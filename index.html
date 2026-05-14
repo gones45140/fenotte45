@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>FENOTTE45 - Dashboard Responsive</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="header">
+    <div class="header-content">
+        <h1><span class="logo">FENOTTE</span><span class="accent">45</span></h1>
+        <div class="header-info">
+            <p class="tagline">📊 Dashboard de Bankroll - Temps Réel</p>
+        </div>
+    </div>
+</header>
+
+<main class="main-container">
+    
+    <!-- SECTION 1: STATS PRINCIPALES -->
+    <section class="stats-section">
+        <h2 class="section-title">📈 Vue d'ensemble</h2>
+        
+        <div class="stats-grid">
+            <div class="stat-card stat-capital">
+                <div class="stat-icon">💰</div>
+                <div class="stat-content">
+                    <label>Capital Total</label>
+                    <div class="stat-value" id="stat-capital">0.00€</div>
+                    <div class="stat-detail" id="stat-capital-detail"></div>
+                </div>
+            </div>
+
+            <div class="stat-card stat-profit">
+                <div class="stat-icon">📈</div>
+                <div class="stat-content">
+                    <label>Bénéfice</label>
+                    <div class="stat-value" id="stat-profit">0.00€</div>
+                    <div class="stat-detail" id="stat-profit-pct"></div>
+                </div>
+            </div>
+
+            <div class="stat-card stat-winrate">
+                <div class="stat-icon">🎯</div>
+                <div class="stat-content">
+                    <label>Taux de Réussite</label>
+                    <div class="stat-value" id="stat-winrate">0%</div>
+                    <div class="stat-detail" id="stat-wins-total"></div>
+                </div>
+            </div>
+
+            <div class="stat-card stat-roi">
+                <div class="stat-icon">⚡</div>
+                <div class="stat-content">
+                    <label>ROI Global</label>
+                    <div class="stat-value" id="stat-roi">0%</div>
+                    <div class="stat-detail" id="stat-roi-detail"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RISQUE BANKROLL -->
+        <div class="risk-indicator">
+            <h3>⚠️ Indicateur de Risque</h3>
+            <div class="risk-meter">
+                <div class="risk-bar" id="risk-bar"></div>
+                <div class="risk-label" id="risk-label">OPTIMAL</div>
+            </div>
+            <p class="risk-info" id="risk-info"></p>
+        </div>
+    </section>
+
+    <!-- SECTION 2: GRAPHIQUES -->
+    <section class="charts-section">
+        <h2 class="section-title">📊 Analyse Détaillée</h2>
+        
+        <div class="charts-grid">
+            <!-- GRAPHIQUE 1: ÉVOLUTION PROFIT -->
+            <div class="chart-card">
+                <h3>💹 Évolution du Profit</h3>
+                <div class="chart-container">
+                    <canvas id="chartProfit"></canvas>
+                </div>
+                <div class="chart-legend">
+                    <span class="legend-item">
+                        <i class="fas fa-square" style="color: #22c55e;"></i> Gains
+                    </span>
+                    <span class="legend-item">
+                        <i class="fas fa-square" style="color: #da0812;"></i> Pertes
+                    </span>
+                </div>
+            </div>
+
+            <!-- GRAPHIQUE 2: BOOKMAKERS -->
+            <div class="chart-card">
+                <h3>🏦 Répartition Bookmakers</h3>
+                <div class="chart-container">
+                    <canvas id="chartBookmakers"></canvas>
+                </div>
+            </div>
+
+            <!-- GRAPHIQUE 3: UNITÉS -->
+            <div class="chart-card">
+                <h3>⭐ Performance Unités</h3>
+                <div class="chart-container">
+                    <canvas id="chartUnites"></canvas>
+                </div>
+            </div>
+
+            <!-- GRAPHIQUE 4: TYPES DE PARIS -->
+            <div class="chart-card">
+                <h3>🎲 ROI par Type</h3>
+                <div class="chart-container">
+                    <canvas id="chartTypes"></canvas>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 3: UNITÉS ACTIVES -->
+    <section class="units-section">
+        <h2 class="section-title">⚙️ Unités Actives</h2>
+        
+        <div class="table-responsive">
+            <table class="units-table">
+                <thead>
+                    <tr>
+                        <th>Unité</th>
+                        <th>Niveau</th>
+                        <th>Paris</th>
+                        <th>Winrate</th>
+                        <th>Profit</th>
+                    </tr>
+                </thead>
+                <tbody id="units-tbody">
+                    <tr>
+                        <td colspan="5" style="text-align: center; color: #94a3b8;">Chargement des données...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- SECTION 4: BOOKMAKERS -->
+    <section class="bookmakers-section">
+        <h2 class="section-title">💳 État des Bookmakers</h2>
+        
+        <div class="bookmakers-grid" id="bookmakers-grid">
+            <div style="text-align: center; color: #94a3b8; padding: 20px;">Chargement...</div>
+        </div>
+    </section>
+
+</main>
+
+<!-- CONTRÔLES -->
+<div class="controls-panel">
+    <button id="btn-load-demo" class="btn btn-primary" onclick="loadDemoData()">
+        <i class="fas fa-download"></i> Charger Données Démo
+    </button>
+    <button id="btn-refresh" class="btn btn-secondary" onclick="refreshDashboard()">
+        <i class="fas fa-sync"></i> Actualiser
+    </button>
+    <button id="btn-export" class="btn btn-success" onclick="exportData()">
+        <i class="fas fa-download"></i> Exporter
+    </button>
+</div>
+
+<footer class="footer">
+    <p>FENOTTE45 © 2026 - Dashboard Responsive | <span id="last-update"></span></p>
+</footer>
+
+<script src="app.js"></script>
+
+</body>
+</html>
