@@ -1,0 +1,581 @@
+/* ========== VARIABLES CSS ========== */
+:root {
+    --bg-dark: #0f172a;
+    --bg-darker: #0a0e1a;
+    --panel-bg: rgba(30, 41, 59, 0.7);
+    --accent-cyan: #22d3ee;
+    --accent-blue: #1e40af;
+    --accent-red: #da0812;
+    --accent-green: #22c55e;
+    --accent-yellow: #eab308;
+    --text-main: #f8fafc;
+    --text-secondary: #94a3b8;
+    --text-tertiary: #64748b;
+    --border-color: rgba(255, 255, 255, 0.1);
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+    --transition: all 0.3s ease;
+}
+
+/* ========== RESET & BASE ========== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    background: var(--bg-dark);
+    color: var(--text-main);
+    font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+    line-height: 1.6;
+    overflow-x: hidden;
+}
+
+/* ========== HEADER ========== */
+.header {
+    background: linear-gradient(135deg, var(--accent-blue), #1a2847);
+    padding: 20px;
+    border-bottom: 3px solid var(--accent-red);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: var(--shadow-md);
+}
+
+.header-content {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.logo {
+    font-size: 28px;
+    font-weight: 900;
+    letter-spacing: 3px;
+    color: var(--text-main);
+}
+
+.logo .accent {
+    color: var(--accent-red);
+}
+
+.tagline {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+}
+
+/* ========== MAIN CONTAINER ========== */
+.main-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+    padding-bottom: 120px;
+}
+
+/* ========== SECTIONS ========== */
+.section-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-main);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* ========== STATS SECTION ========== */
+.stats-section {
+    margin-bottom: 40px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 16px;
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    background: var(--panel-bg);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    gap: 15px;
+    align-items: flex-start;
+    transition: var(--transition);
+    border-left: 4px solid var(--accent-cyan);
+}
+
+.stat-card:hover {
+    background: rgba(30, 41, 59, 0.9);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.stat-card.stat-capital { border-left-color: #3b82f6; }
+.stat-card.stat-profit { border-left-color: var(--accent-green); }
+.stat-card.stat-winrate { border-left-color: var(--accent-yellow); }
+.stat-card.stat-roi { border-left-color: var(--accent-cyan); }
+
+.stat-icon {
+    font-size: 32px;
+    min-width: 40px;
+    text-align: center;
+}
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-content label {
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    display: block;
+    margin-bottom: 6px;
+}
+
+.stat-value {
+    font-size: 24px;
+    font-weight: 900;
+    color: var(--text-main);
+    margin-bottom: 4px;
+}
+
+.stat-card.stat-profit .stat-value,
+.stat-card.stat-roi .stat-value {
+    color: var(--accent-green);
+}
+
+.stat-detail {
+    font-size: 11px;
+    color: var(--text-tertiary);
+}
+
+/* ========== RISK INDICATOR ========== */
+.risk-indicator {
+    background: var(--panel-bg);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 30px;
+}
+
+.risk-indicator h3 {
+    font-size: 14px;
+    margin-bottom: 12px;
+    color: var(--text-main);
+}
+
+.risk-meter {
+    position: relative;
+    height: 24px;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 10px;
+    border: 1px solid var(--border-color);
+}
+
+.risk-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-green) 0%, var(--accent-yellow) 50%, var(--accent-red) 100%);
+    border-radius: 12px;
+    transition: width 0.5s ease;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 8px;
+}
+
+.risk-label {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 10px;
+    font-weight: 700;
+    color: white;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.risk-info {
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-align: center;
+}
+
+/* ========== CHARTS SECTION ========== */
+.charts-section {
+    margin-bottom: 40px;
+}
+
+.charts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.chart-card {
+    background: var(--panel-bg);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 20px;
+    transition: var(--transition);
+}
+
+.chart-card:hover {
+    background: rgba(30, 41, 59, 0.9);
+    box-shadow: var(--shadow-md);
+}
+
+.chart-card h3 {
+    font-size: 14px;
+    color: var(--accent-cyan);
+    margin-bottom: 16px;
+    font-weight: 600;
+}
+
+.chart-container {
+    position: relative;
+    height: 280px;
+    margin-bottom: 12px;
+}
+
+.chart-legend {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    flex-wrap: wrap;
+    font-size: 11px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-secondary);
+}
+
+.legend-item i {
+    font-size: 8px;
+}
+
+/* ========== UNITS SECTION ========== */
+.units-section {
+    margin-bottom: 40px;
+}
+
+.table-responsive {
+    background: var(--panel-bg);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    overflow-x: auto;
+}
+
+.units-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.units-table thead {
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.units-table th {
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.units-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    font-size: 13px;
+}
+
+.units-table tbody tr:hover {
+    background: rgba(34, 211, 238, 0.05);
+}
+
+.units-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* ========== BOOKMAKERS SECTION ========== */
+.bookmakers-section {
+    margin-bottom: 40px;
+}
+
+.bookmakers-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 16px;
+}
+
+.bookmaker-card {
+    background: var(--panel-bg);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+    transition: var(--transition);
+    cursor: pointer;
+}
+
+.bookmaker-card:hover {
+    background: rgba(30, 41, 59, 0.9);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.bookmaker-name {
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    letter-spacing: 1px;
+}
+
+.bookmaker-balance {
+    font-size: 20px;
+    font-weight: 900;
+    color: var(--accent-cyan);
+    margin-bottom: 6px;
+}
+
+.bookmaker-status {
+    font-size: 10px;
+    color: var(--text-tertiary);
+}
+
+/* ========== CONTROLS PANEL ========== */
+.controls-panel {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--bg-darker);
+    border-top: 1px solid var(--border-color);
+    padding: 12px 20px;
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+    box-shadow: 0 -2px 16px rgba(0, 0, 0, 0.5);
+}
+
+.btn {
+    padding: 10px 16px;
+    border: none;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.btn-primary {
+    background: var(--accent-blue);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #1a35a0;
+}
+
+.btn-secondary {
+    background: var(--accent-cyan);
+    color: var(--bg-dark);
+}
+
+.btn-secondary:hover {
+    background: #06b6d4;
+}
+
+.btn-success {
+    background: var(--accent-green);
+    color: white;
+}
+
+.btn-success:hover {
+    background: #16a34a;
+}
+
+/* ========== FOOTER ========== */
+.footer {
+    text-align: center;
+    padding: 20px;
+    color: var(--text-tertiary);
+    font-size: 11px;
+    margin-top: 60px;
+}
+
+/* ========== RESPONSIVE: TABLETTE ========== */
+@media (max-width: 1024px) {
+    .main-container {
+        padding: 16px;
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .charts-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .bookmakers-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    }
+
+    .header {
+        padding: 16px;
+    }
+
+    .logo {
+        font-size: 24px;
+    }
+}
+
+/* ========== RESPONSIVE: MOBILE ========== */
+@media (max-width: 640px) {
+    .main-container {
+        padding: 12px;
+        padding-bottom: 140px;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .stat-card {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .stat-icon {
+        min-width: auto;
+        font-size: 28px;
+    }
+
+    .header {
+        padding: 12px;
+    }
+
+    .logo {
+        font-size: 20px;
+        letter-spacing: 2px;
+    }
+
+    .tagline {
+        font-size: 10px;
+    }
+
+    .section-title {
+        font-size: 16px;
+        margin-bottom: 12px;
+    }
+
+    .charts-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .chart-container {
+        height: 240px;
+    }
+
+    .bookmakers-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .controls-panel {
+        padding: 10px;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .btn {
+        width: 100%;
+        justify-content: center;
+        padding: 10px 12px;
+        font-size: 11px;
+    }
+
+    .units-table {
+        font-size: 12px;
+    }
+
+    .units-table th,
+    .units-table td {
+        padding: 8px;
+    }
+
+    .risk-meter {
+        height: 20px;
+    }
+
+    .stat-value {
+        font-size: 20px;
+    }
+}
+
+/* ========== ANIMATIONS ========== */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.stat-card,
+.chart-card,
+.bookmaker-card {
+    animation: fadeIn 0.5s ease forwards;
+}
+
+/* ========== SCROLL BAR ========== */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-dark);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--accent-cyan);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #06b6d4;
+}
