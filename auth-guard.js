@@ -4,7 +4,6 @@
 
 import { supabase, chargerEtat, sauverEtat, deconnexion } from './supabase.js';
 
-// Overlay pendant le chargement, retiré une fois app.js prêt
 const overlay = document.createElement('div');
 overlay.id = 'g45-boot';
 overlay.style.cssText = 'position:fixed;inset:0;background:#0a0e1a;color:#fff;display:flex;align-items:center;justify-content:center;flex-direction:column;font-family:system-ui;z-index:99999;font-size:14px;gap:12px;';
@@ -12,7 +11,6 @@ overlay.innerHTML = '<div style="font-size:22px;font-weight:800;letter-spacing:-
 document.body.appendChild(overlay);
 const msg = (t) => { const el = document.getElementById('g45-boot-msg'); if (el) el.textContent = t; };
 
-// 1. Récupérer la session, en attendant si l'URL contient un token magic link
 async function attendreSession() {
   const hash = window.location.hash || '';
   const contientToken = /access_token=|error/.test(hash);
@@ -43,7 +41,6 @@ if (!session) {
 }
 const user = session.user;
 
-// 2. Charger le state depuis Supabase
 try {
   msg('Chargement de tes données…');
   const data = await chargerEtat(user.id);
@@ -57,7 +54,6 @@ try {
   console.warn('⚠️ erreur chargement Supabase, on continue avec le localStorage :', e);
 }
 
-// 3. Intercepter les écritures de g45v5 pour les pousser sur Supabase
 const origSet = localStorage.setItem.bind(localStorage);
 let pushTimer = null;
 let lastPushed = null;
@@ -96,18 +92,39 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 window.addEventListener('pagehide', flush);
 window.addEventListener('beforeunload', flush);
 
-// 4. Utilitaires console
 window._g45User = user;
 window._g45Deconnexion = async () => { await flush(); await deconnexion(); window.location.href = './login.html'; };
 
-// 5. Charger app.js
 msg('Démarrage de l\'application…');
 console.log('✅ auth-guard actif, utilisateur :', user.email);
+
+// Rebrancher les handlers d'onglets une fois app.js chargé
+// Quand app.js est injecté dynamiquement, certains handlers inline plantent
+// silencieusement à cause d'IDs qui n'existent pas dans ce contexte — on recolle
+// ceux qui comptent pour naviguer.
+function rebrancherOnglets() {
+  const paires = [
+    ['itab-saisons',      () => window.swInner && swInner('saisons', document.getElementById('itab-saisons'))],
+    ['itab-mondial',      () => { window.swInner && swInner('mondial', document.getElementById('itab-mondial')); window.loadMondial2026 && loadMondial2026(); }],
+    ['btn-generate-pari', () => window.generatePariDuJour && generatePariDuJour()],
+    ['btn-chat-params-pc',      () => window.toggleChatParamsPC && toggleChatParamsPC()],
+    ['btn-chat-params-mobile',  () => window.toggleChatParamsPC && toggleChatParamsPC()],
+    ['btn-refresh-cal',   () => window.loadCalendrier && loadCalendrier()],
+    ['btn-comparer',      () => window.runComparateur && runComparateur()],
+  ];
+  paires.forEach(([id, fn]) => {
+    const el = document.getElementById(id);
+    if (el && !el.onclick) el.onclick = fn;
+  });
+  console.log('✅ handlers d\'onglets rebranchés');
+}
 
 const s = document.createElement('script');
 s.src = './app.js';
 s.onload = () => {
   const el = document.getElementById('g45-boot');
   if (el) el.remove();
+  // Petit délai pour laisser app.js finir son init
+  setTimeout(rebrancherOnglets, 100);
 };
 document.body.appendChild(s);
