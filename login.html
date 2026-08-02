@@ -37,31 +37,61 @@
     .msg { font-size: 12px; margin-top: 14px; text-align: center; line-height: 1.6; min-height: 32px; }
     .msg.ok { color: var(--g); }
     .msg.err { color: var(--r); }
+    .form { display: none; }
+    .form.visible { display: block; }
+    .loading { text-align: center; color: var(--t3); font-size: 13px; padding: 10px 0; }
   </style>
 </head>
 <body>
   <div class="box">
     <h1>🎯 GONES45</h1>
-    <div class="sub">Connexion sans mot de passe. Un lien de connexion t'est envoyé par email.</div>
-
-    <label>Email</label>
-    <input type="email" id="email" placeholder="ton@email.com" autocomplete="email" required>
-    <button id="btn">Envoyer le lien</button>
-
-    <div class="msg" id="msg"></div>
+    <div id="loading" class="loading">Vérification de la connexion…</div>
+    <div id="form" class="form">
+      <div class="sub">Connexion sans mot de passe. Un lien de connexion t'est envoyé par email.</div>
+      <label>Email</label>
+      <input type="email" id="email" placeholder="ton@email.com" autocomplete="email" required>
+      <button id="btn">Envoyer le lien</button>
+      <div class="msg" id="msg"></div>
+    </div>
   </div>
 
   <script type="module">
-    import { envoyerMagicLink, utilisateurActuel } from './supabase.js';
+    import { supabase, envoyerMagicLink } from './supabase.js';
 
-    // Si déjà connecté, on va direct à l'app
-    const user = await utilisateurActuel();
-    if (user) window.location.href = './index.html';
+    async function attendreSession() {
+      const hash = window.location.hash || '';
+      const contientToken = /access_token=|error/.test(hash);
+      if (!contientToken) {
+        const { data: { session } } = await supabase.auth.getSession();
+        return session;
+      }
+      return await new Promise(resolve => {
+        let done = false;
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+          if (done) return;
+          if (session) { done = true; subscription.unsubscribe(); resolve(session); }
+        });
+        setTimeout(async () => {
+          if (done) return;
+          done = true; subscription.unsubscribe();
+          const { data: { session } } = await supabase.auth.getSession();
+          resolve(session);
+        }, 4000);
+      });
+    }
+
+    const session = await attendreSession();
+    if (session) {
+      window.location.href = './index.html';
+      throw new Error('redirect');
+    }
+
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('form').classList.add('visible');
 
     const btn = document.getElementById('btn');
     const email = document.getElementById('email');
     const msg = document.getElementById('msg');
-
     email.focus();
     email.addEventListener('keydown', e => { if (e.key === 'Enter') btn.click(); });
 
@@ -70,8 +100,7 @@
       if (!val || !val.includes('@')) {
         msg.className = 'msg err'; msg.textContent = 'Email invalide.'; return;
       }
-      btn.disabled = true;
-      btn.textContent = '⏳ Envoi…';
+      btn.disabled = true; btn.textContent = '⏳ Envoi…';
       msg.className = 'msg'; msg.textContent = '';
       const err = await envoyerMagicLink(val);
       if (err) {

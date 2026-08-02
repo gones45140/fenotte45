@@ -1,19 +1,10 @@
 // ═══════════════════════════════════════════════════════════════
 // GONES45 — pont Supabase transparent
 // ═══════════════════════════════════════════════════════════════
-// Ce fichier tourne AVANT app.js. Il fait trois choses :
-//   1. Redirige vers login.html si l'utilisateur n'est pas connecté
-//   2. Charge son state depuis Supabase et l'écrit en localStorage
-//      (là où app.js s'attend à le trouver, aucun changement dans app.js)
-//   3. Intercepte les futures écritures de g45v5 pour les pousser sur Supabase
-//
-// Puis il charge app.js dynamiquement — d'où la nécessité de RETIRER
-// le <script src="app.js"> de index.html au profit de <script type="module"
-// src="./auth-guard.js">.
 
-import { supabase, utilisateurActuel, chargerEtat, sauverEtat, deconnexion } from './supabase.js';
+import { supabase, chargerEtat, sauverEtat, deconnexion } from './supabase.js';
 
-// Petit overlay pendant le chargement, retiré une fois app.js prêt
+// Overlay pendant le chargement, retiré une fois app.js prêt
 const overlay = document.createElement('div');
 overlay.id = 'g45-boot';
 overlay.style.cssText = 'position:fixed;inset:0;background:#0a0e1a;color:#fff;display:flex;align-items:center;justify-content:center;flex-direction:column;font-family:system-ui;z-index:99999;font-size:14px;gap:12px;';
@@ -21,13 +12,36 @@ overlay.innerHTML = '<div style="font-size:22px;font-weight:800;letter-spacing:-
 document.body.appendChild(overlay);
 const msg = (t) => { const el = document.getElementById('g45-boot-msg'); if (el) el.textContent = t; };
 
-// 1. Vérifier l'auth
-const user = await utilisateurActuel();
-if (!user) {
+// 1. Récupérer la session, en attendant si l'URL contient un token magic link
+async function attendreSession() {
+  const hash = window.location.hash || '';
+  const contientToken = /access_token=|error/.test(hash);
+  if (!contientToken) {
+    const { data: { session } } = await supabase.auth.getSession();
+    return session;
+  }
+  return await new Promise(resolve => {
+    let done = false;
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (done) return;
+      if (session) { done = true; subscription.unsubscribe(); resolve(session); }
+    });
+    setTimeout(async () => {
+      if (done) return;
+      done = true; subscription.unsubscribe();
+      const { data: { session } } = await supabase.auth.getSession();
+      resolve(session);
+    }, 4000);
+  });
+}
+
+const session = await attendreSession();
+if (!session) {
   msg('Redirection vers la connexion…');
   window.location.href = './login.html';
-  throw new Error('non connecté');   // interrompt le reste du script
+  throw new Error('non connecté');
 }
+const user = session.user;
 
 // 2. Charger le state depuis Supabase
 try {
@@ -44,8 +58,6 @@ try {
 }
 
 // 3. Intercepter les écritures de g45v5 pour les pousser sur Supabase
-//    On garde le comportement local intact (setItem d'origine), on ajoute juste
-//    un push différé de 800ms pour grouper plusieurs modifs rapprochées.
 const origSet = localStorage.setItem.bind(localStorage);
 let pushTimer = null;
 let lastPushed = null;
@@ -54,7 +66,7 @@ localStorage.setItem = function(k, v) {
   if (k === 'g45v5') {
     clearTimeout(pushTimer);
     pushTimer = setTimeout(async () => {
-      if (v === lastPushed) return;   // évite les doubles push
+      if (v === lastPushed) return;
       try {
         const state = JSON.parse(v);
         await sauverEtat(user.id, state);
@@ -67,8 +79,6 @@ localStorage.setItem = function(k, v) {
   }
 };
 
-// Filet de sécurité : pousser tout ce qui reste en attente au moment
-// de quitter la page (analogue à _g45FlushBetSync côté GitHub)
 const flush = async () => {
   if (pushTimer) {
     clearTimeout(pushTimer);
@@ -86,11 +96,11 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 window.addEventListener('pagehide', flush);
 window.addEventListener('beforeunload', flush);
 
-// 4. Exposer utilitaires dans la console
+// 4. Utilitaires console
 window._g45User = user;
 window._g45Deconnexion = async () => { await flush(); await deconnexion(); window.location.href = './login.html'; };
 
-// 5. Enfin, charger app.js
+// 5. Charger app.js
 msg('Démarrage de l\'application…');
 console.log('✅ auth-guard actif, utilisateur :', user.email);
 
