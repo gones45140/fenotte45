@@ -13,7 +13,12 @@ const msg = (t) => { const el = document.getElementById('g45-boot-msg'); if (el)
 
 async function attendreSession() {
   const hash = window.location.hash || '';
-  const contientToken = /access_token=|error/.test(hash);
+  const search = window.location.search || '';
+  // Deux formats possibles selon le flux du SDK : implicite (#access_token=…)
+  // et PKCE (?code=…), qui est le défaut des versions récentes de supabase-js v2.
+  // Ne renifler que le hash faisait tomber le flux PKCE sur getSession(), qui peut
+  // répondre null avant l'échange du code → rebond intempestif vers login.html.
+  const contientToken = /access_token=|error/.test(hash) || /[?&]code=/.test(search);
   if (!contientToken) {
     const { data: { session } } = await supabase.auth.getSession();
     return session;
@@ -41,17 +46,24 @@ if (!session) {
 }
 const user = session.user;
 
-// ── Couper les synchros GitHub et Dropbox
+// ── Neutraliser les synchros GitHub et Dropbox
 // Sur cette version test, seul Supabase doit stocker les données utilisateur —
 // sans ça un ami connecté tirerait le state de la prod d'Antoine (ou l'inverse).
-// _g45BetSyncOn() retourne false si le token GitHub n'existe pas, saveToDropbox()
-// idem, donc supprimer les tokens suffit à neutraliser les deux syncs.
+// On RANGE les tokens sous une autre clé au lieu de les supprimer : le token GitHub
+// ne sert pas qu'aux paris (Mémoire Stats, joueurs.json, players.json passent par lui),
+// et le perdre obligerait à le recoller à la main pour revenir en prod.
 try {
-  localStorage.removeItem('gones45_github_token');
-  localStorage.removeItem('g45_dbx_token');
-  localStorage.removeItem('g45_dbx_refresh');
+  [
+    ['gones45_github_token', 'gones45_github_token__off'],
+    ['g45_dbx_token',        'g45_dbx_token__off'],
+    ['g45_dbx_refresh',      'g45_dbx_refresh__off'],
+    ['gones45_dbx_token',    'gones45_dbx_token__off']
+  ].forEach(([vif, range]) => {
+    const v = localStorage.getItem(vif);
+    if (v !== null) { localStorage.setItem(range, v); localStorage.removeItem(vif); }
+  });
   localStorage.setItem('g45_github_betsync', '0');
-  console.log('🛑 synchros GitHub et Dropbox désactivées sur cette version');
+  console.log('🛑 synchros GitHub et Dropbox neutralisées (tokens rangés sous *__off)');
 } catch (e) {}
 
 try {
@@ -75,6 +87,7 @@ localStorage.setItem = function(k, v) {
   if (k === 'g45v5') {
     clearTimeout(pushTimer);
     pushTimer = setTimeout(async () => {
+      pushTimer = null;
       if (v === lastPushed) return;
       try {
         const state = JSON.parse(v);
@@ -89,17 +102,16 @@ localStorage.setItem = function(k, v) {
 };
 
 const flush = async () => {
-  if (pushTimer) {
-    clearTimeout(pushTimer);
-    try {
-      const v = localStorage.getItem('g45v5');
-      if (v && v !== lastPushed) {
-        const state = JSON.parse(v);
-        await sauverEtat(user.id, state);
-        lastPushed = v;
-      }
-    } catch (e) {}
-  }
+  clearTimeout(pushTimer);
+  pushTimer = null;
+  try {
+    const v = localStorage.getItem('g45v5');
+    if (v && v !== lastPushed) {
+      const state = JSON.parse(v);
+      await sauverEtat(user.id, state);
+      lastPushed = v;
+    }
+  } catch (e) {}
 };
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flush(); });
 window.addEventListener('pagehide', flush);
@@ -111,35 +123,39 @@ window._g45Deconnexion = async () => { await flush(); await deconnexion(); windo
 msg('Démarrage de l\'application…');
 console.log('✅ auth-guard actif, utilisateur :', user.email);
 
-function rebrancherOnglets() {
-  const paires = [
-    ['itab-saisons',      () => window.swInner && swInner('saisons', document.getElementById('itab-saisons'))],
-    ['itab-mondial',      () => { window.swInner && swInner('mondial', document.getElementById('itab-mondial')); window.loadMondial2026 && loadMondial2026(); }],
-    ['btn-generate-pari', () => window.generatePariDuJour && generatePariDuJour()],
-    ['btn-chat-params-pc',      () => window.toggleChatParamsPC && toggleChatParamsPC()],
-    ['btn-chat-params-mobile',  () => window.toggleChatParamsPC && toggleChatParamsPC()],
-    ['btn-refresh-cal',   () => window.loadCalendrier && loadCalendrier()],
-    ['btn-comparer',      () => window.runComparateur && runComparateur()],
-  ];
-  paires.forEach(([id, fn]) => {
-    const el = document.getElementById(id);
-    if (el && !el.onclick) el.onclick = fn;
-  });
-  console.log('✅ handlers d\'onglets rebranchés');
-}
-
 const s = document.createElement('script');
 s.src = './app.js';
+
+s.onerror = () => {
+  msg('❌ échec du chargement de app.js');
+  console.error('app.js introuvable ou bloqué (CSP ?)');
+};
+
 s.onload = () => {
   const el = document.getElementById('g45-boot');
   if (el) el.remove();
-  // Rebrancher les handlers et re-neutraliser les syncs par mesure de sécurité
-  setTimeout(() => {
-    rebrancherOnglets();
-    // Verrouiller au niveau fonction : au cas où app.js ait déjà relu les flags
-    if (typeof window._g45BetSyncOn === 'function') {
-      window._g45BetSyncOn = () => false;
-    }
-  }, 100);
+
+  // Verrouiller la synchro paris au niveau fonction, au cas où app.js ait déjà lu les flags
+  if (typeof window._g45BetSyncOn === 'function') window._g45BetSyncOn = () => false;
+
+  // ── POINT CRITIQUE ──────────────────────────────────────────────
+  // app.js pose son initialisation principale sur `window.onload` (lignes 19396→20469,
+  // soit 1073 lignes : 46 fonctions, 16 exports vers window, le préremplissage des clés
+  // API, loadPublicStats(), _applyCardStyle(), initPariChips(), et les onclick des boutons
+  // btn-refresh-cal / btn-comparer / btn-generate-pari / itab-saisons / itab-mondial /
+  // btn-chat-params-*).
+  // Comme on injecte app.js APRÈS que l'événement `load` soit passé, ce bloc ne partirait
+  // jamais. `window.onload` étant le gestionnaire de l'événement `load`, redispatcher
+  // l'événement suffit à tout relancer — inutile de rebrancher les boutons un par un,
+  // d'autant que la plupart de leurs fonctions ne sont pas globales.
+  // Les six autres blocs d'init d'app.js sont gardés par document.readyState et tournent
+  // déjà tout seuls ; ils ne sont pas rejoués ici.
+  try {
+    window.dispatchEvent(new Event('load'));
+    console.log('✅ événement load redispatché — init de app.js exécutée');
+  } catch (e) {
+    console.error('❌ redispatch de load échoué :', e);
+  }
 };
+
 document.body.appendChild(s);
