@@ -41,6 +41,19 @@ if (!session) {
 }
 const user = session.user;
 
+// ── Couper les synchros GitHub et Dropbox
+// Sur cette version test, seul Supabase doit stocker les données utilisateur —
+// sans ça un ami connecté tirerait le state de la prod d'Antoine (ou l'inverse).
+// _g45BetSyncOn() retourne false si le token GitHub n'existe pas, saveToDropbox()
+// idem, donc supprimer les tokens suffit à neutraliser les deux syncs.
+try {
+  localStorage.removeItem('gones45_github_token');
+  localStorage.removeItem('g45_dbx_token');
+  localStorage.removeItem('g45_dbx_refresh');
+  localStorage.setItem('g45_github_betsync', '0');
+  console.log('🛑 synchros GitHub et Dropbox désactivées sur cette version');
+} catch (e) {}
+
 try {
   msg('Chargement de tes données…');
   const data = await chargerEtat(user.id);
@@ -98,10 +111,6 @@ window._g45Deconnexion = async () => { await flush(); await deconnexion(); windo
 msg('Démarrage de l\'application…');
 console.log('✅ auth-guard actif, utilisateur :', user.email);
 
-// Rebrancher les handlers d'onglets une fois app.js chargé
-// Quand app.js est injecté dynamiquement, certains handlers inline plantent
-// silencieusement à cause d'IDs qui n'existent pas dans ce contexte — on recolle
-// ceux qui comptent pour naviguer.
 function rebrancherOnglets() {
   const paires = [
     ['itab-saisons',      () => window.swInner && swInner('saisons', document.getElementById('itab-saisons'))],
@@ -124,7 +133,13 @@ s.src = './app.js';
 s.onload = () => {
   const el = document.getElementById('g45-boot');
   if (el) el.remove();
-  // Petit délai pour laisser app.js finir son init
-  setTimeout(rebrancherOnglets, 100);
+  // Rebrancher les handlers et re-neutraliser les syncs par mesure de sécurité
+  setTimeout(() => {
+    rebrancherOnglets();
+    // Verrouiller au niveau fonction : au cas où app.js ait déjà relu les flags
+    if (typeof window._g45BetSyncOn === 'function') {
+      window._g45BetSyncOn = () => false;
+    }
+  }, 100);
 };
 document.body.appendChild(s);
