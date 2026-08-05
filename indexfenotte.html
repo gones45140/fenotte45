@@ -1,0 +1,1264 @@
+<!DOCTYPE html>
+<!-- Build: 20260523-213343 -->
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; worker-src 'self' blob:; connect-src 'self' data: blob: https://tessdata.projectnaptha.com https://site.api.espn.com https://site.web.api.espn.com https://sports.core.api.espn.com https://fantasy.premierleague.com https://api.dropbox.com https://content.dropboxapi.com https://api.dropboxapi.com https://api.groq.com https://generativelanguage.googleapis.com https://api.mistral.ai https://api.tavily.com https://fd-proxy.touraine-antoine.workers.dev https://media.api-sports.io https://api.football-data.org https://api-web.nhle.com https://statsapi.mlb.com https://www.thesportsdb.com https://cdn.jsdelivr.net https://api.openf1.org https://racecenter.letour.fr https://racecenter.lavuelta.es https://racecenter.letourfemmes.fr https://racecenter.paris-nice.fr https://racecenter.tour-auvergne-rhone-alpes.fr https://racecenter.paris-roubaix.fr https://racecenter.liege-bastogne-liege.be https://racecenter.la-fleche-wallonne.be https://racecenter.paris-tours.fr https://api.jolpi.ca https://en.wikipedia.org https://api.github.com https://raw.githubusercontent.com https://gones45140.github.io https://ofcizjaynonjtiusdwgi.supabase.co wss://ofcizjaynonjtiusdwgi.supabase.co; img-src 'self' data: https: blob: https://flagcdn.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com;">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https: data: blob:;">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>GONES45</title>
+
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="logo">GONES<em>45</em></div>
+  <div class="top-cap"><div class="lbl">Capital</div><div class="val" id="top-val">0 €</div><div id="top-fb" style="display:none;font-size:11px;color:var(--gold);font-weight:700;line-height:1.1;margin-top:2px;">🎟 0 €</div></div>
+</header>
+
+<main class="main">
+
+<!-- DASHBOARD -->
+<div id="t-dash" class="tab on">
+  <div class="kpi2">
+    <div class="kpibox" style="--ac:var(--a);"><div class="kpi-l">Bankroll</div><div class="kpi-v" id="d-cap">0 €</div></div>
+    <div class="kpibox" style="--ac:var(--g);"><div class="kpi-l">Bénéfice</div><div class="kpi-v" id="d-ben">0 €</div></div>
+  </div>
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--b1);">
+      <span style="font-size:11px;font-weight:600;color:var(--t2);">Objectif bankroll</span>
+      <button class="ba" onclick="setGoal()">MODIFIER</button>
+    </div>
+    <div class="cp" style="padding:12px 14px;">
+      <div class="prog-row"><span id="g-cur" style="font-size:13px;font-weight:700;">0€</span><span id="g-pct" style="font-size:11px;color:var(--t3);">—</span></div>
+      <div class="prog-track"><div id="g-fill" class="prog-fill" style="width:0%;"></div></div>
+      <div class="prog-meta"><span id="g-lbl">Définir un objectif</span><span id="g-tgt"></span></div>
+    </div>
+  </div>
+  <!-- GENERATEUR PARI DU JOUR -->
+  <div class="fc" style="margin-bottom:10px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+      <div>
+        <div style="font-size:13px;font-weight:800;color:var(--t1);">🎯 Pari du jour</div>
+        <div style="font-size:10px;color:var(--t3);margin-top:2px;">Analyse IA de tes équipes favorites</div>
+      </div>
+      <button id="btn-generate-pari" style="padding:8px 16px;border-radius:var(--r6);border:none;background:var(--a);color:#fff;font-size:11px;font-weight:700;cursor:pointer;">⚡ Générer</button>
+    </div>
+    <!-- Sélecteur équipe -->
+    <div id="pari-equipe-chips" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;"></div>
+    <div id="pari-du-jour-content" style="display:none;"></div>
+  </div>
+  <div class="sec">Équipes <span style="font-size:9px;color:var(--t3);font-weight:400;">(dernières perf.)</span></div>
+  <div class="card" style="overflow:visible;"><div id="dash-units" style="padding:0;"><div class="empty">Aucune équipe</div></div></div>
+</div>
+
+<!-- PARIS -->
+<div id="t-paris" class="tab">
+  <div class="tog">
+    <button class="togb on" id="btn-cpit" onclick="swBet('strat')">🚀 Cockpit</button>
+    <button class="togb" id="btn-simp" onclick="swBet('simple')">🎯 Simple</button>
+    <button class="togb" id="btn-comb" onclick="swBet('combi')">🎲 Combiné</button>
+  </div>
+  <div id="sub-strat">
+    <div class="crash-wrap">
+      <div class="crash-hdr"><span>⚠️</span> Simulateur crash par palier</div>
+      <div class="crash-grid" id="crash-grid"><div style="color:var(--t3);font-size:11px;grid-column:span 4;text-align:center;padding:8px;">Sélectionne une équipe</div></div>
+      <div class="crash-alert" id="crash-alert"><span>⚠️</span><span id="crash-txt"></span></div>
+    </div>
+    <div class="mm-wrap">
+      <div class="mm-title">
+        <span>⚡ MyMatch</span><span style="font-size:9px;color:var(--t3);font-weight:400;">Sélections combinées</span>
+        <button class="ba" onclick="addMmRow()">+ Ajouter</button>
+      </div>
+      <div class="mm-sel" id="mm-sel"></div>
+      <div class="mm-types" id="mm-types"></div>
+      <div class="mm-cote-total" style="display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <span class="mm-ct-l">Cote combinée</span>
+          <span class="mm-ct-v" id="mm-cote-total">—</span>
+        </div>
+        <button onclick="saveMmAsPari('cockpit')" style="padding:7px 14px;border-radius:var(--r6);border:1px solid rgba(30,215,96,.4);background:rgba(30,215,96,.1);color:#1ed760;font-size:11px;font-weight:700;cursor:pointer;">💾 Enregistrer pari</button>
+      </div>
+    </div>
+    <div class="fc">
+      <div class="g2" style="gap:9px;">
+        <div class="fg"><label class="fl">Équipe</label><select id="c-unit" class="fi" onchange="updMise();renderCrash()"></select></div>
+        <div class="fg"><label class="fl">Sport</label><select id="c-sport" class="fi">
+          <option value="⚽">⚽ Football</option><option value="🏀">🏀 Basket</option>
+          <option value="🎾">🎾 Tennis</option><option value="🏈">🏈 NFL</option>
+          <option value="⚾">⚾ Baseball</option><option value="🏒">🏒 Hockey</option>
+          <option value="🏉">🏉 Rugby</option><option value="🏉🇦🇺">🏉🇦🇺 NRL</option><option value="🏎">🏎 F1</option><option value="🥊">🥊 MMA</option><option value="🚗">🚗 WRC</option><option value="🚴">🚴 Cyclisme</option>
+        </select></div>
+        <div class="fg"><label class="fl">Compétition</label><input id="c-comp" class="fi" placeholder="Ligue 1, CL…"></div>
+        <div class="fg" style="position:relative"><label class="fl">Adversaire</label><input id="c-target" class="fi" placeholder="Ex : Real Madrid, OM…" autocomplete="off" oninput="searchAdv(this.value,'c-target','adv-res-cock')"><div id="adv-res-cock" style="display:none;position:absolute;left:0;right:0;background:var(--bg3);border:1px solid var(--b1);border-radius:var(--r6);z-index:200;max-height:180px;overflow-y:auto;"></div></div>
+        <div class="fg"><label class="fl">Bookmaker</label><select id="c-book" class="fi"></select></div>
+        <div class="fg"><label class="fl" style="color:var(--g);">Mise (€)</label><input type="number" id="c-mise" class="fi" style="border-color:rgba(30,215,96,.25);"></div>
+        <div class="fg"><label class="fl">Date</label><input type="date" id="c-date" class="fi"></div>
+        <div class="fg"><label class="fl">Heure</label><input type="time" id="c-heure" class="fi"></div>
+      </div>
+      <div class="fg" style="margin-top:9px"><label class="fl">📝 Notes</label><textarea id="c-notes" class="fi" style="height:44px;resize:none;" placeholder="Analyse, contexte…"></textarea></div>
+      <button class="btn btn-p" style="margin-top:11px;" onclick="pari(true)">Engager la montante</button>
+    </div>
+    <div class="sec" style="display:flex;justify-content:space-between;align-items:center;">
+      <span>En cours</span>
+      
+    </div>
+    <div class="card"><table class="ltbl"><thead><tr><th>Équipe</th><th>Match</th><th>Cote</th><th>Mise</th><th style="text-align:right">Résultat</th></tr></thead><tbody id="live-strat"></tbody></table></div>
+  </div>
+  <div id="sub-combi" style="display:none;">
+    <div class="fc">
+      <div style="font-size:11px;color:var(--t3);margin-bottom:10px;">Ajoute plusieurs matchs — la cote se multiplie automatiquement</div>
+      <div id="combi-rows"></div>
+      <button onclick="addCombiRow()" style="width:100%;padding:9px;border-radius:var(--r6);border:1px dashed rgba(77,132,255,.4);background:rgba(77,132,255,.06);color:#4d84ff;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:12px;">+ Ajouter une sélection</button>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:rgba(255,255,255,.04);border-radius:var(--r6);margin-bottom:8px;">
+        <div>
+          <div style="font-size:10px;color:var(--t3);">Cote auto (produit)</div>
+          <div id="combi-cote-total" style="font-size:22px;font-weight:800;color:#f0b020;">—</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:10px;color:var(--t3);">Gain potentiel</div>
+          <div id="combi-gain" style="font-size:16px;font-weight:700;color:#1ed760;">—</div>
+        </div>
+      </div>
+      <div class="fg" style="margin-bottom:12px;">
+        <label class="fl" style="color:#f0b020;">🎯 Cote du book (boostée) — optionnel</label>
+        <input type="number" step="0.01" id="combi-cote-book" class="fi" placeholder="vide = cote auto ci-dessus" oninput="updateCombiCote()">
+        <div style="font-size:9px;color:var(--t3);margin-top:3px;">Si remplie, c'est elle qui sert aux gains (boost / arrondi du bookmaker).</div>
+      </div>
+      <div class="g2" style="gap:9px;margin-bottom:9px;">
+        <div class="fg"><label class="fl" style="color:var(--g);">Mise (€)</label><input type="number" id="combi-mise" class="fi" value="10" oninput="updateCombiCote()"></div>
+        <div class="fg"><label class="fl">Bookmaker</label><select id="combi-book" class="fi"></select></div>
+      </div>
+      <div class="g2" style="gap:9px;margin-bottom:9px;">
+        <div class="fg"><label class="fl">Date</label><input type="date" id="combi-date" class="fi"></div>
+        <div class="fg"><label class="fl">Heure</label><input type="time" id="combi-heure" class="fi"></div>
+      </div>
+      <div class="fg" style="margin-bottom:9px;"><label class="fl">📝 Notes</label><textarea id="combi-notes" class="fi" style="height:44px;resize:none;" placeholder="Analyse…"></textarea></div>
+      <div class="fg" style="margin-bottom:9px;">
+        <label class="fl">🏠 Lieu</label>
+        <div style="display:flex;gap:8px;margin-top:6px;">
+          <button id="combi-dom-btn" type="button" onclick="setCombiLieu('dom')" style="flex:1;padding:9px;border-radius:var(--r6);border:2px solid rgba(30,215,96,.4);background:rgba(30,215,96,.1);color:#1ed760;font-size:12px;font-weight:700;cursor:pointer;">🏠 Dom</button>
+          <button id="combi-ext-btn" type="button" onclick="setCombiLieu('ext')" style="flex:1;padding:9px;border-radius:var(--r6);border:2px solid var(--b2);background:var(--bg3);color:var(--t2);font-size:12px;font-weight:700;cursor:pointer;">🚌 Ext</button>
+          <button id="combi-neu-btn" type="button" onclick="setCombiLieu('')" style="flex:1;padding:9px;border-radius:var(--r6);border:2px solid var(--b2);background:var(--bg3);color:var(--t2);font-size:12px;font-weight:700;cursor:pointer;">➖ N/A</button>
+        </div>
+        <input type="hidden" id="combi-lieu" value="dom">
+      </div>
+      <label style="display:flex;align-items:center;gap:8px;padding:9px;background:rgba(30,215,96,.07);border:1px solid rgba(30,215,96,.2);border-radius:var(--r6);cursor:pointer;margin-bottom:6px;">
+        <input type="checkbox" id="combi-freebet" style="accent-color:var(--g)">
+        <span style="font-size:11px;font-weight:700;color:var(--g)">🎟 Freebet</span>
+        <span style="font-size:10px;color:var(--t3);margin-left:auto;">Mise non engagée</span>
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;padding:9px;background:rgba(240,176,32,.08);border:1px solid rgba(240,176,32,.2);border-radius:var(--r6);cursor:pointer;margin-bottom:9px;">
+        <input type="checkbox" id="combi-flashboost" style="accent-color:var(--gold)">
+        <span style="font-size:11px;font-weight:700;color:var(--gold)">⚡ FlashBoost</span>
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;padding:9px;background:rgba(77,132,255,.08);border:1px solid rgba(77,132,255,.2);border-radius:var(--r6);cursor:pointer;margin-bottom:9px;">
+        <input type="checkbox" id="combi-notif" checked style="accent-color:var(--a)">
+        <span style="font-size:11px;font-weight:700;color:var(--a)">🔔 Notifications</span>
+        <span style="font-size:10px;color:var(--t3);margin-left:auto;">Suivi des matchs</span>
+      </label>
+      <button class="btn btn-p" style="width:100%;margin-bottom:8px;" onclick="saveCombiPending()">⏳ Placer le pari combiné (en cours)</button>
+      <div style="font-size:10px;color:var(--t3);text-align:center;margin-bottom:6px;">— ou enregistrer un combiné déjà terminé —</div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn" style="flex:1;background:rgba(30,215,96,.12);border-color:rgba(30,215,96,.4);color:#1ed760;" onclick="saveCombi(true)">✅ Déjà gagné</button>
+        <button class="btn" style="flex:1;background:rgba(255,69,69,.15);border-color:rgba(255,69,69,.4);color:#ff4545;" onclick="saveCombi(false)">❌ Déjà perdu</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="sub-simple" style="display:none;">
+    <div class="mm-wrap">
+      <div class="mm-title">
+        <span>⚡ My Match</span>
+        <button class="ba" onclick="addMmRowSimple()">+ Ajouter</button>
+      </div>
+      <div class="mm-sel" id="mm-sel-simple"></div>
+      <div class="mm-types" id="mm-types-simple"></div>
+      <div class="mm-cote-total" style="display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <span class="mm-ct-l">Cote combinée</span>
+          <span class="mm-ct-v" id="mm-cote-total-simple">—</span>
+        </div>
+        <button onclick="saveMmAsPari('simple')" style="padding:7px 14px;border-radius:var(--r6);border:1px solid rgba(30,215,96,.4);background:rgba(30,215,96,.1);color:#1ed760;font-size:11px;font-weight:700;cursor:pointer;">💾 Enregistrer pari</button>
+      </div>
+    </div>
+    <div class="fc">
+      <div class="g2" style="gap:9px;margin-bottom:9px;">
+        <div class="fg"><label class="fl">Date</label><input type="date" id="n-date" class="fi"></div>
+        <div class="fg"><label class="fl">Heure</label><input type="time" id="n-heure" class="fi"></div>
+      </div>
+      <div class="g2" style="gap:9px;margin-bottom:9px;">
+        <div class="fg"><label class="fl">Sport</label><select id="p-sport" class="fi">
+          <option value="⚽">⚽ Football</option><option value="🏀">🏀 Basket</option>
+          <option value="🎾">🎾 Tennis</option><option value="🏈">🏈 NFL</option>
+          <option value="🏒">🏒 Hockey</option><option value="⚾">⚾ Baseball</option>
+          <option value="🏉">🏉 Rugby</option><option value="🏉🇦🇺">🏉🇦🇺 NRL</option><option value="🏎">🏎 F1</option><option value="🥊">🥊 MMA</option><option value="🚗">🚗 WRC</option><option value="🚴">🚴 Cyclisme</option>
+        </select></div>
+        <div class="fg"><label class="fl">Compétition</label><input id="n-comp" class="fi" placeholder="Ligue 1…"></div>
+      </div>
+      <div style="display:flex;gap:6px;margin-bottom:9px;">
+        <button id="btn-dom" onclick="setLieu('dom')" style="flex:1;padding:7px;border-radius:var(--r6);border:1px solid rgba(30,215,96,.4);background:rgba(30,215,96,.1);color:#1ed760;font-size:11px;font-weight:700;cursor:pointer;">🏠 Dom</button>
+        <button id="btn-ext" onclick="setLieu('ext')" style="flex:1;padding:7px;border-radius:var(--r6);border:1px solid var(--b2);background:none;color:var(--t3);font-size:11px;font-weight:700;cursor:pointer;">🚌 Ext</button>
+        <button id="btn-neut" onclick="setLieu('')" style="flex:1;padding:7px;border-radius:var(--r6);border:1px solid var(--b2);background:none;color:var(--t3);font-size:11px;font-weight:700;cursor:pointer;">➖ Neut</button>
+      </div>
+      <input type="hidden" id="n-lieu" value="dom">
+      <div class="fg" style="margin-bottom:9px;"><label class="fl">Type de pari</label><input id="n-type" class="fi" placeholder="Over 1.5, Victoire…"></div>
+      <div class="g2" style="gap:9px;margin-bottom:9px;">
+        <div class="fg" style="position:relative"><label class="fl">Équipe / Joueur</label>
+          <input id="n-team" class="fi" placeholder="Ex : Lyon, Djokovic…" autocomplete="off" oninput="searchAdv(this.value,'n-team','adv-res-simple-team')">
+          <div id="adv-res-simple-team" style="display:none;position:absolute;left:0;right:0;background:var(--bg3);border:1px solid var(--b1);border-radius:var(--r6);z-index:200;max-height:160px;overflow-y:auto;"></div>
+        </div>
+        <div class="fg" style="position:relative"><label class="fl">Adversaire</label>
+          <input id="n-analysis" class="fi" placeholder="Ex : Real Madrid…" autocomplete="off" oninput="searchAdv(this.value,'n-analysis','adv-res-simple-adv')">
+          <div id="adv-res-simple-adv" style="display:none;position:absolute;left:0;right:0;background:var(--bg3);border:1px solid var(--b1);border-radius:var(--r6);z-index:200;max-height:160px;overflow-y:auto;"></div>
+        </div>
+      </div>
+      <div class="g2" style="gap:9px;margin-bottom:9px;">
+        <div class="fg"><label class="fl">Cote</label><input type="number" id="n-cote" class="fi" value="1.50" oninput="syncSimpleCote()"></div>
+        <div class="fg"><label class="fl">Mise (€)</label><input type="number" id="n-mise" class="fi" value="10"></div>
+      </div>
+      <div class="fg" style="margin-bottom:9px;"><label class="fl">Bookmaker</label><select id="n-book" class="fi"></select></div>
+      <div class="fg" style="margin-bottom:9px;"><label class="fl">📝 Notes</label><textarea id="n-notes" class="fi" style="height:44px;resize:none;" placeholder="Analyse, contexte…"></textarea></div>
+      <div class="fg" style="margin-bottom:8px;">
+        <label class="fl">🏠 Lieu</label>
+        <div style="display:flex;gap:8px;margin-top:6px;">
+          <button id="pari-dom-btn" type="button" onclick="togglePariDom(true)" style="flex:1;padding:9px;border-radius:var(--r6);border:2px solid var(--b2);background:var(--bg3);color:var(--t2);font-size:12px;font-weight:700;cursor:pointer;">🏠 Dom</button>
+          <button id="pari-ext-btn" type="button" onclick="togglePariDom(false)" style="flex:1;padding:9px;border-radius:var(--r6);border:2px solid var(--b2);background:var(--bg3);color:var(--t2);font-size:12px;font-weight:700;cursor:pointer;">🚌 Ext</button>
+          <button id="pari-neu-btn" type="button" onclick="togglePariDom(null)" style="flex:1;padding:9px;border-radius:var(--r6);border:2px solid var(--b2);background:var(--bg3);color:var(--t2);font-size:12px;font-weight:700;cursor:pointer;">➖ N/A</button>
+        </div>
+        <input type="hidden" id="p-domicile" value="">
+      </div>
+      <label style="display:flex;align-items:center;gap:8px;padding:9px;background:rgba(30,215,96,.07);border:1px solid rgba(30,215,96,.2);border-radius:var(--r6);cursor:pointer;margin-bottom:6px;">
+        <input type="checkbox" id="n-freebet" style="accent-color:var(--g)">
+        <span style="font-size:11px;font-weight:700;color:var(--g)">🎟 Freebet</span>
+        <span style="font-size:10px;color:var(--t3);margin-left:auto;">Mise non engagée</span>
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;padding:9px;background:rgba(122,140,255,.07);border:1px solid rgba(122,140,255,.25);border-radius:var(--r6);cursor:pointer;margin-bottom:6px;">
+        <input type="checkbox" id="n-lay" style="accent-color:#8aa2ff">
+        <span style="font-size:11px;font-weight:700;color:#8aa2ff">↩️ Lay (parier contre)</span>
+        <span style="font-size:10px;color:var(--t3);margin-left:auto;">Saisis mise lay + cote lay — conversion auto</span>
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;padding:9px;background:rgba(240,176,32,.08);border:1px solid rgba(240,176,32,.2);border-radius:var(--r6);cursor:pointer;margin-bottom:9px;">
+        <input type="checkbox" id="n-flashboost" style="accent-color:var(--gold)">
+        <span style="font-size:11px;font-weight:700;color:var(--gold)">⚡ FlashBoost</span>
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;padding:9px;background:rgba(77,132,255,.08);border:1px solid rgba(77,132,255,.2);border-radius:var(--r6);cursor:pointer;margin-bottom:9px;">
+        <input type="checkbox" id="n-notif" checked style="accent-color:var(--a)">
+        <span style="font-size:11px;font-weight:700;color:var(--a)">🔔 Notifications</span>
+        <span style="font-size:10px;color:var(--t3);margin-left:auto;">Suivi du match</span>
+      </label>
+      <button class="btn btn-p" style="margin-top:2px;" onclick="pari(false)">Placer le pari simple</button>
+    </div>
+    <div class="sec" style="display:flex;justify-content:space-between;align-items:center;">
+      <span>En cours</span>
+      
+    </div>
+    <div class="card"><table class="ltbl"><thead><tr><th>Cible</th><th>Mise</th><th style="text-align:right">Résultat</th></tr></thead><tbody id="live-norm"></tbody></table></div>
+  </div>
+</div>
+
+<!-- ARCHIVE -->
+<div id="t-arch" class="tab">
+  <!-- KPIs rapides -->
+  <div class="kpi2" style="margin-bottom:10px;">
+    <div class="kpibox" style="--ac:var(--g);"><div class="kpi-l">Victoires</div><div class="kpi-v" id="arch-wins" style="color:var(--g);">—</div></div>
+    <div class="kpibox" style="--ac:var(--r);"><div class="kpi-l">Défaites</div><div class="kpi-v" id="arch-loss" style="color:var(--r);">—</div></div>
+    <div class="kpibox" style="--ac:#f0a020;"><div class="kpi-l">En cours</div><div class="kpi-v" id="arch-pending" style="color:#f0a020;">—</div></div>
+  </div>
+  <!-- Filtre sport -->
+  <div class="sfrow" id="arch-sport-filter" style="margin-bottom:12px;"></div>
+  <!-- Filtre résultat -->
+  <div style="display:flex;gap:6px;margin-bottom:12px;">
+    <button class="sfbtn on" id="arch-f-all" onclick="setArchFilter('all',this)">Tous</button>
+    <button class="sfbtn" id="arch-f-w" onclick="setArchFilter('w',this)" style="border-color:rgba(30,215,96,.3);color:var(--g);">✓ Gagnés</button>
+    <button class="sfbtn" id="arch-f-l" onclick="setArchFilter('l',this)" style="border-color:rgba(255,69,69,.3);color:var(--r);">✗ Perdus</button>
+    <button class="sfbtn" id="arch-f-p" onclick="setArchFilter('p',this)" style="border-color:rgba(240,160,32,.3);color:#f0a020;">⏳ En cours</button>
+  </div>
+  <div id="arch-chart" class="cwrap"></div>
+  <div class="sec" style="display:flex;align-items:center;justify-content:space-between;margin-top:0;">
+    <span>Par mois</span>
+    <span style="display:flex;gap:6px;align-items:center;">
+      <button onclick="changeArchYear(-1)" style="background:none;border:none;color:var(--t3);cursor:pointer;font-size:16px;padding:0 4px;">‹</button>
+      <span id="arch-year-label" style="font-size:11px;font-weight:700;color:var(--t2);min-width:40px;text-align:center;"></span>
+      <button onclick="changeArchYear(1)" style="background:none;border:none;color:var(--t3);cursor:pointer;font-size:16px;padding:0 4px;">›</button>
+    </span>
+  </div>
+  <div style="background:var(--bg2);border:1px solid var(--card-border,rgba(77,132,255,.32));border-radius:var(--r8);padding:10px;margin-bottom:10px;box-shadow:var(--card-glow,0 0 14px rgba(77,132,255,.18),0 0 4px rgba(77,132,255,.28));">
+    <div id="arch-mois-list"></div>
+  </div>
+  <div class="sec">Détail</div>
+  <div id="arch-list"></div>
+  <button class="btn btn-d" style="margin-top:4px;font-size:11px;" onclick="if(confirm('Effacer tout ?')){state.a=[];save();renderArchive();}">Effacer l'historique</button>
+</div>
+
+<!-- ══════════════════════════════════════════
+     BILAN — Stats + Équipes + Sofascore
+     ══════════════════════════════════════════ -->
+<section id="t-bilan" class="tab" style="padding:0;">
+  <!-- 4 onglets stats -->
+  <div class="gtabs">
+    <button class="gtab on" id="btab-global" onclick="showBilanTab('global',this)" style="font-size:9px;">🌍 Global</button>
+    <button class="gtab" id="btab-cockpit" onclick="showBilanTab('cockpit',this)" style="font-size:9px;">🚀 Cockpit</button>
+    <button class="gtab" id="btab-simple" onclick="showBilanTab('simple',this)" style="font-size:9px;">🎯 Simple</button>
+    <button class="gtab" id="btab-combi" onclick="showBilanTab('combi',this)" style="font-size:9px;">🔗 Combiné</button>
+    <button class="gtab" id="btab-flash" onclick="showBilanTab('flash',this)" style="font-size:9px;">⚡ Flash</button>
+  </div>
+  <!-- Filtre sport -->
+  <div class="sec" style="margin-top:0;">Filtre sport</div>
+  <div class="sfrow" id="sport-filter"></div>
+  <div class="sfrow" id="month-filter"></div>
+  <!-- KPIs -->
+  <div class="sec">Performance</div>
+  <div class="bili2">
+    <div class="bilibox"><div class="bilibox-l">Bénéfice</div><div class="bilibox-v" id="stat-ben" style="color:var(--g);">0€</div></div>
+    <div class="bilibox"><div class="bilibox-l">Réussite</div><div class="bilibox-v" id="stat-wr">0%</div></div>
+    <div class="bilibox"><div class="bilibox-l">ROI</div><div class="bilibox-v" id="stat-roi">0%</div></div>
+    <div class="bilibox"><div class="bilibox-l">Paris</div><div class="bilibox-v" id="stat-nb">0</div></div>
+  </div>
+  <!-- Courbe capital -->
+  <div class="sec">Évolution des gains</div>
+  <div class="cwrap"><div style="height:160px;position:relative;"><canvas id="bilan-chart"></canvas></div><div class="chart-info-bar" id="cib-bilan" style="display:none;"><span class="cib-main" id="cib-bilan-txt"></span><span class="cib-val" id="cib-bilan-val"></span></div></div>
+  <!-- Par bookmaker -->
+  <div class="sec">Par bookmaker</div>
+  <div style="background:var(--bg2);border:1px solid var(--card-border,rgba(77,132,255,.32));border-radius:var(--r8);padding:10px;margin-bottom:10px;box-shadow:var(--card-glow,0 0 14px rgba(77,132,255,.18),0 0 4px rgba(77,132,255,.28));">
+    <div id="bk-stats"></div>
+  </div>
+  <!-- Graphiques avancés -->
+  <div class="sec">📊 Graphiques avancés</div>
+  <div class="cwrap" style="margin-bottom:10px;">
+    <div class="ctitle">📈 Bankroll totale</div>
+    <div style="height:150px;position:relative;"><canvas id="chart-bankroll"></canvas></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+    <div class="cwrap">
+      <div class="ctitle">🥧 Mises par book</div>
+      <div style="height:150px;position:relative;"><canvas id="chart-pie-bk"></canvas></div>
+    </div>
+    <div class="cwrap">
+      <div class="ctitle">⚽ Réussite par sport</div>
+      <div style="height:150px;position:relative;"><canvas id="chart-sport"></canvas></div>
+    </div>
+  </div>
+  <div class="cwrap" style="margin-bottom:10px;">
+    <div class="ctitle">📉 Drawdown & ROI dans le temps</div>
+    <div style="height:150px;position:relative;"><canvas id="chart-roi-time"></canvas></div>
+  </div>
+  <!-- Par mois -->
+  <div class="sec" style="display:flex;align-items:center;justify-content:space-between;">
+    <span>Par mois</span>
+    <span id="mois-year-nav" style="display:flex;gap:6px;align-items:center;">
+      <button onclick="changeMoisYear(-1)" style="background:none;border:none;color:var(--t3);cursor:pointer;font-size:16px;padding:0 4px;">‹</button>
+      <span id="mois-year-label" style="font-size:11px;font-weight:700;color:var(--t2);min-width:40px;text-align:center;"></span>
+      <button onclick="changeMoisYear(1)" style="background:none;border:none;color:var(--t3);cursor:pointer;font-size:16px;padding:0 4px;">›</button>
+    </span>
+  </div>
+  <div style="background:var(--bg2);border:1px solid var(--card-border,rgba(77,132,255,.32));border-radius:var(--r8);padding:10px;margin-bottom:10px;box-shadow:var(--card-glow,0 0 14px rgba(77,132,255,.18),0 0 4px rgba(77,132,255,.28));">
+    <div id="bilan-mois-list"></div>
+    <div class="gtabs" style="margin-top:8px;">
+      <button class="gtab on" onclick="showBilanView('g-global',this)">📊 Graphiques</button>
+      <button class="gtab" onclick="showBilanView('g-equipes',this)">🛡 Équipes</button>
+    </div>
+  </div>
+
+  <!-- GRAPHIQUES PANEL -->
+  <div id="g-global" class="gpanel on">
+    <div id="global-zone"></div>
+    <div class="sec" style="display:flex;align-items:center;justify-content:space-between;">
+      <span>Courbes par équipe</span>
+      <div style="position:relative;">
+        <button id="curve-picker-btn" onclick="toggleCurvePicker()" style="padding:4px 10px;border-radius:8px;border:1px solid var(--b2);background:var(--bg3);color:var(--t2);font-size:10px;font-weight:700;cursor:pointer;">⚙️ 0/5</button>
+        <div id="curve-picker" style="display:none;position:absolute;right:0;top:32px;background:var(--s1);border:1px solid var(--b2);border-radius:10px;z-index:500;min-width:190px;max-height:260px;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.6);">
+          <div style="padding:8px 12px;font-size:9px;font-weight:700;letter-spacing:.8px;color:var(--t3);border-bottom:1px solid var(--b1);text-transform:uppercase;">Max 5 équipes</div>
+          <div id="curve-picker-list"></div>
+        </div>
+      </div>
+    </div>
+    <div class="sec">Profit par équipe</div>
+    <div class="cwrap" id="multi-curve-wrap">
+      <div id="chart-multi-legend" style="display:flex;flex-wrap:nowrap;gap:5px;overflow-x:auto;scrollbar-width:none;padding-bottom:8px;"></div>
+      <div style="height:200px;position:relative;"><canvas id="chart-multi"></canvas></div>
+      <div class="chart-info-bar" id="cib-multi"><span class="cib-main" id="cib-multi-txt">Touche un point</span><span class="cib-val" id="cib-multi-val"></span></div>
+    </div>
+    <div class="sec">Répartition bookmakers</div>
+    <div class="cwrap"><div style="height:180px;position:relative;"><canvas id="chart-books"></canvas></div></div>
+    <div class="sec">Paliers par équipe</div>
+    <div class="cwrap"><div style="height:200px;position:relative;"><canvas id="chart-paliers"></canvas></div></div>
+    <div class="sec">Radar types de paris</div>
+    <div class="radar-wrap"><div style="height:220px;position:relative;"><canvas id="chart-radar"></canvas></div></div>
+    <div class="sec">Bénéfice par mois</div>
+    <div class="cwrap"><div style="height:200px;position:relative;"><canvas id="chart-mois-bar"></canvas></div></div>
+    <div class="sec">Bénéfice par sport</div>
+    <div class="cwrap"><div style="height:200px;position:relative;"><canvas id="chart-sport-ben"></canvas></div></div>
+    <div class="sec">Réussite par sport</div>
+    <div class="cwrap"><div style="height:180px;position:relative;"><canvas id="chart-sport-wr"></canvas></div></div>
+    <div class="sec">Répartition par type de pari</div>
+    <div class="cwrap"><div style="height:220px;position:relative;"><canvas id="chart-type-donut"></canvas></div></div>
+    <div id="type-donut-picker" style="display:flex;flex-wrap:wrap;gap:6px;padding:8px 0;margin-bottom:8px;"></div>
+    <div class="sec">Bénéfice par type de pari</div>
+    <div class="cwrap"><div style="height:200px;position:relative;"><canvas id="chart-type-ben"></canvas></div></div>
+    <!-- Streak -->
+    <div class="sec">Séries & Streaks</div>
+    <div id="streak-panel" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;"></div>
+  </div>
+  <!-- ÉQUIPES PANEL -->
+  <div id="g-equipes" class="gpanel">
+    <div class="sec" style="margin-top:0;">Mes équipes</div>
+    <div id="equipes-list"></div>
+  </div>
+</section>
+
+<!-- DÉTAIL CLUB (overlay) -->
+<section id="detail" style="padding:0;display:none;">
+  <div id="d-hero"></div>
+  <div id="d-compf" style="padding:0 8px 6px;"></div>
+  <div>
+    <div class="itabs">
+      <button class="itab on" onclick="swInner('bilan',this)">Bilan</button>
+      <button class="itab" onclick="swInner('graphiques',this)">Graphs</button>
+      <button class="itab" onclick="swInner('archive',this)">Archive</button>
+      <button class="itab" onclick="swInner('types',this)">Types</button>
+      <button class="itab" onclick="swInner('live',this);setTimeout(loadTeamLive,30)">🔴 Live</button>
+      <button class="itab" id="itab-compo" onclick="swInner('compo',this);setTimeout(loadTeamCompo,30)">👥 Compo</button>
+      <button class="itab" id="itab-saisons">📊 Saisons</button>
+      <button class="itab" id="itab-joueur" style="display:none;" onclick="swInner('joueur',this);g45MurJoueurPanel();">⚽ Statistiques</button>
+      <button class="itab" id="itab-liens-equipe" onclick="swInner('liens-equipe',this);loadLiensEquipe();">🔗 Liens</button>
+      <button class="itab" id="itab-mondial" style="display:none;">🌍 Mondial</button>
+    </div>
+    <div id="ip-bilan" class="ipanel on"></div>
+    <div id="ip-graphiques" class="ipanel"></div>
+    <div id="ip-archive" class="ipanel"></div>
+    <div id="ip-types" class="ipanel"></div>
+    <div id="ip-live" class="ipanel"></div>
+    <div id="ip-joueur" class="ipanel"></div>
+    <div id="ip-compo" class="ipanel"></div>
+    <div id="ip-saisons" class="ipanel"></div>
+    <div id="ip-liens-equipe" class="ipanel"></div>
+    <div id="ip-mondial" class="ipanel"></div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     OUTILS — Calculatrices + Équipes + Config
+     ══════════════════════════════════════════ -->
+<div id="t-calc" class="tab">
+  <!-- CALCULATRICES -->
+  <div class="sec" style="margin-top:0;">Calculateur</div>
+  <div class="fc">
+    <div class="calc-tabs">
+      <button class="ctbtn on" id="ct-sb" onclick="swCalc('sb')">Surebet</button>
+      <button class="ctbtn" id="ct-dt" onclick="swCalc('dt')">Dutching</button>
+      <button class="ctbtn" id="ct-lay" onclick="swCalc('lay')">⚖ Lay</button>
+      <button class="ctbtn" id="ct-vb" onclick="swCalc('vb')">Value</button>
+      <button class="ctbtn" id="ct-arjel" onclick="swCalc('arjel')">🎟 ARJEL</button>
+    </div>
+    <!-- SUREBET -->
+    <div id="calc-sb">
+      <label style="display:flex;align-items:center;gap:8px;padding:9px;background:rgba(240,176,32,.08);border:1px solid rgba(240,176,32,.2);border-radius:var(--r6);cursor:pointer;margin-bottom:10px">
+        <input type="checkbox" id="sb-gorr" onchange="calcSb()" style="accent-color:var(--gold)">
+        <span style="font-size:11px;font-weight:700;color:var(--gold)">🎁 Gagner ou Rembourser (cote 1)</span>
+        <span style="margin-left:auto;display:flex;align-items:center;gap:5px;"><span style="font-size:10px;color:var(--t3);">remboursé à</span><input type="number" id="sb-gorr-val" class="fi" style="width:58px;padding:3px 5px;font-size:11px;" value="70" min="1" max="100" oninput="calcSb()"><span style="font-size:10px;color:var(--t3);">%</span></span>
+      </label>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <label class="fl" style="margin:0;">Mise totale (€)</label>
+        <input type="number" id="sb-tot" class="fi" style="width:100px;" value="100" oninput="calcSb()">
+      </div>
+      <div id="sb-rows"></div>
+      <button class="ba" style="width:100%;margin-top:6px;" onclick="addSbRow()">+ Ajouter une cote</button>
+      <div class="calc-res" style="margin-top:10px;">
+        <div class="cres-row"><span class="cres-l">Marge</span><span class="cres-v" id="sb-marge">—</span></div>
+        <div class="cres-row"><span class="cres-l">Cote équivalente</span><span class="cres-v" id="sb-cote">—</span></div>
+        <div class="cres-row"><span class="cres-l">Retour garanti</span><span class="cres-v" id="sb-retour">—</span></div>
+        <div class="cres-row"><span class="cres-l">Profit garanti</span><span class="cres-v" id="sb-profit">—</span></div>
+      </div>
+      <div id="sb-mises" style="margin-top:8px;"></div>
+    </div>
+    <!-- DUTCHING -->
+    <div id="calc-dt" style="display:none;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <label class="fl" style="margin:0;">Mise totale (€)</label>
+        <input type="number" id="dt-tot" class="fi" style="width:100px;" value="50" oninput="calcDt()">
+      </div>
+      <div id="dt-rows"></div>
+      <button class="ba" style="width:100%;margin-top:6px;" onclick="addDtRow()">+ Ajouter une sélection</button>
+      <div class="calc-res" style="margin-top:10px;">
+        <div class="cres-row"><span class="cres-l">Retour si victoire</span><span class="cres-v" id="dt-ret">—</span></div>
+        <div class="cres-row"><span class="cres-l">Profit</span><span class="cres-v" id="dt-profit">—</span></div>
+      </div>
+    </div>
+    <!-- LAY -->
+    <div id="calc-lay" style="display:none">
+      <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px">
+        <label style="display:flex;align-items:center;gap:8px;padding:9px;background:rgba(240,176,32,.08);border:1px solid rgba(240,176,32,.2);border-radius:var(--r6);cursor:pointer">
+          <input type="checkbox" id="lay-gorr" onchange="calcLay()" style="accent-color:var(--gold)">
+          <span style="font-size:11px;font-weight:700;color:var(--gold)">🎁 Gagner ou Rembourser</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;padding:9px;background:rgba(77,132,255,.08);border:1px solid rgba(77,132,255,.2);border-radius:var(--r6);cursor:pointer">
+          <input type="checkbox" id="lay-usecomm" onchange="calcLay()" checked style="accent-color:var(--a)">
+          <span style="font-size:11px;font-weight:700;color:var(--a)">💸 Appliquer la commission exchange</span>
+        </label>
+      </div>
+      <div class="g2" style="gap:8px;margin-bottom:8px">
+        <div class="fg"><label class="fl">Cote Back</label><input type="number" id="lay-back-cote" class="fi" value="2.50" step="0.01" style="color:var(--g);font-weight:700" oninput="calcLay()"></div>
+        <div class="fg"><label class="fl" id="lay-mise-label">Mise Back (€)</label><input type="number" id="lay-back-mise" class="fi" value="10" oninput="calcLay()"></div>
+        <div class="fg"><label class="fl">Cote Lay (Piwi)</label><input type="number" id="lay-lay-cote" class="fi" value="2.60" step="0.01" style="color:var(--r);font-weight:700" oninput="calcLay()"></div>
+        <div class="fg"><label class="fl">Commission %</label><input type="number" id="lay-commission" class="fi" value="3" oninput="calcLay()"></div>
+      </div>
+      <label style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:rgba(77,132,255,.08);border:1px solid rgba(77,132,255,.2);border-radius:var(--r6);cursor:pointer;margin-bottom:8px;">
+        <input type="checkbox" id="lay-mode-cible" onchange="toggleLayMode()" style="accent-color:var(--a)">
+        <span style="font-size:11px;font-weight:700;color:var(--a)">🎯 Mode Liability cible — je saisis la Liability souhaitée</span>
+      </label>
+      <div class="fg" style="margin-bottom:4px;"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+        <input type="checkbox" id="lay-liability-mode" onchange="calcLay()" style="width:16px;height:16px;cursor:pointer;accent-color:var(--gold);">
+        <span style="font-size:11px;font-weight:700;color:var(--gold)">💰 Mode Liability — je saisis la Liability souhaitée</span>
+      </label>
+      <div style="display:none" id="lay-cible-wrap">
+        <div class="fg" style="margin-bottom:8px;" id="lay-stake-group"><label class="fl" style="color:var(--a);">Stake (€)</label><input type="number" id="lay-lay-mise" class="fi" value="15" oninput="calcLay()"></div>
+        <div class="fg" style="margin-bottom:8px;display:none;" id="lay-liability-group"><label class="fl" style="color:var(--gold);">Liability cible (€)</label><input type="number" id="lay-liability-input" class="fi" value="240" oninput="calcLay()"></div>
+      </div>
+      <div class="g2" style="display:none">
+      </div>
+      <div style="background:var(--bg3);border-radius:var(--r6);padding:9px 12px;margin-bottom:9px;display:flex;justify-content:space-between">
+        <div><div style="font-size:8px;color:var(--t3);text-transform:uppercase;letter-spacing:.7px">Cote réelle</div><div id="lay-real-cote" style="font-size:20px;font-weight:800;color:var(--r)">—</div></div>
+        <div style="text-align:right"><div style="font-size:8px;color:var(--t3);text-transform:uppercase;letter-spacing:.7px">Liability</div><div id="lay-liability" style="font-size:20px;font-weight:800;color:var(--gold)">—</div></div>
+      </div>
+      <div class="calc-res">
+        <div class="cres-row"><span class="cres-l">Stake optimal</span><span class="cres-v" id="lay-mise-opt">—</span></div>
+        <div class="cres-row"><span class="cres-l">Profit si Back gagne</span><span class="cres-v" id="lay-profit-back">—</span></div>
+        <div class="cres-row"><span class="cres-l">Profit si Lay gagne</span><span class="cres-v" id="lay-profit-lay">—</span></div>
+        <div class="cres-row"><span class="cres-l">Profit garanti</span><span class="cres-v" id="lay-profit-garanti" style="font-size:15px;font-weight:800">—</span></div>
+        <div class="cres-row"><span class="cres-l">ROI</span><span class="cres-v" id="lay-roi">—</span></div>
+      </div>
+      <div id="lay-verdict" style="display:none;margin-top:9px;padding:10px;border-radius:var(--r6);text-align:center;font-size:13px;font-weight:700"></div>
+      <div style="border-top:1px solid var(--b1);margin-top:14px;padding-top:12px">
+        <div style="font-size:10px;font-weight:700;color:var(--gold);margin-bottom:9px">🎟 Freebet → Cash</div>
+        <label style="display:flex;align-items:center;gap:8px;padding:9px;background:rgba(30,215,96,.08);border:1px solid rgba(30,215,96,.2);border-radius:var(--r6);cursor:pointer;margin-bottom:10px">
+          <input type="checkbox" id="fb-gorr" onchange="calcFreebet()" style="accent-color:var(--g)">
+          <span style="font-size:11px;font-weight:700;color:var(--g)">🎁 Mise remboursée si freebet perd (argent réel)</span>
+        </label>
+        <div class="g2" style="gap:8px;margin-bottom:8px">
+          <div class="fg"><label class="fl">Freebet (€)</label><input type="number" id="fb-amount" class="fi" value="10" style="color:var(--gold);font-weight:700" oninput="calcFreebet()"></div>
+          <div class="fg"><label class="fl">Cote Back</label><input type="number" id="fb-back-cote" class="fi" value="5.00" step="0.01" style="color:var(--g);font-weight:700" oninput="calcFreebet()"></div>
+          <div class="fg"><label class="fl">Cote Lay</label><input type="number" id="fb-lay-cote" class="fi" value="5.20" step="0.01" style="color:var(--r);font-weight:700" oninput="calcFreebet()"></div>
+          <div class="fg"><label class="fl">Commission %</label><input type="number" id="fb-comm" class="fi" value="3" oninput="calcFreebet()"></div>
+        </div>
+        <div class="calc-res">
+          <div class="cres-row"><span class="cres-l">Stake</span><span class="cres-v" id="fb-lay-mise">—</span></div>
+          <div class="cres-row"><span class="cres-l">Liability</span><span class="cres-v" id="fb-liability">—</span></div>
+          <div class="cres-row"><span class="cres-l">Cash garanti</span><span class="cres-v" id="fb-cash" style="font-size:15px;font-weight:800;color:var(--g)">—</span></div>
+          <div class="cres-row"><span class="cres-l">Taux conversion</span><span class="cres-v" id="fb-taux">—</span></div>
+          <div class="cres-row"><span class="cres-l">Cash si remboursé</span><span class="cres-v" id="fb-cash-gorr" style="color:var(--gold)">—</span></div>
+        </div>
+      </div>
+    </div>
+    </div>
+    <!-- VALUE BET -->
+    <div id="calc-vb" style="display:none">
+      <div class="g2" style="gap:8px;margin-bottom:8px">
+        <div class="fg"><label class="fl">Proba estimée (%)</label><input type="number" id="vb-prob" class="fi" value="55" oninput="calcVb()"></div>
+        <div class="fg"><label class="fl">Cote proposée</label><input type="number" id="vb-cote" class="fi" value="2.10" step="0.01" oninput="calcVb()"></div>
+        <div class="fg" style="grid-column:span 2"><label class="fl">Mise (€)</label><input type="number" id="vb-mise" class="fi" value="10" oninput="calcVb()"></div>
+      </div>
+      <div class="calc-res">
+        <div class="cres-row"><span class="cres-l">Cote juste</span><span class="cres-v" id="vb-fair">—</span></div>
+        <div class="cres-row"><span class="cres-l">Edge</span><span class="cres-v" id="vb-edge">—</span></div>
+        <div class="cres-row"><span class="cres-l">EV</span><span class="cres-v" id="vb-ev">—</span></div>
+        <div class="cres-row"><span class="cres-l">Kelly %</span><span class="cres-v" id="vb-kelly">—</span></div>
+      </div>
+      <div id="vb-verd" style="display:none;margin-top:9px;padding:10px;border-radius:var(--r6);text-align:center;font-size:13px;font-weight:700"></div>
+    </div>
+    <!-- ARJEL -->
+    <div id="calc-arjel" style="display:none">
+      <div style="display:flex;gap:6px;margin-bottom:10px;">
+        <button id="arjel-mode-full" onclick="setArjelMode('full')" style="flex:1;padding:7px;border-radius:var(--r6);border:1px solid var(--gold);background:rgba(240,176,32,.15);color:var(--gold);font-size:11px;font-weight:700;cursor:pointer;">🎟 Entier</button>
+        <button id="arjel-mode-split" onclick="setArjelMode('split')" style="flex:1;padding:7px;border-radius:var(--r6);border:1px solid var(--b2);background:none;color:var(--t3);font-size:11px;font-weight:700;cursor:pointer;">✂️ Divisé</button>
+      </div>
+      <div style="font-size:10px;color:var(--t3);margin-bottom:10px;" id="arjel-desc">🎟 FB sur la plus grosse cote automatiquement · 💵 Argent réel sur les autres.</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <label class="fl" style="margin:0;">Freebet (€)</label>
+        <input type="number" id="arjel-fb" class="fi" style="width:100px;color:var(--gold);font-weight:700;" value="10" oninput="calcArjel()">
+      </div>
+      <div id="arjel-rows"></div>
+      <button class="ba" style="width:100%;margin-top:6px;" onclick="addArjelRow()">+ Ajouter une cote</button>
+      <div class="calc-res" style="margin-top:10px;">
+        <div class="cres-row"><span class="cres-l">Répartition</span><span class="cres-v" id="arjel-mise">—</span></div>
+        <div class="cres-row"><span class="cres-l">Cash garanti</span><span class="cres-v" id="arjel-cash" style="font-size:15px;font-weight:800;color:var(--g)">—</span></div>
+        <div class="cres-row"><span class="cres-l">Taux conversion</span><span class="cres-v" id="arjel-taux">—</span></div>
+      </div>
+      <div id="arjel-detail" style="margin-top:8px;"></div>
+      <div id="arjel-verdict" style="display:none;margin-top:9px;padding:10px;border-radius:var(--r6);text-align:center;font-size:13px;font-weight:700"></div>
+    </div>
+  </div>
+
+</div>
+
+<div id="t-outils" class="tab">
+
+  <!-- APPARENCE / FOND PERSO -->
+  <div class="sec">🎨 Apparence</div>
+  <div class="fc">
+    <label class="fl" style="color:var(--a);">🖼️ Photo de fond</label>
+    <div style="font-size:10px;color:var(--t3);margin:4px 0 9px;">Personnalise le fond de l'appli. Gardé sur cet appareil uniquement.</div>
+    <input type="file" id="bg-file-input" accept="image/*" style="display:none;" onchange="applyBgFromFile(this)">
+    <button class="btn btn-p" style="font-size:12px;" onclick="$i('bg-file-input').click()">📁 Choisir une photo</button>
+    <div style="margin-top:9px;">
+      <label class="fl" style="color:var(--t3);">…ou colle une URL d'image</label>
+      <div style="display:flex;gap:6px;margin-top:5px;">
+        <input id="bg-url-input" class="fi" placeholder="https://…/photo.jpg" style="flex:1;font-size:11px;">
+        <button class="btn btn-p" style="width:auto;margin:0;padding:9px 14px;font-size:11px;" onclick="applyBgFromUrl()">OK</button>
+      </div>
+    </div>
+    <button class="btn" style="margin-top:9px;background:rgba(255,69,69,.10);color:#ff6b6b;border:1px solid rgba(255,69,69,.25);font-size:11px;" onclick="resetBgDefault()">↩️ Remettre le fond par défaut</button>
+    <div id="bg-status" style="margin-top:7px;font-size:11px;font-weight:700;min-height:14px;"></div>
+    <div style="margin-top:12px;border-top:1px solid var(--b1);padding-top:11px;">
+      <label class="fl">🌗 Assombrir le fond <span id="bg-dark-val" style="color:var(--t3);font-weight:400;"></span></label>
+      <input type="range" id="bg-dark-range" min="0" max="100" value="60" oninput="setScrimDark(this.value)" style="width:100%;accent-color:var(--a);margin:4px 0 10px;">
+      <label class="fl">🟦 Transparence des cartes <span id="bg-card-val" style="color:var(--t3);font-weight:400;"></span></label>
+      <input type="range" id="bg-card-range" min="35" max="95" value="64" oninput="setCardAlpha(this.value)" style="width:100%;accent-color:var(--a);margin:4px 0 0;">
+    </div>
+  </div>
+
+
+  <!-- EXPORT PDF ANNUEL -->
+  <div class="sec">📄 Export PDF</div>
+  <div class="fc">
+    <div style="font-size:10px;color:var(--t3);line-height:1.6;margin-bottom:10px;">
+      Génère un PDF de tous tes paris d'une année : bilan chiffré, statistiques par équipe et détail complet. À faire avant de repartir de zéro — c'est ton archive.
+    </div>
+    <button class="btn btn-p" style="font-size:12px;" onclick="g45ExportPdfAnnee()">📄 Exporter une année en PDF</button>
+    <div id="pdf-export-status" style="margin-top:7px;font-size:11px;font-weight:700;min-height:14px;color:var(--t3);"></div>
+  </div>
+
+  <!-- NOTIFICATIONS -->
+  <div class="sec">🔔 Notifications</div>
+  <div class="fc" id="notif-panel"><div style="font-size:11px;color:var(--t3);">Chargement…</div></div>
+
+  <!-- GRILLE DES MISES PAR PALIER -->
+  <div class="sec">💰 Mises par palier</div>
+  <div class="fc" id="palier-panel">
+    <div style="font-size:10px;color:var(--t3);line-height:1.6;margin-bottom:10px;">
+      Grilles utilisées par la montante selon le nombre d'étoiles de chaque équipe. Modifie une case, valide au clavier ou en changeant d'input : la nouvelle valeur remplace la mise proposée du palier correspondant.
+    </div>
+    <div id="palier-grids"></div>
+    <div style="display:flex;gap:6px;margin-top:8px;">
+      <button class="btn" style="flex:1;font-size:11px;padding:8px;" onclick="resetPaliers()">↩ Valeurs par défaut</button>
+    </div>
+  </div>
+
+  <!-- ÉQUIPES / CRÉATION -->
+  <div class="sec">Équipes / Unités</div>
+  <div class="fc">
+    <label class="fl">Rechercher un club</label>
+    <div style="display:flex;gap:7px;margin-top:5px;margin-bottom:6px;">
+      <input id="u-search" class="fi" placeholder="Bayern, Lyon, PSG…" oninput="debounceSearchClub()">
+      <button class="btn btn-p" style="width:64px;margin:0;padding:9px;" onclick="searchClub()">🔍</button>
+    </div>
+    <div id="search-results"></div>
+    <div style="margin-top:10px;border-top:1px solid var(--b1);padding-top:10px;">
+      <label class="fl" style="color:var(--t3);">Ou ajouter manuellement</label>
+      <div class="g2" style="margin:6px 0 10px;">
+        <div class="fg"><label class="fl">Nom</label><input id="u-name" class="fi" placeholder="OL, PSG…"></div>
+        <div class="fg"><label class="fl">Étoiles</label>
+          <select id="u-stars" class="fi"><option value="1">1⭐</option><option value="2">2⭐</option><option value="3">3⭐</option><option value="4">4⭐</option><option value="5">5⭐</option></select>
+        </div>
+        <div class="fg" style="grid-column:span 2"><label class="fl">Sport</label>
+          <select id="u-sport" class="fi"><option value="⚽">⚽ Football</option><option value="🏀">🏀 Basket</option><option value="🎾">🎾 Tennis</option><option value="🏒">🏒 Hockey</option><option value="⚾">⚾ Baseball</option><option value="🏈">🏈 NFL</option><option value="🏉">🏉 Rugby</option><option value="🏉🇦🇺">🏉🇦🇺 NRL</option><option value="🏎">🏎 F1</option><option value="🥊">🥊 MMA</option><option value="🚗">🚗 WRC</option><option value="🚴">🚴 Cyclisme</option></select>
+        </div>
+      </div>
+      <label class="fl">Couleur</label>
+      <div class="cprow" id="cprow"></div>
+      <input type="color" id="u-color" class="fi" style="height:34px;padding:2px 4px;cursor:pointer;margin-bottom:10px;">
+      <div class="fg" style="margin-bottom:7px"><label class="fl" style="color:var(--t3)">🔴 Lien Sofascore (optionnel)</label><input id="u-link" class="fi" placeholder="https://www.sofascore.com/…"></div>
+      <div class="fg" style="margin-bottom:10px"><label class="fl" style="color:var(--t3)">📡 Lien Flashscore (optionnel)</label><input id="u-link2" class="fi" placeholder="https://www.flashscore.fr/equipe/…"></div>
+      <div class="fg" style="margin-bottom:8px;"><label class="fl">📌 Note rapide</label><input id="u-note" class="fi" placeholder="Ex: Under 3.5 buts, forme à domicile…"></div>
+      <div style="display:flex;gap:6px;margin-bottom:10px;">
+        <button id="u-type-club" data-action="unit-type-club" style="flex:1;padding:9px;border-radius:var(--r6);border:2px solid rgba(77,132,255,.5);background:rgba(77,132,255,.12);color:#7aaaff;font-size:11px;font-weight:700;cursor:pointer;">⚽ Club / Équipe</button>
+        <button id="u-type-joueur" data-action="unit-type-joueur" style="flex:1;padding:9px;border-radius:var(--r6);border:2px solid var(--b2);background:var(--bg3);color:var(--t3);font-size:11px;font-weight:700;cursor:pointer;">👤 Joueur / Buteur</button>
+      </div>
+      <input type="hidden" id="u-type" value="club">
+      <button class="btn btn-p" onclick="addUnit()">Ajouter</button>
+    </div>
+    <div id="ulist" style="margin-top:10px;"></div>
+  </div>
+
+  <!-- BACKUP -->
+  <div class="fc" style="border-style:dashed;">
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <label class="fl" style="color:var(--a);">⚡ Groq AI — Clé API</label>
+      <button onclick="showKeyHelp('groq')" style="background:rgba(77,132,255,.12);border:1px solid rgba(77,132,255,.3);color:#7aaaff;border-radius:50%;width:20px;height:20px;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0;">?</button>
+    </div>
+    <div style="font-size:10px;color:var(--t3);margin-bottom:8px;margin-top:4px;">Gratuit sur console.groq.com · Stockée localement</div>
+    <div style="display:flex;gap:6px;margin-bottom:8px;">
+      <input id="gemini-key-input" class="fi" type="password" placeholder="gsk_…" style="font-size:11px;flex:1;">
+      <button onclick="var i=$i('gemini-key-input');i.type=i.type==='password'?'text':'password';" style="flex-shrink:0;padding:0 10px;height:38px;background:var(--bg3);border:1px solid var(--b2);border-radius:var(--r6);color:var(--t3);font-size:14px;cursor:pointer;">👁</button>
+    </div>
+    <div style="display:flex;gap:7px;">
+      <button class="btn btn-p" style="font-size:11px;" onclick="saveGeminiKey()">💾 Enregistrer</button>
+      <button class="btn" style="background:rgba(30,215,96,.12);color:var(--g);border:1px solid rgba(30,215,96,.2);font-size:11px;" onclick="testGroqKey()">🧪 Tester</button>
+    </div>
+    <div id="gemini-key-status" style="margin-top:7px;font-size:11px;font-weight:700;"></div>
+  </div>
+  <div class="fc" style="border-style:dashed;">
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <label class="fl" style="color:var(--a);">🔍 Tavily — Recherche web</label>
+      <button onclick="showKeyHelp('tavily')" style="background:rgba(240,176,32,.12);border:1px solid rgba(240,176,32,.3);color:#f0b020;border-radius:50%;width:20px;height:20px;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0;">?</button>
+    </div>
+    <div style="font-size:10px;color:var(--t3);margin-bottom:8px;margin-top:4px;">Gratuit sur tavily.com · 1000 recherches/mois · Stockée localement</div>
+    <div style="display:flex;gap:6px;margin-bottom:8px;">
+      <input id="tavily-key-input" class="fi" type="password" placeholder="tvly-…" style="font-size:11px;flex:1;">
+      <button onclick="var i=$i('tavily-key-input');i.type=i.type==='password'?'text':'password';" style="flex-shrink:0;padding:0 10px;height:38px;background:var(--bg3);border:1px solid var(--b2);border-radius:var(--r6);color:var(--t3);font-size:14px;cursor:pointer;">👁</button>
+    </div>
+    <div style="display:flex;gap:7px;">
+      <button class="btn btn-p" style="font-size:11px;" onclick="saveTavilyKey()">💾 Enregistrer</button>
+      <button class="btn" style="background:rgba(30,215,96,.12);color:var(--g);border:1px solid rgba(30,215,96,.2);font-size:11px;" onclick="testTavilyKey()">🧪 Tester</button>
+    </div>
+    <div id="tavily-key-status" style="margin-top:7px;font-size:11px;font-weight:700;"></div>
+  </div>
+  <div class="fc" style="border-style:dashed;">
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <label class="fl" style="color:#1ed760;">⚽ API-Sports — Live & Stats joueurs</label>
+      <button onclick="showKeyHelp('apisports')" style="background:rgba(30,215,96,.12);border:1px solid rgba(30,215,96,.3);color:#1ed760;border-radius:50%;width:20px;height:20px;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0;">?</button>
+    </div>
+    <div style="font-size:10px;color:var(--t3);margin-bottom:8px;margin-top:4px;">api-sports.io · 100 req/jour gratuit · Live scores + stats joueurs</div>
+    <div style="display:flex;gap:6px;margin-bottom:8px;">
+      <input id="apisports-key-input" class="fi" type="password" placeholder="0f15f16e…" style="font-size:11px;flex:1;">
+      <button onclick="var i=$i('apisports-key-input');i.type=i.type==='password'?'text':'password';" style="flex-shrink:0;padding:0 10px;height:38px;background:var(--bg3);border:1px solid var(--b2);border-radius:var(--r6);color:var(--t3);font-size:14px;cursor:pointer;">👁</button>
+    </div>
+    <div style="display:flex;gap:7px;">
+      <button class="btn btn-p" style="font-size:11px;" onclick="saveApiSportsKey()">💾 Enregistrer</button>
+      <button class="btn" style="background:rgba(30,215,96,.12);color:var(--g);border:1px solid rgba(30,215,96,.2);font-size:11px;" onclick="testApiSportsKey()">🧪 Tester</button>
+    </div>
+    <div id="apisports-key-status" style="margin-top:7px;font-size:11px;font-weight:700;"></div>
+  </div>
+
+  <div class="fc" style="border-style:dashed;">
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <label class="fl" style="color:#6e9f3e;">🐙 GitHub — Sync stats joueurs</label>
+    </div>
+    <div style="font-size:10px;color:var(--t3);margin-bottom:8px;margin-top:4px;">Token GitHub pour synchroniser les stats entre appareils</div>
+    <div style="display:flex;gap:6px;margin-bottom:8px;">
+      <input id="github-token-input" class="fi" type="password" placeholder="ghp_xxxxxxxxxxxx…" style="font-size:11px;flex:1;">
+      <button onclick="var i=$i('github-token-input');i.type=i.type==='password'?'text':'password';" style="flex-shrink:0;padding:0 10px;height:38px;background:var(--bg3);border:1px solid var(--b2);border-radius:var(--r6);color:var(--t3);font-size:14px;cursor:pointer;">👁</button>
+    </div>
+    <div style="display:flex;gap:7px;">
+      <button class="btn btn-p" style="font-size:11px;" onclick="saveGithubToken()">💾 Enregistrer</button>
+      <button class="btn" style="font-size:11px;background:rgba(30,215,96,.15);border:1px solid rgba(30,215,96,.4);color:#1ed760;" onclick="publishStats()">📤 Publier les stats</button>
+    </div>
+    <div id="github-token-status" style="margin-top:7px;font-size:11px;font-weight:700;"></div>
+    <div id="publish-stats-status" style="margin-top:5px;font-size:11px;font-weight:700;"></div>
+  </div>
+
+  <div class="fc" style="border-style:dashed;">
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <label class="fl" style="color:#f59e0b;">⚡ RapidAPI — Sofascore Squad & Valeurs</label>
+    </div>
+    <div style="font-size:10px;color:var(--t3);margin-bottom:8px;margin-top:4px;">rapidapi.com · Squad temps réel + valeurs marchandes via Sofascore</div>
+    <div style="display:flex;gap:6px;margin-bottom:8px;">
+      <input id="rapidapi-key-input" class="fi" type="password" placeholder="Clé RapidAPI…" style="font-size:11px;flex:1;">
+      <button onclick="var i=$i('rapidapi-key-input');i.type=i.type==='password'?'text':'password';" style="flex-shrink:0;padding:0 10px;height:38px;background:var(--bg3);border:1px solid var(--b2);border-radius:var(--r6);color:var(--t3);font-size:14px;cursor:pointer;">👁</button>
+    </div>
+    <div style="display:flex;gap:7px;flex-wrap:wrap;">
+      <button class="btn btn-p" style="font-size:11px;" onclick="saveRapidApiKey()">💾 Enregistrer</button>
+      <button class="btn" style="font-size:11px;background:rgba(138,160,255,.12);color:#8aa0ff;border:1px solid rgba(138,160,255,.35);" onclick="g45SofaProbe(this)">🔎 Quels sports sont couverts ?</button>
+    </div>
+    <div id="g45-sofa-probe" style="margin-top:7px;"></div>
+    <div id="rapidapi-key-status" style="margin-top:7px;font-size:11px;font-weight:700;"></div>
+  </div>
+
+  <div class="fc" style="border-style:dashed;">
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <label class="fl" style="color:#2ecc71;">💰 Cotes (The Odds API) — Quota</label>
+    </div>
+    <div style="font-size:10px;color:var(--t3);margin-bottom:8px;margin-top:4px;">Clé stockée côté serveur (Worker Cloudflare), pas ici. Vérifier le quota ne consomme aucune requête.</div>
+    <div style="display:flex;gap:7px;">
+      <button class="btn btn-p" style="font-size:11px;" onclick="g45CheckOddsQuota()">🔄 Vérifier le quota</button>
+    </div>
+    <div id="odds-quota-status" style="margin-top:9px;font-size:11px;font-weight:700;color:var(--t3);">Clique pour afficher le quota restant.</div>
+  </div>
+
+  <div class="fc">
+    <label class="fl">🔷 Clé Google Gemini (optionnel — 2ᵉ avis IA)</label>
+    <div style="font-size:10px;color:var(--t3);margin:4px 0 8px;">Gratuite sur <b>aistudio.google.com</b> → « Get API key ». Ajoute un 2ᵉ avis (Gemini) sous l'analyse IA des matchs, pour comparer avec Groq.</div>
+    <div style="display:flex;gap:7px;">
+      <input id="google-key-input" type="password" placeholder="AIza..." class="fi" style="flex:1;min-width:0;width:auto;">
+      <button class="btn btn-p" style="font-size:12px;flex:none;width:auto;min-width:52px;padding:0 16px;" onclick="g45SaveGoogleKey(this)">💾</button>
+    </div>
+  </div>
+
+  <div class="fc">
+    <label class="fl">🇫🇷 Clé Mistral (optionnel — 4ᵉ avis IA)</label>
+    <div style="font-size:10px;color:var(--t3);margin:4px 0 8px;">Gratuite sur <b>console.mistral.ai</b> → API Keys (plan gratuit « Experiment »). Ajoute l'avis Mistral sous l'analyse IA des matchs.</div>
+    <div style="display:flex;gap:7px;">
+      <input id="mistral-key-input" type="password" placeholder="Clé Mistral…" class="fi" style="flex:1;min-width:0;width:auto;">
+      <button class="btn btn-p" style="font-size:12px;flex:none;width:auto;min-width:52px;padding:0 16px;" onclick="g45SaveMistralKey(this)">💾</button>
+    </div>
+  </div>
+
+  <div class="fc" style="border-style:dashed;">
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <label class="fl" style="color:#8aa2ff;">🧠 Mémoire stats — dico de pépites</label>
+    </div>
+    <div style="font-size:10px;color:var(--t3);margin-bottom:8px;margin-top:4px;">Enregistre les stats utiles (ex : « GP Autriche pas pour Ferrari ») avec des tags. Synchro PC + mobile via GitHub. Elles ressortiront sur les matchs/GP correspondants.</div>
+    <div style="display:flex;gap:7px;">
+      <button class="btn btn-p" style="font-size:11px;" onclick="g45OpenStatsMemory()">🧠 Ouvrir la mémoire stats</button>
+    </div>
+  </div>
+
+  <div class="fc" style="border-style:dashed;">
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <label class="fl" style="color:#1ed760;">⚽ Football-Data.org — Stats</label>
+      <button onclick="showKeyHelp('fdorg')" style="background:rgba(30,215,96,.12);border:1px solid rgba(30,215,96,.3);color:#1ed760;border-radius:50%;width:20px;height:20px;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0;">?</button>
+    </div>
+    <div style="font-size:10px;color:var(--t3);margin-bottom:8px;margin-top:4px;">Gratuit sur football-data.org · Résultats, forme, stats · Stockée localement</div>
+    <div style="display:flex;align-items:center;gap:6px;background:rgba(240,176,32,.08);border:1px solid rgba(240,176,32,.2);border-radius:var(--r6);padding:7px 10px;margin-bottom:8px;">
+      <span style="font-size:14px;">⚠️</span>
+      <span style="font-size:10px;color:#f0b020;line-height:1.5;"><strong>Limite : 10 requêtes / minute</strong> — Évite de charger plusieurs fiches équipe en même temps. Attends 1 minute si tu vois une erreur.</span>
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:8px;">
+      <input id="fdorg-key-input" class="fi" type="password" placeholder="Clé API…" style="font-size:11px;flex:1;">
+      <button onclick="var i=$i('fdorg-key-input');i.type=i.type==='password'?'text':'password';" style="flex-shrink:0;padding:0 10px;height:38px;background:var(--bg3);border:1px solid var(--b2);border-radius:var(--r6);color:var(--t3);font-size:14px;cursor:pointer;">👁</button>
+    </div>
+    <div style="display:flex;gap:7px;">
+      <button class="btn btn-p" style="font-size:11px;" onclick="saveFdorgKey()">💾 Enregistrer</button>
+      <button class="btn" style="background:rgba(30,215,96,.12);color:var(--g);border:1px solid rgba(30,215,96,.2);font-size:11px;" onclick="testFdorgKey()">🧪 Tester</button>
+    </div>
+    <div id="fdorg-key-status" style="margin-top:7px;font-size:11px;font-weight:700;"></div>
+  </div>
+  <div class="fc" style="border-style:dashed;margin-bottom:10px;">
+    <label class="fl" style="color:#a78bfa;">🖼️ Logos officiels — TheSportsDB</label>
+    <div style="font-size:10px;color:var(--t3);margin-bottom:10px;margin-top:4px;">Gratuit · Sans clé · Logos HD pour tes équipes</div>
+    <button class="btn btn-p" style="font-size:11px;" onclick="enrichTeamLogos()">🔄 Enrichir les logos</button>
+    <div style="font-size:10px;color:var(--t3);margin-top:6px;">Met à jour les logos manquants automatiquement</div>
+  </div>
+  <div class="sec">APPARENCE</div>
+  <div class="fc">
+    <label class="fl">Cadre des sections</label>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px;margin-bottom:14px;">
+      <button id="ap-off" onclick="setCardStyle('off')" style="padding:10px 4px;border-radius:var(--r6);border:1px solid var(--b2);background:var(--bg3);color:var(--t3);font-size:10px;font-weight:700;cursor:pointer;transition:all .2s;">Aucun</button>
+      <button id="ap-fin" onclick="setCardStyle('fin')" style="padding:10px 4px;border-radius:var(--r6);border:1px solid var(--b2);background:var(--bg3);color:var(--t3);font-size:10px;font-weight:700;cursor:pointer;transition:all .2s;">Fin</button>
+      <button id="ap-halo" onclick="setCardStyle('halo')" style="padding:10px 4px;border-radius:var(--r6);border:1px solid rgba(77,132,255,.5);background:rgba(77,132,255,.12);color:var(--a);font-size:10px;font-weight:700;cursor:pointer;transition:all .2s;">Halo</button>
+      <button id="ap-intense" onclick="setCardStyle('intense')" style="padding:10px 4px;border-radius:var(--r6);border:1px solid var(--b2);background:var(--bg3);color:var(--t3);font-size:10px;font-weight:700;cursor:pointer;transition:all .2s;">Intense</button>
+    </div>
+    <label class="fl">Intensite du halo</label>
+    <div style="display:flex;align-items:center;gap:10px;margin-top:8px;margin-bottom:14px;">
+      <span style="font-size:10px;color:var(--t3);">0%</span>
+      <input type="range" id="ap-intensity" min="0" max="100" value="40" oninput="updateCardIntensity(this.value)" style="flex:1;accent-color:var(--a);">
+      <span id="ap-intensity-val" style="font-size:11px;font-weight:700;color:var(--a);min-width:32px;text-align:right;">40%</span>
+    </div>
+    <label class="fl">Apercu</label>
+    <div id="ap-preview" style="margin-top:8px;padding:12px 14px;background:var(--bg);border-radius:var(--r8);border:1px solid var(--card-border,var(--b1));box-shadow:var(--card-glow,none);transition:all .3s;">
+      <div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--t3);margin-bottom:4px;">Section exemple</div>
+      <div style="font-size:14px;font-weight:700;color:var(--t1);">Apercu du cadre lumineux</div>
+    </div>
+  </div>
+  <div class="sec">Backup &amp; Config</div>
+  <div class="fc" style="border-style:dashed;">
+    <label class="fl">Export / Import</label>
+    <div class="g2" style="margin-top:7px;">
+      <button class="btn" style="background:rgba(77,132,255,.14);color:var(--a);border:1px solid rgba(77,132,255,.25);" onclick="exportData()">⬇ Exporter</button>
+      <button class="btn" style="background:var(--s1);color:var(--t2);border:1px solid var(--b2);" onclick="importData()">⬆ Importer</button>
+      <button class="btn" style="margin-top:6px;background:rgba(240,176,32,.12);color:#f0b020;border:1px solid rgba(240,176,32,.3);font-size:11px;" onclick="importBetAnalytix()">📊 Importer Bet-Analytix CSV</button>
+    </div>
+    <button class="btn" style="margin-top:8px;background:rgba(0,107,255,.18);color:#4d9fff;border:1px solid rgba(77,132,255,.35);font-size:12px;" onclick="loadFromDropbox()">☁️ Charger depuis Dropbox</button>
+    <button class="btn" style="margin-top:8px;background:rgba(30,215,96,.15);color:#1ed760;border:1px solid rgba(30,215,96,.3);font-size:12px;" onclick="partagerProfil()">📤 Partager mon profil</button>
+    <div id="dbx-load-status" style="margin-top:6px;font-size:11px;font-weight:700;text-align:center;"></div>
+  </div>
+  <div class="fc" style="border-style:dashed;">
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <label class="fl" style="color:var(--gold);">☁️ Dropbox — Sauvegarde auto</label>
+      <button onclick="showKeyHelp('dropbox')" style="background:rgba(0,97,255,.12);border:1px solid rgba(0,97,255,.3);color:#0061ff;border-radius:50%;width:20px;height:20px;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0;">?</button>
+    </div>
+    <div style="font-size:10px;color:var(--t3);margin-bottom:8px;margin-top:4px;">Colle ton Refresh Token Dropbox. Il sera sauvegardé sur cet appareil.</div>
+    <input id="dbx-key-input" class="fi" type="text" placeholder="sl.u.XXXXXXX…" style="margin-bottom:8px;font-size:11px;filter:blur(4px);transition:filter .2s;" onfocus="this.style.filter='none'" onblur="this.style.filter='blur(4px)'">
+    <div style="display:flex;gap:7px;">
+      <button class="btn btn-p" style="font-size:11px;" onclick="saveDbxKey()">💾 Enregistrer</button>
+      <button class="btn" style="background:rgba(255,69,69,.12);color:var(--r);border:1px solid rgba(255,69,69,.2);font-size:11px;" onclick="testDbxKey()">🧪 Tester</button>
+    </div>
+    <div id="dbx-key-status" style="margin-top:7px;font-size:11px;font-weight:700;"></div>
+  </div>
+  <!-- GEMINI — uniquement ici dans Outils -->
+</div>
+
+<!-- BANK -->
+<div id="t-bank" class="tab">
+  <!-- KPI total -->
+  <div class="kpi2" style="margin-bottom:10px;">
+    <div class="kpibox" style="--ac:var(--a);">
+      <div class="kpi-l">Total déposé</div>
+      <div class="kpi-v" id="bank-total">0 €</div>
+    </div>
+    <div class="kpibox" style="--ac:var(--gold);">
+      <div class="kpi-l">🎟 Total freebet</div>
+      <div class="kpi-v" id="bank-fb-total">0 €</div>
+    </div>
+  </div>
+  <div class="sec">Mouvement de fonds</div>
+  <div class="fc">
+    <label class="fl">Bookmaker &amp; Montant</label>
+    <div class="fundrow" style="margin-top:8px;">
+      <select id="mv-book" class="fi"></select>
+      <input type="number" id="mv-amt" class="fi" placeholder="Montant €" style="text-align:center;">
+      <div class="fbtns">
+        <button class="fb plus" onclick="fund(true)" title="Dépôt">+</button>
+        <button class="fb minus" onclick="fund(false)" title="Retrait">−</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:6px;margin-top:8px;">
+      <button class="sfbtn" style="flex:1;text-align:center;border-color:rgba(30,215,96,.3);color:var(--g);" onclick="fund(true)">+ Dépôt</button>
+      <button class="sfbtn" style="flex:1;text-align:center;border-color:rgba(255,69,69,.3);color:var(--r);" onclick="fund(false)">− Retrait</button>
+    </div>
+  </div>
+  <div class="sec">Mes bookmakers</div>
+  <div id="books-grid" class="bgrid"></div>
+  <div class="fc">
+    <label class="fl">Ajouter un bookmaker</label>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
+      <input id="new-bk" class="fi" placeholder="Nom du bookmaker…">
+      <label class="fl">Couleur</label>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;" id="bk-color-row"></div>
+      <input type="color" id="new-bk-color" style="height:36px;width:100%;padding:2px 4px;border-radius:var(--r4);border:1px solid var(--b2);background:var(--bg);cursor:pointer;">
+      <button class="btn btn-p" onclick="addBook()">+ Ajouter</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- CALENDRIER -->
+<div id="t-cal" class="tab">
+  <div class="sec" style="margin-top:0;display:flex;align-items:center;justify-content:space-between;">
+    <span>📅 Agenda de mes équipes</span>
+    <button id="btn-refresh-cal" style="background:none;border:1px solid var(--b1);color:var(--t3);font-size:9px;font-weight:700;cursor:pointer;padding:3px 8px;border-radius:4px;">↻ Actualiser</button>
+  </div>
+  <div id="cal-content"><div class="empty">Clique sur Actualiser pour charger</div></div>
+</div>
+
+<!-- COMPARATEUR -->
+<div id="t-simu" class="tab"></div>
+<div id="t-social" class="tab"></div>
+<div id="t-stats" class="tab"></div>
+<div id="t-live" class="tab"></div>
+<div id="t-resultats" class="tab"></div>
+<div id="t-tend" class="tab"></div>
+<div id="t-comp" class="tab">
+  <div class="sec" style="margin-top:0;">⚖️ Comparateur d'équipes</div>
+  <div class="fc" style="margin-bottom:10px;">
+    <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;margin-bottom:12px;">
+      <select id="comp-team1" class="fi" style="font-size:12px;"></select>
+      <span style="font-size:14px;font-weight:800;color:var(--t3);">vs</span>
+      <select id="comp-team2" class="fi" style="font-size:12px;"></select>
+    </div>
+    <button id="btn-comparer" style="width:100%;padding:11px;border-radius:var(--r8);border:none;background:var(--a);color:#fff;font-size:13px;font-weight:700;cursor:pointer;">⚡ Comparer</button>
+  </div>
+  <div id="comp-content"></div>
+</div>
+
+<!-- LIENS -->
+<div id="t-links" class="tab">
+  <div class="sec" style="margin-top:0;">Stats &amp; Scores</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
+    <a href="https://www.sofascore.com" target="_blank" style="display:flex;align-items:center;gap:10px;padding:13px 12px;background:var(--s1);border-radius:var(--r8);text-decoration:none;color:var(--t1);font-size:12px;font-weight:700;border:1px solid rgba(77,132,255,.3);box-shadow:0 0 10px rgba(77,132,255,.12);border-left:3px solid #ff2040;">
+      <span style="font-size:16px;">🔴</span>Sofascore
+    </a>
+    <a href="https://www.flashscore.fr" target="_blank" style="display:flex;align-items:center;gap:10px;padding:13px 12px;background:var(--s1);border-radius:var(--r8);text-decoration:none;color:var(--t1);font-size:12px;font-weight:700;border:1px solid rgba(77,132,255,.3);box-shadow:0 0 10px rgba(77,132,255,.12);border-left:3px solid #f0b020;">
+      <span style="font-size:16px;">⚡</span>Flashscore
+    </a>
+    <a href="https://www.oddschecker.com" target="_blank" style="display:flex;align-items:center;gap:10px;padding:13px 12px;background:var(--s1);border-radius:var(--r8);text-decoration:none;color:var(--t1);font-size:12px;font-weight:700;border:1px solid rgba(77,132,255,.3);box-shadow:0 0 10px rgba(77,132,255,.12);border-left:3px solid #4d84ff;">
+      <span style="font-size:16px;">📊</span>Oddschecker
+    </a>
+    <a href="https://www.betexplorer.com" target="_blank" style="display:flex;align-items:center;gap:10px;padding:13px 12px;background:var(--s1);border-radius:var(--r8);text-decoration:none;color:var(--t1);font-size:12px;font-weight:700;border:1px solid rgba(77,132,255,.3);box-shadow:0 0 10px rgba(77,132,255,.12);border-left:3px solid #1ed760;">
+      <span style="font-size:16px;">🔎</span>BetExplorer
+    </a>
+    <a href="https://www.forebet.com/fr" target="_blank" style="display:flex;align-items:center;gap:10px;padding:13px 12px;background:var(--s1);border-radius:var(--r8);text-decoration:none;color:var(--t1);font-size:12px;font-weight:700;border:1px solid rgba(77,132,255,.3);box-shadow:0 0 10px rgba(77,132,255,.12);border-left:3px solid #a855f7;">
+      <span style="font-size:16px;">🧠</span>Forebet
+    </a>
+    <a href="https://www.whoscored.com" target="_blank" style="display:flex;align-items:center;gap:10px;padding:13px 12px;background:var(--s1);border-radius:var(--r8);text-decoration:none;color:var(--t1);font-size:12px;font-weight:700;border:1px solid rgba(77,132,255,.3);box-shadow:0 0 10px rgba(77,132,255,.12);border-left:3px solid #22d3ee;">
+      <span style="font-size:16px;">📈</span>WhoScored
+    </a>
+  </div>
+  <div class="sec">Outils &amp; IA</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
+    <a href="https://console.groq.com" target="_blank" style="display:flex;align-items:center;gap:10px;padding:13px 12px;background:var(--s1);border-radius:var(--r8);text-decoration:none;color:var(--t1);font-size:12px;font-weight:700;border:1px solid rgba(77,132,255,.3);box-shadow:0 0 10px rgba(77,132,255,.12);border-left:3px solid #f0b020;">
+      <span style="font-size:16px;">⚡</span>Groq Console
+    </a>
+    <a href="https://app.tavily.com" target="_blank" style="display:flex;align-items:center;gap:10px;padding:13px 12px;background:var(--s1);border-radius:var(--r8);text-decoration:none;color:var(--t1);font-size:12px;font-weight:700;border:1px solid rgba(77,132,255,.3);box-shadow:0 0 10px rgba(77,132,255,.12);border-left:3px solid #4d84ff;">
+      <span style="font-size:16px;">🔍</span>Tavily
+    </a>
+    <a href="https://www.football-data.org" target="_blank" style="display:flex;align-items:center;gap:10px;padding:13px 12px;background:var(--s1);border-radius:var(--r8);text-decoration:none;color:var(--t1);font-size:12px;font-weight:700;border:1px solid rgba(77,132,255,.3);box-shadow:0 0 10px rgba(77,132,255,.12);border-left:3px solid #1ed760;">
+      <span style="font-size:16px;">⚽</span>Football-Data.org
+    </a>
+    <a href="https://www.dropbox.com" target="_blank" style="display:flex;align-items:center;gap:10px;padding:13px 12px;background:var(--s1);border-radius:var(--r8);text-decoration:none;color:var(--t1);font-size:12px;font-weight:700;border:1px solid rgba(77,132,255,.3);box-shadow:0 0 10px rgba(77,132,255,.12);border-left:3px solid #0061ff;">
+      <span style="font-size:16px;">📦</span>Dropbox
+    </a>
+    <a href="https://surebetfinder.com" target="_blank" style="display:flex;align-items:center;gap:10px;padding:13px 12px;background:var(--s1);border-radius:var(--r8);text-decoration:none;color:var(--t1);font-size:12px;font-weight:700;border:1px solid rgba(77,132,255,.3);box-shadow:0 0 10px rgba(77,132,255,.12);border-left:3px solid #1ed760;">
+      <span style="font-size:16px;">🔁</span>Surebet Finder
+    </a>
+  </div>
+  <div class="sec">Mes liens personnels</div>
+  <div id="custom-links-list" style="margin-bottom:12px;"></div>
+  <div class="fc">
+    <label class="fl">Ajouter un lien</label>
+    <div class="g2" style="margin-top:8px;margin-bottom:8px;">
+      <div class="fg"><label class="fl">Nom</label><input id="link-name" class="fi" placeholder="Mon site…"></div>
+      <div class="fg"><label class="fl">URL</label><input id="link-url" class="fi" placeholder="https://…"></div>
+    </div>
+    <button class="btn btn-p" onclick="addCustomLink()">+ Ajouter</button>
+  </div>
+</div>
+
+<div id="t-chat" class="tab">
+  <div style="display:flex;flex-direction:column;height:calc(100vh - 130px);max-height:700px;overflow:hidden;">
+    <div class="sec" style="margin-top:0;display:flex;align-items:center;justify-content:space-between;">💬 Assistant Paris
+  <div style="display:flex;gap:5px;">
+    <button id="btn-chat-params-mobile" style="background:none;border:1px solid var(--b1);color:var(--t3);font-size:9px;font-weight:700;cursor:pointer;padding:2px 6px;border-radius:4px;">⚙️</button>
+    <button onclick="resetChat()" style="background:none;border:none;color:var(--t3);font-size:9px;font-weight:700;cursor:pointer;letter-spacing:.5px;padding:2px 6px;border-radius:4px;border:1px solid var(--b1);">↺</button>
+  </div>
+</div>
+<div id="chat-params-panel" style="display:none;background:var(--bg3);border:1px solid var(--card-border,rgba(77,132,255,.32));border-radius:var(--r8);padding:10px;margin-bottom:8px;box-shadow:var(--card-glow,none);max-height:55vh;overflow-y:auto;-webkit-overflow-scrolling:touch;flex-shrink:0;">
+  <div style="font-size:9px;font-weight:700;letter-spacing:1px;color:var(--t3);text-transform:uppercase;margin-bottom:8px;">Paramètres IA</div>
+  <div style="margin-bottom:8px;">
+    <div style="font-size:10px;color:var(--t2);font-weight:600;margin-bottom:5px;">Équipe focus</div>
+    <select id="cp-equipe" class="fi" style="font-size:11px;padding:6px 8px;"></select>
+  </div>
+  <div style="margin-bottom:8px;">
+    <div style="font-size:10px;color:var(--t2);font-weight:600;margin-bottom:5px;">Lieu favori</div>
+    <div style="display:flex;gap:5px;">
+      <button class="cp-lieu-btn on-param" data-val="domicile" data-action="cp-lieu" style="flex:1;padding:6px;border-radius:var(--r4);border:1px solid rgba(30,215,96,.4);background:rgba(30,215,96,.1);color:#1ed760;font-size:10px;font-weight:700;cursor:pointer;">🏠 Dom</button>
+      <button class="cp-lieu-btn" data-val="exterieur" data-action="cp-lieu" style="flex:1;padding:6px;border-radius:var(--r4);border:1px solid var(--b2);background:none;color:var(--t3);font-size:10px;font-weight:700;cursor:pointer;">🚌 Ext</button>
+      <button class="cp-lieu-btn" data-val="both" data-action="cp-lieu" style="flex:1;padding:6px;border-radius:var(--r4);border:1px solid var(--b2);background:none;color:var(--t3);font-size:10px;font-weight:700;cursor:pointer;">➖ Les 2</button>
+    </div>
+  </div>
+  <div style="margin-bottom:8px;">
+    <div style="font-size:10px;color:var(--t2);font-weight:600;margin-bottom:5px;">Types de paris favoris</div>
+    <div id="cp-types" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;"></div>
+    <div style="display:flex;gap:5px;">
+      <input id="cp-new-type" class="fi" placeholder="Ajouter un type…" style="flex:1;font-size:11px;padding:6px 8px;">
+      <button data-action="cp-add-mobile" style="padding:6px 10px;border-radius:var(--r4);border:1px solid rgba(77,132,255,.4);background:rgba(77,132,255,.12);color:#7aaaff;font-size:11px;font-weight:700;cursor:pointer;">+</button>
+    </div>
+  </div>
+  <div>
+    <div style="font-size:10px;color:var(--t2);font-weight:600;margin-bottom:5px;">Championnat uniquement</div>
+    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+      <input type="checkbox" id="cp-champ-only" style="accent-color:var(--a);width:15px;height:15px;">
+      <span style="font-size:11px;color:var(--t2);">Exclure Coupes et amicaux</span>
+    </label>
+  </div>
+</div>
+    <div id="chat-messages" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:4px 0 12px;scrollbar-width:none;"></div>
+    <div style="display:flex;gap:8px;padding-top:10px;border-top:1px solid var(--b1);">
+      <input id="chat-input" class="fi" placeholder="Pose ta question…" style="flex:1;" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat();}">
+      <button onclick="sendChat()" style="padding:0 16px;background:var(--a);border:none;border-radius:var(--r6);color:#fff;font-size:18px;cursor:pointer;flex-shrink:0;">↑</button>
+    </div>
+    <div style="font-size:9px;color:var(--t3);text-align:center;margin-top:6px;">Clé Groq dans Outils · Tes données restent locales</div>
+  </div>
+</div>
+
+</main>
+
+<nav class="nav">
+  <button class="ni on" onclick="showTab('t-dash',this)"><span>🥧</span>Mur</button>
+  <button class="ni" onclick="showTab('t-paris',this)"><span>⚽</span>Pari</button>
+  <button class="ni" onclick="showTab('t-arch',this)"><span>🕐</span>Archive</button>
+  <button class="ni" onclick="showTab('t-bilan',this)"><span>📈</span>Bilan</button>
+  <button class="ni" onclick="showTab('t-calc',this)"><span>🧮</span>Calc</button>
+  <button class="ni pc-only" onclick="showTab('t-links',this)"><span>🔗</span>Liens</button>
+  <button class="ni pc-hide-chat" id="btn-plus-menu" onclick="togglePlusMenu()" style="position:relative;"><span>+</span>Plus</button>
+  <button class="ni pc-only" onclick="showTab('t-outils',this)"><span>🔧</span>Outils</button>
+  <button class="ni pc-only" onclick="showTab('t-bank',this)"><span>💳</span>Bank</button>
+  <button class="ni pc-only" onclick="showTab('t-cal',this);loadCalendrier()"><span>📅</span>Agenda</button>
+  <button class="ni pc-only" onclick="showTab('t-comp',this);" data-action-comp="init"><span>⚖️</span>Vs</button>
+  <button class="ni pc-only" onclick="showTab('t-simu',this);loadSimuTab();"><span>🎮</span>Simu</button>
+  <button class="ni pc-only" onclick="showTab('t-live',this);loadLiveTab();_g45F1LiveCard();_g45MotoLiveCard();"><span>📡</span>Direct</button>
+  <button class="ni pc-only" onclick="showTab('t-resultats',this);loadResultatsTab();"><span>🏆</span>Résultats</button>
+  <button class="ni pc-only" onclick="showTab('t-tend',this);loadTendancesTab();"><span>🔥</span>Tendances</button>
+  <button class="ni pc-only" onclick="showTab('t-social',this);loadSocialTab();"><span>🤝</span>Social</button>
+  <button class="ni pc-only" onclick="showTab('t-stats',this);loadStatsTab();"><span>🧠</span>Stats</button>
+
+  <div style="flex:1;display:flex;flex-direction:column;padding:0 8px 8px;min-height:0;" class="pc-note-area">
+    <div id="pc-note" contenteditable="true" style="flex:1;min-height:100px;background:var(--bg3);border:1px solid var(--b1);border-radius:var(--r6);color:var(--t1);font-size:11px;line-height:1.6;padding:10px;outline:none;font-family:inherit;overflow-y:auto;word-break:break-word;" data-placeholder="Notes, cotes, screenshots…" oninput="saveNote()"></div>
+    <button onclick="clearNote()" style="margin-top:6px;background:none;border:1px solid var(--b1);border-radius:var(--r4);color:var(--t3);font-size:9px;font-weight:700;cursor:pointer;padding:4px;letter-spacing:.5px;">EFFACER</button>
+  </div>
+
+  <!-- MENU PLUS MOBILE -->
+  <div id="plus-menu" style="display:none;position:fixed;bottom:68px;right:0;left:0;background:var(--s1);border-top:1px solid var(--b2);z-index:300;padding:8px 0;max-height:calc(100vh - 88px);overflow-y:auto;-webkit-overflow-scrolling:touch;">
+    <div style="display:flex;flex-direction:column;gap:2px;padding:0 12px;">
+      <button onclick="showTab('t-bank',$i('btn-plus-menu'));togglePlusMenu();" style="display:flex;align-items:center;gap:12px;padding:14px 12px;background:var(--bg3);border:none;border-radius:8px;color:var(--t1);font-size:13px;font-weight:700;cursor:pointer;text-align:left;">
+        <span>💳</span> Bank
+      </button>
+      <button onclick="showTab('t-chat',$i('btn-plus-menu'));togglePlusMenu();" style="display:flex;align-items:center;gap:12px;padding:14px 12px;background:var(--bg3);border:none;border-radius:8px;color:var(--t1);font-size:13px;font-weight:700;cursor:pointer;text-align:left;margin-top:4px;">
+        <span>💬</span> Chat IA
+      </button>
+      <button onclick="showTab('t-cal',$i('btn-plus-menu'));togglePlusMenu();loadCalendrier();" style="display:flex;align-items:center;gap:12px;padding:14px 12px;background:var(--bg3);border:none;border-radius:8px;color:var(--t1);font-size:13px;font-weight:700;cursor:pointer;text-align:left;margin-top:4px;">
+        <span>📅</span> Calendrier
+      </button>
+      <button onclick="showTab('t-comp',$i('btn-plus-menu'));togglePlusMenu();initComparateur();" style="display:flex;align-items:center;gap:12px;padding:14px 12px;background:var(--bg3);border:none;border-radius:8px;color:var(--t1);font-size:13px;font-weight:700;cursor:pointer;text-align:left;margin-top:4px;">
+        <span>⚖️</span> Comparateur
+      </button>
+      <button onclick="showTab('t-outils',$i('btn-plus-menu'));togglePlusMenu();" style="display:flex;align-items:center;gap:12px;padding:14px 12px;background:var(--bg3);border:none;border-radius:8px;color:var(--t1);font-size:13px;font-weight:700;cursor:pointer;text-align:left;margin-top:4px;">
+        <span>🔧</span> Outils
+      </button>
+      <button onclick="showTab('t-links',$i('btn-plus-menu'));togglePlusMenu();" style="display:flex;align-items:center;gap:12px;padding:14px 12px;background:var(--bg3);border:none;border-radius:8px;color:var(--t1);font-size:13px;font-weight:700;cursor:pointer;text-align:left;margin-top:4px;">
+        <span>🔗</span> Liens
+      </button>
+      <button onclick="showTab('t-simu',$i('btn-plus-menu'));togglePlusMenu();loadSimuTab();" style="display:flex;align-items:center;gap:12px;padding:14px 12px;background:var(--bg3);border:none;border-radius:8px;color:var(--t1);font-size:13px;font-weight:700;cursor:pointer;text-align:left;margin-top:4px;">
+        <span>🎮</span> Simulation Mondial
+      </button>
+      <button onclick="showTab('t-social',$i('btn-plus-menu'));togglePlusMenu();loadSocialTab();" style="display:flex;align-items:center;gap:12px;padding:14px 12px;background:var(--bg3);border:none;border-radius:8px;color:var(--t1);font-size:13px;font-weight:700;cursor:pointer;text-align:left;margin-top:4px;">
+        <span>🤝</span> Social
+      </button>
+      <button onclick="showTab('t-live',$i('btn-plus-menu'));togglePlusMenu();loadLiveTab();_g45F1LiveCard();" style="display:flex;align-items:center;gap:12px;padding:14px 12px;background:var(--bg3);border:none;border-radius:8px;color:var(--t1);font-size:13px;font-weight:700;cursor:pointer;text-align:left;margin-top:4px;">
+        <span>📡</span> Matchs en direct
+      </button>
+      <button onclick="showTab('t-resultats',$i('btn-plus-menu'));togglePlusMenu();loadResultatsTab();" style="display:flex;align-items:center;gap:12px;padding:14px 12px;background:var(--bg3);border:none;border-radius:8px;color:var(--t1);font-size:13px;font-weight:700;cursor:pointer;text-align:left;margin-top:4px;">
+        <span>🏆</span> Résultats (tous sports)
+      </button>
+      <button onclick="showTab('t-tend',$i('btn-plus-menu'));togglePlusMenu();loadTendancesTab();" style="display:flex;align-items:center;gap:12px;padding:14px 12px;background:var(--bg3);border:none;border-radius:8px;color:var(--t1);font-size:13px;font-weight:700;cursor:pointer;text-align:left;margin-top:4px;">
+        <span>🔥</span> Tendances du jour
+      </button>
+      <button onclick="showTab('t-stats',$i('btn-plus-menu'));togglePlusMenu();loadStatsTab();" style="display:flex;align-items:center;gap:12px;padding:14px 12px;background:var(--bg3);border:none;border-radius:8px;color:var(--t1);font-size:13px;font-weight:700;cursor:pointer;text-align:left;margin-top:4px;">
+        <span>🧠</span> Mémoire stats
+      </button>
+      <button onclick="togglePlusMenu();" style="display:flex;align-items:center;gap:12px;padding:14px 12px;background:none;border:none;border-radius:8px;color:var(--t3);font-size:12px;font-weight:700;cursor:pointer;text-align:left;margin-top:4px;">
+        <span>✕</span> Fermer
+      </button>
+    </div>
+  </div>
+</nav>
+
+
+<script type="module" src="./auth-guard.js"></script>
+<script src="social.js"></script>
+
+
+
+<!-- BLOC-NOTE PC — intégré dans nav -->
+<div class="note-sidebar" id="pc-note-sidebar" style="display:none;">
+  <div class="sec" style="margin-top:0;font-size:10px;display:flex;align-items:center;justify-content:space-between;">
+    <span>📝 Pense-bête</span>
+    <button onclick="clearNote()" style="background:none;border:none;color:var(--t3);font-size:9px;cursor:pointer;font-weight:700;">EFFACER</button>
+  </div>
+  <textarea id="pc-note2" style="flex:1;background:var(--bg3);border:1px solid var(--b1);border-radius:var(--r6);color:var(--t1);font-size:12px;line-height:1.6;padding:10px;resize:none;outline:none;font-family:inherit;" placeholder="Notes, cotes à surveiller, stratégie…" oninput="saveNote()"></textarea>
+</div>
+
+<!-- SIDEBAR CHAT PC -->
+<div class="chat-sidebar" id="pc-chat-sidebar">
+  <div class="sec" style="margin-top:0;font-size:10px;display:flex;align-items:center;justify-content:space-between;">💬 Assistant Paris
+    <div style="display:flex;gap:5px;">
+      <button id="btn-chat-params-pc" style="background:none;border:1px solid var(--b1);color:var(--t3);font-size:9px;font-weight:700;cursor:pointer;padding:2px 6px;border-radius:4px;" title="Paramètres IA">⚙️</button>
+      <button onclick="resetChat()" style="background:none;border:1px solid var(--b1);color:var(--t3);font-size:9px;font-weight:700;cursor:pointer;letter-spacing:.5px;padding:2px 6px;border-radius:4px;">↺</button>
+    </div>
+  </div>
+  <div id="chat-params-panel-pc" style="display:none;background:var(--bg3);border:1px solid var(--card-border,rgba(77,132,255,.32));border-radius:var(--r8);padding:10px;margin-bottom:8px;box-shadow:var(--card-glow,none);flex-shrink:0;">
+    <div style="font-size:9px;font-weight:700;letter-spacing:1px;color:var(--t3);text-transform:uppercase;margin-bottom:8px;">Paramètres IA</div>
+    <div style="margin-bottom:8px;">
+      <div style="font-size:10px;color:var(--t2);font-weight:600;margin-bottom:4px;">Équipe focus</div>
+      <select id="cp-equipe-pc" class="fi" style="font-size:11px;padding:6px 8px;"></select>
+    </div>
+    <div style="margin-bottom:8px;">
+      <div style="font-size:10px;color:var(--t2);font-weight:600;margin-bottom:4px;">Lieu favori</div>
+      <div style="display:flex;gap:5px;">
+        <button class="cp-lieu-btn-pc" data-val="domicile" data-action="cp-lieu-pc" style="flex:1;padding:6px;border-radius:var(--r4);border:1px solid rgba(30,215,96,.4);background:rgba(30,215,96,.1);color:#1ed760;font-size:10px;font-weight:700;cursor:pointer;">🏠 Dom</button>
+        <button class="cp-lieu-btn-pc" data-val="exterieur" data-action="cp-lieu-pc" style="flex:1;padding:6px;border-radius:var(--r4);border:1px solid var(--b2);background:none;color:var(--t3);font-size:10px;font-weight:700;cursor:pointer;">🚌 Ext</button>
+        <button class="cp-lieu-btn-pc" data-val="both" data-action="cp-lieu-pc" style="flex:1;padding:6px;border-radius:var(--r4);border:1px solid var(--b2);background:none;color:var(--t3);font-size:10px;font-weight:700;cursor:pointer;">➖ Les 2</button>
+      </div>
+    </div>
+    <div style="margin-bottom:8px;">
+      <div style="font-size:10px;color:var(--t2);font-weight:600;margin-bottom:4px;">Types de paris</div>
+      <div id="cp-types-pc" style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px;"></div>
+      <div style="display:flex;gap:5px;">
+        <input id="cp-new-type-pc" class="fi" placeholder="Ajouter…" style="flex:1;font-size:11px;padding:5px 8px;">
+        <button data-action="cp-add-pc" style="padding:5px 10px;border-radius:var(--r4);border:1px solid rgba(77,132,255,.4);background:rgba(77,132,255,.12);color:#7aaaff;font-size:11px;font-weight:700;cursor:pointer;">+</button>
+      </div>
+    </div>
+    <label style="display:flex;align-items:center;gap:7px;cursor:pointer;">
+      <input type="checkbox" id="cp-champ-only-pc" style="accent-color:var(--a);">
+      <span style="font-size:10px;color:var(--t2);">Championnat uniquement</span>
+    </label>
+  </div>
+  <div id="chat-messages-pc" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:4px 0 8px;scrollbar-width:thin;"></div>
+  <div style="border-top:1px solid var(--b1);padding-top:8px;">
+    <div style="display:flex;gap:6px;">
+      <input id="chat-input-pc" class="fi" placeholder="Question…" style="flex:1;font-size:12px;padding:8px 10px;" onkeydown="if(event.key==='Enter'){event.preventDefault();sendChatPC();}">
+      <button onclick="sendChatPC()" style="padding:0 12px;background:var(--a);border:none;border-radius:var(--r6);color:#fff;font-size:16px;cursor:pointer;flex-shrink:0;">↑</button>
+    </div>
+    <div style="font-size:9px;color:var(--t3);text-align:center;margin-top:5px;">Groq AI · Clé dans Outils</div>
+  </div>
+</div>
+
+<!-- MODAL EDIT EQUIPE -->
+<div id="edit-unit-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;align-items:center;justify-content:center;">
+  <div style="background:var(--bg2);border-radius:12px;padding:20px;width:90%;max-width:400px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div style="font-size:14px;font-weight:800;">✏️ Modifier l'équipe</div>
+      <button onclick="closeEditUnit()" style="background:none;border:none;color:var(--t3);font-size:20px;cursor:pointer;">✕</button>
+    </div>
+    <input type="hidden" id="edit-unit-idx">
+    <div class="fg" style="margin-bottom:10px;"><label class="fl">Nom</label><input id="edit-unit-name" class="fi"></div>
+    <div class="g2" style="margin-bottom:10px;">
+      <div class="fg"><label class="fl">Étoiles</label>
+        <select id="edit-unit-stars" class="fi">
+          <option value="1">1⭐</option><option value="2">2⭐</option><option value="3">3⭐</option><option value="4">4⭐</option><option value="5">5⭐</option>
+        </select>
+      </div>
+      <div class="fg"><label class="fl">Couleur</label><input id="edit-unit-color" type="color" class="fi" style="height:42px;padding:2px 4px;cursor:pointer;"></div>
+    </div>
+    <div class="fg" style="margin-bottom:14px;"><label class="fl">📌 Note rapide</label><input id="edit-unit-note" class="fi" placeholder="Ex: Under 3.5 buts, forme à domicile…"></div>
+    <button class="btn btn-p" style="width:100%;" onclick="saveEditUnit()">💾 Enregistrer</button>
+  </div>
+</div>
+
+<!-- MODAL EDIT PARI EN COURS -->
+<div id="edit-bet-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;align-items:center;justify-content:center;">
+  <div style="background:var(--bg2);border-radius:12px;padding:20px;width:90%;max-width:500px;max-height:90vh;overflow-y:auto;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div style="font-size:14px;font-weight:800;color:var(--t1);">✏️ Modifier le pari</div>
+      <button onclick="closeEditBet()" style="background:none;border:none;color:var(--t3);font-size:20px;cursor:pointer;">✕</button>
+    </div>
+    <input type="hidden" id="edit-bet-id">
+    <div class="g2" style="margin-bottom:10px;">
+      <div class="fg"><label class="fl">Adversaire</label><input id="edit-target" class="fi" placeholder="Ex: Real Madrid"></div>
+      <div class="fg"><label class="fl">Équipe</label><input id="edit-equipe" class="fi" placeholder="Bayern Munich"></div>
+    </div>
+    <div class="g2" style="margin-bottom:10px;">
+      <div class="fg"><label class="fl">Cote</label><input id="edit-cote" class="fi" type="number" step="0.01"></div>
+      <div class="fg"><label class="fl">Mise (€)</label><input id="edit-mise" class="fi" type="number" step="0.01"></div>
+    </div>
+    <div class="g2" style="margin-bottom:10px;">
+      <div class="fg"><label class="fl">Sport</label><input id="edit-sport" class="fi"></div>
+      <div class="fg"><label class="fl">Compétition</label><input id="edit-comp" class="fi"></div>
+    </div>
+    <div class="g2" style="margin-bottom:10px;">
+      <div class="fg"><label class="fl">Type de pari</label><input id="edit-type" class="fi"></div>
+      <div class="fg"><label class="fl">Bookmaker</label><input id="edit-bk" class="fi"></div>
+    </div>
+    <div class="g2" style="margin-bottom:10px;">
+      <div class="fg"><label class="fl">Date</label><input id="edit-date" class="fi" type="date"></div>
+      <div class="fg"><label class="fl">Heure</label><input id="edit-heure" class="fi" type="time"></div>
+    </div>
+    <div class="fg" style="margin-bottom:10px;">
+      <label class="fl">Lieu</label>
+      <div style="display:flex;gap:8px;margin-top:6px;">
+        <button id="edit-dom-btn" onclick="toggleEditDom(true)" style="flex:1;padding:10px;border-radius:var(--r6);border:2px solid var(--b2);background:var(--bg3);color:var(--t2);font-size:13px;font-weight:700;cursor:pointer;">🏠 Domicile</button>
+        <button id="edit-ext-btn" onclick="toggleEditDom(false)" style="flex:1;padding:10px;border-radius:var(--r6);border:2px solid var(--b2);background:var(--bg3);color:var(--t2);font-size:13px;font-weight:700;cursor:pointer;">🚌 Extérieur</button>
+      </div>
+      <input type="hidden" id="edit-domicile" value="">
+    </div>
+    <div class="fg" style="margin-bottom:14px;"><label class="fl">Notes</label><input id="edit-notes" class="fi" placeholder="Notes…"></div>
+    <button class="btn btn-p" style="width:100%;" onclick="saveEditBet()">💾 Enregistrer</button>
+  </div>
+</div>
+
+<!-- MODAL AIDE CLÉS -->
+<div id="key-help-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;align-items:flex-end;justify-content:center;" onclick="if(event.target===this)closeKeyHelp()">
+  <div id="key-help-content" style="background:var(--bg2);border-radius:16px 16px 0 0;padding:20px;width:100%;max-width:500px;max-height:80vh;overflow-y:auto;border-top:2px solid rgba(77,132,255,.4);">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div id="key-help-title" style="font-size:15px;font-weight:800;color:var(--t1);"></div>
+      <button onclick="closeKeyHelp()" style="background:none;border:none;color:var(--t3);font-size:20px;cursor:pointer;">✕</button>
+    </div>
+    <div id="key-help-body"></div>
+  </div>
+</div>
+</body>
+</html>
