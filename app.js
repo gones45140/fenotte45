@@ -4022,8 +4022,14 @@ var ADV_DB={
 function searchAdv(q,targetId,resId){
   var el=$i(targetId);var res=$i(resId);if(!res)return;
   if(!q||q.length<2){res.style.display='none';return;}
-  var sport=$i('c-sport')&&$i('c-sport').value||'⚽';
-  var db=(ADV_DB[sport]||ADV_DB['⚽']).concat(state.a.map(function(h){return h.target||'';}).filter(Boolean));
+  /* Le selecteur de sport depend du formulaire : c-sport pour la montante,
+     p-sport pour le pari simple. On lisait c-sport dans TOUS les cas, donc le
+     filtrage par sport etait faux depuis le pari simple. */
+  var _sportSel = (String(targetId).indexOf('n-')===0) ? 'p-sport' : 'c-sport';
+  var sport=($i(_sportSel)&&$i(_sportSel).value) || ($i('c-sport')&&$i('c-sport').value) || '⚽';
+  var db=(ADV_DB[sport]||ADV_DB['⚽'])
+    .concat(state.a.map(function(h){return h.target||'';}).filter(Boolean))
+    .concat(_g45AdversairesConnus());
   var seen={};var uniq=db.filter(function(v){return v&&!seen[v]&&(seen[v]=1);});
   var ql=q.toLowerCase();
   var filtered=uniq.filter(function(v){return v.toLowerCase().includes(ql);}).slice(0,8);
@@ -10287,8 +10293,14 @@ var ADV_DB={
 function searchAdv(q,targetId,resId){
   var el=$i(targetId);var res=$i(resId);if(!res)return;
   if(!q||q.length<2){res.style.display='none';return;}
-  var sport=$i('c-sport')&&$i('c-sport').value||'⚽';
-  var db=(ADV_DB[sport]||ADV_DB['⚽']).concat(state.a.map(function(h){return h.target||'';}).filter(Boolean));
+  /* Le selecteur de sport depend du formulaire : c-sport pour la montante,
+     p-sport pour le pari simple. On lisait c-sport dans TOUS les cas, donc le
+     filtrage par sport etait faux depuis le pari simple. */
+  var _sportSel = (String(targetId).indexOf('n-')===0) ? 'p-sport' : 'c-sport';
+  var sport=($i(_sportSel)&&$i(_sportSel).value) || ($i('c-sport')&&$i('c-sport').value) || '⚽';
+  var db=(ADV_DB[sport]||ADV_DB['⚽'])
+    .concat(state.a.map(function(h){return h.target||'';}).filter(Boolean))
+    .concat(_g45AdversairesConnus());
   var seen={};var uniq=db.filter(function(v){return v&&!seen[v]&&(seen[v]=1);});
   var ql=q.toLowerCase();
   var filtered=uniq.filter(function(v){return v.toLowerCase().includes(ql);}).slice(0,8);
@@ -18115,7 +18127,7 @@ async function loadTeamSaisons() {
     try {
       // Calcul AUTOMATIQUE des saisons à charger selon la date du jour (aucune maintenance annuelle).
       var lg = espnLeagueOf(nom) || '';
-      var calendarYearLeagues = ['bra.1','usa.1','nor.1','swe.1','fin.1','irl.1','rus.1','jpn.1','kor.1'];
+      var calendarYearLeagues = ['bra.1','usa.1','arg.1','nor.1','swe.1','fin.1','irl.1','rus.1','jpn.1','kor.1'];
       var isCalYear = calendarYearLeagues.indexOf(lg) >= 0;
       var now = new Date();
       var curY = now.getFullYear();
@@ -18160,22 +18172,76 @@ async function loadTeamSaisons() {
         })();
       }
 
-      // ── 1b) ESPN : Europe d'abord (C1 → Europa → Conference, auto-détectée par année) ──
-      var _euroSlugs = ['uefa.champions','uefa.europa','uefa.europa.conf','uefa.champions_qual','uefa.europa_qual','uefa.europa.conf_qual'];
+      // ── 1b) ESPN : coupes, selon le championnat ──
+      /* Cette boucle etait lancee SANS CONDITION avec les seuls slugs UEFA, donc
+         aussi pour les clubs d'Amerique ou d'Asie : 12 requetes sequentielles
+         perdues par fiche equipe. Deux familles desormais :
+
+         EXCLUSIVES — un club europeen ne joue qu'UNE coupe continentale par
+         saison, on s'arrete donc a la premiere trouvee.
+
+         CUMULEES — coupe nationale, et hors d'Europe coupes continentales : un
+         club peut disputer la Libertadores ET la Copa Argentina la meme annee,
+         ou la Ligue des Champions ET la Coupe de France. Aucun arret.
+
+         Slugs verifies 200 le 06/08/2026. bra.copa_do_brasil renvoie 400, le
+         bon slug reste a trouver. */
+      var _coupesExclusives = {
+        _europe: ['uefa.champions','uefa.europa','uefa.europa.conf','uefa.champions_qual','uefa.europa_qual','uefa.europa.conf_qual'],
+        'usa.1': ['concacaf.champions_cup'],
+        'mex.1': ['concacaf.champions_cup'],
+        'arg.1': ['conmebol.libertadores','conmebol.sudamericana'],
+        'bra.1': ['conmebol.libertadores','conmebol.sudamericana'],
+        'chi.1': ['conmebol.libertadores','conmebol.sudamericana'],
+        'col.1': ['conmebol.libertadores','conmebol.sudamericana'],
+        'uru.1': ['conmebol.libertadores','conmebol.sudamericana'],
+        'par.1': ['conmebol.libertadores','conmebol.sudamericana'],
+        'per.1': ['conmebol.libertadores','conmebol.sudamericana'],
+        'ecu.1': ['conmebol.libertadores','conmebol.sudamericana'],
+        'jpn.1': ['afc.champions'],
+        'chn.1': ['afc.champions'],
+        'ksa.1': ['afc.champions'],
+        'aus.1': ['afc.champions']
+      };
+      var _coupesCumulees = {
+        'fra.1': ['fra.coupe_de_france'],
+        'fra.2': ['fra.coupe_de_france'],
+        'esp.1': ['esp.copa_del_rey'],
+        'ger.1': ['ger.dfb_pokal'],
+        'ita.1': ['ita.coppa_italia'],
+        'eng.1': ['eng.league_cup'],
+        'bra.1': ['bra.copa_do_brazil'],
+        'usa.1': ['concacaf.leagues.cup','usa.open'],
+        'mex.1': ['concacaf.leagues.cup'],
+        'arg.1': ['arg.copa'],
+        'fifa.world': ['uefa.nations']   // selections nationales
+      };
+      var _horsEurope = !!_coupesExclusives[lg];
+      var _exclusives = _coupesExclusives[lg] || _coupesExclusives._europe;
+      var _cumulees   = _coupesCumulees[lg] || [];
+
+      async function _ajouterCoupe(_slug, _yr, _key){
+        try {
+          var _euro = await espnClubSchedule(nom, _yr, _slug);
+          _g45AVenir[nom]=_g45CollecteAVenir([_euro], _g45AVenir[nom], (_euro&&_euro.team?_euro.team.id:null), (_euro&&_euro.team?_euro.team.name:nom));
+          var _finE = (_euro && _euro.matches) ? _euro.matches.filter(function(mm){ return mm.completed; }) : [];
+          if(_finE.length){
+            var _nm = (_euro.team && _euro.team.name) ? _euro.team.name : nom;
+            results[_key] = (results[_key]||[]).concat(_finE.map(function(mm){ return espnToFdMatch(mm, _nm, teamId); }));
+            espnEuroYears[_key] = true; espnOk = true;
+            return true;
+          }
+        } catch(_e){}
+        return false;
+      }
+
       for(var _yi=0; _yi<2; _yi++){
         var _yr = (_yi===0)?yA:yB; var _key = String(_yr);
-        for(var _es=0; _es<_euroSlugs.length; _es++){
-          try {
-            var _euro = await espnClubSchedule(nom, _yr, _euroSlugs[_es]);
-            _g45AVenir[nom]=_g45CollecteAVenir([_euro], _g45AVenir[nom], (_euro&&_euro.team?_euro.team.id:null), (_euro&&_euro.team?_euro.team.name:nom));
-            var _finE = (_euro && _euro.matches) ? _euro.matches.filter(function(mm){ return mm.completed; }) : [];
-            if(_finE.length){
-              var _nm = (_euro.team && _euro.team.name) ? _euro.team.name : nom;
-              results[_key] = (results[_key]||[]).concat(_finE.map(function(mm){ return espnToFdMatch(mm, _nm, teamId); }));
-              espnEuroYears[_key] = true; espnOk = true;
-              break; // coupe d'Europe trouvée pour cette année
-            }
-          } catch(_e){}
+        for(var _es=0; _es<_exclusives.length; _es++){
+          if(await _ajouterCoupe(_exclusives[_es], _yr, _key)) break;
+        }
+        for(var _cs=0; _cs<_cumulees.length; _cs++){
+          await _ajouterCoupe(_cumulees[_cs], _yr, _key);
         }
       }
     } catch(espErr) { /* on tentera football-data */ }
@@ -29907,3 +29973,176 @@ window.g45SyncEtat = g45SyncEtat;
 window.g45SyncCharger = g45SyncCharger;
 window.g45SyncEnvoyer = g45SyncEnvoyer;
 window.g45SyncBascule = g45SyncBascule;
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   GONES45 — SUGGESTIONS COMPÉTITION / ADVERSAIRE, TOUS SPORTS
+   ───────────────────────────────────────────────────────────────────────────
+   Competition etait un champ entierement libre : « Ligue 1 » un jour,
+   « ligue1 » le lendemain, et les regroupements par competition du Bilan et de
+   l'export PDF deviennent faux. Adversaire avait deja `searchAdv` (base ADV_DB
+   par sport), mais il lisait TOUJOURS c-sport, donc le filtrage par sport etait
+   faux depuis le pari simple — corrige dans searchAdv.
+
+   TROIS SOURCES, cumulees et dedoublonnees :
+     1. COMP_DB — competitions courantes par sport, en dur. Couvre tous les
+        sports des le premier pari, sans aucune requete.
+     2. L'HISTORIQUE — state.a (paris regles) et state.h (en attente). C'est la
+        meilleure source : exactement ce qu'Antoine joue vraiment, quel que soit
+        le sport, et ca s'enrichit tout seul.
+     3. LE CALENDRIER ESPN de l'equipe choisie, quand elle est identifiable
+        (football pour l'instant) : adversaires reels de la saison en cours.
+
+   C'est la source 2 qui rend l'ensemble multi-sport sans maintenance : le jour
+   ou Antoine parie sur du handball, ses competitions handball apparaissent.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+var COMP_DB = {
+  '\u26bd': ['Ligue 1','Ligue 2','Coupe de France','Premier League','FA Cup','Carabao Cup',
+             'LaLiga','Copa del Rey','Serie A','Coppa Italia','Bundesliga','DFB Pokal',
+             'Eredivisie','Liga Portugal','Ligue des Champions','Ligue Europa',
+             'Conference League','Ligue des Nations','Coupe du Monde','Euro',
+             'MLS','Leagues Cup','Brasileirao','Copa do Brasil','Libertadores',
+             'Sudamericana','Primera Division','Copa Argentina'],
+  '\ud83c\udfc0': ['NBA','EuroLeague','Betclic Elite','WNBA','NCAA'],
+  '\ud83c\udfbe': ['Roland-Garros','Wimbledon','US Open','Open d Australie','Masters 1000','ATP 500','ATP 250','WTA'],
+  '\ud83c\udfc8': ['NFL','NCAA Football'],
+  '\ud83c\udfd2': ['NHL','Ligue Magnus'],
+  '\u26be': ['MLB'],
+  '\ud83c\udfc9': ['Top 14','Champions Cup','Tournoi des 6 Nations','Pro D2','United Rugby','Coupe du Monde'],
+  '\ud83c\udfc9\ud83c\udde6\ud83c\uddfa': ['NRL','State of Origin'],
+  '\ud83c\udfce': ['Formule 1','Sprint'],
+  '\ud83e\udd4a': ['UFC','Bellator'],
+  '\ud83d\ude97': ['WRC']
+};
+
+var _g45ListesPari = {};
+var _g45ListesEnCours = {};
+
+function _g45TousParis() {
+  var a = (window.state && state.a) ? state.a : [];
+  var h = (window.state && state.h) ? state.h : [];
+  return a.concat(h);
+}
+
+/* L'adversaire n'est pas stocke tel quel : `target` porte l'equipe d'Antoine et
+   `n` le libelle du match (« Lyon - PSG »). On retire donc `target` de `n`. */
+function _g45AdversairesConnus() {
+  var out = [];
+  _g45TousParis().forEach(function(b) {
+    var lib = String(b.n || ''), moi = String(b.target || '');
+    if (!lib) return;
+    var parts = lib.split(/\s+(?:-|\u2013|vs\.?|contre)\s+/i);
+    if (parts.length === 2) {
+      var bas = moi.toLowerCase();
+      var adv = (bas && parts[0].toLowerCase().indexOf(bas) >= 0) ? parts[1] : parts[0];
+      adv = String(adv).trim();
+      if (adv && (!bas || adv.toLowerCase().indexOf(bas) < 0)) out.push(adv);
+    }
+  });
+  Object.keys(_g45ListesPari).forEach(function(nm) {
+    var c = _g45ListesPari[nm].comps || {};
+    Object.keys(c).forEach(function(k) { out = out.concat(Object.keys(c[k])); });
+  });
+  return out;
+}
+window._g45AdversairesConnus = _g45AdversairesConnus;
+
+function _g45CompetitionsConnues(sport) {
+  var out = (COMP_DB[sport] || COMP_DB['\u26bd']).slice();
+  _g45TousParis().forEach(function(b) { if (b.comp) out.push(String(b.comp).trim()); });
+  return out;
+}
+
+function _g45Dedoublonne(liste) {
+  var vu = {}, out = [];
+  liste.forEach(function(v) {
+    v = String(v || '').trim();
+    if (!v) return;
+    var k = v.toLowerCase();
+    if (vu[k]) return;
+    vu[k] = 1; out.push(v);
+  });
+  return out.sort(function(a, b) { return a.localeCompare(b, 'fr'); });
+}
+
+function _g45MajDatalist(id, valeurs) {
+  var dl = document.getElementById(id);
+  if (!dl) return;
+  dl.innerHTML = valeurs.slice(0, 400).map(function(v) {
+    return '<option value="' + String(v).replace(/"/g, '&quot;') + '">';
+  }).join('');
+}
+
+async function _g45ChargerListesPari(nom) {
+  if (!nom) return null;
+  var cache = _g45ListesPari[nom];
+  if (cache && (Date.now() - cache.ts) < 6 * 3600 * 1000) return cache;
+  if (_g45ListesEnCours[nom]) return null;
+  _g45ListesEnCours[nom] = true;
+  var comps = {};
+  try {
+    var lg = (typeof espnLeagueOf === 'function') ? espnLeagueOf(nom) : null;
+    if (lg) {
+      var calendaire = ['bra.1','usa.1','arg.1','nor.1','swe.1','fin.1','irl.1','rus.1','jpn.1','kor.1'];
+      var d = new Date();
+      var an = (calendaire.indexOf(lg) >= 0) ? d.getFullYear()
+             : ((d.getMonth() + 1 >= 8) ? d.getFullYear() : d.getFullYear() - 1);
+      var sched = await espnClubSchedule(nom, an);
+      var moi = (sched && sched.team && sched.team.name) ? sched.team.name : nom;
+      var moiBas = String(moi).toLowerCase();
+      (sched && sched.matches ? sched.matches : []).forEach(function(m) {
+        var comp = m.competitionName || m.competition || 'Autre';
+        var h = m.homeTeam || '', a = m.awayTeam || '';
+        var adv = (String(h).toLowerCase().indexOf(moiBas) >= 0 ||
+                   moiBas.indexOf(String(h).toLowerCase()) >= 0) ? a : h;
+        if (!adv) return;
+        if (!comps[comp]) comps[comp] = {};
+        comps[comp][adv] = true;
+      });
+    }
+  } catch (e) { console.warn('listes pari :', e && e.message); }
+  delete _g45ListesEnCours[nom];
+  var res = { comps: comps, ts: Date.now() };
+  _g45ListesPari[nom] = res;
+  return res;
+}
+
+async function g45MajListesPari(quelForm) {
+  var estSimple = (quelForm === 'simple');
+  var idListe = estSimple ? 'dl-n-comp' : 'dl-c-comp';
+  var idSport = estSimple ? 'p-sport' : 'c-sport';
+  var sportEl = document.getElementById(idSport);
+  var sport = (sportEl && sportEl.value) || '\u26bd';
+  var comps = _g45CompetitionsConnues(sport);
+  if (!estSimple) {
+    var sel = document.getElementById('c-unit');
+    var nom = sel ? sel.value : '';
+    if (nom) {
+      var res = await _g45ChargerListesPari(nom);
+      if (res) comps = comps.concat(Object.keys(res.comps));
+    }
+  }
+  _g45MajDatalist(idListe, _g45Dedoublonne(comps));
+}
+window.g45MajListesPari = g45MajListesPari;
+
+(function _g45BrancherListesPari() {
+  function brancher() {
+    var cu = document.getElementById('c-unit');
+    var cs = document.getElementById('c-sport');
+    var ps = document.getElementById('p-sport');
+    if (cu && !cu._g45Br) { cu._g45Br = 1; cu.addEventListener('change', function(){ g45MajListesPari('montante'); }); }
+    if (cs && !cs._g45Br) { cs._g45Br = 1; cs.addEventListener('change', function(){ g45MajListesPari('montante'); }); }
+    if (ps && !ps._g45Br) { ps._g45Br = 1; ps.addEventListener('change', function(){ g45MajListesPari('simple'); }); }
+    if (cu && ps) {
+      setTimeout(function(){ g45MajListesPari('montante'); g45MajListesPari('simple'); }, 400);
+      return true;
+    }
+    return false;
+  }
+  if (!brancher()) {
+    var n = 0;
+    var t = setInterval(function(){ if (brancher() || ++n > 40) clearInterval(t); }, 250);
+  }
+})();
