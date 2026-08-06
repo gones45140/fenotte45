@@ -622,6 +622,20 @@
   </div>
 
 
+  <!-- SYNCHRO GITHUB -->
+  <div class="sec">🔄 Synchro GitHub</div>
+  <div class="fc">
+    <div style="font-size:10px;color:var(--t3);line-height:1.6;margin-bottom:10px;">
+      Chaque appareil a ses propres données. Ces boutons forcent la copie dans un sens ou dans l'autre, sans passer par la console.
+    </div>
+    <button class="btn" style="font-size:12px;width:100%;margin-bottom:6px;" onclick="g45SyncEtat()">🔍 Voir l'état de cet appareil</button>
+    <button class="btn" style="font-size:12px;width:100%;margin-bottom:6px;" onclick="g45SyncSauvegarde()">💾 Sauvegarder cet appareil dans un fichier</button>
+    <button class="btn btn-p" style="font-size:12px;width:100%;margin-bottom:6px;" onclick="g45SyncCharger()">⬇️ Charger depuis GitHub (écrase cet appareil)</button>
+    <button class="btn" style="font-size:12px;width:100%;margin-bottom:6px;border-color:rgba(255,177,61,.5);color:#ffb13d;" onclick="g45SyncEnvoyer()">⬆️ Envoyer vers GitHub (écrase le distant)</button>
+    <button class="btn" style="font-size:12px;width:100%;" onclick="g45SyncBascule()">🔄 Activer / désactiver la synchro auto</button>
+    <div id="g45-sync-msg" style="margin-top:9px;font-size:11px;font-weight:600;min-height:16px;color:var(--t3);"></div>
+  </div>
+
   <!-- EXPORT PDF ANNUEL -->
   <div class="sec">📄 Export PDF</div>
   <div class="fc">

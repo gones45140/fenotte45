@@ -20497,6 +20497,10 @@ var _bcp=document.getElementById('btn-chat-params-pc');if(_bcp)_bcp.onclick=func
      index.html (filtres Archive, styles de carte, curseur d intensite, Agenda et
      Comparateur depuis le menu PC). Un handler inline resout ses identifiants dans la
      portee GLOBALE, jamais dans cette closure : sans ces exports, ReferenceError. */
+  window.g45SuivisGet = g45SuivisGet;
+  window.g45SuivisSave = g45SuivisSave;
+  window.g45SuivisHas = g45SuivisHas;
+  window.g45SuivisToggle = g45SuivisToggle;
   window.setArchFilter = setArchFilter;
   window.setCardStyle = setCardStyle;
   window.updateCardIntensity = updateCardIntensity;
@@ -29717,3 +29721,155 @@ async function g45ExportPdfAnnee(){
   }
 }
 window.g45ExportPdfAnnee = g45ExportPdfAnnee;
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   GONES45 — SYNCHRO GITHUB MANUELLE (panneau Outils)
+   ───────────────────────────────────────────────────────────────────────────
+   POURQUOI CE FICHIER EXISTE
+   `g45ToggleGithubBetSync()` existait déjà mais AUCUN bouton ne l'appelait :
+   elle n'était atteignable qu'en console. Sur téléphone, c'est inutilisable —
+   or c'est précisément là qu'on a besoin de forcer un rechargement.
+
+   Trois boutons, plus un état lisible :
+     ⬇️ Charger depuis GitHub  → écrase CET appareil avec la version distante
+     ⬆️ Envoyer vers GitHub    → écrase la version distante avec CET appareil
+     🔄 Activer / Désactiver   → bascule la synchro automatique
+
+   Le chargement contourne délibérément les deux garde-fous de
+   `_g45PullBetsGithub` (comparaison d'horodatage et drapeau `g45_dirty`), qui
+   font qu'un appareil se croyant à jour refuse de tirer. C'est justement ce
+   blocage qu'on veut lever quand on sait que l'appareil est le mauvais.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+function _g45SyncMsg(txt, couleur) {
+  var el = document.getElementById('g45-sync-msg');
+  if (el) { el.innerHTML = txt; el.style.color = couleur || 'var(--t3)'; }
+  return txt;
+}
+
+/* Sauvegarde locale téléchargée avant toute opération destructive. */
+function g45SyncSauvegarde() {
+  try {
+    var v = localStorage.getItem('g45v5');
+    if (!v) { _g45SyncMsg('Rien à sauvegarder sur cet appareil.', '#ffb13d'); return; }
+    var b = new Blob([v], { type: 'application/json' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(b);
+    a.download = 'g45v5-' + new Date().toISOString().slice(0, 19).replace(/[:T]/g, '') + '.json';
+    a.click();
+    _g45SyncMsg('✅ Sauvegarde téléchargée.', '#4ade80');
+  } catch (e) {
+    _g45SyncMsg('❌ ' + e.message, '#ff6b6b');
+  }
+}
+
+/* Affiche l'état réel de la synchro sur cet appareil. */
+function g45SyncEtat() {
+  var token = localStorage.getItem('gones45_github_token');
+  var flag = localStorage.getItem('g45_github_betsync');
+  var pass = localStorage.getItem('g45_bets_pass');
+  var sale = localStorage.getItem('g45_dirty') === '1';
+  var cap = 0, nbParis = 0;
+  try {
+    var st = JSON.parse(localStorage.getItem('g45v5') || '{}');
+    cap = st.cap || 0;
+    nbParis = ((st.a || []).length) + ((st.h || []).length);
+  } catch (e) {}
+
+  var actif = !!token && flag !== '0';
+  var h = '<div style="font-size:11px;line-height:1.8;">';
+  h += '<div>Capital sur cet appareil : <b>' + Number(cap).toFixed(2) + ' €</b> · ' + nbParis + ' paris</div>';
+  h += '<div>Token GitHub : <b style="color:' + (token ? '#4ade80' : '#ff6b6b') + '">' + (token ? 'présent' : 'ABSENT') + '</b></div>';
+  h += '<div>Synchro auto : <b style="color:' + (actif ? '#4ade80' : '#ffb13d') + '">' + (actif ? 'ACTIVE' : 'ÉTEINTE') + '</b></div>';
+  h += '<div>Clé de chiffrement : <b>' + (pass ? 'séparée' : 'le token') + '</b></div>';
+  if (sale) h += '<div style="color:#ffb13d">⚠️ modifications locales non envoyées</div>';
+  h += '</div>';
+  _g45SyncMsg(h);
+}
+
+/* ⬇️ Écrase CET appareil avec la version GitHub, sans condition d'horodatage. */
+async function g45SyncCharger() {
+  if (!confirm('Remplacer TOUTES les données de cet appareil par la version GitHub ?\n\nBankroll, paris et mur seront écrasés. Cette action est irréversible sur cet appareil.')) return;
+
+  var token = localStorage.getItem('gones45_github_token');
+  if (!token) { _g45SyncMsg('❌ Aucun token GitHub. Colle-le d\'abord dans Réglages.', '#ff6b6b'); return; }
+
+  _g45SyncMsg('⏳ Lecture de GitHub…');
+  try {
+    var res = await _gh_getBets();
+    if (!res || !res.data) { _g45SyncMsg('❌ Fichier introuvable sur GitHub.', '#ff6b6b'); return; }
+
+    var st = null;
+    if (res.data.enc) {
+      var pass = _g45BetsPass();
+      if (!pass) { _g45SyncMsg('❌ Paris chiffrés et aucune clé sur cet appareil.', '#ff6b6b'); return; }
+      try { st = await _g45DecryptState(res.data.enc, pass); }
+      catch (e) {
+        _g45SyncMsg('❌ Déchiffrement impossible. La clé de cet appareil ne correspond pas — mets le MÊME token (ou le même mot de passe) que sur l\'autre appareil. Rien n\'a été modifié.', '#ff6b6b');
+        return;
+      }
+    } else {
+      st = res.data.state;
+    }
+    if (!st) { _g45SyncMsg('❌ Contenu vide sur GitHub — rien appliqué.', '#ff6b6b'); return; }
+
+    if (!st.bkColors) st.bkColors = {};
+
+    /* Remplacement INTÉGRAL, volontairement : contrairement au pull automatique,
+       le mur n'est PAS fusionné. On veut une copie conforme de la référence. */
+    localStorage.setItem('g45v5', JSON.stringify(st));
+    localStorage.setItem('g45_betsync_ts', String(res.data.ts || Date.now()));
+    localStorage.removeItem('g45_dirty');
+    localStorage.setItem('g45_github_betsync', '1');
+
+    var cap = Number(st.cap || 0).toFixed(2);
+    var n = ((st.a || []).length) + ((st.h || []).length);
+    _g45SyncMsg('✅ Chargé : ' + cap + ' € · ' + n + ' paris. Rechargement…', '#4ade80');
+    setTimeout(function () { location.reload(); }, 1200);
+  } catch (e) {
+    _g45SyncMsg('❌ ' + (e && e.message ? e.message : 'échec'), '#ff6b6b');
+  }
+}
+
+/* ⬆️ Écrase la version GitHub avec CET appareil. */
+async function g45SyncEnvoyer() {
+  var cap = 0, n = 0;
+  try {
+    var st = JSON.parse(localStorage.getItem('g45v5') || '{}');
+    cap = Number(st.cap || 0).toFixed(2);
+    n = ((st.a || []).length) + ((st.h || []).length);
+  } catch (e) {}
+
+  if (!confirm('Envoyer CET appareil vers GitHub ?\n\nCapital ' + cap + ' € · ' + n + ' paris.\nLa version distante sera remplacée.\n\nVérifie que ces chiffres sont les BONS avant de continuer.')) return;
+
+  if (!localStorage.getItem('gones45_github_token')) {
+    _g45SyncMsg('❌ Aucun token GitHub sur cet appareil.', '#ff6b6b');
+    return;
+  }
+  _g45SyncMsg('⏳ Envoi…');
+  try {
+    localStorage.setItem('g45_github_betsync', '1');
+    await _g45PushBetsGithub(true);
+    _g45SyncMsg('✅ Envoyé vers GitHub (' + cap + ' € · ' + n + ' paris).', '#4ade80');
+  } catch (e) {
+    _g45SyncMsg('❌ ' + (e && e.message ? e.message : 'échec'), '#ff6b6b');
+  }
+}
+
+/* 🔄 Bascule la synchro automatique, SANS pousser — contrairement à
+   g45ToggleGithubBetSync() qui envoie immédiatement en s'activant, ce qui peut
+   écraser la version distante depuis un appareil mal à jour. */
+function g45SyncBascule() {
+  var actif = localStorage.getItem('g45_github_betsync') !== '0';
+  localStorage.setItem('g45_github_betsync', actif ? '0' : '1');
+  _g45SyncMsg(actif ? '🔴 Synchro automatique ÉTEINTE.' : '🟢 Synchro automatique ACTIVÉE.',
+              actif ? '#ffb13d' : '#4ade80');
+  setTimeout(g45SyncEtat, 1500);
+}
+
+window.g45SyncSauvegarde = g45SyncSauvegarde;
+window.g45SyncEtat = g45SyncEtat;
+window.g45SyncCharger = g45SyncCharger;
+window.g45SyncEnvoyer = g45SyncEnvoyer;
+window.g45SyncBascule = g45SyncBascule;
