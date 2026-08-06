@@ -18948,6 +18948,15 @@ function renderSaisonsChart(el, results, nom) {
   for(var k in TEAM_IDS) {
     if(k.toLowerCase()===nom.toLowerCase() || nom.toLowerCase().indexOf(k.toLowerCase())>=0) { teamId=TEAM_IDS[k]; break; }
   }
+  /* Clubs absents de TEAM_IDS (championnats hors offre gratuite football-data :
+     Argentine, Mexique...). Sans ce repli, teamId reste null, le test
+     `m.homeTeam.id === teamId` de calcSaisonStats echoue TOUJOURS, et tous les
+     matchs sont comptes a l'exterieur — avec en prime les resultats a domicile
+     inverses, puisque le score est lu du mauvais cote. Doit produire exactement
+     la meme cle que loadTeamSaisons et que espnToFdMatch. */
+  if(teamId == null) {
+    teamId = 'espn_' + String(nom||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+  }
 
   // Détecter toutes les compétitions disponibles
   var allComps = {};
