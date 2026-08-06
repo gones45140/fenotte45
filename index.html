@@ -1,3 +1,27 @@
 <!DOCTYPE html>
+<html lang="fr">
+<head>
 <meta charset="utf-8">
-<meta http-equiv="refresh" content="0; url=./indexfenotte.html">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GONES45</title>
+</head>
+<body style="background:#0a0e1a">
+<!-- Redirection vers l'application.
+     ATTENTION : ne PAS utiliser de redirection par meta refresh ici.
+     Le magic link Supabase arrive sur ce dossier avec un ?code=... (flux PKCE)
+     ou un #access_token=... (flux implicite). Un meta refresh JETTE la query
+     string et le fragment : auth-guard.js ne verrait aucune session et
+     renverrait vers login.html en boucle.
+     location.replace conserve les deux, et n'ajoute pas d'entree dans
+     l'historique (pas de retour arriere piegeux). -->
+<script>
+  location.replace('./indexfenotte.html' + window.location.search + window.location.hash);
+</script>
+<noscript>
+  <p style="color:#fff;font-family:system-ui;padding:20px">
+    Activez JavaScript, ou ouvrez directement
+    <a href="./indexfenotte.html" style="color:#7aa7ff">indexfenotte.html</a>.
+  </p>
+</noscript>
+</body>
+</html>
