@@ -163,8 +163,26 @@ function _espnMatchTeam(nom, teams, league, mode) {
    Les clubs listes ici court-circuitent cette etape. Verifie le 06/08/2026 :
    arg.1/teams/5/schedule renvoie bien 20 matchs pour Boca. */
 var ESPN_TEAM_ID_FIX = {
-  'boca juniors': {id:'5', league:'arg.1'},
-  'boca':         {id:'5', league:'arg.1'}
+  'boca juniors':  {id:'5',     league:'arg.1'},
+  'boca':          {id:'5',     league:'arg.1'},
+  /* Identifiants relevés le 06/08/2026 dans la réponse /pdebug du Worker, qui
+     liste les équipes suivies avec leur id ESPN et leur ligue. Sans eux, vider
+     les clés espn_teamid_any_* du localStorage suffit à rendre ces clubs
+     introuvables, puisque la résolution par nom passe par /{ligue}/teams, servi
+     sans en-tête CORS. */
+  'miami cf':      {id:'20232', league:'usa.1'},
+  'inter miami':   {id:'20232', league:'usa.1'},
+  'inter miami cf':{id:'20232', league:'usa.1'},
+  'palmeiras':     {id:'2029',  league:'bra.1'},
+  'se palmeiras':  {id:'2029',  league:'bra.1'},
+  'france':        {id:'478',   league:'fifa.world'},
+  'inter milan':   {id:'110',   league:'ita.1'},
+  'lyon':          {id:'167',   league:'fra.1'},
+  'psg':           {id:'160',   league:'fra.1'},
+  'psv':           {id:'148',   league:'ned.1'},
+  'real madrid':   {id:'86',    league:'esp.1'},
+  'bayern munich': {id:'132',   league:'ger.1'},
+  'arsenal':       {id:'359',   league:'eng.1'}
 };
 
 async function espnResolveTeam(nom) {
@@ -18209,7 +18227,8 @@ async function loadTeamSaisons() {
         'esp.1': ['esp.copa_del_rey'],
         'ger.1': ['ger.dfb_pokal'],
         'ita.1': ['ita.coppa_italia'],
-        'eng.1': ['eng.league_cup'],
+        'ned.1': ['ned.cup'],
+        'eng.1': ['eng.fa','eng.league_cup'],
         'bra.1': ['bra.copa_do_brazil'],
         'usa.1': ['concacaf.leagues.cup','usa.open'],
         'mex.1': ['concacaf.leagues.cup'],
@@ -21041,7 +21060,11 @@ var G45_LEAGUE_GROUPS = [
     {name:'Serie B', slug:'ita.2', ico:'🇮🇹'},
     {name:'Liga 2', slug:'esp.2', ico:'🇪🇸'},
     {name:'MLS', slug:'usa.1', ico:'🇺🇸'},
-    {name:'2.Bundesliga', slug:'ger.2', ico:'🇩🇪'}
+    {name:'2.Bundesliga', slug:'ger.2', ico:'🇩🇪'},
+    {name:'Bundesliga (AUT)', slug:'aut.1', ico:'🇦🇹'},
+    {name:'Superliga', slug:'den.1', ico:'🇩🇰'},
+    {name:'Eliteserien', slug:'nor.1', ico:'🇳🇴'},
+    {name:'Allsvenskan', slug:'swe.1', ico:'🇸🇪'}
   ]},
   {grp:'🇫🇷 Coupes nationales', leagues:[
     {name:'Coupe de France', slug:'fra.coupe_de_france', ico:'🇫🇷'},
@@ -21063,8 +21086,17 @@ var G45_LEAGUE_GROUPS = [
     {name:'Liga MX', slug:'mex.1', ico:'🇲🇽'},
     {name:'Brasileirão', slug:'bra.1', ico:'🇧🇷'},
     {name:'Primera (ARG)', slug:'arg.1', ico:'🇦🇷'},
-    {name:'Saudi League', slug:'rsa.1', ico:'🇸🇦'},
-    {name:'Libertadores', slug:'conmebol.libertadores', ico:'🏆'}
+    {name:'Saudi League', slug:'ksa.1', ico:'🇸🇦'},
+    {name:'Libertadores', slug:'conmebol.libertadores', ico:'🏆'},
+    {name:'Sudamericana', slug:'conmebol.sudamericana', ico:'🏆'},
+    {name:'Copa do Brasil', slug:'bra.copa_do_brazil', ico:'🇧🇷'},
+    {name:'Copa Argentina', slug:'arg.copa', ico:'🇦🇷'},
+    {name:'Leagues Cup', slug:'concacaf.leagues.cup', ico:'🏆'},
+    {name:'CONCACAF Champions', slug:'concacaf.champions_cup', ico:'🏆'},
+    {name:'J-League', slug:'jpn.1', ico:'🇯🇵'},
+    {name:'Super League (CHN)', slug:'chn.1', ico:'🇨🇳'},
+    {name:'A-League', slug:'aus.1', ico:'🇦🇺'},
+    {name:'AFC Champions', slug:'afc.champions', ico:'🏆'}
   ]}
 ];
 /* ═══════════ 🔥 TENDANCES DU JOUR ═══════════
@@ -26526,7 +26558,7 @@ async function g45LoadStandings(slug, sportPath, box){
   box.innerHTML='<div style="display:flex;align-items:center;gap:8px;padding:14px;color:var(--t3);font-size:11px;"><div style="width:12px;height:12px;border:2px solid rgba(240,176,32,.2);border-top-color:#f0b020;border-radius:50%;animation:spin .8s linear infinite;"></div>Chargement du classement…</div>';
   var now=new Date(), curY=now.getFullYear();
   var augY=(now.getMonth()>=7)?curY:curY-1; // saison européenne (août)
-  var calYear=['bra.1','usa.1','arg.1','mex.1','rsa.1','nor.1','swe.1','fin.1','irl.1','jpn.1','kor.1','conmebol.libertadores','conmebol.america','242041'];
+  var calYear=['bra.1','usa.1','arg.1','mex.1','nor.1','swe.1','fin.1','irl.1','jpn.1','kor.1','conmebol.libertadores','conmebol.america','242041'];
   var primary=(calYear.indexOf(slug)>=0)?curY:augY;
   if(sportPath==='rugby-league'||sportPath==='baseball'){ primary=curY; } // NRL / MLB = saison en année civile
   var seen={}, seasons=[primary,augY,curY,curY-1].filter(function(y){ if(seen[y])return false; seen[y]=1; return true; });
@@ -26685,7 +26717,7 @@ async function g45LoadScorers(slug, sportPath, box){
   box.innerHTML='<div style="display:flex;align-items:center;gap:8px;padding:14px;color:var(--t3);font-size:11px;"><div style="width:12px;height:12px;border:2px solid rgba(77,132,255,.2);border-top-color:#4d84ff;border-radius:50%;animation:spin .8s linear infinite;"></div>Chargement des buteurs…</div>';
   var now=new Date(), curY=now.getFullYear();
   var augY=(now.getMonth()>=7)?curY:curY-1;
-  var calYear=['bra.1','usa.1','arg.1','mex.1','rsa.1','nor.1','swe.1','fin.1','irl.1','jpn.1','kor.1'];
+  var calYear=['bra.1','usa.1','arg.1','mex.1','nor.1','swe.1','fin.1','irl.1','jpn.1','kor.1'];
   var primary=(calYear.indexOf(slug)>=0)?curY:augY;
   var seen={}, seasons=[primary,augY,curY].filter(function(y){ if(seen[y])return false; seen[y]=1; return true; });
   try{
@@ -27706,7 +27738,7 @@ function _g45FillForm(box, league){
     var sp=league||'soccer/eng.1';
     var _p=sp.split('/'), _sport=_p[0], _slug=_p.slice(1).join('/');
     var _now=new Date(), _cy=_now.getFullYear(), _ay=(_now.getMonth()>=7)?_cy:_cy-1;
-    var _cal=['bra.1','usa.1','arg.1','mex.1','rsa.1','nor.1','swe.1','fin.1','irl.1','jpn.1','kor.1','conmebol.libertadores','conmebol.america','242041','fifa.world'];
+    var _cal=['bra.1','usa.1','arg.1','mex.1','nor.1','swe.1','fin.1','irl.1','jpn.1','kor.1','conmebol.libertadores','conmebol.america','242041','fifa.world'];
     var _season=(_sport==='rugby-league'||_sport==='baseball'||_cal.indexOf(_slug)>=0)?_cy:_ay;
     function scoreOf(c){ var s=c&&c.score; if(s==null) return null; if(typeof s==='object') return s.displayValue!=null?s.displayValue:s.value; return s; }
     function isDone(e){
@@ -27785,7 +27817,7 @@ function _g45FillStandings(box, sp){
     var hId=cont.getAttribute('data-h')||'', aId=cont.getAttribute('data-a')||'';
     var parts=String(sp||'soccer/eng.1').split('/'); var sportPath=parts[0]||'soccer', slug=parts.slice(1).join('/')||'eng.1';
     var now=new Date(), curY=now.getFullYear(), augY=(now.getMonth()>=7)?curY:curY-1;
-    var calYear=['bra.1','usa.1','arg.1','mex.1','rsa.1','nor.1','swe.1','fin.1','irl.1','jpn.1','kor.1','conmebol.libertadores','conmebol.america','242041','fifa.world'];
+    var calYear=['bra.1','usa.1','arg.1','mex.1','nor.1','swe.1','fin.1','irl.1','jpn.1','kor.1','conmebol.libertadores','conmebol.america','242041','fifa.world'];
     var primary=(sportPath==='rugby-league'||sportPath==='baseball'||calYear.indexOf(slug)>=0)?curY:augY;
     var seen={}, seasons=[primary,curY,augY].filter(function(y){ if(seen[y])return false; seen[y]=1; return true; });
     (function tryS(i){
