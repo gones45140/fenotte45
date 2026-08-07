@@ -280,7 +280,17 @@ function espnToFdMatch(m, ourName, ourFdId) {
      cname.indexOf('Champions')>=0 || cname.indexOf('Europa')>=0 || cname.indexOf('UEFA')>=0 || cname.indexOf('Conference')>=0) {
     type = 'CUP';
   } else if(slug.indexOf('cup')>=0 || slug.indexOf('coupe')>=0 || slug.indexOf('copa')>=0 || slug.indexOf('dfb')>=0 ||
-            cname.indexOf('Cup')>=0 || cname.indexOf('Coupe')>=0 || cname.indexOf('Copa')>=0) {
+            /* PIEGE : 'coppa_italia' ne contient PAS 'copa' (deux p), 'ned.cup' passe mais
+               'knvb'/'beker'/'taca' non, et les coupes continentales hors Europe non plus.
+               Sans ces motifs, le match tombait dans le `else` final et etait etiquete
+               « Championnat » : 5 matchs de Coppa comptes en Serie A, aucune chip affichee. */
+            slug==='eng.fa' || slug.indexOf('.fa_')>=0 ||
+            slug.indexOf('coppa')>=0 || slug.indexOf('pokal')>=0 || slug.indexOf('beker')>=0 ||
+            slug.indexOf('knvb')>=0 || slug.indexOf('taca')>=0 || slug.indexOf('open')>=0 ||
+            slug.indexOf('libertadores')>=0 || slug.indexOf('sudamericana')>=0 ||
+            slug.indexOf('concacaf')>=0 || slug.indexOf('afc.')>=0 || slug.indexOf('nations')>=0 ||
+            cname.indexOf('Cup')>=0 || cname.indexOf('Coupe')>=0 || cname.indexOf('Copa')>=0 ||
+            cname.indexOf('Coppa')>=0 || cname.indexOf('Pokal')>=0 || cname.indexOf('Beker')>=0) {
     type = 'CUP';
   } else if(isLeague) {
     type = 'LEAGUE';
@@ -292,9 +302,30 @@ function espnToFdMatch(m, ourName, ourFdId) {
   // pour être bien classées en « Coupe Europe » au lieu de « Coupe Nationale »)
   var compName = cname;
   if(!compName){
-    if(slug.indexOf('champions')>=0) compName = 'Ligue des Champions';
+    if(slug.indexOf('afc.champions')>=0) compName = 'AFC Champions';
+    else if(slug.indexOf('concacaf.champions')>=0) compName = 'CONCACAF Champions';
+    else if(slug.indexOf('nations')>=0) compName = 'Ligue des Nations';
+    else if(slug.indexOf('champions')>=0) compName = 'Ligue des Champions';
     else if(slug.indexOf('conference')>=0 || slug.indexOf('europa.conf')>=0) compName = 'Conference League';
     else if(slug.indexOf('europa')>=0) compName = 'Ligue Europa';
+    /* Libelles des coupes cablees en aout 2026 : sans eux, toutes s'afficheraient
+       sous un « Coupe » generique et se confondraient dans les chips. */
+    else if(slug.indexOf('coppa_italia')>=0) compName = 'Coppa Italia';
+    else if(slug.indexOf('coupe_de_france')>=0) compName = 'Coupe de France';
+    else if(slug.indexOf('copa_del_rey')>=0) compName = 'Copa del Rey';
+    else if(slug.indexOf('dfb_pokal')>=0) compName = 'DFB Pokal';
+    else if(slug==='eng.fa') compName = 'FA Cup';
+    else if(slug.indexOf('league_cup')>=0) compName = 'Carabao Cup';
+    else if(slug==='ned.cup') compName = 'KNVB Beker';
+    else if(slug.indexOf('copa_do_brazil')>=0) compName = 'Copa do Brasil';
+    else if(slug==='arg.copa') compName = 'Copa Argentina';
+    else if(slug.indexOf('leagues.cup')>=0) compName = 'Leagues Cup';
+    else if(slug.indexOf('usa.open')>=0) compName = 'US Open Cup';
+    else if(slug.indexOf('libertadores')>=0) compName = 'Libertadores';
+    else if(slug.indexOf('sudamericana')>=0) compName = 'Sudamericana';
+    else if(slug.indexOf('concacaf.champions')>=0) compName = 'CONCACAF Champions';
+    else if(slug.indexOf('afc.champions')>=0) compName = 'AFC Champions';
+    else if(slug.indexOf('nations')>=0) compName = 'Ligue des Nations';
     else compName = (type==='LEAGUE' ? 'Championnat' : 'Coupe');
   }
 
