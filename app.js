@@ -30209,3 +30209,228 @@ window.g45MajListesPari = g45MajListesPari;
     var t = setInterval(function(){ if (brancher() || ++n > 40) clearInterval(t); }, 250);
   }
 })();
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   GONES45 — RECHERCHE D'ÉQUIPE VIA THESPORTSDB
+   ───────────────────────────────────────────────────────────────────────────
+   La recherche du formulaire d'ajout s'appuyait sur `fuzzyClubSearch`, une
+   table locale. Elle est excellente pour les clubs qu'Antoine suit (couleurs
+   choisies, liens Sofascore et Flashscore), mais ne connaît qu'eux : chercher
+   un club argentin, japonais ou une equipe d'un autre sport ne donnait rien.
+
+   On COMPLETE donc la table locale au lieu de la remplacer :
+     1. les resultats locaux s'affichent immediatement (aucune latence),
+     2. TheSportsDB est interroge en arriere-plan et ses resultats sont
+        ajoutes en dessous, dedoublonnes sur le nom.
+
+   TheSportsDB est gratuit, sans inscription, et couvre tous les sports. Il
+   apporte surtout le BADGE officiel du club (strBadge), ce que la table locale
+   n'a pas : c'est ce qui reglait l'affichage d'un mauvais logo — le blason
+   d'Odense s'affichait pour Boca, la recherche de logo tombant sur une
+   correspondance approximative a trois lettres.
+
+   Reserves : base communautaire, donc les noms sont souvent en anglais et pas
+   toujours alignes sur ceux d'ESPN. On garde le nom ESPN comme reference
+   interne : TheSportsDB ne sert qu'a la RECHERCHE et au BADGE.
+   La cle « 3 » est une cle de test publique ; la « 1 » a deja ete retiree, donc
+   surveiller. En cas de retrait, creer un compte gratuit pour obtenir la sienne.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+var G45_SDB_KEY = '3';
+var G45_SDB_BASE = 'https://www.thesportsdb.com/api/v1/json/';
+var _g45SdbCache = {};   // requête normalisée -> résultats
+
+/* strSport de TheSportsDB -> emoji du sélecteur u-sport */
+var _G45_SDB_SPORT = {
+  'soccer': '\u26bd',
+  'basketball': '\ud83c\udfc0',
+  'tennis': '\ud83c\udfbe',
+  'ice hockey': '\ud83c\udfd2',
+  'american football': '\ud83c\udfc8',
+  'baseball': '\u26be',
+  'rugby': '\ud83c\udfc9',
+  'motorsport': '\ud83c\udfce',
+  'fighting': '\ud83e\udd4a',
+  'cycling': '\ud83d\udeb4'
+};
+
+function _g45SdbCouleur(c) {
+  c = String(c || '').trim();
+  return /^#[0-9a-f]{6}$/i.test(c) ? c : null;
+}
+
+async function g45SdbSearch(q) {
+  var cle = String(q || '').trim().toLowerCase();
+  if (cle.length < 2) return [];
+  if (_g45SdbCache[cle]) return _g45SdbCache[cle];
+  try {
+    var r = await fetch(G45_SDB_BASE + G45_SDB_KEY + '/searchteams.php?t=' + encodeURIComponent(cle));
+    if (!r.ok) return [];
+    var d = await r.json();
+    var out = (d && d.teams ? d.teams : []).map(function(t) {
+      return {
+        name: t.strTeam || '',
+        logo: t.strBadge || '',
+        league: [t.strLeague, t.strCountry].filter(Boolean).join(' \u00b7 '),
+        sport: _G45_SDB_SPORT[String(t.strSport || '').toLowerCase()] || '\u26bd',
+        color: _g45SdbCouleur(t.strColour1),
+        abbr: (t.strTeamShort || t.strTeam || '').substring(0, 3).toUpperCase(),
+        stars: 3,
+        _sdb: true
+      };
+    }).filter(function(x) { return x.name; });
+    _g45SdbCache[cle] = out;
+    return out;
+  } catch (e) {
+    console.warn('TheSportsDB :', e && e.message);
+    return [];
+  }
+}
+window.g45SdbSearch = g45SdbSearch;
+
+/* Rendu commun aux deux sources, calques sur le balisage d'origine pour garder
+   les memes styles (.sr-item, .sr-logo, .sr-name, .sr-meta). */
+function _g45SdbRendu(liste) {
+  return '<div class="search-res">' + liste.map(function(r, i) {
+    var badge = r._sdb
+      ? '<span style="font-size:9px;color:var(--t3);border:1px solid var(--b2);border-radius:4px;padding:1px 4px;margin-left:6px;">DB</span>'
+      : '';
+    return '<div class="sr-item" data-idx="' + i + '" onclick="selectClub(+this.dataset.idx)">'
+      + '<img class="sr-logo" src="' + (r.logo || '') + '" onerror="logoErr(this)" loading="lazy">'
+      + '<div><div class="sr-name">' + (r.sport || '') + ' ' + r.name + badge + '</div>'
+      + '<div class="sr-meta">' + (r.league || '') + '</div></div>'
+      + '<span style="font-size:11px;color:var(--a);font-weight:700;">&#8629;</span>'
+      + '</div>';
+  }).join('') + '</div>';
+}
+
+/* On enveloppe searchClub : les resultats locaux d'abord, TheSportsDB ensuite.
+   `_g45SdbJeton` evite qu'une reponse lente ecrase une recherche plus recente. */
+var _g45SdbJeton = 0;
+var _g45SearchClubOrig = (typeof searchClub === 'function') ? searchClub : null;
+
+window.searchClub = function() {
+  if (_g45SearchClubOrig) { try { _g45SearchClubOrig(); } catch (e) {} }
+
+  var q = ($i('u-search') && $i('u-search').value || '').trim();
+  var res = $i('search-results');
+  if (!res || q.length < 2) return;
+
+  var jeton = ++_g45SdbJeton;
+  var locaux = (window._srCache || []).slice();
+
+  g45SdbSearch(q).then(function(sdb) {
+    if (jeton !== _g45SdbJeton) return;           // une frappe plus recente a pris la main
+    var vus = {};
+    locaux.forEach(function(r) { vus[String(r.name).toLowerCase()] = 1; });
+    var ajout = sdb.filter(function(r) { return !vus[String(r.name).toLowerCase()]; }).slice(0, 12);
+    if (!ajout.length && locaux.length) return;   // rien de neuf, on laisse l'affichage local
+
+    window._srCache = locaux.concat(ajout);
+    res.innerHTML = _g45SdbRendu(window._srCache);
+  });
+};
+
+/* selectClub d'origine ne renseigne pas le sport ni le badge des resultats
+   TheSportsDB : on complete apres coup. */
+var _g45SelectClubOrig = (typeof selectClub === 'function') ? selectClub : null;
+
+window.selectClub = function(idx) {
+  if (_g45SelectClubOrig) { try { _g45SelectClubOrig(idx); } catch (e) {} }
+  var r = (window._srCache || [])[idx];
+  if (!r) return;
+  if (r.sport && $i('u-sport')) $i('u-sport').value = r.sport;
+  if (r.logo) {
+    window._pendingLogo = {
+      name: r.name,
+      url: r.logo,
+      abbr: r.abbr || r.name.substring(0, 3).toUpperCase(),
+      color: r.color || (window.selColor || '#4d84ff')
+    };
+  }
+};
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ENRICHISSEMENT DES LOGOS (bouton « Enrichir les logos » de l'onglet Outils)
+   ───────────────────────────────────────────────────────────────────────────
+   L'ancienne version ne pouvait PAS fonctionner : elle lisait
+   `d.teams[0].strTeamBadge`, or TheSportsDB a renomme ce champ en `strBadge`.
+   Le logo valait donc toujours undefined et le bouton ne faisait rien.
+   Deux autres defauts corriges : elle s'arretait aux 5 PREMIERES equipes, et
+   elle prenait le premier resultat sans verifier ni le sport ni le nom — d'ou
+   les mauvais blasons (le logo d'Odense pour Boca).
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Choisit le meilleur candidat : nom identique d'abord, puis meme sport,
+   puis inclusion. Renvoie null si rien ne correspond serieusement. */
+function _g45SdbMeilleur(liste, nom, sport) {
+  if (!liste || !liste.length) return null;
+  var n = String(nom || '').toLowerCase().trim();
+  var exact = liste.filter(function(r) { return String(r.name).toLowerCase().trim() === n; });
+  var pool = exact.length ? exact : liste;
+  if (sport) {
+    var memeSport = pool.filter(function(r) { return r.sport === sport; });
+    if (memeSport.length) pool = memeSport;
+  }
+  if (!exact.length) {
+    pool = pool.filter(function(r) {
+      var rn = String(r.name).toLowerCase();
+      return rn.indexOf(n) >= 0 || n.indexOf(rn) >= 0;
+    });
+  }
+  var avecBadge = pool.filter(function(r) { return r.logo; });
+  return avecBadge.length ? avecBadge[0] : null;
+}
+
+window.enrichTeamLogos = async function() {
+  if (!window.state || !state.u || !state.u.length) { alert('Aucune equipe dans le mur.'); return; }
+  var btn = document.querySelector('[onclick="enrichTeamLogos()"]');
+  var libelle = btn ? btn.textContent : '';
+  var dire = function(t) { if (btn) btn.textContent = t; };
+
+  /* Par defaut on ne touche qu'aux logos manquants. Mais un logo DEJA pose peut
+     etre faux — l'ancienne version prenait le premier resultat venu, d'ou le
+     blason d'Odense sur Boca et celui de l'universite de Miami sur Miami CF.
+     Quand il n'y a plus rien a completer, on propose donc de tout recontroler. */
+  var aFaire = state.u.filter(function(u) { return u.n && !u.logoUrl; });
+  if (!aFaire.length) {
+    if (!confirm('Tous les logos sont deja renseignes.\n\nVoulez-vous les RE-VERIFIER tous ?\nLes logos errones seront remplaces, ceux qui sont introuvables seront conserves.')) return;
+    aFaire = state.u.filter(function(u) { return u.n; });
+  }
+
+  var ok = 0, rates = [];
+  for (var i = 0; i < aFaire.length; i++) {
+    var u = aFaire[i];
+    dire('\u23f3 ' + (i + 1) + '/' + aFaire.length + ' \u2014 ' + u.n);
+    try {
+      var res = await g45SdbSearch(u.n);
+      var best = _g45SdbMeilleur(res, u.n, u.sport);
+      if (best && best.logo) {
+        u.logoUrl = best.logo;
+        /* Le mur lit d'abord le cache memoire LOGOS[nom] et ne retombe sur
+           u.logoUrl que si cette entree est VIDE. Sans cette ligne, le nouveau
+           badge n'etait jamais affiche : LOGOS gardait l'ancienne URL (le
+           blason d'Odense pour Boca) tant que la page n'etait pas rechargee. */
+        try { if (typeof LOGOS !== 'undefined') LOGOS[u.n] = best.logo; } catch (e) {}
+        ok++;
+      }
+      else rates.push(u.n);   /* introuvable : on GARDE le logo existant */
+    } catch (e) { rates.push(u.n); }
+    await new Promise(function(r) { setTimeout(r, 250); });   // on menage l'API publique
+  }
+
+  try { save(); } catch (e) {}
+  try { render(); } catch (e) {}
+
+  dire('\u2705 ' + ok + '/' + aFaire.length + ' logos ajoutes');
+  if (rates.length) console.warn('Sans logo trouve :', rates.join(', '));
+  setTimeout(function() { dire(libelle); }, 4000);
+};
+
+/* getTeamLogo reste utilisee ailleurs : on la corrige aussi. */
+window.getTeamLogo = async function(teamName) {
+  var res = await g45SdbSearch(teamName);
+  var best = _g45SdbMeilleur(res, teamName, null);
+  return best ? best.logo : null;
+};
