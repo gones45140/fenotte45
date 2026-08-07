@@ -30434,3 +30434,112 @@ window.getTeamLogo = async function(teamName) {
   var best = _g45SdbMeilleur(res, teamName, null);
   return best ? best.logo : null;
 };
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   GONES45 — TRANSMISSION DES PARIS EN COURS POUR LE VERDICT
+   ───────────────────────────────────────────────────────────────────────────
+   `g45BetTeams()` n'envoyait au Worker que l'equipe, le sport et la ligue :
+   de quoi surveiller le match, pas de quoi dire si le pari est gagne. On y
+   ajoute le TYPE, la cote et la mise, sous une cle `paris` distincte.
+
+   Le Worker evalue au coup de sifflet final et n'envoie un verdict que si le
+   type est reconnu sans ambiguite (voir g45VerdictPari cote Worker). Il ne
+   touche jamais a l'historique : le reglement du pari reste manuel dans l'app.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+function _g45SportDePari(h) {
+  var se = String(h.sport || '\u26bd');
+  var cl = String(h.comp || '').toLowerCase();
+  if (se.indexOf('\u26bd') >= 0) return 'soccer';
+  if (se.indexOf('\ud83c\udfc9') >= 0) {
+    return (se.indexOf('\ud83c\udde6\ud83c\uddfa') >= 0 || /\bnrl\b|rugby.?league|treize|xiii/.test(cl))
+      ? 'nrl' : 'rugby';
+  }
+  return null;   // autres sports : pas de verdict automatique
+}
+
+/* Nom de l'equipe pariee : `n` si renseigne, sinon le premier terme de `target`
+   (« Lyon vs PSG » -> « Lyon »). */
+function _g45EquipeDuPari(h) {
+  var n = String(h.n || '').trim();
+  if (n && n !== 'SIMPLE' && n !== '-') return n;
+  var t = String(h.target || '').split(/\s+vs\.?\s+|\s+-\s+/i);
+  return (t[0] || '').trim();
+}
+
+async function g45ParisPourNotif() {
+  var H = (typeof state !== 'undefined' && state.h) ? state.h : [];
+  var out = [], vus = {};
+  for (var i = 0; i < H.length; i++) {
+    var h = H[i];
+    if (h.notif === false) continue;
+    if (h.isCombi) continue;          /* combine multi-matchs : un seul score ne suffit pas a trancher */
+    var sp = _g45SportDePari(h);
+    if (!sp) continue;
+    var nom = _g45EquipeDuPari(h);
+    if (!nom) continue;
+    var type = String(h.type || '').trim();
+    if (!type) continue;              /* sans type, aucun verdict possible */
+
+    var res = null;
+    try {
+      if (sp === 'soccer') res = await _g45ResolveTeam(nom);
+      else if (sp === 'rugby') res = await _g45ResolveEspnTeam(nom, 'rugby', _g45RugbyLeagueId(h.comp));
+      else if (sp === 'nrl') res = await _g45ResolveEspnTeam(nom, 'rugby-league', '3');
+    } catch (e) {}
+    if (!res || !res.id) continue;
+
+    var pid = String(h.id || (nom + '|' + type + '|' + (h.date || '')));
+    if (vus[pid]) continue;
+    vus[pid] = 1;
+    out.push({
+      pid: pid, teamId: String(res.id), league: res.league, sport: sp,
+      team: nom, type: type,
+      cote: parseFloat(h.cote) || 0,
+      mise: parseFloat(h.m) || 0
+    });
+  }
+  return out;
+}
+window.g45ParisPourNotif = g45ParisPourNotif;
+
+/* On enveloppe g45SyncNotifs pour ajouter `paris` sans toucher a l'existant. */
+var _g45SyncNotifsOrig = (typeof g45SyncNotifs === 'function') ? g45SyncNotifs : null;
+
+window.g45SyncNotifs = async function(subOpt) {
+  if (_g45SyncNotifsOrig) { try { await _g45SyncNotifsOrig(subOpt); } catch (e) {} }
+  try {
+    var reg = await navigator.serviceWorker.getRegistration();
+    var sub = subOpt || (reg && await reg.pushManager.getSubscription());
+    if (!sub) return;
+    var p = g45NotifPrefs();
+    if (p.bets === false) return;
+    var paris = await g45ParisPourNotif();
+    /* On renvoie tout le paquet : /psub ecrase l'enregistrement complet. */
+    var favs = (typeof state !== 'undefined' && state.u ? state.u : [])
+      .filter(function(u) { return (u.sport || '\u26bd') === '\u26bd' && p.teams[u.n]; });
+    var teams = [];
+    for (var i = 0; i < favs.length; i++) {
+      var r = await _g45ResolveTeam(favs[i].n);
+      if (r) teams.push({ n: favs[i].n, id: r.id, league: r.league });
+    }
+    var betTeams = [];
+    try { betTeams = await g45BetTeams(); } catch (e) {}
+    var suivis = [];
+    try {
+      suivis = g45SuivisGet().map(function(m) {
+        return { id: String(m.id), sport: m.sport || 'soccer', league: m.league || '',
+                 date: m.date || '', home: m.home || '', away: m.away || '' };
+      });
+    } catch (e) {}
+    await fetch(FD_PROXY + '/psub', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sub: sub, teams: teams, betTeams: betTeams,
+                             matches: suivis, paris: paris, ev: p.ev })
+    });
+    console.log('\u2705 notifs synchronisees \u2014 ' + paris.length + ' pari(s) suivi(s) pour verdict');
+  } catch (e) {
+    console.warn('synchro paris/verdict :', e && e.message);
+  }
+};
