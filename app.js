@@ -108,7 +108,7 @@ var ESPN_TEAM_LEAGUE = {
   // Autres
   'Benfica':'por.1','SL Benfica':'por.1','Porto':'por.1','FC Porto':'por.1',
   'Ajax':'ned.1','AFC Ajax':'ned.1','PSV':'ned.1','PSV Eindhoven':'ned.1',
-  'Boca Juniors':'arg.1','Boca':'arg.1','Palmeiras':'bra.1','SE Palmeiras':'bra.1'
+  'Boca Juniors':'arg.1','Boca':'arg.1','Feyenoord':'ned.1','Feyenoord Rotterdam':'ned.1','AZ Alkmaar':'ned.1','FC Twente':'ned.1','FC Utrecht':'ned.1','Palmeiras':'bra.1','SE Palmeiras':'bra.1'
 };
 
 // Cache des listes d'équipes par championnat (pour résoudre les IDs ESPN)
@@ -30482,12 +30482,17 @@ async function g45ParisPourNotif() {
     var type = String(h.type || '').trim();
     if (!type) continue;              /* sans type, aucun verdict possible */
 
+    /* La resolution passait par site.api/{ligue}/teams, bloque en CORS : aucun
+       pari n'etait donc transmis. g45ResolvePourPari essaie la table cablee, le
+       cache, puis sports.core qui autorise le CORS. */
     var res = null;
     try {
-      if (sp === 'soccer') res = await _g45ResolveTeam(nom);
-      else if (sp === 'rugby') res = await _g45ResolveEspnTeam(nom, 'rugby', _g45RugbyLeagueId(h.comp));
-      else if (sp === 'nrl') res = await _g45ResolveEspnTeam(nom, 'rugby-league', '3');
-    } catch (e) {}
+      var lgh = (sp === 'nrl') ? '3'
+              : (sp === 'rugby' && typeof _g45RugbyLeagueId === 'function') ? _g45RugbyLeagueId(h.comp)
+              : null;
+      res = await g45ResolvePourPari(nom, sp, lgh);
+      if (!res && sp === 'soccer') res = await _g45ResolveTeam(nom);
+    } catch (e) { console.warn('resolution pari', nom, e && e.message); }
     if (!res || !res.id) continue;
 
     var pid = String(h.id || (nom + '|' + type + '|' + (h.date || '')));
@@ -30543,3 +30548,682 @@ window.g45SyncNotifs = async function(subOpt) {
     console.warn('synchro paris/verdict :', e && e.message);
   }
 };
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   GONES45 — DIAGNOSTIC DES NOTIFICATIONS DEPUIS L'APP
+   ───────────────────────────────────────────────────────────────────────────
+   Tout le diagnostic se faisait en console. Or Antoine consulte surtout depuis
+   son TELEPHONE, ou il n'y a pas de console : les commandes etaient donc
+   inutilisables la ou le probleme se manifeste. Deux boutons dans l'onglet
+   Outils font desormais le meme travail, avec un resume lisible.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+function _g45NdMsg(html) {
+  var el = document.getElementById('g45-notif-diag');
+  if (el) el.innerHTML = html;
+}
+
+async function _g45NdEndpoint() {
+  var reg = await navigator.serviceWorker.getRegistration();
+  if (!reg) return null;
+  var sub = await reg.pushManager.getSubscription();
+  return sub ? sub.endpoint : null;
+}
+
+/* Renvoie l'etat connu du Worker, en francais et sans jargon. */
+async function g45NotifEtat() {
+  _g45NdMsg('<span style="color:#9fb0c7">⏳ Interrogation du serveur…</span>');
+  try {
+    var ep = await _g45NdEndpoint();
+    if (!ep) { _g45NdMsg('<b style="color:#ff6b6b">❌ Cet appareil n\'est pas abonné.</b><br>Active les notifications ci-dessus, puis réessaie.'); return; }
+
+    var r = await fetch(FD_PROXY + '/pdebug?ep=' + encodeURIComponent(ep));
+    var d = await r.json();
+    if (!d || d.found === false) { _g45NdMsg('<b style="color:#ff6b6b">❌ Le serveur ne connaît pas cet appareil.</b><br>Appuie sur « Resynchroniser » ci-dessous.'); return; }
+
+    var locaux = [];
+    try { locaux = JSON.parse(localStorage.getItem('g45_suivis') || '[]'); } catch (e) {}
+
+    var h = '<div style="line-height:1.9">';
+    h += '<div>Équipes favorites suivies : <b>' + (d.teams || []).length + '</b></div>';
+    h += '<div>Paris en cours transmis : <b>' + (d.paris || []).length + '</b>'
+       + ((d.paris === undefined) ? ' <span style="color:#ffb13d">(worker.js pas à jour)</span>' : '') + '</div>';
+    (d.paris || []).forEach(function (p) {
+      h += '<div style="margin-left:8px;color:#9fb0c7">• ' + (p.team || '?') + ' — ' + (p.type || '?') + '</div>';
+    });
+    h += '<div>Matchs ⭐ sur cet appareil : <b>' + locaux.length + '</b></div>';
+    h += '<div>Matchs ⭐ connus du serveur : <b style="color:' +
+         ((d.matches || []).length === locaux.length ? '#4ade80' : '#ff6b6b') + '">' +
+         (d.matches || []).length + '</b></div>';
+
+    if ((d.matches || []).length) {
+      h += '<div style="margin-top:8px;color:#9fb0c7">Le serveur surveille :</div>';
+      (d.matches || []).forEach(function (m) {
+        var e = ((d.etatsMatchsSuivis || []).filter(function (x) { return String(x.id) === String(m.id); })[0] || {}).fstate;
+        var etat = (!e || typeof e === 'string') ? 'pas encore vu'
+          : (e.state === 'post' ? 'terminé' : e.state === 'in' ? 'en cours' : 'à venir')
+            + ' · score ' + (e.total || 0)
+            + (e.startSent ? ' · coup d\'envoi envoyé' : '')
+            + (e.endSent ? ' · fin envoyée' : '');
+        h += '<div style="margin-left:8px">• ' + (m.home || '?') + ' - ' + (m.away || '?')
+           + ' <span style="color:#9fb0c7">(' + etat + ')</span></div>';
+      });
+    }
+    if ((d.matches || []).length !== locaux.length) {
+      h += '<div style="margin-top:8px;color:#ffb13d">⚠️ Décalage : appuie sur « Resynchroniser ».</div>';
+    }
+    h += '</div>';
+    _g45NdMsg(h);
+  } catch (e) {
+    _g45NdMsg('<b style="color:#ff6b6b">❌ ' + (e && e.message ? e.message : 'échec') + '</b>');
+  }
+}
+window.g45NotifEtat = g45NotifEtat;
+
+/* Force l'envoi de la liste complete au Worker, puis reaffiche l'etat. */
+async function g45NotifResync() {
+  _g45NdMsg('<span style="color:#9fb0c7">⏳ Envoi de la liste au serveur…</span>');
+  try {
+    await g45SyncNotifs();
+    await new Promise(function (r) { setTimeout(r, 800); });
+    await g45NotifEtat();
+  } catch (e) {
+    _g45NdMsg('<b style="color:#ff6b6b">❌ ' + (e && e.message ? e.message : 'échec') + '</b>');
+  }
+}
+window.g45NotifResync = g45NotifResync;
+
+/* Envoie une notification de test : valide la chaine jusqu'a l'ecran. */
+async function g45NotifTest() {
+  _g45NdMsg('<span style="color:#9fb0c7">⏳ Envoi d\'une notification de test…</span>');
+  try {
+    var ep = await _g45NdEndpoint();
+    if (!ep) { _g45NdMsg('<b style="color:#ff6b6b">❌ Cet appareil n\'est pas abonné.</b>'); return; }
+    var r = await fetch(FD_PROXY + '/ptest?ep=' + encodeURIComponent(ep));
+    var d = await r.json();
+    _g45NdMsg(d && d.sent
+      ? '<b style="color:#4ade80">✅ Test envoyé (code ' + d.status + ').</b><br>Si rien ne s\'affiche d\'ici une minute, le problème est dans les réglages du téléphone, pas dans l\'app.'
+      : '<b style="color:#ff6b6b">❌ ' + JSON.stringify(d) + '</b>');
+  } catch (e) {
+    _g45NdMsg('<b style="color:#ff6b6b">❌ ' + (e && e.message ? e.message : 'échec') + '</b>');
+  }
+}
+window.g45NotifTest = g45NotifTest;
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   GONES45 — RESOLUTION D'EQUIPE PAR sports.core.api (repli CORS)
+   ───────────────────────────────────────────────────────────────────────────
+   PROBLEME : `site.api.espn.com/apis/site/v2/sports/{sport}/{ligue}/teams`,
+   la LISTE des clubs, est servie SANS en-tete Access-Control-Allow-Origin.
+   Depuis le navigateur elle est donc inaccessible, et aucun club jamais
+   consulte ne peut etre resolu par son nom. Consequence concrete : le pari sur
+   « Redcliffe Dolphins » n'etait pas transmis au Worker, donc aucun verdict.
+
+   `sports.core.api.espn.com`, lui, envoie bien les en-tetes CORS (verifie).
+   Il renvoie des $ref plutot que les equipes : une requete par club. C'est plus
+   lourd, mais le resultat est mis en cache DEFINITIVEMENT en localStorage, donc
+   ce cout n'est paye qu'une fois par championnat.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+var _g45CoreCache = {};
+
+function _g45CoreCle(sportPath, ligue) { return 'g45core_' + sportPath + '_' + ligue; }
+
+function _g45Norm(s) {
+  return String(s || '').toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]/g, '');
+}
+
+/* Charge (et met en cache) la liste { nom -> id } d'un championnat. */
+async function g45CoreTeams(sportPath, ligue) {
+  var cle = _g45CoreCle(sportPath, ligue);
+  if (_g45CoreCache[cle]) return _g45CoreCache[cle];
+  try {
+    var brut = localStorage.getItem(cle);
+    if (brut) { _g45CoreCache[cle] = JSON.parse(brut); return _g45CoreCache[cle]; }
+  } catch (e) {}
+
+  var out = {};
+  try {
+    var url = 'https://sports.core.api.espn.com/v2/sports/' + sportPath +
+              '/leagues/' + ligue + '/teams?limit=100';
+    var r = await fetch(url);
+    if (!r.ok) { console.warn('core teams', sportPath, ligue, r.status); return out; }
+    var d = await r.json();
+    var refs = (d && d.items ? d.items : []).map(function (i) { return i.$ref; }).filter(Boolean);
+
+    /* Les $ref sont en http:// dans certaines reponses : le navigateur bloquerait
+       en contenu mixte depuis une page https. On force donc https. */
+    refs = refs.map(function (u) { return String(u).replace(/^http:/, 'https:'); });
+
+    for (var i = 0; i < refs.length; i += 8) {
+      var lot = refs.slice(i, i + 8);
+      var res = await Promise.all(lot.map(function (u) {
+        return fetch(u).then(function (x) { return x.ok ? x.json() : null; }).catch(function () { return null; });
+      }));
+      res.forEach(function (t) {
+        if (!t || !t.id) return;
+        [t.displayName, t.name, t.shortDisplayName, t.nickname, t.location]
+          .filter(Boolean).forEach(function (n) { out[_g45Norm(n)] = String(t.id); });
+      });
+    }
+    _g45CoreCache[cle] = out;
+    try { localStorage.setItem(cle, JSON.stringify(out)); } catch (e) {}
+    console.log('✅ ' + Object.keys(out).length + ' noms d\'équipes chargés pour ' + sportPath + '/' + ligue);
+  } catch (e) {
+    console.warn('core teams', e && e.message);
+  }
+  return out;
+}
+window.g45CoreTeams = g45CoreTeams;
+
+/* Cherche l'id d'une equipe : correspondance exacte, puis inclusion. */
+async function g45CoreTeamId(sportPath, ligue, nom) {
+  var table = await g45CoreTeams(sportPath, ligue);
+  var n = _g45Norm(nom);
+  if (!n) return null;
+  if (table[n]) return table[n];
+  var cles = Object.keys(table);
+  for (var i = 0; i < cles.length; i++) {
+    if (cles[i].indexOf(n) >= 0 || n.indexOf(cles[i]) >= 0) return table[cles[i]];
+  }
+  return null;
+}
+window.g45CoreTeamId = g45CoreTeamId;
+
+/* On remplace la resolution utilisee par la transmission des paris : elle passe
+   d'abord par la table cablee, puis par sports.core. */
+var _G45_SPORT_PATH = { soccer: 'soccer', rugby: 'rugby', nrl: 'rugby-league' };
+
+async function g45ResolvePourPari(nom, sp, ligue) {
+  /* 1. table cablee (ESPN_TEAM_ID_FIX), la plus fiable */
+  try {
+    var fix = (typeof ESPN_TEAM_ID_FIX !== 'undefined')
+      ? ESPN_TEAM_ID_FIX[String(nom || '').toLowerCase().trim()] : null;
+    if (fix) return { id: fix.id, league: fix.league };
+  } catch (e) {}
+
+  /* 2. identifiant deja resolu et garde en localStorage */
+  try {
+    var c = localStorage.getItem('espn_teamid_any_' + String(nom || '').toLowerCase().replace(/\s+/g, '_'));
+    if (c) { var o = JSON.parse(c); if (o && o.id) return { id: String(o.id), league: o.league || ligue }; }
+  } catch (e) {}
+
+  /* 3. sports.core, seul hote ESPN qui autorise le CORS sur la liste des clubs */
+  var path = _G45_SPORT_PATH[sp] || sp;
+  var lg = ligue || (sp === 'nrl' ? '3' : '');
+  if (!lg) return null;
+  var id = await g45CoreTeamId(path, lg, nom);
+  return id ? { id: id, league: lg } : null;
+}
+window.g45ResolvePourPari = g45ResolvePourPari;
+
+/* Repli general : quand la resolution normale echoue (liste des clubs bloquee
+   en CORS), on passe par sports.core. Corrige toute la categorie « club absent
+   des tables cablees » — Feyenoord etait introuvable alors qu'Ajax marchait,
+   simplement parce que l'un est dans ESPN_TEAM_LEAGUE et l'autre non. */
+var _g45ResolveTeamOrig = (typeof espnResolveTeam === 'function') ? espnResolveTeam : null;
+
+window.espnResolveTeam = async function (nom) {
+  var r = null;
+  if (_g45ResolveTeamOrig) { try { r = await _g45ResolveTeamOrig(nom); } catch (e) {} }
+  if (r && r.id) return r;
+
+  var lg = null;
+  try { lg = (typeof espnLeagueOf === 'function') ? espnLeagueOf(nom) : null; } catch (e) {}
+  if (!lg) return r;
+
+  try {
+    var id = await g45CoreTeamId('soccer', lg, nom);
+    if (id) {
+      var out = { id: String(id), league: lg, name: nom, logo: '' };
+      try {
+        localStorage.setItem('espn_teamid_any_' + String(nom).toLowerCase().replace(/\s+/g, '_'),
+                             JSON.stringify(out));
+      } catch (e) {}
+      console.log('✅ ' + nom + ' résolu via sports.core (id ' + id + ', ' + lg + ')');
+      return out;
+    }
+  } catch (e) { console.warn('repli core', nom, e && e.message); }
+  return r;
+};
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   GONES45 — ÉQUIPES PERSONNALISÉES (ajout sans toucher au code)
+   ───────────────────────────────────────────────────────────────────────────
+   ESPN_TEAM_LEAGUE est une table ecrite en dur : 92 clubs, 10 championnats.
+   Un club absent (Feyenoord hier, un promu de Ligue 2 demain) ne pouvait etre
+   ajoute qu'en editant app.js — impossible depuis un telephone.
+
+   Ici, Antoine saisit le nom et choisit le championnat ; l'app retrouve
+   l'identifiant ESPN via sports.core (le seul hote qui autorise le CORS sur la
+   liste des clubs), VERIFIE que le calendrier repond, et n'enregistre qu'apres.
+   Le tout dans localStorage : aucune modification de code, rien a redeployer.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+var G45_CLE_PERSO = 'g45_teams_perso';
+
+/* Championnats proposes, par sport. Le chemin sports.core est
+   /v2/sports/{sport}/leagues/{ligue}/teams : la meme mecanique sert donc pour
+   le rugby a XIII, le basket ou le hockey, seul le couple sport/ligue change. */
+var G45_SPORTS_DISPO = [
+  ['soccer',       '\u26bd Football'],
+  ['rugby-league', '\ud83c\udfc9 Rugby \u00e0 XIII'],
+  ['rugby',        '\ud83c\udfc9 Rugby \u00e0 XV'],
+  ['basketball',   '\ud83c\udfc0 Basket'],
+  ['hockey',       '\ud83c\udfd2 Hockey'],
+  ['baseball',     '\u26be Baseball'],
+  ['football',     '\ud83c\udfc8 Football US']
+];
+
+var G45_LIGUES_PAR_SPORT = {
+  'soccer': [
+    ['fra.1','Ligue 1'], ['fra.2','Ligue 2'], ['eng.1','Premier League'],
+    ['eng.2','Championship'], ['esp.1','LaLiga'], ['esp.2','LaLiga 2'],
+    ['ita.1','Serie A'], ['ita.2','Serie B'], ['ger.1','Bundesliga'], ['ger.2','2.Bundesliga'],
+    ['ned.1','Eredivisie'], ['por.1','Liga Portugal'], ['bel.1','Belgique'],
+    ['sco.1','\u00c9cosse'], ['tur.1','Turquie'], ['gre.1','Gr\u00e8ce'], ['aut.1','Autriche'],
+    ['den.1','Danemark'], ['nor.1','Norv\u00e8ge'], ['swe.1','Su\u00e8de'],
+    ['usa.1','MLS'], ['mex.1','Liga MX'], ['bra.1','Br\u00e9sil'], ['arg.1','Argentine'],
+    ['jpn.1','Japon'], ['chn.1','Chine'], ['ksa.1','Arabie saoudite'], ['aus.1','Australie']
+  ],
+  'rugby-league': [ ['3','NRL (Australie)'] ],
+  'rugby': [ ['270559','Top 14'], ['270557','United Rugby Championship'], ['164205','Champions Cup'] ],
+  'basketball': [ ['nba','NBA'], ['wnba','WNBA'] ],
+  'hockey': [ ['nhl','NHL'] ],
+  'baseball': [ ['mlb','MLB'] ],
+  'football': [ ['nfl','NFL'] ]
+};
+
+function g45TeamsPerso() {
+  try { return JSON.parse(localStorage.getItem(G45_CLE_PERSO) || '{}') || {}; }
+  catch (e) { return {}; }
+}
+function _g45SavePerso(o) {
+  try { localStorage.setItem(G45_CLE_PERSO, JSON.stringify(o)); } catch (e) {}
+}
+function _g45CleNom(n) { return String(n || '').toLowerCase().trim(); }
+
+/* La table perso est consultee AVANT la table cablee, pour qu'Antoine puisse
+   aussi corriger une entree existante qui pointerait au mauvais endroit. */
+var _g45EspnLeagueOfOrig = (typeof espnLeagueOf === 'function') ? espnLeagueOf : null;
+window.espnLeagueOf = function (nom) {
+  var p = g45TeamsPerso()[_g45CleNom(nom)];
+  /* espnLeagueOf sert la logique FOOTBALL : on ne renvoie donc une entree perso
+     que si elle est bien du football, sinon l'onglet Saisons croirait qu'une
+     equipe de NRL est un club de foot. */
+  if (p && p.league && (p.sport || 'soccer') === 'soccer') return p.league;
+  return _g45EspnLeagueOfOrig ? _g45EspnLeagueOfOrig(nom) : null;
+};
+
+var _g45ResolveTeamPersoOrig = (typeof espnResolveTeam === 'function') ? espnResolveTeam : null;
+window.espnResolveTeam = async function (nom) {
+  var p = g45TeamsPerso()[_g45CleNom(nom)];
+  if (p && p.id) return { id: String(p.id), league: p.league, name: nom, logo: p.logo || '' };
+  return _g45ResolveTeamPersoOrig ? await _g45ResolveTeamPersoOrig(nom) : null;
+};
+
+/* ── Interface ──────────────────────────────────────────────────────────── */
+
+function _g45TpMsg(html, couleur) {
+  var el = document.getElementById('g45-tp-msg');
+  if (el) { el.innerHTML = html; el.style.color = couleur || '#9fb0c7'; }
+}
+
+function g45TpMajLigues() {
+  var sp = (document.getElementById('g45-tp-sport') || {}).value || 'soccer';
+  var sel = document.getElementById('g45-tp-ligue');
+  if (!sel) return;
+  sel.innerHTML = (G45_LIGUES_PAR_SPORT[sp] || []).map(function (l) {
+    return '<option value="' + l[0] + '">' + l[1] + '</option>';
+  }).join('');
+}
+window.g45TpMajLigues = g45TpMajLigues;
+
+function _g45TpNomLigue(sp, id) {
+  var l = (G45_LIGUES_PAR_SPORT[sp] || []).filter(function (x) { return x[0] === id; })[0];
+  return l ? l[1] : id;
+}
+
+function g45TpRender() {
+  var ss = document.getElementById('g45-tp-sport');
+  if (ss && !ss.options.length) {
+    ss.innerHTML = G45_SPORTS_DISPO.map(function (x) {
+      return '<option value="' + x[0] + '">' + x[1] + '</option>';
+    }).join('');
+    g45TpMajLigues();
+  }
+  var liste = document.getElementById('g45-tp-liste');
+  if (!liste) return;
+  var p = g45TeamsPerso();
+  var cles = Object.keys(p);
+  if (!cles.length) { liste.innerHTML = '<div style="color:#9fb0c7;font-size:11px;">Aucune équipe ajoutée pour l\'instant.</div>'; return; }
+  liste.innerHTML = cles.sort().map(function (k) {
+    var v = p[k];
+    var nomLigue = _g45TpNomLigue(v.sport || 'soccer', v.league);
+    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 9px;margin-bottom:5px;background:rgba(255,255,255,.04);border-radius:8px;">'
+      + '<div><b>' + (v.nom || k) + '</b> <span style="color:#9fb0c7;font-size:10px;">· ' + nomLigue + ' · id ' + v.id + '</span></div>'
+      + '<button onclick="g45TpSupprimer(\'' + k.replace(/'/g, "\\'") + '\')" style="background:none;border:1px solid rgba(255,107,107,.5);color:#ff6b6b;border-radius:6px;padding:3px 9px;font-size:11px;cursor:pointer;">Retirer</button>'
+      + '</div>';
+  }).join('');
+}
+window.g45TpRender = g45TpRender;
+
+function g45TpSupprimer(cle) {
+  var p = g45TeamsPerso();
+  delete p[cle];
+  _g45SavePerso(p);
+  g45TpRender();
+  _g45TpMsg('Équipe retirée.', '#ffb13d');
+}
+window.g45TpSupprimer = g45TpSupprimer;
+
+async function g45TpAjouter() {
+  var nom = (document.getElementById('g45-tp-nom') || {}).value || '';
+  var ligue = (document.getElementById('g45-tp-ligue') || {}).value || '';
+  var sport = (document.getElementById('g45-tp-sport') || {}).value || 'soccer';
+  var idManuel = ((document.getElementById('g45-tp-id') || {}).value || '').trim();
+  nom = nom.trim();
+  if (!nom || !ligue) { _g45TpMsg('Saisis un nom et choisis un championnat.', '#ffb13d'); return; }
+
+  _g45TpMsg('⏳ Recherche de l\'identifiant ESPN…');
+  try {
+    var id = idManuel;
+    if (!id) id = await g45CoreTeamId(sport, ligue, nom);
+    if (!id) {
+      _g45TpMsg('❌ Introuvable dans ce championnat. Vérifie l\'orthographe exacte (celle d\'ESPN), ou saisis l\'identifiant à la main — il est dans l\'URL de la fiche ESPN de l\'équipe, après <b>/id/</b>.', '#ff6b6b');
+      return;
+    }
+
+    /* On ne fait confiance qu'a une verification reelle : si le calendrier ne
+       repond pas, l'entree serait inutile et on prefere ne rien enregistrer. */
+    _g45TpMsg('⏳ Vérification du calendrier…');
+    var an = new Date().getFullYear();
+    if (['bra.1','usa.1','arg.1','nor.1','swe.1','jpn.1','chn.1'].indexOf(ligue) < 0 && new Date().getMonth() + 1 < 8) an -= 1;
+    var r = await fetch('https://site.api.espn.com/apis/site/v2/sports/' + sport + '/' + ligue + '/teams/' + id + '/schedule?season=' + an);
+    if (!r.ok) { _g45TpMsg('❌ ESPN ne répond pas pour cet identifiant (code ' + r.status + '). Rien n\'a été enregistré.', '#ff6b6b'); return; }
+    var d = await r.json();
+    var n = (d.events || []).length;
+    var vrai = (d.team && d.team.displayName) ? d.team.displayName : nom;
+
+    var p = g45TeamsPerso();
+    p[_g45CleNom(nom)] = { nom: nom, id: String(id), league: ligue, sport: sport };
+    if (_g45CleNom(vrai) !== _g45CleNom(nom)) p[_g45CleNom(vrai)] = { nom: vrai, id: String(id), league: ligue, sport: sport };
+    _g45SavePerso(p);
+    g45TpRender();
+
+    _g45TpMsg('✅ <b>' + vrai + '</b> enregistrée (id ' + id + ') — ' + n + ' match(s) trouvés sur la saison. Elle est utilisable dès maintenant dans le mur et les paris.', '#4ade80');
+    var i1 = document.getElementById('g45-tp-nom'); if (i1) i1.value = '';
+    var i2 = document.getElementById('g45-tp-id'); if (i2) i2.value = '';
+  } catch (e) {
+    _g45TpMsg('❌ ' + (e && e.message ? e.message : 'échec'), '#ff6b6b');
+  }
+}
+window.g45TpAjouter = g45TpAjouter;
+
+setTimeout(g45TpRender, 800);
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   GONES45 — ANALYSE NRL : FAVORI CONTRE OUTSIDER
+   ───────────────────────────────────────────────────────────────────────────
+   OBJECTIF : Antoine parie sur le favori (ou favori handicap) en montante. Il
+   veut savoir si l'inverse — parier l'outsider — serait aussi rentable, et
+   surtout quel risque cela represente.
+
+   POURQUOI LA SAISIE EST MANUELLE : les cotes historiques n'existent pas en
+   gratuit. ESPN n'en fournit aucune pour le NRL (verifie), et The Odds API ne
+   donne que le present. Sofascore les a — `/match/odds` renvoie meme la cote
+   d'OUVERTURE et celle de CLOTURE — mais l'enumeration est impossible :
+   `/match/list` renvoie 0 quel que soit le slug, et `/team/matches` un 404.
+   Il faut donc l'identifiant du match, visible dans l'URL publique apres #id:.
+   D'ou le collage d'URL, qui evite de taper les cotes a la main.
+
+   CE QUI COMPTE VRAIMENT : pas le taux de reussite, mais la plus longue serie
+   de defaites. C'est elle qui tue une montante, pas le rendement moyen.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+var G45_NRL_CLE = 'g45_cotes_hist';
+var _g45NrlMatchs = null;
+var _g45NrlCtx = { sport: 'rugby-league', ligue: '3' };
+
+/* Les competitions ouvertes a l'analyse. Le couple sport/ligue sert a la fois a
+   sports.core (liste des equipes) et a site.api (calendrier), la mecanique est
+   donc identique quel que soit le sport. */
+var G45_COTES_COMPETS = [
+  ['rugby-league|3',   '\ud83c\udfc9 NRL'],
+  ['rugby|270559',     '\ud83c\udfc9 Top 14'],
+  ['soccer|fra.1',     '\u26bd Ligue 1'],
+  ['soccer|eng.1',     '\u26bd Premier League'],
+  ['soccer|esp.1',     '\u26bd LaLiga'],
+  ['soccer|ita.1',     '\u26bd Serie A'],
+  ['soccer|ger.1',     '\u26bd Bundesliga'],
+  ['soccer|ned.1',     '\u26bd Eredivisie'],
+  ['soccer|bra.1',     '\u26bd Br\u00e9sil'],
+  ['soccer|arg.1',     '\u26bd Argentine'],
+  ['soccer|usa.1',     '\u26bd MLS'],
+  ['basketball|nba',   '\ud83c\udfc0 NBA'],
+  ['hockey|nhl',       '\ud83c\udfd2 NHL'],
+  ['baseball|mlb',     '\u26be MLB'],
+  ['football|nfl',     '\ud83c\udfc8 NFL']
+];
+
+/* Une cote de match TERMINE ne bougera plus jamais : le stockage local fait
+   donc office de cache definitif, et rien n'est jamais redemande. */
+function g45NrlCotes() {
+  try {
+    var o = JSON.parse(localStorage.getItem(G45_NRL_CLE) || '{}') || {};
+    /* migration de l'ancienne cle, propre au NRL */
+    var vieux = localStorage.getItem('g45_nrl_cotes');
+    if (vieux) {
+      try {
+        var v = JSON.parse(vieux) || {};
+        Object.keys(v).forEach(function (k) { if (!o['rugby-league|' + k]) o['rugby-league|' + k] = v[k]; });
+        localStorage.setItem(G45_NRL_CLE, JSON.stringify(o));
+        localStorage.removeItem('g45_nrl_cotes');
+        console.log('cotes NRL migrées vers le stockage multi-sport');
+      } catch (e) {}
+    }
+    return o;
+  } catch (e) { return {}; }
+}
+function _g45NrlSave(o) { try { localStorage.setItem(G45_NRL_CLE, JSON.stringify(o)); } catch (e) {} }
+function _g45Cle(id) { return _g45NrlCtx.sport + '|' + id; }
+
+function _g45NrlMsg(h, c) {
+  var el = document.getElementById('g45-nrl-msg');
+  if (el) { el.innerHTML = h; el.style.color = c || '#9fb0c7'; }
+}
+
+/* Recupere tous les matchs joues de la saison, via le calendrier de chaque
+   equipe (17 requetes, dedoublonnees sur l'identifiant d'evenement). */
+async function g45NrlCharger(annee) {
+  annee = annee || new Date().getFullYear();
+  _g45NrlMsg('⏳ Chargement du calendrier ' + annee + '…');
+  var equipes = await g45CoreTeams(_g45NrlCtx.sport, _g45NrlCtx.ligue);
+  var ids = {};
+  Object.keys(equipes).forEach(function (k) { ids[equipes[k]] = 1; });
+  var listeIds = Object.keys(ids);
+  if (!listeIds.length) { _g45NrlMsg('❌ Impossible de charger la liste des équipes de cette compétition.', '#ff6b6b'); return []; }
+
+  var vus = {}, out = [];
+  for (var i = 0; i < listeIds.length; i++) {
+    _g45NrlMsg('⏳ Équipe ' + (i + 1) + '/' + listeIds.length + '…');
+    try {
+      var r = await fetch('https://site.api.espn.com/apis/site/v2/sports/' + _g45NrlCtx.sport + '/' + _g45NrlCtx.ligue + '/teams/' + listeIds[i] + '/schedule?season=' + annee);
+      if (!r.ok) continue;
+      var d = await r.json();
+      (d.events || []).forEach(function (e) {
+        var id = String(e.id);
+        if (vus[id]) return;
+        var c = (e.competitions && e.competitions[0]) || {};
+        var st = (c.status && c.status.type) || {};
+        if (!(st.completed === true || st.state === 'post')) return;   /* matchs joues seulement */
+        var cps = c.competitors || [];
+        var dom = cps.filter(function (x) { return x.homeAway === 'home'; })[0] || cps[0] || {};
+        var ext = cps.filter(function (x) { return x.homeAway === 'away'; })[0] || cps[1] || {};
+        var nm = function (x) { return (x.team && (x.team.shortDisplayName || x.team.displayName)) || '?'; };
+        vus[id] = 1;
+        out.push({
+          id: id, date: e.date || '',
+          dom: nm(dom), ext: nm(ext),
+          sDom: parseInt(dom.score, 10) || 0, sExt: parseInt(ext.score, 10) || 0
+        });
+      });
+    } catch (e) {}
+  }
+  out.sort(function (a, b) { return new Date(a.date) - new Date(b.date); });
+  _g45NrlMatchs = out;
+  _g45NrlMsg('✅ ' + out.length + ' matchs joués chargés.', '#4ade80');
+  return out;
+}
+
+/* Extrait l'identifiant Sofascore d'une URL collee, puis va chercher les cotes. */
+async function g45NrlCotesSofa(idMatch, saisie) {
+  var m = String(saisie || '').match(/(\d{6,})/);
+  if (!m) { _g45NrlMsg('❌ Aucun identifiant trouvé dans ce texte. Colle l\'URL complète du match Sofascore.', '#ff6b6b'); return; }
+  var sid = m[1];
+  _g45NrlMsg('⏳ Lecture des cotes Sofascore…');
+  try {
+    var r = await g45Sofa6('/api/sofascore/v1/match/odds?match_id=' + sid);
+    if (!r || r.__err) { _g45NrlMsg('❌ Sofascore : ' + (r && r.__err ? r.__err : 'aucune réponse'), '#ff6b6b'); return; }
+    var bloc = (Array.isArray(r) ? r : []).filter(function (x) { return (x.group === '1X2' || /full/i.test(x.name || '')); })[0]
+             || (Array.isArray(r) ? r[0] : null);
+    if (!bloc || !bloc.choices) { _g45NrlMsg('❌ Pas de marché 1X2 sur ce match.', '#ff6b6b'); return; }
+    var un = bloc.choices.filter(function (c) { return c.name === '1'; })[0];
+    var de = bloc.choices.filter(function (c) { return c.name === '2'; })[0];
+    if (!un || !de) { _g45NrlMsg('❌ Cotes domicile/extérieur absentes.', '#ff6b6b'); return; }
+
+    var o = g45NrlCotes();
+    o[_g45Cle(idMatch)] = {
+      dom:  (un.value && un.value.decimal) || 0,
+      ext:  (de.value && de.value.decimal) || 0,
+      domO: (un.initialValue && un.initialValue.decimal) || 0,
+      extO: (de.initialValue && de.initialValue.decimal) || 0,
+      sofa: sid
+    };
+    _g45NrlSave(o);
+    g45NrlRender();
+    var cc = o[_g45Cle(idMatch)];
+    _g45NrlMsg('✅ Cotes récupérées : ' + cc.dom + ' / ' + cc.ext
+      + ' (ouverture ' + cc.domO + ' / ' + cc.extO + ')', '#4ade80');
+  } catch (e) {
+    _g45NrlMsg('❌ ' + (e && e.message ? e.message : 'échec'), '#ff6b6b');
+  }
+}
+window.g45NrlCotesSofa = g45NrlCotesSofa;
+
+function g45NrlSaisir(id, camp, val) {
+  var o = g45NrlCotes();
+  var k = _g45Cle(id);
+  if (!o[k]) o[k] = { dom: 0, ext: 0, domO: 0, extO: 0 };
+  o[k][camp] = parseFloat(String(val).replace(',', '.')) || 0;
+  _g45NrlSave(o);
+  g45NrlSynthese();
+}
+window.g45NrlSaisir = g45NrlSaisir;
+
+/* ── Synthèse : c'est là qu'est la réponse à sa question ─────────────────── */
+function g45NrlSynthese() {
+  var el = document.getElementById('g45-nrl-synth');
+  if (!el) return;
+  var cotes = g45NrlCotes();
+  var lignes = (_g45NrlMatchs || []).filter(function (m) {
+    var c = cotes[_g45Cle(m.id)];
+    return c && c.dom > 1 && c.ext > 1;
+  });
+  if (!lignes.length) { el.innerHTML = '<div style="color:#9fb0c7">Saisis au moins une cote pour voir la synthèse.</div>'; return; }
+
+  var st = { fav: { n: 0, g: 0, pnl: 0, serie: 0, pire: 0 }, out: { n: 0, g: 0, pnl: 0, serie: 0, pire: 0 } };
+  var ecarts = [];
+  lignes.forEach(function (m) {
+    var c = cotes[_g45Cle(m.id)];
+    var favDom = c.dom <= c.ext;
+    var coteFav = favDom ? c.dom : c.ext;
+    var coteOut = favDom ? c.ext : c.dom;
+    var favGagne = favDom ? (m.sDom > m.sExt) : (m.sExt > m.sDom);
+    ecarts.push(Math.abs(m.sDom - m.sExt));
+
+    [['fav', favGagne, coteFav], ['out', !favGagne, coteOut]].forEach(function (x) {
+      var s = st[x[0]];
+      s.n++;
+      if (x[1]) { s.g++; s.pnl += x[2] - 1; s.serie = 0; }
+      else { s.pnl -= 1; s.serie++; if (s.serie > s.pire) s.pire = s.serie; }
+    });
+  });
+
+  function bloc(titre, s, couleur) {
+    var taux = s.n ? (s.g / s.n * 100) : 0;
+    var eq = taux > 0 ? (100 / taux) : 0;
+    var roi = s.n ? (s.pnl / s.n * 100) : 0;
+    return '<div style="flex:1;min-width:150px;background:rgba(255,255,255,.04);border-radius:9px;padding:10px 12px;">'
+      + '<div style="font-weight:800;color:' + couleur + ';margin-bottom:6px;">' + titre + '</div>'
+      + '<div>Réussite : <b>' + taux.toFixed(1) + '%</b> (' + s.g + '/' + s.n + ')</div>'
+      + '<div>Cote d\'équilibre : <b>' + eq.toFixed(2) + '</b></div>'
+      + '<div>Rendement : <b style="color:' + (roi >= 0 ? '#4ade80' : '#ff6b6b') + '">'
+        + (roi >= 0 ? '+' : '') + roi.toFixed(1) + '%</b></div>'
+      + '<div style="color:#ffb13d">Pire série : <b>' + s.pire + '</b> défaites</div>'
+      + '</div>';
+  }
+
+  ecarts.sort(function (a, b) { return a - b; });
+  var med = ecarts[Math.floor(ecarts.length / 2)];
+  var seuils = [6, 12, 18].map(function (h) {
+    var n = ecarts.filter(function (e) { return e > h; }).length;
+    return 'plus de ' + h + ' pts : <b>' + (n / ecarts.length * 100).toFixed(0) + '%</b>';
+  }).join(' &nbsp;·&nbsp; ');
+
+  el.innerHTML = '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;">'
+    + bloc('Favori', st.fav, '#4ade80') + bloc('Outsider', st.out, '#ffb13d') + '</div>'
+    + '<div style="background:rgba(255,255,255,.04);border-radius:9px;padding:10px 12px;">'
+    + '<div style="font-weight:800;margin-bottom:6px;">Écarts de points — utile pour le handicap</div>'
+    + '<div>Écart médian : <b>' + med + ' pts</b></div><div>' + seuils + '</div></div>'
+    + '<div style="margin-top:8px;color:#9fb0c7;font-size:10.5px;">Calculé sur ' + lignes.length
+    + ' match(s) avec cotes, mise d\'une unité par match.</div>';
+}
+window.g45NrlSynthese = g45NrlSynthese;
+
+function g45NrlRender() {
+  var el = document.getElementById('g45-nrl-liste');
+  if (!el) return;
+  if (!_g45NrlMatchs) { el.innerHTML = '<div style="color:#9fb0c7">Appuie sur « Charger la saison ».</div>'; return; }
+  var cotes = g45NrlCotes();
+  el.innerHTML = _g45NrlMatchs.map(function (m) {
+    var c = cotes[_g45Cle(m.id)] || {};
+    var d = (m.date || '').slice(8, 10) + '/' + (m.date || '').slice(5, 7);
+    var ch = 'width:62px;padding:6px;font-size:11.5px;border-radius:7px;background:#0f1626;border:1px solid rgba(255,255,255,.14);color:#e6ecf5;text-align:center;';
+    return '<div style="padding:8px 9px;margin-bottom:6px;background:rgba(255,255,255,.04);border-radius:8px;">'
+      + '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">'
+      + '<div style="flex:1;min-width:150px;font-size:11.5px;"><span style="color:#9fb0c7">' + d + '</span> '
+        + '<b>' + m.dom + '</b> ' + m.sDom + '-' + m.sExt + ' <b>' + m.ext + '</b></div>'
+      + '<input value="' + (c.dom || '') + '" placeholder="dom" onchange="g45NrlSaisir(\'' + m.id + '\',\'dom\',this.value)" style="' + ch + '">'
+      + '<input value="' + (c.ext || '') + '" placeholder="ext" onchange="g45NrlSaisir(\'' + m.id + '\',\'ext\',this.value)" style="' + ch + '">'
+      + '<input placeholder="URL Sofascore" onchange="g45NrlCotesSofa(\'' + m.id + '\',this.value)" style="width:120px;padding:6px;font-size:10.5px;border-radius:7px;background:#0f1626;border:1px solid rgba(255,255,255,.14);color:#e6ecf5;">'
+      + '</div></div>';
+  }).join('');
+  g45NrlSynthese();
+}
+window.g45NrlRender = g45NrlRender;
+
+async function g45NrlDemarrer() {
+  var comp = (document.getElementById('g45-nrl-comp') || {}).value || 'rugby-league|3';
+  var p = comp.split('|');
+  _g45NrlCtx = { sport: p[0], ligue: p[1] };
+  var an = (document.getElementById('g45-nrl-annee') || {}).value || new Date().getFullYear();
+  await g45NrlCharger(parseInt(an, 10));
+  g45NrlRender();
+}
+window.g45NrlDemarrer = g45NrlDemarrer;
+
+setTimeout(function () {
+  var sel = document.getElementById('g45-nrl-comp');
+  if (sel && !sel.options.length) {
+    sel.innerHTML = G45_COTES_COMPETS.map(function (c) {
+      return '<option value="' + c[0] + '">' + c[1] + '</option>';
+    }).join('');
+  }
+}, 900);
