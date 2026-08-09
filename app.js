@@ -31062,14 +31062,18 @@ async function g45NrlCharger(annee) {
         if (vus[id]) return;
         var c = (e.competitions && e.competitions[0]) || {};
         var st = (c.status && c.status.type) || {};
-        if (!(st.completed === true || st.state === 'post')) return;   /* matchs joues seulement */
+        var joue = (st.completed === true || st.state === 'post');
         var cps = c.competitors || [];
         var dom = cps.filter(function (x) { return x.homeAway === 'home'; })[0] || cps[0] || {};
         var ext = cps.filter(function (x) { return x.homeAway === 'away'; })[0] || cps[1] || {};
         var nm = function (x) { return (x.team && (x.team.shortDisplayName || x.team.displayName)) || '?'; };
         vus[id] = 1;
         out.push({
-          id: id, date: e.date || '',
+          id: id, date: e.date || '', joue: joue,
+          /* ESPN ne fournit pas toujours le numero de journee : on le deduit
+             sinon de la semaine calendaire, ce qui colle au NRL (une journee
+             du jeudi au dimanche). */
+          jr: (e.week && e.week.number) || (c.week && c.week.number) || 0,
           dom: nm(dom), ext: nm(ext),
           sDom: parseInt(dom.score, 10) || 0, sExt: parseInt(ext.score, 10) || 0
         });
@@ -31077,8 +31081,16 @@ async function g45NrlCharger(annee) {
     } catch (e) {}
   }
   out.sort(function (a, b) { return new Date(a.date) - new Date(b.date); });
+  if (!out.some(function (m) { return m.jr; })) {
+    var base = out.length ? new Date(out[0].date).getTime() : 0;
+    out.forEach(function (m) {
+      m.jr = Math.floor((new Date(m.date).getTime() - base) / (7 * 86400000)) + 1;
+    });
+  }
   _g45NrlMatchs = out;
-  _g45NrlMsg('✅ ' + out.length + ' matchs joués chargés.', '#4ade80');
+  var nj = out.filter(function (m) { return m.joue; }).length;
+  _g45NrlMsg('✅ ' + out.length + ' matchs (' + nj + ' joués) sur '
+    + (out.length ? out[out.length - 1].jr : 0) + ' journées.', '#4ade80');
   return out;
 }
 
@@ -31134,7 +31146,7 @@ function g45NrlSynthese() {
   var cotes = g45NrlCotes();
   var lignes = (_g45NrlMatchs || []).filter(function (m) {
     var c = cotes[_g45Cle(m.id)];
-    return c && c.dom > 1 && c.ext > 1;
+    return m.joue && c && c.dom > 1 && c.ext > 1;
   });
   if (!lignes.length) { el.innerHTML = '<div style="color:#9fb0c7">Saisis au moins une cote pour voir la synthèse.</div>'; return; }
 
@@ -31190,20 +31202,37 @@ window.g45NrlSynthese = g45NrlSynthese;
 function g45NrlRender() {
   var el = document.getElementById('g45-nrl-liste');
   if (!el) return;
-  if (!_g45NrlMatchs) { el.innerHTML = '<div style="color:#9fb0c7">Appuie sur « Charger la saison ».</div>'; return; }
+  if (!_g45NrlMatchs) { el.innerHTML = '<div style="color:#9fb0c7">Appuie sur \u00ab Charger la saison \u00bb.</div>'; return; }
   var cotes = g45NrlCotes();
-  el.innerHTML = _g45NrlMatchs.map(function (m) {
-    var c = cotes[_g45Cle(m.id)] || {};
-    var d = (m.date || '').slice(8, 10) + '/' + (m.date || '').slice(5, 7);
-    var ch = 'width:62px;padding:6px;font-size:11.5px;border-radius:7px;background:#0f1626;border:1px solid rgba(255,255,255,.14);color:#e6ecf5;text-align:center;';
-    return '<div style="padding:8px 9px;margin-bottom:6px;background:rgba(255,255,255,.04);border-radius:8px;">'
-      + '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">'
-      + '<div style="flex:1;min-width:150px;font-size:11.5px;"><span style="color:#9fb0c7">' + d + '</span> '
-        + '<b>' + m.dom + '</b> ' + m.sDom + '-' + m.sExt + ' <b>' + m.ext + '</b></div>'
-      + '<input value="' + (c.dom || '') + '" placeholder="dom" onchange="g45NrlSaisir(\'' + m.id + '\',\'dom\',this.value)" style="' + ch + '">'
-      + '<input value="' + (c.ext || '') + '" placeholder="ext" onchange="g45NrlSaisir(\'' + m.id + '\',\'ext\',this.value)" style="' + ch + '">'
-      + '<input placeholder="URL Sofascore" onchange="g45NrlCotesSofa(\'' + m.id + '\',this.value)" style="width:120px;padding:6px;font-size:10.5px;border-radius:7px;background:#0f1626;border:1px solid rgba(255,255,255,.14);color:#e6ecf5;">'
-      + '</div></div>';
+  var ch = 'width:58px;padding:6px;font-size:11.5px;border-radius:7px;background:#0f1626;border:1px solid rgba(255,255,255,.14);color:#e6ecf5;text-align:center;';
+
+  /* Groupement par journee : c'est ainsi qu'on lit un championnat, et ca permet
+     de reperer les journees ou les favoris tombent en serie. */
+  var parJr = {};
+  _g45NrlMatchs.forEach(function (m) { (parJr[m.jr] = parJr[m.jr] || []).push(m); });
+
+  el.innerHTML = Object.keys(parJr).sort(function (a, b) { return a - b; }).map(function (jr) {
+    var lst = parJr[jr];
+    var nCotes = lst.filter(function (m) { var c = cotes[_g45Cle(m.id)]; return c && c.dom > 1 && c.ext > 1; }).length;
+    return '<div style="margin-bottom:14px;">'
+      + '<div style="font-weight:800;font-size:11.5px;color:var(--a);margin-bottom:6px;">'
+        + 'Journ\u00e9e ' + jr + ' <span style="color:#9fb0c7;font-weight:600;">\u00b7 ' + lst.length + ' matchs \u00b7 '
+        + nCotes + ' avec cotes</span></div>'
+      + lst.map(function (m) {
+          var c = cotes[_g45Cle(m.id)] || {};
+          var d = (m.date || '').slice(8, 10) + '/' + (m.date || '').slice(5, 7);
+          var score = m.joue ? (m.sDom + '-' + m.sExt) : '<span style="color:#9fb0c7">\u00e0 venir</span>';
+          return '<div style="padding:7px 9px;margin-bottom:5px;background:rgba(255,255,255,.04);border-radius:8px;'
+            + (m.joue ? '' : 'opacity:.65;') + '">'
+            + '<div style="display:flex;justify-content:space-between;align-items:center;gap:7px;flex-wrap:wrap;">'
+            + '<div style="flex:1;min-width:150px;font-size:11.5px;"><span style="color:#9fb0c7">' + d + '</span> '
+              + '<b>' + m.dom + '</b> ' + score + ' <b>' + m.ext + '</b></div>'
+            + '<input value="' + (c.dom || '') + '" placeholder="dom" onchange="g45NrlSaisir(\'' + m.id + '\',\'dom\',this.value)" style="' + ch + '">'
+            + '<input value="' + (c.ext || '') + '" placeholder="ext" onchange="g45NrlSaisir(\'' + m.id + '\',\'ext\',this.value)" style="' + ch + '">'
+            + '<input placeholder="URL Sofascore" onchange="g45NrlCotesSofa(\'' + m.id + '\',this.value)" style="width:110px;padding:6px;font-size:10.5px;border-radius:7px;background:#0f1626;border:1px solid rgba(255,255,255,.14);color:#e6ecf5;">'
+            + '</div></div>';
+        }).join('')
+      + '</div>';
   }).join('');
   g45NrlSynthese();
 }
