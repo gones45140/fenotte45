@@ -447,7 +447,6 @@ function bbadge(k){
 /* ── LOGOS (api-sports CDN) ── */
 var LOGOS={
   "Bayern Munich":"https://media.api-sports.io/football/teams/157.png",
-  "Boca Juniors": "https://media.api-sports.io/football/teams/405.png",
   "France":       "https://media.api-sports.io/football/teams/2.png",
   "Inter Milan":  "https://media.api-sports.io/football/teams/505.png",
   "Lyon":         "https://media.api-sports.io/football/teams/80.png",
@@ -457,7 +456,6 @@ var LOGOS={
   "Real Madrid":  "https://media.api-sports.io/football/teams/541.png",
   "Carolina Hurricanes":"https://media.api-sports.io/hockey/teams/7.png",
   "Colorado Avalanche": "https://media.api-sports.io/hockey/teams/9.png",
-  "LA Dodgers":   "https://media.api-sports.io/baseball/teams/19.png"
 };
 var FAV_LINKS={
   "Bayern Munich":"https://www.flashscore.fr/equipe/bayern/nVp0wiqd/",
@@ -471,7 +469,6 @@ var FAV_LINKS={
   "Real Madrid":"https://www.flashscore.fr/equipe/real-madrid/W8mj7MDD/",
   "Carolina Hurricanes":"https://www.flashscore.fr/equipe/carolina-hurricanes/Sx0gl0tm/",
   "Colorado Avalanche":"https://www.flashscore.fr/equipe/colorado-avalanche/hACAnvBa/",
-  "LA Dodgers":"https://www.flashscore.fr/equipe/los-angeles-dodgers/nwPDBpVc/",
   "Marseille":"https://www.flashscore.fr/equipe/marseille/GRk7WQET/",
   "Monaco":"https://www.flashscore.fr/equipe/monaco/dOUzNP1B/",
   "Lille":"https://www.flashscore.fr/equipe/lille/fOHJ2dlA/",
@@ -1202,17 +1199,14 @@ function hexRgb(h){
 /* ── PRESET TEAMS ── */
 var PRESETS=[
   {n:"Bayern Munich",abbr:"FCB",color:"#dc2626",s:"4",sport:"⚽"},
-  {n:"Boca Juniors", abbr:"BJR",color:"#f0b020",s:"3",sport:"⚽"},
   {n:"France",       abbr:"FRA",color:"#3b82f6",s:"4",sport:"⚽"},
   {n:"Inter Milan",  abbr:"INT",color:"#0ea5e9",s:"4",sport:"⚽"},
   {n:"Lyon",         abbr:"OL", color:"#c8a050",s:"3",sport:"⚽"},
-  {n:"Palmeiras",    abbr:"PAL",color:"#22c55e",s:"3",sport:"⚽"},
   {n:"PSG",          abbr:"PSG",color:"#c8a050",s:"4",sport:"⚽"},
   {n:"PSV",          abbr:"PSV",color:"#ef4444",s:"3",sport:"⚽"},
   {n:"Real Madrid",  abbr:"RMA",color:"#94a3b8",s:"5",sport:"⚽"},
   {n:"Carolina Hurricanes",abbr:"CAR",color:"#cc0000",s:"3",sport:"🏒"},
   {n:"Colorado Avalanche", abbr:"COL",color:"#7c3aed",s:"3",sport:"🏒"},
-  {n:"LA Dodgers",   abbr:"LAD",color:"#3b82f6",s:"3",sport:"⚾"}
 ];
 
 /* ── STATE ── */
