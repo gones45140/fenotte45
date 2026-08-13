@@ -1291,6 +1291,18 @@ function showBilanTab(mode,btn){
   var outils=$i('t-outils');
   if(outils)outils.querySelectorAll('.gtab').forEach(function(b){if(b.id&&b.id.startsWith('btab-'))b.classList.remove('on');});
   if(btn)btn.classList.add('on');
+
+  /* ARCHIVE, devenue le sixieme sous-onglet du Bilan : c'est un bloc HTML
+     complet avec ses propres identifiants, on l'affiche ou on le masque plutot
+     que de le redessiner. Les autres vues du Bilan sont masquees pendant ce
+     temps, sinon les deux se superposeraient. */
+  var arch = $i('bilan-arch');
+  var estArch = (mode === 'arch');
+  if (arch) arch.style.display = estArch ? 'block' : 'none';
+  var normal = $i('bilan-normal');
+  if (normal) normal.style.display = estArch ? 'none' : '';
+  if (estArch) { try { renderArchive(); } catch(e) { console.warn('archive', e && e.message); } return; }
+
   renderBilanTab();
 }
 var dtRows=[{c:2.0},{c:3.0}];
@@ -7690,6 +7702,18 @@ function showBilanTab(mode,btn){
   var outils=$i('t-outils');
   if(outils)outils.querySelectorAll('.gtab').forEach(function(b){if(b.id&&b.id.startsWith('btab-'))b.classList.remove('on');});
   if(btn)btn.classList.add('on');
+
+  /* ARCHIVE, devenue le sixieme sous-onglet du Bilan : c'est un bloc HTML
+     complet avec ses propres identifiants, on l'affiche ou on le masque plutot
+     que de le redessiner. Les autres vues du Bilan sont masquees pendant ce
+     temps, sinon les deux se superposeraient. */
+  var arch = $i('bilan-arch');
+  var estArch = (mode === 'arch');
+  if (arch) arch.style.display = estArch ? 'block' : 'none';
+  var normal = $i('bilan-normal');
+  if (normal) normal.style.display = estArch ? 'none' : '';
+  if (estArch) { try { renderArchive(); } catch(e) { console.warn('archive', e && e.message); } return; }
+
   renderBilanTab();
 }
 var dtRows=[{c:2.0},{c:3.0}];
@@ -31700,8 +31724,8 @@ async function loadCompetTab() {
           + (civil ? y : (y + '-' + String(y + 1).slice(2))) + '</option>';
   }
 
-  var vues = [['equipes','\ud83d\udc65 \u00c9quipes'], ['calendrier','\ud83d\udcc5 Calendrier'],
-              ['journees','\ud83d\uddd3\ufe0f Journ\u00e9es'],
+  var vues = [['equipes','\ud83d\udc65 \u00c9quipes'], ['direct','\ud83d\udd34 Direct'],
+              ['calendrier','\ud83d\udcc5 Calendrier'], ['journees','\ud83d\uddd3\ufe0f Journ\u00e9es'],
               ['classement','\ud83d\udcca Classement'], ['forme','\ud83d\udcc8 Forme'],
               ['buteurs', c.sp === 'soccer' ? '\u26bd Buteurs' : '\ud83c\udfc5 Individuel'],
               ['transferts','\ud83d\udd04 Transferts']];
@@ -31749,6 +31773,20 @@ async function loadCompetTab() {
   if (_g45CompetVue === 'transferts') { await g45TrfRender(c, body); return; }
   if (_g45CompetVue === 'forme')      { await g45FormeRender(c, body); return; }
 
+  /* Direct filtre sur la competition affichee, alors que l'onglet Direct global
+     montrait tous les sports. `g45LoadLeagueMatches` prend deja le slug en
+     parametre : on lui designe simplement notre conteneur, puis on restaure
+     `_g45ListId` pour ne pas detourner l'autre onglet. */
+  if (_g45CompetVue === 'direct') {
+    body.id = 'g45-compet-live';
+    var ancienL = window._g45ListId;
+    window._g45ListId = 'g45-compet-live';
+    try { await g45LoadLeagueMatches(c.s, null, 0, c.sp); }
+    catch (e) { body.innerHTML = '<div style="color:#ff6b6b;font-size:11.5px;">\u274c ' + (e && e.message ? e.message : 'direct indisponible') + '</div>'; }
+    window._g45ListId = ancienL;
+    return;
+  }
+
   if (_g45CompetVue === 'calendrier') {
     body.id = 'g45-compet-cal';
     var ancien = window._g45ListId;
@@ -31770,8 +31808,16 @@ async function loadCompetTab() {
       + '<div id="g45-nrl-synth" style="font-size:11.5px;line-height:1.8;margin-bottom:12px;"></div>'
       + '<div id="g45-nrl-liste"></div>';
     var cleAttendue = c.sp + '|' + c.s + '|' + _g45CompetAnnee(c.s);
-    if (_g45NrlMatchs && _g45NrlMatchs.length && _g45NrlMatchsCle === cleAttendue) g45NrlRender();
-    else { _g45NrlMatchs = null; _g45NrlMatchsCle = null; }
+    if (_g45NrlMatchs && _g45NrlMatchs.length && _g45NrlMatchsCle === cleAttendue) {
+      g45NrlRender();
+    } else {
+      /* Les matchs en memoire viennent d'une AUTRE competition : on ne les
+         affiche pas, et surtout on charge directement ceux de la competition
+         ouverte plutot que d'attendre un clic. Le cache rend l'operation
+         instantanee si la saison a deja ete consultee. */
+      _g45NrlMatchs = null; _g45NrlMatchsCle = null;
+      g45NrlDemarrer();
+    }
     return;
   }
 
@@ -31799,6 +31845,54 @@ async function loadCompetTab() {
       }).join('');
 }
 window.loadCompetTab = loadCompetTab;
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SOUS-ONGLETS DE « PARI »
+   ───────────────────────────────────────────────────────────────────────────
+   Pari, Bilan, Calculatrice, VS, Bank et Tendances etaient six entrees du menu
+   principal alors qu'ils traitent tous du meme sujet : les paris d'Antoine.
+   Ils restent des `.tab` distincts — aucun HTML deplace, donc aucun risque —
+   et une barre identique inseree dans chacun permet de passer de l'un a l'autre.
+   ═══════════════════════════════════════════════════════════════════════════ */
+function showPariSub(id, btn) {
+  var boutonMenu = document.querySelector('.ni[onclick*="t-paris"]');
+  showTab(id, boutonMenu);
+  /* La barre est dupliquee dans les six onglets : on met a jour CELLE de
+     l'onglet affiche, sinon le bouton actif resterait sur l'ancien. */
+  var cible = document.getElementById(id);
+  if (cible) {
+    cible.querySelectorAll('.psub').forEach(function (b) {
+      var on = (b.dataset.sub === id);
+      b.style.background = on ? '#2563eb' : '#1a2235';
+      b.style.border = on ? '1px solid #3b82f6' : '1px solid rgba(255,255,255,.14)';
+      b.style.color = on ? '#fff' : '#9fb0c7';
+    });
+  }
+  /* Chaque vue a son propre chargement differe. */
+  try {
+    if (id === 't-bilan') { renderBilanTab(); renderGlobalCharts(); }
+    else if (id === 't-tend' && typeof loadTendancesTab === 'function') loadTendancesTab();
+    else if (id === 't-bank' && typeof renderBank === 'function') renderBank();
+  } catch (e) { console.warn('sous-onglet', id, e && e.message); }
+}
+window.showPariSub = showPariSub;
+
+/* Les fleches de navigation par jour appellent g45LiveNav, qui ecrit dans
+   `window._g45ListId` : on la redirige tant que la vue Direct des Competitions
+   est ouverte. */
+var _g45LiveNavOrig = (typeof g45LiveNav === 'function') ? g45LiveNav : null;
+if (_g45LiveNavOrig) {
+  window.g45LiveNav = function (delta) {
+    if (_g45CompetVue === 'direct' && document.getElementById('g45-compet-live')) {
+      var anc = window._g45ListId;
+      window._g45ListId = 'g45-compet-live';
+      var r = _g45LiveNavOrig(delta);
+      Promise.resolve(r).then(function () { window._g45ListId = anc; });
+      return r;
+    }
+    return _g45LiveNavOrig(delta);
+  };
+}
 
 /* Les fleches < > du calendrier appellent g45CalNav, qui ecrit dans
    `window._g45ListId`. Tant qu'on est sur la vue Calendrier des Competitions,
@@ -32241,11 +32335,35 @@ var G45_LD_FR = {
   'strikeouts':'Retraits au b\u00e2ton', 'battingAverage':'Moyenne au b\u00e2ton',
   'homeRuns':'Coups de circuit', 'RBIs':'Points produits', 'hits':'Coups s\u00fbrs',
   'stolenBases':'Buts vol\u00e9s', 'whip':'WHIP',
+  /* football : les libelles varient d'un endpoint a l'autre (goals / totalGoals /
+     goalsScored), d'ou les doublons « Goals » et « Buts » cote a cote. On couvre
+     donc toutes les formes rencontrees. */
+  'totalGoals':'Buts', 'goalsScored':'Buts', 'goalAssists':'Passes d\u00e9cisives',
+  'shotsOnTarget':'Tirs cadr\u00e9s', 'totalShots':'Tirs', 'accuratePasses':'Passes r\u00e9ussies',
+  'yellowCards':'Cartons jaunes', 'redCards':'Cartons rouges',
+  'foulsCommitted':'Fautes commises', 'foulsSuffered':'Fautes subies',
+  'saves':'Arr\u00eats', 'cleanSheet':'Clean sheets', 'appearances':'Matchs jou\u00e9s',
+  'minutes':'Minutes', 'ownGoals':'Buts contre son camp', 'penaltyKickGoals':'Penalties marqu\u00e9s',
   /* football americain */
   'passingYards':'Yards \u00e0 la passe', 'rushingYards':'Yards \u00e0 la course',
   'receivingYards':'Yards \u00e0 la r\u00e9ception', 'passingTouchdowns':'Touchdowns \u00e0 la passe',
   'totalTackles':'Plaquages', 'sacks':'Sacks', 'interceptions':'Interceptions'
 };
+
+/* ESPN renvoie des valeurs comme « Matches: 31, Goals: 27 » : on traduit les
+   etiquettes, sinon la colonne reste anglaise malgre les chips en francais. */
+function _g45LdValFr(v) {
+  return String(v == null ? '' : v)
+    .replace(/\bMatches\b/gi, 'Matchs')
+    .replace(/\bGoals\b/gi, 'Buts')
+    .replace(/\bAssists\b/gi, 'Passes')
+    .replace(/\bSaves\b/gi, 'Arr\u00eats')
+    .replace(/\bPoints\b/gi, 'Points')
+    .replace(/\bTries\b/gi, 'Essais')
+    .replace(/\bShots\b/gi, 'Tirs')
+    .replace(/\bYards\b/gi, 'Yards')
+    .replace(/\bStrikeouts\b/gi, 'Retraits');
+}
 
 function _g45LdLibelle(cat) {
   return G45_LD_FR[cat.name] || G45_LD_FR[cat.abbreviation] || cat.displayName || cat.name;
@@ -32346,7 +32464,7 @@ async function g45LeadersGen(c, box, an) {
           + (t.logo ? '<img src="' + t.logo + '" style="width:20px;height:20px;object-fit:contain;" loading="lazy">' : '<span style="width:20px;"></span>')
           + '<span style="flex:1;font-size:11.5px;font-weight:700;">' + t.joueur + '</span>'
           + '<span style="font-size:10.5px;color:#9fb0c7;">' + t.equipe + '</span>'
-          + '<span style="font-size:13px;font-weight:800;color:var(--a);min-width:52px;text-align:right;">' + t.val + '</span>'
+          + '<span style="font-size:12px;font-weight:800;color:var(--a);text-align:right;">' + _g45LdValFr(t.val) + '</span>'
           + '</div>';
       }).join('');
 }

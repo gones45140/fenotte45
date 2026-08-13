@@ -58,6 +58,7 @@
 
 <!-- PARIS -->
 <div id="t-paris" class="tab">
+  <div class="psub-bar" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;"><button onclick="showPariSub('t-paris',this)" class="psub" data-sub="t-paris" style="flex:1;min-width:74px;padding:9px 6px;font-size:10.5px;font-weight:800;cursor:pointer;border-radius:9px;background:#2563eb;border:1px solid #3b82f6;color:#fff;">🎯 Pari</button><button onclick="showPariSub('t-bilan',this)" class="psub" data-sub="t-bilan" style="flex:1;min-width:74px;padding:9px 6px;font-size:10.5px;font-weight:800;cursor:pointer;border-radius:9px;background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#9fb0c7;">📈 Bilan</button><button onclick="showPariSub('t-calc',this)" class="psub" data-sub="t-calc" style="flex:1;min-width:74px;padding:9px 6px;font-size:10.5px;font-weight:800;cursor:pointer;border-radius:9px;background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#9fb0c7;">🧮 Calculatrice</button><button onclick="showPariSub('t-comp',this)" class="psub" data-sub="t-comp" style="flex:1;min-width:74px;padding:9px 6px;font-size:10.5px;font-weight:800;cursor:pointer;border-radius:9px;background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#9fb0c7;">⚖️ VS</button><button onclick="showPariSub('t-bank',this)" class="psub" data-sub="t-bank" style="flex:1;min-width:74px;padding:9px 6px;font-size:10.5px;font-weight:800;cursor:pointer;border-radius:9px;background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#9fb0c7;">🏦 Bank</button><button onclick="showPariSub('t-tend',this)" class="psub" data-sub="t-tend" style="flex:1;min-width:74px;padding:9px 6px;font-size:10.5px;font-weight:800;cursor:pointer;border-radius:9px;background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#9fb0c7;">🔥 Tendances</button></div>
   <div class="tog">
     <button class="togb on" id="btn-cpit" onclick="swBet('strat')">🚀 Cockpit</button>
     <button class="togb" id="btn-simp" onclick="swBet('simple')">🎯 Simple</button>
@@ -261,8 +262,22 @@
   </div>
 </div>
 
-<!-- ARCHIVE -->
-<div id="t-arch" class="tab">
+<!-- ══════════════════════════════════════════
+     BILAN — Stats + Équipes + Sofascore
+     ══════════════════════════════════════════ -->
+<section id="t-bilan" class="tab" style="padding:0;">
+  <div class="psub-bar" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;"><button onclick="showPariSub('t-paris',this)" class="psub" data-sub="t-paris" style="flex:1;min-width:74px;padding:9px 6px;font-size:10.5px;font-weight:800;cursor:pointer;border-radius:9px;background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#9fb0c7;">🎯 Pari</button><button onclick="showPariSub('t-bilan',this)" class="psub" data-sub="t-bilan" style="flex:1;min-width:74px;padding:9px 6px;font-size:10.5px;font-weight:800;cursor:pointer;border-radius:9px;background:#2563eb;border:1px solid #3b82f6;color:#fff;">📈 Bilan</button><button onclick="showPariSub('t-calc',this)" class="psub" data-sub="t-calc" style="flex:1;min-width:74px;padding:9px 6px;font-size:10.5px;font-weight:800;cursor:pointer;border-radius:9px;background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#9fb0c7;">🧮 Calculatrice</button><button onclick="showPariSub('t-comp',this)" class="psub" data-sub="t-comp" style="flex:1;min-width:74px;padding:9px 6px;font-size:10.5px;font-weight:800;cursor:pointer;border-radius:9px;background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#9fb0c7;">⚖️ VS</button><button onclick="showPariSub('t-bank',this)" class="psub" data-sub="t-bank" style="flex:1;min-width:74px;padding:9px 6px;font-size:10.5px;font-weight:800;cursor:pointer;border-radius:9px;background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#9fb0c7;">🏦 Bank</button><button onclick="showPariSub('t-tend',this)" class="psub" data-sub="t-tend" style="flex:1;min-width:74px;padding:9px 6px;font-size:10.5px;font-weight:800;cursor:pointer;border-radius:9px;background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#9fb0c7;">🔥 Tendances</button></div>
+  <!-- 4 onglets stats -->
+  <div class="gtabs">
+    <button class="gtab on" id="btab-global" onclick="showBilanTab('global',this)" style="font-size:9px;">🌍 Global</button>
+    <button class="gtab" id="btab-cockpit" onclick="showBilanTab('cockpit',this)" style="font-size:9px;">🚀 Cockpit</button>
+    <button class="gtab" id="btab-simple" onclick="showBilanTab('simple',this)" style="font-size:9px;">🎯 Simple</button>
+    <button class="gtab" id="btab-combi" onclick="showBilanTab('combi',this)" style="font-size:9px;">🔗 Combiné</button>
+    <button class="gtab" id="btab-flash" onclick="showBilanTab('flash',this)" style="font-size:9px;">⚡ Flash</button>
+    <button class="gtab" id="btab-arch" onclick="showBilanTab('arch',this)" style="font-size:9px;">🕒 Archive</button>
+  </div>
+<!-- ARCHIVE — devenue un sous-onglet du Bilan -->
+<div id="bilan-arch" style="display:none;">
   <!-- KPIs rapides -->
   <div class="kpi2" style="margin-bottom:10px;">
     <div class="kpibox" style="--ac:var(--g);"><div class="kpi-l">Victoires</div><div class="kpi-v" id="arch-wins" style="color:var(--g);">—</div></div>
@@ -295,18 +310,8 @@
   <button class="btn btn-d" style="margin-top:4px;font-size:11px;" onclick="if(confirm('Effacer tout ?')){state.a=[];save();renderArchive();}">Effacer l'historique</button>
 </div>
 
-<!-- ══════════════════════════════════════════
-     BILAN — Stats + Équipes + Sofascore
-     ══════════════════════════════════════════ -->
-<section id="t-bilan" class="tab" style="padding:0;">
-  <!-- 4 onglets stats -->
-  <div class="gtabs">
-    <button class="gtab on" id="btab-global" onclick="showBilanTab('global',this)" style="font-size:9px;">🌍 Global</button>
-    <button class="gtab" id="btab-cockpit" onclick="showBilanTab('cockpit',this)" style="font-size:9px;">🚀 Cockpit</button>
-    <button class="gtab" id="btab-simple" onclick="showBilanTab('simple',this)" style="font-size:9px;">🎯 Simple</button>
-    <button class="gtab" id="btab-combi" onclick="showBilanTab('combi',this)" style="font-size:9px;">🔗 Combiné</button>
-    <button class="gtab" id="btab-flash" onclick="showBilanTab('flash',this)" style="font-size:9px;">⚡ Flash</button>
-  </div>
+  <!-- Tout le Bilan hors Archive, regroupe pour pouvoir le masquer d'un bloc -->
+  <div id="bilan-normal">
   <!-- Filtre sport -->
   <div class="sec" style="margin-top:0;">Filtre sport</div>
   <div class="sfrow" id="sport-filter"></div>
@@ -409,6 +414,7 @@
     <div class="sec" style="margin-top:0;">Mes équipes</div>
     <div id="equipes-list"></div>
   </div>
+  </div>
 </section>
 
 <!-- DÉTAIL CLUB (overlay) -->
@@ -445,6 +451,7 @@
      OUTILS — Calculatrices + Équipes + Config
      ══════════════════════════════════════════ -->
 <div id="t-calc" class="tab">
+  <div class="psub-bar" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;"><button onclick="showPariSub('t-paris',this)" class="psub" data-sub="t-paris" style="flex:1;min-width:74px;padding:9px 6px;font-size:10.5px;font-weight:800;cursor:pointer;border-radius:9px;background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#9fb0c7;">🎯 Pari</button><button onclick="showPariSub('t-bilan',this)" class="psub" data-sub="t-bilan" style="flex:1;min-width:74px;padding:9px 6px;font-size:10.5px;font-weight:800;cursor:pointer;border-radius:9px;background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#9fb0c7;">📈 Bilan</button><button onclick="showPariSub('t-calc',this)" class="psub" data-sub="t-calc" style="flex:1;min-width:74px;padding:9px 6px;font-size:10.5px;font-weight:800;cursor:pointer;border-radius:9px;background:#2563eb;border:1px solid #3b82f6;color:#fff;">🧮 Calculatrice</button><button onclick="showPariSub('t-comp',this)" class="psub" data-sub="t-comp" style="flex:1;min-width:74px;padding:9px 6px;font-size:10.5px;font-weight:800;cursor:pointer;border-radius:9px;background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#9fb0c7;">⚖️ VS</button><button onclick="showPariSub('t-bank',this)" class="psub" data-sub="t-bank" style="flex:1;min-width:74px;padding:9px 6px;font-size:10.5px;font-weight:800;cursor:pointer;border-radius:9px;background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#9fb0c7;">🏦 Bank</button><button onclick="showPariSub('t-tend',this)" class="psub" data-sub="t-tend" style="flex:1;min-width:74px;padding:9px 6px;font-size:10.5px;font-weight:800;cursor:pointer;border-radius:9px;background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#9fb0c7;">🔥 Tendances</button></div>
   <!-- CALCULATRICES -->
   <div class="sec" style="margin-top:0;">Calculateur</div>
   <div class="fc">
@@ -924,6 +931,7 @@
 
 <!-- BANK -->
 <div id="t-bank" class="tab">
+  <div class="psub-bar" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;"><button onclick="showPariSub('t-paris',this)" class="psub" data-sub="t-paris" style="flex:1;min-width:74px;padding:9px 6px;font-size:10.5px;font-weight:800;cursor:pointer;border-radius:9px;background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#9fb0c7;">🎯 Pari</button><button onclick="showPariSub('t-bilan',this)" class="psub" data-sub="t-bilan" style="flex:1;min-width:74px;padding:9px 6px;font-size:10.5px;font-weight:800;cursor:pointer;border-radius:9px;background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#9fb0c7;">📈 Bilan</button><button onclick="showPariSub('t-calc',this)" class="psub" data-sub="t-calc" style="flex:1;min-width:74px;padding:9px 6px;font-size:10.5px;font-weight:800;cursor:pointer;border-radius:9px;background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#9fb0c7;">🧮 Calculatrice</button><button onclick="showPariSub('t-comp',this)" class="psub" data-sub="t-comp" style="flex:1;min-width:74px;padding:9px 6px;font-size:10.5px;font-weight:800;cursor:pointer;border-radius:9px;background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#9fb0c7;">⚖️ VS</button><button onclick="showPariSub('t-bank',this)" class="psub" data-sub="t-bank" style="flex:1;min-width:74px;padding:9px 6px;font-size:10.5px;font-weight:800;cursor:pointer;border-radius:9px;background:#2563eb;border:1px solid #3b82f6;color:#fff;">🏦 Bank</button><button onclick="showPariSub('t-tend',this)" class="psub" data-sub="t-tend" style="flex:1;min-width:74px;padding:9px 6px;font-size:10.5px;font-weight:800;cursor:pointer;border-radius:9px;background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#9fb0c7;">🔥 Tendances</button></div>
   <!-- KPI total -->
   <div class="kpi2" style="margin-bottom:10px;">
     <div class="kpibox" style="--ac:var(--a);">
@@ -981,9 +989,11 @@
 <div id="t-stats" class="tab"></div>
 <div id="t-live" class="tab"></div>
 <div id="t-resultats" class="tab"></div>
-<div id="t-tend" class="tab"></div>
+<div id="t-tend" class="tab">
+  <div class="psub-bar" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;"><button onclick="showPariSub('t-paris',this)" class="psub" data-sub="t-paris" style="flex:1;min-width:74px;padding:9px 6px;font-size:10.5px;font-weight:800;cursor:pointer;border-radius:9px;background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#9fb0c7;">🎯 Pari</button><button onclick="showPariSub('t-bilan',this)" class="psub" data-sub="t-bilan" style="flex:1;min-width:74px;padding:9px 6px;font-size:10.5px;font-weight:800;cursor:pointer;border-radius:9px;background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#9fb0c7;">📈 Bilan</button><button onclick="showPariSub('t-calc',this)" class="psub" data-sub="t-calc" style="flex:1;min-width:74px;padding:9px 6px;font-size:10.5px;font-weight:800;cursor:pointer;border-radius:9px;background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#9fb0c7;">🧮 Calculatrice</button><button onclick="showPariSub('t-comp',this)" class="psub" data-sub="t-comp" style="flex:1;min-width:74px;padding:9px 6px;font-size:10.5px;font-weight:800;cursor:pointer;border-radius:9px;background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#9fb0c7;">⚖️ VS</button><button onclick="showPariSub('t-bank',this)" class="psub" data-sub="t-bank" style="flex:1;min-width:74px;padding:9px 6px;font-size:10.5px;font-weight:800;cursor:pointer;border-radius:9px;background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#9fb0c7;">🏦 Bank</button><button onclick="showPariSub('t-tend',this)" class="psub" data-sub="t-tend" style="flex:1;min-width:74px;padding:9px 6px;font-size:10.5px;font-weight:800;cursor:pointer;border-radius:9px;background:#2563eb;border:1px solid #3b82f6;color:#fff;">🔥 Tendances</button></div></div>
 <div id="t-compet" class="tab"></div>
 <div id="t-comp" class="tab">
+  <div class="psub-bar" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;"><button onclick="showPariSub('t-paris',this)" class="psub" data-sub="t-paris" style="flex:1;min-width:74px;padding:9px 6px;font-size:10.5px;font-weight:800;cursor:pointer;border-radius:9px;background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#9fb0c7;">🎯 Pari</button><button onclick="showPariSub('t-bilan',this)" class="psub" data-sub="t-bilan" style="flex:1;min-width:74px;padding:9px 6px;font-size:10.5px;font-weight:800;cursor:pointer;border-radius:9px;background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#9fb0c7;">📈 Bilan</button><button onclick="showPariSub('t-calc',this)" class="psub" data-sub="t-calc" style="flex:1;min-width:74px;padding:9px 6px;font-size:10.5px;font-weight:800;cursor:pointer;border-radius:9px;background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#9fb0c7;">🧮 Calculatrice</button><button onclick="showPariSub('t-comp',this)" class="psub" data-sub="t-comp" style="flex:1;min-width:74px;padding:9px 6px;font-size:10.5px;font-weight:800;cursor:pointer;border-radius:9px;background:#2563eb;border:1px solid #3b82f6;color:#fff;">⚖️ VS</button><button onclick="showPariSub('t-bank',this)" class="psub" data-sub="t-bank" style="flex:1;min-width:74px;padding:9px 6px;font-size:10.5px;font-weight:800;cursor:pointer;border-radius:9px;background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#9fb0c7;">🏦 Bank</button><button onclick="showPariSub('t-tend',this)" class="psub" data-sub="t-tend" style="flex:1;min-width:74px;padding:9px 6px;font-size:10.5px;font-weight:800;cursor:pointer;border-radius:9px;background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#9fb0c7;">🔥 Tendances</button></div>
   <div class="sec" style="margin-top:0;">⚖️ Comparateur d'équipes</div>
   <div class="fc" style="margin-bottom:10px;">
     <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;margin-bottom:12px;">
@@ -1101,19 +1111,11 @@
 <nav class="nav">
   <button class="ni on" onclick="showTab('t-dash',this)"><span>🥧</span>Mur</button>
   <button class="ni" onclick="showTab('t-paris',this)"><span>⚽</span>Pari</button>
-  <button class="ni" onclick="showTab('t-arch',this)"><span>🕐</span>Archive</button>
-  <button class="ni" onclick="showTab('t-bilan',this)"><span>📈</span>Bilan</button>
-  <button class="ni" onclick="showTab('t-calc',this)"><span>🧮</span>Calc</button>
   <button class="ni pc-only" onclick="showTab('t-links',this)"><span>🔗</span>Liens</button>
   <button class="ni pc-hide-chat" id="btn-plus-menu" onclick="togglePlusMenu()" style="position:relative;"><span>+</span>Plus</button>
   <button class="ni pc-only" onclick="showTab('t-outils',this)"><span>🔧</span>Outils</button>
-  <button class="ni pc-only" onclick="showTab('t-bank',this)"><span>💳</span>Bank</button>
   <button class="ni pc-only" onclick="showTab('t-cal',this);loadCalendrier()"><span>📅</span>Agenda</button>
-  <button class="ni pc-only" onclick="showTab('t-comp',this);" data-action-comp="init"><span>⚖️</span>Vs</button>
-  <button class="ni pc-only" onclick="showTab('t-simu',this);loadSimuTab();"><span>🎮</span>Simu</button>
-  <button class="ni pc-only" onclick="showTab('t-live',this);loadLiveTab();_g45F1LiveCard();_g45MotoLiveCard();"><span>📡</span>Direct</button>
-  <button class="ni pc-only" onclick="showTab('t-resultats',this);loadResultatsTab();"><span>🏆</span>Résultats</button>
-  <button class="ni pc-only" onclick="showTab('t-tend',this);loadTendancesTab();"><span>🔥</span>Tendances</button>
+  <button class="ni pc-only" onclick="showTab('t-simu',this);loadSimuTab();"><span>🎮</span>Jeu</button>
   <button class="ni pc-only" onclick="showTab('t-compet',this);loadCompetTab();"><span>🏆</span>Compétitions</button>
   <button class="ni pc-only" onclick="showTab('t-social',this);loadSocialTab();"><span>🤝</span>Social</button>
   <button class="ni pc-only" onclick="showTab('t-stats',this);loadStatsTab();"><span>🧠</span>Stats</button>
@@ -1149,12 +1151,6 @@
       </button>
       <button onclick="showTab('t-social',$i('btn-plus-menu'));togglePlusMenu();loadSocialTab();" style="display:flex;align-items:center;gap:12px;padding:14px 12px;background:var(--bg3);border:none;border-radius:8px;color:var(--t1);font-size:13px;font-weight:700;cursor:pointer;text-align:left;margin-top:4px;">
         <span>🤝</span> Social
-      </button>
-      <button onclick="showTab('t-live',$i('btn-plus-menu'));togglePlusMenu();loadLiveTab();_g45F1LiveCard();" style="display:flex;align-items:center;gap:12px;padding:14px 12px;background:var(--bg3);border:none;border-radius:8px;color:var(--t1);font-size:13px;font-weight:700;cursor:pointer;text-align:left;margin-top:4px;">
-        <span>📡</span> Matchs en direct
-      </button>
-      <button onclick="showTab('t-resultats',$i('btn-plus-menu'));togglePlusMenu();loadResultatsTab();" style="display:flex;align-items:center;gap:12px;padding:14px 12px;background:var(--bg3);border:none;border-radius:8px;color:var(--t1);font-size:13px;font-weight:700;cursor:pointer;text-align:left;margin-top:4px;">
-        <span>🏆</span> Résultats (tous sports)
       </button>
       <button onclick="showTab('t-tend',$i('btn-plus-menu'));togglePlusMenu();loadTendancesTab();" style="display:flex;align-items:center;gap:12px;padding:14px 12px;background:var(--bg3);border:none;border-radius:8px;color:var(--t1);font-size:13px;font-weight:700;cursor:pointer;text-align:left;margin-top:4px;">
         <span>🔥</span> Tendances du jour
