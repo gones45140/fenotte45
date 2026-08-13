@@ -18143,7 +18143,21 @@ async function loadTeamSaisons() {
 
   // Détection sport
   var uObj2 = state.u.find(function(u){ return u.n === nom; }) || {};
-  var sport2 = uObj2.sport || '⚽';
+  var sport2 = uObj2.sport || '';
+  /* Une equipe ouverte depuis l'onglet Competitions n'est PAS dans le mur :
+     `uObj2` est vide et le sport retombait sur le football, d'ou des Saisons
+     vides en NRL, rugby, NHL, NFL et MLB. `g45_teams_perso` a justement
+     enregistre son sport au moment du clic — on le lit ici. */
+  if(!sport2){
+    try{
+      var _p = (typeof g45TeamsPerso === 'function') ? g45TeamsPerso() : {};
+      var _e = _p[String(nom).toLowerCase().trim()];
+      var _MAP = { 'soccer':'⚽', 'basketball':'🏀', 'hockey':'🏒', 'baseball':'⚾',
+                   'football':'🏈', 'rugby':'🏉', 'rugby-league':'🏉🇦🇺' };
+      if(_e && _e.sport) sport2 = _MAP[_e.sport] || '⚽';
+    }catch(e){}
+  }
+  if(!sport2) sport2 = '⚽';
   if(sport2==='🏒'||sport2==='🏒🇺🇸'||NHL_TEAMS[nom]) { loadNhlSaisons(el, nom); return; }
   if(sport2==='⚾'||sport2==='⚾🇺🇸'||MLB_TEAMS[nom]) { loadMlbSaisons(el, nom); return; }
   if(sport2==='🏀'||sport2==='🏀🇺🇸'||NBA_TEAMS[nom]||resolveNbaTeam(nom)) { loadNbaSaisons(el, nom); return; }
