@@ -622,36 +622,18 @@
   </div>
 
 
-  <!-- ANALYSE NRL -->
-  <div class="sec">📉 Cotes — favori contre outsider</div>
+  <!-- LANCEURS MLB -->
+  <div class="sec">⚾ Lanceurs MLB — tester la stratégie</div>
   <div class="fc">
     <div style="font-size:10px;color:var(--t3);line-height:1.6;margin-bottom:12px;">
-      Les cotes historiques n'existent pas en gratuit : colle l'URL Sofascore d'un match pour les récupérer automatiquement (ouverture et clôture), ou saisis-les à la main. Une fois enregistrées elles ne sont plus jamais redemandées — un match terminé ne change plus.
+      Pour chaque lanceur suivi : sa prochaine sortie, le bilan de son équipe quand il démarre, et la cote minimale pour que « le parier à chaque fois » soit rentable.
     </div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
-      <select id="g45-nrl-comp" style="flex:1;padding:11px 12px;font-size:12.5px;border-radius:9px;background:#0f1626;border:1px solid rgba(255,255,255,.14);color:#e6ecf5;"></select>
-      <input id="g45-nrl-annee" value="2026" style="width:80px;padding:11px 12px;font-size:12.5px;border-radius:9px;background:#0f1626;border:1px solid rgba(255,255,255,.14);color:#e6ecf5;">
-      <button onclick="g45NrlDemarrer()" style="width:100%;margin-top:8px;padding:12px 14px;font-size:12.5px;font-weight:800;cursor:pointer;border-radius:10px;background:#2563eb;border:1px solid #3b82f6;color:#fff;">⬇️&nbsp; Charger la saison</button>
+    <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+      <input id="g45-lc-nom" placeholder="Nom du lanceur — ex : Cristopher Sanchez" autocomplete="off" style="flex:1;min-width:180px;padding:11px 12px;font-size:12.5px;border-radius:9px;background:#0f1626;border:1px solid rgba(255,255,255,.14);color:#e6ecf5;">
+      <button onclick="g45LanceurAjouter()" style="padding:11px 16px;font-size:12.5px;font-weight:800;cursor:pointer;border-radius:9px;background:#2563eb;border:1px solid #3b82f6;color:#fff;">Ajouter</button>
     </div>
-    <div id="g45-nrl-msg" style="font-size:11.5px;font-weight:600;min-height:16px;color:#9fb0c7;background:rgba(0,0,0,.25);border-radius:8px;padding:10px 12px;margin-bottom:12px;">Appuie sur « Charger la saison ».</div>
-    <div id="g45-nrl-synth" style="font-size:11.5px;line-height:1.8;margin-bottom:12px;"></div>
-    <div id="g45-nrl-liste" style="max-height:420px;overflow-y:auto;"></div>
-  </div>
-
-  <!-- EQUIPES PERSONNALISEES -->
-  <div class="sec">➕ Ajouter une équipe</div>
-  <div class="fc">
-    <div style="font-size:10px;color:var(--t3);line-height:1.6;margin-bottom:12px;">
-      Pour un club que l'app ne connaît pas encore. Tape le nom tel qu'ESPN l'écrit, choisis son championnat : l'identifiant est trouvé et vérifié automatiquement.
-    </div>
-    <select id="g45-tp-sport" onchange="g45TpMajLigues()" style="display:block;width:100%;padding:11px 12px;margin-bottom:8px;font-size:12.5px;border-radius:9px;background:#0f1626;border:1px solid rgba(255,255,255,.14);color:#e6ecf5;"></select>
-    <input id="g45-tp-nom" placeholder="Nom de l'équipe — ex : Feyenoord, Sydney Roosters" autocomplete="off" style="display:block;width:100%;padding:11px 12px;margin-bottom:8px;font-size:12.5px;border-radius:9px;background:#0f1626;border:1px solid rgba(255,255,255,.14);color:#e6ecf5;">
-    <select id="g45-tp-ligue" style="display:block;width:100%;padding:11px 12px;margin-bottom:8px;font-size:12.5px;border-radius:9px;background:#0f1626;border:1px solid rgba(255,255,255,.14);color:#e6ecf5;"></select>
-    <input id="g45-tp-id" placeholder="Identifiant ESPN (facultatif — si la recherche échoue)" autocomplete="off" style="display:block;width:100%;padding:11px 12px;margin-bottom:8px;font-size:12.5px;border-radius:9px;background:#0f1626;border:1px solid rgba(255,255,255,.14);color:#e6ecf5;">
-    <button onclick="g45TpAjouter()" style="display:block;width:100%;padding:13px 14px;font-size:12.5px;font-weight:800;text-align:left;cursor:pointer;border-radius:10px;background:#2563eb;border:1px solid #3b82f6;color:#ffffff;">➕&nbsp; Vérifier et ajouter</button>
-    <div id="g45-tp-msg" style="margin-top:12px;font-size:11.5px;font-weight:600;min-height:16px;color:#9fb0c7;background:rgba(0,0,0,.25);border-radius:8px;padding:10px 12px;">Le club sera vérifié chez ESPN avant d'être enregistré.</div>
-    <div style="margin-top:12px;font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;">Mes équipes ajoutées</div>
-    <div id="g45-tp-liste" style="margin-top:7px;font-size:11.5px;"></div>
+    <button onclick="g45LanceursRender()" style="display:block;width:100%;padding:12px 14px;margin-bottom:12px;font-size:12.5px;font-weight:800;text-align:left;cursor:pointer;border-radius:10px;background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#e6ecf5;">↻&nbsp; Calculer / actualiser</button>
+    <div id="g45-lc-body" style="font-size:11.5px;">Ajoute un lanceur puis appuie sur Calculer.</div>
   </div>
 
   <!-- DIAGNOSTIC NOTIFICATIONS -->
@@ -1000,6 +982,7 @@
 <div id="t-live" class="tab"></div>
 <div id="t-resultats" class="tab"></div>
 <div id="t-tend" class="tab"></div>
+<div id="t-compet" class="tab"></div>
 <div id="t-comp" class="tab">
   <div class="sec" style="margin-top:0;">⚖️ Comparateur d'équipes</div>
   <div class="fc" style="margin-bottom:10px;">
@@ -1131,6 +1114,7 @@
   <button class="ni pc-only" onclick="showTab('t-live',this);loadLiveTab();_g45F1LiveCard();_g45MotoLiveCard();"><span>📡</span>Direct</button>
   <button class="ni pc-only" onclick="showTab('t-resultats',this);loadResultatsTab();"><span>🏆</span>Résultats</button>
   <button class="ni pc-only" onclick="showTab('t-tend',this);loadTendancesTab();"><span>🔥</span>Tendances</button>
+  <button class="ni pc-only" onclick="showTab('t-compet',this);loadCompetTab();"><span>🏆</span>Compétitions</button>
   <button class="ni pc-only" onclick="showTab('t-social',this);loadSocialTab();"><span>🤝</span>Social</button>
   <button class="ni pc-only" onclick="showTab('t-stats',this);loadStatsTab();"><span>🧠</span>Stats</button>
 
@@ -1175,6 +1159,7 @@
       <button onclick="showTab('t-tend',$i('btn-plus-menu'));togglePlusMenu();loadTendancesTab();" style="display:flex;align-items:center;gap:12px;padding:14px 12px;background:var(--bg3);border:none;border-radius:8px;color:var(--t1);font-size:13px;font-weight:700;cursor:pointer;text-align:left;margin-top:4px;">
         <span>🔥</span> Tendances du jour
       </button>
+      <button onclick="showTab('t-compet',$i('btn-plus-menu'));togglePlusMenu();loadCompetTab();" style="display:flex;align-items:center;gap:12px;padding:14px 12px;background:var(--bg3);border:none;border-radius:8px;color:var(--t1);font-size:13px;font-weight:700;cursor:pointer;text-align:left;margin-top:4px;"><span>🏆</span>Compétitions</button>
       <button onclick="showTab('t-stats',$i('btn-plus-menu'));togglePlusMenu();loadStatsTab();" style="display:flex;align-items:center;gap:12px;padding:14px 12px;background:var(--bg3);border:none;border-radius:8px;color:var(--t1);font-size:13px;font-weight:700;cursor:pointer;text-align:left;margin-top:4px;">
         <span>🧠</span> Mémoire stats
       </button>
