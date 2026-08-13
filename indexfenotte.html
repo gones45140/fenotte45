@@ -1111,14 +1111,14 @@
 <nav class="nav">
   <button class="ni on" onclick="showTab('t-dash',this)"><span>🥧</span>Mur</button>
   <button class="ni" onclick="showTab('t-paris',this)"><span>⚽</span>Pari</button>
-  <button class="ni pc-only" onclick="showTab('t-links',this)"><span>🔗</span>Liens</button>
-  <button class="ni pc-hide-chat" id="btn-plus-menu" onclick="togglePlusMenu()" style="position:relative;"><span>+</span>Plus</button>
+  <button class="ni" onclick="showTab('t-compet',this);loadCompetTab();"><span>🏆</span>Compétitions</button>
+  <button class="ni" onclick="showTab('t-cal',this);loadCalendrier()"><span>📅</span>Agenda</button>
   <button class="ni pc-only" onclick="showTab('t-outils',this)"><span>🔧</span>Outils</button>
-  <button class="ni pc-only" onclick="showTab('t-cal',this);loadCalendrier()"><span>📅</span>Agenda</button>
-  <button class="ni pc-only" onclick="showTab('t-simu',this);loadSimuTab();"><span>🎮</span>Jeu</button>
-  <button class="ni pc-only" onclick="showTab('t-compet',this);loadCompetTab();"><span>🏆</span>Compétitions</button>
   <button class="ni pc-only" onclick="showTab('t-social',this);loadSocialTab();"><span>🤝</span>Social</button>
   <button class="ni pc-only" onclick="showTab('t-stats',this);loadStatsTab();"><span>🧠</span>Stats</button>
+  <button class="ni pc-only" onclick="showTab('t-simu',this);loadSimuTab();"><span>🎮</span>Jeu</button>
+  <button class="ni pc-only" onclick="showTab('t-links',this)"><span>🔗</span>Liens</button>
+  <button class="ni pc-hide-chat" id="btn-plus-menu" onclick="togglePlusMenu()" style="position:relative;"><span>+</span>Plus</button>
 
   <div style="flex:1;display:flex;flex-direction:column;padding:0 8px 8px;min-height:0;" class="pc-note-area">
     <div id="pc-note" contenteditable="true" style="flex:1;min-height:100px;background:var(--bg3);border:1px solid var(--b1);border-radius:var(--r6);color:var(--t1);font-size:11px;line-height:1.6;padding:10px;outline:none;font-family:inherit;overflow-y:auto;word-break:break-word;" data-placeholder="Notes, cotes, screenshots…" oninput="saveNote()"></div>
@@ -1127,41 +1127,13 @@
 
   <!-- MENU PLUS MOBILE -->
   <div id="plus-menu" style="display:none;position:fixed;bottom:68px;right:0;left:0;background:var(--s1);border-top:1px solid var(--b2);z-index:300;padding:8px 0;max-height:calc(100vh - 88px);overflow-y:auto;-webkit-overflow-scrolling:touch;">
-    <div style="display:flex;flex-direction:column;gap:2px;padding:0 12px;">
-      <button onclick="showTab('t-bank',$i('btn-plus-menu'));togglePlusMenu();" style="display:flex;align-items:center;gap:12px;padding:14px 12px;background:var(--bg3);border:none;border-radius:8px;color:var(--t1);font-size:13px;font-weight:700;cursor:pointer;text-align:left;">
-        <span>💳</span> Bank
-      </button>
-      <button onclick="showTab('t-chat',$i('btn-plus-menu'));togglePlusMenu();" style="display:flex;align-items:center;gap:12px;padding:14px 12px;background:var(--bg3);border:none;border-radius:8px;color:var(--t1);font-size:13px;font-weight:700;cursor:pointer;text-align:left;margin-top:4px;">
-        <span>💬</span> Chat IA
-      </button>
-      <button onclick="showTab('t-cal',$i('btn-plus-menu'));togglePlusMenu();loadCalendrier();" style="display:flex;align-items:center;gap:12px;padding:14px 12px;background:var(--bg3);border:none;border-radius:8px;color:var(--t1);font-size:13px;font-weight:700;cursor:pointer;text-align:left;margin-top:4px;">
-        <span>📅</span> Calendrier
-      </button>
-      <button onclick="showTab('t-comp',$i('btn-plus-menu'));togglePlusMenu();initComparateur();" style="display:flex;align-items:center;gap:12px;padding:14px 12px;background:var(--bg3);border:none;border-radius:8px;color:var(--t1);font-size:13px;font-weight:700;cursor:pointer;text-align:left;margin-top:4px;">
-        <span>⚖️</span> Comparateur
-      </button>
-      <button onclick="showTab('t-outils',$i('btn-plus-menu'));togglePlusMenu();" style="display:flex;align-items:center;gap:12px;padding:14px 12px;background:var(--bg3);border:none;border-radius:8px;color:var(--t1);font-size:13px;font-weight:700;cursor:pointer;text-align:left;margin-top:4px;">
-        <span>🔧</span> Outils
-      </button>
-      <button onclick="showTab('t-links',$i('btn-plus-menu'));togglePlusMenu();" style="display:flex;align-items:center;gap:12px;padding:14px 12px;background:var(--bg3);border:none;border-radius:8px;color:var(--t1);font-size:13px;font-weight:700;cursor:pointer;text-align:left;margin-top:4px;">
-        <span>🔗</span> Liens
-      </button>
-      <button onclick="showTab('t-simu',$i('btn-plus-menu'));togglePlusMenu();loadSimuTab();" style="display:flex;align-items:center;gap:12px;padding:14px 12px;background:var(--bg3);border:none;border-radius:8px;color:var(--t1);font-size:13px;font-weight:700;cursor:pointer;text-align:left;margin-top:4px;">
-        <span>🎮</span> Simulation Mondial
-      </button>
-      <button onclick="showTab('t-social',$i('btn-plus-menu'));togglePlusMenu();loadSocialTab();" style="display:flex;align-items:center;gap:12px;padding:14px 12px;background:var(--bg3);border:none;border-radius:8px;color:var(--t1);font-size:13px;font-weight:700;cursor:pointer;text-align:left;margin-top:4px;">
-        <span>🤝</span> Social
-      </button>
-      <button onclick="showTab('t-tend',$i('btn-plus-menu'));togglePlusMenu();loadTendancesTab();" style="display:flex;align-items:center;gap:12px;padding:14px 12px;background:var(--bg3);border:none;border-radius:8px;color:var(--t1);font-size:13px;font-weight:700;cursor:pointer;text-align:left;margin-top:4px;">
-        <span>🔥</span> Tendances du jour
-      </button>
-      <button onclick="showTab('t-compet',$i('btn-plus-menu'));togglePlusMenu();loadCompetTab();" style="display:flex;align-items:center;gap:12px;padding:14px 12px;background:var(--bg3);border:none;border-radius:8px;color:var(--t1);font-size:13px;font-weight:700;cursor:pointer;text-align:left;margin-top:4px;"><span>🏆</span>Compétitions</button>
-      <button onclick="showTab('t-stats',$i('btn-plus-menu'));togglePlusMenu();loadStatsTab();" style="display:flex;align-items:center;gap:12px;padding:14px 12px;background:var(--bg3);border:none;border-radius:8px;color:var(--t1);font-size:13px;font-weight:700;cursor:pointer;text-align:left;margin-top:4px;">
-        <span>🧠</span> Mémoire stats
-      </button>
-      <button onclick="togglePlusMenu();" style="display:flex;align-items:center;gap:12px;padding:14px 12px;background:none;border:none;border-radius:8px;color:var(--t3);font-size:12px;font-weight:700;cursor:pointer;text-align:left;margin-top:4px;">
-        <span>✕</span> Fermer
-      </button>
+    <div>
+      <button onclick="showTab('t-outils',$i('btn-plus-menu'));togglePlusMenu();" style="display:flex;align-items:center;gap:12px;padding:13px 16px;width:100%;background:none;border:none;border-bottom:1px solid var(--b1);color:var(--t1);font-size:13px;font-weight:600;cursor:pointer;text-align:left;"><span style="font-size:17px;">🔧</span>Outils</button>
+      <button onclick="showTab('t-social',$i('btn-plus-menu'));togglePlusMenu();loadSocialTab();" style="display:flex;align-items:center;gap:12px;padding:13px 16px;width:100%;background:none;border:none;border-bottom:1px solid var(--b1);color:var(--t1);font-size:13px;font-weight:600;cursor:pointer;text-align:left;"><span style="font-size:17px;">🤝</span>Social</button>
+      <button onclick="showTab('t-stats',$i('btn-plus-menu'));togglePlusMenu();loadStatsTab();" style="display:flex;align-items:center;gap:12px;padding:13px 16px;width:100%;background:none;border:none;border-bottom:1px solid var(--b1);color:var(--t1);font-size:13px;font-weight:600;cursor:pointer;text-align:left;"><span style="font-size:17px;">🧠</span>Stats</button>
+      <button onclick="showTab('t-simu',$i('btn-plus-menu'));togglePlusMenu();loadSimuTab();" style="display:flex;align-items:center;gap:12px;padding:13px 16px;width:100%;background:none;border:none;border-bottom:1px solid var(--b1);color:var(--t1);font-size:13px;font-weight:600;cursor:pointer;text-align:left;"><span style="font-size:17px;">🎮</span>Jeu</button>
+      <button onclick="showTab('t-links',$i('btn-plus-menu'));togglePlusMenu();" style="display:flex;align-items:center;gap:12px;padding:13px 16px;width:100%;background:none;border:none;border-bottom:1px solid var(--b1);color:var(--t1);font-size:13px;font-weight:600;cursor:pointer;text-align:left;"><span style="font-size:17px;">🔗</span>Liens</button>
+      <button onclick="showTab('t-chat',$i('btn-plus-menu'));togglePlusMenu();" style="display:flex;align-items:center;gap:12px;padding:13px 16px;width:100%;background:none;border:none;border-bottom:1px solid var(--b1);color:var(--t1);font-size:13px;font-weight:600;cursor:pointer;text-align:left;"><span style="font-size:17px;">💬</span>Chat IA</button>
     </div>
   </div>
 </nav>
