@@ -32815,3 +32815,251 @@ async function g45StatsIndRender(c, box) {
       : '<div style="color:#9fb0c7;font-size:11.5px;">Personne n\'a de total sur cette statistique.</div>');
 }
 window.g45StatsIndRender = g45StatsIndRender;
+
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SAISONS GENERIQUES — sports hors football (13/08/2026)
+   ───────────────────────────────────────────────────────────────────────────
+   POURQUOI : l'onglet Saisons d'une fiche equipe reposait, hors football, sur
+   des TABLES DE NOMS CABLEES (NHL_TEAMS, MLB_TEAMS, NBA_TEAMS, NFL_TEAMS) et,
+   pour le rugby, sur une liste de douze noms ecrite a la main. Une equipe
+   ouverte depuis l'onglet Competitions porte le nom que lui donne ESPN
+   (« Roosters », pas « Sydney Roosters ») et ne figure dans aucune de ces
+   tables : la fiche tombait donc dans la branche FOOTBALL et affichait
+   « Equipe non trouvee dans la base ». Meme cause pour NHL, NFL et MLB.
+
+   CE QU'ON FAIT : quand l'equipe n'est PAS dans le mur mais possede une entree
+   dans `g45_teams_perso` (posee par g45CompetOuvrir au clic), on reconstruit
+   les saisons a partir des MATCHS de la competition, exactement comme la vue
+   Forme. Aucune table de noms, donc aucune maintenance : ca marche pour les
+   17 equipes de NRL comme pour les 32 de NFL.
+
+   PIEGE REPRIS DE LA VUE FORME : les identifiants de `sports.core` (28919…)
+   ne sont pas ceux de `site.api`. Le NRL, dont le classement n'est pas publie,
+   vient de core — le filtrage par identifiant echouerait donc. On accepte
+   AUSSI la correspondance par NOM, que le repli scoreboard fournit (`hn`/`an`).
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+var _g45SgAn = null;   /* saison choisie dans la fiche, independante des Competitions */
+
+function _g45SgNorm(s) {
+  return String(s || '').toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]/g, '');
+}
+
+/* Ligne de total de points au-dessus de laquelle on compte les « Over ».
+   Valeurs usuelles des bookmakers, par sport. */
+function _g45SgLigne(sport, slug) {
+  if (slug === 'nba' || slug === 'wnba' || sport === 'basketball') return 220.5;
+  if (sport === 'hockey') return 5.5;
+  if (sport === 'baseball') return 8.5;
+  if (sport === 'football') return 44.5;          /* football americain */
+  if (sport === 'rugby-league') return 40.5;
+  if (sport === 'rugby') return 45.5;
+  return 2.5;                                      /* football */
+}
+
+/* Calcul pur : aucune requete, testable hors navigateur. */
+function _g45SgCalc(ms, monId, monNom, ligne) {
+  var st = {
+    j:0, v:0, n:0, d:0, bp:0, bc:0, over:0,
+    dom:{j:0,v:0,n:0,d:0,bp:0,bc:0}, ext:{j:0,v:0,n:0,d:0,bp:0,bc:0},
+    liste:[]
+  };
+  var id = String(monId || ''), nn = _g45SgNorm(monNom);
+
+  ms.forEach(function (m) {
+    var estDom = (id && String(m.h) === id) || (nn && m.hn && _g45SgNorm(m.hn) === nn);
+    var estExt = (id && String(m.a) === id) || (nn && m.an && _g45SgNorm(m.an) === nn);
+    if (estDom === estExt) return;                 /* ni l'un ni l'autre, ou les deux */
+
+    var pour   = estDom ? m.hg : m.ag;
+    var contre = estDom ? m.ag : m.hg;
+    var res    = pour > contre ? 'V' : (pour < contre ? 'D' : 'N');
+    var bloc   = estDom ? st.dom : st.ext;
+
+    st.j++; st.bp += pour; st.bc += contre;
+    bloc.j++; bloc.bp += pour; bloc.bc += contre;
+    if (res === 'V') { st.v++; bloc.v++; } else if (res === 'D') { st.d++; bloc.d++; } else { st.n++; bloc.n++; }
+    if ((m.hg + m.ag) > ligne) st.over++;
+
+    st.liste.push({
+      t: m.t, dom: estDom, res: res, pour: pour, contre: contre,
+      adv: estDom ? (m.an || m.a) : (m.hn || m.h),
+      advId: estDom ? String(m.a) : String(m.h)
+    });
+  });
+
+  st.liste.sort(function (a, b) { return b.t - a.t; });   /* plus recent en tete */
+  return st;
+}
+
+async function _g45SaisonsGen(el, nom, perso) {
+  var sp = perso.sport || 'soccer', lg = String(perso.league || '');
+  var ligne = _g45SgLigne(sp, lg);
+
+  /* Deux saisons proposees, selon la convention du championnat (civile pour le
+     NRL et la MLB, a cheval sinon) — la meme fonction que l'onglet Competitions. */
+  var anAuto = (typeof _g45CompetAnneeAuto === 'function') ? _g45CompetAnneeAuto(lg) : new Date().getFullYear();
+  var an = _g45SgAn || anAuto;
+
+  el.innerHTML = '<div style="display:flex;align-items:center;gap:10px;padding:20px;color:var(--t3);font-size:12px;">'
+    + '<div style="width:16px;height:16px;border:2px solid rgba(77,132,255,.2);border-top-color:#4d84ff;border-radius:50%;animation:spin .8s linear infinite;"></div>'
+    + '<span id="sg-prog">Chargement de la saison ' + an + '\u2026</span></div>';
+
+  var eq = [], ms = [];
+  try { eq = await _g45CompetEquipes({ sp: sp, s: lg }); } catch (e) {}
+  var ids = eq.map(function (t) { return t.id; }).filter(Boolean);
+  var noms = {}; eq.forEach(function (t) { noms[String(t.id)] = t.nom; });
+
+  try {
+    ms = await _g45CompetMatchs(sp, lg, an, ids, function (i, n) {
+      var p = document.getElementById('sg-prog');
+      if (p) p.textContent = 'Chargement de la saison ' + an + '\u2026 (' + i + '/' + n + ')';
+    });
+  } catch (e) {}
+
+  var st = _g45SgCalc(ms || [], perso.id, nom, ligne);
+
+  /* Chips de saison — toujours affichees, meme si la saison en cours est vide :
+     c'est justement le cas au 13 aout, ou le NRL est en cours mais la NFL non. */
+  var chips = '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">'
+    + [anAuto, anAuto - 1, anAuto - 2].map(function (y) {
+        var on = (y === an);
+        return '<button onclick="_g45SgSaison(' + y + ')" style="border:none;cursor:pointer;padding:5px 11px;border-radius:14px;font-size:11px;font-weight:700;'
+          + (on ? 'background:#4d84ff;color:#fff;' : 'background:rgba(255,255,255,.06);color:#9fb0c7;') + '">' + y + '</button>';
+      }).join('') + '</div>';
+
+  if (!st.j) {
+    el.innerHTML = '<div style="padding:4px 0;">' + chips
+      + '<div class="fc" style="text-align:center;color:var(--t3);padding:18px;font-size:12px;">'
+      + 'Aucun match termin\u00e9 pour <b>' + nom + '</b> en ' + an + '.<br>'
+      + '<small style="opacity:.75;">' + (ms || []).length + ' matchs charg\u00e9s pour la comp\u00e9tition \u00b7 '
+      + sp + '/' + lg + ' \u00b7 id ' + perso.id + '</small></div></div>';
+    return;
+  }
+
+  var pc = function (a, b) { return b ? Math.round(a / b * 100) : 0; };
+  var moy = function (a, b) { return b ? (a / b).toFixed(1) : '0.0'; };
+  var avecNul = st.n > 0;
+  var bilan = st.v + '-' + (avecNul ? st.n + '-' : '') + st.d;
+  var diff = st.bp - st.bc;
+
+  var tuile = function (val, lab, col) {
+    return '<div style="text-align:center;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:9px 4px;">'
+      + '<div style="font-size:17px;font-weight:800;color:' + col + ';">' + val + '</div>'
+      + '<div style="font-size:8.5px;color:var(--t3);">' + lab + '</div></div>';
+  };
+
+  var html = '<div style="padding:4px 0;">' + chips;
+
+  /* ── Bloc principal ── */
+  html += '<div class="cwrap" style="margin-bottom:10px;">'
+    + '<div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#4f5d88;margin-bottom:9px;">'
+    + 'Saison ' + an + ' \u00b7 ' + st.j + ' matchs</div>'
+    + '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">'
+    + tuile(bilan, avecNul ? 'V-N-D' : 'V-D', '#e6ecf5')
+    + tuile(pc(st.v, st.j) + '%', 'Victoires', pc(st.v, st.j) >= 50 ? '#1ed760' : '#ff7b54')
+    + tuile((diff > 0 ? '+' : '') + diff, 'Diff\u00e9rence', diff >= 0 ? '#1ed760' : '#ff4545')
+    + tuile(moy(st.bp, st.j), 'Marqu\u00e9s / match', '#f0b020')
+    + tuile(moy(st.bc, st.j), 'Encaiss\u00e9s / match', '#4d84ff')
+    + tuile(moy(st.bp + st.bc, st.j), 'Total / match', '#a78bfa')
+    + '</div></div>';
+
+  /* ── Domicile / Exterieur ── */
+  var ligneDE = function (lab, b) {
+    if (!b.j) return '';
+    var bl = b.v + '-' + (avecNul ? b.n + '-' : '') + b.d;
+    return '<div style="display:flex;align-items:center;gap:8px;padding:7px 2px;border-bottom:1px solid rgba(255,255,255,.06);font-size:11.5px;">'
+      + '<div style="width:74px;font-weight:700;color:#9fb0c7;">' + lab + '</div>'
+      + '<div style="width:34px;color:var(--t3);">' + b.j + 'm</div>'
+      + '<div style="width:62px;font-weight:700;">' + bl + '</div>'
+      + '<div style="width:44px;font-weight:800;color:' + (pc(b.v, b.j) >= 50 ? '#1ed760' : '#ff7b54') + ';">' + pc(b.v, b.j) + '%</div>'
+      + '<div style="flex:1;text-align:right;color:var(--t3);">' + moy(b.bp, b.j) + ' \u00b7 ' + moy(b.bc, b.j) + '</div></div>';
+  };
+  html += '<div class="cwrap" style="margin-bottom:10px;">'
+    + '<div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#4f5d88;margin-bottom:6px;">Domicile / Ext\u00e9rieur</div>'
+    + ligneDE('\ud83c\udfe0 Domicile', st.dom) + ligneDE('\u2708\ufe0f Ext\u00e9rieur', st.ext)
+    + '<div style="font-size:9px;color:var(--t3);margin-top:6px;">Les deux derniers chiffres : marqu\u00e9s puis encaiss\u00e9s par match.</div>'
+    + '</div>';
+
+  /* ── Forme + total de points ── */
+  var forme = st.liste.slice(0, 10).map(function (m) {
+    var c = m.res === 'V' ? '#1ed760' : (m.res === 'D' ? '#ff4545' : '#f0b020');
+    return '<span title="' + m.adv + ' ' + m.pour + '-' + m.contre + '" style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:' + c + '22;color:' + c + ';font-size:10px;font-weight:800;">' + m.res + '</span>';
+  }).join('');
+  var pOver = pc(st.over, st.j);
+  html += '<div class="cwrap" style="margin-bottom:10px;">'
+    + '<div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#4f5d88;margin-bottom:8px;">Forme \u00b7 10 derniers</div>'
+    + '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px;">' + forme + '</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">'
+    + tuile(pOver + '%', 'Over ' + ligne, pOver >= 50 ? '#1ed760' : '#9fb0c7')
+    + tuile((100 - pOver) + '%', 'Under ' + ligne, pOver < 50 ? '#1ed760' : '#9fb0c7')
+    + '</div></div>';
+
+  /* ── Derniers matchs ── */
+  html += '<div class="cwrap">'
+    + '<div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#4f5d88;margin-bottom:6px;">Derniers matchs</div>';
+  st.liste.slice(0, 20).forEach(function (m) {
+    var c = m.res === 'V' ? '#1ed760' : (m.res === 'D' ? '#ff4545' : '#f0b020');
+    var dt = new Date(m.t);
+    var adv = noms[m.advId] || m.adv || '?';
+    html += '<div style="display:flex;align-items:center;gap:8px;padding:6px 2px;border-bottom:1px solid rgba(255,255,255,.06);font-size:11.5px;">'
+      + '<div style="width:38px;color:var(--t3);font-size:10px;">' + String(dt.getDate()).padStart(2, '0') + '/' + String(dt.getMonth() + 1).padStart(2, '0') + '</div>'
+      + '<div style="width:16px;color:var(--t3);font-size:10px;">' + (m.dom ? '\ud83c\udfe0' : '\u2708\ufe0f') + '</div>'
+      + '<div style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + adv + '</div>'
+      + '<div style="width:52px;text-align:right;font-weight:700;">' + m.pour + '-' + m.contre + '</div>'
+      + '<div style="width:18px;text-align:right;font-weight:800;color:' + c + ';">' + m.res + '</div></div>';
+  });
+  html += '</div></div>';
+
+  el.innerHTML = html;
+}
+
+function _g45SgSaison(y) {
+  _g45SgAn = y;
+  if (typeof loadTeamSaisons === 'function') loadTeamSaisons();
+}
+window._g45SgSaison = _g45SgSaison;
+
+/* ── Branchement : on ENVELOPPE loadTeamSaisons, on ne la modifie pas ──
+   L'equipe est traitee ici seulement si elle n'est PAS dans le mur et qu'elle
+   possede une entree perso hors football. Les equipes du mur gardent donc
+   leurs chargeurs existants (NHL, MLB, NBA), plus riches. */
+var _g45SaisonsOrig = (typeof loadTeamSaisons === 'function') ? loadTeamSaisons : null;
+
+window.loadTeamSaisons = async function () {
+  var el = document.getElementById('ip-saisons');
+  if (!el) return;
+  var nom = (typeof _currentTeam !== 'undefined' ? _currentTeam : '') ||
+            (typeof _currentUnitNom !== 'undefined' ? _currentUnitNom : '') || '';
+  try {
+    var U = (window.state && state.u) ? state.u : [];
+    var estMur = U.some(function (u) { return u && u.n === nom; });
+    var perso = (typeof g45TeamsPerso === 'function') ? g45TeamsPerso()[_g45SgNorm2(nom)] : null;
+    if (!estMur && perso && perso.league && (perso.sport || 'soccer') !== 'soccer') {
+      return await _g45SaisonsGen(el, nom, perso);
+    }
+  } catch (e) { console.warn('saisons generiques', e && e.message); }
+  if (_g45SaisonsOrig) await _g45SaisonsOrig();
+
+  /* DIAGNOSTIC : si la fiche retombe sur le message football alors que l'equipe
+     vient des Competitions, c'est que l'entree perso n'a PAS ete enregistree au
+     clic. On l'affiche plutot que de laisser un message muet. */
+  try {
+    if (/Equipe non trouvee dans la base/.test(el.innerHTML)) {
+      var t = (typeof g45TeamsPerso === 'function') ? g45TeamsPerso() : {};
+      var k = Object.keys(t);
+      el.innerHTML += '<div style="font-size:9.5px;color:#4f5d88;text-align:center;padding:6px;">'
+        + 'diag \u00b7 nom lu : \u00ab ' + nom + ' \u00bb \u00b7 entr\u00e9e perso : '
+        + (t[_g45SgNorm2(nom)] ? JSON.stringify(t[_g45SgNorm2(nom)]) : 'ABSENTE')
+        + ' \u00b7 ' + k.length + ' \u00e9quipes enregistr\u00e9es</div>';
+    }
+  } catch (e) {}
+};
+
+/* La cle de la table perso est le nom en minuscules, espaces compris — PAS la
+   normalisation agressive utilisee pour comparer les noms d'equipes. */
+function _g45SgNorm2(n) { return String(n || '').toLowerCase().trim(); }
