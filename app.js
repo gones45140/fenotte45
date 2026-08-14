@@ -13207,7 +13207,37 @@ async function autoEspnFillSquad(uid, nom) {
   var cacheKey = 'squad_sofa_' + (sofaId || 'af_' + nom);
   var squadData = null;
   try { var cc = JSON.parse(localStorage.getItem(cacheKey) || '{}'); squadData = cc.squad; } catch (e) {}
-  if (!squadData || !squadData.length) { alert('Effectif Sofascore non chargé pour ' + nom + ' — ouvre d\'abord l\'effectif.'); return; }
+
+  /* REPLI 1 : l'effectif affiche a l'ecran. Le message « non charge » etait un
+     FAUX NEGATIF — le tableau montrait bien ses 26 joueurs, mais l'ecriture en
+     cache avait echoue (quota) ou la cle differait. */
+  if ((!squadData || !squadData.length) && window._g45SquadCourant
+      && window._g45SquadCourant.squad && window._g45SquadCourant.squad.length
+      && String(window._g45SquadCourant.nom || '') === String(nom)) {
+    squadData = window._g45SquadCourant.squad;
+    if (window._g45SquadCourant.key) cacheKey = window._g45SquadCourant.key;
+  }
+
+  /* REPLI 2 : on balaye les effectifs en cache et on prend celui dont la cle
+     correspond au club, quelle que soit la variante de nom utilisee a l'ecriture. */
+  if (!squadData || !squadData.length) {
+    var cible = String(nom || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    for (var i = 0; i < localStorage.length; i++) {
+      var kk = localStorage.key(i);
+      if (!kk || kk.indexOf('squad_sofa_') !== 0) continue;
+      var suffixe = kk.slice(11).toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (suffixe !== cible && suffixe !== ('af' + cible) && String(sofaId || '') !== kk.slice(11)) continue;
+      try {
+        var oo = JSON.parse(localStorage.getItem(kk) || '{}');
+        if (oo.squad && oo.squad.length) { squadData = oo.squad; cacheKey = kk; break; }
+      } catch (e) {}
+    }
+  }
+
+  if (!squadData || !squadData.length) {
+    alert('Effectif introuvable pour ' + nom + '.\n\nOuvre l\'onglet Compo et laisse l\'effectif se charger, puis relance Auto ESPN.');
+    return;
+  }
 
   // Équipe déjà saisie manuellement (FBref) et pas sourcée ESPN → on laisse intact
   var srcFlag = 'espn_src_' + saisonKey(keyTeam + '_' + savePrefix);
@@ -13568,7 +13598,10 @@ async function loadFdSquad(el, nom, teamId, noTerrain, terrainOnly) {
       if(!squad && afKey) {
         var afId = await findApiSportsTeamId(nom, afKey);
         if(afId) {
-          var season = 2024;
+          /* La saison etait FIGEE a 2024 : le repli renvoyait donc les stats
+             d'une saison ancienne pour tout club absent de Sofascore — AS Monaco,
+             les clubs de MLS, du Bresil… On suit desormais la saison choisie. */
+          var season = 2000 + parseInt(String(_currentSaison).slice(0, 2), 10);
           var [squadData, statsData] = await Promise.all([
             apiSportsFetch('/players/squads?team='+afId),
             apiSportsFetch('/players?team='+afId+'&season='+season+'&page=1')
@@ -13597,6 +13630,35 @@ async function loadFdSquad(el, nom, teamId, noTerrain, terrainOnly) {
             });
           }
         }
+      }
+
+      /* DERNIER RECOURS : construire l'effectif depuis le ROSTER ESPN.
+         Jusqu'ici, un club absent de Sofascore ET d'api-sports n'avait qu'un lien
+         « voir sur ESPN » — donc pas de tableau, pas d'import FBref, pas de
+         remplissage auto. Le roster ESPN suffit pourtant a fabriquer la liste :
+         il donne identifiant, nom, poste, numero et age. Les statistiques
+         resteront a remplir, mais le tableau EXISTE et devient exploitable. */
+      if(!squad){
+        try{
+          var _re = await espnResolveTeam(nom);
+          if(_re && _re.id){
+            var _rr = await fetch(FD_PROXY + '?host=espn&path=' + encodeURIComponent('/apis/site/v2/sports/soccer/' + _re.league + '/teams/' + _re.id + '/roster'));
+            var _rj = await _rr.json();
+            var _ath = (_rj && _rj.athletes) || [];
+            if(_ath.length && _ath[0] && _ath[0].items){ var _p2=[]; _ath.forEach(function(g){ (g.items||[]).forEach(function(x){_p2.push(x);}); }); _ath = _p2; }
+            if(_ath.length){
+              var _posMap = {G:'Goalkeeper', D:'Defender', M:'Midfielder', F:'Attacker'};
+              squad = _ath.map(function(a){
+                var _ab = (a.position && (a.position.abbreviation || a.position.name)) || '';
+                return { id:'espn'+a.id, name:(a.fullName||a.displayName||''), shortName:(a.displayName||''),
+                         nationality:(a.citizenship||''), position:(_posMap[String(_ab).charAt(0).toUpperCase()]||'Midfielder'),
+                         number:parseInt(a.jersey,10)||0, _age:a.age||0, marketValue:0, sofaId:null,
+                         _goals:0,_assists:0,_minutes:0,_rating:null };
+              });
+              usingSofa = false;
+            }
+          }
+        }catch(e){}
       }
 
       if(!squad){
@@ -13676,6 +13738,11 @@ async function loadFdSquad(el, nom, teamId, noTerrain, terrainOnly) {
       }
 
       // Sauvegarder cache
+      /* L'ecriture peut echouer silencieusement (quota localStorage sature) : le
+         tableau s'affiche alors normalement, mais « Auto ESPN » ne retrouve plus
+         l'effectif et refuse de travailler. On publie donc l'effectif affiche
+         dans une variable, qui sert de repli au bouton. */
+      window._g45SquadCourant = { nom: nom, key: cacheKey, squad: squad, ts: Date.now() };
       try { localStorage.setItem(cacheKey, JSON.stringify({squad:squad,statsMap:statsMap,usingSofa:usingSofa,ts:Date.now()})); } catch(e) {}
     }
 
@@ -13700,11 +13767,20 @@ async function loadFdSquad(el, nom, teamId, noTerrain, terrainOnly) {
     html += '<div style="font-size:9px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--t3);">👤 Squad · '+nom+' <span style="color:var(--t2);font-weight:500;">('+squad.length+')</span></div>';
     html += '<div style="display:flex;align-items:center;gap:8px;">';
     html += '<div style="font-size:9px;color:var(--t3);">'+(usingSofa?'sofascore':'api-football · 2024-25')+'</div>';
-    if(localStorage.getItem('gones45_admin')==='1'){html += '<button id="btn-espn-auto-'+uid+'" onclick="autoEspnFillSquad(\''+uid+'\',\''+nom+'\')" style="display:flex;align-items:center;gap:4px;padding:4px 8px;border-radius:6px;border:1px solid rgba(30,215,96,.3);background:rgba(30,215,96,.12);color:#1ed760;font-size:9px;font-weight:700;cursor:pointer;" title="Remplir auto depuis ESPN (saison sélectionnée, Championnat) — n\'écrase pas une équipe déjà saisie">⚡ Auto ESPN</button>';
+    if(localStorage.getItem('gones45_admin')==='1'){
+      /* Une requete pour tout l'effectif, championnat ET Europe (14/08/2026). */
+      html += '<button id="btn-apis-auto-'+uid+'" onclick="autoApiSportsFillSquad(\''+uid+'\',\''+nom+'\')" style="display:flex;align-items:center;gap:4px;padding:4px 8px;border-radius:6px;border:1px solid rgba(167,139,250,.35);background:rgba(167,139,250,.12);color:#a78bfa;font-size:9px;font-weight:700;cursor:pointer;" title="Remplit tout l\'effectif en 1 requete api-sports (championnat et Europe separes)">\u26a1 Auto api-sports</button>';
+      html += '<button id="btn-espn-auto-'+uid+'" onclick="autoEspnFillSquad(\''+uid+'\',\''+nom+'\')" style="display:flex;align-items:center;gap:4px;padding:4px 8px;border-radius:6px;border:1px solid rgba(30,215,96,.3);background:rgba(30,215,96,.12);color:#1ed760;font-size:9px;font-weight:700;cursor:pointer;" title="Remplir auto depuis ESPN (saison sélectionnée, Championnat) — n\'écrase pas une équipe déjà saisie">⚡ Auto ESPN</button>';
     html += '<button id="btn-fbref-import-'+uid+'" onclick="importFbrefStats(\''+uid+'\',\''+nom+'\')" style="display:flex;align-items:center;gap:4px;padding:4px 8px;border-radius:6px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.07);color:var(--t2);font-size:9px;font-weight:700;cursor:pointer;">📸 Import FBref</button>';}
     html += '<button id="btn-admin-lock-'+uid+'" onclick="toggleAdminLock(\''+uid+'\')" style="padding:4px 7px;border-radius:6px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.07);color:var(--t2);font-size:12px;cursor:pointer;" title="Mode admin">'+(localStorage.getItem('gones45_admin')==='1'?'🔓':'🔒')+'</button>';
     html += '<button onclick="refreshSquadCache(\''+nom+'\')" style="display:flex;align-items:center;gap:4px;padding:4px 8px;border-radius:6px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.07);color:var(--t2);font-size:9px;font-weight:700;cursor:pointer;" title="Vider le cache et recharger le squad depuis l\'API">🔄</button>';
-    if(localStorage.getItem('gones45_admin')==='1'){ html += '<button onclick="resetTeamStats(\''+nom+'\')" style="display:flex;align-items:center;gap:4px;padding:4px 8px;border-radius:6px;border:1px solid rgba(255,69,69,.3);background:rgba(255,69,69,.1);color:#ff7b7b;font-size:9px;font-weight:700;cursor:pointer;" title="Effacer les stats de cette equipe">Reset</button>'; }
+    if(localStorage.getItem('gones45_admin')==='1'){
+      /* Reset de la SAISON entiere, toutes equipes, avec sauvegarde prealable. */
+      html += '<button id="btn-rattr-'+uid+'" onclick="g45RattrapageJournees(\''+uid+'\',\''+nom+'\')" style="display:flex;align-items:center;gap:4px;padding:4px 8px;border-radius:6px;border:1px solid rgba(34,211,238,.35);background:rgba(34,211,238,.10);color:#22d3ee;font-size:9px;font-weight:700;cursor:pointer;" title="Recupere les stats journee par journee (1 requete par match, budget quotidien)">\ud83d\udcc5 Rattrapage J</button>';
+      html += '<span style="font-size:8.5px;color:var(--t3);align-self:center;" title="Requetes api-sports consommees aujourd\'hui">'+g45ApisConso()+'/'+g45ApisPlafond()+'</span>';
+      html += '<button onclick="g45ResetSaisonToutes()" style="display:flex;align-items:center;gap:4px;padding:4px 8px;border-radius:6px;border:1px solid rgba(255,120,80,.35);background:rgba(255,120,80,.10);color:#ff9a6b;font-size:9px;font-weight:700;cursor:pointer;" title="Efface les stats de TOUTE la saison selectionnee, toutes equipes. Sauvegarde telechargee avant.">\ud83e\uddf9 Reset saison</button>';
+      html += '<button onclick="g45RestaurerSaison()" style="display:flex;align-items:center;gap:4px;padding:4px 8px;border-radius:6px;border:1px solid rgba(120,160,255,.3);background:rgba(120,160,255,.10);color:#8fb2ff;font-size:9px;font-weight:700;cursor:pointer;" title="Restaure une sauvegarde JSON">\u21a9\ufe0f Restaurer</button>';
+      html += '<button onclick="resetTeamStats(\''+nom+'\')" style="display:flex;align-items:center;gap:4px;padding:4px 8px;border-radius:6px;border:1px solid rgba(255,69,69,.3);background:rgba(255,69,69,.1);color:#ff7b7b;font-size:9px;font-weight:700;cursor:pointer;" title="Effacer les stats de cette equipe">Reset</button>'; }
     html += '</div>';
     html += '</div>';
 
@@ -26726,22 +26802,39 @@ function g45ToggleStandings(slug, sportPath, btn){
 }
 async function g45LoadStandings(slug, sportPath, box){
   box.innerHTML='<div style="display:flex;align-items:center;gap:8px;padding:14px;color:var(--t3);font-size:11px;"><div style="width:12px;height:12px;border:2px solid rgba(240,176,32,.2);border-top-color:#f0b020;border-radius:50%;animation:spin .8s linear infinite;"></div>Chargement du classement…</div>';
-  var now=new Date(), curY=now.getFullYear();
-  var augY=(now.getMonth()>=7)?curY:curY-1; // saison européenne (août)
-  var calYear=['bra.1','usa.1','arg.1','mex.1','nor.1','swe.1','fin.1','irl.1','jpn.1','kor.1','conmebol.libertadores','conmebol.america','242041'];
-  var primary=(calYear.indexOf(slug)>=0)?curY:augY;
-  if(sportPath==='rugby-league'||sportPath==='baseball'){ primary=curY; } // NRL / MLB = saison en année civile
-  var seen={}, seasons=[primary,augY,curY,curY-1].filter(function(y){ if(seen[y])return false; seen[y]=1; return true; });
+  var now=new Date(), curY=now.getFullYear(), mois=now.getMonth()+1;
+  var augY=(mois>=8)?curY:curY-1; // saison européenne (août)
+  var calYear=G45_LIGUES_CIVILES;   /* source unique */
+  /* Meme calcul que les autres vues : une seule fonction decide de l'annee, sinon
+     le classement et le calendrier se contredisent (c'etait le cas). */
+  var primary=(typeof _g45CompetAnneeAuto==='function') ? _g45CompetAnneeAuto(slug)
+              : ((calYear.indexOf(slug)>=0)?curY:augY);
+  if(sportPath==='rugby-league'||sportPath==='baseball'){ primary=curY; }
+  var seen={}, seasons=[];
+  /* La saison choisie dans le sélecteur passe AVANT tout le reste : elle était
+     purement et simplement ignorée ici. */
+  if(typeof _g45CompetSaison!=='undefined' && _g45CompetSaison) seasons.push(_g45CompetSaison);
+  seasons=seasons.concat([primary,augY,curY,curY-1]).filter(function(y){ if(seen[y])return false; seen[y]=1; return true; });
   try{
-    var data=null, used=null;
+    var data=null, used=null, repli=null, repliAn=null;
     for(var i=0;i<seasons.length;i++){
       var r=await fetch('https://site.api.espn.com/apis/v2/sports/'+sportPath+'/'+slug+'/standings?season='+seasons[i]);
       if(!r.ok) continue;
       var j=await r.json();
       var groups=j.children||(j.standings?[j]:[]);
-      var tot=0; groups.forEach(function(g){ tot+=(((g.standings&&g.standings.entries)||g.entries||[]).length); });
-      if(tot>0){ data=j; used=seasons[i]; break; }
+      var tot=0, joues=0;
+      groups.forEach(function(g){
+        var es=((g.standings&&g.standings.entries)||g.entries||[]);
+        tot+=es.length;
+        es.forEach(function(e){ joues += (parseFloat(_g45Stat(e.stats,['gamesPlayed','games','wins','losses']))||0); });
+      });
+      /* UN CLASSEMENT A ZERO N'EST PAS UN CLASSEMENT : une saison a venir renvoie
+         toutes ses equipes avec 0 match joue, et c'etait accepte comme valide.
+         On le garde en repli, mais on continue a chercher une saison jouee. */
+      if(tot>0 && joues>0){ data=j; used=seasons[i]; break; }
+      if(tot>0 && !repli){ repli=j; repliAn=seasons[i]; }
     }
+    if(!data && repli){ data=repli; used=repliAn; }
     if(!data){ box.innerHTML='<div style="color:var(--t3);font-size:11px;text-align:center;padding:12px;">Classement indisponible pour cette compétition.</div>'; return; }
     box.innerHTML=g45RenderStandings(data, used, sportPath, slug);
   }catch(e){
@@ -26790,7 +26883,11 @@ function g45RenderStandings(data, season, sportPath, slug){
   if(!groups.length) return '<div style="color:var(--t3);font-size:11px;text-align:center;padding:12px;">Classement indisponible.</div>';
   var multi=groups.length>1;
   var usePct=(sportPath==='baseball'||sportPath==='basketball'||sportPath==='football'); // MLB/NBA/NFL = % victoires (NHL garde ses points)
-  var seasLbl = season ? ((sportPath==='rugby-league'||sportPath==='baseball') ? String(season) : (season+'-'+String(season+1).slice(-2))) : '';
+  /* Conventions ESPN : annee de FIN en NHL/NBA (2026 = 2025-26), de DEBUT en
+     NFL et en football, annee civile en NRL et MLB. Le libelle unique
+     « season-(season+1) » annonçait donc 2026-27 sur des donnees 2025-26. */
+  var seasLbl = season ? ((typeof _g45SgLabel==='function') ? _g45SgLabel(slug, season)
+                : ((sportPath==='rugby-league'||sportPath==='baseball') ? String(season) : (season+'-'+String(season+1).slice(-2)))) : '';
   var out='<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#8aa0ff;margin:2px 0 8px;">Classement'+(seasLbl?' · '+seasLbl:'')+'</div>';
   var legend={};
   groups.forEach(function(g){
@@ -26887,7 +26984,7 @@ async function g45LoadScorers(slug, sportPath, box){
   box.innerHTML='<div style="display:flex;align-items:center;gap:8px;padding:14px;color:var(--t3);font-size:11px;"><div style="width:12px;height:12px;border:2px solid rgba(77,132,255,.2);border-top-color:#4d84ff;border-radius:50%;animation:spin .8s linear infinite;"></div>Chargement des buteurs…</div>';
   var now=new Date(), curY=now.getFullYear();
   var augY=(now.getMonth()>=7)?curY:curY-1;
-  var calYear=['bra.1','usa.1','arg.1','mex.1','nor.1','swe.1','fin.1','irl.1','jpn.1','kor.1'];
+  var calYear=G45_LIGUES_CIVILES;   /* source unique */
   var primary=(calYear.indexOf(slug)>=0)?curY:augY;
   var seen={}, seasons=[primary,augY,curY].filter(function(y){ if(seen[y])return false; seen[y]=1; return true; });
   try{
@@ -27987,7 +28084,7 @@ function _g45FillStandings(box, sp){
     var hId=cont.getAttribute('data-h')||'', aId=cont.getAttribute('data-a')||'';
     var parts=String(sp||'soccer/eng.1').split('/'); var sportPath=parts[0]||'soccer', slug=parts.slice(1).join('/')||'eng.1';
     var now=new Date(), curY=now.getFullYear(), augY=(now.getMonth()>=7)?curY:curY-1;
-    var calYear=['bra.1','usa.1','arg.1','mex.1','nor.1','swe.1','fin.1','irl.1','jpn.1','kor.1','conmebol.libertadores','conmebol.america','242041','fifa.world'];
+    var calYear=G45_LIGUES_CIVILES;   /* source unique */
     var primary=(sportPath==='rugby-league'||sportPath==='baseball'||calYear.indexOf(slug)>=0)?curY:augY;
     var seen={}, seasons=[primary,curY,augY].filter(function(y){ if(seen[y])return false; seen[y]=1; return true; });
     (function tryS(i){
@@ -31399,9 +31496,14 @@ function g45NrlRender() {
     var lst = parJr[jr];
     var nCotes = lst.filter(function (m) { var c = cotes[_g45Cle(m.id)]; return c && c.dom > 1 && c.ext > 1; }).length;
     return '<div style="margin-bottom:14px;">'
-      + '<div style="font-weight:800;font-size:11.5px;color:var(--a);margin-bottom:6px;">'
-        + 'Journ\u00e9e ' + jr + ' <span style="color:#9fb0c7;font-weight:600;">\u00b7 ' + lst.length + ' matchs \u00b7 '
-        + nCotes + ' avec cotes</span></div>'
+      + '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px;">'
+        + '<div style="font-weight:800;font-size:11.5px;color:var(--a);">Journ\u00e9e ' + jr
+        + ' <span data-jr-compte="1" data-jr-ids="' + lst.map(function (m) { return m.id; }).join(',')
+        + '" style="color:#9fb0c7;font-weight:600;">\u00b7 ' + lst.length + ' matchs \u00b7 ' + nCotes + ' avec cotes</span></div>'
+        + (g45EstAdmin()
+            ? ('<button onclick="g45CotesEspnJournee(\'' + jr + '\',this)" title="Remplit les cotes vides de cette journ\u00e9e depuis ESPN" style="margin-left:auto;padding:4px 10px;border-radius:12px;border:1px solid rgba(46,204,113,.4);background:rgba(46,204,113,.10);color:#2ecc71;font-size:10px;font-weight:800;cursor:pointer;">\ud83d\udcb0 Cotes ESPN</button>')
+            : '')
+        + '</div>'
       + lst.map(function (m) {
           var c = cotes[_g45Cle(m.id)] || {};
           var d = (m.date || '').slice(8, 10) + '/' + (m.date || '').slice(5, 7);
@@ -31411,9 +31513,14 @@ function g45NrlRender() {
             + '<div style="display:flex;justify-content:space-between;align-items:center;gap:7px;flex-wrap:wrap;">'
             + '<div style="flex:1;min-width:150px;font-size:11.5px;"><span style="color:#9fb0c7">' + d + '</span> '
               + '<b>' + m.dom + '</b> ' + score + ' <b>' + m.ext + '</b></div>'
-            + '<input value="' + (c.dom || '') + '" placeholder="dom" onchange="g45NrlSaisir(\'' + m.id + '\',\'dom\',this.value)" style="' + ch + '">'
-            + '<input value="' + (c.ext || '') + '" placeholder="ext" onchange="g45NrlSaisir(\'' + m.id + '\',\'ext\',this.value)" style="' + ch + '">'
-            + '<input placeholder="URL Sofascore" onchange="g45NrlCotesSofa(\'' + m.id + '\',this.value)" style="width:110px;padding:6px;font-size:10.5px;border-radius:7px;background:#0f1626;border:1px solid rgba(255,255,255,.14);color:#e6ecf5;">'
+            /* URL Sofascore retiree le 13/08 (une requete RapidAPI par match).
+               Le champ NUL n'apparait que la ou le nul existe. */
+            + '<input value="' + (c.dom || '') + '" placeholder="dom" inputmode="decimal" onchange="g45NrlSaisir(\'' + m.id + '\',\'dom\',this.value,this)" style="' + ch + '">'
+            + (_g45AvecNul(_g45NrlCtx.sport)
+                ? ('<input value="' + (c.nul || '') + '" placeholder="nul" inputmode="decimal" onchange="g45NrlSaisir(\'' + m.id + '\',\'nul\',this.value,this)" style="' + ch + '">')
+                : '')
+            + '<input value="' + (c.ext || '') + '" placeholder="ext" inputmode="decimal" onchange="g45NrlSaisir(\'' + m.id + '\',\'ext\',this.value,this)" style="' + ch + '">'
+            + ((c.dom || c.ext || c.nul) ? ('<button onclick="g45NrlEffacer(\'' + m.id + '\')" title="Effacer les cotes de ce match" style="padding:6px 9px;border-radius:7px;border:1px solid rgba(255,107,107,.35);background:rgba(255,107,107,.10);color:#ff8a8a;font-size:11px;font-weight:800;cursor:pointer;">\u2715</button>') : '')
             + '</div></div>';
         }).join('')
       + '</div>';
@@ -31423,9 +31530,17 @@ function g45NrlRender() {
 window.g45NrlRender = g45NrlRender;
 
 async function g45NrlDemarrer() {
-  var comp = (document.getElementById('g45-nrl-comp') || {}).value || 'rugby-league|3';
-  var p = comp.split('|');
-  _g45NrlCtx = { sport: p[0], ligue: p[1] };
+  /* PIEGE : ce selecteur n'existe QUE dans le panneau NRL autonome. Dans la vue
+     Journees des Competitions il est absent, et le repli code en dur
+     'rugby-league|3' ECRASAIT le contexte pose par la vue — d'ou des matchs de
+     NRL affiches sous la Ligue 1. */
+  var sel = document.getElementById('g45-nrl-comp');
+  if (sel && sel.value) {
+    var p = String(sel.value).split('|');
+    _g45NrlCtx = { sport: p[0], ligue: p[1] };
+  } else if (!_g45NrlCtx || !_g45NrlCtx.sport || !_g45NrlCtx.ligue) {
+    _g45NrlCtx = { sport: 'rugby-league', ligue: '3' };
+  }
   var an = (document.getElementById('g45-nrl-annee') || {}).value || new Date().getFullYear();
   await g45NrlCharger(parseInt(an, 10));
   g45NrlRender();
@@ -31515,17 +31630,35 @@ function _g45CompetAnnee(slug) {
   if (_g45CompetSaison) return _g45CompetSaison;
   return _g45CompetAnneeAuto(slug);
 }
+/* ═══ CHAMPIONNATS EN ANNEE CIVILE — SOURCE UNIQUE ═══
+   Il en existait TROIS listes divergentes dans le fichier : celle-ci ignorait
+   le Mexique, la Finlande, l'Irlande et la Coree, que le classement connaissait.
+   Resultat : les grands championnats (aout-mai) tombaient juste partout, et les
+   championnats secondaires en annee civile affichaient une saison a zero selon
+   la vue consultee. Toute nouvelle ligue s'ajoute ICI, et nulle part ailleurs. */
+var G45_LIGUES_CIVILES = [
+  'bra.1','bra.2','usa.1','usa.2','arg.1','arg.2','mex.1','chi.1','col.1','uru.1',
+  'nor.1','nor.2','swe.1','swe.2','fin.1','irl.1','isl.1','est.1','lva.1','ltu.1',
+  'jpn.1','jpn.2','kor.1','chn.1','aus.1','sgp.1',
+  'conmebol.libertadores','conmebol.america','242041','fifa.world',
+  '3','mlb'
+];
+
 function _g45CompetAnneeAuto(slug) {
-  var civils = ['bra.1','usa.1','arg.1','nor.1','swe.1','jpn.1','chn.1','3','mlb'];
-  var d = new Date();
+  var civils = G45_LIGUES_CIVILES;
+  var d = new Date(), m = d.getMonth() + 1;
   if (civils.indexOf(slug) >= 0) return d.getFullYear();
-  return (d.getMonth() + 1 >= 8) ? d.getFullYear() : d.getFullYear() - 1;
+  /* La NFL commence en septembre, pas en août : sinon on propose par défaut une
+     saison sans un seul match joué, et tout s'affiche à zéro. */
+  if (slug === 'nfl' || slug === 'college-football') return (m >= 9) ? d.getFullYear() : d.getFullYear() - 1;
+  return (m >= 8) ? d.getFullYear() : d.getFullYear() - 1;
 }
 
 /* Liste des equipes d'une competition, tiree du CLASSEMENT — une seule requete,
    et on recupere au passage logos, rang et points. Cache 6 h. */
 async function _g45CompetEquipes(c) {
-  var an = _g45CompetAnnee(c.s);
+  /* `c.an` permet a un appelant d'imposer la saison. */
+  var an = (c.an != null) ? c.an : _g45CompetAnnee(c.s);
   var cle = 'g45compet_' + c.sp + '_' + c.s + '_' + an;
   if (_g45CompetCache[cle]) return _g45CompetCache[cle];
   try {
@@ -31606,7 +31739,22 @@ window.g45CompetVue = g45CompetVue;
    ESPN_TEAM_LEAGUE ne connaissent qu'une centaine de clubs, pas Angers ni
    Le Mans. Une fois enregistree, l'equipe est resolue partout : Saisons,
    paris, notifications. */
-function g45CompetOuvrir(nom, id, slug, sport) {
+function g45CompetOuvrir(nom, id, slug, sport, dejaResolu) {
+  /* FILET : plusieurs vues appellent cette fonction avec le seul nom. */
+  if (!dejaResolu && (!id || !slug) && typeof _g45CompetSel !== 'undefined' && _g45CompetSel) {
+    slug = slug || _g45CompetSel;
+    sport = sport || (typeof _g45CompetSport !== 'undefined' ? _g45CompetSport : '') || 'soccer';
+    if (!id && typeof _g45CompetEquipes === 'function') {
+      _g45CompetEquipes({ sp: sport, s: slug }).then(function (eq) {
+        var n2 = String(nom || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+        var hit = (eq || []).filter(function (t) {
+          return String(t.nom || '').toLowerCase().replace(/[^a-z0-9]/g, '') === n2;
+        })[0];
+        g45CompetOuvrir(nom, hit ? hit.id : '', slug, sport, true);
+      }).catch(function () { g45CompetOuvrir(nom, '', slug, sport, true); });
+      return;
+    }
+  }
   try {
     if (id && slug && typeof g45TeamsPerso === 'function') {
       var p = g45TeamsPerso();
@@ -31735,7 +31883,8 @@ async function loadCompetTab() {
   var opts = '<option value="">Saison auto (' + anAuto + ')</option>';
   for (var y = anAuto; y >= 2002; y--) {
     opts += '<option value="' + y + '"' + (_g45CompetSaison === y ? ' selected' : '') + '>'
-          + (civil ? y : (y + '-' + String(y + 1).slice(2))) + '</option>';
+          + ((typeof _g45SgLabel === 'function') ? _g45SgLabel(c.s, y)
+             : (civil ? y : (y + '-' + String(y + 1).slice(2)))) + '</option>';
   }
 
   var vues = [['equipes','\ud83d\udc65 \u00c9quipes'], ['direct','\ud83d\udd34 Direct'],
@@ -31815,10 +31964,15 @@ async function loadCompetTab() {
     _g45NrlCtx = { sport: c.sp, ligue: c.s };
     body.innerHTML = '<div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap;">'
       + '<input id="g45-nrl-annee" value="' + _g45CompetAnnee(c.s) + '" style="width:82px;padding:10px 11px;font-size:12.5px;border-radius:9px;background:#0f1626;border:1px solid rgba(255,255,255,.14);color:#e6ecf5;">'
-      + '<button onclick="g45NrlDemarrer()" style="flex:1;min-width:180px;padding:12px 14px;font-size:12.5px;font-weight:800;cursor:pointer;border-radius:10px;background:#2563eb;border:1px solid #3b82f6;color:#fff;">\u2b07\ufe0f Charger la saison</button>'
+      + (g45EstAdmin()
+          ? ('<button onclick="g45NrlRecharger()" title="Force le rechargement du calendrier depuis ESPN" style="flex:1;min-width:140px;padding:12px 14px;font-size:12.5px;font-weight:800;cursor:pointer;border-radius:10px;background:#2563eb;border:1px solid #3b82f6;color:#fff;">\u21bb Recharger</button>'
+             + '<button onclick="g45CotesEspnSaison(this)" title="Remplit toutes les cotes vides de la saison depuis ESPN" style="flex:1;min-width:140px;padding:12px 14px;font-size:12.5px;font-weight:800;cursor:pointer;border-radius:10px;background:rgba(46,204,113,.14);border:1px solid rgba(46,204,113,.5);color:#2ecc71;">\ud83d\udcb0 Cotes ESPN \u2014 saison</button>')
+          : '')
+      + '<button id="btn-admin-lock-journees" onclick="g45AdminBascule()" title="Mode administrateur" style="padding:12px 13px;border-radius:10px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.07);color:var(--t2);font-size:14px;cursor:pointer;">'
+        + (g45EstAdmin() ? '\ud83d\udd13' : '\ud83d\udd12') + '</button>'
       + '</div>'
-      + '<div style="font-size:10px;color:var(--t3);line-height:1.6;margin-bottom:10px;">Tous les matchs group\u00e9s par journ\u00e9e. Colle l\'URL Sofascore d\'un match pour r\u00e9cup\u00e9rer ses cotes, ou saisis-les \u00e0 la main.</div>'
-      + '<div id="g45-nrl-msg" style="font-size:11.5px;font-weight:600;min-height:16px;color:#9fb0c7;background:rgba(0,0,0,.25);border-radius:8px;padding:10px 12px;margin-bottom:12px;">Appuie sur \u00ab Charger la saison \u00bb.</div>'
+      + '<div style="font-size:10px;color:var(--t3);line-height:1.6;margin-bottom:10px;">Tous les matchs group\u00e9s par journ\u00e9e. La saisie des cotes est libre \u2014 dom, nul, ext. Le rechargement du calendrier et le remplissage automatique depuis ESPN sont r\u00e9serv\u00e9s \u00e0 l\'administrateur (cadenas).</div>'
+      + '<div id="g45-nrl-msg" style="font-size:11.5px;font-weight:600;min-height:16px;color:#9fb0c7;background:rgba(0,0,0,.25);border-radius:8px;padding:10px 12px;margin-bottom:12px;">\u23f3\u2026</div>'
       + '<div id="g45-nrl-synth" style="font-size:11.5px;line-height:1.8;margin-bottom:12px;"></div>'
       + '<div id="g45-nrl-liste"></div>';
     var cleAttendue = c.sp + '|' + c.s + '|' + _g45CompetAnnee(c.s);
@@ -32084,7 +32238,7 @@ window.g45FormeN = g45FormeN;
    parametre — la vue Forme marche donc aussi en NBA, NHL, NFL, MLB et rugby.
    Cache 12 h par sport+ligue+saison, car c'est une requete par equipe. */
 async function _g45CompetMatchs(sportPath, slug, an, ids, progres) {
-  var ck = 'g45cm_' + sportPath + '_' + slug + '_' + an;
+  var ck = 'g45cm3_' + sportPath + '_' + slug + '_' + an;   /* v3 : id d'evenement + phase finale */
   try {
     var cc = JSON.parse(localStorage.getItem(ck) || 'null');
     if (cc && (Date.now() - cc.t) < 12 * 3600000) return cc.d;
@@ -32113,10 +32267,60 @@ async function _g45CompetMatchs(sportPath, slug, an, ids, progres) {
         var t = Date.parse(e.date);
         if (isNaN(hg) || isNaN(ag) || !hid || !aid || isNaN(t)) return;
         vus[e.id] = 1;
-        ms.push({ h: hid, a: aid, hg: hg, ag: ag, t: t });
+        ms.push({ id: String(e.id), h: hid, a: aid, hg: hg, ag: ag, t: t });
       });
     } catch (e) {}
   }
+  /* ═══ PHASE FINALE ═══
+     `teams/{id}/schedule` ne renvoie QUE la saison reguliere : ESPN range les
+     playoffs derriere `seasontype=3`. Les Super Bowl, finales de conference,
+     series NBA et NHL, World Series et finales NRL manquaient donc a l'appel
+     dans les fiches d'equipe.
+
+     ECONOMIE : on ne refait PAS 32 appels par equipe. Les playoffs suivent
+     immediatement la saison reguliere, donc une SEULE requete scoreboard sur la
+     fenetre qui suit le dernier match collecte suffit pour toute la ligue.
+     La fenetre est deduite des donnees, jamais codee en dur : elle s'adapte
+     donc aux calendriers decales sans nouveau reglage. */
+  if (ms.length && ['football', 'basketball', 'hockey', 'baseball', 'rugby-league', 'rugby'].indexOf(sportPath) >= 0) {
+    var maxT = 0;
+    ms.forEach(function (m) { if (m.t > maxT) maxT = m.t; });
+    var fmtP = function (d) {
+      return d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0');
+    };
+    var p1 = new Date(maxT - 21 * 86400000), p2 = new Date(maxT + 120 * 86400000);
+    try {
+      var rp = await fetch('https://site.api.espn.com/apis/site/v2/sports/' + sportPath + '/' + slug +
+                           '/scoreboard?dates=' + fmtP(p1) + '-' + fmtP(p2) + '&limit=1000&seasontype=3');
+      if (rp.ok) {
+        var jp = await rp.json();
+        ((jp && jp.events) || []).forEach(function (e) {
+          if (vus[e.id]) return;
+          var cp = (e.competitions && e.competitions[0]) || {};
+          var stp = (cp.status && cp.status.type) || (e.status && e.status.type) || {};
+          if (stp.completed !== true) return;
+          var csp = cp.competitors || []; if (csp.length < 2) return;
+          var hop = csp.filter(function (x) { return x.homeAway === 'home'; })[0];
+          var awp = csp.filter(function (x) { return x.homeAway === 'away'; })[0];
+          if (!hop || !awp) return;
+          var svp = function (x) { var v = x.score; if (v && typeof v === 'object') v = (v.value != null ? v.value : v.displayValue); return parseInt(v, 10); };
+          var hgp = svp(hop), agp = svp(awp);
+          var hidp = String((hop.team && hop.team.id) || ''), aidp = String((awp.team && awp.team.id) || '');
+          var tp = Date.parse(e.date);
+          if (isNaN(hgp) || isNaN(agp) || !hidp || !aidp || isNaN(tp)) return;
+          vus[e.id] = 1;
+          ms.push({
+            id: String(e.id), h: hidp, a: aidp, hg: hgp, ag: agp, t: tp,
+            po: 1,   /* marque « phase finale » : exploitable a l'affichage */
+            hn: (hop.team && (hop.team.shortDisplayName || hop.team.displayName)) || '',
+            an: (awp.team && (awp.team.shortDisplayName || awp.team.displayName)) || '',
+            hl: (hop.team && hop.team.logo) || '', al: (awp.team && awp.team.logo) || ''
+          });
+        });
+      }
+    } catch (e) {}
+  }
+
   /* REPLI SCOREBOARD. Les identifiants d'equipe de `sports.core` (28919, 28920…)
      ne sont PAS ceux de `site.api` : le calendrier par equipe renvoie alors 500.
      C'est le cas du NRL, dont le classement n'est pas publie et dont les equipes
@@ -32153,6 +32357,7 @@ async function _g45CompetMatchs(sportPath, slug, an, ids, progres) {
           if (isNaN(hg3) || isNaN(ag3) || !hid3 || !aid3 || isNaN(t3)) return;
           vus[e.id] = 1;
           ms.push({
+            id: String(e.id),
             h: hid3, a: aid3, hg: hg3, ag: ag3, t: t3,
             hn: (ho3.team && (ho3.team.shortDisplayName || ho3.team.displayName)) || '',
             an: (aw3.team && (aw3.team.shortDisplayName || aw3.team.displayName)) || '',
@@ -32242,6 +32447,7 @@ async function g45FormeRender(c, body) {
     st.serie = der.map(function (x) { return x.r; }).reverse();   /* le plus recent a gauche */
     st.nom = (noms[id] && noms[id].nom) || t.nom;
     st.logo = (noms[id] && noms[id].logo) || t.logo;
+    st.id = id;   /* sans ca, le clic ouvrait la fiche SANS identifiant ESPN */
     return st;
   }).filter(function (x) { return x.mj > 0; });
 
@@ -32281,7 +32487,7 @@ async function g45FormeRender(c, body) {
     return '<tr style="border-top:1px solid rgba(255,255,255,.06);">'
       + '<td style="padding:7px 4px;text-align:center;color:#9fb0c7;font-size:11px;">' + (i + 1) + '</td>'
       + '<td style="padding:7px 4px;">'
-        + '<span onclick="g45CompetOuvrir(\'' + String(t.nom).replace(/'/g, "\\'") + '\')" style="display:flex;align-items:center;gap:6px;cursor:pointer;">'
+        + '<span onclick="g45CompetOuvrir(\'' + String(t.nom).replace(/'/g, "\\'") + '\',\'' + (t.id || '') + '\',\'' + c.s + '\',\'' + c.sp + '\')" style="display:flex;align-items:center;gap:6px;cursor:pointer;">'
         + (t.logo ? '<img src="' + t.logo + '" style="width:18px;height:18px;object-fit:contain;" loading="lazy">' : '')
         + '<span style="font-size:11.5px;font-weight:700;">' + t.nom + '</span></span></td>'
       + '<td style="padding:7px 4px;text-align:center;font-size:11px;">' + t.mj + '</td>'
@@ -32821,213 +33027,441 @@ window.g45StatsIndRender = g45StatsIndRender;
 /* ═══════════════════════════════════════════════════════════════════════════
    SAISONS GENERIQUES — sports hors football (13/08/2026)
    ───────────────────────────────────────────────────────────────────────────
-   POURQUOI : l'onglet Saisons d'une fiche equipe reposait, hors football, sur
-   des TABLES DE NOMS CABLEES (NHL_TEAMS, MLB_TEAMS, NBA_TEAMS, NFL_TEAMS) et,
-   pour le rugby, sur une liste de douze noms ecrite a la main. Une equipe
-   ouverte depuis l'onglet Competitions porte le nom que lui donne ESPN
-   (« Roosters », pas « Sydney Roosters ») et ne figure dans aucune de ces
-   tables : la fiche tombait donc dans la branche FOOTBALL et affichait
-   « Equipe non trouvee dans la base ». Meme cause pour NHL, NFL et MLB.
+   POURQUOI : l'onglet Saisons reposait, hors football, sur des TABLES DE NOMS
+   CABLEES (NHL_TEAMS, MLB_TEAMS, NFL_TEAMS) et, pour le rugby, sur une liste de
+   douze noms ecrite a la main. Une equipe ouverte depuis Competitions porte le
+   nom que lui donne ESPN (« Roosters », pas « Sydney Roosters ») : elle ne
+   figurait dans aucune table et la fiche tombait dans la branche FOOTBALL.
 
-   CE QU'ON FAIT : quand l'equipe n'est PAS dans le mur mais possede une entree
-   dans `g45_teams_perso` (posee par g45CompetOuvrir au clic), on reconstruit
-   les saisons a partir des MATCHS de la competition, exactement comme la vue
-   Forme. Aucune table de noms, donc aucune maintenance : ca marche pour les
-   17 equipes de NRL comme pour les 32 de NFL.
+   SOURCE : uniquement ESPN. Le classement ne donne ni split domicile/exterieur
+   ni Over/Under, et le calendrier par equipe renvoie 500 avec un identifiant
+   `sports.core` (cas du NRL). On repart donc des MATCHS collectes par
+   `_g45CompetMatchs` — le meme cache que la vue Forme, donc en general zero
+   requete supplementaire.
 
-   PIEGE REPRIS DE LA VUE FORME : les identifiants de `sports.core` (28919…)
-   ne sont pas ceux de `site.api`. Le NRL, dont le classement n'est pas publie,
-   vient de core — le filtrage par identifiant echouerait donc. On accepte
-   AUSSI la correspondance par NOM, que le repli scoreboard fournit (`hn`/`an`).
+   LES LIGNES O/U SONT CALCULEES, PAS CABLEES. Elles se placent autour de la
+   moyenne observee, avec un pas choisi selon l'ordre de grandeur : 1 en
+   football (2.8 buts), 1 en hockey et baseball, 5 en rugby et football US
+   (45 points), 10 en basket (225). Aucune table par competition a maintenir :
+   une nouvelle ligue tombe juste.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-var _g45SgAn = null;   /* saison choisie dans la fiche, independante des Competitions */
+var _g45SgAn = null;        /* saison choisie dans la fiche */
+var _g45SgFiltre = 'global';
+var _g45SgQuick = null;     /* cases cochees ; null = valeurs par defaut */
+var _g45SgMem = {};         /* matchs deja charges, par sport|ligue|annee */
+var _g45SgReplie = false;    /* un seul repli automatique sur la saison precedente */
+var _g45SgNomCourant = '';   /* equipe affichee, pour reinitialiser les filtres */
+var _g45SgPhase = 'tout';    /* 'tout' | 'reg' | 'po' */
 
 function _g45SgNorm(s) {
   return String(s || '').toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]/g, '');
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
+}
+function _g45SgCle(n) { return String(n || '').toLowerCase().trim(); }
+
+/* Libelle d'une saison. ESPN n'a PAS la meme convention partout : le parametre
+   `season` vaut l'annee de FIN pour les ligues nord-americaines (2026 = saison
+   2025-26), l'annee civile pour le NRL et la MLB, et l'annee de DEBUT pour le
+   football et le rugby. Sans ca, une chip « 2026 » sur les Avalanche montre en
+   fait 2025-26 : on croit consulter une saison et on en voit une autre. */
+function _g45SgLabel(lg, y) {
+  if (['3', 'mlb'].indexOf(lg) >= 0) return String(y);                 /* annee civile */
+  if (['nhl', 'nba', 'wnba'].indexOf(lg) >= 0)                         /* annee de FIN */
+    return (y - 1) + '-' + String(y).slice(2);
+  return y + '-' + String(y + 1).slice(2);                             /* annee de DEBUT */
 }
 
-/* Ligne de total de points au-dessus de laquelle on compte les « Over ».
-   Valeurs usuelles des bookmakers, par sport. */
-function _g45SgLigne(sport, slug) {
-  if (slug === 'nba' || slug === 'wnba' || sport === 'basketball') return 220.5;
-  if (sport === 'hockey') return 5.5;
-  if (sport === 'baseball') return 8.5;
-  if (sport === 'football') return 44.5;          /* football americain */
-  if (sport === 'rugby-league') return 40.5;
-  if (sport === 'rugby') return 45.5;
-  return 2.5;                                      /* football */
+/* PIEGE NFL : la NFL se joue a cheval sur deux annees comme la NBA et la NHL,
+   mais ESPN la numerote par l'annee de DEBUT — saison 2025 = septembre 2025 a
+   fevrier 2026 — alors que la NBA et la NHL sont numerotees par l'annee de FIN.
+   Les mettre dans le meme panier affichait « 2025-26 » sur des donnees 2026-27,
+   et surtout proposait par defaut une saison qui n'a pas encore commence.
+
+   Deuxieme piege, la date de bascule. Au 13 aout la NFL n'a pas repris : sa
+   derniere saison COMPLETE est 2025. On ne bascule donc qu'en septembre, alors
+   que le football europeen bascule des aout. */
+function _g45SgAnAuto(lg) {
+  var d = new Date(), y = d.getFullYear(), m = d.getMonth() + 1;
+  if (['3', 'mlb'].indexOf(lg) >= 0) return y;                          /* annee civile */
+  if (['nhl', 'nba', 'wnba'].indexOf(lg) >= 0) return (m >= 9) ? (y + 1) : y;
+  if (['nfl', 'college-football'].indexOf(lg) >= 0) return (m >= 9) ? y : (y - 1);
+  return (m >= 8) ? y : (y - 1);                                        /* football, rugby */
+}
+
+/* Cinq lignes autour de la moyenne. Le pas suit l'ordre de grandeur du sport. */
+function _g45SgLignes(moy) {
+  var pas = moy <= 15 ? 1 : (moy <= 90 ? 5 : 10);
+  var centre = Math.round(moy / pas) * pas - 0.5;
+  var out = [];
+  for (var i = -2; i <= 2; i++) {
+    var v = centre + i * pas;
+    if (v > 0) out.push(v);
+  }
+  return out;
 }
 
 /* Calcul pur : aucune requete, testable hors navigateur. */
-function _g45SgCalc(ms, monId, monNom, ligne) {
-  var st = {
-    j:0, v:0, n:0, d:0, bp:0, bc:0, over:0,
-    dom:{j:0,v:0,n:0,d:0,bp:0,bc:0}, ext:{j:0,v:0,n:0,d:0,bp:0,bc:0},
-    liste:[]
-  };
+function _g45SgCalc(ms, monId, monNom) {
+  var st = { j:0, v:0, n:0, d:0, bp:0, bc:0, cs:0, sansMarquer:0, po:0, liste:[],
+             dom:{j:0,v:0,n:0,d:0,bp:0,bc:0}, ext:{j:0,v:0,n:0,d:0,bp:0,bc:0} };
   var id = String(monId || ''), nn = _g45SgNorm(monNom);
 
   ms.forEach(function (m) {
+    /* Les ids `core` (NRL) ne sont pas ceux du scoreboard : on accepte AUSSI la
+       correspondance par nom, que le repli scoreboard fournit (hn/an). */
     var estDom = (id && String(m.h) === id) || (nn && m.hn && _g45SgNorm(m.hn) === nn);
     var estExt = (id && String(m.a) === id) || (nn && m.an && _g45SgNorm(m.an) === nn);
-    if (estDom === estExt) return;                 /* ni l'un ni l'autre, ou les deux */
+    if (estDom === estExt) return;
 
-    var pour   = estDom ? m.hg : m.ag;
-    var contre = estDom ? m.ag : m.hg;
-    var res    = pour > contre ? 'V' : (pour < contre ? 'D' : 'N');
-    var bloc   = estDom ? st.dom : st.ext;
+    var pour = estDom ? m.hg : m.ag, contre = estDom ? m.ag : m.hg;
+    var res = pour > contre ? 'V' : (pour < contre ? 'D' : 'N');
+    var b = estDom ? st.dom : st.ext;
 
     st.j++; st.bp += pour; st.bc += contre;
-    bloc.j++; bloc.bp += pour; bloc.bc += contre;
-    if (res === 'V') { st.v++; bloc.v++; } else if (res === 'D') { st.d++; bloc.d++; } else { st.n++; bloc.n++; }
-    if ((m.hg + m.ag) > ligne) st.over++;
+    b.j++; b.bp += pour; b.bc += contre;
+    if (res === 'V') { st.v++; b.v++; } else if (res === 'D') { st.d++; b.d++; } else { st.n++; b.n++; }
+    if (contre === 0) st.cs++;
+    if (pour === 0) st.sansMarquer++;
+    if (m.po) st.po++;
 
-    st.liste.push({
-      t: m.t, dom: estDom, res: res, pour: pour, contre: contre,
-      adv: estDom ? (m.an || m.a) : (m.hn || m.h),
-      advId: estDom ? String(m.a) : String(m.h)
-    });
+    st.liste.push({ id:m.id || '', po:m.po ? 1 : 0, t:m.t, dom:estDom, res:res, pour:pour, contre:contre, tot:pour + contre,
+                    adv: estDom ? (m.an || '') : (m.hn || ''),
+                    advId: estDom ? String(m.a) : String(m.h) });
   });
 
-  st.liste.sort(function (a, b) { return b.t - a.t; });   /* plus recent en tete */
+  st.liste.sort(function (a, b2) { return b2.t - a.t; });
+
+  /* Serie en cours, lue depuis le match le plus recent. */
+  st.serie = 0; st.serieType = '';
+  for (var i = 0; i < st.liste.length; i++) {
+    var r = st.liste[i].res === 'V' ? 'V' : 'X';   /* nul ou defaite = pas de victoire */
+    if (!st.serieType) { st.serieType = r; st.serie = 1; }
+    else if (r === st.serieType) st.serie++;
+    else break;
+  }
   return st;
+}
+
+/* Compte les matchs d'une liste au-dessus / en-dessous d'une ligne. */
+function _g45SgCompte(liste, cle) {
+  var n = 0;
+  liste.forEach(function (m) {
+    var ok = false;
+    if (cle.charAt(0) === 'O') ok = m.tot > parseFloat(cle.slice(1));
+    else if (cle.charAt(0) === 'U') ok = m.tot < parseFloat(cle.slice(1));
+    else if (cle === 'WIN') ok = m.res === 'V';
+    else if (cle === 'LOSE') ok = m.res === 'D';
+    else if (cle === 'CS') ok = m.contre === 0;
+    else if (cle === 'BTS') ok = m.pour > 0 && m.contre > 0;
+    if (ok) n++;
+  });
+  return n;
 }
 
 async function _g45SaisonsGen(el, nom, perso) {
   var sp = perso.sport || 'soccer', lg = String(perso.league || '');
-  var ligne = _g45SgLigne(sp, lg);
-
-  /* Deux saisons proposees, selon la convention du championnat (civile pour le
-     NRL et la MLB, a cheval sinon) — la meme fonction que l'onglet Competitions. */
-  var anAuto = (typeof _g45CompetAnneeAuto === 'function') ? _g45CompetAnneeAuto(lg) : new Date().getFullYear();
+  var anAuto = _g45SgAnAuto(lg);
   var an = _g45SgAn || anAuto;
+  var memK = sp + '|' + lg + '|' + an;
 
-  el.innerHTML = '<div style="display:flex;align-items:center;gap:10px;padding:20px;color:var(--t3);font-size:12px;">'
-    + '<div style="width:16px;height:16px;border:2px solid rgba(77,132,255,.2);border-top-color:#4d84ff;border-radius:50%;animation:spin .8s linear infinite;"></div>'
-    + '<span id="sg-prog">Chargement de la saison ' + an + '\u2026</span></div>';
-
-  var eq = [], ms = [];
+  var ms = _g45SgMem[memK], eq = [];
+  if (!ms) {
+    el.innerHTML = '<div style="display:flex;align-items:center;gap:10px;padding:20px;color:var(--t3);font-size:12px;">'
+      + '<div style="width:16px;height:16px;border:2px solid rgba(77,132,255,.2);border-top-color:#4d84ff;border-radius:50%;animation:spin .8s linear infinite;"></div>'
+      + '<span id="sg-prog">Chargement de la saison ' + an + '\u2026</span></div>';
+  }
   try { eq = await _g45CompetEquipes({ sp: sp, s: lg }); } catch (e) {}
-  var ids = eq.map(function (t) { return t.id; }).filter(Boolean);
   var noms = {}; eq.forEach(function (t) { noms[String(t.id)] = t.nom; });
+  if (!ms) {
+    try {
+      ms = await _g45CompetMatchs(sp, lg, an, eq.map(function (t) { return t.id; }).filter(Boolean),
+        function (i, n) { var p = document.getElementById('sg-prog'); if (p) p.textContent = 'Chargement de la saison ' + an + '\u2026 (' + i + '/' + n + ')'; });
+    } catch (e) { ms = []; }
+    _g45SgMem[memK] = ms;
+  }
 
-  try {
-    ms = await _g45CompetMatchs(sp, lg, an, ids, function (i, n) {
-      var p = document.getElementById('sg-prog');
-      if (p) p.textContent = 'Chargement de la saison ' + an + '\u2026 (' + i + '/' + n + ')';
-    });
-  } catch (e) {}
+  /* Le filtre phase agit AVANT le calcul, pas a l'affichage : sinon le bilan,
+     les moyennes et le split domicile/exterieur continueraient d'inclure les
+     matchs ecartes, et le panneau se contredirait lui-meme. */
+  var stTous = _g45SgCalc(ms || [], perso.id, nom);
+  var msPhase = ms || [];
+  if (_g45SgPhase === 'reg') msPhase = msPhase.filter(function (m) { return !m.po; });
+  else if (_g45SgPhase === 'po') msPhase = msPhase.filter(function (m) { return m.po; });
+  var st = _g45SgCalc(msPhase, perso.id, nom);
 
-  var st = _g45SgCalc(ms || [], perso.id, nom, ligne);
+  /* Entre deux saisons (aout pour la NFL, juillet pour la NHL), la saison en
+     cours est vide. Plutot qu'un panneau desert, on recule d'un an une fois —
+     seulement en mode automatique, un choix explicite d'Antoine est respecte. */
+  if (!stTous.j && !_g45SgAn && !_g45SgReplie) {
+    _g45SgReplie = true;
+    _g45SgAn = an - 1;
+    return await _g45SaisonsGen(el, nom, perso);
+  }
 
-  /* Chips de saison — toujours affichees, meme si la saison en cours est vide :
-     c'est justement le cas au 13 aout, ou le NRL est en cours mais la NFL non. */
+  _g45SgCtx = { sp: sp, lg: lg };   /* lu par _g45SgMatch au clic */
+  var pct = function (a, b) { return b ? Math.round(a / b * 100) : 0; };
+
   var chips = '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">'
     + [anAuto, anAuto - 1, anAuto - 2].map(function (y) {
         var on = (y === an);
         return '<button onclick="_g45SgSaison(' + y + ')" style="border:none;cursor:pointer;padding:5px 11px;border-radius:14px;font-size:11px;font-weight:700;'
-          + (on ? 'background:#4d84ff;color:#fff;' : 'background:rgba(255,255,255,.06);color:#9fb0c7;') + '">' + y + '</button>';
+          + (on ? 'background:#4d84ff;color:#fff;' : 'background:rgba(255,255,255,.06);color:#9fb0c7;') + '">' + _g45SgLabel(lg, y) + '</button>';
       }).join('') + '</div>';
 
   if (!st.j) {
     el.innerHTML = '<div style="padding:4px 0;">' + chips
-      + '<div class="fc" style="text-align:center;color:var(--t3);padding:18px;font-size:12px;">'
-      + 'Aucun match termin\u00e9 pour <b>' + nom + '</b> en ' + an + '.<br>'
-      + '<small style="opacity:.75;">' + (ms || []).length + ' matchs charg\u00e9s pour la comp\u00e9tition \u00b7 '
-      + sp + '/' + lg + ' \u00b7 id ' + perso.id + '</small></div></div>';
+      + '<div class="fc" style="text-align:center;color:var(--t3);padding:18px;font-size:12px;">Aucun match ' + (_g45SgPhase === 'po' ? 'de phase finale ' : (_g45SgPhase === 'reg' ? 'de saison r\u00e9guli\u00e8re ' : 'termin\u00e9 ')) + 'pour <b>' + nom + '</b> en ' + _g45SgLabel(lg, an) + '.'
+      + '<br><small style="opacity:.7;">' + (ms || []).length + ' matchs charg\u00e9s \u00b7 ' + sp + '/' + lg + ' \u00b7 id ' + perso.id + '</small></div></div>';
     return;
   }
 
-  var pc = function (a, b) { return b ? Math.round(a / b * 100) : 0; };
-  var moy = function (a, b) { return b ? (a / b).toFixed(1) : '0.0'; };
+  /* ── Lignes O/U deduites de la moyenne de CETTE equipe ── */
+  var moyTot = (st.bp + st.bc) / st.j;
+  var lignes = _g45SgLignes(moyTot);
   var avecNul = st.n > 0;
-  var bilan = st.v + '-' + (avecNul ? st.n + '-' : '') + st.d;
-  var diff = st.bp - st.bc;
+  var basScore = moyTot < 12;          /* BTS n'a de sens qu'a faible score */
+  var CLES = lignes.map(function (l) { return 'O' + l; })
+    .concat(lignes.map(function (l) { return 'U' + l; }))
+    .concat(basScore ? ['BTS'] : []).concat(['CS', 'WIN', 'LOSE']);
+  if (!_g45SgQuick) _g45SgQuick = ['O' + lignes[2], 'WIN'];
 
-  var tuile = function (val, lab, col) {
-    return '<div style="text-align:center;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:9px 4px;">'
-      + '<div style="font-size:17px;font-weight:800;color:' + col + ';">' + val + '</div>'
-      + '<div style="font-size:8.5px;color:var(--t3);">' + lab + '</div></div>';
+  /* ── Sous-ensemble selon le filtre Global / Dom / Ext ── */
+  var liste = st.liste;
+  if (_g45SgFiltre === 'dom') liste = liste.filter(function (m) { return m.dom; });
+  else if (_g45SgFiltre === 'ext') liste = liste.filter(function (m) { return !m.dom; });
+  if (!liste.length) liste = st.liste;
+  var nF = liste.length;
+
+  var COULEURS = ['#1ed760','#4d84ff','#f0b020','#ff7b54','#ff4545','#22d3ee','#67e8f9','#a5f3fc','#bae6fd','#e0f2fe'];
+  var couleurDe = function (k, i) {
+    if (k === 'BTS') return '#a78bfa'; if (k === 'CS') return '#1ed760';
+    if (k === 'WIN') return '#1ed760'; if (k === 'LOSE') return '#ff4545';
+    return COULEURS[i % COULEURS.length];
+  };
+  var libelleDe = function (k) {
+    if (k === 'BTS') return 'Les 2 marquent'; if (k === 'CS') return 'Blanchissage';
+    if (k === 'WIN') return 'Victoire'; if (k === 'LOSE') return 'D\u00e9faite';
+    return (k.charAt(0) === 'O' ? 'Over ' : 'Under ') + k.slice(1);
   };
 
-  var html = '<div style="padding:4px 0;">' + chips;
+  var html = '<div style="padding:4px 0;">' + chips + '<div class="cwrap" style="margin-bottom:12px;">';
 
-  /* ── Bloc principal ── */
-  html += '<div class="cwrap" style="margin-bottom:10px;">'
-    + '<div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#4f5d88;margin-bottom:9px;">'
-    + 'Saison ' + an + ' \u00b7 ' + st.j + ' matchs</div>'
-    + '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">'
-    + tuile(bilan, avecNul ? 'V-N-D' : 'V-D', '#e6ecf5')
-    + tuile(pc(st.v, st.j) + '%', 'Victoires', pc(st.v, st.j) >= 50 ? '#1ed760' : '#ff7b54')
-    + tuile((diff > 0 ? '+' : '') + diff, 'Diff\u00e9rence', diff >= 0 ? '#1ed760' : '#ff4545')
-    + tuile(moy(st.bp, st.j), 'Marqu\u00e9s / match', '#f0b020')
-    + tuile(moy(st.bc, st.j), 'Encaiss\u00e9s / match', '#4d84ff')
-    + tuile(moy(st.bp + st.bc, st.j), 'Total / match', '#a78bfa')
-    + '</div></div>';
+  /* En-tete */
+  html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">'
+    + '<div style="font-size:13px;font-weight:800;color:var(--t1);">Saison ' + _g45SgLabel(lg, an) + '</div>'
+    + '<div style="font-size:10px;color:var(--t3);">' + st.j + ' matchs'
+    + (st.po ? (' \u00b7 dont ' + st.po + ' en phase finale') : '')
+    + ' \u00b7 ' + st.v + (avecNul ? '-' + st.n : '') + '-' + st.d + '</div></div>';
 
-  /* ── Domicile / Exterieur ── */
-  var ligneDE = function (lab, b) {
-    if (!b.j) return '';
-    var bl = b.v + '-' + (avecNul ? b.n + '-' : '') + b.d;
-    return '<div style="display:flex;align-items:center;gap:8px;padding:7px 2px;border-bottom:1px solid rgba(255,255,255,.06);font-size:11.5px;">'
-      + '<div style="width:74px;font-weight:700;color:#9fb0c7;">' + lab + '</div>'
-      + '<div style="width:34px;color:var(--t3);">' + b.j + 'm</div>'
-      + '<div style="width:62px;font-weight:700;">' + bl + '</div>'
-      + '<div style="width:44px;font-weight:800;color:' + (pc(b.v, b.j) >= 50 ? '#1ed760' : '#ff7b54') + ';">' + pc(b.v, b.j) + '%</div>'
-      + '<div style="flex:1;text-align:right;color:var(--t3);">' + moy(b.bp, b.j) + ' \u00b7 ' + moy(b.bc, b.j) + '</div></div>';
+  /* ── Filtre saison reguliere / phase finale ──
+     Affiche seulement si la saison en contient : inutile en football europeen,
+     indispensable en NFL, NBA, NHL, MLB et NRL. */
+  if (stTous.po > 0) {
+    var reg = stTous.j - stTous.po;
+    html += '<div style="display:flex;gap:6px;margin-bottom:10px;">';
+    [['tout', 'Tout (' + stTous.j + ')'], ['reg', 'Saison r\u00e9g. (' + reg + ')'], ['po', '\ud83c\udfc6 Phase finale (' + stTous.po + ')']]
+      .forEach(function (f) {
+        var on = (f[0] === _g45SgPhase);
+        html += '<button onclick="_g45SgPhaseSet(\'' + f[0] + '\')" style="flex:1;padding:6px 4px;border-radius:7px;border:1px solid rgba(255,255,255,'
+          + (on ? '.3' : '.08') + ');background:' + (on ? 'rgba(240,176,32,.16)' : 'rgba(255,255,255,.04)')
+          + ';color:' + (on ? '#f0b020' : 'var(--t3)') + ';font-size:10px;font-weight:' + (on ? '800' : '400') + ';cursor:pointer;">' + f[1] + '</button>';
+      });
+    html += '</div>';
+  }
+
+  /* ── Selecteurs de marche ── */
+  html += '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px;">';
+  CLES.forEach(function (k) {
+    var on = _g45SgQuick.indexOf(k) >= 0;
+    html += '<button onclick="_g45SgToggle(\'' + k + '\')" style="padding:4px 8px;border-radius:12px;border:1px solid rgba(255,255,255,'
+      + (on ? '.3' : '.08') + ');background:rgba(255,255,255,' + (on ? '.15' : '.04') + ');color:' + (on ? 'var(--t1)' : 'var(--t3)')
+      + ';font-size:9px;font-weight:' + (on ? '700' : '400') + ';cursor:pointer;">' + k + '</button>';
+  });
+  html += '</div>';
+
+  /* ── Forme recente : 5 cartes ── */
+  html += '<div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#4f5d88;margin-bottom:8px;">Forme r\u00e9cente</div>';
+  var cinq = st.liste.slice(0, 5);
+  html += '<div style="display:grid;grid-template-columns:repeat(' + cinq.length + ',1fr)' + (st.serie > 1 ? ' auto' : '') + ';gap:4px;margin-bottom:8px;">';
+  cinq.forEach(function (m) {
+    var col = m.res === 'V' ? '#1ed760' : (m.res === 'N' ? '#f0b020' : '#ff4545');
+    var adv = (noms[m.advId] || m.adv || '?').split(' ').filter(function (w) { return w.length > 1; });
+    var d = new Date(m.t);
+    html += '<div ' + (m.id ? 'onclick="_g45SgMatch(\'' + m.id + '\')" ' : '')
+      + 'style="text-align:center;background:var(--s1);border:1px solid rgba(255,255,255,.06);border-top:3px solid ' + col + ';border-radius:8px;padding:6px 2px;min-width:0;' + (m.id ? 'cursor:pointer;' : '') + '">'
+      + '<div style="font-size:10px;line-height:1.2;">' + (m.dom ? '\ud83c\udfe0' : '\ud83d\ude8c') + '</div>'
+      + '<div style="font-size:16px;font-weight:800;color:' + col + ';line-height:1.2;">' + m.pour + '-' + m.contre + '</div>'
+      + '<div style="font-size:8px;color:var(--t2);font-weight:600;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;padding:0 2px;">' + ((adv[0] || '?').substring(0, 8)) + '</div>'
+      + '<div style="font-size:8px;color:var(--t3);">' + String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0') + '</div></div>';
+  });
+  if (st.serie > 1) {
+    var sc = st.serieType === 'V' ? '#1ed760' : '#ff4545';
+    html += '<div style="padding:4px 8px;background:rgba(255,255,255,.04);border-radius:8px;text-align:center;display:flex;flex-direction:column;justify-content:center;">'
+      + '<div style="font-size:18px;font-weight:800;color:' + sc + ';">' + st.serie + '</div>'
+      + '<div style="font-size:8px;color:rgba(255,255,255,.4);">' + (st.serieType === 'V' ? 'V cons\u00e9c.' : 'Sans V') + '</div></div>';
+  }
+  html += '</div>';
+
+  /* ── Filtre Global / Domicile / Exterieur ── */
+  html += '<div style="display:flex;gap:6px;margin-bottom:14px;">';
+  [['global', '\ud83c\udf10 Global'], ['dom', '\ud83c\udfe0 Domicile'], ['ext', '\ud83d\ude8c Ext\u00e9rieur']].forEach(function (f) {
+    var on = (f[0] === _g45SgFiltre);
+    html += '<button onclick="_g45SgLieu(\'' + f[0] + '\')" style="flex:1;padding:7px 4px;border-radius:6px;border:1px solid rgba(255,255,255,'
+      + (on ? '.3' : '.08') + ');background:rgba(255,255,255,' + (on ? '.12' : '.04') + ');color:' + (on ? 'var(--t1)' : 'var(--t3)')
+      + ';font-size:10px;font-weight:' + (on ? '700' : '400') + ';cursor:pointer;">' + f[1] + '</button>';
+  });
+  html += '</div>';
+
+  /* ── Barres des marches coches ── */
+  html += '<div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#4f5d88;margin-bottom:8px;">'
+    + 'Stats s\u00e9lectionn\u00e9es <span style="color:var(--t3);font-weight:400;text-transform:none;letter-spacing:0;">\u00b7 ' + nF + ' matchs</span></div>';
+  html += '<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px;">';
+  var coches = CLES.filter(function (k) { return _g45SgQuick.indexOf(k) >= 0; });
+  if (!coches.length) coches = ['O' + lignes[2]];
+  coches.forEach(function (k, i) {
+    var v = pct(_g45SgCompte(liste, k), nF), c = couleurDe(k, CLES.indexOf(k));
+    html += '<div style="display:flex;align-items:center;gap:8px;">'
+      + '<div style="font-size:10px;font-weight:700;color:var(--t2);width:92px;flex-shrink:0;">' + libelleDe(k) + '</div>'
+      + '<div style="flex:1;height:8px;background:rgba(255,255,255,.06);border-radius:4px;"><div style="height:8px;border-radius:4px;background:' + c + ';width:' + v + '%;transition:width .4s;"></div></div>'
+      + '<div style="font-size:11px;font-weight:800;color:' + c + ';width:36px;text-align:right;">' + v + '%</div></div>';
+  });
+  html += '</div>';
+
+  /* ── Domicile vs Exterieur ── */
+  var carteDE = function (lab, b, col, fond) {
+    return '<div style="background:' + fond + ';border:1px solid ' + col + '33;border-radius:8px;padding:10px;text-align:center;">'
+      + '<div style="font-size:10px;color:var(--t3);margin-bottom:4px;">' + lab + ' (' + b.j + ')</div>'
+      + '<div style="font-size:11px;color:' + col + ';font-weight:700;">' + b.v + 'V ' + (avecNul ? b.n + 'N ' : '') + b.d + 'D</div>'
+      + '<div style="font-size:18px;font-weight:800;color:' + col + ';margin-top:2px;">' + pct(b.v, b.j) + '%</div>'
+      + '<div style="font-size:9px;color:var(--t3);margin-top:3px;">' + (b.j ? (b.bp / b.j).toFixed(1) : '0.0') + ' \u00b7 ' + (b.j ? (b.bc / b.j).toFixed(1) : '0.0') + '</div></div>';
   };
-  html += '<div class="cwrap" style="margin-bottom:10px;">'
-    + '<div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#4f5d88;margin-bottom:6px;">Domicile / Ext\u00e9rieur</div>'
-    + ligneDE('\ud83c\udfe0 Domicile', st.dom) + ligneDE('\u2708\ufe0f Ext\u00e9rieur', st.ext)
-    + '<div style="font-size:9px;color:var(--t3);margin-top:6px;">Les deux derniers chiffres : marqu\u00e9s puis encaiss\u00e9s par match.</div>'
+  html += '<div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#4f5d88;margin-bottom:8px;">Domicile vs Ext\u00e9rieur</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">'
+    + carteDE('\ud83c\udfe0 Domicile', st.dom, '#1ed760', 'rgba(30,215,96,.08)')
+    + carteDE('\ud83d\ude8c Ext\u00e9rieur', st.ext, '#4d84ff', 'rgba(77,132,255,.08)') + '</div>';
+
+  /* ── Points par match ── */
+  var mot = (sp === 'soccer' || sp === 'hockey') ? 'Buts' : 'Points';
+  html += '<div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#4f5d88;margin-bottom:8px;">' + mot + ' par match</div>'
+    + '<div style="display:flex;gap:8px;">'
+    + '<div style="flex:1;background:rgba(30,215,96,.08);border:1px solid rgba(30,215,96,.2);border-radius:8px;padding:10px;text-align:center;"><div style="font-size:10px;color:var(--t3);">Marqu\u00e9s</div><div style="font-size:22px;font-weight:800;color:#1ed760;">' + (st.bp / st.j).toFixed(1) + '</div></div>'
+    + '<div style="flex:1;background:rgba(255,69,69,.08);border:1px solid rgba(255,69,69,.2);border-radius:8px;padding:10px;text-align:center;"><div style="font-size:10px;color:var(--t3);">Encaiss\u00e9s</div><div style="font-size:22px;font-weight:800;color:#ff4545;">' + (st.bc / st.j).toFixed(1) + '</div></div>'
+    + '<div style="flex:1;background:rgba(240,176,32,.08);border:1px solid rgba(240,176,32,.2);border-radius:8px;padding:10px;text-align:center;"><div style="font-size:10px;color:var(--t3);">Total/match</div><div style="font-size:22px;font-weight:800;color:#f0b020;">' + moyTot.toFixed(1) + '</div></div>'
     + '</div>';
 
-  /* ── Forme + total de points ── */
-  var forme = st.liste.slice(0, 10).map(function (m) {
-    var c = m.res === 'V' ? '#1ed760' : (m.res === 'D' ? '#ff4545' : '#f0b020');
-    return '<span title="' + m.adv + ' ' + m.pour + '-' + m.contre + '" style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:' + c + '22;color:' + c + ';font-size:10px;font-weight:800;">' + m.res + '</span>';
-  }).join('');
-  var pOver = pc(st.over, st.j);
-  html += '<div class="cwrap" style="margin-bottom:10px;">'
-    + '<div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#4f5d88;margin-bottom:8px;">Forme \u00b7 10 derniers</div>'
-    + '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px;">' + forme + '</div>'
-    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">'
-    + tuile(pOver + '%', 'Over ' + ligne, pOver >= 50 ? '#1ed760' : '#9fb0c7')
-    + tuile((100 - pOver) + '%', 'Under ' + ligne, pOver < 50 ? '#1ed760' : '#9fb0c7')
-    + '</div></div>';
-
-  /* ── Derniers matchs ── */
-  html += '<div class="cwrap">'
-    + '<div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#4f5d88;margin-bottom:6px;">Derniers matchs</div>';
-  st.liste.slice(0, 20).forEach(function (m) {
-    var c = m.res === 'V' ? '#1ed760' : (m.res === 'D' ? '#ff4545' : '#f0b020');
-    var dt = new Date(m.t);
-    var adv = noms[m.advId] || m.adv || '?';
-    html += '<div style="display:flex;align-items:center;gap:8px;padding:6px 2px;border-bottom:1px solid rgba(255,255,255,.06);font-size:11.5px;">'
-      + '<div style="width:38px;color:var(--t3);font-size:10px;">' + String(dt.getDate()).padStart(2, '0') + '/' + String(dt.getMonth() + 1).padStart(2, '0') + '</div>'
-      + '<div style="width:16px;color:var(--t3);font-size:10px;">' + (m.dom ? '\ud83c\udfe0' : '\u2708\ufe0f') + '</div>'
-      + '<div style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + adv + '</div>'
-      + '<div style="width:52px;text-align:right;font-weight:700;">' + m.pour + '-' + m.contre + '</div>'
-      + '<div style="width:18px;text-align:right;font-weight:800;color:' + c + ';">' + m.res + '</div></div>';
+  /* ── Stats cles ── */
+  var plusLarge = st.liste.reduce(function (a, m) { return (m.pour - m.contre) > (a ? a.pour - a.contre : -999) ? m : a; }, null);
+  html += '<div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#4f5d88;margin:12px 0 8px;">Stats cl\u00e9s</div>'
+    + '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px;">';
+  [{ l:'Blanchissages', v:st.cs, t:st.j, c:'#1ed760' },
+   { l:'Sans marquer', v:st.sansMarquer, t:st.j, c:'#ff4545' },
+   { l:'Diff\u00e9rence', v:(st.bp - st.bc > 0 ? '+' : '') + (st.bp - st.bc), t:null, c:st.bp >= st.bc ? '#1ed760' : '#ff4545' },
+   { l:'Moy. marqu\u00e9s', v:(st.bp / st.j).toFixed(1), t:null, c:'#22d3ee' },
+   { l:'Moy. encaiss\u00e9s', v:(st.bc / st.j).toFixed(1), t:null, c:'#ff7b54' },
+   { l:'Plus large victoire', v:plusLarge ? (plusLarge.pour + '-' + plusLarge.contre) : '\u2014', t:null, c:'#a78bfa' }
+  ].forEach(function (s) {
+    html += '<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:8px;text-align:center;">'
+      + '<div style="font-size:17px;font-weight:800;color:' + s.c + ';">' + (s.t ? pct(s.v, s.t) + '%' : s.v) + '</div>'
+      + '<div style="font-size:8px;color:rgba(255,255,255,.4);margin-top:2px;">' + s.l + (s.t ? ' (' + s.v + '/' + s.t + ')' : '') + '</div></div>';
   });
-  html += '</div></div>';
+  html += '</div>';
 
+  /* ── Compteur de COMBINE ──────────────────────────────────────────────────
+     Le chiffre qui sert vraiment : combien de matchs valident TOUS les marches
+     coches a la fois. Chaque barre prise isolement dit 55% et 47% ; leur
+     intersection dit 39%, et c'est elle qu'on parie. Calcule sur la liste
+     FILTREE, donc il suit le choix Global / Domicile / Exterieur. */
+  var combN = 0;
+  liste.forEach(function (m) {
+    if (coches.every(function (k) { return _g45SgCompte([m], k) === 1; })) combN++;
+  });
+  var combPc = pct(combN, nF);
+  var combCol = combPc >= 60 ? '#1ed760' : (combPc >= 40 ? '#f0b020' : '#ff7b54');
+
+  html += '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:6px;">'
+    + '<div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#4f5d88;">R\u00e9sultats (' + nF + ' matchs)</div>'
+    + '<div style="font-size:11px;font-weight:800;color:' + combCol + ';background:' + combCol + '1a;border:1px solid ' + combCol + '55;border-radius:12px;padding:3px 10px;">'
+    + '\u2705 ' + combN + '/' + nF + ' \u2014 ' + coches.join(' + ') + ' \u00b7 ' + combPc + '%</div></div>';
+  liste.forEach(function (m) {
+    var col = m.res === 'V' ? '#1ed760' : (m.res === 'N' ? '#f0b020' : '#ff4545');
+    var d = new Date(m.t);
+    var passes = coches.filter(function (k) { return _g45SgCompte([m], k) === 1; });
+    html += '<div ' + (m.id ? 'onclick="_g45SgMatch(\'' + m.id + '\')" ' : '')
+      + 'style="display:flex;align-items:center;gap:8px;padding:7px 2px;border-left:3px solid ' + col + ';padding-left:8px;margin-bottom:3px;background:rgba(255,255,255,.02);border-radius:0 6px 6px 0;font-size:11.5px;' + (m.id ? 'cursor:pointer;' : '') + '">'
+      + '<div style="width:38px;color:var(--t3);font-size:10px;">' + String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0') + '</div>'
+      + '<div style="width:16px;font-size:10px;">' + (m.dom ? '\ud83c\udfe0' : '\ud83d\ude8c') + '</div>'
+      + '<div style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (noms[m.advId] || m.adv || '?')
+      + (m.po ? ' <span style="font-size:8px;font-weight:800;color:#f0b020;border:1px solid rgba(240,176,32,.4);border-radius:6px;padding:0 4px;">PO</span>' : '') + '</div>'
+      + '<div style="font-size:9px;color:#7aaaff;white-space:nowrap;">' + passes.join(' ') + '</div>'
+      + '<div style="width:52px;text-align:right;font-weight:700;">' + m.pour + '-' + m.contre + '</div>'
+      + '<div style="width:16px;text-align:right;font-weight:800;color:' + col + ';">' + m.res + '</div></div>';
+  });
+
+  html += '</div></div>';
   el.innerHTML = html;
 }
 
-function _g45SgSaison(y) {
-  _g45SgAn = y;
-  if (typeof loadTeamSaisons === 'function') loadTeamSaisons();
+/* ── Ouverture du detail d'un match ──────────────────────────────────────────
+   On ne reecrit RIEN : `_g45RenderGenericDetail` sert deja les Resultats US et
+   le suivi de pari en direct. Il apporte le score par periode, les cotes ESPN,
+   l'analyse IA, la tendance du public, le resume YouTube, les confrontations et
+   le classement. On lui ouvre juste une fenetre.
+   `data-open="1"` est indispensable : le rafraichissement auto d'un match en
+   direct s'arrete de lui-meme des que l'attribut disparait. */
+var _g45SgCtx = null;
+
+function _g45SgFermerMatch() {
+  var m = document.getElementById('g45-sg-modal');
+  if (m) m.remove();
+}
+window._g45SgFermerMatch = _g45SgFermerMatch;
+
+async function _g45SgMatch(eid) {
+  if (!eid || !_g45SgCtx) return;
+  _g45SgFermerMatch();
+  var mo = document.createElement('div');
+  mo.id = 'g45-sg-modal';
+  mo.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:14px;overflow-y:auto;';
+  mo.onclick = function (e) { if (e.target === mo) _g45SgFermerMatch(); };
+  mo.innerHTML = '<div style="background:var(--s1);border:1px solid var(--b2);border-radius:14px;max-width:560px;width:100%;position:relative;margin:auto 0;">'
+    + '<button onclick="_g45SgFermerMatch()" style="position:absolute;top:8px;right:12px;background:none;border:none;color:var(--t2);font-size:22px;cursor:pointer;z-index:3;">\u2715</button>'
+    + '<div class="smd-panel" id="g45-sg-panel" data-open="1" style="padding:10px;">'
+    + '<div style="padding:24px;text-align:center;color:var(--t3);font-size:12px;">\u23f3 Ouverture du match\u2026</div></div></div>';
+  document.body.appendChild(mo);
+
+  var panel = document.getElementById('g45-sg-panel');
+  try {
+    if (typeof _renderGenericDetail === 'function') {
+      await _renderGenericDetail(panel, _g45SgCtx.sp, _g45SgCtx.lg, eid);
+    } else {
+      panel.innerHTML = '<div style="padding:20px;color:#ff6b6b;font-size:12px;text-align:center;">D\u00e9tail de match indisponible dans cette version.</div>';
+    }
+  } catch (e) {
+    panel.innerHTML = '<div style="padding:20px;color:#ff6b6b;font-size:12px;text-align:center;">Erreur d\'ouverture : ' + (e && e.message) + '</div>';
+  }
+}
+window._g45SgMatch = _g45SgMatch;
+
+function _g45SgRefresh() { if (typeof loadTeamSaisons === 'function') loadTeamSaisons(); }
+function _g45SgSaison(y) { _g45SgAn = y; _g45SgRefresh(); }
+function _g45SgLieu(f) { _g45SgFiltre = f; _g45SgRefresh(); }
+function _g45SgPhaseSet(f) { _g45SgPhase = f; _g45SgRefresh(); }
+window._g45SgPhaseSet = _g45SgPhaseSet;
+function _g45SgToggle(k) {
+  if (!_g45SgQuick) _g45SgQuick = [];
+  var i = _g45SgQuick.indexOf(k);
+  if (i >= 0) _g45SgQuick.splice(i, 1); else _g45SgQuick.push(k);
+  _g45SgRefresh();
 }
 window._g45SgSaison = _g45SgSaison;
+window._g45SgLieu = _g45SgLieu;
+window._g45SgToggle = _g45SgToggle;
 
 /* ── Branchement : on ENVELOPPE loadTeamSaisons, on ne la modifie pas ──
-   L'equipe est traitee ici seulement si elle n'est PAS dans le mur et qu'elle
-   possede une entree perso hors football. Les equipes du mur gardent donc
-   leurs chargeurs existants (NHL, MLB, NBA), plus riches. */
+   Traitement ici seulement si l'equipe n'est PAS dans le mur et possede une
+   entree perso hors football. Les equipes du mur gardent leurs chargeurs
+   existants (NHL, MLB, NBA), plus riches en donnees propres a leur sport. */
 var _g45SaisonsOrig = (typeof loadTeamSaisons === 'function') ? loadTeamSaisons : null;
 
 window.loadTeamSaisons = async function () {
@@ -33035,31 +33469,1618 @@ window.loadTeamSaisons = async function () {
   if (!el) return;
   var nom = (typeof _currentTeam !== 'undefined' ? _currentTeam : '') ||
             (typeof _currentUnitNom !== 'undefined' ? _currentUnitNom : '') || '';
+  /* On ne distingue PLUS les equipes du mur : NHL_TEAMS ne connait que 8 des
+     32 clubs de NHL, et une equipe absente tombait dans la branche FOOTBALL —
+     Columbus Blue Jackets affichait la fiche de Lyon. Le sport decide, pas la
+     presence au mur. `_g45CompoCtx` resout sport + ligue + identifiant ESPN
+     depuis l'entree perso, sinon depuis le classement de la competition. */
   try {
-    var U = (window.state && state.u) ? state.u : [];
-    var estMur = U.some(function (u) { return u && u.n === nom; });
-    var perso = (typeof g45TeamsPerso === 'function') ? g45TeamsPerso()[_g45SgNorm2(nom)] : null;
-    if (!estMur && perso && perso.league && (perso.sport || 'soccer') !== 'soccer') {
-      return await _g45SaisonsGen(el, nom, perso);
+    var ctx = await _g45CompoCtx(nom);
+    if (ctx && ctx.via === 'ambigu') {
+      el.innerHTML = '<div class="fc" style="text-align:center;color:var(--t3);padding:18px;font-size:12px;">'
+        + 'Nom trop g\u00e9n\u00e9rique : <b>' + nom + '</b> correspond \u00e0 plusieurs sports ('
+        + (ctx.pistes || []).map(function (p) { return p.sp; }).join(', ') + ').'
+        + '<br><small style="opacity:.7;">Ouvre l\'\u00e9quipe depuis Comp\u00e9titions pour lever le doute.</small></div>';
+      return;
+    }
+    if (ctx && ctx.sp && ctx.sp !== 'soccer') {
+      /* Nouvelle equipe : on repart d'une saison automatique. Sans ca, la
+         saison choisie sur les Roosters s'appliquait aux Islanders. */
+      if (_g45SgNomCourant !== nom) { _g45SgNomCourant = nom; _g45SgAn = null; _g45SgReplie = false; _g45SgPhase = 'tout'; }
+      if (!ctx.ref) {
+        el.innerHTML = '<div class="fc" style="text-align:center;color:var(--t3);padding:18px;font-size:12px;">'
+          + '\u00c9quipe introuvable dans le classement <b>' + ctx.sp + '/' + ctx.lg + '</b>.'
+          + '<br><small style="opacity:.7;">nom lu : \u00ab ' + nom + ' \u00bb</small></div>';
+        return;
+      }
+      return await _g45SaisonsGen(el, nom, { sport: ctx.sp, league: ctx.lg, id: ctx.ref });
     }
   } catch (e) { console.warn('saisons generiques', e && e.message); }
+
   if (_g45SaisonsOrig) await _g45SaisonsOrig();
 
   /* DIAGNOSTIC : si la fiche retombe sur le message football alors que l'equipe
-     vient des Competitions, c'est que l'entree perso n'a PAS ete enregistree au
-     clic. On l'affiche plutot que de laisser un message muet. */
+     vient des Competitions, c'est que l'entree perso n'a pas ete enregistree. */
   try {
     if (/Equipe non trouvee dans la base/.test(el.innerHTML)) {
       var t = (typeof g45TeamsPerso === 'function') ? g45TeamsPerso() : {};
-      var k = Object.keys(t);
-      el.innerHTML += '<div style="font-size:9.5px;color:#4f5d88;text-align:center;padding:6px;">'
-        + 'diag \u00b7 nom lu : \u00ab ' + nom + ' \u00bb \u00b7 entr\u00e9e perso : '
-        + (t[_g45SgNorm2(nom)] ? JSON.stringify(t[_g45SgNorm2(nom)]) : 'ABSENTE')
-        + ' \u00b7 ' + k.length + ' \u00e9quipes enregistr\u00e9es</div>';
+      el.innerHTML += '<div style="font-size:9.5px;color:#4f5d88;text-align:center;padding:6px;">diag \u00b7 nom lu : \u00ab ' + nom + ' \u00bb \u00b7 entr\u00e9e perso : '
+        + (t[_g45SgCle(nom)] ? JSON.stringify(t[_g45SgCle(nom)]) : 'ABSENTE') + ' \u00b7 ' + Object.keys(t).length + ' \u00e9quipes enregistr\u00e9es</div>';
     }
   } catch (e) {}
 };
 
-/* La cle de la table perso est le nom en minuscules, espaces compris — PAS la
-   normalisation agressive utilisee pour comparer les noms d'equipes. */
-function _g45SgNorm2(n) { return String(n || '').toLowerCase().trim(); }
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   EFFECTIF & STATS JOUEURS DANS « COMPO » — tous sports (13/08/2026)
+   ───────────────────────────────────────────────────────────────────────────
+   L'onglet Compo appelait `loadFdSquad`, qui interroge football-data : vide
+   pour une equipe de NBA, NHL, NFL, MLB ou rugby. Le panneau d'effectif qui
+   existait pour le basket etait enferme dans l'onglet Saisons et cable sur
+   NBA_TEAMS. On le sort de la et on le rend generique.
+
+   TROIS ENDPOINTS ESPN, LES MEMES POUR TOUS LES SPORTS :
+     .../sports/{sport}/{ligue}/teams/{ref}/roster        -> effectif
+     .../common/v3/sports/{sport}/{ligue}/athletes/{id}/overview -> moyennes
+     .../common/v3/sports/{sport}/{ligue}/athletes/{id}/gamelog  -> derniers matchs
+
+   PIEGE EVITE : ne PAS cabler la liste des stats affichees. En NBA c'est
+   PTS/REB/AST, en NFL des yards, en NHL des buts et des arrets. On prend donc
+   les libelles que RENVOIE ESPN (`statistics.labels`) au lieu d'en imposer —
+   c'est ce qui fait que le meme code sert les six sports.
+
+   RESOLUTION DE L'EQUIPE : l'entree `g45_teams_perso` d'abord (posee au clic
+   depuis Competitions), sinon le classement de la competition, qui donne les
+   identifiants ESPN et evite les tables de noms cablees.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ═══ RESOLUTION DU SPORT D'UNE EQUIPE ═══
+   Trois passes, de la plus sure a la plus tolerante. La version precedente ne
+   faisait que la deuxieme, avec une table d'emojis en correspondance EXACTE :
+   « New York Islanders » renvoyait null parce que son champ sport ne tombait
+   sur aucune cle au caractere pres (selecteur de variante, drapeau accole,
+   champ vide). On ne fait donc plus dependre le sport d'un emoji. */
+
+/* Un emoji peut porter un selecteur de variante ou un drapeau : on cherche le
+   symbole du sport N'IMPORTE OU dans la chaine, jamais une egalite stricte. */
+var _G45_SPORT_SIGNES = [
+  ['\ud83c\udfc0', 'basketball', 'nba'],
+  ['\ud83c\udfd2', 'hockey', 'nhl'],
+  ['\u26be', 'baseball', 'mlb'],
+  ['\ud83c\udfc8', 'football', 'nfl'],
+  ['\ud83c\udfc9', 'rugby', '270559']
+];
+
+/* Ligues balayees en dernier recours, quand ni l'entree perso ni le sport du
+   mur ne disent rien. Cinq classements, mis en cache 6 h par _g45CompetEquipes :
+   au pire cinq requetes une seule fois, et l'equipe est identifiee a coup sur. */
+var _G45_LIGUES_SCAN = [
+  ['hockey', 'nhl'], ['basketball', 'nba'], ['baseball', 'mlb'],
+  ['football', 'nfl'], ['rugby-league', '3']
+];
+
+/* Rapprochement d'un nom d'equipe dans une liste.
+   PIEGE 1 : une simple inclusion accepte n'importe quoi de court — « Col »
+   matche Colorado ET Columbus. On exige 4 caracteres.
+   PIEGE 2 : la VILLE est partagee entre ligues et entre clubs. « Cleveland »
+   colle aux Browns (NFL) comme aux Cavaliers (NBA) ; « New York » colle aux
+   Islanders comme aux Rangers. On compte donc les mots communs et on EXIGE
+   un vainqueur unique : deux candidats a egalite, on renonce plutot que de
+   rendre une equipe au hasard.
+   `strict` limite le rapprochement a l'egalite exacte — indispensable quand on
+   balaye PLUSIEURS ligues, ou la moindre tolerance melange les sports. */
+function _g45CompoMatch(nom, eq, strict) {
+  var n2 = _g45SgNorm(nom);
+  var cands = (eq || []).map(function (t) {
+    return { id: t.id, a: _g45SgNorm(t.nom), b: _g45SgNorm(t.court || ''),
+             mots: String(t.nom || '').split(/\s+/).map(_g45SgNorm) };
+  });
+
+  var exact = cands.filter(function (t) { return t.a === n2 || t.b === n2; })[0];
+  if (exact) return String(exact.id);
+  if (strict) return '';
+
+  var motsMoi = String(nom || '').split(/\s+/).map(_g45SgNorm).filter(function (w) { return w.length >= 4; });
+  if (motsMoi.length) {
+    var notes = cands.map(function (t) {
+      return { id: t.id, n: motsMoi.filter(function (w) { return t.mots.indexOf(w) >= 0; }).length };
+    }).filter(function (x) { return x.n > 0; }).sort(function (x, y) { return y.n - x.n; });
+    if (notes.length === 1 || (notes.length > 1 && notes[0].n > notes[1].n)) return String(notes[0].id);
+    if (notes.length > 1) return '';        /* egalite : ambigu, on renonce */
+  }
+
+  if (n2.length >= 4) {
+    var inc = cands.filter(function (t) { return t.a.indexOf(n2) >= 0 || n2.indexOf(t.a) >= 0; });
+    if (inc.length === 1) return String(inc[0].id);
+  }
+  return '';
+}
+
+/* Liste des equipes d'une ligue, saison EXPLICITE.
+   PIEGE MAJEUR : `_g45CompetEquipes` calcule l'annee avec la regle du football
+   (bascule en aout). Au 13 aout elle demande donc le classement NFL 2026 — une
+   saison qui n'a pas commence, donc VIDE. La NFL disparaissait du balayage, et
+   « Denver Broncos » partait vers la seule ligue qui repondait : les Nuggets.
+   Meme mecanique pour Miami, Houston, Atlanta, Pittsburgh, Los Angeles. */
+async function _g45CompoEq(sp, lg) {
+  var an = (typeof _g45SgAnAuto === 'function') ? _g45SgAnAuto(lg) : null;
+  var eq = [];
+  try { eq = await _g45CompetEquipes({ sp: sp, s: lg, an: an }); } catch (e) {}
+  /* Une table vide n'est pas une reponse : on recule d'un an avant d'abandonner. */
+  if ((!eq || !eq.length) && an) {
+    try { eq = await _g45CompetEquipes({ sp: sp, s: lg, an: an - 1 }); } catch (e) {}
+  }
+  return eq || [];
+}
+
+/* Tables de noms deja presentes dans l'appli. Elles sont incompletes (8 clubs
+   de NHL sur 32) et leurs identifiants ne sont pas ceux d'ESPN — on ne s'en
+   sert donc QUE comme indice de SPORT, jamais comme source d'identifiant. */
+function _g45CompoIndice(nom) {
+  try {
+    if (typeof NFL_TEAMS !== 'undefined' && NFL_TEAMS[nom]) return ['football', 'nfl'];
+    if (typeof NHL_TEAMS !== 'undefined' && NHL_TEAMS[nom]) return ['hockey', 'nhl'];
+    if (typeof MLB_TEAMS !== 'undefined' && MLB_TEAMS[nom]) return ['baseball', 'mlb'];
+    if (typeof NBA_TEAMS !== 'undefined' && NBA_TEAMS[nom]) return ['basketball', 'nba'];
+    if (typeof resolveNbaTeam === 'function' && resolveNbaTeam(nom)) return ['basketball', 'nba'];
+  } catch (e) {}
+  return null;
+}
+
+async function _g45CompoCtx(nom, avecFoot) {
+  /* 1. Entree perso, posee au clic depuis Competitions : la plus fiable. */
+  var perso = null;
+  try { perso = g45TeamsPerso()[String(nom || '').toLowerCase().trim()]; } catch (e) {}
+  if (perso && perso.league && (perso.sport || 'soccer') !== 'soccer') {
+    return { sp: perso.sport, lg: String(perso.league), ref: String(perso.id || ''), via: 'perso' };
+  }
+
+  /* 1 bis. FOOTBALL, seulement si l'appelant le demande. L'onglet Saisons garde
+     son rendu football historique ; c'est Compo qui a besoin de ce chemin, pour
+     servir l'effectif depuis ESPN au lieu de football-data et son quota. */
+  if (avecFoot) {
+    if (perso && perso.league && (perso.sport || 'soccer') === 'soccer') {
+      return { sp: 'soccer', lg: String(perso.league), ref: String(perso.id || ''), via: 'perso-foot' };
+    }
+    try {
+      if (typeof espnResolveTeam === 'function') {
+        var rf = await espnResolveTeam(nom);
+        if (rf && rf.id && rf.league) return { sp: 'soccer', lg: String(rf.league), ref: String(rf.id), via: 'espn-foot' };
+      }
+    } catch (e) {}
+
+    /* REPLI. `espnResolveTeam` compare les noms tels quels et rate les clubs
+       accentues ou nommes autrement : « Atl\u00e9tico Madrid » ne tombait sur rien.
+       On rejoue donc le rapprochement du module, qui NORMALISE (accents,
+       ponctuation) et exige un vainqueur unique, sur les grands championnats.
+       Les classements sont deja en cache 6 h. */
+    var LIGUES_FOOT = ['esp.1','eng.1','ita.1','ger.1','fra.1','por.1','ned.1','bel.1',
+                       'tur.1','sco.1','fra.2','eng.2','esp.2','ita.2','ger.2'];
+    for (var f = 0; f < LIGUES_FOOT.length; f++) {
+      var eqF = await _g45CompoEq('soccer', LIGUES_FOOT[f]);
+      if (!eqF.length) continue;
+      var refF = _g45CompoMatch(nom, eqF, true);            /* strict d'abord */
+      if (refF) return { sp: 'soccer', lg: LIGUES_FOOT[f], ref: refF, via: 'scan-foot' };
+    }
+    for (var f2 = 0; f2 < LIGUES_FOOT.length; f2++) {
+      var eqF2 = await _g45CompoEq('soccer', LIGUES_FOOT[f2]);
+      if (!eqF2.length) continue;
+      var refF2 = _g45CompoMatch(nom, eqF2, false);         /* puis tolerant */
+      if (refF2) return { sp: 'soccer', lg: LIGUES_FOOT[f2], ref: refF2, via: 'scan-foot-large' };
+    }
+  }
+
+  /* 2. Sport du mur, cherche comme SYMBOLE contenu et non comme cle exacte. */
+  var em = '';
+  try {
+    var u = (window.state && state.u ? state.u : []).filter(function (x) { return x && x.n === nom; })[0];
+    em = (u && u.sport) || '';
+  } catch (e) {}
+  if (em && em.indexOf('\u26bd') < 0) {                    /* ⚽ = football, on ne touche pas */
+    for (var i = 0; i < _G45_SPORT_SIGNES.length; i++) {
+      var sg = _G45_SPORT_SIGNES[i];
+      if (em.indexOf(sg[0]) >= 0) {
+        var sp = sg[1], lg = sg[2];
+        /* 🏉 + drapeau australien = rugby a XIII, pas rugby a XV. */
+        if (sp === 'rugby' && em.indexOf('\ud83c\udde6\ud83c\uddfa') >= 0) { sp = 'rugby-league'; lg = '3'; }
+        var eq0 = await _g45CompoEq(sp, lg);
+        return { sp: sp, lg: lg, ref: _g45CompoMatch(nom, eq0), via: 'mur' };
+      }
+    }
+  }
+
+  /* 3. Indice gratuit : les tables de noms de l'appli donnent le SPORT sans
+     aucune requete. Incompletes, mais quand elles repondent elles ont raison. */
+  var ind = _g45CompoIndice(nom);
+  if (ind) {
+    var eqI = await _g45CompoEq(ind[0], ind[1]);
+    var refI = _g45CompoMatch(nom, eqI, false);
+    if (refI) return { sp: ind[0], lg: ind[1], ref: refI, via: 'table' };
+  }
+
+  /* 4. Dernier recours : on cherche le nom dans les classements. */
+  if (!em || em.indexOf('\u26bd') < 0) {
+    var tables = [];
+    for (var j = 0; j < _G45_LIGUES_SCAN.length; j++) {
+      var L = _G45_LIGUES_SCAN[j];
+      var eqJ = await _g45CompoEq(L[0], L[1]);
+      if (eqJ.length) tables.push({ sp: L[0], lg: L[1], eq: eqJ });
+    }
+    /* Si une ligue n'a rien renvoye, on le DIT : c'est exactement ce qui a
+       envoye les Broncos en NBA, et un balayage partiel doit se voir. */
+    if (tables.length < _G45_LIGUES_SCAN.length) {
+      try { console.warn('[GONES45] balayage partiel :', tables.map(function (t) { return t.lg; }).join(', ')); } catch (e) {}
+    }
+    /* Passe 1, STRICTE : nom complet ou abreviation officielle. C'est elle qui
+       distingue Cleveland Browns de Cleveland Cavaliers. */
+    for (var k = 0; k < tables.length; k++) {
+      var r1 = _g45CompoMatch(nom, tables[k].eq, true);
+      if (r1) return { sp: tables[k].sp, lg: tables[k].lg, ref: r1, via: 'scan' };
+    }
+    /* Passe 2, tolerante — acceptee UNIQUEMENT si une seule ligue repond.
+       Deux ligues qui repondent, c'est un nom de ville : on ne devine pas. */
+    var touches = [];
+    for (var m = 0; m < tables.length; m++) {
+      var r2 = _g45CompoMatch(nom, tables[m].eq, false);
+      if (r2) touches.push({ sp: tables[m].sp, lg: tables[m].lg, ref: r2 });
+    }
+    if (touches.length === 1) return { sp: touches[0].sp, lg: touches[0].lg, ref: touches[0].ref, via: 'scan-large' };
+    if (touches.length > 1) return { sp: '', lg: '', ref: '', via: 'ambigu', pistes: touches };
+  }
+  return null;
+}
+window._g45CompoCtx = _g45CompoCtx;
+
+/* ═══ PORTRAITS ═══
+   TESTE ET INVALIDE le 14/08/2026. J'avais suppose qu'ESPN servait les portraits
+   a une adresse construite sur l'identifiant de l'athlete :
+     a.espncdn.com/i/headshots/soccer/players/full/{id}.png
+   Verification sur l'effectif du Real Madrid : 37 joueurs, UN SEUL portrait
+   fourni par le roster, et les adresses fabriquees renvoient toutes 404
+   (Navarro 84349, Courtois 134283, Lunin 257237, Mestre 350351).
+   ESPN n'heberge tout simplement pas ces images pour la Liga.
+
+   On ne construit donc plus rien : 36 requetes vouees a l'echec par affichage,
+   pour zero photo gagnee. On utilise UNIQUEMENT le `headshot` que le roster
+   fournit, et la pastille numerotee prend le relais partout ailleurs.
+
+   Le numero reste dessine EN DESSOUS de la photo : si une image fournie casse,
+   `onerror` la masque et la pastille reapparait, sans trou dans la liste. */
+function _g45HeadshotUrl(sp, pid) {
+  return '';   /* ESPN : voir le constat ci-dessus */
+}
+
+/* ═══ PORTRAITS FOOTBALL VIA API-SPORTS ═══
+   ESPN n'ayant pas les images, on passe par api-sports, dont la cle est deja
+   configuree dans Outils. COUT : UNE requete `/players/squads`, qui rend tout
+   l'effectif avec les portraits d'un coup — pas une requete par joueur.
+   `findApiSportsTeamId` en coute une seconde la premiere fois seulement, et
+   uniquement si le club n'est pas deja dans `API_SPORTS_IDS`.
+
+   MISE EN CACHE 30 JOURS, y compris les echecs (3 jours pour ceux-la) : sans ca
+   un club introuvable relancerait la requete a chaque ouverture de l'onglet.
+
+   PIEGE DE NOMMAGE : api-sports ecrit souvent « K. Mbappe » la ou ESPN ecrit
+   « Kylian Mbappe ». Un rapprochement sur le nom complet echouerait sur la
+   moitie de l'effectif. On indexe donc aussi le NOM DE FAMILLE avec l'initiale
+   du prenom, et on n'accepte ce rapprochement que s'il est UNIQUE dans
+   l'effectif — deux freres ou deux homonymes, on renonce plutot que se tromper. */
+async function _g45PhotosFoot(nom) {
+  var cle = 'g45photos_' + _g45SgNorm(nom);
+  try {
+    var brut = localStorage.getItem(cle);
+    if (brut) {
+      var o = JSON.parse(brut);
+      var age = Date.now() - (o.t || 0);
+      var duree = (o.l && o.l.length) ? 30 * 86400000 : 3 * 86400000;
+      if (age < duree) return o.l || [];
+    }
+  } catch (e) {}
+
+  var liste = [];
+  try {
+    if (typeof findApiSportsTeamId === 'function' && typeof apiSportsFetch === 'function') {
+      var tid = await findApiSportsTeamId(nom);
+      if (tid) {
+        var d = await apiSportsFetch('/players/squads?team=' + tid);
+        var js = (d && d.response && d.response[0] && d.response[0].players) || [];
+        js.forEach(function (j) {
+          if (!j || !j.name || !j.photo) return;
+          var mots = String(j.name).trim().split(/\s+/);
+          liste.push({
+            n: _g45SgNorm(j.name),
+            f: _g45SgNorm(mots[mots.length - 1]),               /* nom de famille */
+            i: _g45SgNorm(mots[0]).charAt(0),                    /* initiale prenom */
+            u: j.photo
+          });
+        });
+      }
+    }
+  } catch (e) {}
+
+  try { localStorage.setItem(cle, JSON.stringify({ t: Date.now(), l: liste })); } catch (e) {}
+  return liste;
+}
+
+function _g45PhotoDe(liste, nomJoueur) {
+  if (!liste || !liste.length || !nomJoueur) return '';
+  var n = _g45SgNorm(nomJoueur);
+  var exact = liste.filter(function (x) { return x.n === n; })[0];
+  if (exact) return exact.u;
+
+  var mots = String(nomJoueur).trim().split(/\s+/);
+  var fam = _g45SgNorm(mots[mots.length - 1]);
+  var ini = _g45SgNorm(mots[0]).charAt(0);
+  var cands = liste.filter(function (x) { return x.f === fam && (!x.i || !ini || x.i === ini); });
+  return (cands.length === 1) ? cands[0].u : '';   /* ambigu -> pastille */
+}
+
+async function _g45CompoEffectif(el, nom, avecFoot) {
+  var ctx = await _g45CompoCtx(nom, avecFoot);
+  if (!ctx || !ctx.ref) {
+    el.innerHTML = '<div style="text-align:center;color:var(--t3);font-size:11.5px;padding:18px;">Effectif indisponible pour <b>' + nom + '</b>.'
+      + '<br><small style="opacity:.7;">' + (ctx ? ('\u00e9quipe non trouv\u00e9e dans ' + ctx.sp + '/' + ctx.lg)
+          : 'club introuvable chez ESPN sous ce nom \u2014 ouvre-le depuis Comp\u00e9titions pour l\'associer') + '</small></div>';
+    return;
+  }
+  _g45CompoCtxCourant = ctx;
+
+  el.innerHTML = '<div style="display:flex;align-items:center;gap:9px;padding:16px;color:var(--t3);font-size:11.5px;">'
+    + '<div style="width:14px;height:14px;border:2px solid rgba(77,132,255,.2);border-top-color:#4d84ff;border-radius:50%;animation:spin .8s linear infinite;"></div>Chargement de l\'effectif\u2026</div>';
+
+  var joueurs = [], saison = '';
+  try {
+    var r = await fetch('https://site.api.espn.com/apis/site/v2/sports/' + ctx.sp + '/' + ctx.lg + '/teams/' + ctx.ref + '/roster');
+    var d = await r.json();
+    saison = (d.season && d.season.displayName) || '';
+    var ath = d.athletes || [];
+    /* ESPN groupe parfois par poste (objets avec .items), parfois non. */
+    if (ath.length && ath[0] && ath[0].items) ath.forEach(function (g) { (g.items || []).forEach(function (p) { joueurs.push(p); }); });
+    else joueurs = ath;
+  } catch (e) {}
+
+  if (!joueurs.length) {
+    el.innerHTML = '<div style="text-align:center;color:var(--t3);font-size:11.5px;padding:18px;">Aucun joueur renvoy\u00e9 par ESPN.<br><small style="opacity:.7;">' + ctx.sp + '/' + ctx.lg + ' \u00b7 id ' + ctx.ref + '</small></div>';
+    return;
+  }
+
+  /* Football : une requete api-sports pour tout l'effectif, mise en cache 30 j. */
+  var photos = [];
+  if (ctx.sp === 'soccer') { try { photos = await _g45PhotosFoot(nom); } catch (e) {} }
+
+  var html = '<div class="cwrap">'
+    + '<div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#4f5d88;margin-bottom:8px;">\ud83d\udc65 Effectif '
+    + (saison ? saison + ' ' : '') + '(' + joueurs.length + ')</div>';
+
+  joueurs.forEach(function (p) {
+    var num = p.jersey || '';
+    var pos = (p.position && (p.position.abbreviation || p.position.name)) || '';
+    var nm = p.fullName || p.displayName || ((p.firstName || '') + ' ' + (p.lastName || ''));
+    var ht = p.displayHeight || '';
+    /* ESPN sert souvent l'age tout calcule ; sinon on le deduit de la date de
+       naissance, dont le champ varie selon les ligues. */
+    var age = p.age;
+    if (!age && p.dateOfBirth) {
+      var dn = new Date(p.dateOfBirth);
+      if (!isNaN(dn)) age = Math.floor((Date.now() - dn.getTime()) / 31557600000);
+    }
+    var pid = String(p.id || '');
+    if (!pid) return;
+    var img = (p.headshot && p.headshot.href) || _g45PhotoDe(photos, nm) || _g45HeadshotUrl(ctx.sp, pid);
+    html += '<div onclick="_g45CompoJoueur(\'' + pid + '\',\'' + String(pos).replace(/'/g, '') + '\')" style="display:flex;align-items:center;gap:9px;padding:7px 6px;border-bottom:1px solid rgba(255,255,255,.04);cursor:pointer;border-radius:5px;">'
+      + '<div style="position:relative;width:30px;height:30px;flex-shrink:0;">'
+      + '<div style="position:absolute;inset:0;border-radius:50%;background:rgba(77,132,255,.12);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#4d84ff;">' + (num || '\u2014') + '</div>'
+      + (img ? '<img src="' + img + '" loading="lazy" style="position:absolute;inset:0;width:30px;height:30px;border-radius:50%;object-fit:cover;background:#0f1626;" onerror="this.style.display=\'none\'">' : '')
+      + '</div>'
+      + '<div style="flex:1;min-width:0;">'
+      + '<div style="font-size:11.5px;font-weight:700;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (num ? '#' + num + ' ' : '') + nm + '</div>'
+      + '<div style="font-size:9px;color:var(--t3);">' + [pos, ht, (age ? (age + ' ans') : '')].filter(Boolean).join(' \u00b7 ') + '</div></div>'
+      + '<div style="color:#4d84ff;font-size:13px;">\ud83d\udcca</div></div>'
+      + '<div id="g45-pst-' + pid + '"></div>';
+  });
+
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+var _g45CompoCtxCourant = null;
+
+/* ═══ TRADUCTION DES LIBELLES DE STATS ═══
+   ESPN renvoie ses abreviations americaines : CMP, ATT, YDS, LNG, PIM, RBI…
+   Illisible quand on ne pratique pas le sport. On garde la valeur telle quelle
+   mais on affiche un libelle francais, et l'abreviation d'origine reste en
+   infobulle pour retrouver ses petits sur ESPN ou chez un bookmaker.
+
+   On NE remplace PAS la liste des stats : elle vient toujours d'ESPN, donc un
+   sport non traduit affiche simplement ses abreviations brutes plutot que rien. */
+var _G45_STAT_FR = {
+  /* football americain — passe */
+  CMP:'Passes r\u00e9ussies', ATT:'Tentatives', 'CMP%':'% r\u00e9ussite', YDS:'Yards',
+  AVG:'Yards / tentative', TD:'Touchdowns', INT:'Interceptions', LNG:'Plus longue',
+  SACK:'Sacks', RTG:'Note QB', QBR:'Note QBR',
+  /* football americain — course et reception */
+  CAR:'Courses', REC:'R\u00e9ceptions', TGTS:'Ballons vis\u00e9s', FUM:'Fumbles',
+  TOT:'Total plaquages', SOLO:'Plaquages solo', 'FF':'Fumbles provoqu\u00e9s',
+  /* basket */
+  PTS:'Points', REB:'Rebonds', AST:'Passes d\u00e9c.', STL:'Interceptions',
+  BLK:'Contres', 'FG%':'% aux tirs', '3P%':'% \u00e0 3 pts', 'FT%':'% lancers francs',
+  MIN:'Minutes', GP:'Matchs jou\u00e9s', TO:'Ballons perdus',
+  /* hockey */
+  G:'Buts', A:'Passes d\u00e9c.', P:'Points', PIM:'Minutes de p\u00e9nalit\u00e9',
+  'S':'Tirs', 'S%':'% de tirs', 'SV%':'% d\u2019arr\u00eats', GAA:'Buts encaiss\u00e9s / match',
+  SO:'Blanchissages', TOI:'Temps de jeu',
+  /* baseball */
+  HR:'Circuits', RBI:'Points produits', OBP:'% pr\u00e9sence base', SLG:'Puissance',
+  OPS:'OBP + SLG', SB:'Bases vol\u00e9es', ERA:'Moy. points m\u00e9rit\u00e9s', 'K':'Retraits sur 3 pr.',
+  /* rugby */
+  TRIES:'Essais', TRY:'Essais', CONV:'Transformations', PEN:'P\u00e9nalit\u00e9s',
+  TACKLES:'Plaquages', METRES:'M\u00e8tres gagn\u00e9s',
+  /* football */
+  GLS:'Buts', SOG:'Tirs cadr\u00e9s', SH:'Tirs', 'YC':'Cartons jaunes', 'RC':'Cartons rouges',
+  STRT:'Titularisations', APP:'Matchs jou\u00e9s', SUB:'Entr\u00e9es en jeu', SHOT:'Tirs',
+  ST:'Tirs cadr\u00e9s', FC:'Fautes commises', FA:'Fautes subies', OFF:'Hors-jeu',
+  GA:'Buts encaiss\u00e9s', SV:'Arr\u00eats', CS:'Clean sheets'
+};
+function _g45StatFr(lab) {
+  var k = String(lab || '').toUpperCase().trim();
+  return _G45_STAT_FR[k] || lab;
+}
+
+/* Statistiques de la saison — libelles pris chez ESPN, jamais cables. */
+/* Postes SANS statistique individuelle publiee. Ce ne sont pas des joueurs qui
+   n'ont pas joue : un offensive tackle dispute souvent tous les snaps de la
+   saison, mais son travail ne produit rien de comptabilisable. Afficher
+   « pas de stats publiees » laissait croire a une absence. */
+var _g45SplitChoisi = {};   /* competition selectionnee, par joueur */
+var _g45CompoPosMem = {};   /* poste memorise, pour redessiner sans le reperdre */
+
+function _g45CompoSplit(pid, i) {
+  _g45SplitChoisi[pid] = i;
+  var box = document.getElementById('g45-pst-' + pid);
+  if (box) box.innerHTML = '';
+  _g45CompoJoueur(pid, _g45CompoPosMem[pid]);
+}
+window._g45CompoSplit = _g45CompoSplit;
+
+var _G45_POSTES_SANS_STATS = {
+  OT:'ligne offensive', OG:'ligne offensive', C:'ligne offensive', G:'ligne offensive',
+  T:'ligne offensive', OL:'ligne offensive', LS:'longsnapper'
+};
+
+async function _g45CompoJoueur(pid, pos) {
+  var box = document.getElementById('g45-pst-' + pid);
+  var ctx = _g45CompoCtxCourant;
+  if (!box || !ctx) return;
+  if (box.innerHTML.trim()) { box.innerHTML = ''; return; }          /* bascule */
+  box.innerHTML = '<div style="padding:8px 8px 8px 40px;color:var(--t3);font-size:10px;">\u23f3 Stats\u2026</div>';
+
+  try {
+    var r = await fetch('https://site.web.api.espn.com/apis/common/v3/sports/' + ctx.sp + '/' + ctx.lg + '/athletes/' + pid + '/overview');
+    var d = await r.json();
+    var st = d && d.statistics;
+    if (!st || !st.labels || !st.splits || !st.splits.length) {
+      var motif = _G45_POSTES_SANS_STATS[String(pos || '').toUpperCase()];
+      box.innerHTML = '<div style="padding:8px 8px 8px 40px;color:var(--t3);font-size:10px;line-height:1.5;">'
+        + (motif
+            ? ('Poste sans statistique individuelle (' + motif + ').<br><span style="opacity:.7;">Il peut avoir jou\u00e9 toute la saison : la NFL ne publie rien de chiffr\u00e9 pour ce r\u00f4le.</span>')
+            : 'Aucune statistique publi\u00e9e \u2014 n\'a probablement pas jou\u00e9, ou saison pas encore commenc\u00e9e.')
+        + '</div>';
+      return;
+    }
+    /* PIEGE FOOTBALL : ESPN ne renvoie pas UN bloc « saison reguliere » mais un
+       bloc PAR COMPETITION — Liga, Ligue des champions, Coupe du Roi, amicaux…
+       Prendre le premier donnait « 2026 International Friendly » sur Ferran
+       Torres : 3 titularisations, alors que sa saison de Liga en compte trente.
+       On choisit le bloc le plus FOURNI, et on laisse basculer sur les autres. */
+    var idxJeu = -1;
+    (st.labels || []).forEach(function (l, i) {
+      if (idxJeu < 0 && /^(GP|APP|STRT|MIN)$/i.test(String(l).trim())) idxJeu = i;
+    });
+    var note = function (sp) {
+      var v = (idxJeu >= 0) ? parseFloat(sp.stats && sp.stats[idxJeu]) : NaN;
+      if (isFinite(v) && v > 0) return v * 1000;
+      var somme = 0;
+      (sp.stats || []).forEach(function (x) { var n = parseFloat(x); if (isFinite(n)) somme += Math.abs(n); });
+      return somme;
+    };
+    var iSel = 0;
+    if (_g45SplitChoisi[pid] != null && st.splits[_g45SplitChoisi[pid]]) iSel = _g45SplitChoisi[pid];
+    else { var best = -1; st.splits.forEach(function (sp, i) { var n = note(sp); if (n > best) { best = n; iSel = i; } }); }
+    var split = st.splits[iSel];
+    var vals = split.stats || [];
+    var COUL = ['#4d84ff','#1ed760','#f0b020','#a78bfa','#22d3ee','#ff7b54','#ec4899','#84cc16'];
+
+    /* « Moyennes » etait faux : ESPN renvoie des TOTAUX de saison en football
+       americain, hockey et baseball (3 587 yards, ce n'est pas une moyenne par
+       match), et des moyennes par match en basket. On annonce donc ce qui est
+       reellement affiche, sport par sport. */
+    var parMatch = (ctx.sp === 'basketball');
+    var titre = (split.displayName || 'Saison') + ' \u00b7 ' + (parMatch ? 'moyennes par match' : 'totaux de la saison');
+    var h = '<div style="background:rgba(77,132,255,.05);border-radius:8px;padding:10px;margin:4px 0 8px 38px;">'
+      + '<div style="font-size:9px;color:var(--t3);margin-bottom:8px;">' + titre + '</div>'
+      + '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;">';
+    st.labels.slice(0, 8).forEach(function (lab, i) {
+      var v = (vals[i] !== undefined && vals[i] !== null && vals[i] !== '') ? vals[i] : '\u2014';
+      var fr = _g45StatFr(lab);
+      h += '<div style="text-align:center;" title="' + String(lab).replace(/"/g, '') + '">'
+        + '<div style="font-size:14px;font-weight:800;color:' + COUL[i % COUL.length] + ';">' + v + '</div>'
+        + '<div style="font-size:7.5px;color:var(--t3);line-height:1.25;">' + fr + '</div></div>';
+    });
+    h += '</div>';
+    if (st.splits.length > 1) {
+      h += '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:8px;">';
+      st.splits.forEach(function (sp, i) {
+        var on = (i === iSel);
+        var nomC = String(sp.displayName || ('Bloc ' + (i + 1))).replace(/^\d{4}[-\d]*\s*/, '');
+        h += '<button onclick="_g45CompoSplit(\'' + pid + '\',' + i + ')" style="padding:3px 8px;border-radius:10px;border:1px solid rgba(255,255,255,'
+          + (on ? '.3' : '.08') + ');background:rgba(255,255,255,' + (on ? '.14' : '.04') + ');color:' + (on ? 'var(--t1)' : 'var(--t3)')
+          + ';font-size:8.5px;font-weight:' + (on ? '800' : '400') + ';cursor:pointer;">' + nomC + '</button>';
+      });
+      h += '</div>';
+    }
+    h += '<button onclick="_g45CompoGamelog(\'' + pid + '\')" style="width:100%;margin-top:8px;padding:7px;border-radius:6px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:var(--t2);font-size:10px;font-weight:700;cursor:pointer;">\ud83d\udccb 5 derniers matchs</button>'
+      + '<div id="g45-pgl-' + pid + '"></div></div>';
+    box.innerHTML = h;
+    _g45CompoPosMem[pid] = pos;
+  } catch (e) {
+    box.innerHTML = '<div style="padding:8px 8px 8px 40px;color:#ff6b6b;font-size:10px;">Erreur stats joueur.</div>';
+  }
+}
+
+async function _g45CompoGamelog(pid) {
+  var box = document.getElementById('g45-pgl-' + pid);
+  var ctx = _g45CompoCtxCourant;
+  if (!box || !ctx) return;
+  if (box.innerHTML.trim()) { box.innerHTML = ''; return; }
+  box.innerHTML = '<div style="padding:8px;color:var(--t3);font-size:10px;">\u23f3 Matchs\u2026</div>';
+
+  try {
+    var r = await fetch('https://site.web.api.espn.com/apis/common/v3/sports/' + ctx.sp + '/' + ctx.lg + '/athletes/' + pid + '/gamelog');
+    var d = await r.json();
+    var evs = d.events || {}, labels = d.labels || d.names || [];
+    var lignes = [];
+    (d.seasonTypes || []).forEach(function (t) {
+      (t.categories || []).forEach(function (c) {
+        (c.events || []).forEach(function (e) { lignes.push(e); });
+      });
+    });
+    if (!lignes.length) { box.innerHTML = '<div style="padding:8px;color:var(--t3);font-size:10px;">Aucun match r\u00e9cent.</div>'; return; }
+
+    /* Le nombre de matchs joues n'est pas servi dans les stats de tous les
+       sports — la NFL ne le donne pas. On le compte sur le releve lui-meme,
+       ce qui ne coute aucune requete de plus : il est deja charge. */
+    var h = '<div style="margin-top:8px;font-size:9px;color:var(--t3);">'
+      + lignes.length + ' match' + (lignes.length > 1 ? 's' : '') + ' jou\u00e9' + (lignes.length > 1 ? 's' : '')
+      + ' cette saison \u00b7 les 5 derniers</div>';
+    lignes.slice(0, 5).forEach(function (e) {
+      var ev = evs[e.eventId] || {};
+      var res = (ev.gameResult || '').toUpperCase();
+      var col = res === 'W' ? '#1ed760' : (res === 'L' ? '#ff4545' : 'var(--t3)');
+      var adv = (ev.opponent && (ev.opponent.abbreviation || ev.opponent.displayName)) || '';
+      var lieu = ev.atVs || '';
+      var sc = ev.score || '';
+      /* Les trois premieres stats du sport, quelles qu'elles soient. */
+      var det = (e.stats || []).slice(0, 3).map(function (v, i) {
+        return v + (labels[i] ? (' ' + _g45StatFr(labels[i])) : '');
+      }).join(' \u00b7 ');
+      h += '<div style="display:flex;align-items:center;gap:6px;padding:5px 2px;border-bottom:1px solid rgba(255,255,255,.04);font-size:10px;">'
+        + '<div style="width:14px;font-weight:800;color:' + col + ';">' + res + '</div>'
+        + '<div style="width:74px;color:var(--t2);">' + lieu + ' ' + adv + '</div>'
+        + '<div style="width:60px;color:var(--t3);">' + sc + '</div>'
+        + '<div style="flex:1;text-align:right;font-weight:700;color:var(--t1);">' + det + '</div></div>';
+    });
+    box.innerHTML = h;
+  } catch (e) {
+    box.innerHTML = '<div style="padding:8px;color:#ff6b6b;font-size:10px;">Erreur gamelog.</div>';
+  }
+}
+
+window._g45CompoJoueur = _g45CompoJoueur;
+window._g45CompoGamelog = _g45CompoGamelog;
+
+/* ── Branchement sur l'onglet Compo, par enveloppe ──
+   Le football garde `loadFdSquad` et son terrain : on ne detourne que les
+   equipes dont le sport n'est pas le football. */
+var _g45CompoOrig = (typeof loadTeamCompo === 'function') ? loadTeamCompo : null;
+
+window.loadTeamCompo = async function () {
+  var el = (typeof $i === 'function') ? $i('ip-compo') : document.getElementById('ip-compo');
+  if (!el) return;
+  var nom = (typeof _currentTeam !== 'undefined' ? _currentTeam : '') || '';
+  var estFoot = true;
+  try {
+    var u = (window.state && state.u ? state.u : []).filter(function (x) { return x && x.n === nom; })[0];
+    var perso = g45TeamsPerso()[String(nom || '').toLowerCase().trim()];
+    if (u && u.sport && u.sport !== '\u26bd') estFoot = false;
+    if (!u && perso && (perso.sport || 'soccer') !== 'soccer') estFoot = false;
+  } catch (e) {}
+
+  if (estFoot) {
+    /* On NE remplace PAS le terrain et les positions de `loadFdSquad` : Antoine
+       s'en sert. On ajoute l'effectif ESPN EN DESSOUS, avec les stats joueur
+       cliquables et a jour, sans toucher a l'existant. */
+    var r = null;
+    try { r = _g45CompoOrig ? _g45CompoOrig() : null; } catch (e) {}
+    if (r && typeof r.then === 'function') { try { await r; } catch (e) {} }
+
+    var poser = function () {
+      if (!document.getElementById('ip-compo')) return;
+      if (document.getElementById('g45-compo-espn')) return;
+      var sub = document.createElement('div');
+      sub.id = 'g45-compo-espn';
+      sub.style.marginTop = '10px';
+      el.appendChild(sub);
+      _g45CompoEffectif(sub, nom, true);
+    };
+    poser();
+    /* `loadFdSquad` peut encore reecrire el apres son retour (chargements
+       imbriques non attendus) : on verifie une fois et on repose si besoin. */
+    setTimeout(poser, 1400);
+    /* Reprise silencieuse d'un rattrapage interrompu la veille par le budget. */
+    setTimeout(function () { if (typeof _g45RattrReprise === 'function') _g45RattrReprise(nom); }, 3000);
+    return;
+  }
+  el.style.display = 'block';
+  _g45CompoEffectif(el, nom);
+};
+
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   COTES SAISIES A LA MAIN — retour visuel et effacement (13/08/2026)
+   ───────────────────────────────────────────────────────────────────────────
+   La saisie manuelle enregistrait deja (`g45NrlSaisir` -> localStorage), mais
+   sans rien montrer : impossible de savoir si la valeur etait prise. Et une
+   cote fausse ne pouvait pas etre RETIREE — la retaper marchait, la vider
+   laissait un 0 dans la base.
+
+   On ajoute donc trois choses, sans toucher au stockage existant :
+     - un liseré vert bref quand la valeur est enregistree ;
+     - un bouton ✕ par match, qui supprime la ligne de cotes ;
+     - le compteur « N avec cotes » de la journee, remis a jour.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+function _g45CoteFlash(el, ok) {
+  if (!el || !el.style) return;
+  var av = el.style.borderColor;
+  el.style.borderColor = ok ? '#1ed760' : '#ff6b6b';
+  el.style.transition = 'border-color .25s';
+  setTimeout(function () { el.style.borderColor = av || 'rgba(255,255,255,.14)'; }, 900);
+}
+
+var _g45SaisirOrig = (typeof g45NrlSaisir === 'function') ? g45NrlSaisir : null;
+
+window.g45NrlSaisir = function (id, camp, val, el) {
+  var txt = String(val == null ? '' : val).trim();
+  /* Champ vide = retrait de la cote, pas un zero fantome. */
+  if (!txt) {
+    try {
+      var o0 = g45NrlCotes(), k0 = _g45Cle(id);
+      if (o0[k0]) { o0[k0][camp] = 0; if (!o0[k0].dom && !o0[k0].ext) delete o0[k0]; _g45NrlSave(o0); }
+    } catch (e) {}
+    _g45CoteFlash(el, true);
+    if (typeof g45NrlSynthese === 'function') g45NrlSynthese();
+    _g45MajCompteurs();
+    return;
+  }
+  var n = parseFloat(txt.replace(',', '.'));
+  /* Une cote decimale est toujours > 1 : 1.85 oui, 0.85 ou « 185 » non. */
+  if (!isFinite(n) || n <= 1 || n > 100) {
+    _g45CoteFlash(el, false);
+    if (typeof _g45NrlMsg === 'function') _g45NrlMsg('\u26a0\ufe0f « ' + txt + ' » n\'est pas une cote d\u00e9cimale valide (attendu entre 1.01 et 100).', '#ffb13d');
+    return;
+  }
+  if (_g45SaisirOrig) _g45SaisirOrig(id, camp, n);
+  _g45CoteFlash(el, true);
+  _g45MajCompteurs();
+};
+
+/* Efface les deux cotes d'un match. Redessine, donc les champs se vident. */
+function g45NrlEffacer(id) {
+  try {
+    var o = g45NrlCotes(), k = _g45Cle(id);
+    if (o[k]) { delete o[k]; _g45NrlSave(o); }
+  } catch (e) {}
+  if (typeof g45NrlRender === 'function') g45NrlRender();
+}
+window.g45NrlEffacer = g45NrlEffacer;
+
+/* Met a jour les « N avec cotes » sans redessiner : redessiner ferait perdre
+   le focus et sauter la page au milieu d'une saisie en serie. */
+function _g45MajCompteurs() {
+  try {
+    var o = g45NrlCotes();
+    document.querySelectorAll('[data-jr-compte]').forEach(function (sp) {
+      var ids = String(sp.getAttribute('data-jr-ids') || '').split(',').filter(Boolean);
+      var n = ids.filter(function (i) { var c = o[_g45Cle(i)]; return c && c.dom > 1 && c.ext > 1; }).length;
+      sp.textContent = '\u00b7 ' + ids.length + ' matchs \u00b7 ' + n + ' avec cotes';
+    });
+  } catch (e) {}
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CACHE DU CALENDRIER DE SAISON (13/08/2026)
+   ───────────────────────────────────────────────────────────────────────────
+   La vue Journees relançait `g45NrlCharger` a CHAQUE ouverture : 17 requetes
+   pour le NRL, 12 en repli scoreboard. Le code s'en excusait meme en commentaire
+   (« le cache rend l'operation instantanee ») — sauf qu'aucun cache n'existait.
+
+   REGLE RETENUE, calquee sur la nature de la donnee :
+     - saison TERMINEE (tous les matchs joues) -> cache PERMANENT. Un calendrier
+       passe ne change plus jamais, le rafraichir est du gaspillage pur.
+     - saison EN COURS -> 6 h. Les scores et les reports bougent, mais pas
+       toutes les cinq minutes.
+   Un bouton force le rechargement quand Antoine le decide.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+function _g45NrlCleCache(annee) {
+  return 'g45nrlcal2_' + _g45NrlCtx.sport + '_' + _g45NrlCtx.ligue + '_' + annee;
+}
+
+var _g45NrlChargerOrig = (typeof g45NrlCharger === 'function') ? g45NrlCharger : null;
+
+window.g45NrlCharger = async function (annee, force) {
+  annee = annee || new Date().getFullYear();
+  var cle = _g45NrlCleCache(annee);
+
+  if (!force) {
+    try {
+      var brut = localStorage.getItem(cle);
+      if (brut) {
+        var o = JSON.parse(brut);
+        var d = (o && o.d) || [];
+        if (d.length) {
+          var tousJoues = d.every(function (m) { return m.joue; });
+          var frais = (Date.now() - (o.t || 0)) < 6 * 3600000;
+          if (tousJoues || frais) {
+            _g45NrlMatchs = d;
+            _g45NrlMatchsCle = _g45NrlCtx.sport + '|' + _g45NrlCtx.ligue + '|' + annee;
+            var nj = d.filter(function (m) { return m.joue; }).length;
+            _g45NrlMsg('\u2705 ' + d.length + ' matchs (' + nj + ' jou\u00e9s) \u00b7 '
+              + (tousJoues ? 'saison termin\u00e9e, en m\u00e9moire' : 'en m\u00e9moire depuis moins de 6 h')
+              + ' \u2014 aucune requ\u00eate.', '#4ade80');
+            return d;
+          }
+        }
+      }
+    } catch (e) {}
+  }
+
+  var out = _g45NrlChargerOrig ? await _g45NrlChargerOrig(annee) : [];
+  if (out && out.length) {
+    try { localStorage.setItem(cle, JSON.stringify({ t: Date.now(), d: out })); } catch (e) {}
+  }
+  return out;
+};
+
+/* Rechargement force, a la demande. */
+async function g45NrlRecharger() {
+  var an = parseInt((document.getElementById('g45-nrl-annee') || {}).value, 10) || new Date().getFullYear();
+  await window.g45NrlCharger(an, true);
+  if (typeof g45NrlRender === 'function') g45NrlRender();
+}
+window.g45NrlRecharger = g45NrlRecharger;
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   COTES ESPN AUTOMATIQUES + CHAMP NUL (13/08/2026)
+   ───────────────────────────────────────────────────────────────────────────
+   ESPN publie les cotes DANS le scoreboard : `competitions[0].odds[0]`, avec
+   homeTeamOdds / awayTeamOdds / drawOdds et le total. C'est gratuit, sans cle
+   et sans quota — a l'oppose de The Odds API (500 requetes par mois) et de
+   RapidAPI. On va donc les chercher la.
+
+   ECONOMIE : une requete par JOUR de match, pas par match. Une journee de NRL
+   tient sur 3 ou 4 dates, donc 3 ou 4 requetes pour 8 matchs. Le bouton est
+   pose par journee et non sur la saison entiere : charger 27 journees d'un coup
+   ferait une centaine de requetes pour des cotes qui, sur les matchs deja
+   joues, ne servent qu'a l'historique.
+
+   COUVERTURE REELLE (constatee) : tres bonne en NFL, NBA, MLB, NHL et NCAA,
+   ou ESPN sert son propre bookmaker. Correcte en football europeen avec le
+   NUL. Faible a nulle en NRL et en rugby a XV — d'ou la saisie manuelle qui
+   reste le chemin principal.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Les cotes americaines sont converties en decimal : +150 -> 2.50, -200 -> 1.50. */
+function _g45AmDec(a) {
+  a = parseFloat(a);
+  if (!a || isNaN(a)) return 0;
+  return a > 0 ? (1 + a / 100) : (1 + 100 / Math.abs(a));
+}
+
+/* Extrait dom / nul / ext d'un bloc `odds` ESPN, quelle que soit sa forme :
+   selon les ligues on trouve un decimal tout pret, une cote americaine, ou
+   seulement l'americaine dans `current`. */
+function _g45OddsTrio(od) {
+  if (!od) return null;
+  var cur = od.current || {};
+  function lire(o1, o2) {
+    var o = o1 || o2 || {};
+    var ml = o.moneyLine != null ? o.moneyLine : (o.moneyline != null ? o.moneyline : null);
+    if (ml && typeof ml === 'object') {
+      if (ml.decimal) return parseFloat(ml.decimal);
+      if (ml.american != null) return _g45AmDec(String(ml.american).replace('+', ''));
+    }
+    if (o.decimal) return parseFloat(o.decimal);
+    if (ml != null) return _g45AmDec(ml);
+    return 0;
+  }
+  var dom = lire(od.homeTeamOdds, cur.homeTeamOdds);
+  var ext = lire(od.awayTeamOdds, cur.awayTeamOdds);
+  var nul = lire(od.drawOdds, cur.drawOdds);
+  if (!dom && !ext) return null;
+  return { dom: dom || 0, nul: nul || 0, ext: ext || 0,
+           prov: (od.provider && od.provider.name) || 'ESPN' };
+}
+
+/* Sports ou le match nul existe : inutile d'afficher un champ qui ne sera
+   jamais rempli en NBA, NHL, NFL ou MLB. */
+function _g45AvecNul(sport) {
+  return ['soccer', 'rugby', 'rugby-league', 'cricket'].indexOf(String(sport || '')) >= 0;
+}
+window._g45AvecNul = _g45AvecNul;
+
+/* Memoire de session : une meme date n'est demandee qu'une fois, meme si on
+   relance le bouton ou qu'on passe de la journee a la saison entiere. */
+var _g45OddsJourMem = {};
+
+/* Coeur commun : remplit les cotes VIDES d'une liste de matchs.
+   Une requete par JOUR, jamais par match. */
+async function _g45CotesEspnPour(lst, etiquette, btn) {
+  if (!lst || !lst.length) return;
+  var libelleBtn = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = '\u23f3\u2026'; }
+
+  var o = g45NrlCotes();
+  /* On ne redemande pas les dates dont TOUS les matchs ont deja leurs cotes. */
+  var aFaire = lst.filter(function (m) {
+    var c = o[_g45Cle(m.id)];
+    return !(c && c.dom > 1 && c.ext > 1);
+  });
+  if (!aFaire.length) {
+    if (btn) { btn.disabled = false; btn.textContent = libelleBtn; }
+    _g45NrlMsg('\u2705 ' + etiquette + ' : toutes les cotes sont deja saisies, aucune requete.', '#4ade80');
+    return;
+  }
+
+  var parJour = {};
+  aFaire.forEach(function (m) {
+    var d = new Date(m.date);
+    if (isNaN(d)) return;
+    var k = d.getUTCFullYear() + String(d.getUTCMonth() + 1).padStart(2, '0') + String(d.getUTCDate()).padStart(2, '0');
+    (parJour[k] = parJour[k] || []).push(m);
+  });
+
+  var jours = Object.keys(parJour).sort();
+  var trouves = 0, prov = '', reseau = 0;
+
+  for (var i = 0; i < jours.length; i++) {
+    _g45NrlMsg('\u23f3 Cotes ESPN \u00b7 ' + etiquette + ' \u00b7 jour ' + (i + 1) + '/' + jours.length + '\u2026');
+    var memK = _g45NrlCtx.sport + '|' + _g45NrlCtx.ligue + '|' + jours[i];
+    var j = _g45OddsJourMem[memK];
+    if (!j) {
+      try {
+        var r = await fetch('https://site.api.espn.com/apis/site/v2/sports/' + _g45NrlCtx.sport +
+                            '/' + _g45NrlCtx.ligue + '/scoreboard?dates=' + jours[i] + '&limit=1000');
+        if (!r.ok) continue;
+        j = await r.json();
+        _g45OddsJourMem[memK] = j;
+        reseau++;
+      } catch (e) { continue; }
+    }
+
+    var index = {};
+    ((j && j.events) || []).forEach(function (e) { index[String(e.id)] = e; });
+
+    parJour[jours[i]].forEach(function (m) {
+      var e = index[String(m.id)];
+      var c0 = e && e.competitions && e.competitions[0];
+      var trio = _g45OddsTrio(c0 && c0.odds && c0.odds[0]);
+      if (!trio) return;
+      var k = _g45Cle(m.id);
+      /* On n'ECRASE PAS une cote saisie a la main : elle vient de SON
+         bookmaker et fait foi. On ne remplit que le vide. */
+      var d = o[k] || { dom: 0, nul: 0, ext: 0 };
+      if (!d.dom && trio.dom) d.dom = Math.round(trio.dom * 100) / 100;
+      if (!d.ext && trio.ext) d.ext = Math.round(trio.ext * 100) / 100;
+      if (!d.nul && trio.nul) d.nul = Math.round(trio.nul * 100) / 100;
+      if (d.dom || d.ext) { o[k] = d; trouves++; prov = trio.prov; }
+    });
+  }
+
+  _g45NrlSave(o);
+  if (typeof g45NrlRender === 'function') g45NrlRender();
+  _g45NrlMsg(trouves
+    ? ('\u2705 ' + etiquette + ' : ' + trouves + '/' + aFaire.length + ' matchs remplis \u00b7 '
+       + reseau + ' requ\u00eate' + (reseau > 1 ? 's' : '') + ' \u00b7 ' + prov + ' via ESPN.')
+    : ('\u2139\ufe0f ' + etiquette + ' : ESPN ne publie pas de cotes sur ces matchs (' + reseau + ' requ\u00eates). Saisie manuelle.'),
+    trouves ? '#4ade80' : '#ffb13d');
+}
+
+async function g45CotesEspnJournee(jr, btn) {
+  var lst = (_g45NrlMatchs || []).filter(function (m) { return String(m.jr) === String(jr); });
+  await _g45CotesEspnPour(lst, 'Journ\u00e9e ' + jr, btn);
+}
+window.g45CotesEspnJournee = g45CotesEspnJournee;
+
+/* Saison entiere. Le cout est ANNONCE avant de partir : ESPN est gratuit et
+   sans quota, mais une centaine de requetes enchainees reste une centaine de
+   requetes, et Antoine doit savoir ce qu'il declenche. */
+async function g45CotesEspnSaison(btn) {
+  var tous = _g45NrlMatchs || [];
+  if (!tous.length) return;
+  var o = g45NrlCotes();
+  var manquants = tous.filter(function (m) {
+    var c = o[_g45Cle(m.id)];
+    return !(c && c.dom > 1 && c.ext > 1);
+  });
+  if (!manquants.length) { _g45NrlMsg('\u2705 Toute la saison a deja ses cotes.', '#4ade80'); return; }
+
+  var dates = {};
+  manquants.forEach(function (m) {
+    var d = new Date(m.date);
+    if (!isNaN(d)) dates[d.getUTCFullYear() + '' + d.getUTCMonth() + '' + d.getUTCDate()] = 1;
+  });
+  var nJours = Object.keys(dates).length;
+  if (!confirm('Remplir les cotes de ' + manquants.length + ' matchs.\n\n'
+      + nJours + ' requetes ESPN (une par jour de match), gratuites et sans quota.\n'
+      + 'Compte environ ' + Math.max(1, Math.round(nJours * 0.6)) + ' secondes.\n\nContinuer ?')) return;
+
+  await _g45CotesEspnPour(manquants, 'Saison', btn);
+}
+window.g45CotesEspnSaison = g45CotesEspnSaison;
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MODE ADMINISTRATEUR SUR LES BOUTONS RESEAU (13/08/2026)
+   ───────────────────────────────────────────────────────────────────────────
+   GONES45 est partage avec Bruno, JP, Cedric et Baptiste. Les boutons qui
+   declenchent des dizaines de requetes — rechargement du calendrier, cotes
+   ESPN d'une journee ou d'une saison — passent donc derriere le meme verrou
+   que la zone FBref : `gones45_admin` dans localStorage.
+
+   On REUTILISE `toggleAdminLock` au lieu de recopier le controle du mot de
+   passe : un second exemplaire du code se serait desynchronise du premier au
+   premier changement, et surtout aurait duplique le mot de passe en clair.
+
+   Ce qui reste ouvert a tous : la SAISIE manuelle des cotes et l'effacement.
+   C'est leur propre localStorage, ca ne coute rien et ca ne casse rien.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+function g45EstAdmin() {
+  try { return localStorage.getItem('gones45_admin') === '1'; } catch (e) { return false; }
+}
+window.g45EstAdmin = g45EstAdmin;
+
+function g45AdminBascule() {
+  /* toggleAdminLock gere le prompt, la verification et la memorisation du code.
+     Elle cherche ensuite des elements par identifiant : le cadenas de cette vue
+     porte justement `btn-admin-lock-journees`, il se met donc a jour tout seul. */
+  if (typeof toggleAdminLock === 'function') toggleAdminLock('journees');
+  else {
+    var p = prompt('Code admin :');
+    if (p && p === localStorage.getItem('gones45_admin_pwd')) localStorage.setItem('gones45_admin', '1');
+  }
+  /* On redessine la vue pour faire apparaitre ou disparaitre les boutons. */
+  if (typeof loadCompetTab === 'function') loadCompetTab();
+}
+window.g45AdminBascule = g45AdminBascule;
+
+/* Garde-fou cote fonction, pas seulement cote affichage : masquer un bouton
+   n'empeche personne d'appeler la fonction depuis la console. */
+var _g45CotesPourOrig = _g45CotesEspnPour;
+_g45CotesEspnPour = async function (lst, etiquette, btn) {
+  if (!g45EstAdmin()) {
+    _g45NrlMsg('\ud83d\udd12 R\u00e9serv\u00e9 \u00e0 l\'administrateur \u2014 d\u00e9verrouille avec le cadenas.', '#ffb13d');
+    if (btn) btn.disabled = false;
+    return;
+  }
+  return await _g45CotesPourOrig(lst, etiquette, btn);
+};
+
+var _g45RechargerOrig = g45NrlRecharger;
+window.g45NrlRecharger = async function () {
+  if (!g45EstAdmin()) {
+    _g45NrlMsg('\ud83d\udd12 Rechargement r\u00e9serv\u00e9 \u00e0 l\'administrateur \u2014 le calendrier en m\u00e9moire reste affich\u00e9.', '#ffb13d');
+    return;
+  }
+  return await _g45RechargerOrig();
+};
+
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   AUTO API-SPORTS — remplit tout l'effectif en UNE requete (14/08/2026)
+   ───────────────────────────────────────────────────────────────────────────
+   POURQUOI, alors qu'« Auto ESPN » existe deja : ce dernier interroge ESPN
+   JOUEUR PAR JOUEUR — 26 requetes pour le PSG — et, pour l'Europe, sonde
+   jusqu'a six competitions sur huit joueurs avant de trouver la bonne, soit
+   pres de 50 appels supplementaires.
+
+   `/players?team=X&season=Y` rend l'effectif ENTIER avec ses statistiques, et
+   les separe deja par competition : championnat ET Europe dans la meme reponse.
+   L'API pagine par 20, donc 2 requetes pour 26 joueurs. Pas de sondage.
+
+   REGLE DE PRUDENCE, la meme que pour ESPN : on ne touche PAS a une equipe
+   saisie a la main (FBref). Seules les equipes vides ou deja sourcees
+   automatiquement sont (re)remplies.
+
+   CE QU'API-SPORTS NE DONNE PAS : les clean sheets et les tirs cadres subis des
+   gardiens. On laisse ces deux cases INTACTES plutot que d'ecrire un zero qui
+   passerait pour une donnee. Un zero faux est pire qu'une case vide.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Competitions europeennes chez api-sports : C1, Europa, Conference. */
+var _G45_APIS_EURO = { 2: 1, 3: 1, 848: 1 };
+
+function _g45ApisNorm(s) {
+  return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z ]/g, '').replace(/\s+/g, ' ').trim();
+}
+
+/* Retrouve l'effectif affiche, ou qu'il soit : cache, variable de la vue, ou
+   balayage des cles. Meme repli que celui pose sur « Auto ESPN ». */
+function _g45SquadDe(nom, sofaId) {
+  var cle = 'squad_sofa_' + (sofaId || 'af_' + nom);
+  try { var c = JSON.parse(localStorage.getItem(cle) || '{}'); if (c.squad && c.squad.length) return { squad: c.squad, key: cle }; } catch (e) {}
+  if (window._g45SquadCourant && window._g45SquadCourant.squad && window._g45SquadCourant.squad.length
+      && String(window._g45SquadCourant.nom || '') === String(nom)) {
+    return { squad: window._g45SquadCourant.squad, key: window._g45SquadCourant.key || cle };
+  }
+  var cible = String(nom || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  for (var i = 0; i < localStorage.length; i++) {
+    var kk = localStorage.key(i);
+    if (!kk || kk.indexOf('squad_sofa_') !== 0) continue;
+    var suf = kk.slice(11).toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (suf !== cible && suf !== ('af' + cible) && String(sofaId || '') !== kk.slice(11)) continue;
+    try { var oo = JSON.parse(localStorage.getItem(kk) || '{}'); if (oo.squad && oo.squad.length) return { squad: oo.squad, key: kk }; } catch (e) {}
+  }
+  return null;
+}
+
+async function autoApiSportsFillSquad(uid, nom) {
+  var btn = document.getElementById('btn-apis-auto-' + uid);
+  if (typeof apiSportsFetch !== 'function' || typeof getApiSportsKey !== 'function' || !getApiSportsKey()) {
+    alert('Cl\u00e9 api-sports manquante \u2014 configure-la dans Outils.'); return;
+  }
+
+  var sofaId = (typeof SOFASCORE_TEAM_IDS !== 'undefined') ? SOFASCORE_TEAM_IDS[nom] : null;
+  if (!sofaId && typeof SOFASCORE_TEAM_IDS !== 'undefined') {
+    for (var k in SOFASCORE_TEAM_IDS) {
+      if (nom.toLowerCase().indexOf(k.toLowerCase()) >= 0 || k.toLowerCase().indexOf(nom.toLowerCase()) >= 0) { sofaId = SOFASCORE_TEAM_IDS[k]; break; }
+    }
+  }
+  var keyTeam = sofaId || '0';
+
+  var trouve = _g45SquadDe(nom, sofaId);
+  if (!trouve) { alert('Effectif introuvable pour ' + nom + '.\n\nOuvre l\'onglet Compo et laisse l\'effectif se charger, puis relance.'); return; }
+  var squadData = trouve.squad;
+
+  var comp = window['_compMode_' + uid] || 'league';
+  var savePrefix = (comp === 'euro') ? 'euro' : 'league';
+
+  /* Garde-fou : une equipe remplie a la main n'est jamais ecrasee. */
+  var srcApis = 'apis_src_' + saisonKey(keyTeam + '_' + savePrefix);
+  var srcEspn = 'espn_src_' + saisonKey(keyTeam + '_' + savePrefix);
+  var autoSource = localStorage.getItem(srcApis) === '1' || localStorage.getItem(srcEspn) === '1';
+  var aDuManuel = squadData.some(function (p) {
+    var ms = {}; try { ms = JSON.parse(localStorage.getItem('manual_stats_' + saisonKey(keyTeam + '_' + p.id)) || '{}'); } catch (e) {}
+    return ms[savePrefix + '_goals'] !== undefined || ms[savePrefix + '_apps'] !== undefined;
+  });
+  if (aDuManuel && !autoSource) {
+    alert('\u00ab ' + nom + ' \u00bb contient une saisie manuelle (FBref) \u2014 laiss\u00e9 intact.\nFais Reset d\'abord pour passer en source automatique.');
+    return;
+  }
+
+  if (btn) { btn.disabled = true; btn.textContent = '\u23f3 api-sports\u2026'; }
+  try {
+    var saison = 2000 + parseInt(String(_currentSaison).slice(0, 2), 10);
+    var tid = await findApiSportsTeamId(nom);
+    if (!tid) throw new Error('club introuvable chez api-sports');
+
+    /* Une requete, deux si l'effectif depasse 20 joueurs. */
+    var joueurs = [], page = 1, total = 1, appels = 0;
+    while (page <= total && page <= 5) {
+      var d = await _g45ApisAppel('/players?team=' + tid + '&season=' + saison + '&page=' + page);
+      appels++;
+      var errP = _g45ApisErreur(d);
+      if (errP) throw new Error('api-sports : ' + errP + ' (saison ' + saison + ')');
+      total = (d && d.paging && d.paging.total) || 1;
+      ((d && d.response) || []).forEach(function (x) { joueurs.push(x); });
+      page++;
+    }
+    if (!joueurs.length) throw new Error('aucune donnee pour la saison ' + saison
+      + '\n\nTon plan api-sports ne couvre peut-etre pas cette saison. Teste une saison anterieure.');
+
+    /* Index de l'effectif affiche, par nom complet et par nom de famille. */
+    var index = squadData.map(function (p) {
+      var n = _g45ApisNorm(p.name || p.shortName || '');
+      var mots = n.split(' ').filter(function (w) { return w.length > 2; });
+      return { p: p, n: n, fam: mots[mots.length - 1] || n };
+    });
+    var apparier = function (nomComplet) {
+      var n = _g45ApisNorm(nomComplet);
+      var exact = index.filter(function (x) { return x.n === n; })[0];
+      if (exact) return exact.p;
+      var mots = n.split(' ').filter(function (w) { return w.length > 2; });
+      var fam = mots[mots.length - 1] || n;
+      var cands = index.filter(function (x) { return x.fam === fam; });
+      if (cands.length === 1) return cands[0].p;
+      /* Homonymes de nom de famille : on tranche sur le prenom. */
+      var prenom = mots[0] || '';
+      var fin = cands.filter(function (x) { return x.n.indexOf(prenom) >= 0; });
+      return (fin.length === 1) ? fin[0].p : null;
+    };
+
+    var maj = 0, sansMatch = 0;
+    joueurs.forEach(function (item) {
+      var pl = item.player || {};
+      var nomPlein = ((pl.firstname || '') + ' ' + (pl.lastname || '')).trim() || pl.name || '';
+      var cible = apparier(nomPlein) || apparier(pl.name || '');
+      if (!cible) { sansMatch++; return; }
+
+      /* Cumul des blocs de la competition demandee : un joueur peut avoir
+         plusieurs lignes (phase de groupes + qualifications, par exemple). */
+      var acc = null;
+      (item.statistics || []).forEach(function (st) {
+        var lg = st.league || {};
+        var estEuro = !!_G45_APIS_EURO[lg.id];
+        var estChamp = !estEuro && String(lg.type || '') === 'League';
+        if ((savePrefix === 'euro') !== estEuro) return;
+        if (savePrefix === 'league' && !estChamp) return;
+        acc = acc || { apps:0, starts:0, minutes:0, goals:0, assists:0, pk:0, pkm:0, yellow:0, red:0, ga:0, saves:0 };
+        var g = st.games || {}, go = st.goals || {}, pe = st.penalty || {}, ca = st.cards || {};
+        acc.apps += g.appearences || 0;
+        acc.starts += g.lineups || 0;
+        acc.minutes += g.minutes || 0;
+        acc.goals += go.total || 0;
+        acc.assists += go.assists || 0;
+        acc.ga += go.conceded || 0;
+        acc.saves += go.saves || 0;
+        acc.pk += pe.scored || 0;
+        acc.pkm += pe.missed || 0;
+        acc.yellow += ca.yellow || 0;
+        acc.red += ca.red || 0;
+      });
+      if (!acc) return;
+
+      var estGardien = /^g/i.test(String(cible.position || cible.pos || '')) || (acc.saves > 0 || acc.ga > 0);
+      var mk = 'manual_stats_' + saisonKey(keyTeam + '_' + cible.id);
+      var ms = {}; try { ms = JSON.parse(localStorage.getItem(mk) || '{}'); } catch (e) {}
+      ms[savePrefix + '_apps'] = acc.apps;
+      ms[savePrefix + '_starts'] = acc.starts;
+      ms[savePrefix + '_minutes'] = acc.minutes;
+      if (estGardien) {
+        ms[savePrefix + '_ga'] = acc.ga;
+        ms[savePrefix + '_saves'] = acc.saves;
+        /* clean sheets et tirs cadres subis : NON fournis, on n'y touche pas. */
+      } else {
+        ms[savePrefix + '_goals'] = acc.goals;
+        ms[savePrefix + '_assists'] = acc.assists;
+        ms[savePrefix + '_gpk'] = acc.goals - acc.pk;
+        ms[savePrefix + '_pk'] = acc.pk;
+        ms[savePrefix + '_pkatt'] = acc.pk + acc.pkm;
+        ms[savePrefix + '_yellow'] = acc.yellow;
+        ms[savePrefix + '_red'] = acc.red;
+      }
+      try { localStorage.setItem(mk, JSON.stringify(ms)); maj++; } catch (e) {}
+    });
+
+    localStorage.setItem(srcApis, '1');
+    if (btn) { btn.disabled = false; btn.textContent = '\u26a1 Auto api-sports'; }
+    alert('\u2705 ' + nom + ' \u00b7 ' + (savePrefix === 'euro' ? 'Europe' : 'Championnat') + ' ' + saison + '\n'
+      + maj + ' joueurs mis \u00e0 jour sur ' + joueurs.length + ' renvoy\u00e9s\n'
+      + appels + ' requ\u00eate' + (appels > 1 ? 's' : '') + ' api-sports'
+      + (sansMatch ? ('\n' + sansMatch + ' non appari\u00e9s \u00e0 ton effectif') : ''));
+    if (typeof loadTeamCompo === 'function') loadTeamCompo();
+  } catch (e) {
+    if (btn) { btn.disabled = false; btn.textContent = '\u26a1 Auto api-sports'; }
+    alert('\u274c ' + ((e && e.message) || e));
+  }
+}
+window.autoApiSportsFillSquad = autoApiSportsFillSquad;
+
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RESET D'UNE SAISON ENTIERE + SAUVEGARDE (14/08/2026)
+   ───────────────────────────────────────────────────────────────────────────
+   `resetTeamStats` ne vide qu'UNE equipe. Antoine a rempli par erreur toute la
+   saison 2026/27 et n'allait pas ouvrir trente fiches a la main.
+
+   IRREVERSIBLE, donc SAUVEGARDE D'ABORD : un fichier JSON est telecharge avant
+   la suppression, et une fonction de restauration le relit. Les imports FBref
+   sont passes par une reconnaissance d'image sur des captures qu'Antoine n'a
+   plus forcement — les perdre serait bien pire que garder des chiffres faux.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+function _g45ClesSaison(saison) {
+  var out = [];
+  var motifs = ['manual_stats_' + saison + '_', 'espn_src_' + saison + '_',
+                'apis_src_' + saison + '_', 'squad_lastJ_' + saison + '_'];
+  for (var i = 0; i < localStorage.length; i++) {
+    var k = localStorage.key(i);
+    if (!k) continue;
+    for (var m = 0; m < motifs.length; m++) {
+      if (k.indexOf(motifs[m]) === 0) { out.push(k); break; }
+    }
+  }
+  return out;
+}
+
+function _g45LibelleSaison(s) {
+  s = String(s || '');
+  return (s.length === 4) ? (s.slice(0, 2) + '/' + s.slice(2)) : s;
+}
+
+function g45SauvegardeSaison(saison) {
+  saison = saison || _currentSaison;
+  var cles = _g45ClesSaison(saison), dump = {};
+  cles.forEach(function (k) { dump[k] = localStorage.getItem(k); });
+  var blob = new Blob([JSON.stringify({ saison: saison, ts: Date.now(), cles: dump }, null, 1)], { type: 'application/json' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'gones45-stats-' + saison + '-' + new Date().toISOString().slice(0, 10) + '.json';
+  document.body.appendChild(a); a.click();
+  setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+  return cles.length;
+}
+window.g45SauvegardeSaison = g45SauvegardeSaison;
+
+function g45ResetSaisonToutes(saison) {
+  saison = saison || _currentSaison;
+  var cles = _g45ClesSaison(saison);
+  if (!cles.length) { alert('Rien a effacer pour la saison ' + _g45LibelleSaison(saison) + '.'); return; }
+
+  /* Nombre d'equipes concernees : l'identifiant d'equipe est le segment qui
+     suit le prefixe et la saison. */
+  var equipes = {};
+  cles.forEach(function (k) {
+    var m = k.match(/^(?:manual_stats|espn_src|apis_src|squad_lastJ)_\d+_([^_]+)/);
+    if (m) equipes[m[1]] = 1;
+  });
+
+  if (!confirm('Saison ' + _g45LibelleSaison(saison) + '\n\n'
+    + cles.length + ' entrees, ' + Object.keys(equipes).length + ' equipes.\n\n'
+    + 'Une SAUVEGARDE va d\'abord etre telechargee.\nContinuer ?')) return;
+
+  var n = g45SauvegardeSaison(saison);
+
+  if (!confirm('Sauvegarde de ' + n + ' entrees telechargee.\n\n'
+    + 'EFFACER MAINTENANT toutes les stats de la saison ' + _g45LibelleSaison(saison) + ' ?\n'
+    + 'Les effectifs sont conserves, seules les statistiques partent.\n\nIrreversible sans le fichier.')) return;
+
+  var ok = 0;
+  cles.forEach(function (k) { try { localStorage.removeItem(k); ok++; } catch (e) {} });
+  alert(ok + ' entrees effacees pour la saison ' + _g45LibelleSaison(saison) + '.\n'
+    + 'Tu peux relancer Auto api-sports equipe par equipe.');
+  if (typeof loadTeamCompo === 'function') loadTeamCompo();
+}
+window.g45ResetSaisonToutes = g45ResetSaisonToutes;
+
+/* Restauration : relit le fichier produit ci-dessus et remet les cles. */
+function g45RestaurerSaison() {
+  var inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = 'application/json,.json';
+  inp.onchange = function (e) {
+    var f = e.target.files && e.target.files[0];
+    if (!f) return;
+    var fr = new FileReader();
+    fr.onload = function () {
+      var o = null;
+      try { o = JSON.parse(fr.result); } catch (err) { alert('Fichier illisible.'); return; }
+      if (!o || !o.cles) { alert('Ce fichier n\'est pas une sauvegarde GONES45.'); return; }
+      var n = Object.keys(o.cles).length;
+      if (!confirm('Restaurer ' + n + ' entrees de la saison ' + _g45LibelleSaison(o.saison) + ' ?\n'
+        + 'Les valeurs actuelles de ces cles seront remplacees.')) return;
+      var ok = 0;
+      Object.keys(o.cles).forEach(function (k) { try { localStorage.setItem(k, o.cles[k]); ok++; } catch (err) {} });
+      alert(ok + ' entrees restaurees.');
+      if (typeof loadTeamCompo === 'function') loadTeamCompo();
+    };
+    fr.readAsText(f);
+  };
+  inp.click();
+}
+window.g45RestaurerSaison = g45RestaurerSaison;
+
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RATTRAPAGE JOURNEE PAR JOURNEE — api-sports, budget 90/jour (14/08/2026)
+   ───────────────────────────────────────────────────────────────────────────
+   `/players?team&season` ne rend que des TOTAUX. Pour du journee par journee il
+   faut `/fixtures/players?fixture={id}` : une requete = un match = tous les
+   joueurs des DEUX equipes. Le cout est donc fixe par le nombre de MATCHS, pas
+   par le nombre de joueurs ni d'equipes suivies.
+
+   TROIS GARDE-FOUS, parce que 34 journees x plusieurs clubs, ca chiffre :
+     1. BUDGET QUOTIDIEN (90 par defaut, reglable). Le compteur est remis a zero
+        au changement de date. Arrive a la limite, on s'arrete NET et on garde
+        la file d'attente.
+     2. REPRISE AUTOMATIQUE : la file est stockee. Le lendemain, l'ouverture de
+        l'onglet Compo la reprend la ou elle s'etait arretee, sans rien demander.
+     3. CACHE DEFINITIF PAR MATCH : un match joue ne change plus jamais. Une fois
+        traite, il n'est PLUS JAMAIS redemande, meme apres un reset de saison.
+
+   On ecrit dans `manual_stats_{saison}_{equipe}_{joueur}` avec le prefixe
+   `league_J12_…`, exactement le format que le selecteur de journee attend.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* api-sports ne renvoie PAS un code HTTP d'erreur quand il refuse : il repond
+   200 avec `response:[]` et un objet `errors` explicite — plan insuffisant,
+   saison hors couverture, parametre invalide. Le jeter revenait a transformer
+   une raison precise en « aucune donnee », impossible a diagnostiquer. */
+function _g45ApisErreur(d) {
+  if (!d) return 'reponse vide';
+  var e = d.errors;
+  if (!e) return '';
+  if (typeof e === 'string') return e;
+  if (Array.isArray(e)) return e.length ? e.join(' \u00b7 ') : '';
+  var out = [];
+  for (var k in e) { if (e[k]) out.push(k + ' : ' + e[k]); }
+  return out.join(' \u00b7 ');
+}
+window._g45ApisErreur = _g45ApisErreur;
+
+/* ═══ CADENCE ═══
+   api-sports limite aussi les requetes PAR MINUTE (10 sur le plan gratuit,
+   davantage au-dessus). Ma boucle de rattrapage les enchainait sans pause : le
+   quota minute sautait des le deuxieme match, et l'erreur ressemblait a un
+   probleme de saison ou de plan alors que tout allait bien.
+
+   On espace donc les appels, et on RETENTE une fois apres une minute quand la
+   limite tombe quand meme — plutot que de perdre la file d'attente. */
+function g45ApisRpm() {
+  var v = parseInt(localStorage.getItem('gones45_apis_rpm') || '10', 10);
+  return (isFinite(v) && v > 0) ? v : 10;
+}
+var _g45ApisDernier = 0;
+
+function _g45Dodo(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+
+/* Appel cadence, avec une seule reprise apres limite minute. */
+async function _g45ApisAppel(path) {
+  var ecart = Math.ceil(60000 / g45ApisRpm()) + 250;   /* marge : l'API compte au plus juste */
+  var depuis = Date.now() - _g45ApisDernier;
+  if (depuis < ecart) await _g45Dodo(ecart - depuis);
+  _g45ApisDernier = Date.now();
+
+  var d = await apiSportsFetch(path);
+  var err = _g45ApisErreur(d);
+  if (/rateLimit|too many requests/i.test(err)) {
+    await _g45Dodo(61000);                              /* la fenetre d'une minute passe */
+    _g45ApisDernier = Date.now();
+    d = await apiSportsFetch(path);
+  }
+  return d;
+}
+
+function _g45AujKey() {
+  var d = new Date();
+  return '' + d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0');
+}
+function g45ApisPlafond() {
+  var v = parseInt(localStorage.getItem('gones45_apis_cap') || '90', 10);
+  return (isFinite(v) && v > 0) ? v : 90;
+}
+function g45ApisConso() {
+  try {
+    var o = JSON.parse(localStorage.getItem('g45_apis_quota') || '{}');
+    return (o.j === _g45AujKey()) ? (o.n || 0) : 0;   /* nouveau jour = compteur a zero */
+  } catch (e) { return 0; }
+}
+function _g45ApisPlusUn() {
+  try { localStorage.setItem('g45_apis_quota', JSON.stringify({ j: _g45AujKey(), n: g45ApisConso() + 1 })); } catch (e) {}
+}
+function g45ApisReste() { return Math.max(0, g45ApisPlafond() - g45ApisConso()); }
+window.g45ApisReste = g45ApisReste;
+
+/* Matchs deja traites, tous clubs confondus : un match vu pour le PSG n'est pas
+   redemande si on rattrape ensuite l'adversaire sur la meme rencontre. */
+function _g45FxFaits() {
+  try { return JSON.parse(localStorage.getItem('g45_fx_faits') || '{}'); } catch (e) { return {}; }
+}
+function _g45FxMarque(id) {
+  var o = _g45FxFaits(); o[id] = 1;
+  try { localStorage.setItem('g45_fx_faits', JSON.stringify(o)); } catch (e) {}
+}
+
+function _g45JournuDeRound(round) {
+  var m = String(round || '').match(/(\d+)\s*$/);
+  return m ? parseInt(m[1], 10) : 0;
+}
+
+/* ── File d'attente par equipe et par saison ── */
+function _g45RattrCle(keyTeam, saison) { return 'g45_rattr_' + saison + '_' + keyTeam; }
+function _g45RattrLire(keyTeam, saison) {
+  try { return JSON.parse(localStorage.getItem(_g45RattrCle(keyTeam, saison)) || 'null'); } catch (e) { return null; }
+}
+function _g45RattrEcrire(keyTeam, saison, job) {
+  try {
+    if (!job || !job.file || !job.file.length) localStorage.removeItem(_g45RattrCle(keyTeam, saison));
+    else localStorage.setItem(_g45RattrCle(keyTeam, saison), JSON.stringify(job));
+  } catch (e) {}
+}
+
+/* ── Traitement d'UN match : ecrit les stats de nos joueurs pour cette journee ── */
+async function _g45RattrUnMatch(fx, index, keyTeam, saison, tid) {
+  var d = await _g45ApisAppel('/fixtures/players?fixture=' + fx.id);
+  _g45ApisPlusUn();
+  var errM = _g45ApisErreur(d);
+  if (errM) throw new Error(errM);
+  _g45FxMarque(fx.id);
+  var blocs = (d && d.response) || [];
+  var moi = blocs.filter(function (b) { return b.team && String(b.team.id) === String(tid); })[0];
+  if (!moi) return 0;
+
+  var pref = 'league_J' + fx.j;
+  var maj = 0;
+  (moi.players || []).forEach(function (jp) {
+    var pl = jp.player || {}, st = (jp.statistics && jp.statistics[0]) || {};
+    var g = st.games || {}, go = st.goals || {}, ca = st.cards || {}, pe = st.penalty || {};
+    var min = g.minutes || 0;
+    var cible = index.apparier(pl.name || '');
+    if (!cible) return;
+
+    var mk = 'manual_stats_' + saisonKey(keyTeam + '_' + cible.id);
+    var ms = {}; try { ms = JSON.parse(localStorage.getItem(mk) || '{}'); } catch (e) {}
+    ms[pref + '_apps'] = min > 0 ? 1 : 0;
+    ms[pref + '_starts'] = (g.substitute === false && min > 0) ? 1 : 0;
+    ms[pref + '_minutes'] = min;
+    if (/^g/i.test(String(g.position || ''))) {
+      ms[pref + '_ga'] = go.conceded || 0;
+      ms[pref + '_saves'] = go.saves || 0;
+    } else {
+      var pk = pe.scored || 0;
+      ms[pref + '_goals'] = go.total || 0;
+      ms[pref + '_assists'] = go.assists || 0;
+      ms[pref + '_gpk'] = (go.total || 0) - pk;
+      ms[pref + '_pk'] = pk;
+      ms[pref + '_pkatt'] = pk + (pe.missed || 0);
+      ms[pref + '_yellow'] = ca.yellow || 0;
+      ms[pref + '_red'] = ca.red || 0;
+    }
+    try { localStorage.setItem(mk, JSON.stringify(ms)); maj++; } catch (e) {}
+  });
+  return maj;
+}
+
+/* ── Index d'appariement construit une fois par equipe ── */
+function _g45RattrIndex(squadData) {
+  var idx = squadData.map(function (p) {
+    var n = _g45ApisNorm(p.name || p.shortName || '');
+    var mots = n.split(' ').filter(function (w) { return w.length > 2; });
+    return { p: p, n: n, fam: mots[mots.length - 1] || n };
+  });
+  return {
+    apparier: function (nomComplet) {
+      var n = _g45ApisNorm(nomComplet);
+      var ex = idx.filter(function (x) { return x.n === n; })[0];
+      if (ex) return ex.p;
+      var mots = n.split(' ').filter(function (w) { return w.length > 2; });
+      var fam = mots[mots.length - 1] || n;
+      var c = idx.filter(function (x) { return x.fam === fam; });
+      if (c.length === 1) return c[0].p;
+      var pre = mots[0] || '';
+      var f = c.filter(function (x) { return pre && x.n.indexOf(pre) >= 0; });
+      return (f.length === 1) ? f[0].p : null;
+    }
+  };
+}
+
+/* ── Deroule la file tant qu'il reste du budget ── */
+async function _g45RattrDerouler(keyTeam, saison, tid, squadData, silencieux) {
+  var job = _g45RattrLire(keyTeam, saison);
+  if (!job || !job.file || !job.file.length) return 0;
+  var index = _g45RattrIndex(squadData);
+  var faits = _g45FxFaits(), traites = 0;
+
+  var total0 = job.file.length;
+  var btnP = document.querySelector('[id^="btn-rattr-"]');
+  while (job.file.length) {
+    if (g45ApisReste() <= 0) break;
+    var fx = job.file[0];
+    if (faits[fx.id]) { job.file.shift(); continue; }   /* deja vu via l'adversaire */
+    if (btnP) btnP.textContent = '\u23f3 J' + fx.j + ' \u00b7 ' + (traites + 1) + '/' + total0;
+    try { await _g45RattrUnMatch(fx, index, keyTeam, saison, tid); traites++; }
+    catch (e) { break; }                                 /* erreur ou limite : on garde la file */
+    job.file.shift();
+    _g45RattrEcrire(keyTeam, saison, job);
+  }
+  _g45RattrEcrire(keyTeam, saison, job);
+  if (btnP) btnP.textContent = '\ud83d\udcc5 Rattrapage J';
+
+  if (!silencieux) {
+    alert(traites + ' journ\u00e9es r\u00e9cup\u00e9r\u00e9es.\n'
+      + (job.file.length ? (job.file.length + ' restantes \u2014 reprise automatique demain.\n') : 'Rattrapage termin\u00e9.\n')
+      + 'Budget du jour : ' + g45ApisConso() + '/' + g45ApisPlafond());
+    if (typeof loadTeamCompo === 'function') loadTeamCompo();
+  }
+  return traites;
+}
+
+/* ── Lancement : construit la file, annonce le cout, deroule ── */
+async function g45RattrapageJournees(uid, nom) {
+  if (typeof apiSportsFetch !== 'function' || !getApiSportsKey()) { alert('Cl\u00e9 api-sports manquante \u2014 Outils.'); return; }
+  var sofaId = (typeof SOFASCORE_TEAM_IDS !== 'undefined') ? SOFASCORE_TEAM_IDS[nom] : null;
+  if (!sofaId && typeof SOFASCORE_TEAM_IDS !== 'undefined') {
+    for (var k in SOFASCORE_TEAM_IDS) { if (nom.toLowerCase().indexOf(k.toLowerCase()) >= 0 || k.toLowerCase().indexOf(nom.toLowerCase()) >= 0) { sofaId = SOFASCORE_TEAM_IDS[k]; break; } }
+  }
+  var keyTeam = sofaId || '0';
+  var trouve = _g45SquadDe(nom, sofaId);
+  if (!trouve) { alert('Effectif introuvable \u2014 ouvre l\'onglet Compo et laisse-le charger.'); return; }
+
+  var saison = 2000 + parseInt(String(_currentSaison).slice(0, 2), 10);
+  var tid = await findApiSportsTeamId(nom);
+  if (!tid) { alert('Club introuvable chez api-sports.'); return; }
+
+  var job = _g45RattrLire(keyTeam, _currentSaison);
+  if (!job || !job.file) {
+    var d = await _g45ApisAppel('/fixtures?team=' + tid + '&season=' + saison);
+    _g45ApisPlusUn();
+    var errFx = _g45ApisErreur(d);
+    if (errFx) { alert('api-sports refuse la requ\u00eate :\n\n' + errFx + '\n\n(saison ' + saison + ', club ' + tid + ')'); return; }
+    var faits = _g45FxFaits();
+    var file = [];
+    ((d && d.response) || []).forEach(function (f) {
+      var st = (f.fixture && f.fixture.status && f.fixture.status.short) || '';
+      if (st !== 'FT' && st !== 'AET' && st !== 'PEN') return;      /* matchs joues seulement */
+      var lg = f.league || {};
+      if (_G45_APIS_EURO[lg.id] || String(lg.type || '') !== 'League') return;   /* championnat */
+      var j = _g45JournuDeRound(lg.round);
+      if (!j || j > 38) return;
+      if (faits[f.fixture.id]) return;
+      file.push({ id: f.fixture.id, j: j });
+    });
+    file.sort(function (a, b) { return b.j - a.j; });   /* les plus recentes d'abord */
+    job = { file: file, ts: Date.now() };
+    _g45RattrEcrire(keyTeam, _currentSaison, job);
+  }
+
+  if (!job.file.length) {
+    alert('Aucune journ\u00e9e \u00e0 r\u00e9cup\u00e9rer pour la saison ' + saison + '.\n\n'
+      + 'Soit tout est d\u00e9j\u00e0 en base, soit api-sports ne couvre pas cette saison avec ton plan '
+      + '(le plan gratuit est souvent limit\u00e9 a quelques saisons passees).\n'
+      + 'Teste une saison anterieure dans le selecteur pour trancher.');
+    return;
+  }
+
+  var reste = g45ApisReste();
+  var faisable = Math.min(job.file.length, reste);
+  if (!confirm(nom + ' \u00b7 saison ' + saison + '\n\n'
+    + job.file.length + ' journ\u00e9es \u00e0 r\u00e9cup\u00e9rer (1 requ\u00eate chacune).\n'
+    + 'Budget restant aujourd\'hui : ' + reste + '/' + g45ApisPlafond() + '\n\n'
+    + 'Cadence : ' + g45ApisRpm() + ' requetes/minute, soit environ '
+    + Math.ceil(faisable * 60 / g45ApisRpm() / 60) + ' min.\n'
+    + 'On en traite ' + faisable + ' maintenant'
+    + (job.file.length > faisable ? ', le reste repartira tout seul demain' : '') + '.\n\nLancer ?')) return;
+
+  await _g45RattrDerouler(keyTeam, _currentSaison, tid, trouve.squad, false);
+}
+window.g45RattrapageJournees = g45RattrapageJournees;
+
+/* ── Reprise automatique, en silence, a l'ouverture de l'onglet ── */
+async function _g45RattrReprise(nom) {
+  try {
+    if (localStorage.getItem('gones45_admin') !== '1') return;
+    if (g45ApisReste() <= 5) return;                 /* on garde une marge pour ses usages manuels */
+    var sofaId = (typeof SOFASCORE_TEAM_IDS !== 'undefined') ? SOFASCORE_TEAM_IDS[nom] : null;
+    if (!sofaId && typeof SOFASCORE_TEAM_IDS !== 'undefined') {
+      for (var k in SOFASCORE_TEAM_IDS) { if (nom.toLowerCase().indexOf(k.toLowerCase()) >= 0 || k.toLowerCase().indexOf(nom.toLowerCase()) >= 0) { sofaId = SOFASCORE_TEAM_IDS[k]; break; } }
+    }
+    var keyTeam = sofaId || '0';
+    var job = _g45RattrLire(keyTeam, _currentSaison);
+    if (!job || !job.file || !job.file.length) return;
+    var trouve = _g45SquadDe(nom, sofaId);
+    if (!trouve) return;
+    var tid = await findApiSportsTeamId(nom);
+    if (!tid) return;
+    var n = await _g45RattrDerouler(keyTeam, _currentSaison, tid, trouve.squad, true);
+    if (n && typeof loadTeamCompo === 'function') loadTeamCompo();
+  } catch (e) {}
+}
+window._g45RattrReprise = _g45RattrReprise;
