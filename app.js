@@ -30191,6 +30191,72 @@ function _g45SyncMsg(txt, couleur) {
 }
 
 /* Sauvegarde locale téléchargée avant toute opération destructive. */
+/* ═══ RESTAURATION DEPUIS UN FICHIER ═══
+   `g45SyncSauvegarde` telecharge l'etat, mais RIEN ne savait le relire : une
+   sauvegarde qu'on ne peut pas restaurer n'en est pas une. Il fallait passer par
+   la console avec un JSON.parse a la main.
+
+   Trois protections, parce que cette fonction ECRASE tout :
+     - on verifie que le fichier a bien la forme d'un etat GONES45 avant de
+       toucher a quoi que ce soit ;
+     - on annonce ce qu'il contient (paris, equipes, capital) ET ce qui va etre
+       remplace, pour comparer avant de valider ;
+     - on telecharge automatiquement l'etat ACTUEL juste avant de l'ecraser :
+       une restauration par erreur reste rattrapable. */
+function g45SyncRestaurer() {
+  var inp = document.createElement('input');
+  inp.type = 'file';
+  inp.accept = 'application/json,.json';
+  inp.onchange = function (ev) {
+    var f = ev.target.files && ev.target.files[0];
+    if (!f) return;
+    var fr = new FileReader();
+    fr.onload = function () {
+      var o = null;
+      try { o = JSON.parse(fr.result); } catch (e) {
+        _g45SyncMsg('❌ Fichier illisible (ce n\'est pas du JSON).', '#ff6b6b'); return;
+      }
+      /* Un fichier de sauvegarde GONES45 porte au moins un de ces champs. */
+      if (!o || typeof o !== 'object' || (!o.u && !o.h && !o.a && !o.b)) {
+        _g45SyncMsg('❌ Ce fichier n\'est pas une sauvegarde GONES45.', '#ff6b6b'); return;
+      }
+
+      var nb = function (x) { return Array.isArray(x) ? x.length : 0; };
+      var cap = 0;
+      try { Object.keys(o.b || {}).forEach(function (k) { cap += parseFloat(o.b[k]) || 0; }); } catch (e) {}
+      var act = null; try { act = JSON.parse(localStorage.getItem('g45v5') || 'null'); } catch (e) {}
+
+      var txt = 'FICHIER À RESTAURER\n'
+        + '  ' + nb(o.h) + ' paris en attente\n'
+        + '  ' + nb(o.a) + ' paris réglés\n'
+        + '  ' + nb(o.u) + ' entrées du mur\n'
+        + '  capital ' + cap.toFixed(2) + ' €\n\n';
+      if (act) {
+        var capA = 0;
+        try { Object.keys(act.b || {}).forEach(function (k) { capA += parseFloat(act.b[k]) || 0; }); } catch (e) {}
+        txt += 'SERA REMPLACÉ PAR CE QUI EST ICI\n'
+            + '  ' + nb(act.h) + ' en attente · ' + nb(act.a) + ' réglés · '
+            + nb(act.u) + ' entrées · ' + capA.toFixed(2) + ' €\n\n';
+      }
+      txt += 'Une sauvegarde de l\'état actuel est téléchargée juste avant.\n\nContinuer ?';
+      if (!confirm(txt)) { _g45SyncMsg('Restauration annulée.', '#9fb0c7'); return; }
+
+      try { g45SyncSauvegarde(); } catch (e) {}     /* filet automatique */
+      try {
+        localStorage.setItem('g45v5', JSON.stringify(o));
+        /* On empeche la synchro auto de repousser immediatement l'ancien etat. */
+        try { localStorage.setItem('g45_dirty', '1'); } catch (e) {}
+        _g45SyncMsg('✅ Restauré. Rechargement…', '#4ade80');
+        setTimeout(function () { location.reload(); }, 900);
+      } catch (e) {
+        _g45SyncMsg('❌ Écriture impossible : ' + e.message + ' (quota localStorage ?)', '#ff6b6b');
+      }
+    };
+    fr.readAsText(f);
+  };
+  inp.click();
+}
+
 function g45SyncSauvegarde() {
   try {
     var v = localStorage.getItem('g45v5');

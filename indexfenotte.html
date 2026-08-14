@@ -663,6 +663,7 @@
     </div>
     <button onclick="g45SyncEtat()" style="display:block;width:100%;margin-bottom:8px;padding:12px 14px;font-size:12.5px;font-weight:700;text-align:left;cursor:pointer;border-radius:10px;background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#e6ecf5;">🔍&nbsp; Voir l'état de cet appareil</button>
     <button onclick="g45SyncSauvegarde()" style="display:block;width:100%;margin-bottom:8px;padding:12px 14px;font-size:12.5px;font-weight:700;text-align:left;cursor:pointer;border-radius:10px;background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#e6ecf5;">💾&nbsp; Sauvegarder cet appareil dans un fichier</button>
+    <button onclick="g45SyncRestaurer()" style="display:block;width:100%;margin-bottom:8px;padding:12px 14px;font-size:12.5px;font-weight:700;text-align:left;cursor:pointer;border-radius:10px;background:#1a2235;border:1px solid rgba(240,176,32,.35);color:#f0b020;">📂&nbsp; Restaurer depuis un fichier</button>
     <button onclick="g45SyncCharger()" style="display:block;width:100%;margin-bottom:8px;padding:13px 14px;font-size:12.5px;font-weight:800;text-align:left;cursor:pointer;border-radius:10px;background:#2563eb;border:1px solid #3b82f6;color:#ffffff;">⬇️&nbsp; Charger depuis GitHub <span style="font-weight:600;opacity:.85;">(écrase cet appareil)</span></button>
     <button onclick="g45SyncEnvoyer()" style="display:block;width:100%;margin-bottom:8px;padding:13px 14px;font-size:12.5px;font-weight:800;text-align:left;cursor:pointer;border-radius:10px;background:#3a2a12;border:1px solid rgba(255,177,61,.55);color:#ffb13d;">⬆️&nbsp; Envoyer vers GitHub <span style="font-weight:600;opacity:.85;">(écrase le distant)</span></button>
     <button onclick="g45SyncBascule()" style="display:block;width:100%;padding:12px 14px;font-size:12.5px;font-weight:700;text-align:left;cursor:pointer;border-radius:10px;background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#e6ecf5;">🔄&nbsp; Activer / désactiver la synchro auto</button>
@@ -1143,9 +1144,12 @@
      Ne pas remettre <script src="app.js"> ici : app.js demarrerait avant le
      remappage de g45v5 -> g45v5__fen, et l'etat de la prod d'Antoine serait
      lu (meme origine github.io, localStorage partage entre /gones45/ et
-     /fenotte45/). social.js reste un script classique, donc execute AVANT. -->
-<script src="social.js?v=20260814c"></script>
-<script type="module" src="auth-guard.js?v=20260814c"></script>
+     /fenotte45/). social.js reste un script classique, donc execute AVANT.
+     Le ?v= est OBLIGATOIRE : sans lui le navigateur sert l'ancienne version
+     depuis son cache HTTP, que le service worker n'intercepte pas pour ces
+     fichiers. Le changer a CHAQUE deploiement. -->
+<script src="social.js?v=20260814d"></script>
+<script type="module" src="auth-guard.js?v=20260814d"></script>
 
 
 
