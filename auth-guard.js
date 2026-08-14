@@ -3,7 +3,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { supabase, chargerEtat, sauverEtat, deconnexion,
-         sauverInstantane, listerInstantanes, lireInstantane } from './supabase.js?v=20260814b';
+         sauverInstantane, listerInstantanes, lireInstantane } from './supabase.js?v=20260814c';
 
 // ═══════════════════════════════════════════════════════════════
 // CLOISONNEMENT DU localStorage — À LIRE AVANT DE MODIFIER
@@ -257,7 +257,18 @@ window.addEventListener('pagehide', flush);
 window.addEventListener('beforeunload', flush);
 
 window._g45User = user;
-window._g45Deconnexion = async () => { await flush(); await deconnexion(); window.location.href = './login.html'; };
+window._g45Deconnexion = async () => {
+  await flush();                       // on pousse les dernières modifications
+  await deconnexion();
+  // PURGE LOCALE OBLIGATOIRE : sans elle, le compte suivant démarre en affichant
+  // l'état du précédent le temps que Supabase réponde — et si le chargement
+  // échoue, il le CONSERVE puis l'écrase avec ses propres données.
+  rawDel(CLE_ETAT_FEN);
+  rawDel(CLE_DERNIER_SNAP);
+  sessionStorage.removeItem('g45_login_bounce');
+  Object.keys(localStorage).filter(k => k.indexOf('sb-') === 0).forEach(k => rawDel(k));
+  window.location.href = './login.html';
+};
 
 // ═══════════════════════════════════════════════════════════════
 // PANNEAU « MES SAUVEGARDES »
@@ -317,17 +328,34 @@ window._g45Sauvegardes = async function () {
   });
 };
 
-// Bouton dans Outils, posé après le démarrage d'app.js (l'onglet est rendu tard).
+// ═══════════════════════════════════════════════════════════════
+// BLOC COMPTE DANS L'ONGLET OUTILS
+// ═══════════════════════════════════════════════════════════════
+// `_g45Deconnexion` existait depuis le début mais AUCUN bouton ne l'appelait :
+// changer de compte imposait la console. On pose donc un bloc complet — email
+// connecté, sauvegardes, déconnexion — après le démarrage d'app.js.
 function _g45PoserBoutonSauvegardes() {
-  if (document.getElementById('g45-btn-snap')) return;
+  if (document.getElementById('g45-bloc-compte')) return;
   const hote = document.getElementById('t-outils') || document.getElementById('ip-outils');
   if (!hote) return;
-  const b = document.createElement('button');
-  b.id = 'g45-btn-snap';
-  b.textContent = '💾 Mes sauvegardes';
-  b.style.cssText = 'width:100%;margin:10px 0;padding:11px;border-radius:10px;border:1px solid rgba(77,132,255,.35);background:rgba(77,132,255,.12);color:#4d84ff;font-size:13px;font-weight:800;cursor:pointer;';
-  b.onclick = () => window._g45Sauvegardes();
-  hote.insertBefore(b, hote.firstChild);
+
+  const bloc = document.createElement('div');
+  bloc.id = 'g45-bloc-compte';
+  bloc.style.cssText = 'margin:10px 0 14px;padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.03);';
+  bloc.innerHTML =
+      '<div style="font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#4f5d88;margin-bottom:8px;">Mon compte</div>'
+    + '<div style="font-size:12px;color:#e6ecf5;font-weight:700;word-break:break-all;margin-bottom:10px;">' + (user.email || '—') + '</div>'
+    + '<button id="g45-btn-snap" style="width:100%;margin-bottom:7px;padding:11px;border-radius:10px;border:1px solid rgba(77,132,255,.35);background:rgba(77,132,255,.12);color:#4d84ff;font-size:13px;font-weight:800;cursor:pointer;">💾 Mes sauvegardes</button>'
+    + '<button id="g45-btn-out" style="width:100%;padding:11px;border-radius:10px;border:1px solid rgba(255,107,107,.35);background:rgba(255,107,107,.10);color:#ff8a8a;font-size:13px;font-weight:800;cursor:pointer;">🚪 Se déconnecter</button>'
+    + '<div style="font-size:9.5px;color:#8899aa;margin-top:8px;line-height:1.5;">Tes données sont enregistrées avant la déconnexion.</div>';
+  hote.insertBefore(bloc, hote.firstChild);
+
+  document.getElementById('g45-btn-snap').onclick = () => window._g45Sauvegardes();
+  document.getElementById('g45-btn-out').onclick = async (e) => {
+    if (!confirm('Se déconnecter de ' + (user.email || 'ce compte') + ' ?')) return;
+    e.target.textContent = '⏳ Enregistrement…';
+    await window._g45Deconnexion();
+  };
 }
 
 // Secours : réinjecter une sauvegarde JSON dans CETTE version uniquement.
@@ -336,7 +364,7 @@ window._g45ImporterEtat = (json) => { rawSet(CLE_ETAT_FEN, typeof json === 'stri
 msg('Démarrage de l\'application…');
 
 const s = document.createElement('script');
-s.src = './app.js?v=20260814b';   /* version : force le rechargement apres deploiement */
+s.src = './app.js?v=20260814c';   /* version : force le rechargement apres deploiement */
 
 s.onerror = () => {
   msg('❌ échec du chargement de app.js');

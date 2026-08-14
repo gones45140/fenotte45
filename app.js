@@ -1222,7 +1222,14 @@ if(!state.ugoals)state.ugoals={};
 if(!state.notes)state.notes={};
 DEF_BK.forEach(function(k){if(state.b[k]===undefined)state.b[k]=0;});
 (function(){function _num(x){var n=parseFloat(x);return isNaN(n)?0:n;}for(var _k in state.b){state.b[_k]=_num(state.b[_k]).toFixed(2);}if(state.fb)for(var _f in state.fb){state.fb[_f]=_num(state.fb[_f]).toFixed(2);}state.start_bk=_num(state.start_bk);})();
+/* PIEGE : ce bloc re-ajoutait les equipes PRESET manquantes a CHAQUE demarrage.
+   Supprimer une equipe pre-configuree du mur marchait donc parfaitement... et
+   elle revenait au rechargement suivant. On tient desormais une liste des
+   presets volontairement retires, et on ne les recree plus. */
+var _g45PresetsOff = {};
+try { _g45PresetsOff = JSON.parse(localStorage.getItem('g45_presets_off') || '{}'); } catch(e) {}
 PRESETS.forEach(function(pt){
+  if(_g45PresetsOff[pt.n]) return;
   if(!state.u.find(function(u){return u.n===pt.n;}))
     state.u.push({n:pt.n,abbr:pt.abbr,color:pt.color,s:pt.s,l:1,sport:pt.sport,preset:true});
 });
@@ -3089,7 +3096,9 @@ function addUnit(){
   if(state.u.find(function(u){return u.n===name;}))return alert('Existe déjà !');
   var ulink=($i('u-link')&&$i('u-link').value.trim())||'';
   var ulink2=($i('u-link2')&&$i('u-link2').value.trim())||'';
-  var unote=($i('u-note')&&$i('u-note').value.trim())||'';var utype=($i('u-type')&&$i('u-type').value)||'club';state.u.push({n:name,abbr:abbr,color:color,s:$i('u-stars').value,l:1,sport:($i('u-sport')&&$i('u-sport').value)||'⚽',logoUrl:logoUrl||'',link:ulink,link2:ulink2,note:unote,type:utype});
+  var unote=($i('u-note')&&$i('u-note').value.trim())||'';var utype=($i('u-type')&&$i('u-type').value)||'club';
+try{ var _off2=JSON.parse(localStorage.getItem('g45_presets_off')||'{}'); if(_off2[name]){ delete _off2[name]; localStorage.setItem('g45_presets_off',JSON.stringify(_off2)); } }catch(e){}
+state.u.push({n:name,abbr:abbr,color:color,s:$i('u-stars').value,l:1,sport:($i('u-sport')&&$i('u-sport').value)||'⚽',logoUrl:logoUrl||'',link:ulink,link2:ulink2,note:unote,type:utype});
   if(logoUrl)LOGOS[name]=logoUrl;
   $i('u-name').value='';
   if($i('u-link'))$i('u-link').value='';
@@ -3134,7 +3143,14 @@ function saveEditUnit(){
   try{ if(typeof _g45PushBetsGithub==='function') _g45PushBetsGithub(true); }catch(err){}
   closeEditUnit();
 }
-function rmUnit(i){var u=state.u[parseInt(i)];if(u&&confirm('Supprimer '+u.n+' ?')){state.u.splice(parseInt(i),1);save();try{ if(typeof _g45PushBetsGithub==='function') _g45PushBetsGithub(true); }catch(e){}}}
+function rmUnit(i){var u=state.u[parseInt(i)];if(u&&confirm('Supprimer '+u.n+' ?')){
+  /* PIERRE TOMBALE : on memorise TOUTE suppression, pas seulement les PRESET.
+     Deux mecanismes ressuscitaient les entrees effacees — le bloc PRESETS au
+     demarrage, et la fusion ADDITIVE du pull GitHub qui reinjecte ce qui est
+     absent d'un cote. Sans trace ecrite, une suppression ne peut pas survivre
+     a une synchronisation. */
+  try{ var _off=JSON.parse(localStorage.getItem('g45_presets_off')||'{}'); _off[u.n]=Date.now(); localStorage.setItem('g45_presets_off',JSON.stringify(_off)); }catch(e){}
+  state.u.splice(parseInt(i),1);save();try{ if(typeof _g45PushBetsGithub==='function') _g45PushBetsGithub(true); }catch(e){}}}
 
 /* ── NAV ── */
 function showTab(id,btn){
@@ -7633,7 +7649,14 @@ if(!state.ugoals)state.ugoals={};
 if(!state.notes)state.notes={};
 DEF_BK.forEach(function(k){if(state.b[k]===undefined)state.b[k]=0;});
 (function(){function _num(x){var n=parseFloat(x);return isNaN(n)?0:n;}for(var _k in state.b){state.b[_k]=_num(state.b[_k]).toFixed(2);}if(state.fb)for(var _f in state.fb){state.fb[_f]=_num(state.fb[_f]).toFixed(2);}state.start_bk=_num(state.start_bk);})();
+/* PIEGE : ce bloc re-ajoutait les equipes PRESET manquantes a CHAQUE demarrage.
+   Supprimer une equipe pre-configuree du mur marchait donc parfaitement... et
+   elle revenait au rechargement suivant. On tient desormais une liste des
+   presets volontairement retires, et on ne les recree plus. */
+var _g45PresetsOff = {};
+try { _g45PresetsOff = JSON.parse(localStorage.getItem('g45_presets_off') || '{}'); } catch(e) {}
 PRESETS.forEach(function(pt){
+  if(_g45PresetsOff[pt.n]) return;
   if(!state.u.find(function(u){return u.n===pt.n;}))
     state.u.push({n:pt.n,abbr:pt.abbr,color:pt.color,s:pt.s,l:1,sport:pt.sport,preset:true});
 });
@@ -9372,7 +9395,9 @@ function addUnit(){
   if(state.u.find(function(u){return u.n===name;}))return alert('Existe déjà !');
   var ulink=($i('u-link')&&$i('u-link').value.trim())||'';
   var ulink2=($i('u-link2')&&$i('u-link2').value.trim())||'';
-  var unote=($i('u-note')&&$i('u-note').value.trim())||'';var utype=($i('u-type')&&$i('u-type').value)||'club';state.u.push({n:name,abbr:abbr,color:color,s:$i('u-stars').value,l:1,sport:($i('u-sport')&&$i('u-sport').value)||'⚽',logoUrl:logoUrl||'',link:ulink,link2:ulink2,note:unote,type:utype});
+  var unote=($i('u-note')&&$i('u-note').value.trim())||'';var utype=($i('u-type')&&$i('u-type').value)||'club';
+try{ var _off2=JSON.parse(localStorage.getItem('g45_presets_off')||'{}'); if(_off2[name]){ delete _off2[name]; localStorage.setItem('g45_presets_off',JSON.stringify(_off2)); } }catch(e){}
+state.u.push({n:name,abbr:abbr,color:color,s:$i('u-stars').value,l:1,sport:($i('u-sport')&&$i('u-sport').value)||'⚽',logoUrl:logoUrl||'',link:ulink,link2:ulink2,note:unote,type:utype});
   if(logoUrl)LOGOS[name]=logoUrl;
   $i('u-name').value='';
   if($i('u-link'))$i('u-link').value='';
@@ -9417,7 +9442,14 @@ function saveEditUnit(){
   try{ if(typeof _g45PushBetsGithub==='function') _g45PushBetsGithub(true); }catch(err){}
   closeEditUnit();
 }
-function rmUnit(i){var u=state.u[parseInt(i)];if(u&&confirm('Supprimer '+u.n+' ?')){state.u.splice(parseInt(i),1);save();try{ if(typeof _g45PushBetsGithub==='function') _g45PushBetsGithub(true); }catch(e){}}}
+function rmUnit(i){var u=state.u[parseInt(i)];if(u&&confirm('Supprimer '+u.n+' ?')){
+  /* PIERRE TOMBALE : on memorise TOUTE suppression, pas seulement les PRESET.
+     Deux mecanismes ressuscitaient les entrees effacees — le bloc PRESETS au
+     demarrage, et la fusion ADDITIVE du pull GitHub qui reinjecte ce qui est
+     absent d'un cote. Sans trace ecrite, une suppression ne peut pas survivre
+     a une synchronisation. */
+  try{ var _off=JSON.parse(localStorage.getItem('g45_presets_off')||'{}'); _off[u.n]=Date.now(); localStorage.setItem('g45_presets_off',JSON.stringify(_off)); }catch(e){}
+  state.u.splice(parseInt(i),1);save();try{ if(typeof _g45PushBetsGithub==='function') _g45PushBetsGithub(true); }catch(e){}}}
 
 /* ── NAV ── */
 function showTab(id,btn){
@@ -27474,6 +27506,17 @@ async function _g45PullBetsGithub(){
          chargement suivant (symptôme vécu trois fois avec les joueurs du mur). On accepte
          qu'une suppression puisse ainsi revenir : perdre une entrée coûte plus cher. */
       try{
+        /* PIERRES TOMBALES : les entrees explicitement supprimees par Antoine ne
+           doivent revenir NI du distant, NI du repli additif ci-dessous. Sans
+           ca, supprimer une equipe etait impossible : elle repoussait au
+           rechargement suivant. */
+        var _off={}; try{ _off=JSON.parse(localStorage.getItem('g45_presets_off')||'{}'); }catch(e){}
+        var _estSupprime=function(n){ return n && Object.prototype.hasOwnProperty.call(_off, String(n)); };
+        if(Array.isArray(st.u)){
+          var _av=st.u.length;
+          st.u=st.u.filter(function(x){ return !(x&&_estSupprime(x.n)); });
+          if(st.u.length<_av) console.warn('🪦 '+(_av-st.u.length)+' entrée(s) supprimée(s) ignorée(s) à la synchro');
+        }
         var _loc=JSON.parse(localStorage.getItem('g45v5')||'null');
         if(_loc&&_loc.u&&_loc.u.length){
           if(!Array.isArray(st.u)) st.u=[];
@@ -27481,7 +27524,7 @@ async function _g45PullBetsGithub(){
           st.u.forEach(function(x){ if(x&&x.n) _vus[String(x.n).toLowerCase()]=1; });
           var _gardes=[];
           _loc.u.forEach(function(x){
-            if(x&&x.n&&!_vus[String(x.n).toLowerCase()]){ st.u.push(x); _gardes.push(x.n); }
+            if(x&&x.n&&!_vus[String(x.n).toLowerCase()]&&!_estSupprime(x.n)){ st.u.push(x); _gardes.push(x.n); }
           });
           if(_gardes.length) console.warn('🛟 entrées locales conservées malgré la synchro : '+_gardes.join(', '));
         }
@@ -35064,23 +35107,85 @@ async function g45RattrapageJournees(uid, nom) {
 window.g45RattrapageJournees = g45RattrapageJournees;
 
 /* ── Reprise automatique, en silence, a l'ouverture de l'onglet ── */
+/* ═══ VEILLE AUTOMATIQUE ═══
+   Reprendre une file existante ne suffisait pas : une journee fraichement jouee
+   n'etait detectee par personne, il fallait recliquer sur le bouton. Cette
+   fonction fait les deux — elle vide la file en cours ET va chercher les
+   nouvelles journees.
+
+   ECONOMIE, parce qu'un controle coute une requete :
+     - au plus UN controle par jour et par equipe ;
+     - et surtout, on memorise la DATE DU PROCHAIN MATCH lue lors du dernier
+       controle : tant qu'elle n'est pas passee (plus 3 h pour que le match soit
+       fini et saisi), on ne redemande RIEN. En pratique, un controle par
+       semaine et par club, plus une requete par nouveau match.
+   Une equipe consultee tous les jours coute donc ~2 requetes par semaine. */
 async function _g45RattrReprise(nom) {
   try {
     if (localStorage.getItem('gones45_admin') !== '1') return;
-    if (g45ApisReste() <= 5) return;                 /* on garde une marge pour ses usages manuels */
+    if (g45ApisReste() <= 5) return;              /* marge pour ses usages manuels */
+
     var sofaId = (typeof SOFASCORE_TEAM_IDS !== 'undefined') ? SOFASCORE_TEAM_IDS[nom] : null;
     if (!sofaId && typeof SOFASCORE_TEAM_IDS !== 'undefined') {
-      for (var k in SOFASCORE_TEAM_IDS) { if (nom.toLowerCase().indexOf(k.toLowerCase()) >= 0 || k.toLowerCase().indexOf(nom.toLowerCase()) >= 0) { sofaId = SOFASCORE_TEAM_IDS[k]; break; } }
+      for (var k in SOFASCORE_TEAM_IDS) {
+        if (nom.toLowerCase().indexOf(k.toLowerCase()) >= 0 || k.toLowerCase().indexOf(nom.toLowerCase()) >= 0) { sofaId = SOFASCORE_TEAM_IDS[k]; break; }
+      }
     }
     var keyTeam = sofaId || '0';
-    var job = _g45RattrLire(keyTeam, _currentSaison);
-    if (!job || !job.file || !job.file.length) return;
     var trouve = _g45SquadDe(nom, sofaId);
     if (!trouve) return;
-    var tid = await findApiSportsTeamId(nom);
+
+    var job = _g45RattrLire(keyTeam, _currentSaison);
+    var tid = null;
+
+    /* ── 1. File en attente : on la deroule d'abord ── */
+    if (job && job.file && job.file.length) {
+      tid = await findApiSportsTeamId(nom);
+      if (!tid) return;
+      var n1 = await _g45RattrDerouler(keyTeam, _currentSaison, tid, trouve.squad, true);
+      if (n1 && typeof loadTeamCompo === 'function') loadTeamCompo();
+      return;                                     /* une chose a la fois */
+    }
+
+    /* ── 2. Faut-il aller voir s'il y a du nouveau ? ── */
+    var cleV = 'g45_veille_' + _currentSaison + '_' + keyTeam;
+    var v = {};
+    try { v = JSON.parse(localStorage.getItem(cleV) || '{}'); } catch (e) {}
+    var auj = _g45AujKey();
+    if (v.jour === auj) return;                   /* deja controle aujourd'hui */
+    if (v.prochain && Date.now() < (v.prochain + 3 * 3600000)) return;  /* match pas encore joue */
+
+    tid = tid || await findApiSportsTeamId(nom);
     if (!tid) return;
-    var n = await _g45RattrDerouler(keyTeam, _currentSaison, tid, trouve.squad, true);
-    if (n && typeof loadTeamCompo === 'function') loadTeamCompo();
+
+    var saison = 2000 + parseInt(String(_currentSaison).slice(0, 2), 10);
+    var d = await _g45ApisAppel('/fixtures?team=' + tid + '&season=' + saison);
+    _g45ApisPlusUn();
+    if (_g45ApisErreur(d)) return;                /* on retentera demain, en silence */
+
+    var faits = _g45FxFaits(), file = [], prochain = 0;
+    ((d && d.response) || []).forEach(function (f) {
+      var lg = f.league || {};
+      if (_G45_APIS_EURO[lg.id] || String(lg.type || '') !== 'League') return;
+      var st = (f.fixture && f.fixture.status && f.fixture.status.short) || '';
+      var t = Date.parse((f.fixture && f.fixture.date) || '');
+      if (st === 'NS' || st === 'TBD' || st === 'PST') {
+        if (!isNaN(t) && (!prochain || t < prochain)) prochain = t;   /* prochain match a venir */
+        return;
+      }
+      if (st !== 'FT' && st !== 'AET' && st !== 'PEN') return;
+      var j = _g45JournuDeRound(lg.round);
+      if (!j || j > 38 || faits[f.fixture.id]) return;
+      file.push({ id: f.fixture.id, j: j });
+    });
+
+    try { localStorage.setItem(cleV, JSON.stringify({ jour: auj, prochain: prochain })); } catch (e) {}
+    if (!file.length) return;
+
+    file.sort(function (a, b) { return b.j - a.j; });
+    _g45RattrEcrire(keyTeam, _currentSaison, { file: file, ts: Date.now() });
+    var n2 = await _g45RattrDerouler(keyTeam, _currentSaison, tid, trouve.squad, true);
+    if (n2 && typeof loadTeamCompo === 'function') loadTeamCompo();
   } catch (e) {}
 }
 window._g45RattrReprise = _g45RattrReprise;
