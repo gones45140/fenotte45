@@ -3,7 +3,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { supabase, chargerEtat, sauverEtat, deconnexion,
-         sauverInstantane, listerInstantanes, lireInstantane } from './supabase.js';
+         sauverInstantane, listerInstantanes, lireInstantane } from './supabase.js?v=20260814b';
 
 // ═══════════════════════════════════════════════════════════════
 // CLOISONNEMENT DU localStorage — À LIRE AVANT DE MODIFIER
@@ -86,12 +86,65 @@ async function attendreSession() {
   });
 }
 
-const session = await attendreSession();
+// ═══════════════════════════════════════════════════════════════
+// ANTI-BOUCLE DE CONNEXION
+// ═══════════════════════════════════════════════════════════════
+// Sans session on redirigeait AUSSITÔT vers login.html. Si l'échange du code
+// échoue — lien déjà utilisé, second lien demandé qui invalide le vérifieur du
+// premier, URL de redirection absente de la configuration Supabase — on repart
+// en boucle sans jamais voir la raison.
+// On tente donc l'échange EXPLICITEMENT, puis on s'arrête et on AFFICHE l'erreur
+// au lieu de rebondir. Un seul aller-retour automatique est autorisé.
+let session = await attendreSession();
+
 if (!session) {
+  const url = window.location.href;
+  const aUnCode = /[?&]code=/.test(window.location.search) || /access_token=/.test(window.location.hash);
+  if (aUnCode) {
+    try {
+      msg('Validation du lien de connexion…');
+      const { data, error } = await supabase.auth.exchangeCodeForSession(url);
+      if (error) throw error;
+      session = data && data.session;
+      // On nettoie l'URL pour qu'un rechargement ne rejoue pas un code déjà consommé.
+      if (session) history.replaceState({}, '', window.location.pathname);
+    } catch (e) {
+      console.error('échange du code échoué :', e);
+      overlay.innerHTML = '<div style="max-width:420px;text-align:center;padding:20px;font-family:system-ui;">'
+        + '<div style="font-size:22px;font-weight:800;margin-bottom:10px;">🎯 GONES45</div>'
+        + '<div style="color:#ff8a8a;font-weight:700;margin-bottom:8px;">Lien de connexion refusé</div>'
+        + '<div style="color:#8899aa;font-size:12px;line-height:1.6;margin-bottom:14px;">'
+        + (e && e.message ? e.message : 'raison inconnue') + '<br><br>'
+        + 'Causes habituelles : lien déjà utilisé, ou un second lien demandé qui a annulé le premier '
+        + '(n\'utilise que le DERNIER email reçu), ou l\'adresse de redirection absente de la configuration Supabase.'
+        + '</div><a href="./login.html" style="display:inline-block;padding:10px 18px;border-radius:9px;background:#2563eb;color:#fff;text-decoration:none;font-weight:700;font-size:13px;">Redemander un lien</a></div>';
+      throw new Error('échange du code échoué');
+    }
+  }
+}
+
+if (!session) {
+  // Un seul rebond : si on revient ici après être déjà passé par login.html,
+  // on s'arrête et on le dit, plutôt que de tourner indéfiniment.
+  if (sessionStorage.getItem('g45_login_bounce') === '1') {
+    sessionStorage.removeItem('g45_login_bounce');
+    overlay.innerHTML = '<div style="max-width:420px;text-align:center;padding:20px;font-family:system-ui;">'
+      + '<div style="font-size:22px;font-weight:800;margin-bottom:10px;">🎯 GONES45</div>'
+      + '<div style="color:#ffb13d;font-weight:700;margin-bottom:8px;">Connexion impossible</div>'
+      + '<div style="color:#8899aa;font-size:12px;line-height:1.6;margin-bottom:14px;">'
+      + 'La session n\'a pas pu être établie après le retour de login.html.<br><br>'
+      + 'Vérifie dans Supabase → Authentication → URL Configuration que '
+      + '<b>' + window.location.origin + window.location.pathname.replace(/[^\/]*$/, '') + '</b> '
+      + 'figure bien dans les Redirect URLs.</div>'
+      + '<a href="./login.html" style="display:inline-block;padding:10px 18px;border-radius:9px;background:#2563eb;color:#fff;text-decoration:none;font-weight:700;font-size:13px;">Réessayer</a></div>';
+    throw new Error('boucle de connexion interrompue');
+  }
+  sessionStorage.setItem('g45_login_bounce', '1');
   msg('Redirection vers la connexion…');
   window.location.href = './login.html';
   throw new Error('non connecté');
 }
+sessionStorage.removeItem('g45_login_bounce');
 const user = session.user;
 console.log('👤 utilisateur :', user.email, '— user_id :', user.id);
 
@@ -283,7 +336,7 @@ window._g45ImporterEtat = (json) => { rawSet(CLE_ETAT_FEN, typeof json === 'stri
 msg('Démarrage de l\'application…');
 
 const s = document.createElement('script');
-s.src = './app.js';
+s.src = './app.js?v=20260814b';   /* version : force le rechargement apres deploiement */
 
 s.onerror = () => {
   msg('❌ échec du chargement de app.js');
