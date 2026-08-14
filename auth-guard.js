@@ -95,18 +95,46 @@ if (!session) {
 const user = session.user;
 console.log('👤 utilisateur :', user.email, '— user_id :', user.id);
 
+// ═══════════════════════════════════════════════════════════════
+// FORME DE L'ÉTAT — NE JAMAIS ÉCRIRE UN OBJET VIDE
+// ═══════════════════════════════════════════════════════════════
+// app.js démarre ainsi :
+//   var state = JSON.parse(localStorage.getItem('g45v5')) || {b:{},u:[],h:[],…};
+// Or `{}` est VRAI en JavaScript : le repli ne se déclenche pas, `state.u` reste
+// indéfini, et le premier `state.u.find(...)` (bloc PRESETS, l. ~1225) lève une
+// TypeError qui tue tout le script. Symptôme observé sur un compte neuf :
+// capital 0 €, onglets vides, aucune erreur visible pour l'utilisateur.
+// On écrit donc une structure COMPLÈTE, et on complète aussi un état venu de
+// Supabase auquel il manquerait des champs.
+const ETAT_VIDE = { b:{}, u:[], h:[], a:[], start_bk:0, goal:0, ugoals:{}, notes:{}, bkColors:{} };
+
+function normaliser(etat) {
+  const out = Object.assign({}, ETAT_VIDE, etat || {});
+  // Les tableaux et objets doivent avoir le bon TYPE, pas seulement exister :
+  // un `u` à null passerait Object.assign et planterait de la même façon.
+  if (!Array.isArray(out.u)) out.u = [];
+  if (!Array.isArray(out.h)) out.h = [];
+  if (!Array.isArray(out.a)) out.a = [];
+  ['b','ugoals','notes','bkColors'].forEach(k => {
+    if (!out[k] || typeof out[k] !== 'object' || Array.isArray(out[k])) out[k] = {};
+  });
+  return out;
+}
+
 try {
   msg('Chargement de tes données…');
   const data = await chargerEtat(user.id);
   if (data && data.state && Object.keys(data.state).length > 0) {
-    rawSet(CLE_ETAT_FEN, JSON.stringify(data.state));
+    rawSet(CLE_ETAT_FEN, JSON.stringify(normaliser(data.state)));
     console.log('✅ état chargé depuis Supabase — dernière maj :', data.updated_at);
   } else {
-    rawSet(CLE_ETAT_FEN, JSON.stringify({}));
-    console.log('ℹ️ nouveau compte, état vierge (la prod n\'est PAS lue)');
+    rawSet(CLE_ETAT_FEN, JSON.stringify(ETAT_VIDE));
+    console.log('ℹ️ nouveau compte, état vierge complet (la prod n\'est PAS lue)');
   }
 } catch (e) {
+  // Même en cas d'échec Supabase, l'app doit démarrer sur une structure valide.
   console.warn('⚠️ erreur chargement Supabase :', e);
+  if (!rawGet(CLE_ETAT_FEN)) rawSet(CLE_ETAT_FEN, JSON.stringify(ETAT_VIDE));
 }
 
 let pushTimer = null;
