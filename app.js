@@ -32000,7 +32000,9 @@ async function loadCompetTab() {
               ['calendrier','\ud83d\udcc5 Calendrier'], ['journees','\ud83d\uddd3\ufe0f Journ\u00e9es'],
               ['classement','\ud83d\udcca Classement'], ['forme','\ud83d\udcc8 Forme'],
               ['buteurs', c.sp === 'soccer' ? '\u26bd Buteurs' : '\ud83c\udfc5 Individuel'],
-              ['transferts','\ud83d\udd04 Transferts']];
+              ['transferts','\ud83d\udd04 Transferts'],
+              /* Liste personnelle, sans rapport avec le mur : voir g45SuiviEqRender. */
+              ['suivies','\u2b50 Suivies']];
   var onglets = vues.map(function (v) {
     var on = (v[0] === _g45CompetVue);
     return '<button onclick="g45CompetVue(\'' + v[0] + '\')" style="flex:1;min-width:96px;padding:10px;font-size:11.5px;font-weight:800;cursor:pointer;border-radius:9px;'
@@ -32042,6 +32044,7 @@ async function loadCompetTab() {
     await g45LeadersGen(c, body, _g45CompetAnnee(c.s));
     return;
   }
+  if (_g45CompetVue === 'suivies')    { await g45SuiviEqRender(body); return; }
   if (_g45CompetVue === 'transferts') { await g45TrfRender(c, body); return; }
   if (_g45CompetVue === 'forme')      { await g45FormeRender(c, body); return; }
 
@@ -32116,7 +32119,9 @@ async function loadCompetTab() {
                 + (t.logo ? '<img src="' + t.logo + '" style="width:22px;height:22px;object-fit:contain;" loading="lazy">' : '<span style="width:22px;"></span>')
                 + '<div style="min-width:0;"><div style="font-size:11.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + t.nom + '</div>'
                 + (t.j ? '<div style="font-size:9.5px;color:#9fb0c7;">' + t.j + 'j \u00b7 ' + t.pts + ' pts</div>' : '')
-                + '</div></div>';
+                + '</div>'
+                + (typeof g45SuiviEqEtoile === 'function' ? g45SuiviEqEtoile(t, c) : '')
+                + '</div>';
             }).join('')
           + '</div>';
       }).join('');
@@ -35255,3 +35260,104 @@ async function _g45RattrReprise(nom) {
   } catch (e) {}
 }
 window._g45RattrReprise = _g45RattrReprise;
+
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ÉQUIPES SUIVIES — indépendantes du MUR (14/08/2026)
+   ───────────────────────────────────────────────────────────────────────────
+   IDEE D'ANTOINE, meilleure que la mienne : le MUR sert aux PARIS — paliers,
+   montante, historique, capital. Y ajouter une equipe juste pour la consulter
+   la polluerait et fausserait ses statistiques par equipe.
+
+   On tient donc une liste separee. Elle vit dans `state.suiviEq`, donc elle est
+   SYNCHRONISEE comme le reste (GitHub cote prod, Supabase cote fenotte) : suivre
+   une equipe sur le PC la retrouve sur le telephone. Une cle localStorage
+   independante aurait ete plus simple mais serait restee sur un seul appareil.
+
+   Aucune interference avec le mur : ni `state.u`, ni les paris, ni les paliers.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+function g45SuiviEqGet() {
+  try { return Array.isArray(state.suiviEq) ? state.suiviEq : []; } catch (e) { return []; }
+}
+function _g45SuiviEqCle(id, slug) { return String(slug || '') + '|' + String(id || ''); }
+
+function g45SuiviEqHas(id, slug) {
+  var k = _g45SuiviEqCle(id, slug);
+  return g45SuiviEqGet().some(function (t) { return _g45SuiviEqCle(t.id, t.league) === k; });
+}
+window.g45SuiviEqHas = g45SuiviEqHas;
+
+function g45SuiviEqToggle(nom, id, slug, sport, ico, logo, ev) {
+  /* Sans ca, le clic sur l'etoile ouvrirait AUSSI la fiche : l'etoile est
+     posee a l'interieur de la carte, qui porte son propre onclick. */
+  if (ev && ev.stopPropagation) ev.stopPropagation();
+  try {
+    if (!Array.isArray(state.suiviEq)) state.suiviEq = [];
+    var k = _g45SuiviEqCle(id, slug);
+    var i = state.suiviEq.findIndex(function (t) { return _g45SuiviEqCle(t.id, t.league) === k; });
+    if (i >= 0) state.suiviEq.splice(i, 1);
+    else state.suiviEq.push({ nom: nom, id: String(id), league: slug, sport: sport, ico: ico || '', logo: logo || '', ts: Date.now() });
+    save();
+    /* On enregistre aussi l'equipe cote `g45_teams_perso` : sans ca, ouvrir sa
+       fiche depuis l'onglet Suivies ne saurait pas de quel sport il s'agit. */
+    if (i < 0 && typeof g45TeamsPerso === 'function') {
+      var p = g45TeamsPerso();
+      p[String(nom || '').toLowerCase().trim()] = { nom: nom, id: String(id), league: slug, sport: sport || 'soccer' };
+      try { localStorage.setItem('g45_teams_perso', JSON.stringify(p)); } catch (e) {}
+    }
+  } catch (e) { console.warn('suivi equipe', e && e.message); }
+  if (typeof loadCompetTab === 'function') loadCompetTab();
+}
+window.g45SuiviEqToggle = g45SuiviEqToggle;
+
+/* Etoile a poser dans une carte d'equipe. */
+function g45SuiviEqEtoile(t, c) {
+  var on = g45SuiviEqHas(t.id, c.s);
+  var arg = "'" + String(t.nom).replace(/'/g, "\\'") + "','" + t.id + "','" + c.s + "','" + c.sp
+          + "','" + String(c.ico || '').replace(/'/g, '') + "','" + String(t.logo || '').replace(/'/g, '') + "',event";
+  return '<span onclick="g45SuiviEqToggle(' + arg + ')" title="' + (on ? 'Ne plus suivre' : 'Suivre cette \u00e9quipe')
+    + '" style="margin-left:auto;font-size:15px;line-height:1;cursor:pointer;color:' + (on ? '#f0b020' : 'rgba(255,255,255,.22)')
+    + ';padding:2px 4px;flex-shrink:0;">' + (on ? '\u2605' : '\u2606') + '</span>';
+}
+window.g45SuiviEqEtoile = g45SuiviEqEtoile;
+
+/* ── Vue « Suivies » : toutes compétitions et tous sports confondus ── */
+async function g45SuiviEqRender(body) {
+  var liste = g45SuiviEqGet();
+  if (!liste.length) {
+    body.innerHTML = '<div style="text-align:center;color:#9fb0c7;font-size:12px;padding:22px;line-height:1.7;">'
+      + 'Aucune \u00e9quipe suivie.<br><span style="opacity:.75;">Ouvre l\'onglet \u00c9quipes d\'une comp\u00e9tition et clique sur l\'\u00e9toile \u2606 d\'une \u00e9quipe.</span>'
+      + '<br><br><span style="opacity:.6;font-size:11px;">Ces \u00e9quipes n\'entrent PAS dans ton mur : aucun pari, aucun palier, aucune statistique.</span></div>';
+    return;
+  }
+
+  /* Regroupement par sport, plus lisible que la competition quand on en suit
+     dans cinq championnats. */
+  var parSport = {};
+  liste.forEach(function (t) { (parSport[t.sport || 'soccer'] = parSport[t.sport || 'soccer'] || []).push(t); });
+  var nomSport = { soccer:'\u26bd Football', basketball:'\ud83c\udfc0 Basket', hockey:'\ud83c\udfd2 Hockey',
+                   baseball:'\u26be Baseball', football:'\ud83c\udfc8 Football US',
+                   'rugby-league':'\ud83c\udfc9 Rugby \u00e0 XIII', rugby:'\ud83c\udfc9 Rugby' };
+
+  body.innerHTML = '<div style="font-size:11px;color:#9fb0c7;margin-bottom:10px;">'
+      + liste.length + ' \u00e9quipe' + (liste.length > 1 ? 's' : '') + ' suivie' + (liste.length > 1 ? 's' : '')
+      + ' \u00b7 clique pour ouvrir la fiche</div>'
+    + Object.keys(parSport).map(function (sp) {
+        return '<div style="font-size:11px;font-weight:800;color:var(--a);margin:10px 0 6px;">' + (nomSport[sp] || sp) + '</div>'
+          + '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:7px;">'
+          + parSport[sp].map(function (t) {
+              var argOuv = "'" + String(t.nom).replace(/'/g, "\\'") + "','" + t.id + "','" + t.league + "','" + t.sport + "'";
+              var argSup = "'" + String(t.nom).replace(/'/g, "\\'") + "','" + t.id + "','" + t.league + "','" + t.sport + "','','',event";
+              return '<div onclick="g45CompetOuvrir(' + argOuv + ')" style="display:flex;align-items:center;gap:8px;padding:8px 9px;background:rgba(255,255,255,.04);border-radius:9px;cursor:pointer;">'
+                + (t.logo ? '<img src="' + t.logo + '" style="width:22px;height:22px;object-fit:contain;" loading="lazy" onerror="this.style.display=\'none\'">' : '<span style="width:22px;"></span>')
+                + '<div style="min-width:0;flex:1;"><div style="font-size:11.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + t.nom + '</div>'
+                + '<div style="font-size:9.5px;color:#9fb0c7;">' + t.league + '</div></div>'
+                + '<span onclick="g45SuiviEqToggle(' + argSup + ')" title="Ne plus suivre" style="font-size:15px;line-height:1;cursor:pointer;color:#f0b020;padding:2px 4px;">\u2605</span>'
+                + '</div>';
+            }).join('')
+          + '</div>';
+      }).join('');
+}
+window.g45SuiviEqRender = g45SuiviEqRender;
