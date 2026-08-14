@@ -20083,6 +20083,26 @@ async function loadCalendrier() {
 
   // Équipes football favorites (résolution ESPN, comme l'onglet Saisons)
   var teams = state.u.filter(function(u){ return (u.sport||'⚽')==='⚽'; }).slice(0,8);
+
+  /* EQUIPES SUIVIES (14/08/2026) : l'Agenda ne regardait que le mur. Les equipes
+     suivies a l'etoile s'y ajoutent, sans doublon.
+     LIMITE ASSUMEE : le FOOTBALL seulement. Ce pipeline resout l'equipe par son
+     NOM (_calTeamSchedule, espnLeagueOf), ce qui echoue hors football — c'est le
+     mecanisme meme qui donnait la fiche de Lyon pour Columbus. Les autres sports
+     demandent le chemin scoreboard, a traiter separement. */
+  try {
+    var _dejaLa = {};
+    teams.forEach(function(u){ _dejaLa[String(u.n||'').toLowerCase()] = 1; });
+    (typeof g45SuiviEqGet === 'function' ? g45SuiviEqGet() : []).forEach(function(t){
+      if ((t.sport || 'soccer') !== 'soccer') return;
+      var k = String(t.nom||'').toLowerCase();
+      if (_dejaLa[k]) return;
+      _dejaLa[k] = 1;
+      teams.push({ n: t.nom, sport: '⚽', _suiviEq: 1 });
+    });
+    teams = teams.slice(0, 14);   /* plafond : chaque equipe coute des requetes */
+  } catch(e) {}
+
   var _suivis = g45SuivisGet();
   if(!teams.length && !_suivis.length) {
     el.innerHTML = '<div class="fc" style="color:var(--t3);text-align:center;">Ajoute des équipes de foot en favori, ou suis un match précis depuis l\'onglet Résultats (bouton ☆ Suivre).</div>';
@@ -35308,7 +35328,8 @@ function g45SuiviEqToggle(nom, id, slug, sport, ico, logo, ev) {
       try { localStorage.setItem('g45_teams_perso', JSON.stringify(p)); } catch (e) {}
     }
   } catch (e) { console.warn('suivi equipe', e && e.message); }
-  if (typeof loadCompetTab === 'function') loadCompetTab();
+  var tc = document.getElementById('t-compet');
+  if (tc && tc.classList && tc.classList.contains('active') && typeof loadCompetTab === 'function') loadCompetTab();
 }
 window.g45SuiviEqToggle = g45SuiviEqToggle;
 
@@ -35361,3 +35382,27 @@ async function g45SuiviEqRender(body) {
       }).join('');
 }
 window.g45SuiviEqRender = g45SuiviEqRender;
+
+/* Onglet PRINCIPAL, entre Competitions et Agenda (demande d'Antoine) : la liste
+   ne depend d'aucune competition affichee, elle n'avait donc rien a faire dans
+   les sous-onglets — il fallait d'abord choisir un championnat pour y acceder. */
+async function loadSuiviesTab() {
+  var el = document.getElementById('t-suivies');
+  if (!el) return;
+  el.innerHTML = '<div class="sec" style="margin-top:0;">\u2b50 \u00c9quipes suivies</div>'
+    + '<div style="font-size:10px;color:var(--t3);line-height:1.6;margin-bottom:10px;">'
+    + 'Suivi de consultation, ind\u00e9pendant du mur : aucun pari, aucun palier, aucune statistique. '
+    + 'L\'\u00e9toile \u2606 se trouve dans Comp\u00e9titions \u2192 \u00c9quipes.</div>'
+    + '<div id="g45-suivies-body" class="fc"></div>';
+  await g45SuiviEqRender(document.getElementById('g45-suivies-body'));
+}
+window.loadSuiviesTab = loadSuiviesTab;
+
+/* Apres un ajout ou un retrait, on redessine la vue REELLEMENT ouverte : appeler
+   loadCompetTab depuis l'onglet principal n'aurait rien rafraichi. */
+var _g45SuiviEqToggleBase = g45SuiviEqToggle;
+window.g45SuiviEqToggle = function () {
+  _g45SuiviEqToggleBase.apply(null, arguments);
+  var tSui = document.getElementById('t-suivies');
+  if (tSui && tSui.classList && tSui.classList.contains('active')) loadSuiviesTab();
+};

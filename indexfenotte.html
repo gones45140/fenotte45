@@ -993,6 +993,7 @@
 <div id="t-tend" class="tab">
   <div class="psub-bar" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;"><button onclick="showPariSub('t-paris',this)" class="psub" data-sub="t-paris" style="flex:1;min-width:74px;padding:9px 6px;font-size:10.5px;font-weight:800;cursor:pointer;border-radius:9px;background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#9fb0c7;">🎯 Pari</button><button onclick="showPariSub('t-bilan',this)" class="psub" data-sub="t-bilan" style="flex:1;min-width:74px;padding:9px 6px;font-size:10.5px;font-weight:800;cursor:pointer;border-radius:9px;background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#9fb0c7;">📈 Bilan</button><button onclick="showPariSub('t-calc',this)" class="psub" data-sub="t-calc" style="flex:1;min-width:74px;padding:9px 6px;font-size:10.5px;font-weight:800;cursor:pointer;border-radius:9px;background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#9fb0c7;">🧮 Calculatrice</button><button onclick="showPariSub('t-comp',this)" class="psub" data-sub="t-comp" style="flex:1;min-width:74px;padding:9px 6px;font-size:10.5px;font-weight:800;cursor:pointer;border-radius:9px;background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#9fb0c7;">⚖️ VS</button><button onclick="showPariSub('t-bank',this)" class="psub" data-sub="t-bank" style="flex:1;min-width:74px;padding:9px 6px;font-size:10.5px;font-weight:800;cursor:pointer;border-radius:9px;background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#9fb0c7;">🏦 Bank</button><button onclick="showPariSub('t-tend',this)" class="psub" data-sub="t-tend" style="flex:1;min-width:74px;padding:9px 6px;font-size:10.5px;font-weight:800;cursor:pointer;border-radius:9px;background:#2563eb;border:1px solid #3b82f6;color:#fff;">🔥 Tendances</button></div></div>
 <div id="t-compet" class="tab"></div>
+<div id="t-suivies" class="tab"></div>
 <div id="t-comp" class="tab">
   <div class="psub-bar" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;"><button onclick="showPariSub('t-paris',this)" class="psub" data-sub="t-paris" style="flex:1;min-width:74px;padding:9px 6px;font-size:10.5px;font-weight:800;cursor:pointer;border-radius:9px;background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#9fb0c7;">🎯 Pari</button><button onclick="showPariSub('t-bilan',this)" class="psub" data-sub="t-bilan" style="flex:1;min-width:74px;padding:9px 6px;font-size:10.5px;font-weight:800;cursor:pointer;border-radius:9px;background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#9fb0c7;">📈 Bilan</button><button onclick="showPariSub('t-calc',this)" class="psub" data-sub="t-calc" style="flex:1;min-width:74px;padding:9px 6px;font-size:10.5px;font-weight:800;cursor:pointer;border-radius:9px;background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#9fb0c7;">🧮 Calculatrice</button><button onclick="showPariSub('t-comp',this)" class="psub" data-sub="t-comp" style="flex:1;min-width:74px;padding:9px 6px;font-size:10.5px;font-weight:800;cursor:pointer;border-radius:9px;background:#2563eb;border:1px solid #3b82f6;color:#fff;">⚖️ VS</button><button onclick="showPariSub('t-bank',this)" class="psub" data-sub="t-bank" style="flex:1;min-width:74px;padding:9px 6px;font-size:10.5px;font-weight:800;cursor:pointer;border-radius:9px;background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#9fb0c7;">🏦 Bank</button><button onclick="showPariSub('t-tend',this)" class="psub" data-sub="t-tend" style="flex:1;min-width:74px;padding:9px 6px;font-size:10.5px;font-weight:800;cursor:pointer;border-radius:9px;background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#9fb0c7;">🔥 Tendances</button></div>
   <div class="sec" style="margin-top:0;">⚖️ Comparateur d'équipes</div>
@@ -1113,6 +1114,7 @@
   <button class="ni on" onclick="showTab('t-dash',this)"><span>🥧</span>Mur</button>
   <button class="ni" onclick="showTab('t-paris',this)"><span>⚽</span>Pari</button>
   <button class="ni" onclick="showTab('t-compet',this);loadCompetTab();"><span>🏆</span>Compétitions</button>
+  <button class="ni" onclick="showTab('t-suivies',this);loadSuiviesTab()"><span>⭐</span>Suivies</button>
   <button class="ni" onclick="showTab('t-cal',this);loadCalendrier()"><span>📅</span>Agenda</button>
   <button class="ni pc-only" onclick="showTab('t-outils',this)"><span>🔧</span>Outils</button>
   <button class="ni pc-only" onclick="showTab('t-social',this);loadSocialTab();"><span>🤝</span>Social</button>
@@ -1142,14 +1144,13 @@
 
 <!-- FENOTTE45 : app.js est injecte par auth-guard.js APRES authentification.
      Ne pas remettre <script src="app.js"> ici : app.js demarrerait avant le
-     remappage de g45v5 -> g45v5__fen, et l'etat de la prod d'Antoine serait
-     lu (meme origine github.io, localStorage partage entre /gones45/ et
-     /fenotte45/). social.js reste un script classique, donc execute AVANT.
-     Le ?v= est OBLIGATOIRE : sans lui le navigateur sert l'ancienne version
-     depuis son cache HTTP, que le service worker n'intercepte pas pour ces
-     fichiers. Le changer a CHAQUE deploiement. -->
-<script src="social.js?v=20260814d"></script>
-<script type="module" src="auth-guard.js?v=20260814d"></script>
+     remappage de g45v5 -> g45v5__fen, et l'etat de la prod serait lu (meme
+     origine github.io, localStorage partage entre /gones45/ et /fenotte45/).
+     social.js reste un script classique, donc execute AVANT.
+     Le ?v= est OBLIGATOIRE : le service worker n'intercepte pas ces fichiers,
+     le navigateur sert donc son cache HTTP. A CHANGER a chaque deploiement. -->
+<script src="social.js?v=20260814e"></script>
+<script type="module" src="auth-guard.js?v=20260814e"></script>
 
 
 

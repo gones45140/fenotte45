@@ -3,7 +3,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { supabase, chargerEtat, sauverEtat, deconnexion,
-         sauverInstantane, listerInstantanes, lireInstantane } from './supabase.js?v=20260814c';
+         sauverInstantane, listerInstantanes, lireInstantane } from './supabase.js?v=20260814e';
 
 // ═══════════════════════════════════════════════════════════════
 // CLOISONNEMENT DU localStorage — À LIRE AVANT DE MODIFIER
@@ -346,11 +346,13 @@ function _g45PoserBoutonSauvegardes() {
       '<div style="font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#4f5d88;margin-bottom:8px;">Mon compte</div>'
     + '<div style="font-size:12px;color:#e6ecf5;font-weight:700;word-break:break-all;margin-bottom:10px;">' + (user.email || '—') + '</div>'
     + '<button id="g45-btn-snap" style="width:100%;margin-bottom:7px;padding:11px;border-radius:10px;border:1px solid rgba(77,132,255,.35);background:rgba(77,132,255,.12);color:#4d84ff;font-size:13px;font-weight:800;cursor:pointer;">💾 Mes sauvegardes</button>'
+    + '<button id="g45-btn-imp" style="width:100%;margin-bottom:7px;padding:11px;border-radius:10px;border:1px solid rgba(240,176,32,.35);background:rgba(240,176,32,.10);color:#f0b020;font-size:13px;font-weight:800;cursor:pointer;">⬇️ Importer mes paris de GONES45</button>'
     + '<button id="g45-btn-out" style="width:100%;padding:11px;border-radius:10px;border:1px solid rgba(255,107,107,.35);background:rgba(255,107,107,.10);color:#ff8a8a;font-size:13px;font-weight:800;cursor:pointer;">🚪 Se déconnecter</button>'
     + '<div style="font-size:9.5px;color:#8899aa;margin-top:8px;line-height:1.5;">Tes données sont enregistrées avant la déconnexion.</div>';
   hote.insertBefore(bloc, hote.firstChild);
 
   document.getElementById('g45-btn-snap').onclick = () => window._g45Sauvegardes();
+  document.getElementById('g45-btn-imp').onclick = (e) => window._g45ImporterDeProd(e.target);
   document.getElementById('g45-btn-out').onclick = async (e) => {
     if (!confirm('Se déconnecter de ' + (user.email || 'ce compte') + ' ?')) return;
     e.target.textContent = '⏳ Enregistrement…';
@@ -358,13 +360,62 @@ function _g45PoserBoutonSauvegardes() {
   };
 }
 
+// ═══════════════════════════════════════════════════════════════
+// REPRISE DES DONNÉES DE LA PROD (gones45 → fenotte45)
+// ═══════════════════════════════════════════════════════════════
+// Les deux dépôts partagent l'origine, donc le stockage : les paris saisis sur
+// gones45 sont lisibles ici, sous la clé d'origine `g45v5`. `rawGet` court-circuite
+// le remappage, c'est le SEUL endroit où on lit volontairement la prod.
+//
+// POINT CRITIQUE : on ne peut pas se contenter d'écrire `g45v5__fen`, car
+// auth-guard le réécrit depuis Supabase à chaque démarrage — la copie serait
+// effacée au rechargement suivant. On POUSSE donc vers Supabase, qui devient la
+// source, et on dépose un instantané au passage.
+//
+// La prod n'est jamais modifiée : lecture seule.
+window._g45ImporterDeProd = async function (btn) {
+  let brut = null;
+  try { brut = rawGet(CLE_ETAT); } catch (e) {}
+  if (!brut) { alert('Aucune donnée GONES45 trouvée sur cet appareil.\n\nOuvre d\'abord gones45 dans ce navigateur, puis reviens ici.'); return; }
+
+  let prod = null;
+  try { prod = JSON.parse(brut); } catch (e) { alert('Données GONES45 illisibles.'); return; }
+  const nParis = ((prod.h && prod.h.length) || 0) + ((prod.a && prod.a.length) || 0);
+  const nEquipes = (prod.u && prod.u.length) || 0;
+  if (!nParis && !nEquipes) { alert('Les données GONES45 de cet appareil sont vides.'); return; }
+
+  let actuel = { h: [], a: [], u: [] };
+  try { actuel = JSON.parse(rawGet(CLE_ETAT_FEN) || '{}') || {}; } catch (e) {}
+  const dejaLa = ((actuel.h && actuel.h.length) || 0) + ((actuel.a && actuel.a.length) || 0);
+
+  if (!confirm('Importer depuis GONES45 :\n\n' + nParis + ' paris\n' + nEquipes + ' équipes du mur\n\n'
+    + (dejaLa ? ('⚠️ Ton compte contient déjà ' + dejaLa + ' paris. Ils seront REMPLACÉS.\n(Une sauvegarde est déposée juste avant.)\n\n') : '')
+    + 'Les données de GONES45 ne sont pas modifiées.')) return;
+
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Import…'; }
+  try {
+    // Filet : on photographie l'état actuel avant de l'écraser.
+    if (dejaLa) { try { await sauverInstantane(user.id, actuel); } catch (e) {} }
+    const propre = normaliser(prod);
+    await sauverEtat(user.id, propre);          // Supabase devient la source
+    try { await sauverInstantane(user.id, propre); } catch (e) {}
+    rawSet(CLE_ETAT_FEN, JSON.stringify(propre));
+    rawSet(CLE_DERNIER_SNAP, String(Date.now()));
+    alert('✅ ' + nParis + ' paris importés.\n\nIls sont maintenant enregistrés sur ton compte : tu les retrouveras sur n\'importe quel appareil.');
+    location.reload();
+  } catch (e) {
+    if (btn) { btn.disabled = false; btn.textContent = '⬇️ Importer mes paris de GONES45'; }
+    alert('Échec de l\'import : ' + (e && e.message));
+  }
+};
+
 // Secours : réinjecter une sauvegarde JSON dans CETTE version uniquement.
 window._g45ImporterEtat = (json) => { rawSet(CLE_ETAT_FEN, typeof json === 'string' ? json : JSON.stringify(json)); location.reload(); };
 
 msg('Démarrage de l\'application…');
 
 const s = document.createElement('script');
-s.src = './app.js?v=20260814c';   /* version : force le rechargement apres deploiement */
+s.src = './app.js?v=20260814e';   /* version : force le rechargement apres deploiement */
 
 s.onerror = () => {
   msg('❌ échec du chargement de app.js');
