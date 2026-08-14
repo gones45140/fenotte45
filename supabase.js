@@ -60,6 +60,43 @@ export async function sauverEtat(userId, state) {
   if (error) throw error;
 }
 
+// ── Instantanés de sécurité ────────────────────────────────────
+// `user_state` n'a qu'UNE version vivante, écrasée à chaque écriture. La prod
+// d'Antoine peut remonter dans l'historique de ses commits GitHub ; ici, sans
+// ces instantanés, une mauvaise manœuvre serait définitive.
+// La table garde les 10 derniers par utilisateur (purge par trigger côté base).
+
+export async function sauverInstantane(userId, state) {
+  const nParis = ((state && state.h && state.h.length) || 0)
+               + ((state && state.a && state.a.length) || 0);
+  const { error } = await supabase
+    .from('user_state_backup')
+    .insert({ user_id: userId, state, n_paris: nParis });
+  if (error) throw error;
+}
+
+export async function listerInstantanes(userId) {
+  const { data, error } = await supabase
+    .from('user_state_backup')
+    .select('id, n_paris, created_at')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(10);
+  if (error) throw error;
+  return data || [];
+}
+
+export async function lireInstantane(userId, id) {
+  const { data, error } = await supabase
+    .from('user_state_backup')
+    .select('state, created_at')
+    .eq('user_id', userId)
+    .eq('id', id)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
 // ── Config CLV et grille de mises ──────────────────────────────
 
 export async function chargerClvConfig(userId) {

@@ -3,7 +3,7 @@
    1) Notifications de match (push) — inchangé.
    2) NOUVEAU : "network-first" sur app.js / social.js / style.css / la page,
       pour que tes mises à jour s'appliquent TOUJOURS direct (fini le cache figé).
-   Version : 2026-06-27a  (changer ce commentaire force la mise à jour du SW) */
+   Version : 2026-08-14a  (changer ce commentaire force la mise à jour du SW) */
 
 const G45_PUSH_BASE = 'https://fd-proxy.touraine-antoine.workers.dev';
 
@@ -19,7 +19,11 @@ self.addEventListener('fetch', function(event){
   try {
     if (event.request.method !== 'GET') return;
     var req = event.request;
-    var freshAsset = /\/(app\.js|social\.js|style\.css)(\?|$)/.test(req.url);
+    /* auth-guard.js et supabase.js ETAIENT ABSENTS de cette liste : sur fenotte45,
+       toute correction apportee a ces deux fichiers restait donc invisible, servie
+       depuis le cache HTTP, alors qu'app.js se mettait bien a jour. Piege parfait
+       pour croire qu'un correctif ne fonctionne pas. */
+    var freshAsset = /\/(app\.js|social\.js|style\.css|auth-guard\.js|supabase\.js)(\?|$)/.test(req.url);
     var isNav = (req.mode === 'navigate');
     if (freshAsset || isNav) {
       event.respondWith(

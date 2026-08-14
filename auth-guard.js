@@ -2,7 +2,8 @@
 // GONES45 — pont Supabase transparent (fenotte45)
 // ═══════════════════════════════════════════════════════════════
 
-import { supabase, chargerEtat, sauverEtat, deconnexion } from './supabase.js';
+import { supabase, chargerEtat, sauverEtat, deconnexion,
+         sauverInstantane, listerInstantanes, lireInstantane } from './supabase.js';
 
 // ═══════════════════════════════════════════════════════════════
 // CLOISONNEMENT DU localStorage — À LIRE AVANT DE MODIFIER
@@ -110,6 +111,32 @@ try {
 
 let pushTimer = null;
 let lastPushed = null;
+
+// ═══════════════════════════════════════════════════════════════
+// INSTANTANÉS DE SÉCURITÉ
+// ═══════════════════════════════════════════════════════════════
+// `sauverEtat` ÉCRASE la ligne : une seule version vivante. Un état vidé par
+// erreur serait définitif, là où la prod peut remonter dans ses commits GitHub.
+// On dépose donc une copie horodatée, AU PLUS UNE PAR HEURE — un instantané à
+// chaque frappe remplirait la table pour rien, et la fenêtre d'une heure suffit
+// largement à rattraper une fausse manœuvre.
+// Le dépôt se fait APRÈS un push réussi : jamais de copie d'un état qu'on n'a
+// pas réussi à enregistrer.
+const CLE_DERNIER_SNAP = 'g45_snap_ts__fen';
+const SNAP_INTERVALLE = 3600000;
+
+async function peutEtreInstantane(state) {
+  try {
+    if (!state || !Object.keys(state).length) return;          // jamais d'état vide
+    const dernier = parseInt(rawGet(CLE_DERNIER_SNAP) || '0', 10) || 0;
+    if (Date.now() - dernier < SNAP_INTERVALLE) return;
+    await sauverInstantane(user.id, state);
+    rawSet(CLE_DERNIER_SNAP, String(Date.now()));
+    console.log('📸 instantané de sécurité déposé');
+  } catch (e) {
+    console.warn('instantané non déposé :', e && e.message);    // jamais bloquant
+  }
+}
 localStorage.setItem = function(k, v) {
   if (Object.prototype.hasOwnProperty.call(MASQUE, k)) return;   // ne pas écrire chez la prod
   rawSet(remap(k), v);
@@ -119,9 +146,11 @@ localStorage.setItem = function(k, v) {
       pushTimer = null;
       if (v === lastPushed) return;
       try {
-        await sauverEtat(user.id, JSON.parse(v));
+        const objet = JSON.parse(v);
+        await sauverEtat(user.id, objet);
         lastPushed = v;
         console.log('✅ poussé sur Supabase');
+        peutEtreInstantane(objet);
       } catch (e) {
         console.warn('❌ push Supabase échoué :', e);
       }
@@ -135,8 +164,10 @@ const flush = async () => {
   try {
     const v = rawGet(CLE_ETAT_FEN);
     if (v && v !== lastPushed) {
-      await sauverEtat(user.id, JSON.parse(v));
+      const objet = JSON.parse(v);
+      await sauverEtat(user.id, objet);
       lastPushed = v;
+      await peutEtreInstantane(objet);
     }
   } catch (e) {}
 };
@@ -146,6 +177,77 @@ window.addEventListener('beforeunload', flush);
 
 window._g45User = user;
 window._g45Deconnexion = async () => { await flush(); await deconnexion(); window.location.href = './login.html'; };
+
+// ═══════════════════════════════════════════════════════════════
+// PANNEAU « MES SAUVEGARDES »
+// ═══════════════════════════════════════════════════════════════
+// Accessible sans console : un bouton est posé dans l'onglet Outils si on le
+// trouve, et la fonction reste appelable directement en secours.
+window._g45Sauvegardes = async function () {
+  const fond = document.createElement('div');
+  fond.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:99998;display:flex;align-items:center;justify-content:center;padding:16px;font-family:system-ui;';
+  fond.onclick = (e) => { if (e.target === fond) fond.remove(); };
+  fond.innerHTML = '<div style="background:#141a2a;border:1px solid #2a3550;border-radius:14px;max-width:460px;width:100%;padding:16px;color:#e6ecf5;">'
+    + '<div style="font-size:15px;font-weight:800;margin-bottom:4px;">💾 Mes sauvegardes</div>'
+    + '<div style="font-size:11px;color:#8899aa;margin-bottom:12px;">Copies automatiques de tes paris et de ta bankroll. Une par heure, les 10 dernières sont gardées.</div>'
+    + '<div id="g45-snap-liste" style="font-size:12px;color:#8899aa;">Chargement…</div></div>';
+  document.body.appendChild(fond);
+
+  let liste = [];
+  try { liste = await listerInstantanes(user.id); }
+  catch (e) {
+    document.getElementById('g45-snap-liste').textContent = 'Erreur de lecture : ' + (e && e.message);
+    return;
+  }
+  const box = document.getElementById('g45-snap-liste');
+  if (!liste.length) {
+    box.innerHTML = 'Aucune sauvegarde pour l\'instant.<br><span style="opacity:.7;">La première sera déposée automatiquement après ta prochaine modification.</span>';
+    return;
+  }
+  box.innerHTML = liste.map(s => {
+    const d = new Date(s.created_at);
+    const q = String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0')
+            + ' à ' + String(d.getHours()).padStart(2,'0') + 'h' + String(d.getMinutes()).padStart(2,'0');
+    return '<div style="display:flex;align-items:center;gap:8px;padding:8px 2px;border-bottom:1px solid rgba(255,255,255,.06);">'
+      + '<div style="flex:1;"><div style="color:#e6ecf5;font-weight:700;">' + q + '</div>'
+      + '<div style="font-size:10px;color:#8899aa;">' + (s.n_paris || 0) + ' paris</div></div>'
+      + '<button data-snap="' + s.id + '" style="padding:5px 10px;border-radius:7px;border:1px solid rgba(30,215,96,.4);background:rgba(30,215,96,.12);color:#1ed760;font-size:11px;font-weight:700;cursor:pointer;">Restaurer</button></div>';
+  }).join('');
+
+  box.querySelectorAll('[data-snap]').forEach(b => {
+    b.onclick = async () => {
+      if (!confirm('Restaurer cette sauvegarde ?\n\nTon état actuel sera remplacé. Une copie de sécurité est déposée juste avant, donc tu pourras revenir en arrière.')) return;
+      b.textContent = '…';
+      try {
+        // Filet : on photographie l'état ACTUEL avant de l'écraser, sinon
+        // restaurer par erreur ferait perdre ce qu'on avait.
+        const actuel = rawGet(CLE_ETAT_FEN);
+        if (actuel) { try { await sauverInstantane(user.id, JSON.parse(actuel)); } catch (e) {} }
+        const snap = await lireInstantane(user.id, b.getAttribute('data-snap'));
+        if (!snap || !snap.state) throw new Error('sauvegarde illisible');
+        await sauverEtat(user.id, snap.state);
+        rawSet(CLE_ETAT_FEN, JSON.stringify(snap.state));
+        location.reload();
+      } catch (e) {
+        alert('Échec de la restauration : ' + (e && e.message));
+        b.textContent = 'Restaurer';
+      }
+    };
+  });
+};
+
+// Bouton dans Outils, posé après le démarrage d'app.js (l'onglet est rendu tard).
+function _g45PoserBoutonSauvegardes() {
+  if (document.getElementById('g45-btn-snap')) return;
+  const hote = document.getElementById('t-outils') || document.getElementById('ip-outils');
+  if (!hote) return;
+  const b = document.createElement('button');
+  b.id = 'g45-btn-snap';
+  b.textContent = '💾 Mes sauvegardes';
+  b.style.cssText = 'width:100%;margin:10px 0;padding:11px;border-radius:10px;border:1px solid rgba(77,132,255,.35);background:rgba(77,132,255,.12);color:#4d84ff;font-size:13px;font-weight:800;cursor:pointer;';
+  b.onclick = () => window._g45Sauvegardes();
+  hote.insertBefore(b, hote.firstChild);
+}
 
 // Secours : réinjecter une sauvegarde JSON dans CETTE version uniquement.
 window._g45ImporterEtat = (json) => { rawSet(CLE_ETAT_FEN, typeof json === 'string' ? json : JSON.stringify(json)); location.reload(); };
@@ -182,6 +284,11 @@ s.onload = () => {
   } catch (e) {
     console.error('❌ redispatch de load échoué :', e);
   }
+
+  // L'onglet Outils n'existe pas forcément tout de suite : on retente.
+  setTimeout(_g45PoserBoutonSauvegardes, 800);
+  setTimeout(_g45PoserBoutonSauvegardes, 3000);
+  document.addEventListener('click', () => setTimeout(_g45PoserBoutonSauvegardes, 300));
 };
 
 document.body.appendChild(s);
