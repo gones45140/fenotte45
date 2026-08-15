@@ -13810,6 +13810,8 @@ async function loadFdSquad(el, nom, teamId, noTerrain, terrainOnly) {
       /* Reset de la SAISON entiere, toutes equipes, avec sauvegarde prealable. */
       html += '<button id="btn-rattr-'+uid+'" onclick="g45RattrapageJournees(\''+uid+'\',\''+nom+'\')" style="display:flex;align-items:center;gap:4px;padding:4px 8px;border-radius:6px;border:1px solid rgba(34,211,238,.35);background:rgba(34,211,238,.10);color:#22d3ee;font-size:9px;font-weight:700;cursor:pointer;" title="Recupere les stats journee par journee (1 requete par match, budget quotidien)">\ud83d\udcc5 Rattrapage J</button>';
       html += '<span style="font-size:8.5px;color:var(--t3);align-self:center;" title="Requetes api-sports consommees aujourd\'hui">'+g45ApisConso()+'/'+g45ApisPlafond()+'</span>';
+      html += '<button onclick="g45PrixL1Generer(2025)" title="Calcule les prix fantasy Ligue 1 depuis la saison passee (~30 requetes api-sports, une seule fois)" style="display:flex;align-items:center;gap:4px;padding:4px 8px;border-radius:6px;border:1px solid rgba(34,211,238,.35);background:rgba(34,211,238,.10);color:#22d3ee;font-size:9px;font-weight:700;cursor:pointer;">\ud83d\udcb6 Prix Fantasy L1</button>';
+      html += '<span id="g45-prix-msg" style="font-size:8.5px;color:var(--t3);align-self:center;"></span>';
       html += '<button onclick="g45ReparerStats()" title="Repare les accents et emojis abimes dans la Memoire stats" style="display:flex;align-items:center;gap:4px;padding:4px 8px;border-radius:6px;border:1px solid rgba(167,139,250,.35);background:rgba(167,139,250,.10);color:#a78bfa;font-size:9px;font-weight:700;cursor:pointer;">\ud83e\uddf9 R\u00e9parer les accents</button>';
       html += '<button onclick="g45ResetSaisonToutes()" style="display:flex;align-items:center;gap:4px;padding:4px 8px;border-radius:6px;border:1px solid rgba(255,120,80,.35);background:rgba(255,120,80,.10);color:#ff9a6b;font-size:9px;font-weight:700;cursor:pointer;" title="Efface les stats de TOUTE la saison selectionnee, toutes equipes. Sauvegarde telechargee avant.">\ud83e\uddf9 Reset saison</button>';
       html += '<button onclick="g45RestaurerSaison()" style="display:flex;align-items:center;gap:4px;padding:4px 8px;border-radius:6px;border:1px solid rgba(120,160,255,.3);background:rgba(120,160,255,.10);color:#8fb2ff;font-size:9px;font-weight:700;cursor:pointer;" title="Restaure une sauvegarde JSON">\u21a9\ufe0f Restaurer</button>';
@@ -35513,6 +35515,34 @@ function _g45Visible(id) {
 }
 window._g45Visible = _g45Visible;
 
+/* ═══ DIFFUSEURS FRANÇAIS ═══
+   ESPN expose bien un champ `broadcasts`, mais avec les chaines AMERICAINES
+   (ESPN, FOX, TNT) : inutilisable ici. Aucune API gratuite ne donne les droits
+   TV francais.
+   On tient donc une table par COMPETITION, qui couvre l'immense majorite des
+   cas sans une seule requete. Les droits changent chaque saison : cette table
+   est a revoir en aout, c'est son seul entretien.
+   LIMITE ASSUMEE : un match precis peut etre sur une autre chaine du groupe
+   (multiplex, affiche du dimanche soir). On affiche donc le diffuseur du
+   CHAMPIONNAT, pas une garantie pour ce match-la. */
+var G45_TV_FR = {
+  'fra.1':'Ligue 1+', 'fra.2':'beIN SPORTS', 'fra.coupe_de_france':'beIN SPORTS / France TV',
+  'eng.1':'Canal+', 'esp.1':'beIN SPORTS', 'ita.1':'beIN SPORTS', 'ger.1':'beIN SPORTS',
+  'por.1':'Canal+', 'ned.1':'Canal+',
+  'uefa.champions':'Canal+ / beIN SPORTS', 'uefa.europa':'Canal+', 'uefa.europa.conf':'Canal+',
+  'uefa.super_cup':'Canal+', 'fifa.world':'TF1 / M6', 'uefa.euro':'TF1 / M6',
+  'club.friendly':'\u2014',
+  'nba':'beIN SPORTS', 'nfl':'beIN SPORTS',
+  /* Corrige le 15/08 : la MLB et la NHL passent bien en France, sur les chaines
+     beIN SPORTS MAX — je les avais classees « non diffusees » a tort. */
+  'nhl':'beIN SPORTS MAX', 'mlb':'beIN SPORTS MAX',
+  '3':'\u2014', '270559':'Canal+', '271937':'beIN SPORTS'
+};
+function _g45TvDe(slug) {
+  var t = G45_TV_FR[String(slug || '')];
+  return (t && t !== '\u2014') ? t : '';
+}
+
 var _g45DirTimer = null;
 
 /* ═══ VISUELS D'ÉQUIPE (façon Winamax) ═══
@@ -35585,17 +35615,30 @@ function _g45FanLire(nom) {
   } catch (e) { return undefined; }
 }
 
-async function _g45FanChercher(nom) {
+/* Sport ESPN -> sport TheSportsDB. Sans cette verification, « Reds » ramenait
+   une ecurie de MotoGP et « Giants » pouvait ramener du rugby : l'image etait
+   spectaculairement fausse sans qu'aucune erreur ne soit levee. */
+var _G45_TSDB_SPORT = {
+  soccer:'soccer', basketball:'basketball', baseball:'baseball',
+  hockey:'ice hockey', football:'american football',
+  'rugby-league':'rugby', rugby:'rugby'
+};
+
+async function _g45FanChercher(nom, sport) {
   var url = '';
   try {
     var r = await fetch('https://www.thesportsdb.com/api/v1/json/3/searchteams.php?t=' + encodeURIComponent(nom));
     if (r.ok) {
       var j = await r.json();
-      var t = (j && j.teams && j.teams[0]) || null;
-      if (t) {
-        /* Ordre de preference : bandeau large, puis ambiance, puis stade. */
-        url = t.strTeamBanner || t.strFanart1 || t.strFanart2 || t.strStadiumThumb || '';
-      }
+      var liste = (j && j.teams) || [];
+      var attendu = _G45_TSDB_SPORT[sport || ''] || '';
+      var n = _g45SgNorm(nom);
+      /* On garde d'abord les equipes du BON SPORT, puis on prefere le nom exact. */
+      var bons = liste.filter(function (t) {
+        return !attendu || _g45SgNorm(t.strSport || '') === _g45SgNorm(attendu);
+      });
+      var t = bons.filter(function (x) { return _g45SgNorm(x.strTeam || '') === n; })[0] || bons[0] || null;
+      if (t) url = t.strTeamBanner || t.strFanart1 || t.strFanart2 || t.strStadiumThumb || '';
     }
   } catch (e) {}
   try { localStorage.setItem(_G45_FANART + _g45SgNorm(nom), JSON.stringify({ u: url, t: Date.now() })); } catch (e) {}
@@ -35610,16 +35653,20 @@ async function _g45FanCompleter(noms) {
 
   /* 1. Images personnelles d'abord : simple chargement d'image depuis le depot,
      aucune API, aucun quota. On les teste TOUTES, c'est gratuit. */
-  var perso = noms.filter(function (n) { return _g45ImgPersoLire(n) === undefined; });
+  var perso = noms.filter(function (n) { return _g45ImgPersoLire(n.nom || n) === undefined; });
   for (var p2 = 0; p2 < perso.length && p2 < 8; p2++) {
-    if (await _g45ImgPersoTester(perso[p2])) maj = true;
+    if (await _g45ImgPersoTester(perso[p2].nom || perso[p2])) maj = true;
   }
 
   /* 2. TheSportsDB seulement pour celles qui n'ont PAS d'image personnelle. */
   var aFaire = noms.filter(function (n) {
-    return !_g45ImgPersoLire(n) && _g45FanLire(n) === undefined;
+    return !_g45ImgPersoLire(n.nom || n) && _g45FanLire(n.nom || n) === undefined;
   }).slice(0, 2);
-  for (var i = 0; i < aFaire.length; i++) { await _g45FanChercher(aFaire[i]); maj = true; }
+  for (var i = 0; i < aFaire.length; i++) {
+    var it = aFaire[i];
+    await _g45FanChercher(it.nom || it, it.sp || '');
+    maj = true;
+  }
 
   _g45FanEnCours = 0;
   return maj;
@@ -35708,12 +35755,19 @@ async function g45DirectMesEquipes(silencieux) {
      championnat : c'est a la fois plus complet ET moins couteux.
      Les sports US et le rugby gardent leur championnat : ils n'ont pas de coupe
      parallele, et `all` n'existe pas pour eux. */
-  var grpFoot = { sp: 'soccer', lg: 'all', ids: {}, noms: {} };
+  /* En fusionnant tout le football sous `all`, on perdait le championnat de
+     chaque equipe — or c'est lui qui donne le diffuseur. On le conserve donc
+     dans `lgDe`, indexe par identifiant d'equipe. */
+  var grpFoot = { sp: 'soccer', lg: 'all', ids: {}, noms: {}, lgDe: {} };
   var aDuFoot = false;
   cles.forEach(function (k) {
     if (grp[k].sp !== 'soccer') return;
     aDuFoot = true;
-    Object.keys(grp[k].ids).forEach(function (id) { grpFoot.ids[id] = 1; grpFoot.noms[id] = grp[k].noms[id]; });
+    Object.keys(grp[k].ids).forEach(function (id) {
+      grpFoot.ids[id] = 1;
+      grpFoot.noms[id] = grp[k].noms[id];
+      grpFoot.lgDe[id] = grp[k].lg;
+    });
   });
   var aInterroger = cles.filter(function (k) { return grp[k].sp !== 'soccer'; }).map(function (k) { return grp[k]; });
   if (aDuFoot) aInterroger.unshift(grpFoot);
@@ -35755,10 +35809,24 @@ async function g45DirectMesEquipes(silencieux) {
       var lgReel = (e.league && (e.league.slug || e.league.abbreviation))
                 || (cp.league && (cp.league.slug || cp.league.abbreviation))
                 || g.lg;
-      var lgNom = (e.league && e.league.name) || (cp.league && cp.league.name) || lgReel;
+      var lgNom = (e.league && e.league.name) || (cp.league && cp.league.name)
+                || (cp.notes && cp.notes[0] && cp.notes[0].headline) || '';
+      /* Avec le slug generique, `lgReel` vaut litteralement « all » : l'afficher
+         n'apprend rien. Sans nom de competition, on prefere ne RIEN ecrire. */
+      if (!lgNom && lgReel !== 'all') lgNom = lgReel;
+      if (lgNom === 'all') lgNom = '';
+      /* Slug servant UNIQUEMENT au diffuseur : quand ESPN ne dit pas de quelle
+         competition il s'agit, on retombe sur le championnat de l'equipe suivie.
+         Approximatif pour une coupe, mais c'est justement ce que la table
+         annonce — le diffuseur habituel, pas une garantie pour ce match. */
+      var idMoi = String((moi.team && moi.team.id) || moi.id || '');
+      var lgTv = (lgReel && lgReel !== 'all') ? lgReel : ((g.lgDe && g.lgDe[idMoi]) || g.lg);
+      /* Nom COMPLET pour la recherche d'image : « Reds » seul ramenait une equipe
+         de MotoGP, « Cincinnati Reds » ramene la bonne. */
+      var nmLong = function (x) { return (x.team && (x.team.displayName || x.team.name)) || ''; };
       trouves.push({
-        etat: etat, id: String(e.id), sp: g.sp, lg: lgReel, lgNom: lgNom,
-        moi: nm(moi), adv: nm(autre), dom: moi.homeAway === 'home',
+        etat: etat, id: String(e.id), sp: g.sp, lg: lgReel, lgTv: lgTv, lgNom: lgNom,
+        moi: nm(moi), moiLong: nmLong(moi) || nm(moi), adv: nm(autre), dom: moi.homeAway === 'home',
         cMoi: col(moi, '#4d84ff'), cAdv: col(autre, '#8899aa'),
         lMoi: lg2(moi), lAdv: lg2(autre),
         sMoi: sc(moi), sAdv: sc(autre),
@@ -35798,7 +35866,9 @@ async function g45DirectMesEquipes(silencieux) {
     /* Le visuel de MON equipe passe en fond, tres assombri pour que le score
        reste lisible ; le degrade de couleurs reste par-dessus. Sans visuel
        connu, on retombe exactement sur la carte precedente. */
-    var vis = _g45ImgPersoLire(m.moi) || _g45FanLire(m.moi);
+    var cleImg = m.moiLong || m.moi;
+    var vis = _g45ImgPersoLire(cleImg) || _g45FanLire(cleImg)
+           || _g45ImgPersoLire(m.moi) || _g45FanLire(m.moi);
     var degrade = 'linear-gradient(100deg, ' + m.cMoi + '55 0%, rgba(12,17,29,.94) 42%, rgba(12,17,29,.94) 58%, ' + m.cAdv + '55 100%)';
     var fond = vis
       ? ('linear-gradient(100deg, ' + m.cMoi + '66 0%, rgba(10,14,26,.90) 45%, rgba(10,14,26,.90) 55%, ' + m.cAdv + '66 100%), url(\'' + vis + '\')')
@@ -35823,16 +35893,74 @@ async function g45DirectMesEquipes(silencieux) {
       + '<div style="font-size:12.5px;font-weight:800;color:#e6ecf5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'
       + m.moi + ' <span style="color:#8899aa;font-weight:500;">' + (m.dom ? 'vs' : '@') + '</span> ' + m.adv + '</div>'
       + '<div style="font-size:22px;font-weight:900;color:#fff;line-height:1.25;letter-spacing:-.5px;">' + score + '</div>'
-      + '<div style="font-size:8.5px;color:#8899aa;">' + (m.lgNom || m.lg) + (m.detail ? (' \u00b7 ' + m.detail) : '') + '</div>'
+      /* ═══ BAS DE CARTE EN PASTILLES ═══
+         L'ancienne ligne empilait competition, statut et chaine dans le meme gris
+         de 8,5 px : illisible. Trois pastilles distinctes, chacune avec sa
+         couleur — la chaine ressort, c'est l'information qu'on cherche en un
+         coup d'oeil quand on veut regarder. */
+      + (function () {
+          var SPORT_ICO = { soccer:'\u26bd', basketball:'\ud83c\udfc0', hockey:'\ud83c\udfd2',
+                            baseball:'\u26be', football:'\ud83c\udfc8',
+                            'rugby-league':'\ud83c\udfc9', rugby:'\ud83c\udfc9' };
+          var pastille = function (contenu, coul, fond) {
+            return '<span style="display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:9px;'
+                 + 'background:' + (fond || 'rgba(255,255,255,.06)') + ';color:' + coul + ';font-size:8.5px;font-weight:700;'
+                 + 'white-space:nowrap;">' + contenu + '</span>';
+          };
+          var p = [];
+
+          var comp = m.lgNom || '';
+          p.push(pastille((SPORT_ICO[m.sp] || '') + ' ' + (comp || m.lgTv || m.sp), '#9fb0c7'));
+
+          var dd = new Date(m.date);
+          if (!isNaN(dd)) {
+            var jourTxt = dd.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
+            var hTxt = dd.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+            p.push(pastille('\ud83d\udcc5 ' + jourTxt + ' \u00b7 ' + hTxt, '#9fb0c7'));
+          }
+
+          var info = (typeof g45TvInfosMatch === 'function') ? g45TvInfosMatch(m.moiLong || m.moi, m.adv) : null;
+          var reel = info ? info.tv : '';
+          var tv = reel || _g45TvDe(m.lgTv || m.lg);
+          if (tv) {
+            var gratuit = /youtube|twitch|dailymotion/i.test(reel || '');
+            var coul = gratuit ? '#1ed760' : (reel ? '#a78bfa' : '#6b7a99');
+            var fond = gratuit ? 'rgba(30,215,96,.14)' : (reel ? 'rgba(167,139,250,.14)' : 'rgba(255,255,255,.05)');
+            var dedans = '\ud83d\udcfa ' + tv;
+            if (info && info.url) {
+              var arg = "'" + String(info.url).replace(/'/g, '') + "','"
+                      + String((m.moiLong || m.moi) + ' - ' + m.adv).replace(/'/g, '') + "'";
+              dedans += gratuit
+                ? (' <a href="#" onclick="event.preventDefault();event.stopPropagation();g45RegarderYT(' + arg + ');" style="color:#1ed760;text-decoration:none;font-weight:800;">\u25b6</a>')
+                : (' <a href="' + info.url + '" target="_blank" rel="noopener" onclick="event.stopPropagation();" style="color:#8899aa;text-decoration:none;">\u2197</a>');
+            }
+            p.push(pastille(dedans, coul, fond));
+          }
+
+          if (m.detail && !/scheduled/i.test(m.detail)) p.push(pastille(m.detail, '#6b7a99'));
+
+          return '<div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:center;margin-top:4px;">' + p.join('') + '</div>';
+        })()
       + '</div></div>';
   }).join('')
   + '<div style="font-size:9px;color:var(--t3);text-align:center;margin-top:6px;">'
   + aInterroger.length + ' requ\u00eate(s) \u00b7 ' + (enCours ? 'rafra\u00eechissement auto toutes les 45 s' : 'aucun match en cours, rafra\u00eechissement arr\u00eat\u00e9') + '</div>';
 
+  /* Programme TV : charge en arriere-plan, mis en cache 3 h. Si le Worker n'a
+     pas l'hote « tvsports », la fonction echoue en silence et on retombe sur la
+     table par competition. */
+  try {
+    if (typeof g45TvProgramme === 'function' && !_g45TvCache) {
+      g45TvProgramme().then(function (l) {
+        if (l && l.length && _g45Visible('t-suivies')) g45DirectMesEquipes(true);
+      });
+    }
+  } catch (e) {}
+
   /* Visuels manquants : on les cherche APRES avoir affiche, jamais avant —
      l'ecran ne doit pas attendre une image decorative. */
   try {
-    var noms = trouves.map(function (m) { return m.moi; });
+    var noms = trouves.map(function (m) { return { nom: m.moiLong || m.moi, sp: m.sp }; });
     _g45FanCompleter(noms).then(function (maj) {
       if (maj) {
         if (_g45Visible('t-suivies')) g45DirectMesEquipes(true);
@@ -36182,3 +36310,410 @@ if (typeof g45StatsGithubSave === 'function') {
     return await _g45StatsGhSaveOrig(arr, sha);
   };
 }
+
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   GÉNÉRATEUR DE PRIX — FANTASY LIGUE 1 (15/08/2026)
+   ───────────────────────────────────────────────────────────────────────────
+   Aucune source gratuite ne donne les valeurs marchandes (Transfermarkt n'a pas
+   d'API ouverte). On ne cherche donc PAS la valeur marchande mais un prix qui
+   reflete le RENDEMENT de la saison passee — plus juste pour un jeu, et
+   entierement recalculable chaque ete sans rien entretenir a la main.
+
+   COUT : `/players?league=61&season=Y` pagine par 20, soit ~30 requetes UNE
+   SEULE FOIS, a la cadence habituelle (10/minute, budget quotidien respecte).
+   Le resultat est ecrit dans `donnees/prix_l1.json` sur GitHub : les amis le
+   lisent gratuitement, sans cle.
+
+   CALIBRAGE : 500 M€ pour 18 joueurs, soit 28 M€ de moyenne. Avec ce bareme,
+   trois ou quatre stars maximum tiennent dans l'enveloppe.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* CALIBRAGE VERIFIE A FROID. Premiere version : un attaquant moyen sortait a
+   51 M€ et une equipe de 18 depassait l'enveloppe des le milieu de tableau.
+   Cible retenue : star 55-65, titulaire solide 25-35, remplacant 8-15, ce qui
+   laisse composer 3 stars + 6 solides + 9 complements sous 500 M€. */
+var G45_PRIX_BAREME = {
+  base:      { G: 8,   D: 8,   M: 9,   A: 10 },
+  but:       { G: 6,   D: 4,   M: 2.2, A: 1.7 },  /* un but de defenseur vaut plus cher */
+  passe:     1.3,
+  parMatch:  0.13,                                /* temps de jeu, par match complet */
+  cleanSheet:{ G: 0.9, D: 0.7, M: 0,   A: 0 },
+  min: 5, max: 75                                 /* bornes : personne a 0, personne a 150 */
+};
+
+function _g45PostePrix(p) {
+  var s = String(p || '').toLowerCase();
+  if (s.indexOf('goal') >= 0 || s === 'g') return 'G';
+  if (s.indexOf('defen') >= 0 || s === 'd') return 'D';
+  if (s.indexOf('midfi') >= 0 || s === 'm') return 'M';
+  return 'A';
+}
+
+/* Prix d'un joueur a partir de ses statistiques de la saison passee. */
+function g45PrixJoueur(st, poste) {
+  var B = G45_PRIX_BAREME;
+  var p = poste || 'A';
+  var buts = (st.buts || 0), passes = (st.passes || 0);
+  var minutes = (st.minutes || 0), cs = (st.cs || 0);
+  var prix = B.base[p]
+           + buts * B.but[p]
+           + passes * B.passe
+           + (minutes / 90) * B.parMatch
+           + cs * B.cleanSheet[p];
+  prix = Math.max(B.min, Math.min(B.max, prix));
+  return Math.round(prix * 2) / 2;              /* arrondi au demi-million */
+}
+
+async function g45PrixL1Generer(saison) {
+  saison = saison || (new Date().getFullYear() - 1);
+  if (typeof apiSportsFetch !== 'function' || !getApiSportsKey()) { alert('Cl\u00e9 api-sports manquante.'); return; }
+
+  var reste = (typeof g45ApisReste === 'function') ? g45ApisReste() : 999;
+  if (!confirm('G\u00e9n\u00e9rer les prix Ligue 1 \u00e0 partir de la saison ' + saison + '.\n\n'
+    + 'Environ 30 requ\u00eates api-sports (une seule fois).\n'
+    + 'Budget restant aujourd\'hui : ' + reste + '\n'
+    + 'Dur\u00e9e : ~3 minutes \u00e0 ' + ((typeof g45ApisRpm === 'function') ? g45ApisRpm() : 10) + '/minute.\n\nLancer ?')) return;
+
+  var box = document.getElementById('g45-prix-msg');
+  var joueurs = [], page = 1, total = 1, appels = 0;
+
+  while (page <= total && page <= 40) {
+    if ((typeof g45ApisReste === 'function') && g45ApisReste() <= 1) break;   /* budget epuise */
+    if (box) box.textContent = '\u23f3 Page ' + page + (total > 1 ? ('/' + total) : '') + ' \u00b7 ' + joueurs.length + ' joueurs';
+    var d = null;
+    try { d = await _g45ApisAppel('/players?league=61&season=' + saison + '&page=' + page); }
+    catch (e) { break; }
+    if (typeof _g45ApisPlusUn === 'function') _g45ApisPlusUn();
+    appels++;
+    var err = (typeof _g45ApisErreur === 'function') ? _g45ApisErreur(d) : '';
+    if (err) { if (box) box.textContent = '\u274c ' + err; return; }
+    total = (d && d.paging && d.paging.total) || 1;
+
+    ((d && d.response) || []).forEach(function (it) {
+      var pl = it.player || {};
+      /* On ne garde QUE le bloc du championnat : la coupe et l'Europe ne doivent
+         pas gonfler le prix d'un joueur qui a peu joue en Ligue 1. */
+      var bloc = (it.statistics || []).filter(function (x) { return x.league && String(x.league.id) === '61'; })[0];
+      if (!bloc) return;
+      var g = bloc.games || {}, go = bloc.goals || {};
+      var poste = _g45PostePrix(g.position);
+      var st = {
+        buts: go.total || 0, passes: go.assists || 0,
+        minutes: g.minutes || 0, cs: 0, matchs: g.appearences || 0
+      };
+      /* api-sports ne donne pas les clean sheets : on les approche par les buts
+         encaisses de l'equipe rapportes aux minutes. Faute de mieux, et
+         uniquement pour les gardiens et defenseurs. */
+      if (poste === 'G' || poste === 'D') {
+        var enc = go.conceded || 0;
+        var m90 = Math.max(1, st.minutes / 90);
+        st.cs = Math.max(0, Math.round(m90 * Math.max(0, 1 - (enc / m90) / 1.4)));
+      }
+      joueurs.push({
+        id: pl.id, nom: ((pl.firstname || '') + ' ' + (pl.lastname || '')).trim() || pl.name,
+        club: (bloc.team && bloc.team.name) || '', poste: poste,
+        prix: g45PrixJoueur(st, poste),
+        b: st.buts, p: st.passes, m: st.matchs, min: st.minutes
+      });
+    });
+    page++;
+  }
+
+  if (!joueurs.length) { if (box) box.textContent = '\u274c Aucun joueur r\u00e9cup\u00e9r\u00e9.'; return; }
+  joueurs.sort(function (a, b) { return b.prix - a.prix; });
+
+  var fichier = { v: 1, saison: saison, genere: new Date().toISOString(), bareme: G45_PRIX_BAREME, joueurs: joueurs };
+  try { localStorage.setItem('g45_prix_l1', JSON.stringify(fichier)); } catch (e) {}
+
+  var top = joueurs.slice(0, 5).map(function (j) { return j.nom + ' ' + j.prix + 'M'; }).join(' \u00b7 ');
+  var moy = Math.round(joueurs.reduce(function (a, j) { return a + j.prix; }, 0) / joueurs.length * 10) / 10;
+  if (box) box.innerHTML = '\u2705 ' + joueurs.length + ' joueurs \u00b7 ' + appels + ' requ\u00eates \u00b7 moyenne ' + moy + 'M<br>'
+    + '<span style="opacity:.75;">Plus chers : ' + top + '</span>';
+
+  /* Envoi sur GitHub pour que les amis y aient acces sans cle. */
+  var token = localStorage.getItem('gones45_github_token');
+  if (!token) { alert('Prix calcul\u00e9s et gard\u00e9s en local.\nSans jeton GitHub, ils ne sont pas partag\u00e9s.'); return; }
+  try {
+    var chemin = 'donn\u00e9es/prix_l1.json';
+    var api = 'https://api.github.com/repos/' + GITHUB_OWNER + '/' + GITHUB_REPO + '/contents/' + encodeURI(chemin);
+    var sha = null;
+    var rg = await fetch(api, { headers: { 'Authorization': 'token ' + token } });
+    if (rg.ok) { var dg = await rg.json(); sha = dg.sha; }
+    var corps = { message: 'Prix fantasy L1 ' + saison, content: btoa(unescape(encodeURIComponent(JSON.stringify(fichier)))) };
+    if (sha) corps.sha = sha;
+    var rp = await fetch(api, { method: 'PUT', headers: { 'Authorization': 'token ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify(corps) });
+    alert(rp.ok ? '\u2705 Prix publi\u00e9s sur GitHub.' : '\u26a0\ufe0f Publication refus\u00e9e (HTTP ' + rp.status + ').');
+  } catch (e) { alert('Publication impossible : ' + (e && e.message)); }
+}
+window.g45PrixL1Generer = g45PrixL1Generer;
+
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DIFFUSEURS TV — lecture de tv-sports.fr (15/08/2026)
+   ───────────────────────────────────────────────────────────────────────────
+   Aucune API : il faut lire la page HTML. Je n'ai PAS acces au reseau pour voir
+   sa structure, donc j'ecris un analyseur qui ne depend d'AUCUNE classe CSS —
+   celles-ci changent au premier redesign et cassent en silence.
+
+   METHODE : on retire les balises, on cherche les noms de CHAINES connus (liste
+   fermee, stable dans le temps), et on rattache a chacun le texte qui le
+   precede — c'est la que se trouvent les equipes et l'heure. Une mise en page
+   differente decale le texte mais ne fait pas disparaitre « Ligue 1+ ».
+
+   `g45TvDiag()` affiche ce qui a ete extrait : si le rapprochement echoue, on
+   verra POURQUOI au lieu de deviner.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+var G45_CHAINES = [
+  /* Liste relevee sur tv-sports.fr le 15/08/2026. Les DECLINAISONS NUMEROTEES
+     sont indispensables : un match sur « Canal+ Live 14 » ou « beIN SPORTS MAX 5 »
+     n'etait pas reconnu du tout, faute d'ancrage dans le HTML.
+     ATTENTION A L'ORDRE : les libelles LONGS d'abord. « Canal+ Live 1 » est
+     contenu dans « Canal+ Live 12 » — en testant le court en premier, tous les
+     matchs de Live 10 a 19 seraient etiquetes Live 1. */
+  'Canal+ Live 19', 'Canal+ Live 18', 'Canal+ Live 17', 'Canal+ Live 16', 'Canal+ Live 15', 'Canal+ Live 14', 'Canal+ Live 13', 'Canal+ Live 12', 'Canal+ Live 11', 'Canal+ Live 10', 'Canal+ Live 9', 'Canal+ Live 8', 'Canal+ Live 7', 'Canal+ Live 6', 'Canal+ Live 5', 'Canal+ Live 4', 'Canal+ Live 3', 'Canal+ Live 2', 'Canal+ Live 1',
+  'Canal+ Premi\u00e8re League', 'Canal+ Sport 360', 'Canal+ Sport', 'Canal+ Foot', 'Canal+',
+  'Ligue 1+ 10', 'Ligue 1+ 9', 'Ligue 1+ 8', 'Ligue 1+ 7', 'Ligue 1+ 6', 'Ligue 1+ 5', 'Ligue 1+ 4', 'Ligue 1+ 3', 'Ligue 1+ 2', 'Ligue 1+ expert', 'Ligue 1+',
+  'beIN SPORTS MAX 10', 'beIN SPORTS MAX 9', 'beIN SPORTS MAX 8', 'beIN SPORTS MAX 7', 'beIN SPORTS MAX 6', 'beIN SPORTS MAX 5', 'beIN SPORTS MAX 4', 'beIN SPORTS MAX', 'beIN SPORTS 1', 'beIN SPORTS 2', 'beIN SPORTS 3', 'beIN SPORTS',
+  'RMC Sport Live 16', 'RMC Sport Live 15', 'RMC Sport Live 14', 'RMC Sport Live 13', 'RMC Sport Live 12', 'RMC Sport Live 11', 'RMC Sport Live 10', 'RMC Sport Live 9', 'RMC Sport Live 8', 'RMC Sport Live 7', 'RMC Sport Live 6', 'RMC Sport Live 5', 'RMC Sport Access 1', 'RMC Sport Access', 'RMC Sport 1', 'RMC Sport 2', 'RMC Sport',
+  'Eurosport 1', 'Eurosport 2', 'Eurosport',
+  'La Cha\u00eene L\'\u00c9quipe', 'L\'Equipe', 'L\u2019\u00c9quipe',
+  'France 2', 'France 3', 'France 4', 'France 5', 'France TV',
+  'TF1 S\u00e9ries Films', 'TF1', 'TMC', 'TFX', 'M6', 'W9', '6ter', 'Gulli', 'Arte',
+  'Sport en France', '\u00c9quidia', 'Equidia', 'Automoto',
+  /* Belgique et Suisse : elles diffusent des affiches que la France n'a pas. */
+  'VOOsport World 1', 'VOOsport World 2', 'RTS 1', 'RTS 2', 'La Une', 'La Trois',
+  'Tipik', 'RTL tvi', 'Club RTL', 'Plug RTL', 'AB 3', 'ABXplore', 'VTM 2',
+  'Prime Video', 'Amazon Prime Video', 'DAZN', 'Netflix',
+  /* STREAMING GRATUIT. Vu le 15/08 : Bayern-Leipzig etait sur YouTube, diffuse
+     par le club. Les amicaux d'ete y passent souvent, et sans ces entrees le
+     match ressortait sans diffuseur alors qu'il etait regardable gratuitement —
+     l'information la PLUS utile, justement. */
+  'YouTube', 'Twitch', 'Dailymotion', 'Molotov', 'Free Ligue 1', 'Footao', 'Streaming'
+];
+
+function _g45TvNorm(s) {
+  return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+var _g45TvCache = null;
+
+async function g45TvProgramme(force) {
+  try {
+    if (!force) {
+      var brut = localStorage.getItem('g45_tv_prog');
+      if (brut) {
+        var o = JSON.parse(brut);
+        if (Date.now() - (o.t || 0) < 3 * 3600000) { _g45TvCache = o.l; return o.l; }
+      }
+    }
+  } catch (e) {}
+
+  /* La page `?types=live` ne liste que ce qui passe A CET INSTANT — d'ou un seul
+     match reconnu sur dix. On lit donc AUSSI la page complete du jour, et on
+     fusionne. Deux requetes toutes les 3 heures, negligeable. */
+  var pages = ['/', '/?types=live'];
+  var html = '';
+  for (var pi = 0; pi < pages.length; pi++) {
+    try {
+      var u = FD_PROXY + '?host=tvsports&path=' + encodeURIComponent(pages[pi]);
+      var r = await fetch(u);
+      if (!r.ok) continue;
+      html += '\n' + (await r.text());
+    } catch (e) { console.warn('tv-sports', pages[pi], e && e.message); }
+  }
+  if (!html) return [];
+
+  /* Texte brut : on supprime scripts, styles et balises, en gardant des
+     separateurs pour ne pas coller les mots entre eux. */
+  var txt = html
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, '\n')
+    .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&#039;|&apos;/g, "'")
+    .split('\n').map(function (x) { return x.trim(); }).filter(Boolean);
+
+  var out = [];
+  txt.forEach(function (ligne, i) {
+    /* Egalite stricte sur la ligne entiere : « Canal+ Live 1 » ne peut donc pas
+       capturer « Canal+ Live 12 ». Le tri par longueur protege les cas ou le
+       site ajoute un suffixe (HD, chaine, etc.). */
+    var ch = G45_CHAINES.filter(function (c) { return _g45TvNorm(ligne) === _g45TvNorm(c); })
+             .sort(function (x, y) { return y.length - x.length; })[0];
+    if (!ch) return;
+    /* Les equipes sont dans les lignes qui PRECEDENT la chaine. On remonte
+       jusqu'a 8 lignes en cherchant un « A – B » ou un « A - B ». */
+    for (var k = i - 1; k >= Math.max(0, i - 8); k--) {
+      var l = txt[k];
+      var m = l.match(/^(.{3,40})\s+[\u2013\u2014-]\s+(.{3,40})$/);
+      if (m) { out.push({ a: m[1].trim(), b: m[2].trim(), tv: ch }); return; }
+    }
+  });
+
+  /* ═══ LIEN VERS LA PAGE DU MATCH ═══
+     Le site heberge le direct sur sa propre page (/foot/…-e4492490/). En
+     supprimant les balises, je jetais les href avec — or c'est exactement ce
+     qui permet d'ouvrir le flux en un clic.
+     On repasse donc sur le HTML BRUT, decoupe par ancres : chaque ancre porte
+     son adresse ET le texte de la ligne, donc le rapprochement est direct et
+     ne depend d'aucune classe CSS. */
+  try {
+    html.split('<a ').forEach(function (bloc) {
+      var mh = bloc.match(/href="([^"]+)"/);
+      if (!mh) return;
+      var lien = mh[1];
+      if (!/\/[a-z-]+\/[^"]*-e\d+\/?$/.test(lien)) return;      /* page de match uniquement */
+      /* Le texte d'une ancre contient AUSSI l'heure et la chaine (« 15h30 Bayern
+         Munich – Leipzig YouTube »). Une egalite stricte echouait donc toujours :
+         on verifie simplement que les DEUX equipes y figurent. */
+      var texte = _g45TvNorm(bloc.replace(/<[^>]*>/g, ' '));
+      if (texte.indexOf('-') < 0 && texte.indexOf(' vs ') < 0 && texte.length < 8) return;
+      out.forEach(function (p2) {
+        if (p2.url) return;
+        var a = _g45TvNorm(p2.a), b = _g45TvNorm(p2.b);
+        if (a && b && texte.indexOf(a) >= 0 && texte.indexOf(b) >= 0) {
+          p2.url = lien.indexOf('http') === 0 ? lien : ('https://tv-sports.fr' + lien);
+        }
+      });
+    });
+  } catch (e) {}
+
+  var vus = {}, uniq = [];
+  out.forEach(function (p) {
+    var k = _g45TvNorm(p.a) + '|' + _g45TvNorm(p.b);
+    if (vus[k]) return;
+    vus[k] = 1; uniq.push(p);
+  });
+
+  try { localStorage.setItem('g45_tv_prog', JSON.stringify({ t: Date.now(), l: uniq })); } catch (e) {}
+  _g45TvCache = uniq;
+  return uniq;
+}
+window.g45TvProgramme = g45TvProgramme;
+
+/* Retrouve la chaine d'un match a partir des deux equipes. On EXIGE les DEUX
+   pour eviter d'attribuer la chaine d'un autre match du meme club. */
+function g45TvPourMatch(eqA, eqB) {
+  var l = _g45TvCache || [];
+  if (!l.length) return '';
+  var A = _g45TvNorm(eqA), B = _g45TvNorm(eqB);
+  /* BUG : le filtre « plus de 3 lettres » supprimait PSG, OL, OM, RCL… donc le
+     match ne pouvait JAMAIS etre trouve pour ces clubs. On garde des 3 lettres,
+     et si tout est filtre on retombe sur le nom complet. */
+  var court = function (x) {
+    var m = x.split(' ').filter(function (w) { return w.length >= 3; });
+    return m.length ? m : [x];
+  };
+  var mA = court(A), mB = court(B);
+  var hit = l.filter(function (p) {
+    var pa = _g45TvNorm(p.a), pb = _g45TvNorm(p.b);
+    var okA = mA.some(function (w) { return pa.indexOf(w) >= 0 || pb.indexOf(w) >= 0; });
+    var okB = mB.some(function (w) { return pa.indexOf(w) >= 0 || pb.indexOf(w) >= 0; });
+    return okA && okB;
+  })[0];
+  return hit ? hit.tv : '';
+}
+window.g45TvPourMatch = g45TvPourMatch;
+
+/* Meme recherche, mais rend l'entree complete (chaine + lien vers le direct). */
+function g45TvInfosMatch(eqA, eqB) {
+  var l = _g45TvCache || [];
+  if (!l.length) return null;
+  var A = _g45TvNorm(eqA), B = _g45TvNorm(eqB);
+  var court = function (x) {
+    var m = x.split(' ').filter(function (w) { return w.length >= 3; });
+    return m.length ? m : [x];
+  };
+  var mA = court(A), mB = court(B);
+  return l.filter(function (p) {
+    var pa = _g45TvNorm(p.a), pb = _g45TvNorm(p.b);
+    var okA = mA.some(function (w) { return pa.indexOf(w) >= 0 || pb.indexOf(w) >= 0; });
+    var okB = mB.some(function (w) { return pa.indexOf(w) >= 0 || pb.indexOf(w) >= 0; });
+    return okA && okB;
+  })[0] || null;
+}
+window.g45TvInfosMatch = g45TvInfosMatch;
+
+/* ═══ LECTEUR YOUTUBE INTÉGRÉ ═══
+   Le bouton « voir » ouvrait la page du site, qui renvoie vers un abonnement
+   payant : sans interet. En revanche, quand le match est diffuse GRATUITEMENT
+   sur YouTube — les amicaux d'ete, souvent —, on peut le lire directement ici.
+
+   L'identifiant de la video n'est pas dans la liste du jour : il faut ouvrir la
+   page du match. UNE requete, au clic seulement, jamais en arriere-plan.
+   Le CSP n'autorise QUE youtube.com en cadre : aucune autre origine ne peut
+   s'inserer dans l'application. */
+var _g45YtCache = {};
+
+async function g45YtIdDepuisPage(url) {
+  if (!url) return '';
+  if (_g45YtCache[url] !== undefined) return _g45YtCache[url];
+  var id = '';
+  try {
+    var chemin = String(url).replace(/^https?:\/\/[^/]+/, '');
+    var r = await fetch(FD_PROXY + '?host=tvsports&path=' + encodeURIComponent(chemin));
+    if (r.ok) {
+      var t = await r.text();
+      /* Trois ecritures possibles selon l'integration : embed, lien court, ou
+         identifiant nu dans un attribut de donnees. */
+      var m = t.match(/youtube(?:-nocookie)?\.com\/embed\/([A-Za-z0-9_-]{11})/)
+           || t.match(/youtu\.be\/([A-Za-z0-9_-]{11})/)
+           || t.match(/["'](?:videoId|data-video|youtube[-_]?id)["']?\s*[:=]\s*["']([A-Za-z0-9_-]{11})["']/);
+      if (m) id = m[1];
+    }
+  } catch (e) {}
+  _g45YtCache[url] = id;
+  return id;
+}
+window.g45YtIdDepuisPage = g45YtIdDepuisPage;
+
+async function g45RegarderYT(url, titre) {
+  var mo = document.createElement('div');
+  mo.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:100000;display:flex;align-items:center;justify-content:center;padding:12px;';
+  mo.onclick = function (e) { if (e.target === mo) mo.remove(); };
+  mo.innerHTML = '<div style="width:100%;max-width:900px;">'
+    + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;color:#e6ecf5;font-size:13px;font-weight:800;">'
+    + '<span style="flex:1;">' + (titre || 'Direct') + '</span>'
+    + '<button onclick="this.closest(\'div\').parentNode.parentNode.remove()" style="background:none;border:none;color:#8899aa;font-size:22px;cursor:pointer;">\u2715</button></div>'
+    + '<div id="g45-yt-box" style="color:#8899aa;font-size:12px;text-align:center;padding:24px;">\u23f3 Recherche du flux\u2026</div></div>';
+  document.body.appendChild(mo);
+
+  var id = await g45YtIdDepuisPage(url);
+  var box = document.getElementById('g45-yt-box');
+  if (!box) return;
+  if (!id) {
+    box.innerHTML = 'Aucune vid\u00e9o YouTube trouv\u00e9e sur cette page.<br>'
+      + '<a href="' + url + '" target="_blank" rel="noopener" style="color:#4d84ff;">Ouvrir la page du match \u2197</a>';
+    return;
+  }
+  box.outerHTML = '<div style="position:relative;padding-top:56.25%;border-radius:12px;overflow:hidden;">'
+    + '<iframe src="https://www.youtube.com/embed/' + id + '?autoplay=1" allow="autoplay; encrypted-media; picture-in-picture" '
+    + 'allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0;"></iframe></div>';
+}
+window.g45RegarderYT = g45RegarderYT;
+
+/* Diagnostic : montre ce qui a ete extrait, ou l'echec exact. */
+async function g45TvDiag() {
+  var l = await g45TvProgramme(true);
+  if (!l.length) {
+    var cf = false;
+    try { cf = !!(JSON.parse(localStorage.getItem('g45_tv_prog') || '{}').cf); } catch (e2) {}
+    if (cf) {
+      alert('\ud83d\udee1\ufe0f tv-sports.fr renvoie une page de v\u00e9rification Cloudflare.\n\n'
+        + 'L\'adresse IP du Worker est filtr\u00e9e : le lecteur ne peut pas fonctionner tant que c\'est le cas.\n'
+        + 'La table par comp\u00e9tition prend le relais automatiquement.');
+      return l;
+    }
+    console.warn('Aucun programme extrait. Causes possibles : hote tvsports absent du Worker, page vide, ou structure inattendue.');
+    alert('Aucun programme TV extrait.\n\nV\u00e9rifie que l\'h\u00f4te « tvsports » a bien \u00e9t\u00e9 ajout\u00e9 au Worker.\nD\u00e9tail dans la console.');
+    return l;
+  }
+  console.table(l.slice(0, 30));
+  alert(l.length + ' diffusions extraites.\nDetail dans la console (console.table).');
+  return l;
+}
+window.g45TvDiag = g45TvDiag;
