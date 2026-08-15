@@ -35937,7 +35937,12 @@ async function g45DirectMesEquipes(silencieux) {
             p.push(pastille(dedans, coul, fond));
           }
 
-          if (m.detail && !/scheduled/i.test(m.detail)) p.push(pastille(m.detail, '#6b7a99'));
+          /* Le `detail` d'ESPN contient souvent la date au format americain
+             (« 8/15 - 6:40 PM EDT ») : redondant avec la pastille de date, et
+             illisible pour un francais. On ne garde que ce qui APPREND quelque
+             chose — « Final/10 », « Report\u00e9 », une manche en cours. */
+          var inutile = /scheduled|\d{1,2}\/\d{1,2}|\b(AM|PM)\b|E[DS]T|\bET\b/i;
+          if (m.detail && !inutile.test(m.detail)) p.push(pastille(m.detail, '#6b7a99'));
 
           return '<div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:center;margin-top:4px;">' + p.join('') + '</div>';
         })()
