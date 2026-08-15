@@ -1143,14 +1143,10 @@
 
 
 <!-- FENOTTE45 : app.js est injecte par auth-guard.js APRES authentification.
-     Ne pas remettre <script src="app.js"> ici : app.js demarrerait avant le
-     remappage de g45v5 -> g45v5__fen, et l'etat de la prod serait lu (meme
-     origine github.io, localStorage partage entre /gones45/ et /fenotte45/).
-     social.js reste un script classique, donc execute AVANT.
-     Le ?v= est OBLIGATOIRE : le service worker n'intercepte pas ces fichiers,
-     le navigateur sert donc son cache HTTP. A CHANGER a chaque deploiement. -->
-<script src="social.js?v=20260814e"></script>
-<script type="module" src="auth-guard.js?v=20260814e"></script>
+     Ne pas remettre <script src="app.js"> ici. Le ?v= doit changer a CHAQUE
+     deploiement : le service worker n'intercepte pas ces fichiers. -->
+<script src="social.js?v=20260815a"></script>
+<script type="module" src="auth-guard.js?v=20260815a"></script>
 
 
 

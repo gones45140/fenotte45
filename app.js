@@ -5526,7 +5526,7 @@ async function githubGetStats() {
     });
     if(r.status===404) return {data:{}, sha:null};
     var d = await r.json();
-    var data = JSON.parse(atob(d.content.split('\n').join('')));
+    var data = JSON.parse(_g45b64utf8(d.content));   /* UTF-8 : voir _g45b64utf8 */
     return {data:data, sha:d.sha};
   } catch(e) { console.warn('GitHub read error:', e); return null; }
 }
@@ -11825,7 +11825,7 @@ async function githubGetStats() {
     });
     if(r.status===404) return {data:{}, sha:null};
     var d = await r.json();
-    var data = JSON.parse(atob(d.content.split('\n').join('')));
+    var data = JSON.parse(_g45b64utf8(d.content));   /* UTF-8 : voir _g45b64utf8 */
     return {data:data, sha:d.sha};
   } catch(e) { console.warn('GitHub read error:', e); return null; }
 }
@@ -13810,6 +13810,7 @@ async function loadFdSquad(el, nom, teamId, noTerrain, terrainOnly) {
       /* Reset de la SAISON entiere, toutes equipes, avec sauvegarde prealable. */
       html += '<button id="btn-rattr-'+uid+'" onclick="g45RattrapageJournees(\''+uid+'\',\''+nom+'\')" style="display:flex;align-items:center;gap:4px;padding:4px 8px;border-radius:6px;border:1px solid rgba(34,211,238,.35);background:rgba(34,211,238,.10);color:#22d3ee;font-size:9px;font-weight:700;cursor:pointer;" title="Recupere les stats journee par journee (1 requete par match, budget quotidien)">\ud83d\udcc5 Rattrapage J</button>';
       html += '<span style="font-size:8.5px;color:var(--t3);align-self:center;" title="Requetes api-sports consommees aujourd\'hui">'+g45ApisConso()+'/'+g45ApisPlafond()+'</span>';
+      html += '<button onclick="g45ReparerStats()" title="Repare les accents et emojis abimes dans la Memoire stats" style="display:flex;align-items:center;gap:4px;padding:4px 8px;border-radius:6px;border:1px solid rgba(167,139,250,.35);background:rgba(167,139,250,.10);color:#a78bfa;font-size:9px;font-weight:700;cursor:pointer;">\ud83e\uddf9 R\u00e9parer les accents</button>';
       html += '<button onclick="g45ResetSaisonToutes()" style="display:flex;align-items:center;gap:4px;padding:4px 8px;border-radius:6px;border:1px solid rgba(255,120,80,.35);background:rgba(255,120,80,.10);color:#ff9a6b;font-size:9px;font-weight:700;cursor:pointer;" title="Efface les stats de TOUTE la saison selectionnee, toutes equipes. Sauvegarde telechargee avant.">\ud83e\uddf9 Reset saison</button>';
       html += '<button onclick="g45RestaurerSaison()" style="display:flex;align-items:center;gap:4px;padding:4px 8px;border-radius:6px;border:1px solid rgba(120,160,255,.3);background:rgba(120,160,255,.10);color:#8fb2ff;font-size:9px;font-weight:700;cursor:pointer;" title="Restaure une sauvegarde JSON">\u21a9\ufe0f Restaurer</button>';
       html += '<button onclick="resetTeamStats(\''+nom+'\')" style="display:flex;align-items:center;gap:4px;padding:4px 8px;border-radius:6px;border:1px solid rgba(255,69,69,.3);background:rgba(255,69,69,.1);color:#ff7b7b;font-size:9px;font-weight:700;cursor:pointer;" title="Effacer les stats de cette equipe">Reset</button>'; }
@@ -20161,6 +20162,69 @@ async function loadCalendrier() {
       });
     });
   }
+
+  /* ═══ ÉQUIPES SUIVIES HORS FOOTBALL ═══
+     Le pipeline ci-dessus resout l'equipe par son NOM, ce qui ne marche qu'en
+     football. Pour la NBA, la NHL, la NFL, la MLB ou la NRL, on prend l'autre
+     chemin : le SCOREBOARD du championnat sur une fenetre de dates.
+
+     C'est meme moins couteux — UNE requete par championnat couvre toutes les
+     equipes suivies dedans, la ou le chemin football en demande une a deux PAR
+     EQUIPE. On dispose de l'identifiant ESPN et du slug dans `state.suiviEq`,
+     donc aucune resolution de nom, donc aucun risque de confusion (le piege
+     Columbus/Lyon). */
+  try {
+    var _grpSui = {};
+    (typeof g45SuiviEqGet === 'function' ? g45SuiviEqGet() : []).forEach(function(t){
+      var sp = t.sport || 'soccer';
+      if (sp === 'soccer') return;                 /* deja traite plus haut */
+      var k = sp + '|' + t.league;
+      (_grpSui[k] = _grpSui[k] || { sp: sp, lg: t.league, ids: {}, noms: {} });
+      _grpSui[k].ids[String(t.id)] = 1;
+      _grpSui[k].noms[String(t.id)] = t.nom;
+    });
+
+    var _fmtJ = function(d){ return d.getFullYear() + String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0'); };
+    var _d1 = new Date(Date.now() - 2*3600000), _d2 = new Date(Date.now() + 21*86400000);
+    var _cles = Object.keys(_grpSui).slice(0, 6);   /* plafond : 6 requetes maximum */
+
+    for (var _gi = 0; _gi < _cles.length; _gi++) {
+      var _g = _grpSui[_cles[_gi]];
+      var _js = null;
+      try {
+        var _r = await fetch('https://site.api.espn.com/apis/site/v2/sports/' + _g.sp + '/' + _g.lg
+                             + '/scoreboard?dates=' + _fmtJ(_d1) + '-' + _fmtJ(_d2) + '&limit=400');
+        if (!_r.ok) continue;
+        _js = await _r.json();
+      } catch(e) { continue; }
+
+      ((_js && _js.events) || []).forEach(function(e){
+        var cp = (e.competitions && e.competitions[0]) || {};
+        var cps = cp.competitors || [];
+        var moi = null, autre = null;
+        cps.forEach(function(x){
+          var xid = String((x.team && x.team.id) || x.id || '');
+          if (_g.ids[xid]) moi = x; else autre = x;
+        });
+        if (!moi || !autre) return;
+        var t = new Date(e.date).getTime();
+        if (isNaN(t) || t < nowTs) return;
+        var nm = function(x){ return (x.team && (x.team.shortDisplayName || x.team.displayName || x.team.name)) || '?'; };
+        allMatches.push({
+          date: e.date,
+          isDom: moi.homeAway === 'home',
+          adv: nm(autre),
+          ourName: _g.noms[String((moi.team && moi.team.id) || moi.id || '')] || nm(moi),
+          color: '#f0b020',                        /* teinte des equipes suivies */
+          comp: (_js.leagues && _js.leagues[0] && _js.leagues[0].name) || _g.lg,
+          compSlug: _g.lg,
+          venue: (cp.venue && cp.venue.fullName) || '',
+          suivi: true,
+          id: String(e.id)
+        });
+      });
+    }
+  } catch(e) { console.warn('agenda equipes suivies', e && e.message); }
 
   // + matchs suivis manuellement (sélection dans Résultats), même hors favoris
   _suivis.forEach(function(s){
@@ -27418,6 +27482,20 @@ async function _g45CryptoKey(pass, salt){
   return crypto.subtle.deriveKey({name:'PBKDF2', salt:salt, iterations:120000, hash:'SHA-256'}, km, {name:'AES-GCM', length:256}, false, ['encrypt','decrypt']);
 }
 function _g45b64(buf){ var b=new Uint8Array(buf),s=''; for(var i=0;i<b.length;i++) s+=String.fromCharCode(b[i]); return btoa(s); }
+/* ═══ BASE64 → UTF-8 ═══
+   `atob` rend une chaine d'OCTETS, pas du texte : chaque octet devient un
+   caractere. Un « é » stocke en UTF-8 (0xC3 0xA9) ressort donc en « Ã© », et un
+   emoji sur 4 octets en quatre caracteres illisibles — l'« ecriture egyptienne »
+   vue le 15/08 dans la Memoire stats.
+   L'ecriture, elle, encode correctement (`btoa(unescape(encodeURIComponent(x)))`),
+   donc seule la LECTURE etait fautive. Trois endroits l'oubliaient. */
+function _g45b64utf8(b64) {
+  var brut = atob(String(b64 || '').split('\n').join(''));
+  try { return decodeURIComponent(escape(brut)); }
+  catch (e) { return brut; }   /* deja du texte simple : on ne casse rien */
+}
+window._g45b64utf8 = _g45b64utf8;
+
 function _g45unb64(str){ var bin=atob(str),a=new Uint8Array(bin.length); for(var i=0;i<bin.length;i++) a[i]=bin.charCodeAt(i); return a; }
 async function _g45EncryptState(obj, pass){
   var salt=crypto.getRandomValues(new Uint8Array(16)), iv=crypto.getRandomValues(new Uint8Array(12));
@@ -28199,7 +28277,7 @@ async function g45StatsGithubGet(){
   try{
     var r=await fetch('https://api.github.com/repos/'+GITHUB_OWNER+'/'+GITHUB_REPO+'/contents/'+G45_STATS_FILE,{headers:{'Authorization':'token '+token,'Accept':'application/vnd.github.v3+json'}});
     if(r.status===404) return {arr:[], sha:null};
-    var d=await r.json(); var arr=JSON.parse(atob(d.content.split('\n').join(''))); if(!Array.isArray(arr)) arr=[];
+    var d=await r.json(); var arr=JSON.parse(_g45b64utf8(d.content));   /* UTF-8 : accents et emojis */ if(!Array.isArray(arr)) arr=[];
     return {arr:arr, sha:d.sha};
   }catch(e){ console.warn('stats github read', e); return null; }
 }
@@ -35328,8 +35406,7 @@ function g45SuiviEqToggle(nom, id, slug, sport, ico, logo, ev) {
       try { localStorage.setItem('g45_teams_perso', JSON.stringify(p)); } catch (e) {}
     }
   } catch (e) { console.warn('suivi equipe', e && e.message); }
-  var tc = document.getElementById('t-compet');
-  if (tc && tc.classList && tc.classList.contains('active') && typeof loadCompetTab === 'function') loadCompetTab();
+  if (_g45Visible('t-compet') && typeof loadCompetTab === 'function') loadCompetTab();
 }
 window.g45SuiviEqToggle = g45SuiviEqToggle;
 
@@ -35389,12 +35466,16 @@ window.g45SuiviEqRender = g45SuiviEqRender;
 async function loadSuiviesTab() {
   var el = document.getElementById('t-suivies');
   if (!el) return;
-  el.innerHTML = '<div class="sec" style="margin-top:0;">\u2b50 \u00c9quipes suivies</div>'
+  el.innerHTML = '<div class="sec" style="margin-top:0;">\ud83d\udd34 Le direct de mes \u00e9quipes</div>'
+    + '<div style="font-size:10px;color:var(--t3);margin-bottom:8px;">Mur ET \u00e9quipes suivies, tous sports \u00b7 une requ\u00eate par championnat.</div>'
+    + '<div id="g45-direct-body" class="fc" style="margin-bottom:14px;"></div>'
+    + '<div class="sec" style="margin-top:0;">\u2b50 \u00c9quipes suivies</div>'
     + '<div style="font-size:10px;color:var(--t3);line-height:1.6;margin-bottom:10px;">'
     + 'Suivi de consultation, ind\u00e9pendant du mur : aucun pari, aucun palier, aucune statistique. '
     + 'L\'\u00e9toile \u2606 se trouve dans Comp\u00e9titions \u2192 \u00c9quipes.</div>'
     + '<div id="g45-suivies-body" class="fc"></div>';
   await g45SuiviEqRender(document.getElementById('g45-suivies-body'));
+  g45DirectMesEquipes();          /* asynchrone : la liste s'affiche sans attendre */
 }
 window.loadSuiviesTab = loadSuiviesTab;
 
@@ -35403,6 +35484,701 @@ window.loadSuiviesTab = loadSuiviesTab;
 var _g45SuiviEqToggleBase = g45SuiviEqToggle;
 window.g45SuiviEqToggle = function () {
   _g45SuiviEqToggleBase.apply(null, arguments);
-  var tSui = document.getElementById('t-suivies');
-  if (tSui && tSui.classList && tSui.classList.contains('active')) loadSuiviesTab();
+  if (_g45Visible('t-suivies')) loadSuiviesTab();
 };
+
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   🔴 DIRECT DE MES ÉQUIPES — mur + suivies, tous sports (14/08/2026)
+   ───────────────────────────────────────────────────────────────────────────
+   Le direct existait par COMPÉTITION (Compétitions → une ligue → Direct) et par
+   ÉQUIPE (fiche → Live). Rien ne rassemblait « mes équipes » : suivre le Bayern,
+   les Roosters et les Celtics un soir de match imposait trois écrans.
+
+   COÛT : une requête par CHAMPIONNAT concerné, pas par équipe. Le scoreboard du
+   jour rend tous les matchs de la ligue, on filtre ensuite sur nos équipes.
+   Rafraîchissement toutes les 45 s UNIQUEMENT tant que l'onglet est visible et
+   qu'un match est en cours — sinon on arrête, inutile d'interroger ESPN toute
+   la nuit.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* PIEGE CORRIGE LE 15/08 : `showTab` masque les onglets avec `style.display`,
+   il ne pose AUCUNE classe « active ». Tous mes tests `classList.contains('active')`
+   etaient donc toujours faux — les sous-onglets des Outils ne s'affichaient jamais
+   et le direct ne se rafraichissait pas. */
+function _g45Visible(id) {
+  var el = document.getElementById(id);
+  return !!(el && el.style.display !== 'none' && el.offsetParent !== null);
+}
+window._g45Visible = _g45Visible;
+
+var _g45DirTimer = null;
+
+/* ═══ VISUELS D'ÉQUIPE (façon Winamax) ═══
+   TheSportsDB — deja utilise par « Enrichir les logos » — sert des visuels
+   larges : `strTeamBanner` (bandeau 1000x185, taille ideale pour une carte),
+   `strFanart1..4` (photos d'ambiance) et `strStadiumThumb`.
+
+   COUT : UNE requete par equipe, UNE SEULE FOIS. Le resultat est mis en cache
+   DEFINITIVEMENT — un visuel de club ne change pas d'une semaine a l'autre — et
+   un echec est memorise 30 jours pour ne pas re-interroger a chaque affichage
+   une equipe qu'ils ne connaissent pas.
+
+   On ne demande QUE les equipes reellement affichees a l'ecran, deux au maximum
+   par rafraichissement : le direct se redessine toutes les 45 s, et sans cette
+   limite un soir de multiplex declencherait vingt requetes par minute. */
+var _G45_FANART = 'g45_fanart_';
+var _g45FanEnCours = 0;
+
+/* ═══ VISUELS PERSONNELS ═══
+   Antoine depose ses propres images dans le depot, sous `images/equipes/`.
+   Priorite absolue sur TheSportsDB : c'est SON choix, il gagne.
+
+   POURQUOI PAS LE localStorage : une image en base64 pese 200 a 600 ko, soit
+   plus que tout son historique de paris. Le quota a deja provoque DEUX pertes
+   de donnees (30/07 et 04/08). Les images vivent donc dans le depot, servies
+   par le CDN de GitHub Pages, partagees entre appareils et avec ses amis.
+
+   CONVENTION DE NOM : nom de l'equipe normalise (minuscules, sans accents ni
+   espaces) + .jpg — « Real Madrid » -> images/equipes/realmadrid.jpg.
+   Aucun fichier de configuration a tenir : deposer le fichier suffit.
+
+   L'existence est testee UNE FOIS par equipe puis memorisee : une image trouvee
+   l'est definitivement, une absence est reessayee au bout de 7 jours (le temps
+   qu'il en ajoute). Sans ce cache, chaque rafraichissement du direct produirait
+   une rafale de 404. */
+var _G45_PERSO_IMG = 'g45_img_perso_';
+var _G45_PERSO_DIR = 'images/equipes/';
+
+function _g45ImgPersoLire(nom) {
+  try {
+    var o = JSON.parse(localStorage.getItem(_G45_PERSO_IMG + _g45SgNorm(nom)) || 'null');
+    if (!o) return undefined;
+    if (!o.u && (Date.now() - (o.t || 0)) > 7 * 86400000) return undefined;
+    return o.u || '';
+  } catch (e) { return undefined; }
+}
+
+function _g45ImgPersoTester(nom) {
+  var url = _G45_PERSO_DIR + _g45SgNorm(nom) + '.jpg';
+  return new Promise(function (res) {
+    var im = new Image();
+    im.onload = function () {
+      try { localStorage.setItem(_G45_PERSO_IMG + _g45SgNorm(nom), JSON.stringify({ u: url, t: Date.now() })); } catch (e) {}
+      res(url);
+    };
+    im.onerror = function () {
+      try { localStorage.setItem(_G45_PERSO_IMG + _g45SgNorm(nom), JSON.stringify({ u: '', t: Date.now() })); } catch (e) {}
+      res('');
+    };
+    im.src = url;
+  });
+}
+
+function _g45FanLire(nom) {
+  try {
+    var o = JSON.parse(localStorage.getItem(_G45_FANART + _g45SgNorm(nom)) || 'null');
+    if (!o) return undefined;                       /* jamais demande */
+    if (!o.u && (Date.now() - (o.t || 0)) > 30 * 86400000) return undefined;  /* echec perime */
+    return o.u || '';                               /* '' = connu sans visuel */
+  } catch (e) { return undefined; }
+}
+
+async function _g45FanChercher(nom) {
+  var url = '';
+  try {
+    var r = await fetch('https://www.thesportsdb.com/api/v1/json/3/searchteams.php?t=' + encodeURIComponent(nom));
+    if (r.ok) {
+      var j = await r.json();
+      var t = (j && j.teams && j.teams[0]) || null;
+      if (t) {
+        /* Ordre de preference : bandeau large, puis ambiance, puis stade. */
+        url = t.strTeamBanner || t.strFanart1 || t.strFanart2 || t.strStadiumThumb || '';
+      }
+    }
+  } catch (e) {}
+  try { localStorage.setItem(_G45_FANART + _g45SgNorm(nom), JSON.stringify({ u: url, t: Date.now() })); } catch (e) {}
+  return url;
+}
+
+/* Complete les visuels manquants puis redessine, sans bloquer l'affichage. */
+async function _g45FanCompleter(noms) {
+  if (_g45FanEnCours) return false;
+  var maj = false;
+  _g45FanEnCours = 1;
+
+  /* 1. Images personnelles d'abord : simple chargement d'image depuis le depot,
+     aucune API, aucun quota. On les teste TOUTES, c'est gratuit. */
+  var perso = noms.filter(function (n) { return _g45ImgPersoLire(n) === undefined; });
+  for (var p2 = 0; p2 < perso.length && p2 < 8; p2++) {
+    if (await _g45ImgPersoTester(perso[p2])) maj = true;
+  }
+
+  /* 2. TheSportsDB seulement pour celles qui n'ont PAS d'image personnelle. */
+  var aFaire = noms.filter(function (n) {
+    return !_g45ImgPersoLire(n) && _g45FanLire(n) === undefined;
+  }).slice(0, 2);
+  for (var i = 0; i < aFaire.length; i++) { await _g45FanChercher(aFaire[i]); maj = true; }
+
+  _g45FanEnCours = 0;
+  return maj;
+}
+
+/* Outil de diagnostic : quel visuel est utilise pour une equipe, et sous quel
+   nom de fichier deposer le sien. */
+window.g45VisuelInfo = function (nom) {
+  var f = _G45_PERSO_DIR + _g45SgNorm(nom) + '.jpg';
+  console.log('Equipe   : ' + nom);
+  console.log('Fichier a deposer : ' + f);
+  console.log('Image perso       : ' + (_g45ImgPersoLire(nom) || '(aucune)'));
+  console.log('TheSportsDB       : ' + (_g45FanLire(nom) || '(aucun)'));
+  return f;
+};
+
+/* L'animation de la pastille « live » est injectee ICI et non dans style.css :
+   ce fichier n'est pas livre dans les sessions, et une regle manquante donnerait
+   une pastille figee sans qu'aucune erreur ne le signale. */
+(function () {
+  if (document.getElementById('g45-dir-css')) return;
+  var st = document.createElement('style');
+  st.id = 'g45-dir-css';
+  st.textContent = '@keyframes g45pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.7)}}';
+  document.head.appendChild(st);
+})();
+
+/* Rassemble les équipes à surveiller : celles du mur ET les suivies.
+   Le mur ne stocke pas le championnat ; on le récupère dans `g45_teams_perso`,
+   alimenté par les clics depuis Compétitions et par la pose d'une étoile. */
+function _g45DirEquipes() {
+  var out = {}, perso = {};
+  try { perso = (typeof g45TeamsPerso === 'function') ? g45TeamsPerso() : {}; } catch (e) {}
+
+  (typeof g45SuiviEqGet === 'function' ? g45SuiviEqGet() : []).forEach(function (t) {
+    var k = (t.sport || 'soccer') + '|' + t.league;
+    (out[k] = out[k] || { sp: t.sport || 'soccer', lg: t.league, ids: {}, noms: {} });
+    out[k].ids[String(t.id)] = 1;
+    out[k].noms[String(t.id)] = t.nom;
+  });
+
+  try {
+    (state.u || []).forEach(function (u) {
+      if (!u || !u.n) return;
+      if (u.type === 'joueur') return;
+      var p = perso[String(u.n).toLowerCase().trim()];
+      if (!p || !p.league) return;              /* championnat inconnu : on saute */
+      var k = (p.sport || 'soccer') + '|' + p.league;
+      (out[k] = out[k] || { sp: p.sport || 'soccer', lg: p.league, ids: {}, noms: {} });
+      out[k].ids[String(p.id)] = 1;
+      out[k].noms[String(p.id)] = u.n;
+    });
+  } catch (e) {}
+  return out;
+}
+
+async function g45DirectMesEquipes(silencieux) {
+  var box = document.getElementById('g45-direct-body');
+  if (!box) return;
+  var grp = _g45DirEquipes();
+  var cles = Object.keys(grp).slice(0, 8);        /* plafond : 8 requêtes */
+  if (!cles.length) {
+    box.innerHTML = '<div style="font-size:11.5px;color:var(--t3);padding:12px;text-align:center;line-height:1.6;">'
+      + 'Aucune \u00e9quipe exploitable.<br><span style="opacity:.7;">Ouvre une \u00e9quipe depuis Comp\u00e9titions ou pose une \u00e9toile \u2606 : '
+      + 'c\'est ce qui enregistre son championnat.</span></div>';
+    return;
+  }
+  if (!silencieux) box.innerHTML = '<div style="padding:12px;color:var(--t3);font-size:11.5px;">\u23f3 Recherche des matchs\u2026</div>';
+
+  /* PLAGE DE DATES, PAS UN SEUL JOUR. N'interroger que la date du jour faisait
+     disparaitre un match a minuit pile — precisement quand on veut encore voir le
+     score. ESPN accepte `dates=debut-fin` dans la MEME requete : la veille et le
+     lendemain ne coutent donc rien de plus. Le lendemain sert aux matchs nocturnes
+     des ligues americaines, qui basculent de jour en heure francaise. */
+  var _fj = function (dd) { return dd.getFullYear() + String(dd.getMonth() + 1).padStart(2, '0') + String(dd.getDate()).padStart(2, '0'); };
+  var jour = _fj(new Date(Date.now() - 86400000)) + '-' + _fj(new Date(Date.now() + 86400000));
+  var LIMITE = Date.now() - 24 * 3600000;   /* un score reste affiche 24 h */
+  var trouves = [], enCours = 0;
+
+  /* ═══ FOOTBALL : UNE SEULE REQUETE, TOUTES COMPETITIONS ═══
+     PIEGE TROUVE LE 15/08 : on n'interrogeait que le CHAMPIONNAT de l'equipe
+     (`fra.1` pour le PSG), donc Lens-PSG en Trophee des Champions n'apparaissait
+     pas — pas plus qu'une Coupe de France ou une Ligue des Champions.
+     Le slug generique `all` renvoie TOUTES les competitions de football d'un
+     coup. On regroupe donc tout le football en UNE requete, au lieu d'une par
+     championnat : c'est a la fois plus complet ET moins couteux.
+     Les sports US et le rugby gardent leur championnat : ils n'ont pas de coupe
+     parallele, et `all` n'existe pas pour eux. */
+  var grpFoot = { sp: 'soccer', lg: 'all', ids: {}, noms: {} };
+  var aDuFoot = false;
+  cles.forEach(function (k) {
+    if (grp[k].sp !== 'soccer') return;
+    aDuFoot = true;
+    Object.keys(grp[k].ids).forEach(function (id) { grpFoot.ids[id] = 1; grpFoot.noms[id] = grp[k].noms[id]; });
+  });
+  var aInterroger = cles.filter(function (k) { return grp[k].sp !== 'soccer'; }).map(function (k) { return grp[k]; });
+  if (aDuFoot) aInterroger.unshift(grpFoot);
+
+  for (var i = 0; i < aInterroger.length; i++) {
+    var g = aInterroger[i], js = null;
+    try {
+      var r = await fetch('https://site.api.espn.com/apis/site/v2/sports/' + g.sp + '/' + g.lg + '/scoreboard?dates=' + jour + '&limit=1000');
+      if (!r.ok) continue;
+      js = await r.json();
+    } catch (e) { continue; }
+
+    ((js && js.events) || []).forEach(function (e) {
+      var cp = (e.competitions && e.competitions[0]) || {};
+      var cps = cp.competitors || [];
+      var moi = null, autre = null;
+      cps.forEach(function (x) {
+        var xid = String((x.team && x.team.id) || x.id || '');
+        if (g.ids[xid]) moi = x; else autre = x;
+      });
+      if (!moi || !autre) return;
+      var st = (cp.status && cp.status.type) || (e.status && e.status.type) || {};
+      var etat = st.state || '';
+      if (etat === 'in') enCours++;
+      var tMatch = Date.parse(e.date);
+      if (!isNaN(tMatch) && etat === 'post' && tMatch < LIMITE) return;   /* plus vieux que 24 h */
+      var nm = function (x) { return (x.team && (x.team.shortDisplayName || x.team.displayName)) || '?'; };
+      var sc = function (x) { var v = x.score; if (v && typeof v === 'object') v = v.value; return (v == null ? '' : v); };
+      /* Couleur officielle et logo : deja presents dans la reponse, donc gratuits.
+         C'est ce qui permet la carte facon Winamax sans une seule requete de plus. */
+      var col = function (x, dft) {
+        var c = (x.team && (x.team.color || x.team.alternateColor)) || '';
+        c = String(c).replace('#', '');
+        return /^[0-9a-f]{6}$/i.test(c) ? ('#' + c) : dft;
+      };
+      var lg2 = function (x) { return (x.team && (x.team.logo || (x.team.logos && x.team.logos[0] && x.team.logos[0].href))) || ''; };
+      /* Avec le slug `all`, le championnat reel est porte par l'EVENEMENT.
+         Sans ca, toutes les cartes de football afficheraient « all ». */
+      var lgReel = (e.league && (e.league.slug || e.league.abbreviation))
+                || (cp.league && (cp.league.slug || cp.league.abbreviation))
+                || g.lg;
+      var lgNom = (e.league && e.league.name) || (cp.league && cp.league.name) || lgReel;
+      trouves.push({
+        etat: etat, id: String(e.id), sp: g.sp, lg: lgReel, lgNom: lgNom,
+        moi: nm(moi), adv: nm(autre), dom: moi.homeAway === 'home',
+        cMoi: col(moi, '#4d84ff'), cAdv: col(autre, '#8899aa'),
+        lMoi: lg2(moi), lAdv: lg2(autre),
+        sMoi: sc(moi), sAdv: sc(autre),
+        horloge: (cp.status && cp.status.displayClock) || '',
+        periode: (cp.status && cp.status.period) || 0,
+        detail: st.shortDetail || st.detail || '',
+        date: e.date
+      });
+    });
+  }
+
+  /* En cours d'abord, puis à venir, puis terminés — l'ordre d'intérêt. */
+  var rang = { 'in': 0, 'pre': 1, 'post': 2 };
+  trouves.sort(function (a, b) { return (rang[a.etat] || 3) - (rang[b.etat] || 3) || (Date.parse(a.date) - Date.parse(b.date)); });
+
+  if (!trouves.length) {
+    box.innerHTML = '<div style="font-size:11.5px;color:var(--t3);padding:12px;text-align:center;">'
+      + 'Aucun match de tes \u00e9quipes depuis 24 h, ni aujourd\'hui.<br><span style="opacity:.7;">' + cles.length + ' championnat(s) consult\u00e9(s).</span></div>';
+    _g45DirStop();
+    return;
+  }
+
+  box.innerHTML = trouves.map(function (m) {
+    var dM = new Date(m.date);
+    var hier = dM.toDateString() !== new Date().toDateString();
+    var live = (m.etat === 'in'), fini = (m.etat === 'post');
+    var badge = live ? ('\ud83d\udd34 ' + (m.horloge || ('P' + m.periode)))
+              : (fini ? (hier ? 'Hier' : 'Termin\u00e9')
+              : ((hier ? dM.toLocaleDateString('fr-FR', { weekday: 'short' }) + ' ' : '')
+                 + dM.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })));
+    var colBadge = live ? '#ff4545' : (fini ? '#9fb0c7' : '#4d84ff');
+
+    /* CARTE FA\u00c7ON WINAMAX. Le degrade part de la couleur officielle de chaque
+       club vers le centre, assombri pour que le texte reste lisible quel que soit
+       le club — un fond Real Madrid est blanc, un fond Juventus est noir, et les
+       deux doivent rester lisibles avec le meme texte clair. */
+    /* Le visuel de MON equipe passe en fond, tres assombri pour que le score
+       reste lisible ; le degrade de couleurs reste par-dessus. Sans visuel
+       connu, on retombe exactement sur la carte precedente. */
+    var vis = _g45ImgPersoLire(m.moi) || _g45FanLire(m.moi);
+    var degrade = 'linear-gradient(100deg, ' + m.cMoi + '55 0%, rgba(12,17,29,.94) 42%, rgba(12,17,29,.94) 58%, ' + m.cAdv + '55 100%)';
+    var fond = vis
+      ? ('linear-gradient(100deg, ' + m.cMoi + '66 0%, rgba(10,14,26,.90) 45%, rgba(10,14,26,.90) 55%, ' + m.cAdv + '66 100%), url(\'' + vis + '\')')
+      : degrade;
+    var logo = function (url, cote) {
+      if (!url) return '';
+      return '<img src="' + url + '" loading="lazy" onerror="this.style.display=\'none\'" '
+        + 'style="position:absolute;' + cote + ':6px;top:50%;transform:translateY(-50%);height:52px;width:52px;'
+        + 'object-fit:contain;opacity:.22;filter:saturate(1.3);pointer-events:none;">';
+    };
+    var score = (m.etat === 'pre') ? '<span style="font-size:13px;color:#9fb0c7;">vs</span>'
+              : (m.sMoi + ' <span style="opacity:.45;">-</span> ' + m.sAdv);
+
+    return '<div onclick="_g45SgMatchDepuisDirect(\'' + m.id + '\',\'' + m.sp + '\',\'' + m.lg + '\')" '
+      + 'style="position:relative;overflow:hidden;margin-bottom:7px;border-radius:12px;cursor:pointer;'
+      + 'background:' + fond + ';background-size:cover;background-position:center;border:1px solid rgba(255,255,255,.08);'
+      + (live ? 'box-shadow:0 0 0 1px rgba(255,69,69,.35),0 2px 14px rgba(255,69,69,.12);' : '') + '">'
+      + logo(m.lMoi, 'left') + logo(m.lAdv, 'right')
+      + '<div style="position:relative;padding:11px 62px;text-align:center;">'
+      + '<div style="font-size:9px;font-weight:800;letter-spacing:.5px;color:' + colBadge + ';margin-bottom:3px;">'
+      + badge + (live ? ' <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#ff4545;animation:g45pulse 1.4s infinite;"></span>' : '') + '</div>'
+      + '<div style="font-size:12.5px;font-weight:800;color:#e6ecf5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'
+      + m.moi + ' <span style="color:#8899aa;font-weight:500;">' + (m.dom ? 'vs' : '@') + '</span> ' + m.adv + '</div>'
+      + '<div style="font-size:22px;font-weight:900;color:#fff;line-height:1.25;letter-spacing:-.5px;">' + score + '</div>'
+      + '<div style="font-size:8.5px;color:#8899aa;">' + (m.lgNom || m.lg) + (m.detail ? (' \u00b7 ' + m.detail) : '') + '</div>'
+      + '</div></div>';
+  }).join('')
+  + '<div style="font-size:9px;color:var(--t3);text-align:center;margin-top:6px;">'
+  + aInterroger.length + ' requ\u00eate(s) \u00b7 ' + (enCours ? 'rafra\u00eechissement auto toutes les 45 s' : 'aucun match en cours, rafra\u00eechissement arr\u00eat\u00e9') + '</div>';
+
+  /* Visuels manquants : on les cherche APRES avoir affiche, jamais avant —
+     l'ecran ne doit pas attendre une image decorative. */
+  try {
+    var noms = trouves.map(function (m) { return m.moi; });
+    _g45FanCompleter(noms).then(function (maj) {
+      if (maj) {
+        if (_g45Visible('t-suivies')) g45DirectMesEquipes(true);
+      }
+    });
+  } catch (e) {}
+
+  /* On ne relance QUE s'il y a du direct : sinon on interrogerait ESPN pour rien. */
+  _g45DirStop();
+  if (enCours) _g45DirTimer = setTimeout(function () {
+    if (_g45Visible('t-suivies') && document.visibilityState === 'visible') g45DirectMesEquipes(true);
+    else _g45DirStop();
+  }, 45000);
+}
+window.g45DirectMesEquipes = g45DirectMesEquipes;
+
+function _g45DirStop() { if (_g45DirTimer) { clearTimeout(_g45DirTimer); _g45DirTimer = null; } }
+window._g45DirStop = _g45DirStop;
+
+/* Ouvre le détail complet du match — celui des fiches équipe (cotes, analyse IA,
+   tendance du public, résumé vidéo). */
+function _g45SgMatchDepuisDirect(eid, sp, lg) {
+  _g45SgCtx = { sp: sp, lg: lg };
+  if (typeof _g45SgMatch === 'function') _g45SgMatch(eid);
+}
+window._g45SgMatchDepuisDirect = _g45SgMatchDepuisDirect;
+
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ONGLET OUTILS — RANGEMENT EN QUATRE SECTIONS (15/08/2026)
+   ───────────────────────────────────────────────────────────────────────────
+   32 blocs empiles a la suite, dont neuf champs de cles d'API et un simulateur
+   de lanceurs MLB qui n'a rien a faire la.
+
+   CHOIX TECHNIQUE : on ne DEPLACE PAS le HTML. Les blocs restent exactement ou
+   ils sont, avec leurs identifiants et leurs onclick intacts ; on se contente
+   de les MASQUER selon la section choisie. Deplacer 30 blocs dans index.html
+   aurait casse des references que rien n'aurait signalees avant l'usage.
+
+   Le classement se fait sur le TITRE de section, ou a defaut sur l'identifiant
+   du premier champ du bloc — les cles d'API n'ont pas de titre.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+var _G45_OUTILS_SEC = [
+  { id: 'app',    lab: '\u2699\ufe0f Application' },
+  { id: 'eq',     lab: '\u2795 \u00c9quipes' },
+  { id: 'cles',   lab: '\ud83d\udd11 Cl\u00e9s' },
+  { id: 'donnees',lab: '\ud83d\udcbe Donn\u00e9es' },
+  /* Plus de section Labo : les Lanceurs MLB sont deplaces dans l'onglet
+     Calculateur (t-calc), leur vraie place — c'est un simulateur de
+     rentabilite, pas un reglage. Voir _g45DeplacerLanceurs. */
+];
+var _g45OutilsSec = null;
+
+/* Classement d'un bloc. On lit d'abord le titre visible, puis les identifiants
+   qu'il contient — c'est ce qui permet de rattraper les blocs anonymes. */
+function _g45OutilsClasser(el, dernierTitre) {
+  var t = (dernierTitre || '').toLowerCase();
+  var html = el.innerHTML || '';
+  var ids = (html.match(/id="([^"]+)"/g) || []).join(' ').toLowerCase();
+
+  /* Ne devrait plus se presenter : le bloc est deplace au demarrage. Garde-fou
+     au cas ou le deplacement echoue — il retombe alors dans Application plutot
+     que de disparaitre. */
+  if (/lanceur/.test(t) || /g45-lc-/.test(ids)) return 'app';
+  /* Dropbox teste AVANT : son champ s'appelle `dbx-key-input`, donc la regle des
+     cles l'attrapait et separait le bloc de son titre « Backup & Config ». */
+  if (/dbx-/.test(ids)) return 'donnees';
+  if (/cl\u00e9|key|token/.test(t) || /-key-input|-token-input|odds-quota/.test(ids)) return 'cles';
+  if (/synchro|backup|export|sauvegarde|dropbox|dbx/.test(t) || /g45-sync|pdf-export|dbx-/.test(ids)) return 'donnees';
+  if (/\u00e9quipe|unit\u00e9|equipe/.test(t) || /u-search|u-nom|u-add/.test(ids)) return 'eq';
+  if (/apparence|notification|palier|mise/.test(t) || /bg-file|notif-|palier-|ap-off/.test(ids)) return 'app';
+  return 'app';   /* par defaut : reglages generaux */
+}
+
+function g45OutilsSection(sec) {
+  _g45OutilsSec = sec;
+  try { localStorage.setItem('g45_outils_sec', sec); } catch (e) {}
+  var hote = document.getElementById('t-outils');
+  if (!hote) return;
+
+  var titre = '';
+  Array.prototype.forEach.call(hote.children, function (el) {
+    if (el.id === 'g45-outils-nav') return;
+    var estTitre = el.className && String(el.className).indexOf('sec') >= 0;
+    if (estTitre) titre = (el.textContent || '').trim();
+    /* Un titre appartient au bloc qui le SUIT : on les classe ensemble, sinon
+       un intitule resterait seul au milieu d'une section qui n'est pas la sienne. */
+    var cat = _g45OutilsClasser(el, titre);
+    el.style.display = (cat === sec) ? '' : 'none';
+  });
+
+  var nav = document.getElementById('g45-outils-nav');
+  if (nav) Array.prototype.forEach.call(nav.children, function (b) {
+    var on = b.getAttribute('data-sec') === sec;
+    b.style.background = on ? 'rgba(77,132,255,.18)' : 'rgba(255,255,255,.04)';
+    b.style.color = on ? '#4d84ff' : 'var(--t3)';
+    b.style.borderColor = on ? 'rgba(77,132,255,.45)' : 'rgba(255,255,255,.08)';
+    b.style.fontWeight = on ? '800' : '600';
+  });
+}
+window.g45OutilsSection = g45OutilsSection;
+
+/* ═══ DEPLACEMENT DES LANCEURS MLB VERS LE CALCULATEUR ═══
+   Ici on DEPLACE vraiment les noeuds, contrairement au rangement des Outils qui
+   se contente de masquer. `appendChild` deplace l'element existant : identifiants,
+   contenu et gestionnaires d'evenements suivent, rien n'est recree. Rejouer le
+   HTML a la main aurait perdu les onclick poses par app.js.
+
+   Le bloc est fait de DEUX noeuds freres — le titre puis le panneau — comme tous
+   les blocs de l'appli. On deplace les deux, sinon le titre resterait orphelin
+   dans les Outils. */
+/* `swCalc` ne connait que ses cinq panneaux d'origine : on l'enveloppe pour
+   ajouter 'lc' sans toucher a la fonction elle-meme. */
+var _g45SwCalcOrig = (typeof swCalc === 'function') ? swCalc : null;
+window.swCalc = function (m) {
+  var lc = document.getElementById('calc-lc');
+  if (lc) lc.style.display = (m === 'lc') ? 'block' : 'none';
+  var bl = document.getElementById('ct-lc');
+  if (bl) bl.classList.toggle('on', m === 'lc');
+  if (m === 'lc') {
+    ['sb','dt','lay','vb','arjel'].forEach(function (p) {
+      var el = document.getElementById('calc-' + p); if (el) el.style.display = 'none';
+      var bt = document.getElementById('ct-' + p); if (bt) bt.classList.remove('on');
+    });
+    return;
+  }
+  if (_g45SwCalcOrig) _g45SwCalcOrig(m);
+};
+
+function _g45DeplacerLanceurs() {
+  var champ = document.getElementById('g45-lc-nom');
+  if (!champ) return;
+  var panneau = champ.closest ? champ.closest('#t-outils > *') : null;
+  var cible = document.getElementById('t-calc');
+  if (panneau && cible && panneau.parentNode !== cible) {
+    var titre = panneau.previousElementSibling;
+    if (titre && !(titre.className && String(titre.className).indexOf('sec') >= 0)) titre = null;
+    /* On enveloppe les deux noeuds dans un panneau de calculatrice : sans ca le
+       bloc restait affiche SOUS toutes les calculatrices a la fois, quelle que
+       soit celle choisie. */
+    var boite = document.createElement('div');
+    boite.id = 'calc-lc';
+    boite.style.display = 'none';
+    if (titre) boite.appendChild(titre);
+    boite.appendChild(panneau);
+    panneau.style.display = '';
+    cible.appendChild(boite);
+  }
+
+  /* Bouton dans la barre des calculatrices, a cote de Surebet et Lay. */
+  var barre = document.querySelector('#t-calc .calc-tabs');
+  if (barre && !document.getElementById('ct-lc')) {
+    var b = document.createElement('button');
+    b.className = 'ctbtn';
+    b.id = 'ct-lc';
+    b.textContent = '\u26be Lanceurs';
+    b.onclick = function () { swCalc('lc'); };
+    barre.appendChild(b);
+  }
+}
+window._g45DeplacerLanceurs = _g45DeplacerLanceurs;
+
+function g45OutilsRanger() {
+  _g45DeplacerLanceurs();   /* avant tout classement, sinon on masquerait un bloc parti */
+  var hote = document.getElementById('t-outils');
+  if (!hote || document.getElementById('g45-outils-nav')) return;
+
+  var nav = document.createElement('div');
+  nav.id = 'g45-outils-nav';
+  nav.style.cssText = 'display:flex;gap:5px;flex-wrap:wrap;margin:0 0 14px;';
+  nav.innerHTML = _G45_OUTILS_SEC.map(function (s) {
+    return '<button data-sec="' + s.id + '" onclick="g45OutilsSection(\'' + s.id + '\')" '
+      + 'style="flex:1;min-width:88px;padding:9px 6px;border-radius:9px;border:1px solid rgba(255,255,255,.08);'
+      + 'background:rgba(255,255,255,.04);color:var(--t3);font-size:10.5px;font-weight:600;cursor:pointer;">' + s.lab + '</button>';
+  }).join('');
+  hote.insertBefore(nav, hote.firstChild);
+
+  var mem = null;
+  try { mem = localStorage.getItem('g45_outils_sec'); } catch (e) {}
+  g45OutilsSection(mem || 'app');
+}
+window.g45OutilsRanger = g45OutilsRanger;
+
+/* L'onglet Outils est deja rendu dans index.html : on range des qu'il s'affiche.
+   Le clic sur l'entree de menu ne passe par aucune fonction qu'on puisse
+   envelopper, d'où cette verification legere sur les clics. */
+document.addEventListener('click', function () {
+  setTimeout(function () {
+    if (_g45Visible('t-outils')) g45OutilsRanger();
+  }, 120);
+});
+
+/* Le deplacement ne doit PAS dependre d'une visite dans les Outils : sinon le
+   simulateur resterait invisible dans le Calculateur tant qu'Antoine n'y serait
+   pas passe. On le fait au demarrage. */
+setTimeout(_g45DeplacerLanceurs, 1200);
+setTimeout(_g45DeplacerLanceurs, 4000);
+
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RÉPARATION DES TEXTES DOUBLEMENT ENCODÉS (15/08/2026)
+   ───────────────────────────────────────────────────────────────────────────
+   L'ECRITURE etait correcte : `btoa(unescape(encodeURIComponent(x)))`.
+   La LECTURE, elle, faisait un simple `atob` — donc « réussit » revenait en
+   « rÃ©ussit ». Ce texte abime etait ensuite RE-ENREGISTRE tel quel, et le cycle
+   ajoutait une couche a chaque passage : « rÃÂ©ussit », puis « rÃÂÃÂ©ussit ».
+
+   Le correctif de lecture arrete l'hemorragie mais ne repare pas l'existant :
+   les couches sont dans le fichier. On les retire donc en rejouant la
+   transformation inverse TANT QU'ELLE PROGRESSE, avec deux garde-fous :
+     - on s'arrete des qu'une passe echoue ou ne change rien ;
+     - on refuse un resultat qui contient un caractere de remplacement, signe
+       qu'on a decode une couche de trop.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+function g45Demojibake(txt) {
+  var s = String(txt == null ? '' : txt);
+  /* On rejoue l'INVERSE exact du bug : chaque caractere redevient un octet, et
+     ces octets sont relus comme de l'UTF-8. `decodeURIComponent(escape(x))`
+     echouait des la deuxieme couche — la sequence C3 C2 n'est pas un UTF-8
+     valide pour lui, alors que TextDecoder la traite correctement. */
+  for (var i = 0; i < 5; i++) {
+    if (!/[\u00c3\u00c2\u00e2]/.test(s)) break;          /* plus de signature */
+    var essai = null;
+    try {
+      var oct = new Uint8Array(s.length);
+      for (var k = 0; k < s.length; k++) {
+        var c = s.charCodeAt(k);
+        if (c > 255) { oct = null; break; }               /* deja du vrai texte */
+        oct[k] = c;
+      }
+      if (!oct) break;
+      essai = new TextDecoder('utf-8', { fatal: true }).decode(oct);
+    } catch (e) { break; }                                 /* couche de trop */
+    if (!essai || essai === s || essai.indexOf('\ufffd') >= 0) break;
+    s = essai;
+  }
+  return s;
+}
+window.g45Demojibake = g45Demojibake;
+
+/* Parcourt une structure et repare toutes ses chaines. */
+function _g45ReparerProfond(o) {
+  if (typeof o === 'string') return g45Demojibake(o);
+  if (Array.isArray(o)) return o.map(_g45ReparerProfond);
+  if (o && typeof o === 'object') {
+    var out = {};
+    Object.keys(o).forEach(function (k) { out[k] = _g45ReparerProfond(o[k]); });
+    return out;
+  }
+  return o;
+}
+
+/* Repare la Memoire stats : local d'abord, puis renvoi sur GitHub. */
+async function g45ReparerStats() {
+  /* On passe par les fonctions existantes plutot que par une cle en dur :
+     `G45_STATS_CACHE` peut changer, `g45StatsLocal` non. */
+  var avant = (typeof g45StatsLocal === 'function') ? g45StatsLocal() : [];
+  if (!Array.isArray(avant) || !avant.length) {
+    alert('Aucune stat en m\u00e9moire locale. Ouvre l\'onglet Stats une fois, puis relance.');
+    return;
+  }
+
+  var apres = _g45ReparerProfond(avant);
+  var nb = 0, exemples = [];
+  avant.forEach(function (x, i) {
+    var a = JSON.stringify(x), b = JSON.stringify(apres[i]);
+    if (a !== b) {
+      nb++;
+      if (exemples.length < 3) exemples.push('\u2022 ' + String(apres[i].texte || apres[i].t || '').slice(0, 60));
+    }
+  });
+
+  if (!nb) { alert('Rien \u00e0 r\u00e9parer : aucun texte ab\u00eem\u00e9 d\u00e9tect\u00e9.'); return; }
+  if (!confirm(nb + ' stat(s) \u00e0 r\u00e9parer sur ' + avant.length + '.\n\n' + exemples.join('\n')
+    + '\n\nLa version r\u00e9par\u00e9e sera enregistr\u00e9e localement puis envoy\u00e9e sur GitHub.')) return;
+
+  if (typeof g45StatsSetLocal === 'function') g45StatsSetLocal(apres);
+  var envoye = false;
+  try {
+    /* Il faut le `sha` du fichier distant pour l'ecraser, sinon GitHub refuse. */
+    if (typeof g45StatsGithubGet === 'function' && typeof g45StatsGithubSave === 'function') {
+      var dist = await g45StatsGithubGet();
+      envoye = await g45StatsGithubSave(apres, dist && dist.sha);
+    }
+  } catch (e) { console.warn('envoi stats', e); }
+  alert('\u2705 ' + nb + ' stat(s) r\u00e9par\u00e9e(s).\n'
+    + (envoye ? 'Envoy\u00e9es sur GitHub.' : '\u26a0\ufe0f Envoi GitHub non confirm\u00e9 \u2014 v\u00e9rifie ton token.'));
+  location.reload();
+}
+window.g45ReparerStats = g45ReparerStats;
+
+/* ═══ NETTOYAGE À LA LECTURE ═══
+   Le correctif d'encodage empeche d'ABIMER davantage, mais les couches deja
+   presentes restent dans le fichier : l'ecran continuait donc d'afficher des
+   hieroglyphes tant qu'Antoine n'avait pas lance la reparation.
+   On enveloppe donc la lecture : ce qui s'affiche est propre immediatement.
+   Le bouton « Reparer les accents » reste utile — c'est lui qui ECRIT la version
+   propre sur GitHub, donc qui repare pour ses amis et ses autres appareils. */
+if (typeof g45StatsLocal === 'function') {
+  var _g45StatsLocalOrig = g45StatsLocal;
+  window.g45StatsLocal = function () {
+    var arr = _g45StatsLocalOrig();
+    try { return _g45ReparerProfond(arr); } catch (e) { return arr; }
+  };
+}
+
+/* La source PRINCIPALE n'est pas le cache local mais GitHub : `g45StatsAdd`,
+   `g45StatsUpdate` et l'affichage passent tous par `g45StatsGithubGet`. Nettoyer
+   le seul cache local laissait donc les hieroglyphes a l'ecran. */
+if (typeof g45StatsGithubGet === 'function') {
+  var _g45StatsGhGetOrig = g45StatsGithubGet;
+  window.g45StatsGithubGet = async function () {
+    var o = await _g45StatsGhGetOrig();
+    if (o && Array.isArray(o.arr)) { try { o.arr = _g45ReparerProfond(o.arr); } catch (e) {} }
+    return o;
+  };
+}
+if (typeof g45StatsLoadPublic === 'function') {
+  var _g45StatsPubOrig = g45StatsLoadPublic;
+  window.g45StatsLoadPublic = async function () {
+    var a = await _g45StatsPubOrig();
+    try { return Array.isArray(a) ? _g45ReparerProfond(a) : a; } catch (e) { return a; }
+  };
+}
+
+/* ═══ LE VRAI COUPABLE : LE CHAMP SPORT ═══
+   Le sport est stocke AVEC son emoji (« \u26bd Football »). Un texte abime ne
+   correspond donc a AUCUNE option du menu deroulant, qui retombe sur vide — d'ou
+   « le sport revient en neutre au rafraichissement ». Et cette valeur vide,
+   reenregistree, ecrasait le sport correct.
+   On nettoie donc AUSSI a l'ECRITURE : plus rien d'abime n'entre en base. */
+if (typeof g45StatsSetLocal === 'function') {
+  var _g45StatsSetOrig = g45StatsSetLocal;
+  window.g45StatsSetLocal = function (arr) {
+    try { arr = _g45ReparerProfond(arr); } catch (e) {}
+    return _g45StatsSetOrig(arr);
+  };
+}
+if (typeof g45StatsGithubSave === 'function') {
+  var _g45StatsGhSaveOrig = g45StatsGithubSave;
+  window.g45StatsGithubSave = async function (arr, sha) {
+    try { arr = _g45ReparerProfond(arr); } catch (e) {}
+    return await _g45StatsGhSaveOrig(arr, sha);
+  };
+}

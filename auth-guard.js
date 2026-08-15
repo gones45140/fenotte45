@@ -3,7 +3,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { supabase, chargerEtat, sauverEtat, deconnexion,
-         sauverInstantane, listerInstantanes, lireInstantane } from './supabase.js?v=20260814e';
+         sauverInstantane, listerInstantanes, lireInstantane } from './supabase.js?v=20260815a';
 
 // ═══════════════════════════════════════════════════════════════
 // CLOISONNEMENT DU localStorage — À LIRE AVANT DE MODIFIER
@@ -415,7 +415,7 @@ window._g45ImporterEtat = (json) => { rawSet(CLE_ETAT_FEN, typeof json === 'stri
 msg('Démarrage de l\'application…');
 
 const s = document.createElement('script');
-s.src = './app.js?v=20260814e';   /* version : force le rechargement apres deploiement */
+s.src = './app.js?v=20260815a';   /* version : force le rechargement apres deploiement */
 
 s.onerror = () => {
   msg('❌ échec du chargement de app.js');
