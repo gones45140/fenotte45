@@ -35824,9 +35824,36 @@ async function g45DirectMesEquipes(silencieux) {
       /* Nom COMPLET pour la recherche d'image : « Reds » seul ramenait une equipe
          de MotoGP, « Cincinnati Reds » ramene la bonne. */
       var nmLong = function (x) { return (x.team && (x.team.displayName || x.team.name)) || ''; };
+
+      /* ═══ LANCEURS PARTANTS (MLB) ═══
+         ESPN les fournit dans `competitors[].probables` — je ne les lisais pas.
+         C'est pourtant l'information qui decide d'un pari au baseball : le
+         lanceur partant pese plus que l'equipe elle-meme.
+         Le bilan victoires-defaites est cherche dans plusieurs champs selon les
+         reponses ; s'il manque, on affiche le nom seul plutot que rien. */
+      var lanceur = function (x) {
+        var pr = (x.probables && x.probables[0]) || null;
+        if (!pr) return '';
+        var a = pr.athlete || {};
+        var nom = a.shortName || a.displayName || a.fullName || '';
+        if (!nom) return '';
+        var bilan = '';
+        var st = pr.statistics || a.statistics || [];
+        var v = null, d = null;
+        (Array.isArray(st) ? st : []).forEach(function (o) {
+          var n = String(o.name || o.abbreviation || '').toLowerCase();
+          if (n === 'wins' || n === 'w') v = o.displayValue != null ? o.displayValue : o.value;
+          if (n === 'losses' || n === 'l') d = o.displayValue != null ? o.displayValue : o.value;
+        });
+        if (v != null && d != null) bilan = ' (' + v + '-' + d + ')';
+        else if (a.summary) bilan = ' (' + a.summary + ')';
+        else if (pr.displayValue) bilan = ' (' + pr.displayValue + ')';
+        return nom + bilan;
+      };
       trouves.push({
         etat: etat, id: String(e.id), sp: g.sp, lg: lgReel, lgTv: lgTv, lgNom: lgNom,
         moi: nm(moi), moiLong: nmLong(moi) || nm(moi), adv: nm(autre), dom: moi.homeAway === 'home',
+        lcMoi: lanceur(moi), lcAdv: lanceur(autre),
         cMoi: col(moi, '#4d84ff'), cAdv: col(autre, '#8899aa'),
         lMoi: lg2(moi), lAdv: lg2(autre),
         sMoi: sc(moi), sAdv: sc(autre),
@@ -35941,6 +35968,12 @@ async function g45DirectMesEquipes(silencieux) {
              (« 8/15 - 6:40 PM EDT ») : redondant avec la pastille de date, et
              illisible pour un francais. On ne garde que ce qui APPREND quelque
              chose — « Final/10 », « Report\u00e9 », une manche en cours. */
+          /* Lanceurs : uniquement au baseball, et seulement tant que le match
+             n'est pas termine — apres, le score a remplace l'information. */
+          if (m.sp === 'baseball' && m.etat !== 'post' && (m.lcMoi || m.lcAdv)) {
+            p.push(pastille('\u26be ' + [m.lcMoi, m.lcAdv].filter(Boolean).join(' vs '), '#f0b020', 'rgba(240,176,32,.12)'));
+          }
+
           var inutile = /scheduled|\d{1,2}\/\d{1,2}|\b(AM|PM)\b|E[DS]T|\bET\b/i;
           if (m.detail && !inutile.test(m.detail)) p.push(pastille(m.detail, '#6b7a99'));
 
