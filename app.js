@@ -33648,6 +33648,10 @@ async function _g45SgMatch(eid) {
   try {
     if (typeof _renderGenericDetail === 'function') {
       await _renderGenericDetail(panel, _g45SgCtx.sp, _g45SgCtx.lg, eid);
+      /* Le detail generique est ecrit pour les sports US : il n'a pas de section
+         « moments forts ». En football, buteurs et passeurs sont l'information
+         principale — on les ajoute EN TETE du panneau. */
+      if (_g45SgCtx.sp === 'soccer') await _g45SgButeurs(panel, _g45SgCtx.lg, eid);
     } else {
       panel.innerHTML = '<div style="padding:20px;color:#ff6b6b;font-size:12px;text-align:center;">D\u00e9tail de match indisponible dans cette version.</div>';
     }
@@ -33656,6 +33660,52 @@ async function _g45SgMatch(eid) {
   }
 }
 window._g45SgMatch = _g45SgMatch;
+
+/* Buteurs, passeurs et cartons d'un match de football, lus dans le resume ESPN.
+   Une requete, uniquement a l'ouverture du detail. */
+async function _g45SgButeurs(panel, lg, eid) {
+  if (!panel) return;
+  var sum = null;
+  try {
+    var r = await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/' + lg + '/summary?event=' + eid);
+    if (!r.ok) return;
+    sum = await r.json();
+  } catch (e) { return; }
+
+  var evs = (sum && sum.keyEvents) || [];
+  if (!evs.length) return;
+
+  var lignes = [];
+  evs.forEach(function (g) {
+    var typ = ((g.type && g.type.text) || '').toLowerCase();
+    var but = (g.scoringPlay === true) || /goal/.test(typ);
+    var jaune = /yellow/.test(typ), rouge = /red/.test(typ);
+    if (!but && !jaune && !rouge) return;
+    var min = (g.clock && g.clock.displayValue) ? g.clock.displayValue : '';
+    var p0 = (g.participants && g.participants[0] && g.participants[0].athlete) || {};
+    var p1 = (g.participants && g.participants[1] && g.participants[1].athlete) || {};
+    var qui = p0.displayName || p0.shortName || '';
+    var passeur = p1.displayName || p1.shortName || '';
+    var csc = /own/.test(typ);
+    var eq = (g.team && (g.team.displayName || g.team.abbreviation)) || '';
+    var ico = but ? (csc ? '\u26bd\ufe0f' : '\u26bd') : (rouge ? '\ud83d\udfe5' : '\ud83d\udfe8');
+    lignes.push('<div style="display:flex;align-items:center;gap:8px;padding:5px 2px;border-bottom:1px solid rgba(255,255,255,.05);font-size:11.5px;">'
+      + '<div style="width:34px;color:var(--t3);font-size:10px;">' + (min || '') + '</div>'
+      + '<div style="width:18px;">' + ico + '</div>'
+      + '<div style="flex:1;min-width:0;"><b>' + (qui || '?') + '</b>' + (csc ? ' <span style="color:#ff8a8a;">(csc)</span>' : '')
+      + (passeur && but && !csc ? ('<span style="color:var(--t3);"> \u00b7 passe ' + passeur + '</span>') : '')
+      + '</div>'
+      + '<div style="font-size:9px;color:var(--t3);">' + eq + '</div></div>');
+  });
+  if (!lignes.length) return;
+
+  var bloc = document.createElement('div');
+  bloc.style.cssText = 'margin-bottom:12px;padding:10px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);';
+  bloc.innerHTML = '<div style="font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#4f5d88;margin-bottom:6px;">'
+    + '\u26bd Buteurs & passeurs</div>' + lignes.join('');
+  panel.insertBefore(bloc, panel.firstChild);
+}
+window._g45SgButeurs = _g45SgButeurs;
 
 function _g45SgRefresh() { if (typeof loadTeamSaisons === 'function') loadTeamSaisons(); }
 function _g45SgSaison(y) { _g45SgAn = y; _g45SgRefresh(); }
