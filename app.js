@@ -5088,7 +5088,7 @@ async function testGroqKey(){
   try{
     var r=await fetch('https://api.groq.com/openai/v1/chat/completions',{
       method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
-      body:JSON.stringify({model:'llama-3.3-70b-versatile',messages:[{role:'user',content:'OK'}],max_tokens:3})
+      body:JSON.stringify({model:g45GroqModele(),messages:[{role:'user',content:'OK'}],max_tokens:3})
     });
     var d=await r.json();
     if(d.choices&&d.choices[0]){if(st){st.innerText='✅ Clé valide !';st.style.color='var(--g)';}}
@@ -5189,7 +5189,7 @@ async function sendChat(){
     var r=await fetch('https://api.groq.com/openai/v1/chat/completions',{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
-      body:JSON.stringify({model:'llama-3.3-70b-versatile',messages:messages,temperature:0.3,max_tokens:400})
+      body:JSON.stringify({model:g45GroqModele(),messages:messages,temperature:0.3,max_tokens:400})
     });
     var d=await r.json();
     var t=document.getElementById('chat-typing');if(t)t.remove();
@@ -5450,7 +5450,7 @@ async function sendChatPC(){
     var messages=[{role:'system',content:sysPC},{role:'user',content:msg}];
     var r=await fetch('https://api.groq.com/openai/v1/chat/completions',{
       method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
-      body:JSON.stringify({model:'llama-3.3-70b-versatile',messages:messages,temperature:0.3,max_tokens:400})
+      body:JSON.stringify({model:g45GroqModele(),messages:messages,temperature:0.3,max_tokens:400})
     });
     var d=await r.json();
     var t=document.getElementById('chat-typing-pc');if(t)t.remove();
@@ -5691,6 +5691,64 @@ async function apiFootballFetch(endpoint) {
 }
 
 function getFdorgKey(){ return localStorage.getItem('gones45_fdorg_key')||null; }
+/* ═══ MODÈLE GROQ — DÉCOUVERTE AUTOMATIQUE (15/08/2026) ═══
+   `llama-3.3-70b-versatile` a ete retire par Groq du jour au lendemain, et les
+   15 appels de l'appli le nommaient EN DUR. Le remplacer par un autre nom fixe
+   ne ferait que repousser le probleme : Groq renouvelle son catalogue plusieurs
+   fois par an.
+   On interroge donc /openai/v1/models — gratuit, ne consomme aucun jeton — et on
+   prend le premier modele de la liste de preference REELLEMENT disponible.
+   Cache 24 h, et repli sur un nom connu si l'appel echoue. */
+var G45_GROQ_PREF = [
+  'llama-3.3-70b-versatile',
+  'meta-llama/llama-4-maverick-17b-128e-instruct',
+  'meta-llama/llama-4-scout-17b-16e-instruct',
+  'openai/gpt-oss-120b',
+  'moonshotai/kimi-k2-instruct',
+  'qwen/qwen3-32b',
+  'openai/gpt-oss-20b',
+  'llama-3.1-8b-instant'
+];
+var G45_GROQ_MODELE = null;
+
+function g45GroqModele() {
+  if (G45_GROQ_MODELE) return G45_GROQ_MODELE;
+  try {
+    var o = JSON.parse(localStorage.getItem('g45_groq_modele') || 'null');
+    if (o && o.m && (Date.now() - o.t) < 86400000) { G45_GROQ_MODELE = o.m; return o.m; }
+  } catch (e) {}
+  return G45_GROQ_PREF[0];          /* repli le temps que la decouverte reponde */
+}
+window.g45GroqModele = g45GroqModele;
+
+async function g45GroqDecouvrir(force) {
+  var cle = localStorage.getItem('gones45_gemini_key');   /* clé Groq, nom historique */
+  if (!cle) return g45GroqModele();
+  if (!force) {
+    try {
+      var o = JSON.parse(localStorage.getItem('g45_groq_modele') || 'null');
+      if (o && o.m && (Date.now() - o.t) < 86400000) { G45_GROQ_MODELE = o.m; return o.m; }
+    } catch (e) {}
+  }
+  try {
+    var r = await fetch('https://api.groq.com/openai/v1/models', { headers: { 'Authorization': 'Bearer ' + cle } });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    var j = await r.json();
+    var dispo = ((j && j.data) || []).map(function (x) { return x.id; });
+    var choisi = G45_GROQ_PREF.filter(function (m) { return dispo.indexOf(m) >= 0; })[0];
+    /* Aucune preference disponible : on prend le plus gros modele texte propose,
+       plutot que d'echouer. */
+    if (!choisi) choisi = dispo.filter(function (m) { return !/whisper|tts|guard|embed/i.test(m); })[0];
+    if (choisi) {
+      G45_GROQ_MODELE = choisi;
+      try { localStorage.setItem('g45_groq_modele', JSON.stringify({ m: choisi, t: Date.now() })); } catch (e) {}
+      console.log('\ud83e\udde0 mod\u00e8le Groq retenu : ' + choisi + ' (' + dispo.length + ' disponibles)');
+    }
+  } catch (e) { console.warn('decouverte Groq', e && e.message); }
+  return g45GroqModele();
+}
+window.g45GroqDecouvrir = g45GroqDecouvrir;
+
 var FD_PROXY = 'https://fd-proxy.touraine-antoine.workers.dev';
 
 // Cache mémoire + file d'attente anti-rate-limit pour football-data (plan free: 10 req/min)
@@ -5833,7 +5891,7 @@ async function getTeamStatsViaGroq(teamName, cpTypes) {
     var r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+groqKey},
-      body:JSON.stringify({model:'llama-3.3-70b-versatile',messages:[{role:'user',content:analysisPrompt}],max_tokens:400,temperature:0.2})
+      body:JSON.stringify({model:g45GroqModele(),messages:[{role:'user',content:analysisPrompt}],max_tokens:400,temperature:0.2})
     });
     var d = await r.json();
     if(d.error) return null;
@@ -6019,7 +6077,7 @@ async function loadVideoHighlights(el, nom, col, sport) {
         var r = await fetch('https://api.groq.com/openai/v1/chat/completions',{
           method:'POST',
           headers:{'Content-Type':'application/json','Authorization':'Bearer '+groqKey},
-          body:JSON.stringify({model:'llama-3.3-70b-versatile',messages:[{role:'user',content:prompt}],max_tokens:150,temperature:0.2})
+          body:JSON.stringify({model:g45GroqModele(),messages:[{role:'user',content:prompt}],max_tokens:150,temperature:0.2})
         });
         var d = await r.json();
         var reply = d.choices[0].message.content.trim();
@@ -11387,7 +11445,7 @@ async function testGroqKey(){
   try{
     var r=await fetch('https://api.groq.com/openai/v1/chat/completions',{
       method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
-      body:JSON.stringify({model:'llama-3.3-70b-versatile',messages:[{role:'user',content:'OK'}],max_tokens:3})
+      body:JSON.stringify({model:g45GroqModele(),messages:[{role:'user',content:'OK'}],max_tokens:3})
     });
     var d=await r.json();
     if(d.choices&&d.choices[0]){if(st){st.innerText='✅ Clé valide !';st.style.color='var(--g)';}}
@@ -11488,7 +11546,7 @@ async function sendChat(){
     var r=await fetch('https://api.groq.com/openai/v1/chat/completions',{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
-      body:JSON.stringify({model:'llama-3.3-70b-versatile',messages:messages,temperature:0.3,max_tokens:400})
+      body:JSON.stringify({model:g45GroqModele(),messages:messages,temperature:0.3,max_tokens:400})
     });
     var d=await r.json();
     var t=document.getElementById('chat-typing');if(t)t.remove();
@@ -11749,7 +11807,7 @@ async function sendChatPC(){
     var messages=[{role:'system',content:sysPC},{role:'user',content:msg}];
     var r=await fetch('https://api.groq.com/openai/v1/chat/completions',{
       method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
-      body:JSON.stringify({model:'llama-3.3-70b-versatile',messages:messages,temperature:0.3,max_tokens:400})
+      body:JSON.stringify({model:g45GroqModele(),messages:messages,temperature:0.3,max_tokens:400})
     });
     var d=await r.json();
     var t=document.getElementById('chat-typing-pc');if(t)t.remove();
@@ -12064,7 +12122,7 @@ async function getTeamStatsViaGroq(teamName, cpTypes) {
     var r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+groqKey},
-      body:JSON.stringify({model:'llama-3.3-70b-versatile',messages:[{role:'user',content:analysisPrompt}],max_tokens:400,temperature:0.2})
+      body:JSON.stringify({model:g45GroqModele(),messages:[{role:'user',content:analysisPrompt}],max_tokens:400,temperature:0.2})
     });
     var d = await r.json();
     if(d.error) return null;
@@ -12250,7 +12308,7 @@ async function loadVideoHighlights(el, nom, col, sport) {
         var r = await fetch('https://api.groq.com/openai/v1/chat/completions',{
           method:'POST',
           headers:{'Content-Type':'application/json','Authorization':'Bearer '+groqKey},
-          body:JSON.stringify({model:'llama-3.3-70b-versatile',messages:[{role:'user',content:prompt}],max_tokens:150,temperature:0.2})
+          body:JSON.stringify({model:g45GroqModele(),messages:[{role:'user',content:prompt}],max_tokens:150,temperature:0.2})
         });
         var d = await r.json();
         var reply = d.choices[0].message.content.trim();
@@ -15006,7 +15064,7 @@ async function searchTennisPlayer(nom) {
         method: 'POST',
         headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + groqKey},
         body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
+          model: g45GroqModele(),
           messages: [{role: 'user', content: prompt}],
           max_tokens: 300,
           temperature: 0
@@ -19740,7 +19798,7 @@ async function loadTeamAI(nom) {
       method: 'POST',
       headers: {'Content-Type':'application/json','Authorization':'Bearer '+groqKey},
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
+        model: g45GroqModele(),
         messages: [{role:'user', content: prompt}],
         max_tokens: 200,
         temperature: 0.4
@@ -20867,7 +20925,7 @@ async function generatePariDuJour() {
     var r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+groqKey},
-      body:JSON.stringify({model:'llama-3.3-70b-versatile',messages:[{role:'user',content:prompt}],max_tokens:300,temperature:0.4})
+      body:JSON.stringify({model:g45GroqModele(),messages:[{role:'user',content:prompt}],max_tokens:300,temperature:0.4})
     });
     var d = await r.json();
     if(d.error) throw new Error(d.error.message);
@@ -23173,7 +23231,7 @@ async function _g45MultiAI(box, boxId, sys, facts, title){
   var key=(typeof getGeminiKey==='function')?getGeminiKey():localStorage.getItem('gones45_gemini_key');
   var eaf=function(x){return String(x).replace(/&/g,'&amp;').replace(/</g,'&lt;');};
   try{
-    var r2=await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({model:'llama-3.3-70b-versatile',messages:[{role:'system',content:sys},{role:'user',content:facts.join('\n')}],temperature:0.4,max_tokens:450})});
+    var r2=await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({model:g45GroqModele(),messages:[{role:'system',content:sys},{role:'user',content:facts.join('\n')}],temperature:0.4,max_tokens:450})});
     var d2=await r2.json();
     if(d2.error) throw new Error(d2.error.message);
     var txt=((d2.choices&&d2.choices[0]&&d2.choices[0].message.content)||'').trim();
@@ -28354,7 +28412,7 @@ async function g45StatsAutoTag(){
   if(st)st.textContent='⏳ Analyse…';
   try{
     var prompt='Extrais les tags de cette stat de paris sportifs. Reponds UNIQUEMENT par un JSON valide sans texte autour: {"sport":"<emoji parmi ⚽ 🏀 🎾 🏈 🏒 ⚾ 🏉 🏎 🥊 🚗 🚴>","targets":["..."],"place":"","comp":"","context":""}. targets=equipes/joueurs/ecuries cites (max 2). place=lieu ou GP (ex Autriche) sinon vide. comp=competition sinon vide. context=type court (elimination directe, buteur, lay, domicile...) sinon vide. Stat: '+txtEl.value.trim();
-    var r=await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({model:'llama-3.3-70b-versatile',messages:[{role:'user',content:prompt}],temperature:0,max_tokens:200})});
+    var r=await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({model:g45GroqModele(),messages:[{role:'user',content:prompt}],temperature:0,max_tokens:200})});
     var d=await r.json(); if(d.error) throw new Error(d.error.message);
     var t=d.choices[0].message.content.replace(/```json|```/g,'').trim(); var o=JSON.parse(t);
     if(o.sport){ var sel=document.getElementById('gms-sport'); if(sel) sel.value=o.sport; }
@@ -36805,3 +36863,8 @@ async function g45TvDiag() {
   return l;
 }
 window.g45TvDiag = g45TvDiag;
+
+
+/* Decouverte au demarrage, sans bloquer l'affichage. Si le modele en cache a
+   ete retire depuis, le prochain appel utilisera le nouveau. */
+setTimeout(function () { if (typeof g45GroqDecouvrir === 'function') g45GroqDecouvrir(); }, 3000);
