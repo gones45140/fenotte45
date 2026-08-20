@@ -715,6 +715,18 @@ function renderApiSportsStats(zone, data) {
       html += '<div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#4f5d88;margin-bottom:8px;">📊 Stats du match</div>';
       html += '<div style="display:flex;flex-direction:column;gap:4px;margin-bottom:10px;">';
 
+      /* Couleurs officielles des deux equipes, memes que partout ailleurs.
+         Les competitors du header portent `team.color` ; repli sur l'ancien
+         couple si l'endpoint ne les fournit pas. */
+      var _cStat = ['#4d84ff', '#a78bfa'];
+      try {
+        if (typeof g45CoulPaire === 'function') {
+          var _cs = (data && data.header && data.header.competitions && data.header.competitions[0] && data.header.competitions[0].competitors) || [];
+          var _hs = _cs.filter(function (x) { return x.homeAway === 'home'; })[0] || _cs[0];
+          var _as = _cs.filter(function (x) { return x.homeAway === 'away'; })[0] || _cs[1];
+          if (_hs && _as) _cStat = g45CoulPaire(_hs, _as);
+        }
+      } catch (e) {}
       var SHOW_STATS = ['Ball Possession','Expected Goals','Total Shots','Shots on Goal','Corner Kicks','Fouls','Yellow Cards'];
       SHOW_STATS.forEach(function(sn){
         var hs = (homeSt.statistics||[]).find(function(x){return x.type===sn;});
@@ -733,8 +745,12 @@ function renderApiSportsStats(zone, data) {
         html += '<div style="flex:1;">';
         html += '<div style="font-size:8px;color:var(--t3);text-align:center;margin-bottom:2px;">'+label+'</div>';
         html += '<div style="height:6px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden;display:flex;">';
-        html += '<div style="width:'+hPct+'%;background:#4d84ff;border-radius:3px 0 0 3px;"></div>';
-        html += '<div style="width:'+(100-hPct)+'%;background:#a78bfa;border-radius:0 3px 3px 0;"></div>';
+        /* COULEURS DES CLUBS (20/08) : ces barres etaient restees en bleu/violet
+           fixes alors que les compositions et la carte des tirs utilisent deja
+           la couleur officielle. Une equipe changeait donc de couleur d'un bloc
+           a l'autre dans le meme ecran. */
+        html += '<div style="width:'+hPct+'%;background:'+_cStat[0]+';border-radius:3px 0 0 3px;"></div>';
+        html += '<div style="width:'+(100-hPct)+'%;background:'+_cStat[1]+';border-radius:0 3px 3px 0;"></div>';
         html += '</div></div>';
         html += '<div style="font-size:10px;font-weight:700;color:var(--t1);width:30px;text-align:center;">'+av+'</div>';
         html += '</tr>';
@@ -7265,8 +7281,12 @@ function renderApiSportsStats(zone, data) {
         html += '<div style="flex:1;">';
         html += '<div style="font-size:8px;color:var(--t3);text-align:center;margin-bottom:2px;">'+label+'</div>';
         html += '<div style="height:6px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden;display:flex;">';
-        html += '<div style="width:'+hPct+'%;background:#4d84ff;border-radius:3px 0 0 3px;"></div>';
-        html += '<div style="width:'+(100-hPct)+'%;background:#a78bfa;border-radius:0 3px 3px 0;"></div>';
+        /* COULEURS DES CLUBS (20/08) : ces barres etaient restees en bleu/violet
+           fixes alors que les compositions et la carte des tirs utilisent deja
+           la couleur officielle. Une equipe changeait donc de couleur d'un bloc
+           a l'autre dans le meme ecran. */
+        html += '<div style="width:'+hPct+'%;background:'+_cStat[0]+';border-radius:3px 0 0 3px;"></div>';
+        html += '<div style="width:'+(100-hPct)+'%;background:'+_cStat[1]+';border-radius:0 3px 3px 0;"></div>';
         html += '</div></div>';
         html += '<div style="font-size:10px;font-weight:700;color:var(--t1);width:30px;text-align:center;">'+av+'</div>';
         html += '</tr>';
@@ -37737,8 +37757,14 @@ function _g45CageHTML(tirs, idDom, nomDom, nomExt, CD, CE) {
      a l'identique. */
   var GY0 = 44.62, GYW = 10.76, GZH = 40;
 
-  var W = 560, H = 190, m = 26;
-  var GW = W - 2 * m, GH = H - m - 14;
+  /* PROPORTIONS REELLES : un but fait 7,32 m sur 2,44, soit exactement 3 fois
+     plus large que haut. Mes dimensions donnaient 3,39 — les tirs hauts
+     paraissaient donc plus bas qu'ils ne l'etaient, ce qui fausse la lecture
+     d'une lucarne. La hauteur est deduite de la largeur, plus jamais fixee. */
+  var W = 560, m = 26;
+  var GW = W - 2 * m;
+  var GH = GW / 3;
+  var H = GH + m + 14;
   var px = function (t) {
     var f = (t.gy - GY0) / GYW;
     f = 1 - Math.max(0, Math.min(1, f));            /* gy eleve = gauche */
@@ -37765,11 +37791,23 @@ function _g45CageHTML(tirs, idDom, nomDom, nomExt, CD, CE) {
   return '<div style="margin-top:10px;">'
     + '<div style="font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#4f5d88;margin-bottom:4px;">'
     + '\ud83e\udd45 Dans la cage \u00b7 ' + cadres.length + ' tir(s) cadr\u00e9(s)</div>'
-    + '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto;background:rgba(255,255,255,.03);border-radius:8px;">'
-    + '<rect x="' + m + '" y="' + (H - 14 - GH) + '" width="' + GW + '" height="' + GH + '" fill="rgba(255,255,255,.04)" stroke="rgba(255,255,255,.45)" stroke-width="3"/>'
-    + '<line x1="' + (m + GW / 3) + '" y1="' + (H - 14 - GH) + '" x2="' + (m + GW / 3) + '" y2="' + (H - 14) + '" stroke="rgba(255,255,255,.10)" stroke-width="1"/>'
-    + '<line x1="' + (m + 2 * GW / 3) + '" y1="' + (H - 14 - GH) + '" x2="' + (m + 2 * GW / 3) + '" y2="' + (H - 14) + '" stroke="rgba(255,255,255,.10)" stroke-width="1"/>'
-    + '<line x1="' + m + '" y1="' + (H - 14 - GH / 2) + '" x2="' + (m + GW) + '" y2="' + (H - 14 - GH / 2) + '" stroke="rgba(255,255,255,.10)" stroke-width="1"/>'
+    /* VRAIE CAGE (20/08) : un rectangle et deux traits ne ressemblaient pas a un
+       but. On dessine le FILET par un motif SVG repete — beaucoup plus leger
+       qu'une centaine de lignes tracees une a une — plus des montants epais et
+       une barre transversale, et le sol sous la ligne de but. */
+    + '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto;border-radius:8px;">'
+    + '<defs><pattern id="g45filet" width="9" height="9" patternUnits="userSpaceOnUse">'
+    + '<path d="M0 0 L9 9 M9 0 L0 9" stroke="rgba(255,255,255,.16)" stroke-width="0.7" fill="none"/></pattern></defs>'
+    /* sol */
+    + '<rect x="0" y="' + (H - 14) + '" width="' + W + '" height="14" fill="rgba(30,120,70,.22)"/>'
+    /* filet */
+    + '<rect x="' + m + '" y="' + (H - 14 - GH) + '" width="' + GW + '" height="' + GH + '" fill="url(#g45filet)"/>'
+    /* montants et barre : trait blanc epais, comme un vrai but */
+    + '<rect x="' + (m - 4) + '" y="' + (H - 14 - GH - 4) + '" width="4" height="' + (GH + 4) + '" fill="#fff" opacity=".92"/>'
+    + '<rect x="' + (m + GW) + '" y="' + (H - 14 - GH - 4) + '" width="4" height="' + (GH + 4) + '" fill="#fff" opacity=".92"/>'
+    + '<rect x="' + (m - 4) + '" y="' + (H - 14 - GH - 4) + '" width="' + (GW + 8) + '" height="4" fill="#fff" opacity=".92"/>'
+    /* ligne de but */
+    + '<rect x="' + (m - 4) + '" y="' + (H - 14) + '" width="' + (GW + 8) + '" height="2" fill="rgba(255,255,255,.55)"/>'
     + pts + '</svg>'
     + '<div style="font-size:9px;color:var(--t3);margin-top:4px;">Vue depuis le tireur \u00b7 point plein = but '
     + '\u00b7 survole pour la zone annonc\u00e9e par ESPN et le xGOT</div></div>';
