@@ -20967,12 +20967,10 @@ function _renderEspnMatchPitch(s, col, nameFn){
       if (c2 && _lum(c2) < 0.82) return c2;
       return c1 || c2 || dft;
     };
-    var homeCol = _couleurEquipe(hR, col || '#4d84ff');
-    var awayCol = _couleurEquipe(aR, '#e0564f');
-    if (_ecart(homeCol, awayCol) < 90) {            /* trop proches : on differencie */
-      var alt = _hex((aR && aR.team && aR.team.alternateColor) || '');
-      awayCol = (alt && _ecart(homeCol, alt) >= 90) ? alt : '#e0564f';
-    }
+    /* SOURCE UNIQUE (voir g45CoulPaire) : la meme couleur sert ici, sur la carte
+       des tirs et dans les statistiques. Le calcul local a ete supprime. */
+    var _cp = g45CoulPaire(hR, aR);
+    var homeCol = _cp[0], awayCol = _cp[1];
     var pitch='<div style="position:relative;width:100%;max-width:min(660px,100%);margin:4px auto 2px;aspect-ratio:5/8;min-height:440px;background:linear-gradient(180deg,#1f7a3f 0%,#19682f 50%,#1f7a3f 100%);border-radius:10px;overflow:hidden;border:1px solid rgba(255,255,255,.12);">'
       +'<div style="position:absolute;inset:5px;border:2px solid rgba(255,255,255,.18);border-radius:6px;"></div>'
       +'<div style="position:absolute;top:50%;left:5px;right:5px;height:2px;background:rgba(255,255,255,.22);"></div>'
@@ -34073,6 +34071,12 @@ function _g45SgAbsences(panel, sum) {
 window._g45SgAbsences = _g45SgAbsences;
 
 /* Insère la carte des tirs dans le détail d'un match de football. */
+/* Memorise le couple de couleurs par match : la carte est ouverte plus tard,
+   par un clic, alors que le resume (qui porte les couleurs) est deja consomme. */
+var _g45CoulMatch = {};
+function _g45CoulDuMatch(eid) { return _g45CoulMatch[String(eid)] || null; }
+window._g45CoulDuMatch = _g45CoulDuMatch;
+
 async function _g45SgCarteTirs(panel, lg, eid, sum) {
   if (!panel) return;
   var comp = (sum && sum.header && sum.header.competitions && sum.header.competitions[0]) || {};
@@ -34083,6 +34087,7 @@ async function _g45SgCarteTirs(panel, lg, eid, sum) {
   var nm = function (c) { return (c.team && (c.team.shortDisplayName || c.team.displayName)) || '?'; };
 
   var st = (comp.status && comp.status.type) || {};
+  try { _g45CoulMatch[String(eid)] = g45CoulPaire(dom, ext); } catch (e) {}
 
   /* BOUTON plutot qu'affichage systematique : la carte demande 1 a 4 requetes
      par match, inutiles tant qu'on ne la regarde pas. Meme presentation que les
@@ -34118,7 +34123,10 @@ async function _g45SgOuvrirTirs(btn, lg, eid, idDom, nomDom, nomExt, termine) {
       + 'pour ce match \u2014 pas de carte possible.</div>';
     return;
   }
-  zone.innerHTML = g45CarteTirsHTML(tirs, idDom, nomDom, nomExt);
+  /* Couleurs des clubs transmises pour que la carte parle le meme langage que
+     les compositions : une equipe = une couleur, partout dans l'ecran. */
+  var cc = (typeof _g45CoulDuMatch === 'function') ? _g45CoulDuMatch(eid) : null;
+  zone.innerHTML = g45CarteTirsHTML(tirs, idDom, nomDom, nomExt, cc && cc[0], cc && cc[1]);
 }
 window._g45SgOuvrirTirs = _g45SgOuvrirTirs;
 
@@ -37452,6 +37460,56 @@ document.addEventListener('click', function () {
    Le penalty est traite a part via le drapeau `penaltyKick`, a 0,76.
    ═══════════════════════════════════════════════════════════════════════════ */
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   COULEUR D'ÉQUIPE — UNE SEULE SOURCE (20/08/2026)
+   ───────────────────────────────────────────────────────────────────────────
+   Chaque bloc avait sa propre convention : bleu/jaune sur la carte des tirs,
+   bleu/noir dans les statistiques, rose/rouge dans les compositions. L'Atletico
+   changeait donc de couleur trois fois dans le meme ecran.
+   Desormais tout passe par `g45CoulEquipe`, qui rend la couleur OFFICIELLE du
+   club en ecartant celles qui seraient illisibles, et `g45CoulPaire` qui
+   garantit que les deux equipes restent distinguables.
+   ═══════════════════════════════════════════════════════════════════════════ */
+function _g45Hex(x) {
+  var v = String(x || '').replace('#', '').trim();
+  return /^[0-9a-f]{6}$/i.test(v) ? ('#' + v.toLowerCase()) : '';
+}
+function _g45Lum(h) {
+  var n = parseInt(h.slice(1), 16);
+  return (0.2126 * ((n >> 16) & 255) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255)) / 255;
+}
+function _g45Ecart(a, b) {
+  var A = parseInt(a.slice(1), 16), B = parseInt(b.slice(1), 16);
+  return Math.abs(((A >> 16) & 255) - ((B >> 16) & 255))
+       + Math.abs(((A >> 8) & 255) - ((B >> 8) & 255))
+       + Math.abs((A & 255) - (B & 255));
+}
+/* `src` accepte indifferemment un competitor, un roster ou un objet team :
+   les trois formes circulent dans l'app selon l'endpoint appele. */
+function g45CoulEquipe(src, dft) {
+  var t = (src && (src.team || src)) || {};
+  var c1 = _g45Hex(t.color), c2 = _g45Hex(t.alternateColor);
+  /* Trop clair = illisible sur le vert d'un terrain comme sur le fond sombre
+     de l'app : on prend l'alternative (Real en blanc, Lens en jaune). */
+  if (c1 && _g45Lum(c1) < 0.82) return c1;
+  if (c2 && _g45Lum(c2) < 0.82) return c2;
+  return c1 || c2 || dft || '#4d84ff';
+}
+/* Rend le couple [domicile, exterieur] en garantissant qu'on les distingue. */
+function g45CoulPaire(srcDom, srcExt) {
+  var a = g45CoulEquipe(srcDom, '#4d84ff');
+  var b = g45CoulEquipe(srcExt, '#f0b020');
+  if (_g45Ecart(a, b) >= 90) return [a, b];
+  /* L'alternative doit etre distincte ET lisible : sur Lens-Lille, les deux
+     rouges etant proches, l'alternative de Lille est du BLANC — invisible sur
+     le vert du terrain. On la refuse et on bascule sur l'ambre. */
+  var alt = _g45Hex(((srcExt && (srcExt.team || srcExt)) || {}).alternateColor);
+  if (alt && _g45Ecart(a, alt) >= 90 && _g45Lum(alt) < 0.82) return [a, alt];
+  return [a, '#f0b020'];                 /* repli : ambre, jamais confondu */
+}
+window.g45CoulEquipe = g45CoulEquipe;
+window.g45CoulPaire = g45CoulPaire;
+
 var _G45_POSTE = 3.66;          /* demi-largeur du but, en metres */
 var _G45_LONG = 105, _G45_LARG = 68;
 
@@ -37556,8 +37614,11 @@ window.g45TirsMatch = g45TirsMatch;
    Les coordonnees etant relatives au sens d'attaque, on RENVERSE l'equipe
    visiteuse (x -> 100-x, y -> 100-y) pour obtenir la lecture habituelle :
    domicile attaque a droite, visiteur a gauche. */
-function g45CarteTirsHTML(tirs, idDom, nomDom, nomExt) {
+function g45CarteTirsHTML(tirs, idDom, nomDom, nomExt, coulDom, coulExt) {
   if (!tirs || !tirs.length) return '';
+  /* Couleurs recues du detail de match (memes que les compositions). Repli sur
+     l'ancien couple bleu/ambre si l'appelant ne les fournit pas. */
+  var CD = coulDom || '#4d84ff', CE = coulExt || '#f0b020';
 
   var W = 660, H = 420, M = 8;
   var px = function (t) {
@@ -37578,7 +37639,7 @@ function g45CarteTirsHTML(tirs, idDom, nomDom, nomExt) {
   /* Le rayon suit le xG : un tir dangereux se voit immediatement. */
   var points = tirs.map(function (t) {
     var dom = (String(t.equipe) === String(idDom));
-    var coul = dom ? '#4d84ff' : '#f0b020';
+    var coul = dom ? CD : CE;
     var r = 4 + Math.sqrt(t.xg) * 13;
     var titre = (t.qui || '?') + ' \u00b7 ' + t.min + ' \u00b7 ' + t.type
               + ' \u00b7 xG ' + t.xg.toFixed(2) + (t.pen ? ' (penalty)' : '');
@@ -37603,11 +37664,11 @@ function g45CarteTirsHTML(tirs, idDom, nomDom, nomExt) {
     + '\ud83c\udfaf Carte des tirs & xG</div>'
 
     + '<div style="display:flex;gap:10px;font-size:11px;margin-bottom:6px;">'
-    + '<div style="flex:1;"><span style="color:#4d84ff;font-weight:800;">' + nomDom + '</span><br>'
-    + '<span style="font-size:16px;font-weight:900;color:#4d84ff;">' + somme.dom.toFixed(2) + '</span>'
+    + '<div style="flex:1;"><span style="color:' + CD + ';font-weight:800;">' + nomDom + '</span><br>'
+    + '<span style="font-size:16px;font-weight:900;color:' + CD + ';">' + somme.dom.toFixed(2) + '</span>'
     + '<span style="font-size:9px;color:var(--t3);"> xG \u00b7 ' + nb.dom + ' tirs \u00b7 ' + buts.dom + ' but(s)</span></div>'
-    + '<div style="flex:1;text-align:right;"><span style="color:#f0b020;font-weight:800;">' + nomExt + '</span><br>'
-    + '<span style="font-size:16px;font-weight:900;color:#f0b020;">' + somme.ext.toFixed(2) + '</span>'
+    + '<div style="flex:1;text-align:right;"><span style="color:' + CE + ';font-weight:800;">' + nomExt + '</span><br>'
+    + '<span style="font-size:16px;font-weight:900;color:' + CE + ';">' + somme.ext.toFixed(2) + '</span>'
     + '<span style="font-size:9px;color:var(--t3);"> xG \u00b7 ' + nb.ext + ' tirs \u00b7 ' + buts.ext + ' but(s)</span></div></div>'
 
     + '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto;background:rgba(30,120,70,.16);border-radius:8px;">'
@@ -37633,7 +37694,7 @@ function g45CarteTirsHTML(tirs, idDom, nomDom, nomExt) {
              + ' ; les autres sont estim\u00e9s maison (distance et angle).';
       })()
     + '</div>'
-    + _g45CageHTML(tirs, idDom, nomDom, nomExt)
+    + _g45CageHTML(tirs, idDom, nomDom, nomExt, CD, CE)
     + '</div>';
 }
 window.g45CarteTirsHTML = g45CarteTirsHTML;
@@ -37645,7 +37706,8 @@ window.g45CarteTirsHTML = g45CarteTirsHTML;
    L'unite n'est pas documentee. On la DEDUIT : au-dela de 8, ce sont forcement
    des pourcentages ; en deca, des metres (le but fait 7,32 m sur 2,44 m).
    Deviner aurait place les tirs n'importe ou. */
-function _g45CageHTML(tirs, idDom, nomDom, nomExt) {
+function _g45CageHTML(tirs, idDom, nomDom, nomExt, CD, CE) {
+  CD = CD || '#4d84ff'; CE = CE || '#f0b020';
   /* CORRIGE le 20/08 : je gardais tout tir PORTANT des coordonnees de cage.
      Or les tirs contres et hors cadre en ont aussi — souvent (0,0), faute de
      point d'impact reel. D'ou 20 points la ou le match en comptait 7 cadres, et
@@ -37689,7 +37751,7 @@ function _g45CageHTML(tirs, idDom, nomDom, nomExt) {
 
   var pts = cadres.map(function (t) {
     var dom = (String(t.equipe) === String(idDom));
-    var coul = dom ? '#4d84ff' : '#f0b020';
+    var coul = dom ? CD : CE;
     var r = t.but ? 8 : 6;
     var titre = (t.qui || '?') + ' \u00b7 ' + t.min + ' \u00b7 ' + (t.but ? 'BUT' : t.type)
               + ' \u00b7 xG ' + t.xg.toFixed(2)
