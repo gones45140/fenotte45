@@ -330,9 +330,19 @@ function espnToFdMatch(m, ourName, ourFdId) {
   }
 
   // Déterminer de quel côté est notre équipe (pour domicile/extérieur)
-  var nl = (ourName||'').toLowerCase().trim();
-  var homeLow = (m.homeTeam||'').toLowerCase().trim();
-  var awayLow = (m.awayTeam||'').toLowerCase().trim();
+  /* ACCENTS — bug trouve le 15/08 sur l'Atletico Madrid.
+     Le nom stocke porte l'accent (« atletico madrid »), celui d'ESPN non. Le
+     test d'egalite echouait donc, et les deux camps ne marquaient plus que 10
+     via le mot commun « madrid » : egalite, et le repli « on garde domicile »
+     classait les DEPLACEMENTS au Bernabeu comme des receptions.
+     Meme famille que le bug PSG/Paris FC, autre cause. On normalise les trois
+     chaines avant toute comparaison. */
+  var _sansAcc = function (x) {
+    return String(x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+  };
+  var nl = _sansAcc(ourName);
+  var homeLow = _sansAcc(m.homeTeam);
+  var awayLow = _sansAcc(m.awayTeam);
   // Score de similarité : combien de mots du nom de l'équipe se retrouvent dans home/away
   function simScore(teamNameLow, ourLow){
     if(teamNameLow===ourLow) return 100;
@@ -5710,6 +5720,53 @@ var G45_GROQ_PREF = [
   'llama-3.1-8b-instant'
 ];
 var G45_GROQ_MODELE = null;
+
+/* ═══ MODÈLES GEMINI — MÊME MALADIE, MÊME REMÈDE ═══
+   `gemini-1.5-flash` a ete retire par Google. La cascade nommait ses quatre
+   modeles en dur : chaque retrait cassera donc un maillon, en silence, jusqu'a
+   ce qu'il n'en reste aucun.
+   L'endpoint /v1beta/models liste ce que LA CLE peut reellement appeler. On ne
+   garde que les modeles qui acceptent `generateContent`, tries du plus recent
+   au plus ancien, en ecartant les modeles d'image et d'embedding. */
+var G45_GEM_LISTE = null;
+
+async function g45GeminiModeles(force) {
+  if (G45_GEM_LISTE && !force) return G45_GEM_LISTE;
+  var repli = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.0-flash-lite'];
+  try {
+    if (!force) {
+      var o = JSON.parse(localStorage.getItem('g45_gem_modeles') || 'null');
+      if (o && o.l && o.l.length && (Date.now() - o.t) < 86400000) { G45_GEM_LISTE = o.l; return o.l; }
+    }
+  } catch (e) {}
+
+  var cle = localStorage.getItem('gones45_google_key');
+  if (!cle) return repli;
+  try {
+    var r = await fetch('https://generativelanguage.googleapis.com/v1beta/models?key=' + encodeURIComponent(cle));
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    var j = await r.json();
+    var ok = ((j && j.models) || []).filter(function (m) {
+      var meth = m.supportedGenerationMethods || m.supportedActions || [];
+      return meth.indexOf('generateContent') >= 0 && !/embed|image|vision-only|aqa/i.test(m.name || '');
+    }).map(function (m) { return String(m.name || '').replace(/^models\//, ''); });
+
+    /* On prefere les « flash » : gratuits et rapides, ce qui compte pour une
+       analyse d'avant-match. Puis tri decroissant, donc les versions recentes
+       d'abord. */
+    var flash = ok.filter(function (n) { return /flash/i.test(n); }).sort().reverse();
+    var autres = ok.filter(function (n) { return !/flash/i.test(n); }).sort().reverse();
+    var liste = flash.concat(autres).slice(0, 6);
+    if (liste.length) {
+      G45_GEM_LISTE = liste;
+      try { localStorage.setItem('g45_gem_modeles', JSON.stringify({ l: liste, t: Date.now() })); } catch (e) {}
+      console.log('\ud83d\udd37 mod\u00e8les Gemini disponibles : ' + liste.join(', '));
+      return liste;
+    }
+  } catch (e) { console.warn('decouverte Gemini', e && e.message); }
+  return repli;
+}
+window.g45GeminiModeles = g45GeminiModeles;
 
 function g45GroqModele() {
   if (G45_GROQ_MODELE) return G45_GROQ_MODELE;
@@ -18606,18 +18663,35 @@ async function loadTeamSaisons() {
 
 
 // ── FILTRES ONGLET SAISONS ──
-function updateSaisonFilter() {
+/* REECRIT le 20/08/2026 — le filtre etait inutilisable.
+   Ancien comportement : avec « Toutes » active, les chips de competition
+   s'affichaient TOUTES cochees. Cliquer sur « Championnat » la DECOCHAIT donc,
+   et le gestionnaire, voyant « Toutes » encore cochee, remettait tout a zero :
+   l'ecran ne changeait pas. Il fallait deviner qu'il fallait d'abord decocher
+   « Toutes ». Le repli « si le filtre est vide, on montre tout » masquait le
+   reste.
+   Nouveau comportement, en UN clic : cliquer une competition ne garde QUE
+   celle-la (et « Toutes » se decoche) ; recliquer l'enleve ; si plus rien n'est
+   selectionne on revient a « Toutes ». */
+function updateSaisonFilter(clique) {
   var allChk = document.getElementById('sf-all');
   if(!allChk) return;
-  // Tous les chips de filtre (génériques : marche pour n'importe quels groupes)
   var _boxes = Array.prototype.slice.call(document.querySelectorAll('#saison-filter-chips input[id^="sf-"]')).filter(function(b){ return b.id!=='sf-all'; });
-  if(allChk.checked) {
+
+  if(clique === 'sf-all' || (!clique && allChk.checked)) {
+    allChk.checked = true;
     _boxes.forEach(function(b){ b.checked=false; });
     localStorage.setItem('g45_saison_filters', JSON.stringify({all:true}));
   } else {
-    var _f = { all:false };
-    _boxes.forEach(function(b){ _f[b.id] = !!b.checked; });
-    localStorage.setItem('g45_saison_filters', JSON.stringify(_f));
+    allChk.checked = false;
+    var _f = { all:false }, n = 0;
+    _boxes.forEach(function(b){ _f[b.id] = !!b.checked; if(b.checked) n++; });
+    if(!n) {                       /* plus aucune competition : retour a Toutes */
+      allChk.checked = true;
+      localStorage.setItem('g45_saison_filters', JSON.stringify({all:true}));
+    } else {
+      localStorage.setItem('g45_saison_filters', JSON.stringify(_f));
+    }
   }
   // Recharger les saisons
   _saisonsCache = {};
@@ -19040,7 +19114,11 @@ function _buildScorerBarHtml(teamId, s, nom, finCount, scIdx){
   if(!has){
     var _lbl = scIdx ? ('↻ Réessayer l\'analyse ('+analyzed+'/'+tot+')') : ('⚽ Analyser buteurs / passeurs ('+finCount+' matchs)');
     h += '<button id="scbtn-'+s+'" onclick="buildScorerIndexUI(\''+teamId+'\',\''+s+'\',\''+_scEscJs(nom)+'\')" style="padding:6px 12px;border-radius:10px;border:1px solid rgba(30,215,96,.4);background:rgba(30,215,96,.1);color:#1ed760;font-size:11px;font-weight:700;cursor:pointer;">'+_lbl+'</button>';
+    h += '<button onclick="g45XgSaison((_saisonsCache[\''+teamId+'\']||{})[\''+s+'\'],\''+teamId+'\',\''+_scEscJs(nom)+'\',\'g45-xg-'+s+'\')" '
+      + 'style="padding:6px 10px;border-radius:8px;border:1px solid rgba(34,211,238,.35);background:rgba(34,211,238,.10);color:#22d3ee;font-size:11px;font-weight:800;cursor:pointer;">'
+      + '\ud83d\udcca xG de la saison</button>';
     h += '<span style="font-size:9px;color:var(--t3);">1 seule fois · mis en cache</span>';
+    h += '<div id="g45-xg-'+s+'" style="width:100%;margin-top:8px;"></div>';
     h += '</div>'; return h;
   }
   var players = Object.keys(scIdx.players);
@@ -19377,7 +19455,7 @@ function renderSaisonsChart(el, results, nom) {
   // Chip "Toutes"
   var allActive = !_saisonFilters || _saisonFilters.all;
   html += '<label style="display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:12px;border:1px solid '+(allActive?'rgba(77,132,255,.5)':'rgba(255,255,255,.1)')+';background:'+(allActive?'rgba(77,132,255,.12)':'none')+';cursor:pointer;font-size:10px;font-weight:700;color:'+(allActive?'#7aaaff':'var(--t3)')+';">'
-    +'<input type="checkbox" id="sf-all" '+(allActive?'checked':'')+' onchange="updateSaisonFilter()" style="accent-color:var(--a);">Toutes</label>';
+    +'<input type="checkbox" id="sf-all" '+(allActive?'checked':'')+' onchange="updateSaisonFilter(\'sf-all\')" style="accent-color:var(--a);">Toutes</label>';
 
   // Chips par groupe
   var groupColors = {'Championnat':'#1ed760','Ligue des Champions':'#4d84ff','Ligue Europa':'#f0b020','Conference League':'#22d3ee','Coupe Nationale':'#ff7b54','Autre':'#a78bfa'};
@@ -19385,10 +19463,12 @@ function renderSaisonsChart(el, results, nom) {
   Object.keys(compGroups).forEach(function(g){
     if(!compGroups[g].length) return;
     var key = 'sf-'+g.replace(/ /g,'_');
-    var active = _saisonFilters.all || (_saisonFilters[key]);
+    /* PLUS de « cochee parce que Toutes est cochee » : c'est ce qui rendait le
+       premier clic destructeur au lieu d'etre selectif. */
+    var active = !!_saisonFilters[key];
     var col = groupColors[g]||'#7aaaff';
     html += '<label style="display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:12px;border:1px solid '+(active?col.replace('#','rgba(').replace(/(..)(..)(..)/, function(m,r,g2,b){ return parseInt(r,16)+','+parseInt(g2,16)+','+parseInt(b,16); })+',.4)':'rgba(255,255,255,.1)')+';background:'+(active?'rgba(77,132,255,.08)':'none')+';cursor:pointer;font-size:10px;font-weight:700;color:'+(active?col:'var(--t3)')+';">'
-      +'<input type="checkbox" id="'+key+'" '+(active?'checked':'')+' onchange="updateSaisonFilter()" style="accent-color:'+col+';">'+(groupLabels[g]||g)+'</label>';
+      +'<input type="checkbox" id="'+key+'" '+(active?'checked':'')+' onchange="updateSaisonFilter(\''+key+'\')" style="accent-color:'+col+';">'+(groupLabels[g]||g)+'</label>';
     // Tooltip avec les compétitions
     html += '';
   });
@@ -19398,7 +19478,10 @@ function renderSaisonsChart(el, results, nom) {
     var matches = results[s];
     var filters = JSON.parse(localStorage.getItem('g45_saison_filters')||'null');
     var filteredMatches = filterMatchesByComp(matches, filters);
-    if(!filteredMatches.length) filteredMatches = matches; // fallback si filtre vide
+    /* On n'affiche PLUS tous les matchs quand le filtre ne rend rien : c'est
+       exactement ce qui donnait l'impression que le filtre ne marchait pas.
+       Une saison sans match dans la competition choisie est simplement sautee. */
+    if(!filteredMatches.length) return;
     // Filtre dom/ext
     /* Filet de securite : si AUCUN match ne porte cet identifiant, on retombe sur
        une comparaison par nom plutot que de tout jeter et d'afficher des NaN. */
@@ -21349,6 +21432,16 @@ async function _renderSaisonDetail(el, eventId, league){
     var r=await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/'+(league||'eng.1')+'/summary?event='+eventId+'&lang=fr&region=fr');
     var data=await r.json();
     el._data=data;   // pour le sélecteur de marché (re-rendu sans re-fetch)
+    /* CARTE DES TIRS (20/08) : elle n'existait que dans le detail GENERIQUE,
+       celui des sports US. Le football a son propre rendu — celui-ci — donc la
+       carte n'apparaissait jamais par l'interface, seulement en console.
+       Insertion differee : on laisse ce rendu poser son HTML, puis on ajoute la
+       carte en tete. */
+    try {
+      setTimeout(function () {
+        if (typeof _g45SgCarteTirs === 'function') _g45SgCarteTirs(el, league || 'eng.1', eventId, data);
+      }, 60);
+    } catch (e) {}
     var comp=(data.header&&data.header.competitions&&data.header.competitions[0])||{};
     var cps=comp.competitors||[];
     var home=cps.filter(function(c){return c.homeAway==='home';})[0]||cps[0]||{};
@@ -23246,7 +23339,9 @@ async function _g45MultiAI(box, boxId, sys, facts, title){
     if(gk){
       box.innerHTML+='<div id="'+boxId+'-gm" style="font-size:10px;color:var(--t3);padding:6px;text-align:center;">🔷 Gemini réfléchit…</div>';
       try{
-        var GM=['gemini-2.5-flash','gemini-2.0-flash','gemini-2.0-flash-lite','gemini-1.5-flash'];
+        /* Liste decouverte aupres de Google plutot que codee en dur : un modele
+           retire ne casse plus le maillon correspondant. */
+        var GM = await g45GeminiModeles();
         var gt='', dg=null;
         for(var gi=0; gi<GM.length && !gt; gi++){
           try{
@@ -29601,7 +29696,22 @@ window.g45F1Session=g45F1Session;
    du navigateur. Tous ces caches sont reconstructibles : ils cèdent la place aux données. */
 var _G45_CACHE_PREFIXES=['g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dcf_','g45dc_',
   'g45trv3_','g45trv2_','g45trOdds_','g45tr_','g45but_st_','g45butL_','g45butA_','g45but_mur_',
-  '_g45clv','g45clv_snaps','g45_saisons_cache_v2_'];
+  '_g45clv','g45clv_snaps','g45_saisons_cache_v2_',
+  /* Ajoutes le 20/08 : ces caches, tous reconstructibles, n'etaient PAS declares
+     ici — donc jamais purges quand le stockage saturait. Resultat : le quota
+     explosait et des ecritures LEGITIMES echouaient en silence (le filtre par
+     competition, qui restait bloque sur « Toutes »). Les cartes de tirs sont
+     les plus lourdes : plusieurs Ko par match, gardees indefiniment. */
+  'g45_tirs2_','g45_fanart_','g45_img_perso_','g45_tv_prog','g45_mqnom_',
+  'g45nrlcal2_','g45_fx_faits','g45_veille_','g45_compet_logos','g45_groq_modele','g45_gemini_modeles',
+  /* MESURE DU 20/08 sur le stockage reel d'Antoine (5,1 Mo, sature) :
+       fpl_bootstrap_cache ... 1951 Ko  <- a lui seul 38 % du total
+       g45itf_*            ... 1779 Ko  <- tennis ITF/Challenger, par date
+       g45_saisons_cache_* ...  243 Ko
+       nba_pstat_, g45cm_, g45news3_ ... ~180 Ko
+     AUCUN n'etait declare purgeable, d'où une purge qui ne liberait que 80 Ko
+     alors que 3,7 Mo dormaient en cache. Tous sont reconstructibles. */
+  'fpl_bootstrap','g45itf_','g45_saisons_cache_','nba_pstat_','g45cm_','g45news3_','g45trf_','g45sofastats_'];
 function _g45CachePoids(){
   var t={}, tot=0;
   try{
@@ -29651,7 +29761,20 @@ var _G45_CACHE_MAX=60*1024;
           }
         }
       }catch(e){}
-      return _set(k,v);
+      try {
+        return _set(k,v);
+      } catch(e2) {
+        /* AVANT : seul `save()` savait purger et reessayer. Toute autre ecriture
+           — un filtre, une preference, un choix de saison — echouait donc
+           DEFINITIVEMENT et sans bruit quand le stockage etait plein. C'est ce
+           qui a fait croire pendant une heure que le filtre par competition
+           etait casse. Desormais toute ecriture beneficie du meme filet. */
+        var q=(e2&&(e2.name==='QuotaExceededError'||e2.code===22))||/quota/i.test(String(e2&&e2.message));
+        if(!q) throw e2;
+        console.warn('\ud83d\uddc4\ufe0f stockage sature \u2014 purge des caches, nouvelle tentative pour : '+k);
+        try{ if(typeof _g45FreeSpace==='function') _g45FreeSpace(); }catch(e3){}
+        return _set(k,v);        /* si ca echoue encore, l'erreur remonte */
+      }
     };
     wrap._g45cap=1;
     localStorage.setItem=wrap;
@@ -33730,6 +33853,19 @@ async function _g45SgButeurs(panel, lg, eid) {
     sum = await r.json();
   } catch (e) { return; }
 
+  /* Carte des tirs : posee AVANT les absences pour qu'elle finisse en tete du
+     panneau (chaque bloc est insere en premiere position). Asynchrone et sans
+     bloquer : si les actions ne sont pas disponibles, rien ne s'affiche. */
+  try { _g45SgCarteTirs(panel, lg, eid, sum); } catch (e) {}
+
+  /* ═══ ABSENCES ═══ (15/08/2026)
+     Le resume porte AUSSI les blessures et suspensions des deux equipes, dans
+     `sum.injuries`. On les rend depuis la MEME reponse : aucune requete de plus.
+     C'est l'information la plus utile avant un pari — un buteur forfait change
+     un « victoire + plus de 2,5 buts » du tout au tout, et le marche l'integre
+     lentement le matin du match. */
+  try { _g45SgAbsences(panel, sum); } catch (e) {}
+
   var evs = (sum && sum.keyEvents) || [];
   if (!evs.length) return;
 
@@ -33764,6 +33900,102 @@ async function _g45SgButeurs(panel, lg, eid) {
   panel.insertBefore(bloc, panel.firstChild);
 }
 window._g45SgButeurs = _g45SgButeurs;
+
+/* Bloc des absences, construit depuis le resume deja telecharge. */
+function _g45SgAbsences(panel, sum) {
+  if (!panel || !sum) return;
+  var grp = (sum.injuries || []).filter(function (g) { return (g.injuries || []).length; });
+  if (!grp.length) return;
+
+  /* ESPN melange les statuts : on distingue ce qui est CERTAIN (forfait,
+     suspendu) de ce qui est incertain (douteux, de retour), parce que les deux
+     ne se parient pas pareil. */
+  var certain = /out|suspend|injured reserve|\bir\b/i;
+  var douteux = /doubtful|questionable|day-to-day|probable/i;
+
+  var colonnes = grp.map(function (g) {
+    var eq = (g.team && (g.team.shortDisplayName || g.team.displayName || g.team.abbreviation)) || '';
+    var lignes = (g.injuries || []).slice(0, 10).map(function (b) {
+      var a = b.athlete || {};
+      var nom = a.shortName || a.displayName || a.fullName || '?';
+      var poste = (a.position && (a.position.abbreviation || a.position.name)) || '';
+      var st = String(b.status || (b.type && b.type.description) || '').trim();
+      var detail = (b.details && (b.details.type || b.details.detail)) || (b.longComment || b.shortComment) || '';
+      var coul = certain.test(st) ? '#ff6b6b' : (douteux.test(st) ? '#ffb13d' : '#9fb0c7');
+      var ico = certain.test(st) ? '\u26d4' : (douteux.test(st) ? '\u2753' : '\ud83e\ude79');
+      return '<div style="display:flex;align-items:baseline;gap:5px;padding:3px 0;font-size:11px;">'
+        + '<span>' + ico + '</span>'
+        + '<span style="font-weight:700;">' + nom + '</span>'
+        + (poste ? '<span style="font-size:9px;color:var(--t3);">' + poste + '</span>' : '')
+        + '<span style="margin-left:auto;font-size:9px;color:' + coul + ';font-weight:700;white-space:nowrap;">'
+        + (st || '?') + '</span></div>'
+        + (detail ? '<div style="font-size:9px;color:var(--t3);margin:-2px 0 3px 20px;">' + detail + '</div>' : '');
+    }).join('');
+    return '<div style="flex:1;min-width:150px;">'
+      + '<div style="font-size:10px;font-weight:800;color:var(--t1);margin-bottom:4px;">' + eq
+      + ' <span style="color:var(--t3);font-weight:600;">(' + (g.injuries || []).length + ')</span></div>'
+      + lignes + '</div>';
+  }).join('');
+
+  var bloc = document.createElement('div');
+  bloc.style.cssText = 'margin-bottom:12px;padding:10px;border-radius:10px;background:rgba(255,107,107,.07);border:1px solid rgba(255,107,107,.22);';
+  bloc.innerHTML = '<div style="font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#ff8a8a;margin-bottom:6px;">'
+    + '\ud83e\ude79 Absences & incertitudes</div>'
+    + '<div style="display:flex;gap:14px;flex-wrap:wrap;">' + colonnes + '</div>'
+    + '<div style="font-size:9px;color:var(--t3);margin-top:6px;">\u26d4 forfait \u00b7 \u2753 incertain \u2014 source ESPN, v\u00e9rifie avant de miser gros.</div>';
+  panel.insertBefore(bloc, panel.firstChild);
+}
+window._g45SgAbsences = _g45SgAbsences;
+
+/* Insère la carte des tirs dans le détail d'un match de football. */
+async function _g45SgCarteTirs(panel, lg, eid, sum) {
+  if (!panel) return;
+  var comp = (sum && sum.header && sum.header.competitions && sum.header.competitions[0]) || {};
+  var cps = comp.competitors || [];
+  var dom = cps.filter(function (c) { return c.homeAway === 'home'; })[0] || cps[0] || {};
+  var ext = cps.filter(function (c) { return c.homeAway === 'away'; })[0] || cps[1] || {};
+  var idDom = String((dom.team && dom.team.id) || dom.id || '');
+  var nm = function (c) { return (c.team && (c.team.shortDisplayName || c.team.displayName)) || '?'; };
+
+  var st = (comp.status && comp.status.type) || {};
+
+  /* BOUTON plutot qu'affichage systematique : la carte demande 1 a 4 requetes
+     par match, inutiles tant qu'on ne la regarde pas. Meme presentation que les
+     autres actions du panneau. */
+  var uid = 'g45-tirs-' + eid;
+  if (document.getElementById(uid)) return;
+  var bloc = document.createElement('div');
+  bloc.id = uid;
+  bloc.innerHTML = '<button onclick="_g45SgOuvrirTirs(this,\'' + lg + '\',\'' + eid + '\',\'' + idDom + '\',\''
+    + String(nm(dom)).replace(/'/g, '') + '\',\'' + String(nm(ext)).replace(/'/g, '') + '\',' + (st.completed === true) + ')" '
+    + 'style="width:100%;margin-bottom:10px;padding:11px;border-radius:10px;border:1px solid rgba(255,107,107,.35);'
+    + 'background:rgba(255,107,107,.08);color:#ff8a8a;font-size:13px;font-weight:800;cursor:pointer;">'
+    + '\ud83c\udfaf Carte des tirs & xG</button><div class="g45-tirs-zone"></div>';
+  panel.insertBefore(bloc, panel.firstChild);
+}
+window._g45SgCarteTirs = _g45SgCarteTirs;
+
+/* Chargement a la demande, avec repli parlant plutot qu'un bouton mort. */
+async function _g45SgOuvrirTirs(btn, lg, eid, idDom, nomDom, nomExt, termine) {
+  var zone = btn.parentNode.querySelector('.g45-tirs-zone');
+  if (!zone) return;
+  if (zone.innerHTML) {                       /* deja ouverte : on replie */
+    zone.innerHTML = '';
+    btn.textContent = '\ud83c\udfaf Carte des tirs & xG';
+    return;
+  }
+  btn.textContent = '\u23f3 Lecture des actions\u2026';
+  var tirs = null;
+  try { tirs = await g45TirsMatch(lg, eid, termine === true || termine === 'true'); } catch (e) {}
+  btn.textContent = '\ud83c\udfaf Carte des tirs & xG';
+  if (!tirs || !tirs.length) {
+    zone.innerHTML = '<div style="font-size:11px;color:#ffb13d;padding:8px;">ESPN ne publie pas le d\u00e9tail des actions '
+      + 'pour ce match \u2014 pas de carte possible.</div>';
+    return;
+  }
+  zone.innerHTML = g45CarteTirsHTML(tirs, idDom, nomDom, nomExt);
+}
+window._g45SgOuvrirTirs = _g45SgOuvrirTirs;
 
 function _g45SgRefresh() { if (typeof loadTeamSaisons === 'function') loadTeamSaisons(); }
 function _g45SgSaison(y) { _g45SgAn = y; _g45SgRefresh(); }
@@ -33950,6 +34182,27 @@ function _g45CompoIndice(nom) {
   return null;
 }
 
+/* Reconnaissance FOOTBALL stricte, independante du drapeau `avecFoot`.
+   Necessaire parce qu'un club de MLS porte presque toujours le nom d'une ville
+   deja prise par une franchise US : sans ce test prealable, « Nashville SC »
+   part chez les Predators (NHL) et « Inter Miami CF » repond en NBA, MLB et NFL
+   a la fois — d'ou le message « nom trop generique ».
+   Strict uniquement : on ne devine pas, on reconnait. */
+var _G45_FOOT_STRICT = ['usa.1','mex.1','bra.1','arg.1','esp.1','eng.1','ita.1','ger.1','fra.1',
+                        'por.1','ned.1','bel.1','tur.1','sco.1'];
+async function _g45FootStrict(nom) {
+  for (var i = 0; i < _G45_FOOT_STRICT.length; i++) {
+    try {
+      var eq = await _g45CompoEq('soccer', _G45_FOOT_STRICT[i]);
+      if (!eq.length) continue;
+      var ref = _g45CompoMatch(nom, eq, true);
+      if (ref) return { sp: 'soccer', lg: _G45_FOOT_STRICT[i], ref: ref, via: 'foot-strict' };
+    } catch (e) {}
+  }
+  return null;
+}
+window._g45FootStrict = _g45FootStrict;
+
 async function _g45CompoCtx(nom, avecFoot) {
   /* 1. Entree perso, posee au clic depuis Competitions : la plus fiable. */
   var perso = null;
@@ -33977,8 +34230,16 @@ async function _g45CompoCtx(nom, avecFoot) {
        On rejoue donc le rapprochement du module, qui NORMALISE (accents,
        ponctuation) et exige un vainqueur unique, sur les grands championnats.
        Les classements sont deja en cache 6 h. */
+    /* MLS, Bresil, Argentine et Mexique AJOUTES le 20/08 : la liste s'arretait a
+       l'Europe, donc « Inter Miami CF » et « Nashville SC » n'etaient jamais
+       reconnus comme footballeurs. Le balayage des sports americains les
+       recuperait ensuite — Nashville partait chez les Predators (NHL), et Miami
+       repondait a la fois en NBA, MLB et NFL, d'ou le message « nom trop
+       generique ». Un club de MLS porte presque toujours un nom de ville deja
+       pris par une franchise US : il DOIT etre teste avant elles. */
     var LIGUES_FOOT = ['esp.1','eng.1','ita.1','ger.1','fra.1','por.1','ned.1','bel.1',
-                       'tur.1','sco.1','fra.2','eng.2','esp.2','ita.2','ger.2'];
+                       'tur.1','sco.1','fra.2','eng.2','esp.2','ita.2','ger.2',
+                       'usa.1','mex.1','bra.1','arg.1'];
     for (var f = 0; f < LIGUES_FOOT.length; f++) {
       var eqF = await _g45CompoEq('soccer', LIGUES_FOOT[f]);
       if (!eqF.length) continue;
@@ -34047,6 +34308,11 @@ async function _g45CompoCtx(nom, avecFoot) {
       var r2 = _g45CompoMatch(nom, tables[m].eq, false);
       if (r2) touches.push({ sp: tables[m].sp, lg: tables[m].lg, ref: r2 });
     }
+    /* AVANT de retenir un rapprochement tolerant hors football — ou de declarer
+       le nom ambigu — on verifie s'il correspond STRICTEMENT a un club de
+       football. Un nom exact vaut toujours mieux qu'un nom de ville approche. */
+    var fs = await _g45FootStrict(nom);
+    if (fs) return fs;
     if (touches.length === 1) return { sp: touches[0].sp, lg: touches[0].lg, ref: touches[0].ref, via: 'scan-large' };
     if (touches.length > 1) return { sp: '', lg: '', ref: '', via: 'ambigu', pistes: touches };
   }
@@ -36867,4 +37133,605 @@ window.g45TvDiag = g45TvDiag;
 
 /* Decouverte au demarrage, sans bloquer l'affichage. Si le modele en cache a
    ete retire depuis, le prochain appel utilisera le nouveau. */
-setTimeout(function () { if (typeof g45GroqDecouvrir === 'function') g45GroqDecouvrir(); }, 3000);
+setTimeout(function () {
+  if (typeof g45GroqDecouvrir === 'function') g45GroqDecouvrir();
+  if (typeof g45GeminiModeles === 'function') g45GeminiModeles();
+}, 3000);
+
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MARQUEURS NFL & NHL (15/08/2026)
+   ───────────────────────────────────────────────────────────────────────────
+   Meme logique que la vue Buteurs football : probabilite de Poisson a partir du
+   rendement par match, puis COTE MINIMALE au-dessus de laquelle le pari devient
+   theoriquement rentable. C'est cette cote qui interesse Antoine, pas le
+   pourcentage brut — au-dela de 67 %, une cote equitable passe sous son seuil
+   de 1.50 et le pari n'est plus jouable.
+
+   SAISONS : la NFL demarre en septembre, la NHL en octobre. Interroges en aout,
+   les deux championnats renvoient une saison VIDE. On bascule donc sur la
+   derniere saison jouee et on l'affiche en clair — un tableau de zeros sans
+   explication ferait croire a une panne.
+
+   `types/2` = saison reguliere chez ESPN (types/0 = toutes phases, utilise en
+   football). Verifie : en NFL types/0 melange preseason et playoffs, ce qui
+   fausse le rendement par match.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+var G45_MQ = {
+  nfl: {
+    sport: 'football', lg: 'nfl', nom: 'NFL', ico: '\ud83c\udfc8',
+    cat: 'totalTouchdownsLeaders', libelle: 'Touchdowns', marche: 'Marque un TD',
+    debutMois: 8   /* septembre */
+  },
+  nhl: {
+    sport: 'hockey', lg: 'nhl', nom: 'NHL', ico: '\ud83c\udfd2',
+    cat: 'goalsLeaders', libelle: 'Buts', marche: 'Marque un but',
+    cat2: 'pointsLeaders', libelle2: 'Points', marche2: 'Marque ou passe',
+    debutMois: 9   /* octobre */
+  }
+};
+
+/* Saison a interroger : si le championnat n'a pas encore repris, la precedente. */
+function _g45MqSaison(c) {
+  var d = new Date();
+  var y = d.getFullYear();
+  return (d.getMonth() >= c.debutMois) ? y : (y - 1);
+}
+
+async function _g45MqLeaders(c, saison, categorie) {
+  var url = 'https://sports.core.api.espn.com/v2/sports/' + c.sport + '/leagues/' + c.lg
+          + '/seasons/' + saison + '/types/2/leaders';
+  var j = null;
+  try {
+    var r = await fetch(url);
+    if (!r.ok) return [];
+    j = await r.json();
+  } catch (e) { return []; }
+
+  var cat = ((j && j.categories) || []).filter(function (x) { return x.name === categorie; })[0];
+  if (!cat) {
+    /* Le nom de categorie change parfois d'une saison a l'autre : on prend la
+       premiere qui contient le mot-cle plutot que d'echouer. */
+    var mot = categorie.replace('Leaders', '').toLowerCase();
+    cat = ((j && j.categories) || []).filter(function (x) { return String(x.name || '').toLowerCase().indexOf(mot) >= 0; })[0];
+  }
+  return (cat && cat.leaders) ? cat.leaders.slice(0, 15) : [];
+}
+
+/* Le nom du joueur n'est pas dans la reponse : seulement une reference. */
+var _g45MqNoms = {};
+async function _g45MqNom(ref) {
+  var m = String(ref || '').match(/athletes\/(\d+)/);
+  if (!m) return { id: '', nom: '?' };
+  var id = m[1];
+  if (_g45MqNoms[id]) return { id: id, nom: _g45MqNoms[id] };
+  try {
+    var cle = 'g45_mqnom_' + id;
+    var cache = localStorage.getItem(cle);
+    if (cache) { _g45MqNoms[id] = cache; return { id: id, nom: cache }; }
+    var r = await fetch(String(ref).replace(/^http:/, 'https:'));
+    if (r.ok) {
+      var a = await r.json();
+      var n = a.displayName || a.fullName || a.shortName || '';
+      if (n) {
+        _g45MqNoms[id] = n;
+        try { localStorage.setItem(cle, n); } catch (e) {}   /* definitif : un nom ne change pas */
+        return { id: id, nom: n };
+      }
+    }
+  } catch (e) {}
+  return { id: id, nom: '#' + id };
+}
+
+async function g45MarqueursUS(quoi, secondaire) {
+  var c = G45_MQ[quoi];
+  var body = document.getElementById('g45-mq-body');
+  if (!c || !body) return;
+  var saison = _g45MqSaison(c);
+  var categorie = secondaire && c.cat2 ? c.cat2 : c.cat;
+  var libelle = secondaire && c.libelle2 ? c.libelle2 : c.libelle;
+  var marche = secondaire && c.marche2 ? c.marche2 : c.marche;
+
+  body.innerHTML = '<div style="color:var(--t3);font-size:11.5px;padding:12px;">\u23f3 Lecture des classements ' + c.nom + '\u2026</div>';
+  var leaders = await _g45MqLeaders(c, saison, categorie);
+  if (!leaders.length && saison === new Date().getFullYear()) {
+    saison = saison - 1;
+    leaders = await _g45MqLeaders(c, saison, categorie);
+  }
+  if (!leaders.length) {
+    body.innerHTML = '<div style="color:#ffb13d;font-size:11.5px;padding:12px;">Aucun classement disponible pour ' + c.nom + '.</div>';
+    return;
+  }
+
+  var lignes = [];
+  for (var i = 0; i < leaders.length; i++) {
+    var L = leaders[i];
+    var total = parseFloat(L.value) || 0;
+    var who = await _g45MqNom(L.athlete && L.athlete.$ref);
+    /* Nombre de matchs : ESPN le donne rarement ici. On l'approche par la saison
+       complete du championnat — 17 en NFL, 82 en NHL — ce qui SOUS-ESTIME le
+       rendement d'un joueur blesse. Signale sous le tableau. */
+    var matchs = (c.lg === 'nfl') ? 17 : 82;
+    var lam = total / matchs;
+    var p = 1 - Math.exp(-lam);
+    var coteMin = p > 0 ? (1 / p) : 0;
+    lignes.push({ nom: who.nom, total: total, lam: lam, p: p, cote: coteMin });
+  }
+  lignes.sort(function (a, b) { return b.p - a.p; });
+
+  body.innerHTML = '<div style="font-size:10px;color:var(--t3);margin-bottom:8px;">'
+      + c.ico + ' ' + c.nom + ' \u00b7 saison ' + saison + ' \u00b7 march\u00e9 \u00ab ' + marche + ' \u00bb'
+      + (saison < new Date().getFullYear() ? ' <span style="color:#ffb13d;">(saison pass\u00e9e : le championnat n\'a pas repris)</span>' : '')
+      + '</div>'
+    + '<div style="display:flex;font-size:9px;font-weight:800;color:#4f5d88;padding:0 6px 4px;">'
+    + '<div style="flex:1;">JOUEUR</div><div style="width:46px;text-align:right;">' + libelle.toUpperCase() + '</div>'
+    + '<div style="width:52px;text-align:right;">PAR M.</div><div style="width:46px;text-align:right;">PROBA</div>'
+    + '<div style="width:56px;text-align:right;">COTE MIN</div></div>'
+    + lignes.map(function (l) {
+        var coul = l.cote <= 1.5 ? '#6b7a99' : (l.cote <= 2.5 ? '#1ed760' : '#f0b020');
+        return '<div style="display:flex;align-items:center;padding:6px;border-bottom:1px solid rgba(255,255,255,.05);font-size:11.5px;">'
+          + '<div style="flex:1;min-width:0;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + l.nom + '</div>'
+          + '<div style="width:46px;text-align:right;color:var(--t3);">' + l.total + '</div>'
+          + '<div style="width:52px;text-align:right;color:var(--t3);">' + l.lam.toFixed(2) + '</div>'
+          + '<div style="width:46px;text-align:right;font-weight:700;">' + Math.round(l.p * 100) + '%</div>'
+          + '<div style="width:56px;text-align:right;font-weight:800;color:' + coul + ';">' + l.cote.toFixed(2) + '</div></div>';
+      }).join('')
+    + '<div style="font-size:9px;color:var(--t3);margin-top:8px;line-height:1.6;">'
+    + 'La <b>cote minimale</b> est celle au-dessus de laquelle le pari devient rentable \u00e0 long terme (1 \u00f7 probabilit\u00e9). '
+    + 'Elle n\'est pas d\u00e9vigorisée : la marge du bookmaker s\'y ajoute.<br>'
+    + 'Le rendement par match suppose une saison compl\u00e8te (' + ((c.lg === 'nfl') ? 17 : 82) + ' matchs) : '
+    + 'un joueur bless\u00e9 une partie de la saison est donc <b>sous-estim\u00e9</b>.</div>';
+}
+window.g45MarqueursUS = g45MarqueursUS;
+
+function g45MarqueursUI() {
+  var el = document.getElementById('t-tend') || document.getElementById('t-compet');
+  if (!el || document.getElementById('g45-mq-bloc')) return;
+  var d = document.createElement('div');
+  d.id = 'g45-mq-bloc';
+  d.innerHTML = '<div class="sec">\ud83c\udfc8 Marqueurs NFL & NHL</div>'
+    + '<div class="fc"><div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;">'
+    + '<button onclick="g45MarqueursUS(\'nfl\')" style="flex:1;min-width:90px;padding:9px;border-radius:9px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.04);color:var(--t1);font-size:11px;font-weight:700;cursor:pointer;">\ud83c\udfc8 NFL \u00b7 TD</button>'
+    + '<button onclick="g45MarqueursUS(\'nhl\')" style="flex:1;min-width:90px;padding:9px;border-radius:9px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.04);color:var(--t1);font-size:11px;font-weight:700;cursor:pointer;">\ud83c\udfd2 NHL \u00b7 buts</button>'
+    + '<button onclick="g45MarqueursUS(\'nhl\',1)" style="flex:1;min-width:90px;padding:9px;border-radius:9px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.04);color:var(--t1);font-size:11px;font-weight:700;cursor:pointer;">\ud83c\udfd2 NHL \u00b7 points</button>'
+    + '</div><div id="g45-mq-body" style="font-size:11.5px;color:var(--t3);">Choisis un march\u00e9.</div></div>';
+  el.appendChild(d);
+}
+window.g45MarqueursUI = g45MarqueursUI;
+
+document.addEventListener('click', function () {
+  setTimeout(function () { if (_g45Visible('t-tend')) g45MarqueursUI(); }, 200);
+});
+
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CARTE DES TIRS & xG MAISON (20/08/2026)
+   ───────────────────────────────────────────────────────────────────────────
+   SONDÉ AVANT D'ÉCRIRE, sur Atletico-Malaga (401882925). Trois constats qui
+   commandent tout le code :
+
+   1. `fieldPositionX` / `fieldPositionY` existent bien, de 0 a 100.
+   2. Les coordonnees sont RELATIVES AU SENS D'ATTAQUE : les tirs des DEUX
+      equipes sont entre x=71 et x=91. x=100 est donc toujours le but adverse,
+      quelle que soit la mi-temps. Aucune inversion a gerer.
+   3. PIEGE MAJEUR : un `Save` est enregistre du point de vue du GARDIEN, a
+      x=3-9, c'est-a-dire devant SON but. Chaque tir cadre apparait donc DEUX
+      fois. Sans filtre, la moitie des points se retrouverait devant le mauvais
+      but. On ne garde que les actions du TIREUR.
+
+   xG : modele explicite distance + angle, cale sur les reperes publics
+   (6 yards 42%, penalty en jeu ouvert 22%, entree de surface 9%, 25 m 3,5%).
+   Le penalty est traite a part via le drapeau `penaltyKick`, a 0,76.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+var _G45_POSTE = 3.66;          /* demi-largeur du but, en metres */
+var _G45_LONG = 105, _G45_LARG = 68;
+
+function _g45AngleBut(dx, dy) {
+  return Math.abs(Math.atan2(_G45_POSTE - dy, dx) - Math.atan2(-_G45_POSTE - dy, dx));
+}
+
+/* x, y en 0-100 tels que rendus par ESPN. */
+function g45XgTir(x, y, penalty) {
+  if (penalty) return 0.76;
+  var dx = Math.max(0.5, (100 - x) / 100 * _G45_LONG);      /* distance a la ligne de but */
+  var dy = Math.abs((y - 50) / 100 * _G45_LARG);            /* ecart par rapport a l'axe */
+  var dist = Math.sqrt(dx * dx + dy * dy);
+  var base = 0.92 * Math.exp(-0.13 * dist);
+  var aCentre = 2 * Math.atan(_G45_POSTE / Math.max(0.5, dist));
+  var ratio = _g45AngleBut(dx, dy) / Math.max(1e-6, aCentre);
+  return Math.max(0.01, Math.min(0.95, base * Math.pow(Math.min(1, ratio), 2)));
+}
+window.g45XgTir = g45XgTir;
+
+/* ── Récupération des actions, paginée ──
+   Une page rend 400 actions et un match en compte 1200 a 1500 : sans
+   pagination, les tirs de la fin de match manquaient. Cache DEFINITIF, un match
+   termine ne changeant plus. */
+async function g45TirsMatch(lg, eid, termine) {
+  /* VERSION 2 dans la cle : les entrees enregistrees avant la decouverte du xG
+     ESPN et des positions de cage n'ont pas ces champs. Les relire donnerait un
+     xG maison et une cage vide, sans le moindre signe d'anomalie. Changer la
+     cle est plus sur que de tenter une migration. */
+  var cle = 'g45_tirs2_' + lg + '_' + eid;
+  try {
+    var c = JSON.parse(localStorage.getItem(cle) || 'null');
+    if (c && (termine || (Date.now() - c.t) < 120000)) return c.l;
+  } catch (e) {}
+
+  var items = [];
+  for (var p = 1; p <= 5; p++) {
+    try {
+      var r = await fetch('https://sports.core.api.espn.com/v2/sports/soccer/leagues/' + lg
+        + '/events/' + eid + '/competitions/' + eid + '/plays?limit=400&page=' + p);
+      if (!r.ok) break;
+      var j = await r.json();
+      var lot = j.items || [];
+      items = items.concat(lot);
+      if (lot.length < 400) break;
+    } catch (e) { break; }
+  }
+  if (!items.length) return null;
+
+  /* Seules les actions du TIREUR. « Save » et « Goal Kick » sont exclus : ce
+     sont les memes tirs vus du gardien, a l'autre bout du terrain. */
+  var estTir = /^(shot|goal)/i;
+  var exclu = /save|goal kick|assists? shot/i;
+
+  var tirs = items.filter(function (a) {
+    var t = (a.type && a.type.text) || '';
+    if (exclu.test(t)) return false;
+    if (!estTir.test(t)) return false;
+    return typeof a.fieldPositionX === 'number';
+  }).map(function (a) {
+    var t = (a.type && a.type.text) || '';
+    var but = a.scoringPlay === true || /^goal/i.test(t);
+    var cadre = but || /on target|hit woodwork/i.test(t);
+    return {
+      min: (a.clock && a.clock.displayValue) || '',
+      periode: (a.period && a.period.number) || 1,
+      type: t,
+      but: but,
+      cadre: cadre,
+      bloque: /blocked/i.test(t),
+      csc: a.ownGoal === true,
+      pen: a.penaltyKick === true,
+      equipe: String((a.team && a.team.$ref) || '').match(/teams\/(\d+)/) ? String(a.team.$ref).match(/teams\/(\d+)/)[1] : '',
+      qui: String(a.shortText || '').replace(/\s+(Shot|Goal).*$/i, '').trim(),
+      x: a.fieldPositionX,
+      y: a.fieldPositionY,
+      /* ═══ xG RÉEL D'ESPN (decouvert le 20/08) ═══
+         Un tir porte `expectedGoals` : inutile d'estimer ce qui est fourni. Mon
+         modele maison ne sert plus que de REPLI, quand le champ est absent —
+         tirs contres, competitions moins couvertes. La provenance est notee
+         pour que l'affichage puisse le dire honnetement. */
+      xg: (typeof a.expectedGoals === 'number' && a.expectedGoals >= 0)
+            ? a.expectedGoals
+            : g45XgTir(a.fieldPositionX, a.fieldPositionY, a.penaltyKick === true),
+      xgSrc: (typeof a.expectedGoals === 'number' && a.expectedGoals >= 0) ? 'espn' : 'maison',
+      xgot: (typeof a.expectedGoalsOnTarget === 'number') ? a.expectedGoalsOnTarget : null,
+      /* Position DANS LA CAGE, presente uniquement sur les tirs cadres. */
+      gy: (typeof a.goalPositionY === 'number') ? a.goalPositionY : null,
+      gz: (typeof a.goalPositionZ === 'number') ? a.goalPositionZ : null,
+      zone: a.targetZone || '',
+      contact: (a.contactType && (a.contactType.text || a.contactType)) || '',
+      info: (a.shotInfo && (a.shotInfo.text || a.shotInfo)) || ''
+    };
+  });
+
+  try { localStorage.setItem(cle, JSON.stringify({ t: Date.now(), l: tirs })); } catch (e) {}
+  return tirs;
+}
+window.g45TirsMatch = g45TirsMatch;
+
+/* ── Rendu : terrain SVG, les deux equipes face a face ──
+   Les coordonnees etant relatives au sens d'attaque, on RENVERSE l'equipe
+   visiteuse (x -> 100-x, y -> 100-y) pour obtenir la lecture habituelle :
+   domicile attaque a droite, visiteur a gauche. */
+function g45CarteTirsHTML(tirs, idDom, nomDom, nomExt) {
+  if (!tirs || !tirs.length) return '';
+
+  var W = 660, H = 420, M = 8;
+  var px = function (t) {
+    var x = (String(t.equipe) === String(idDom)) ? t.x : (100 - t.x);
+    return M + (x / 100) * (W - 2 * M);
+  };
+  var py = function (t) {
+    var y = (String(t.equipe) === String(idDom)) ? t.y : (100 - t.y);
+    return M + (y / 100) * (H - 2 * M);
+  };
+
+  var somme = { dom: 0, ext: 0 }, nb = { dom: 0, ext: 0 }, buts = { dom: 0, ext: 0 };
+  tirs.forEach(function (t) {
+    var k = (String(t.equipe) === String(idDom)) ? 'dom' : 'ext';
+    somme[k] += t.xg; nb[k]++; if (t.but) buts[k]++;
+  });
+
+  /* Le rayon suit le xG : un tir dangereux se voit immediatement. */
+  var points = tirs.map(function (t) {
+    var dom = (String(t.equipe) === String(idDom));
+    var coul = dom ? '#4d84ff' : '#f0b020';
+    var r = 4 + Math.sqrt(t.xg) * 13;
+    var titre = (t.qui || '?') + ' \u00b7 ' + t.min + ' \u00b7 ' + t.type
+              + ' \u00b7 xG ' + t.xg.toFixed(2) + (t.pen ? ' (penalty)' : '');
+    if (t.but) {
+      return '<circle cx="' + px(t).toFixed(1) + '" cy="' + py(t).toFixed(1) + '" r="' + r.toFixed(1) + '" '
+        + 'fill="' + coul + '" stroke="#fff" stroke-width="2.5"><title>' + titre + '</title></circle>';
+    }
+    return '<circle cx="' + px(t).toFixed(1) + '" cy="' + py(t).toFixed(1) + '" r="' + r.toFixed(1) + '" '
+      + 'fill="' + (t.cadre ? coul : 'none') + '" fill-opacity="' + (t.cadre ? '.55' : '0') + '" '
+      + 'stroke="' + coul + '" stroke-width="1.6" ' + (t.bloque ? 'stroke-dasharray="3 2"' : '')
+      + '><title>' + titre + '</title></circle>';
+  }).join('');
+
+  var L = function (x1, y1, x2, y2) {
+    return '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="rgba(255,255,255,.20)" stroke-width="1.4"/>';
+  };
+  var surf = (W - 2 * M) * 0.165, six = (W - 2 * M) * 0.055;
+  var hs = (H - 2 * M) * 0.60, h6 = (H - 2 * M) * 0.28;
+
+  return '<div style="margin-bottom:12px;padding:10px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);">'
+    + '<div style="font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#4f5d88;margin-bottom:6px;">'
+    + '\ud83c\udfaf Carte des tirs & xG</div>'
+
+    + '<div style="display:flex;gap:10px;font-size:11px;margin-bottom:6px;">'
+    + '<div style="flex:1;"><span style="color:#4d84ff;font-weight:800;">' + nomDom + '</span><br>'
+    + '<span style="font-size:16px;font-weight:900;color:#4d84ff;">' + somme.dom.toFixed(2) + '</span>'
+    + '<span style="font-size:9px;color:var(--t3);"> xG \u00b7 ' + nb.dom + ' tirs \u00b7 ' + buts.dom + ' but(s)</span></div>'
+    + '<div style="flex:1;text-align:right;"><span style="color:#f0b020;font-weight:800;">' + nomExt + '</span><br>'
+    + '<span style="font-size:16px;font-weight:900;color:#f0b020;">' + somme.ext.toFixed(2) + '</span>'
+    + '<span style="font-size:9px;color:var(--t3);"> xG \u00b7 ' + nb.ext + ' tirs \u00b7 ' + buts.ext + ' but(s)</span></div></div>'
+
+    + '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto;background:rgba(30,120,70,.16);border-radius:8px;">'
+    + '<rect x="' + M + '" y="' + M + '" width="' + (W - 2 * M) + '" height="' + (H - 2 * M) + '" fill="none" stroke="rgba(255,255,255,.20)" stroke-width="1.4"/>'
+    + L(W / 2, M, W / 2, H - M)
+    + '<circle cx="' + (W / 2) + '" cy="' + (H / 2) + '" r="' + ((H - 2 * M) * 0.13) + '" fill="none" stroke="rgba(255,255,255,.20)" stroke-width="1.4"/>'
+    /* surfaces */
+    + '<rect x="' + M + '" y="' + ((H - hs) / 2) + '" width="' + surf + '" height="' + hs + '" fill="none" stroke="rgba(255,255,255,.20)" stroke-width="1.4"/>'
+    + '<rect x="' + (W - M - surf) + '" y="' + ((H - hs) / 2) + '" width="' + surf + '" height="' + hs + '" fill="none" stroke="rgba(255,255,255,.20)" stroke-width="1.4"/>'
+    + '<rect x="' + M + '" y="' + ((H - h6) / 2) + '" width="' + six + '" height="' + h6 + '" fill="none" stroke="rgba(255,255,255,.14)" stroke-width="1.2"/>'
+    + '<rect x="' + (W - M - six) + '" y="' + ((H - h6) / 2) + '" width="' + six + '" height="' + h6 + '" fill="none" stroke="rgba(255,255,255,.14)" stroke-width="1.2"/>'
+    + points
+    + '</svg>'
+
+    + '<div style="font-size:9px;color:var(--t3);margin-top:6px;line-height:1.6;">'
+    + '\u25cf plein = but \u00b7 \u25cf translucide = cadr\u00e9 \u00b7 \u25cb vide = hors cadre \u00b7 pointill\u00e9 = contr\u00e9 \u2014 '
+    + 'la TAILLE du point suit le xG. Survole un point pour le d\u00e9tail.<br>'
+    + (function () {
+        var nEspn = tirs.filter(function (t) { return t.xgSrc === 'espn'; }).length;
+        if (nEspn === tirs.length) return '<b>xG fourni par ESPN</b> pour les ' + tirs.length + ' tirs.';
+        if (!nEspn) return '<b>xG maison</b> (distance et angle) : ESPN n\'en fournit pas sur ce match.';
+        return '<b>xG ESPN</b> sur ' + nEspn + ' tir(s) sur ' + tirs.length
+             + ' ; les autres sont estim\u00e9s maison (distance et angle).';
+      })()
+    + '</div>'
+    + _g45CageHTML(tirs, idDom, nomDom, nomExt)
+    + '</div>';
+}
+window.g45CarteTirsHTML = g45CarteTirsHTML;
+
+/* ═══ VUE « DANS LA CAGE » ═══
+   `goalPositionY` (largeur) et `goalPositionZ` (hauteur) ne sont presents que
+   sur les tirs CADRES — c'est logique : un tir hors cadre n'a pas de point
+   d'impact dans le but.
+   L'unite n'est pas documentee. On la DEDUIT : au-dela de 8, ce sont forcement
+   des pourcentages ; en deca, des metres (le but fait 7,32 m sur 2,44 m).
+   Deviner aurait place les tirs n'importe ou. */
+function _g45CageHTML(tirs, idDom, nomDom, nomExt) {
+  /* CORRIGE le 20/08 : je gardais tout tir PORTANT des coordonnees de cage.
+     Or les tirs contres et hors cadre en ont aussi — souvent (0,0), faute de
+     point d'impact reel. D'ou 20 points la ou le match en comptait 7 cadres, et
+     un amas au centre du but.
+     On exige donc un tir REELLEMENT cadre, et on ecarte le couple (0,0) qui
+     signale une donnee absente plutot qu'un tir au ras du poteau gauche. */
+  var cadres = tirs.filter(function (t) {
+    if (!t.cadre) return false;
+    if (t.gy == null || t.gz == null) return false;
+    if (Math.abs(t.gy) < 0.01 && Math.abs(t.gz) < 0.01) return false;
+    return true;
+  });
+  if (!cadres.length) return '';
+
+  /* ═══ ÉCHELLE DÉDUITE DES DONNÉES, PAS SUPPOSÉE (20/08) ═══
+     Ma premiere version tassait tous les tirs en bas au centre. En comparant
+     `goalPositionY/Z` aux zones que ESPN annonce lui-meme (`targetZone`), la
+     regle apparait :
+       gy = pourcentage de la LARGEUR DU TERRAIN, comme `fieldPositionY`. Le but
+            occupe 7,32 m sur 68, soit 10,76 % : de 44,62 a 55,38 autour de
+            l'axe. Les valeurs observees tenaient TOUTES dans cet intervalle
+            (49 a 54,5), alors que je les divisais par 100 — d'ou l'amas au
+            centre du but.
+       gz = hauteur, barre transversale vers 40 et non 100.
+       gy CROISSANT = cote GAUCHE (vocabulaire d'ESPN).
+     Verifie sur les 7 tirs cadres d'Atletico-Malaga : 7 zones sur 7 reproduites
+     a l'identique. */
+  var GY0 = 44.62, GYW = 10.76, GZH = 40;
+
+  var W = 560, H = 190, m = 26;
+  var GW = W - 2 * m, GH = H - m - 14;
+  var px = function (t) {
+    var f = (t.gy - GY0) / GYW;
+    f = 1 - Math.max(0, Math.min(1, f));            /* gy eleve = gauche */
+    return m + f * GW;
+  };
+  var py = function (t) {
+    var f = Math.max(0, Math.min(1, t.gz / GZH));
+    return (H - 14) - f * GH;                        /* 0 = au sol */
+  };
+
+  var pts = cadres.map(function (t) {
+    var dom = (String(t.equipe) === String(idDom));
+    var coul = dom ? '#4d84ff' : '#f0b020';
+    var r = t.but ? 8 : 6;
+    var titre = (t.qui || '?') + ' \u00b7 ' + t.min + ' \u00b7 ' + (t.but ? 'BUT' : t.type)
+              + ' \u00b7 xG ' + t.xg.toFixed(2)
+              + (t.xgot != null ? (' \u00b7 xGOT ' + t.xgot.toFixed(2)) : '')
+              + (t.zone ? (' \u00b7 ' + ((t.zone && t.zone.text) || t.zone)) : '');
+    return '<circle cx="' + px(t).toFixed(1) + '" cy="' + py(t).toFixed(1) + '" r="' + r + '" '
+      + 'fill="' + (t.but ? coul : 'none') + '" fill-opacity="' + (t.but ? '1' : '0') + '" '
+      + 'stroke="' + coul + '" stroke-width="2"><title>' + titre + '</title></circle>';
+  }).join('');
+
+  return '<div style="margin-top:10px;">'
+    + '<div style="font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#4f5d88;margin-bottom:4px;">'
+    + '\ud83e\udd45 Dans la cage \u00b7 ' + cadres.length + ' tir(s) cadr\u00e9(s)</div>'
+    + '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto;background:rgba(255,255,255,.03);border-radius:8px;">'
+    + '<rect x="' + m + '" y="' + (H - 14 - GH) + '" width="' + GW + '" height="' + GH + '" fill="rgba(255,255,255,.04)" stroke="rgba(255,255,255,.45)" stroke-width="3"/>'
+    + '<line x1="' + (m + GW / 3) + '" y1="' + (H - 14 - GH) + '" x2="' + (m + GW / 3) + '" y2="' + (H - 14) + '" stroke="rgba(255,255,255,.10)" stroke-width="1"/>'
+    + '<line x1="' + (m + 2 * GW / 3) + '" y1="' + (H - 14 - GH) + '" x2="' + (m + 2 * GW / 3) + '" y2="' + (H - 14) + '" stroke="rgba(255,255,255,.10)" stroke-width="1"/>'
+    + '<line x1="' + m + '" y1="' + (H - 14 - GH / 2) + '" x2="' + (m + GW) + '" y2="' + (H - 14 - GH / 2) + '" stroke="rgba(255,255,255,.10)" stroke-width="1"/>'
+    + pts + '</svg>'
+    + '<div style="font-size:9px;color:var(--t3);margin-top:4px;">Vue depuis le tireur \u00b7 point plein = but '
+    + '\u00b7 survole pour la zone annonc\u00e9e par ESPN et le xGOT</div></div>';
+}
+window._g45CageHTML = _g45CageHTML;
+
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   xG DE LA SAISON — pour, contre, et ECART avec les buts reels (20/08/2026)
+   ───────────────────────────────────────────────────────────────────────────
+   Rendu possible par la decouverte du champ `expectedGoals` dans les actions
+   ESPN. C'est l'information que la memoire notait comme « hors de portee
+   gratuitement » depuis juillet : la conclusion etait juste pour les sources
+   connues, fausse pour celle-ci.
+
+   POURQUOI C'EST LA STATISTIQUE LA PLUS UTILE POUR PARIER : une equipe qui
+   marque 2,1 buts pour 1,4 xG emprunte a son avenir et regressera ; le marche,
+   lui, suit les resultats et met du temps a corriger. L'ecart se lit ici.
+
+   COUT : le xG est par MATCH, jamais par saison. Il faut donc lire les actions
+   de chaque rencontre — 1 a 4 requetes ESPN, gratuites. Une saison complete
+   coute ~100 requetes, UNE SEULE FOIS : le cache par match est definitif
+   (`g45_tirs_*`), un match termine ne changeant plus.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+async function g45XgSaison(matches, teamId, nom, boiteId, lgDef) {
+  var box = document.getElementById(boiteId);
+  if (!box) return;
+
+  var joues = (matches || []).filter(function (m) {
+    return m && m.espnId && (m.status === 'FINISHED' || m.score && m.score.fullTime && m.score.fullTime.home != null);
+  });
+  if (!joues.length) { box.innerHTML = '<div style="color:var(--t3);font-size:11px;">Aucun match jou\u00e9 exploitable.</div>'; return; }
+
+  var dejaEnCache = joues.filter(function (m) {
+    try { return !!localStorage.getItem('g45_tirs2_' + ((m.competition && m.competition.code) || lgDef || 'esp.1') + '_' + m.espnId); }
+    catch (e) { return false; }
+  }).length;
+  var aLire = joues.length - dejaEnCache;
+
+  if (aLire > 0 && !confirm('Calculer les xG de la saison\n\n'
+      + joues.length + ' matchs jou\u00e9s\n'
+      + dejaEnCache + ' d\u00e9j\u00e0 en cache\n'
+      + aLire + ' \u00e0 lire (' + aLire + ' \u00e0 ' + (aLire * 3) + ' requ\u00eates ESPN, gratuites)\n\n'
+      + 'Dur\u00e9e : environ ' + Math.max(1, Math.round(aLire * 1.2 / 60)) + ' min. Lancer ?')) return;
+
+  var pour = 0, contre = 0, butsP = 0, butsC = 0, lus = 0, sansXg = 0, indetermine = 0;
+  var parMatch = [];
+
+  for (var i = 0; i < joues.length; i++) {
+    var m = joues[i];
+    var lg = (m.competition && m.competition.code) || lgDef || 'esp.1';
+    box.innerHTML = '<div style="color:var(--t3);font-size:11px;">\u23f3 ' + (i + 1) + '/' + joues.length
+      + ' \u00b7 ' + (m.homeTeam && m.homeTeam.name || '') + '</div>';
+
+    var tirs = null;
+    try { tirs = await g45TirsMatch(lg, m.espnId, true); } catch (e) {}
+    if (!tirs || !tirs.length) { sansXg++; continue; }
+
+    /* ═══ IDENTIFIER NOTRE CAMP, SANS SUPPOSER L'IDENTIFIANT ═══
+       Les tirs portent l'identifiant ESPN de l'equipe. Or l'onglet Saisons
+       travaille parfois avec un identifiant d'une AUTRE source. Quand aucun tir
+       ne correspond, tout bascule du cote adverse : Espanyol est ressorti a
+       0,0 xG pour 3 buts marques, et 1,8 xG contre 0 encaisse.
+       On DEDUIT donc notre camp en comparant les buts marques dans les tirs au
+       score reel du match. Si la deduction est impossible — score de parite,
+       aucun but —, on ECARTE le match plutot que de risquer une inversion
+       silencieuse, et on le signale. */
+    var bH0 = (m.score && m.score.fullTime && m.score.fullTime.home) || 0;
+    var bA0 = (m.score && m.score.fullTime && m.score.fullTime.away) || 0;
+    var nousDom0 = (m.homeTeam && String(m.homeTeam.id) === String(teamId));
+    var nosButs = nousDom0 ? bH0 : bA0, sesButs = nousDom0 ? bA0 : bH0;
+
+    var ids = [];
+    tirs.forEach(function (t) { if (t.equipe && ids.indexOf(t.equipe) < 0) ids.push(t.equipe); });
+
+    var idNous = null;
+    if (ids.indexOf(String(teamId)) >= 0) {
+      idNous = String(teamId);                       /* correspondance directe */
+    } else if (ids.length === 2 && nosButs !== sesButs) {
+      var butsPar = {};
+      ids.forEach(function (id) { butsPar[id] = 0; });
+      tirs.forEach(function (t) { if (t.but && butsPar[t.equipe] != null) butsPar[t.equipe]++; });
+      if (butsPar[ids[0]] === nosButs && butsPar[ids[1]] === sesButs) idNous = ids[0];
+      else if (butsPar[ids[1]] === nosButs && butsPar[ids[0]] === sesButs) idNous = ids[1];
+    }
+    if (!idNous) { indetermine++; continue; }
+
+    var estNous = function (t) { return String(t.equipe) === String(idNous); };
+    var xp = 0, xc = 0, vrai = false;
+    tirs.forEach(function (t) {
+      if (t.xgSrc === 'espn') vrai = true;
+      if (estNous(t)) xp += t.xg; else xc += t.xg;
+    });
+    /* Un match dont AUCUN tir n'a de xG ESPN fausserait la comparaison avec les
+       buts reels : on le compte a part plutot que de melanger les sources. */
+    if (!vrai) { sansXg++; continue; }
+
+    var bH = (m.score && m.score.fullTime && m.score.fullTime.home) || 0;
+    var bA = (m.score && m.score.fullTime && m.score.fullTime.away) || 0;
+    var nousDom = (m.homeTeam && String(m.homeTeam.id) === String(teamId));
+    pour += xp; contre += xc;
+    butsP += nousDom ? bH : bA;
+    butsC += nousDom ? bA : bH;
+    lus++;
+    parMatch.push({ adv: nousDom ? (m.awayTeam && m.awayTeam.name) : (m.homeTeam && m.homeTeam.name),
+                    date: m.utcDate || m.date, xp: xp, xc: xc,
+                    bp: nousDom ? bH : bA, bc: nousDom ? bA : bH });
+  }
+
+  if (!lus) {
+    box.innerHTML = '<div style="color:#ffb13d;font-size:11px;">ESPN ne fournit pas de xG sur cette comp\u00e9tition '
+      + '(' + sansXg + ' matchs sans donn\u00e9e).</div>';
+    return;
+  }
+
+  var ecartP = butsP - pour, ecartC = butsC - contre;
+  var pastille = function (lib, val, sous, coul) {
+    return '<div style="flex:1;min-width:110px;padding:9px;border-radius:9px;background:rgba(255,255,255,.04);text-align:center;">'
+      + '<div style="font-size:9px;color:var(--t3);">' + lib + '</div>'
+      + '<div style="font-size:19px;font-weight:900;color:' + coul + ';">' + val + '</div>'
+      + '<div style="font-size:9px;color:var(--t3);">' + sous + '</div></div>';
+  };
+  var fleche = function (e) {
+    if (e > 1.5) return '<span style="color:#ff8a8a;">sur-performe de ' + e.toFixed(1) + ' buts</span>';
+    if (e < -1.5) return '<span style="color:#4ade80;">sous-performe de ' + Math.abs(e).toFixed(1) + ' buts</span>';
+    return '<span style="color:var(--t3);">conforme \u00e0 ses occasions</span>';
+  };
+
+  box.innerHTML =
+      '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">'
+    + pastille('xG POUR', pour.toFixed(1), (pour / lus).toFixed(2) + ' / match', '#1ed760')
+    + pastille('BUTS MARQU\u00c9S', butsP, (butsP / lus).toFixed(2) + ' / match', '#e6ecf5')
+    + pastille('xG CONTRE', contre.toFixed(1), (contre / lus).toFixed(2) + ' / match', '#ff8a8a')
+    + pastille('BUTS ENCAISS\u00c9S', butsC, (butsC / lus).toFixed(2) + ' / match', '#e6ecf5')
+    + '</div>'
+    + '<div style="font-size:11px;line-height:1.8;padding:8px;border-radius:8px;background:rgba(255,255,255,.03);">'
+    + '<b>Attaque</b> : ' + fleche(ecartP) + '<br>'
+    + '<b>D\u00e9fense</b> : ' + (ecartC > 1.5
+        ? '<span style="color:#ff8a8a;">encaisse ' + ecartC.toFixed(1) + ' buts de plus que les occasions conc\u00e9d\u00e9es</span>'
+        : (ecartC < -1.5
+          ? '<span style="color:#4ade80;">encaisse ' + Math.abs(ecartC).toFixed(1) + ' buts de moins</span>'
+          : '<span style="color:var(--t3);">conforme</span>')) + '</div>'
+    + '<div style="font-size:9px;color:var(--t3);margin-top:6px;line-height:1.6;">'
+    + lus + ' match(s) avec xG ESPN'
+    + (sansXg ? (' \u00b7 ' + sansXg + ' sans donn\u00e9e') : '')
+    + (indetermine ? (' \u00b7 ' + indetermine + ' \u00e9cart\u00e9(s), camp ind\u00e9terminable') : '') + '.<br>'
+    + 'Une <b>sur-performance</b> durable finit presque toujours par se corriger : c\'est l\u00e0 que le march\u00e9 '
+    + 'retarde le plus, puisqu\'il suit les r\u00e9sultats.</div>';
+}
+window.g45XgSaison = g45XgSaison;
