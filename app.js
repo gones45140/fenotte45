@@ -37386,6 +37386,21 @@ function _g45DirEquipes() {
   return out;
 }
 
+/* Ouvrir le module F1 DEPUIS le direct (22/08). `g45F1Open` ecrit dans
+   `#t-resultats` mais ne bascule pas d'onglet : appelee telle quelle depuis
+   Suivies, elle remplirait un onglet invisible. On montre donc l'onglet
+   d'abord, en reutilisant le bouton de navigation pour que la barre du bas
+   reste coherente. */
+window.g45F1DepuisDirect = function(){
+  try{
+    var btn = document.querySelector('.ni[onclick*="t-resultats"]');
+    if (typeof showTab === 'function') showTab('t-resultats', btn || null);
+    if (typeof g45F1Open === 'function') g45F1Open();
+    var t = document.getElementById('t-resultats');
+    if (t && t.scrollIntoView) t.scrollIntoView({ behavior:'smooth', block:'start' });
+  }catch(e){ try{ if(typeof g45F1Open==='function') g45F1Open(); }catch(_e){} }
+};
+
 /* ═══ SEANCES DE FORMULE 1 DANS LE DIRECT (22/08) ═══
    Demande d'Antoine. La donnee etait deja la : `_g45OF1YearSessions` rapatrie
    TOUTES les seances de la saison en une seule requete, gardee en memoire — donc
@@ -37640,7 +37655,8 @@ async function g45DirectMesEquipes(silencieux) {
         return '<span style="background:rgba(8,11,20,.62);border-radius:6px;padding:3px 7px;font-size:9px;'
              + 'color:rgba(255,255,255,.78);white-space:nowrap;">' + _g45CyEa(txt) + '</span>';
       };
-      return '<div style="position:relative;overflow:hidden;border-radius:12px;margin-bottom:7px;'
+      return '<div onclick="g45F1DepuisDirect()" title="Ouvrir la Formule 1" '
+        + 'style="position:relative;overflow:hidden;border-radius:12px;margin-bottom:7px;cursor:pointer;'
         + 'border:1px solid rgba(255,255,255,.07);background:' + fondF + ';background-size:cover;'
         + 'background-position:center 45%;padding:12px 62px;min-height:92px;'
         + 'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;">'
@@ -37655,6 +37671,7 @@ async function g45DirectMesEquipes(silencieux) {
           + pastF('\ud83d\udcc5 ' + dF.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'long' })
                  + ' \u00b7 ' + dF.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }))
           + (m.circuit ? pastF('\ud83d\udccd ' + m.circuit) : '')
+          + pastF('\u2192 Ouvrir')
         + '</div>'
       + '</div>';
     }
