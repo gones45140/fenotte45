@@ -395,3 +395,18 @@ input[type="date"],input[type="time"]{color-scheme:dark;}
 .t-chip{padding:4px 10px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:var(--t3);font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;}.t-chip:hover{border-color:rgba(77,132,255,.5);background:rgba(77,132,255,.1);color:#7aaaff;}.t-chip.active{border-color:rgba(77,132,255,.5);background:rgba(77,132,255,.12);color:#7aaaff;}
 .mm-row input.fi{color:var(--t1) !important;background:var(--bg2) !important;}
 .mm-del{background:rgba(255,69,69,.15);border:1px solid rgba(255,69,69,.3);color:#ff6b6b;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;flex-shrink:0;padding:0;}
+
+/* ═══ Fond de championnat des classements Marqueurs (22/08) ═══
+   Couche posee entre le fond opaque du panneau et le tableau. Sur PC le logo
+   est CENTRE ; sur telephone il reste cale a droite, ou il tombait deja bien.
+   Passer par une classe permet cette distinction : une regle inline ne peut
+   pas porter de media query. `--mq-img` et `--mq-tinte` sont fournies par
+   g45MqSport, une par championnat. */
+.g45-mq-fond{position:absolute;inset:0;pointer-events:none;border-radius:var(--r8);opacity:.13;
+  background-image:linear-gradient(120deg,var(--mq-tinte,transparent) 0%,transparent 60%),var(--mq-img,none);
+  background-repeat:no-repeat,no-repeat;
+  background-size:auto,contain;
+  background-position:center center,center center;}
+@media(max-width:1099px){
+  .g45-mq-fond{background-position:center center,right -40px center;}
+}
