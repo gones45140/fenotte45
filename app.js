@@ -37386,6 +37386,73 @@ function _g45DirEquipes() {
   return out;
 }
 
+/* ═══ SEANCES DE FORMULE 1 DANS LE DIRECT (22/08) ═══
+   Demande d'Antoine. La donnee etait deja la : `_g45OF1YearSessions` rapatrie
+   TOUTES les seances de la saison en une seule requete, gardee en memoire — donc
+   l'ajout ne coute rien au chargement des matchs.
+   Une carte PAR SEANCE et non par week-end : les qualifications du samedi et la
+   course du dimanche sont deux rendez-vous distincts, a deux heures distinctes.
+   LES ESSAIS SONT EXCLUS (choix d'Antoine) : un week-end de sprint produirait
+   six lignes et noierait ses matchs de football. Restent qualifications, sprint
+   qualifications, sprint et course.
+   L'entree « FORMULE 1 » du mur sert d'interrupteur, comme les equipes suivies
+   commandent l'affichage des matchs. */
+var _G45_F1_SESS = [
+  { re:/sprint\s*(qualif|shootout)/i,  nom:'Sprint Qualifs', ico:'\u23f1\ufe0f', ordre:2 },
+  { re:/sprint/i,                      nom:'Sprint',         ico:'\u26a1',        ordre:3 },
+  { re:/qualif/i,                      nom:'Qualifications', ico:'\u23f1\ufe0f', ordre:2 },
+  { re:/race|grand\s*prix/i,           nom:'Course',         ico:'\ud83c\udfc1', ordre:4 }
+];
+function _g45F1SessType(nom){
+  var n = String(nom || '');
+  if (/practice|essai/i.test(n)) return null;      /* essais : exclus */
+  for (var i = 0; i < _G45_F1_SESS.length; i++) {
+    if (_G45_F1_SESS[i].re.test(n)) return _G45_F1_SESS[i];
+  }
+  return null;
+}
+function _g45F1SuiviMur(){
+  try {
+    return ((typeof state !== 'undefined' && state && state.u) || []).some(function (u) {
+      return u && u.n && /^(formule1|formula1|f1)$/.test(_g45SgNorm(u.n));
+    });
+  } catch (e) { return false; }
+}
+async function _g45F1DirectCartes(limite){
+  if (!_g45F1SuiviMur()) return [];
+  var out = [];
+  try {
+    var an = new Date().getFullYear();
+    var all = await _g45OF1YearSessions(an);
+    if (!all || !all.length) return [];
+    var maintenant = Date.now();
+    var fin = maintenant + 3 * 24 * 3600000;      /* meme horizon que les matchs, elargi au week-end */
+    all.forEach(function (sess) {
+      var t = _g45F1SessType(sess.session_name);
+      if (!t) return;
+      var deb = Date.parse(sess.date_start);
+      if (isNaN(deb) || deb < limite || deb > fin) return;
+      /* Une seance dure environ une heure ; deux pour une course. */
+      var duree = (t.nom === 'Course') ? 2.5 * 3600000 : 1.2 * 3600000;
+      var etat = (maintenant < deb) ? 'pre' : ((maintenant < deb + duree) ? 'in' : 'post');
+      var pays = sess.country_name || '';
+      out.push({
+        f1: true,
+        etat: etat,
+        id: 'f1-' + (sess.session_key || (deb + '-' + t.nom)),
+        sp: 'f1',
+        titre: sess.meeting_name || ('GP ' + pays),
+        seance: t.nom,
+        ico: t.ico,
+        pays: pays,
+        circuit: sess.circuit_short_name || '',
+        date: sess.date_start
+      });
+    });
+  } catch (e) {}
+  return out;
+}
+
 async function g45DirectMesEquipes(silencieux) {
   var box = document.getElementById('g45-direct-body');
   if (!box) return;
@@ -37533,6 +37600,10 @@ async function g45DirectMesEquipes(silencieux) {
     });
   }
 
+  /* Les seances de F1 rejoignent la meme liste : elles heritent donc du tri par
+     etat puis par heure, et se glissent naturellement entre les matchs. */
+  try { (await _g45F1DirectCartes(LIMITE)).forEach(function (c) { trouves.push(c); }); } catch (e) {}
+
   /* En cours d'abord, puis à venir, puis terminés — l'ordre d'intérêt. */
   var rang = { 'in': 0, 'pre': 1, 'post': 2 };
   trouves.sort(function (a, b) { return (rang[a.etat] || 3) - (rang[b.etat] || 3) || (Date.parse(a.date) - Date.parse(b.date)); });
@@ -37545,6 +37616,49 @@ async function g45DirectMesEquipes(silencieux) {
   }
 
   box.innerHTML = trouves.map(function (m) {
+    /* ═══ CARTE DE SEANCE F1 ═══
+       Une seance n'a pas d'adversaire : la mise en page a deux camps ne
+       s'applique pas. On garde en revanche la MEME grammaire visuelle que les
+       autres cartes — `g45FondSolo`, hauteur, rayon, pastilles du bas — pour
+       que la ligne ne detonne pas au milieu des matchs.
+       Le fond est celui de la categorie FORMULE 1 : le fichier depose dans le
+       depot s'il existe, sinon le pictogramme dessine. */
+    if (m.f1) {
+      var dF = new Date(m.date);
+      var liveF = (m.etat === 'in'), finiF = (m.etat === 'post');
+      var hierF = dF.toDateString() !== new Date().toDateString();
+      var badgeF = liveF ? '\ud83d\udd34 EN COURS'
+                 : (finiF ? (hierF ? 'Hier' : 'Termin\u00e9')
+                          : dF.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }));
+      var visF = '';
+      try { visF = (typeof g45VisuelCategorie === 'function') ? g45VisuelCategorie('FORMULE 1') : ''; } catch (e) {}
+      var fondF = (typeof g45FondSolo === 'function') ? g45FondSolo('#e10600', visF)
+                : 'linear-gradient(100deg,#e1060055 0%,rgba(12,17,29,.94) 42%)';
+      var drapF = '';
+      try { drapF = (typeof flagUrl === 'function') ? (flagUrl(m.pays) || '') : ''; } catch (e) {}
+      var pastF = function (txt) {
+        return '<span style="background:rgba(8,11,20,.62);border-radius:6px;padding:3px 7px;font-size:9px;'
+             + 'color:rgba(255,255,255,.78);white-space:nowrap;">' + _g45CyEa(txt) + '</span>';
+      };
+      return '<div style="position:relative;overflow:hidden;border-radius:12px;margin-bottom:7px;'
+        + 'border:1px solid rgba(255,255,255,.07);background:' + fondF + ';background-size:cover;'
+        + 'background-position:center 45%;padding:12px 62px;min-height:92px;'
+        + 'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;">'
+        + (drapF ? ('<img src="' + drapF + '" alt="" style="position:absolute;left:10px;top:50%;'
+            + 'transform:translateY(-50%);width:44px;height:30px;object-fit:cover;border-radius:4px;opacity:.9;">') : '')
+        + '<div style="position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:26px;opacity:.55;">' + m.ico + '</div>'
+        + '<div style="position:relative;font-size:10px;font-weight:800;color:' + (liveF ? '#ff5a5a' : '#8aa0ff') + ';letter-spacing:.4px;">' + badgeF + '</div>'
+        + '<div style="position:relative;font-size:13px;font-weight:800;color:var(--t1);text-align:center;">' + _g45CyEa(m.titre) + '</div>'
+        + '<div style="position:relative;font-size:11.5px;font-weight:700;color:#f0c828;">' + m.ico + ' ' + _g45CyEa(m.seance) + '</div>'
+        + '<div style="position:relative;display:flex;gap:6px;flex-wrap:wrap;justify-content:center;">'
+          + pastF('\ud83c\udfce\ufe0f Formule 1')
+          + pastF('\ud83d\udcc5 ' + dF.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'long' })
+                 + ' \u00b7 ' + dF.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }))
+          + (m.circuit ? pastF('\ud83d\udccd ' + m.circuit) : '')
+        + '</div>'
+      + '</div>';
+    }
+
     var dM = new Date(m.date);
     var hier = dM.toDateString() !== new Date().toDateString();
     var live = (m.etat === 'in'), fini = (m.etat === 'post');
