@@ -30565,7 +30565,7 @@ var _G45_CACHE_PREFIXES=['g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dc
      explosait et des ecritures LEGITIMES echouaient en silence (le filtre par
      competition, qui restait bloque sur « Toutes »). Les cartes de tirs sont
      les plus lourdes : plusieurs Ko par match, gardees indefiniment. */
-  'g45butA2_','g45gl3_','g45gl2_','g45gl_','g45_tirs2_','g45_fanart2_','g45_fanart_','g45_img_perso_','g45_tv_prog','g45_mqnom_','g45_mqteam_','g45_mqfond_','g45trv4_','g45_catimg_',
+  'g45butA2_','g45gl3_','g45gl2_','g45gl_','g45_tirs2_','g45_fanart2_','g45_fanart_','g45_img_perso_','g45_tv_prog','g45_mqnom_','g45_mqteam_','g45_mqfond_','g45trv4_','g45_catimg_','g45ld2_','g45ld_',
   'g45nrlcal2_','g45_fx_faits','g45_veille_','g45_compet_logos','g45_groq_modele','g45_gemini_modeles',
   /* MESURE DU 20/08 sur le stockage reel d'Antoine (5,1 Mo, sature) :
        fpl_bootstrap_cache ... 1951 Ko  <- a lui seul 38 % du total
@@ -33963,7 +33963,21 @@ async function _g45LdNom(ref) {
   var url = String(ref).replace(/^http:/, 'https:');
   var m = url.match(/\/(\d+)(?:\?|$)/);
   var id = m ? m[1] : url;
-  var ck = 'g45ld_' + id;
+  /* CLE DE CACHE COMPLETE (23/08). Elle ne portait que l'identifiant numerique.
+     Or les identifiants d'equipes ESPN REDEMARRENT A 1 DANS CHAQUE SPORT :
+     l'equipe 8 est Detroit en NFL et Milwaukee en MLB. La premiere ligue
+     consultee remplissait le cache et toutes les autres relisaient ses entrees.
+     Symptome en production : le classement des lanceurs MLB affichait les logos
+     et les abreviations de la NFL — Misiorowski aux Lions de Detroit, Chris
+     Sale aux Dolphins.
+     Meme famille que `espn_teamid_any_*` en juillet : une cle trop courte fait
+     se recouvrir deux univers. On y met donc le SPORT et le CHAMPIONNAT, tires
+     de l'URL de reference elle-meme, plus le type d'objet — un joueur et une
+     equipe peuvent partager un numero. */
+  var sp = (url.match(/\/sports\/([a-z-]+)\//i) || [, ''])[1];
+  var lg = (url.match(/\/leagues\/([a-z0-9.-]+)\//i) || [, ''])[1];
+  var kind = /\/athletes\//i.test(url) ? 'a' : (/\/teams\//i.test(url) ? 't' : 'x');
+  var ck = 'g45ld2_' + sp + '_' + lg + '_' + kind + '_' + id;
   try { var c = localStorage.getItem(ck); if (c) return JSON.parse(c); } catch (e) {}
   try {
     var r = await fetch(url);
@@ -36873,8 +36887,24 @@ window.g45SuiviEqRender = g45SuiviEqRender;
 async function loadSuiviesTab() {
   var el = document.getElementById('t-suivies');
   if (!el) return;
-  el.innerHTML = '<div class="sec" style="margin-top:0;">\ud83d\udd34 Le direct de mes \u00e9quipes</div>'
-    + '<div style="font-size:10px;color:var(--t3);margin-bottom:8px;">Mur ET \u00e9quipes suivies, tous sports \u00b7 une requ\u00eate par championnat.</div>'
+  var _md = (window._G45_SUIVI_MODE === 'resultats') ? 'resultats' : 'direct';
+  var _chip = function (id, lbl) {
+    var on = (_md === id);
+    return '<button onclick="g45SuiviMode(\'' + id + '\')" style="padding:6px 12px;margin:0 6px 8px 0;font-size:11px;'
+      + 'font-weight:700;cursor:pointer;border-radius:16px;'
+      + (on ? 'background:#2563eb;border:1px solid #3b82f6;color:#fff;'
+            : 'background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#9fb0c7;')
+      + '">' + lbl + '</button>';
+  };
+  el.innerHTML = '<div class="sec" style="margin-top:0;">'
+      + (_md === 'resultats' ? '\ud83d\udcca R\u00e9sultats de mes \u00e9quipes' : '\ud83d\udd34 Matchs \u00e0 venir / direct')
+    + '</div>'
+    + '<div style="margin-bottom:6px;">' + _chip('direct', '\ud83d\udd34 \u00c0 venir / direct') + _chip('resultats', '\ud83d\udcca R\u00e9sultats') + '</div>'
+    + '<div style="font-size:10px;color:var(--t3);margin-bottom:8px;">'
+      + (_md === 'resultats'
+          ? 'Matchs termin\u00e9s des 7 derniers jours, du plus r\u00e9cent au plus ancien.'
+          : 'Mur ET \u00e9quipes suivies, tous sports. Les matchs jou\u00e9s basculent dans \u00ab R\u00e9sultats \u00bb.')
+    + '</div>'
     + '<div id="g45-direct-body" class="fc" style="margin-bottom:14px;"></div>'
     + '<div class="sec" style="margin-top:0;">\u2b50 \u00c9quipes suivies</div>'
     + '<div style="font-size:10px;color:var(--t3);line-height:1.6;margin-bottom:10px;">'
@@ -36885,6 +36915,15 @@ async function loadSuiviesTab() {
   g45DirectMesEquipes();          /* asynchrone : la liste s'affiche sans attendre */
 }
 window.loadSuiviesTab = loadSuiviesTab;
+
+/* Bascule Direct / Resultats. Le mode vit sur `window` et non dans le
+   localStorage : c'est un etat de consultation, pas une preference — on rouvre
+   toujours l'onglet sur le direct, qui est ce qu'on regarde en premier. */
+window.g45SuiviMode = function (m) {
+  window._G45_SUIVI_MODE = (m === 'resultats') ? 'resultats' : 'direct';
+  try { _g45DirStop(); } catch (e) {}
+  loadSuiviesTab();
+};
 
 /* Apres un ajout ou un retrait, on redessine la vue REELLEMENT ouverte : appeler
    loadCompetTab depuis l'onglet principal n'aurait rien rafraichi. */
@@ -37487,8 +37526,21 @@ async function g45DirectMesEquipes(silencieux) {
      lendemain ne coutent donc rien de plus. Le lendemain sert aux matchs nocturnes
      des ligues americaines, qui basculent de jour en heure francaise. */
   var _fj = function (dd) { return dd.getFullYear() + String(dd.getMonth() + 1).padStart(2, '0') + String(dd.getDate()).padStart(2, '0'); };
-  var jour = _fj(new Date(Date.now() - 86400000)) + '-' + _fj(new Date(Date.now() + 86400000));
-  var LIMITE = Date.now() - 24 * 3600000;   /* un score reste affiche 24 h */
+
+  /* ═══ DEUX MODES SUR LA MEME COLLECTE (23/08) ═══
+     « Direct » couvre la veille au lendemain ; « Resultats » remonte sur une
+     semaine et ne garde que les matchs TERMINES.
+     Meme fonction pour les deux, volontairement : ESPN accepte `dates=debut-fin`
+     dans UNE requete, donc elargir la fenetre ne coute pas un appel de plus, et
+     un module separe aurait duplique la resolution des equipes, le regroupement
+     du football sous `all` et les diffuseurs. */
+  var MODE = (window._G45_SUIVI_MODE === 'resultats') ? 'resultats' : 'direct';
+  var JOURS = (MODE === 'resultats') ? 7 : 1;   /* la veille reste interrogee pour
+     les matchs nocturnes des ligues americaines, qui basculent de jour en heure
+     francaise — mais ils seront ecartes plus bas s'ils sont termines. */
+  var jour = _fj(new Date(Date.now() - JOURS * 86400000)) + '-'
+           + _fj(new Date(Date.now() + (MODE === 'resultats' ? 0 : 1) * 86400000));
+  var LIMITE = Date.now() - JOURS * 24 * 3600000;
   var trouves = [], enCours = 0;
 
   /* ═══ FOOTBALL : UNE SEULE REQUETE, TOUTES COMPETITIONS ═══
@@ -37619,13 +37671,28 @@ async function g45DirectMesEquipes(silencieux) {
      etat puis par heure, et se glissent naturellement entre les matchs. */
   try { (await _g45F1DirectCartes(LIMITE)).forEach(function (c) { trouves.push(c); }); } catch (e) {}
 
+  /* PARTAGE NET ENTRE LES DEUX VUES (23/08). Le direct gardait les scores 24 h,
+     ce qui avait du sens tant qu'il n'existait rien d'autre. Maintenant que
+     l'onglet Resultats couvre sept jours, laisser les matchs termines des deux
+     cotes ne fait que noyer ce qui arrive. Chaque vue a donc son perimetre :
+     a venir et en cours d'un cote, joues de l'autre. */
+  trouves = trouves.filter(function (m) {
+    return (MODE === 'resultats') ? (m.etat === 'post') : (m.etat !== 'post');
+  });
+
   /* En cours d'abord, puis à venir, puis terminés — l'ordre d'intérêt. */
   var rang = { 'in': 0, 'pre': 1, 'post': 2 };
-  trouves.sort(function (a, b) { return (rang[a.etat] || 3) - (rang[b.etat] || 3) || (Date.parse(a.date) - Date.parse(b.date)); });
+  trouves.sort(function (a, b) {
+    if (MODE === 'resultats') return Date.parse(b.date) - Date.parse(a.date);
+    return (rang[a.etat] || 3) - (rang[b.etat] || 3) || (Date.parse(a.date) - Date.parse(b.date));
+  });
 
   if (!trouves.length) {
     box.innerHTML = '<div style="font-size:11.5px;color:var(--t3);padding:12px;text-align:center;">'
-      + 'Aucun match de tes \u00e9quipes depuis 24 h, ni aujourd\'hui.<br><span style="opacity:.7;">' + cles.length + ' championnat(s) consult\u00e9(s).</span></div>';
+      + (MODE === 'resultats'
+          ? 'Aucun match termin\u00e9 sur les 7 derniers jours.'
+          : 'Aucun match \u00e0 venir ni en cours pour tes \u00e9quipes.')
+      + '<br><span style="opacity:.7;">' + cles.length + ' championnat(s) consult\u00e9(s).</span></div>';
     _g45DirStop();
     return;
   }
@@ -37804,7 +37871,9 @@ async function g45DirectMesEquipes(silencieux) {
 
   /* On ne relance QUE s'il y a du direct : sinon on interrogerait ESPN pour rien. */
   _g45DirStop();
-  if (enCours) _g45DirTimer = setTimeout(function () {
+  /* Et jamais en mode Resultats : un historique ne bouge pas, relancer une
+     requete toutes les 45 secondes serait du gaspillage pur. */
+  if (enCours && MODE !== 'resultats') _g45DirTimer = setTimeout(function () {
     if (_g45Visible('t-suivies') && document.visibilityState === 'visible') g45DirectMesEquipes(true);
     else _g45DirStop();
   }, 45000);
