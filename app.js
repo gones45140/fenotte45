@@ -2016,8 +2016,13 @@ function render(){
          donc comme un filigrane CENTRE, a taille fixe, et la ligne garde son
          degrade de couleur en fond. */
       var _cat=(!_vis && typeof g45VisuelCategorie==='function')?g45VisuelCategorie(u.n):'';
+      /* RETOUR AU VISUEL EN FOND PLEIN CADRE (23/08). J'avais essaye une couche
+         masquee pour eviter l'agrandissement sur grand ecran ; Antoine prefere
+         nettement le rendu d'origine, ou l'image occupe toute la ligne. Le
+         cadrage serre sur large ecran est donc un choix assume, pas un oubli. */
       var _fond=(typeof g45FondSolo==='function')?g45FondSolo(u.color,_vis)
               :('linear-gradient(100deg,'+(u.color||'#4d84ff')+'2e 0%,transparent 55%)');
+      var _couche='';
       /* Logo nettement plus present : 86 px a 18 %. Une ligne du mur faisait
          10 px de haut de matiere pour 100 % de largeur vide — l'effet « salon
          Discord » qu'Antoine veut casser. */
@@ -2029,7 +2034,7 @@ function render(){
          le moins risque, puisqu'il ne recouvre rien. */
       var _cfmt = _cat ? ((typeof _g45CatFormat==='function') ? _g45CatFormat(_g45SgNorm(u.n)) : '') : '';
       if(_cat && _cfmt === 'banniere'){
-        _fond = (typeof g45FondSolo==='function') ? g45FondSolo(u.color, _cat) : _fond;
+        _vis = _cat;                      /* traitee comme un visuel de club */
       } else if(_cat){
         _filig+='<img src="'+_cat+'" alt="" '
           +'style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);height:64px;'
@@ -2047,8 +2052,9 @@ function render(){
            le sujet de la plupart des bannieres TheSportsDB — elles sont
            cadrees pour un bandeau large, pas pour une bande fine. */
         +'min-height:92px;border-radius:12px;margin-bottom:7px;border:1px solid rgba(255,255,255,.07);'
-        +'cursor:pointer;background:'+_fond+';background-size:auto 118%;background-position:center;background-repeat:no-repeat;" '
+        +'cursor:pointer;background:'+_fond+';background-size:cover;background-position:center 50%;" '
         +'data-nom="'+u.n+'" onclick="openClubFromDash(this.dataset.nom)">'
+        +_couche
         +_filig
         +logo
         +'<div style="position:relative;flex:1;min-width:0;">'
@@ -8654,8 +8660,13 @@ function render(){
          donc comme un filigrane CENTRE, a taille fixe, et la ligne garde son
          degrade de couleur en fond. */
       var _cat=(!_vis && typeof g45VisuelCategorie==='function')?g45VisuelCategorie(u.n):'';
+      /* RETOUR AU VISUEL EN FOND PLEIN CADRE (23/08). J'avais essaye une couche
+         masquee pour eviter l'agrandissement sur grand ecran ; Antoine prefere
+         nettement le rendu d'origine, ou l'image occupe toute la ligne. Le
+         cadrage serre sur large ecran est donc un choix assume, pas un oubli. */
       var _fond=(typeof g45FondSolo==='function')?g45FondSolo(u.color,_vis)
               :('linear-gradient(100deg,'+(u.color||'#4d84ff')+'2e 0%,transparent 55%)');
+      var _couche='';
       /* Logo nettement plus present : 86 px a 18 %. Une ligne du mur faisait
          10 px de haut de matiere pour 100 % de largeur vide — l'effet « salon
          Discord » qu'Antoine veut casser. */
@@ -8667,7 +8678,7 @@ function render(){
          le moins risque, puisqu'il ne recouvre rien. */
       var _cfmt = _cat ? ((typeof _g45CatFormat==='function') ? _g45CatFormat(_g45SgNorm(u.n)) : '') : '';
       if(_cat && _cfmt === 'banniere'){
-        _fond = (typeof g45FondSolo==='function') ? g45FondSolo(u.color, _cat) : _fond;
+        _vis = _cat;                      /* traitee comme un visuel de club */
       } else if(_cat){
         _filig+='<img src="'+_cat+'" alt="" '
           +'style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);height:64px;'
@@ -8685,8 +8696,9 @@ function render(){
            le sujet de la plupart des bannieres TheSportsDB — elles sont
            cadrees pour un bandeau large, pas pour une bande fine. */
         +'min-height:92px;border-radius:12px;margin-bottom:7px;border:1px solid rgba(255,255,255,.07);'
-        +'cursor:pointer;background:'+_fond+';background-size:auto 118%;background-position:center;background-repeat:no-repeat;" '
+        +'cursor:pointer;background:'+_fond+';background-size:cover;background-position:center 50%;" '
         +'data-nom="'+u.n+'" onclick="openClubFromDash(this.dataset.nom)">'
+        +_couche
         +_filig
         +logo
         +'<div style="position:relative;flex:1;min-width:0;">'
@@ -23687,7 +23699,7 @@ function _g45TrRender(){
         +'object-fit:contain;opacity:.22;filter:saturate(1.3);pointer-events:none;">';
     };
     var filig=lg(d.lh,'left')+lg(d.la,'right');
-    var s='<div style="position:relative;overflow:hidden;background:'+fondCoul+';background-size:auto 118%;background-position:center;background-repeat:no-repeat;'
+    var s='<div style="position:relative;overflow:hidden;background:'+fondCoul+';background-size:cover;background-position:center;'
       +'background-color:rgba(12,16,28,.97);border:1px solid rgba(255,255,255,.08);border-left:3px solid '+col+';'
       +'border-radius:12px;padding:10px 62px;margin-bottom:7px;">'
       +filig
@@ -30581,7 +30593,7 @@ var _G45_CACHE_PREFIXES=['g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dc
      explosait et des ecritures LEGITIMES echouaient en silence (le filtre par
      competition, qui restait bloque sur « Toutes »). Les cartes de tirs sont
      les plus lourdes : plusieurs Ko par match, gardees indefiniment. */
-  'g45butA2_','g45gl3_','g45gl2_','g45gl_','g45_tirs2_','g45_fanart2_','g45_fanart_','g45_img_perso_','g45_tv_prog','g45_mqnom_','g45_mqteam_','g45_mqfond_','g45trv4_','g45_catimg_','g45_catfmt_','g45ld2_','g45ld_',
+  'g45butA2_','g45gl3_','g45gl2_','g45gl_','g45_tirs2_','g45_fanart2_','g45_fanart_','g45_img_perso_','g45_tv_prog','g45_mqnom_','g45_mqteam_','g45_mqfond_','g45trv4_','g45_catimg_','g45_catfmt2_','g45_catfmt_','g45ld2_','g45ld_',
   'g45nrlcal2_','g45_fx_faits','g45_veille_','g45_compet_logos','g45_groq_modele','g45_gemini_modeles',
   /* MESURE DU 20/08 sur le stockage reel d'Antoine (5,1 Mo, sature) :
        fpl_bootstrap_cache ... 1951 Ko  <- a lui seul 38 % du total
@@ -37180,17 +37192,52 @@ var _G45_CAT_IMG = {
    largeur/hauteur de 2,5, c'est une banniere et elle occupe toute la carte ;
    en deca, c'est un pictogramme et il reste centre a taille fixe.
    Le rapport est memorise a cote de l'URL, donc la mesure ne se refait pas. */
+/* ═══ LOGO OU PHOTO : C'EST LA TRANSPARENCE QUI TRANCHE (23/08) ═══
+   Premiere version : le rapport largeur/hauteur, avec un seuil a 2,5. Mauvais
+   critere — la photo de tennis d'Antoine, pas assez large, etait traitee comme
+   un pictogramme et restait en petit au milieu, alors qu'il voulait un fond
+   plein cadre. Et l'obliger a recadrer ses images pour contenter un seuil
+   arbitraire n'a aucun sens.
+   Le vrai discriminant est ailleurs : un LOGO a des coins TRANSPARENTS, une
+   PHOTO n'en a pas. On dessine donc l'image sur un canevas et on lit le canal
+   alpha des quatre coins. Aucune ambiguite, aucune contrainte de format.
+   Les fichiers viennent du meme domaine que la page, le canevas n'est donc pas
+   souille et la lecture des pixels est autorisee. En cas d'echec — navigateur
+   restrictif, image cassee — on retombe sur le rapport, qui reste un repli
+   raisonnable. */
 var _G45_CAT_SEUIL = 2.5;
 function _g45CatFormat(k){
-  try{ return localStorage.getItem('g45_catfmt_' + k) || ''; }catch(e){ return ''; }
+  try{ return localStorage.getItem('g45_catfmt2_' + k) || ''; }catch(e){ return ''; }
+}
+function _g45CatCoinsTransparents(im){
+  try{
+    var c = document.createElement('canvas');
+    var w = Math.max(2, Math.min(64, im.naturalWidth || 2));
+    var h = Math.max(2, Math.min(64, im.naturalHeight || 2));
+    c.width = w; c.height = h;
+    var x = c.getContext('2d');
+    if (!x) return null;
+    x.drawImage(im, 0, 0, w, h);
+    var coins = [[0,0],[w-1,0],[0,h-1],[w-1,h-1]];
+    for (var i = 0; i < coins.length; i++){
+      var d = x.getImageData(coins[i][0], coins[i][1], 1, 1).data;
+      if (d[3] < 128) return true;          /* un coin translucide suffit */
+    }
+    return false;
+  }catch(e){ return null; }               /* null = indetermine */
 }
 function _g45CatMesurer(k, url){
   try{
-    if (localStorage.getItem('g45_catfmt_' + k)) return;
+    if (localStorage.getItem('g45_catfmt2_' + k)) return;
     var im = new Image();
+    im.crossOrigin = 'anonymous';
     im.onload = function(){
-      var r = (im.naturalWidth || 1) / (im.naturalHeight || 1);
-      try{ localStorage.setItem('g45_catfmt_' + k, r >= _G45_CAT_SEUIL ? 'banniere' : 'logo'); }catch(e){}
+      var t = _g45CatCoinsTransparents(im);
+      var fmt;
+      if (t === true) fmt = 'logo';
+      else if (t === false) fmt = 'banniere';
+      else fmt = (((im.naturalWidth || 1) / (im.naturalHeight || 1)) >= _G45_CAT_SEUIL) ? 'banniere' : 'logo';
+      try{ localStorage.setItem('g45_catfmt2_' + k, fmt); }catch(e){}
       if(!_g45CatVus['fmt_' + k]){
         _g45CatVus['fmt_' + k] = 1;
         try{ if(typeof render === 'function') render(); }catch(e){}
@@ -37818,14 +37865,11 @@ async function g45DirectMesEquipes(silencieux) {
 
     return '<div onclick="_g45SgMatchDepuisDirect(\'' + m.id + '\',\'' + m.sp + '\',\'' + m.lg + '\')" '
       + 'style="position:relative;overflow:hidden;margin-bottom:7px;border-radius:12px;cursor:pointer;'
-      /* PAS `cover` SUR UNE BANNIERE (23/08). Ces cartes sont bien plus LARGES
-         que hautes, alors qu'une banniere TheSportsDB fait 1000x185. `cover`
-         l'agrandissait jusqu'a remplir la largeur, d'ou un gros plan sur le
-         milieu de l'ecusson — l'OL et le Bayern etaient illisibles.
-         `auto 118%` cale l'image sur la HAUTEUR de la carte : elle garde ses
-         proportions, reste a taille lisible, et les cotes montrent simplement
-         le degrade aux couleurs des deux clubs. */
-      + 'background:' + fond + ';background-size:auto 118%;background-position:center;background-repeat:no-repeat;'
+      /* PLEIN CADRE, choix d'Antoine (23/08). J'avais cale l'image sur la hauteur
+         pour eviter le cadrage serre sur grand ecran ; le rendu laissait un pave
+         au milieu de la carte et il prefere nettement le plein cadre. Le
+         recadrage sur large ecran est donc assume. */
+      + 'background:' + fond + ';background-size:cover;background-position:center;'
       + 'border:1px solid rgba(255,255,255,.08);'
       + (live ? 'box-shadow:0 0 0 1px rgba(255,69,69,.35),0 2px 14px rgba(255,69,69,.12);' : '') + '">'
       + logo(m.lMoi, 'left') + logo(m.lAdv, 'right')
