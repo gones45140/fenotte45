@@ -2024,9 +2024,17 @@ function render(){
       var _filig=_lu?('<img src="'+_lu+'" loading="lazy" onerror="this.style.display=\'none\'" '
         +'style="position:absolute;right:14px;top:50%;transform:translateY(-50%);height:86px;width:86px;'
         +'object-fit:contain;opacity:.18;filter:saturate(1.4);pointer-events:none;">'):'';
-      if(_cat) _filig+='<img src="'+_cat+'" alt="" '
-        +'style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);height:64px;'
-        +'object-fit:contain;opacity:.20;pointer-events:none;">';
+      /* Une BANNIERE remplace le fond de la ligne ; un LOGO reste un filigrane
+         centre. Tant que la mesure n'a pas eu lieu, on traite en logo — le cas
+         le moins risque, puisqu'il ne recouvre rien. */
+      var _cfmt = _cat ? ((typeof _g45CatFormat==='function') ? _g45CatFormat(_g45SgNorm(u.n)) : '') : '';
+      if(_cat && _cfmt === 'banniere'){
+        _fond = (typeof g45FondSolo==='function') ? g45FondSolo(u.color, _cat) : _fond;
+      } else if(_cat){
+        _filig+='<img src="'+_cat+'" alt="" '
+          +'style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);height:64px;'
+          +'object-fit:contain;opacity:.20;pointer-events:none;">';
+      }
       /* CARTE, plus une ligne de liste (22/08). On reprend la presentation des
          cartes du direct, qu'Antoine a validee : coins arrondis, cartes
          detachees, visuel plein cadre, hauteur qui laisse respirer. Le filet
@@ -2039,7 +2047,7 @@ function render(){
            le sujet de la plupart des bannieres TheSportsDB — elles sont
            cadrees pour un bandeau large, pas pour une bande fine. */
         +'min-height:92px;border-radius:12px;margin-bottom:7px;border:1px solid rgba(255,255,255,.07);'
-        +'cursor:pointer;background:'+_fond+';background-size:cover;background-position:center 50%;" '
+        +'cursor:pointer;background:'+_fond+';background-size:auto 118%;background-position:center;background-repeat:no-repeat;" '
         +'data-nom="'+u.n+'" onclick="openClubFromDash(this.dataset.nom)">'
         +_filig
         +logo
@@ -8654,9 +8662,17 @@ function render(){
       var _filig=_lu?('<img src="'+_lu+'" loading="lazy" onerror="this.style.display=\'none\'" '
         +'style="position:absolute;right:14px;top:50%;transform:translateY(-50%);height:86px;width:86px;'
         +'object-fit:contain;opacity:.18;filter:saturate(1.4);pointer-events:none;">'):'';
-      if(_cat) _filig+='<img src="'+_cat+'" alt="" '
-        +'style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);height:64px;'
-        +'object-fit:contain;opacity:.20;pointer-events:none;">';
+      /* Une BANNIERE remplace le fond de la ligne ; un LOGO reste un filigrane
+         centre. Tant que la mesure n'a pas eu lieu, on traite en logo — le cas
+         le moins risque, puisqu'il ne recouvre rien. */
+      var _cfmt = _cat ? ((typeof _g45CatFormat==='function') ? _g45CatFormat(_g45SgNorm(u.n)) : '') : '';
+      if(_cat && _cfmt === 'banniere'){
+        _fond = (typeof g45FondSolo==='function') ? g45FondSolo(u.color, _cat) : _fond;
+      } else if(_cat){
+        _filig+='<img src="'+_cat+'" alt="" '
+          +'style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);height:64px;'
+          +'object-fit:contain;opacity:.20;pointer-events:none;">';
+      }
       /* CARTE, plus une ligne de liste (22/08). On reprend la presentation des
          cartes du direct, qu'Antoine a validee : coins arrondis, cartes
          detachees, visuel plein cadre, hauteur qui laisse respirer. Le filet
@@ -8669,7 +8685,7 @@ function render(){
            le sujet de la plupart des bannieres TheSportsDB — elles sont
            cadrees pour un bandeau large, pas pour une bande fine. */
         +'min-height:92px;border-radius:12px;margin-bottom:7px;border:1px solid rgba(255,255,255,.07);'
-        +'cursor:pointer;background:'+_fond+';background-size:cover;background-position:center 50%;" '
+        +'cursor:pointer;background:'+_fond+';background-size:auto 118%;background-position:center;background-repeat:no-repeat;" '
         +'data-nom="'+u.n+'" onclick="openClubFromDash(this.dataset.nom)">'
         +_filig
         +logo
@@ -23671,7 +23687,7 @@ function _g45TrRender(){
         +'object-fit:contain;opacity:.22;filter:saturate(1.3);pointer-events:none;">';
     };
     var filig=lg(d.lh,'left')+lg(d.la,'right');
-    var s='<div style="position:relative;overflow:hidden;background:'+fondCoul+';background-size:cover;background-position:center;'
+    var s='<div style="position:relative;overflow:hidden;background:'+fondCoul+';background-size:auto 118%;background-position:center;background-repeat:no-repeat;'
       +'background-color:rgba(12,16,28,.97);border:1px solid rgba(255,255,255,.08);border-left:3px solid '+col+';'
       +'border-radius:12px;padding:10px 62px;margin-bottom:7px;">'
       +filig
@@ -30565,7 +30581,7 @@ var _G45_CACHE_PREFIXES=['g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dc
      explosait et des ecritures LEGITIMES echouaient en silence (le filtre par
      competition, qui restait bloque sur « Toutes »). Les cartes de tirs sont
      les plus lourdes : plusieurs Ko par match, gardees indefiniment. */
-  'g45butA2_','g45gl3_','g45gl2_','g45gl_','g45_tirs2_','g45_fanart2_','g45_fanart_','g45_img_perso_','g45_tv_prog','g45_mqnom_','g45_mqteam_','g45_mqfond_','g45trv4_','g45_catimg_','g45ld2_','g45ld_',
+  'g45butA2_','g45gl3_','g45gl2_','g45gl_','g45_tirs2_','g45_fanart2_','g45_fanart_','g45_img_perso_','g45_tv_prog','g45_mqnom_','g45_mqteam_','g45_mqfond_','g45trv4_','g45_catimg_','g45_catfmt_','g45ld2_','g45ld_',
   'g45nrlcal2_','g45_fx_faits','g45_veille_','g45_compet_logos','g45_groq_modele','g45_gemini_modeles',
   /* MESURE DU 20/08 sur le stockage reel d'Antoine (5,1 Mo, sature) :
        fpl_bootstrap_cache ... 1951 Ko  <- a lui seul 38 % du total
@@ -37157,6 +37173,33 @@ var _G45_CAT_IMG = {
    sert plus que de repli tant qu'il n'est pas la.
    Le test d'existence est NON BLOQUANT et memorise : on ne fait pas attendre
    l'affichage du mur pour savoir si un fichier existe. */
+/* ═══ LOGO OU PHOTO : LE FICHIER DECIDE (23/08) ═══
+   Antoine veut pouvoir deposer indifferemment un logo transparent ou une vraie
+   photo de fond. Plutot que de lui imposer un choix ou un nom de fichier
+   different, on MESURE l'image une fois chargee : au-dela d'un rapport
+   largeur/hauteur de 2,5, c'est une banniere et elle occupe toute la carte ;
+   en deca, c'est un pictogramme et il reste centre a taille fixe.
+   Le rapport est memorise a cote de l'URL, donc la mesure ne se refait pas. */
+var _G45_CAT_SEUIL = 2.5;
+function _g45CatFormat(k){
+  try{ return localStorage.getItem('g45_catfmt_' + k) || ''; }catch(e){ return ''; }
+}
+function _g45CatMesurer(k, url){
+  try{
+    if (localStorage.getItem('g45_catfmt_' + k)) return;
+    var im = new Image();
+    im.onload = function(){
+      var r = (im.naturalWidth || 1) / (im.naturalHeight || 1);
+      try{ localStorage.setItem('g45_catfmt_' + k, r >= _G45_CAT_SEUIL ? 'banniere' : 'logo'); }catch(e){}
+      if(!_g45CatVus['fmt_' + k]){
+        _g45CatVus['fmt_' + k] = 1;
+        try{ if(typeof render === 'function') render(); }catch(e){}
+      }
+    };
+    im.src = url;
+  }catch(e){}
+}
+
 var _g45CatVus = {};
 function _g45CatPerso(k){
   var cle = 'g45_catimg_' + k;
@@ -37168,6 +37211,7 @@ function _g45CatPerso(k){
     var img = new Image();
     img.onload = function(){
       try{ localStorage.setItem(cle, url); }catch(e){}
+      try{ _g45CatMesurer(k, url); }catch(e){}
       /* REDESSIN (22/08). Sans lui, le fichier etait bien detecte et memorise,
          mais la ligne restait sur le pictogramme dessine jusqu'au rechargement
          SUIVANT — le test part au moment ou la ligne s'affiche, donc il repond
@@ -37774,7 +37818,15 @@ async function g45DirectMesEquipes(silencieux) {
 
     return '<div onclick="_g45SgMatchDepuisDirect(\'' + m.id + '\',\'' + m.sp + '\',\'' + m.lg + '\')" '
       + 'style="position:relative;overflow:hidden;margin-bottom:7px;border-radius:12px;cursor:pointer;'
-      + 'background:' + fond + ';background-size:cover;background-position:center;border:1px solid rgba(255,255,255,.08);'
+      /* PAS `cover` SUR UNE BANNIERE (23/08). Ces cartes sont bien plus LARGES
+         que hautes, alors qu'une banniere TheSportsDB fait 1000x185. `cover`
+         l'agrandissait jusqu'a remplir la largeur, d'ou un gros plan sur le
+         milieu de l'ecusson — l'OL et le Bayern etaient illisibles.
+         `auto 118%` cale l'image sur la HAUTEUR de la carte : elle garde ses
+         proportions, reste a taille lisible, et les cotes montrent simplement
+         le degrade aux couleurs des deux clubs. */
+      + 'background:' + fond + ';background-size:auto 118%;background-position:center;background-repeat:no-repeat;'
+      + 'border:1px solid rgba(255,255,255,.08);'
       + (live ? 'box-shadow:0 0 0 1px rgba(255,69,69,.35),0 2px 14px rgba(255,69,69,.12);' : '') + '">'
       + logo(m.lMoi, 'left') + logo(m.lAdv, 'right')
       + '<div style="position:relative;padding:11px 62px;text-align:center;">'
@@ -38981,8 +39033,15 @@ function _g45CoulFond(h) {
 function g45FondMatch(cDom, cExt, vis) {
   var a = _g45CoulFond(cDom || '#4d84ff'), b = _g45CoulFond(cExt || '#f0b020'), N = _G45_FOND_NIV;
   if (vis) {
-    return 'linear-gradient(100deg,' + a + N.bordVis + ' 0%,rgba(10,14,26,' + N.voileVis + ') 45%,'
-         + 'rgba(10,14,26,' + N.voileVis + ') 55%,' + b + N.bordVis + ' 100%), url(\'' + vis + '\')';
+    /* BANDE NEUTRE ELARGIE (23/08). Elle ne couvrait que 45-55 % de la largeur,
+       alors que le bloc de texte — heure, noms, score, pastilles — est CENTRE et
+       s'etale bien plus large. Le visuel du club tombait donc pile derriere le
+       score : sur Bayern-Dortmund, l'ecusson passait sous le « 2 - 1 ».
+       Elle couvre desormais 30-70 % et se ferme un cran plus tot, ce qui laisse
+       l'image respirer sur les cotes — la ou il n'y a que les logos — et degage
+       le centre. */
+    return 'linear-gradient(100deg,' + a + N.bordVis + ' 0%,rgba(10,14,26,' + (N.voileVis + 0.06) + ') 30%,'
+         + 'rgba(10,14,26,' + (N.voileVis + 0.06) + ') 70%,' + b + N.bordVis + ' 100%), url(\'' + vis + '\')';
   }
   return 'linear-gradient(100deg,' + a + N.bord + ' 0%,rgba(12,17,29,' + N.voile + ') 42%,'
        + 'rgba(12,17,29,' + N.voile + ') 58%,' + b + N.bord + ' 100%)';
