@@ -2044,9 +2044,29 @@ function render(){
          masquee pour eviter l'agrandissement sur grand ecran ; Antoine prefere
          nettement le rendu d'origine, ou l'image occupe toute la ligne. Le
          cadrage serre sur large ecran est donc un choix assume, pas un oubli. */
-      var _fond=(typeof g45FondSolo==='function')?g45FondSolo(u.color,_vis)
+      /* ═══ BANDES NOIRES DE L'IMAGE (26/08) ═══
+         Certains fanarts de TheSportsDB ont des bandes noires INCRUSTEES en haut
+         et en bas — visible sur Colorado Avalanche. En fond CSS avec `cover`,
+         elles restent dans le cadre des que la hauteur commande le cadrage,
+         c'est-a-dire sur telephone.
+         L'image devient donc une couche `<img>` en `object-fit:cover`, haute de
+         150 % et remontee de 25 % : le centre de l'image remplit la ligne et les
+         bandes tombent hors cadre. Le degrade de couleur reste en fond derriere,
+         et le voile passe au-dessus pour proteger le texte.
+         Un `<img>` plutot qu'un fond CSS : `object-fit` accepte un debordement
+         maitrise, ce qu'aucune valeur de `background-size` ne permet a la fois
+         sur ecran large et sur ecran etroit. */
+      var _fond=(typeof g45FondSolo==='function')?g45FondSolo(u.color,'')
               :('linear-gradient(100deg,'+(u.color||'#4d84ff')+'2e 0%,transparent 55%)');
       var _couche='';
+      if(_vis){
+        var _vl=(typeof _G45_FOND_NIV!=='undefined')?_G45_FOND_NIV.voileVis:0.30;
+        _couche='<img src="'+_vis+'" alt="" loading="lazy" onerror="this.style.display=\'none\'" '
+          +'style="position:absolute;left:0;top:-25%;width:100%;height:150%;object-fit:cover;'
+          +'pointer-events:none;">'
+          +'<div style="position:absolute;inset:0;pointer-events:none;'
+          +'background:rgba(10,14,26,'+_vl+');"></div>';
+      }
       /* Logo nettement plus present : 86 px a 18 %. Une ligne du mur faisait
          10 px de haut de matiere pour 100 % de largeur vide — l'effet « salon
          Discord » qu'Antoine veut casser. */
@@ -2085,9 +2105,22 @@ function render(){
            cette protection « Arsenal » se noyait dans le maillot blanc et le
            libelle de Barcelone passait sur l'ecusson dore. Degrade sous le seul
            bloc de texte, plus une ombre portee : l'image reste intacte ailleurs. */
-        +'<div style="position:relative;flex:1;min-width:0;padding:5px 14px 5px 8px;margin:-5px 0;border-radius:9px;'
-          +'background:linear-gradient(90deg,rgba(8,11,20,.80) 0%,rgba(8,11,20,.62) 62%,transparent 100%);'
-          +'text-shadow:0 1px 3px rgba(0,0,0,.9);">'
+        /* VOILE RESSERRE (26/08). Il courait sur toute la HAUTEUR de la ligne et
+           formait une bande sombre qui la traversait de part en part — bien
+           visible sur Colorado. Il s'arrete desormais au contenu, avec des coins
+           arrondis et un degrade qui s'eteint plus tot. La lisibilite du texte
+           tient surtout a l'ombre portee, pas au fond. */
+        /* VOILE AJUSTE AU CONTENU (26/08). Le bloc etait en `flex:1` : il occupait
+           toute la largeur restante, donc son voile s'etirait jusqu'au centre de
+           la carte alors que le texte s'arrete bien avant. D'ou une bande sombre
+           inutile en plein milieu de l'image.
+           `flex:0 1 auto` le fait se dimensionner sur SON contenu ; `max-width`
+           garde la troncature sur les noms tres longs. L'image reste donc nue
+           partout ou il n'y a rien a lire. */
+        +'<div style="position:relative;flex:0 1 auto;min-width:0;max-width:72%;'
+          +'padding:4px 16px 4px 9px;border-radius:10px;'
+          +'background:linear-gradient(90deg,rgba(8,11,20,.72) 0%,rgba(8,11,20,.34) 62%,transparent 100%);'
+          +'text-shadow:0 1px 4px rgba(0,0,0,.95),0 0 10px rgba(0,0,0,.7);">'
         +'<div style="font-size:12px;font-weight:700;">'+(u.sport||'')+' '+u.n+'</div>'
         +'<div style="font-size:9px;color:var(--t3);">'+'⭐'.repeat(u.s)+' · '+_g45PalLabel(u)+' · '+pc+'% réussite</div>'
         +(u.note?'<div style="font-size:10px;color:var(--a);margin-top:2px;font-style:italic;">📌 '+u.note+'</div>':'')
@@ -2095,9 +2128,9 @@ function render(){
         +(streak(paris).n>1?'<div style="display:inline-flex;align-items:center;gap:3px;padding:1px 7px;border-radius:10px;font-size:9px;font-weight:700;margin-top:3px;background:'+(streak(paris).t?'rgba(30,215,96,.1)':'rgba(255,69,69,.1)')+';color:'+(streak(paris).t?'var(--g)':'var(--r)')+'">'
         +(streak(paris).t?'🔥':'❄️')+' '+streak(paris).n+'</div>':'')
         +'</div>'
-        +'<div style="position:relative;text-align:right;line-height:1.25;padding:5px 8px 5px 16px;margin:-5px 0;border-radius:9px;'
-          +'background:linear-gradient(270deg,rgba(8,11,20,.80) 0%,rgba(8,11,20,.62) 62%,transparent 100%);'
-          +'text-shadow:0 1px 3px rgba(0,0,0,.9);">'
+        +'<div style="position:relative;margin-left:auto;text-align:right;line-height:1.25;padding:4px 9px 4px 18px;border-radius:10px;'
+          +'background:linear-gradient(270deg,rgba(8,11,20,.72) 0%,rgba(8,11,20,.40) 55%,transparent 100%);'
+          +'text-shadow:0 1px 4px rgba(0,0,0,.95),0 0 10px rgba(0,0,0,.7);">'
           +'<div style="font-size:14px;font-weight:800;color:'+pColor+';">'+fmt(profit)+'</div>'
           + ((_dom.n||_ext.n)
               ? ('<div style="font-size:9px;font-weight:700;white-space:nowrap;">'
@@ -4163,14 +4196,36 @@ function renderMmRows(){
   }).join('');
   renderMmCote();
 }
+/* ═══ COTE COMBINEE MODIFIABLE (26/08) ═══
+   Le cockpit n'affichait que le PRODUIT des selections. Or un bookmaker
+   arrondit ou applique un boost : la cote enregistree n'etait donc pas celle du
+   ticket, et le gain calcule etait faux.
+   Le champ manuel prime quand il est rempli ; vide, on revient au calcul
+   automatique. Le produit reste affiche, pour garder le point de comparaison
+   sous les yeux. */
+function _mmCoteManuelle(){
+  var e=$i('mm-cote-manuelle');
+  var v=e?(parseFloat(e.value)||0):0;
+  return v>0?v:0;
+}
+
 function renderMmCote(){
   var cote=mmRows.reduce(function(a,r){return a*(parseFloat(r.cote)||1);},1);
   var el=$i('mm-cote-total');
   if(el)el.innerText='@'+cote.toFixed(2);
-  /* sync to cockpit cote field */
-  var cc=$i('c-cote');if(cc)cc.value=cote.toFixed(2);
+  /* C'est la cote EFFECTIVE qui part vers le champ du pari. */
+  var eff=_mmCoteManuelle()||cote;
+  var cc=$i('c-cote');if(cc)cc.value=eff.toFixed(2);
+  /* Reperage visuel : le produit passe en gris barre des qu'une cote manuelle
+     le remplace, pour qu'on voie laquelle sera reellement enregistree. */
+  if(el){
+    var manuel=_mmCoteManuelle()>0;
+    el.style.opacity = manuel?'.42':'1';
+    el.style.textDecoration = manuel?'line-through':'none';
+  }
   renderCrash();
 }
+window.mmCoteManuelle=function(){ try{ renderMmCote(); }catch(e){} };
 function addMmRow(){mmRows.push({type:'',cote:1.50});renderMmRows();}
 function addMmType(t){
   var existing=mmRows.find(function(r){return r.type===t;});
@@ -8796,9 +8851,29 @@ function render(){
          masquee pour eviter l'agrandissement sur grand ecran ; Antoine prefere
          nettement le rendu d'origine, ou l'image occupe toute la ligne. Le
          cadrage serre sur large ecran est donc un choix assume, pas un oubli. */
-      var _fond=(typeof g45FondSolo==='function')?g45FondSolo(u.color,_vis)
+      /* ═══ BANDES NOIRES DE L'IMAGE (26/08) ═══
+         Certains fanarts de TheSportsDB ont des bandes noires INCRUSTEES en haut
+         et en bas — visible sur Colorado Avalanche. En fond CSS avec `cover`,
+         elles restent dans le cadre des que la hauteur commande le cadrage,
+         c'est-a-dire sur telephone.
+         L'image devient donc une couche `<img>` en `object-fit:cover`, haute de
+         150 % et remontee de 25 % : le centre de l'image remplit la ligne et les
+         bandes tombent hors cadre. Le degrade de couleur reste en fond derriere,
+         et le voile passe au-dessus pour proteger le texte.
+         Un `<img>` plutot qu'un fond CSS : `object-fit` accepte un debordement
+         maitrise, ce qu'aucune valeur de `background-size` ne permet a la fois
+         sur ecran large et sur ecran etroit. */
+      var _fond=(typeof g45FondSolo==='function')?g45FondSolo(u.color,'')
               :('linear-gradient(100deg,'+(u.color||'#4d84ff')+'2e 0%,transparent 55%)');
       var _couche='';
+      if(_vis){
+        var _vl=(typeof _G45_FOND_NIV!=='undefined')?_G45_FOND_NIV.voileVis:0.30;
+        _couche='<img src="'+_vis+'" alt="" loading="lazy" onerror="this.style.display=\'none\'" '
+          +'style="position:absolute;left:0;top:-25%;width:100%;height:150%;object-fit:cover;'
+          +'pointer-events:none;">'
+          +'<div style="position:absolute;inset:0;pointer-events:none;'
+          +'background:rgba(10,14,26,'+_vl+');"></div>';
+      }
       /* Logo nettement plus present : 86 px a 18 %. Une ligne du mur faisait
          10 px de haut de matiere pour 100 % de largeur vide — l'effet « salon
          Discord » qu'Antoine veut casser. */
@@ -8837,9 +8912,22 @@ function render(){
            cette protection « Arsenal » se noyait dans le maillot blanc et le
            libelle de Barcelone passait sur l'ecusson dore. Degrade sous le seul
            bloc de texte, plus une ombre portee : l'image reste intacte ailleurs. */
-        +'<div style="position:relative;flex:1;min-width:0;padding:5px 14px 5px 8px;margin:-5px 0;border-radius:9px;'
-          +'background:linear-gradient(90deg,rgba(8,11,20,.80) 0%,rgba(8,11,20,.62) 62%,transparent 100%);'
-          +'text-shadow:0 1px 3px rgba(0,0,0,.9);">'
+        /* VOILE RESSERRE (26/08). Il courait sur toute la HAUTEUR de la ligne et
+           formait une bande sombre qui la traversait de part en part — bien
+           visible sur Colorado. Il s'arrete desormais au contenu, avec des coins
+           arrondis et un degrade qui s'eteint plus tot. La lisibilite du texte
+           tient surtout a l'ombre portee, pas au fond. */
+        /* VOILE AJUSTE AU CONTENU (26/08). Le bloc etait en `flex:1` : il occupait
+           toute la largeur restante, donc son voile s'etirait jusqu'au centre de
+           la carte alors que le texte s'arrete bien avant. D'ou une bande sombre
+           inutile en plein milieu de l'image.
+           `flex:0 1 auto` le fait se dimensionner sur SON contenu ; `max-width`
+           garde la troncature sur les noms tres longs. L'image reste donc nue
+           partout ou il n'y a rien a lire. */
+        +'<div style="position:relative;flex:0 1 auto;min-width:0;max-width:72%;'
+          +'padding:4px 16px 4px 9px;border-radius:10px;'
+          +'background:linear-gradient(90deg,rgba(8,11,20,.72) 0%,rgba(8,11,20,.34) 62%,transparent 100%);'
+          +'text-shadow:0 1px 4px rgba(0,0,0,.95),0 0 10px rgba(0,0,0,.7);">'
         +'<div style="font-size:12px;font-weight:700;">'+(u.sport||'')+' '+u.n+'</div>'
         +'<div style="font-size:9px;color:var(--t3);">'+'⭐'.repeat(u.s)+' · '+_g45PalLabel(u)+' · '+pc+'% réussite</div>'
         +(u.note?'<div style="font-size:10px;color:var(--a);margin-top:2px;font-style:italic;">📌 '+u.note+'</div>':'')
@@ -8847,9 +8935,9 @@ function render(){
         +(streak(paris).n>1?'<div style="display:inline-flex;align-items:center;gap:3px;padding:1px 7px;border-radius:10px;font-size:9px;font-weight:700;margin-top:3px;background:'+(streak(paris).t?'rgba(30,215,96,.1)':'rgba(255,69,69,.1)')+';color:'+(streak(paris).t?'var(--g)':'var(--r)')+'">'
         +(streak(paris).t?'🔥':'❄️')+' '+streak(paris).n+'</div>':'')
         +'</div>'
-        +'<div style="position:relative;text-align:right;line-height:1.25;padding:5px 8px 5px 16px;margin:-5px 0;border-radius:9px;'
-          +'background:linear-gradient(270deg,rgba(8,11,20,.80) 0%,rgba(8,11,20,.62) 62%,transparent 100%);'
-          +'text-shadow:0 1px 3px rgba(0,0,0,.9);">'
+        +'<div style="position:relative;margin-left:auto;text-align:right;line-height:1.25;padding:4px 9px 4px 18px;border-radius:10px;'
+          +'background:linear-gradient(270deg,rgba(8,11,20,.72) 0%,rgba(8,11,20,.40) 55%,transparent 100%);'
+          +'text-shadow:0 1px 4px rgba(0,0,0,.95),0 0 10px rgba(0,0,0,.7);">'
           +'<div style="font-size:14px;font-weight:800;color:'+pColor+';">'+fmt(profit)+'</div>'
           + ((_dom.n||_ext.n)
               ? ('<div style="font-size:9px;font-weight:700;white-space:nowrap;">'
@@ -10702,12 +10790,33 @@ function renderMmRows(){
   }).join('');
   renderMmCote();
 }
+/* ═══ COTE COMBINEE MODIFIABLE (26/08) ═══
+   Le cockpit n'affichait que le PRODUIT des selections. Or un bookmaker
+   arrondit ou applique un boost : la cote enregistree n'etait donc pas celle du
+   ticket, et le gain calcule etait faux.
+   Le champ manuel prime quand il est rempli ; vide, on revient au calcul
+   automatique. Le produit reste affiche, pour garder le point de comparaison
+   sous les yeux. */
+function _mmCoteManuelle(){
+  var e=$i('mm-cote-manuelle');
+  var v=e?(parseFloat(e.value)||0):0;
+  return v>0?v:0;
+}
+
 function renderMmCote(){
   var cote=mmRows.reduce(function(a,r){return a*(parseFloat(r.cote)||1);},1);
   var el=$i('mm-cote-total');
   if(el)el.innerText='@'+cote.toFixed(2);
-  /* sync to cockpit cote field */
-  var cc=$i('c-cote');if(cc)cc.value=cote.toFixed(2);
+  /* C'est la cote EFFECTIVE qui part vers le champ du pari. */
+  var eff=_mmCoteManuelle()||cote;
+  var cc=$i('c-cote');if(cc)cc.value=eff.toFixed(2);
+  /* Reperage visuel : le produit passe en gris barre des qu'une cote manuelle
+     le remplace, pour qu'on voie laquelle sera reellement enregistree. */
+  if(el){
+    var manuel=_mmCoteManuelle()>0;
+    el.style.opacity = manuel?'.42':'1';
+    el.style.textDecoration = manuel?'line-through':'none';
+  }
   renderCrash();
 }
 function addMmRow(){mmRows.push({type:'',cote:1.50});renderMmRows();}
@@ -21154,8 +21263,205 @@ async function _espnMatchLiveData(nom){
   return {resolved:resolved, event:ev, summary:summary, league:lg};
 }
 
+/* ═══ PRESSION DU MATCH (26/08) ═══
+   Equivalent du « Match Momentum » d'ESPN et de Sofascore. Ni l'un ni l'autre ne
+   publie sa courbe : ESPN ne l'expose dans aucun point d'entree du compte rendu
+   — verifie par sonde, ni `momentum` ni `winprobability`. Elle est donc
+   RECONSTRUITE a partir du commentaire minute par minute, qui porte pour chaque
+   action son type, sa minute et surtout son EQUIPE dans un champ dedie.
+   Nommee « Pression » et non « Momentum » : la forme est comparable, les valeurs
+   sont les notres. Annoncer un momentum laisserait croire a un calcul identique.
+   Ponderation : un but pese beaucoup, un tir cadre nettement, un tir bloque ou
+   un corner un peu. Les fautes comptent NEGATIVEMENT pour l'equipe qui la
+   commet — subir une faute traduit une progression, la commettre une defense.
+   Tranches de trois minutes : en dessous le graphique devient du bruit, au-dela
+   il lisse les temps forts. */
+var _G45_PRESS_POIDS = {
+  'goal': 10, 'penalty - scored': 10,
+  'shot on target': 5, 'penalty - missed': 4, 'penalty - saved': 4,
+  'shot blocked': 2.5, 'shot off target': 2, 'attempt missed': 2,
+  'corner awarded': 1.5, 'offside': -0.5,
+  'foul': -0.6, 'handball': -0.6,
+  'yellow card': -1, 'red card': -3
+};
+function _g45PressPoids(t){
+  var k = String(t || '').toLowerCase();
+  if (_G45_PRESS_POIDS[k] != null) return _G45_PRESS_POIDS[k];
+  if (k.indexOf('goal') >= 0 && k.indexOf('own') < 0) return 10;
+  if (k.indexOf('on target') >= 0) return 5;
+  if (k.indexOf('blocked') >= 0) return 2.5;
+  if (k.indexOf('shot') >= 0 || k.indexOf('attempt') >= 0) return 2;
+  if (k.indexOf('corner') >= 0) return 1.5;
+  if (k.indexOf('card') >= 0) return -1;
+  if (k.indexOf('foul') >= 0 || k.indexOf('handball') >= 0) return -0.6;
+  return 0;
+}
+
+function _renderMatchPression(s, homeId, awayId){
+  try {
+    var com = (s && s.commentary) || [];
+
+    /* SEUIL SELON L'ETAT DU MATCH (26/08). Un seuil unique a 10 actions rendait
+       le graphique invisible pendant la premiere demi-heure d'un match EN COURS,
+       alors que c'est justement le moment ou il sert. On descend a 4 tant que le
+       match n'est pas termine, et on garde 10 apres coup : sur une rencontre
+       finie, moins de dix actions signifie que la competition est mal couverte
+       et le graphique n'aurait aucune valeur. */
+    var _et = (s.header && s.header.competitions && s.header.competitions[0]
+               && s.header.competitions[0].status && s.header.competitions[0].status.type) || null;
+    var enCours = _et ? (_et.completed !== true) : false;
+    var MINI = enCours ? 4 : 10;
+    if (com.length < (enCours ? 6 : 12)) return '';
+
+    /* Nom de chaque camp : le champ `team` du commentaire ne porte que le nom
+       affiche, pas l'identifiant — on apparie donc sur le nom. */
+    var cps = (s.header && s.header.competitions && s.header.competitions[0] && s.header.competitions[0].competitors) || [];
+    var dom = cps.filter(function(c){ return c.homeAway === 'home'; })[0] || cps[0] || {};
+    var ext = cps.filter(function(c){ return c.homeAway === 'away'; })[0] || cps[1] || {};
+    var nomD = (dom.team && (dom.team.displayName || dom.team.name)) || '';
+    var nomE = (ext.team && (ext.team.displayName || ext.team.name)) || '';
+    if (!nomD || !nomE) return '';
+    var cD = (dom.team && dom.team.color) ? ('#' + String(dom.team.color).replace('#','')) : '#4d84ff';
+    var cE = (ext.team && ext.team.color) ? ('#' + String(ext.team.color).replace('#','')) : '#f0b020';
+    if (typeof _g45CoulFond === 'function') { cD = _g45CoulFond(cD); cE = _g45CoulFond(cE); }
+
+    /* UNE BARRE PAR MINUTE (26/08). Les tranches de trois minutes lissaient trop :
+       la ou ESPN montre un temps fort de trois minutes consecutives, on ne voyait
+       qu'une seule barre moyennee. La comparaison avec leur graphique l'a rendu
+       evident. Il y a assez de matiere dans le commentaire pour descendre a la
+       minute sans que ca devienne du bruit. */
+    var PAS = 1, MAXMIN = 96;
+    var n = Math.ceil(MAXMIN / PAS);
+    var bD = new Array(n).fill(0), bE = new Array(n).fill(0);
+    var buts = [], reperes = [];
+    var vus = 0;
+
+    com.forEach(function(c){
+      var p = c.play; if (!p || !p.team) return;
+      var mn = parseInt(String((p.clock && p.clock.displayValue) || '').replace(/[^0-9]/g,''), 10);
+      if (isNaN(mn)) return;
+      /* ESPN remet l'horloge a zero en seconde periode sur certains matchs :
+         on rattrape avec le numero de periode. */
+      if (p.period && p.period.number === 2 && mn <= 45) mn += 45;
+      var i = Math.min(n - 1, Math.floor(mn / PAS));
+      var w = _g45PressPoids(p.type && p.type.text);
+      if (!w) return;
+      var estDom = (String(p.team.displayName || '') === nomD);
+      vus++;
+      if (w > 0) { if (estDom) bD[i] += w; else bE[i] += w; }
+      else       { if (estDom) bE[i] += -w * 0.5; else bD[i] += -w * 0.5; }
+      var tt = String((p.type && p.type.text) || '').toLowerCase();
+      if (tt.indexOf('goal') >= 0) buts.push({ i: i, dom: estDom });
+    });
+
+    /* REPERES (26/08) : cartons et remplacements, comme les pastilles et les
+       fleches d'ESPN. Ils sont dans le commentaire mais etaient ignores. Releves
+       a part car ils ne pesent pas dans la pression — un remplacement ne dit
+       rien de la domination, il situe un moment du match. */
+    com.forEach(function(c){
+      var p = c.play; if (!p || !p.team) return;
+      var tt = String((p.type && p.type.text) || '').toLowerCase();
+      var ico = '';
+      if (tt.indexOf('red card') >= 0) ico = '\ud83d\udfe5';
+      else if (tt.indexOf('yellow') >= 0) ico = '\ud83d\udfe8';
+      else if (tt.indexOf('substitut') >= 0) ico = '\ud83d\udd01';
+      if (!ico) return;
+      var mn = parseInt(String((p.clock && p.clock.displayValue) || '').replace(/[^0-9]/g,''), 10);
+      if (isNaN(mn)) return;
+      if (p.period && p.period.number === 2 && mn <= 45) mn += 45;
+      reperes.push({ i: Math.min(n - 1, Math.floor(mn / PAS)), ico: ico,
+                     dom: (String(p.team.displayName || '') === nomD) });
+    });
+    if (vus < MINI) return '';
+
+    var maxi = Math.max(1, Math.max.apply(null, bD.concat(bE)));
+    var H = 46;
+    /* En direct, on s'arrete a la minute atteinte : dessiner les tranches a
+       venir donnerait un graphique aux trois quarts vide, comme si les deux
+       equipes ne faisaient rien. */
+    var nAff = n;
+    if (enCours) {
+      var dernier = 0;
+      for (var k = 0; k < n; k++) { if (bD[k] > 0 || bE[k] > 0) dernier = k; }
+      nAff = Math.min(n, dernier + 2);
+    }
+    var barres = '';
+    for (var i = 0; i < nAff; i++) {
+      var hD = Math.round((bD[i] / maxi) * H), hE = Math.round((bE[i] / maxi) * H);
+      var but = buts.filter(function(g){ return g.i === i; })[0];
+      var rep = reperes.filter(function(g){ return g.i === i; })[0];
+      /* A la minute, les barres deviennent fines : 1 px d'ecart suffit, sinon
+         les 96 colonnes ne tiennent plus sur un ecran de telephone. */
+      barres += '<div style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;position:relative;">'
+        + '<div style="height:11px;font-size:8px;line-height:11px;">' + (but && but.dom ? '\u26bd' : (rep && rep.dom ? rep.ico : '')) + '</div>'
+        + '<div style="height:' + H + 'px;display:flex;align-items:flex-end;width:100%;padding:0 .5px;box-sizing:border-box;">'
+          + '<div style="width:100%;height:' + hD + 'px;background:' + cD + ';border-radius:1px 1px 0 0;"></div>'
+        + '</div>'
+        + '<div style="height:1px;width:100%;background:rgba(255,255,255,.22);"></div>'
+        + '<div style="height:' + H + 'px;display:flex;align-items:flex-start;width:100%;padding:0 .5px;box-sizing:border-box;">'
+          + '<div style="width:100%;height:' + hE + 'px;background:' + cE + ';border-radius:0 0 1px 1px;"></div>'
+        + '</div>'
+        + '<div style="height:11px;font-size:8px;line-height:11px;">' + (but && !but.dom ? '\u26bd' : (rep && !rep.dom ? rep.ico : '')) + '</div>'
+      + '</div>';
+    }
+
+    var lg = function(c, nom){
+      return '<span style="display:inline-flex;align-items:center;gap:5px;font-size:9.5px;font-weight:700;color:rgba(255,255,255,.75);">'
+        + '<span style="width:9px;height:9px;border-radius:2px;background:' + c + ';"></span>' + _g45CyEa(nom) + '</span>';
+    };
+
+    return '<div class="fc" style="padding:14px;">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:11px;">'
+        + '<div style="font-size:11px;font-weight:800;letter-spacing:.5px;color:var(--t2);">\ud83d\udcc8 PRESSION DU MATCH'
+          + (enCours ? ' <span style="color:#ff5a5a;font-size:9px;">\u25cf EN COURS</span>' : '') + '</div>'
+        + '<div style="display:flex;gap:11px;">' + lg(cD, nomD) + lg(cE, nomE) + '</div>'
+      + '</div>'
+      + '<div style="display:flex;align-items:center;gap:1px;">' + barres + '</div>'
+      + '<div style="display:flex;justify-content:space-between;font-size:8.5px;color:var(--t3);margin-top:5px;font-weight:700;">'
+        + '<span>0\'</span>'
+        + (nAff > n * 0.55 ? '<span>45\'</span>' : '')
+        + '<span>' + Math.round(nAff * PAS) + '\'</span></div>'
+      + '<div style="font-size:8.5px;color:var(--t3);margin-top:7px;line-height:1.5;">'
+        + '\u26bd but \u00b7 \ud83d\udfe8 carton \u00b7 \ud83d\udfe5 expulsion \u00b7 \ud83d\udd01 remplacement<br>'
+        + 'Reconstruite \u00e0 partir des actions du match \u2014 tirs, corners, buts, fautes. '
+        + 'Indicateur maison, non comparable aux valeurs d\'ESPN ou de Sofascore.</div>'
+    + '</div>';
+  } catch (e) { return ''; }
+}
+
+/* EXPORTS EXPLICITES (26/08). La declaration est pourtant au niveau superieur,
+   mais `typeof _renderMatchPression` rendait `undefined` en console chez
+   Antoine. Plutot que de supposer la portee, on expose franchement : c'est ce
+   que fait deja le reste du fichier pour tout ce qui est appele de l'exterieur,
+   et ca rend aussi la fonction testable a la main. */
+window._renderMatchPression = _renderMatchPression;
+window._g45PressPoids = _g45PressPoids;
+window._G45_PRESS_POIDS = _G45_PRESS_POIDS;
+/* Marqueur de version, pour verifier en une ligne quel app.js tourne
+   reellement : g45Build() en console. */
+window.g45Build = function(){ return '20260826n'; };
+
 function _renderEspnMatchStats(s, homeId, awayId, col){
   try {
+    /* ═══ AUCUNE STATISTIQUE AVANT LE COUP D'ENVOI (26/08) ═══
+       La fonction affichait TOUT ce que le boxscore contient, sans verifier que
+       le match avait ete joue. Sur une rencontre a venir, ESPN y place des
+       colonnes de CLASSEMENT — Goal Difference, Total Goals, Assists — que
+       l'app presentait comme des statistiques de match. D'ou des chiffres
+       affiches sur des matchs pas encore disputes.
+       Deux verrous complementaires : l'etat du match d'abord, puis une liste
+       noire de noms qui n'appartiennent pas a une feuille de match. Le second
+       protege des competitions ou l'etat n'est pas renseigne. */
+    var _st = (s.header && s.header.competitions && s.header.competitions[0]
+               && s.header.competitions[0].status)
+           || (s.competitions && s.competitions[0] && s.competitions[0].status)
+           || (s.status) || null;
+    var _t = _st && _st.type;
+    if (_t) {
+      var joue = (_t.completed === true) || /in|post|final/i.test(String(_t.state || ''));
+      if (!joue) return '';
+    }
+
     var teams = (s.boxscore&&s.boxscore.teams)||[];
     if(teams.length<2) return '';
     function pick(side){ return teams.find(function(t){return t.team&&String(t.team.id)===String(side);}); }
@@ -21169,10 +21475,14 @@ function _renderEspnMatchStats(s, homeId, awayId, col){
     var frMap={possessionPct:'Possession',expectedGoals:'Buts attendus (xG)',totalShots:'Tirs',shotsOnTarget:'Tirs cadrés',shotsOnGoal:'Tirs au but',ownGoals:'Buts contre son camp',blockedShots:'Tirs bloqués',shotsInsideBox:'Tirs dans la surface',shotsOutsideBox:'Tirs hors surface',hitWoodwork:'Poteaux / barres',wonCorners:'Corners',cornerKicks:'Corners',offsides:'Hors-jeu',foulsCommitted:'Fautes',yellowCards:'Cartons jaunes',redCards:'Cartons rouges',totalPasses:'Passes',accuratePasses:'Passes réussies',saves:'Arrêts',totalCrosses:'Centres',accurateCrosses:'Centres réussis',totalTackles:'Tacles',interceptions:'Interceptions',effectiveClearance:'Dégagements',totalLongBalls:'Longs ballons',penaltyKicksTaken:'Penaltys tirés'};
     // ordre : les plus parlantes d'abord, puis tout le reste (rien n'est masqué)
     var prio=['possessionPct','expectedGoals','totalShots','shotsOnGoal','shotsOnTarget','blockedShots','shotsInsideBox','shotsOutsideBox','hitWoodwork','wonCorners','cornerKicks','offsides','foulsCommitted','yellowCards','redCards','totalPasses','accuratePasses','totalCrosses','accurateCrosses','saves'];
+    /* Colonnes de CLASSEMENT, jamais de feuille de match : une difference de
+       buts ou un nombre de points n'a aucun sens sur une rencontre unique. */
+    var _hors = /^(goalDifference|pointsFor|pointsAgainst|points|rank|gamesPlayed|wins|losses|ties|draws|totalGoals|goalsFor|goalsAgainst|assists|goalAssists|appearances|streak|winPercent)$/i;
     var names=[], seen={};
-    prio.forEach(function(n){ if((H[n]||A[n]) && !seen[n]){ names.push(n); seen[n]=1; } });
-    Object.keys(H).forEach(function(n){ if(!seen[n]){ names.push(n); seen[n]=1; } });
-    Object.keys(A).forEach(function(n){ if(!seen[n]){ names.push(n); seen[n]=1; } });
+    var ajout=function(n){ if(!seen[n] && !_hors.test(n)){ names.push(n); seen[n]=1; } };
+    prio.forEach(function(n){ if(H[n]||A[n]) ajout(n); });
+    Object.keys(H).forEach(ajout);
+    Object.keys(A).forEach(ajout);
     var rows='';
     names.forEach(function(n){
       var hh=H[n], aa=A[n], hv=hh?hh.v:null, av=aa?aa.v:null;
@@ -21504,6 +21814,7 @@ async function loadEspnMatchLive(el, nom, col){
   html+='<div style="text-align:center;margin-top:10px;"><button onclick="loadTeamLive()" style="background:rgba(255,255,255,.06);border:1px solid var(--b2);color:var(--t2);font-size:11px;padding:6px 14px;border-radius:6px;cursor:pointer;">🔄 Rafraîchir</button></div>';
   html+='</div>';
   var homeId=(home.team&&home.team.id), awayId=(away.team&&away.team.id);
+  try{ html+=_renderMatchPression(s, homeId, awayId); }catch(e){}
   html+=_renderEspnMatchStats(s, homeId, awayId, col);
   var _compo=_renderEspnMatchPitch(s, col); html+=_compo||_renderEspnMatchLineups(s, col);
   el.innerHTML=html;
@@ -25583,6 +25894,14 @@ async function _renderGenericDetail(el, sport, lg, eid){
     var _tSlug=({mlb:'baseball',nba:'basketball',nfl:'american-football',nhl:'ice-hockey',wnba:'basketball'})[lg]||({rugby:'rugby','rugby-league':'rugby'})[sport]||'';
     if(_tSlug){ h+='<div style="margin-top:8px;"><button onclick="g45LoadTendance(this)" data-slug="'+_tSlug+'" data-h="'+String(hN).replace(/"/g,'&quot;')+'" data-a="'+String(aN).replace(/"/g,'&quot;')+'" data-date="'+(comp.date||'')+'" data-box="ustend-'+eid+'" style="width:100%;box-sizing:border-box;font-size:12px;font-weight:800;padding:9px 12px;border-radius:9px;cursor:pointer;border:1.5px solid rgba(122,140,255,.5);background:rgba(122,140,255,.08);color:#8aa2ff;">📈 Tendance du public</button><div id="ustend-'+eid+'" style="margin-top:8px;"></div></div>'; }
     h+='<div style="margin-top:8px;"><button onclick="g45YT(this.dataset.q)" data-q="'+String(hN+' '+aN+' highlights').replace(/"/g,'&quot;')+'" style="width:100%;box-sizing:border-box;font-size:12px;font-weight:800;padding:9px 12px;border-radius:9px;cursor:pointer;border:1.5px solid rgba(255,69,58,.5);background:rgba(255,69,58,.10);color:#ff6b5e;">📺 Résumé sur YouTube</button></div>';
+    /* PRESSION DU MATCH (26/08). Elle n'etait branchee que sur le rendu
+       FOOTBALL (`_renderSaisonDetail`). Or ce rendu-ci, generique multi-sports,
+       sert aussi au football depuis certaines vues — d'ou un graphique absent la
+       ou Antoine l'attendait. La fonction se protege seule : elle rend une
+       chaine vide si le commentaire est absent ou trop maigre, donc l'appeler
+       sur un match de baseball ou de hockey ne coute rien. */
+    try{ if(typeof _renderMatchPression==='function'){ h+=_renderMatchPression(data, (home.team&&home.team.id)||'', (away.team&&away.team.id)||''); } }catch(e){}
+
     // H2H + Classement (génériques : rugby, baseball, basket, hockey, NFL…)
     var _hid=(home.team&&home.team.id)||'', _aid=(away.team&&away.team.id)||'';
     if(_hid&&_aid) h+='<div style="margin-top:8px;"><button onclick="g45RugbyH2H(this)" data-sport="'+sport+'" data-lg="'+lg+'" data-hid="'+_hid+'" data-aid="'+_aid+'" data-date="'+(comp.date||'')+'" data-h="'+String(hN).replace(/"/g,'&quot;')+'" data-a="'+String(aN).replace(/"/g,'&quot;')+'" data-box="rh2h-'+eid+'" style="width:100%;box-sizing:border-box;font-size:12px;font-weight:800;padding:9px 12px;border-radius:9px;cursor:pointer;border:1.5px solid rgba(138,160,255,.5);background:rgba(138,160,255,.10);color:#8aa0ff;">⚔️ Confrontations &amp; forme</button><div id="rh2h-'+eid+'" style="margin-top:8px;"></div></div>';
