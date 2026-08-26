@@ -2131,7 +2131,13 @@ function render(){
   }).join('');
 
   /* ulist */
-  $i('ulist').innerHTML=state.u.length?'<div style="border-top:1px solid var(--b1);">'
+  /* GRILLE SUR GRAND ECRAN (26/08). Une carte par ligne sur toute la largeur
+     laissait un vide enorme au centre sur PC. La mise en colonnes est portee par
+     `style.css` — c'est la seule facon d'adapter le nombre de colonnes a la
+     largeur reelle, une regle inline ne pouvant pas contenir de media query.
+     Le filet superieur disparait : entre des cartes detachees en grille il
+     n'aurait plus aucun sens. */
+  $i('ulist').innerHTML=state.u.length?'<div class="g45-mur-grid">'
     +state.u.map(function(u,i){
       return '<div class="urow">'
         +'<div class="udot" style="background:'+u.color+';"></div>'
@@ -8877,7 +8883,13 @@ function render(){
   }).join('');
 
   /* ulist */
-  $i('ulist').innerHTML=state.u.length?'<div style="border-top:1px solid var(--b1);">'
+  /* GRILLE SUR GRAND ECRAN (26/08). Une carte par ligne sur toute la largeur
+     laissait un vide enorme au centre sur PC. La mise en colonnes est portee par
+     `style.css` — c'est la seule facon d'adapter le nombre de colonnes a la
+     largeur reelle, une regle inline ne pouvant pas contenir de media query.
+     Le filet superieur disparait : entre des cartes detachees en grille il
+     n'aurait plus aucun sens. */
+  $i('ulist').innerHTML=state.u.length?'<div class="g45-mur-grid">'
     +state.u.map(function(u,i){
       return '<div class="urow">'
         +'<div class="udot" style="background:'+u.color+';"></div>'
@@ -23915,7 +23927,9 @@ function _g45TrRender(){
                :'dérivé du classement — repli, les matchs du championnat n\'ont pas pu être récupérés')+'</div>';
     if(m.faits&&m.faits.length) s+='<ul style="position:relative;margin:6px 0 0 0;padding:6px 9px 6px 24px;'
       +'background:rgba(8,11,20,.58);border-radius:7px;list-style-position:outside;">'
-      +m.faits.slice(0,4).map(function(f){ return '<li style="font-size:9.5px;color:rgba(255,255,255,.84);line-height:1.6;">'+_g45CyEa(f)+'</li>'; }).join('')+'</ul>';
+      /* Passage en 600 le 26/08 : sur le fond colore des cartes, un texte en
+         graisse normale a 9,5 px se lisait mal. */
+      +m.faits.slice(0,4).map(function(f){ return '<li style="font-size:9.5px;font-weight:600;color:rgba(255,255,255,.90);line-height:1.6;">'+_g45CyEa(f)+'</li>'; }).join('')+'</ul>';
     if(m.n<9) s+='<div style="font-size:8px;color:#ff6b6b;margin-top:4px;">⛔ Échantillon très réduit ('+m.n+' matchs) — statistiquement peu fiable, à titre indicatif seulement.</div>';
     else if(m.n<14) s+='<div style="font-size:8px;color:#ff8c42;margin-top:4px;">⚠️ Échantillon réduit ('+m.n+' matchs) — à prendre avec prudence.</div>';
     return s+'</div>';
@@ -28164,8 +28178,12 @@ async function g45LoadCalendar(slug, btn, monthOffset, sportPath){
        les numeros de jour ni les etiquettes de journee. */
     var _filigCal = lgLogo
       ? ('<div style="position:absolute;inset:0;background-image:url(\'' + lgLogo + '\');'
-         + 'background-repeat:no-repeat;background-position:center 58%;background-size:auto 62%;'
-         + 'opacity:.07;pointer-events:none;border-radius:14px;"></div>')
+         /* Opacite montee de .07 a .16 le 26/08 : a 7 % le logo etait indiscernable
+            du fond. La grille du calendrier n'ayant que de petits numeros bien
+            contrastes, elle supporte un filigrane plus franc que les cartes
+            chargees de texte. */
+         + 'background-repeat:no-repeat;background-position:center 58%;background-size:auto 68%;'
+         + 'opacity:.16;pointer-events:none;border-radius:14px;"></div>')
       : '';
     list.innerHTML='<div class="g45-cal-panel" style="position:relative;overflow:hidden;background:var(--bg2);border:1px solid var(--card-border,rgba(77,132,255,.32));border-radius:14px;padding:14px;box-shadow:0 4px 18px rgba(0,0,0,.5);width:100%;margin:0 auto;box-sizing:border-box;">'
       + _filigCal
@@ -33713,20 +33731,29 @@ async function loadCompetTab() {
         var estDrapeau = /^[\u{1F1E6}-\u{1F1FF}]{2}/u.test(String(l.ico || ''));
         var vis;
         if (lo) {
-          vis = '<img src="' + lo + '" style="width:16px;height:16px;object-fit:contain;margin-right:5px;" onerror="this.remove()" loading="lazy">';
+          vis = '<img src="' + lo + '" style="width:22px;height:22px;object-fit:contain;" onerror="this.remove()" loading="lazy">';
         } else if (estDrapeau) {
           var pays = String(l.slug).split('.')[0].toUpperCase().slice(0, 3);
-          vis = '<span style="display:inline-block;min-width:22px;padding:1px 4px;margin-right:5px;border-radius:4px;'
+          vis = '<span style="display:inline-block;min-width:26px;padding:2px 5px;border-radius:5px;'
               + 'background:rgba(255,255,255,.10);color:#9fb0c7;font-size:8.5px;font-weight:800;letter-spacing:.4px;text-align:center;">'
               + pays + '</span>';
         } else {
-          vis = '<span style="margin-right:4px;">' + (l.ico || '') + '</span>';
+          vis = '<span style="font-size:17px;line-height:1;">' + (l.ico || '') + '</span>';
         }
-        return '<button onclick="g45CompetSel(\'' + l.slug + '\')" style="border:none;cursor:pointer;font-size:11px;font-weight:700;padding:7px 11px;margin:0 5px 5px 0;border-radius:16px;background:#1a2235;color:#e6ecf5;display:inline-flex;align-items:center;">'
-          + vis + l.name + '</button>';
+        /* ═══ GRILLE REGULIERE (26/08) ═══
+           Les chips flottaient en lignes irregulieres, chacune large comme son
+           libelle : « Ligue 1 » a cote de « Bundesliga », des trous en bout de
+           ligne, et l'oeil ne trouvait aucun repere. En grille, toutes les
+           tuiles font la meme taille et les colonnes s'alignent.
+           Le visuel est place au-dessus du nom plutot qu'a cote : il gagne en
+           taille — 22 px au lieu de 16 — et le nom dispose de toute la largeur
+           de la tuile, donc plus de troncature. */
+        return '<button onclick="g45CompetSel(\'' + l.slug + '\')" class="g45-cmp-tile">'
+          + '<span class="g45-cmp-ico">' + vis + '</span>'
+          + '<span class="g45-cmp-nom">' + l.name + '</span></button>';
       }).join('');
-      return '<div style="margin-bottom:10px;"><div style="font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#4f5d88;margin-bottom:5px;">'
-        + g.grp + '</div><div>' + ch + '</div></div>';
+      return '<div style="margin-bottom:14px;"><div style="font-size:9px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#6b7a99;margin-bottom:7px;">'
+        + g.grp + '</div><div class="g45-cmp-grid">' + ch + '</div></div>';
     }).join('');
     el.innerHTML = retour + '<div class="sec" style="margin-top:0;">' + sp.ico + ' ' + sp.name + '</div>'
       + '<div class="fc">' + html + '</div>';
@@ -34068,13 +34095,33 @@ async function g45TrfRender(c, body) {
   } else {
     corps = vis.slice(0, 200).map(function (t) {
       var d = (t.date || '').slice(8, 10) + '/' + (t.date || '').slice(5, 7);
-      return '<div style="display:flex;align-items:center;gap:8px;padding:7px 9px;margin-bottom:5px;background:rgba(255,255,255,.04);border-radius:8px;flex-wrap:wrap;">'
-        + '<span style="color:#9fb0c7;font-size:10px;min-width:36px;">' + d + '</span>'
-        + '<span style="flex:1;min-width:110px;font-size:11.5px;font-weight:700;">' + t.joueur + '</span>'
-        + '<span style="font-size:11px;color:#9fb0c7;">' + (t.de || 'libre') + '</span>'
-        + '<span style="color:var(--a);">\u2192</span>'
-        + '<span style="font-size:11px;font-weight:700;">' + (t.vers || '?') + '</span>'
-        + (t.montant ? '<span style="font-size:10px;color:#4ade80;font-weight:700;">' + t.montant + '</span>' : '')
+      /* ═══ MISE EN PAGE SUR DEUX LIGNES (26/08) ═══
+         Tout tenait sur une seule ligne en `flex-wrap` : sur telephone, le club
+         d'arrivee passait a la ligne tout seul et se retrouvait detache de la
+         fleche — « Son Heung-Min · Tottenham → » puis « LAFC » en dessous, comme
+         s'il s'agissait d'une autre entree.
+         Structure explicite desormais : le joueur et la date en haut, le
+         mouvement de club en dessous sur sa propre ligne. Le montant passe en
+         pastille a droite, la ou l'oeil le cherche.
+         `min-width:0` sur les cellules de club est indispensable : sans lui,
+         `text-overflow` ne peut pas fonctionner dans une grille. */
+      var mt = t.montant ? String(t.montant) : '';
+      var mtLib = /^\d+$/.test(mt) ? (Math.round(+mt / 1e6) + ' M\u20ac') : mt;
+      return '<div style="padding:9px 11px;margin-bottom:5px;background:rgba(255,255,255,.04);border-radius:9px;border-left:3px solid rgba(77,132,255,.35);">'
+        + '<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:5px;">'
+          + '<span style="font-size:12px;font-weight:800;color:var(--t1);flex:1;min-width:0;'
+            + 'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + t.joueur + '</span>'
+          + '<span style="color:#6b7a99;font-size:9.5px;font-weight:700;flex:none;">' + d + '</span>'
+        + '</div>'
+        + '<div style="display:grid;grid-template-columns:1fr auto 1fr;gap:7px;align-items:center;">'
+          + '<span style="font-size:10.5px;color:#9fb0c7;min-width:0;text-align:right;'
+            + 'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (t.de || 'libre') + '</span>'
+          + '<span style="color:var(--a);font-weight:800;flex:none;">\u2192</span>'
+          + '<span style="font-size:10.5px;font-weight:700;color:var(--t1);min-width:0;'
+            + 'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (t.vers || '?') + '</span>'
+        + '</div>'
+        + (mtLib ? ('<div style="margin-top:5px;text-align:right;"><span style="font-size:9.5px;font-weight:800;color:#4ade80;'
+            + 'background:rgba(74,222,128,.12);border-radius:5px;padding:2px 7px;">' + mtLib + '</span></div>') : '')
         + '</div>';
     }).join('');
   }
