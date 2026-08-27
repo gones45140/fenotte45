@@ -471,7 +471,11 @@ var LOGOS={
      page redeclarait le mauvais blason et annulait toute reparation. Sans
      entree ici, la resolution retombe sur le logo memorise dans le mur, qui est
      le bon depuis `g45ReparerLogo`. */
-  "LA Dodgers":   "https://media.api-sports.io/baseball/teams/19.png"
+  "LA Dodgers":   "https://media.api-sports.io/baseball/teams/19.png",
+  /* AJOUTE LE 27/08 : blason perso deposee par Antoine sur GitHub (absent
+     de api-sports). La cle doit correspondre EXACTEMENT au nom de l'equipe
+     sur le mur (`u.n`) pour que g45LogoUrlDe() la trouve. */
+  "Atletico Madrid": "https://raw.githubusercontent.com/gones45140/gones45/main/images/ligues/Atletico%20Madrid.png"
 };
 var FAV_LINKS={
   "Bayern Munich":"https://www.flashscore.fr/equipe/bayern/nVp0wiqd/",
@@ -4299,7 +4303,13 @@ function saveMmAsPari(mode) {
   if (!rows || !rows.length || !rows.some(function(r){ return r.type; })) {
     alert('Ajoute au moins une sélection !'); return;
   }
-  var cote = rows.reduce(function(a,r){ return a*(parseFloat(r.cote)||1); }, 1);
+  var coteProduit = rows.reduce(function(a,r){ return a*(parseFloat(r.cote)||1); }, 1);
+  /* COTE MANUELLE PRISE EN COMPTE A L'ENREGISTREMENT (27/08). `renderMmCote()`
+     affichait deja la cote manuelle en aperçu (barre le produit automatique),
+     mais `saveMmAsPari` recalculait le produit brut depuis `rows` sans jamais
+     regarder le champ manuel : le pari enregistrait toujours le produit, pas
+     la cote reelle du ticket. Seul le mode 'cockpit' a ce champ. */
+  var cote = (mode==='cockpit' && typeof _mmCoteManuelle==='function' && _mmCoteManuelle()>0) ? _mmCoteManuelle() : coteProduit;
   /* COTE RETIREE DU LIBELLE (25/08). Elle etait collee a chaque selection —
      « Victoire @1.8 + BTS Oui @1.7 » — ce qui faisait de chaque combinaison de
      cotes un TYPE distinct : le bilan comptait autant de categories que de
@@ -4364,7 +4374,14 @@ function getMmLabel(){
   return mmRows.filter(function(r){return r.type;}).map(function(r){return r.type;}).join(' + ');
 }
 function getMmCote(){
-  return mmRows.reduce(function(a,r){return a*(parseFloat(r.cote)||1);},1);
+  /* COTE MANUELLE PRISE EN COMPTE ICI AUSSI (27/08, 2e endroit trouve apres
+     retour d'Antoine). `getMmCote()` est ce que lit `pari(true)` pour la
+     colonne "Engager la montante" — un chemin totalement distinct de
+     `saveMmAsPari` (le bouton "Enregistrer pari" du cockpit), corrige plus
+     tot. Meme bug ici : le produit brut de `mmRows` etait renvoye sans jamais
+     regarder le champ "cote reelle" manuel. */
+  var produit=mmRows.reduce(function(a,r){return a*(parseFloat(r.cote)||1);},1);
+  return (typeof _mmCoteManuelle==='function' && _mmCoteManuelle()>0) ? _mmCoteManuelle() : produit;
 }
 
 /* ── SEARCH CLUB API-SPORTS ── */
@@ -7418,7 +7435,11 @@ var LOGOS={
      page redeclarait le mauvais blason et annulait toute reparation. Sans
      entree ici, la resolution retombe sur le logo memorise dans le mur, qui est
      le bon depuis `g45ReparerLogo`. */
-  "LA Dodgers":   "https://media.api-sports.io/baseball/teams/19.png"
+  "LA Dodgers":   "https://media.api-sports.io/baseball/teams/19.png",
+  /* AJOUTE LE 27/08 : blason perso deposee par Antoine sur GitHub (absent
+     de api-sports). La cle doit correspondre EXACTEMENT au nom de l'equipe
+     sur le mur (`u.n`) pour que g45LogoUrlDe() la trouve. */
+  "Atletico Madrid": "https://raw.githubusercontent.com/gones45140/gones45/main/images/ligues/Atletico%20Madrid.png"
 };
 var FAV_LINKS={
   "Bayern Munich":"https://www.flashscore.fr/equipe/bayern/nVp0wiqd/",
@@ -10936,7 +10957,13 @@ function saveMmAsPari(mode) {
   if (!rows || !rows.length || !rows.some(function(r){ return r.type; })) {
     alert('Ajoute au moins une sélection !'); return;
   }
-  var cote = rows.reduce(function(a,r){ return a*(parseFloat(r.cote)||1); }, 1);
+  var coteProduit = rows.reduce(function(a,r){ return a*(parseFloat(r.cote)||1); }, 1);
+  /* COTE MANUELLE PRISE EN COMPTE A L'ENREGISTREMENT (27/08). `renderMmCote()`
+     affichait deja la cote manuelle en aperçu (barre le produit automatique),
+     mais `saveMmAsPari` recalculait le produit brut depuis `rows` sans jamais
+     regarder le champ manuel : le pari enregistrait toujours le produit, pas
+     la cote reelle du ticket. Seul le mode 'cockpit' a ce champ. */
+  var cote = (mode==='cockpit' && typeof _mmCoteManuelle==='function' && _mmCoteManuelle()>0) ? _mmCoteManuelle() : coteProduit;
   /* COTE RETIREE DU LIBELLE (25/08). Elle etait collee a chaque selection —
      « Victoire @1.8 + BTS Oui @1.7 » — ce qui faisait de chaque combinaison de
      cotes un TYPE distinct : le bilan comptait autant de categories que de
@@ -11001,7 +11028,14 @@ function getMmLabel(){
   return mmRows.filter(function(r){return r.type;}).map(function(r){return r.type;}).join(' + ');
 }
 function getMmCote(){
-  return mmRows.reduce(function(a,r){return a*(parseFloat(r.cote)||1);},1);
+  /* COTE MANUELLE PRISE EN COMPTE ICI AUSSI (27/08, 2e endroit trouve apres
+     retour d'Antoine). `getMmCote()` est ce que lit `pari(true)` pour la
+     colonne "Engager la montante" — un chemin totalement distinct de
+     `saveMmAsPari` (le bouton "Enregistrer pari" du cockpit), corrige plus
+     tot. Meme bug ici : le produit brut de `mmRows` etait renvoye sans jamais
+     regarder le champ "cote reelle" manuel. */
+  var produit=mmRows.reduce(function(a,r){return a*(parseFloat(r.cote)||1);},1);
+  return (typeof _mmCoteManuelle==='function' && _mmCoteManuelle()>0) ? _mmCoteManuelle() : produit;
 }
 
 /* ── SEARCH CLUB API-SPORTS ── */
@@ -24093,21 +24127,30 @@ function loadTendancesTab(){
   var el=document.getElementById('t-tend'); if(!el) return;
   var G=_g45TrGroups();
   if(!_G45_TR.sel){ _G45_TR.sel={}; G.forEach(function(g,i){ if(/Grands championnats|Coupes d/i.test(g.grp)) _G45_TR.sel[i]=true; }); }
-  var chip=function(lbl,on,fn){ return '<button onclick="'+fn+'" style="border:none;cursor:pointer;border-radius:8px;padding:6px 11px;font-size:10px;font-weight:800;background:'+(on?'#f0c828':'rgba(255,255,255,.06)')+';color:'+(on?'#221b00':'var(--t2)')+';">'+lbl+'</button>'; };
+  /* LIFTING DU 27/08 (meme demande que le Bilan : "comme le screen 2"). Les
+     puces etaient des pilules en ligne flex-wrap, largeur variable, un seul
+     ton (jaune plein/transparent). On applique la meme grille de tuiles que
+     .sfbtn (Bilan) pour les GROUPES (ligne 1, meme nature de choix — un
+     ensemble de filtres homogenes). La ligne 2 (Jour / Cote mini / Proba
+     mini / Buteurs / CLV) melange des etiquettes et des puces courtes :
+     forcer une grille uniforme y gaspillerait de la place et casserait le
+     regroupement label->options. On garde le flex-wrap mais chaque sous-
+     groupe est isole dans son propre segment arrondi, pour que l'oeil separe
+     "Jour" de "Cote mini" de "Proba mini" au lieu d'une ligne continue. */
+  var chip=function(lbl,on,fn){ return '<button onclick="'+fn+'" class="sfbtn"'+(on?' style="background:#f0c828;border-color:#f0c828;color:#221b00;"':'')+'>'+lbl+'</button>'; };
+  var seg=function(label,inner){ return '<div style="display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:5px 7px 5px 9px;">'
+    +(label?'<span style="font-size:9px;color:var(--t3);font-weight:700;white-space:nowrap;">'+label+'</span>':'')
+    +'<div style="display:flex;gap:5px;flex-wrap:wrap;">'+inner+'</div></div>'; };
   var h='<div class="sec" style="margin-top:0;">🔥 Tendances du jour</div>'
     +'<div style="font-size:9px;color:var(--t3);line-height:1.6;margin-bottom:9px;">Les tendances sont classées par <b>écart avec la cote</b>, pas par pourcentage brut : une série à 100% ne vaut rien si le bookmaker l\'a déjà intégrée. Les cotes sont dévigorisées avant comparaison.</div>'
-    +'<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:7px;">'
+    +'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:6px;margin-bottom:9px;">'
     +G.map(function(g,i){ return chip(g.grp, !!_G45_TR.sel[i], "g45TrSel("+i+")"); }).join('')+'</div>'
-    +'<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:9px;align-items:center;">'
-    +'<span style="font-size:9px;color:var(--t3);">Jour :</span>'
-    +chip("Aujourd'hui", _G45_TR.day===0, "g45TrDay(0)")+chip('Demain', _G45_TR.day===1, "g45TrDay(1)")
-    +'<span style="font-size:9px;color:var(--t3);margin-left:6px;">Cote mini :</span>'
-    +chip('Toutes', !_G45_TR.min, "g45TrMin(0)")+chip('1.30', _G45_TR.min===1.3, "g45TrMin(1.3)")+chip('1.50', _G45_TR.min===1.5, "g45TrMin(1.5)")
-    +'<span style="font-size:9px;color:var(--t3);margin-left:6px;">Proba mini :</span>'
-    +chip('40%', _G45_TR.pmin===0.40, "g45TrPMin(0.40)")+chip('50%', _G45_TR.pmin===0.50, "g45TrPMin(0.50)")
-    +chip('60%', _G45_TR.pmin===0.60, "g45TrPMin(0.60)")
-    +'<button onclick="g45ButeursView()" style="border:none;cursor:pointer;border-radius:8px;padding:6px 11px;font-size:10px;font-weight:800;background:rgba(240,200,40,.16);color:#f0c828;margin-left:4px;">⚽ Buteurs</button>'
-    +'<button onclick="g45ClvView()" style="border:none;cursor:pointer;border-radius:8px;padding:6px 11px;font-size:10px;font-weight:800;background:rgba(46,204,113,.16);color:#2ecc71;margin-left:4px;">📏 CLV</button>'
+    +'<div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:9px;align-items:center;">'
+    +seg('Jour', chip("Aujourd'hui", _G45_TR.day===0, "g45TrDay(0)")+chip('Demain', _G45_TR.day===1, "g45TrDay(1)"))
+    +seg('Cote mini', chip('Toutes', !_G45_TR.min, "g45TrMin(0)")+chip('1.30', _G45_TR.min===1.3, "g45TrMin(1.3)")+chip('1.50', _G45_TR.min===1.5, "g45TrMin(1.5)"))
+    +seg('Proba mini', chip('40%', _G45_TR.pmin===0.40, "g45TrPMin(0.40)")+chip('50%', _G45_TR.pmin===0.50, "g45TrPMin(0.50)")+chip('60%', _G45_TR.pmin===0.60, "g45TrPMin(0.60)"))
+    +seg('', '<button onclick="g45ButeursView()" class="sfbtn" style="background:rgba(240,200,40,.16);border-color:rgba(240,200,40,.35);color:#f0c828;">⚽ Buteurs</button>'
+      +'<button onclick="g45ClvView()" class="sfbtn" style="background:rgba(46,204,113,.16);border-color:rgba(46,204,113,.35);color:#2ecc71;">📏 CLV</button>')
     +'</div>';
   if(!_G45_TR.res){
     h+='<button onclick="g45TrRun()" style="width:100%;border:none;cursor:pointer;border-radius:9px;padding:11px;font-size:11px;font-weight:800;background:rgba(240,200,40,.16);color:#f0c828;">⚡ Analyser les matchs</button>'
@@ -28360,8 +28403,10 @@ function renderBilanTypeFilter(){
   var cur=window._bilanType||'all';
   var defs=[['all','Tous']].concat(_bilanTypes().map(function(t){return [t,t];}));
   window._bilanTypeList=defs.map(function(d){return d[0];});
-  var html='<div style="font-size:9px;color:var(--t3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;">📊 Filtrer par type de pari</div><div style="display:flex;gap:5px;overflow-x:auto;padding-bottom:6px;-webkit-overflow-scrolling:touch;">';
-  defs.forEach(function(d,i){ var on=cur===d[0]; html+='<button onclick="setBilanTypeIdx('+i+')" style="flex-shrink:0;border:none;border-radius:7px;padding:6px 11px;font-size:10px;font-weight:700;cursor:pointer;background:'+(on?'#4d84ff':'rgba(255,255,255,.06)')+';color:'+(on?'#fff':'var(--t2)')+';">'+d[1]+'</button>'; });
+  /* GRILLE DE TUILES, meme langage que .sfbtn/.mm-type (27/08, "comme le
+     screen 2"). Avant : pilules en ligne scroll-x, largeur variable. */
+  var html='<div style="font-size:9px;color:var(--t3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;">📊 Filtrer par type de pari</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:6px;">';
+  defs.forEach(function(d,i){ var on=cur===d[0]; html+='<button onclick="setBilanTypeIdx('+i+')" class="sfbtn'+(on?' on':'')+'">'+d[1]+'</button>'; });
   fb.innerHTML=html+'</div>';
 }
 function setBilanTypeIdx(i){ window._bilanType=(window._bilanTypeList||[])[i]||'all'; renderBilanTypeFilter(); try{renderBilanCompFilter();}catch(e){} try{renderBilanTab();}catch(e){} try{renderGlobalCharts();}catch(e){} }
@@ -28394,8 +28439,10 @@ function renderBilanCompFilter(){
   var cur=window._bilanComp||'all';
   var defs=[['all','Toutes']].concat(comps.map(function(c){return [c,c];}));
   window._bilanCompList=defs.map(function(d){return d[0];});
-  var html='<div style="font-size:9px;color:var(--t3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;">🏆 Filtrer par compétition</div><div style="display:flex;gap:5px;overflow-x:auto;padding-bottom:6px;-webkit-overflow-scrolling:touch;">';
-  defs.forEach(function(d,i){ var on=cur===d[0]; html+='<button onclick="setBilanCompIdx('+i+')" style="flex-shrink:0;border:none;border-radius:7px;padding:6px 11px;font-size:10px;font-weight:700;cursor:pointer;background:'+(on?'#4d84ff':'rgba(255,255,255,.06)')+';color:'+(on?'#fff':'var(--t2)')+';">'+d[1]+'</button>'; });
+  /* GRILLE DE TUILES, meme langage que .sfbtn/.mm-type (27/08, "comme le
+     screen 2"). Avant : pilules en ligne scroll-x, largeur variable. */
+  var html='<div style="font-size:9px;color:var(--t3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;">🏆 Filtrer par compétition</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:6px;">';
+  defs.forEach(function(d,i){ var on=cur===d[0]; html+='<button onclick="setBilanCompIdx('+i+')" class="sfbtn'+(on?' on':'')+'">'+d[1]+'</button>'; });
   fb.innerHTML=html+'</div>';
 }
 function setBilanCompIdx(i){ window._bilanComp=(window._bilanCompList||[])[i]||'all'; renderBilanCompFilter(); try{renderBilanTab();}catch(e){} try{renderGlobalCharts();}catch(e){} }
@@ -38421,21 +38468,34 @@ function _g45CatPerso(k){
   var cle = 'g45_catimg_' + k;
   var c = null;
   try{ c = localStorage.getItem(cle); }catch(e){}
-  if (c !== null) {
+  /* NEGATIF PERIME (27/08). Un resultat "absent" restait en cache POUR
+     TOUJOURS (chaine vide indefinie) : deposer formule1.png dans le depot
+     APRES ce premier test ne changeait plus jamais rien, rien ne retestait.
+     Constate par Antoine sur FORMULE 1 (fichier present, jamais affiche) et
+     AU NRL (image plus la, malgre un nouveau depot). Le negatif expire donc
+     desormais au bout de 6h ; le positif (une vraie URL trouvee) reste en
+     cache sans limite, aucune raison de re-tester un fichier qui existe deja. */
+  if (c !== null && c !== '') {
     /* CORRECTION DU 23/08 : la mesure du format n'etait declenchee qu'a la
        DECOUVERTE du fichier, dans le `onload` du test d'existence. Pour une
        image deja connue — le cas normal des le second chargement — on sortait
        ici sans jamais mesurer, et la detection logo/photo ne tournait pas.
        Constate sur `tennis.png` : le fichier etait bien trouve, le format
        restait `null`. On mesure donc aussi sur ce chemin. */
-    if (c) { try{ _g45CatMesurer(k, c); }catch(e){} }
-    return c;                                     /* '' = teste, absent */
+    try{ _g45CatMesurer(k, c); }catch(e){}
+    return c;
+  }
+  if (c === '') {
+    var negT=0; try{ negT=parseInt(localStorage.getItem(cle+'_neg_t')||'0',10)||0; }catch(e){}
+    if (negT && (Date.now()-negT) < 6*3600*1000) return c;   /* negatif encore frais */
+    /* perime, ou jamais horodate (ancien cache d'avant ce correctif) : on
+       retente ci-dessous plutot que de faire confiance a un test qui date. */
   }
   ['png','jpg'].forEach(function(ext){
     var url = 'images/ligues/' + k + '.' + ext;
     var img = new Image();
     img.onload = function(){
-      try{ localStorage.setItem(cle, url); }catch(e){}
+      try{ localStorage.setItem(cle, url); localStorage.removeItem(cle+'_neg_t'); }catch(e){}
       try{ _g45CatMesurer(k, url); }catch(e){}
       /* REDESSIN (22/08). Sans lui, le fichier etait bien detecte et memorise,
          mais la ligne restait sur le pictogramme dessine jusqu'au rechargement
@@ -38450,10 +38510,18 @@ function _g45CatPerso(k){
         try{ if(typeof render === 'function') render(); }catch(e){}
       }
     };
-    img.onerror = function(){ try{ if(localStorage.getItem(cle)===null && ext==='jpg') localStorage.setItem(cle,''); }catch(e){} };
+    img.onerror = function(){
+      try{
+        var cur = localStorage.getItem(cle);
+        if((cur===null || cur==='') && ext==='jpg'){
+          localStorage.setItem(cle,'');
+          localStorage.setItem(cle+'_neg_t', String(Date.now()));
+        }
+      }catch(e){}
+    };
     img.src = url;
   });
-  return null;                                    /* pas encore teste */
+  return c;                                    /* '' ou null = absent pour CE rendu */
 }
 
 function g45VisuelCategorie(nom){
