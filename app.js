@@ -29693,9 +29693,19 @@ window.loadTeamNews=loadTeamNews;
 function _g45BetRowMini(h){
   var b2=(typeof bki==='function')?bki(h.b):{c:'#888',n:(h.b||'?')};
   var cote=parseFloat(h.cote||0), mise=parseFloat(h.m||0);
-  var gain=h.win?(mise*cote-mise):-mise;
-  var gainC=gain>=0?'var(--g)':'var(--r)';
-  var borderC=h.win?'var(--g)':'var(--r)';
+  /* ETAT DU PARI, 3 COULEURS (27/08, demande explicite d'Antoine : "rouge
+     perdu, jaune en cours, vert gagne"). Meme palette que celle deja etablie
+     ailleurs dans l'app pour les paris en cours (voir cmap ~ligne 17691) :
+     vert #1ed760 gagne, rouge #ff4545 perdu, jaune #f0b020 en cours
+     (h.win==null). Cette liste vient de l'archive `state.a`, donc en
+     pratique quasi toujours tranchee, mais le 3e etat est gere si une entree
+     y arrive sans resultat — sans lui, `h.win?...:-mise` aurait affiche un
+     pari en cours comme une perte, ce qui est faux. */
+  var etat=(h.win==null)?'pending':(h.win?'win':'lose');
+  var etatColor=etat==='win'?'#1ed760':(etat==='lose'?'#ff4545':'#f0b020');
+  var gain=etat==='win'?(mise*cote-mise):(etat==='lose'?-mise:0);
+  var resIcon=etat==='win'?'✅':(etat==='lose'?'❌':'🟡');
+  var gainTxt=etat==='pending'?'en cours':((gain>=0?'+':'')+gain.toFixed(2)+'€');
   /* QUI EST LE PARI, VRAIMENT ? (27/08, corrige apres retour d'Antoine). Sur une
      MONTANTE, le champ `target`/`c-target` s'appelle "Adversaire" dans le
      formulaire — ce n'est JAMAIS l'equipe jouee, c'est le camp d'en face. Un
@@ -29719,25 +29729,34 @@ function _g45BetRowMini(h){
      et un logo sur le mur, meme grammaire que les cartes du mur : teinte +
      filigrane), le BOOKMAKER pour un pari SIMPLE qui n'est rattache a aucune
      equipe. Un pari simple n'a pas d'equipe unique a mettre en avant — le book
-     est la seule identite stable de la ligne. */
+     est la seule identite stable de la ligne.
+     27/08 (2e passe) : logos remontes de .16/.25 a .55/.6 d'opacite et
+     agrandis — "on les voit a peine" — tout en restant confines au bloc
+     texte (cf. commentaire plus bas) pour ne jamais toucher les montants. */
   var _idU=isSimple?null:(state.u||[]).filter(function(x){return x&&x.n===h.n;})[0];
   var _idColor=(_idU&&_idU.color)||b2.c||'#4d84ff';
   var _idLogo=isSimple?'':((typeof g45LogoUrlDe==='function')?g45LogoUrlDe(h.n):'');
   var _idFilig=_idLogo
-    ?('<img src="'+_idLogo+'" alt="" loading="lazy" onerror="this.style.display=\'none\'" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);height:34px;width:34px;object-fit:contain;opacity:.20;pointer-events:none;">')
-    :((isSimple&&b2.d)?('<img src="https://www.google.com/s2/favicons?domain='+b2.d+'&sz=64" alt="" loading="lazy" onerror="this.style.display=\'none\'" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);height:26px;width:26px;object-fit:contain;opacity:.30;border-radius:5px;pointer-events:none;">'):'');
-  return '<div data-aid="'+h.id+'" onclick="try{openBetEdit(this.dataset.aid)}catch(e){}" style="position:relative;overflow:hidden;display:flex;align-items:center;padding:8px 10px;background:linear-gradient(100deg,'+_idColor+'26 0%,var(--s1) 62%);border-radius:8px;margin-bottom:4px;border-left:3px solid '+borderC+';gap:8px;cursor:pointer;">'
-    +_idFilig
-    +'<div style="position:relative;font-size:10px;color:var(--t3);min-width:50px;flex-shrink:0;text-align:center;line-height:1.3;">'+(h.date||'')+(h.heure?'<br>'+h.heure:'')+'</div>'
+    ?('<img src="'+_idLogo+'" alt="" loading="lazy" onerror="this.style.display=\'none\'" style="position:absolute;right:2px;top:50%;transform:translateY(-50%);height:38px;width:38px;object-fit:contain;opacity:.55;filter:drop-shadow(0 1px 3px rgba(0,0,0,.5));pointer-events:none;">')
+    :((isSimple&&b2.d)?('<img src="https://www.google.com/s2/favicons?domain='+b2.d+'&sz=64" alt="" loading="lazy" onerror="this.style.display=\'none\'" style="position:absolute;right:2px;top:50%;transform:translateY(-50%);height:28px;width:28px;object-fit:contain;opacity:.6;border-radius:6px;filter:drop-shadow(0 1px 3px rgba(0,0,0,.5));pointer-events:none;">'):'');
+  /* Le filigrane est CONFINE au bloc titre/sous-titre (position:relative sur
+     ce div precis), pas sur toute la ligne. Sur une ligne compacte comme
+     celle-ci, ancrer le logo par rapport a toute la largeur de la carte
+     l'envoyait pile sous la colonne resultat (case ✅/❌ + montants) a droite
+     — les deux se superposaient. Confine au bloc texte, il reste derriere le
+     titre et ne touche jamais les chiffres. */
+  return '<div data-aid="'+h.id+'" onclick="try{openBetEdit(this.dataset.aid)}catch(e){}" style="position:relative;overflow:hidden;display:flex;align-items:center;padding:9px 10px;background:linear-gradient(100deg,'+_idColor+'45 0%,'+etatColor+'26 60%,var(--s1) 100%);border-radius:8px;margin-bottom:4px;border-left:4px solid '+etatColor+';gap:8px;cursor:pointer;">'
+    +'<div style="position:relative;font-size:10px;font-weight:600;color:var(--t2);min-width:50px;flex-shrink:0;text-align:center;line-height:1.3;">'+(h.date||'')+(h.heure?'<br>'+h.heure:'')+'</div>'
     +'<div style="position:relative;width:22px;height:22px;border-radius:5px;background:'+b2.c+';color:#fff;font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;">'+((b2.n||'?').charAt(0).toUpperCase())+'</div>'
     +'<div style="position:relative;flex:1;min-width:0;overflow:hidden;">'
-    +'<div style="font-size:12px;font-weight:700;color:var(--t1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+titre+'</div>'
-    +'<div style="font-size:10px;color:var(--t3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+parts.join(' · ')+'</div>'
+    +_idFilig
+    +'<div style="position:relative;font-size:12px;font-weight:700;color:var(--t1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+titre+'</div>'
+    +'<div style="position:relative;font-size:10.5px;font-weight:600;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+parts.join(' · ')+'</div>'
     +'</div>'
     +'<div style="position:relative;text-align:right;flex-shrink:0;">'
-    +'<div style="font-size:11px;font-weight:800;">'+(h.win?'✅':'❌')+'</div>'
-    +'<div style="font-size:11px;font-weight:700;color:'+gainC+';">'+(gain>=0?'+':'')+gain.toFixed(2)+'€</div>'
-    +'<div style="font-size:9px;color:var(--t3);">'+mise.toFixed(2)+'€</div>'
+    +'<div style="font-size:12px;font-weight:800;">'+resIcon+'</div>'
+    +'<div style="font-size:11px;font-weight:800;color:'+etatColor+';">'+gainTxt+'</div>'
+    +'<div style="font-size:9.5px;font-weight:600;color:var(--t2);">'+mise.toFixed(2)+'€</div>'
     +'</div>'
     +'</div>';
 }
