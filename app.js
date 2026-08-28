@@ -5682,13 +5682,20 @@ function togglePariDom(val){
   if(e)e.style.cssText=val===false?active:def;
   if(n)n.style.cssText=val===null?active:def;
 }
+/* SIGNATURE ELARGIE LE 27/08 (demande d'Antoine, 3e possibilite de lieu).
+   Prenait avant un booleen (true=dom, false=ext) : binaire par construction,
+   impossible d'y loger un 3e etat. Prend desormais directement la valeur a
+   stocker ('dom'|'ext'|''), la meme convention que `h.domicile` partout
+   ailleurs dans le code — 'glob' aurait ete un 4e mot-cle a cabler a chaque
+   filtre existant, '' est deja le "aucun lieu" que tout le reste comprend. */
 function toggleEditDom(val){
-  var inp=$i('edit-domicile');if(inp)inp.value=val?'dom':'ext';
-  var d=$i('edit-dom-btn');var e=$i('edit-ext-btn');
+  var inp=$i('edit-domicile');if(inp)inp.value=val||'';
+  var d=$i('edit-dom-btn');var e=$i('edit-ext-btn');var g=$i('edit-glob-btn');
   var active='flex:1;padding:10px;border-radius:var(--r6);border:2px solid var(--a);background:rgba(77,132,255,.15);color:var(--a);font-size:13px;font-weight:700;cursor:pointer;';
   var def='flex:1;padding:10px;border-radius:var(--r6);border:2px solid var(--b2);background:var(--bg3);color:var(--t2);font-size:13px;font-weight:700;cursor:pointer;';
-  if(d)d.style.cssText=val?active:def;
-  if(e)e.style.cssText=!val?active:def;
+  if(d)d.style.cssText=(val==='dom')?active:def;
+  if(e)e.style.cssText=(val==='ext')?active:def;
+  if(g)g.style.cssText=(!val)?active:def;
 }
 function editBet(id){
   var h=state.h.find(function(x){return x.id===id;});if(!h)return;
@@ -5708,7 +5715,9 @@ function editBet(id){
   $i('edit-heure').value=h.heure||'';
   $i('edit-notes').value=h.notes||'';
   $i('edit-domicile').value=h.domicile||'';
-  toggleEditDom(h.domicile==='dom'?true:false);
+  /* CORRECTION DU 27/08 : un pari 'glob' (aucun lieu) surlignait a tort le
+     bouton Exterieur, faute d'un 3e etat possible dans l'ancienne signature. */
+  toggleEditDom(h.domicile==='dom'?'dom':(h.domicile==='ext'?'ext':''));
   var m=$i('edit-bet-modal');if(m)m.style.display='flex';
 }
 function closeEditBet(){
@@ -12336,13 +12345,20 @@ function togglePariDom(val){
   if(e)e.style.cssText=val===false?active:def;
   if(n)n.style.cssText=val===null?active:def;
 }
+/* SIGNATURE ELARGIE LE 27/08 (demande d'Antoine, 3e possibilite de lieu).
+   Prenait avant un booleen (true=dom, false=ext) : binaire par construction,
+   impossible d'y loger un 3e etat. Prend desormais directement la valeur a
+   stocker ('dom'|'ext'|''), la meme convention que `h.domicile` partout
+   ailleurs dans le code — 'glob' aurait ete un 4e mot-cle a cabler a chaque
+   filtre existant, '' est deja le "aucun lieu" que tout le reste comprend. */
 function toggleEditDom(val){
-  var inp=$i('edit-domicile');if(inp)inp.value=val?'dom':'ext';
-  var d=$i('edit-dom-btn');var e=$i('edit-ext-btn');
+  var inp=$i('edit-domicile');if(inp)inp.value=val||'';
+  var d=$i('edit-dom-btn');var e=$i('edit-ext-btn');var g=$i('edit-glob-btn');
   var active='flex:1;padding:10px;border-radius:var(--r6);border:2px solid var(--a);background:rgba(77,132,255,.15);color:var(--a);font-size:13px;font-weight:700;cursor:pointer;';
   var def='flex:1;padding:10px;border-radius:var(--r6);border:2px solid var(--b2);background:var(--bg3);color:var(--t2);font-size:13px;font-weight:700;cursor:pointer;';
-  if(d)d.style.cssText=val?active:def;
-  if(e)e.style.cssText=!val?active:def;
+  if(d)d.style.cssText=(val==='dom')?active:def;
+  if(e)e.style.cssText=(val==='ext')?active:def;
+  if(g)g.style.cssText=(!val)?active:def;
 }
 function editBet(id){
   var h=state.h.find(function(x){return x.id===id;});if(!h)return;
@@ -12362,7 +12378,9 @@ function editBet(id){
   $i('edit-heure').value=h.heure||'';
   $i('edit-notes').value=h.notes||'';
   $i('edit-domicile').value=h.domicile||'';
-  toggleEditDom(h.domicile==='dom'?true:false);
+  /* CORRECTION DU 27/08 : un pari 'glob' (aucun lieu) surlignait a tort le
+     bouton Exterieur, faute d'un 3e etat possible dans l'ancienne signature. */
+  toggleEditDom(h.domicile==='dom'?'dom':(h.domicile==='ext'?'ext':''));
   var m=$i('edit-bet-modal');if(m)m.style.display='flex';
 }
 function closeEditBet(){

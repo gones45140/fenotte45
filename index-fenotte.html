@@ -8,7 +8,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>GONES45</title>
 
-<link rel="stylesheet" href="style.css?v=20260827b">
+<link rel="stylesheet" href="style.css?v=20260826n">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -132,12 +132,23 @@
           <option value="🏉">🏉 Rugby</option><option value="🏉🇦🇺">🏉🇦🇺 NRL</option><option value="🏎">🏎 F1</option><option value="🥊">🥊 MMA</option><option value="🚗">🚗 WRC</option><option value="🚴">🚴 Cyclisme</option>
         </select></div>
         <div class="fg"><label class="fl">Compétition</label><input id="c-comp" class="fi" list="dl-c-comp" placeholder="Ligue 1, CL…" autocomplete="off"><datalist id="dl-c-comp"></datalist></div>
-        <!-- LIEU (22/08) : chaque equipe tient deux montantes independantes,
-             domicile et exterieur, sur une SEULE entree du mur. Changer ce
-             selecteur redessine les paliers et recalcule la mise proposee. -->
+        <!-- LIEU (22/08, + 3e option le 27/08 a la demande d'Antoine) : chaque
+             equipe tient DEUX montantes independantes, domicile et exterieur,
+             sur une SEULE entree du mur. La 3e option ("") reactive l'ancienne
+             echelle UNIQUE d'avant le 22/08 (une seule progression, tous
+             matchs confondus) — utile pour une equipe jouee sur toutes ses
+             sorties, ou l'on ne veut pas scinder domicile/exterieur (ex. la
+             France en tournoi, peu de matchs par lieu). Cette 3e valeur est
+             volontairement une chaine VIDE et non un 3e mot-cle : c'est deja
+             exactement le comportement que `_g45Pal`/`_g45PalKey` et les
+             filtres domParis/extParis/neutreParis traitent partout ailleurs
+             comme "aucun lieu" — un 3e mot-cle aurait fallu le cabler a
+             chacun de ces endroits, avec le risque d'en oublier un. Changer
+             ce selecteur redessine les paliers et recalcule la mise proposee. -->
         <div class="fg"><label class="fl">Lieu</label><select id="c-lieu" class="fi" onchange="g45LieuChange()">
           <option value="dom">🏠 Domicile</option>
           <option value="ext">✈️ Extérieur</option>
+          <option value="">🌍 Tous les matchs (global)</option>
         </select></div>
         <div class="fg" style="position:relative"><label class="fl">Adversaire</label><input id="c-target" class="fi" placeholder="Ex : Real Madrid, OM…" autocomplete="off" oninput="searchAdv(this.value,'c-target','adv-res-cock')"><div id="adv-res-cock" style="display:none;position:absolute;left:0;right:0;background:var(--bg3);border:1px solid var(--b1);border-radius:var(--r6);z-index:200;max-height:180px;overflow-y:auto;"></div></div>
         <div class="fg"><label class="fl">Bookmaker</label><select id="c-book" class="fi"></select></div>
@@ -1188,8 +1199,8 @@
 
 <!-- FENOTTE45 : app.js est injecte par auth-guard.js APRES authentification.
      Le ?v= doit changer a CHAQUE deploiement. -->
-<script src="social.js?v=20260827b"></script>
-<script type="module" src="auth-guard.js?v=20260827b"></script>
+<script src="social.js?v=20260826n"></script>
+<script type="module" src="auth-guard.js?v=20260826n"></script>
 
 
 
@@ -1299,9 +1310,13 @@
     </div>
     <div class="fg" style="margin-bottom:10px;">
       <label class="fl">Lieu</label>
+      <!-- 3e bouton ajoute le 27/08 (demande d'Antoine) : reactive l'ancienne
+           echelle UNIQUE (avant separation dom/ext du 22/08), pour un pari
+           qui ne doit pas etre range dans l'une des deux montantes par lieu. -->
       <div style="display:flex;gap:8px;margin-top:6px;">
-        <button id="edit-dom-btn" onclick="toggleEditDom(true)" style="flex:1;padding:10px;border-radius:var(--r6);border:2px solid var(--b2);background:var(--bg3);color:var(--t2);font-size:13px;font-weight:700;cursor:pointer;">🏠 Domicile</button>
-        <button id="edit-ext-btn" onclick="toggleEditDom(false)" style="flex:1;padding:10px;border-radius:var(--r6);border:2px solid var(--b2);background:var(--bg3);color:var(--t2);font-size:13px;font-weight:700;cursor:pointer;">🚌 Extérieur</button>
+        <button id="edit-dom-btn" onclick="toggleEditDom('dom')" style="flex:1;padding:10px;border-radius:var(--r6);border:2px solid var(--b2);background:var(--bg3);color:var(--t2);font-size:13px;font-weight:700;cursor:pointer;">🏠 Domicile</button>
+        <button id="edit-ext-btn" onclick="toggleEditDom('ext')" style="flex:1;padding:10px;border-radius:var(--r6);border:2px solid var(--b2);background:var(--bg3);color:var(--t2);font-size:13px;font-weight:700;cursor:pointer;">🚌 Extérieur</button>
+        <button id="edit-glob-btn" onclick="toggleEditDom('')" style="flex:1;padding:10px;border-radius:var(--r6);border:2px solid var(--b2);background:var(--bg3);color:var(--t2);font-size:13px;font-weight:700;cursor:pointer;">🌍 Global</button>
       </div>
       <input type="hidden" id="edit-domicile" value="">
     </div>
