@@ -26,6 +26,33 @@ export async function envoyerMagicLink(email) {
   return error;
 }
 
+// ── Authentification par email + mot de passe (27/08) ──────────
+// Demande d'Antoine : plus de lien à chaque connexion. Supabase exige
+// malgré tout UN email de confirmation la toute première fois qu'un compte
+// bascule sur mot de passe (aucun moyen de le définir sans preuve qu'on
+// possède l'adresse) — ensuite, connexion = email + mot de passe, sans lien.
+
+export async function connexionMotDePasse(email, password) {
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  return error;
+}
+
+// Envoie l'email one-shot (première configuration OU mot de passe oublié).
+// Réutilise le flux de récupération de Supabase : le lien renvoie sur
+// reset.html, où `definirNouveauMotDePasse` fixe le mot de passe.
+export async function demanderReinitialisation(email) {
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin + window.location.pathname.replace(/[^\/]*$/, '') + 'reset.html'
+  });
+  return error;
+}
+
+// Appelé depuis reset.html, une fois la session de récupération active.
+export async function definirNouveauMotDePasse(password) {
+  const { error } = await supabase.auth.updateUser({ password });
+  return error;
+}
+
 export async function utilisateurActuel() {
   const { data: { user } } = await supabase.auth.getUser();
   return user;
