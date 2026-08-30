@@ -29771,7 +29771,17 @@ window.loadTeamNews=loadTeamNews;
    redessin quand le resultat arrive — jamais de blocage du rendu en cours. */
 var _g45ScoreVus = {};
 function _g45ScoreTexte(h) {
-  if (h.sport !== '⚽' || h.n === 'SIMPLE' || !h.id || !h.date) return '';
+  /* ELARGI AU PARI SIMPLE (28/08, retour d'Antoine). Une montante a son equipe
+     dans `h.n` ; un pari simple (h.n==='SIMPLE') l'a dans `h.target`, sous la
+     forme "Equipe vs Adversaire" ou juste "Equipe" (voir pari()). On extrait
+     le premier segment avant " vs " — c'est toujours le camp choisi, jamais
+     l'adversaire (cf. le correctif du 27/08 sur `_g45BetRowMini`).
+     EXCLU EXPRES : les COMBINES (h.isCombi) melangent plusieurs matchs
+     differents sous un seul pari — un score unique ne veut rien dire ici, il
+     faudrait un score PAR JAMBE. Hors de portee de cette version. */
+  if (h.sport !== '⚽' || h.isCombi || !h.id || !h.date) return '';
+  var nomEquipe = (h.n && h.n !== 'SIMPLE') ? h.n : String(h.target || '').split(/\s+vs\s+/i)[0].trim();
+  if (!nomEquipe) return '';
   var ck = 'g45_score_' + h.id;
   var raw = null;
   try { raw = localStorage.getItem(ck); } catch(e) {}
@@ -29783,8 +29793,8 @@ function _g45ScoreTexte(h) {
     var resultat = '';
     try {
       var betDay = String(h.date).slice(0, 10);
-      var resolved = await espnResolveTeam(h.n);
-      var sched = resolved ? await espnClubSchedule(h.n, null, resolved.league) : null;
+      var resolved = await espnResolveTeam(nomEquipe);
+      var sched = resolved ? await espnClubSchedule(nomEquipe, null, resolved.league) : null;
       var matches = (sched && sched.matches) || [];
       var trouve = matches.filter(function(m) {
         return m && m.completed && m.date && String(m.date).slice(0, 10) === betDay
