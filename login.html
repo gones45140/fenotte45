@@ -12,13 +12,15 @@
     * { box-sizing: border-box; }
    body {
   margin: 0;
+  padding: 0;
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  /* Image avec overlay sombre pour garder le texte lisible */
-  background: linear-gradient(rgba(10, 14, 26, 0.75), rgba(10, 14, 26, 0.85)), 
-              url('https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&w=1920&q=80') no-repeat center center / cover;
+  /* Overlay sombre + image multisport */
+  background: linear-gradient(rgba(10, 14, 26, 0.70), rgba(10, 14, 26, 0.85)), 
+              url('bg-login.jpg') no-repeat center center fixed;
+  background-size: cover;
 }
     .box {
       background: var(--box); border: 1px solid var(--border); border-radius: 14px;
