@@ -111,7 +111,7 @@ if (!session) {
     } catch (e) {
       console.error('échange du code échoué :', e);
       overlay.innerHTML = '<div style="max-width:420px;text-align:center;padding:20px;font-family:system-ui;">'
-        + '<div style="font-size:22px;font-weight:800;margin-bottom:10px;">🎯 GONES45</div>'
+        + '<div style="font-size:22px;font-weight:800;margin-bottom:10px;">🎯 BET45</div>'
         + '<div style="color:#ff8a8a;font-weight:700;margin-bottom:8px;">Lien de connexion refusé</div>'
         + '<div style="color:#8899aa;font-size:12px;line-height:1.6;margin-bottom:14px;">'
         + (e && e.message ? e.message : 'raison inconnue') + '<br><br>'
@@ -129,7 +129,7 @@ if (!session) {
   if (sessionStorage.getItem('g45_login_bounce') === '1') {
     sessionStorage.removeItem('g45_login_bounce');
     overlay.innerHTML = '<div style="max-width:420px;text-align:center;padding:20px;font-family:system-ui;">'
-      + '<div style="font-size:22px;font-weight:800;margin-bottom:10px;">🎯 GONES45</div>'
+      + '<div style="font-size:22px;font-weight:800;margin-bottom:10px;">🎯 BET45</div>'
       + '<div style="color:#ffb13d;font-weight:700;margin-bottom:8px;">Connexion impossible</div>'
       + '<div style="color:#8899aa;font-size:12px;line-height:1.6;margin-bottom:14px;">'
       + 'La session n\'a pas pu être établie après le retour de login.html.<br><br>'
