@@ -55,7 +55,7 @@ console.log('🔒 cloisonnement actif : ' + CLE_ETAT + ' → ' + CLE_ETAT_FEN + 
 const overlay = document.createElement('div');
 overlay.id = 'g45-boot';
 overlay.style.cssText = 'position:fixed;inset:0;background:#0a0e1a;color:#fff;display:flex;align-items:center;justify-content:center;flex-direction:column;font-family:system-ui;z-index:99999;font-size:14px;gap:12px;';
-overlay.innerHTML = '<div style="font-size:22px;font-weight:800;letter-spacing:-.5px;">🎯 GONES45</div><div id="g45-boot-msg" style="color:#8899aa;">Connexion…</div>';
+overlay.innerHTML = '<div style="font-size:22px;font-weight:800;letter-spacing:-.5px;">🎯 BET45</div><div id="g45-boot-msg" style="color:#8899aa;">Connexion…</div>';
 document.body.appendChild(overlay);
 const msg = (t) => { const el = document.getElementById('g45-boot-msg'); if (el) el.textContent = t; };
 
