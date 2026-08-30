@@ -29755,6 +29755,51 @@ window.loadTeamNews=loadTeamNews;
 })();
 
 /* ═════════ BILAN — Archive des paris filtrés (réagit aux filtres sport/compétition/type/bookmaker) ═════════ */
+/* SCORE DU MATCH SUR LA LIGNE (28/08, demande d'Antoine). Limite au FOOTBALL
+   (h.sport==='⚽', et pas un pari SIMPLE) : c'est le seul sport pour lequel
+   l'app sait deja resoudre une equipe vers un ID ESPN et lire son calendrier
+   (espnResolveTeam/espnClubSchedule, deja utilises ailleurs pour les stats du
+   mur). Baseball (MLB) et NRL passent par des API totalement differentes
+   (statsapi.mlb.com, ESPN rugby-league) — hors de portee ici, a construire a
+   part si Antoine le demande un jour.
+   MEME REGLE que le Worker de notifications ("en cas de doute, on ne dit
+   rien") : un score n'est affiche QUE si un match TERMINE est trouve a
+   EXACTEMENT la date du pari. Pas de tolerance de ±1 jour — un faux score
+   accole au mauvais match serait pire que rien.
+   Fonctionne comme `_g45CatPerso` (visuels perso) : lecture synchrone du
+   cache si deja teste, sinon recherche en tache de fond puis un seul
+   redessin quand le resultat arrive — jamais de blocage du rendu en cours. */
+var _g45ScoreVus = {};
+function _g45ScoreTexte(h) {
+  if (h.sport !== '⚽' || h.n === 'SIMPLE' || !h.id || !h.date) return '';
+  var ck = 'g45_score_' + h.id;
+  var raw = null;
+  try { raw = localStorage.getItem(ck); } catch(e) {}
+  if (raw !== null) {
+    if (!raw) return '';   // deja teste : match introuvable, pas termine, ou date differente
+    try { var c = JSON.parse(raw); return c.hs + '-' + c.as; } catch(e) { return ''; }
+  }
+  (async function() {
+    var resultat = '';
+    try {
+      var betDay = String(h.date).slice(0, 10);
+      var resolved = await espnResolveTeam(h.n);
+      var sched = resolved ? await espnClubSchedule(h.n, null, resolved.league) : null;
+      var matches = (sched && sched.matches) || [];
+      var trouve = matches.filter(function(m) {
+        return m && m.completed && m.date && String(m.date).slice(0, 10) === betDay
+          && m.homeScore != null && m.awayScore != null;
+      })[0];
+      if (trouve) resultat = JSON.stringify({hs: trouve.homeScore, as: trouve.awayScore});
+    } catch(e) { resultat = ''; }
+    try { localStorage.setItem(ck, resultat); } catch(e) {}
+    if (!_g45ScoreVus[ck]) {
+      _g45ScoreVus[ck] = 1;
+      try { if (typeof renderBilanTab === 'function') renderBilanTab(); } catch(e) {}
+    }
+  })();
+  return '';
+}
 function _g45BetRowMini(h){
   var b2=(typeof bki==='function')?bki(h.b):{c:'#888',n:(h.b||'?')};
   var cote=parseFloat(h.cote||0), mise=parseFloat(h.m||0);
@@ -29787,7 +29832,9 @@ function _g45BetRowMini(h){
   if(/^victoire\b/i.test(typeTxt) && titre.toLowerCase().indexOf(' vs ')===-1){
     typeTxt=titre+' '+typeTxt.replace(/^victoire\b/i,'gagne');
   }
-  var parts=[]; if(typeTxt) parts.push(typeTxt); if(adversaire) parts.push('vs '+adversaire); parts.push('@'+cote.toFixed(2)); if(h.comp) parts.push(h.comp);
+  var parts=[]; if(typeTxt) parts.push(typeTxt); if(adversaire) parts.push('vs '+adversaire);
+  var _score=_g45ScoreTexte(h); if(_score) parts.push('📊 '+_score);
+  parts.push('@'+cote.toFixed(2)); if(h.comp) parts.push(h.comp);
   /* IDENTITE VISUELLE DE LA LIGNE (27/08, lifting demande par Antoine — "logo
      du book ou de l'equipe, je sais pas"). On choisit selon ce que la ligne
      represente VRAIMENT : l'EQUIPE pour une montante (elle a deja une couleur
@@ -38299,19 +38346,33 @@ function _g45ImgPersoLire(nom) {
   } catch (e) { return undefined; }
 }
 
+/* EXTENSIONS ELARGIES LE 27/08 (retour d'Antoine : fichier depose en .png,
+   seul .jpg etait teste — meme famille de correctif que `_g45CatPerso`). Le
+   negatif garde le meme cache "7 jours" que la fonction de lecture ; seule
+   l'EXTENSION est desormais tolerante, pas la CASSE : GitHub etant sensible a
+   la casse, un fichier "AtleticoMadrid.png" ne sera jamais trouve par l'URL
+   "atleticomadrid.png" que ce code construit — le nom de fichier doit rester
+   tout en minuscules, sans espace ni accent (`_g45SgNorm`). */
 function _g45ImgPersoTester(nom) {
-  var url = _G45_PERSO_DIR + _g45SgNorm(nom) + '.jpg';
+  var base = _G45_PERSO_DIR + _g45SgNorm(nom);
+  var exts = ['jpg', 'png'];
   return new Promise(function (res) {
-    var im = new Image();
-    im.onload = function () {
-      try { localStorage.setItem(_G45_PERSO_IMG + _g45SgNorm(nom), JSON.stringify({ u: url, t: Date.now() })); } catch (e) {}
-      res(url);
+    var essayer = function (i) {
+      if (i >= exts.length) {
+        try { localStorage.setItem(_G45_PERSO_IMG + _g45SgNorm(nom), JSON.stringify({ u: '', t: Date.now() })); } catch (e) {}
+        res('');
+        return;
+      }
+      var url = base + '.' + exts[i];
+      var im = new Image();
+      im.onload = function () {
+        try { localStorage.setItem(_G45_PERSO_IMG + _g45SgNorm(nom), JSON.stringify({ u: url, t: Date.now() })); } catch (e) {}
+        res(url);
+      };
+      im.onerror = function () { essayer(i + 1); };
+      im.src = url;
     };
-    im.onerror = function () {
-      try { localStorage.setItem(_G45_PERSO_IMG + _g45SgNorm(nom), JSON.stringify({ u: '', t: Date.now() })); } catch (e) {}
-      res('');
-    };
-    im.src = url;
+    essayer(0);
   });
 }
 
