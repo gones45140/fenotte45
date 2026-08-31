@@ -2871,11 +2871,40 @@ function renderEquipes(){
       var paris=state.a.filter(function(h){return h.n===u.n;});if(!paris.length)return;
       var p=gp(u),sid='mc'+u.n.replace(/[^a-z0-9]/gi,'_');
       var ctx=$i(sid);if(!ctx)return;
-      var cum=0;
-      var data=[0].concat(_g45Chrono(paris).map(function(h){cum+=(h.win?(h.m*h.cote)-h.m:-h.m);return parseFloat(cum.toFixed(2));}));
-      var c2=ctx.getContext('2d'),g=c2.createLinearGradient(0,0,0,55);
-      g.addColorStop(0,p.fade.replace('.12','.3'));g.addColorStop(1,'rgba(0,0,0,0)');
-      MC[u.n]=new Chart(c2,{type:'line',data:{labels:data.map(function(_,i){return i;}),datasets:[{data:data,borderColor:p.c,backgroundColor:g,borderWidth:1.5,fill:true,tension:.4,pointRadius:0}]},
+      var c2=ctx.getContext('2d');
+      /* SEPARE PAR LIEU (31/08, retour d'Antoine — "on l'a en équipe... faut
+         juste rajouter une courbe domicile et extérieur"). La mini-courbe ne
+         montrait qu'un seul profit cumule, tous lieux melanges, alors que le
+         graphique de comparaison globale ("Profit par equipe", garde tel
+         quel a raison) n'a pas ce probleme puisqu'il compare des EQUIPES
+         entre elles, pas des LIEUX au sein d'une equipe. Meme filtre robuste
+         que celui deja utilise ailleurs (h.lieu / h.dom / h.domicile, pour
+         couvrir les anciens formats). Une equipe purement en mode "global"
+         (jamais de dom/ext) garde sa 3e courbe pour ne perdre aucune donnee. */
+      var domParis=paris.filter(function(h){ return h.lieu==='dom'||h.dom===true||h.domicile==='dom'; });
+      var extParis=paris.filter(function(h){ return h.lieu==='ext'||h.dom===false||h.domicile==='ext'; });
+      var globParis=paris.filter(function(h){ return domParis.indexOf(h)<0 && extParis.indexOf(h)<0; });
+      function courbe(liste){
+        var cum=0;
+        return [0].concat(_g45Chrono(liste).map(function(h){cum+=(h.win?(h.m*h.cote)-h.m:-h.m);return parseFloat(cum.toFixed(2));}));
+      }
+      var dData=domParis.length?courbe(domParis):null;
+      var eData=extParis.length?courbe(extParis):null;
+      var gData=globParis.length?courbe(globParis):null;
+      var maxLen=Math.max((dData||[]).length,(eData||[]).length,(gData||[]).length,1);
+      var datasets=[];
+      if(dData) datasets.push({data:dData,borderColor:'#1ed760',borderWidth:1.5,fill:false,tension:.4,pointRadius:0});
+      if(eData) datasets.push({data:eData,borderColor:'#4d84ff',borderWidth:1.5,fill:false,tension:.4,pointRadius:0});
+      if(gData) datasets.push({data:gData,borderColor:'#f0b020',borderWidth:1.5,fill:false,tension:.4,pointRadius:0});
+      /* Remplissage garde seulement si une SEULE courbe (comportement identique
+         a avant pour une equipe qui n'utilise qu'un mode) — avec plusieurs
+         courbes superposees, un fond degrade sur chacune brouillerait tout. */
+      if(datasets.length===1){
+        var g=c2.createLinearGradient(0,0,0,55);
+        g.addColorStop(0,p.fade.replace('.12','.3'));g.addColorStop(1,'rgba(0,0,0,0)');
+        datasets[0].backgroundColor=g; datasets[0].fill=true; datasets[0].borderColor=p.c;
+      }
+      MC[u.n]=new Chart(c2,{type:'line',data:{labels:Array.from({length:maxLen},function(_,i){return i;}),datasets:datasets},
         options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{enabled:false}},scales:{x:{display:false},y:{display:false}}}});
     });
   },100);
@@ -4213,17 +4242,40 @@ function renderPaliersChart(){
   if(GC2.paliers){try{GC2.paliers.destroy();}catch(e){}}
   if(!state.u.length){ctx.parentElement.innerHTML='<div class="empty">Aucune équipe</div>';return;}
   var labels=state.u.map(function(u){return u.n.substring(0,8);});
-  var data=state.u.map(function(u){return u.l;});
-  var colors=state.u.map(function(u){
-    var l=u.l;
-    return l>=6?'rgba(255,69,69,.8)':l>=4?'rgba(240,176,32,.8)':l>=2?'rgba(77,132,255,.7)':'rgba(30,215,96,.7)';
+  /* SEPARE PAR LIEU (31/08, retour d'Antoine : "il distingue pas les 3
+     modes global/domicile/exterieur"). Ce graphique ne lisait que `u.l`, le
+     champ HERITE d'avant la separation dom/ext du 22/08 — il ne porte que le
+     DERNIER palier ecrit, tous lieux confondus (cf. le commentaire dans
+     `_g45Pal` juste au-dessus dans ce fichier), pas un vrai palier par lieu.
+     On lit desormais `u.lc` directement : 3 barres groupees par equipe
+     (domicile / exterieur / global), chacune absente (null, pas de barre)
+     si l'equipe n'utilise pas ce mode. Consequence assumee : la couleur ne
+     code plus "a quel point la montante est avancee" (rouge=danger) mais
+     QUEL LIEU — l'ancien code couleur par niveau de risque n'a plus de sens
+     des qu'il faut distinguer 3 series au lieu d'une seule barre. */
+  var domData=[], extData=[], globData=[];
+  state.u.forEach(function(u){
+    var dom=null, ext=null, glob=null;
+    if(u.lc){
+      Object.keys(u.lc).forEach(function(k){
+        if(/\|dom$/.test(k)) dom=parseInt(u.lc[k],10)||1;
+        else if(/\|ext$/.test(k)) ext=parseInt(u.lc[k],10)||1;
+        else if(k.indexOf('|')<0) glob=parseInt(u.lc[k],10)||1;
+      });
+    }
+    if(dom===null&&ext===null&&glob===null) glob=parseInt(u.l,10)||1;  // jamais engagee sur aucun lieu : repli
+    domData.push(dom); extData.push(ext); globData.push(glob);
   });
   GC2.paliers=new Chart(ctx.getContext('2d'),{
     type:'bar',
-    data:{labels:labels,datasets:[{label:'Palier actuel',data:data,backgroundColor:colors,borderColor:colors.map(function(c){return c.replace('.7','.9').replace('.8','1');}),borderWidth:1,borderRadius:4}]},
+    data:{labels:labels,datasets:[
+      {label:'🏠 Domicile',data:domData,backgroundColor:'rgba(30,215,96,.75)',borderColor:'rgba(30,215,96,1)',borderWidth:1,borderRadius:4},
+      {label:'✈️ Extérieur',data:extData,backgroundColor:'rgba(77,132,255,.75)',borderColor:'rgba(77,132,255,1)',borderWidth:1,borderRadius:4},
+      {label:'🌍 Global',data:globData,backgroundColor:'rgba(240,176,32,.75)',borderColor:'rgba(240,176,32,1)',borderWidth:1,borderRadius:4}
+    ]},
     options:{
       responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:function(i){return 'Palier '+i.raw+' ('+state.u[i.dataIndex].n+')';}}}},
+      plugins:{legend:{display:true,labels:{color:'#8b97c4',font:{size:9},boxWidth:10}},tooltip:{callbacks:{label:function(i){return i.raw!=null?(i.dataset.label+' : Palier '+i.raw):null;}}}},
       scales:{
         x:{ticks:{color:'#4f5d88',font:{size:9}},grid:{display:false}},
         y:{min:0,max:8,ticks:{color:'#4f5d88',font:{size:9},stepSize:1},grid:{color:'rgba(255,255,255,.03)'}}
@@ -9846,11 +9898,40 @@ function renderEquipes(){
       var paris=state.a.filter(function(h){return h.n===u.n;});if(!paris.length)return;
       var p=gp(u),sid='mc'+u.n.replace(/[^a-z0-9]/gi,'_');
       var ctx=$i(sid);if(!ctx)return;
-      var cum=0;
-      var data=[0].concat(_g45Chrono(paris).map(function(h){cum+=(h.win?(h.m*h.cote)-h.m:-h.m);return parseFloat(cum.toFixed(2));}));
-      var c2=ctx.getContext('2d'),g=c2.createLinearGradient(0,0,0,55);
-      g.addColorStop(0,p.fade.replace('.12','.3'));g.addColorStop(1,'rgba(0,0,0,0)');
-      MC[u.n]=new Chart(c2,{type:'line',data:{labels:data.map(function(_,i){return i;}),datasets:[{data:data,borderColor:p.c,backgroundColor:g,borderWidth:1.5,fill:true,tension:.4,pointRadius:0}]},
+      var c2=ctx.getContext('2d');
+      /* SEPARE PAR LIEU (31/08, retour d'Antoine — "on l'a en équipe... faut
+         juste rajouter une courbe domicile et extérieur"). La mini-courbe ne
+         montrait qu'un seul profit cumule, tous lieux melanges, alors que le
+         graphique de comparaison globale ("Profit par equipe", garde tel
+         quel a raison) n'a pas ce probleme puisqu'il compare des EQUIPES
+         entre elles, pas des LIEUX au sein d'une equipe. Meme filtre robuste
+         que celui deja utilise ailleurs (h.lieu / h.dom / h.domicile, pour
+         couvrir les anciens formats). Une equipe purement en mode "global"
+         (jamais de dom/ext) garde sa 3e courbe pour ne perdre aucune donnee. */
+      var domParis=paris.filter(function(h){ return h.lieu==='dom'||h.dom===true||h.domicile==='dom'; });
+      var extParis=paris.filter(function(h){ return h.lieu==='ext'||h.dom===false||h.domicile==='ext'; });
+      var globParis=paris.filter(function(h){ return domParis.indexOf(h)<0 && extParis.indexOf(h)<0; });
+      function courbe(liste){
+        var cum=0;
+        return [0].concat(_g45Chrono(liste).map(function(h){cum+=(h.win?(h.m*h.cote)-h.m:-h.m);return parseFloat(cum.toFixed(2));}));
+      }
+      var dData=domParis.length?courbe(domParis):null;
+      var eData=extParis.length?courbe(extParis):null;
+      var gData=globParis.length?courbe(globParis):null;
+      var maxLen=Math.max((dData||[]).length,(eData||[]).length,(gData||[]).length,1);
+      var datasets=[];
+      if(dData) datasets.push({data:dData,borderColor:'#1ed760',borderWidth:1.5,fill:false,tension:.4,pointRadius:0});
+      if(eData) datasets.push({data:eData,borderColor:'#4d84ff',borderWidth:1.5,fill:false,tension:.4,pointRadius:0});
+      if(gData) datasets.push({data:gData,borderColor:'#f0b020',borderWidth:1.5,fill:false,tension:.4,pointRadius:0});
+      /* Remplissage garde seulement si une SEULE courbe (comportement identique
+         a avant pour une equipe qui n'utilise qu'un mode) — avec plusieurs
+         courbes superposees, un fond degrade sur chacune brouillerait tout. */
+      if(datasets.length===1){
+        var g=c2.createLinearGradient(0,0,0,55);
+        g.addColorStop(0,p.fade.replace('.12','.3'));g.addColorStop(1,'rgba(0,0,0,0)');
+        datasets[0].backgroundColor=g; datasets[0].fill=true; datasets[0].borderColor=p.c;
+      }
+      MC[u.n]=new Chart(c2,{type:'line',data:{labels:Array.from({length:maxLen},function(_,i){return i;}),datasets:datasets},
         options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{enabled:false}},scales:{x:{display:false},y:{display:false}}}});
     });
   },100);
@@ -10975,17 +11056,40 @@ function renderPaliersChart(){
   if(GC2.paliers){try{GC2.paliers.destroy();}catch(e){}}
   if(!state.u.length){ctx.parentElement.innerHTML='<div class="empty">Aucune équipe</div>';return;}
   var labels=state.u.map(function(u){return u.n.substring(0,8);});
-  var data=state.u.map(function(u){return u.l;});
-  var colors=state.u.map(function(u){
-    var l=u.l;
-    return l>=6?'rgba(255,69,69,.8)':l>=4?'rgba(240,176,32,.8)':l>=2?'rgba(77,132,255,.7)':'rgba(30,215,96,.7)';
+  /* SEPARE PAR LIEU (31/08, retour d'Antoine : "il distingue pas les 3
+     modes global/domicile/exterieur"). Ce graphique ne lisait que `u.l`, le
+     champ HERITE d'avant la separation dom/ext du 22/08 — il ne porte que le
+     DERNIER palier ecrit, tous lieux confondus (cf. le commentaire dans
+     `_g45Pal` juste au-dessus dans ce fichier), pas un vrai palier par lieu.
+     On lit desormais `u.lc` directement : 3 barres groupees par equipe
+     (domicile / exterieur / global), chacune absente (null, pas de barre)
+     si l'equipe n'utilise pas ce mode. Consequence assumee : la couleur ne
+     code plus "a quel point la montante est avancee" (rouge=danger) mais
+     QUEL LIEU — l'ancien code couleur par niveau de risque n'a plus de sens
+     des qu'il faut distinguer 3 series au lieu d'une seule barre. */
+  var domData=[], extData=[], globData=[];
+  state.u.forEach(function(u){
+    var dom=null, ext=null, glob=null;
+    if(u.lc){
+      Object.keys(u.lc).forEach(function(k){
+        if(/\|dom$/.test(k)) dom=parseInt(u.lc[k],10)||1;
+        else if(/\|ext$/.test(k)) ext=parseInt(u.lc[k],10)||1;
+        else if(k.indexOf('|')<0) glob=parseInt(u.lc[k],10)||1;
+      });
+    }
+    if(dom===null&&ext===null&&glob===null) glob=parseInt(u.l,10)||1;  // jamais engagee sur aucun lieu : repli
+    domData.push(dom); extData.push(ext); globData.push(glob);
   });
   GC2.paliers=new Chart(ctx.getContext('2d'),{
     type:'bar',
-    data:{labels:labels,datasets:[{label:'Palier actuel',data:data,backgroundColor:colors,borderColor:colors.map(function(c){return c.replace('.7','.9').replace('.8','1');}),borderWidth:1,borderRadius:4}]},
+    data:{labels:labels,datasets:[
+      {label:'🏠 Domicile',data:domData,backgroundColor:'rgba(30,215,96,.75)',borderColor:'rgba(30,215,96,1)',borderWidth:1,borderRadius:4},
+      {label:'✈️ Extérieur',data:extData,backgroundColor:'rgba(77,132,255,.75)',borderColor:'rgba(77,132,255,1)',borderWidth:1,borderRadius:4},
+      {label:'🌍 Global',data:globData,backgroundColor:'rgba(240,176,32,.75)',borderColor:'rgba(240,176,32,1)',borderWidth:1,borderRadius:4}
+    ]},
     options:{
       responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:function(i){return 'Palier '+i.raw+' ('+state.u[i.dataIndex].n+')';}}}},
+      plugins:{legend:{display:true,labels:{color:'#8b97c4',font:{size:9},boxWidth:10}},tooltip:{callbacks:{label:function(i){return i.raw!=null?(i.dataset.label+' : Palier '+i.raw):null;}}}},
       scales:{
         x:{ticks:{color:'#4f5d88',font:{size:9}},grid:{display:false}},
         y:{min:0,max:8,ticks:{color:'#4f5d88',font:{size:9},stepSize:1},grid:{color:'rgba(255,255,255,.03)'}}
