@@ -2856,7 +2856,13 @@ function renderEquipes(){
       +forme
       +(sk.n>1?'<div class="spill" style="background:'+(sk.t?'rgba(30,215,96,.1)':'rgba(255,69,69,.1)')+';color:'+(sk.t?'var(--g)':'var(--r)')+';">'+(sk.t?'🔥':'❄️')+' Série '+(sk.t?'W':'L')+' : '+sk.n+'</div>':'')
       +'</div>'
-      +'<div class="tprofit" style="color:'+p.c+';">'+fmt(profit)+'</div>'
+      /* CORRIGE LE 31/08 (retour d'Antoine, capture Athletics -15.00€ en
+         VERT — illisible). Ce montant prenait `p.c`, la couleur du THEME de
+         l'equipe sur le mur (parfois verte/bleue selon le club), sans aucun
+         rapport avec gain ou perte — les stats juste en dessous (Wins/
+         Pertes/Reussite) utilisaient deja la bonne convention verte/rouge,
+         seul ce montant-la etait incoherent avec elles. */
+      +'<div class="tprofit" style="color:'+(profit>=0?'var(--g)':'var(--r)')+';">'+fmt(profit)+'</div>'
       +'</div>'
       +'<div class="tmini"><canvas id="'+sid+'" style="height:55px;"></canvas></div>'
       +'<div class="tstats">'
@@ -9883,7 +9889,13 @@ function renderEquipes(){
       +forme
       +(sk.n>1?'<div class="spill" style="background:'+(sk.t?'rgba(30,215,96,.1)':'rgba(255,69,69,.1)')+';color:'+(sk.t?'var(--g)':'var(--r)')+';">'+(sk.t?'🔥':'❄️')+' Série '+(sk.t?'W':'L')+' : '+sk.n+'</div>':'')
       +'</div>'
-      +'<div class="tprofit" style="color:'+p.c+';">'+fmt(profit)+'</div>'
+      /* CORRIGE LE 31/08 (retour d'Antoine, capture Athletics -15.00€ en
+         VERT — illisible). Ce montant prenait `p.c`, la couleur du THEME de
+         l'equipe sur le mur (parfois verte/bleue selon le club), sans aucun
+         rapport avec gain ou perte — les stats juste en dessous (Wins/
+         Pertes/Reussite) utilisaient deja la bonne convention verte/rouge,
+         seul ce montant-la etait incoherent avec elles. */
+      +'<div class="tprofit" style="color:'+(profit>=0?'var(--g)':'var(--r)')+';">'+fmt(profit)+'</div>'
       +'</div>'
       +'<div class="tmini"><canvas id="'+sid+'" style="height:55px;"></canvas></div>'
       +'<div class="tstats">'
