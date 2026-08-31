@@ -1916,12 +1916,18 @@ function renderBilanTab(){
 
       _bilanChart=new Chart(ct,{type:'line',data:{labels:clabels,datasets:datasets},options:{responsive:true,maintainAspectRatio:false,events:['mousemove','mouseout','click','touchstart','touchmove'],
         interaction:{mode:'nearest',intersect:false},
-            plugins:{legend:{display:true,position:'bottom',labels:{color:'#4f5d88',font:{size:9},boxWidth:20,padding:8}},
-              tooltip:{backgroundColor:'rgba(8,11,18,.96)',borderColor:color,borderWidth:1,padding:10,
-                callbacks:{
-                  title:function(ii){return clabels[ii[0].dataIndex]||('Pari '+(ii[0].dataIndex+1));},
-                  label:function(ii){return ii.dataset.label+' : '+(ii.raw>=0?'+':'')+ii.raw.toFixed(2)+'€';}
-                }}},
+            plugins:{/* RESSERRE LE 28/08 (retour d'Antoine, illisible sur mobile sans scroller
+               horizontalement). boxWidth 20->8, police 9->8, padding 8->4 : les 4
+               entrees (Global + 3 books) tiennent desormais en largeur sur un ecran
+               etroit sans depasser du cadre. */
+            legend:{display:true,position:'bottom',labels:{color:'#4f5d88',font:{size:8},boxWidth:8,padding:4}},
+              /* DESACTIVE (28/08, retour d'Antoine) : ce tooltip natif Chart.js et la
+                 boite personnalisee du bas (`attachTouchTooltip`) se declenchaient TOUS
+                 LES DEUX au toucher sur mobile ('touchstart'/'touchmove' dans `events`
+                 ci-dessus) — double affichage qui se chevauche, et celui-ci montrait en
+                 plus le `||` brut du label (separateur destine a `attachTouchTooltip`,
+                 jamais traite ici). La boite du bas fait deja le travail proprement. */
+              tooltip:{enabled:false}},
             scales:{x:{display:false},y:{grid:{color:'rgba(255,255,255,.03)'},ticks:{color:'#4f5d88',font:{size:9},callback:function(v){return v+'€';}}}}}});
         attachTouchTooltip('bilan-chart',function(){return _bilanChart;},'cib-bilan','cib-bilan-txt','cib-bilan-val');
     }
@@ -2512,8 +2518,8 @@ function renderArchive(){
           +'<div style="font-size:10px;color:var(--t3);min-width:32px;flex-shrink:0;text-align:center;">'+(h.heure||'—')+'</div>'
           +bkBadge+sportIco
           +'<div data-aid="'+h.id+'" onclick="openBetEdit(this.dataset.aid)" style="flex:1;min-width:0;overflow:hidden;cursor:pointer;">'
-          +'<div style="font-size:12px;font-weight:700;color:var(--t1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+titre+'</div>'
-          +'<div style="font-size:10px;color:var(--t3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+sous+'</div>'
+          +'<div style="font-size:12px;font-weight:700;color:var(--t1);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word;line-height:1.25;">'+titre+'</div>'
+          +'<div style="font-size:10px;color:var(--t3);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word;line-height:1.3;">'+sous+'</div>'
           +'</div>'
           +'<div style="text-align:right;flex-shrink:0;">'
           +'<div style="font-size:11px;font-weight:800;color:'+winC+';">'+(h.isPending?'⏳':(h.win?'✅':'❌'))+'</div>'
@@ -6695,28 +6701,82 @@ var NFL_TEAMS = {
   'New England Patriots': {id:'NE'},
 };
 
+/* COMPLETEE AUX 32 EQUIPES LE 28/08 (score de match, demande d'Antoine) —
+   n'en avait que 8 avant. Abbreviations standard de l'API NHL (api-web.nhle.com). */
 var NHL_TEAMS = {
-  'Colorado Avalanche': {abbr:'COL', id:21, mlb:false},
-  'Carolina Hurricanes': {abbr:'CAR', id:12, mlb:false},
-  'Vegas Golden Knights': {abbr:'VGK', id:54, mlb:false},
-  'Tampa Bay Lightning': {abbr:'TBL', id:14, mlb:false},
-  'Boston Bruins': {abbr:'BOS', id:6, mlb:false},
-  'Toronto Maple Leafs': {abbr:'TOR', id:10, mlb:false},
-  'New York Rangers': {abbr:'NYR', id:3, mlb:false},
-  'Edmonton Oilers': {abbr:'EDM', id:22, mlb:false},
+  'Anaheim Ducks': {abbr:'ANA', id:24},
+  'Boston Bruins': {abbr:'BOS', id:6},
+  'Buffalo Sabres': {abbr:'BUF', id:7},
+  'Calgary Flames': {abbr:'CGY', id:20},
+  'Carolina Hurricanes': {abbr:'CAR', id:12},
+  'Chicago Blackhawks': {abbr:'CHI', id:16},
+  'Colorado Avalanche': {abbr:'COL', id:21},
+  'Columbus Blue Jackets': {abbr:'CBJ', id:29},
+  'Dallas Stars': {abbr:'DAL', id:25},
+  'Detroit Red Wings': {abbr:'DET', id:17},
+  'Edmonton Oilers': {abbr:'EDM', id:22},
+  'Florida Panthers': {abbr:'FLA', id:13},
+  'Los Angeles Kings': {abbr:'LAK', id:26},
+  'Minnesota Wild': {abbr:'MIN', id:30},
+  'Montreal Canadiens': {abbr:'MTL', id:8},
+  'Nashville Predators': {abbr:'NSH', id:18},
+  'New Jersey Devils': {abbr:'NJD', id:1},
+  'New York Islanders': {abbr:'NYI', id:2},
+  'New York Rangers': {abbr:'NYR', id:3},
+  'Ottawa Senators': {abbr:'OTT', id:9},
+  'Philadelphia Flyers': {abbr:'PHI', id:4},
+  'Pittsburgh Penguins': {abbr:'PIT', id:5},
+  'San Jose Sharks': {abbr:'SJS', id:28},
+  'Seattle Kraken': {abbr:'SEA', id:55},
+  'St Louis Blues': {abbr:'STL', id:19},
+  'St. Louis Blues': {abbr:'STL', id:19},
+  'Tampa Bay Lightning': {abbr:'TBL', id:14},
+  'Toronto Maple Leafs': {abbr:'TOR', id:10},
+  'Utah Hockey Club': {abbr:'UTA', id:59},
+  'Vancouver Canucks': {abbr:'VAN', id:23},
+  'Vegas Golden Knights': {abbr:'VGK', id:54},
+  'Washington Capitals': {abbr:'WSH', id:15},
+  'Winnipeg Jets': {abbr:'WPG', id:52},
 };
 
+/* COMPLETEE AUX 30 EQUIPES LE 28/08 (score de match, demande d'Antoine) —
+   n'en avait que 10 avant, manquaient Mariners/Reds/Brewers deja paries.
+   IDs standard de statsapi.mlb.com. */
 var MLB_TEAMS = {
-  'LA Dodgers': {id:119},
-  'Los Angeles Dodgers': {id:119},
-  'New York Yankees': {id:147},
-  'Atlanta Braves': {id:144},
-  'Houston Astros': {id:117},
+  'Los Angeles Angels': {id:108},
+  'LA Angels': {id:108},
+  'Arizona Diamondbacks': {id:109},
+  'Baltimore Orioles': {id:110},
   'Boston Red Sox': {id:111},
   'Chicago Cubs': {id:112},
-  'San Francisco Giants': {id:137},
+  'Cincinnati Reds': {id:113},
+  'Cleveland Guardians': {id:114},
+  'Colorado Rockies': {id:115},
+  'Detroit Tigers': {id:116},
+  'Houston Astros': {id:117},
+  'Kansas City Royals': {id:118},
+  'Los Angeles Dodgers': {id:119},
+  'LA Dodgers': {id:119},
+  'Washington Nationals': {id:120},
   'New York Mets': {id:121},
+  'Athletics': {id:133},
+  'Oakland Athletics': {id:133},
+  'Pittsburgh Pirates': {id:134},
+  'San Diego Padres': {id:135},
+  'Seattle Mariners': {id:136},
+  'San Francisco Giants': {id:137},
+  'St Louis Cardinals': {id:138},
+  'St. Louis Cardinals': {id:138},
+  'Tampa Bay Rays': {id:139},
+  'Texas Rangers': {id:140},
+  'Toronto Blue Jays': {id:141},
+  'Minnesota Twins': {id:142},
   'Philadelphia Phillies': {id:143},
+  'Atlanta Braves': {id:144},
+  'Chicago White Sox': {id:145},
+  'Miami Marlins': {id:146},
+  'New York Yankees': {id:147},
+  'Milwaukee Brewers': {id:158},
 };
 
 
@@ -8793,12 +8853,18 @@ function renderBilanTab(){
 
       _bilanChart=new Chart(ct,{type:'line',data:{labels:clabels,datasets:datasets},options:{responsive:true,maintainAspectRatio:false,events:['mousemove','mouseout','click','touchstart','touchmove'],
         interaction:{mode:'nearest',intersect:false},
-            plugins:{legend:{display:true,position:'bottom',labels:{color:'#4f5d88',font:{size:9},boxWidth:20,padding:8}},
-              tooltip:{backgroundColor:'rgba(8,11,18,.96)',borderColor:color,borderWidth:1,padding:10,
-                callbacks:{
-                  title:function(ii){return clabels[ii[0].dataIndex]||('Pari '+(ii[0].dataIndex+1));},
-                  label:function(ii){return ii.dataset.label+' : '+(ii.raw>=0?'+':'')+ii.raw.toFixed(2)+'€';}
-                }}},
+            plugins:{/* RESSERRE LE 28/08 (retour d'Antoine, illisible sur mobile sans scroller
+               horizontalement). boxWidth 20->8, police 9->8, padding 8->4 : les 4
+               entrees (Global + 3 books) tiennent desormais en largeur sur un ecran
+               etroit sans depasser du cadre. */
+            legend:{display:true,position:'bottom',labels:{color:'#4f5d88',font:{size:8},boxWidth:8,padding:4}},
+              /* DESACTIVE (28/08, retour d'Antoine) : ce tooltip natif Chart.js et la
+                 boite personnalisee du bas (`attachTouchTooltip`) se declenchaient TOUS
+                 LES DEUX au toucher sur mobile ('touchstart'/'touchmove' dans `events`
+                 ci-dessus) — double affichage qui se chevauche, et celui-ci montrait en
+                 plus le `||` brut du label (separateur destine a `attachTouchTooltip`,
+                 jamais traite ici). La boite du bas fait deja le travail proprement. */
+              tooltip:{enabled:false}},
             scales:{x:{display:false},y:{grid:{color:'rgba(255,255,255,.03)'},ticks:{color:'#4f5d88',font:{size:9},callback:function(v){return v+'€';}}}}}});
         attachTouchTooltip('bilan-chart',function(){return _bilanChart;},'cib-bilan','cib-bilan-txt','cib-bilan-val');
     }
@@ -9389,8 +9455,8 @@ function renderArchive(){
           +'<div style="font-size:10px;color:var(--t3);min-width:32px;flex-shrink:0;text-align:center;">'+(h.heure||'—')+'</div>'
           +bkBadge+sportIco
           +'<div data-aid="'+h.id+'" onclick="openBetEdit(this.dataset.aid)" style="flex:1;min-width:0;overflow:hidden;cursor:pointer;">'
-          +'<div style="font-size:12px;font-weight:700;color:var(--t1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+titre+'</div>'
-          +'<div style="font-size:10px;color:var(--t3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+sous+'</div>'
+          +'<div style="font-size:12px;font-weight:700;color:var(--t1);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word;line-height:1.25;">'+titre+'</div>'
+          +'<div style="font-size:10px;color:var(--t3);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word;line-height:1.3;">'+sous+'</div>'
           +'</div>'
           +'<div style="text-align:right;flex-shrink:0;">'
           +'<div style="font-size:11px;font-weight:800;color:'+winC+';">'+(h.isPending?'⏳':(h.win?'✅':'❌'))+'</div>'
@@ -13185,28 +13251,82 @@ var NFL_TEAMS = {
   'New England Patriots': {id:'NE'},
 };
 
+/* COMPLETEE AUX 32 EQUIPES LE 28/08 (score de match, demande d'Antoine) —
+   n'en avait que 8 avant. Abbreviations standard de l'API NHL (api-web.nhle.com). */
 var NHL_TEAMS = {
-  'Colorado Avalanche': {abbr:'COL', id:21, mlb:false},
-  'Carolina Hurricanes': {abbr:'CAR', id:12, mlb:false},
-  'Vegas Golden Knights': {abbr:'VGK', id:54, mlb:false},
-  'Tampa Bay Lightning': {abbr:'TBL', id:14, mlb:false},
-  'Boston Bruins': {abbr:'BOS', id:6, mlb:false},
-  'Toronto Maple Leafs': {abbr:'TOR', id:10, mlb:false},
-  'New York Rangers': {abbr:'NYR', id:3, mlb:false},
-  'Edmonton Oilers': {abbr:'EDM', id:22, mlb:false},
+  'Anaheim Ducks': {abbr:'ANA', id:24},
+  'Boston Bruins': {abbr:'BOS', id:6},
+  'Buffalo Sabres': {abbr:'BUF', id:7},
+  'Calgary Flames': {abbr:'CGY', id:20},
+  'Carolina Hurricanes': {abbr:'CAR', id:12},
+  'Chicago Blackhawks': {abbr:'CHI', id:16},
+  'Colorado Avalanche': {abbr:'COL', id:21},
+  'Columbus Blue Jackets': {abbr:'CBJ', id:29},
+  'Dallas Stars': {abbr:'DAL', id:25},
+  'Detroit Red Wings': {abbr:'DET', id:17},
+  'Edmonton Oilers': {abbr:'EDM', id:22},
+  'Florida Panthers': {abbr:'FLA', id:13},
+  'Los Angeles Kings': {abbr:'LAK', id:26},
+  'Minnesota Wild': {abbr:'MIN', id:30},
+  'Montreal Canadiens': {abbr:'MTL', id:8},
+  'Nashville Predators': {abbr:'NSH', id:18},
+  'New Jersey Devils': {abbr:'NJD', id:1},
+  'New York Islanders': {abbr:'NYI', id:2},
+  'New York Rangers': {abbr:'NYR', id:3},
+  'Ottawa Senators': {abbr:'OTT', id:9},
+  'Philadelphia Flyers': {abbr:'PHI', id:4},
+  'Pittsburgh Penguins': {abbr:'PIT', id:5},
+  'San Jose Sharks': {abbr:'SJS', id:28},
+  'Seattle Kraken': {abbr:'SEA', id:55},
+  'St Louis Blues': {abbr:'STL', id:19},
+  'St. Louis Blues': {abbr:'STL', id:19},
+  'Tampa Bay Lightning': {abbr:'TBL', id:14},
+  'Toronto Maple Leafs': {abbr:'TOR', id:10},
+  'Utah Hockey Club': {abbr:'UTA', id:59},
+  'Vancouver Canucks': {abbr:'VAN', id:23},
+  'Vegas Golden Knights': {abbr:'VGK', id:54},
+  'Washington Capitals': {abbr:'WSH', id:15},
+  'Winnipeg Jets': {abbr:'WPG', id:52},
 };
 
+/* COMPLETEE AUX 30 EQUIPES LE 28/08 (score de match, demande d'Antoine) —
+   n'en avait que 10 avant, manquaient Mariners/Reds/Brewers deja paries.
+   IDs standard de statsapi.mlb.com. */
 var MLB_TEAMS = {
-  'LA Dodgers': {id:119},
-  'Los Angeles Dodgers': {id:119},
-  'New York Yankees': {id:147},
-  'Atlanta Braves': {id:144},
-  'Houston Astros': {id:117},
+  'Los Angeles Angels': {id:108},
+  'LA Angels': {id:108},
+  'Arizona Diamondbacks': {id:109},
+  'Baltimore Orioles': {id:110},
   'Boston Red Sox': {id:111},
   'Chicago Cubs': {id:112},
-  'San Francisco Giants': {id:137},
+  'Cincinnati Reds': {id:113},
+  'Cleveland Guardians': {id:114},
+  'Colorado Rockies': {id:115},
+  'Detroit Tigers': {id:116},
+  'Houston Astros': {id:117},
+  'Kansas City Royals': {id:118},
+  'Los Angeles Dodgers': {id:119},
+  'LA Dodgers': {id:119},
+  'Washington Nationals': {id:120},
   'New York Mets': {id:121},
+  'Athletics': {id:133},
+  'Oakland Athletics': {id:133},
+  'Pittsburgh Pirates': {id:134},
+  'San Diego Padres': {id:135},
+  'Seattle Mariners': {id:136},
+  'San Francisco Giants': {id:137},
+  'St Louis Cardinals': {id:138},
+  'St. Louis Cardinals': {id:138},
+  'Tampa Bay Rays': {id:139},
+  'Texas Rangers': {id:140},
+  'Toronto Blue Jays': {id:141},
+  'Minnesota Twins': {id:142},
   'Philadelphia Phillies': {id:143},
+  'Atlanta Braves': {id:144},
+  'Chicago White Sox': {id:145},
+  'Miami Marlins': {id:146},
+  'New York Yankees': {id:147},
+  'Milwaukee Brewers': {id:158},
 };
 
 
@@ -29755,15 +29875,13 @@ window.loadTeamNews=loadTeamNews;
 })();
 
 /* ═════════ BILAN — Archive des paris filtrés (réagit aux filtres sport/compétition/type/bookmaker) ═════════ */
-/* SCORE DU MATCH SUR LA LIGNE (28/08, demande d'Antoine). Limite au FOOTBALL
-   (h.sport==='⚽', et pas un pari SIMPLE) : c'est le seul sport pour lequel
-   l'app sait deja resoudre une equipe vers un ID ESPN et lire son calendrier
-   (espnResolveTeam/espnClubSchedule, deja utilises ailleurs pour les stats du
-   mur). Baseball (MLB) et NRL passent par des API totalement differentes
-   (statsapi.mlb.com, ESPN rugby-league) — hors de portee ici, a construire a
-   part si Antoine le demande un jour.
-   MEME REGLE que le Worker de notifications ("en cas de doute, on ne dit
-   rien") : un score n'est affiche QUE si un match TERMINE est trouve a
+/* SCORE DU MATCH SUR LA LIGNE (28/08, demande d'Antoine, elargi le meme jour a
+   Baseball/NBA/NHL/NRL). Chaque sport a sa PROPRE API amont (ESPN pour foot/
+   basket/NRL, statsapi.mlb.com pour le baseball, api-web.nhle.com pour le
+   hockey), donc son propre bloc de resolution ci-dessous — pas de fonction
+   generique unique possible sans casser ce qui existe deja pour le football.
+   MEME REGLE partout que le Worker de notifications ("en cas de doute, on ne
+   dit rien") : un score n'est affiche QUE si un match TERMINE est trouve a
    EXACTEMENT la date du pari. Pas de tolerance de ±1 jour — un faux score
    accole au mauvais match serait pire que rien.
    Fonctionne comme `_g45CatPerso` (visuels perso) : lecture synchrone du
@@ -29771,15 +29889,15 @@ window.loadTeamNews=loadTeamNews;
    redessin quand le resultat arrive — jamais de blocage du rendu en cours. */
 var _g45ScoreVus = {};
 function _g45ScoreTexte(h) {
-  /* ELARGI AU PARI SIMPLE (28/08, retour d'Antoine). Une montante a son equipe
-     dans `h.n` ; un pari simple (h.n==='SIMPLE') l'a dans `h.target`, sous la
-     forme "Equipe vs Adversaire" ou juste "Equipe" (voir pari()). On extrait
-     le premier segment avant " vs " — c'est toujours le camp choisi, jamais
-     l'adversaire (cf. le correctif du 27/08 sur `_g45BetRowMini`).
+  /* ELARGI AU PARI SIMPLE (28/08). Une montante a son equipe dans `h.n` ; un
+     pari simple (h.n==='SIMPLE') l'a dans `h.target`, sous la forme "Equipe
+     vs Adversaire" ou juste "Equipe" (voir pari()). On extrait le premier
+     segment avant " vs " — c'est toujours le camp choisi, jamais l'adversaire
+     (cf. le correctif du 27/08 sur `_g45BetRowMini`).
      EXCLU EXPRES : les COMBINES (h.isCombi) melangent plusieurs matchs
      differents sous un seul pari — un score unique ne veut rien dire ici, il
      faudrait un score PAR JAMBE. Hors de portee de cette version. */
-  if (h.sport !== '⚽' || h.isCombi || !h.id || !h.date) return '';
+  if (h.isCombi || !h.id || !h.date) return '';
   var nomEquipe = (h.n && h.n !== 'SIMPLE') ? h.n : String(h.target || '').split(/\s+vs\s+/i)[0].trim();
   if (!nomEquipe) return '';
   var ck = 'g45_score_' + h.id;
@@ -29789,26 +29907,156 @@ function _g45ScoreTexte(h) {
     if (!raw) return '';   // deja teste : match introuvable, pas termine, ou date differente
     try { var c = JSON.parse(raw); return c.hs + '-' + c.as; } catch(e) { return ''; }
   }
-  (async function() {
-    var resultat = '';
-    try {
-      var betDay = String(h.date).slice(0, 10);
-      var resolved = await espnResolveTeam(nomEquipe);
-      var sched = resolved ? await espnClubSchedule(nomEquipe, null, resolved.league) : null;
-      var matches = (sched && sched.matches) || [];
-      var trouve = matches.filter(function(m) {
-        return m && m.completed && m.date && String(m.date).slice(0, 10) === betDay
-          && m.homeScore != null && m.awayScore != null;
-      })[0];
-      if (trouve) resultat = JSON.stringify({hs: trouve.homeScore, as: trouve.awayScore});
-    } catch(e) { resultat = ''; }
+  var betDay = String(h.date).slice(0, 10);
+  var finir = function(resultat) {
     try { localStorage.setItem(ck, resultat); } catch(e) {}
     if (!_g45ScoreVus[ck]) {
       _g45ScoreVus[ck] = 1;
       try { if (typeof renderBilanTab === 'function') renderBilanTab(); } catch(e) {}
     }
-  })();
-  return '';
+  };
+
+  if (h.sport === '⚽') {
+    (async function() {
+      var resultat = '';
+      try {
+        var resolved = await espnResolveTeam(nomEquipe);
+        var sched = resolved ? await espnClubSchedule(nomEquipe, null, resolved.league) : null;
+        var matches = (sched && sched.matches) || [];
+        var trouve = matches.filter(function(m) {
+          return m && m.completed && m.date && String(m.date).slice(0, 10) === betDay
+            && m.homeScore != null && m.awayScore != null;
+        })[0];
+        if (trouve) resultat = JSON.stringify({hs: trouve.homeScore, as: trouve.awayScore});
+      } catch(e) { resultat = ''; }
+      finir(resultat);
+    })();
+    return '';
+  }
+
+  if (h.sport === '⚾') {
+    /* MLB : statsapi.mlb.com. Un seul jour demande = au plus un match (les
+       doubles programmes existent mais restent rares) ; `dates[].games[]`
+       peut en theorie en contenir 2, on prend le premier "Final" trouve. */
+    (async function() {
+      var resultat = '';
+      try {
+        var info = (typeof MLB_TEAMS !== 'undefined') ? MLB_TEAMS[nomEquipe] : null;
+        if (info) {
+          var chemin = '/api/v1/schedule?teamId=' + info.id + '&startDate=' + betDay + '&endDate=' + betDay + '&sportId=1';
+          var r = await fetch(FD_PROXY + '?key=mlb&path=' + encodeURIComponent(chemin) + '&host=mlb');
+          var d = await r.json();
+          var jeu = null;
+          (d.dates || []).forEach(function(dt) {
+            (dt.games || []).forEach(function(g) {
+              if (!jeu && g && g.status && g.status.abstractGameState === 'Final') jeu = g;
+            });
+          });
+          if (jeu) resultat = JSON.stringify({hs: jeu.teams.home.score, as: jeu.teams.away.score});
+        }
+      } catch(e) { resultat = ''; }
+      finir(resultat);
+    })();
+    return '';
+  }
+
+  if (h.sport === '🏀') {
+    /* NBA : meme famille d'API ESPN que le football (site.api.espn.com),
+       juste un sportPath different — on ne reutilise pas espnClubSchedule
+       (hardcodee sur /sports/soccer/) pour ne prendre aucun risque sur le
+       football, on refait le meme parsing ici avec le bon chemin. */
+    (async function() {
+      var resultat = '';
+      try {
+        var cle = (typeof resolveNbaTeam === 'function') ? resolveNbaTeam(nomEquipe) : null;
+        var info = cle ? NBA_TEAMS[cle] : null;
+        if (info && info.espnId) {
+          var chemin = '/apis/site/v2/sports/basketball/nba/teams/' + info.espnId + '/schedule';
+          var r = await fetch(FD_PROXY + '?host=espn&path=' + encodeURIComponent(chemin));
+          var d = await r.json();
+          var evs = d.events || [];
+          for (var i = 0; i < evs.length; i++) {
+            var e = evs[i];
+            var comp = (e.competitions && e.competitions[0]) || null;
+            if (!comp) continue;
+            var st = (comp.status && comp.status.type) || {};
+            if (!st.completed || String(e.date || '').slice(0, 10) !== betDay) continue;
+            var home = comp.competitors.find(function(c) { return c.homeAway === 'home'; }) || comp.competitors[0];
+            var away = comp.competitors.find(function(c) { return c.homeAway === 'away'; }) || comp.competitors[1];
+            var hS = home.score != null ? parseInt(home.score.value !== undefined ? home.score.value : home.score, 10) : null;
+            var aS = away.score != null ? parseInt(away.score.value !== undefined ? away.score.value : away.score, 10) : null;
+            if (hS != null && aS != null) { resultat = JSON.stringify({hs: hS, as: aS}); break; }
+          }
+        }
+      } catch(e) { resultat = ''; }
+      finir(resultat);
+    })();
+    return '';
+  }
+
+  if (h.sport === '🏒') {
+    /* NHL : api-web.nhle.com, endpoint different de tous les autres —
+       `club-schedule-season` renvoie la saison complete, filtree par date. */
+    (async function() {
+      var resultat = '';
+      try {
+        var info = (typeof NHL_TEAMS !== 'undefined') ? NHL_TEAMS[nomEquipe] : null;
+        if (info) {
+          var chemin = '/v1/club-schedule-season/' + info.abbr + '/now';
+          var r = await fetch(FD_PROXY + '?key=nhl&path=' + encodeURIComponent(chemin) + '&host=nhl');
+          var d = await r.json();
+          var jeu = (d.games || []).filter(function(g) {
+            return g && String(g.gameDate || '').slice(0, 10) === betDay;
+          })[0];
+          if (jeu && jeu.gameState && /OFF|FINAL/i.test(jeu.gameState) && jeu.homeTeam && jeu.awayTeam) {
+            resultat = JSON.stringify({hs: jeu.homeTeam.score, as: jeu.awayTeam.score});
+          }
+        }
+      } catch(e) { resultat = ''; }
+      finir(resultat);
+    })();
+    return '';
+  }
+
+  if (h.sport === '🏉🇦🇺') {
+    /* NRL : ESPN rugby-league (league '3'), meme resolveur generique que
+       g45BetTeams. Le calendrier par equipe renvoie parfois une 500 sur ce
+       sport (deja documente ailleurs dans le code) — on interroge donc le
+       SCOREBOARD du jour du pari directement, plus fiable. */
+    (async function() {
+      var resultat = '';
+      try {
+        var resolved = (typeof _g45ResolveEspnTeam === 'function')
+          ? await _g45ResolveEspnTeam(nomEquipe, 'rugby-league', '3') : null;
+        if (resolved) {
+          var jour = betDay.replace(/-/g, '');
+          var chemin = '/apis/site/v2/sports/rugby-league/3/scoreboard?dates=' + jour;
+          var r = await fetch(FD_PROXY + '?host=espn&path=' + encodeURIComponent(chemin));
+          var d = await r.json();
+          var evs = d.events || [];
+          for (var i = 0; i < evs.length; i++) {
+            var e = evs[i];
+            var comp = (e.competitions && e.competitions[0]) || null;
+            if (!comp) continue;
+            var st = (comp.status && comp.status.type) || {};
+            if (!st.completed) continue;
+            var cps = comp.competitors || [];
+            var joue = cps.some(function(c) { return String((c.team && c.team.id) || c.id || '') === String(resolved.id); });
+            if (!joue) continue;
+            var home = cps.find(function(c) { return c.homeAway === 'home'; }) || cps[0];
+            var away = cps.find(function(c) { return c.homeAway === 'away'; }) || cps[1];
+            var hS = home.score != null ? parseInt(home.score.value !== undefined ? home.score.value : home.score, 10) : null;
+            var aS = away.score != null ? parseInt(away.score.value !== undefined ? away.score.value : away.score, 10) : null;
+            if (hS != null && aS != null) { resultat = JSON.stringify({hs: hS, as: aS}); break; }
+          }
+        }
+      } catch(e) { resultat = ''; }
+      finir(resultat);
+    })();
+    return '';
+  }
+
+  return '';   // sport non couvert (tennis, F1, cyclisme...) : rien affiche, pas de tentative
 }
 function _g45BetRowMini(h){
   var b2=(typeof bki==='function')?bki(h.b):{c:'#888',n:(h.b||'?')};
@@ -29843,8 +30091,13 @@ function _g45BetRowMini(h){
     typeTxt=titre+' '+typeTxt.replace(/^victoire\b/i,'gagne');
   }
   var parts=[]; if(typeTxt) parts.push(typeTxt); if(adversaire) parts.push('vs '+adversaire);
-  var _score=_g45ScoreTexte(h); if(_score) parts.push('📊 '+_score);
   parts.push('@'+cote.toFixed(2)); if(h.comp) parts.push(h.comp);
+  /* SCORE SORTI DES "parts" LE 28/08 (retour d'Antoine : "un peu dans les
+     types de pari, faudrait le separer"). Il etait noye au milieu du type de
+     pari/adversaire/cote/competition — desormais sa propre petite ligne,
+     entre le titre et le sous-titre, pour qu'il saute aux yeux sans avoir a
+     lire toute la phrase. */
+  var _score=_g45ScoreTexte(h);
   /* IDENTITE VISUELLE DE LA LIGNE (27/08, lifting demande par Antoine — "logo
      du book ou de l'equipe, je sais pas"). On choisit selon ce que la ligne
      represente VRAIMENT : l'EQUIPE pour une montante (elle a deja une couleur
@@ -29872,8 +30125,9 @@ function _g45BetRowMini(h){
     +'<div style="position:relative;width:22px;height:22px;border-radius:5px;background:'+b2.c+';color:#fff;font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;">'+((b2.n||'?').charAt(0).toUpperCase())+'</div>'
     +'<div style="position:relative;flex:1;min-width:0;overflow:hidden;">'
     +_idFilig
-    +'<div style="position:relative;font-size:12px;font-weight:700;color:var(--t1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+titre+'</div>'
-    +'<div style="position:relative;font-size:10.5px;font-weight:600;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+parts.join(' · ')+'</div>'
+    +'<div style="position:relative;font-size:12px;font-weight:700;color:var(--t1);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word;line-height:1.25;">'+titre+'</div>'
+    +(_score?'<div style="position:relative;font-size:11px;font-weight:800;color:var(--t1);background:rgba(255,255,255,.10);display:inline-block;padding:1px 6px;border-radius:5px;margin:2px 0;">📊 '+_score+'</div>':'')
+    +'<div style="position:relative;font-size:10.5px;font-weight:600;color:var(--t2);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word;line-height:1.3;">'+parts.join(' · ')+'</div>'
     +'</div>'
     +'<div style="position:relative;text-align:right;flex-shrink:0;">'
     +'<div style="font-size:12px;font-weight:800;">'+resIcon+'</div>'
