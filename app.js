@@ -28395,6 +28395,30 @@ function _g45EspnTennisChips(active){
   defs.forEach(function(d){ var on=active===d[0]; out+='<button onclick="g45TennisResFilter(\''+d[0]+'\')" style="flex-shrink:0;border:none;border-radius:7px;padding:6px 11px;font-size:10px;font-weight:700;cursor:pointer;background:'+(on?'#4d84ff':'rgba(255,255,255,.06)')+';color:'+(on?'#fff':'var(--t2)')+';">'+d[1]+'</button>'; });
   return out+'</div>';
 }
+/* RACCOURCIS DES 4 GRANDS CHELEMS (28/08, demande d'Antoine). Filtre distinct
+   et ORTHOGONAL a celui du dessus (genre/simple-double) : on peut cumuler
+   "ATP" + "US Open" pour n'avoir que le tableau messieurs de l'US Open. Match
+   par mot-cle dans le nom du tournoi ESPN (`ev.name`/`ev.shortName`), pas par
+   ID de competition ESPN — plus simple et suffisant, ces 4 noms n'ont pas
+   d'ambiguite. "Tous" (par defaut) ne filtre rien, donc rien ne change en
+   dehors des semaines de Grand Chelem. */
+function _g45EspnTennisMajorChips(active){
+  var defs=[['all','Tous'],['ao','🇦🇺 Australian Open'],['rg','🇫🇷 Roland-Garros'],['wm','🇬🇧 Wimbledon'],['us','🇺🇸 US Open']];
+  var out='<div style="display:flex;gap:5px;overflow-x:auto;padding-bottom:6px;margin-bottom:6px;-webkit-overflow-scrolling:touch;">';
+  defs.forEach(function(d){ var on=active===d[0]; out+='<button onclick="g45TennisMajorFilter(\''+d[0]+'\')" style="flex-shrink:0;border:none;border-radius:7px;padding:6px 11px;font-size:10px;font-weight:700;cursor:pointer;background:'+(on?'#f0c828':'rgba(255,255,255,.06)')+';color:'+(on?'#221b00':'var(--t2)')+';">'+d[1]+'</button>'; });
+  return out+'</div>';
+}
+function _g45EspnMajorPass(tourNom,f){
+  if(f==='all') return true;
+  var n=(tourNom||'').toLowerCase();
+  if(f==='ao') return n.indexOf('australian')>=0;
+  if(f==='rg') return n.indexOf('roland')>=0||n.indexOf('french open')>=0;
+  if(f==='wm') return n.indexOf('wimbledon')>=0;
+  if(f==='us') return n.indexOf('us open')>=0;
+  return true;
+}
+function g45TennisMajorFilter(f){ window._g45TennisMajorFilter=f; _g45RenderTennisRes(); }
+window.g45TennisMajorFilter=g45TennisMajorFilter;
 function _g45EspnGrpPass(gn,f){
   if(f==='all') return true;
   var g=(gn||'').toLowerCase();
@@ -28418,13 +28442,26 @@ function _g45RenderTennisRes(){
   var offset=window._g45TennisResOffset||0;
   var selDate=new Date(); selDate.setHours(12,0,0,0); selDate.setDate(selDate.getDate()+offset);
   var filter=window._g45TennisResFilter||'all';
-  var chips=_g45EspnTennisChips(filter);
+  var majorFilter=window._g45TennisMajorFilter||'all';
+  var chips=_g45EspnTennisChips(filter)+_g45EspnTennisMajorChips(majorFilter);
+  /* BOUTON TABLEAU (28/08, demande d'Antoine). Visible seulement quand un
+     Majeur precis est choisi — un "tableau" n'a de sens que pour UN tournoi.
+     Regroupe par TOUR (round.displayName, deja present dans les donnees du
+     scoreboard ESPN, deja utilise pour l'etiquette discrete de chaque ligne
+     de match) plutot que par jour. Aucun endpoint "bracket" specifique
+     trouve dans l'API publique d'ESPN — la page web en utilise un interne,
+     non documente et non testable depuis ici ; ce regroupement par tour
+     s'appuie donc uniquement sur des donnees deja prouvees fiables. */
+  if(majorFilter!=='all'){
+    chips+='<div style="margin-bottom:8px;"><button onclick="g45TennisBracket(\''+majorFilter+'\')" style="border:none;border-radius:7px;padding:7px 12px;font-size:10px;font-weight:800;cursor:pointer;background:rgba(138,160,255,.15);color:#8aa0ff;">📋 Voir le tableau par tour</button></div>';
+  }
   var itfBtn='<div style="text-align:center;margin-top:14px;"><button onclick="g45TennisResultsItf('+offset+')" style="border:none;background:rgba(138,160,255,.12);color:#8aa0ff;border-radius:8px;padding:8px 14px;font-size:10px;font-weight:700;cursor:pointer;">➕ Voir ITF / Challenger (Sofascore · quota)</button></div><div id="g45-tennis-itf" style="margin-top:8px;"></div>';
   if(!evs.length){ list.innerHTML=chips+'<div style="text-align:center;color:var(--t3);font-size:11px;padding:24px;">Aucun match de tennis ce jour-là.<br><span style="font-size:9px;">Navigue avec ◀ ▶. (ESPN couvre ATP/WTA/Grands Chelems, pas les ITF/Challengers.)</span></div>'+itfBtn; return; }
   var cache=window._g45EspnTennisCache||(window._g45EspnTennisCache={});
   function rank(c){ var st=(c.status&&c.status.type)||{}; if(st.state==='in') return 0; if(st.state==='post'||st.completed) return 2; return 1; }
   var html='';
   evs.forEach(function(ev,evi){
+    if(!_g45EspnMajorPass(ev.name||ev.shortName||'', majorFilter)) return;
     var groupings={}, gOrder=[], total=0;
     (ev.groupings||[]).forEach(function(g){
       var gn=(g.grouping&&g.grouping.displayName)||'Matchs';
@@ -28448,6 +28485,95 @@ function _g45RenderTennisRes(){
   list.innerHTML=chips+(html||'<div style="text-align:center;color:var(--t3);font-size:11px;padding:18px;">Aucun match pour ce filtre.</div>')+itfBtn;
 }
 window._g45RenderTennisRes=_g45RenderTennisRes;
+
+/* ═══════════ TABLEAU PAR TOUR D'UN GRAND CHELEM (28/08) ═══════════
+   Pas d'endpoint "bracket" dedie trouve dans l'API publique d'ESPN (la page
+   web en utilise un interne, non documente, non testable depuis ici sans
+   acces reseau direct a espn.com). On reconstruit l'equivalent avec ce qui
+   est deja prouve fiable : le scoreboard ESPN tennis, interroge sur UNE
+   PLAGE de dates couvrant tout le tournoi (l'API accepte deja
+   `dates=DEBUT-FIN`, vu ailleurs dans ce fichier), puis regroupe par
+   `round.displayName` — le meme champ deja utilise pour l'etiquette
+   discrete de chaque ligne de match. Fenetres de dates volontairement
+   larges (le debut/fin exact varie d'une annee sur l'autre de quelques
+   jours) : une plage trop large ne rend que des jours vides, sans risque. */
+var _G45_TENNIS_MAJORS = {
+  ao: {label:'Australian Open', debut:[0,10],  fin:[1,3]},
+  rg: {label:'Roland-Garros',   debut:[4,15],  fin:[5,10]},
+  wm: {label:'Wimbledon',       debut:[5,20],  fin:[6,15]},
+  us: {label:'US Open',         debut:[7,18],  fin:[8,15]}
+};
+var _G45_ROUND_ORDER = ['1st round','2nd round','3rd round','4th round','round of 16','round of 32',
+  'round of 64','round of 128','quarterfinal','quarterfinals','semifinal','semifinals','final','championship'];
+function _g45RoundRank(nom){
+  var n=String(nom||'').toLowerCase().trim();
+  var i=_G45_ROUND_ORDER.indexOf(n);
+  return i>=0 ? i : 99;
+}
+async function g45TennisBracket(key){
+  var maj=_G45_TENNIS_MAJORS[key]; if(!maj) return;
+  var el=document.getElementById('g45-tennis-res'); if(!el) return;
+  el.innerHTML='<div style="text-align:center;color:var(--t3);font-size:11px;padding:24px;">⏳ Chargement du tableau…</div>';
+  var y=new Date().getFullYear();
+  var d0=new Date(y, maj.debut[0], maj.debut[1]);
+  var d1=new Date(y, maj.fin[0], maj.fin[1]);
+  var range=_g45ymd(d0)+'-'+_g45ymd(d1);
+  async function f(lg){ try{ var r=await fetch(FD_PROXY+'?host=espn&path='+encodeURIComponent('/apis/site/v2/sports/tennis/'+lg+'/scoreboard?dates='+range)); if(!r.ok) return []; var j=await r.json(); return j.events||[]; }catch(e){ return []; } }
+  var atp=await f('atp'), wta=await f('wta');
+  var evs=atp.concat(wta).filter(function(e){ return _g45EspnMajorPass(e.name||e.shortName||'', key); });
+  var rounds={}, rSeen={};
+  evs.forEach(function(ev){
+    (ev.groupings||[]).forEach(function(g){
+      var gn=(g.grouping&&g.grouping.displayName)||'';
+      (g.competitions||[]).forEach(function(c){
+        var rn=(c.round&&c.round.displayName)||'Autre';
+        var cle=rn+'|'+gn;
+        if(!rounds[cle]){ rounds[cle]={round:rn, grp:gn, matches:[]}; }
+        rounds[cle].matches.push(c);
+      });
+    });
+  });
+  var cles=Object.keys(rounds).sort(function(a,b){ return _g45RoundRank(rounds[a].round)-_g45RoundRank(rounds[b].round); });
+  if(!cles.length){
+    el.innerHTML='<div style="text-align:center;color:var(--t3);font-size:11px;padding:18px;">Tableau pas encore disponible pour '+maj.label+'.<br><span style="font-size:9px;">Les compos/tableaux ESPN n\'apparaissent en general que quelques jours avant le debut du tournoi.</span></div>'
+      +'<div style="text-align:center;margin-top:8px;"><button onclick="g45TennisResFilter(window._g45TennisResFilter||\'all\')" style="border:none;background:rgba(255,255,255,.06);color:var(--t2);border-radius:8px;padding:7px 13px;font-size:10px;font-weight:700;cursor:pointer;">← Retour aux résultats</button></div>';
+    return;
+  }
+  /* Tour par defaut : le DERNIER qui a deja des matchs commences/finis, sinon
+     le tout premier — comme le fait ESPN a l'ouverture de sa propre page. */
+  var defCle=cles[0];
+  cles.forEach(function(cle){
+    var a=rounds[cle].matches.some(function(c){ var st=(c.status&&c.status.type)||{}; return st.state==='in'||st.state==='post'||st.completed; });
+    if(a) defCle=cle;
+  });
+  window._g45TennisBracket={key:key, maj:maj, rounds:rounds, cles:cles, cur:defCle};
+  _g45RenderTennisBracket();
+}
+window.g45TennisBracket=g45TennisBracket;
+function g45TennisBracketRound(cle){
+  if(!window._g45TennisBracket) return;
+  window._g45TennisBracket.cur=cle;
+  _g45RenderTennisBracket();
+}
+window.g45TennisBracketRound=g45TennisBracketRound;
+function _g45RenderTennisBracket(){
+  var el=document.getElementById('g45-tennis-res'); if(!el) return;
+  var B=window._g45TennisBracket; if(!B) return;
+  var tabs='<div style="display:flex;gap:5px;overflow-x:auto;padding-bottom:6px;margin-bottom:9px;-webkit-overflow-scrolling:touch;">';
+  B.cles.forEach(function(cle){
+    var r=B.rounds[cle], on=(cle===B.cur);
+    var lbl=r.round+(r.grp?(' · '+r.grp.replace(/\s*singles?\s*/i,'').trim()):'');
+    tabs+='<button onclick="g45TennisBracketRound(\''+cle.replace(/'/g,"\\'")+'\')" style="flex-shrink:0;border:none;border-radius:7px;padding:6px 11px;font-size:10px;font-weight:700;cursor:pointer;background:'+(on?'#8aa0ff':'rgba(255,255,255,.06)')+';color:'+(on?'#0b0f1a':'var(--t2)')+';">'+_g45CyEa(lbl)+'</button>';
+  });
+  tabs+='</div>';
+  var back='<button onclick="g45TennisResFilter(window._g45TennisResFilter||\'all\')" style="border:none;background:rgba(255,255,255,.06);color:var(--t2);border-radius:8px;padding:6px 12px;font-size:10px;font-weight:700;cursor:pointer;margin-bottom:9px;">← Retour aux résultats</button>';
+  var cur=B.rounds[B.cur];
+  var matches=(cur?cur.matches:[]).slice().sort(function(a,b){ return new Date(a.date||a.startDate)-new Date(b.date||b.startDate); });
+  var html=back+'<div class="sec" style="margin-top:0;">🎾 Tableau — '+_g45CyEa(B.maj.label)+'</div>'+tabs
+    +matches.map(function(c){ return _g45EspnTennisRow(c); }).join('');
+  el.innerHTML=html||'<div style="text-align:center;color:var(--t3);font-size:11px;padding:14px;">Aucun match pour ce tour.</div>';
+}
+window._g45RenderTennisBracket=_g45RenderTennisBracket;
 /* Saisie mobile : tous les champs numériques acceptent la virgule (number -> text + inputmode decimal, virgule->point en direct). */
 function _g45FixNumberInputs(root){
   try{
@@ -29947,6 +30073,21 @@ function _g45ScoreTexte(h) {
   if (h.isCombi || !h.id || !h.date) return '';
   var nomEquipe = (h.n && h.n !== 'SIMPLE') ? h.n : String(h.target || '').split(/\s+vs\s+/i)[0].trim();
   if (!nomEquipe) return '';
+  /* NOM ADVERSE, EN REPLI (28/08, retour d'Antoine sur "AU NRL" et un pari
+     Buteur "Kvaratskhelia ou Lepaul vs Stade Rennais"). `nomEquipe` n'est
+     parfois PAS une equipe reelle : une entree generique du mur ("AU NRL",
+     representant n'importe quel match NRL) ou un intitule de joueurs pour un
+     pari Buteur. Dans ces deux cas, le VRAI nom d'equipe resoluble est dans
+     l'adversaire — on le tente en second si le premier echoue. Le score
+     affiche reste correct dans les deux cas : c'est celui du match trouve,
+     peu importe lequel des deux noms a permis de le localiser. */
+  var nomAdverse = '';
+  if (h.n === 'SIMPLE') {
+    var segT = String(h.target || '').split(/\s+vs\s+/i);
+    if (segT.length > 1) nomAdverse = segT[1].trim();
+  } else if (h.target && h.target !== '-') {
+    nomAdverse = String(h.target).trim();
+  }
   var ck = 'g45_score_' + h.id;
   var raw = null;
   try { raw = localStorage.getItem(ck); } catch(e) {}
@@ -29961,6 +30102,7 @@ function _g45ScoreTexte(h) {
     try {
       var c = JSON.parse(raw);
       if (c && c.hs != null && c.as != null) return c.hs + '-' + c.as;
+      if (c && c.txt) return c.txt;   // tennis : score de sets, deja formate en texte
       if (c && c.neg && (Date.now() - (c.t || 0)) < 2 * 3600000) return '';   // negatif encore frais
     } catch(e) { /* ancien format brut : on retente ci-dessous */ }
   }
@@ -29978,13 +30120,37 @@ function _g45ScoreTexte(h) {
       try { if (typeof renderArchive === 'function') renderArchive(); } catch(e) {}
     }
   };
+  var finirTxt = function(txt) {
+    var payload = txt ? {txt: txt} : {neg: true, t: Date.now()};
+    try { localStorage.setItem(ck, JSON.stringify(payload)); } catch(e) {}
+    if (!_g45ScoreVus[ck]) {
+      _g45ScoreVus[ck] = 1;
+      try { if (typeof renderBilanTab === 'function') renderBilanTab(); } catch(e) {}
+      try { if (typeof renderArchive === 'function') renderArchive(); } catch(e) {}
+    }
+  };
+  /* FENETRE DE DATE ELARGIE POUR LES SPORTS US (28/08, retour d'Antoine —
+     un Cincinnati Reds joue a 01h10 du matin cote europeen restait sans
+     score). Un match MLB/NBA/NHL joue tard le soir cote americain tombe
+     souvent le lendemain en heure europeenne, alors que l'API amont garde
+     la date LOCALE americaine — decalage d'un jour selon le fuseau. On
+     teste donc la date du pari ET la veille pour ces trois sports
+     uniquement (le football, majoritairement europeen, n'a pas ce souci). */
+  var joursUS = [betDay];
+  try {
+    var _d = new Date(betDay + 'T00:00:00Z');
+    _d.setUTCDate(_d.getUTCDate() - 1);
+    joursUS.push(_d.toISOString().slice(0, 10));
+  } catch(e) {}
 
   if (h.sport === '⚽') {
     (async function() {
       var hs = null, as = null;
       try {
-        var resolved = await espnResolveTeam(nomEquipe);
-        var sched = resolved ? await espnClubSchedule(nomEquipe, null, resolved.league) : null;
+        var cible = nomEquipe;
+        var resolved = await espnResolveTeam(cible);
+        if (!resolved && nomAdverse) { cible = nomAdverse; resolved = await espnResolveTeam(cible); }
+        var sched = resolved ? await espnClubSchedule(cible, null, resolved.league) : null;
         var matches = (sched && sched.matches) || [];
         var trouve = matches.filter(function(m) {
           return m && m.completed && m.date && String(m.date).slice(0, 10) === betDay
@@ -30004,18 +30170,21 @@ function _g45ScoreTexte(h) {
     (async function() {
       var hs = null, as = null;
       try {
-        var info = (typeof MLB_TEAMS !== 'undefined') ? MLB_TEAMS[nomEquipe] : null;
+        var info = (typeof MLB_TEAMS !== 'undefined') ? (MLB_TEAMS[nomEquipe] || MLB_TEAMS[nomAdverse]) : null;
         if (info) {
-          var chemin = '/api/v1/schedule?teamId=' + info.id + '&startDate=' + betDay + '&endDate=' + betDay + '&sportId=1';
-          var r = await fetch(FD_PROXY + '?key=mlb&path=' + encodeURIComponent(chemin) + '&host=mlb');
-          var d = await r.json();
-          var jeu = null;
-          (d.dates || []).forEach(function(dt) {
-            (dt.games || []).forEach(function(g) {
-              if (!jeu && g && g.status && g.status.abstractGameState === 'Final') jeu = g;
+          for (var jj = 0; jj < joursUS.length && hs == null; jj++) {
+            var jr = joursUS[jj];
+            var chemin = '/api/v1/schedule?teamId=' + info.id + '&startDate=' + jr + '&endDate=' + jr + '&sportId=1';
+            var r = await fetch(FD_PROXY + '?key=mlb&path=' + encodeURIComponent(chemin) + '&host=mlb');
+            var d = await r.json();
+            var jeu = null;
+            (d.dates || []).forEach(function(dt) {
+              (dt.games || []).forEach(function(g) {
+                if (!jeu && g && g.status && g.status.abstractGameState === 'Final') jeu = g;
+              });
             });
-          });
-          if (jeu) { hs = jeu.teams.home.score; as = jeu.teams.away.score; }
+            if (jeu) { hs = jeu.teams.home.score; as = jeu.teams.away.score; }
+          }
         }
       } catch(e) {}
       finir(hs, as);
@@ -30031,7 +30200,7 @@ function _g45ScoreTexte(h) {
     (async function() {
       var hs = null, as = null;
       try {
-        var cle = (typeof resolveNbaTeam === 'function') ? resolveNbaTeam(nomEquipe) : null;
+        var cle = (typeof resolveNbaTeam === 'function') ? (resolveNbaTeam(nomEquipe) || resolveNbaTeam(nomAdverse)) : null;
         var info = cle ? NBA_TEAMS[cle] : null;
         if (info && info.espnId) {
           var chemin = '/apis/site/v2/sports/basketball/nba/teams/' + info.espnId + '/schedule';
@@ -30043,7 +30212,7 @@ function _g45ScoreTexte(h) {
             var comp = (e.competitions && e.competitions[0]) || null;
             if (!comp) continue;
             var st = (comp.status && comp.status.type) || {};
-            if (!st.completed || String(e.date || '').slice(0, 10) !== betDay) continue;
+            if (!st.completed || joursUS.indexOf(String(e.date || '').slice(0, 10)) < 0) continue;
             var home = comp.competitors.find(function(c) { return c.homeAway === 'home'; }) || comp.competitors[0];
             var away = comp.competitors.find(function(c) { return c.homeAway === 'away'; }) || comp.competitors[1];
             var hS = home.score != null ? parseInt(home.score.value !== undefined ? home.score.value : home.score, 10) : null;
@@ -30063,13 +30232,13 @@ function _g45ScoreTexte(h) {
     (async function() {
       var hs = null, as = null;
       try {
-        var info = (typeof NHL_TEAMS !== 'undefined') ? NHL_TEAMS[nomEquipe] : null;
+        var info = (typeof NHL_TEAMS !== 'undefined') ? (NHL_TEAMS[nomEquipe] || NHL_TEAMS[nomAdverse]) : null;
         if (info) {
           var chemin = '/v1/club-schedule-season/' + info.abbr + '/now';
           var r = await fetch(FD_PROXY + '?key=nhl&path=' + encodeURIComponent(chemin) + '&host=nhl');
           var d = await r.json();
           var jeu = (d.games || []).filter(function(g) {
-            return g && String(g.gameDate || '').slice(0, 10) === betDay;
+            return g && joursUS.indexOf(String(g.gameDate || '').slice(0, 10)) >= 0;
           })[0];
           if (jeu && jeu.gameState && /OFF|FINAL/i.test(jeu.gameState) && jeu.homeTeam && jeu.awayTeam) {
             hs = jeu.homeTeam.score; as = jeu.awayTeam.score;
@@ -30091,6 +30260,9 @@ function _g45ScoreTexte(h) {
       try {
         var resolved = (typeof _g45ResolveEspnTeam === 'function')
           ? await _g45ResolveEspnTeam(nomEquipe, 'rugby-league', '3') : null;
+        if (!resolved && nomAdverse && typeof _g45ResolveEspnTeam === 'function') {
+          resolved = await _g45ResolveEspnTeam(nomAdverse, 'rugby-league', '3');
+        }
         if (resolved) {
           var jour = betDay.replace(/-/g, '');
           var chemin = '/apis/site/v2/sports/rugby-league/3/scoreboard?dates=' + jour;
@@ -30119,7 +30291,59 @@ function _g45ScoreTexte(h) {
     return '';
   }
 
-  return '';   // sport non couvert (tennis, F1, cyclisme...) : rien affiche, pas de tentative
+  if (h.sport === '🎾') {
+    /* TENNIS (28/08, demande d'Antoine — le score d'un match, ce sont des
+       SETS, pas un simple nombre : "6-4, 3-6, 6-2", jamais hs/as. D'ou le
+       chemin `finirTxt` a part, sur le meme scoreboard ESPN tennis deja
+       utilise par `g45TennisResults` (site.api.espn.com/.../tennis/{atp|wta}
+       /scoreboard?dates=...). Les noms sont souvent des noms de famille
+       seuls ("Fils", "Tiafoe") : on matche par inclusion, pas egalite exacte,
+       sur les deux joueurs de l'affiche. */
+    (async function() {
+      var txt = '';
+      try {
+        if (nomEquipe && nomAdverse) {
+          var jour = betDay.replace(/-/g, '');
+          var norm = function(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); };
+          var n1 = norm(nomEquipe), n2 = norm(nomAdverse);
+          var ligues = ['atp', 'wta'];
+          for (var li = 0; li < ligues.length && !txt; li++) {
+            var r = await fetch(FD_PROXY + '?host=espn&path=' + encodeURIComponent('/apis/site/v2/sports/tennis/' + ligues[li] + '/scoreboard?dates=' + jour));
+            var d = await r.json();
+            var evs = d.events || [];
+            for (var i = 0; i < evs.length; i++) {
+              var e = evs[i];
+              var comp = (e.competitions && e.competitions[0]) || null;
+              if (!comp) continue;
+              var st = (comp.status && comp.status.type) || {};
+              if (!st.completed) continue;
+              var cps = comp.competitors || [];
+              if (cps.length < 2) continue;
+              var noms = cps.map(function(c) { return norm((c.athlete && (c.athlete.displayName || c.athlete.shortName)) || c.displayName || ''); });
+              var okA = noms.some(function(nn) { return nn.indexOf(n1) >= 0; });
+              var okB = noms.some(function(nn) { return nn.indexOf(n2) >= 0; });
+              if (!okA || !okB) continue;
+              var p0 = cps[0], p1 = cps[1];
+              var s0 = p0.linescores || [], s1 = p1.linescores || [];
+              if (!s0.length) continue;
+              var sets = [];
+              for (var k = 0; k < s0.length; k++) {
+                var v0 = s0[k] && s0[k].value != null ? s0[k].value : '';
+                var v1 = s1[k] && s1[k].value != null ? s1[k].value : '';
+                if (v0 === '' && v1 === '') continue;
+                sets.push(v0 + '-' + v1);
+              }
+              if (sets.length) { txt = sets.join(', '); break; }
+            }
+          }
+        }
+      } catch(e) {}
+      finirTxt(txt);
+    })();
+    return '';
+  }
+
+  return '';   // sport non couvert (F1, cyclisme, MMA...) : rien affiche, pas de tentative
 }
 function _g45BetRowMini(h){
   var b2=(typeof bki==='function')?bki(h.b):{c:'#888',n:(h.b||'?')};
