@@ -3363,7 +3363,12 @@ function pari(isS){
   }
   var isFlash=!isS&&$i('n-flashboost')&&$i('n-flashboost').checked;
   var isFreebet=!isS&&$i('n-freebet')&&$i('n-freebet').checked;
-  var notif=isS?true:(!$i('n-notif')||$i('n-notif').checked);
+  /* CASE AJOUTEE LE 31/08 : la montante n'avait AUCUNE case a cocher pour
+     les notifications — `notif` etait force a `true` sans jamais pouvoir
+     etre desactive depuis ce formulaire. `c-notif` peut ne pas exister sur
+     d'anciennes versions d'index.html non redeployees ; `!$i('c-notif')`
+     retombe alors sur `true` par defaut, comme avant ce correctif. */
+  var notif=isS?(!$i('c-notif')||$i('c-notif').checked):(!$i('n-notif')||$i('n-notif').checked);
   if(!state.fb)state.fb={};
   var isLay=!isS&&$i('n-lay')&&$i('n-lay').checked;
   if(isLay&&c>1&&m>0){ var _lm=m,_lc=c; m=parseFloat((_lm*(_lc-1)).toFixed(2)); c=parseFloat((1+(_lm*0.97)/m).toFixed(4)); } /* lay : mise=liability, gain net de 3% de commission */
@@ -10120,7 +10125,12 @@ function pari(isS){
   }
   var isFlash=!isS&&$i('n-flashboost')&&$i('n-flashboost').checked;
   var isFreebet=!isS&&$i('n-freebet')&&$i('n-freebet').checked;
-  var notif=isS?true:(!$i('n-notif')||$i('n-notif').checked);
+  /* CASE AJOUTEE LE 31/08 : la montante n'avait AUCUNE case a cocher pour
+     les notifications — `notif` etait force a `true` sans jamais pouvoir
+     etre desactive depuis ce formulaire. `c-notif` peut ne pas exister sur
+     d'anciennes versions d'index.html non redeployees ; `!$i('c-notif')`
+     retombe alors sur `true` par defaut, comme avant ce correctif. */
+  var notif=isS?(!$i('c-notif')||$i('c-notif').checked):(!$i('n-notif')||$i('n-notif').checked);
   if(!state.fb)state.fb={};
   var isLay=!isS&&$i('n-lay')&&$i('n-lay').checked;
   if(isLay&&c>1&&m>0){ var _lm=m,_lc=c; m=parseFloat((_lm*(_lc-1)).toFixed(2)); c=parseFloat((1+(_lm*0.97)/m).toFixed(4)); } /* lay : mise=liability, gain net de 3% de commission */
