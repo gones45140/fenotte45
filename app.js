@@ -28510,11 +28510,11 @@ function _g45RoundRank(nom){
   var i=_G45_ROUND_ORDER.indexOf(n);
   return i>=0 ? i : 99;
 }
-async function g45TennisBracket(key){
+async function g45TennisBracket(key,year){
   var maj=_G45_TENNIS_MAJORS[key]; if(!maj) return;
   var el=document.getElementById('g45-tennis-res'); if(!el) return;
-  el.innerHTML='<div style="text-align:center;color:var(--t3);font-size:11px;padding:24px;">⏳ Chargement du tableau…</div>';
-  var y=new Date().getFullYear();
+  var y=year||new Date().getFullYear();
+  el.innerHTML='<div style="text-align:center;color:var(--t3);font-size:11px;padding:24px;">⏳ Chargement du tableau '+y+'…</div>';
   var d0=new Date(y, maj.debut[0], maj.debut[1]);
   var d1=new Date(y, maj.fin[0], maj.fin[1]);
   var range=_g45ymd(d0)+'-'+_g45ymd(d1);
@@ -28534,9 +28534,18 @@ async function g45TennisBracket(key){
     });
   });
   var cles=Object.keys(rounds).sort(function(a,b){ return _g45RoundRank(rounds[a].round)-_g45RoundRank(rounds[b].round); });
+  /* SELECTEUR D'ANNEE (28/08, retour d'Antoine : "tu aurais pu rajouter un
+     truc pour les annees"). Meme principe que celui deja present au-dessus
+     pour la recherche de joueur (2026/2025/2024/2023) — `window._g45TennisBracket`
+     garde l'annee courante et `key`, pour que changer d'annee ne perde pas le
+     Majeur selectionne. Affiche MEME quand le tableau est vide : c'est
+     precisement de la qu'on rebascule sur une annee ou il y a des donnees. */
+  window._g45TennisBracket={key:key, year:y, maj:maj, rounds:rounds, cles:cles, cur:cles[0]};
   if(!cles.length){
-    el.innerHTML='<div style="text-align:center;color:var(--t3);font-size:11px;padding:18px;">Tableau pas encore disponible pour '+maj.label+'.<br><span style="font-size:9px;">Les compos/tableaux ESPN n\'apparaissent en general que quelques jours avant le debut du tournoi.</span></div>'
-      +'<div style="text-align:center;margin-top:8px;"><button onclick="g45TennisResFilter(window._g45TennisResFilter||\'all\')" style="border:none;background:rgba(255,255,255,.06);color:var(--t2);border-radius:8px;padding:7px 13px;font-size:10px;font-weight:700;cursor:pointer;">← Retour aux résultats</button></div>';
+    var chipsAnnee=_g45TennisBracketYearChips(y);
+    el.innerHTML='<button onclick="g45TennisResFilter(window._g45TennisResFilter||\'all\')" style="border:none;background:rgba(255,255,255,.06);color:var(--t2);border-radius:8px;padding:6px 12px;font-size:10px;font-weight:700;cursor:pointer;margin-bottom:9px;">← Retour aux résultats</button>'
+      +'<div class="sec" style="margin-top:0;">🎾 Tableau — '+_g45CyEa(maj.label)+'</div>'+chipsAnnee
+      +'<div style="text-align:center;color:var(--t3);font-size:11px;padding:18px;">Tableau '+y+' introuvable pour '+_g45CyEa(maj.label)+'.<br><span style="font-size:9px;">Essaie une autre année, ou c\'est trop tôt/tard dans la saison ESPN.</span></div>';
     return;
   }
   /* Tour par defaut : le DERNIER qui a deja des matchs commences/finis, sinon
@@ -28546,10 +28555,19 @@ async function g45TennisBracket(key){
     var a=rounds[cle].matches.some(function(c){ var st=(c.status&&c.status.type)||{}; return st.state==='in'||st.state==='post'||st.completed; });
     if(a) defCle=cle;
   });
-  window._g45TennisBracket={key:key, maj:maj, rounds:rounds, cles:cles, cur:defCle};
+  window._g45TennisBracket.cur=defCle;
   _g45RenderTennisBracket();
 }
 window.g45TennisBracket=g45TennisBracket;
+function _g45TennisBracketYearChips(active){
+  var now=new Date().getFullYear();
+  var out='<div style="display:flex;gap:5px;margin-bottom:9px;">';
+  for(var y=now; y>=now-3; y--){
+    var on=(y===active);
+    out+='<button onclick="g45TennisBracket(window._g45TennisBracket.key,'+y+')" style="border:none;border-radius:7px;padding:6px 11px;font-size:10px;font-weight:700;cursor:pointer;background:'+(on?'#4d84ff':'rgba(255,255,255,.06)')+';color:'+(on?'#fff':'var(--t2)')+';">'+y+'</button>';
+  }
+  return out+'</div>';
+}
 function g45TennisBracketRound(cle){
   if(!window._g45TennisBracket) return;
   window._g45TennisBracket.cur=cle;
@@ -28567,9 +28585,10 @@ function _g45RenderTennisBracket(){
   });
   tabs+='</div>';
   var back='<button onclick="g45TennisResFilter(window._g45TennisResFilter||\'all\')" style="border:none;background:rgba(255,255,255,.06);color:var(--t2);border-radius:8px;padding:6px 12px;font-size:10px;font-weight:700;cursor:pointer;margin-bottom:9px;">← Retour aux résultats</button>';
+  var chipsAnnee=_g45TennisBracketYearChips(B.year);
   var cur=B.rounds[B.cur];
   var matches=(cur?cur.matches:[]).slice().sort(function(a,b){ return new Date(a.date||a.startDate)-new Date(b.date||b.startDate); });
-  var html=back+'<div class="sec" style="margin-top:0;">🎾 Tableau — '+_g45CyEa(B.maj.label)+'</div>'+tabs
+  var html=back+'<div class="sec" style="margin-top:0;">🎾 Tableau — '+_g45CyEa(B.maj.label)+' '+B.year+'</div>'+chipsAnnee+tabs
     +matches.map(function(c){ return _g45EspnTennisRow(c); }).join('');
   el.innerHTML=html||'<div style="text-align:center;color:var(--t3);font-size:11px;padding:14px;">Aucun match pour ce tour.</div>';
 }

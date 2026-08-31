@@ -112,7 +112,32 @@ if (!session) {
 // ═══════════════════════════════════════════════════════════════
 // FORME DE L'ÉTAT INITIAL
 // ═══════════════════════════════════════════════════════════════
-const ETAT_VIDE = { b:{}, u:[], h:[], a:[], start_bk:0, goal:0, ugoals:{}, notes:{}, bkColors:{} };
+// MUR DE DÉMARRAGE (28/08, demande d'Antoine : "je veux en page d'entrée...
+// sur un nouveau compte"). Contrairement à `PRESETS` dans app.js (qui RÉAJOUTE
+// une équipe manquante à CHAQUE démarrage, un comportement qu'Antoine a dû
+// contourner avec une liste d'exclusion `g45_presets_off` sur gones45), cette
+// liste n'est écrite QU'UNE FOIS, à la création du compte — un nouvel inscrit
+// peut ensuite supprimer n'importe laquelle sans la voir revenir. Noms
+// choisis pour correspondre EXACTEMENT aux clés déjà connues ailleurs dans
+// app.js (ESPN_TEAM_LEAGUE, NBA_TEAMS, MLB_TEAMS, la convention "AU NRL"/
+// "FORMULE 1" déjà utilisée sur le mur perso) — sinon la résolution du score
+// et du logo ne fonctionnerait pas pour ces équipes-là spécifiquement.
+const MUR_DEMARRAGE = [
+  {n:'France',              abbr:'FRA', color:'#3b82f6', s:'4', l:1, sport:'⚽'},
+  {n:'PSG',                 abbr:'PSG', color:'#c8a050', s:'4', l:1, sport:'⚽'},
+  {n:'Real Madrid',         abbr:'RMA', color:'#94a3b8', s:'5', l:1, sport:'⚽'},
+  {n:'Barcelona',           abbr:'BAR', color:'#a50044', s:'5', l:1, sport:'⚽'},
+  {n:'Arsenal',             abbr:'ARS', color:'#ef4444', s:'4', l:1, sport:'⚽'},
+  {n:'Manchester City',     abbr:'MCI', color:'#6cabdd', s:'4', l:1, sport:'⚽'},
+  {n:'Inter Milan',         abbr:'INT', color:'#0ea5e9', s:'4', l:1, sport:'⚽'},
+  {n:'Bayern Munich',       abbr:'FCB', color:'#dc2626', s:'4', l:1, sport:'⚽'},
+  {n:'Colorado Avalanche',  abbr:'COL', color:'#7c3aed', s:'3', l:1, sport:'🏒'},
+  {n:'FORMULE 1',           abbr:'F1',  color:'#e10600', s:'3', l:1, sport:'🏎'},
+  {n:'AU NRL',              abbr:'NRL', color:'#f0b020', s:'3', l:1, sport:'🏉🇦🇺'},
+  {n:'Los Angeles Lakers',  abbr:'LAL', color:'#552583', s:'4', l:1, sport:'🏀'},
+  {n:'LA Dodgers',          abbr:'LAD', color:'#3b82f6', s:'3', l:1, sport:'⚾'}
+];
+const ETAT_VIDE = { b:{}, u:MUR_DEMARRAGE.slice(), h:[], a:[], start_bk:0, goal:0, ugoals:{}, notes:{}, bkColors:{} };
 
 function normaliser(etat) {
   const out = Object.assign({}, ETAT_VIDE, etat || {});
@@ -353,7 +378,7 @@ window._g45ImporterEtat = (json) => { rawSet(CLE_ETAT_FEN, typeof json === 'stri
 msg('Démarrage de l\'application…');
 
 const s = document.createElement('script');
-s.src = './app.js?v=20260821a';
+s.src = './app.js?v=20260831a';
 
 s.onerror = () => {
   msg('❌ échec du chargement de app.js');
