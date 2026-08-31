@@ -190,6 +190,17 @@
         <div class="fg"><label class="fl">Heure</label><input type="time" id="c-heure" class="fi"></div>
       </div>
       <div class="fg" style="margin-top:9px"><label class="fl">📝 Notes</label><textarea id="c-notes" class="fi" style="height:44px;resize:none;" placeholder="Analyse, contexte…"></textarea></div>
+      <!-- AJOUTEE LE 31/08 (retour d'Antoine : "notif n'est pas dans les pari
+           cockpit, ce que j'utilise"). Le pari simple et le combine avaient
+           deja leur case a cocher (n-notif / combi-notif) ; la montante
+           (celle-ci, le formulaire du "+") n'en avait AUCUNE — `pari()`
+           mettait donc `notif` a `true` en dur, sans jamais lire de case
+           puisqu'aucune case n'existait pour ce formulaire. -->
+      <label style="display:flex;align-items:center;gap:8px;padding:9px;background:rgba(77,132,255,.08);border:1px solid rgba(77,132,255,.2);border-radius:var(--r6);cursor:pointer;margin-top:9px;">
+        <input type="checkbox" id="c-notif" checked style="accent-color:var(--a)">
+        <span style="font-size:11px;font-weight:700;color:var(--a)">🔔 Notifications</span>
+        <span style="font-size:10px;color:var(--t3);margin-left:auto;">Suivi du match</span>
+      </label>
       <button class="btn btn-p" style="margin-top:11px;" onclick="pari(true)">Engager la montante</button>
     </div>
     <div class="sec" style="display:flex;justify-content:space-between;align-items:center;">
@@ -414,7 +425,7 @@
   </div>
   <!-- Courbe capital -->
   <div class="sec">Évolution des gains</div>
-  <div class="cwrap"><div style="height:160px;position:relative;"><canvas id="bilan-chart"></canvas></div><div class="chart-info-bar" id="cib-bilan" style="display:none;"><span class="cib-main" id="cib-bilan-txt"></span><span class="cib-val" id="cib-bilan-val"></span></div></div>
+  <div class="cwrap" style="max-width:100%;overflow-x:hidden;"><div style="height:160px;position:relative;max-width:100%;"><canvas id="bilan-chart"></canvas></div><div class="chart-info-bar" id="cib-bilan" style="display:none;"><span class="cib-main" id="cib-bilan-txt"></span><span class="cib-val" id="cib-bilan-val"></span></div></div>
   <!-- Par bookmaker -->
   <div class="sec">Par bookmaker</div>
   <div style="background:var(--bg2);border:1px solid var(--card-border,rgba(77,132,255,.32));border-radius:var(--r8);padding:10px;margin-bottom:10px;box-shadow:var(--card-glow,0 0 14px rgba(77,132,255,.18),0 0 4px rgba(77,132,255,.28));">
@@ -1237,7 +1248,7 @@
 <!-- FENOTTE45 : app.js est injecte par auth-guard.js APRES authentification.
      Le ?v= doit changer a CHAQUE deploiement. -->
 <script src="social.js?v=20260826n"></script>
-<script type="module" src="auth-guard.js?v=20260826n"></script>
+<script type="module" src="auth-guard.js?v=20260831b"></script>
 
 
 
