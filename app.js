@@ -2508,25 +2508,45 @@ function renderArchive(){
       var betsHtml=filteredDayParis.map(function(h){
         var b2=bki(h.b);
         var gain=h.isPending?0:(h.win?(h.m*h.cote-h.m):-h.m);
-        var gainC=h.isPending?'#f0a020':(gain>=0?'var(--g)':'var(--r)');
-        var winC=h.isPending?'#f0a020':(h.win?'var(--g)':'var(--r)');
-        var borderC=h.isPending?'#f0a020':(h.win?'var(--g)':'var(--r)');
-        var _bkHas=!!b2.d;var _bkImg=_bkHas?('<img src="https://www.google.com/s2/favicons?domain='+b2.d+'&sz=64" alt="" loading="lazy" onerror="logoErr(this)" style="width:18px;height:18px;object-fit:contain;background:#fff;border-radius:3px;">'):'';var bkBadge='<div style="width:22px;height:22px;border-radius:5px;background:'+b2.c+';display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;">'+_bkImg+'<span style="width:100%;height:100%;align-items:center;justify-content:center;color:#fff;font-size:9px;font-weight:800;display:'+(_bkHas?'none':'flex')+';">'+b2.n.charAt(0).toUpperCase()+'</span></div>'; var sportIco=(h.sport?'<span style="font-size:15px;flex-shrink:0;line-height:1;" title="Sport">'+h.sport+'</span>':'');
-        var titre=(h.target&&h.target!=='-'?h.target:(h.n||'—'));
-        var sous='<span style="color:#7aa2ff;font-weight:800;font-size:11px;background:rgba(77,132,255,.16);padding:1px 7px;border-radius:5px;">@'+parseFloat(h.cote).toFixed(2)+'</span>'+(h.comp?' · '+h.comp:'')+((h.n&&h.target&&h.target!=='-')?' · '+h.n:'');
-        return '<div style="display:flex;align-items:center;padding:8px 10px;background:var(--s1);border-radius:var(--r6);margin-bottom:4px;border-left:3px solid '+borderC+';gap:8px;">'
-          +'<div style="font-size:10px;color:var(--t3);min-width:32px;flex-shrink:0;text-align:center;">'+(h.heure||'—')+'</div>'
+        var gainC=h.isPending?'#f0b020':(gain>=0?'#1ed760':'#ff4545');
+        var winC=gainC, borderC=gainC;
+        var _bkHas=!!b2.d;var _bkImg=_bkHas?('<img src="https://www.google.com/s2/favicons?domain='+b2.d+'&sz=64" alt="" loading="lazy" onerror="logoErr(this)" style="width:18px;height:18px;object-fit:contain;background:#fff;border-radius:3px;">'):'';var bkBadge='<div style="position:relative;width:22px;height:22px;border-radius:5px;background:'+b2.c+';display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;">'+_bkImg+'<span style="width:100%;height:100%;align-items:center;justify-content:center;color:#fff;font-size:9px;font-weight:800;display:'+(_bkHas?'none':'flex')+';">'+b2.n.charAt(0).toUpperCase()+'</span></div>'; var sportIco=(h.sport?'<span style="position:relative;font-size:15px;flex-shrink:0;line-height:1;" title="Sport">'+h.sport+'</span>':'');
+        /* TITRE CORRIGE (28/08, meme bug que celui deja corrige sur la liste du
+           Bilan le 27/08) : `h.target` est l'ADVERSAIRE sur une montante, pas
+           l'equipe jouee — "Real Madrid" contre "Malaga" affichait "Malaga"
+           comme titre, l'inverse de la realite. Pour un pari SIMPLE
+           (h.n==='SIMPLE'), target reste la bonne source (deja "Equipe vs
+           Adversaire" combines par pari()). */
+        var isSimpleA=(h.n==='SIMPLE');
+        var adversaireA=(h.target&&h.target!=='-'&&!isSimpleA)?h.target:'';
+        var titre=isSimpleA?(h.target&&h.target!=='-'?h.target:(h.n||'—')):(h.n||h.target||'—');
+        var sous='<span style="color:#7aa2ff;font-weight:800;font-size:11px;background:rgba(77,132,255,.16);padding:1px 7px;border-radius:5px;">@'+parseFloat(h.cote).toFixed(2)+'</span>'+(h.comp?' · '+h.comp:'')+(adversaireA?' · vs '+adversaireA:'');
+        /* IDENTITE VISUELLE + SCORE (28/08) : port de ce qui existe deja sur la
+           liste du Bilan (`_g45BetRowMini`) — cette liste-ci (onglet PARI) ne
+           les avait jamais eus. Meme logique : couleur+logo du club pour une
+           montante, favicon du book pour un pari simple sans equipe rattachee. */
+        var _idU=isSimpleA?null:(state.u||[]).filter(function(x){return x&&x.n===h.n;})[0];
+        var _idColor=(_idU&&_idU.color)||b2.c||'#4d84ff';
+        var _idLogo=isSimpleA?'':((typeof g45LogoUrlDe==='function')?g45LogoUrlDe(h.n):'');
+        var _idFilig=_idLogo
+          ?('<img src="'+_idLogo+'" alt="" loading="lazy" onerror="this.style.display=\'none\'" style="position:absolute;right:2px;top:50%;transform:translateY(-50%);height:32px;width:32px;object-fit:contain;opacity:.5;filter:drop-shadow(0 1px 3px rgba(0,0,0,.5));pointer-events:none;">')
+          :((isSimpleA&&b2.d)?('<img src="https://www.google.com/s2/favicons?domain='+b2.d+'&sz=64" alt="" loading="lazy" onerror="this.style.display=\'none\'" style="position:absolute;right:2px;top:50%;transform:translateY(-50%);height:24px;width:24px;object-fit:contain;opacity:.55;border-radius:6px;filter:drop-shadow(0 1px 3px rgba(0,0,0,.5));pointer-events:none;">'):'');
+        var _scoreA=(typeof _g45ScoreTexte==='function')?_g45ScoreTexte(h):'';
+        return '<div style="position:relative;overflow:hidden;display:flex;align-items:center;padding:8px 10px;background:linear-gradient(100deg,'+_idColor+'40 0%,'+borderC+'20 60%,var(--s1) 100%);border-radius:var(--r6);margin-bottom:4px;border-left:3px solid '+borderC+';gap:8px;">'
+          +'<div style="position:relative;font-size:10px;color:var(--t3);min-width:32px;flex-shrink:0;text-align:center;">'+(h.heure||'—')+'</div>'
           +bkBadge+sportIco
-          +'<div data-aid="'+h.id+'" onclick="openBetEdit(this.dataset.aid)" style="flex:1;min-width:0;overflow:hidden;cursor:pointer;">'
-          +'<div style="font-size:12px;font-weight:700;color:var(--t1);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word;line-height:1.25;">'+titre+'</div>'
-          +'<div style="font-size:10px;color:var(--t3);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word;line-height:1.3;">'+sous+'</div>'
+          +'<div data-aid="'+h.id+'" onclick="openBetEdit(this.dataset.aid)" style="position:relative;flex:1;min-width:0;overflow:hidden;cursor:pointer;">'
+          +_idFilig
+          +'<div style="position:relative;font-size:12px;font-weight:700;color:var(--t1);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word;line-height:1.25;">'+titre+'</div>'
+          +(_scoreA?'<div style="position:relative;font-size:10px;font-weight:800;color:var(--t1);background:rgba(255,255,255,.10);display:inline-block;padding:1px 6px;border-radius:5px;margin:1px 0;">📊 '+_scoreA+'</div>':'')
+          +'<div style="position:relative;font-size:10px;color:var(--t3);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word;line-height:1.3;">'+sous+'</div>'
           +'</div>'
-          +'<div style="text-align:right;flex-shrink:0;">'
+          +'<div style="position:relative;text-align:right;flex-shrink:0;">'
           +'<div style="font-size:11px;font-weight:800;color:'+winC+';">'+(h.isPending?'⏳':(h.win?'✅':'❌'))+'</div>'
           +'<div style="font-size:11px;font-weight:700;color:'+gainC+';">'+(h.isPending?'En cours':(gain>=0?'+':'')+gain.toFixed(2)+'€')+'</div>'
           +'<div style="font-size:10px;color:var(--t3);">'+parseFloat(h.m).toFixed(2)+'€</div>'
           +'</div>'
-          +'<div style="display:flex;flex-direction:column;gap:3px;flex-shrink:0;">'
+          +'<div style="position:relative;display:flex;flex-direction:column;gap:3px;flex-shrink:0;">'
           +'<a href="https://www.google.com/search?q='+encodeURIComponent(titre+' sofascore')+'" target="_blank" style="background:none;border:none;color:#ff7b54;font-size:13px;cursor:pointer;padding:0;text-decoration:none;" title="Sofascore">⚡</a>'
           +'<button data-titre="'+titre.replace(/"/g,'&quot;')+'" data-date="'+(h.date||'')+'" data-comp="'+(h.comp||'')+'" onclick="var d=this.dataset;ouvrirYouTubeAvecScore(d.titre,d.date,d.comp)" style="background:none;border:none;color:#ff0000;font-size:13px;cursor:pointer;padding:0;" title="YouTube highlights">▶️</button>'
           +'<button data-aid="'+h.id+'" onclick="openBetEdit(this.dataset.aid)" style="background:none;border:none;color:var(--t3);font-size:14px;cursor:pointer;padding:0;">✏️</button>'
@@ -9445,25 +9465,45 @@ function renderArchive(){
       var betsHtml=filteredDayParis.map(function(h){
         var b2=bki(h.b);
         var gain=h.isPending?0:(h.win?(h.m*h.cote-h.m):-h.m);
-        var gainC=h.isPending?'#f0a020':(gain>=0?'var(--g)':'var(--r)');
-        var winC=h.isPending?'#f0a020':(h.win?'var(--g)':'var(--r)');
-        var borderC=h.isPending?'#f0a020':(h.win?'var(--g)':'var(--r)');
-        var _bkHas=!!b2.d;var _bkImg=_bkHas?('<img src="https://www.google.com/s2/favicons?domain='+b2.d+'&sz=64" alt="" loading="lazy" onerror="logoErr(this)" style="width:18px;height:18px;object-fit:contain;background:#fff;border-radius:3px;">'):'';var bkBadge='<div style="width:22px;height:22px;border-radius:5px;background:'+b2.c+';display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;">'+_bkImg+'<span style="width:100%;height:100%;align-items:center;justify-content:center;color:#fff;font-size:9px;font-weight:800;display:'+(_bkHas?'none':'flex')+';">'+b2.n.charAt(0).toUpperCase()+'</span></div>'; var sportIco=(h.sport?'<span style="font-size:15px;flex-shrink:0;line-height:1;" title="Sport">'+h.sport+'</span>':'');
-        var titre=(h.target&&h.target!=='-'?h.target:(h.n||'—'));
-        var sous='<span style="color:#7aa2ff;font-weight:800;font-size:11px;background:rgba(77,132,255,.16);padding:1px 7px;border-radius:5px;">@'+parseFloat(h.cote).toFixed(2)+'</span>'+(h.comp?' · '+h.comp:'')+((h.n&&h.target&&h.target!=='-')?' · '+h.n:'');
-        return '<div style="display:flex;align-items:center;padding:8px 10px;background:var(--s1);border-radius:var(--r6);margin-bottom:4px;border-left:3px solid '+borderC+';gap:8px;">'
-          +'<div style="font-size:10px;color:var(--t3);min-width:32px;flex-shrink:0;text-align:center;">'+(h.heure||'—')+'</div>'
+        var gainC=h.isPending?'#f0b020':(gain>=0?'#1ed760':'#ff4545');
+        var winC=gainC, borderC=gainC;
+        var _bkHas=!!b2.d;var _bkImg=_bkHas?('<img src="https://www.google.com/s2/favicons?domain='+b2.d+'&sz=64" alt="" loading="lazy" onerror="logoErr(this)" style="width:18px;height:18px;object-fit:contain;background:#fff;border-radius:3px;">'):'';var bkBadge='<div style="position:relative;width:22px;height:22px;border-radius:5px;background:'+b2.c+';display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;">'+_bkImg+'<span style="width:100%;height:100%;align-items:center;justify-content:center;color:#fff;font-size:9px;font-weight:800;display:'+(_bkHas?'none':'flex')+';">'+b2.n.charAt(0).toUpperCase()+'</span></div>'; var sportIco=(h.sport?'<span style="position:relative;font-size:15px;flex-shrink:0;line-height:1;" title="Sport">'+h.sport+'</span>':'');
+        /* TITRE CORRIGE (28/08, meme bug que celui deja corrige sur la liste du
+           Bilan le 27/08) : `h.target` est l'ADVERSAIRE sur une montante, pas
+           l'equipe jouee — "Real Madrid" contre "Malaga" affichait "Malaga"
+           comme titre, l'inverse de la realite. Pour un pari SIMPLE
+           (h.n==='SIMPLE'), target reste la bonne source (deja "Equipe vs
+           Adversaire" combines par pari()). */
+        var isSimpleA=(h.n==='SIMPLE');
+        var adversaireA=(h.target&&h.target!=='-'&&!isSimpleA)?h.target:'';
+        var titre=isSimpleA?(h.target&&h.target!=='-'?h.target:(h.n||'—')):(h.n||h.target||'—');
+        var sous='<span style="color:#7aa2ff;font-weight:800;font-size:11px;background:rgba(77,132,255,.16);padding:1px 7px;border-radius:5px;">@'+parseFloat(h.cote).toFixed(2)+'</span>'+(h.comp?' · '+h.comp:'')+(adversaireA?' · vs '+adversaireA:'');
+        /* IDENTITE VISUELLE + SCORE (28/08) : port de ce qui existe deja sur la
+           liste du Bilan (`_g45BetRowMini`) — cette liste-ci (onglet PARI) ne
+           les avait jamais eus. Meme logique : couleur+logo du club pour une
+           montante, favicon du book pour un pari simple sans equipe rattachee. */
+        var _idU=isSimpleA?null:(state.u||[]).filter(function(x){return x&&x.n===h.n;})[0];
+        var _idColor=(_idU&&_idU.color)||b2.c||'#4d84ff';
+        var _idLogo=isSimpleA?'':((typeof g45LogoUrlDe==='function')?g45LogoUrlDe(h.n):'');
+        var _idFilig=_idLogo
+          ?('<img src="'+_idLogo+'" alt="" loading="lazy" onerror="this.style.display=\'none\'" style="position:absolute;right:2px;top:50%;transform:translateY(-50%);height:32px;width:32px;object-fit:contain;opacity:.5;filter:drop-shadow(0 1px 3px rgba(0,0,0,.5));pointer-events:none;">')
+          :((isSimpleA&&b2.d)?('<img src="https://www.google.com/s2/favicons?domain='+b2.d+'&sz=64" alt="" loading="lazy" onerror="this.style.display=\'none\'" style="position:absolute;right:2px;top:50%;transform:translateY(-50%);height:24px;width:24px;object-fit:contain;opacity:.55;border-radius:6px;filter:drop-shadow(0 1px 3px rgba(0,0,0,.5));pointer-events:none;">'):'');
+        var _scoreA=(typeof _g45ScoreTexte==='function')?_g45ScoreTexte(h):'';
+        return '<div style="position:relative;overflow:hidden;display:flex;align-items:center;padding:8px 10px;background:linear-gradient(100deg,'+_idColor+'40 0%,'+borderC+'20 60%,var(--s1) 100%);border-radius:var(--r6);margin-bottom:4px;border-left:3px solid '+borderC+';gap:8px;">'
+          +'<div style="position:relative;font-size:10px;color:var(--t3);min-width:32px;flex-shrink:0;text-align:center;">'+(h.heure||'—')+'</div>'
           +bkBadge+sportIco
-          +'<div data-aid="'+h.id+'" onclick="openBetEdit(this.dataset.aid)" style="flex:1;min-width:0;overflow:hidden;cursor:pointer;">'
-          +'<div style="font-size:12px;font-weight:700;color:var(--t1);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word;line-height:1.25;">'+titre+'</div>'
-          +'<div style="font-size:10px;color:var(--t3);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word;line-height:1.3;">'+sous+'</div>'
+          +'<div data-aid="'+h.id+'" onclick="openBetEdit(this.dataset.aid)" style="position:relative;flex:1;min-width:0;overflow:hidden;cursor:pointer;">'
+          +_idFilig
+          +'<div style="position:relative;font-size:12px;font-weight:700;color:var(--t1);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word;line-height:1.25;">'+titre+'</div>'
+          +(_scoreA?'<div style="position:relative;font-size:10px;font-weight:800;color:var(--t1);background:rgba(255,255,255,.10);display:inline-block;padding:1px 6px;border-radius:5px;margin:1px 0;">📊 '+_scoreA+'</div>':'')
+          +'<div style="position:relative;font-size:10px;color:var(--t3);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word;line-height:1.3;">'+sous+'</div>'
           +'</div>'
-          +'<div style="text-align:right;flex-shrink:0;">'
+          +'<div style="position:relative;text-align:right;flex-shrink:0;">'
           +'<div style="font-size:11px;font-weight:800;color:'+winC+';">'+(h.isPending?'⏳':(h.win?'✅':'❌'))+'</div>'
           +'<div style="font-size:11px;font-weight:700;color:'+gainC+';">'+(h.isPending?'En cours':(gain>=0?'+':'')+gain.toFixed(2)+'€')+'</div>'
           +'<div style="font-size:10px;color:var(--t3);">'+parseFloat(h.m).toFixed(2)+'€</div>'
           +'</div>'
-          +'<div style="display:flex;flex-direction:column;gap:3px;flex-shrink:0;">'
+          +'<div style="position:relative;display:flex;flex-direction:column;gap:3px;flex-shrink:0;">'
           +'<a href="https://www.google.com/search?q='+encodeURIComponent(titre+' sofascore')+'" target="_blank" style="background:none;border:none;color:#ff7b54;font-size:13px;cursor:pointer;padding:0;text-decoration:none;" title="Sofascore">⚡</a>'
           +'<button data-titre="'+titre.replace(/"/g,'&quot;')+'" data-date="'+(h.date||'')+'" data-comp="'+(h.comp||'')+'" onclick="var d=this.dataset;ouvrirYouTubeAvecScore(d.titre,d.date,d.comp)" style="background:none;border:none;color:#ff0000;font-size:13px;cursor:pointer;padding:0;" title="YouTube highlights">▶️</button>'
           +'<button data-aid="'+h.id+'" onclick="openBetEdit(this.dataset.aid)" style="background:none;border:none;color:var(--t3);font-size:14px;cursor:pointer;padding:0;">✏️</button>'
@@ -27118,7 +27158,14 @@ async function g45RcOpen(raceId, stage){
   var back='<button onclick="loadResultatsTab()" style="border:none;cursor:pointer;background:rgba(255,255,255,.06);border-radius:8px;color:var(--t2);padding:7px 12px;font-size:11px;font-weight:700;margin-bottom:10px;">← Sports</button>';
   var chips='<div style="display:flex;gap:6px;margin-bottom:9px;flex-wrap:wrap;">'+_G45_CY_RACES.map(function(r){
       var on=(r.id===race.id);
-      return '<button onclick="g45CyclingOpen(\''+r.id+'\')" style="border:none;border-radius:7px;padding:6px 11px;font-size:10px;font-weight:700;cursor:pointer;background:'+(on?'#f0c828':'rgba(255,255,255,.06)')+';color:'+(on?'#221b00':'var(--t2)')+';">'+r.flag+' '+r.n+'</button>';
+      /* APPEL DIRECT (28/08, simplification suite a un signalement d'Antoine :
+         "la barre selective ne se change pas" — Vuelta affichait les etapes
+         du Tour de France). On etait deja dans g45RcOpen ; passer par
+         g45CyclingOpen() pour y revenir ajoutait un detour inutile qui
+         compliquait le suivi du bug sans jamais servir a rien ici, puisque
+         toutes les courses de _G45_CY_RACES ont un `rc` renseigne (le
+         detour finissait toujours par rappeler g45RcOpen de toute facon). */
+      return '<button onclick="g45RcOpen(\''+r.id+'\',0)" style="border:none;border-radius:7px;padding:6px 11px;font-size:10px;font-weight:700;cursor:pointer;background:'+(on?'#f0c828':'rgba(255,255,255,.06)')+';color:'+(on?'#221b00':'var(--t2)')+';">'+r.flag+' '+r.n+'</button>';
     }).join('')+'</div>';
   var mkHead=function(y){ return back+'<div class="sec" style="margin-top:0;">🚴 '+_g45CyEa(race.n)+(y?(' '+y):'')+'</div>'+chips; };
   el.innerHTML=mkHead(0)+'<div style="color:var(--t3);font-size:11px;padding:16px;text-align:center;">⏳ Chargement…</div>';
@@ -29903,22 +29950,38 @@ function _g45ScoreTexte(h) {
   var ck = 'g45_score_' + h.id;
   var raw = null;
   try { raw = localStorage.getItem(ck); } catch(e) {}
-  if (raw !== null) {
-    if (!raw) return '';   // deja teste : match introuvable, pas termine, ou date differente
-    try { var c = JSON.parse(raw); return c.hs + '-' + c.as; } catch(e) { return ''; }
+  if (raw) {
+    /* NEGATIF PERIME (28/08, meme bug que celui deja corrige sur les visuels
+       perso `_g45CatPerso` — deux fois le meme piege dans ce projet). Un
+       resultat "pas trouve" etait mis en cache SANS DATE, donc pour toujours :
+       un pari verifie avant la fin du match ne montrait plus jamais son score,
+       meme des heures apres. Le negatif expire desormais apres 2h ; un ancien
+       cache au format brut ('' ou string non-JSON, d'avant ce correctif) est
+       traite comme perime et retente immediatement. */
+    try {
+      var c = JSON.parse(raw);
+      if (c && c.hs != null && c.as != null) return c.hs + '-' + c.as;
+      if (c && c.neg && (Date.now() - (c.t || 0)) < 2 * 3600000) return '';   // negatif encore frais
+    } catch(e) { /* ancien format brut : on retente ci-dessous */ }
   }
   var betDay = String(h.date).slice(0, 10);
-  var finir = function(resultat) {
-    try { localStorage.setItem(ck, resultat); } catch(e) {}
+  var finir = function(hs, as) {
+    var payload = (hs != null && as != null) ? {hs: hs, as: as} : {neg: true, t: Date.now()};
+    try { localStorage.setItem(ck, JSON.stringify(payload)); } catch(e) {}
     if (!_g45ScoreVus[ck]) {
       _g45ScoreVus[ck] = 1;
+      /* REDESSINE LES DEUX LISTES (28/08) : `_g45ScoreTexte` est maintenant
+         aussi utilisee par `renderArchive` (onglet PARI), pas seulement par
+         le Bilan — sans les deux appels, le score resolu en tache de fond ne
+         rafraichissait que la liste qui n'avait pas demande la recherche. */
       try { if (typeof renderBilanTab === 'function') renderBilanTab(); } catch(e) {}
+      try { if (typeof renderArchive === 'function') renderArchive(); } catch(e) {}
     }
   };
 
   if (h.sport === '⚽') {
     (async function() {
-      var resultat = '';
+      var hs = null, as = null;
       try {
         var resolved = await espnResolveTeam(nomEquipe);
         var sched = resolved ? await espnClubSchedule(nomEquipe, null, resolved.league) : null;
@@ -29927,19 +29990,19 @@ function _g45ScoreTexte(h) {
           return m && m.completed && m.date && String(m.date).slice(0, 10) === betDay
             && m.homeScore != null && m.awayScore != null;
         })[0];
-        if (trouve) resultat = JSON.stringify({hs: trouve.homeScore, as: trouve.awayScore});
-      } catch(e) { resultat = ''; }
-      finir(resultat);
+        if (trouve) { hs = trouve.homeScore; as = trouve.awayScore; }
+      } catch(e) {}
+      finir(hs, as);
     })();
     return '';
   }
 
-  if (h.sport === '⚾') {
+  if (h.sport === '⚾' || h.sport === '⚾🇺🇸') {
     /* MLB : statsapi.mlb.com. Un seul jour demande = au plus un match (les
        doubles programmes existent mais restent rares) ; `dates[].games[]`
        peut en theorie en contenir 2, on prend le premier "Final" trouve. */
     (async function() {
-      var resultat = '';
+      var hs = null, as = null;
       try {
         var info = (typeof MLB_TEAMS !== 'undefined') ? MLB_TEAMS[nomEquipe] : null;
         if (info) {
@@ -29952,10 +30015,10 @@ function _g45ScoreTexte(h) {
               if (!jeu && g && g.status && g.status.abstractGameState === 'Final') jeu = g;
             });
           });
-          if (jeu) resultat = JSON.stringify({hs: jeu.teams.home.score, as: jeu.teams.away.score});
+          if (jeu) { hs = jeu.teams.home.score; as = jeu.teams.away.score; }
         }
-      } catch(e) { resultat = ''; }
-      finir(resultat);
+      } catch(e) {}
+      finir(hs, as);
     })();
     return '';
   }
@@ -29966,7 +30029,7 @@ function _g45ScoreTexte(h) {
        (hardcodee sur /sports/soccer/) pour ne prendre aucun risque sur le
        football, on refait le meme parsing ici avec le bon chemin. */
     (async function() {
-      var resultat = '';
+      var hs = null, as = null;
       try {
         var cle = (typeof resolveNbaTeam === 'function') ? resolveNbaTeam(nomEquipe) : null;
         var info = cle ? NBA_TEAMS[cle] : null;
@@ -29985,11 +30048,11 @@ function _g45ScoreTexte(h) {
             var away = comp.competitors.find(function(c) { return c.homeAway === 'away'; }) || comp.competitors[1];
             var hS = home.score != null ? parseInt(home.score.value !== undefined ? home.score.value : home.score, 10) : null;
             var aS = away.score != null ? parseInt(away.score.value !== undefined ? away.score.value : away.score, 10) : null;
-            if (hS != null && aS != null) { resultat = JSON.stringify({hs: hS, as: aS}); break; }
+            if (hS != null && aS != null) { hs = hS; as = aS; break; }
           }
         }
-      } catch(e) { resultat = ''; }
-      finir(resultat);
+      } catch(e) {}
+      finir(hs, as);
     })();
     return '';
   }
@@ -29998,7 +30061,7 @@ function _g45ScoreTexte(h) {
     /* NHL : api-web.nhle.com, endpoint different de tous les autres —
        `club-schedule-season` renvoie la saison complete, filtree par date. */
     (async function() {
-      var resultat = '';
+      var hs = null, as = null;
       try {
         var info = (typeof NHL_TEAMS !== 'undefined') ? NHL_TEAMS[nomEquipe] : null;
         if (info) {
@@ -30009,11 +30072,11 @@ function _g45ScoreTexte(h) {
             return g && String(g.gameDate || '').slice(0, 10) === betDay;
           })[0];
           if (jeu && jeu.gameState && /OFF|FINAL/i.test(jeu.gameState) && jeu.homeTeam && jeu.awayTeam) {
-            resultat = JSON.stringify({hs: jeu.homeTeam.score, as: jeu.awayTeam.score});
+            hs = jeu.homeTeam.score; as = jeu.awayTeam.score;
           }
         }
-      } catch(e) { resultat = ''; }
-      finir(resultat);
+      } catch(e) {}
+      finir(hs, as);
     })();
     return '';
   }
@@ -30024,7 +30087,7 @@ function _g45ScoreTexte(h) {
        sport (deja documente ailleurs dans le code) — on interroge donc le
        SCOREBOARD du jour du pari directement, plus fiable. */
     (async function() {
-      var resultat = '';
+      var hs = null, as = null;
       try {
         var resolved = (typeof _g45ResolveEspnTeam === 'function')
           ? await _g45ResolveEspnTeam(nomEquipe, 'rugby-league', '3') : null;
@@ -30047,11 +30110,11 @@ function _g45ScoreTexte(h) {
             var away = cps.find(function(c) { return c.homeAway === 'away'; }) || cps[1];
             var hS = home.score != null ? parseInt(home.score.value !== undefined ? home.score.value : home.score, 10) : null;
             var aS = away.score != null ? parseInt(away.score.value !== undefined ? away.score.value : away.score, 10) : null;
-            if (hS != null && aS != null) { resultat = JSON.stringify({hs: hS, as: aS}); break; }
+            if (hS != null && aS != null) { hs = hS; as = aS; break; }
           }
         }
-      } catch(e) { resultat = ''; }
-      finir(resultat);
+      } catch(e) {}
+      finir(hs, as);
     })();
     return '';
   }
