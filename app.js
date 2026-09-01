@@ -1362,15 +1362,21 @@ function updateInfoBar(barId, txtId, valId, label, val, color){
 function attachTouchTooltip(canvas, chartRef, barId, txtId, valId){
   if(typeof canvas==='string'){var canvasId=canvas;canvas=$i(canvas);}
   if(!canvas)return;
-  canvas.addEventListener('touchend',function(e){
+  /* AJOUT DU 01/09 : cette fonction n'ecoutait que 'touchend' (le doigt),
+     jamais la souris. Le 28/08, le tooltip NATIF de Chart.js — qui etait le
+     SEUL mecanisme a repondre au survol souris sur PC — a ete desactive
+     (tooltip:{enabled:false}) pour corriger un doublon d'affichage sur
+     mobile. Consequence non prevue : plus aucun survol ne montrait quoi que
+     ce soit sur PC (retour d'Antoine, "avant je survolais les points verts,
+     ca mettait le pari correspondant"). Fonction partagee entre le toucher
+     ET la souris desormais — meme boite d'info dans les deux cas. */
+  function _resoudre(clientX, clientY){
     var chart=typeof chartRef==='function'?chartRef():chartRef;
     if(!chart)return;
-    /* Résoudre les éléments DOM dynamiquement au moment du touch */
     var bar=$i(barId);var txt=$i(txtId);var v=$i(valId);
-    var t=e.changedTouches[0];
     var r=canvas.getBoundingClientRect();
-    var x=t.clientX-r.left;
-    var y=t.clientY-r.top;
+    var x=clientX-r.left;
+    var y=clientY-r.top;
     try{
       var pts=chart.getElementsAtEventForMode({offsetX:x,offsetY:y},'nearest',{intersect:false},false);
       if(pts.length){
@@ -1396,6 +1402,13 @@ function attachTouchTooltip(canvas, chartRef, barId, txtId, valId){
         }
       }
     }catch(err){console.log(err);}
+  }
+  canvas.addEventListener('touchend',function(e){
+    var t=e.changedTouches[0];
+    _resoudre(t.clientX, t.clientY);
+  },{passive:true});
+  canvas.addEventListener('mousemove',function(e){
+    _resoudre(e.clientX, e.clientY);
   },{passive:true});
 }
 var bilanMode='global';
@@ -1819,7 +1832,13 @@ function renderAdvancedCharts(paris, bankroll) {
             }
           }
         },
-        scales:{x:{display:false},y:{ticks:{color:'#4f5d88',font:{size:9},callback:function(v){return v+'€';}},grid:{color:'rgba(255,255,255,.03)'}}}
+        /* AXE DES DATES AJOUTE (01/09, retour d'Antoine, screen 2/3 : "une barre
+           horizontale de date tous les 2 jours"). Meme principe applique sur le
+           graphique du Bilan le meme jour : `maxTicksLimit` s'adapte tout seul
+           au volume de donnees (Chart.js repartit toujours le meme nombre
+           d'etiquettes que ce soit 40 ou 400 paris), et on saute toute date
+           identique a la precedente affichee pour eviter les doublons. */
+        scales:{x:{display:true,grid:{display:false},ticks:{color:'#e8ecfa',font:{size:8},maxTicksLimit:6,maxRotation:0,autoSkip:true,callback:(function(){var last=null;return function(v,index){var lbl=bkLabels[index];var d=lbl?lbl.split(' ')[0]:'';if(!d||d===last)return '';last=d;return d;};})()}},y:{ticks:{color:'#e8ecfa',font:{size:9},callback:function(v){return v+'€';}},grid:{color:'rgba(255,255,255,.03)'}}}
       }
     });
   }
@@ -1848,7 +1867,7 @@ function renderAdvancedCharts(paris, bankroll) {
   if(ctx3&&sportKeys.length){
     var sportWr=sportKeys.map(function(s){return Math.round(sportStats[s].wins/sportStats[s].n*100);});
     var sportColors=sportWr.map(function(v){return v>=55?'#1ed760':v>=45?'#f0b020':'#ff4545';});
-    _advCharts.sport=new Chart(ctx3,{type:'bar',data:{labels:sportKeys,datasets:[{data:sportWr,backgroundColor:sportColors,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{label:function(i){var s=sportKeys[i.dataIndex];return sportStats[s].wins+'/'+sportStats[s].n+' ('+i.raw+'%)';}}}},scales:{x:{max:100,ticks:{color:'#4f5d88',font:{size:9},callback:function(v){return v+'%';}},grid:{color:'rgba(255,255,255,.03)'}},y:{ticks:{color:'#4f5d88',font:{size:11}},grid:{display:false}}}}});
+    _advCharts.sport=new Chart(ctx3,{type:'bar',data:{labels:sportKeys,datasets:[{data:sportWr,backgroundColor:sportColors,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{label:function(i){var s=sportKeys[i.dataIndex];return sportStats[s].wins+'/'+sportStats[s].n+' ('+i.raw+'%)';}}}},scales:{x:{max:100,ticks:{color:'#e8ecfa',font:{size:9},callback:function(v){return v+'%';}},grid:{color:'rgba(255,255,255,.03)'}},y:{ticks:{color:'#e8ecfa',font:{size:11}},grid:{display:false}}}}});
   }
 
   // ── 4. ROI dans le temps + Drawdown ──
@@ -1865,10 +1884,16 @@ function renderAdvancedCharts(paris, bankroll) {
   });
   var ctx4=document.getElementById('chart-roi-time');
   if(ctx4){
-    _advCharts.roi=new Chart(ctx4,{type:'line',data:{labels:sorted.map(function(h,i){return i+1;}),datasets:[
+    /* VRAIES DATES AU LIEU D'UN SIMPLE INDEX (01/09, retour d'Antoine). Les
+       labels etaient juste "1,2,3..." — aucune date exploitable. Remplaces
+       par la date reelle de chaque pari, meme dedoublonnage que les autres
+       graphiques de cette session pour rester lisible quel que soit le
+       volume de paris. */
+    var roiLabels=sorted.map(function(h){return h.date||'';});
+    _advCharts.roi=new Chart(ctx4,{type:'line',data:{labels:roiLabels,datasets:[
       {label:'ROI %',data:roiCurve,borderColor:'#4d84ff',backgroundColor:'transparent',borderWidth:2,tension:.4,pointRadius:0,yAxisID:'y'},
       {label:'Drawdown %',data:ddCurve,borderColor:'#ff4545',backgroundColor:'rgba(255,69,69,.1)',fill:true,borderWidth:1.5,tension:.4,pointRadius:0,yAxisID:'y'}
-    ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'nearest',intersect:false},plugins:{legend:{position:'bottom',labels:{color:'#4f5d88',font:{size:9},boxWidth:12}}},scales:{x:{display:false},y:{ticks:{color:'#4f5d88',font:{size:9},callback:function(v){return v+'%';}},grid:{color:'rgba(255,255,255,.03)'}}}}});
+    ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'nearest',intersect:false},plugins:{legend:{position:'bottom',labels:{color:'#4f5d88',font:{size:9},boxWidth:12}}},scales:{x:{display:true,grid:{display:false},ticks:{color:'#e8ecfa',font:{size:8},maxTicksLimit:6,maxRotation:0,autoSkip:true,callback:(function(){var last=null;return function(v,index){var d=roiLabels[index]||'';if(!d||d===last)return '';last=d;return d;};})()}},y:{ticks:{color:'#e8ecfa',font:{size:9},callback:function(v){return v+'%';}},grid:{color:'rgba(255,255,255,.03)'}}}}});
   }
 }
 function renderBilanTab(){
@@ -1914,6 +1939,7 @@ function renderBilanTab(){
         datasets.push({label:bki(bk).n,data:bkCurve,borderColor:bkCol,backgroundColor:'transparent',borderWidth:1.5,fill:false,tension:.4,pointRadius:0,pointHoverRadius:4,borderDash:[4,3]});
       });
 
+      var _lastDateShown=null;
       _bilanChart=new Chart(ct,{type:'line',data:{labels:clabels,datasets:datasets},options:{responsive:true,maintainAspectRatio:false,events:['mousemove','mouseout','click','touchstart','touchmove'],
         interaction:{mode:'nearest',intersect:false},
             plugins:{/* RESSERRE LE 28/08 (retour d'Antoine, illisible sur mobile sans scroller
@@ -1934,7 +1960,12 @@ function renderBilanTab(){
                l'adversaire/le `||`) et on limite le nombre d'etiquettes affichees
                (`maxTicksLimit`) — pas besoin d'une date par pari, juste des reperes
                espaces dans le temps. */
-            scales:{x:{display:true,grid:{display:false},ticks:{color:'#4f5d88',font:{size:8},maxTicksLimit:6,maxRotation:0,autoSkip:true,callback:function(v,index){ var lbl=clabels[index]; return lbl?lbl.split(' ')[0]:''; }}},y:{grid:{color:'rgba(255,255,255,.03)'},ticks:{color:'#4f5d88',font:{size:9},callback:function(v){return v+'€';}}}}}});
+            scales:{x:{display:true,grid:{display:false},ticks:{color:'#e8ecfa',font:{size:8},maxTicksLimit:6,maxRotation:0,autoSkip:true,callback:function(v,index){ var lbl=clabels[index]; var dOnly=lbl?lbl.split(' ')[0]:''; /* PAS DE DATE REPETEE (01/09, retour d'Antoine : "19 23 23 27..."). Chart.js
+                 choisit les INDEX a etiqueter par intervalle regulier, pas par date —
+                 deux index differents peuvent tomber sur la meme journee si plusieurs
+                 paris partagent une date. On saute silencieusement toute etiquette
+                 identique a la precedente affichee. */
+if(!dOnly || dOnly===_lastDateShown) return ''; _lastDateShown=dOnly; return dOnly; }}},y:{grid:{color:'rgba(255,255,255,.03)'},ticks:{color:'#e8ecfa',font:{size:9},callback:function(v){return v+'€';}}}}}});
         attachTouchTooltip('bilan-chart',function(){return _bilanChart;},'cib-bilan','cib-bilan-txt','cib-bilan-val');
     }
   }
@@ -2448,7 +2479,7 @@ function renderArchive(){
     setTimeout(function(){
       var ctx=$i('ac');if(!ctx)return;
       if(window._ac){try{window._ac.destroy();}catch(e){}}
-      window._ac=new Chart(ctx.getContext('2d'),{type:'bar',data:{labels:keys,datasets:[{data:profits,backgroundColor:profits.map(function(v){return v>=0?'rgba(30,215,96,.55)':'rgba(255,69,69,.55)';}),borderColor:profits.map(function(v){return v>=0?'#1ed760':'#ff4545';}),borderWidth:1,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#4f5d88',font:{size:9}},grid:{display:false}},y:{ticks:{color:'#4f5d88',font:{size:9},callback:function(v){return v+'€';}},grid:{color:'rgba(255,255,255,.03)'}}}}});
+      window._ac=new Chart(ctx.getContext('2d'),{type:'bar',data:{labels:keys,datasets:[{data:profits,backgroundColor:profits.map(function(v){return v>=0?'rgba(30,215,96,.55)':'rgba(255,69,69,.55)';}),borderColor:profits.map(function(v){return v>=0?'#1ed760':'#ff4545';}),borderWidth:1,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#e8ecfa',font:{size:9}},grid:{display:false}},y:{ticks:{color:'#e8ecfa',font:{size:9},callback:function(v){return v+'€';}},grid:{color:'rgba(255,255,255,.03)'}}}}});
     },60);
   }
   /* Grouper par semaine puis par jour */
@@ -2526,7 +2557,16 @@ function renderArchive(){
         var isSimpleA=(h.n==='SIMPLE');
         var adversaireA=(h.target&&h.target!=='-'&&!isSimpleA)?h.target:'';
         var titre=isSimpleA?(h.target&&h.target!=='-'?h.target:(h.n||'—')):(h.n||h.target||'—');
-        var sous='<span style="color:#7aa2ff;font-weight:800;font-size:11px;background:rgba(77,132,255,.16);padding:1px 7px;border-radius:5px;">@'+parseFloat(h.cote).toFixed(2)+'</span>'+(h.comp?' · '+h.comp:'')+(adversaireA?' · vs '+adversaireA:'');
+        /* TYPE DE PARI AJOUTE (01/09, retour d'Antoine : "dans archive contrairement
+           a global il manque le type de pari"). Meme calcul que dans le Bilan
+           (_g45BetRowMini) : "Victoire" seul se transforme en "Equipe gagne"
+           pour rester lisible, sinon le type s'affiche tel quel (Buteur,
+           Victoire + Over 2.5...). */
+        var typeTxtA=h.type||'';
+        if(/^victoire\b/i.test(typeTxtA) && titre.toLowerCase().indexOf(' vs ')===-1){
+          typeTxtA=titre+' '+typeTxtA.replace(/^victoire\b/i,'gagne');
+        }
+        var sous=(typeTxtA?typeTxtA+' · ':'')+'<span style="color:#7aa2ff;font-weight:800;font-size:11px;background:rgba(77,132,255,.16);padding:1px 7px;border-radius:5px;">@'+parseFloat(h.cote).toFixed(2)+'</span>'+(h.comp?' · '+h.comp:'')+(adversaireA?' · vs '+adversaireA:'');
         /* IDENTITE VISUELLE + SCORE (28/08) : port de ce qui existe deja sur la
            liste du Bilan (`_g45BetRowMini`) — cette liste-ci (onglet PARI) ne
            les avait jamais eus. Meme logique : couleur+logo du club pour une
@@ -2555,6 +2595,7 @@ function renderArchive(){
           +'<div style="position:relative;display:flex;flex-direction:column;gap:3px;flex-shrink:0;">'
           +'<a href="https://www.google.com/search?q='+encodeURIComponent(titre+' sofascore')+'" target="_blank" style="background:none;border:none;color:#ff7b54;font-size:13px;cursor:pointer;padding:0;text-decoration:none;" title="Sofascore">⚡</a>'
           +'<button data-titre="'+titre.replace(/"/g,'&quot;')+'" data-date="'+(h.date||'')+'" data-comp="'+(h.comp||'')+'" onclick="var d=this.dataset;ouvrirYouTubeAvecScore(d.titre,d.date,d.comp)" style="background:none;border:none;color:#ff0000;font-size:13px;cursor:pointer;padding:0;" title="YouTube highlights">▶️</button>'
+          +'<button data-aid="'+h.id+'" onclick="g45PartagerPari(this.dataset.aid)" style="background:none;border:none;color:#4d84ff;font-size:14px;cursor:pointer;padding:0;" title="Partager ce pari en image">📤</button>'
           +'<button data-aid="'+h.id+'" onclick="openBetEdit(this.dataset.aid)" style="background:none;border:none;color:var(--t3);font-size:14px;cursor:pointer;padding:0;">✏️</button>'
           +'<button data-aid="'+h.id+'" onclick="deleteArchived(this.dataset.aid)" style="background:none;border:none;color:var(--r);font-size:14px;cursor:pointer;padding:0;">🗑</button>'
           +'</div>'
@@ -2623,8 +2664,8 @@ function renderChartMoisBar(){
     type:'bar',data:{labels:labels,datasets:[{data:data,backgroundColor:colors,borderRadius:5,borderSkipped:false}]},
     options:{animation:false,responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:{callbacks:{label:function(i){return (i.raw>=0?'+':'')+i.raw.toFixed(2)+'€';}}}},
-      scales:{x:{ticks:{color:'#4f5d88',font:{size:9}},grid:{display:false}},
-        y:{grid:{color:'rgba(255,255,255,.03)'},ticks:{color:'#4f5d88',font:{size:9},callback:function(v){return v+'€';}}}}}
+      scales:{x:{ticks:{color:'#e8ecfa',font:{size:9}},grid:{display:false}},
+        y:{grid:{color:'rgba(255,255,255,.03)'},ticks:{color:'#e8ecfa',font:{size:9},callback:function(v){return v+'€';}}}}}
   });
   attachTouchTooltip('chart-mois-bar',function(){return window._gcMoisBar;},'','','');
 }
@@ -2651,13 +2692,13 @@ function renderChartSport(){
     type:'bar',data:{labels:labels,datasets:[{data:profits,backgroundColor:pColors,borderRadius:5,borderSkipped:false}]},
     options:{animation:false,responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:{callbacks:{label:function(i){return (i.raw>=0?'+':'')+i.raw.toFixed(2)+'€';}}}},
-      scales:{x:{ticks:{color:'#4f5d88',font:{size:9}},grid:{display:false}},y:{grid:{color:'rgba(255,255,255,.03)'},ticks:{color:'#4f5d88',font:{size:9},callback:function(v){return v+'€';}}}}}
+      scales:{x:{ticks:{color:'#e8ecfa',font:{size:9}},grid:{display:false}},y:{grid:{color:'rgba(255,255,255,.03)'},ticks:{color:'#e8ecfa',font:{size:9},callback:function(v){return v+'€';}}}}}
   });
   if(ctxWr)window._gcSportWr=new Chart(ctxWr.getContext('2d'),{
     type:'bar',data:{labels:labels,datasets:[{data:wrs,backgroundColor:wrColors,borderRadius:5,borderSkipped:false}]},
     options:{animation:false,responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:{callbacks:{label:function(i){return i.raw+'%';}}}},
-      scales:{x:{ticks:{color:'#4f5d88',font:{size:9}},grid:{display:false}},y:{min:0,max:100,grid:{color:'rgba(255,255,255,.03)'},ticks:{color:'#4f5d88',font:{size:9},callback:function(v){return v+'%';}}}}}
+      scales:{x:{ticks:{color:'#e8ecfa',font:{size:9}},grid:{display:false}},y:{min:0,max:100,grid:{color:'rgba(255,255,255,.03)'},ticks:{color:'#e8ecfa',font:{size:9},callback:function(v){return v+'%';}}}}}
   });
 }
 
@@ -2680,7 +2721,7 @@ function renderChartTypeBen(){
     type:'bar',data:{labels:labels,datasets:[{data:data,backgroundColor:colors,borderRadius:5,borderSkipped:false}]},
     options:{animation:false,responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:{callbacks:{label:function(i){return (i.raw>=0?'+':'')+i.raw.toFixed(2)+'€';}}}},
-      scales:{x:{ticks:{color:'#4f5d88',font:{size:9},maxRotation:30},grid:{display:false}},y:{grid:{color:'rgba(255,255,255,.03)'},ticks:{color:'#4f5d88',font:{size:9},callback:function(v){return v+'€';}}}}}
+      scales:{x:{ticks:{color:'#e8ecfa',font:{size:9},maxRotation:30},grid:{display:false}},y:{grid:{color:'rgba(255,255,255,.03)'},ticks:{color:'#e8ecfa',font:{size:9},callback:function(v){return v+'€';}}}}}
   });
 }
 
@@ -2828,8 +2869,11 @@ function renderGlobalChart(){
               title:function(ii){if(!ii||!ii.length)return '';var l=glabels[ii[0].dataIndex]||'';return l.split('||')[0]||'Départ';},
               label:function(ii){if(!ii||ii.dataIndex===undefined)return '';var l=glabels[ii.dataIndex]||'';var parts=l.split('||');return parts[1]?'Capital : '+ii.raw.toFixed(2)+'€  '+parts[1]:'Capital : '+ii.raw.toFixed(2)+'€';}
             }}},
-        scales:{x:{display:false},y:{grid:{color:'rgba(255,255,255,.03)'},border:{display:false},
-          ticks:{color:'#4f5d88',font:{size:10},maxTicksLimit:4,callback:function(v){return v+'€';}}}}
+        /* AXE DES DATES AJOUTE (01/09, retour d'Antoine). Meme principe que les
+           autres graphiques corriges ce jour : `maxTicksLimit` s'adapte tout
+           seul au volume de paris, anti-doublon de date consecutive. */
+        scales:{x:{display:true,grid:{display:false},ticks:{color:'#e8ecfa',font:{size:8},maxTicksLimit:6,maxRotation:0,autoSkip:true,callback:(function(){var last=null;return function(v,index){var lbl=glabels[index];var d=lbl?lbl.split('||')[0].split(' ')[0]:'';if(!d||d===last)return '';last=d;return d;};})()}},y:{grid:{color:'rgba(255,255,255,.03)'},border:{display:false},
+          ticks:{color:'#e8ecfa',font:{size:10},maxTicksLimit:4,callback:function(v){return v+'€';}}}}
       }
     });
 
@@ -3310,7 +3354,7 @@ function openClub(nom,idx){
           options:{
             responsive:true,maintainAspectRatio:false,
             plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(8,11,18,.96)',borderColor:p.border,borderWidth:1,titleColor:'#4f5d88',bodyColor:p.c,bodyFont:{weight:'bold'},callbacks:{title:function(ii){return lb[ii[0].dataIndex]||'';},label:function(ii){return (ii.raw>=0?'+':'')+ii.raw+'€';}}}},
-            scales:{x:{ticks:{color:'#4f5d88',font:{size:8},maxTicksLimit:6},grid:{display:false}},y:{grid:{color:'rgba(255,255,255,.03)'},ticks:{color:'#4f5d88',font:{size:9},callback:function(v){return v+'€';}}}}
+            scales:{x:{ticks:{color:'#e8ecfa',font:{size:8},maxTicksLimit:6},grid:{display:false}},y:{grid:{color:'rgba(255,255,255,.03)'},ticks:{color:'#e8ecfa',font:{size:9},callback:function(v){return v+'€';}}}}
           }
         });
       }
@@ -3325,7 +3369,7 @@ function openClub(nom,idx){
           options:{
             responsive:true,maintainAspectRatio:false,
             plugins:{legend:{display:false},tooltip:{callbacks:{label:function(i){return (i.raw>=0?'+':'')+i.raw.toFixed(2)+'€';}}}},
-            scales:{x:{ticks:{color:'#4f5d88',font:{size:9}},grid:{display:false}},y:{ticks:{color:'#4f5d88',font:{size:9},callback:function(v){return v+'€';}},grid:{color:'rgba(255,255,255,.03)'}}}
+            scales:{x:{ticks:{color:'#e8ecfa',font:{size:9}},grid:{display:false}},y:{ticks:{color:'#e8ecfa',font:{size:9},callback:function(v){return v+'€';}},grid:{color:'rgba(255,255,255,.03)'}}}
           }
         });
       }
@@ -3453,6 +3497,77 @@ function cancelBet(id){
   if(bet.isS&&bet.l){var u=state.u.find(function(x){return x.n===bet.n;});if(u)_g45SetPal(u,bet.comp,bet.domicile,parseInt(bet.l)||1);}
   state.h.splice(idx,1);save();
 }
+/* ═════════ CARTE DE RESULTAT PARTAGEABLE (01/09, demande d'Antoine) ═════════
+   Reprend le style de la maquette validee la veille (fond stade CSS pur,
+   filigrane sportif, badge de championnat) mais avec les VRAIES donnees du
+   pari. html2canvas transforme la carte (construite hors-ecran) en image ;
+   partage natif sur mobile (WhatsApp/Discord/SMS via le menu du telephone),
+   telechargement en repli sur PC ou si le partage natif echoue. */
+function _g45CarteResultatHTML(h){
+  var isSimpleC=(h.n==='SIMPLE');
+  var adversaireC=(h.target&&h.target!=='-'&&!isSimpleC)?h.target:'';
+  var titreC=isSimpleC?(h.target&&h.target!=='-'?h.target.split(/\s+vs\s+/i)[0]:(h.n||'—')):(h.n||h.target||'—');
+  var u1=(state.u||[]).filter(function(x){return x&&x.n===titreC;})[0];
+  var coul1=(u1&&u1.color)||'#4d84ff';
+  var abbr1=(u1&&u1.abbr)||titreC.replace(/[^a-zA-Z]/g,'').substring(0,3).toUpperCase()||'—';
+  var abbr2=adversaireC?adversaireC.replace(/[^a-zA-Z]/g,'').substring(0,3).toUpperCase():'';
+  var isPend=!!h.isPending;
+  var gain=isPend?0:(h.win?(parseFloat(h.m)*parseFloat(h.cote)-parseFloat(h.m)):-parseFloat(h.m));
+  var verdictTxt=isPend?'⏳ En cours':(h.win?'✅ Gagné':'❌ Perdu');
+  var verdictCls=isPend?'#f0b020':(h.win?'#1ed760':'#ff4545');
+  var score=(typeof _g45ScoreTexte==='function')?(_g45ScoreTexte(h)||''):'';
+  var typeTxtC=h.type||'';
+  if(/^victoire\b/i.test(typeTxtC) && titreC.toLowerCase().indexOf(' vs ')===-1){ typeTxtC=titreC+' '+typeTxtC.replace(/^victoire\b/i,'gagne'); }
+  return '<div style="width:340px;border-radius:20px;overflow:hidden;position:relative;'
+    +'background:radial-gradient(circle at 50% 18%,'+coul1+'59 0%,'+coul1+'00 55%),repeating-linear-gradient(135deg,rgba(255,255,255,.025) 0px,rgba(255,255,255,.025) 1px,transparent 1px,transparent 14px),linear-gradient(160deg,#151b30 0%,#0a0e1a 65%);'
+    +'border:1px solid rgba(255,255,255,.08);font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif;">'
+    +'<div style="position:absolute;right:-20px;bottom:-40px;font-size:210px;opacity:.13;line-height:1;transform:rotate(-8deg);">'+(h.sport||'⚽')+'</div>'
+    +'<div style="position:relative;padding:20px 22px 16px;display:flex;justify-content:space-between;align-items:center;">'
+      +'<div style="font-size:15px;font-weight:900;color:#fff;letter-spacing:-.02em;">BET<span style="color:#ff5a5a;">45</span></div>'
+      +'<div style="font-size:11px;font-weight:800;padding:5px 12px;border-radius:20px;background:'+verdictCls+'26;color:'+verdictCls+';">'+verdictTxt+'</div>'
+    +'</div>'
+    +'<div style="position:relative;display:flex;align-items:center;justify-content:center;gap:18px;padding:6px 22px 22px;">'
+      +'<div style="width:64px;height:64px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;color:#fff;background:'+coul1+';">'+abbr1+'</div>'
+      +(abbr2?'<div style="color:#4f5d88;font-size:13px;font-weight:700;">VS</div><div style="width:64px;height:64px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;color:#fff;background:#5b6690;">'+abbr2+'</div>':'')
+    +'</div>'
+    +'<div style="position:relative;text-align:center;padding:0 22px;font-size:16px;font-weight:800;color:#fff;">'+(titreC||'')+'</div>'
+    +'<div style="position:relative;text-align:center;padding:4px 22px 16px;font-size:11px;color:#8b97c4;">'+(h.comp?('<span style="display:inline-block;font-size:9px;font-weight:900;letter-spacing:.06em;color:#c9d2f0;border:1px solid rgba(255,255,255,.16);padding:3px 8px;border-radius:6px;background:rgba(255,255,255,.05);margin-right:6px;">'+h.comp.toUpperCase()+'</span>'):'')+(h.date||'')+'</div>'
+    +(score?('<div style="position:relative;text-align:center;padding:0 22px 10px;"><span style="font-size:26px;font-weight:900;color:#fff;">'+score+'</span></div>'):'')
+    +'<div style="position:relative;text-align:center;padding:0 22px 18px;font-size:11px;color:#8b97c4;">'+(typeTxtC||'')+'</div>'
+    +'<div style="position:relative;display:flex;border-top:1px solid rgba(255,255,255,.08);">'
+      +'<div style="flex:1;text-align:center;padding:14px 8px;border-right:1px solid rgba(255,255,255,.08);"><div style="font-size:9px;color:#5b6690;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Mise</div><div style="font-size:15px;font-weight:800;color:#fff;">'+parseFloat(h.m).toFixed(2)+'€</div></div>'
+      +'<div style="flex:1;text-align:center;padding:14px 8px;border-right:1px solid rgba(255,255,255,.08);"><div style="font-size:9px;color:#5b6690;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Cote</div><div style="font-size:15px;font-weight:800;color:#fff;">'+parseFloat(h.cote).toFixed(2)+'</div></div>'
+      +'<div style="flex:1;text-align:center;padding:14px 8px;"><div style="font-size:9px;color:#5b6690;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">'+(isPend?'Gain pot.':'Gain')+'</div><div style="font-size:15px;font-weight:800;color:'+(isPend?'#fff':(gain>=0?'#1ed760':'#ff4545'))+';">'+(isPend?'+'+(parseFloat(h.m)*parseFloat(h.cote)-parseFloat(h.m)).toFixed(2):((gain>=0?'+':'')+gain.toFixed(2)))+'€</div></div>'
+    +'</div>'
+    +'<div style="position:relative;background:#05070d;padding:10px 22px;display:flex;justify-content:space-between;align-items:center;">'
+      +'<span style="font-size:10px;color:#4f5d88;font-weight:700;">bet45.fr</span><span style="font-size:15px;">'+(h.sport||'⚽')+'</span>'
+    +'</div>'
+  +'</div>';
+}
+async function g45PartagerPari(id){
+  var h=(state.a||[]).concat(state.h||[]).filter(function(x){return x.id===id;})[0];
+  if(!h){ alert('Pari introuvable.'); return; }
+  if(typeof html2canvas==='undefined'){ alert('Génération d\'image indisponible pour le moment.'); return; }
+  var wrap=document.createElement('div');
+  wrap.style.cssText='position:fixed;left:-9999px;top:0;';
+  wrap.innerHTML=_g45CarteResultatHTML(h);
+  document.body.appendChild(wrap);
+  try{
+    var canvas=await html2canvas(wrap.firstChild, {backgroundColor:null, scale:2});
+    document.body.removeChild(wrap);
+    canvas.toBlob(async function(blob){
+      if(!blob) return;
+      var file=new File([blob], 'bet45-pari.png', {type:'image/png'});
+      if(navigator.canShare && navigator.canShare({files:[file]})){
+        try{ await navigator.share({files:[file], title:'BET45', text:'Mon pari sur BET45'}); return; }catch(e){ /* annule ou echoue : repli telechargement */ }
+      }
+      var url=URL.createObjectURL(blob);
+      var a=document.createElement('a'); a.href=url; a.download='bet45-pari.png'; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+    }, 'image/png');
+  }catch(e){ try{ document.body.removeChild(wrap); }catch(e2){} alert('Échec de la génération de l\'image.'); }
+}
+window.g45PartagerPari=g45PartagerPari;
 function deleteArchived(id){
   if(!confirm('Supprimer ce pari ?'))return;
   var idx=state.a.findIndex(function(x){return x.id===id;});if(idx===-1)return;
@@ -4213,11 +4328,20 @@ function renderMultiCurveChart(){
     if(!$i('chart-multi'))return;
     if(window._gcM){try{window._gcM.destroy();}catch(e){}}window._gcM=null;
     var ct=$i('chart-multi').getContext('2d');
+    /* AXE DES DATES, EN APPROXIMATION ASSUMEE (01/09, retour d'Antoine). Ici,
+       contrairement au Bilan/Bankroll, chaque equipe a SA PROPRE sequence de
+       dates (le point d'index 5 de Real Madrid n'est pas force le meme jour
+       que le point d'index 5 du PSG) — il n'existe pas de "vraie" date par
+       position d'index commune a toutes les courbes. On prend donc la date de
+       la courbe la PLUS LONGUE comme reperage indicatif — utile pour se
+       reperer dans le temps, mais a lire comme approximatif sur les equipes
+       plus courtes, pas comme une date exacte pour chacune. */
+    var refLbl=active.reduce(function(best,d){ return (d._labels&&d._labels.length>(best?best.length:0))?d._labels:best; },null)||[];
     window._gcM=new Chart(ct,{type:'line',data:{labels:Array.from({length:maxLen},function(_,i){return i;}),datasets:active},options:{
       animation:false,responsive:true,maintainAspectRatio:false,interaction:{mode:'nearest',intersect:false},
       plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(8,11,18,.96)',borderColor:'rgba(255,255,255,.1)',borderWidth:1,
         callbacks:{title:function(ii){var d=active[0];return d&&d._labels?d._labels[ii[0].dataIndex]||'':'';},label:function(i){return ' '+i.dataset.label+' : '+(i.raw!==null?(i.raw>=0?'+':'')+i.raw.toFixed(2)+'€':'—');}}}},
-      scales:{x:{display:false},y:{grid:{color:'rgba(255,255,255,.03)'},border:{display:false},ticks:{color:'#4f5d88',font:{size:9},maxTicksLimit:4,callback:function(v){return v+'€';}}}}
+      scales:{x:{display:true,grid:{display:false},ticks:{color:'#e8ecfa',font:{size:8},maxTicksLimit:5,maxRotation:0,autoSkip:true,callback:(function(){var last=null;return function(v,index){var lbl=refLbl[index];var d=lbl?lbl.split(' ')[0]:'';if(!d||d===last)return '';last=d;return d;};})()}},y:{grid:{color:'rgba(255,255,255,.03)'},border:{display:false},ticks:{color:'#e8ecfa',font:{size:9},maxTicksLimit:4,callback:function(v){return v+'€';}}}}
     }});
     attachTouchTooltip('chart-multi',function(){return window._gcM;},'cib-multi','cib-multi-txt','cib-multi-val');
   },80);
@@ -4286,6 +4410,14 @@ function renderPaliersChart(){
     if(dom===null&&ext===null&&glob===null) glob=parseInt(u.l,10)||1;  // jamais engagee sur aucun lieu : repli
     domData.push(dom); extData.push(ext); globData.push(glob);
   });
+  /* BARRES HORIZONTALES (01/09, retour d'Antoine : trop resserre/illisible sur
+     mobile en vertical avec 11+ equipes — meme traitement que "Reussite par
+     sport", deja en barres horizontales et lisible sur tous les ecrans. La
+     hauteur du conteneur est desormais calculee selon le nombre d'equipes
+     (~30px par ligne) au lieu d'une hauteur fixe pensee pour un axe X court :
+     sans ca, toutes les lignes s'ecraseraient dans les 200px d'origine. */
+  var _hCont=ctx.parentElement;
+  if(_hCont) _hCont.style.height=Math.max(220, state.u.length*30)+'px';
   GC2.paliers=new Chart(ctx.getContext('2d'),{
     type:'bar',
     data:{labels:labels,datasets:[
@@ -4294,11 +4426,12 @@ function renderPaliersChart(){
       {label:'🌍 Global',data:globData,backgroundColor:'rgba(240,176,32,.75)',borderColor:'rgba(240,176,32,1)',borderWidth:1,borderRadius:4}
     ]},
     options:{
+      indexAxis:'y',
       responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:true,labels:{color:'#8b97c4',font:{size:9},boxWidth:10}},tooltip:{callbacks:{label:function(i){return i.raw!=null?(i.dataset.label+' : Palier '+i.raw):null;}}}},
       scales:{
-        x:{ticks:{color:'#4f5d88',font:{size:9}},grid:{display:false}},
-        y:{min:0,max:8,ticks:{color:'#4f5d88',font:{size:9},stepSize:1},grid:{color:'rgba(255,255,255,.03)'}}
+        y:{ticks:{color:'#e8ecfa',font:{size:9}},grid:{display:false}},
+        x:{min:0,max:8,ticks:{color:'#e8ecfa',font:{size:9},stepSize:1},grid:{color:'rgba(255,255,255,.03)'}}
       }
     }
   });
@@ -4333,7 +4466,7 @@ function renderRadarChart(){
     options:{
       responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:true,labels:{color:'#8b97c4',font:{size:10},boxWidth:10}}},
-      scales:{r:{ticks:{color:'#4f5d88',font:{size:9},backdropColor:'transparent'},grid:{color:'rgba(255,255,255,.07)'},pointLabels:{color:'#8b97c4',font:{size:9}}}}
+      scales:{r:{ticks:{color:'#e8ecfa',font:{size:9},backdropColor:'transparent'},grid:{color:'rgba(255,255,255,.07)'},pointLabels:{color:'#8b97c4',font:{size:9}}}}
     }
   });
 }
@@ -8425,15 +8558,21 @@ function updateInfoBar(barId, txtId, valId, label, val, color){
 function attachTouchTooltip(canvas, chartRef, barId, txtId, valId){
   if(typeof canvas==='string'){var canvasId=canvas;canvas=$i(canvas);}
   if(!canvas)return;
-  canvas.addEventListener('touchend',function(e){
+  /* AJOUT DU 01/09 : cette fonction n'ecoutait que 'touchend' (le doigt),
+     jamais la souris. Le 28/08, le tooltip NATIF de Chart.js — qui etait le
+     SEUL mecanisme a repondre au survol souris sur PC — a ete desactive
+     (tooltip:{enabled:false}) pour corriger un doublon d'affichage sur
+     mobile. Consequence non prevue : plus aucun survol ne montrait quoi que
+     ce soit sur PC (retour d'Antoine, "avant je survolais les points verts,
+     ca mettait le pari correspondant"). Fonction partagee entre le toucher
+     ET la souris desormais — meme boite d'info dans les deux cas. */
+  function _resoudre(clientX, clientY){
     var chart=typeof chartRef==='function'?chartRef():chartRef;
     if(!chart)return;
-    /* Résoudre les éléments DOM dynamiquement au moment du touch */
     var bar=$i(barId);var txt=$i(txtId);var v=$i(valId);
-    var t=e.changedTouches[0];
     var r=canvas.getBoundingClientRect();
-    var x=t.clientX-r.left;
-    var y=t.clientY-r.top;
+    var x=clientX-r.left;
+    var y=clientY-r.top;
     try{
       var pts=chart.getElementsAtEventForMode({offsetX:x,offsetY:y},'nearest',{intersect:false},false);
       if(pts.length){
@@ -8459,6 +8598,13 @@ function attachTouchTooltip(canvas, chartRef, barId, txtId, valId){
         }
       }
     }catch(err){console.log(err);}
+  }
+  canvas.addEventListener('touchend',function(e){
+    var t=e.changedTouches[0];
+    _resoudre(t.clientX, t.clientY);
+  },{passive:true});
+  canvas.addEventListener('mousemove',function(e){
+    _resoudre(e.clientX, e.clientY);
   },{passive:true});
 }
 var bilanMode='global';
@@ -8866,7 +9012,13 @@ function renderAdvancedCharts(paris, bankroll) {
             }
           }
         },
-        scales:{x:{display:false},y:{ticks:{color:'#4f5d88',font:{size:9},callback:function(v){return v+'€';}},grid:{color:'rgba(255,255,255,.03)'}}}
+        /* AXE DES DATES AJOUTE (01/09, retour d'Antoine, screen 2/3 : "une barre
+           horizontale de date tous les 2 jours"). Meme principe applique sur le
+           graphique du Bilan le meme jour : `maxTicksLimit` s'adapte tout seul
+           au volume de donnees (Chart.js repartit toujours le meme nombre
+           d'etiquettes que ce soit 40 ou 400 paris), et on saute toute date
+           identique a la precedente affichee pour eviter les doublons. */
+        scales:{x:{display:true,grid:{display:false},ticks:{color:'#e8ecfa',font:{size:8},maxTicksLimit:6,maxRotation:0,autoSkip:true,callback:(function(){var last=null;return function(v,index){var lbl=bkLabels[index];var d=lbl?lbl.split(' ')[0]:'';if(!d||d===last)return '';last=d;return d;};})()}},y:{ticks:{color:'#e8ecfa',font:{size:9},callback:function(v){return v+'€';}},grid:{color:'rgba(255,255,255,.03)'}}}
       }
     });
   }
@@ -8895,7 +9047,7 @@ function renderAdvancedCharts(paris, bankroll) {
   if(ctx3&&sportKeys.length){
     var sportWr=sportKeys.map(function(s){return Math.round(sportStats[s].wins/sportStats[s].n*100);});
     var sportColors=sportWr.map(function(v){return v>=55?'#1ed760':v>=45?'#f0b020':'#ff4545';});
-    _advCharts.sport=new Chart(ctx3,{type:'bar',data:{labels:sportKeys,datasets:[{data:sportWr,backgroundColor:sportColors,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{label:function(i){var s=sportKeys[i.dataIndex];return sportStats[s].wins+'/'+sportStats[s].n+' ('+i.raw+'%)';}}}},scales:{x:{max:100,ticks:{color:'#4f5d88',font:{size:9},callback:function(v){return v+'%';}},grid:{color:'rgba(255,255,255,.03)'}},y:{ticks:{color:'#4f5d88',font:{size:11}},grid:{display:false}}}}});
+    _advCharts.sport=new Chart(ctx3,{type:'bar',data:{labels:sportKeys,datasets:[{data:sportWr,backgroundColor:sportColors,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{label:function(i){var s=sportKeys[i.dataIndex];return sportStats[s].wins+'/'+sportStats[s].n+' ('+i.raw+'%)';}}}},scales:{x:{max:100,ticks:{color:'#e8ecfa',font:{size:9},callback:function(v){return v+'%';}},grid:{color:'rgba(255,255,255,.03)'}},y:{ticks:{color:'#e8ecfa',font:{size:11}},grid:{display:false}}}}});
   }
 
   // ── 4. ROI dans le temps + Drawdown ──
@@ -8912,10 +9064,16 @@ function renderAdvancedCharts(paris, bankroll) {
   });
   var ctx4=document.getElementById('chart-roi-time');
   if(ctx4){
-    _advCharts.roi=new Chart(ctx4,{type:'line',data:{labels:sorted.map(function(h,i){return i+1;}),datasets:[
+    /* VRAIES DATES AU LIEU D'UN SIMPLE INDEX (01/09, retour d'Antoine). Les
+       labels etaient juste "1,2,3..." — aucune date exploitable. Remplaces
+       par la date reelle de chaque pari, meme dedoublonnage que les autres
+       graphiques de cette session pour rester lisible quel que soit le
+       volume de paris. */
+    var roiLabels=sorted.map(function(h){return h.date||'';});
+    _advCharts.roi=new Chart(ctx4,{type:'line',data:{labels:roiLabels,datasets:[
       {label:'ROI %',data:roiCurve,borderColor:'#4d84ff',backgroundColor:'transparent',borderWidth:2,tension:.4,pointRadius:0,yAxisID:'y'},
       {label:'Drawdown %',data:ddCurve,borderColor:'#ff4545',backgroundColor:'rgba(255,69,69,.1)',fill:true,borderWidth:1.5,tension:.4,pointRadius:0,yAxisID:'y'}
-    ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'nearest',intersect:false},plugins:{legend:{position:'bottom',labels:{color:'#4f5d88',font:{size:9},boxWidth:12}}},scales:{x:{display:false},y:{ticks:{color:'#4f5d88',font:{size:9},callback:function(v){return v+'%';}},grid:{color:'rgba(255,255,255,.03)'}}}}});
+    ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'nearest',intersect:false},plugins:{legend:{position:'bottom',labels:{color:'#4f5d88',font:{size:9},boxWidth:12}}},scales:{x:{display:true,grid:{display:false},ticks:{color:'#e8ecfa',font:{size:8},maxTicksLimit:6,maxRotation:0,autoSkip:true,callback:(function(){var last=null;return function(v,index){var d=roiLabels[index]||'';if(!d||d===last)return '';last=d;return d;};})()}},y:{ticks:{color:'#e8ecfa',font:{size:9},callback:function(v){return v+'%';}},grid:{color:'rgba(255,255,255,.03)'}}}}});
   }
 }
 function renderBilanTab(){
@@ -8961,6 +9119,7 @@ function renderBilanTab(){
         datasets.push({label:bki(bk).n,data:bkCurve,borderColor:bkCol,backgroundColor:'transparent',borderWidth:1.5,fill:false,tension:.4,pointRadius:0,pointHoverRadius:4,borderDash:[4,3]});
       });
 
+      var _lastDateShown=null;
       _bilanChart=new Chart(ct,{type:'line',data:{labels:clabels,datasets:datasets},options:{responsive:true,maintainAspectRatio:false,events:['mousemove','mouseout','click','touchstart','touchmove'],
         interaction:{mode:'nearest',intersect:false},
             plugins:{/* RESSERRE LE 28/08 (retour d'Antoine, illisible sur mobile sans scroller
@@ -8981,7 +9140,12 @@ function renderBilanTab(){
                l'adversaire/le `||`) et on limite le nombre d'etiquettes affichees
                (`maxTicksLimit`) — pas besoin d'une date par pari, juste des reperes
                espaces dans le temps. */
-            scales:{x:{display:true,grid:{display:false},ticks:{color:'#4f5d88',font:{size:8},maxTicksLimit:6,maxRotation:0,autoSkip:true,callback:function(v,index){ var lbl=clabels[index]; return lbl?lbl.split(' ')[0]:''; }}},y:{grid:{color:'rgba(255,255,255,.03)'},ticks:{color:'#4f5d88',font:{size:9},callback:function(v){return v+'€';}}}}}});
+            scales:{x:{display:true,grid:{display:false},ticks:{color:'#e8ecfa',font:{size:8},maxTicksLimit:6,maxRotation:0,autoSkip:true,callback:function(v,index){ var lbl=clabels[index]; var dOnly=lbl?lbl.split(' ')[0]:''; /* PAS DE DATE REPETEE (01/09, retour d'Antoine : "19 23 23 27..."). Chart.js
+                 choisit les INDEX a etiqueter par intervalle regulier, pas par date —
+                 deux index differents peuvent tomber sur la meme journee si plusieurs
+                 paris partagent une date. On saute silencieusement toute etiquette
+                 identique a la precedente affichee. */
+if(!dOnly || dOnly===_lastDateShown) return ''; _lastDateShown=dOnly; return dOnly; }}},y:{grid:{color:'rgba(255,255,255,.03)'},ticks:{color:'#e8ecfa',font:{size:9},callback:function(v){return v+'€';}}}}}});
         attachTouchTooltip('bilan-chart',function(){return _bilanChart;},'cib-bilan','cib-bilan-txt','cib-bilan-val');
     }
   }
@@ -9495,7 +9659,7 @@ function renderArchive(){
     setTimeout(function(){
       var ctx=$i('ac');if(!ctx)return;
       if(window._ac){try{window._ac.destroy();}catch(e){}}
-      window._ac=new Chart(ctx.getContext('2d'),{type:'bar',data:{labels:keys,datasets:[{data:profits,backgroundColor:profits.map(function(v){return v>=0?'rgba(30,215,96,.55)':'rgba(255,69,69,.55)';}),borderColor:profits.map(function(v){return v>=0?'#1ed760':'#ff4545';}),borderWidth:1,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#4f5d88',font:{size:9}},grid:{display:false}},y:{ticks:{color:'#4f5d88',font:{size:9},callback:function(v){return v+'€';}},grid:{color:'rgba(255,255,255,.03)'}}}}});
+      window._ac=new Chart(ctx.getContext('2d'),{type:'bar',data:{labels:keys,datasets:[{data:profits,backgroundColor:profits.map(function(v){return v>=0?'rgba(30,215,96,.55)':'rgba(255,69,69,.55)';}),borderColor:profits.map(function(v){return v>=0?'#1ed760':'#ff4545';}),borderWidth:1,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#e8ecfa',font:{size:9}},grid:{display:false}},y:{ticks:{color:'#e8ecfa',font:{size:9},callback:function(v){return v+'€';}},grid:{color:'rgba(255,255,255,.03)'}}}}});
     },60);
   }
   /* Grouper par semaine puis par jour */
@@ -9573,7 +9737,16 @@ function renderArchive(){
         var isSimpleA=(h.n==='SIMPLE');
         var adversaireA=(h.target&&h.target!=='-'&&!isSimpleA)?h.target:'';
         var titre=isSimpleA?(h.target&&h.target!=='-'?h.target:(h.n||'—')):(h.n||h.target||'—');
-        var sous='<span style="color:#7aa2ff;font-weight:800;font-size:11px;background:rgba(77,132,255,.16);padding:1px 7px;border-radius:5px;">@'+parseFloat(h.cote).toFixed(2)+'</span>'+(h.comp?' · '+h.comp:'')+(adversaireA?' · vs '+adversaireA:'');
+        /* TYPE DE PARI AJOUTE (01/09, retour d'Antoine : "dans archive contrairement
+           a global il manque le type de pari"). Meme calcul que dans le Bilan
+           (_g45BetRowMini) : "Victoire" seul se transforme en "Equipe gagne"
+           pour rester lisible, sinon le type s'affiche tel quel (Buteur,
+           Victoire + Over 2.5...). */
+        var typeTxtA=h.type||'';
+        if(/^victoire\b/i.test(typeTxtA) && titre.toLowerCase().indexOf(' vs ')===-1){
+          typeTxtA=titre+' '+typeTxtA.replace(/^victoire\b/i,'gagne');
+        }
+        var sous=(typeTxtA?typeTxtA+' · ':'')+'<span style="color:#7aa2ff;font-weight:800;font-size:11px;background:rgba(77,132,255,.16);padding:1px 7px;border-radius:5px;">@'+parseFloat(h.cote).toFixed(2)+'</span>'+(h.comp?' · '+h.comp:'')+(adversaireA?' · vs '+adversaireA:'');
         /* IDENTITE VISUELLE + SCORE (28/08) : port de ce qui existe deja sur la
            liste du Bilan (`_g45BetRowMini`) — cette liste-ci (onglet PARI) ne
            les avait jamais eus. Meme logique : couleur+logo du club pour une
@@ -9602,6 +9775,7 @@ function renderArchive(){
           +'<div style="position:relative;display:flex;flex-direction:column;gap:3px;flex-shrink:0;">'
           +'<a href="https://www.google.com/search?q='+encodeURIComponent(titre+' sofascore')+'" target="_blank" style="background:none;border:none;color:#ff7b54;font-size:13px;cursor:pointer;padding:0;text-decoration:none;" title="Sofascore">⚡</a>'
           +'<button data-titre="'+titre.replace(/"/g,'&quot;')+'" data-date="'+(h.date||'')+'" data-comp="'+(h.comp||'')+'" onclick="var d=this.dataset;ouvrirYouTubeAvecScore(d.titre,d.date,d.comp)" style="background:none;border:none;color:#ff0000;font-size:13px;cursor:pointer;padding:0;" title="YouTube highlights">▶️</button>'
+          +'<button data-aid="'+h.id+'" onclick="g45PartagerPari(this.dataset.aid)" style="background:none;border:none;color:#4d84ff;font-size:14px;cursor:pointer;padding:0;" title="Partager ce pari en image">📤</button>'
           +'<button data-aid="'+h.id+'" onclick="openBetEdit(this.dataset.aid)" style="background:none;border:none;color:var(--t3);font-size:14px;cursor:pointer;padding:0;">✏️</button>'
           +'<button data-aid="'+h.id+'" onclick="deleteArchived(this.dataset.aid)" style="background:none;border:none;color:var(--r);font-size:14px;cursor:pointer;padding:0;">🗑</button>'
           +'</div>'
@@ -9670,8 +9844,8 @@ function renderChartMoisBar(){
     type:'bar',data:{labels:labels,datasets:[{data:data,backgroundColor:colors,borderRadius:5,borderSkipped:false}]},
     options:{animation:false,responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:{callbacks:{label:function(i){return (i.raw>=0?'+':'')+i.raw.toFixed(2)+'€';}}}},
-      scales:{x:{ticks:{color:'#4f5d88',font:{size:9}},grid:{display:false}},
-        y:{grid:{color:'rgba(255,255,255,.03)'},ticks:{color:'#4f5d88',font:{size:9},callback:function(v){return v+'€';}}}}}
+      scales:{x:{ticks:{color:'#e8ecfa',font:{size:9}},grid:{display:false}},
+        y:{grid:{color:'rgba(255,255,255,.03)'},ticks:{color:'#e8ecfa',font:{size:9},callback:function(v){return v+'€';}}}}}
   });
   attachTouchTooltip('chart-mois-bar',function(){return window._gcMoisBar;},'','','');
 }
@@ -9698,13 +9872,13 @@ function renderChartSport(){
     type:'bar',data:{labels:labels,datasets:[{data:profits,backgroundColor:pColors,borderRadius:5,borderSkipped:false}]},
     options:{animation:false,responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:{callbacks:{label:function(i){return (i.raw>=0?'+':'')+i.raw.toFixed(2)+'€';}}}},
-      scales:{x:{ticks:{color:'#4f5d88',font:{size:9}},grid:{display:false}},y:{grid:{color:'rgba(255,255,255,.03)'},ticks:{color:'#4f5d88',font:{size:9},callback:function(v){return v+'€';}}}}}
+      scales:{x:{ticks:{color:'#e8ecfa',font:{size:9}},grid:{display:false}},y:{grid:{color:'rgba(255,255,255,.03)'},ticks:{color:'#e8ecfa',font:{size:9},callback:function(v){return v+'€';}}}}}
   });
   if(ctxWr)window._gcSportWr=new Chart(ctxWr.getContext('2d'),{
     type:'bar',data:{labels:labels,datasets:[{data:wrs,backgroundColor:wrColors,borderRadius:5,borderSkipped:false}]},
     options:{animation:false,responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:{callbacks:{label:function(i){return i.raw+'%';}}}},
-      scales:{x:{ticks:{color:'#4f5d88',font:{size:9}},grid:{display:false}},y:{min:0,max:100,grid:{color:'rgba(255,255,255,.03)'},ticks:{color:'#4f5d88',font:{size:9},callback:function(v){return v+'%';}}}}}
+      scales:{x:{ticks:{color:'#e8ecfa',font:{size:9}},grid:{display:false}},y:{min:0,max:100,grid:{color:'rgba(255,255,255,.03)'},ticks:{color:'#e8ecfa',font:{size:9},callback:function(v){return v+'%';}}}}}
   });
 }
 
@@ -9727,7 +9901,7 @@ function renderChartTypeBen(){
     type:'bar',data:{labels:labels,datasets:[{data:data,backgroundColor:colors,borderRadius:5,borderSkipped:false}]},
     options:{animation:false,responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:{callbacks:{label:function(i){return (i.raw>=0?'+':'')+i.raw.toFixed(2)+'€';}}}},
-      scales:{x:{ticks:{color:'#4f5d88',font:{size:9},maxRotation:30},grid:{display:false}},y:{grid:{color:'rgba(255,255,255,.03)'},ticks:{color:'#4f5d88',font:{size:9},callback:function(v){return v+'€';}}}}}
+      scales:{x:{ticks:{color:'#e8ecfa',font:{size:9},maxRotation:30},grid:{display:false}},y:{grid:{color:'rgba(255,255,255,.03)'},ticks:{color:'#e8ecfa',font:{size:9},callback:function(v){return v+'€';}}}}}
   });
 }
 
@@ -9875,8 +10049,11 @@ function renderGlobalChart(){
               title:function(ii){if(!ii||!ii.length)return '';var l=glabels[ii[0].dataIndex]||'';return l.split('||')[0]||'Départ';},
               label:function(ii){if(!ii||ii.dataIndex===undefined)return '';var l=glabels[ii.dataIndex]||'';var parts=l.split('||');return parts[1]?'Capital : '+ii.raw.toFixed(2)+'€  '+parts[1]:'Capital : '+ii.raw.toFixed(2)+'€';}
             }}},
-        scales:{x:{display:false},y:{grid:{color:'rgba(255,255,255,.03)'},border:{display:false},
-          ticks:{color:'#4f5d88',font:{size:10},maxTicksLimit:4,callback:function(v){return v+'€';}}}}
+        /* AXE DES DATES AJOUTE (01/09, retour d'Antoine). Meme principe que les
+           autres graphiques corriges ce jour : `maxTicksLimit` s'adapte tout
+           seul au volume de paris, anti-doublon de date consecutive. */
+        scales:{x:{display:true,grid:{display:false},ticks:{color:'#e8ecfa',font:{size:8},maxTicksLimit:6,maxRotation:0,autoSkip:true,callback:(function(){var last=null;return function(v,index){var lbl=glabels[index];var d=lbl?lbl.split('||')[0].split(' ')[0]:'';if(!d||d===last)return '';last=d;return d;};})()}},y:{grid:{color:'rgba(255,255,255,.03)'},border:{display:false},
+          ticks:{color:'#e8ecfa',font:{size:10},maxTicksLimit:4,callback:function(v){return v+'€';}}}}
       }
     });
 
@@ -10196,7 +10373,7 @@ function openClub(nom,idx){
           options:{
             responsive:true,maintainAspectRatio:false,
             plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(8,11,18,.96)',borderColor:p.border,borderWidth:1,titleColor:'#4f5d88',bodyColor:p.c,bodyFont:{weight:'bold'},callbacks:{title:function(ii){return lb[ii[0].dataIndex]||'';},label:function(ii){return (ii.raw>=0?'+':'')+ii.raw+'€';}}}},
-            scales:{x:{ticks:{color:'#4f5d88',font:{size:8},maxTicksLimit:6},grid:{display:false}},y:{grid:{color:'rgba(255,255,255,.03)'},ticks:{color:'#4f5d88',font:{size:9},callback:function(v){return v+'€';}}}}
+            scales:{x:{ticks:{color:'#e8ecfa',font:{size:8},maxTicksLimit:6},grid:{display:false}},y:{grid:{color:'rgba(255,255,255,.03)'},ticks:{color:'#e8ecfa',font:{size:9},callback:function(v){return v+'€';}}}}
           }
         });
       }
@@ -10211,7 +10388,7 @@ function openClub(nom,idx){
           options:{
             responsive:true,maintainAspectRatio:false,
             plugins:{legend:{display:false},tooltip:{callbacks:{label:function(i){return (i.raw>=0?'+':'')+i.raw.toFixed(2)+'€';}}}},
-            scales:{x:{ticks:{color:'#4f5d88',font:{size:9}},grid:{display:false}},y:{ticks:{color:'#4f5d88',font:{size:9},callback:function(v){return v+'€';}},grid:{color:'rgba(255,255,255,.03)'}}}
+            scales:{x:{ticks:{color:'#e8ecfa',font:{size:9}},grid:{display:false}},y:{ticks:{color:'#e8ecfa',font:{size:9},callback:function(v){return v+'€';}},grid:{color:'rgba(255,255,255,.03)'}}}
           }
         });
       }
@@ -11047,11 +11224,20 @@ function renderMultiCurveChart(){
     if(!$i('chart-multi'))return;
     if(window._gcM){try{window._gcM.destroy();}catch(e){}}window._gcM=null;
     var ct=$i('chart-multi').getContext('2d');
+    /* AXE DES DATES, EN APPROXIMATION ASSUMEE (01/09, retour d'Antoine). Ici,
+       contrairement au Bilan/Bankroll, chaque equipe a SA PROPRE sequence de
+       dates (le point d'index 5 de Real Madrid n'est pas force le meme jour
+       que le point d'index 5 du PSG) — il n'existe pas de "vraie" date par
+       position d'index commune a toutes les courbes. On prend donc la date de
+       la courbe la PLUS LONGUE comme reperage indicatif — utile pour se
+       reperer dans le temps, mais a lire comme approximatif sur les equipes
+       plus courtes, pas comme une date exacte pour chacune. */
+    var refLbl=active.reduce(function(best,d){ return (d._labels&&d._labels.length>(best?best.length:0))?d._labels:best; },null)||[];
     window._gcM=new Chart(ct,{type:'line',data:{labels:Array.from({length:maxLen},function(_,i){return i;}),datasets:active},options:{
       animation:false,responsive:true,maintainAspectRatio:false,interaction:{mode:'nearest',intersect:false},
       plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(8,11,18,.96)',borderColor:'rgba(255,255,255,.1)',borderWidth:1,
         callbacks:{title:function(ii){var d=active[0];return d&&d._labels?d._labels[ii[0].dataIndex]||'':'';},label:function(i){return ' '+i.dataset.label+' : '+(i.raw!==null?(i.raw>=0?'+':'')+i.raw.toFixed(2)+'€':'—');}}}},
-      scales:{x:{display:false},y:{grid:{color:'rgba(255,255,255,.03)'},border:{display:false},ticks:{color:'#4f5d88',font:{size:9},maxTicksLimit:4,callback:function(v){return v+'€';}}}}
+      scales:{x:{display:true,grid:{display:false},ticks:{color:'#e8ecfa',font:{size:8},maxTicksLimit:5,maxRotation:0,autoSkip:true,callback:(function(){var last=null;return function(v,index){var lbl=refLbl[index];var d=lbl?lbl.split(' ')[0]:'';if(!d||d===last)return '';last=d;return d;};})()}},y:{grid:{color:'rgba(255,255,255,.03)'},border:{display:false},ticks:{color:'#e8ecfa',font:{size:9},maxTicksLimit:4,callback:function(v){return v+'€';}}}}
     }});
     attachTouchTooltip('chart-multi',function(){return window._gcM;},'cib-multi','cib-multi-txt','cib-multi-val');
   },80);
@@ -11120,6 +11306,14 @@ function renderPaliersChart(){
     if(dom===null&&ext===null&&glob===null) glob=parseInt(u.l,10)||1;  // jamais engagee sur aucun lieu : repli
     domData.push(dom); extData.push(ext); globData.push(glob);
   });
+  /* BARRES HORIZONTALES (01/09, retour d'Antoine : trop resserre/illisible sur
+     mobile en vertical avec 11+ equipes — meme traitement que "Reussite par
+     sport", deja en barres horizontales et lisible sur tous les ecrans. La
+     hauteur du conteneur est desormais calculee selon le nombre d'equipes
+     (~30px par ligne) au lieu d'une hauteur fixe pensee pour un axe X court :
+     sans ca, toutes les lignes s'ecraseraient dans les 200px d'origine. */
+  var _hCont=ctx.parentElement;
+  if(_hCont) _hCont.style.height=Math.max(220, state.u.length*30)+'px';
   GC2.paliers=new Chart(ctx.getContext('2d'),{
     type:'bar',
     data:{labels:labels,datasets:[
@@ -11128,11 +11322,12 @@ function renderPaliersChart(){
       {label:'🌍 Global',data:globData,backgroundColor:'rgba(240,176,32,.75)',borderColor:'rgba(240,176,32,1)',borderWidth:1,borderRadius:4}
     ]},
     options:{
+      indexAxis:'y',
       responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:true,labels:{color:'#8b97c4',font:{size:9},boxWidth:10}},tooltip:{callbacks:{label:function(i){return i.raw!=null?(i.dataset.label+' : Palier '+i.raw):null;}}}},
       scales:{
-        x:{ticks:{color:'#4f5d88',font:{size:9}},grid:{display:false}},
-        y:{min:0,max:8,ticks:{color:'#4f5d88',font:{size:9},stepSize:1},grid:{color:'rgba(255,255,255,.03)'}}
+        y:{ticks:{color:'#e8ecfa',font:{size:9}},grid:{display:false}},
+        x:{min:0,max:8,ticks:{color:'#e8ecfa',font:{size:9},stepSize:1},grid:{color:'rgba(255,255,255,.03)'}}
       }
     }
   });
@@ -11167,7 +11362,7 @@ function renderRadarChart(){
     options:{
       responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:true,labels:{color:'#8b97c4',font:{size:10},boxWidth:10}}},
-      scales:{r:{ticks:{color:'#4f5d88',font:{size:9},backdropColor:'transparent'},grid:{color:'rgba(255,255,255,.07)'},pointLabels:{color:'#8b97c4',font:{size:9}}}}
+      scales:{r:{ticks:{color:'#e8ecfa',font:{size:9},backdropColor:'transparent'},grid:{color:'rgba(255,255,255,.07)'},pointLabels:{color:'#8b97c4',font:{size:9}}}}
     }
   });
 }
@@ -30720,7 +30915,36 @@ function _g45RenderFilteredArchive(){
     +'</div>';
   if(open){
     if(!sorted.length){ html+='<div style="padding:14px;color:var(--t3);font-size:11px;text-align:center;">Aucun pari pour ces filtres.</div>'; }
-    else { html+='<div style="max-height:62vh;overflow-y:auto;margin-top:8px;-webkit-overflow-scrolling:touch;">'+sorted.map(_g45BetRowMini).join('')+'</div>'; }
+    else {
+      /* SEPARATEUR PAR JOUR AVEC TOTAL (01/09, retour d'Antoine : "reprendre le
+         truc d'archive" — meme regroupement que renderArchive/onglet PARI,
+         absent ici jusque-la, cette liste etait un simple flux continu). */
+      var fullDayNames=['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+      var byDay={}, order=[];
+      sorted.forEach(function(h){
+        var dk=h.date||'Inconnu';
+        if(!byDay[dk]){ byDay[dk]=[]; order.push(dk); }
+        byDay[dk].push(h);
+      });
+      html+='<div style="max-height:62vh;overflow-y:auto;margin-top:8px;-webkit-overflow-scrolling:touch;">'
+        +order.map(function(dk){
+          var dayParis=byDay[dk];
+          var dayProfit=dayParis.reduce(function(a,h){var m=parseFloat(h.m||0);return a+(h.win?(m*parseFloat(h.cote||0)-m):-m);},0);
+          var dpC=dayProfit>=0?'var(--g)':'var(--r)';
+          var dayLabel=dk;
+          try{
+            var dp=dk.split('-');
+            if(dp.length===3){
+              var dt=new Date(parseInt(dp[0]),parseInt(dp[1])-1,parseInt(dp[2]));
+              dayLabel=fullDayNames[dt.getDay()]+' '+parseInt(dp[2]);
+            }
+          }catch(e){}
+          return '<div style="display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,.04);border-radius:8px;padding:7px 10px;margin:10px 0 4px;font-size:11px;font-weight:800;">'
+            +'<span style="color:var(--t1);">'+dayLabel+'</span><span style="color:'+dpC+';">'+(dayProfit>=0?'+':'')+dayProfit.toFixed(2)+'€</span></div>'
+            +dayParis.map(_g45BetRowMini).join('');
+        }).join('')
+        +'</div>';
+    }
   }
   box.innerHTML=html;
 }
