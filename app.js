@@ -4433,22 +4433,69 @@ function renderPaliersChart(){
      sans ca, toutes les lignes s'ecraseraient dans les 200px d'origine. */
   var _hCont=ctx.parentElement;
   if(_hCont) _hCont.style.height=Math.max(220, state.u.length*30)+'px';
-  GC2.paliers=new Chart(ctx.getContext('2d'),{
-    type:'bar',
-    data:{labels:labels,datasets:[
-      {label:'🏠 Domicile',data:domData,backgroundColor:'rgba(30,215,96,.75)',borderColor:'rgba(30,215,96,1)',borderWidth:1,borderRadius:4},
-      {label:'✈️ Extérieur',data:extData,backgroundColor:'rgba(77,132,255,.75)',borderColor:'rgba(77,132,255,1)',borderWidth:1,borderRadius:4},
-      {label:'🌍 Global',data:globData,backgroundColor:'rgba(240,176,32,.75)',borderColor:'rgba(240,176,32,1)',borderWidth:1,borderRadius:4}
-    ]},
-    options:{
-      indexAxis:'y',
-      responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:true,labels:{color:'#8b97c4',font:{size:9},boxWidth:10}},tooltip:{callbacks:{label:function(i){return i.raw!=null?(i.dataset.label+' : Palier '+i.raw):null;}}}},
-      scales:{
-        y:{ticks:{color:'#e8ecfa',font:{size:9}},grid:{display:false}},
-        x:{min:0,max:8,ticks:{color:'#e8ecfa',font:{size:9},stepSize:1},grid:{color:'rgba(255,255,255,.03)'}}
+  /* ECUSSONS SUR L'AXE (01/09, retour d'Antoine : "20 equipes qui se
+     ressemblent, difficile de reperer ou l'une finit et l'autre commence").
+     Meme logo que celui deja utilise partout ailleurs (`g45LogoUrlDe`).
+     Precharge d'abord CHAQUE image (Chart.js ne sait pas attendre un
+     chargement asynchrone tout seul), avec repli silencieux sur le texte
+     seul si le logo est absent ou ne charge pas. Plugin `afterDraw` plutot
+     que des ticks HTML : Chart.js dessine son axe sur un <canvas>, aucune
+     image DOM ne peut s'y superposer proprement autrement. */
+  var _logoImgs={};
+  var _preloads=state.u.map(function(u){
+    return new Promise(function(resolve){
+      var url=(typeof g45LogoUrlDe==='function')?g45LogoUrlDe(u.n):'';
+      if(!url){ resolve(); return; }
+      var img=new Image();
+      img.crossOrigin='anonymous';
+      img.onload=function(){ _logoImgs[u.n]=img; resolve(); };
+      img.onerror=function(){ resolve(); };
+      img.src=url;
+    });
+  });
+  Promise.all(_preloads).then(function(){
+    if(GC2.paliers){try{GC2.paliers.destroy();}catch(e){}}   // un autre appel a pu passer pendant le prechargement
+    if(!$i('chart-paliers')) return;
+    var _logoPlugin={
+      id:'g45TeamLogos',
+      afterFit:function(chart){ chart.scales.y.width=92; },
+      afterDraw:function(chart){
+        var yA=chart.scales.y, c=chart.ctx;
+        c.save();
+        state.u.forEach(function(u,i){
+          var yPix=yA.getPixelForTick(i);
+          var xStart=yA.left+4;
+          var img=_logoImgs[u.n];
+          if(img){
+            try{ c.drawImage(img, xStart, yPix-9, 18, 18); }catch(e){}
+            c.fillStyle='#e8ecfa'; c.font='9px sans-serif'; c.textBaseline='middle'; c.textAlign='left';
+            c.fillText(labels[i], xStart+23, yPix);
+          } else {
+            c.fillStyle='#e8ecfa'; c.font='9px sans-serif'; c.textBaseline='middle'; c.textAlign='left';
+            c.fillText(labels[i], xStart, yPix);
+          }
+        });
+        c.restore();
       }
-    }
+    };
+    GC2.paliers=new Chart($i('chart-paliers').getContext('2d'),{
+      type:'bar',
+      data:{labels:labels,datasets:[
+        {label:'🏠 Domicile',data:domData,backgroundColor:'rgba(30,215,96,.75)',borderColor:'rgba(30,215,96,1)',borderWidth:1,borderRadius:4},
+        {label:'✈️ Extérieur',data:extData,backgroundColor:'rgba(77,132,255,.75)',borderColor:'rgba(77,132,255,1)',borderWidth:1,borderRadius:4},
+        {label:'🌍 Global',data:globData,backgroundColor:'rgba(240,176,32,.75)',borderColor:'rgba(240,176,32,1)',borderWidth:1,borderRadius:4}
+      ]},
+      plugins:[_logoPlugin],
+      options:{
+        indexAxis:'y',
+        responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:true,labels:{color:'#8b97c4',font:{size:9},boxWidth:10}},tooltip:{callbacks:{label:function(i){return i.raw!=null?(i.dataset.label+' : Palier '+i.raw):null;}}}},
+        scales:{
+          y:{ticks:{display:false},grid:{display:false}},
+          x:{min:0,max:8,ticks:{color:'#e8ecfa',font:{size:9},stepSize:1},grid:{color:'rgba(255,255,255,.03)'}}
+        }
+      }
+    });
   });
 }
 
@@ -11329,22 +11376,69 @@ function renderPaliersChart(){
      sans ca, toutes les lignes s'ecraseraient dans les 200px d'origine. */
   var _hCont=ctx.parentElement;
   if(_hCont) _hCont.style.height=Math.max(220, state.u.length*30)+'px';
-  GC2.paliers=new Chart(ctx.getContext('2d'),{
-    type:'bar',
-    data:{labels:labels,datasets:[
-      {label:'🏠 Domicile',data:domData,backgroundColor:'rgba(30,215,96,.75)',borderColor:'rgba(30,215,96,1)',borderWidth:1,borderRadius:4},
-      {label:'✈️ Extérieur',data:extData,backgroundColor:'rgba(77,132,255,.75)',borderColor:'rgba(77,132,255,1)',borderWidth:1,borderRadius:4},
-      {label:'🌍 Global',data:globData,backgroundColor:'rgba(240,176,32,.75)',borderColor:'rgba(240,176,32,1)',borderWidth:1,borderRadius:4}
-    ]},
-    options:{
-      indexAxis:'y',
-      responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:true,labels:{color:'#8b97c4',font:{size:9},boxWidth:10}},tooltip:{callbacks:{label:function(i){return i.raw!=null?(i.dataset.label+' : Palier '+i.raw):null;}}}},
-      scales:{
-        y:{ticks:{color:'#e8ecfa',font:{size:9}},grid:{display:false}},
-        x:{min:0,max:8,ticks:{color:'#e8ecfa',font:{size:9},stepSize:1},grid:{color:'rgba(255,255,255,.03)'}}
+  /* ECUSSONS SUR L'AXE (01/09, retour d'Antoine : "20 equipes qui se
+     ressemblent, difficile de reperer ou l'une finit et l'autre commence").
+     Meme logo que celui deja utilise partout ailleurs (`g45LogoUrlDe`).
+     Precharge d'abord CHAQUE image (Chart.js ne sait pas attendre un
+     chargement asynchrone tout seul), avec repli silencieux sur le texte
+     seul si le logo est absent ou ne charge pas. Plugin `afterDraw` plutot
+     que des ticks HTML : Chart.js dessine son axe sur un <canvas>, aucune
+     image DOM ne peut s'y superposer proprement autrement. */
+  var _logoImgs={};
+  var _preloads=state.u.map(function(u){
+    return new Promise(function(resolve){
+      var url=(typeof g45LogoUrlDe==='function')?g45LogoUrlDe(u.n):'';
+      if(!url){ resolve(); return; }
+      var img=new Image();
+      img.crossOrigin='anonymous';
+      img.onload=function(){ _logoImgs[u.n]=img; resolve(); };
+      img.onerror=function(){ resolve(); };
+      img.src=url;
+    });
+  });
+  Promise.all(_preloads).then(function(){
+    if(GC2.paliers){try{GC2.paliers.destroy();}catch(e){}}   // un autre appel a pu passer pendant le prechargement
+    if(!$i('chart-paliers')) return;
+    var _logoPlugin={
+      id:'g45TeamLogos',
+      afterFit:function(chart){ chart.scales.y.width=92; },
+      afterDraw:function(chart){
+        var yA=chart.scales.y, c=chart.ctx;
+        c.save();
+        state.u.forEach(function(u,i){
+          var yPix=yA.getPixelForTick(i);
+          var xStart=yA.left+4;
+          var img=_logoImgs[u.n];
+          if(img){
+            try{ c.drawImage(img, xStart, yPix-9, 18, 18); }catch(e){}
+            c.fillStyle='#e8ecfa'; c.font='9px sans-serif'; c.textBaseline='middle'; c.textAlign='left';
+            c.fillText(labels[i], xStart+23, yPix);
+          } else {
+            c.fillStyle='#e8ecfa'; c.font='9px sans-serif'; c.textBaseline='middle'; c.textAlign='left';
+            c.fillText(labels[i], xStart, yPix);
+          }
+        });
+        c.restore();
       }
-    }
+    };
+    GC2.paliers=new Chart($i('chart-paliers').getContext('2d'),{
+      type:'bar',
+      data:{labels:labels,datasets:[
+        {label:'🏠 Domicile',data:domData,backgroundColor:'rgba(30,215,96,.75)',borderColor:'rgba(30,215,96,1)',borderWidth:1,borderRadius:4},
+        {label:'✈️ Extérieur',data:extData,backgroundColor:'rgba(77,132,255,.75)',borderColor:'rgba(77,132,255,1)',borderWidth:1,borderRadius:4},
+        {label:'🌍 Global',data:globData,backgroundColor:'rgba(240,176,32,.75)',borderColor:'rgba(240,176,32,1)',borderWidth:1,borderRadius:4}
+      ]},
+      plugins:[_logoPlugin],
+      options:{
+        indexAxis:'y',
+        responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:true,labels:{color:'#8b97c4',font:{size:9},boxWidth:10}},tooltip:{callbacks:{label:function(i){return i.raw!=null?(i.dataset.label+' : Palier '+i.raw):null;}}}},
+        scales:{
+          y:{ticks:{display:false},grid:{display:false}},
+          x:{min:0,max:8,ticks:{color:'#e8ecfa',font:{size:9},stepSize:1},grid:{color:'rgba(255,255,255,.03)'}}
+        }
+      }
+    });
   });
 }
 
