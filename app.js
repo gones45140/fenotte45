@@ -4466,7 +4466,7 @@ function renderPaliersChart(){
            SANS logo se noient completement sans repere, meme avec le nom en
            face). Une ligne fine au MILIEU de l'espace entre deux equipes —
            pas sur une equipe elle-meme — pour ne jamais couper une barre. */
-        c.strokeStyle='rgba(255,255,255,.12)'; c.lineWidth=1;
+        c.strokeStyle='rgba(255,255,255,.85)'; c.lineWidth=2;
         for(var i=0;i<state.u.length-1;i++){
           var mid=(yA.getPixelForTick(i)+yA.getPixelForTick(i+1))/2;
           c.beginPath(); c.moveTo(area.left, mid); c.lineTo(area.right, mid); c.stroke();
@@ -11418,7 +11418,7 @@ function renderPaliersChart(){
            SANS logo se noient completement sans repere, meme avec le nom en
            face). Une ligne fine au MILIEU de l'espace entre deux equipes —
            pas sur une equipe elle-meme — pour ne jamais couper une barre. */
-        c.strokeStyle='rgba(255,255,255,.12)'; c.lineWidth=1;
+        c.strokeStyle='rgba(255,255,255,.85)'; c.lineWidth=2;
         for(var i=0;i<state.u.length-1;i++){
           var mid=(yA.getPixelForTick(i)+yA.getPixelForTick(i+1))/2;
           c.beginPath(); c.moveTo(area.left, mid); c.lineTo(area.right, mid); c.stroke();
