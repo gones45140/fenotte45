@@ -1784,8 +1784,31 @@ function filteredA(){
   if(window._bilanBkFilter) filtered=filtered.filter(function(h){return h.b===window._bilanBkFilter;});
    if(window._bilanType&&window._bilanType!=='all') filtered=filtered.filter(function(h){return _normType(h.type)===window._bilanType;});
    if(window._bilanComp&&window._bilanComp!=='all') filtered=filtered.filter(function(h){return ((h.comp||'').trim()||'(sans)')===window._bilanComp;});
+  /* PERIODE RAPIDE (01/09, inspire de FlashBooost, retour d'Antoine) : filtre
+     complementaire au mois exact deja existant — coexistent sans se marcher
+     dessus puisque bilanMonth reste 'ALL' par defaut tant que la section
+     "Par mois" n'est pas utilisee. */
+  if(window._bilanPeriode && window._bilanPeriode!=='all'){
+    var _jours={'1j':1,'1s':7,'1m':30,'1a':365}[window._bilanPeriode];
+    if(_jours){
+      var _cut=new Date(); _cut.setHours(0,0,0,0); _cut.setDate(_cut.getDate()-_jours);
+      filtered=filtered.filter(function(h){ var d=new Date((h.date||'')+'T00:00:00'); return !isNaN(d.getTime()) && d>=_cut; });
+    }
+  }
   return filtered;
 }
+function _renderBilanPeriodeChips(){
+  var box=$i('bilan-periode-chips'); if(!box) return;
+  var defs=[['1j','1J'],['1s','1S'],['1m','1M'],['1a','1A'],['all','Tout']];
+  var cur=window._bilanPeriode||'all';
+  box.innerHTML=defs.map(function(d){
+    var on=cur===d[0];
+    return '<button onclick="setBilanPeriode(\''+d[0]+'\')" style="flex:1;border:none;border-radius:8px;padding:7px 4px;font-size:11px;font-weight:800;cursor:pointer;background:'+(on?'#1ed760':'rgba(255,255,255,.06)')+';color:'+(on?'#0b1a10':'var(--t2)')+';">'+d[1]+'</button>';
+  }).join('');
+}
+function setBilanPeriode(p){ window._bilanPeriode=p; _renderBilanPeriodeChips(); try{renderBilanTab();}catch(e){} try{renderGlobalCharts();}catch(e){} }
+window.setBilanPeriode=setBilanPeriode;
+window._renderBilanPeriodeChips=_renderBilanPeriodeChips;
 
 /* ── BILAN TAB (autonome) ── */
 var _bilanChart=null;
@@ -1898,6 +1921,7 @@ function renderAdvancedCharts(paris, bankroll) {
 }
 function renderBilanTab(){
   renderSportFilter();
+  try{_renderBilanPeriodeChips();}catch(e){}
   var paris=filteredA();
   /* Stats */
   var ben=paris.reduce(function(a,h){return a+(h.win?(h.m*h.cote)-h.m:-h.m);},0);
@@ -1920,7 +1944,7 @@ function renderBilanTab(){
       var color=bilanMode==='flash'?'#f0b020':bilanMode==='cockpit'?'#4d84ff':bilanMode==='simple'?'#22d3ee':'#1ed760';
       var ct=ctx.getContext('2d');
       var g=ct.createLinearGradient(0,0,0,150);
-      g.addColorStop(0,color+'44');g.addColorStop(1,color+'00');
+      g.addColorStop(0,color+'99');g.addColorStop(1,color+'00');   // degrade renforce (01/09, inspire de FlashBooost)
 
       // Courbes par bookmaker
       var datasets = [{label:'Global',data:curve,borderColor:color,backgroundColor:g,borderWidth:2,fill:true,tension:.4,pointRadius:2,pointBackgroundColor:color,pointHoverRadius:5,pointHoverBorderColor:'#fff',pointHoverBorderWidth:2}];
@@ -2577,14 +2601,14 @@ function renderArchive(){
         var _idFilig=_idLogo
           ?('<img src="'+_idLogo+'" alt="" loading="lazy" onerror="this.style.display=\'none\'" style="position:absolute;right:2px;top:50%;transform:translateY(-50%);height:32px;width:32px;object-fit:contain;opacity:.5;filter:drop-shadow(0 1px 3px rgba(0,0,0,.5));pointer-events:none;">')
           :((isSimpleA&&b2.d)?('<img src="https://www.google.com/s2/favicons?domain='+b2.d+'&sz=64" alt="" loading="lazy" onerror="this.style.display=\'none\'" style="position:absolute;right:2px;top:50%;transform:translateY(-50%);height:24px;width:24px;object-fit:contain;opacity:.55;border-radius:6px;filter:drop-shadow(0 1px 3px rgba(0,0,0,.5));pointer-events:none;">'):'');
-        var _scoreA=(typeof _g45ScoreTexte==='function')?_g45ScoreTexte(h):'';
+        var _scoreA=h.isCombi?((typeof _g45ScoreTexteCombi==='function')?_g45ScoreTexteCombi(h):''):((typeof _g45ScoreTexte==='function')?_g45ScoreTexte(h):'');
         return '<div style="position:relative;overflow:hidden;display:flex;align-items:center;padding:8px 10px;background:linear-gradient(100deg,'+_idColor+'40 0%,'+borderC+'20 60%,var(--s1) 100%);border-radius:var(--r6);margin-bottom:4px;border-left:3px solid '+borderC+';gap:8px;">'
           +'<div style="position:relative;font-size:10px;color:var(--t3);min-width:32px;flex-shrink:0;text-align:center;">'+(h.heure||'—')+'</div>'
           +bkBadge+sportIco
           +'<div data-aid="'+h.id+'" onclick="openBetEdit(this.dataset.aid)" style="position:relative;flex:1;min-width:0;overflow:hidden;cursor:pointer;">'
           +_idFilig
           +'<div style="position:relative;font-size:12px;font-weight:700;color:var(--t1);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word;line-height:1.25;">'+titre+'</div>'
-          +(_scoreA?'<div style="position:relative;font-size:10px;font-weight:800;color:var(--t1);background:rgba(255,255,255,.10);display:inline-block;padding:1px 6px;border-radius:5px;margin:1px 0;">📊 '+_scoreA+'</div>':'')
+          +(_scoreA?'<div style="position:relative;font-size:10px;font-weight:800;color:var(--t1);background:rgba(255,255,255,.10);display:inline-block;padding:1px 6px;border-radius:5px;margin:1px 0;max-width:100%;white-space:normal;word-break:break-word;">📊 '+_scoreA+'</div>':'')
           +'<div style="position:relative;font-size:10px;color:var(--t3);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word;line-height:1.3;">'+sous+'</div>'
           +'</div>'
           +'<div style="position:relative;text-align:right;flex-shrink:0;">'
@@ -4396,11 +4420,59 @@ function renderBooksChart(){
   });
 }
 
+/* SELECTEUR D'EQUIPES (01/09, retour d'Antoine : "rajouter un selectif
+   equipes et en mettre moins") — meme mecanisme que le picker deja existant
+   sur "Profit par equipe" (`_multiSelected`/`toggleCurvePicker`), duplique a
+   l'identique pour ce graphique avec son propre etat (`_paliersSelected`) et
+   son propre plafond (8, plus genereux que les 5 de l'autre picker puisque
+   les barres horizontales supportent mieux davantage de lignes). */
+var _paliersSelected=null;
+function togglePaliersPicker(){
+  var p=$i('paliers-picker');if(!p)return;
+  var open=p.style.display==='block';
+  p.style.display=open?'none':'block';
+  if(!open){renderPaliersPicker();setTimeout(function(){document.addEventListener('click',function h(e){var btn=$i('paliers-picker-btn'),pk=$i('paliers-picker');if(pk&&btn&&!pk.contains(e.target)&&!btn.contains(e.target)){pk.style.display='none';document.removeEventListener('click',h);}});},50);}
+}
+window.togglePaliersPicker=togglePaliersPicker;
+function _paliersEquipesActives(){
+  var all=state.u;
+  if(!_paliersSelected)_paliersSelected={};
+  var hasSelection=Object.values(_paliersSelected).some(Boolean);
+  if(!hasSelection){ all.forEach(function(u,i){_paliersSelected[u.n]=i<8;}); }
+  else { all.forEach(function(u){ if(_paliersSelected[u.n]===undefined) _paliersSelected[u.n]=false; }); }
+  return all.filter(function(u){return _paliersSelected[u.n];});
+}
+function renderPaliersPicker(){
+  var list=$i('paliers-picker-list');if(!list)return;
+  if(!_paliersSelected)_paliersSelected={};
+  var cnt=Object.values(_paliersSelected).filter(Boolean).length;
+  list.innerHTML=state.u.map(function(u){
+    var on=!!_paliersSelected[u.n];var dis=!on&&cnt>=8;
+    var sn=u.n.replace(/"/g,'&quot;');
+    return '<label style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--b1);cursor:'+(dis?'not-allowed':'pointer')+';opacity:'+(dis?'.45':'1')+';">'
+      +'<input type="checkbox" '+(on?'checked':'')+' '+(dis&&!on?'disabled':'')+' data-nom="'+sn+'" onchange="togglePaliersTeam(this)" style="accent-color:'+(u.color||'#4d84ff')+';width:15px;height:15px;flex-shrink:0;">'
+      +'<span style="font-size:12px;font-weight:600;flex:1;">'+u.n+'</span>'
+      +(on?'<span style="font-size:9px;color:'+(u.color||'#4d84ff')+';font-weight:700;">✓</span>':'')+'</label>';
+  }).join('');
+  var btn=$i('paliers-picker-btn');if(btn)btn.textContent='⚙️ '+cnt+'/8';
+}
+window.renderPaliersPicker=renderPaliersPicker;
+function togglePaliersTeam(el){
+  var nom=el.dataset.nom;var checked=el.checked;
+  if(!_paliersSelected)_paliersSelected={};
+  var cnt=Object.values(_paliersSelected).filter(Boolean).length;
+  if(checked&&cnt>=8){el.checked=false;renderPaliersPicker();return;}
+  _paliersSelected[nom]=checked;renderPaliersPicker();renderPaliersChart();
+}
+window.togglePaliersTeam=togglePaliersTeam;
 function renderPaliersChart(){
   var ctx=$i('chart-paliers');if(!ctx)return;
   if(GC2.paliers){try{GC2.paliers.destroy();}catch(e){}}
   if(!state.u.length){ctx.parentElement.innerHTML='<div class="empty">Aucune équipe</div>';return;}
-  var labels=state.u.map(function(u){return u.n.substring(0,8);});
+  var uList=_paliersEquipesActives();
+  try{renderPaliersPicker();}catch(e){}
+  if(!uList.length){ctx.parentElement.innerHTML='<div class="empty">Aucune équipe sélectionnée — clique sur ⚙️.</div>';return;}
+  var labels=uList.map(function(u){return u.n.substring(0,8);});
   /* SEPARE PAR LIEU (31/08, retour d'Antoine : "il distingue pas les 3
      modes global/domicile/exterieur"). Ce graphique ne lisait que `u.l`, le
      champ HERITE d'avant la separation dom/ext du 22/08 — il ne porte que le
@@ -4413,7 +4485,7 @@ function renderPaliersChart(){
      QUEL LIEU — l'ancien code couleur par niveau de risque n'a plus de sens
      des qu'il faut distinguer 3 series au lieu d'une seule barre. */
   var domData=[], extData=[], globData=[];
-  state.u.forEach(function(u){
+  uList.forEach(function(u){
     var dom=null, ext=null, glob=null;
     if(u.lc){
       Object.keys(u.lc).forEach(function(k){
@@ -4432,7 +4504,7 @@ function renderPaliersChart(){
      (~30px par ligne) au lieu d'une hauteur fixe pensee pour un axe X court :
      sans ca, toutes les lignes s'ecraseraient dans les 200px d'origine. */
   var _hCont=ctx.parentElement;
-  if(_hCont) _hCont.style.height=Math.max(220, state.u.length*30)+'px';
+  if(_hCont) _hCont.style.height=Math.max(220, uList.length*30)+'px';
   /* ECUSSONS SUR L'AXE (01/09, retour d'Antoine : "20 equipes qui se
      ressemblent, difficile de reperer ou l'une finit et l'autre commence").
      Meme logo que celui deja utilise partout ailleurs (`g45LogoUrlDe`).
@@ -4442,7 +4514,7 @@ function renderPaliersChart(){
      que des ticks HTML : Chart.js dessine son axe sur un <canvas>, aucune
      image DOM ne peut s'y superposer proprement autrement. */
   var _logoImgs={};
-  var _preloads=state.u.map(function(u){
+  var _preloads=uList.map(function(u){
     return new Promise(function(resolve){
       var url=(typeof g45LogoUrlDe==='function')?g45LogoUrlDe(u.n):'';
       if(!url){ resolve(); return; }
@@ -4467,11 +4539,11 @@ function renderPaliersChart(){
            face). Une ligne fine au MILIEU de l'espace entre deux equipes —
            pas sur une equipe elle-meme — pour ne jamais couper une barre. */
         c.strokeStyle='rgba(255,255,255,.85)'; c.lineWidth=2;
-        for(var i=0;i<state.u.length-1;i++){
+        for(var i=0;i<uList.length-1;i++){
           var mid=(yA.getPixelForTick(i)+yA.getPixelForTick(i+1))/2;
           c.beginPath(); c.moveTo(area.left, mid); c.lineTo(area.right, mid); c.stroke();
         }
-        state.u.forEach(function(u,i){
+        uList.forEach(function(u,i){
           var yPix=yA.getPixelForTick(i);
           var xStart=yA.left+4;
           var img=_logoImgs[u.n];
@@ -9035,8 +9107,31 @@ function filteredA(){
   if(window._bilanBkFilter) filtered=filtered.filter(function(h){return h.b===window._bilanBkFilter;});
    if(window._bilanType&&window._bilanType!=='all') filtered=filtered.filter(function(h){return _normType(h.type)===window._bilanType;});
    if(window._bilanComp&&window._bilanComp!=='all') filtered=filtered.filter(function(h){return ((h.comp||'').trim()||'(sans)')===window._bilanComp;});
+  /* PERIODE RAPIDE (01/09, inspire de FlashBooost, retour d'Antoine) : filtre
+     complementaire au mois exact deja existant — coexistent sans se marcher
+     dessus puisque bilanMonth reste 'ALL' par defaut tant que la section
+     "Par mois" n'est pas utilisee. */
+  if(window._bilanPeriode && window._bilanPeriode!=='all'){
+    var _jours={'1j':1,'1s':7,'1m':30,'1a':365}[window._bilanPeriode];
+    if(_jours){
+      var _cut=new Date(); _cut.setHours(0,0,0,0); _cut.setDate(_cut.getDate()-_jours);
+      filtered=filtered.filter(function(h){ var d=new Date((h.date||'')+'T00:00:00'); return !isNaN(d.getTime()) && d>=_cut; });
+    }
+  }
   return filtered;
 }
+function _renderBilanPeriodeChips(){
+  var box=$i('bilan-periode-chips'); if(!box) return;
+  var defs=[['1j','1J'],['1s','1S'],['1m','1M'],['1a','1A'],['all','Tout']];
+  var cur=window._bilanPeriode||'all';
+  box.innerHTML=defs.map(function(d){
+    var on=cur===d[0];
+    return '<button onclick="setBilanPeriode(\''+d[0]+'\')" style="flex:1;border:none;border-radius:8px;padding:7px 4px;font-size:11px;font-weight:800;cursor:pointer;background:'+(on?'#1ed760':'rgba(255,255,255,.06)')+';color:'+(on?'#0b1a10':'var(--t2)')+';">'+d[1]+'</button>';
+  }).join('');
+}
+function setBilanPeriode(p){ window._bilanPeriode=p; _renderBilanPeriodeChips(); try{renderBilanTab();}catch(e){} try{renderGlobalCharts();}catch(e){} }
+window.setBilanPeriode=setBilanPeriode;
+window._renderBilanPeriodeChips=_renderBilanPeriodeChips;
 
 /* ── BILAN TAB (autonome) ── */
 var _bilanChart=null;
@@ -9149,6 +9244,7 @@ function renderAdvancedCharts(paris, bankroll) {
 }
 function renderBilanTab(){
   renderSportFilter();
+  try{_renderBilanPeriodeChips();}catch(e){}
   var paris=filteredA();
   /* Stats */
   var ben=paris.reduce(function(a,h){return a+(h.win?(h.m*h.cote)-h.m:-h.m);},0);
@@ -9171,7 +9267,7 @@ function renderBilanTab(){
       var color=bilanMode==='flash'?'#f0b020':bilanMode==='cockpit'?'#4d84ff':bilanMode==='simple'?'#22d3ee':'#1ed760';
       var ct=ctx.getContext('2d');
       var g=ct.createLinearGradient(0,0,0,150);
-      g.addColorStop(0,color+'44');g.addColorStop(1,color+'00');
+      g.addColorStop(0,color+'99');g.addColorStop(1,color+'00');   // degrade renforce (01/09, inspire de FlashBooost)
 
       // Courbes par bookmaker
       var datasets = [{label:'Global',data:curve,borderColor:color,backgroundColor:g,borderWidth:2,fill:true,tension:.4,pointRadius:2,pointBackgroundColor:color,pointHoverRadius:5,pointHoverBorderColor:'#fff',pointHoverBorderWidth:2}];
@@ -9828,14 +9924,14 @@ function renderArchive(){
         var _idFilig=_idLogo
           ?('<img src="'+_idLogo+'" alt="" loading="lazy" onerror="this.style.display=\'none\'" style="position:absolute;right:2px;top:50%;transform:translateY(-50%);height:32px;width:32px;object-fit:contain;opacity:.5;filter:drop-shadow(0 1px 3px rgba(0,0,0,.5));pointer-events:none;">')
           :((isSimpleA&&b2.d)?('<img src="https://www.google.com/s2/favicons?domain='+b2.d+'&sz=64" alt="" loading="lazy" onerror="this.style.display=\'none\'" style="position:absolute;right:2px;top:50%;transform:translateY(-50%);height:24px;width:24px;object-fit:contain;opacity:.55;border-radius:6px;filter:drop-shadow(0 1px 3px rgba(0,0,0,.5));pointer-events:none;">'):'');
-        var _scoreA=(typeof _g45ScoreTexte==='function')?_g45ScoreTexte(h):'';
+        var _scoreA=h.isCombi?((typeof _g45ScoreTexteCombi==='function')?_g45ScoreTexteCombi(h):''):((typeof _g45ScoreTexte==='function')?_g45ScoreTexte(h):'');
         return '<div style="position:relative;overflow:hidden;display:flex;align-items:center;padding:8px 10px;background:linear-gradient(100deg,'+_idColor+'40 0%,'+borderC+'20 60%,var(--s1) 100%);border-radius:var(--r6);margin-bottom:4px;border-left:3px solid '+borderC+';gap:8px;">'
           +'<div style="position:relative;font-size:10px;color:var(--t3);min-width:32px;flex-shrink:0;text-align:center;">'+(h.heure||'—')+'</div>'
           +bkBadge+sportIco
           +'<div data-aid="'+h.id+'" onclick="openBetEdit(this.dataset.aid)" style="position:relative;flex:1;min-width:0;overflow:hidden;cursor:pointer;">'
           +_idFilig
           +'<div style="position:relative;font-size:12px;font-weight:700;color:var(--t1);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word;line-height:1.25;">'+titre+'</div>'
-          +(_scoreA?'<div style="position:relative;font-size:10px;font-weight:800;color:var(--t1);background:rgba(255,255,255,.10);display:inline-block;padding:1px 6px;border-radius:5px;margin:1px 0;">📊 '+_scoreA+'</div>':'')
+          +(_scoreA?'<div style="position:relative;font-size:10px;font-weight:800;color:var(--t1);background:rgba(255,255,255,.10);display:inline-block;padding:1px 6px;border-radius:5px;margin:1px 0;max-width:100%;white-space:normal;word-break:break-word;">📊 '+_scoreA+'</div>':'')
           +'<div style="position:relative;font-size:10px;color:var(--t3);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word;line-height:1.3;">'+sous+'</div>'
           +'</div>'
           +'<div style="position:relative;text-align:right;flex-shrink:0;">'
@@ -11348,11 +11444,59 @@ function renderBooksChart(){
   });
 }
 
+/* SELECTEUR D'EQUIPES (01/09, retour d'Antoine : "rajouter un selectif
+   equipes et en mettre moins") — meme mecanisme que le picker deja existant
+   sur "Profit par equipe" (`_multiSelected`/`toggleCurvePicker`), duplique a
+   l'identique pour ce graphique avec son propre etat (`_paliersSelected`) et
+   son propre plafond (8, plus genereux que les 5 de l'autre picker puisque
+   les barres horizontales supportent mieux davantage de lignes). */
+var _paliersSelected=null;
+function togglePaliersPicker(){
+  var p=$i('paliers-picker');if(!p)return;
+  var open=p.style.display==='block';
+  p.style.display=open?'none':'block';
+  if(!open){renderPaliersPicker();setTimeout(function(){document.addEventListener('click',function h(e){var btn=$i('paliers-picker-btn'),pk=$i('paliers-picker');if(pk&&btn&&!pk.contains(e.target)&&!btn.contains(e.target)){pk.style.display='none';document.removeEventListener('click',h);}});},50);}
+}
+window.togglePaliersPicker=togglePaliersPicker;
+function _paliersEquipesActives(){
+  var all=state.u;
+  if(!_paliersSelected)_paliersSelected={};
+  var hasSelection=Object.values(_paliersSelected).some(Boolean);
+  if(!hasSelection){ all.forEach(function(u,i){_paliersSelected[u.n]=i<8;}); }
+  else { all.forEach(function(u){ if(_paliersSelected[u.n]===undefined) _paliersSelected[u.n]=false; }); }
+  return all.filter(function(u){return _paliersSelected[u.n];});
+}
+function renderPaliersPicker(){
+  var list=$i('paliers-picker-list');if(!list)return;
+  if(!_paliersSelected)_paliersSelected={};
+  var cnt=Object.values(_paliersSelected).filter(Boolean).length;
+  list.innerHTML=state.u.map(function(u){
+    var on=!!_paliersSelected[u.n];var dis=!on&&cnt>=8;
+    var sn=u.n.replace(/"/g,'&quot;');
+    return '<label style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--b1);cursor:'+(dis?'not-allowed':'pointer')+';opacity:'+(dis?'.45':'1')+';">'
+      +'<input type="checkbox" '+(on?'checked':'')+' '+(dis&&!on?'disabled':'')+' data-nom="'+sn+'" onchange="togglePaliersTeam(this)" style="accent-color:'+(u.color||'#4d84ff')+';width:15px;height:15px;flex-shrink:0;">'
+      +'<span style="font-size:12px;font-weight:600;flex:1;">'+u.n+'</span>'
+      +(on?'<span style="font-size:9px;color:'+(u.color||'#4d84ff')+';font-weight:700;">✓</span>':'')+'</label>';
+  }).join('');
+  var btn=$i('paliers-picker-btn');if(btn)btn.textContent='⚙️ '+cnt+'/8';
+}
+window.renderPaliersPicker=renderPaliersPicker;
+function togglePaliersTeam(el){
+  var nom=el.dataset.nom;var checked=el.checked;
+  if(!_paliersSelected)_paliersSelected={};
+  var cnt=Object.values(_paliersSelected).filter(Boolean).length;
+  if(checked&&cnt>=8){el.checked=false;renderPaliersPicker();return;}
+  _paliersSelected[nom]=checked;renderPaliersPicker();renderPaliersChart();
+}
+window.togglePaliersTeam=togglePaliersTeam;
 function renderPaliersChart(){
   var ctx=$i('chart-paliers');if(!ctx)return;
   if(GC2.paliers){try{GC2.paliers.destroy();}catch(e){}}
   if(!state.u.length){ctx.parentElement.innerHTML='<div class="empty">Aucune équipe</div>';return;}
-  var labels=state.u.map(function(u){return u.n.substring(0,8);});
+  var uList=_paliersEquipesActives();
+  try{renderPaliersPicker();}catch(e){}
+  if(!uList.length){ctx.parentElement.innerHTML='<div class="empty">Aucune équipe sélectionnée — clique sur ⚙️.</div>';return;}
+  var labels=uList.map(function(u){return u.n.substring(0,8);});
   /* SEPARE PAR LIEU (31/08, retour d'Antoine : "il distingue pas les 3
      modes global/domicile/exterieur"). Ce graphique ne lisait que `u.l`, le
      champ HERITE d'avant la separation dom/ext du 22/08 — il ne porte que le
@@ -11365,7 +11509,7 @@ function renderPaliersChart(){
      QUEL LIEU — l'ancien code couleur par niveau de risque n'a plus de sens
      des qu'il faut distinguer 3 series au lieu d'une seule barre. */
   var domData=[], extData=[], globData=[];
-  state.u.forEach(function(u){
+  uList.forEach(function(u){
     var dom=null, ext=null, glob=null;
     if(u.lc){
       Object.keys(u.lc).forEach(function(k){
@@ -11384,7 +11528,7 @@ function renderPaliersChart(){
      (~30px par ligne) au lieu d'une hauteur fixe pensee pour un axe X court :
      sans ca, toutes les lignes s'ecraseraient dans les 200px d'origine. */
   var _hCont=ctx.parentElement;
-  if(_hCont) _hCont.style.height=Math.max(220, state.u.length*30)+'px';
+  if(_hCont) _hCont.style.height=Math.max(220, uList.length*30)+'px';
   /* ECUSSONS SUR L'AXE (01/09, retour d'Antoine : "20 equipes qui se
      ressemblent, difficile de reperer ou l'une finit et l'autre commence").
      Meme logo que celui deja utilise partout ailleurs (`g45LogoUrlDe`).
@@ -11394,7 +11538,7 @@ function renderPaliersChart(){
      que des ticks HTML : Chart.js dessine son axe sur un <canvas>, aucune
      image DOM ne peut s'y superposer proprement autrement. */
   var _logoImgs={};
-  var _preloads=state.u.map(function(u){
+  var _preloads=uList.map(function(u){
     return new Promise(function(resolve){
       var url=(typeof g45LogoUrlDe==='function')?g45LogoUrlDe(u.n):'';
       if(!url){ resolve(); return; }
@@ -11419,11 +11563,11 @@ function renderPaliersChart(){
            face). Une ligne fine au MILIEU de l'espace entre deux equipes —
            pas sur une equipe elle-meme — pour ne jamais couper une barre. */
         c.strokeStyle='rgba(255,255,255,.85)'; c.lineWidth=2;
-        for(var i=0;i<state.u.length-1;i++){
+        for(var i=0;i<uList.length-1;i++){
           var mid=(yA.getPixelForTick(i)+yA.getPixelForTick(i+1))/2;
           c.beginPath(); c.moveTo(area.left, mid); c.lineTo(area.right, mid); c.stroke();
         }
-        state.u.forEach(function(u,i){
+        uList.forEach(function(u,i){
           var yPix=yA.getPixelForTick(i);
           var xStart=yA.left+4;
           var img=_logoImgs[u.n];
@@ -30977,6 +31121,37 @@ function _g45ScoreTexte(h) {
 
   return '';   // sport non couvert (F1, cyclisme, MMA...) : rien affiche, pas de tentative
 }
+/* SCORE PAR JAMBE POUR LES COMBINES (01/09, "score par jambe pourquoi pas...
+   doit etre simple a trier plusieurs matchs dans un combine"). `_g45ScoreTexte`
+   refusait tout combine expres (h.isCombi) puisqu'un match ne suffit pas a un
+   pari qui en couvre plusieurs — ici, on rejoue EXACTEMENT la meme fonction
+   UNE FOIS PAR JAMBE, avec un faux pari synthetise a partir de `combiRows`
+   (team/adv/sport/comp deja stockes par jambe, seule la date est partagee —
+   un combine n'a qu'une seule date/heure enregistree pour tout le pari).
+   Cle de cache distincte par jambe (`h.id+'_leg'+i`) pour que chacune se
+   resolve independamment, avec le meme systeme de retente/expiration deja en
+   place. Simple par construction : une ligne "Equipe score" par jambe,
+   jointes par " · ", rien de plus a trier soi-meme. */
+function _g45ScoreTexteCombi(h) {
+  if (!h.isCombi || !h.combiRows || !h.combiRows.length || !h.date) return '';
+  var segs = [];
+  h.combiRows.forEach(function(r, i) {
+    var fakeH = {
+      id: h.id + '_leg' + i,
+      n: r.team || 'SIMPLE',
+      target: r.adv || '',
+      sport: r.sport || '⚽',
+      comp: r.comp || h.comp || '',
+      date: h.date
+    };
+    var sc = (typeof _g45ScoreTexte === 'function') ? _g45ScoreTexte(fakeH) : '';
+    if (sc) {
+      var nomCourt = (r.team || r.adv || '?').split(' ')[0];
+      segs.push(nomCourt + ' ' + sc);
+    }
+  });
+  return segs.join(' · ');
+}
 function _g45BetRowMini(h){
   var b2=(typeof bki==='function')?bki(h.b):{c:'#888',n:(h.b||'?')};
   var cote=parseFloat(h.cote||0), mise=parseFloat(h.m||0);
@@ -31016,7 +31191,7 @@ function _g45BetRowMini(h){
      pari/adversaire/cote/competition — desormais sa propre petite ligne,
      entre le titre et le sous-titre, pour qu'il saute aux yeux sans avoir a
      lire toute la phrase. */
-  var _score=_g45ScoreTexte(h);
+  var _score=h.isCombi?((typeof _g45ScoreTexteCombi==='function')?_g45ScoreTexteCombi(h):''):_g45ScoreTexte(h);
   /* IDENTITE VISUELLE DE LA LIGNE (27/08, lifting demande par Antoine — "logo
      du book ou de l'equipe, je sais pas"). On choisit selon ce que la ligne
      represente VRAIMENT : l'EQUIPE pour une montante (elle a deja une couleur
@@ -31045,7 +31220,7 @@ function _g45BetRowMini(h){
     +'<div style="position:relative;flex:1;min-width:0;overflow:hidden;">'
     +_idFilig
     +'<div style="position:relative;font-size:12px;font-weight:700;color:var(--t1);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word;line-height:1.25;">'+titre+'</div>'
-    +(_score?'<div style="position:relative;font-size:11px;font-weight:800;color:var(--t1);background:rgba(255,255,255,.10);display:inline-block;padding:1px 6px;border-radius:5px;margin:2px 0;">📊 '+_score+'</div>':'')
+    +(_score?'<div style="position:relative;font-size:11px;font-weight:800;color:var(--t1);background:rgba(255,255,255,.10);display:inline-block;padding:1px 6px;border-radius:5px;margin:2px 0;max-width:100%;white-space:normal;word-break:break-word;">📊 '+_score+'</div>':'')
     +'<div style="position:relative;font-size:10.5px;font-weight:600;color:var(--t2);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word;line-height:1.3;">'+parts.join(' · ')+'</div>'
     +'</div>'
     +'<div style="position:relative;text-align:right;flex-shrink:0;">'

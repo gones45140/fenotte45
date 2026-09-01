@@ -419,13 +419,14 @@
   <!-- KPIs -->
   <div class="sec">Performance</div>
   <div class="bili2">
-    <div class="bilibox"><div class="bilibox-l">Bénéfice</div><div class="bilibox-v" id="stat-ben" style="color:var(--g);">0€</div></div>
-    <div class="bilibox"><div class="bilibox-l">Réussite</div><div class="bilibox-v" id="stat-wr">0%</div></div>
-    <div class="bilibox"><div class="bilibox-l">ROI</div><div class="bilibox-v" id="stat-roi">0%</div></div>
-    <div class="bilibox"><div class="bilibox-l">Paris</div><div class="bilibox-v" id="stat-nb">0</div></div>
+    <div class="bilibox"><div class="bilibox-l">Bénéfice</div><div class="bilibox-v" id="stat-ben" style="color:var(--g);font-size:23px;">0€</div></div>
+    <div class="bilibox"><div class="bilibox-l">Réussite</div><div class="bilibox-v" id="stat-wr" style="font-size:23px;">0%</div></div>
+    <div class="bilibox"><div class="bilibox-l">ROI</div><div class="bilibox-v" id="stat-roi" style="font-size:23px;">0%</div></div>
+    <div class="bilibox"><div class="bilibox-l">Paris</div><div class="bilibox-v" id="stat-nb" style="font-size:23px;">0</div></div>
   </div>
   <!-- Courbe capital -->
   <div class="sec">Évolution des gains</div>
+  <div id="bilan-periode-chips" style="display:flex;gap:6px;margin-bottom:8px;"></div>
   <div class="cwrap" style="max-width:100%;overflow-x:hidden;"><div style="height:160px;position:relative;max-width:100%;"><canvas id="bilan-chart"></canvas></div><div class="chart-info-bar" id="cib-bilan" style="display:none;"><span class="cib-main" id="cib-bilan-txt"></span><span class="cib-val" id="cib-bilan-val"></span></div></div>
   <!-- Par bookmaker -->
   <div class="sec">Par bookmaker</div>
@@ -490,7 +491,16 @@
     </div>
     <div class="sec">Répartition bookmakers</div>
     <div class="cwrap"><div style="height:180px;position:relative;"><canvas id="chart-books"></canvas></div></div>
-    <div class="sec">Paliers par équipe</div>
+    <div class="sec" style="display:flex;align-items:center;justify-content:space-between;">
+      <span>Paliers par équipe</span>
+      <div style="position:relative;">
+        <button id="paliers-picker-btn" onclick="togglePaliersPicker()" style="padding:4px 10px;border-radius:8px;border:1px solid var(--b2);background:var(--bg3);color:var(--t2);font-size:10px;font-weight:700;cursor:pointer;">⚙️ 0/8</button>
+        <div id="paliers-picker" style="display:none;position:absolute;right:0;top:32px;background:var(--s1);border:1px solid var(--b2);border-radius:10px;z-index:500;min-width:190px;max-height:260px;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.6);">
+          <div style="padding:8px 12px;font-size:9px;font-weight:700;letter-spacing:.8px;color:var(--t3);border-bottom:1px solid var(--b1);text-transform:uppercase;">Max 8 équipes</div>
+          <div id="paliers-picker-list"></div>
+        </div>
+      </div>
+    </div>
     <div class="cwrap"><div style="height:200px;position:relative;"><canvas id="chart-paliers"></canvas></div></div>
     <div class="sec">Radar types de paris</div>
     <div class="radar-wrap"><div style="height:220px;position:relative;"><canvas id="chart-radar"></canvas></div></div>
@@ -1249,7 +1259,7 @@
 <!-- FENOTTE45 : app.js est injecte par auth-guard.js APRES authentification.
      Le ?v= doit changer a CHAQUE deploiement. -->
 <script src="social.js?v=20260826n"></script>
-<script type="module" src="auth-guard.js?v=20260901c"></script>
+<script type="module" src="auth-guard.js?v=20260901g"></script>
 
 
 
