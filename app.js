@@ -40214,9 +40214,13 @@ window.g45ReparerVisuel = async function (nom, sport) {
 };
 
 window.g45VisuelInfo = function (nom) {
-  var f = _G45_PERSO_DIR + _g45SgNorm(nom) + '.jpg';
+  /* LES DEUX EXTENSIONS (01/09) : la commande annoncait `.jpg` en dur alors que
+     `_g45ImgPersoTester` accepte aussi `.png` depuis le 27/08. Un outil de
+     diagnostic qui ment sur ce qu'il attend est pire que pas d'outil du tout. */
+  var f = _G45_PERSO_DIR + _g45SgNorm(nom) + '.png';
   console.log('Equipe   : ' + nom);
-  console.log('Fichier a deposer : ' + f);
+  console.log('Fichier a deposer : ' + f + '  (ou .jpg)');
+  console.log('ATTENTION : nom EXACT, minuscules, sans espace ni accent — GitHub distingue la casse.');
   console.log('Image perso       : ' + (_g45ImgPersoLire(nom) || '(aucune)'));
   console.log('TheSportsDB       : ' + (_g45FanLire(nom) || '(aucun)'));
   return f;

@@ -3,6 +3,15 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
+<!-- ICONES (01/09). Le favicon avait ete depose a la racine du depot sans que
+     rien ne change : sans balise, Chrome ne demande QUE `<origine>/favicon.ico`,
+     donc `https://gones45140.github.io/favicon.ico` — la racine du COMPTE, pas
+     celle du projet. Le fichier vit lui dans `/gones45/`, jamais demande. Le
+     chemin est volontairement RELATIF : il se resout en `/gones45/favicon.ico`
+     sur les Pages de projet et en `/favicon.ico` sur bet45.fr, sans avoir a
+     maintenir deux valeurs differentes. -->
+<link rel="icon" href="favicon.ico?v=20260901o" sizes="any">
+<link rel="apple-touch-icon" href="apple-touch-icon.png?v=20260901o">
   <title>BET45 — Dashboard Sport & Tracking</title>
 <meta name="description" content="Accède à tes statistiques sportives, suivis de matchs et outils d'analyse en direct sur BET45.">
   <script>
@@ -541,7 +550,7 @@
       <button class="itab" id="itab-compo" onclick="swInner('compo',this);setTimeout(loadTeamCompo,30)">👥 Compo</button>
       <button class="itab" id="itab-saisons">📊 Saisons</button>
       <button class="itab" id="itab-joueur" style="display:none;" onclick="swInner('joueur',this);g45MurJoueurPanel();">⚽ Statistiques</button>
-      <button class="itab" id="itab-s-equipe" onclick="swInner('s-equipe',this);loadsEquipe();">🔗 s</button>
+      <button class="itab" id="itab-liens-equipe" onclick="swInner('liens-equipe',this);loadLiensEquipe();">🔗 Liens</button>
       <button class="itab" id="itab-mondial" style="display:none;">🌍 Mondial</button>
     </div>
     <div id="ip-bilan" class="ipanel on"></div>
@@ -552,7 +561,7 @@
     <div id="ip-joueur" class="ipanel"></div>
     <div id="ip-compo" class="ipanel"></div>
     <div id="ip-saisons" class="ipanel"></div>
-    <div id="ip-s-equipe" class="ipanel"></div>
+    <div id="ip-liens-equipe" class="ipanel"></div>
     <div id="ip-mondial" class="ipanel"></div>
   </div>
 </section>
@@ -1259,7 +1268,7 @@
 <!-- FENOTTE45 : app.js est injecte par auth-guard.js APRES authentification.
      Le ?v= doit changer a CHAQUE deploiement. -->
 <script src="social.js?v=20260826n"></script>
-<script type="module" src="auth-guard.js?v=20260901l"></script>
+<script type="module" src="auth-guard.js?v=20260901o"></script>
 
 
 
