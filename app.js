@@ -4505,15 +4505,39 @@ function renderPaliersChart(){
      maquettes) : conteneur a largeur fixe qui defile horizontalement plutot
      qu'une hauteur qui grandit avec le nombre d'equipes — chaque equipe garde
      une largeur minimale (46px) pour que les noms tournes restent lisibles. */
+  /* PLACE SOUS L'AXE X (01/09, retour d'Antoine : "on voit pas le nom des
+     equipes ni les logos"). La reservation se faisait par un hook `afterFit`
+     declare au niveau du PLUGIN — or Chart.js 4 n'expose `afterFit` que sur une
+     ECHELLE, jamais comme hook de plugin : la fonction n'etait donc jamais
+     appelee. Les ticks et la grille de l'axe X etant masques, l'axe gardait une
+     hauteur quasi nulle et TOUT ce que le plugin dessine sous
+     `chartArea.bottom` (ecussons puis noms tournes) tombait hors du canvas.
+     Deux corrections : la reservation passe dans `scales.x.afterFit`, et sa
+     valeur est CALCULEE a partir du nom le plus long au lieu des 72px en dur
+     qui n'auraient de toute facon pas suffi pour un "Colorado Avalanche"
+     tourne a 45 degres (le texte descend de largeur x sin(45)). */
+  var _mes=document.createElement('canvas').getContext('2d');
+  _mes.font='9px sans-serif';
+  var _maxLbl=0;
+  labels.forEach(function(t){ _maxLbl=Math.max(_maxLbl, _mes.measureText(t||'').width); });
+  var _xPad=Math.min(130, Math.round(30+_maxLbl*0.7072+8));
   var _hCont=ctx.parentElement;
-  if(_hCont){ _hCont.style.height='280px'; _hCont.parentElement.style.overflowX='auto'; ctx.style.minWidth=Math.max(340, uList.length*46)+'px'; }
+  if(_hCont){ _hCont.style.height=(230+_xPad)+'px'; _hCont.parentElement.style.overflowX='auto'; ctx.style.minWidth=Math.max(340, uList.length*46)+'px'; }
   var _logoImgs={};
   var _preloads=uList.map(function(u){
     return new Promise(function(resolve){
       var url=(typeof g45LogoUrlDe==='function')?g45LogoUrlDe(u.n):'';
       if(!url){ resolve(); return; }
       var img=new Image();
-      img.crossOrigin='anonymous';
+      /* PAS DE crossOrigin (01/09, retour d'Antoine sur une console pleine de
+         "blocked by CORS policy"). `crossOrigin='anonymous'` transforme le
+         chargement en requete CORS ; r2.thesportsdb.com ne renvoie aucun
+         en-tete `Access-Control-Allow-Origin`, donc le navigateur REFUSAIT
+         l'image alors qu'elle se charge tres bien sans cet attribut. Resultat :
+         plus aucun ecusson sur le graphique, et une avalanche d'erreurs rouges.
+         L'attribut ne sert qu'a relire les pixels (`getImageData`/`toDataURL`)
+         — ici on ne fait qu'un `drawImage` et ce graphique n'est jamais exporte
+         en image, donc un canvas "teinte" n'a aucune consequence. */
       img.onload=function(){ _logoImgs[u.n]=img; resolve(); };
       img.onerror=function(){ resolve(); };
       img.src=url;
@@ -4524,7 +4548,6 @@ function renderPaliersChart(){
     if(!$i('chart-paliers')) return;
     var _logoPlugin={
       id:'g45TeamLogos',
-      afterFit:function(chart){ chart.scales.x.height=72; },
       afterDraw:function(chart){
         var xA=chart.scales.x, c=chart.ctx, area=chart.chartArea;
         c.save();
@@ -4570,7 +4593,7 @@ function renderPaliersChart(){
         responsive:true,maintainAspectRatio:false,
         plugins:{legend:{display:true,labels:{color:'#8b97c4',font:{size:9},boxWidth:10}},tooltip:{callbacks:{label:function(i){return i.raw!=null?(i.dataset.label+' : Palier '+i.raw):null;}}}},
         scales:{
-          x:{ticks:{display:false},grid:{display:false}},
+          x:{afterFit:function(sc){ sc.height=_xPad; },ticks:{display:false},grid:{display:false}},
           y:{min:0,max:8,ticks:{color:'#e8ecfa',font:{size:9},stepSize:1},grid:{color:'rgba(255,255,255,.03)'}}
         }
       }
@@ -11512,15 +11535,39 @@ function renderPaliersChart(){
      maquettes) : conteneur a largeur fixe qui defile horizontalement plutot
      qu'une hauteur qui grandit avec le nombre d'equipes — chaque equipe garde
      une largeur minimale (46px) pour que les noms tournes restent lisibles. */
+  /* PLACE SOUS L'AXE X (01/09, retour d'Antoine : "on voit pas le nom des
+     equipes ni les logos"). La reservation se faisait par un hook `afterFit`
+     declare au niveau du PLUGIN — or Chart.js 4 n'expose `afterFit` que sur une
+     ECHELLE, jamais comme hook de plugin : la fonction n'etait donc jamais
+     appelee. Les ticks et la grille de l'axe X etant masques, l'axe gardait une
+     hauteur quasi nulle et TOUT ce que le plugin dessine sous
+     `chartArea.bottom` (ecussons puis noms tournes) tombait hors du canvas.
+     Deux corrections : la reservation passe dans `scales.x.afterFit`, et sa
+     valeur est CALCULEE a partir du nom le plus long au lieu des 72px en dur
+     qui n'auraient de toute facon pas suffi pour un "Colorado Avalanche"
+     tourne a 45 degres (le texte descend de largeur x sin(45)). */
+  var _mes=document.createElement('canvas').getContext('2d');
+  _mes.font='9px sans-serif';
+  var _maxLbl=0;
+  labels.forEach(function(t){ _maxLbl=Math.max(_maxLbl, _mes.measureText(t||'').width); });
+  var _xPad=Math.min(130, Math.round(30+_maxLbl*0.7072+8));
   var _hCont=ctx.parentElement;
-  if(_hCont){ _hCont.style.height='280px'; _hCont.parentElement.style.overflowX='auto'; ctx.style.minWidth=Math.max(340, uList.length*46)+'px'; }
+  if(_hCont){ _hCont.style.height=(230+_xPad)+'px'; _hCont.parentElement.style.overflowX='auto'; ctx.style.minWidth=Math.max(340, uList.length*46)+'px'; }
   var _logoImgs={};
   var _preloads=uList.map(function(u){
     return new Promise(function(resolve){
       var url=(typeof g45LogoUrlDe==='function')?g45LogoUrlDe(u.n):'';
       if(!url){ resolve(); return; }
       var img=new Image();
-      img.crossOrigin='anonymous';
+      /* PAS DE crossOrigin (01/09, retour d'Antoine sur une console pleine de
+         "blocked by CORS policy"). `crossOrigin='anonymous'` transforme le
+         chargement en requete CORS ; r2.thesportsdb.com ne renvoie aucun
+         en-tete `Access-Control-Allow-Origin`, donc le navigateur REFUSAIT
+         l'image alors qu'elle se charge tres bien sans cet attribut. Resultat :
+         plus aucun ecusson sur le graphique, et une avalanche d'erreurs rouges.
+         L'attribut ne sert qu'a relire les pixels (`getImageData`/`toDataURL`)
+         — ici on ne fait qu'un `drawImage` et ce graphique n'est jamais exporte
+         en image, donc un canvas "teinte" n'a aucune consequence. */
       img.onload=function(){ _logoImgs[u.n]=img; resolve(); };
       img.onerror=function(){ resolve(); };
       img.src=url;
@@ -11531,7 +11578,6 @@ function renderPaliersChart(){
     if(!$i('chart-paliers')) return;
     var _logoPlugin={
       id:'g45TeamLogos',
-      afterFit:function(chart){ chart.scales.x.height=72; },
       afterDraw:function(chart){
         var xA=chart.scales.x, c=chart.ctx, area=chart.chartArea;
         c.save();
@@ -11577,7 +11623,7 @@ function renderPaliersChart(){
         responsive:true,maintainAspectRatio:false,
         plugins:{legend:{display:true,labels:{color:'#8b97c4',font:{size:9},boxWidth:10}},tooltip:{callbacks:{label:function(i){return i.raw!=null?(i.dataset.label+' : Palier '+i.raw):null;}}}},
         scales:{
-          x:{ticks:{display:false},grid:{display:false}},
+          x:{afterFit:function(sc){ sc.height=_xPad; },ticks:{display:false},grid:{display:false}},
           y:{min:0,max:8,ticks:{color:'#e8ecfa',font:{size:9},stepSize:1},grid:{color:'rgba(255,255,255,.03)'}}
         }
       }
@@ -39699,9 +39745,16 @@ var _g45FanEnCours = 0;
    Aucun fichier de configuration a tenir : deposer le fichier suffit.
 
    L'existence est testee UNE FOIS par equipe puis memorisee : une image trouvee
-   l'est definitivement, une absence est reessayee au bout de 7 jours (le temps
-   qu'il en ajoute). Sans ce cache, chaque rafraichissement du direct produirait
-   une rafale de 404. */
+   l'est definitivement, une absence est reessayee au bout de 3 HEURES.
+   C'ETAIT 7 JOURS jusqu'au 01/09 (retour d'Antoine : "deja que sa fonctionne
+   pas") : l'absence etant memorisee au PREMIER affichage, une image deposee
+   ENSUITE — l'ordre normal des choses — restait invisible une semaine entiere,
+   sans erreur ni message. Le depot passait donc pour casse alors qu'il ne
+   l'etait pas. Meme correction que sur `_g45CatPerso` : un resultat NEGATIF ne
+   doit jamais etre garde longtemps. Sans aucun cache en revanche, chaque
+   rafraichissement du direct produirait une rafale de 404, d'ou les 3 heures
+   plutot que rien. */
+var _G45_PERSO_TTLNEG = 3 * 3600000;
 var _G45_PERSO_IMG = 'g45_img_perso_';
 var _G45_PERSO_DIR = 'images/equipes/';
 
@@ -39709,14 +39762,14 @@ function _g45ImgPersoLire(nom) {
   try {
     var o = JSON.parse(localStorage.getItem(_G45_PERSO_IMG + _g45SgNorm(nom)) || 'null');
     if (!o) return undefined;
-    if (!o.u && (Date.now() - (o.t || 0)) > 7 * 86400000) return undefined;
+    if (!o.u && (Date.now() - (o.t || 0)) > _G45_PERSO_TTLNEG) return undefined;
     return o.u || '';
   } catch (e) { return undefined; }
 }
 
 /* EXTENSIONS ELARGIES LE 27/08 (retour d'Antoine : fichier depose en .png,
    seul .jpg etait teste — meme famille de correctif que `_g45CatPerso`). Le
-   negatif garde le meme cache "7 jours" que la fonction de lecture ; seule
+   negatif garde le meme cache court (`_G45_PERSO_TTLNEG`) que la lecture ; seule
    l'EXTENSION est desormais tolerante, pas la CASSE : GitHub etant sensible a
    la casse, un fichier "AtleticoMadrid.png" ne sera jamais trouve par l'URL
    "atleticomadrid.png" que ce code construit — le nom de fichier doit rester
