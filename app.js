@@ -1748,7 +1748,7 @@ function renderSportFilter(){
       mf.innerHTML=chips.map(function(c){ return '<button class="sfbtn'+(bilanMonth===c[0]?' on':'')+'" onclick="bilanMonth=\''+c[0]+'\';renderBilanTab()">'+c[1]+'</button>'; }).join('');
     }
   }catch(e){}
-  try{renderBilanTypeFilter();}catch(e){} try{renderBilanCompFilter();}catch(e){}
+  try{renderBilanTypeFilter();}catch(e){} try{renderBilanCompFilter();}catch(e){} try{renderBilanBookFilter();}catch(e){}
 }
 function _g45Chrono(arr){
   function ts(h){
@@ -3557,9 +3557,24 @@ async function g45PartagerPari(id){
     document.body.removeChild(wrap);
     canvas.toBlob(async function(blob){
       if(!blob) return;
+      /* CORRIGE LE 01/09 (retour d'Antoine sur Windows/Discord) : le partage
+         natif Windows (navigator.share) copie le FICHIER, pas une vraie image
+         — Discord n'accepte au Ctrl+V que ce que l'API presse-papiers ecrit
+         comme une IMAGE reelle (exactement ce que fait l'Outil Capture de
+         Windows). Sur mobile, navigator.share reste le bon choix (menu natif
+         WhatsApp/Discord qui fonctionne correctement) ; sur PC, on ecrit
+         directement l'image dans le presse-papiers a la place. */
+      var estMobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
       var file=new File([blob], 'bet45-pari.png', {type:'image/png'});
-      if(navigator.canShare && navigator.canShare({files:[file]})){
-        try{ await navigator.share({files:[file], title:'BET45', text:'Mon pari sur BET45'}); return; }catch(e){ /* annule ou echoue : repli telechargement */ }
+      if(estMobile && navigator.canShare && navigator.canShare({files:[file]})){
+        try{ await navigator.share({files:[file], title:'BET45', text:'Mon pari sur BET45'}); return; }catch(e){ /* annule ou echoue : repli ci-dessous */ }
+      }
+      if(navigator.clipboard && window.ClipboardItem){
+        try{
+          await navigator.clipboard.write([new ClipboardItem({'image/png':blob})]);
+          alert('📋 Image copiée — colle-la (Ctrl+V) directement dans Discord, WhatsApp Web, etc.');
+          return;
+        }catch(e){ /* repli telechargement ci-dessous */ }
       }
       var url=URL.createObjectURL(blob);
       var a=document.createElement('a'); a.href=url; a.download='bet45-pari.png'; document.body.appendChild(a); a.click(); document.body.removeChild(a);
@@ -4347,7 +4362,7 @@ function renderMultiCurveChart(){
   },80);
 }
 function renderGlobalCharts(){
-  try{renderBilanTypeFilter();}catch(e){} try{renderBilanCompFilter();}catch(e){}
+  try{renderBilanTypeFilter();}catch(e){} try{renderBilanCompFilter();}catch(e){} try{renderBilanBookFilter();}catch(e){}
   renderGlobalChart();
   setTimeout(function(){
     renderMultiCurveChart();
@@ -8944,7 +8959,7 @@ function renderSportFilter(){
       mf.innerHTML=chips.map(function(c){ return '<button class="sfbtn'+(bilanMonth===c[0]?' on':'')+'" onclick="bilanMonth=\''+c[0]+'\';renderBilanTab()">'+c[1]+'</button>'; }).join('');
     }
   }catch(e){}
-  try{renderBilanTypeFilter();}catch(e){} try{renderBilanCompFilter();}catch(e){}
+  try{renderBilanTypeFilter();}catch(e){} try{renderBilanCompFilter();}catch(e){} try{renderBilanBookFilter();}catch(e){}
 }
 function _hMonthKey(h){
   var d=String((h&&h.date)||'').trim(); if(!d) return '';
@@ -11243,7 +11258,7 @@ function renderMultiCurveChart(){
   },80);
 }
 function renderGlobalCharts(){
-  try{renderBilanTypeFilter();}catch(e){} try{renderBilanCompFilter();}catch(e){}
+  try{renderBilanTypeFilter();}catch(e){} try{renderBilanCompFilter();}catch(e){} try{renderBilanBookFilter();}catch(e){}
   renderGlobalChart();
   setTimeout(function(){
     renderMultiCurveChart();
@@ -29203,6 +29218,40 @@ function setBilanCompIdx(i){ window._bilanComp=(window._bilanCompList||[])[i]||'
 window.setBilanCompIdx=setBilanCompIdx;
 window.renderBilanCompFilter=renderBilanCompFilter;
 window._bilanComps=_bilanComps;
+/* FILTRE PAR BOOKMAKER (01/09, retour d'Antoine : "filtre par book clairement
+   manquant"). La logique existait deja dans `filteredA()` depuis un moment
+   (`window._bilanBkFilter`), mais aucune rangee de puces ne permettait de la
+   regler — repli manuel uniquement, jamais expose dans l'interface. Meme
+   gabarit que les filtres Type/Competition juste au-dessus. */
+function _bilanBooks(){
+  var base=(state.a||[]);
+  if(typeof bilanSport!=='undefined' && bilanSport!=='ALL'){ base=base.filter(function(h){return h.sport===bilanSport;}); }
+  var set={};
+  base.forEach(function(h){ if(h.b) set[h.b]=1; });
+  return Object.keys(set).sort(function(a,b){ return (bki(a).n||a).localeCompare(bki(b).n||b,'fr'); });
+}
+function renderBilanBookFilter(){
+  var fbComp=document.getElementById('bilan-comp-filter');
+  var fbType=document.getElementById('bilan-type-filter');
+  var sf=document.getElementById('sport-filter');
+  var anchorEl=fbComp||fbType||sf; if(!anchorEl||!anchorEl.parentNode) return;
+  var fb=document.getElementById('bilan-book-filter');
+  if(!fb){ fb=document.createElement('div'); fb.id='bilan-book-filter'; fb.style.cssText='padding:6px 2px 2px;';
+    anchorEl.parentNode.insertBefore(fb, anchorEl.nextSibling); }
+  var books=_bilanBooks();
+  if(window._bilanBkFilter && books.indexOf(window._bilanBkFilter)<0){ window._bilanBkFilter=null; }
+  if(books.length<=1){ fb.innerHTML=''; window._bilanBookList=[null]; return; }
+  var cur=window._bilanBkFilter||null;
+  var defs=[[null,'Tous']].concat(books.map(function(b){return [b,bki(b).n||b];}));
+  window._bilanBookList=defs.map(function(d){return d[0];});
+  var html='<div style="font-size:9px;color:var(--t3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;">💳 Filtrer par bookmaker</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:6px;">';
+  defs.forEach(function(d,i){ var on=cur===d[0]; html+='<button onclick="setBilanBookIdx('+i+')" class="sfbtn'+(on?' on':'')+'">'+d[1]+'</button>'; });
+  fb.innerHTML=html+'</div>';
+}
+function setBilanBookIdx(i){ window._bilanBkFilter=(window._bilanBookList||[])[i]||null; renderBilanBookFilter(); try{renderBilanTab();}catch(e){} try{renderGlobalCharts();}catch(e){} }
+window.setBilanBookIdx=setBilanBookIdx;
+window.renderBilanBookFilter=renderBilanBookFilter;
+window._bilanBooks=_bilanBooks;
 /* Complément ITF / Challenger via Sofascore (opt-in, quota) — avec cache local (dates passées = gratuit ensuite). */
 async function g45TennisResultsItf(offset){
   offset=offset|0;
