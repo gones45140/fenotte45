@@ -4460,8 +4460,17 @@ function renderPaliersChart(){
       id:'g45TeamLogos',
       afterFit:function(chart){ chart.scales.y.width=92; },
       afterDraw:function(chart){
-        var yA=chart.scales.y, c=chart.ctx;
+        var yA=chart.scales.y, c=chart.ctx, area=chart.chartArea;
         c.save();
+        /* SEPARATEUR ENTRE EQUIPES (01/09, retour d'Antoine : les equipes
+           SANS logo se noient completement sans repere, meme avec le nom en
+           face). Une ligne fine au MILIEU de l'espace entre deux equipes —
+           pas sur une equipe elle-meme — pour ne jamais couper une barre. */
+        c.strokeStyle='rgba(255,255,255,.12)'; c.lineWidth=1;
+        for(var i=0;i<state.u.length-1;i++){
+          var mid=(yA.getPixelForTick(i)+yA.getPixelForTick(i+1))/2;
+          c.beginPath(); c.moveTo(area.left, mid); c.lineTo(area.right, mid); c.stroke();
+        }
         state.u.forEach(function(u,i){
           var yPix=yA.getPixelForTick(i);
           var xStart=yA.left+4;
@@ -11403,8 +11412,17 @@ function renderPaliersChart(){
       id:'g45TeamLogos',
       afterFit:function(chart){ chart.scales.y.width=92; },
       afterDraw:function(chart){
-        var yA=chart.scales.y, c=chart.ctx;
+        var yA=chart.scales.y, c=chart.ctx, area=chart.chartArea;
         c.save();
+        /* SEPARATEUR ENTRE EQUIPES (01/09, retour d'Antoine : les equipes
+           SANS logo se noient completement sans repere, meme avec le nom en
+           face). Une ligne fine au MILIEU de l'espace entre deux equipes —
+           pas sur une equipe elle-meme — pour ne jamais couper une barre. */
+        c.strokeStyle='rgba(255,255,255,.12)'; c.lineWidth=1;
+        for(var i=0;i<state.u.length-1;i++){
+          var mid=(yA.getPixelForTick(i)+yA.getPixelForTick(i+1))/2;
+          c.beginPath(); c.moveTo(area.left, mid); c.lineTo(area.right, mid); c.stroke();
+        }
         state.u.forEach(function(u,i){
           var yPix=yA.getPixelForTick(i);
           var xStart=yA.left+4;
