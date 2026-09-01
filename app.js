@@ -1239,6 +1239,21 @@ window.g45MurVisuels = g45MurVisuels;
 function g45LogoUrlDe(name){
   try{
     var l = (typeof LOGOS!=='undefined' && LOGOS[name]) || '';
+    /* ALIAS DE NOM (01/09, retour d'Antoine : "Internazionale, on connait pas
+       le logo?" — si, mais LOGOS le range sous "Inter Milan", pas le nom du
+       mur. Reutilise la table d'alias deja construite pour TheSportsDB
+       (_G45_TSDB_ALIAS, "internazionale"->"Inter Milan") plutot que d'en
+       recreer une deuxieme redondante. Valeur alias parfois un tableau
+       (plusieurs ecritures possibles pour un meme club) : on essaie chacune
+       jusqu'a trouver un logo. */
+    if(!l && typeof _G45_TSDB_ALIAS!=='undefined'){
+      var norm=String(name||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+      var alias=_G45_TSDB_ALIAS[norm];
+      if(alias){
+        var candidats=Array.isArray(alias)?alias:[alias];
+        for(var i=0;i<candidats.length && !l;i++){ l=(LOGOS&&LOGOS[candidats[i]])||''; }
+      }
+    }
     if(!l){
       var u = ((typeof state!=='undefined' && state && state.u)||[]).filter(function(x){ return x && x.n===name; })[0];
       if(u && u.logoUrl) l = u.logoUrl;
@@ -4472,18 +4487,7 @@ function renderPaliersChart(){
   var uList=_paliersEquipesActives();
   try{renderPaliersPicker();}catch(e){}
   if(!uList.length){ctx.parentElement.innerHTML='<div class="empty">Aucune équipe sélectionnée — clique sur ⚙️.</div>';return;}
-  var labels=uList.map(function(u){return u.n.substring(0,8);});
-  /* SEPARE PAR LIEU (31/08, retour d'Antoine : "il distingue pas les 3
-     modes global/domicile/exterieur"). Ce graphique ne lisait que `u.l`, le
-     champ HERITE d'avant la separation dom/ext du 22/08 — il ne porte que le
-     DERNIER palier ecrit, tous lieux confondus (cf. le commentaire dans
-     `_g45Pal` juste au-dessus dans ce fichier), pas un vrai palier par lieu.
-     On lit desormais `u.lc` directement : 3 barres groupees par equipe
-     (domicile / exterieur / global), chacune absente (null, pas de barre)
-     si l'equipe n'utilise pas ce mode. Consequence assumee : la couleur ne
-     code plus "a quel point la montante est avancee" (rouge=danger) mais
-     QUEL LIEU — l'ancien code couleur par niveau de risque n'a plus de sens
-     des qu'il faut distinguer 3 series au lieu d'une seule barre. */
+  var labels=uList.map(function(u){return u.n;});   // nom complet (01/09, retour d'Antoine : 'Internaz' tronque trop court)
   var domData=[], extData=[], globData=[];
   uList.forEach(function(u){
     var dom=null, ext=null, glob=null;
@@ -4497,22 +4501,12 @@ function renderPaliersChart(){
     if(dom===null&&ext===null&&glob===null) glob=parseInt(u.l,10)||1;  // jamais engagee sur aucun lieu : repli
     domData.push(dom); extData.push(ext); globData.push(glob);
   });
-  /* BARRES HORIZONTALES (01/09, retour d'Antoine : trop resserre/illisible sur
-     mobile en vertical avec 11+ equipes — meme traitement que "Reussite par
-     sport", deja en barres horizontales et lisible sur tous les ecrans. La
-     hauteur du conteneur est desormais calculee selon le nombre d'equipes
-     (~30px par ligne) au lieu d'une hauteur fixe pensee pour un axe X court :
-     sans ca, toutes les lignes s'ecraseraient dans les 200px d'origine. */
+  /* RETOUR EN VERTICAL (01/09, retour d'Antoine apres comparaison des deux
+     maquettes) : conteneur a largeur fixe qui defile horizontalement plutot
+     qu'une hauteur qui grandit avec le nombre d'equipes — chaque equipe garde
+     une largeur minimale (46px) pour que les noms tournes restent lisibles. */
   var _hCont=ctx.parentElement;
-  if(_hCont) _hCont.style.height=Math.max(220, uList.length*30)+'px';
-  /* ECUSSONS SUR L'AXE (01/09, retour d'Antoine : "20 equipes qui se
-     ressemblent, difficile de reperer ou l'une finit et l'autre commence").
-     Meme logo que celui deja utilise partout ailleurs (`g45LogoUrlDe`).
-     Precharge d'abord CHAQUE image (Chart.js ne sait pas attendre un
-     chargement asynchrone tout seul), avec repli silencieux sur le texte
-     seul si le logo est absent ou ne charge pas. Plugin `afterDraw` plutot
-     que des ticks HTML : Chart.js dessine son axe sur un <canvas>, aucune
-     image DOM ne peut s'y superposer proprement autrement. */
+  if(_hCont){ _hCont.style.height='280px'; _hCont.parentElement.style.overflowX='auto'; ctx.style.minWidth=Math.max(340, uList.length*46)+'px'; }
   var _logoImgs={};
   var _preloads=uList.map(function(u){
     return new Promise(function(resolve){
@@ -4530,31 +4524,36 @@ function renderPaliersChart(){
     if(!$i('chart-paliers')) return;
     var _logoPlugin={
       id:'g45TeamLogos',
-      afterFit:function(chart){ chart.scales.y.width=92; },
+      afterFit:function(chart){ chart.scales.x.height=72; },
       afterDraw:function(chart){
-        var yA=chart.scales.y, c=chart.ctx, area=chart.chartArea;
+        var xA=chart.scales.x, c=chart.ctx, area=chart.chartArea;
         c.save();
-        /* SEPARATEUR ENTRE EQUIPES (01/09, retour d'Antoine : les equipes
-           SANS logo se noient completement sans repere, meme avec le nom en
-           face). Une ligne fine au MILIEU de l'espace entre deux equipes —
-           pas sur une equipe elle-meme — pour ne jamais couper une barre. */
         c.strokeStyle='rgba(255,255,255,.85)'; c.lineWidth=2;
         for(var i=0;i<uList.length-1;i++){
-          var mid=(yA.getPixelForTick(i)+yA.getPixelForTick(i+1))/2;
-          c.beginPath(); c.moveTo(area.left, mid); c.lineTo(area.right, mid); c.stroke();
+          var mid=(xA.getPixelForTick(i)+xA.getPixelForTick(i+1))/2;
+          c.beginPath(); c.moveTo(mid, area.top); c.lineTo(mid, area.bottom); c.stroke();
         }
         uList.forEach(function(u,i){
-          var yPix=yA.getPixelForTick(i);
-          var xStart=yA.left+4;
+          var xPix=xA.getPixelForTick(i);
           var img=_logoImgs[u.n];
-          if(img){
-            try{ c.drawImage(img, xStart, yPix-9, 18, 18); }catch(e){}
-            c.fillStyle='#e8ecfa'; c.font='9px sans-serif'; c.textBaseline='middle'; c.textAlign='left';
-            c.fillText(labels[i], xStart+23, yPix);
-          } else {
-            c.fillStyle='#e8ecfa'; c.font='9px sans-serif'; c.textBaseline='middle'; c.textAlign='left';
-            c.fillText(labels[i], xStart, yPix);
+          if(img){ try{ c.drawImage(img, xPix-9, area.bottom+6, 18, 18); }catch(e){} }
+          else {
+            /* BADGE DE REPLI (01/09, retour d'Antoine : "sans logo en +" —
+               les equipes sans logo n'avaient plus AUCUN repere visuel une
+               fois le texte tronque retire). Pastille coloree avec
+               l'initiale, meme esprit que le badge deja utilise ailleurs
+               dans l'app pour un bookmaker sans favicon. */
+            c.fillStyle=u.color||'#4d84ff';
+            c.beginPath(); c.arc(xPix, area.bottom+15, 9, 0, Math.PI*2); c.fill();
+            c.fillStyle='#fff'; c.font='bold 9px sans-serif'; c.textAlign='center'; c.textBaseline='middle';
+            c.fillText((u.n||'?').charAt(0).toUpperCase(), xPix, area.bottom+15);
           }
+          c.save();
+          c.translate(xPix, area.bottom+(img?28:10));
+          c.rotate(-Math.PI/4);
+          c.fillStyle='#e8ecfa'; c.font='9px sans-serif'; c.textBaseline='middle'; c.textAlign='right';
+          c.fillText(labels[i], 0, 0);
+          c.restore();
         });
         c.restore();
       }
@@ -4568,12 +4567,11 @@ function renderPaliersChart(){
       ]},
       plugins:[_logoPlugin],
       options:{
-        indexAxis:'y',
         responsive:true,maintainAspectRatio:false,
         plugins:{legend:{display:true,labels:{color:'#8b97c4',font:{size:9},boxWidth:10}},tooltip:{callbacks:{label:function(i){return i.raw!=null?(i.dataset.label+' : Palier '+i.raw):null;}}}},
         scales:{
-          y:{ticks:{display:false},grid:{display:false}},
-          x:{min:0,max:8,ticks:{color:'#e8ecfa',font:{size:9},stepSize:1},grid:{color:'rgba(255,255,255,.03)'}}
+          x:{ticks:{display:false},grid:{display:false}},
+          y:{min:0,max:8,ticks:{color:'#e8ecfa',font:{size:9},stepSize:1},grid:{color:'rgba(255,255,255,.03)'}}
         }
       }
     });
@@ -11496,18 +11494,7 @@ function renderPaliersChart(){
   var uList=_paliersEquipesActives();
   try{renderPaliersPicker();}catch(e){}
   if(!uList.length){ctx.parentElement.innerHTML='<div class="empty">Aucune équipe sélectionnée — clique sur ⚙️.</div>';return;}
-  var labels=uList.map(function(u){return u.n.substring(0,8);});
-  /* SEPARE PAR LIEU (31/08, retour d'Antoine : "il distingue pas les 3
-     modes global/domicile/exterieur"). Ce graphique ne lisait que `u.l`, le
-     champ HERITE d'avant la separation dom/ext du 22/08 — il ne porte que le
-     DERNIER palier ecrit, tous lieux confondus (cf. le commentaire dans
-     `_g45Pal` juste au-dessus dans ce fichier), pas un vrai palier par lieu.
-     On lit desormais `u.lc` directement : 3 barres groupees par equipe
-     (domicile / exterieur / global), chacune absente (null, pas de barre)
-     si l'equipe n'utilise pas ce mode. Consequence assumee : la couleur ne
-     code plus "a quel point la montante est avancee" (rouge=danger) mais
-     QUEL LIEU — l'ancien code couleur par niveau de risque n'a plus de sens
-     des qu'il faut distinguer 3 series au lieu d'une seule barre. */
+  var labels=uList.map(function(u){return u.n;});   // nom complet (01/09, retour d'Antoine : 'Internaz' tronque trop court)
   var domData=[], extData=[], globData=[];
   uList.forEach(function(u){
     var dom=null, ext=null, glob=null;
@@ -11521,22 +11508,12 @@ function renderPaliersChart(){
     if(dom===null&&ext===null&&glob===null) glob=parseInt(u.l,10)||1;  // jamais engagee sur aucun lieu : repli
     domData.push(dom); extData.push(ext); globData.push(glob);
   });
-  /* BARRES HORIZONTALES (01/09, retour d'Antoine : trop resserre/illisible sur
-     mobile en vertical avec 11+ equipes — meme traitement que "Reussite par
-     sport", deja en barres horizontales et lisible sur tous les ecrans. La
-     hauteur du conteneur est desormais calculee selon le nombre d'equipes
-     (~30px par ligne) au lieu d'une hauteur fixe pensee pour un axe X court :
-     sans ca, toutes les lignes s'ecraseraient dans les 200px d'origine. */
+  /* RETOUR EN VERTICAL (01/09, retour d'Antoine apres comparaison des deux
+     maquettes) : conteneur a largeur fixe qui defile horizontalement plutot
+     qu'une hauteur qui grandit avec le nombre d'equipes — chaque equipe garde
+     une largeur minimale (46px) pour que les noms tournes restent lisibles. */
   var _hCont=ctx.parentElement;
-  if(_hCont) _hCont.style.height=Math.max(220, uList.length*30)+'px';
-  /* ECUSSONS SUR L'AXE (01/09, retour d'Antoine : "20 equipes qui se
-     ressemblent, difficile de reperer ou l'une finit et l'autre commence").
-     Meme logo que celui deja utilise partout ailleurs (`g45LogoUrlDe`).
-     Precharge d'abord CHAQUE image (Chart.js ne sait pas attendre un
-     chargement asynchrone tout seul), avec repli silencieux sur le texte
-     seul si le logo est absent ou ne charge pas. Plugin `afterDraw` plutot
-     que des ticks HTML : Chart.js dessine son axe sur un <canvas>, aucune
-     image DOM ne peut s'y superposer proprement autrement. */
+  if(_hCont){ _hCont.style.height='280px'; _hCont.parentElement.style.overflowX='auto'; ctx.style.minWidth=Math.max(340, uList.length*46)+'px'; }
   var _logoImgs={};
   var _preloads=uList.map(function(u){
     return new Promise(function(resolve){
@@ -11554,31 +11531,36 @@ function renderPaliersChart(){
     if(!$i('chart-paliers')) return;
     var _logoPlugin={
       id:'g45TeamLogos',
-      afterFit:function(chart){ chart.scales.y.width=92; },
+      afterFit:function(chart){ chart.scales.x.height=72; },
       afterDraw:function(chart){
-        var yA=chart.scales.y, c=chart.ctx, area=chart.chartArea;
+        var xA=chart.scales.x, c=chart.ctx, area=chart.chartArea;
         c.save();
-        /* SEPARATEUR ENTRE EQUIPES (01/09, retour d'Antoine : les equipes
-           SANS logo se noient completement sans repere, meme avec le nom en
-           face). Une ligne fine au MILIEU de l'espace entre deux equipes —
-           pas sur une equipe elle-meme — pour ne jamais couper une barre. */
         c.strokeStyle='rgba(255,255,255,.85)'; c.lineWidth=2;
         for(var i=0;i<uList.length-1;i++){
-          var mid=(yA.getPixelForTick(i)+yA.getPixelForTick(i+1))/2;
-          c.beginPath(); c.moveTo(area.left, mid); c.lineTo(area.right, mid); c.stroke();
+          var mid=(xA.getPixelForTick(i)+xA.getPixelForTick(i+1))/2;
+          c.beginPath(); c.moveTo(mid, area.top); c.lineTo(mid, area.bottom); c.stroke();
         }
         uList.forEach(function(u,i){
-          var yPix=yA.getPixelForTick(i);
-          var xStart=yA.left+4;
+          var xPix=xA.getPixelForTick(i);
           var img=_logoImgs[u.n];
-          if(img){
-            try{ c.drawImage(img, xStart, yPix-9, 18, 18); }catch(e){}
-            c.fillStyle='#e8ecfa'; c.font='9px sans-serif'; c.textBaseline='middle'; c.textAlign='left';
-            c.fillText(labels[i], xStart+23, yPix);
-          } else {
-            c.fillStyle='#e8ecfa'; c.font='9px sans-serif'; c.textBaseline='middle'; c.textAlign='left';
-            c.fillText(labels[i], xStart, yPix);
+          if(img){ try{ c.drawImage(img, xPix-9, area.bottom+6, 18, 18); }catch(e){} }
+          else {
+            /* BADGE DE REPLI (01/09, retour d'Antoine : "sans logo en +" —
+               les equipes sans logo n'avaient plus AUCUN repere visuel une
+               fois le texte tronque retire). Pastille coloree avec
+               l'initiale, meme esprit que le badge deja utilise ailleurs
+               dans l'app pour un bookmaker sans favicon. */
+            c.fillStyle=u.color||'#4d84ff';
+            c.beginPath(); c.arc(xPix, area.bottom+15, 9, 0, Math.PI*2); c.fill();
+            c.fillStyle='#fff'; c.font='bold 9px sans-serif'; c.textAlign='center'; c.textBaseline='middle';
+            c.fillText((u.n||'?').charAt(0).toUpperCase(), xPix, area.bottom+15);
           }
+          c.save();
+          c.translate(xPix, area.bottom+(img?28:10));
+          c.rotate(-Math.PI/4);
+          c.fillStyle='#e8ecfa'; c.font='9px sans-serif'; c.textBaseline='middle'; c.textAlign='right';
+          c.fillText(labels[i], 0, 0);
+          c.restore();
         });
         c.restore();
       }
@@ -11592,12 +11574,11 @@ function renderPaliersChart(){
       ]},
       plugins:[_logoPlugin],
       options:{
-        indexAxis:'y',
         responsive:true,maintainAspectRatio:false,
         plugins:{legend:{display:true,labels:{color:'#8b97c4',font:{size:9},boxWidth:10}},tooltip:{callbacks:{label:function(i){return i.raw!=null?(i.dataset.label+' : Palier '+i.raw):null;}}}},
         scales:{
-          y:{ticks:{display:false},grid:{display:false}},
-          x:{min:0,max:8,ticks:{color:'#e8ecfa',font:{size:9},stepSize:1},grid:{color:'rgba(255,255,255,.03)'}}
+          x:{ticks:{display:false},grid:{display:false}},
+          y:{min:0,max:8,ticks:{color:'#e8ecfa',font:{size:9},stepSize:1},grid:{color:'rgba(255,255,255,.03)'}}
         }
       }
     });
