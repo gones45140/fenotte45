@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BET45 — Ton tableau de bord de paris sportifs</title>
+<meta name="description" content="BET45 : un tableau de bord gratuit et sans pub pour suivre tes paris sportifs, sport par sport, équipe par équipe. Foot, MLB, tennis, NRL, F1 et plus. Construit par quelqu'un qui parie, pour ceux qui parient.">
+<style>
+  :root{
+    --bg:#0a0e1a; --bg2:#12172a; --bg3:#1a2038; --card-border:rgba(77,132,255,.18);
+    --t1:#f3f5fa; --t2:#aab4d4; --t3:#6b7699;
+    --accent:#4d84ff; --win:#1ed760; --loss:#ff4545; --gold:#f0b020;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--bg); color:var(--t1);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.5; overflow-x:hidden;
+  }
+  a{color:inherit;}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 28px;}
+
+  /* ── NAV ── */
+  nav{display:flex;align-items:center;justify-content:space-between;padding:22px 28px;max-width:1180px;margin:0 auto;}
+  .logo{font-size:22px;font-weight:900;letter-spacing:-.02em;}
+  .logo em{color:#ff5a5a;font-style:normal;}
+  .nav-cta{background:var(--accent);color:#fff;padding:9px 20px;border-radius:9px;font-weight:700;font-size:14px;text-decoration:none;transition:transform .15s ease;}
+  .nav-cta:hover{transform:translateY(-1px);}
+
+  /* ── HERO ── */
+  .hero{padding:56px 0 90px;}
+  .hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:56px;align-items:center;}
+  h1{font-size:52px;font-weight:900;letter-spacing:-.025em;line-height:1.05;max-width:560px;}
+  .hero p.lede{margin-top:22px;font-size:18px;color:var(--t2);max-width:480px;line-height:1.6;}
+  .hero-ctas{margin-top:34px;display:flex;gap:14px;flex-wrap:wrap;}
+  .btn-primary{background:var(--accent);color:#fff;padding:15px 26px;border-radius:11px;font-weight:800;font-size:15px;text-decoration:none;display:inline-block;box-shadow:0 8px 24px rgba(77,132,255,.35);transition:transform .15s ease;}
+  .btn-primary:hover{transform:translateY(-2px);}
+  .btn-ghost{border:1.5px solid rgba(255,255,255,.16);color:var(--t1);padding:15px 26px;border-radius:11px;font-weight:700;font-size:15px;text-decoration:none;display:inline-block;}
+  .hero-note{margin-top:18px;font-size:13px;color:var(--t3);}
+
+  /* ── MUR PREVIEW (le vrai héros visuel) ── */
+  .mur-preview{position:relative;}
+  .mur-card{
+    position:relative;overflow:hidden;border-radius:14px;padding:16px 18px;margin-bottom:10px;
+    display:flex;align-items:center;justify-content:space-between;
+    border:1px solid var(--card-border);
+  }
+  .mur-card .mc-left{display:flex;align-items:center;gap:12px;position:relative;z-index:1;}
+  .mur-card .crest{width:38px;height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900;flex-shrink:0;}
+  .mur-card .mc-name{font-weight:800;font-size:15px;}
+  .mur-card .mc-sub{font-size:11px;color:var(--t2);margin-top:2px;}
+  .mur-card .mc-profit{font-weight:800;font-size:16px;position:relative;z-index:1;}
+  .mc-1{background:linear-gradient(100deg,rgba(255,255,255,.06) 0%,rgba(148,163,184,.14) 100%);}
+  .mc-1 .crest{background:#94a3b8;color:#0a0e1a;}
+  .mc-2{background:linear-gradient(100deg,rgba(255,255,255,.06) 0%,rgba(200,160,80,.14) 100%);}
+  .mc-2 .crest{background:#c8a050;color:#0a0e1a;}
+  .mc-3{background:linear-gradient(100deg,rgba(255,255,255,.06) 0%,rgba(220,38,38,.14) 100%);}
+  .mc-3 .crest{background:#dc2626;color:#fff;}
+  .mc-4{background:linear-gradient(100deg,rgba(255,255,255,.06) 0%,rgba(14,165,233,.14) 100%);}
+  .mc-4 .crest{background:#0ea5e9;color:#fff;}
+  .mur-badge{position:absolute;top:-14px;right:18px;background:var(--gold);color:#221b00;font-size:11px;font-weight:800;padding:5px 12px;border-radius:7px;transform:rotate(3deg);box-shadow:0 6px 16px rgba(240,176,32,.35);}
+
+  /* ── SPORTS STRIP ── */
+  .sports-strip{border-top:1px solid rgba(255,255,255,.06);border-bottom:1px solid rgba(255,255,255,.06);padding:26px 0;}
+  .sports-strip .wrap{display:flex;gap:36px;flex-wrap:wrap;justify-content:center;align-items:center;}
+  .sport-item{display:flex;align-items:center;gap:9px;color:var(--t2);font-weight:700;font-size:14px;}
+  .sport-item .ic{font-size:20px;}
+
+  /* ── FEATURES (bande scoreboard, pas des cartes identiques) ── */
+  .features{padding:100px 0;}
+  .features-head{max-width:600px;margin-bottom:56px;}
+  .features-head h2{font-size:34px;font-weight:900;letter-spacing:-.02em;line-height:1.15;}
+  .features-head p{margin-top:14px;color:var(--t2);font-size:16px;}
+  .feat-row{display:grid;grid-template-columns:60px 1fr;gap:22px;padding:30px 0;border-top:1px solid rgba(255,255,255,.07);align-items:start;}
+  .feat-row:last-child{border-bottom:1px solid rgba(255,255,255,.07);}
+  .feat-num{font-size:34px;font-weight:900;color:var(--accent);letter-spacing:-.02em;}
+  .feat-title{font-size:20px;font-weight:800;margin-bottom:8px;}
+  .feat-body{color:var(--t2);font-size:15.5px;max-width:600px;line-height:1.65;}
+
+  /* ── HONNETETE / POURQUOI GRATUIT ── */
+  .honest{padding:90px 0;background:var(--bg2);}
+  .honest-grid{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;}
+  .honest h2{font-size:32px;font-weight:900;letter-spacing:-.02em;line-height:1.2;}
+  .honest p{margin-top:18px;color:var(--t2);font-size:16px;line-height:1.7;}
+  .honest-kpis{display:flex;flex-direction:column;gap:0;}
+  .kpi{display:flex;justify-content:space-between;align-items:baseline;padding:20px 0;border-top:1px solid rgba(255,255,255,.08);}
+  .kpi:last-child{border-bottom:1px solid rgba(255,255,255,.08);}
+  .kpi-label{color:var(--t2);font-size:15px;}
+  .kpi-val{font-size:22px;font-weight:900;color:var(--t1);}
+
+  /* ── CTA FINAL ── */
+  .final{padding:110px 0;text-align:center;}
+  .final h2{font-size:38px;font-weight:900;letter-spacing:-.02em;max-width:640px;margin:0 auto;line-height:1.2;}
+  .final p{margin:18px auto 34px;color:var(--t2);font-size:16px;max-width:460px;}
+
+  footer{padding:34px 28px;border-top:1px solid rgba(255,255,255,.06);text-align:center;color:var(--t3);font-size:13px;}
+  footer a{color:var(--t2);text-decoration:none;}
+
+  @media(max-width:860px){
+    .hero-grid,.honest-grid{grid-template-columns:1fr;}
+    h1{font-size:38px;}
+    .features-head h2,.honest h2,.final h2{font-size:27px;}
+    nav{padding:18px 20px;}
+    .hero{padding:36px 0 60px;}
+    .mur-badge{display:none;}
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">BET<em>45</em></div>
+  <a href="./indexfenotte.html" class="nav-cta">Voir le mur</a>
+</nav>
+
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <h1>Suis tes paris comme tu suis tes équipes.</h1>
+      <p class="lede">Un tableau de bord gratuit et sans pub pour ton suivi sportif : foot, baseball, tennis, NRL, F1, cyclisme et plus — équipe par équipe, avec les scores qui arrivent tout seuls.</p>
+      <div class="hero-ctas">
+        <a href="./indexfenotte.html" class="btn-primary">Voir le mur, sans créer de compte</a>
+        <a href="./login.html" class="btn-ghost">Créer un compte gratuit</a>
+      </div>
+      <div class="hero-note">Aucune carte bancaire, aucune pub, aucune donnée revendue.</div>
+    </div>
+    <div class="mur-preview">
+      <div class="mur-badge">🔥 Série W : 2</div>
+      <div class="mur-card mc-1">
+        <div class="mc-left">
+          <div class="crest">RM</div>
+          <div><div class="mc-name">Real Madrid</div><div class="mc-sub">Palier 1 · vs Malaga</div></div>
+        </div>
+        <div class="mc-profit" style="color:var(--win);">+3.60€</div>
+      </div>
+      <div class="mur-card mc-2">
+        <div class="mc-left">
+          <div class="crest">PSG</div>
+          <div><div class="mc-name">PSG</div><div class="mc-sub">Palier 1 · vs Lille</div></div>
+        </div>
+        <div class="mc-profit" style="color:var(--win);">+6.60€</div>
+      </div>
+      <div class="mur-card mc-3">
+        <div class="mc-left">
+          <div class="crest">FCB</div>
+          <div><div class="mc-name">Bayern Munich</div><div class="mc-sub">Palier 2 · vs Stuttgart</div></div>
+        </div>
+        <div class="mc-profit" style="color:var(--loss);">-10.00€</div>
+      </div>
+      <div class="mur-card mc-4">
+        <div class="mc-left">
+          <div class="crest">⚾</div>
+          <div><div class="mc-name">Cincinnati Reds</div><div class="mc-sub">MLB · vs Chicago Cubs</div></div>
+        </div>
+        <div class="mc-profit" style="color:var(--win);">+6.25€</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="sports-strip">
+  <div class="wrap">
+    <div class="sport-item"><span class="ic">⚽</span>Football</div>
+    <div class="sport-item"><span class="ic">⚾</span>Baseball</div>
+    <div class="sport-item"><span class="ic">🎾</span>Tennis</div>
+    <div class="sport-item"><span class="ic">🏀</span>Basketball</div>
+    <div class="sport-item"><span class="ic">🏒</span>Hockey</div>
+    <div class="sport-item"><span class="ic">🏉</span>Rugby &amp; NRL</div>
+    <div class="sport-item"><span class="ic">🏎️</span>Formule 1</div>
+    <div class="sport-item"><span class="ic">🚴</span>Cyclisme</div>
+  </div>
+</div>
+
+<section class="features">
+  <div class="wrap">
+    <div class="features-head">
+      <h2>Ce n'est pas un tableur. C'est construit pour parier, pas pour être parfait sur Excel.</h2>
+      <p>Chaque fonctionnalité vient d'un vrai besoin rencontré en pariant, pas d'une liste de cases à cocher.</p>
+    </div>
+
+    <div class="feat-row">
+      <div class="feat-num">01</div>
+      <div>
+        <div class="feat-title">Une montante, deux façons de la jouer</div>
+        <div class="feat-body">Chaque équipe garde une progression séparée à domicile et à l'extérieur — une défaite à la maison ne fait pas reculer ta série en déplacement. Le mode global reste disponible pour ceux qui préfèrent une seule échelle par équipe.</div>
+      </div>
+    </div>
+
+    <div class="feat-row">
+      <div class="feat-num">02</div>
+      <div>
+        <div class="feat-title">Le score arrive tout seul</div>
+        <div class="feat-body">Une fois le match terminé, le résultat s'affiche directement sur ton pari — foot, baseball, basket, hockey, rugby, tennis avec le détail des sets. Pas de recherche à faire, pas de score annoncé au hasard : s'il n'est pas sûr à 100%, l'app préfère ne rien afficher plutôt qu'une erreur.</div>
+      </div>
+    </div>
+
+    <div class="feat-row">
+      <div class="feat-num">03</div>
+      <div>
+        <div class="feat-title">Des notifications qui suivent le match, pas juste le résultat</div>
+        <div class="feat-body">Coup d'envoi, buts marqués et annulés, fin de match, verdict du pari — directement sur ton téléphone, sans avoir l'app ouverte.</div>
+      </div>
+    </div>
+
+    <div class="feat-row">
+      <div class="feat-num">04</div>
+      <div>
+        <div class="feat-title">Tes stats, découpées comme tu veux les lire</div>
+        <div class="feat-body">Par équipe, par compétition, par bookmaker, par mois, par lieu — les graphiques se recoupent au lieu de te forcer une seule vue d'ensemble.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="honest">
+  <div class="wrap honest-grid">
+    <div>
+      <h2>Pourquoi c'est gratuit, sans détour</h2>
+      <p>BET45 a d'abord été construit pour un usage personnel — suivre mes propres paris, sans les pubs et les trackers des outils existants. Les amis à qui je l'ai montré en ont voulu un compte. Le voici, ouvert à qui veut l'essayer.</p>
+      <p>Pas de version payante cachée derrière un mur, pas de données revendues à des annonceurs. Si un jour un abonnement existe, ce sera pour des fonctionnalités en plus — jamais pour retirer ce qui existe déjà gratuitement.</p>
+    </div>
+    <div class="honest-kpis">
+      <div class="kpi"><span class="kpi-label">Sports suivis</span><span class="kpi-val">10+</span></div>
+      <div class="kpi"><span class="kpi-label">Pubs affichées</span><span class="kpi-val">0</span></div>
+      <div class="kpi"><span class="kpi-label">Carte bancaire requise</span><span class="kpi-val">Non</span></div>
+      <div class="kpi"><span class="kpi-label">Consultable sans compte</span><span class="kpi-val">Oui</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="final">
+  <div class="wrap">
+    <h2>Jette un œil au mur. Ça ne coûte rien, littéralement.</h2>
+    <p>Aucune inscription requise pour regarder. Un compte gratuit si tu veux garder ton suivi.</p>
+    <a href="./indexfenotte.html" class="btn-primary">Voir le mur</a>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">BET45, un projet indépendant. <a href="./indexfenotte.html">Ouvrir l'application</a></div>
+</footer>
+
+</body>
+</html>

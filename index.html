@@ -13,9 +13,20 @@
      string et le fragment : auth-guard.js ne verrait aucune session et
      renverrait vers login.html en boucle.
      location.replace conserve les deux, et n'ajoute pas d'entree dans
-     l'historique (pas de retour arriere piegeux). -->
+     l'historique (pas de retour arriere piegeux).
+
+     AJOUT DU 31/08 (page vitrine, demande d'Antoine) : un visiteur SANS
+     parametre d'authentification (jamais venu, ou venu depuis un lien
+     partage) tombe desormais sur accueil.html plutot que directement sur
+     l'appli — pour lui expliquer ce qu'est BET45 avant de le laisser entrer.
+     Un lien magique en cours (?code= ou #access_token=) continue de filer
+     DIRECTEMENT vers indexfenotte.html, sans jamais passer par accueil.html :
+     casser ce chemin casserait la connexion, aucune page vitrine ne doit
+     s'interposer sur ce cas precis. -->
 <script>
-  location.replace('./indexfenotte.html' + window.location.search + window.location.hash);
+  var aUnCode = /[?&]code=/.test(window.location.search) || /access_token=/.test(window.location.hash);
+  var cible = aUnCode ? './indexfenotte.html' : './accueil.html';
+  location.replace(cible + window.location.search + window.location.hash);
 </script>
 <noscript>
   <p style="color:#fff;font-family:system-ui;padding:20px">

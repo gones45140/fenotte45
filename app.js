@@ -1928,7 +1928,13 @@ function renderBilanTab(){
                  plus le `||` brut du label (separateur destine a `attachTouchTooltip`,
                  jamais traite ici). La boite du bas fait deja le travail proprement. */
               tooltip:{enabled:false}},
-            scales:{x:{display:false},y:{grid:{color:'rgba(255,255,255,.03)'},ticks:{color:'#4f5d88',font:{size:9},callback:function(v){return v+'€';}}}}}});
+            /* AXE DES DATES AJOUTE (01/09, retour d'Antoine : "il manque une ligne
+               horizontale avec les dates"). L'axe X etait entierement cache. On
+               extrait juste la date (premier segment de `clabels`, avant l'heure/
+               l'adversaire/le `||`) et on limite le nombre d'etiquettes affichees
+               (`maxTicksLimit`) — pas besoin d'une date par pari, juste des reperes
+               espaces dans le temps. */
+            scales:{x:{display:true,grid:{display:false},ticks:{color:'#4f5d88',font:{size:8},maxTicksLimit:6,maxRotation:0,autoSkip:true,callback:function(v,index){ var lbl=clabels[index]; return lbl?lbl.split(' ')[0]:''; }}},y:{grid:{color:'rgba(255,255,255,.03)'},ticks:{color:'#4f5d88',font:{size:9},callback:function(v){return v+'€';}}}}}});
         attachTouchTooltip('bilan-chart',function(){return _bilanChart;},'cib-bilan','cib-bilan-txt','cib-bilan-val');
     }
   }
@@ -2904,11 +2910,19 @@ function renderEquipes(){
       if(gData) datasets.push({data:gData,borderColor:'#f0b020',borderWidth:1.5,fill:false,tension:.4,pointRadius:0});
       /* Remplissage garde seulement si une SEULE courbe (comportement identique
          a avant pour une equipe qui n'utilise qu'un mode) — avec plusieurs
-         courbes superposees, un fond degrade sur chacune brouillerait tout. */
+         courbes superposees, un fond degrade sur chacune brouillerait tout.
+         CORRIGE LE 31/08 (retour d'Antoine, Seattle Mariners/Athletics
+         invisibles) : la couleur de la courbe etait ECRASEE par `p.c`
+         (couleur du theme de l'equipe) juste ici, retombant dans le MEME
+         piege de contraste que le montant de profit corrige juste avant —
+         une equipe au theme sombre/proche du fond de la carte devenait
+         quasi invisible. On garde desormais la couleur DEJA choisie plus
+         haut selon le mode (vert/bleu/or), jamais celle du theme. */
       if(datasets.length===1){
+        var coul=datasets[0].borderColor;
         var g=c2.createLinearGradient(0,0,0,55);
-        g.addColorStop(0,p.fade.replace('.12','.3'));g.addColorStop(1,'rgba(0,0,0,0)');
-        datasets[0].backgroundColor=g; datasets[0].fill=true; datasets[0].borderColor=p.c;
+        g.addColorStop(0,coul+'4d');g.addColorStop(1,'rgba(0,0,0,0)');
+        datasets[0].backgroundColor=g; datasets[0].fill=true;
       }
       MC[u.n]=new Chart(c2,{type:'line',data:{labels:Array.from({length:maxLen},function(_,i){return i;}),datasets:datasets},
         options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{enabled:false}},scales:{x:{display:false},y:{display:false}}}});
@@ -8961,7 +8975,13 @@ function renderBilanTab(){
                  plus le `||` brut du label (separateur destine a `attachTouchTooltip`,
                  jamais traite ici). La boite du bas fait deja le travail proprement. */
               tooltip:{enabled:false}},
-            scales:{x:{display:false},y:{grid:{color:'rgba(255,255,255,.03)'},ticks:{color:'#4f5d88',font:{size:9},callback:function(v){return v+'€';}}}}}});
+            /* AXE DES DATES AJOUTE (01/09, retour d'Antoine : "il manque une ligne
+               horizontale avec les dates"). L'axe X etait entierement cache. On
+               extrait juste la date (premier segment de `clabels`, avant l'heure/
+               l'adversaire/le `||`) et on limite le nombre d'etiquettes affichees
+               (`maxTicksLimit`) — pas besoin d'une date par pari, juste des reperes
+               espaces dans le temps. */
+            scales:{x:{display:true,grid:{display:false},ticks:{color:'#4f5d88',font:{size:8},maxTicksLimit:6,maxRotation:0,autoSkip:true,callback:function(v,index){ var lbl=clabels[index]; return lbl?lbl.split(' ')[0]:''; }}},y:{grid:{color:'rgba(255,255,255,.03)'},ticks:{color:'#4f5d88',font:{size:9},callback:function(v){return v+'€';}}}}}});
         attachTouchTooltip('bilan-chart',function(){return _bilanChart;},'cib-bilan','cib-bilan-txt','cib-bilan-val');
     }
   }
@@ -9937,11 +9957,19 @@ function renderEquipes(){
       if(gData) datasets.push({data:gData,borderColor:'#f0b020',borderWidth:1.5,fill:false,tension:.4,pointRadius:0});
       /* Remplissage garde seulement si une SEULE courbe (comportement identique
          a avant pour une equipe qui n'utilise qu'un mode) — avec plusieurs
-         courbes superposees, un fond degrade sur chacune brouillerait tout. */
+         courbes superposees, un fond degrade sur chacune brouillerait tout.
+         CORRIGE LE 31/08 (retour d'Antoine, Seattle Mariners/Athletics
+         invisibles) : la couleur de la courbe etait ECRASEE par `p.c`
+         (couleur du theme de l'equipe) juste ici, retombant dans le MEME
+         piege de contraste que le montant de profit corrige juste avant —
+         une equipe au theme sombre/proche du fond de la carte devenait
+         quasi invisible. On garde desormais la couleur DEJA choisie plus
+         haut selon le mode (vert/bleu/or), jamais celle du theme. */
       if(datasets.length===1){
+        var coul=datasets[0].borderColor;
         var g=c2.createLinearGradient(0,0,0,55);
-        g.addColorStop(0,p.fade.replace('.12','.3'));g.addColorStop(1,'rgba(0,0,0,0)');
-        datasets[0].backgroundColor=g; datasets[0].fill=true; datasets[0].borderColor=p.c;
+        g.addColorStop(0,coul+'4d');g.addColorStop(1,'rgba(0,0,0,0)');
+        datasets[0].backgroundColor=g; datasets[0].fill=true;
       }
       MC[u.n]=new Chart(c2,{type:'line',data:{labels:Array.from({length:maxLen},function(_,i){return i;}),datasets:datasets},
         options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{enabled:false}},scales:{x:{display:false},y:{display:false}}}});
@@ -25800,20 +25828,52 @@ async function g45LoadLeagueMatches(slug, btn, dayOffset, sportPath){
       +'<button onclick="g45LiveNav(14)" style="border:none;background:rgba(255,255,255,.06);color:var(--t2);border-radius:8px;padding:7px 13px;font-weight:800;cursor:pointer;">▶</button>'
       +'</div>';
     if(!events.length){ list.innerHTML=nav+'<div style="text-align:center;color:var(--t3);font-size:11px;padding:20px;">Aucun match sur cette période.<br><span style="font-size:9px;">Navigue avec ◀ ▶ pour trouver d\'autres journées.</span></div>'; return; }
-    function stOf(e){ return (e.status&&e.status.type&&e.status.type.state)||''; }
     events.sort(function(a,b){ return new Date(a.date)-new Date(b.date); });
+    /* CHOIX D'UNE SEULE JOURNEE (01/09, demande d'Antoine — "au lieu d'ouvrir
+       toutes les journées, choisir la journée"). Avant : tous les jours de
+       la fenetre de 14 jours s'empilaient dans un seul long defilement. On
+       garde la meme fenetre/pagination ◀▶, mais desormais une rangee de
+       puces (une par jour AVEC match) au-dessus, et SEULE la journee
+       selectionnee s'affiche en dessous — meme principe que le calendrier
+       des competitions. Cle de jour = date ISO (YYYY-MM-DD, stable, pas
+       affectee par le fuseau du texte affiche) plutot que la chaine
+       "mercredi 26 août" utilisee pour l'affichage seulement. */
     var byDay={}, order=[];
-    events.forEach(function(e){ var d=new Date(e.date); var key=d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'}); if(!byDay[key]){ byDay[key]=[]; order.push(key); } byDay[key].push(e); });
-    var h=nav;
-    order.forEach(function(key){
-      h+='<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#8aa0ff;margin:12px 0 6px;">'+key+'</div>';
-      byDay[key].sort(function(a,b){ var ra=stOf(a)==='in'?0:1, rb=stOf(b)==='in'?0:1; if(ra!==rb) return ra-rb; return new Date(a.date)-new Date(b.date); });
-      byDay[key].forEach(function(e){ h+=_g45MatchRow(e, slug, sportPath); });
+    events.forEach(function(e){
+      var d=new Date(e.date);
+      var iso=_g45ymd(d);
+      if(!byDay[iso]){ byDay[iso]=[]; order.push(iso); }
+      byDay[iso].push(e);
     });
-    list.innerHTML='<div style="background:var(--bg2);border:1px solid var(--card-border,rgba(77,132,255,.32));border-radius:14px;padding:12px;box-shadow:0 4px 18px rgba(0,0,0,.5);">'+h+'</div>';
+    window._g45LiveByDay=byDay; window._g45LiveOrder=order; window._g45LiveNav=nav; window._g45LiveSlugRow=slug; window._g45LiveSportRow=sportPath;
+    var todayIso=_g45ymd(new Date());
+    window._g45LiveSelDay = (order.indexOf(todayIso)>=0) ? todayIso : order[0];
+    _g45RenderLiveDay();
     _g45StartListRefresh();
   }catch(err){ list.innerHTML='<div style="text-align:center;color:#ff6b6b;font-size:11px;padding:24px;">Erreur de chargement.</div>'; }
 }
+function _g45RenderLiveDay(){
+  var list=document.getElementById(window._g45ListId||'g45-live-list'); if(!list) return;
+  var byDay=window._g45LiveByDay||{}, order=window._g45LiveOrder||[], sel=window._g45LiveSelDay;
+  var todayIso=_g45ymd(new Date());
+  var chips='<div style="display:flex;gap:5px;overflow-x:auto;padding-bottom:6px;margin-bottom:8px;-webkit-overflow-scrolling:touch;">'
+    +order.map(function(iso){
+      var d=new Date(iso+'T00:00:00');
+      var lbl=d.toLocaleDateString('fr-FR',{weekday:'short',day:'numeric'}).replace('.','');
+      var on=(iso===sel), isToday=(iso===todayIso);
+      return '<button onclick="g45LiveSelDay(\''+iso+'\')" style="flex-shrink:0;border:none;border-radius:8px;padding:7px 12px;font-size:11px;font-weight:800;cursor:pointer;background:'+(on?'#4d84ff':'rgba(255,255,255,.06)')+';color:'+(on?'#fff':'var(--t2)')+';'+(isToday&&!on?'border:1px solid #4d84ff;':'')+'text-transform:capitalize;">'+lbl+(isToday?' •':'')+'</button>';
+    }).join('')
+    +'</div>';
+  function stOf(e){ return (e.status&&e.status.type&&e.status.type.state)||''; }
+  var evs=(byDay[sel]||[]).slice().sort(function(a,b){ var ra=stOf(a)==='in'?0:1, rb=stOf(b)==='in'?0:1; if(ra!==rb) return ra-rb; return new Date(a.date)-new Date(b.date); });
+  var hdr = sel ? new Date(sel+'T00:00:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'}) : '';
+  var body = evs.length
+    ? ('<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#8aa0ff;margin-bottom:6px;">'+hdr+'</div>'+evs.map(function(e){ return _g45MatchRow(e, window._g45LiveSlugRow, window._g45LiveSportRow); }).join(''))
+    : '<div style="text-align:center;color:var(--t3);font-size:11px;padding:16px;">Aucun match ce jour-là.</div>';
+  list.innerHTML='<div style="background:var(--bg2);border:1px solid var(--card-border,rgba(77,132,255,.32));border-radius:14px;padding:12px;box-shadow:0 4px 18px rgba(0,0,0,.5);">'+(window._g45LiveNav||'')+chips+body+'</div>';
+}
+function g45LiveSelDay(iso){ window._g45LiveSelDay=iso; _g45RenderLiveDay(); _g45StartListRefresh(); }
+window.g45LiveSelDay=g45LiveSelDay;
 function g45LiveNav(delta){ if(window._g45LiveSlug) g45LoadLeagueMatches(window._g45LiveSlug, null, (window._g45LiveOffset||0)+delta, window._g45Sport); }
 window.loadLiveTab=loadLiveTab;
 window.g45LoadLeagueMatches=g45LoadLeagueMatches;
@@ -29056,7 +29116,20 @@ async function g45LoadCalendar(slug, btn, monthOffset, sportPath){
   list.innerHTML='<div style="text-align:center;color:var(--t3);font-size:11px;padding:24px;">⏳ Chargement du calendrier…</div>';
   try{
     var mb=_g45MonthBounds(monthOffset);
-    var r=await fetch('https://site.api.espn.com/apis/site/v2/sports/'+sportPath+'/'+slug+'/scoreboard?dates='+_g45ymd(mb.first)+'-'+_g45ymd(mb.last)+'&limit=1000');
+    /* PADDING D'UN JOUR DE CHAQUE COTE (31/08, retour d'Antoine : le 1er du
+       mois affichait "0 match" alors que tous les autres jours en avaient).
+       ESPN interprete la plage `dates=DEBUT-FIN` selon SA propre convention
+       de date (probablement le fuseau US, pas le fuseau local du visiteur) —
+       un match commençant tard le soir cote americain peut ainsi tomber
+       juste avant ou apres la plage demandee selon le fuseau. On elargit
+       donc la requete d'un jour de chaque cote ; le tri par jour juste en
+       dessous (`d.getFullYear()===mb.y && d.getMonth()===mb.m`) continue de
+       ne garder QUE les jours reellement dans le mois affiche, donc ce
+       padding ne peut faire apparaitre aucun match hors du mois — il sert
+       seulement a ne plus EN RATER un a la frontiere. */
+    var _pad0=new Date(mb.first); _pad0.setDate(_pad0.getDate()-1);
+    var _pad1=new Date(mb.last); _pad1.setDate(_pad1.getDate()+1);
+    var r=await fetch('https://site.api.espn.com/apis/site/v2/sports/'+sportPath+'/'+slug+'/scoreboard?dates='+_g45ymd(_pad0)+'-'+_g45ymd(_pad1)+'&limit=1000');
     var data=await r.json();
     var events=(data.events||[]);
     /* LOGO DE COMPETITION MEMORISE (25/08). ESPN ne le renvoie PAS a chaque
@@ -30352,25 +30425,40 @@ function _g45ScoreTexte(h) {
   }
 
   if (h.sport === '⚾' || h.sport === '⚾🇺🇸') {
-    /* MLB : statsapi.mlb.com. Un seul jour demande = au plus un match (les
-       doubles programmes existent mais restent rares) ; `dates[].games[]`
-       peut en theorie en contenir 2, on prend le premier "Final" trouve. */
+    /* MLB : statsapi.mlb.com. CORRIGE LE 01/09 (retour d'Antoine : score de
+       5-8 affiche pour un match Athletics-Rangers reellement a 7-0) — un
+       DOUBLE PROGRAMME (2 matchs entre les 2 memes equipes le meme jour, pas
+       si rare en MLB) faisait prendre le premier match "Final" trouve, sans
+       verifier que c'etait bien contre le bon adversaire. On verifie
+       desormais que l'AUTRE equipe du match correspond a l'adversaire du
+       pari avant d'accepter le score ; si l'adversaire n'est pas resoluble
+       (nom inhabituel), on retombe sur l'ancien comportement plutot que de
+       n'afficher aucun score. */
     (async function() {
       var hs = null, as = null;
       try {
         var info = (typeof MLB_TEAMS !== 'undefined') ? (MLB_TEAMS[nomEquipe] || MLB_TEAMS[nomAdverse]) : null;
+        var advInfo = (typeof MLB_TEAMS !== 'undefined') ? MLB_TEAMS[nomAdverse] : null;
         if (info) {
           for (var jj = 0; jj < joursUS.length && hs == null; jj++) {
             var jr = joursUS[jj];
             var chemin = '/api/v1/schedule?teamId=' + info.id + '&startDate=' + jr + '&endDate=' + jr + '&sportId=1';
             var r = await fetch(FD_PROXY + '?key=mlb&path=' + encodeURIComponent(chemin) + '&host=mlb');
             var d = await r.json();
-            var jeu = null;
+            var candidats = [];
             (d.dates || []).forEach(function(dt) {
               (dt.games || []).forEach(function(g) {
-                if (!jeu && g && g.status && g.status.abstractGameState === 'Final') jeu = g;
+                if (g && g.status && g.status.abstractGameState === 'Final') candidats.push(g);
               });
             });
+            var jeu = null;
+            if (advInfo) {
+              jeu = candidats.filter(function(g) {
+                var hId = g.teams.home.team.id, aId = g.teams.away.team.id;
+                return hId === advInfo.id || aId === advInfo.id;
+              })[0] || null;
+            }
+            if (!jeu) jeu = candidats[0] || null;
             if (jeu) { hs = jeu.teams.home.score; as = jeu.teams.away.score; }
           }
         }
