@@ -2118,11 +2118,17 @@ function render(){
       var _serieLieu=function(lg, ico){
         var l=paris.filter(function(h){ return h.domicile===lg; });
         if(!l.length) return '';
-        return '<span style="display:inline-flex;align-items:center;gap:4px;margin-right:9px;">'
+        return '<span style="display:inline-flex;align-items:center;gap:4px;">'
           + '<span style="font-size:9px;opacity:.75;">'+ico+'</span>'+formeHtml(l,5)+'</span>';
       };
+      /* UNE LIGNE PAR LIEU (02/09, demande d'Antoine). Les deux series se
+         suivaient sur la meme ligne, separees par une simple marge : sur une
+         equipe jouee des deux cotes on lisait une file de dix pastilles ou il
+         fallait retrouver soi-meme la coupure. Passer le conteneur en colonne
+         donne une ligne 🏠 et une ligne ✈️, ce qui rejoint la logique de tout le
+         reste de la carte, ventilee par lieu depuis le 22/08. */
       var forme=(_dom.n||_ext.n)
-        ? ('<span style="display:inline-flex;align-items:center;flex-wrap:wrap;">'
+        ? ('<span style="display:flex;flex-direction:column;align-items:flex-start;gap:3px;">'
             + _serieLieu('dom','\ud83c\udfe0') + _serieLieu('ext','\u2708\ufe0f') + '</span>')
         : formeHtml(paris,5);
       /* SERIE EN COURS PAR LIEU (27/08). Meme raison que la separation de la
@@ -2187,9 +2193,33 @@ function render(){
       /* Logo nettement plus present : 86 px a 18 %. Une ligne du mur faisait
          10 px de haut de matiere pour 100 % de largeur vide — l'effet « salon
          Discord » qu'Antoine veut casser. */
-      var _filig=_lu?('<img src="'+_lu+'" loading="lazy" onerror="this.style.display=\'none\'" '
-        +'style="position:absolute;right:14px;top:50%;transform:translateY(-50%);height:86px;width:86px;'
-        +'object-fit:contain;opacity:.18;filter:saturate(1.4);pointer-events:none;">'):'';
+      /* ECUSSON PORTEUR DES MONTANTS (02/09, demande d'Antoine : « les chiffres
+         peuvent-ils etre inclus dans le logo »). Avant, l'ecusson etait une
+         image posee a `right:14px` en 86x86 a 18 % — dimensionnee pour une carte
+         de 92 px. Depuis que la hauteur est reglable jusqu'a 500 px, il
+         paraissait perdu, et son centre ne tombait pas sur celui des montants.
+         Il devient donc le FOND du bloc des montants : l'alignement est acquis
+         par construction, quelle que soit la hauteur.
+         La taille suit `--g45-murh` en CSS pur — pas de recalcul JS, et le
+         curseur des Outils la fait bouger en direct. `clamp` garde 86 px au
+         minimum (le telephone ne doit rien perdre) et plafonne a 200 px pour que
+         l'ecusson ne vienne pas manger le sujet de la banniere.
+         Le halo radial est necessaire : sur un ecusson clair — le Real, le PSV —
+         le vert des gains devenait illisible malgre l'ombre portee. */
+      /* TAILLE ET OPACITE SORTIES DU JS (02/09, retour d'Antoine : « sur telephone
+         les caches cachent un peu trop »). Une seule valeur ne peut pas convenir
+         aux deux : 86 px d'ecusson plus son halo, c'est discret sur une carte de
+         1580 px de large et c'est un gros disque sombre sur une carte de 330 px.
+         Les dimensions passent donc dans la feuille de style injectee, ou une
+         media query peut les differencier — ce qu'un style inline ne permet pas.
+         Le JS ne pose plus que les classes. */
+      var _ecuFond = _lu ? ('<img class="g45-ecu" src="'+_lu+'" loading="lazy" onerror="this.style.display=\'none\'" '
+        +'style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);'
+        +'object-fit:contain;filter:saturate(1.4);pointer-events:none;z-index:0;">'
+        +'<div class="g45-ecu-halo" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);'
+        +'pointer-events:none;z-index:1;'
+        +'background:radial-gradient(closest-side,rgba(8,11,20,.62) 0%,rgba(8,11,20,.32) 55%,transparent 100%);"></div>') : '';
+      var _filig='';
       /* Une BANNIERE remplace le fond de la ligne ; un LOGO reste un filigrane
          centre. Tant que la mesure n'a pas eu lieu, on traite en logo — le cas
          le moins risque, puisqu'il ne recouvre rien. */
@@ -2214,7 +2244,7 @@ function render(){
            cadrees pour un bandeau large, pas pour une bande fine. */
         +'min-height:92px;border-radius:12px;margin-bottom:7px;border:1px solid rgba(255,255,255,.07);'
         +'cursor:pointer;background:'+_fond+';background-size:cover;background-position:center 50%;" '
-        +'data-nom="'+u.n+'" onclick="openClubFromDash(this.dataset.nom)">'
+        +'class="g45-murcard" data-nom="'+u.n+'" onclick="openClubFromDash(this.dataset.nom)">'
         +_couche
         +_filig
         /* BADGE ROND SUPPRIME (27/08, corrige le decalage persistant). C'etait un
@@ -2248,9 +2278,21 @@ function render(){
            est serre.
            `margin-right:auto` remet le bloc a gauche SANS lui rendre la largeur
            — c'est l'espace vide qui absorbe la place, plus le voile. */
-        +'<div style="position:relative;flex:0 1 auto;min-width:0;max-width:72%;margin-right:auto;'
+        /* PLEINE HAUTEUR (02/09). Le parent est en `align-items:center`, donc les deux
+           blocs restaient de petites pastilles flottant au milieu — anecdotiques des
+           que la carte est montee a 500px. `align-self:stretch` les fait courir du
+           haut en bas de la carte ; le flex interne recentre le texte, qui ne bouge
+           donc PAS de place. Seul le voile degrade s'etend, ce qui encadre l'image
+           au lieu de la barrer. Pour revenir en arriere il suffit de retirer les
+           trois proprietes ajoutees ici et sur le bloc des montants. */
+        +'<div class="g45-murtxt" style="position:relative;flex:0 1 auto;min-width:0;max-width:72%;margin-right:auto;'
+          +'align-self:stretch;display:flex;flex-direction:column;justify-content:center;'
           +'padding:4px 16px 4px 9px;border-radius:10px;'
-          +'background:linear-gradient(90deg,rgba(8,11,20,.72) 0%,rgba(8,11,20,.34) 62%,transparent 100%);'
+          /* Le degre s'eteignait a 62%, alors que le bloc s'etend jusqu'a la fin du
+             texte le plus long : la queue d'une note et la barre de serie sortaient
+             dans le clair (visible sur le fond blanc du Real). Il tient maintenant
+             jusqu'a 82%, donc tout le contenu reste couvert. */
+          +'background:linear-gradient(90deg,rgba(8,11,20,.74) 0%,rgba(8,11,20,.55) 82%,transparent 100%);'
           +'text-shadow:0 1px 4px rgba(0,0,0,.95),0 0 10px rgba(0,0,0,.7);">'
         +'<div style="font-size:12px;font-weight:700;">'+(u.sport||'')+' '+u.n+'</div>'
         +'<div style="font-size:9px;color:var(--t3);">'+'⭐'.repeat(u.s)+' · '+_g45PalLabel(u)+' · '+pc+'% réussite</div>'
@@ -2258,16 +2300,27 @@ function render(){
         +forme
         +serieFeu
         +'</div>'
-        +'<div style="position:relative;margin-left:auto;text-align:right;line-height:1.25;padding:4px 9px 4px 18px;border-radius:10px;'
+        +'<div class="g45-murval" style="position:relative;margin-left:auto;text-align:right;line-height:1.25;padding:4px 9px 4px 18px;border-radius:10px;'
+          +'align-self:stretch;display:flex;flex-direction:column;justify-content:center;align-items:flex-end;'
           +'background:linear-gradient(270deg,rgba(8,11,20,.72) 0%,rgba(8,11,20,.40) 55%,transparent 100%);'
           +'text-shadow:0 1px 4px rgba(0,0,0,.95),0 0 10px rgba(0,0,0,.7);">'
-          +'<div style="font-size:14px;font-weight:800;color:'+pColor+';">'+fmt(profit)+'</div>'
+          +_ecuFond
+          +'<div style="position:relative;z-index:2;font-size:14px;font-weight:800;color:'+pColor+';">'+fmt(profit)+'</div>'
+          /* TROIS LIGNES (02/09, demande d'Antoine) : total, puis domicile, puis
+             exterieur. Les deux details tenaient sur une seule ligne separes par
+             un point median — lisible a 92 px de haut, mais tasse et illogique
+             une fois la carte montee, alors que les series a gauche sont
+             desormais ventilees ligne par ligne. Les deux colonnes se lisent
+             maintenant de la meme facon.
+             `opacity:.35` reste la marque d'un lieu sans aucun pari : le montant
+             a zero doit se distinguer d'un vrai equilibre a zero. */
           + ((_dom.n||_ext.n)
-              ? ('<div style="font-size:9px;font-weight:700;white-space:nowrap;">'
-                  +'<span style="color:'+(_dom.p>=0?'var(--g)':'var(--r)')+';opacity:'+(_dom.n?'1':'.35')+';">\ud83c\udfe0 '+fmt(_dom.p)+'</span>'
-                  +'<span style="color:var(--t3);"> · </span>'
-                  +'<span style="color:'+(_ext.p>=0?'var(--g)':'var(--r)')+';opacity:'+(_ext.n?'1':'.35')+';">\u2708\ufe0f '+fmt(_ext.p)+'</span>'
-                +'</div>')
+              ? ('<div style="position:relative;z-index:2;font-size:9px;font-weight:700;white-space:nowrap;'
+                  +'color:'+(_dom.p>=0?'var(--g)':'var(--r)')+';opacity:'+(_dom.n?'1':'.35')+';margin-top:1px;">'
+                  +'\ud83c\udfe0 '+fmt(_dom.p)+'</div>'
+                +'<div style="position:relative;z-index:2;font-size:9px;font-weight:700;white-space:nowrap;'
+                  +'color:'+(_ext.p>=0?'var(--g)':'var(--r)')+';opacity:'+(_ext.n?'1':'.35')+';">'
+                  +'\u2708\ufe0f '+fmt(_ext.p)+'</div>')
               : '')
         +'</div>'
         +'</div>';
@@ -9447,11 +9500,17 @@ function render(){
       var _serieLieu=function(lg, ico){
         var l=paris.filter(function(h){ return h.domicile===lg; });
         if(!l.length) return '';
-        return '<span style="display:inline-flex;align-items:center;gap:4px;margin-right:9px;">'
+        return '<span style="display:inline-flex;align-items:center;gap:4px;">'
           + '<span style="font-size:9px;opacity:.75;">'+ico+'</span>'+formeHtml(l,5)+'</span>';
       };
+      /* UNE LIGNE PAR LIEU (02/09, demande d'Antoine). Les deux series se
+         suivaient sur la meme ligne, separees par une simple marge : sur une
+         equipe jouee des deux cotes on lisait une file de dix pastilles ou il
+         fallait retrouver soi-meme la coupure. Passer le conteneur en colonne
+         donne une ligne 🏠 et une ligne ✈️, ce qui rejoint la logique de tout le
+         reste de la carte, ventilee par lieu depuis le 22/08. */
       var forme=(_dom.n||_ext.n)
-        ? ('<span style="display:inline-flex;align-items:center;flex-wrap:wrap;">'
+        ? ('<span style="display:flex;flex-direction:column;align-items:flex-start;gap:3px;">'
             + _serieLieu('dom','\ud83c\udfe0') + _serieLieu('ext','\u2708\ufe0f') + '</span>')
         : formeHtml(paris,5);
       /* SERIE EN COURS PAR LIEU (27/08). Meme raison que la separation de la
@@ -9516,9 +9575,33 @@ function render(){
       /* Logo nettement plus present : 86 px a 18 %. Une ligne du mur faisait
          10 px de haut de matiere pour 100 % de largeur vide — l'effet « salon
          Discord » qu'Antoine veut casser. */
-      var _filig=_lu?('<img src="'+_lu+'" loading="lazy" onerror="this.style.display=\'none\'" '
-        +'style="position:absolute;right:14px;top:50%;transform:translateY(-50%);height:86px;width:86px;'
-        +'object-fit:contain;opacity:.18;filter:saturate(1.4);pointer-events:none;">'):'';
+      /* ECUSSON PORTEUR DES MONTANTS (02/09, demande d'Antoine : « les chiffres
+         peuvent-ils etre inclus dans le logo »). Avant, l'ecusson etait une
+         image posee a `right:14px` en 86x86 a 18 % — dimensionnee pour une carte
+         de 92 px. Depuis que la hauteur est reglable jusqu'a 500 px, il
+         paraissait perdu, et son centre ne tombait pas sur celui des montants.
+         Il devient donc le FOND du bloc des montants : l'alignement est acquis
+         par construction, quelle que soit la hauteur.
+         La taille suit `--g45-murh` en CSS pur — pas de recalcul JS, et le
+         curseur des Outils la fait bouger en direct. `clamp` garde 86 px au
+         minimum (le telephone ne doit rien perdre) et plafonne a 200 px pour que
+         l'ecusson ne vienne pas manger le sujet de la banniere.
+         Le halo radial est necessaire : sur un ecusson clair — le Real, le PSV —
+         le vert des gains devenait illisible malgre l'ombre portee. */
+      /* TAILLE ET OPACITE SORTIES DU JS (02/09, retour d'Antoine : « sur telephone
+         les caches cachent un peu trop »). Une seule valeur ne peut pas convenir
+         aux deux : 86 px d'ecusson plus son halo, c'est discret sur une carte de
+         1580 px de large et c'est un gros disque sombre sur une carte de 330 px.
+         Les dimensions passent donc dans la feuille de style injectee, ou une
+         media query peut les differencier — ce qu'un style inline ne permet pas.
+         Le JS ne pose plus que les classes. */
+      var _ecuFond = _lu ? ('<img class="g45-ecu" src="'+_lu+'" loading="lazy" onerror="this.style.display=\'none\'" '
+        +'style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);'
+        +'object-fit:contain;filter:saturate(1.4);pointer-events:none;z-index:0;">'
+        +'<div class="g45-ecu-halo" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);'
+        +'pointer-events:none;z-index:1;'
+        +'background:radial-gradient(closest-side,rgba(8,11,20,.62) 0%,rgba(8,11,20,.32) 55%,transparent 100%);"></div>') : '';
+      var _filig='';
       /* Une BANNIERE remplace le fond de la ligne ; un LOGO reste un filigrane
          centre. Tant que la mesure n'a pas eu lieu, on traite en logo — le cas
          le moins risque, puisqu'il ne recouvre rien. */
@@ -9543,7 +9626,7 @@ function render(){
            cadrees pour un bandeau large, pas pour une bande fine. */
         +'min-height:92px;border-radius:12px;margin-bottom:7px;border:1px solid rgba(255,255,255,.07);'
         +'cursor:pointer;background:'+_fond+';background-size:cover;background-position:center 50%;" '
-        +'data-nom="'+u.n+'" onclick="openClubFromDash(this.dataset.nom)">'
+        +'class="g45-murcard" data-nom="'+u.n+'" onclick="openClubFromDash(this.dataset.nom)">'
         +_couche
         +_filig
         /* BADGE ROND SUPPRIME (27/08, corrige le decalage persistant). C'etait un
@@ -9577,9 +9660,21 @@ function render(){
            est serre.
            `margin-right:auto` remet le bloc a gauche SANS lui rendre la largeur
            — c'est l'espace vide qui absorbe la place, plus le voile. */
-        +'<div style="position:relative;flex:0 1 auto;min-width:0;max-width:72%;margin-right:auto;'
+        /* PLEINE HAUTEUR (02/09). Le parent est en `align-items:center`, donc les deux
+           blocs restaient de petites pastilles flottant au milieu — anecdotiques des
+           que la carte est montee a 500px. `align-self:stretch` les fait courir du
+           haut en bas de la carte ; le flex interne recentre le texte, qui ne bouge
+           donc PAS de place. Seul le voile degrade s'etend, ce qui encadre l'image
+           au lieu de la barrer. Pour revenir en arriere il suffit de retirer les
+           trois proprietes ajoutees ici et sur le bloc des montants. */
+        +'<div class="g45-murtxt" style="position:relative;flex:0 1 auto;min-width:0;max-width:72%;margin-right:auto;'
+          +'align-self:stretch;display:flex;flex-direction:column;justify-content:center;'
           +'padding:4px 16px 4px 9px;border-radius:10px;'
-          +'background:linear-gradient(90deg,rgba(8,11,20,.72) 0%,rgba(8,11,20,.34) 62%,transparent 100%);'
+          /* Le degre s'eteignait a 62%, alors que le bloc s'etend jusqu'a la fin du
+             texte le plus long : la queue d'une note et la barre de serie sortaient
+             dans le clair (visible sur le fond blanc du Real). Il tient maintenant
+             jusqu'a 82%, donc tout le contenu reste couvert. */
+          +'background:linear-gradient(90deg,rgba(8,11,20,.74) 0%,rgba(8,11,20,.55) 82%,transparent 100%);'
           +'text-shadow:0 1px 4px rgba(0,0,0,.95),0 0 10px rgba(0,0,0,.7);">'
         +'<div style="font-size:12px;font-weight:700;">'+(u.sport||'')+' '+u.n+'</div>'
         +'<div style="font-size:9px;color:var(--t3);">'+'⭐'.repeat(u.s)+' · '+_g45PalLabel(u)+' · '+pc+'% réussite</div>'
@@ -9587,16 +9682,27 @@ function render(){
         +forme
         +serieFeu
         +'</div>'
-        +'<div style="position:relative;margin-left:auto;text-align:right;line-height:1.25;padding:4px 9px 4px 18px;border-radius:10px;'
+        +'<div class="g45-murval" style="position:relative;margin-left:auto;text-align:right;line-height:1.25;padding:4px 9px 4px 18px;border-radius:10px;'
+          +'align-self:stretch;display:flex;flex-direction:column;justify-content:center;align-items:flex-end;'
           +'background:linear-gradient(270deg,rgba(8,11,20,.72) 0%,rgba(8,11,20,.40) 55%,transparent 100%);'
           +'text-shadow:0 1px 4px rgba(0,0,0,.95),0 0 10px rgba(0,0,0,.7);">'
-          +'<div style="font-size:14px;font-weight:800;color:'+pColor+';">'+fmt(profit)+'</div>'
+          +_ecuFond
+          +'<div style="position:relative;z-index:2;font-size:14px;font-weight:800;color:'+pColor+';">'+fmt(profit)+'</div>'
+          /* TROIS LIGNES (02/09, demande d'Antoine) : total, puis domicile, puis
+             exterieur. Les deux details tenaient sur une seule ligne separes par
+             un point median — lisible a 92 px de haut, mais tasse et illogique
+             une fois la carte montee, alors que les series a gauche sont
+             desormais ventilees ligne par ligne. Les deux colonnes se lisent
+             maintenant de la meme facon.
+             `opacity:.35` reste la marque d'un lieu sans aucun pari : le montant
+             a zero doit se distinguer d'un vrai equilibre a zero. */
           + ((_dom.n||_ext.n)
-              ? ('<div style="font-size:9px;font-weight:700;white-space:nowrap;">'
-                  +'<span style="color:'+(_dom.p>=0?'var(--g)':'var(--r)')+';opacity:'+(_dom.n?'1':'.35')+';">\ud83c\udfe0 '+fmt(_dom.p)+'</span>'
-                  +'<span style="color:var(--t3);"> · </span>'
-                  +'<span style="color:'+(_ext.p>=0?'var(--g)':'var(--r)')+';opacity:'+(_ext.n?'1':'.35')+';">\u2708\ufe0f '+fmt(_ext.p)+'</span>'
-                +'</div>')
+              ? ('<div style="position:relative;z-index:2;font-size:9px;font-weight:700;white-space:nowrap;'
+                  +'color:'+(_dom.p>=0?'var(--g)':'var(--r)')+';opacity:'+(_dom.n?'1':'.35')+';margin-top:1px;">'
+                  +'\ud83c\udfe0 '+fmt(_dom.p)+'</div>'
+                +'<div style="position:relative;z-index:2;font-size:9px;font-weight:700;white-space:nowrap;'
+                  +'color:'+(_ext.p>=0?'var(--g)':'var(--r)')+';opacity:'+(_ext.n?'1':'.35')+';">'
+                  +'\u2708\ufe0f '+fmt(_ext.p)+'</div>')
               : '')
         +'</div>'
         +'</div>';
@@ -21249,12 +21355,19 @@ function renderSaisonsChart(el, results, nom) {
         if(qs0.every(function(k){ return CHK0[k]!==undefined ? CHK0[k] : true; })) matchCount++;
       });
       var condLabel = qs0.join(' + ');
-      html += '<div style="display:flex;align-items:center;justify-content:space-between;margin:12px 0 8px;">';
+      /* ENVELOPPE AUX COULEURS DU CLUB (02/09). Le fond raye est pose ici, sur
+         un conteneur qui englobe l'entete ET la liste : il couvre donc toute la
+         hauteur quel que soit le nombre de matchs — 5 comme 38 — sans qu'aucune
+         taille n'ait a etre calculee. Un ecusson centre, lui, se serait retrouve
+         vers le 19e match, invisible a l'ouverture du panneau. */
+      html += '<div style="position:relative;border-radius:10px;padding:8px 10px 10px;margin:12px 0 0;overflow:hidden;">';
+      html += g45FondClubHtml(_currentTeam, 0.2);
+      html += '<div style="position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;margin:0 0 8px;">';
       html += '<div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#4f5d88;">📅 Résultats ('+allMatchesSorted.length+' matchs)</div>';
       html += '<div style="font-size:10px;font-weight:800;color:'+(matchCount>0?'#1ed760':'#ff4545')+';">✅ '+matchCount+'/'+allMatchesSorted.length+' — '+condLabel+'</div>';
       html += '</div>';
       html += _scoreBarHtml;
-      html += '<div style="display:flex;flex-direction:column;gap:3px;">';
+      html += '<div style="position:relative;z-index:1;display:flex;flex-direction:column;gap:3px;">';
       allMatchesSorted.forEach(function(m){
         var hg = (m.score&&m.score.regularTime?m.score.regularTime.home:m.score&&m.score.fullTime?m.score.fullTime.home:0)||0;
         var ag = (m.score&&m.score.regularTime?m.score.regularTime.away:m.score&&m.score.fullTime?m.score.fullTime.away:0)||0;
@@ -21292,15 +21405,34 @@ function renderSaisonsChart(el, results, nom) {
         var qs = window._quickStats || ['O2.5','BTS'];
         var allOk = qs.every(function(k){ return MATCH_CHECKS[k]!==undefined ? MATCH_CHECKS[k] : true; });
         var barColor = allOk ? '#1ed760' : '#ff4545';
-        html += '<div onclick="toggleSaisonMatchDetail(this)" data-eid="'+(m.espnId||'')+'" data-lg="'+((m.competition&&m.competition.code)||'')+'" style="display:grid;grid-template-columns:32px 1fr auto 1fr 36px;gap:4px;align-items:center;padding:5px 8px;background:'+(isOurHome?'rgba(255,255,255,.04)':'rgba(255,255,255,.02)')+';border-radius:6px;border-left:3px solid '+barColor+';cursor:pointer;" onmouseover="this.style.opacity=\'0.8\'" onmouseout="this.style.opacity=\'1\'">';
+        /* VOILES AJUSTES AU CONTENU (02/09, retour d'Antoine : « un seul cache
+           actuellement, ce qui gache l'image de fond »). Le voile couvrait toute
+           la largeur de la ligne, donc le fond aux couleurs du club ne se voyait
+           que dans les 4 px de gouttiere entre deux lignes.
+           Chaque element porte desormais SON voile, et le fond passe entre eux.
+           Point important : le voile est pose sur les NOMS, pas sur les cellules
+           de la grille. Une cellule fait toute la largeur de sa colonne, on
+           serait revenu au meme probleme ; un nom, lui, epouse son texte. La
+           grille et ses colonnes fixes sont conservees telles quelles, donc la
+           colonne des scores reste parfaitement alignee d'une ligne a l'autre —
+           ce qui se serait perdu en centrant un bloc unique sur le contenu.
+           Meme logique que le voile ajuste au contenu des cartes du mur. */
+        var _vl = isOurHome ? 'rgba(16,21,38,.80)' : 'rgba(16,21,38,.72)';
+        html += '<div onclick="toggleSaisonMatchDetail(this)" data-eid="'+(m.espnId||'')+'" data-lg="'+((m.competition&&m.competition.code)||'')+'" style="display:grid;grid-template-columns:32px 1fr auto 1fr 36px;gap:6px;align-items:center;padding:2px 0;cursor:pointer;" onmouseover="this.style.opacity=\'0.8\'" onmouseout="this.style.opacity=\'1\'">';
         // Date
-        html += '<div style="font-size:9px;color:var(--t3);text-align:center;">'+dateStr+'</div>';
+        html += '<div style="font-size:9px;color:var(--t3);text-align:center;background:'+_vl+';border-radius:6px;border-left:3px solid '+barColor+';padding:4px 3px;">'+dateStr+'</div>';
         // Equipe dom
-        html += '<div style="font-size:10px;font-weight:'+(isOurHome?'800':'400')+';color:'+(isOurHome?'var(--t1)':'var(--t2)')+';text-align:right;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">'+(isOurHome?_scMark:'')+homeName+'</div>';
+        html += '<div style="text-align:right;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">'
+          +'<span style="display:inline-block;max-width:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;vertical-align:middle;'
+          +'background:'+_vl+';border-radius:6px;padding:4px 8px;font-size:10px;font-weight:'+(isOurHome?'800':'400')+';color:'+(isOurHome?'var(--t1)':'var(--t2)')+';">'
+          +(isOurHome?_scMark:'')+homeName+'</span></div>';
         // Score
-        html += '<div style="font-size:11px;font-weight:800;color:'+rc+';text-align:center;min-width:40px;">'+hg+' - '+ag+'</div>';
+        html += '<div style="font-size:11px;font-weight:800;color:'+rc+';text-align:center;min-width:40px;background:'+_vl+';border-radius:6px;padding:4px 6px;">'+hg+' - '+ag+'</div>';
         // Equipe ext
-        html += '<div style="font-size:10px;font-weight:'+(!isOurHome?'800':'400')+';color:'+(!isOurHome?'var(--t1)':'var(--t2)')+';overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">'+(!isOurHome?_scMark:'')+awayName+'</div>';
+        html += '<div style="overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">'
+          +'<span style="display:inline-block;max-width:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;vertical-align:middle;'
+          +'background:'+_vl+';border-radius:6px;padding:4px 8px;font-size:10px;font-weight:'+(!isOurHome?'800':'400')+';color:'+(!isOurHome?'var(--t1)':'var(--t2)')+';">'
+          +(!isOurHome?_scMark:'')+awayName+'</span></div>';
         // Over/BTS
         var badges = '';
         var qs = window._quickStats || ['O2.5','BTS'];
@@ -21329,11 +21461,12 @@ function renderSaisonsChart(el, results, nom) {
         var _coteMatch = (typeof _g45CoteDuMatch === 'function')
           ? _g45CoteDuMatch(m.espnId, isDom) : null;
         if (_coteMatch) badges += '<span style="color:#9fb0c7;">@' + _coteMatch.toFixed(2) + '</span> ';
-        html += '<div style="font-size:8px;text-align:right;min-width:40px;">'+compIco+'<br>'+badges+'</div>';
+        html += '<div style="font-size:8px;text-align:right;min-width:40px;background:'+_vl+';border-radius:6px;padding:3px 4px;">'+compIco+'<br>'+badges+'</div>';
         html += '</div>';
         html += '<div class="smd-panel" style="display:none;"></div>';
       });
       html += '</div>';
+      html += '</div>';   /* ferme l'enveloppe aux couleurs du club */
     }
 
     // ── Classement de la ligue ──
@@ -35709,15 +35842,33 @@ async function loadCompetTab() {
            corriger cote police. En attendant que le vrai logo soit connu, on
            affiche donc une PASTILLE avec le code pays, lisible partout.
            Les emoji non-drapeaux (coupes, ballons) restent tels quels. */
-        var estDrapeau = /^[\u{1F1E6}-\u{1F1FF}]{2}/u.test(String(l.ico || ''));
+        /* REFONTE DU 02/09 (retours d'Antoine : « Angleterre y a le drapeau
+           pourquoi que lui », « un coup bleu blanc rouge un coup logo Ligue 1 »).
+           Trois defauts se cumulaient :
+           1) Le test ne reconnaissait que les drapeaux formes de DEUX indicateurs
+              regionaux (🇫🇷 = F+R). Le drapeau anglais est construit autrement —
+              un drapeau noir suivi d'une sequence de balises — il echappait donc
+              au filtre et restait le seul affiche en vrai.
+           2) La pastille « FRA / ESP » etait imposee a tout le monde alors que le
+              probleme d'origine ne touche QUE Chrome sous Windows, ou la police
+              d'emoji drapeaux est absente.
+           3) Surtout, l'aspect d'une tuile CHANGEAIT avec le temps : le logo du
+              championnat est capte gratuitement dans la reponse du classement,
+              donc tuile au drapeau avant d'avoir ouvert la competition, tuile au
+              logo apres. Rien d'aleatoire, mais rien de previsible non plus.
+           La regle est desormais fixe et ne depend plus de la police du systeme :
+           une competition NATIONALE montre toujours le drapeau de son pays, en
+           IMAGE (flagcdn, deja utilise ailleurs dans l'appli), et une competition
+           internationale montre son logo, ou son emoji a defaut. Le logo ne prend
+           donc plus le dessus sur le drapeau d'un championnat national. */
+        var _pays3 = String(l.slug).split('.')[0];
+        var _iso = _G45_CMP_PAYS[_pays3];
         var vis;
-        if (lo) {
+        if (_iso) {
+          vis = '<img src="https://flagcdn.com/w40/' + _iso + '.png" alt="" loading="lazy" '
+              + 'onerror="this.remove()" style="width:24px;height:16px;object-fit:cover;border-radius:3px;">';
+        } else if (lo) {
           vis = '<img src="' + lo + '" style="width:22px;height:22px;object-fit:contain;" onerror="this.remove()" loading="lazy">';
-        } else if (estDrapeau) {
-          var pays = String(l.slug).split('.')[0].toUpperCase().slice(0, 3);
-          vis = '<span style="display:inline-block;min-width:26px;padding:2px 5px;border-radius:5px;'
-              + 'background:rgba(255,255,255,.10);color:#9fb0c7;font-size:8.5px;font-weight:800;letter-spacing:.4px;text-align:center;">'
-              + pays + '</span>';
         } else {
           vis = '<span style="font-size:17px;line-height:1;">' + (l.ico || '') + '</span>';
         }
@@ -35729,9 +35880,30 @@ async function loadCompetTab() {
            Le visuel est place au-dessus du nom plutot qu'a cote : il gagne en
            taille — 22 px au lieu de 16 — et le nom dispose de toute la largeur
            de la tuile, donc plus de troncature. */
-        return '<button onclick="g45CompetSel(\'' + l.slug + '\')" class="g45-cmp-tile">'
-          + '<span class="g45-cmp-ico">' + vis + '</span>'
-          + '<span class="g45-cmp-nom">' + l.name + '</span></button>';
+        /* FOND PHOTO PAR COMPETITION (02/09, demande d'Antoine : « des fonds qui
+           remplissent les carres »). Meme principe que les fonds NFL/NHL du
+           27/08 : un fichier depose dans `images/ligues/`, teste une fois puis
+           memorise. Une tuile sans fichier garde exactement son aspect actuel,
+           donc les fonds peuvent etre ajoutes un par un sans rien casser.
+           Le voile est un DEGRADE qui ne fonce que le bas, sous le nom, plutot
+           qu'un assombrissement uniforme : la photo garde sa matiere en haut la
+           ou rien n'est ecrit. Le nom recoit en plus une ombre portee, seule
+           garantie de lisibilite sur une photo claire imprevisible. */
+        var _fdc = _g45CompetFond(l.slug);
+        var _st = _fdc
+          ? ' style="position:relative;overflow:hidden;background-image:url(\'' + _fdc + '\');background-size:cover;background-position:center;"'
+          : '';
+        var _vlc = _fdc
+          ? '<span style="position:absolute;inset:0;background:rgba(10,14,26,.30);pointer-events:none;"></span>'
+            + '<span style="position:absolute;left:0;right:0;bottom:0;height:54%;pointer-events:none;'
+            + 'background:linear-gradient(180deg,transparent 0%,rgba(8,11,20,.86) 100%);"></span>'
+          : '';
+        return '<button onclick="g45CompetSel(\'' + l.slug + '\')" class="g45-cmp-tile"' + _st + '>'
+          + _vlc
+          + '<span class="g45-cmp-ico" style="position:relative;">' + vis + '</span>'
+          + '<span class="g45-cmp-nom" style="position:relative;'
+          + (_fdc ? 'text-shadow:0 1px 4px rgba(0,0,0,.95),0 0 10px rgba(0,0,0,.7);' : '') + '">'
+          + l.name + '</span></button>';
       }).join('');
       return '<div style="margin-bottom:14px;"><div style="font-size:9px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#6b7a99;margin-bottom:7px;">'
         + g.grp + '</div><div class="g45-cmp-grid">' + ch + '</div></div>';
@@ -42864,3 +43036,399 @@ document.addEventListener('click', function () {
   setTimeout(g45BrancherEquipesCompet, 200);
 });
 setTimeout(g45BrancherEquipesCompet, 2500);
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   GONES45 — HAUTEUR DES CARTES DU MUR (02/09)
+   ───────────────────────────────────────────────────────────────────────────
+   POURQUOI : les cartes sont figees a 92px de haut. Sur un ecran large elles
+   font ~1580px de large, soit un rapport proche de 17:1, alors que les
+   bannieres TheSportsDB sont cadrees en 16:9. `cover` agrandit l'image jusqu'a
+   remplir la largeur, et il n'en reste qu'une mince bande — le PSV coupe en
+   deux, le "SAINT-GERMAIN" du PSG hors cadre. Sur telephone la carte ne fait
+   que ~350px de large, donc les memes 92px en montrent bien plus : la bonne
+   hauteur n'est PAS la meme sur les deux, et une valeur unique en dur cassera
+   toujours l'un des deux.
+
+   D'ou DEUX valeurs memorisees separement, choisies par l'utilisateur au
+   doigt. Le seuil de 700px separe "grand ecran" et "telephone" ; c'est la
+   largeur de la carte qui compte, pas l'appareil, donc une fenetre PC reduite
+   est traitee comme un telephone — ce qui est le comportement voulu.
+
+   MISE EN OEUVRE : une variable CSS plutot qu'une reecriture du mur. La
+   hauteur est posee en inline dans le HTML genere (`min-height:92px`), donc il
+   faut `!important` pour passer devant. L'avantage est qu'un deplacement du
+   curseur se voit INSTANTANEMENT, sans re-rendre les cartes ni retelecharger
+   la moindre image.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+var _G45_MURH_DEF = 92;
+
+/* La cle depend de la largeur, pas du materiel : c'est la largeur qui
+   determine de combien `cover` doit rogner. */
+function _g45MurHCle() {
+  return (window.innerWidth >= 700) ? 'g45_mur_h_large' : 'g45_mur_h_petit';
+}
+
+function _g45MurHLue() {
+  var v = parseInt(localStorage.getItem(_g45MurHCle()) || '', 10);
+  return (v && v >= 60 && v <= 700) ? v : _G45_MURH_DEF;
+}
+
+/* La regle est posee une seule fois ; ensuite seule la variable bouge. */
+function _g45MurHStyle() {
+  var id = 'g45-murh-style';
+  if (document.getElementById(id)) return;
+  var st = document.createElement('style');
+  st.id = id;
+  /* LARGEUR DU BLOC TEXTE (02/09). A 72% la note filait jusqu'au centre de la
+     carte et passait devant le sujet de l'image. On la ramene a 45% sur grand
+     ecran — elle passe alors a la ligne au lieu de s'etirer. On garde 72% sur
+     telephone : 45% d'une carte de 350px ne laisserait pas de quoi lire.
+     Une media query impose une feuille de style ; une regle inline ne peut pas
+     en contenir, d'ou le passage par ce <style> deja injecte pour la hauteur. */
+  /* Reglages du telephone en valeur de base, grand ecran en surcharge : sur une
+     carte etroite l'ecusson doit rester un filigrane, pas un element de plus.
+     `--g45-ecut` depend de `--g45-murh`, donc le curseur des Outils fait bouger
+     l'ecusson en meme temps que la carte, sans une ligne de JS. */
+  st.textContent = '.g45-murcard{min-height:var(--g45-murh,' + _G45_MURH_DEF + 'px) !important;}'
+    + ':root{--g45-ecut:clamp(64px,calc(var(--g45-murh,92px) * .40),130px);}'
+    + '.g45-ecu,.g45-ecu-halo{width:var(--g45-ecut);height:var(--g45-ecut);}'
+    + '.g45-ecu{opacity:.18;}'
+    + '.g45-ecu-halo{opacity:.45;}'
+    /* PLEINE HAUTEUR : GRAND ECRAN SEULEMENT (02/09, retour d'Antoine : « a cette
+       allure sur tel on va remplir l'image »). Etirer les deux blocs du haut en
+       bas encadre joliment une carte de 1580 px de large, ou le bloc texte ne
+       prend que 45 %. Sur telephone il en prend 72 %, et le meme etirement
+       transforme le voile en rideau qui recouvre presque toute la photo.
+       On revient donc au comportement d'origine — blocs centres verticalement —
+       en dessous de 700 px. */
+    + '.g45-murtxt,.g45-murval{align-self:center !important;}'
+    + '@media(min-width:700px){'
+      + '.g45-murtxt,.g45-murval{align-self:stretch !important;}'
+      + ':root{--g45-ecut:clamp(86px,calc(var(--g45-murh,92px) * .55),200px);}'
+      + '.g45-murtxt{max-width:45% !important;}'
+      + '.g45-ecu{opacity:.30;}'
+      + '.g45-ecu-halo{opacity:1;}'
+    + '}';
+  (document.head || document.documentElement).appendChild(st);
+}
+
+function _g45MurHAppliquer(v) {
+  _g45MurHStyle();
+  document.documentElement.style.setProperty('--g45-murh', v + 'px');
+}
+
+/* Appelee par le curseur des Outils. */
+function g45MurHauteur(v) {
+  v = parseInt(v, 10) || _G45_MURH_DEF;
+  try { localStorage.setItem(_g45MurHCle(), String(v)); } catch (e) {}
+  _g45MurHAppliquer(v);
+  var lab = document.getElementById('mur-h-val');
+  if (lab) {
+    lab.textContent = v + ' px — ' +
+      ((window.innerWidth >= 700) ? 'grand écran' : 'téléphone') +
+      (v === _G45_MURH_DEF ? ' (défaut)' : '');
+  }
+}
+window.g45MurHauteur = g45MurHauteur;
+
+/* Remet les DEUX valeurs a 92 : le bouton sert de sortie de secours si un
+   reglage rend le mur inutilisable, il ne doit pas dependre de l'ecran
+   depuis lequel on le declenche. */
+function g45MurHauteurReset() {
+  try {
+    localStorage.removeItem('g45_mur_h_large');
+    localStorage.removeItem('g45_mur_h_petit');
+  } catch (e) {}
+  var r = document.getElementById('mur-h-range');
+  if (r) r.value = _G45_MURH_DEF;
+  g45MurHauteur(_G45_MURH_DEF);
+}
+window.g45MurHauteurReset = g45MurHauteurReset;
+
+/* Applique tout de suite, avant meme que les Outils soient ouverts, sinon le
+   mur s'afficherait a 92px puis sauterait a la bonne hauteur. */
+_g45MurHAppliquer(_g45MurHLue());
+
+/* Le curseur n'existe qu'une fois l'onglet Outils construit ; on le
+   synchronise a l'ouverture plutot que de deviner un moment. */
+function _g45MurHSync() {
+  var r = document.getElementById('mur-h-range');
+  if (!r) return;
+  var v = _g45MurHLue();
+  if (String(r.value) !== String(v)) r.value = v;
+  var lab = document.getElementById('mur-h-val');
+  if (lab) {
+    lab.textContent = v + ' px — ' +
+      ((window.innerWidth >= 700) ? 'grand écran' : 'téléphone') +
+      (v === _G45_MURH_DEF ? ' (défaut)' : '');
+  }
+}
+document.addEventListener('click', function () { setTimeout(_g45MurHSync, 150); });
+setTimeout(_g45MurHSync, 1500);
+
+/* Passer d'une fenetre large a une fenetre etroite change de reglage : sans
+   ca, la valeur "grand ecran" resterait appliquee a une carte devenue
+   etroite. */
+window.addEventListener('resize', function () {
+  _g45MurHAppliquer(_g45MurHLue());
+  _g45MurHSync();
+});
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   GONES45 — COULEURS DU CLUB, LUES DANS SON ECUSSON (02/09)
+   ───────────────────────────────────────────────────────────────────────────
+   POURQUOI : Antoine veut le tableau des resultats habille aux couleurs du
+   club — rouge et blanc pour l'Atletico, noir et bleu pour l'Inter. L'appli ne
+   connait qu'UNE couleur par equipe (`u.color`), et ecrire a la main la
+   deuxieme pour chaque club de chaque sport ne tient pas : la liste est
+   ouverte. On lit donc les deux teintes dominantes directement dans l'image
+   deja presente.
+
+   LIMITE ASSUMEE : lire les pixels impose `getImageData`, donc une image de
+   MEME ORIGINE. Les ecussons TheSportsDB sont sur r2.thesportsdb.com sans
+   en-tete CORS — c'est precisement ce qui cassait les logos du graphique
+   Paliers ce matin. L'extraction ne tourne donc QUE sur les images perso de
+   `images/equipes/`, et tout le reste retombe sur `u.color` + blanc. Mieux
+   vaut un repli previsible qu'un canvas souille et une exception silencieuse.
+
+   METHODE : l'image est reduite a 28x28 — on cherche des teintes dominantes,
+   pas du detail, et ca divise le travail par mille. Les pixels quasi
+   transparents sont ignores (le fond d'un blason detoure), pas les blancs ni
+   les noirs : ce sont de vraies couleurs de club. Les teintes sont regroupees
+   par paliers de 32 pour que deux rouges voisins comptent ensemble. La
+   deuxieme couleur retenue doit etre suffisamment eloignee de la premiere,
+   sinon on obtiendrait deux nuances du meme rouge et aucune rayure visible.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+var _G45_COUL_CLE = 'g45_couleurs_';
+var _g45CoulVus = {};
+
+function _g45CoulHex(r, g, b) {
+  return '#' + [r, g, b].map(function (v) {
+    var h = Math.max(0, Math.min(255, v | 0)).toString(16);
+    return h.length < 2 ? '0' + h : h;
+  }).join('');
+}
+
+/* Distance simple dans l'espace RVB : suffisant pour dire « ces deux teintes
+   sont-elles distinctes a l'oeil », inutile de sortir du CIELAB ici. */
+function _g45CoulEcart(a, b) {
+  var d = 0;
+  for (var i = 0; i < 3; i++) { var x = a[i] - b[i]; d += x * x; }
+  return Math.sqrt(d);
+}
+
+function _g45CoulExtraire(k, url) {
+  try {
+    if (localStorage.getItem(_G45_COUL_CLE + k)) return;
+    var im = new Image();
+    im.onload = function () {
+      try {
+        var T = 28;
+        var cv = document.createElement('canvas');
+        cv.width = T; cv.height = T;
+        var cx = cv.getContext('2d', { willReadFrequently: true });
+        cx.drawImage(im, 0, 0, T, T);
+        var d = cx.getImageData(0, 0, T, T).data;
+
+        var seaux = {};
+        for (var i = 0; i < d.length; i += 4) {
+          if (d[i + 3] < 128) continue;
+          var q = [d[i] >> 5, d[i + 1] >> 5, d[i + 2] >> 5].join(',');
+          var e = seaux[q] || (seaux[q] = { n: 0, r: 0, g: 0, b: 0 });
+          e.n++; e.r += d[i]; e.g += d[i + 1]; e.b += d[i + 2];
+        }
+        var liste = Object.keys(seaux).map(function (q) {
+          var e = seaux[q];
+          return { n: e.n, c: [e.r / e.n, e.g / e.n, e.b / e.n] };
+        }).sort(function (a, b) { return b.n - a.n; });
+        if (!liste.length) return;
+
+        var c1 = liste[0].c, c2 = null;
+        for (var j = 1; j < liste.length; j++) {
+          if (_g45CoulEcart(liste[j].c, c1) > 95) { c2 = liste[j].c; break; }
+        }
+        /* Un ecusson monochrome n'a pas de seconde teinte : on prend du blanc,
+           qui donne une rayure lisible sur n'importe quelle couleur. */
+        var v = _g45CoulHex(c1[0], c1[1], c1[2]) + '|' +
+                (c2 ? _g45CoulHex(c2[0], c2[1], c2[2]) : '#ffffff');
+        try { localStorage.setItem(_G45_COUL_CLE + k, v); } catch (e) {}
+
+        /* Un seul redessin par equipe : sans ce garde-fou, redessiner
+           relancerait la lecture, qui relancerait le redessin. */
+        if (!_g45CoulVus[k]) {
+          _g45CoulVus[k] = 1;
+          try { if (typeof render === 'function') render(); } catch (e) {}
+        }
+      } catch (e) {}
+    };
+    im.src = url;
+  } catch (e) {}
+}
+
+/* Rendue globale : c'est la seule entree utilisee par les vues. */
+function g45CouleursDe(nom) {
+  var repli = ['#4d84ff', '#ffffff'];
+  try {
+    var u = (typeof state !== 'undefined' && state.u)
+      ? state.u.find(function (x) { return x.n === nom; }) : null;
+    if (u && u.color) repli = [u.color, '#ffffff'];
+    /* Une couleur saisie a la main dans la fiche equipe passe AVANT
+       l'extraction : l'automatique ne doit jamais ecraser un choix explicite. */
+    if (u && u.color2) return [u.color, u.color2];
+
+    var k = _g45SgNorm(nom);
+    var c = localStorage.getItem(_G45_COUL_CLE + k);
+    if (c) { var p = c.split('|'); if (p.length === 2) return p; }
+
+    var perso = (typeof _g45ImgPersoLire === 'function') ? _g45ImgPersoLire(nom) : '';
+    if (perso) _g45CoulExtraire(k, perso);
+  } catch (e) {}
+  return repli;
+}
+window.g45CouleursDe = g45CouleursDe;
+
+/* Le fond raye du panneau. Garde en un seul endroit : le jour ou on l'ajoute
+   a une autre vue, l'aspect reste identique sans copier le degrade. */
+function g45FondClubHtml(nom, opac) {
+  var c = g45CouleursDe(nom);
+  return '<div style="position:absolute;inset:0;pointer-events:none;z-index:0;'
+    + 'opacity:' + (opac || 0.2) + ';border-radius:10px;'
+    + 'background:repeating-linear-gradient(90deg,' + c[0] + ' 0 34px,' + c[1] + ' 34px 68px);"></div>';
+}
+window.g45FondClubHtml = g45FondClubHtml;
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   GONES45 — LE NAVIGATEUR SAIT-IL DESSINER LES DRAPEAUX ? (02/09)
+   ───────────────────────────────────────────────────────────────────────────
+   Chrome sous Windows ne fournit pas de police d'emoji drapeaux : 🇫🇷 sort en
+   deux petites lettres grises « FR ». Android et iOS les dessinent tres bien.
+   Plutot que de trancher pour tout le monde, on ecrit le drapeau francais dans
+   un canvas et on regarde s'il en sort de la COULEUR. Bleu-blanc-rouge donne
+   des pixels tres satures ; un rendu en lettres grises n'en donne aucun.
+   Le resultat est garde en memoire pour la session : c'est une propriete du
+   navigateur, elle ne change pas en cours de route, et ce serait du gaspillage
+   de refaire le test a chaque tuile.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+var _g45FlagOk = null;
+function _g45DrapeauxOk() {
+  if (_g45FlagOk !== null) return _g45FlagOk;
+  _g45FlagOk = false;
+  try {
+    var cv = document.createElement('canvas');
+    cv.width = 24; cv.height = 24;
+    var cx = cv.getContext('2d', { willReadFrequently: true });
+    cx.font = '18px sans-serif';
+    cx.textBaseline = 'top';
+    cx.fillText('\uD83C\uDDEB\uD83C\uDDF7', 0, 0);
+    var d = cx.getImageData(0, 0, 24, 24).data;
+    for (var i = 0; i < d.length; i += 4) {
+      if (d[i + 3] < 40) continue;
+      var mx = Math.max(d[i], d[i + 1], d[i + 2]);
+      var mn = Math.min(d[i], d[i + 1], d[i + 2]);
+      if (mx - mn > 40) { _g45FlagOk = true; break; }
+    }
+  } catch (e) {}
+  return _g45FlagOk;
+}
+window._g45DrapeauxOk = _g45DrapeauxOk;
+
+
+/* Prefixe de slug ESPN -> code pays flagcdn. Seules les competitions NATIONALES
+   figurent ici : `uefa`, `fifa`, `conmebol`, `concacaf` et `afc` n'ont pas de
+   drapeau et gardent leur logo ou leur emoji. Les nations britanniques ont leurs
+   propres codes chez flagcdn (`gb-eng`, `gb-sct`), ce qui evite de tomber sur
+   l'Union Jack. */
+var _G45_CMP_PAYS = {
+  fra: 'fr', eng: 'gb-eng', esp: 'es', ita: 'it', ger: 'de',
+  por: 'pt', ned: 'nl', bel: 'be', tur: 'tr', sco: 'gb-sct',
+  gre: 'gr', usa: 'us', aut: 'at', den: 'dk', nor: 'no',
+  swe: 'se', mex: 'mx', bra: 'br', arg: 'ar', ksa: 'sa',
+  jpn: 'jp', chn: 'cn', aus: 'au'
+};
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   GONES45 — FOND PHOTO D'UNE COMPETITION (02/09)
+   ───────────────────────────────────────────────────────────────────────────
+   Antoine depose lui-meme ses images dans `images/ligues/`. On ne peut pas
+   savoir a l'avance lesquelles existent, donc on TESTE, sans jamais faire
+   attendre l'affichage : la tuile s'affiche nue tout de suite, et le fond
+   apparait au prochain rendu. Le resultat est memorise pour ne pas retester a
+   chaque ouverture de l'onglet.
+
+   NOM DE FICHIER : les identifiants ESPN contiennent des points (`fra.1`,
+   `uefa.champions`). On les normalise en `fra1`, `uefachampions` — un point
+   dans un nom de fichier prete a confusion avec l'extension.
+
+   NEGATIF DE COURTE DUREE : un fichier absent est retenu 3 HEURES, pas plus.
+   C'est la lecon du matin — le cache negatif de 7 jours faisait passer pour
+   casse un depot d'image parfaitement valide, simplement parce que le test
+   avait eu lieu AVANT. Un resultat positif, lui, est garde sans limite.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+var _G45_CMPF_CLE = 'g45_cmpfond_';
+var _G45_CMPF_TTLNEG = 3 * 3600000;
+var _g45CmpfEnCours = {};
+
+function g45CompetFondNom(slug) {
+  return String(slug || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+function _g45CompetFond(slug) {
+  var k = g45CompetFondNom(slug);
+  if (!k) return '';
+  try {
+    var o = JSON.parse(localStorage.getItem(_G45_CMPF_CLE + k) || 'null');
+    if (o && o.u) return o.u;
+    if (o && (Date.now() - (o.t || 0)) <= _G45_CMPF_TTLNEG) return '';
+  } catch (e) {}
+
+  /* Un seul test en vol par competition : sans ce garde-fou, chaque rendu de
+     l'onglet relancerait deux requetes par tuile. */
+  if (_g45CmpfEnCours[k]) return '';
+  _g45CmpfEnCours[k] = 1;
+
+  var exts = ['.jpg', '.png', '.jpeg', '.webp'], i = 0;
+  var suivant = function () {
+    if (i >= exts.length) {
+      try { localStorage.setItem(_G45_CMPF_CLE + k, JSON.stringify({ u: '', t: Date.now() })); } catch (e) {}
+      _g45CmpfEnCours[k] = 0;
+      return;
+    }
+    var url = 'images/ligues/' + k + exts[i++];
+    var im = new Image();
+    im.onload = function () {
+      try { localStorage.setItem(_G45_CMPF_CLE + k, JSON.stringify({ u: url, t: Date.now() })); } catch (e) {}
+      _g45CmpfEnCours[k] = 0;
+      try { if (typeof loadCompetTab === 'function') loadCompetTab(); } catch (e) {}
+    };
+    im.onerror = suivant;
+    im.src = url;
+  };
+  suivant();
+  return '';
+}
+
+/* Aide de saisie : sans elle, il faudrait deviner le nom attendu a partir d'un
+   identifiant interne jamais affiche nulle part. */
+window.g45FondsCompetInfo = function () {
+  try {
+    var out = [];
+    (G45_LEAGUE_GROUPS || []).forEach(function (g) {
+      (g.leagues || []).forEach(function (l) {
+        var k = g45CompetFondNom(l.slug);
+        var o = null;
+        try { o = JSON.parse(localStorage.getItem(_G45_CMPF_CLE + k) || 'null'); } catch (e) {}
+        out.push({ Competition: l.name, Fichier: 'images/ligues/' + k + '.jpg', Etat: (o && o.u) ? 'présent' : 'absent' });
+      });
+    });
+    console.table(out);
+    return out.length + ' compétitions';
+  } catch (e) { return 'indisponible'; }
+};

@@ -10,8 +10,8 @@
      chemin est volontairement RELATIF : il se resout en `/gones45/favicon.ico`
      sur les Pages de projet et en `/favicon.ico` sur bet45.fr, sans avoir a
      maintenir deux valeurs differentes. -->
-<link rel="icon" href="favicon.ico?v=20260901o" sizes="any">
-<link rel="apple-touch-icon" href="apple-touch-icon.png?v=20260901o">
+<link rel="icon" href="favicon.ico?v=20260902l" sizes="any">
+<link rel="apple-touch-icon" href="apple-touch-icon.png?v=20260902l">
   <title>BET45 — Dashboard Sport & Tracking</title>
 <meta name="description" content="Accède à tes statistiques sportives, suivis de matchs et outils d'analyse en direct sur BET45.">
   <script>
@@ -744,6 +744,12 @@
       <input type="range" id="bg-dark-range" min="0" max="100" value="60" oninput="setScrimDark(this.value)" style="width:100%;accent-color:var(--a);margin:4px 0 10px;">
       <label class="fl">🟦 Transparence des cartes <span id="bg-card-val" style="color:var(--t3);font-weight:400;"></span></label>
       <input type="range" id="bg-card-range" min="35" max="95" value="64" oninput="setCardAlpha(this.value)" style="width:100%;accent-color:var(--a);margin:4px 0 0;">
+      <div style="margin-top:12px;border-top:1px solid var(--b1);padding-top:11px;">
+        <label class="fl">📐 Hauteur des cartes du mur <span id="mur-h-val" style="color:var(--t3);font-weight:400;"></span></label>
+        <div style="font-size:10px;color:var(--t3);margin:4px 0 7px;line-height:1.5;">Plus la carte est haute, moins l'écusson est rogné. Réglage mémorisé <b>séparément</b> pour le téléphone et le grand écran — refais-le sur chaque appareil.</div>
+        <input type="range" id="mur-h-range" min="92" max="600" step="4" value="92" oninput="g45MurHauteur(this.value)" style="width:100%;accent-color:var(--a);margin:0 0 8px;">
+        <button class="btn" style="background:rgba(255,69,69,.10);color:#ff6b6b;border:1px solid rgba(255,69,69,.25);font-size:11px;" onclick="g45MurHauteurReset()">↩️ Revenir à 92 px partout</button>
+      </div>
     </div>
   </div>
 
@@ -1268,7 +1274,7 @@
 <!-- FENOTTE45 : app.js est injecte par auth-guard.js APRES authentification.
      Le ?v= doit changer a CHAQUE deploiement. -->
 <script src="social.js?v=20260826n"></script>
-<script type="module" src="auth-guard.js?v=20260901o"></script>
+<script type="module" src="auth-guard.js?v=20260902l"></script>
 
 
 
