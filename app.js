@@ -1518,6 +1518,11 @@ function buildSbRows(light){
   var dr=$i('sb-rows');if(!dr)return;
   if(!light) dr.innerHTML=sbRows.map(function(r,i){
     return '<div class="dutch-row">'
+      /* ETIQUETTE VISIBLE (02/09) : le `placeholder` « Cote 1 » ne s'affiche que
+         tant que le champ est vide — donc jamais ici, puisqu'il porte toujours
+         une valeur. Deux grands champs cote a cote sans rien pour les
+         distinguer, alors que le resultat plus bas parle de « Mise 1 (@2.1) ». */
+      +'<span class="dutch-lbl">Cote '+(i+1)+'</span>'
       +'<input type="text" inputmode="decimal" class="fi" value="'+r.c+'" placeholder="Cote '+(i+1)+'" data-idx="'+i+'" oninput="sbRows[this.dataset.idx].c=parseFloat(this.value.replace(\',\',\'.\'))||1;buildSbRows(true);">'
       +(sbRows.length>2?'<button class="udel" data-idx="'+i+'" onclick="sbRows.splice(this.dataset.idx,1);buildSbRows();">✕</button>':'')
       +'</div>';
@@ -1581,6 +1586,11 @@ function buildDtRows(light){
   dtRows.forEach(function(r,i){
     var mise=impl>0?(tot*(1/(r.c||1))/impl).toFixed(2):'—';
     html+='<div class="dutch-row">'
+      /* ETIQUETTE VISIBLE (02/09) : le `placeholder` « Cote 1 » ne s'affiche que
+         tant que le champ est vide — donc jamais ici, puisqu'il porte toujours
+         une valeur. Deux grands champs cote a cote sans rien pour les
+         distinguer, alors que le resultat plus bas parle de « Mise 1 (@2.1) ». */
+      +'<span class="dutch-lbl">Cote '+(i+1)+'</span>'
       +'<input type="text" inputmode="decimal" class="fi" value="'+r.c+'" placeholder="Cote '+(i+1)+'" data-idx="'+i+'" oninput="dtRows[this.dataset.idx].c=parseFloat(this.value.replace(\',\',\'.\'))||1;buildDtRows(true);">'
       +'<div class="dutch-mise" id="dt-mise-'+i+'">'+mise+'€</div>'
       +(dtRows.length>2?'<button class="udel" data-idx="'+i+'" onclick="dtRows.splice(this.dataset.idx,1);buildDtRows();">✕</button>':'')
@@ -1763,7 +1773,18 @@ function renderSportFilter(){
       mf.innerHTML=chips.map(function(c){ return '<button class="sfbtn'+(bilanMonth===c[0]?' on':'')+'" onclick="bilanMonth=\''+c[0]+'\';renderBilanTab()">'+c[1]+'</button>'; }).join('');
     }
   }catch(e){}
-  try{renderBilanTypeFilter();}catch(e){} try{renderBilanCompFilter();}catch(e){} try{renderBilanBookFilter();}catch(e){}
+  /* LES FILTRES PASSENT DANS UN TIROIR (02/09, sur le modele que m'a montre
+     Antoine). Quatre rangees de puces — type, competition, bookmaker, mois —
+     occupaient la moitie de l'ecran AVANT le moindre chiffre, alors qu'on
+     ouvre un bilan pour lire des chiffres. Elles vivent desormais dans un
+     panneau lateral, resume par un seul bouton qui affiche le nombre de
+     filtres actifs.
+     Les anciens rendus sont conserves mais ne sont plus appeles : ils
+     servaient aussi a recalculer les listes disponibles (`_bilanTypeList`
+     etc.) et surtout a remettre un filtre a « tous » quand sa valeur a disparu
+     du jeu de donnees — logique reprise ici par `_g45BilFiltresNettoyer`. */
+  try{ _g45BilFiltresNettoyer(); }catch(e){}
+  try{ _g45BilBarreFiltres(); }catch(e){}
 }
 function _g45Chrono(arr){
   function ts(h){
@@ -2018,16 +2039,63 @@ if(!dOnly || dOnly===_lastDateShown) return ''; _lastDateShown=dOnly; return dOn
     bks[h.b].n++;
     if(h.win) bks[h.b].wins++;
   });
+  /* ═══ PAR BOOKMAKER — REVU LE 02/09 ═══
+     Retour d'Antoine : « le tableau du haut est très utile, ça permet de voir où
+     je joue principalement, mais Boursorama les 2 n'ont pas à y être ».
+     Trois changements :
+     1. Les comptes SANS AUCUN PARI sont replies derriere un « + ». Ils sortent
+        donc les deux Boursorama — qui sont ses banques, pas des bookmakers —
+        mais aussi tous les comptes ouverts et jamais joues. On ne les exclut
+        surtout pas par leur NOM : le jour ou un pari y est enregistre, ils
+        reapparaissent d'eux-memes, et un nouveau compte bancaire ne polluera
+        jamais la liste.
+     2. Tri par NOMBRE DE PARIS decroissant. Si le tableau sert a voir ou l'on
+        joue le plus, l'ordre de creation des comptes ne veut rien dire.
+     3. Une ligne de TOTAL, pour verifier d'un coup d'oeil que la somme des
+        lignes correspond au benefice global affiche plus haut.
+     Le nom repasse en blanc : la couleur reste sur la pastille de gauche, qui
+     identifie deja le bookmaker. Quinze teintes plus le vert et le rouge des
+     montants, cela faisait beaucoup de signaux pour peu d'information. */
   var bke=$i('bk-stats');
-  if(bke) bke.innerHTML=Object.entries(bks).map(function(e){
-    var b=bki(e[0]), p=e[1].profit, n=e[1].n, wr=n?Math.round(e[1].wins/n*100):0;
-    var isActive = window._bilanBkFilter===e[0];
-    return '<div class="bkrow" onclick="window._bilanBkFilter=(window._bilanBkFilter===\''+e[0]+'\'?null:\''+e[0]+'\');renderBilanTab();" style="--bc:'+b.c+';display:flex;align-items:center;gap:8px;cursor:pointer;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,'+(isActive?'.2':'.04')+');background:rgba(255,255,255,'+(isActive?'.06':'.02')+');margin-bottom:4px;">'
-      +bkFavicon(e[0],18)
-      +'<span style="flex:1;font-size:11px;font-weight:700;color:'+b.c+';">'+b.n+'</span>'
-      +(n?'<span style="font-size:10px;color:var(--t3);">'+n+' paris · '+wr+'%</span>':'')
-      +'<span style="font-size:13px;font-weight:800;color:'+(p>=0?'var(--g)':'var(--r)')+';">'+fmt(p)+'</span></div>';
-  }).join('')+(window._bilanBkFilter?'<button onclick="window._bilanBkFilter=null;renderBilanTab();" style="width:100%;padding:6px;margin-top:4px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:6px;color:var(--t3);font-size:10px;cursor:pointer;">✕ Effacer le filtre</button>':'');
+  if(bke){
+    var _lignes=Object.entries(bks).sort(function(a,b){
+      /* A egalite de paris (donc a zero), ordre alphabetique stable plutot qu'un
+         ordre d'objet dependant de l'historique des insertions. */
+      if(b[1].n!==a[1].n) return b[1].n-a[1].n;
+      return (bki(a[0]).n||a[0]).localeCompare(bki(b[0]).n||b[0],'fr');
+    });
+    var _joues=_lignes.filter(function(e){ return e[1].n>0; });
+    var _vides=_lignes.filter(function(e){ return e[1].n===0; });
+    var _ouvert=false;
+    try{ _ouvert=localStorage.getItem('g45_bk_vides')==='1'; }catch(e){}
+
+    var _row=function(e){
+      var b=bki(e[0]), p=e[1].profit, n=e[1].n, wr=n?Math.round(e[1].wins/n*100):0;
+      var isActive = window._bilanBkFilter===e[0];
+      return '<div class="bkrow" onclick="window._bilanBkFilter=(window._bilanBkFilter===\''+e[0]+'\'?null:\''+e[0]+'\');renderBilanTab();" style="--bc:'+b.c+';display:flex;align-items:center;gap:9px;cursor:pointer;padding:9px 11px;border-radius:var(--r4);border:1px solid '+(isActive?b.c:'var(--b1)')+';background:'+(isActive?'rgba(255,255,255,.07)':'rgba(11,16,26,.74)')+';margin-bottom:4px;transition:all .15s;'+(n?'':'opacity:.55;')+'">'
+        +bkFavicon(e[0],18)
+        +'<span style="flex:1;font-size:13px;">'+b.n+'</span>'
+        +'<span style="font-size:11.5px;color:var(--t3);min-width:104px;text-align:right;">'+(n?(n+' pari'+(n>1?'s':'')+' · '+wr+' %'):'—')+'</span>'
+        +'<span style="font-size:13px;font-weight:700;min-width:78px;text-align:right;font-variant-numeric:tabular-nums;color:'+(p>=0?'var(--g)':'var(--r)')+';">'+fmt(p)+'</span></div>';
+    };
+
+    var _tp=0,_tn=0,_tw=0;
+    _joues.forEach(function(e){ _tp+=e[1].profit; _tn+=e[1].n; _tw+=e[1].wins; });
+
+    bke.innerHTML = _joues.map(_row).join('')
+      + (_joues.length>1
+          ? '<div style="display:flex;align-items:center;gap:9px;border-top:1px solid var(--b1);margin-top:8px;padding:11px 11px 0;">'
+              +'<span style="flex:1;font-size:13px;font-weight:600;">Total</span>'
+              +'<span style="font-size:11.5px;color:var(--t3);min-width:104px;text-align:right;">'+_tn+' pari'+(_tn>1?'s':'')+' · '+(_tn?Math.round(_tw/_tn*100):0)+' %</span>'
+              +'<span style="font-size:13px;font-weight:700;min-width:78px;text-align:right;font-variant-numeric:tabular-nums;color:'+(_tp>=0?'var(--g)':'var(--r)')+';">'+fmt(_tp)+'</span></div>'
+          : '')
+      + (_vides.length
+          ? '<button onclick="g45BkVidesToggle()" style="width:100%;margin-top:10px;padding:7px;background:none;border:1px solid var(--b1);border-radius:var(--r4);color:var(--t3);font:inherit;font-size:12px;cursor:pointer;">'
+              + (_ouvert?'−':'+') + ' ' + _vides.length + ' compte' + (_vides.length>1?'s':'') + ' sans pari</button>'
+              + (_ouvert?'<div style="margin-top:6px;">'+_vides.map(_row).join('')+'</div>':'')
+          : '')
+      + (window._bilanBkFilter?'<button onclick="window._bilanBkFilter=null;renderBilanTab();" style="width:100%;padding:7px;margin-top:6px;background:rgba(255,255,255,.04);border:1px solid var(--b1);border-radius:var(--r4);color:var(--t3);font-size:12px;cursor:pointer;">Effacer le filtre</button>':'');
+  }
 }
 
 /* ── RENDER PRINCIPAL ── */
@@ -2076,7 +2144,10 @@ function render(){
       +'<td style="color:var(--gold);font-weight:700;">'+h.m+'€</td>'
       +'<td style="text-align:right;white-space:nowrap"><button data-id="'+h.id+'" onclick="openBetLive(this.dataset.id)" title="Voir le match live" style="display:inline-flex;align-items:center;padding:5px 7px;background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.3);border-radius:4px;color:#a78bfa;font-size:11px;font-weight:700;cursor:pointer;margin-right:3px;">\ud83d\udce1</button><a href="https://www.google.com/search?q='+encodeURIComponent(h.target+' sofascore résumé')+'" target="_blank" style="display:inline-flex;align-items:center;padding:5px 7px;background:rgba(77,132,255,.1);border:1px solid rgba(77,132,255,.25);border-radius:4px;color:#4d84ff;font-size:11px;font-weight:700;text-decoration:none;margin-right:3px;" title="Résumé">🔍</a><button class="sbtn sw" data-id="'+h.id+'" onclick="result(this.dataset.id,true)" style="margin-right:3px">✅</button><button class="sbtn sl" data-id="'+h.id+'" onclick="result(this.dataset.id,false)" style="margin-right:3px">❌</button><button data-id="'+h.id+'" onclick="editBet(this.dataset.id)" style="background:none;border:1px solid rgba(77,132,255,.25);color:var(--a);font-size:11px;font-weight:700;padding:5px 8px;border-radius:4px;cursor:pointer;margin-right:3px">✏️</button><button data-id="'+h.id+'" onclick="cancelBet(this.dataset.id)" style="background:none;border:1px solid rgba(255,69,69,.25);color:var(--r);font-size:11px;font-weight:700;padding:5px 8px;border-radius:4px;cursor:pointer">✕</button></td>'
       +'</tr>';
-  }).join('')||'<tr><td colspan="5" class="empty">Aucun pari en cours</td></tr>';
+  /* ETAT VIDE QUI INVITE (02/09). « Aucun pari en cours » constatait sans rien
+     proposer. C'est pourtant le tout premier ecran que verra quelqu'un qui
+     ouvre l'appli pour la premiere fois : autant qu'il dise quoi faire. */
+  }).join('')||'<tr><td colspan="5" class="empty">Aucun pari en cours.<br><span style="color:var(--t3);font-size:12px;">Renseigne un match ci-dessus pour lancer ta première montante.</span></td></tr>';
 
   $i('live-norm').innerHTML=state.h.filter(function(x){return !x.isS;}).map(function(h){
     return '<tr>'
@@ -2086,7 +2157,7 @@ function render(){
       +'<td style="color:var(--gold);font-weight:700;">'+h.m+'€</td>'
       +'<td style="text-align:right;white-space:nowrap"><button data-id="'+h.id+'" onclick="openBetLive(this.dataset.id)" title="Voir le match live" style="display:inline-flex;align-items:center;padding:5px 7px;background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.3);border-radius:4px;color:#a78bfa;font-size:11px;font-weight:700;cursor:pointer;margin-right:3px;">\ud83d\udce1</button><a href="https://www.google.com/search?q='+encodeURIComponent(h.target+' sofascore résumé')+'" target="_blank" style="display:inline-flex;align-items:center;padding:5px 7px;background:rgba(77,132,255,.1);border:1px solid rgba(77,132,255,.25);border-radius:4px;color:#4d84ff;font-size:11px;font-weight:700;text-decoration:none;margin-right:3px;" title="Résumé">🔍</a><button class="sbtn sw" data-id="'+h.id+'" onclick="result(this.dataset.id,true)" style="margin-right:3px">✅</button><button class="sbtn sl" data-id="'+h.id+'" onclick="result(this.dataset.id,false)" style="margin-right:3px">❌</button><button data-id="'+h.id+'" onclick="editBet(this.dataset.id)" style="background:none;border:1px solid rgba(77,132,255,.25);color:var(--a);font-size:11px;font-weight:700;padding:5px 8px;border-radius:4px;cursor:pointer;margin-right:3px">✏️</button><button data-id="'+h.id+'" onclick="cancelBet(this.dataset.id)" style="background:none;border:1px solid rgba(255,69,69,.25);color:var(--r);font-size:11px;font-weight:700;padding:5px 8px;border-radius:4px;cursor:pointer">✕</button></td>'
       +'</tr>';
-  }).join('')||'<tr><td colspan="3" class="empty">Aucun pari en cours</td></tr>';
+  }).join('')||'<tr><td colspan="3" class="empty">Aucun pari en cours.<br><span style="color:var(--t3);font-size:12px;">Les paris simples et combinés enregistrés s\'afficheront ici.</span></td></tr>';
 
   /* dash units */
   $i('dash-units').innerHTML=state.u.length?state.u.map(function(u){
@@ -2332,17 +2403,48 @@ function render(){
      Le drapeau evite la boucle : redessiner rappelle ce bloc. */
   try{ g45MurVisuels(); }catch(e){}
   /* books */
+  /* Le camembert des soldes vit maintenant dans l'onglet Bank (02/09). Il etait
+     dessine depuis la chaine des graphiques du Bilan ; on le redessine donc ici,
+     avec le reste de Bank, sinon il resterait fige apres un depot ou un retrait.
+     Le `setTimeout` laisse le canvas prendre ses dimensions : dessiner dans un
+     onglet encore masque donne un graphique de taille nulle. */
+  try{ setTimeout(function(){ try{ renderBooksChart(); }catch(e){} }, 60); }catch(e){}
+  /* TOTAL DANS LE TITRE (03/09). Quatorze montants s'affichaient sans jamais
+     etre additionnes, alors que leur somme EST le capital — la valeur affichee
+     en haut de chaque ecran. La voir a cote de la liste permet de reperer tout
+     de suite un solde saisi de travers. */
+  try{
+    var _tb=document.getElementById('bank-titre');
+    if(_tb){
+      var _st=Object.values(state.b).reduce(function(a,v){ return a+(parseFloat(v)||0); },0);
+      _tb.innerHTML='Mes comptes<b style="margin-left:auto;font-family:var(--ff-t);font-size:20px;font-weight:600;font-variant-numeric:tabular-nums;">'+_st.toFixed(2)+'€</b>';
+    }
+  }catch(e){}
   $i('books-grid').innerHTML=Object.entries(state.b).map(function(e){
     var b=bki(e[0]);
+    /* ═══ TUILE DE COMPTE — REVUE LE 03/09 ═══
+       Quatre corrections, toutes issues des captures d'Antoine :
+       1. La COULEUR etait dite trois fois — bordure gauche, nom colore, pastille
+          du pied de carte. Le nom repasse en blanc ; le liseré et la pastille
+          suffisent, et la pastille est de toute facon le CONTROLE qui la change.
+       2. La ligne freebet s'affichait sur les quatorze cartes, dont douze a
+          « 0.00€ » : elle repetait qu'il n'y a rien. Elle n'apparait plus que
+          s'il y a effectivement un freebet.
+       3. Deux boutons sur trois n'avaient pas de libelle. Le 🎟 ouvre la cagnotte
+          freebet, mais rendu dans la police d'Antoine il ressemble a un crayon —
+          on le prenait pour un doublon de « Modifier ». Trois boutons, trois mots.
+       4. Le nom n'est plus en capitales interlettrees, comme partout ailleurs. */
+    var _fbv = parseFloat(state.fb && state.fb[e[0]]) || 0;
     return '<div class="btile" style="--bc:'+b.c+';">'
-      +'<div class="btile-n" style="color:'+b.c+';display:flex;align-items:center;gap:5px;">'+bkFavicon(e[0],14)+b.n+'</div>'
+      +'<div class="btile-n" style="display:flex;align-items:center;gap:6px;">'+bkFavicon(e[0],14)+b.n
+        +(_fbv>0?'<span style="margin-left:auto;font-size:11px;font-weight:700;color:var(--gold);">🎟 '+_fbv.toFixed(2)+'€</span>':'')
+      +'</div>'
       +'<div class="btile-v">'+parseFloat(e[1]).toFixed(2)+'€</div>'
-      +'<div class="btile-fb" style="font-size:11px;font-weight:700;color:var(--gold);margin-top:1px;">🎟 '+(parseFloat(state.fb&&state.fb[e[0]])||0).toFixed(2)+'€</div>'
       +'<div class="btile-acts" style="align-items:center;">'
-      +'<input type="color" value="'+b.c+'" title="Couleur" data-bk="'+e[0]+'" onchange="changeBookColor(this)" style="width:20px;height:20px;border-radius:50%;border:none;padding:0;cursor:pointer;background:none;flex-shrink:0;">'
-      +'<button class="ba" data-bk="'+e[0]+'" onclick="editBook(this.dataset.bk)">Modifier</button> '
-      +'<button class="ba" data-bk="'+e[0]+'" title="Cagnotte freebet" onclick="editFb(this.dataset.bk)" style="color:var(--gold);border-color:rgba(240,176,32,.4);">🎟</button> '
-      +'<button class="ba del" data-bk="'+e[0]+'" onclick="delBook(this.dataset.bk)">✕</button>'
+      +'<input type="color" value="'+b.c+'" title="Couleur du compte" data-bk="'+e[0]+'" onchange="changeBookColor(this)" style="width:20px;height:20px;border-radius:50%;border:none;padding:0;cursor:pointer;background:none;flex-shrink:0;">'
+      +'<button class="ba" data-bk="'+e[0]+'" onclick="editBook(this.dataset.bk)">Modifier</button>'
+      +'<button class="ba" data-bk="'+e[0]+'" onclick="editFb(this.dataset.bk)" style="color:var(--gold);border-color:rgba(240,176,32,.35);">Freebet</button>'
+      +'<button class="ba del" data-bk="'+e[0]+'" onclick="delBook(this.dataset.bk)">Supprimer</button>'
       +'</div></div>';
   }).join('');
 
@@ -2669,8 +2771,19 @@ function renderArchive(){
         var _idFilig=_idLogo
           ?('<img src="'+_idLogo+'" alt="" loading="lazy" onerror="this.style.display=\'none\'" style="position:absolute;right:2px;top:50%;transform:translateY(-50%);height:32px;width:32px;object-fit:contain;opacity:.5;filter:drop-shadow(0 1px 3px rgba(0,0,0,.5));pointer-events:none;">')
           :((isSimpleA&&b2.d)?('<img src="https://www.google.com/s2/favicons?domain='+b2.d+'&sz=64" alt="" loading="lazy" onerror="this.style.display=\'none\'" style="position:absolute;right:2px;top:50%;transform:translateY(-50%);height:24px;width:24px;object-fit:contain;opacity:.55;border-radius:6px;filter:drop-shadow(0 1px 3px rgba(0,0,0,.5));pointer-events:none;">'):'');
+        /* FOND TEINTE PAR LE RESULTAT (02/09, demande d'Antoine : « pari gagné
+           vert, pari perdu rouge, pari en cours jaune »). Le degrade partait de
+           `_idColor`, la couleur du CLUB — d'ou un fond vert sur Athletics et
+           violet sur Seattle, sans aucun rapport avec l'issue du pari. Or
+           l'identite du club est deja portee par son ecusson en filigrane a
+           droite, tandis que le resultat n'etait signale que par un filet de
+           3 px sur le bord gauche.
+           On reutilise `borderC`, deja calcule au-dessus et qui vaut
+           #1ed760 / #ff4545 / #f0b020 selon gagne, perdu ou en cours : une
+           seule source pour le filet et pour le fond, donc impossible qu'ils se
+           contredisent un jour. */
         var _scoreA=h.isCombi?((typeof _g45ScoreTexteCombi==='function')?_g45ScoreTexteCombi(h):''):((typeof _g45ScoreTexte==='function')?_g45ScoreTexte(h):'');
-        return '<div style="position:relative;overflow:hidden;display:flex;align-items:center;padding:8px 10px;background:linear-gradient(100deg,'+_idColor+'40 0%,'+borderC+'20 60%,var(--s1) 100%);border-radius:var(--r6);margin-bottom:4px;border-left:3px solid '+borderC+';gap:8px;">'
+        return '<div style="position:relative;overflow:hidden;display:flex;align-items:center;padding:8px 10px;background:linear-gradient(100deg,'+borderC+'38 0%,'+borderC+'16 52%,var(--s1) 100%);border-radius:var(--r6);margin-bottom:4px;border-left:3px solid '+borderC+';gap:8px;">'
           +'<div style="position:relative;font-size:10px;color:var(--t3);min-width:32px;flex-shrink:0;text-align:center;">'+(h.heure||'—')+'</div>'
           +bkBadge+sportIco
           +'<div data-aid="'+h.id+'" onclick="openBetEdit(this.dataset.aid)" style="position:relative;flex:1;min-width:0;overflow:hidden;cursor:pointer;">'
@@ -2736,7 +2849,11 @@ function renderArchive(){
 function renderChartMoisBar(){
   var ctx=$i('chart-mois-bar');if(!ctx)return;
   if(window._gcMoisBar){try{window._gcMoisBar.destroy();}catch(e){}}
-  var moisNames=['','Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
+  /* MOIS EN ENTIER (02/09, retour d'Antoine). Les abreviations a trois lettres
+     dataient d'un axe etroit ; l'axe ne compte ici qu'une poignee de barres, il
+     y a largement la place. « Aoû » et « Déc » n'economisaient rien et se
+     lisaient mal. */
+  var moisNames=['','Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
   var year=new Date().getFullYear();
   var mois={};
   _bilanSrc().forEach(function(h){
@@ -2753,6 +2870,7 @@ function renderChartMoisBar(){
   var data=keys.map(function(m){return parseFloat(mois[m].toFixed(2));});
   var colors=data.map(function(v){return v>=0?'rgba(30,215,96,.7)':'rgba(255,69,69,.7)';});
   window._gcMoisBar=new Chart(ctx.getContext('2d'),{
+    plugins:[G45_VAL_BARRES],
     type:'bar',data:{labels:labels,datasets:[{data:data,backgroundColor:colors,borderRadius:5,borderSkipped:false}]},
     options:{animation:false,responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:{callbacks:{label:function(i){return (i.raw>=0?'+':'')+i.raw.toFixed(2)+'€';}}}},
@@ -2775,18 +2893,29 @@ function renderChartSport(){
   });
   var entries=Object.entries(sports).sort(function(a,b){return b[1].profit-a[1].profit;});
   if(!entries.length)return;
-  var labels=entries.map(function(e){return e[0];});
+  /* NOM DU SPORT SOUS LA BARRE (02/09, retour d'Antoine : « on voit à peine les
+     logos de sport »). `h.sport` est l'emoji lui-meme, il servait donc
+     d'etiquette d'axe — rendu minuscule par Chart.js et illisible. On reprend la
+     table de `renderSportFilter`, seule source des noms dans l'appli. */
+  var _SPN={'⚽':'Football','🏀':'Basket','🎾':'Tennis','🏈':'NFL','⚾':'Baseball','🏒':'Hockey',
+            '🏉':'Rugby','🏉🇦🇺':'NRL','🏎':'F1','🥊':'MMA','🚗':'WRC','🚴':'Cyclisme'};
+  var labels=entries.map(function(e){return _SPN[e[0]]||e[0];});
   var profits=entries.map(function(e){return parseFloat(e[1].profit.toFixed(2));});
   var wrs=entries.map(function(e){return parseFloat((e[1].wins/e[1].n*100).toFixed(1));});
   var pColors=profits.map(function(v){return v>=0?'rgba(30,215,96,.7)':'rgba(255,69,69,.7)';});
   var wrColors=['rgba(30,215,96,.7)','rgba(240,176,32,.7)','rgba(255,69,69,.7)','rgba(77,132,255,.7)','rgba(168,85,247,.7)'];
   if(ctxBen)window._gcSportBen=new Chart(ctxBen.getContext('2d'),{
+    plugins:[G45_VAL_BARRES],
     type:'bar',data:{labels:labels,datasets:[{data:profits,backgroundColor:pColors,borderRadius:5,borderSkipped:false}]},
     options:{animation:false,responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:{callbacks:{label:function(i){return (i.raw>=0?'+':'')+i.raw.toFixed(2)+'€';}}}},
       scales:{x:{ticks:{color:'#e8ecfa',font:{size:9}},grid:{display:false}},y:{grid:{color:'rgba(255,255,255,.03)'},ticks:{color:'#e8ecfa',font:{size:9},callback:function(v){return v+'€';}}}}}
   });
   if(ctxWr)window._gcSportWr=new Chart(ctxWr.getContext('2d'),{
+    plugins:[G45_VAL_BARRES],
+    /* Seul graphique en pourcentage des quatre ; les trois autres sont en euros
+       et prennent le suffixe par defaut. */
+    _g45Suffixe:'%',
     type:'bar',data:{labels:labels,datasets:[{data:wrs,backgroundColor:wrColors,borderRadius:5,borderSkipped:false}]},
     options:{animation:false,responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:{callbacks:{label:function(i){return i.raw+'%';}}}},
@@ -2810,10 +2939,16 @@ function renderChartTypeBen(){
   var TCOLS=['rgba(77,132,255,.8)','rgba(30,215,96,.8)','rgba(240,176,32,.8)','rgba(168,85,247,.8)','rgba(34,211,238,.8)','rgba(249,115,22,.8)','rgba(236,72,153,.8)','rgba(20,184,166,.8)','rgba(132,204,22,.8)','rgba(232,121,249,.8)'];
   var colors=entries.map(function(e,i){return TCOLS[i%TCOLS.length];});
   window._gcTypeBen=new Chart(ctx.getContext('2d'),{
+    plugins:[G45_VAL_BARRES],
     type:'bar',data:{labels:labels,datasets:[{data:data,backgroundColor:colors,borderRadius:5,borderSkipped:false}]},
     options:{animation:false,responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:{callbacks:{label:function(i){return (i.raw>=0?'+':'')+i.raw.toFixed(2)+'€';}}}},
-      scales:{x:{ticks:{color:'#e8ecfa',font:{size:9},maxRotation:30},grid:{display:false}},y:{grid:{color:'rgba(255,255,255,.03)'},ticks:{color:'#e8ecfa',font:{size:9},callback:function(v){return v+'€';}}}}}
+      /* ETIQUETTES D'AXE RACCOURCIES (03/09). « Gagne le 1er set et le match »
+         ou « Victoire + Under 3.5 » inclines a 30 degres sur un telephone se
+         chevauchaient et debordaient du cadre. On tronque a 14 caracteres —
+         l'infobulle donne le libelle complet — et `autoSkip` laisse Chart.js
+         retirer les etiquettes restantes s'il en manque encore la place. */
+      scales:{x:{ticks:{color:'#e8ecfa',font:{size:9},maxRotation:38,autoSkip:true,callback:function(v,i){var t=String(this.getLabelForValue(v)||'');return t.length>14?t.slice(0,13)+'…':t;}},grid:{display:false}},y:{grid:{color:'rgba(255,255,255,.03)'},ticks:{color:'#e8ecfa',font:{size:9},callback:function(v){return v+'€';}}}}}
   });
 }
 
@@ -4454,7 +4589,18 @@ function renderMultiCurveChart(){
   },80);
 }
 function renderGlobalCharts(){
-  try{renderBilanTypeFilter();}catch(e){} try{renderBilanCompFilter();}catch(e){} try{renderBilanBookFilter();}catch(e){}
+  /* LES FILTRES PASSENT DANS UN TIROIR (02/09, sur le modele que m'a montre
+     Antoine). Quatre rangees de puces — type, competition, bookmaker, mois —
+     occupaient la moitie de l'ecran AVANT le moindre chiffre, alors qu'on
+     ouvre un bilan pour lire des chiffres. Elles vivent desormais dans un
+     panneau lateral, resume par un seul bouton qui affiche le nombre de
+     filtres actifs.
+     Les anciens rendus sont conserves mais ne sont plus appeles : ils
+     servaient aussi a recalculer les listes disponibles (`_bilanTypeList`
+     etc.) et surtout a remettre un filtre a « tous » quand sa valeur a disparu
+     du jeu de donnees — logique reprise ici par `_g45BilFiltresNettoyer`. */
+  try{ _g45BilFiltresNettoyer(); }catch(e){}
+  try{ _g45BilBarreFiltres(); }catch(e){}
   renderGlobalChart();
   setTimeout(function(){
     renderMultiCurveChart();
@@ -4683,7 +4829,13 @@ function renderRadarChart(){
     options:{
       responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:true,labels:{color:'#8b97c4',font:{size:10},boxWidth:10}}},
-      scales:{r:{ticks:{color:'#e8ecfa',font:{size:9},backdropColor:'transparent'},grid:{color:'rgba(255,255,255,.07)'},pointLabels:{color:'#8b97c4',font:{size:9}}}}
+      /* AXE EXPLICITE (03/09, retour d'Antoine : « -50 on se demande a quoi ca
+         correspond »). Les deux series sont en POURCENTAGE mais ne couvrent pas
+         la meme plage : la reussite va de 0 a 100, le ROI peut etre negatif.
+         D'ou une graduation a −50 qui n'a de sens que pour l'une des deux, sans
+         que rien ne le dise. Le suffixe % au moins nomme l'unite ; le libelle
+         complet reste dans l'infobulle et dans la legende. */
+      scales:{r:{ticks:{color:'#e8ecfa',font:{size:9},backdropColor:'transparent',callback:function(v){return v+' %';}},grid:{color:'rgba(255,255,255,.07)'},pointLabels:{color:'#8b97c4',font:{size:9},callback:function(t){t=String(t||'');return t.length>16?t.slice(0,15)+'…':t;}}}}
     }
   });
 }
@@ -4695,6 +4847,22 @@ var mmRows=[
 ];
 var MM_TYPES=['Victoire','Nul','Défaite','Domicile ou nul','Extérieur ou nul','BTS Oui','BTS Non','Over 1.5','Over 2.5','Under 2.5','HC -1','HC +1','Mi-temps','Buteur','Passeur','Décisif'];
 
+/* MARCHES GROUPES PAR FAMILLE (02/09, refonte de la page Pari). Les seize
+   marches etaient affiches a plat, en seize pastilles identiques. Ils ne sont
+   pourtant pas equivalents : on cherche un resultat, OU un nombre de buts, OU
+   une performance de joueur. Il fallait donc balayer les seize a chaque fois.
+   Les familles rendent la recherche directe.
+   IMPORTANT : `MM_TYPES` reste la liste de reference, utilisee ailleurs dans le
+   fichier ; ce regroupement ne fait que decrire l'ORDRE D'AFFICHAGE. Les
+   libelles enregistres ne changent pas d'un caractere — un pari deja en base
+   reste lisible, et rien ne casse dans le bilan ni dans les archives. */
+var MM_GROUPES=[
+  {g:'Résultat', t:['Victoire','Nul','Défaite','Domicile ou nul','Extérieur ou nul','Mi-temps']},
+  {g:'Buts',     t:['BTS Oui','BTS Non','Over 1.5','Over 2.5','Under 2.5']},
+  {g:'Handicap', t:['HC -1','HC +1']},
+  {g:'Joueur',   t:['Buteur','Passeur','Décisif']}
+];
+
 function renderMmRows(){
   var sel=$i('mm-sel');if(!sel)return;
   sel.innerHTML=mmRows.map(function(r,i){
@@ -4705,8 +4873,14 @@ function renderMmRows(){
       +'</div>';
   }).join('');
   var types=$i('mm-types');
-  if(types)types.innerHTML=MM_TYPES.map(function(t){
-    return '<button class="mm-type" onclick="addMmType(\''+t+'\')">'+ t+'</button>';
+  if(types)types.innerHTML=MM_GROUPES.map(function(f){
+    /* Un marche deja choisi est grise : le proposer encore alors qu'`addMmType`
+       le refuse silencieusement laissait croire a un clic sans effet. */
+    return '<div class="mm-fam"><span>'+f.g+'</span></div>'
+      + '<div class="mm-types-g">' + f.t.map(function(t){
+          var pris = mmRows.some(function(r){ return r.type===t; });
+          return '<button class="mm-type'+(pris?' pris':'')+'" onclick="addMmType(\''+t+'\')">'+t+'</button>';
+        }).join('') + '</div>';
   }).join('');
   renderMmCote();
 }
@@ -5855,8 +6029,19 @@ function renderMmRowsSimple(){
       +(mmRowsSimple.length>1?'<button class="mm-del" data-idx="'+i+'" onclick="mmRowsSimple.splice(parseInt(this.dataset.idx),1);renderMmRowsSimple();">✕</button>':'')
       +'</div>';
   }).join('');
+  /* MEMES FAMILLES QUE LE COCKPIT (02/09). Le pari simple etait reste sur la
+     liste a plat de `MM_TYPES` alors que le cockpit avait deja ses familles :
+     deux ecrans qui proposent exactement les memes seize marches n'ont aucune
+     raison de les presenter differemment. On reutilise `MM_GROUPES`, donc un
+     marche ajoute un jour se retrouvera automatiquement dans les deux. */
   var types=$i('mm-types-simple');
-  if(types)types.innerHTML=MM_TYPES.map(function(t){return '<button class="mm-type" data-t="'+t+'" onclick="addMmTypeSimple(this.dataset.t)">'+t+'</button>';}).join('');
+  if(types)types.innerHTML=MM_GROUPES.map(function(f){
+    return '<div class="mm-fam"><span>'+f.g+'</span></div>'
+      + '<div class="mm-types-g">' + f.t.map(function(t){
+          var pris = mmRowsSimple.some(function(r){ return r.type===t; });
+          return '<button class="mm-type'+(pris?' pris':'')+'" data-t="'+t+'" onclick="addMmTypeSimple(this.dataset.t)">'+t+'</button>';
+        }).join('') + '</div>';
+  }).join('');
   renderMmCoteSimple();
 }
 function renderMmCoteSimple(){
@@ -8916,6 +9101,11 @@ function buildSbRows(light){
   var dr=$i('sb-rows');if(!dr)return;
   if(!light) dr.innerHTML=sbRows.map(function(r,i){
     return '<div class="dutch-row">'
+      /* ETIQUETTE VISIBLE (02/09) : le `placeholder` « Cote 1 » ne s'affiche que
+         tant que le champ est vide — donc jamais ici, puisqu'il porte toujours
+         une valeur. Deux grands champs cote a cote sans rien pour les
+         distinguer, alors que le resultat plus bas parle de « Mise 1 (@2.1) ». */
+      +'<span class="dutch-lbl">Cote '+(i+1)+'</span>'
       +'<input type="text" inputmode="decimal" class="fi" value="'+r.c+'" placeholder="Cote '+(i+1)+'" data-idx="'+i+'" oninput="sbRows[this.dataset.idx].c=parseFloat(this.value.replace(\',\',\'.\'))||1;buildSbRows(true);">'
       +(sbRows.length>2?'<button class="udel" data-idx="'+i+'" onclick="sbRows.splice(this.dataset.idx,1);buildSbRows();">✕</button>':'')
       +'</div>';
@@ -8979,6 +9169,11 @@ function buildDtRows(light){
   dtRows.forEach(function(r,i){
     var mise=impl>0?(tot*(1/(r.c||1))/impl).toFixed(2):'—';
     html+='<div class="dutch-row">'
+      /* ETIQUETTE VISIBLE (02/09) : le `placeholder` « Cote 1 » ne s'affiche que
+         tant que le champ est vide — donc jamais ici, puisqu'il porte toujours
+         une valeur. Deux grands champs cote a cote sans rien pour les
+         distinguer, alors que le resultat plus bas parle de « Mise 1 (@2.1) ». */
+      +'<span class="dutch-lbl">Cote '+(i+1)+'</span>'
       +'<input type="text" inputmode="decimal" class="fi" value="'+r.c+'" placeholder="Cote '+(i+1)+'" data-idx="'+i+'" oninput="dtRows[this.dataset.idx].c=parseFloat(this.value.replace(\',\',\'.\'))||1;buildDtRows(true);">'
       +'<div class="dutch-mise" id="dt-mise-'+i+'">'+mise+'€</div>'
       +(dtRows.length>2?'<button class="udel" data-idx="'+i+'" onclick="dtRows.splice(this.dataset.idx,1);buildDtRows();">✕</button>':'')
@@ -9161,7 +9356,18 @@ function renderSportFilter(){
       mf.innerHTML=chips.map(function(c){ return '<button class="sfbtn'+(bilanMonth===c[0]?' on':'')+'" onclick="bilanMonth=\''+c[0]+'\';renderBilanTab()">'+c[1]+'</button>'; }).join('');
     }
   }catch(e){}
-  try{renderBilanTypeFilter();}catch(e){} try{renderBilanCompFilter();}catch(e){} try{renderBilanBookFilter();}catch(e){}
+  /* LES FILTRES PASSENT DANS UN TIROIR (02/09, sur le modele que m'a montre
+     Antoine). Quatre rangees de puces — type, competition, bookmaker, mois —
+     occupaient la moitie de l'ecran AVANT le moindre chiffre, alors qu'on
+     ouvre un bilan pour lire des chiffres. Elles vivent desormais dans un
+     panneau lateral, resume par un seul bouton qui affiche le nombre de
+     filtres actifs.
+     Les anciens rendus sont conserves mais ne sont plus appeles : ils
+     servaient aussi a recalculer les listes disponibles (`_bilanTypeList`
+     etc.) et surtout a remettre un filtre a « tous » quand sa valeur a disparu
+     du jeu de donnees — logique reprise ici par `_g45BilFiltresNettoyer`. */
+  try{ _g45BilFiltresNettoyer(); }catch(e){}
+  try{ _g45BilBarreFiltres(); }catch(e){}
 }
 function _hMonthKey(h){
   var d=String((h&&h.date)||'').trim(); if(!d) return '';
@@ -9400,16 +9606,63 @@ if(!dOnly || dOnly===_lastDateShown) return ''; _lastDateShown=dOnly; return dOn
     bks[h.b].n++;
     if(h.win) bks[h.b].wins++;
   });
+  /* ═══ PAR BOOKMAKER — REVU LE 02/09 ═══
+     Retour d'Antoine : « le tableau du haut est très utile, ça permet de voir où
+     je joue principalement, mais Boursorama les 2 n'ont pas à y être ».
+     Trois changements :
+     1. Les comptes SANS AUCUN PARI sont replies derriere un « + ». Ils sortent
+        donc les deux Boursorama — qui sont ses banques, pas des bookmakers —
+        mais aussi tous les comptes ouverts et jamais joues. On ne les exclut
+        surtout pas par leur NOM : le jour ou un pari y est enregistre, ils
+        reapparaissent d'eux-memes, et un nouveau compte bancaire ne polluera
+        jamais la liste.
+     2. Tri par NOMBRE DE PARIS decroissant. Si le tableau sert a voir ou l'on
+        joue le plus, l'ordre de creation des comptes ne veut rien dire.
+     3. Une ligne de TOTAL, pour verifier d'un coup d'oeil que la somme des
+        lignes correspond au benefice global affiche plus haut.
+     Le nom repasse en blanc : la couleur reste sur la pastille de gauche, qui
+     identifie deja le bookmaker. Quinze teintes plus le vert et le rouge des
+     montants, cela faisait beaucoup de signaux pour peu d'information. */
   var bke=$i('bk-stats');
-  if(bke) bke.innerHTML=Object.entries(bks).map(function(e){
-    var b=bki(e[0]), p=e[1].profit, n=e[1].n, wr=n?Math.round(e[1].wins/n*100):0;
-    var isActive = window._bilanBkFilter===e[0];
-    return '<div class="bkrow" onclick="window._bilanBkFilter=(window._bilanBkFilter===\''+e[0]+'\'?null:\''+e[0]+'\');renderBilanTab();" style="--bc:'+b.c+';display:flex;align-items:center;gap:8px;cursor:pointer;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,'+(isActive?'.2':'.04')+');background:rgba(255,255,255,'+(isActive?'.06':'.02')+');margin-bottom:4px;">'
-      +bkFavicon(e[0],18)
-      +'<span style="flex:1;font-size:11px;font-weight:700;color:'+b.c+';">'+b.n+'</span>'
-      +(n?'<span style="font-size:10px;color:var(--t3);">'+n+' paris · '+wr+'%</span>':'')
-      +'<span style="font-size:13px;font-weight:800;color:'+(p>=0?'var(--g)':'var(--r)')+';">'+fmt(p)+'</span></div>';
-  }).join('')+(window._bilanBkFilter?'<button onclick="window._bilanBkFilter=null;renderBilanTab();" style="width:100%;padding:6px;margin-top:4px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:6px;color:var(--t3);font-size:10px;cursor:pointer;">✕ Effacer le filtre</button>':'');
+  if(bke){
+    var _lignes=Object.entries(bks).sort(function(a,b){
+      /* A egalite de paris (donc a zero), ordre alphabetique stable plutot qu'un
+         ordre d'objet dependant de l'historique des insertions. */
+      if(b[1].n!==a[1].n) return b[1].n-a[1].n;
+      return (bki(a[0]).n||a[0]).localeCompare(bki(b[0]).n||b[0],'fr');
+    });
+    var _joues=_lignes.filter(function(e){ return e[1].n>0; });
+    var _vides=_lignes.filter(function(e){ return e[1].n===0; });
+    var _ouvert=false;
+    try{ _ouvert=localStorage.getItem('g45_bk_vides')==='1'; }catch(e){}
+
+    var _row=function(e){
+      var b=bki(e[0]), p=e[1].profit, n=e[1].n, wr=n?Math.round(e[1].wins/n*100):0;
+      var isActive = window._bilanBkFilter===e[0];
+      return '<div class="bkrow" onclick="window._bilanBkFilter=(window._bilanBkFilter===\''+e[0]+'\'?null:\''+e[0]+'\');renderBilanTab();" style="--bc:'+b.c+';display:flex;align-items:center;gap:9px;cursor:pointer;padding:9px 11px;border-radius:var(--r4);border:1px solid '+(isActive?b.c:'var(--b1)')+';background:'+(isActive?'rgba(255,255,255,.07)':'rgba(11,16,26,.74)')+';margin-bottom:4px;transition:all .15s;'+(n?'':'opacity:.55;')+'">'
+        +bkFavicon(e[0],18)
+        +'<span style="flex:1;font-size:13px;">'+b.n+'</span>'
+        +'<span style="font-size:11.5px;color:var(--t3);min-width:104px;text-align:right;">'+(n?(n+' pari'+(n>1?'s':'')+' · '+wr+' %'):'—')+'</span>'
+        +'<span style="font-size:13px;font-weight:700;min-width:78px;text-align:right;font-variant-numeric:tabular-nums;color:'+(p>=0?'var(--g)':'var(--r)')+';">'+fmt(p)+'</span></div>';
+    };
+
+    var _tp=0,_tn=0,_tw=0;
+    _joues.forEach(function(e){ _tp+=e[1].profit; _tn+=e[1].n; _tw+=e[1].wins; });
+
+    bke.innerHTML = _joues.map(_row).join('')
+      + (_joues.length>1
+          ? '<div style="display:flex;align-items:center;gap:9px;border-top:1px solid var(--b1);margin-top:8px;padding:11px 11px 0;">'
+              +'<span style="flex:1;font-size:13px;font-weight:600;">Total</span>'
+              +'<span style="font-size:11.5px;color:var(--t3);min-width:104px;text-align:right;">'+_tn+' pari'+(_tn>1?'s':'')+' · '+(_tn?Math.round(_tw/_tn*100):0)+' %</span>'
+              +'<span style="font-size:13px;font-weight:700;min-width:78px;text-align:right;font-variant-numeric:tabular-nums;color:'+(_tp>=0?'var(--g)':'var(--r)')+';">'+fmt(_tp)+'</span></div>'
+          : '')
+      + (_vides.length
+          ? '<button onclick="g45BkVidesToggle()" style="width:100%;margin-top:10px;padding:7px;background:none;border:1px solid var(--b1);border-radius:var(--r4);color:var(--t3);font:inherit;font-size:12px;cursor:pointer;">'
+              + (_ouvert?'−':'+') + ' ' + _vides.length + ' compte' + (_vides.length>1?'s':'') + ' sans pari</button>'
+              + (_ouvert?'<div style="margin-top:6px;">'+_vides.map(_row).join('')+'</div>':'')
+          : '')
+      + (window._bilanBkFilter?'<button onclick="window._bilanBkFilter=null;renderBilanTab();" style="width:100%;padding:7px;margin-top:6px;background:rgba(255,255,255,.04);border:1px solid var(--b1);border-radius:var(--r4);color:var(--t3);font-size:12px;cursor:pointer;">Effacer le filtre</button>':'');
+  }
 }
 
 /* ── RENDER PRINCIPAL ── */
@@ -9458,7 +9711,10 @@ function render(){
       +'<td style="color:var(--gold);font-weight:700;">'+h.m+'€</td>'
       +'<td style="text-align:right;white-space:nowrap"><button data-id="'+h.id+'" onclick="openBetLive(this.dataset.id)" title="Voir le match live" style="display:inline-flex;align-items:center;padding:5px 7px;background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.3);border-radius:4px;color:#a78bfa;font-size:11px;font-weight:700;cursor:pointer;margin-right:3px;">\ud83d\udce1</button><a href="https://www.google.com/search?q='+encodeURIComponent(h.target+' sofascore résumé')+'" target="_blank" style="display:inline-flex;align-items:center;padding:5px 7px;background:rgba(77,132,255,.1);border:1px solid rgba(77,132,255,.25);border-radius:4px;color:#4d84ff;font-size:11px;font-weight:700;text-decoration:none;margin-right:3px;" title="Résumé">🔍</a><button class="sbtn sw" data-id="'+h.id+'" onclick="result(this.dataset.id,true)" style="margin-right:3px">✅</button><button class="sbtn sl" data-id="'+h.id+'" onclick="result(this.dataset.id,false)" style="margin-right:3px">❌</button><button data-id="'+h.id+'" onclick="editBet(this.dataset.id)" style="background:none;border:1px solid rgba(77,132,255,.25);color:var(--a);font-size:11px;font-weight:700;padding:5px 8px;border-radius:4px;cursor:pointer;margin-right:3px">✏️</button><button data-id="'+h.id+'" onclick="cancelBet(this.dataset.id)" style="background:none;border:1px solid rgba(255,69,69,.25);color:var(--r);font-size:11px;font-weight:700;padding:5px 8px;border-radius:4px;cursor:pointer">✕</button></td>'
       +'</tr>';
-  }).join('')||'<tr><td colspan="5" class="empty">Aucun pari en cours</td></tr>';
+  /* ETAT VIDE QUI INVITE (02/09). « Aucun pari en cours » constatait sans rien
+     proposer. C'est pourtant le tout premier ecran que verra quelqu'un qui
+     ouvre l'appli pour la premiere fois : autant qu'il dise quoi faire. */
+  }).join('')||'<tr><td colspan="5" class="empty">Aucun pari en cours.<br><span style="color:var(--t3);font-size:12px;">Renseigne un match ci-dessus pour lancer ta première montante.</span></td></tr>';
 
   $i('live-norm').innerHTML=state.h.filter(function(x){return !x.isS;}).map(function(h){
     return '<tr>'
@@ -9468,7 +9724,7 @@ function render(){
       +'<td style="color:var(--gold);font-weight:700;">'+h.m+'€</td>'
       +'<td style="text-align:right;white-space:nowrap"><button data-id="'+h.id+'" onclick="openBetLive(this.dataset.id)" title="Voir le match live" style="display:inline-flex;align-items:center;padding:5px 7px;background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.3);border-radius:4px;color:#a78bfa;font-size:11px;font-weight:700;cursor:pointer;margin-right:3px;">\ud83d\udce1</button><a href="https://www.google.com/search?q='+encodeURIComponent(h.target+' sofascore résumé')+'" target="_blank" style="display:inline-flex;align-items:center;padding:5px 7px;background:rgba(77,132,255,.1);border:1px solid rgba(77,132,255,.25);border-radius:4px;color:#4d84ff;font-size:11px;font-weight:700;text-decoration:none;margin-right:3px;" title="Résumé">🔍</a><button class="sbtn sw" data-id="'+h.id+'" onclick="result(this.dataset.id,true)" style="margin-right:3px">✅</button><button class="sbtn sl" data-id="'+h.id+'" onclick="result(this.dataset.id,false)" style="margin-right:3px">❌</button><button data-id="'+h.id+'" onclick="editBet(this.dataset.id)" style="background:none;border:1px solid rgba(77,132,255,.25);color:var(--a);font-size:11px;font-weight:700;padding:5px 8px;border-radius:4px;cursor:pointer;margin-right:3px">✏️</button><button data-id="'+h.id+'" onclick="cancelBet(this.dataset.id)" style="background:none;border:1px solid rgba(255,69,69,.25);color:var(--r);font-size:11px;font-weight:700;padding:5px 8px;border-radius:4px;cursor:pointer">✕</button></td>'
       +'</tr>';
-  }).join('')||'<tr><td colspan="3" class="empty">Aucun pari en cours</td></tr>';
+  }).join('')||'<tr><td colspan="3" class="empty">Aucun pari en cours.<br><span style="color:var(--t3);font-size:12px;">Les paris simples et combinés enregistrés s\'afficheront ici.</span></td></tr>';
 
   /* dash units */
   $i('dash-units').innerHTML=state.u.length?state.u.map(function(u){
@@ -9714,17 +9970,48 @@ function render(){
      Le drapeau evite la boucle : redessiner rappelle ce bloc. */
   try{ g45MurVisuels(); }catch(e){}
   /* books */
+  /* Le camembert des soldes vit maintenant dans l'onglet Bank (02/09). Il etait
+     dessine depuis la chaine des graphiques du Bilan ; on le redessine donc ici,
+     avec le reste de Bank, sinon il resterait fige apres un depot ou un retrait.
+     Le `setTimeout` laisse le canvas prendre ses dimensions : dessiner dans un
+     onglet encore masque donne un graphique de taille nulle. */
+  try{ setTimeout(function(){ try{ renderBooksChart(); }catch(e){} }, 60); }catch(e){}
+  /* TOTAL DANS LE TITRE (03/09). Quatorze montants s'affichaient sans jamais
+     etre additionnes, alors que leur somme EST le capital — la valeur affichee
+     en haut de chaque ecran. La voir a cote de la liste permet de reperer tout
+     de suite un solde saisi de travers. */
+  try{
+    var _tb=document.getElementById('bank-titre');
+    if(_tb){
+      var _st=Object.values(state.b).reduce(function(a,v){ return a+(parseFloat(v)||0); },0);
+      _tb.innerHTML='Mes comptes<b style="margin-left:auto;font-family:var(--ff-t);font-size:20px;font-weight:600;font-variant-numeric:tabular-nums;">'+_st.toFixed(2)+'€</b>';
+    }
+  }catch(e){}
   $i('books-grid').innerHTML=Object.entries(state.b).map(function(e){
     var b=bki(e[0]);
+    /* ═══ TUILE DE COMPTE — REVUE LE 03/09 ═══
+       Quatre corrections, toutes issues des captures d'Antoine :
+       1. La COULEUR etait dite trois fois — bordure gauche, nom colore, pastille
+          du pied de carte. Le nom repasse en blanc ; le liseré et la pastille
+          suffisent, et la pastille est de toute facon le CONTROLE qui la change.
+       2. La ligne freebet s'affichait sur les quatorze cartes, dont douze a
+          « 0.00€ » : elle repetait qu'il n'y a rien. Elle n'apparait plus que
+          s'il y a effectivement un freebet.
+       3. Deux boutons sur trois n'avaient pas de libelle. Le 🎟 ouvre la cagnotte
+          freebet, mais rendu dans la police d'Antoine il ressemble a un crayon —
+          on le prenait pour un doublon de « Modifier ». Trois boutons, trois mots.
+       4. Le nom n'est plus en capitales interlettrees, comme partout ailleurs. */
+    var _fbv = parseFloat(state.fb && state.fb[e[0]]) || 0;
     return '<div class="btile" style="--bc:'+b.c+';">'
-      +'<div class="btile-n" style="color:'+b.c+';display:flex;align-items:center;gap:5px;">'+bkFavicon(e[0],14)+b.n+'</div>'
+      +'<div class="btile-n" style="display:flex;align-items:center;gap:6px;">'+bkFavicon(e[0],14)+b.n
+        +(_fbv>0?'<span style="margin-left:auto;font-size:11px;font-weight:700;color:var(--gold);">🎟 '+_fbv.toFixed(2)+'€</span>':'')
+      +'</div>'
       +'<div class="btile-v">'+parseFloat(e[1]).toFixed(2)+'€</div>'
-      +'<div class="btile-fb" style="font-size:11px;font-weight:700;color:var(--gold);margin-top:1px;">🎟 '+(parseFloat(state.fb&&state.fb[e[0]])||0).toFixed(2)+'€</div>'
       +'<div class="btile-acts" style="align-items:center;">'
-      +'<input type="color" value="'+b.c+'" title="Couleur" data-bk="'+e[0]+'" onchange="changeBookColor(this)" style="width:20px;height:20px;border-radius:50%;border:none;padding:0;cursor:pointer;background:none;flex-shrink:0;">'
-      +'<button class="ba" data-bk="'+e[0]+'" onclick="editBook(this.dataset.bk)">Modifier</button> '
-      +'<button class="ba" data-bk="'+e[0]+'" title="Cagnotte freebet" onclick="editFb(this.dataset.bk)" style="color:var(--gold);border-color:rgba(240,176,32,.4);">🎟</button> '
-      +'<button class="ba del" data-bk="'+e[0]+'" onclick="delBook(this.dataset.bk)">✕</button>'
+      +'<input type="color" value="'+b.c+'" title="Couleur du compte" data-bk="'+e[0]+'" onchange="changeBookColor(this)" style="width:20px;height:20px;border-radius:50%;border:none;padding:0;cursor:pointer;background:none;flex-shrink:0;">'
+      +'<button class="ba" data-bk="'+e[0]+'" onclick="editBook(this.dataset.bk)">Modifier</button>'
+      +'<button class="ba" data-bk="'+e[0]+'" onclick="editFb(this.dataset.bk)" style="color:var(--gold);border-color:rgba(240,176,32,.35);">Freebet</button>'
+      +'<button class="ba del" data-bk="'+e[0]+'" onclick="delBook(this.dataset.bk)">Supprimer</button>'
       +'</div></div>';
   }).join('');
 
@@ -10051,8 +10338,19 @@ function renderArchive(){
         var _idFilig=_idLogo
           ?('<img src="'+_idLogo+'" alt="" loading="lazy" onerror="this.style.display=\'none\'" style="position:absolute;right:2px;top:50%;transform:translateY(-50%);height:32px;width:32px;object-fit:contain;opacity:.5;filter:drop-shadow(0 1px 3px rgba(0,0,0,.5));pointer-events:none;">')
           :((isSimpleA&&b2.d)?('<img src="https://www.google.com/s2/favicons?domain='+b2.d+'&sz=64" alt="" loading="lazy" onerror="this.style.display=\'none\'" style="position:absolute;right:2px;top:50%;transform:translateY(-50%);height:24px;width:24px;object-fit:contain;opacity:.55;border-radius:6px;filter:drop-shadow(0 1px 3px rgba(0,0,0,.5));pointer-events:none;">'):'');
+        /* FOND TEINTE PAR LE RESULTAT (02/09, demande d'Antoine : « pari gagné
+           vert, pari perdu rouge, pari en cours jaune »). Le degrade partait de
+           `_idColor`, la couleur du CLUB — d'ou un fond vert sur Athletics et
+           violet sur Seattle, sans aucun rapport avec l'issue du pari. Or
+           l'identite du club est deja portee par son ecusson en filigrane a
+           droite, tandis que le resultat n'etait signale que par un filet de
+           3 px sur le bord gauche.
+           On reutilise `borderC`, deja calcule au-dessus et qui vaut
+           #1ed760 / #ff4545 / #f0b020 selon gagne, perdu ou en cours : une
+           seule source pour le filet et pour le fond, donc impossible qu'ils se
+           contredisent un jour. */
         var _scoreA=h.isCombi?((typeof _g45ScoreTexteCombi==='function')?_g45ScoreTexteCombi(h):''):((typeof _g45ScoreTexte==='function')?_g45ScoreTexte(h):'');
-        return '<div style="position:relative;overflow:hidden;display:flex;align-items:center;padding:8px 10px;background:linear-gradient(100deg,'+_idColor+'40 0%,'+borderC+'20 60%,var(--s1) 100%);border-radius:var(--r6);margin-bottom:4px;border-left:3px solid '+borderC+';gap:8px;">'
+        return '<div style="position:relative;overflow:hidden;display:flex;align-items:center;padding:8px 10px;background:linear-gradient(100deg,'+borderC+'38 0%,'+borderC+'16 52%,var(--s1) 100%);border-radius:var(--r6);margin-bottom:4px;border-left:3px solid '+borderC+';gap:8px;">'
           +'<div style="position:relative;font-size:10px;color:var(--t3);min-width:32px;flex-shrink:0;text-align:center;">'+(h.heure||'—')+'</div>'
           +bkBadge+sportIco
           +'<div data-aid="'+h.id+'" onclick="openBetEdit(this.dataset.aid)" style="position:relative;flex:1;min-width:0;overflow:hidden;cursor:pointer;">'
@@ -10118,7 +10416,11 @@ function renderArchive(){
 function renderChartMoisBar(){
   var ctx=$i('chart-mois-bar');if(!ctx)return;
   if(window._gcMoisBar){try{window._gcMoisBar.destroy();}catch(e){}}
-  var moisNames=['','Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
+  /* MOIS EN ENTIER (02/09, retour d'Antoine). Les abreviations a trois lettres
+     dataient d'un axe etroit ; l'axe ne compte ici qu'une poignee de barres, il
+     y a largement la place. « Aoû » et « Déc » n'economisaient rien et se
+     lisaient mal. */
+  var moisNames=['','Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
   var year=new Date().getFullYear();
   var mois={};
   _bilanSrc().forEach(function(h){
@@ -10135,6 +10437,7 @@ function renderChartMoisBar(){
   var data=keys.map(function(m){return parseFloat(mois[m].toFixed(2));});
   var colors=data.map(function(v){return v>=0?'rgba(30,215,96,.7)':'rgba(255,69,69,.7)';});
   window._gcMoisBar=new Chart(ctx.getContext('2d'),{
+    plugins:[G45_VAL_BARRES],
     type:'bar',data:{labels:labels,datasets:[{data:data,backgroundColor:colors,borderRadius:5,borderSkipped:false}]},
     options:{animation:false,responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:{callbacks:{label:function(i){return (i.raw>=0?'+':'')+i.raw.toFixed(2)+'€';}}}},
@@ -10157,18 +10460,29 @@ function renderChartSport(){
   });
   var entries=Object.entries(sports).sort(function(a,b){return b[1].profit-a[1].profit;});
   if(!entries.length)return;
-  var labels=entries.map(function(e){return e[0];});
+  /* NOM DU SPORT SOUS LA BARRE (02/09, retour d'Antoine : « on voit à peine les
+     logos de sport »). `h.sport` est l'emoji lui-meme, il servait donc
+     d'etiquette d'axe — rendu minuscule par Chart.js et illisible. On reprend la
+     table de `renderSportFilter`, seule source des noms dans l'appli. */
+  var _SPN={'⚽':'Football','🏀':'Basket','🎾':'Tennis','🏈':'NFL','⚾':'Baseball','🏒':'Hockey',
+            '🏉':'Rugby','🏉🇦🇺':'NRL','🏎':'F1','🥊':'MMA','🚗':'WRC','🚴':'Cyclisme'};
+  var labels=entries.map(function(e){return _SPN[e[0]]||e[0];});
   var profits=entries.map(function(e){return parseFloat(e[1].profit.toFixed(2));});
   var wrs=entries.map(function(e){return parseFloat((e[1].wins/e[1].n*100).toFixed(1));});
   var pColors=profits.map(function(v){return v>=0?'rgba(30,215,96,.7)':'rgba(255,69,69,.7)';});
   var wrColors=['rgba(30,215,96,.7)','rgba(240,176,32,.7)','rgba(255,69,69,.7)','rgba(77,132,255,.7)','rgba(168,85,247,.7)'];
   if(ctxBen)window._gcSportBen=new Chart(ctxBen.getContext('2d'),{
+    plugins:[G45_VAL_BARRES],
     type:'bar',data:{labels:labels,datasets:[{data:profits,backgroundColor:pColors,borderRadius:5,borderSkipped:false}]},
     options:{animation:false,responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:{callbacks:{label:function(i){return (i.raw>=0?'+':'')+i.raw.toFixed(2)+'€';}}}},
       scales:{x:{ticks:{color:'#e8ecfa',font:{size:9}},grid:{display:false}},y:{grid:{color:'rgba(255,255,255,.03)'},ticks:{color:'#e8ecfa',font:{size:9},callback:function(v){return v+'€';}}}}}
   });
   if(ctxWr)window._gcSportWr=new Chart(ctxWr.getContext('2d'),{
+    plugins:[G45_VAL_BARRES],
+    /* Seul graphique en pourcentage des quatre ; les trois autres sont en euros
+       et prennent le suffixe par defaut. */
+    _g45Suffixe:'%',
     type:'bar',data:{labels:labels,datasets:[{data:wrs,backgroundColor:wrColors,borderRadius:5,borderSkipped:false}]},
     options:{animation:false,responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:{callbacks:{label:function(i){return i.raw+'%';}}}},
@@ -10192,10 +10506,16 @@ function renderChartTypeBen(){
   var TCOLS=['rgba(77,132,255,.8)','rgba(30,215,96,.8)','rgba(240,176,32,.8)','rgba(168,85,247,.8)','rgba(34,211,238,.8)','rgba(249,115,22,.8)','rgba(236,72,153,.8)','rgba(20,184,166,.8)','rgba(132,204,22,.8)','rgba(232,121,249,.8)'];
   var colors=entries.map(function(e,i){return TCOLS[i%TCOLS.length];});
   window._gcTypeBen=new Chart(ctx.getContext('2d'),{
+    plugins:[G45_VAL_BARRES],
     type:'bar',data:{labels:labels,datasets:[{data:data,backgroundColor:colors,borderRadius:5,borderSkipped:false}]},
     options:{animation:false,responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:{callbacks:{label:function(i){return (i.raw>=0?'+':'')+i.raw.toFixed(2)+'€';}}}},
-      scales:{x:{ticks:{color:'#e8ecfa',font:{size:9},maxRotation:30},grid:{display:false}},y:{grid:{color:'rgba(255,255,255,.03)'},ticks:{color:'#e8ecfa',font:{size:9},callback:function(v){return v+'€';}}}}}
+      /* ETIQUETTES D'AXE RACCOURCIES (03/09). « Gagne le 1er set et le match »
+         ou « Victoire + Under 3.5 » inclines a 30 degres sur un telephone se
+         chevauchaient et debordaient du cadre. On tronque a 14 caracteres —
+         l'infobulle donne le libelle complet — et `autoSkip` laisse Chart.js
+         retirer les etiquettes restantes s'il en manque encore la place. */
+      scales:{x:{ticks:{color:'#e8ecfa',font:{size:9},maxRotation:38,autoSkip:true,callback:function(v,i){var t=String(this.getLabelForValue(v)||'');return t.length>14?t.slice(0,13)+'…':t;}},grid:{display:false}},y:{grid:{color:'rgba(255,255,255,.03)'},ticks:{color:'#e8ecfa',font:{size:9},callback:function(v){return v+'€';}}}}}
   });
 }
 
@@ -11537,7 +11857,18 @@ function renderMultiCurveChart(){
   },80);
 }
 function renderGlobalCharts(){
-  try{renderBilanTypeFilter();}catch(e){} try{renderBilanCompFilter();}catch(e){} try{renderBilanBookFilter();}catch(e){}
+  /* LES FILTRES PASSENT DANS UN TIROIR (02/09, sur le modele que m'a montre
+     Antoine). Quatre rangees de puces — type, competition, bookmaker, mois —
+     occupaient la moitie de l'ecran AVANT le moindre chiffre, alors qu'on
+     ouvre un bilan pour lire des chiffres. Elles vivent desormais dans un
+     panneau lateral, resume par un seul bouton qui affiche le nombre de
+     filtres actifs.
+     Les anciens rendus sont conserves mais ne sont plus appeles : ils
+     servaient aussi a recalculer les listes disponibles (`_bilanTypeList`
+     etc.) et surtout a remettre un filtre a « tous » quand sa valeur a disparu
+     du jeu de donnees — logique reprise ici par `_g45BilFiltresNettoyer`. */
+  try{ _g45BilFiltresNettoyer(); }catch(e){}
+  try{ _g45BilBarreFiltres(); }catch(e){}
   renderGlobalChart();
   setTimeout(function(){
     renderMultiCurveChart();
@@ -11766,7 +12097,13 @@ function renderRadarChart(){
     options:{
       responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:true,labels:{color:'#8b97c4',font:{size:10},boxWidth:10}}},
-      scales:{r:{ticks:{color:'#e8ecfa',font:{size:9},backdropColor:'transparent'},grid:{color:'rgba(255,255,255,.07)'},pointLabels:{color:'#8b97c4',font:{size:9}}}}
+      /* AXE EXPLICITE (03/09, retour d'Antoine : « -50 on se demande a quoi ca
+         correspond »). Les deux series sont en POURCENTAGE mais ne couvrent pas
+         la meme plage : la reussite va de 0 a 100, le ROI peut etre negatif.
+         D'ou une graduation a −50 qui n'a de sens que pour l'une des deux, sans
+         que rien ne le dise. Le suffixe % au moins nomme l'unite ; le libelle
+         complet reste dans l'infobulle et dans la legende. */
+      scales:{r:{ticks:{color:'#e8ecfa',font:{size:9},backdropColor:'transparent',callback:function(v){return v+' %';}},grid:{color:'rgba(255,255,255,.07)'},pointLabels:{color:'#8b97c4',font:{size:9},callback:function(t){t=String(t||'');return t.length>16?t.slice(0,15)+'…':t;}}}}
     }
   });
 }
@@ -11778,6 +12115,22 @@ var mmRows=[
 ];
 var MM_TYPES=['Victoire','Nul','Défaite','Domicile ou nul','Extérieur ou nul','BTS Oui','BTS Non','Over 1.5','Over 2.5','Under 2.5','HC -1','HC +1','Mi-temps','Buteur','Passeur','Décisif'];
 
+/* MARCHES GROUPES PAR FAMILLE (02/09, refonte de la page Pari). Les seize
+   marches etaient affiches a plat, en seize pastilles identiques. Ils ne sont
+   pourtant pas equivalents : on cherche un resultat, OU un nombre de buts, OU
+   une performance de joueur. Il fallait donc balayer les seize a chaque fois.
+   Les familles rendent la recherche directe.
+   IMPORTANT : `MM_TYPES` reste la liste de reference, utilisee ailleurs dans le
+   fichier ; ce regroupement ne fait que decrire l'ORDRE D'AFFICHAGE. Les
+   libelles enregistres ne changent pas d'un caractere — un pari deja en base
+   reste lisible, et rien ne casse dans le bilan ni dans les archives. */
+var MM_GROUPES=[
+  {g:'Résultat', t:['Victoire','Nul','Défaite','Domicile ou nul','Extérieur ou nul','Mi-temps']},
+  {g:'Buts',     t:['BTS Oui','BTS Non','Over 1.5','Over 2.5','Under 2.5']},
+  {g:'Handicap', t:['HC -1','HC +1']},
+  {g:'Joueur',   t:['Buteur','Passeur','Décisif']}
+];
+
 function renderMmRows(){
   var sel=$i('mm-sel');if(!sel)return;
   sel.innerHTML=mmRows.map(function(r,i){
@@ -11788,8 +12141,14 @@ function renderMmRows(){
       +'</div>';
   }).join('');
   var types=$i('mm-types');
-  if(types)types.innerHTML=MM_TYPES.map(function(t){
-    return '<button class="mm-type" onclick="addMmType(\''+t+'\')">'+ t+'</button>';
+  if(types)types.innerHTML=MM_GROUPES.map(function(f){
+    /* Un marche deja choisi est grise : le proposer encore alors qu'`addMmType`
+       le refuse silencieusement laissait croire a un clic sans effet. */
+    return '<div class="mm-fam"><span>'+f.g+'</span></div>'
+      + '<div class="mm-types-g">' + f.t.map(function(t){
+          var pris = mmRows.some(function(r){ return r.type===t; });
+          return '<button class="mm-type'+(pris?' pris':'')+'" onclick="addMmType(\''+t+'\')">'+t+'</button>';
+        }).join('') + '</div>';
   }).join('');
   renderMmCote();
 }
@@ -12937,8 +13296,19 @@ function renderMmRowsSimple(){
       +(mmRowsSimple.length>1?'<button class="mm-del" data-idx="'+i+'" onclick="mmRowsSimple.splice(parseInt(this.dataset.idx),1);renderMmRowsSimple();">✕</button>':'')
       +'</div>';
   }).join('');
+  /* MEMES FAMILLES QUE LE COCKPIT (02/09). Le pari simple etait reste sur la
+     liste a plat de `MM_TYPES` alors que le cockpit avait deja ses familles :
+     deux ecrans qui proposent exactement les memes seize marches n'ont aucune
+     raison de les presenter differemment. On reutilise `MM_GROUPES`, donc un
+     marche ajoute un jour se retrouvera automatiquement dans les deux. */
   var types=$i('mm-types-simple');
-  if(types)types.innerHTML=MM_TYPES.map(function(t){return '<button class="mm-type" data-t="'+t+'" onclick="addMmTypeSimple(this.dataset.t)">'+t+'</button>';}).join('');
+  if(types)types.innerHTML=MM_GROUPES.map(function(f){
+    return '<div class="mm-fam"><span>'+f.g+'</span></div>'
+      + '<div class="mm-types-g">' + f.t.map(function(t){
+          var pris = mmRowsSimple.some(function(r){ return r.type===t; });
+          return '<button class="mm-type'+(pris?' pris':'')+'" data-t="'+t+'" onclick="addMmTypeSimple(this.dataset.t)">'+t+'</button>';
+        }).join('') + '</div>';
+  }).join('');
   renderMmCoteSimple();
 }
 function renderMmCoteSimple(){
@@ -25121,23 +25491,45 @@ function loadTendancesTab(){
      regroupement label->options. On garde le flex-wrap mais chaque sous-
      groupe est isole dans son propre segment arrondi, pour que l'oeil separe
      "Jour" de "Cote mini" de "Proba mini" au lieu d'une ligne continue. */
-  var chip=function(lbl,on,fn){ return '<button onclick="'+fn+'" class="sfbtn"'+(on?' style="background:#f0c828;border-color:#f0c828;color:#221b00;"':'')+'>'+lbl+'</button>'; };
-  var seg=function(label,inner){ return '<div style="display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:5px 7px 5px 9px;">'
-    +(label?'<span style="font-size:9px;color:var(--t3);font-weight:700;white-space:nowrap;">'+label+'</span>':'')
+  /* ═══ BARRE DE FILTRES — REVUE LE 03/09 ═══
+     Retour d'Antoine sur capture. Trois defauts se cumulaient :
+     1. L'OR SERVAIT A TOUT. Competition retenue, jour, cote mini, proba mini,
+        Buteurs, et jusqu'au bouton d'analyse : six aplats dores d'affilee, donc
+        plus rien qui ressorte. L'etat actif se signale desormais par un filet
+        or a gauche de la puce — le meme repere que partout ailleurs depuis le
+        02/09 — et l'or cesse d'etre une couleur de remplissage.
+     2. LES GROUPES NE SE RESSEMBLAIENT PAS : « Jour » avait son intitule a
+        gauche et ses options empilees, les autres aussi mais differemment.
+        Intitule au-dessus, options en ligne, pour les trois.
+     3. « Analyser les matchs » etait un degrade dore pleine largeur qui se
+        fondait dans la photo. Il repasse en bleu, la couleur des commandes. */
+  var chip=function(lbl,on,fn){
+    return '<button onclick="'+fn+'" class="sfbtn'+(on?' g45-tr-on':'')+'">'+lbl+'</button>'; };
+  var seg=function(label,inner){ return '<div style="min-width:0;">'
+    +(label?'<label class="fl">'+label+'</label>':'')
     +'<div style="display:flex;gap:5px;flex-wrap:wrap;">'+inner+'</div></div>'; };
-  var h='<div class="sec" style="margin-top:0;">🔥 Tendances du jour</div>'
-    +'<div style="font-size:9px;color:var(--t3);line-height:1.6;margin-bottom:9px;">Les tendances sont classées par <b>écart avec la cote</b>, pas par pourcentage brut : une série à 100% ne vaut rien si le bookmaker l\'a déjà intégrée. Les cotes sont dévigorisées avant comparaison.</div>'
+  var h='<div class="sec" style="margin-top:0;">Tendances du jour</div>'
+    /* 9px en gris pale sur une photo : la phrase etait presente mais illisible.
+       Elle passe a 12px avec ombre portee, et la mention sur la devigorisation
+       part — c'est un detail de methode, pas une introduction. */
+    +'<div style="font-size:12px;color:var(--t2);line-height:1.5;margin-bottom:13px;max-width:640px;text-shadow:0 1px 4px rgba(0,0,0,.85);">Classées par <b style="color:var(--t1);">écart avec la cote</b>, pas par pourcentage brut : une série à 100 % ne vaut rien si le bookmaker l\'a déjà intégrée.</div>'
     +'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:6px;margin-bottom:9px;">'
     +G.map(function(g,i){ return chip(g.grp, !!_G45_TR.sel[i], "g45TrSel("+i+")"); }).join('')+'</div>'
-    +'<div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:9px;align-items:center;">'
+    +'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:4px 16px;margin-bottom:11px;">'
     +seg('Jour', chip("Aujourd'hui", _G45_TR.day===0, "g45TrDay(0)")+chip('Demain', _G45_TR.day===1, "g45TrDay(1)"))
     +seg('Cote mini', chip('Toutes', !_G45_TR.min, "g45TrMin(0)")+chip('1.30', _G45_TR.min===1.3, "g45TrMin(1.3)")+chip('1.50', _G45_TR.min===1.5, "g45TrMin(1.5)"))
     +seg('Proba mini', chip('40%', _G45_TR.pmin===0.40, "g45TrPMin(0.40)")+chip('50%', _G45_TR.pmin===0.50, "g45TrPMin(0.50)")+chip('60%', _G45_TR.pmin===0.60, "g45TrPMin(0.60)"))
-    +seg('', '<button onclick="g45ButeursView()" class="sfbtn" style="background:rgba(240,200,40,.16);border-color:rgba(240,200,40,.35);color:#f0c828;">⚽ Buteurs</button>'
-      +'<button onclick="g45ClvView()" class="sfbtn" style="background:rgba(46,204,113,.16);border-color:rgba(46,204,113,.35);color:#2ecc71;">📏 CLV</button>')
+    +'</div>'
+    /* Buteurs et CLV ne sont PAS des filtres : ce sont deux boutons qui ouvrent
+       d'autres vues. Melanges aux puces, ils se lisaient comme des options a
+       cocher. Ils sortent de la grille et prennent l'aspect de commandes
+       secondaires, avec le chevron qui annonce un changement d'ecran. */
+    +'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:11px;">'
+      +'<button onclick="g45ButeursView()" class="ba">Voir les buteurs ›</button>'
+      +'<button onclick="g45ClvView()" class="ba">Voir le CLV ›</button>'
     +'</div>';
   if(!_G45_TR.res){
-    h+='<button onclick="g45TrRun()" style="width:100%;border:none;cursor:pointer;border-radius:9px;padding:11px;font-size:11px;font-weight:800;background:rgba(240,200,40,.16);color:#f0c828;">⚡ Analyser les matchs</button>'
+    h+='<button onclick="g45TrRun()" class="btn btn-p" style="padding:11px 24px;font-size:13.5px;">Analyser les matchs</button>'
       +'<div id="g45tr-prog" style="font-size:10px;color:#8aa0ff;text-align:center;padding:9px;"></div>';
   } else {
     h+=_g45TrRender();
@@ -26363,6 +26755,17 @@ async function g45RenderTennisDetail(panel, matchId){
 }
 window.g45RenderTennisDetail=g45RenderTennisDetail;
 function _g45ymd(d){ return ''+d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0'); }
+/* DEUX FORMATS DE DATE, DEUX USAGES (03/09, retour d'Antoine : « Invalid Date »
+   sur les puces de jour de la vue Direct).
+   `_g45ymd` produit `20260903`, la forme qu'attend l'API ESPN dans son parametre
+   `dates`. Les puces de jour, elles, faisaient `new Date(iso + 'T00:00:00')` —
+   ce qui suppose `2026-09-03`. « 20260903T00:00:00 » n'est une date pour aucun
+   navigateur, d'ou l'etiquette « Invalid Date » sur chaque puce et sur l'entete.
+   Le commentaire du regroupement annoncait d'ailleurs `YYYY-MM-DD` : c'est la
+   fonction qui ne suivait pas.
+   On separe donc clairement : `_g45ymd` reste pour l'API, `_g45iso` sert de cle
+   de jour et se relit correctement. */
+function _g45iso(d){ return ''+d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 /* ESPN ne donne pas d'horloge rugby fiable (clock:0, displayClock figé) → on affiche la mi-temps via period */
 function _rugbyLiveLabel(status){
   var st=status||{}; var tn=(st.type&&st.type.name)||'';
@@ -26467,12 +26870,12 @@ async function g45LoadLeagueMatches(slug, btn, dayOffset, sportPath){
     var byDay={}, order=[];
     events.forEach(function(e){
       var d=new Date(e.date);
-      var iso=_g45ymd(d);
+      var iso=_g45iso(d);
       if(!byDay[iso]){ byDay[iso]=[]; order.push(iso); }
       byDay[iso].push(e);
     });
     window._g45LiveByDay=byDay; window._g45LiveOrder=order; window._g45LiveNav=nav; window._g45LiveSlugRow=slug; window._g45LiveSportRow=sportPath;
-    var todayIso=_g45ymd(new Date());
+    var todayIso=_g45iso(new Date());
     window._g45LiveSelDay = (order.indexOf(todayIso)>=0) ? todayIso : order[0];
     _g45RenderLiveDay();
     _g45StartListRefresh();
@@ -26481,7 +26884,7 @@ async function g45LoadLeagueMatches(slug, btn, dayOffset, sportPath){
 function _g45RenderLiveDay(){
   var list=document.getElementById(window._g45ListId||'g45-live-list'); if(!list) return;
   var byDay=window._g45LiveByDay||{}, order=window._g45LiveOrder||[], sel=window._g45LiveSelDay;
-  var todayIso=_g45ymd(new Date());
+  var todayIso=_g45iso(new Date());
   var chips='<div style="display:flex;gap:5px;overflow-x:auto;padding-bottom:6px;margin-bottom:8px;-webkit-overflow-scrolling:touch;">'
     +order.map(function(iso){
       var d=new Date(iso+'T00:00:00');
@@ -30234,8 +30637,15 @@ async function g45LoadScorers(slug, sportPath, box){
         + (m.l?('<img src="'+m.l+'" alt="" loading="lazy" onerror="this.style.visibility=\'hidden\'" '
             + 'style="position:absolute;right:-10px;bottom:-10px;width:56px;height:56px;object-fit:contain;opacity:.20;pointer-events:none;">'):'')
         + '<div style="position:relative;font-size:15px;line-height:1;">'+med+'</div>'
+        /* NOM SUR DEUX LIGNES (03/09, retour d'Antoine : « le nom est coupé »).
+           Le podium tient trois tuiles a un tiers de largeur : sur un telephone
+           de 350 px, cela laisse une centaine de pixels par nom, et
+           `white-space:nowrap` tronquait tout le monde a « Esteban… ». Le nom
+           peut desormais passer a la ligne, deux au maximum, avec une hauteur
+           minimale pour que les trois tuiles restent alignees meme quand un seul
+           des trois noms deborde. */
         + '<div style="position:relative;font-size:11px;font-weight:800;color:var(--t1);margin-top:5px;'
-          + 'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+nameOf(L)+'</div>'
+          + 'line-height:1.15;min-height:2.3em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word;">'+nameOf(L)+'</div>'
         + '<div style="position:relative;font-size:8.5px;font-weight:700;color:rgba(255,255,255,.62);letter-spacing:.4px;">'+(m.a||teamOf(L))+'</div>'
         + '<div style="position:relative;font-size:20px;font-weight:900;color:#f0c828;margin-top:3px;">'+(L.value!=null?Math.round(L.value):'')+'</div>'
       + '</div>';
@@ -35905,11 +36315,21 @@ async function loadCompetTab() {
           + (_fdc ? 'text-shadow:0 1px 4px rgba(0,0,0,.95),0 0 10px rgba(0,0,0,.7);' : '') + '">'
           + l.name + '</span></button>';
       }).join('');
-      return '<div style="margin-bottom:14px;"><div style="font-size:9px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#6b7a99;margin-bottom:7px;">'
+      /* Le gris d'origine se lisait sur un panneau uni ; sur la photo il
+         disparait. Teinte plus claire et ombre portee. */
+      return '<div style="margin-bottom:14px;"><div style="font-size:9px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#c3cfe6;text-shadow:0 1px 5px rgba(0,0,0,.95);margin-bottom:7px;">'
         + g.grp + '</div><div class="g45-cmp-grid">' + ch + '</div></div>';
     }).join('');
+    /* PLUS DE PANNEAU (02/09, demande d'Antoine : « que l'on voie moins les
+       caches »). La liste des competitions etait posee dans une carte `.fc`
+       opaque qui masquait `fond.jpg` sur toute sa hauteur — une belle image
+       cachee a 90 %. Le conteneur devient transparent et ce sont les TUILES qui
+       portent leur voile, exactement comme les cartes du mur et les lignes du
+       tableau des resultats depuis ce matin : jamais de bloc pleine largeur,
+       toujours un voile ajuste au contenu. */
+    _g45CmpStyle();
     el.innerHTML = retour + '<div class="sec" style="margin-top:0;">' + sp.ico + ' ' + sp.name + '</div>'
-      + '<div class="fc">' + html + '</div>';
+      + '<div class="g45-cmp-nu">' + html + '</div>';
     return;
   }
 
@@ -39800,12 +40220,16 @@ async function loadSuiviesTab() {
           ? 'Matchs termin\u00e9s des 7 derniers jours, du plus r\u00e9cent au plus ancien.'
           : 'Mur ET \u00e9quipes suivies, tous sports. Les matchs jou\u00e9s basculent dans \u00ab R\u00e9sultats \u00bb.')
     + '</div>'
-    + '<div id="g45-direct-body" class="fc" style="margin-bottom:14px;"></div>'
+    /* 03/09 : panneau retire (« pourquoi l'image fait plus tout l'ecran ? »).
+       Les cartes de match portent deja leur propre image plein cadre ; les
+       enfermer dans une carte `.fc` bordee de bleu ajoutait une marge tout
+       autour, si bien que la photo s'arretait avant le bord de l'ecran. */
+    + '<div id="g45-direct-body" class="fc g45-nu g45-dir" style="margin-bottom:14px;"></div>'
     + '<div class="sec" style="margin-top:0;">\u2b50 \u00c9quipes suivies</div>'
     + '<div style="font-size:10px;color:var(--t3);line-height:1.6;margin-bottom:10px;">'
     + 'Suivi de consultation, ind\u00e9pendant du mur : aucun pari, aucun palier, aucune statistique. '
     + 'L\'\u00e9toile \u2606 se trouve dans Comp\u00e9titions \u2192 \u00c9quipes.</div>'
-    + '<div id="g45-suivies-body" class="fc"></div>';
+    + '<div id="g45-suivies-body" class="fc g45-nu"></div>';
   await g45SuiviEqRender(document.getElementById('g45-suivies-body'));
   g45DirectMesEquipes();          /* asynchrone : la liste s'affiche sans attendre */
 }
@@ -40806,7 +41230,11 @@ async function g45DirectMesEquipes(silencieux) {
       + 'text-shadow:0 1px 3px rgba(0,0,0,.95),0 0 12px rgba(0,0,0,.85),0 0 26px rgba(0,0,0,.6);">'
       + '<div style="font-size:9px;font-weight:800;letter-spacing:.5px;color:' + colBadge + ';margin-bottom:3px;">'
       + badge + (live ? ' <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#ff4545;animation:g45pulse 1.4s infinite;"></span>' : '') + '</div>'
-      + '<div style="font-size:13px;font-weight:900;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'
+      /* DEUX LIGNES (03/09) : « Mariners vs Athl… ». Sur un telephone, deux noms
+         d'equipe plus le separateur depassent largement la largeur disponible,
+         et `nowrap` tronquait systematiquement le second. */
+      + '<div style="font-size:13px;font-weight:900;color:#fff;line-height:1.2;'
+      + 'display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">'
       + m.moi + ' <span style="color:#c2ccdb;font-weight:600;">' + (m.dom ? 'vs' : '@') + '</span> ' + m.adv + '</div>'
       + '<div style="font-size:22px;font-weight:900;color:#fff;line-height:1.25;letter-spacing:-.5px;">' + score + '</div>'
       /* ═══ BAS DE CARTE EN PASTILLES ═══
@@ -43394,7 +43822,13 @@ function _g45CompetFond(slug) {
   if (_g45CmpfEnCours[k]) return '';
   _g45CmpfEnCours[k] = 1;
 
-  var exts = ['.jpg', '.png', '.jpeg', '.webp'], i = 0;
+  /* DEUX EXTENSIONS, PAS QUATRE (03/09, apres la console d'Antoine : des
+     dizaines de « Failed to load resource » sur images/ligues). Sonder quatre
+     extensions pour cinquante-quatre competitions, c'est plus de deux cents
+     requetes vouees a echouer a la premiere ouverture de l'onglet — bruyant
+     dans la console et inutile sur un reseau mobile. `.jpg` et `.png` couvrent
+     ce qu'Antoine depose ; le resultat negatif reste memorise trois heures. */
+  var exts = ['.jpg', '.png'], i = 0;
   var suivant = function () {
     if (i >= exts.length) {
       try { localStorage.setItem(_G45_CMPF_CLE + k, JSON.stringify({ u: '', t: Date.now() })); } catch (e) {}
@@ -43432,3 +43866,759 @@ window.g45FondsCompetInfo = function () {
     return out.length + ' compétitions';
   } catch (e) { return 'indisponible'; }
 };
+
+
+/* Feuille de style de l'onglet Competitions, injectee une seule fois.
+   POINT DELICAT : on emploie `background-color`, jamais la forme courte
+   `background`. Avec `!important`, la forme courte effacerait aussi
+   `background-image` — donc les fonds photo par competition deposes dans
+   `images/ligues/`, qui sont poses en style inline. La couleur seule laisse
+   l'image intacte et ne fait que remplacer le fond des tuiles sans photo. */
+function _g45CmpStyle() {
+  var id = 'g45-cmp-style';
+  if (document.getElementById(id)) return;
+  var st = document.createElement('style');
+  st.id = id;
+  st.textContent =
+      '.g45-cmp-nu{background:none;border:0;box-shadow:none;padding:0;margin:0;}'
+    + '.g45-cmp-nu .g45-cmp-tile{background-color:rgba(14,20,38,.76) !important;'
+      + 'border:1px solid rgba(255,255,255,.13) !important;'
+      + 'text-shadow:0 1px 4px rgba(0,0,0,.85);}';
+  (document.head || document.documentElement).appendChild(st);
+}
+window._g45CmpStyle = _g45CmpStyle;
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   GONES45 — DOSAGE DU VOILE SUR LA PHOTO DE FOND (02/09)
+   ───────────────────────────────────────────────────────────────────────────
+   `--scrim` etait fige a 55/72 % dans le :root. Antoine : « on ne voit plus du
+   tout l'image du fond ». Le voile descend donc a ~30/48 % par defaut, et la
+   lisibilite est assuree la ou elle doit l'etre : sur les elements eux-memes.
+   `.card` et `.fc` ont deja leur propre fond, et les tuiles de Competitions ont
+   recu le leur juste avant — la photo peut donc passer entre eux sans gener.
+
+   Une seule valeur pilote les deux arrets du degrade : deux curseurs pour un
+   reglage qui se regarde d'un coup d'oeil n'aurait servi qu'a produire des
+   combinaisons incoherentes. L'ecart de 18 points est conserve, c'est lui qui
+   fait le fondu vers le bas de la page.
+
+   Le reglage est deposé sur `documentElement`, donc il prime sur le :root de la
+   feuille de style sans avoir a la modifier. */
+
+var _G45_SCRIM_DEF = 34;
+
+function _g45ScrimLu() {
+  var v = parseInt(localStorage.getItem('g45_scrim') || '', 10);
+  return (v >= 0 && v <= 100) ? v : _G45_SCRIM_DEF;
+}
+
+function _g45ScrimAppliquer(v) {
+  var a = (v / 100) * 0.90;
+  var b = Math.min(0.97, a + 0.18);
+  document.documentElement.style.setProperty('--scrim',
+    'linear-gradient(180deg,rgba(16,21,40,' + a.toFixed(2) + ') 0%,rgba(13,17,32,' + b.toFixed(2) + ') 100%)');
+}
+
+function _g45ScrimLabel(v) {
+  var lab = document.getElementById('scrim-val');
+  if (!lab) return;
+  lab.textContent = v === 0 ? 'photo nue'
+    : (v >= 95 ? 'photo masquée' : v + ' %' + (v === _G45_SCRIM_DEF ? ' (défaut)' : ''));
+}
+
+function g45Scrim(v) {
+  v = parseInt(v, 10);
+  if (isNaN(v)) v = _G45_SCRIM_DEF;
+  try { localStorage.setItem('g45_scrim', String(v)); } catch (e) {}
+  _g45ScrimAppliquer(v);
+  _g45ScrimLabel(v);
+}
+window.g45Scrim = g45Scrim;
+
+function g45ScrimReset() {
+  try { localStorage.removeItem('g45_scrim'); } catch (e) {}
+  var r = document.getElementById('scrim-range');
+  if (r) r.value = _G45_SCRIM_DEF;
+  _g45ScrimAppliquer(_G45_SCRIM_DEF);
+  _g45ScrimLabel(_G45_SCRIM_DEF);
+}
+window.g45ScrimReset = g45ScrimReset;
+
+/* Applique avant tout rendu : sinon la page s'afficherait sombre puis
+   s'eclaircirait, ce qui se voit. */
+_g45ScrimAppliquer(_g45ScrimLu());
+
+function _g45ScrimSync() {
+  var r = document.getElementById('scrim-range');
+  if (!r) return;
+  var v = _g45ScrimLu();
+  if (String(r.value) !== String(v)) r.value = v;
+  _g45ScrimLabel(v);
+}
+document.addEventListener('click', function () { setTimeout(_g45ScrimSync, 150); });
+setTimeout(_g45ScrimSync, 1500);
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   GONES45 — TIROIR DE FILTRES DU BILAN (02/09)
+   ───────────────────────────────────────────────────────────────────────────
+   Les valeurs sont MISES DE COTE pendant le reglage et ne sont appliquees
+   qu'a la validation, qui referme le tiroir. C'est le choix d'Antoine, et il
+   evite de relancer quatre rendus complets — graphiques compris — a chaque
+   fois qu'on touche une liste.
+   Le bouton du bas annonce ce qu'on obtient (« Voir les 12 paris ») plutot que
+   « Filtrer » : on sait avant de cliquer, et un reglage qui ne laisse aucun
+   pari se repere immediatement.
+   Le compteur sur le bouton de la barre est important : tiroir ferme, plus
+   rien ne dirait que les chiffres affiches sont filtres — c'est le meilleur
+   moyen de mal lire son propre bilan.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Un filtre dont la valeur n'existe plus dans les donnees (changement de
+   sport, pari supprime) doit revenir a « tous », sinon le bilan se vide sans
+   qu'on comprenne pourquoi. */
+function _g45BilFiltresNettoyer(){
+  try{
+    var comps=(typeof _bilanComps==='function')?_bilanComps():[];
+    if(window._bilanComp && window._bilanComp!=='all' && comps.indexOf(window._bilanComp)<0) window._bilanComp='all';
+    var books=(typeof _bilanBooks==='function')?_bilanBooks():[];
+    if(window._bilanBkFilter && books.indexOf(window._bilanBkFilter)<0) window._bilanBkFilter=null;
+    var types=(typeof _bilanTypes==='function')?_bilanTypes():[];
+    if(window._bilanType && window._bilanType!=='all' && types.indexOf(window._bilanType)<0) window._bilanType='all';
+  }catch(e){}
+}
+
+function _g45BilMoisListe(){
+  var MN={'01':'janv','02':'févr','03':'mars','04':'avr','05':'mai','06':'juin',
+          '07':'juil','08':'août','09':'sept','10':'oct','11':'nov','12':'déc'};
+  var mk={}, out=[['ALL','Tous les mois']];
+  try{
+    (state.a||[]).forEach(function(h){ var k=_hMonthKey(h); if(k) mk[k]=1; });
+    Object.keys(mk).sort().reverse().forEach(function(m){
+      out.push([m,(MN[m.slice(5)]||m.slice(5))+' '+m.slice(0,4)]);
+    });
+  }catch(e){}
+  return out;
+}
+
+/* Combien de filtres ne sont pas sur « tous ». */
+function _g45BilNbFiltres(){
+  var n=0;
+  if(window._bilanType && window._bilanType!=='all') n++;
+  if(window._bilanComp && window._bilanComp!=='all') n++;
+  if(window._bilanBkFilter) n++;
+  if(typeof bilanMonth!=='undefined' && bilanMonth!=='ALL') n++;
+  return n;
+}
+
+/* La barre remplace les quatre rangees de puces, au meme endroit. */
+function _g45BilBarreFiltres(){
+  var sf=document.getElementById('sport-filter');
+  var host=(sf&&sf.parentNode)?sf.parentNode:document.getElementById('g-global');
+  if(!host) return;
+  var b=document.getElementById('bilan-filtres-barre');
+  if(!b){
+    b=document.createElement('div'); b.id='bilan-filtres-barre';
+    b.style.cssText='padding:8px 2px 2px;';
+    if(sf&&sf.parentNode) sf.parentNode.insertBefore(b, sf.nextSibling);
+    else host.insertBefore(b, host.firstChild);
+  }
+  /* Les anciens conteneurs peuvent subsister d'un rendu precedent : on les
+     vide plutot que de les supprimer, au cas ou un autre appel les cible. */
+  ['bilan-type-filter','bilan-comp-filter','bilan-book-filter','month-filter'].forEach(function(id){
+    var e=document.getElementById(id); if(e) e.innerHTML='';
+  });
+  var n=_g45BilNbFiltres();
+  var resume=[];
+  if(window._bilanType && window._bilanType!=='all') resume.push(window._bilanType);
+  if(window._bilanComp && window._bilanComp!=='all') resume.push(window._bilanComp);
+  if(window._bilanBkFilter) resume.push((typeof bki==='function'?(bki(window._bilanBkFilter).n||window._bilanBkFilter):window._bilanBkFilter));
+  if(typeof bilanMonth!=='undefined' && bilanMonth!=='ALL') resume.push(bilanMonth);
+  var nb=0; try{ nb=filteredA().length; }catch(e){}
+  b.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;'
+    +'background:rgba(11,16,26,.74);border-radius:var(--r4);padding:9px 11px;">'
+    +'<span style="font-size:12.5px;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'
+      + nb + ' pari' + (nb>1?'s':'') + (resume.length?' · '+resume.join(' · '):' · aucun filtre')
+    +'</span>'
+    +'<button onclick="g45BilFiltresOuvrir()" style="flex:none;display:flex;align-items:center;gap:7px;'
+      +'background:none;border:1px solid ' + (n?'var(--or,#f2b23c)':'var(--b2)') + ';border-radius:var(--r4);'
+      +'color:var(--t1);font:inherit;font-size:12px;padding:6px 12px;cursor:pointer;">Filtres'
+      + (n?'<span style="background:var(--or,#f2b23c);color:#12161f;border-radius:8px;font-size:10px;font-weight:700;padding:1px 6px;">'+n+'</span>':'')
+    +'</button></div>';
+}
+
+function _g45BilSelect(id, defs, cur){
+  return '<select id="'+id+'" class="fi" style="margin-bottom:2px;">'
+    + defs.map(function(d){
+        var v=(d[0]===null?'':String(d[0]));
+        return '<option value="'+v.replace(/"/g,'&quot;')+'"'+((String(cur===null?'':cur))===v?' selected':'')+'>'+d[1]+'</option>';
+      }).join('')
+    + '</select>';
+}
+
+function g45BilFiltresOuvrir(){
+  _g45BilFiltresFermer();
+  var types=[['all','Tous les types']];
+  try{ _bilanTypes().forEach(function(t){ types.push([t,t]); }); }catch(e){}
+  var comps=[['all','Toutes les compétitions']];
+  try{ _bilanComps().forEach(function(c){ comps.push([c,c]); }); }catch(e){}
+  var books=[[null,'Tous les bookmakers']];
+  try{ _bilanBooks().forEach(function(b){ books.push([b,(typeof bki==='function'?(bki(b).n||b):b)]); }); }catch(e){}
+
+  var d=document.createElement('div');
+  d.id='g45-bil-filtres';
+  d.style.cssText='position:fixed;inset:0;z-index:9000;display:flex;justify-content:flex-end;';
+  d.innerHTML='<div onclick="_g45BilFiltresFermer()" style="position:absolute;inset:0;background:rgba(6,9,16,.55);"></div>'
+    +'<aside style="position:relative;width:320px;max-width:88%;background:var(--bg2);border-left:1px solid var(--b1);'
+      +'display:flex;flex-direction:column;box-shadow:-8px 0 30px rgba(0,0,0,.4);">'
+      +'<header style="display:flex;align-items:center;justify-content:space-between;padding:13px 14px;border-bottom:1px solid var(--b1);">'
+        +'<span style="font-family:var(--ff-t);font-size:21px;font-weight:600;">Filtres</span>'
+        +'<button onclick="_g45BilFiltresFermer()" style="background:none;border:0;color:var(--t3);font-size:15px;cursor:pointer;">✕</button>'
+      +'</header>'
+      +'<div style="padding:13px 14px;overflow-y:auto;flex:1;">'
+        +'<label class="fl">Type de pari</label>'+_g45BilSelect('bf-type',types,window._bilanType||'all')
+        +'<label class="fl" style="margin-top:12px;">Compétition</label>'+_g45BilSelect('bf-comp',comps,window._bilanComp||'all')
+        +'<label class="fl" style="margin-top:12px;">Bookmaker</label>'+_g45BilSelect('bf-book',books,window._bilanBkFilter||null)
+        +'<label class="fl" style="margin-top:12px;">Mois</label>'+_g45BilSelect('bf-mois',_g45BilMoisListe(),(typeof bilanMonth!=='undefined'?bilanMonth:'ALL'))
+      +'</div>'
+      +'<footer style="display:flex;gap:7px;padding:12px 14px;border-top:1px solid var(--b1);">'
+        +'<button onclick="g45BilFiltresVider()" style="flex:none;background:none;border:1px solid var(--b2);border-radius:var(--r4);color:var(--t3);font:inherit;font-size:12px;padding:9px 12px;cursor:pointer;">Tout retirer</button>'
+        +'<button id="bf-ok" onclick="g45BilFiltresAppliquer()" class="btn btn-p" style="flex:1;padding:9px;font-size:12.5px;">Appliquer</button>'
+      +'</footer>'
+    +'</aside>';
+  document.body.appendChild(d);
+  ['bf-type','bf-comp','bf-book','bf-mois'].forEach(function(id){
+    var e=document.getElementById(id); if(e) e.addEventListener('change', _g45BilApercu);
+  });
+  _g45BilApercu();
+}
+window.g45BilFiltresOuvrir=g45BilFiltresOuvrir;
+
+/* L'apercu compte les paris SANS rien appliquer : on lit les listes du tiroir
+   et on rejoue le filtrage sur une copie des valeurs globales. */
+function _g45BilApercu(){
+  var b=document.getElementById('bf-ok'); if(!b) return;
+  var sv={t:window._bilanType,c:window._bilanComp,k:window._bilanBkFilter,
+          m:(typeof bilanMonth!=='undefined'?bilanMonth:'ALL')};
+  try{
+    _g45BilLire();
+    var n=filteredA().length;
+    b.textContent = n ? ('Voir les '+n+' pari'+(n>1?'s':'')) : 'Aucun pari avec ces filtres';
+    b.disabled = !n;
+    b.style.opacity = n ? '1' : '.5';
+  }catch(e){}
+  /* Remise en place systematique : tant que l'utilisateur n'a pas valide, rien
+     ne doit avoir bouge derriere le tiroir. */
+  window._bilanType=sv.t; window._bilanComp=sv.c; window._bilanBkFilter=sv.k;
+  if(typeof bilanMonth!=='undefined') bilanMonth=sv.m;
+}
+
+function _g45BilLire(){
+  var g=function(id){ var e=document.getElementById(id); return e?e.value:null; };
+  var t=g('bf-type'); if(t!==null) window._bilanType=t||'all';
+  var c=g('bf-comp'); if(c!==null) window._bilanComp=c||'all';
+  var k=g('bf-book'); if(k!==null) window._bilanBkFilter=k||null;
+  var m=g('bf-mois'); if(m!==null && typeof bilanMonth!=='undefined') bilanMonth=m||'ALL';
+}
+
+function g45BilFiltresAppliquer(){
+  _g45BilLire();
+  _g45BilFiltresFermer();
+  try{renderBilanTab();}catch(e){}
+  try{renderGlobalCharts();}catch(e){}
+  try{_g45BilBarreFiltres();}catch(e){}
+}
+window.g45BilFiltresAppliquer=g45BilFiltresAppliquer;
+
+function g45BilFiltresVider(){
+  window._bilanType='all'; window._bilanComp='all'; window._bilanBkFilter=null;
+  if(typeof bilanMonth!=='undefined') bilanMonth='ALL';
+  _g45BilFiltresFermer();
+  try{renderBilanTab();}catch(e){}
+  try{renderGlobalCharts();}catch(e){}
+  try{_g45BilBarreFiltres();}catch(e){}
+}
+window.g45BilFiltresVider=g45BilFiltresVider;
+
+function _g45BilFiltresFermer(){
+  var d=document.getElementById('g45-bil-filtres'); if(d) d.remove();
+}
+window._g45BilFiltresFermer=_g45BilFiltresFermer;
+
+/* Ouvre ou referme la liste des comptes sans pari du tableau « Par bookmaker ».
+   L'etat est retenu : replier a chaque visite quelqu'un qui veut voir ses soldes
+   serait aussi penible que l'inverse. */
+function g45BkVidesToggle(){
+  try{
+    var o=localStorage.getItem('g45_bk_vides')==='1';
+    localStorage.setItem('g45_bk_vides', o?'0':'1');
+  }catch(e){}
+  try{ renderBilanTab(); }catch(e){}
+}
+window.g45BkVidesToggle=g45BkVidesToggle;
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   GONES45 — VALEURS ECRITES SUR LES BARRES (02/09)
+   ───────────────────────────────────────────────────────────────────────────
+   Retour d'Antoine : « faut survoler pour avoir les infos des 2 graphiques ».
+   C'etait vrai de « Bénéfice par mois », « Bénéfice par sport », « Réussite par
+   sport » et « Bénéfice par type de pari » : la valeur n'existait que dans
+   l'infobulle. Sur telephone il n'y a pas de survol du tout — l'information
+   etait donc simplement inaccessible.
+
+   Le libelle est place a l'exterieur de la barre (au-dessus d'une barre
+   positive, en dessous d'une negative) plutot qu'a l'interieur : une barre
+   courte — le rugby a +0,40 € sur la capture — n'a pas la hauteur d'accueillir
+   un texte, et un libelle qui deborde de sa barre est pire que pas de libelle.
+   Quand la place manque vraiment au bord du cadre, on bascule du cote interieur.
+
+   `afterDatasetsDraw` et non `afterDraw` : il faut passer APRES les barres pour
+   ecrire dessus, mais AVANT la legende et les axes.
+   ═══════════════════════════════════════════════════════════════════════════ */
+var G45_VAL_BARRES = {
+  id: 'g45ValBarres',
+  afterDatasetsDraw: function (chart, args, opts) {
+    var suf = (chart.config && chart.config._g45Suffixe) || '€';
+    var ctx = chart.ctx;
+    ctx.save();
+    ctx.font = '600 11px ' + (getComputedStyle(document.documentElement).getPropertyValue('--ff') || 'sans-serif');
+    ctx.textAlign = 'center';
+    /* ANTI-CHEVAUCHEMENT (03/09, retour d'Antoine : « une catastrophe » sur le
+       graphique par type de pari, telephone). Avec douze barres sur 350 px de
+       large, les etiquettes se superposaient au point de former une bouillie
+       illisible — pire que l'absence d'etiquette qu'elles etaient censees
+       corriger.
+       On dessine donc de gauche a droite en gardant la position du bord droit
+       de la derniere etiquette ecrite, et on saute celles qui empieteraient.
+       Les barres restent toutes lisibles au survol, et sur un graphique aere
+       (deux ou trois mois) rien n'est saute. */
+    var occupePos = -Infinity, occupeNeg = -Infinity;
+    chart.data.datasets.forEach(function (ds, di) {
+      var meta = chart.getDatasetMeta(di);
+      if (meta.hidden) return;
+      /* Tri par abscisse : l'ordre du tableau ne suit pas forcement l'ordre
+         visuel des barres. */
+      var pts = meta.data.map(function (bar, i) { return { bar: bar, v: ds.data[i] }; })
+                         .sort(function (a, b) { return a.bar.x - b.bar.x; });
+      pts.forEach(function (o) {
+        var v = o.v, bar = o.bar;
+        if (v === null || v === undefined) return;
+        var txt = (v > 0 ? '+' : '') + v + suf;
+        var demi = ctx.measureText(txt).width / 2;
+        var pos = v >= 0;
+        /* Deux couloirs separes : une etiquette au-dessus de l'axe ne peut pas
+           heurter une etiquette placee en dessous. */
+        var ref = pos ? occupePos : occupeNeg;
+        if (bar.x - demi < ref + 4) return;
+        var y = pos ? bar.y - 6 : bar.y + 15;
+        if (pos && y < chart.chartArea.top + 11) y = bar.y + 15;
+        if (!pos && y > chart.chartArea.bottom - 4) y = bar.y - 6;
+        ctx.fillStyle = '#eef1fb';
+        ctx.fillText(txt, bar.x, y);
+        if (pos) occupePos = bar.x + demi; else occupeNeg = bar.x + demi;
+      });
+    });
+    ctx.restore();
+  }
+};
+/* PAS d'enregistrement global : `Chart.register` l'appliquerait a TOUS les
+   graphiques, courbes et camemberts compris, et notamment au graphique Paliers
+   qui a deja son propre plugin de dessin. Chaque graphique concerne le declare
+   dans son tableau `plugins`. */
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   GONES45 — BANDEAU DE SCORES DES EQUIPES SUIVIES (03/09)
+   ───────────────────────────────────────────────────────────────────────────
+   Demande d'Antoine : « tu ouvres l'appli, tu as l'info ». Les matchs du jour
+   de ses equipes, en haut de chaque ecran, cliquables.
+
+   D'OU VIENNENT LES DONNEES : de l'API ESPN deja utilisee partout ailleurs. On
+   ne demande PAS un match par equipe — ce serait quinze requetes — mais un
+   tableau de scores par CHAMPIONNAT, puis on filtre. Antoine suit une poignee
+   de clubs repartis sur cinq ou six competitions : trois a six requetes
+   suffisent, et le resultat est mis en cache.
+
+   HIER SI RIEN AUJOURD'HUI : sans ce repli, le bandeau serait vide tous les
+   matins — c'est-a-dire au moment ou l'on ouvre l'appli pour voir ce qui s'est
+   passe. Des qu'un match du jour existe, la journee d'hier disparait.
+
+   RAFRAICHISSEMENT : toutes les 45 secondes, mais UNIQUEMENT s'il y a un match
+   en cours ET si l'onglet est visible. Sans ces deux conditions on taperait
+   l'API en continu dans la poche de l'utilisateur, sans que personne regarde.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+var _G45_BAND_TTL = 90000;      /* cache d'un tableau de scores */
+var _G45_BAND_REFRESH = 45000;  /* boucle quand un match est en cours */
+var _g45BandCache = {};
+var _g45BandTimer = null;
+
+/* Chemin ESPN d'une equipe. Le football passe par `espnLeagueOf`, deja garni ;
+   les autres sports se deduisent de l'emoji porte par l'equipe, seule
+   information de discipline dont on dispose sur le mur. */
+var _G45_BAND_SPORTS = {
+  '\ud83c\udfd2': 'hockey/nhl',
+  '\u26be':       'baseball/mlb',
+  '\ud83c\udfc0': 'basketball/nba',
+  '\ud83c\udfc8': 'football/nfl'
+};
+
+function _g45BandChemin(u) {
+  try {
+    var lg = (typeof espnLeagueOf === 'function') ? espnLeagueOf(u.n) : null;
+    if (lg) return 'soccer/' + lg;
+    return _G45_BAND_SPORTS[u.sport] || null;
+  } catch (e) { return null; }
+}
+
+function _g45BandJour(d) {
+  var z = function (n) { return (n < 10 ? '0' : '') + n; };
+  return d.getFullYear() + z(d.getMonth() + 1) + z(d.getDate());
+}
+
+/* Comparaison souple des noms : ESPN ecrit « Paris Saint-Germain » la ou le mur
+   dit « PSG ». On reutilise la normalisation de l'appli et on accepte
+   l'inclusion dans un sens comme dans l'autre. */
+function _g45BandMeme(a, b) {
+  try {
+    var x = _g45SgNorm(a || ''), y = _g45SgNorm(b || '');
+    if (!x || !y) return false;
+    return x === y || (x.length > 3 && y.indexOf(x) >= 0) || (y.length > 3 && x.indexOf(y) >= 0);
+  } catch (e) { return false; }
+}
+
+async function _g45BandScores(chemin, jour) {
+  var cle = chemin + ':' + jour;
+  var c = _g45BandCache[cle];
+  if (c && (Date.now() - c.t) < _G45_BAND_TTL) return c.v;
+  try {
+    var r = await fetch('https://site.api.espn.com/apis/site/v2/sports/' + chemin +
+                        '/scoreboard?dates=' + jour);
+    if (!r.ok) return [];
+    var j = await r.json();
+    var ev = j.events || [];
+    _g45BandCache[cle] = { t: Date.now(), v: ev };
+    return ev;
+  } catch (e) { return []; }
+}
+
+function _g45BandTuile(ev, monNom, estMoi) {
+  var comp = (ev.competitions && ev.competitions[0]) || {};
+  var cs = comp.competitors || [];
+  if (cs.length < 2) return '';
+  var st = (ev.status && ev.status.type) || {};
+  var live = st.state === 'in', fin = st.state === 'post', pre = st.state === 'pre';
+
+  var etat = live
+    ? '<span class="g45-mt-st live"><span class="g45-mt-pt"></span>' + (st.shortDetail || 'En direct') + '</span>'
+    : (fin ? '<span class="g45-mt-st">Terminé</span>'
+           : '<span class="g45-mt-st soon">' + _g45BandQuand(ev.date) + '</span>');
+
+  /* Domicile en bas, comme sur les tableaux de scores : c'est la convention
+     americaine d'ESPN et celle des chaines sportives. */
+  var dom = cs.filter(function (x) { return x.homeAway === 'home'; })[0] || cs[0];
+  var ext = cs.filter(function (x) { return x.homeAway === 'away'; })[0] || cs[1];
+
+  var ligne = function (c, autre) {
+    var n = (c.team && (c.team.shortDisplayName || c.team.displayName || c.team.abbreviation)) || '';
+    /* AUCUN SCORE AVANT LE COUP D'ENVOI (corrige le 03/09). ESPN renvoie « 0 »
+       pour un match a venir ; affiche tel quel, cela ressemblait a un 0-0 en
+       cours alors que la rencontre commence a 3h40. On n'affiche un chiffre que
+       si le match a demarre. */
+    var sc = (!pre && c.score != null && c.score !== '') ? c.score : '';
+    var perd = (fin || live) && sc !== '' && autre.score !== '' &&
+               parseFloat(sc) < parseFloat(autre.score);
+    var moi = _g45BandMeme(n, monNom) ||
+              _g45BandMeme((c.team && c.team.displayName) || '', monNom);
+    return '<span class="g45-mt-li' + (perd ? ' perd' : '') + (moi ? ' moi' : '') + '">'
+      + '<span>' + n + '</span><b>' + sc + '</b></span>';
+  };
+
+  /* Sans equipe suivie dans le match, la tuile n'ouvre aucune fiche : elle est la
+     pour informer, pas pour mener vers un club qu'on ne suit pas. */
+  var act = monNom
+    ? ' onclick="openClubFromDash(' + JSON.stringify(monNom).replace(/"/g, '&quot;') + ')"'
+    : ' disabled style="cursor:default;"';
+  return '<button class="g45-mt' + (estMoi ? ' g45-mt-moi' : '') + '"' + act + '>'
+    + etat
+    + '<span class="g45-mt-eq">' + ligne(ext, dom) + ligne(dom, ext) + '</span>'
+    + '</button>';
+}
+
+/* « 19:00 » tout seul laisserait croire a un match du soir meme. On prefixe donc
+   par « Demain » des que la date n'est pas celle du jour — et on descend a
+   l'heure seule pour aujourd'hui, ou la precision suffit. */
+function _g45BandQuand(iso) {
+  try {
+    var d = new Date(iso), n = new Date();
+    var meme = d.toDateString() === n.toDateString();
+    var lend = d.toDateString() === new Date(Date.now() + 86400000).toDateString();
+    var h = _g45BandHeure(iso);
+    return meme ? h : (lend ? 'Demain ' + h : d.getDate() + '/' + (d.getMonth() + 1) + ' ' + h);
+  } catch (e) { return _g45BandHeure(iso); }
+}
+
+function _g45BandHeure(iso) {
+  try {
+    var d = new Date(iso);
+    var z = function (n) { return (n < 10 ? '0' : '') + n; };
+    return z(d.getHours()) + ':' + z(d.getMinutes());
+  } catch (e) { return ''; }
+}
+
+/* ═══ SOURCE DU BANDEAU (03/09) ═══
+   Antoine : « mettre le long d'une journee de championnat les resultats, le
+   direct et les matchs a venir de la Ligue 1 par exemple ».
+   Ce qui rend l'idee gratuite : on interroge deja l'API par CHAMPIONNAT, pas par
+   equipe. La reponse contient donc toute la journee — on n'en affichait que les
+   deux matchs qui concernaient l'utilisateur. Montrer la journee entiere ne
+   coute pas une requete de plus.
+   Reste qu'une journee fait dix rencontres, et quatre championnats en feraient
+   quarante : plusieurs minutes pour un tour complet. D'ou UN SEUL championnat a
+   la fois, choisi par l'utilisateur.
+   C'etait la bonne idee de filtre — pas un tri entre resultats et matchs a venir
+   (une information courte qui tient deja), mais le choix de la SOURCE. */
+
+function _g45BandSource() {
+  try { return localStorage.getItem('g45_band_src') || 'moi'; } catch (e) { return 'moi'; }
+}
+function g45BandSource(v) {
+  try { localStorage.setItem('g45_band_src', v || 'moi'); } catch (e) {}
+  g45BandeauMaj();
+}
+window.g45BandSource = g45BandSource;
+
+/* Les championnats proposes sont ceux ou l'utilisateur a des equipes : ils
+   n'ajoutent aucune requete, puisqu'ils sont deja interroges. */
+function _g45BandChampionnats() {
+  var out = [];
+  try {
+    var vus = {};
+    (state.u || []).forEach(function (u) {
+      if (!u || !u.n) return;
+      var ch = _g45BandChemin(u);
+      if (!ch || vus[ch]) return;
+      vus[ch] = 1;
+      out.push({ ch: ch, nom: _g45BandNomChampionnat(ch) });
+    });
+  } catch (e) {}
+  return out;
+}
+
+/* Nom lisible d'un chemin ESPN, pioche dans la table des competitions — seule
+   source de libelles francais de l'appli. */
+function _g45BandNomChampionnat(ch) {
+  var slug = ch.indexOf('soccer/') === 0 ? ch.slice(7) : ch;
+  try {
+    var trouve = null;
+    (G45_LEAGUE_GROUPS || []).forEach(function (g) {
+      (g.leagues || []).forEach(function (l) { if (!trouve && l.slug === slug) trouve = l.name; });
+    });
+    if (trouve) return trouve;
+  } catch (e) {}
+  var court = { 'hockey/nhl': 'NHL', 'baseball/mlb': 'MLB',
+                'basketball/nba': 'NBA', 'football/nfl': 'NFL' };
+  return court[ch] || slug.toUpperCase();
+}
+
+function _g45BandSelecteur() {
+  var src = _g45BandSource();
+  var opts = '<option value="moi"' + (src === 'moi' ? ' selected' : '') + '>Mes équipes</option>'
+    + _g45BandChampionnats().map(function (c) {
+        return '<option value="' + c.ch + '"' + (src === c.ch ? ' selected' : '') + '>' + c.nom + '</option>';
+      }).join('');
+  return '<select class="g45-band-src" onchange="g45BandSource(this.value)" '
+    + 'aria-label="Source du bandeau">' + opts + '</select>';
+}
+
+async function g45BandeauMaj() {
+  var box = document.getElementById('g45-bandeau');
+  if (!box) return;
+  var track = box.querySelector('.g45-band-track');
+  if (!track) return;
+
+  var us = [];
+  try { us = (state.u || []).filter(function (u) { return u && u.n; }); } catch (e) { return; }
+  if (!us.length) { box.style.display = 'none'; return; }
+
+  /* Une requete par CHEMIN, pas par equipe. */
+  var parChemin = {};
+  us.forEach(function (u) {
+    var ch = _g45BandChemin(u);
+    if (!ch) return;
+    (parChemin[ch] = parChemin[ch] || []).push(u.n);
+  });
+  var chemins = Object.keys(parChemin);
+  if (!chemins.length) { box.style.display = 'none'; return; }
+
+  var src = _g45BandSource();
+  /* Le championnat choisi peut ne plus figurer parmi les equipes suivies — une
+     equipe supprimee, par exemple. On revient alors a « Mes equipes » plutot que
+     d'interroger un championnat dont plus personne ne fait partie. */
+  if (src !== 'moi' && chemins.indexOf(src) < 0) src = 'moi';
+
+  var auj = _g45BandJour(new Date());
+  var hier = _g45BandJour(new Date(Date.now() - 86400000));
+  var demain = _g45BandJour(new Date(Date.now() + 86400000));
+
+  var trouves = [], enCours = false;
+  var passe = async function (jour) {
+    var out = [];
+    /* DEDUPLICATION PAR IDENTIFIANT (corrige le 03/09 : « Athletics-Mariners »
+       apparaissait trois fois). Antoine suit les deux equipes d'un meme match,
+       et la boucle poussait une entree par equipe reconnue. Le test portait sur
+       `out.indexOf(ev)` alors qu'`out` contient des objets `{ev, n}` — il ne
+       trouvait donc jamais rien. On indexe desormais par `ev.id`, et la premiere
+       equipe reconnue est celle qui sera mise en avant dans la tuile. */
+    var vus = {};
+    var lots = await Promise.all(chemins.map(function (ch) { return _g45BandScores(ch, jour); }));
+    lots.forEach(function (evs, i) {
+      var noms = parChemin[chemins[i]];
+      (evs || []).forEach(function (ev) {
+        var id = ev.id || ev.uid || '';
+        if (vus[id]) return;
+        var comp = (ev.competitions && ev.competitions[0]) || {};
+        var trouve = null;
+        (comp.competitors || []).forEach(function (c) {
+          if (trouve) return;
+          var dn = (c.team && (c.team.displayName || c.team.shortDisplayName)) || '';
+          noms.forEach(function (n) { if (!trouve && _g45BandMeme(dn, n)) trouve = n; });
+        });
+        if (trouve) { vus[id] = 1; out.push({ ev: ev, n: trouve, moi: true }); }
+        /* Le championnat retenu passe en entier ; les autres n'apportent que les
+           equipes suivies, qui restent donc visibles quel que soit le
+           championnat affiche — c'est l'information qu'on ne veut jamais rater. */
+        else if (src !== 'moi' && chemins[i] === src) { vus[id] = 1; out.push({ ev: ev, n: '', moi: false }); }
+      });
+    });
+    return out;
+  };
+
+  /* AUJOURD'HUI, PUIS HIER, PUIS DEMAIN (03/09).
+     Un bandeau de scores parle d'abord du present : tant qu'un match du jour
+     existe, rien d'autre ne s'affiche. Sans match aujourd'hui on regarde hier —
+     c'est le matin qu'on ouvre l'appli pour voir ce qui s'est passe. Et si les
+     deux sont vides, on annonce le prochain rendez-vous plutot que de masquer le
+     bandeau : Antoine suit une poignee d'equipes qui ne jouent pas tous les
+     jours, la bande serait absente la plupart du temps.
+     L'ordre compte : jamais de futur quand il y a du present. */
+  /* AUJOURD'HUI *ET* HIER (revu le 03/09 : « il n'affiche que les matchs a
+     venir, pas les resultats »). La regle precedente etait exclusive — des qu'un
+     match du jour existait, hier disparaissait, resultats compris. Les deux
+     interessent : ce qui vient et ce qui s'est joue. Plutot qu'un filtre a
+     manipuler sur un bandeau fait pour se lire d'un coup d'oeil, on fusionne.
+     Demain ne sert que de repli, sinon on annoncerait du futur en masquant du
+     present. */
+  var aj = await passe(auj);
+  var hr = await passe(hier);
+  trouves = aj.concat(hr.filter(function (o) {
+    return !aj.some(function (x) { return (x.ev.id || '') === (o.ev.id || ''); });
+  }));
+  if (!trouves.length) trouves = await passe(demain);
+  if (!trouves.length) { box.style.display = 'none'; return; }
+
+  /* En cours d'abord, puis a venir, puis termines : l'ordre d'interet. */
+  var rang = function (o) {
+    var st = (o.ev.status && o.ev.status.type) || {};
+    return st.state === 'in' ? 0 : (st.state === 'pre' ? 1 : 2);
+  };
+  trouves.sort(function (a, b) {
+    /* Les matchs des equipes suivies passent devant, meme termines : noyes au
+       milieu de dix rencontres de Ligue 1, ils seraient manques. */
+    if (!!a.moi !== !!b.moi) return a.moi ? -1 : 1;
+    var d = rang(a) - rang(b);
+    if (d) return d;
+    var ta = new Date(a.ev.date).getTime() || 0, tb = new Date(b.ev.date).getTime() || 0;
+    /* Les matchs termines du plus recent au plus ancien ; les autres dans
+       l'ordre chronologique. */
+    return rang(a) === 2 ? (tb - ta) : (ta - tb);
+  });
+  /* Plafond plus haut pour une journee entiere, mais un plafond quand meme :
+     au-dela, le tour complet dure plusieurs minutes. */
+  var plafond = (src === 'moi') ? 12 : 22;
+  if (trouves.length > plafond) trouves = trouves.slice(0, plafond);
+  trouves.forEach(function (o) {
+    var st = (o.ev.status && o.ev.status.type) || {};
+    if (st.state === 'in') enCours = true;
+  });
+
+  var html = trouves.map(function (o) { return _g45BandTuile(o.ev, o.n, o.moi); }).join('');
+  /* Le contenu est double pour que le defilement boucle sans a-coup : la
+     translation de -50 % ramene exactement au debut de la copie. */
+  track.innerHTML = html + html;
+  /* Le selecteur est place HORS de la piste : dans le flux, il defilerait avec
+     les matchs et deviendrait impossible a atteindre. */
+  try {
+    var sel = box.querySelector('.g45-band-src-wrap');
+    if (!sel) {
+      sel = document.createElement('div');
+      sel.className = 'g45-band-src-wrap';
+      box.insertBefore(sel, box.firstChild);
+    }
+    sel.innerHTML = _g45BandSelecteur();
+  } catch (e) {}
+  box.style.display = '';
+
+  /* La duree suit le nombre de tuiles, sinon deux matchs defileraient aussi vite
+     que douze — soit illisible, soit interminable. */
+  /* LARGEUR DE PISTE (03/09 : « il demarre au milieu et pas totalement a
+     droite »). Le defilement translate la piste de -50 %, ce qui suppose deux
+     copies remplissant CHACUNE plus que la largeur visible. Avec trois matchs,
+     une copie est plus etroite que l'ecran : la boucle repartait alors n'importe
+     ou. On repete donc le contenu jusqu'a depasser la largeur, et on met
+     l'animation en pause si tout tient deja — faire glisser ce qui est
+     entierement lisible n'apporte rien. */
+  try {
+    var large = box.clientWidth || 0;
+    var uneCopie = track.scrollWidth / 2;
+    if (uneCopie > 0 && large > 0) {
+      /* CORRECTION DU 03/09 — « ça commence au milieu, la moitié droite est
+         vide ».
+         L'animation translate la piste de -50 % : elle suppose donc que la
+         piste contienne EXACTEMENT DEUX copies, et que CHACUNE soit plus large
+         que l'ecran. Ma version precedente ajoutait des copies (4, 6, 8...) en
+         laissant le -50 % en dur : la translation ne parcourait plus que la
+         premiere moitie de la piste, d'ou une bande a moitie remplie et un saut
+         a chaque tour.
+         La regle est donc : on ne depasse JAMAIS deux copies. Pour qu'une copie
+         couvre l'ecran, on repete les TUILES a l'interieur de la copie autant de
+         fois qu'il faut, puis on double le tout. Une moitie de piste est alors
+         toujours plus large que le bandeau, et la boucle se referme sans trou. */
+      var parCopie = 1;
+      while (uneCopie * parCopie < large * 1.15 && parCopie < 12) parCopie++;
+      if (parCopie > 1) {
+        var copie = '';
+        for (var i = 0; i < parCopie; i++) copie += html;
+        track.innerHTML = copie + copie;
+      }
+      /* Rien a faire glisser si tout tient deja a l'ecran... sauf que ce cas ne
+         se produit plus : on vient justement de garantir le contraire. La pause
+         ne sert donc qu'au repli ou la mesure echoue. */
+      track.style.animationPlayState = (track.scrollWidth / 2 <= large) ? 'paused' : '';
+    }
+    /* La duree suit la largeur d'UNE copie — celle reellement parcourue par la
+       translation — et non la piste entiere, sinon doubler le contenu diviserait
+       la vitesse par deux. */
+    track.style.animationDuration = Math.max(18, Math.round((track.scrollWidth / 2) / 90)) + 's';
+  } catch (e) {}
+
+  if (_g45BandTimer) { clearTimeout(_g45BandTimer); _g45BandTimer = null; }
+  if (enCours) {
+    _g45BandTimer = setTimeout(function () {
+      if (document.visibilityState === 'visible') g45BandeauMaj();
+      else _g45BandTimer = null;
+    }, _G45_BAND_REFRESH);
+  }
+}
+window.g45BandeauMaj = g45BandeauMaj;
+
+/* Relance en revenant sur l'onglet : si la boucle s'est arretee parce que la
+   page etait cachee, les scores affiches datent du moment ou l'on est parti. */
+document.addEventListener('visibilitychange', function () {
+  if (document.visibilityState === 'visible' && !_g45BandTimer) {
+    setTimeout(g45BandeauMaj, 300);
+  }
+});
+setTimeout(function () { try { g45BandeauMaj(); } catch (e) {} }, 1200);

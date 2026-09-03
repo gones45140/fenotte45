@@ -1,18 +1,39 @@
 *{box-sizing:border-box;margin:0;padding:0;}
+/* ═══════════════════════════════════════════════════════════════════════
+   DIRECTION VISUELLE — REVUE DU 02/09
+   Retour d'Antoine : « je veux que ça fasse un vrai site internet, pas
+   Discord ». Les tics repérés étaient tous typographiques ou décoratifs,
+   jamais structurels — d'où une révision des JETONS plutôt qu'une refonte :
+     · Les emoji comme icônes, les capitales très espacées sur chaque titre et
+       les gros arrondis partout sont la signature d'une appli de messagerie.
+     · Le halo bleu-violet sur fond bleu nuit reprenait la palette de Discord
+       presque à l'identique.
+   Le monde de référence devient le programme de match : typographie condensée,
+   filets, angles nets, un seul accent chaud. Le bleu reste la couleur des
+   commandes (boutons, champs) ; l'or ne sert qu'à la structure éditoriale —
+   deux rôles distincts, jamais mélangés.
+   ═══════════════════════════════════════════════════════════════════════ */
 :root{
   --bg:#151c30;--bg2:#1a2238;--bg3:#222c49;
   --s1:#222b47;--s2:#2a3457;
   --b1:rgba(255,255,255,.07);--b2:rgba(255,255,255,.13);
   --t1:#eef1fb;--t2:#a6b2d8;--t3:#6f7ca8;
   --a:#4d84ff;--g:#1ed760;--r:#ff4545;--gold:#f0b020;
-  --r8:10px;--r6:8px;--r4:6px;
+  /* Accent editorial : filets de section, bordures de tuile, puces de liste. */
+  --or:#f2b23c;
+  /* Deux familles nettement distinctes, comme le veut la regle : une
+     condensee pour les titres, une normale pour le texte et les chiffres. */
+  --ff:'Barlow',-apple-system,'Segoe UI',system-ui,sans-serif;
+  --ff-t:'Barlow Condensed','Arial Narrow',var(--ff);
+  /* Rayons resserres : 10px sur chaque bloc donnait le cote « bulle de chat ». */
+  --r8:6px;--r6:5px;--r4:3px;
   --card-border:rgba(120,150,255,.13);--card-glow:0 3px 14px rgba(8,11,25,.35);--card-alpha:.64;
   /* ── FOND PHOTO : remplace la valeur de --bg-img par url('https://...ton-image.jpg') pour mettre une photo ── */
   --bg-img:url('fond.jpg');
   /* Voile sombre par-dessus la photo (lisibilité). Monte les opacités (.55/.72 → .80/.90) pour assombrir, baisse-les pour voir plus la photo. */
   --scrim:linear-gradient(180deg,rgba(16,21,40,.55) 0%,rgba(13,17,32,.72) 100%);
 }
-html,body{background:#151c30;background:var(--scrim),var(--bg-img) center center/cover fixed no-repeat;color:var(--t1);font-family:-apple-system,'SF Pro Text','Segoe UI',system-ui,sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh;scrollbar-width:thin;scrollbar-color:var(--b2) transparent;}
+html,body{background:#151c30;background:var(--scrim),var(--bg-img) center center/cover fixed no-repeat;color:var(--t1);font-family:var(--ff);-webkit-font-smoothing:antialiased;min-height:100vh;scrollbar-width:thin;scrollbar-color:var(--b2) transparent;}
 body{padding-bottom:68px;overflow-x:hidden;}
 input,select,textarea,button{font-family:inherit;color:var(--t1);}
 ::-webkit-scrollbar{width:2px;}
@@ -26,10 +47,14 @@ input,select,textarea,button{font-family:inherit;color:var(--t1);}
 .top-cap .val{font-size:17px;font-weight:700;}
 
 .nav{position:fixed;bottom:0;width:100%;background:rgba(20,26,46,.9);backdrop-filter:blur(20px);border-top:1px solid var(--b1);display:grid;grid-template-columns:repeat(6,1fr);z-index:200;}
-.ni{display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 2px 7px;font-size:7.5px;font-weight:600;letter-spacing:.3px;color:var(--t3);background:none;border:1px solid transparent;border-radius:10px;cursor:pointer;transition:color .35s ease,border-color .35s ease,background .35s ease,box-shadow .35s ease;text-transform:uppercase;}
-.ni i{font-size:17px;transition:all .35s ease;}
-.ni.on{color:#a8c8ff;border:1px solid rgba(77,132,255,.55);background:radial-gradient(ellipse at 50% 70%,rgba(77,132,255,.14) 0%,rgba(77,132,255,.05) 50%,transparent 100%);box-shadow:0 4px 18px rgba(92,140,255,.3),inset 0 0 0 1px rgba(92,140,255,.12);}
-.ni.on i{color:#c8deff;filter:drop-shadow(0 1px 4px rgba(92,140,255,.5));}
+/* 7.5px en capitales etait a la limite du lisible et obligeait a tronquer
+   « COMPETITIONS ». Onglet actif : le halo bleu diffus et le cadre arrondi sont
+   remplaces par un simple trait plein en haut. Un trait dit « vous etes ici »
+   aussi bien qu'un halo, sans imiter une barre de salons. */
+.ni{display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 2px 7px;font-size:10px;font-weight:500;letter-spacing:.1px;color:var(--t3);background:none;border:0;border-top:2px solid transparent;border-radius:0;cursor:pointer;transition:color .2s ease,border-color .2s ease;}
+.ni i{font-size:17px;transition:color .2s ease;}
+.ni.on{color:var(--t1);border-top-color:var(--or);background:linear-gradient(180deg,rgba(242,178,60,.09) 0%,transparent 70%);}
+.ni.on i{color:var(--or);}
 
 .main{padding:14px;max-width:580px;margin:0 auto;}
 .tab{display:none;}
@@ -37,8 +62,13 @@ input,select,textarea,button{font-family:inherit;color:var(--t1);}
 @keyframes up{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
 @keyframes aidot{0%,100%{opacity:1}50%{opacity:.3}}
 
-.sec{font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--t3);margin:18px 0 10px;display:flex;align-items:center;gap:8px;}
-.sec::after{content:'';flex:1;height:1px;background:var(--b1);}
+/* Avant : 9px, graisse 700, interlettrage 1.5, tout en capitales, gris pale —
+   soit exactement l'en-tete de salon Discord. La hierarchie passe desormais par
+   la TAILLE et la famille condensee, pas par la deformation des lettres. Le
+   filet horizontal est conserve : lui porte une information (la section
+   commence ici), il ne decore pas. */
+.sec{font-family:var(--ff-t);font-size:21px;font-weight:600;letter-spacing:.2px;color:var(--t1);margin:26px 0 11px;display:flex;align-items:baseline;gap:11px;line-height:1.1;}
+.sec::after{content:'';flex:1;height:1px;background:var(--b1);transform:translateY(-5px);}
 .sec:first-child{margin-top:0;}
 
 .card{background:rgba(34,43,71,var(--card-alpha,.64));backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid var(--card-border,var(--b1));border-radius:var(--r8);margin-bottom:10px;overflow:hidden;box-shadow:var(--card-glow,none);}
@@ -56,7 +86,10 @@ input,select,textarea,button{font-family:inherit;color:var(--t1);}
 .prog-meta{display:flex;justify-content:space-between;font-size:10px;color:var(--t3);margin-top:5px;}
 
 .fc{background:rgba(26,34,56,var(--card-alpha,.64));backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--card-border,var(--b1));border-radius:var(--r8);padding:14px;margin-bottom:10px;box-shadow:var(--card-glow,none);}
-.fl{font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--a);display:block;margin-bottom:4px;}
+/* Meme correction sur les 98 etiquettes de formulaire : capitales espacees en
+   bleu vif au-dessus de chaque champ. En minuscules et en gris clair, elles
+   redeviennent des etiquettes au lieu de crier. */
+.fl{font-size:11.5px;font-weight:600;letter-spacing:0;color:var(--t2);display:block;margin-bottom:5px;}
 .fi{width:100%;padding:9px 11px;background:var(--bg);border:1px solid var(--b2);color:var(--t1);border-radius:var(--r6);font-size:13px;outline:none;-webkit-appearance:none;appearance:none;transition:border-color .15s;}
 .fi:focus{border-color:var(--a);}
 .fi::placeholder{color:var(--t3);}
@@ -80,7 +113,10 @@ input[type="date"],input[type="time"]{color-scheme:dark;}
 .togb.on{background:var(--s2);color:var(--t1);}
 
 .ltbl{width:100%;border-collapse:collapse;font-size:12px;}
-.ltbl th{font-size:9px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--t3);padding:8px 10px;border-bottom:1px solid var(--b1);text-align:left;}
+/* 02/09 : dernieres capitales interlettrees de l'appli, apres `.sec`, `.fl` et
+   `.mm-title`. Le texte des entetes est deja ecrit en minuscules dans les
+   pages, c'est le CSS qui le deformait. */
+.ltbl th{font-size:11.5px;font-weight:600;letter-spacing:0;color:var(--t3);padding:8px 10px;border-bottom:1px solid var(--b1);text-align:left;}
 .ltbl td{padding:10px;border-bottom:1px solid var(--b1);vertical-align:middle;}
 .ltbl tr:last-child td{border-bottom:none;}
 
@@ -178,7 +214,9 @@ input[type="date"],input[type="time"]{color-scheme:dark;}
 /* BOOKS */
 .bgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
 .btile{background:var(--s1);border:1px solid var(--card-border,rgba(77,132,255,.25));border-radius:var(--r8);padding:11px 13px;border-left:3px solid var(--bc,var(--a));box-shadow:var(--card-glow,0 0 10px rgba(77,132,255,.12));}
-.btile-n{font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--t2);margin-bottom:3px;}
+/* Nom de compte : ni capitales ni interlettrage, comme partout ailleurs depuis
+   le 02/09. La couleur du compte reste portee par le lisere et la pastille. */
+.btile-n{font-size:12.5px;font-weight:600;letter-spacing:0;color:var(--t1);margin-bottom:3px;}
 .btile-v{font-size:17px;font-weight:800;}
 .btile-acts{display:flex;gap:5px;margin-top:7px;}
 
@@ -239,14 +277,35 @@ input[type="date"],input[type="time"]{color-scheme:dark;}
 .crash-alert.show{display:flex;}
 
 /* CALC */
-.calc-tabs{display:flex;background:var(--bg3);border-radius:var(--r6);padding:3px;gap:3px;margin-bottom:14px;}
-.ctbtn{flex:1;padding:8px 3px;font-size:9px;font-weight:700;text-align:center;border-radius:var(--r4);cursor:pointer;color:var(--t3);border:1px solid transparent;background:none;transition:all .2s;letter-spacing:.2px;}
-.ctbtn.on{color:#fff;border-color:transparent;}
-#ct-sb.on{background:rgba(77,132,255,.85);box-shadow:0 0 10px rgba(77,132,255,.4);}
-#ct-dt.on{background:rgba(30,215,96,.75);box-shadow:0 0 10px rgba(30,215,96,.3);}
-#ct-lay.on{background:rgba(255,69,69,.75);box-shadow:0 0 10px rgba(255,69,69,.3);}
-#ct-vb.on{background:rgba(240,176,32,.8);box-shadow:0 0 10px rgba(240,176,32,.3);}
-#ct-arjel.on{background:rgba(167,139,250,.8);box-shadow:0 0 10px rgba(167,139,250,.3);}
+/* ONGLETS DES CALCULATRICES — 02/09.
+   L'onglet actif changeait de COULEUR selon la calculatrice : bleu pour Surebet,
+   vert pour Dutching, rouge pour Lay, or pour Value, violet pour ARJEL. Ces
+   couleurs n'encodaient rien — ce n'est pas la nature du calcul qui change, c'est
+   juste l'onglet selectionne. Cinq halos concurrents pour une seule information.
+   Un soulignement unique, celui deja employe par la barre de navigation.
+   Au passage 9px et l'interlettrage disparaissent : c'etait a la limite du
+   lisible, et « Dutching » n'a aucune raison d'etre ecrit plus petit que le
+   reste de l'interface. */
+.calc-tabs{display:flex;gap:2px;border-bottom:1px solid var(--b1);margin-bottom:15px;overflow-x:auto;scrollbar-width:none;}
+.calc-tabs::-webkit-scrollbar{display:none;}
+/* CONTRASTE (03/09, retour d'Antoine : « le type de calculatrice est très peu
+   visible sur tel »). Depuis que le panneau opaque a disparu, ces onglets sont
+   poses directement sur la photo de fond : le gris `--t3`, calcule pour un aplat
+   sombre, s'y effacait completement. Teinte plus claire et ombre portee — la
+   meme correction que sur les autres libelles passes au-dessus du fond. */
+.ctbtn{flex:1 0 auto;padding:8px 13px;font-size:12.5px;font-weight:500;text-align:center;border-radius:0;cursor:pointer;color:var(--t2);text-shadow:0 1px 4px rgba(0,0,0,.9);border:0;border-bottom:2px solid transparent;margin-bottom:-1px;background:none;transition:color .2s,border-color .2s;letter-spacing:0;white-space:nowrap;}
+.ctbtn.on{color:var(--t1);border-bottom-color:var(--or);}
+
+/* Le chiffre que l'on vient chercher — profit garanti, cash garanti — avait
+   exactement le meme poids que « Cote equivalente ». Il sort du tableau. */
+.cres-row.cres-hero{border-top:1px solid var(--b1);margin-top:6px;padding-top:11px;align-items:baseline;}
+.cres-row.cres-hero .cres-l{font-size:13px;}
+.cres-row.cres-hero .cres-v{font-family:var(--ff-t);font-size:29px;font-weight:600;line-height:1;font-variant-numeric:tabular-nums;}
+
+/* Etiquette de cote devant chaque ligne de Surebet et Dutching : le
+   `placeholder` « Cote 1 » existait deja, mais un placeholder disparait des que
+   le champ est rempli — donc toujours, ici. */
+.dutch-lbl{flex:none;min-width:52px;font-size:11.5px;color:var(--t3);}
 .calc-res{background:var(--bg3);border-radius:var(--r6);padding:11px 13px;margin-top:10px;}
 .cres-row{display:flex;justify-content:space-between;padding:4px 0;font-size:12px;border-bottom:1px solid var(--b1);}
 .cres-row:last-child{border-bottom:none;}
@@ -266,9 +325,13 @@ input[type="date"],input[type="time"]{color-scheme:dark;}
 
 /* MYMATCH */
 .mm-wrap{background:var(--bg2);border:1px solid var(--card-border,rgba(77,132,255,.3));border-radius:var(--r8);padding:13px;margin-bottom:10px;box-shadow:var(--card-glow,0 0 12px rgba(77,132,255,.15),0 0 3px rgba(77,132,255,.25));}
-.mm-title{font-size:9px;font-weight:700;letter-spacing:1px;color:var(--t3);text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;}
+/* Meme correction que `.sec` : la hierarchie passe par la taille et la famille
+   condensee, plus par des capitales interlettrees. */
+.mm-title{font-family:var(--ff-t);font-size:19px;font-weight:600;letter-spacing:.2px;color:var(--t1);margin-bottom:11px;display:flex;align-items:center;justify-content:space-between;gap:10px;line-height:1.1;}
 .mm-sel{display:flex;flex-direction:column;gap:6px;margin-bottom:10px;}
-.mm-row{display:flex;align-items:center;gap:7px;background:var(--bg3);border-radius:var(--r6);padding:8px 10px;border:1px solid rgba(77,132,255,.2);}
+/* Le cadre bleu complet devient un filet or a gauche : il signale la ligne
+   sans l'enfermer, et laisse le bleu aux commandes. */
+.mm-row{display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.05);border-radius:var(--r4);padding:7px 9px;border:1px solid var(--b1);border-left:2px solid var(--or);}
 .mm-lbl{flex:1;font-size:12px;font-weight:600;color:var(--t1);background:var(--bg2);border:1px solid var(--b2);border-radius:var(--r4);padding:5px 8px;}
 .mm-cote{width:65px;padding:5px 8px;background:var(--bg);border:1px solid var(--b2);border-radius:var(--r4);color:var(--a);font-weight:700;font-size:12px;text-align:center;}
 .mm-del{background:none;border:none;color:var(--t3);cursor:pointer;font-size:14px;padding:0 3px;}
@@ -279,7 +342,17 @@ input[type="date"],input[type="time"]{color-scheme:dark;}
    de rangee. En grille, toutes font la meme largeur et les colonnes s'alignent.
    Le nombre de colonnes suit la largeur disponible — quatre sur telephone,
    davantage sur PC — sans media query. */
-.mm-types{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:6px;margin-bottom:11px;}
+/* Le conteneur n'est plus une grille : il empile des familles, et c'est
+   CHAQUE famille qui porte sa grille. Sans ca, les intitules de famille
+   auraient ete traites comme des cases de la grille. */
+.mm-types{margin-bottom:11px;}
+.mm-types-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:5px;}
+.mm-fam{display:flex;align-items:center;gap:9px;margin:13px 0 6px;}
+.mm-fam:first-child{margin-top:0;}
+.mm-fam span{font-family:var(--ff-t);font-size:14px;font-weight:600;color:var(--t1);}
+.mm-fam::after{content:'';flex:1;height:1px;background:var(--b1);}
+/* Marche deja pris : visible mais manifestement inactif. */
+.mm-type.pris{opacity:.34;}
 .mm-type{padding:4px 10px;border-radius:12px;border:1px solid var(--b2);background:none;color:var(--t3);font-size:10px;font-weight:700;cursor:pointer;transition:all .12s;}
 .mm-type.on{background:var(--a);border-color:var(--a);color:#fff;}
 .mm-cote-total{background:var(--bg3);border-radius:var(--r4);padding:9px 12px;display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
@@ -323,16 +396,20 @@ input[type="date"],input[type="time"]{color-scheme:dark;}
   /* BLOC-NOTE — gauche */
   .note-sidebar{
     width:260px;position:fixed;left:0;top:52px;bottom:68px;
-    background:var(--bg2);border-right:1px solid rgba(77,132,255,.35);
-    box-shadow:2px 0 16px rgba(77,132,255,.12);
+    background:linear-gradient(90deg,rgba(9,13,22,.88) 0%,rgba(9,13,22,.74) 100%);
+    backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);
+    border-right:1px solid var(--b1);
+    box-shadow:none;
     display:flex !important;flex-direction:column;padding:12px;z-index:100;box-sizing:border-box;
     overflow:hidden;
   }
   /* CHAT — droite */
   .chat-sidebar{
     width:300px;position:fixed;right:0;top:52px;bottom:68px;
-    background:var(--bg2);border-left:1px solid rgba(77,132,255,.35);
-    box-shadow:-2px 0 16px rgba(77,132,255,.12);
+    background:linear-gradient(270deg,rgba(9,13,22,.88) 0%,rgba(9,13,22,.74) 100%);
+    backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);
+    border-left:1px solid var(--b1);
+    box-shadow:none;
     display:flex !important;flex-direction:column;padding:12px;z-index:100;box-sizing:border-box;
     overflow:hidden;
   }
@@ -340,6 +417,11 @@ input[type="date"],input[type="time"]{color-scheme:dark;}
   #t-chat{display:none !important;}
   .main{max-width:100%;padding:14px 20px;}
 }
+/* Formulaires bornes sur grand ecran (02/09). Voir `g45-form` dans les pages. */
+@media(min-width:1100px){
+  .g45-form{max-width:640px;}
+}
+
 @media(min-width:1400px){
   body{padding-left:280px;padding-right:320px;}
   .note-sidebar{width:280px;}
@@ -347,32 +429,48 @@ input[type="date"],input[type="time"]{color-scheme:dark;}
 }
 /* NAV VERTICALE dans sidebar gauche sur PC */
 @media(min-width:1100px){
+  /* COLONNE VOILEE (03/09, retour d'Antoine : « un poil trop transparent a
+     gauche, pourtant ce côté est très important »). Elle etait un aplat plein,
+     cerne d'un halo bleu — le plus gros bloc opaque de l'interface, sur toute la
+     hauteur de l'ecran, au milieu de pages devenues transparentes.
+     Elle garde sa presence, indispensable pour une navigation, mais par un
+     degrade sombre : on devine la photo derriere sans que la lecture en
+     souffre. Le halo bleu laisse place a un simple filet — un trait separe
+     aussi bien qu'une lueur, sans imiter une barre de salons. */
   .nav{
     position:fixed;left:0;top:52px;width:260px;
     bottom:0;height:auto;
     border-top:none;border-bottom:none;
-    border-right:1px solid rgba(77,132,255,.35);
-    box-shadow:2px 0 16px rgba(77,132,255,.12);
-    background:var(--bg2);
+    border-right:1px solid var(--b1);
+    box-shadow:none;
+    background:linear-gradient(90deg,rgba(9,13,22,.88) 0%,rgba(9,13,22,.74) 100%);
+    backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);
     display:flex;flex-direction:column;align-items:stretch;
     padding:8px 0;gap:2px;z-index:101;
   }
+  /* L'entree active portait DEUX marques : le trait or herite de la barre
+     mobile, et un pave bleu. Une seule suffit — le filet or, a gauche, comme
+     les puces de filtre et les lignes de selection depuis le 02/09. */
   .ni{
-    flex-direction:row;align-items:center;gap:10px;
-    padding:10px 16px;border-radius:8px;margin:0 8px;
-    font-size:11px;font-weight:700;letter-spacing:.3px;
+    flex-direction:row;align-items:center;gap:11px;
+    padding:9px 15px;border-radius:0;margin:0;
+    border-top:0;border-left:2px solid transparent;
+    font-size:13px;font-weight:500;letter-spacing:0;
     text-align:left;width:auto;height:auto;
     justify-content:flex-start;
   }
   .ni i{font-size:16px;width:20px;text-align:center;}
-  .ni.on{background:rgba(77,132,255,.15);color:var(--a);}
+  .ni.on{background:rgba(255,255,255,.06);color:var(--t1);border-left-color:var(--or);border-top-color:transparent;}
+  .ni.on i{color:inherit;}
   /* Séparateur avant le pense-bête */
+  /* Capitales interlettrees : dernier vestige du style d'avant le 02/09 dans
+     la barre laterale. */
   .nav::after{
-    content:'PENSE-BÊTE';
+    content:'Pense-bête';
     display:block;
-    font-size:9px;font-weight:700;letter-spacing:1px;
-    color:var(--t3);padding:12px 16px 6px;
-    text-transform:uppercase;
+    font-size:11.5px;font-weight:500;letter-spacing:0;
+    color:var(--t3);padding:13px 16px 6px;
+    text-transform:none;
     border-top:1px solid var(--b1);
     margin-top:8px;
   }
@@ -448,11 +546,14 @@ input[type="date"],input[type="time"]{color-scheme:dark;}
    Le visuel passe au-dessus du nom : il gagne en taille et le libelle dispose
    de toute la largeur de la tuile, ce qui supprime les troncatures. */
 .g45-cmp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:7px;}
+/* Le filet or a gauche remplace le cadre arrondi complet : il signale sans
+   encadrer, et donne a la grille une direction de lecture. */
 .g45-cmp-tile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
-  min-height:64px;padding:9px 6px;border:1px solid rgba(255,255,255,.07);border-radius:11px;
+  min-height:64px;padding:9px 6px;border:1px solid rgba(255,255,255,.09);border-left:2px solid var(--or);
+  border-radius:var(--r4);
   background:linear-gradient(160deg,rgba(255,255,255,.055) 0%,rgba(255,255,255,.02) 100%);
   color:#e6ecf5;cursor:pointer;font-family:inherit;transition:background .15s,border-color .15s,transform .1s;}
-.g45-cmp-tile:hover{background:rgba(77,132,255,.14);border-color:rgba(77,132,255,.45);}
+.g45-cmp-tile:hover{background:rgba(242,178,60,.12);border-color:rgba(242,178,60,.40);border-left-color:var(--or);}
 .g45-cmp-tile:active{transform:scale(.97);}
 .g45-cmp-ico{display:flex;align-items:center;justify-content:center;height:22px;}
 .g45-cmp-nom{font-size:10.5px;font-weight:700;line-height:1.2;text-align:center;
@@ -468,8 +569,193 @@ input[type="date"],input[type="time"]{color-scheme:dark;}
 
 /* Le total et le bouton d'enregistrement : c'est l'action finale du bloc,
    elle merite d'etre plus visible que le reste. */
-.mm-cote-total{background:linear-gradient(100deg,rgba(240,200,40,.10) 0%,var(--bg3) 55%);
-  border:1px solid rgba(240,200,40,.20);padding:11px 13px;}
-.mm-ct-l{font-size:10px;color:var(--t3);font-weight:700;}
-.mm-ct-v{font-size:19px;font-weight:900;color:#f0c828;margin-left:7px;}
-.mm-title{font-size:9.5px;letter-spacing:.9px;color:#8aa0ff;}
+/* 02/09 — TROIS CORRECTIONS ICI.
+   1. La cote combinee etait en or sur un cartouche dore. Elle est deja
+      l'element le plus gros de la zone : la taille suffit a la hierarchiser.
+      L'or est desormais reserve aux filets de structure — s'il sert aussi a
+      mettre en valeur, il ne signale plus rien.
+   2. Le cartouche devient un simple filet superieur : il separait deja la zone
+      de total du reste, l'aplat colore n'ajoutait rien.
+   3. Ce bloc REDEFINISSAIT `.mm-title` en 9.5px bleu clair interlettre, APRES
+      la regle corrigee plus haut dans le fichier — d'ou un titre « Ton pari »
+      reste minuscule et bleu malgre la correction. La surcharge est supprimee,
+      pas rectifiee : deux definitions du meme titre a 200 lignes d'ecart, c'est
+      la garantie que la prochaine correction sera annulee elle aussi. */
+.mm-cote-total{background:none;border:0;border-top:1px solid var(--b1);border-radius:0;padding:12px 2px 0;margin-top:14px;}
+.mm-ct-l{font-size:12px;color:var(--t3);font-weight:400;}
+.mm-ct-v{font-family:var(--ff-t);font-size:25px;font-weight:600;color:var(--t1);margin-left:7px;font-variant-numeric:tabular-nums;}
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   CONTENEURS NUS — PAGE PARI (02/09)
+   Meme principe que l'onglet Competitions : le panneau opaque disparait pour
+   que `fond.jpg` se voie, et ce sont les elements qui portent leur voile. La
+   regle a respecter partout : le fond passe ENTRE les elements, jamais
+   dessous. Un tableau ou un champ pose nu sur une photo devient illisible des
+   qu'il se remplit.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.g45-nu{background:none;border:0;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;padding:0;}
+/* Les etiquettes etaient nues sur un aplat uni ; sur la photo il leur faut
+   une ombre portee, sinon elles disparaissent sur les zones claires. */
+.g45-nu .fl,.g45-nu .mm-fam span{text-shadow:0 1px 4px rgba(0,0,0,.85);}
+.g45-nu .fi{background:rgba(11,16,26,.78);}
+
+/* MyMatch : meme traitement, plus un bornage. Sur grand ecran le champ du type
+   de pari s'etirait sur 1350 px avec « Victoire » perdu au centre. */
+.mm-wrap{max-width:640px;}
+.mm-wrap.g45-nu .mm-row{background:rgba(11,16,26,.74);}
+.mm-wrap.g45-nu .mm-type{background:rgba(11,16,26,.74);}
+.mm-wrap.g45-nu .mm-title,
+.mm-wrap.g45-nu .mm-fam span{text-shadow:0 1px 5px rgba(0,0,0,.9);}
+/* Le libelle se lit a gauche, comme un intitule ; centre, il flottait. */
+.mm-lbl,.mm-row .mm-cote:first-of-type{text-align:left;}
+
+/* Tableau des paris en cours : le voile passe de la carte aux lignes. */
+.g45-nu-tbl{background:none;border:0;}
+.g45-nu-tbl .ltbl td{background:rgba(11,16,26,.74);}
+.g45-nu-tbl .ltbl th{background:none;text-shadow:0 1px 4px rgba(0,0,0,.85);}
+.g45-nu-tbl .ltbl .empty{background:rgba(11,16,26,.62);}
+
+/* Options d'un pari (freebet, lay, boost, notifications) — 02/09.
+   Chacune etait un pave pleine largeur avec sa propre couleur de fond, son
+   emoji et une mention grise a droite : quatre couleurs concurrentes dans le
+   pari simple, pour quatre cases a cocher. Une case a cocher se voit deja
+   toute seule. Seule la couleur de la COCHE est conservee — elle distingue les
+   options d'un coup d'oeil sans peser sur la mise en page. */
+.g45-opt{display:flex;align-items:center;gap:9px;cursor:pointer;padding:7px 2px;font-size:13px;color:var(--t1);}
+.g45-opt + .g45-opt{border-top:1px solid var(--b1);}
+.g45-nu .g45-opt{text-shadow:0 1px 4px rgba(0,0,0,.85);}
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   CORRECTIONS TELEPHONE — 03/09
+   Retours d'Antoine sur captures Android : plusieurs blocs debordaient a
+   droite, coupes net par le bord de l'ecran.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+@media(max-width:699px){
+  /* « Par bookmaker » : le nom, la mention « 32 paris · 66 % » et le montant
+     etaient sur une seule ligne avec des largeurs minimales fixees pour
+     l'alignement en colonnes sur grand ecran. Sur 350 px, la somme depassait
+     et le montant sortait du cadre — la seule valeur qu'on vient lire. La
+     ligne passe donc sur deux niveaux : identite au-dessus, chiffres en
+     dessous, alignes a droite. */
+  .bkrow{flex-wrap:wrap;row-gap:2px;}
+  .bkrow>span:nth-child(2){flex:1 1 100%;order:1;}
+  .bkrow>span:nth-child(3){order:2;flex:1;min-width:0 !important;text-align:left !important;}
+  .bkrow>span:nth-child(4){order:3;min-width:0 !important;}
+  .bkrow>img,.bkrow>svg{order:0;}
+
+  /* Le bandeau sous le graphique d'evolution enumere le detail par bookmaker
+     sur une seule ligne : « Global −15.29€ · Piwi +14.25€ · Unibet… ». Il etait
+     tronque au bord. Il passe a la ligne. */
+  .gc-cap,.chart-legend-txt{white-space:normal !important;overflow:visible !important;text-overflow:clip !important;line-height:1.5;}
+
+  /* La zone de total du MyMatch empilait cote combinee, cote reelle et bouton
+     sur une ligne : sur telephone le bouton se retrouvait a cheval sur le
+     champ. */
+  .mm-cote-total{flex-wrap:wrap;row-gap:10px;}
+  .mm-cote-total>button{width:100%;}
+}
+
+
+/* Titre de section portant une valeur a droite (total du capital dans Bank). */
+.sec>b{margin-left:auto;color:var(--t1);}
+/* Les trois actions d'une carte de compte sont maintenant des mots, pas des
+   symboles : elles ont besoin de place et doivent pouvoir passer a la ligne. */
+.btile-acts{flex-wrap:wrap;}
+.btile-acts .ba{flex:1 1 auto;white-space:nowrap;}
+
+/* Puce de filtre retenue (Tendances). Filet or a gauche plutot qu'aplat dore :
+   avec six filtres actifs simultanement, le remplissage saturait la barre au
+   point qu'aucun ne se distinguait. */
+.sfbtn.g45-tr-on{border-color:var(--or);color:var(--t1);box-shadow:inset 2px 0 0 var(--or);}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   BANDEAU DE SCORES — 03/09
+   Les matchs du jour des equipes suivies, en haut de chaque ecran : on ouvre
+   l'appli, on a l'information sans naviguer.
+   TELEPHONE : bande fixe qu'on fait glisser au doigt. Un defilement
+   automatique y serait ingerable — il n'y a pas de survol pour l'arreter, et
+   le premier appui servirait a stopper au lieu d'ouvrir le match.
+   GRAND ECRAN : defilement automatique, mis en pause au survol. La condition
+   `hover:hover` exclut les tablettes tactiles larges, ou le pointeur est
+   simule et la pause ne se declencherait jamais.
+   ═══════════════════════════════════════════════════════════════════════ */
+.g45-band{position:relative;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;
+  background:rgba(9,13,22,.82);border-bottom:1px solid var(--b1);
+  backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);}
+.g45-band::-webkit-scrollbar{display:none;}
+.g45-band-track{display:flex;}
+.g45-mt{flex:none;display:flex;align-items:center;gap:9px;padding:7px 13px;
+  border-right:1px solid rgba(255,255,255,.07);cursor:pointer;white-space:nowrap;
+  background:none;border-top:0;border-left:0;border-bottom:0;color:var(--t1);font:inherit;text-align:left;}
+.g45-mt:hover{background:rgba(255,255,255,.05);}
+.g45-mt-st{font-size:9.5px;font-weight:600;color:var(--t3);}
+.g45-mt-st.live{color:var(--r);display:flex;align-items:center;gap:4px;}
+.g45-mt-st.soon{color:var(--or);}
+.g45-mt-pt{width:6px;height:6px;border-radius:50%;background:var(--r);
+  animation:g45pulse 1.6s ease-in-out infinite;}
+@keyframes g45pulse{0%,100%{opacity:1;}50%{opacity:.35;}}
+.g45-mt-eq{display:flex;flex-direction:column;gap:1px;font-size:12px;}
+.g45-mt-li{display:flex;align-items:center;gap:7px;}
+.g45-mt-li>span{width:78px;overflow:hidden;text-overflow:ellipsis;color:#cfd8ea;}
+.g45-mt-li>b{font-variant-numeric:tabular-nums;}
+/* Le perdant s'efface : le resultat se lit sans comparer les deux chiffres. */
+.g45-mt-li.perd>span,.g45-mt-li.perd>b{color:var(--t3);}
+/* L'equipe suivie ressort — on la repere sans lire. */
+.g45-mt-li.moi>span{color:var(--or);font-weight:600;}
+
+/* Les images-cles sont declarees HORS media query : a l'interieur, certains
+   navigateurs ne les retrouvent pas quand l'animation est appliquee ailleurs.
+   Le defilement va de la droite vers la gauche — la piste glisse vers les
+   valeurs negatives, donc le contenu entre par la droite. */
+@keyframes g45def{from{transform:translateX(0);}to{transform:translateX(-50%);}}
+@media (hover:hover) and (min-width:1100px){
+  .g45-band{overflow:hidden;}
+  /* DUREE PAR DEFAUT (03/09). Elle etait absente ici et posee uniquement en
+     JavaScript : la forme courte `animation` la ramenait donc a 0s, et il
+     suffisait que le calcul echoue pour que la bande reste figee. Les 30s sont
+     un repli ; le JavaScript ajuste ensuite selon le nombre de matchs. */
+  .g45-band-track{animation:g45def 30s linear infinite;}
+  .g45-band:hover .g45-band-track{animation-play-state:paused;}
+}
+/* Un mouvement continu gene une partie des lecteurs ; le systeme sait le dire. */
+@media (prefers-reduced-motion:reduce){
+  .g45-band-track{animation:none !important;}
+  .g45-band{overflow-x:auto;}
+}
+
+/* Selecteur de source du bandeau, fixe a gauche et HORS de la piste animee. */
+.g45-band{display:flex;align-items:stretch;}
+.g45-band-src-wrap{flex:none;display:flex;align-items:center;padding:0 8px;
+  border-right:1px solid var(--b1);background:rgba(9,13,22,.55);z-index:2;}
+.g45-band-src{background:none;border:0;color:var(--t2);font:inherit;font-size:11.5px;
+  padding:4px 2px;cursor:pointer;max-width:100px;}
+.g45-band-src option{background:var(--bg2);color:var(--t1);}
+.g45-band>.g45-band-track{min-width:0;}
+
+/* Equipe suivie : filet or et voile leger. Le FOND de la tuile ne pouvait pas
+   servir a ca — le vert et le rouge y disent deja gagne/perdu, et le rouge
+   signale le direct. Une troisieme couleur de fond serait entree en collision
+   avec les deux autres. */
+.g45-mt-moi{border-left:2px solid var(--or);background:rgba(242,178,60,.10);}
+.g45-mt-moi:hover{background:rgba(242,178,60,.16);}
+/* Un match sans equipe suivie n'ouvre rien : pas d'effet de survol trompeur. */
+.g45-mt[disabled]{opacity:1;}
+.g45-mt[disabled]:hover{background:none;}
+
+/* PLEIN CADRE SUR TELEPHONE (03/09, demande d'Antoine : « fais en sorte que
+   l'image du club suivi remplisse bien de gauche a droite sur tel »).
+   `.main` applique 14px de marge laterale a tout le contenu — c'est ce qu'on
+   veut pour du texte, pas pour une photo de club. Les cartes du direct
+   annulent donc cette marge par un retrait negatif de meme valeur, et perdent
+   leurs coins arrondis puisqu'elles touchent les bords.
+   Uniquement sur telephone : sur grand ecran, une image etiree sur 1500px
+   serait recadree a l'exces, et la carte a de toute facon la place de
+   respirer. */
+@media(max-width:699px){
+  .g45-dir{margin-left:-14px;margin-right:-14px;}
+  .g45-dir>div{border-radius:0 !important;border-left:0 !important;border-right:0 !important;}
+}

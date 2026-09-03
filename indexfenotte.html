@@ -10,8 +10,8 @@
      chemin est volontairement RELATIF : il se resout en `/gones45/favicon.ico`
      sur les Pages de projet et en `/favicon.ico` sur bet45.fr, sans avoir a
      maintenir deux valeurs differentes. -->
-<link rel="icon" href="favicon.ico?v=20260902l" sizes="any">
-<link rel="apple-touch-icon" href="apple-touch-icon.png?v=20260902l">
+<link rel="icon" href="favicon.ico?v=20260903n" sizes="any">
+<link rel="apple-touch-icon" href="apple-touch-icon.png?v=20260903n">
   <title>BET45 — Dashboard Sport & Tracking</title>
 <meta name="description" content="Accède à tes statistiques sportives, suivis de matchs et outils d'analyse en direct sur BET45.">
   <script>
@@ -44,11 +44,14 @@
   ]
 }
 </script>
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; frame-src https://www.youtube.com https://www.youtube-nocookie.com; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://cloud.umami.is; worker-src 'self' blob:; connect-src 'self' data: blob: https://cloud.umami.is https://gateway.umami.is https://api-gateway.umami.dev https://tessdata.projectnaptha.com https://site.api.espn.com https://site.web.api.espn.com https://sports.core.api.espn.com https://fantasy.premierleague.com https://api.dropbox.com https://content.dropboxapi.com https://api.dropboxapi.com https://api.groq.com https://generativelanguage.googleapis.com https://api.mistral.ai https://api.tavily.com https://fd-proxy.touraine-antoine.workers.dev https://media.api-sports.io https://api.football-data.org https://api-web.nhle.com https://statsapi.mlb.com https://www.thesportsdb.com https://cdn.jsdelivr.net https://api.openf1.org https://racecenter.letour.fr https://racecenter.lavuelta.es https://racecenter.letourfemmes.fr https://racecenter.paris-nice.fr https://racecenter.tour-auvergne-rhone-alpes.fr https://racecenter.paris-roubaix.fr https://racecenter.liege-bastogne-liege.be https://racecenter.la-fleche-wallonne.be https://racecenter.paris-tours.fr https://api.jolpi.ca https://en.wikipedia.org https://api.github.com https://raw.githubusercontent.com https://gones45140.github.io https://ofcizjaynonjtiusdwgi.supabase.co wss://ofcizjaynonjtiusdwgi.supabase.co; img-src 'self' data: https: blob: https://flagcdn.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com;">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; frame-src https://www.youtube.com https://www.youtube-nocookie.com; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://cloud.umami.is; worker-src 'self' blob:; connect-src 'self' data: blob: https://cloud.umami.is https://gateway.umami.is https://api-gateway.umami.dev https://tessdata.projectnaptha.com https://site.api.espn.com https://site.web.api.espn.com https://sports.core.api.espn.com https://fantasy.premierleague.com https://api.dropbox.com https://content.dropboxapi.com https://api.dropboxapi.com https://api.groq.com https://generativelanguage.googleapis.com https://api.mistral.ai https://api.tavily.com https://fd-proxy.touraine-antoine.workers.dev https://media.api-sports.io https://api.football-data.org https://api-web.nhle.com https://statsapi.mlb.com https://www.thesportsdb.com https://cdn.jsdelivr.net https://api.openf1.org https://racecenter.letour.fr https://racecenter.lavuelta.es https://racecenter.letourfemmes.fr https://racecenter.paris-nice.fr https://racecenter.tour-auvergne-rhone-alpes.fr https://racecenter.paris-roubaix.fr https://racecenter.liege-bastogne-liege.be https://racecenter.la-fleche-wallonne.be https://racecenter.paris-tours.fr https://api.jolpi.ca https://en.wikipedia.org https://api.github.com https://raw.githubusercontent.com https://gones45140.github.io https://ofcizjaynonjtiusdwgi.supabase.co wss://ofcizjaynonjtiusdwgi.supabase.co; img-src 'self' data: https: blob: https://flagcdn.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com;">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>BET45</title>
 
-<link rel="stylesheet" href="style.css?v=20260826n">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=Barlow+Condensed:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="style.css?v=20260903n">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
@@ -62,6 +65,11 @@
   <div class="logo">BET<em>45</em></div>
   <div class="top-cap"><div class="lbl">Capital</div><div class="val" id="top-val">0 €</div><div id="top-fb" style="display:none;font-size:11px;color:var(--gold);font-weight:700;line-height:1.1;margin-top:2px;">🎟 0 €</div></div>
 </header>
+
+<!-- BANDEAU DE SCORES (03/09). Vide et masque tant qu'aucun match des equipes
+     suivies n'est trouve : mieux vaut rien qu'une bande vide en haut de chaque
+     ecran. Rempli par `g45BandeauMaj()` dans app.js. -->
+<div id="g45-bandeau" class="g45-band" style="display:none;"><div class="g45-band-track"></div></div>
 
 <main class="main">
 
@@ -138,10 +146,13 @@
       <div class="crash-grid" id="crash-grid"><div style="color:var(--t3);font-size:11px;grid-column:span 4;text-align:center;padding:8px;">Sélectionne une équipe</div></div>
       <div class="crash-alert" id="crash-alert"><span>⚠️</span><span id="crash-txt"></span></div>
     </div>
-    <div class="mm-wrap">
+    <div class="mm-wrap g45-nu">
+      <!-- Titre remis en minuscules (02/09) : `.mm-title` forcait les capitales
+           et l'interlettrage, comme les anciens `.sec`. Le sous-titre
+           « Sélections combinées » disait la meme chose que le titre, il part. -->
       <div class="mm-title">
-        <span>⚡ MyMatch</span><span style="font-size:9px;color:var(--t3);font-weight:400;">Sélections combinées</span>
-        <button class="ba" onclick="addMmRow()">+ Ajouter</button>
+        <span>Ton pari</span>
+        <button class="ba" onclick="addMmRow()">+ Ajouter une sélection</button>
       </div>
       <div class="mm-sel" id="mm-sel"></div>
       <div class="mm-types" id="mm-types"></div>
@@ -156,16 +167,30 @@
                Sans ce champ, Antoine enregistrait une cote qui n'etait pas celle
                de son ticket, donc un gain fausse.
                Vide = on garde le calcul automatique. -->
+          <!-- 03/09, retour d'Antoine : « sur telephone la cote reelle est a peine
+               visible ». Le champ n'avait qu'un contour dore sur fond quasi
+               transparent, et son seul libelle etait un placeholder — qui
+               disparait des qu'on saisit quelque chose. Il ressemblait donc a une
+               decoration plutot qu'a un champ. Il reprend l'aspect des autres
+               champs de l'appli, avec un vrai libelle au-dessus. -->
+          <label style="display:block;">
+            <span class="fl" style="margin-bottom:3px;">Cote réelle du ticket</span>
           <input type="number" step="0.01" min="1" id="mm-cote-manuelle"
-                 placeholder="cote réelle" oninput="mmCoteManuelle()"
-                 style="width:104px;padding:6px 9px;border-radius:8px;border:1px solid rgba(240,200,40,.35);
-                        background:rgba(0,0,0,.28);color:#f0c828;font-size:13px;font-weight:800;
-                        text-align:center;font-family:inherit;">
+                 placeholder="auto" oninput="mmCoteManuelle()"
+                 class="fi"
+                 style="width:118px;text-align:center;font-weight:700;">
+          </label>
         </div>
-        <button onclick="saveMmAsPari('cockpit')" style="padding:7px 14px;border-radius:var(--r6);border:1px solid rgba(30,215,96,.4);background:rgba(30,215,96,.1);color:#1ed760;font-size:11px;font-weight:700;cursor:pointer;">💾 Enregistrer pari</button>
+        <button onclick="saveMmAsPari('cockpit')" style="padding:8px 16px;border-radius:var(--r4);border:0;background:var(--a);color:#fff;font-size:12.5px;font-weight:600;cursor:pointer;">Enregistrer le pari</button>
       </div>
     </div>
-    <div class="fc">
+    <!-- `g45-form` (02/09) : sur grand ecran `.main` passe en pleine largeur, ce
+         qui donnait des champs de 760 px — un selecteur de date ou une mise a
+         trois chiffres dans 760 px, c'est du vide. La classe borne UNIQUEMENT
+         les formulaires ; le mur, les tableaux et les graphiques gardent toute
+         la largeur, dont ils ont besoin. -->
+    <div class="fc g45-form g45-nu">
+      <div class="mm-fam" style="margin-top:0;"><span>Le match</span></div>
       <div class="g2" style="gap:9px;">
         <div class="fg"><label class="fl">Équipe</label><select id="c-unit" class="fi" onchange="updMise();renderCrash()"></select></div>
         <div class="fg"><label class="fl">Sport</label><select id="c-sport" class="fi">
@@ -194,22 +219,46 @@
           <option value="">🌍 Tous les matchs (global)</option>
         </select></div>
         <div class="fg" style="position:relative"><label class="fl">Adversaire</label><input id="c-target" class="fi" placeholder="Ex : Real Madrid, OM…" autocomplete="off" oninput="searchAdv(this.value,'c-target','adv-res-cock')"><div id="adv-res-cock" style="display:none;position:absolute;left:0;right:0;background:var(--bg3);border:1px solid var(--b1);border-radius:var(--r6);z-index:200;max-height:180px;overflow-y:auto;"></div></div>
-        <div class="fg"><label class="fl">Bookmaker</label><select id="c-book" class="fi"></select></div>
-        <div class="fg"><label class="fl" style="color:var(--g);">Mise (€)</label><input type="number" id="c-mise" class="fi" style="border-color:rgba(30,215,96,.25);"></div>
-        <div class="fg"><label class="fl">Date</label><input type="date" id="c-date" class="fi"></div>
-        <div class="fg"><label class="fl">Heure</label><input type="time" id="c-heure" class="fi"></div>
+        <!-- 02/09 : l'etiquette etait verte et le champ borde de vert, alors que les
+             autres etaient grises. Rien ne rend la mise plus importante que
+             l'adversaire ou la date ; trois couleurs d'etiquettes sur un meme
+             formulaire ne hierarchisaient rien, elles se disputaient l'attention. -->
+        <!-- Date et heure fusionnees sous « Coup d'envoi » (02/09). Separees, l'heure
+             se retrouvait seule sur sa ligne avec toute la colonne de droite vide,
+             et deux etiquettes decrivaient un seul et meme moment. -->
+        <div class="fg" style="grid-column:1/-1;"><label class="fl">Coup d'envoi</label>
+          <div style="display:grid;grid-template-columns:1fr 108px;gap:6px;">
+            <input type="date" id="c-date" class="fi">
+            <input type="time" id="c-heure" class="fi">
+          </div></div>
       </div>
-      <div class="fg" style="margin-top:9px"><label class="fl">📝 Notes</label><textarea id="c-notes" class="fi" style="height:44px;resize:none;" placeholder="Analyse, contexte…"></textarea></div>
+
+      <!-- TROIS TEMPS (02/09). Les dix champs se suivaient d'un bloc, ou
+           « Compétition » et « Mise » avaient exactement le meme poids. On lit
+           d'abord ce qui est joue, puis combien, puis comment on est prevenu —
+           c'est l'ordre dans lequel on y pense. Les intitules reprennent le
+           filet de `.sec`, deja employe partout ailleurs. -->
+      <div class="mm-fam"><span>La mise</span></div>
+      <div class="g2" style="gap:9px;">
+        <div class="fg"><label class="fl">Mise (€)</label><input type="number" id="c-mise" class="fi"></div>
+        <div class="fg"><label class="fl">Bookmaker</label><select id="c-book" class="fi"></select></div>
+      </div>
+
+      <div class="mm-fam"><span>Suivi</span></div>
+      <div class="fg" style="margin-top:9px"><label class="fl">Notes</label><textarea id="c-notes" class="fi" style="height:44px;resize:none;" placeholder="Analyse, contexte…"></textarea></div>
       <!-- AJOUTEE LE 31/08 (retour d'Antoine : "notif n'est pas dans les pari
            cockpit, ce que j'utilise"). Le pari simple et le combine avaient
            deja leur case a cocher (n-notif / combi-notif) ; la montante
            (celle-ci, le formulaire du "+") n'en avait AUCUNE — `pari()`
            mettait donc `notif` a `true` en dur, sans jamais lire de case
            puisqu'aucune case n'existait pour ce formulaire. -->
-      <label style="display:flex;align-items:center;gap:8px;padding:9px;background:rgba(77,132,255,.08);border:1px solid rgba(77,132,255,.2);border-radius:var(--r6);cursor:pointer;margin-top:9px;">
+      <!-- 02/09 : « Notifications » ne disait pas ce qui serait notifie, et la
+           precision « Suivi du match » etait reléguee a droite en petit gris. Un
+           seul libelle, qui annonce l'effet. Le cadre bleu plein disparait : la
+           case a cocher se voit deja toute seule. -->
+      <label style="display:flex;align-items:center;gap:9px;cursor:pointer;margin-top:12px;">
         <input type="checkbox" id="c-notif" checked style="accent-color:var(--a)">
-        <span style="font-size:11px;font-weight:700;color:var(--a)">🔔 Notifications</span>
-        <span style="font-size:10px;color:var(--t3);margin-left:auto;">Suivi du match</span>
+        <span style="font-size:13px;color:var(--t1);">Me prévenir des buts et du résultat</span>
       </label>
       <button class="btn btn-p" style="margin-top:11px;" onclick="pari(true)">Engager la montante</button>
     </div>
@@ -217,17 +266,21 @@
       <span>En cours</span>
       
     </div>
-    <div class="card"><div style="overflow-x:auto;-webkit-overflow-scrolling:touch;"><table class="ltbl" style="min-width:480px;"><thead><tr><th>Équipe</th><th>Match</th><th>Cote</th><th>Mise</th><th style="text-align:right">Résultat</th></tr></thead><tbody id="live-strat"></tbody></table></div></div>
+    <!-- 02/09 : la carte opaque disparait, mais les LIGNES prennent leur
+           propre voile (voir `.g45-nu-tbl` dans style.css). Un tableau pose nu
+           sur la photo serait illisible des qu'il contient des paris — le fond
+           doit passer ENTRE les lignes, jamais dessous. -->
+      <div class="g45-nu-tbl"><div style="overflow-x:auto;-webkit-overflow-scrolling:touch;"><table class="ltbl" style="min-width:480px;"><thead><tr><th>Équipe</th><th>Match</th><th>Cote</th><th>Mise</th><th style="text-align:right">Résultat</th></tr></thead><tbody id="live-strat"></tbody></table></div></div>
   </div>
   <div id="sub-combi" style="display:none;">
-    <div class="fc">
+    <div class="fc g45-form g45-nu">
       <div style="font-size:11px;color:var(--t3);margin-bottom:10px;">Ajoute plusieurs matchs — la cote se multiplie automatiquement</div>
       <div id="combi-rows"></div>
       <button onclick="addCombiRow()" style="width:100%;padding:9px;border-radius:var(--r6);border:1px dashed rgba(77,132,255,.4);background:rgba(77,132,255,.06);color:#4d84ff;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:12px;">+ Ajouter une sélection</button>
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:rgba(255,255,255,.04);border-radius:var(--r6);margin-bottom:8px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:rgba(11,16,26,.74);border-radius:var(--r4);margin-bottom:10px;">
         <div>
           <div style="font-size:10px;color:var(--t3);">Cote auto (produit)</div>
-          <div id="combi-cote-total" style="font-size:22px;font-weight:800;color:#f0b020;">—</div>
+          <div id="combi-cote-total" style="font-family:var(--ff-t);font-size:26px;font-weight:600;color:var(--t1);font-variant-numeric:tabular-nums;">—</div>
         </div>
         <div style="text-align:right;">
           <div style="font-size:10px;color:var(--t3);">Gain potentiel</div>
@@ -235,21 +288,24 @@
         </div>
       </div>
       <div class="fg" style="margin-bottom:12px;">
-        <label class="fl" style="color:#f0b020;">🎯 Cote du book (boostée) — optionnel</label>
+        <label class="fl">Cote du book, si elle est boostée</label>
         <input type="number" step="0.01" id="combi-cote-book" class="fi" placeholder="vide = cote auto ci-dessus" oninput="updateCombiCote()">
         <div style="font-size:9px;color:var(--t3);margin-top:3px;">Si remplie, c'est elle qui sert aux gains (boost / arrondi du bookmaker).</div>
       </div>
       <div class="g2" style="gap:9px;margin-bottom:9px;">
-        <div class="fg"><label class="fl" style="color:var(--g);">Mise (€)</label><input type="number" id="combi-mise" class="fi" value="10" oninput="updateCombiCote()"></div>
+        <div class="fg"><label class="fl">Mise (€)</label><input type="number" id="combi-mise" class="fi" value="10" oninput="updateCombiCote()"></div>
         <div class="fg"><label class="fl">Bookmaker</label><select id="combi-book" class="fi"></select></div>
       </div>
       <div class="g2" style="gap:9px;margin-bottom:9px;">
-        <div class="fg"><label class="fl">Date</label><input type="date" id="combi-date" class="fi"></div>
-        <div class="fg"><label class="fl">Heure</label><input type="time" id="combi-heure" class="fi"></div>
+        <div class="fg" style="grid-column:1/-1;"><label class="fl">Coup d'envoi</label>
+          <div style="display:grid;grid-template-columns:1fr 108px;gap:6px;">
+            <input type="date" id="combi-date" class="fi">
+            <input type="time" id="combi-heure" class="fi">
+          </div></div>
       </div>
-      <div class="fg" style="margin-bottom:9px;"><label class="fl">📝 Notes</label><textarea id="combi-notes" class="fi" style="height:44px;resize:none;" placeholder="Analyse…"></textarea></div>
+      <div class="fg" style="margin-bottom:9px;"><label class="fl">Notes</label><textarea id="combi-notes" class="fi" style="height:44px;resize:none;" placeholder="Analyse…"></textarea></div>
       <div class="fg" style="margin-bottom:9px;">
-        <label class="fl">🏠 Lieu</label>
+        <label class="fl">Lieu</label>
         <div style="display:flex;gap:8px;margin-top:6px;">
           <button id="combi-dom-btn" type="button" onclick="setCombiLieu('dom')" style="flex:1;padding:9px;border-radius:var(--r6);border:2px solid rgba(30,215,96,.4);background:rgba(30,215,96,.1);color:#1ed760;font-size:12px;font-weight:700;cursor:pointer;">🏠 Dom</button>
           <button id="combi-ext-btn" type="button" onclick="setCombiLieu('ext')" style="flex:1;padding:9px;border-radius:var(--r6);border:2px solid var(--b2);background:var(--bg3);color:var(--t2);font-size:12px;font-weight:700;cursor:pointer;">🚌 Ext</button>
@@ -257,34 +313,23 @@
         </div>
         <input type="hidden" id="combi-lieu" value="dom">
       </div>
-      <label style="display:flex;align-items:center;gap:8px;padding:9px;background:rgba(30,215,96,.07);border:1px solid rgba(30,215,96,.2);border-radius:var(--r6);cursor:pointer;margin-bottom:6px;">
-        <input type="checkbox" id="combi-freebet" style="accent-color:var(--g)">
-        <span style="font-size:11px;font-weight:700;color:var(--g)">🎟 Freebet</span>
-        <span style="font-size:10px;color:var(--t3);margin-left:auto;">Mise non engagée</span>
-      </label>
-      <label style="display:flex;align-items:center;gap:8px;padding:9px;background:rgba(240,176,32,.08);border:1px solid rgba(240,176,32,.2);border-radius:var(--r6);cursor:pointer;margin-bottom:9px;">
-        <input type="checkbox" id="combi-flashboost" style="accent-color:var(--gold)">
-        <span style="font-size:11px;font-weight:700;color:var(--gold)">⚡ FlashBoost</span>
-      </label>
-      <label style="display:flex;align-items:center;gap:8px;padding:9px;background:rgba(77,132,255,.08);border:1px solid rgba(77,132,255,.2);border-radius:var(--r6);cursor:pointer;margin-bottom:9px;">
-        <input type="checkbox" id="combi-notif" checked style="accent-color:var(--a)">
-        <span style="font-size:11px;font-weight:700;color:var(--a)">🔔 Notifications</span>
-        <span style="font-size:10px;color:var(--t3);margin-left:auto;">Suivi des matchs</span>
-      </label>
-      <button class="btn btn-p" style="width:100%;margin-bottom:8px;" onclick="saveCombiPending()">⏳ Placer le pari combiné (en cours)</button>
+      <label class="g45-opt"><input type="checkbox" id="combi-freebet" style="accent-color:var(--g)"><span>Freebet — mise non engagée</span></label>
+      <label class="g45-opt"><input type="checkbox" id="combi-flashboost" style="accent-color:var(--gold)"><span>FlashBoost</span></label>
+      <label class="g45-opt"><input type="checkbox" id="combi-notif" checked style="accent-color:var(--a)"><span>Me prévenir des buts et du résultat</span></label>
+      <button class="btn btn-p" style="width:100%;margin-bottom:8px;" onclick="saveCombiPending()">Placer le pari combiné</button>
       <div style="font-size:10px;color:var(--t3);text-align:center;margin-bottom:6px;">— ou enregistrer un combiné déjà terminé —</div>
       <div style="display:flex;gap:8px;">
-        <button class="btn" style="flex:1;background:rgba(30,215,96,.12);border-color:rgba(30,215,96,.4);color:#1ed760;" onclick="saveCombi(true)">✅ Déjà gagné</button>
-        <button class="btn" style="flex:1;background:rgba(255,69,69,.15);border-color:rgba(255,69,69,.4);color:#ff4545;" onclick="saveCombi(false)">❌ Déjà perdu</button>
+        <button class="btn" style="flex:1;background:rgba(30,215,96,.12);border-color:rgba(30,215,96,.4);color:#1ed760;" onclick="saveCombi(true)">Déjà gagné</button>
+        <button class="btn" style="flex:1;background:rgba(255,69,69,.15);border-color:rgba(255,69,69,.4);color:#ff4545;" onclick="saveCombi(false)">Déjà perdu</button>
       </div>
     </div>
   </div>
 
   <div id="sub-simple" style="display:none;">
-    <div class="mm-wrap">
+    <div class="mm-wrap g45-nu">
       <div class="mm-title">
-        <span>⚡ My Match</span>
-        <button class="ba" onclick="addMmRowSimple()">+ Ajouter</button>
+        <span>Ton pari</span>
+        <button class="ba" onclick="addMmRowSimple()">Ajouter une sélection</button>
       </div>
       <div class="mm-sel" id="mm-sel-simple"></div>
       <div class="mm-types" id="mm-types-simple"></div>
@@ -293,13 +338,17 @@
           <span class="mm-ct-l">Cote combinée</span>
           <span class="mm-ct-v" id="mm-cote-total-simple">—</span>
         </div>
-        <button onclick="saveMmAsPari('simple')" style="padding:7px 14px;border-radius:var(--r6);border:1px solid rgba(30,215,96,.4);background:rgba(30,215,96,.1);color:#1ed760;font-size:11px;font-weight:700;cursor:pointer;">💾 Enregistrer pari</button>
+        <button onclick="saveMmAsPari('simple')" style="padding:8px 16px;border-radius:var(--r4);border:0;background:var(--a);color:#fff;font-size:12.5px;font-weight:600;cursor:pointer;">Enregistrer le pari</button>
       </div>
     </div>
-    <div class="fc">
+    <div class="fc g45-form g45-nu">
+      <div class="mm-fam" style="margin-top:0;"><span>Le match</span></div>
       <div class="g2" style="gap:9px;margin-bottom:9px;">
-        <div class="fg"><label class="fl">Date</label><input type="date" id="n-date" class="fi"></div>
-        <div class="fg"><label class="fl">Heure</label><input type="time" id="n-heure" class="fi"></div>
+        <div class="fg" style="grid-column:1/-1;"><label class="fl">Coup d'envoi</label>
+          <div style="display:grid;grid-template-columns:1fr 108px;gap:6px;">
+            <input type="date" id="n-date" class="fi">
+            <input type="time" id="n-heure" class="fi">
+          </div></div>
       </div>
       <div class="g2" style="gap:9px;margin-bottom:9px;">
         <div class="fg"><label class="fl">Sport</label><select id="p-sport" class="fi">
@@ -332,9 +381,9 @@
         <div class="fg"><label class="fl">Mise (€)</label><input type="number" id="n-mise" class="fi" value="10"></div>
       </div>
       <div class="fg" style="margin-bottom:9px;"><label class="fl">Bookmaker</label><select id="n-book" class="fi"></select></div>
-      <div class="fg" style="margin-bottom:9px;"><label class="fl">📝 Notes</label><textarea id="n-notes" class="fi" style="height:44px;resize:none;" placeholder="Analyse, contexte…"></textarea></div>
+      <div class="fg" style="margin-bottom:9px;"><label class="fl">Notes</label><textarea id="n-notes" class="fi" style="height:44px;resize:none;" placeholder="Analyse, contexte…"></textarea></div>
       <div class="fg" style="margin-bottom:8px;">
-        <label class="fl">🏠 Lieu</label>
+        <label class="fl">Lieu</label>
         <div style="display:flex;gap:8px;margin-top:6px;">
           <button id="pari-dom-btn" type="button" onclick="togglePariDom(true)" style="flex:1;padding:9px;border-radius:var(--r6);border:2px solid var(--b2);background:var(--bg3);color:var(--t2);font-size:12px;font-weight:700;cursor:pointer;">🏠 Dom</button>
           <button id="pari-ext-btn" type="button" onclick="togglePariDom(false)" style="flex:1;padding:9px;border-radius:var(--r6);border:2px solid var(--b2);background:var(--bg3);color:var(--t2);font-size:12px;font-weight:700;cursor:pointer;">🚌 Ext</button>
@@ -342,32 +391,17 @@
         </div>
         <input type="hidden" id="p-domicile" value="">
       </div>
-      <label style="display:flex;align-items:center;gap:8px;padding:9px;background:rgba(30,215,96,.07);border:1px solid rgba(30,215,96,.2);border-radius:var(--r6);cursor:pointer;margin-bottom:6px;">
-        <input type="checkbox" id="n-freebet" style="accent-color:var(--g)">
-        <span style="font-size:11px;font-weight:700;color:var(--g)">🎟 Freebet</span>
-        <span style="font-size:10px;color:var(--t3);margin-left:auto;">Mise non engagée</span>
-      </label>
-      <label style="display:flex;align-items:center;gap:8px;padding:9px;background:rgba(122,140,255,.07);border:1px solid rgba(122,140,255,.25);border-radius:var(--r6);cursor:pointer;margin-bottom:6px;">
-        <input type="checkbox" id="n-lay" style="accent-color:#8aa2ff">
-        <span style="font-size:11px;font-weight:700;color:#8aa2ff">↩️ Lay (parier contre)</span>
-        <span style="font-size:10px;color:var(--t3);margin-left:auto;">Saisis mise lay + cote lay — conversion auto</span>
-      </label>
-      <label style="display:flex;align-items:center;gap:8px;padding:9px;background:rgba(240,176,32,.08);border:1px solid rgba(240,176,32,.2);border-radius:var(--r6);cursor:pointer;margin-bottom:9px;">
-        <input type="checkbox" id="n-flashboost" style="accent-color:var(--gold)">
-        <span style="font-size:11px;font-weight:700;color:var(--gold)">⚡ FlashBoost</span>
-      </label>
-      <label style="display:flex;align-items:center;gap:8px;padding:9px;background:rgba(77,132,255,.08);border:1px solid rgba(77,132,255,.2);border-radius:var(--r6);cursor:pointer;margin-bottom:9px;">
-        <input type="checkbox" id="n-notif" checked style="accent-color:var(--a)">
-        <span style="font-size:11px;font-weight:700;color:var(--a)">🔔 Notifications</span>
-        <span style="font-size:10px;color:var(--t3);margin-left:auto;">Suivi du match</span>
-      </label>
+      <label class="g45-opt"><input type="checkbox" id="n-freebet" style="accent-color:var(--g)"><span>Freebet — mise non engagée</span></label>
+      <label class="g45-opt"><input type="checkbox" id="n-lay" style="accent-color:#8aa2ff"><span>Lay — parier contre</span></label>
+      <label class="g45-opt"><input type="checkbox" id="n-flashboost" style="accent-color:var(--gold)"><span>FlashBoost</span></label>
+      <label class="g45-opt"><input type="checkbox" id="n-notif" checked style="accent-color:var(--a)"><span>Me prévenir des buts et du résultat</span></label>
       <button class="btn btn-p" style="margin-top:2px;" onclick="pari(false)">Placer le pari simple</button>
     </div>
     <div class="sec" style="display:flex;justify-content:space-between;align-items:center;">
       <span>En cours</span>
       
     </div>
-    <div class="card"><div style="overflow-x:auto;-webkit-overflow-scrolling:touch;"><table class="ltbl" style="min-width:420px;"><thead><tr><th>Cible</th><th>Mise</th><th style="text-align:right">Résultat</th></tr></thead><tbody id="live-norm"></tbody></table></div></div>
+    <div class="g45-nu-tbl"><div style="overflow-x:auto;-webkit-overflow-scrolling:touch;"><table class="ltbl" style="min-width:420px;"><thead><tr><th>Cible</th><th>Mise</th><th style="text-align:right">Résultat</th></tr></thead><tbody id="live-norm"></tbody></table></div></div>
   </div>
 </div>
 
@@ -498,8 +532,13 @@
       <div style="height:200px;position:relative;"><canvas id="chart-multi"></canvas></div>
       <div class="chart-info-bar" id="cib-multi"><span class="cib-main" id="cib-multi-txt">Touche un point</span><span class="cib-val" id="cib-multi-val"></span></div>
     </div>
-    <div class="sec">Répartition bookmakers</div>
-    <div class="cwrap"><div style="height:180px;position:relative;"><canvas id="chart-books"></canvas></div></div>
+    <!-- « Répartition bookmakers » DEPLACE VERS L'ONGLET BANK (02/09, decision
+         d'Antoine). Ce camembert lit `state.b`, c'est-a-dire les SOLDES : il
+         montre la repartition du CAPITAL, pas des paris. Entoure de blocs qui
+         parlent de paris et de resultats, il se lisait forcement de travers —
+         d'autant que Boursorama et les comptes PMU sont les banques d'Antoine,
+         pas des bookmakers, et y occupaient donc une part alors qu'ils n'ont
+         jamais servi a parier. Sa place est aupres des mouvements de fonds. -->
     <div class="sec" style="display:flex;align-items:center;justify-content:space-between;">
       <span>Paliers par équipe</span>
       <div style="position:relative;">
@@ -573,20 +612,28 @@
   <div class="psub-bar" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;"><button onclick="showPariSub('t-paris',this)" class="psub" data-sub="t-paris" style="flex:1;min-width:74px;padding:9px 6px;font-size:10.5px;font-weight:800;cursor:pointer;border-radius:9px;background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#9fb0c7;">🎯 Pari</button><button onclick="showPariSub('t-bilan',this)" class="psub" data-sub="t-bilan" style="flex:1;min-width:74px;padding:9px 6px;font-size:10.5px;font-weight:800;cursor:pointer;border-radius:9px;background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#9fb0c7;">📈 Bilan</button><button onclick="showPariSub('t-calc',this)" class="psub" data-sub="t-calc" style="flex:1;min-width:74px;padding:9px 6px;font-size:10.5px;font-weight:800;cursor:pointer;border-radius:9px;background:#2563eb;border:1px solid #3b82f6;color:#fff;">🧮 Calculatrice</button><button onclick="showPariSub('t-comp',this)" class="psub" data-sub="t-comp" style="flex:1;min-width:74px;padding:9px 6px;font-size:10.5px;font-weight:800;cursor:pointer;border-radius:9px;background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#9fb0c7;">⚖️ VS</button><button onclick="showPariSub('t-bank',this)" class="psub" data-sub="t-bank" style="flex:1;min-width:74px;padding:9px 6px;font-size:10.5px;font-weight:800;cursor:pointer;border-radius:9px;background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#9fb0c7;">🏦 Bank</button><button onclick="showPariSub('t-tend',this)" class="psub" data-sub="t-tend" style="flex:1;min-width:74px;padding:9px 6px;font-size:10.5px;font-weight:800;cursor:pointer;border-radius:9px;background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#9fb0c7;">🔥 Tendances</button></div>
   <!-- CALCULATRICES -->
   <div class="sec" style="margin-top:0;">Calculateur</div>
-  <div class="fc">
+  <!-- 02/09 : meme traitement que les formulaires de la page Pari — panneau
+       retire pour laisser voir le fond, et largeur bornee sur grand ecran. Une
+       cote a quatre caracteres dans un champ de 1550 px, c'etait du vide. -->
+  <div class="fc g45-form g45-nu">
     <div class="calc-tabs">
       <button class="ctbtn on" id="ct-sb" onclick="swCalc('sb')">Surebet</button>
       <button class="ctbtn" id="ct-dt" onclick="swCalc('dt')">Dutching</button>
-      <button class="ctbtn" id="ct-lay" onclick="swCalc('lay')">⚖ Lay</button>
+      <button class="ctbtn" id="ct-lay" onclick="swCalc('lay')">Lay</button>
       <button class="ctbtn" id="ct-vb" onclick="swCalc('vb')">Value</button>
-      <button class="ctbtn" id="ct-arjel" onclick="swCalc('arjel')">🎟 ARJEL</button>
+      <button class="ctbtn" id="ct-arjel" onclick="swCalc('arjel')">ARJEL</button>
     </div>
     <!-- SUREBET -->
     <div id="calc-sb">
       <label style="display:flex;align-items:center;gap:8px;padding:9px;background:rgba(240,176,32,.08);border:1px solid rgba(240,176,32,.2);border-radius:var(--r6);cursor:pointer;margin-bottom:10px">
         <input type="checkbox" id="sb-gorr" onchange="calcSb()" style="accent-color:var(--gold)">
-        <span style="font-size:11px;font-weight:700;color:var(--gold)">🎁 Gagner ou Rembourser (cote 1)</span>
-        <span style="margin-left:auto;display:flex;align-items:center;gap:5px;"><span style="font-size:10px;color:var(--t3);">remboursé à</span><input type="number" id="sb-gorr-val" class="fi" style="width:58px;padding:3px 5px;font-size:11px;" value="70" min="1" max="100" oninput="calcSb()"><span style="font-size:10px;color:var(--t3);">%</span></span>
+        <!-- 02/09 : « remboursé à 70 % » se lisait « on me rend 70 % », alors que
+             la valeur est le TAUX DE VALEUR du remboursement — un freebet de 10 €
+             ne vaut pas 10 € puisqu'on n'en recupere que le gain. Le calcul est
+             inchange (`(c1 - v)` dans `buildSbRows`), seul le libelle est corrige.
+             Mettre 100 revient donc a dire « remboursement en argent reel ». -->
+        <span style="font-size:13px;color:var(--t1)">Gagner ou remboursé sur la cote 1</span>
+        <span style="margin-left:auto;display:flex;align-items:center;gap:5px;"><span style="font-size:11.5px;color:var(--t3);">remboursement valorisé à</span><input type="number" id="sb-gorr-val" class="fi" style="width:58px;padding:3px 5px;font-size:11px;" value="70" min="1" max="100" oninput="calcSb()"><span style="font-size:10px;color:var(--t3);">%</span></span>
       </label>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
         <label class="fl" style="margin:0;">Mise totale (€)</label>
@@ -598,7 +645,7 @@
         <div class="cres-row"><span class="cres-l">Marge</span><span class="cres-v" id="sb-marge">—</span></div>
         <div class="cres-row"><span class="cres-l">Cote équivalente</span><span class="cres-v" id="sb-cote">—</span></div>
         <div class="cres-row"><span class="cres-l">Retour garanti</span><span class="cres-v" id="sb-retour">—</span></div>
-        <div class="cres-row"><span class="cres-l">Profit garanti</span><span class="cres-v" id="sb-profit">—</span></div>
+        <div class="cres-row cres-hero"><span class="cres-l">Profit garanti</span><span class="cres-v" id="sb-profit">—</span></div>
       </div>
       <div id="sb-mises" style="margin-top:8px;"></div>
     </div>
@@ -612,7 +659,7 @@
       <button class="ba" style="width:100%;margin-top:6px;" onclick="addDtRow()">+ Ajouter une sélection</button>
       <div class="calc-res" style="margin-top:10px;">
         <div class="cres-row"><span class="cres-l">Retour si victoire</span><span class="cres-v" id="dt-ret">—</span></div>
-        <div class="cres-row"><span class="cres-l">Profit</span><span class="cres-v" id="dt-profit">—</span></div>
+        <div class="cres-row cres-hero"><span class="cres-l">Profit</span><span class="cres-v" id="dt-profit">—</span></div>
       </div>
     </div>
     <!-- LAY -->
@@ -655,16 +702,13 @@
         <div class="cres-row"><span class="cres-l">Stake optimal</span><span class="cres-v" id="lay-mise-opt">—</span></div>
         <div class="cres-row"><span class="cres-l">Profit si Back gagne</span><span class="cres-v" id="lay-profit-back">—</span></div>
         <div class="cres-row"><span class="cres-l">Profit si Lay gagne</span><span class="cres-v" id="lay-profit-lay">—</span></div>
-        <div class="cres-row"><span class="cres-l">Profit garanti</span><span class="cres-v" id="lay-profit-garanti" style="font-size:15px;font-weight:800">—</span></div>
+        <div class="cres-row cres-hero"><span class="cres-l">Profit garanti</span><span class="cres-v" id="lay-profit-garanti">—</span></div>
         <div class="cres-row"><span class="cres-l">ROI</span><span class="cres-v" id="lay-roi">—</span></div>
       </div>
       <div id="lay-verdict" style="display:none;margin-top:9px;padding:10px;border-radius:var(--r6);text-align:center;font-size:13px;font-weight:700"></div>
       <div style="border-top:1px solid var(--b1);margin-top:14px;padding-top:12px">
         <div style="font-size:10px;font-weight:700;color:var(--gold);margin-bottom:9px">🎟 Freebet → Cash</div>
-        <label style="display:flex;align-items:center;gap:8px;padding:9px;background:rgba(30,215,96,.08);border:1px solid rgba(30,215,96,.2);border-radius:var(--r6);cursor:pointer;margin-bottom:10px">
-          <input type="checkbox" id="fb-gorr" onchange="calcFreebet()" style="accent-color:var(--g)">
-          <span style="font-size:11px;font-weight:700;color:var(--g)">🎁 Mise remboursée si freebet perd (argent réel)</span>
-        </label>
+        <label class="g45-opt"><input type="checkbox" id="fb-gorr" onchange="calcFreebet()" style="accent-color:var(--g)"><span>Mise remboursée si freebet perd (argent réel)</span></label>
         <div class="g2" style="gap:8px;margin-bottom:8px">
           <div class="fg"><label class="fl">Freebet (€)</label><input type="number" id="fb-amount" class="fi" value="10" style="color:var(--gold);font-weight:700" oninput="calcFreebet()"></div>
           <div class="fg"><label class="fl">Cote Back</label><input type="number" id="fb-back-cote" class="fi" value="5.00" step="0.01" style="color:var(--g);font-weight:700" oninput="calcFreebet()"></div>
@@ -674,7 +718,7 @@
         <div class="calc-res">
           <div class="cres-row"><span class="cres-l">Stake</span><span class="cres-v" id="fb-lay-mise">—</span></div>
           <div class="cres-row"><span class="cres-l">Liability</span><span class="cres-v" id="fb-liability">—</span></div>
-          <div class="cres-row"><span class="cres-l">Cash garanti</span><span class="cres-v" id="fb-cash" style="font-size:15px;font-weight:800;color:var(--g)">—</span></div>
+          <div class="cres-row cres-hero"><span class="cres-l">Cash garanti</span><span class="cres-v" id="fb-cash" style="color:var(--g)">—</span></div>
           <div class="cres-row"><span class="cres-l">Taux conversion</span><span class="cres-v" id="fb-taux">—</span></div>
           <div class="cres-row"><span class="cres-l">Cash si remboursé</span><span class="cres-v" id="fb-cash-gorr" style="color:var(--gold)">—</span></div>
         </div>
@@ -711,7 +755,7 @@
       <button class="ba" style="width:100%;margin-top:6px;" onclick="addArjelRow()">+ Ajouter une cote</button>
       <div class="calc-res" style="margin-top:10px;">
         <div class="cres-row"><span class="cres-l">Répartition</span><span class="cres-v" id="arjel-mise">—</span></div>
-        <div class="cres-row"><span class="cres-l">Cash garanti</span><span class="cres-v" id="arjel-cash" style="font-size:15px;font-weight:800;color:var(--g)">—</span></div>
+        <div class="cres-row cres-hero"><span class="cres-l">Cash garanti</span><span class="cres-v" id="arjel-cash" style="color:var(--g)">—</span></div>
         <div class="cres-row"><span class="cres-l">Taux conversion</span><span class="cres-v" id="arjel-taux">—</span></div>
       </div>
       <div id="arjel-detail" style="margin-top:8px;"></div>
@@ -744,6 +788,12 @@
       <input type="range" id="bg-dark-range" min="0" max="100" value="60" oninput="setScrimDark(this.value)" style="width:100%;accent-color:var(--a);margin:4px 0 10px;">
       <label class="fl">🟦 Transparence des cartes <span id="bg-card-val" style="color:var(--t3);font-weight:400;"></span></label>
       <input type="range" id="bg-card-range" min="35" max="95" value="64" oninput="setCardAlpha(this.value)" style="width:100%;accent-color:var(--a);margin:4px 0 0;">
+      <div style="margin-top:12px;border-top:1px solid var(--b1);padding-top:11px;">
+        <label class="fl">🌫️ Voile sur la photo de fond <span id="scrim-val" style="color:var(--t3);font-weight:400;"></span></label>
+        <div style="font-size:10px;color:var(--t3);margin:4px 0 7px;line-height:1.5;">Baisse pour voir la photo, monte si un écran devient dur à lire. Le réglage vaut pour toute l'appli.</div>
+        <input type="range" id="scrim-range" min="0" max="100" step="2" value="34" oninput="g45Scrim(this.value)" style="width:100%;accent-color:var(--a);margin:0 0 8px;">
+        <button class="btn" style="background:rgba(255,69,69,.10);color:#ff6b6b;border:1px solid rgba(255,69,69,.25);font-size:11px;" onclick="g45ScrimReset()">↩️ Voile par défaut</button>
+      </div>
       <div style="margin-top:12px;border-top:1px solid var(--b1);padding-top:11px;">
         <label class="fl">📐 Hauteur des cartes du mur <span id="mur-h-val" style="color:var(--t3);font-weight:400;"></span></label>
         <div style="font-size:10px;color:var(--t3);margin:4px 0 7px;line-height:1.5;">Plus la carte est haute, moins l'écusson est rogné. Réglage mémorisé <b>séparément</b> pour le téléphone et le grand écran — refais-le sur chaque appareil.</div>
@@ -1069,6 +1119,8 @@
       <div class="kpi-v" id="bank-fb-total">0 €</div>
     </div>
   </div>
+  <div class="sec">Répartition du capital</div>
+  <div class="cwrap"><div style="height:180px;position:relative;"><canvas id="chart-books"></canvas></div></div>
   <div class="sec">Mouvement de fonds</div>
   <div class="fc">
     <label class="fl">Bookmaker &amp; Montant</label>
@@ -1085,7 +1137,7 @@
       <button class="sfbtn" style="flex:1;text-align:center;border-color:rgba(255,69,69,.3);color:var(--r);" onclick="fund(false)">− Retrait</button>
     </div>
   </div>
-  <div class="sec">Mes bookmakers</div>
+  <div class="sec" id="bank-titre">Mes comptes</div>
   <div id="books-grid" class="bgrid"></div>
   <div class="fc">
     <label class="fl">Ajouter un bookmaker</label>
@@ -1093,7 +1145,12 @@
       <input id="new-bk" class="fi" placeholder="Nom du bookmaker…">
       <label class="fl">Couleur</label>
       <div style="display:flex;flex-wrap:wrap;gap:6px;" id="bk-color-row"></div>
-      <input type="color" id="new-bk-color" style="height:36px;width:100%;padding:2px 4px;border-radius:var(--r4);border:1px solid var(--b2);background:var(--bg);cursor:pointer;">
+      <!-- 03/09 : ce selecteur de couleur libre s'etalait sur toute la largeur en
+           aplat bleu. Il ressemblait a un bouton — plus gros que le vrai bouton
+           « Ajouter » juste en dessous — et poussait celui-ci hors de vue. Reduit
+           a une pastille, il se range au bout de la rangee de couleurs, la ou on
+           le cherche. -->
+      <input type="color" id="new-bk-color" title="Autre couleur" style="height:30px;width:44px;padding:2px;border-radius:var(--r4);border:1px solid var(--b2);background:var(--bg);cursor:pointer;align-self:flex-start;">
       <button class="btn btn-p" onclick="addBook()">+ Ajouter</button>
     </div>
   </div>
@@ -1254,7 +1311,7 @@
 
   <div style="flex:1;display:flex;flex-direction:column;padding:0 8px 8px;min-height:0;" class="pc-note-area">
     <div id="pc-note" contenteditable="true" style="flex:1;min-height:100px;background:var(--bg3);border:1px solid var(--b1);border-radius:var(--r6);color:var(--t1);font-size:11px;line-height:1.6;padding:10px;outline:none;font-family:inherit;overflow-y:auto;word-break:break-word;" data-placeholder="Notes, cotes, screenshots…" oninput="saveNote()"></div>
-    <button onclick="clearNote()" style="margin-top:6px;background:none;border:1px solid var(--b1);border-radius:var(--r4);color:var(--t3);font-size:9px;font-weight:700;cursor:pointer;padding:4px;letter-spacing:.5px;">EFFACER</button>
+    <button onclick="clearNote()" style="margin-top:6px;background:none;border:1px solid var(--b1);border-radius:var(--r4);color:var(--t3);font-size:11.5px;font-weight:400;cursor:pointer;padding:4px;letter-spacing:0;text-decoration:underline;">Effacer</button>
   </div>
 
   <!-- MENU PLUS MOBILE -->
@@ -1274,7 +1331,7 @@
 <!-- FENOTTE45 : app.js est injecte par auth-guard.js APRES authentification.
      Le ?v= doit changer a CHAQUE deploiement. -->
 <script src="social.js?v=20260826n"></script>
-<script type="module" src="auth-guard.js?v=20260902l"></script>
+<script type="module" src="auth-guard.js?v=20260903n"></script>
 
 
 
@@ -1282,7 +1339,7 @@
 <div class="note-sidebar" id="pc-note-sidebar" style="display:none;">
   <div class="sec" style="margin-top:0;font-size:10px;display:flex;align-items:center;justify-content:space-between;">
     <span>📝 Pense-bête</span>
-    <button onclick="clearNote()" style="background:none;border:none;color:var(--t3);font-size:9px;cursor:pointer;font-weight:700;">EFFACER</button>
+    <button onclick="clearNote()" style="background:none;border:none;color:var(--t3);font-size:11.5px;cursor:pointer;font-weight:400;text-decoration:underline;">Effacer</button>
   </div>
   <textarea id="pc-note2" style="flex:1;background:var(--bg3);border:1px solid var(--b1);border-radius:var(--r6);color:var(--t1);font-size:12px;line-height:1.6;padding:10px;resize:none;outline:none;font-family:inherit;" placeholder="Notes, cotes à surveiller, stratégie…" oninput="saveNote()"></textarea>
 </div>
