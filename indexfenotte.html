@@ -10,8 +10,8 @@
      chemin est volontairement RELATIF : il se resout en `/gones45/favicon.ico`
      sur les Pages de projet et en `/favicon.ico` sur bet45.fr, sans avoir a
      maintenir deux valeurs differentes. -->
-<link rel="icon" href="favicon.ico?v=20260903n" sizes="any">
-<link rel="apple-touch-icon" href="apple-touch-icon.png?v=20260903n">
+<link rel="icon" href="favicon.ico?v=20260904f" sizes="any">
+<link rel="apple-touch-icon" href="apple-touch-icon.png?v=20260904f">
   <title>BET45 — Dashboard Sport & Tracking</title>
 <meta name="description" content="Accède à tes statistiques sportives, suivis de matchs et outils d'analyse en direct sur BET45.">
   <script>
@@ -51,7 +51,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=Barlow+Condensed:wght@500;600;700&display=swap">
-<link rel="stylesheet" href="style.css?v=20260903n">
+<link rel="stylesheet" href="style.css?v=20260904f">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
@@ -218,6 +218,12 @@
           <option value="ext">✈️ Extérieur</option>
           <option value="">🌍 Tous les matchs (global)</option>
         </select></div>
+        <!-- EQUIPE JOUEE (04/09). Rempli automatiquement d'apres l'entree du mur et
+             VERROUILLE quand celle-ci est un club : il n'y a rien a choisir. Il
+             s'ouvre a la saisie quand l'entree est une COMPETITION — « AU NRL »,
+             « BASKET » — car c'est alors la seule facon de savoir sur quelle
+             equipe le pari a porte, et donc de retrouver le match et son score. -->
+        <div class="fg"><label class="fl">Équipe jouée</label><input id="c-equipe" class="fi" placeholder="Ex : Bulldogs" autocomplete="off"></div>
         <div class="fg" style="position:relative"><label class="fl">Adversaire</label><input id="c-target" class="fi" placeholder="Ex : Real Madrid, OM…" autocomplete="off" oninput="searchAdv(this.value,'c-target','adv-res-cock')"><div id="adv-res-cock" style="display:none;position:absolute;left:0;right:0;background:var(--bg3);border:1px solid var(--b1);border-radius:var(--r6);z-index:200;max-height:180px;overflow-y:auto;"></div></div>
         <!-- 02/09 : l'etiquette etait verte et le champ borde de vert, alors que les
              autres etaient grises. Rien ne rend la mise plus importante que
@@ -900,6 +906,12 @@
       <div style="display:flex;gap:6px;margin-bottom:10px;">
         <button id="u-type-club" data-action="unit-type-club" style="flex:1;padding:9px;border-radius:var(--r6);border:2px solid rgba(77,132,255,.5);background:rgba(77,132,255,.12);color:#7aaaff;font-size:11px;font-weight:700;cursor:pointer;">⚽ Club / Équipe</button>
         <button id="u-type-joueur" data-action="unit-type-joueur" style="flex:1;padding:9px;border-radius:var(--r6);border:2px solid var(--b2);background:var(--bg3);color:var(--t3);font-size:11px;font-weight:700;cursor:pointer;">👤 Joueur / Buteur</button>
+        <!-- 04/09 : troisieme type. « AU NRL », « BASKET », « RUGBY » ne sont ni
+             des clubs ni des joueurs : ce sont des COMPETITIONS, sous lesquelles
+             Antoine range des paris portant chacun sur un match different. Sans
+             cette distinction, le champ « Adversaire » recevait tantot l'equipe
+             jouee, tantot celle d'en face, et aucun score n'etait retrouvable. -->
+        <button id="u-type-competition" data-action="unit-type-competition" style="flex:1;padding:9px;border-radius:var(--r6);border:2px solid var(--b2);background:var(--bg3);color:var(--t3);font-size:11px;font-weight:700;cursor:pointer;">Compétition</button>
       </div>
       <input type="hidden" id="u-type" value="club">
       <button class="btn btn-p" onclick="addUnit()">Ajouter</button>
@@ -1331,7 +1343,7 @@
 <!-- FENOTTE45 : app.js est injecte par auth-guard.js APRES authentification.
      Le ?v= doit changer a CHAQUE deploiement. -->
 <script src="social.js?v=20260826n"></script>
-<script type="module" src="auth-guard.js?v=20260903n"></script>
+<script type="module" src="auth-guard.js?v=20260904f"></script>
 
 
 
@@ -1405,6 +1417,19 @@
         </select>
       </div>
       <div class="fg"><label class="fl">Couleur</label><input id="edit-unit-color" type="color" class="fi" style="height:42px;padding:2px 4px;cursor:pointer;"></div>
+    </div>
+    <!-- TYPE MODIFIABLE (04/09). Il n'existait qu'a la CREATION : une entree deja
+         enregistree ne pouvait plus changer de nature, et il aurait fallu la
+         supprimer puis la recreer — en perdant le lien avec tous les paris deja
+         saisis sous ce nom. Le choix est donc repris ici. -->
+    <div class="fg" style="margin-bottom:14px;">
+      <label class="fl">Type d'entrée</label>
+      <select id="edit-unit-type" class="fi">
+        <option value="club">Club</option>
+        <option value="joueur">Joueur</option>
+        <option value="competition">Compétition</option>
+      </select>
+      <div style="font-size:11px;color:var(--t3);margin-top:5px;line-height:1.45;">Choisis « Compétition » pour une entrée qui regroupe des matchs d'équipes différentes (AU NRL, Basket…). Le Cockpit demandera alors quelle équipe tu joues.</div>
     </div>
     <div class="fg" style="margin-bottom:14px;"><label class="fl">📌 Note rapide</label><input id="edit-unit-note" class="fi" placeholder="Ex: Under 3.5 buts, forme à domicile…"></div>
     <button class="btn btn-p" style="width:100%;" onclick="saveEditUnit()">💾 Enregistrer</button>

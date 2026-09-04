@@ -731,8 +731,10 @@ input[type="date"],input[type="time"]{color-scheme:dark;}
 .g45-band{display:flex;align-items:stretch;}
 .g45-band-src-wrap{flex:none;display:flex;align-items:center;padding:0 8px;
   border-right:1px solid var(--b1);background:rgba(9,13,22,.55);z-index:2;}
+/* 03/09 : a 100px, « Ligue 1 » etait tronque et le premier match passait sous
+   le selecteur. Largeur minimale garantie, et le libelle ne se coupe plus. */
 .g45-band-src{background:none;border:0;color:var(--t2);font:inherit;font-size:11.5px;
-  padding:4px 2px;cursor:pointer;max-width:100px;}
+  padding:4px 2px;cursor:pointer;min-width:96px;max-width:150px;}
 .g45-band-src option{background:var(--bg2);color:var(--t1);}
 .g45-band>.g45-band-track{min-width:0;}
 
@@ -758,4 +760,14 @@ input[type="date"],input[type="time"]{color-scheme:dark;}
 @media(max-width:699px){
   .g45-dir{margin-left:-14px;margin-right:-14px;}
   .g45-dir>div{border-radius:0 !important;border-left:0 !important;border-right:0 !important;}
+}
+
+/* Bouton flottant « Rafraichir » : masque sur telephone (04/09). Voir la note
+   dans `injectRefreshButton`. */
+@media(max-width:699px){ .g45-refresh{display:none !important;} }
+/* Au repos il s'efface, il ne reapparait franchement qu'au survol : meme sur
+   grand ecran, un bouton pose sur le contenu n'a pas a crier. */
+@media(min-width:700px){
+  .g45-refresh{opacity:.35;transition:opacity .2s;}
+  .g45-refresh:hover,.g45-refresh:focus{opacity:1;}
 }

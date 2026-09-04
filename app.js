@@ -3657,6 +3657,14 @@ function injectRefreshButton() {
   b.innerHTML = '🔄';
   b.title = 'Rafraîchir cette page';
   b.onclick = smartRefresh;
+  /* 04/09, retour d'Antoine : « ce bouton est particulierement chiant ».
+     Il flottait au-dessus du contenu sur TOUS les ecrans, et tombait pile sur
+     les boutons de marche de la page Pari. Il fait de surcroit doublon sur
+     telephone : le tirer-pour-rafraichir du navigateur et le bouton de rechargement
+     de la barre d'adresse rendent deja ce service. Il n'est donc conserve que sur
+     grand ecran, ou ces deux gestes n'existent pas et ou la place ne manque pas.
+     `id` conserve : la classe pilote l'affichage, le comportement ne change pas. */
+  b.className = 'g45-refresh';
   b.style.cssText = 'position:fixed;bottom:80px;right:16px;z-index:9999;width:48px;height:48px;border-radius:50%;border:1px solid rgba(77,132,255,.4);background:rgba(20,26,40,.95);color:#4d84ff;font-size:20px;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;';
   document.body.appendChild(b);
 }
@@ -3670,6 +3678,10 @@ function pari(isS){
   if(isS){
     var u=state.u.find(function(x){return x.n===$i('c-unit').value;});if(!u)return alert('Aucune équipe !');
     n=u.n;target=$i('c-target').value||'-';type=getMmLabel()||'-';
+    /* EQUIPE JOUEE ENREGISTREE A PART (04/09). Pour un club elle vaut `u.n` et
+       n'apporte rien de neuf ; pour une COMPETITION c'est la seule trace du camp
+       reellement joue — sans elle, un pari « AU NRL » ne designe aucun match. */
+    var _eqJ=($i('c-equipe')&&$i('c-equipe').value.trim())||'';
     sport=$i('c-sport').value||'';comp=$i('c-comp').value||'';
     heure=$i('c-heure').value||'';date=$i('c-date').value||'';
     b=$i('c-book').value;c=getMmCote();
@@ -3700,7 +3712,7 @@ function pari(isS){
        au formulaire de pari simple et vaut « dom » en dur, ce qui aurait range
        tous les paris de montante dans l'echelle domicile. */
     var domicile=isS?(($i('c-lieu')&&$i('c-lieu').value)||'')
-                    :(($i('n-lieu')&&$i('n-lieu').value)||($i('p-domicile')?$i('p-domicile').value:''));state.h.unshift({id:Date.now().toString(),n:n,target:target,b:b,l:l,m:m,cote:c,isS:isS,isFlash:isFlash,isFreebet:isFreebet,isLay:isLay,t:t,sport:sport,type:type,comp:comp,heure:heure,date:date,notes:notes||'',domicile:domicile,notif:notif});
+                    :(($i('n-lieu')&&$i('n-lieu').value)||($i('p-domicile')?$i('p-domicile').value:''));state.h.unshift({id:Date.now().toString(),n:n,target:target,eq:(typeof _eqJ!=='undefined'?_eqJ:''),b:b,l:l,m:m,cote:c,isS:isS,isFlash:isFlash,isFreebet:isFreebet,isLay:isLay,t:t,sport:sport,type:type,comp:comp,heure:heure,date:date,notes:notes||'',domicile:domicile,notif:notif});
     save();
     if(isS){$i('c-target').value='';$i('c-comp').value='';if($i('c-notes'))$i('c-notes').value='';}
     else{$i('n-comp').value='';$i('n-type').value='';$i('n-analysis').value='';if($i('n-notes'))$i('n-notes').value='';if($i('n-team'))$i('n-team').value='';if($i('n-flashboost'))$i('n-flashboost').checked=false;if($i('n-freebet'))$i('n-freebet').checked=false;if($i('n-lay'))$i('n-lay').checked=false;if($i('n-notif'))$i('n-notif').checked=true;mmRowsSimple=[{type:'',cote:1.50}];renderMmRowsSimple();}
@@ -3853,6 +3865,13 @@ function updMise(){
   /* Auto-fill competition from CLUB_DB */
   var db=CLUB_DB.find(function(c){return c.name===u.n;});
   if(db&&db.league&&$i('c-comp'))$i('c-comp').value=db.league;
+  /* EQUIPE JOUEE (04/09). Pour un club ou un joueur, elle EST l'entree du mur :
+     le champ est rempli et verrouille, il n'y a rien a decider. Pour une
+     COMPETITION — « AU NRL », « BASKET » — l'entree ne designe aucune equipe
+     precise : le champ s'ouvre, et c'est ce qu'Antoine y saisit qui permettra de
+     retrouver le match et son score. Sans cela, l'equipe jouee finissait dans le
+     champ « Adversaire », ou rien ne la distinguait du camp d'en face. */
+  _g45MajEquipeJouee(u);
   /* Auto-fill adversaires via API */
   autoFillAdv(u);
   renderCrash();
@@ -3951,6 +3970,9 @@ function editUnit(i){
   $i('edit-unit-stars').value=u.s||'3';
   $i('edit-unit-note').value=u.note||'';
   $i('edit-unit-color').value=u.color||'#4d84ff';
+  /* Type repris a l'ouverture : sans cette ligne, le menu afficherait toujours
+     « Club » et un enregistrement retirerait le type reel. */
+  var vt2=$i('edit-unit-type'); if(vt2) vt2.value=u.type||'club';
   m.style.display='flex';
 }
 function closeEditUnit(){var m=$i('edit-unit-modal');if(m)m.style.display='none';}
@@ -3967,6 +3989,7 @@ function saveEditUnit(){
   if(vs&&vs.value) u.s=vs.value;
   if(vt) u.note=(vt.value||'').trim();
   if(vc&&vc.value) u.color=vc.value;
+  var vty=$i('edit-unit-type'); if(vty&&vty.value) u.type=vty.value;
   /* Le rendu ne doit jamais empêcher la fermeture du modal : une exception ici donnait
      l'impression que le bouton Enregistrer ne faisait rien, alors que la sauvegarde
      avait bien eu lieu. */
@@ -6048,6 +6071,26 @@ function renderMmCoteSimple(){
   var cote=mmRowsSimple.reduce(function(a,r){return a*(parseFloat(r.cote)||1);},1);
   var el=$i('mm-cote-total-simple');if(el)el.innerText='@'+cote.toFixed(2);
   var nc=$i('n-cote');if(nc)nc.value=cote.toFixed(2);
+  /* TYPE DE PARI REPORTE AUSSI (04/09, retour d'Antoine : « Enregistrer le pari
+     doit remplir type de pari / la cote, sinon le haut sert a rien »).
+     La cote combinee etait deja recopiee dans le formulaire du dessous, mais pas
+     le libelle : on composait « Victoire + BTS Oui » en haut, et il fallait le
+     ressaisir a la main en bas. Les deux champs suivent maintenant les
+     selections en direct, a chaque ajout ou retrait.
+     Le champ reste MODIFIABLE : on n'ecrase que s'il est vide ou s'il porte
+     encore un libelle issu de MyMatch, jamais un texte tape a la main. */
+  try{
+    var nt=$i('n-type');
+    if(nt){
+      var lbl=mmRowsSimple.filter(function(r){return r.type;})
+                          .map(function(r){return r.type;}).join(' + ');
+      var ancien=(nt.dataset && nt.dataset.mm) || '';
+      if(!nt.value || nt.value===ancien){
+        nt.value=lbl;
+        if(nt.dataset) nt.dataset.mm=lbl;
+      }
+    }
+  }catch(e){}
 }
 function addMmRowSimple(){mmRowsSimple.push({type:'',cote:1.50});renderMmRowsSimple();}
 function addMmTypeSimple(t){
@@ -11024,6 +11067,10 @@ function pari(isS){
   if(isS){
     var u=state.u.find(function(x){return x.n===$i('c-unit').value;});if(!u)return alert('Aucune équipe !');
     n=u.n;target=$i('c-target').value||'-';type=getMmLabel()||'-';
+    /* EQUIPE JOUEE ENREGISTREE A PART (04/09). Pour un club elle vaut `u.n` et
+       n'apporte rien de neuf ; pour une COMPETITION c'est la seule trace du camp
+       reellement joue — sans elle, un pari « AU NRL » ne designe aucun match. */
+    var _eqJ=($i('c-equipe')&&$i('c-equipe').value.trim())||'';
     sport=$i('c-sport').value||'';comp=$i('c-comp').value||'';
     heure=$i('c-heure').value||'';date=$i('c-date').value||'';
     b=$i('c-book').value;c=getMmCote();
@@ -11054,7 +11101,7 @@ function pari(isS){
        au formulaire de pari simple et vaut « dom » en dur, ce qui aurait range
        tous les paris de montante dans l'echelle domicile. */
     var domicile=isS?(($i('c-lieu')&&$i('c-lieu').value)||'')
-                    :(($i('n-lieu')&&$i('n-lieu').value)||($i('p-domicile')?$i('p-domicile').value:''));state.h.unshift({id:Date.now().toString(),n:n,target:target,b:b,l:l,m:m,cote:c,isS:isS,isFlash:isFlash,isFreebet:isFreebet,isLay:isLay,t:t,sport:sport,type:type,comp:comp,heure:heure,date:date,notes:notes||'',domicile:domicile,notif:notif});
+                    :(($i('n-lieu')&&$i('n-lieu').value)||($i('p-domicile')?$i('p-domicile').value:''));state.h.unshift({id:Date.now().toString(),n:n,target:target,eq:(typeof _eqJ!=='undefined'?_eqJ:''),b:b,l:l,m:m,cote:c,isS:isS,isFlash:isFlash,isFreebet:isFreebet,isLay:isLay,t:t,sport:sport,type:type,comp:comp,heure:heure,date:date,notes:notes||'',domicile:domicile,notif:notif});
     save();
     if(isS){$i('c-target').value='';$i('c-comp').value='';if($i('c-notes'))$i('c-notes').value='';}
     else{$i('n-comp').value='';$i('n-type').value='';$i('n-analysis').value='';if($i('n-notes'))$i('n-notes').value='';if($i('n-team'))$i('n-team').value='';if($i('n-flashboost'))$i('n-flashboost').checked=false;if($i('n-freebet'))$i('n-freebet').checked=false;if($i('n-lay'))$i('n-lay').checked=false;if($i('n-notif'))$i('n-notif').checked=true;mmRowsSimple=[{type:'',cote:1.50}];renderMmRowsSimple();}
@@ -11121,6 +11168,13 @@ function updMise(){
   /* Auto-fill competition from CLUB_DB */
   var db=CLUB_DB.find(function(c){return c.name===u.n;});
   if(db&&db.league&&$i('c-comp'))$i('c-comp').value=db.league;
+  /* EQUIPE JOUEE (04/09). Pour un club ou un joueur, elle EST l'entree du mur :
+     le champ est rempli et verrouille, il n'y a rien a decider. Pour une
+     COMPETITION — « AU NRL », « BASKET » — l'entree ne designe aucune equipe
+     precise : le champ s'ouvre, et c'est ce qu'Antoine y saisit qui permettra de
+     retrouver le match et son score. Sans cela, l'equipe jouee finissait dans le
+     champ « Adversaire », ou rien ne la distinguait du camp d'en face. */
+  _g45MajEquipeJouee(u);
   /* Auto-fill adversaires via API */
   autoFillAdv(u);
   renderCrash();
@@ -11219,6 +11273,9 @@ function editUnit(i){
   $i('edit-unit-stars').value=u.s||'3';
   $i('edit-unit-note').value=u.note||'';
   $i('edit-unit-color').value=u.color||'#4d84ff';
+  /* Type repris a l'ouverture : sans cette ligne, le menu afficherait toujours
+     « Club » et un enregistrement retirerait le type reel. */
+  var vt2=$i('edit-unit-type'); if(vt2) vt2.value=u.type||'club';
   m.style.display='flex';
 }
 function closeEditUnit(){var m=$i('edit-unit-modal');if(m)m.style.display='none';}
@@ -11235,6 +11292,7 @@ function saveEditUnit(){
   if(vs&&vs.value) u.s=vs.value;
   if(vt) u.note=(vt.value||'').trim();
   if(vc&&vc.value) u.color=vc.value;
+  var vty=$i('edit-unit-type'); if(vty&&vty.value) u.type=vty.value;
   /* Le rendu ne doit jamais empêcher la fermeture du modal : une exception ici donnait
      l'impression que le bouton Enregistrer ne faisait rien, alors que la sauvegarde
      avait bien eu lieu. */
@@ -13315,6 +13373,26 @@ function renderMmCoteSimple(){
   var cote=mmRowsSimple.reduce(function(a,r){return a*(parseFloat(r.cote)||1);},1);
   var el=$i('mm-cote-total-simple');if(el)el.innerText='@'+cote.toFixed(2);
   var nc=$i('n-cote');if(nc)nc.value=cote.toFixed(2);
+  /* TYPE DE PARI REPORTE AUSSI (04/09, retour d'Antoine : « Enregistrer le pari
+     doit remplir type de pari / la cote, sinon le haut sert a rien »).
+     La cote combinee etait deja recopiee dans le formulaire du dessous, mais pas
+     le libelle : on composait « Victoire + BTS Oui » en haut, et il fallait le
+     ressaisir a la main en bas. Les deux champs suivent maintenant les
+     selections en direct, a chaque ajout ou retrait.
+     Le champ reste MODIFIABLE : on n'ecrase que s'il est vide ou s'il porte
+     encore un libelle issu de MyMatch, jamais un texte tape a la main. */
+  try{
+    var nt=$i('n-type');
+    if(nt){
+      var lbl=mmRowsSimple.filter(function(r){return r.type;})
+                          .map(function(r){return r.type;}).join(' + ');
+      var ancien=(nt.dataset && nt.dataset.mm) || '';
+      if(!nt.value || nt.value===ancien){
+        nt.value=lbl;
+        if(nt.dataset) nt.dataset.mm=lbl;
+      }
+    }
+  }catch(e){}
 }
 function addMmRowSimple(){mmRowsSimple.push({type:'',cote:1.50});renderMmRowsSimple();}
 function addMmTypeSimple(t){
@@ -22063,16 +22141,25 @@ function setUnitType(t) {
   _unitType = t;
   var cb = document.getElementById('u-type-club');
   var jb = document.getElementById('u-type-joueur');
+  var pb = document.getElementById('u-type-competition');
   var inp = document.getElementById('u-type');
   if (inp) inp.value = t;
-  if (cb && jb) {
-    if (t === 'club') {
-      cb.style.borderColor='rgba(77,132,255,.5)';cb.style.background='rgba(77,132,255,.12)';cb.style.color='#7aaaff';
-      jb.style.borderColor='var(--b2)';jb.style.background='var(--bg3)';jb.style.color='var(--t3)';
-    } else {
-      jb.style.borderColor='rgba(240,176,32,.5)';jb.style.background='rgba(240,176,32,.1)';jb.style.color='#f0b020';
-      cb.style.borderColor='var(--b2)';cb.style.background='var(--bg3)';cb.style.color='var(--t3)';
-    }
+  /* TROIS ETATS DEPUIS LE 04/09. L'ancienne version raisonnait en binaire — si
+     ce n'est pas un club, c'est un joueur — ce qui aurait colorie « Compétition »
+     comme un joueur. On eteint tout, puis on allume le seul actif. */
+  var eteindre = function (b) {
+    if (!b) return;
+    b.style.borderColor = 'var(--b2)';
+    b.style.background = 'var(--bg3)';
+    b.style.color = 'var(--t3)';
+  };
+  eteindre(cb); eteindre(jb); eteindre(pb);
+  if (t === 'club' && cb) {
+    cb.style.borderColor='rgba(77,132,255,.5)';cb.style.background='rgba(77,132,255,.12)';cb.style.color='#7aaaff';
+  } else if (t === 'competition' && pb) {
+    pb.style.borderColor='rgba(242,178,60,.5)';pb.style.background='rgba(242,178,60,.12)';pb.style.color='#f2b23c';
+  } else if (jb) {
+    jb.style.borderColor='rgba(240,176,32,.5)';jb.style.background='rgba(240,176,32,.1)';jb.style.color='#f0b020';
   }
 }
 
@@ -23470,6 +23557,7 @@ var _bcp=document.getElementById('btn-chat-params-pc');if(_bcp)_bcp.onclick=func
     else if(action === 'pari-equipe') { setPariEquipe(el); }
     else if(action === 'unit-type-club') { setUnitType('club'); }
     else if(action === 'unit-type-joueur') { setUnitType('joueur'); }
+    else if(action === 'unit-type-competition') { setUnitType('competition'); }
   });
   render();updMise();buildSbRows();setTimeout(initPariChips,100);buildDtRows();buildArjelRows();renderCrash();renderMmRows();renderMmRowsSimple();updateCompList();calcVb();calcLay();calcFreebet();renderArchive();updateBankTotal();setTimeout(initPariChips,200);_apStyle=localStorage.getItem('g45_ap_style')||'halo';_apIntensity=parseInt(localStorage.getItem('g45_ap_intensity')||'40');var _apInp=document.getElementById('ap-intensity');if(_apInp)_apInp.value=_apIntensity;setCardStyle(_apStyle);
 
@@ -31402,7 +31490,13 @@ function _g45ScoreTexte(h) {
      differents sous un seul pari — un score unique ne veut rien dire ici, il
      faudrait un score PAR JAMBE. Hors de portee de cette version. */
   if (h.isCombi || !h.id || !h.date) return '';
-  var nomEquipe = (h.n && h.n !== 'SIMPLE') ? h.n : String(h.target || '').split(/\s+vs\s+/i)[0].trim();
+  /* `h.eq` D'ABORD (04/09). Sur un pari rattache a une COMPETITION — « AU NRL »
+     — `h.n` est le nom de la competition, pas d'une equipe : aucune recherche de
+     score ne pouvait aboutir. Le champ « Equipe jouee » porte desormais le vrai
+     camp, et il prime des qu'il est renseigne. Les paris anterieurs ne l'ont pas
+     et retombent sur l'ancien chemin, inchange. */
+  var nomEquipe = (h.eq && String(h.eq).trim())
+    || ((h.n && h.n !== 'SIMPLE') ? h.n : String(h.target || '').split(/\s+vs\s+/i)[0].trim());
   if (!nomEquipe) return '';
   /* NOM ADVERSE, EN REPLI (28/08, retour d'Antoine sur "AU NRL" et un pari
      Buteur "Kvaratskhelia ou Lepaul vs Stade Rennais"). `nomEquipe` n'est
@@ -31791,7 +31885,13 @@ function _g45BetRowMini(h){
     +_idFilig
     +'<div style="position:relative;font-size:12px;font-weight:700;color:var(--t1);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word;line-height:1.25;">'+titre+'</div>'
     +(_score?'<div style="position:relative;font-size:11px;font-weight:800;color:var(--t1);background:rgba(255,255,255,.10);display:inline-block;padding:1px 6px;border-radius:5px;margin:2px 0;max-width:100%;white-space:normal;word-break:break-word;">📊 '+_score+'</div>':'')
-    +'<div style="position:relative;font-size:10.5px;font-weight:600;color:var(--t2);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word;line-height:1.3;">'+parts.join(' · ')+'</div>'
+    /* TROIS LIGNES (04/09, retour d'Antoine : « le texte est coupé »). Le
+       sous-titre reunit le type de pari, l'adversaire, la cote et la competition
+       — sur un telephone, « Défaite · vs Seattle Mariners · @1.45 · MLB » ne
+       tient pas en deux lignes, et c'est la competition qui sautait. Trois
+       lignes suffisent dans tous les cas observes ; au-dela on tronque encore,
+       mais le detail complet reste accessible en ouvrant le pari. */
+    +'<div style="position:relative;font-size:10.5px;font-weight:600;color:var(--t2);overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;word-break:break-word;line-height:1.3;">'+parts.join(' · ')+'</div>'
     +'</div>'
     +'<div style="position:relative;text-align:right;flex-shrink:0;">'
     +'<div style="font-size:12px;font-weight:800;">'+resIcon+'</div>'
@@ -39159,7 +39259,10 @@ function _g45NrlCleCache(annee) {
      conservee SANS limite de duree, ces donnees incompletes seraient restees
      affichees indefiniment. Changer la cle force une reconstruction propre,
      une seule fois. */
-  return 'g45nrlcal3_' + _g45NrlCtx.sport + '_' + _g45NrlCtx.ligue + '_' + annee;
+  /* Cle changee le 04/09 : les caches « g45nrlcal3_ » ont pu se figer sur une
+     saison declaree terminee a tort (voir le garde-fou plus bas). Ils resteraient
+     sinon en place indefiniment, puisque c'est precisement leur defaut. */
+  return 'g45nrlcal4_' + _g45NrlCtx.sport + '_' + _g45NrlCtx.ligue + '_' + annee;
 }
 
 var _g45NrlChargerOrig = (typeof g45NrlCharger === 'function') ? g45NrlCharger : null;
@@ -39180,7 +39283,27 @@ window.g45NrlCharger = async function (annee, force) {
         var joues = d.filter(function (m) { return m.joue; });
         if (joues.length && !joues.some(function (m) { return (m.sDom || m.sExt); })) d = [];
         if (d.length) {
-          var tousJoues = d.every(function (m) { return m.joue; });
+          /* ═══ CORRECTION DU 04/09 ═══
+             Retour d'Antoine : « seulement 6 matchs récupérés, et le match de la
+             3e journée n'apparaît pas », avec le message « saison terminée » en
+             plein mois de septembre.
+             `tousJoues` etait une tautologie : il verifiait que tous les matchs
+             DEJA EN CACHE sont joues, ce qui est evidemment vrai d'un cache
+             constitue le 28 aout, alors que seules deux journees avaient eu lieu.
+             Le cache se declarait donc definitif, et comme une saison terminee
+             est conservee SANS limite de duree, il ne se rechargeait plus jamais.
+             Une saison ne peut pas etre reputee finie sur la foi de son propre
+             cache. On exige donc une preuve exterieure : le dernier match connu
+             doit remonter a plus de 30 jours. Tant que ce n'est pas le cas, la
+             fraicheur de 6 h s'applique — le cache sert encore, mais il expire. */
+          var dernier = 0;
+          d.forEach(function (m) {
+            var t = new Date(m.date || m.d || 0).getTime();
+            if (t && t > dernier) dernier = t;
+          });
+          var tousJoues = d.every(function (m) { return m.joue; })
+                          && dernier > 0
+                          && (Date.now() - dernier) > 30 * 86400000;
           var frais = (Date.now() - (o.t || 0)) < 6 * 3600000;
           if (tousJoues || frais) {
             _g45NrlMatchs = d;
@@ -44289,6 +44412,9 @@ function _g45BandMeme(a, b) {
   } catch (e) { return false; }
 }
 
+/* `jour` accepte desormais soit une date (20260904), soit une PLAGE
+   (20260830-20260912) : ESPN comprend les deux, et la plage permet de recuperer
+   toute une journee de championnat en une seule requete. */
 async function _g45BandScores(chemin, jour) {
   var cle = chemin + ':' + jour;
   var c = _g45BandCache[cle];
@@ -44390,22 +44516,21 @@ function g45BandSource(v) {
 }
 window.g45BandSource = g45BandSource;
 
-/* Les championnats proposes sont ceux ou l'utilisateur a des equipes : ils
-   n'ajoutent aucune requete, puisqu'ils sont deja interroges. */
-function _g45BandChampionnats() {
-  var out = [];
-  try {
-    var vus = {};
-    (state.u || []).forEach(function (u) {
-      if (!u || !u.n) return;
-      var ch = _g45BandChemin(u);
-      if (!ch || vus[ch]) return;
-      vus[ch] = 1;
-      out.push({ ch: ch, nom: _g45BandNomChampionnat(ch) });
-    });
-  } catch (e) {}
-  return out;
-}
+/* LISTE FIXE (03/09, demande d'Antoine). Elle etait auparavant deduite des
+   equipes suivies : on ne pouvait donc pas consulter la Liga sans y avoir un
+   club, alors que c'est precisement l'interet — suivre une journee entiere.
+   Les sept championnats sont ceux qu'il a nommes. Un seul est interroge a la
+   fois, celui qui est affiche : le cout reste d'une requete. */
+var _G45_BAND_LIGUES = [
+  { ch: 'soccer/fra.1',           nom: 'Ligue 1' },
+  { ch: 'soccer/esp.1',           nom: 'Liga' },
+  { ch: 'soccer/ita.1',           nom: 'Serie A' },
+  { ch: 'soccer/eng.1',           nom: 'Premier League' },
+  { ch: 'soccer/ger.1',           nom: 'Bundesliga' },
+  { ch: 'soccer/uefa.champions',  nom: 'Ligue des champions' },
+  { ch: 'soccer/uefa.europa',     nom: 'Ligue Europa' }
+];
+function _g45BandChampionnats() { return _G45_BAND_LIGUES; }
 
 /* Nom lisible d'un chemin ESPN, pioche dans la table des competitions — seule
    source de libelles francais de l'appli. */
@@ -44439,153 +44564,44 @@ async function g45BandeauMaj() {
   var track = box.querySelector('.g45-band-track');
   if (!track) return;
 
-  var us = [];
-  try { us = (state.u || []).filter(function (u) { return u && u.n; }); } catch (e) { return; }
-  if (!us.length) { box.style.display = 'none'; return; }
-
-  /* Une requete par CHEMIN, pas par equipe. */
-  var parChemin = {};
-  us.forEach(function (u) {
-    var ch = _g45BandChemin(u);
-    if (!ch) return;
-    (parChemin[ch] = parChemin[ch] || []).push(u.n);
-  });
-  var chemins = Object.keys(parChemin);
-  if (!chemins.length) { box.style.display = 'none'; return; }
-
   var src = _g45BandSource();
-  /* Le championnat choisi peut ne plus figurer parmi les equipes suivies — une
-     equipe supprimee, par exemple. On revient alors a « Mes equipes » plutot que
-     d'interroger un championnat dont plus personne ne fait partie. */
-  if (src !== 'moi' && chemins.indexOf(src) < 0) src = 'moi';
-
-  var auj = _g45BandJour(new Date());
-  var hier = _g45BandJour(new Date(Date.now() - 86400000));
-  var demain = _g45BandJour(new Date(Date.now() + 86400000));
-
   var trouves = [], enCours = false;
-  var passe = async function (jour) {
-    var out = [];
-    /* DEDUPLICATION PAR IDENTIFIANT (corrige le 03/09 : « Athletics-Mariners »
-       apparaissait trois fois). Antoine suit les deux equipes d'un meme match,
-       et la boucle poussait une entree par equipe reconnue. Le test portait sur
-       `out.indexOf(ev)` alors qu'`out` contient des objets `{ev, n}` — il ne
-       trouvait donc jamais rien. On indexe desormais par `ev.id`, et la premiere
-       equipe reconnue est celle qui sera mise en avant dans la tuile. */
-    var vus = {};
-    var lots = await Promise.all(chemins.map(function (ch) { return _g45BandScores(ch, jour); }));
-    lots.forEach(function (evs, i) {
-      var noms = parChemin[chemins[i]];
-      (evs || []).forEach(function (ev) {
-        var id = ev.id || ev.uid || '';
-        if (vus[id]) return;
-        var comp = (ev.competitions && ev.competitions[0]) || {};
-        var trouve = null;
-        (comp.competitors || []).forEach(function (c) {
-          if (trouve) return;
-          var dn = (c.team && (c.team.displayName || c.team.shortDisplayName)) || '';
-          noms.forEach(function (n) { if (!trouve && _g45BandMeme(dn, n)) trouve = n; });
-        });
-        if (trouve) { vus[id] = 1; out.push({ ev: ev, n: trouve, moi: true }); }
-        /* Le championnat retenu passe en entier ; les autres n'apportent que les
-           equipes suivies, qui restent donc visibles quel que soit le
-           championnat affiche — c'est l'information qu'on ne veut jamais rater. */
-        else if (src !== 'moi' && chemins[i] === src) { vus[id] = 1; out.push({ ev: ev, n: '', moi: false }); }
-      });
-    });
-    return out;
-  };
 
-  /* AUJOURD'HUI, PUIS HIER, PUIS DEMAIN (03/09).
-     Un bandeau de scores parle d'abord du present : tant qu'un match du jour
-     existe, rien d'autre ne s'affiche. Sans match aujourd'hui on regarde hier —
-     c'est le matin qu'on ouvre l'appli pour voir ce qui s'est passe. Et si les
-     deux sont vides, on annonce le prochain rendez-vous plutot que de masquer le
-     bandeau : Antoine suit une poignee d'equipes qui ne jouent pas tous les
-     jours, la bande serait absente la plupart du temps.
-     L'ordre compte : jamais de futur quand il y a du present. */
-  /* AUJOURD'HUI *ET* HIER (revu le 03/09 : « il n'affiche que les matchs a
-     venir, pas les resultats »). La regle precedente etait exclusive — des qu'un
-     match du jour existait, hier disparaissait, resultats compris. Les deux
-     interessent : ce qui vient et ce qui s'est joue. Plutot qu'un filtre a
-     manipuler sur un bandeau fait pour se lire d'un coup d'oeil, on fusionne.
-     Demain ne sert que de repli, sinon on annoncerait du futur en masquant du
-     present. */
-  var aj = await passe(auj);
-  var hr = await passe(hier);
-  trouves = aj.concat(hr.filter(function (o) {
-    return !aj.some(function (x) { return (x.ev.id || '') === (o.ev.id || ''); });
-  }));
-  if (!trouves.length) trouves = await passe(demain);
-  if (!trouves.length) { box.style.display = 'none'; return; }
+  if (src === 'moi') {
+    trouves = await _g45BandMesEquipes();
+  } else {
+    trouves = await _g45BandJournee(src);
+  }
 
-  /* En cours d'abord, puis a venir, puis termines : l'ordre d'interet. */
-  var rang = function (o) {
-    var st = (o.ev.status && o.ev.status.type) || {};
-    return st.state === 'in' ? 0 : (st.state === 'pre' ? 1 : 2);
-  };
-  trouves.sort(function (a, b) {
-    /* Les matchs des equipes suivies passent devant, meme termines : noyes au
-       milieu de dix rencontres de Ligue 1, ils seraient manques. */
-    if (!!a.moi !== !!b.moi) return a.moi ? -1 : 1;
-    var d = rang(a) - rang(b);
-    if (d) return d;
-    var ta = new Date(a.ev.date).getTime() || 0, tb = new Date(b.ev.date).getTime() || 0;
-    /* Les matchs termines du plus recent au plus ancien ; les autres dans
-       l'ordre chronologique. */
-    return rang(a) === 2 ? (tb - ta) : (ta - tb);
-  });
-  /* Plafond plus haut pour une journee entiere, mais un plafond quand meme :
-     au-dela, le tour complet dure plusieurs minutes. */
-  var plafond = (src === 'moi') ? 12 : 22;
-  if (trouves.length > plafond) trouves = trouves.slice(0, plafond);
+  if (!trouves.length) {
+    /* Le selecteur reste visible meme sans match : sinon, un championnat en
+       treve piegerait l'utilisateur sur un bandeau vide sans moyen d'en sortir. */
+    _g45BandPoseSelecteur(box);
+    track.innerHTML = '<span class="g45-mt" style="cursor:default;">'
+      + '<span class="g45-mt-st">Aucun match à afficher</span></span>';
+    box.style.display = '';
+    return;
+  }
+
   trouves.forEach(function (o) {
     var st = (o.ev.status && o.ev.status.type) || {};
     if (st.state === 'in') enCours = true;
   });
 
   var html = trouves.map(function (o) { return _g45BandTuile(o.ev, o.n, o.moi); }).join('');
-  /* Le contenu est double pour que le defilement boucle sans a-coup : la
-     translation de -50 % ramene exactement au debut de la copie. */
   track.innerHTML = html + html;
-  /* Le selecteur est place HORS de la piste : dans le flux, il defilerait avec
-     les matchs et deviendrait impossible a atteindre. */
-  try {
-    var sel = box.querySelector('.g45-band-src-wrap');
-    if (!sel) {
-      sel = document.createElement('div');
-      sel.className = 'g45-band-src-wrap';
-      box.insertBefore(sel, box.firstChild);
-    }
-    sel.innerHTML = _g45BandSelecteur();
-  } catch (e) {}
+  _g45BandPoseSelecteur(box);
   box.style.display = '';
 
-  /* La duree suit le nombre de tuiles, sinon deux matchs defileraient aussi vite
-     que douze — soit illisible, soit interminable. */
-  /* LARGEUR DE PISTE (03/09 : « il demarre au milieu et pas totalement a
-     droite »). Le defilement translate la piste de -50 %, ce qui suppose deux
-     copies remplissant CHACUNE plus que la largeur visible. Avec trois matchs,
-     une copie est plus etroite que l'ecran : la boucle repartait alors n'importe
-     ou. On repete donc le contenu jusqu'a depasser la largeur, et on met
-     l'animation en pause si tout tient deja — faire glisser ce qui est
-     entierement lisible n'apporte rien. */
+  /* LARGEUR DE PISTE. Le defilement translate la piste de -50 % : il suppose
+     donc DEUX copies, chacune plus large que le bandeau. Avec trois matchs, une
+     copie est plus etroite que l'ecran et la boucle repart n'importe ou — d'ou
+     l'impression de demarrer au milieu. On repete les tuiles A L'INTERIEUR de la
+     copie jusqu'a depasser la largeur, puis on double le tout. */
   try {
     var large = box.clientWidth || 0;
     var uneCopie = track.scrollWidth / 2;
     if (uneCopie > 0 && large > 0) {
-      /* CORRECTION DU 03/09 — « ça commence au milieu, la moitié droite est
-         vide ».
-         L'animation translate la piste de -50 % : elle suppose donc que la
-         piste contienne EXACTEMENT DEUX copies, et que CHACUNE soit plus large
-         que l'ecran. Ma version precedente ajoutait des copies (4, 6, 8...) en
-         laissant le -50 % en dur : la translation ne parcourait plus que la
-         premiere moitie de la piste, d'ou une bande a moitie remplie et un saut
-         a chaque tour.
-         La regle est donc : on ne depasse JAMAIS deux copies. Pour qu'une copie
-         couvre l'ecran, on repete les TUILES a l'interieur de la copie autant de
-         fois qu'il faut, puis on double le tout. Une moitie de piste est alors
-         toujours plus large que le bandeau, et la boucle se referme sans trou. */
       var parCopie = 1;
       while (uneCopie * parCopie < large * 1.15 && parCopie < 12) parCopie++;
       if (parCopie > 1) {
@@ -44593,14 +44609,10 @@ async function g45BandeauMaj() {
         for (var i = 0; i < parCopie; i++) copie += html;
         track.innerHTML = copie + copie;
       }
-      /* Rien a faire glisser si tout tient deja a l'ecran... sauf que ce cas ne
-         se produit plus : on vient justement de garantir le contraire. La pause
-         ne sert donc qu'au repli ou la mesure echoue. */
       track.style.animationPlayState = (track.scrollWidth / 2 <= large) ? 'paused' : '';
     }
-    /* La duree suit la largeur d'UNE copie — celle reellement parcourue par la
-       translation — et non la piste entiere, sinon doubler le contenu diviserait
-       la vitesse par deux. */
+    /* La duree suit la largeur d'UNE copie — celle reellement parcourue — sinon
+       doubler le contenu diviserait la vitesse par deux. */
     track.style.animationDuration = Math.max(18, Math.round((track.scrollWidth / 2) / 90)) + 's';
   } catch (e) {}
 
@@ -44612,6 +44624,181 @@ async function g45BandeauMaj() {
     }, _G45_BAND_REFRESH);
   }
 }
+
+function _g45BandPoseSelecteur(box) {
+  /* Le selecteur vit HORS de la piste : dans le flux, il defilerait avec les
+     matchs et deviendrait impossible a atteindre. */
+  try {
+    var sel = box.querySelector('.g45-band-src-wrap');
+    if (!sel) {
+      sel = document.createElement('div');
+      sel.className = 'g45-band-src-wrap';
+      box.insertBefore(sel, box.firstChild);
+    }
+    sel.innerHTML = _g45BandSelecteur();
+  } catch (e) {}
+}
+
+/* Ordre commun aux deux modes : ce qui se joue, puis ce qui vient de se jouer,
+   puis ce qui arrive. C'est l'ordre demande par Antoine — un resultat frais
+   interesse plus qu'un match dans trois jours. */
+function _g45BandRang(o) {
+  var st = (o.ev.status && o.ev.status.type) || {};
+  return st.state === 'in' ? 0 : (st.state === 'post' ? 1 : 2);
+}
+function _g45BandTrier(l) {
+  return l.sort(function (a, b) {
+    var d = _g45BandRang(a) - _g45BandRang(b);
+    if (d) return d;
+    var ta = new Date(a.ev.date).getTime() || 0, tb = new Date(b.ev.date).getTime() || 0;
+    /* Resultats du plus recent au plus ancien ; matchs a venir du plus proche
+       au plus lointain. */
+    return _g45BandRang(a) === 1 ? (tb - ta) : (ta - tb);
+  });
+}
+
+/* ─── MODE « MES EQUIPES » ────────────────────────────────────────────────
+   Uniquement les equipes suivies, tous championnats confondus, sans doublon.
+   Fenetre : hier, aujourd'hui, demain. */
+async function _g45BandMesEquipes() {
+  var us = [];
+  try { us = (state.u || []).filter(function (u) { return u && u.n; }); } catch (e) { return []; }
+  if (!us.length) return [];
+
+  var parChemin = {};
+  us.forEach(function (u) {
+    var ch = _g45BandChemin(u);
+    if (!ch) return;
+    (parChemin[ch] = parChemin[ch] || []).push(u.n);
+  });
+  var chemins = Object.keys(parChemin);
+  if (!chemins.length) return [];
+
+  var jours = [
+    _g45BandJour(new Date(Date.now() - 86400000)),
+    _g45BandJour(new Date()),
+    _g45BandJour(new Date(Date.now() + 86400000))
+  ];
+
+  var vus = {}, out = [];
+  for (var d = 0; d < jours.length; d++) {
+    var lots = await Promise.all(chemins.map(function (ch) {
+      return _g45BandScores(ch, jours[d]);
+    }));
+    lots.forEach(function (evs, i) {
+      var noms = parChemin[chemins[i]];
+      (evs || []).forEach(function (ev) {
+        var id = ev.id || ev.uid || '';
+        /* Deduplication par identifiant : quand deux equipes suivies s'affrontent,
+           le match ne doit apparaitre qu'une fois. La fenetre de trois jours peut
+           aussi renvoyer deux fois la meme rencontre selon le fuseau. */
+        if (!id || vus[id]) return;
+        var comp = (ev.competitions && ev.competitions[0]) || {};
+        var trouve = null;
+        (comp.competitors || []).forEach(function (c) {
+          if (trouve) return;
+          var dn = (c.team && (c.team.displayName || c.team.shortDisplayName)) || '';
+          noms.forEach(function (n) { if (!trouve && _g45BandMeme(dn, n)) trouve = n; });
+        });
+        if (trouve) { vus[id] = 1; out.push({ ev: ev, n: trouve, moi: true }); }
+      });
+    });
+  }
+  _g45BandTrier(out);
+  return out.slice(0, 14);
+}
+
+/* ─── MODE « CHAMPIONNAT » ────────────────────────────────────────────────
+   La JOURNEE en cours, et rien d'autre : aucun match d'un autre championnat,
+   aucune equipe suivie venue d'ailleurs.
+
+   ESPN ne fournit PAS de numero de journee dans son tableau de scores. On la
+   deduit donc : une seule requete couvre une fenetre de treize jours, puis on
+   decoupe la liste la ou deux rencontres consecutives sont separees de trois
+   jours ou plus. Pour un championnat national, ou une journee s'etale du
+   vendredi au dimanche et la suivante arrive une semaine apres, le decoupage
+   est net. Sur une semaine de Coupe d'Europe imbriquee dans le calendrier, il
+   l'est moins — c'est la limite assumee de la methode.
+
+   REGLE DE BASCULE demandee par Antoine : la journee affichee reste en place
+   jusqu'a 24 h avant le premier match de la suivante. On voit donc les
+   resultats du week-end toute la semaine, et on pivote la veille de la reprise. */
+var _G45_BAND_TROU = 3 * 86400000;
+
+async function _g45BandJournee(chemin) {
+  var a = _g45BandJour(new Date(Date.now() - 5 * 86400000));
+  var b = _g45BandJour(new Date(Date.now() + 8 * 86400000));
+  var evs = await _g45BandScores(chemin, a + '-' + b);
+  if (!evs || !evs.length) return [];
+
+  /* Deduplication avant tout traitement : une plage de dates peut renvoyer deux
+     fois la meme rencontre. */
+  var vus = {}, liste = [];
+  evs.forEach(function (ev) {
+    var id = ev.id || ev.uid || '';
+    if (!id || vus[id]) return;
+    vus[id] = 1;
+    liste.push(ev);
+  });
+  liste.sort(function (x, y) {
+    return (new Date(x.date).getTime() || 0) - (new Date(y.date).getTime() || 0);
+  });
+
+  /* Decoupage en journees. */
+  var journees = [], cour = [];
+  liste.forEach(function (ev) {
+    var t = new Date(ev.date).getTime() || 0;
+    if (cour.length) {
+      var dernier = new Date(cour[cour.length - 1].date).getTime() || 0;
+      if (t - dernier >= _G45_BAND_TROU) { journees.push(cour); cour = []; }
+    }
+    cour.push(ev);
+  });
+  if (cour.length) journees.push(cour);
+  if (!journees.length) return [];
+
+  var maintenant = Date.now();
+  var debut = function (j) { return new Date(j[0].date).getTime() || 0; };
+  var fin = function (j) { return new Date(j[j.length - 1].date).getTime() || 0; };
+
+  /* On retient la derniere journee deja commencee, sauf si la suivante demarre
+     dans moins de 24 h — auquel cas on bascule dessus. */
+  var choisie = journees[0];
+  for (var i = 0; i < journees.length; i++) {
+    if (debut(journees[i]) <= maintenant) choisie = journees[i];
+  }
+  var idx = journees.indexOf(choisie);
+  var suivante = journees[idx + 1];
+  if (suivante && (debut(suivante) - maintenant) <= 86400000) choisie = suivante;
+  /* Aucune journee commencee (debut de saison, longue treve) : on annonce la
+     prochaine plutot que de ne rien montrer. */
+  if (debut(choisie) > maintenant && idx < 0) choisie = journees[0];
+
+  var out = choisie.map(function (ev) {
+    /* Une equipe suivie dans la journee garde son filet or et reste cliquable ;
+       les autres informent sans mener nulle part. */
+    var mien = _g45BandMonEquipe(ev);
+    return { ev: ev, n: mien, moi: !!mien };
+  });
+  _g45BandTrier(out);
+  return out.slice(0, 24);
+}
+
+/* Nom de l'equipe suivie impliquee dans un match, s'il y en a une. */
+function _g45BandMonEquipe(ev) {
+  try {
+    var comp = (ev.competitions && ev.competitions[0]) || {};
+    var noms = (state.u || []).map(function (u) { return u && u.n; }).filter(Boolean);
+    var trouve = '';
+    (comp.competitors || []).forEach(function (c) {
+      if (trouve) return;
+      var dn = (c.team && (c.team.displayName || c.team.shortDisplayName)) || '';
+      noms.forEach(function (n) { if (!trouve && _g45BandMeme(dn, n)) trouve = n; });
+    });
+    return trouve;
+  } catch (e) { return ''; }
+}
+
 window.g45BandeauMaj = g45BandeauMaj;
 
 /* Relance en revenant sur l'onglet : si la boucle s'est arretee parce que la
@@ -44622,3 +44809,24 @@ document.addEventListener('visibilitychange', function () {
   }
 });
 setTimeout(function () { try { g45BandeauMaj(); } catch (e) {} }, 1200);
+
+/* Etat du champ « Equipe jouee » du Cockpit selon le type de l'entree du mur. */
+function _g45MajEquipeJouee(u) {
+  var el = document.getElementById('c-equipe');
+  if (!el) return;
+  var estCompet = !!(u && u.type === 'competition');
+  if (estCompet) {
+    el.readOnly = false;
+    el.style.opacity = '1';
+    el.placeholder = 'Ex : Bulldogs';
+    /* On ne vide pas un nom deja saisi : l'utilisateur enchaine souvent
+       plusieurs paris sur la meme equipe d'une competition. */
+    if (el.value === (u && u.n)) el.value = '';
+  } else {
+    el.value = (u && u.n) || '';
+    el.readOnly = true;
+    el.style.opacity = '.6';
+    el.placeholder = '';
+  }
+}
+window._g45MajEquipeJouee = _g45MajEquipeJouee;
