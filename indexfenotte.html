@@ -10,8 +10,8 @@
      chemin est volontairement RELATIF : il se resout en `/gones45/favicon.ico`
      sur les Pages de projet et en `/favicon.ico` sur bet45.fr, sans avoir a
      maintenir deux valeurs differentes. -->
-<link rel="icon" href="favicon.ico?v=20260904f" sizes="any">
-<link rel="apple-touch-icon" href="apple-touch-icon.png?v=20260904f">
+<link rel="icon" href="favicon.ico?v=20260904i" sizes="any">
+<link rel="apple-touch-icon" href="apple-touch-icon.png?v=20260904i">
   <title>BET45 — Dashboard Sport & Tracking</title>
 <meta name="description" content="Accède à tes statistiques sportives, suivis de matchs et outils d'analyse en direct sur BET45.">
   <script>
@@ -51,7 +51,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=Barlow+Condensed:wght@500;600;700&display=swap">
-<link rel="stylesheet" href="style.css?v=20260904f">
+<link rel="stylesheet" href="style.css?v=20260904i">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
@@ -733,6 +733,28 @@
     </div>
     <!-- VALUE BET -->
     <div id="calc-vb" style="display:none">
+      <!-- CONVERTISSEUR DE COTES (04/09). Antoine lit des cotes ESPN au format
+           FRACTIONNAIRE (Bet365 : « 10/11 » pour un buteur) ou AMERICAIN
+           (DraftKings : « -290 »), alors qu'il joue en decimal. Sans conversion,
+           impossible de comparer une cote trouvee la-bas a celle de son
+           bookmaker. Les trois formats se deduisent les uns des autres, donc
+           aucune donnee externe n'est requise.
+           Place dans « Value » plutot que dans un onglet a part : c'est le seul
+           ecran ou l'on saisit deja une cote ET une probabilite, et la
+           conversion alimente directement les deux champs ci-dessous. -->
+      <div class="mm-fam" style="margin-top:0;"><span>Convertir une cote</span></div>
+      <div class="g2" style="gap:8px;margin-bottom:4px">
+        <div class="fg"><label class="fl">Décimale</label><input type="text" inputmode="decimal" id="cv-dec" class="fi" placeholder="2.10" oninput="g45Conv('dec')"></div>
+        <div class="fg"><label class="fl">Fractionnaire</label><input type="text" id="cv-frac" class="fi" placeholder="11/10" oninput="g45Conv('frac')"></div>
+        <div class="fg"><label class="fl">Américaine</label><input type="text" inputmode="numeric" id="cv-us" class="fi" placeholder="+110" oninput="g45Conv('us')"></div>
+        <div class="fg"><label class="fl">Probabilité implicite</label><input type="text" id="cv-prob" class="fi" placeholder="47,6 %" oninput="g45Conv('prob')"></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+        <button class="ba" onclick="g45ConvVersValue()">Utiliser cette cote ci-dessous</button>
+        <span style="font-size:11px;color:var(--t3);line-height:1.45;">La probabilité affichée est celle du bookmaker, marge comprise — elle surestime toujours un peu la vraie.</span>
+      </div>
+
+      <div class="mm-fam"><span>Évaluer le pari</span></div>
       <div class="g2" style="gap:8px;margin-bottom:8px">
         <div class="fg"><label class="fl">Proba estimée (%)</label><input type="number" id="vb-prob" class="fi" value="55" oninput="calcVb()"></div>
         <div class="fg"><label class="fl">Cote proposée</label><input type="number" id="vb-cote" class="fi" value="2.10" step="0.01" oninput="calcVb()"></div>
@@ -1343,7 +1365,7 @@
 <!-- FENOTTE45 : app.js est injecte par auth-guard.js APRES authentification.
      Le ?v= doit changer a CHAQUE deploiement. -->
 <script src="social.js?v=20260826n"></script>
-<script type="module" src="auth-guard.js?v=20260904f"></script>
+<script type="module" src="auth-guard.js?v=20260904i"></script>
 
 
 
