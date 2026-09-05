@@ -687,7 +687,16 @@ input[type="date"],input[type="time"]{color-scheme:dark;}
   background:rgba(9,13,22,.82);border-bottom:1px solid var(--b1);
   backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);}
 .g45-band::-webkit-scrollbar{display:none;}
-.g45-band-track{display:flex;}
+/* LARGEUR = CONTENU (corrige le 04/09 : « ça coupe toujours après Inter-Naples »).
+   `.g45-band` est en `display:flex`. Sans ces deux declarations, la piste est un
+   element flex qui se retrecit a l'espace disponible : sa BOITE fait la largeur
+   de l'ecran, meme si son contenu fait trois fois plus.
+   Or `translateX(-50%)` se calcule sur la largeur de l'ELEMENT, pas sur celle du
+   contenu. Le defilement ne parcourait donc qu'une demi-largeur d'ecran avant de
+   reboucler, et tout ce qui suivait n'etait jamais atteint.
+   `width:max-content` donne a la piste la largeur reelle de ses tuiles, et
+   `flex:0 0 auto` empeche le conteneur de la comprimer. */
+.g45-band-track{display:flex;width:max-content;flex:0 0 auto;}
 .g45-mt{flex:none;display:flex;align-items:center;gap:9px;padding:7px 13px;
   border-right:1px solid rgba(255,255,255,.07);cursor:pointer;white-space:nowrap;
   background:none;border-top:0;border-left:0;border-bottom:0;color:var(--t1);font:inherit;text-align:left;}
@@ -736,7 +745,8 @@ input[type="date"],input[type="time"]{color-scheme:dark;}
 .g45-band-src{background:none;border:0;color:var(--t2);font:inherit;font-size:11.5px;
   padding:4px 2px;cursor:pointer;min-width:96px;max-width:150px;}
 .g45-band-src option{background:var(--bg2);color:var(--t1);}
-.g45-band>.g45-band-track{min-width:0;}
+/* `min-width:0` retire le 04/09 : il autorisait la compression qui faussait la
+   translation. Le debordement est deja gere par `overflow` sur `.g45-band`. */
 
 /* Equipe suivie : filet or et voile leger. Le FOND de la tuile ne pouvait pas
    servir a ca — le vert et le rouge y disent deja gagne/perdu, et le rouge

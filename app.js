@@ -1550,9 +1550,39 @@ function buildSbRows(light){
         retour=s1*c1;
       }
     }
+    /* ═══ MISE 1 IMPOSEE (04/09) ═══
+       Quand le premier bookmaker plafonne la mise, on ne repartit plus un total :
+       on part de cette mise et on calcule les autres pour EGALISER les retours.
+       s1·c1 = sj·cj  donc  sj = s1·c1/cj.
+       La mise totale devient alors la somme obtenue, et non plus une consigne —
+       elle est reaffichee dans son champ pour que le chiffre reste coherent.
+       Compatible avec « Gagner ou Rembourse » : la promo est calculee d'abord,
+       et on remet simplement les mises a l'echelle pour que la premiere tombe
+       sur le montant impose. Le rapport entre les mises est conserve, donc le
+       profit garanti reste garanti. */
+    var fix1=parseFloat((($i('sb-fix1')&&$i('sb-fix1').value)||'').toString().replace(',','.'));
+    var impose=(fix1>0);
+
     if(!mises.length){
-      mises=sbRows.map(function(r){ return tot/impl*(1/(r.c||1)); });
-      retour=tot/impl;
+      if(impose){
+        var c1f=sbRows[0].c||1;
+        mises=sbRows.map(function(r,i){ return i===0 ? fix1 : fix1*c1f/(r.c||1); });
+        retour=fix1*c1f;
+      } else {
+        mises=sbRows.map(function(r){ return tot/impl*(1/(r.c||1)); });
+        retour=tot/impl;
+      }
+    } else if(impose && mises[0]>0){
+      /* Cas « Gagner ou Rembourse » : on met la repartition a l'echelle. */
+      var k=fix1/mises[0];
+      mises=mises.map(function(m){ return m*k; });
+      retour=retour*k;
+    }
+
+    if(impose){
+      tot=mises.reduce(function(a,m){ return a+m; },0);
+      var ti=$i('sb-tot');
+      if(ti && document.activeElement!==ti) ti.value=tot.toFixed(2);
     }
     profit=retour-tot;
     sbRows.forEach(function(r,i){
@@ -5217,7 +5247,35 @@ function searchAdv(q,targetId,resId){
   var db=(ADV_DB[sport]||ADV_DB['⚽'])
     .concat(state.a.map(function(h){return h.target||'';}).filter(Boolean))
     .concat(_g45AdversairesConnus());
-  var seen={};var uniq=db.filter(function(v){return v&&!seen[v]&&(seen[v]=1);});
+
+  /* ═══ NETTOYAGE DES SUGGESTIONS (04/09) ═══
+     Retour d'Antoine : « quand je choisis une équipe, Paris vs Monaco… c'est un
+     peu casse-pied ».
+     La liste agrege les adversaires des paris passes. Or ce champ a parfois
+     recu un INTITULE DE MATCH complet — « Paris Saint-Germain vs AS Monaco » —
+     qui revenait ensuite comme s'il s'agissait d'une equipe.
+     Plutot que de jeter ces entrees, on les COUPE : un intitule contient deux
+     noms d'equipe parfaitement utilisables. « A vs B » fournit donc A et B.
+     Et la deduplication comparait les chaines a l'identique : un espace en trop
+     ou une casse differente creait un doublon. Elle porte desormais sur une
+     forme normalisee, tout en conservant l'ecriture d'origine pour l'affichage. */
+  var eclate = [];
+  db.forEach(function(v){
+    if(!v) return;
+    /* Le tiret simple est inclus, mais SEULEMENT entoure d'espaces : sans cette
+       precaution, « Paris Saint-Germain » et « Saint-Étienne » seraient coupes
+       en deux. « Lyon - Auxerre » l'est, eux non. */
+    var parts = String(v).split(/\s+(?:vs?\.?|v\.|contre|@|—|–|-)\s+/i);
+    if(parts.length > 1) parts.forEach(function(x){ x=x.trim(); if(x) eclate.push(x); });
+    else eclate.push(String(v).trim());
+  });
+  var seen={};
+  var uniq=eclate.filter(function(v){
+    if(!v) return false;
+    var k=v.toLowerCase().replace(/\s+/g,' ').trim();
+    if(seen[k]) return false;
+    seen[k]=1; return true;
+  });
   var ql=q.toLowerCase();
   var filtered=uniq.filter(function(v){return v.toLowerCase().includes(ql);}).slice(0,8);
   if(!filtered.length){res.style.display='none';return;}
@@ -9176,9 +9234,39 @@ function buildSbRows(light){
         retour=s1*c1;
       }
     }
+    /* ═══ MISE 1 IMPOSEE (04/09) ═══
+       Quand le premier bookmaker plafonne la mise, on ne repartit plus un total :
+       on part de cette mise et on calcule les autres pour EGALISER les retours.
+       s1·c1 = sj·cj  donc  sj = s1·c1/cj.
+       La mise totale devient alors la somme obtenue, et non plus une consigne —
+       elle est reaffichee dans son champ pour que le chiffre reste coherent.
+       Compatible avec « Gagner ou Rembourse » : la promo est calculee d'abord,
+       et on remet simplement les mises a l'echelle pour que la premiere tombe
+       sur le montant impose. Le rapport entre les mises est conserve, donc le
+       profit garanti reste garanti. */
+    var fix1=parseFloat((($i('sb-fix1')&&$i('sb-fix1').value)||'').toString().replace(',','.'));
+    var impose=(fix1>0);
+
     if(!mises.length){
-      mises=sbRows.map(function(r){ return tot/impl*(1/(r.c||1)); });
-      retour=tot/impl;
+      if(impose){
+        var c1f=sbRows[0].c||1;
+        mises=sbRows.map(function(r,i){ return i===0 ? fix1 : fix1*c1f/(r.c||1); });
+        retour=fix1*c1f;
+      } else {
+        mises=sbRows.map(function(r){ return tot/impl*(1/(r.c||1)); });
+        retour=tot/impl;
+      }
+    } else if(impose && mises[0]>0){
+      /* Cas « Gagner ou Rembourse » : on met la repartition a l'echelle. */
+      var k=fix1/mises[0];
+      mises=mises.map(function(m){ return m*k; });
+      retour=retour*k;
+    }
+
+    if(impose){
+      tot=mises.reduce(function(a,m){ return a+m; },0);
+      var ti=$i('sb-tot');
+      if(ti && document.activeElement!==ti) ti.value=tot.toFixed(2);
     }
     profit=retour-tot;
     sbRows.forEach(function(r,i){
@@ -12519,7 +12607,35 @@ function searchAdv(q,targetId,resId){
   var db=(ADV_DB[sport]||ADV_DB['⚽'])
     .concat(state.a.map(function(h){return h.target||'';}).filter(Boolean))
     .concat(_g45AdversairesConnus());
-  var seen={};var uniq=db.filter(function(v){return v&&!seen[v]&&(seen[v]=1);});
+
+  /* ═══ NETTOYAGE DES SUGGESTIONS (04/09) ═══
+     Retour d'Antoine : « quand je choisis une équipe, Paris vs Monaco… c'est un
+     peu casse-pied ».
+     La liste agrege les adversaires des paris passes. Or ce champ a parfois
+     recu un INTITULE DE MATCH complet — « Paris Saint-Germain vs AS Monaco » —
+     qui revenait ensuite comme s'il s'agissait d'une equipe.
+     Plutot que de jeter ces entrees, on les COUPE : un intitule contient deux
+     noms d'equipe parfaitement utilisables. « A vs B » fournit donc A et B.
+     Et la deduplication comparait les chaines a l'identique : un espace en trop
+     ou une casse differente creait un doublon. Elle porte desormais sur une
+     forme normalisee, tout en conservant l'ecriture d'origine pour l'affichage. */
+  var eclate = [];
+  db.forEach(function(v){
+    if(!v) return;
+    /* Le tiret simple est inclus, mais SEULEMENT entoure d'espaces : sans cette
+       precaution, « Paris Saint-Germain » et « Saint-Étienne » seraient coupes
+       en deux. « Lyon - Auxerre » l'est, eux non. */
+    var parts = String(v).split(/\s+(?:vs?\.?|v\.|contre|@|—|–|-)\s+/i);
+    if(parts.length > 1) parts.forEach(function(x){ x=x.trim(); if(x) eclate.push(x); });
+    else eclate.push(String(v).trim());
+  });
+  var seen={};
+  var uniq=eclate.filter(function(v){
+    if(!v) return false;
+    var k=v.toLowerCase().replace(/\s+/g,' ').trim();
+    if(seen[k]) return false;
+    seen[k]=1; return true;
+  });
   var ql=q.toLowerCase();
   var filtered=uniq.filter(function(v){return v.toLowerCase().includes(ql);}).slice(0,8);
   if(!filtered.length){res.style.display='none';return;}
@@ -26534,8 +26650,45 @@ async function g45F1AI(btn){
     var rows=(data&&data.DriverStandings)||[];
     if(rows.length) facts.push('Classement championnat : '+rows.slice(0,8).map(function(x){ var D=x.Driver||{}; return x.position+'. '+(D.familyName||'')+' ('+(x.points||0)+' pts)'; }).join(' · '));
   }catch(e){}
+  /* ═══ GRILLE DE DEPART (04/09) ═══
+     Retour d'Antoine : « si Anto gagne je m'en coupe une… il a eu une penalite
+     et part dernier, l'IA ne le prend pas en compte ».
+     Les trois modeles donnaient Antonelli favori parce qu'il MENE LE
+     CHAMPIONNAT — seule information de forme qu'on leur transmettait. Or en F1,
+     la grille est de loin le meilleur predicteur d'un resultat : partir 1er ou
+     18e change tout, et le classement de saison n'en dit rien.
+     On ajoute donc les qualifications quand elles ont eu lieu. Les positions
+     viennent du champ `order`, celui-la meme qu'affiche l'onglet Qual. */
+  try{
+    var _q=(ev.competitions||[]).filter(function(c){
+      var t=String((c.type&&(c.type.abbreviation||c.type.text))||'').toLowerCase();
+      var st=(c.status&&c.status.type&&c.status.type.state)||'';
+      return /qual/.test(t) && !/sprint|shoot/.test(t) && st==='post';
+    }).pop();
+    if(_q){
+      var _g=(_q.competitors||[]).slice()
+        .sort(function(a,b){ return (a.order||99)-(b.order||99); })
+        .slice(0,12)
+        .map(function(c){
+          var n=(c.athlete&&(c.athlete.shortName||c.athlete.displayName))||'';
+          /* La position vient de `order`, JAMAIS du rang dans la liste : un
+             pilote penalise porte l'ordre 18 tout en etant 6e de la liste
+             tronquee. Renumeroter par l'index aurait affiche « 6. Antonelli »
+             et reproduit exactement l'erreur qu'on cherche a corriger. */
+          return (c.order||'?')+'. '+n;
+        }).filter(function(x){ return x.length>3; });
+      if(_g.length) facts.push('GRILLE DE DEPART (qualifications, ordre reel de depart) : '+_g.join(' · '));
+    } else {
+      /* Le dire explicitement vaut mieux que laisser le modele se rabattre en
+         silence sur le championnat, ce qui produit une reponse assuree et fausse. */
+      facts.push('GRILLE DE DEPART : pas encore connue (qualifications non disputees). Ne pas deviner l\'ordre de depart.');
+    }
+  }catch(e){}
+
   try{ if(typeof g45StatsForEvent==='function'){ g45StatsForEvent(_g45F1Ev(ev)).slice(0,4).forEach(function(st){ facts.push('Note perso de l\'utilisateur : '+st.text); }); } }catch(e){}
-  var sys='Tu es un analyste paris F1 francophone, concis et prudent. Reponds STRICTEMENT dans ce format, sans rien avant ni apres:\n🎯 FAVORI : <pilote> — podium probable <P1, P2, P3>\n💎 OUTSIDER / VALUE : <pilote(s) potentiellement sous-cotes et pourquoi>\n🔑 POINTS CLES :\n- <point 1>\n- <point 2>\n- <point 3>\n⚠️ <principale incertitude en 1 phrase>\nAppuie-toi sur les faits fournis (forme, championnat, notes, circuit) et tes connaissances des circuits. REGLE ABSOLUE : ne cite JAMAIS une forme recente, une serie, un historique de confrontations, un score passe, une blessure ou un classement qui ne figure PAS dans les FAITS fournis. Si une info te manque, raisonne au conditionnel ou dis que la donnee manque, sans l\'inventer.';
+  /* Consigne ajoutee le 04/09 : sans elle, le modele continue de raisonner sur
+     le championnat meme quand la grille lui est fournie. */
+  var sys='Tu es un analyste paris F1 francophone, concis et prudent. Si une GRILLE DE DEPART est fournie, elle prime sur le classement du championnat : un pilote partant loin ne peut pas etre donne favori sur la seule foi de ses points. Si la grille n\'est pas connue, dis-le au lieu de la deviner. Reponds STRICTEMENT dans ce format, sans rien avant ni apres:\n🎯 FAVORI : <pilote> — podium probable <P1, P2, P3>\n💎 OUTSIDER / VALUE : <pilote(s) potentiellement sous-cotes et pourquoi>\n🔑 POINTS CLES :\n- <point 1>\n- <point 2>\n- <point 3>\n⚠️ <principale incertitude en 1 phrase>\nAppuie-toi sur les faits fournis (forme, championnat, notes, circuit) et tes connaissances des circuits. REGLE ABSOLUE : ne cite JAMAIS une forme recente, une serie, un historique de confrontations, un score passe, une blessure ou un classement qui ne figure PAS dans les FAITS fournis. Si une info te manque, raisonne au conditionnel ou dis que la donnee manque, sans l\'inventer.';
   await _g45MultiAI(box, btn.dataset.box, sys, facts, ev.name||'GP');
   btn.disabled=false;
 }
@@ -35351,6 +35504,37 @@ async function g45CoreTeams(sportPath, ligue) {
   } catch (e) {}
 
   var out = {};
+
+  /* ═══ VOIE RAPIDE PAR LE PROXY (04/09) ═══
+     Le commentaire ci-dessus reste vrai : `site.api.espn.com/.../teams` ne
+     renvoie pas d'en-tete CORS, donc le navigateur ne peut pas l'appeler.
+     Mais le Worker `fd-proxy`, LUI, le peut — il tourne cote serveur, ou le CORS
+     n'existe pas, et il relaie la reponse avec les bons en-tetes. Il met meme le
+     resultat en cache 10 minutes pour tous les appareils.
+     Une requete au lieu d'une centaine (la voie `sports.core.api` demande une
+     requete PAR CLUB), et la console cesse d'etre noyee sous les erreurs CORS.
+     La voie `core` reste en repli si le proxy est indisponible. */
+  try {
+    var rp = await fetch(FD_PROXY + '?host=espn&path=' +
+      encodeURIComponent('/apis/site/v2/sports/' + sportPath + '/' + ligue + '/teams?limit=100'));
+    if (rp.ok) {
+      var dp = await rp.json();
+      var lst = (((dp.sports || [])[0] || {}).leagues || [])[0];
+      var eq = (lst && lst.teams) || [];
+      eq.forEach(function (w) {
+        var t = w && (w.team || w);
+        if (!t || !t.id) return;
+        [t.displayName, t.name, t.shortDisplayName, t.nickname, t.location, t.abbreviation]
+          .filter(Boolean).forEach(function (n) { out[_g45Norm(n)] = String(t.id); });
+      });
+      if (Object.keys(out).length) {
+        _g45CoreCache[cle] = out;
+        try { localStorage.setItem(cle, JSON.stringify(out)); } catch (e) {}
+        return out;
+      }
+    }
+  } catch (e) {}
+
   try {
     var url = 'https://sports.core.api.espn.com/v2/sports/' + sportPath +
               '/leagues/' + ligue + '/teams?limit=100';
@@ -40496,17 +40680,32 @@ window._g45Visible = _g45Visible;
    LIMITE ASSUMEE : un match precis peut etre sur une autre chaine du groupe
    (multiplex, affiche du dimanche soir). On affiche donc le diffuseur du
    CHAMPIONNAT, pas une garantie pour ce match-la. */
+/* MISE A JOUR DU 04/09/2026 (retour d'Antoine : « sur les matchs de Serie A cela
+   me dit beIN, sauf qu'en France c'est DAZN »).
+   Les droits ont ete ENTIEREMENT redistribues pour 2026-2027, et cette table
+   datait de la saison precedente. Trois erreurs, pas une :
+   · SERIE A : beIN → DAZN
+   · LIGA : beIN → DAZN (apres quatorze ans chez beIN), Disney+ en second
+   · LIGUE 1 : Ligue 1+ devient l'UNIQUE diffuseur (9 matchs sur 9)
+   La Ligue des champions n'est plus co-diffusee : Canal+ seul, avec la finale en
+   clair sur M6. beIN conserve la Ligue 2, la Bundesliga et la Coupe de France.
+   La F1 reste un monopole Canal+.
+   Verifie le 04/09/2026 — a revoir chaque ete, c'est le seul entretien. */
 var G45_TV_FR = {
   'fra.1':'Ligue 1+', 'fra.2':'beIN SPORTS', 'fra.coupe_de_france':'beIN SPORTS / France TV',
-  'eng.1':'Canal+', 'esp.1':'beIN SPORTS', 'ita.1':'beIN SPORTS', 'ger.1':'beIN SPORTS',
+  'eng.1':'Canal+', 'esp.1':'DAZN / Disney+', 'ita.1':'DAZN', 'ger.1':'beIN SPORTS',
   'por.1':'Canal+', 'ned.1':'Canal+',
-  'uefa.champions':'Canal+ / beIN SPORTS', 'uefa.europa':'Canal+', 'uefa.europa.conf':'Canal+',
+  'uefa.champions':'Canal+', 'uefa.europa':'Canal+', 'uefa.europa.conf':'Canal+',
   'uefa.super_cup':'Canal+', 'fifa.world':'TF1 / M6', 'uefa.euro':'TF1 / M6',
+  'uefa.nations':'La chaîne L\'Équipe',
   'club.friendly':'\u2014',
   'nba':'beIN SPORTS', 'nfl':'beIN SPORTS',
   /* Corrige le 15/08 : la MLB et la NHL passent bien en France, sur les chaines
      beIN SPORTS MAX — je les avais classees « non diffusees » a tort. */
   'nhl':'beIN SPORTS MAX', 'mlb':'beIN SPORTS MAX',
+  /* Formule 1 : monopole Canal+. Le slug ESPN de la F1 est `f1`, mais la vue
+     course transmet parfois le chemin complet — les deux sont couverts. */
+  'f1':'Canal+', 'racing/f1':'Canal+',
   '3':'\u2014', '270559':'Canal+', '271937':'beIN SPORTS'
 };
 function _g45TvDe(slug) {
@@ -40563,6 +40762,7 @@ var _G45_PERSO_IMG = 'g45_img_perso_';
 var _G45_PERSO_DIR = 'images/equipes/';
 
 function _g45ImgPersoLire(nom) {
+  if (typeof nom !== 'string' || !nom.trim()) return '';
   try {
     var o = JSON.parse(localStorage.getItem(_G45_PERSO_IMG + _g45SgNorm(nom)) || 'null');
     if (!o) return undefined;
@@ -40579,6 +40779,18 @@ function _g45ImgPersoLire(nom) {
    "atleticomadrid.png" que ce code construit — le nom de fichier doit rester
    tout en minuscules, sans espace ni accent (`_g45SgNorm`). */
 function _g45ImgPersoTester(nom) {
+  /* GARDE-FOU (04/09) : la console d'Antoine reclamait
+     « images/equipes/objectobject.jpg ». Un appelant passe ici un OBJET au lieu
+     d'un nom ; converti en texte il donne « [object Object] », que la
+     normalisation reduit a « objectobject ».
+     On refuse donc tout ce qui n'est pas une chaine exploitable : deux requetes
+     404 en moins, et surtout plus d'entree de cache parasite sous ce nom.
+     L'avertissement en console sert a retrouver l'appelant fautif — la pile
+     d'appels y est visible. */
+  if (typeof nom !== 'string' || !nom.trim() || nom.indexOf('[object') >= 0) {
+    try { console.warn('visuel perso : nom invalide', nom); } catch (e) {}
+    return Promise.resolve('');
+  }
   var base = _G45_PERSO_DIR + _g45SgNorm(nom);
   var exts = ['jpg', 'png'];
   return new Promise(function (res) {
@@ -44527,8 +44739,10 @@ function _g45BandTuile(ev, monNom, estMoi) {
     : (fin ? '<span class="g45-mt-st">Terminé</span>'
            : '<span class="g45-mt-st soon">' + _g45BandQuand(ev.date) + '</span>');
 
-  /* Domicile en bas, comme sur les tableaux de scores : c'est la convention
-     americaine d'ESPN et celle des chaines sportives. */
+  /* DOMICILE EN PREMIER (corrige le 04/09). J'avais repris la convention des
+     tableaux de scores AMERICAINS, qui placent le visiteur en haut — d'ou
+     « Monaco / PSG » pour un match joue au Parc des Princes. En football
+     europeen on ecrit toujours le receveur d'abord. */
   var dom = cs.filter(function (x) { return x.homeAway === 'home'; })[0] || cs[0];
   var ext = cs.filter(function (x) { return x.homeAway === 'away'; })[0] || cs[1];
 
@@ -44554,7 +44768,7 @@ function _g45BandTuile(ev, monNom, estMoi) {
     : ' disabled style="cursor:default;"';
   return '<button class="g45-mt' + (estMoi ? ' g45-mt-moi' : '') + '"' + act + '>'
     + etat
-    + '<span class="g45-mt-eq">' + ligne(ext, dom) + ligne(dom, ext) + '</span>'
+    + '<span class="g45-mt-eq">' + ligne(dom, ext) + ligne(ext, dom) + '</span>'
     + '</button>';
 }
 
@@ -44790,7 +45004,14 @@ async function _g45BandMesEquipes() {
     });
   }
   _g45BandTrier(out);
-  return out.slice(0, 14);
+  /* PLAFOND RELEVE (04/09) : « le bandeau se coupe net… il manque les matchs du
+     Bayern et de l'AS Roma, sans compter ceux de MLB cette nuit ».
+     A 14, la limite mordait sur les equipes suivies elles-memes — or c'est
+     exactement ce qu'on veut voir, et elles ne sont pas si nombreuses. On monte
+     a 40, ce qui couvre une journee complete de football plus une soiree de
+     baseball. La borne subsiste uniquement pour empecher un tour de bande
+     interminable en cas de configuration inattendue. */
+  return out.slice(0, 40);
 }
 
 /* ─── MODE « CHAMPIONNAT » ────────────────────────────────────────────────
