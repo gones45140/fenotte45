@@ -35848,9 +35848,44 @@ async function g45NrlCharger(annee) {
       }
     });
   }
-  /* Dernier recours seulement : des tranches de sept jours a partir du premier
-     match. Approximatif par construction — conserve uniquement pour les
-     competitions ou ni `week.number` ni calendrier ne sont fournis. */
+  /* SOURCE PRIORITAIRE POUR LE FOOTBALL : football-data.org (04/09).
+     Une requete pour toute la saison, mise en cache 6 h. Le numero est
+     OFFICIEL, donc un match avance ou reporte est classe correctement — ce
+     qu'aucune deduction fondee sur les dates ne peut garantir. Sans cle
+     enregistree, ou hors des championnats couverts, on retombe simplement sur
+     les methodes suivantes. */
+  if (!out.some(function (m) { return m.jr; })) {
+    try {
+      var refs = await _g45FdMatchdays(_g45NrlCtx.ligue, annee);
+      var n = _g45FdAssocier(out, refs);
+      if (n) console.log('journées via football-data :', n, '/', out.length, 'matchs');
+    } catch (e) {}
+  }
+
+  /* ═══ TROISIEME SOURCE : LE COMPTAGE PAR EQUIPE (04/09) ═══
+     Le calendrier d'ESPN ne remonte rien pour la Ligue 1, et le decoupage
+     temporel s'est montre incoherent : Toulouse-Lille et Lyon-Auxerre tombaient
+     en J2 pendant que PSG-Monaco, joue le MEME JOUR, tombait en J3.
+     Le nombre de matchs deja disputes, lui, ne peut pas mentir : le 3e match
+     d'une equipe appartient a la 3e journee, quelle que soit sa date. Un match
+     avance ou reporte est donc classe correctement, ce qu'aucune methode fondee
+     sur le calendrier ne peut faire.
+     On prend le MAXIMUM des deux compteurs plutot que l'un des deux : si une
+     equipe a un match en retard, c'est celle qui a le plus joue qui donne le bon
+     numero. Le classement d'ESPN confirme le raisonnement — Lille et Toulouse y
+     affichent 3 matchs joues quand les autres en ont 2. */
+  if (!out.some(function (m) { return m.jr; })) {
+    var joues = {};
+    out.forEach(function (m) {
+      var d = m.dom || m.d || '', e = m.ext || m.e || '';
+      var nd = (joues[d] || 0) + 1, ne = (joues[e] || 0) + 1;
+      joues[d] = nd; joues[e] = ne;
+      m.jr = Math.max(nd, ne);
+    });
+  }
+  /* Dernier recours : des tranches de sept jours a partir du premier match.
+     Approximatif par construction — ne sert plus que si les noms d'equipe
+     manquent, auquel cas le comptage ci-dessus n'a pas pu s'appliquer. */
   if (!out.some(function (m) { return m.jr; })) {
     var base = out.length ? new Date(out[0].date).getTime() : 0;
     out.forEach(function (m) {
@@ -39309,7 +39344,10 @@ function _g45NrlCleCache(annee) {
   /* Cle changee le 04/09 : la numerotation des journees du FOOTBALL etait fausse
      (tranches de sept jours). Les caches existants la contiennent, il faut donc
      les reconstruire une fois. */
-  return 'g45nrlcal5_' + _g45NrlCtx.sport + '_' + _g45NrlCtx.ligue + '_' + annee;
+  /* Cle changee le 04/09 : les caches precedents contiennent des numeros de
+     journee errones (deduits des dates). Ils doivent etre reconstruits une fois
+     avec la numerotation officielle de football-data. */
+  return 'g45nrlcal6_' + _g45NrlCtx.sport + '_' + _g45NrlCtx.ligue + '_' + annee;
 }
 
 var _g45NrlChargerOrig = (typeof g45NrlCharger === 'function') ? g45NrlCharger : null;
@@ -44974,3 +45012,111 @@ function g45ConvVersValue() {
   try { calcVb(); } catch (e) {}
 }
 window.g45ConvVersValue = g45ConvVersValue;
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   GONES45 — NUMEROS DE JOURNEE VIA FOOTBALL-DATA.ORG (04/09)
+   ───────────────────────────────────────────────────────────────────────────
+   Trois methodes ont echoue avant celle-ci, et il vaut la peine de dire
+   pourquoi, pour qu'on n'y revienne pas :
+   · `week.number` d'ESPN : renseigne pour la NRL et le NFL, VIDE en football.
+   · Le calendrier `leagues[0].calendar` d'ESPN : absent pour la Ligue 1.
+   · Le decoupage par ecart de dates : incoherent des qu'un match est avance ou
+     reporte — Toulouse-Lille et PSG-Monaco, joues le meme jour, tombaient dans
+     deux journees differentes.
+   · TheSportsDB expose bien `intRound`, mais la cle gratuite plafonne CHAQUE
+     reponse a 5 resultats : impossible de couvrir une journee de 9 ou 10
+     matchs.
+   football-data.org fournit `matchday` pour toute la saison en UNE requete, sur
+   les cinq grands championnats et la Coupe d'Europe. C'est une donnee
+   officielle, pas une deduction : un match reporte garde son vrai numero.
+   ESPN reste la source des scores, des logos et du direct ; football-data ne
+   sert qu'a numeroter.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+var _G45_FD_CODES = {
+  'fra.1': 'FL1', 'esp.1': 'PD', 'ita.1': 'SA',
+  'eng.1': 'PL',  'ger.1': 'BL1',
+  'uefa.champions': 'CL', 'por.1': 'PPL', 'ned.1': 'DED', 'bra.1': 'BSA'
+};
+
+/* Cache long : le calendrier d'une saison ne bouge quasiment pas, et l'offre
+   gratuite est limitee a 10 requetes par minute. */
+var _g45FdJournees = {};
+
+async function _g45FdMatchdays(ligue, annee) {
+  var code = _G45_FD_CODES[ligue];
+  if (!code) return null;
+  var cle = code + ':' + annee;
+  var c = _g45FdJournees[cle];
+  if (c && (Date.now() - c.t) < 6 * 3600000) return c.v;
+  try {
+    var d = await fdFetch('/v4/competitions/' + code + '/matches?season=' + annee);
+    if (!d || !d.matches || !d.matches.length) return null;
+    var out = [];
+    d.matches.forEach(function (m) {
+      if (!m.matchday) return;
+      out.push({
+        jr: m.matchday,
+        d: String(m.utcDate || '').slice(0, 10),
+        h: (m.homeTeam && (m.homeTeam.shortName || m.homeTeam.name)) || '',
+        a: (m.awayTeam && (m.awayTeam.shortName || m.awayTeam.name)) || '',
+        hl: (m.homeTeam && m.homeTeam.name) || '',
+        al: (m.awayTeam && m.awayTeam.name) || ''
+      });
+    });
+    _g45FdJournees[cle] = { t: Date.now(), v: out };
+    return out;
+  } catch (e) { return null; }
+}
+
+/* Appariement d'un match ESPN avec son homologue football-data.
+   La DATE seule ne suffit pas — plusieurs matchs le meme jour — et les NOMS
+   seuls non plus, puisque les deux sources ecrivent differemment (« Paris
+   Saint-Germain » contre « Paris SG »). On exige donc la date ET la
+   reconnaissance des deux equipes, avec la comparaison souple deja utilisee
+   pour le bandeau. Une tolerance d'un jour absorbe les decalages de fuseau sur
+   les matchs de fin de soiree. */
+function _g45FdAssocier(matchs, refs) {
+  if (!refs || !refs.length) return 0;
+  var n = 0;
+  matchs.forEach(function (m) {
+    var jour = String(m.date || '').slice(0, 10);
+    var t = new Date(jour).getTime();
+    for (var i = 0; i < refs.length; i++) {
+      var r = refs[i];
+      var ecart = Math.abs(new Date(r.d).getTime() - t);
+      if (!(ecart <= 86400000)) continue;
+      var okD = _g45FdMemeEquipe(m.dom, r.h, r.hl);
+      var okE = _g45FdMemeEquipe(m.ext, r.a, r.al);
+      if (okD && okE) { m.jr = r.jr; n++; break; }
+    }
+  });
+  return n;
+}
+
+/* Comparaison de deux ecritures d'un meme club entre ESPN et football-data.
+   L'inclusion simple ne suffit pas : « PSG » n'est contenu ni dans « Paris SG »
+   ni dans « Paris Saint-Germain FC ». On compare donc aussi les INITIALES des
+   mots significatifs — « Paris Saint-Germain » donne « psg » — ce qui couvre
+   les sigles sans table a maintenir. Les suffixes juridiques (FC, AC, AS, OL,
+   SC) sont retires : ils varient d'une source a l'autre et n'identifient rien. */
+function _g45FdSigle(nom) {
+  var mots = String(nom || '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^A-Za-z\s-]/g, ' ')
+    .split(/[\s-]+/)
+    .filter(function (w) {
+      return w && ['fc','ac','as','ol','sc','cf','de','du','la','le','les','of','and','et','club','olympique','stade','racing','football'].indexOf(w.toLowerCase()) < 0;
+    });
+  return mots.map(function (w) { return w[0]; }).join('').toLowerCase();
+}
+
+function _g45FdMemeEquipe(espn, court, complet) {
+  if (_g45BandMeme(espn, court) || _g45BandMeme(espn, complet)) return true;
+  var e = _g45SgNorm(espn || '');
+  if (e.length >= 2 && e.length <= 5) {
+    if (e === _g45FdSigle(court) || e === _g45FdSigle(complet)) return true;
+  }
+  return false;
+}
