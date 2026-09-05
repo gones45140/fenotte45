@@ -6466,6 +6466,10 @@ function editBet(id){
   $i('edit-date').value=h.date||'';
   $i('edit-heure').value=h.heure||'';
   $i('edit-notes').value=h.notes||'';
+  /* Les trois options relues a l'ouverture (04/09) : sans ca, la fenetre les
+     afficherait toujours decochees et le premier enregistrement les effacerait. */
+  var _oc=function(id,v){ var e=$i(id); if(e) e.checked=!!v; };
+  _oc('edit-freebet', h.isFreebet); _oc('edit-lay', h.isLay); _oc('edit-flash', h.isFlash);
   $i('edit-domicile').value=h.domicile||'';
   /* CORRECTION DU 27/08 : un pari 'glob' (aucun lieu) surlignait a tort le
      bouton Exterieur, faute d'un 3e etat possible dans l'ancienne signature. */
@@ -6490,6 +6494,8 @@ function saveEditBet(){
   h.date=$i('edit-date').value;
   h.heure=$i('edit-heure').value;
   h.notes=$i('edit-notes').value.trim();
+  var _ck=function(id){ var e=$i(id); return !!(e&&e.checked); };
+  h.isFreebet=_ck('edit-freebet'); h.isLay=_ck('edit-lay'); h.isFlash=_ck('edit-flash');
   h.domicile=$i('edit-domicile').value;
   save();render();closeEditBet();
 }
@@ -13826,6 +13832,10 @@ function editBet(id){
   $i('edit-date').value=h.date||'';
   $i('edit-heure').value=h.heure||'';
   $i('edit-notes').value=h.notes||'';
+  /* Les trois options relues a l'ouverture (04/09) : sans ca, la fenetre les
+     afficherait toujours decochees et le premier enregistrement les effacerait. */
+  var _oc=function(id,v){ var e=$i(id); if(e) e.checked=!!v; };
+  _oc('edit-freebet', h.isFreebet); _oc('edit-lay', h.isLay); _oc('edit-flash', h.isFlash);
   $i('edit-domicile').value=h.domicile||'';
   /* CORRECTION DU 27/08 : un pari 'glob' (aucun lieu) surlignait a tort le
      bouton Exterieur, faute d'un 3e etat possible dans l'ancienne signature. */
@@ -13850,6 +13860,8 @@ function saveEditBet(){
   h.date=$i('edit-date').value;
   h.heure=$i('edit-heure').value;
   h.notes=$i('edit-notes').value.trim();
+  var _ck=function(id){ var e=$i(id); return !!(e&&e.checked); };
+  h.isFreebet=_ck('edit-freebet'); h.isLay=_ck('edit-lay'); h.isFlash=_ck('edit-flash');
   h.domicile=$i('edit-domicile').value;
   save();render();closeEditBet();
 }
@@ -17967,9 +17979,9 @@ async function loadRugbySaisons(el, nom) {
     // Bloc Top 14 / Pro D2
     html += '<div class="cwrap" style="margin-bottom:10px;">';
     html += '<div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#4f5d88;margin-bottom:10px;">🏉 Rugby XV — Saison 2025-26</div>';
-    html += '<a href="https://www.lnr.fr/top-14/classement" target="_blank" style="'+lienStyle+'"><div style="'+labelStyle+'color:#f0b020;">🏆 Classement Top 14</div><div style="'+arr+'">→</div></a>';
-    html += '<a href="https://www.lnr.fr/top-14/calendrier-et-resultats" target="_blank" style="'+lienStyle+'"><div style="'+labelStyle+'color:#4d84ff;">📅 Calendrier Top 14</div><div style="'+arr+'">→</div></a>';
-    html += '<a href="https://www.lnr.fr/top-14/stats" target="_blank" style="'+lienStyle+'"><div style="'+labelStyle+'color:#1ed760;">📊 Stats Top 14</div><div style="'+arr+'">→</div></a>';
+    html += '<a href="https://top14.lnr.fr/" target="_blank" style="'+lienStyle+'"><div style="'+labelStyle+'color:#f0b020;">🏆 Classement Top 14</div><div style="'+arr+'">→</div></a>';
+    html += '<a href="https://top14.lnr.fr/" target="_blank" style="'+lienStyle+'"><div style="'+labelStyle+'color:#4d84ff;">📅 Calendrier Top 14</div><div style="'+arr+'">→</div></a>';
+    html += '<a href="https://top14.lnr.fr/" target="_blank" style="'+lienStyle+'"><div style="'+labelStyle+'color:#1ed760;">📊 Stats Top 14</div><div style="'+arr+'">→</div></a>';
     html += '</div>';
 
     // Bloc Coupes d'Europe
@@ -30604,7 +30616,26 @@ async function g45LoadStandings(slug, sportPath, box){
       if(tot>0 && !repli){ repli=j; repliAn=seasons[i]; }
     }
     if(!data && repli){ data=repli; used=repliAn; }
-    if(!data){ box.innerHTML='<div style="color:var(--t3);font-size:11px;text-align:center;padding:12px;">Classement indisponible pour cette compétition.</div>'; return; }
+    if(!data){
+      /* ═══ MESSAGE EXPLICITE (04/09) ═══
+         Antoine a cherche un bug la ou il n'y en avait pas : ESPN a CESSE de
+         couvrir le rugby a XV apres la saison 2022-23. La liste des saisons
+         qu'il renvoie saute de 2023 a 2027, et ce « 2027 » ne contient aucune
+         donnee reelle. Le code se comportait correctement — il refusait un
+         classement vide — mais « Classement indisponible » laissait croire a une
+         panne passagere.
+         On nomme donc la cause et on donne le lien officiel, pour ne pas y
+         reperdre du temps dans six mois. */
+      var _xv = (sportPath === 'rugby');
+      box.innerHTML = _xv
+        ? '<div style="padding:14px;text-align:center;line-height:1.6;">'
+          + '<div style="font-size:12px;color:var(--t2);margin-bottom:4px;">Classement non disponible</div>'
+          + '<div style="font-size:11px;color:var(--t3);margin-bottom:10px;">La source de données ne couvre plus le rugby à XV depuis la saison 2022-23.</div>'
+          + '<a href="https://top14.lnr.fr/" target="_blank" rel="noopener" style="display:inline-block;font-size:12px;font-weight:600;color:var(--or);border:1px solid var(--or);border-radius:3px;padding:7px 14px;text-decoration:none;">Classement officiel sur la LNR ›</a>'
+          + '</div>'
+        : '<div style="color:var(--t3);font-size:11px;text-align:center;padding:12px;">Classement indisponible pour cette compétition.</div>';
+      return;
+    }
     box.innerHTML=g45RenderStandings(data, used, sportPath, slug);
   }catch(e){
     box.innerHTML='<div style="color:#ff6b6b;font-size:11px;text-align:center;padding:12px;">Erreur de chargement du classement.</div>';
