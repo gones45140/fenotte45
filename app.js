@@ -253,6 +253,12 @@ async function espnClubSchedule(nom, season, leagueSlug) {
         completed: completed,
         homeTeam: home.team ? home.team.displayName : '?',
         awayTeam: away.team ? away.team.displayName : '?',
+        /* LOGOS CONSERVES (06/09). Ils etaient jetes ici, si bien qu'aucune vue
+           alimentee par ESPN ne disposait d'un blason — d'ou un fond de panneau
+           sans ecusson des que l'equipe n'etait pas au mur. ESPN ecrit tantot
+           `logo`, tantot `logos[]`, selon l'endpoint. */
+        homeLogo: _espnLogoDe(home.team),
+        awayLogo: _espnLogoDe(away.team),
         homeId: home.team ? String(home.team.id) : null,
         awayId: away.team ? String(away.team.id) : null,
         homeScore: hS, awayScore: aS,
@@ -266,6 +272,17 @@ async function espnClubSchedule(nom, season, leagueSlug) {
   } catch(e) { return null; }
 }
 
+
+/* Le blason d'une equipe ESPN, quel que soit l'endpoint : le scoreboard sert
+   `logos[]`, le calendrier d'equipe sert `logo`. */
+function _espnLogoDe(t){
+  try{
+    if(!t) return '';
+    if(t.logo) return String(t.logo);
+    if(t.logos && t.logos[0] && t.logos[0].href) return String(t.logos[0].href);
+  }catch(e){}
+  return '';
+}
 
 // Convertir un match ESPN au format football-data (pour renderSaisonsChart)
 function espnToFdMatch(m, ourName, ourFdId) {
@@ -372,8 +389,10 @@ function espnToFdMatch(m, ourName, ourFdId) {
     utcDate: m.date,
     status: m.completed ? 'FINISHED' : 'SCHEDULED',
     competition: { name: compName, type: type, code: m.competition || '' },
-    homeTeam: { id: homeId, name: m.homeTeam, shortName: m.homeTeam },
-    awayTeam: { id: awayId, name: m.awayTeam, shortName: m.awayTeam },
+    /* `crest` porte le meme nom que chez football-data : les vues qui lisaient
+       deja ce champ le trouvent maintenant aussi sur les matchs venus d'ESPN. */
+    homeTeam: { id: homeId, name: m.homeTeam, shortName: m.homeTeam, crest: m.homeLogo || '' },
+    awayTeam: { id: awayId, name: m.awayTeam, shortName: m.awayTeam, crest: m.awayLogo || '' },
     score: {
       fullTime: { home: m.homeScore, away: m.awayScore },
       regularTime: { home: m.homeScore, away: m.awayScore }
@@ -3652,7 +3671,7 @@ function smartRefresh() {
       try {
         var tid=null; for(var k in TEAM_IDS){ if(_currentTeam.toLowerCase().indexOf(k.toLowerCase())>=0||k.toLowerCase().indexOf(_currentTeam.toLowerCase())>=0){tid=TEAM_IDS[k];break;} }
         if(tid && typeof _saisonsCache!=='undefined' && _saisonsCache) delete _saisonsCache[tid];
-        if(tid) localStorage.removeItem('g45_saisons_cache_v2_'+tid); // forcer un vrai refresh
+        if(tid) localStorage.removeItem('g45_saisons_cache_v3_'+tid); // forcer un vrai refresh
       } catch(e){}
       if(typeof loadTeamSaisons==='function') loadTeamSaisons();
     }
@@ -20664,7 +20683,7 @@ async function loadTeamSaisons() {
 
   // Cache localStorage (1h) — accélère les équipes déjà consultées
   try {
-    var lsCacheKey = 'g45_saisons_cache_v2_'+teamId;
+    var lsCacheKey = 'g45_saisons_cache_v3_'+teamId;
     var lsRaw = localStorage.getItem(lsCacheKey);
     if(lsRaw){
       var lsObj = JSON.parse(lsRaw);
@@ -20822,7 +20841,7 @@ async function loadTeamSaisons() {
   if(espnOk && !skipFd) {
     // ESPN OK : afficher d'abord ESPN, compléter les coupes en arrière-plan (non bloquant)
     _saisonsCache[teamId] = results;
-    try { localStorage.setItem('g45_saisons_cache_v2_'+teamId, JSON.stringify({ts:Date.now(), data:results})); } catch(e){}
+    try { localStorage.setItem('g45_saisons_cache_v3_'+teamId, JSON.stringify({ts:Date.now(), data:results})); } catch(e){}
     renderSaisonsChart(el, results, nom);
 
     // Mi-temps football-data en arrière-plan (ESPN ne la fournit pas)
@@ -20831,7 +20850,7 @@ async function loadTeamSaisons() {
         var _nHT=await _g45FdHalfTime(teamId, results);
         if(_nHT>0){
           _saisonsCache[teamId]=results;
-          try{ localStorage.setItem('g45_saisons_cache_v2_'+teamId, JSON.stringify({ts:Date.now(), data:results})); }catch(e){}
+          try{ localStorage.setItem('g45_saisons_cache_v3_'+teamId, JSON.stringify({ts:Date.now(), data:results})); }catch(e){}
           renderSaisonsChart(el, results, nom);
         }
       }catch(e){}
@@ -20857,7 +20876,7 @@ async function loadTeamSaisons() {
             if(cups.length){
               results[yr] = (results[yr]||[]).concat(cups);
               _saisonsCache[teamId] = results;
-              try { localStorage.setItem('g45_saisons_cache_v2_'+teamId, JSON.stringify({ts:Date.now(), data:results})); } catch(e){}
+              try { localStorage.setItem('g45_saisons_cache_v3_'+teamId, JSON.stringify({ts:Date.now(), data:results})); } catch(e){}
               renderSaisonsChart(el, results, nom); // re-render avec les coupes
             }
           }
@@ -20901,7 +20920,7 @@ async function loadTeamSaisons() {
   }
 
   _saisonsCache[teamId] = results;
-  try { localStorage.setItem('g45_saisons_cache_v2_'+teamId, JSON.stringify({ts:Date.now(), data:results})); } catch(e){}
+  try { localStorage.setItem('g45_saisons_cache_v3_'+teamId, JSON.stringify({ts:Date.now(), data:results})); } catch(e){}
   renderSaisonsChart(el, results, nom);
 }
 
@@ -33831,7 +33850,7 @@ window.g45F1Session=g45F1Session;
    du navigateur. Tous ces caches sont reconstructibles : ils cèdent la place aux données. */
 var _G45_CACHE_PREFIXES=['g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dcf_','g45dc_',
   'g45trv3_','g45trv2_','g45trOdds_','g45tr_','g45but_st_','g45butL_','g45butA_','g45but_mur_',
-  '_g45clv','g45clv_snaps','g45_saisons_cache_v2_',
+  '_g45clv','g45clv_snaps','g45_saisons_cache_v3_','g45_saisons_cache_v2_',
   /* Ajoutes le 20/08 : ces caches, tous reconstructibles, n'etaient PAS declares
      ici — donc jamais purges quand le stockage saturait. Resultat : le quota
      explosait et des ecritures LEGITIMES echouaient en silence (le filtre par
