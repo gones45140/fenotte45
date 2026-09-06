@@ -21937,7 +21937,20 @@ function renderSaisonsChart(el, results, nom) {
          taille n'ait a etre calculee. Un ecusson centre, lui, se serait retrouve
          vers le 19e match, invisible a l'ouverture du panneau. */
       html += '<div style="position:relative;border-radius:10px;padding:8px 10px 10px;margin:12px 0 0;overflow:hidden;">';
-      html += g45FondClubHtml(_currentTeam, 0.2);
+      /* LE BLASON VIENT DES MATCHS (06/09). `g45LogoUrlDe` ne connait que les
+         equipes du mur : consulter Dortmund, qui n'y est pas, donnait un fond
+         sans ecusson (retour d'Antoine). Or football-data livre `crest` sur
+         chaque equipe de chaque match — notre equipe figure forcement dans la
+         liste affichee. Zero requete, et c'est toujours le bon club. */
+      var _fondCrest = '';
+      try {
+        for (var _fc = 0; _fc < allMatchesSorted.length && !_fondCrest; _fc++) {
+          var _fm = allMatchesSorted[_fc];
+          if (_fm.homeTeam && _fm.homeTeam.id === teamId) _fondCrest = _fm.homeTeam.crest || '';
+          else if (_fm.awayTeam && _fm.awayTeam.id === teamId) _fondCrest = _fm.awayTeam.crest || '';
+        }
+      } catch (e) {}
+      html += g45FondClubHtml(_currentTeam, 0.2, _fondCrest);
       html += '<div style="position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;margin:0 0 8px;">';
       html += '<div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#4f5d88;">📅 Résultats ('+allMatchesSorted.length+' matchs)</div>';
       html += '<div style="font-size:10px;font-weight:800;color:'+(matchCount>0?'#1ed760':'#ff4545')+';">✅ '+matchCount+'/'+allMatchesSorted.length+' — '+condLabel+'</div>';
@@ -44214,13 +44227,16 @@ window.g45CouleursDe = g45CouleursDe;
    Sans blason connu, on renvoie le degrade seul : jamais de trou visuel. */
 var _G45_FOND_TUILE = 46;      /* hauteur d'une tuile, en px */
 var _G45_FOND_MOSAIQUE = 0.26; /* opacite du blason ; baisser vers 0.14 pour plus discret */
-function g45FondClubHtml(nom, opac) {
+function g45FondClubHtml(nom, opac, blason) {
   var c = g45CouleursDe(nom);
   var base = '<div style="position:absolute;inset:0;pointer-events:none;z-index:0;'
     + 'opacity:' + (opac || 0.2) + ';border-radius:10px;'
     + 'background:linear-gradient(100deg,' + c[0] + ' 0%,' + c[1] + ' 100%);"></div>';
-  var logo = '';
-  try { if (typeof g45LogoUrlDe === 'function') logo = g45LogoUrlDe(nom) || ''; } catch (e) {}
+  /* Un blason fourni par l'appelant passe en premier : il vient des donnees du
+     match affiche, donc il vaut pour TOUTE equipe, pas seulement celles du mur
+     que connait `g45LogoUrlDe`. */
+  var logo = (typeof blason === 'string' && blason) ? blason : '';
+  try { if (!logo && typeof g45LogoUrlDe === 'function') logo = g45LogoUrlDe(nom) || ''; } catch (e) {}
   /* Une URL comportant une apostrophe casserait l'attribut style ; on la refuse
      plutot que de l'echapper, le repli degrade etant deja propre. */
   if (!logo || /['"\\]/.test(logo)) return base;
