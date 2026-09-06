@@ -30713,7 +30713,7 @@ function g45RenderStandings(data, season, sportPath, slug){
       var _bd=_z?('border-left:3px solid '+_z.color+';'):'border-left:3px solid transparent;';
       var _rowbg=_z?('background:'+_g45Hex2rgba(_z.color,.13)+';'):'';
       var logo=''; try{ logo=(t.logos&&t.logos[0]&&t.logos[0].href)||''; }catch(_){ }
-      var nm=t.shortDisplayName||t.displayName||t.name||t.abbreviation||'?';
+      var nm=_g45EntName(e)||'?';
       var J=_g45Stat(st,['gamesPlayed']), V=_g45Stat(st,['wins','gamesWon']), N=_g45Stat(st,['ties','draws','gamesDrawn']), D=_g45Stat(st,['losses','gamesLost']);
       var BP=_g45Stat(st,['pointsFor']), BC=_g45Stat(st,['pointsAgainst']);
       var DF=_g45Stat(st,['pointDifferential']), PT=_g45Stat(st,['points']);
@@ -32149,6 +32149,33 @@ window._g45RenderFilteredArchive=_g45RenderFilteredArchive;
 })();
 
 /* ═════════ Bloc AVANT-MATCH (proba, stats d'équipe, forme, classement) — données ESPN ═════════ */
+/* ═══ CORRECTIF 06/09 — colonne « Équipe » vide dans le classement avant-match ═══
+   ESPN ne renvoie plus toujours entry.team en OBJET {id, displayName…} : dans le
+   summary c'est désormais une simple CHAÎNE (le nom), l'id passant sur entry.id.
+   Tout le code lisait e.team.id / e.team.displayName → colonne vide ET aucune
+   ligne surlignée (les deux équipes n'étaient plus reconnues). Ces deux lecteurs
+   acceptent les DEUX formes, plus le cas $ref, donc on est couvert quel que soit
+   le format qu'ESPN décide de servir demain. */
+function _g45EntName(e){
+  var t = e && e.team;
+  if (typeof t === 'string' && t.trim()) return t.trim();
+  t = t || {};
+  return t.shortDisplayName || t.displayName || t.name || t.nickname || t.location || t.abbreviation || '';
+}
+function _g45EntId(e){
+  var t = e && e.team, m;
+  if (t && typeof t === 'object') {
+    if (t.id) return String(t.id);
+    if (t.$ref && (m = String(t.$ref).match(/teams\/(\d+)/))) return m[1];
+  }
+  if (e) {
+    if (e.id) return String(e.id);
+    if (e.teamId) return String(e.teamId);
+    if (e.link && (m = String(e.link).match(/\/id\/(\d+)/))) return m[1];
+  }
+  return '';
+}
+window._g45EntName=_g45EntName; window._g45EntId=_g45EntId;
 function _g45PreMatchBlock(data){
   try{
     var comp=(data.header&&data.header.competitions&&data.header.competitions[0])||{};
@@ -32262,7 +32289,7 @@ function _g45PreMatchBlock(data){
         if(st.groups&&st.groups.length){
           for(var gi=0;gi<st.groups.length;gi++){
             var g=st.groups[gi]; var ents=(g.standings&&(g.standings.entries||(Array.isArray(g.standings)?g.standings:null)))||g.entries||[];
-            if(ents.some(function(e){return String(e.team&&e.team.id)===hId||String(e.team&&e.team.id)===aId;})){ entries=ents; grpName=g.header||g.name||''; break; }
+            if(ents.some(function(e){return _g45EntId(e)===hId||_g45EntId(e)===aId;})){ entries=ents; grpName=g.header||g.name||''; break; }
           }
           if(!entries){ var g0=st.groups[0]; entries=(g0.standings&&(g0.standings.entries||(Array.isArray(g0.standings)?g0.standings:null)))||g0.entries||[]; grpName=g0.header||g0.name||''; }
         } else if(st.entries){ entries=st.entries; }
@@ -32271,9 +32298,9 @@ function _g45PreMatchBlock(data){
         function gs(e,names){ var ss=e.stats||[]; for(var i=0;i<ss.length;i++){ for(var j=0;j<names.length;j++){ if(ss[i].name===names[j]||ss[i].abbreviation===names[j]) return ss[i].displayValue; } } return ''; }
         var rowsS='';
         entries.forEach(function(e){
-          var isUs=String(e.team&&e.team.id)===hId||String(e.team&&e.team.id)===aId;
-          var t=e.team||{}; var tid=String(t.id||'');
-          var nm=t.displayName||t.shortDisplayName||t.name||t.nickname||t.location||t.abbreviation||(tid===hId?hN:tid===aId?aN:'');
+          var tid=_g45EntId(e);
+          var isUs=!!tid&&(tid===hId||tid===aId);
+          var nm=_g45EntName(e)||(tid===hId?hN:tid===aId?aN:'')||'?';
           rowsS+='<tr style="'+(isUs?'background:rgba(77,132,255,.12);':'')+'">'
             +'<td class="g45-sname" data-tid="'+tid+'" style="padding:3px 4px;font-size:10px;color:var(--t1);font-weight:'+(isUs?'800':'600')+';overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:96px;">'+nm+'</td>'
             +'<td style="padding:3px 4px;font-size:10px;text-align:center;color:var(--t2);">'+gs(e,['gamesPlayed','GP'])+'</td>'
@@ -32477,7 +32504,7 @@ function _g45FillStandings(box, sp){
     var now=new Date(), curY=now.getFullYear(), augY=(now.getMonth()>=7)?curY:curY-1;
     var calYear=G45_LIGUES_CIVILES;   /* source unique */
     var primary=(sportPath==='rugby-league'||sportPath==='baseball'||calYear.indexOf(slug)>=0)?curY:augY;
-    var seen={}, seasons=[primary,curY,augY].filter(function(y){ if(seen[y])return false; seen[y]=1; return true; });
+    var seen={}, seasons=[primary,curY,augY,primary-1].filter(function(y){ if(seen[y])return false; seen[y]=1; return true; });
     (function tryS(i){
       if(i>=seasons.length) return;
       fetch('https://site.api.espn.com/apis/v2/sports/'+sportPath+'/'+slug+'/standings?season='+seasons[i])
@@ -32488,13 +32515,13 @@ function _g45FillStandings(box, sp){
           var tot=0; groups.forEach(function(g){ tot+=(((g.standings&&g.standings.entries)||g.entries||[]).length); });
           if(!tot){ tryS(i+1); return; }
           var grp=null;
-          for(var k=0;k<groups.length;k++){ var ents=(groups[k].standings&&groups[k].standings.entries)||groups[k].entries||[]; if(ents.some(function(e){return String(e.team&&e.team.id)===hId||String(e.team&&e.team.id)===aId;})){ grp={name:groups[k].name||groups[k].abbreviation||'', entries:ents}; break; } }
+          for(var k=0;k<groups.length;k++){ var ents=(groups[k].standings&&groups[k].standings.entries)||groups[k].entries||[]; if(ents.some(function(e){return _g45EntId(e)===hId||_g45EntId(e)===aId;})){ grp={name:groups[k].name||groups[k].abbreviation||'', entries:ents}; break; } }
           if(!grp){ if(groups.length===1){ grp={name:'',entries:(groups[0].standings&&groups[0].standings.entries)||groups[0].entries||[]}; } else { return; } }
           var ents=grp.entries.slice().sort(function(a,b){ var ra=parseFloat(_g45Stat(a.stats,['rank']))||999, rb=parseFloat(_g45Stat(b.stats,['rank']))||999; return ra-rb; });
           var rows=ents.map(function(e){
-            var t=e.team||{}, st=e.stats||[]; var tid=String(t.id||'');
-            var isUs=tid===hId||tid===aId;
-            var nm=t.shortDisplayName||t.displayName||t.name||t.abbreviation||'?';
+            var st=e.stats||[]; var tid=_g45EntId(e);
+            var isUs=!!tid&&(tid===hId||tid===aId);
+            var nm=_g45EntName(e)||'?';
             return '<tr style="'+(isUs?'background:rgba(77,132,255,.12);':'')+'">'
               +'<td style="padding:3px 4px;font-size:10px;color:var(--t1);font-weight:'+(isUs?'800':'600')+';overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:104px;">'+nm+'</td>'
               +'<td style="padding:3px 4px;font-size:10px;text-align:center;color:var(--t2);">'+(_g45Stat(st,['gamesPlayed','games','GP'])||'-')+'</td>'
@@ -44170,13 +44197,38 @@ function g45CouleursDe(nom) {
 }
 window.g45CouleursDe = g45CouleursDe;
 
-/* Le fond raye du panneau. Garde en un seul endroit : le jour ou on l'ajoute
-   a une autre vue, l'aspect reste identique sans copier le degrade. */
+/* Le fond du panneau. Garde en un seul endroit : le jour ou on l'ajoute
+   a une autre vue, l'aspect reste identique sans copier le rendu.
+
+   ═══ LES BANDES CEDENT LA PLACE A L'ECUSSON (06/09) ═══
+   Les bandes verticales aux deux couleurs du club donnaient du blanc et du
+   jaune peu flatteurs sur la moitie des equipes (retour d'Antoine sur Lyon).
+   Le blason en mosaique le remplace : il tient sur n'importe quelle hauteur de
+   panneau — 5 matchs comme 38 — la ou un ecusson unique centre se serait
+   retrouve vers le 19e match, invisible a l'ouverture.
+   Deux couches distinctes, et non une seule : le degrade garde l'opacite
+   demandee par l'appelant (teinte generale), la mosaique a la sienne, plus
+   forte, pour que le blason reste reconnaissable en couleur. `space` ecarte
+   les tuiles au lieu de les coller, et `auto 46px` cale sur la hauteur pour ne
+   deformer aucun logo, carre ou non.
+   Sans blason connu, on renvoie le degrade seul : jamais de trou visuel. */
+var _G45_FOND_TUILE = 46;      /* hauteur d'une tuile, en px */
+var _G45_FOND_MOSAIQUE = 0.26; /* opacite du blason ; baisser vers 0.14 pour plus discret */
 function g45FondClubHtml(nom, opac) {
   var c = g45CouleursDe(nom);
-  return '<div style="position:absolute;inset:0;pointer-events:none;z-index:0;'
+  var base = '<div style="position:absolute;inset:0;pointer-events:none;z-index:0;'
     + 'opacity:' + (opac || 0.2) + ';border-radius:10px;'
-    + 'background:repeating-linear-gradient(90deg,' + c[0] + ' 0 34px,' + c[1] + ' 34px 68px);"></div>';
+    + 'background:linear-gradient(100deg,' + c[0] + ' 0%,' + c[1] + ' 100%);"></div>';
+  var logo = '';
+  try { if (typeof g45LogoUrlDe === 'function') logo = g45LogoUrlDe(nom) || ''; } catch (e) {}
+  /* Une URL comportant une apostrophe casserait l'attribut style ; on la refuse
+     plutot que de l'echapper, le repli degrade etant deja propre. */
+  if (!logo || /['"\\]/.test(logo)) return base;
+  return base
+    + '<div style="position:absolute;inset:0;pointer-events:none;z-index:0;border-radius:10px;'
+    + 'opacity:' + _G45_FOND_MOSAIQUE + ';background-image:url(\'' + logo + '\');'
+    + 'background-size:auto ' + _G45_FOND_TUILE + 'px;background-repeat:space;'
+    + 'background-position:center top;"></div>';
 }
 window.g45FondClubHtml = g45FondClubHtml;
 
