@@ -51,7 +51,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=Barlow+Condensed:wght@500;600;700&display=swap">
-<link rel="stylesheet" href="style.css?v=20260904t">
+<link rel="stylesheet" href="style.css?v=20260908a">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
@@ -638,7 +638,12 @@
              ne vaut pas 10 € puisqu'on n'en recupere que le gain. Le calcul est
              inchange (`(c1 - v)` dans `buildSbRows`), seul le libelle est corrige.
              Mettre 100 revient donc a dire « remboursement en argent reel ». -->
-        <span style="font-size:13px;color:var(--t1)">Gagner ou remboursé sur la cote 1</span>
+        <!-- 06/09 : le libelle « Gagner ou rembourse » decrivait ici une OFFRE DU
+             BOOKMAKER (mise 1 rendue en freebet si elle perd), alors qu'Antoine
+             entendait par la « je gagne sur la 1, je recupere ma mise sur la 2 » —
+             ce qui est desormais le bouton 🎯 sur les lignes de cotes, et ne
+             suppose aucune promo. Deux mecaniques distinctes, deux noms distincts. -->
+        <span style="font-size:13px;color:var(--t1)">🎁 Offre bookmaker : mise 1 remboursée si elle perd</span>
         <span style="margin-left:auto;display:flex;align-items:center;gap:5px;"><span style="font-size:11.5px;color:var(--t3);">remboursement valorisé à</span><input type="number" id="sb-gorr-val" class="fi" style="width:58px;padding:3px 5px;font-size:11px;" value="70" min="1" max="100" oninput="calcSb()"><span style="font-size:10px;color:var(--t3);">%</span></span>
       </label>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
@@ -663,8 +668,8 @@
       <div class="calc-res" style="margin-top:10px;">
         <div class="cres-row"><span class="cres-l">Marge</span><span class="cres-v" id="sb-marge">—</span></div>
         <div class="cres-row"><span class="cres-l">Cote équivalente</span><span class="cres-v" id="sb-cote">—</span></div>
-        <div class="cres-row"><span class="cres-l">Retour garanti</span><span class="cres-v" id="sb-retour">—</span></div>
-        <div class="cres-row cres-hero"><span class="cres-l">Profit garanti</span><span class="cres-v" id="sb-profit">—</span></div>
+        <div class="cres-row"><span class="cres-l" id="sb-retour-l">Retour garanti</span><span class="cres-v" id="sb-retour">—</span></div>
+        <div class="cres-row cres-hero"><span class="cres-l" id="sb-profit-l">Profit garanti</span><span class="cres-v" id="sb-profit">—</span></div>
       </div>
       <div id="sb-mises" style="margin-top:8px;"></div>
     </div>
@@ -1378,7 +1383,7 @@
 <!-- FENOTTE45 : app.js est injecte par auth-guard.js APRES authentification.
      Le ?v= doit changer a CHAQUE deploiement. -->
 <script src="social.js?v=20260826n"></script>
-<script type="module" src="auth-guard.js?v=20260904t"></script>
+<script type="module" src="auth-guard.js?v=20260908a"></script>
 
 
 

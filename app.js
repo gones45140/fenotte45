@@ -1529,22 +1529,75 @@ function renderCrash(){
 }
 
 /* ── SUREBET ── */
-var sbRows=[{c:2.10},{c:2.05}];
+/* `d` = cette ligne PORTE le profit. Toutes a `true` : comportement historique,
+   les retours sont egalises et le profit est identique quelle que soit l'issue.
+   Decochee, une ligne est calculee pour rendre EXACTEMENT la mise totale : elle
+   rembourse, sans plus, et son benefice se reporte sur les lignes marquees.
+   C'est la colonne « D » de surebet.com, et c'est ce qu'Antoine appelle
+   « gagner ou rembourse » : cote 1 passe, je gagne ; cote 2 passe, je recupere
+   ma mise. A ne pas confondre avec la case OFFRE BOOKMAKER plus haut, qui elle
+   suppose un remboursement paye par le bookmaker en freebet. */
+var sbRows=[{c:2.10,d:true,k:0},{c:2.05,d:true,k:0}];
+/* ═══ COMMISSION PAR COTE (06/09) ═══
+   Piwi247 donne acces a Betfair : la commission y porte sur le GAIN NET, pas
+   sur la mise ni sur le retour. Une cote c a k % vaut donc reellement
+       1 + (c − 1)·(1 − k/100)
+   — a 3 %, une 2.18 n'est plus qu'une 2.145. C'est loin d'etre cosmetique :
+   sur 2.18/1.9 la marge tombe de 1,5 % a 0,19 %, l'arbitrage disparait presque.
+   Tout le calculateur travaille donc sur la cote EFFECTIVE ; la cote saisie
+   n'est plus qu'un affichage. */
+function sbCote(r){
+  var c=(r&&r.c)||1, k=(r&&parseFloat(r.k))||0;
+  if(!(k>0)) return c;
+  if(k>=100) k=99;
+  var e=1+(c-1)*(1-k/100);
+  return e>1?e:1;
+}
+/* Les cotes changent a chaque pari, la commission non : c'est une propriete du
+   bookmaker. On la retient donc d'une session a l'autre, ligne par ligne. */
+try{
+  var _sbK=JSON.parse(localStorage.getItem('g45_sb_com_v1')||'null');
+  if(_sbK&&_sbK.length) sbRows.forEach(function(r,i){ if(_sbK[i]!=null) r.k=_sbK[i]; });
+}catch(e){}
+function sbSetCom(i,v){
+  var r=sbRows[i]; if(!r) return;
+  r.k=parseFloat(String(v).replace(',','.'))||0;
+  try{ localStorage.setItem('g45_sb_com_v1', JSON.stringify(sbRows.map(function(x){ return x.k||0; }))); }catch(e){}
+  buildSbRows(true);
+}
+function toggleSbD(i){
+  var r=sbRows[i]; if(!r) return;
+  r.d = (r.d===false);
+  /* Au moins une ligne doit porter le profit, sinon plus rien n'a de solution :
+     decocher la derniere marquee remet tout le monde a l'egalisation. */
+  if(!sbRows.some(function(x){ return x.d!==false; })) sbRows.forEach(function(x){ x.d=true; });
+  buildSbRows();
+}
 function buildSbRows(light){
   var tot=parseFloat((($i('sb-tot')&&$i('sb-tot').value)||100).toString().replace(',','.'));
   var gorr=$i('sb-gorr')&&$i('sb-gorr').checked;
-  var impl=sbRows.reduce(function(a,r){return a+1/(r.c||1);},0);
+  var impl=sbRows.reduce(function(a,r){return a+1/sbCote(r);},0);
   var dr=$i('sb-rows');if(!dr)return;
+  /* La repartition de l'offre bookmaker a deja sa propre logique : les deux
+     mecaniques se marcheraient dessus, donc les cibles disparaissent. */
+  var cibles=!gorr && sbRows.length>=2;
   if(!light) dr.innerHTML=sbRows.map(function(r,i){
+    var on=(r.d!==false);
+    /* ETIQUETTE VISIBLE (02/09) : le `placeholder` « Cote 1 » ne s'affiche que
+       tant que le champ est vide — donc jamais ici, puisqu'il porte toujours
+       une valeur. Deux grands champs cote a cote sans rien pour les
+       distinguer, alors que le resultat plus bas parle de « Mise 1 (@2.1) ». */
     return '<div class="dutch-row">'
-      /* ETIQUETTE VISIBLE (02/09) : le `placeholder` « Cote 1 » ne s'affiche que
-         tant que le champ est vide — donc jamais ici, puisqu'il porte toujours
-         une valeur. Deux grands champs cote a cote sans rien pour les
-         distinguer, alors que le resultat plus bas parle de « Mise 1 (@2.1) ». */
       +'<span class="dutch-lbl">Cote '+(i+1)+'</span>'
       +'<input type="text" inputmode="decimal" class="fi" value="'+r.c+'" placeholder="Cote '+(i+1)+'" data-idx="'+i+'" oninput="sbRows[this.dataset.idx].c=parseFloat(this.value.replace(\',\',\'.\'))||1;buildSbRows(true);">'
+      +'<input type="text" inputmode="decimal" class="fi" value="'+(r.k||0)+'" title="Commission du bookmaker, en % du gain net" data-idx="'+i+'" style="width:52px;flex:none;text-align:center;color:'+((r.k>0)?'var(--gold)':'var(--t3)')+';" oninput="sbSetCom(this.dataset.idx,this.value)">'
+      +'<span style="font-size:11px;color:var(--t3);">%</span>'
+      +(cibles?('<button data-idx="'+i+'" onclick="toggleSbD(this.dataset.idx)" title="Concentrer le profit sur cette cote" style="border:1px solid '+(on?'rgba(30,215,96,.55)':'rgba(255,255,255,.12)')+';background:'+(on?'rgba(30,215,96,.16)':'transparent')+';color:'+(on?'var(--g)':'var(--t3)')+';border-radius:8px;padding:7px 9px;font-size:11px;white-space:nowrap;cursor:pointer;">🎯</button>'):'')
       +(sbRows.length>2?'<button class="udel" data-idx="'+i+'" onclick="sbRows.splice(this.dataset.idx,1);buildSbRows();">✕</button>':'')
-      +'</div>';
+      +'</div>'
+      /* La ligne d'explication n'apparait qu'a partir d'une commission saisie :
+         a 0 %, elle n'apprendrait rien et alourdirait l'ecran du telephone. */
+      +((r.k>0)?('<div style="font-size:10px;color:var(--gold);margin:-2px 0 6px 52px;">commission '+r.k+' % → cote effective '+sbCote(r).toFixed(3)+'</div>'):'');
   }).join('');
   var isSure=impl<1;
   var marge=((1-impl)*100).toFixed(2);
@@ -1555,17 +1608,17 @@ function buildSbRows(light){
      On égalise les retours : s1·c1 = sj·cj + v·s1, d'où sj = s1(c1−v)/cj et
      s1 = T / [1 + (c1−v)·Σ(1/cj)]. À v=0 on retombe exactement sur le surebet classique. */
   var misesHtml='';
-  var profit=0, retour=0, mises=[];
+  var profit=0, retour=0, mises=[], gains=[], toutesCibles=true, impossible=false;
   if(impl>0&&sbRows.length){
     if(gorr&&sbRows.length>=2){
       var v=parseFloat((($i('sb-gorr-val')&&$i('sb-gorr-val').value)||70).toString().replace(',','.'))/100;
       if(!(v>0)||v>1) v=0.7;
-      var c1=sbRows[0].c||1;
-      var reste=sbRows.slice(1).reduce(function(a,r){ return a+1/(r.c||1); },0);
+      var c1=sbCote(sbRows[0]);
+      var reste=sbRows.slice(1).reduce(function(a,r){ return a+1/sbCote(r); },0);
       var den=1+(c1-v)*reste;
       if(den>0&&c1>v){
         var s1=tot/den;
-        mises=[s1].concat(sbRows.slice(1).map(function(r){ return s1*(c1-v)/(r.c||1); }));
+        mises=[s1].concat(sbRows.slice(1).map(function(r){ return s1*(c1-v)/sbCote(r); }));
         retour=s1*c1;
       }
     }
@@ -1583,14 +1636,36 @@ function buildSbRows(light){
     var impose=(fix1>0);
 
     if(!mises.length){
-      if(impose){
-        var c1f=sbRows[0].c||1;
-        mises=sbRows.map(function(r,i){ return i===0 ? fix1 : fix1*c1f/(r.c||1); });
-        retour=fix1*c1f;
-      } else {
-        mises=sbRows.map(function(r){ return tot/impl*(1/(r.c||1)); });
-        retour=tot/impl;
+      /* ═══ PROFIT CONCENTRE (06/09) ═══
+         Notons D les lignes marquees et N les autres. Une ligne de N doit rendre
+         la mise totale : s_i = T/c_i. Les lignes de D partagent un meme retour R,
+         donc s_i = R/c_i. En sommant :
+             T = R·Σ_D(1/c) + T·Σ_N(1/c)
+         d'ou R = T·(1 − Σ_N) / Σ_D, et reciproquement T = R·Σ_D / (1 − Σ_N).
+         Toutes les lignes marquees : Σ_N = 0, R = T/impl — exactement l'ancienne
+         formule, l'egalisation reste donc le comportement par defaut. */
+      var oc=sbRows.map(function(r){ return sbCote(r); });
+      var dF=sbRows.map(function(r){ return r.d!==false; });
+      if(!dF.some(function(x){ return x; })) dF=dF.map(function(){ return true; });
+      toutesCibles=dF.every(function(x){ return x; });
+      var sumN=0,sumD=0;
+      dF.forEach(function(on,i){ if(on) sumD+=1/oc[i]; else sumN+=1/oc[i]; });
+      /* Σ_N ≥ 1 : les lignes non marquees coutent deja plus que ce qu'elles
+         rendent, aucun montant ne peut les rembourser. On le dit plutot que
+         d'afficher un resultat negatif incomprehensible. */
+      if(sumD<=0||sumN>=1){
+        impossible=!toutesCibles;
+        dF=dF.map(function(){ return true; }); toutesCibles=true;
+        sumN=0; sumD=impl;
       }
+      var R=0, T=0;
+      if(impose){
+        if(dF[0]){ R=fix1*oc[0]; T=R*sumD/(1-sumN); }
+        else { T=fix1*oc[0]; R=T*(1-sumN)/sumD; }
+      } else { T=tot; R=T*(1-sumN)/sumD; }
+      mises=oc.map(function(c,i){ return (dF[i]?R:T)/c; });
+      gains=oc.map(function(c,i){ return (dF[i]?R:T)-T; });
+      retour=R; tot=T;
     } else if(impose && mises[0]>0){
       /* Cas « Gagner ou Rembourse » : on met la repartition a l'echelle. */
       var k=fix1/mises[0];
@@ -1605,9 +1680,15 @@ function buildSbRows(light){
     }
     profit=retour-tot;
     sbRows.forEach(function(r,i){
-      misesHtml+='<div class="cres-row"><span class="cres-l">Mise '+(i+1)+' (@'+(r.c||1)+')'+((gorr&&i===0)?' 🎁':'')+'</span><span class="cres-v" style="color:var(--a)">'+mises[i].toFixed(2)+'€</span></div>';
+      var on=(r.d!==false);
+      var g=gains.length?gains[i]:profit;
+      misesHtml+='<div class="cres-row"><span class="cres-l">Mise '+(i+1)+' (@'+(r.c||1)+((r.k>0)?(' → '+sbCote(r).toFixed(3)):'')+')'+((gorr&&i===0)?' 🎁':'')+((!toutesCibles&&on)?' 🎯':'')+'</span><span class="cres-v" style="color:var(--a)">'+mises[i].toFixed(2)+'€'
+        +(toutesCibles?'':' <span style="color:'+(g>0.005?'var(--g)':'var(--t3)')+';">('+(g>0.005?'+':'')+g.toFixed(2)+'€)</span>')
+        +'</span></div>';
     });
     if(gorr&&sbRows.length>=2) misesHtml+='<div style="font-size:9px;color:var(--gold);padding:4px 0;line-height:1.5;">🎁 Si la sélection 1 perd, une partie du retour arrive en freebet, pas en cash.</div>';
+    if(impossible) misesHtml+='<div style="font-size:9px;color:var(--r);padding:4px 0;line-height:1.5;">🎯 Impossible de rembourser ces cotes-là : profit réparti sur toutes les lignes.</div>';
+    else if(!toutesCibles) misesHtml+='<div style="font-size:9px;color:var(--t3);padding:4px 0;line-height:1.5;">🎯 Les lignes sans cible rendent la mise totale — remboursé, ni gain ni perte.</div>';
   }
   /* Cote équivalente : ce que devient la mise totale, exprimé comme une cote unique.
      1/impl, soit exactement l'inverse de la somme des probabilités implicites. */
@@ -1619,12 +1700,16 @@ function buildSbRows(light){
   }
   var pr=$i('sb-retour');
   if(pr){ pr.innerText=(retour>0)?(retour.toFixed(2)+'€'):'—'; }
+  /* Les intitules mentent des que le profit est concentre : il n'est plus garanti
+     puisqu'il ne tombe que sur les lignes marquees. */
+  var lr=$i('sb-retour-l'); if(lr) lr.innerText=toutesCibles?'Retour garanti':'Retour si 🎯';
+  var lp=$i('sb-profit-l'); if(lp) lp.innerText=toutesCibles?'Profit garanti':'Profit si 🎯 (0 sinon)';
   var pm=$i('sb-mises');if(pm)pm.innerHTML=misesHtml;
   var pp=$i('sb-profit');
   if(pp){pp.innerText=(retour>0)?fmt(profit):'—';if(pp.innerText!=='—')pp.style.color=profit>=0?'var(--g)':'var(--r)';}
 }
 function calcSb(){buildSbRows();}
-function addSbRow(){sbRows.push({c:2.0});buildSbRows();}
+function addSbRow(){sbRows.push({c:2.0,d:true,k:0});buildSbRows();}
 
 /* ── DUTCHING (sans boucle) ── */
 function buildDtRows(light){
@@ -1909,23 +1994,25 @@ function renderAdvancedCharts(paris, bankroll) {
 
   // ── 1. Bankroll totale ──
   var bkTotal = Object.values(bankroll||{}).reduce(function(s,v){return s+parseFloat(v||0);},0);
+  /* Points regroupes (09/09) : les marqueurs se touchaient deja et formaient
+     une chenille sur 80 paris. Un marqueur porte desormais le bilan de sa
+     JOURNEE — d'ou sa couleur : vert si la journee est positive, rouge sinon.
+     Au detail par pari, il garde son sens d'origine, gagne ou perdu. */
+  var _uBk = _g45UnitesBilan(sorted, false);
   var cumProfits = [], cum=0;
-  sorted.forEach(function(h){cum+=(h.win?(h.m*h.cote-h.m):-h.m);cumProfits.push(parseFloat(cum.toFixed(2)));});
+  _uBk.unites.forEach(function(u){ cum += u.b; cumProfits.push(parseFloat(cum.toFixed(2))); });
   var startBk = bkTotal - cum;
   var bkCurve = cumProfits.map(function(p){return parseFloat((startBk+p).toFixed(2));});
   var ctx1 = document.getElementById('chart-bankroll');
   if(ctx1){
     var g1=ctx1.getContext('2d').createLinearGradient(0,0,0,150);
     g1.addColorStop(0,'rgba(240,176,32,.3)');g1.addColorStop(1,'rgba(240,176,32,0)');
-    var bkLabels = sorted.map(function(h){
-      var adv = h.target&&h.target!=='-'?h.target:'';
-      return (h.date||'')+(adv?' · '+adv:'');
+    var bkLabels = _uBk.unites.map(function(u){
+      return u.quand + (u.adv ? ' · ' + u.adv : '') + (u.n > 1 ? ' · ' + u.n + ' paris' : '');
     });
-    var bkGains = sorted.map(function(h){
-      return h.win ? '+'+(h.m*h.cote-h.m).toFixed(2)+'€' : '-'+parseFloat(h.m).toFixed(2)+'€';
-    });
+    var bkGains = _uBk.unites.map(function(u){ return (u.b >= 0 ? '+' : '') + u.b.toFixed(2) + '\u20ac'; });
     _advCharts.bk=new Chart(ctx1,{type:'line',
-      data:{labels:bkLabels,datasets:[{data:bkCurve,borderColor:'#f0b020',backgroundColor:g1,borderWidth:2,fill:true,tension:.4,pointRadius:3,pointBackgroundColor:sorted.map(function(h){return h.win?'#1ed760':'#ff4545';}),pointRadius:4,pointHoverRadius:7}]},
+      data:{labels:bkLabels,datasets:[{data:bkCurve,borderColor:'#f0b020',backgroundColor:g1,borderWidth:2,fill:true,tension:.4,pointRadius:3,pointBackgroundColor:_uBk.unites.map(function(u){return u.b>=0?'#1ed760':'#ff4545';}),pointRadius:(_uBk.unites.length>60?0:4),pointHoverRadius:7}]},
       options:{responsive:true,maintainAspectRatio:false,
         interaction:{mode:'nearest',intersect:false},
         plugins:{legend:{display:false},
@@ -2004,6 +2091,165 @@ function renderAdvancedCharts(paris, bankroll) {
     ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'nearest',intersect:false},plugins:{legend:{position:'bottom',labels:{color:'#4f5d88',font:{size:9},boxWidth:12}}},scales:{x:{display:true,grid:{display:false},ticks:{color:'#e8ecfa',font:{size:8},maxTicksLimit:6,maxRotation:0,autoSkip:true,callback:(function(){var last=null;return function(v,index){var d=roiLabels[index]||'';if(!d||d===last)return '';last=d;return d;};})()}},y:{ticks:{color:'#e8ecfa',font:{size:9},callback:function(v){return v+'%';}},grid:{color:'rgba(255,255,255,.03)'}}}}});
   }
 }
+/* ═══════════ SERIE DU BILAN : PAR PARI OU PAR JOURNEE (09/09) ═══════════
+   Un point par PARI ne tient pas dans la duree : a 5000 paris, la courbe
+   devient une bande et six series de 5000 points a recalculer figent l'onglet
+   sur telephone. Regroupees par JOURNEE, six mois font 180 points que l'on ait
+   500 ou 5000 paris — la vraie correction, pas un sous-echantillonnage.
+
+   Choix arretes avec Antoine le 09/09 :
+     - 1J et 1S gardent le detail par pari : peu de points, et l'infobulle peut
+       encore nommer le match ;
+     - 1M, 1A et Tout regroupent par journee ;
+     - les jours SANS pari sont SAUTES (pas de plat) — l'axe ne montre que les
+       journees jouees ;
+     - l'infobulle donne le benefice ou la perte DU JOUR, la date et le nombre
+       de paris ; le cumul reste lisible a droite, ou Chart.js affiche la valeur
+       de chaque courbe.
+
+   Au-dela de 300 journees, on passe a la SEMAINE, puis au MOIS au-dela de 300
+   semaines. Regle automatique plutot que seuil fige : « Tout » grandit sans
+   limite, et on ne veut pas se reposer la question dans un an. La courbe etant
+   CUMULEE, regrouper ne deforme rien — un point hebdomadaire vaut le capital
+   atteint en fin de semaine, on perd le detail intermediaire, pas la
+   trajectoire. Ce serait faux pour un indicateur de pointe. */
+/* La sonde ESPN posee ici le 09/09 a ete retiree une fois sa reponse obtenue :
+   le momentum existe sur `sports.core` (branche), `situation` est vide en
+   football meme en plein match (donc le terrain anime d'ESPN vient d'ailleurs),
+   et `espnweb` ne rend rien de plus que `site.api`. Inutile de la reconstruire
+   pour ces questions-la — la reponse est ici. */
+
+function _g45CleUnite(h, mode){
+  var d = String((h && h.date) || '');
+  if (mode === 'jour')  return d;
+  if (mode === 'mois')  return d.slice(0, 7);
+  if (mode === 'semaine') {
+    var t = new Date(d);
+    if (isNaN(t.getTime())) return d;
+    t.setDate(t.getDate() - ((t.getDay() + 6) % 7));   /* lundi de la semaine */
+    return t.toISOString().slice(0, 10);
+  }
+  return '';
+}
+function _g45DateFr(iso){
+  var m = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return m ? (m[3] + '/' + m[2]) : String(iso || '');
+}
+/* Unites d'une courbe CUMULEE, sans mise en forme : la courbe du Bilan, la
+   Bankroll totale et l'Evolution bankroll s'en servent toutes les trois.
+   `parPeriode` : le Bilan suit les chips 1J/1S, ou le detail par pari a du sens.
+   Les deux graphiques avances n'ont PAS de selecteur (verifie avec Antoine), le
+   decoupage s'y decide donc au VOLUME : en dessous de 80 paris on garde le
+   detail, au-dela on regroupe par journee, puis par semaine et par mois selon
+   les memes seuils que le Bilan.
+   Ne convient qu'aux courbes CUMULEES. Le drawdown, lui, est un CREUX MAXIMAL :
+   regrouper par cloture y effacerait les pointes, c'est-a-dire precisement ce
+   qu'il sert a montrer. */
+function _g45UnitesBilan(chrono, parPeriode){
+  var gain = function(h){ return h.win ? (h.m * h.cote - h.m) : -h.m; };
+  var mode;
+  if (parPeriode) {
+    var per = (window._bilanPeriode || 'all');
+    mode = (per === '1j' || per === '1s') ? 'pari' : 'jour';
+  } else {
+    mode = (chrono.length <= 80) ? 'pari' : 'jour';
+  }
+  if (mode !== 'pari') {
+    var cpt = function(md){ var o = {}; chrono.forEach(function(h){ o[_g45CleUnite(h, md)] = 1; }); return Object.keys(o).length; };
+    if (cpt('jour') > 300) mode = (cpt('semaine') > 300) ? 'mois' : 'semaine';
+  }
+  if (mode === 'pari') {
+    return { mode: mode, libelle: '', unites: chrono.map(function(h){
+      var adv = (h.target && h.target !== '-') ? h.target : '';
+      return { cle: null, quand: (h.date || '') + (h.heure ? ' ' + h.heure : ''), adv: adv, n: 1, b: gain(h), h: h };
+    }) };
+  }
+  var ordre = [], par = {};
+  chrono.forEach(function(h){
+    var k = _g45CleUnite(h, mode);
+    if (!par[k]) { par[k] = { cle: k, n: 0, b: 0 }; ordre.push(k); }
+    par[k].n++; par[k].b += gain(h);
+  });
+  var unites = ordre.map(function(k){
+    var u = par[k];
+    u.quand = (mode === 'mois') ? (String(k).slice(5, 7) + '/' + String(k).slice(0, 4))
+            : ((mode === 'semaine' ? 'sem. ' : '') + _g45DateFr(k));
+    u.court = (mode === 'mois') ? (String(k).slice(5, 7) + '/' + String(k).slice(2, 4)) : _g45DateFr(k);
+    u.adv = '';
+    return u;
+  });
+  var lib = { jour: 'regroup\u00e9 par jour', semaine: 'regroup\u00e9 par semaine', mois: 'regroup\u00e9 par mois' }[mode] || '';
+  return { mode: mode, libelle: lib, unites: unites };
+}
+
+function _g45SerieBilan(paris){
+  var chrono = (typeof _g45Chrono === 'function') ? _g45Chrono(paris) : paris.slice();
+  var gain = function(h){ return h.win ? (h.m * h.cote - h.m) : -h.m; };
+  var per = (window._bilanPeriode || 'all');
+  var mode = (per === '1j' || per === '1s') ? 'pari' : 'jour';
+
+  if (mode !== 'pari') {
+    var cpt = function(md){ var o = {}; chrono.forEach(function(h){ o[_g45CleUnite(h, md)] = 1; }); return Object.keys(o).length; };
+    if (cpt('jour') > 300) mode = (cpt('semaine') > 300) ? 'mois' : 'semaine';
+  }
+
+  var curve = [], clabels = [], xdates = [], cles = [], cum = 0;
+
+  if (mode === 'pari') {
+    chrono.forEach(function(h){
+      cum += gain(h);
+      curve.push(parseFloat(cum.toFixed(2)));
+      var adv = (h.target && h.target !== '-') ? h.target : '';
+      var g = gain(h);
+      clabels.push((h.date || '') + (h.heure ? ' ' + h.heure : '') + (adv ? ' vs ' + adv : '')
+        + '||' + (g >= 0 ? '+' : '') + g.toFixed(2) + '\u20ac');
+      xdates.push(h.date || '');
+      cles.push(null);
+    });
+    return { curve: curve, clabels: clabels, xdates: xdates, cles: cles, mode: mode, libelle: '' };
+  }
+
+  var ordre = [], par = {};
+  chrono.forEach(function(h){
+    var k = _g45CleUnite(h, mode);
+    if (!par[k]) { par[k] = { n: 0, b: 0, k: k }; ordre.push(k); }
+    par[k].n++; par[k].b += gain(h);
+  });
+  ordre.forEach(function(k){
+    var u = par[k];
+    cum += u.b;
+    curve.push(parseFloat(cum.toFixed(2)));
+    var quand = (mode === 'mois')
+      ? (String(k).slice(5, 7) + '/' + String(k).slice(0, 4))
+      : ((mode === 'semaine' ? 'sem. ' : '') + _g45DateFr(k));
+    clabels.push(quand + ' \u00b7 ' + u.n + ' pari' + (u.n > 1 ? 's' : '')
+      + ' \u00b7 ' + (u.b >= 0 ? '+' : '') + u.b.toFixed(2) + '\u20ac'
+      + '||' + (u.b >= 0 ? '+' : '') + u.b.toFixed(2) + '\u20ac');
+    xdates.push(mode === 'mois' ? (String(k).slice(5, 7) + '/' + String(k).slice(2, 4)) : _g45DateFr(k));
+    cles.push(k);
+  });
+  var lib = { jour: 'regroup\u00e9 par jour', semaine: 'regroup\u00e9 par semaine', mois: 'regroup\u00e9 par mois' }[mode] || '';
+  return { curve: curve, clabels: clabels, xdates: xdates, cles: cles, mode: mode, libelle: lib };
+}
+/* Une courbe de bookmaker, alignee sur les MEMES unites que la courbe globale :
+   sans ca, les points ne correspondraient pas d'une serie a l'autre. */
+function _g45SerieBook(paris, bk, serie){
+  var chrono = (typeof _g45Chrono === 'function') ? _g45Chrono(paris) : paris.slice();
+  var gain = function(h){ return h.win ? (h.m * h.cote - h.m) : -h.m; };
+  var cum = 0;
+  if (serie.mode === 'pari') {
+    return chrono.map(function(h){ if (h.b === bk) cum += gain(h); return parseFloat(cum.toFixed(2)); });
+  }
+  var parCle = {};
+  chrono.forEach(function(h){
+    if (h.b !== bk) return;
+    var k = _g45CleUnite(h, serie.mode);
+    parCle[k] = (parCle[k] || 0) + gain(h);
+  });
+  return serie.cles.map(function(k){ cum += (parCle[k] || 0); return parseFloat(cum.toFixed(2)); });
+}
+window._g45SerieBilan = _g45SerieBilan;
+
 function renderBilanTab(){
   renderSportFilter();
   try{_renderBilanPeriodeChips();}catch(e){}
@@ -2023,29 +2269,49 @@ function renderBilanTab(){
   if(ctx){
     if(_bilanChart){try{_bilanChart.destroy();}catch(e){}}
     if(paris.length){
-      var cum=0;
-      var curve=_g45Chrono(paris).map(function(h){cum+=(h.win?(h.m*h.cote)-h.m:-h.m);return parseFloat(cum.toFixed(2));});
-      var clabels=_g45Chrono(paris).map(function(h){var adv2=h.target&&h.target!=='-'?h.target:'';return (h.date||'')+(h.heure?' '+h.heure:'')+(adv2?' vs '+adv2:'')+'||'+(h.win?(h.m*h.cote-h.m>=0?'+':'')+parseFloat(h.m*h.cote-h.m).toFixed(2)+'€':'-'+parseFloat(h.m).toFixed(2)+'€');});
+      var _serie=_g45SerieBilan(paris);
+      var curve=_serie.curve, clabels=_serie.clabels, xdates=_serie.xdates;
       var color=bilanMode==='flash'?'#f0b020':bilanMode==='cockpit'?'#4d84ff':bilanMode==='simple'?'#22d3ee':'#1ed760';
       var ct=ctx.getContext('2d');
+      /* ═══ LA COURBE ETAIT ILLISIBLE SUR TELEPHONE (08/09) ═══
+         Un point etait dessine sur CHAQUE pari. Sur 50 paris tasses dans 300 px,
+         les marqueurs se touchent et forment une chenille : on ne voit plus la
+         trajectoire, seulement une masse verte (releve par Antoine).
+         Le point disparait donc des que la densite depasse un point tous les
+         ~8 px, ou sur ecran etroit. Il reste au SURVOL et au TOUCHER, ou il est
+         justement utile puisqu'il designe un pari precis.
+         Le degrade suit la meme logique : 0x99 tient sur un grand graphique, il
+         noie une courbe haute de 160 px sur telephone. */
+      var _largeurG = 0;
+      try { _largeurG = ctx.clientWidth || ctx.parentNode.clientWidth || 0; } catch (e) {}
+      var _etroitG = (typeof window !== 'undefined' && window.innerWidth < 700);
+      var _dense = _largeurG ? (curve.length > _largeurG / 8) : (curve.length > 40);
+      var _pr = (_etroitG || _dense) ? 0 : 2;
       var g=ct.createLinearGradient(0,0,0,150);
-      g.addColorStop(0,color+'99');g.addColorStop(1,color+'00');   // degrade renforce (01/09, inspire de FlashBooost)
+      g.addColorStop(0,color+(_etroitG?'55':'99'));g.addColorStop(1,color+'00');   // degrade renforce (01/09, inspire de FlashBooost), allege sur telephone (08/09)
 
       // Courbes par bookmaker
-      var datasets = [{label:'Global',data:curve,borderColor:color,backgroundColor:g,borderWidth:2,fill:true,tension:.4,pointRadius:2,pointBackgroundColor:color,pointHoverRadius:5,pointHoverBorderColor:'#fff',pointHoverBorderWidth:2}];
+      var datasets = [{label:'Global',data:curve,borderColor:color,backgroundColor:g,borderWidth:2,fill:true,tension:.4,pointRadius:_pr,pointBackgroundColor:color,pointHoverRadius:5,pointHoverBorderColor:'#fff',pointHoverBorderWidth:2}];
+      /* ═══ COMBIEN DE COURBES DE BOOKMAKER AFFICHER (08/09) ═══
+         Chaque compte ajoute un pointille : a six, le telephone est illisible,
+         et le PC le deviendra au meme rythme — le fouillis suit le nombre de
+         BOOKMAKERS, pas celui des paris.
+         Sur telephone, on ne trace donc que la courbe Global. Sur grand ecran on
+         ne touche a RIEN : la legende y est deja cliquable, Antoine masque ce
+         qu'il veut, un plafond de plus n'apporterait que de la contrainte.
+         Masque, pas supprime : le nom reste dans la legende, barre, et un appui
+         rallume la courbe. */
       var bkColors = ['#ff4545','#4d84ff','#f0b020','#1ed760','#a78bfa','#ff7b54','#22d3ee','#e879f9'];
-      var bkList = Object.keys(state.b);
-      bkList.forEach(function(bk, i){
-        var bkParis = paris.filter(function(h){return h.b===bk;});
-        if(!bkParis.length) return;
-        var bkCum=0;
-        // Aligner sur les mêmes labels (indices)
-        var bkCurve = _g45Chrono(paris).map(function(h){
-          if(h.b===bk) bkCum+=(h.win?(h.m*h.cote)-h.m:-h.m);
-          return parseFloat(bkCum.toFixed(2));
-        });
+      var bkRangs = Object.keys(state.b).map(function(bk){
+        return { bk: bk, n: paris.filter(function(h){ return h.b===bk; }).length };
+      }).filter(function(x){ return x.n > 0; })
+        .sort(function(a,b){ return b.n - a.n; });
+      var _maxCourbes = _etroitG ? 0 : bkRangs.length;   /* aucun plafond sur grand ecran */
+      bkRangs.forEach(function(e, i){
+        var bk = e.bk;
+        var bkCurve = _g45SerieBook(paris, bk, _serie);
         var bkCol = bki(bk).c || bkColors[i%bkColors.length];
-        datasets.push({label:bki(bk).n,data:bkCurve,borderColor:bkCol,backgroundColor:'transparent',borderWidth:1.5,fill:false,tension:.4,pointRadius:0,pointHoverRadius:4,borderDash:[4,3]});
+        datasets.push({label:bki(bk).n,data:bkCurve,borderColor:bkCol,backgroundColor:'transparent',borderWidth:1.5,fill:false,tension:.4,pointRadius:0,pointHoverRadius:4,borderDash:[4,3],hidden:(i>=_maxCourbes)});
       });
 
       var _lastDateShown=null;
@@ -2069,12 +2335,25 @@ function renderBilanTab(){
                l'adversaire/le `||`) et on limite le nombre d'etiquettes affichees
                (`maxTicksLimit`) — pas besoin d'une date par pari, juste des reperes
                espaces dans le temps. */
-            scales:{x:{display:true,grid:{display:false},ticks:{color:'#e8ecfa',font:{size:8},maxTicksLimit:6,maxRotation:0,autoSkip:true,callback:function(v,index){ var lbl=clabels[index]; var dOnly=lbl?lbl.split(' ')[0]:''; /* PAS DE DATE REPETEE (01/09, retour d'Antoine : "19 23 23 27..."). Chart.js
+            scales:{x:{display:true,grid:{display:false},ticks:{color:'#e8ecfa',font:{size:8},maxTicksLimit:6,maxRotation:0,autoSkip:true,callback:function(v,index){ var dOnly=xdates[index]||''; /* PAS DE DATE REPETEE (01/09, retour d'Antoine : "19 23 23 27..."). Chart.js
                  choisit les INDEX a etiqueter par intervalle regulier, pas par date —
                  deux index differents peuvent tomber sur la meme journee si plusieurs
                  paris partagent une date. On saute silencieusement toute etiquette
                  identique a la precedente affichee. */
 if(!dOnly || dOnly===_lastDateShown) return ''; _lastDateShown=dOnly; return dOnly; }}},y:{grid:{color:'rgba(255,255,255,.03)'},ticks:{color:'#e8ecfa',font:{size:9},callback:function(v){return v+'€';}}}}}});
+        /* La bascule doit se VOIR : en passant de 1S a 1M, la courbe change de
+           nature, pas seulement d'echelle. Une mention discrete sous le
+           graphique dit toujours ce qu'on lit. */
+        try {
+          var _mBloc = document.getElementById('bilan-groupe');
+          if (!_mBloc && ctx.parentNode) {
+            _mBloc = document.createElement('div');
+            _mBloc.id = 'bilan-groupe';
+            _mBloc.style.cssText = 'font-size:9px;color:var(--t3);text-align:right;margin-top:4px;';
+            ctx.parentNode.appendChild(_mBloc);
+          }
+          if (_mBloc) _mBloc.textContent = _serie.libelle ? (_serie.libelle + ' \u00b7 ' + _serie.curve.length + ' points') : '';
+        } catch (e) {}
         attachTouchTooltip('bilan-chart',function(){return _bilanChart;},'cib-bilan','cib-bilan-txt','cib-bilan-val');
     }
   }
@@ -2840,6 +3119,14 @@ function renderArchive(){
           +'<div style="position:relative;font-size:12px;font-weight:700;color:var(--t1);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word;line-height:1.25;">'+titre+'</div>'
           +(_scoreA?'<div style="position:relative;font-size:10px;font-weight:800;color:var(--t1);background:rgba(255,255,255,.10);display:inline-block;padding:1px 6px;border-radius:5px;margin:1px 0;max-width:100%;white-space:normal;word-break:break-word;">📊 '+_scoreA+'</div>':'')
           +'<div style="position:relative;font-size:10px;color:var(--t3);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word;line-height:1.3;">'+sous+'</div>'
+          /* ═══ LA NOTE S'AFFICHE ENFIN (09/09) ═══
+             Elle etait enregistree mais montree NULLE PART : ni ici, ni dans le
+             bilan, ni dans l'archive. Il fallait rouvrir la fenetre d'edition
+             pour la revoir, d'ou l'impression qu'elle disparaissait.
+             Antoine y met systematiquement le buteur ou le passeur : sur la
+             ligne, ca transforme ses paris joueurs en memoire consultable. */
+          +(function(){ var _n=(typeof g45NoteDe==='function')?g45NoteDe(h):'';
+             return _n ? ('<div style="position:relative;font-size:10px;color:var(--gold);font-style:italic;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;margin-top:2px;">\ud83d\udcdd '+_n.replace(/</g,'&lt;')+'</div>') : ''; })()
           +'</div>'
           +'<div style="position:relative;text-align:right;flex-shrink:0;">'
           +'<div style="font-size:11px;font-weight:800;color:'+winC+';">'+(h.isPending?'⏳':(h.win?'✅':'❌'))+'</div>'
@@ -3099,15 +3386,21 @@ function renderGlobalChart(){
   var gz=$i('global-zone');if(!gz)return;
   var ap=_bilanSrc().slice().reverse().sort(function(a,b){var ta=new Date((a.date||"")+" "+(a.heure||"00:00")).getTime();var tb=new Date((b.date||"")+" "+(b.heure||"00:00")).getTime();if(isNaN(ta))ta=Infinity;if(isNaN(tb))tb=Infinity;return ta-tb;});
   var startBk=state.start_bk||0;
+  /* Meme regroupement que la Bankroll totale (09/09) : au-dela de 80 paris, un
+     point par JOURNEE. Le point « Depart » reste en tete, il porte le capital
+     initial et non un pari. */
+  var _uEv = _g45UnitesBilan(ap, false);
   var cum=startBk;
   var glabels=['Départ'];
   var curve=[startBk];
-  ap.forEach(function(h){
-    cum+=(h.win?(h.m*h.cote)-h.m:-h.m);
+  _uEv.unites.forEach(function(u){
+    cum += u.b;
     curve.push(parseFloat(cum.toFixed(2)));
-    var gain=(h.win?(h.m*h.cote)-h.m:-h.m);
-    var adv3=h.target&&h.target!=='-'?h.target:'';var lbl=(h.date||'')+(h.n?' '+h.n:'')+(adv3?' vs '+adv3:'')+(h.l?' P'+h.l:'');
-    glabels.push(lbl+'||'+(gain>=0?'+':'')+gain.toFixed(2)+'€');
+    var h = u.h || {};
+    var lbl = (u.mode === 'pari' || u.h)
+      ? ((h.date||'')+(h.n?' '+h.n:'')+(u.adv?' vs '+u.adv:'')+(h.l?' P'+h.l:''))
+      : (u.quand + ' \u00b7 ' + u.n + ' pari' + (u.n>1?'s':''));
+    glabels.push(lbl+'||'+(u.b>=0?'+':'')+u.b.toFixed(2)+'€');
   });
   var tot=cum-startBk;
   var wins=_bilanSrc().filter(function(h){return h.win&&!h.isCashout;}).length,n=_bilanSrc().filter(function(h){return !h.isCashout;}).length;
@@ -3791,14 +4084,118 @@ function cancelBet(id){
    pari. html2canvas transforme la carte (construite hors-ecran) en image ;
    partage natif sur mobile (WhatsApp/Discord/SMS via le menu du telephone),
    telechargement en repli sur PC ou si le partage natif echoue. */
-function _g45CarteResultatHTML(h){
-  var isSimpleC=(h.n==='SIMPLE');
-  var adversaireC=(h.target&&h.target!=='-'&&!isSimpleC)?h.target:'';
-  var titreC=isSimpleC?(h.target&&h.target!=='-'?h.target.split(/\s+vs\s+/i)[0]:(h.n||'—')):(h.n||h.target||'—');
-  var u1=(state.u||[]).filter(function(x){return x&&x.n===titreC;})[0];
-  var coul1=(u1&&u1.color)||'#4d84ff';
-  var abbr1=(u1&&u1.abbr)||titreC.replace(/[^a-zA-Z]/g,'').substring(0,3).toUpperCase()||'—';
-  var abbr2=adversaireC?adversaireC.replace(/[^a-zA-Z]/g,'').substring(0,3).toUpperCase():'';
+/* ══════════ CARTE DE RESULTAT PARTAGEABLE — REFONTE DU 08/09 ══════════
+   Quatre corrections d'un coup, toutes venues des cartes qu'Antoine a relues :
+
+   1. L'ADVERSAIRE ETAIT PERDU. Sur un pari simple, le titre coupait « A vs B »
+      et ne gardait que A : la carte d'un « over 2.5 sets » Osaka-Rybakina ne
+      nommait qu'une joueuse. Les deux sont desormais affichees.
+   2. COULEUR IDENTITAIRE. Tout ce qui n'etait pas une equipe du mur sortait
+      dans le meme bleu par defaut. Trois sources dans l'ordre : la couleur du
+      mur, la couleur d'ecurie F1 relevee par OpenF1, sinon une teinte DERIVEE
+      DU NOM — stable, donc un meme combattant garde sa carte, et deux
+      combattants n'ont pas la meme.
+   3. VIGNETTE. Initiales quand il y a deux camps (il faut les distinguer),
+      emoji du sport quand il n'y en a qu'un et qu'aucun club n'est identifie
+      (« GAS » ne disait rien).
+   4. VRAI ECUSSON quand on l'a. Attention, c'est la partie delicate : html2canvas
+      REFUSE d'exporter un canvas contenant une image d'un autre domaine. On ne
+      pose donc jamais une URL directement — elle est telechargee, convertie en
+      donnee integree, et n'est utilisee que si l'operation a reussi. Sinon on
+      retombe sur les initiales : jamais de carte cassee.
+      La tuile est CLAIRE et non aux couleurs du club : un ecusson sombre sur
+      son propre fond disparait (le PSG marine sur du marine). */
+
+/* Teinte stable calculee sur le nom. Rendue en HEX et non en hsl(), parce que
+   le fond de la carte lui concatene une opacite hexadecimale (`coul+'59'`). */
+function _g45TeinteNom(nom){
+  var x = 0, t = String(nom || '');
+  for (var i = 0; i < t.length; i++) x = (x * 31 + t.charCodeAt(i)) % 360;
+  var h = x / 360, s = 0.62, l = 0.52;
+  var f = function (n) {
+    var k = (n + h * 12) % 12, a = s * Math.min(l, 1 - l);
+    var v = l - a * Math.max(-1, Math.min(Math.min(k - 3, 9 - k), 1));
+    return Math.round(v * 255).toString(16).padStart(2, '0');
+  };
+  return '#' + f(0) + f(8) + f(4);
+}
+/* Couleurs d'ecurie F1 : remplies au fil des consultations du module F1, qui
+   telecharge deja la liste des pilotes. Aucune requete supplementaire ici. */
+function _g45PiloteCoul(nom){
+  try {
+    var t = JSON.parse(localStorage.getItem('g45_pilote_coul') || '{}');
+    return t[String(nom || '').toLowerCase().replace(/[^a-z0-9]/g, '')] || '';
+  } catch (e) { return ''; }
+}
+function g45CoulIdentite(nom){
+  try {
+    var u = ((typeof state !== 'undefined' && state && state.u) || []).filter(function (x) { return x && x.n === nom; })[0];
+    if (u && u.color) return u.color;
+    var f = _g45PiloteCoul(nom);
+    if (f) return f;
+  } catch (e) {}
+  return _g45TeinteNom(nom);
+}
+window.g45CoulIdentite = g45CoulIdentite;
+
+/* Les deux camps d'un pari, lus au meme endroit par le rendu et par le
+   pre-chargement des ecussons — sinon les deux se contrediraient. */
+function _g45CarteNoms(h){
+  var simple = (h.n === 'SIMPLE');
+  var parts = (h.target && h.target !== '-') ? String(h.target).split(/\s+vs\s+/i) : [];
+  if (simple) return { titre: String(parts[0] || h.n || '—').trim(), adv: String(parts[1] || '').trim() };
+  return { titre: String(h.n || h.target || '—').trim(), adv: (h.target && h.target !== '-') ? String(h.target).trim() : '' };
+}
+/* L'adresse d'un ecusson : le mur et la table LOGOS d'abord, puis le CDN ESPN
+   des que la table perso nous donne l'identifiant — c'est elle qui alimente
+   deja les vignettes de la vue Classement. */
+function _g45CarteLogoUrl(nom){
+  try {
+    var l = (typeof g45LogoUrlDe === 'function') ? g45LogoUrlDe(nom) : '';
+    if (l) return l;
+    if (typeof g45TeamsPerso === 'function') {
+      var e = g45TeamsPerso()[String(nom || '').toLowerCase().trim()];
+      if (e && e.id) return 'https://a.espncdn.com/i/teamlogos/' + (e.sport || 'soccer') + '/500/' + e.id + '.png';
+    }
+  } catch (e2) {}
+  return '';
+}
+/* Telechargement puis conversion en donnee integree. En memoire seulement :
+   ces chaines pesent plusieurs Ko et le localStorage d'Antoine a deja sature
+   une fois. Un echec (serveur sans en-tetes CORS, reseau) rend '' et la carte
+   retombe sur les initiales. */
+var _g45CarteLogoCache = {};
+async function _g45CarteLogoData(url){
+  if (!url) return '';
+  if (_g45CarteLogoCache[url] !== undefined) return _g45CarteLogoCache[url];
+  var out = '';
+  try {
+    var r = await fetch(url, { mode: 'cors' });
+    if (r.ok) {
+      var b = await r.blob();
+      if (b.size && b.size < 500000) {
+        out = await new Promise(function (res) {
+          var fr = new FileReader();
+          fr.onload = function () { res(String(fr.result || '')); };
+          fr.onerror = function () { res(''); };
+          fr.readAsDataURL(b);
+        });
+      }
+    }
+  } catch (e) { out = ''; }
+  _g45CarteLogoCache[url] = out;
+  return out;
+}
+
+function _g45CarteResultatHTML(h, logos){
+  logos = logos || {};
+  var nomsC = _g45CarteNoms(h);
+  var titreC = nomsC.titre, adversaireC = nomsC.adv;
+  var u1 = (state.u || []).filter(function (x) { return x && x.n === titreC; })[0];
+  var coul1 = g45CoulIdentite(titreC);
+  var coul2 = adversaireC ? g45CoulIdentite(adversaireC) : '';
+  var abbr1 = (u1 && u1.abbr) || titreC.replace(/[^a-zA-Z]/g, '').substring(0, 3).toUpperCase() || '—';
+  var abbr2 = adversaireC ? (adversaireC.replace(/[^a-zA-Z]/g, '').substring(0, 3).toUpperCase() || '—') : '';
   var isPend=!!h.isPending;
   var gain=isPend?0:(h.win?(parseFloat(h.m)*parseFloat(h.cote)-parseFloat(h.m)):-parseFloat(h.m));
   var verdictTxt=isPend?'⏳ En cours':(h.win?'✅ Gagné':'❌ Perdu');
@@ -3806,8 +4203,35 @@ function _g45CarteResultatHTML(h){
   var score=(typeof _g45ScoreTexte==='function')?(_g45ScoreTexte(h)||''):'';
   var typeTxtC=h.type||'';
   if(/^victoire\b/i.test(typeTxtC) && titreC.toLowerCase().indexOf(' vs ')===-1){ typeTxtC=titreC+' '+typeTxtC.replace(/^victoire\b/i,'gagne'); }
+
+  var sportIco1 = h.sport || '⚽';
+  var vign = function (abbr, coul, logo, solo, club) {
+    var base = 'width:64px;height:64px;border-radius:16px;display:flex;align-items:center;justify-content:center;';
+    if (logo) {
+      return '<div style="' + base + 'background:rgba(255,255,255,.92);box-shadow:inset 0 0 0 1px rgba(0,0,0,.10);">'
+        + '<img src="' + logo + '" style="width:44px;height:44px;object-fit:contain;" alt="">'
+        + '</div>';
+    }
+    if (solo && !club) {
+      return '<div style="' + base + 'font-size:32px;line-height:1;background:linear-gradient(145deg,' + coul + '4d,' + coul + '12);box-shadow:inset 0 0 0 1px rgba(255,255,255,.14);">' + sportIco1 + '</div>';
+    }
+    return '<div style="' + base + 'font-size:20px;font-weight:900;color:#fff;background:linear-gradient(145deg,' + coul + ',' + coul + '80);box-shadow:inset 0 0 0 1px rgba(255,255,255,.18);">' + abbr + '</div>';
+  };
+  var vignette1 = vign(abbr1, coul1, logos.a || '', !adversaireC, !!(u1 && u1.color));
+  var vignette2 = adversaireC ? vign(abbr2, coul2, logos.b || '', false, true) : '';
+
+  /* Le titre porte les deux noms tant qu'il tient sur une ligne. Au-dela, on
+     garde le premier : deux clubs longs deborderaient de la carte. */
+  var titreHtml = (adversaireC && (titreC + ' vs ' + adversaireC).length <= 30)
+    ? (titreC + ' <span style="color:#4f5d88;font-size:12px;">vs</span> ' + adversaireC)
+    : titreC;
+
+  var halo = coul2
+    ? ('radial-gradient(circle at 30% 18%,' + coul1 + '4d 0%,' + coul1 + '00 55%),radial-gradient(circle at 70% 18%,' + coul2 + '4d 0%,' + coul2 + '00 55%)')
+    : ('radial-gradient(circle at 50% 18%,' + coul1 + '59 0%,' + coul1 + '00 55%)');
+
   return '<div style="width:340px;border-radius:20px;overflow:hidden;position:relative;'
-    +'background:radial-gradient(circle at 50% 18%,'+coul1+'59 0%,'+coul1+'00 55%),repeating-linear-gradient(135deg,rgba(255,255,255,.025) 0px,rgba(255,255,255,.025) 1px,transparent 1px,transparent 14px),linear-gradient(160deg,#151b30 0%,#0a0e1a 65%);'
+    +'background:'+halo+',repeating-linear-gradient(135deg,rgba(255,255,255,.025) 0px,rgba(255,255,255,.025) 1px,transparent 1px,transparent 14px),linear-gradient(160deg,#151b30 0%,#0a0e1a 65%);'
     +'border:1px solid rgba(255,255,255,.08);font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif;">'
     +'<div style="position:absolute;right:-20px;bottom:-40px;font-size:210px;opacity:.13;line-height:1;transform:rotate(-8deg);">'+(h.sport||'⚽')+'</div>'
     +'<div style="position:relative;padding:20px 22px 16px;display:flex;justify-content:space-between;align-items:center;">'
@@ -3815,10 +4239,10 @@ function _g45CarteResultatHTML(h){
       +'<div style="font-size:11px;font-weight:800;padding:5px 12px;border-radius:20px;background:'+verdictCls+'26;color:'+verdictCls+';">'+verdictTxt+'</div>'
     +'</div>'
     +'<div style="position:relative;display:flex;align-items:center;justify-content:center;gap:18px;padding:6px 22px 22px;">'
-      +'<div style="width:64px;height:64px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;color:#fff;background:'+coul1+';">'+abbr1+'</div>'
-      +(abbr2?'<div style="color:#4f5d88;font-size:13px;font-weight:700;">VS</div><div style="width:64px;height:64px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;color:#fff;background:#5b6690;">'+abbr2+'</div>':'')
+      +vignette1
+      +(vignette2?('<div style="color:#4f5d88;font-size:13px;font-weight:700;">VS</div>'+vignette2):'')
     +'</div>'
-    +'<div style="position:relative;text-align:center;padding:0 22px;font-size:16px;font-weight:800;color:#fff;">'+(titreC||'')+'</div>'
+    +'<div style="position:relative;text-align:center;padding:0 22px;font-size:16px;font-weight:800;color:#fff;">'+titreHtml+'</div>'
     +'<div style="position:relative;text-align:center;padding:4px 22px 16px;font-size:11px;color:#8b97c4;">'+(h.comp?('<span style="display:inline-block;font-size:9px;font-weight:900;letter-spacing:.06em;color:#c9d2f0;border:1px solid rgba(255,255,255,.16);padding:3px 8px;border-radius:6px;background:rgba(255,255,255,.05);margin-right:6px;">'+h.comp.toUpperCase()+'</span>'):'')+(h.date||'')+'</div>'
     +(score?('<div style="position:relative;text-align:center;padding:0 22px 10px;"><span style="font-size:26px;font-weight:900;color:#fff;">'+score+'</span></div>'):'')
     +'<div style="position:relative;text-align:center;padding:0 22px 18px;font-size:11px;color:#8b97c4;">'+(typeTxtC||'')+'</div>'
@@ -3836,9 +4260,20 @@ async function g45PartagerPari(id){
   var h=(state.a||[]).concat(state.h||[]).filter(function(x){return x.id===id;})[0];
   if(!h){ alert('Pari introuvable.'); return; }
   if(typeof html2canvas==='undefined'){ alert('Génération d\'image indisponible pour le moment.'); return; }
+  /* Les ecussons sont resolus AVANT le rendu : la capture ne doit contenir que
+     des donnees integrees, jamais une URL externe. Un echec rend '' et la
+     vignette repasse en initiales. */
+  var _nm=_g45CarteNoms(h), _lg={};
+  try {
+    var _r = await Promise.all([
+      _g45CarteLogoData(_g45CarteLogoUrl(_nm.titre)),
+      _nm.adv ? _g45CarteLogoData(_g45CarteLogoUrl(_nm.adv)) : Promise.resolve('')
+    ]);
+    _lg = { a: _r[0], b: _r[1] };
+  } catch (e) { _lg = {}; }
   var wrap=document.createElement('div');
   wrap.style.cssText='position:fixed;left:-9999px;top:0;';
-  wrap.innerHTML=_g45CarteResultatHTML(h);
+  wrap.innerHTML=_g45CarteResultatHTML(h, _lg);
   document.body.appendChild(wrap);
   try{
     var canvas=await html2canvas(wrap.firstChild, {backgroundColor:null, scale:2});
@@ -4086,11 +4521,81 @@ function combiAddType(i, kw){
   combiRows[i].type=nv;
   if(inp){ inp.value=nv; inp.focus(); }
 }
+/* ═══ LA LISTE DES SPORTS DE PARI, EN UN SEUL ENDROIT (08/09) ═══
+   NOM AU PLURIEL PRECIS — `G45_SPORTS_PARI` et surtout PAS `G45_SPORTS` :
+   ce dernier existe deja plus bas pour la navigation des Competitions, avec des
+   entrees d'une tout autre forme ({key, name, ico, groups}). Deux `var` de meme
+   nom dans le meme fichier : la derniere declaree gagne, et les selecteurs de
+   sport ont affiche « undefined undefined » (bug introduit puis corrige le
+   08/09). Ne jamais reprendre ce nom ici.
+   Elle etait recopiee a SIX endroits : trois `<select>` en dur dans index.html
+   (pari, edition, ajout au mur), deux tableaux ici pour les combines, un sixieme
+   dans la Memoire stats. Ajouter le biathlon demandait donc six modifications,
+   et en oublier une passait inapercu.
+   Tout part maintenant de cette table. Les `<select>` statiques sont remplis au
+   demarrage : leur contenu HTML sert de repli si le script ne tourne pas.
+
+   LA VALEUR EST L'EMOJI, et elle est ECRITE DANS LES PARIS DEJA ENREGISTRES :
+   ne JAMAIS changer celle d'un sport existant, un pari MMA archive sous 🥊
+   deviendrait un pari de boxe. C'est pour cette raison que la boxe prend 👊 et
+   non 🥊, deja pris par le MMA depuis le debut.
+
+   Un sport ajoute ici sert d'ETIQUETTE : filtres du Bilan, montante, capital.
+   Il n'apporte ni score automatique ni fiche equipe — comme le WRC aujourd'hui. */
+var G45_SPORTS_PARI = [
+  { v:'⚽',    n:'Football' },
+  { v:'🏀',    n:'Basket' },
+  { v:'🎾',    n:'Tennis' },
+  { v:'🏈',    n:'NFL' },
+  { v:'⚾',    n:'Baseball' },
+  { v:'🏒',    n:'Hockey' },
+  { v:'🏉',    n:'Rugby' },
+  { v:'🏉🇦🇺', n:'NRL' },
+  { v:'🏎',    n:'F1' },
+  { v:'🥊',    n:'MMA' },
+  { v:'🚗',    n:'WRC' },
+  { v:'🚴',    n:'Cyclisme' },
+  { v:'🎿',    n:'Biathlon' },
+  { v:'⛷',    n:'Ski alpin' },
+  { v:'🏊',    n:'Natation' },
+  { v:'🏃',    n:'Athlétisme' },
+  { v:'🤾',    n:'Handball' },
+  { v:'🏐',    n:'Volley' },
+  { v:'👊',    n:'Boxe' },
+  { v:'⛳',    n:'Golf' },
+  { v:'🎯',    n:'Fléchettes' },
+  { v:'🏓',    n:'Tennis de table' },
+  { v:'🎮',    n:'e-sport' },
+  { v:'🏅',    n:'Autre — préciser dans Compétition' }
+];
+function g45SportsOptions(sel){
+  return G45_SPORTS_PARI.map(function(s){
+    return '<option value="'+s.v+'"'+((sel!=null&&sel===s.v)?' selected':'')+'>'+s.v+' '+s.n+'</option>';
+  }).join('');
+}
+/* Etiquettes « emoji + nom », pour les listes deroulantes des combines. */
+function g45SportsLabels(){ return G45_SPORTS_PARI.map(function(s){ return s.v+' '+s.n; }); }
+/* Remplit les selecteurs poses en dur dans la page, en CONSERVANT la valeur
+   choisie : la fonction peut donc etre rappelee sans rien perdre. */
+function g45SportsRemplir(){
+  ['c-sport','p-sport','u-sport','gms-sport'].forEach(function(id){
+    var el=document.getElementById(id); if(!el) return;
+    var av=el.value;
+    el.innerHTML=g45SportsOptions();
+    if(av) el.value=av;
+  });
+}
+window.G45_SPORTS_PARI=G45_SPORTS_PARI; window.g45SportsOptions=g45SportsOptions; window.g45SportsRemplir=g45SportsRemplir;
+if (typeof document!=='undefined') {
+  if (document.readyState==='loading') document.addEventListener('DOMContentLoaded', g45SportsRemplir);
+  else g45SportsRemplir();
+}
+
 function renderCombiRows() {
   var el = document.getElementById('combi-rows');
   if(!el) return;
   if(!combiRows.length) { el.innerHTML=''; updateCombiCote(); return; }
-  var sports = ['⚽ Football','🏀 Basket','🎾 Tennis','🏈 NFL','🏒 Hockey','⚾ Baseball','🏉 Rugby','🏎 F1','🥊 MMA','🚗 WRC','🚴 Cyclisme'];
+  var sports = g45SportsLabels();   /* source unique : G45_SPORTS */
   var html = '';
   combiRows.forEach(function(row, i) {
     html += '<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:12px;margin-bottom:10px;">';
@@ -6484,7 +6989,7 @@ function editBet(id){
   $i('edit-bk').value=h.b||'';
   $i('edit-date').value=h.date||'';
   $i('edit-heure').value=h.heure||'';
-  $i('edit-notes').value=h.notes||'';
+  $i('edit-notes').value=g45NoteDe(h);
   /* Les trois options relues a l'ouverture (04/09) : sans ca, la fenetre les
      afficherait toujours decochees et le premier enregistrement les effacerait. */
   var _oc=function(id,v){ var e=$i(id); if(e) e.checked=!!v; };
@@ -6512,7 +7017,7 @@ function saveEditBet(){
   h.b=$i('edit-bk').value.trim();
   h.date=$i('edit-date').value;
   h.heure=$i('edit-heure').value;
-  h.notes=$i('edit-notes').value.trim();
+  g45NoteSet(h, $i('edit-notes').value);
   var _ck=function(id){ var e=$i(id); return !!(e&&e.checked); };
   h.isFreebet=_ck('edit-freebet'); h.isLay=_ck('edit-lay'); h.isFlash=_ck('edit-flash');
   h.domicile=$i('edit-domicile').value;
@@ -9219,22 +9724,75 @@ function renderCrash(){
 }
 
 /* ── SUREBET ── */
-var sbRows=[{c:2.10},{c:2.05}];
+/* `d` = cette ligne PORTE le profit. Toutes a `true` : comportement historique,
+   les retours sont egalises et le profit est identique quelle que soit l'issue.
+   Decochee, une ligne est calculee pour rendre EXACTEMENT la mise totale : elle
+   rembourse, sans plus, et son benefice se reporte sur les lignes marquees.
+   C'est la colonne « D » de surebet.com, et c'est ce qu'Antoine appelle
+   « gagner ou rembourse » : cote 1 passe, je gagne ; cote 2 passe, je recupere
+   ma mise. A ne pas confondre avec la case OFFRE BOOKMAKER plus haut, qui elle
+   suppose un remboursement paye par le bookmaker en freebet. */
+var sbRows=[{c:2.10,d:true,k:0},{c:2.05,d:true,k:0}];
+/* ═══ COMMISSION PAR COTE (06/09) ═══
+   Piwi247 donne acces a Betfair : la commission y porte sur le GAIN NET, pas
+   sur la mise ni sur le retour. Une cote c a k % vaut donc reellement
+       1 + (c − 1)·(1 − k/100)
+   — a 3 %, une 2.18 n'est plus qu'une 2.145. C'est loin d'etre cosmetique :
+   sur 2.18/1.9 la marge tombe de 1,5 % a 0,19 %, l'arbitrage disparait presque.
+   Tout le calculateur travaille donc sur la cote EFFECTIVE ; la cote saisie
+   n'est plus qu'un affichage. */
+function sbCote(r){
+  var c=(r&&r.c)||1, k=(r&&parseFloat(r.k))||0;
+  if(!(k>0)) return c;
+  if(k>=100) k=99;
+  var e=1+(c-1)*(1-k/100);
+  return e>1?e:1;
+}
+/* Les cotes changent a chaque pari, la commission non : c'est une propriete du
+   bookmaker. On la retient donc d'une session a l'autre, ligne par ligne. */
+try{
+  var _sbK=JSON.parse(localStorage.getItem('g45_sb_com_v1')||'null');
+  if(_sbK&&_sbK.length) sbRows.forEach(function(r,i){ if(_sbK[i]!=null) r.k=_sbK[i]; });
+}catch(e){}
+function sbSetCom(i,v){
+  var r=sbRows[i]; if(!r) return;
+  r.k=parseFloat(String(v).replace(',','.'))||0;
+  try{ localStorage.setItem('g45_sb_com_v1', JSON.stringify(sbRows.map(function(x){ return x.k||0; }))); }catch(e){}
+  buildSbRows(true);
+}
+function toggleSbD(i){
+  var r=sbRows[i]; if(!r) return;
+  r.d = (r.d===false);
+  /* Au moins une ligne doit porter le profit, sinon plus rien n'a de solution :
+     decocher la derniere marquee remet tout le monde a l'egalisation. */
+  if(!sbRows.some(function(x){ return x.d!==false; })) sbRows.forEach(function(x){ x.d=true; });
+  buildSbRows();
+}
 function buildSbRows(light){
   var tot=parseFloat((($i('sb-tot')&&$i('sb-tot').value)||100).toString().replace(',','.'));
   var gorr=$i('sb-gorr')&&$i('sb-gorr').checked;
-  var impl=sbRows.reduce(function(a,r){return a+1/(r.c||1);},0);
+  var impl=sbRows.reduce(function(a,r){return a+1/sbCote(r);},0);
   var dr=$i('sb-rows');if(!dr)return;
+  /* La repartition de l'offre bookmaker a deja sa propre logique : les deux
+     mecaniques se marcheraient dessus, donc les cibles disparaissent. */
+  var cibles=!gorr && sbRows.length>=2;
   if(!light) dr.innerHTML=sbRows.map(function(r,i){
+    var on=(r.d!==false);
+    /* ETIQUETTE VISIBLE (02/09) : le `placeholder` « Cote 1 » ne s'affiche que
+       tant que le champ est vide — donc jamais ici, puisqu'il porte toujours
+       une valeur. Deux grands champs cote a cote sans rien pour les
+       distinguer, alors que le resultat plus bas parle de « Mise 1 (@2.1) ». */
     return '<div class="dutch-row">'
-      /* ETIQUETTE VISIBLE (02/09) : le `placeholder` « Cote 1 » ne s'affiche que
-         tant que le champ est vide — donc jamais ici, puisqu'il porte toujours
-         une valeur. Deux grands champs cote a cote sans rien pour les
-         distinguer, alors que le resultat plus bas parle de « Mise 1 (@2.1) ». */
       +'<span class="dutch-lbl">Cote '+(i+1)+'</span>'
       +'<input type="text" inputmode="decimal" class="fi" value="'+r.c+'" placeholder="Cote '+(i+1)+'" data-idx="'+i+'" oninput="sbRows[this.dataset.idx].c=parseFloat(this.value.replace(\',\',\'.\'))||1;buildSbRows(true);">'
+      +'<input type="text" inputmode="decimal" class="fi" value="'+(r.k||0)+'" title="Commission du bookmaker, en % du gain net" data-idx="'+i+'" style="width:52px;flex:none;text-align:center;color:'+((r.k>0)?'var(--gold)':'var(--t3)')+';" oninput="sbSetCom(this.dataset.idx,this.value)">'
+      +'<span style="font-size:11px;color:var(--t3);">%</span>'
+      +(cibles?('<button data-idx="'+i+'" onclick="toggleSbD(this.dataset.idx)" title="Concentrer le profit sur cette cote" style="border:1px solid '+(on?'rgba(30,215,96,.55)':'rgba(255,255,255,.12)')+';background:'+(on?'rgba(30,215,96,.16)':'transparent')+';color:'+(on?'var(--g)':'var(--t3)')+';border-radius:8px;padding:7px 9px;font-size:11px;white-space:nowrap;cursor:pointer;">🎯</button>'):'')
       +(sbRows.length>2?'<button class="udel" data-idx="'+i+'" onclick="sbRows.splice(this.dataset.idx,1);buildSbRows();">✕</button>':'')
-      +'</div>';
+      +'</div>'
+      /* La ligne d'explication n'apparait qu'a partir d'une commission saisie :
+         a 0 %, elle n'apprendrait rien et alourdirait l'ecran du telephone. */
+      +((r.k>0)?('<div style="font-size:10px;color:var(--gold);margin:-2px 0 6px 52px;">commission '+r.k+' % → cote effective '+sbCote(r).toFixed(3)+'</div>'):'');
   }).join('');
   var isSure=impl<1;
   var marge=((1-impl)*100).toFixed(2);
@@ -9245,17 +9803,17 @@ function buildSbRows(light){
      On égalise les retours : s1·c1 = sj·cj + v·s1, d'où sj = s1(c1−v)/cj et
      s1 = T / [1 + (c1−v)·Σ(1/cj)]. À v=0 on retombe exactement sur le surebet classique. */
   var misesHtml='';
-  var profit=0, retour=0, mises=[];
+  var profit=0, retour=0, mises=[], gains=[], toutesCibles=true, impossible=false;
   if(impl>0&&sbRows.length){
     if(gorr&&sbRows.length>=2){
       var v=parseFloat((($i('sb-gorr-val')&&$i('sb-gorr-val').value)||70).toString().replace(',','.'))/100;
       if(!(v>0)||v>1) v=0.7;
-      var c1=sbRows[0].c||1;
-      var reste=sbRows.slice(1).reduce(function(a,r){ return a+1/(r.c||1); },0);
+      var c1=sbCote(sbRows[0]);
+      var reste=sbRows.slice(1).reduce(function(a,r){ return a+1/sbCote(r); },0);
       var den=1+(c1-v)*reste;
       if(den>0&&c1>v){
         var s1=tot/den;
-        mises=[s1].concat(sbRows.slice(1).map(function(r){ return s1*(c1-v)/(r.c||1); }));
+        mises=[s1].concat(sbRows.slice(1).map(function(r){ return s1*(c1-v)/sbCote(r); }));
         retour=s1*c1;
       }
     }
@@ -9273,14 +9831,36 @@ function buildSbRows(light){
     var impose=(fix1>0);
 
     if(!mises.length){
-      if(impose){
-        var c1f=sbRows[0].c||1;
-        mises=sbRows.map(function(r,i){ return i===0 ? fix1 : fix1*c1f/(r.c||1); });
-        retour=fix1*c1f;
-      } else {
-        mises=sbRows.map(function(r){ return tot/impl*(1/(r.c||1)); });
-        retour=tot/impl;
+      /* ═══ PROFIT CONCENTRE (06/09) ═══
+         Notons D les lignes marquees et N les autres. Une ligne de N doit rendre
+         la mise totale : s_i = T/c_i. Les lignes de D partagent un meme retour R,
+         donc s_i = R/c_i. En sommant :
+             T = R·Σ_D(1/c) + T·Σ_N(1/c)
+         d'ou R = T·(1 − Σ_N) / Σ_D, et reciproquement T = R·Σ_D / (1 − Σ_N).
+         Toutes les lignes marquees : Σ_N = 0, R = T/impl — exactement l'ancienne
+         formule, l'egalisation reste donc le comportement par defaut. */
+      var oc=sbRows.map(function(r){ return sbCote(r); });
+      var dF=sbRows.map(function(r){ return r.d!==false; });
+      if(!dF.some(function(x){ return x; })) dF=dF.map(function(){ return true; });
+      toutesCibles=dF.every(function(x){ return x; });
+      var sumN=0,sumD=0;
+      dF.forEach(function(on,i){ if(on) sumD+=1/oc[i]; else sumN+=1/oc[i]; });
+      /* Σ_N ≥ 1 : les lignes non marquees coutent deja plus que ce qu'elles
+         rendent, aucun montant ne peut les rembourser. On le dit plutot que
+         d'afficher un resultat negatif incomprehensible. */
+      if(sumD<=0||sumN>=1){
+        impossible=!toutesCibles;
+        dF=dF.map(function(){ return true; }); toutesCibles=true;
+        sumN=0; sumD=impl;
       }
+      var R=0, T=0;
+      if(impose){
+        if(dF[0]){ R=fix1*oc[0]; T=R*sumD/(1-sumN); }
+        else { T=fix1*oc[0]; R=T*(1-sumN)/sumD; }
+      } else { T=tot; R=T*(1-sumN)/sumD; }
+      mises=oc.map(function(c,i){ return (dF[i]?R:T)/c; });
+      gains=oc.map(function(c,i){ return (dF[i]?R:T)-T; });
+      retour=R; tot=T;
     } else if(impose && mises[0]>0){
       /* Cas « Gagner ou Rembourse » : on met la repartition a l'echelle. */
       var k=fix1/mises[0];
@@ -9295,9 +9875,15 @@ function buildSbRows(light){
     }
     profit=retour-tot;
     sbRows.forEach(function(r,i){
-      misesHtml+='<div class="cres-row"><span class="cres-l">Mise '+(i+1)+' (@'+(r.c||1)+')'+((gorr&&i===0)?' 🎁':'')+'</span><span class="cres-v" style="color:var(--a)">'+mises[i].toFixed(2)+'€</span></div>';
+      var on=(r.d!==false);
+      var g=gains.length?gains[i]:profit;
+      misesHtml+='<div class="cres-row"><span class="cres-l">Mise '+(i+1)+' (@'+(r.c||1)+((r.k>0)?(' → '+sbCote(r).toFixed(3)):'')+')'+((gorr&&i===0)?' 🎁':'')+((!toutesCibles&&on)?' 🎯':'')+'</span><span class="cres-v" style="color:var(--a)">'+mises[i].toFixed(2)+'€'
+        +(toutesCibles?'':' <span style="color:'+(g>0.005?'var(--g)':'var(--t3)')+';">('+(g>0.005?'+':'')+g.toFixed(2)+'€)</span>')
+        +'</span></div>';
     });
     if(gorr&&sbRows.length>=2) misesHtml+='<div style="font-size:9px;color:var(--gold);padding:4px 0;line-height:1.5;">🎁 Si la sélection 1 perd, une partie du retour arrive en freebet, pas en cash.</div>';
+    if(impossible) misesHtml+='<div style="font-size:9px;color:var(--r);padding:4px 0;line-height:1.5;">🎯 Impossible de rembourser ces cotes-là : profit réparti sur toutes les lignes.</div>';
+    else if(!toutesCibles) misesHtml+='<div style="font-size:9px;color:var(--t3);padding:4px 0;line-height:1.5;">🎯 Les lignes sans cible rendent la mise totale — remboursé, ni gain ni perte.</div>';
   }
   /* Cote équivalente : ce que devient la mise totale, exprimé comme une cote unique.
      1/impl, soit exactement l'inverse de la somme des probabilités implicites. */
@@ -9309,12 +9895,16 @@ function buildSbRows(light){
   }
   var pr=$i('sb-retour');
   if(pr){ pr.innerText=(retour>0)?(retour.toFixed(2)+'€'):'—'; }
+  /* Les intitules mentent des que le profit est concentre : il n'est plus garanti
+     puisqu'il ne tombe que sur les lignes marquees. */
+  var lr=$i('sb-retour-l'); if(lr) lr.innerText=toutesCibles?'Retour garanti':'Retour si 🎯';
+  var lp=$i('sb-profit-l'); if(lp) lp.innerText=toutesCibles?'Profit garanti':'Profit si 🎯 (0 sinon)';
   var pm=$i('sb-mises');if(pm)pm.innerHTML=misesHtml;
   var pp=$i('sb-profit');
   if(pp){pp.innerText=(retour>0)?fmt(profit):'—';if(pp.innerText!=='—')pp.style.color=profit>=0?'var(--g)':'var(--r)';}
 }
 function calcSb(){buildSbRows();}
-function addSbRow(){sbRows.push({c:2.0});buildSbRows();}
+function addSbRow(){sbRows.push({c:2.0,d:true,k:0});buildSbRows();}
 
 /* ── DUTCHING (sans boucle) ── */
 function buildDtRows(light){
@@ -9583,23 +10173,25 @@ function renderAdvancedCharts(paris, bankroll) {
 
   // ── 1. Bankroll totale ──
   var bkTotal = Object.values(bankroll||{}).reduce(function(s,v){return s+parseFloat(v||0);},0);
+  /* Points regroupes (09/09) : les marqueurs se touchaient deja et formaient
+     une chenille sur 80 paris. Un marqueur porte desormais le bilan de sa
+     JOURNEE — d'ou sa couleur : vert si la journee est positive, rouge sinon.
+     Au detail par pari, il garde son sens d'origine, gagne ou perdu. */
+  var _uBk = _g45UnitesBilan(sorted, false);
   var cumProfits = [], cum=0;
-  sorted.forEach(function(h){cum+=(h.win?(h.m*h.cote-h.m):-h.m);cumProfits.push(parseFloat(cum.toFixed(2)));});
+  _uBk.unites.forEach(function(u){ cum += u.b; cumProfits.push(parseFloat(cum.toFixed(2))); });
   var startBk = bkTotal - cum;
   var bkCurve = cumProfits.map(function(p){return parseFloat((startBk+p).toFixed(2));});
   var ctx1 = document.getElementById('chart-bankroll');
   if(ctx1){
     var g1=ctx1.getContext('2d').createLinearGradient(0,0,0,150);
     g1.addColorStop(0,'rgba(240,176,32,.3)');g1.addColorStop(1,'rgba(240,176,32,0)');
-    var bkLabels = sorted.map(function(h){
-      var adv = h.target&&h.target!=='-'?h.target:'';
-      return (h.date||'')+(adv?' · '+adv:'');
+    var bkLabels = _uBk.unites.map(function(u){
+      return u.quand + (u.adv ? ' · ' + u.adv : '') + (u.n > 1 ? ' · ' + u.n + ' paris' : '');
     });
-    var bkGains = sorted.map(function(h){
-      return h.win ? '+'+(h.m*h.cote-h.m).toFixed(2)+'€' : '-'+parseFloat(h.m).toFixed(2)+'€';
-    });
+    var bkGains = _uBk.unites.map(function(u){ return (u.b >= 0 ? '+' : '') + u.b.toFixed(2) + '\u20ac'; });
     _advCharts.bk=new Chart(ctx1,{type:'line',
-      data:{labels:bkLabels,datasets:[{data:bkCurve,borderColor:'#f0b020',backgroundColor:g1,borderWidth:2,fill:true,tension:.4,pointRadius:3,pointBackgroundColor:sorted.map(function(h){return h.win?'#1ed760':'#ff4545';}),pointRadius:4,pointHoverRadius:7}]},
+      data:{labels:bkLabels,datasets:[{data:bkCurve,borderColor:'#f0b020',backgroundColor:g1,borderWidth:2,fill:true,tension:.4,pointRadius:3,pointBackgroundColor:_uBk.unites.map(function(u){return u.b>=0?'#1ed760':'#ff4545';}),pointRadius:(_uBk.unites.length>60?0:4),pointHoverRadius:7}]},
       options:{responsive:true,maintainAspectRatio:false,
         interaction:{mode:'nearest',intersect:false},
         plugins:{legend:{display:false},
@@ -9697,29 +10289,49 @@ function renderBilanTab(){
   if(ctx){
     if(_bilanChart){try{_bilanChart.destroy();}catch(e){}}
     if(paris.length){
-      var cum=0;
-      var curve=_g45Chrono(paris).map(function(h){cum+=(h.win?(h.m*h.cote)-h.m:-h.m);return parseFloat(cum.toFixed(2));});
-      var clabels=_g45Chrono(paris).map(function(h){var adv2=h.target&&h.target!=='-'?h.target:'';return (h.date||'')+(h.heure?' '+h.heure:'')+(adv2?' vs '+adv2:'')+'||'+(h.win?(h.m*h.cote-h.m>=0?'+':'')+parseFloat(h.m*h.cote-h.m).toFixed(2)+'€':'-'+parseFloat(h.m).toFixed(2)+'€');});
+      var _serie=_g45SerieBilan(paris);
+      var curve=_serie.curve, clabels=_serie.clabels, xdates=_serie.xdates;
       var color=bilanMode==='flash'?'#f0b020':bilanMode==='cockpit'?'#4d84ff':bilanMode==='simple'?'#22d3ee':'#1ed760';
       var ct=ctx.getContext('2d');
+      /* ═══ LA COURBE ETAIT ILLISIBLE SUR TELEPHONE (08/09) ═══
+         Un point etait dessine sur CHAQUE pari. Sur 50 paris tasses dans 300 px,
+         les marqueurs se touchent et forment une chenille : on ne voit plus la
+         trajectoire, seulement une masse verte (releve par Antoine).
+         Le point disparait donc des que la densite depasse un point tous les
+         ~8 px, ou sur ecran etroit. Il reste au SURVOL et au TOUCHER, ou il est
+         justement utile puisqu'il designe un pari precis.
+         Le degrade suit la meme logique : 0x99 tient sur un grand graphique, il
+         noie une courbe haute de 160 px sur telephone. */
+      var _largeurG = 0;
+      try { _largeurG = ctx.clientWidth || ctx.parentNode.clientWidth || 0; } catch (e) {}
+      var _etroitG = (typeof window !== 'undefined' && window.innerWidth < 700);
+      var _dense = _largeurG ? (curve.length > _largeurG / 8) : (curve.length > 40);
+      var _pr = (_etroitG || _dense) ? 0 : 2;
       var g=ct.createLinearGradient(0,0,0,150);
-      g.addColorStop(0,color+'99');g.addColorStop(1,color+'00');   // degrade renforce (01/09, inspire de FlashBooost)
+      g.addColorStop(0,color+(_etroitG?'55':'99'));g.addColorStop(1,color+'00');   // degrade renforce (01/09, inspire de FlashBooost), allege sur telephone (08/09)
 
       // Courbes par bookmaker
-      var datasets = [{label:'Global',data:curve,borderColor:color,backgroundColor:g,borderWidth:2,fill:true,tension:.4,pointRadius:2,pointBackgroundColor:color,pointHoverRadius:5,pointHoverBorderColor:'#fff',pointHoverBorderWidth:2}];
+      var datasets = [{label:'Global',data:curve,borderColor:color,backgroundColor:g,borderWidth:2,fill:true,tension:.4,pointRadius:_pr,pointBackgroundColor:color,pointHoverRadius:5,pointHoverBorderColor:'#fff',pointHoverBorderWidth:2}];
+      /* ═══ COMBIEN DE COURBES DE BOOKMAKER AFFICHER (08/09) ═══
+         Chaque compte ajoute un pointille : a six, le telephone est illisible,
+         et le PC le deviendra au meme rythme — le fouillis suit le nombre de
+         BOOKMAKERS, pas celui des paris.
+         Sur telephone, on ne trace donc que la courbe Global. Sur grand ecran on
+         ne touche a RIEN : la legende y est deja cliquable, Antoine masque ce
+         qu'il veut, un plafond de plus n'apporterait que de la contrainte.
+         Masque, pas supprime : le nom reste dans la legende, barre, et un appui
+         rallume la courbe. */
       var bkColors = ['#ff4545','#4d84ff','#f0b020','#1ed760','#a78bfa','#ff7b54','#22d3ee','#e879f9'];
-      var bkList = Object.keys(state.b);
-      bkList.forEach(function(bk, i){
-        var bkParis = paris.filter(function(h){return h.b===bk;});
-        if(!bkParis.length) return;
-        var bkCum=0;
-        // Aligner sur les mêmes labels (indices)
-        var bkCurve = _g45Chrono(paris).map(function(h){
-          if(h.b===bk) bkCum+=(h.win?(h.m*h.cote)-h.m:-h.m);
-          return parseFloat(bkCum.toFixed(2));
-        });
+      var bkRangs = Object.keys(state.b).map(function(bk){
+        return { bk: bk, n: paris.filter(function(h){ return h.b===bk; }).length };
+      }).filter(function(x){ return x.n > 0; })
+        .sort(function(a,b){ return b.n - a.n; });
+      var _maxCourbes = _etroitG ? 0 : bkRangs.length;   /* aucun plafond sur grand ecran */
+      bkRangs.forEach(function(e, i){
+        var bk = e.bk;
+        var bkCurve = _g45SerieBook(paris, bk, _serie);
         var bkCol = bki(bk).c || bkColors[i%bkColors.length];
-        datasets.push({label:bki(bk).n,data:bkCurve,borderColor:bkCol,backgroundColor:'transparent',borderWidth:1.5,fill:false,tension:.4,pointRadius:0,pointHoverRadius:4,borderDash:[4,3]});
+        datasets.push({label:bki(bk).n,data:bkCurve,borderColor:bkCol,backgroundColor:'transparent',borderWidth:1.5,fill:false,tension:.4,pointRadius:0,pointHoverRadius:4,borderDash:[4,3],hidden:(i>=_maxCourbes)});
       });
 
       var _lastDateShown=null;
@@ -9743,12 +10355,25 @@ function renderBilanTab(){
                l'adversaire/le `||`) et on limite le nombre d'etiquettes affichees
                (`maxTicksLimit`) — pas besoin d'une date par pari, juste des reperes
                espaces dans le temps. */
-            scales:{x:{display:true,grid:{display:false},ticks:{color:'#e8ecfa',font:{size:8},maxTicksLimit:6,maxRotation:0,autoSkip:true,callback:function(v,index){ var lbl=clabels[index]; var dOnly=lbl?lbl.split(' ')[0]:''; /* PAS DE DATE REPETEE (01/09, retour d'Antoine : "19 23 23 27..."). Chart.js
+            scales:{x:{display:true,grid:{display:false},ticks:{color:'#e8ecfa',font:{size:8},maxTicksLimit:6,maxRotation:0,autoSkip:true,callback:function(v,index){ var dOnly=xdates[index]||''; /* PAS DE DATE REPETEE (01/09, retour d'Antoine : "19 23 23 27..."). Chart.js
                  choisit les INDEX a etiqueter par intervalle regulier, pas par date —
                  deux index differents peuvent tomber sur la meme journee si plusieurs
                  paris partagent une date. On saute silencieusement toute etiquette
                  identique a la precedente affichee. */
 if(!dOnly || dOnly===_lastDateShown) return ''; _lastDateShown=dOnly; return dOnly; }}},y:{grid:{color:'rgba(255,255,255,.03)'},ticks:{color:'#e8ecfa',font:{size:9},callback:function(v){return v+'€';}}}}}});
+        /* La bascule doit se VOIR : en passant de 1S a 1M, la courbe change de
+           nature, pas seulement d'echelle. Une mention discrete sous le
+           graphique dit toujours ce qu'on lit. */
+        try {
+          var _mBloc = document.getElementById('bilan-groupe');
+          if (!_mBloc && ctx.parentNode) {
+            _mBloc = document.createElement('div');
+            _mBloc.id = 'bilan-groupe';
+            _mBloc.style.cssText = 'font-size:9px;color:var(--t3);text-align:right;margin-top:4px;';
+            ctx.parentNode.appendChild(_mBloc);
+          }
+          if (_mBloc) _mBloc.textContent = _serie.libelle ? (_serie.libelle + ' \u00b7 ' + _serie.curve.length + ' points') : '';
+        } catch (e) {}
         attachTouchTooltip('bilan-chart',function(){return _bilanChart;},'cib-bilan','cib-bilan-txt','cib-bilan-val');
     }
   }
@@ -10514,6 +11139,14 @@ function renderArchive(){
           +'<div style="position:relative;font-size:12px;font-weight:700;color:var(--t1);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word;line-height:1.25;">'+titre+'</div>'
           +(_scoreA?'<div style="position:relative;font-size:10px;font-weight:800;color:var(--t1);background:rgba(255,255,255,.10);display:inline-block;padding:1px 6px;border-radius:5px;margin:1px 0;max-width:100%;white-space:normal;word-break:break-word;">📊 '+_scoreA+'</div>':'')
           +'<div style="position:relative;font-size:10px;color:var(--t3);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word;line-height:1.3;">'+sous+'</div>'
+          /* ═══ LA NOTE S'AFFICHE ENFIN (09/09) ═══
+             Elle etait enregistree mais montree NULLE PART : ni ici, ni dans le
+             bilan, ni dans l'archive. Il fallait rouvrir la fenetre d'edition
+             pour la revoir, d'ou l'impression qu'elle disparaissait.
+             Antoine y met systematiquement le buteur ou le passeur : sur la
+             ligne, ca transforme ses paris joueurs en memoire consultable. */
+          +(function(){ var _n=(typeof g45NoteDe==='function')?g45NoteDe(h):'';
+             return _n ? ('<div style="position:relative;font-size:10px;color:var(--gold);font-style:italic;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;margin-top:2px;">\ud83d\udcdd '+_n.replace(/</g,'&lt;')+'</div>') : ''; })()
           +'</div>'
           +'<div style="position:relative;text-align:right;flex-shrink:0;">'
           +'<div style="font-size:11px;font-weight:800;color:'+winC+';">'+(h.isPending?'⏳':(h.win?'✅':'❌'))+'</div>'
@@ -10773,15 +11406,21 @@ function renderGlobalChart(){
   var gz=$i('global-zone');if(!gz)return;
   var ap=_bilanSrc().slice().reverse().sort(function(a,b){var ta=new Date((a.date||"")+" "+(a.heure||"00:00")).getTime();var tb=new Date((b.date||"")+" "+(b.heure||"00:00")).getTime();if(isNaN(ta))ta=Infinity;if(isNaN(tb))tb=Infinity;return ta-tb;});
   var startBk=state.start_bk||0;
+  /* Meme regroupement que la Bankroll totale (09/09) : au-dela de 80 paris, un
+     point par JOURNEE. Le point « Depart » reste en tete, il porte le capital
+     initial et non un pari. */
+  var _uEv = _g45UnitesBilan(ap, false);
   var cum=startBk;
   var glabels=['Départ'];
   var curve=[startBk];
-  ap.forEach(function(h){
-    cum+=(h.win?(h.m*h.cote)-h.m:-h.m);
+  _uEv.unites.forEach(function(u){
+    cum += u.b;
     curve.push(parseFloat(cum.toFixed(2)));
-    var gain=(h.win?(h.m*h.cote)-h.m:-h.m);
-    var adv3=h.target&&h.target!=='-'?h.target:'';var lbl=(h.date||'')+(h.n?' '+h.n:'')+(adv3?' vs '+adv3:'')+(h.l?' P'+h.l:'');
-    glabels.push(lbl+'||'+(gain>=0?'+':'')+gain.toFixed(2)+'€');
+    var h = u.h || {};
+    var lbl = (u.mode === 'pari' || u.h)
+      ? ((h.date||'')+(h.n?' '+h.n:'')+(u.adv?' vs '+u.adv:'')+(h.l?' P'+h.l:''))
+      : (u.quand + ' \u00b7 ' + u.n + ' pari' + (u.n>1?'s':''));
+    glabels.push(lbl+'||'+(u.b>=0?'+':'')+u.b.toFixed(2)+'€');
   });
   var tot=cum-startBk;
   var wins=_bilanSrc().filter(function(h){return h.win&&!h.isCashout;}).length,n=_bilanSrc().filter(function(h){return !h.isCashout;}).length;
@@ -11457,7 +12096,7 @@ function renderCombiRows() {
   var el = document.getElementById('combi-rows');
   if(!el) return;
   if(!combiRows.length) { el.innerHTML=''; updateCombiCote(); return; }
-  var sports = ['⚽ Football','🏀 Basket','🎾 Tennis','🏈 NFL','🏒 Hockey','⚾ Baseball','🏉 Rugby','🏎 F1','🥊 MMA','🚗 WRC','🚴 Cyclisme'];
+  var sports = g45SportsLabels();   /* source unique : G45_SPORTS */
   var html = '';
   combiRows.forEach(function(row, i) {
     html += '<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:12px;margin-bottom:10px;">';
@@ -13850,7 +14489,7 @@ function editBet(id){
   $i('edit-bk').value=h.b||'';
   $i('edit-date').value=h.date||'';
   $i('edit-heure').value=h.heure||'';
-  $i('edit-notes').value=h.notes||'';
+  $i('edit-notes').value=g45NoteDe(h);
   /* Les trois options relues a l'ouverture (04/09) : sans ca, la fenetre les
      afficherait toujours decochees et le premier enregistrement les effacerait. */
   var _oc=function(id,v){ var e=$i(id); if(e) e.checked=!!v; };
@@ -13878,7 +14517,7 @@ function saveEditBet(){
   h.b=$i('edit-bk').value.trim();
   h.date=$i('edit-date').value;
   h.heure=$i('edit-heure').value;
-  h.notes=$i('edit-notes').value.trim();
+  g45NoteSet(h, $i('edit-notes').value);
   var _ck=function(id){ var e=$i(id); return !!(e&&e.checked); };
   h.isFreebet=_ck('edit-freebet'); h.isLay=_ck('edit-lay'); h.isFlash=_ck('edit-flash');
   h.domicile=$i('edit-domicile').value;
@@ -16794,11 +17433,20 @@ async function loadNhlSaisons(el, nom) {
       // Résultats complets
       html += '<div class="cwrap">';
       var nhlMatchOk=0; allGames.forEach(function(g){var idN=g.homeTeam&&g.homeTeam.abbrev===teamInfo.abbr;var tsN=idN?(g.homeTeam.score||0):(g.awayTeam.score||0);var osN=idN?(g.awayTeam.score||0):(g.homeTeam.score||0);var totN=tsN+osN;var cN={'O4.5':totN>4.5,'O5.5':totN>5.5,'O6.5':totN>6.5,'O7.5':totN>7.5,'U5.5':totN<=5.5,'U6.5':totN<=6.5,'U7.5':totN<=7.5,'BTS':g.homeTeam.score>0&&g.awayTeam.score>0,'WIN':tsN>osN,'LOSE':tsN<osN};if((window._nhlQuickStats||['O5.5']).every(function(k){return cN[k]!==undefined?cN[k]:true;}))nhlMatchOk++;});
-      html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">';
+      /* Le blason vient du calendrier NHL lui-meme (`logo` sur chaque equipe),
+         donc il fonctionne aussi pour une equipe absente du mur. */
+      var _nhlCrest='';
+      try{ (allGames||[]).some(function(g){
+        if(g.homeTeam&&g.homeTeam.abbrev===teamInfo.abbr) _nhlCrest=g.homeTeam.logo||'';
+        else if(g.awayTeam&&g.awayTeam.abbrev===teamInfo.abbr) _nhlCrest=g.awayTeam.logo||'';
+        return !!_nhlCrest;
+      }); }catch(e){}
+      html += g45UsPanneauOuvrir(nom, _nhlCrest);
+      html += '<div style="position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">';
       html += '<div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#4f5d88;">📅 Résultats ('+n+')</div>';
       html += '<div style="font-size:10px;font-weight:800;color:'+(nhlMatchOk>0?'#1ed760':'#ff4545')+';">✅ '+nhlMatchOk+'/'+n+' — '+(window._nhlQuickStats||['O5.5']).join(' + ')+'</div>';
       html += '</div>';
-      html += '<div style="display:flex;flex-direction:column;gap:3px;">';
+      html += '<div style="position:relative;z-index:1;display:flex;flex-direction:column;gap:3px;">';
       allGames.slice().reverse().forEach(function(g){
         var isDom = g.homeTeam&&g.homeTeam.abbrev===teamInfo.abbr;
         var ts=isDom?(g.homeTeam.score||0):(g.awayTeam.score||0);
@@ -16821,20 +17469,19 @@ async function loadNhlSaisons(el, nom) {
         var nhlChk={'O4.5':total>4.5,'O5.5':total>5.5,'O6.5':total>6.5,'O7.5':total>7.5,'U5.5':total<=5.5,'U6.5':total<=6.5,'U7.5':total<=7.5,'BTS':g.homeTeam.score>0&&g.awayTeam.score>0,'WIN':ts>os,'LOSE':ts<os};
         var nhlAllOk=nqlqs.every(function(k){return nhlChk[k]!==undefined?nhlChk[k]:true;});
         var nhlBar=nhlAllOk?'#1ed760':'#ff4545';
-        html += '<div onclick="_callUS(\''+nKey+'\')" style="display:grid;grid-template-columns:32px 1fr auto 1fr 50px;gap:4px;align-items:center;padding:5px 8px;background:'+(isDom?'rgba(255,255,255,.04)':'rgba(255,255,255,.02)')+';border-radius:6px;border-left:3px solid '+nhlBar+';cursor:pointer;">';
-        html += '<div style="font-size:9px;color:var(--t3);text-align:center;">'+ds2+'</div>';
-        html += '<div style="font-size:10px;font-weight:'+(isDom?'800':'400')+';color:'+(isDom?'var(--t1)':'var(--t2)')+';text-align:right;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">'+hName+'</div>';
-        html += '<div style="font-size:11px;font-weight:800;color:'+rc+';text-align:center;min-width:40px;">'+g.homeTeam.score+' - '+g.awayTeam.score+'</div>';
-        html += '<div style="font-size:10px;font-weight:'+(!isDom?'800':'400')+';color:'+(!isDom?'var(--t1)':'var(--t2)')+';overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">'+aName+'</div>';
+
         var nhlBadges='';
         var nqs2 = window._nhlQuickStats||['O5.5','O6.5','BTS'];
         var NHL_CHK={'O4.5':total>4.5,'O5.5':total>5.5,'O6.5':total>6.5,'O7.5':total>7.5,'U5.5':total<=5.5,'U6.5':total<=6.5,'U7.5':total<=7.5,'BTS':g.homeTeam.score>0&&g.awayTeam.score>0,'WIN':ts>os,'LOSE':ts<os};
         var NHL_COL={'O4.5':'#4d84ff','O5.5':'#1ed760','O6.5':'#f0b020','O7.5':'#ff7b54','U5.5':'#22d3ee','U6.5':'#67e8f9','U7.5':'#a5f3fc','BTS':'#a78bfa','WIN':'#1ed760','LOSE':'#ff4545'};
         nqs2.forEach(function(k){if(NHL_CHK[k])nhlBadges+='<span style="color:'+NHL_COL[k]+';">'+k+'</span><br>';});
-        html += '<div style="font-size:8px;text-align:right;">🏒<br>'+nhlBadges+'</div>';
-        html += '</div>';
+        html += g45UsLigne({clic:"_callUS('"+nKey+"')", date:ds2, hNom:hName, aNom:aName,
+          score:g.homeTeam.score+' - '+g.awayTeam.score, isDom:isDom, barre:nhlBar,
+          coulScore:rc, ico:'🏒', badges:nhlBadges});
       });
-      html += '</div></div>';
+      html += '</div>';
+      html += g45UsPanneauFermer();
+      html += '</div>';
     }
 
     // Prochain match
@@ -16987,8 +17634,11 @@ async function loadMlbSaisons(el, nom) {
 
       // Résultats complets
       html += '<div class="cwrap">';
-      html += '<div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#4f5d88;margin-bottom:8px;">📅 Résultats ('+n+' matchs)</div>';
-      html += '<div style="display:flex;flex-direction:column;gap:3px;">';
+      /* L'API MLB ne sert pas de blason : `g45FondClubHtml` retombe alors sur
+         `g45LogoUrlDe`, donc sur le mur, et a defaut sur le degrade seul. */
+      html += g45UsPanneauOuvrir(nom, '');
+      html += '<div style="position:relative;z-index:1;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#4f5d88;margin-bottom:8px;">📅 Résultats ('+n+' matchs)</div>';
+      html += '<div style="position:relative;z-index:1;display:flex;flex-direction:column;gap:3px;">';
       allGames.slice().reverse().forEach(function(g){
         var isDom=g.teams&&g.teams.home&&g.teams.home.team&&g.teams.home.team.id===teamInfo.id;
         var ts=isDom?(g.teams.home.score||0):(g.teams.away.score||0);
@@ -17003,15 +17653,13 @@ async function loadMlbSaisons(el, nom) {
         var mlbChk={'O6':total>6,'O7':total>7,'O8':total>8,'O9':total>9,'U7':total<=7,'U8':total<=8,'U9':total<=9,'BTS':ts>0&&os>0,'WIN':ts>os,'LOSE':ts<os};
         var mlbAllOk=mqlqs.every(function(k){return mlbChk[k]!==undefined?mlbChk[k]:true;});
         var mlbBar=mlbAllOk?'#1ed760':'#ff4545';
-        html += '<div onclick="_callUS(\''+mKey+'\')" style="display:grid;grid-template-columns:32px 1fr auto 1fr 36px;gap:4px;align-items:center;padding:5px 8px;background:'+(isDom?'rgba(255,255,255,.04)':'rgba(255,255,255,.02)')+';border-radius:6px;border-left:3px solid '+mlbBar+';cursor:pointer;">';
-        html += '<div style="font-size:9px;color:var(--t3);text-align:center;">'+ds2+'</div>';
-        html += '<div style="font-size:10px;font-weight:'+(isDom?'800':'400')+';color:'+(isDom?'var(--t1)':'var(--t2)')+';text-align:right;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">'+hName+'</div>';
-        html += '<div style="font-size:11px;font-weight:800;color:'+rc+';text-align:center;min-width:40px;">'+g.teams.home.score+' - '+g.teams.away.score+'</div>';
-        html += '<div style="font-size:10px;font-weight:'+(!isDom?'800':'400')+';color:'+(!isDom?'var(--t1)':'var(--t2)')+';overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">'+aName+'</div>';
-        html += '<div style="font-size:8px;text-align:right;">⚾<br>'+(total>8?'<span style="color:#f0b020;">O8</span>':'')+'</div>';
-        html += '</div>';
+        html += g45UsLigne({clic:"_callUS('"+mKey+"')", date:ds2, hNom:hName, aNom:aName,
+          score:g.teams.home.score+' - '+g.teams.away.score, isDom:isDom, barre:mlbBar,
+          coulScore:rc, ico:'⚾', badges:(total>8?'<span style="color:#f0b020;">O8</span>':'')});
       });
-      html += '</div></div>';
+      html += '</div>';
+      html += g45UsPanneauFermer();
+      html += '</div>';
     }
 
     // Prochain match MLB
@@ -17596,8 +18244,10 @@ async function loadNbaSaisons(el, nom) {
 
       // Résultats complets
       html += '<div class="cwrap" style="margin-bottom:10px;">';
-      html += '<div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#4f5d88;margin-bottom:8px;">📅 Résultats ('+n+' matchs)</div>';
-      html += '<div style="display:flex;flex-direction:column;gap:3px;">';
+      /* balldontlie ne sert pas de blason non plus — meme repli que pour la MLB. */
+      html += g45UsPanneauOuvrir(nom, '');
+      html += '<div style="position:relative;z-index:1;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#4f5d88;margin-bottom:8px;">📅 Résultats ('+n+' matchs)</div>';
+      html += '<div style="position:relative;z-index:1;display:flex;flex-direction:column;gap:3px;">';
       allGames.slice().reverse().forEach(function(g){
         var isDom=g.home_team&&g.home_team.id===bdlId;
         var ts=isDom?g.home_team_score:g.visitor_team_score;
@@ -17612,15 +18262,13 @@ async function loadNbaSaisons(el, nom) {
         var nbaChk={'O200':tot>200,'O210':tot>210,'O220':tot>220,'O230':tot>230,'U210':tot<=210,'U220':tot<=220,'U230':tot<=230,'WIN':ts>os,'LOSE':ts<os};
         var nbaAllOk=bqlqs.every(function(k){return nbaChk[k]!==undefined?nbaChk[k]:true;});
         var nbaBar=nbaAllOk?'#1ed760':'#ff4545';
-        html += '<div onclick="_callUS(\''+bKey+'\')" style="display:grid;grid-template-columns:32px 1fr auto 1fr 40px;gap:4px;align-items:center;padding:5px 8px;background:'+(isDom?'rgba(255,255,255,.04)':'rgba(255,255,255,.02)')+';border-radius:6px;border-left:3px solid '+nbaBar+';cursor:pointer;">';
-        html += '<div style="font-size:9px;color:var(--t3);text-align:center;">'+ds+'</div>';
-        html += '<div style="font-size:10px;font-weight:'+(isDom?'800':'400')+';color:'+(isDom?'var(--t1)':'var(--t2)')+';text-align:right;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">'+hName+'</div>';
-        html += '<div style="font-size:11px;font-weight:800;color:'+rc+';text-align:center;min-width:50px;">'+g.home_team_score+' - '+g.visitor_team_score+'</div>';
-        html += '<div style="font-size:10px;font-weight:'+(!isDom?'800':'400')+';color:'+(!isDom?'var(--t1)':'var(--t2)')+';overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">'+aName+'</div>';
-        html += '<div style="font-size:8px;text-align:right;">🏀<br>'+(tot>220?'<span style="color:#f0b020;">O220</span>':'')+'</div>';
-        html += '</div>';
+        html += g45UsLigne({clic:"_callUS('"+bKey+"')", date:ds, hNom:hName, aNom:aName,
+          score:g.home_team_score+' - '+g.visitor_team_score, isDom:isDom, barre:nbaBar,
+          coulScore:rc, ico:'🏀', badges:(tot>220?'<span style="color:#f0b020;">O220</span>':'')});
       });
-      html += '</div></div>';
+      html += '</div>';
+      html += g45UsPanneauFermer();
+      html += '</div>';
     }
 
     // Prochain match NBA
@@ -19513,8 +20161,8 @@ function _momentsTimeline(data){
         ico='⚽'; col='#1ed760';
         label = '<b style="color:var(--t1);">'+(p0||'But')+'</b>'
               + (own?' <span style="color:#ff8a8a;font-size:8.5px;">(csc)</span>':'')
-              + (pen?' <span style="color:var(--t3);font-size:8.5px;">(pen)</span>':'')
-              + (p1 && !own ? ' <span style="color:var(--t3);font-size:9px;">👟 '+p1+'</span>' : '');
+              + (pen?' <span style="color:var(--t2);font-size:9px;">(pen)</span>':'')
+              + (p1 && !own ? ' <span style="color:var(--t2);font-size:9px;">👟 '+p1+'</span>' : '');
       } else if(/red card|carton rouge/.test(tt)){
         ico='🟥'; label='<span style="color:var(--t1);">'+(p0||'')+'</span>';
       } else if(/yellow card|carton jaune|booked/.test(tt)){
@@ -19533,7 +20181,11 @@ function _momentsTimeline(data){
       h += '<div style="display:flex;gap:8px;align-items:flex-start;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:10px;">';
       h += '<span style="color:'+it.col+';font-weight:800;min-width:34px;flex-shrink:0;">'+(it.min||'')+'</span>';
       h += '<span style="flex-shrink:0;">'+it.ico+'</span>';
-      h += '<div style="line-height:1.35;">'+it.label+(it.team?(' <span style="color:var(--t3);font-size:8.5px;">· '+it.team+'</span>'):'')+'</div>';
+      /* Le club, le passeur et les mentions (csc)/(pen) etaient en `--t3`, la
+         teinte la plus pale de la palette. Lisible sur un fond uni, plus du tout
+         depuis que le panneau porte une mosaique de blasons (Antoine les a
+         soulignes en rouge sur sa capture). On remonte d'un cran, en `--t2`. */
+      h += '<div style="line-height:1.35;">'+it.label+(it.team?(' <span style="color:var(--t2);font-size:9px;">· '+it.team+'</span>'):'')+'</div>';
       h += '</div>';
     });
     h += '</div>';
@@ -22025,22 +22677,32 @@ function renderSaisonsChart(el, results, nom) {
            colonne des scores reste parfaitement alignee d'une ligne a l'autre —
            ce qui se serait perdu en centrant un bloc unique sur le contenu.
            Meme logique que le voile ajuste au contenu des cartes du mur. */
-        var _vl = isOurHome ? 'rgba(16,21,38,.80)' : 'rgba(16,21,38,.72)';
-        html += '<div onclick="toggleSaisonMatchDetail(this)" data-eid="'+(m.espnId||'')+'" data-lg="'+((m.competition&&m.competition.code)||'')+'" style="display:grid;grid-template-columns:32px 1fr auto 1fr 36px;gap:6px;align-items:center;padding:2px 0;cursor:pointer;" onmouseover="this.style.opacity=\'0.8\'" onmouseout="this.style.opacity=\'1\'">';
-        // Date
-        html += '<div style="font-size:9px;color:var(--t3);text-align:center;background:'+_vl+';border-radius:6px;border-left:3px solid '+barColor+';padding:4px 3px;">'+dateStr+'</div>';
-        // Equipe dom
-        html += '<div style="text-align:right;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">'
-          +'<span style="display:inline-block;max-width:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;vertical-align:middle;'
-          +'background:'+_vl+';border-radius:6px;padding:4px 8px;font-size:10px;font-weight:'+(isOurHome?'800':'400')+';color:'+(isOurHome?'var(--t1)':'var(--t2)')+';">'
-          +(isOurHome?_scMark:'')+homeName+'</span></div>';
-        // Score
-        html += '<div style="font-size:11px;font-weight:800;color:'+rc+';text-align:center;min-width:40px;background:'+_vl+';border-radius:6px;padding:4px 6px;">'+hg+' - '+ag+'</div>';
-        // Equipe ext
-        html += '<div style="overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">'
-          +'<span style="display:inline-block;max-width:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;vertical-align:middle;'
-          +'background:'+_vl+';border-radius:6px;padding:4px 8px;font-size:10px;font-weight:'+(!isOurHome?'800':'400')+';color:'+(!isOurHome?'var(--t1)':'var(--t2)')+';">'
-          +(!isOurHome?_scMark:'')+awayName+'</span></div>';
+        /* ═══ LIGNE DE MATCH SUR DEUX NIVEAUX (09/09) ═══
+           Avant : une seule ligne de cinq colonnes. Deux defauts releves par
+           Antoine. Les pastilles epousaient leur texte, donc rien n'etait
+           aligne d'une ligne a l'autre — les scores « dansaient ». Et sur
+           telephone, cinq colonnes dans 380 px reduisaient les noms a « Min… »,
+           « Lo… », illisibles.
+           Desormais : date et competition en haut a gauche, marches valides en
+           haut a droite, le match en dessous sur toute la largeur. Les noms
+           recuperent la place des colonnes laterales, et chaque pastille
+           REMPLIT sa colonne au lieu d'epouser son texte — d'ou un alignement
+           parfait, score compris. Meme structure sur PC et sur telephone.
+           L'equipe suivie est en OR des deux cotes : l'ancien code mettait en
+           gras l'equipe A DOMICILE, donc Toulouse ressortait sur un
+           Toulouse-Lyon. L'adversaire est en blanc gras. Scores et pastilles
+           gardent leurs couleurs, en gras. */
+        var _vl = 'rgba(16,21,38,.82)';
+        var _nomCell = function(txt, mien, droite, crest){
+          var img = crest ? ('<img src="'+crest+'" alt="" style="width:15px;height:15px;object-fit:contain;vertical-align:middle;flex:none;" onerror="this.style.display=\'none\'">') : '';
+          return '<div style="background:'+_vl+';border-radius:6px;padding:5px '+(_etr?'6px':'9px')+';font-size:'+(_etr?'10.5px':'11.5px')+';font-weight:800;'
+            +'color:'+(mien?'#f5c542':'var(--t1)')+';display:flex;align-items:center;gap:6px;'
+            +'justify-content:'+(droite?'flex-end':'flex-start')+';overflow:hidden;">'
+            +(droite?'':img)
+            +'<span style="min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">'+txt+'</span>'
+            +(droite?img:'')
+            +'</div>';
+        };
         // Over/BTS
         var badges = '';
         var qs = window._quickStats || ['O2.5','BTS'];
@@ -22054,22 +22716,40 @@ function renderSaisonsChart(el, results, nom) {
              beaucoup ces marches, ils manquaient aux selecteurs. */
           '1N': tg>=og, 'N2': tg<=og
         };
-        var BADGE_COLORS = {
-          'O0.5':'#1ed760','O1.5':'#4d84ff','O2.5':'#f0b020','O3.5':'#ff7b54','O4.5':'#ff4545',
-          'U0.5':'#22d3ee','U1.5':'#67e8f9','U2.5':'#a5f3fc','U3.5':'#bae6fd','U4.5':'#e0f2fe',
-          'BTS':'#a78bfa','CS':'#1ed760','WIN':'#1ed760','LOSE':'#ff4545',
-          '1N':'#7ee787','N2':'#ffa198'
-        };
+        /* Table deplacee dans `G45_BADGE_COULS` : les deux panneaux doivent
+           colorer un marche de la meme facon, sinon ils divergent en silence. */
         qs.forEach(function(k){
-          if(MATCH_CHECKS[k]) badges += '<span style="color:'+BADGE_COLORS[k]+';">'+k+'</span> ';
+          if(MATCH_CHECKS[k]) badges += '<span style="color:'+g45CoulMarche(k)+';margin-left:7px;">'+k+'</span>';
         });
         /* Pastille de cote : la cote d'avant-match de NOTRE equipe, saisie dans
            le panneau Cotes. Affichee comme les autres indicateurs, en gris pour
            ne pas concurrencer les O2.5/BTS qui, eux, sont des resultats. */
         var _coteMatch = (typeof _g45CoteDuMatch === 'function')
           ? _g45CoteDuMatch(m.espnId, isDom) : null;
-        if (_coteMatch) badges += '<span style="color:#9fb0c7;">@' + _coteMatch.toFixed(2) + '</span> ';
-        html += '<div style="font-size:8px;text-align:right;min-width:40px;background:'+_vl+';border-radius:6px;padding:3px 4px;">'+compIco+'<br>'+badges+'</div>';
+        if (_coteMatch) badges += '<span style="color:#9fb0c7;margin-left:7px;">@' + _coteMatch.toFixed(2) + '</span>';
+        html += '<div onclick="toggleSaisonMatchDetail(this)" data-eid="'+(m.espnId||'')+'" data-lg="'+((m.competition&&m.competition.code)||'')+'" style="border-left:3px solid '+barColor+';border-radius:0 8px 8px 0;background:rgba(16,21,38,.42);padding:6px 9px;margin-bottom:6px;cursor:pointer;" onmouseover="this.style.opacity=\'0.8\'" onmouseout="this.style.opacity=\'1\'">';
+        /* Ligne du haut : date, competition, marches valides. La place gagnee
+           permet d'ecrire la COMPETITION, que rien ne distinguait jusqu'ici —
+           un resultat de Ligue Europa ne se lit pas comme un resultat de
+           championnat. */
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:5px;">'
+          +'<span style="font-size:10px;font-weight:800;color:#c2cee6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+dateStr+' <span style="color:var(--t3);font-weight:400;">'+compIco+'</span></span>'
+          +'<span style="font-size:9px;font-weight:800;white-space:nowrap;">'+badges+'</span>'
+        +'</div>';
+        /* Ligne du bas : le match. Score a largeur fixe, donc aligne partout. */
+        /* ═══ REGLAGE TELEPHONE (09/09) ═══
+           `1fr` ne descend jamais sous la largeur de son CONTENU : avec deux
+           noms longs et un ecusson, les colonnes se disputaient la place et
+           les deux noms tombaient a « M… » (capture d'Antoine).
+           `minmax(0,1fr)` les autorise a retrecir, l'ecusson disparait sous
+           700 px — la mosaique de fond dit deja de quelle equipe il s'agit —
+           et le score se resserre. */
+        var _etr = g45Etroit(el);
+        html += '<div style="display:grid;grid-template-columns:minmax(0,1fr) '+(_etr?'54px':'68px')+' minmax(0,1fr);gap:'+(_etr?'4px':'6px')+';align-items:center;">'
+          +_nomCell((isOurHome?_scMark:'')+homeName, isOurHome, true, _etr?'':((m.homeTeam&&m.homeTeam.crest)||''))
+          +'<div style="font-size:12px;font-weight:800;color:'+rc+';text-align:center;background:'+_vl+';border-radius:6px;padding:5px 3px;">'+hg+' - '+ag+'</div>'
+          +_nomCell((!isOurHome?_scMark:'')+awayName, !isOurHome, false, _etr?'':((m.awayTeam&&m.awayTeam.crest)||''))
+        +'</div>';
         html += '</div>';
         html += '<div class="smd-panel" style="display:none;"></div>';
       });
@@ -22986,12 +23666,18 @@ async function _espnMatchLiveData(nom){
   return {resolved:resolved, event:ev, summary:summary, league:lg};
 }
 
-/* ═══ PRESSION DU MATCH (26/08) ═══
-   Equivalent du « Match Momentum » d'ESPN et de Sofascore. Ni l'un ni l'autre ne
-   publie sa courbe : ESPN ne l'expose dans aucun point d'entree du compte rendu
-   — verifie par sonde, ni `momentum` ni `winprobability`. Elle est donc
-   RECONSTRUITE a partir du commentaire minute par minute, qui porte pour chaque
-   action son type, sa minute et surtout son EQUIPE dans un champ dedie.
+/* ═══ PRESSION DU MATCH (26/08, corrige le 09/09) ═══
+   Equivalent du « Match Momentum » d'ESPN et de Sofascore.
+   CETTE NOTE AFFIRMAIT QU'ESPN NE PUBLIAIT PAS SA COURBE, « verifie par sonde ».
+   C'ETAIT FAUX : la sonde n'avait interroge que `site.api`, et le momentum vit
+   sur `sports.core`, en lien `$ref` de la competition. Il est desormais utilise
+   quand il existe (voir `_g45MomentumEspn`), y compris pendant le match.
+   Le calcul ci-dessous reste en REPLI : toutes les competitions ne servent pas
+   ce champ. Il RECONSTRUIT la pression a partir du commentaire minute par
+   minute, qui porte pour chaque action son type, sa minute et son EQUIPE.
+   Lecon retenue : une sonde qui n'interroge qu'un hote ne prouve pas une
+   absence — `sports.core` et `site.api` n'exposent pas les memes champs, on
+   l'avait deja vu en aout avec les tirs et leur xG.
    Nommee « Pression » et non « Momentum » : la forme est comparable, les valeurs
    sont les notres. Annoncer un momentum laisserait croire a un calcul identique.
    Ponderation : un but pese beaucoup, un tir cadre nettement, un tir bloque ou
@@ -23020,7 +23706,70 @@ function _g45PressPoids(t){
   return 0;
 }
 
-function _renderMatchPression(s, homeId, awayId){
+/* ═══ LA MINUTE D'UNE ACTION (09/09) ═══
+   La pression lisait `play.clock.displayValue`. Chez ESPN, l'horloge d'une
+   action de football ne porte pas toujours la minute de jeu — c'est
+   `commentary[].time` qui la porte —, d'ou des barres et des buts tasses sur le
+   premier quart d'heure alors que les buts etaient a la 53e et au-dela
+   (capture d'Antoine).
+   On lit donc les deux sources, dans l'ordre, et on couvre les trois ecritures
+   rencontrees : « 53' », « 12:34 » (minutes:secondes) et « 90'+3 ». Le rattrapage
+   de seconde periode est conserve : certains matchs remettent l'horloge a zero
+   a la 46e. */
+function _g45MinuteAction(c){
+  var p = (c && c.play) || null;
+  var src = (c && c.time && (c.time.displayValue || c.time.value))
+         || (p && p.clock && (p.clock.displayValue || p.clock.value)) || '';
+  src = String(src);
+  var mn;
+  if (/^\d+:\d+$/.test(src)) mn = parseInt(src.split(':')[0], 10);
+  else { var m = src.match(/(\d+)/); mn = m ? parseInt(m[1], 10) : NaN; }
+  if (isNaN(mn)) return NaN;
+  var add = src.match(/\+\s*(\d+)/);
+  if (add) mn += Math.min(9, parseInt(add[1], 10));
+  if (p && p.period && p.period.number === 2 && mn <= 45) mn += 45;
+  return mn;
+}
+
+/* ═══════════ MOMENTUM ESPN (09/09) ═══════════
+   Ma note du 26/08 disait qu'ESPN ne publiait pas de momentum. C'etait faux :
+   la sonde l'a trouve sur `sports.core`, en lien `$ref` de la competition, la
+   ou vivent deja les tirs et leur xG. `site.api` ne le montre pas, d'ou
+   l'erreur — la sonde de l'epoque n'avait interroge que celui-la.
+   Chaque entree porte `clock` en secondes, `probability`, et l'equipe dans un
+   lien dont il suffit d'extraire l'identifiant : pas besoin de le suivre.
+   La reponse est PAGINEE par 25, il faut donc dérouler les pages, sinon un
+   match s'arrete a la 25e minute — exactement le symptome qu'on vient de
+   passer la matinee a corriger ailleurs.
+   Cache definitif par match : un match termine ne bouge plus. */
+var _g45MomCache = {};
+async function _g45MomentumEspn(lg, eid){
+  var cle = String(lg || '') + '|' + String(eid || '');
+  if (_g45MomCache[cle]) return _g45MomCache[cle];
+  var base = 'https://sports.core.api.espn.com/v2/sports/soccer/leagues/' + (lg || 'eng.1')
+           + '/events/' + eid + '/competitions/' + eid + '/momentum?limit=100';
+  var out = [], page = 1, pages = 1;
+  try {
+    while (page <= pages && page <= 4) {
+      var r = await fetch(base + '&page=' + page);
+      if (!r.ok) break;
+      var j = await r.json();
+      pages = j.pageCount || 1;
+      (j.items || []).forEach(function(it){
+        var m = String((it.competitor && it.competitor.$ref) || '').match(/competitors\/(\d+)/);
+        var mn = Math.round(((it.clock || 0) + (it.addedClock || 0)) / 60);
+        if (it.period && it.period.number === 2 && mn <= 45) mn += 45;
+        out.push({ min: mn, p: Math.abs(it.probability || 0), tid: m ? m[1] : '' });
+      });
+      page++;
+    }
+  } catch (e) { return []; }
+  if (out.length) _g45MomCache[cle] = out;
+  return out;
+}
+window._g45MomentumEspn = _g45MomentumEspn;
+
+function _renderMatchPression(s, homeId, awayId, momEspn){
   try {
     var com = (s && s.commentary) || [];
 
@@ -23044,9 +23793,30 @@ function _renderMatchPression(s, homeId, awayId){
     var nomD = (dom.team && (dom.team.displayName || dom.team.name)) || '';
     var nomE = (ext.team && (ext.team.displayName || ext.team.name)) || '';
     if (!nomD || !nomE) return '';
-    var cD = (dom.team && dom.team.color) ? ('#' + String(dom.team.color).replace('#','')) : '#4d84ff';
-    var cE = (ext.team && ext.team.color) ? ('#' + String(ext.team.color).replace('#','')) : '#f0b020';
-    if (typeof _g45CoulFond === 'function') { cD = _g45CoulFond(cD); cE = _g45CoulFond(cE); }
+    /* ═══ DEUX JAUNES INDISTINGUABLES (09/09) ═══
+       Dortmund et Villarreal jouent tous deux en jaune : la legende affichait
+       deux carres identiques et les barres etaient illisibles (capture
+       d'Antoine). `g45CoulPaire` existe justement pour ca — elle bascule la
+       seconde equipe sur sa couleur alternative quand l'ecart est trop faible,
+       et sur l'ambre si l'alternative est elle-meme trop claire. Elle sert deja
+       a la carte des tirs et aux compositions ; ce bloc-ci ne l'appelait pas. */
+    var cD, cE;
+    if (typeof g45CoulPaire === 'function') {
+      var _paire = g45CoulPaire(dom, ext);
+      cD = _paire[0]; cE = _paire[1];
+      /* `g45CoulPaire` garantit qu'on DISTINGUE les deux equipes, pas qu'on les
+         VOIE : la couleur ESPN de Dortmund est le noir, invisible sur le fond
+         sombre de l'app (capture d'Antoine, barres grises). `_g45CoulFond`
+         eclaircit jusqu'a un seuil lisible — l'etape que j'avais supprimee en
+         passant a `g45CoulPaire`. Si les deux se rapprochent en s'eclaircissant,
+         la seconde bascule sur l'ambre. */
+      if (typeof _g45CoulFond === 'function') { cD = _g45CoulFond(cD); cE = _g45CoulFond(cE); }
+      if (typeof _g45Ecart === 'function' && _g45Ecart(cD, cE) < 90) cE = '#f0b020';
+    } else {
+      cD = (dom.team && dom.team.color) ? ('#' + String(dom.team.color).replace('#','')) : '#4d84ff';
+      cE = (ext.team && ext.team.color) ? ('#' + String(ext.team.color).replace('#','')) : '#f0b020';
+      if (typeof _g45CoulFond === 'function') { cD = _g45CoulFond(cD); cE = _g45CoulFond(cE); }
+    }
 
     /* UNE BARRE PAR MINUTE (26/08). Les tranches de trois minutes lissaient trop :
        la ou ESPN montre un temps fort de trois minutes consecutives, on ne voyait
@@ -23059,13 +23829,27 @@ function _renderMatchPression(s, homeId, awayId){
     var buts = [], reperes = [];
     var vus = 0;
 
-    com.forEach(function(c){
+    /* ═══ LA VALEUR D'ESPN QUAND ON L'A (09/09) ═══
+       Fournie, elle remplace le calcul maison : c'est celle qu'affiche leur
+       site, donc coherente avec ce qu'Antoine voit ailleurs, et je n'ai plus a
+       assumer une reconstruction dans la note du bas.
+       Le calcul maison reste, en repli : toutes les competitions ne servent pas
+       ce champ, et un match trop recent peut n'avoir aucune entree. */
+    var sourceEspn = false;
+    if (momEspn && momEspn.length) {
+      var idD = String((dom.team && dom.team.id) || homeId || '');
+      momEspn.forEach(function(e){
+        if (!e || isNaN(e.min)) return;
+        var i = Math.min(n - 1, Math.max(0, Math.floor(e.min / PAS)));
+        if (String(e.tid) === idD) bD[i] += e.p; else bE[i] += e.p;
+        vus++;
+      });
+      sourceEspn = vus > 0;
+    }
+    if (!sourceEspn) com.forEach(function(c){
       var p = c.play; if (!p || !p.team) return;
-      var mn = parseInt(String((p.clock && p.clock.displayValue) || '').replace(/[^0-9]/g,''), 10);
+      var mn = _g45MinuteAction(c);
       if (isNaN(mn)) return;
-      /* ESPN remet l'horloge a zero en seconde periode sur certains matchs :
-         on rattrape avec le numero de periode. */
-      if (p.period && p.period.number === 2 && mn <= 45) mn += 45;
       var i = Math.min(n - 1, Math.floor(mn / PAS));
       var w = _g45PressPoids(p.type && p.type.text);
       if (!w) return;
@@ -23075,6 +23859,17 @@ function _renderMatchPression(s, homeId, awayId){
       else       { if (estDom) bE[i] += -w * 0.5; else bD[i] += -w * 0.5; }
       var tt = String((p.type && p.type.text) || '').toLowerCase();
       if (tt.indexOf('goal') >= 0) buts.push({ i: i, dom: estDom });
+    });
+    /* Les buts restent lus dans le commentaire : le momentum d'ESPN ne porte
+       qu'une valeur, pas les evenements. */
+    if (sourceEspn) com.forEach(function(c){
+      var p = c.play; if (!p || !p.team) return;
+      var tt = String((p.type && p.type.text) || '').toLowerCase();
+      if (tt.indexOf('goal') < 0) return;
+      var mn = _g45MinuteAction(c);
+      if (isNaN(mn)) return;
+      buts.push({ i: Math.min(n - 1, Math.floor(mn / PAS)),
+                  dom: (String(p.team.displayName || '') === nomD) });
     });
 
     /* REPERES (26/08) : cartons et remplacements, comme les pastilles et les
@@ -23089,7 +23884,7 @@ function _renderMatchPression(s, homeId, awayId){
       else if (tt.indexOf('yellow') >= 0) ico = '\ud83d\udfe8';
       else if (tt.indexOf('substitut') >= 0) ico = '\ud83d\udd01';
       if (!ico) return;
-      var mn = parseInt(String((p.clock && p.clock.displayValue) || '').replace(/[^0-9]/g,''), 10);
+      var mn = _g45MinuteAction(c);
       if (isNaN(mn)) return;
       if (p.period && p.period.number === 2 && mn <= 45) mn += 45;
       reperes.push({ i: Math.min(n - 1, Math.floor(mn / PAS)), ico: ico,
@@ -23146,8 +23941,10 @@ function _renderMatchPression(s, homeId, awayId){
         + '<span>' + Math.round(nAff * PAS) + '\'</span></div>'
       + '<div style="font-size:8.5px;color:var(--t3);margin-top:7px;line-height:1.5;">'
         + '\u26bd but \u00b7 \ud83d\udfe8 carton \u00b7 \ud83d\udfe5 expulsion \u00b7 \ud83d\udd01 remplacement<br>'
-        + 'Reconstruite \u00e0 partir des actions du match \u2014 tirs, corners, buts, fautes. '
-        + 'Indicateur maison, non comparable aux valeurs d\'ESPN ou de Sofascore.</div>'
+        + (sourceEspn
+            ? 'Momentum publi\u00e9 par ESPN, une valeur par minute.'
+            : 'Reconstruite \u00e0 partir des actions du match \u2014 tirs, corners, buts, fautes. Indicateur maison, non comparable aux valeurs d\'ESPN ou de Sofascore.')
+        + '</div>'
     + '</div>';
   } catch (e) { return ''; }
 }
@@ -23534,10 +24331,42 @@ async function loadEspnMatchLive(el, nom, col){
   html+='<div style="font-size:26px;font-weight:800;min-width:74px;text-align:center;">'+(tscore(home)!==''?tscore(home):'–')+' : '+(tscore(away)!==''?tscore(away):'–')+'</div>';
   html+='<div style="flex:1;text-align:center;min-width:0;">'+(tlogo(away)?'<img src="'+tlogo(away)+'" style="width:38px;height:38px;object-fit:contain;">':'')+'<div style="font-size:12px;font-weight:700;margin-top:4px;overflow:hidden;text-overflow:ellipsis;">'+tname(away)+'</div></div>';
   html+='</div>';
+  /* ═══ RETARD REEL SUR LE DIRECT (09/09) ═══
+     J'ai avance « une a deux minutes » sans l'avoir mesure. Autant le mesurer :
+     chaque action ESPN porte `wallclock`, l'heure REELLE de l'evenement. La
+     comparer a l'heure du telephone au moment ou on l'affiche donne le retard
+     exact, sans chronometre ni television.
+     Trois delais s'additionnent et cette mesure les contient tous : celui
+     d'ESPN entre l'action et sa publication, le cache de 60 s du Worker sur les
+     resumes, et l'intervalle de rafraichissement de l'app.
+     Affiche uniquement pendant un match EN COURS : sur un match termine, la
+     derniere action date de la fin du match et le chiffre n'aurait aucun sens. */
+  if (stState === 'in') {
+    try {
+      var _der = 0;
+      ((s && s.commentary) || []).forEach(function (c) {
+        var w = (c && (c.wallclock || (c.play && c.play.wallclock))) || '';
+        var t = w ? new Date(w).getTime() : NaN;
+        if (!isNaN(t) && t > _der) _der = t;
+      });
+      if (_der) {
+        var _sec = Math.max(0, Math.round((Date.now() - _der) / 1000));
+        var _c = _sec < 90 ? 'var(--g)' : (_sec < 180 ? 'var(--gold)' : 'var(--r)');
+        html += '<div style="text-align:center;margin-top:8px;font-size:10px;color:var(--t3);">'
+          + 'derni\u00e8re action re\u00e7ue il y a <span style="color:' + _c + ';font-weight:800;">'
+          + (_sec < 60 ? (_sec + ' s') : (Math.floor(_sec / 60) + ' min ' + (_sec % 60) + ' s')) + '</span>'
+          + '<br><span style="font-size:9px;">retard total sur le terrain, cache et rafra\u00eechissement compris</span></div>';
+      }
+    } catch (e) {}
+  }
   html+='<div style="text-align:center;margin-top:10px;"><button onclick="loadTeamLive()" style="background:rgba(255,255,255,.06);border:1px solid var(--b2);color:var(--t2);font-size:11px;padding:6px 14px;border-radius:6px;cursor:pointer;">🔄 Rafraîchir</button></div>';
   html+='</div>';
   var homeId=(home.team&&home.team.id), awayId=(away.team&&away.team.id);
-  try{ html+=_renderMatchPression(s, homeId, awayId); }catch(e){}
+  try{
+    var _momL = [];
+    try { if (typeof _g45MomentumEspn === 'function' && data.event && data.event.id) _momL = await _g45MomentumEspn(data.league || 'eng.1', data.event.id); } catch(e2){}
+    html+=_renderMatchPression(s, homeId, awayId, _momL);
+  }catch(e){}
   html+=_renderEspnMatchStats(s, homeId, awayId, col);
   var _compo=_renderEspnMatchPitch(s, col); html+=_compo||_renderEspnMatchLineups(s, col);
   el.innerHTML=html;
@@ -24071,7 +24900,36 @@ async function _renderSaisonDetail(el, eventId, league){
   try{
     var r=await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/'+(league||'eng.1')+'/summary?event='+eventId+'&lang=fr&region=fr');
     var data=await r.json();
-    el._data=data;   // pour le sélecteur de marché (re-rendu sans re-fetch)
+    /* ═══ LE RESUME DU SUIVI, TEL QUEL (09/09) ═══
+       Trois tentatives pour rien : la langue, un seuil de repli, puis un tri par
+       couverture. La bonne idee est d'Antoine — « prends celui du suivi et
+       colle-le ici ». C'est la meme FONCTION aux deux endroits, seules les
+       DONNEES differaient : le suivi demande le resume au WORKER, ce rendu le
+       demandait a ESPN en direct. Depuis une adresse francaise, ESPN sert un
+       commentaire minute par minute du seul debut de match — 300 actions sur 20
+       minutes ; par l'edge Cloudflare il sert le releve complet, 126 actions sur
+       tout le match.
+       On recupere donc le meme objet que le suivi et on le passe TEL QUEL a la
+       pression : plus de recollage de champs, plus d'heuristique a maintenir.
+       L'affichage garde la version francaise pour ses libelles.
+       Mis en cache par match : replier puis rouvrir ne redemande rien. */
+    var _dataPress = null;
+    try {
+      var _ck = String(eventId);
+      if (_g45SumWorker[_ck]) { _dataPress = _g45SumWorker[_ck]; }
+      else if (typeof FD_PROXY !== 'undefined' && FD_PROXY) {
+        var _rw = await fetch(FD_PROXY + '?host=espn&path=' + encodeURIComponent('/apis/site/v2/sports/soccer/' + (league || 'eng.1') + '/summary?event=' + eventId));
+        if (_rw.ok) {
+          var _dw = await _rw.json();
+          if (_dw && (_dw.commentary || []).length) { _g45SumWorker[_ck] = _dw; _dataPress = _dw; }
+        }
+      }
+    } catch (e) {}
+    /* Le resume est aussi mis de cote pour l'ANALYSE IA (08/09) : elle ne
+       recevait que le nom des deux equipes et la date, d'ou trois avis
+       identiques disant « donnees manquantes » (releve par Antoine sur
+       Real Madrid - Internazionale). Tout ce qu'il lui faut est deja ICI. */
+    try { _g45ResumeIA[String(eventId)] = data; } catch (e) {}
     /* CARTE DES TIRS (20/08) : elle n'existait que dans le detail GENERIQUE,
        celui des sports US. Le football a son propre rendu — celui-ci — donc la
        carte n'apparaissait jamais par l'interface, seulement en console.
@@ -24118,6 +24976,26 @@ async function _renderSaisonDetail(el, eventId, league){
     var _mstate=(comp.status&&comp.status.type&&comp.status.type.state)||'';
     if(_mstate==='pre' && !isLive){ try{ var _pm=_g45PreMatchBlock(data); if(_pm){ h+=_pm; added=true; } }catch(e){} }
     if(typeof _renderEspnMatchStats==='function'){ try{ var st=_renderEspnMatchStats(data, homeId, awayId, '#4d84ff'); if(st){ h+=st; added=true; } }catch(e){} }
+    /* ═══ PRESSION DU MATCH, ENFIN ICI (09/09) ═══
+       Elle etait branchee sur le direct d'une equipe et sur le detail generique
+       des sports US, mais pas sur ce rendu-la — celui qu'on ouvre depuis la
+       liste des resultats en football, et depuis les journees d'une
+       competition. D'ou la question d'Antoine : « pourquoi je ne l'ai que dans
+       le suivi ». Meme oubli que la carte des tirs le 20/08.
+       PIEGE EVITE : une premiere version l'ajoutait apres coup avec
+       `appendChild`. Sans effet — ce rendu finit par `el.innerHTML = h`, qui
+       remplace tout ce qui a ete ajoute entre-temps. Elle est donc posee DANS
+       la chaine, a cote des statistiques, la ou elle se lit avec elles.
+       La fonction se protege seule : commentaire absent ou trop maigre, elle
+       rend une chaine vide. */
+    try{
+      if(typeof _renderMatchPression==='function'){
+        var _mom = [];
+        try { if (typeof _g45MomentumEspn === 'function') _mom = await _g45MomentumEspn(league || 'eng.1', eventId); } catch(e2){}
+        var _pr=_renderMatchPression(_dataPress || data, homeId, awayId, _mom);
+        if(_pr){ h+=_pr; added=true; }
+      }
+    }catch(e){}
     // Bouton stats avancées Sofascore (xG, tirs dans/hors surface…) — à la demande via Worker→RapidAPI
     try{
       function _eaAdv(x){return String(x==null?'':x).replace(/&/g,'&amp;').replace(/"/g,'&quot;');}
@@ -24129,7 +25007,7 @@ async function _renderSaisonDetail(el, eventId, league){
       h+='<div style="margin-top:8px;"><button onclick="g45LoadOdds(this)" data-h="'+_eaAdv(hN)+'" data-a="'+_eaAdv(aN)+'" data-comp="'+_eaAdv(_compName||league||'')+'" data-box="'+_oddsId+'" style="width:100%;box-sizing:border-box;font-size:12px;font-weight:800;padding:9px 12px;border-radius:9px;cursor:pointer;border:1.5px solid rgba(46,204,113,.5);background:rgba(46,204,113,.12);color:#2ecc71;">💰 Cotes réelles (bookmakers FR)</button><div id="'+_oddsId+'" style="margin-top:8px;"></div></div>';
       var _moreId='g45more_'+(eventId||Math.random().toString(36).slice(2));
       h+='<div style="margin-top:8px;"><button onclick="g45LoadMoreOdds(this)" data-h="'+_eaAdv(hN)+'" data-a="'+_eaAdv(aN)+'" data-comp="'+_eaAdv(_compName||league||'')+'" data-box="'+_moreId+'" style="width:100%;box-sizing:border-box;font-size:12px;font-weight:800;padding:9px 12px;border-radius:9px;cursor:pointer;border:1.5px solid rgba(155,89,182,.5);background:rgba(155,89,182,.12);color:#b07cd6;">📋 Plus de marchés (O/U · BTTS · buteur)</button><div id="'+_moreId+'" style="margin-top:8px;"></div></div>';
-      h+='<div style="margin-top:8px;"><button onclick="g45LoadMatchAI(this)" data-date="'+_eaAdv(comp.date||'')+'" data-h="'+_eaAdv(hN)+'" data-a="'+_eaAdv(aN)+'" data-comp="'+_eaAdv(_compName||league||'')+'" data-box="'+_oddsId+'ai" style="width:100%;box-sizing:border-box;font-size:12px;font-weight:800;padding:9px 12px;border-radius:9px;cursor:pointer;border:1.5px solid rgba(176,124,214,.5);background:rgba(176,124,214,.10);color:#b07cd6;">🧠 Analyse IA du match</button><div id="'+_oddsId+'ai" style="margin-top:8px;"></div></div>';
+      h+='<div style="margin-top:8px;"><button onclick="g45LoadMatchAI(this)" data-eid="'+_eaAdv(eventId||'')+'" data-date="'+_eaAdv(comp.date||'')+'" data-h="'+_eaAdv(hN)+'" data-a="'+_eaAdv(aN)+'" data-comp="'+_eaAdv(_compName||league||'')+'" data-box="'+_oddsId+'ai" style="width:100%;box-sizing:border-box;font-size:12px;font-weight:800;padding:9px 12px;border-radius:9px;cursor:pointer;border:1.5px solid rgba(176,124,214,.5);background:rgba(176,124,214,.10);color:#b07cd6;">🧠 Analyse IA du match</button><div id="'+_oddsId+'ai" style="margin-top:8px;"></div></div>';
       added=true;
     }catch(e){}
     if(typeof _renderEspnMatchPitch==='function'){ try{ var pi=_renderEspnMatchPitch(data, '#4d84ff', function(x){return x;}); if(pi){ h+=pi; added=true; } }catch(e){} }
@@ -26395,6 +27273,110 @@ function _g45RenderOdds(ev, hN, aN, remain){
     +_valueBlock
     +'</div>';
 }
+/* ══════════ LES FAITS ENVOYES AUX IA (08/09) ══════════
+   Constat d'Antoine : les trois modeles rendaient le meme avis vague. Normal —
+   ils recevaient une seule ligne (« Match: A vs B — le 2026-09-08 ») des que
+   The Odds API et Sofascore ne repondaient pas, et la consigne systeme leur
+   INTERDIT d'inventer une forme ou un classement. Ils repondaient donc
+   « donnees manquantes », ce qui etait exact et sans interet.
+   Or le resume ESPN du match, deja telecharge pour le bloc avant-match, porte
+   la forme, les statistiques d'equipe, le classement, la probabilite ESPN et
+   les absences. On le relit ici : AUCUNE requete supplementaire, aucun quota.
+   Avec de vrais faits, les trois modeles peuvent enfin diverger — et c'est
+   leur desaccord qui a de la valeur, pas trois fois la meme prudence. */
+var _g45ResumeIA = {};
+/* Resumes ESPN obtenus par le Worker, par identifiant de match : c'est la
+   source du suivi, la seule qui porte le match entier (voir _renderSaisonDetail). */
+var _g45SumWorker = {};
+function _g45FaitsDuResume(eid, hN, aN){
+  var out = [];
+  var d = _g45ResumeIA[String(eid || '')];
+  if (!d) return out;
+  var txt = function (x) { return String(x == null ? '' : x).replace(/\s+/g, ' ').trim(); };
+  try {
+    var comp = (d.header && d.header.competitions && d.header.competitions[0]) || {};
+    var cs = comp.competitors || [];
+    var home = cs.filter(function (c) { return c.homeAway === 'home'; })[0] || cs[0] || {};
+    var away = cs.filter(function (c) { return c.homeAway === 'away'; })[0] || cs[1] || {};
+
+    /* Forme : adversaire ET score, pas seulement une suite de V/D — « battu 0-4
+       par le leader » et « battu 0-1 par le dernier » ne valent pas pareil. */
+    var forme = function (tid, nom) {
+      try {
+        var lf = d.lastFiveGames || [], e = null;
+        for (var i = 0; i < lf.length; i++) { if (String(lf[i].team && lf[i].team.id) === String(tid)) { e = lf[i]; break; } }
+        if (!e) return '';
+        var evs = (e.events || e.games || []).slice(-5);
+        if (!evs.length) return '';
+        return nom + ' — 5 derniers matchs : ' + evs.map(function (x) {
+          var gr = String(x.gameResult || x.result || '').toUpperCase();
+          var r = gr === 'W' ? 'gagné' : (gr === 'L' ? 'perdu' : 'nul');
+          var o = x.opponent || {};
+          return r + ' ' + txt(x.score || '') + ' contre ' + txt(o.displayName || o.shortDisplayName || o.abbreviation || '?');
+        }).join(' ; ');
+      } catch (e2) { return ''; }
+    };
+    var f1 = forme(home.id, hN), f2 = forme(away.id, aN);
+    if (f1) out.push(f1);
+    if (f2) out.push(f2);
+
+    /* Statistiques d'equipe de la saison (buts marques, encaisses, difference…). */
+    try {
+      var bt = d.boxscore && d.boxscore.teams;
+      if (bt && bt.length >= 2) {
+        [0, 1].forEach(function (i) {
+          var t = bt[i], nom = (String(t.team && t.team.id) === String(home.id)) ? hN : aN;
+          var st = (t.statistics || []).map(function (x) {
+            return txt(x.label || x.name) + ' ' + txt(x.displayValue != null ? x.displayValue : x.value);
+          }).filter(Boolean).slice(0, 8);
+          if (st.length) out.push('Statistiques de la saison — ' + nom + ' : ' + st.join(', '));
+        });
+      }
+    } catch (e3) {}
+
+    /* Classement : uniquement les DEUX equipes concernees, pas la table entiere. */
+    try {
+      var grps = (d.standings && d.standings.groups) || [];
+      grps.forEach(function (g) {
+        ((g.standings && g.standings.entries) || []).forEach(function (e) {
+          var tid = (typeof _g45EntId === 'function') ? _g45EntId(e) : String((e.team && e.team.id) || '');
+          if (tid !== String(home.id) && tid !== String(away.id)) return;
+          var nom = (tid === String(home.id)) ? hN : aN;
+          var st = (e.stats || []).map(function (x) {
+            return txt(x.shortDisplayName || x.abbreviation || x.name) + ' ' + txt(x.displayValue != null ? x.displayValue : x.value);
+          }).filter(Boolean).slice(0, 8);
+          if (st.length) out.push('Classement — ' + nom + ' : ' + st.join(', '));
+        });
+      });
+    } catch (e4) {}
+
+    /* Probabilite ESPN : un avis chiffre de plus, a confronter aux cotes. */
+    try {
+      var pr = d.predictor;
+      if (pr && (pr.homeTeam || pr.awayTeam)) {
+        var ph = pr.homeTeam && (pr.homeTeam.gameProjection || pr.homeTeam.teamChanceLoss);
+        var pa = pr.awayTeam && pr.awayTeam.gameProjection;
+        if (ph || pa) out.push('Probabilité de victoire selon ESPN : ' + hN + ' ' + txt(ph || '?') + '%, ' + aN + ' ' + txt(pa || '?') + '%');
+      }
+    } catch (e5) {}
+
+    /* Absences : forfaits et incertains, deja distingues par le bloc avant-match. */
+    try {
+      var inj = d.injuries || [];
+      inj.forEach(function (bloc) {
+        var nom = (String(bloc.team && bloc.team.id) === String(home.id)) ? hN : aN;
+        var l = (bloc.injuries || []).map(function (x) {
+          var a = x.athlete || {};
+          return txt(a.displayName || a.shortName) + (x.status ? (' (' + txt(x.status) + ')') : '');
+        }).filter(Boolean).slice(0, 6);
+        if (l.length) out.push('Absents ou incertains — ' + nom + ' : ' + l.join(', '));
+      });
+    } catch (e6) {}
+  } catch (e7) {}
+  return out;
+}
+window._g45FaitsDuResume = _g45FaitsDuResume;
+
 async function g45LoadMatchAI(btn){
   var box=document.getElementById(btn.dataset.box); if(!box) return;
   if(box.getAttribute('data-loaded')==='1'){ box.style.display=(box.style.display==='none'?'':'none'); return; }
@@ -26407,6 +27389,10 @@ async function g45LoadMatchAI(btn){
   var _neutral=/coupe du monde|world cup|mondial|euro\b|championnat d'europe|copa am|copa america|can\b|coupe d'afrique|africa cup|gold cup|nations league finals|olymp|jeux olympiques|club world cup|supercoupe|super cup|finale/i.test(comp||'');
   facts.push('Match: '+hN+(_neutral?' vs ':' (domicile) vs ')+aN+(_neutral?'':' (extérieur)')+(comp?(' — '+comp):'')+(iso?(' — le '+iso.slice(0,10)):''));
   if(_neutral) facts.push('TERRAIN NEUTRE : ce match se joue sur terrain neutre (aucune des deux équipes ne reçoit). Il n\'y a PAS d\'avantage du terrain. Les libellés "1"/"2" désignent seulement la 1re et la 2e équipe, pas domicile/extérieur.');
+  /* Faits du resume ESPN — poses en premier : ce sont les plus denses. */
+  try {
+    if (btn.dataset.eid) _g45FaitsDuResume(btn.dataset.eid, hN, aN).forEach(function (f) { facts.push(f); });
+  } catch (e) {}
   // Cotes réelles (Worker, cache 15 min → souvent zéro quota)
   try{
     var sport=_g45OddsSportKey(comp);
@@ -26537,8 +27523,26 @@ async function _g45MultiAI(box, boxId, sys, facts, title){
     if(mk){
       box.innerHTML+='<div id="'+boxId+'-ms" style="font-size:10px;color:var(--t3);padding:6px;text-align:center;">🇫🇷 Mistral réfléchit…</div>';
       try{
-        var rm=await fetch('https://api.mistral.ai/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+mk},body:JSON.stringify({model:'mistral-small-latest',messages:[{role:'system',content:sys},{role:'user',content:facts.join('\n')}],temperature:0.4,max_tokens:450})});
+        /* ═══ MISTRAL EST LE 4e APPEL D'UNE RAFALE (08/09) ═══
+           Le plan gratuit limite le DEBIT, pas seulement le volume : arrive en
+           dernier d'une salve, Mistral repondait « Rate limit exceeded » et
+           l'avis manquait a chaque fois (releve par Antoine). On lui laisse
+           donc respirer, puis on retente UNE fois — au-dela ce n'est plus une
+           rafale mais un vrai plafond, et insister ne servirait qu'a faire
+           patienter devant un message identique. */
+        var _mBody=JSON.stringify({model:'mistral-small-latest',messages:[{role:'system',content:sys},{role:'user',content:facts.join('\n')}],temperature:0.4,max_tokens:450});
+        var _mAppel=function(){ return fetch('https://api.mistral.ai/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+mk},body:_mBody}); };
+        var _mLimite=function(o){ return !!(o && ((o.error && /rate limit|429|too many/i.test(String(o.error.message||o.error))) || /rate limit|429|too many/i.test(String(o.message||'')))); };
+        await new Promise(function(r){ setTimeout(r, 1200); });
+        var rm=await _mAppel();
         var dm=await rm.json();
+        if(rm.status===429 || _mLimite(dm)){
+          var _ms0=document.getElementById(boxId+'-ms');
+          if(_ms0) _ms0.textContent='🇫🇷 Mistral surchargé — nouvelle tentative…';
+          await new Promise(function(r){ setTimeout(r, 4000); });
+          rm=await _mAppel();
+          dm=await rm.json();
+        }
         var mt=((dm.choices&&dm.choices[0]&&dm.choices[0].message&&dm.choices[0].message.content)||'').trim();
         var msBox=document.getElementById(boxId+'-ms');
         if(mt && msBox){
@@ -29135,6 +30139,151 @@ async function g45RcFavAI(raceId, stage){
 }
 window.g45RcFavAI=g45RcFavAI;
 /* Dispatcher : racecenter si la course en a un, sinon ancien parsing HTML */
+/* ═══════════════════ BIATHLON — IBU (09/09/2026) ═══════════════════
+   L'IBU expose une API JSON publique sur biathlonresults.com : pas de cle, pas
+   de quota. Sondee avant d'ecrire une ligne — endpoints, champs et formats
+   verifies sur une vraie course.
+     Seasons                      → saisons disponibles
+     Events?SeasonId&Level        → etapes (Level 1 = Coupe du monde)
+     Competitions?EventId         → courses d'une etape, avec leur RaceId
+     Results?RaceId               → resultats detailles
+     CupResults?CupId             → classements generaux
+   La saison s'ecrit en QUATRE chiffres : « 2627 » pour 2026-27, et elle bascule
+   a l'automne, pas en janvier.
+   CE QUI VAUT POUR PARIER, et qu'aucune autre source ne donne aussi proprement :
+   `Shootings` (« 0+2 0+0 », les fautes seance par seance) et `ShootingTotal`.
+   Un sprint se joue la, pas sur le temps de ski.
+   PASSAGE PAR LE WORKER : rien ne garantit que le site accepte les requetes
+   depuis gones45140.github.io. On emprunte donc `?host=ibu`, comme pour ASO et
+   tv-sports, avec repli en appel direct si le Worker ne connait pas encore cet
+   hote — l'ajout cote Worker est fourni a part. */
+var _g45BiaCache = {};
+async function _g45BiaJ(chemin){
+  if (_g45BiaCache[chemin] !== undefined) return _g45BiaCache[chemin];
+  var essais = [];
+  if (typeof FD_PROXY !== 'undefined' && FD_PROXY) essais.push(FD_PROXY + '?host=ibu&path=' + encodeURIComponent(chemin));
+  essais.push('https://biathlonresults.com' + chemin);
+  for (var i = 0; i < essais.length; i++) {
+    try {
+      var r = await fetch(essais[i]);
+      if (!r.ok) continue;
+      var j = await r.json();
+      if (j) { _g45BiaCache[chemin] = j; return j; }
+    } catch (e) {}
+  }
+  return null;
+}
+/* Saison IBU en cours : bascule a l'automne. En septembre 2026 on vise 2627. */
+function _g45BiaSaison(){
+  var d = new Date(), a = d.getFullYear(), m = d.getMonth() + 1;
+  var deb = (m >= 9) ? a : (a - 1);
+  return String(deb).slice(2) + String(deb + 1).slice(2);
+}
+function _g45BiaRetour(){
+  return '<button onclick="loadResultatsTab()" style="border:none;cursor:pointer;background:rgba(255,255,255,.06);border-radius:8px;color:var(--t2);padding:7px 12px;font-size:11px;font-weight:700;margin-bottom:10px;">\u2190 Sports</button>';
+}
+/* Les fautes, mises en couleur : le zero pointe est ce qu'on cherche. */
+function _g45BiaTir(t){
+  var txt = String(t || '').trim();
+  if (!txt) return '<span style="color:var(--t3);">\u2013</span>';
+  var tot = txt.split(/[\s+]+/).reduce(function(a, x){ return a + (parseInt(x, 10) || 0); }, 0);
+  var col = tot === 0 ? 'var(--g)' : (tot <= 2 ? 'var(--gold)' : 'var(--r)');
+  return '<span style="color:' + col + ';font-weight:800;">' + txt + '</span>';
+}
+async function g45BiaOpen(saison){
+  var el = document.getElementById('t-resultats'); if (!el) return;
+  var sa = saison || _g45BiaSaison();
+  el.innerHTML = _g45BiaRetour() + '<div style="color:var(--t3);font-size:11px;padding:16px;text-align:center;">\u23f3 Chargement de la saison\u2026</div>';
+  var evs = await _g45BiaJ('/modules/sportapi/api/Events?SeasonId=' + sa + '&Level=1');
+  /* Une saison qui n'a pas commence rend une liste vide : on recule d'un an
+     plutot que d'afficher un ecran mort — la Coupe du monde ne reprend qu'en
+     novembre, et entre avril et novembre il n'y a rien a montrer d'autre. */
+  if (!Array.isArray(evs) || !evs.length) {
+    var pre = String(parseInt(sa.slice(0, 2), 10) - 1) + sa.slice(0, 2);
+    var evs2 = await _g45BiaJ('/modules/sportapi/api/Events?SeasonId=' + pre + '&Level=1');
+    if (Array.isArray(evs2) && evs2.length) { evs = evs2; sa = pre; }
+  }
+  if (!Array.isArray(evs) || !evs.length) {
+    el.innerHTML = _g45BiaRetour() + '<div style="color:#ff6b6b;font-size:11px;padding:14px;text-align:center;">Biathlon indisponible pour le moment.</div>';
+    return;
+  }
+  var an = '20' + sa.slice(0, 2) + '-' + sa.slice(2);
+  var h = _g45BiaRetour()
+    + '<div class="sec" style="margin-top:0;">\ud83c\udfbf Biathlon \u00b7 Coupe du monde ' + an + '</div>'
+    + '<div style="font-size:11px;color:var(--t3);margin-bottom:10px;">Choisis une \u00e9tape, puis une course. Les fautes au tir sont d\u00e9taill\u00e9es s\u00e9ance par s\u00e9ance.</div>'
+    + '<div style="display:flex;flex-direction:column;gap:6px;">';
+  evs.slice().reverse().forEach(function(e){
+    var d1 = String(e.StartDate || '').slice(0, 10).split('-').reverse().slice(0, 2).join('/');
+    h += '<button onclick="g45BiaEtape(\'' + e.EventId + '\')" style="text-align:left;border:none;cursor:pointer;background:rgba(255,255,255,.05);border-radius:10px;padding:11px 13px;color:#e6ecf5;display:flex;justify-content:space-between;align-items:center;gap:8px;">'
+      + '<span style="font-weight:700;font-size:12.5px;">' + (e.ShortDescription || e.Description || '?') + '</span>'
+      + '<span style="font-size:10px;color:var(--t3);">' + (e.Nat || '') + ' \u00b7 ' + d1 + '</span></button>';
+  });
+  el.innerHTML = h + '</div>';
+}
+async function g45BiaEtape(eventId){
+  var el = document.getElementById('t-resultats'); if (!el) return;
+  el.innerHTML = _g45BiaRetour() + '<div style="color:var(--t3);font-size:11px;padding:16px;text-align:center;">\u23f3 Chargement des courses\u2026</div>';
+  var cs = await _g45BiaJ('/modules/sportapi/api/Competitions?EventId=' + eventId);
+  var back = '<button onclick="g45BiaOpen()" style="border:none;cursor:pointer;background:rgba(255,255,255,.06);border-radius:8px;color:var(--t2);padding:7px 12px;font-size:11px;font-weight:700;margin-bottom:10px;">\u2190 \u00c9tapes</button>';
+  if (!Array.isArray(cs) || !cs.length) {
+    el.innerHTML = back + '<div style="color:var(--t3);font-size:11px;padding:14px;text-align:center;">Aucune course pour cette \u00e9tape.</div>';
+    return;
+  }
+  var h = back + '<div class="sec" style="margin-top:0;">\ud83c\udfbf Courses</div><div style="display:flex;flex-direction:column;gap:6px;">';
+  cs.forEach(function(c){
+    var quand = String(c.StartTime || '').slice(0, 10).split('-').reverse().slice(0, 2).join('/');
+    var fini = (c.StatusId === 11) || /final/i.test(String(c.StatusText || ''));
+    h += '<button onclick="g45BiaCourse(\'' + c.RaceId + '\')" style="text-align:left;border:none;cursor:pointer;background:rgba(255,255,255,.05);border-radius:10px;padding:11px 13px;color:#e6ecf5;display:flex;justify-content:space-between;align-items:center;gap:8px;">'
+      + '<span style="font-weight:700;font-size:12.5px;">' + (c.Description || c.ShortDescription || '?') + '</span>'
+      + '<span style="font-size:10px;color:' + (fini ? 'var(--g)' : 'var(--t3)') + ';">' + (fini ? 'termin\u00e9e' : quand) + '</span></button>';
+  });
+  el.innerHTML = h + '</div>';
+}
+async function g45BiaCourse(raceId){
+  var el = document.getElementById('t-resultats'); if (!el) return;
+  el.innerHTML = _g45BiaRetour() + '<div style="color:var(--t3);font-size:11px;padding:16px;text-align:center;">\u23f3 Chargement des r\u00e9sultats\u2026</div>';
+  var j = await _g45BiaJ('/modules/sportapi/api/Results?RaceId=' + raceId);
+  var evId = String(raceId).slice(0, 14);
+  var back = '<button onclick="g45BiaEtape(\'' + evId + '\')" style="border:none;cursor:pointer;background:rgba(255,255,255,.06);border-radius:8px;color:var(--t2);padding:7px 12px;font-size:11px;font-weight:700;margin-bottom:10px;">\u2190 Courses</button>';
+  var res = (j && j.Results) || [];
+  if (!res.length) {
+    el.innerHTML = back + '<div style="color:var(--t3);font-size:11px;padding:14px;text-align:center;">R\u00e9sultats pas encore publi\u00e9s.</div>';
+    return;
+  }
+  var comp = (j && j.Competition) || {};
+  /* Sur un relais, chaque relayeur a sa ligne EN PLUS de celle de l'equipe :
+     on ne garde que les equipes, sinon la liste triple de longueur et le
+     classement devient illisible. */
+  var relais = res.some(function(r){ return r.IsTeam; });
+  var lignes = relais ? res.filter(function(r){ return r.IsTeam; }) : res;
+  var h = back
+    + '<div class="sec" style="margin-top:0;">' + (comp.Description || 'R\u00e9sultats') + '</div>'
+    + '<div style="font-size:11px;color:var(--t3);margin-bottom:10px;">'
+      + ((j.SportEvt && (j.SportEvt.ShortDescription || j.SportEvt.Description)) || '')
+      + (comp.Location ? (' \u00b7 ' + comp.Location) : '') + '</div>'
+    + '<div style="display:flex;flex-direction:column;gap:3px;">';
+  lignes.forEach(function(r, i){
+    var irm = r.IRM ? String(r.IRM) : '';
+    var rang = irm || (r.Rank || '');
+    var podium = (rang === '1' || rang === '2' || rang === '3');
+    var col = rang === '1' ? '#f5c542' : (rang === '2' ? '#c7cdd8' : (rang === '3' ? '#cd7f32' : 'var(--t3)'));
+    h += '<div style="display:grid;grid-template-columns:30px 1fr auto auto;gap:8px;align-items:center;padding:7px 9px;border-radius:6px;background:rgba(255,255,255,' + (i % 2 ? '.02' : '.045') + ');">'
+      + '<span style="font-size:11px;font-weight:800;color:' + col + ';">' + (rang || '\u2013') + '</span>'
+      + '<span style="font-size:12px;font-weight:' + (podium ? '800' : '600') + ';color:var(--t1);overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">'
+        + (r.ShortName || r.Name || '?')
+        + '<span style="color:var(--t3);font-weight:400;font-size:10px;"> \u00b7 ' + (r.Nat || '') + '</span></span>'
+      + '<span style="font-size:11px;">' + _g45BiaTir(r.Shootings || r.ShootingTotal) + '</span>'
+      + '<span style="font-size:11px;font-weight:700;color:var(--t2);min-width:64px;text-align:right;">' + (r.Result || r.TotalTime || '') + '</span>'
+      + '</div>';
+  });
+  h += '</div><div style="font-size:9px;color:var(--t3);margin-top:8px;line-height:1.5;">'
+    + 'Tir : fautes par s\u00e9ance \u00b7 vert = sans faute, or = 1 ou 2, rouge au-del\u00e0.'
+    + (relais ? '<br>Relais : seules les \u00e9quipes sont list\u00e9es.' : '')
+    + '<br>Source : IBU (biathlonresults.com)</div>';
+  el.innerHTML = h;
+}
+window.g45BiaOpen = g45BiaOpen; window.g45BiaEtape = g45BiaEtape; window.g45BiaCourse = g45BiaCourse;
+
 async function g45CyclingOpen(raceId){
   var race=_g45RcRace(raceId);
   if(race&&race.rc) return g45RcOpen(race.id, 0);
@@ -30186,7 +31335,7 @@ function openBetEdit(id){
     +fld('Compétition','<input id="be-comp" value="'+esc(b.comp)+'" style="'+ins+'">')
     +fld('Bookmaker','<select id="be-b" style="'+ins+'">'+books.map(function(k){return '<option value="'+k+'"'+(b.b===k?' selected':'')+'>'+bki(k).n+'</option>';}).join('')+'</select>')
     +fld('Résultat',resSel)
-    +fld('📝 Note','<textarea id="be-note" rows="4" placeholder="Tes notes sur ce pari…" style="'+ins+'resize:vertical;font-family:inherit;line-height:1.4;">'+((b.note==null?'':(''+b.note)).replace(/</g,'&lt;'))+'</textarea>')
+    +fld('📝 Note','<textarea id="be-note" rows="4" placeholder="Tes notes sur ce pari…" style="'+ins+'resize:vertical;font-family:inherit;line-height:1.4;">'+(g45NoteDe(b).replace(/</g,'&lt;'))+'</textarea>')
     +'<div style="display:flex;gap:8px;margin-top:6px;"><button onclick="saveBetEdit(\''+id+'\')" style="flex:2;background:#4d84ff;border:none;border-radius:10px;padding:12px;color:#fff;font-size:14px;font-weight:800;cursor:pointer;">💾 Enregistrer</button><button onclick="if(confirm(\'Supprimer ce pari ?\')){var o=document.getElementById(\'bet-edit-ov\');if(o)o.remove();deleteArchived(\''+id+'\');}" style="flex:1;background:rgba(255,69,69,.15);border:none;border-radius:10px;padding:12px;color:#ff6b6b;font-size:13px;font-weight:700;cursor:pointer;">🗑</button></div>'
     +'</div>';
   document.body.appendChild(ov);
@@ -30194,6 +31343,30 @@ function openBetEdit(id){
   setTimeout(_g45FixNumberInputs,50);
 }
 window.openBetEdit=openBetEdit;
+/* ═══ UN SEUL CHAMP DE NOTE (09/09) ═══
+   L'app a DEUX fenetres d'edition d'un pari : celle construite en JavaScript
+   (`be-note`) ecrivait dans `note`, celle du formulaire de l'onglet Pari
+   (`edit-notes`) dans `notes`. Chacune ne voyait que son propre champ — Antoine
+   tapait le buteur dans l'une et retrouvait la case vide dans l'autre, d'ou
+   l'impression que rien ne s'enregistrait.
+   `note` (singulier) devient LE champ. Ces deux lecteurs acceptent les deux
+   ecritures, donc les notes deja saisies sous `notes` sont reprises telles
+   quelles, sans migration ni perte. A l'ecriture, `notes` est supprime pour ne
+   pas laisser deux verites dans l'objet. */
+function g45NoteDe(b){
+  if (!b) return '';
+  var n = (b.note != null && String(b.note).trim()) ? String(b.note) : '';
+  if (!n && b.notes != null && String(b.notes).trim()) n = String(b.notes);
+  return n;
+}
+function g45NoteSet(b, v){
+  if (!b) return;
+  var t = String(v == null ? '' : v).trim();
+  if (t) b.note = t; else delete b.note;
+  delete b.notes;   /* l'ancien champ ne doit plus jamais etre relu */
+}
+window.g45NoteDe = g45NoteDe;
+
 function saveBetEdit(id){
   var f=_betFind(id); if(!f) return;
   var b=f.bet;
@@ -30212,7 +31385,7 @@ function saveBetEdit(id){
   b.cote=parseFloat((v('be-cote')+'').replace(',','.'))||b.cote;
   b.m=parseFloat((v('be-m')+'').replace(',','.'))||b.m;
   b.comp=v('be-comp').trim();
-  b.note=v('be-note');
+  g45NoteSet(b, v('be-note'));
   b.b=v('be-b')||b.b;
   var nowPending=(res==='p'), win=(res==='w');
   // 3) transitions état + bankroll
@@ -32798,7 +33971,7 @@ async function g45StatsDeleteUI(id){ if(!confirm('Supprimer cette stat ?'))retur
 function _g45StatsTabHTML(){
   var bg3='rgba(0,0,0,.22)', b2='rgba(255,255,255,.1)';
   var fi='width:100%;box-sizing:border-box;background:'+bg3+';border:1px solid '+b2+';border-radius:8px;color:#e8ecf5;font-size:12px;padding:7px;';
-  var sportOpts='<option value="⚽">⚽ Football</option><option value="🏀">🏀 Basket</option><option value="🎾">🎾 Tennis</option><option value="🏈">🏈 NFL</option><option value="🏒">🏒 Hockey</option><option value="⚾">⚾ Baseball</option><option value="🏉">🏉 Rugby</option><option value="🏉🇦🇺">🏉🇦🇺 NRL</option><option value="🏎">🏎 F1</option><option value="🥊">🥊 MMA</option><option value="🚗">🚗 WRC</option><option value="🚴">🚴 Cyclisme</option>';
+  var sportOpts=g45SportsOptions();   /* source unique : G45_SPORTS */
   function fld(lbl,inner){ return '<div><label style="font-size:9px;color:#8b97c4;text-transform:uppercase;">'+lbl+'</label>'+inner+'</div>'; }
   return '<div style="max-width:600px;margin:0 auto;background:rgba(13,17,28,.9);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:18px;">'
     +'<div style="font-size:16px;font-weight:800;color:#e8ecf5;margin-bottom:4px;">🧠 Mémoire stats</div>'
@@ -32927,6 +34100,19 @@ async function _g45OF1Drivers(sk){
     if(!r.ok) return null;
     var a=await r.json(); var m={};
     a.forEach(function(d){ m[d.driver_number]={n:d.last_name||d.broadcast_name||('#'+d.driver_number), ac:d.name_acronym||'', team:d.team_name||'', col:(d.team_colour?('#'+d.team_colour):'#8b97c4')}; });
+    /* On profite de cette reponse — deja telechargee pour le direct — pour
+       retenir la couleur d'ecurie de chaque pilote : la carte partageable la
+       reutilise ensuite sans une seule requete de plus. */
+    try{
+      var _pc=JSON.parse(localStorage.getItem('g45_pilote_coul')||'{}');
+      a.forEach(function(d){
+        if(!d.team_colour) return;
+        [d.last_name, d.full_name, d.broadcast_name, d.name_acronym].filter(Boolean).forEach(function(n){
+          _pc[String(n).toLowerCase().replace(/[^a-z0-9]/g,'')]='#'+d.team_colour;
+        });
+      });
+      localStorage.setItem('g45_pilote_coul', JSON.stringify(_pc));
+    }catch(e){}
     _g45OF1.drv[sk]=m; return m;
   }catch(e){ return null; }
 }
@@ -33857,7 +35043,7 @@ var _G45_CACHE_PREFIXES=['g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dc
      competition, qui restait bloque sur « Toutes »). Les cartes de tirs sont
      les plus lourdes : plusieurs Ko par match, gardees indefiniment. */
   'g45butA2_','g45gl3_','g45gl2_','g45gl_','g45_tirs2_','g45_fanart2_','g45_fanart_','g45_img_perso_','g45_tv_prog','g45_mqnom_','g45_mqteam_','g45_mqfond_','g45trv4_','g45_catimg_','g45_catfmt2_','g45_catfmt_','g45nrlcal3_','g45nrlcal2_','g45_lglogo_','g45compet3_','g45compet2_','g45compet_','g45tmeta_','g45histo_','g45ld2_','g45ld_',
-  'g45nrlcal2_','g45_fx_faits','g45_veille_','g45_compet_logos','g45_groq_modele','g45_gemini_modeles',
+  'g45nrlcal2_','g45core2_','g45core_','g45_fx_faits','g45_veille_','g45_compet_logos','g45_groq_modele','g45_gemini_modeles',
   /* MESURE DU 20/08 sur le stockage reel d'Antoine (5,1 Mo, sature) :
        fpl_bootstrap_cache ... 1951 Ko  <- a lui seul 38 % du total
        g45itf_*            ... 1779 Ko  <- tennis ITF/Challenger, par date
@@ -35576,7 +36762,9 @@ window.g45NotifTest = g45NotifTest;
 
 var _g45CoreCache = {};
 
-function _g45CoreCle(sportPath, ligue) { return 'g45core_' + sportPath + '_' + ligue; }
+/* v2 (08/09) : la table porte desormais AUSSI les noms d'affichage, sous des
+   cles prefixees « # ». Les entrees v1 n'en ont pas, d'ou la nouvelle cle. */
+function _g45CoreCle(sportPath, ligue) { return 'g45core2_' + sportPath + '_' + ligue; }
 
 function _g45Norm(s) {
   return String(s || '').toLowerCase()
@@ -35616,6 +36804,16 @@ async function g45CoreTeams(sportPath, ligue) {
         if (!t || !t.id) return;
         [t.displayName, t.name, t.shortDisplayName, t.nickname, t.location, t.abbreviation]
           .filter(Boolean).forEach(function (n) { out[_g45Norm(n)] = String(t.id); });
+        /* ═══ LE NOM D'AFFICHAGE, ET PLUS SEULEMENT SA FORME NORMALISEE (08/09) ═══
+           La table ne servait qu'a retrouver un id A PARTIR d'un nom, donc seules
+           les cles normalisees etaient gardees : « castresolympique », « stadetou ».
+           Or `_g45CompetEquipes` s'en sert en repli quand la competition n'a pas de
+           classement — le rugby a XV depuis 2022-23 — et affichait ces cles telles
+           quelles a l'ecran (releve par Antoine sur Toulon).
+           Le sens id → nom est donc enregistre ici, sous une cle prefixee « # » que
+           `_g45Norm` ne peut jamais produire : aucune collision possible avec un
+           nom d'equipe, et la table garde son usage d'origine. */
+        if (t.displayName || t.name) out['#' + t.id] = String(t.displayName || t.name);
       });
       if (Object.keys(out).length) {
         _g45CoreCache[cle] = out;
@@ -35646,6 +36844,7 @@ async function g45CoreTeams(sportPath, ligue) {
         if (!t || !t.id) return;
         [t.displayName, t.name, t.shortDisplayName, t.nickname, t.location]
           .filter(Boolean).forEach(function (n) { out[_g45Norm(n)] = String(t.id); });
+        if (t.displayName || t.name) out['#' + t.id] = String(t.displayName || t.name);
       });
     }
     _g45CoreCache[cle] = out;
@@ -35664,7 +36863,9 @@ async function g45CoreTeamId(sportPath, ligue, nom) {
   var n = _g45Norm(nom);
   if (!n) return null;
   if (table[n]) return table[n];
-  var cles = Object.keys(table);
+  /* Les cles « # » portent un NOM, pas un id : les inclure ici rendrait un nom
+     d'equipe la ou l'appelant attend un identifiant. */
+  var cles = Object.keys(table).filter(function (k) { return k.charAt(0) !== '#'; });
   for (var i = 0; i < cles.length; i++) {
     if (cles[i].indexOf(n) >= 0 || n.indexOf(cles[i]) >= 0) return table[cles[i]];
   }
@@ -35992,7 +37193,7 @@ async function g45NrlCharger(annee) {
   _g45NrlMsg('⏳ Chargement du calendrier ' + annee + '…');
   var equipes = await g45CoreTeams(_g45NrlCtx.sport, _g45NrlCtx.ligue);
   var ids = {};
-  Object.keys(equipes).forEach(function (k) { ids[equipes[k]] = 1; });
+  Object.keys(equipes).forEach(function (k) { if (k.charAt(0) !== '#') ids[equipes[k]] = 1; });
   var listeIds = Object.keys(ids);
   if (!listeIds.length) { _g45NrlMsg('❌ Impossible de charger la liste des équipes de cette compétition.', '#ff6b6b'); return []; }
 
@@ -36563,9 +37764,16 @@ async function _g45CompetEquipes(c) {
       var tb = await g45CoreTeams(c.sp, c.s);
       var vus = {};
       Object.keys(tb).forEach(function (k) {
+        if (k.charAt(0) === '#') return;          /* entree de nom, lue via tb['#'+id] */
         var id = tb[k];
         if (vus[id]) return; vus[id] = 1;
-        out.push({ id: String(id), nom: k, court: '', logo: '', j:0,v:0,n:0,p:0,bp:0,bc:0,diff:0,pts:0,rang:0 });
+        /* `k` est une cle NORMALISEE (« castresolympique ») : elle ne doit servir
+           que de dernier recours, jamais de libelle par defaut. Le logo suit le
+           meme motif de CDN que la voie classement, sinon les vignettes de la vue
+           Equipes resteraient vides pour ces competitions. */
+        out.push({ id: String(id), nom: tb['#' + id] || k, court: '',
+          logo: id ? ('https://a.espncdn.com/i/teamlogos/' + c.sp + '/500/' + id + '.png') : '',
+          j:0,v:0,n:0,p:0,bp:0,bc:0,diff:0,pts:0,rang:0 });
       });
     } catch (e) {}
   }
@@ -36659,7 +37867,8 @@ async function loadCompetTab() {
       ['g45F1Open()', '\ud83c\udfce', 'F1'],
       ['g45MmaOpen(0)', '\ud83e\udd4a', 'MMA / UFC'],
       ['g45MotoOpen()', '\ud83c\udfcd', 'MotoGP'],
-      ["g45CyclingOpen('tdf')", '\ud83d\udeb4', 'Cyclisme']
+      ["g45CyclingOpen('tdf')", '\ud83d\udeb4', 'Cyclisme'],
+      ['g45BiaOpen()', '\ud83c\udfbf', 'Biathlon']
     ].map(function (x) {
       return '<button onclick="g45CompetVersResultats(function(){ ' + x[0] + ' });" style="border:none;cursor:pointer;background:rgba(255,255,255,.05);border-radius:12px;padding:16px 8px;display:flex;flex-direction:column;align-items:center;gap:7px;color:#e6ecf5;">'
         + '<span style="font-size:26px;">' + x[1] + '</span>'
@@ -38115,6 +39324,56 @@ function _g45SgLignes(moy) {
 }
 
 /* Calcul pur : aucune requete, testable hors navigateur. */
+/* Ecran etroit : un seul endroit ou le decider, pour que les deux panneaux de
+   resultats repondent pareil. Le seuil de 700 px est celui deja utilise
+   ailleurs dans l'app, on n'en invente pas un autre. */
+function g45Etroit(el){
+  /* ═══ MESURER LE CONTENEUR, PAS LA FENETRE (09/09) ═══
+     Premiere version basee sur `window.innerWidth` : sans effet chez Antoine.
+     Cause : Chrome en mode « site pour ordinateur » IGNORE le viewport de la
+     page et annonce ~980 px de large sur un telephone de 393 px. La fenetre
+     mentait donc, pas le telephone.
+     On mesure desormais la LARGEUR REELLE du panneau qui va recevoir les
+     lignes : elle est juste dans tous les cas, mode ordinateur compris, ecran
+     partage compris. La fenetre ne sert plus que de repli quand l'element
+     n'est pas encore dans la page (largeur nulle). */
+  try {
+    var w = (el && (el.clientWidth || (el.parentNode && el.parentNode.clientWidth))) || 0;
+    if (w) return w < 560;
+    return window.innerWidth < 700;
+  } catch (e) { return false; }
+}
+window.g45Etroit = g45Etroit;
+
+/* ═══ COULEUR D'UN MARCHE, COMMUNE AUX DEUX PANNEAUX (09/09) ═══
+   Le football colorait ses pastilles marche par marche, le panneau generique
+   les sortait toutes en bleu (releve par Antoine sur les Bills). Impossible de
+   recopier sa table telle quelle : ici les seuils sont CALCULES par sport —
+   O49.5 au rugby, O220 au basket, O5.5 en hockey — donc une table figee par
+   cle ne couvrirait jamais tout.
+   D'ou deux etages : la table exacte du football d'abord, pour garder ses
+   nuances par seuil, puis une regle par FAMILLE (Over, Under, victoire…) qui
+   accepte n'importe quel nombre. Un marche invente demain sera colore sans
+   qu'on ait rien a ajouter. */
+var G45_BADGE_COULS = {
+  'O0.5':'#1ed760','O1.5':'#4d84ff','O2.5':'#f0b020','O3.5':'#ff7b54','O4.5':'#ff4545',
+  'U0.5':'#22d3ee','U1.5':'#67e8f9','U2.5':'#a5f3fc','U3.5':'#bae6fd','U4.5':'#e0f2fe',
+  'BTS':'#a78bfa','CS':'#1ed760','WIN':'#1ed760','LOSE':'#ff4545',
+  '1N':'#7ee787','N2':'#ffa198'
+};
+function g45CoulMarche(k){
+  k = String(k || '');
+  if (G45_BADGE_COULS[k]) return G45_BADGE_COULS[k];
+  if (/^O\d/.test(k)) return '#f0b020';   /* Over : dore, comme O2.5 en football */
+  if (/^U\d/.test(k)) return '#22d3ee';   /* Under : cyan */
+  if (k === 'WIN') return '#1ed760';
+  if (k === 'LOSE') return '#ff4545';
+  if (k === 'BTS') return '#a78bfa';
+  if (k === 'CS') return '#1ed760';
+  return '#7aaaff';
+}
+window.g45CoulMarche = g45CoulMarche;
+
 function _g45SgCalc(ms, monId, monNom) {
   var st = { j:0, v:0, n:0, d:0, bp:0, bc:0, cs:0, sansMarquer:0, po:0, liste:[],
              dom:{j:0,v:0,n:0,d:0,bp:0,bc:0}, ext:{j:0,v:0,n:0,d:0,bp:0,bc:0} };
@@ -38185,7 +39444,11 @@ async function _g45SaisonsGen(el, nom, perso) {
       + '<span id="sg-prog">Chargement de la saison ' + an + '\u2026</span></div>';
   }
   try { eq = await _g45CompetEquipes({ sp: sp, s: lg }); } catch (e) {}
-  var noms = {}; eq.forEach(function (t) { noms[String(t.id)] = t.nom; });
+  var noms = {}, logos = {};
+  /* Les ecussons viennent de la MEME source que les noms (`_g45CompetEquipes`),
+     celle qui alimente deja le classement — donc aucune requete de plus, et ils
+     existent pour toute equipe classee, pas seulement celles du mur. */
+  eq.forEach(function (t) { noms[String(t.id)] = t.nom; if (t.logo) logos[String(t.id)] = t.logo; });
   if (!ms) {
     try {
       ms = await _g45CompetMatchs(sp, lg, an, eq.map(function (t) { return t.id; }).filter(Boolean),
@@ -38212,7 +39475,7 @@ async function _g45SaisonsGen(el, nom, perso) {
     return await _g45SaisonsGen(el, nom, perso);
   }
 
-  _g45SgCtx = { sp: sp, lg: lg };   /* lu par _g45SgMatch au clic */
+  _g45SgCtx = { sp: sp, lg: lg, id: (perso && perso.id) || '' };   /* lu par _g45SgMatch au clic, et pour le blason de fond */
   var pct = function (a, b) { return b ? Math.round(a / b * 100) : 0; };
 
   var chips = '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">'
@@ -38392,6 +39655,19 @@ async function _g45SaisonsGen(el, nom, perso) {
   var combPc = pct(combN, nF);
   var combCol = combPc >= 60 ? '#1ed760' : (combPc >= 40 ? '#f0b020' : '#ff7b54');
 
+  /* ═══ MEME FOND QU'EN FOOTBALL (09/09) ═══
+     Le blason vient du CDN ESPN, construit sur le sport et l'identifiant que ce
+     panneau connait deja — donc il marche pour toute equipe, du mur ou non.
+     Si l'image manque, `g45FondClubHtml` ne pose que le degrade : jamais de trou. */
+  var _crestG = '';
+  try {
+    if (_g45SgCtx && _g45SgCtx.sp && _g45SgCtx.id) {
+      _crestG = 'https://a.espncdn.com/i/teamlogos/' + _g45SgCtx.sp + '/500/' + _g45SgCtx.id + '.png';
+    }
+  } catch (e) {}
+  html += '<div style="position:relative;border-radius:10px;padding:8px 10px 10px;overflow:hidden;margin-top:6px;">';
+  if (typeof g45FondClubHtml === 'function') html += g45FondClubHtml(_g45SgNomCourant || '', 0.2, _crestG);
+  html += '<div style="position:relative;z-index:1;">';
   html += '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:6px;">'
     + '<div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#4f5d88;">R\u00e9sultats (' + nF + ' matchs)</div>'
     + '<div style="font-size:11px;font-weight:800;color:' + combCol + ';background:' + combCol + '1a;border:1px solid ' + combCol + '55;border-radius:12px;padding:3px 10px;">'
@@ -38400,17 +39676,71 @@ async function _g45SaisonsGen(el, nom, perso) {
     var col = m.res === 'V' ? '#1ed760' : (m.res === 'N' ? '#f0b020' : '#ff4545');
     var d = new Date(m.t);
     var passes = coches.filter(function (k) { return _g45SgCompte([m], k) === 1; });
+    /* ═══ LA BARRE SUIT LE COMBINE, PAS LE RESULTAT (08/09) ═══
+       Elle etait coloree sur `m.res` : un match gagne 28-20 ressortait en VERT
+       alors que le combine coche etait « O49.5 + WIN » et que le total, a 48,
+       ne passait pas (releve par Antoine). Deux informations differentes se
+       disputaient la meme barre.
+       Elle dit desormais la meme chose que la pastille de l'en-tete : vert si
+       TOUS les marches coches passent, rouge sinon — exactement la regle du
+       panneau football. La lettre V/N/D et le score gardent, eux, la couleur
+       du resultat : c'est leur role.
+       Aucun marche coche : rien a verifier, on retombe sur le resultat. */
+    var barre = coches.length ? ((passes.length === coches.length) ? '#1ed760' : '#ff4545') : col;
+    /* ═══ MEME LIGNE QUE LE FOOTBALL (09/09) ═══
+       Le football et les sports US affichaient la meme information de deux
+       facons differentes, sans raison — pastilles et score au milieu d'un cote,
+       ligne plate de l'autre (releve par Antoine, captures a l'appui).
+       Ce panneau sert le hockey, le baseball, le basket, le rugby et le NRL :
+       une seule conversion aligne les cinq.
+       Deux differences avec le football, imposees par les donnees : ce panneau
+       ne connait que NOTRE equipe et son adversaire, pas la paire domicile /
+       exterieur nommee ; l'icone 🏠/🚌 porte donc l'information du lieu. Et le
+       nom de notre equipe n'est pas dans `m`, il vient de `nomEquipe`. */
+    var _etrG = g45Etroit(el);
+    var _vlG = 'rgba(16,21,38,.82)';
+    /* L'ecusson est place du cote du SCORE — a droite pour l'equipe de gauche,
+       a gauche pour celle de droite — donc les deux encadrent le score au lieu
+       de border la ligne. Image absente ou en echec : elle disparait, le nom
+       reste. */
+    var _cellG = function (txt, mien, droite, crest) {
+      var img = crest ? ('<img src="' + crest + '" alt="" style="width:15px;height:15px;object-fit:contain;vertical-align:middle;flex:none;" onerror="this.style.display=\'none\'">') : '';
+      return '<div style="background:' + _vlG + ';border-radius:6px;padding:5px ' + (_etrG ? '6px' : '9px') + ';font-size:' + (_etrG ? '10.5px' : '11.5px') + ';font-weight:800;'
+        + 'color:' + (mien ? '#f5c542' : 'var(--t1)') + ';display:flex;align-items:center;gap:6px;'
+        + 'justify-content:' + (droite ? 'flex-end' : 'flex-start') + ';overflow:hidden;">'
+        + (droite ? '' : img)
+        + '<span style="min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">' + txt + '</span>'
+        + (droite ? img : '')
+        + '</div>';
+    };
+    /* Ecussons masques sous 700 px : ils coutaient 21 px par nom et faisaient
+       tomber « Minnesota Wild » a « M… ». */
+    var _crestMoi = (!_etrG && _g45SgCtx && _g45SgCtx.id) ? (logos[String(_g45SgCtx.id)] || '') : '';
+    var _crestAdv = _etrG ? '' : (logos[String(m.advId)] || '');
+    var _advG = (noms[m.advId] || m.adv || '?')
+      + (m.po ? ' <span style="font-size:8px;font-weight:800;color:#f0b020;border:1px solid rgba(240,176,32,.4);border-radius:6px;padding:0 4px;">PO</span>' : '');
+    var _moiG = _g45SgNomCourant || 'Mon équipe';
+    var _dG = String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0');
     html += '<div ' + (m.id ? 'onclick="_g45SgMatch(\'' + m.id + '\')" ' : '')
-      + 'style="display:flex;align-items:center;gap:8px;padding:7px 2px;border-left:3px solid ' + col + ';padding-left:8px;margin-bottom:3px;background:rgba(255,255,255,.02);border-radius:0 6px 6px 0;font-size:11.5px;' + (m.id ? 'cursor:pointer;' : '') + '">'
-      + '<div style="width:38px;color:var(--t3);font-size:10px;">' + String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0') + '</div>'
-      + '<div style="width:16px;font-size:10px;">' + (m.dom ? '\ud83c\udfe0' : '\ud83d\ude8c') + '</div>'
-      + '<div style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (noms[m.advId] || m.adv || '?')
-      + (m.po ? ' <span style="font-size:8px;font-weight:800;color:#f0b020;border:1px solid rgba(240,176,32,.4);border-radius:6px;padding:0 4px;">PO</span>' : '') + '</div>'
-      + '<div style="font-size:9px;color:#7aaaff;white-space:nowrap;">' + passes.join(' ') + '</div>'
-      + '<div style="width:52px;text-align:right;font-weight:700;">' + m.pour + '-' + m.contre + '</div>'
-      + '<div style="width:16px;text-align:right;font-weight:800;color:' + col + ';">' + m.res + '</div></div>';
+      + 'style="border-left:3px solid ' + barre + ';border-radius:0 8px 8px 0;background:rgba(16,21,38,.42);padding:6px 9px;margin-bottom:6px;' + (m.id ? 'cursor:pointer;' : '') + '">'
+      + '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:5px;">'
+        + '<span style="font-size:10px;font-weight:800;color:#c2cee6;white-space:nowrap;">' + _dG
+        + ' <span style="font-weight:400;">' + (m.dom ? '\ud83c\udfe0' : '\ud83d\ude8c') + '</span></span>'
+        + '<span style="font-size:9px;font-weight:800;white-space:nowrap;">'
+          + passes.map(function (k) { return '<span style="color:' + g45CoulMarche(k) + ';margin-left:7px;">' + k + '</span>'; }).join('')
+        + '</span>'
+      + '</div>'
+      /* Notre equipe est ecrite a gauche quand elle recoit, a droite sinon :
+         le score se lit alors dans le sens du match. */
+      + '<div style="display:grid;grid-template-columns:minmax(0,1fr) ' + (_etrG ? '54px' : '68px') + ' minmax(0,1fr);gap:' + (_etrG ? '4px' : '6px') + ';align-items:center;">'
+        + _cellG(m.dom ? _moiG : _advG, !!m.dom, true, m.dom ? _crestMoi : _crestAdv)
+        + '<div style="font-size:12px;font-weight:800;color:' + col + ';text-align:center;background:' + _vlG + ';border-radius:6px;padding:5px 3px;">'
+          + (m.dom ? (m.pour + ' - ' + m.contre) : (m.contre + ' - ' + m.pour)) + '</div>'
+        + _cellG(m.dom ? _advG : _moiG, !m.dom, false, m.dom ? _crestAdv : _crestMoi)
+      + '</div></div>';
   });
 
+  html += '</div></div>';        /* ferme le voile puis l'enveloppe au blason */
   html += '</div></div>';
   el.innerHTML = html;
 }
@@ -41524,6 +42854,24 @@ async function g45DirectMesEquipes(silencieux) {
       js = await r.json();
     } catch (e) { continue; }
 
+    /* ═══ RETROUVER LA VRAIE COMPETITION (09/09) ═══
+       Avec le slug `all`, la reponse porte un tableau `leagues` decrivant TOUTES
+       les competitions du jour. On l'indexe par identifiant, car un evenement ne
+       nomme pas toujours la sienne : il la designe seulement dans son `uid`, de
+       la forme « s:600~l:2310~e:... ». Sans cette table, une affiche de Ligue des
+       Champions ressortait etiquetee « esp.1 » ou « eng.1 » — le championnat de
+       l'equipe suivie (releve par Antoine sur Barcelone-Feyenoord). */
+    var lgParId = {};
+    ((js && js.leagues) || []).forEach(function (L) {
+      if (!L) return;
+      var idL = String(L.id || '');
+      if (idL) lgParId[idL] = { nom: L.name || L.shortName || '', slug: L.slug || L.abbreviation || '' };
+    });
+    var lgDuUid = function (uid) {
+      var m = String(uid || '').match(/~l:(\d+)/);
+      return (m && lgParId[m[1]]) || null;
+    };
+
     ((js && js.events) || []).forEach(function (e) {
       var cp = (e.competitions && e.competitions[0]) || {};
       var cps = cp.competitors || [];
@@ -41555,10 +42903,13 @@ async function g45DirectMesEquipes(silencieux) {
       var lg2 = function (x) { return (x.team && (x.team.logo || (x.team.logos && x.team.logos[0] && x.team.logos[0].href))) || ''; };
       /* Avec le slug `all`, le championnat reel est porte par l'EVENEMENT.
          Sans ca, toutes les cartes de football afficheraient « all ». */
+      var lgUid = lgDuUid(e.uid) || lgDuUid(cp.uid);
       var lgReel = (e.league && (e.league.slug || e.league.abbreviation))
                 || (cp.league && (cp.league.slug || cp.league.abbreviation))
+                || (lgUid && lgUid.slug)
                 || g.lg;
       var lgNom = (e.league && e.league.name) || (cp.league && cp.league.name)
+                || (lgUid && lgUid.nom)
                 || (cp.notes && cp.notes[0] && cp.notes[0].headline) || '';
       /* Avec le slug generique, `lgReel` vaut litteralement « all » : l'afficher
          n'apprend rien. Sans nom de competition, on prefere ne RIEN ecrire. */
@@ -41767,8 +43118,12 @@ async function g45DirectMesEquipes(silencieux) {
           };
           var p = [];
 
-          var comp = m.lgNom || '';
-          p.push(pastille((SPORT_ICO[m.sp] || '') + ' ' + (comp || m.lgTv || m.sp), 'rgba(255,255,255,.80)'));
+          /* `lgTv` est le championnat de l'EQUIPE, garde pour deviner le
+             diffuseur. L'utiliser ici affichait « esp.1 » sur une affiche de
+             Ligue des Champions : mieux vaut le sport seul qu'une competition
+             fausse. */
+          var comp = m.lgNom || ((m.lg && m.lg !== 'all') ? m.lg : '');
+          p.push(pastille((SPORT_ICO[m.sp] || '') + ' ' + (comp || m.sp), 'rgba(255,255,255,.80)'));
 
           var dd = new Date(m.date);
           if (!isNaN(dd)) {
@@ -42974,6 +44329,40 @@ window.g45FondMatch = g45FondMatch;
    luminosite reste une modification a un seul endroit.
    Le visuel prime largement sur la couleur : l'objectif d'Antoine est de
    remplir le vide, et une photo de club remplit infiniment mieux qu'un aplat. */
+/* ═══ LES LISTES US ADOPTENT LA PRESENTATION DU FOOT (08/09) ═══
+   Antoine a compare les deux et prefere celle du foot : noms en pastilles,
+   score au MILIEU, et le fond aux couleurs du club derriere la liste.
+   Les trois sports US (NHL, MLB, NBA) rendaient chacun leur ligne dans leur
+   coin, avec le meme code recopie trois fois. Tout passe ici : une seule
+   ligne a corriger le jour ou la presentation rebouge, et le foot ne peut
+   plus diverger silencieusement des sports US.
+   Le voile est pose sur les PASTILLES et non sur les cellules de la grille :
+   une cellule occupe toute la largeur de sa colonne et masquerait le fond,
+   une pastille epouse son texte et le laisse passer entre les elements. */
+function g45UsPanneauOuvrir(nom, blason){
+  return '<div style="position:relative;border-radius:10px;padding:8px 10px 10px;overflow:hidden;">'
+    + g45FondClubHtml(nom, 0.2, blason);
+}
+function g45UsPanneauFermer(){ return '</div>'; }
+/* o = {clic, date, hNom, aNom, score, isDom, barre, coulScore, ico, badges} */
+function g45UsLigne(o){
+  var vl = o.isDom ? 'rgba(16,21,38,.80)' : 'rgba(16,21,38,.72)';
+  var pastille = function(txt, gras, droite){
+    return '<div style="'+(droite?'text-align:right;':'')+'overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">'
+      +'<span style="display:inline-block;max-width:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;vertical-align:middle;'
+      +'background:'+vl+';border-radius:6px;padding:4px 8px;font-size:10px;font-weight:'+(gras?'800':'400')+';color:'+(gras?'var(--t1)':'var(--t2)')+';">'
+      +txt+'</span></div>';
+  };
+  return '<div onclick="'+(o.clic||'')+'" style="display:grid;grid-template-columns:32px 1fr auto 1fr 40px;gap:6px;align-items:center;padding:2px 0;cursor:pointer;" onmouseover="this.style.opacity=\'0.8\'" onmouseout="this.style.opacity=\'1\'">'
+    +'<div style="font-size:9px;color:var(--t3);text-align:center;background:'+vl+';border-radius:6px;border-left:3px solid '+o.barre+';padding:4px 3px;">'+o.date+'</div>'
+    +pastille(o.hNom, o.isDom, true)
+    +'<div style="font-size:11px;font-weight:800;color:'+o.coulScore+';text-align:center;min-width:40px;background:'+vl+';border-radius:6px;padding:4px 6px;">'+o.score+'</div>'
+    +pastille(o.aNom, !o.isDom, false)
+    +'<div style="font-size:8px;text-align:right;min-width:40px;background:'+vl+';border-radius:6px;padding:3px 4px;">'+(o.ico||'')+'<br>'+(o.badges||'')+'</div>'
+    +'</div>';
+}
+window.g45UsLigne=g45UsLigne; window.g45UsPanneauOuvrir=g45UsPanneauOuvrir; window.g45UsPanneauFermer=g45UsPanneauFermer;
+
 function g45FondSolo(coul, vis) {
   var c = _g45CoulFond(coul || '#4d84ff'), N = _G45_FOND_NIV;
   if (vis) {
@@ -44244,8 +45633,14 @@ window.g45CouleursDe = g45CouleursDe;
    les tuiles au lieu de les coller, et `auto 46px` cale sur la hauteur pour ne
    deformer aucun logo, carre ou non.
    Sans blason connu, on renvoie le degrade seul : jamais de trou visuel. */
-var _G45_FOND_TUILE = 46;      /* hauteur d'une tuile, en px */
-var _G45_FOND_MOSAIQUE = 0.26; /* opacite du blason ; baisser vers 0.14 pour plus discret */
+/* 46 px : un blason couvrait une ligne entiere sur telephone et passait devant
+   les noms (capture d'Antoine du 09/09). La tuile suit desormais l'ecran. */
+/* 110 px paraissait bon en maquette, ou le blason etait une forme fine. Avec un
+   vrai ecusson dense — le BVB, capture du 09/09 — la mosaique couvre le texte :
+   `background-size` fixe la hauteur du LOGO, pas celle d'une case avec marge.
+   72 px, et l'opacite retombe de 0.26 a 0.16. */
+var _G45_FOND_TUILE = 72;    /* ajuste a 56 sur ecran etroit, voir g45FondClubHtml */
+var _G45_FOND_MOSAIQUE = 0.16; /* opacite du blason ; monter vers 0.26 pour plus marque */
 function g45FondClubHtml(nom, opac, blason) {
   var c = g45CouleursDe(nom);
   var base = '<div style="position:absolute;inset:0;pointer-events:none;z-index:0;'
@@ -44254,6 +45649,7 @@ function g45FondClubHtml(nom, opac, blason) {
   /* Un blason fourni par l'appelant passe en premier : il vient des donnees du
      match affiche, donc il vaut pour TOUTE equipe, pas seulement celles du mur
      que connait `g45LogoUrlDe`. */
+  var _tuile = (typeof g45Etroit === 'function' && g45Etroit()) ? 56 : _G45_FOND_TUILE;
   var logo = (typeof blason === 'string' && blason) ? blason : '';
   try { if (!logo && typeof g45LogoUrlDe === 'function') logo = g45LogoUrlDe(nom) || ''; } catch (e) {}
   /* Une URL comportant une apostrophe casserait l'attribut style ; on la refuse
@@ -44262,7 +45658,7 @@ function g45FondClubHtml(nom, opac, blason) {
   return base
     + '<div style="position:absolute;inset:0;pointer-events:none;z-index:0;border-radius:10px;'
     + 'opacity:' + _G45_FOND_MOSAIQUE + ';background-image:url(\'' + logo + '\');'
-    + 'background-size:auto ' + _G45_FOND_TUILE + 'px;background-repeat:space;'
+    + 'background-size:auto ' + _tuile + 'px;background-repeat:space;'
     + 'background-position:center top;"></div>';
 }
 window.g45FondClubHtml = g45FondClubHtml;
