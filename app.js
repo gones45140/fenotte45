@@ -30157,6 +30157,67 @@ window.g45RcFavAI=g45RcFavAI;
    depuis gones45140.github.io. On emprunte donc `?host=ibu`, comme pour ASO et
    tv-sports, avec repli en appel direct si le Worker ne connait pas encore cet
    hote — l'ajout cote Worker est fourni a part. */
+/* ═══ COULEURS DU PAYS (09/09) ═══
+   Le code pays est deja dans la donnee de l'etape : trois bandes NETTES a ses
+   couleurs, un tiers chacune. Antoine avait releve que le blanc n'occupait
+   qu'une frange quand le degrade le traversait — d'ou les arrets francs.
+   Les courses d'une etape heritent du pays de celle-ci : elles s'y deroulent
+   toutes, et ca garde le fil quand on descend d'un ecran.
+   PAS D'EMOJI DRAPEAU, des bandes de couleur : Chrome sous Windows rend les
+   emoji drapeaux en petites lettres grises (piege deja rencontre dans
+   l'onglet Competitions).
+   Ombre portee sur le texte, obligatoire : un nom en blanc sur la bande blanche
+   d'un drapeau francais ou italien disparaitrait sans elle. */
+var _G45_BIA_PAYS = {
+  NOR:['#ba0c2f','#ffffff','#00205b'], SWE:['#006aa7','#fecc00','#006aa7'], GER:['#000000','#dd0000','#ffce00'],
+  FRA:['#0055a4','#ffffff','#ef4135'], ITA:['#008c45','#f4f5f0','#cd212a'], AUT:['#ed2939','#ffffff','#ed2939'],
+  CZE:['#11457e','#d7141a','#ffffff'], FIN:['#003580','#ffffff','#003580'], SUI:['#d52b1e','#ffffff','#d52b1e'],
+  USA:['#3c3b6e','#ffffff','#b31942'], CAN:['#d52b1e','#ffffff','#d52b1e'], SLO:['#005da4','#ffffff','#ed1c24'],
+  EST:['#0072ce','#000000','#ffffff'], POL:['#ffffff','#dc143c','#ffffff'], SVK:['#ffffff','#0b4ea2','#ee1c25'],
+  LAT:['#9e3039','#ffffff','#9e3039'], LTU:['#fdb913','#006a44','#c1272d'], UKR:['#005bbb','#ffd500','#005bbb'],
+  BUL:['#ffffff','#00966e','#d62612'], ROU:['#002b7f','#fcd116','#ce1126'], KOR:['#ffffff','#cd2e3a','#0047a0'],
+  CHN:['#de2910','#ffde00','#de2910'], JPN:['#ffffff','#bc002d','#ffffff'], BLR:['#ffffff','#c8313e','#ffffff'],
+  KAZ:['#00afca','#fec50c','#00afca'], MDA:['#0046ae','#ffd200','#cc092f'], GBR:['#012169','#ffffff','#c8102e'],
+  BEL:['#000000','#fdda24','#ef3340'], NED:['#ae1c28','#ffffff','#21468b'], ESP:['#aa151b','#f1bf00','#aa151b']
+};
+function _g45BiaFond(code){
+  var k = _G45_BIA_PAYS[String(code || '').toUpperCase()];
+  if (!k) return 'rgba(255,255,255,.05)';
+  /* 35 % paraissait raisonnable en maquette, sur trois lignes et un fond uni.
+     Sur une saison entiere — onze etapes empilees devant le visuel de fond de
+     l'app — l'ecran vire au patchwork (capture d'Antoine, 09/09). 22 %, et le
+     pays reste parfaitement identifiable grace au petit drapeau a droite. */
+  var a = '38';
+  /* Base opaque sous la teinte, sinon le visuel de l'app remonte entre les
+     lignes — meme correctif que sur le panneau de resultats. */
+  return 'linear-gradient(100deg,' + k[0] + a + ' 0%,' + k[0] + a + ' 33%,'
+       + k[1] + a + ' 33%,' + k[1] + a + ' 66%,' + k[2] + a + ' 66%,' + k[2] + a + ' 100%), #161d33';
+}
+function _g45BiaDrapeau(code){
+  var k = _G45_BIA_PAYS[String(code || '').toUpperCase()];
+  if (!k) return '';
+  return '<span style="display:inline-flex;border-radius:3px;overflow:hidden;height:10px;width:16px;vertical-align:middle;box-shadow:0 0 0 1px rgba(255,255,255,.20);">'
+    + k.map(function(x){ return '<i style="flex:1;background:' + x + ';"></i>'; }).join('') + '</span>';
+}
+var _G45_BIA_OMBRE = 'text-shadow:0 1px 4px rgba(0,0,0,.95);';
+/* Le pays de l'etape ouverte, pour que ses courses en heritent. */
+var _g45BiaPays = '';
+/* Libelles de l'IBU, en anglais. Traduits ici plutot qu'affiches tels quels. */
+function _g45BiaCourseFr(txt){
+  var t = String(txt || '');
+  var ico = /relay/i.test(t) ? '\ud83d\udd01' : (/pursuit/i.test(t) ? '\ud83c\udfaf' : (/mass start/i.test(t) ? '\ud83d\udc65' : (/individual/i.test(t) ? '\u23f1\ufe0f' : '\ud83c\udfbf')));
+  /* PIEGE : « Women's » CONTIENT « Men's ». Remplacer Men's d'abord donnait
+     « WoHommes » — attrape par le test avant livraison. Toujours du plus long
+     au plus court, comme pour « quarterfinals » qui contient « final ». */
+  t = t.replace(/Women'?s?\b/gi, 'Dames').replace(/Men'?s?\b/gi, 'Hommes')
+       .replace(/Single Mixed Relay/gi, 'Relais mixte simple')
+       .replace(/Mixed Relay/gi, 'Relais mixte')
+       .replace(/\bRelay\b/gi, 'Relais').replace(/\bSprint\b/gi, 'Sprint')
+       .replace(/\bPursuit\b/gi, 'Poursuite').replace(/\bMass Start\b/gi, 'D\u00e9part group\u00e9')
+       .replace(/\bIndividual\b/gi, 'Individuelle').replace(/\bShort Individual\b/gi, 'Individuelle courte');
+  return ico + ' ' + t;
+}
+
 var _g45BiaCache = {};
 async function _g45BiaJ(chemin){
   if (_g45BiaCache[chemin] !== undefined) return _g45BiaCache[chemin];
@@ -30179,6 +30240,22 @@ function _g45BiaSaison(){
   var deb = (m >= 9) ? a : (a - 1);
   return String(deb).slice(2) + String(deb + 1).slice(2);
 }
+/* ═══ ANNEE REELLE D'UNE SAISON IBU (09/09) ═══
+   Les identifiants sont en DEUX chiffres : « 2627 » = 2026-27, « 9900 » =
+   1999-2000. Trier ces textes met donc « 9900 » en tete et mon affichage le
+   relisait « 2099-00 » — Antoine a vu passer des saisons ou il serait
+   centenaire. Il faut convertir en annee pleine AVANT de trier.
+   Regle de bascule : deux chiffres au-dela de 50 designent les annees 1900. */
+function _g45BiaAnnee(sa){
+  var d = parseInt(String(sa || '').slice(0, 2), 10);
+  if (isNaN(d)) return 0;
+  return (d >= 50) ? (1900 + d) : (2000 + d);
+}
+function _g45BiaLib(sa){
+  var a = _g45BiaAnnee(sa);
+  return a ? (a + '-' + String((a + 1) % 100).padStart(2, '0')) : String(sa || '');
+}
+
 function _g45BiaRetour(){
   return '<button onclick="loadResultatsTab()" style="border:none;cursor:pointer;background:rgba(255,255,255,.06);border-radius:8px;color:var(--t2);padding:7px 12px;font-size:11px;font-weight:700;margin-bottom:10px;">\u2190 Sports</button>';
 }
@@ -30190,64 +30267,207 @@ function _g45BiaTir(t){
   var col = tot === 0 ? 'var(--g)' : (tot <= 2 ? 'var(--gold)' : 'var(--r)');
   return '<span style="color:' + col + ';font-weight:800;">' + txt + '</span>';
 }
+/* Fond du panneau, teinte aux couleurs du pays de l'etape. Les LIGNES gardent
+   leur propre fond sombre : sans ca, un classement colore derriere devient
+   illisible des la troisieme ligne. */
+/* ═══ CACHE OPAQUE (09/09) ═══
+   Les trois ecrans du biathlon s'affichaient directement sur le visuel de fond
+   de l'app : le classement restait delave et les etapes flottaient (captures
+   d'Antoine). Une carte opaque les englobe desormais, du bouton de retour
+   jusqu'a la derniere ligne.
+   Le liseré et l'ombre portee ne sont pas decoratifs : sans eux, la carte se
+   confond avec le fond au lieu de se poser dessus. */
+function _g45BiaCarte(contenu){
+  return '<div style="background:#0f1526;border:1px solid rgba(255,255,255,.09);border-radius:14px;'
+    + 'padding:14px;box-shadow:0 10px 30px rgba(0,0,0,.45);">' + contenu + '</div>';
+}
+
+function _g45BiaFondPanneau(code){
+  var k = _G45_BIA_PAYS[String(code || '').toUpperCase()];
+  var base = '#141a2e';   /* base OPAQUE, indispensable */
+  if (!k) return 'linear-gradient(150deg,#1b2547 0%,' + base + ' 55%,#101733 100%)';
+  /* ═══ DEUX COUCHES, PAS UNE (09/09) ═══
+     Premiere version : un seul degrade aux couleurs du pays, en semi-
+     transparent. Resultat, le visuel de fond de l'app remontait entre les
+     lignes et le classement restait delave (capture d'Antoine).
+     On empile donc la teinte SUR une base opaque : la couleur du pays se voit,
+     mais plus rien ne passe derriere. Meme principe que le voile des cartes du
+     direct. */
+  return 'linear-gradient(150deg,' + k[0] + '40 0%,transparent 42%,' + k[2] + '4d 100%), ' + base;
+}
+/* La notation du tir n'etait expliquee nulle part — evident pour Antoine, pas
+   pour ceux a qui il partage l'app. Le nombre de seances et le cout d'une faute
+   changent selon la discipline : deux seances sur un sprint, quatre sur une
+   poursuite, une individuelle ou un depart groupe, et sur l'individuelle une
+   faute coute UNE MINUTE au lieu d'un tour de penalite. */
+function _g45BiaLegendeTir(desc){
+  var t = String(desc || '').toLowerCase();
+  var quatre = /pursuit|poursuite|mass start|depart group|individual|individuelle/.test(t);
+  var ordre = quatre
+    ? 'Quatre s\u00e9ances : couch\u00e9, couch\u00e9, debout, debout.'
+    : 'Deux s\u00e9ances : couch\u00e9 puis debout.';
+  var cout = /individual|individuelle/.test(t)
+    ? 'Sur l\'individuelle, chaque faute ajoute <b>une minute</b> au temps.'
+    : 'Chaque faute co\u00fbte un tour de p\u00e9nalit\u00e9 de 150 m, environ 23 s.';
+  return '<div style="background:rgba(255,255,255,.07);border-radius:8px;padding:8px 10px;font-size:9.5px;color:#dbe3f4;line-height:1.55;margin-bottom:10px;">'
+    + '<b style="color:#fff;">Tir : couch\u00e9 + debout</b> \u00b7 ' + ordre
+    + '<br><b>0+1</b> = z\u00e9ro faute couch\u00e9, une debout. ' + cout + '</div>';
+}
+/* ═══ FICHE ATHLETE (09/09) ═══
+   `AllResults?IBUId=` rend TOUTE la carriere d'un athlete : chaque course, son
+   rang et ses fautes. On en tire ce qui manque pour parier — le pourcentage de
+   reussite au tir, et surtout COUCHE et DEBOUT separement, parce que ce sont
+   deux exercices differents et qu'un athlete regulier couche peut s'ecrouler
+   debout.
+   L'identifiant vient du classement quand il y figure ; sinon la ligne n'est
+   pas cliquable, plutot qu'un clic qui ne menerait nulle part. */
+async function g45BiaAthlete(ibuId, nom){
+  var el = document.getElementById('t-resultats'); if (!el) return;
+  var back = '<button onclick="history.back()" style="border:none;cursor:pointer;background:rgba(255,255,255,.06);border-radius:8px;color:var(--t2);padding:7px 12px;font-size:11px;font-weight:700;margin-bottom:10px;">\u2190 Retour</button>';
+  el.innerHTML = _g45BiaCarte(back + '<div style="color:var(--t3);font-size:11px;padding:16px;text-align:center;">\u23f3 Chargement de la fiche\u2026</div>');
+  var j = await _g45BiaJ('/modules/sportapi/api/AllResults?IBUId=' + encodeURIComponent(ibuId));
+  var lignes = (j && (j.Results || j)) || [];
+  if (!Array.isArray(lignes) || !lignes.length) {
+    el.innerHTML = _g45BiaCarte(back + '<div style="color:var(--t3);font-size:11px;padding:14px;text-align:center;">Aucun r\u00e9sultat pour cet athl\u00e8te.</div>');
+    return;
+  }
+  /* Le detail « 0+1 0+2 » se lit seance par seance : les rangs pairs sont
+     couche, les impairs debout — c'est l'ordre officiel, quel que soit le
+     nombre de seances. */
+  var tC = 0, fC = 0, tD = 0, fD = 0, courses = 0, podiums = 0, top10 = 0;
+  lignes.forEach(function(r){
+    var sh = String(r.Shootings || '').trim();
+    if (sh) {
+      sh.split(/\s+/).forEach(function(bloc, i){
+        var f = bloc.split('+').reduce(function(a, x){ return a + (parseInt(x, 10) || 0); }, 0);
+        if (i % 2 === 0) { tC += 5; fC += f; } else { tD += 5; fD += f; }
+      });
+    }
+    var rg = parseInt(r.Rank, 10);
+    if (!isNaN(rg)) { courses++; if (rg <= 3) podiums++; if (rg <= 10) top10++; }
+  });
+  var pc = function(t, f){ return t ? Math.round((t - f) / t * 100) : 0; };
+  var carte = function(lab, val, col){
+    return '<div style="flex:1;min-width:96px;background:rgba(10,14,26,.45);border-radius:10px;padding:10px;text-align:center;">'
+      + '<div style="font-size:17px;font-weight:800;color:' + col + ';">' + val + '</div>'
+      + '<div style="font-size:9px;color:#b9c5e0;margin-top:2px;">' + lab + '</div></div>';
+  };
+  var h = back
+    + '<div class="sec" style="margin-top:0;">\ud83c\udfbf ' + (nom || 'Athl\u00e8te') + '</div>'
+    + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">'
+      + carte('Tir couch\u00e9', pc(tC, fC) + '%', pc(tC, fC) >= 85 ? 'var(--g)' : 'var(--gold)')
+      + carte('Tir debout', pc(tD, fD) + '%', pc(tD, fD) >= 85 ? 'var(--g)' : 'var(--gold)')
+      + carte('Podiums', podiums, '#f5c542')
+      + carte('Top 10', top10 + '/' + courses, 'var(--a)')
+    + '</div>'
+    + '<div style="font-size:9px;color:var(--t3);margin-bottom:8px;line-height:1.5;">Couch\u00e9 et debout compt\u00e9s s\u00e9par\u00e9ment : ce sont deux exercices diff\u00e9rents, et c\'est souvent le debout qui d\u00e9cide une course.</div>'
+    + '<div style="display:flex;flex-direction:column;gap:3px;">';
+  lignes.slice(0, 40).forEach(function(r, i){
+    var rg = r.Rank || (r.IRM || '\u2013');
+    h += '<div style="display:grid;grid-template-columns:32px 1fr 52px;gap:8px;align-items:center;padding:7px 9px;border-radius:6px;background:rgba(255,255,255,' + (i % 2 ? '.02' : '.045') + ');">'
+      + '<span style="font-size:11px;font-weight:800;color:' + (String(rg) === '1' ? '#f5c542' : 'var(--t3)') + ';">' + rg + '</span>'
+      + '<span style="font-size:11px;color:var(--t1);overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">' + _g45BiaCourseFr(r.Description || r.Comp || '?') + '</span>'
+      + '<span style="font-size:11px;text-align:right;">' + _g45BiaTir(r.Shootings || r.ShootingTotal) + '</span>'
+      + '</div>';
+  });
+  el.innerHTML = _g45BiaCarte(h + '</div><div style="font-size:9px;color:var(--t3);margin-top:8px;">Source : IBU</div>');
+}
+window.g45BiaAthlete = g45BiaAthlete;
+
 async function g45BiaOpen(saison){
   var el = document.getElementById('t-resultats'); if (!el) return;
   var sa = saison || _g45BiaSaison();
-  el.innerHTML = _g45BiaRetour() + '<div style="color:var(--t3);font-size:11px;padding:16px;text-align:center;">\u23f3 Chargement de la saison\u2026</div>';
+  el.innerHTML = _g45BiaCarte(_g45BiaRetour() + '<div style="color:var(--t3);font-size:11px;padding:16px;text-align:center;">\u23f3 Chargement de la saison\u2026</div>');
   var evs = await _g45BiaJ('/modules/sportapi/api/Events?SeasonId=' + sa + '&Level=1');
   /* Une saison qui n'a pas commence rend une liste vide : on recule d'un an
      plutot que d'afficher un ecran mort — la Coupe du monde ne reprend qu'en
-     novembre, et entre avril et novembre il n'y a rien a montrer d'autre. */
-  if (!Array.isArray(evs) || !evs.length) {
+     novembre, et entre avril et novembre il n'y a rien a montrer d'autre.
+     UNIQUEMENT en mode automatique : des qu'Antoine CHOISIT une saison, son
+     choix est respecte, sinon il croirait consulter une annee en en voyant une
+     autre — meme regle que le selecteur de saison des Competitions. */
+  if (!saison && (!Array.isArray(evs) || !evs.length)) {
     var pre = String(parseInt(sa.slice(0, 2), 10) - 1) + sa.slice(0, 2);
     var evs2 = await _g45BiaJ('/modules/sportapi/api/Events?SeasonId=' + pre + '&Level=1');
     if (Array.isArray(evs2) && evs2.length) { evs = evs2; sa = pre; }
   }
   if (!Array.isArray(evs) || !evs.length) {
-    el.innerHTML = _g45BiaRetour() + '<div style="color:#ff6b6b;font-size:11px;padding:14px;text-align:center;">Biathlon indisponible pour le moment.</div>';
+    el.innerHTML = _g45BiaCarte(_g45BiaRetour() + '<div style="color:#ff6b6b;font-size:11px;padding:14px;text-align:center;">Biathlon indisponible pour le moment.</div>');
     return;
   }
-  var an = '20' + sa.slice(0, 2) + '-' + sa.slice(2);
+  var an = _g45BiaLib(sa);
+  /* ═══ SAISONS PASSEES (09/09) ═══
+     `Seasons` les liste toutes, jusqu'aux annees 2000. On n'en propose que les
+     douze dernieres : au-dela, les donnees existent mais n'apprennent rien sur
+     des athletes qui ne courent plus.
+     Repli sur une liste calculee si l'endpoint ne repond pas — le sélecteur ne
+     doit pas disparaitre parce qu'une requete secondaire a echoue. */
+  var saisons = [];
+  try {
+    var js = await _g45BiaJ('/modules/sportapi/api/Seasons');
+    if (Array.isArray(js)) {
+      saisons = js.map(function(x){ return String(x.SeasonId || x.seasonId || ''); })
+                  .filter(function(x){ return /^\d{4}$/.test(x); });
+    }
+  } catch (e) {}
+  if (!saisons.length) {
+    var d0 = _g45BiaAnnee(sa);
+    for (var k = 0; k < 12; k++) {
+      var y = d0 - k;
+      saisons.push(String(y % 100).padStart(2, '0') + String((y + 1) % 100).padStart(2, '0'));
+    }
+  }
+  saisons = saisons.sort(function(x, y){ return _g45BiaAnnee(y) - _g45BiaAnnee(x); }).slice(0, 12);
+  if (saisons.indexOf(sa) < 0) saisons.unshift(sa);
+  var chips = '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">'
+    + saisons.map(function(x){
+        var on = (x === sa);
+        return '<button onclick="g45BiaOpen(\'' + x + '\')" style="border:none;cursor:pointer;border-radius:8px;padding:6px 11px;font-size:11px;font-weight:700;'
+          + 'background:' + (on ? 'var(--a)' : 'rgba(255,255,255,.06)') + ';color:' + (on ? '#0b1020' : 'var(--t2)') + ';">'
+          + _g45BiaLib(x) + '</button>';
+      }).join('')
+    + '</div>';
   var h = _g45BiaRetour()
     + '<div class="sec" style="margin-top:0;">\ud83c\udfbf Biathlon \u00b7 Coupe du monde ' + an + '</div>'
+    + chips
     + '<div style="font-size:11px;color:var(--t3);margin-bottom:10px;">Choisis une \u00e9tape, puis une course. Les fautes au tir sont d\u00e9taill\u00e9es s\u00e9ance par s\u00e9ance.</div>'
     + '<div style="display:flex;flex-direction:column;gap:6px;">';
   evs.slice().reverse().forEach(function(e){
     var d1 = String(e.StartDate || '').slice(0, 10).split('-').reverse().slice(0, 2).join('/');
-    h += '<button onclick="g45BiaEtape(\'' + e.EventId + '\')" style="text-align:left;border:none;cursor:pointer;background:rgba(255,255,255,.05);border-radius:10px;padding:11px 13px;color:#e6ecf5;display:flex;justify-content:space-between;align-items:center;gap:8px;">'
-      + '<span style="font-weight:700;font-size:12.5px;">' + (e.ShortDescription || e.Description || '?') + '</span>'
-      + '<span style="font-size:10px;color:var(--t3);">' + (e.Nat || '') + ' \u00b7 ' + d1 + '</span></button>';
+    h += '<button onclick="g45BiaEtape(\'' + e.EventId + '\',\'' + (e.Nat || '') + '\')" style="text-align:left;border:none;cursor:pointer;background:' + _g45BiaFond(e.Nat) + ';border-radius:10px;padding:11px 13px;color:#fff;display:flex;justify-content:space-between;align-items:center;gap:8px;">'
+      + '<span style="font-weight:800;font-size:12.5px;' + _G45_BIA_OMBRE + 'overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">' + (e.ShortDescription || e.Description || '?') + '</span>'
+      + '<span style="font-size:10px;color:#fff;' + _G45_BIA_OMBRE + 'white-space:nowrap;display:flex;align-items:center;gap:5px;">' + _g45BiaDrapeau(e.Nat) + (e.Nat || '') + ' \u00b7 ' + d1 + '</span></button>';
   });
-  el.innerHTML = h + '</div>';
+  el.innerHTML = _g45BiaCarte(h + '</div>');
 }
-async function g45BiaEtape(eventId){
+async function g45BiaEtape(eventId, nat){
   var el = document.getElementById('t-resultats'); if (!el) return;
-  el.innerHTML = _g45BiaRetour() + '<div style="color:var(--t3);font-size:11px;padding:16px;text-align:center;">\u23f3 Chargement des courses\u2026</div>';
+  el.innerHTML = _g45BiaCarte(_g45BiaRetour() + '<div style="color:var(--t3);font-size:11px;padding:16px;text-align:center;">\u23f3 Chargement des courses\u2026</div>');
+  if (nat) _g45BiaPays = nat;
   var cs = await _g45BiaJ('/modules/sportapi/api/Competitions?EventId=' + eventId);
   var back = '<button onclick="g45BiaOpen()" style="border:none;cursor:pointer;background:rgba(255,255,255,.06);border-radius:8px;color:var(--t2);padding:7px 12px;font-size:11px;font-weight:700;margin-bottom:10px;">\u2190 \u00c9tapes</button>';
   if (!Array.isArray(cs) || !cs.length) {
-    el.innerHTML = back + '<div style="color:var(--t3);font-size:11px;padding:14px;text-align:center;">Aucune course pour cette \u00e9tape.</div>';
+    el.innerHTML = _g45BiaCarte(back + '<div style="color:var(--t3);font-size:11px;padding:14px;text-align:center;">Aucune course pour cette \u00e9tape.</div>');
     return;
   }
   var h = back + '<div class="sec" style="margin-top:0;">\ud83c\udfbf Courses</div><div style="display:flex;flex-direction:column;gap:6px;">';
   cs.forEach(function(c){
     var quand = String(c.StartTime || '').slice(0, 10).split('-').reverse().slice(0, 2).join('/');
     var fini = (c.StatusId === 11) || /final/i.test(String(c.StatusText || ''));
-    h += '<button onclick="g45BiaCourse(\'' + c.RaceId + '\')" style="text-align:left;border:none;cursor:pointer;background:rgba(255,255,255,.05);border-radius:10px;padding:11px 13px;color:#e6ecf5;display:flex;justify-content:space-between;align-items:center;gap:8px;">'
-      + '<span style="font-weight:700;font-size:12.5px;">' + (c.Description || c.ShortDescription || '?') + '</span>'
-      + '<span style="font-size:10px;color:' + (fini ? 'var(--g)' : 'var(--t3)') + ';">' + (fini ? 'termin\u00e9e' : quand) + '</span></button>';
+    h += '<button onclick="g45BiaCourse(\'' + c.RaceId + '\')" style="text-align:left;border:none;cursor:pointer;background:' + _g45BiaFond(_g45BiaPays) + ';border-radius:10px;padding:11px 13px;color:#fff;display:flex;justify-content:space-between;align-items:center;gap:8px;">'
+      + '<span style="font-weight:800;font-size:12.5px;' + _G45_BIA_OMBRE + 'overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">' + _g45BiaCourseFr(c.Description || c.ShortDescription || '?') + '</span>'
+      + '<span style="font-size:10px;color:#fff;' + _G45_BIA_OMBRE + 'white-space:nowrap;">' + (fini ? 'termin\u00e9e' : quand) + '</span></button>';
   });
-  el.innerHTML = h + '</div>';
+  el.innerHTML = _g45BiaCarte(h + '</div>');
 }
 async function g45BiaCourse(raceId){
   var el = document.getElementById('t-resultats'); if (!el) return;
-  el.innerHTML = _g45BiaRetour() + '<div style="color:var(--t3);font-size:11px;padding:16px;text-align:center;">\u23f3 Chargement des r\u00e9sultats\u2026</div>';
+  el.innerHTML = _g45BiaCarte(_g45BiaRetour() + '<div style="color:var(--t3);font-size:11px;padding:16px;text-align:center;">\u23f3 Chargement des r\u00e9sultats\u2026</div>');
   var j = await _g45BiaJ('/modules/sportapi/api/Results?RaceId=' + raceId);
   var evId = String(raceId).slice(0, 14);
   var back = '<button onclick="g45BiaEtape(\'' + evId + '\')" style="border:none;cursor:pointer;background:rgba(255,255,255,.06);border-radius:8px;color:var(--t2);padding:7px 12px;font-size:11px;font-weight:700;margin-bottom:10px;">\u2190 Courses</button>';
   var res = (j && j.Results) || [];
   if (!res.length) {
-    el.innerHTML = back + '<div style="color:var(--t3);font-size:11px;padding:14px;text-align:center;">R\u00e9sultats pas encore publi\u00e9s.</div>';
+    el.innerHTML = _g45BiaCarte(back + '<div style="color:var(--t3);font-size:11px;padding:14px;text-align:center;">R\u00e9sultats pas encore publi\u00e9s.</div>');
     return;
   }
   var comp = (j && j.Competition) || {};
@@ -30256,31 +30476,48 @@ async function g45BiaCourse(raceId){
      classement devient illisible. */
   var relais = res.some(function(r){ return r.IsTeam; });
   var lignes = relais ? res.filter(function(r){ return r.IsTeam; }) : res;
+  /* ═══ PANNEAU LISIBLE (09/09) ═══
+     Le classement n'avait AUCUN fond : le visuel de l'app traversait les lignes
+     et le rendait illisible (capture d'Antoine). Fond teinte aux couleurs du
+     pays de l'etape, lignes sur leur propre fond sombre, et un en-tete de
+     colonnes qui manquait. */
   var h = back
-    + '<div class="sec" style="margin-top:0;">' + (comp.Description || 'R\u00e9sultats') + '</div>'
-    + '<div style="font-size:11px;color:var(--t3);margin-bottom:10px;">'
+    + '<div style="background:' + _g45BiaFondPanneau(_g45BiaPays) + ';border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:12px 14px;">'
+    + '<div style="font-size:13.5px;font-weight:800;color:#fff;">' + _g45BiaCourseFr(comp.Description || 'R\u00e9sultats') + '</div>'
+    + '<div style="font-size:10px;color:#c9d4ea;margin:3px 0 10px;display:flex;align-items:center;gap:5px;">'
+      + _g45BiaDrapeau(_g45BiaPays)
       + ((j.SportEvt && (j.SportEvt.ShortDescription || j.SportEvt.Description)) || '')
       + (comp.Location ? (' \u00b7 ' + comp.Location) : '') + '</div>'
+    + _g45BiaLegendeTir(comp.Description || '')
+    + '<div style="display:grid;grid-template-columns:26px 1fr 46px 62px;gap:8px;font-size:9px;color:#a9b6d4;text-transform:uppercase;letter-spacing:.05em;padding:0 8px 5px;">'
+      + '<span>#</span><span>' + (relais ? '\u00c9quipe' : 'Athl\u00e8te') + '</span><span style="text-align:center;">Tir</span><span style="text-align:right;">Temps</span></div>'
     + '<div style="display:flex;flex-direction:column;gap:3px;">';
   lignes.forEach(function(r, i){
     var irm = r.IRM ? String(r.IRM) : '';
     var rang = irm || (r.Rank || '');
     var podium = (rang === '1' || rang === '2' || rang === '3');
-    var col = rang === '1' ? '#f5c542' : (rang === '2' ? '#c7cdd8' : (rang === '3' ? '#cd7f32' : 'var(--t3)'));
-    h += '<div style="display:grid;grid-template-columns:30px 1fr auto auto;gap:8px;align-items:center;padding:7px 9px;border-radius:6px;background:rgba(255,255,255,' + (i % 2 ? '.02' : '.045') + ');">'
+    var col = rang === '1' ? '#f5c542' : (rang === '2' ? '#dfe6f5' : (rang === '3' ? '#e2a06a' : '#b9c5e0'));
+    /* Cliquable seulement si l'IBU nous donne l'identifiant : un clic qui ne
+       mene nulle part vaut moins qu'une ligne inerte. */
+    var ibu = r.IBUId || r.Ibuid || '';
+    var nomA = (r.ShortName || r.Name || '?');
+    var clic = (ibu && !relais)
+      ? (' onclick="g45BiaAthlete(\'' + ibu + '\',\'' + String(nomA).replace(/'/g, "\\'") + '\')" style="cursor:pointer;')
+      : (' style="');
+    h += '<div' + clic + 'display:grid;grid-template-columns:26px 1fr 46px 62px;gap:8px;align-items:center;padding:7px 8px;border-radius:6px;background:rgba(10,14,26,' + (i % 2 ? '.62' : '.76') + ');">'
       + '<span style="font-size:11px;font-weight:800;color:' + col + ';">' + (rang || '\u2013') + '</span>'
-      + '<span style="font-size:12px;font-weight:' + (podium ? '800' : '600') + ';color:var(--t1);overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">'
-        + (r.ShortName || r.Name || '?')
-        + '<span style="color:var(--t3);font-weight:400;font-size:10px;"> \u00b7 ' + (r.Nat || '') + '</span></span>'
-      + '<span style="font-size:11px;">' + _g45BiaTir(r.Shootings || r.ShootingTotal) + '</span>'
-      + '<span style="font-size:11px;font-weight:700;color:var(--t2);min-width:64px;text-align:right;">' + (r.Result || r.TotalTime || '') + '</span>'
+      + '<span style="font-size:11.5px;font-weight:' + (podium ? '800' : '600') + ';color:#fff;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">'
+        + nomA + '<span style="color:#b9c5e0;font-weight:400;font-size:9.5px;"> \u00b7 ' + (r.Nat || '') + '</span></span>'
+      + '<span style="font-size:11px;text-align:center;">' + _g45BiaTir(r.Shootings || r.ShootingTotal) + '</span>'
+      + '<span style="font-size:11px;font-weight:700;color:#e3e9f7;text-align:right;">' + (r.Result || r.TotalTime || '') + '</span>'
       + '</div>';
   });
-  h += '</div><div style="font-size:9px;color:var(--t3);margin-top:8px;line-height:1.5;">'
-    + 'Tir : fautes par s\u00e9ance \u00b7 vert = sans faute, or = 1 ou 2, rouge au-del\u00e0.'
-    + (relais ? '<br>Relais : seules les \u00e9quipes sont list\u00e9es.' : '')
-    + '<br>Source : IBU (biathlonresults.com)</div>';
-  el.innerHTML = h;
+  h += '</div>';
+  h += '<div style="font-size:9px;color:#a9b6d4;margin-top:9px;line-height:1.5;">'
+    + 'Vert = sans faute, or = 1 ou 2, rouge au-del\u00e0.'
+    + (relais ? '<br>Relais : seules les \u00e9quipes sont list\u00e9es.' : '<br>Touche un athl\u00e8te pour voir sa fiche.')
+    + '<br>Source : IBU (biathlonresults.com)</div></div>';
+  el.innerHTML = _g45BiaCarte(h);
 }
 window.g45BiaOpen = g45BiaOpen; window.g45BiaEtape = g45BiaEtape; window.g45BiaCourse = g45BiaCourse;
 
@@ -37524,7 +37761,41 @@ function g45NrlRender() {
   var parJr = {};
   _g45NrlMatchs.forEach(function (m) { (parJr[m.jr] = parJr[m.jr] || []).push(m); });
 
-  el.innerHTML = Object.keys(parJr).sort(function (a, b) { return b - a; }).map(function (jr) {
+  /* ═══ SENS DE LECTURE DES JOURNEES (09/09) ═══
+     L'ordre etait toujours decroissant : pertinent en cours de saison, ou l'on
+     veut les derniers resultats en tete. Absurde sur une saison qui n'a pas
+     commence — Antoine ouvrait la NFL 2026 et tombait sur la journee 18, vide,
+     avec la premiere tout en bas de dix-huit blocs.
+     Le sens s'adapte donc a l'etat de la saison, et un bouton permet de le
+     retourner : le reglage est retenu tant que la page reste ouverte, sinon il
+     serait perdu a chaque changement d'onglet. */
+  var _jrCles = Object.keys(parJr).map(Number).filter(function (x) { return !isNaN(x); });
+  var _joues = _g45NrlMatchs.filter(function (m) { return m.joue; }).length;
+  /* La journee EN COURS : la plus avancee qui compte au moins un match joue.
+     « Derniere journee » ne veut pas dire la 18e — sur une saison en cours,
+     celle-la est vide et n'interesse personne (remarque d'Antoine). */
+  var _jrCourante = 0;
+  _g45NrlMatchs.forEach(function (m) { if (m.joue && Number(m.jr) > _jrCourante) _jrCourante = Number(m.jr); });
+
+  if (window._g45JrSens == null) window._g45JrSens = _joues ? 'cours' : 'asc';
+  var _sens = window._g45JrSens;
+  var _ordre;
+  if (_sens === 'asc' || !_jrCourante) {
+    _ordre = _jrCles.slice().sort(function (a, b) { return a - b; });
+  } else {
+    /* La journee en cours d'abord, puis les precedentes en remontant le temps,
+       et les a venir a la suite dans l'ordre du calendrier. On voit donc ce qui
+       vient de se jouer sans perdre l'acces au reste. */
+    var _passees = _jrCles.filter(function (x) { return x <= _jrCourante; }).sort(function (a, b) { return b - a; });
+    var _venir = _jrCles.filter(function (x) { return x > _jrCourante; }).sort(function (a, b) { return a - b; });
+    _ordre = _passees.concat(_venir);
+  }
+  var _btnSens = '<button onclick="window._g45JrSens=(window._g45JrSens===\'asc\'?\'cours\':\'asc\');g45NrlRender();" '
+    + 'style="border:none;cursor:pointer;background:rgba(255,255,255,.06);color:var(--t2);border-radius:8px;padding:6px 11px;font-size:10.5px;font-weight:700;margin-bottom:10px;">'
+    + (_sens === 'asc' ? '\u2191 Calendrier, 1re journ\u00e9e en haut'
+                       : '\u25c9 Journ\u00e9e en cours en haut' + (_jrCourante ? (' (J' + _jrCourante + ')') : '')) + '</button>';
+
+  el.innerHTML = _btnSens + _ordre.map(function (jr) {
     var lst = parJr[jr];
     var nJoues = lst.filter(function (m) { return m.joue; }).length;
     return '<div style="margin-bottom:16px;">'
@@ -38094,7 +38365,7 @@ async function loadCompetTab() {
       + '<button id="btn-admin-lock-journees" onclick="g45AdminBascule()" title="Mode administrateur" style="padding:12px 13px;border-radius:10px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.07);color:var(--t2);font-size:14px;cursor:pointer;">'
         + (g45EstAdmin() ? '\ud83d\udd13' : '\ud83d\udd12') + '</button>'
       + '</div>'
-      + '<div style="font-size:10px;color:var(--t3);line-height:1.6;margin-bottom:10px;">R\u00e9sultats group\u00e9s par journ\u00e9e, de la plus r\u00e9cente \u00e0 la plus ancienne. <b>Clique sur un match</b> pour son compte rendu complet.</div>'
+      + '<div style="font-size:10px;color:var(--t3);line-height:1.6;margin-bottom:10px;">R\u00e9sultats group\u00e9s par journ\u00e9e. <b>Clique sur un match</b> pour son compte rendu complet.</div>'
       + '<div id="g45-nrl-msg" style="font-size:11.5px;font-weight:600;min-height:16px;color:#9fb0c7;background:rgba(0,0,0,.25);border-radius:8px;padding:10px 12px;margin-bottom:12px;">\u23f3\u2026</div>'
 
       + '<div id="g45-nrl-liste"></div>';
