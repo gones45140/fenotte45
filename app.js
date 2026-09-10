@@ -2959,9 +2959,45 @@ function toggleArchMonth(el){
   next.style.display=next.style.display==='none'?'block':'none';
 }
 var _archFilter = 'all';
+var _archSport = 'all';
+function setArchSport(v, el){
+  _archSport = v;
+  try {
+    var z = document.getElementById('arch-sport-filter');
+    if (z) z.querySelectorAll('.sfbtn').forEach(function(b){ b.classList.remove('on'); });
+  } catch (e) {}
+  if (el) el.classList.add('on');
+  if (typeof renderArchive === 'function') renderArchive();
+}
+window.setArchSport = setArchSport;
 function renderArchive(){
   // Source = archives (réglés) + paris EN COURS (state.h) injectés comme isPending
   var _arSrc = (state.a||[]).concat((state.h||[]).map(function(_h){ return Object.assign({}, _h, {isPending:true}); }));
+  /* ═══ FILTRE PAR SPORT (10/09) ═══
+     Le conteneur `arch-sport-filter` existait dans la page depuis le debut mais
+     AUCUN code ne le remplissait : l'archive n'avait donc que les filtres par
+     resultat, la ou le Bilan filtre aussi par sport (releve par Antoine).
+     Les tuiles sont construites a partir des sports REELLEMENT presents dans
+     l'archive, avec leur nombre de paris — inutile de proposer le biathlon si
+     aucun pari n'y a ete pose. */
+  try {
+    var _zs = document.getElementById('arch-sport-filter');
+    if (_zs) {
+      var _cnt = {};
+      _arSrc.forEach(function(h){ var sp = h && h.sport; if (sp) _cnt[sp] = (_cnt[sp] || 0) + 1; });
+      var _sp = Object.keys(_cnt).sort(function(a, b){ return _cnt[b] - _cnt[a]; });
+      var _nomSp = function(v){
+        var t = (typeof G45_SPORTS_PARI !== 'undefined') ? G45_SPORTS_PARI.filter(function(x){ return x.v === v; })[0] : null;
+        return t ? t.n : v;
+      };
+      _zs.innerHTML = '<button class="sfbtn' + (_archSport === 'all' ? ' on' : '') + '" onclick="setArchSport(\'all\',this)">Tous les sports</button>'
+        + _sp.map(function(v){
+            return '<button class="sfbtn' + (_archSport === v ? ' on' : '') + '" onclick="setArchSport(\'' + v + '\',this)">'
+              + v + ' ' + _nomSp(v) + ' <span style="opacity:.6;">' + _cnt[v] + '</span></button>';
+          }).join('');
+    }
+  } catch (e) {}
+  if (_archSport !== 'all') _arSrc = _arSrc.filter(function(h){ return h && h.sport === _archSport; });
   // Mise à jour compteurs KPI
   var wins = _arSrc.filter(function(x){return !x.isPending && x.win;}).length;
   var loss = _arSrc.filter(function(x){return !x.isPending && !x.win;}).length;
@@ -3069,7 +3105,15 @@ function renderArchive(){
         var gain=h.isPending?0:(h.win?(h.m*h.cote-h.m):-h.m);
         var gainC=h.isPending?'#f0b020':(gain>=0?'#1ed760':'#ff4545');
         var winC=gainC, borderC=gainC;
-        var _bkHas=!!b2.d;var _bkImg=_bkHas?('<img src="https://www.google.com/s2/favicons?domain='+b2.d+'&sz=64" alt="" loading="lazy" onerror="logoErr(this)" style="width:18px;height:18px;object-fit:contain;background:#fff;border-radius:3px;">'):'';var bkBadge='<div style="position:relative;width:22px;height:22px;border-radius:5px;background:'+b2.c+';display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;">'+_bkImg+'<span style="width:100%;height:100%;align-items:center;justify-content:center;color:#fff;font-size:9px;font-weight:800;display:'+(_bkHas?'none':'flex')+';">'+b2.n.charAt(0).toUpperCase()+'</span></div>'; var sportIco=(h.sport?'<span style="position:relative;font-size:15px;flex-shrink:0;line-height:1;" title="Sport">'+h.sport+'</span>':'');
+        /* ═══ MEME PASTILLE QUE PARTOUT AILLEURS (10/09) ═══
+           Cette liste fabriquait la sienne : un carre colore avec l'initiale du
+           book, et le logo en repli DERRIERE. Resultat, on voyait « W », « U »,
+           « B » alors que la meme ligne montrait le vrai logo Winamax a droite
+           (captures d'Antoine). `bkFavicon` fait deja ce travail, correctement,
+           et sert aux tuiles de comptes comme au classement par bookmaker :
+           l'appeler ici aligne les trois endroits et supprime une variante de
+           plus a maintenir. */
+        var bkBadge='<span style="display:inline-flex;flex-shrink:0;">'+bkFavicon(h.b,22)+'</span>'; var sportIco=(h.sport?'<span style="position:relative;font-size:15px;flex-shrink:0;line-height:1;" title="Sport">'+h.sport+'</span>':'');
         /* TITRE CORRIGE (28/08, meme bug que celui deja corrige sur la liste du
            Bilan le 27/08) : `h.target` est l'ADVERSAIRE sur une montante, pas
            l'equipe jouee — "Real Madrid" contre "Malaga" affichait "Malaga"
@@ -10982,6 +11026,31 @@ var _archFilter = 'all';
 function renderArchive(){
   // Source = archives (réglés) + paris EN COURS (state.h) injectés comme isPending
   var _arSrc = (state.a||[]).concat((state.h||[]).map(function(_h){ return Object.assign({}, _h, {isPending:true}); }));
+  /* ═══ FILTRE PAR SPORT (10/09) ═══
+     Le conteneur `arch-sport-filter` existait dans la page depuis le debut mais
+     AUCUN code ne le remplissait : l'archive n'avait donc que les filtres par
+     resultat, la ou le Bilan filtre aussi par sport (releve par Antoine).
+     Les tuiles sont construites a partir des sports REELLEMENT presents dans
+     l'archive, avec leur nombre de paris — inutile de proposer le biathlon si
+     aucun pari n'y a ete pose. */
+  try {
+    var _zs = document.getElementById('arch-sport-filter');
+    if (_zs) {
+      var _cnt = {};
+      _arSrc.forEach(function(h){ var sp = h && h.sport; if (sp) _cnt[sp] = (_cnt[sp] || 0) + 1; });
+      var _sp = Object.keys(_cnt).sort(function(a, b){ return _cnt[b] - _cnt[a]; });
+      var _nomSp = function(v){
+        var t = (typeof G45_SPORTS_PARI !== 'undefined') ? G45_SPORTS_PARI.filter(function(x){ return x.v === v; })[0] : null;
+        return t ? t.n : v;
+      };
+      _zs.innerHTML = '<button class="sfbtn' + (_archSport === 'all' ? ' on' : '') + '" onclick="setArchSport(\'all\',this)">Tous les sports</button>'
+        + _sp.map(function(v){
+            return '<button class="sfbtn' + (_archSport === v ? ' on' : '') + '" onclick="setArchSport(\'' + v + '\',this)">'
+              + v + ' ' + _nomSp(v) + ' <span style="opacity:.6;">' + _cnt[v] + '</span></button>';
+          }).join('');
+    }
+  } catch (e) {}
+  if (_archSport !== 'all') _arSrc = _arSrc.filter(function(h){ return h && h.sport === _archSport; });
   // Mise à jour compteurs KPI
   var wins = _arSrc.filter(function(x){return !x.isPending && x.win;}).length;
   var loss = _arSrc.filter(function(x){return !x.isPending && !x.win;}).length;
@@ -11089,7 +11158,15 @@ function renderArchive(){
         var gain=h.isPending?0:(h.win?(h.m*h.cote-h.m):-h.m);
         var gainC=h.isPending?'#f0b020':(gain>=0?'#1ed760':'#ff4545');
         var winC=gainC, borderC=gainC;
-        var _bkHas=!!b2.d;var _bkImg=_bkHas?('<img src="https://www.google.com/s2/favicons?domain='+b2.d+'&sz=64" alt="" loading="lazy" onerror="logoErr(this)" style="width:18px;height:18px;object-fit:contain;background:#fff;border-radius:3px;">'):'';var bkBadge='<div style="position:relative;width:22px;height:22px;border-radius:5px;background:'+b2.c+';display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;">'+_bkImg+'<span style="width:100%;height:100%;align-items:center;justify-content:center;color:#fff;font-size:9px;font-weight:800;display:'+(_bkHas?'none':'flex')+';">'+b2.n.charAt(0).toUpperCase()+'</span></div>'; var sportIco=(h.sport?'<span style="position:relative;font-size:15px;flex-shrink:0;line-height:1;" title="Sport">'+h.sport+'</span>':'');
+        /* ═══ MEME PASTILLE QUE PARTOUT AILLEURS (10/09) ═══
+           Cette liste fabriquait la sienne : un carre colore avec l'initiale du
+           book, et le logo en repli DERRIERE. Resultat, on voyait « W », « U »,
+           « B » alors que la meme ligne montrait le vrai logo Winamax a droite
+           (captures d'Antoine). `bkFavicon` fait deja ce travail, correctement,
+           et sert aux tuiles de comptes comme au classement par bookmaker :
+           l'appeler ici aligne les trois endroits et supprime une variante de
+           plus a maintenir. */
+        var bkBadge='<span style="display:inline-flex;flex-shrink:0;">'+bkFavicon(h.b,22)+'</span>'; var sportIco=(h.sport?'<span style="position:relative;font-size:15px;flex-shrink:0;line-height:1;" title="Sport">'+h.sport+'</span>':'');
         /* TITRE CORRIGE (28/08, meme bug que celui deja corrige sur la liste du
            Bilan le 27/08) : `h.target` est l'ADVERSAIRE sur une montante, pas
            l'equipe jouee — "Real Madrid" contre "Malaga" affichait "Malaga"
@@ -30303,9 +30380,11 @@ function _g45BiaFondPanneau(code){
 function _g45BiaLegendeTir(desc){
   var t = String(desc || '').toLowerCase();
   var quatre = /pursuit|poursuite|mass start|depart group|individual|individuelle/.test(t);
-  var ordre = quatre
-    ? 'Quatre s\u00e9ances : couch\u00e9, couch\u00e9, debout, debout.'
-    : 'Deux s\u00e9ances : couch\u00e9 puis debout.';
+  var indiv = /individual|individuelle/.test(t);
+  var ordre = indiv
+    ? 'Quatre s\u00e9ances, en ALTERNANCE : couch\u00e9, debout, couch\u00e9, debout.'
+    : (quatre ? 'Quatre s\u00e9ances : couch\u00e9, couch\u00e9, debout, debout.'
+              : 'Deux s\u00e9ances : couch\u00e9 puis debout.');
   var cout = /individual|individuelle/.test(t)
     ? 'Sur l\'individuelle, chaque faute ajoute <b>une minute</b> au temps.'
     : 'Chaque faute co\u00fbte un tour de p\u00e9nalit\u00e9 de 150 m, environ 23 s.';
@@ -30321,6 +30400,47 @@ function _g45BiaLegendeTir(desc){
    debout.
    L'identifiant vient du classement quand il y figure ; sinon la ligne n'est
    pas cliquable, plutot qu'un clic qui ne menerait nulle part. */
+/* ═══ CODES DE COURSE ET ORDRE DES POSITIONS (10/09) ═══
+   `AllResults` ne donne pas le libelle mais un code : SP, PU, MS, IN, RL...
+   Affiches bruts, ils ne disent rien (releve par Antoine).
+   Surtout, l'ORDRE des positions depend de la discipline, et je l'avais suppose
+   uniforme :
+     Sprint          P, S
+     Poursuite       P, P, S, S
+     Depart groupe   P, P, S, S
+     Individuelle    P, S, P, S   ← alternee, contrairement aux deux ci-dessus
+     Relais          P, S par relayeur
+   Ma premiere version comptait donc l'individuelle a l'envers, et ma legende
+   annoncait « couche, couche, debout, debout » pour elle aussi. */
+var _G45_BIA_CODES = {
+  SP:'Sprint', PU:'Poursuite', MS:'D\u00e9part group\u00e9', IN:'Individuelle',
+  SI:'Individuelle courte', RL:'Relais', MR:'Relais mixte', SR:'Relais mixte simple',
+  MX:'Relais mixte', SMR:'Relais mixte simple', MXR:'Relais mixte'
+};
+function _g45BiaNomCourse(code){
+  var c = String(code || '').trim().toUpperCase();
+  return _G45_BIA_CODES[c] || code || '?';
+}
+/* La suite des positions, dans l'ordre des seances. 'C' = couche, 'D' = debout. */
+function _g45BiaPositions(code, nSeances){
+  var c = String(code || '').trim().toUpperCase();
+  if (c === 'IN' || c === 'SI') return ['C','D','C','D'];
+  if (c === 'SP') return ['C','D'];
+  if (c === 'PU' || c === 'MS') return ['C','C','D','D'];
+  if (/^(RL|MR|SR|MX|SMR|MXR)$/.test(c)) return ['C','D'];
+  /* Discipline inconnue : on deduit du nombre de seances, en prenant le cas le
+     plus frequent — deux seances = sprint, quatre = poursuite. */
+  return (nSeances >= 4) ? ['C','C','D','D'] : ['C','D'];
+}
+/* Les fautes, seance par seance. Le champ s'ecrit « 0+1 », « 0+0+0+1 » ou
+   « 0+0 0+1 » selon les courses : on accepte le plus et l'espace comme
+   separateurs, et chaque nombre est UNE seance. */
+function _g45BiaSeances(txt){
+  return String(txt || '').trim().split(/[\s+]+/)
+    .filter(function(x){ return x !== ''; })
+    .map(function(x){ return parseInt(x, 10) || 0; });
+}
+
 async function g45BiaAthlete(ibuId, nom){
   var el = document.getElementById('t-resultats'); if (!el) return;
   var back = '<button onclick="history.back()" style="border:none;cursor:pointer;background:rgba(255,255,255,.06);border-radius:8px;color:var(--t2);padding:7px 12px;font-size:11px;font-weight:700;margin-bottom:10px;">\u2190 Retour</button>';
@@ -30336,11 +30456,12 @@ async function g45BiaAthlete(ibuId, nom){
      nombre de seances. */
   var tC = 0, fC = 0, tD = 0, fD = 0, courses = 0, podiums = 0, top10 = 0;
   lignes.forEach(function(r){
-    var sh = String(r.Shootings || '').trim();
-    if (sh) {
-      sh.split(/\s+/).forEach(function(bloc, i){
-        var f = bloc.split('+').reduce(function(a, x){ return a + (parseInt(x, 10) || 0); }, 0);
-        if (i % 2 === 0) { tC += 5; fC += f; } else { tD += 5; fD += f; }
+    var se = _g45BiaSeances(r.Shootings);
+    if (se.length) {
+      var pos = _g45BiaPositions(r.Description || r.Comp || r.ShortDescription, se.length);
+      se.forEach(function(f, i){
+        var p = pos[i % pos.length];
+        if (p === 'D') { tD += 5; fD += f; } else { tC += 5; fC += f; }
       });
     }
     var rg = parseInt(r.Rank, 10);
@@ -30366,7 +30487,7 @@ async function g45BiaAthlete(ibuId, nom){
     var rg = r.Rank || (r.IRM || '\u2013');
     h += '<div style="display:grid;grid-template-columns:32px 1fr 52px;gap:8px;align-items:center;padding:7px 9px;border-radius:6px;background:rgba(255,255,255,' + (i % 2 ? '.02' : '.045') + ');">'
       + '<span style="font-size:11px;font-weight:800;color:' + (String(rg) === '1' ? '#f5c542' : 'var(--t3)') + ';">' + rg + '</span>'
-      + '<span style="font-size:11px;color:var(--t1);overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">' + _g45BiaCourseFr(r.Description || r.Comp || '?') + '</span>'
+      + '<span style="font-size:11px;color:var(--t1);overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">' + _g45BiaNomCourse(r.Description || r.Comp || r.ShortDescription) + '</span>'
       + '<span style="font-size:11px;text-align:right;">' + _g45BiaTir(r.Shootings || r.ShootingTotal) + '</span>'
       + '</div>';
   });
@@ -33208,6 +33329,54 @@ function _g45ScoreTexte(h) {
             && m.homeScore != null && m.awayScore != null;
         })[0];
         if (trouve) { hs = trouve.homeScore; as = trouve.awayScore; }
+        /* ═══ COUPES D'EUROPE (10/09) ═══
+           Le calendrier d'un club est demande POUR SON CHAMPIONNAT : une affiche
+           de Ligue des Champions n'y figure pas, et aucun score ne s'affichait
+           sur ces paris (releve par Antoine sur PSG-Slovan et Barcelone-
+           Feyenoord). Meme piege que le 15/08 sur le direct.
+           On interroge donc le tableau des scores du jour avec le slug `all`,
+           qui couvre TOUTES les competitions de football en une requete, et on
+           reconnait le match par ses deux noms. */
+        if (hs == null) {
+          var jour = String(betDay).replace(/-/g, '');
+          var chemin = '/apis/site/v2/sports/soccer/all/scoreboard?dates=' + jour + '&limit=1000';
+          var urls = [];
+          if (typeof FD_PROXY !== 'undefined' && FD_PROXY) urls.push(FD_PROXY + '?host=espn&path=' + encodeURIComponent(chemin));
+          urls.push('https://site.api.espn.com' + chemin);
+          var nrm = function(x){ return String(x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, ''); };
+          var cibles = [nrm(nomEquipe), nrm(nomAdverse)].filter(function(x){ return x.length > 3; });
+          for (var u = 0; u < urls.length && hs == null; u++) {
+            try {
+              var rr = await fetch(urls[u]);
+              if (!rr.ok) continue;
+              var jj = await rr.json();
+              ((jj && jj.events) || []).forEach(function(ev) {
+                if (hs != null) return;
+                var cp = (ev.competitions && ev.competitions[0]) || {};
+                var st = (cp.status && cp.status.type) || {};
+                if (!st.completed) return;
+                var cps = cp.competitors || [];
+                var noms = cps.map(function(c){ return nrm((c.team && (c.team.displayName || c.team.shortDisplayName || c.team.name)) || ''); });
+                /* Un nom doit CONTENIR l'autre : « Slovan Bratislava » cote pari
+                   face a « SK Slovan Bratislava » cote ESPN.
+                   ET LES DEUX CAMPS DOIVENT CORRESPONDRE quand on connait les
+                   deux : mon test a attrape un pari « Lens vs Betis » qui
+                   retrouvait « Lille vs Real Betis » — un seul nom suffisait, et
+                   sur une soiree europeenne a dix-huit matchs ca finirait par
+                   afficher le score d'une autre rencontre.
+                   Un seul nom connu (pari sur une equipe sans adversaire saisi) :
+                   on l'accepte, faute de mieux. */
+                var colle = function(c){ return noms.some(function(n){ return n && (n.indexOf(c) >= 0 || c.indexOf(n) >= 0); }); };
+                var ok = (cibles.length >= 2) ? cibles.every(colle) : cibles.some(colle);
+                if (!ok) return;
+                var dom = cps.filter(function(c){ return c.homeAway === 'home'; })[0] || cps[0] || {};
+                var ext = cps.filter(function(c){ return c.homeAway === 'away'; })[0] || cps[1] || {};
+                var a1 = parseInt(dom.score, 10), a2 = parseInt(ext.score, 10);
+                if (!isNaN(a1) && !isNaN(a2)) { hs = a1; as = a2; }
+              });
+            } catch (e2) {}
+          }
+        }
       } catch(e) {}
       finir(hs, as);
     })();
@@ -37470,7 +37639,7 @@ async function g45NrlCharger(annee) {
           /* ESPN ne fournit pas toujours le numero de journee : on le deduit
              sinon de la semaine calendaire, ce qui colle au NRL (une journee
              du jeudi au dimanche). */
-          jr: (e.week && e.week.number) || (c.week && c.week.number) || 0,
+          jr: _g45JrNum(e, c),
           dom: nm(dom), ext: nm(ext),
           sDom: sc(dom), sExt: sc(ext),
           /* Couleurs et logos pris au passage (25/08) : ils sont deja dans la
@@ -37534,7 +37703,7 @@ async function g45NrlCharger(annee) {
           out.push({
             id: id, date: e.date || '',
             joue: (stt.completed === true || stt.state === 'post'),
-            jr: (e.week && e.week.number) || (cc.week && cc.week.number) || 0,
+            jr: _g45JrNum(e, cc),
             dom: nm2(hd), ext: nm2(ad), sDom: sc2(hd), sExt: sc2(ad),
             cD: (hd.team && hd.team.color) ? ('#' + String(hd.team.color).replace('#','')) : '',
             cE: (ad.team && ad.team.color) ? ('#' + String(ad.team.color).replace('#','')) : '',
@@ -37742,6 +37911,28 @@ window.g45OuvrirMatchJournee = async function (eid, sport, ligue) {
   }
 };
 
+/* ═══ NUMERO DE JOURNEE (10/09) ═══
+   ESPN ne le fournit pas toujours : sur la phase de ligue de la Ligue des
+   Champions, deux matchs sortaient sans `week`, mon code retombait sur 0 et
+   une « Journee 0 » s'affichait au milieu du calendrier (releve par Antoine).
+   On tente donc d'autres sources avant d'abandonner : les notes de la
+   competition portent souvent « Matchday 1 » ou « Journee 1 » en clair.
+   A defaut, on renvoie 0, mais l'affichage le traite alors comme « journee non
+   precisee » et le range EN DERNIER — un match sans numero n'est pas un match
+   de la journee zero. */
+function _g45JrNum(e, c){
+  var n = (e && e.week && e.week.number) || (c && c.week && c.week.number) || 0;
+  if (n) return n;
+  var txt = '';
+  try {
+    ((c && c.notes) || []).forEach(function(x){ txt += ' ' + ((x && (x.headline || x.text)) || ''); });
+    ((e && e.notes) || []).forEach(function(x){ txt += ' ' + ((x && (x.headline || x.text)) || ''); });
+    if (e && e.season && e.season.slug) txt += ' ' + e.season.slug;
+  } catch (x2) {}
+  var m = String(txt).match(/(?:matchday|journ[ée]e|week|round|jornada|spieltag)\s*(\d{1,2})/i);
+  return m ? parseInt(m[1], 10) : 0;
+}
+
 function g45NrlRender() {
   var el = document.getElementById('g45-nrl-liste');
   if (!el) return;
@@ -37780,6 +37971,10 @@ function g45NrlRender() {
   if (window._g45JrSens == null) window._g45JrSens = _joues ? 'cours' : 'asc';
   var _sens = window._g45JrSens;
   var _ordre;
+  /* Les matchs sans numero (jr = 0) ne sont pas « la journee zero » : ils sont
+     mis a part, toujours en fin de liste. */
+  var _sansJr = _jrCles.filter(function (x) { return !x; });
+  _jrCles = _jrCles.filter(function (x) { return x > 0; });
   if (_sens === 'asc' || !_jrCourante) {
     _ordre = _jrCles.slice().sort(function (a, b) { return a - b; });
   } else {
@@ -37790,6 +37985,7 @@ function g45NrlRender() {
     var _venir = _jrCles.filter(function (x) { return x > _jrCourante; }).sort(function (a, b) { return a - b; });
     _ordre = _passees.concat(_venir);
   }
+  _ordre = _ordre.concat(_sansJr);
   var _btnSens = '<button onclick="window._g45JrSens=(window._g45JrSens===\'asc\'?\'cours\':\'asc\');g45NrlRender();" '
     + 'style="border:none;cursor:pointer;background:rgba(255,255,255,.06);color:var(--t2);border-radius:8px;padding:6px 11px;font-size:10.5px;font-weight:700;margin-bottom:10px;">'
     + (_sens === 'asc' ? '\u2191 Calendrier, 1re journ\u00e9e en haut'
@@ -37800,7 +37996,7 @@ function g45NrlRender() {
     var nJoues = lst.filter(function (m) { return m.joue; }).length;
     return '<div style="margin-bottom:16px;">'
       + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;">'
-        + '<div style="font-weight:800;font-size:11.5px;color:var(--a);">Journ\u00e9e ' + jr
+        + '<div style="font-weight:800;font-size:11.5px;color:var(--a);">' + (Number(jr) ? ('Journ\u00e9e ' + jr) : 'Journ\u00e9e non pr\u00e9cis\u00e9e')
         + ' <span style="color:#9fb0c7;font-weight:600;">\u00b7 ' + lst.length + ' matchs \u00b7 '
         + nJoues + ' jou\u00e9' + (nJoues > 1 ? 's' : '') + '</span></div>'
       + '</div>'
@@ -42234,9 +42430,20 @@ function g45SuiviEqEtoile(t, c) {
   var on = g45SuiviEqHas(t.id, c.s);
   var arg = "'" + String(t.nom).replace(/'/g, "\\'") + "','" + t.id + "','" + c.s + "','" + c.sp
           + "','" + String(c.ico || '').replace(/'/g, '') + "','" + String(t.logo || '').replace(/'/g, '') + "',event";
+  /* ═══ ETOILE VISIBLE (10/09) ═══
+     A 22 % de blanc et sans fond, elle disparaissait devant l'ecusson en
+     filigrane de la carte : impossible de deviner qu'on peut suivre une equipe
+     (releve par Antoine). Elle a desormais sa propre pastille sombre, ce qui la
+     detache quel que soit ce qu'il y a derriere, et une bordure doree quand
+     l'equipe est suivie — l'etat se lit alors de loin, sans avoir a distinguer
+     une etoile pleine d'une etoile vide. */
   return '<span onclick="g45SuiviEqToggle(' + arg + ')" title="' + (on ? 'Ne plus suivre' : 'Suivre cette \u00e9quipe')
-    + '" style="margin-left:auto;font-size:15px;line-height:1;cursor:pointer;color:' + (on ? '#f0b020' : 'rgba(255,255,255,.22)')
-    + ';padding:2px 4px;flex-shrink:0;">' + (on ? '\u2605' : '\u2606') + '</span>';
+    + '" style="margin-left:auto;font-size:15px;line-height:1;cursor:pointer;flex-shrink:0;'
+    + 'display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;'
+    + 'background:' + (on ? 'rgba(240,176,32,.18)' : 'rgba(10,14,26,.72)') + ';'
+    + 'border:1px solid ' + (on ? 'rgba(240,176,32,.60)' : 'rgba(255,255,255,.16)') + ';'
+    + 'color:' + (on ? '#f0b020' : 'rgba(255,255,255,.62)') + ';'
+    + 'text-shadow:0 1px 3px rgba(0,0,0,.9);">' + (on ? '\u2605' : '\u2606') + '</span>';
 }
 window.g45SuiviEqEtoile = g45SuiviEqEtoile;
 
