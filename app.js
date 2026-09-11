@@ -2193,6 +2193,24 @@ if (typeof document !== 'undefined') {
    Authorization part donc toujours, vide quand il n'y a pas de cle locale — le
    Worker l'ignore et met la sienne. */
 function g45IaCle(){ try { return localStorage.getItem('gones45_groq_key') || ''; } catch (e) { return ''; } }
+
+/* ═══════════ CLES SPORTIVES : LE WORKER PREND LE RELAIS (11/09/2026) ═══════════
+   Suite du chantier du 10/09, pour api-sports, football-data.org et RapidAPI.
+   Le Worker sait deja fournir ces trois cles depuis ses variables d'environnement,
+   mais l'app refusait d'appeler quand l'utilisateur n'en avait pas : une
+   quarantaine d'endroits font `if(!key) return` AVANT le moindre appel reseau.
+   Les reecrire un par un est precisement ce qui a casse les appels IA le 10/09.
+   On change donc les ACCESSEURS, pas les appelants. Sans cle locale, ils rendent
+   le jeton `_worker_` : il est vrai, donc tous les tests passent ; il arrive au
+   Worker, qui le reconnait et met sa propre cle a la place.
+   Une cle locale reste PRIORITAIRE — un utilisateur avance garde la sienne. */
+var G45_JETON_WORKER = '_worker_';
+function g45CleOuWorker(nom){
+  try { var k = localStorage.getItem(nom); if (k) return k; } catch (e) {}
+  return (typeof FD_PROXY !== 'undefined' && FD_PROXY) ? G45_JETON_WORKER : null;
+}
+function g45RapidKey(){ return g45CleOuWorker('gones45_rapidapi_key'); }
+window.g45CleOuWorker = g45CleOuWorker; window.g45RapidKey = g45RapidKey;
 /* ═══════════ LA CLE N'EST PLUS UN PREALABLE (10/09) ═══════════
    Une quinzaine d'endroits refusaient d'agir avant meme d'essayer : « Configure
    ta cle Groq dans Outils ». Depuis que le Worker porte la cle, ce refus est
@@ -6890,7 +6908,7 @@ function saveGeminiKey(){
   setTimeout(function(){if(st)st.innerText='';},3000);
 }
 
-function getApiSportsKey(){ return localStorage.getItem('gones45_apisports_key')||null; }
+function getApiSportsKey(){ return g45CleOuWorker('gones45_apisports_key'); }
 
 function saveApiSportsKey(){
   var inp = $i('apisports-key-input'); if(!inp) return;
@@ -7375,7 +7393,7 @@ async function enrichTeamLogos() {
   render();
 }
 
-function getApiFootballKey(){ return localStorage.getItem('gones45_apifootball_key')||null; }
+function getApiFootballKey(){ return g45CleOuWorker('gones45_apifootball_key'); }
 
 function saveGithubToken(){
   var v = ($i('github-token-input')||{}).value||'';
@@ -7563,7 +7581,7 @@ async function apiFootballFetch(endpoint) {
   } catch(e) { return null; }
 }
 
-function getFdorgKey(){ return localStorage.getItem('gones45_fdorg_key')||null; }
+function getFdorgKey(){ return g45CleOuWorker('gones45_fdorg_key'); }
 /* ═══ MODÈLE GROQ — DÉCOUVERTE AUTOMATIQUE (15/08/2026, réparée le 11/09/2026) ═══
    `llama-3.3-70b-versatile` a ete retire par Groq du jour au lendemain, et les
    15 appels de l'appli le nommaient EN DUR. Le remplacer par un autre nom fixe
@@ -8816,7 +8834,7 @@ var SOFASCORE_TEAM_IDS = {
 };
 
 async function sofascoreFetch(path) {
-  var key = localStorage.getItem('gones45_rapidapi_key');
+  var key = g45RapidKey();
   if(!key) return null;
   var url = 'https://fd-proxy.touraine-antoine.workers.dev/?key='+key+'&host=rapidapi&rapidhost=sofascore-sport-api.p.rapidapi.com&path='+encodeURIComponent(path);
   var r = await fetch(url);
@@ -14496,7 +14514,7 @@ function saveGeminiKey(){
   setTimeout(function(){if(st)st.innerText='';},3000);
 }
 
-function getApiSportsKey(){ return localStorage.getItem('gones45_apisports_key')||null; }
+function getApiSportsKey(){ return g45CleOuWorker('gones45_apisports_key'); }
 
 function saveApiSportsKey(){
   var inp = $i('apisports-key-input'); if(!inp) return;
@@ -14981,7 +14999,7 @@ async function enrichTeamLogos() {
   render();
 }
 
-function getApiFootballKey(){ return localStorage.getItem('gones45_apifootball_key')||null; }
+function getApiFootballKey(){ return g45CleOuWorker('gones45_apifootball_key'); }
 
 function saveGithubToken(){
   var v = ($i('github-token-input')||{}).value||'';
@@ -15101,7 +15119,7 @@ async function apiFootballFetch(endpoint) {
   } catch(e) { return null; }
 }
 
-function getFdorgKey(){ return localStorage.getItem('gones45_fdorg_key')||null; }
+function getFdorgKey(){ return g45CleOuWorker('gones45_fdorg_key'); }
 var FD_PROXY = 'https://fd-proxy.touraine-antoine.workers.dev';
 
 // Cache mémoire + file d'attente anti-rate-limit pour football-data (plan free: 10 req/min)
@@ -16179,7 +16197,7 @@ var SOFASCORE_TEAM_IDS = {
 };
 
 async function sofascoreFetch(path) {
-  var key = localStorage.getItem('gones45_rapidapi_key');
+  var key = g45RapidKey();
   if(!key) return null;
   var url = 'https://fd-proxy.touraine-antoine.workers.dev/?key='+key+'&host=rapidapi&rapidhost=sofascore-sport-api.p.rapidapi.com&path='+encodeURIComponent(path);
   var r = await fetch(url);
@@ -16788,7 +16806,7 @@ function updateFbrefHint(uid) {
 async function loadFdSquad(el, nom, teamId, noTerrain, terrainOnly) {
   el.innerHTML = '<div style="text-align:center;padding:16px;color:var(--t3);font-size:11px;">⏳ Chargement squad...</div>';
   try {
-    var rapidKey = localStorage.getItem('gones45_rapidapi_key');
+    var rapidKey = g45RapidKey();
     var afKey = getApiSportsKey();
 
     // Trouver l'ID Sofascore
@@ -27215,7 +27233,7 @@ window.g45DirectSport=g45DirectSport;
 /* ═══════════ TENNIS LIVE — Sofascore via RapidAPI (sofascore6) ═══════════
    À la demande uniquement (pas d'auto-refresh) pour ménager le quota RapidAPI gratuit. */
 async function g45Sofa6(path){
-  var key=localStorage.getItem('gones45_rapidapi_key');
+  var key=g45RapidKey();
   if(!key) return {__err:'nokey'};
   try{
     var r=await fetch('https://fd-proxy.touraine-antoine.workers.dev/?key='+encodeURIComponent(key)+'&host=rapidapi&rapidhost=sofascore6.p.rapidapi.com&path='+encodeURIComponent(path));
@@ -27227,7 +27245,7 @@ function _g45SofaNorm(s){ return String(s||'').toLowerCase().normalize('NFD').re
 /* Teste quels sports le wrapper Sofascore couvre réellement (1 requête par slug). */
 async function g45SofaProbe(btn){
   var box=document.getElementById('g45-sofa-probe'); if(!box) return;
-  if(!localStorage.getItem('gones45_rapidapi_key')){ box.innerHTML='<div style="color:#ff6b6b;font-size:11px;">Clé RapidAPI manquante.</div>'; return; }
+  if(!g45RapidKey()){ box.innerHTML='<div style="color:#ff6b6b;font-size:11px;">Clé RapidAPI manquante.</div>'; return; }
   var SL=[['cycling','🚴 Cyclisme'],['motorsport','🏁 Motorsport'],['motogp','🏍️ MotoGP'],['mma','🥊 MMA'],['football','⚽ Football (témoin)'],['tennis','🎾 Tennis']];
   if(!confirm('Ce test consomme '+SL.length+' requêtes de ton quota RapidAPI. Continuer ?')) return;
   btn.disabled=true;
@@ -27298,7 +27316,7 @@ function _g45RenderSofaStats(st, match, hN, aN){
 async function g45LoadAdvStats(btn){
   var box=document.getElementById(btn.dataset.box); if(!box) return;
   if(box.getAttribute('data-loaded')==='1'){ box.style.display = (box.style.display==='none'?'':'none'); return; }
-  var key=localStorage.getItem('gones45_rapidapi_key');
+  var key=g45RapidKey();
   if(!key){ box.innerHTML='<div style="color:#ff6b6b;font-size:11px;padding:8px;">Clé RapidAPI manquante (à mettre dans Outils).</div>'; return; }
   box.innerHTML='<div style="color:var(--t3);font-size:11px;padding:10px;text-align:center;">⏳ Chargement Sofascore…</div>';
   btn.disabled=true;
@@ -27325,7 +27343,7 @@ window.g45LoadAdvStats=g45LoadAdvStats;
 async function g45LoadTendance(btn){
   var box=document.getElementById(btn.dataset.box); if(!box) return;
   if(box.getAttribute('data-loaded')==='1'){ box.style.display=(box.style.display==='none'?'':'none'); return; }
-  var key=localStorage.getItem('gones45_rapidapi_key');
+  var key=g45RapidKey();
   if(!key){ box.innerHTML='<div style="color:#ff6b6b;font-size:11px;padding:8px;">Clé RapidAPI manquante (à mettre dans Outils).</div>'; return; }
   box.innerHTML='<div style="color:var(--t3);font-size:11px;padding:10px;text-align:center;">⏳ Chargement tendance…</div>';
   btn.disabled=true;
@@ -27696,7 +27714,7 @@ async function g45LoadMatchAI(btn){
   }catch(e){}
   // Tendance du public (Sofascore, si clé RapidAPI)
   try{
-    var rk=localStorage.getItem('gones45_rapidapi_key');
+    var rk=g45RapidKey();
     if(rk && iso){
       var d=new Date(iso);
       var ymd=function(dt){ return dt.getUTCFullYear()+'-'+String(dt.getUTCMonth()+1).padStart(2,'0')+'-'+String(dt.getUTCDate()).padStart(2,'0'); };
@@ -28164,7 +28182,7 @@ async function g45TennisDirect(){
     +'<button onclick="g45TennisDirect()" style="border:none;background:rgba(255,255,255,.06);color:var(--t2);border-radius:8px;padding:5px 11px;font-size:10px;font-weight:700;cursor:pointer;margin-bottom:10px;">🔄 Rafraîchir</button>'
     +'<div id="g45-tennis-list"><div style="text-align:center;color:var(--t3);font-size:11px;padding:24px;">⏳ Chargement…</div></div>'+'</div>';
   var list=document.getElementById('g45-tennis-list');
-  if(!localStorage.getItem('gones45_rapidapi_key')){ list.innerHTML='<div style="text-align:center;color:var(--t3);font-size:11px;padding:24px;">🔑 Clé RapidAPI manquante.<br>Renseigne-la dans OUTILS.</div>'; return; }
+  if(!g45RapidKey()){ list.innerHTML='<div style="text-align:center;color:var(--t3);font-size:11px;padding:24px;">🔑 Clé RapidAPI manquante.<br>Renseigne-la dans OUTILS.</div>'; return; }
   var data=await g45Sofa6('/api/sofascore/v1/match/live?sport_slug=tennis');
   if(!Array.isArray(data)){
     var er=data&&data.__err;
@@ -31358,7 +31376,7 @@ async function g45EspnMatchStats(cid, btn){
   var c=(window._g45EspnTennisCache||{})[cid];
   var box=btn.parentNode.querySelector('.g45estats');
   if(!c||!box) return;
-  if(!localStorage.getItem('gones45_rapidapi_key')){ box.innerHTML=_g45SofaErr('nokey'); btn.style.display='none'; return; }
+  if(!g45RapidKey()){ box.innerHTML=_g45SofaErr('nokey'); btn.style.display='none'; return; }
   btn.disabled=true; btn.textContent='⏳ Recherche du match…';
   var cps=c.competitors||[], home=null, away=null;
   cps.forEach(function(x){ if(x.homeAway==='home') home=x; else if(x.homeAway==='away') away=x; });
@@ -31394,7 +31412,7 @@ async function _g45SofaTry(paths){ for(var i=0;i<paths.length;i++){ try{ var r=a
 async function g45TennisH2H(btn){
   var box=document.getElementById(btn.dataset.box); if(!box) return;
   if(box.getAttribute('data-loaded')==='1'){ box.style.display=(box.style.display==='none'?'':'none'); return; }
-  if(!localStorage.getItem('gones45_rapidapi_key')){ box.innerHTML=_g45SofaErr('nokey'); btn.style.display='none'; return; }
+  if(!g45RapidKey()){ box.innerHTML=_g45SofaErr('nokey'); btn.style.display='none'; return; }
   box.innerHTML='<div style="color:var(--t3);font-size:11px;padding:10px;text-align:center;">⏳ H2H &amp; forme…</div>'; btn.disabled=true;
   try{
     var hN=btn.dataset.h, aN=btn.dataset.a, iso=btn.dataset.date, d=new Date(iso);
@@ -32116,7 +32134,7 @@ async function g45TennisResultsItf(offset){
   var ck='g45itf_'+ymdDash, matches=null, fromCache=false;
   try{ var raw=localStorage.getItem(ck); if(raw){ var o=JSON.parse(raw); if(o && o.m && (isPast || (Date.now()-(o.t||0))<300000)){ matches=o.m; fromCache=true; } } }catch(e){}
   if(!matches){
-    if(!localStorage.getItem('gones45_rapidapi_key')){ container.innerHTML='<div style="text-align:center;color:var(--t3);font-size:11px;padding:14px;">🔑 Clé RapidAPI manquante (OUTILS).</div>'; return; }
+    if(!g45RapidKey()){ container.innerHTML='<div style="text-align:center;color:var(--t3);font-size:11px;padding:14px;">🔑 Clé RapidAPI manquante (OUTILS).</div>'; return; }
     var data=await g45Sofa6('/api/sofascore/v1/match/list?sport_slug=tennis&date='+ymdDash);
     if(data && data.__err){
       var er=data.__err;
