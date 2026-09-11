@@ -2193,6 +2193,18 @@ if (typeof document !== 'undefined') {
    Authorization part donc toujours, vide quand il n'y a pas de cle locale — le
    Worker l'ignore et met la sienne. */
 function g45IaCle(){ try { return localStorage.getItem('gones45_groq_key') || ''; } catch (e) { return ''; } }
+/* ═══════════ LA CLE N'EST PLUS UN PREALABLE (10/09) ═══════════
+   Une quinzaine d'endroits refusaient d'agir avant meme d'essayer : « Configure
+   ta cle Groq dans Outils ». Depuis que le Worker porte la cle, ce refus est
+   FAUX — l'appel aurait abouti (capture d'Antoine sur fenotte45).
+   `g45IaDispo()` remplace ces tests : vrai s'il y a une cle locale OU un Worker
+   joignable. Les messages d'erreur restent pour le cas ou les deux manquent. */
+function g45IaDispo(){
+  if (g45IaCle()) return true;
+  return (typeof FD_PROXY !== 'undefined' && !!FD_PROXY);
+}
+window.g45IaDispo = g45IaDispo;
+
 function g45IaUrl(){
   if (g45IaCle()) return 'https://api.groq.com/openai/v1/chat/completions';
   return ((typeof FD_PROXY !== 'undefined' && FD_PROXY) ? FD_PROXY : '') + '/ia';
@@ -7007,7 +7019,7 @@ async function sendChat(){
   var msg=inp?inp.value.trim():'';
   if(!msg)return;
   var key=getGeminiKey();
-  if(!key){chatBubble('assistant','Configure ta cle Groq dans Outils.');return;}
+  if(!key && !g45IaDispo()){chatBubble('assistant','Assistant indisponible : aucune cl\u00e9 et aucun Worker joignable.');return;}
   inp.value='';
   chatBubble('user',msg);
   _chatHistory.push({role:'user',content:msg});
@@ -7294,7 +7306,7 @@ async function sendChatPC(){
   var msg=inp?inp.value.trim():'';
   if(!msg)return;
   var key=getGeminiKey();
-  if(!key){chatBubblePC('assistant','Configure ta clé Groq dans Outils.');return;}
+  if(!key && !g45IaDispo()){chatBubblePC('assistant','Assistant indisponible : aucune cl\u00e9 et aucun Worker joignable.');return;}
   inp.value='';
   chatBubblePC('user',msg);
   _chatHistory.push({role:'user',content:msg});
@@ -8800,7 +8812,7 @@ function resetTeamStats(nom) {
 
 async function importFbrefStats(uid, nom) {
   var groqKey = getGeminiKey();
-  if(!groqKey) { alert('❌ Clé Groq manquante — configure-la dans Outils.'); return; }
+  if(!groqKey && !g45IaDispo()) { alert('\u274c Analyse IA indisponible : aucune cl\u00e9 et aucun Worker joignable.'); return; }
 
   var input = document.createElement('input');
   input.type = 'file';
@@ -8818,7 +8830,7 @@ function handleFbrefFileInput(e, uid, nom) {
   var file = e.target.files[0];
   if(!file) return;
   var groqKey = getGeminiKey();
-  if(!groqKey) { alert('❌ Clé Groq manquante — configure-la dans Outils.'); return; }
+  if(!groqKey && !g45IaDispo()) { alert('\u274c Analyse IA indisponible : aucune cl\u00e9 et aucun Worker joignable.'); return; }
   var modeBtn = document.getElementById('fbref-mode-'+uid);
   var mode = modeBtn ? modeBtn.dataset.mode : 'replace';
   var compBtn = document.getElementById('fbref-comp-'+uid);
@@ -8833,7 +8845,7 @@ function handleFbrefDrop(e, uid, nom) {
   var file = e.dataTransfer.files[0];
   if(!file || file.type.indexOf('image')===-1) return;
   var groqKey = getGeminiKey();
-  if(!groqKey) { alert('❌ Clé Groq manquante — configure-la dans Outils.'); return; }
+  if(!groqKey && !g45IaDispo()) { alert('\u274c Analyse IA indisponible : aucune cl\u00e9 et aucun Worker joignable.'); return; }
   var modeBtn = document.getElementById('fbref-mode-'+uid);
   var mode = modeBtn ? modeBtn.dataset.mode : 'replace';
   var compBtn = document.getElementById('fbref-comp-'+uid);
@@ -14540,7 +14552,7 @@ async function sendChat(){
   var msg=inp?inp.value.trim():'';
   if(!msg)return;
   var key=getGeminiKey();
-  if(!key){chatBubble('assistant','Configure ta cle Groq dans Outils.');return;}
+  if(!key && !g45IaDispo()){chatBubble('assistant','Assistant indisponible : aucune cl\u00e9 et aucun Worker joignable.');return;}
   inp.value='';
   chatBubble('user',msg);
   _chatHistory.push({role:'user',content:msg});
@@ -14827,7 +14839,7 @@ async function sendChatPC(){
   var msg=inp?inp.value.trim():'';
   if(!msg)return;
   var key=getGeminiKey();
-  if(!key){chatBubblePC('assistant','Configure ta clé Groq dans Outils.');return;}
+  if(!key && !g45IaDispo()){chatBubblePC('assistant','Assistant indisponible : aucune cl\u00e9 et aucun Worker joignable.');return;}
   inp.value='';
   chatBubblePC('user',msg);
   _chatHistory.push({role:'user',content:msg});
@@ -16112,7 +16124,7 @@ function refreshSquadCache(nom) {
 
 async function importFbrefStats(uid, nom) {
   var groqKey = getGeminiKey();
-  if(!groqKey) { alert('❌ Clé Groq manquante — configure-la dans Outils.'); return; }
+  if(!groqKey && !g45IaDispo()) { alert('\u274c Analyse IA indisponible : aucune cl\u00e9 et aucun Worker joignable.'); return; }
 
   var input = document.createElement('input');
   input.type = 'file';
@@ -16130,7 +16142,7 @@ function handleFbrefFileInput(e, uid, nom) {
   var file = e.target.files[0];
   if(!file) return;
   var groqKey = getGeminiKey();
-  if(!groqKey) { alert('❌ Clé Groq manquante — configure-la dans Outils.'); return; }
+  if(!groqKey && !g45IaDispo()) { alert('\u274c Analyse IA indisponible : aucune cl\u00e9 et aucun Worker joignable.'); return; }
   var modeBtn = document.getElementById('fbref-mode-'+uid);
   var mode = modeBtn ? modeBtn.dataset.mode : 'replace';
   var compBtn = document.getElementById('fbref-comp-'+uid);
@@ -16145,7 +16157,7 @@ function handleFbrefDrop(e, uid, nom) {
   var file = e.dataTransfer.files[0];
   if(!file || file.type.indexOf('image')===-1) return;
   var groqKey = getGeminiKey();
-  if(!groqKey) { alert('❌ Clé Groq manquante — configure-la dans Outils.'); return; }
+  if(!groqKey && !g45IaDispo()) { alert('\u274c Analyse IA indisponible : aucune cl\u00e9 et aucun Worker joignable.'); return; }
   var modeBtn = document.getElementById('fbref-mode-'+uid);
   var mode = modeBtn ? modeBtn.dataset.mode : 'replace';
   var compBtn = document.getElementById('fbref-comp-'+uid);
@@ -23004,8 +23016,8 @@ async function loadTeamAI(nom) {
   // Si pas de clé football-data — message simple
   var webCtx = '';
 
-  if (!groqKey) {
-    box.innerHTML = '<span style="color:#ff4545;">Configure ta clé Groq dans Outils.</span>';
+  if (!groqKey && !g45IaDispo()) {
+    box.innerHTML = '<span style="color:#ff4545;">Analyse IA indisponible : aucune cl\u00e9 et aucun Worker joignable.</span>';
     return;
   }
 
@@ -24582,8 +24594,8 @@ async function generatePariDuJour() {
 
   var groqKey = getGeminiKey();
   var fdKey = getFdorgKey();
-  if(!groqKey) {
-    cont.innerHTML = '<div style="color:#ff4545;font-size:11px;">Configure ta clé Groq dans Outils.</div>';
+  if (!groqKey && !g45IaDispo()) {
+    cont.innerHTML = '<div style="color:#ff4545;font-size:11px;">Analyse IA indisponible : aucune cl\u00e9 et aucun Worker joignable.</div>';
     btn.textContent = '⚡ Générer'; btn.disabled = false; return;
   }
 
