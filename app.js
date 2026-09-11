@@ -2119,6 +2119,90 @@ function renderAdvancedCharts(paris, bankroll) {
    et `espnweb` ne rend rien de plus que `site.api`. Inutile de la reconstruire
    pour ces questions-la — la reponse est ici. */
 
+/* ═══════════ SAUVEGARDE DES CLES D'API (10/09/2026) ═══════════
+   Les cles vivent dans des entrees SEPAREES du stockage local, pas dans
+   `state` : la sauvegarde en fichier ne les emportait donc pas, et vider les
+   donnees du telephone les perdait toutes (cas d'Antoine, huit cles a ressaisir
+   a la main).
+   Fichier a part, volontairement, et JAMAIS dans la sauvegarde generale : celle
+   -ci finit parfois sur GitHub, et des cles d'API n'ont rien a y faire. Le nom
+   du fichier le rappelle, et un avertissement s'affiche a l'export. */
+var _G45_CLES = ['gones45_apisports_key','gones45_apifootball_key','gones45_fdorg_key',
+  'gones45_rapidapi_key','gones45_gemini_key','gones45_google_key','gones45_mistral_key',
+  'gones45_tavily_key','gones45_groq_key','gones45_odds_key','gones45_admin'];
+function g45ClesExport(){
+  var o = {}, n = 0;
+  _G45_CLES.forEach(function(k){
+    var v = null; try { v = localStorage.getItem(k); } catch (e) {}
+    if (v) { o[k] = v; n++; }
+  });
+  if (!n) { alert('Aucune cl\u00e9 enregistr\u00e9e sur cet appareil.'); return; }
+  var d = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(o, null, 2));
+  var a = document.createElement('a');
+  a.href = d; a.download = 'gones45_CLES_PRIVEES.json'; a.click();
+  alert(n + ' cl\u00e9(s) export\u00e9e(s).\n\nCe fichier contient tes cl\u00e9s d\'API : garde-le pour toi, ne le d\u00e9pose pas sur GitHub.');
+}
+function g45ClesImport(input){
+  var f = input && input.files && input.files[0];
+  if (!f) return;
+  var fr = new FileReader();
+  fr.onload = function(){
+    var o = null;
+    try { o = JSON.parse(String(fr.result || '')); } catch (e) {}
+    if (!o || typeof o !== 'object') { alert('Fichier illisible.'); return; }
+    var n = 0;
+    /* On n'ecrit QUE les cles connues : un fichier trafique ne doit pas pouvoir
+       deposer n'importe quoi dans le stockage local. */
+    _G45_CLES.forEach(function(k){
+      if (typeof o[k] === 'string' && o[k]) { try { localStorage.setItem(k, o[k]); n++; } catch (e) {} }
+    });
+    alert(n + ' cl\u00e9(s) restaur\u00e9e(s). Recharge la page pour qu\'elles soient prises en compte.');
+  };
+  fr.readAsText(f);
+}
+function g45ClesUI(){
+  try {
+    var zone = document.getElementById('t-outils');
+    if (!zone || document.getElementById('g45-cles')) return;
+    var d = document.createElement('div');
+    d.id = 'g45-cles';
+    d.innerHTML = '<div class="sec">\ud83d\udd11 Sauvegarde des cl\u00e9s</div>'
+      + '<div class="fc">'
+      + '<div style="font-size:10px;color:var(--t3);margin-bottom:9px;line-height:1.6;">Tes cl\u00e9s d\'API ne sont PAS dans la sauvegarde g\u00e9n\u00e9rale : vider les donn\u00e9es de l\'appareil les efface. Garde ce fichier de c\u00f4t\u00e9, il te les rendra en un clic.</div>'
+      + '<button class="btn btn-p" style="font-size:12px;" onclick="g45ClesExport()">\ud83d\udcbe Exporter mes cl\u00e9s</button>'
+      + '<label class="btn" style="font-size:12px;display:block;text-align:center;cursor:pointer;margin-top:7px;">\ud83d\udcc2 Restaurer depuis un fichier'
+      + '<input type="file" accept="application/json,.json" style="display:none;" onchange="g45ClesImport(this)"></label>'
+      + '</div>';
+    zone.appendChild(d);
+  } catch (e) {}
+}
+window.g45ClesExport = g45ClesExport; window.g45ClesImport = g45ClesImport;
+if (typeof document !== 'undefined') {
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', g45ClesUI);
+  else g45ClesUI();
+}
+
+/* ═══════════ APPELS IA PAR LE WORKER (10/09/2026) ═══════════
+   Antoine supprime la saisie de cle chez l'utilisateur : ses amis decrochent
+   des qu'on leur en demande une. Les appels a Groq visent donc le Worker, qui
+   ajoute GROQ_KEY au vol — le client ne voit jamais la cle.
+   Une cle locale reste PRIORITAIRE : un utilisateur avance garde la sienne, et
+   les installations actuelles continuent sans rien changer.
+   ON NE CHANGE QUE L'ADRESSE, pas la forme des appels : une premiere tentative
+   de reecrire les dix-huit appels d'un coup a casse leur structure. L'en-tete
+   Authorization part donc toujours, vide quand il n'y a pas de cle locale — le
+   Worker l'ignore et met la sienne. */
+function g45IaCle(){ try { return localStorage.getItem('gones45_groq_key') || ''; } catch (e) { return ''; } }
+function g45IaUrl(){
+  if (g45IaCle()) return 'https://api.groq.com/openai/v1/chat/completions';
+  return ((typeof FD_PROXY !== 'undefined' && FD_PROXY) ? FD_PROXY : '') + '/ia';
+}
+function g45IaUrlModeles(){
+  if (g45IaCle()) return 'https://api.groq.com/openai/v1/models';
+  return ((typeof FD_PROXY !== 'undefined' && FD_PROXY) ? FD_PROXY : '') + '/ia-modeles';
+}
+window.g45IaUrl = g45IaUrl;
+
 function _g45CleUnite(h, mode){
   var d = String((h && h.date) || '');
   if (mode === 'jour')  return d;
@@ -6845,7 +6929,7 @@ async function testGroqKey(){
   if(!key){if(st){st.innerText='❌ Aucune clé';st.style.color='var(--r)';}return;}
   if(st){st.innerText='⏳ Test…';st.style.color='var(--t3)';}
   try{
-    var r=await fetch('https://api.groq.com/openai/v1/chat/completions',{
+    var r=await fetch(g45IaUrl(),{
       method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
       body:JSON.stringify({model:g45GroqModele(),messages:[{role:'user',content:'OK'}],max_tokens:3})
     });
@@ -6945,7 +7029,7 @@ async function sendChat(){
       ?'Tu as ces infos web. Cite uniquement ce qui est confirmé. Si le score exact n est pas dans les infos, dis juste qui a gagné. 1-2 phrases en français, pas de supposition: '+webCtx
       :buildContextWithParams();
     var messages=[{role:'system',content:sysPrompt},{role:'user',content:msg}];
-    var r=await fetch('https://api.groq.com/openai/v1/chat/completions',{
+    var r=await fetch(g45IaUrl(),{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
       body:JSON.stringify({model:g45GroqModele(),messages:messages,temperature:0.3,max_tokens:400})
@@ -7225,7 +7309,7 @@ async function sendChatPC(){
     if(needsWeb&&getTavilyKey()){var sr=await searchTavily(msg);if(sr){webCtx=sr;webFound2=true;}}
     var sysPC=webFound2?'Tu as ces infos web. Cite uniquement ce qui est confirmé. Si le score exact n est pas dedans, dis juste qui a gagné. 1-2 phrases en français: '+webCtx:buildContextWithParams();
     var messages=[{role:'system',content:sysPC},{role:'user',content:msg}];
-    var r=await fetch('https://api.groq.com/openai/v1/chat/completions',{
+    var r=await fetch(g45IaUrl(),{
       method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
       body:JSON.stringify({model:g45GroqModele(),messages:messages,temperature:0.3,max_tokens:400})
     });
@@ -7555,7 +7639,7 @@ async function g45GroqDecouvrir(force) {
     } catch (e) {}
   }
   try {
-    var r = await fetch('https://api.groq.com/openai/v1/models', { headers: { 'Authorization': 'Bearer ' + cle } });
+    var r = await fetch(g45IaUrlModeles(), { headers: { 'Authorization': 'Bearer ' + cle } });
     if (!r.ok) throw new Error('HTTP ' + r.status);
     var j = await r.json();
     var dispo = ((j && j.data) || []).map(function (x) { return x.id; });
@@ -7712,7 +7796,7 @@ async function getTeamStatsViaGroq(teamName, cpTypes) {
 
     // 4. Groq analyse
     var analysisPrompt = 'Tu es expert paris sportifs. Stats reelles de '+teamName+' : '+matchStats+'. Analyse en 3 phrases pour ces types de paris : '+typesStr+'. En francais, sois direct et precis avec les chiffres.';
-    var r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    var r = await fetch(g45IaUrl(), {
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+groqKey},
       body:JSON.stringify({model:g45GroqModele(),messages:[{role:'user',content:analysisPrompt}],max_tokens:400,temperature:0.2})
@@ -7898,7 +7982,7 @@ async function loadVideoHighlights(el, nom, col, sport) {
       // Groq extrait le lien
       var prompt = 'Voici des résultats de recherche sur les highlights de '+nom+' en '+cfg.name+' : '+webData.substring(0,800)+'. Extrais uniquement le lien vidéo le plus pertinent (YouTube, site officiel) et donne une description en 1 phrase. Format: "LIEN: url\nDESC: description". En français.';
       try {
-        var r = await fetch('https://api.groq.com/openai/v1/chat/completions',{
+        var r = await fetch(g45IaUrl(),{
           method:'POST',
           headers:{'Content-Type':'application/json','Authorization':'Bearer '+groqKey},
           body:JSON.stringify({model:g45GroqModele(),messages:[{role:'user',content:prompt}],max_tokens:150,temperature:0.2})
@@ -14378,7 +14462,7 @@ async function testGroqKey(){
   if(!key){if(st){st.innerText='❌ Aucune clé';st.style.color='var(--r)';}return;}
   if(st){st.innerText='⏳ Test…';st.style.color='var(--t3)';}
   try{
-    var r=await fetch('https://api.groq.com/openai/v1/chat/completions',{
+    var r=await fetch(g45IaUrl(),{
       method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
       body:JSON.stringify({model:g45GroqModele(),messages:[{role:'user',content:'OK'}],max_tokens:3})
     });
@@ -14478,7 +14562,7 @@ async function sendChat(){
       ?'Tu as ces infos web. Cite uniquement ce qui est confirmé. Si le score exact n est pas dans les infos, dis juste qui a gagné. 1-2 phrases en français, pas de supposition: '+webCtx
       :buildContextWithParams();
     var messages=[{role:'system',content:sysPrompt},{role:'user',content:msg}];
-    var r=await fetch('https://api.groq.com/openai/v1/chat/completions',{
+    var r=await fetch(g45IaUrl(),{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
       body:JSON.stringify({model:g45GroqModele(),messages:messages,temperature:0.3,max_tokens:400})
@@ -14758,7 +14842,7 @@ async function sendChatPC(){
     if(needsWeb&&getTavilyKey()){var sr=await searchTavily(msg);if(sr){webCtx=sr;webFound2=true;}}
     var sysPC=webFound2?'Tu as ces infos web. Cite uniquement ce qui est confirmé. Si le score exact n est pas dedans, dis juste qui a gagné. 1-2 phrases en français: '+webCtx:buildContextWithParams();
     var messages=[{role:'system',content:sysPC},{role:'user',content:msg}];
-    var r=await fetch('https://api.groq.com/openai/v1/chat/completions',{
+    var r=await fetch(g45IaUrl(),{
       method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
       body:JSON.stringify({model:g45GroqModele(),messages:messages,temperature:0.3,max_tokens:400})
     });
@@ -15072,7 +15156,7 @@ async function getTeamStatsViaGroq(teamName, cpTypes) {
 
     // 4. Groq analyse
     var analysisPrompt = 'Tu es expert paris sportifs. Stats reelles de '+teamName+' : '+matchStats+'. Analyse en 3 phrases pour ces types de paris : '+typesStr+'. En francais, sois direct et precis avec les chiffres.';
-    var r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    var r = await fetch(g45IaUrl(), {
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+groqKey},
       body:JSON.stringify({model:g45GroqModele(),messages:[{role:'user',content:analysisPrompt}],max_tokens:400,temperature:0.2})
@@ -15258,7 +15342,7 @@ async function loadVideoHighlights(el, nom, col, sport) {
       // Groq extrait le lien
       var prompt = 'Voici des résultats de recherche sur les highlights de '+nom+' en '+cfg.name+' : '+webData.substring(0,800)+'. Extrais uniquement le lien vidéo le plus pertinent (YouTube, site officiel) et donne une description en 1 phrase. Format: "LIEN: url\nDESC: description". En français.';
       try {
-        var r = await fetch('https://api.groq.com/openai/v1/chat/completions',{
+        var r = await fetch(g45IaUrl(),{
           method:'POST',
           headers:{'Content-Type':'application/json','Authorization':'Bearer '+groqKey},
           body:JSON.stringify({model:g45GroqModele(),messages:[{role:'user',content:prompt}],max_tokens:150,temperature:0.2})
@@ -16116,7 +16200,7 @@ async function runFbrefGroq(uid, nom, b64, groqKey, mode, comp) {
   if(btn) { btn.textContent = '⏳...'; btn.disabled = true; }
 
   try {
-    var resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    var resp = await fetch(g45IaUrl(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer '+groqKey },
       body: JSON.stringify({
@@ -18105,7 +18189,7 @@ async function searchTennisPlayer(nom) {
     if(groqKey) {
       var prompt = 'Donnees sur ' + nom + ' saison ' + yr + ': ' + raw.substring(0, 800) + ' Extrait UNIQUEMENT ces stats si presentes. Reponds: RESUME|||{"matchs":null,"victoires":null,"defaites":null,"pct_1er_service":null,"pts_1er_service":null,"pct_2e_service":null,"pts_2e_service":null,"aces":null,"doubles_fautes":null,"brk_sauves_n":null,"brk_sauves_total":null,"brk_sauves_pct":null,"brk_conv_n":null,"brk_conv_total":null,"brk_conv_pct":null,"tiebreaks_gagnes":null,"tiebreaks_joues":null} RESUME=1 phrase francais. Valeurs: matchs/victoires/defaites=entier, pourcentages=40-85, aces=1-20, df=0-8, breaks=entiers. Null si absent.' ;
 
-      var r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      var r = await fetch(g45IaUrl(), {
         method: 'POST',
         headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + groqKey},
         body: JSON.stringify({
@@ -22937,7 +23021,7 @@ async function loadTeamAI(nom) {
   }
 
   try {
-    var r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    var r = await fetch(g45IaUrl(), {
       method: 'POST',
       headers: {'Content-Type':'application/json','Authorization':'Bearer '+groqKey},
       body: JSON.stringify({
@@ -24558,7 +24642,7 @@ async function generatePariDuJour() {
     + 'Format: "⚽ EQUIPE — TYPE : justification". Sois direct et precis. En francais. Max 4 lignes.';
 
   try {
-    var r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    var r = await fetch(g45IaUrl(), {
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+groqKey},
       body:JSON.stringify({model:g45GroqModele(),messages:[{role:'user',content:prompt}],max_tokens:300,temperature:0.4})
@@ -24676,7 +24760,13 @@ function renderNotifPanel(){
     return;
   }
   var p=g45NotifPrefs();
-  var favs=(typeof state!=='undefined'&&state.u?state.u:[]).filter(function(u){ return (u.sport||'\u26bd')==='\u26bd'; });
+  /* ═══ PLUS QUE LE FOOTBALL (10/09) ═══
+     Le panneau ne listait que les equipes en football : Antoine a ajoute les
+     Rams au mur et ne les voyait pas proposees. Le cron du Worker sait
+     interroger ESPN sur ces sports, il lui manquait le CHEMIN — envoye
+     desormais avec chaque equipe. */
+  var _NOTIF_SPORTS = { '\u26bd':'soccer', '\ud83c\udfc8':'football', '\ud83c\udfc0':'basketball', '\ud83c\udfd2':'hockey', '\u26be':'baseball' };
+  var favs=(typeof state!=='undefined'&&state.u?state.u:[]).filter(function(u){ return !!_NOTIF_SPORTS[(u.sport||'\u26bd')]; });
   var h='';
   if(p.enabled){
     h+='<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;">'
@@ -24811,9 +24901,16 @@ async function g45SyncNotifs(subOpt){
   var sub=subOpt||(reg&&await reg.pushManager.getSubscription());
   if(!sub) return;
   var p=g45NotifPrefs();
-  var favs=(typeof state!=='undefined'&&state.u?state.u:[]).filter(function(u){ return (u.sport||'\u26bd')==='\u26bd' && p.teams[u.n]; });
+  var _SP2 = { '\u26bd':'soccer', '\ud83c\udfc8':'football', '\ud83c\udfc0':'basketball', '\ud83c\udfd2':'hockey', '\u26be':'baseball' };
+  var favs=(typeof state!=='undefined'&&state.u?state.u:[]).filter(function(u){ return !!_SP2[(u.sport||'\u26bd')] && p.teams[u.n]; });
   var teams=[];
-  for(var i=0;i<favs.length;i++){ var r=await _g45ResolveTeam(favs[i].n); if(r) teams.push({n:favs[i].n, id:r.id, league:r.league}); }
+  for(var i=0;i<favs.length;i++){
+    var r=await _g45ResolveTeam(favs[i].n);
+    /* `sp` est le CHEMIN ESPN, pas l'emoji : le Worker n'a pas a connaitre
+       nos pictogrammes. Absent, il retombe sur le football, ce qui preserve
+       les abonnements deja enregistres. */
+    if(r) teams.push({n:favs[i].n, id:r.id, league:r.league, sp:(_SP2[favs[i].sport||'\u26bd']||'soccer')});
+  }
   var betTeams=[];
   if(p.bets!==false){ try{ betTeams=await g45BetTeams(); }catch(e){} } // Phase 2 : matchs des paris (foot + rugby), surveillés à part, taggés 🎯
   // Phase 3 : matchs suivis manuellement (⭐) → notifs sur cet event précis, hors favoris
@@ -27552,7 +27649,7 @@ async function _g45MultiAI(box, boxId, sys, facts, title){
   var key=(typeof getGeminiKey==='function')?getGeminiKey():localStorage.getItem('gones45_gemini_key');
   var eaf=function(x){return String(x).replace(/&/g,'&amp;').replace(/</g,'&lt;');};
   try{
-    var r2=await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({model:g45GroqModele(),messages:[{role:'system',content:sys},{role:'user',content:facts.join('\n')}],temperature:0.4,max_tokens:450})});
+    var r2=await fetch(g45IaUrl(),{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({model:g45GroqModele(),messages:[{role:'system',content:sys},{role:'user',content:facts.join('\n')}],temperature:0.4,max_tokens:450})});
     var d2=await r2.json();
     if(d2.error) throw new Error(d2.error.message);
     var txt=((d2.choices&&d2.choices[0]&&d2.choices[0].message.content)||'').trim();
@@ -27595,7 +27692,7 @@ async function _g45MultiAI(box, boxId, sys, facts, title){
       var dt='', dd=null, _dLbl='3ᵉ IA';
       for(var di=0; di<DM.length && !dt; di++){
         try{
-          var rd=await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({model:DM[di][0],messages:[{role:'system',content:sys},{role:'user',content:facts.join('\n')}],temperature:0.4,max_tokens:800})});
+          var rd=await fetch(g45IaUrl(),{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({model:DM[di][0],messages:[{role:'system',content:sys},{role:'user',content:facts.join('\n')}],temperature:0.4,max_tokens:800})});
           dd=await rd.json();
           dt=((dd.choices&&dd.choices[0]&&dd.choices[0].message&&dd.choices[0].message.content)||'').replace(/<think>[\s\S]*?<\/think>/g,'').trim();
           if(dt) _dLbl=DM[di][1];
@@ -34332,7 +34429,7 @@ async function g45StatsAutoTag(){
   if(st)st.textContent='⏳ Analyse…';
   try{
     var prompt='Extrais les tags de cette stat de paris sportifs. Reponds UNIQUEMENT par un JSON valide sans texte autour: {"sport":"<emoji parmi ⚽ 🏀 🎾 🏈 🏒 ⚾ 🏉 🏎 🥊 🚗 🚴>","targets":["..."],"place":"","comp":"","context":""}. targets=equipes/joueurs/ecuries cites (max 2). place=lieu ou GP (ex Autriche) sinon vide. comp=competition sinon vide. context=type court (elimination directe, buteur, lay, domicile...) sinon vide. Stat: '+txtEl.value.trim();
-    var r=await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({model:g45GroqModele(),messages:[{role:'user',content:prompt}],temperature:0,max_tokens:200})});
+    var r=await fetch(g45IaUrl(),{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({model:g45GroqModele(),messages:[{role:'user',content:prompt}],temperature:0,max_tokens:200})});
     var d=await r.json(); if(d.error) throw new Error(d.error.message);
     var t=d.choices[0].message.content.replace(/```json|```/g,'').trim(); var o=JSON.parse(t);
     if(o.sport){ var sel=document.getElementById('gms-sport'); if(sel) sel.value=o.sport; }
@@ -38331,7 +38428,11 @@ async function _g45CompetEquipes(c) {
            meme motif de CDN que la voie classement, sinon les vignettes de la vue
            Equipes resteraient vides pour ces competitions. */
         out.push({ id: String(id), nom: tb['#' + id] || k, court: '',
-          logo: id ? ('https://a.espncdn.com/i/teamlogos/' + c.sp + '/500/' + id + '.png') : '',
+          /* URL construite uniquement pour le FOOTBALL : le CDN d'ESPN n'a pas
+             les logos des autres sports, et l'inventer donnait une icone
+             d'image brisee sur chaque ligne du classement de Top 14
+             (capture d'Antoine, 10/09). Mieux vaut pas de logo qu'un logo mort. */
+          logo: (id && c.sp === 'soccer') ? ('https://a.espncdn.com/i/teamlogos/soccer/500/' + id + '.png') : '',
           j:0,v:0,n:0,p:0,bp:0,bc:0,diff:0,pts:0,rang:0 });
       });
     } catch (e) {}
@@ -38617,6 +38718,16 @@ async function loadCompetTab() {
     await g45LeadersGen(c, body, _g45CompetAnnee(c.s));
     return;
   }
+  if (_g45CompetVue === 'classement' && _G45_SOFA_TOURNOIS[String(c.s)]) {
+    /* Top 14 : ESPN ne rend rien, Sofascore prend le relais. */
+    if (await g45SofaClassement(body, c.s)) return;
+  }
+  if (_g45CompetVue === 'classement' && _G45_SOFA_TOURNOIS[String(c.s)]) {
+    /* Top 14 : ESPN ne rend rien, Sofascore prend le relais. */
+    if (await g45SofaClassement(body, c.s)) return;
+  }
+  /* Top 14 : ESPN ne couvre plus le rugby a XV, on passe par Sofascore. */
+  if (_g45CompetVue === 'classement' && c.s === '270559') { await g45SofaClassement(body); return; }
   if (_g45CompetVue === 'suivies')    { await g45SuiviEqRender(body); return; }
   if (_g45CompetVue === 'transferts') { await g45TrfRender(c, body); return; }
   if (_g45CompetVue === 'forme')      { await g45FormeRender(c, body); return; }
@@ -39208,7 +39319,7 @@ async function g45FormeRender(c, body) {
       + '<td style="padding:7px 4px;text-align:center;color:#9fb0c7;font-size:11px;">' + (i + 1) + '</td>'
       + '<td style="padding:7px 4px;">'
         + '<span onclick="g45CompetOuvrir(\'' + String(t.nom).replace(/'/g, "\\'") + '\',\'' + (t.id || '') + '\',\'' + c.s + '\',\'' + c.sp + '\')" style="display:flex;align-items:center;gap:6px;cursor:pointer;">'
-        + (t.logo ? '<img src="' + t.logo + '" style="width:18px;height:18px;object-fit:contain;" loading="lazy">' : '')
+        + (t.logo ? '<img src="' + t.logo + '" style="width:18px;height:18px;object-fit:contain;" loading="lazy" onerror="this.style.display=\'none\'">' : '')
         + '<span style="font-size:11.5px;font-weight:700;">' + t.nom + '</span></span></td>'
       + '<td style="padding:7px 4px;text-align:center;font-size:11px;">' + t.mj + '</td>'
       + '<td style="padding:7px 4px;text-align:center;font-size:11px;color:#1ed760;">' + t.v + '</td>'
@@ -39415,7 +39526,7 @@ async function g45LeadersGen(c, box, an) {
     + lignes.map(function (t) {
         return '<div style="display:flex;align-items:center;gap:9px;padding:8px 9px;margin-bottom:5px;background:rgba(255,255,255,.04);border-radius:8px;">'
           + '<span style="color:#9fb0c7;font-size:11px;min-width:20px;text-align:right;">' + t.rang + '</span>'
-          + (t.logo ? '<img src="' + t.logo + '" style="width:20px;height:20px;object-fit:contain;" loading="lazy">' : '<span style="width:20px;"></span>')
+          + (t.logo ? '<img src="' + t.logo + '" style="width:20px;height:20px;object-fit:contain;" loading="lazy" onerror="this.style.display=\'none\'">' : '<span style="width:20px;"></span>')
           + '<span style="flex:1;font-size:11.5px;font-weight:700;">' + t.joueur + '</span>'
           + '<span style="font-size:10.5px;color:#9fb0c7;">' + t.equipe + '</span>'
           + '<span style="font-size:12px;font-weight:800;color:var(--a);text-align:right;">' + _g45LdValFr(t.val) + '</span>'
@@ -39720,6 +39831,146 @@ async function _g45Feuille(sportPath, slug, eventId) {
     return out;
   } catch (e) { return null; }
 }
+
+/* ═══════════ CLASSEMENT TOP 14 VIA SOFASCORE (10/09/2026) ═══════════
+   ESPN ne couvre plus le rugby a XV depuis 2022-23, et la LNR construit son
+   tableau en JavaScript — verifie en recuperant sa page, il n'y a rien a lire.
+   Sofascore, lui, publie le classement dans une API sans cle.
+   CE QU'ON Y GAGNE ET CE QU'ON N'Y GAGNE PAS : rang, matchs joues, difference
+   et points. PAS de bonus ni de V/N/D, que la LNR est seule a donner. Autant le
+   dire dans le bloc plutot que laisser croire a un classement complet.
+   La saison n'est pas figee : on demande la liste des saisons du tournoi et on
+   prend la plus recente, sinon le classement se retrouverait bloque sur
+   2026-27 l'annee prochaine.
+   RESERVE : Sofascore filtre les clients non-navigateurs par empreinte TLS.
+   L'appel par le Worker peut etre refuse — le bloc l'explique alors au lieu de
+   rester vide. */
+var _G45_SOFA_TOURNOIS = { '270559': 420 };   /* Top 14 ESPN → tournoi Sofascore */
+var _g45SofaCache = {};
+async function _g45SofaJ(chemin){
+  if (_g45SofaCache[chemin] !== undefined) return _g45SofaCache[chemin];
+  if (typeof FD_PROXY === 'undefined' || !FD_PROXY) return null;
+  try {
+    var r = await fetch(FD_PROXY + '?host=sofa&path=' + encodeURIComponent(chemin));
+    if (!r.ok) return null;
+    var j = await r.json();
+    if (j) { _g45SofaCache[chemin] = j; return j; }
+  } catch (e) {}
+  return null;
+}
+async function g45SofaClassement(box, slugEspn){
+  var tid = _G45_SOFA_TOURNOIS[String(slugEspn)];
+  if (!tid) { return false; }
+  box.innerHTML = '<div style="color:var(--t3);font-size:11px;padding:14px;text-align:center;">\u23f3 Chargement du classement\u2026</div>';
+  var sais = await _g45SofaJ('/api/v1/unique-tournament/' + tid + '/seasons');
+  var sid = (sais && sais.seasons && sais.seasons[0] && sais.seasons[0].id) || 0;
+  var j = sid ? await _g45SofaJ('/api/v1/unique-tournament/' + tid + '/season/' + sid + '/standings/total') : null;
+  var rows = (j && j.standings && j.standings[0] && j.standings[0].rows) || [];
+  if (!rows.length) {
+    box.innerHTML = '<div style="text-align:center;padding:18px;">'
+      + '<div style="color:var(--t2);font-size:12px;font-weight:700;margin-bottom:6px;">Classement non disponible</div>'
+      + '<div style="color:var(--t3);font-size:10.5px;line-height:1.6;max-width:460px;margin:0 auto;">'
+      + 'ESPN ne couvre plus le rugby \u00e0 XV depuis 2022-23. La source de secours est Sofascore, '
+      + 'qui filtre parfois les appels ne venant pas d\'un navigateur : v\u00e9rifie que l\'h\u00f4te <b>sofa</b> '
+      + 'est bien d\u00e9clar\u00e9 dans le Worker.</div>'
+      + '<a href="https://top14.lnr.fr/classement" target="_blank" rel="noopener" style="display:inline-block;margin-top:12px;border:1px solid rgba(240,176,32,.5);color:var(--gold);border-radius:8px;padding:8px 14px;font-size:11px;font-weight:700;text-decoration:none;">Classement officiel sur la LNR \u203a</a></div>';
+    return true;
+  }
+  var h = '<div style="display:grid;grid-template-columns:26px 1fr 34px 46px 40px;gap:8px;font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;padding:0 9px 5px;">'
+    + '<span>#</span><span>Club</span><span style="text-align:center;">J</span><span style="text-align:right;">Diff</span><span style="text-align:right;">Pts</span></div>'
+    + '<div style="display:flex;flex-direction:column;gap:3px;">';
+  rows.forEach(function(r, i){
+    var eq = r.team || {};
+    var rang = r.position || (i + 1);
+    /* Six premiers en phase finale, deux derniers en barrage et relegation :
+       les couleurs reprennent la legende de Sofascore, pas une invention. */
+    var bord = (rang <= 6) ? 'var(--g)' : ((rang >= 13) ? 'var(--r)' : 'transparent');
+    var dif = (r.scoresFor != null && r.scoresAgainst != null) ? (r.scoresFor - r.scoresAgainst) : (r.scoreDiffFormatted || 0);
+    h += '<div style="display:grid;grid-template-columns:26px 1fr 34px 46px 40px;gap:8px;align-items:center;padding:7px 9px;border-radius:6px;border-left:3px solid ' + bord + ';background:rgba(255,255,255,' + (i % 2 ? '.02' : '.045') + ');">'
+      + '<span style="font-size:11px;font-weight:800;color:var(--t3);">' + rang + '</span>'
+      + '<span style="font-size:11.5px;font-weight:600;color:var(--t1);overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">' + (eq.name || eq.shortName || '?') + '</span>'
+      + '<span style="font-size:11px;color:var(--t2);text-align:center;">' + (r.matches != null ? r.matches : '') + '</span>'
+      + '<span style="font-size:11px;color:var(--t3);text-align:right;">' + ((dif > 0 ? '+' : '') + dif) + '</span>'
+      + '<span style="font-size:12px;font-weight:800;color:var(--t1);text-align:right;">' + (r.points != null ? r.points : '') + '</span>'
+      + '</div>';
+  });
+  box.innerHTML = h + '</div><div style="font-size:9px;color:var(--t3);margin-top:9px;line-height:1.6;">'
+    + 'Source : Sofascore. Le <b>bonus</b> et le d\u00e9tail victoires / nuls / d\u00e9faites n\'y figurent pas \u2014 '
+    + 'seule la LNR les publie, et son tableau n\'est pas lisible automatiquement.<br>'
+    + '<a href="https://top14.lnr.fr/classement" target="_blank" rel="noopener" style="color:var(--gold);">Classement complet sur la LNR \u203a</a></div>';
+  return true;
+}
+window.g45SofaClassement = g45SofaClassement;
+
+/* ═══════════ CLASSEMENT TOP 14 VIA SOFASCORE (10/09/2026) ═══════════
+   ESPN ne couvre plus le rugby a XV depuis 2022-23, et la LNR construit son
+   tableau en JavaScript — verifie en recuperant sa page, il n'y a rien a lire.
+   Sofascore, lui, publie le classement dans une API sans cle.
+   CE QU'ON Y GAGNE ET CE QU'ON N'Y GAGNE PAS : rang, matchs joues, difference
+   et points. PAS de bonus ni de V/N/D, que la LNR est seule a donner. Autant le
+   dire dans le bloc plutot que laisser croire a un classement complet.
+   La saison n'est pas figee : on demande la liste des saisons du tournoi et on
+   prend la plus recente, sinon le classement se retrouverait bloque sur
+   2026-27 l'annee prochaine.
+   RESERVE : Sofascore filtre les clients non-navigateurs par empreinte TLS.
+   L'appel par le Worker peut etre refuse — le bloc l'explique alors au lieu de
+   rester vide. */
+var _G45_SOFA_TOURNOIS = { '270559': 420 };   /* Top 14 ESPN → tournoi Sofascore */
+var _g45SofaCache = {};
+async function _g45SofaJ(chemin){
+  if (_g45SofaCache[chemin] !== undefined) return _g45SofaCache[chemin];
+  if (typeof FD_PROXY === 'undefined' || !FD_PROXY) return null;
+  try {
+    var r = await fetch(FD_PROXY + '?host=sofa&path=' + encodeURIComponent(chemin));
+    if (!r.ok) return null;
+    var j = await r.json();
+    if (j) { _g45SofaCache[chemin] = j; return j; }
+  } catch (e) {}
+  return null;
+}
+async function g45SofaClassement(box, slugEspn){
+  var tid = _G45_SOFA_TOURNOIS[String(slugEspn)];
+  if (!tid) { return false; }
+  box.innerHTML = '<div style="color:var(--t3);font-size:11px;padding:14px;text-align:center;">\u23f3 Chargement du classement\u2026</div>';
+  var sais = await _g45SofaJ('/api/v1/unique-tournament/' + tid + '/seasons');
+  var sid = (sais && sais.seasons && sais.seasons[0] && sais.seasons[0].id) || 0;
+  var j = sid ? await _g45SofaJ('/api/v1/unique-tournament/' + tid + '/season/' + sid + '/standings/total') : null;
+  var rows = (j && j.standings && j.standings[0] && j.standings[0].rows) || [];
+  if (!rows.length) {
+    box.innerHTML = '<div style="text-align:center;padding:18px;">'
+      + '<div style="color:var(--t2);font-size:12px;font-weight:700;margin-bottom:6px;">Classement non disponible</div>'
+      + '<div style="color:var(--t3);font-size:10.5px;line-height:1.6;max-width:460px;margin:0 auto;">'
+      + 'ESPN ne couvre plus le rugby \u00e0 XV depuis 2022-23. La source de secours est Sofascore, '
+      + 'qui filtre parfois les appels ne venant pas d\'un navigateur : v\u00e9rifie que l\'h\u00f4te <b>sofa</b> '
+      + 'est bien d\u00e9clar\u00e9 dans le Worker.</div>'
+      + '<a href="https://top14.lnr.fr/classement" target="_blank" rel="noopener" style="display:inline-block;margin-top:12px;border:1px solid rgba(240,176,32,.5);color:var(--gold);border-radius:8px;padding:8px 14px;font-size:11px;font-weight:700;text-decoration:none;">Classement officiel sur la LNR \u203a</a></div>';
+    return true;
+  }
+  var h = '<div style="display:grid;grid-template-columns:26px 1fr 34px 46px 40px;gap:8px;font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;padding:0 9px 5px;">'
+    + '<span>#</span><span>Club</span><span style="text-align:center;">J</span><span style="text-align:right;">Diff</span><span style="text-align:right;">Pts</span></div>'
+    + '<div style="display:flex;flex-direction:column;gap:3px;">';
+  rows.forEach(function(r, i){
+    var eq = r.team || {};
+    var rang = r.position || (i + 1);
+    /* Six premiers en phase finale, deux derniers en barrage et relegation :
+       les couleurs reprennent la legende de Sofascore, pas une invention. */
+    var bord = (rang <= 6) ? 'var(--g)' : ((rang >= 13) ? 'var(--r)' : 'transparent');
+    var dif = (r.scoresFor != null && r.scoresAgainst != null) ? (r.scoresFor - r.scoresAgainst) : (r.scoreDiffFormatted || 0);
+    h += '<div style="display:grid;grid-template-columns:26px 1fr 34px 46px 40px;gap:8px;align-items:center;padding:7px 9px;border-radius:6px;border-left:3px solid ' + bord + ';background:rgba(255,255,255,' + (i % 2 ? '.02' : '.045') + ');">'
+      + '<span style="font-size:11px;font-weight:800;color:var(--t3);">' + rang + '</span>'
+      + '<span style="font-size:11.5px;font-weight:600;color:var(--t1);overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">' + (eq.name || eq.shortName || '?') + '</span>'
+      + '<span style="font-size:11px;color:var(--t2);text-align:center;">' + (r.matches != null ? r.matches : '') + '</span>'
+      + '<span style="font-size:11px;color:var(--t3);text-align:right;">' + ((dif > 0 ? '+' : '') + dif) + '</span>'
+      + '<span style="font-size:12px;font-weight:800;color:var(--t1);text-align:right;">' + (r.points != null ? r.points : '') + '</span>'
+      + '</div>';
+  });
+  box.innerHTML = h + '</div><div style="font-size:9px;color:var(--t3);margin-top:9px;line-height:1.6;">'
+    + 'Source : Sofascore. Le <b>bonus</b> et le d\u00e9tail victoires / nuls / d\u00e9faites n\'y figurent pas \u2014 '
+    + 'seule la LNR les publie, et son tableau n\'est pas lisible automatiquement.<br>'
+    + '<a href="https://top14.lnr.fr/classement" target="_blank" rel="noopener" style="color:var(--gold);">Classement complet sur la LNR \u203a</a></div>';
+  return true;
+}
+window.g45SofaClassement = g45SofaClassement;
 
 /* ═══════════ CLASSEMENTS INDIVIDUELS LNR — TOP 14 (10/09/2026) ═══════════
    ESPN ne publie aucun classement individuel en rugby : le NRL avait ete
