@@ -7564,25 +7564,43 @@ async function apiFootballFetch(endpoint) {
 }
 
 function getFdorgKey(){ return localStorage.getItem('gones45_fdorg_key')||null; }
-/* ═══ MODÈLE GROQ — DÉCOUVERTE AUTOMATIQUE (15/08/2026) ═══
+/* ═══ MODÈLE GROQ — DÉCOUVERTE AUTOMATIQUE (15/08/2026, réparée le 11/09/2026) ═══
    `llama-3.3-70b-versatile` a ete retire par Groq du jour au lendemain, et les
    15 appels de l'appli le nommaient EN DUR. Le remplacer par un autre nom fixe
    ne ferait que repousser le probleme : Groq renouvelle son catalogue plusieurs
    fois par an.
    On interroge donc /openai/v1/models — gratuit, ne consomme aucun jeton — et on
    prend le premier modele de la liste de preference REELLEMENT disponible.
-   Cache 24 h, et repli sur un nom connu si l'appel echoue. */
+   Cache 24 h, et repli sur un nom connu si l'appel echoue.
+
+   11/09/2026 — LE MECANISME NE PARTAIT JAMAIS SANS CLE LOCALE. `g45GroqDecouvrir`
+   commencait par « pas de cle -> on renonce », reste de l'epoque ou la cle etait
+   chez l'utilisateur. Depuis que le Worker la porte, un navigateur sans cle
+   tombait donc TOUJOURS sur le repli en dur, c'est-a-dire sur le modele mort :
+   « llama-3.3-70b-versatile does not exist » chez un ami.
+   Toute cette liste etait morte, pas seulement le premier nom — Groq a
+   decommissionne llama-3.3-70b-versatile et llama-3.1-8b-instant le 16/08/2026,
+   qwen3-32b et llama-4-scout le 17/07/2026, llama-4-maverick le 09/03/2026,
+   kimi-k2 avant. Le repli valait donc « echec garanti » quel que soit le rang.
+   Nouvelle liste, et surtout : cle de cache VERSIONNEE, pour jeter les anciens
+   noms deja enregistres dans les navigateurs des amis. */
 var G45_GROQ_PREF = [
-  'llama-3.3-70b-versatile',
-  'meta-llama/llama-4-maverick-17b-128e-instruct',
-  'meta-llama/llama-4-scout-17b-16e-instruct',
   'openai/gpt-oss-120b',
-  'moonshotai/kimi-k2-instruct',
-  'qwen/qwen3-32b',
-  'openai/gpt-oss-20b',
-  'llama-3.1-8b-instant'
+  'qwen/qwen3.8-27b',
+  'qwen/qwen3.6-27b',
+  'openai/gpt-oss-20b'
+];
+/* Les captures d'ecran FBref passent par un modele QUI VOIT. gpt-oss n'est pas
+   multimodal : lui envoyer une image ne rend rien d'exploitable. Liste separee,
+   donc, sinon l'import de stats se casse silencieusement le jour ou le modele
+   texte retenu n'a pas d'yeux. */
+var G45_GROQ_PREF_VISION = [
+  'qwen/qwen3.8-27b',
+  'qwen/qwen3.6-27b'
 ];
 var G45_GROQ_MODELE = null;
+var G45_GROQ_VISION = null;
+var G45_GROQ_DISPO  = null;   /* catalogue brut, reutilise par la cascade 3e avis */
 
 /* ═══ MODÈLES GEMINI — MÊME MALADIE, MÊME REMÈDE ═══
    `gemini-1.5-flash` a ete retire par Google. La cascade nommait ses quatre
@@ -7631,39 +7649,91 @@ async function g45GeminiModeles(force) {
 }
 window.g45GeminiModeles = g45GeminiModeles;
 
+var _G45_GROQ_EXCLUS = /whisper|tts|guard|embed|orpheus|safeguard|moderation|prompt-guard/i;
+
+function _g45GroqCache(cle) {
+  try {
+    var o = JSON.parse(localStorage.getItem(cle) || 'null');
+    if (o && o.m && (Date.now() - o.t) < 86400000) return o.m;
+  } catch (e) {}
+  return null;
+}
+
 function g45GroqModele() {
   if (G45_GROQ_MODELE) return G45_GROQ_MODELE;
-  try {
-    var o = JSON.parse(localStorage.getItem('g45_groq_modele') || 'null');
-    if (o && o.m && (Date.now() - o.t) < 86400000) { G45_GROQ_MODELE = o.m; return o.m; }
-  } catch (e) {}
+  var m = _g45GroqCache('g45_groq_modele3');
+  if (m) { G45_GROQ_MODELE = m; return m; }
   return G45_GROQ_PREF[0];          /* repli le temps que la decouverte reponde */
 }
 window.g45GroqModele = g45GroqModele;
 
+function g45GroqModeleVision() {
+  if (G45_GROQ_VISION) return G45_GROQ_VISION;
+  var m = _g45GroqCache('g45_groq_vision');
+  if (m) { G45_GROQ_VISION = m; return m; }
+  return G45_GROQ_PREF_VISION[0];
+}
+window.g45GroqModeleVision = g45GroqModeleVision;
+
+/* Libelle court pour l'interface, deduit de l'identifiant : « openai/gpt-oss-120b »
+   -> « GPT OSS 120B ». Evite d'entretenir une table de jolis noms qui redeviendrait
+   fausse au prochain renouvellement du catalogue. */
+function g45GroqLibelle(id) {
+  var n = String(id || '').split('/').pop().replace(/[-_]/g, ' ').toUpperCase();
+  return n.length > 20 ? n.slice(0, 20) : n;
+}
+
+/* Cascade du « 3e avis » : des modeles REELLEMENT proposes, differents du
+   principal. Tant que la decouverte n'a pas repondu, on retombe sur la
+   preference — jamais sur une liste figee de noms retires. */
+function g45GroqCascade() {
+  var principal = g45GroqModele();
+  var src = (G45_GROQ_DISPO && G45_GROQ_DISPO.length) ? G45_GROQ_DISPO : G45_GROQ_PREF;
+  var l = src.filter(function (m) { return m !== principal && !_G45_GROQ_EXCLUS.test(m); }).slice(0, 4);
+  if (!l.length) l = [principal];
+  return l.map(function (m) { return [m, g45GroqLibelle(m)]; });
+}
+window.g45GroqCascade = g45GroqCascade;
+
 async function g45GroqDecouvrir(force) {
-  var cle = localStorage.getItem('gones45_gemini_key');   /* clé Groq, nom historique */
-  if (!cle) return g45GroqModele();
+  /* Plus de « pas de cle -> on renonce » (11/09) : depuis que le Worker porte la
+     cle, cette porte fermee condamnait tous les navigateurs des amis au repli en
+     dur. On part des que l'IA est joignable, cle locale OU Worker. */
+  if (typeof g45IaDispo === 'function' && !g45IaDispo()) return g45GroqModele();
   if (!force) {
-    try {
-      var o = JSON.parse(localStorage.getItem('g45_groq_modele') || 'null');
-      if (o && o.m && (Date.now() - o.t) < 86400000) { G45_GROQ_MODELE = o.m; return o.m; }
-    } catch (e) {}
+    var mc = _g45GroqCache('g45_groq_modele3'), vc = _g45GroqCache('g45_groq_vision');
+    if (mc && vc) { G45_GROQ_MODELE = mc; G45_GROQ_VISION = vc; return mc; }
   }
   try {
-    var r = await fetch(g45IaUrlModeles(), { headers: { 'Authorization': 'Bearer ' + cle } });
+    /* Authorization SEULEMENT en direct chez Groq. Vers le Worker, cet en-tete
+       declenche un controle prealable que /ia-modeles ne laissait pas passer :
+       meme AVEC une cle, la decouverte mourait la, en silence. */
+    var opt = {};
+    var cle = (typeof g45IaCle === 'function') ? g45IaCle() : '';
+    if (cle) opt.headers = { 'Authorization': 'Bearer ' + cle };
+    var r = await fetch(g45IaUrlModeles(), opt);
     if (!r.ok) throw new Error('HTTP ' + r.status);
     var j = await r.json();
-    var dispo = ((j && j.data) || []).map(function (x) { return x.id; });
+    var dispo = ((j && j.data) || []).map(function (x) { return x && x.id; }).filter(Boolean);
+    if (!dispo.length) throw new Error('catalogue vide');
+    G45_GROQ_DISPO = dispo;
+
     var choisi = G45_GROQ_PREF.filter(function (m) { return dispo.indexOf(m) >= 0; })[0];
-    /* Aucune preference disponible : on prend le plus gros modele texte propose,
+    /* Aucune preference disponible : on prend le premier modele de texte propose,
        plutot que d'echouer. */
-    if (!choisi) choisi = dispo.filter(function (m) { return !/whisper|tts|guard|embed/i.test(m); })[0];
+    if (!choisi) choisi = dispo.filter(function (m) { return !_G45_GROQ_EXCLUS.test(m); })[0];
     if (choisi) {
       G45_GROQ_MODELE = choisi;
-      try { localStorage.setItem('g45_groq_modele', JSON.stringify({ m: choisi, t: Date.now() })); } catch (e) {}
-      console.log('\ud83e\udde0 mod\u00e8le Groq retenu : ' + choisi + ' (' + dispo.length + ' disponibles)');
+      try { localStorage.setItem('g45_groq_modele3', JSON.stringify({ m: choisi, t: Date.now() })); } catch (e) {}
     }
+
+    var vu = G45_GROQ_PREF_VISION.filter(function (m) { return dispo.indexOf(m) >= 0; })[0];
+    if (!vu) vu = dispo.filter(function (m) { return /vision|vl\b|qwen3\.\d/i.test(m); })[0];
+    if (vu) {
+      G45_GROQ_VISION = vu;
+      try { localStorage.setItem('g45_groq_vision', JSON.stringify({ m: vu, t: Date.now() })); } catch (e) {}
+    }
+    console.log('\ud83e\udde0 mod\u00e8le Groq retenu : ' + g45GroqModele() + ' \u2014 vision : ' + (vu || 'aucun') + ' (' + dispo.length + ' disponibles)');
   } catch (e) { console.warn('decouverte Groq', e && e.message); }
   return g45GroqModele();
 }
@@ -16216,7 +16286,10 @@ async function runFbrefGroq(uid, nom, b64, groqKey, mode, comp) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer '+groqKey },
       body: JSON.stringify({
-        model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+        /* 11/09/2026 : etait `meta-llama/llama-4-scout-17b-16e-instruct`, retire
+           par Groq le 17/07/2026 — l'import de captures ne pouvait plus marcher.
+           On passe par le modele multimodal decouvert dans le catalogue. */
+        model: (typeof g45GroqModeleVision === 'function') ? g45GroqModeleVision() : 'qwen/qwen3.6-27b',
         max_tokens: 8000,
         messages: [{
           role: 'user',
@@ -27700,7 +27773,10 @@ async function _g45MultiAI(box, boxId, sys, facts, title){
     }
     try{
       box.innerHTML+='<div id="'+boxId+'-ds" style="font-size:10px;color:var(--t3);padding:6px;text-align:center;">🐋 DeepSeek réfléchit…</div>';
-      var DM=[['openai/gpt-oss-120b','GPT-OSS 120B'],['qwen/qwen3-32b','QWEN 3'],['moonshotai/kimi-k2-instruct','KIMI K2'],['llama-3.1-8b-instant','LLAMA 8B']];
+      /* 11/09/2026 : la liste etait en dur et trois de ses quatre noms etaient
+         deja retires (qwen3-32b, kimi-k2, llama-3.1-8b). Elle vient maintenant du
+         catalogue reellement servi. */
+      var DM=(typeof g45GroqCascade==='function')?g45GroqCascade():[['openai/gpt-oss-120b','GPT OSS 120B']];
       var dt='', dd=null, _dLbl='3ᵉ IA';
       for(var di=0; di<DM.length && !dt; di++){
         try{
@@ -35650,7 +35726,7 @@ var _G45_CACHE_PREFIXES=['g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dc
      competition, qui restait bloque sur « Toutes »). Les cartes de tirs sont
      les plus lourdes : plusieurs Ko par match, gardees indefiniment. */
   'g45butA2_','g45gl3_','g45gl2_','g45gl_','g45_tirs2_','g45_fanart2_','g45_fanart_','g45_img_perso_','g45_tv_prog','g45_mqnom_','g45_mqteam_','g45_mqfond_','g45trv4_','g45_catimg_','g45_catfmt2_','g45_catfmt_','g45nrlcal3_','g45nrlcal2_','g45_score2_','g45_score_','g45_lglogo_','g45compet3_','g45compet2_','g45compet_','g45tmeta_','g45histo_','g45ld2_','g45ld_',
-  'g45nrlcal2_','g45core2_','g45core_','g45_fx_faits','g45_veille_','g45_compet_logos','g45_groq_modele','g45_gemini_modeles',
+  'g45nrlcal2_','g45core2_','g45core_','g45_fx_faits','g45_veille_','g45_compet_logos','g45_groq_modele','g45_groq_modele3','g45_groq_vision','g45_gemini_modeles',
   /* MESURE DU 20/08 sur le stockage reel d'Antoine (5,1 Mo, sature) :
        fpl_bootstrap_cache ... 1951 Ko  <- a lui seul 38 % du total
        g45itf_*            ... 1779 Ko  <- tennis ITF/Challenger, par date
