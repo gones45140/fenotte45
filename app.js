@@ -8931,8 +8931,11 @@ function setupFbrefPaste(uid, nom) {
     if(!items) return;
     for(var i=0;i<items.length;i++){
       if(items[i].type.indexOf('image')!==-1){
-        var groqKey = getGeminiKey();
-        if(!groqKey) { alert('❌ Clé Groq manquante.'); return; }
+        var groqKey = getGeminiKey() || '';
+        /* 11/09 : ce refus datait de l'epoque ou la cle etait chez l'utilisateur.
+           Le Worker la porte maintenant — exiger une cle locale interdisait la
+           fonction a tous ceux qui n'en ont pas, alors que l'appel aboutirait. */
+        if(!(typeof g45IaDispo==='function' ? g45IaDispo() : !!groqKey)) { alert('❌ Analyse IA indisponible : aucune clé et aucun Worker joignable.'); return; }
         var modeBtn = document.getElementById('fbref-mode-'+uid);
         var mode = modeBtn ? modeBtn.dataset.mode : 'replace';
         var compBtn = document.getElementById('fbref-comp-'+uid);
@@ -16243,8 +16246,11 @@ function setupFbrefPaste(uid, nom) {
     if(!items) return;
     for(var i=0;i<items.length;i++){
       if(items[i].type.indexOf('image')!==-1){
-        var groqKey = getGeminiKey();
-        if(!groqKey) { alert('❌ Clé Groq manquante.'); return; }
+        var groqKey = getGeminiKey() || '';
+        /* 11/09 : ce refus datait de l'epoque ou la cle etait chez l'utilisateur.
+           Le Worker la porte maintenant — exiger une cle locale interdisait la
+           fonction a tous ceux qui n'en ont pas, alors que l'appel aboutirait. */
+        if(!(typeof g45IaDispo==='function' ? g45IaDispo() : !!groqKey)) { alert('❌ Analyse IA indisponible : aucune clé et aucun Worker joignable.'); return; }
         var modeBtn = document.getElementById('fbref-mode-'+uid);
         var mode = modeBtn ? modeBtn.dataset.mode : 'replace';
         var compBtn = document.getElementById('fbref-comp-'+uid);
@@ -27653,7 +27659,7 @@ async function g45LoadMatchAI(btn){
   var box=document.getElementById(btn.dataset.box); if(!box) return;
   if(box.getAttribute('data-loaded')==='1'){ box.style.display=(box.style.display==='none'?'':'none'); return; }
   var key=(typeof getGeminiKey==='function')?getGeminiKey():localStorage.getItem('gones45_gemini_key');
-  if(!key){ box.innerHTML='<div style="color:#ff6b6b;font-size:11px;padding:8px;">Clé Groq manquante (à mettre dans Outils).</div>'; return; }
+  if(!(typeof g45IaDispo==='function' ? g45IaDispo() : !!key)){ box.innerHTML='<div style="color:#ff6b6b;font-size:11px;padding:8px;">Analyse IA indisponible : aucune clé et aucun Worker joignable.</div>'; return; }
   var hN=btn.dataset.h, aN=btn.dataset.a, comp=btn.dataset.comp||'', iso=btn.dataset.date||'';
   box.innerHTML='<div style="color:var(--t3);font-size:11px;padding:10px;text-align:center;">🧠 Je rassemble cotes, tendance et tes notes, puis j\'analyse…</div>';
   btn.disabled=true;
@@ -27879,7 +27885,7 @@ async function g45LoadUsAI(btn){
   var box=document.getElementById(btn.dataset.box); if(!box) return;
   if(box.getAttribute('data-loaded')==='1'){ box.style.display=(box.style.display==='none'?'':'none'); return; }
   var kk=(typeof getGeminiKey==='function')?getGeminiKey():localStorage.getItem('gones45_gemini_key');
-  if(!kk){ box.innerHTML='<div style="color:#ff6b6b;font-size:11px;padding:8px;">Clé Groq manquante (à mettre dans Outils).</div>'; return; }
+  if(!(typeof g45IaDispo==='function' ? g45IaDispo() : !!kk)){ box.innerHTML='<div style="color:#ff6b6b;font-size:11px;padding:8px;">Analyse IA indisponible : aucune clé et aucun Worker joignable.</div>'; return; }
   var hN=btn.dataset.h, aN=btn.dataset.a, lg=btn.dataset.lg||'', iso=btn.dataset.date||'', eid=btn.dataset.eid||'';
   box.innerHTML='<div style="color:var(--t3);font-size:11px;padding:10px;text-align:center;">🧠 Analyse en cours…</div>';
   btn.disabled=true;
@@ -27942,7 +27948,7 @@ async function g45F1AI(btn){
   var box=document.getElementById(btn.dataset.box); if(!box) return;
   if(box.getAttribute('data-loaded')==='1'){ box.style.display=(box.style.display==='none'?'':'none'); return; }
   var kk=(typeof getGeminiKey==='function')?getGeminiKey():localStorage.getItem('gones45_gemini_key');
-  if(!kk){ box.innerHTML='<div style="color:#ff6b6b;font-size:11px;padding:8px;">Clé Groq manquante (à mettre dans Outils).</div>'; return; }
+  if(!(typeof g45IaDispo==='function' ? g45IaDispo() : !!kk)){ box.innerHTML='<div style="color:#ff6b6b;font-size:11px;padding:8px;">Analyse IA indisponible : aucune clé et aucun Worker joignable.</div>'; return; }
   var ev=_g45F1Cache.events.filter(function(e){ return String(e.id)===String(btn.dataset.eid); })[0];
   if(!ev) return;
   box.innerHTML='<div style="color:var(--t3);font-size:11px;padding:10px;text-align:center;">🧠 Analyse du GP en cours…</div>';
@@ -31086,7 +31092,7 @@ async function g45MotoAI(eid, btn){
   var box=document.getElementById('mgpai-'+eid); if(!box) return;
   if(box.getAttribute('data-loaded')==='1'){ box.style.display=(box.style.display==='none'?'':'none'); return; }
   var kk=(typeof getGeminiKey==='function')?getGeminiKey():localStorage.getItem('gones45_gemini_key');
-  if(!kk){ box.innerHTML='<div style="color:#ff6b6b;font-size:11px;padding:8px;">Clé Groq manquante (Outils).</div>'; return; }
+  if(!(typeof g45IaDispo==='function' ? g45IaDispo() : !!kk)){ box.innerHTML='<div style="color:#ff6b6b;font-size:11px;padding:8px;">Analyse IA indisponible : aucune clé et aucun Worker joignable.</div>'; return; }
   var ev=_g45Moto.ev[eid], cat=_g45Moto.cat, se=_g45Moto.season;
   if(!ev||!cat){ return; }
   box.innerHTML='<div style="color:var(--t3);font-size:11px;padding:10px;text-align:center;">🧠 Analyse du GP…</div>';
@@ -34513,7 +34519,7 @@ async function g45StatsAutoTag(){
   var key=(typeof getGeminiKey==='function')?getGeminiKey():localStorage.getItem('gones45_gemini_key');
   var txtEl=document.getElementById('gms-text'), st=document.getElementById('gms-ai-st');
   if(!txtEl||!txtEl.value.trim()){ if(st)st.textContent="Colle d'abord la stat."; return; }
-  if(!key){ if(st)st.textContent='Clé Groq manquante (Outils).'; return; }
+  if(!(typeof g45IaDispo==='function' ? g45IaDispo() : !!key)){ if(st)st.textContent='Analyse IA indisponible (aucune clé, aucun Worker).'; return; }
   if(st)st.textContent='⏳ Analyse…';
   try{
     var prompt='Extrais les tags de cette stat de paris sportifs. Reponds UNIQUEMENT par un JSON valide sans texte autour: {"sport":"<emoji parmi ⚽ 🏀 🎾 🏈 🏒 ⚾ 🏉 🏎 🥊 🚗 🚴>","targets":["..."],"place":"","comp":"","context":""}. targets=equipes/joueurs/ecuries cites (max 2). place=lieu ou GP (ex Autriche) sinon vide. comp=competition sinon vide. context=type court (elimination directe, buteur, lay, domicile...) sinon vide. Stat: '+txtEl.value.trim();
