@@ -11,6 +11,12 @@ import { supabase, chargerEtat, sauverEtat, deconnexion,
 const CLE_ETAT     = 'g45v5';
 const CLE_ETAT_FEN = 'g45v5__fen';
 
+// Déclarés ICI et pas plus bas, près du code qui les utilise : le bloc de
+// chargement les renseigne très en amont, et un `let` déclaré après aurait
+// levé une ReferenceError au démarrage (zone morte temporelle des modules ES).
+let versionVue = null;       // l'updated_at distant sur lequel cet onglet se base
+let conflitSignale = false;  // une fois vrai, cet onglet n'écrit plus rien
+
 const MASQUE = {
   'gones45_github_token': null,
   'g45_dbx_token':        null,
@@ -22,6 +28,69 @@ const MASQUE = {
 const rawGet = localStorage.getItem.bind(localStorage);
 const rawSet = localStorage.setItem.bind(localStorage);
 const rawDel = localStorage.removeItem.bind(localStorage);
+
+// ═══════════════════════════════════════════════════════════════
+// DONNÉES SATELLITES (12/09/2026)
+// ═══════════════════════════════════════════════════════════════
+// `g45v5` n'est pas tout ce que la personne a créé. La Mémoire stats, la config
+// CLV, la grille de mises, le cockpit buteurs, les liens perso… vivent dans des
+// clés SÉPARÉES, qui ne partaient nulle part : sur fenotte45 elles mouraient
+// avec le cache du navigateur. Elles voyagent maintenant avec l'état, dans le
+// même blob `user_state`, sous la clé réservée `__sat`.
+//
+// POURQUOI UNE LISTE BLANCHE ET PAS UNE LISTE NOIRE : app.js écrit une
+// quarantaine de clés, dont des caches d'API, des filtres d'affichage et un
+// fond d'écran en base64. Avec une liste noire, chaque nouvelle clé de cache
+// partirait en base sans qu'on le décide — et `g45_bg_img` à lui seul ferait
+// exploser un blob poussé toutes les 800 ms. On énumère donc ce qui est
+// IRREMPLAÇABLE : ce qu'un utilisateur a saisi et qu'aucun rechargement ne
+// reconstruit. Un cache reste local, c'est sa nature.
+const CLES_SATELLITES = [
+  'g45_stats_cache',                                  // Mémoire stats
+  'g45clv_cfg', 'g45clv_snaps',                       // CLV : config + clôtures relevées
+  'g45_strats',                                       // grille de mises par palier
+  'g45but_mode', 'g45but_comp', 'g45but_lg', 'g45but_cotes',  // cockpit buteurs
+  'g45_typecolors',                                   // couleurs par type de pari
+  'g45_links', 'g45_liens_perso',                     // liens personnalisés
+  'g45_teams_perso', 'g45_suivis', 'g45_presets_off', // équipes : perso, suivies, écartées
+  'g45_bk_vides',                                     // bookmakers masqués
+  'g45_saison_active', 'g45_saison_filters',          // saison courante et filtres
+  'g45_cotes_hist'                                    // historique de cotes relevées
+];
+const SAT = new Set(CLES_SATELLITES);
+
+// Garde-fou de taille. Une clé qui gonfle (un historique qui s'accumule, une
+// image collée par erreur) ne doit pas faire grossir un blob poussé en continu
+// ni saturer les 500 Mo du plan gratuit. Au-delà, on laisse la clé en local et
+// on le dit clairement plutôt que de pousser en silence.
+const SAT_MAX_CLE = 200 * 1024;
+
+function lireSatellites() {
+  const out = {};
+  CLES_SATELLITES.forEach(k => {
+    let v = null;
+    try { v = rawGet(k); } catch (e) {}
+    if (v == null) return;
+    if (v.length > SAT_MAX_CLE) {
+      console.warn('⚠️ ' + k + ' trop volumineux (' + Math.round(v.length / 1024) + ' Ko) — laissé en local');
+      return;
+    }
+    out[k] = v;
+  });
+  return out;
+}
+
+// On n'écrase une clé locale QUE si le distant en a une version. Une clé absente
+// du distant est laissée telle quelle : même règle que pour l'état, le vide
+// n'efface jamais le plein.
+function ecrireSatellites(sat) {
+  if (!sat || typeof sat !== 'object') return 0;
+  let n = 0;
+  CLES_SATELLITES.forEach(k => {
+    if (typeof sat[k] === 'string') { try { rawSet(k, sat[k]); n++; } catch (e) {} }
+  });
+  return n;
+}
 
 const remap = (k) => (k === CLE_ETAT ? CLE_ETAT_FEN : k);
 
@@ -150,16 +219,56 @@ function normaliser(etat) {
   return out;
 }
 
+// Un etat local « qui contient quelque chose » : au moins un pari, un compte,
+// ou une liste d'equipes qui n'est plus celle du mur de demarrage. Genereux a
+// dessein — en cas de doute on conserve, on n'efface pas.
+function aDuContenu(etat) {
+  if (!etat || typeof etat !== 'object') return false;
+  const n = (Array.isArray(etat.h) ? etat.h.length : 0)
+          + (Array.isArray(etat.a) ? etat.a.length : 0)
+          + Object.keys(etat.b || {}).length;
+  if (n > 0) return true;
+  return Array.isArray(etat.u) && etat.u.length !== MUR_DEMARRAGE.length;
+}
+
 try {
   msg('Chargement de tes données…');
   if (user) {
     const data = await chargerEtat(user.id);
     if (data && data.state && Object.keys(data.state).length > 0) {
-      rawSet(CLE_ETAT_FEN, JSON.stringify(normaliser(data.state)));
-      console.log('✅ état chargé depuis Supabase — dernière maj :', data.updated_at);
+      // `__sat` est à nous, pas à app.js : on le retire avant d'écrire l'état,
+      // sinon il se retrouverait dans `state` et repartirait en boucle dans
+      // chaque enregistrement de l'appli.
+      const recu = Object.assign({}, data.state);
+      const sat = recu.__sat; delete recu.__sat;
+      rawSet(CLE_ETAT_FEN, JSON.stringify(normaliser(recu)));
+      const n = ecrireSatellites(sat);
+      versionVue = data.updated_at;   // base de comparaison de cet onglet
+      console.log('✅ état chargé depuis Supabase — dernière maj :', data.updated_at
+        + (n ? ' — ' + n + ' donnée(s) annexe(s) restaurée(s)' : ''));
     } else {
-      rawSet(CLE_ETAT_FEN, JSON.stringify(ETAT_VIDE));
-      console.log('ℹ️ nouveau compte, état vierge complet');
+      // ═══ 12/09/2026 : CE BRANCHEMENT EFFACAIT DES PARIS ═══
+      // Distant vide ne veut pas dire « nouveau compte ». Ca arrive aussi quand
+      // la toute premiere poussee a echoue, ou quand le projet Supabase etait en
+      // pause. On ecrasait alors le local avec le mur de demarrage, A CHAQUE
+      // OUVERTURE : les paris de la personne disparaissaient sans un message.
+      // Desormais le local rempli gagne, et on le remonte immediatement.
+      // REGLE DE FOND : le vide n'ecrase jamais le plein.
+      let local = null;
+      try { local = JSON.parse(rawGet(CLE_ETAT_FEN) || 'null'); } catch (e) {}
+      if (aDuContenu(local)) {
+        console.warn('⚠️ distant vide mais local rempli — on garde le local et on le pousse');
+        try {
+          await sauverEtat(user.id, Object.assign(normaliser(local), { __sat: lireSatellites() }));
+          console.log('✅ état local remonté sur Supabase');
+        } catch (e) {
+          // On ne touche pas au local : il reste la seule copie valable.
+          console.error('❌ remontée impossible, le local est conservé :', e && e.message);
+        }
+      } else {
+        rawSet(CLE_ETAT_FEN, JSON.stringify(ETAT_VIDE));
+        console.log('ℹ️ nouveau compte, état vierge complet');
+      }
     }
   } else {
     if (!rawGet(CLE_ETAT_FEN)) rawSet(CLE_ETAT_FEN, JSON.stringify(ETAT_VIDE));
@@ -172,6 +281,48 @@ try {
 
 let pushTimer = null;
 let lastPushed = null;
+
+// ═══════════════════════════════════════════════════════════════
+// CONTRÔLE DE VERSION (12/09/2026)
+// ═══════════════════════════════════════════════════════════════
+// `sauverEtat` fait un upsert aveugle : l'onglet qui écrit en dernier gagne,
+// même s'il travaille sur un état vieux de huit heures. Cas vécu typique : la
+// PWA reste ouverte en arrière-plan sur le téléphone pendant qu'on saisit sur
+// le PC ; au retour sur le téléphone, le moindre enregistrement — ou la simple
+// fermeture de l'onglet, qui déclenche un vidage forcé — repousse l'état du
+// matin par-dessus le travail de la soirée.
+//
+// `versionVue` retient l'`updated_at` sur lequel CET onglet s'est basé. Avant
+// chaque écriture on relit le distant : s'il a bougé sans nous, on n'écrase
+// RIEN. On dépose un instantané du local, on prévient à l'écran, et on laisse
+// les deux versions vivantes — la distante en base, la locale dans le
+// navigateur — le temps que la personne recharge.
+//
+// CE QUE CA NE FAIT PAS : c'est une relecture puis une écriture, pas une
+// opération atomique. Deux écritures à quelques millisecondes d'intervalle
+// passeraient encore. La vraie fenêtre de ce bug se compte en minutes ou en
+// heures, et celle-là est fermée. Le verrou atomique demanderait un update
+// conditionnel dans supabase.js ; il viendra, il n'est plus urgent.
+//
+// EN CAS DE DOUTE ON ÉCRIT : si la relecture échoue (réseau coupé, projet en
+// pause), on pousse comme avant. Un contrôle qui bloquerait les sauvegardes
+// serait pire que le défaut qu'il corrige.
+
+function banniereConflit() {
+  if (conflitSignale) return;
+  conflitSignale = true;
+  try {
+    const d = document.createElement('div');
+    d.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:99999;padding:14px 16px;'
+      + 'background:#7a2626;color:#fff;font:600 13px/1.5 system-ui,sans-serif;text-align:center;';
+    d.innerHTML = 'Tes données ont été modifiées sur un autre appareil. '
+      + 'Pour ne rien perdre, rien n\'a été enregistré ici. '
+      + '<button style="margin-left:10px;padding:6px 12px;border:0;border-radius:6px;'
+      + 'background:#fff;color:#7a2626;font-weight:700;cursor:pointer;">Recharger</button>';
+    d.querySelector('button').onclick = () => window.location.reload();
+    document.body.appendChild(d);
+  } catch (e) {}
+}
 
 // ═══════════════════════════════════════════════════════════════
 // INSTANTANÉS ET SYNCHRO
@@ -193,40 +344,83 @@ async function peutEtreInstantane(state) {
   }
 }
 
+// Un seul constructeur de charge utile, un seul chemin de poussée. Avant, le
+// délai et le vidage forcé faisaient chacun leur version — deux endroits à
+// modifier pour toute évolution, et donc un candidat idéal à l'oubli.
+function chargeUtile() {
+  let etat = null;
+  try { etat = JSON.parse(rawGet(CLE_ETAT_FEN) || 'null'); } catch (e) {}
+  if (!etat || typeof etat !== 'object') return null;
+  delete etat.__sat;   // au cas où une version précédente en aurait laissé un
+  return Object.assign(etat, { __sat: lireSatellites() });
+}
+
+async function poussee() {
+  if (!user || conflitSignale) return;
+  const objet = chargeUtile();
+  if (!objet) return;
+  const signature = JSON.stringify(objet);
+  if (signature === lastPushed) return;   // rien n'a bougé, on n'écrit pas
+
+  // ── Relecture de contrôle ──────────────────────────────────────────
+  let distant = null, relu = false;
+  try { distant = await chargerEtat(user.id); relu = true; }
+  catch (e) { console.warn('relecture impossible, on écrit quand même :', e && e.message); }
+
+  if (relu && versionVue && distant && distant.updated_at && distant.updated_at !== versionVue) {
+    console.error('⛔ conflit : le distant a changé (' + distant.updated_at
+      + ') alors que cet onglet part de ' + versionVue + ' — aucune écriture');
+    // Le local n'est plus la seule copie : on le met à l'abri avant tout.
+    try { await sauverInstantane(user.id, objet); console.log('📸 version locale mise à l\'abri'); }
+    catch (e) { console.warn('instantané de secours non déposé :', e && e.message); }
+    banniereConflit();
+    return;
+  }
+
+  try {
+    await sauverEtat(user.id, objet);
+    lastPushed = signature;
+    // On relit l'horodatage réellement stocké plutôt que de le deviner : c'est
+    // lui qui servira de référence à la prochaine comparaison.
+    // SI CETTE RELECTURE ÉCHOUE, on remet la référence à `null` — surtout pas
+    // l'ancienne. Le distant vient de bouger (c'est nous), donc une référence
+    // périmée ferait crier au conflit à la poussée suivante et bloquerait
+    // l'onglet pour de bon. Sans référence, on ne compare pas : on revient au
+    // comportement d'avant, qui n'est pas pire.
+    try {
+      const apres = await chargerEtat(user.id);
+      versionVue = (apres && apres.updated_at) ? apres.updated_at : null;
+    } catch (e) {
+      versionVue = null;
+      console.warn('référence de version perdue — contrôle suspendu jusqu\'au prochain chargement');
+    }
+    console.log('✅ poussé sur Supabase');
+    await peutEtreInstantane(objet);
+  } catch (e) {
+    console.warn('❌ push Supabase échoué :', e);
+  }
+}
+
+function programmerPoussee() {
+  if (!user) return;
+  clearTimeout(pushTimer);
+  pushTimer = setTimeout(() => { pushTimer = null; poussee(); }, 800);
+}
+
 localStorage.setItem = function(k, v) {
   if (Object.prototype.hasOwnProperty.call(MASQUE, k)) return;
   rawSet(remap(k), v);
-  if (k === CLE_ETAT && user) {
-    clearTimeout(pushTimer);
-    pushTimer = setTimeout(async () => {
-      pushTimer = null;
-      if (v === lastPushed) return;
-      try {
-        const objet = JSON.parse(v);
-        await sauverEtat(user.id, objet);
-        lastPushed = v;
-        console.log('✅ poussé sur Supabase');
-        peutEtreInstantane(objet);
-      } catch (e) {
-        console.warn('❌ push Supabase échoué :', e);
-      }
-    }, 800);
-  }
+  // L'état ET les données annexes déclenchent la même poussée : sans ça, une
+  // note ajoutée à la Mémoire stats ne partait que si un pari était modifié
+  // ensuite — sinon elle attendait indéfiniment.
+  if (k === CLE_ETAT || SAT.has(k)) programmerPoussee();
 };
 
 const flush = async () => {
   if (!user) return;
   clearTimeout(pushTimer);
   pushTimer = null;
-  try {
-    const v = rawGet(CLE_ETAT_FEN);
-    if (v && v !== lastPushed) {
-      const objet = JSON.parse(v);
-      await sauverEtat(user.id, objet);
-      lastPushed = v;
-      await peutEtreInstantane(objet);
-    }
-  } catch (e) {}
+  await poussee();
 };
 
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flush(); });
@@ -238,6 +432,10 @@ window._g45Deconnexion = async () => {
   if (user) await flush();
   await deconnexion();
   rawDel(CLE_ETAT_FEN);
+  // Les données annexes sont AUSSI les siennes : les laisser derrière, c'est
+  // servir la Mémoire stats et les liens perso du précédent au suivant sur un
+  // ordinateur partagé. Elles sont en base, rien n'est perdu.
+  CLES_SATELLITES.forEach(k => { try { rawDel(k); } catch (e) {} });
   rawDel(CLE_DERNIER_SNAP);
   sessionStorage.removeItem('g45_login_bounce');
   Object.keys(localStorage).filter(k => k.indexOf('sb-') === 0).forEach(k => rawDel(k));

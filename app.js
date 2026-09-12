@@ -2162,6 +2162,10 @@ function g45ClesImport(input){
 }
 function g45ClesUI(){
   try {
+    /* 12/09/2026 : exporter les cles n'a de sens que pour qui en saisit encore.
+       Pour les autres il n'y a plus rien a sauvegarder — le fichier sortirait
+       vide, et le bloc parle d'un sujet dont ils n'ont plus a s'occuper. */
+    if (typeof g45EstAdmin === 'function' && !g45EstAdmin()) return;
     var zone = document.getElementById('t-outils');
     if (!zone || document.getElementById('g45-cles')) return;
     var d = document.createElement('div');
@@ -6704,6 +6708,15 @@ async function getValidToken(){
   return localStorage.getItem('gones45_dbx_token')||_dbxConfig.refreshToken||null;
 }
 async function saveToDropbox(){
+  /* 12/09/2026 : sur fenotte45, Supabase est la reference. Laisser Dropbox
+     ecrire le meme `state` en parallele, c'est deux systemes qui se disputent
+     la meme donnee — et le perdant s'ecrase en silence. `_g45User` est pose par
+     auth-guard.js quand une session est active : sa presence suffit a trancher.
+     On coupe ICI plutot que dans les appelants : `save()` existe en double et
+     appelle saveToDropbox a chaque enregistrement. Un seul garde-fou, au bon
+     endroit, couvre les deux. La sauvegarde MANUELLE vers Dropbox n'est pas
+     touchee — elle passe par un autre bouton. */
+  try { if (typeof window !== 'undefined' && window._g45User) return; } catch(e){}
   if(_dbxSaving)return;
   _dbxSaving=true;
   try{
@@ -14314,6 +14327,15 @@ async function getValidToken(){
   return localStorage.getItem('gones45_dbx_token')||_dbxConfig.refreshToken||null;
 }
 async function saveToDropbox(){
+  /* 12/09/2026 : sur fenotte45, Supabase est la reference. Laisser Dropbox
+     ecrire le meme `state` en parallele, c'est deux systemes qui se disputent
+     la meme donnee — et le perdant s'ecrase en silence. `_g45User` est pose par
+     auth-guard.js quand une session est active : sa presence suffit a trancher.
+     On coupe ICI plutot que dans les appelants : `save()` existe en double et
+     appelle saveToDropbox a chaque enregistrement. Un seul garde-fou, au bon
+     endroit, couvre les deux. La sauvegarde MANUELLE vers Dropbox n'est pas
+     touchee — elle passe par un autre bouton. */
+  try { if (typeof window !== 'undefined' && window._g45User) return; } catch(e){}
   if(_dbxSaving)return;
   _dbxSaving=true;
   try{
@@ -44345,7 +44367,13 @@ function _g45OutilsClasser(el, dernierTitre) {
      que de disparaitre. */
   if (/lanceur/.test(t) || /g45-lc-/.test(ids)) return 'app';
   /* Dropbox teste AVANT : son champ s'appelle `dbx-key-input`, donc la regle des
-     cles l'attrapait et separait le bloc de son titre « Backup & Config ». */
+     cles l'attrapait et separait le bloc de son titre « Backup & Config ».
+     12/09/2026 : on distingue desormais les DEUX blocs Dropbox. La saisie du
+     jeton (`dbx-key-input`) est une cle — elle part dans la section reservee a
+     l'administrateur. Le bloc Export/Import juste au-dessus, lui, reste dans
+     Donnees : c'est l'utilisateur qui sauvegarde ses propres paris, et deux
+     pertes de donnees passees rappellent que ce bouton doit rester a portee. */
+  if (/dbx-key-input/.test(ids)) return 'cles';
   if (/dbx-/.test(ids)) return 'donnees';
   if (/cl\u00e9|key|token/.test(t) || /-key-input|-token-input|odds-quota/.test(ids)) return 'cles';
   if (/synchro|backup|export|sauvegarde|dropbox|dbx/.test(t) || /g45-sync|pdf-export|dbx-/.test(ids)) return 'donnees';
@@ -44354,7 +44382,26 @@ function _g45OutilsClasser(el, dernierTitre) {
   return 'app';   /* par defaut : reglages generaux */
 }
 
+/* ═══════════ LA SECTION « CLES » EST RESERVEE A L'ADMINISTRATEUR (12/09/2026) ═══════════
+   Demande d'Antoine : plus personne d'autre ne doit voir les cles. Depuis que le
+   Worker les porte toutes, il n'y a plus rien a y regler pour un utilisateur —
+   la section ne montrerait que des champs inutiles et un peu inquietants.
+   On filtre la SECTION, pas chaque carte : `_g45OutilsClasser` range deja tout ce
+   qui parle de cle, de token ou de quota dans 'cles', donc un bloc ajoute plus
+   tard sera couvert sans qu'on ait a y penser. Et comme g45OutilsSection masque
+   tout ce qui n'appartient pas a la section affichee, un onglet retire rend ses
+   blocs definitivement invisibles.
+   A SAVOIR : c'est un masquage d'interface, pas un verrou. `gones45_admin` vit
+   dans le stockage local et le code est lisible par tous. C'est suffisant ici
+   (il n'y a plus de secret derriere), ca ne le serait pas pour garder un
+   abonnement payant — celui-la devra se verifier cote Worker. */
+function _g45SecVisible(s) {
+  if (!s || s.id !== 'cles') return true;
+  return (typeof g45EstAdmin === 'function') ? g45EstAdmin() : false;
+}
+
 function g45OutilsSection(sec) {
+  if (!_g45SecVisible({ id: sec })) sec = 'app';
   _g45OutilsSec = sec;
   try { localStorage.setItem('g45_outils_sec', sec); } catch (e) {}
   var hote = document.getElementById('t-outils');
@@ -44442,15 +44489,46 @@ function _g45DeplacerLanceurs() {
 }
 window._g45DeplacerLanceurs = _g45DeplacerLanceurs;
 
+/* ═══════════ LES BOUTONS GITHUB SUIVENT LE MEME SORT (12/09/2026) ═══════════
+   Le bloc « Synchro GitHub » melange deux choses de nature differente :
+   l'etat et la sauvegarde EN FICHIER, qui sont a l'utilisateur, et le va-et-vient
+   avec le depot GitHub, qui ne fonctionne qu'avec un jeton desormais invisible.
+   PREMIERE VERSION : on ne masquait que les trois boutons GitHub. Retour
+   d'Antoine sur capture — il restait un cadre intitule « Synchro GitHub » qui ne
+   synchronisait plus rien, ce qui est pire qu'absent : ca promet une sauvegarde
+   distante qui n'existe pas. On masque donc le bloc ENTIER pour les non-admins.
+   La sauvegarde en fichier n'est pas perdue pour autant : « Backup & Config »,
+   juste en dessous, porte deja Exporter et Importer.
+   Idempotent : rejoue a chaque ouverture des Outils, sans effet cumulatif. */
+function g45SyncMasquerAdmin() {
+  if (typeof g45EstAdmin === 'function' && g45EstAdmin()) return;
+  var hote = document.getElementById('t-outils');
+  if (!hote) return;
+  var panneau = document.getElementById('g45-sync-msg');
+  /* Le bloc est fait de DEUX noeuds freres, le titre puis le panneau — comme
+     tous les blocs de l'appli. On remonte au fils direct de #t-outils, puis on
+     masque aussi le titre qui le precede, sinon il resterait orphelin. */
+  while (panneau && panneau.parentNode !== hote) panneau = panneau.parentNode;
+  if (panneau) {
+    panneau.style.display = 'none';
+    var titre = panneau.previousElementSibling;
+    if (titre && titre.className && String(titre.className).indexOf('sec') >= 0) {
+      titre.style.display = 'none';
+    }
+  }
+}
+window.g45SyncMasquerAdmin = g45SyncMasquerAdmin;
+
 function g45OutilsRanger() {
   _g45DeplacerLanceurs();   /* avant tout classement, sinon on masquerait un bloc parti */
+  g45SyncMasquerAdmin();
   var hote = document.getElementById('t-outils');
   if (!hote || document.getElementById('g45-outils-nav')) return;
 
   var nav = document.createElement('div');
   nav.id = 'g45-outils-nav';
   nav.style.cssText = 'display:flex;gap:5px;flex-wrap:wrap;margin:0 0 14px;';
-  nav.innerHTML = _G45_OUTILS_SEC.map(function (s) {
+  nav.innerHTML = _G45_OUTILS_SEC.filter(_g45SecVisible).map(function (s) {
     return '<button data-sec="' + s.id + '" onclick="g45OutilsSection(\'' + s.id + '\')" '
       + 'style="flex:1;min-width:88px;padding:9px 6px;border-radius:9px;border:1px solid rgba(255,255,255,.08);'
       + 'background:rgba(255,255,255,.04);color:var(--t3);font-size:10.5px;font-weight:600;cursor:pointer;">' + s.lab + '</button>';
@@ -44459,6 +44537,10 @@ function g45OutilsRanger() {
 
   var mem = null;
   try { mem = localStorage.getItem('g45_outils_sec'); } catch (e) {}
+  /* Un non-administrateur qui avait « Clés » en memoire (ou qui l'a encore d'une
+     version precedente) retombe sur Application : sans ca il ouvrirait les Outils
+     sur une section dont aucun onglet n'existe plus, donc sur du vide. */
+  if (mem && !_g45SecVisible({ id: mem })) mem = null;
   g45OutilsSection(mem || 'app');
 }
 window.g45OutilsRanger = g45OutilsRanger;
