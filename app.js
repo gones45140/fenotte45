@@ -2233,6 +2233,54 @@ function g45IaUrlModeles(){
 }
 window.g45IaUrl = g45IaUrl;
 
+/* ═══════════ TAVILY, GEMINI, MISTRAL PASSENT PAR LE WORKER (12/09/2026) ═══════════
+   Dernier lot du chantier commence le 10/09. Ces trois-la n'avaient AUCUNE route
+   cote Worker : l'app sortait en direct depuis le navigateur, donc la cle devait
+   forcement etre chez l'utilisateur. Les routes /tavily, /gemini et /mistral
+   existent maintenant, et on applique ici la methode qui a marche hier : on touche
+   aux ACCESSEURS et a L'ADRESSE, jamais a la forme des appels — c'est en voulant
+   reecrire les appelants un par un qu'on a casse l'IA le 10/09.
+
+   Deux fonctions par service, et c'est tout :
+     g45XxxCle() → la cle locale si elle existe, sinon le jeton '_worker_'. Il est
+       vrai, donc les `if(!cle) return` en amont laissent passer ; il arrive au
+       Worker, qui le jette et met la sienne.
+     g45XxxUrl() → l'API en direct s'il y a une cle locale, sinon le Worker.
+   Les deux vont TOUJOURS ensemble : une cle locale avec l'adresse du Worker
+   enverrait la cle d'Antoine se faire ignorer, et le Worker consommerait son
+   propre quota pour rien. */
+function g45TavilyCle(){ return g45CleOuWorker('gones45_tavily_key'); }
+function g45TavilyLocale(){ try { return localStorage.getItem('gones45_tavily_key') || ''; } catch (e) { return ''; } }
+function g45TavilyUrl(){
+  if (g45TavilyLocale()) return 'https://api.tavily.com/search';
+  return ((typeof FD_PROXY !== 'undefined' && FD_PROXY) ? FD_PROXY : '') + '/tavily';
+}
+
+/* ATTENTION AU NOM DES CLES — deux entrees differentes, souvent confondues :
+   'gones45_gemini_key' sert en realite de cle GROQ (getGeminiKey, saveGeminiKey
+   qui affiche d'ailleurs « Cle Groq enregistree ») ; la vraie cle Google est
+   'gones45_google_key'. Ne pas les intervertir. */
+function g45GoogleCle(){ return g45CleOuWorker('gones45_google_key'); }
+function g45GoogleLocale(){ try { return localStorage.getItem('gones45_google_key') || ''; } catch (e) { return ''; } }
+function g45GeminiUrl(modele){
+  var loc = g45GoogleLocale();
+  if (loc) return 'https://generativelanguage.googleapis.com/v1beta/models/' + modele + ':generateContent?key=' + encodeURIComponent(loc);
+  return ((typeof FD_PROXY !== 'undefined' && FD_PROXY) ? FD_PROXY : '') + '/gemini?modele=' + encodeURIComponent(modele);
+}
+function g45GeminiUrlModeles(){
+  var loc = g45GoogleLocale();
+  if (loc) return 'https://generativelanguage.googleapis.com/v1beta/models?key=' + encodeURIComponent(loc);
+  return ((typeof FD_PROXY !== 'undefined' && FD_PROXY) ? FD_PROXY : '') + '/gemini';
+}
+
+function g45MistralCle(){ return g45CleOuWorker('gones45_mistral_key'); }
+function g45MistralLocale(){ try { return localStorage.getItem('gones45_mistral_key') || ''; } catch (e) { return ''; } }
+function g45MistralUrl(){
+  if (g45MistralLocale()) return 'https://api.mistral.ai/v1/chat/completions';
+  return ((typeof FD_PROXY !== 'undefined' && FD_PROXY) ? FD_PROXY : '') + '/mistral';
+}
+window.g45TavilyUrl = g45TavilyUrl; window.g45GeminiUrl = g45GeminiUrl; window.g45MistralUrl = g45MistralUrl;
+
 function _g45CleUnite(h, mode){
   var d = String((h && h.date) || '');
   if (mode === 'jour')  return d;
@@ -6865,14 +6913,14 @@ function saveTavilyKey(){
   if(st){st.innerText='✅ Clé Tavily enregistrée';st.style.color='var(--g)';}
   setTimeout(function(){if(st)st.innerText='';},3000);
 }
-function getTavilyKey(){return localStorage.getItem('gones45_tavily_key')||null;}
+function getTavilyKey(){return g45TavilyCle();}
 async function testTavilyKey(){
   var key=getTavilyKey();
   var st=$i('tavily-key-status');
   if(!key){if(st){st.innerText='❌ Aucune clé';st.style.color='var(--r)';}return;}
   if(st){st.innerText='⏳ Test…';st.style.color='var(--t3)';}
   try{
-    var r=await fetch('https://api.tavily.com/search',{
+    var r=await fetch(g45TavilyUrl(),{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({api_key:key,query:'test',max_results:1})
@@ -6885,7 +6933,7 @@ async function testTavilyKey(){
 async function searchTavily(query){
   var key=getTavilyKey();if(!key)return null;
   try{
-    var r=await fetch('https://api.tavily.com/search',{
+    var r=await fetch(g45TavilyUrl(),{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({api_key:key,query:query,max_results:5,search_depth:'advanced',include_answer:true})
@@ -6952,7 +7000,7 @@ async function apiSportsFetch(path){
   return await r.json();
 }
 
-function getGeminiKey(){return localStorage.getItem('gones45_gemini_key')||null;}
+function getGeminiKey(){return g45CleOuWorker('gones45_gemini_key');}
 async function testGroqKey(){
   var key=getGeminiKey();
   var st=$i('gemini-key-status');
@@ -7639,10 +7687,14 @@ async function g45GeminiModeles(force) {
     }
   } catch (e) {}
 
-  var cle = localStorage.getItem('gones45_google_key');
+  /* 12/09/2026 : sans cle locale, on s'arretait ici et on retombait sur la liste
+     en dur — exactement le repli « echec garanti » que la decouverte devait
+     eviter. Le Worker sait desormais interroger le catalogue : on ne renonce
+     plus que s'il n'y a NI cle NI Worker. */
+  var cle = g45GoogleCle();
   if (!cle) return repli;
   try {
-    var r = await fetch('https://generativelanguage.googleapis.com/v1beta/models?key=' + encodeURIComponent(cle));
+    var r = await fetch(g45GeminiUrlModeles());
     if (!r.ok) throw new Error('HTTP ' + r.status);
     var j = await r.json();
     var ok = ((j && j.models) || []).filter(function (m) {
@@ -14471,14 +14523,14 @@ function saveTavilyKey(){
   if(st){st.innerText='✅ Clé Tavily enregistrée';st.style.color='var(--g)';}
   setTimeout(function(){if(st)st.innerText='';},3000);
 }
-function getTavilyKey(){return localStorage.getItem('gones45_tavily_key')||null;}
+function getTavilyKey(){return g45TavilyCle();}
 async function testTavilyKey(){
   var key=getTavilyKey();
   var st=$i('tavily-key-status');
   if(!key){if(st){st.innerText='❌ Aucune clé';st.style.color='var(--r)';}return;}
   if(st){st.innerText='⏳ Test…';st.style.color='var(--t3)';}
   try{
-    var r=await fetch('https://api.tavily.com/search',{
+    var r=await fetch(g45TavilyUrl(),{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({api_key:key,query:'test',max_results:1})
@@ -14491,7 +14543,7 @@ async function testTavilyKey(){
 async function searchTavily(query){
   var key=getTavilyKey();if(!key)return null;
   try{
-    var r=await fetch('https://api.tavily.com/search',{
+    var r=await fetch(g45TavilyUrl(),{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({api_key:key,query:query,max_results:5,search_depth:'advanced',include_answer:true})
@@ -14558,7 +14610,7 @@ async function apiSportsFetch(path){
   return await r.json();
 }
 
-function getGeminiKey(){return localStorage.getItem('gones45_gemini_key')||null;}
+function getGeminiKey(){return g45CleOuWorker('gones45_gemini_key');}
 async function testGroqKey(){
   var key=getGeminiKey();
   var st=$i('gemini-key-status');
@@ -27769,7 +27821,7 @@ async function _g45MultiAI(box, boxId, sys, facts, title){
       +'<div style="font-size:9px;color:var(--t3);text-align:center;margin-top:8px;font-style:italic;">Estimations IA, pas des prédictions fiables — les cotes intègrent déjà l\'essentiel de l\'info.</div>'
       +'</div>';
     box.setAttribute('data-loaded','1');
-    var gk=localStorage.getItem('gones45_google_key');
+    var gk=g45GoogleCle();
     if(gk){
       box.innerHTML+='<div id="'+boxId+'-gm" style="font-size:10px;color:var(--t3);padding:6px;text-align:center;">🔷 Gemini réfléchit…</div>';
       try{
@@ -27779,7 +27831,7 @@ async function _g45MultiAI(box, boxId, sys, facts, title){
         var gt='', dg=null;
         for(var gi=0; gi<GM.length && !gt; gi++){
           try{
-            var rg=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+GM[gi]+':generateContent?key='+encodeURIComponent(gk),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:sys+'\n\nFAITS :\n'+facts.join('\n')}]}]})});
+            var rg=await fetch(g45GeminiUrl(GM[gi]),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:sys+'\n\nFAITS :\n'+facts.join('\n')}]}]})});
             dg=await rg.json();
             gt=((dg.candidates&&dg.candidates[0]&&dg.candidates[0].content&&dg.candidates[0].content.parts&&dg.candidates[0].content.parts.map(function(pp){return pp.text||'';}).join(''))||'').trim();
           }catch(ge){}
@@ -27818,7 +27870,7 @@ async function _g45MultiAI(box, boxId, sys, facts, title){
           +'</div>';
       } else if(dsBox){ dsBox.textContent='🧩 3ᵉ avis indisponible'+((dd&&dd.error)?(' : '+String(dd.error.message||'').slice(0,60)):'')+'.'; }
     }catch(e3){ var db3=document.getElementById(boxId+'-ds'); if(db3) db3.textContent='🐋 DeepSeek injoignable.'; }
-    var mk=localStorage.getItem('gones45_mistral_key');
+    var mk=g45MistralCle();
     if(mk){
       box.innerHTML+='<div id="'+boxId+'-ms" style="font-size:10px;color:var(--t3);padding:6px;text-align:center;">🇫🇷 Mistral réfléchit…</div>';
       try{
@@ -27830,7 +27882,7 @@ async function _g45MultiAI(box, boxId, sys, facts, title){
            rafale mais un vrai plafond, et insister ne servirait qu'a faire
            patienter devant un message identique. */
         var _mBody=JSON.stringify({model:'mistral-small-latest',messages:[{role:'system',content:sys},{role:'user',content:facts.join('\n')}],temperature:0.4,max_tokens:450});
-        var _mAppel=function(){ return fetch('https://api.mistral.ai/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+mk},body:_mBody}); };
+        var _mAppel=function(){ return fetch(g45MistralUrl(),{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+mk},body:_mBody}); };
         var _mLimite=function(o){ return !!(o && ((o.error && /rate limit|429|too many/i.test(String(o.error.message||o.error))) || /rate limit|429|too many/i.test(String(o.message||'')))); };
         await new Promise(function(r){ setTimeout(r, 1200); });
         var rm=await _mAppel();
@@ -27850,7 +27902,7 @@ async function _g45MultiAI(box, boxId, sys, facts, title){
             +'<div style="font-size:12px;color:var(--t1);line-height:1.65;">'+eaf(mt).replace(/\n/g,'<br>')+'</div>'
             +'</div>';
         } else if(msBox){ msBox.textContent='🇫🇷 Mistral indisponible'+((dm&&(dm.error||dm.message))?(' : '+String((dm.error&&dm.error.message)||dm.message||'').slice(0,60)):'')+'.'; }
-      }catch(e4){ var mb4=document.getElementById(boxId+'-ms'); if(mb4) mb4.textContent='🇫🇷 Mistral injoignable (si ça persiste, on le routera par le Worker).'; }
+      }catch(e4){ var mb4=document.getElementById(boxId+'-ms'); if(mb4) mb4.textContent='🇫🇷 Mistral injoignable.'; }
     }
   }catch(e){ box.innerHTML='<div style="color:#ff6b6b;font-size:11px;padding:8px;">Erreur analyse IA : '+String(e.message||e).slice(0,90)+'</div>'; }
 }
