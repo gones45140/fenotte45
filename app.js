@@ -4090,7 +4090,7 @@ function openClub(nom,idx){
           var b2=bki(h.b);var dd=h.date?'📅 '+h.date+' ':'';var hh=h.heure?'⏰ '+h.heure+' ':'';
           return '<div class="brow '+(h.win?'w':'l')+'">'
             +'<div class="brow-main"><div class="brow-title">'+(h.sport||'')+' '+h.target+'</div>'
-            +'<div class="brow-meta">'+h.t+' '+dd+hh+'· '+(h.type||'—')+' · @'+h.cote+' · <span style="color:'+b2.c+';">'+b2.n+'</span>'+(h.debrief?'<br><i>'+h.debrief+'</i>':'')+'</div></div>'
+            +'<div class="brow-meta">'+h.t+' '+dd+hh+'· '+(h.type||'—')+' · '+parseFloat(h.m).toFixed(2)+'€'+(h.isS?' · P'+(h.l||1):'')+' · @'+h.cote+' · <span style="color:'+b2.c+';">'+b2.n+'</span>'+(h.debrief?'<br><i>'+h.debrief+'</i>':'')+'</div></div>'
             +'<div class="brow-right"><div class="brow-amt" style="color:'+(h.win?'var(--g)':'var(--r)')+';">'+(h.win?'+'+(h.m*h.cote).toFixed(2):'-'+h.m)+'€</div>'
             +'<div class="brow-tag" style="color:'+(h.win?'var(--g)':'var(--r)')+';">'+(h.win?'WIN':'LOSS')+'</div></div></div>';
         }).join('');
@@ -4264,7 +4264,15 @@ function pari(isS){
        au formulaire de pari simple et vaut « dom » en dur, ce qui aurait range
        tous les paris de montante dans l'echelle domicile. */
     var domicile=isS?(($i('c-lieu')&&$i('c-lieu').value)||'')
-                    :(($i('n-lieu')&&$i('n-lieu').value)||($i('p-domicile')?$i('p-domicile').value:''));state.h.unshift({id:Date.now().toString(),n:n,target:target,eq:(typeof _eqJ!=='undefined'?_eqJ:''),b:b,l:l,m:m,cote:c,isS:isS,isFlash:isFlash,isFreebet:isFreebet,isLay:isLay,t:t,sport:sport,type:type,comp:comp,heure:heure,date:date,notes:notes||'',domicile:domicile,notif:notif});
+                    :(($i('n-lieu')&&$i('n-lieu').value)||($i('p-domicile')?$i('p-domicile').value:''));
+    /* CORRIGE LE 12/09 : `l=u.l` (plus haut) lit la reference GLOBALE, decrite
+       dans les commentaires de `_g45Pal` comme non fiable des qu'une echelle
+       separee domicile/exterieur existe pour cette competition — exactement
+       le cas normal aujourd'hui, confirme par Antoine. Le pari doit lire la
+       MEME fonction que tout le reste de l'appli utilise pour afficher le
+       palier courant, avec le lieu qu'on vient de determiner juste au-dessus. */
+    if(isS && typeof _g45Pal==='function') l=_g45Pal(u, comp, domicile);
+    state.h.unshift({id:Date.now().toString(),n:n,target:target,eq:(typeof _eqJ!=='undefined'?_eqJ:''),b:b,l:l,m:m,cote:c,isS:isS,isFlash:isFlash,isFreebet:isFreebet,isLay:isLay,t:t,sport:sport,type:type,comp:comp,heure:heure,date:date,notes:notes||'',domicile:domicile,notif:notif});
     save();
     if(isS){$i('c-target').value='';$i('c-comp').value='';if($i('c-notes'))$i('c-notes').value='';}
     else{$i('n-comp').value='';$i('n-type').value='';$i('n-analysis').value='';if($i('n-notes'))$i('n-notes').value='';if($i('n-team'))$i('n-team').value='';if($i('n-flashboost'))$i('n-flashboost').checked=false;if($i('n-freebet'))$i('n-freebet').checked=false;if($i('n-lay'))$i('n-lay').checked=false;if($i('n-notif'))$i('n-notif').checked=true;mmRowsSimple=[{type:'',cote:1.50}];renderMmRowsSimple();}
@@ -12068,7 +12076,7 @@ function openClub(nom,idx){
           var b2=bki(h.b);var dd=h.date?'📅 '+h.date+' ':'';var hh=h.heure?'⏰ '+h.heure+' ':'';
           return '<div class="brow '+(h.win?'w':'l')+'">'
             +'<div class="brow-main"><div class="brow-title">'+(h.sport||'')+' '+h.target+'</div>'
-            +'<div class="brow-meta">'+h.t+' '+dd+hh+'· '+(h.type||'—')+' · @'+h.cote+' · <span style="color:'+b2.c+';">'+b2.n+'</span>'+(h.debrief?'<br><i>'+h.debrief+'</i>':'')+'</div></div>'
+            +'<div class="brow-meta">'+h.t+' '+dd+hh+'· '+(h.type||'—')+' · '+parseFloat(h.m).toFixed(2)+'€'+(h.isS?' · P'+(h.l||1):'')+' · @'+h.cote+' · <span style="color:'+b2.c+';">'+b2.n+'</span>'+(h.debrief?'<br><i>'+h.debrief+'</i>':'')+'</div></div>'
             +'<div class="brow-right"><div class="brow-amt" style="color:'+(h.win?'var(--g)':'var(--r)')+';">'+(h.win?'+'+(h.m*h.cote).toFixed(2):'-'+h.m)+'€</div>'
             +'<div class="brow-tag" style="color:'+(h.win?'var(--g)':'var(--r)')+';">'+(h.win?'WIN':'LOSS')+'</div></div></div>';
         }).join('');
@@ -12182,7 +12190,15 @@ function pari(isS){
        au formulaire de pari simple et vaut « dom » en dur, ce qui aurait range
        tous les paris de montante dans l'echelle domicile. */
     var domicile=isS?(($i('c-lieu')&&$i('c-lieu').value)||'')
-                    :(($i('n-lieu')&&$i('n-lieu').value)||($i('p-domicile')?$i('p-domicile').value:''));state.h.unshift({id:Date.now().toString(),n:n,target:target,eq:(typeof _eqJ!=='undefined'?_eqJ:''),b:b,l:l,m:m,cote:c,isS:isS,isFlash:isFlash,isFreebet:isFreebet,isLay:isLay,t:t,sport:sport,type:type,comp:comp,heure:heure,date:date,notes:notes||'',domicile:domicile,notif:notif});
+                    :(($i('n-lieu')&&$i('n-lieu').value)||($i('p-domicile')?$i('p-domicile').value:''));
+    /* CORRIGE LE 12/09 : `l=u.l` (plus haut) lit la reference GLOBALE, decrite
+       dans les commentaires de `_g45Pal` comme non fiable des qu'une echelle
+       separee domicile/exterieur existe pour cette competition — exactement
+       le cas normal aujourd'hui, confirme par Antoine. Le pari doit lire la
+       MEME fonction que tout le reste de l'appli utilise pour afficher le
+       palier courant, avec le lieu qu'on vient de determiner juste au-dessus. */
+    if(isS && typeof _g45Pal==='function') l=_g45Pal(u, comp, domicile);
+    state.h.unshift({id:Date.now().toString(),n:n,target:target,eq:(typeof _eqJ!=='undefined'?_eqJ:''),b:b,l:l,m:m,cote:c,isS:isS,isFlash:isFlash,isFreebet:isFreebet,isLay:isLay,t:t,sport:sport,type:type,comp:comp,heure:heure,date:date,notes:notes||'',domicile:domicile,notif:notif});
     save();
     if(isS){$i('c-target').value='';$i('c-comp').value='';if($i('c-notes'))$i('c-notes').value='';}
     else{$i('n-comp').value='';$i('n-type').value='';$i('n-analysis').value='';if($i('n-notes'))$i('n-notes').value='';if($i('n-team'))$i('n-team').value='';if($i('n-flashboost'))$i('n-flashboost').checked=false;if($i('n-freebet'))$i('n-freebet').checked=false;if($i('n-lay'))$i('n-lay').checked=false;if($i('n-notif'))$i('n-notif').checked=true;mmRowsSimple=[{type:'',cote:1.50}];renderMmRowsSimple();}
