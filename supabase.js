@@ -58,6 +58,17 @@ export async function utilisateurActuel() {
   return user;
 }
 
+// ── Statut « soutien » (12/09/2026) ─────────────────────────────
+// Simple drapeau, jamais ecrit depuis le client — seul Antoine l'active,
+// directement dans Supabase, apres verification manuelle d'un don. La RLS
+// de `user_supporter` interdit toute ecriture depuis un autre compte.
+export async function chargerSoutien(userId) {
+  const { data, error } = await supabase
+    .from('user_supporter').select('soutien').eq('user_id', userId).maybeSingle();
+  if (error) { console.warn('lecture statut soutien impossible :', error.message); return false; }
+  return !!(data && data.soutien);
+}
+
 export async function deconnexion() {
   await supabase.auth.signOut();
 }

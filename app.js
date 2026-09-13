@@ -26970,6 +26970,38 @@ window.g45TrSel=g45TrSel; window.g45TrDay=g45TrDay;
 
 function loadTendancesTab(){
   var el=document.getElementById('t-tend'); if(!el) return;
+  /* ═══ TENDANCES RESERVEE AUX COMPTES (12/09/2026, corrige le meme jour) ═══
+     Decide par Antoine : contrairement au reste de l'appli, gouverne par le
+     seul mur des 15 paris, Tendances est bloquee des le depart pour un
+     visiteur SUR FENOTTE45 — pas de tolerance, pas de compteur. C'est la
+     fonction qui tape le plus dans les quotas Groq/Gemini/Mistral, et un
+     visiteur qui ne place jamais de pari pourrait sinon l'utiliser
+     indefiniment sans jamais toucher le mur general.
+
+     BUG CORRIGE LE MEME JOUR : app.js est PARTAGE entre deux depots — fenotte45
+     (Supabase, ou `auth-guard.js` pose `window._g45User`) et gones45, la
+     version perso d'Antoine, qui n'a NI Supabase NI `auth-guard.js` du tout.
+     Sur ce second depot, `window._g45User` n'est jamais ni `null` ni un objet
+     — il n'existe simplement JAMAIS. La condition `if (!window._g45User)`
+     etait donc vraie EN PERMANENCE sur gones45, bloquant Tendances pour
+     Antoine lui-meme sur son propre site, qui n'a meme pas de login.html vers
+     lequel renvoyer. On distingue desormais deux etats bien differents :
+     `undefined` (aucune notion de compte sur ce depot — ne pas bloquer) et
+     `null` (auth-guard.js a tourne, verifie, et confirme qu'il n'y a
+     personne — bloquer, c'est le vrai cas visiteur). Seul `null` declenche
+     le mur ; `undefined` laisse Tendances ouvert, exactement comme avant
+     qu'on invente cette regle. */
+  if (window._g45User === null) {
+    el.innerHTML = '<div style="padding:40px 20px;text-align:center;">'
+      + '<div style="font-size:32px;margin-bottom:12px;">🔒</div>'
+      + '<div style="font-weight:700;margin-bottom:8px;color:var(--t1);">Tendances réservé aux comptes</div>'
+      + '<div style="color:var(--t3);font-size:13px;line-height:1.6;max-width:320px;margin:0 auto 18px;">'
+      + 'Cette fonction s\'appuie sur plusieurs IA — elle est réservée aux comptes créés, gratuitement.</div>'
+      + '<a href="./login.html" style="display:inline-block;padding:11px 22px;border-radius:9px;'
+      + 'background:#2563eb;color:#fff;text-decoration:none;font-weight:700;font-size:14px;">'
+      + 'Créer mon compte</a></div>';
+    return;
+  }
   var G=_g45TrGroups();
   if(!_G45_TR.sel){ _G45_TR.sel={}; G.forEach(function(g,i){ if(/Grands championnats|Coupes d/i.test(g.grp)) _G45_TR.sel[i]=true; }); }
   /* LIFTING DU 27/08 (meme demande que le Bilan : "comme le screen 2"). Les
@@ -35825,6 +35857,9 @@ var _G45_CACHE_PREFIXES=['g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dc
      les plus lourdes : plusieurs Ko par match, gardees indefiniment. */
   'g45butA2_','g45gl3_','g45gl2_','g45gl_','g45_tirs2_','g45_fanart2_','g45_fanart_','g45_img_perso_','g45_tv_prog','g45_mqnom_','g45_mqteam_','g45_mqfond_','g45trv4_','g45_catimg_','g45_catfmt2_','g45_catfmt_','g45nrlcal3_','g45nrlcal2_','g45_score2_','g45_score_','g45_lglogo_','g45compet3_','g45compet2_','g45compet_','g45tmeta_','g45histo_','g45ld2_','g45ld_',
   'g45nrlcal2_','g45core2_','g45core_','g45_fx_faits','g45_veille_','g45_compet_logos','g45_groq_modele','g45_groq_modele3','g45_groq_vision','g45_gemini_modeles',
+  /* 12/09 : g45nrlcal6_ rejoint la liste, remplace par g45nrlcal7_ ci-dessus —
+     meme raison que g45nrlcal2_ et g45nrlcal3_ avant lui. */
+  'g45nrlcal6_','g45nrlcal7_','g45nrlcal8_','g45nrlcal9_','g45nrlcal10_',
   /* MESURE DU 20/08 sur le stockage reel d'Antoine (5,1 Mo, sature) :
        fpl_bootstrap_cache ... 1951 Ko  <- a lui seul 38 % du total
        g45itf_*            ... 1779 Ko  <- tennis ITF/Challenger, par date
@@ -38104,13 +38139,26 @@ async function g45NrlCharger(annee) {
       }
     });
   }
-  /* SOURCE PRIORITAIRE POUR LE FOOTBALL : football-data.org (04/09).
-     Une requete pour toute la saison, mise en cache 6 h. Le numero est
+  /* SOURCE PRIORITAIRE POUR LE FOOTBALL : football-data.org (04/09, corrige le
+     12/09). Une requete pour toute la saison, mise en cache 6 h. Le numero est
      OFFICIEL, donc un match avance ou reporte est classe correctement — ce
-     qu'aucune deduction fondee sur les dates ne peut garantir. Sans cle
-     enregistree, ou hors des championnats couverts, on retombe simplement sur
-     les methodes suivantes. */
-  if (!out.some(function (m) { return m.jr; })) {
+     qu'aucune deduction fondee sur les dates ne peut garantir.
+
+     BUG CORRIGE LE 12/09 (releve par Antoine — Rennes reste « non precisee »
+     alors que les autres equipes sont bonnes) : cette source ne se declenchait
+     QUE si AUCUN match de la ligue n'avait de journee. Pour la Ligue 1, ESPN en
+     fournit la plupart directement, donc la condition etait fausse et la
+     source la plus fiable ne s'executait JAMAIS — y compris pour les quelques
+     matchs, comme ceux de Rennes, qu'ESPN seul ne resolvait pas. Le mot
+     « prioritaire » du commentaire d'origine ne decrivait donc pas ce que
+     faisait le code : en pratique c'etait un dernier recours, pas une priorite.
+
+     Desormais on tente TOUJOURS football-data pour les championnats couverts,
+     et `_g45FdAssocier` ne comble que les trous — un match deja resolu par
+     ESPN ou par le calendrier n'est jamais touche. Sans cle enregistree, ou
+     hors des championnats couverts, `_g45FdMatchdays` renvoie null et rien ne
+     change par rapport a avant. */
+  if (out.some(function (m) { return !m.jr; })) {
     try {
       var refs = await _g45FdMatchdays(_g45NrlCtx.ligue, annee);
       var n = _g45FdAssocier(out, refs);
@@ -38693,6 +38741,32 @@ window.g45CompetOuvrir = g45CompetOuvrir;
 async function loadCompetTab() {
   var el = document.getElementById('t-compet');
   if (!el) return;
+
+  /* ═══ COMPETITIONS : 30 JOURS APRES CREATION DE COMPTE, PUIS SOUTIEN (12/09/2026) ═══
+     Regle differente de Tendances : un VISITEUR (pas de compte) garde acces a
+     Competitions, gouverne par le seul mur general des 15 paris — comme avant.
+     La restriction ne s'active qu'UNE FOIS UN COMPTE CREE : `window._g45User`
+     porte alors `created_at`, la date d'inscription telle que Supabase l'a
+     enregistree (pas modifiable depuis le navigateur, contrairement a un
+     compteur local). 30 jours pleins a partir de cette date, puis fermeture
+     sauf statut « soutien » — un simple drapeau qu'Antoine active a la main
+     apres verification manuelle d'un don, `window._g45Soutien` pose par
+     auth-guard.js au demarrage (voir la-bas pour le detail et ses limites). */
+  if (window._g45User && window._g45User.created_at && !window._g45Soutien) {
+    var joursDepuis = (Date.now() - new Date(window._g45User.created_at).getTime()) / 86400000;
+    if (joursDepuis > 30) {
+      el.innerHTML = '<div style="padding:40px 20px;text-align:center;">'
+        + '<div style="font-size:32px;margin-bottom:12px;">🏆</div>'
+        + '<div style="font-weight:700;margin-bottom:8px;color:var(--t1);">Mois gratuit terminé</div>'
+        + '<div style="color:var(--t3);font-size:13px;line-height:1.6;max-width:340px;margin:0 auto 18px;">'
+        + 'Compétitions était gratuit pendant 30 jours. Pour continuer à l\'utiliser, '
+        + 'un petit soutien du projet suffit.</div>'
+        + '<a href="https://paypal.me/touraineantoine" target="_blank" rel="noopener" style="display:inline-block;padding:11px 22px;border-radius:9px;'
+        + 'background:#2563eb;color:#fff;text-decoration:none;font-weight:700;font-size:14px;">'
+        + 'Soutenir le projet</a></div>';
+      return;
+    }
+  }
 
   /* NAVIGATION A DEUX NIVEAUX, reprise de l'onglet Resultats : sport puis
      competition. Les chips a plat atteignaient 21 entrees sur quatre lignes,
@@ -40378,8 +40452,17 @@ var _g45SgReplie = false;    /* un seul repli automatique sur la saison preceden
 var _g45SgNomCourant = '';   /* equipe affichee, pour reinitialiser les filtres */
 var _g45SgPhase = 'tout';    /* 'tout' | 'reg' | 'po' */
 
+/* 12/09/2026 : "ø" (et quelques autres lettres latines qui ne se decomposent
+   PAS en NFD, car ce sont des lettres a part entiere, pas des lettres
+   accentuees) disparaissaient au lieu de se simplifier — "Bodø" devenait "bod"
+   au lieu de "bodo", ne correspondant plus a l'ecriture anglicisee "Bodo" que
+   les autres sources utilisent. Ca touche potentiellement tout club nordique
+   (norvegien, danois, islandais...), pas seulement celui qui l'a revele. La
+   table reste courte : seulement les lettres du football europeen. */
+var _G45_TRANSLIT = { 'ø':'o','Ø':'o','å':'a','Å':'a','æ':'ae','Æ':'ae','œ':'oe','Œ':'oe','ß':'ss','đ':'d','Đ':'d','ł':'l','Ł':'l' };
 function _g45SgNorm(s) {
-  return String(s || '').toLowerCase()
+  s = String(s || '').replace(/[øØåÅæÆœŒßđĐłŁ]/g, function (c) { return _G45_TRANSLIT[c] || c; });
+  return s.toLowerCase()
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
 }
 function _g45SgCle(n) { return String(n || '').toLowerCase().trim(); }
@@ -42053,7 +42136,22 @@ function _g45NrlCleCache(annee) {
   /* Cle changee le 04/09 : les caches precedents contiennent des numeros de
      journee errones (deduits des dates). Ils doivent etre reconstruits une fois
      avec la numerotation officielle de football-data. */
-  return 'g45nrlcal6_' + _g45NrlCtx.sport + '_' + _g45NrlCtx.ligue + '_' + annee;
+  /* Cle changee le 12/09 : MEME CAUSE, ENCORE MANQUEE UNE FOIS — j'ai corrige
+     la resolution des journees (verrou tout-ou-rien retire, Europa/Conference
+     ajoutees) sans suivre la regle que les trois commentaires ci-dessus avaient
+     deja posee trois fois : tout changement de cette logique doit changer la cle
+     de cache, sinon les navigateurs ayant deja une saison en memoire depuis
+     moins de 6 h rejouent les anciens numeros (ou leur absence) sans jamais
+     retenter la resolution. C'est exactement ce qu'a signale Antoine avec
+     Forest/Palace/Spurs : « toujours pareil » apres deploiement. */
+  /* Cle changee le 12/09 (bis) : le diagnostic ajoute dans _g45FdAssocier ne
+     doit pas attendre 6 h derriere le cache pose par la version precedente. */
+  /* Cle changee le 12/09 (ter) : l'alias Rennes/Stade Rennais doit s'appliquer
+     tout de suite, pas dans 6 h. */
+  /* Cle changee le 12/09 (quater) : alias Spurs/Palace/Forest/AZ/Cologne. */
+  /* Cle changee le 12/09 (quinquies) : correction ø, alias bidirectionnels,
+     AEK/Bratislava/Prague ajoutes. */
+  return 'g45nrlcal11_' + _g45NrlCtx.sport + '_' + _g45NrlCtx.ligue + '_' + annee;
 }
 
 var _g45NrlChargerOrig = (typeof g45NrlCharger === 'function') ? g45NrlCharger : null;
@@ -47945,7 +48043,14 @@ window.g45ConvVersValue = g45ConvVersValue;
 var _G45_FD_CODES = {
   'fra.1': 'FL1', 'esp.1': 'PD', 'ita.1': 'SA',
   'eng.1': 'PL',  'ger.1': 'BL1',
-  'uefa.champions': 'CL', 'por.1': 'PPL', 'ned.1': 'DED', 'bra.1': 'BSA'
+  'uefa.champions': 'CL', 'por.1': 'PPL', 'ned.1': 'DED', 'bra.1': 'BSA',
+  /* 12/09 : manquaient ici alors qu'elles sont dans la table soeur du calendrier
+     mensuel (`_g45MatchdayMap`, ligne ~32241) — deux endroits qui devraient
+     toujours dire la meme chose et avaient diverge. Forest, Palace et Spurs
+     jouent l'Europa ou la Conference League, pas la Champions League : sans ces
+     deux lignes, `_g45FdMatchdays` renvoyait null avant meme de tenter quoi que
+     ce soit, quel que soit l'etat des deux corrections precedentes. */
+  'uefa.europa': 'EL', 'uefa.europa.conf': 'ECL'
 };
 
 /* Cache long : le calendrier d'une saison ne bouge quasiment pas, et l'offre
@@ -47988,18 +48093,40 @@ async function _g45FdMatchdays(ligue, annee) {
 function _g45FdAssocier(matchs, refs) {
   if (!refs || !refs.length) return 0;
   var n = 0;
+  /* 12/09 : Antoine a confirme sur Premier League que des matchs restent
+     « non precisee » malgre le comblement (26/37 combles selon la console — le
+     reste a echoue en silence). Deux fois de suite j'ai devine une cause de
+     nommage sans preuve et je me suis trompe. Plutot qu'une troisieme
+     hypothese, ce bloc journalise EXACTEMENT pourquoi chaque match resiste :
+     soit aucune reference football-data n'existe a sa date (probleme de
+     couverture), soit une existe mais les noms ne se reconnaissent pas
+     (probleme de correspondance) — et dans ce cas les deux ecritures
+     apparaissent cote a cote dans la console, lisibles directement. */
+  var echecs = [];
   matchs.forEach(function (m) {
+    if (m.jr) return;
     var jour = String(m.date || '').slice(0, 10);
     var t = new Date(jour).getTime();
+    var candidats = [];
     for (var i = 0; i < refs.length; i++) {
       var r = refs[i];
       var ecart = Math.abs(new Date(r.d).getTime() - t);
       if (!(ecart <= 86400000)) continue;
+      candidats.push(r);
       var okD = _g45FdMemeEquipe(m.dom, r.h, r.hl);
       var okE = _g45FdMemeEquipe(m.ext, r.a, r.al);
-      if (okD && okE) { m.jr = r.jr; n++; break; }
+      if (okD && okE) { m.jr = r.jr; n++; candidats = null; break; }
+    }
+    if (candidats) {
+      echecs.push('  ESPN: "' + m.dom + '" vs "' + m.ext + '" (' + jour + ')  |  '
+        + (candidats.length
+            ? 'football-data proposait : ' + candidats.map(function (c) { return '"' + c.h + '" vs "' + c.a + '"'; }).join(', ')
+            : 'AUCUNE reference football-data a cette date (+/- 1 jour)'));
     }
   });
+  if (echecs.length) {
+    console.warn('journees non resolues malgre football-data (' + echecs.length + ') :\n' + echecs.join('\n'));
+  }
   return n;
 }
 
@@ -48020,9 +48147,59 @@ function _g45FdSigle(nom) {
   return mots.map(function (w) { return w[0]; }).join('').toLowerCase();
 }
 
+/* ═══ ALIAS EXPLICITES (12/09/2026, etendu le 12/09 par lot) ═══
+   Rennes/Stade Rennais est confirme par la console d'Antoine (aucun sous-mot
+   commun). Les cinq suivants — Spurs, Palace, Forest, AZ Alkmaar, Cologne —
+   sont signales par Antoine mais PAS encore confirmes par un releve de
+   console : ce sont des propositions raisonnees, pas des certitudes. Chaque
+   valeur est un TABLEAU de formes possibles plutot qu'une seule, faute de
+   savoir laquelle football-data utilise reellement (« Tottenham » seul, ou
+   « Tottenham Hotspur » complet ?). Si une des variantes est fausse, le
+   diagnostic ci-dessous l'aurait de toute facon signalee au prochain passage —
+   c'est le filet qui rend ces suppositions sans risque : au pire elles ne
+   servent a rien, elles ne peuvent pas faire matcher le mauvais club sauf
+   coincidence de nom quasi impossible en pratique.
+   Cologne est un cas different des quatre autres : pas un raccourci ESPN mais
+   le nom ANGLAIS de la ville, quand le club n'est connu partout ailleurs que
+   sous son nom allemand (Köln) — aucun rapport de sous-mot possible entre
+   « cologne » et « koln », quelle que soit la regle generique. */
+/* ═══ ALIAS EXPLICITES (12/09/2026, revu apres retour d'Antoine) ═══
+   Deux corrections par rapport a la version precedente :
+
+   1. DIRECTION ABANDONNEE. J'avais suppose qu'ESPN est toujours le raccourci
+      et football-data toujours la forme longue. Faux pour AZ Alkmaar : c'est
+      football-data qui dit juste « AZ », ESPN qui garde le nom complet — donc
+      ma table, indexee sur le nom ESPN, ne pouvait pas la trouver. Les groupes
+      ci-dessous sont desormais des ENSEMBLES de formes equivalentes, verifies
+      dans les deux sens : peu importe laquelle des deux sources est la plus
+      courte.
+   2. TROIS PAIRES AJOUTEES, confirmees par la console d'Antoine sur les
+      matchs de Ligue des Champions (AEK Athenes, Bratislava, Prague) — memes
+      causes que Rennes et Cologne : sigle grec translitere differemment
+      (PAE = Podosfairiki Anonymi Etaireia), et noms de ville en deux langues.
+
+   « Nottingham » seul (sans « Forest ») et « AZ » seul sont maintenant dans
+   leurs groupes respectifs, confirmes par Antoine — retires les variantes que
+   j'avais devinees et qui ne servaient a rien. */
+var _G45_FD_GROUPES = [
+  ['rennes', 'staderennais'],
+  ['spurs', 'tottenham', 'tottenhamhotspur'],
+  ['cpalace', 'crystalpalace'],
+  ['nottmforest', 'nottingham', 'nottforest'],
+  ['az', 'azalkmaar'],
+  ['cologne', 'koln', 'fckoln', '1fckoln'],
+  ['aekathens', 'paeaek', 'aek'],
+  ['sbratislava', 'slbratislava', 'slovanbratislava'],
+  ['slaviaprague', 'slaviapraha']
+];
 function _g45FdMemeEquipe(espn, court, complet) {
   if (_g45BandMeme(espn, court) || _g45BandMeme(espn, complet)) return true;
-  var e = _g45SgNorm(espn || '');
+  var e = _g45SgNorm(espn || ''), c = _g45SgNorm(court), k = _g45SgNorm(complet);
+  for (var g = 0; g < _G45_FD_GROUPES.length; g++) {
+    var groupe = _G45_FD_GROUPES[g];
+    if (groupe.indexOf(e) < 0) continue;
+    if (groupe.indexOf(c) >= 0 || groupe.indexOf(k) >= 0) return true;
+  }
   if (e.length >= 2 && e.length <= 5) {
     if (e === _g45FdSigle(court) || e === _g45FdSigle(complet)) return true;
   }

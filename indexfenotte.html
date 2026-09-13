@@ -61,7 +61,16 @@
 </head>
 <body>
 
-<header class="topbar">
+<header class="topbar" style="position:relative;">
+  <!-- 12/09/2026 : point d'entree vers login.html, absent partout ailleurs dans
+       l'appli — sans lui, personne ne peut se creer un compte volontairement
+       avant de tomber sur le mur d'essai. Position absolue plutot que dans le
+       flux : le style de .topbar est defini dans style.css, inconnu d'ici, et
+       un lien absolu ne depend d'aucune de ses regles de mise en page.
+       Si la personne est DEJA connectee, cliquer ne fait rien de genant :
+       login.html detecte la session active et renvoie aussitot vers
+       index.html — pas besoin de cacher le lien selon l'etat de connexion. -->
+  <a href="./login.html" title="Se connecter / créer un compte" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:11px;font-weight:700;color:var(--t3,#8899aa);text-decoration:none;padding:6px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.12);white-space:nowrap;">👤 Connexion</a>
   <div class="logo">BET<em>45</em></div>
   <div class="top-cap"><div class="lbl">Capital</div><div class="val" id="top-val">0 €</div><div id="top-fb" style="display:none;font-size:11px;color:var(--gold);font-weight:700;line-height:1.1;margin-top:2px;">🎟 0 €</div></div>
 </header>
@@ -1383,7 +1392,7 @@
 <!-- FENOTTE45 : app.js est injecte par auth-guard.js APRES authentification.
      Le ?v= doit changer a CHAQUE deploiement. -->
 <script src="social.js?v=20260826n"></script>
-<script type="module" src="auth-guard.js?v=20260908a"></script>
+<script type="module" src="auth-guard.js?v=20260912d"></script>
 
 
 

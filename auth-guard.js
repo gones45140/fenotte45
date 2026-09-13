@@ -3,7 +3,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { supabase, chargerEtat, sauverEtat, deconnexion,
-         sauverInstantane, listerInstantanes, lireInstantane } from './supabase.js?v=20260821a';
+         sauverInstantane, listerInstantanes, lireInstantane, chargerSoutien } from './supabase.js?v=20260821a';
 
 // ═══════════════════════════════════════════════════════════════
 // CLOISONNEMENT DU localStorage
@@ -279,6 +279,68 @@ try {
   if (!rawGet(CLE_ETAT_FEN)) rawSet(CLE_ETAT_FEN, JSON.stringify(ETAT_VIDE));
 }
 
+// ═══════════════════════════════════════════════════════════════
+// SEUIL D'ESSAI GRATUIT (12/09/2026)
+// ═══════════════════════════════════════════════════════════════
+// Decide par Antoine : essai libre jusqu'a un nombre de paris, puis compte
+// obligatoire pour continuer. Compte sur les PARIS plutot que sur les jours —
+// un jour ne distingue pas quelqu'un qui a vraiment essaye l'appli de
+// quelqu'un qui l'a juste ouverte une fois puis oubliee, et cette appli se
+// joue surtout le week-end : un compteur de jours punirait l'absence, pas le
+// manque d'engagement.
+//
+// Ne s'applique QU'AUX VISITEURS : un compte deja cree n'a plus de plafond.
+// Compte sur `h` (en cours) + `a` (archives), exactement comme `aDuContenu`
+// plus haut — la meme notion de « a vraiment utilise l'appli » partout dans
+// ce fichier.
+//
+// VOLONTAIREMENT COTE NAVIGATEUR, DONC CONTOURNABLE EN VIDANT LE CACHE —
+// choix assume : a cette echelle (des amis qu'on invite, pas des inconnus
+// cherchant a passer en force), c'est une incitation, pas un verrou. Le
+// durcir couterait le meme risque de faux positifs qu'un plafond par IP
+// partagee (deja discute pour les quotas d'API) pour un gain marginal.
+const SEUIL_ESSAI_GRATUIT = 15;
+
+function nbParisJoues(etat) {
+  if (!etat || typeof etat !== 'object') return 0;
+  return (Array.isArray(etat.h) ? etat.h.length : 0) + (Array.isArray(etat.a) ? etat.a.length : 0);
+}
+
+if (!user) {
+  let etatVisiteur = null;
+  try { etatVisiteur = JSON.parse(rawGet(CLE_ETAT_FEN) || 'null'); } catch (e) {}
+  const n = nbParisJoues(etatVisiteur);
+  if (n >= SEUIL_ESSAI_GRATUIT) {
+    console.log('🔒 essai gratuit termine (' + n + ' paris) — compte requis pour continuer');
+    const boot = document.getElementById('g45-boot');
+    if (boot) {
+      // Lien de soutien (12/09/2026) : compte personnel, pas de plateforme de
+      // dons publique — BET45 n'a que quelques utilisateurs connus, pas des
+      // inconnus, donc pas de statut d'entreprise a declarer pour ca. Propose
+      // en OPTION a cote de la creation de compte, jamais a la place : quelqu'un
+      // qui prefere juste soutenir sans s'engager dans un compte peut le faire
+      // directement, et l'appli reste bloquee tant qu'aucun compte n'existe.
+      boot.innerHTML = '<div style="max-width:380px;text-align:center;padding:20px;font-family:system-ui;">'
+        + '<div style="font-size:22px;font-weight:800;margin-bottom:10px;">🎯 BET45</div>'
+        + '<div style="font-weight:700;margin-bottom:10px;">Essai gratuit terminé</div>'
+        + '<div style="color:#8899aa;font-size:13px;line-height:1.6;margin-bottom:18px;">'
+        + 'Tu as suivi ' + n + ' paris avec BET45 — le maximum en essai libre. '
+        + 'Crée un compte gratuit pour continuer : tes données seront conservées '
+        + 'et synchronisées entre tes appareils.</div>'
+        + '<a href="./login.html" style="display:inline-block;padding:11px 22px;border-radius:9px;'
+        + 'background:#2563eb;color:#fff;text-decoration:none;font-weight:700;font-size:14px;">'
+        + 'Créer mon compte</a>'
+        + '<div style="color:#5c6b85;font-size:11px;margin:16px 0 4px;">— ou —</div>'
+        + '<a href="https://paypal.me/touraineantoine" target="_blank" rel="noopener" '
+        + 'style="display:inline-block;color:#8899aa;text-decoration:underline;font-size:12px;">'
+        + 'Tu préfères juste soutenir le projet ?</a></div>';
+    }
+    // On ne charge PAS app.js : rien ne doit rester utilisable derriere ce mur,
+    // sinon l'ecran ne serait qu'une suggestion ignorable.
+    throw new Error('essai gratuit termine');
+  }
+}
+
 let pushTimer = null;
 let lastPushed = null;
 
@@ -428,6 +490,16 @@ window.addEventListener('pagehide', flush);
 window.addEventListener('beforeunload', flush);
 
 window._g45User = user;
+// Statut « soutien » (12/09/2026) : charge une fois au demarrage, pour que
+// Competitions puisse le lire de facon synchrone sans requete Supabase a
+// chaque ouverture d'onglet. `false` par defaut — un visiteur, une erreur
+// reseau, ou un compte non soutenu ferment tous sur la meme valeur, jamais
+// l'inverse : en cas de doute, on ne debloque pas.
+window._g45Soutien = false;
+if (user) {
+  try { window._g45Soutien = await chargerSoutien(user.id); }
+  catch (e) { console.warn('statut soutien non charge :', e); }
+}
 window._g45Deconnexion = async () => {
   if (user) await flush();
   await deconnexion();
@@ -576,7 +648,7 @@ window._g45ImporterEtat = (json) => { rawSet(CLE_ETAT_FEN, typeof json === 'stri
 msg('Démarrage de l\'application…');
 
 const s = document.createElement('script');
-s.src = './app.js?v=20260910a';
+s.src = './app.js?v=20260912d';
 
 s.onerror = () => {
   msg('❌ échec du chargement de app.js');
