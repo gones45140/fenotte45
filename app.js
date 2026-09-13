@@ -27904,6 +27904,23 @@ window.g45LoadMatchAI=g45LoadMatchAI;
 function g45YT(q){ window.open('https://www.youtube.com/results?search_query='+encodeURIComponent(q),'_blank'); }
 window.g45YT=g45YT;
 async function _g45MultiAI(box, boxId, sys, facts, title){
+  /* ═══ QUATRIEME PORTE FERMEE (12/09/2026) ═══
+     Trouvee par Antoine sur bet45.fr : le bouton « Analyse IA du match »
+     declenchait la cascade Groq → Gemini → Qwen sans jamais passer par aucune
+     des trois gardes posees aujourd'hui (Tendances, l'IA des fiches club,
+     Competitions). Au moins deux boutons differents y menent
+     (`g45LoadMatchAI` pour le foot, `g45LoadUsAI` pour les sports US et le
+     tennis) — plutot que d'en fermer un et de rater le suivant, le mur est
+     pose ICI, dans la fonction UNIQUE ou part le premier appel reel. Meme
+     regle que les trois autres : visiteur bloque des le depart (voir
+     `_g45AccesPremium()`, `!== true` et non `!x`, memes raisons qu'ailleurs). */
+  if (_g45AccesPremium() !== true) {
+    box.innerHTML = '<div style="background:rgba(10,14,24,.93);border:1px solid rgba(176,124,214,.4);border-radius:10px;padding:16px;text-align:center;">'
+      + '<div style="font-size:12px;color:var(--t3);line-height:1.6;">🔒 Analyse IA — gratuite 30 jours après création de compte, puis avec un petit soutien du projet.</div>'
+      + '<div style="margin-top:10px;">' + _g45BlocPremium() + '</div></div>';
+    box.setAttribute('data-loaded', '1');
+    return;
+  }
   var key=(typeof getGeminiKey==='function')?getGeminiKey():localStorage.getItem('gones45_gemini_key');
   var eaf=function(x){return String(x).replace(/&/g,'&amp;').replace(/</g,'&lt;');};
   try{
