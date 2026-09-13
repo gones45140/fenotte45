@@ -16624,6 +16624,25 @@ async function runFbrefGroq(uid, nom, b64, groqKey, mode, comp) {
      ou déjà sourcées ESPN sont (re)remplies → rafraîchissable à chaque journée.
    - écrit uniquement dans manual_stats_{saison}_… → les autres saisons restent intactes.
    - matching joueurs par nom (même logique que l'import FBref). */
+/* Renvoie l'horodatage (ms) du dernier jour de rafraichissement PASSE ou EGAL
+   a maintenant : le lundi le plus recent pour un championnat, le vendredi le
+   plus recent pour l'Europe — minuit locale ce jour-la. Comparer un dernier
+   remplissage a cette valeur dit s'il faut relancer : plus vieux que le
+   seuil → au moins un jour-repere s'est ecoule depuis, on rafraichit. */
+function _g45DernierJourRafraichissement(cmp) {
+  /* Championnat : mardi et non lundi (12/09, releve par Antoine) — certains
+     championnats jouent desormais un match le lundi soir. Se declencher le
+     lundi a minuit tomberait AVANT ce match, et le rafraichissement manquerait
+     purement et simplement la derniere rencontre de la journee. Le mardi
+     laisse au lundi soir le temps de se terminer. */
+  var jourVoulu = (cmp === 'euro') ? 5 : 2;   // 5 = vendredi, 2 = mardi (0 = dimanche)
+  var d = new Date();
+  var ecart = (d.getDay() - jourVoulu + 7) % 7;
+  d.setDate(d.getDate() - ecart);
+  d.setHours(0, 0, 0, 0);
+  return d.getTime();
+}
+
 async function autoEspnFillSquad(uid, nom, silencieux) {
   /* MODE SILENCIEUX (25/08) : depuis le 25/08 cette fonction est aussi
      declenchee TOUTE SEULE a l'ouverture d'un effectif. Ses alertes, ecrites
@@ -17205,22 +17224,34 @@ async function loadFdSquad(el, nom, teamId, noTerrain, terrainOnly) {
     html += '<div style="font-size:9px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--t3);">👤 Squad · '+nom+' <span style="color:var(--t2);font-weight:500;">('+squad.length+')</span></div>';
     html += '<div style="display:flex;align-items:center;gap:8px;">';
     html += '<div style="font-size:9px;color:var(--t3);">'+(usingSofa?'sofascore':'api-football · 2024-25')+'</div>';
-    /* ═══ REMPLISSAGE AUTOMATIQUE (25/08) ═══
+    /* ═══ REMPLISSAGE AUTOMATIQUE PERIODIQUE (25/08, transforme en hebdo le 12/09) ═══
        Antoine veut que le tableau se remplisse seul, sans cliquer. On reutilise
        `autoEspnFillSquad` — appariement de noms robuste, gestion des gardiens,
        et surtout refus d'ecraser une saisie manuelle deja presente.
-       UNE SEULE FOIS par equipe, saison et competition : c'est une trentaine de
-       requetes, hors de question de les relancer a chaque ouverture. Le drapeau
-       est pose AVANT l'appel, sinon deux rendus rapproches partiraient en
-       double. Et on attend deux secondes, le temps que l'effectif soit
-       reellement en place — la fonction en a besoin pour apparier. */
+
+       PASSAGE A UN VRAI RYTHME HEBDOMADAIRE (12/09) : la version du 25/08 ne se
+       declenchait qu'UNE FOIS pour toujours par equipe/saison/competition — un
+       simple drapeau '1', jamais reexamine ensuite. Les stats se figeaient donc
+       au premier remplissage, journee zero, et ne bougeaient plus jamais meme
+       apres des mois de championnat (releve par Antoine).
+       On memorise desormais la DATE du dernier remplissage plutot qu'un simple
+       drapeau, et on la compare au dernier jour de rafraichissement PASSE :
+       le lundi le plus recent pour un championnat (la plupart des journees se
+       jouent le week-end, tout est joue le lundi matin), le vendredi le plus
+       recent pour l'Europe (les matchs se jouent en semaine, le mardi au
+       jeudi generalement — vendredi laisse le temps a tout d'etre termine).
+       Si ce jour-repere est plus recent que le dernier remplissage enregistre,
+       on relance — au maximum une fois par passage de ce jour, jamais a
+       chaque ouverture. */
     (function(){
       try{
         var _cmp = window['_compMode_'+uid] || 'league';
         var _fl  = 'g45autoespn_' + saisonKey((sofaId||afId||nom||'0') + '_' + _cmp);
-        if(localStorage.getItem(_fl) === '1') return;
+        var _seuil = _g45DernierJourRafraichissement(_cmp);
+        var _dernier = parseInt(localStorage.getItem(_fl) || '0', 10) || 0;
+        if(_dernier >= _seuil) return;
         if(typeof autoEspnFillSquad !== 'function') return;
-        localStorage.setItem(_fl, '1');
+        localStorage.setItem(_fl, String(Date.now()));
         setTimeout(function(){
           try{ autoEspnFillSquad(uid, nom, true); }catch(e){}
         }, 2000);
@@ -17231,7 +17262,14 @@ async function loadFdSquad(el, nom, teamId, noTerrain, terrainOnly) {
       /* Une requete pour tout l'effectif, championnat ET Europe (14/08/2026). */
       html += '<button id="btn-apis-auto-'+uid+'" onclick="autoApiSportsFillSquad(\''+uid+'\',\''+nom+'\')" style="display:flex;align-items:center;gap:4px;padding:4px 8px;border-radius:6px;border:1px solid rgba(167,139,250,.35);background:rgba(167,139,250,.12);color:#a78bfa;font-size:9px;font-weight:700;cursor:pointer;" title="Remplit tout l\'effectif en 1 requete api-sports (championnat et Europe separes)">\u26a1 Auto api-sports</button>';
       html += '<button id="btn-espn-auto-'+uid+'" onclick="autoEspnFillSquad(\''+uid+'\',\''+nom+'\')" style="display:flex;align-items:center;gap:4px;padding:4px 8px;border-radius:6px;border:1px solid rgba(30,215,96,.3);background:rgba(30,215,96,.12);color:#1ed760;font-size:9px;font-weight:700;cursor:pointer;" title="Remplir auto depuis ESPN (saison sélectionnée, Championnat) — n\'écrase pas une équipe déjà saisie">⚡ Auto ESPN</button>';
-    html += '<button id="btn-fbref-import-'+uid+'" onclick="importFbrefStats(\''+uid+'\',\''+nom+'\')" style="display:flex;align-items:center;gap:4px;padding:4px 8px;border-radius:6px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.07);color:var(--t2);font-size:9px;font-weight:700;cursor:pointer;">📸 Import FBref</button>';}
+    /* IMPORT FBREF RETIRE (12/09/2026, demande d'Antoine) : bouton + zone de
+       depot de capture d'ecran, deja reserves a l'admin, maintenant masques
+       meme pour lui — l'auto-remplissage api-sports/ESPN suffit desormais
+       pour toutes les equipes. Fonctions JS (`importFbrefStats`,
+       `toggleFbrefComp`, `toggleFbrefMode`, `handleFbrefDrop`,
+       `handleFbrefFileInput`) laissees intactes mais inatteignables : rien
+       n'y mene plus, aucun risque a les avoir gardees. */
+    }
     html += '<button id="btn-admin-lock-'+uid+'" onclick="toggleAdminLock(\''+uid+'\')" style="padding:4px 7px;border-radius:6px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.07);color:var(--t2);font-size:12px;cursor:pointer;" title="Mode admin">'+(localStorage.getItem('gones45_admin')==='1'?'🔓':'🔒')+'</button>';
     html += '<button onclick="refreshSquadCache(\''+nom+'\')" style="display:flex;align-items:center;gap:4px;padding:4px 8px;border-radius:6px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.07);color:var(--t2);font-size:9px;font-weight:700;cursor:pointer;" title="Vider le cache et recharger le squad depuis l\'API">🔄</button>';
     if(localStorage.getItem('gones45_admin')==='1'){
@@ -17281,21 +17319,9 @@ async function loadFdSquad(el, nom, teamId, noTerrain, terrainOnly) {
       +'<button onclick="setCompMode(\''+uid+'\',\'euro\')" style="padding:4px 12px;border-radius:6px;border:1px solid '+(curComp==='euro'?'rgba(240,180,32,.5)':'rgba(255,255,255,.12)')+';background:'+(curComp==='euro'?'rgba(240,180,32,.2)':'rgba(255,255,255,.05)')+';color:'+(curComp==='euro'?'#f0b420':'var(--t3)')+';font-size:11px;font-weight:700;cursor:pointer;">Europe</button>'
       +'</div>';
 
-    // ZONE ADMIN - visible seulement en mode admin
-    var isAdmin = localStorage.getItem('gones45_admin') === '1';
-    html += '<div id="fbref-admin-zone-'+uid+'" style="'+(isAdmin?'':'display:none;') +'">';
-    html += '<div style="margin-bottom:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">'
-      +'<span style="font-size:10px;color:var(--t3);">Comp :</span>'
-      +'<button id="fbref-comp-'+uid+'" data-comp="'+(window['_compMode_'+uid]||'league')+'" onclick="toggleFbrefComp(\''+uid+'\')" style="padding:3px 10px;border-radius:6px;border:1px solid '+(window['_compMode_'+uid]==='euro'?'rgba(240,180,32,.4)':'rgba(77,132,255,.4)')+';background:'+(window['_compMode_'+uid]==='euro'?'rgba(240,180,32,.15)':'rgba(77,132,255,.15)')+';color:'+(window['_compMode_'+uid]==='euro'?'#f0b420':'#4d84ff')+';font-size:10px;font-weight:700;cursor:pointer;">'+(window['_compMode_'+uid]==='euro'?'Europe':'Champ')+'</button>'
-      +'<span style="font-size:10px;color:var(--t3);margin-left:4px;">Mode :</span>'
-      +'<button id="fbref-mode-'+uid+'" data-mode="replace" onclick="toggleFbrefMode(\''+uid+'\')" style="padding:3px 10px;border-radius:6px;border:1px solid rgba(255,120,80,.4);background:rgba(255,120,80,.15);color:#ff7850;font-size:10px;font-weight:700;cursor:pointer;">Remplacer</button>'
-      +'<span style="font-size:9px;color:var(--t3);" id="fbref-mode-hint-'+uid+'">Championnat - saison complete</span>'
-      +'</div>';
-    html += '<div id="fbref-paste-zone-'+uid+'" onclick="document.getElementById(\'fbref-file-'+uid+'\').click()" ondragover="event.preventDefault();this.style.borderColor=\'var(--a)\'" ondragleave="this.style.borderColor=\'rgba(255,255,255,.1)\'" ondrop="handleFbrefDrop(event,\''+uid+'\',\''+nom+'\')" style="border:1.5px dashed rgba(255,255,255,.1);border-radius:8px;padding:10px 14px;margin-bottom:12px;text-align:center;cursor:pointer;transition:border-color .2s;display:flex;align-items:center;justify-content:center;gap:8px;">'
-      +'<span style="font-size:11px;color:var(--t3);">📸 Colle ou glisse un screenshot FBref ici pour importer les stats automatiquement</span>'
-      +'</div>'
-      +'<input type="file" id="fbref-file-'+uid+'" accept="image/*" style="display:none" onchange="handleFbrefFileInput(event,\''+uid+'\',\''+nom+'\')">';
-    html += '</div>'; // fin fbref-admin-zone
+    // ZONE ADMIN — RETIREE (12/09/2026) : ne contenait que les reglages et la
+    // zone de depot propres a l'import FBref, retire juste au-dessus. Rien
+    // d'autre ne s'y trouvait, donc rien d'autre a preserver.
     } // fin if(!terrainOnly)
 
     // TERRAIN + FICHE
