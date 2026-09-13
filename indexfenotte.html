@@ -1373,7 +1373,7 @@
   <button class="ni pc-only" onclick="showTab('t-outils',this)"><span>🔧</span>Outils</button>
   <button class="ni pc-only" onclick="showTab('t-social',this);loadSocialTab();"><span>🤝</span>Social</button>
   <button class="ni pc-only" onclick="showTab('t-stats',this);loadStatsTab();"><span>🧠</span>Stats</button>
-  <button class="ni pc-only" onclick="showTab('t-simu',this);loadSimuTab();"><span>🎮</span>Jeu</button>
+  <button id="btn-jeu-sidebar" class="ni pc-only" onclick="showTab('t-simu',this);loadSimuTab();"><span>🎮</span>Jeu</button>
   <button class="ni pc-only" onclick="showTab('t-links',this)"><span>🔗</span>Liens</button>
   <button class="ni pc-hide-chat" id="btn-plus-menu" onclick="togglePlusMenu()" style="position:relative;"><span>+</span>Plus</button>
 
@@ -1388,7 +1388,7 @@
       <button onclick="showTab('t-outils',$i('btn-plus-menu'));togglePlusMenu();" style="display:flex;align-items:center;gap:12px;padding:13px 16px;width:100%;background:none;border:none;border-bottom:1px solid var(--b1);color:var(--t1);font-size:13px;font-weight:600;cursor:pointer;text-align:left;"><span style="font-size:17px;">🔧</span>Outils</button>
       <button onclick="showTab('t-social',$i('btn-plus-menu'));togglePlusMenu();loadSocialTab();" style="display:flex;align-items:center;gap:12px;padding:13px 16px;width:100%;background:none;border:none;border-bottom:1px solid var(--b1);color:var(--t1);font-size:13px;font-weight:600;cursor:pointer;text-align:left;"><span style="font-size:17px;">🤝</span>Social</button>
       <button onclick="showTab('t-stats',$i('btn-plus-menu'));togglePlusMenu();loadStatsTab();" style="display:flex;align-items:center;gap:12px;padding:13px 16px;width:100%;background:none;border:none;border-bottom:1px solid var(--b1);color:var(--t1);font-size:13px;font-weight:600;cursor:pointer;text-align:left;"><span style="font-size:17px;">🧠</span>Stats</button>
-      <button onclick="showTab('t-simu',$i('btn-plus-menu'));togglePlusMenu();loadSimuTab();" style="display:flex;align-items:center;gap:12px;padding:13px 16px;width:100%;background:none;border:none;border-bottom:1px solid var(--b1);color:var(--t1);font-size:13px;font-weight:600;cursor:pointer;text-align:left;"><span style="font-size:17px;">🎮</span>Jeu</button>
+      <button id="btn-jeu-plus" onclick="showTab('t-simu',$i('btn-plus-menu'));togglePlusMenu();loadSimuTab();" style="display:flex;align-items:center;gap:12px;padding:13px 16px;width:100%;background:none;border:none;border-bottom:1px solid var(--b1);color:var(--t1);font-size:13px;font-weight:600;cursor:pointer;text-align:left;"><span style="font-size:17px;">🎮</span>Jeu</button>
       <button onclick="showTab('t-links',$i('btn-plus-menu'));togglePlusMenu();" style="display:flex;align-items:center;gap:12px;padding:13px 16px;width:100%;background:none;border:none;border-bottom:1px solid var(--b1);color:var(--t1);font-size:13px;font-weight:600;cursor:pointer;text-align:left;"><span style="font-size:17px;">🔗</span>Liens</button>
       <button onclick="showTab('t-chat',$i('btn-plus-menu'));togglePlusMenu();" style="display:flex;align-items:center;gap:12px;padding:13px 16px;width:100%;background:none;border:none;border-bottom:1px solid var(--b1);color:var(--t1);font-size:13px;font-weight:600;cursor:pointer;text-align:left;"><span style="font-size:17px;">💬</span>Chat IA</button>
     </div>
@@ -1399,7 +1399,7 @@
 <!-- FENOTTE45 : app.js est injecte par auth-guard.js APRES authentification.
      Le ?v= doit changer a CHAQUE deploiement. -->
 <script src="social.js?v=20260826n"></script>
-<script type="module" src="auth-guard.js?v=20260912e"></script>
+<script type="module" src="auth-guard.js?v=20260912f"></script>
 
 
 

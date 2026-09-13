@@ -4222,6 +4222,24 @@ function injectRefreshButton() {
 }
 if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', injectRefreshButton); } else { injectRefreshButton(); }
 
+/* ═══════════ MASQUER « JEU » POUR LES NON-ADMINISTRATEURS (12/09/2026) ═══════════
+   Demande d'Antoine, redite plusieurs fois — deux boutons y menaient
+   (le menu principal ET le menu « plus » du mobile), et une correction
+   passee n'avait probablement touche que l'un des deux, d'ou la repetition
+   de la demande. Les deux sont masques ici ensemble, au meme endroit,
+   pour que ca ne se reproduise plus. Meme principe que le masquage
+   d'Outils/Cles : verifie au demarrage, pas de verrou cote serveur — il n'y
+   a rien de sensible derriere, juste une fonctionnalite qu'Antoine ne veut
+   montrer qu'a lui-meme pour l'instant. */
+function g45JeuMasquerAdmin() {
+  if (typeof g45EstAdmin === 'function' && g45EstAdmin()) return;
+  ['btn-jeu-sidebar', 'btn-jeu-plus'].forEach(function (id) {
+    var b = document.getElementById(id);
+    if (b) b.style.display = 'none';
+  });
+}
+if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', g45JeuMasquerAdmin); } else { g45JeuMasquerAdmin(); }
+
 /* ── PARIS ── */
 function pari(isS){
   var n,b,c,m,target,type,l=1,sport='',comp='',heure='',date='';
@@ -22092,6 +22110,7 @@ function calcSaisonStats(matchesRaw, teamId) {
   var matches = matchesRaw.slice().sort(function(a,b){ return new Date(b.utcDate)-new Date(a.utcDate); });
   var stats = {
     n:0, over05:0, over15:0, over25:0, over35:0, over45:0, bts:0,
+    handM15:0, handP15:0,
     domW:0, domD:0, domL:0, domN:0, extW:0, extD:0, extL:0, extN:0,
     butsM:0, butsE:0,
     cleanSheet:0, failedToScore:0, scoredFirst:0,
@@ -22129,6 +22148,19 @@ function calcSaisonStats(matchesRaw, teamId) {
     }
     stats.butsM += teamGoals;
     stats.butsE += oppGoals;
+    /* ═══ HANDICAP (12/09/2026, demande d'Antoine) ═══
+       Rien a recuperer de plus : `teamGoals` et `oppGoals` existaient deja par
+       match dans cette meme boucle, juste au-dessus. L'ecart entre les deux
+       EST le handicap — on ne fait que le lire.
+       Deux lignes seulement, sur le meme modele que Over/Under (.5 partout
+       pour eviter le push, le cas ou le score exact tombe pile sur la ligne) :
+         Hand -1.5 : l'equipe gagne avec 2 buts d'ecart ou plus (couvre un
+                     handicap donne favori de -1.5).
+         Hand +1.5 : l'equipe ne perd pas de plus d'un but (couvre un handicap
+                     donne outsider de +1.5) — victoire, nul, ou defaite d'1 but. */
+    var ecart = teamGoals - oppGoals;
+    if (ecart >= 2) stats.handM15++;
+    if (ecart >= -1) stats.handP15++;
 
     // Menait à la pause (approximation de « a marqué en premier »)
     if(_fh){
@@ -22150,6 +22182,8 @@ function calcSaisonStats(matchesRaw, teamId) {
       if(total>3.5) stats.domOver35=(stats.domOver35||0)+1; else stats.domUnder35=(stats.domUnder35||0)+1;
       if(total>4.5) stats.domOver45=(stats.domOver45||0)+1; else stats.domUnder45=(stats.domUnder45||0)+1;
       if(hg>0&&ag>0) stats.domBts=(stats.domBts||0)+1;
+      if(ecart>=2) stats.domHandM15=(stats.domHandM15||0)+1;
+      if(ecart>=-1) stats.domHandP15=(stats.domHandP15||0)+1;
     } else {
       stats.extN++;
       if(won) stats.extW++; else if(draw) stats.extD++; else stats.extL++;
@@ -22159,6 +22193,8 @@ function calcSaisonStats(matchesRaw, teamId) {
       if(total>3.5) stats.extOver35=(stats.extOver35||0)+1; else stats.extUnder35=(stats.extUnder35||0)+1;
       if(total>4.5) stats.extOver45=(stats.extOver45||0)+1; else stats.extUnder45=(stats.extUnder45||0)+1;
       if(hg>0&&ag>0) stats.extBts=(stats.extBts||0)+1;
+      if(ecart>=2) stats.extHandM15=(stats.extHandM15||0)+1;
+      if(ecart>=-1) stats.extHandP15=(stats.extHandP15||0)+1;
     }
 
     // 5 derniers matchs
@@ -22786,7 +22822,7 @@ function renderSaisonsChart(el, results, nom) {
     html += '<div style="font-size:10px;color:var(--t3);">'+st.n+' matchs'+(stC?' · '+champMatches.length+' champ.':'')+'</div>';
     html += '</div>';
     // Sélecteur stats rapides
-    var QUICK_STATS = ['O0.5','O1.5','O2.5','O3.5','O4.5','U0.5','U1.5','U2.5','U3.5','U4.5','BTS','CS','WIN','LOSE','1N','N2'];
+    var QUICK_STATS = ['O0.5','O1.5','O2.5','O3.5','O4.5','U0.5','U1.5','U2.5','U3.5','U4.5','BTS','CS','H-1.5','H+1.5','WIN','LOSE','1N','N2'];
     if(!window._quickStats) window._quickStats = ['O2.5','BTS'];
     html += '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px;">';
     QUICK_STATS.forEach(function(qs){
@@ -22833,8 +22869,8 @@ function renderSaisonsChart(el, results, nom) {
     });
     html += '</div>';
     // Stats filtrées
-    var sf = _statFilter==='dom' ? {n:st.domN, over05:st.domOver05||0, over15:st.domOver15||0, over25:st.domOver25||0, over35:st.domOver35||0, over45:st.domOver45||0, under05:st.domUnder05||0, under15:st.domUnder15||0, under25:st.domUnder25||0, under35:st.domUnder35||0, under45:st.domUnder45||0, bts:st.domBts||0}
-           : _statFilter==='ext' ? {n:st.extN, over05:st.extOver05||0, over15:st.extOver15||0, over25:st.extOver25||0, over35:st.extOver35||0, over45:st.extOver45||0, under05:st.extUnder05||0, under15:st.extUnder15||0, under25:st.extUnder25||0, under35:st.extUnder35||0, under45:st.extUnder45||0, bts:st.extBts||0}
+    var sf = _statFilter==='dom' ? {n:st.domN, over05:st.domOver05||0, over15:st.domOver15||0, over25:st.domOver25||0, over35:st.domOver35||0, over45:st.domOver45||0, under05:st.domUnder05||0, under15:st.domUnder15||0, under25:st.domUnder25||0, under35:st.domUnder35||0, under45:st.domUnder45||0, bts:st.domBts||0, handM15:st.domHandM15||0, handP15:st.domHandP15||0}
+           : _statFilter==='ext' ? {n:st.extN, over05:st.extOver05||0, over15:st.extOver15||0, over25:st.extOver25||0, over35:st.extOver35||0, over45:st.extOver45||0, under05:st.extUnder05||0, under15:st.extUnder15||0, under25:st.extUnder25||0, under35:st.extUnder35||0, under45:st.extUnder45||0, bts:st.extBts||0, handM15:st.extHandM15||0, handP15:st.extHandP15||0}
            : st;
     var sfN = sf.n||1;
 
@@ -22852,6 +22888,8 @@ function renderSaisonsChart(el, results, nom) {
       {key:'U4.5',  label:'Under 4.5', v:pct(sf.under45||0,sfN),     color:'#e0f2fe'},
       {key:'BTS',   label:'BTS Oui',   v:pct(sf.bts,sfN),            color:'#a78bfa'},
       {key:'CS',    label:'Clean Sheet',v:pct(st.cleanSheet,st.n),   color:'#1ed760'},
+      {key:'H-1.5', label:'Hand -1.5', v:pct(sf.handM15,sfN),        color:'#f472b6'},
+      {key:'H+1.5', label:'Hand +1.5', v:pct(sf.handP15,sfN),        color:'#38bdf8'},
     ];
     var activeRows = ALL_STAT_ROWS.filter(function(r){ return !window._quickStats || window._quickStats.length===0 || window._quickStats.indexOf(r.key)>=0; });
     html += '<div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#4f5d88;margin-bottom:8px;">Stats sélectionnées</div>';
