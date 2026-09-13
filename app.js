@@ -2129,7 +2129,20 @@ function renderAdvancedCharts(paris, bankroll) {
    du fichier le rappelle, et un avertissement s'affiche a l'export. */
 var _G45_CLES = ['gones45_apisports_key','gones45_apifootball_key','gones45_fdorg_key',
   'gones45_rapidapi_key','gones45_gemini_key','gones45_google_key','gones45_mistral_key',
-  'gones45_tavily_key','gones45_groq_key','gones45_odds_key','gones45_admin'];
+  'gones45_tavily_key','gones45_admin',
+  /* 12/09/2026, demande d'Antoine : le token GitHub vivait a part, oblige de
+     passer par la console ou par le champ dedie dans Cles — desormais inclus
+     dans la meme sauvegarde/restauration que les autres cles. */
+  'gones45_github_token'];
+  /* RETIRES LE MEME JOUR : 'gones45_groq_key' et 'gones45_odds_key'. Aucun
+     champ de l'interface n'ecrit dans l'une ou l'autre — 'gones45_odds_key'
+     n'est meme lue nulle part (les cotes passent par le Worker sans
+     condition depuis avant ce chantier). 'gones45_groq_key' est lue par
+     `g45IaCle()` plus bas, mais toujours vide en pratique puisque rien ne
+     l'alimente : la vraie cle Groq d'un utilisateur avance vit dans
+     'gones45_gemini_key' (nom trompeur, voir son commentaire). Les garder
+     ici n'exportait ni ne restaurait jamais rien de reel — seulement du
+     bruit dans le fichier telecharge. */
 function g45ClesExport(){
   var o = {}, n = 0;
   _G45_CLES.forEach(function(k){
@@ -2195,7 +2208,18 @@ if (typeof document !== 'undefined') {
    ON NE CHANGE QUE L'ADRESSE, pas la forme des appels : une premiere tentative
    de reecrire les dix-huit appels d'un coup a casse leur structure. L'en-tete
    Authorization part donc toujours, vide quand il n'y a pas de cle locale — le
-   Worker l'ignore et met la sienne. */
+   Worker l'ignore et met la sienne.
+
+   CONSTAT DU 12/09 : cette « cle locale prioritaire » ne se declenche en
+   pratique JAMAIS. `gones45_groq_key`, lue ci-dessous, n'est ecrite par AUCUN
+   champ de l'interface — la vraie cle qu'un utilisateur avance saisit vit dans
+   'gones45_gemini_key' (nom trompeur, servait a l'origine a Gemini avant que
+   Groq ne la recupere). Consequence : meme un utilisateur avec une cle Groq
+   personnelle passe toujours par le Worker, jamais en direct. Ce n'est pas
+   dangereux — le Worker fonctionne tres bien pour tout le monde — mais ce
+   n'est pas non plus ce que ce commentaire annonce. Non corrige pour l'instant
+   faute de demande en ce sens ; le signaler ici pour la prochaine fois que
+   quelqu'un se demande pourquoi ca ne bascule jamais en direct. */
 function g45IaCle(){ try { return localStorage.getItem('gones45_groq_key') || ''; } catch (e) { return ''; } }
 
 /* ═══════════ CLES SPORTIVES : LE WORKER PREND LE RELAIS (11/09/2026) ═══════════
@@ -44737,10 +44761,25 @@ function g45OutilsRanger() {
   _g45DeplacerLanceurs();   /* avant tout classement, sinon on masquerait un bloc parti */
   g45SyncMasquerAdmin();
   var hote = document.getElementById('t-outils');
-  if (!hote || document.getElementById('g45-outils-nav')) return;
+  if (!hote) return;
+  var navExistant = document.getElementById('g45-outils-nav');
+  var estAdminMtn = (typeof g45EstAdmin === 'function') && g45EstAdmin();
+  /* BUG CORRIGE LE 12/09 : le garde-fou d'origine sautait la reconstruction des
+     qu'un nav existait deja, quel que soit le statut admin — pose pour eviter
+     de reconstruire (et de reinitialiser la section affichee) a CHAQUE clic
+     dans Outils, cette fonction etant rejouee toutes les 120 ms des qu'on y
+     est. Effet de bord trouve par Antoine : debloquer l'admin PENDANT que
+     Outils etait deja ouvert (ou avait deja ete ouvert une fois dans la
+     session) ne faisait jamais apparaitre Cles — seul un rechargement complet
+     de la page forcait une vraie reconstruction. On memorise desormais le
+     statut au moment de la construction (`dataset.admin`) et on ne saute que
+     si RIEN n'a change, admin y compris. */
+  if (navExistant && navExistant.dataset.admin === String(estAdminMtn)) return;
+  if (navExistant) navExistant.remove();
 
   var nav = document.createElement('div');
   nav.id = 'g45-outils-nav';
+  nav.dataset.admin = String(estAdminMtn);
   nav.style.cssText = 'display:flex;gap:5px;flex-wrap:wrap;margin:0 0 14px;';
   nav.innerHTML = _G45_OUTILS_SEC.filter(_g45SecVisible).map(function (s) {
     return '<button data-sec="' + s.id + '" onclick="g45OutilsSection(\'' + s.id + '\')" '
@@ -44753,8 +44792,11 @@ function g45OutilsRanger() {
   try { mem = localStorage.getItem('g45_outils_sec'); } catch (e) {}
   /* Un non-administrateur qui avait « Clés » en memoire (ou qui l'a encore d'une
      version precedente) retombe sur Application : sans ca il ouvrirait les Outils
-     sur une section dont aucun onglet n'existe plus, donc sur du vide. */
+     sur une section dont aucun onglet n'existe plus, donc sur du vide. Meme
+     chose si l'admin vient d'etre REVOQUE en cours de session : la section
+     actuellement affichee peut avoir disparu, il faut retomber sur Application. */
   if (mem && !_g45SecVisible({ id: mem })) mem = null;
+  if (!mem && _g45OutilsSec && _g45SecVisible({ id: _g45OutilsSec })) mem = _g45OutilsSec;
   g45OutilsSection(mem || 'app');
 }
 window.g45OutilsRanger = g45OutilsRanger;
