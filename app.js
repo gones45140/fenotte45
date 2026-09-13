@@ -4273,6 +4273,33 @@ function g45JeuMasquerAdmin() {
 }
 if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', g45JeuMasquerAdmin); } else { g45JeuMasquerAdmin(); }
 
+/* ═══════════ REPARATION DES CLES CORROMPUES PAR LE TEXTE D'AFFICHAGE (12/09/2026) ═══════════
+   Trouve par Antoine sur le PSG puis l'Inter Milan : football-data, api-football,
+   RapidAPI et le token GitHub pouvaient enregistrer LITTERALEMENT le texte
+   d'affichage « (clé enregistrée) » / « (token enregistré) » comme si c'etait la
+   vraie valeur, faute d'un garde-fou que Google et Mistral avaient deja (voir
+   `saveFdorgKey` etc. plus haut, desormais corrigees). Corriger ces fonctions
+   n'efface pas ce qui est deja enregistre — cette verification, executee une
+   fois au demarrage, retire ces valeurs devenues du texte inutilisable. Une
+   cle ainsi nettoyee redevient simplement absente : `g45CleOuWorker` retombe
+   alors sur le Worker, exactement comme si elle n'avait jamais ete saisie. */
+(function () {
+  var placeholders = {
+    'gones45_fdorg_key':      '(clé enregistrée)',
+    'gones45_apifootball_key':'(clé enregistrée)',
+    'gones45_rapidapi_key':   '(clé enregistrée)',
+    'gones45_github_token':   '(token enregistré)'
+  };
+  Object.keys(placeholders).forEach(function (k) {
+    try {
+      if (localStorage.getItem(k) === placeholders[k]) {
+        localStorage.removeItem(k);
+        console.warn('cle corrompue retiree : ' + k + ' contenait le texte d\'affichage au lieu d\'une vraie cle');
+      }
+    } catch (e) {}
+  });
+})();
+
 /* ── PARIS ── */
 function pari(isS){
   var n,b,c,m,target,type,l=1,sport='',comp='',heure='',date='';
@@ -7517,6 +7544,8 @@ function getApiFootballKey(){ return g45CleOuWorker('gones45_apifootball_key'); 
 
 function saveGithubToken(){
   var v = ($i('github-token-input')||{}).value||'';
+  /* 12/09/2026 : meme garde-fou manquant, avec le texte propre a ce champ. */
+  if(v==='(token enregistré)'){ document.getElementById('github-token-status').textContent='✓ Token enregistré'; document.getElementById('github-token-status').style.color='#1ed760'; return; }
   if(!v){ document.getElementById('github-token-status').textContent='Token vide'; return; }
   localStorage.setItem('gones45_github_token', v.trim());
   document.getElementById('github-token-status').textContent='✓ Token enregistré';
@@ -7658,6 +7687,8 @@ async function saveStatToGithub(key, value) {
 
 function saveRapidApiKey(){
   var v = ($i('rapidapi-key-input')||{}).value||'';
+  /* 12/09/2026 : meme garde-fou manquant que football-data, meme cause. */
+  if(v==='(clé enregistrée)'){ document.getElementById('rapidapi-key-status').textContent='✓ Clé enregistrée'; document.getElementById('rapidapi-key-status').style.color='#1ed760'; return; }
   if(!v){ document.getElementById('rapidapi-key-status').textContent='Clé vide'; return; }
   localStorage.setItem('gones45_rapidapi_key', v.trim());
   document.getElementById('rapidapi-key-status').textContent='✓ Clé enregistrée';
@@ -7666,6 +7697,8 @@ function saveRapidApiKey(){
 
 function saveApiFootballKey(){
   var v = ($i('apifootball-key-input')||{}).value||'';
+  /* 12/09/2026 : meme garde-fou manquant que football-data, meme cause. */
+  if(v==='(clé enregistrée)'){ document.getElementById('apifootball-key-status').textContent='✓ Clé sauvegardée'; document.getElementById('apifootball-key-status').style.color='#1ed760'; return; }
   if(!v){ document.getElementById('apifootball-key-status').textContent='Clé vide'; return; }
   localStorage.setItem('gones45_apifootball_key', v.trim());
   document.getElementById('apifootball-key-status').textContent='✓ Clé sauvegardée';
@@ -7930,6 +7963,15 @@ async function fdFetch(path) {
 
 function saveFdorgKey(){
   var v = ($i('fdorg-key-input')||{}).value||'';
+  /* 12/09/2026 : garde-fou manquant, exactement celui que g45SaveGoogleKey et
+     g45SaveMistralKey ont deja. Sans lui, cliquer Enregistrer sans avoir rien
+     retape sauvegardait le texte d'affichage « (clé enregistrée) » COMME SI
+     c'etait la vraie cle — ecrasant la veritable cle par du texte inutilisable.
+     C'est exactement ce qui est arrive : ce texte est parti tel quel vers le
+     Worker, qui l'a refuse (400), et football-data s'est retrouve injoignable
+     jusqu'a ce qu'on le retrouve via un vrai journal d'erreurs (PSG, puis
+     Inter Milan, releves par Antoine). */
+  if(v==='(clé enregistrée)'){ showFdorgStatus('✓ Clé sauvegardée','#1ed760'); return; }
   if(!v){ showFdorgStatus('Clé vide','#ff4545'); return; }
   localStorage.setItem('gones45_fdorg_key', v.trim());
   showFdorgStatus('✓ Clé sauvegardée','#1ed760');
@@ -15144,6 +15186,8 @@ function getApiFootballKey(){ return g45CleOuWorker('gones45_apifootball_key'); 
 
 function saveGithubToken(){
   var v = ($i('github-token-input')||{}).value||'';
+  /* 12/09/2026 : meme garde-fou manquant, avec le texte propre a ce champ. */
+  if(v==='(token enregistré)'){ document.getElementById('github-token-status').textContent='✓ Token enregistré'; document.getElementById('github-token-status').style.color='#1ed760'; return; }
   if(!v){ document.getElementById('github-token-status').textContent='Token vide'; return; }
   localStorage.setItem('gones45_github_token', v.trim());
   document.getElementById('github-token-status').textContent='✓ Token enregistré';
@@ -15217,6 +15261,8 @@ async function saveStatToGithub(key, value) {
 
 function saveRapidApiKey(){
   var v = ($i('rapidapi-key-input')||{}).value||'';
+  /* 12/09/2026 : meme garde-fou manquant que football-data, meme cause. */
+  if(v==='(clé enregistrée)'){ document.getElementById('rapidapi-key-status').textContent='✓ Clé enregistrée'; document.getElementById('rapidapi-key-status').style.color='#1ed760'; return; }
   if(!v){ document.getElementById('rapidapi-key-status').textContent='Clé vide'; return; }
   localStorage.setItem('gones45_rapidapi_key', v.trim());
   document.getElementById('rapidapi-key-status').textContent='✓ Clé enregistrée';
@@ -15225,6 +15271,8 @@ function saveRapidApiKey(){
 
 function saveApiFootballKey(){
   var v = ($i('apifootball-key-input')||{}).value||'';
+  /* 12/09/2026 : meme garde-fou manquant que football-data, meme cause. */
+  if(v==='(clé enregistrée)'){ document.getElementById('apifootball-key-status').textContent='✓ Clé sauvegardée'; document.getElementById('apifootball-key-status').style.color='#1ed760'; return; }
   if(!v){ document.getElementById('apifootball-key-status').textContent='Clé vide'; return; }
   localStorage.setItem('gones45_apifootball_key', v.trim());
   document.getElementById('apifootball-key-status').textContent='✓ Clé sauvegardée';
@@ -15310,6 +15358,15 @@ async function fdFetch(path) {
 
 function saveFdorgKey(){
   var v = ($i('fdorg-key-input')||{}).value||'';
+  /* 12/09/2026 : garde-fou manquant, exactement celui que g45SaveGoogleKey et
+     g45SaveMistralKey ont deja. Sans lui, cliquer Enregistrer sans avoir rien
+     retape sauvegardait le texte d'affichage « (clé enregistrée) » COMME SI
+     c'etait la vraie cle — ecrasant la veritable cle par du texte inutilisable.
+     C'est exactement ce qui est arrive : ce texte est parti tel quel vers le
+     Worker, qui l'a refuse (400), et football-data s'est retrouve injoignable
+     jusqu'a ce qu'on le retrouve via un vrai journal d'erreurs (PSG, puis
+     Inter Milan, releves par Antoine). */
+  if(v==='(clé enregistrée)'){ showFdorgStatus('✓ Clé sauvegardée','#1ed760'); return; }
   if(!v){ showFdorgStatus('Clé vide','#ff4545'); return; }
   localStorage.setItem('gones45_fdorg_key', v.trim());
   showFdorgStatus('✓ Clé sauvegardée','#1ed760');
@@ -21828,6 +21885,14 @@ async function loadTeamSaisons() {
       if(_finA.length) { results[keyA] = _finA.map(function(mm){ return espnToFdMatch(mm, espNameA, teamId); }); espnOk = true; }
       var _finB = (espB && espB.matches) ? espB.matches.filter(function(mm){ return mm.completed; }) : [];
       if(_finB.length) { results[keyB] = _finB.map(function(mm){ return espnToFdMatch(mm, espNameB, teamId); }); espnOk = true; }
+      /* DIAGNOSTIC (12/09/2026) : releve par Antoine sur le PSG, qui tombe
+         sur l'ecran de secours alors que ses identifiants (football-data ET
+         ESPN) sont corrects dans le code. La panne est donc reseau, pas de
+         configuration — ce journal dira, la prochaine fois, si ESPN a repondu
+         sans aucun match, ou pas repondu du tout. */
+      if(!espnOk) console.warn('Saisons ESPN vide pour "'+nom+'" ('+lg+') — annees '+yA+'/'+yB
+        +' : espA='+(espA?(espA.matches?espA.matches.length+' matchs recus':'pas de champ matches'):'reponse nulle')
+        +', espB='+(espB?(espB.matches?espB.matches.length+' matchs recus':'pas de champ matches'):'reponse nulle'));
       /* Les matchs à venir sont déjà dans la réponse ESPN : on les met de côté pour les
          afficher, au lieu de les jeter comme depuis le filtre `completed`. */
       var _espnT=(espA&&espA.team)||(espB&&espB.team)||null;
@@ -21988,7 +22053,10 @@ async function loadTeamSaisons() {
       ]);
       if(dataA && dataA.matches && dataA.matches.length) results[String(_sA)] = dataA.matches;
       if(dataB && dataB.matches && dataB.matches.length) results[String(_sB)] = dataB.matches;
-    } catch(fdErr) {}
+      if(!Object.keys(results).length) console.warn('Saisons football-data vide pour "'+nom+'" (id '+teamId+') — annees '+_sA+'/'+_sB
+        +' : dataA='+(dataA?(dataA.matches?dataA.matches.length+' matchs recus':'pas de champ matches'):'reponse nulle')
+        +', dataB='+(dataB?(dataB.matches?dataB.matches.length+' matchs recus':'pas de champ matches'):'reponse nulle'));
+    } catch(fdErr) { console.warn('Saisons football-data en erreur pour "'+nom+'" :', fdErr); }
   }
   
   var saisons = Object.keys(results).sort().reverse();
