@@ -23130,8 +23130,11 @@ async function loadTeamAI(nom) {
      Tendances et Competitions — voir `_g45AccesPremium()`, plus bas dans le
      fichier mais declaree une fois pour les trois (les fonctions se hissent
      en haut de leur portee en JavaScript, l'ordre d'ecriture n'a pas
-     d'importance ici). */
-  if (!_g45AccesPremium()) {
+     d'importance ici). VISITEUR BLOQUE ICI : `_g45AccesPremium()` renvoie
+     `null` pour lui, et `!== true` l'attrape avec `false` — jamais `!x`, qui
+     traiterait `null` comme faux ET vrai selon le contexte de facon
+     incoherente entre les trois fonctions (piege releve en testant). */
+  if (_g45AccesPremium() !== true) {
     box.innerHTML = '<div style="color:#8899aa;font-size:12px;line-height:1.6;">'
       + '🔒 Analyse IA — gratuite 30 jours après création de compte, puis avec un petit soutien du projet. '
       + _g45BlocPremium() + '</div>';
@@ -26984,21 +26987,27 @@ window.g45TrSel=g45TrSel; window.g45TrDay=g45TrDay;
 
 /* ═══ ACCES « PREMIUM » PARTAGE — TENDANCES, ANALYSE IA DES FICHES, COMPETITIONS (12/09/2026) ═══
    Trois fonctions differentes verifiaient la meme regle avec trois copies de la
-   meme logique, dont deux etaient plus strictes que la troisieme (Tendances et
-   l'IA des fiches bloquaient a la creation de compte, Competitions seulement
-   apres 30 jours). Antoine a tranche : les trois suivent desormais LA MEME
-   regle, ecrite UNE fois ici — plus de risque qu'elles divergent au prochain
-   changement.
+   meme logique. Unifiees ici pour la partie qui EST commune : une fois un
+   compte cree, 30 jours pleins, puis statut « soutien » requis. Sur gones45
+   (`window._g45User === undefined`, aucune notion de compte sur ce depot),
+   jamais de restriction.
 
-   Regle : gratuit pour un visiteur SUR FENOTTE45 tant qu'il reste sous le mur
-   general des paris (ce mur bloque tout AVANT que app.js ne charge, donc s'il
-   est ici c'est qu'il est dessous). Gratuit sans limite de temps une fois un
-   compte cree, pendant 30 jours pleins. Passe ce delai, il faut le statut
-   « soutien ». Sur gones45 (`window._g45User === undefined`, aucune notion de
-   compte sur ce depot), jamais de restriction. */
+   LE CAS VISITEUR N'EST PAS TRANCHE ICI, et c'est volontaire : premiere
+   version, j'avais mis `true` (ouvert) en supposant que le mur general des
+   paris finirait par l'arreter — faux pour quelqu'un qui n'ouvre jamais un
+   pari et se contente de parcourir des fiches club en boucle, ce que le
+   mur ne compte jamais (Antoine, releve le jour meme). Or Competitions et les
+   deux fonctions IA n'ont PAS la meme bonne reponse pour ce visiteur :
+   Competitions doit rester ouvert (choix explicite d'Antoine, peu couteux,
+   cache par contenu), Tendances et l'IA des fiches doivent rester FERMEES
+   (c'est exactement ce qu'elles existent pour empecher — un visiteur qui ne
+   parie jamais ne doit pas pouvoir consommer Tavily/Groq indefiniment).
+   La fonction renvoie donc `null` pour un visiteur : chaque appelant decide
+   ce que ce cas veut dire chez lui, au lieu qu'un seul choix soit impose aux
+   trois. */
 function _g45AccesPremium() {
   if (window._g45User === undefined) return true;   // gones45 : pas de compte, pas de mur
-  if (window._g45User === null) return true;         // visiteur fenotte45 : couvert par le mur general
+  if (window._g45User === null) return null;         // visiteur : chaque appelant decide, voir plus bas
   if (window._g45Soutien) return true;                // statut soutien : jamais de limite
   if (!window._g45User.created_at) return true;       // donnee manquante : ne jamais bloquer par erreur
   var jours = (Date.now() - new Date(window._g45User.created_at).getTime()) / 86400000;
@@ -27021,12 +27030,13 @@ function _g45BlocPremium() {
 
 function loadTendancesTab(){
   var el=document.getElementById('t-tend'); if(!el) return;
-  /* ═══ TENDANCES SUIT L'ACCES PREMIUM PARTAGE (12/09/2026, unifie le meme jour) ═══
-     Meme regle que Compétitions desormais : gratuit sous le mur general pour un
-     visiteur, gratuit 30 jours pleins une fois un compte cree, puis soutien
-     requis. Voir `_g45AccesPremium()` pour le detail — decide en un seul
-     endroit, plus dans trois copies divergentes. */
-  if (!_g45AccesPremium()) {
+  /* ═══ TENDANCES SUIT L'ACCES PREMIUM PARTAGE (12/09/2026, corrige le meme jour) ═══
+     PAS la meme regle que Competitions pour le visiteur : ici il est BLOQUE des
+     le depart (c'est le but de cette fonction), la-bas il reste ouvert. Voir
+     `_g45AccesPremium()` : `null` pour un visiteur, tranche ici avec `!== true`
+     plutot qu'une simple negation, qui traiterait `null` de facon incoherente
+     d'une fonction a l'autre (piege trouve en testant). */
+  if (_g45AccesPremium() !== true) {
     el.innerHTML = '<div style="padding:40px 20px;text-align:center;">'
       + '<div style="font-size:32px;margin-bottom:12px;">🔒</div>'
       + '<div style="font-weight:700;margin-bottom:8px;color:var(--t1);">Tendances réservé aux comptes</div>'
@@ -38776,13 +38786,14 @@ async function loadCompetTab() {
   if (!el) return;
 
   /* ═══ COMPETITIONS SUIT L'ACCES PREMIUM PARTAGE (12/09/2026, unifie le meme jour) ═══
-     Meme regle desormais que Tendances et l'analyse IA des fiches — voir
-     `_g45AccesPremium()` pour le detail unique. Ancienne version : trois
-     copies de ce meme calcul de jours, dont deux plus strictes que celle-ci
-     (bloquaient a la creation du compte au lieu d'apres 30 jours). Antoine a
-     tranche pour la meme regle partout : un seul acces « premium », valable
-     pour les trois fonctions a la fois. */
-  if (!_g45AccesPremium()) {
+     Meme regle desormais que Tendances et l'analyse IA des fiches pour un
+     COMPTE — voir `_g45AccesPremium()` pour le detail unique. Mais PAS pour
+     un visiteur : ici il reste ouvert (choix explicite d'Antoine, couvert par
+     le mur general des paris), a l'inverse de Tendances qui le bloque des le
+     depart. `_g45AccesPremium()` renvoie `null` pour ce cas ; on ne teste
+     donc que l'egalite stricte a `false` — jamais `!x`, qui traiterait `null`
+     comme un blocage ici aussi, exactement l'inverse de ce qui est voulu. */
+  if (_g45AccesPremium() === false) {
     el.innerHTML = '<div style="padding:40px 20px;text-align:center;">'
       + '<div style="font-size:32px;margin-bottom:12px;">🏆</div>'
       + '<div style="font-weight:700;margin-bottom:8px;color:var(--t1);">Mois gratuit terminé</div>'
