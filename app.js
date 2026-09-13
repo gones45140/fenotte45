@@ -23123,6 +23123,20 @@ function renderSaisonsChart(el, results, nom) {
 async function loadTeamAI(nom) {
   var box = document.getElementById('team-ai-content');
   if (!box) return;
+  /* ═══ MEME ACCES PREMIUM PARTAGE (12/09/2026, unifie le meme jour) ═══
+     Trouve par Antoine : cette carte se declenche automatiquement a
+     l'ouverture de N'IMPORTE QUELLE fiche club (Mur, Suivies, bandeau de
+     scores) et tape dans Tavily ET Groq. Suit desormais la meme regle que
+     Tendances et Competitions — voir `_g45AccesPremium()`, plus bas dans le
+     fichier mais declaree une fois pour les trois (les fonctions se hissent
+     en haut de leur portee en JavaScript, l'ordre d'ecriture n'a pas
+     d'importance ici). */
+  if (!_g45AccesPremium()) {
+    box.innerHTML = '<div style="color:#8899aa;font-size:12px;line-height:1.6;">'
+      + '🔒 Analyse IA — gratuite 30 jours après création de compte, puis avec un petit soutien du projet. '
+      + _g45BlocPremium() + '</div>';
+    return;
+  }
   // Brancher le bouton refresh
   var btn = document.getElementById('team-ai-refresh');
   if (btn) { btn.onclick = function(){ loadTeamAI(nom); }; }
@@ -26968,38 +26982,57 @@ window.g45TrPMin=g45TrPMin;
 window.g45TrMin=g45TrMin;
 window.g45TrSel=g45TrSel; window.g45TrDay=g45TrDay;
 
+/* ═══ ACCES « PREMIUM » PARTAGE — TENDANCES, ANALYSE IA DES FICHES, COMPETITIONS (12/09/2026) ═══
+   Trois fonctions differentes verifiaient la meme regle avec trois copies de la
+   meme logique, dont deux etaient plus strictes que la troisieme (Tendances et
+   l'IA des fiches bloquaient a la creation de compte, Competitions seulement
+   apres 30 jours). Antoine a tranche : les trois suivent desormais LA MEME
+   regle, ecrite UNE fois ici — plus de risque qu'elles divergent au prochain
+   changement.
+
+   Regle : gratuit pour un visiteur SUR FENOTTE45 tant qu'il reste sous le mur
+   general des paris (ce mur bloque tout AVANT que app.js ne charge, donc s'il
+   est ici c'est qu'il est dessous). Gratuit sans limite de temps une fois un
+   compte cree, pendant 30 jours pleins. Passe ce delai, il faut le statut
+   « soutien ». Sur gones45 (`window._g45User === undefined`, aucune notion de
+   compte sur ce depot), jamais de restriction. */
+function _g45AccesPremium() {
+  if (window._g45User === undefined) return true;   // gones45 : pas de compte, pas de mur
+  if (window._g45User === null) return true;         // visiteur fenotte45 : couvert par le mur general
+  if (window._g45Soutien) return true;                // statut soutien : jamais de limite
+  if (!window._g45User.created_at) return true;       // donnee manquante : ne jamais bloquer par erreur
+  var jours = (Date.now() - new Date(window._g45User.created_at).getTime()) / 86400000;
+  return jours <= 30;
+}
+
+/* Le message differe selon POURQUOI l'acces est ferme : un visiteur n'a pas de
+   compte (mais _g45AccesPremium() renvoie true pour lui, donc ce cas n'arrive
+   jamais en pratique via cette fonction — gardee pour un futur mur plus
+   strict) ; un compte de plus de 30 jours sans soutien doit voir un don, pas
+   « cree un compte », puisqu'il en a deja un. */
+function _g45BlocPremium() {
+  if (window._g45User) {
+    return '<a href="https://paypal.me/touraineantoine" target="_blank" rel="noopener" style="display:inline-block;padding:11px 22px;border-radius:9px;'
+      + 'background:#2563eb;color:#fff;text-decoration:none;font-weight:700;font-size:14px;">Soutenir le projet</a>';
+  }
+  return '<a href="./login.html" style="display:inline-block;padding:11px 22px;border-radius:9px;'
+    + 'background:#2563eb;color:#fff;text-decoration:none;font-weight:700;font-size:14px;">Créer mon compte</a>';
+}
+
 function loadTendancesTab(){
   var el=document.getElementById('t-tend'); if(!el) return;
-  /* ═══ TENDANCES RESERVEE AUX COMPTES (12/09/2026, corrige le meme jour) ═══
-     Decide par Antoine : contrairement au reste de l'appli, gouverne par le
-     seul mur des 15 paris, Tendances est bloquee des le depart pour un
-     visiteur SUR FENOTTE45 — pas de tolerance, pas de compteur. C'est la
-     fonction qui tape le plus dans les quotas Groq/Gemini/Mistral, et un
-     visiteur qui ne place jamais de pari pourrait sinon l'utiliser
-     indefiniment sans jamais toucher le mur general.
-
-     BUG CORRIGE LE MEME JOUR : app.js est PARTAGE entre deux depots — fenotte45
-     (Supabase, ou `auth-guard.js` pose `window._g45User`) et gones45, la
-     version perso d'Antoine, qui n'a NI Supabase NI `auth-guard.js` du tout.
-     Sur ce second depot, `window._g45User` n'est jamais ni `null` ni un objet
-     — il n'existe simplement JAMAIS. La condition `if (!window._g45User)`
-     etait donc vraie EN PERMANENCE sur gones45, bloquant Tendances pour
-     Antoine lui-meme sur son propre site, qui n'a meme pas de login.html vers
-     lequel renvoyer. On distingue desormais deux etats bien differents :
-     `undefined` (aucune notion de compte sur ce depot — ne pas bloquer) et
-     `null` (auth-guard.js a tourne, verifie, et confirme qu'il n'y a
-     personne — bloquer, c'est le vrai cas visiteur). Seul `null` declenche
-     le mur ; `undefined` laisse Tendances ouvert, exactement comme avant
-     qu'on invente cette regle. */
-  if (window._g45User === null) {
+  /* ═══ TENDANCES SUIT L'ACCES PREMIUM PARTAGE (12/09/2026, unifie le meme jour) ═══
+     Meme regle que Compétitions desormais : gratuit sous le mur general pour un
+     visiteur, gratuit 30 jours pleins une fois un compte cree, puis soutien
+     requis. Voir `_g45AccesPremium()` pour le detail — decide en un seul
+     endroit, plus dans trois copies divergentes. */
+  if (!_g45AccesPremium()) {
     el.innerHTML = '<div style="padding:40px 20px;text-align:center;">'
       + '<div style="font-size:32px;margin-bottom:12px;">🔒</div>'
       + '<div style="font-weight:700;margin-bottom:8px;color:var(--t1);">Tendances réservé aux comptes</div>'
       + '<div style="color:var(--t3);font-size:13px;line-height:1.6;max-width:320px;margin:0 auto 18px;">'
-      + 'Cette fonction s\'appuie sur plusieurs IA — elle est réservée aux comptes créés, gratuitement.</div>'
-      + '<a href="./login.html" style="display:inline-block;padding:11px 22px;border-radius:9px;'
-      + 'background:#2563eb;color:#fff;text-decoration:none;font-weight:700;font-size:14px;">'
-      + 'Créer mon compte</a></div>';
+      + 'Cette fonction s\'appuie sur plusieurs IA — gratuite 30 jours après création de compte, puis avec un petit soutien du projet.</div>'
+      + _g45BlocPremium() + '</div>';
     return;
   }
   var G=_g45TrGroups();
@@ -38742,30 +38775,22 @@ async function loadCompetTab() {
   var el = document.getElementById('t-compet');
   if (!el) return;
 
-  /* ═══ COMPETITIONS : 30 JOURS APRES CREATION DE COMPTE, PUIS SOUTIEN (12/09/2026) ═══
-     Regle differente de Tendances : un VISITEUR (pas de compte) garde acces a
-     Competitions, gouverne par le seul mur general des 15 paris — comme avant.
-     La restriction ne s'active qu'UNE FOIS UN COMPTE CREE : `window._g45User`
-     porte alors `created_at`, la date d'inscription telle que Supabase l'a
-     enregistree (pas modifiable depuis le navigateur, contrairement a un
-     compteur local). 30 jours pleins a partir de cette date, puis fermeture
-     sauf statut « soutien » — un simple drapeau qu'Antoine active a la main
-     apres verification manuelle d'un don, `window._g45Soutien` pose par
-     auth-guard.js au demarrage (voir la-bas pour le detail et ses limites). */
-  if (window._g45User && window._g45User.created_at && !window._g45Soutien) {
-    var joursDepuis = (Date.now() - new Date(window._g45User.created_at).getTime()) / 86400000;
-    if (joursDepuis > 30) {
-      el.innerHTML = '<div style="padding:40px 20px;text-align:center;">'
-        + '<div style="font-size:32px;margin-bottom:12px;">🏆</div>'
-        + '<div style="font-weight:700;margin-bottom:8px;color:var(--t1);">Mois gratuit terminé</div>'
-        + '<div style="color:var(--t3);font-size:13px;line-height:1.6;max-width:340px;margin:0 auto 18px;">'
-        + 'Compétitions était gratuit pendant 30 jours. Pour continuer à l\'utiliser, '
-        + 'un petit soutien du projet suffit.</div>'
-        + '<a href="https://paypal.me/touraineantoine" target="_blank" rel="noopener" style="display:inline-block;padding:11px 22px;border-radius:9px;'
-        + 'background:#2563eb;color:#fff;text-decoration:none;font-weight:700;font-size:14px;">'
-        + 'Soutenir le projet</a></div>';
-      return;
-    }
+  /* ═══ COMPETITIONS SUIT L'ACCES PREMIUM PARTAGE (12/09/2026, unifie le meme jour) ═══
+     Meme regle desormais que Tendances et l'analyse IA des fiches — voir
+     `_g45AccesPremium()` pour le detail unique. Ancienne version : trois
+     copies de ce meme calcul de jours, dont deux plus strictes que celle-ci
+     (bloquaient a la creation du compte au lieu d'apres 30 jours). Antoine a
+     tranche pour la meme regle partout : un seul acces « premium », valable
+     pour les trois fonctions a la fois. */
+  if (!_g45AccesPremium()) {
+    el.innerHTML = '<div style="padding:40px 20px;text-align:center;">'
+      + '<div style="font-size:32px;margin-bottom:12px;">🏆</div>'
+      + '<div style="font-weight:700;margin-bottom:8px;color:var(--t1);">Mois gratuit terminé</div>'
+      + '<div style="color:var(--t3);font-size:13px;line-height:1.6;max-width:340px;margin:0 auto 18px;">'
+      + 'Compétitions était gratuit pendant 30 jours. Pour continuer à l\'utiliser, '
+      + 'un petit soutien du projet suffit.</div>'
+      + _g45BlocPremium() + '</div>';
+    return;
   }
 
   /* NAVIGATION A DEUX NIVEAUX, reprise de l'onglet Resultats : sport puis
