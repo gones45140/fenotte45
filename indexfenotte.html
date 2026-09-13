@@ -70,7 +70,14 @@
        Si la personne est DEJA connectee, cliquer ne fait rien de genant :
        login.html detecte la session active et renvoie aussitot vers
        index.html — pas besoin de cacher le lien selon l'etat de connexion. -->
-  <a href="./login.html" title="Se connecter / créer un compte" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:11px;font-weight:700;color:var(--t3,#8899aa);text-decoration:none;padding:6px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.12);white-space:nowrap;">👤 Connexion</a>
+  <!-- 12/09/2026 (corrige le meme jour) : premiere version en position:absolute
+       DANS le header, sans z-index — invisible en pratique, cachee derriere la
+       barre laterale qui se dessine par-dessus (elle a forcement un z-index,
+       le mien valait 0 par defaut). Fixe au VIEWPORT plutot qu'au header, avec
+       un z-index tres eleve : independant de tout ce que fait .topbar ou la
+       barre laterale, ce lien reste au-dessus de tout, toujours au meme endroit
+       a l'ecran quel que soit le defilement. -->
+  <a href="./login.html" title="Se connecter / créer un compte" style="position:fixed;left:10px;top:14px;z-index:999999;font-size:11px;font-weight:700;color:#fff;text-decoration:none;padding:6px 10px;border-radius:8px;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.25);white-space:nowrap;">👤 Connexion</a>
   <div class="logo">BET<em>45</em></div>
   <div class="top-cap"><div class="lbl">Capital</div><div class="val" id="top-val">0 €</div><div id="top-fb" style="display:none;font-size:11px;color:var(--gold);font-weight:700;line-height:1.1;margin-top:2px;">🎟 0 €</div></div>
 </header>
