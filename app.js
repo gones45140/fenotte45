@@ -4231,8 +4231,17 @@ if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded
    d'Outils/Cles : verifie au demarrage, pas de verrou cote serveur — il n'y
    a rien de sensible derriere, juste une fonctionnalite qu'Antoine ne veut
    montrer qu'a lui-meme pour l'instant. */
+/* ═══════════ MASQUER « JEU » (12/09/2026, corrige le meme jour) ═══════════
+   Demande d'Antoine, redite plusieurs fois. Deux boutons y menaient (menu
+   principal + menu « plus » mobile) — masques ensemble ici pour que ca ne
+   se reproduise plus.
+   PREMIERE VERSION : reserve a l'administrateur, comme Outils/Cles. Mais
+   Antoine le voyait encore CHEZ LUI, precisement parce qu'il est deja
+   reconnu administrateur sur son propre navigateur — la fonction marchait
+   comme concue, pas comme voulue. Ce n'est pas « cacher aux autres », c'est
+   « faire disparaitre », lui compris : masque desormais SANS AUCUNE
+   CONDITION, pour tout le monde. */
 function g45JeuMasquerAdmin() {
-  if (typeof g45EstAdmin === 'function' && g45EstAdmin()) return;
   ['btn-jeu-sidebar', 'btn-jeu-plus'].forEach(function (id) {
     var b = document.getElementById(id);
     if (b) b.style.display = 'none';

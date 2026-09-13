@@ -299,7 +299,7 @@ try {
 // cherchant a passer en force), c'est une incitation, pas un verrou. Le
 // durcir couterait le meme risque de faux positifs qu'un plafond par IP
 // partagee (deja discute pour les quotas d'API) pour un gain marginal.
-const SEUIL_ESSAI_GRATUIT = 15;
+const SEUIL_ESSAI_GRATUIT = 50;
 
 function nbParisJoues(etat) {
   if (!etat || typeof etat !== 'object') return 0;
@@ -648,7 +648,7 @@ window._g45ImporterEtat = (json) => { rawSet(CLE_ETAT_FEN, typeof json === 'stri
 msg('Démarrage de l\'application…');
 
 const s = document.createElement('script');
-s.src = './app.js?v=20260912e';
+s.src = './app.js?v=20260912g';
 
 s.onerror = () => {
   msg('❌ échec du chargement de app.js');
