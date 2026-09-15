@@ -6,6 +6,21 @@
    On redirige donc vers ESPN les appels qui passaient par le proxy.
    Les 28 autres appels ESPN d'app.js sont déjà en direct.
    Les deux hôtes sont déjà autorisés dans le connect-src du CSP.
+
+   EXCEPTION AJOUTEE LE 12/09/2026 (releve par Antoine, capture de
+   console a l'appui) : `/teams` — la liste des equipes d'un
+   championnat, utilisee par `_espnLoadLeagueTeams` pour resoudre un
+   club par son nom — ne renvoie AUCUN en-tete CORS quand on l'appelle
+   en direct depuis le navigateur. Le reseau reussit (200, visible
+   dans la console), mais le navigateur bloque quand meme la lecture
+   de la reponse : ni le Worker (403 Akamai) ni le direct (CORS) ne
+   fonctionnent pour CET endpoint precis, alors que les 28 autres s'en
+   sortent tres bien en direct.
+   Ce test suppose que le blocage Akamai du 05/08 ne s'appliquait pas
+   a /teams specifiquement — a verifier : si ce changement fait
+   ressortir un 403 au lieu du CORS actuel, c'est que /teams est
+   AUSSI bloque cote Worker, et il faudra revenir en arriere (retirer
+   la ligne juste en dessous) le temps de trouver une autre solution.
    ═══════════════════════════════════════════════════════════════ */
 (function(){
   var _f = window.fetch;
@@ -14,7 +29,16 @@
       if (typeof u === 'string' && u.indexOf('host=espn') >= 0 && u.indexOf('workers.dev') >= 0) {
         var p = new URLSearchParams(u.slice(u.indexOf('?') + 1));
         var path = p.get('path');
-        if (path) u = (p.get('host') === 'espnweb'
+        /* CORRECTION DU MEME JOUR : un premier essai testait la simple PRESENCE
+           de "/teams" dans l'URL, qui matchait AUSSI /teams/{id}/schedule (le
+           calendrier d'un club precis) — resultat, ce dernier restait
+           incorrectement sur le Worker au lieu de partir en direct comme les
+           27 autres endpoints. Seule la liste BRUTE des equipes d'un
+           championnat (/soccer/{ligue}/teams, RIEN apres) pose le probleme
+           CORS ; on ne l'exclut qu'elle, en verifiant la FIN exacte du chemin
+           decode plutot qu'une simple sous-chaine. */
+        var estListeEquipes = path && /\/teams\/?$/.test(path);
+        if (path && !estListeEquipes) u = (p.get('host') === 'espnweb'
               ? 'https://site.web.api.espn.com'
               : 'https://site.api.espn.com') + path;
       }
@@ -124,13 +148,26 @@ function espnLeagueOf(nom) {
 // Résoudre l'ID ESPN d'une équipe via la liste des équipes de son championnat
 // Charge (et cache) la liste des équipes d'un championnat ESPN
 async function _espnLoadLeagueTeams(league) {
-  if(_espnTeamsCache[league]) return _espnTeamsCache[league];
+  /* Un tableau vide est VRAI en JavaScript ([] est truthy) : mettre en cache un
+     echec sous cette forme le rend indiscernable d'un vrai « championnat sans
+     equipes » (hors-saison, par exemple) — la prochaine tentative de la meme
+     session ne retente jamais, elle relit juste ce [] fige. Trouve en meme
+     temps que le diagnostic ci-dessous, meme jour, meme cause racine. */
+  if(_espnTeamsCache[league] && _espnTeamsCache[league].length) return _espnTeamsCache[league];
   try {
     var r = await fetch(FD_PROXY+'?host=espn&path='+encodeURIComponent('/apis/site/v2/sports/soccer/'+league+'/teams'));
     var d = await r.json();
     var list = (d.sports && d.sports[0] && d.sports[0].leagues && d.sports[0].leagues[0] && d.sports[0].leagues[0].teams) ? d.sports[0].leagues[0].teams : [];
     _espnTeamsCache[league] = list.map(function(t){ return t.team; });
-  } catch(e) { _espnTeamsCache[league] = []; }
+    /* DIAGNOSTIC (12/09/2026) : releve par Antoine sur l'Atletico Madrid, qui
+       echoue completement (espA/espB nulles) sans jamais expliquer pourquoi.
+       Meme defaut que le catch trouve plus tot le meme jour sur les coupes —
+       une erreur ici (Worker en retard, reponse malformee) etait avalee en
+       silence, transformant un aleas passager en « equipe introuvable » pour
+       de bon. Ce console.warn dit desormais explicitement quand la liste
+       recue est vide alors qu'un vrai championnat a ete demande. */
+    if(!_espnTeamsCache[league].length) console.warn('_espnLoadLeagueTeams : 0 equipe recue pour "'+league+'" — reponse : '+JSON.stringify(d).slice(0,200));
+  } catch(e) { console.warn('_espnLoadLeagueTeams en erreur pour "'+league+'" :', e); return []; }
   return _espnTeamsCache[league];
 }
 
@@ -22013,9 +22050,20 @@ async function loadTeamSaisons() {
     // Compléter avec les coupes football-data SANS bloquer (years alignées sur ESPN)
     var keys = Object.keys(results);
     (async function(){
-      try {
-        for(var ki=0; ki<keys.length; ki++){
-          var yr = keys[ki];
+      /* CORRIGE LE 12/09/2026 (releve par Antoine — coupe et boutons manquants
+         precisement quand la page met longtemps a charger, uniquement sur PC
+         gones45, jamais sur telephone ni sur bet45.fr) : tout ce bloc etait
+         entoure d'UN SEUL catch, qui avalait silencieusement N'IMPORTE QUELLE
+         erreur sur N'IMPORTE QUELLE annee — un simple ralentissement reseau ou
+         un 429 passager sur la PREMIERE annee arretait la boucle net, sans
+         jamais tenter la seconde, et sans la moindre trace dans la console.
+         Un chargement lent augmente mecaniquement les chances de toucher ce
+         genre d'alea, d'ou la correlation qu'Antoine a remarquee. Chaque annee
+         a desormais son propre filet : l'echec de l'une n'empeche plus
+         l'autre d'aboutir, et l'echec est enfin visible plutot que muet. */
+      for(var ki=0; ki<keys.length; ki++){
+        var yr = keys[ki];
+        try {
           var data = await fdFetch('/v4/teams/'+teamId+'/matches?status=FINISHED&season='+yr);
           if(data && data.matches && data.matches.length){
             var cups = data.matches.filter(function(m){
@@ -22034,8 +22082,8 @@ async function loadTeamSaisons() {
               renderSaisonsChart(el, results, nom); // re-render avec les coupes
             }
           }
-        }
-      } catch(e){ /* coupes non chargées, pas grave */ }
+        } catch(e){ console.warn('coupe football-data non chargee pour "'+nom+'" annee '+yr+' :', e); }
+      }
     })();
     return; // on a déjà affiché ESPN
   }
