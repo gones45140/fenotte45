@@ -3,7 +3,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { supabase, chargerEtat, sauverEtat, deconnexion,
-         sauverInstantane, listerInstantanes, lireInstantane, chargerSoutien } from './supabase.js?v=20260912a';
+         sauverInstantane, listerInstantanes, lireInstantane, chargerSoutien } from './supabase.js?v=20260916j';
 
 // ═══════════════════════════════════════════════════════════════
 // CLOISONNEMENT DU localStorage
