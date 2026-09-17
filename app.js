@@ -25610,6 +25610,36 @@ function _g45GarantiesSport(se) {
   if (se.indexOf('\ud83c\udfbe') >= 0) return G45_GARANTIES.tennis;
   return [];
 }
+/* ═══ GARANTIES PAR BOOKMAKER (17/09/2026, maquette validee) ═══
+   winamax : garanties AUTOMATIQUES (cochees toutes seules selon sport et type)
+   bet365  : Remplacant seulement (foot)
+   unibet, betclic, betsson et books inconnus : pas de case — la garantie est un
+     MARCHE A PART (EarlyWin, Assurance 2+, +20 gagnant...), lu dans le type
+   piwi, pmu : aucune, bloc masque */
+function _g45BookGar(book) {
+  var b = String(book || '').toLowerCase();
+  if (b.indexOf('winamax') >= 0) return 'winamax';
+  if (b.indexOf('bet365') >= 0) return 'bet365';
+  if (b.indexOf('piwi') >= 0 || b.indexOf('pmu') >= 0) return 'aucune';
+  return 'type';
+}
+function _g45GarantiesDispo(se, book) {
+  var mode = _g45BookGar(book);
+  if (mode === 'winamax') return _g45GarantiesSport(se);
+  if (mode === 'bet365') return String(se || '').indexOf('\u26bd') >= 0 ? [['remplacant', 'Rempla\u00e7ant']] : [];
+  return [];
+}
+/* Garantie ecrite dans le libelle du pari (books a marche separe). Meme lecture
+   que le Worker. Renvoie un texte court, ou ''. */
+function g45GarantieDansType(type) {
+  var t = String(type || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  var m = t.match(/(\d+)\s*(?:buts?|points?|pts)\s*d'?\s*(?:avance|ecart)/)
+       || t.match(/\+\s*(\d+)\s*(?:gagnant|=\s*winner)/) || t.match(/assurance\s*(\d+)\s*\+/);
+  if (m) return '+' + m[1] + " d'avance";
+  if (/early ?win/.test(t)) return "EarlyWin (2 buts d'avance)";
+  if (/remplacant/.test(t)) return 'rempla\u00e7ant';
+  return '';
+}
 function _g45GarantieLabel(code, se) {
   var l = _g45GarantiesSport(se).filter(function (g) { return g[0] === code; })[0];
   return l ? l[1] : '';
@@ -25624,12 +25654,23 @@ var _g45GarSport = null;
 function g45GarantiesRender() {
   var box = _g45Id('n-garanties'), hid = _g45Id('n-garantie'); if (!box || !hid) return;
   var se = (_g45Id('p-sport') || {}).value || '\u26bd';
-  _g45GarSport = se;
-  var list = _g45GarantiesSport(se);
-  var bloc = _g45Id('g45-garantie-bloc'); if (bloc) bloc.style.display = list.length ? '' : 'none';
-  if (hid.value && !list.some(function (g) { return g[0] === hid.value; })) hid.value = '';
-  box.innerHTML = [['', 'Aucune']].concat(list).map(function (g) {
-    return '<button type="button" onclick="g45Garantie(\'' + g[0] + '\')" style="' + _g45ChipCss(hid.value === g[0]) + '">' + g[1] + '</button>';
+  var book = (_g45Id('n-book') || {}).value || '';
+  _g45GarSport = se + '|' + book;
+  var mode = _g45BookGar(book);
+  var list = _g45GarantiesDispo(se, book);
+  var bloc = _g45Id('g45-garantie-bloc');
+  if (hid.value && hid.value !== 'aucune' && !list.some(function (g) { return g[0] === hid.value; })) hid.value = '';
+  if (mode === 'type') {
+    var lu = g45GarantieDansType((_g45Id('n-type') || {}).value);
+    if (bloc) bloc.style.display = lu ? '' : 'none';
+    hid.value = '';
+    box.innerHTML = lu ? '<span style="' + _g45ChipCss(true) + 'cursor:default;">Lue dans le type : ' + lu + '</span>' : '';
+    return;
+  }
+  if (bloc) bloc.style.display = list.length ? '' : 'none';
+  box.innerHTML = [['aucune', 'Aucune']].concat(list).map(function (g) {
+    var on = g[0] === 'aucune' ? (!hid.value || hid.value === 'aucune') : hid.value === g[0];
+    return '<button type="button" onclick="g45Garantie(\'' + g[0] + '\')" style="' + _g45ChipCss(on) + '">' + g[1] + '</button>';
   }).join('');
 }
 function g45Garantie(code) { var h = _g45Id('n-garantie'); if (h) h.value = code; window._g45GarManuel = true; g45GarantiesRender(); }
@@ -25639,8 +25680,23 @@ function g45GarantieAuto() {
   var t = String((_g45Id('n-type') || {}).value || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   var h = _g45Id('n-garantie'); if (!h) return;
   var se = (_g45Id('p-sport') || {}).value || '';
-  var auto = (/remplacant/.test(t) && se.indexOf('\u26bd') >= 0) ? 'remplacant' : '';
-  if (h.value !== auto) { h.value = auto; g45GarantiesRender(); }
+  var auto = g45GarantieAutoPour(t, se, (_g45Id('n-book') || {}).value);
+  if (h.value !== auto) h.value = auto;
+  g45GarantiesRender();
+}
+/* Garantie d'office. Winamax : buteur foot → Remplacant (qui couvre aussi la
+   sortie avant la pause) ; pari resultat → garantie d'ecart du sport. */
+function g45GarantieAutoPour(type, se, book) {
+  var t = String(type || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  var mode = _g45BookGar(book), foot = String(se || '').indexOf('\u26bd') >= 0;
+  if (mode === 'winamax') {
+    if (foot && /buteur|marque/.test(t) && !/les deux marquent/.test(t)) return 'remplacant';
+    var resultat = /victoire|gagn|\bwin\b|resultat|vainqueur/.test(t) && !/ou nul|double chance|mi-?temps|nul ou/.test(t);
+    if (resultat && _g45GarantiesSport(se).some(function (g) { return g[0] === 'ecart'; })) return 'ecart';
+    return '';
+  }
+  if (mode === 'bet365' && foot && /remplacant/.test(t)) return 'remplacant';
+  return '';
 }
 function g45JAjout(nom, match) {
   var box = _g45Id('n-joueurs-extra'); if (!box) return;
@@ -25683,7 +25739,7 @@ function _g45FJ(k) {
   if (k === 'joueur') return L.length ? L[0].nom : undefined;
   if (k === 'joueurs') return (L.length > 1 || (L[0] && L[0].match)) ? L : undefined;
   if (k === 'mode') return L.length > 1 ? (((_g45Id('n-jmode-val') || {}).value) || 'ou') : undefined;
-  if (k === 'garantie') return ((_g45Id('n-garantie') || {}).value) || undefined;
+  if (k === 'garantie') { var gv = (_g45Id('n-garantie') || {}).value; return gv || (window._g45GarManuel ? 'aucune' : undefined); }
 }
 function g45JReset() {
   ['n-joueur', 'n-joueur-match'].forEach(function (id) { var e = _g45Id(id); if (e) e.value = ''; });
@@ -25699,11 +25755,12 @@ function g45JReset() {
     if (t.id === 'n-type') g45GarantieAuto();
     if (t.id === 'n-joueur' || (t.classList && t.classList.contains('g45-jx-nom'))) g45JMajMode();
   });
-  document.addEventListener('change', function (e) { if (e.target && e.target.id === 'p-sport') { g45GarantiesRender(); g45GarantieAuto(); } });
+  document.addEventListener('change', function (e) { if (e.target && (e.target.id === 'p-sport' || e.target.id === 'n-book')) { g45GarantieAuto(); } });
   /* Le choix du sport passe parfois par un menu maison qui ne declenche pas
      « change » : on recalcule des qu'on revient dans le formulaire. */
   document.addEventListener('focusin', function () {
-    var ps = _g45Id('p-sport'); if (ps && ps.value !== _g45GarSport) g45GarantiesRender();
+    var ps = _g45Id('p-sport'), bk = _g45Id('n-book');
+    if (ps && (ps.value + '|' + (bk ? bk.value : '')) !== _g45GarSport) g45GarantieAuto();
   });
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', g45GarantiesRender);
   else setTimeout(g45GarantiesRender, 0);
@@ -32714,7 +32771,7 @@ function openBetEdit(id){
     +fld('Type de pari','<input id="be-type" value="'+esc(b.type)+'" list="be-type-list" placeholder="Buteur, Passeur, Over 1.5…" style="'+ins+'"><datalist id="be-type-list"><option>Buteur</option><option>Passeur</option><option>Décisif</option><option>Over 1.5</option><option>Over 2.5</option><option>Victoire</option><option>Double chance</option><option>Les deux marquent</option></datalist>')
     +fld('\ud83d\udc64 Joueur(s) — plusieurs : séparer par /','<input id="be-joueur" value="'+esc((b.joueurs&&b.joueurs.length)?b.joueurs.map(function(j){return j.nom;}).join(' / '):(b.joueur||''))+'" placeholder="Seulement pour un pari joueur" style="'+ins+'">')
     +'<div style="display:flex;gap:8px;"><div style="flex:1;">'+fld('Si plusieurs joueurs','<select id="be-jmode" style="'+ins+'"><option value="ou"'+(b.jmode!=='et'?' selected':'')+'>OU : un seul suffit</option><option value="et"'+(b.jmode==='et'?' selected':'')+'>ET : tous doivent marquer</option></select>')+'</div>'
-    +'<div style="flex:1;">'+fld('\ud83d\udee1\ufe0f Garantie','<select id="be-garantie" style="'+ins+'"><option value="">Aucune</option>'+_g45GarantiesSport(b.sport).map(function(g){return '<option value="'+g[0]+'"'+(b.garantie===g[0]?' selected':'')+'>'+g[1]+'</option>';}).join('')+'</select>')+'</div></div>'
+    +'<div style="flex:1;">'+fld('\ud83d\udee1\ufe0f Garantie','<select id="be-garantie" style="'+ins+'"><option value="aucune">Aucune</option>'+_g45GarantiesDispo(b.sport, b.b).map(function(g){return '<option value="'+g[0]+'"'+(b.garantie===g[0]?' selected':'')+'>'+g[1]+'</option>';}).join('')+'</select>')+'</div></div>'
     +'<div style="display:flex;gap:8px;"><div style="flex:1;">'+fld('Cote','<input id="be-cote" inputmode="decimal" value="'+esc(b.cote)+'" style="'+ins+'">')+'</div><div style="flex:1;">'+fld('Mise (€)','<input id="be-m" inputmode="decimal" value="'+esc(b.m)+'" style="'+ins+'">')+'</div></div>'
     +fld('Compétition','<input id="be-comp" value="'+esc(b.comp)+'" style="'+ins+'">')
     /* ═══ LIEU (16/09/2026, demande d'Antoine) ═══
@@ -38237,7 +38294,8 @@ async function g45ParisPourNotif() {
       pid: pid, teamId: String(res.id), league: res.league, sport: sp,
       team: nom, type: type,
       joueur: joueur || undefined,
-      garantie: h.garantie || undefined,
+      garantie: (h.garantie === 'aucune') ? undefined
+              : (h.garantie || g45GarantieAutoPour(type, h.sport, h.b) || undefined),
       cote: parseFloat(h.cote) || 0,
       mise: parseFloat(h.m) || 0
     };

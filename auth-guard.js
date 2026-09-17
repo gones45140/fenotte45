@@ -648,7 +648,7 @@ window._g45ImporterEtat = (json) => { rawSet(CLE_ETAT_FEN, typeof json === 'stri
 msg('Démarrage de l\'application…');
 
 const s = document.createElement('script');
-s.src = './app.js?v=20260917c';
+s.src = './app.js?v=20260917d';
 
 s.onerror = () => {
   msg('❌ échec du chargement de app.js');
