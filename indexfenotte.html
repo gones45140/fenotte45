@@ -389,7 +389,7 @@
       <input type="hidden" id="n-lieu" value="dom">
       <div class="fg" style="margin-bottom:9px;"><label class="fl">Type de pari</label><input id="n-type" class="fi" placeholder="Over 1.5, Victoire…"></div>
       <div class="g2" style="gap:9px;margin-bottom:9px;">
-        <div class="fg" style="position:relative"><label class="fl">Équipe / Joueur</label>
+        <div class="fg" style="position:relative"><label class="fl">Équipe</label>
           <input id="n-team" class="fi" placeholder="Ex : Lyon, Djokovic…" autocomplete="off" oninput="searchAdv(this.value,'n-team','adv-res-simple-team')">
           <div id="adv-res-simple-team" style="display:none;position:absolute;left:0;right:0;background:var(--bg3);border:1px solid var(--b1);border-radius:var(--r6);z-index:200;max-height:160px;overflow-y:auto;"></div>
         </div>
@@ -398,6 +398,20 @@
           <div id="adv-res-simple-adv" style="display:none;position:absolute;left:0;right:0;background:var(--bg3);border:1px solid var(--b1);border-radius:var(--r6);z-index:200;max-height:160px;overflow-y:auto;"></div>
         </div>
       </div>
+      <div class="fg" id="g45-joueurs-bloc" style="margin-bottom:9px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+          <label class="fl">👤 Joueurs (optionnel)</label>
+          <div id="n-jmode" style="display:none;border:1px solid var(--b2);border-radius:var(--r6);overflow:hidden;"><button type="button" data-m="ou" onclick="g45JMode('ou')" style="padding:4px 12px;border:none;background:none;color:var(--t3);font-size:11px;font-weight:800;cursor:pointer;">OU</button><button type="button" data-m="et" onclick="g45JMode('et')" style="padding:4px 12px;border:none;background:none;color:var(--t3);font-size:11px;font-weight:800;cursor:pointer;">ET</button></div>
+        </div>
+        <div class="g2" style="gap:9px;">
+          <input id="n-joueur" class="fi" placeholder="Seulement pour un pari joueur : Oneil Cruz…" autocomplete="off">
+          <input id="n-joueur-match" class="fi" placeholder="Match, si différent" autocomplete="off">
+        </div>
+        <div id="n-joueurs-extra"></div>
+        <div onclick="g45JAjout()" style="font-size:11px;color:#7aa2ff;cursor:pointer;margin-top:6px;font-weight:700;">＋ Ajouter un joueur</div>
+        <input type="hidden" id="n-jmode-val" value="ou">
+      </div>
+      <div class="fg" id="g45-garantie-bloc" style="margin-bottom:9px;"><label class="fl">🛡️ Garantie</label><div id="n-garanties" style="display:flex;flex-wrap:wrap;gap:6px;"></div><input type="hidden" id="n-garantie" value=""></div>
       <div class="g2" style="gap:9px;margin-bottom:9px;">
         <div class="fg"><label class="fl">Cote</label><input type="number" id="n-cote" class="fi" value="1.50" oninput="syncSimpleCote()"></div>
         <div class="fg"><label class="fl">Mise (€)</label><input type="number" id="n-mise" class="fi" value="10"></div>
@@ -1399,7 +1413,7 @@
 <!-- FENOTTE45 : app.js est injecte par auth-guard.js APRES authentification.
      Le ?v= doit changer a CHAQUE deploiement. -->
 <script src="social.js?v=20260826n"></script>
-<script type="module" src="auth-guard.js?v=20260916k"></script>
+<script type="module" src="auth-guard.js?v=20260917c"></script>
 
 
 

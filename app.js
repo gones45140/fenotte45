@@ -641,7 +641,11 @@ var BK={
   "unibet":     {n:"Unibet",     c:"#4ebe48", d:"unibet.fr"},
   "pmu antoine":{n:"PMU Antoine",c:"#3a6fd8", d:"pmu.fr"},
   "pmu laura":  {n:"PMU Laura",  c:"#3a6fd8", d:"pmu.fr"},
-  "piwi":       {n:"Piwi",       c:"#a855f7", d:""},
+  /* "pmu" generique (16/09) : c'est lui qu'on propose sur bet45.fr, jamais les
+     comptes nommes d'Antoine — voir DEF_BK juste dessous. */
+  "pmu":        {n:"PMU",        c:"#3a6fd8", d:"pmu.fr"},
+  /* Piwi247 n'a pas de favicon exploitable : logo depose dans le depot (16/09). */
+  "piwi":       {n:"Piwi",       c:"#a855f7", d:"", logo:"images/books/piwi.png"},
   "betsson":    {n:"Betsson",    c:"#f0b020", d:"betsson.com"},
   "betify":     {n:"Betify",     c:"#22d3ee", d:"betify.com"},
   "bet365":     {n:"Bet365",     c:"#d4b006", d:"bet365.com"}
@@ -649,6 +653,11 @@ var BK={
 function bkFavicon(k,sz){
   var b=bki(k);
   sz=sz||20;
+  if(b.logo){
+    return '<img src="'+b.logo+'" '
+      +'style="width:'+sz+'px;height:'+sz+'px;border-radius:4px;object-fit:cover;" '
+      +'onerror="logoErr(this)" loading="lazy">';
+  }
   if(b.d){
     return '<img src="https://www.google.com/s2/favicons?domain='+b.d+'&sz=32" '
       +'style="width:'+sz+'px;height:'+sz+'px;border-radius:4px;object-fit:contain;" '
@@ -656,7 +665,16 @@ function bkFavicon(k,sz){
   }
   return '<span style="width:'+sz+'px;height:'+sz+'px;border-radius:4px;background:'+b.c+'22;display:inline-flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;color:'+b.c+';">'+b.n.substring(0,2)+'</span>';
 }
-var DEF_BK=Object.keys(BK);
+/* COMPTES PAR DEFAUT SELON LE SITE (16/09/2026, releve par Antoine sur fenotte45) :
+   un compte neuf sur bet45.fr recevait « PMU Antoine » et « PMU Laura » — les
+   comptes PERSONNELS d'Antoine et de sa femme. Sur bet45.fr (window._g45User
+   defini par auth-guard.js, meme a null pour un visiteur) on propose donc un
+   « PMU » generique ; sur gones45 (perso, _g45User indefini) rien ne change. */
+var _G45_BK_PERSO=['pmu antoine','pmu laura'];
+var DEF_BK=Object.keys(BK).filter(function(k){
+  var surBet45=(typeof window!=='undefined' && typeof window._g45User!=='undefined');
+  return surBet45 ? _G45_BK_PERSO.indexOf(k)<0 : k!=='pmu';
+});
 function bki(k){var lk=(k||'').toLowerCase();var cc=state.bkColors&&state.bkColors[lk];var base=BK[lk]||{n:(k||'').toUpperCase()||'—',c:'#4f5d88'};if(cc)base=Object.assign({},base,{c:cc});return base;}
 function bbadge(k){
   var b=bki(k);
@@ -1552,6 +1570,21 @@ if(state&&!state.fb)state.fb={};
 if(!state.ugoals)state.ugoals={};
 if(!state.notes)state.notes={};
 DEF_BK.forEach(function(k){if(state.b[k]===undefined)state.b[k]=0;});
+/* NETTOYAGE bet45.fr (16/09) : les comptes au nom d'Antoine ou de Laura deja
+   poses chez un utilisateur (« PMU Laura », « Unibet Antoine »...) sont retires
+   s'ils sont VIDES et n'ont servi a AUCUN pari. Un compte utilise n'est jamais
+   touche : ce serait perdre l'historique de la personne. */
+(function(){
+  if(typeof window._g45User==='undefined' || !state || !state.b) return;
+  var sert=function(k){
+    return (state.h||[]).concat(state.a||[]).some(function(x){ return x && String(x.b||'').toLowerCase()===k; });
+  };
+  Object.keys(state.b).forEach(function(k){
+    if(!/\b(antoine|laura)\b/i.test(k)) return;
+    if(parseFloat(state.b[k]||0)!==0 || (state.fb && parseFloat(state.fb[k]||0)!==0) || sert(String(k).toLowerCase())) return;
+    delete state.b[k]; if(state.fb) delete state.fb[k]; if(state.bkColors) delete state.bkColors[k];
+  });
+})();
 (function(){function _num(x){var n=parseFloat(x);return isNaN(n)?0:n;}for(var _k in state.b){state.b[_k]=_num(state.b[_k]).toFixed(2);}if(state.fb)for(var _f in state.fb){state.fb[_f]=_num(state.fb[_f]).toFixed(2);}state.start_bk=_num(state.start_bk);})();
 /* PIEGE : ce bloc re-ajoutait les equipes PRESET manquantes a CHAQUE demarrage.
    Supprimer une equipe pre-configuree du mur marchait donc parfaitement... et
@@ -3524,7 +3557,7 @@ function renderArchive(){
         var _idLogo=isSimpleA?'':((typeof g45LogoUrlDe==='function')?g45LogoUrlDe(h.n):'');
         var _idFilig=_idLogo
           ?('<img src="'+_idLogo+'" alt="" loading="lazy" onerror="this.style.display=\'none\'" style="position:absolute;right:2px;top:50%;transform:translateY(-50%);height:32px;width:32px;object-fit:contain;opacity:.5;filter:drop-shadow(0 1px 3px rgba(0,0,0,.5));pointer-events:none;">')
-          :((isSimpleA&&b2.d)?('<img src="https://www.google.com/s2/favicons?domain='+b2.d+'&sz=64" alt="" loading="lazy" onerror="this.style.display=\'none\'" style="position:absolute;right:2px;top:50%;transform:translateY(-50%);height:24px;width:24px;object-fit:contain;opacity:.55;border-radius:6px;filter:drop-shadow(0 1px 3px rgba(0,0,0,.5));pointer-events:none;">'):'');
+          :((isSimpleA&&(b2.logo||b2.d))?('<img src="'+(b2.logo||('https://www.google.com/s2/favicons?domain='+b2.d+'&sz=64'))+'" alt="" loading="lazy" onerror="this.style.display=\'none\'" style="position:absolute;right:2px;top:50%;transform:translateY(-50%);height:24px;width:24px;object-fit:contain;opacity:.55;border-radius:6px;filter:drop-shadow(0 1px 3px rgba(0,0,0,.5));pointer-events:none;">'):'');
         /* FOND TEINTE PAR LE RESULTAT (02/09, demande d'Antoine : « pari gagné
            vert, pari perdu rouge, pari en cours jaune »). Le degrade partait de
            `_idColor`, la couleur du CLUB — d'ou un fond vert sur Athletics et
@@ -4542,10 +4575,10 @@ function pari(isS){
        MEME fonction que tout le reste de l'appli utilise pour afficher le
        palier courant, avec le lieu qu'on vient de determiner juste au-dessus. */
     if(isS && typeof _g45Pal==='function') l=_g45Pal(u, comp, domicile);
-    state.h.unshift({id:Date.now().toString(),n:n,target:target,eq:(typeof _eqJ!=='undefined'?_eqJ:''),b:b,l:l,m:m,cote:c,isS:isS,isFlash:isFlash,isFreebet:isFreebet,isLay:isLay,t:t,sport:sport,type:type,comp:comp,heure:heure,date:date,notes:notes||'',domicile:domicile,notif:notif});
+    state.h.unshift({id:Date.now().toString(),n:n,target:target,eq:(typeof _eqJ!=='undefined'?_eqJ:''),b:b,l:l,m:m,cote:c,isS:isS,isFlash:isFlash,isFreebet:isFreebet,isLay:isLay,t:t,sport:sport,type:type,comp:comp,heure:heure,date:date,notes:notes||'',domicile:domicile,notif:notif,joueur:(isS?undefined:_g45FJ('joueur')),joueurs:(isS?undefined:_g45FJ('joueurs')),jmode:(isS?undefined:_g45FJ('mode')),garantie:(isS?undefined:_g45FJ('garantie'))});
     save();
     if(isS){$i('c-target').value='';$i('c-comp').value='';if($i('c-notes'))$i('c-notes').value='';}
-    else{$i('n-comp').value='';$i('n-type').value='';$i('n-analysis').value='';if($i('n-notes'))$i('n-notes').value='';if($i('n-team'))$i('n-team').value='';if($i('n-flashboost'))$i('n-flashboost').checked=false;if($i('n-freebet'))$i('n-freebet').checked=false;if($i('n-lay'))$i('n-lay').checked=false;if($i('n-notif'))$i('n-notif').checked=true;mmRowsSimple=[{type:'',cote:1.50}];renderMmRowsSimple();}
+    else{$i('n-comp').value='';$i('n-type').value='';$i('n-analysis').value='';if($i('n-notes'))$i('n-notes').value='';if($i('n-team'))$i('n-team').value='';if(typeof g45JReset==='function')g45JReset();if($i('n-flashboost'))$i('n-flashboost').checked=false;if($i('n-freebet'))$i('n-freebet').checked=false;if($i('n-lay'))$i('n-lay').checked=false;if($i('n-notif'))$i('n-notif').checked=true;mmRowsSimple=[{type:'',cote:1.50}];renderMmRowsSimple();}
   }else alert((isFreebet?'Cagnotte freebet insuffisante sur ':'Solde insuffisant sur ')+bki(b).n+' !');
 }
 function result(id,win){
@@ -9337,6 +9370,11 @@ function fileToBase64(file) {
 function bkFavicon(k,sz){
   var b=bki(k);
   sz=sz||20;
+  if(b.logo){
+    return '<img src="'+b.logo+'" '
+      +'style="width:'+sz+'px;height:'+sz+'px;border-radius:4px;object-fit:cover;" '
+      +'onerror="logoErr(this)" loading="lazy">';
+  }
   if(b.d){
     return '<img src="https://www.google.com/s2/favicons?domain='+b.d+'&sz=32" '
       +'style="width:'+sz+'px;height:'+sz+'px;border-radius:4px;object-fit:contain;" '
@@ -9344,7 +9382,16 @@ function bkFavicon(k,sz){
   }
   return '<span style="width:'+sz+'px;height:'+sz+'px;border-radius:4px;background:'+b.c+'22;display:inline-flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;color:'+b.c+';">'+b.n.substring(0,2)+'</span>';
 }
-var DEF_BK=Object.keys(BK);
+/* COMPTES PAR DEFAUT SELON LE SITE (16/09/2026, releve par Antoine sur fenotte45) :
+   un compte neuf sur bet45.fr recevait « PMU Antoine » et « PMU Laura » — les
+   comptes PERSONNELS d'Antoine et de sa femme. Sur bet45.fr (window._g45User
+   defini par auth-guard.js, meme a null pour un visiteur) on propose donc un
+   « PMU » generique ; sur gones45 (perso, _g45User indefini) rien ne change. */
+var _G45_BK_PERSO=['pmu antoine','pmu laura'];
+var DEF_BK=Object.keys(BK).filter(function(k){
+  var surBet45=(typeof window!=='undefined' && typeof window._g45User!=='undefined');
+  return surBet45 ? _G45_BK_PERSO.indexOf(k)<0 : k!=='pmu';
+});
 function bki(k){var lk=(k||'').toLowerCase();var cc=state.bkColors&&state.bkColors[lk];var base=BK[lk]||{n:(k||'').toUpperCase()||'—',c:'#4f5d88'};if(cc)base=Object.assign({},base,{c:cc});return base;}
 function bbadge(k){
   var b=bki(k);
@@ -10145,6 +10192,21 @@ if(state&&!state.fb)state.fb={};
 if(!state.ugoals)state.ugoals={};
 if(!state.notes)state.notes={};
 DEF_BK.forEach(function(k){if(state.b[k]===undefined)state.b[k]=0;});
+/* NETTOYAGE bet45.fr (16/09) : les comptes au nom d'Antoine ou de Laura deja
+   poses chez un utilisateur (« PMU Laura », « Unibet Antoine »...) sont retires
+   s'ils sont VIDES et n'ont servi a AUCUN pari. Un compte utilise n'est jamais
+   touche : ce serait perdre l'historique de la personne. */
+(function(){
+  if(typeof window._g45User==='undefined' || !state || !state.b) return;
+  var sert=function(k){
+    return (state.h||[]).concat(state.a||[]).some(function(x){ return x && String(x.b||'').toLowerCase()===k; });
+  };
+  Object.keys(state.b).forEach(function(k){
+    if(!/\b(antoine|laura)\b/i.test(k)) return;
+    if(parseFloat(state.b[k]||0)!==0 || (state.fb && parseFloat(state.fb[k]||0)!==0) || sert(String(k).toLowerCase())) return;
+    delete state.b[k]; if(state.fb) delete state.fb[k]; if(state.bkColors) delete state.bkColors[k];
+  });
+})();
 (function(){function _num(x){var n=parseFloat(x);return isNaN(n)?0:n;}for(var _k in state.b){state.b[_k]=_num(state.b[_k]).toFixed(2);}if(state.fb)for(var _f in state.fb){state.fb[_f]=_num(state.fb[_f]).toFixed(2);}state.start_bk=_num(state.start_bk);})();
 /* PIEGE : ce bloc re-ajoutait les equipes PRESET manquantes a CHAQUE demarrage.
    Supprimer une equipe pre-configuree du mur marchait donc parfaitement... et
@@ -11741,7 +11803,7 @@ function renderArchive(){
         var _idLogo=isSimpleA?'':((typeof g45LogoUrlDe==='function')?g45LogoUrlDe(h.n):'');
         var _idFilig=_idLogo
           ?('<img src="'+_idLogo+'" alt="" loading="lazy" onerror="this.style.display=\'none\'" style="position:absolute;right:2px;top:50%;transform:translateY(-50%);height:32px;width:32px;object-fit:contain;opacity:.5;filter:drop-shadow(0 1px 3px rgba(0,0,0,.5));pointer-events:none;">')
-          :((isSimpleA&&b2.d)?('<img src="https://www.google.com/s2/favicons?domain='+b2.d+'&sz=64" alt="" loading="lazy" onerror="this.style.display=\'none\'" style="position:absolute;right:2px;top:50%;transform:translateY(-50%);height:24px;width:24px;object-fit:contain;opacity:.55;border-radius:6px;filter:drop-shadow(0 1px 3px rgba(0,0,0,.5));pointer-events:none;">'):'');
+          :((isSimpleA&&(b2.logo||b2.d))?('<img src="'+(b2.logo||('https://www.google.com/s2/favicons?domain='+b2.d+'&sz=64'))+'" alt="" loading="lazy" onerror="this.style.display=\'none\'" style="position:absolute;right:2px;top:50%;transform:translateY(-50%);height:24px;width:24px;object-fit:contain;opacity:.55;border-radius:6px;filter:drop-shadow(0 1px 3px rgba(0,0,0,.5));pointer-events:none;">'):'');
         /* FOND TEINTE PAR LE RESULTAT (02/09, demande d'Antoine : « pari gagné
            vert, pari perdu rouge, pari en cours jaune »). Le degrade partait de
            `_idColor`, la couleur du CLUB — d'ou un fond vert sur Athletics et
@@ -12484,10 +12546,10 @@ function pari(isS){
        MEME fonction que tout le reste de l'appli utilise pour afficher le
        palier courant, avec le lieu qu'on vient de determiner juste au-dessus. */
     if(isS && typeof _g45Pal==='function') l=_g45Pal(u, comp, domicile);
-    state.h.unshift({id:Date.now().toString(),n:n,target:target,eq:(typeof _eqJ!=='undefined'?_eqJ:''),b:b,l:l,m:m,cote:c,isS:isS,isFlash:isFlash,isFreebet:isFreebet,isLay:isLay,t:t,sport:sport,type:type,comp:comp,heure:heure,date:date,notes:notes||'',domicile:domicile,notif:notif});
+    state.h.unshift({id:Date.now().toString(),n:n,target:target,eq:(typeof _eqJ!=='undefined'?_eqJ:''),b:b,l:l,m:m,cote:c,isS:isS,isFlash:isFlash,isFreebet:isFreebet,isLay:isLay,t:t,sport:sport,type:type,comp:comp,heure:heure,date:date,notes:notes||'',domicile:domicile,notif:notif,joueur:(isS?undefined:_g45FJ('joueur')),joueurs:(isS?undefined:_g45FJ('joueurs')),jmode:(isS?undefined:_g45FJ('mode')),garantie:(isS?undefined:_g45FJ('garantie'))});
     save();
     if(isS){$i('c-target').value='';$i('c-comp').value='';if($i('c-notes'))$i('c-notes').value='';}
-    else{$i('n-comp').value='';$i('n-type').value='';$i('n-analysis').value='';if($i('n-notes'))$i('n-notes').value='';if($i('n-team'))$i('n-team').value='';if($i('n-flashboost'))$i('n-flashboost').checked=false;if($i('n-freebet'))$i('n-freebet').checked=false;if($i('n-lay'))$i('n-lay').checked=false;if($i('n-notif'))$i('n-notif').checked=true;mmRowsSimple=[{type:'',cote:1.50}];renderMmRowsSimple();}
+    else{$i('n-comp').value='';$i('n-type').value='';$i('n-analysis').value='';if($i('n-notes'))$i('n-notes').value='';if($i('n-team'))$i('n-team').value='';if(typeof g45JReset==='function')g45JReset();if($i('n-flashboost'))$i('n-flashboost').checked=false;if($i('n-freebet'))$i('n-freebet').checked=false;if($i('n-lay'))$i('n-lay').checked=false;if($i('n-notif'))$i('n-notif').checked=true;mmRowsSimple=[{type:'',cote:1.50}];renderMmRowsSimple();}
   }else alert((isFreebet?'Cagnotte freebet insuffisante sur ':'Solde insuffisant sur ')+bki(b).n+' !');
 }
 function result(id,win){
@@ -25522,6 +25584,150 @@ async function g45SyncNotifs(subOpt){
   try{ await fetch(FD_PROXY+'/psub',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sub:sub,teams:teams,betTeams:betTeams,matches:suivis,ev:p.ev})}); }catch(e){}
 }
 /* Sélections (foot ⚽ + rugby 🏉) des paris en cours → {name, sport, comp} */
+/* ═══ SPORTS US DANS LES NOTIFICATIONS DE PARIS (17/09/2026) ═══
+   NHL, NFL, MLB, NBA : seules ligues couvertes par le Worker. Un pari basket en
+   Euroleague ou Pro A n'est pas transmis (ESPN ne suit que la NBA ici). */
+/* ═══ GARANTIES ET JOUEURS MULTIPLES (17/09/2026, maquette validee) ═══
+   Garantie : un seul choix, filtre selon le sport. Une garantie valide LA JAMBE
+   concernee, jamais le pari entier (MyCombi Levante-Barca d'Antoine).
+   Joueurs : le 1er reste dans `joueur` (compatibilite) ; `joueurs` [{nom, match}]
+   n'est rempli qu'a partir de 2 joueurs ou si un match est precise. */
+var G45_GARANTIES = {
+  foot:   [['remplacant', 'Rempla\u00e7ant'], ['ecart', "2 buts d'\u00e9cart"], ['blessure', 'Blessure']],
+  hockey: [['ecart', "3 buts d'\u00e9cart"], ['goldengoal', 'Golden goal']],
+  basket: [['ecart', "20 pts d'\u00e9cart"], ['5majeur', '5 majeur']],
+  rugby:  [['ecart', "15 pts d'\u00e9cart"]],
+  nfl:    [['ecart', "17 pts d'\u00e9cart"]],
+  tennis: [['abandon', 'Abandon']]
+};
+function _g45GarantiesSport(se) {
+  se = String(se || '');
+  if (se.indexOf('\u26bd') >= 0) return G45_GARANTIES.foot;
+  if (se.indexOf('\ud83c\udfd2') >= 0) return G45_GARANTIES.hockey;
+  if (se.indexOf('\ud83c\udfc0') >= 0) return G45_GARANTIES.basket;
+  if (se.indexOf('\ud83c\udfc9') >= 0) return G45_GARANTIES.rugby;
+  if (se.indexOf('\ud83c\udfc8') >= 0) return G45_GARANTIES.nfl;
+  if (se.indexOf('\ud83c\udfbe') >= 0) return G45_GARANTIES.tennis;
+  return [];
+}
+function _g45GarantieLabel(code, se) {
+  var l = _g45GarantiesSport(se).filter(function (g) { return g[0] === code; })[0];
+  return l ? l[1] : '';
+}
+function _g45Id(id) { return document.getElementById(id); }
+var _g45ChipSt = 'padding:6px 10px;border-radius:var(--r6);font-size:11px;font-weight:700;cursor:pointer;';
+function _g45ChipCss(on) {
+  return _g45ChipSt + (on ? 'border:1px solid #4d84ff;background:rgba(77,132,255,.18);color:#fff;'
+                          : 'border:1px solid var(--b2);background:none;color:var(--t3);');
+}
+var _g45GarSport = null;
+function g45GarantiesRender() {
+  var box = _g45Id('n-garanties'), hid = _g45Id('n-garantie'); if (!box || !hid) return;
+  var se = (_g45Id('p-sport') || {}).value || '\u26bd';
+  _g45GarSport = se;
+  var list = _g45GarantiesSport(se);
+  var bloc = _g45Id('g45-garantie-bloc'); if (bloc) bloc.style.display = list.length ? '' : 'none';
+  if (hid.value && !list.some(function (g) { return g[0] === hid.value; })) hid.value = '';
+  box.innerHTML = [['', 'Aucune']].concat(list).map(function (g) {
+    return '<button type="button" onclick="g45Garantie(\'' + g[0] + '\')" style="' + _g45ChipCss(hid.value === g[0]) + '">' + g[1] + '</button>';
+  }).join('');
+}
+function g45Garantie(code) { var h = _g45Id('n-garantie'); if (h) h.value = code; window._g45GarManuel = true; g45GarantiesRender(); }
+/* « ou son remplacant », « remplacants inclus » : cochee toute seule. */
+function g45GarantieAuto() {
+  if (window._g45GarManuel) return;
+  var t = String((_g45Id('n-type') || {}).value || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  var h = _g45Id('n-garantie'); if (!h) return;
+  var se = (_g45Id('p-sport') || {}).value || '';
+  var auto = (/remplacant/.test(t) && se.indexOf('\u26bd') >= 0) ? 'remplacant' : '';
+  if (h.value !== auto) { h.value = auto; g45GarantiesRender(); }
+}
+function g45JAjout(nom, match) {
+  var box = _g45Id('n-joueurs-extra'); if (!box) return;
+  var row = document.createElement('div');
+  row.className = 'g2 g45-jx';
+  row.style.cssText = 'gap:9px;margin-top:6px;';
+  row.innerHTML = '<input class="fi g45-jx-nom" placeholder="Joueur" autocomplete="off">'
+    + '<div style="display:flex;gap:6px;align-items:center;"><input class="fi g45-jx-match" placeholder="Match, si diff\u00e9rent" autocomplete="off" style="flex:1;min-width:0;">'
+    + '<button type="button" aria-label="Retirer" onclick="g45JRetire(this)" style="background:none;border:none;color:var(--t3);font-size:16px;cursor:pointer;">\u2715</button></div>';
+  box.appendChild(row);
+  if (nom) row.querySelector('.g45-jx-nom').value = nom;
+  if (match) row.querySelector('.g45-jx-match').value = match;
+  g45JMajMode();
+}
+function g45JRetire(btn) { var r = btn.closest('.g45-jx'); if (r) r.remove(); g45JMajMode(); }
+function g45JMode(m) { var h = _g45Id('n-jmode-val'); if (h) h.value = m; g45JMajMode(); }
+function g45JMajMode() {
+  var seg = _g45Id('n-jmode'); if (!seg) return;
+  var n = _g45FormJoueurs().length;
+  seg.style.display = n >= 2 ? 'inline-flex' : 'none';
+  var m = (_g45Id('n-jmode-val') || {}).value || 'ou';
+  seg.querySelectorAll('button').forEach(function (b) {
+    var on = b.getAttribute('data-m') === m;
+    b.style.background = on ? 'rgba(77,132,255,.18)' : 'none';
+    b.style.color = on ? '#fff' : 'var(--t3)';
+  });
+}
+function _g45FormJoueurs() {
+  var out = [];
+  var n0 = String((_g45Id('n-joueur') || {}).value || '').trim();
+  if (n0) out.push({ nom: n0, match: String((_g45Id('n-joueur-match') || {}).value || '').trim() });
+  document.querySelectorAll('#n-joueurs-extra .g45-jx').forEach(function (r) {
+    var nm = String((r.querySelector('.g45-jx-nom') || {}).value || '').trim();
+    if (nm) out.push({ nom: nm, match: String((r.querySelector('.g45-jx-match') || {}).value || '').trim() });
+  });
+  return out;
+}
+function _g45FJ(k) {
+  var L = _g45FormJoueurs();
+  if (k === 'joueur') return L.length ? L[0].nom : undefined;
+  if (k === 'joueurs') return (L.length > 1 || (L[0] && L[0].match)) ? L : undefined;
+  if (k === 'mode') return L.length > 1 ? (((_g45Id('n-jmode-val') || {}).value) || 'ou') : undefined;
+  if (k === 'garantie') return ((_g45Id('n-garantie') || {}).value) || undefined;
+}
+function g45JReset() {
+  ['n-joueur', 'n-joueur-match'].forEach(function (id) { var e = _g45Id(id); if (e) e.value = ''; });
+  var x = _g45Id('n-joueurs-extra'); if (x) x.innerHTML = '';
+  var m = _g45Id('n-jmode-val'); if (m) m.value = 'ou';
+  var g = _g45Id('n-garantie'); if (g) g.value = '';
+  window._g45GarManuel = false;
+  g45JMajMode(); g45GarantiesRender();
+}
+(function () {
+  document.addEventListener('input', function (e) {
+    var t = e.target; if (!t) return;
+    if (t.id === 'n-type') g45GarantieAuto();
+    if (t.id === 'n-joueur' || (t.classList && t.classList.contains('g45-jx-nom'))) g45JMajMode();
+  });
+  document.addEventListener('change', function (e) { if (e.target && e.target.id === 'p-sport') { g45GarantiesRender(); g45GarantieAuto(); } });
+  /* Le choix du sport passe parfois par un menu maison qui ne declenche pas
+     « change » : on recalcule des qu'on revient dans le formulaire. */
+  document.addEventListener('focusin', function () {
+    var ps = _g45Id('p-sport'); if (ps && ps.value !== _g45GarSport) g45GarantiesRender();
+  });
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', g45GarantiesRender);
+  else setTimeout(g45GarantiesRender, 0);
+})();
+window.g45Garantie = g45Garantie; window.g45JAjout = g45JAjout; window.g45JRetire = g45JRetire; window.g45JMode = g45JMode;
+
+var G45_US_SPORT = { nhl: ['hockey', 'nhl'], nfl: ['football', 'nfl'], mlb: ['baseball', 'mlb'], nba: ['basketball', 'nba'] };
+function _g45SportUS(sportEmoji, comp){
+  var se = String(sportEmoji || ''), cl = String(comp || '').toLowerCase();
+  function ok(re){ return !cl || re.test(cl); }
+  if (se.indexOf('\ud83c\udfd2') >= 0) return ok(/nhl|hockey/) ? 'nhl' : null;
+  if (se.indexOf('\ud83c\udfc8') >= 0) return ok(/nfl|football/) ? 'nfl' : null;
+  if (se.indexOf('\u26be') >= 0)       return ok(/mlb|baseball/) ? 'mlb' : null;
+  if (se.indexOf('\ud83c\udfc0') >= 0) return ok(/nba/) ? 'nba' : null;
+  return null;
+}
+/* Pari joueur MLB (home run, runs du joueur) : libelles du book tels quels,
+   « Marqueur de Home Run », « Le joueur inscrit 2 runs ou + ». Un total de runs
+   du match (« Over 8.5 runs ») n'est PAS un pari joueur. */
+function _g45EstPariJoueurMLB(type){
+  var t = String(type || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  if (/\bover\b|\bunder\b|plus de|moins de|total/.test(t)) return false;
+  return /home ?run|\bhr\b|coup de circuit|inscrit|\d+\s*\+?\s*runs?\b/.test(t);
+}
 function g45BetSelections(){
   var seen={}, out=[];
   function add(name, sportEmoji, comp){
@@ -25530,8 +25736,10 @@ function g45BetSelections(){
     var sp = se.indexOf('\u26bd')>=0 ? 'soccer'
       : (se.indexOf('\ud83c\udfc9')>=0
           ? ((se.indexOf('\ud83c\udde6\ud83c\uddfa')>=0 || /\bnrl\b|rugby.?league|treize|xiii/.test(cl)) ? 'nrl' : 'rugby')
-          : null);
+          : _g45SportUS(se, comp));
     if(!sp) return;
+    /* « Pirates - Brewers » dans Adversaire : on transmet les deux equipes. */
+    if(G45_US_SPORT[sp] && /\s-\s/.test(name)){ name.split(/\s+-\s+/).forEach(function(x){ add(x, sportEmoji, comp); }); return; }
     var k=sp+'|'+name.toLowerCase(); if(seen[k]) return; seen[k]=1;
     out.push({name:name, sport:sp, comp:comp||''});
   }
@@ -25541,6 +25749,7 @@ function g45BetSelections(){
     if(h.notif===false) return;
     if(h.isCombi){ (h.combiRows||[]).forEach(function(r){ add(r.team, r.sport||'\u26bd', r.comp||h.comp); add(r.adv, r.sport||'\u26bd', r.comp||h.comp); }); }
     else { var sp=h.sport||'\u26bd'; if(h.n && h.n!=='SIMPLE') add(h.n, sp, h.comp); fromTarget(h.target, sp, h.comp);
+      (h.joueurs||[]).forEach(function(j){ if(j && j.match) String(j.match).split(/\s+vs\.?\s+|\s+-\s+/i).forEach(function(x){ add(x.trim(), sp, h.comp); }); });
       if(String(sp).indexOf('\u26bd')>=0) _g45HarvestNations((h.n||'')+' '+(h.target||''), h.comp, add); }
   });
   return out;
@@ -25572,6 +25781,7 @@ async function g45BetTeams(){
       if(s.sport==='soccer') res=await _g45ResolveTeam(s.name);
       else if(s.sport==='rugby') res=await _g45ResolveEspnTeam(s.name, 'rugby', _g45RugbyLeagueId(s.comp));
       else if(s.sport==='nrl') res=await _g45ResolveEspnTeam(s.name, 'rugby-league', '3');
+      else if(G45_US_SPORT[s.sport]) res=await _g45ResolveEspnTeam(s.name, G45_US_SPORT[s.sport][0], G45_US_SPORT[s.sport][1]);
     }catch(e){}
     if(res && res.id){ var k=s.sport+'|'+res.league+'|'+res.id; if(seen[k]) continue; seen[k]=1; out.push({n:s.name, id:String(res.id), league:res.league, sport:s.sport}); }
   }
@@ -32502,6 +32712,9 @@ function openBetEdit(id){
     +fld('Match / cible','<input id="be-target" value="'+esc(b.target)+'" style="'+ins+'">')
     +fld('Format','<input id="be-n" value="'+esc(b.n)+'" placeholder="SIMPLE / Combiné / Cockpit" style="'+ins+'">')
     +fld('Type de pari','<input id="be-type" value="'+esc(b.type)+'" list="be-type-list" placeholder="Buteur, Passeur, Over 1.5…" style="'+ins+'"><datalist id="be-type-list"><option>Buteur</option><option>Passeur</option><option>Décisif</option><option>Over 1.5</option><option>Over 2.5</option><option>Victoire</option><option>Double chance</option><option>Les deux marquent</option></datalist>')
+    +fld('\ud83d\udc64 Joueur(s) — plusieurs : séparer par /','<input id="be-joueur" value="'+esc((b.joueurs&&b.joueurs.length)?b.joueurs.map(function(j){return j.nom;}).join(' / '):(b.joueur||''))+'" placeholder="Seulement pour un pari joueur" style="'+ins+'">')
+    +'<div style="display:flex;gap:8px;"><div style="flex:1;">'+fld('Si plusieurs joueurs','<select id="be-jmode" style="'+ins+'"><option value="ou"'+(b.jmode!=='et'?' selected':'')+'>OU : un seul suffit</option><option value="et"'+(b.jmode==='et'?' selected':'')+'>ET : tous doivent marquer</option></select>')+'</div>'
+    +'<div style="flex:1;">'+fld('\ud83d\udee1\ufe0f Garantie','<select id="be-garantie" style="'+ins+'"><option value="">Aucune</option>'+_g45GarantiesSport(b.sport).map(function(g){return '<option value="'+g[0]+'"'+(b.garantie===g[0]?' selected':'')+'>'+g[1]+'</option>';}).join('')+'</select>')+'</div></div>'
     +'<div style="display:flex;gap:8px;"><div style="flex:1;">'+fld('Cote','<input id="be-cote" inputmode="decimal" value="'+esc(b.cote)+'" style="'+ins+'">')+'</div><div style="flex:1;">'+fld('Mise (€)','<input id="be-m" inputmode="decimal" value="'+esc(b.m)+'" style="'+ins+'">')+'</div></div>'
     +fld('Compétition','<input id="be-comp" value="'+esc(b.comp)+'" style="'+ins+'">')
     /* ═══ LIEU (16/09/2026, demande d'Antoine) ═══
@@ -32613,6 +32826,23 @@ function saveBetEdit(id){
   b.target=v('be-target').trim()||b.target;
   b.n=v('be-n').trim()||b.n;
   b.type=v('be-type').trim();
+  if (document.getElementById('be-joueur')) {
+    var _noms = v('be-joueur').split(/\s*\/\s*/).map(function (x) { return x.trim(); }).filter(Boolean);
+    var _anc = b.joueurs || [];
+    if (!_noms.length) { delete b.joueur; delete b.joueurs; delete b.jmode; }
+    else {
+      b.joueur = _noms[0];
+      if (_noms.length > 1 || _anc.some(function (j) { return j.match; })) {
+        /* On garde le match deja saisi pour chaque joueur, par nom puis par position. */
+        b.joueurs = _noms.map(function (nm, i) {
+          var a = _anc.filter(function (j) { return String(j.nom).toLowerCase() === nm.toLowerCase(); })[0] || _anc[i] || {};
+          return { nom: nm, match: a.match || '' };
+        });
+      } else delete b.joueurs;
+      if (_noms.length > 1) b.jmode = v('be-jmode') === 'et' ? 'et' : 'ou'; else delete b.jmode;
+    }
+  }
+  if (document.getElementById('be-garantie')) { var _ga = v('be-garantie'); if (_ga) b.garantie = _ga; else delete b.garantie; }
   b.cote=parseFloat((v('be-cote')+'').replace(',','.'))||b.cote;
   b.m=parseFloat((v('be-m')+'').replace(',','.'))||b.m;
   b.comp=v('be-comp').trim();
@@ -34645,7 +34875,7 @@ function _g45BetRowMini(h){
   var _idLogo=isSimple?'':((typeof g45LogoUrlDe==='function')?g45LogoUrlDe(h.n):'');
   var _idFilig=_idLogo
     ?('<img src="'+_idLogo+'" alt="" loading="lazy" onerror="this.style.display=\'none\'" style="position:absolute;right:2px;top:50%;transform:translateY(-50%);height:38px;width:38px;object-fit:contain;opacity:.55;filter:drop-shadow(0 1px 3px rgba(0,0,0,.5));pointer-events:none;">')
-    :((isSimple&&b2.d)?('<img src="https://www.google.com/s2/favicons?domain='+b2.d+'&sz=64" alt="" loading="lazy" onerror="this.style.display=\'none\'" style="position:absolute;right:2px;top:50%;transform:translateY(-50%);height:28px;width:28px;object-fit:contain;opacity:.6;border-radius:6px;filter:drop-shadow(0 1px 3px rgba(0,0,0,.5));pointer-events:none;">'):'');
+    :((isSimple&&(b2.logo||b2.d))?('<img src="'+(b2.logo||('https://www.google.com/s2/favicons?domain='+b2.d+'&sz=64'))+'" alt="" loading="lazy" onerror="this.style.display=\'none\'" style="position:absolute;right:2px;top:50%;transform:translateY(-50%);height:28px;width:28px;object-fit:contain;opacity:.6;border-radius:6px;filter:drop-shadow(0 1px 3px rgba(0,0,0,.5));pointer-events:none;">'):'');
   /* Le filigrane est CONFINE au bloc titre/sous-titre (position:relative sur
      ce div precis), pas sur toute la ligne. Sur une ligne compacte comme
      celle-ci, ancrer le logo par rapport a toute la largeur de la carte
@@ -37937,6 +38167,8 @@ function _g45SportDePari(h) {
     return (se.indexOf('\ud83c\udde6\ud83c\uddfa') >= 0 || /\bnrl\b|rugby.?league|treize|xiii/.test(cl))
       ? 'nrl' : 'rugby';
   }
+  var us = _g45SportUS(se, h.comp);
+  if (us) return us;
   return null;   // autres sports : pas de verdict automatique
 }
 
@@ -37966,24 +38198,74 @@ async function g45ParisPourNotif() {
     /* La resolution passait par site.api/{ligue}/teams, bloque en CORS : aucun
        pari n'etait donc transmis. g45ResolvePourPari essaie la table cablee, le
        cache, puis sports.core qui autorise le CORS. */
+    /* PARI JOUEUR MLB (17/09) : « Equipe / Joueur » = le joueur, « Adversaire » =
+       une equipe du match (n'importe laquelle). On retrouve le match par
+       l'equipe et on transmet le joueur a part. */
+    var joueur = '', candidats = [nom];
+    if (sp === 'mlb' && _g45EstPariJoueurMLB(type)) {
+      var morceaux = String(h.target || '').split(/\s+vs\.?\s+|\s+-\s+/i)
+        .map(function (x) { return x.trim(); }).filter(Boolean);
+      if (h.joueur) {
+        /* Champ Joueur (17/09) : Equipe et Adversaire sont de vraies equipes. */
+        joueur = String(h.joueur).trim();
+        candidats = morceaux.filter(function (x) { return x.toLowerCase() !== joueur.toLowerCase(); });
+      } else {
+        /* Anciens paris : le joueur etait saisi dans Equipe / Joueur. */
+        joueur = morceaux[0] || '';
+        candidats = morceaux.slice(1);
+      }
+      if (!joueur || !candidats.length) continue;
+    }
     var res = null;
     try {
       var lgh = (sp === 'nrl') ? '3'
               : (sp === 'rugby' && typeof _g45RugbyLeagueId === 'function') ? _g45RugbyLeagueId(h.comp)
+              : G45_US_SPORT[sp] ? G45_US_SPORT[sp][1]
               : null;
-      res = await g45ResolvePourPari(nom, sp, lgh);
-      if (!res && sp === 'soccer') res = await _g45ResolveTeam(nom);
+      for (var ci = 0; ci < candidats.length && !(res && res.id); ci++) {
+        res = await g45ResolvePourPari(candidats[ci], sp, lgh);
+        if (!res && sp === 'soccer') res = await _g45ResolveTeam(candidats[ci]);
+        if (!res && G45_US_SPORT[sp]) res = await _g45ResolveEspnTeam(candidats[ci], G45_US_SPORT[sp][0], G45_US_SPORT[sp][1]);
+      }
     } catch (e) { console.warn('resolution pari', nom, e && e.message); }
     if (!res || !res.id) continue;
 
     var pid = String(h.id || (nom + '|' + type + '|' + (h.date || '')));
     if (vus[pid]) continue;
     vus[pid] = 1;
-    out.push({
+    var base = {
       pid: pid, teamId: String(res.id), league: res.league, sport: sp,
       team: nom, type: type,
+      joueur: joueur || undefined,
+      garantie: h.garantie || undefined,
       cote: parseFloat(h.cote) || 0,
       mise: parseFloat(h.m) || 0
+    };
+    /* JOUEURS FOOT (17/09) : une entree par match concerne, meme pid. Le Worker
+       met en commun l'etat des joueurs pour trancher OU / ET. */
+    var listeJ = (h.joueurs && h.joueurs.length)
+      ? h.joueurs.map(function (j) { return { nom: String(j.nom || '').trim(), match: String(j.match || '').trim() }; }).filter(function (j) { return j.nom; })
+      : (h.joueur ? [{ nom: String(h.joueur).trim(), match: '' }] : []);
+    if (sp !== 'soccer' || !listeJ.length) { out.push(base); continue; }
+    var noms = listeJ.map(function (j) { return j.nom; });
+    var groupes = {};
+    listeJ.forEach(function (j) { var k = j.match || ''; (groupes[k] = groupes[k] || []).push(j.nom); });
+    var entrees = [];
+    for (var gk in groupes) {
+      var r2 = res;
+      if (gk) {
+        r2 = null;
+        var parts = gk.split(/\s+vs\.?\s+|\s+-\s+/i).map(function (x) { return x.trim(); }).filter(Boolean);
+        for (var pi = 0; pi < parts.length && !(r2 && r2.id); pi++) {
+          try { r2 = await g45ResolvePourPari(parts[pi], sp, null); if (!r2) r2 = await _g45ResolveTeam(parts[pi]); } catch (e) {}
+        }
+      }
+      if (r2 && r2.id) entrees.push(Object.assign({}, base, { teamId: String(r2.id), league: r2.league, joueursIci: groupes[gk] }));
+    }
+    if (!groupes['']) entrees.push(Object.assign({}, base, { joueursIci: [] }));   /* le match du pari reste suivi */
+    entrees.forEach(function (x) {
+      x.joueurs = noms; x.mode = h.jmode === 'et' ? 'et' : 'ou'; x.nbMatchs = entrees.length;
+      out.push(x);
     });
   }
   return out;
@@ -38263,7 +38545,8 @@ window.g45CoreTeamId = g45CoreTeamId;
 
 /* On remplace la resolution utilisee par la transmission des paris : elle passe
    d'abord par la table cablee, puis par sports.core. */
-var _G45_SPORT_PATH = { soccer: 'soccer', rugby: 'rugby', nrl: 'rugby-league' };
+var _G45_SPORT_PATH = { soccer: 'soccer', rugby: 'rugby', nrl: 'rugby-league',
+                        nhl: 'hockey', nfl: 'football', mlb: 'baseball', nba: 'basketball' };
 
 async function g45ResolvePourPari(nom, sp, ligue) {
   /* 1. table cablee (ESPN_TEAM_ID_FIX), la plus fiable */
@@ -49089,6 +49372,10 @@ function _g45LigneMatch(h, titreDefaut, typeTxt, cote){
   var coteTxt = isNaN(coteNum) ? '' : '@' + coteNum.toFixed(2);
   var meta = (typeof _g45MatchMeta === 'function') ? _g45MatchMeta(h) : null;
   var lieu = _g45LieuDe(h, meta);
+  /* 17/09 : champ Joueur du pari, affiche devant le type. */
+  var _jn = (h.joueurs && h.joueurs.length) ? h.joueurs.map(function (j) { return j.nom; }).join(h.jmode === 'et' ? ' et ' : ' ou ') : (h.joueur || '');
+  if (_jn) typeTxt = '\ud83d\udc64 ' + _g45Esc(_jn) + (typeTxt ? ' \u00b7 ' + typeTxt : '');
+  if (h.garantie) { var _gl = _g45GarantieLabel(h.garantie, h.sport); if (_gl) typeTxt = (typeTxt ? typeTxt + ' \u00b7 ' : '') + '\ud83d\udee1\ufe0f ' + _g45Esc(_gl); }
   var sous = (typeTxt ? typeTxt + '<br>' : '')
     + '<span style="color:#7aa2ff;font-weight:800;font-size:11px;background:rgba(77,132,255,.16);padding:1px 7px;border-radius:5px;">' + coteTxt + '</span>'
     + '<span style="margin-left:14px;">' + _g45Esc(h.comp || '') + (lieu ? (h.comp ? ' · ' : '') + '\ud83d\udccd ' + _g45Esc(lieu) : '') + '</span>';
