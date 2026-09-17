@@ -25637,6 +25637,8 @@ function g45GarantieDansType(type) {
        || t.match(/\+\s*(\d+)\s*(?:gagnant|=\s*winner)/) || t.match(/assurance\s*(\d+)\s*\+/);
   if (m) return '+' + m[1] + " d'avance";
   if (/early ?win/.test(t)) return "EarlyWin (2 buts d'avance)";
+  if (/set express/.test(t) || /1er set[\s\S]*6\s*-\s*0[\s\S]*6\s*-\s*2/.test(t)) return 'Set Express (1er set 6-0/6-1/6-2)';
+  if (/\+\s*2\s*sets?/.test(t)) return '+2 sets';
   if (/remplacant/.test(t)) return 'rempla\u00e7ant';
   return '';
 }
@@ -25693,6 +25695,7 @@ function g45GarantieAutoPour(type, se, book) {
     if (foot && /buteur|marque/.test(t) && !/les deux marquent/.test(t)) return 'remplacant';
     var resultat = /victoire|gagn|\bwin\b|resultat|vainqueur/.test(t) && !/ou nul|double chance|mi-?temps|nul ou/.test(t);
     if (resultat && _g45GarantiesSport(se).some(function (g) { return g[0] === 'ecart'; })) return 'ecart';
+    if (resultat && String(se || '').indexOf('\ud83c\udfbe') >= 0) return 'abandon';
     return '';
   }
   if (mode === 'bet365' && foot && /remplacant/.test(t)) return 'remplacant';
@@ -38226,6 +38229,7 @@ function _g45SportDePari(h) {
   }
   var us = _g45SportUS(se, h.comp);
   if (us) return us;
+  if (se.indexOf('\ud83c\udfbe') >= 0) return 'tennis';   /* 17/09 : par joueur, voir Worker */
   return null;   // autres sports : pas de verdict automatique
 }
 
@@ -38251,6 +38255,20 @@ async function g45ParisPourNotif() {
     if (!nom) continue;
     var type = String(h.type || '').trim();
     if (!type) continue;              /* sans type, aucun verdict possible */
+
+    /* TENNIS (17/09) : pas d'equipe a resoudre, le Worker cherche le match par
+       le nom du joueur (Equipe) et de l'adversaire dans les scoreboards ATP/WTA. */
+    if (sp === 'tennis') {
+      var tparts = String(h.target || '').split(/\s+vs\.?\s+|\s+-\s+/i).map(function (x) { return x.trim(); }).filter(Boolean);
+      var tadv = tparts.filter(function (x) { return x.toLowerCase() !== nom.toLowerCase(); })[0] || '';
+      var tpid = String(h.id || (nom + '|' + type + '|' + (h.date || '')));
+      if (vus[tpid]) continue;
+      vus[tpid] = 1;
+      out.push({ pid: tpid, sport: 'tennis', tj: nom, tadv: tadv, date: h.date || '', type: type,
+                 garantie: (h.garantie === 'aucune') ? undefined : (h.garantie || g45GarantieAutoPour(type, h.sport, h.b) || undefined),
+                 cote: parseFloat(h.cote) || 0, mise: parseFloat(h.m) || 0 });
+      continue;
+    }
 
     /* La resolution passait par site.api/{ligue}/teams, bloque en CORS : aucun
        pari n'etait donc transmis. g45ResolvePourPari essaie la table cablee, le
