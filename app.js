@@ -24941,6 +24941,54 @@ function _renderEspnMatchLineups(s, col, nameFn){
   } catch(e){ return ''; }
 }
 
+/* ═══ PHOTOS SUR LE TERRAIN (18/09/2026, valide avec Antoine) ═══
+   Ordre des sources, le meme que partout ailleurs dans l'appli : image perso
+   du depot (retrouvee par l'index GitHub), puis portrait d'effectif
+   (api-sports, complete par TheSportsDB), puis le maillot SVG actuel — jamais
+   de trou, et la ligne ne se decale pas puisque la photo occupe exactement la
+   meme place. Les photos sont PRE-CHARGEES par equipe avant le rendu : aucune
+   requete par joueur. */
+var _G45_PITCH_PHOTOS = {};
+function _g45PitchPhoto(nom) {
+  try {
+    var k = _g45SgNorm(nom);
+    return _G45_PITCH_PHOTOS[k] || '';
+  } catch (e) { return ''; }
+}
+/* Pose les photos arrivees apres coup, sans redessiner le terrain. */
+function g45PitchPhotosAppliquer() {
+  try {
+    var n = document.querySelectorAll('.g45-pitch-ph[data-nom]');
+    Array.prototype.forEach.call(n, function (sp) {
+      if (sp.getAttribute('data-fait') === '1') return;
+      var url = _G45_PITCH_PHOTOS[sp.getAttribute('data-nom')];
+      if (!url) return;
+      var num = sp.getAttribute('data-num') || '', c = sp.getAttribute('data-col') || '#4d84ff';
+      sp.setAttribute('data-fait', '1');
+      sp.innerHTML = '<span style="position:relative;display:inline-flex;width:clamp(26px,3.4vw,38px);height:clamp(26px,3.4vw,38px);">'
+        + '<img src="' + url + '" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;border-radius:22%;border:2px solid ' + c + ';'
+        + 'background:#26324d;filter:drop-shadow(0 1px 3px rgba(0,0,0,.6));">'
+        + '<span style="position:absolute;left:-3px;top:-3px;background:rgba(0,0,0,.75);color:#fff;border-radius:5px;padding:0 3px;'
+        + 'font-size:clamp(7px,0.85vw,9px);font-weight:800;">' + num + '</span></span>';
+    });
+  } catch (e) {}
+}
+window.g45PitchPhotosAppliquer = g45PitchPhotosAppliquer;
+
+async function _g45PitchPrecharger(noms) {
+  for (var i = 0; i < noms.length; i++) {
+    var club = noms[i];
+    if (!club) continue;
+    try {
+      var liste = (typeof _g45PhotosFoot === 'function') ? await _g45PhotosFoot(club) : [];
+      (liste || []).forEach(function (p) { if (p && p.n && p.u && !_G45_PITCH_PHOTOS[p.n]) _G45_PITCH_PHOTOS[p.n] = p.u; });
+      g45PitchPhotosAppliquer();
+    } catch (e) {}
+  }
+  g45PitchPhotosAppliquer();
+}
+window._g45PitchPrecharger = _g45PitchPrecharger;
+
 function _renderEspnMatchPitch(s, col, nameFn){
   try {
     var rosters = s.rosters||[];
@@ -24949,6 +24997,14 @@ function _renderEspnMatchPitch(s, col, nameFn){
     var aR = rosters.find(function(r){return r.homeAway==='away';})||rosters[1];
     if(!hR||!aR) return '';
     function tName(r){ var n=(r&&r.team&&(r.team.displayName||r.team.shortDisplayName||r.team.name))||''; return (typeof nameFn==='function')?(nameFn(n)||n):n; }
+    /* Pre-chargement des photos des DEUX equipes : une requete par club, en
+       cache 30 jours, puis pose differee sur le terrain deja affiche. */
+    try {
+      var _clubs = ((s && s.rosters) || []).map(function (r) {
+        return (r && r.team && (r.team.displayName || r.team.name)) || '';
+      }).filter(Boolean);
+      if (_clubs.length) setTimeout(function () { _g45PitchPrecharger(_clubs); }, 0);
+    } catch (e) {}
     function lastName(full){ if(!full) return '?'; var p=String(full).trim().split(' '); return p.length>1?p[p.length-1]:p[0]; }
     function getLines(r){
       var players=(r&&r.roster)||[];
@@ -25093,10 +25149,28 @@ function _renderEspnMatchPitch(s, col, nameFn){
            Le col est une couche noire translucide plutot qu'une teinte calculee :
            une opacite fonctionne sur n'importe quelle couleur, claire ou sombre,
            sans avoir a convertir chaque code hexadecimal. */
-        +'<svg viewBox="0 0 24 24" style="width:clamp(26px,3.4vw,38px);height:clamp(26px,3.4vw,38px);filter:drop-shadow(0 1px 3px rgba(0,0,0,.6));">'
-        +'<path d="M8 2 L4 4 L2 8 L5 9.5 L5 22 L19 22 L19 9.5 L22 8 L20 4 L16 2 L14.5 3.6 A3.2 3.2 0 0 1 9.5 3.6 Z" fill="'+c+'" stroke="rgba(0,0,0,.45)" stroke-width="1"/>'
-        +'<path d="M8 2 L9.5 3.6 A3.2 3.2 0 0 0 14.5 3.6 L16 2 L14 1.4 A4.6 4.6 0 0 1 10 1.4 Z" fill="rgba(0,0,0,.35)"/>'
-        +'<text x="12" y="16.5" text-anchor="middle" font-size="9" font-weight="800" fill="#fff" stroke="rgba(0,0,0,.55)" stroke-width="0.5" paint-order="stroke">'+num+'</text></svg>'
+        +(function(){
+           /* PHOTO si on en a une, maillot sinon : meme taille dans les deux
+              cas, la ligne ne bouge donc pas selon la couverture. L'enveloppe
+              porte le nom normalise pour que les photos arrivant APRES le
+              rendu soient posees sans redessiner le terrain. */
+           var nomComplet=(p.athlete&&(p.athlete.displayName||p.athlete.shortName))||'';
+           var ph=_g45PitchPhoto(nomComplet);
+           var enveloppe=function(contenu){
+             return '<span class="g45-pitch-ph" data-nom="'+_g45SgNorm(nomComplet)+'" data-num="'+num+'" data-col="'+c+'" style="display:inline-flex;">'+contenu+'</span>';
+           };
+           if(ph){
+             return enveloppe('<span style="position:relative;display:inline-flex;width:clamp(26px,3.4vw,38px);height:clamp(26px,3.4vw,38px);">'
+               +'<img src="'+ph+'" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;border-radius:22%;border:2px solid '+c+';'
+               +'background:#26324d;filter:drop-shadow(0 1px 3px rgba(0,0,0,.6));" onerror="this.parentNode.style.display=\'none\'">'
+               +'<span style="position:absolute;left:-3px;top:-3px;background:rgba(0,0,0,.75);color:#fff;border-radius:5px;padding:0 3px;'
+               +'font-size:clamp(7px,0.85vw,9px);font-weight:800;">'+num+'</span></span>');
+           }
+           return enveloppe('<svg viewBox="0 0 24 24" style="width:clamp(26px,3.4vw,38px);height:clamp(26px,3.4vw,38px);filter:drop-shadow(0 1px 3px rgba(0,0,0,.6));">'
+            +'<path d="M8 2 L4 4 L2 8 L5 9.5 L5 22 L19 22 L19 9.5 L22 8 L20 4 L16 2 L14.5 3.6 A3.2 3.2 0 0 1 9.5 3.6 Z" fill="'+c+'" stroke="rgba(0,0,0,.45)" stroke-width="1"/>'
+            +'<path d="M8 2 L9.5 3.6 A3.2 3.2 0 0 0 14.5 3.6 L16 2 L14 1.4 A4.6 4.6 0 0 1 10 1.4 Z" fill="rgba(0,0,0,.35)"/>'
+            +'<text x="12" y="16.5" text-anchor="middle" font-size="9" font-weight="800" fill="#fff" stroke="rgba(0,0,0,.55)" stroke-width="0.5" paint-order="stroke">'+num+'</text></svg>');
+         })()
         +'<div style="font-size:clamp(7.5px,0.95vw,11px);font-weight:700;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.95);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:'+(maxW||44)+'px;text-align:center;">'+nm+'</div>'+row+'</div>';
     }
     function placeTeam(r,c,fromTop){
@@ -33489,14 +33563,20 @@ function g45RenderStandings(data, season, sportPath, slug){
       return ra-rb;
     });
     if(multi){ out+='<div style="font-size:11px;font-weight:800;color:var(--t1);margin:10px 0 4px;">'+(g.name||g.abbreviation||'Groupe')+'</div>'; }
+    /* LISIBILITE (18/09/2026) : Antoine lit mal les petits caracteres gris.
+       Toutes les colonnes passent en chiffres a largeur fixe (tabular-nums),
+       le nom du club en 13,5 px blanc, les lignes deviennent des bandes
+       arrondies alternees, les zeros sont estompes et les points passent en
+       pastille. Aucun calcul ne change : c'est le meme rendu commun pour la
+       Ligue 1, la NBA, la NFL, la MLB, le NRL et la KHL. */
     out+='<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">';
-    out+='<table style="width:100%;border-collapse:collapse;font-size:11px;min-width:340px;">';
-    out+='<thead><tr style="color:var(--t3);font-weight:700;">'
-      +'<th style="text-align:left;padding:4px 3px;">#</th>'
-      +'<th style="text-align:left;padding:4px 3px;">Équipe</th>'
-      +'<th style="padding:4px 3px;">J</th><th style="padding:4px 3px;">V</th><th style="padding:4px 3px;">N</th><th style="padding:4px 3px;">D</th>'
-      +'<th style="padding:4px 3px;">BP</th><th style="padding:4px 3px;">BC</th><th style="padding:4px 3px;">Diff</th>'
-      +'<th style="padding:4px 3px;color:var(--t1);">'+(usePct?'% V':'Pts')+'</th></tr></thead><tbody>';
+    out+='<table style="width:100%;border-collapse:separate;border-spacing:0 4px;font-size:12.5px;min-width:360px;">';
+    out+='<thead><tr style="color:#7c89a8;font-weight:800;font-size:9.5px;letter-spacing:.9px;text-transform:uppercase;">'
+      +'<th style="text-align:left;padding:0 6px 6px;">#</th>'
+      +'<th style="text-align:left;padding:0 6px 6px;">Équipe</th>'
+      +'<th style="padding:0 6px 6px;">J</th><th style="padding:0 6px 6px;">V</th><th style="padding:0 6px 6px;">N</th><th style="padding:0 6px 6px;">D</th>'
+      +'<th style="padding:0 6px 6px;">BP</th><th style="padding:0 6px 6px;">BC</th><th style="padding:0 6px 6px;">Diff</th>'
+      +'<th style="padding:0 6px 6px;color:var(--t1);">'+(usePct?'% V':'Pts')+'</th></tr></thead><tbody>';
     entries.forEach(function(e,idx){
       var t=e.team||{}, st=e.stats||[];
       var _z=(e.note && _g45ZoneFromNote(e.note.description)) || _g45ZoneByPos(slug, sportPath, idx+1, entries.length);
@@ -33514,17 +33594,26 @@ function g45RenderStandings(data, season, sportPath, slug){
         if(!isNaN(WP)){ lastCol=(WP<=1?WP*100:WP).toFixed(1)+'%'; }
         else { var vv=parseFloat(V)||0, dd=parseFloat(D)||0; lastCol=(vv+dd>0)?((vv/(vv+dd)*100).toFixed(1)+'%'):'-'; }
       }
-      out+='<tr style="border-top:1px solid rgba(255,255,255,.05);'+_rowbg+'">'
-        +'<td style="padding:5px 3px 5px 7px;'+_bd+'color:var(--t3);font-weight:700;">'+(idx+1)+'</td>'
-        +'<td style="padding:5px 3px;"><div style="display:flex;align-items:center;gap:6px;">'+(logo?'<img src="'+logo+'" style="width:16px;height:16px;object-fit:contain;" onerror="this.style.display=\'none\'">':'')+'<span style="color:var(--t1);font-weight:600;white-space:nowrap;">'+nm+'</span></div></td>'
-        +'<td style="padding:5px 3px;text-align:center;color:var(--t2);">'+(J!==''?J:'-')+'</td>'
-        +'<td style="padding:5px 3px;text-align:center;color:var(--t2);">'+(V!==''?V:'-')+'</td>'
-        +'<td style="padding:5px 3px;text-align:center;color:var(--t2);">'+(N!==''?N:'-')+'</td>'
-        +'<td style="padding:5px 3px;text-align:center;color:var(--t2);">'+(D!==''?D:'-')+'</td>'
-        +'<td style="padding:5px 3px;text-align:center;color:var(--t3);">'+(BP!==''?BP:'-')+'</td>'
-        +'<td style="padding:5px 3px;text-align:center;color:var(--t3);">'+(BC!==''?BC:'-')+'</td>'
-        +'<td style="padding:5px 3px;text-align:center;color:var(--t2);">'+(DF!==''?DF:'-')+'</td>'
-        +'<td style="padding:5px 3px;text-align:center;color:var(--t1);font-weight:800;">'+lastCol+'</td></tr>';
+      /* La barre de qualification passe en LISERE INTERNE : un vrai
+         border-left casserait les coins arrondis de la bande. */
+      var _cell='padding:8px 6px;text-align:center;font-variant-numeric:tabular-nums;font-weight:700;'
+        + 'background:' + (_z ? _g45Hex2rgba(_z.color,.13) : (idx%2 ? 'rgba(255,255,255,.045)' : 'rgba(255,255,255,.022)')) + ';';
+      var _val=function(v, coul){
+        var vide=(v===''||v==='-'), nul=(String(v)==='0');
+        return '<td style="'+_cell+'color:'+(vide||nul?'#5c6785':(coul||'#dbe3f5'))+';">'+(vide?'-':v)+'</td>';
+      };
+      var _dfNum=parseFloat(DF);
+      out+='<tr>'
+        +'<td style="'+_cell+'text-align:left;border-radius:10px 0 0 10px;box-shadow:inset 3px 0 0 '+(_z?_z.color:'transparent')+';'
+          +'color:'+(idx===0?'#f0b020':'var(--t3)')+';padding-left:10px;">'+(idx+1)+'</td>'
+        +'<td style="'+_cell+'text-align:left;"><div style="display:flex;align-items:center;gap:8px;">'
+          +(logo?'<img src="'+logo+'" style="width:20px;height:20px;object-fit:contain;flex:none;" loading="lazy" onerror="this.style.display=\'none\'">':'')
+          +'<span style="color:#fff;font-weight:800;font-size:13.5px;white-space:nowrap;">'+nm+'</span></div></td>'
+        +_val(J)+_val(V)+_val(N)+_val(D)+_val(BP)+_val(BC)
+        +_val(DF, isNaN(_dfNum)?null:(_dfNum>0?'#1ed760':(_dfNum<0?'#ff6b6b':null)))
+        +'<td style="'+_cell+'border-radius:0 10px 10px 0;">'
+          +'<span style="display:inline-block;min-width:34px;padding:3px 8px;border-radius:8px;font-weight:800;font-variant-numeric:tabular-nums;'
+          +(lastCol==='-'?'background:rgba(255,255,255,.06);color:#9fb0c7;':'background:rgba(77,132,255,.16);color:#8ab4ff;')+'">'+lastCol+'</span></td></tr>';
     });
     out+='</tbody></table></div>';
   });
@@ -38582,10 +38671,16 @@ function _g45Norm(s) {
 /* Charge (et met en cache) la liste { nom -> id } d'un championnat. */
 async function g45CoreTeams(sportPath, ligue) {
   var cle = _g45CoreCle(sportPath, ligue);
-  if (_g45CoreCache[cle]) return _g45CoreCache[cle];
+  if (_g45CoreCache[cle] && Object.keys(_g45CoreCache[cle]).length) return _g45CoreCache[cle];
   try {
     var brut = localStorage.getItem(cle);
-    if (brut) { _g45CoreCache[cle] = JSON.parse(brut); return _g45CoreCache[cle]; }
+    if (brut) {
+      var dej = JSON.parse(brut);
+      /* Une entree vide laissee par une version precedente est ignoree ET
+         effacee, sinon elle survivrait a la correction. */
+      if (dej && Object.keys(dej).length) { _g45CoreCache[cle] = dej; return dej; }
+      try { localStorage.removeItem(cle); } catch (e2) {}
+    }
   } catch (e) {}
 
   var out = {};
@@ -38654,8 +38749,14 @@ async function g45CoreTeams(sportPath, ligue) {
         if (t.displayName || t.name) out['#' + t.id] = String(t.displayName || t.name);
       });
     }
-    _g45CoreCache[cle] = out;
-    try { localStorage.setItem(cle, JSON.stringify(out)); } catch (e) {}
+    /* NE JAMAIS METTRE EN CACHE UN RESULTAT VIDE (regle du projet, re-appliquee
+       le 18/09) : un seul raté d'ESPN figeait « 0 equipe » POUR TOUJOURS, et
+       les Journees de Ligue 1, Premier League et Liga affichaient « Impossible
+       de charger la liste des equipes » meme quand ESPN repondait. */
+    if (Object.keys(out).length) {
+      _g45CoreCache[cle] = out;
+      try { localStorage.setItem(cle, JSON.stringify(out)); } catch (e) {}
+    }
     console.log('✅ ' + Object.keys(out).length + ' noms d\'équipes chargés pour ' + sportPath + '/' + ligue);
   } catch (e) {
     console.warn('core teams', e && e.message);
@@ -40343,7 +40444,17 @@ async function _g45CompetMatchs(sportPath, slug, an, ids, progres) {
         var t = Date.parse(e.date);
         if (isNaN(hg) || isNaN(ag) || !hid || !aid || isNaN(t)) return;
         vus[e.id] = 1;
-        ms.push({ id: String(e.id), h: hid, a: aid, hg: hg, ag: ag, t: t });
+        /* PERIODES (18/09/2026) : conservees telles qu'ESPN les donne, pour
+           pouvoir recalculer le score du TEMPS REGLEMENTAIRE (bouton du
+           panneau Saisons). Aucune requete de plus : c'est dans la meme
+           reponse. Le NRL numerote sa prolongation « 20 », d'ou le stockage
+           du NUMERO de periode et pas seulement de la valeur. */
+        var per = function (x) {
+          return ((x && x.linescores) || []).map(function (l, i) {
+            return { p: (l.period != null ? +l.period : i + 1), v: (l.value != null ? +l.value : parseInt(l.displayValue, 10) || 0) };
+          });
+        };
+        ms.push({ id: String(e.id), h: hid, a: aid, hg: hg, ag: ag, t: t, hp: per(ho), ap: per(aw) });
       });
     } catch (e) {}
   }
@@ -40385,7 +40496,12 @@ async function _g45CompetMatchs(sportPath, slug, an, ids, progres) {
           var tp = Date.parse(e.date);
           if (isNaN(hgp) || isNaN(agp) || !hidp || !aidp || isNaN(tp)) return;
           vus[e.id] = 1;
-          ms.push({
+          var perp = function (x) {
+            return ((x && x.linescores) || []).map(function (l, k) {
+              return { p: (l.period != null ? +l.period : k + 1), v: (l.value != null ? +l.value : parseInt(l.displayValue, 10) || 0) };
+            });
+          };
+          ms.push({ hp: perp(hop), ap: perp(awp),
             id: String(e.id), h: hidp, a: aidp, hg: hgp, ag: agp, t: tp,
             po: 1,   /* marque « phase finale » : exploitable a l'affichage */
             hn: (hop.team && (hop.team.shortDisplayName || hop.team.displayName)) || '',
@@ -41459,7 +41575,7 @@ function _g45SgCle(n) { return String(n || '').toLowerCase().trim(); }
    fait 2025-26 : on croit consulter une saison et on en voit une autre. */
 function _g45SgLabel(lg, y) {
   if (['3', 'mlb'].indexOf(lg) >= 0) return String(y);                 /* annee civile */
-  if (['nhl', 'nba', 'wnba'].indexOf(lg) >= 0)                         /* annee de FIN */
+  if (['nhl', 'nba', 'wnba', 'khl'].indexOf(lg) >= 0)                  /* annee de FIN */
     return (y - 1) + '-' + String(y).slice(2);
   return y + '-' + String(y + 1).slice(2);                             /* annee de DEBUT */
 }
@@ -41476,7 +41592,7 @@ function _g45SgLabel(lg, y) {
 function _g45SgAnAuto(lg) {
   var d = new Date(), y = d.getFullYear(), m = d.getMonth() + 1;
   if (['3', 'mlb'].indexOf(lg) >= 0) return y;                          /* annee civile */
-  if (['nhl', 'nba', 'wnba'].indexOf(lg) >= 0) return (m >= 9) ? (y + 1) : y;
+  if (['nhl', 'nba', 'wnba', 'khl'].indexOf(lg) >= 0) return (m >= 9) ? (y + 1) : y;
   if (['nfl', 'college-football'].indexOf(lg) >= 0) return (m >= 9) ? y : (y - 1);
   return (m >= 8) ? y : (y - 1);                                        /* football, rugby */
 }
@@ -41759,6 +41875,19 @@ async function _g45SaisonsGen(el, nom, perso) {
   });
   html += '</div>';
 
+  /* ── Bouton TEMPS REGLEMENTAIRE (18/09/2026) ──
+     Hockey d'abord : un 3-4 en prolongation est un 3-3 en temps reglementaire,
+     et les books ne cotent pas la meme chose. Le bouton n'apparait que sur les
+     sports concernes, pour ne pas encombrer le football de championnat. */
+  if (typeof g45SportTR === 'function' && g45SportTR(_g45SgCtx && _g45SgCtx.sp) && (_g45SgTRDispo || _g45SgTR)) {
+    html += '<div style="display:flex;gap:6px;margin-bottom:14px;">'
+      + '<button onclick="_g45SgTRBascule()" style="flex:1;padding:7px 6px;border-radius:6px;cursor:pointer;font-size:10px;font-weight:'
+      + (_g45SgTR ? '800' : '400') + ';border:1px solid ' + (_g45SgTR ? 'rgba(240,176,32,.55)' : 'rgba(255,255,255,.08)') + ';'
+      + 'background:' + (_g45SgTR ? 'rgba(240,176,32,.16)' : 'rgba(255,255,255,.04)') + ';color:' + (_g45SgTR ? '#f0b020' : 'var(--t3)') + ';">'
+      + '\u23f1\ufe0f ' + g45LibelleTR(_g45SgCtx && _g45SgCtx.sp) + (_g45SgTR ? ' \u00b7 actif' : '') + '</button></div>'
+      + (_g45SgTR ? '<div style="font-size:10px;color:#f0b020;margin:-8px 0 12px;">Prolongations retir\u00e9es : les nuls r\u00e9apparaissent et les totaux baissent.</div>' : '');
+  }
+
   /* ── Barres des marches coches ── */
   html += '<div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#4f5d88;margin-bottom:8px;">'
     + 'Stats s\u00e9lectionn\u00e9es <span style="color:var(--t3);font-weight:400;text-transform:none;letter-spacing:0;">\u00b7 ' + nF + ' matchs</span></div>';
@@ -41839,7 +41968,7 @@ async function _g45SaisonsGen(el, nom, perso) {
   if (typeof g45FondClubHtml === 'function') html += g45FondClubHtml(_g45SgNomCourant || '', 0.2, _crestG);
   html += '<div style="position:relative;z-index:1;">';
   html += '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:6px;">'
-    + '<div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#4f5d88;">R\u00e9sultats (' + nF + ' matchs)</div>'
+    + '<div id="g45-sg-titre-resultats" style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#4f5d88;">R\u00e9sultats (' + nF + ' matchs)</div>'
     + '<div style="font-size:11px;font-weight:800;color:' + combCol + ';background:' + combCol + '1a;border:1px solid ' + combCol + '55;border-radius:12px;padding:3px 10px;">'
     + '\u2705 ' + combN + '/' + nF + ' \u2014 ' + coches.join(' + ') + ' \u00b7 ' + combPc + '%</div></div>';
   liste.forEach(function (m) {
@@ -42128,6 +42257,9 @@ window._g45SgOuvrirTirs = _g45SgOuvrirTirs;
 function _g45SgRefresh() { if (typeof loadTeamSaisons === 'function') loadTeamSaisons(); }
 function _g45SgSaison(y) { _g45SgAn = y; _g45SgRefresh(); }
 function _g45SgLieu(f) { _g45SgFiltre = f; _g45SgRefresh(); }
+var _g45SgTR = false;
+function _g45SgTRBascule() { _g45SgTR = !_g45SgTR; _g45SgRefresh(); }
+window._g45SgTRBascule = _g45SgTRBascule;
 function _g45SgPhaseSet(f) { _g45SgPhase = f; _g45SgRefresh(); }
 window._g45SgPhaseSet = _g45SgPhaseSet;
 function _g45SgToggle(k) {
@@ -49842,9 +49974,45 @@ async function _g45KhlMatchsPlage(de, a) {
      delai et « Aucun match » effacait tout). Un vide n'est retenu que s'il est
      SUR, c'est-a-dire si toutes les semaines ont repondu. Sinon on rend le
      dernier resultat reussi de la meme plage. */
-  var cle = de + '_' + a;
-  if (res.length || !_g45KhlEchecs) { _g45KhlDerniers[cle] = res; return res; }
-  return _g45KhlDerniers[cle] || res;
+  var cle = _g45KhlClePlage(de, a);
+  if (res.length || !_g45KhlEchecs) { _g45KhlDerniers[cle] = res; _g45KhlRangerPlage(cle, res); return res; }
+  return _g45KhlDerniers[cle] || _g45KhlLirePlage(cle) || res;
+}
+
+/* AFFICHAGE IMMEDIAT PUIS RAFRAICHISSEMENT (18/09, demande d'Antoine : « 3
+   plombes a chaque fois »). Les vues longues (classement, forme, journees)
+   relisaient toute la saison avant d'afficher quoi que ce soit. On garde donc
+   le dernier resultat de chaque plage sur le disque : il est rendu tout de
+   suite, la lecture continue en arriere-plan, et l'ecran est redessine
+   seulement si quelque chose a change. */
+/* CLE DE PLAGE : « aujourd'hui » vaut Date.now(), qui change a chaque appel —
+   une cle brute ne retombait donc JAMAIS sur le cache de la fois precedente
+   (bug attrape en simulation). On arrondit : jour de depart + nombre de jours
+   couverts. */
+function _g45KhlClePlage(de, a) {
+  return Math.floor(de / 86400000) + '_' + Math.max(1, Math.round((a - de) / 86400000));
+}
+function _g45KhlRangerPlage(cle, liste) {
+  try { localStorage.setItem('g45khl_plage_' + cle, JSON.stringify({ t: Date.now(), l: liste })); } catch (e) {}
+}
+function _g45KhlLirePlage(cle) {
+  try {
+    var c = JSON.parse(localStorage.getItem('g45khl_plage_' + cle) || 'null');
+    return (c && Array.isArray(c.l) && c.l.length) ? c.l : null;
+  } catch (e) { return null; }
+}
+function _g45KhlEmpreinte(ms) {
+  return (ms || []).map(function (m) { return m.id + ':' + m.sc + ':' + m.etat; }).join('|');
+}
+/* `rendre(ms, ancien)` est appele une fois avec les donnees en cache (si elles
+   existent), puis une seconde fois avec les donnees fraiches si elles different. */
+async function _g45KhlPlageAffiche(de, a, rendre) {
+  var cle = _g45KhlClePlage(de, a);
+  var vieux = _g45KhlDerniers[cle] || _g45KhlLirePlage(cle);
+  if (vieux && vieux.length) rendre(vieux, true);
+  var frais = await _g45KhlMatchsPlage(de, a);
+  if (!vieux || _g45KhlEmpreinte(frais) !== _g45KhlEmpreinte(vieux)) rendre(frais, false);
+  return frais;
 }
 function _g45KhlDebutSaison() {
   var d = new Date(), an = (d.getMonth() + 1 >= 8) ? d.getFullYear() : d.getFullYear() - 1;
@@ -50013,7 +50181,11 @@ window.g45KhlJour = g45KhlJour;
 
 async function _g45KhlVueCalendrier(body) {
   var j0 = new Date(); j0.setHours(0, 0, 0, 0);
-  var ms = (await _g45KhlMatchsPlage(j0.getTime(), j0.getTime() + 14 * 86400000)).filter(function (m) { return !_g45KhlFini(m); });
+  await _g45KhlPlageAffiche(j0.getTime(), j0.getTime() + 14 * 86400000, function (liste, ancien) {
+    _g45KhlRendreCalendrier(body, liste.filter(function (m) { return !_g45KhlFini(m); }), ancien);
+  });
+}
+function _g45KhlRendreCalendrier(body, ms, ancien) {
   if (!ms.length) { body.innerHTML = _g45KhlMsgVide('Aucun match KHL dans les 14 prochains jours.'); return; }
   var h = '', jourCourant = '';
   ms.forEach(function (m) {
@@ -50025,7 +50197,7 @@ async function _g45KhlVueCalendrier(body) {
       + '<span style="color:#8a93ad;">vs</span>'
       + '<span style="flex:1;min-width:0;text-align:right;">' + _g45KhlEsc(g45KhlNomFr(m.b)) + '</span>' + _g45KhlLogoHtml(m.b, m.bn, 20) + '</div>';
   });
-  body.innerHTML = h;
+  body.innerHTML = (ancien ? '<div style="font-size:10.5px;color:#f0b020;margin-bottom:8px;">\u21bb Donn\u00e9es pr\u00e9c\u00e9dentes, mise \u00e0 jour en cours\u2026</div>' : '') + h;
 }
 
 /* Classement recalcule depuis les matchs finis : 2 pts la victoire (quelle
@@ -50048,7 +50220,11 @@ function _g45KhlClassement(ms) {
   });
 }
 async function _g45KhlVueClassement(body) {
-  var ms = await _g45KhlMatchsPlage(_g45KhlDebutSaison(), Date.now());
+  await _g45KhlPlageAffiche(_g45KhlDebutSaison(), Date.now(), function (ms, ancien) {
+    if (document.getElementById('g45-compet-body') === body || body) _g45KhlRendreClassement(body, ms, ancien);
+  });
+}
+function _g45KhlRendreClassement(body, ms, ancien) {
   var cl = _g45KhlClassement(ms).filter(function (r) { return r.e.conf === _g45KhlConf; });
   var h = '<div style="display:flex;gap:6px;margin-bottom:10px;">' + _g45KhlChip('Ouest', _g45KhlConf === 'Ouest', "g45KhlConf('Ouest')") + _g45KhlChip('Est', _g45KhlConf === 'Est', "g45KhlConf('Est')") + '</div>'
     + '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12px;color:#e8ecfa;">'
@@ -50061,14 +50237,19 @@ async function _g45KhlVueClassement(body) {
       + '<td style="text-align:center;">' + (r.bp - r.bc > 0 ? '+' : '') + (r.bp - r.bc) + '</td>'
       + '<td style="text-align:right;padding-right:4px;font-weight:800;color:' + (i === 0 ? '#1ed760' : '#e8ecfa') + ';">' + r.pts + '</td></tr>';
   });
-  h += '</table></div><div style="font-size:10.5px;color:#8a93ad;margin-top:8px;line-height:1.5;">VP = victoire en prolongation ou aux tirs au but \u00b7 DP = d\u00e9faite en prolongation ou aux tirs au but (1 pt). Pointill\u00e9 = limite des 8 qualifi\u00e9s pour les play-offs. Classement recalcul\u00e9 depuis les r\u00e9sultats.</div>';
+  h += '</table></div>'
+    + (ancien ? '<div style="font-size:10.5px;color:#f0b020;margin-top:8px;">\u21bb Classement pr\u00e9c\u00e9dent affich\u00e9, mise \u00e0 jour en cours\u2026</div>' : '')
+    + '<div style="font-size:10.5px;color:#8a93ad;margin-top:8px;line-height:1.5;">VP = victoire en prolongation ou aux tirs au but \u00b7 DP = d\u00e9faite en prolongation ou aux tirs au but (1 pt). Pointill\u00e9 = limite des 8 qualifi\u00e9s pour les play-offs. Classement recalcul\u00e9 depuis les r\u00e9sultats.</div>';
   body.innerHTML = h;
 }
 function g45KhlConf(c) { _g45KhlConf = c; loadCompetTab(); }
 window.g45KhlConf = g45KhlConf;
 
 async function _g45KhlVueForme(body) {
-  var ms = (await _g45KhlMatchsPlage(_g45KhlDebutSaison(), Date.now())).filter(_g45KhlFini).reverse(); /* recent d'abord */
+  await _g45KhlPlageAffiche(_g45KhlDebutSaison(), Date.now(), function (liste, ancien) { _g45KhlRendreForme(body, liste, ancien); });
+}
+function _g45KhlRendreForme(body, liste0, ancien) {
+  var ms = liste0.filter(_g45KhlFini).slice().reverse(); /* recent d'abord */
   var filtres = '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">'
     + _g45KhlChip('Global', _g45KhlFormeLieu === '', "g45KhlForme(null,'')") + _g45KhlChip('Domicile', _g45KhlFormeLieu === 'dom', "g45KhlForme(null,'dom')") + _g45KhlChip('Ext\u00e9rieur', _g45KhlFormeLieu === 'ext', "g45KhlForme(null,'ext')")
     + '</div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">'
@@ -50095,7 +50276,8 @@ async function _g45KhlVueForme(body) {
       + _g45KhlLogoHtml(l.e.id, '', 22) + '<span style="flex:1;min-width:0;">' + _g45KhlEsc(l.e.fr) + '</span>'
       + '<span style="display:flex;gap:3px;">' + l.res.map(pastille).join('') + '</span>'
       + '<span style="width:42px;text-align:right;font-weight:800;">' + l.pct + '%</span></div>';
-  }).join('') + '<div style="font-size:10.5px;color:#8a93ad;margin-top:8px;">R\u00e9sultat le plus r\u00e9cent \u00e0 gauche \u00b7 %V = victoires, prolongation comprise.</div>';
+  }).join('') + (ancien ? '<div style="font-size:10.5px;color:#f0b020;margin-top:8px;">\u21bb Donn\u00e9es pr\u00e9c\u00e9dentes, mise \u00e0 jour en cours\u2026</div>' : '')
+    + '<div style="font-size:10.5px;color:#8a93ad;margin-top:8px;">R\u00e9sultat le plus r\u00e9cent \u00e0 gauche \u00b7 %V = victoires, prolongation comprise.</div>';
 }
 function g45KhlForme(n, lieu) { if (n) _g45KhlFormeN = n; if (lieu !== null && lieu !== undefined) _g45KhlFormeLieu = lieu; loadCompetTab(); }
 window.g45KhlForme = g45KhlForme;
@@ -50198,7 +50380,9 @@ function _g45KhlLundi(t) {
 async function _g45KhlVueJournees(body) {
   var debut = _g45KhlDebutSaison();
   var fin = Date.now() + 21 * 86400000;
-  var ms = await _g45KhlMatchsPlage(debut, fin);
+  await _g45KhlPlageAffiche(debut, fin, function (liste, ancien) { _g45KhlRendreJournees(body, liste, ancien); });
+}
+function _g45KhlRendreJournees(body, ms, ancien) {
   if (!ms.length) { body.innerHTML = _g45KhlMsgVide('Aucun match KHL trouv\u00e9 pour cette saison.'); return; }
   var sem = {}, lundiCourant = _g45KhlLundi(Date.now());
   ms.forEach(function (m) { var k = _g45KhlLundi(m.t); (sem[k] = sem[k] || []).push(m); });
@@ -50240,7 +50424,7 @@ async function _g45KhlVueJournees(body) {
     }
     h += '</div>';
   });
-  body.innerHTML = h;
+  body.innerHTML = (ancien ? '<div style="font-size:10.5px;color:#f0b020;margin-bottom:8px;">\u21bb Donn\u00e9es pr\u00e9c\u00e9dentes, mise \u00e0 jour en cours\u2026</div>' : '') + h;
   /* Fiches des matchs deplies, chargees apres coup. */
   Object.keys(_g45KhlJrOuvert).forEach(async function (id) {
     if (!_g45KhlJrOuvert[id]) return;
@@ -50283,7 +50467,8 @@ function _g45KhlJoueur(x) {
   (p.stats || []).forEach(function (s) { if (s && s.id != null) st[s.id] = s.val; });
   return { id: p.id, kid: p.khl_id, n: p.name, num: p.shirt_number, r: p.role_key, age: p.age, pays: p.country, img: p.image, eq: p.team ? p.team.id : null, st: st };
 }
-async function _g45KhlJoueurs() {
+async function _g45KhlJoueurs(progres) {
+  var dire = function (n, tot) { try { if (typeof progres === 'function') progres(n, tot); } catch (e) {} };
   var stage = await g45KhlStageActuel(), cle = 'g45khl_joueurs_' + stage;
   try { var c = JSON.parse(localStorage.getItem(cle) || 'null'); if (c && c.l && c.l.length && Date.now() - c.t < 3 * 3600000) return c.l; } catch (e) {}
   /* CHARGEMENT EN TROIS TEMPS (17/09/2026, mesures d'Antoine) :
@@ -50314,6 +50499,7 @@ async function _g45KhlJoueurs() {
     var nums = pages.slice(i, i + 4);
     var res = await Promise.all(nums.map(function (n) { return g45KhlApi('players_v2', { stage_id: stage, page: n }); }));
     res.forEach(function (j, k) { if (Array.isArray(j)) ajouter(j); else ratees.push(nums[k]); });
+    dire(tous.length, light.length);
   }
   /* Seconde passe sur les pages coupees : entre-temps le Worker a pu finir de
      les lire et de les mettre en cache (ctx.waitUntil). */
@@ -50567,7 +50753,11 @@ async function g45KhlDirectSuivies() {
   var a = resultats ? Date.now() : j0.getTime() + 3 * 86400000;
   var ms = (await _g45KhlMatchsPlage(de, a)).filter(function (m) {
     if (ids.indexOf(m.a) < 0 && ids.indexOf(m.b) < 0) return false;
-    return resultats ? _g45KhlFini(m) : !_g45KhlFini(m) || m.t > Date.now() - 6 * 3600000;
+    /* CORRIGE le 18/09 : l'onglet « A venir / direct » gardait les matchs
+       TERMINES depuis moins de 6 h — Antoine voyait donc un 4-1 acheve a
+       18 h 10 y rester toute la soiree. Un match fini appartient aux
+       Resultats, point. Ici : uniquement a venir ou en cours. */
+    return resultats ? _g45KhlFini(m) : !_g45KhlFini(m);
   });
   if (resultats) ms.reverse();
   if (!ms.length) return;
@@ -51054,4 +51244,701 @@ window.g45KhlSaisonsFiche = g45KhlSaisonsFiche;
   };
   env._g45Khl = true;
   loadTeamSaisons = env; window.loadTeamSaisons = env;
+})();
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   KHL — ADAPTATEUR VERS LE PANNEAU SAISONS GENERIQUE (17/09/2026)
+   ───────────────────────────────────────────────────────────────────────────
+   Mon panneau maison etait bien plus pauvre que `_g45SaisonsGen` (marches O/U,
+   compteur de combine, forme recente, domicile/exterieur, detail de match).
+   Plutot que de le reecrire pour la KHL, on NOURRIT le panneau generique : on
+   intercepte ses deux sources, `_g45CompetEquipes` et `_g45CompetMatchs`, pour
+   le couple hockey/khl. La KHL heritera donc automatiquement de toute
+   amelioration future du panneau.
+   Format attendu par `_g45SgCalc`, releve dans le code :
+     { id, h, a, hg, ag, t, hn, an, po }   (po = phase finale)
+   Saisons : `khl` est numerotee par l'annee de FIN, comme la NHL (2027 =
+   2026-27). Les `stage_id` des saisons passees et des play-offs sont lus dans
+   data.json ; sans eux, seule la saison en cours est disponible.
+   ═══════════════════════════════════════════════════════════════════════════ */
+var _g45KhlStagesCache = null;
+
+/* Parcourt data.json a la recherche des objets { id, name } dont le libelle
+   ressemble a « Regular 2026/2027 » ou « Playoff 2025/2026 ». On ne suppose pas
+   la structure : on descend recursivement, c'est plus robuste qu'un chemin en
+   dur qui casserait au premier changement. */
+async function g45KhlStages() {
+  if (_g45KhlStagesCache) return _g45KhlStagesCache;
+  try {
+    var c = JSON.parse(localStorage.getItem('g45khl_stages') || 'null');
+    if (c && c.m && Date.now() - c.t < 24 * 3600000) { _g45KhlStagesCache = c.m; return c.m; }
+  } catch (e) {}
+  var d = await g45KhlApi('data', {});
+  var par = {};
+  var vu = 0;
+  (function descendre(o) {
+    if (!o || typeof o !== 'object' || vu++ > 20000) return;
+    if (Array.isArray(o)) { o.forEach(descendre); return; }
+    var id = o.id, nom = o.name || o.title;
+    if (id && typeof nom === 'string') {
+      var m = nom.match(/(\d{4})\s*\/\s*(\d{4})/);
+      if (m) {
+        var an = +m[2], po = /play\s*-?\s*off|\bpo\b|cup/i.test(nom), reg = /regular/i.test(nom);
+        if (po || reg) {
+          par[an] = par[an] || {};
+          par[an][po ? 'po' : 'reg'] = +id;
+        }
+      }
+    }
+    Object.keys(o).forEach(function (k) { if (o[k] && typeof o[k] === 'object') descendre(o[k]); });
+  })(d);
+  /* Filet : la saison en cours est connue meme si data.json change de forme. */
+  var anCourant = _g45SgAnAuto('khl');
+  par[anCourant] = par[anCourant] || {};
+  if (!par[anCourant].reg) par[anCourant].reg = await g45KhlStageActuel();
+  if (Object.keys(par).length) {
+    _g45KhlStagesCache = par;
+    try { localStorage.setItem('g45khl_stages', JSON.stringify({ t: Date.now(), m: par })); } catch (e) {}
+  }
+  return par;
+}
+window.g45KhlStages = g45KhlStages;
+
+/* Tous les matchs d'un stage, par pages de 16. Une saison TERMINEE ne bouge
+   plus : cache definitif. La saison en cours est relue toutes les 10 min. */
+async function _g45KhlMatchsStage(stage, enCours, progres) {
+  if (!stage) return [];
+  var cle = 'g45khl_stage_' + stage;
+  try {
+    var c = JSON.parse(localStorage.getItem(cle) || 'null');
+    if (c && c.l && c.l.length && (!enCours || Date.now() - c.t < 10 * 60000)) return c.l;
+  } catch (e) {}
+  var out = [], vus = {};
+  for (var page = 1; page <= 80; page++) {
+    var j = await g45KhlApi('events_v2', { stage_id: stage, order_direction: 'asc', page: page });
+    if (j === null && page === 1) j = await g45KhlApi('events_v2', { stage_id: stage, order_direction: 'asc', page: page });
+    if (!Array.isArray(j) || !j.length) break;
+    var neufs = 0;
+    j.forEach(function (x) { var m = _g45KhlMatch(x); if (m && !vus[m.id]) { vus[m.id] = 1; out.push(m); neufs++; } });
+    if (!neufs) break;
+    if (typeof progres === 'function') progres(out.length, 0);
+  }
+  out = _g45KhlDedoublonne(out);
+  if (out.length) { try { localStorage.setItem(cle, JSON.stringify({ t: Date.now(), l: out })); } catch (e) {} }
+  return out;
+}
+
+/* Conversion vers le format du panneau generique. */
+function _g45KhlVersSg(m, po) {
+  var s = _g45KhlButs(m);
+  /* Periodes au format commun (hp/ap) pour le bouton « temps reglementaire » :
+     1 a 3 reglementaires, 4 prolongation, 5 tirs au but. */
+  var hp = [], ap = [];
+  (m.p || []).forEach(function (x, i) {
+    if (!x) return;
+    var q = String(x).split(':');
+    if (q.length !== 2) return;
+    hp.push({ p: i + 1, v: parseInt(q[0], 10) || 0 });
+    ap.push({ p: i + 1, v: parseInt(q[1], 10) || 0 });
+  });
+  [[m.ot, 4], [m.so, 5]].forEach(function (x) {
+    if (!x[0]) return;
+    var q = String(x[0]).split(':');
+    if (q.length !== 2) return;
+    hp.push({ p: x[1], v: parseInt(q[0], 10) || 0 });
+    ap.push({ p: x[1], v: parseInt(q[1], 10) || 0 });
+  });
+  return { id: String(m.id), h: m.a, a: m.b, hg: s.a, ag: s.b, t: m.t,
+           hn: g45KhlNomFr(m.a), an: g45KhlNomFr(m.b), po: po ? 1 : 0, hp: hp, ap: ap };
+}
+
+(function _g45KhlBrancherSaisonsGen() {
+  /* Equipes : le panneau s'en sert pour les noms et les ecussons. */
+  if (typeof _g45CompetEquipes === 'function' && !_g45CompetEquipes._g45Khl) {
+    var origEq = _g45CompetEquipes;
+    var envEq = async function (ctx) {
+      if (ctx && ctx.sp === 'hockey' && ctx.s === 'khl') {
+        return G45_KHL_EQUIPES.map(function (e) { return { id: e.id, nom: e.fr, logo: e.logo }; });
+      }
+      return origEq.apply(this, arguments);
+    };
+    envEq._g45Khl = true;
+    _g45CompetEquipes = envEq; window._g45CompetEquipes = envEq;
+  }
+  /* Matchs : saison reguliere + play-offs de l'annee demandee. */
+  if (typeof _g45CompetMatchs === 'function' && !_g45CompetMatchs._g45Khl) {
+    var origMs = _g45CompetMatchs;
+    var envMs = async function (sp, lg, an, ids, progres) {
+      if (sp !== 'hockey' || lg !== 'khl') return origMs.apply(this, arguments);
+      var stages = await g45KhlStages();
+      var st = stages[an] || {};
+      var enCours = (an === _g45SgAnAuto('khl'));
+      var dire = function (n) { if (typeof progres === 'function') progres(n, 0); };
+      var reg = await _g45KhlMatchsStage(st.reg, enCours, dire);
+      var po = st.po ? await _g45KhlMatchsStage(st.po, enCours, dire) : [];
+      return reg.filter(_g45KhlFini).map(function (m) { return _g45KhlVersSg(m, 0); })
+        .concat(po.filter(_g45KhlFini).map(function (m) { return _g45KhlVersSg(m, 1); }));
+    };
+    envMs._g45Khl = true;
+    _g45CompetMatchs = envMs; window._g45CompetMatchs = envMs;
+  }
+  /* La fiche d'equipe envoie desormais la KHL vers le panneau generique, au
+     lieu de mon panneau maison (conserve sous g45KhlSaisonsFiche au cas ou). */
+  if (typeof loadTeamSaisons === 'function' && !loadTeamSaisons._g45KhlGen) {
+    var orig = loadTeamSaisons;
+    var env = async function () {
+      try {
+        var nom = (typeof _currentTeam !== 'undefined' ? _currentTeam : '')
+               || (typeof _currentUnitNom !== 'undefined' ? _currentUnitNom : '') || '';
+        var e = g45KhlEquipe(nom);
+        var el = document.getElementById('ip-saisons');
+        if (e && el && typeof _g45SaisonsGen === 'function') {
+          if (typeof _g45SgNomCourant !== 'undefined' && _g45SgNomCourant !== nom) {
+            _g45SgNomCourant = nom; _g45SgAn = null; _g45SgPhase = 'tout';
+          }
+          return await _g45SaisonsGen(el, e.fr, { sport: 'hockey', league: 'khl', id: e.id });
+        }
+      } catch (err) { console.warn('KHL saisons :', err && err.message); }
+      return orig.apply(this, arguments);
+    };
+    env._g45KhlGen = true; env._g45Khl = true;
+    loadTeamSaisons = env; window.loadTeamSaisons = env;
+  }
+})();
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   KHL — ONGLET COMPO (17/09/2026, maquette validee)
+   ───────────────────────────────────────────────────────────────────────────
+   Effectif complet avec photos officielles khl.ru, deux tableaux (joueurs de
+   champ / gardiens) et, comme en football, des PASTILLES par match indiquant
+   ou le joueur a marque ou donne une passe.
+   Cout : la liste des joueurs est celle de la vue Individuel (cache 3 h), et
+   les pastilles reutilisent les fiches de match DEJA en cache definitif pour
+   les matchs termines — on ne lit que les matchs de cette equipe, et seulement
+   les 10 derniers.
+   ═══════════════════════════════════════════════════════════════════════════ */
+var _g45KhlCompoPoste = 'tous';
+var _g45KhlCompoN = 10;
+
+function _g45KhlPoste(r) {
+  var x = String(r || '');
+  if (/goal/i.test(x)) return 'g';
+  if (/^def/i.test(x)) return 'd';
+  return 'f';
+}
+async function g45KhlCompoFiche(el, e) {
+  /* PROGRESSION (18/09, signale par Antoine) : le premier chargement lit 42
+     pages de 16 joueurs et peut prendre une minute quand webcaster est lent.
+     Sans compteur, l'ecran semblait bloque sur « Chargement ». */
+  var dire = function (n, tot) {
+    var z = document.getElementById('g45-khl-compo-etat');
+    if (z) z.textContent = 'Chargement de l\'effectif KHL\u2026 ' + n + (tot ? ' / ' + tot : '') + ' joueurs';
+  };
+  el.innerHTML = '<div class="fc" style="display:flex;align-items:center;gap:10px;padding:20px;color:var(--t3);font-size:12px;">'
+    + '<div style="width:16px;height:16px;border:2px solid rgba(77,132,255,.2);border-top-color:#4d84ff;border-radius:50%;animation:spin .8s linear infinite;"></div>'
+    + '<span id="g45-khl-compo-etat">Chargement de l\'effectif KHL\u2026</span></div>';
+  var tous = await _g45KhlJoueurs(dire);
+  var eff = (tous || []).filter(function (p) { return String(p.eq) === String(e.id); });
+  if (!eff.length) {
+    el.innerHTML = '<div class="fc" style="text-align:center;color:#f0b020;padding:18px;font-size:12px;line-height:1.6;">'
+      + '\u26a0\ufe0f Effectif KHL non re\u00e7u pour ' + _g45KhlEsc(e.fr) + '.<br>'
+      + 'Le serveur KHL est lent ou indisponible ; le Worker termine la lecture en arri\u00e8re-plan.'
+      + '<div style="margin-top:10px;">' + _g45KhlChip('\ud83d\udd04 R\u00e9essayer', false, 'loadTeamCompo()') + '</div></div>';
+    return;
+  }
+  /* Derniers matchs termines de l'equipe, pour les pastilles. */
+  var saison = await _g45KhlMatchsPlage(_g45KhlDebutSaison(), Date.now());
+  var siens = saison.filter(function (m) { return (m.a === e.id || m.b === e.id) && _g45KhlFini(m); }).slice(-_g45KhlCompoN);
+  var perMatch = {};   /* nom normalise -> [{b, a, joue}] dans l'ordre des matchs */
+  for (var i = 0; i < siens.length; i++) {
+    var m = siens[i], f = await _g45KhlFiche(m);
+    if (!f) continue;
+    var liste = (m.a === e.id) ? f.ja : f.jb;
+    (liste || []).forEach(function (j) {
+      var k = _g45KhlNorm(j.n);
+      (perMatch[k] = perMatch[k] || {})[m.id] = { b: j.g || 0, a: 0, joue: true };
+    });
+    (f.buts || []).forEach(function (g) {
+      if (g.eq !== e.id) return;
+      (g.pa || []).forEach(function (nomPa) {
+        var k2 = _g45KhlNorm(nomPa);
+        perMatch[k2] = perMatch[k2] || {};
+        perMatch[k2][m.id] = perMatch[k2][m.id] || { b: 0, a: 0, joue: true };
+        perMatch[k2][m.id].a++;
+      });
+    });
+  }
+  var pastilles = function (p) {
+    var par = perMatch[_g45KhlNorm(p.n)] || {};
+    return '<span style="display:inline-flex;gap:3px;">' + siens.map(function (m) {
+      var d = par[m.id];
+      var t = new Date(m.t).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+      /* Degrades plutot que des aplats transparents : un but et une passe se
+         distinguent d'un coup d'oeil, meme sur telephone. */
+      var fond = 'rgba(255,255,255,.03)', txt = '#3c465e', lib = '\u00b7', info = 'pas sur la feuille';
+      if (d && d.joue) { fond = 'rgba(255,255,255,.09)'; txt = '#7c89a8'; lib = '\u2013'; info = 'a jou\u00e9'; }
+      if (d && d.a) { fond = 'linear-gradient(145deg,#8ab4ff,#4d84ff)'; txt = '#08132b'; lib = 'A' + (d.a > 1 ? d.a : ''); info = d.a + ' passe(s)'; }
+      if (d && d.b) { fond = 'linear-gradient(145deg,#1ed760,#12a049)'; txt = '#06210f'; lib = 'B' + (d.b > 1 ? d.b : ''); info = d.b + ' but(s)' + (d.a ? ' + ' + d.a + ' passe(s)' : ''); }
+      return '<span title="' + t + ' \u00b7 ' + info + '" style="width:20px;height:20px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;'
+        + 'font-size:9px;font-weight:800;background:' + fond + ';color:' + txt + ';">' + lib + '</span>';
+    }).join('') + '</span>';
+  };
+  var st = function (v, dec) { return (v == null || isNaN(v)) ? '\u2013' : (dec ? (Math.round(v * 100) / 100).toFixed(dec) : Math.round(v)); };
+  var mmss = function (v) { if (!v) return '\u2013'; var s = Math.round(v * 60); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+  /* RELOOKAGE (18/09, retours d'Antoine : « cette ecriture basique grise me
+     saoule ») — variante D validee : ligne pays/age/poste en BLANC, nom
+     agrandi pour garder la hierarchie, lignes alternees, points et +/- en
+     pastilles, zeros estompes, chiffres a largeur fixe (tabular-nums) pour que
+     les colonnes s'alignent vraiment. */
+  var PAYS = { Russia: '\ud83c\uddf7\ud83c\uddfa', Belarus: '\ud83c\udde7\ud83c\uddfe', Kazakhstan: '\ud83c\uddf0\ud83c\uddff',
+               Canada: '\ud83c\udde8\ud83c\udde6', USA: '\ud83c\uddfa\ud83c\uddf8', Sweden: '\ud83c\uddf8\ud83c\uddea',
+               Finland: '\ud83c\uddeb\ud83c\uddee', Czechia: '\ud83c\udde8\ud83c\uddff', 'Czech Republic': '\ud83c\udde8\ud83c\uddff',
+               Slovakia: '\ud83c\uddf8\ud83c\uddf0', Latvia: '\ud83c\uddf1\ud83c\uddfb', China: '\ud83c\udde8\ud83c\uddf3',
+               Norway: '\ud83c\uddf3\ud83c\uddf4', Denmark: '\ud83c\udde9\ud83c\uddf0', Germany: '\ud83c\udde9\ud83c\uddea',
+               Switzerland: '\ud83c\udde8\ud83c\udded', France: '\ud83c\uddeb\ud83c\uddf7' };
+  var POSTE_FR = { g: 'gardien', d: 'd\u00e9fenseur', f: 'attaquant' };
+  var cel = function (v, largeur) {
+    var nul = (v === '0' || v === 0 || v === '\u2013');
+    return '<span style="width:' + (largeur || 38) + 'px;text-align:center;font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;'
+      + 'color:' + (nul ? '#5c6785' : '#dbe3f5') + ';">' + v + '</span>';
+  };
+  var past = function (v, fond, coul) {
+    return '<span style="width:38px;text-align:center;font-size:12px;font-weight:800;border-radius:7px;padding:3px 0;'
+      + 'font-variant-numeric:tabular-nums;background:' + fond + ';color:' + coul + ';">' + v + '</span>';
+  };
+  var ligne = function (p, gardien, rang) {
+    var cols;
+    if (gardien) {
+      var pct = (p.st.sv_pct != null) ? st(p.st.sv_pct, 1) : '\u2013';
+      cols = cel(st(p.st.gp)) + cel(st(p.st.w)) + cel(st(p.st.sv))
+        + past(pct, pct === '\u2013' ? 'transparent' : 'rgba(30,215,96,.14)', pct === '\u2013' ? '#5c6785' : '#1ed760')
+        + cel(p.st.gaa != null ? st(p.st.gaa, 2) : '\u2013')
+        + cel(st(p.st.so));
+    } else {
+      var pts = p.st.pts || 0, pm = p.st.pm || 0;
+      cols = cel(st(p.st.gp)) + cel(st(p.st.g)) + cel(st(p.st.a))
+        + past(pts, pts ? 'rgba(77,132,255,.16)' : 'transparent', pts ? '#8ab4ff' : '#5c6785')
+        + past((pm > 0 ? '+' : (pm < 0 ? '\u2212' : '')) + Math.abs(pm),
+               pm > 0 ? 'rgba(30,215,96,.14)' : (pm < 0 ? 'rgba(255,69,69,.14)' : 'transparent'),
+               pm > 0 ? '#1ed760' : (pm < 0 ? '#ff6b6b' : '#5c6785'))
+        + cel(mmss(p.st.toi_avg), 44);
+    }
+    var drapeau = PAYS[p.pays] ? (PAYS[p.pays] + ' ') : '';
+    return '<div style="display:flex;align-items:center;gap:6px;padding:8px 6px;border-radius:11px;margin-bottom:4px;'
+      + 'background:rgba(255,255,255,' + (rang % 2 ? '.055' : '.028') + ');font-size:12px;">'
+      + '<span style="width:36px;height:36px;border-radius:9px;overflow:hidden;background:#26324d;flex:none;position:relative;display:inline-flex;align-items:center;justify-content:center;">'
+      + (p.img ? '<img src="' + _g45KhlEsc(p.img) + '" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;" onerror="this.remove()">' : '')
+      + (p.num != null ? '<span style="position:absolute;left:-2px;top:-2px;background:#0f1729;border:1px solid rgba(255,255,255,.2);border-radius:5px;font-size:8.5px;font-weight:800;padding:0 3px;color:#dbe3f5;">' + p.num + '</span>' : '')
+      + '</span>'
+      + '<div style="flex:1;min-width:0;"><div style="font-weight:800;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + _g45KhlEsc(p.n) + '</div>'
+      + '<div style="font-size:11px;color:#fff;">' + drapeau + _g45KhlEsc(p.pays || '') + (p.age ? ' \u00b7 ' + p.age + ' ans' : '')
+      + ' \u00b7 ' + POSTE_FR[_g45KhlPoste(p.r)] + '</div></div>'
+      + cols
+      + '<span style="min-width:0;">' + pastilles(p) + '</span></div>';
+  };
+  var entete = function (libs) {
+    return '<div style="display:flex;gap:6px;padding:0 6px 6px;color:#7c89a8;font-size:9px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;">'
+      + '<span style="width:36px;"></span><span style="flex:1;">Joueur</span>'
+      + libs.map(function (l, i) { return '<span style="width:' + (i === libs.length - 1 ? 44 : 38) + 'px;text-align:center;">' + l + '</span>'; }).join('')
+      + '<span style="text-align:center;">' + siens.length + ' derniers</span></div>';
+  };
+  var champ = eff.filter(function (p) { return _g45KhlPoste(p.r) !== 'g'; })
+    .sort(function (x, y) { return (y.st.pts || 0) - (x.st.pts || 0) || (y.st.toi_avg || 0) - (x.st.toi_avg || 0); });
+  var gardiens = eff.filter(function (p) { return _g45KhlPoste(p.r) === 'g'; })
+    .sort(function (x, y) { return (y.st.gp || 0) - (x.st.gp || 0); });
+  if (_g45KhlCompoPoste === 'f') champ = champ.filter(function (p) { return _g45KhlPoste(p.r) === 'f'; });
+  if (_g45KhlCompoPoste === 'd') champ = champ.filter(function (p) { return _g45KhlPoste(p.r) === 'd'; });
+  var h = '<div class="fc">'
+    + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">' + _g45KhlLogoHtml(e.id, '', 26)
+    + '<span style="font-weight:800;">' + _g45KhlEsc(e.fr) + '</span><span style="font-size:10.5px;color:#8a93ad;">\u00b7 effectif 2026-27 (' + eff.length + ')</span></div>'
+    + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">'
+    + _g45KhlChip('Tous', _g45KhlCompoPoste === 'tous', "g45KhlCompoPoste('tous')")
+    + _g45KhlChip('Attaquants', _g45KhlCompoPoste === 'f', "g45KhlCompoPoste('f')")
+    + _g45KhlChip('D\u00e9fenseurs', _g45KhlCompoPoste === 'd', "g45KhlCompoPoste('d')")
+    + _g45KhlChip('Gardiens', _g45KhlCompoPoste === 'g', "g45KhlCompoPoste('g')") + '</div>'
+    + '<div style="overflow-x:auto;"><div style="min-width:560px;">';
+  if (_g45KhlCompoPoste !== 'g' && champ.length) {
+    h += '<div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#c3cfe6;margin:10px 0 4px;">Joueurs de champ (' + champ.length + ')</div>'
+      + entete(['MJ', 'B', 'A', 'PTS', '+/\u2212', 'Glace']) + champ.map(function (p, i) { return ligne(p, false, i); }).join('');
+  }
+  if ((_g45KhlCompoPoste === 'tous' || _g45KhlCompoPoste === 'g') && gardiens.length) {
+    h += '<div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#c3cfe6;margin:14px 0 4px;">Gardiens (' + gardiens.length + ')</div>'
+      + entete(['MJ', 'V', 'Arr.', '%Arr', 'Moy.', 'BL']) + gardiens.map(function (p, i) { return ligne(p, true, i); }).join('');
+  }
+  h += '</div></div><div style="font-size:10.5px;color:#8a93ad;margin-top:10px;line-height:1.6;">'
+    + 'Pastilles : <b style="color:#1ed760;">B</b> but \u00b7 <b style="color:#8ab4ff;">A</b> passe \u00b7 <b>\u2013</b> a jou\u00e9 \u00b7 <b>\u00b7</b> absent de la feuille. '
+    + 'Du plus ancien au plus r\u00e9cent, survole pour la date. Photos officielles khl.ru.</div></div>';
+  el.innerHTML = h;
+}
+function g45KhlCompoPoste(p) { _g45KhlCompoPoste = p; if (typeof loadTeamCompo === 'function') loadTeamCompo(); }
+window.g45KhlCompoPoste = g45KhlCompoPoste;
+window.g45KhlCompoFiche = g45KhlCompoFiche;
+
+(function _g45KhlBrancherCompo() {
+  if (typeof loadTeamCompo !== 'function' || loadTeamCompo._g45Khl) return;
+  var origine = loadTeamCompo;
+  var env = async function () {
+    try {
+      var nom = (typeof _currentTeam !== 'undefined' ? _currentTeam : '')
+             || (typeof _currentUnitNom !== 'undefined' ? _currentUnitNom : '') || '';
+      var e = g45KhlEquipe(nom);
+      var el = (typeof $i === 'function') ? $i('ip-compo') : document.getElementById('ip-compo');
+      if (e && el) return await g45KhlCompoFiche(el, e);
+    } catch (err) { console.warn('KHL compo :', err && err.message); }
+    return origine.apply(this, arguments);
+  };
+  env._g45Khl = true;
+  loadTeamCompo = env; window.loadTeamCompo = env;
+})();
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   KHL — FILTRE BUTEUR / PASSEUR DANS LA LISTE DES RESULTATS (18/09/2026)
+   ───────────────────────────────────────────────────────────────────────────
+   Meme geste qu'en football (`setScorerFilter`) : deux listes deroulantes au-
+   dessus des resultats, et les matchs ou le joueur a marque ou donne une passe
+   portent un badge. La difference : en football il faut ANALYSER les matchs un
+   par un (bouton « Analyser buteurs / passeurs »), alors qu'en KHL les fiches
+   sont deja lues et mises en cache definitif par les autres vues — l'index se
+   construit donc sans requete supplementaire la plupart du temps.
+   Le panneau generique reste intact : on insere la barre APRES son rendu et on
+   decore ses lignes, reperees par leur `onclick="_g45SgMatch('id')"`.
+   ═══════════════════════════════════════════════════════════════════════════ */
+var _g45KhlSgFiltre = null;      /* { type:'g'|'a', nom } */
+var _g45KhlSgIndex = null;       /* { cle, joueurs:{nom:{g,a,par:{idMatch:{g,a}}}} } */
+
+async function _g45KhlIndexButeurs(e) {
+  var cle = 'khl|' + e.id + '|' + (typeof _g45SgAn !== 'undefined' && _g45SgAn ? _g45SgAn : 'auto');
+  if (_g45KhlSgIndex && _g45KhlSgIndex.cle === cle) return _g45KhlSgIndex.joueurs;
+  var saison = await _g45KhlMatchsPlage(_g45KhlDebutSaison(), Date.now());
+  var siens = saison.filter(function (m) { return (m.a === e.id || m.b === e.id) && _g45KhlFini(m); });
+  var joueurs = {}, lus = 0, manques = [];
+  for (var i = 0; i < siens.length; i++) {
+    var m = siens[i], f = await _g45KhlFiche(m);
+    /* Une fiche qui ne repond pas etait ignoree EN SILENCE : le selecteur
+       affichait alors « 1 buteur » pour une equipe qui en avait deux (constate
+       par Antoine sur HC Sotchi). On compte desormais les fiches manquantes et
+       on le dit. */
+    if (!f) { manques.push(m.id); continue; }
+    lus++;
+    (f.buts || []).forEach(function (g) {
+      if (g.eq !== e.id) return;
+      var ajoute = function (nom, champ) {
+        if (!nom) return;
+        var j = joueurs[nom] = joueurs[nom] || { g: 0, a: 0, par: {} };
+        j[champ]++;
+        j.par[m.id] = j.par[m.id] || { g: 0, a: 0 };
+        j.par[m.id][champ]++;
+      };
+      ajoute(g.n, 'g');
+      (g.pa || []).forEach(function (p) { ajoute(p, 'a'); });
+    });
+  }
+  _g45KhlSgIndex = { cle: cle, joueurs: joueurs, lus: lus, total: siens.length, manques: manques };
+  return joueurs;
+}
+
+async function g45KhlSgBarre(el, e) {
+  var joueurs = await _g45KhlIndexButeurs(e);
+  var noms = Object.keys(joueurs);
+  if (!noms.length || !el) return;
+  var buteurs = noms.filter(function (n) { return joueurs[n].g > 0; }).sort(function (x, y) { return joueurs[y].g - joueurs[x].g; });
+  var passeurs = noms.filter(function (n) { return joueurs[n].a > 0; }).sort(function (x, y) { return joueurs[y].a - joueurs[x].a; });
+  var f = _g45KhlSgFiltre, ech = function (s) { return _g45KhlEsc(s); };
+  var style = 'padding:5px 8px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:var(--s1);color:var(--t1);font-size:11px;font-weight:700;cursor:pointer;max-width:190px;';
+  var opt = function (liste, champ, actif) {
+    return liste.map(function (n) {
+      return '<option value="' + ech(n) + '"' + (actif === n ? ' selected' : '') + '>' + ech(n) + ' (' + joueurs[n][champ] + ')</option>';
+    }).join('');
+  };
+  var etat = _g45KhlSgIndex || {};
+  var incomplet = (etat.total && etat.lus < etat.total);
+  var h = '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 10px;">'
+    + '<select onchange="g45KhlSgFiltrer(\'g\',this.value)" style="' + style + 'border-color:rgba(30,215,96,.35);">'
+    + '<option value="">\ud83c\udfd2 Buteur\u2026</option>' + opt(buteurs, 'g', f && f.type === 'g' ? f.nom : '') + '</select>'
+    + '<select onchange="g45KhlSgFiltrer(\'a\',this.value)" style="' + style + 'border-color:rgba(167,139,250,.35);">'
+    + '<option value="">\ud83c\udfaf Passeur\u2026</option>' + opt(passeurs, 'a', f && f.type === 'a' ? f.nom : '') + '</select>'
+    + (f ? '<button onclick="g45KhlSgFiltrer(null,\'\')" style="padding:5px 10px;border-radius:10px;border:1px solid rgba(255,69,69,.4);background:rgba(255,69,69,.12);color:#ff6b6b;font-size:11px;font-weight:800;cursor:pointer;">\u2715</button>' : '')
+    + (incomplet ? '<button onclick="g45KhlSgRelire()" title="Des feuilles de match n\'ont pas r\u00e9pondu" style="padding:5px 10px;border-radius:10px;border:1px solid rgba(240,176,32,.45);background:rgba(240,176,32,.12);color:#f0b020;font-size:11px;font-weight:800;cursor:pointer;">\u26a0\ufe0f ' + etat.lus + '/' + etat.total + ' matchs lus \u00b7 compl\u00e9ter</button>' : '')
+    + '</div>';
+  /* La barre se place juste au-dessus de la liste des resultats. */
+  var hote = document.createElement('div');
+  hote.id = 'g45-khl-sgbar';
+  hote.innerHTML = h;
+  var ancien = document.getElementById('g45-khl-sgbar');
+  if (ancien && ancien.parentNode) ancien.parentNode.removeChild(ancien);
+  /* PLACEMENT (18/09, corrige apres retour d'Antoine) : la barre doit se
+     trouver au-dessus de la LISTE DES RESULTATS, pas en haut de l'onglet ou
+     elle surplombait les stats d'equipe. On vise le titre « Resultats (n
+     matchs) » du panneau generique et on s'insere dans son bloc, juste avant
+     lui. Repli en haut de l'onglet si ce titre n'existe pas. */
+  var titre = document.getElementById('g45-sg-titre-resultats');
+  var conteneur = titre && titre.parentNode ? titre.parentNode : null;
+  if (conteneur && conteneur.parentNode) {
+    hote.style.width = '100%';
+    conteneur.parentNode.insertBefore(hote, conteneur);
+  } else {
+    el.insertBefore(hote, el.firstChild);
+  }
+
+  g45KhlMarquerProlongations(el);
+  if (!f) return;
+  var j = joueurs[f.nom];
+  if (!j) return;
+  var lignes = el.querySelectorAll('[onclick^="_g45SgMatch("]');
+  var touches = 0;
+  Array.prototype.forEach.call(lignes, function (ln) {
+    var mid = (ln.getAttribute('onclick') || '').replace(/^[^']*'/, '').replace(/'.*$/, '');
+    var d = j.par[mid];
+    /* Un match ou le joueur a seulement donne une passe ne doit PAS compter
+       comme un match avec but, et inversement — d'ou le test sur le type. */
+    if (!d || !d[f.type]) { ln.style.opacity = '.4'; return; }
+    touches++;
+    ln.style.opacity = '1';
+    ln.style.boxShadow = 'inset 0 0 0 1px ' + (f.type === 'g' ? 'rgba(30,215,96,.45)' : 'rgba(167,139,250,.45)');
+    var badge = document.createElement('span');
+    badge.style.cssText = 'font-size:9px;font-weight:800;margin-left:6px;padding:1px 5px;border-radius:6px;'
+      + (f.type === 'g' ? 'background:rgba(30,215,96,.18);color:#1ed760;' : 'background:rgba(167,139,250,.18);color:#a78bfa;');
+    badge.textContent = (f.type === 'g' ? '\u26a1 ' : '\ud83c\udfaf ') + (f.type === 'g' ? d.g : d.a);
+    var premiere = ln.querySelector('span');
+    if (premiere) premiere.appendChild(badge);
+  });
+  var info = document.createElement('div');
+  info.style.cssText = 'font-size:10.5px;color:#8a93ad;margin:-4px 0 8px;';
+  info.textContent = _g45KhlEsc(f.nom) + ' : ' + touches + ' match' + (touches > 1 ? 's' : '')
+    + (f.type === 'g' ? ' avec au moins un but' : ' avec au moins une passe');
+  hote.appendChild(info);
+}
+/* Relecture des feuilles manquantes : on vide l'index (les fiches deja lues
+   restent en cache, donc seules les manquantes repartent au reseau). */
+function g45KhlSgRelire() {
+  _g45KhlSgIndex = null;
+  if (typeof loadTeamSaisons === 'function') loadTeamSaisons();
+}
+window.g45KhlSgRelire = g45KhlSgRelire;
+function g45KhlSgFiltrer(type, nom) {
+  _g45KhlSgFiltre = (type && nom) ? { type: type, nom: nom } : null;
+  if (typeof loadTeamSaisons === 'function') loadTeamSaisons();
+}
+window.g45KhlSgFiltrer = g45KhlSgFiltrer;
+window.g45KhlSgBarre = g45KhlSgBarre;
+
+/* On enveloppe une derniere fois la fiche Saisons pour ajouter la barre apres
+   le rendu du panneau generique. */
+(function _g45KhlBrancherBarreButeurs() {
+  if (typeof loadTeamSaisons !== 'function' || loadTeamSaisons._g45KhlBar) return;
+  var origine = loadTeamSaisons;
+  var env = async function () {
+    var r = await origine.apply(this, arguments);
+    try {
+      var nom = (typeof _currentTeam !== 'undefined' ? _currentTeam : '')
+             || (typeof _currentUnitNom !== 'undefined' ? _currentUnitNom : '') || '';
+      var e = g45KhlEquipe(nom);
+      var el = document.getElementById('ip-saisons');
+      if (e && el) await g45KhlSgBarre(el, e);
+    } catch (err) { console.warn('KHL buteurs :', err && err.message); }
+    return r;
+  };
+  env._g45KhlBar = true; env._g45Khl = true; env._g45KhlGen = true;
+  loadTeamSaisons = env; window.loadTeamSaisons = env;
+})();
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   KHL — DETAIL DE MATCH (18/09/2026)
+   ───────────────────────────────────────────────────────────────────────────
+   Cliquer un resultat KHL ouvrait la fenetre generique, qui interroge ESPN :
+   ESPN ne connait pas la KHL, d'ou un « ? - ? » et des boutons inutiles
+   (YouTube, classement). On intercepte donc l'ouverture pour nos matchs et on
+   affiche notre propre carte : score par periode, buteurs et passeurs, et le
+   tableau des stats joueurs. Tout vient de la fiche deja en cache.
+   ═══════════════════════════════════════════════════════════════════════════ */
+function _g45KhlMatchConnu(eid) {
+  var id = String(eid);
+  var trouve = null;
+  try {
+    Object.keys(_g45KhlDerniers).forEach(function (k) {
+      (_g45KhlDerniers[k] || []).forEach(function (m) { if (String(m.id) === id) trouve = m; });
+    });
+    if (!trouve) {
+      for (var i = 0; i < localStorage.length; i++) {
+        var cle = localStorage.key(i);
+        if (!cle || cle.indexOf('g45khl_plage_') !== 0) continue;
+        var c = JSON.parse(localStorage.getItem(cle) || 'null');
+        (c && c.l || []).forEach(function (m) { if (String(m.id) === id) trouve = m; });
+        if (trouve) break;
+      }
+    }
+  } catch (e) {}
+  return trouve;
+}
+async function g45KhlDetailMatch(panel, m) {
+  panel.innerHTML = '<div style="padding:24px;text-align:center;color:var(--t3);font-size:12px;">\u23f3 Ouverture du match KHL\u2026</div>';
+  var f = await _g45KhlFiche(m);
+  _g45KhlOuverts[m.id] = true;   /* stats joueurs depliees d'office dans la fenetre */
+  panel.innerHTML = '<div style="padding:4px;">' + _g45KhlCarte(m, f) + '</div>'
+    + (f ? '' : '<div style="padding:0 8px 10px;color:#f0b020;font-size:11px;">Feuille de match non re\u00e7ue (serveur KHL lent) \u2014 rouvre dans quelques secondes.</div>');
+}
+window.g45KhlDetailMatch = g45KhlDetailMatch;
+
+(function _g45KhlBrancherDetail() {
+  if (typeof _g45SgMatch !== 'function' || _g45SgMatch._g45Khl) return;
+  var origine = _g45SgMatch;
+  var env = async function (eid) {
+    var m = _g45KhlMatchConnu(eid);
+    if (!m) return origine.apply(this, arguments);
+    _g45SgFermerMatch();
+    var mo = document.createElement('div');
+    mo.id = 'g45-sg-modal';
+    mo.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:14px;overflow:auto;';
+    mo.onclick = function (e) { if (e.target === mo) _g45SgFermerMatch(); };
+    mo.innerHTML = '<div style="background:var(--s1);border:1px solid var(--b2);border-radius:14px;max-width:560px;width:100%;position:relative;margin:auto;">'
+      + '<button onclick="_g45SgFermerMatch()" style="position:absolute;top:8px;right:12px;background:none;border:none;color:var(--t2);font-size:22px;cursor:pointer;z-index:2;">\u00d7</button>'
+      + '<div id="g45-sg-panel" style="padding:10px;"></div></div>';
+    document.body.appendChild(mo);
+    try { await g45KhlDetailMatch(document.getElementById('g45-sg-panel'), m); }
+    catch (e) { console.warn('KHL detail :', e && e.message); }
+  };
+  env._g45Khl = true;
+  _g45SgMatch = env; window._g45SgMatch = env;
+})();
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   KHL — SIGNALER LES PROLONGATIONS DANS LA LISTE DES RESULTATS (18/09/2026)
+   ───────────────────────────────────────────────────────────────────────────
+   Signale par Antoine, et c'est capital pour parier : un 3-4 arrache en
+   prolongation est un 3-3 en temps reglementaire. Le panneau generique n'a
+   qu'un score, sans notion de prolongation. On decore donc ses lignes apres
+   coup : badge « prol. » ou « TAB », et score du temps reglementaire, calcule
+   en additionnant les trois periodes.
+   ═══════════════════════════════════════════════════════════════════════════ */
+function _g45KhlScoreTR(m) {
+  var a = 0, b = 0, vu = 0;
+  (m.p || []).forEach(function (x) {
+    if (!x) return;
+    var q = String(x).split(':');
+    if (q.length !== 2) return;
+    a += parseInt(q[0], 10) || 0; b += parseInt(q[1], 10) || 0; vu++;
+  });
+  return vu ? (a + '-' + b) : '';
+}
+function g45KhlMarquerProlongations(el) {
+  try {
+    var lignes = (el || document).querySelectorAll('[onclick^="_g45SgMatch("]');
+    Array.prototype.forEach.call(lignes, function (ln) {
+      if (ln.getAttribute('data-khl-prol') === '1') return;
+      var mid = (ln.getAttribute('onclick') || '').replace(/^[^']*'/, '').replace(/'.*$/, '');
+      var m = _g45KhlMatchConnu(mid);
+      if (!m) return;
+      ln.setAttribute('data-khl-prol', '1');
+      if (!m.ot && !m.so) return;
+      var tr = _g45KhlScoreTR(m);
+      var lib = m.so ? 'TAB' : 'prol.';
+      var b = document.createElement('span');
+      b.style.cssText = 'display:inline-block;margin-left:6px;padding:1px 6px;border-radius:6px;font-size:9.5px;font-weight:800;'
+        + 'background:rgba(240,176,32,.16);color:#f0b020;white-space:nowrap;';
+      b.textContent = lib + (tr ? ' \u00b7 ' + tr + ' TR' : '');
+      b.title = 'Prolongation ou tirs au but' + (tr ? ' \u2014 score en temps r\u00e9glementaire : ' + tr : '');
+      var cible = ln.querySelector('span') || ln;
+      cible.appendChild(b);
+    });
+  } catch (e) {}
+}
+window.g45KhlMarquerProlongations = g45KhlMarquerProlongations;
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SCORE AU TEMPS REGLEMENTAIRE (18/09/2026, demande d'Antoine)
+   ───────────────────────────────────────────────────────────────────────────
+   Un 3-4 arrache en prolongation est un 3-3 en temps reglementaire : pour
+   parier, ce n'est pas le meme match. Les books distinguent d'ailleurs le
+   marche « 1X2 » (temps reglementaire, nul possible) du « vainqueur » (avec
+   prolongation). On recalcule donc a partir des periodes, disponibles sans
+   requete supplementaire : `linescores` chez ESPN (verifie le 18/09 : NHL 5
+   periodes avec tirs au but, MLB 10 manches, NRL prolongation numerotee 20) et
+   `scores` chez la KHL.
+   HOCKEY D'ABORD, les autres sports viendront ensuite.
+   GARDE-FOU : si la somme des periodes reglementaires ne colle pas au score
+   final alors qu'il n'y a PAS eu de prolongation, on garde le score officiel —
+   mieux vaut la valeur d'origine qu'un chiffre invente.
+   ═══════════════════════════════════════════════════════════════════════════ */
+var G45_TR_PERIODES = { hockey: 3, basketball: 4, football: 4, baseball: 9, 'rugby-league': 2, soccer: 2 };
+/* Libelle adapte : « temps reglementaire » n'a pas de sens au baseball. */
+var G45_TR_LIBELLE = { hockey: 'Temps r\u00e9glementaire', basketball: 'Sans prolongation', football: 'Sans prolongation',
+                       baseball: 'Apr\u00e8s 9 manches', 'rugby-league': 'Temps r\u00e9glementaire', soccer: '90 minutes' };
+function g45LibelleTR(sp) {
+  return G45_TR_LIBELLE[String(sp || '').split('/')[0]] || 'Temps r\u00e9glementaire';
+}
+window.g45LibelleTR = g45LibelleTR;
+/* Vrai si la derniere liste chargee contient au moins un match prolonge : le
+   bouton ne s'affiche que la, sinon il encombrerait une Ligue 1 ou aucune
+   rencontre ne va au-dela des 90 minutes. */
+var _g45SgTRDispo = false;
+
+function g45SportTR(sp) {
+  var k = String(sp || '').split('/')[0];
+  return G45_TR_PERIODES[k] || 0;
+}
+/* Somme des periodes dont le NUMERO est <= n (le NRL numerote sa prolongation
+   « 20 » : filtrer sur l'ordre donnerait une 3e mi-temps). */
+function _g45SommePeriodes(liste, n) {
+  var tot = 0, vu = 0;
+  (liste || []).forEach(function (x) {
+    if (!x || x.p == null || x.p > n) return;
+    tot += (+x.v || 0); vu++;
+  });
+  return vu ? tot : null;
+}
+/* Rend { hg, ag, ok, prol } au temps reglementaire, ou null si impossible. */
+function g45ScoreTR(m, sp) {
+  var n = g45SportTR(sp);
+  if (!n || !m) return null;
+  var h = _g45SommePeriodes(m.hp, n), a = _g45SommePeriodes(m.ap, n);
+  if (h == null || a == null) return null;
+  /* GARDE-FOU renforce : on n'accepte un ecart avec le score final QUE si
+     des periodes au-dela du temps reglementaire existent vraiment. Sinon
+     c'est que la liste des periodes est incomplete (cas rencontre en test :
+     3 periodes fournies pour un 9-1) et on renonce plutot que d'afficher un
+     score faux. */
+  var sup = (m.hp || []).concat(m.ap || []).some(function (x) { return x && x.p > n; });
+  var ecart = (h !== +m.hg || a !== +m.ag);
+  if (ecart && !sup) return null;
+  var prol = ecart;
+  return { hg: h, ag: a, prol: prol };
+}
+window.g45ScoreTR = g45ScoreTR;
+window.g45SportTR = g45SportTR;
+
+/* Application du mode « temps reglementaire » : on transforme la liste de
+   matchs A LA SOURCE, juste apres _g45CompetMatchs. Tout le panneau (victoires,
+   nuls, over, BTTS, forme, resultats) travaille alors sur les scores recalcules
+   sans qu'une seule de ses formules ne change. Un match dont les periodes
+   manquent garde son score final : jamais de chiffre invente. */
+(function _g45BrancherTempsReglementaire() {
+  if (typeof _g45CompetMatchs !== 'function' || _g45CompetMatchs._g45TR) return;
+  var origine = _g45CompetMatchs;
+  var env = async function (sp, lg, an, ids, progres) {
+    var ms = await origine.apply(this, arguments);
+    /* `typeof` plutot qu'un acces direct : ce module est charge en fin de
+       fichier et doit rester inoffensif si l'etat n'existe pas encore. */
+    var actif = (typeof _g45SgTR !== 'undefined') && _g45SgTR;
+    if (!Array.isArray(ms)) return ms;
+    /* On repere les matchs prolonges a chaque chargement, meme mode inactif :
+       c'est ce qui decide de l'affichage du bouton. */
+    var n = g45SportTR(sp), dispo = false;
+    if (n) {
+      dispo = ms.some(function (m) {
+        return ((m.hp || []).concat(m.ap || [])).some(function (x) { return x && x.p > n; });
+      });
+    }
+    _g45SgTRDispo = dispo;
+    if (!actif) return ms;
+    return ms.map(function (m) {
+      var tr = g45ScoreTR(m, sp);
+      if (!tr) return m;
+      var c = {};
+      Object.keys(m).forEach(function (k) { c[k] = m[k]; });
+      c.hg = tr.hg; c.ag = tr.ag; c.trProl = tr.prol ? 1 : 0;
+      return c;
+    });
+  };
+  env._g45TR = true; env._g45Khl = origine._g45Khl;
+  _g45CompetMatchs = env; window._g45CompetMatchs = env;
 })();
