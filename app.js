@@ -362,6 +362,13 @@ var ESPN_TEAM_ID_FIX = {
 async function espnResolveTeam(nom) {
   var _fix = ESPN_TEAM_ID_FIX[String(nom||'').toLowerCase().trim()];
   if(_fix) return {id:_fix.id, league:_fix.league, name:nom, logo:''};
+  /* SELECTION NATIONALE (23/09/2026) : reconnue AVANT le cache et la recherche
+     par nom. Le cache a pu memoriser une mauvaise resolution — on le court-
+     circuite. Meme ligue que la France, dont l'entree fonctionne. */
+  try {
+    var _nat = (typeof _g45NatByAlias !== 'undefined') && _g45NatByAlias[_g45norm(nom)];
+    if (_nat && _nat.id) return {id:String(_nat.id), league:'fifa.world', name:nom, logo:''};
+  } catch(e){}
   var nomKey = (nom||'').toLowerCase().replace(/\s+/g,'_');
   try { var cached = localStorage.getItem('espn_teamid_any_'+nomKey); if(cached){ var ci=JSON.parse(cached); if(ci&&ci.id) return ci; } } catch(e){}
 
@@ -22349,10 +22356,34 @@ async function loadTeamSaisons() {
         yA = seasonStartY; yB = seasonStartY - 1;
       }
 
-      var [espA, espB] = await Promise.all([
-        espnClubSchedule(nom, yA),
-        espnClubSchedule(nom, yB)
-      ]);
+      /* SELECTIONS NATIONALES (23/09/2026, sonde d'Antoine sur le Portugal).
+         Une selection n'a pas de championnat : `fifa.world` ne donne que la
+         Coupe du monde, `uefa.nations` rien du tout. `soccer/all` donne TOUT
+         (25 matchs : Coupe du monde, qualifications, Ligue des nations,
+         amicaux) — mais IGNORE le parametre de saison : 2025 et 2026 renvoient
+         les memes 25 matchs. L'appeler deux fois ferait tout compter DOUBLE.
+         On l'appelle donc une fois, et on repartit les matchs nous-memes selon
+         leur date, avec la frontiere du 1er aout des clubs : la Coupe du monde
+         de juin-juillet 2026 tombe ainsi dans la saison 2025-26. */
+      var _natSel = null;
+      try { _natSel = (typeof _g45NatByAlias !== 'undefined') && _g45NatByAlias[_g45norm(nom)]; } catch(e){}
+      var espA, espB;
+      if (_natSel) {
+        var _tout = null;
+        try { _tout = await espnClubSchedule(nom, null, 'all'); } catch(e){}
+        var _saisonDe = function (d) {
+          var x = new Date(d); if (isNaN(x)) return null;
+          return (x.getMonth() + 1 >= 8) ? x.getFullYear() : x.getFullYear() - 1;
+        };
+        var _part = function (an) {
+          if (!_tout) return null;
+          return Object.assign({}, _tout, { matches: (_tout.matches || []).filter(function (m) { return _saisonDe(m.date) === an; }) });
+        };
+        espA = _part(yA); espB = _part(yB);
+      } else {
+        var _pair = await Promise.all([ espnClubSchedule(nom, yA), espnClubSchedule(nom, yB) ]);
+        espA = _pair[0]; espB = _pair[1];
+      }
       var espNameA = (espA && espA.team && espA.team.name) ? espA.team.name : nom;
       var espNameB = (espB && espB.team && espB.team.name) ? espB.team.name : nom;
       // Clé de résultat = année de la saison récente / précédente
@@ -22552,14 +22583,27 @@ async function loadTeamSaisons() {
     var sofaFb = SOFASCORE_LINKS[nom] || ('https://www.sofascore.com/search#q=' + encodeURIComponent(nom));
     var flashFb = FAV_LINKS[nom] || ('https://www.flashscore.fr/recherche/?q=' + encodeURIComponent(nom));
     var ls = 'display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;margin-bottom:6px;text-decoration:none;';
-    el.innerHTML = '<div style="padding:4px 0;">'
+    /* PLUS D'ECRASEMENT (23/09/2026). Mouchard d'Antoine sur le Portugal : dans
+       UNE SEULE execution, `renderSaisonsChart` dessinait d'abord les prochains
+       matchs et le bloc de saison (ecran utile), puis cette branche remplacait
+       tout par le cul-de-sac « Acces direct ». Si des matchs a venir sont
+       connus, on garde l'ecran et on ajoute les liens DESSOUS. */
+    var _avConnus = [];
+    try { _avConnus = (typeof _g45AVenir !== 'undefined' && _g45AVenir[nom]) || []; } catch(e){}
+    var _liensHtml = '<div style="padding:4px 0;">'
       +'<div class="cwrap" style="margin-bottom:10px;">'
-      +'<div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#4f5d88;margin-bottom:6px;">⚽ ' + nom + ' — Accès direct</div>'
-      +'<div style="font-size:10px;color:var(--t3);margin-bottom:12px;">Données non disponibles via football-data.org. Consulter directement :</div>'
+      +'<div style="font-size:11px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#9fb6ff;margin-bottom:6px;">⚽ ' + nom + ' — ' + (_avConnus.length ? 'Résultats ailleurs' : 'Accès direct') + '</div>'
+      +'<div style="font-size:12px;font-weight:700;color:#c8d3ea;margin-bottom:12px;">' + (_avConnus.length ? 'Aucun résultat de saison trouvé chez ESPN. Historique complet :' : 'Données non disponibles via football-data.org. Consulter directement :') + '</div>'
       +'<a href="'+sofaFb+'" target="_blank" style="'+ls+'"><div style="font-size:12px;font-weight:700;color:#ff7b54;flex:1;">⚡ Sofascore — Stats & résultats</div><div style="color:var(--t3);">→</div></a>'
       +'<a href="'+flashFb+'" target="_blank" style="'+ls+'"><div style="font-size:12px;font-weight:700;color:#f0b020;flex:1;">⚡ Flashscore — Résultats live</div><div style="color:var(--t3);">→</div></a>'
       +'<a href="https://fbref.com/fr/search/search.fcgi?search='+encodeURIComponent(nom)+'" target="_blank" style="'+ls+'"><div style="font-size:12px;font-weight:700;color:#4d84ff;flex:1;">📊 FBref — Stats avancées</div><div style="color:var(--t3);">→</div></a>'
       +'</div></div>';
+    if (_avConnus.length) {
+      try { renderSaisonsChart(el, results, nom); } catch(e){}
+      el.insertAdjacentHTML('beforeend', _liensHtml);
+    } else {
+      el.innerHTML = _liensHtml;
+    }
     return;
   }
 
@@ -23379,9 +23423,9 @@ function renderSaisonsChart(el, results, nom) {
     if(premier){
       try{ dateStr=new Date(premier.date).toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'}); }catch(e){}
     }
-    html+='<div style="background:rgba(77,132,255,.06);border:1px dashed rgba(77,132,255,.35);border-radius:10px;padding:14px;margin-bottom:12px;text-align:center;">'
-      +'<div style="font-size:12px;font-weight:800;color:var(--t1);letter-spacing:.5px;">Saison '+curY+'-'+(curY+1)+'</div>'
-      +'<div style="font-size:10px;color:var(--t3);margin-top:5px;line-height:1.6;">'
+    html+='<div style="background:rgba(11,16,29,.86);border:1px dashed rgba(77,132,255,.45);border-radius:10px;padding:14px;margin-bottom:12px;text-align:center;">'
+      +'<div style="font-size:14px;font-weight:800;color:#ffffff;letter-spacing:.5px;">Saison '+curY+'-'+(curY+1)+'</div>'
+      +'<div style="font-size:12px;font-weight:700;color:#c8d3ea;margin-top:6px;line-height:1.6;">'
       +(dateStr?('Premier match : '+_g45CyEa(dateStr)+'.'):'Aucun match encore programmé.')
       +'<br>Les statistiques s\'afficheront ici dès que la 1re journée aura été jouée.</div>'
     +'</div>';
@@ -25438,7 +25482,16 @@ async function loadEspnMatchLive(el, nom, col){
   var data = await _espnMatchLiveData(nom);
   if(!data || !data.event || !data.summary){
     var sofaUrl=(typeof SOFASCORE_LINKS!=='undefined'&&SOFASCORE_LINKS[nom])||('https://www.sofascore.com/search#q='+encodeURIComponent(nom));
-    el.innerHTML='<div class="fc" style="text-align:center;padding:30px 16px;"><div style="font-size:40px;margin-bottom:12px;">📡</div><div style="font-size:13px;font-weight:700;color:'+col+';margin-bottom:4px;">'+nom+'</div><div style="font-size:11px;color:var(--t3);margin-bottom:18px;">Aucun match trouvé via ESPN pour le moment.</div><a href="'+sofaUrl+'" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:'+col+';color:#fff;padding:11px 22px;border-radius:var(--r8);font-size:12px;font-weight:700;text-decoration:none;">📊 Voir sur Sofascore</a></div>';
+    /* MESSAGE CORRIGE (23/09/2026). Ce bloc cherche le match EN COURS ou le
+       plus RECENT. Pour une equipe au repos (l'Italie entre deux treves), il ne
+       trouvait rien et affichait « Aucun match trouve via ESPN » avec une grande
+       antenne — alors que six matchs a venir s'affichaient juste dessous. Ca
+       ressemblait a une panne. C'est simplement une periode sans match. */
+    el.innerHTML='<div class="fc" style="--card-alpha:.9;display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 14px;">'
+      +'<span style="font-size:20px;">⏸️</span>'
+      +'<div style="flex:1;min-width:180px;"><div style="font-size:13px;font-weight:800;color:#ffffff;">'+nom+'</div>'
+      +'<div style="font-size:12px;font-weight:700;color:#c8d3ea;">Pas de match en cours ni récent.</div></div>'
+      +'<a href="'+sofaUrl+'" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:'+col+';color:#fff;padding:9px 16px;border-radius:var(--r8);font-size:12px;font-weight:800;text-decoration:none;">📊 Sofascore</a></div>';
     return;
   }
   var s=data.summary;
@@ -25833,7 +25886,37 @@ var G45_NATIONS=[
 {id:'212',fr:'Uruguay',a:['uruguay']},
 {id:'2570',fr:'Ouzb\u00e9kistan',a:['ouzbekistan']}
 ];
+/* NOMS ANGLAIS DES SELECTIONS (23/09/2026). Les alias n'etaient qu'en
+   francais (« espagne », « angleterre ») alors que le mur nomme les selections
+   comme ESPN, en anglais. « Spain » n'etait donc jamais reconnue et retombait
+   sur la recherche par nom — qui envoyait « England » vers les New England
+   Patriots (NFL) et ne trouvait rien pour l'Espagne, championne du monde.
+   Les IDENTIFIANTS ne changent pas : ce sont ceux de cette liste. Seule
+   l'orthographe anglaise du pays est ajoutee. */
+(function(){
+  var en={'624':['algeria'],'202':['argentina'],'628':['australia'],'474':['austria'],'459':['belgium'],
+    '452':['bosnia and herzegovina','bosnia'],'205':['brazil'],'206':['canada'],'2597':['cape verde','cabo verde'],
+    '208':['colombia'],'2850':['dr congo','congo dr'],'477':['croatia'],'11678':['curacao'],
+    '450':['czechia','czech republic'],'209':['ecuador'],'2620':['egypt'],'448':['england'],'478':['france'],
+    '481':['germany'],'4469':['ghana'],'2654':['haiti'],'469':['iran'],'4375':['iraq'],
+    '4789':['ivory coast','cote d ivoire'],'627':['japan'],'2917':['jordan'],'203':['mexico'],'2869':['morocco'],
+    '449':['netherlands','holland'],'2666':['new zealand'],'464':['norway'],'2659':['panama'],'210':['paraguay'],
+    '482':['portugal'],'4398':['qatar'],'655':['saudi arabia'],'580':['scotland'],'654':['senegal'],
+    '467':['south africa'],'451':['south korea','korea republic'],'164':['spain'],'466':['sweden'],
+    '475':['switzerland'],'659':['tunisia'],'465':['turkey','turkiye'],'660':['united states','usa'],
+    '212':['uruguay'],'2570':['uzbekistan']};
+  G45_NATIONS.forEach(function(n){ (en[n.id]||[]).forEach(function(x){ if((n.a||[]).indexOf(x)<0) (n.a=n.a||[]).push(x); }); });
+})();
 var _g45NatByAlias=(function(){var m={};G45_NATIONS.forEach(function(n){m[_g45norm(n.fr)]=n;(n.a||[]).forEach(function(a){m[_g45norm(a)]=n;});});return m;})();
+/* SELECTIONS HORS COUPE DU MONDE (23/09/2026). G45_NATIONS liste les 48
+   qualifies et sert aussi a l'onglet Mondial : y ajouter l'Italie la ferait
+   apparaitre parmi les qualifies. On l'ajoute donc SEULEMENT a la
+   reconnaissance, pour que le panneau Saisons la traite comme une selection.
+   Identifiant releve par Antoine sur espn.co.uk/football/team/_/id/162/italy. */
+(function(){
+  var hors=[{id:'162',fr:'Italie',a:['italie','italy']}];
+  hors.forEach(function(n){ _g45NatByAlias[_g45norm(n.fr)]=n; (n.a||[]).forEach(function(a){ _g45NatByAlias[_g45norm(a)]=n; }); });
+})();
 function _g45NationId(nom){var n=_g45NatByAlias[_g45norm(nom)];return n?n.id:null;}
 var _G45_INTL_RE=/coupe du monde|mondial|world cup|fifa|euro|nations|qualif|amical|copa|afcon|\bcan\b/;
 /* Pêche TOUTES les nations citées dans un texte de pari international (n + target), même mal orthographiées/sans accents */
@@ -35744,7 +35827,7 @@ function _g45CinqDerniers(data, teamId, ligue) {
       if (isNaN(a) || isNaN(b)) return;
       out.push({
         date: e.gameDate, pour: a, contre: b, domicile: dom,
-        advNom: (e.opponent || {}).abbreviation || (e.opponent || {}).displayName || '?',
+        advNom: (e.opponent || {}).displayName || (e.opponent || {}).abbreviation || '?',   /* nom complet : la ligne a maintenant la place */
         compet: e.leagueAbbreviation || e.leagueName || '',
         lien: ((e.links || [])[0] || {}).href || ''
       });
@@ -35753,11 +35836,15 @@ function _g45CinqDerniers(data, teamId, ligue) {
   } catch (e) { return null; }
 }
 
+/* ANNEE AJOUTEE (23/09/2026, demande d'Antoine) : « 26/06 » ne dit pas si
+   c'est cette annee ou l'an dernier, alors que les confrontations remontent
+   souvent a deux ou trois saisons. */
 function _g45JJMM(d) {
   try {
     var x = new Date(d);
     if (isNaN(x)) return '';
-    return String(x.getDate()).padStart(2, '0') + '/' + String(x.getMonth() + 1).padStart(2, '0');
+    return String(x.getDate()).padStart(2, '0') + '/' + String(x.getMonth() + 1).padStart(2, '0')
+      + '/' + String(x.getFullYear()).slice(2);
   } catch (e) { return ''; }
 }
 
@@ -35767,10 +35854,16 @@ function _g45LigneMatchH2H(g) {
   /* LISIBILITE (22/09/2026) : le premier rendu mettait dates et lieu en
      `--t3`, le gris le plus pale, sur la photo de fond de l'appli. Illisible
      pour Antoine. Tout passe en clair, un cran plus grand. */
-  var corps = '<span style="font-size:12px;font-weight:700;color:#c8d3ea;width:48px;flex:none;">' + _g45JJMM(g.date) + '</span>'
-    + '<span style="font-size:12px;width:22px;flex:none;">' + (g.domicile ? '🏠' : '🚌') + '</span>'
-    + '<span style="flex:1;font-size:13.5px;font-weight:800;color:#ffffff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + _g45Esc(g.advNom) + '</span>'
-    + '<span style="font-size:13.5px;font-weight:800;color:#ffffff;width:40px;text-align:right;flex:none;font-variant-numeric:tabular-nums;">' + g.pour + '-' + g.contre + '</span>'
+  /* DEUX NIVEAUX (23/09/2026). Sur une seule ligne, date + lieu + score +
+     pastille prenaient ~160 px de largeur fixe : sur telephone il ne restait
+     rien au nom, reduit a UNE lettre (« L », « F »), alors que sur PC tout
+     tenait. Le nom a maintenant toute la largeur en haut, la date complete et
+     le lieu en petit dessous. */
+  var corps = '<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;">'
+    + '<span style="font-size:13.5px;font-weight:800;color:#ffffff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + _g45Esc(g.advNom) + '</span>'
+    + '<span style="font-size:11px;font-weight:700;color:#c8d3ea;white-space:nowrap;">' + _g45JJMM(g.date)
+    + ' · ' + (g.domicile ? '🏠 domicile' : '🚌 extérieur') + '</span></div>'
+    + '<span style="font-size:14px;font-weight:800;color:#ffffff;flex:none;padding-left:6px;font-variant-numeric:tabular-nums;">' + g.pour + '-' + g.contre + '</span>'
     + '<span style="width:18px;height:18px;line-height:18px;text-align:center;border-radius:4px;flex:none;background:' + col + ';color:#0b101d;font-size:10px;font-weight:800;">' + res + '</span>';
   var sty = 'display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:7px;background:rgba(11,16,29,.62);text-decoration:none;';
   return g.lien
@@ -41536,6 +41629,44 @@ async function _g45CompetMatchs(sportPath, slug, an, ids, progres) {
   }
 
   /* Une collecte vide n'est pas un resultat, c'est un echec : on ne la cache pas. */
+  /* TOUTES COMPETITIONS (22/09/2026) : le calendrier de ligue ne renvoie que
+     la competition principale (ex. Ligue 1 sans Coupe de France ni Europe).
+     `soccer/all` sur le meme endpoint retourne toutes les competitions en une
+     requete de plus, mais uniquement pour les matchs A VENIR — on ne touche
+     pas aux matchs joues, deja consolides et mis en cache. */
+  if (sportPath === 'soccer' && slug !== 'all') {
+    try {
+      var allMs = [], allVus = {};
+      for (var ia = 0; ia < ids.length; ia++) {
+        var ra = await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/all/teams/' + ids[ia] + '/schedule');
+        if (!ra.ok) continue;
+        var ja = await ra.json();
+        ((ja && ja.events) || []).forEach(function (e) {
+          var c2a = (e.competitions && e.competitions[0]) || {};
+          var sta = (c2a.status && c2a.status.type) || (e.status && e.status.type) || {};
+          if (sta.completed || sta.state !== 'pre' || allVus['av' + e.id]) return;
+          var cs0 = c2a.competitors || [];
+          var h0 = cs0.filter(function (x) { return x.homeAway === 'home'; })[0];
+          var a0 = cs0.filter(function (x) { return x.homeAway === 'away'; })[0];
+          var t0 = Date.parse(e.date);
+          if (h0 && a0 && !isNaN(t0)) {
+            allVus['av' + e.id] = 1;
+            var lg0 = (e.league && (e.league.abbreviation || e.league.name)) || '';
+            allMs.push({ id: String(e.id), t: t0,
+              h: String((h0.team && h0.team.id) || ''), a: String((a0.team && a0.team.id) || ''),
+              hn: (h0.team && (h0.team.displayName || h0.team.shortDisplayName)) || '',
+              an: (a0.team && (a0.team.displayName || a0.team.shortDisplayName)) || '',
+              comp: lg0 });
+          }
+        });
+      }
+      if (allMs.length > avenir.length) {
+        avenir = allMs;
+        avenir.sort(function (x, y) { return x.t - y.t; });
+      }
+    } catch (e) {}
+  }
+
   avenir.sort(function (x, y) { return x.t - y.t; });
   _g45CompetAVenir[sportPath + '|' + slug + '|' + an] = avenir;
   if (ms.length) { try { localStorage.setItem(ck, JSON.stringify({ t: Date.now(), d: ms, av: avenir })); } catch (e) {} }
@@ -41569,7 +41700,9 @@ function _g45ProchainsHtml(sp, lg, an, monId, monNom, n) {
       + '<div style="font-size:12.5px;font-weight:800;color:#ffffff;">' + jours[d.getDay()] + ' ' + d.getDate() + ' ' + mois[d.getMonth()] + '</div>'
       + '<div style="font-size:11.5px;font-weight:700;color:#c8d3ea;">' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0') + '</div></div>'
       + '<span style="font-size:15px;flex:none;">' + (dom ? '🏠' : '✈️') + '</span>'
-      + '<span style="flex:1;font-size:13.5px;font-weight:800;color:#ffffff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + _g45Esc(adv) + '</span>'
+      + '<div style="flex:1;overflow:hidden;"><span style="font-size:13.5px;font-weight:800;color:#ffffff;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + _g45Esc(adv) + '</span>'
+      + (m.comp ? '<span style="font-size:10.5px;font-weight:700;color:#9fb0c7;">' + _g45Esc(m.comp) + '</span>' : '')
+      + '</div>'
       + '</div>';
   });
   return h + '</div>';
@@ -43537,7 +43670,13 @@ window.loadTeamSaisons = async function () {
      presence au mur. `_g45CompoCtx` resout sport + ligue + identifiant ESPN
      depuis l'entree perso, sinon depuis le classement de la competition. */
   try {
-    var ctx = await _g45CompoCtx(nom);
+    /* Une SELECTION reste au football (23/09/2026). Les selections n'ont pas de
+       championnat : cherchees dans les classements, « England » ne trouvait que
+       les New England Patriots. Une seule piste, donc pas d'ambiguite detectee,
+       et l'Angleterre partait en NFL. */
+    var _estNation = false;
+    try { _estNation = !!((typeof _g45NatByAlias !== 'undefined') && _g45NatByAlias[_g45norm(nom)]); } catch(e){}
+    var ctx = _estNation ? null : await _g45CompoCtx(nom);
     if (ctx && ctx.via === 'ambigu') {
       el.innerHTML = '<div class="fc" style="text-align:center;color:var(--t3);padding:18px;font-size:12px;">'
         + 'Nom trop g\u00e9n\u00e9rique : <b>' + nom + '</b> correspond \u00e0 plusieurs sports ('
