@@ -17175,7 +17175,27 @@ function _g45RemplProgres(uid, fait, total, fini) {
     if (!tab || !tab.parentNode) return;
     var id = 'g45-rempl-' + uid;
     var el = document.getElementById(id);
-    if (fini) { if (el) el.remove(); return; }
+    if (fini) {
+      /* PLUS DE SAUT A LA FIN DU REMPLISSAGE (24/09/2026). Retirer cette ligne
+         faisait remonter d'un coup tout ce qui suit, de sa hauteur — Antoine
+         perdait sa position dans le tableau au moment ou le remplissage finit.
+         Meme parade que pour les pastilles (22/09) : mesurer AVANT de retirer,
+         puis rendre au defilement la hauteur qui vient de disparaitre, dans le
+         bon conteneur (celui qui defile reellement, pas forcement la fenetre). */
+      if (el) {
+        var h = el.getBoundingClientRect().height;
+        el.remove();
+        if (h > 0) {
+          var cont = null;
+          for (var q = tab.parentElement; q; q = q.parentElement) {
+            var oy = getComputedStyle(q).overflowY;
+            if ((oy === 'auto' || oy === 'scroll') && q.scrollHeight > q.clientHeight) { cont = q; break; }
+          }
+          if (cont) cont.scrollTop -= h; else window.scrollBy(0, -h);
+        }
+      }
+      return;
+    }
     if (!el) {
       el = document.createElement('div');
       el.id = id;
@@ -18145,7 +18165,7 @@ async function loadFdSquad(el, nom, teamId, noTerrain, terrainOnly) {
           var sot= ms[jPrefix+'_sot']||0;
           var cj = ms[jPrefix+'_yellow']||0;
           var cr = ms[jPrefix+'_red']||0;
-          var fmtS=function(v,col){return '<td style="text-align:center;font-size:12px;font-weight:700;padding:6px 2px;color:'+(v>0?col:'rgba(255,255,255,.2)')+'">'+v+'</td>';};
+          var fmtS=function(v,col){return '<td style="text-align:center;font-size:12.5px;font-weight:800;padding:6px 2px;color:'+(v>0?col:'rgba(255,255,255,.38)')+'">'+v+'</td>';};
           html += '<tr data-bench-pid="'+p.id+'" style="background:'+rowBg+';border-left:3px solid '+pc+'55;cursor:pointer;">';
           html += '<td style="padding:6px 4px;text-align:center;"><span class="xi-badge" style="font-size:7px;background:'+pc+'33;color:'+pc+';border-radius:3px;padding:1px 3px;font-weight:800;'+(inXi?'':'visibility:hidden;')+'">XI</span></td>';
           html += '<td style="padding:6px 4px;overflow:hidden;"><a href="'+sofaUrl+'" target="_blank" onclick="event.stopPropagation()" style="font-size:12px;font-weight:700;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:none;display:block;">'+p.name+'</a></td>';
@@ -18154,23 +18174,26 @@ async function loadFdSquad(el, nom, teamId, noTerrain, terrainOnly) {
           html += '<td style="text-align:center;font-size:12px;font-weight:700;color:#ffffff;padding:6px 2px;">'+p._age+'</td>';
           html += '<td style="text-align:center;font-size:12px;font-weight:700;color:#ffffff;padding:6px 2px;">'+(mj||0)+'</td>';
           html += '<td style="text-align:center;font-size:12px;font-weight:700;color:#ffffff;padding:6px 2px;">'+(tit||0)+'</td>';
-          html += '<td style="text-align:center;font-size:11px;color:var(--t2);padding:6px 2px;">'+(min?minK:'—')+'</td>';
+          /* COLONNES EN GRAS (24/09/2026, demande d'Antoine) : toutes les valeurs
+             en 12,5 px gras ; neutres en blanc, couleurs de sens conservees,
+             zeros et tirets attenues mais plus lisibles qu'avant. */
+          html += '<td style="text-align:center;font-size:12.5px;font-weight:800;color:#ffffff;padding:6px 2px;">'+(min?minK:'—')+'</td>';
           if(isGK) {
-            html += '<td style="text-align:center;font-size:11px;color:'+(ga>0?'#ef4444':'rgba(255,255,255,.3)')+';padding:6px 2px;">'+(ga||'—')+'</td>';
-            html += '<td style="text-align:center;font-size:11px;color:var(--t2);padding:6px 2px;">'+(sota||'—')+'</td>';
-            html += '<td style="text-align:center;font-size:11px;color:'+(saves>0?'#1ed760':'rgba(255,255,255,.3)')+';padding:6px 2px;">'+(saves||'—')+'</td>';
-            html += '<td style="text-align:center;font-size:11px;color:'+(savepct?'#4d84ff':'rgba(255,255,255,.3)')+';font-weight:700;padding:6px 2px;">'+(savepct?savepct+'%':'—')+'</td>';
-            html += '<td style="text-align:center;font-size:11px;color:'+(cs>0?'#1ed760':'rgba(255,255,255,.3)')+';font-weight:700;padding:6px 2px;">'+(cs||'—')+'</td>';
-            html += '<td style="text-align:center;font-size:11px;color:'+(cspct?'#a78bfa':'rgba(255,255,255,.3)')+';padding:6px 2px;">'+(cspct?cspct+'%':'—')+'</td>';
+            html += '<td style="text-align:center;font-size:12.5px;font-weight:800;color:'+(ga>0?'#ef4444':'rgba(255,255,255,.38)')+';padding:6px 2px;">'+(ga||'—')+'</td>';
+            html += '<td style="text-align:center;font-size:12.5px;font-weight:800;color:#ffffff;padding:6px 2px;">'+(sota||'—')+'</td>';
+            html += '<td style="text-align:center;font-size:12.5px;font-weight:800;color:'+(saves>0?'#1ed760':'rgba(255,255,255,.38)')+';padding:6px 2px;">'+(saves||'—')+'</td>';
+            html += '<td style="text-align:center;font-size:12.5px;font-weight:800;color:'+(savepct?'#4d84ff':'rgba(255,255,255,.38)')+';padding:6px 2px;">'+(savepct?savepct+'%':'—')+'</td>';
+            html += '<td style="text-align:center;font-size:12.5px;font-weight:800;color:'+(cs>0?'#1ed760':'rgba(255,255,255,.38)')+';padding:6px 2px;">'+(cs||'—')+'</td>';
+            html += '<td style="text-align:center;font-size:12.5px;font-weight:800;color:'+(cspct?'#a78bfa':'rgba(255,255,255,.38)')+';padding:6px 2px;">'+(cspct?cspct+'%':'—')+'</td>';
           } else {
             html += fmtS(g,'#1ed760');
             html += fmtS(a,'#4d84ff');
-            html += '<td style="text-align:center;font-size:11px;font-weight:700;padding:6px 2px;color:'+((g+a)>0?'#7ee0a0':'rgba(255,255,255,.2)')+'">'+((g+a)||'—')+'</td>';
-            html += '<td style="text-align:center;font-size:11px;padding:6px 2px;color:'+(gpk>0?'#1ed760':'rgba(255,255,255,.2)')+'">'+(gpk||'—')+'</td>';
-            html += '<td style="text-align:center;font-size:11px;padding:6px 2px;color:'+(pk>0?'#f0b020':'rgba(255,255,255,.2)')+'">'+(pk||'—')+'</td>';
-            html += '<td style="text-align:center;font-size:11px;padding:6px 2px;color:'+(pkatt>0?'var(--t2)':'rgba(255,255,255,.2)')+'">'+(pkatt||'—')+'</td>';
-            html += '<td style="text-align:center;font-size:11px;padding:6px 2px;color:'+(cj>0?'#f0b020':'rgba(255,255,255,.2)')+'">'+( cj||'—')+'</td>';
-            html += '<td style="text-align:center;font-size:11px;padding:6px 2px;color:'+(cr>0?'#ef4444':'rgba(255,255,255,.2)')+'">'+( cr||'—')+'</td>';
+            html += '<td style="text-align:center;font-size:12.5px;font-weight:800;padding:6px 2px;color:'+((g+a)>0?'#7ee0a0':'rgba(255,255,255,.38)')+'">'+((g+a)||'—')+'</td>';
+            html += '<td style="text-align:center;font-size:12.5px;font-weight:800;padding:6px 2px;color:'+(gpk>0?'#1ed760':'rgba(255,255,255,.38)')+'">'+(gpk||'—')+'</td>';
+            html += '<td style="text-align:center;font-size:12.5px;font-weight:800;padding:6px 2px;color:'+(pk>0?'#f0b020':'rgba(255,255,255,.38)')+'">'+(pk||'—')+'</td>';
+            html += '<td style="text-align:center;font-size:12.5px;font-weight:800;padding:6px 2px;color:'+(pkatt>0?'#ffffff':'rgba(255,255,255,.38)')+'">'+(pkatt||'—')+'</td>';
+            html += '<td style="text-align:center;font-size:12.5px;font-weight:800;padding:6px 2px;color:'+(cj>0?'#f0b020':'rgba(255,255,255,.38)')+'">'+( cj||'—')+'</td>';
+            html += '<td style="text-align:center;font-size:12.5px;font-weight:800;padding:6px 2px;color:'+(cr>0?'#ef4444':'rgba(255,255,255,.38)')+'">'+( cr||'—')+'</td>';
           }
           if(localStorage.getItem('gones45_admin')==='1'){
             html += '<td style="text-align:center;padding:6px 2px;"><span onclick="event.stopPropagation();editPlayerStats(\''+(sofaId||afId||'0')+'\',\''+p.id+'\',\''+encodeURIComponent(p.name)+'\','+(pos===1?'true':'false')+',\''+uid+'\')" style="cursor:pointer;font-size:13px;opacity:.6;" title="Editer les stats">✏️</span></td>';
@@ -37168,21 +37191,32 @@ function _g45FillForm(box, league){
           var res='N', col='#f0b020';
           if(!isNaN(us_s)&&!isNaN(op_s)){ if(us_s>op_s){res='G';col='#1ed760';} else if(us_s<op_s){res='P';col='#ff4545';} }
           var sc=(isNaN(us_s)?'':us_s)+'-'+(isNaN(op_s)?'':op_s);
+          /* PRESAISON SIGNALEE (24/09/2026, choix d'Antoine) : gardee dans la
+             forme — elle renseigne sur l'etat de forme — mais marquee, et jamais
+             comptee dans les statistiques (le panneau Saisons ne telecharge que la
+             saison reguliere). Meme detection que le filtre : `e.season.type` sur
+             le scoreboard, `e.seasonType` sur le calendrier d'equipe. */
+          var _stF=e.seasonType||{};
+          var _tyF=(e.season&&e.season.type!=null)?e.season.type:(_stF.type!=null?_stF.type:_stF.id);
+          var _pre=(+_tyF===1)||/pre\s*-?\s*season/i.test(String(_stF.name||''));
+          if(_pre) _vuPre=true;
           var href=''; try{ var lks=e.links||c.links||[]; for(var k=0;k<lks.length;k++){ if(lks[k]&&lks[k].href){ href=lks[k].href; if(/(summary|gamecast|match)/i.test(href)) break; } } }catch(_e){}
           var wrapStyle='display:inline-block;text-align:center;margin:0 2px 2px 0;vertical-align:top;'+(href?'text-decoration:none;cursor:pointer;':'');
-          var inner='<span style="display:block;width:18px;height:18px;line-height:18px;border-radius:4px;background:'+col+';color:#0b0f1a;font-size:9px;font-weight:800;'+(href?'box-shadow:0 0 0 1px rgba(255,255,255,.25);':'')+'">'+res+'</span>'
+          var inner='<span style="display:block;width:18px;height:18px;line-height:18px;border-radius:4px;background:'+col+';color:#0b0f1a;font-size:9px;font-weight:800;'+(_pre?'opacity:.6;outline:1.5px dashed #f0b020;outline-offset:1px;':'')+(href&&!_pre?'box-shadow:0 0 0 1px rgba(255,255,255,.25);':'')+'">'+res+'</span>'
             +'<span style="font-size:7px;color:var(--t3);display:block;margin-top:1px;max-width:26px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+oppN+'</span>'
-            +'<span style="font-size:7px;color:var(--t3);display:block;">'+sc+'</span>';
-          var tip=oppN+' '+sc+(href?' · voir sur ESPN':'');
+            +'<span style="font-size:7px;color:var(--t3);display:block;">'+sc+'</span>'
+            +(_pre?'<span style="font-size:7px;font-weight:800;color:#f0b020;display:block;">PRÉ</span>':'');
+          var tip=oppN+' '+sc+(_pre?' · présaison, hors statistiques':'')+(href?' · voir sur ESPN':'');
           return href
             ? '<a href="'+href+'" target="_blank" rel="noopener" title="'+tip+'" style="'+wrapStyle+'">'+inner+'</a>'
             : '<div title="'+tip+'" style="'+wrapStyle+'">'+inner+'</div>';
         }
-        var L=letters.length, D=done.length, N=Math.max(L,D), html='';
+        var L=letters.length, D=done.length, N=Math.max(L,D), html='', _vuPre=false;
         for(var i=0;i<N;i++){
           if(i>=N-D){ html+=richPill(done[i-(N-D)]); }
           else if(i<L){ html+=plainPill(letters[i]); }
         }
+        if(html && _vuPre) html+='<div style="font-size:9.5px;font-weight:800;color:#f0b020;margin-top:3px;">PRÉ = présaison, hors statistiques</div>';
         if(html) node.innerHTML=html;
       }
       // Calendrier ESPN : essaie direct puis proxy ; si l'API échoue (ex: rugby league = 500), on garde simplement les résultats
@@ -38570,7 +38604,7 @@ var _G45_CACHE_PREFIXES=['g45_mmeta2_','g45_mmeta1_','g45_tennis4_','g45_tennis3
      explosait et des ecritures LEGITIMES echouaient en silence (le filtre par
      competition, qui restait bloque sur « Toutes »). Les cartes de tirs sont
      les plus lourdes : plusieurs Ko par match, gardees indefiniment. */
-  'g45butA2_','g45gl3_','g45gl2_','g45gl_','g45_tirs2_','g45_fanart2_','g45_fanart_','g45_img_perso_','g45_tv_prog','g45_mqnom_','g45_mqteam_','g45_mqfond_','g45trv4_','g45_catimg_','g45_catfmt2_','g45_catfmt_','g45_scorers_v4_','g45cm6_','g45cm5_','g45cm4_','g45_domext1_','g45_t14e_','g45_t14bo_','g45_gar1_','g45_epr1_','g45nrlcal3_','g45nrlcal2_','g45_score4_','g45_score3_','g45_score2_','g45_score_','g45_lglogo_','g45compet3_','g45compet2_','g45compet_','g45tmeta_','g45histo_','g45ld2_','g45ld_',
+  'g45butA2_','g45gl3_','g45gl2_','g45gl_','g45_tirs2_','g45_fanart2_','g45_fanart_','g45_img_perso_','g45_tv_prog','g45_mqnom_','g45_mqteam_','g45_mqfond_','g45trv4_','g45_catimg_','g45_catfmt2_','g45_catfmt_','g45_scorers_v4_','g45cm8_','g45cm7_','g45cm6_','g45cm5_','g45cm4_','g45_domext1_','g45_t14e_','g45_t14bo_','g45_gar1_','g45_epr1_','g45nrlcal3_','g45nrlcal2_','g45_score4_','g45_score3_','g45_score2_','g45_score_','g45_lglogo_','g45compet3_','g45compet2_','g45compet_','g45tmeta_','g45histo_','g45ld2_','g45ld_',
   'g45nrlcal2_','g45core2_','g45core_','g45_fx_faits','g45_veille_','g45_compet_logos','g45_groq_modele','g45_groq_modele3','g45_groq_vision','g45_gemini_modeles',
   /* 12/09 : g45nrlcal6_ rejoint la liste, remplace par g45nrlcal7_ ci-dessus —
      meme raison que g45nrlcal2_ et g45nrlcal3_ avant lui. */
@@ -42180,7 +42214,7 @@ window.g45FormeN = g45FormeN;
    parametre — la vue Forme marche donc aussi en NBA, NHL, NFL, MLB et rugby.
    Cache 12 h par sport+ligue+saison, car c'est une requete par equipe. */
 async function _g45CompetMatchs(sportPath, slug, an, ids, progres) {
-  var ck = 'g45cm6_' + sportPath + '_' + slug + '_' + an;   /* v6 (24/09) : presaison NHL/NFL/NBA/MLB exclue, resultats et prochains matchs */
+  var ck = 'g45cm8_' + sportPath + '_' + slug + '_' + an;   /* v8 (24/09 soir) : seasontype=2 demande — la presaison n'est plus telechargee */
   try {
     var cc = JSON.parse(localStorage.getItem(ck) || 'null');
     if (cc && (Date.now() - cc.t) < 12 * 3600000) {
@@ -42193,8 +42227,17 @@ async function _g45CompetMatchs(sportPath, slug, an, ids, progres) {
   for (var i = 0; i < ids.length; i++) {
     if (progres) progres(i + 1, ids.length);
     try {
+      /* SAISON REGULIERE DEMANDEE EXPLICITEMENT (24/09/2026, page ESPN
+         d'Edmonton fournie par Antoine). Sans `seasontype`, ESPN renvoie la
+         phase EN COURS — fin septembre, la PRESAISON. La saison reguliere n'etait
+         alors jamais telechargee : Colorado montrait ses amicaux du 21-22/09,
+         Edmonton rien du tout apres le filtre de presaison. Les ligues US
+         numerotent 1 presaison, 2 saison reguliere, 3 series (series deja
+         chargees a part plus bas). Limite a ces quatre sports : le rugby et le
+         NRL passent par un autre chemin, avec leur propre numerotation. */
+      var _stQ = (['football', 'basketball', 'hockey', 'baseball'].indexOf(sportPath) >= 0) ? '&seasontype=2' : '';
       var r = await fetch('https://site.api.espn.com/apis/site/v2/sports/' + sportPath + '/' + slug +
-                          '/teams/' + ids[i] + '/schedule?season=' + an);
+                          '/teams/' + ids[i] + '/schedule?season=' + an + _stQ);
       if (!r.ok) continue;
       var j = await r.json();
       ((j && j.events) || []).forEach(function (e) {
@@ -42204,8 +42247,14 @@ async function _g45CompetMatchs(sportPath, slug, an, ids, progres) {
            3 en series. Sans ce filtre, les amicaux de fin septembre
            apparaissaient comme des resultats ET comme prochains matchs, alors
            qu'ils ne comptent pour aucune stat de la vraie saison. */
-        var _styp = e.season && e.season.type;
-        if (_styp === 1 || _styp === '1') return;
+        /* CORRIGE le 24/09 au soir (sonde d'Antoine sur le calendrier d'equipe) :
+           ici `e.season` ne porte QUE l'annee — le type est dans `e.seasonType`
+           ({type:2, name:"Regular Season"}). Le type n'est dans `e.season` que
+           sur l'adresse scoreboard, sondee le matin. Deux adresses ESPN, deux
+           rangements : on lit les deux, plus le libelle par securite. */
+        var _stO = e.seasonType || {};
+        var _styp = (e.season && e.season.type != null) ? e.season.type : (_stO.type != null ? _stO.type : _stO.id);
+        if (+_styp === 1 || /pre\s*-?\s*season/i.test(String(_stO.name || ''))) return;
         var c2 = (e.competitions && e.competitions[0]) || {};
         var st = (c2.status && c2.status.type) || (e.status && e.status.type) || {};
         /* MATCHS A VENIR GARDES A PART (22/09/2026). Ils etaient ecartes ici,
@@ -44114,8 +44163,16 @@ async function _g45SaisonsGen(el, nom, perso) {
       }).join('') + '</div>';
 
   if (!st.j) {
-    el.innerHTML = '<div style="padding:4px 0;">' + chips
-      + '<div class="fc" style="text-align:center;color:var(--t3);padding:18px;font-size:12px;">Aucun match ' + (_g45SgPhase === 'po' ? 'de phase finale ' : (_g45SgPhase === 'reg' ? 'de saison r\u00e9guli\u00e8re ' : 'termin\u00e9 ')) + 'pour <b>' + nom + '</b> en ' + _g45SgLabel(lg, an) + '.'
+    /* PROCHAINS MATCHS MEME SANS MATCH JOUE (24/09/2026, releve d'Antoine sur
+       Edmonton). Ce retour anticipe sortait AVANT le bloc des prochains matchs :
+       une equipe qui n'avait encore rien joue — precisement avant et au tout
+       debut de la saison, quand ce bloc sert le plus — n'affichait que
+       « Aucun match termine ». Le 30/09, Vancouver–Edmonton restait invisible. */
+    var _pvH = '';
+    try { if (typeof _g45ProchainsHtml === 'function') _pvH = _g45ProchainsHtml(sp, lg, an, (perso && perso.id) || '', nom, 6); } catch (e) {}
+    el.innerHTML = '<div style="padding:4px 0;">' + chips + _pvH
+      + '<div class="fc" style="--card-alpha:.9;text-align:center;color:#c8d3ea;padding:16px;font-size:12.5px;font-weight:700;">Aucun match ' + (_g45SgPhase === 'po' ? 'de phase finale ' : (_g45SgPhase === 'reg' ? 'de saison r\u00e9guli\u00e8re ' : 'termin\u00e9 ')) + 'pour <b style="color:#fff;">' + nom + '</b> en ' + _g45SgLabel(lg, an) + '.'
+      + (_pvH ? '<br><span style="font-size:11.5px;color:#9fb0c7;">Les statistiques apparaîtront après le premier match.</span>' : '')
       + '<br><small style="opacity:.7;">' + (ms || []).length + ' matchs charg\u00e9s \u00b7 ' + sp + '/' + lg + ' \u00b7 id ' + perso.id + '</small></div></div>';
     return;
   }
