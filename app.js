@@ -18038,9 +18038,14 @@ async function loadFdSquad(el, nom, teamId, noTerrain, terrainOnly) {
         /* BLASON EN FOND (24/09/2026, demande d'Antoine), comme les autres
            panneaux. Fond de base sombre SOUS la mosaique : douze colonnes de
            petits chiffres ne supporteraient pas un fond clair. */
+        /* OPACITE REDUITE POUR CE TABLEAU (24/09/2026). Releve d'Antoine : a 0,2
+           le blason repete rendait les douze colonnes de chiffres illisibles,
+           chaque cellule chevauchant un ecusson. Un tableau dense supporte
+           beaucoup moins de mosaique qu'une simple ligne de resultat — fond
+           quasi opaque, juste une trace de couleur derriere. */
         var _fondSq = '';
-        try { if (typeof g45FondClubHtml === 'function') _fondSq = g45FondClubHtml(nom, 0.2); } catch(e){}
-        html += '<div style="overflow-x:auto;position:relative;border-radius:10px;background:rgba(11,16,29,.80);" id="squad-table-'+uid+'">' + _fondSq;
+        try { if (typeof g45FondClubHtml === 'function') _fondSq = g45FondClubHtml(nom, 0.05); } catch(e){}
+        html += '<div style="overflow-x:auto;position:relative;border-radius:10px;background:rgba(11,16,29,.94);" id="squad-table-'+uid+'">' + _fondSq;
         html += '<table style="width:100%;border-collapse:collapse;table-layout:fixed;min-width:680px;position:relative;z-index:1;">';
         html += '<colgroup><col style="width:22px"><col style="width:150px"><col style="width:32px"><col style="width:30px"><col style="width:30px"><col style="width:42px"><col style="width:auto"><col style="width:auto"><col style="width:auto"><col style="width:auto"><col style="width:auto"><col style="width:auto"><col style="width:auto"><col style="width:auto"><col style="width:30px"></colgroup>';
         html += '<thead><tr>';
@@ -18144,9 +18149,11 @@ async function loadFdSquad(el, nom, teamId, noTerrain, terrainOnly) {
           html += '<tr data-bench-pid="'+p.id+'" style="background:'+rowBg+';border-left:3px solid '+pc+'55;cursor:pointer;">';
           html += '<td style="padding:6px 4px;text-align:center;"><span class="xi-badge" style="font-size:7px;background:'+pc+'33;color:'+pc+';border-radius:3px;padding:1px 3px;font-weight:800;'+(inXi?'':'visibility:hidden;')+'">XI</span></td>';
           html += '<td style="padding:6px 4px;overflow:hidden;"><a href="'+sofaUrl+'" target="_blank" onclick="event.stopPropagation()" style="font-size:12px;font-weight:700;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:none;display:block;">'+p.name+'</a></td>';
-          html += '<td style="text-align:center;font-size:11px;color:var(--t2);padding:6px 2px;">'+p._age+'</td>';
-          html += '<td style="text-align:center;font-size:11px;color:var(--t2);padding:6px 2px;">'+(mj||0)+'</td>';
-          html += '<td style="text-align:center;font-size:11px;color:var(--t2);padding:6px 2px;">'+(tit||0)+'</td>';
+          /* Age/MJ/Tit en blanc gras (24/09/2026, demande d'Antoine) : comme le
+             nom du joueur, plus lisible que le gris --t2 d'origine. */
+          html += '<td style="text-align:center;font-size:12px;font-weight:700;color:#ffffff;padding:6px 2px;">'+p._age+'</td>';
+          html += '<td style="text-align:center;font-size:12px;font-weight:700;color:#ffffff;padding:6px 2px;">'+(mj||0)+'</td>';
+          html += '<td style="text-align:center;font-size:12px;font-weight:700;color:#ffffff;padding:6px 2px;">'+(tit||0)+'</td>';
           html += '<td style="text-align:center;font-size:11px;color:var(--t2);padding:6px 2px;">'+(min?minK:'—')+'</td>';
           if(isGK) {
             html += '<td style="text-align:center;font-size:11px;color:'+(ga>0?'#ef4444':'rgba(255,255,255,.3)')+';padding:6px 2px;">'+(ga||'—')+'</td>';
@@ -29706,6 +29713,32 @@ async function _g45MultiAI(box, boxId, sys, facts, title){
        et l'avis reviendra de lui-meme si l'acces gratuit rouvre. */
     var _mVeille=0; try{ _mVeille=parseInt(localStorage.getItem('g45_mistral_veille')||'0',10)||0; }catch(e){}
     if(mk && (Date.now()-_mVeille) < 24*3600000) mk='';
+    /* WORKERS AI (24/09/2026) : si Mistral est en veille ET Workers AI est
+       disponible, on utilise /cfai. Le format de reponse est identique (OpenAI),
+       donc l'appli le lit sans modification. */
+    var _cfAiOk=false;
+    try{ _cfAiOk = !!FD_PROXY; }catch(e){}
+    var _cfAiVeille=0; try{ _cfAiVeille=parseInt(localStorage.getItem('g45_cfai_veille')||'0',10)||0; }catch(e){}
+    if(Date.now()-_cfAiVeille < 24*3600000) _cfAiOk=false;
+    if(!mk && _cfAiOk){
+      /* Workers AI : label distinct pour ne pas confondre avec Mistral. */
+      box.innerHTML+='<div id="'+boxId+'-ms" style="font-size:10px;color:var(--t3);padding:6px;text-align:center;">☁️ Workers AI réfléchit…</div>';
+      try{
+        var _cfBody=JSON.stringify({messages:JSON.parse(_mBody).messages, max_tokens:512});
+        var _cfR=await fetch(FD_PROXY+'/cfai',{method:'POST',headers:{'Content-Type':'application/json'},body:_cfBody});
+        var _cfJ=await _cfR.json();
+        var _cfT=(_cfJ.choices&&_cfJ.choices[0]&&_cfJ.choices[0].message&&_cfJ.choices[0].message.content||'').trim();
+        var _cfBox=document.getElementById(boxId+'-ms');
+        if(_cfT && _cfBox){
+          try{ localStorage.removeItem('g45_cfai_veille'); }catch(e){}
+          _cfBox.innerHTML='<div class="aiv" style="border-left:3px solid #f0c828;padding:8px 10px;margin-top:8px;font-size:10px;line-height:1.5;color:var(--t1);">'
+            +'<span style="font-size:9px;font-weight:700;color:var(--t3);">☁️ Workers AI</span><br>'+_g45Esc(_cfT)+'</div>';
+        } else if(_cfR.status===429 || !_cfT){
+          try{ localStorage.setItem('g45_cfai_veille', String(Date.now())); }catch(e){}
+          if(_cfBox) _cfBox.textContent='\u2601\uFE0F Workers AI : limite atteinte pour aujourd\'hui.';
+        }
+      }catch(_cfe){ var _b=document.getElementById(boxId+'-ms'); if(_b)_b.remove(); }
+    }
     if(mk){
       box.innerHTML+='<div id="'+boxId+'-ms" style="font-size:10px;color:var(--t3);padding:6px;text-align:center;">🇫🇷 Mistral réfléchit…</div>';
       try{
@@ -38537,7 +38570,7 @@ var _G45_CACHE_PREFIXES=['g45_mmeta2_','g45_mmeta1_','g45_tennis4_','g45_tennis3
      explosait et des ecritures LEGITIMES echouaient en silence (le filtre par
      competition, qui restait bloque sur « Toutes »). Les cartes de tirs sont
      les plus lourdes : plusieurs Ko par match, gardees indefiniment. */
-  'g45butA2_','g45gl3_','g45gl2_','g45gl_','g45_tirs2_','g45_fanart2_','g45_fanart_','g45_img_perso_','g45_tv_prog','g45_mqnom_','g45_mqteam_','g45_mqfond_','g45trv4_','g45_catimg_','g45_catfmt2_','g45_catfmt_','g45_scorers_v4_','g45cm5_','g45cm4_','g45_domext1_','g45_t14e_','g45_t14bo_','g45_gar1_','g45_epr1_','g45nrlcal3_','g45nrlcal2_','g45_score4_','g45_score3_','g45_score2_','g45_score_','g45_lglogo_','g45compet3_','g45compet2_','g45compet_','g45tmeta_','g45histo_','g45ld2_','g45ld_',
+  'g45butA2_','g45gl3_','g45gl2_','g45gl_','g45_tirs2_','g45_fanart2_','g45_fanart_','g45_img_perso_','g45_tv_prog','g45_mqnom_','g45_mqteam_','g45_mqfond_','g45trv4_','g45_catimg_','g45_catfmt2_','g45_catfmt_','g45_scorers_v4_','g45cm6_','g45cm5_','g45cm4_','g45_domext1_','g45_t14e_','g45_t14bo_','g45_gar1_','g45_epr1_','g45nrlcal3_','g45nrlcal2_','g45_score4_','g45_score3_','g45_score2_','g45_score_','g45_lglogo_','g45compet3_','g45compet2_','g45compet_','g45tmeta_','g45histo_','g45ld2_','g45ld_',
   'g45nrlcal2_','g45core2_','g45core_','g45_fx_faits','g45_veille_','g45_compet_logos','g45_groq_modele','g45_groq_modele3','g45_groq_vision','g45_gemini_modeles',
   /* 12/09 : g45nrlcal6_ rejoint la liste, remplace par g45nrlcal7_ ci-dessus —
      meme raison que g45nrlcal2_ et g45nrlcal3_ avant lui. */
@@ -42147,7 +42180,7 @@ window.g45FormeN = g45FormeN;
    parametre — la vue Forme marche donc aussi en NBA, NHL, NFL, MLB et rugby.
    Cache 12 h par sport+ligue+saison, car c'est une requete par equipe. */
 async function _g45CompetMatchs(sportPath, slug, an, ids, progres) {
-  var ck = 'g45cm5_' + sportPath + '_' + slug + '_' + an;   /* v5 (23/09) : + matchs a venir du repli rugby/NRL */
+  var ck = 'g45cm6_' + sportPath + '_' + slug + '_' + an;   /* v6 (24/09) : presaison NHL/NFL/NBA/MLB exclue, resultats et prochains matchs */
   try {
     var cc = JSON.parse(localStorage.getItem(ck) || 'null');
     if (cc && (Date.now() - cc.t) < 12 * 3600000) {
@@ -42166,6 +42199,13 @@ async function _g45CompetMatchs(sportPath, slug, an, ids, progres) {
       var j = await r.json();
       ((j && j.events) || []).forEach(function (e) {
         if (vus[e.id]) return;
+        /* PRESAISON EXCLUE (24/09/2026, releve d'Antoine sur la NHL). Sonde
+           console : season.type vaut 1 en presaison, 2 en saison reguliere,
+           3 en series. Sans ce filtre, les amicaux de fin septembre
+           apparaissaient comme des resultats ET comme prochains matchs, alors
+           qu'ils ne comptent pour aucune stat de la vraie saison. */
+        var _styp = e.season && e.season.type;
+        if (_styp === 1 || _styp === '1') return;
         var c2 = (e.competitions && e.competitions[0]) || {};
         var st = (c2.status && c2.status.type) || (e.status && e.status.type) || {};
         /* MATCHS A VENIR GARDES A PART (22/09/2026). Ils etaient ecartes ici,
@@ -44412,7 +44452,22 @@ async function _g45SgMatch(eid) {
 
   var panel = document.getElementById('g45-sg-panel');
   try {
-    if (typeof _renderGenericDetail === 'function') {
+    /* KHL : IDENTIFIANTS WEBCASTER, PAS ESPN (24/09/2026). `_renderGenericDetail`
+       interroge toujours site.api.espn.com — avec un id KHL, cet appel echoue
+       forcement, la ligue n'existant pas chez ESPN sous ce nom. On detourne donc
+       vers la carte maison KHL, qui sait deja gerer un match a venir sans
+       requete inutile (etat « avenir » = juste l'heure, pas de fiche a charger). */
+    if (_g45SgCtx.sp === 'hockey' && _g45SgCtx.lg === 'khl' && typeof _g45KhlMatchsPlage === 'function') {
+      var j0k = new Date(); j0k.setHours(0, 0, 0, 0);
+      var msk = await _g45KhlMatchsPlage(j0k.getTime() - 21 * 86400000, j0k.getTime() + 21 * 86400000);
+      var mk = msk.filter(function (x) { return String(x.id) === String(eid); })[0];
+      if (mk) {
+        var fk = _g45KhlAVenir(mk) ? null : await _g45KhlFiche(mk);
+        panel.innerHTML = _g45KhlCarte(mk, fk);
+      } else {
+        panel.innerHTML = '<div style="padding:20px;color:#ff6b6b;font-size:12px;text-align:center;">Match KHL introuvable dans la fenetre chargee.</div>';
+      }
+    } else if (typeof _renderGenericDetail === 'function') {
       await _renderGenericDetail(panel, _g45SgCtx.sp, _g45SgCtx.lg, eid);
       /* Le detail generique est ecrit pour les sports US : il n'a pas de section
          « moments forts ». En football, buteurs et passeurs sont l'information
@@ -54442,6 +54497,20 @@ function _g45KhlVersSg(m, po) {
       var dire = function (n) { if (typeof progres === 'function') progres(n, 0); };
       var reg = await _g45KhlMatchsStage(st.reg, enCours, dire);
       var po = st.po ? await _g45KhlMatchsStage(st.po, enCours, dire) : [];
+      /* PROCHAINS MATCHS KHL (24/09/2026, releve d'Antoine : « pas les matchs
+         a venir en saison »). Ce pont ne renvoyait que les matchs FINIS au
+         panneau generique — `_g45KhlAVenir` existe deja dans le module (utilise
+         par le calendrier et le mur) mais n'etait jamais transmis ici. On
+         alimente le meme canal _g45CompetAVenir que les autres sports, pour que
+         le bloc « Prochains matchs » ajoute lundi s'affiche aussi pour la KHL. */
+      try {
+        var avKhl = reg.concat(po).filter(_g45KhlAVenir).map(function (m) {
+          return { id: String(m.id), t: m.t, h: String(m.a), a: String(m.b),
+                   hn: g45KhlNomFr(m.a), an: g45KhlNomFr(m.b) };
+        });
+        avKhl.sort(function (x, y) { return x.t - y.t; });
+        _g45CompetAVenir[sp + '|' + lg + '|' + an] = avKhl;
+      } catch (eAv) {}
       return reg.filter(_g45KhlFini).map(function (m) { return _g45KhlVersSg(m, 0); })
         .concat(po.filter(_g45KhlFini).map(function (m) { return _g45KhlVersSg(m, 1); }));
     };
