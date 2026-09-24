@@ -29697,6 +29697,15 @@ async function _g45MultiAI(box, boxId, sys, facts, title){
       } else if(dsBox){ dsBox.textContent='🧩 3ᵉ avis indisponible'+((dd&&dd.error)?(' : '+String(dd.error.message||'').slice(0,60)):'')+'.'; }
     }catch(e3){ var db3=document.getElementById(boxId+'-ds'); if(db3) db3.textContent='🐋 DeepSeek injoignable.'; }
     var mk=g45MistralCle();
+    /* MISE EN VEILLE (24/09/2026). Sonde d'Antoine : un appel ISOLE est refuse
+       (« rate_limited », code 1300) avec sa cle ET avec celle du serveur. Ce
+       n'est plus du debit mais un refus de principe — tres probablement la fin
+       de l'allocation API gratuite de Mistral, relevee debut septembre. Plutot
+       que d'attendre 5 s et d'afficher « indisponible » a chaque analyse, on
+       met Mistral en veille 24 h au premier refus ; il retente seul ensuite,
+       et l'avis reviendra de lui-meme si l'acces gratuit rouvre. */
+    var _mVeille=0; try{ _mVeille=parseInt(localStorage.getItem('g45_mistral_veille')||'0',10)||0; }catch(e){}
+    if(mk && (Date.now()-_mVeille) < 24*3600000) mk='';
     if(mk){
       box.innerHTML+='<div id="'+boxId+'-ms" style="font-size:10px;color:var(--t3);padding:6px;text-align:center;">🇫🇷 Mistral réfléchit…</div>';
       try{
@@ -29722,6 +29731,12 @@ async function _g45MultiAI(box, boxId, sys, facts, title){
         }
         var mt=((dm.choices&&dm.choices[0]&&dm.choices[0].message&&dm.choices[0].message.content)||'').trim();
         var msBox=document.getElementById(boxId+'-ms');
+        if(mt){ try{ localStorage.removeItem('g45_mistral_veille'); }catch(e){} }
+        else if(rm.status===429 || _mLimite(dm)){
+          /* Toujours refuse apres la seconde tentative : veille 24 h, message UNE fois. */
+          try{ localStorage.setItem('g45_mistral_veille', String(Date.now())); }catch(e){}
+          if(msBox){ msBox.textContent='🇫🇷 Mistral refuse les appels gratuits — mis en veille 24 h. Les autres avis ne sont pas concernés.'; msBox=null; }
+        }
         if(mt && msBox){
           msBox.outerHTML='<div style="background:rgba(10,14,24,.93);border:1px solid rgba(249,115,22,.4);border-radius:10px;padding:12px;margin-top:8px;">'
             +'<div style="font-size:10px;font-weight:800;color:#f97316;margin-bottom:8px;">🇫🇷 MISTRAL — 4ᵉ avis</div>'
@@ -29732,6 +29747,8 @@ async function _g45MultiAI(box, boxId, sys, facts, title){
     }
   }catch(e){ box.innerHTML='<div style="color:#ff6b6b;font-size:11px;padding:8px;">Erreur analyse IA : '+String(e.message||e).slice(0,90)+'</div>'; }
 }
+/* Pour forcer un nouvel essai sans attendre 24 h : g45MistralReveil() en console. */
+window.g45MistralReveil = function(){ try{ localStorage.removeItem('g45_mistral_veille'); }catch(e){} console.log('Mistral réactivé : il sera réessayé à la prochaine analyse.'); };
 async function g45TennisOdds(btn){
   var box=document.getElementById(btn.dataset.box); if(!box) return;
   if(box.getAttribute('data-loaded')==='1'){ box.style.display=(box.style.display==='none'?'':'none'); return; }
@@ -43744,6 +43761,8 @@ function _g45SgCalc(ms, monId, monNom) {
     if (m.po) st.po++;
 
     st.liste.push({ id:m.id || '', po:m.po ? 1 : 0, t:m.t, dom:estDom, res:res, pour:pour, contre:contre, tot:pour + contre,
+                    /* scores par periode (24/09) : pour les curseurs de periode */
+                    lp: (estDom ? m.hp : m.ap) || null, lc: (estDom ? m.ap : m.hp) || null,
                     adv: estDom ? (m.an || '') : (m.hn || ''),
                     advId: estDom ? String(m.a) : String(m.h) });
   });
@@ -43762,6 +43781,229 @@ function _g45SgCalc(ms, monId, monNom) {
 }
 
 /* Compte les matchs d'une liste au-dessus / en-dessous d'une ligne. */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CURSEURS — AUTRES SPORTS (24/09/2026, lignes relevees par Antoine chez son
+   book). Meme principe que le football : total, par equipe, ecart, et une
+   periode propre au sport. Le moteur `_g45MarcheEval` sert tel quel : les
+   cles ont la meme forme (« O44.5 », « MT:EO28.5 », « H-3.5 », « X+3.5 »).
+   Lignes POINT PAR POINT. Match entier donne par Antoine : MLB 1,5→11,5 et
+   ecart ±3,5 ; hockey 3,5→7,5 et ±3,5 ; NBA 200,5→249,5 et ±20,5.
+   ESTIMATIONS a confirmer : total NFL, tout le rugby, et toutes les plages
+   de periode. Aucune requete : les scores par periode arrivent deja avec les
+   resultats (linescores d'ESPN).
+   ═══════════════════════════════════════════════════════════════════════════ */
+function _g45SgPlage(a, b) { var o = []; for (var v = a; v <= b + 1e-9; v += 1) o.push(Math.round(v * 10) / 10); return o; }
+function _g45SgEcart(m) {
+  var o = [];
+  for (var v = -m; v < 0; v += 1) o.push(Math.round(v * 10) / 10);
+  o.push(0);
+  for (var w = 0.5; w <= m + 1e-9; w += 1) o.push(Math.round(w * 10) / 10);
+  return o;
+}
+var _G45_SG_L = {
+  hockey:       { tot: [3.5, 7.5],     eq: [0.5, 4.5],    hand: 3.5,  totP: [0.5, 3.5],    eqP: [0.5, 2.5],  handP: 1.5,  per: '1re période' },
+  baseball:     { tot: [1.5, 11.5],    eq: [0.5, 7.5],    hand: 3.5,  totP: [1.5, 7.5],    eqP: [0.5, 4.5],  handP: 2.5,  per: '5 premières manches' },
+  basketball:   { tot: [200.5, 249.5], eq: [90.5, 135.5], hand: 20.5, totP: [95.5, 130.5], eqP: [45.5, 70.5], handP: 12.5, per: '1re mi-temps' },
+  football:     { tot: [30.5, 60.5],   eq: [10.5, 40.5],  hand: 26.5, totP: [14.5, 34.5],  eqP: [3.5, 24.5], handP: 14.5, per: '1re mi-temps' },
+  rugby:        { tot: [25.5, 75.5],   eq: [5.5, 45.5],   hand: 30.5, totP: [10.5, 40.5],  eqP: [0.5, 25.5], handP: 20.5, per: '1re mi-temps' },
+  'rugby-league': { tot: [25.5, 65.5], eq: [5.5, 40.5],   hand: 30.5, totP: [5.5, 35.5],   eqP: [0.5, 25.5], handP: 20.5, per: '1re mi-temps' }
+};
+/* Periodes composant la « premiere partie », par sport. */
+var _G45_SG_PER = { hockey: [1], basketball: [1, 2], football: [1, 2], baseball: [1, 2, 3, 4, 5], rugby: [1], 'rugby-league': [1] };
+
+function _g45SgPeriodeSomme(ls, sp) {
+  var ps = _G45_SG_PER[sp];
+  if (!ps || !ls || !ls.length) return null;
+  var s = 0, vus = 0;
+  ls.forEach(function (l) { if (l && ps.indexOf(+l.p) >= 0) { s += (+l.v || 0); vus++; } });
+  return vus === ps.length ? s : null;      /* il faut TOUTES les periodes, sinon inconnu */
+}
+
+function _g45SgLignesDe(sp, carte, HT) {
+  var t = _G45_SG_L[sp]; if (!t) return null;
+  if (carte === 'hand') return _g45SgEcart(HT ? t.handP : t.hand);
+  var r = HT ? t[carte + 'P'] : t[carte];
+  return _g45SgPlage(r[0], r[1]);
+}
+function _g45SgPlusProche(lignes, cible) {
+  var bi = 0, bd = Infinity;
+  (lignes || []).forEach(function (v, i) { var d = Math.abs(v - cible); if (d < bd) { bd = d; bi = i; } });
+  return bi;
+}
+
+function _g45SgCursEtat(sp) {
+  var e = null;
+  try { e = JSON.parse(localStorage.getItem('g45_curs_gen_' + sp) || 'null'); } catch (x) {}
+  if (!e) e = { per: 'FT', tot: { i: -1, s: 'A', on: true }, eq: { w: 'E', i: -1, s: 'A', on: false }, hand: { i: -1, s: 'A', on: false } };
+  return e;
+}
+function _g45SgCursSauver(sp, e) { try { localStorage.setItem('g45_curs_gen_' + sp, JSON.stringify(e)); } catch (x) {} }
+
+/* Donnees d'un match de la liste, vues depuis notre equipe. */
+function _g45SgX(m, sp) {
+  return { tg: m.pour, og: m.contre,
+           htg: _g45SgPeriodeSomme(m.lp, sp), hog: _g45SgPeriodeSomme(m.lc, sp), fg: null };
+}
+
+/* Indices : -1 = pas encore choisi → la ligne la plus proche de la moyenne. */
+function _g45SgCursIndices(sp, e, liste) {
+  var HT = e.per === 'HT';
+  var xs = (liste || []).map(function (m) { return _g45SgX(m, sp); });
+  var moy = function (f) { var s = 0, n = 0; xs.forEach(function (x) { var v = f(x); if (v != null) { s += v; n++; } }); return n ? s / n : null; };
+  var LT = _g45SgLignesDe(sp, 'tot', HT), LE = _g45SgLignesDe(sp, 'eq', HT), LH = _g45SgLignesDe(sp, 'hand', HT);
+  if (e.tot.i < 0 || e.tot.i >= LT.length) {
+    var mt = moy(function (x) { return HT ? (x.htg == null ? null : x.htg + x.hog) : x.tg + x.og; });
+    e.tot.i = mt == null ? Math.floor(LT.length / 2) : _g45SgPlusProche(LT, mt);
+  }
+  if (e.eq.i < 0 || e.eq.i >= LE.length) {
+    var me = moy(function (x) { return HT ? x.htg : x.tg; });
+    e.eq.i = me == null ? Math.floor(LE.length / 2) : _g45SgPlusProche(LE, me);
+  }
+  if (e.hand.i < 0 || e.hand.i >= LH.length) e.hand.i = LH.indexOf(0);
+  return { LT: LT, LE: LE, LH: LH, xs: xs };
+}
+
+function _g45SgCursCles(sp, e, L) {
+  var pre = e.per === 'HT' ? 'MT:' : '', out = [];
+  var f = function (v) { return Number(v).toFixed(1); };
+  if (e.tot.on) out.push(pre + (e.tot.s === 'A' ? 'O' : 'U') + f(L.LT[e.tot.i]));
+  if (e.eq.on) out.push(pre + (e.eq.w === 'E' ? 'E' : 'A') + (e.eq.s === 'A' ? 'O' : 'U') + f(L.LE[e.eq.i]));
+  if (e.hand.on) { var h = L.LH[e.hand.i]; out.push(pre + (e.hand.s === 'A' ? 'H' + _g45Ligne(h) : 'X' + _g45Ligne(-h))); }
+  return out;
+}
+
+function _g45SgCursHtml(liste, sp, nomEq) {
+  if (!_G45_SG_L[sp]) return '';
+  var e = _g45SgCursEtat(sp), HT = e.per === 'HT';
+  var L = _g45SgCursIndices(sp, e, liste);
+  _g45SgCursSauver(sp, e);
+  var xs = L.xs;
+  var compte = function (k) { var ok = 0, n = 0; xs.forEach(function (x) { var v = _g45MarcheEval(k, x); if (v == null) return; n++; if (v) ok++; }); return { ok: ok, n: n }; };
+  var fmt = function (c) { return c.n ? { v: c.ok + '/' + c.n, p: Math.round(c.ok * 100 / c.n) + ' %' } : { v: '—', p: 'aucun match' }; };
+  var fr = function (v) { return Number(v).toFixed(1).replace('.', ','); };
+  var pre = HT ? 'MT:' : '';
+  var nomC = _g45Esc(nomEq || 'Équipe');
+  var mot = (sp === 'hockey') ? 'buts' : 'points';
+  var ON = 'background:rgba(240,176,32,.16);border:2px solid rgba(240,176,32,.8);';
+  var OFF = 'background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.16);';
+  var boite = function (carte, cote, lib, r, coul, actif) {
+    return '<div onclick="g45SgCursCase(\'' + sp + '\',\'' + carte + '\',\'' + cote + '\')" data-cote="' + cote + '" style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:1px;padding:9px 5px;border-radius:11px;cursor:pointer;' + (actif ? ON : OFF) + '">'
+      + '<span class="g45c-l" style="font-size:12px;font-weight:700;color:#e8ecfa;text-align:center;">' + lib + '</span>'
+      + '<span class="g45c-v" style="font-size:19px;font-weight:800;color:' + coul + ';">' + r.v + '</span>'
+      + '<span class="g45c-p" style="font-size:11.5px;font-weight:700;color:#c8d3ea;">' + r.p + '</span></div>';
+  };
+  /* Beaucoup de crans (50 en NBA) : graduation clairsemee pour rester lisible. */
+  var curseur = function (carte, lignes, idx, lib) {
+    var pas = Math.max(1, Math.ceil(lignes.length / 6));
+    var ticks = '';
+    lignes.forEach(function (v, i) {
+      if (i % pas === 0 || i === lignes.length - 1 || i === idx)
+        ticks += '<span style="' + (i === idx ? 'color:#fff;font-weight:800;' : '') + '">' + lib(v) + '</span>';
+    });
+    return '<input type="range" min="0" max="' + (lignes.length - 1) + '" step="1" value="' + idx + '"'
+      + ' oninput="g45SgCursInput(this)" onchange="g45SgCursCommit(this,\'' + sp + '\',\'' + carte + '\')" style="width:100%;accent-color:#46dcf0;margin:4px 0 0;">'
+      + '<div style="display:flex;justify-content:space-between;font-size:11.5px;font-weight:700;color:#9fb0c7;margin-top:1px;">' + ticks + '</div>';
+  };
+  var carteH = function (titre, sous, corps, id, vals) {
+    return '<div id="' + id + '" data-vals="' + _g45Esc(JSON.stringify(vals)) + '" style="display:flex;flex-direction:column;gap:8px;padding:11px 12px;border-radius:12px;background:rgba(11,16,29,.72);border:1px solid rgba(255,255,255,.08);margin-bottom:8px;">'
+      + '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;"><span style="font-size:13.5px;font-weight:800;color:#fff;">' + titre + '</span>'
+      + '<span style="font-size:11px;font-weight:700;color:#9fb0c7;">' + sous + '</span></div>' + corps + '</div>';
+  };
+  var h = '';
+  var nP = xs.filter(function (x) { return x.htg != null; }).length;
+  var perLib = _G45_SG_L[sp].per;
+  h += '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:2px 0 9px;">'
+    + '<div style="display:flex;border-radius:10px;overflow:hidden;border:1.5px solid rgba(70,220,240,.5);">'
+    + '<span onclick="g45SgCursPer(\'' + sp + '\',\'FT\')" style="cursor:pointer;padding:7px 13px;font-size:12.5px;font-weight:800;' + (HT ? 'color:#c8d3ea;' : 'background:rgba(70,220,240,.2);color:#46dcf0;') + '">Match entier</span>'
+    + '<span onclick="g45SgCursPer(\'' + sp + '\',\'HT\')" style="cursor:pointer;padding:7px 13px;font-size:12.5px;font-weight:800;' + (HT ? 'background:rgba(70,220,240,.2);color:#46dcf0;' : 'color:#c8d3ea;') + '">' + perLib + '</span></div>'
+    + (HT ? '<span style="font-size:11.5px;font-weight:700;color:' + (nP ? '#c8d3ea' : '#f5c542') + ';">' + (nP ? ('détail connu sur ' + nP + ' match' + (nP > 1 ? 's' : '')) : 'pas de score par période pour ces matchs') + '</span>' : '')
+    + '</div>';
+
+  /* Total */
+  var vT = L.LT.map(function (l) { var a = fmt(compte(pre + 'O' + l.toFixed(1))), b = fmt(compte(pre + 'U' + l.toFixed(1)));
+    return { la: 'Plus de ' + fr(l), va: a.v, pa: a.p, lb: 'Moins de ' + fr(l), vb: b.v, pb: b.p }; });
+  var t0 = vT[e.tot.i];
+  h += carteH('Nombre de ' + mot, HT ? perLib : xs.length + ' matchs',
+    '<div style="display:flex;gap:8px;">' + boite('tot', 'A', t0.la, { v: t0.va, p: t0.pa }, '#f5c542', e.tot.on && e.tot.s === 'A')
+    + boite('tot', 'B', t0.lb, { v: t0.vb, p: t0.pb }, '#9fe7f5', e.tot.on && e.tot.s === 'B') + '</div>'
+    + curseur('tot', L.LT, e.tot.i, fr), 'g45s-tot', vT);
+
+  /* Par equipe */
+  var W = e.eq.w === 'A' ? 'A' : 'E', qui = W === 'E' ? nomC : 'Adversaire';
+  var vE = L.LE.map(function (l) { var a = fmt(compte(pre + W + 'O' + l.toFixed(1))), b = fmt(compte(pre + W + 'U' + l.toFixed(1)));
+    return { la: qui + ' plus de ' + fr(l), va: a.v, pa: a.p, lb: qui + ' moins de ' + fr(l), vb: b.v, pb: b.p }; });
+  var e0 = vE[e.eq.i];
+  var bascule = '<div style="display:flex;gap:6px;">'
+    + '<span onclick="g45SgCursEq(\'' + sp + '\',\'E\')" style="cursor:pointer;padding:5px 12px;border-radius:12px;font-size:12px;font-weight:800;' + (W === 'E' ? 'background:rgba(70,220,240,.18);color:#46dcf0;border:1px solid rgba(70,220,240,.55);' : 'color:#c8d3ea;border:1px solid rgba(255,255,255,.16);') + '">' + nomC + '</span>'
+    + '<span onclick="g45SgCursEq(\'' + sp + '\',\'A\')" style="cursor:pointer;padding:5px 12px;border-radius:12px;font-size:12px;font-weight:800;' + (W === 'A' ? 'background:rgba(70,220,240,.18);color:#46dcf0;border:1px solid rgba(70,220,240,.55);' : 'color:#c8d3ea;border:1px solid rgba(255,255,255,.16);') + '">Adversaire</span></div>';
+  h += carteH(mot.charAt(0).toUpperCase() + mot.slice(1) + ' par équipe', HT ? perLib : '',
+    bascule + '<div style="display:flex;gap:8px;">' + boite('eq', 'A', e0.la, { v: e0.va, p: e0.pa }, '#46dcf0', e.eq.on && e.eq.s === 'A')
+    + boite('eq', 'B', e0.lb, { v: e0.vb, p: e0.pb }, '#9fe7f5', e.eq.on && e.eq.s === 'B') + '</div>'
+    + curseur('eq', L.LE, e.eq.i, fr), 'g45s-eq', vE);
+
+  /* Ecart */
+  var vH = L.LH.map(function (l) { var a = fmt(compte(pre + 'H' + _g45Ligne(l))), b = fmt(compte(pre + 'X' + _g45Ligne(-l)));
+    var nr = l === 0 ? ' · nul remboursé' : '';
+    return { la: nomC + ' ' + _g45LigneFr(l) + nr, va: a.v, pa: a.p, lb: 'Adversaire ' + _g45LigneFr(-l) + nr, vb: b.v, pb: b.p }; });
+  var h0 = vH[e.hand.i];
+  h += carteH('Écart', HT ? perLib : '',
+    '<div style="display:flex;gap:8px;">' + boite('hand', 'A', h0.la, { v: h0.va, p: h0.pa }, '#f472b6', e.hand.on && e.hand.s === 'A')
+    + boite('hand', 'B', h0.lb, { v: h0.vb, p: h0.pb }, '#9fe7f5', e.hand.on && e.hand.s === 'B') + '</div>'
+    + curseur('hand', L.LH, e.hand.i, _g45LigneFr), 'g45s-hand', vH);
+  return h;
+}
+
+/* Cles actives, pour les barres « Stats selectionnees ». */
+function _g45SgCursClesActives(liste, sp) {
+  if (!_G45_SG_L[sp]) return [];
+  var e = _g45SgCursEtat(sp);
+  var L = _g45SgCursIndices(sp, e, liste);
+  return _g45SgCursCles(sp, e, L);
+}
+
+function g45SgCursInput(el) {
+  try {
+    var bloc = el.closest('[data-vals]');
+    var v = JSON.parse(bloc.getAttribute('data-vals') || '[]')[+el.value]; if (!v) return;
+    var bx = bloc.querySelectorAll('[data-cote]');
+    if (bx[0]) { bx[0].querySelector('.g45c-l').textContent = v.la; bx[0].querySelector('.g45c-v').textContent = v.va; bx[0].querySelector('.g45c-p').textContent = v.pa; }
+    if (bx[1]) { bx[1].querySelector('.g45c-l').textContent = v.lb; bx[1].querySelector('.g45c-v').textContent = v.vb; bx[1].querySelector('.g45c-p').textContent = v.pb; }
+  } catch (x) {}
+}
+async function _g45SgCursRedessiner(ancreId) {
+  var haut0 = null;
+  try { var a = document.getElementById(ancreId); if (a) haut0 = a.getBoundingClientRect().top; } catch (x) {}
+  try { await loadTeamSaisons(); } catch (x) {}
+  try {
+    var n = document.getElementById(ancreId);
+    if (n && haut0 != null) {
+      var d = n.getBoundingClientRect().top - haut0;
+      if (Math.abs(d) > 1) {
+        var c = null;
+        for (var q = n.parentElement; q; q = q.parentElement) {
+          var oy = getComputedStyle(q).overflowY;
+          if ((oy === 'auto' || oy === 'scroll') && q.scrollHeight > q.clientHeight) { c = q; break; }
+        }
+        if (c) c.scrollTop += d; else window.scrollBy(0, d);
+      }
+    }
+  } catch (x) {}
+}
+function g45SgCursCommit(el, sp, carte) { var e = _g45SgCursEtat(sp); e[carte].i = +el.value; e[carte].on = true; _g45SgCursSauver(sp, e); _g45SgCursRedessiner('g45s-' + carte); }
+function g45SgCursCase(sp, carte, cote) {
+  var e = _g45SgCursEtat(sp), c = e[carte]; if (!c) return;
+  if (c.on && c.s === cote) c.on = false; else { c.s = cote; c.on = true; }
+  _g45SgCursSauver(sp, e); _g45SgCursRedessiner('g45s-' + carte);
+}
+function g45SgCursEq(sp, w) { var e = _g45SgCursEtat(sp); e.eq.w = w; e.eq.i = -1; _g45SgCursSauver(sp, e); _g45SgCursRedessiner('g45s-eq'); }
+/* Changer de periode change les plages : on recentre sur la moyenne. */
+function g45SgCursPer(sp, p) { var e = _g45SgCursEtat(sp); e.per = p; e.tot.i = -1; e.eq.i = -1; e.hand.i = -1; _g45SgCursSauver(sp, e); _g45SgCursRedessiner('g45s-tot'); }
+
+window._g45SgCursHtml = _g45SgCursHtml; window._g45SgCursClesActives = _g45SgCursClesActives;
+window.g45SgCursInput = g45SgCursInput; window.g45SgCursCommit = g45SgCursCommit; window.g45SgCursCase = g45SgCursCase;
+window.g45SgCursEq = g45SgCursEq; window.g45SgCursPer = g45SgCursPer;
+
 function _g45SgCompte(liste, cle) {
   var n = 0;
   liste.forEach(function (m) {
@@ -43893,8 +44135,12 @@ async function _g45SaisonsGen(el, nom, perso) {
   }
 
   /* ── Selecteurs de marche ── */
+  /* CURSEURS (24/09/2026) : pour les sports ayant une table de lignes, les
+     boutons O/U sont remplaces par des curseurs point par point. */
+  var _cursOk = !!(typeof _G45_SG_L !== 'undefined' && _G45_SG_L[sp]);
+  if (_cursOk) { try { html += _g45SgCursHtml(liste, sp, nom); } catch (e) { _cursOk = false; } }
   html += '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px;">';
-  CLES.forEach(function (k) {
+  CLES.filter(function (k) { return !_cursOk || !/^[OU]\d/.test(k); }).forEach(function (k) {
     var on = _g45SgQuick.indexOf(k) >= 0;
     html += '<button onclick="_g45SgToggle(\'' + k + '\')" style="padding:4px 8px;border-radius:12px;border:1px solid rgba(255,255,255,'
       + (on ? '.3' : '.08') + ');background:rgba(255,255,255,' + (on ? '.15' : '.04') + ');color:' + (on ? 'var(--t1)' : 'var(--t3)')
@@ -43953,11 +44199,24 @@ async function _g45SaisonsGen(el, nom, perso) {
     + 'Stats s\u00e9lectionn\u00e9es <span style="color:var(--t3);font-weight:400;text-transform:none;letter-spacing:0;">\u00b7 ' + nF + ' matchs</span></div>';
   html += '<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px;">';
   var coches = CLES.filter(function (k) { return _g45SgQuick.indexOf(k) >= 0; });
+  if (_cursOk) {
+    coches = coches.filter(function (k) { return !/^[OU]\d/.test(k); });
+    try { coches = coches.concat(_g45SgCursClesActives(liste, sp)); } catch (e) {}
+  }
   if (!coches.length) coches = ['O' + lignes[2]];
   coches.forEach(function (k, i) {
-    var v = pct(_g45SgCompte(liste, k), nF), c = couleurDe(k, CLES.indexOf(k));
+    var v, c, libK;
+    if (CLES.indexOf(k) >= 0) { v = pct(_g45SgCompte(liste, k), nF); c = couleurDe(k, CLES.indexOf(k)); libK = libelleDe(k); }
+    else {
+      /* Cle d'un curseur : moteur de marches, sur les seuls matchs ou la
+         donnee existe (une periode inconnue n'est pas comptee comme perdue). */
+      var okC = 0, nC = 0;
+      liste.forEach(function (m) { var r = _g45MarcheEval(k, _g45SgX(m, sp)); if (r == null) return; nC++; if (r) okC++; });
+      if (!nC) return;
+      v = Math.round(okC * 100 / nC); c = _g45MarcheCoul(k); libK = _g45MarcheCourt(k);
+    }
     html += '<div style="display:flex;align-items:center;gap:8px;">'
-      + '<div style="font-size:10px;font-weight:700;color:var(--t2);width:92px;flex-shrink:0;">' + libelleDe(k) + '</div>'
+      + '<div style="font-size:10px;font-weight:700;color:var(--t2);width:92px;flex-shrink:0;">' + libK + '</div>'
       + '<div style="flex:1;height:8px;background:rgba(255,255,255,.06);border-radius:4px;"><div style="height:8px;border-radius:4px;background:' + c + ';width:' + v + '%;transition:width .4s;"></div></div>'
       + '<div style="font-size:11px;font-weight:800;color:' + c + ';width:36px;text-align:right;">' + v + '%</div></div>';
   });
