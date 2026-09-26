@@ -38412,7 +38412,7 @@ async function g45F1Open(){
   try{ if(typeof g45StatsLocal==='function' && !g45StatsLocal().length && typeof g45StatsLoadPublic==='function'){ g45StatsLoadPublic().then(function(a){ if(a&&a.length) g45F1Open(); }); } }catch(e){}
 }
 var _g45OF1={drv:{}, timer:null};
-function _g45F1LiveStop(){ if(_g45OF1.timer){ clearInterval(_g45OF1.timer); _g45OF1.timer=null; } if(_g45OF1.mapTimer){ clearInterval(_g45OF1.mapTimer); _g45OF1.mapTimer=null; } if(typeof _g45F1SessRefreshStop==='function') _g45F1SessRefreshStop(); }
+function _g45F1LiveStop(){ if(typeof _g45F1Off!=='undefined'&&_g45F1Off.timer){ clearInterval(_g45F1Off.timer); _g45F1Off.timer=null; } if(_g45OF1.timer){ clearInterval(_g45OF1.timer); _g45OF1.timer=null; } if(_g45OF1.mapTimer){ clearInterval(_g45OF1.mapTimer); _g45OF1.mapTimer=null; } if(typeof _g45F1SessRefreshStop==='function') _g45F1SessRefreshStop(); }
 async function _g45OF1Drivers(sk){
   if(_g45OF1.drv[sk]) return _g45OF1.drv[sk];
   try{
@@ -38631,9 +38631,263 @@ async function _g45F1LiveTick(sess){
   html+='</div>';
   box.innerHTML=html;
 }
+/* ═══════════════════════════════════════════════════════════════════════════
+   F1 EN DIRECT — FLUX OFFICIEL VIA LE WORKER   (26/09/2026, maquettes validées)
+   ───────────────────────────────────────────────────────────────────────────
+   OpenF1 réserve le direct aux abonnés (401 pendant les séances). Le test
+   /f1test du 26/09 a montré que le flux officiel livetiming.formula1.com
+   ACCEPTE Cloudflare : la route /f1live du worker renvoie un instantané
+   allégé (cache partagé 5 s). Ici : TABLEAU façon feuille de chronométrage
+   (écart, pneu, dernier tour, S1-S3 avec mini-secteurs, flèches ▲▼, bandeaux
+   « bataille » sous 1 s) puis CHRONOLOGIE. Les messages de course arrivent
+   avec leur historique ; violets, meilleurs tours, stands, dépassements et
+   abandons sont DÉDUITS en comparant deux instantanés successifs — donc
+   seulement depuis l'ouverture de la page. Pas de carte ni de temps aux
+   stands : réservés à F1 TV depuis 2025.
+   Aperçu hors séance (dernier état du hub) : g45F1Apercu() en console.
+   ═══════════════════════════════════════════════════════════════════════════ */
+var _g45F1Off = { timer: null, prec: null, evts: [], cle: '', fleches: {}, filtre: 'tout', dernier: null, box: null };
+async function _g45F1OffLire() {
+  try { var r = await fetch(FD_PROXY + '/f1live'); if (!r.ok) return null; var j = await r.json(); return (j && j.pilotes && j.sess) ? j : null; } catch (e) { return null; }
+}
+function _g45F1OffCorrespond(j, ev) {
+  var ad = (ev && ev.circuit && ev.circuit.address) || {};
+  var pays = String(_g45OF1CountryEN(ad.country || '') || '').toLowerCase(), ville = String(ad.city || '').toLowerCase();
+  var ok = (!!pays && pays === String(j.sess.pays || '').toLowerCase()) || (!!ville && ville === String(j.sess.lieu || '').toLowerCase());
+  var d0 = Date.parse(j.sess.debut), dv = Date.parse(ev && ev.date);
+  if (!isNaN(d0) && !isNaN(dv) && Math.abs(d0 - dv) > 5 * 86400000) ok = false;
+  return ok;
+}
+function _g45F1OffEnDirect(j) { return /^(Started|Aborted|Suspended)$/i.test(String(j.sess.statut || '')); }
+function _g45F1OffCourse(j) { return /race|sprint$/i.test(String(j.sess.type || j.sess.libelle || '')) && !/qualif|shootout/i.test(String(j.sess.libelle || '')); }
+var _G45_F1_PISTE = { '1': ['🟢 Piste libre', '#1ed760', '#0f5a2c'], '2': ['🟨 Drapeau jaune', '#f0b020', '#5a4a12'], '4': ['🚗 Safety Car', '#f0b020', '#5a4a12'],
+  '5': ['🟥 Drapeau rouge', '#ff4545', '#5a1616'], '6': ['🚗 VSC', '#f0b020', '#5a4a12'], '7': ['🚗 Fin de VSC', '#f0b020', '#5a4a12'] };
+var _G45_F1_PNEU = { SOFT: ['S', '#ff4545', 'tendres'], MEDIUM: ['M', '#f0b020', 'médiums'], HARD: ['H', '#ffffff', 'durs'], INTERMEDIATE: ['I', '#2ecc71', 'intermédiaires'], WET: ['W', '#4d84ff', 'pluie'] };
+var _G45_F1_SEG = ['#2a3350', '#f0b020', '#1ed760', '#b57bff', '#4d84ff'];
+function _g45F1SessFr(x) {
+  var m = { 'race': 'Course', 'qualifying': 'Qualifications', 'sprint': 'Sprint', 'sprint qualifying': 'Qualif. sprint', 'sprint shootout': 'Qualif. sprint',
+    'practice 1': 'Essais libres 1', 'practice 2': 'Essais libres 2', 'practice 3': 'Essais libres 3' };
+  return m[String(x || '').toLowerCase()] || String(x || '');
+}
+/* Messages de la direction de course : les formules les plus courantes, en français. */
+function _g45F1RcFr(t) {
+  var s = String(t || ''), u = s.toUpperCase(), m;
+  var R = [
+    [/^CLEAR IN TRACK SECTOR (\d+)/, function (x) { return 'Secteur ' + x[1] + ' dégagé'; }],
+    [/^DOUBLE YELLOW IN TRACK SECTOR (\d+)/, function (x) { return 'Double drapeau jaune, secteur ' + x[1]; }],
+    [/^YELLOW IN TRACK SECTOR (\d+)/, function (x) { return 'Drapeau jaune, secteur ' + x[1]; }],
+    [/^MARSHALS ON TRACK AT TURN (\d+)/, function (x) { return 'Commissaires en piste, virage ' + x[1]; }],
+    [/^VIRTUAL SAFETY CAR DEPLOYED/, function () { return 'VSC déployée'; }],
+    [/^VIRTUAL SAFETY CAR ENDING/, function () { return 'Fin de la VSC'; }],
+    [/^SAFETY CAR DEPLOYED/, function () { return 'Safety Car déployée'; }],
+    [/^SAFETY CAR IN THIS LAP/, function () { return 'La Safety Car rentre à la fin du tour'; }],
+    [/^RED FLAG/, function () { return 'Drapeau rouge'; }],
+    [/^CHEQUERED FLAG/, function () { return 'Drapeau à damier'; }],
+    [/^GREEN LIGHT - PIT EXIT OPEN/, function () { return 'Feu vert : sortie des stands ouverte'; }],
+    [/^PIT EXIT CLOSED/, function () { return 'Sortie des stands fermée'; }],
+    [/^DRS ENABLED/, function () { return 'DRS autorisé'; }],
+    [/^DRS DISABLED/, function () { return 'DRS désactivé'; }],
+    [/^OVERTAKE ENABLED/, function () { return 'Dépassement autorisé'; }],
+    [/^OVERTAKE DISABLED/, function () { return 'Dépassement désactivé'; }],
+    [/^TRACK CLEAR/, function () { return 'Piste dégagée'; }],
+    [/^LAPPED CARS MAY NOW OVERTAKE/, function () { return 'Les retardataires peuvent se dédoubler'; }],
+    [/^RISK OF RAIN FOR F1 RACE IS (\d+)%/, function (x) { return 'Risque de pluie pour la course : ' + x[1] + ' %'; }]
+  ];
+  for (var i = 0; i < R.length; i++) { if ((m = u.match(R[i][0]))) return R[i][1](m); }
+  return s.replace(/UNDER INVESTIGATION/i, 'sous enquête').replace(/WILL BE INVESTIGATED AFTER THE RACE/i, 'enquête après la course')
+    .replace(/NO FURTHER (ACTION|INVESTIGATION)/i, 'pas de sanction').replace(/(\d+) SECOND TIME PENALTY/i, 'pénalité de $1 s')
+    .replace(/TRACK LIMITS/i, 'limites de piste').replace(/CAUSING A COLLISION/i, 'provoque un accrochage').replace(/UNSAFE RELEASE/i, 'relâché dangereusement')
+    .replace(/DELETED/i, 'annulé').replace(/NOTED/i, 'noté').replace(/INCIDENT INVOLVING/i, 'incident impliquant');
+}
+/* Titre, icône et couleur d'un message de course dans la chronologie. */
+function _g45F1RcType(m) {
+  var c = String(m.cat || '').toLowerCase(), f = String(m.drapeau || '').toUpperCase(), u = String(m.msg || '').toUpperCase();
+  if (/SAFETY CAR|VIRTUAL/.test(u) || c === 'safetycar') return ['🚗', 'SAFETY CAR', '#f0b020'];
+  if (/RED/.test(f)) return ['🟥', 'DRAPEAU ROUGE', '#ff4545'];
+  if (/DOUBLE YELLOW|YELLOW/.test(f)) return ['🟨', 'DRAPEAU JAUNE', '#f0b020'];
+  if (/CHEQUERED/.test(f)) return ['🏁', 'DRAPEAU À DAMIER', '#fff'];
+  if (/BLUE/.test(f)) return ['🟦', 'DRAPEAU BLEU', '#4d84ff'];
+  if (/PENALTY/.test(u)) return ['⚖️', 'PÉNALITÉ', '#ff8a8a'];
+  if (/INVESTIGAT|NOTED/.test(u)) return ['⚖️', 'ENQUÊTE', '#ff8a8a'];
+  if (/GREEN|CLEAR/.test(f) || /CLEAR/.test(u)) return ['🟢', 'PISTE DÉGAGÉE', '#1ed760'];
+  if (/MARSHALS/.test(u)) return ['🦺', 'COMMISSAIRES', '#f0b020'];
+  if (/DRS|OVERTAKE/.test(u)) return ['💨', 'DÉPASSEMENT / DRS', '#9fc3ff'];
+  return ['📢', 'DIRECTION DE COURSE', '#c9d3ee'];
+}
+function _g45F1Coul(p) {
+  var c = p && p.coul ? p.coul : '#8b97c4';
+  try { if (typeof _g45CoulTexte === 'function') return _g45CoulTexte(c); } catch (e) {}
+  return c;
+}
+function _g45F1Temps(x) { var q = String(x || '').split(':'), v = q.length === 2 ? (+q[0]) * 60 + parseFloat(q[1]) : parseFloat(q[0]); return isNaN(v) ? null : v; }
+
+/* ── Événements déduits de deux instantanés successifs ── */
+function _g45F1OffEvenements(av, ap) {
+  var out = [], idx = {}, parPos = {};
+  (av.pilotes || []).forEach(function (q) { idx[q.n] = q; parPos[q.pos] = q; });
+  var tour = (ap.tour && ap.tour.cur) || 0, t = Date.now();
+  var nom = function (p) { return String(p.nom || p.tla || '#' + p.n).toUpperCase(); };
+  var ev = function (fam, ico, titre, coulT, html) { out.push({ t: t, tour: tour, fam: fam, ico: ico, titre: titre, cT: coulT, html: html }); };
+  var nomH = function (p) { return '<b style="color:' + _g45F1Coul(p) + ';">' + nom(p) + '</b>'; };
+  /* meilleur tour : le plus petit « meilleur » du plateau a baissé */
+  var mini = function (L) { var b = null; (L || []).forEach(function (p) { var v = _g45F1Temps(p.meilleur); if (v != null && (!b || v < b.v)) b = { v: v, p: p }; }); return b; };
+  var b0 = mini(av.pilotes), b1 = mini(ap.pilotes);
+  if (b1 && (!b0 || b1.v < b0.v - 0.0005)) ev('chrono', '⏱️', 'MEILLEUR TOUR', '#b57bff', nomH(b1.p) + ' signe le meilleur tour · ' + b1.p.meilleur);
+  (ap.pilotes || []).forEach(function (p) {
+    var q = idx[p.n]; if (!q) return;
+    (p.s || []).forEach(function (x, k) {
+      var y = (q.s || [])[k] || [];
+      if (x[1] === 2 && x[0] && (y[0] !== x[0] || y[1] !== 2)) ev('chrono', '⚡', 'VIOLET S' + (k + 1), '#b57bff', nomH(p) + ' signe le meilleur secteur ' + (k + 1) + ' · ' + x[0]);
+    });
+    if (!q.stand && p.stand) ev('stand', '🔧', 'STAND', '#9fc3ff', nomH(p) + ' rentre au stand');
+    if (q.stand && !p.stand) {
+      var pn = _G45_F1_PNEU[String(p.pneu || '').toUpperCase()];
+      ev('stand', '🔧', 'SORTIE DES STANDS', '#9fc3ff', nomH(p) + ' ressort' + (pn ? ' en ' + pn[2] + ' (' + pn[0] + ')' : '') + ' · ' + p.pos + 'e');
+    }
+    if (!q.abandon && p.abandon) ev('stand', '❌', 'ABANDON', '#ff8a8a', nomH(p) + ' abandonne');
+    if (p.pos < q.pos && !p.stand && !q.stand && !p.abandon) {
+      var r = parPos[p.pos];
+      if (r && r.n !== p.n && !r.stand && !r.abandon) ev('stand', '▲', 'DÉPASSEMENT', '#1ed760', nomH(p) + ' passe ' + p.pos + 'e devant ' + nomH(r));
+    }
+  });
+  return out;
+}
+
+function _g45F1OffHtml(j, apercu) {
+  var e = function (x) { return String(x == null ? '' : x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); };
+  var direct = _g45F1OffEnDirect(j), course = _g45F1OffCourse(j), ps = _G45_F1_PISTE[j.piste.s] || null, S = _g45F1Off;
+  var age = Math.max(0, Math.round((Date.now() - (j.t || Date.now())) / 1000));
+  var h = '<div style="background:rgba(11,16,29,.92);border-radius:12px;padding:10px;color:#fff;margin:8px 0;">';
+  /* Bandeau */
+  h += '<div style="background:linear-gradient(' + (ps ? ps[2] : '#26324f') + ',#141b2e);border-radius:8px;padding:10px;text-align:center;margin-bottom:8px;">'
+    + '<div style="font-size:14px;font-weight:900;letter-spacing:2px;">' + (ps ? ps[0].toUpperCase() : '') + ' · ' + e(_g45F1SessFr(j.sess.libelle || j.sess.type).toUpperCase()) + '</div>'
+    + '<div style="font-size:13px;color:#c9d3ee;margin-top:2px;">' + (direct ? '🔴 En direct' : '⏺ Dernier état connu') + ' · ' + e(j.sess.lieu)
+    + (j.tour.tot ? ' · <b style="color:#f0b020;">Tour ' + j.tour.cur + ' / ' + j.tour.tot + '</b>' : (j.sess.horloge ? ' · ⏱️ ' + e(j.sess.horloge) : ''))
+    + ' · il y a ' + age + ' s</div>'
+    + '<div style="font-size:12px;color:#c9d3ee;margin-top:2px;">🌡️ Air ' + e(j.meteo.air) + ' °C · piste ' + e(j.meteo.piste) + ' °C · ' + (j.meteo.pluie ? '🌧️ pluie' : '💧 pas de pluie') + '</div></div>';
+  /* Batailles : groupes consécutifs à moins d'1 s (course seulement) */
+  var bat = {};
+  if (course) {
+    var L = j.pilotes, i = 1;
+    while (i < L.length) {
+      var iv = parseFloat(String(L[i].int || '').replace('+', ''));
+      if (!isNaN(iv) && iv < 1 && !L[i].stand && !L[i - 1].stand && !L[i].abandon) {
+        var d = i - 1, f = i, tot = iv;
+        while (f + 1 < L.length) { var v2 = parseFloat(String(L[f + 1].int || '').replace('+', '')); if (isNaN(v2) || v2 >= 1 || L[f + 1].stand) break; f++; tot += v2; }
+        bat[d] = { f: f, tot: tot }; i = f + 1;
+      } else i++;
+    }
+  }
+  /* Tableau */
+  var th = 'padding:7px 6px;font-size:12px;color:#c9d3ee;font-weight:700;';
+  h += '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:8px;background:#141b2e;margin-bottom:10px;">'
+    + '<table style="border-collapse:collapse;white-space:nowrap;font-size:14px;color:#fff;width:100%;"><tr>'
+    + '<th style="' + th + 'position:sticky;left:0;z-index:2;background:#141b2e;text-align:left;min-width:34px;">#</th>'
+    + '<th style="' + th + 'position:sticky;left:40px;z-index:2;background:#141b2e;text-align:left;">Pilote</th>'
+    + '<th style="' + th + 'text-align:right;">' + (course ? 'Écart' : 'Meilleur') + '</th><th style="' + th + '">Pn</th>'
+    + '<th style="' + th + 'text-align:right;">Dernier</th><th style="' + th + '">S1</th><th style="' + th + '">S2</th><th style="' + th + '">S3</th></tr>';
+  j.pilotes.forEach(function (p, i) {
+    if (bat[i]) {
+      var gp = j.pilotes.slice(i, bat[i].f + 1);
+      h += '<tr><td colspan="8" style="padding:6px 8px;background:#1b2a52;color:#9fc3ff;font-size:13px;font-weight:800;">⚔️ Bataille pour la ' + p.pos + 'e place · '
+        + gp.map(function (x) { return e(x.tla || x.nom); }).join(', ') + ' en ' + bat[i].tot.toFixed(1).replace('.', ',') + ' s</td></tr>';
+    }
+    var fl = S.fleches[p.n], fd = fl && fl.jusqua > Date.now() ? fl.d : 0;
+    var pn = _G45_F1_PNEU[String(p.pneu || '').toUpperCase()] || null;
+    var ecart = course ? (i === 0 ? 'Leader' : (/LAP/i.test(p.gap) ? e(p.int || '') : e(p.gap))) : e(p.meilleur || '—');
+    var badge = p.abandon ? ' <span style="font-size:11px;background:#3a1616;color:#ff8a8a;padding:1px 4px;border-radius:4px;">OUT</span>'
+      : (p.stand ? ' <span style="font-size:11px;background:#1b2a52;color:#9fc3ff;padding:1px 4px;border-radius:4px;">STAND</span>' : '');
+    var cs = function (x) { return !x[0] ? '#8c97b8' : (x[1] === 2 ? '#b57bff' : (x[1] === 1 ? '#1ed760' : '#f0b020')); };
+    var cel = 'padding:6px 6px;border-top:1px solid rgba(255,255,255,.08);';
+    h += '<tr style="' + (p.abandon ? 'opacity:.5;' : '') + '">'
+      + '<td style="' + cel + 'position:sticky;left:0;z-index:1;background:#141b2e;font-weight:800;color:' + (fd > 0 ? '#1ed760' : (fd < 0 ? '#ff8a8a' : (i ? '#c9d3ee' : '#f0b020'))) + ';">'
+      + (p.pos < 99 ? p.pos : '—') + (fd > 0 ? '▲' : (fd < 0 ? '▼' : '')) + '</td>'
+      + '<td style="' + cel + 'position:sticky;left:40px;z-index:1;background:#141b2e;font-weight:800;border-left:3px solid ' + (p.coul || '#8b97c4') + ';">' + e(p.tla || p.nom) + badge + '</td>'
+      + '<td style="' + cel + 'text-align:right;font-weight:800;">' + ecart + '</td>'
+      + '<td style="' + cel + 'font-weight:900;color:' + (pn ? pn[1] : '#c9d3ee') + ';">' + (pn ? pn[0] : '—') + (p.age != null ? '<sub style="font-size:10px;color:#c9d3ee;">' + p.age + '</sub>' : '') + '</td>'
+      + '<td style="' + cel + 'text-align:right;font-weight:800;color:' + (p.dernierB ? '#b57bff' : (p.dernierP ? '#1ed760' : '#fff')) + ';">' + e(p.dernier || '—') + '</td>';
+    for (var k = 0; k < 3; k++) {
+      var x = (p.s || [])[k] || ['', 0, []], sg = x[2] || [];
+      h += '<td style="' + cel + '">' + (sg.length ? '<div style="display:flex;gap:2px;margin-bottom:3px;">' + sg.map(function (c) { return '<i style="display:block;width:7px;height:4px;border-radius:2px;background:' + _G45_F1_SEG[c] + ';"></i>'; }).join('') + '</div>' : '')
+        + '<span style="font-weight:700;color:' + cs(x) + ';">' + e(x[0] || '—') + '</span></td>';
+    }
+    h += '</tr>';
+  });
+  h += '</table></div>';
+  /* Chronologie : messages de course (historique) + événements déduits */
+  var tous = S.evts.slice();
+  (j.rc || []).forEach(function (m) {
+    var ty = _g45F1RcType(m);
+    tous.push({ t: Date.parse(m.utc) || 0, tour: +m.tour || 0, fam: 'course', ico: ty[0], titre: ty[1], cT: ty[2], html: e(_g45F1RcFr(m.msg)) });
+  });
+  var F = S.filtre || 'tout';
+  var vis = tous.filter(function (x) { return F === 'tout' || x.fam === F; }).sort(function (a, b) { return (b.tour - a.tour) || (b.t - a.t); }).slice(0, 60);
+  var bt = function (k, lib) {
+    var on = F === k;
+    return '<button onclick="g45F1OffFiltre(\'' + k + '\')" style="padding:7px 10px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:' + (on ? '900' : '700') + ';'
+      + 'border:1px solid ' + (on ? '#4d84ff' : 'rgba(255,255,255,.18)') + ';background:' + (on ? '#1b2a52' : 'rgba(11,16,29,.85)') + ';color:' + (on ? '#fff' : '#c9d3ee') + ';">' + lib + '</button>';
+  };
+  h += '<div style="font-size:12px;font-weight:800;letter-spacing:1px;color:#c9d3ee;margin:4px 0 6px;">⏱️ CHRONOLOGIE DU DIRECT</div>'
+    + '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">' + bt('tout', 'Tout') + bt('course', 'Course & drapeaux') + bt('chrono', 'Chronos') + bt('stand', 'Stands & places') + '</div>';
+  if (!vis.length) h += '<div style="font-size:13px;color:#c9d3ee;">Rien pour l\'instant' + (F === 'chrono' || F === 'stand' ? ' : ces événements apparaissent au fil du direct, depuis l\'ouverture de la page.' : '.') + '</div>';
+  var tourAct = null;
+  vis.forEach(function (x) {
+    if (x.tour !== tourAct) { tourAct = x.tour; h += '<div style="display:inline-block;background:#26324f;border-radius:10px;padding:2px 9px;font-size:12px;font-weight:800;margin:6px 0;">' + (x.tour ? 'T' + x.tour : 'Avant le départ') + '</div>'; }
+    h += '<div style="background:#141b2e;border-radius:8px;padding:8px 10px;margin-bottom:5px;"><div style="font-size:12px;font-weight:800;color:' + x.cT + ';">' + x.ico + ' ' + x.titre + '</div>'
+      + '<div style="font-size:14px;color:#fff;line-height:1.4;">' + x.html + '</div></div>';
+  });
+  h += '<div style="font-size:12px;color:#c9d3ee;margin-top:8px;">' + (direct ? 'Mise à jour toutes les 5 s · ' : (apercu ? 'Aperçu hors séance · ' : 'Séance terminée · '))
+    + 'violet = meilleur de la séance · vert = record perso · carte et temps aux stands : réservés à F1 TV en direct</div></div>';
+  return h;
+}
+/* Nouvel instantané : événements, flèches, puis affichage. */
+function _g45F1OffAppliquer(j) {
+  var S = _g45F1Off, cle = (j.sess.debut || '') + '|' + (j.sess.libelle || '');
+  if (S.cle !== cle) { S.cle = cle; S.prec = null; S.evts = []; S.fleches = {}; }
+  if (S.prec) {
+    var idx = {}; S.prec.pilotes.forEach(function (q) { idx[q.n] = q; });
+    j.pilotes.forEach(function (p) { var q = idx[p.n]; if (q && q.pos !== p.pos && p.pos < 99 && q.pos < 99) S.fleches[p.n] = { d: p.pos < q.pos ? 1 : -1, jusqua: Date.now() + 30000 }; });
+    S.evts = _g45F1OffEvenements(S.prec, j).concat(S.evts).slice(0, 150);
+  }
+  S.prec = j; S.dernier = j;
+}
+function _g45F1OffDessiner() {
+  var S = _g45F1Off;
+  if (S.box && S.box.isConnected && S.dernier) S.box.innerHTML = _g45F1OffHtml(S.dernier, !!window._g45F1OffApercu);
+}
+window.g45F1OffFiltre = function (k) { _g45F1Off.filtre = k; _g45F1OffDessiner(); };
+async function _g45F1OffDemarrer(box, j) {
+  var S = _g45F1Off;
+  S.box = box; _g45F1OffAppliquer(j); _g45F1OffDessiner();
+  if (S.timer) clearInterval(S.timer);
+  if (!_g45F1OffEnDirect(j)) return;                     /* aperçu ou séance finie : pas de rafraîchissement */
+  S.timer = setInterval(async function () {
+    if (!box.isConnected) { clearInterval(S.timer); S.timer = null; return; }
+    if (document.hidden) return;
+    var n = await _g45F1OffLire(); if (!n || !box.isConnected) return;
+    _g45F1OffAppliquer(n); _g45F1OffDessiner();
+    if (!_g45F1OffEnDirect(n)) { clearInterval(S.timer); S.timer = null; }
+  }, 5000);
+}
+window.g45F1Apercu = function () {
+  window._g45F1OffApercu = 1;
+  if (window._g45F1Eid && typeof g45F1Detail === 'function') g45F1Detail(window._g45F1Eid);
+};
+window._g45F1OffHtml = _g45F1OffHtml; window._g45F1RcFr = _g45F1RcFr; window._g45F1OffEvenements = _g45F1OffEvenements;
+
 async function _g45F1LiveStart(ev){
   _g45F1LiveStop();
   var box=document.getElementById('f1-live'); if(!box) return;
+  /* 1) Flux officiel via le worker (26/09/2026) : prioritaire s'il est EN
+        DIRECT et que la séance est celle de ce GP. */
+  try {
+    var off=await _g45F1OffLire();
+    if(off && _g45F1OffCorrespond(off, ev) && (_g45F1OffEnDirect(off) || window._g45F1OffApercu)){
+      var mb0=document.getElementById('f1-livemap'); if(mb0) mb0.innerHTML='';
+      _g45F1OffDemarrer(box, off); return;
+    }
+  } catch(e) {}
+  /* 2) Sinon : OpenF1, comme avant. */
   var sess=await _g45OF1LiveSession(ev);
   if(!sess){
     var mb=document.getElementById('f1-livemap'); if(mb) mb.innerHTML='';
