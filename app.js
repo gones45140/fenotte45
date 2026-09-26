@@ -34799,6 +34799,17 @@ function saveBetEdit(id){
   }
   /* 3 bis) on applique l'effet TOTAL du pari tel qu'il est maintenant. */
   _g45BetAppliquer(b, nowPending ? 'h' : 'a', +1);
+  /* SCORE QUI NE REVENAIT PLUS (26/09/2026, relevé d'Antoine sur France –
+     Türkiye). Un pari cherché AVANT d'être corrigé gardait son « score
+     introuvable » 2 h (cache g45_score4_<id>) : la correction ne relançait
+     rien. Enregistrer dans l'éditeur efface ce cache : recherche immédiate. */
+  try {
+    ['g45_score4_', 'g45_tennis4_'].forEach(function (p) {
+      localStorage.removeItem(p + b.id);
+      if (typeof _g45ScoreEnVol !== 'undefined') delete _g45ScoreEnVol[p + b.id];
+      if (typeof _g45ScoreVus !== 'undefined') delete _g45ScoreVus[p + b.id];
+    });
+  } catch (e) {}
   save();
   var ov=document.getElementById('bet-edit-ov'); if(ov) ov.remove();
   try{ renderArchive(); }catch(e){}
@@ -38431,10 +38442,37 @@ function _g45OF1CountryEN(c){
   var m={'grande-bretagne':'United Kingdom','royaume-uni':'United Kingdom','angleterre':'United Kingdom','great britain':'United Kingdom','britain':'United Kingdom','uk':'United Kingdom','bahrein':'Bahrain','bahreïn':'Bahrain','arabie saoudite':'Saudi Arabia','australie':'Australia','japon':'Japan','chine':'China','etats-unis':'United States','états-unis':'United States','usa':'United States','italie':'Italy','espagne':'Spain','autriche':'Austria','hongrie':'Hungary','belgique':'Belgium','pays-bas':'Netherlands','pays bas':'Netherlands','azerbaidjan':'Azerbaijan','azerbaïdjan':'Azerbaijan','singapour':'Singapore','mexique':'Mexico','bresil':'Brazil','brésil':'Brazil','emirats arabes unis':'United Arab Emirates','émirats arabes unis':'United Arab Emirates','uae':'United Arab Emirates','abu dhabi':'United Arab Emirates','allemagne':'Germany','turquie':'Turkey','russie':'Russia','canada':'Canada','france':'France','monaco':'Monaco','qatar':'Qatar','portugal':'Portugal'};
   return m[k]||c;
 }
+/* ═══ OPENF1 BLOQUÉ PENDANT UNE SÉANCE (26/09/2026, GP de Bakou) ═══
+   Recherche du 26/09 (openf1.org, FAQ et doc) : pendant une séance, et de
+   ~30 min avant à ~30 min après, l'API gratuite répond 401 à TOUT, séances
+   passées comprises (« Live F1 session in progress… restricted to
+   authenticated users until the session ends ») ; le direct est réservé à
+   l'offre payante. L'app affichait « Séance introuvable » : faux. On le dit
+   clairement, et on réessaie tout seul toutes les 5 min tant que le bloc est
+   affiché — dès la levée, secteurs, pneus, arrêts et drapeaux reviennent. */
+function _g45OF1Bloque(){ _g45OF1.bloque = Date.now(); }
+function _g45OF1EstBloque(){ return !!(_g45OF1.bloque && Date.now() - _g45OF1.bloque < 10 * 60000); }
+function _g45OF1MsgBloque(){
+  return '<div class="fc" style="font-size:13px;line-height:1.5;color:#fff;background:rgba(11,16,29,.85);border:1px solid rgba(240,176,32,.45);border-radius:10px;padding:10px 12px;">'
+    + '<b style="color:#f0b020;">🔒 Direct F1 indisponible gratuitement</b><br>'
+    + '<span style="color:#c9d3ee;">OpenF1 réserve les données en direct à ses abonnés pendant la séance. Tout redevient gratuit environ 30 min après la fin : '
+    + 'secteurs, pneus, arrêts et drapeaux s\u2019afficheront alors tout seuls (nouvel essai toutes les 5 min).</span></div>';
+}
+/* Message « introuvable » ou « bloqué » + nouvel essai automatique. */
+function _g45OF1Introuvable(out, relancer){
+  if(!_g45OF1EstBloque()){ out.innerHTML='<div class="fc" style="color:var(--t3);font-size:11px;">Séance introuvable côté OpenF1.</div>'; return; }
+  out.innerHTML=_g45OF1MsgBloque();
+  var cur=window._g45F1Cur;
+  setTimeout(function(){
+    if(!out.isConnected || window._g45F1Cur!==cur) return;   /* page quittée ou autre séance */
+    if(_g45OF1.year) _g45OF1.year={};                        /* relire les séances */
+    try{ relancer(); }catch(e){}
+  }, 5*60000);
+}
 async function _g45OF1YearSessions(year){
   if(!_g45OF1.year) _g45OF1.year={};
   if(_g45OF1.year[year]) return _g45OF1.year[year];
-  try{ var r=await fetch('https://api.openf1.org/v1/sessions?year='+year); if(!r.ok) return []; var a=await r.json(); a=Array.isArray(a)?a:[]; if(a.length) _g45OF1.year[year]=a; return a; }catch(e){ return []; }
+  try{ var r=await fetch('https://api.openf1.org/v1/sessions?year='+year); if(r.status===401){ _g45OF1Bloque(); return []; } if(!r.ok) return []; var a=await r.json(); a=Array.isArray(a)?a:[]; if(a.length) _g45OF1.year[year]=a; return a; }catch(e){ return []; }
 }
 /* Séances OpenF1 du GP courant : match pays (FR→EN) sur le même week-end, sinon repli par date (±3 j). */
 async function _g45OF1EventSessions(ev){
@@ -38454,6 +38492,7 @@ async function _g45OF1LiveSession(ev){
     var hit=evs.filter(inWin)[0]; if(hit) return hit;
     // Fallback : la session courante d'OpenF1, si sa fenêtre horaire colle
     var r2=await fetch('https://api.openf1.org/v1/sessions?session_key=latest');
+    if(r2.status===401) _g45OF1Bloque();
     if(r2.ok){ var ls=await r2.json(); var cur=(Array.isArray(ls)?ls[0]:ls); if(cur&&inWin(cur)) return cur; }
     return null;
   }catch(e){ return null; }
@@ -38596,7 +38635,14 @@ async function _g45F1LiveStart(ev){
   _g45F1LiveStop();
   var box=document.getElementById('f1-live'); if(!box) return;
   var sess=await _g45OF1LiveSession(ev);
-  if(!sess){ box.innerHTML=''; var mb=document.getElementById('f1-livemap'); if(mb) mb.innerHTML=''; return; }
+  if(!sess){
+    var mb=document.getElementById('f1-livemap'); if(mb) mb.innerHTML='';
+    if(_g45OF1EstBloque()){
+      box.innerHTML=_g45OF1MsgBloque();
+      setTimeout(function(){ if(box.isConnected){ if(_g45OF1.year) _g45OF1.year={}; _g45F1LiveStart(ev); } }, 5*60000);
+    } else box.innerHTML='';
+    return;
+  }
   _g45F1LiveTick(sess);
   _g45OF1.timer=setInterval(function(){
     if(!document.getElementById('f1-live')){ _g45F1LiveStop(); return; }
@@ -38709,7 +38755,7 @@ async function g45F1Sectors(){
   out.innerHTML=_g45F1XtraLoad('Chargement des secteurs…');
   var cur=window._g45F1Cur;
   var sess=await _g45OF1FindSessionByDate(cur.ev, cur.date, cur.label);
-  if(!sess){ out.innerHTML='<div class="fc" style="color:var(--t3);font-size:11px;">Séance introuvable côté OpenF1.</div>'; return; }
+  if(!sess){ _g45OF1Introuvable(out, g45F1Sectors); return; }
   var sk=sess.session_key;
   var drv=await _g45OF1Drivers(sk)||{};
   var lp;
@@ -38752,7 +38798,7 @@ async function g45F1Tyres(){
   out.innerHTML=_g45F1XtraLoad('Chargement pneus & arrêts…');
   var cur=window._g45F1Cur;
   var sess=await _g45OF1FindSessionByDate(cur.ev, cur.date, cur.label);
-  if(!sess){ out.innerHTML='<div class="fc" style="color:var(--t3);font-size:11px;">Séance introuvable côté OpenF1.</div>'; return; }
+  if(!sess){ _g45OF1Introuvable(out, g45F1Tyres); return; }
   var sk=sess.session_key;
   var drv=await _g45OF1Drivers(sk)||{};
   var stints=[], pits=[];
@@ -38845,7 +38891,7 @@ async function g45F1Flags(){
   out.innerHTML=_g45F1XtraLoad('Chargement drapeaux & pénalités…');
   var cur=window._g45F1Cur;
   var sess=await _g45OF1FindSessionByDate(cur.ev, cur.date, cur.label);
-  if(!sess){ out.innerHTML='<div class="fc" style="color:var(--t3);font-size:11px;">Séance introuvable côté OpenF1.</div>'; return; }
+  if(!sess){ _g45OF1Introuvable(out, g45F1Flags); return; }
   var sk=sess.session_key;
   var drv=await _g45OF1Drivers(sk)||{};
   var rc=[];
