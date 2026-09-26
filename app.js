@@ -52830,7 +52830,14 @@ window.g45BkVidesToggle=g45BkVidesToggle;
 var G45_VAL_BARRES = {
   id: 'g45ValBarres',
   afterDatasetsDraw: function (chart, args, opts) {
-    var suf = (chart.config && chart.config._g45Suffixe) || '€';
+    /* SUFFIXE « % » JAMAIS LU (26/09/2026, relevé d'Antoine sur « Réussite par
+       sport » : « +63€ » au lieu de 63 %). Chart.js 4 ne recopie pas une clé
+       inconnue du haut de la configuration sur `chart.config` : elle reste dans
+       `chart.config._config`. Le suffixe tombait donc toujours sur « € ». On lit
+       les deux emplacements. Un pourcentage de réussite ne prend pas de « + » :
+       ce n'est pas un gain. */
+    var cfg = chart.config || {};
+    var suf = cfg._g45Suffixe || (cfg._config && cfg._config._g45Suffixe) || '€';
     var ctx = chart.ctx;
     ctx.save();
     ctx.font = '600 11px ' + (getComputedStyle(document.documentElement).getPropertyValue('--ff') || 'sans-serif');
@@ -52855,7 +52862,7 @@ var G45_VAL_BARRES = {
       pts.forEach(function (o) {
         var v = o.v, bar = o.bar;
         if (v === null || v === undefined) return;
-        var txt = (v > 0 ? '+' : '') + v + suf;
+        var txt = suf === '%' ? String(v).replace('.', ',') + ' %' : (v > 0 ? '+' : '') + v + suf;
         var demi = ctx.measureText(txt).width / 2;
         var pos = v >= 0;
         /* Deux couloirs separes : une etiquette au-dessus de l'axe ne peut pas
