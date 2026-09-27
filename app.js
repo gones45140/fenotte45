@@ -38053,6 +38053,33 @@ async function g45DomExtLancer(btn) {
     + '<div></div>'
     + '<div style="font-size:14px;font-weight:800;color:#fff;padding-bottom:4px;border-bottom:2px solid #6d9dff;">🏠 ' + _g45Esc(hN) + ' à domicile</div>'
     + '<div style="font-size:14px;font-weight:800;color:#fff;padding-bottom:4px;border-bottom:2px solid #f5c542;">🚌 ' + _g45Esc(aN) + ' à l\'extérieur</div></div>';
+  /* PORTRAIT (27/09/2026, relevé d'Antoine : « c'est coupé en mode portrait »).
+     Trois colonnes fixes (96 px | 1fr | 1fr) laissaient ~95 px par équipe sur
+     téléphone : les tuiles débordaient à droite. Sous 520 px de large, on
+     EMPILE : pour chaque saison, le bloc domicile puis le bloc extérieur,
+     chacun sur toute la largeur. Même contenu, mêmes couleurs. */
+  if ((box.clientWidth || 0) < 520) {
+    var bloc = function (titre, coulTrait, html) {
+      return '<div style="margin-bottom:10px;">'
+        + '<div style="font-size:13.5px;font-weight:800;color:#fff;padding-bottom:4px;margin-bottom:6px;border-bottom:2px solid ' + coulTrait + ';">' + titre + '</div>'
+        + html + '</div>';
+    };
+    var saison = function (lib, sous, coulSous, a, b) {
+      return '<div style="margin-bottom:6px;"><span style="font-size:15px;font-weight:800;color:#fff;">' + lib + '</span> '
+        + '<span style="font-size:12px;font-weight:700;color:' + coulSous + ';">' + sous + '</span></div>'
+        + bloc('🏠 ' + _g45Esc(hN) + ' à domicile', '#6d9dff', a)
+        + bloc('🚌 ' + _g45Esc(aN) + ' à l\'extérieur', '#f5c542', b);
+    };
+    box.innerHTML = '<div style="padding:12px;border-radius:11px;background:rgba(11,16,29,.88);border:1px solid rgba(70,220,240,.35);">'
+      + saison(s0 + '-' + String(s0 + 1).slice(2), 'saison en cours', '#f5bf47', cellule(res[0], hId, true, false), cellule(res[2], aId, false, false))
+      + '<div style="height:1px;background:rgba(255,255,255,.08);margin:3px 0 11px;"></div>'
+      + saison(s1 + '-' + String(s1 + 1).slice(2), 'saison complète', '#3ddf78', cellule(res[1], hId, true, true), cellule(res[3], aId, false, true))
+      + '<div style="font-size:11px;font-weight:600;color:#9fb0c7;line-height:1.5;margin-top:4px;">'
+      + 'Même championnat pour les deux. Les statistiques de mi-temps ne sont pas affichées ici : '
+      + 'elles demandent un identifiant que cette fenêtre ne peut pas garantir.</div></div>';
+    btn.style.display = 'none';
+    return;
+  }
   box.innerHTML = '<div style="padding:12px;border-radius:11px;background:rgba(11,16,29,.88);border:1px solid rgba(70,220,240,.35);">'
     + tete
     + ligne(s0 + '-' + String(s0 + 1).slice(2), 'saison en cours', '#f5bf47',
