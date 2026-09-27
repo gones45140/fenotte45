@@ -27982,6 +27982,8 @@ async function _renderSaisonDetail(el, eventId, league){
     if(!isLive) h+='<div style="display:flex;align-items:center;justify-content:center;gap:12px;font-size:13px;font-weight:800;color:var(--t1);margin-bottom:8px;"><span>'+hN+'</span><span style="color:var(--a);">'+hS+' - '+aS+'</span><span>'+aN+'</span></div>';
     /* Stade et arbitre (27/09/2026, maquette validée) : voir _g45ArbPlace. */
     try{ if(typeof _g45ArbPlace==='function') h+=_g45ArbPlace(data, league, eventId); }catch(e){}
+    /* Article ESPN (avant-match ou compte rendu), 27/09 : voir _g45ArticleBloc. */
+    try{ var _artF=(typeof _g45ArticleBloc==='function')?_g45ArticleBloc(data, eventId, hN, aN):''; if(_artF) h+=_artF; }catch(e){}
     // ── Blocs LIVE (vides automatiquement si match pas en cours) ──
     try{ if(typeof _liveBettingBlock==='function') h+=_liveBettingBlock(data, el.id); }catch(e){}
     try{ if(typeof _liveBetsBlock==='function'){ var _lb=_liveBetsBlock(data); if(_lb) h+=_lb; } }catch(e){}
@@ -30932,13 +30934,19 @@ window.g45TennisOdds=g45TennisOdds;
    demande pour ménager le quota gratuit. Même verrou premium que l'analyse IA. */
 var _g45ArtCache = {};
 function _g45ArticleBloc(data, eid, hN, aN) {
+  /* ÉTENDU (27/09/2026, « sur tous les sports ? ») : sondé par Antoine, le foot
+     (Premier League, Ligue 1, Liga) a des articles « Recap », comptes rendus
+     d'après-match ; NHL, MLB, NBA et NRL n'en ont que pour certaines affiches.
+     Le bloc accepte donc Preview ET Recap, et le foot l'affiche aussi
+     (_renderSaisonDetail, sous le stade et l'arbitre). */
   var a = data && data.article;
-  if (!a || !a.headline || !/preview/i.test(String(a.type || ''))) return '';
+  var typ = /preview/i.test(String((a && a.type) || '')) ? 'preview' : (/recap/i.test(String((a && a.type) || '')) ? 'recap' : '');
+  if (!a || !a.headline || !typ) return '';
   var txt = String(a.story || '').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&#39;|&rsquo;/g, "'").replace(/&quot;|&ldquo;|&rdquo;/g, '"').replace(/\s+/g, ' ').trim();
-  _g45ArtCache[eid] = { titre: String(a.headline), chapeau: String(a.description || ''), texte: txt.slice(0, 7000), hN: hN, aN: aN };
+  _g45ArtCache[eid] = { titre: String(a.headline), chapeau: String(a.description || ''), texte: txt.slice(0, 7000), hN: hN, aN: aN, typ: typ };
   var ea = function (x) { return String(x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); };
   return '<div style="margin-top:10px;background:rgba(10,14,24,.85);border:1px solid rgba(138,160,255,.25);border-radius:10px;padding:12px;">'
-    + '<div style="font-size:11px;font-weight:800;color:#8aa0ff;letter-spacing:.4px;margin-bottom:6px;">📰 L\'AVANT-MATCH D\'ESPN</div>'
+    + '<div style="font-size:11px;font-weight:800;color:#8aa0ff;letter-spacing:.4px;margin-bottom:6px;">📰 ' + (typ === 'recap' ? 'LE COMPTE RENDU D\'ESPN' : 'L\'AVANT-MATCH D\'ESPN') + '</div>'
     + '<div style="font-size:14px;font-weight:800;color:#fff;line-height:1.35;">' + ea(a.headline) + '</div>'
     + (a.description ? '<div style="font-size:13px;color:var(--t2);line-height:1.5;margin-top:4px;">' + ea(String(a.description).replace(/^\s*—\s*/, '')) + '</div>' : '')
     + '<button onclick="g45ArticleTraduire(this)" data-eid="' + ea(eid) + '" data-box="usart-' + ea(eid) + '" style="margin-top:10px;width:100%;box-sizing:border-box;font-size:13px;font-weight:800;padding:9px 12px;border-radius:9px;cursor:pointer;border:1.5px solid rgba(138,160,255,.5);background:rgba(138,160,255,.10);color:#aabaff;">🇫🇷 Traduire et résumer en français</button>'
@@ -30956,9 +30964,12 @@ async function g45ArticleTraduire(btn) {
   if (!(typeof g45IaDispo === 'function' ? g45IaDispo() : true)) { box.innerHTML = '<div style="color:#ff6b6b;font-size:13px;">Traduction indisponible : aucune clé et aucun Worker joignable.</div>'; return; }
   btn.disabled = true;
   box.innerHTML = '<div style="color:var(--t3);font-size:13px;padding:8px;text-align:center;">🇫🇷 Traduction en cours…</div>';
-  var sys = 'Tu traduis et resumes en francais un article d\'avant-match (sport americain). Reponds STRICTEMENT dans ce format, sans rien avant ni apres :\n'
-    + 'TITRE : <titre traduit en francais>\n• <point cle 1>\n• <point cle 2>\n• <point cle 3>\n(• 4e et 5e points seulement si utiles)\nCE QUE L\'ARTICLE LAISSE ENTENDRE : <une phrase>\n'
-    + 'Regles : francais simple, phrases courtes, noms propres inchanges. N\'invente RIEN qui ne soit pas dans l\'article (blesses, chiffres, forme). Si l\'article ne donne pas d\'avis sur l\'issue du match, ecris-le.';
+  var recap = art.typ === 'recap';
+  var sys = 'Tu traduis et resumes en francais ' + (recap ? 'le compte rendu d\'un match deja joue' : 'un article d\'avant-match') + '. Reponds STRICTEMENT dans ce format, sans rien avant ni apres :\n'
+    + 'TITRE : <titre traduit en francais>\n• <point cle 1>\n• <point cle 2>\n• <point cle 3>\n(• 4e et 5e points seulement si utiles)\n'
+    + (recap ? 'A RETENIR : <une phrase : le fait marquant du match>\n' : 'CE QUE L\'ARTICLE LAISSE ENTENDRE : <une phrase>\n')
+    + 'Regles : francais simple, phrases courtes, noms propres inchanges. N\'invente RIEN qui ne soit pas dans l\'article (score, buteurs, blesses, chiffres, forme).'
+    + (recap ? ' Points cles : score, buteurs ou marqueurs, tournants du match, blesses, consequences.' : ' Si l\'article ne donne pas d\'avis sur l\'issue du match, ecris-le.');
   var user = 'Match : ' + art.hN + ' vs ' + art.aN + '\nTITRE : ' + art.titre + '\nCHAPEAU : ' + art.chapeau + '\nARTICLE :\n' + art.texte;
   var txt = '', src = '';
   try {
@@ -30987,7 +30998,8 @@ async function g45ArticleTraduire(btn) {
   var ea = function (x) { return String(x).replace(/&/g, '&amp;').replace(/</g, '&lt;'); };
   var html = ea(txt).replace(/\*\*/g, '').split('\n').filter(function (l) { return l.trim(); }).map(function (l) {
     if (/^TITRE\s*:/i.test(l)) return '<div style="font-size:14px;font-weight:800;color:#fff;margin-bottom:6px;">' + l.replace(/^TITRE\s*:\s*/i, '') + '</div>';
-    if (/^CE QUE/i.test(l)) return '<div style="font-size:13px;color:#ffd166;margin-top:6px;line-height:1.5;">' + l + '</div>';
+    if (/^A RETENIR\s*:/i.test(l)) l = l.replace(/^A RETENIR/i, '\u00c0 RETENIR');
+    if (/^(CE QUE|\u00c0 RETENIR)/i.test(l)) return '<div style="font-size:13px;color:#ffd166;margin-top:6px;line-height:1.5;">' + l + '</div>';
     return '<div style="font-size:13px;color:var(--t1);line-height:1.55;margin:3px 0;">' + l + '</div>';
   }).join('');
   box.innerHTML = '<div style="border-top:1px solid rgba(255,255,255,.08);padding-top:8px;">' + html
