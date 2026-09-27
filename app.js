@@ -17631,6 +17631,7 @@ async function _g45SquadPhotos(el, club) {
         var im = document.createElement('img');
         im.src = url; im.alt = ''; im.loading = 'lazy';
         im.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;';
+        im.onload = function () { _g45Cadrer(this); };
         im.onerror = function () { this.remove(); };
         box.appendChild(im);
         box.style.borderColor = box.style.color;       /* anneau plein quand la photo est là */
@@ -26627,7 +26628,7 @@ function g45PitchPhotosAppliquer() {
       var num = sp.getAttribute('data-num') || '', c = sp.getAttribute('data-col') || '#4d84ff';
       sp.setAttribute('data-fait', '1');
       sp.innerHTML = '<span style="position:relative;display:inline-flex;width:clamp(26px,3.4vw,38px);height:clamp(26px,3.4vw,38px);">'
-        + '<img src="' + url + '" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;border-radius:22%;border:2px solid ' + c + ';'
+        + '<img src="' + url + '" alt="" loading="lazy" onload="if(window._g45Cadrer)_g45Cadrer(this)" style="width:100%;height:100%;object-fit:cover;border-radius:22%;border:2px solid ' + c + ';'
         + 'background:#26324d;filter:drop-shadow(0 1px 3px rgba(0,0,0,.6));">'
         + '<span style="position:absolute;left:-3px;top:-3px;background:rgba(0,0,0,.75);color:#fff;border-radius:5px;padding:0 3px;'
         + 'font-size:clamp(7px,0.85vw,9px);font-weight:800;">' + num + '</span></span>';
@@ -26712,6 +26713,19 @@ async function _g45WkPhoto(nom) {
   })();
   try { return await _g45WkEnCours[k]; } finally { delete _g45WkEnCours[k]; }
 }
+/* CADRAGE SUR LA TÊTE (27/09/2026, Antoine : « certaines photos, on voit même
+   pas la tête ») : les portraits de Wikipédia (et certains TheSportsDB) sont
+   des photos en pied, plus hautes que larges. Dans une vignette carrée,
+   `object-fit:cover` gardait le MILIEU de l'image — le torse — et coupait la
+   tête. Une image nettement plus haute que large est calée en HAUT ; une
+   photo carrée (api-sports, ESPN) n'est pas concernée. */
+function _g45Cadrer(img) {
+  try {
+    var w = img.naturalWidth, h = img.naturalHeight;
+    if (w && h && h > w * 1.1) img.style.objectPosition = '50% 6%';
+  } catch (e) {}
+}
+window._g45Cadrer = _g45Cadrer;
 /* Complète le terrain affiché : joueurs sans photo après le préchargement. */
 async function _g45PitchWiki() {
   try {
@@ -26906,7 +26920,7 @@ function _renderEspnMatchPitch(s, col, nameFn){
            };
            if(ph){
              return enveloppe('<span style="position:relative;display:inline-flex;width:clamp(26px,3.4vw,38px);height:clamp(26px,3.4vw,38px);">'
-               +'<img src="'+ph+'" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;border-radius:22%;border:2px solid '+c+';'
+               +'<img src="'+ph+'" alt="" loading="lazy" onload="if(window._g45Cadrer)_g45Cadrer(this)" style="width:100%;height:100%;object-fit:cover;border-radius:22%;border:2px solid '+c+';'
                +'background:#26324d;filter:drop-shadow(0 1px 3px rgba(0,0,0,.6));" onerror="this.parentNode.style.display=\'none\'">'
                +'<span style="position:absolute;left:-3px;top:-3px;background:rgba(0,0,0,.75);color:#fff;border-radius:5px;padding:0 3px;'
                +'font-size:clamp(7px,0.85vw,9px);font-weight:800;">'+num+'</span></span>');
@@ -48150,6 +48164,7 @@ async function _g45CompoWiki(el) {
         var im = document.createElement('img');
         im.src = url; im.loading = 'lazy'; im.alt = '';
         im.style.cssText = 'position:absolute;inset:0;width:30px;height:30px;border-radius:50%;object-fit:cover;background:#0f1626;';
+        im.onload = function () { _g45Cadrer(this); };
         im.onerror = function () { this.style.display = 'none'; };
         box.appendChild(im);
       }
