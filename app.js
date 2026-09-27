@@ -58746,3 +58746,64 @@ window.g45OriPoser = g45OriPoser;
   };
   try { document.addEventListener('pointerdown', une, true); } catch (e) {}
 })();
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ASTUCE « PASSE EN PAYSAGE »   (27/09/2026, maquette validée par Antoine, choix 1)
+   ───────────────────────────────────────────────────────────────────────────
+   Petite carte au-dessus de la barre du bas, à l'ouverture de l'app, sur
+   TÉLÉPHONE EN PORTRAIT seulement (jamais PC ni tablette), au plus une fois
+   par ouverture, ~3 s après le démarrage. « OK » ferme (elle reviendra à une
+   prochaine ouverture) ; « Ne plus afficher » la coupe pour de bon sur ce
+   téléphone. Elle se retire d'elle-même dès que le téléphone passe en paysage.
+   N'apparaît que si style.css porte la mise en page paysage (--g45-paysage) :
+   inutile de conseiller le paysage là où il serait cassé.
+   ═══════════════════════════════════════════════════════════════════════════ */
+(function () {
+  var CLE_OFF = 'g45_astuce_paysage_off', CLE_VU = 'g45_astuce_paysage_vu';
+  var portraitTel = function () {
+    try { return matchMedia('(orientation: portrait) and (max-width: 599px)').matches; } catch (e) { return false; }
+  };
+  var fermer = function (pourDeBon) {
+    var el = document.getElementById('g45-astuce-paysage');
+    if (el) el.remove();
+    if (pourDeBon) { try { localStorage.setItem(CLE_OFF, '1'); } catch (e) {} }
+  };
+  var montrer = function () {
+    try {
+      if (document.getElementById('g45-astuce-paysage')) return;
+      if (localStorage.getItem(CLE_OFF) === '1') return;
+      if (sessionStorage.getItem(CLE_VU) === '1') return;
+      if (!portraitTel()) return;
+      if (String(getComputedStyle(document.documentElement).getPropertyValue('--g45-paysage')).trim() !== '1') return;
+      if (document.getElementById('g45-boot')) { setTimeout(montrer, 2000); return; }   /* écran de connexion (fenotte45) encore là */
+      sessionStorage.setItem(CLE_VU, '1');
+      var nav = document.querySelector('.nav');
+      var bas = ((nav && nav.getBoundingClientRect().height) || 70) + 10;
+      var d = document.createElement('div');
+      d.id = 'g45-astuce-paysage';
+      d.setAttribute('role', 'status');
+      d.style.cssText = 'position:fixed;left:12px;right:12px;bottom:' + bas + 'px;z-index:260;border-radius:14px;'
+        + 'background:rgba(11,16,29,.97);border:1px solid rgba(77,132,255,.55);box-shadow:0 8px 28px rgba(0,0,0,.55);'
+        + 'padding:12px 14px;display:flex;gap:12px;align-items:center;color:#fff;font-family:inherit;';
+      d.innerHTML = '<div aria-hidden="true" style="font-size:30px;line-height:1;transform:rotate(-90deg);flex:none;">📱</div>'
+        + '<div style="flex:1;min-width:0;">'
+        + '<div style="font-size:14.5px;font-weight:800;">Astuce : passe en paysage</div>'
+        + '<div style="font-size:13px;color:#c9d3ee;line-height:1.35;margin-top:2px;">Tourne ton téléphone : graphiques et tableaux sont plus grands et plus lisibles.</div>'
+        + '<div style="display:flex;gap:8px;margin-top:9px;">'
+        + '<button type="button" data-g45ap="ok" style="padding:7px 14px;border-radius:8px;border:0;background:#2563eb;color:#fff;font-size:13px;font-weight:800;cursor:pointer;">OK</button>'
+        + '<button type="button" data-g45ap="off" style="padding:7px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.2);background:none;color:#c9d3ee;font-size:13px;font-weight:700;cursor:pointer;">Ne plus afficher</button>'
+        + '</div></div>';
+      d.addEventListener('click', function (ev) {
+        var b = ev.target && ev.target.getAttribute && ev.target.getAttribute('data-g45ap');
+        if (b === 'ok') fermer(false); else if (b === 'off') fermer(true);
+      });
+      document.body.appendChild(d);
+    } catch (e) {}
+  };
+  try {
+    setTimeout(montrer, 3000);
+    var mq = matchMedia('(orientation: landscape)');
+    var surRotation = function () { if (mq.matches) fermer(false); };
+    if (mq.addEventListener) mq.addEventListener('change', surRotation); else if (mq.addListener) mq.addListener(surRotation);
+  } catch (e) {}
+})();
