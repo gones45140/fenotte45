@@ -54233,7 +54233,16 @@ async function g45BandeauMaj() {
   try {
     var large = box.clientWidth || 0;
     var uneCopie = track.scrollWidth / 2;
-    if (uneCopie > 0 && large > 0) {
+    /* PEU DE MATCHS = PAS DE BOUCLE (27/09/2026, relevé d'Antoine : « Columbus –
+       Miami » trois fois de suite). Répéter les tuiles pour remplir la largeur
+       faisait croire à des doublons dès qu'il n'y avait qu'un ou deux matchs.
+       Si tout tient à l'écran, on affiche chaque match UNE fois, sans défiler. */
+    var dispo = large - ((box.querySelector('.g45-band-src-wrap') || {}).offsetWidth || 0);
+    if (uneCopie > 0 && dispo > 0 && uneCopie <= dispo) {
+      track.innerHTML = html;
+      track.style.animation = 'none';
+    } else if (uneCopie > 0 && large > 0) {
+      track.style.animation = '';
       var parCopie = 1;
       while (uneCopie * parCopie < large * 1.15 && parCopie < 12) parCopie++;
       if (parCopie > 1) {
@@ -54245,7 +54254,7 @@ async function g45BandeauMaj() {
     }
     /* La duree suit la largeur d'UNE copie — celle reellement parcourue — sinon
        doubler le contenu diviserait la vitesse par deux. */
-    track.style.animationDuration = Math.max(18, Math.round((track.scrollWidth / 2) / 90)) + 's';
+    if (track.style.animation !== 'none') track.style.animationDuration = Math.max(18, Math.round((track.scrollWidth / 2) / 90)) + 's';
   } catch (e) {}
 
   if (_g45BandTimer) { clearTimeout(_g45BandTimer); _g45BandTimer = null; }
@@ -58507,3 +58516,88 @@ window.g45JouInfo = g45JouInfo;
 try {
   if (typeof _G45_CACHE_PREFIXES !== 'undefined' && _G45_CACHE_PREFIXES.indexOf('g45_jou_') < 0) _G45_CACHE_PREFIXES.push('g45_jou_');
 } catch (e) {}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ORIENTATION DE L'ÉCRAN   (27/09/2026, demande d'Antoine, testé sur fenotte45)
+   ───────────────────────────────────────────────────────────────────────────
+   Réglage « Auto / Portrait / Paysage » en tête d'Outils. Il n'apparaît que si
+   style.css porte la mise en page paysage (variable CSS --g45-paysage) : sur
+   un site qui ne l'a pas encore, proposer « Paysage » donnerait un écran cassé.
+   ANDROID, CE QU'IL AUTORISE : screen.orientation.lock() n'est accepté qu'en
+   PLEIN ÉCRAN (ou dans une app installée). On demande donc le plein écran puis
+   le verrouillage, sur le geste de la personne. Au rechargement, le plein
+   écran est perdu : le choix est réappliqué au premier toucher. iPhone :
+   aucun verrouillage possible depuis une page web, on le dit. « Auto » ne
+   verrouille rien : la mise en page suit la rotation du téléphone.
+   ═══════════════════════════════════════════════════════════════════════════ */
+var _G45_ORI_CLE = 'g45_orientation';
+function _g45OriDispo() {
+  try { return String(getComputedStyle(document.documentElement).getPropertyValue('--g45-paysage')).trim() === '1'; } catch (e) { return false; }
+}
+function _g45OriLire() { try { return localStorage.getItem(_G45_ORI_CLE) || 'auto'; } catch (e) { return 'auto'; } }
+async function _g45OriAppliquer(v, silencieux) {
+  var msg = '';
+  try {
+    if (v === 'auto') {
+      try { if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } catch (e) {}
+      if (document.fullscreenElement && document.exitFullscreen) { try { await document.exitFullscreen(); } catch (e) {} }
+      return '';
+    }
+    if (!screen.orientation || !screen.orientation.lock) return 'Ce téléphone ne permet pas à une page web de bloquer le sens de l’écran (c’est le cas des iPhone). Tourne-le simplement : la mise en page suit.';
+    if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+      try { await document.documentElement.requestFullscreen({ navigationUI: 'hide' }); } catch (e) {}
+    }
+    await screen.orientation.lock(v === 'portrait' ? 'portrait' : 'landscape');
+  } catch (e) {
+    msg = 'Android a refusé de bloquer le sens de l’écran (' + ((e && e.name) || 'refus') + '). Il ne l’accepte qu’en plein écran : touche à nouveau le bouton.';
+  }
+  if (msg && !silencieux) return msg;
+  return '';
+}
+function _g45OriBloc() {
+  var v = _g45OriLire();
+  var btn = function (k, lib) {
+    var on = v === k;
+    return '<button onclick="g45OriChoisir(\'' + k + '\')" style="flex:1;padding:10px 6px;border-radius:9px;cursor:pointer;font-size:13px;font-weight:' + (on ? '900' : '700') + ';'
+      + 'border:1px solid ' + (on ? '#4d84ff' : 'rgba(255,255,255,.18)') + ';background:' + (on ? '#1b2a52' : 'rgba(11,16,29,.85)') + ';color:' + (on ? '#fff' : '#c9d3ee') + ';">' + lib + '</button>';
+  };
+  return '<div style="font-size:11px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#9fb6ff;margin-bottom:8px;">📱 Orientation de l’écran</div>'
+    + '<div style="display:flex;gap:6px;">' + btn('auto', 'Auto') + btn('portrait', 'Portrait') + btn('paysage', 'Paysage') + '</div>'
+    + '<div id="g45-ori-msg" style="font-size:12.5px;color:#c9d3ee;margin-top:8px;line-height:1.45;">'
+    + (v === 'auto' ? 'L’app suit la rotation du téléphone.' : 'Bloqué en ' + v + ' (en plein écran). À chaque ouverture, le premier toucher le réapplique.') + '</div>';
+}
+function g45OriPoser(forcer) {
+  try {
+    if (!_g45OriDispo()) return;
+    if (!forcer && document.getElementById('g45-ori')) return;   /* déjà posé : ne pas effacer un message */
+    var hote = document.getElementById('t-outils');
+    if (!hote) return;
+    var el = document.getElementById('g45-ori');
+    if (!el) {
+      el = document.createElement('div'); el.id = 'g45-ori';
+      el.style.cssText = 'margin:10px 0 14px;padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,.10);background:rgba(11,16,29,.88);';
+      hote.insertBefore(el, hote.firstChild);
+    }
+    el.innerHTML = _g45OriBloc();
+  } catch (e) {}
+}
+window.g45OriChoisir = async function (v) {
+  try { localStorage.setItem(_G45_ORI_CLE, v); } catch (e) {}
+  g45OriPoser(true);
+  var m = await _g45OriAppliquer(v, false);
+  var z = document.getElementById('g45-ori-msg');
+  if (m && z) { z.textContent = m; z.style.color = '#ffb13d'; }
+};
+window.g45OriPoser = g45OriPoser;
+(function () {
+  var poser = function () { g45OriPoser(); };
+  try { setTimeout(poser, 1500); setTimeout(poser, 4000); document.addEventListener('click', function () { setTimeout(poser, 300); }); } catch (e) {}
+  /* Choix Portrait/Paysage : réappliqué au premier toucher (le plein écran exige un geste). */
+  var une = function () {
+    document.removeEventListener('pointerdown', une, true);
+    var v = _g45OriLire();
+    if (v !== 'auto' && _g45OriDispo()) _g45OriAppliquer(v, true);
+  };
+  try { document.addEventListener('pointerdown', une, true); } catch (e) {}
+})();
