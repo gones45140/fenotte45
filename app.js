@@ -866,7 +866,7 @@ function ouvrirDetailMatchUS(sport, homeTeam, awayTeam, homeScore, awayScore, da
   html += '<a href="'+sofaQ+'" target="_blank" style="flex:1;display:flex;align-items:center;justify-content:center;padding:10px;background:rgba(255,107,54,.15);border:1px solid rgba(255,107,54,.3);border-radius:10px;text-decoration:none;color:#ff7b54;font-size:12px;font-weight:700;">⚡ Sofascore</a>';
   html += '<a href="'+googleQ+'" target="_blank" style="flex:1;display:flex;align-items:center;justify-content:center;padding:10px;background:rgba(77,132,255,.15);border:1px solid rgba(77,132,255,.3);border-radius:10px;text-decoration:none;color:#4d84ff;font-size:12px;font-weight:700;">🔍 Résumé</a>';
   html += '</div>';
-  html += '<a href="'+ytUrl+'" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:10px;background:rgba(255,0,0,.15);border:1px solid rgba(255,0,0,.3);border-radius:10px;text-decoration:none;color:#ff4545;font-size:12px;font-weight:700;">▶️ Voir sur YouTube</a>';
+  html += '<a href="'+ytUrl+'" target="_blank" onclick="event.preventDefault();event.stopPropagation();g45YT(\''+String(homeTeam+' '+awayTeam+' highlights résumé').replace(/['"\\]/g,' ')+'\');return false;" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:10px;background:rgba(255,0,0,.15);border:1px solid rgba(255,0,0,.3);border-radius:10px;text-decoration:none;color:#ff4545;font-size:12px;font-weight:700;">▶️ Voir le résumé vidéo</a>';
   html += '</div>';
   modal.innerHTML = html;
 }
@@ -1225,7 +1225,7 @@ function renderDetailMatch(modal, m, matchId) {
   html += '<a href="'+googleUrl+'" target="_blank" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;background:rgba(77,132,255,.15);border:1px solid rgba(77,132,255,.3);border-radius:10px;text-decoration:none;color:#4d84ff;font-size:12px;font-weight:700;">🔍 Résumé</a>';
   html += '</div>';
   html += '<div style="margin-top:8px;">';
-  html += '<a href="'+ytMatchUrl+'" target="_blank" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:10px;background:rgba(255,0,0,.15);border:1px solid rgba(255,0,0,.3);border-radius:10px;text-decoration:none;color:#ff4545;font-size:12px;font-weight:700;box-sizing:border-box;">▶️ Voir les buts sur YouTube</a>';
+  html += '<a href="'+ytMatchUrl+'" target="_blank" onclick="event.preventDefault();event.stopPropagation();g45YT(\''+String(homeName+' '+awayName+' '+d2.toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'})+' buts résumé highlights').replace(/['"\\]/g,' ')+'\');return false;" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:10px;background:rgba(255,0,0,.15);border:1px solid rgba(255,0,0,.3);border-radius:10px;text-decoration:none;color:#ff4545;font-size:12px;font-weight:700;box-sizing:border-box;">▶️ Voir les buts en vidéo</a>';
 
   // Bouton stats joueurs si api-sports disponible
   if(getApiSportsKey()) {
@@ -9672,7 +9672,7 @@ function ouvrirDetailMatchUS(sport, homeTeam, awayTeam, homeScore, awayScore, da
   html += '<a href="'+sofaQ+'" target="_blank" style="flex:1;display:flex;align-items:center;justify-content:center;padding:10px;background:rgba(255,107,54,.15);border:1px solid rgba(255,107,54,.3);border-radius:10px;text-decoration:none;color:#ff7b54;font-size:12px;font-weight:700;">⚡ Sofascore</a>';
   html += '<a href="'+googleQ+'" target="_blank" style="flex:1;display:flex;align-items:center;justify-content:center;padding:10px;background:rgba(77,132,255,.15);border:1px solid rgba(77,132,255,.3);border-radius:10px;text-decoration:none;color:#4d84ff;font-size:12px;font-weight:700;">🔍 Résumé</a>';
   html += '</div>';
-  html += '<a href="'+ytUrl+'" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:10px;background:rgba(255,0,0,.15);border:1px solid rgba(255,0,0,.3);border-radius:10px;text-decoration:none;color:#ff4545;font-size:12px;font-weight:700;">▶️ Voir sur YouTube</a>';
+  html += '<a href="'+ytUrl+'" target="_blank" onclick="event.preventDefault();event.stopPropagation();g45YT(\''+String(homeTeam+' '+awayTeam+' highlights résumé').replace(/['"\\]/g,' ')+'\');return false;" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:10px;background:rgba(255,0,0,.15);border:1px solid rgba(255,0,0,.3);border-radius:10px;text-decoration:none;color:#ff4545;font-size:12px;font-weight:700;">▶️ Voir le résumé vidéo</a>';
   html += '</div>';
   modal.innerHTML = html;
 }
@@ -10019,7 +10019,7 @@ function renderDetailMatch(modal, m, matchId) {
   html += '<a href="'+googleUrl+'" target="_blank" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;background:rgba(77,132,255,.15);border:1px solid rgba(77,132,255,.3);border-radius:10px;text-decoration:none;color:#4d84ff;font-size:12px;font-weight:700;">🔍 Résumé</a>';
   html += '</div>';
   html += '<div style="margin-top:8px;">';
-  html += '<a href="'+ytMatchUrl+'" target="_blank" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:10px;background:rgba(255,0,0,.15);border:1px solid rgba(255,0,0,.3);border-radius:10px;text-decoration:none;color:#ff4545;font-size:12px;font-weight:700;box-sizing:border-box;">▶️ Voir les buts sur YouTube</a>';
+  html += '<a href="'+ytMatchUrl+'" target="_blank" onclick="event.preventDefault();event.stopPropagation();g45YT(\''+String(homeName+' '+awayName+' '+d2.toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'})+' buts résumé highlights').replace(/['"\\]/g,' ')+'\');return false;" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:10px;background:rgba(255,0,0,.15);border:1px solid rgba(255,0,0,.3);border-radius:10px;text-decoration:none;color:#ff4545;font-size:12px;font-weight:700;box-sizing:border-box;">▶️ Voir les buts en vidéo</a>';
 
   // Bouton stats joueurs si api-sports disponible
   if(getApiSportsKey()) {
@@ -17569,6 +17569,70 @@ function updateFbrefHint(uid) {
   hint.textContent = c + ' - ' + m;
 }
 
+/* ═══ TABLEAU DE L'EFFECTIF : FOND DU CLUB ET PHOTOS (27/09/2026, maquette validée) ═══
+   Antoine : « le fond est un peu noir, on y colle le fond du club ? » — pour
+   TOUS les clubs. Couleurs : g45CouleursDe (mur, choix manuel, extraction du
+   blason) ; blason : g45LogoUrlDe. Une couleur trop claire (blanc, jaune) est
+   assombrie : le dégradé doit rester un fond, jamais une surface éblouissante.
+   Photos dans l'ordre habituel : image perso du dépôt (synchrone si connue),
+   api-sports (_g45PhotosFoot, déjà en cache 30 j), puis Wikipédia
+   (_g45WkPhoto). Sans photo : les initiales dans un rond de la couleur du poste. */
+function _g45SqAssombrir(hex) {
+  var h = String(hex || '').replace('#', '');
+  if (h.length === 3) h = h.split('').map(function (x) { return x + x; }).join('');
+  if (!/^[0-9a-f]{6}$/i.test(h)) return '#1b2a52';
+  var r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16);
+  var lum = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+  if (lum <= 0.40) return '#' + h.toLowerCase();   /* 0,40 : un bleu vif (#4d84ff) rendait les intitulés gris illisibles */
+  var k = 0.45;                                   /* garde 45 % de la teinte, le reste vers le fond de l'app */
+  var m = function (v, f) { return Math.round(v * k + f * (1 - k)).toString(16).padStart(2, '0'); };
+  return '#' + m(r, 11) + m(g, 16) + m(b, 29);
+}
+function _g45SquadFond(nom) {
+  var c = ['#1b2a52', '#1b2a52'], logo = '';
+  try { if (typeof g45CouleursDe === 'function') c = g45CouleursDe(nom) || c; } catch (e) {}
+  try { if (typeof g45LogoUrlDe === 'function') logo = g45LogoUrlDe(nom) || ''; } catch (e) {}
+  var c0 = _g45SqAssombrir(c[0]), c1 = _g45SqAssombrir(c[1] || c[0]);
+  var h = '<div style="position:absolute;inset:0;z-index:0;pointer-events:none;opacity:.85;background:linear-gradient(135deg,' + c0 + ' 0%,' + c0 + ' 45%,' + c1 + ' 100%);"></div>';
+  if (logo && !/['"\\<>]/.test(logo)) h += '<img src="' + logo + '" alt="" aria-hidden="true" onerror="this.remove()" style="position:absolute;z-index:0;right:-30px;top:50%;transform:translateY(-50%);width:230px;height:230px;object-fit:contain;opacity:.16;pointer-events:none;">';
+  return h;
+}
+function _g45SquadAvatar(nom, pc) {
+  var mots = String(nom || '').trim().split(/\s+/).filter(Boolean);
+  var ini = mots.length > 1 ? (mots[0].charAt(0) + mots[mots.length - 1].charAt(0)) : String(mots[0] || '?').slice(0, 2);
+  var perso = '';
+  try { if (typeof _g45ImgPersoLire === 'function') perso = _g45ImgPersoLire(nom) || ''; } catch (e) {}
+  var esc = function (x) { return String(x).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;'); };
+  return '<span data-g45av="' + esc(nom) + '" style="position:relative;flex:none;width:28px;height:28px;border-radius:50%;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;'
+    + 'background:' + pc + '26;border:2px solid ' + pc + (perso ? '' : '59') + ';color:' + pc + ';font-size:10px;font-weight:800;">' + esc(ini.toUpperCase())
+    + (perso ? '<img src="' + esc(perso) + '" alt="" onerror="this.remove()" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;">' : '')
+    + '</span>';
+}
+async function _g45SquadPhotos(el, club) {
+  try {
+    var file = Array.prototype.slice.call(el.querySelectorAll('[data-g45av]')).filter(function (x) { return !x.querySelector('img'); });
+    if (!file.length) return;
+    var liste = [];
+    try { if (typeof _g45PhotosFoot === 'function') liste = (await _g45PhotosFoot(club)) || []; } catch (e) {}
+    var travail = async function () {
+      while (file.length) {
+        var box = file.shift(), nm = box.getAttribute('data-g45av');
+        var url = (typeof _g45PhotoDe === 'function') ? _g45PhotoDe(liste, nm) : '';
+        if (!url && typeof _g45WkPhoto === 'function') url = await _g45WkPhoto(nm);
+        if (!url || !box.isConnected || box.querySelector('img')) continue;
+        var im = document.createElement('img');
+        im.src = url; im.alt = ''; im.loading = 'lazy';
+        im.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;';
+        im.onerror = function () { this.remove(); };
+        box.appendChild(im);
+        box.style.borderColor = box.style.color;       /* anneau plein quand la photo est là */
+      }
+    };
+    await Promise.all([travail(), travail(), travail()]);
+  } catch (e) {}
+}
+window._g45SquadFond = _g45SquadFond; window._g45SquadAvatar = _g45SquadAvatar; window._g45SquadPhotos = _g45SquadPhotos;
+
 async function loadFdSquad(el, nom, teamId, noTerrain, terrainOnly) {
   el.innerHTML = '<div style="text-align:center;padding:16px;color:var(--t3);font-size:11px;">⏳ Chargement squad...</div>';
   try {
@@ -17978,6 +18042,12 @@ async function loadFdSquad(el, nom, teamId, noTerrain, terrainOnly) {
       if(!pp.length) return;
       var pc=posColors[pos];
       html += '<div style="margin-bottom:12px;">';
+      /* FOND DU CLUB + PHOTOS (27/09/2026, maquette validée par Antoine) :
+         en portrait téléphone, chaque bloc de poste est posé sur un dégradé
+         aux couleurs du club avec son blason en filigrane (_g45SquadFond) ;
+         les lignes gardent une bande sombre sous le texte. */
+      var _sqFond = (!terrainOnly && window.innerWidth < 600);
+      if (_sqFond) html += '<div style="position:relative;overflow:hidden;border-radius:12px;padding:8px 6px 6px;background:#0b101d;">' + _g45SquadFond(nom) + '<div style="position:relative;z-index:1;">';
       html += '<div style="display:flex;align-items:center;gap:7px;margin-bottom:6px;"><div style="width:3px;height:14px;border-radius:2px;background:'+pc+';flex-shrink:0;"></div>';
       html += '<div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:'+pc+';">'+posLabels[pos]+'</div>';
       html += '<div style="flex:1;height:1px;background:rgba(255,255,255,.05);"></div>';
@@ -17992,7 +18062,8 @@ async function loadFdSquad(el, nom, teamId, noTerrain, terrainOnly) {
         var mView = (function(){ var el=document.getElementById('fbref-journee-'+uid); return el?el.value:'global'; })() || 'global';
         var mJ = (mView && mView !== 'global') ? mPrefix+'_'+mView : mPrefix;
         var mIsGK = (pos === 1);
-        html += '<table style="width:100%;border-collapse:collapse;table-layout:fixed;">';
+        if (_sqFond) tc = tc.replace('color:var(--t3);', 'color:#dbe3f5;');   /* lisibles sur le fond du club */
+        html += '<table style="width:100%;border-collapse:separate;border-spacing:0 2px;table-layout:fixed;">';
         if(mIsGK) {
           html += '<colgroup><col style="width:18px"><col style="auto"><col style="width:30px"><col style="width:34px"><col style="width:34px"></colgroup>';
           html += '<thead><tr>';
@@ -18014,7 +18085,7 @@ async function loadFdSquad(el, nom, teamId, noTerrain, terrainOnly) {
         }
         pp.forEach(function(p,i){
           var inXi=xi.some(function(x){return x.id===p.id;});
-          var rowBg=i%2===0?'rgba(255,255,255,.025)':'rgba(255,255,255,.015)';
+          var rowBg='rgba(10,16,32,.72)';   /* bande sombre sous le texte, sur le fond du club */
           var manualKey='manual_stats_'+saisonKey((sofaId||afId||'0')+'_'+p.id);
           var ms={}; try{ms=JSON.parse(localStorage.getItem(manualKey)||'{}');}catch(e){}
           var hasManual=ms.league_goals!==undefined||ms.euro_goals!==undefined;
@@ -18027,7 +18098,8 @@ async function loadFdSquad(el, nom, teamId, noTerrain, terrainOnly) {
           var sofaUrl=p.sofaId?'https://www.sofascore.com/player/'+p.sofaId:'https://www.google.com/search?q='+encodeURIComponent(p.name+' '+nom);
           html += '<tr data-bench-pid="'+p.id+'" style="background:'+rowBg+';border-left:3px solid '+pc+'55;cursor:pointer;">';
           html += '<td style="padding:5px 3px;text-align:center;"><span style="font-size:7px;background:'+pc+'33;color:'+pc+';border-radius:3px;padding:1px 3px;font-weight:800;'+(inXi?'':'visibility:hidden;')+'">XI</span></td>';
-          html += '<td style="padding:5px 4px;overflow:hidden;"><span style="font-size:12px;font-weight:700;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;">'+p.name+'</span></td>';
+          html += '<td style="padding:5px 4px;overflow:hidden;"><span style="display:flex;align-items:center;gap:8px;min-width:0;">'+_g45SquadAvatar(p.name, pc)
+            +'<span style="font-size:12px;font-weight:700;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;min-width:0;">'+p.name+'</span></span></td>';
           if(mIsGK) {
             html += '<td style="text-align:center;font-size:12px;font-weight:700;padding:5px 2px;color:'+(mga>0?'#ef4444':'rgba(255,255,255,.2)')+'">'+(mga||'\u2014')+'</td>';
             html += '<td style="text-align:center;font-size:12px;font-weight:700;padding:5px 2px;color:'+(msaves>0?'#1ed760':'rgba(255,255,255,.2)')+'">'+(msaves||'\u2014')+'</td>';
@@ -18040,10 +18112,12 @@ async function loadFdSquad(el, nom, teamId, noTerrain, terrainOnly) {
           html += '</tr>';
         });
         html += '</tbody></table>';
+        if (_sqFond) html += '</div></div>';
         html += '</div>';
       } else {
         // ── MODE PAYSAGE / PC : colonnes selon comp toggle ──
         var isGK = (pos === 1); // Gardiens
+        tc = tc.replace('color:var(--t3);', 'color:#dbe3f5;');   /* intitulés lisibles sur le fond du club (27/09/2026) */
         var compMode = window['_compMode_'+uid] || (function(){ var b=document.getElementById('fbref-comp-'+uid); return (b&&b.dataset.comp) || 'league'; })();
         var sortKey = window['_squadSort_'+uid] || 'name';
         var sortDir = window['_squadSortDir_'+uid] || 1;
@@ -18054,7 +18128,7 @@ async function loadFdSquad(el, nom, teamId, noTerrain, terrainOnly) {
                 var thS = function(col,lbl,title){
           var active = sortKey===col;
           var arrow = active?(sortDir===1?' ↓':' ↑'):'';
-          var color = active?'#4d84ff':'var(--t3)';
+          var color = active?'#4d84ff':'#dbe3f5';   /* lisible sur le fond du club (27/09/2026) */
           return '<th data-sort="'+col+'" data-uid="'+uid+'" onclick="sortSquad(this.dataset.uid,this.dataset.sort)" style="font-size:8px;color:'+color+';font-weight:700;text-align:center;padding:3px 4px;white-space:nowrap;cursor:pointer;" title="'+(title||lbl)+'">'+lbl+arrow+'</th>';
         };
         /* BLASON EN FOND (24/09/2026, demande d'Antoine), comme les autres
@@ -18066,10 +18140,14 @@ async function loadFdSquad(el, nom, teamId, noTerrain, terrainOnly) {
            beaucoup moins de mosaique qu'une simple ligne de resultat — fond
            quasi opaque, juste une trace de couleur derriere. */
         var _fondSq = '';
-        try { if (typeof g45FondClubHtml === 'function') _fondSq = g45FondClubHtml(nom, 0.05); } catch(e){}
-        html += '<div style="overflow-x:auto;position:relative;border-radius:10px;background:rgba(11,16,29,.94);" id="squad-table-'+uid+'">' + _fondSq;
-        html += '<table style="width:100%;border-collapse:collapse;table-layout:fixed;min-width:680px;position:relative;z-index:1;">';
-        html += '<colgroup><col style="width:22px"><col style="width:150px"><col style="width:32px"><col style="width:30px"><col style="width:30px"><col style="width:42px"><col style="width:auto"><col style="width:auto"><col style="width:auto"><col style="width:auto"><col style="width:auto"><col style="width:auto"><col style="width:auto"><col style="width:auto"><col style="width:30px"></colgroup>';
+        /* PC AUSSI (27/09/2026, « faut que ça fonctionne aussi sur PC ») : même
+           fond que le téléphone — dégradé du club + un seul blason en filigrane,
+           bandes sombres sous chaque ligne. Remplace la mosaïque à 0,05 qui
+           n'apportait qu'une trace de couleur. */
+        try { _fondSq = (typeof _g45SquadFond === 'function') ? _g45SquadFond(nom) : ((typeof g45FondClubHtml === 'function') ? g45FondClubHtml(nom, 0.05) : ''); } catch(e){}
+        html += '<div style="overflow-x:auto;position:relative;border-radius:10px;background:#0b101d;padding:4px 4px 2px;" id="squad-table-'+uid+'">' + _fondSq;
+        html += '<table style="width:100%;border-collapse:separate;border-spacing:0 2px;table-layout:fixed;min-width:710px;position:relative;z-index:1;">';
+        html += '<colgroup><col style="width:22px"><col style="width:180px"><col style="width:32px"><col style="width:30px"><col style="width:30px"><col style="width:42px"><col style="width:auto"><col style="width:auto"><col style="width:auto"><col style="width:auto"><col style="width:auto"><col style="width:auto"><col style="width:auto"><col style="width:auto"><col style="width:30px"></colgroup>';
         html += '<thead><tr>';
         html += '<th style="'+tc+'"></th>';
         html += '<th data-sort="name" data-uid="'+uid+'" onclick="sortSquad(this.dataset.uid,this.dataset.sort)" style="'+tc+'text-align:left;cursor:pointer;">Joueur'+(sortKey==='name'?(sortDir===1?' ↓':' ↑'):'')+'</th>';
@@ -18129,7 +18207,7 @@ async function loadFdSquad(el, nom, teamId, noTerrain, terrainOnly) {
 
         sortedPp.forEach(function(p,i){
           var inXi=xi.some(function(x){return x.id===p.id;});
-          var rowBg=i%2===0?'rgba(255,255,255,.025)':'rgba(255,255,255,.015)';
+          var rowBg='rgba(10,16,32,.72)';   /* bande sombre sous le texte (27/09/2026) */
           var pSlug=p.name?p.name.toLowerCase().split(' ').join('-'):'player';
           var sofaUrl=p.sofaId?'https://www.sofascore.com/player/'+pSlug+'/'+p.sofaId:'https://www.google.com/search?q='+encodeURIComponent(p.name+' '+nom+' Sofascore');
           var manualKey='manual_stats_'+saisonKey((sofaId||afId||'0')+'_'+p.id);
@@ -18170,7 +18248,8 @@ async function loadFdSquad(el, nom, teamId, noTerrain, terrainOnly) {
           var fmtS=function(v,col){return '<td style="text-align:center;font-size:12.5px;font-weight:800;padding:6px 2px;color:'+(v>0?col:'rgba(255,255,255,.38)')+'">'+v+'</td>';};
           html += '<tr data-bench-pid="'+p.id+'" style="background:'+rowBg+';border-left:3px solid '+pc+'55;cursor:pointer;">';
           html += '<td style="padding:6px 4px;text-align:center;"><span class="xi-badge" style="font-size:7px;background:'+pc+'33;color:'+pc+';border-radius:3px;padding:1px 3px;font-weight:800;'+(inXi?'':'visibility:hidden;')+'">XI</span></td>';
-          html += '<td style="padding:6px 4px;overflow:hidden;"><a href="'+sofaUrl+'" target="_blank" onclick="event.stopPropagation()" style="font-size:12px;font-weight:700;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:none;display:block;">'+p.name+'</a></td>';
+          html += '<td style="padding:6px 4px;overflow:hidden;"><span style="display:flex;align-items:center;gap:8px;min-width:0;">'+_g45SquadAvatar(p.name, pc)
+            +'<a href="'+sofaUrl+'" target="_blank" onclick="event.stopPropagation()" style="font-size:12px;font-weight:700;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:none;display:block;min-width:0;">'+p.name+'</a></span></td>';
           /* Age/MJ/Tit en blanc gras (24/09/2026, demande d'Antoine) : comme le
              nom du joueur, plus lisible que le gris --t2 d'origine. */
           html += '<td style="text-align:center;font-size:12px;font-weight:700;color:#ffffff;padding:6px 2px;">'+p._age+'</td>';
@@ -18197,6 +18276,8 @@ async function loadFdSquad(el, nom, teamId, noTerrain, terrainOnly) {
             html += '<td style="text-align:center;font-size:12.5px;font-weight:800;padding:6px 2px;color:'+(cj>0?'#f0b020':'rgba(255,255,255,.38)')+'">'+( cj||'—')+'</td>';
             html += '<td style="text-align:center;font-size:12.5px;font-weight:800;padding:6px 2px;color:'+(cr>0?'#ef4444':'rgba(255,255,255,.38)')+'">'+( cr||'—')+'</td>';
           }
+          /* Gardiens : 13 cases pour 15 colonnes — les bandes sombres s'arrêtaient avant le bord (27/09/2026). */
+          if(isGK) html += '<td></td><td></td>';
           if(localStorage.getItem('gones45_admin')==='1'){
             html += '<td style="text-align:center;padding:6px 2px;"><span onclick="event.stopPropagation();editPlayerStats(\''+(sofaId||afId||'0')+'\',\''+p.id+'\',\''+encodeURIComponent(p.name)+'\','+(pos===1?'true':'false')+',\''+uid+'\')" style="cursor:pointer;font-size:13px;opacity:.6;" title="Editer les stats">✏️</span></td>';
           } else {
@@ -18213,6 +18294,7 @@ async function loadFdSquad(el, nom, teamId, noTerrain, terrainOnly) {
 
     html += '</div>';
     el.innerHTML = html;
+    try { if (typeof _g45SquadPhotos === 'function') _g45SquadPhotos(el, nom); } catch (e) {}
 
     // Activer le paste global pour la zone screenshot
     setupFbrefPaste(uid, nom);
@@ -21321,6 +21403,9 @@ function _videoBlock(data, teamA, teamB, qExtra){
   var vid = _extractEspnVideo(data);
   var q = encodeURIComponent((teamA||'')+' '+(teamB||'')+' '+(qExtra||'résumé highlights'));
   var ytSearch = 'https://www.youtube.com/results?search_query='+q;
+  /* 27/09/2026 : chaque lien ouvre le LECTEUR INTÉGRÉ (g45YT), sans quitter l'app. */
+  var qTxt = String((teamA||'')+' '+(teamB||'')+' '+(qExtra||'résumé highlights')).replace(/['"\\]/g,' ');
+  var surClic = 'onclick="event.preventDefault();event.stopPropagation();g45YT(\''+qTxt+'\');return false;" ';
   var h = '<div style="background:rgba(255,0,0,.04);border:1px solid rgba(255,255,255,.06);border-radius:8px;padding:10px;margin-bottom:8px;">';
   h += '<div style="font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#ff5a5a;margin-bottom:8px;">📺 Résumé vidéo</div>';
   // Belle vignette → YouTube. Réutilisée soit en affichage principal, soit en repli caché (hidden=true).
@@ -21328,16 +21413,16 @@ function _videoBlock(data, teamA, teamB, qExtra){
     var dn = hidden ? 'display:none;' : 'display:block;';
     var attr = hidden ? 'data-vfb="1" ' : '';
     if(!vid.thumb){
-      return '<a '+attr+'href="'+ytSearch+'" target="_blank" rel="noopener" style="'+dn+'text-align:center;padding:10px;background:#ff0000;color:#fff;font-size:11px;font-weight:700;border-radius:8px;text-decoration:none;">🔎 Voir le résumé sur YouTube</a>';
+      return '<a '+attr+surClic+'href="'+ytSearch+'" target="_blank" rel="noopener" style="'+dn+'text-align:center;padding:10px;background:#ff0000;color:#fff;font-size:11px;font-weight:700;border-radius:8px;text-decoration:none;">🔎 Voir le résumé vidéo</a>';
     }
-    return '<a '+attr+'href="'+ytSearch+'" target="_blank" rel="noopener" style="'+dn+'position:relative;padding-bottom:56.25%;height:0;border-radius:8px;overflow:hidden;background-image:url('+vid.thumb+');background-size:cover;background-position:center;text-decoration:none;">'
-      +'<span style="position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:5px;padding:7px 10px;background:linear-gradient(to top,rgba(0,0,0,.8),rgba(0,0,0,0));font-size:11px;font-weight:700;color:#fff;">▶ Voir le résumé sur YouTube</span>'
+    return '<a '+attr+surClic+'href="'+ytSearch+'" target="_blank" rel="noopener" style="'+dn+'position:relative;padding-bottom:56.25%;height:0;border-radius:8px;overflow:hidden;background-image:url('+vid.thumb+');background-size:cover;background-position:center;text-decoration:none;">'
+      +'<span style="position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:5px;padding:7px 10px;background:linear-gradient(to top,rgba(0,0,0,.8),rgba(0,0,0,0));font-size:11px;font-weight:700;color:#fff;">▶ Voir le résumé vidéo</span>'
       +'</a>';
   }
   if(vid.type==='youtube'){
     // Lien YouTube référencé par ESPN → lecteur intégré
     h += '<div style="position:relative;padding-bottom:56.25%;height:0;border-radius:8px;overflow:hidden;"><iframe src="https://www.youtube.com/embed/'+vid.src+'?autoplay=0" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;" allow="accelerometer;encrypted-media;gyroscope;picture-in-picture" allowfullscreen></iframe></div>';
-    h += '<a href="'+ytSearch+'" target="_blank" rel="noopener" style="display:block;text-align:center;margin-top:8px;font-size:10px;color:var(--t3);text-decoration:none;">🔎 Plus de vidéos sur YouTube →</a>';
+    h += '<a '+surClic+'href="'+ytSearch+'" target="_blank" rel="noopener" style="display:block;text-align:center;margin-top:8px;font-size:10px;color:var(--t3);text-decoration:none;">🔎 Plus de vidéos sur YouTube →</a>';
   } else {
     // Clips ESPN : géo-bloqués hors USA + bloqués par la CSP du site → belle vignette qui ouvre YouTube.
     h += thumbCard(false);
@@ -23266,6 +23351,16 @@ async function loadTeamSaisons() {
           var _euro = await espnClubSchedule(nom, _yr, _slug);
           _g45AVenir[nom]=_g45CollecteAVenir([_euro], _g45AVenir[nom], (_euro&&_euro.team?_euro.team.id:null), (_euro&&_euro.team?_euro.team.name:nom));
           var _finE = (_euro && _euro.matches) ? _euro.matches.filter(function(mm){ return mm.completed; }) : [];
+          /* DOUBLON LIGUE DES NATIONS (27/09/2026, relevé d'Antoine sur la
+             France : Türkiye 0-1 France compté deux fois, sous « Ligue des
+             nations » ET « Ligue des Nations »). Pour une sélection, `soccer/all`
+             a DÉJÀ apporté tous les matchs, Ligue des nations comprise ; la
+             coupe cumulée `uefa.nations` les rajoutait sans contrôle, avec un
+             libellé tiré du slug. On écarte tout match dont l'identifiant ESPN
+             est déjà présent dans la saison. */
+          var _deja = {};
+          (results[_key]||[]).forEach(function(x){ if(x && x.espnId) _deja[String(x.espnId)] = 1; });
+          _finE = _finE.filter(function(mm){ return !(mm.id && _deja[String(mm.id)]); });
           if(_finE.length){
             var _nm = (_euro.team && _euro.team.name) ? _euro.team.name : nom;
             results[_key] = (results[_key]||[]).concat(_finE.map(function(mm){ return espnToFdMatch(mm, _nm, teamId); }));
@@ -24608,6 +24703,20 @@ function _g45BlocAVenir(nom){
   return h+'</div>';
 }
 function renderSaisonsChart(el, results, nom) {
+  /* Même match deux fois dans une saison (27/09/2026, voir `_ajouterCoupe`) :
+     filet pour les résultats déjà en cache (g45_saisons_cache_v3_), qui
+     gardaient le doublon. Un même identifiant ESPN n'est compté qu'une fois ;
+     les matchs sans identifiant ESPN (football-data) ne sont pas touchés. */
+  Object.keys(results || {}).forEach(function (s) {
+    if (!Array.isArray(results[s])) return;
+    var vus = {};
+    results[s] = results[s].filter(function (m) {
+      var id = m && m.espnId ? String(m.espnId) : '';
+      if (!id) return true;
+      if (vus[id]) return false;
+      vus[id] = 1; return true;
+    });
+  });
   var saisons = Object.keys(results).sort().reverse();
   var teamId = null;
   /* MEMES TROIS CONDITIONS que loadTeamSaisons — la troisieme manquait ici, si
@@ -26521,8 +26630,91 @@ async function _g45PitchPrecharger(noms) {
     } catch (e) {}
   }
   g45PitchPhotosAppliquer();
+  /* Wikipédia pour ceux qui restent sans photo (27/09/2026) : voir plus bas. */
+  try { if (typeof _g45PitchWiki === 'function') await _g45PitchWiki(); } catch (e) {}
 }
 window._g45PitchPrecharger = _g45PitchPrecharger;
+
+/* ═══ PHOTOS WIKIPÉDIA EN DERNIER RECOURS (27/09/2026, accord d'Antoine) ═══
+   Antoine ajoute ses portraits à la main dans images/joueurs/, club par club,
+   et api-sports n'en fournit qu'une partie. Wikimedia Commons : gratuit, sans
+   clé, licences libres, CORS ouvert avec `origin=*`.
+   SONDÉ le 27/09 (API de recherche fr.wikipedia, prop=pageimages|description) :
+   - « Marquinhos footballeur » → page « Marquinhos », description
+     « footballeur brésilien », thumbnail.source (Commons, 250 px) ;
+   - « Christ Makosso footballeur » → bonne page, « footballeur congolais »,
+     mais AUCUNE image : les joueurs peu connus resteront au maillot.
+   Ordre inchangé, Wikipédia vient APRÈS tout le reste : image perso du dépôt,
+   api-sports / TheSportsDB, puis ceci, puis le maillot. Seuls les joueurs
+   encore sans photo après le préchargement sont cherchés.
+   GARDE-FOU HOMONYMES : la page n'est retenue que si sa description parle de
+   football ET que son titre contient le nom de famille du joueur.
+   fr d'abord, en en repli (même banque d'images, autre couverture).
+   Cache par joueur : photo trouvée = permanente ; rien trouvé = 14 jours,
+   pour ne pas redemander à chaque match mais profiter d'une photo ajoutée
+   plus tard sur Wikipédia. 3 requêtes à la fois au plus. */
+var _G45_WK_CLE = 'g45wk1_', _g45WkEnCours = {};
+/* Retenir un résultat de recherche Wikipédia ? Exporté pour les tests. */
+function _g45WkValide(page, nom) {
+  if (!page || !page.thumbnail || !page.thumbnail.source) return '';
+  if (!/football|soccer/i.test(String(page.description || ''))) return '';
+  var mots = String(nom || '').trim().split(/\s+/).filter(function (w) { return w.length >= 2; });
+  var nomFam = mots.length ? _g45SgNorm(mots[mots.length - 1]) : '';
+  if (!nomFam || _g45SgNorm(page.title || '').indexOf(nomFam) < 0) return '';
+  return String(page.thumbnail.source);
+}
+async function _g45WkChercher(nom) {
+  var essais = [['fr', ' footballeur'], ['en', ' footballer']];
+  for (var i = 0; i < essais.length; i++) {
+    try {
+      var u = 'https://' + essais[i][0] + '.wikipedia.org/w/api.php?action=query&generator=search&gsrlimit=1'
+        + '&gsrsearch=' + encodeURIComponent(nom + essais[i][1])
+        + '&prop=pageimages|description&piprop=thumbnail&pithumbsize=200&format=json&origin=*';
+      var r = await fetch(u);
+      if (!r.ok) return null;                      /* échec réseau : rien n'est mis en cache */
+      var j = await r.json(), pages = (j && j.query && j.query.pages) || {};
+      var p = pages[Object.keys(pages)[0]];
+      var url = _g45WkValide(p, nom);
+      if (url) return url;
+    } catch (e) { return null; }
+  }
+  return '';
+}
+async function _g45WkPhoto(nom) {
+  var k = _g45SgNorm(nom);
+  if (!k) return '';
+  try {
+    var c = JSON.parse(localStorage.getItem(_G45_WK_CLE + k) || 'null');
+    if (c && (c.u || Date.now() - c.t < 14 * 86400000)) return c.u || '';
+  } catch (e) {}
+  if (_g45WkEnCours[k]) return _g45WkEnCours[k];
+  _g45WkEnCours[k] = (async function () {
+    var url = await _g45WkChercher(nom);
+    if (url !== null) { try { localStorage.setItem(_G45_WK_CLE + k, JSON.stringify({ u: url, t: Date.now() })); } catch (e) {} }
+    return url || '';
+  })();
+  try { return await _g45WkEnCours[k]; } finally { delete _g45WkEnCours[k]; }
+}
+/* Complète le terrain affiché : joueurs sans photo après le préchargement. */
+async function _g45PitchWiki() {
+  try {
+    var vus = {}, file = [];
+    Array.prototype.forEach.call(document.querySelectorAll('.g45-pitch-ph[data-nom]'), function (sp) {
+      var k = sp.getAttribute('data-nom'), nm = sp.getAttribute('data-nm') || '';
+      if (!k || !nm || vus[k] || sp.getAttribute('data-fait') === '1' || _G45_PITCH_PHOTOS[k]) return;
+      if (sp.querySelector('img')) return;           /* photo déjà posée au rendu */
+      vus[k] = 1; file.push({ k: k, nm: nm });
+    });
+    var travail = async function () {
+      while (file.length) {
+        var x = file.shift(), url = await _g45WkPhoto(x.nm);
+        if (url && !_G45_PITCH_PHOTOS[x.k]) { _G45_PITCH_PHOTOS[x.k] = url; g45PitchPhotosAppliquer(); }
+      }
+    };
+    await Promise.all([travail(), travail(), travail()]);
+  } catch (e) {}
+}
+window._g45WkValide = _g45WkValide; window._g45WkPhoto = _g45WkPhoto; window._g45PitchWiki = _g45PitchWiki;
 
 function _renderEspnMatchPitch(s, col, nameFn){
   try {
@@ -26692,7 +26884,8 @@ function _renderEspnMatchPitch(s, col, nameFn){
            var nomComplet=(p.athlete&&(p.athlete.displayName||p.athlete.shortName))||'';
            var ph=_g45PitchPhoto(nomComplet);
            var enveloppe=function(contenu){
-             return '<span class="g45-pitch-ph" data-nom="'+_g45SgNorm(nomComplet)+'" data-num="'+num+'" data-col="'+c+'" style="display:inline-flex;">'+contenu+'</span>';
+             /* data-nm : nom lisible, pour la recherche Wikipédia (27/09/2026). */
+             return '<span class="g45-pitch-ph" data-nom="'+_g45SgNorm(nomComplet)+'" data-nm="'+String(nomComplet).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;')+'" data-num="'+num+'" data-col="'+c+'" style="display:inline-flex;">'+contenu+'</span>';
            };
            if(ph){
              return enveloppe('<span style="position:relative;display:inline-flex;width:clamp(26px,3.4vw,38px);height:clamp(26px,3.4vw,38px);">'
@@ -27758,6 +27951,8 @@ async function _renderSaisonDetail(el, eventId, league){
     }catch(_e){}
     // En live : on laisse le lecteur live afficher le score. Hors live : en-tête de score.
     if(!isLive) h+='<div style="display:flex;align-items:center;justify-content:center;gap:12px;font-size:13px;font-weight:800;color:var(--t1);margin-bottom:8px;"><span>'+hN+'</span><span style="color:var(--a);">'+hS+' - '+aS+'</span><span>'+aN+'</span></div>';
+    /* Stade et arbitre (27/09/2026, maquette validée) : voir _g45ArbPlace. */
+    try{ if(typeof _g45ArbPlace==='function') h+=_g45ArbPlace(data, league, eventId); }catch(e){}
     // ── Blocs LIVE (vides automatiquement si match pas en cours) ──
     try{ if(typeof _liveBettingBlock==='function') h+=_liveBettingBlock(data, el.id); }catch(e){}
     try{ if(typeof _liveBetsBlock==='function'){ var _lb=_liveBetsBlock(data); if(_lb) h+=_lb; } }catch(e){}
@@ -27819,6 +28014,7 @@ async function _renderSaisonDetail(el, eventId, league){
        il eteignait les blasons de club sur les ecrans qui les montrent. */
     h = _g45EnveloppeMatch(h, (typeof _currentTeam !== 'undefined' ? _currentTeam : ''), data);
     el.innerHTML=h;
+    try{ if(typeof _g45ArbRemplir==='function') _g45ArbRemplir(el, league, eventId, data); }catch(e){}
     if(_mstate==='pre'){ try{ _g45FillForm(el, 'soccer/'+league); _g45FillStandings(el, 'soccer/'+league); }catch(e){} }
 
     // ── Rafraîchissement auto pendant le match (toutes les 30 s) ──
@@ -30359,8 +30555,118 @@ async function g45LoadMatchAI(btn){
   btn.disabled=false;
 }
 window.g45LoadMatchAI=g45LoadMatchAI;
-function g45YT(q){ window.open('https://www.youtube.com/results?search_query='+encodeURIComponent(q),'_blank'); }
-window.g45YT=g45YT;
+/* Bloc « 📺 RÉSUMÉS VIDÉO » (Course / Sprint / Qualifs) → lecteur intégré. */
+function _g45BlocResumes(base, sprint){
+  var bt=function(ico, lib, q, rouge){
+    return '<button onclick="event.stopPropagation();g45YT(this.dataset.q)" data-q="'+_g45YTEsc(q)+'" style="padding:10px 4px;border-radius:9px;cursor:pointer;font-size:13px;font-weight:800;'
+      +'border:1.5px solid '+(rouge?'rgba(255,69,58,.6)':'rgba(255,255,255,.2)')+';background:'+(rouge?'rgba(255,69,58,.14)':'rgba(11,16,29,.85)')+';color:'+(rouge?'#ff8a80':'#fff')+';">'+ico+' '+lib+'</button>';
+  };
+  var b=[bt('🏁','Course',base+' race highlights',true)];
+  if(sprint) b.push(bt('⚡','Sprint',base+' sprint highlights',false));
+  b.push(bt('⏱️','Qualifs',base+' qualifying highlights',false));
+  return '<div style="margin:0 0 10px;"><div style="font-size:12px;font-weight:800;letter-spacing:1px;color:#c9d3ee;margin-bottom:6px;">📺 RÉSUMÉS VIDÉO</div>'
+    +'<div style="display:grid;grid-template-columns:repeat('+b.length+',minmax(0,1fr));gap:6px;">'+b.join('')+'</div></div>';
+}
+/* ═══════════════════════════════════════════════════════════════════════════
+   LECTEUR YOUTUBE INTÉGRÉ   (27/09/2026, maquettes validées)
+   ───────────────────────────────────────────────────────────────────────────
+   Tous les boutons YouTube de l'app ne connaissaient qu'une RECHERCHE et
+   ouvraient youtube.com dans un autre onglet. Désormais g45YT(q) ouvre une
+   fenêtre DANS l'app : la route /ytsearch du worker (sondée le 27/09 : page de
+   résultats lue sans clé, FORMULA 1 en tête pour un GP) donne les vidéos ; la
+   meilleure se lance (youtube-nocookie, plein écran), 3 autres proposées,
+   lien YouTube en repli. Les liens <a href="…youtube.com/results…"> et les
+   window.open vers une recherche YouTube sont redirigés ici automatiquement.
+   ═══════════════════════════════════════════════════════════════════════════ */
+var _G45_YT_OFFICIELS = /^(formula 1|motogp|nba|nhl|khl|ufc|mlb|nfl|ligue 1 mcdonald|uefa|canal\+ sport|eurosport|dazn|bein sports)/i;
+function _g45YTScore(v, q, i) {
+  var t = String(v.titre || '').toLowerCase(), c = String(v.chaine || ''), ql = String(q || '').toLowerCase(), s = 0;
+  if (_G45_YT_OFFICIELS.test(c)) s += 4;
+  if (/highlights|meilleurs moments|résumé|resume|faits saillants|temps forts/.test(t)) s += 2;
+  var fam = [['qualif', /qualif/], ['sprint', /sprint/], ['fp', /\bfp\d|practice|essais/]];
+  fam.forEach(function (f) { var dansQ = ql.indexOf(f[0]) >= 0 || (f[0] === 'fp' && /essais|practice/.test(ql)); if (f[1].test(t)) s += dansQ ? 3 : -3; });
+  [['f2', /\bf2\b/], ['f3', /\bf3\b/], ['moto2', /moto2/], ['moto3', /moto3/], ['academy', /academy/]].forEach(function (f) { if (f[1].test(t) && ql.indexOf(f[0]) < 0) s -= 5; });
+  if (/react|interview|onboard|réaction|reaction|press conference|conférence/.test(t)) s -= 2;
+  return s * 100 - i;
+}
+function _g45YTEsc(x) { return String(x == null ? '' : x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
+var _g45YTEtat = { q: '', vids: [], cur: 0 };
+function _g45YTFermer() { var o = document.getElementById('g45-yt-ov'); if (o) o.remove(); document.removeEventListener('keydown', _g45YTTouche); }
+function _g45YTTouche(e) { if (e.key === 'Escape') _g45YTFermer(); }
+function _g45YTDessiner() {
+  var box = document.getElementById('g45-yt-corps'); if (!box) return;
+  var E = _g45YTEtat, v = E.vids[E.cur], lien = 'https://www.youtube.com/results?search_query=' + encodeURIComponent(E.q);
+  if (!v) {
+    box.innerHTML = '<div style="padding:18px;text-align:center;color:#c9d3ee;font-size:14px;">Vidéo introuvable.</div>'
+      + '<a data-g45-direct="1" href="' + lien + '" target="_blank" rel="noopener" style="display:block;text-align:center;font-size:14px;font-weight:800;color:#9fc3ff;padding:8px;">Ouvrir la recherche sur YouTube ↗</a>';
+    return;
+  }
+  var h = '<div style="position:relative;width:100%;aspect-ratio:16/9;border-radius:10px;overflow:hidden;background:#000;margin-bottom:8px;">'
+    + '<iframe src="https://www.youtube-nocookie.com/embed/' + encodeURIComponent(v.id) + '?autoplay=1&rel=0&playsinline=1" title="' + _g45YTEsc(v.titre) + '" '
+    + 'allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0;"></iframe></div>'
+    + '<div style="font-size:15px;font-weight:800;color:#fff;line-height:1.3;">' + _g45YTEsc(v.titre || 'Vidéo') + '</div>'
+    + '<div style="font-size:12px;font-weight:600;color:#c9d3ee;margin:2px 0 10px;">' + [v.chaine, v.duree, v.vues ? v.vues + ' vues' : ''].filter(Boolean).map(_g45YTEsc).join(' · ') + '</div>';
+  var autres = E.vids.map(function (x, i) { return [x, i]; }).filter(function (p) { return p[1] !== E.cur; }).slice(0, 3);
+  if (autres.length) {
+    h += '<div style="font-size:12px;font-weight:800;letter-spacing:1px;color:#c9d3ee;margin-bottom:6px;">AUTRES VIDÉOS</div>';
+    autres.forEach(function (p) {
+      var x = p[0];
+      h += '<div onclick="g45YTChoisir(' + p[1] + ')" style="display:flex;gap:8px;align-items:center;background:#141b2e;border-radius:8px;padding:6px;margin-bottom:5px;cursor:pointer;">'
+        + '<img src="https://i.ytimg.com/vi/' + encodeURIComponent(x.id) + '/mqdefault.jpg" alt="" loading="lazy" style="width:80px;height:45px;border-radius:5px;object-fit:cover;flex:none;background:#26324f;">'
+        + '<div style="min-width:0;"><div style="font-size:13px;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + _g45YTEsc(x.titre || 'Vidéo') + '</div>'
+        + '<div style="font-size:12px;color:#c9d3ee;">' + [x.chaine, x.duree].filter(Boolean).map(_g45YTEsc).join(' · ') + '</div></div></div>';
+    });
+  }
+  h += '<a data-g45-direct="1" href="' + lien + '" target="_blank" rel="noopener" style="display:block;text-align:center;font-size:13px;font-weight:800;color:#9fc3ff;padding:8px 0 2px;">Ouvrir la recherche sur YouTube ↗</a>';
+  box.innerHTML = h;
+}
+window.g45YTChoisir = function (i) { _g45YTEtat.cur = i; _g45YTDessiner(); };
+async function g45YT(q) {
+  q = String(q || '').trim(); if (!q) return;
+  _g45YTFermer();
+  _g45YTEtat = { q: q, vids: [], cur: 0 };
+  var ov = document.createElement('div');
+  ov.id = 'g45-yt-ov';
+  ov.setAttribute('style', 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.78);display:flex;align-items:flex-start;justify-content:center;padding:max(16px, env(safe-area-inset-top)) 10px 16px;overflow-y:auto;');
+  ov.innerHTML = '<div style="width:100%;max-width:760px;background:#0b101d;border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:12px;color:#fff;box-sizing:border-box;">'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;">'
+    + '<div style="font-size:13px;font-weight:800;color:#c9d3ee;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">📺 ' + _g45YTEsc(q) + '</div>'
+    + '<button onclick="_g45YTFermer()" aria-label="Fermer" style="flex:none;width:38px;height:38px;border-radius:9px;border:1px solid rgba(255,255,255,.2);background:#141b2e;color:#fff;font-size:18px;cursor:pointer;">✕</button></div>'
+    + '<div id="g45-yt-corps"><div style="padding:24px;text-align:center;color:#fff;font-size:14px;">⏳ Recherche de la vidéo…</div></div></div>';
+  ov.addEventListener('click', function (e) { if (e.target === ov) _g45YTFermer(); });
+  document.body.appendChild(ov);
+  document.addEventListener('keydown', _g45YTTouche);
+  try {
+    var r = await fetch(FD_PROXY + '/ytsearch?q=' + encodeURIComponent(q));
+    var j = r.ok ? await r.json() : null;
+    var vids = (j && j.videos) || [];
+    vids = vids.map(function (v, i) { return { v: v, s: _g45YTScore(v, q, i) }; }).sort(function (a, b) { return b.s - a.s; }).map(function (x) { return x.v; });
+    if (_g45YTEtat.q === q) _g45YTEtat.vids = vids;
+  } catch (e) {}
+  _g45YTDessiner();
+}
+window.g45YT = g45YT; window._g45YTFermer = _g45YTFermer; window._g45YTScore = _g45YTScore;
+/* Redirection automatique : liens et window.open vers une RECHERCHE YouTube. */
+function _g45YTRequete(u) {
+  try { var x = new URL(u, location.href); if (/(^|\.)youtube\.com$/.test(x.hostname) && x.pathname === '/results') return x.searchParams.get('search_query') || ''; } catch (e) {}
+  return '';
+}
+if (typeof document !== 'undefined' && document.addEventListener) {
+  document.addEventListener('click', function (e) {
+    var a = e.target && e.target.closest ? e.target.closest('a[href*="youtube.com/results"]') : null;
+    if (!a || a.getAttribute('data-g45-direct') === '1') return;
+    var q = _g45YTRequete(a.getAttribute('href')); if (!q) return;
+    e.preventDefault(); e.stopPropagation(); g45YT(q);
+  }, true);
+}
+if (typeof window !== 'undefined' && window.open && !window._g45OpenOrig) {
+  window._g45OpenOrig = window.open;
+  window.open = function (u) {
+    var q = _g45YTRequete(u);
+    if (q) { g45YT(q); return null; }
+    return window._g45OpenOrig.apply(window, arguments);
+  };
+}
 async function _g45MultiAI(box, boxId, sys, facts, title){
   /* ═══ QUATRIEME PORTE FERMEE (12/09/2026) ═══
      Trouvee par Antoine sur bet45.fr : le bouton « Analyse IA du match »
@@ -33574,22 +33880,56 @@ function _g45MotoPhoto(rec, nom, col){
     +'<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;color:#fff;">'+_g45MotoEa(ini)+'</div>'
     +(rec&&rec.photo?'<img src="'+_g45MotoEa(rec.photo)+'" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top;">':'')+'</div>';
 }
-/* Vainqueurs (course et sprint) d'un GP terminé : 2 à 3 requêtes, cache DÉFINITIF. */
+/* Résultats d'un GP terminé (course + sprint) : vainqueurs ET points de chaque
+   pilote, 2 à 3 requêtes puis cache DÉFINITIF. Les points servent à recalculer
+   le championnat quand l'API le refuse (Moto2 : 403 constaté le 27/09/2026,
+   alors que séances et résultats passent). */
 async function _g45MotoVainqueurs(eid, catId){
-  var k='g45moto_win1_'+eid+'_'+catId;
+  var k='g45moto_win2_'+eid+'_'+catId;
   try{ var c=JSON.parse(localStorage.getItem(k)||'null'); if(c) return c; }catch(e){}
   var ss=await _g45MotoJ('/results/sessions?eventUuid='+encodeURIComponent(eid)+'&categoryUuid='+encodeURIComponent(catId));
   if(!Array.isArray(ss)) return null;
-  var out={}, fini=true;
+  var out={pts:{}}, fini=true, vu=false;
   for(var i=0;i<ss.length;i++){
     var ty=String(ss[i].type||'').toUpperCase(), cle=(ty==='RAC'||ty==='RA')?'course':(ty==='SPR'?'sprint':'');
     if(!cle) continue;
     var j=await _g45MotoJ('/results/session/'+encodeURIComponent(ss[i].id)+'/classification?test=false');
-    var p1=((j&&j.classification)||[]).filter(function(r){ return r.position===1; })[0];
-    if(p1&&p1.rider) out[cle]=p1.rider.full_name||''; else fini=false;
+    var cl=(j&&j.classification)||[];
+    if(!cl.length){ fini=false; continue; }
+    vu=true;
+    cl.forEach(function(r){
+      var rd=r.rider||{}, id=rd.legacy_id!=null?'L'+rd.legacy_id:('N'+String(rd.full_name||'').toLowerCase());
+      if(r.position===1) out[cle]=rd.full_name||'';
+      var p=parseFloat(r.points)||0;
+      var e=out.pts[id]=out.pts[id]||{n:rd.full_name||'?',num:rd.number,iso:(rd.country&&rd.country.iso)||'',lid:rd.legacy_id,id:rd.id,eq:(r.team&&r.team.name)||'',p:0,v:0};
+      e.p+=p; if(cle==='course'&&r.position===1) e.v++;
+    });
   }
+  if(!vu) return null;
   if(out.course&&fini){ try{ localStorage.setItem(k, JSON.stringify(out)); }catch(e){} }
-  return out.course||out.sprint?out:null;
+  return out;
+}
+/* Championnat recalculé depuis les résultats des GP terminés (repli si l'API refuse). */
+async function _g45MotoChampCalcule(catId, progres){
+  var now=Date.now(), ids=Object.keys(_g45Moto.ev||{}).filter(function(k){ var e=_g45Moto.ev[k]; return e&&!e.test&&e.date_end&&new Date(e.date_end).getTime()<now; });
+  var tot={}, fait=0;
+  var file=ids.slice();
+  var travail=async function(){
+    while(file.length){
+      var eid=file.shift(), w=null;
+      try{ w=await _g45MotoVainqueurs(eid, catId); }catch(e){}
+      fait++; if(progres) progres(fait, ids.length);
+      if(!w||!w.pts) continue;
+      Object.keys(w.pts).forEach(function(id){
+        var x=w.pts[id], t=tot[id]=tot[id]||{n:x.n,num:x.num,iso:x.iso,lid:x.lid,id:x.id,eq:x.eq,p:0,v:0};
+        t.p+=x.p; t.v+=x.v; if(x.eq) t.eq=x.eq;
+      });
+    }
+  };
+  await Promise.all([travail(),travail(),travail()]);
+  return Object.keys(tot).map(function(k){ return tot[k]; }).filter(function(x){ return x.p>0; })
+    .sort(function(a,b){ return (b.p-a.p)||(b.v-a.v); })
+    .map(function(x,i){ return { position:i+1, points:x.p, race_wins:x.v, rider:{legacy_id:x.lid,id:x.id,full_name:x.n,number:x.num,country:{iso:x.iso}}, team:{name:x.eq} }; });
 }
 async function _g45MotoRemplirVainqueurs(ids, catId){
   var file=ids.slice();
@@ -33675,6 +34015,13 @@ async function g45MotoEvent(eid, el){
   var ORD={P:1,FP:1,Q:2,SPR:3,WUP:3,RAC:4,RA:4};
   ss.sort(function(a,b){ return (ORD[String(a.type||'').toUpperCase()]||9)-(ORD[String(b.type||'').toUpperCase()]||9) || (a.number||0)-(b.number||0); });
   var h='<div style="background:rgba(12,16,28,.9);border:1px solid rgba(255,255,255,.08);border-radius:9px;padding:8px;">';
+  /* 27/09/2026 : résumés vidéo lus dans l'app (catégorie choisie ; sprint en MotoGP seulement). */
+  try{
+    var _evM=_g45Moto.ev[eid]||{}, _catN=String(cat.name||'MotoGP').replace(/™/g,'').trim();
+    var _pays=(_evM.country&&_evM.country.name)||String(_evM.name||'').replace(/^.*Grand Prix (of |de |du )?/i,'');
+    var _an=String(_evM.date_start||'').slice(0,4);
+    h+=_g45BlocResumes(_catN+' '+_pays+' '+_an, /motogp/i.test(_catN) && ss.some(function(x){ return String(x.type||'').toUpperCase()==='SPR'; }));
+  }catch(e){}
   h+='<button onclick="event.stopPropagation();g45MotoGrid(\''+_g45MotoEa(eid)+'\',this)" style="width:100%;box-sizing:border-box;border:1.5px solid rgba(240,200,40,.4);cursor:pointer;background:rgba(240,200,40,.08);border-radius:8px;color:#f0c828;padding:7px;font-size:11px;font-weight:800;margin-bottom:5px;">🏁 Grille de départ</button><div id="mgpgr-'+_g45MotoEa(eid)+'" style="display:none;margin-bottom:6px;"></div>';
   h+='<button onclick="event.stopPropagation();g45MotoAI(\''+_g45MotoEa(eid)+'\',this)" style="width:100%;box-sizing:border-box;border:1.5px solid rgba(176,124,214,.5);cursor:pointer;background:rgba(176,124,214,.10);border-radius:8px;color:#b07cd6;padding:7px;font-size:11px;font-weight:800;margin-bottom:5px;">🧠 Analyse IA du GP</button><div id="mgpai-'+_g45MotoEa(eid)+'" style="margin-bottom:6px;"></div>';
   ss.forEach(function(s){
@@ -33744,7 +34091,12 @@ async function g45MotoStandings(btn){
   if(!s||!c){ box.innerHTML='<div style="color:var(--t3);font-size:10px;padding:8px;text-align:center;">Indisponible.</div>'; return; }
   box.innerHTML='<div style="color:var(--t3);font-size:10px;padding:8px;text-align:center;">⏳ Classement…</div>';
   var j=await _g45MotoJ('/results/standings?seasonUuid='+encodeURIComponent(s.id)+'&categoryUuid='+encodeURIComponent(c.id));
-  var cl=(j&&j.classification)||[];
+  var cl=(j&&j.classification)||[], _calc=false;
+  if(!cl.length){
+    /* Repli (Moto2, 403 de l'API) : on additionne les points des courses. */
+    box.innerHTML='<div style="color:#fff;font-size:13px;padding:8px;text-align:center;">⏳ Classement officiel indisponible : calcul à partir des courses…</div>';
+    try{ cl=await _g45MotoChampCalcule(c.id, function(f,n){ box.innerHTML='<div style="color:#fff;font-size:13px;padding:8px;text-align:center;">⏳ Calcul du classement : GP '+f+'/'+n+'…</div>'; }); _calc=cl.length>0; }catch(e){ cl=[]; }
+  }
   if(!cl.length){ box.innerHTML='<div style="color:var(--t3);font-size:10px;padding:8px;text-align:center;">Pas de classement.'+((j&&(j.__http||j.__err))?('<br><span style="font-size:8px;color:#8aa0ff;">diag → '+(j.__http?('HTTP '+j.__http):j.__err)+'</span>'):'')+'</div>'; return; }
   var cmap=await _g45MotoColors();
   /* CARTES FAÇON SITE OFFICIEL (26/09/2026, maquette validée) : couleur de
@@ -33752,6 +34104,7 @@ async function g45MotoStandings(btn){
      leader ; un appui ouvre toujours la fiche du pilote. */
   var lead=parseFloat(cl[0]&&cl[0].points)||0;
   var h='<div style="font-size:12px;letter-spacing:2px;font-weight:800;color:#f0b020;margin:4px 0 8px;">🏆 CHAMPIONNAT '+_g45MotoEa(String(c.name||'').replace(/™/g,'').toUpperCase())+' '+s.year+'</div>';
+  if(_calc) h+='<div style="font-size:12px;color:#c9d3ee;margin:-4px 0 8px;">Calculé à partir des résultats des courses : motogp.com ne fournit pas ce classement. Pénalités de points éventuelles non prises en compte.</div>';
   cl.forEach(function(r,i){
     var rd=r.rider||{}, tm=r.team||{}, rec=_g45MotoRec(cmap,rd);
     var col=(rec&&rec.col)||'#8aa0ff', rgb=_g45MotoRgb(col), top=i===0;
@@ -39331,7 +39684,9 @@ function g45F1Detail(eid){
     +'<div id="f1-livemap"></div>'
     +'<div id="f1-map"></div>'
     +'<div style="margin:0 0 8px;"><button onclick="g45F1AI(this)" data-eid="'+ea(ev.id)+'" data-box="f1ai-'+ea(ev.id)+'" style="width:100%;box-sizing:border-box;font-size:12px;font-weight:800;padding:9px 12px;border-radius:9px;cursor:pointer;border:1.5px solid rgba(176,124,214,.5);background:rgba(176,124,214,.10);color:#b07cd6;">🧠 Analyse IA du GP</button><div id="f1ai-'+ea(ev.id)+'" style="margin-top:8px;"></div></div>'
-    +'<div style="margin:0 0 8px;"><button onclick="g45YT(this.dataset.q)" data-q="'+ea((ev.name||'GP F1')+' highlights')+'" style="width:100%;box-sizing:border-box;font-size:12px;font-weight:800;padding:9px 12px;border-radius:9px;cursor:pointer;border:1.5px solid rgba(255,69,58,.5);background:rgba(255,69,58,.10);color:#ff6b5e;">📺 Résumé du GP sur YouTube</button></div>'
+    /* 27/09/2026 : résumés Course / Sprint / Qualifs lus dans l'app (le nom
+       ESPN porte le sponsor ; « Pays Grand Prix Année » trouve la vidéo officielle). */
+    +_g45BlocResumes(((ev.circuit&&ev.circuit.address&&ev.circuit.address.country)||String(ev.name||'').replace(/^.*?(\w+ Grand Prix).*$/,'$1').replace(/ Grand Prix$/,''))+' Grand Prix '+String(ev.date||'').slice(0,4)+' F1', comps.some(function(c){ return /sprint/i.test((c.type&&(c.type.abbreviation||c.type.text))||''); }))
     +'<div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch;margin-bottom:8px;">'+chips+'</div>'
     +'<div id="f1-session"></div>';
   el.innerHTML=html;
@@ -43932,7 +44287,11 @@ function _g45ClsLireMatch(e) {
     return nh === hg && na === ag;
   };
   if (buts.length === hg + ag) { fiable = essai(true) || essai(false); }
-  var o = { id: String(e.id), t: Date.parse(e.date) || 0, h: h, a: a, hg: hg, ag: ag, po: _g45ClsEstPO(e),
+  /* FAUTES (27/09/2026, bloc Arbitre) : competitors[].statistics foulsCommitted,
+     déjà dans cette réponse. null si l'un des deux camps ne l'a pas. */
+  var _fo = function (X) { var s = (X.statistics || []).filter(function (x) { return x && x.name === 'foulsCommitted'; })[0]; var v = s ? parseInt(s.displayValue, 10) : NaN; return isNaN(v) ? null : v; };
+  var foH = _fo(H), foA = _fo(A);
+  var o = { id: String(e.id), t: Date.parse(e.date) || 0, h: h, a: a, hg: hg, ag: ag, po: _g45ClsEstPO(e), fo: (foH == null || foA == null) ? null : foH + foA,
     hn: String(H.team.shortDisplayName || H.team.displayName || '?'), an: String(A.team.shortDisplayName || A.team.displayName || '?'),
     hl: H.team.logo || '', al: A.team.logo || '', f: fiable ? 1 : 0, c: cartons.map(function (k) { return [k.tm, k.aid, k.nom, k.r ? 1 : 0]; }) };
   if (fiable) {
@@ -43994,15 +44353,176 @@ function _g45ClsGarderLigue(ms, ids) {
 async function _g45ClsMatchs(slug, an) {
   var k = slug + '_' + an;
   if (_g45ClsMem[k] && _g45ClsMem[k].x > Date.now()) return _g45ClsMem[k].d;
-  try { var c = JSON.parse(localStorage.getItem('g45cls3_' + k) || 'null'); if (c && c.x > Date.now()) { _g45ClsMem[k] = c; return c.d; } } catch (e) {}
+  try { var c = JSON.parse(localStorage.getItem('g45cls4_' + k) || 'null'); if (c && c.x > Date.now()) { _g45ClsMem[k] = c; return c.d; } } catch (e) {}
   var civil = (typeof G45_LIGUES_CIVILES !== 'undefined') && G45_LIGUES_CIVILES.indexOf(slug) >= 0;
   var out = await _g45ClsLireSaison('https://site.api.espn.com/apis/site/v2/sports/soccer/' + slug, an, civil, _g45ClsLireMatch);
   if (!out) return null;
   var val = { x: Date.now() + 12 * 3600e3, d: out };
   _g45ClsMem[k] = val;
-  try { localStorage.setItem('g45cls3_' + k, JSON.stringify(val)); } catch (e) {}   /* trop gros : la mémoire suffit */
+  try { localStorage.setItem('g45cls4_' + k, JSON.stringify(val)); } catch (e) {}   /* trop gros : la mémoire suffit */
   return out;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ARBITRE D'UN MATCH DE FOOT   (27/09/2026, maquette validée par Antoine)
+   ───────────────────────────────────────────────────────────────────────────
+   Idée venue de FotMob : « Cartons jaunes 3,6 / match, en dessous de la
+   moyenne ». ESPN ne publie AUCUNE statistique d'arbitre : on la calcule.
+   SONDÉ le 27/09 sur PSG–Marseille (401876449) :
+   - summary → gameInfo.officials [{displayName, position.name "Referee",
+     order 1}] : le nom de l'arbitre du match ouvert (pas d'identifiant) ;
+     gameInfo.venue {fullName, address.city} ; PAS de météo ; attendance à 0.
+   - core …/events/{id}/competitions/{id}/officials → {items:[{id, displayName,
+     position}]} : ~400 octets, là où le summary en pèse 450 Ko. C'est lui
+     qu'on interroge pour CHAQUE match de la saison.
+   - scoreboard (déjà lu par les Classements, `_g45ClsMatchs`) : les cartons
+     dans `details`, les fautes dans competitors[].statistics foulsCommitted.
+   Arbitre d'un match joué = donnée définitive : cache localStorage PERMANENT
+   par match (`g45arb1_<id>`). Premier passage sur un championnat : une petite
+   requête par match joué (6 en parallèle) ; ensuite, plus rien.
+   Moyenne calculée sur CE championnat et CETTE saison seulement (pas les
+   coupes). Sous 4 matchs arbitrés, pas de verdict : « peu de matchs ».
+   ═══════════════════════════════════════════════════════════════════════════ */
+var _g45ArbMem = {}, _g45ArbEnCours = {};
+function _g45ArbNorm(x) { return String(x || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z]/g, ''); }
+function _g45ArbChoisir(L) {
+  L = L || [];
+  return L.filter(function (o) { return o && o.position && /^referee$/i.test(o.position.name || ''); })[0]
+      || L.filter(function (o) { return o && +o.order === 1; })[0] || null;
+}
+/* Nom de l'arbitre du match ouvert, depuis le summary déjà chargé. */
+function _g45ArbDuMatch(data) {
+  var r = _g45ArbChoisir(data && data.gameInfo && data.gameInfo.officials);
+  return r ? String(r.displayName || r.fullName || '').trim() : '';
+}
+/* Saison ESPN d'un match : année civile pour ces ligues, sinon bascule en juillet. */
+function _g45ArbSaison(slug, t) {
+  var d = new Date(t || Date.now()); if (isNaN(d)) d = new Date();
+  var civil = (typeof G45_LIGUES_CIVILES !== 'undefined') && G45_LIGUES_CIVILES.indexOf(slug) >= 0;
+  return civil ? d.getFullYear() : (d.getMonth() >= 6 ? d.getFullYear() : d.getFullYear() - 1);
+}
+/* Arbitre d'un match (core). '' = pas d'arbitre publié ; null = échec réseau (non mis en cache). */
+async function _g45ArbOfficiel(slug, eid) {
+  var ck = 'g45arb1_' + eid;
+  try { var c = localStorage.getItem(ck); if (c !== null) return c; } catch (e) {}
+  try {
+    var r = await fetch('https://sports.core.api.espn.com/v2/sports/soccer/leagues/' + slug + '/events/' + eid + '/competitions/' + eid + '/officials');
+    if (r.status === 404) { try { localStorage.setItem(ck, ''); } catch (e) {} return ''; }
+    if (!r.ok) return null;
+    var j = await r.json(), ref = _g45ArbChoisir(j && j.items);
+    var nom = ref ? String(ref.displayName || ref.fullName || '').trim() : '';
+    try { localStorage.setItem(ck, nom); } catch (e) {}
+    return nom;
+  } catch (e) { return null; }
+}
+/* Cumul de la saison : {lg:{n,c,fn,f}, par:{nomNormalisé:{nom,n,c,fn,f}}} ou null. Exporté pour les tests. */
+function _g45ArbCumul(ms, noms) {
+  var lg = { n: 0, c: 0, fn: 0, f: 0 }, par = {};
+  (ms || []).forEach(function (m) {
+    var nc = (m.c || []).length;
+    lg.n++; lg.c += nc; if (m.fo != null) { lg.fn++; lg.f += m.fo; }
+    var nm = noms[m.id]; if (!nm) return;
+    var k = _g45ArbNorm(nm), p = par[k] = par[k] || { nom: nm, n: 0, c: 0, fn: 0, f: 0 };
+    p.n++; p.c += nc; if (m.fo != null) { p.fn++; p.f += m.fo; }
+  });
+  return { lg: lg, par: par };
+}
+async function _g45ArbStats(slug, an) {
+  var k = slug + '_' + an;
+  if (_g45ArbMem[k] && _g45ArbMem[k].x > Date.now()) return _g45ArbMem[k].d;
+  if (_g45ArbEnCours[k]) return _g45ArbEnCours[k];
+  _g45ArbEnCours[k] = (async function () {
+    var ms = null;
+    try { ms = await _g45ClsMatchs(slug, an); } catch (e) {}
+    if (!ms || !ms.length) return null;
+    var file = ms.slice(), noms = {};
+    var travail = async function () {
+      while (file.length) { var m = file.shift(), n = await _g45ArbOfficiel(slug, m.id); if (n) noms[m.id] = n; }
+    };
+    await Promise.all([travail(), travail(), travail(), travail(), travail(), travail()]);
+    var d = _g45ArbCumul(ms, noms);
+    _g45ArbMem[k] = { x: Date.now() + 3600e3, d: d };
+    return d;
+  })();
+  try { return await _g45ArbEnCours[k]; } finally { delete _g45ArbEnCours[k]; }
+}
+/* Verdict face à la moyenne du championnat. */
+function _g45ArbVerdict(v, moy, n) {
+  if (n < 4) return { t: 'Peu de matchs (' + n + ')', c: '#c9d3ee' };
+  if (moy > 0 && v > moy * 1.1) return { t: 'Au-dessus de la moyenne', c: '#f0b020' };
+  if (moy > 0 && v < moy * 0.9) return { t: 'En dessous de la moyenne', c: '#7cc4ff' };
+  return { t: 'Dans la moyenne', c: '#c9d3ee' };
+}
+function _g45ArbCase(ico, lib, v, moy, n) {
+  var fr = function (x) { return x.toFixed(1).replace('.', ','); };
+  if (v == null) return '<div style="background:rgba(255,255,255,.05);border-radius:10px;padding:10px;">'
+    + '<div style="font-size:13px;color:#c9d3ee;font-weight:700;">' + ico + ' ' + lib + '</div>'
+    + '<div style="font-size:13px;color:#c9d3ee;margin-top:6px;">Non publié</div></div>';
+  var vd = _g45ArbVerdict(v, moy, n);
+  var larg = moy > 0 ? Math.min(v / (2 * moy), 1) * 100 : 0;
+  return '<div style="background:rgba(255,255,255,.05);border-radius:10px;padding:10px;min-width:0;">'
+    + '<div style="font-size:13px;color:#c9d3ee;font-weight:700;">' + ico + ' ' + lib + '</div>'
+    + '<div style="font-size:22px;font-weight:900;color:#fff;margin:2px 0;">' + fr(v) + ' <span style="font-size:13px;color:#c9d3ee;font-weight:700;">/ match</span></div>'
+    + '<div style="height:6px;border-radius:3px;background:rgba(255,255,255,.12);position:relative;margin:6px 0;">'
+    + '<div style="position:absolute;left:0;top:0;bottom:0;width:' + larg.toFixed(0) + '%;background:' + (vd.c === '#c9d3ee' ? '#9fb0c7' : vd.c) + ';border-radius:3px;"></div>'
+    + '<div title="moyenne du championnat" style="position:absolute;left:50%;top:-3px;width:2px;height:12px;background:#fff;"></div></div>'
+    + '<div style="font-size:13px;font-weight:800;color:' + vd.c + ';">' + vd.t + '</div></div>';
+}
+/* Contenu du bloc. `st` absent = calcul en cours ; `st === null` = indisponible. */
+function _g45ArbContenu(nom, st, lgNom, saisonTxt) {
+  var h = '<div style="font-size:11px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#9fb6ff;margin-bottom:6px;">🧑‍⚖️ Arbitre</div>'
+    + '<div style="font-size:17px;font-weight:900;color:#fff;margin-bottom:10px;">' + _g45Esc(nom) + '</div>';
+  if (st === undefined) return h + '<div style="font-size:13px;color:#c9d3ee;">⏳ Calcul de ses moyennes sur la saison…</div>';
+  var p = st && st.par[_g45ArbNorm(nom)];
+  if (!st || !p) return h + '<div style="font-size:13px;color:#c9d3ee;">Aucun match de lui trouvé cette saison' + (lgNom ? ' en ' + _g45Esc(lgNom) : '') + '.</div>';
+  var L = st.lg, mc = L.n ? L.c / L.n : 0, mf = L.fn ? L.f / L.fn : 0;
+  h += '<div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;">'
+    + _g45ArbCase('🟨', 'Cartons', p.c / p.n, mc, p.n)
+    + _g45ArbCase('🦵', 'Fautes', (p.fn && L.fn) ? p.f / p.fn : null, mf, p.fn)
+    + '</div>';
+  h += '<div style="font-size:12.5px;color:#c9d3ee;margin-top:9px;line-height:1.45;">'
+    + [lgNom ? _g45Esc(lgNom) + (saisonTxt ? ' ' + _g45Esc(saisonTxt) : '') : '', p.n + ' match' + (p.n > 1 ? 's' : '') + ' arbitré' + (p.n > 1 ? 's' : ''),
+       'moyenne du championnat : ' + mc.toFixed(1).replace('.', ',') + ' cartons' + (L.fn ? ', ' + mf.toFixed(1).replace('.', ',') + ' fautes' : '')].filter(Boolean).join(' · ')
+    + '</div>';
+  return h;
+}
+function _g45ArbInfos(data, league) {
+  var comp = (data && data.header && data.header.competitions && data.header.competitions[0]) || {};
+  var lgO = (data && data.header && data.header.league) || {};
+  var an = _g45ArbSaison(league, Date.parse(comp.date || ''));
+  return { an: an, k: league + '_' + an, lgNom: lgO.abbreviation || lgO.shortName || lgO.name || '',
+           saisonTxt: (typeof _g45SgLabel === 'function') ? _g45SgLabel(league, an) : String(an) };
+}
+/* Posé DANS la chaîne de `_renderSaisonDetail` (qui finit par el.innerHTML = h) :
+   le stade, puis le bloc arbitre — complet si déjà calculé, sinon en attente. */
+function _g45ArbPlace(data, league, eventId) {
+  var h = '';
+  try {
+    var v = (data && data.gameInfo && data.gameInfo.venue) || {};
+    var ville = (v.address && v.address.city) || '';
+    if (v.fullName) h += '<div style="text-align:center;font-size:13px;color:#c9d3ee;margin:-2px 0 10px;">🏟️ ' + _g45Esc(v.fullName) + (ville ? ' · ' + _g45Esc(ville) : '') + '</div>';
+    var nom = _g45ArbDuMatch(data);
+    if (!nom || !league || league === 'all') return h;
+    var I = _g45ArbInfos(data, league), m = _g45ArbMem[I.k];
+    h += '<div data-g45arb="' + _g45Esc(String(eventId)) + '" style="border-radius:12px;background:rgba(11,16,29,.92);border:1px solid rgba(255,255,255,.10);padding:12px 14px;margin-bottom:10px;">'
+      + _g45ArbContenu(nom, (m && m.x > Date.now()) ? m.d : undefined, I.lgNom, I.saisonTxt) + '</div>';
+  } catch (e) {}
+  return h;
+}
+/* Appelé juste après el.innerHTML = h : calcule puis remplit le bloc en attente. */
+async function _g45ArbRemplir(el, league, eventId, data) {
+  try {
+    var bloc = el && el.querySelector('[data-g45arb]');
+    if (!bloc) return;
+    var nom = _g45ArbDuMatch(data), I = _g45ArbInfos(data, league);
+    var m = _g45ArbMem[I.k];
+    if (m && m.x > Date.now()) return;           /* déjà complet */
+    var st = await _g45ArbStats(league, I.an);
+    bloc = el.querySelector('[data-g45arb]');    /* la fenêtre a pu être redessinée */
+    if (bloc) bloc.innerHTML = _g45ArbContenu(nom, st || null, I.lgNom, I.saisonTxt);
+  } catch (e) {}
+}
+window._g45ArbCumul = _g45ArbCumul; window._g45ArbVerdict = _g45ArbVerdict; window._g45ArbStats = _g45ArbStats;
 
 /* Matchs retenus par équipe selon lieu et N derniers : {teamId: [m…]} (récent d'abord). */
 function _g45ClsParEquipe(ms) {
@@ -47302,7 +47822,8 @@ async function _g45CompoEffectif(el, nom, avecFoot) {
     var posFr = _g45PosteFr(pos, (p.position && p.position.name) || '');
     var natio = _g45NatioHtml(p);
     html += '<div onclick="_g45CompoJoueur(\'' + pid + '\',\'' + String(pos).replace(/'/g, '') + '\')" style="display:flex;align-items:center;gap:9px;padding:7px 6px;border-bottom:1px solid rgba(255,255,255,.04);cursor:pointer;border-radius:5px;">'
-      + '<div style="position:relative;width:30px;height:30px;flex-shrink:0;">'
+      /* data-g45wk : joueur de foot sans photo, complété par Wikipédia après le rendu (27/09/2026). */
+      + '<div' + ((!img && ctx.sp === 'soccer') ? ' data-g45wk="' + String(nm).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;') + '"' : '') + ' style="position:relative;width:30px;height:30px;flex-shrink:0;">'
       + '<div style="position:absolute;inset:0;border-radius:50%;background:rgba(77,132,255,.12);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#4d84ff;">' + (num || '\u2014') + '</div>'
       + (img ? '<img src="' + img + '" loading="lazy" style="position:absolute;inset:0;width:30px;height:30px;border-radius:50%;object-fit:cover;background:#0f1626;" onerror="this.style.display=\'none\'">' : '')
       + '</div>'
@@ -47318,7 +47839,31 @@ async function _g45CompoEffectif(el, nom, avecFoot) {
 
   html += '</div>';
   el.innerHTML = html;
+  try { if (typeof _g45CompoWiki === 'function') _g45CompoWiki(el); } catch (e) {}
 }
+
+/* Onglet Compo : même recherche Wikipédia que le terrain (_g45WkPhoto), pour
+   les joueurs restés sans photo. La photo se pose par-dessus la pastille
+   numérotée, exactement comme une photo api-sports (27/09/2026). */
+async function _g45CompoWiki(el) {
+  try {
+    var file = Array.prototype.slice.call(el.querySelectorAll('[data-g45wk]'));
+    var travail = async function () {
+      while (file.length) {
+        var box = file.shift(), nm = box.getAttribute('data-g45wk');
+        var url = (typeof _g45WkPhoto === 'function') ? await _g45WkPhoto(nm) : '';
+        if (!url || !box.isConnected || box.querySelector('img')) continue;
+        var im = document.createElement('img');
+        im.src = url; im.loading = 'lazy'; im.alt = '';
+        im.style.cssText = 'position:absolute;inset:0;width:30px;height:30px;border-radius:50%;object-fit:cover;background:#0f1626;';
+        im.onerror = function () { this.style.display = 'none'; };
+        box.appendChild(im);
+      }
+    };
+    await Promise.all([travail(), travail(), travail()]);
+  } catch (e) {}
+}
+window._g45CompoWiki = _g45CompoWiki;
 
 var _g45CompoCtxCourant = null;
 
