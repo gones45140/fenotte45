@@ -46972,23 +46972,32 @@ async function _g45SaisonsGen(el, nom, perso) {
     + carteDE('\ud83d\ude8c Ext\u00e9rieur', st.ext, '#4d84ff', 'rgba(77,132,255,.08)') + '</div>';
 
   /* ── Points par match ── */
+  /* FILTRE RESPECTÉ (27/09/2026, relevé d'Antoine sur le NRL : « pourquoi ça
+     compte le global alors que j'ai sélectionné Domicile ? »). Ces deux blocs
+     lisaient `st`, qui contient TOUS les matchs (1/27, 0/27…), alors que
+     « Stats sélectionnées » juste au-dessus lisait `liste`, filtrée par lieu et
+     par repos. On recalcule ici sur `liste`. */
+  var sf = { j: 0, bp: 0, bc: 0, cs: 0, sansMarquer: 0, liste: liste };
+  liste.forEach(function (m) { sf.j++; sf.bp += m.pour; sf.bc += m.contre; if (m.contre === 0) sf.cs++; if (m.pour === 0) sf.sansMarquer++; });
+  if (!sf.j) sf = st;
+  var _nfTxt = ' <span style="color:var(--t3);font-weight:400;text-transform:none;letter-spacing:0;">\u00b7 ' + sf.j + ' matchs</span>';
   var mot = (sp === 'soccer' || sp === 'hockey') ? 'Buts' : 'Points';
-  html += '<div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#4f5d88;margin-bottom:8px;">' + mot + ' par match</div>'
+  html += '<div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#4f5d88;margin-bottom:8px;">' + mot + ' par match' + _nfTxt + '</div>'
     + '<div style="display:flex;gap:8px;">'
-    + '<div style="flex:1;background:rgba(30,215,96,.08);border:1px solid rgba(30,215,96,.2);border-radius:8px;padding:10px;text-align:center;"><div style="font-size:10px;color:var(--t3);">Marqu\u00e9s</div><div style="font-size:22px;font-weight:800;color:#1ed760;">' + (st.bp / st.j).toFixed(1) + '</div></div>'
-    + '<div style="flex:1;background:rgba(255,69,69,.08);border:1px solid rgba(255,69,69,.2);border-radius:8px;padding:10px;text-align:center;"><div style="font-size:10px;color:var(--t3);">Encaiss\u00e9s</div><div style="font-size:22px;font-weight:800;color:#ff4545;">' + (st.bc / st.j).toFixed(1) + '</div></div>'
-    + '<div style="flex:1;background:rgba(240,176,32,.08);border:1px solid rgba(240,176,32,.2);border-radius:8px;padding:10px;text-align:center;"><div style="font-size:10px;color:var(--t3);">Total/match</div><div style="font-size:22px;font-weight:800;color:#f0b020;">' + moyTot.toFixed(1) + '</div></div>'
+    + '<div style="flex:1;background:rgba(30,215,96,.08);border:1px solid rgba(30,215,96,.2);border-radius:8px;padding:10px;text-align:center;"><div style="font-size:10px;color:var(--t3);">Marqu\u00e9s</div><div style="font-size:22px;font-weight:800;color:#1ed760;">' + (sf.bp / sf.j).toFixed(1) + '</div></div>'
+    + '<div style="flex:1;background:rgba(255,69,69,.08);border:1px solid rgba(255,69,69,.2);border-radius:8px;padding:10px;text-align:center;"><div style="font-size:10px;color:var(--t3);">Encaiss\u00e9s</div><div style="font-size:22px;font-weight:800;color:#ff4545;">' + (sf.bc / sf.j).toFixed(1) + '</div></div>'
+    + '<div style="flex:1;background:rgba(240,176,32,.08);border:1px solid rgba(240,176,32,.2);border-radius:8px;padding:10px;text-align:center;"><div style="font-size:10px;color:var(--t3);">Total/match</div><div style="font-size:22px;font-weight:800;color:#f0b020;">' + ((sf.bp + sf.bc) / sf.j).toFixed(1) + '</div></div>'
     + '</div>';
 
   /* ── Stats cles ── */
-  var plusLarge = st.liste.reduce(function (a, m) { return (m.pour - m.contre) > (a ? a.pour - a.contre : -999) ? m : a; }, null);
-  html += '<div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#4f5d88;margin:12px 0 8px;">Stats cl\u00e9s</div>'
+  var plusLarge = sf.liste.reduce(function (a, m) { return (m.pour - m.contre) > (a ? a.pour - a.contre : -999) ? m : a; }, null);
+  html += '<div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#4f5d88;margin:12px 0 8px;">Stats cl\u00e9s' + _nfTxt + '</div>'
     + '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px;">';
-  [{ l:'Blanchissages', v:st.cs, t:st.j, c:'#1ed760' },
-   { l:'Sans marquer', v:st.sansMarquer, t:st.j, c:'#ff4545' },
-   { l:'Diff\u00e9rence', v:(st.bp - st.bc > 0 ? '+' : '') + (st.bp - st.bc), t:null, c:st.bp >= st.bc ? '#1ed760' : '#ff4545' },
-   { l:'Moy. marqu\u00e9s', v:(st.bp / st.j).toFixed(1), t:null, c:'#22d3ee' },
-   { l:'Moy. encaiss\u00e9s', v:(st.bc / st.j).toFixed(1), t:null, c:'#ff7b54' },
+  [{ l:'Blanchissages', v:sf.cs, t:sf.j, c:'#1ed760' },
+   { l:'Sans marquer', v:sf.sansMarquer, t:sf.j, c:'#ff4545' },
+   { l:'Diff\u00e9rence', v:(sf.bp - sf.bc > 0 ? '+' : '') + (sf.bp - sf.bc), t:null, c:sf.bp >= sf.bc ? '#1ed760' : '#ff4545' },
+   { l:'Moy. marqu\u00e9s', v:(sf.bp / sf.j).toFixed(1), t:null, c:'#22d3ee' },
+   { l:'Moy. encaiss\u00e9s', v:(sf.bc / sf.j).toFixed(1), t:null, c:'#ff7b54' },
    { l:'Plus large victoire', v:plusLarge ? (plusLarge.pour + '-' + plusLarge.contre) : '\u2014', t:null, c:'#a78bfa' }
   ].forEach(function (s) {
     html += '<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:8px;text-align:center;">'
