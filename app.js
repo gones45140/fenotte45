@@ -59383,7 +59383,9 @@ var _G45_SANTE = [
   { k: 'worker', n: 'Ton worker Cloudflare', u: function () { return FD_PROXY + '?host=espn&path=' + encodeURIComponent('/apis/site/v2/sports/basketball/nba/scoreboard?limit=1'); }, j: function (d) { return d && Array.isArray(d.events); } },
   { k: 'tsdb', n: 'TheSportsDB (logos, visuels)', u: function () { return 'https://www.thesportsdb.com/api/v1/json/3/searchteams.php?t=Arsenal'; }, j: function (d) { return d && d.teams && d.teams.length; } },
   { k: 'wiki', n: 'Wikipédia (photos de joueurs)', u: function () { return 'https://fr.wikipedia.org/w/api.php?action=query&titles=Football&format=json&origin=*'; }, j: function (d) { return d && d.query; } },
-  { k: 'nhl', n: 'NHL (api officielle)', u: function () { return 'https://api-web.nhle.com/v1/season'; }, j: function (d) { return Array.isArray(d) && d.length; } },
+  /* 27/09 soir, faux « injoignable » vu par Antoine : l'API NHL refuse la lecture
+     directe depuis le navigateur (CORS) ; l'appli passe TOUJOURS par le worker. */
+  { k: 'nhl', n: 'NHL (api officielle)', u: function () { return FD_PROXY + '?key=nhl&path=' + encodeURIComponent('/v1/season') + '&host=nhl'; }, j: function (d) { return Array.isArray(d) && d.length; } },
   { k: 'mlb', n: 'MLB (api officielle)', u: function () { return 'https://statsapi.mlb.com/api/v1/sports/1'; }, j: function (d) { return d && d.sports; } },
   { k: 'groq', n: 'IA Groq (liste des modèles)', ia: 'groq', u: function () { return g45IaUrlModeles(); }, j: function (d) { return d && (d.data || d.models); } },
   { k: 'gemini', n: 'IA Gemini (liste des modèles)', u: function () { return g45GeminiUrlModeles(); }, j: function (d) { return d && (d.models || d.data); } }
@@ -59406,7 +59408,10 @@ async function _g45SanteUn(s) {
     var ctl = (typeof AbortController === 'function') ? new AbortController() : null;
     var to = ctl ? setTimeout(function () { ctl.abort(); }, 12000) : null;
     var opt = ctl ? { signal: ctl.signal } : {};
-    if (s.ia === 'groq') { var kk = (typeof getGeminiKey === 'function') ? getGeminiKey() : ''; opt.headers = { 'Authorization': 'Bearer ' + (kk || '_worker_') }; }
+    /* Même règle que la découverte des modèles (g45GroqModele) : Authorization
+       SEULEMENT en direct chez Groq ; vers le worker, cet en-tête déclenche un
+       contrôle préalable que /ia-modeles refuse (faux « injoignable », 27/09). */
+    if (s.ia === 'groq') { var kk = (typeof g45IaCle === 'function') ? g45IaCle() : ''; if (kk) opt.headers = { 'Authorization': 'Bearer ' + kk }; }
     var r = await fetch(s.u(), opt);
     if (to) clearTimeout(to);
     if (!r.ok) return { ok: false, err: 'erreur ' + r.status, ms: Date.now() - t0 };
@@ -59424,7 +59429,7 @@ async function g45SanteTester(auto) {
     await new Promise(function (ok) { setTimeout(ok, 10000); });
     await Promise.all(ko.map(async function (s) { res[s.k] = await _g45SanteUn(s); }));
   }
-  var o = { t: Date.now(), r: res };
+  var o = { t: Date.now(), r: res, v: 2 };   /* v : version des tests (voir demarrer) */
   try { localStorage.setItem('g45_sante_res', JSON.stringify(o)); if (auto) localStorage.setItem('g45_sante_jour', new Date().toISOString().slice(0, 10)); } catch (e) {}
   _g45SanteAfficher();
   return o;
@@ -59512,7 +59517,10 @@ window.g45SantePayant = async function (k, btn) {
   var demarrer = function () {
     _g45SanteAfficher();
     var jour = ''; try { jour = localStorage.getItem('g45_sante_jour') || ''; } catch (e) {}
-    if (jour !== new Date().toISOString().slice(0, 10)) setTimeout(function () { g45SanteTester(true); }, 20000);   /* après le chargement de l'appli */
+    /* Résultat obtenu avec d'anciens tests (v < 2 : faux « injoignable » NHL et
+       Groq du 27/09) : on le refait sans attendre le lendemain. */
+    var o = _g45SanteLire(), vieux = o && o.v !== 2;
+    if (jour !== new Date().toISOString().slice(0, 10) || vieux) setTimeout(function () { g45SanteTester(true); }, vieux ? 5000 : 20000);   /* après le chargement de l'appli */
   };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { setTimeout(demarrer, 2000); });
   else setTimeout(demarrer, 2000);
