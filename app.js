@@ -3043,6 +3043,8 @@ function render(){
          Le degrade s'eteint a 55 % : le profit, a droite, doit rester lisible
          en vert comme en rouge sans dependre de la couleur du club. */
       var _lu=(typeof g45LogoUrlDe==='function')?g45LogoUrlDe(u.n):'';
+      /* 27/09 : un JOUEUR porte le logo de son club (voir _g45JoueurClubLogo). */
+      if(u.type==='joueur' && typeof _g45JoueurClubLogo==='function') _lu=_g45JoueurClubLogo(u)||_lu;
       var _vis=(typeof g45VisuelCache==='function')?g45VisuelCache(u.n):'';
       /* CORRECTION DU 22/08 : le pictogramme d'une categorie ne doit PAS servir
          de fond. La ligne est en `background-size:cover`, pensee pour une photo
@@ -3079,7 +3081,7 @@ function render(){
       var _jv=(!_vis && typeof _g45JoueurVisLire==='function')?_g45JoueurVisLire(u.n):null;
       if(!_vis && _jv && _jv.fan) _vis=_jv.fan;
       if(!_vis && _jv && (_jv.cut||_jv.thumb)){
-        _couche='<img src="'+(_jv.cut||_jv.thumb)+'" alt="" loading="lazy" onerror="this.style.display=\'none\'" '
+        _couche='<img src="'+(_jv.cut||_jv.thumb)+'" alt="" loading="lazy" data-alt="'+((typeof _g45JoueurVisRepli==='function')?_g45JoueurVisRepli(_jv):'')+'" onerror="_g45ImgRepli(this)" '
           /* CENTRE (17/09, retour d'Antoine) : a droite, le joueur passait
              derriere le bloc des montants. Au centre, il a la carte pour lui —
              le texte est a gauche, les montants a droite. */
@@ -11391,6 +11393,8 @@ function render(){
          Le degrade s'eteint a 55 % : le profit, a droite, doit rester lisible
          en vert comme en rouge sans dependre de la couleur du club. */
       var _lu=(typeof g45LogoUrlDe==='function')?g45LogoUrlDe(u.n):'';
+      /* 27/09 : un JOUEUR porte le logo de son club (voir _g45JoueurClubLogo). */
+      if(u.type==='joueur' && typeof _g45JoueurClubLogo==='function') _lu=_g45JoueurClubLogo(u)||_lu;
       var _vis=(typeof g45VisuelCache==='function')?g45VisuelCache(u.n):'';
       /* CORRECTION DU 22/08 : le pictogramme d'une categorie ne doit PAS servir
          de fond. La ligne est en `background-size:cover`, pensee pour une photo
@@ -11427,7 +11431,7 @@ function render(){
       var _jv=(!_vis && typeof _g45JoueurVisLire==='function')?_g45JoueurVisLire(u.n):null;
       if(!_vis && _jv && _jv.fan) _vis=_jv.fan;
       if(!_vis && _jv && (_jv.cut||_jv.thumb)){
-        _couche='<img src="'+(_jv.cut||_jv.thumb)+'" alt="" loading="lazy" onerror="this.style.display=\'none\'" '
+        _couche='<img src="'+(_jv.cut||_jv.thumb)+'" alt="" loading="lazy" data-alt="'+((typeof _g45JoueurVisRepli==='function')?_g45JoueurVisRepli(_jv):'')+'" onerror="_g45ImgRepli(this)" '
           /* CENTRE (17/09, retour d'Antoine) : a droite, le joueur passait
              derriere le bloc des montants. Au centre, il a la carte pour lui —
              le texte est a gauche, les montants a droite. */
@@ -56978,6 +56982,55 @@ window._g45JoueurVisChercher = _g45JoueurVisChercher;
   env._g45Joueur = true;
   _g45FanChercher = env; window._g45FanChercher = env;
 })();
+
+/* ═══ CARTES DE JOUEUR DU MUR (27/09/2026, Antoine : « j'avais la photo de
+   Haaland et le logo du club pour Mbappé et Haaland ») ═══
+   Sondé par Antoine : l'ancienne adresse TheSportsDB (www.thesportsdb.com/
+   images/…) répond 404 — celle de Mbappé, en r2.thesportsdb.com, s'affiche —
+   et la photo ESPN (headshots/soccer) est vide. D'où deux replis :
+   1) photo : l'image suivante est essayée en cas d'échec (même fichier sur r2,
+      puis le portrait), au lieu de disparaître ;
+   2) rond de droite : le logo du CLUB du joueur (note de l'entrée, sinon le
+      club donné par TheSportsDB), trouvé par g45SdbClub et gardé en local
+      comme les logos d'en-tête (g45_herologo_<club>). */
+function _g45R2(url) { return String(url || '').replace(/^https?:\/\/www\.thesportsdb\.com\/images\//, 'https://r2.thesportsdb.com/images/'); }
+function _g45JoueurVisRepli(jv) {
+  var a = [], prem = jv.cut || jv.thumb;
+  [_g45R2(jv.cut), jv.thumb, _g45R2(jv.thumb)].forEach(function (x) { if (x && x !== prem && a.indexOf(x) < 0) a.push(x); });
+  return a.join(' ').replace(/"/g, '');
+}
+function _g45ImgRepli(img) {
+  try {
+    var l = String(img.getAttribute('data-alt') || '').split(' ').filter(Boolean);
+    if (!l.length) { img.style.display = 'none'; return; }
+    img.setAttribute('data-alt', l.slice(1).join(' '));
+    img.src = l[0];
+  } catch (e) { img.style.display = 'none'; }
+}
+var _g45JclEnCours = {};
+function _g45JoueurClubLogo(u) {
+  try {
+    var jv = (typeof _g45JoueurVisLire === 'function') ? _g45JoueurVisLire(u.n) : null;
+    var club = String(u.note || '').trim() || (jv && jv.club) || '';
+    if (!club) return '';
+    var l = (typeof g45LogoUrlDe === 'function') ? g45LogoUrlDe(club) : '';
+    if (l) return l;
+    var k = (typeof _g45SgNorm === 'function') ? _g45SgNorm(club) : club.toLowerCase();
+    var mem = localStorage.getItem('g45_herologo_' + k);
+    if (mem) return mem;
+    var ck = 'g45_herologo_ko_' + k, t = +localStorage.getItem(ck) || 0;
+    if ((t && Date.now() - t < 7 * 86400000) || _g45JclEnCours[k] || typeof g45SdbClub !== 'function') return '';
+    _g45JclEnCours[k] = 1;
+    g45SdbClub(club, '\u26bd').then(function (best) {
+      if (best && best.logo) {
+        try { localStorage.setItem('g45_herologo_' + k, best.logo); } catch (e) {}
+        try { if (typeof render === 'function') render(); } catch (e) {}
+      } else { try { localStorage.setItem(ck, String(Date.now())); } catch (e) {} }
+    }).catch(function () {});
+  } catch (e) {}
+  return '';
+}
+window._g45ImgRepli = _g45ImgRepli; window._g45JoueurClubLogo = _g45JoueurClubLogo; window._g45JoueurVisRepli = _g45JoueurVisRepli;
 
 /* Diagnostic, comme g45ReparerVisuel pour les clubs : g45VisuelJoueur('Erling Haaland') */
 window.g45VisuelJoueur = async function (nom, sport) {
