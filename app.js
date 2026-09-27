@@ -30172,6 +30172,14 @@ async function g45LoadAdvStats(btn){
   btn.disabled=false;
 }
 window.g45LoadAdvStats=g45LoadAdvStats;
+/* Sport refuse par sofascore6 (voir g45LoadTendance) : NFL, MLB, NHL sondes
+   le 27/09/2026. Connus d'office ; les autres sont appris au premier refus. */
+var _G45_SOFA_KO={'american-football':1, baseball:1, 'ice-hockey':1};
+function _g45SofaSportKo(slug){
+  if(_G45_SOFA_KO[slug]) return true;
+  try{ var t=+localStorage.getItem('g45_sofa_ko_'+slug)||0; return !!(t && Date.now()-t < 30*86400000); }catch(e){ return false; }
+}
+window._g45SofaSportKo=_g45SofaSportKo;
 async function g45LoadTendance(btn){
   var box=document.getElementById(btn.dataset.box); if(!box) return;
   if(box.getAttribute('data-loaded')==='1'){ box.style.display=(box.style.display==='none'?'':'none'); return; }
@@ -30184,15 +30192,28 @@ async function g45LoadTendance(btn){
     var slug=btn.dataset.slug||'football';
     function ymd(dt){ return dt.getUTCFullYear()+'-'+String(dt.getUTCMonth()+1).padStart(2,'0')+'-'+String(dt.getUTCDate()).padStart(2,'0'); }
     var dates=[ymd(d), ymd(new Date(d.getTime()+86400000)), ymd(new Date(d.getTime()-86400000))];
-    var match=null;
+    var match=null, _refus=0, _essais=0;
     for(var i=0;i<dates.length && !match;i++){
       var _slugs=(slug==='mma')?['mma','mixed-martial-arts','ufc']:[slug];
       for(var _si=0;_si<_slugs.length && !match;_si++){
         var list=await g45Sofa6('/api/sofascore/v1/match/list?sport_slug='+_slugs[_si]+'&date='+dates[i]);
+        _essais++;
+        if(list&&list.__err===400) _refus++;
         if(list&&list.__err) continue;
         var evs=Array.isArray(list)?list:((list&&(list.events||list.data))||[]);
         match=_g45SofaFindMatch(evs, hN, aN);
       }
+    }
+    /* SPORT REFUSE (27/09/2026, sonde par Antoine) : le service sofascore6 de
+       RapidAPI repond 400 a match/list pour american-football, baseball et
+       ice-hockey (le football, temoin, rend 553 matchs : cle et quota bons).
+       « Match introuvable » etait donc faux. Toutes les requetes refusees en
+       400 = sport non couvert : on le memorise 30 jours et le bouton n'est
+       plus propose pour ce sport (_g45SofaSportKo). */
+    if(!match && _essais && _refus===_essais){
+      try{ localStorage.setItem('g45_sofa_ko_'+slug, String(Date.now())); }catch(e){}
+      box.innerHTML='<div style="color:var(--t3);font-size:11px;padding:8px;">Sofascore (RapidAPI) ne couvre pas ce sport : le bouton ne sera plus proposé.</div>';
+      btn.style.display='none'; btn.disabled=false; return;
     }
     if(!match){ box.innerHTML='<div style="color:var(--t3);font-size:11px;padding:8px;">Match introuvable sur Sofascore.</div>'; btn.disabled=false; return; }
     var v=await g45Sofa6('/api/sofascore/v1/match/votes?match_id='+match.id);
@@ -32075,6 +32096,7 @@ async function _renderGenericDetail(el, sport, lg, eid){
     try{ var _usOdds=await _g45EspnUsOdds(sport, lg, eid, comp.date||'', hN, aN); if(_usOdds) h+=_usOdds; }catch(e){}
     h+='<div style="margin-top:8px;"><button onclick="g45LoadUsAI(this)" data-lg="'+lg+'" data-sport="'+sport+'" data-eid="'+eid+'" data-h="'+String(hN).replace(/"/g,'&quot;')+'" data-a="'+String(aN).replace(/"/g,'&quot;')+'" data-date="'+(comp.date||'')+'" data-box="usai-'+eid+'" style="width:100%;box-sizing:border-box;font-size:12px;font-weight:800;padding:9px 12px;border-radius:9px;cursor:pointer;border:1.5px solid rgba(176,124,214,.5);background:rgba(176,124,214,.10);color:#b07cd6;">🧠 Analyse IA du match</button><div id="usai-'+eid+'" style="margin-top:8px;"></div></div>';
     var _tSlug=({mlb:'baseball',nba:'basketball',nfl:'american-football',nhl:'ice-hockey',wnba:'basketball'})[lg]||({rugby:'rugby','rugby-league':'rugby'})[sport]||'';
+    if(_tSlug && typeof _g45SofaSportKo==='function' && _g45SofaSportKo(_tSlug)) _tSlug='';
     if(_tSlug){ h+='<div style="margin-top:8px;"><button onclick="g45LoadTendance(this)" data-slug="'+_tSlug+'" data-h="'+String(hN).replace(/"/g,'&quot;')+'" data-a="'+String(aN).replace(/"/g,'&quot;')+'" data-date="'+(comp.date||'')+'" data-box="ustend-'+eid+'" style="width:100%;box-sizing:border-box;font-size:12px;font-weight:800;padding:9px 12px;border-radius:9px;cursor:pointer;border:1.5px solid rgba(122,140,255,.5);background:rgba(122,140,255,.08);color:#8aa2ff;">📈 Tendance du public</button><div id="ustend-'+eid+'" style="margin-top:8px;"></div></div>'; }
     h+='<div style="margin-top:8px;"><button onclick="g45YT(this.dataset.q)" data-q="'+String(hN+' '+aN+' highlights').replace(/"/g,'&quot;')+'" style="width:100%;box-sizing:border-box;font-size:12px;font-weight:800;padding:9px 12px;border-radius:9px;cursor:pointer;border:1.5px solid rgba(255,69,58,.5);background:rgba(255,69,58,.10);color:#ff6b5e;">📺 Résumé sur YouTube</button></div>';
     /* PRESSION DU MATCH (26/08). Elle n'etait branchee que sur le rendu
