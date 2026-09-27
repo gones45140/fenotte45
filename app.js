@@ -30947,6 +30947,41 @@ window.g45TennisOdds=g45TennisOdds;
    français par l'IA de l'appli (Groq, Gemini en secours), UNIQUEMENT à la
    demande pour ménager le quota gratuit. Même verrou premium que l'analyse IA. */
 var _g45ArtCache = {};
+/* TRADUCTION GARDÉE EN MÉMOIRE (27/09/2026, « l'avis reste en cache ? » → oui) :
+   compte rendu 30 jours (le texte ne bouge plus), avant-match 12 h (ESPN peut
+   le mettre à jour avant le coup d'envoi). Rouvrir le match l'affiche
+   directement, sans appel à l'IA. Sur l'appareil seulement. */
+function _g45ArtMemCle(eid, typ) { return 'g45art1_' + String(eid) + '_' + typ; }
+function _g45ArtMemLire(eid, typ) {
+  try {
+    var c = JSON.parse(localStorage.getItem(_g45ArtMemCle(eid, typ)) || 'null');
+    var duree = typ === 'recap' ? 30 * 86400000 : 12 * 3600000;
+    if (c && c.txt && Date.now() - (c.t || 0) < duree) return c;
+  } catch (e) {}
+  return null;
+}
+function _g45ArtMemEcrire(eid, typ, txt, src) {
+  try {
+    for (var i = localStorage.length - 1; i >= 0; i--) {         /* ménage : entrées de plus de 30 jours */
+      var k = localStorage.key(i);
+      if (k && k.indexOf('g45art1_') === 0) {
+        try { var o = JSON.parse(localStorage.getItem(k) || 'null'); if (!o || Date.now() - (o.t || 0) > 30 * 86400000) localStorage.removeItem(k); } catch (e) { localStorage.removeItem(k); }
+      }
+    }
+    localStorage.setItem(_g45ArtMemCle(eid, typ), JSON.stringify({ t: Date.now(), txt: txt, src: src }));
+  } catch (e) {}
+}
+function _g45ArtHtml(txt, src) {
+  var ea = function (x) { return String(x).replace(/&/g, '&amp;').replace(/</g, '&lt;'); };
+  var html = ea(txt).replace(/\*\*/g, '').split('\n').filter(function (l) { return l.trim(); }).map(function (l) {
+    if (/^TITRE\s*:/i.test(l)) return '<div style="font-size:14px;font-weight:800;color:#fff;margin-bottom:6px;">' + l.replace(/^TITRE\s*:\s*/i, '') + '</div>';
+    if (/^A RETENIR\s*:/i.test(l)) l = l.replace(/^A RETENIR/i, '\u00c0 RETENIR');
+    if (/^(CE QUE|\u00c0 RETENIR)/i.test(l)) return '<div style="font-size:13px;color:#ffd166;margin-top:6px;line-height:1.5;">' + l + '</div>';
+    return '<div style="font-size:13px;color:var(--t1);line-height:1.55;margin:3px 0;">' + l + '</div>';
+  }).join('');
+  return '<div style="border-top:1px solid rgba(255,255,255,.08);padding-top:8px;">' + html
+    + '<div style="font-size:11px;color:var(--t3);margin-top:8px;font-style:italic;">Traduit et résumé par IA (' + ea(src) + ') · source ESPN</div></div>';
+}
 function _g45ArticleBloc(data, eid, hN, aN) {
   /* ÉTENDU (27/09/2026, « sur tous les sports ? ») : sondé par Antoine, le foot
      (Premier League, Ligue 1, Liga) a des articles « Recap », comptes rendus
@@ -30964,7 +30999,9 @@ function _g45ArticleBloc(data, eid, hN, aN) {
     + '<div style="font-size:14px;font-weight:800;color:#fff;line-height:1.35;">' + ea(a.headline) + '</div>'
     + (a.description ? '<div style="font-size:13px;color:var(--t2);line-height:1.5;margin-top:4px;">' + ea(String(a.description).replace(/^\s*—\s*/, '')) + '</div>' : '')
     + '<button onclick="g45ArticleTraduire(this)" data-eid="' + ea(eid) + '" data-box="usart-' + ea(eid) + '" style="margin-top:10px;width:100%;box-sizing:border-box;font-size:13px;font-weight:800;padding:9px 12px;border-radius:9px;cursor:pointer;border:1.5px solid rgba(138,160,255,.5);background:rgba(138,160,255,.10);color:#aabaff;">🇫🇷 Traduire et résumer en français</button>'
-    + '<div id="usart-' + ea(eid) + '" style="margin-top:8px;"></div></div>';
+    + (function () { var m = _g45ArtMemLire(eid, typ);
+        return '<div id="usart-' + ea(eid) + '" style="margin-top:8px;"' + (m ? ' data-loaded="1">' + _g45ArtHtml(m.txt, m.src || 'IA') : '>') + '</div>'; })()
+    + '</div>';
 }
 /* FOOT : RÉSUMÉ EN ANGLAIS POUR L'ARTICLE (27/09/2026, « rien sur tous les
    matchs de foot ») : la fenêtre foot demande le résumé ESPN avec
@@ -30995,6 +31032,8 @@ async function g45ArticleTraduire(btn) {
   var box = document.getElementById(btn.dataset.box); if (!box) return;
   if (box.getAttribute('data-loaded') === '1') { box.style.display = (box.style.display === 'none' ? '' : 'none'); return; }
   var art = _g45ArtCache[btn.dataset.eid]; if (!art) return;
+  var mem = _g45ArtMemLire(btn.dataset.eid, art.typ);
+  if (mem) { box.innerHTML = _g45ArtHtml(mem.txt, mem.src || 'IA'); box.setAttribute('data-loaded', '1'); return; }
   if (typeof _g45AccesPremium === 'function' && _g45AccesPremium() !== true) {
     box.innerHTML = '<div style="font-size:13px;color:var(--t3);line-height:1.6;text-align:center;">🔒 Traduction IA — gratuite 30 jours après création de compte, puis avec un petit soutien du projet.</div>'
       + (typeof _g45BlocPremium === 'function' ? '<div style="margin-top:10px;">' + _g45BlocPremium() + '</div>' : '');
@@ -31034,15 +31073,8 @@ async function g45ArticleTraduire(btn) {
   }
   btn.disabled = false;
   if (!txt) { box.innerHTML = '<div style="color:#ff6b6b;font-size:13px;">Traduction indisponible pour le moment. Réessaie plus tard.</div>'; return; }
-  var ea = function (x) { return String(x).replace(/&/g, '&amp;').replace(/</g, '&lt;'); };
-  var html = ea(txt).replace(/\*\*/g, '').split('\n').filter(function (l) { return l.trim(); }).map(function (l) {
-    if (/^TITRE\s*:/i.test(l)) return '<div style="font-size:14px;font-weight:800;color:#fff;margin-bottom:6px;">' + l.replace(/^TITRE\s*:\s*/i, '') + '</div>';
-    if (/^A RETENIR\s*:/i.test(l)) l = l.replace(/^A RETENIR/i, '\u00c0 RETENIR');
-    if (/^(CE QUE|\u00c0 RETENIR)/i.test(l)) return '<div style="font-size:13px;color:#ffd166;margin-top:6px;line-height:1.5;">' + l + '</div>';
-    return '<div style="font-size:13px;color:var(--t1);line-height:1.55;margin:3px 0;">' + l + '</div>';
-  }).join('');
-  box.innerHTML = '<div style="border-top:1px solid rgba(255,255,255,.08);padding-top:8px;">' + html
-    + '<div style="font-size:11px;color:var(--t3);margin-top:8px;font-style:italic;">Traduit et résumé par IA (' + src + ') · source ESPN</div></div>';
+  _g45ArtMemEcrire(btn.dataset.eid, art.typ, txt, src);
+  box.innerHTML = _g45ArtHtml(txt, src);
   box.setAttribute('data-loaded', '1');
 }
 window.g45ArticleTraduire = g45ArticleTraduire; window._g45ArticleBloc = _g45ArticleBloc;
