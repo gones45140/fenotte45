@@ -26337,7 +26337,16 @@ function _renderMatchPression(s, homeId, awayId, momEspn){
        et sur l'ambre si l'alternative est elle-meme trop claire. Elle sert deja
        a la carte des tirs et aux compositions ; ce bloc-ci ne l'appelait pas. */
     var cD, cE;
-    if (typeof g45CoulPaire === 'function') {
+    /* FOND SOMBRE ≠ TERRAIN VERT (27/09/2026, relevé d'Antoine sur Lyon–Lens :
+       « souvent le problème de couleur »). g45CoulPaire est réglée pour le
+       terrain : elle écarte le BLANC. Lyon (blanc) tombait sur sa couleur de
+       secours quasi noire, que _g45CoulFond n'éclaircit que jusqu'à 0,20 — un
+       gris invisible ici. Sur ce fond sombre, le blanc est au contraire idéal :
+       _g45CoulPaireSombre l'accepte et éclaircit franchement le reste. */
+    if (typeof _g45CoulPaireSombre === 'function') {
+      var _ps = _g45CoulPaireSombre(dom, ext);
+      cD = _ps[0]; cE = _ps[1];
+    } else if (typeof g45CoulPaire === 'function') {
       var _paire = g45CoulPaire(dom, ext);
       cD = _paire[0]; cE = _paire[1];
       /* `g45CoulPaire` garantit qu'on DISTINGUE les deux equipes, pas qu'on les
@@ -51949,6 +51958,48 @@ var _G45_FOND_NIV = { voile:0.86, voileVis:0.30, bord:'6e', bordVis:'7a' };
    rendre le club RECONNAISSABLE, pas d'eclaircir la carte.
    Applique ici seulement, et non dans `g45CoulEquipe` : sur le terrain vert des
    compositions, un maillot sombre est parfaitement lisible et doit le rester. */
+/* ═══ PAIRE DE COULEURS POUR UN GRAPHIQUE SUR FOND SOMBRE (27/09/2026) ═══
+   Pour chaque équipe : sa couleur si elle se voit sur le fond sombre (blanc
+   compris), sinon son alternative, sinon sa couleur éclaircie jusqu'à un
+   seuil franchement lisible (0,42, contre 0,20 pour un simple fond). Si les
+   deux restent trop proches, la seconde passe sur son alternative, puis sur
+   l'ambre. Exporté pour les tests. */
+function _g45CoulClaire(h, seuil) {
+  var c = _g45Hex(h); if (!c) return null;
+  var n = parseInt(c.slice(1), 16), r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+  var hex = function () { return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1); };
+  for (var i = 0; i < 30 && _g45Lum(hex()) < seuil; i++) {
+    r = Math.min(255, Math.round(r + (255 - r) * 0.12));
+    g = Math.min(255, Math.round(g + (255 - g) * 0.12));
+    b = Math.min(255, Math.round(b + (255 - b) * 0.12));
+  }
+  return hex();
+}
+function _g45CoulPaireSombre(srcDom, srcExt) {
+  /* 0,25 suffit pour ACCEPTER une couleur vive (le rouge de Lens se voit très
+     bien) ; 0,42 est la cible quand il faut éclaircir un noir ou un marine.
+     Écart minimal 150 (et non 90) : jaune et jaune pâle restaient confondus. */
+  var SEUIL = 0.42, OK = 0.25, ECART = 150;
+  var choix = function (src, dft) {
+    var t = (src && (src.team || src)) || {};
+    var c1 = _g45Hex(t.color), c2 = _g45Hex(t.alternateColor);
+    /* Visible = assez claire, OU vive (une composante forte) : la formule de
+       luminance écrase le rouge pur (#e30613 → 0,21), pourtant très lisible. */
+    var vis = function (c) { if (!c) return false; var n = parseInt(c.slice(1), 16); return _g45Lum(c) >= OK || Math.max((n >> 16) & 255, (n >> 8) & 255, n & 255) >= 180; };
+    if (vis(c1)) return c1;
+    if (vis(c2)) return c2;
+    return _g45CoulClaire(c1 || c2 || dft, SEUIL) || dft;
+  };
+  var a = choix(srcDom, '#4d84ff'), b = choix(srcExt, '#f0b020');
+  if (_g45Ecart(a, b) < ECART) {
+    var t2 = (srcExt && (srcExt.team || srcExt)) || {};
+    var alt = _g45CoulClaire(_g45Hex(t2.alternateColor) || _g45Hex(t2.color), SEUIL);
+    b = (alt && _g45Ecart(a, alt) >= ECART) ? alt : (_g45Ecart(a, '#f0b020') >= ECART ? '#f0b020' : '#4d84ff');
+  }
+  return [a, b];
+}
+window._g45CoulPaireSombre = _g45CoulPaireSombre;
+
 function _g45CoulFond(h) {
   try {
     var c = _g45Hex(h); if (!c) return h;
