@@ -30922,6 +30922,80 @@ async function g45TennisOdds(btn){
   btn.disabled=false;
 }
 window.g45TennisOdds=g45TennisOdds;
+/* ═══ L'AVANT-MATCH D'ESPN, TRADUIT (27/09/2026, maquette validée : « si c'est
+   traduit, oui ») ═══
+   Sondé par Antoine sur Rams–Broncos : le résumé ESPN du match contient
+   `article` (type « Preview », ~6 700 caractères, en anglais, `story` en HTML).
+   Aucun pronostic d'expert n'est fourni (againstTheSpread : records vides).
+   Le bloc montre titre et chapeau ; le bouton fait traduire et résumer en
+   français par l'IA de l'appli (Groq, Gemini en secours), UNIQUEMENT à la
+   demande pour ménager le quota gratuit. Même verrou premium que l'analyse IA. */
+var _g45ArtCache = {};
+function _g45ArticleBloc(data, eid, hN, aN) {
+  var a = data && data.article;
+  if (!a || !a.headline || !/preview/i.test(String(a.type || ''))) return '';
+  var txt = String(a.story || '').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&#39;|&rsquo;/g, "'").replace(/&quot;|&ldquo;|&rdquo;/g, '"').replace(/\s+/g, ' ').trim();
+  _g45ArtCache[eid] = { titre: String(a.headline), chapeau: String(a.description || ''), texte: txt.slice(0, 7000), hN: hN, aN: aN };
+  var ea = function (x) { return String(x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); };
+  return '<div style="margin-top:10px;background:rgba(10,14,24,.85);border:1px solid rgba(138,160,255,.25);border-radius:10px;padding:12px;">'
+    + '<div style="font-size:11px;font-weight:800;color:#8aa0ff;letter-spacing:.4px;margin-bottom:6px;">📰 L\'AVANT-MATCH D\'ESPN</div>'
+    + '<div style="font-size:14px;font-weight:800;color:#fff;line-height:1.35;">' + ea(a.headline) + '</div>'
+    + (a.description ? '<div style="font-size:13px;color:var(--t2);line-height:1.5;margin-top:4px;">' + ea(String(a.description).replace(/^\s*—\s*/, '')) + '</div>' : '')
+    + '<button onclick="g45ArticleTraduire(this)" data-eid="' + ea(eid) + '" data-box="usart-' + ea(eid) + '" style="margin-top:10px;width:100%;box-sizing:border-box;font-size:13px;font-weight:800;padding:9px 12px;border-radius:9px;cursor:pointer;border:1.5px solid rgba(138,160,255,.5);background:rgba(138,160,255,.10);color:#aabaff;">🇫🇷 Traduire et résumer en français</button>'
+    + '<div id="usart-' + ea(eid) + '" style="margin-top:8px;"></div></div>';
+}
+async function g45ArticleTraduire(btn) {
+  var box = document.getElementById(btn.dataset.box); if (!box) return;
+  if (box.getAttribute('data-loaded') === '1') { box.style.display = (box.style.display === 'none' ? '' : 'none'); return; }
+  var art = _g45ArtCache[btn.dataset.eid]; if (!art) return;
+  if (typeof _g45AccesPremium === 'function' && _g45AccesPremium() !== true) {
+    box.innerHTML = '<div style="font-size:13px;color:var(--t3);line-height:1.6;text-align:center;">🔒 Traduction IA — gratuite 30 jours après création de compte, puis avec un petit soutien du projet.</div>'
+      + (typeof _g45BlocPremium === 'function' ? '<div style="margin-top:10px;">' + _g45BlocPremium() + '</div>' : '');
+    return;
+  }
+  if (!(typeof g45IaDispo === 'function' ? g45IaDispo() : true)) { box.innerHTML = '<div style="color:#ff6b6b;font-size:13px;">Traduction indisponible : aucune clé et aucun Worker joignable.</div>'; return; }
+  btn.disabled = true;
+  box.innerHTML = '<div style="color:var(--t3);font-size:13px;padding:8px;text-align:center;">🇫🇷 Traduction en cours…</div>';
+  var sys = 'Tu traduis et resumes en francais un article d\'avant-match (sport americain). Reponds STRICTEMENT dans ce format, sans rien avant ni apres :\n'
+    + 'TITRE : <titre traduit en francais>\n• <point cle 1>\n• <point cle 2>\n• <point cle 3>\n(• 4e et 5e points seulement si utiles)\nCE QUE L\'ARTICLE LAISSE ENTENDRE : <une phrase>\n'
+    + 'Regles : francais simple, phrases courtes, noms propres inchanges. N\'invente RIEN qui ne soit pas dans l\'article (blesses, chiffres, forme). Si l\'article ne donne pas d\'avis sur l\'issue du match, ecris-le.';
+  var user = 'Match : ' + art.hN + ' vs ' + art.aN + '\nTITRE : ' + art.titre + '\nCHAPEAU : ' + art.chapeau + '\nARTICLE :\n' + art.texte;
+  var txt = '', src = '';
+  try {
+    var key = (typeof getGeminiKey === 'function') ? getGeminiKey() : localStorage.getItem('gones45_gemini_key');
+    var r = await fetch(g45IaUrl(), { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
+      body: JSON.stringify({ model: g45GroqModele(), messages: [{ role: 'system', content: sys }, { role: 'user', content: user }], temperature: 0.2, max_tokens: 700 }) });
+    var d = await r.json();
+    txt = ((d.choices && d.choices[0] && d.choices[0].message && d.choices[0].message.content) || '').replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+    if (txt) src = 'Groq';
+  } catch (e) {}
+  if (!txt && typeof g45GeminiModeles === 'function') {
+    try {
+      var GM = await g45GeminiModeles();
+      for (var i = 0; i < GM.length && !txt; i++) {
+        try {
+          var rg = await fetch(g45GeminiUrl(GM[i]), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: sys + '\n\n' + user }] }] }) });
+          var dg = await rg.json();
+          txt = ((dg.candidates && dg.candidates[0] && dg.candidates[0].content && dg.candidates[0].content.parts && dg.candidates[0].content.parts.map(function (pp) { return pp.text || ''; }).join('')) || '').trim();
+          if (txt) src = 'Gemini';
+        } catch (e) {}
+      }
+    } catch (e) {}
+  }
+  btn.disabled = false;
+  if (!txt) { box.innerHTML = '<div style="color:#ff6b6b;font-size:13px;">Traduction indisponible pour le moment. Réessaie plus tard.</div>'; return; }
+  var ea = function (x) { return String(x).replace(/&/g, '&amp;').replace(/</g, '&lt;'); };
+  var html = ea(txt).replace(/\*\*/g, '').split('\n').filter(function (l) { return l.trim(); }).map(function (l) {
+    if (/^TITRE\s*:/i.test(l)) return '<div style="font-size:14px;font-weight:800;color:#fff;margin-bottom:6px;">' + l.replace(/^TITRE\s*:\s*/i, '') + '</div>';
+    if (/^CE QUE/i.test(l)) return '<div style="font-size:13px;color:#ffd166;margin-top:6px;line-height:1.5;">' + l + '</div>';
+    return '<div style="font-size:13px;color:var(--t1);line-height:1.55;margin:3px 0;">' + l + '</div>';
+  }).join('');
+  box.innerHTML = '<div style="border-top:1px solid rgba(255,255,255,.08);padding-top:8px;">' + html
+    + '<div style="font-size:11px;color:var(--t3);margin-top:8px;font-style:italic;">Traduit et résumé par IA (' + src + ') · source ESPN</div></div>';
+  box.setAttribute('data-loaded', '1');
+}
+window.g45ArticleTraduire = g45ArticleTraduire; window._g45ArticleBloc = _g45ArticleBloc;
+
 async function g45LoadUsAI(btn){
   var box=document.getElementById(btn.dataset.box); if(!box) return;
   if(box.getAttribute('data-loaded')==='1'){ box.style.display=(box.style.display==='none'?'':'none'); return; }
@@ -32094,6 +32168,7 @@ async function _renderGenericDetail(el, sport, lg, eid){
     if(stT.state==='pre'){ try{ var _pmG=_g45PreMatchBlock(data); if(_pmG) h+=_pmG; }catch(e){} }
     // Cotes ESPN (sports US : favori moneyline + total), en décimal — gratuit, sans quota
     try{ var _usOdds=await _g45EspnUsOdds(sport, lg, eid, comp.date||'', hN, aN); if(_usOdds) h+=_usOdds; }catch(e){}
+    try{ var _artB=(typeof _g45ArticleBloc==='function')?_g45ArticleBloc(data, eid, hN, aN):''; if(_artB) h+=_artB; }catch(e){}
     h+='<div style="margin-top:8px;"><button onclick="g45LoadUsAI(this)" data-lg="'+lg+'" data-sport="'+sport+'" data-eid="'+eid+'" data-h="'+String(hN).replace(/"/g,'&quot;')+'" data-a="'+String(aN).replace(/"/g,'&quot;')+'" data-date="'+(comp.date||'')+'" data-box="usai-'+eid+'" style="width:100%;box-sizing:border-box;font-size:12px;font-weight:800;padding:9px 12px;border-radius:9px;cursor:pointer;border:1.5px solid rgba(176,124,214,.5);background:rgba(176,124,214,.10);color:#b07cd6;">🧠 Analyse IA du match</button><div id="usai-'+eid+'" style="margin-top:8px;"></div></div>';
     var _tSlug=({mlb:'baseball',nba:'basketball',nfl:'american-football',nhl:'ice-hockey',wnba:'basketball'})[lg]||({rugby:'rugby','rugby-league':'rugby'})[sport]||'';
     if(_tSlug && typeof _g45SofaSportKo==='function' && _g45SofaSportKo(_tSlug)) _tSlug='';
