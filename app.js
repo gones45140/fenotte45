@@ -59422,6 +59422,7 @@ async function _g45SanteUn(s) {
   }
 }
 async function g45SanteTester(auto) {
+  if (!_g45SanteActive()) return null;
   var res = {};
   await Promise.all(_G45_SANTE.map(async function (s) { res[s.k] = await _g45SanteUn(s); }));
   var ko = _G45_SANTE.filter(function (s) { return !res[s.k].ok; });
@@ -59433,6 +59434,18 @@ async function g45SanteTester(auto) {
   try { localStorage.setItem('g45_sante_res', JSON.stringify(o)); if (auto) localStorage.setItem('g45_sante_jour', new Date().toISOString().slice(0, 10)); } catch (e) {}
   _g45SanteAfficher();
   return o;
+}
+/* GONES45 SEULEMENT (27/09/2026, Antoine : « seulement gones devrait avoir ce
+   message, et non mes futurs clients sur fenotte / bet45 »). bet45.fr = variable
+   window._g45User posée par auth-guard.js (même à null pour un visiteur, cf.
+   DEF_BK) ; l'adresse sert de filet. Sur bet45 : ni test, ni bandeau, ni bloc,
+   ni point rouge. */
+function _g45SanteActive() {
+  try {
+    if (typeof window._g45User !== 'undefined') return false;
+    if (/(^|\.)bet45\.fr$/i.test(location.hostname) || /fenotte/i.test(location.pathname)) return false;
+  } catch (e) {}
+  return true;
 }
 function _g45SanteLire() { try { return JSON.parse(localStorage.getItem('g45_sante_res') || 'null'); } catch (e) { return null; } }
 function _g45SantePannes(o) { o = o || _g45SanteLire(); if (!o || !o.r) return []; return _G45_SANTE.filter(function (s) { return o.r[s.k] && !o.r[s.k].ok; }); }
@@ -59461,6 +59474,7 @@ function _g45SanteBloc() {
 }
 function _g45SanteAfficher() {
   try {
+    if (!_g45SanteActive()) { ['g45-sante', 'g45-sante-ban'].forEach(function (id) { var x = document.getElementById(id); if (x) x.remove(); }); return; }
     var hote = document.getElementById('t-outils');
     if (hote) {
       var el = document.getElementById('g45-sante');
@@ -59515,6 +59529,7 @@ window.g45SantePayant = async function (k, btn) {
 };
 (function () {
   var demarrer = function () {
+    if (!_g45SanteActive()) return;
     _g45SanteAfficher();
     var jour = ''; try { jour = localStorage.getItem('g45_sante_jour') || ''; } catch (e) {}
     /* Résultat obtenu avec d'anciens tests (v < 2 : faux « injoignable » NHL et
