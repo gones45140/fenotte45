@@ -59227,3 +59227,295 @@ async function g45DomExtGenLancer(btn) {
   btn.style.display = 'none';
 }
 window.g45DomExtGenLancer = g45DomExtGenLancer; window._g45DeStats = _g45DeStats; window._g45DeLib = _g45DeLib;
+
+/* ═══ RÈGLEMENT SEMI-AUTOMATIQUE DES PARIS EN COURS (27/09/2026, maquette
+   validée : « 3 ok ») ═══
+   Le Worker annonce déjà « Pari GAGNÉ / PERDU » par notification ; l'appli
+   n'en faisait rien. Elle connaît pourtant le score final de chaque pari
+   (_g45ScoreTexte, cache g45_score4_<id> = {hs: domicile, as: extérieur}).
+   Les RÈGLES sont celles du Worker (g45VerdictPari, _g45VerdictJambe), copiées
+   telles quelles : garder les deux identiques si l'une change.
+   RIEN n'est réglé tout seul : la ligne du pari propose « 🤖 Score 2-1 →
+   GAGNÉ » avec un bouton qui appelle result() — le même règlement, débrief
+   compris. RÈGLE ABSOLUE (celle du Worker) : au moindre doute, AUCUNE
+   proposition. Donc rien pour : combiné multi-matchs, lay, pari joueur,
+   hockey (prolongation comptée différemment selon le book), tennis et autres
+   sports, lieu inconnu pour un marché qui dépend du camp, pari perdu mais
+   couvert par une garantie (remboursement possible), type non reconnu.
+   Tableaux concernés : #live-strat (montante) et #live-norm (simple),
+   complétés APRÈS leur rendu (MutationObserver) — aucune des copies du rendu
+   n'est touchée. */
+var _G45_AV_SEP = /\s*&\s*|\s+et\s+|\s*\+(?!\s*(?:[\d.]|de\b))\s*/i;
+function _g45AvNum(x) { return parseFloat(String(x).replace(',', '.')); }
+function _g45AvOver(t) {
+  var m = t.match(/\bover\s*(\d+(?:[.,]\d+)?)/) || t.match(/\bplus de\s*(\d+(?:[.,]\d+)?)/) || t.match(/(?:^|[\s(])\+\s*de\s*(\d+(?:[.,]\d+)?)/);
+  return m ? _g45AvNum(m[1]) : null;
+}
+function _g45AvUnder(t) {
+  var m = t.match(/\bunder\s*(\d+(?:[.,]\d+)?)/) || t.match(/\bmoins de\s*(\d+(?:[.,]\d+)?)/) || t.match(/(?:^|[\s(])-\s*de\s*(\d+(?:[.,]\d+)?)/);
+  return m ? _g45AvNum(m[1]) : null;
+}
+/* moiDom : true / false, ou null si le lieu est inconnu (seuls les marchés
+   symétriques — total, les deux marquent, nul, sans nul — sont alors jugés). */
+function _g45AvJambe(txt, moiDom, hS, aS) {
+  var t = String(txt || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim();
+  if (!t) return null;
+  var total = hS + aS, camp = (moiDom === true || moiDom === false);
+  var mien = moiDom ? hS : aS, autre = moiDom ? aS : hS;
+  if (/buteur|passeur|decisif|mi-?temps|1ere periode|2eme periode/.test(t)) return null;
+  var m;
+  if ((m = _g45AvOver(t)) != null) return total > m;
+  if ((m = _g45AvUnder(t)) != null) return total < m;
+  if (/\bbts\b|\bbtts\b|les deux marquent/.test(t)) { var ld = (hS > 0 && aS > 0); return /non|no\b/.test(t) ? !ld : ld; }
+  if ((m = t.match(/\bh(?:c|andicap)\s*([+-]\s*\d+(?:[.,]\d+)?)/))) return camp ? (mien + _g45AvNum(m[1].replace(/\s/g, ''))) > autre : null;
+  if (/domicile ou nul|1n\b/.test(t)) return hS >= aS;
+  if (/exterieur ou nul|n2\b/.test(t)) return aS >= hS;
+  if (/ou nul/.test(t)) return camp ? mien >= autre : null;
+  if (/sans nul|12\b/.test(t)) return hS !== aS;
+  if (/victoire|gagn|\bwin\b/.test(t)) return camp ? mien > autre : null;
+  if (/defaite|perd|\blose\b/.test(t)) return camp ? mien < autre : null;
+  if (/\bnul\b|\bdraw\b|match nul/.test(t)) return hS === aS;
+  if (/clean sheet/.test(t)) return camp ? autre === 0 : null;
+  return null;
+}
+function _g45AvPari(type, moiDom, hS, aS) {
+  var j = String(type || '').split(_G45_AV_SEP).filter(function (x) { return x.trim(); });
+  if (!j.length) return null;
+  var toutes = true;
+  for (var i = 0; i < j.length; i++) {
+    var r = _g45AvJambe(j[i], moiDom, hS, aS);
+    if (r === null) return null;
+    if (r === false) toutes = false;
+  }
+  return toutes;
+}
+/* Proposition pour un pari en cours : {v, hs, as, type} ou null. */
+function _g45AvProposer(h) {
+  try {
+    if (!h || h.isCombi || h.isLay || h.joueur || (h.joueurs && h.joueurs.length)) return null;
+    var se = String(h.sport || '⚽');
+    var ok = /⚽|🏉|🏀|🏈|⚾/.test(se) && !/🏒|🎾/.test(se);
+    if (!ok) return null;
+    var type = String(h.type || '').replace(/\s*@\s*\d+(?:[.,]\d+)?\s*$/, '').trim();
+    if (!type || type === '-') return null;
+    var c = null;
+    try { c = JSON.parse(localStorage.getItem('g45_score4_' + h.id) || 'null'); } catch (e) {}
+    if (!c || c.hs == null || c.as == null) return null;
+    var moiDom = h.domicile === 'dom' ? true : (h.domicile === 'ext' ? false : null);
+    var v = _g45AvPari(type, moiDom, +c.hs, +c.as);
+    if (v === null) return null;
+    if (v === false) {
+      var gar = (h.garantie === 'aucune') ? '' : (h.garantie || ((typeof g45GarantieAutoPour === 'function') ? g45GarantieAutoPour(type, h.sport, h.b) : ''));
+      if (gar) return null;                        /* perdu mais peut-être remboursé : on se tait */
+    }
+    return { v: v, hs: +c.hs, as: +c.as, type: type };
+  } catch (e) { return null; }
+}
+/* Le match est-il probablement fini ? (sinon on ne lance pas de recherche de score) */
+function _g45AvFini(h) {
+  var d = String(h.date || '').slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return false;
+  if (!h.heure) return d < new Date().toISOString().slice(0, 10);
+  var t = new Date(d + 'T' + h.heure + ':00');
+  return !isNaN(t) && Date.now() > t.getTime() + 3 * 3600000;
+}
+function _g45AvScanner() {
+  try {
+    var H = (typeof state !== 'undefined' && state && state.h) || [];
+    ['live-strat', 'live-norm'].forEach(function (tid) {
+      var tb = document.getElementById(tid); if (!tb) return;
+      Array.prototype.forEach.call(tb.querySelectorAll('button.sbtn.sw[data-id]'), function (b) {
+        var tr = b.closest('tr'); if (!tr || tr.getAttribute('data-g45av') === '1') return;
+        var h = H.filter(function (x) { return x && String(x.id) === String(b.getAttribute('data-id')); })[0];
+        if (!h || !_g45AvFini(h)) return;
+        var p = _g45AvProposer(h);
+        if (!p) { if (typeof _g45ScoreTexte === 'function') _g45ScoreTexte(h); return; }   /* lance / relit la recherche du score */
+        var td = tr.querySelectorAll('td')[tid === 'live-strat' ? 1 : 0]; if (!td) return;
+        tr.setAttribute('data-g45av', '1');
+        var col = p.v ? '#1ed760' : '#ff5a5a';
+        var d = document.createElement('div');
+        d.style.cssText = 'margin-top:5px;display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:13px;font-weight:800;color:' + col + ';';
+        d.innerHTML = '<span>🤖 Score ' + p.hs + '-' + p.as + ' → ' + (p.v ? 'GAGNÉ' : 'PERDU') + '</span>'
+          + '<span style="font-size:12px;font-weight:600;color:var(--t2);">(' + p.type.replace(/&/g, '&amp;').replace(/</g, '&lt;') + ')</span>'
+          + '<button data-id="' + String(h.id).replace(/"/g, '') + '" onclick="result(this.dataset.id,' + (p.v ? 'true' : 'false') + ')" '
+          + 'style="font-size:13px;font-weight:800;padding:4px 10px;border-radius:7px;cursor:pointer;border:1.5px solid ' + col + ';background:' + col + '22;color:' + col + ';">'
+          + (p.v ? '✅' : '❌') + ' Valider</button>';
+        td.appendChild(d);
+      });
+    });
+  } catch (e) {}
+}
+(function () {
+  var minuteur = null;
+  var relancer = function () { clearTimeout(minuteur); minuteur = setTimeout(_g45AvScanner, 300); };
+  var brancher = function () {
+    ['live-strat', 'live-norm'].forEach(function (tid) {
+      var tb = document.getElementById(tid);
+      if (tb && !tb._g45Av) { tb._g45Av = 1; new MutationObserver(relancer).observe(tb, { childList: true }); }
+    });
+    relancer();
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', brancher); else setTimeout(brancher, 0);
+  /* Le score arrive en tâche de fond : on repasse toutes les 20 s, page visible. */
+  setInterval(function () { if (!document.hidden) { brancher(); } }, 20000);
+})();
+window._g45AvPari = _g45AvPari; window._g45AvProposer = _g45AvProposer; window._g45AvScanner = _g45AvScanner;
+
+/* ═══ SANTÉ DES SOURCES (27/09/2026, maquette validée ; Antoine : « une fois
+   par jour ? » puis « avec un message qui s'affiche en avant-première si un
+   truc va mal ») ═══
+   Pourquoi : aujourd'hui, les photos TheSportsDB en 404 et le refus de
+   Sofascore pour la NFL n'ont été vus que par hasard. Chaque ligne fait UNE
+   petite requête à une source dont l'appli dépend.
+   - Automatique : au premier lancement du jour, en arrière-plan, sources
+     GRATUITES seulement. Un échec est retesté 10 s plus tard avant d'alerter
+     (un raté réseau isolé n'est pas une panne).
+   - Si une source reste en panne : bandeau en HAUT de l'écran (fermable) +
+     point rouge sur Outils ; rien du tout si tout va bien.
+   - Bloc en tête d'Outils : résultat détaillé + bouton « Lancer le test ».
+     RapidAPI (Sofascore) et api-sports ont un quota : bouton à part, jamais
+     dans le test automatique.
+   Clés : g45_sante_jour (date du dernier test auto), g45_sante_res (résultat),
+   g45_sante_vu (bandeau fermé pour ce résultat). */
+var _G45_SANTE = [
+  { k: 'espn', n: 'ESPN (scores, matchs, cotes)', u: function () { return 'https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard?limit=1'; }, j: function (d) { return d && Array.isArray(d.events); } },
+  { k: 'espncore', n: 'ESPN core (joueurs, arbitres)', u: function () { return 'https://sports.core.api.espn.com/v2/sports/soccer/leagues/eng.1?lang=en&region=us'; }, j: function (d) { return d && (d.id || d.name); } },
+  { k: 'worker', n: 'Ton worker Cloudflare', u: function () { return FD_PROXY + '?host=espn&path=' + encodeURIComponent('/apis/site/v2/sports/basketball/nba/scoreboard?limit=1'); }, j: function (d) { return d && Array.isArray(d.events); } },
+  { k: 'tsdb', n: 'TheSportsDB (logos, visuels)', u: function () { return 'https://www.thesportsdb.com/api/v1/json/3/searchteams.php?t=Arsenal'; }, j: function (d) { return d && d.teams && d.teams.length; } },
+  { k: 'wiki', n: 'Wikipédia (photos de joueurs)', u: function () { return 'https://fr.wikipedia.org/w/api.php?action=query&titles=Football&format=json&origin=*'; }, j: function (d) { return d && d.query; } },
+  { k: 'nhl', n: 'NHL (api officielle)', u: function () { return 'https://api-web.nhle.com/v1/season'; }, j: function (d) { return Array.isArray(d) && d.length; } },
+  { k: 'mlb', n: 'MLB (api officielle)', u: function () { return 'https://statsapi.mlb.com/api/v1/sports/1'; }, j: function (d) { return d && d.sports; } },
+  { k: 'groq', n: 'IA Groq (liste des modèles)', ia: 'groq', u: function () { return g45IaUrlModeles(); }, j: function (d) { return d && (d.data || d.models); } },
+  { k: 'gemini', n: 'IA Gemini (liste des modèles)', u: function () { return g45GeminiUrlModeles(); }, j: function (d) { return d && (d.models || d.data); } }
+];
+var _G45_SANTE_PAYANT = [
+  { k: 'rapid', n: 'RapidAPI · Sofascore', cout: '1 requête de ton quota RapidAPI',
+    f: async function () { var r = (typeof g45Sofa6 === 'function') ? await g45Sofa6('/api/sofascore/v1/match/list?sport_slug=football&date=' + new Date().toISOString().slice(0, 10)) : { __err: 'absent' };
+      if (r && r.__err) return { ok: false, err: r.__err === 'nokey' ? 'pas de clé' : 'erreur ' + r.__err };
+      return { ok: true }; } },
+  { k: 'apisports', n: 'api-sports (photos foot)', cout: 'le test « status » (normalement gratuit)',
+    f: async function () { var key = (typeof getApiSportsKey === 'function') ? getApiSportsKey() : '';
+      var r = await fetch(FD_PROXY + '/?key=' + encodeURIComponent(key || '') + '&path=/status&host=apisports');
+      if (!r.ok) return { ok: false, err: 'erreur ' + r.status };
+      var d = await r.json(); var e = d && d.errors && (Array.isArray(d.errors) ? d.errors[0] : Object.values(d.errors)[0]);
+      return e ? { ok: false, err: String(e).slice(0, 60) } : { ok: true }; } }
+];
+async function _g45SanteUn(s) {
+  var t0 = Date.now();
+  try {
+    var ctl = (typeof AbortController === 'function') ? new AbortController() : null;
+    var to = ctl ? setTimeout(function () { ctl.abort(); }, 12000) : null;
+    var opt = ctl ? { signal: ctl.signal } : {};
+    if (s.ia === 'groq') { var kk = (typeof getGeminiKey === 'function') ? getGeminiKey() : ''; opt.headers = { 'Authorization': 'Bearer ' + (kk || '_worker_') }; }
+    var r = await fetch(s.u(), opt);
+    if (to) clearTimeout(to);
+    if (!r.ok) return { ok: false, err: 'erreur ' + r.status, ms: Date.now() - t0 };
+    var d = null; try { d = await r.json(); } catch (e) { return { ok: false, err: 'réponse illisible', ms: Date.now() - t0 }; }
+    return s.j(d) ? { ok: true, ms: Date.now() - t0 } : { ok: false, err: 'réponse vide', ms: Date.now() - t0 };
+  } catch (e) {
+    return { ok: false, err: (e && e.name === 'AbortError') ? 'trop lent (12 s)' : 'injoignable', ms: Date.now() - t0 };
+  }
+}
+async function g45SanteTester(auto) {
+  var res = {};
+  await Promise.all(_G45_SANTE.map(async function (s) { res[s.k] = await _g45SanteUn(s); }));
+  var ko = _G45_SANTE.filter(function (s) { return !res[s.k].ok; });
+  if (ko.length) {                                   /* 2e chance : un raté isolé n'est pas une panne */
+    await new Promise(function (ok) { setTimeout(ok, 10000); });
+    await Promise.all(ko.map(async function (s) { res[s.k] = await _g45SanteUn(s); }));
+  }
+  var o = { t: Date.now(), r: res };
+  try { localStorage.setItem('g45_sante_res', JSON.stringify(o)); if (auto) localStorage.setItem('g45_sante_jour', new Date().toISOString().slice(0, 10)); } catch (e) {}
+  _g45SanteAfficher();
+  return o;
+}
+function _g45SanteLire() { try { return JSON.parse(localStorage.getItem('g45_sante_res') || 'null'); } catch (e) { return null; } }
+function _g45SantePannes(o) { o = o || _g45SanteLire(); if (!o || !o.r) return []; return _G45_SANTE.filter(function (s) { return o.r[s.k] && !o.r[s.k].ok; }); }
+var _G45_SANTE_EFFET = { espn: 'scores, matchs et cotes peuvent manquer', espncore: 'fiches joueurs et arbitres peuvent manquer', worker: 'beaucoup de fonctions (IA, KHL, MotoGP, ESPN web…) peuvent échouer', tsdb: 'logos et visuels peuvent manquer', wiki: 'certaines photos de joueurs peuvent manquer', nhl: 'données NHL incomplètes', mlb: 'données MLB incomplètes', groq: 'l\'analyse et la traduction IA peuvent échouer', gemini: 'l\'avis Gemini peut manquer' };
+function _g45SanteBloc() {
+  var o = _g45SanteLire(), esc = function (x) { return String(x).replace(/&/g, '&amp;').replace(/</g, '&lt;'); };
+  var lignes = _G45_SANTE.map(function (s) {
+    var x = o && o.r && o.r[s.k];
+    var ico = !x ? '⚪' : (x.ok ? '✅' : '❌');
+    var info = !x ? 'pas encore testé' : (x.ok ? (x.ms + ' ms') : esc(x.err));
+    return '<div style="display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:13px;">'
+      + '<span style="color:#fff;font-weight:700;">' + ico + ' ' + esc(s.n) + '</span><span style="color:' + (x && !x.ok ? '#ff6b6b' : 'var(--t2)') + ';font-weight:700;white-space:nowrap;">' + info + '</span></div>';
+  }).join('');
+  var payant = _G45_SANTE_PAYANT.map(function (s) {
+    return '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 0;font-size:13px;">'
+      + '<span style="color:#fff;font-weight:700;">⚪ ' + esc(s.n) + '<br><span style="font-size:11px;color:var(--t3);font-weight:600;">coûte : ' + esc(s.cout) + '</span></span>'
+      + '<button onclick="g45SantePayant(\'' + s.k + '\',this)" style="font-size:12px;font-weight:800;padding:6px 10px;border-radius:8px;cursor:pointer;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:#fff;">Tester</button></div>';
+  }).join('');
+  var quand = o ? new Date(o.t).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : 'jamais';
+  return '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;">'
+    + '<div style="font-size:14px;font-weight:800;color:#fff;">🩺 Santé des sources</div>'
+    + '<button id="g45-sante-go" onclick="g45SanteLancer(this)" style="font-size:13px;font-weight:800;padding:7px 12px;border-radius:9px;cursor:pointer;border:1.5px solid rgba(77,132,255,.55);background:rgba(77,132,255,.12);color:#9fb8ff;">Lancer le test</button></div>'
+    + lignes
+    + '<div style="margin-top:8px;font-size:12px;color:var(--t3);">Sources à quota (jamais testées automatiquement) :</div>' + payant
+    + '<div style="margin-top:6px;font-size:12px;color:var(--t3);">Dernier test : ' + quand + ' · automatique une fois par jour.</div>';
+}
+function _g45SanteAfficher() {
+  try {
+    var hote = document.getElementById('t-outils');
+    if (hote) {
+      var el = document.getElementById('g45-sante');
+      if (!el) {
+        el = document.createElement('div'); el.id = 'g45-sante';
+        el.style.cssText = 'margin:10px 0 14px;padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,.10);background:rgba(11,16,29,.88);';
+        hote.insertBefore(el, hote.firstChild);
+      }
+      el.innerHTML = _g45SanteBloc();
+    }
+    var o = _g45SanteLire(), pannes = _g45SantePannes(o);
+    /* Point rouge sur Outils (bouton PC, bouton « Plus » du téléphone, entrée du menu). */
+    var cibles = Array.prototype.slice.call(document.querySelectorAll('[onclick*="t-outils"]'));
+    var plus = document.getElementById('btn-plus-menu'); if (plus) cibles.push(plus);
+    cibles.forEach(function (b) {
+      var p = b.querySelector('.g45-sante-pt');
+      if (pannes.length && !p) { p = document.createElement('span'); p.className = 'g45-sante-pt'; p.style.cssText = 'display:inline-block;width:9px;height:9px;border-radius:50%;background:#ff4545;margin-left:4px;box-shadow:0 0 6px #ff4545;vertical-align:top;'; b.appendChild(p); }
+      if (!pannes.length && p) p.remove();
+    });
+    /* Bandeau en haut de l'écran : une fois par résultat, fermable. */
+    var ban = document.getElementById('g45-sante-ban');
+    var vu = ''; try { vu = localStorage.getItem('g45_sante_vu') || ''; } catch (e) {}
+    if (!pannes.length || vu === String(o && o.t)) { if (ban) ban.remove(); return; }
+    if (!ban) {
+      ban = document.createElement('div'); ban.id = 'g45-sante-ban';
+      ban.setAttribute('role', 'alert');
+      ban.style.cssText = 'position:fixed;left:10px;right:10px;top:calc(env(safe-area-inset-top,0px) + 10px);z-index:100000;max-width:560px;margin:0 auto;'
+        + 'background:#2a0d12;border:2px solid #ff4545;border-radius:12px;padding:12px 14px;box-shadow:0 8px 30px rgba(0,0,0,.6);color:#fff;';
+      document.body.appendChild(ban);
+    }
+    ban.innerHTML = '<div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;">'
+      + '<div style="font-size:15px;font-weight:800;">⚠️ Une source ne répond plus</div>'
+      + '<button onclick="g45SanteFermer()" aria-label="Fermer" style="background:none;border:none;color:#fff;font-size:20px;cursor:pointer;line-height:1;">✕</button></div>'
+      + pannes.map(function (s) { var x = o.r[s.k]; return '<div style="font-size:13px;margin-top:6px;line-height:1.45;"><b>' + s.n + '</b> (' + (x && x.err || '?') + ') : ' + (_G45_SANTE_EFFET[s.k] || '') + '.</div>'; }).join('')
+      + '<button onclick="g45SanteVoir()" style="margin-top:10px;font-size:13px;font-weight:800;padding:7px 12px;border-radius:9px;cursor:pointer;border:1.5px solid #ff8a8a;background:rgba(255,69,69,.15);color:#fff;">Voir le détail</button>';
+  } catch (e) {}
+}
+window.g45SanteLancer = async function (btn) { if (btn) { btn.disabled = true; btn.textContent = '⏳ Test…'; } try { localStorage.removeItem('g45_sante_vu'); } catch (e) {} await g45SanteTester(false); };
+window.g45SanteFermer = function () { var o = _g45SanteLire(); try { localStorage.setItem('g45_sante_vu', String(o && o.t)); } catch (e) {} var b = document.getElementById('g45-sante-ban'); if (b) b.remove(); };
+window.g45SanteVoir = function () {
+  g45SanteFermer();
+  try { var b = document.querySelector('.ni[onclick*="t-outils"]'); if (typeof showTab === 'function') showTab('t-outils', b || document.getElementById('btn-plus-menu')); } catch (e) {}
+  setTimeout(function () { _g45SanteAfficher(); var el = document.getElementById('g45-sante'); if (el) { el.style.scrollMarginTop = '90px'; el.scrollIntoView({ block: 'start' }); } }, 300);
+};
+window.g45SantePayant = async function (k, btn) {
+  var s = _G45_SANTE_PAYANT.filter(function (x) { return x.k === k; })[0]; if (!s) return;
+  if (!confirm('Ce test utilise ' + s.cout + '. Continuer ?')) return;
+  btn.disabled = true; btn.textContent = '⏳';
+  var r; try { r = await s.f(); } catch (e) { r = { ok: false, err: 'injoignable' }; }
+  btn.disabled = false; btn.textContent = r.ok ? '✅ OK' : '❌ ' + r.err;
+  btn.style.color = r.ok ? '#1ed760' : '#ff6b6b';
+};
+(function () {
+  var demarrer = function () {
+    _g45SanteAfficher();
+    var jour = ''; try { jour = localStorage.getItem('g45_sante_jour') || ''; } catch (e) {}
+    if (jour !== new Date().toISOString().slice(0, 10)) setTimeout(function () { g45SanteTester(true); }, 20000);   /* après le chargement de l'appli */
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { setTimeout(demarrer, 2000); });
+  else setTimeout(demarrer, 2000);
+  document.addEventListener('click', function (e) { var t = e.target && e.target.closest && e.target.closest('[onclick*="t-outils"]'); if (t) setTimeout(_g45SanteAfficher, 300); });
+})();
+window.g45SanteTester = g45SanteTester; window._g45SantePannes = _g45SantePannes;
