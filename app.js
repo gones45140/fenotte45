@@ -41762,26 +41762,44 @@ window.g45ReparerLogo = async function(nom) {
    Florida Panthers — et sans esport, féminines ni réserves) pour la seule
    équipe ouverte, on mémorise le résultat comme le bouton, et on remplace le
    rond. Rien trouvé : on ne redemande pas avant 7 jours. */
+/* ÉQUIPES HORS DU MUR (27/09/2026, relevé d'Antoine : Roosters, Panthers ouverts
+   depuis Compétitions restaient à « Roo »). Pour elles, pas d'entrée state.u :
+   le sport vient de la mémoire des équipes ouvertes (g45TeamsPerso : id ESPN,
+   ligue, sport), et le logo trouvé est gardé en local (g45_herologo_<nom>). */
+var _G45_HERO_SP = { soccer: '⚽', basketball: '🏀', hockey: '🏒', baseball: '⚾', football: '🏈', rugby: '🏉', 'rugby-league': '🏉🇦🇺' };
+function _g45HeroPoser(nom, url, u) {
+  try { if (typeof LOGOS !== 'undefined') LOGOS[nom] = url; } catch (e) {}
+  var top = document.querySelector('#d-hero .dtop');
+  var nomAff = document.querySelector('#d-hero .dname');
+  if (!top || !top.firstElementChild || !nomAff || nomAff.textContent.indexOf(nom) < 0) return;
+  var tmp = document.createElement('div');
+  tmp.innerHTML = logoHtml(nom, (u && u.color) || (typeof PCOLS !== 'undefined' ? PCOLS[0] : '#4d84ff'), (u && u.abbr) || nom.substring(0, 3), 58);
+  if (tmp.firstElementChild) top.replaceChild(tmp.firstElementChild, top.firstElementChild);
+}
 async function _g45HeroLogo(nom) {
   try {
     if (!nom || (typeof flagUrl === 'function' && flagUrl(nom))) return;
     var u = ((typeof state !== 'undefined' && state && state.u) || []).filter(function (x) { return x && x.n === nom; })[0];
-    if (!u || u.logoUrl || (typeof LOGOS !== 'undefined' && LOGOS[nom])) return;
+    if ((u && u.logoUrl) || (typeof LOGOS !== 'undefined' && LOGOS[nom])) return;
     if (typeof _G45_NON_CLUB !== 'undefined' && _G45_NON_CLUB.test(String(nom).trim())) return;
-    var ck = 'g45_herologo_ko_' + ((typeof _g45SgNorm === 'function') ? _g45SgNorm(nom) : nom);
+    var k = (typeof _g45SgNorm === 'function') ? _g45SgNorm(nom) : nom;
+    /* Déjà trouvé pour une équipe hors du mur : affichage immédiat. */
+    try { var mem = localStorage.getItem('g45_herologo_' + k); if (mem) { _g45HeroPoser(nom, mem, u); return; } } catch (e) {}
+    var ck = 'g45_herologo_ko_' + k;
     try { var t = +localStorage.getItem(ck) || 0; if (t && Date.now() - t < 7 * 86400000) return; } catch (e) {}
-    var best = (typeof g45SdbClub === 'function') ? await g45SdbClub(nom, u.sport) : null;
-    if (!best || !best.logo) { try { localStorage.setItem(ck, String(Date.now())); } catch (e) {} return; }
-    u.logoUrl = best.logo;
-    try { if (typeof LOGOS !== 'undefined') LOGOS[nom] = best.logo; } catch (e) {}
-    try { if (typeof save === 'function') save(); } catch (e) {}
-    var top = document.querySelector('#d-hero .dtop');
-    var nomAff = document.querySelector('#d-hero .dname');
-    if (top && top.firstElementChild && nomAff && nomAff.textContent.indexOf(nom) >= 0) {
-      var tmp = document.createElement('div');
-      tmp.innerHTML = logoHtml(nom, u.color || (typeof PCOLS !== 'undefined' ? PCOLS[0] : '#4d84ff'), u.abbr || nom.substring(0, 3), 58);
-      if (tmp.firstElementChild) top.replaceChild(tmp.firstElementChild, top.firstElementChild);
+    var sport = u && u.sport;
+    if (!sport) {
+      try {
+        var tp = (typeof g45TeamsPerso === 'function') ? g45TeamsPerso() : {};
+        var e = tp[String(nom).toLowerCase().trim()];
+        if (e && e.sport) sport = _G45_HERO_SP[e.sport] || '';
+      } catch (er) {}
     }
+    var best = (typeof g45SdbClub === 'function') ? await g45SdbClub(nom, sport || null) : null;
+    if (!best || !best.logo) { try { localStorage.setItem(ck, String(Date.now())); } catch (e) {} return; }
+    if (u) { u.logoUrl = best.logo; try { if (typeof save === 'function') save(); } catch (e) {} }
+    else { try { localStorage.setItem('g45_herologo_' + k, best.logo); } catch (e) {} }
+    _g45HeroPoser(nom, best.logo, u);
   } catch (e) {}
 }
 window._g45HeroLogo = _g45HeroLogo;
