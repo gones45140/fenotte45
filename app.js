@@ -31989,6 +31989,16 @@ async function _renderGenericDetail(el, sport, lg, eid){
     var h='<div style="margin:4px 0 8px;padding:12px;background:rgba(0,0,0,.18);border-radius:10px;">';
     h+='<div style="display:flex;align-items:center;justify-content:center;gap:14px;font-size:15px;font-weight:900;color:var(--t1);"><span>'+hN+'</span><span style="color:'+(isLive?'#ff4545':'var(--a)')+';white-space:nowrap;">'+hS+' - '+aS+'</span><span>'+aN+'</span></div>';
     if(status) h+='<div style="text-align:center;font-size:10px;color:'+(isLive?'#ff4545':'var(--t3)')+';margin-top:4px;font-weight:700;">'+(isLive?'🔴 ':'')+status+'</div>';
+    /* STADE (27/09/2026, relevé d'Antoine sur Panthers–Knights : « la localisation
+       du match manque »). Même ligne que la fenêtre foot (_g45ArbPlace) : ESPN
+       range le lieu dans gameInfo.venue du summary ; repli sur l'en-tête. Rien
+       n'est affiché si ESPN ne le donne pas. */
+    try{
+      var _vn=(data.gameInfo&&data.gameInfo.venue)||comp.venue||{};
+      var _vv=(_vn.address&&(_vn.address.city||''))||'';
+      var _vp=(_vn.address&&(_vn.address.state||_vn.address.country))||'';
+      if(_vn.fullName) h+='<div style="text-align:center;font-size:13px;color:#c9d3ee;margin-top:6px;">🏟️ '+_g45Esc(_vn.fullName)+(_vv?' · '+_g45Esc(_vv):'')+(_vp&&_vp!==_vv?' ('+_g45Esc(_vp)+')':'')+'</div>';
+    }catch(e){}
     // ── Bouton « Suivre ce match » → calendrier perso ──
     try{
       var _cnG=''; try{ _cnG=(data.header&&data.header.league&&(data.header.league.name||data.header.league.shortName))||lg||''; }catch(_e){}
