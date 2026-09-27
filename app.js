@@ -58761,7 +58761,9 @@ window.g45OriPoser = g45OriPoser;
 (function () {
   var CLE_OFF = 'g45_astuce_paysage_off', CLE_VU = 'g45_astuce_paysage_vu';
   var portraitTel = function () {
-    try { return matchMedia('(orientation: portrait) and (max-width: 599px)').matches; } catch (e) { return false; }
+    /* Écran TACTILE exigé (pointer: coarse) : une fenêtre de PC rétrécie sous
+       600 px ne doit pas recevoir l'astuce — « sur PC ça sert à rien » (Antoine). */
+    try { return matchMedia('(orientation: portrait) and (max-width: 599px) and (pointer: coarse)').matches; } catch (e) { return false; }
   };
   var fermer = function (pourDeBon) {
     var el = document.getElementById('g45-astuce-paysage');
