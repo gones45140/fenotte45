@@ -27340,6 +27340,9 @@ function renderNotifPanel(){
   if(p.enabled){
     h+='<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;">'
       +'<span style="font-size:12px;font-weight:800;color:var(--g);">\u2705 Notifications activ\u00e9es</span>'
+      /* 27/09 : appareils reliés au même compte (réponse du Worker à la synchro). */
+      +(function(){ var n=0; try{ n=parseInt(localStorage.getItem('g45_notif_appareils')||'0',10)||0; }catch(e){}
+         return n>0 ? '<span style="font-size:13px;font-weight:700;color:#fff;">\ud83d\udcf1 '+n+' appareil'+(n>1?'s':'')+' reli\u00e9'+(n>1?'s':'')+' \u00e0 ton compte</span>' : ''; })()
       +'<button class="btn" style="width:auto;margin:0;padding:6px 12px;font-size:11px;" onclick="g45TestNotif()">\ud83d\udd14 Test</button>'
       +'<button class="btn" style="width:auto;margin:0;padding:6px 12px;font-size:11px;background:rgba(255,69,69,.10);color:#ff6b6b;border:1px solid rgba(255,69,69,.25);" onclick="g45DisableNotifs()">D\u00e9sactiver</button>'
       +'</div>';
@@ -42214,6 +42217,29 @@ async function g45ParisPourNotif() {
 }
 window.g45ParisPourNotif = g45ParisPourNotif;
 
+/* ═══ NOTIFICATIONS SUR TOUS LES APPAREILS DU MÊME COMPTE (27/09/2026, Antoine :
+   « même compte sur mon PC et mon tel, mais les notifs ne vont que sur l'ordi
+   où je mets mes paris ») ═══
+   Chaque appareil envoyait au Worker SA liste de paris : le téléphone ne
+   connaissait que ceux présents lors de sa dernière ouverture. On envoie
+   désormais une EMPREINTE de compte (SHA-256, 32 caractères) : le Worker
+   partage les listes entre appareils de même empreinte (route /psub).
+   Source : bet45 → identifiant du compte connecté (window._g45User.id) ;
+   gones45 → la clé GitHub d'Antoine (présente sur ses appareils pour la synchro
+   des paris). La clé ne sort JAMAIS : seule son empreinte part. Sans l'une ni
+   l'autre : pas d'empreinte, fonctionnement d'avant (chaque appareil seul). */
+async function _g45NotifCompte() {
+  try {
+    var src = '';
+    if (typeof window._g45User !== 'undefined') src = (window._g45User && window._g45User.id) ? 'u:' + window._g45User.id : '';
+    else src = localStorage.getItem('gones45_github_token') ? 'g:' + localStorage.getItem('gones45_github_token') : '';
+    if (!src || !(window.crypto && crypto.subtle)) return '';
+    var h = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('g45-compte|' + src));
+    return Array.prototype.map.call(new Uint8Array(h), function (b) { return ('0' + b.toString(16)).slice(-2); }).join('').slice(0, 32);
+  } catch (e) { return ''; }
+}
+window._g45NotifCompte = _g45NotifCompte;
+
 /* On enveloppe g45SyncNotifs pour ajouter `paris` sans toucher a l'existant. */
 var _g45SyncNotifsOrig = (typeof g45SyncNotifs === 'function') ? g45SyncNotifs : null;
 
@@ -42243,11 +42269,16 @@ window.g45SyncNotifs = async function(subOpt) {
                  date: m.date || '', home: m.home || '', away: m.away || '' };
       });
     } catch (e) {}
-    await fetch(FD_PROXY + '/psub', {
+    /* COMPTE (27/09/2026) : relie les appareils d'une même personne côté Worker
+       (voir _g45NotifCompte). Réponse : nombre d'appareils reliés, affiché dans
+       le panneau Notifications. */
+    var compte = await _g45NotifCompte();
+    var rp = await fetch(FD_PROXY + '/psub', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ sub: sub, teams: teams, betTeams: betTeams,
-                             matches: suivis, paris: paris, ev: p.ev })
+                             matches: suivis, paris: paris, ev: p.ev, compte: compte || undefined })
     });
+    try { var jr = await rp.json(); if (jr && jr.ok) localStorage.setItem('g45_notif_appareils', String(jr.compte ? (jr.appareils || 1) : 0)); } catch (e) {}
     console.log('\u2705 notifs synchronisees \u2014 ' + paris.length + ' pari(s) suivi(s) pour verdict');
   } catch (e) {
     console.warn('synchro paris/verdict :', e && e.message);
