@@ -4300,6 +4300,8 @@ function openClub(nom,idx){
 
   /* Lancer l'analyse IA en arrière-plan */
   setTimeout(function(){ loadTeamAI(nom); }, 300);
+  /* Logo du club dans l'en-tête (27/09/2026) : cherché s'il manque. Voir _g45HeroLogo. */
+  try{ if(typeof _g45HeroLogo==='function') _g45HeroLogo(nom); }catch(e){}
 
   $i('ip-bilan').innerHTML=
     '<div class="kpi2" style="margin-bottom:10px;">'
@@ -12474,6 +12476,8 @@ function openClub(nom,idx){
 
   /* Lancer l'analyse IA en arrière-plan */
   setTimeout(function(){ loadTeamAI(nom); }, 300);
+  /* Logo du club dans l'en-tête (27/09/2026) : cherché s'il manque. Voir _g45HeroLogo. */
+  try{ if(typeof _g45HeroLogo==='function') _g45HeroLogo(nom); }catch(e){}
 
   $i('ip-bilan').innerHTML=
     '<div class="kpi2" style="margin-bottom:10px;">'
@@ -41748,6 +41752,39 @@ window.g45ReparerLogo = async function(nom) {
     try { render(); } catch (e) {}
   } catch (e) { console.warn('Echec :', e); }
 };
+
+/* ═══ LOGO DANS L'EN-TÊTE D'UNE ÉQUIPE (27/09/2026, demande d'Antoine : « au
+   lieu de Pan pour Panthers, le logo du club, pour chaque sport et club ») ═══
+   L'en-tête (openClub, DEUX copies) dessine `logoHtml` : drapeau, puis
+   u.logoUrl, puis la table LOGOS, sinon les trois lettres. u.logoUrl n'était
+   rempli que par le bouton « Enrichir les logos » d'Outils. On lance donc la
+   MÊME recherche (g45SdbClub : TheSportsDB, filtrée par sport — Penrith et non
+   Florida Panthers — et sans esport, féminines ni réserves) pour la seule
+   équipe ouverte, on mémorise le résultat comme le bouton, et on remplace le
+   rond. Rien trouvé : on ne redemande pas avant 7 jours. */
+async function _g45HeroLogo(nom) {
+  try {
+    if (!nom || (typeof flagUrl === 'function' && flagUrl(nom))) return;
+    var u = ((typeof state !== 'undefined' && state && state.u) || []).filter(function (x) { return x && x.n === nom; })[0];
+    if (!u || u.logoUrl || (typeof LOGOS !== 'undefined' && LOGOS[nom])) return;
+    if (typeof _G45_NON_CLUB !== 'undefined' && _G45_NON_CLUB.test(String(nom).trim())) return;
+    var ck = 'g45_herologo_ko_' + ((typeof _g45SgNorm === 'function') ? _g45SgNorm(nom) : nom);
+    try { var t = +localStorage.getItem(ck) || 0; if (t && Date.now() - t < 7 * 86400000) return; } catch (e) {}
+    var best = (typeof g45SdbClub === 'function') ? await g45SdbClub(nom, u.sport) : null;
+    if (!best || !best.logo) { try { localStorage.setItem(ck, String(Date.now())); } catch (e) {} return; }
+    u.logoUrl = best.logo;
+    try { if (typeof LOGOS !== 'undefined') LOGOS[nom] = best.logo; } catch (e) {}
+    try { if (typeof save === 'function') save(); } catch (e) {}
+    var top = document.querySelector('#d-hero .dtop');
+    var nomAff = document.querySelector('#d-hero .dname');
+    if (top && top.firstElementChild && nomAff && nomAff.textContent.indexOf(nom) >= 0) {
+      var tmp = document.createElement('div');
+      tmp.innerHTML = logoHtml(nom, u.color || (typeof PCOLS !== 'undefined' ? PCOLS[0] : '#4d84ff'), u.abbr || nom.substring(0, 3), 58);
+      if (tmp.firstElementChild) top.replaceChild(tmp.firstElementChild, top.firstElementChild);
+    }
+  } catch (e) {}
+}
+window._g45HeroLogo = _g45HeroLogo;
 
 /* getTeamLogo reste utilisee ailleurs : on la corrige aussi. */
 window.getTeamLogo = async function(teamName) {
