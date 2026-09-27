@@ -58548,9 +58548,18 @@ async function _g45OriAppliquer(v, silencieux) {
     if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
       try { await document.documentElement.requestFullscreen({ navigationUI: 'hide' }); } catch (e) {}
     }
+    /* PLEIN ÉCRAN REFUSÉ (27/09/2026, relevé d'Antoine : NotSupportedError).
+       Le navigateur INTÉGRÉ d'une autre app (GitHub, Claude, WhatsApp… : la
+       barre avec ✕ et ∨) n'accorde pas le plein écran, donc pas de blocage.
+       Inutile de dire « touche à nouveau » : on explique où ça marche. */
+    var appli = false;
+    try { appli = matchMedia('(display-mode: standalone)').matches || matchMedia('(display-mode: fullscreen)').matches; } catch (e) {}
+    if (!document.fullscreenElement && !appli) {
+      return 'Ce navigateur ne permet pas de bloquer le sens de l’écran : c’est le cas quand BET45 est ouvert DEPUIS une autre app (GitHub, Claude, WhatsApp…). Ouvre-le directement dans Chrome pour ce réglage, ou utilise le bouton « Rotation auto » des réglages rapides du téléphone.';
+    }
     await screen.orientation.lock(v === 'portrait' ? 'portrait' : 'landscape');
   } catch (e) {
-    msg = 'Android a refusé de bloquer le sens de l’écran (' + ((e && e.name) || 'refus') + '). Il ne l’accepte qu’en plein écran : touche à nouveau le bouton.';
+    msg = 'Le téléphone a refusé de bloquer le sens de l’écran (' + ((e && e.name) || 'refus') + '). Utilise le bouton « Rotation auto » des réglages rapides du téléphone.';
   }
   if (msg && !silencieux) return msg;
   return '';
@@ -58586,6 +58595,12 @@ window.g45OriChoisir = async function (v) {
   try { localStorage.setItem(_G45_ORI_CLE, v); } catch (e) {}
   g45OriPoser(true);
   var m = await _g45OriAppliquer(v, false);
+  if (m) {
+    /* Échec : retour sur « Auto » plutôt qu'un blocage affiché qui n'existe pas. */
+    try { localStorage.setItem(_G45_ORI_CLE, 'auto'); } catch (e) {}
+    g45OriPoser(true);
+    if (document.fullscreenElement && document.exitFullscreen) { try { await document.exitFullscreen(); } catch (e) {} }
+  }
   var z = document.getElementById('g45-ori-msg');
   if (m && z) { z.textContent = m; z.style.color = '#ffb13d'; }
 };

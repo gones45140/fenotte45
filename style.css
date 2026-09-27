@@ -791,9 +791,9 @@ input[type="date"],input[type="time"]{color-scheme:dark;}
    `--g45-paysage` signale à app.js que ce style existe (réglage Orientation). */
 :root{--g45-paysage:1;}
 @media (orientation:landscape) and (max-height:520px) and (max-width:1099px){
-  body{padding-left:72px !important;padding-bottom:0 !important;}
+  body{padding-left:80px !important;padding-bottom:0 !important;}
   .nav{
-    top:0;bottom:0;left:0;width:72px;height:auto;
+    top:0;bottom:0;left:0;width:80px;height:auto;
     display:flex;flex-direction:column;align-items:stretch;
     grid-template-columns:none;padding:34px 0 6px;gap:0;
     border-top:0;border-right:1px solid var(--b1);
@@ -802,17 +802,17 @@ input[type="date"],input[type="time"]{color-scheme:dark;}
        qu'il contient, et le menu Plus serait resté coincé dans la colonne. */
     backdrop-filter:none;-webkit-backdrop-filter:none;
   }
-  .ni{padding:6px 0;font-size:9.5px;font-weight:700;gap:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  .ni{padding:6px 2px;font-size:9px;letter-spacing:-.2px;font-weight:700;gap:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
     border-top:0;border-left:3px solid transparent;}
   .ni span{font-size:19px;line-height:1.1;}
   .ni.on{border-left-color:var(--or);border-top-color:transparent;background:rgba(255,255,255,.06);}
   .topbar{padding:5px 14px;backdrop-filter:none;-webkit-backdrop-filter:none;z-index:210;}   /* au-dessus de la colonne : le logo y est posé */
   .top-cap{margin-left:auto;}   /* le logo parti dans la colonne, le capital reste à droite */   /* même raison : logo et « Connexion » fixés à l'écran */
-  .topbar .logo{position:fixed;left:0;top:7px;width:72px;text-align:center;font-size:12px;letter-spacing:1px;z-index:201;}
+  .topbar .logo{position:fixed;left:0;top:7px;width:80px;text-align:center;font-size:12px;letter-spacing:1px;z-index:201;}
   .top-cap .lbl{display:inline;margin-right:6px;}
   .top-cap .val{display:inline;font-size:17px;}
-  header.topbar a[href="./login.html"]{left:82px !important;top:5px !important;}
+  header.topbar a[href="./login.html"]{left:90px !important;top:5px !important;}
   .g45-mt{padding:4px 11px;}
   .g45-mt-eq{font-size:12px;}
-  #plus-menu{left:72px !important;right:0 !important;bottom:0 !important;max-height:100vh !important;}
+  #plus-menu{left:80px !important;right:0 !important;bottom:0 !important;max-height:100vh !important;}
 }
