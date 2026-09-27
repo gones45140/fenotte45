@@ -27983,7 +27983,7 @@ async function _renderSaisonDetail(el, eventId, league){
     /* Stade et arbitre (27/09/2026, maquette validée) : voir _g45ArbPlace. */
     try{ if(typeof _g45ArbPlace==='function') h+=_g45ArbPlace(data, league, eventId); }catch(e){}
     /* Article ESPN (avant-match ou compte rendu), 27/09 : voir _g45ArticleBloc. */
-    try{ var _artF=(typeof _g45ArticleBloc==='function')?_g45ArticleBloc(data, eventId, hN, aN):''; if(_artF) h+=_artF; }catch(e){}
+    try{ var _artF=(typeof _g45ArticleBloc==='function')?_g45ArticleBloc(data, eventId, hN, aN):''; if(_artF) h+=_artF; else if(typeof _g45ArticleFootEn==='function') h+=_g45ArticleFootEn(league, eventId, hN, aN); }catch(e){}
     // ── Blocs LIVE (vides automatiquement si match pas en cours) ──
     try{ if(typeof _liveBettingBlock==='function') h+=_liveBettingBlock(data, el.id); }catch(e){}
     try{ if(typeof _liveBetsBlock==='function'){ var _lb=_liveBetsBlock(data); if(_lb) h+=_lb; } }catch(e){}
@@ -30952,6 +30952,31 @@ function _g45ArticleBloc(data, eid, hN, aN) {
     + '<button onclick="g45ArticleTraduire(this)" data-eid="' + ea(eid) + '" data-box="usart-' + ea(eid) + '" style="margin-top:10px;width:100%;box-sizing:border-box;font-size:13px;font-weight:800;padding:9px 12px;border-radius:9px;cursor:pointer;border:1.5px solid rgba(138,160,255,.5);background:rgba(138,160,255,.10);color:#aabaff;">🇫🇷 Traduire et résumer en français</button>'
     + '<div id="usart-' + ea(eid) + '" style="margin-top:8px;"></div></div>';
 }
+/* FOOT : RÉSUMÉ EN ANGLAIS POUR L'ARTICLE (27/09/2026, « rien sur tous les
+   matchs de foot ») : la fenêtre foot demande le résumé ESPN avec
+   lang=fr&region=fr, et cette version ne contient pas `article` (les articles
+   ESPN sont en anglais). Le sondage d'Antoine, sans ces paramètres, en
+   trouvait. On pose une place vide et on va chercher le résumé anglais à côté,
+   sans retarder l'affichage de la fenêtre ; rien trouvé → la place reste vide. */
+function _g45ArticleFootEn(league, eventId, hN, aN) {
+  var id = 'g45artf-' + String(eventId).replace(/[^0-9a-z]/gi, '');
+  (async function () {
+    try {
+      var r = await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/' + (league || 'eng.1') + '/summary?event=' + encodeURIComponent(eventId));
+      if (!r.ok) return;
+      var d = await r.json();
+      var html = _g45ArticleBloc(d, eventId, hN, aN);
+      if (!html) return;
+      for (var i = 0; i < 50; i++) {                 /* la fenêtre peut ne pas être encore dans la page */
+        var box = document.getElementById(id);
+        if (box) { box.innerHTML = html; return; }
+        await new Promise(function (ok) { setTimeout(ok, 100); });
+      }
+    } catch (e) {}
+  })();
+  return '<div id="' + id + '"></div>';
+}
+window._g45ArticleFootEn = _g45ArticleFootEn;
 async function g45ArticleTraduire(btn) {
   var box = document.getElementById(btn.dataset.box); if (!box) return;
   if (box.getAttribute('data-loaded') === '1') { box.style.display = (box.style.display === 'none' ? '' : 'none'); return; }
