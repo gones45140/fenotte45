@@ -43880,7 +43880,7 @@ window.g45FormeN = g45FormeN;
    parametre — la vue Forme marche donc aussi en NBA, NHL, NFL, MLB et rugby.
    Cache 12 h par sport+ligue+saison, car c'est une requete par equipe. */
 async function _g45CompetMatchs(sportPath, slug, an, ids, progres) {
-  var ck = 'g45cm8_' + sportPath + '_' + slug + '_' + an;   /* v8 (24/09 soir) : seasontype=2 demande — la presaison n'est plus telechargee */
+  var ck = 'g45cm9_' + sportPath + '_' + slug + '_' + an;   /* v9 (27/09) : phase finale NRL marquée (po) · v8 (24/09 soir) : seasontype=2 demande — la presaison n'est plus telechargee */
   try {
     var cc = JSON.parse(localStorage.getItem(ck) || 'null');
     if (cc && (Date.now() - cc.t) < 12 * 3600000) {
@@ -44081,6 +44081,11 @@ async function _g45CompetMatchs(sportPath, slug, an, ids, progres) {
           vus[e.id] = 1;
           ms.push({
             id: String(e.id),
+            /* PHASE FINALE (27/09/2026, relevé d'Antoine : Saisons ne distinguait
+               pas saison régulière et play-offs au NRL). Ce chemin ne posait
+               jamais `po`. Le NRL range ses phases finales en season.type 2
+               (l'inverse des sports US) : on lit le SLUG, comme les Classements. */
+            po: (typeof _g45ClsEstPO === 'function') ? _g45ClsEstPO(e) : 0,
             h: hid3, a: aid3, hg: hg3, ag: ag3, t: t3,
             hn: (ho3.team && (ho3.team.shortDisplayName || ho3.team.displayName)) || '',
             an: (aw3.team && (aw3.team.shortDisplayName || aw3.team.displayName)) || '',
