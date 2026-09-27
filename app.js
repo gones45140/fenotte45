@@ -33561,6 +33561,49 @@ async function g45CyclingOpen(raceId){
   return _g45CyOpenHtml(race?race.id:raceId);
 }
 window.g45CyclingOpen=g45CyclingOpen;
+/* ═══ MOTOGP — STYLE « SITE OFFICIEL » (26/09/2026, maquettes validées) ═══ */
+function _g45MotoRgb(c){ var h=String(c||'').replace('#',''); return h.length===6?(parseInt(h.substr(0,2),16)+','+parseInt(h.substr(2,2),16)+','+parseInt(h.substr(4,2),16)):'138,160,255'; }
+function _g45MotoRec(cmap, rd){
+  if(!cmap||!rd) return null;
+  return (rd.legacy_id!=null&&cmap['L'+rd.legacy_id])||(rd.id&&cmap['I'+rd.id])||(rd.full_name&&cmap['N'+String(rd.full_name).toLowerCase()])||null;
+}
+/* Photo du pilote (initiales en repli), même principe que la F1. */
+function _g45MotoPhoto(rec, nom, col){
+  var ini=String(nom||'?').split(/\s+/).map(function(w){ return w.charAt(0); }).join('').slice(0,3).toUpperCase();
+  return '<div style="position:relative;width:52px;height:60px;flex:none;border-radius:8px;overflow:hidden;background:rgba('+_g45MotoRgb(col)+',.35);">'
+    +'<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;color:#fff;">'+_g45MotoEa(ini)+'</div>'
+    +(rec&&rec.photo?'<img src="'+_g45MotoEa(rec.photo)+'" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top;">':'')+'</div>';
+}
+/* Vainqueurs (course et sprint) d'un GP terminé : 2 à 3 requêtes, cache DÉFINITIF. */
+async function _g45MotoVainqueurs(eid, catId){
+  var k='g45moto_win1_'+eid+'_'+catId;
+  try{ var c=JSON.parse(localStorage.getItem(k)||'null'); if(c) return c; }catch(e){}
+  var ss=await _g45MotoJ('/results/sessions?eventUuid='+encodeURIComponent(eid)+'&categoryUuid='+encodeURIComponent(catId));
+  if(!Array.isArray(ss)) return null;
+  var out={}, fini=true;
+  for(var i=0;i<ss.length;i++){
+    var ty=String(ss[i].type||'').toUpperCase(), cle=(ty==='RAC'||ty==='RA')?'course':(ty==='SPR'?'sprint':'');
+    if(!cle) continue;
+    var j=await _g45MotoJ('/results/session/'+encodeURIComponent(ss[i].id)+'/classification?test=false');
+    var p1=((j&&j.classification)||[]).filter(function(r){ return r.position===1; })[0];
+    if(p1&&p1.rider) out[cle]=p1.rider.full_name||''; else fini=false;
+  }
+  if(out.course&&fini){ try{ localStorage.setItem(k, JSON.stringify(out)); }catch(e){} }
+  return out.course||out.sprint?out:null;
+}
+async function _g45MotoRemplirVainqueurs(ids, catId){
+  var file=ids.slice();
+  var travail=async function(){
+    while(file.length){
+      var eid=file.shift(), w=null;
+      try{ w=await _g45MotoVainqueurs(eid, catId); }catch(e){}
+      var el=document.getElementById('mgpw-'+eid); if(!el||!w) continue;
+      el.innerHTML='<div style="display:inline-block;margin-top:5px;background:rgba(5,7,13,.72);border-radius:6px;padding:2px 9px;font-size:13px;font-weight:800;color:#f0c828;">'
+        +(w.course?'🏆 '+_g45MotoEa(w.course):'')+(w.sprint?' <span style="color:#c9d3ee;font-weight:700;">· ⚡ Sprint : '+_g45MotoEa(w.sprint)+'</span>':'')+'</div>';
+    }
+  };
+  await Promise.all([travail(),travail(),travail()]);
+}
 async function g45MotoOpen(){
   var el=document.getElementById('t-resultats'); if(!el) return;
   var back='<button onclick="loadResultatsTab()" style="border:none;cursor:pointer;background:rgba(255,255,255,.06);border-radius:8px;color:var(--t2);padding:7px 12px;font-size:11px;font-weight:700;margin-bottom:10px;">← Sports</button>';
@@ -33585,7 +33628,7 @@ async function g45MotoOpen(){
       return '<button onclick="g45MotoCat(\''+_g45MotoEa(c.id)+'\')" style="flex-shrink:0;border:none;border-radius:7px;padding:6px 11px;font-size:10px;font-weight:700;cursor:pointer;background:'+(on?'#e2001a':'rgba(255,255,255,.06)')+';color:'+(on?'#fff':'var(--t2)')+';">'+_g45MotoEa(String(c.name||'').replace(/™/g,''))+'</button>';
     }).join('')+'</div>';
   }
-  var now=Date.now(), html='';
+  var now=Date.now(), html='', _finis=[], _prochain=null;
   evs.forEach(function(e,i){
     var d=new Date(e.date_start||e.date_end||0);
     var fin=(e.date_end?(new Date(e.date_end).getTime()<now):false);
@@ -33594,11 +33637,18 @@ async function g45MotoOpen(){
     var iso=(e.country&&e.country.iso)||'';
     var eid=e.id||e.toad_api_uuid||('mev'+i);
     _g45Moto.ev[eid]=e;
-    html+='<div onclick="g45MotoEvent(\''+_g45MotoEa(eid)+'\',this)" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;background:'+(fin?'var(--s1)':'rgba(226,0,26,.07)')+';border-radius:9px;padding:9px 11px;margin-bottom:5px;'+(fin?'':'border-left:3px solid #e2001a;')+'">'
-      +'<div style="min-width:0;display:flex;align-items:center;gap:7px;">'+_g45MotoFlag(iso)
-      +'<div style="min-width:0;"><div style="font-size:11px;font-weight:800;color:var(--t1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+_g45MotoEa(nm)+'</div>'
-      +'<div style="font-size:9px;color:var(--t2);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+(isNaN(d)?'':('📅 '+d.toLocaleDateString('fr-FR',{day:'numeric',month:'long'})))+(cir?(' · '+_g45MotoEa(cir)):'')+'</div></div></div>'
-      +'<span style="font-size:9px;color:var(--t3);white-space:nowrap;">'+(fin?'terminé':'à venir')+' ▸</span></div>'
+    /* Drapeau entier en fond (flagcdn, ISO à 2 lettres, comme la F1), textes sur bandes sombres. */
+    var isoL=String(iso||'').toLowerCase(), pil='background:rgba(5,7,13,.72);border-radius:8px;';
+    if(fin) _finis.push(eid);
+    if(!fin&&!_prochain){ _prochain=eid; }
+    html+='<div onclick="g45MotoEvent(\''+_g45MotoEa(eid)+'\',this)" style="position:relative;overflow:hidden;cursor:pointer;display:flex;align-items:center;gap:8px;padding:14px 12px;min-height:84px;box-sizing:border-box;background:#141b2e;border-radius:12px;margin-bottom:8px;'+(_prochain===eid?'border-left:3px solid #e2001a;':'')+'">'
+      +(/^[a-z]{2}$/.test(isoL)?'<img src="https://flagcdn.com/w640/'+isoL+'.png" alt="" aria-hidden="true" loading="lazy" onerror="this.remove()" style="position:absolute;inset:0;width:100%;height:100%;object-fit:fill;opacity:.45;pointer-events:none;">':'')
+      +'<div style="position:relative;z-index:1;flex:1;min-width:0;">'
+        +'<div style="display:inline-block;'+pil+'padding:3px 9px;max-width:100%;"><div style="font-size:16px;font-weight:900;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">🏍️ '+_g45MotoEa(nm)+'</div>'
+        +'<div style="font-size:12px;font-weight:700;color:#c9d3ee;">'+(cir?_g45MotoEa(cir)+' · ':'')+(isNaN(d)?'':d.toLocaleDateString('fr-FR',{day:'numeric',month:'long'}))+'</div></div>'
+        +'<div id="mgpw-'+_g45MotoEa(eid)+'"></div>'
+      +'</div>'
+      +'<span style="position:relative;z-index:1;flex:none;'+pil+'padding:5px 9px;font-size:12px;font-weight:800;color:'+(fin?'#c9d3ee':'#ff8a8a')+';white-space:nowrap;">'+(fin?'terminé':'à venir')+' ▸</span></div>'
       +'<div id="mgpev-'+_g45MotoEa(eid)+'" style="display:none;margin:-2px 0 7px;"></div>';
   });
   el.innerHTML=back+'<div class="sec" style="margin-top:0;">🏍️ MotoGP — saison '+cur.year+'</div>'
@@ -33606,6 +33656,8 @@ async function g45MotoOpen(){
     +'<button onclick="g45MotoLive(this)" style="width:100%;box-sizing:border-box;border:1.5px solid rgba(226,0,26,.45);cursor:pointer;background:rgba(226,0,26,.1);border-radius:9px;color:#e2001a;padding:9px;font-size:12px;font-weight:800;margin-bottom:7px;">📡 Live timing (session en direct)</button><div id="mgp-live" style="display:none;margin-bottom:9px;"></div>'
     +'<button onclick="g45MotoStandings(this)" style="width:100%;box-sizing:border-box;border:1.5px solid rgba(240,176,32,.4);cursor:pointer;background:rgba(240,176,32,.1);border-radius:9px;color:#f0b020;padding:9px;font-size:12px;font-weight:800;margin-bottom:9px;">🏆 Classement du championnat</button><div id="mgp-stand" style="margin-bottom:9px;"></div>'
     +html;
+  /* Vainqueurs des GP terminés, en arrière-plan (cache définitif). */
+  if(cat) _g45MotoRemplirVainqueurs(_finis, cat.id);
 }
 window.g45MotoOpen=g45MotoOpen;
 function g45MotoCat(cid){ var c=null; try{ c=cid; }catch(e){} _g45Moto.catForce=cid; g45MotoOpen(); }
@@ -33649,22 +33701,33 @@ async function g45MotoSession(sid, el){
   var cl=(j&&j.classification)||[];
   if(!cl.length){ box.innerHTML='<div style="color:var(--t3);font-size:10px;padding:6px;text-align:center;">Pas de classement.'+((j&&(j.__http||j.__err))?('<br><span style="font-size:8px;color:#8aa0ff;">diag → '+(j.__http?('HTTP '+j.__http):j.__err)+'</span>'):'')+'</div>'; return; }
   var _cmapS=await _g45MotoColors();
-  var h='<div style="background:rgba(12,16,28,.96);border:1px solid rgba(255,255,255,.09);border-radius:8px;padding:7px 9px;">';
+  /* CARTES FAÇON SITE OFFICIEL (26/09/2026, maquette validée) : dégradé aux
+     couleurs de l'équipe, photo officielle, numéro dans la couleur d'équipe,
+     équipe · moto, tours et drapeau ; à droite temps / écart et points. */
+  var h='<div style="padding:2px 0;">';
   cl.slice(0,30).forEach(function(r){
-    var rd=r.rider||{}, tm=r.team||{}, cn=r.constructor||{};
-    var pos=r.position!=null?r.position:'-';
+    var rd=r.rider||{}, tm=r.team||{}, cn=r.constructor||{}, rec=_g45MotoRec(_cmapS,rd);
+    var col=(rec&&rec.col)||'#8aa0ff', rgb=_g45MotoRgb(col);
+    var pos=r.position!=null?r.position:'—', p1=pos===1;
     var gap=(r.gap&&(r.gap.first||r.gap.prev))||'';
     var bl=(r.best_lap&&r.best_lap.time)||'';
     var st=(r.status&&r.status!=='INSTND')?r.status:'';
-    var col=pos===1?'#f0c828':(pos<=3?'#c3cce6':'var(--t1)');
-    h+='<div style="display:flex;align-items:center;gap:7px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.04);">'
-      +'<span style="width:20px;text-align:center;font-size:11px;font-weight:800;color:'+col+';flex:none;">'+(pos===1?'🏆':pos)+'</span>'
-      +_g45MotoFlag(rd.country&&rd.country.iso)
-      +'<div style="flex:1;min-width:0;"><div style="font-size:11px;font-weight:700;color:var(--t1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+(rd.number!=null?('<span style="color:'+(_g45MotoColOf(_cmapS,rd)||'#8aa0ff')+';font-weight:800;">'+rd.number+'</span> '):'')+_g45MotoEa(rd.full_name||'?')+'</div>'
-      +'<div style="font-size:8px;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+_g45MotoEa(tm.name||cn.name||'')+(r.top_speed?(' · <span style="color:#8aa0ff;">'+_g45MotoEa(r.top_speed)+' km/h</span>'):'')+'</div></div>'
+    var out=!!st&&r.position==null;
+    var tps=p1?(r.time||bl):(st&&r.position==null?'':(gap&&gap!=='0.000'?'+'+gap:(bl||'')));
+    var eq=(tm.name||(rec&&rec.team)||'')+((cn.name||(rec&&rec.moto))?' · '+(cn.name||rec.moto):'');
+    var tours=r.total_laps?(r.total_laps+' TOUR'+(r.total_laps>1?'S':'')):'';
+    h+='<div style="display:flex;align-items:center;gap:10px;border-radius:14px;padding:8px 12px;margin-bottom:8px;background:linear-gradient(90deg,rgba('+rgb+',.42),rgba(10,14,24,.95) 55%);border:1px solid rgba(255,255,255,.12);'+(out?'opacity:.8;':'')+'">'
+      +'<div style="width:28px;flex:none;text-align:center;font-size:20px;font-weight:900;color:'+(p1?'#f0c828':'#c9d3ee')+';">'+pos+'</div>'
+      +_g45MotoPhoto(rec, rd.full_name, col)
+      +'<div style="flex:1;min-width:0;">'
+        +'<div style="font-size:17px;font-weight:800;color:'+(p1?'#f0c828':'#fff')+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+(rd.number!=null?'<span style="color:'+col+';">'+rd.number+'</span> ':'')+_g45MotoEa(rd.full_name||'?')+'</div>'
+        +(eq?'<div style="font-size:13px;font-weight:600;color:#c9d3ee;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+_g45MotoEa(eq)+'</div>':'')
+        +'<div style="font-size:11px;letter-spacing:2px;font-weight:800;color:#9aa6c4;margin-top:2px;display:flex;align-items:center;gap:5px;">'+tours+(tours?' ':'')+_g45MotoFlag(rd.country&&rd.country.iso)+(r.top_speed?' <span style="letter-spacing:0;color:#8aa0ff;">'+_g45MotoEa(r.top_speed)+' km/h</span>':'')+'</div>'
+      +'</div>'
       +'<div style="flex:none;text-align:right;">'
-      +(bl?('<div style="font-size:10px;font-weight:700;color:var(--t1);">'+_g45MotoEa(bl)+'</div>'):'')
-      +(st?('<div style="font-size:8px;color:#ff7b54;">'+_g45MotoEa(st)+'</div>'):(gap&&gap!=='0.000'?('<div style="font-size:9px;color:var(--t3);">+'+_g45MotoEa(gap)+'</div>'):''))
+        +(tps?'<div style="font-size:17px;font-weight:900;color:#fff;">'+_g45MotoEa(tps)+'</div>':'')
+        +(st?'<div style="font-size:13px;font-weight:800;color:#ff8a5a;">'+_g45MotoEa(st==='OUTSTND'?'Hors classement':st)+'</div>':'')
+        +(r.points?'<div style="font-size:12px;letter-spacing:1px;font-weight:800;color:#f0b020;">'+r.points+' PTS</div>':'')
       +'</div></div>';
   });
   box.innerHTML=h+'</div>';
@@ -33683,22 +33746,35 @@ async function g45MotoStandings(btn){
   var j=await _g45MotoJ('/results/standings?seasonUuid='+encodeURIComponent(s.id)+'&categoryUuid='+encodeURIComponent(c.id));
   var cl=(j&&j.classification)||[];
   if(!cl.length){ box.innerHTML='<div style="color:var(--t3);font-size:10px;padding:8px;text-align:center;">Pas de classement.'+((j&&(j.__http||j.__err))?('<br><span style="font-size:8px;color:#8aa0ff;">diag → '+(j.__http?('HTTP '+j.__http):j.__err)+'</span>'):'')+'</div>'; return; }
-  var h='<div style="background:rgba(240,176,32,.05);border:1px solid rgba(240,176,32,.22);border-radius:9px;padding:8px 10px;">'
-    +'<div style="font-size:9px;font-weight:800;color:#f0b020;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;">🏆 Championnat '+_g45MotoEa(String(c.name||'').replace(/™/g,''))+' '+s.year+'</div>';
-  cl.forEach(function(r){
-    var rd=r.rider||{}, tm=r.team||{}, cn=r.constructor||{};
-    var pos=r.position!=null?r.position:'-';
-    var col=pos===1?'#f0c828':(pos<=3?'#c3cce6':'var(--t1)');
-    var _lid=rd.legacy_id;
-    h+='<div'+(_lid?(' onclick="g45MotoRider(\''+_g45MotoEa(_lid)+'\',\''+_g45MotoEa(String(rd.full_name||'').replace(/'/g,''))+'\',event)" style="cursor:pointer;'):' style="')+'display:flex;align-items:center;gap:7px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.04);">'
-      +'<span style="width:20px;text-align:center;font-size:11px;font-weight:800;color:'+col+';flex:none;">'+pos+'</span>'
-      +_g45MotoFlag(rd.country&&rd.country.iso)
-      +'<div style="flex:1;min-width:0;"><div style="font-size:11px;font-weight:700;color:var(--t1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+_g45MotoEa(rd.full_name||'?')+(_lid?' <span style="color:var(--t3);font-size:8px;">›</span>':'')+'</div>'
-      +'<div style="font-size:8px;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+_g45MotoEa(tm.name||cn.name||'')+'</div></div>'
-      +'<span style="flex:none;font-size:12px;font-weight:800;color:var(--t1);">'+(r.points!=null?r.points:'-')+'</span></div>'
-      +(_lid?('<div id="mgprd-'+_g45MotoEa(_lid)+'" style="display:none;margin:2px 0 5px;"></div>'):'');
+  var cmap=await _g45MotoColors();
+  /* CARTES FAÇON SITE OFFICIEL (26/09/2026, maquette validée) : couleur de
+     l'équipe sur TOUTE la carte, photo, points sur bande sombre, écart au
+     leader ; un appui ouvre toujours la fiche du pilote. */
+  var lead=parseFloat(cl[0]&&cl[0].points)||0;
+  var h='<div style="font-size:12px;letter-spacing:2px;font-weight:800;color:#f0b020;margin:4px 0 8px;">🏆 CHAMPIONNAT '+_g45MotoEa(String(c.name||'').replace(/™/g,'').toUpperCase())+' '+s.year+'</div>';
+  cl.forEach(function(r,i){
+    var rd=r.rider||{}, tm=r.team||{}, rec=_g45MotoRec(cmap,rd);
+    var col=(rec&&rec.col)||'#8aa0ff', rgb=_g45MotoRgb(col), top=i===0;
+    var pos=r.position!=null?r.position:'—', pts=parseFloat(r.points)||0, ecart=lead-pts;
+    var _lid=rd.legacy_id, v=r.race_wins||r.wins||0;
+    var eq=tm.name||(rec&&rec.team)||'';
+    h+='<div'+(_lid?(' onclick="g45MotoRider(\''+_g45MotoEa(_lid)+'\',\''+_g45MotoEa(String(rd.full_name||'').replace(/'/g,''))+'\',event)"'):'')
+      +' style="'+(_lid?'cursor:pointer;':'')+'display:flex;align-items:center;gap:10px;border-radius:14px;padding:8px 12px;margin-bottom:8px;'
+      +'background:linear-gradient(90deg,rgba('+rgb+',.58),rgba('+rgb+',.32));border:1px solid '+(top?'rgba(240,200,40,.65)':'rgba(255,255,255,.14)')+';">'
+      +'<div style="width:28px;flex:none;text-align:center;font-size:20px;font-weight:900;color:'+(top?'#f0c828':'#fff')+';">'+pos+'</div>'
+      +_g45MotoPhoto(rec, rd.full_name, col)
+      +'<div style="flex:1;min-width:0;">'
+        +'<div style="font-size:17px;font-weight:800;color:'+(top?'#f0c828':'#fff')+';text-shadow:0 1px 3px rgba(0,0,0,.65);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+(rd.number!=null?rd.number+' · ':'')+_g45MotoEa(rd.full_name||'?')+'</div>'
+        +'<div style="font-size:13px;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.65);display:flex;align-items:center;gap:5px;white-space:nowrap;overflow:hidden;">'+_g45MotoFlag(rd.country&&rd.country.iso)+' '+_g45MotoEa(eq)+(v?' · 🏆 '+v:'')+'</div>'
+      +'</div>'
+      +'<div style="flex:none;text-align:right;background:rgba(5,7,13,.55);border-radius:10px;padding:6px 10px;">'
+        +'<div style="font-size:20px;font-weight:900;color:#fff;">'+(r.points!=null?r.points:'—')+'</div>'
+        +'<div style="font-size:11px;letter-spacing:2px;font-weight:800;color:#c9d3ee;">POINTS</div>'
+        +(i>0&&ecart>0?'<div style="font-size:12px;font-weight:700;color:#fff;">−'+ecart+' au leader</div>':'')
+      +'</div></div>'
+      +(_lid?('<div id="mgprd-'+_g45MotoEa(_lid)+'" style="display:none;margin:2px 0 8px;"></div>'):'');
   });
-  box.innerHTML=h+'</div>';
+  box.innerHTML=h;
   box.setAttribute('data-loaded','1');
 }
 window.g45MotoStandings=g45MotoStandings;
@@ -33711,9 +33787,12 @@ async function _g45MotoColors(){
     if(Array.isArray(rs)) rs.forEach(function(r){
       var cs=r.current_career_step||{}, t=cs.team||{};
       var col=t.color||cs.team_color||'';
-      if(!col) return;
+      if(!col) col='#8aa0ff';
       if(col.charAt(0)!=='#') col='#'+col;
-      var rec={col:col, team:(t.name||cs.sponsored_team||'')};
+      /* 26/09/2026 (sondé) : photo officielle cs.pictures.profile.main,
+         constructeur t.constructor.name, couleur de texte t.text_color. */
+      var ph=(((cs.pictures||{}).profile||{}).main)||'';
+      var rec={col:col, team:(t.name||cs.sponsored_team||''), photo:(/^https:\/\//.test(ph)?ph:''), moto:((t.constructor||{}).name||''), num:cs.number};
       if(r.legacy_id!=null) m['L'+r.legacy_id]=rec;
       if(r.id) m['I'+r.id]=rec;
       var nm=((r.name||'')+' '+(r.surname||'')).trim().toLowerCase(); if(nm) m['N'+nm]=rec;
@@ -39618,14 +39697,24 @@ function _g45F1EcurieInfo(n){
 function _g45F1Pastille(n, taille){
   var inf=_g45F1EcurieInfo(n), coul=_g45F1CoulEcurie(n), tl=taille||52;
   var h=String(coul).replace('#',''), rgb=h.length===6?(parseInt(h.substr(0,2),16)+','+parseInt(h.substr(2,2),16)+','+parseInt(h.substr(4,2),16)):'139,151,196';
-  /* Logos absents de Simple Icons (Alpine, Haas, Williams) : fichiers SVG
-     déposés par Antoine dans le dépôt, dossier images/ecuries/ (alpine.svg,
-     haas.svg, williams.svg). Fichier absent → l'abréviation réapparaît. */
+  /* Logos absents de Simple Icons (Alpine, Haas, Williams) : fichiers déposés
+     par Antoine dans images/ecuries/ — SVG si possible, sinon PNG (Wikimedia
+     donne surtout des aperçus PNG). Ces logos sont EN COULEUR (Alpine bleu,
+     Haas gris) : pastille BLANCHE pour eux, sinon bleu sur bleu illisible.
+     Ordre d'essai : .svg → .png → abréviation sur la pastille colorée. */
   var fic={ALP:'alpine',HAA:'haas',WIL:'williams'}[inf.abr];
   var abrH='<span style="font-size:'+Math.round(tl*0.32)+'px;font-weight:900;color:#fff;letter-spacing:.5px;">'+inf.abr+'</span>';
-  return '<div style="width:'+tl+'px;height:'+tl+'px;flex:none;border-radius:50%;background:rgba('+rgb+',.55);border:1px solid rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;overflow:hidden;">'
+  var fond='background:rgba('+rgb+',.55);';
+  var repli="this.parentNode.style.background='rgba("+rgb+",.55)';this.outerHTML='"+abrH.replace(/'/g,"\\'").replace(/"/g,'&quot;')+"'";
+  /* ?j=AAAA-MM-JJ : un logo remplacé sous le même nom réapparaît au plus tard
+     le lendemain (le cache de GitHub Pages et du navigateur resservait
+     l'ancien, relevé du 26/09). */
+  var jour=new Date().toISOString().slice(0,10);
+  var img=fic?'<img src="images/ecuries/'+fic+'.svg?j='+jour+'" alt="'+inf.abr+'" style="width:'+Math.round(tl*0.8)+'px;height:'+Math.round(tl*0.8)+'px;object-fit:contain;" '
+    +'onerror="if(!this.dataset.png){this.dataset.png=1;this.src=\'images/ecuries/'+fic+'.png?j='+jour+'\';}else{'+repli+'}">':'';
+  return '<div style="width:'+tl+'px;height:'+tl+'px;flex:none;border-radius:50%;'+(img?'background:#fff;':fond)+'border:1px solid rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;overflow:hidden;">'
     +(inf.logo?'<svg viewBox="0 0 24 24" width="'+Math.round(tl*0.6)+'" height="'+Math.round(tl*0.6)+'" aria-hidden="true"><path fill="#fff" d="'+inf.logo+'"/></svg>'
-      :(fic?'<img src="images/ecuries/'+fic+'.svg" alt="'+inf.abr+'" style="width:'+Math.round(tl*0.72)+'px;height:'+Math.round(tl*0.72)+'px;object-fit:contain;" onerror="this.outerHTML=\''+abrH.replace(/'/g,"\\'").replace(/"/g,'&quot;')+'\'">':abrH))+'</div>';
+      :(img||abrH))+'</div>';
 }
 /* Photos des pilotes pour le championnat : OpenF1 « drivers » de la dernière
    séance (gratuit hors direct), 7 jours en cache ; initiales en repli. */
