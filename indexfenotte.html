@@ -241,6 +241,22 @@
              equipe le pari a porte, et donc de retrouver le match et son score. -->
         <div class="fg"><label class="fl">Équipe jouée</label><input id="c-equipe" class="fi" placeholder="Ex : Bulldogs" autocomplete="off"></div>
         <div class="fg" style="position:relative"><label class="fl">Adversaire</label><input id="c-target" class="fi" placeholder="Ex : Real Madrid, OM…" autocomplete="off" oninput="searchAdv(this.value,'c-target','adv-res-cock')"><div id="adv-res-cock" style="display:none;position:absolute;left:0;right:0;background:var(--bg3);border:1px solid var(--b1);border-radius:var(--r6);z-index:200;max-height:180px;overflow-y:auto;"></div></div>
+        <!-- JOUEURS (27/09, maquette validee) : le meme bloc que le pari simple,
+             ids en « c- ». Enregistre dans joueur / joueurs / jmode du pari,
+             deja lus par la carte et par le suivi des notifications. -->
+        <div class="fg" style="grid-column:1/-1;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+            <label class="fl">👤 Joueurs (optionnel)</label>
+            <div id="c-jmode" style="display:none;border:1px solid var(--b2);border-radius:var(--r6);overflow:hidden;"><button type="button" data-m="ou" onclick="g45JMode('ou','c')" style="padding:4px 12px;border:none;background:none;color:var(--t3);font-size:11px;font-weight:800;cursor:pointer;">OU</button><button type="button" data-m="et" onclick="g45JMode('et','c')" style="padding:4px 12px;border:none;background:none;color:var(--t3);font-size:11px;font-weight:800;cursor:pointer;">ET</button></div>
+          </div>
+          <div class="g2" style="gap:9px;">
+            <input id="c-joueur" class="fi" placeholder="Seulement pour un pari joueur : Oneil Cruz…" autocomplete="off">
+            <input id="c-joueur-match" class="fi" placeholder="Match, si différent" autocomplete="off">
+          </div>
+          <div id="c-joueurs-extra"></div>
+          <div onclick="g45JAjout('','','c')" style="font-size:11px;color:#7aa2ff;cursor:pointer;margin-top:6px;font-weight:700;">＋ Ajouter un joueur</div>
+          <input type="hidden" id="c-jmode-val" value="ou">
+        </div>
         <!-- 02/09 : l'etiquette etait verte et le champ borde de vert, alors que les
              autres etaient grises. Rien ne rend la mise plus importante que
              l'adversaire ou la date ; trois couleurs d'etiquettes sur un meme
@@ -1413,7 +1429,7 @@
 <!-- FENOTTE45 : app.js est injecte par auth-guard.js APRES authentification.
      Le ?v= doit changer a CHAQUE deploiement. -->
 <script src="social.js?v=20260826n"></script>
-<script type="module" src="auth-guard.js?v=20260927t"></script>
+<script type="module" src="auth-guard.js?v=20260927u"></script>
 
 
 

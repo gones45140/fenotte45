@@ -4670,9 +4670,9 @@ function pari(isS){
        MEME fonction que tout le reste de l'appli utilise pour afficher le
        palier courant, avec le lieu qu'on vient de determiner juste au-dessus. */
     if(isS && typeof _g45Pal==='function') l=_g45Pal(u, comp, domicile);
-    state.h.unshift({id:Date.now().toString(),n:n,target:target,eq:(typeof _eqJ!=='undefined'?_eqJ:''),b:b,l:l,m:m,cote:c,isS:isS,isFlash:isFlash,isFreebet:isFreebet,isLay:isLay,t:t,sport:sport,type:type,comp:comp,heure:heure,date:date,notes:notes||'',domicile:domicile,notif:notif,joueur:(isS?undefined:_g45FJ('joueur')),joueurs:(isS?undefined:_g45FJ('joueurs')),jmode:(isS?undefined:_g45FJ('mode')),garantie:(isS?undefined:_g45FJ('garantie'))});
+    state.h.unshift({id:Date.now().toString(),n:n,target:target,eq:(typeof _eqJ!=='undefined'?_eqJ:''),b:b,l:l,m:m,cote:c,isS:isS,isFlash:isFlash,isFreebet:isFreebet,isLay:isLay,t:t,sport:sport,type:type,comp:comp,heure:heure,date:date,notes:notes||'',domicile:domicile,notif:notif,joueur:_g45FJ('joueur',isS?'c':'n'),joueurs:_g45FJ('joueurs',isS?'c':'n'),jmode:_g45FJ('mode',isS?'c':'n'),garantie:(isS?undefined:_g45FJ('garantie'))});
     save();
-    if(isS){$i('c-target').value='';$i('c-comp').value='';if($i('c-notes'))$i('c-notes').value='';}
+    if(isS){$i('c-target').value='';$i('c-comp').value='';if($i('c-notes'))$i('c-notes').value='';if(typeof g45JReset==='function')g45JReset('c');}
     else{$i('n-comp').value='';$i('n-type').value='';$i('n-analysis').value='';if($i('n-notes'))$i('n-notes').value='';if($i('n-team'))$i('n-team').value='';if(typeof g45JReset==='function')g45JReset();if($i('n-flashboost'))$i('n-flashboost').checked=false;if($i('n-freebet'))$i('n-freebet').checked=false;if($i('n-lay'))$i('n-lay').checked=false;if($i('n-notif'))$i('n-notif').checked=true;mmRowsSimple=[{type:'',cote:1.50}];renderMmRowsSimple();}
   }else alert((isFreebet?'Cagnotte freebet insuffisante sur ':'Solde insuffisant sur ')+bki(b).n+' !');
 }
@@ -12732,9 +12732,9 @@ function pari(isS){
        MEME fonction que tout le reste de l'appli utilise pour afficher le
        palier courant, avec le lieu qu'on vient de determiner juste au-dessus. */
     if(isS && typeof _g45Pal==='function') l=_g45Pal(u, comp, domicile);
-    state.h.unshift({id:Date.now().toString(),n:n,target:target,eq:(typeof _eqJ!=='undefined'?_eqJ:''),b:b,l:l,m:m,cote:c,isS:isS,isFlash:isFlash,isFreebet:isFreebet,isLay:isLay,t:t,sport:sport,type:type,comp:comp,heure:heure,date:date,notes:notes||'',domicile:domicile,notif:notif,joueur:(isS?undefined:_g45FJ('joueur')),joueurs:(isS?undefined:_g45FJ('joueurs')),jmode:(isS?undefined:_g45FJ('mode')),garantie:(isS?undefined:_g45FJ('garantie'))});
+    state.h.unshift({id:Date.now().toString(),n:n,target:target,eq:(typeof _eqJ!=='undefined'?_eqJ:''),b:b,l:l,m:m,cote:c,isS:isS,isFlash:isFlash,isFreebet:isFreebet,isLay:isLay,t:t,sport:sport,type:type,comp:comp,heure:heure,date:date,notes:notes||'',domicile:domicile,notif:notif,joueur:_g45FJ('joueur',isS?'c':'n'),joueurs:_g45FJ('joueurs',isS?'c':'n'),jmode:_g45FJ('mode',isS?'c':'n'),garantie:(isS?undefined:_g45FJ('garantie'))});
     save();
-    if(isS){$i('c-target').value='';$i('c-comp').value='';if($i('c-notes'))$i('c-notes').value='';}
+    if(isS){$i('c-target').value='';$i('c-comp').value='';if($i('c-notes'))$i('c-notes').value='';if(typeof g45JReset==='function')g45JReset('c');}
     else{$i('n-comp').value='';$i('n-type').value='';$i('n-analysis').value='';if($i('n-notes'))$i('n-notes').value='';if($i('n-team'))$i('n-team').value='';if(typeof g45JReset==='function')g45JReset();if($i('n-flashboost'))$i('n-flashboost').checked=false;if($i('n-freebet'))$i('n-freebet').checked=false;if($i('n-lay'))$i('n-lay').checked=false;if($i('n-notif'))$i('n-notif').checked=true;mmRowsSimple=[{type:'',cote:1.50}];renderMmRowsSimple();}
   }else alert((isFreebet?'Cagnotte freebet insuffisante sur ':'Solde insuffisant sur ')+bki(b).n+' !');
 }
@@ -27616,8 +27616,13 @@ function g45GarantieAutoPour(type, se, book) {
   if (mode === 'bet365' && foot && /remplacant/.test(t)) return 'remplacant';
   return '';
 }
-function g45JAjout(nom, match) {
-  var box = _g45Id('n-joueurs-extra'); if (!box) return;
+/* 27/09 (Antoine : « rajouter joueur optionnel dans cockpit ? ») : le meme
+   bloc existe dans le formulaire de la montante, avec le prefixe « c- » au lieu
+   de « n- ». Les fonctions prennent ce prefixe en dernier argument ; sans lui,
+   c'est le pari simple, comme avant. */
+function g45JAjout(nom, match, p) {
+  p = p || 'n';
+  var box = _g45Id(p + '-joueurs-extra'); if (!box) return;
   var row = document.createElement('div');
   row.className = 'g2 g45-jx';
   row.style.cssText = 'gap:9px;margin-top:6px;';
@@ -27627,42 +27632,48 @@ function g45JAjout(nom, match) {
   box.appendChild(row);
   if (nom) row.querySelector('.g45-jx-nom').value = nom;
   if (match) row.querySelector('.g45-jx-match').value = match;
-  g45JMajMode();
+  g45JMajMode(p);
 }
-function g45JRetire(btn) { var r = btn.closest('.g45-jx'); if (r) r.remove(); g45JMajMode(); }
-function g45JMode(m) { var h = _g45Id('n-jmode-val'); if (h) h.value = m; g45JMajMode(); }
-function g45JMajMode() {
-  var seg = _g45Id('n-jmode'); if (!seg) return;
-  var n = _g45FormJoueurs().length;
+function _g45JPrefixe(el) { var b = el && el.closest && el.closest('[id$="-joueurs-extra"]'); return (b && b.id.charAt(0) === 'c') ? 'c' : 'n'; }
+function g45JRetire(btn) { var p = _g45JPrefixe(btn); var r = btn.closest('.g45-jx'); if (r) r.remove(); g45JMajMode(p); }
+function g45JMode(m, p) { p = p || 'n'; var h = _g45Id(p + '-jmode-val'); if (h) h.value = m; g45JMajMode(p); }
+function g45JMajMode(p) {
+  p = p || 'n';
+  var seg = _g45Id(p + '-jmode'); if (!seg) return;
+  var n = _g45FormJoueurs(p).length;
   seg.style.display = n >= 2 ? 'inline-flex' : 'none';
-  var m = (_g45Id('n-jmode-val') || {}).value || 'ou';
+  var m = (_g45Id(p + '-jmode-val') || {}).value || 'ou';
   seg.querySelectorAll('button').forEach(function (b) {
     var on = b.getAttribute('data-m') === m;
     b.style.background = on ? 'rgba(77,132,255,.18)' : 'none';
     b.style.color = on ? '#fff' : 'var(--t3)';
   });
 }
-function _g45FormJoueurs() {
+function _g45FormJoueurs(p) {
+  p = p || 'n';
   var out = [];
-  var n0 = String((_g45Id('n-joueur') || {}).value || '').trim();
-  if (n0) out.push({ nom: n0, match: String((_g45Id('n-joueur-match') || {}).value || '').trim() });
-  document.querySelectorAll('#n-joueurs-extra .g45-jx').forEach(function (r) {
+  var n0 = String((_g45Id(p + '-joueur') || {}).value || '').trim();
+  if (n0) out.push({ nom: n0, match: String((_g45Id(p + '-joueur-match') || {}).value || '').trim() });
+  document.querySelectorAll('#' + p + '-joueurs-extra .g45-jx').forEach(function (r) {
     var nm = String((r.querySelector('.g45-jx-nom') || {}).value || '').trim();
     if (nm) out.push({ nom: nm, match: String((r.querySelector('.g45-jx-match') || {}).value || '').trim() });
   });
   return out;
 }
-function _g45FJ(k) {
-  var L = _g45FormJoueurs();
+function _g45FJ(k, p) {
+  p = p || 'n';
+  var L = _g45FormJoueurs(p);
   if (k === 'joueur') return L.length ? L[0].nom : undefined;
   if (k === 'joueurs') return (L.length > 1 || (L[0] && L[0].match)) ? L : undefined;
-  if (k === 'mode') return L.length > 1 ? (((_g45Id('n-jmode-val') || {}).value) || 'ou') : undefined;
+  if (k === 'mode') return L.length > 1 ? (((_g45Id(p + '-jmode-val') || {}).value) || 'ou') : undefined;
   if (k === 'garantie') { var gv = (_g45Id('n-garantie') || {}).value; return gv || (window._g45GarManuel ? 'aucune' : undefined); }
 }
-function g45JReset() {
-  ['n-joueur', 'n-joueur-match'].forEach(function (id) { var e = _g45Id(id); if (e) e.value = ''; });
-  var x = _g45Id('n-joueurs-extra'); if (x) x.innerHTML = '';
-  var m = _g45Id('n-jmode-val'); if (m) m.value = 'ou';
+function g45JReset(p) {
+  p = p || 'n';
+  [p + '-joueur', p + '-joueur-match'].forEach(function (id) { var e = _g45Id(id); if (e) e.value = ''; });
+  var x = _g45Id(p + '-joueurs-extra'); if (x) x.innerHTML = '';
+  var m = _g45Id(p + '-jmode-val'); if (m) m.value = 'ou';
+  if (p !== 'n') { g45JMajMode(p); return; }   /* la montante n'a pas de garantie */
   var g = _g45Id('n-garantie'); if (g) g.value = '';
   window._g45GarManuel = false;
   g45JMajMode(); g45GarantiesRender();
@@ -27671,7 +27682,8 @@ function g45JReset() {
   document.addEventListener('input', function (e) {
     var t = e.target; if (!t) return;
     if (t.id === 'n-type') g45GarantieAuto();
-    if (t.id === 'n-joueur' || (t.classList && t.classList.contains('g45-jx-nom'))) g45JMajMode();
+    if (t.id === 'n-joueur' || t.id === 'c-joueur') g45JMajMode(t.id.charAt(0));
+    else if (t.classList && t.classList.contains('g45-jx-nom')) g45JMajMode(_g45JPrefixe(t));
   });
   document.addEventListener('change', function (e) { if (e.target && (e.target.id === 'p-sport' || e.target.id === 'n-book')) { g45GarantieAuto(); } });
   /* Le choix du sport passe parfois par un menu maison qui ne declenche pas
