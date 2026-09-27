@@ -31905,12 +31905,34 @@ async function _g45EspnUsOdds(sport, lg, eid, dateISO, hN, aN){
     var hf=od.homeTeamOdds&&od.homeTeamOdds.favorite, af=od.awayTeamOdds&&od.awayTeamOdds.favorite;
     var favName=hf?hN:(af?aN:'');
     var favDec=null, favAm='';
-    if(od.details){ var mm=String(od.details).match(/([+-]?\d+(?:\.\d+)?)\s*$/); if(mm){ favAm=mm[1]; favDec=amToDec(favAm); } }
+    /* CORRIGE LE 27/09/2026 (Antoine : « Los Angeles Rams @67.67, c'est quoi
+       cette cote ? »). `details` vaut « LAR -1.5 » en NFL : c'est le HANDICAP
+       (points), pas une cote. Le nombre final etait lu comme une cote
+       americaine : -1.5 donnait 1 + 100/1.5 = 67,67. La cote du favori vient
+       maintenant du moneyline (deux formats ESPN, lus par _g45TrPickOdd). Le
+       nombre de `details` n'est pris pour une cote que s'il en a la forme
+       (±100 ou plus, cas MLB « NYY -150 ») ; sinon il s'affiche en handicap. */
+    var mlo=od.moneyline||{};
+    var hDec=(typeof _g45TrPickOdd==='function')?(_g45TrPickOdd(mlo.home)||_g45TrPickOdd(od.homeTeamOdds)):0;
+    var aDec=(typeof _g45TrPickOdd==='function')?(_g45TrPickOdd(mlo.away)||_g45TrPickOdd(od.awayTeamOdds)):0;
+    if(!favName && hDec>1 && aDec>1) favName=(hDec<=aDec)?hN:aN;
+    if(favName===hN && hDec>1) favDec=hDec;
+    else if(favName===aN && aDec>1) favDec=aDec;
+    var handi='';
+    if(od.details){
+      var mm=String(od.details).match(/([+-]?\d+(?:\.\d+)?)\s*$/);
+      if(mm){
+        var nb=parseFloat(mm[1]);
+        if(Math.abs(nb)>=100){ if(!favDec){ favAm=mm[1]; favDec=amToDec(favAm); } }
+        else if(!/^\s*even\s*$/i.test(od.details)) handi=String(od.details).trim();
+      }
+    }
     var prov=(od.provider&&od.provider.name)||'ESPN';
-    if(!over&&!under&&!favName) return '';
-    try{ window._g45LastUsOdds={eid:String(eid), prov:prov, favName:favName, favDec:favDec, line:line, over:over, under:under}; }catch(e){}
+    if(!over&&!under&&!favName&&!handi) return '';
+    try{ window._g45LastUsOdds={eid:String(eid), prov:prov, favName:favName, favDec:favDec, line:line, over:over, under:under, handi:handi}; }catch(e){}
     var rows='';
     if(favName){ rows+='<div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;padding:3px 0;"><span style="color:var(--t2);">🏆 Favori vainqueur</span><span style="color:var(--t1);font-weight:700;">'+ea(favName)+(favDec?(' <b style="color:#2ecc71;">@'+favDec.toFixed(2)+'</b>'):(favAm?(' ('+ea(favAm)+')'):''))+'</span></div>'; }
+    if(handi){ rows+='<div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;padding:3px 0;"><span style="color:var(--t2);">📏 Handicap</span><span style="color:var(--t1);font-weight:700;">'+ea(handi.replace(/(\d)\.(\d)/g,'$1,$2'))+'</span></div>'; }
     if(over||under){ rows+='<div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;padding:3px 0;"><span style="color:var(--t2);">📊 Total '+ea(String(line))+'</span><span style="color:var(--t1);font-weight:700;">Plus <b style="color:#2ecc71;">'+(over?over.toFixed(2):'—')+'</b> · Moins <b style="color:#ff7b54;">'+(under?under.toFixed(2):'—')+'</b></span></div>'; }
     return '<div style="margin-top:10px;background:rgba(46,204,113,.06);border:1px solid rgba(46,204,113,.2);border-radius:10px;padding:10px;"><div style="font-size:10px;font-weight:800;color:#2ecc71;margin-bottom:6px;">💰 COTES ('+ea(prov)+')</div>'+rows+'<div style="font-size:9px;color:var(--t3);text-align:center;margin-top:6px;font-style:italic;">Cotes décimales · réf. '+ea(prov)+', via ESPN (gratuit).</div></div>';
   }catch(e){ return ''; }
