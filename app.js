@@ -59947,3 +59947,37 @@ function _g45ClvPoser() {
   renderBilanTab._g45Clv = true; window.renderBilanTab = renderBilanTab;
 })();
 window._g45ClvSelection = _g45ClvSelection; window._g45ClvPoser = _g45ClvPoser; window._g45ClvAmDec = _g45ClvAmDec;
+
+/* ═══ 🧹 MÉNAGE DU STOCKAGE À L'OUVERTURE (28/09/2026, mesure d'Antoine :
+   « TOTAL 5731 Ko sur ~5000 » — g45_saisons_cache_v3_ 887 Ko, g45cm3_ baseball
+   387 + hockey 274, g45khl_fiche_ 183…) ═══
+   1) Caches ABANDONNÉS (plus lus par aucune ligne du code : leur clé a changé
+      de version) : effacés à chaque ouverture. g45cm3_ n'était même pas dans
+      _G45_CACHE_PREFIXES, donc jamais purgé.
+   2) Caches ACTUELS mais reconstructibles, absents de la liste de purge :
+      ajoutés, pour que le filet « stockage saturé → purge → nouvel essai »
+      (setItem et save) puisse les vider.
+   3) Au-delà de 4 millions de caractères stockés, purge préventive des
+      caches (jamais g45v5, les données). */
+var _G45_CACHE_MORTS = ['g45cm_', 'g45cm2_', 'g45cm3_', 'g45cm4_', 'g45cm5_', 'g45cm6_', 'g45cm7_', 'g45cm8_',
+  'g45khl_fiche_', 'g45_saisons_cache_v2_', 'g45_score_', 'g45_score2_', 'g45_score3_'];
+try {
+  ['g45cm9_', 'g45khl_fiche2_', 'g45khl_plage_', 'g45cls3_', 'g45cls4_', 'g45photostsdb_', 'g45wk1_', 'g45jv_', 'g45art1_', 'g45clv1_', 'g45arb1_', 'g45_herologo_', 'g45cm3_']
+    .forEach(function (p) { if (_G45_CACHE_PREFIXES.indexOf(p) < 0) _G45_CACHE_PREFIXES.push(p); });
+} catch (e) {}
+function g45MenageStockage() {
+  var morts = 0, oct = 0, tot = 0;
+  try {
+    Object.keys(localStorage).forEach(function (k) {
+      if (k === 'g45v5') return;
+      var v = localStorage.getItem(k) || '';
+      if (_G45_CACHE_MORTS.some(function (p) { return k.indexOf(p) === 0; })) { oct += v.length; localStorage.removeItem(k); morts++; }
+      else tot += k.length + v.length;
+    });
+    if (morts) console.info('🧹 ' + morts + ' caches abandonnés effacés (' + Math.round(oct / 1024) + ' Ko)');
+    if (tot > 4000000 && typeof _g45FreeSpace === 'function') _g45FreeSpace();
+  } catch (e) {}
+  return { morts: morts, libere: oct, reste: tot };
+}
+window.g45MenageStockage = g45MenageStockage;
+setTimeout(g45MenageStockage, 3000);
