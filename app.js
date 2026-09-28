@@ -44550,7 +44550,7 @@ window._g45CompetMatchs = _g45CompetMatchs;
    FINAL ; si aucune ne colle (détail incomplet), le match est écarté des
    catégories tirées des buts, et gardé pour celles tirées du score.
    ═══════════════════════════════════════════════════════════════════════════ */
-var _g45ClsCtx = { mode: 'eq', catE: 'bm', catJ: 'buts', lieu: 'all', n: 0, inv: false, phase: 'reg', tot: false, ouP: 'ft', ouL: 2.5 };
+var _g45ClsCtx = { mode: 'eq', catE: 'bm', catJ: 'buts', lieu: 'all', n: 0, inv: false, phase: 'reg', tot: false, ouP: 'ft', ouL: 2.5, qMode: 'pour', qTri: 'm2', qInv: false, qOuvert: '' };
 try { (function () { var o = JSON.parse(localStorage.getItem('g45_cls_ou') || 'null');
   if (o && /^(ft|1|2)$/.test(o.p)) _g45ClsCtx.ouP = o.p;
   if (o && [0.5, 1.5, 2.5, 3.5, 4.5].indexOf(o.l) >= 0) _g45ClsCtx.ouL = o.l; })(); } catch (e) {}
@@ -44606,7 +44606,11 @@ var _G45_CLS_EQ = [
      deviennent UN bouton « Over » + période (Match / 1re MT / 2e MT) + ligne
      (0,5 à 4,5) : _g45ClsCtx.ouP / ouL, gardés sur l'appareil (g45_cls_ou). */
   ['ou', 'Over', 'pct', 1], ['p1', '⚡ 1re à marquer', 'pct', 1], ['mt', 'Mène à la pause', 'pct', 1],
-  ['bts1', 'BTS 1re MT', 'pct', 1], ['car', 'Cartons', 'moy', 1]
+  ['bts1', 'BTS 1re MT', 'pct', 1], ['car', 'Cartons', 'moy', 1],
+  /* « QUAND ? » (28/09/2026, maquette validée ; Antoine : minute moyenne « pour le
+     1er but et le dernier but, sinon ça ne veut rien dire ») : vue à part,
+     _g45ClsTableQuand. */
+  ['quand', '\u23f1\ufe0f Quand ?', 'quand', 1]
 ];
 var _G45_CLS_JO = [
   /* clé, libellé, source ('b' = buts du scoreboard | 'l' = top 25 ESPN), noms de catégorie ESPN */
@@ -44982,6 +44986,11 @@ async function g45ClsRender(c, body) {
       + [0.5, 1.5, 2.5, 3.5, 4.5].map(function (l) { return _g45ClsBtn(X.ouL === l, _g45ClsFr(l, 1), "g45ClsSet('ouL'," + l + ")"); }).join('') + '</div>';
     def = ['ou', 'Over ' + _g45ClsFr(X.ouL, 1) + ({ ft: '', '1': ' · 1re MT', '2': ' · 2e MT' })[X.ouP], 'pct', 1];
   }
+  if (X.mode === 'eq' && def[0] === 'quand') {
+    h += '<div style="font-size:12px;color:#c9d3ee;font-weight:700;margin:2px 0 4px;">Buts</div>'
+      + '<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-bottom:10px;">'
+      + _g45ClsBtn(X.qMode === 'pour', 'Marqués', "g45ClsSet('qMode','pour')") + _g45ClsBtn(X.qMode === 'contre', 'Encaissés', "g45ClsSet('qMode','contre')") + '</div>';
+  }
   var filtrable = X.mode === 'eq' || def[2] === 'b';
   if (filtrable) {
     h += _ph.html + '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-bottom:6px;">'
@@ -44994,7 +45003,8 @@ async function g45ClsRender(c, body) {
   var lieuTxt = _ph.lib.replace(/^ · /, '') + (_ph.lib ? ' · ' : '') + { all: 'Global', dom: 'Domicile', ext: 'Extérieur' }[X.lieu] + (X.n ? ' · ' + X.n + ' derniers' : '');
   var saisonTxt = (typeof _g45SgLabel === 'function') ? _g45SgLabel(c.s, an) : String(an);
   var PE = _g45ClsParEquipe(ms);
-  if (X.mode === 'eq') h += _g45ClsTableEq(c, def, PE, saisonTxt, lieuTxt, ms);
+  if (X.mode === 'eq' && def[0] === 'quand') h += _g45ClsTableQuand(c, PE, saisonTxt, lieuTxt, ms);
+  else if (X.mode === 'eq') h += _g45ClsTableEq(c, def, PE, saisonTxt, lieuTxt, ms);
   else h += await _g45ClsTableJo(c, def, PE, saisonTxt, filtrable ? lieuTxt : 'saison', an, body);
   body.innerHTML = _g45ClsFond(c, h);
 }
@@ -45035,6 +45045,88 @@ function _g45ClsTableEq(c, def, PE, saisonTxt, lieuTxt, ms) {
   });
   return h + '</div><div style="font-size:12px;color:#c9d3ee;margin-top:6px;">Touche une équipe pour ouvrir sa fiche · touche « ' + (pct ? '%' : 'Moy.') + ' » pour inverser l\'ordre</div>';
 }
+
+/* ═══ « QUAND ? » — MOMENT DES BUTS (28/09/2026) ═══
+   Pour chaque équipe (filtres lieu / derniers matchs / phase respectés), sur les
+   seuls matchs au détail complet (m.f) : part des buts en 1re MT (minute ≤ 45,
+   « 45'+2 » compris) et en 2e MT (le reste, prolongation comprise), minute
+   moyenne du 1er et du DERNIER but de l'équipe dans les matchs où elle en a
+   marqué (ou encaissé, selon « Buts »), et répartition par quart d'heure
+   (temps additionnel rangé dans la tranche d'avant). Tirs au but exclus (déjà
+   écartés à la lecture). */
+function _g45ClsQuandEq(id, liste, mode) {
+  var r = { g: 0, m1: 0, m2: 0, s1: 0, sd: 0, nm: 0, tr: [0, 0, 0, 0, 0, 0], nMatch: 0 };
+  liste.forEach(function (m) {
+    if (!m.f || !m.b) return;
+    r.nMatch++;
+    var mins = m.b.filter(function (x) { return mode === 'pour' ? x[0] === id : x[0] !== id; })
+      .map(function (x) { return x[1]; }).filter(function (x) { return x !== null && x !== undefined; });
+    if (!mins.length) return;
+    mins.forEach(function (mn) {
+      r.g++; if (mn <= 45) r.m1++; else r.m2++;
+      r.tr[mn <= 15 ? 0 : mn <= 30 ? 1 : mn <= 45 ? 2 : mn <= 60 ? 3 : mn <= 75 ? 4 : 5]++;
+    });
+    r.nm++; r.s1 += Math.min.apply(null, mins); r.sd += Math.max.apply(null, mins);
+  });
+  r.p1 = r.g ? r.m1 * 100 / r.g : null; r.p2 = r.g ? r.m2 * 100 / r.g : null;
+  r.prem = r.nm ? r.s1 / r.nm : null; r.der = r.nm ? r.sd / r.nm : null;
+  return r;
+}
+function _g45ClsTableQuand(c, PE, saisonTxt, lieuTxt, ms) {
+  var X = _g45ClsCtx, rows = [], T = { g: 0, m1: 0, s1: 0, sd: 0, nm: 0 };
+  Object.keys(PE.par).forEach(function (id) {
+    var q = _g45ClsQuandEq(id, PE.par[id], X.qMode);
+    if (!q.nMatch) return;
+    T.g += q.g; T.m1 += q.m1; T.s1 += q.s1; T.sd += q.sd; T.nm += q.nm;
+    rows.push({ id: id, nom: PE.info[id].nom, logo: PE.info[id].logo, q: q });
+  });
+  var cle = { m1: 'p1', m2: 'p2', prem: 'prem', der: 'der', g: 'g' }[X.qTri] || 'p2', sens = X.qInv ? 1 : -1;
+  rows.sort(function (a, b) {
+    var va = a.q[cle], vb = b.q[cle];
+    if (va === null && vb === null) return a.nom.localeCompare(b.nom);
+    if (va === null) return 1; if (vb === null) return -1;
+    return (va - vb) * sens || b.q.g - a.q.g || a.nom.localeCompare(b.nom);
+  });
+  var mn = function (x) { return x === null ? '\u2014' : Math.round(x) + '\u2019'; };
+  var pc = function (x) { return x === null ? '\u2014' : Math.round(x) + ' %'; };
+  var nonFiables = ms.filter(function (m) { return !m.f; }).length;
+  var verbe = X.qMode === 'pour' ? 'marque' : 'encaisse';
+  var sous = T.g ? ('Championnat : ' + Math.round(T.m1 * 100 / T.g) + ' % en 1re MT \u00b7 ' + (100 - Math.round(T.m1 * 100 / T.g)) + ' % en 2e MT \u00b7 1er but ' + mn(T.s1 / T.nm) + ' \u00b7 dernier ' + mn(T.sd / T.nm)) : 'Aucun but au détail complet.';
+  if (nonFiables) sous += ' \u00b7 ' + nonFiables + ' match(s) au détail incomplet écarté(s)';
+  var h = _g45ClsEnTete('\u23f1\ufe0f Quand ' + (X.qMode === 'pour' ? 'marque' : 'encaisse') + '-t-on ? \u00b7 ' + c.n + ' ' + saisonTxt + ' \u00b7 ' + lieuTxt, sous);
+  var GR = 'display:grid;grid-template-columns:22px minmax(0,1fr) 50px 62px 38px 42px 28px;gap:4px;padding:8px 8px;align-items:center;';
+  var th = function (k, t) { return '<span onclick="g45ClsSet(\'qTri\',\'' + k + '\')" style="text-align:right;cursor:pointer;text-decoration:underline;' + (X.qTri === k ? 'color:#fff;' : '') + '">' + t + (X.qTri === k ? (X.qInv ? '\u25b2' : '\u25bc') : '') + '</span>'; };
+  h += '<div style="background:rgba(11,16,29,.50);border-radius:8px;overflow:hidden;">'
+    + '<div style="' + GR + 'font-size:12px;color:#c9d3ee;font-weight:700;"><span>#</span><span>Équipe</span>'
+    + th('m1', '1re') + th('m2', '2e MT') + th('prem', '1er') + th('der', 'Dern.') + th('g', 'Buts') + '</div>';
+  rows.forEach(function (r, i) {
+    var q = r.q, fl = q.g ? (q.m2 > q.m1 ? ' \u2197\ufe0f' : (q.m1 > q.m2 ? ' \u2198\ufe0f' : '')) : '';
+    var ouvert = X.qOuvert === r.id;
+    h += '<div onclick="g45ClsSet(\'qOuvert\',\'' + r.id + '\')" style="' + GR + 'border-top:1px solid rgba(255,255,255,.08);cursor:pointer;' + (ouvert ? 'background:rgba(77,132,255,.10);' : '') + '">'
+      + '<span style="font-size:13px;font-weight:800;color:' + (i ? '#c9d3ee' : '#f0b020') + ';">' + (i + 1) + '</span>'
+      + '<span style="display:flex;align-items:center;gap:6px;min-width:0;">' + (r.logo ? '<img src="' + r.logo + '" alt="" loading="lazy" style="width:18px;height:18px;object-fit:contain;flex:none;" onerror="this.style.display=\'none\'">' : '')
+      + '<span style="font-size:13px;font-weight:800;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + r.nom + '</span></span>'
+      + '<span style="text-align:right;font-size:13px;font-weight:800;color:#fff;white-space:nowrap;">' + pc(q.p1) + '</span>'
+      + '<span style="text-align:right;font-size:13px;font-weight:800;color:#fff;white-space:nowrap;">' + pc(q.p2) + fl + '</span>'
+      + '<span style="text-align:right;font-size:13px;font-weight:700;color:#ffd166;">' + mn(q.prem) + '</span>'
+      + '<span style="text-align:right;font-size:13px;font-weight:700;color:#ffd166;">' + mn(q.der) + '</span>'
+      + '<span style="text-align:right;font-size:13px;color:#c9d3ee;">' + q.g + '</span></div>';
+    if (ouvert) {
+      var mx = Math.max.apply(null, q.tr) || 1, lib = ['0-15', '16-30', '31-45+', '46-60', '61-75', '76-90+'];
+      h += '<div style="padding:6px 10px 10px;background:rgba(77,132,255,.06);">'
+        + '<div style="font-size:12px;color:#c9d3ee;font-weight:700;margin-bottom:6px;">Buts ' + (X.qMode === 'pour' ? 'marqués' : 'encaissés') + ' par quart d\'heure (' + q.nMatch + ' matchs)</div>'
+        + q.tr.map(function (v, k) {
+            return '<div style="display:grid;grid-template-columns:54px minmax(0,1fr) 26px;gap:6px;align-items:center;margin:3px 0;">'
+              + '<span style="font-size:12px;color:#c9d3ee;font-weight:700;' + (k === 3 ? 'border-top:1px dashed rgba(255,255,255,.25);padding-top:3px;' : '') + '">' + lib[k] + '</span>'
+              + '<span style="height:12px;border-radius:4px;background:rgba(255,255,255,.06);overflow:hidden;"><span style="display:block;height:100%;width:' + Math.round(v * 100 / mx) + '%;background:' + (k < 3 ? '#4d84ff' : '#ff7b54') + ';"></span></span>'
+              + '<span style="font-size:13px;font-weight:800;color:#fff;text-align:right;">' + v + '</span></div>';
+          }).join('')
+        + '<button onclick="event.stopPropagation();g45CompetOuvrir(\'' + String(r.nom).replace(/'/g, "\\'") + '\',\'' + r.id + '\',\'' + c.s + '\',\'soccer\')" style="margin-top:8px;font-size:13px;font-weight:800;padding:6px 12px;border-radius:8px;cursor:pointer;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:#fff;">Fiche de l\'équipe \u203a</button></div>';
+    }
+  });
+  return h + '</div><div style="font-size:12px;color:#c9d3ee;margin-top:6px;line-height:1.5;">\u2197\ufe0f ' + verbe + ' plus en 2e MT \u00b7 \u2198\ufe0f plus en 1re \u00b7 1er / Dern. = minute moyenne du 1er et du dernier but ' + (X.qMode === 'pour' ? 'marqué' : 'encaissé') + ' dans un match \u00b7 touche une équipe pour ses buts par quart d\'heure \u00b7 touche un en-tête pour trier.</div>';
+}
+window._g45ClsQuandEq = _g45ClsQuandEq;
 
 /* Joueurs, catégories tirées des buts et cartons. */
 function _g45ClsJoueursButs(def, PE) {
@@ -45133,7 +45225,9 @@ async function _g45ClsTableJo(c, def, PE, saisonTxt, lieuTxt, an, body) {
 
 window.g45ClsSet = function (k, v) {
   if (k === 'inv') _g45ClsCtx.inv = !_g45ClsCtx.inv;
-  else { _g45ClsCtx[k] = v; if (k !== 'lieu' && k !== 'n' && k !== 'phase' && k !== 'tot' && k !== 'ouP' && k !== 'ouL') _g45ClsCtx.inv = false; }
+  else if (k === 'qTri') { if (_g45ClsCtx.qTri === v) _g45ClsCtx.qInv = !_g45ClsCtx.qInv; else { _g45ClsCtx.qTri = v; _g45ClsCtx.qInv = false; } }
+  else if (k === 'qOuvert') { _g45ClsCtx.qOuvert = (_g45ClsCtx.qOuvert === v) ? '' : v; }
+  else { _g45ClsCtx[k] = v; if (k !== 'lieu' && k !== 'n' && k !== 'phase' && k !== 'tot' && k !== 'ouP' && k !== 'ouL' && k !== 'qMode') _g45ClsCtx.inv = false; }
   if (k === 'ouP' || k === 'ouL') { try { localStorage.setItem('g45_cls_ou', JSON.stringify({ p: _g45ClsCtx.ouP, l: _g45ClsCtx.ouL })); } catch (e) {} }
   var D = window._g45ClsDernier, body = document.getElementById('g45-compet-body');
   if (D && D.khl && body) _g45KhlVueClassements(body);
