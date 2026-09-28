@@ -44582,7 +44582,7 @@ window._g45CompetMatchs = _g45CompetMatchs;
    FINAL ; si aucune ne colle (détail incomplet), le match est écarté des
    catégories tirées des buts, et gardé pour celles tirées du score.
    ═══════════════════════════════════════════════════════════════════════════ */
-var _g45ClsCtx = { mode: 'eq', catE: 'bm', catJ: 'buts', lieu: 'all', n: 0, inv: false, phase: 'reg', tot: false, ouP: 'ft', ouL: 2.5, vsTri: 'd', vsInv: false, qMode: 'pour', qTri: 'm2', qInv: false, qOuvert: '' };
+var _g45ClsCtx = { mode: 'eq', catE: 'bm', catJ: 'buts', lieu: 'all', n: 0, inv: false, phase: 'reg', tot: false, ouP: 'ft', ouL: 2.5, vsTri: 'd', vsInv: false, sMode: 'sans', sEv: 'o15', sCote: false, qMode: 'pour', qTri: 'm2', qInv: false, qOuvert: '' };
 try { (function () { var o = JSON.parse(localStorage.getItem('g45_cls_ou') || 'null');
   if (o && /^(ft|1|2|vs)$/.test(o.p)) _g45ClsCtx.ouP = o.p;
   if (o && [0.5, 1.5, 2.5, 3.5, 4.5].indexOf(o.l) >= 0) _g45ClsCtx.ouL = o.l; })(); } catch (e) {}
@@ -44642,7 +44642,10 @@ var _G45_CLS_EQ = [
   /* « QUAND ? » (28/09/2026, maquette validée ; Antoine : minute moyenne « pour le
      1er but et le dernier but, sinon ça ne veut rien dire ») : vue à part,
      _g45ClsTableQuand. */
-  ['quand', '\u23f1\ufe0f Quand ?', 'quand', 1]
+  ['quand', '\u23f1\ufe0f Quand ?', 'quand', 1],
+  /* « SÉRIES » (28/09/2026, maquette validée ; Antoine : « une série a toujours
+     une fin ») : _g45ClsTableSerie. */
+  ['serie', '🔁 Séries', 'serie', 1]
 ];
 var _G45_CLS_JO = [
   /* clé, libellé, source ('b' = buts du scoreboard | 'l' = top 25 ESPN), noms de catégorie ESPN */
@@ -45018,6 +45021,16 @@ async function g45ClsRender(c, body) {
       + [0.5, 1.5, 2.5, 3.5, 4.5].map(function (l) { return _g45ClsBtn(X.ouL === l, _g45ClsFr(l, 1), "g45ClsSet('ouL'," + l + ")"); }).join('') + '</div>';
     def = ['ou', 'Over ' + _g45ClsFr(X.ouL, 1) + ({ ft: '', '1': ' · 1re MT', '2': ' · 2e MT', vs: ' · 1re vs 2e MT' })[X.ouP], 'pct', 1];
   }
+  if (X.mode === 'eq' && def[0] === 'serie') {
+    h += '<div style="font-size:12px;color:#c9d3ee;font-weight:700;margin:2px 0 4px;">Série de matchs</div>'
+      + '<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-bottom:6px;">'
+      + _g45ClsBtn(X.sMode === 'sans', 'SANS', "g45ClsSet('sMode','sans')") + _g45ClsBtn(X.sMode === 'avec', 'AVEC', "g45ClsSet('sMode','avec')") + '</div>'
+      + '<div style="font-size:12px;color:#c9d3ee;font-weight:700;margin:2px 0 4px;">Événement</div>'
+      + '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">'
+      + _G45_SERIE_EV.map(function (e) { return _g45ClsBtn(X.sEv === e[0], e[1], "g45ClsSet('sEv','" + e[0] + "')"); }).join('') + '</div>'
+      + '<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-bottom:10px;">'
+      + _g45ClsBtn(!X.sCote, 'Toutes les cotes', "g45ClsSet('sCote',false)") + _g45ClsBtn(!!X.sCote, 'Cote ≥ 1,5', "g45ClsSet('sCote',true)") + '</div>';
+  }
   if (X.mode === 'eq' && def[0] === 'quand') {
     h += '<div style="font-size:12px;color:#c9d3ee;font-weight:700;margin:2px 0 4px;">Buts</div>'
       + '<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-bottom:10px;">'
@@ -45035,7 +45048,8 @@ async function g45ClsRender(c, body) {
   var lieuTxt = _ph.lib.replace(/^ · /, '') + (_ph.lib ? ' · ' : '') + { all: 'Global', dom: 'Domicile', ext: 'Extérieur' }[X.lieu] + (X.n ? ' · ' + X.n + ' derniers' : '');
   var saisonTxt = (typeof _g45SgLabel === 'function') ? _g45SgLabel(c.s, an) : String(an);
   var PE = _g45ClsParEquipe(ms);
-  if (X.mode === 'eq' && def[0] === 'quand') h += _g45ClsTableQuand(c, PE, saisonTxt, lieuTxt, ms);
+  if (X.mode === 'eq' && def[0] === 'serie') { var _nG = X.n; X.n = 0; var PEs = _g45ClsParEquipe(ms); X.n = _nG; h += _g45ClsTableSerie(c, PEs, saisonTxt, lieuTxt.replace(/ · \d+ derniers$/, '')); }
+  else if (X.mode === 'eq' && def[0] === 'quand') h += _g45ClsTableQuand(c, PE, saisonTxt, lieuTxt, ms);
   else if (X.mode === 'eq' && def[0] === 'ou' && X.ouP === 'vs') h += _g45ClsTableOuVs(c, def, PE, saisonTxt, lieuTxt, ms);
   else if (X.mode === 'eq') h += _g45ClsTableEq(c, def, PE, saisonTxt, lieuTxt, ms);
   else h += await _g45ClsTableJo(c, def, PE, saisonTxt, filtrable ? lieuTxt : 'saison', an, body);
@@ -45198,6 +45212,122 @@ function _g45ClsTableOuVs(c, def, PE, saisonTxt, lieuTxt, ms) {
 }
 window._g45ClsTableOuVs = _g45ClsTableOuVs;
 
+/* ═══ 🔁 SÉRIES EN COURS (28/09/2026, maquette validée) ═══
+   Pour chaque équipe (filtre lieu et phase respectés, TOUTE la saison) :
+   série en cours de matchs SANS (ou AVEC) l'événement, record de la saison
+   pour la même série, % de la saison avec l'événement, et prochain match.
+   Prochain match : UN tableau des scores du championnat sur 14 jours
+   (soccer/<ligue>/scoreboard?dates=A-B), gardé en mémoire 1 h ; le tableau
+   s'affiche d'abord, puis se complète. */
+var _G45_SERIE_EV = [['o05', 'Over 0,5'], ['o15', 'Over 1,5'], ['o25', 'Over 2,5'], ['o35', 'Over 3,5'], ['btts', 'Les 2 marquent'],
+  ['marque', 'Marque'], ['encaisse', 'Encaisse'], ['v', 'Victoire'], ['n', 'Nul'], ['d', 'Défaite']];
+function _g45SerieEvt(ev, p, c) {
+  switch (ev) {
+    case 'o05': return p + c > 0.5; case 'o15': return p + c > 1.5; case 'o25': return p + c > 2.5; case 'o35': return p + c > 3.5;
+    case 'btts': return p > 0 && c > 0; case 'marque': return p > 0; case 'encaisse': return c > 0;
+    case 'v': return p > c; case 'n': return p === c; case 'd': return p < c;
+  }
+  return false;
+}
+/* liste = matchs de l'équipe du plus RÉCENT au plus ancien. */
+function _g45SerieCalc(id, liste, ev, avec) {
+  var serie = 0, enCours = true, rec = 0, run = 0, k = 0;
+  liste.forEach(function (m) {
+    var dom = m.h === id, p = dom ? m.hg : m.ag, c = dom ? m.ag : m.hg, e = _g45SerieEvt(ev, p, c);
+    if (e) k++;
+    if (enCours) { if (e === avec) serie++; else enCours = false; }
+  });
+  liste.slice().reverse().forEach(function (m) {
+    var dom = m.h === id, p = dom ? m.hg : m.ag, c = dom ? m.ag : m.hg;
+    if (_g45SerieEvt(ev, p, c) === avec) { run++; if (run > rec) rec = run; } else run = 0;
+  });
+  return { serie: serie, rec: rec, pct: liste.length ? k * 100 / liste.length : 0, n: liste.length };
+}
+var _g45ClsProch = {};
+function _g45ClsProchains(lg) {
+  var c = _g45ClsProch[lg];
+  if (c && (c.p || Date.now() - c.t < 3600000)) return c.d || null;
+  _g45ClsProch[lg] = { p: 1, t: Date.now() };
+  var ymd = function (d) { return d.getUTCFullYear() + String(d.getUTCMonth() + 1).padStart(2, '0') + String(d.getUTCDate()).padStart(2, '0'); };
+  var a = new Date(), b = new Date(Date.now() + 14 * 86400000);
+  fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/' + lg + '/scoreboard?dates=' + ymd(a) + '-' + ymd(b) + '&limit=200')
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (j) {
+      var d = {};
+      ((j && j.events) || []).sort(function (x, y) { return Date.parse(x.date) - Date.parse(y.date); }).forEach(function (e) {
+        var co = (e.competitions && e.competitions[0]) || {}, st = (co.status && co.status.type) || {};
+        if (st.state && st.state !== 'pre') return;
+        var cs = co.competitors || [], H = cs.filter(function (x) { return x.homeAway === 'home'; })[0], A = cs.filter(function (x) { return x.homeAway === 'away'; })[0];
+        if (!H || !A || !H.team || !A.team) return;
+        var dt = new Date(e.date), jour = dt.toLocaleDateString('fr-FR', { weekday: 'short', day: '2-digit', month: '2-digit' });
+        var hi = String(H.team.id), ai = String(A.team.id);
+        /* Cotes DraftKings du match (1N2 : _g45TrOddsEv ; over / under sur la ligne principale). */
+        var od = null;
+        try {
+          var t = (typeof _g45TrOddsEv === 'function') ? _g45TrOddsEv(e) : null, o0 = (co.odds || [])[0] || {}, cur = o0.current || {};
+          var ov = (typeof _g45TrDec === 'function') ? (_g45TrDec(o0.overOdds) || (cur.over && _g45TrDec(cur.over.decimal || cur.over.american))) : 0;
+          var un = (typeof _g45TrDec === 'function') ? (_g45TrDec(o0.underOdds) || (cur.under && _g45TrDec(cur.under.decimal || cur.under.american))) : 0;
+          od = { h: t && t.h, d: t && t.d, a: t && t.a, line: o0.overUnder != null ? parseFloat(o0.overUnder) : (t && t.line), over: ov, under: un };
+        } catch (er) {}
+        if (!d[hi]) d[hi] = { txt: jour + ' vs ' + (A.team.shortDisplayName || A.team.displayName || '?'), dom: true, od: od };
+        if (!d[ai]) d[ai] = { txt: jour + ' @ ' + (H.team.shortDisplayName || H.team.displayName || '?'), dom: false, od: od };
+      });
+      _g45ClsProch[lg] = { t: Date.now(), d: d };
+    })
+    .catch(function () { _g45ClsProch[lg] = { t: Date.now(), d: {} }; })
+    .then(function () {
+      try { var D = window._g45ClsDernier, body = document.getElementById('g45-compet-body');
+        if (D && body && D.c && D.c.s === lg && _g45ClsCtx.catE === 'serie' && _g45ClsCtx.mode === 'eq') g45ClsRender(D.c, body); } catch (e) {}
+    });
+  return null;
+}
+/* Cote de la FIN de série au prochain match, ou 0 si ESPN ne la donne pas. */
+function _g45SerieCote(ev, avec, pm) {
+  var o = pm && pm.od; if (!o) return 0;
+  var L = { o05: 0.5, o15: 1.5, o25: 2.5, o35: 3.5 }[ev];
+  if (L != null) { if (o.line == null || Math.abs(o.line - L) > 0.01) return 0; return (avec ? o.under : o.over) || 0; }
+  if (avec) return 0;                                     /* « pas de victoire » etc. : pas de cote simple */
+  var moi = pm.dom ? o.h : o.a, lui = pm.dom ? o.a : o.h;
+  return ev === 'v' ? (moi || 0) : ev === 'n' ? (o.d || 0) : ev === 'd' ? (lui || 0) : 0;
+}
+window._g45SerieCote = _g45SerieCote;
+function _g45ClsTableSerie(c, PE, saisonTxt, lieuTxt) {
+  var X = _g45ClsCtx, avec = X.sMode === 'avec', ev = X.sEv;
+  var lib = (_G45_SERIE_EV.filter(function (e) { return e[0] === ev; })[0] || ['', ev])[1];
+  var proch = _g45ClsProchains(c.s);
+  var rows = [];
+  Object.keys(PE.par).forEach(function (id) {
+    var r = _g45SerieCalc(id, PE.par[id], ev, avec);
+    if (!(r.n && r.serie > 0)) return;
+    var pm = proch ? proch[id] : null, cote = _g45SerieCote(ev, avec, pm);
+    if (X.sCote && proch && !(cote >= 1.5)) return;
+    rows.push({ id: id, nom: PE.info[id].nom, logo: PE.info[id].logo, r: r, pm: pm, cote: cote });
+  });
+  rows.sort(function (a, b) { return b.r.serie - a.r.serie || (b.r.serie >= b.r.rec) - (a.r.serie >= a.r.rec) || a.nom.localeCompare(b.nom); });
+  var h = _g45ClsEnTete('🔁 Série ' + (avec ? 'AVEC' : 'SANS') + ' « ' + lib + ' » · ' + c.n + ' ' + saisonTxt + ' · ' + lieuTxt,
+    rows.length + ' équipe(s) en série' + (X.sCote ? ' avec une cote ≥ 1,5' : '') + ' · toute la saison (les filtres « derniers matchs » ne s’appliquent pas ici)');
+  var GR = 'display:grid;grid-template-columns:22px minmax(0,1fr) 44px 48px 46px;gap:4px;padding:8px 8px 2px;align-items:center;';
+  h += '<div style="background:rgba(11,16,29,.50);border-radius:8px;overflow:hidden;">'
+    + '<div style="' + GR + 'padding-bottom:8px;font-size:12px;color:#c9d3ee;font-weight:700;"><span>#</span><span>Équipe</span><span style="text-align:right;">Série</span><span style="text-align:right;">Record</span><span style="text-align:right;">Saison</span></div>';
+  rows.forEach(function (x, i) {
+    var r = x.r, auRecord = r.serie >= r.rec && r.serie >= 2;
+    var pr = proch ? (x.pm ? x.pm.txt : 'pas de match dans 14 j') : '⏳ prochain match…';
+    if (x.pm) pr += x.cote > 1 ? (' · cote fin de série <b style="color:' + (x.cote >= 1.5 ? '#1ed760' : '#ffb13d') + ';">' + x.cote.toFixed(2) + (x.cote >= 1.5 ? ' ✅' : ' (< 1,5)') + '</b>') : ' · cote : —';
+    h += '<div onclick="g45CompetOuvrir(\'' + String(x.nom).replace(/'/g, "\\'") + '\',\'' + x.id + '\',\'' + c.s + '\',\'soccer\')" style="border-top:1px solid rgba(255,255,255,.08);cursor:pointer;">'
+      + '<div style="' + GR + '">'
+      + '<span style="font-size:13px;font-weight:800;color:' + (i ? '#c9d3ee' : '#f0b020') + ';">' + (i + 1) + '</span>'
+      + '<span style="display:flex;align-items:center;gap:6px;min-width:0;">' + (x.logo ? '<img src="' + x.logo + '" alt="" loading="lazy" style="width:18px;height:18px;object-fit:contain;flex:none;" onerror="this.style.display=\'none\'">' : '')
+      + '<span style="font-size:13px;font-weight:800;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + x.nom + '</span></span>'
+      + '<span style="text-align:right;font-size:15px;font-weight:900;color:' + (auRecord ? '#ff8a8a' : '#fff') + ';">' + r.serie + '</span>'
+      + '<span style="text-align:right;font-size:13px;font-weight:700;color:#c9d3ee;">' + r.rec + '</span>'
+      + '<span style="text-align:right;font-size:13px;font-weight:700;color:#ffd166;">' + Math.round(r.pct) + ' %</span></div>'
+      + '<div style="padding:0 8px 8px 34px;font-size:12px;color:#9fb8ff;font-weight:700;">' + (auRecord ? '🔥 record de la saison · ' : '') + '📅 ' + pr + '</div></div>';
+  });
+  if (!rows.length) h += '<div style="padding:12px;font-size:13px;color:#c9d3ee;">Aucune équipe en série pour ce choix.</div>';
+  return h + '</div><div style="font-size:12px;color:#c9d3ee;margin-top:6px;line-height:1.5;">Série = matchs d’affilée en cours · Record = plus longue série de la saison (en rouge : série actuelle = record) · Saison = % de matchs AVEC l’événement · touche une équipe pour sa fiche.</div>';
+}
+window._g45SerieCalc = _g45SerieCalc;
+
 /* Joueurs, catégories tirées des buts et cartons. */
 function _g45ClsJoueursButs(def, PE) {
   var J = {};
@@ -45298,7 +45428,7 @@ window.g45ClsSet = function (k, v) {
   else if (k === 'qTri') { if (_g45ClsCtx.qTri === v) _g45ClsCtx.qInv = !_g45ClsCtx.qInv; else { _g45ClsCtx.qTri = v; _g45ClsCtx.qInv = false; } }
   else if (k === 'vsTri') { if (_g45ClsCtx.vsTri === v) _g45ClsCtx.vsInv = !_g45ClsCtx.vsInv; else { _g45ClsCtx.vsTri = v; _g45ClsCtx.vsInv = false; } }
   else if (k === 'qOuvert') { _g45ClsCtx.qOuvert = (_g45ClsCtx.qOuvert === v) ? '' : v; }
-  else { _g45ClsCtx[k] = v; if (k !== 'lieu' && k !== 'n' && k !== 'phase' && k !== 'tot' && k !== 'ouP' && k !== 'ouL' && k !== 'qMode') _g45ClsCtx.inv = false; }
+  else { _g45ClsCtx[k] = v; if (k !== 'lieu' && k !== 'n' && k !== 'phase' && k !== 'tot' && k !== 'ouP' && k !== 'ouL' && k !== 'qMode' && k !== 'sMode' && k !== 'sEv' && k !== 'sCote') _g45ClsCtx.inv = false; }
   if (k === 'ouP' || k === 'ouL') { try { localStorage.setItem('g45_cls_ou', JSON.stringify({ p: _g45ClsCtx.ouP, l: _g45ClsCtx.ouL })); } catch (e) {} }
   var D = window._g45ClsDernier, body = document.getElementById('g45-compet-body');
   if (D && D.khl && body) _g45KhlVueClassements(body);
