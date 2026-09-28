@@ -59822,3 +59822,128 @@ async function g45InstPoser() {
   try { setTimeout(poser, 1600); document.addEventListener('click', function (e) { var t = e.target && e.target.closest && e.target.closest('[onclick*="t-outils"]'); if (t) setTimeout(poser, 350); }); } catch (e) {}
 })();
 window.g45InstPoser = g45InstPoser;
+
+/* ═══ TES COTES CONTRE LA CLÔTURE — CLV (28/09/2026, demande d'Antoine « à faire
+   de suite », maquette présentée) ═══
+   Battre la cote de clôture sur la durée = prendre de bonnes cotes, quel que
+   soit le résultat. SONDÉ le 28/09 par Antoine : le scoreboard d'un match joué
+   n'a plus de cotes ([null]), mais soccer/all/summary?event=ID les garde
+   (pickcenter[0], DraftKings : homeTeamOdds / awayTeamOdds / drawOdds.moneyLine
+   en cotes américaines, overUnder + overOdds / underOdds) ; soccer/summary sans
+   « all » → 404. Le match se retrouve par soccer/all/scoreboard?dates=JOUR.
+   Version 1 : FOOT seulement, paris simples à une jambe, marchés dont la
+   clôture existe : victoire / nul / défaite de l'équipe jouée, Over / Under sur
+   LA ligne de clôture. Exclus : combinés, lay, boostés (cote gonflée), paris
+   joueur, lieu inconnu pour victoire / défaite. Cache par pari g45clv1_<id>
+   (trouvé = permanent ; rien = 3 jours). Scoreboards du jour en mémoire. */
+function _g45ClvAmDec(a) { a = parseFloat(a); if (!a || isNaN(a)) return 0; return a > 0 ? 1 + a / 100 : 1 + 100 / Math.abs(a); }
+function _g45ClvNrm(x) { return String(x || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, ''); }
+/* Sélection du pari : '1' (domicile), 'N', '2' (extérieur) — relatif au MATCH —,
+   'o' / 'u' + ligne ; ou null. moiDom = l'équipe jouée reçoit ? */
+function _g45ClvSelection(h, moiDom) {
+  var t = String(h.type || '').replace(/\s*@\s*\d+(?:[.,]\d+)?\s*$/, '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+  if (!t || /\s*&\s*|\s+et\s+|\s\+\s(?!de)/.test(t) || /buteur|passeur|mi-?temps|periode|handicap|\bhc\b|double|ou nul|sans nul|les deux|btts|corner|carton/.test(t)) return null;
+  var m = t.match(/\b(?:over|plus de|\+\s*de)\s*(\d+(?:[.,]\d+)?)/);
+  if (m) return { s: 'o', l: parseFloat(m[1].replace(',', '.')) };
+  m = t.match(/\b(?:under|moins de|-\s*de)\s*(\d+(?:[.,]\d+)?)/);
+  if (m) return { s: 'u', l: parseFloat(m[1].replace(',', '.')) };
+  if (/\bnul\b|\bdraw\b/.test(t)) return { s: 'N' };
+  if (moiDom === null) return null;
+  if (/victoire|gagn|\bwin\b/.test(t)) return { s: moiDom ? '1' : '2' };
+  if (/defaite|perd|\blose\b/.test(t)) return { s: moiDom ? '2' : '1' };
+  return null;
+}
+function _g45ClvEligible(h) {
+  return h && !h.isPending && !h.isCombi && !h.isLay && !h.isFlash && !h.joueur && !(h.joueurs && h.joueurs.length)
+    && String(h.sport || '⚽').indexOf('⚽') >= 0 && /^\d{4}-\d{2}-\d{2}/.test(String(h.date || '')) && parseFloat(h.cote) > 1;
+}
+function _g45ClvLire(h) { try { var c = JSON.parse(localStorage.getItem('g45clv1_' + h.id) || 'null'); if (!c) return undefined; if (c.neg) return (Date.now() - c.t < 3 * 86400000) ? null : undefined; return c; } catch (e) { return undefined; } }
+var _g45ClvSb = {}, _g45ClvEnCours = {}, _g45ClvFile = [], _g45ClvActif = 0;
+async function _g45ClvScoreboard(jour) {
+  if (!_g45ClvSb[jour]) _g45ClvSb[jour] = (async function () {
+    var r = await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/all/scoreboard?dates=' + jour.replace(/-/g, '') + '&limit=400');
+    if (!r.ok) throw new Error('sb ' + r.status);
+    return ((await r.json()).events || []);
+  })();
+  return _g45ClvSb[jour];
+}
+async function _g45ClvResoudre(h) {
+  var neg = function () { try { localStorage.setItem('g45clv1_' + h.id, JSON.stringify({ neg: 1, t: Date.now() })); } catch (e) {} };
+  var equipe = (h.eq && String(h.eq).trim()) || ((h.n && h.n !== 'SIMPLE') ? h.n : String(h.target || '').split(/\s+vs\s+/i)[0].trim());
+  var adv = h.n === 'SIMPLE' ? (String(h.target || '').split(/\s+vs\s+/i)[1] || '') : (h.target && h.target !== '-' ? h.target : '');
+  var ce = _g45ClvNrm(equipe), ca = _g45ClvNrm(adv);
+  if (ce.length < 3) return neg();
+  var evs = [], jour = String(h.date).slice(0, 10);
+  try { evs = await _g45ClvScoreboard(jour); } catch (e) { return; }   /* réseau : on retentera */
+  var colle = function (n, c) { return n && c && c.length > 2 && (n.indexOf(c) >= 0 || c.indexOf(n) >= 0); };
+  var cand = evs.map(function (e) {
+    var cp = (e.competitions && e.competitions[0]) || {}, cs = cp.competitors || [];
+    var H = cs.filter(function (x) { return x.homeAway === 'home'; })[0] || cs[0] || {}, A = cs.filter(function (x) { return x.homeAway === 'away'; })[0] || cs[1] || {};
+    var nh = _g45ClvNrm(H.team && (H.team.displayName || H.team.name)), na = _g45ClvNrm(A.team && (A.team.displayName || A.team.name));
+    return { id: e.id, nh: nh, na: na, meH: colle(nh, ce), meA: colle(na, ce), adH: colle(nh, ca), adA: colle(na, ca) };
+  }).filter(function (x) { return x.meH || x.meA; });
+  var ev = cand.filter(function (x) { return ca.length > 2 ? ((x.meH && x.adA) || (x.meA && x.adH)) : true; })[0] || (cand.length === 1 ? cand[0] : null);
+  if (!ev) return neg();
+  var moiDom = ev.meH && !ev.meA ? true : (ev.meA && !ev.meH ? false : (h.domicile === 'dom' ? true : h.domicile === 'ext' ? false : null));
+  var sel = _g45ClvSelection(h, moiDom);
+  if (!sel) return neg();
+  var d = null;
+  try { var r = await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/all/summary?event=' + encodeURIComponent(ev.id)); if (r.ok) d = await r.json(); } catch (e) { return; }
+  var pc = d && (d.pickcenter || d.odds || [])[0];
+  if (!pc) return neg();
+  var clo = 0;
+  if (sel.s === '1') clo = _g45ClvAmDec(pc.homeTeamOdds && pc.homeTeamOdds.moneyLine);
+  else if (sel.s === '2') clo = _g45ClvAmDec(pc.awayTeamOdds && pc.awayTeamOdds.moneyLine);
+  else if (sel.s === 'N') clo = _g45ClvAmDec(pc.drawOdds && pc.drawOdds.moneyLine);
+  else if (pc.overUnder != null && Math.abs(parseFloat(pc.overUnder) - sel.l) < 0.01) clo = _g45ClvAmDec(sel.s === 'o' ? pc.overOdds : pc.underOdds);
+  if (!(clo > 1)) return neg();
+  try { localStorage.setItem('g45clv1_' + h.id, JSON.stringify({ c: Math.round(clo * 100) / 100, s: sel.s, l: sel.l || null, eid: ev.id })); } catch (e) {}
+}
+function _g45ClvPompe() {
+  while (_g45ClvActif < 2 && _g45ClvFile.length) {
+    var h = _g45ClvFile.shift(); _g45ClvActif++;
+    _g45ClvResoudre(h).catch(function () {}).then(function () { _g45ClvActif--; delete _g45ClvEnCours[h.id]; _g45ClvPoser(); _g45ClvPompe(); });
+  }
+}
+function _g45ClvPoser() {
+  try {
+    var hote = document.getElementById('bilan-normal'); if (!hote) return;
+    var paris = (typeof filteredA === 'function') ? filteredA() : [];
+    var el = document.getElementById('g45-clv');
+    if (!el) { el = document.createElement('div'); el.id = 'g45-clv'; el.style.cssText = 'margin:0 0 12px;padding:12px;border-radius:12px;border:1px solid rgba(30,215,96,.3);background:rgba(10,14,24,.85);'; hote.insertBefore(el, hote.firstChild); }
+    var elig = paris.filter(_g45ClvEligible), faits = [], aChercher = 0;
+    elig.forEach(function (h) {
+      var c = _g45ClvLire(h);
+      if (c && c.c) faits.push({ h: h, c: c, v: (parseFloat(h.cote) / c.c - 1) * 100 });
+      else if (c === undefined) { aChercher++; if (!_g45ClvEnCours[h.id] && _g45ClvFile.length < 40) { _g45ClvEnCours[h.id] = 1; _g45ClvFile.push(h); } }
+    });
+    _g45ClvPompe();
+    var esc = function (x) { return String(x).replace(/&/g, '&amp;').replace(/</g, '&lt;'); };
+    var h = '<div style="font-size:14px;font-weight:800;color:#fff;">📈 Tes cotes contre la clôture</div>';
+    if (!faits.length) {
+      h += '<div style="font-size:13px;color:#c9d3ee;margin-top:6px;line-height:1.5;">' + (aChercher ? '⏳ Recherche des cotes de clôture… (' + aChercher + ' pari(s) foot)' : 'Aucun pari comparable pour l’instant : foot, pari simple (victoire, nul, défaite, over / under sur la ligne de clôture), non boosté.') + '</div>';
+    } else {
+      var bat = faits.filter(function (x) { return x.v > 0; }).length, moy = faits.reduce(function (a, x) { return a + x.v; }, 0) / faits.length;
+      var ok = moy > 0, col = ok ? '#1ed760' : '#ff6b6b';
+      h += '<div style="font-size:13px;color:#dfe6f5;margin-top:6px;line-height:1.6;">Paris comparés : <b>' + faits.length + '</b>' + (aChercher ? ' <span style="color:#c9d3ee;">(+' + aChercher + ' en recherche)</span>' : '') + '<br>'
+        + 'Tu as battu la clôture : <b>' + bat + ' fois (' + Math.round(bat * 100 / faits.length) + ' %)</b><br>'
+        + 'En moyenne : <b style="color:' + col + ';">' + (moy >= 0 ? '+' : '') + moy.toFixed(1).replace('.', ',') + ' %</b> ' + (moy >= 0 ? 'de mieux' : 'de moins bien') + '</div>'
+        + '<div style="font-size:13px;font-weight:800;color:' + col + ';margin-top:6px;">' + (faits.length < 10 ? 'ℹ️ Encore trop peu de paris pour conclure' : (ok ? '✅ Tu prends de bonnes cotes' : '❌ Tu prends souvent la cote trop tôt ou trop basse')) + '</div>';
+      var der = faits.slice().sort(function (a, b) { return String(b.h.date).localeCompare(String(a.h.date)); }).slice(0, 5);
+      h += '<div style="margin-top:8px;border-top:1px solid rgba(255,255,255,.08);padding-top:6px;">' + der.map(function (x) {
+        var lib = { '1': 'dom.', '2': 'ext.', N: 'nul', o: 'over ' + String(x.c.l).replace('.', ','), u: 'under ' + String(x.c.l).replace('.', ',') }[x.c.s] || '';
+        return '<div style="display:flex;justify-content:space-between;gap:8px;font-size:13px;padding:3px 0;"><span style="color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(x.h.target || x.h.n) + ' <span style="color:#c9d3ee;">(' + lib + ')</span></span>'
+          + '<span style="white-space:nowrap;color:#dfe6f5;">@' + parseFloat(x.h.cote).toFixed(2) + ' → ' + x.c.c.toFixed(2) + ' ' + (x.v > 0 ? '✅' : '❌') + '</span></div>';
+      }).join('') + '</div>';
+      h += '<div style="font-size:11px;color:#c9d3ee;margin-top:6px;">Clôture = dernière cote DraftKings avant le match (ESPN). Foot seulement pour l’instant.</div>';
+    }
+    el.innerHTML = h;
+  } catch (e) {}
+}
+(function () {
+  if (typeof renderBilanTab !== 'function' || renderBilanTab._g45Clv) return;
+  var orig = renderBilanTab;
+  renderBilanTab = function () { try { return orig.apply(this, arguments); } finally { try { _g45ClvPoser(); } catch (e) {} } };   /* même si la courbe échoue */
+  renderBilanTab._g45Clv = true; window.renderBilanTab = renderBilanTab;
+})();
+window._g45ClvSelection = _g45ClvSelection; window._g45ClvPoser = _g45ClvPoser; window._g45ClvAmDec = _g45ClvAmDec;
