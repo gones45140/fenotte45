@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 27/09/2026 au soir (version déployée : 20260928n, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 27/09/2026 au soir (version déployée : 20260928o, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -225,6 +225,16 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   pas la moyenne de tous les buts), tranches de 15 min. Contexte : qMode
   ('pour'|'contre'), qTri (m1|m2|prem|der|g, re-toucher = inverser), qOuvert
   (équipe dépliée : histogramme + bouton fiche).
+- Classements foot « 🔁 Séries » (28o) : catégorie `serie` → `_g45ClsTableSerie`
+  (toute la saison, X.n ignoré) ; `_g45SerieCalc(id, liste, ev, avec)` (série en cours,
+  record, % saison) ; événements `_G45_SERIE_EV` ; prochain match + cotes DraftKings
+  `_g45ClsProchains(lg)` (scoreboard 14 j → découpé en MOIS par l'enveloppe fetch, car
+  les plages de dates ESPN répondent 400) ; `_g45SerieCote` = cote de FIN de série
+  (over/under seulement si la ligne DK = la ligne choisie, souvent 2,5 ; victoire / nul
+  / défaite) ; filtre sCote (≥ 1,5, demande d'Antoine). Antoine parie sur la FIN des
+  séries : ne pas lui refaire la leçon sur le « biais du parieur ».
+- ⚠ Script de patch écrit avec l'outil Write : les \uXXXX deviennent de vrais
+  caractères ; app.js garde souvent les échappements → recaler les repères.
 - STOCKAGE (28n, mesure d'Antoine : 5731 Ko, saturé) : filet existant « quota →
   _g45FreeSpace() → nouvel essai » (setItem enveloppé + save). `_G45_CACHE_PREFIXES` =
   caches reconstructibles purgeables (jamais g45v5). `_G45_CACHE_MORTS` = clés
