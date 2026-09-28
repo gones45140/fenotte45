@@ -36857,7 +36857,17 @@ function _g45TeamQuery(nom){
 /* Déduit un mot-clé de sport (français) à partir du sport de l'équipe → désambiguïse la recherche */
 function _g45SportWord(nom){
   var u=(typeof state!=='undefined'&&state.u)?state.u.find(function(x){return x&&x.n===nom;}):null;
-  var s=_g45Norm((u&&u.sport)||'');
+  /* 28/09/2026 : u.sport est un EMOJI (⚽, 🏉…) que _g45Norm efface — le sport
+     n'était donc jamais reconnu (flux « sport » général, pas de RMC). */
+  var se=String((u&&u.sport)||'');
+  if(se.indexOf('\u26bd')>=0) return 'football';
+  if(se.indexOf('\ud83c\udfc9')>=0) return 'rugby';
+  if(se.indexOf('\ud83c\udfbe')>=0) return 'tennis';
+  if(se.indexOf('\ud83c\udfd2')>=0) return 'hockey';
+  if(se.indexOf('\u26be')>=0) return 'baseball';
+  if(se.indexOf('\ud83c\udfc0')>=0) return 'basket';
+  if(se.indexOf('\ud83c\udfce')>=0) return 'Formule 1';
+  var s=_g45Norm(se);
   if(s.indexOf('foot')>=0) return 'football';
   if(s.indexOf('rugby')>=0) return 'rugby';
   if(s.indexOf('tennis')>=0) return 'tennis';
@@ -36907,24 +36917,47 @@ function _g45FeedList(sw){
   L.push({host:'www.lemonde.fr', path:'/'+(lm[sw]||'sport')+'/rss_full.xml'});
   L.push({host:'www.francetvinfo.fr', path:'/sports.rss'});
   if(rmc[sw]) L.push({host:'rmcsport.bfmtv.com', path:'/rss/'+rmc[sw]+'/'});
+  /* 28/09/2026 (Antoine : « j'ai que Le Monde ? ») : sources foot en plus, déjà
+     autorisées par le worker (host=rss). Un flux qui ne répond pas est ignoré. */
+  if(sw==='football'){
+    L.push({host:'www.lequipe.fr', path:'/rss/actu_rss_Football.xml'});
+    L.push({host:'www.maxifoot.fr', path:'/rss.xml'});
+    L.push({host:'www.footmercato.net', path:'/flux-rss'});
+  }
   return L;
 }
+/* TOUTES LES SOURCES EN MÊME TEMPS (28/09/2026) : avant, la boucle s'arrêtait au
+   PREMIER flux qui trouvait quelque chose — presque toujours Le Monde, d'où
+   « que Le Monde ». Les flux sont lus en parallèle, fusionnés, dédoublonnés par
+   titre, triés par date, 5 articles au plus par source. Équipe de FOOT : les
+   articles d'un autre sport sont écartés (« Bleus » attrapait l'Euro de volley),
+   sauf s'ils parlent aussi de foot. */
+var _G45_AUTRES_SPORTS=/\b(volley|volleyball|handball|hand|rugby|xv de france|basket|basketball|nba|tennis|roland|cyclisme|tour de france|natation|athletisme|judo|formule 1|\bf1\b|moto ?gp|biathlon|ski|golf|boxe|escrime|nfl|nhl)\b/;
 async function _g45FeedFetch(nom){
   var sw=_g45SportWord(nom);
   var feeds=_g45FeedList(sw);
-  var kws=_g45RssKeywords(nom);
-  for(var i=0;i<feeds.length;i++){
+  /* Mots-clés passés par le MÊME nettoyage que le texte (_g45Norm colle les mots) :
+     « equipe de france » ne pouvait jamais correspondre, seul « bleus » accrochait. */
+  var kws=_g45RssKeywords(nom).map(function(k){ return _g45Norm(k); }).filter(function(k){ return k && k.length>=3; });
+  var lots=await Promise.all(feeds.map(async function(f){
     try{
-      var f=feeds[i];
       var r=await fetch(_G45_WORKER+'?host=rss&rsshost='+encodeURIComponent(f.host)+'&path='+encodeURIComponent(f.path));
-      if(!r.ok) continue;
+      if(!r.ok) return [];
       var all=_g45ParseRssItems(await r.text(),80);
-      if(!all.length) continue;
-      var hit=all.filter(function(n){ var t=_g45Norm(n.title+' '+n.desc); return kws.some(function(k){ return k && t.indexOf(k)>=0; }); });
-      if(hit.length) return hit.slice(0,15);
-    }catch(e){}
-  }
-  return [];
+      return all.filter(function(n){
+        var t=_g45Norm(n.title+' '+n.desc);
+        if(!kws.some(function(k){ return k && t.indexOf(k)>=0; })) return false;
+        /* _g45Norm colle les mots (2e définition, ligne ~42463) : nettoyage à part, espaces gardés. */
+        var tt=String(n.title+' '+n.desc).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+        if(sw==='football' && _G45_AUTRES_SPORTS.test(tt) && !/foot/.test(tt)) return false;
+        return true;
+      }).slice(0,5);
+    }catch(e){ return []; }
+  }));
+  var vus={}, out=[];
+  lots.forEach(function(l){ l.forEach(function(n){ var k=_g45Norm(n.title).slice(0,60); if(!vus[k]){ vus[k]=1; out.push(n); } }); });
+  out.sort(function(a,b){ return (b.ts||0)-(a.ts||0); });
+  return out.slice(0,15);
 }
 function _g45NewsAgo(ts){
   if(!ts) return '';
@@ -36959,7 +36992,7 @@ window._g45OpenNewsTab=_g45OpenNewsTab;
 async function loadTeamNews(nom, force){
   var el=document.getElementById('ip-news'); if(!el) return;
   if(!nom){ el.innerHTML='<div style="padding:14px;color:var(--t3);font-size:11px;">Aucune équipe sélectionnée.</div>'; return; }
-  var ck='g45news7_'+nom, items=null, cachedTs=0;
+  var ck='g45news8_'+nom, items=null, cachedTs=0;   /* 8 : plusieurs sources (28/09) */
   if(!force){
     try{ var raw=localStorage.getItem(ck); if(raw){ var o=JSON.parse(raw); if(o&&o.items&&(Date.now()-(o.t||0))<20*60000){ items=o.items; cachedTs=o.t; } } }catch(e){}
   }
@@ -60157,7 +60190,7 @@ window._g45ClvSelection = _g45ClvSelection; window._g45ClvPoser = _g45ClvPoser; 
       (setItem et save) puisse les vider.
    3) Au-delà de 4 millions de caractères stockés, purge préventive des
       caches (jamais g45v5, les données). */
-var _G45_CACHE_MORTS = ['g45cm_', 'g45cm2_', 'g45cm3_', 'g45cm4_', 'g45cm5_', 'g45cm6_', 'g45cm7_', 'g45cm8_',
+var _G45_CACHE_MORTS = ['g45news7_', 'g45cm_', 'g45cm2_', 'g45cm3_', 'g45cm4_', 'g45cm5_', 'g45cm6_', 'g45cm7_', 'g45cm8_',
   'g45khl_fiche_', 'g45_saisons_cache_v2_', 'g45_score_', 'g45_score2_', 'g45_score3_'];
 try {
   ['g45cm9_', 'g45khl_fiche2_', 'g45khl_plage_', 'g45cls3_', 'g45cls4_', 'g45photostsdb_', 'g45wk1_', 'g45jv_', 'g45art1_', 'g45clv1_', 'g45arb1_', 'g45_herologo_', 'g45cm3_']
