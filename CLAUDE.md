@@ -340,8 +340,10 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
 - API-Sports (clé dans le worker, host=apisports…) : répond 200 AVEC `errors` rempli
   (quota, « Too many requests… per minute ») → worker.js corrigé le 28/09 pour ne PLUS
   mettre ces réponses en cache (avant : erreur servie 10 min, photos comprises). À
-  redéployer par Antoine. Piste « cotes toutes lignes » : /odds?league=61&season=2026&bet=5
-  (Goals Over/Under) — test bloqué par ce cache, à refaire. Scraping de bookmakers /
+  redéployer par Antoine. Clé OK (/timezone → 427). Cotes « toutes lignes » via
+  /odds?league=61&season=2026&bet=5 : REFUSÉ en gratuit (« Free plans do not have access
+  to this season, try from 2022 to 2024 ») → API-Sports inutilisable pour les cotes à
+  venir. Reste ESPN (1N2 + ligne principale) ; piste non testée : OddsPapi (250 req/mois). Scraping de bookmakers /
   Oddsportal / DraftKings via VPN : REFUSÉ (CGU, géoblocage), ne pas reproposer.
 - Cotes ESPN US : `details` = handicap (« LAR -1.5 », côté favori) en NFL.
 - Sofascore RapidAPI (sofascore6, via worker host=rapidapi) : match/list
