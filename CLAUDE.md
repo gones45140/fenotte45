@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 27/09/2026 au soir (version déployée : 20260928s, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 27/09/2026 au soir (version déployée : 20260928t, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -242,6 +242,7 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   `_g45SportWord` ne reconnaissait pas l'emoji du mur (⚽) ; `_g45Norm` existe en DEUX
   définitions, la dernière (≈ ligne 42463) COLLE les mots → normaliser aussi les
   mots-clés, et nettoyer à part quand on cherche des mots séparés.
+  28t : chaque article a le logo de sa source (favicon Google s2, rond 32 px + filigrane).
 - STOCKAGE (28n, mesure d'Antoine : 5731 Ko, saturé) : filet existant « quota →
   _g45FreeSpace() → nouvel essai » (setItem enveloppé + save). `_G45_CACHE_PREFIXES` =
   caches reconstructibles purgeables (jamais g45v5). `_G45_CACHE_MORTS` = clés
