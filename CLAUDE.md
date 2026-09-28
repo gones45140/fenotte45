@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 27/09/2026 au soir (version déployée : 20260928q, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 27/09/2026 au soir (version déployée : 20260928r, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -344,15 +344,16 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   /odds?league=61&season=2026&bet=5 : REFUSÉ en gratuit (« Free plans do not have access
   to this season, try from 2022 to 2024 ») → API-Sports inutilisable pour les cotes à
   venir. Reste ESPN (1N2 + ligne principale).
-- THE ODDS API (28/09, clé gratuite d'Antoine, 500 crédits/MOIS) : testée OK (Ligue 1
-  en cours, bookmakers FR Winamax/Unibet, 1 crédit = 1 marché × 1 région). Gratuit :
-  chaque bookmaker ne donne que SA ligne principale d'over/under. Clé = secret
-  ODDSAPI_KEY du worker (JAMAIS dans l'appli ni un dépôt). Worker : host=oddsapi
-  (oamarket h2h|totals, oaregion fr|eu|uk, chemin /v4/sports/soccer_…/odds), cache 12 h,
-  PLAFONDS.oddsapi [10/IP/j, 14/j, 450/mois]. Appli (28q) : `_g45OaCote` dans les
-  Séries, UNIQUEMENT si ESPN n'a pas la cote (règle d'Antoine « ESPN d'abord ») ; cache
-  appareil g45oa1_<ligue>_<marché> (échec : nouvel essai 30 min) ; ligues
-  `_G45_OA_LIGUES`. Plusieurs clés pour contourner le quota : REFUSÉ (CGU). Scraping de bookmakers /
+- THE ODDS API : DÉJÀ intégrée avant le 28/09 (route worker `/odds?sport=&regions=&markets=
+  [&event=]`, secret ODDS_API_KEY, cache KV 3 h, plafond « odds » ; `/odds-quota`) — utilisée
+  par « Cotes réelles (bookmakers FR) », plus de marchés (alternate_totals, btts, buteur
+  par event). ⚠ Le 28/09 j'ai d'abord codé une route en double (host=oddsapi, ODDSAPI_KEY)
+  sans l'avoir vue : retirée. TOUJOURS grep le worker avant d'ajouter une route.
+  Gratuit : 500 crédits/mois, 1 crédit = 1 marché × 1 région ; chaque bookmaker ne donne
+  que SA ligne principale d'over/under. Séries (28r) : `_g45OaCote` UNIQUEMENT si ESPN n'a
+  pas la cote (règle d'Antoine) → /odds totals région eu ou h2h région fr ; cache appareil
+  g45oa1_ (échec : 30 min) ; ligues `_G45_OA_LIGUES`. Plusieurs comptes/clés pour
+  contourner le quota : REFUSÉ (CGU). Scraping de bookmakers /
   Oddsportal / DraftKings via VPN : REFUSÉ (CGU, géoblocage), ne pas reproposer.
 - Cotes ESPN US : `details` = handicap (« LAR -1.5 », côté favori) en NFL.
 - Sofascore RapidAPI (sofascore6, via worker host=rapidapi) : match/list
