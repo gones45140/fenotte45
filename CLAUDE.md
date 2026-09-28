@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 27/09/2026 au soir (version déployée : 20260928m, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 27/09/2026 au soir (version déployée : 20260928n, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -225,6 +225,13 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   pas la moyenne de tous les buts), tranches de 15 min. Contexte : qMode
   ('pour'|'contre'), qTri (m1|m2|prem|der|g, re-toucher = inverser), qOuvert
   (équipe dépliée : histogramme + bouton fiche).
+- STOCKAGE (28n, mesure d'Antoine : 5731 Ko, saturé) : filet existant « quota →
+  _g45FreeSpace() → nouvel essai » (setItem enveloppé + save). `_G45_CACHE_PREFIXES` =
+  caches reconstructibles purgeables (jamais g45v5). `_G45_CACHE_MORTS` = clés
+  ABANDONNÉES effacées à chaque ouverture (`g45MenageStockage`, 3 s après le
+  chargement ; purge préventive au-delà de 4 M caractères). RÈGLE : quand on change
+  la version d'une clé de cache (ex. g45cm8_ → g45cm9_), ajouter l'ANCIENNE à
+  _G45_CACHE_MORTS et la NOUVELLE à _G45_CACHE_PREFIXES.
 - Score d'un pari : `_g45ScoreTexte`, cache `g45_score4_<id>` (négatif gardé
   2 h) — effacé par `saveBetEdit` pour relancer la recherche.
 
