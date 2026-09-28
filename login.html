@@ -51,6 +51,13 @@
     .lien-secours:hover { color: var(--t2); }
   </style>
   <script defer src="https://cloud.umami.is/script.js" data-website-id="b6bf9373-afdd-491a-b27e-6b0f18b46d82"></script>
+<!-- APPLI INSTALLABLE (28/09/2026, préparation de l'APK « TWA » via PWABuilder) :
+     le manifeste n'était déclaré sur aucune page de bet45, et son icône venait
+     d'un site extérieur. sw.js (réseau d'abord, jamais de vieux cache) est
+     enregistré dès l'ouverture : exigé pour l'installation et les notifications. -->
+<link rel="manifest" href="manifest.json?v=20260928h">
+<meta name="theme-color" content="#0a0e1a">
+<script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});}</script>
 </head>
 <body>
   <div class="box">

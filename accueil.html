@@ -106,6 +106,13 @@
     .mur-badge{display:none;}
   }
 </style>
+<!-- APPLI INSTALLABLE (28/09/2026, préparation de l'APK « TWA » via PWABuilder) :
+     le manifeste n'était déclaré sur aucune page de bet45, et son icône venait
+     d'un site extérieur. sw.js (réseau d'abord, jamais de vieux cache) est
+     enregistré dès l'ouverture : exigé pour l'installation et les notifications. -->
+<link rel="manifest" href="manifest.json?v=20260928h">
+<meta name="theme-color" content="#0a0e1a">
+<script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});}</script>
 </head>
 <body>
 

@@ -1,16 +1,18 @@
 {
+  "id": "./indexfenotte.html",
   "short_name": "BET45",
-  "name": "BET45 Command Center",
+  "name": "BET45",
+  "description": "Suivi de paris sportifs : montantes, statistiques, scores en direct.",
+  "lang": "fr",
   "icons": [
-    {
-      "src": "https://cdn-icons-png.flaticon.com/512/535/535234.png",
-      "type": "image/png",
-      "sizes": "512x512"
-    }
+    { "src": "icon-192.png", "type": "image/png", "sizes": "192x192", "purpose": "any" },
+    { "src": "icon-512.png", "type": "image/png", "sizes": "512x512", "purpose": "any" },
+    { "src": "icon-512.png", "type": "image/png", "sizes": "512x512", "purpose": "maskable" }
   ],
-  "start_url": "./index.html",
-  "background_color": "#020617",
-  "display": "standalone",
+  "start_url": "./indexfenotte.html",
   "scope": "./",
-  "theme_color": "#020617"
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0a0e1a",
+  "theme_color": "#0a0e1a"
 }
