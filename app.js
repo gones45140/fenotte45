@@ -59573,3 +59573,62 @@ window.g45SantePayant = async function (k, btn) {
   document.addEventListener('click', function (e) { var t = e.target && e.target.closest && e.target.closest('[onclick*="t-outils"]'); if (t) setTimeout(_g45SanteAfficher, 300); });
 })();
 window.g45SanteTester = g45SanteTester; window._g45SantePannes = _g45SantePannes;
+
+/* ═══ INSTALLER BET45 (28/09/2026, maquette validée : « OUI ») ═══
+   Bloc en tête d'Outils, sur bet45 SEULEMENT (gones45 = Antoine, déjà installé).
+   Une seule ligne selon l'appareil : Android → APK (TWA PWABuilder, paquet
+   fr.bet45.twa, fichier telecharger/bet45.apk dans fenotte45) ; iPhone →
+   Safari « Sur l'écran d'accueil » ; PC → icône « Installer » de Chrome/Edge.
+   Masqué quand l'appli tourne déjà installée (display-mode standalone, ou
+   ouverte par l'APK : référent android-app://). Tant que l'APK n'est pas déposé
+   (HEAD en 404), le bouton affiche « bientôt disponible ». */
+function _g45InstSurBet45() {
+  try { return typeof window._g45User !== 'undefined' || /(^|\.)bet45\.fr$/i.test(location.hostname); } catch (e) { return false; }
+}
+function _g45InstDejaInstalle() {
+  try {
+    if (window.matchMedia && (matchMedia('(display-mode: standalone)').matches || matchMedia('(display-mode: fullscreen)').matches)) return true;
+    if (navigator.standalone) return true;
+    if (String(document.referrer || '').indexOf('android-app://') === 0) return true;
+  } catch (e) {}
+  return false;
+}
+function _g45InstAppareil() {
+  var ua = navigator.userAgent || '';
+  if (/Android/i.test(ua)) return 'android';
+  if (/iPhone|iPad|iPod/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1)) return 'ios';
+  return 'pc';
+}
+var _G45_APK = 'telecharger/bet45.apk';
+async function g45InstPoser() {
+  try {
+    if (!_g45InstSurBet45() || _g45InstDejaInstalle()) return;
+    var hote = document.getElementById('t-outils'); if (!hote) return;
+    var el = document.getElementById('g45-inst');
+    if (!el) {
+      el = document.createElement('div'); el.id = 'g45-inst';
+      el.style.cssText = 'margin:10px 0 14px;padding:14px;border-radius:12px;border:1px solid rgba(77,132,255,.35);background:rgba(11,16,29,.9);';
+      hote.insertBefore(el, hote.firstChild);
+    }
+    var app = _g45InstAppareil(), corps = '';
+    var txt = function (t) { return '<div style="font-size:13px;color:#dfe6f5;line-height:1.55;margin-top:6px;">' + t + '</div>'; };
+    if (app === 'android') {
+      var dispo = false;
+      try { var r = await fetch(_G45_APK, { method: 'HEAD', cache: 'no-store' }); dispo = r.ok; } catch (e) {}
+      corps = dispo
+        ? '<a href="' + _G45_APK + '" download="BET45.apk" data-g45-direct="1" style="display:block;text-align:center;margin-top:8px;padding:11px 14px;border-radius:10px;background:#4d84ff;color:#fff;font-size:14px;font-weight:800;text-decoration:none;">⬇️ Télécharger l\'appli Android</a>'
+          + txt('Si Android le demande, autorise l\'installation depuis ton navigateur, puis ouvre le fichier téléchargé.')
+        : '<div style="margin-top:8px;padding:11px 14px;border-radius:10px;background:rgba(255,255,255,.06);color:#9fb0c7;font-size:14px;font-weight:800;text-align:center;">📲 Appli Android : bientôt disponible</div>';
+    } else if (app === 'ios') {
+      corps = txt('Dans <b>Safari</b> : touche <b>Partager</b> ⬆️ puis <b>« Sur l\'écran d\'accueil »</b>. BET45 s\'ouvre alors comme une appli, avec ses notifications.');
+    } else {
+      corps = txt('Dans <b>Chrome</b> ou <b>Edge</b> : clique sur l\'icône <b>« Installer »</b> au bout de la barre d\'adresse (ou menu ⋮ → « Installer BET45 »). BET45 s\'ouvre dans sa propre fenêtre.');
+    }
+    el.innerHTML = '<div style="font-size:14px;font-weight:800;color:#fff;">📲 Installer BET45</div>' + corps;
+  } catch (e) {}
+}
+(function () {
+  var poser = function () { g45InstPoser(); };
+  try { setTimeout(poser, 1600); document.addEventListener('click', function (e) { var t = e.target && e.target.closest && e.target.closest('[onclick*="t-outils"]'); if (t) setTimeout(poser, 350); }); } catch (e) {}
+})();
+window.g45InstPoser = g45InstPoser;
