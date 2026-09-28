@@ -31031,6 +31031,37 @@ function _g45ArticleFootEn(league, eventId, hN, aN) {
   return '<div id="' + id + '"></div>';
 }
 window._g45ArticleFootEn = _g45ArticleFootEn;
+/* ═══ « QUI VA GAGNER ? — 2 AVIS » (28/09/2026, maquette validée) ═══
+   Remplace le projet « 3 avis » (Kalshi abandonné : 429 en continu). Compare la
+   probabilité ESPN (data.predictor.*.gameProjection) à celle des cotes du match
+   (moneyline domicile / extérieur lue par _g45EspnUsOdds, marge du bookmaker
+   retirée en normalisant 1/cote). Affiché seulement si les DEUX existent ;
+   alerte si l'écart dépasse 8 points. Fenêtre hors foot (_renderGenericDetail). */
+function _g45DeuxAvis(data, eid, hN, aN) {
+  var pr = data && data.predictor, od = window._g45LastUsOdds;
+  if (!pr || !pr.homeTeam || !pr.awayTeam || !od || String(od.eid) !== String(eid)) return '';
+  var eh = parseFloat(pr.homeTeam.gameProjection), ea = parseFloat(pr.awayTeam.gameProjection);
+  if (isNaN(eh) || isNaN(ea) || !(od.hDec > 1) || !(od.aDec > 1)) return '';
+  var qh = 1 / od.hDec, qa = 1 / od.aDec, ch = qh * 100 / (qh + qa), ca = 100 - ch;
+  var esc = function (x) { return String(x).replace(/&/g, '&amp;').replace(/</g, '&lt;'); };
+  var r = function (x) { return Math.round(x) + ' %'; };
+  var dh = eh - ch, da = ea - ca, big = dh >= da ? { n: hN, d: dh } : { n: aN, d: da };   /* l'équipe qu'ESPN voit plus haut que les cotes */
+  var alerte = Math.abs(big.d) > 8
+    ? '<div style="margin-top:8px;font-size:13px;font-weight:800;color:#ffd166;line-height:1.45;">⚠️ Écart de ' + Math.round(Math.abs(big.d)) + ' pts sur ' + esc(big.n) + ' : ESPN ' + (big.d > 0 ? 'plus optimiste' : 'moins optimiste') + ' que les bookmakers</div>'
+    : '<div style="margin-top:8px;font-size:12px;color:var(--t3);">Les deux avis sont proches (moins de 8 pts d’écart).</div>';
+  var ligne = function (ico, lib, a, b) {
+    return '<div style="display:grid;grid-template-columns:minmax(0,1fr) 64px 64px;gap:6px;padding:5px 0;border-top:1px solid rgba(255,255,255,.06);font-size:13px;">'
+      + '<span style="color:#dfe6f5;font-weight:700;">' + ico + ' ' + lib + '</span><span style="text-align:right;color:#fff;font-weight:800;">' + a + '</span><span style="text-align:right;color:#fff;font-weight:800;">' + b + '</span></div>';
+  };
+  return '<div style="margin-top:10px;background:rgba(10,14,24,.85);border:1px solid rgba(255,209,102,.3);border-radius:10px;padding:12px;">'
+    + '<div style="font-size:11px;font-weight:800;color:#ffd166;letter-spacing:.4px;margin-bottom:6px;">📊 QUI VA GAGNER ? — 2 AVIS</div>'
+    + '<div style="display:grid;grid-template-columns:minmax(0,1fr) 64px 64px;gap:6px;font-size:12px;color:#c9d3ee;font-weight:700;"><span></span>'
+    + '<span style="text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(hN) + '</span><span style="text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(aN) + '</span></div>'
+    + ligne('🔮', 'ESPN', r(eh), r(ea)) + ligne('💰', 'Cotes (' + esc(od.prov || 'ESPN') + ')', r(ch), r(ca))
+    + alerte + '</div>';
+}
+window._g45DeuxAvis = _g45DeuxAvis;
+
 async function g45ArticleTraduire(btn) {
   var box = document.getElementById(btn.dataset.box); if (!box) return;
   if (box.getAttribute('data-loaded') === '1') { box.style.display = (box.style.display === 'none' ? '' : 'none'); return; }
@@ -32114,7 +32145,7 @@ async function _g45EspnUsOdds(sport, lg, eid, dateISO, hN, aN){
     }
     var prov=(od.provider&&od.provider.name)||'ESPN';
     if(!over&&!under&&!favName&&!handi) return '';
-    try{ window._g45LastUsOdds={eid:String(eid), prov:prov, favName:favName, favDec:favDec, line:line, over:over, under:under, handi:handi}; }catch(e){}
+    try{ window._g45LastUsOdds={eid:String(eid), prov:prov, favName:favName, favDec:favDec, line:line, over:over, under:under, handi:handi, hDec:hDec, aDec:aDec}; }catch(e){}
     var rows='';
     if(favName){ rows+='<div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;padding:3px 0;"><span style="color:var(--t2);">🏆 Favori vainqueur</span><span style="color:var(--t1);font-weight:700;">'+ea(favName)+(favDec?(' <b style="color:#2ecc71;">@'+favDec.toFixed(2)+'</b>'):(favAm?(' ('+ea(favAm)+')'):''))+'</span></div>'; }
     if(handi){ rows+='<div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;padding:3px 0;"><span style="color:var(--t2);">📏 Handicap</span><span style="color:var(--t1);font-weight:700;">'+ea(handi.replace(/(\d)\.(\d)/g,'$1,$2'))+'</span></div>'; }
@@ -32254,6 +32285,7 @@ async function _renderGenericDetail(el, sport, lg, eid){
     if(stT.state==='pre'){ try{ var _pmG=_g45PreMatchBlock(data); if(_pmG) h+=_pmG; }catch(e){} }
     // Cotes ESPN (sports US : favori moneyline + total), en décimal — gratuit, sans quota
     try{ var _usOdds=await _g45EspnUsOdds(sport, lg, eid, comp.date||'', hN, aN); if(_usOdds) h+=_usOdds; }catch(e){}
+    try{ var _2av=(typeof _g45DeuxAvis==='function')?_g45DeuxAvis(data, eid, hN, aN):''; if(_2av) h+=_2av; }catch(e){}
     try{ var _artB=(typeof _g45ArticleBloc==='function')?_g45ArticleBloc(data, eid, hN, aN):''; if(_artB) h+=_artB; }catch(e){}
     h+='<div style="margin-top:8px;"><button onclick="g45LoadUsAI(this)" data-lg="'+lg+'" data-sport="'+sport+'" data-eid="'+eid+'" data-h="'+String(hN).replace(/"/g,'&quot;')+'" data-a="'+String(aN).replace(/"/g,'&quot;')+'" data-date="'+(comp.date||'')+'" data-box="usai-'+eid+'" style="width:100%;box-sizing:border-box;font-size:12px;font-weight:800;padding:9px 12px;border-radius:9px;cursor:pointer;border:1.5px solid rgba(176,124,214,.5);background:rgba(176,124,214,.10);color:#b07cd6;">🧠 Analyse IA du match</button><div id="usai-'+eid+'" style="margin-top:8px;"></div></div>';
     var _tSlug=({mlb:'baseball',nba:'basketball',nfl:'american-football',nhl:'ice-hockey',wnba:'basketball'})[lg]||({rugby:'rugby','rugby-league':'rugby'})[sport]||'';
@@ -44550,9 +44582,9 @@ window._g45CompetMatchs = _g45CompetMatchs;
    FINAL ; si aucune ne colle (détail incomplet), le match est écarté des
    catégories tirées des buts, et gardé pour celles tirées du score.
    ═══════════════════════════════════════════════════════════════════════════ */
-var _g45ClsCtx = { mode: 'eq', catE: 'bm', catJ: 'buts', lieu: 'all', n: 0, inv: false, phase: 'reg', tot: false, ouP: 'ft', ouL: 2.5, qMode: 'pour', qTri: 'm2', qInv: false, qOuvert: '' };
+var _g45ClsCtx = { mode: 'eq', catE: 'bm', catJ: 'buts', lieu: 'all', n: 0, inv: false, phase: 'reg', tot: false, ouP: 'ft', ouL: 2.5, vsTri: 'd', vsInv: false, qMode: 'pour', qTri: 'm2', qInv: false, qOuvert: '' };
 try { (function () { var o = JSON.parse(localStorage.getItem('g45_cls_ou') || 'null');
-  if (o && /^(ft|1|2)$/.test(o.p)) _g45ClsCtx.ouP = o.p;
+  if (o && /^(ft|1|2|vs)$/.test(o.p)) _g45ClsCtx.ouP = o.p;
   if (o && [0.5, 1.5, 2.5, 3.5, 4.5].indexOf(o.l) >= 0) _g45ClsCtx.ouL = o.l; })(); } catch (e) {}
 /* PAR MATCH / TOTAL (26/09/2026, maquette validée) : « Buts marqués » était
    une moyenne sans le dire. Le total reste toujours visible sous la moyenne ;
@@ -44979,12 +45011,12 @@ async function g45ClsRender(c, body) {
   var def = cats.filter(function (k) { return k[0] === cle; })[0] || cats[0];
   if (X.mode === 'eq' && def[0] === 'ou') {
     h += '<div style="font-size:12px;color:#c9d3ee;font-weight:700;margin:2px 0 4px;">Période</div>'
-      + '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-bottom:6px;">'
-      + [['ft', 'Match'], ['1', '1re MT'], ['2', '2e MT']].map(function (x) { return _g45ClsBtn(X.ouP === x[0], x[1], "g45ClsSet('ouP','" + x[0] + "')"); }).join('') + '</div>'
+      + '<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-bottom:6px;">'
+      + [['ft', 'Match'], ['1', '1re MT'], ['2', '2e MT'], ['vs', '1re vs 2e']].map(function (x) { return _g45ClsBtn(X.ouP === x[0], x[1], "g45ClsSet('ouP','" + x[0] + "')"); }).join('') + '</div>'
       + '<div style="font-size:12px;color:#c9d3ee;font-weight:700;margin:2px 0 4px;">Ligne</div>'
       + '<div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin-bottom:10px;">'
       + [0.5, 1.5, 2.5, 3.5, 4.5].map(function (l) { return _g45ClsBtn(X.ouL === l, _g45ClsFr(l, 1), "g45ClsSet('ouL'," + l + ")"); }).join('') + '</div>';
-    def = ['ou', 'Over ' + _g45ClsFr(X.ouL, 1) + ({ ft: '', '1': ' · 1re MT', '2': ' · 2e MT' })[X.ouP], 'pct', 1];
+    def = ['ou', 'Over ' + _g45ClsFr(X.ouL, 1) + ({ ft: '', '1': ' · 1re MT', '2': ' · 2e MT', vs: ' · 1re vs 2e MT' })[X.ouP], 'pct', 1];
   }
   if (X.mode === 'eq' && def[0] === 'quand') {
     h += '<div style="font-size:12px;color:#c9d3ee;font-weight:700;margin:2px 0 4px;">Buts</div>'
@@ -45004,6 +45036,7 @@ async function g45ClsRender(c, body) {
   var saisonTxt = (typeof _g45SgLabel === 'function') ? _g45SgLabel(c.s, an) : String(an);
   var PE = _g45ClsParEquipe(ms);
   if (X.mode === 'eq' && def[0] === 'quand') h += _g45ClsTableQuand(c, PE, saisonTxt, lieuTxt, ms);
+  else if (X.mode === 'eq' && def[0] === 'ou' && X.ouP === 'vs') h += _g45ClsTableOuVs(c, def, PE, saisonTxt, lieuTxt, ms);
   else if (X.mode === 'eq') h += _g45ClsTableEq(c, def, PE, saisonTxt, lieuTxt, ms);
   else h += await _g45ClsTableJo(c, def, PE, saisonTxt, filtrable ? lieuTxt : 'saison', an, body);
   body.innerHTML = _g45ClsFond(c, h);
@@ -45128,6 +45161,43 @@ function _g45ClsTableQuand(c, PE, saisonTxt, lieuTxt, ms) {
 }
 window._g45ClsQuandEq = _g45ClsQuandEq;
 
+/* ═══ OVER « 1re vs 2e MT » (28/09/2026, maquette validée) ═══
+   Pour la ligne choisie, % de matchs Over en 1re MT et en 2e MT côte à côte
+   (même calcul que _g45ClsValEq 'ou', matchs au détail complet seulement) et
+   l'écart en points ; tri par écart (ou par colonne, via vsTri). */
+function _g45ClsTableOuVs(c, def, PE, saisonTxt, lieuTxt, ms) {
+  var X = _g45ClsCtx, garde = X.ouP, rows = [], T1 = { k: 0, n: 0 }, T2 = { k: 0, n: 0 };
+  Object.keys(PE.par).forEach(function (id) {
+    X.ouP = '1'; var v1 = _g45ClsValEq('ou', id, PE.par[id]);
+    X.ouP = '2'; var v2 = _g45ClsValEq('ou', id, PE.par[id]);
+    if (v1 && v2) { T1.k += v1.k; T1.n += v1.n; T2.k += v2.k; T2.n += v2.n; rows.push({ id: id, nom: PE.info[id].nom, logo: PE.info[id].logo, v1: v1, v2: v2, d: v2.v - v1.v }); }
+  });
+  X.ouP = garde;
+  var cle = { d: 'd', '1': 'a', '2': 'b' }[X.vsTri] || 'd', sens = X.vsInv ? 1 : -1;
+  rows.forEach(function (r) { r.a = r.v1.v; r.b = r.v2.v; });
+  rows.sort(function (a, b) { return (a[cle] - b[cle]) * sens || a.nom.localeCompare(b.nom); });
+  var nonFiables = ms.filter(function (m) { return !m.f; }).length;
+  var sous = 'Championnat : ' + (T1.n ? Math.round(T1.k * 100 / T1.n) : 0) + ' % en 1re MT · ' + (T2.n ? Math.round(T2.k * 100 / T2.n) : 0) + ' % en 2e MT';
+  if (nonFiables) sous += ' · ' + nonFiables + ' match(s) au détail incomplet écarté(s)';
+  var h = _g45ClsEnTete(def[1] + ' · ' + c.n + ' ' + saisonTxt + ' · ' + lieuTxt, sous);
+  var GR = 'display:grid;grid-template-columns:24px minmax(0,1fr) 58px 58px 64px;gap:5px;padding:8px 10px;align-items:center;';
+  var th = function (k, t) { return '<span onclick="g45ClsSet(\'vsTri\',\'' + k + '\')" style="text-align:right;cursor:pointer;text-decoration:underline;' + (X.vsTri === k ? 'color:#fff;' : '') + '">' + t + (X.vsTri === k ? (X.vsInv ? '▲' : '▼') : '') + '</span>'; };
+  h += '<div style="background:rgba(11,16,29,.50);border-radius:8px;overflow:hidden;">'
+    + '<div style="' + GR + 'font-size:12px;color:#c9d3ee;font-weight:700;"><span>#</span><span>Équipe</span>' + th('1', '1re MT') + th('2', '2e MT') + th('d', 'Écart') + '</div>';
+  rows.forEach(function (r, i) {
+    var d = Math.round(r.d), col = d > 0 ? '#1ed760' : (d < 0 ? '#ff8a8a' : '#c9d3ee');
+    h += '<div onclick="g45CompetOuvrir(\'' + String(r.nom).replace(/'/g, "\\'") + '\',\'' + r.id + '\',\'' + c.s + '\',\'soccer\')" style="' + GR + 'border-top:1px solid rgba(255,255,255,.08);cursor:pointer;">'
+      + '<span style="font-size:13px;font-weight:800;color:' + (i ? '#c9d3ee' : '#f0b020') + ';">' + (i + 1) + '</span>'
+      + '<span style="display:flex;align-items:center;gap:6px;min-width:0;">' + (r.logo ? '<img src="' + r.logo + '" alt="" loading="lazy" style="width:18px;height:18px;object-fit:contain;flex:none;" onerror="this.style.display=\'none\'">' : '')
+      + '<span style="font-size:13px;font-weight:800;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + r.nom + '</span></span>'
+      + '<span style="text-align:right;font-size:13px;font-weight:800;color:#fff;">' + Math.round(r.a) + ' %<div style="font-size:11px;color:#c9d3ee;font-weight:700;">' + r.v1.k + '/' + r.v1.n + '</div></span>'
+      + '<span style="text-align:right;font-size:13px;font-weight:800;color:#fff;">' + Math.round(r.b) + ' %<div style="font-size:11px;color:#c9d3ee;font-weight:700;">' + r.v2.k + '/' + r.v2.n + '</div></span>'
+      + '<span style="text-align:right;font-size:13px;font-weight:900;color:' + col + ';white-space:nowrap;">' + (d > 0 ? '+' : '') + d + (d > 0 ? ' ↗️' : (d < 0 ? ' ↘️' : '')) + '</span></div>';
+  });
+  return h + '</div><div style="font-size:12px;color:#c9d3ee;margin-top:6px;">Écart = points de % en plus en 2e MT (↗️) ou en 1re (↘️) · touche un en-tête pour trier · touche une équipe pour sa fiche.</div>';
+}
+window._g45ClsTableOuVs = _g45ClsTableOuVs;
+
 /* Joueurs, catégories tirées des buts et cartons. */
 function _g45ClsJoueursButs(def, PE) {
   var J = {};
@@ -45226,6 +45296,7 @@ async function _g45ClsTableJo(c, def, PE, saisonTxt, lieuTxt, an, body) {
 window.g45ClsSet = function (k, v) {
   if (k === 'inv') _g45ClsCtx.inv = !_g45ClsCtx.inv;
   else if (k === 'qTri') { if (_g45ClsCtx.qTri === v) _g45ClsCtx.qInv = !_g45ClsCtx.qInv; else { _g45ClsCtx.qTri = v; _g45ClsCtx.qInv = false; } }
+  else if (k === 'vsTri') { if (_g45ClsCtx.vsTri === v) _g45ClsCtx.vsInv = !_g45ClsCtx.vsInv; else { _g45ClsCtx.vsTri = v; _g45ClsCtx.vsInv = false; } }
   else if (k === 'qOuvert') { _g45ClsCtx.qOuvert = (_g45ClsCtx.qOuvert === v) ? '' : v; }
   else { _g45ClsCtx[k] = v; if (k !== 'lieu' && k !== 'n' && k !== 'phase' && k !== 'tot' && k !== 'ouP' && k !== 'ouL' && k !== 'qMode') _g45ClsCtx.inv = false; }
   if (k === 'ouP' || k === 'ouL') { try { localStorage.setItem('g45_cls_ou', JSON.stringify({ p: _g45ClsCtx.ouP, l: _g45ClsCtx.ouL })); } catch (e) {} }
