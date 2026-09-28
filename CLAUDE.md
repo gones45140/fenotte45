@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 27/09/2026 au soir (version déployée : 20260928k, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 27/09/2026 au soir (version déployée : 20260928l, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -342,11 +342,13 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
 ## 7. Reste à faire (trié avec Antoine le 28/09/2026)
 
 EN COURS / À FAIRE DE SUITE (maquettes proposées le 28/09) :
-- (4) Classements foot : comparaison 1re MT vs 2e MT côte à côte (Over).
-- (5) Bloc « 2 avis » dans la fenêtre de match : proba ESPN (predictor) vs proba des
-  cotes (DraftKings, marge retirée), alerte si écart > 8 points.
-- (8) CLV : cote prise vs cote de clôture, sur les paris réglés (sonder d'abord ce
-  qu'ESPN garde des cotes après le match : moneyline.*.close / pickcenter).
+- (4) FAIT 28l : Over période « 1re vs 2e » → `_g45ClsTableOuVs` (tri vsTri/vsInv).
+- (5) FAIT 28l : `_g45DeuxAvis(data, eid, hN, aN)` dans `_renderGenericDetail` (hors foot) :
+  predictor ESPN vs moneyline (hDec/aDec ajoutés à window._g45LastUsOdds), marge
+  retirée, alerte > 8 pts orientée vers l'équipe qu'ESPN voit plus haut.
+- (8) CLV : cote prise vs cote de clôture, sur les paris réglés. Sondé 28/09 :
+  scoreboard d'un match JOUÉ (eng.1, 20/09) → competitions[0].odds = [null]. Reste à
+  sonder summary?event= (pickcenter / odds) d'un match joué.
 
 À VOIR (en attente d'un retour d'Antoine) :
 - Notifications multi-appareils (28g + worker redéployé : « N appareils reliés ») :
