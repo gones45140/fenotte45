@@ -45265,8 +45265,12 @@ function _g45ClsProchains(lg) {
         var od = null;
         try {
           var t = (typeof _g45TrOddsEv === 'function') ? _g45TrOddsEv(e) : null, o0 = (co.odds || [])[0] || {}, cur = o0.current || {};
-          var ov = (typeof _g45TrDec === 'function') ? (_g45TrDec(o0.overOdds) || (cur.over && _g45TrDec(cur.over.decimal || cur.over.american))) : 0;
-          var un = (typeof _g45TrDec === 'function') ? (_g45TrDec(o0.underOdds) || (cur.under && _g45TrDec(cur.under.decimal || cur.under.american))) : 0;
+          /* 28/09 (sondé par Antoine sur Lyon-Lens) : pour un match À VENIR, ESPN range
+             l'over/under dans total.over / total.under .close (.open) .odds (« +130 ») ;
+             overOdds / underOdds n'existent que dans l'ancien format. */
+          var tot = o0.total || {}, pk = function (n) { return n && ((n.close && n.close.odds) || (n.open && n.open.odds) || n.odds); };
+          var ov = (typeof _g45TrDec === 'function') ? (_g45TrDec(o0.overOdds) || _g45TrDec(pk(tot.over)) || (cur.over && _g45TrDec(cur.over.decimal || cur.over.american))) : 0;
+          var un = (typeof _g45TrDec === 'function') ? (_g45TrDec(o0.underOdds) || _g45TrDec(pk(tot.under)) || (cur.under && _g45TrDec(cur.under.decimal || cur.under.american))) : 0;
           od = { h: t && t.h, d: t && t.d, a: t && t.a, line: o0.overUnder != null ? parseFloat(o0.overUnder) : (t && t.line), over: ov, under: un };
         } catch (er) {}
         if (!d[hi]) d[hi] = { txt: jour + ' vs ' + (A.team.shortDisplayName || A.team.displayName || '?'), dom: true, od: od };
@@ -45312,7 +45316,10 @@ function _g45ClsTableSerie(c, PE, saisonTxt, lieuTxt) {
   rows.forEach(function (x, i) {
     var r = x.r, auRecord = r.serie >= r.rec && r.serie >= 2;
     var pr = proch ? (x.pm ? x.pm.txt : 'pas de match dans 14 j') : '⏳ prochain match…';
-    if (x.pm) pr += x.cote > 1 ? (' · cote fin de série <b style="color:' + (x.cote >= 1.5 ? '#1ed760' : '#ffb13d') + ';">' + x.cote.toFixed(2) + (x.cote >= 1.5 ? ' ✅' : ' (< 1,5)') + '</b>') : ' · cote : —';
+    var _od = x.pm && x.pm.od, _L = { o05: 0.5, o15: 1.5, o25: 2.5, o35: 3.5 }[ev];
+    var _autre = (!(x.cote > 1) && _od && _L != null && _od.line != null && Math.abs(_od.line - _L) > 0.01)
+      ? ' (DraftKings propose la ligne ' + String(_od.line).replace('.', ',') + (_od.over > 1 ? ' : over ' + _od.over.toFixed(2) : '') + (_od.under > 1 ? ' / under ' + _od.under.toFixed(2) : '') + ')' : '';
+    if (x.pm) pr += x.cote > 1 ? (' · cote fin de série <b style="color:' + (x.cote >= 1.5 ? '#1ed760' : '#ffb13d') + ';">' + x.cote.toFixed(2) + (x.cote >= 1.5 ? ' ✅' : ' (< 1,5)') + '</b>') : ' · cote : —' + _autre;
     h += '<div onclick="g45CompetOuvrir(\'' + String(x.nom).replace(/'/g, "\\'") + '\',\'' + x.id + '\',\'' + c.s + '\',\'soccer\')" style="border-top:1px solid rgba(255,255,255,.08);cursor:pointer;">'
       + '<div style="' + GR + '">'
       + '<span style="font-size:13px;font-weight:800;color:' + (i ? '#c9d3ee' : '#f0b020') + ';">' + (i + 1) + '</span>'
@@ -60025,7 +60032,10 @@ async function _g45ClvResoudre(h) {
   if (sel.s === '1') clo = _g45ClvAmDec(pc.homeTeamOdds && pc.homeTeamOdds.moneyLine);
   else if (sel.s === '2') clo = _g45ClvAmDec(pc.awayTeamOdds && pc.awayTeamOdds.moneyLine);
   else if (sel.s === 'N') clo = _g45ClvAmDec(pc.drawOdds && pc.drawOdds.moneyLine);
-  else if (pc.overUnder != null && Math.abs(parseFloat(pc.overUnder) - sel.l) < 0.01) clo = _g45ClvAmDec(sel.s === 'o' ? pc.overOdds : pc.underOdds);
+  else if (pc.overUnder != null && Math.abs(parseFloat(pc.overUnder) - sel.l) < 0.01) {
+    var _t = pc.total || {}, _n = sel.s === 'o' ? _t.over : _t.under;
+    clo = _g45ClvAmDec(sel.s === 'o' ? pc.overOdds : pc.underOdds) || _g45ClvAmDec(_n && ((_n.close && _n.close.odds) || (_n.open && _n.open.odds)));
+  }
   if (!(clo > 1)) return neg();
   try { localStorage.setItem('g45clv1_' + h.id, JSON.stringify({ c: Math.round(clo * 100) / 100, s: sel.s, l: sel.l || null, eid: ev.id })); } catch (e) {}
 }
