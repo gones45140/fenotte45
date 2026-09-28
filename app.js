@@ -37030,7 +37030,7 @@ async function loadTeamNews(nom, force){
     var _dom=String(n.src||'').replace(/[^a-z0-9.\-]/gi,'');
     var _ico=_dom?('https://www.google.com/s2/favicons?domain='+_dom+'&sz=128'):'';
     html+='<a href="'+n.link+'" target="_blank" rel="noopener" style="position:relative;overflow:hidden;display:flex;align-items:center;gap:11px;text-decoration:none;background:rgba(11,16,29,.72);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:10px 12px;margin-bottom:8px;">'
-      +(_ico?'<img src="'+_ico+'" alt="" aria-hidden="true" loading="lazy" onerror="this.remove()" style="position:absolute;right:-14px;top:50%;transform:translateY(-50%);width:96px;height:96px;object-fit:contain;opacity:.10;pointer-events:none;filter:grayscale(.2);">':'')
+      +(_ico?'<img src="'+_ico+'" alt="" aria-hidden="true" loading="lazy" onerror="this.remove()" style="position:absolute;right:-10px;top:50%;transform:translateY(-50%);width:110px;height:110px;object-fit:contain;opacity:.30;pointer-events:none;">':'')
       +(_ico?'<img src="'+_ico+'" alt="" loading="lazy" onerror="this.remove()" style="position:relative;flex:none;width:32px;height:32px;border-radius:50%;background:#fff;padding:3px;box-sizing:border-box;object-fit:contain;">':'')
       +'<div style="position:relative;min-width:0;">'
       +'<div style="font-size:13px;color:#fff;font-weight:700;line-height:1.4;text-shadow:0 1px 3px rgba(0,0,0,.8);">'+n.title+'</div>'
