@@ -44550,7 +44550,10 @@ window._g45CompetMatchs = _g45CompetMatchs;
    FINAL ; si aucune ne colle (détail incomplet), le match est écarté des
    catégories tirées des buts, et gardé pour celles tirées du score.
    ═══════════════════════════════════════════════════════════════════════════ */
-var _g45ClsCtx = { mode: 'eq', catE: 'bm', catJ: 'buts', lieu: 'all', n: 0, inv: false, phase: 'reg', tot: false };
+var _g45ClsCtx = { mode: 'eq', catE: 'bm', catJ: 'buts', lieu: 'all', n: 0, inv: false, phase: 'reg', tot: false, ouP: 'ft', ouL: 2.5 };
+try { (function () { var o = JSON.parse(localStorage.getItem('g45_cls_ou') || 'null');
+  if (o && /^(ft|1|2)$/.test(o.p)) _g45ClsCtx.ouP = o.p;
+  if (o && [0.5, 1.5, 2.5, 3.5, 4.5].indexOf(o.l) >= 0) _g45ClsCtx.ouL = o.l; })(); } catch (e) {}
 /* PAR MATCH / TOTAL (26/09/2026, maquette validée) : « Buts marqués » était
    une moyenne sans le dire. Le total reste toujours visible sous la moyenne ;
    le bouton choisit le chiffre principal ET le tri. */
@@ -44599,8 +44602,11 @@ var _G45_CLS_EQ = [
   /* clé, libellé, type ('moy' par match | 'pct' | 'moyc' cartons), sens (1 = le plus haut en tête) */
   ['bm', 'Buts marqués', 'moy', 1], ['be', 'Encaissés', 'moy', -1], ['tot', 'Total/match', 'moy', 1],
   ['cs', 'Clean sheets', 'pct', 1], ['sm', 'Sans marquer', 'pct', -1], ['btts', 'Les 2 marquent', 'pct', 1],
-  ['o25', 'Over 2,5', 'pct', 1], ['p1', '⚡ 1re à marquer', 'pct', 1], ['mt', 'Mène à la pause', 'pct', 1],
-  ['bts1', 'BTS 1re MT', 'pct', 1], ['o15mt', 'Over 1,5 MT', 'pct', 1], ['car', 'Cartons', 'moy', 1]
+  /* OVER À SÉLECTEURS (28/09/2026, maquette validée) : « Over 2,5 » et « Over 1,5 MT »
+     deviennent UN bouton « Over » + période (Match / 1re MT / 2e MT) + ligne
+     (0,5 à 4,5) : _g45ClsCtx.ouP / ouL, gardés sur l'appareil (g45_cls_ou). */
+  ['ou', 'Over', 'pct', 1], ['p1', '⚡ 1re à marquer', 'pct', 1], ['mt', 'Mène à la pause', 'pct', 1],
+  ['bts1', 'BTS 1re MT', 'pct', 1], ['car', 'Cartons', 'moy', 1]
 ];
 var _G45_CLS_JO = [
   /* clé, libellé, source ('b' = buts du scoreboard | 'l' = top 25 ESPN), noms de catégorie ESPN */
@@ -44920,6 +44926,15 @@ function _g45ClsValEq(cat, id, liste) {
       case 'mt': if (m.f) { n++; if ((dom ? m.mh : m.ma) > (dom ? m.ma : m.mh)) k++; } break;
       case 'bts1': if (m.f) { n++; if (m.mh && m.ma) k++; } break;
       case 'o15mt': if (m.f) { n++; if (m.mh + m.ma > 1.5) k++; } break;
+      case 'ou': {
+        var L = _g45ClsCtx.ouL, P = _g45ClsCtx.ouP;
+        if (P === 'ft') { n++; if (p + c > L) k++; }
+        else if (m.f) {   /* mi-temps : seulement si le détail des buts est complet */
+          var b1 = m.mh + m.ma, b = P === '1' ? b1 : (m.hg + m.ag - b1);
+          if (b >= 0) { n++; if (b > L) k++; }
+        }
+        break;
+      }
     }
   });
   if (!n) return null;
@@ -44958,6 +44973,15 @@ async function g45ClsRender(c, body) {
   cats.forEach(function (k) { h += _g45ClsBtn(k[0] === cle, k[1], "g45ClsSet('" + (X.mode === 'eq' ? 'catE' : 'catJ') + "','" + k[0] + "')", k[0].indexOf('p1') === 0 ? '#f0b020' : ''); });
   h += '</div>';
   var def = cats.filter(function (k) { return k[0] === cle; })[0] || cats[0];
+  if (X.mode === 'eq' && def[0] === 'ou') {
+    h += '<div style="font-size:12px;color:#c9d3ee;font-weight:700;margin:2px 0 4px;">Période</div>'
+      + '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-bottom:6px;">'
+      + [['ft', 'Match'], ['1', '1re MT'], ['2', '2e MT']].map(function (x) { return _g45ClsBtn(X.ouP === x[0], x[1], "g45ClsSet('ouP','" + x[0] + "')"); }).join('') + '</div>'
+      + '<div style="font-size:12px;color:#c9d3ee;font-weight:700;margin:2px 0 4px;">Ligne</div>'
+      + '<div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin-bottom:10px;">'
+      + [0.5, 1.5, 2.5, 3.5, 4.5].map(function (l) { return _g45ClsBtn(X.ouL === l, _g45ClsFr(l, 1), "g45ClsSet('ouL'," + l + ")"); }).join('') + '</div>';
+    def = ['ou', 'Over ' + _g45ClsFr(X.ouL, 1) + ({ ft: '', '1': ' · 1re MT', '2': ' · 2e MT' })[X.ouP], 'pct', 1];
+  }
   var filtrable = X.mode === 'eq' || def[2] === 'b';
   if (filtrable) {
     h += _ph.html + '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-bottom:6px;">'
@@ -44992,7 +45016,7 @@ function _g45ClsTableEq(c, def, PE, saisonTxt, lieuTxt, ms) {
   var nonFiables = ms.filter(function (m) { return !m.f; }).length;
   var sous = 'Moyenne du championnat : ' + (pct ? _g45ClsFr(moyC) + ' %' : _g45ClsFr(moyC, 2));
   if (def[0] === 'p1') sous += ' · match sans but : non compté';
-  if (/^(p1|mt|bts1|o15mt)$/.test(def[0]) && nonFiables) sous += ' · ' + nonFiables + ' match(s) au détail incomplet écarté(s)';
+  if ((/^(p1|mt|bts1|o15mt)$/.test(def[0]) || (def[0] === 'ou' && X.ouP !== 'ft')) && nonFiables) sous += ' · ' + nonFiables + ' match(s) au détail incomplet écarté(s)';
   if (!pct) sous = sous.replace(/(\d)$/, '$1 par match');
   var h = (pct ? '' : _g45ClsBtnTot()) + _g45ClsEnTete(def[1] + (pct ? '' : (T ? ' (total)' : ' par match')) + ' · ' + c.n + ' ' + saisonTxt + ' · ' + lieuTxt, sous);
   h += '<div style="background:rgba(11,16,29,.50);border-radius:8px;overflow:hidden;">'
@@ -45109,7 +45133,8 @@ async function _g45ClsTableJo(c, def, PE, saisonTxt, lieuTxt, an, body) {
 
 window.g45ClsSet = function (k, v) {
   if (k === 'inv') _g45ClsCtx.inv = !_g45ClsCtx.inv;
-  else { _g45ClsCtx[k] = v; if (k !== 'lieu' && k !== 'n' && k !== 'phase' && k !== 'tot') _g45ClsCtx.inv = false; }
+  else { _g45ClsCtx[k] = v; if (k !== 'lieu' && k !== 'n' && k !== 'phase' && k !== 'tot' && k !== 'ouP' && k !== 'ouL') _g45ClsCtx.inv = false; }
+  if (k === 'ouP' || k === 'ouL') { try { localStorage.setItem('g45_cls_ou', JSON.stringify({ p: _g45ClsCtx.ouP, l: _g45ClsCtx.ouL })); } catch (e) {} }
   var D = window._g45ClsDernier, body = document.getElementById('g45-compet-body');
   if (D && D.khl && body) _g45KhlVueClassements(body);
   else if (D && body) g45ClsRender(D.c, body); else if (typeof loadCompetTab === 'function') loadCompetTab();
