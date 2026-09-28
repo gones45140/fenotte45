@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 27/09/2026 au soir (version déployée : 20260928o, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 27/09/2026 au soir (version déployée : 20260928p, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -333,6 +333,10 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   NFL (Rams–Broncos 401872962) : article type « Preview » ~6 700 car. (story HTML),
   predictor.homeTeam/awayTeam.gameProjection, againstTheSpread (records VIDES),
   pickcenter, news (actus NFL générales). Pas de pronostics d'experts.
+- Cotes ESPN foot, match À VENIR (scoreboard, sondé 28/09 Lyon-Lens) : clés overUnder,
+  total, pointSpread, moneyline, drawOdds, details ; over/under dans
+  total.over|under.close|open.odds (« +130 »), PAS d'overOdds/underOdds (ancien format,
+  vu sur un summary de match joué). La ligne DK n'est pas toujours 2,5 (3,5 vu).
 - Cotes ESPN US : `details` = handicap (« LAR -1.5 », côté favori) en NFL.
 - Sofascore RapidAPI (sofascore6, via worker host=rapidapi) : match/list
   sport_slug=football OK (553 matchs) ; american-football, americanfootball,
