@@ -339,104 +339,42 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   condensed_game {iframe_url « //api-video.khl.ru… »} ; geo_error ;
   this_pair_stat {events_count, team_a/b {wins_count, goals_count}}.
 
-## 7. Reste à faire (ordre proposé)
+## 7. Reste à faire (trié avec Antoine le 28/09/2026)
 
-(Classements par catégorie : foot, US, KHL, rugby XV et NRL — FAIT, 20260926g.)
-(Comptabilité des paris corrigée et cache de score relancé à l'édition — 20260926i.)
-(Stade hors foot — k ; Saisons : filtre lieu respecté — l ; phases finales NRL — m ; logo d'en-tête d'équipe, mur et hors mur — n/o. Tout en 20260927o sur les deux sites.)
-(Mode paysage + réglage Orientation — fenotte45 20260927i, gones45 20260927i ; gones45 installable (manifeste) — 20260927j.)
-(Tableau de l'effectif : fond du club + photos — 20260927g.)
-(Photos Wikipédia en dernier recours sur le terrain — 20260927f.)
-(Bloc Arbitre dans la fenêtre de match foot — 20260927e. Rugby : à sonder, le scoreboard par plage répond 400.)
-(Saisons : match de sélection compté deux fois (soccer/all + uefa.nations) — dédoublonné par espnId dans `_ajouterCoupe` et `renderSaisonsChart`, 20260927d.)
-(Depuis 27o : p pression lisible, q/r astuce paysage, s/t Domicile-Extérieur tous sports,
- u joueurs dans le cockpit, v handicap ≠ cote, w cartes joueur du mur, x Tendance cachée
- pour NFL/MLB/NHL, y/z/28a article ESPN traduit (foot compris), 28b cadrage des photos,
- 28c traduction mémorisée.)
-(28d : règlement semi-automatique, santé des sources, tests/smoke.js — FAIT.)
-0. À FAIRE EN PREMIER :
-   - NOTIFICATIONS MULTI-APPAREILS : FAIT côté appli (28g) + worker.js modifié le 27/09
-     (à vérifier : Antoine l'a-t-il redéployé ? le panneau Notifications affiche
-     « 📱 N appareils reliés » si oui). App : `_g45NotifCompte()` = SHA-256
-     ('g45-compte|' + 'u:'+_g45User.id sur bet45, 'g:'+gones45_github_token sur gones)
-     → 32 hex, envoyé dans /psub (`compte`). Worker /psub : les subs de même `compte`
-     partagent teams/betTeams/matches/paris (dernier envoi = référence ; une liste vide
-     ne remplace pas, elle hérite). Réponse {compte, appareils} → localStorage
-     g45_notif_appareils. ⚠ L'APK (WebView) ne gère PAS le push : sur téléphone,
-     utiliser Chrome / l'appli installée depuis Chrome, et activer les notifications
-     une fois sur l'appareil.
-   - APK TWA bet45 : FAIT le 28/09. PWABuilder (Google Play → Generate), paquet
-     fr.bet45.twa, empreinte CE:21:79:F3:…:3C:2C (vérifiée = certificat de l'APK).
-     fenotte45 : manifest.json (icônes locales icon-192/512, start_url
-     ./indexfenotte.html) déclaré sur index/accueil/indexfenotte/login + sw.js
-     enregistré ; .well-known/assetlinks.json + .nojekyll (sinon Pages ignore le
-     dossier) ; APK publié dans telecharger/bet45.apk. La clé de signature est chez
-     Antoine (NE JAMAIS la demander ni la mettre dans un dépôt) : sans elle, pas de mise
-     à jour de l'APK. Outils (bet45 seulement) : bloc `g45InstPoser` (#g45-inst) :
-     Android → lien APK (HEAD sinon « bientôt disponible »), iPhone → Safari « Sur
-     l'écran d'accueil », PC → « Installer » ; masqué si déjà installé (standalone /
-     referrer android-app://). 1er essai d'Antoine : APK ouvert en Custom Tab (barre
-     d'URL) → installé avant publication d'assetlinks et/ou Edge navigateur par
-     défaut ; conseil : Chrome par défaut, désinstaller/réinstaller. À vérifier.
-     Piste : l'APK ouvre la page d'accueil marketing (bet45.fr → accueil.html) ;
-     envisager d'envoyer vers indexfenotte.html si referrer android-app://fr.bet45.twa.
-   - gones45 : icône installée = logo Bad Gones (icon-gones-192/512.png, manifest
-     v=20260928h) ; Antoine installe gones par le navigateur (pas d'APK).
-   - Marchés de prédiction (Polymarket / Kalshi) : 1er essai du 27/09 lancé dans la
-     console de la page BET45 → bloqué par la CSP (connect-src ne contient ni
-     gamma-api.polymarket.com ni api.elections.kalshi.com). Rien appris sur les API.
-     Étape suivante : Antoine ouvre DIRECTEMENT dans un onglet
-     https://gamma-api.polymarket.com/events?tag_slug=nfl&closed=false&limit=3 et
-     https://api.elections.kalshi.com/trade-api/v2/markets?series_ticker=KXNFLGAME&status=open&limit=3
-     et envoie une capture. Si données NFL présentes → brancher soit par la CSP
-     (index.html ET indexfenotte.html, + vérifier le CORS), soit par une route du worker ;
-     puis maquette « ESPN / cotes / marché » dans la fenêtre de match.
-     RÉSULTAT (27/09, URL ouverte dans un onglet) : Polymarket BLOQUÉ en France (ANJ) —
-     ne PAS contourner (ni worker ni autre). Kalshi RÉPOND :
-     /trade-api/v2/markets?series_ticker=KXNFLGAME&status=open → markets[] : un marché
-     PAR ÉQUIPE et par match, event_ticker « KXNFLGAME-26OCT05ATLNO » (date + abréviations),
-     title « New Orleans wins », yes_sub_title « New Orleans », last_price_dollars « 0.6100 »
-     (= 61 %), yes_bid/yes_ask_dollars, volume_fp, occurrence_datetime (UTC), status.
-     CORS (27/09, fetch depuis example.com) : REFUSÉ (« Failed to fetch ») sur toutes les
-     séries → Kalshi n'est PAS lisible depuis le navigateur : passer par le worker
-     (liste blanche de hosts ; ajouter host=kalshi → api.elections.kalshi.com, lecture
-     seule, cache court). worker.js n'est PAS dans le dépôt gones45 : le demander à Antoine.
-     WORKER (27/09) : route `host=kalshi` ajoutée à worker.js (sans clé, chemins
-     /trade-api/v2/(markets|events|series) seulement, cache 10 min) — fichier modifié
-     remis à Antoine, déployé par lui. Test : /series?category=Sports → 200.
-     Séries « par match » confirmées : KXNFLGAME, KXNBAGAME, KXNHLGAME, KXMLBGAME,
-     KXWNBAGAME, KXKHLGAME, KXEPLGAME, KXLIGUE1GAME, KXLALIGAGAME, KXSERIEAGAME,
-     KXBUNDESLIGAGAME, KXUCLGAME, KXUELGAME, KXUECLGAME, KXCOUPEDEFRANCEGAME,
-     KXFACUPGAME, KXATPGAME, KXWTAGAME, KXEUROLEAGUEGAME, KXAFLGAME, KXRLGAME (XIII ?).
-     ⚠ 2e appel immédiat → 429 « too_many_requests » : UNE requête par série (markets?
-     series_ticker=…&status=open&limit=200) partagée par tous les matchs, cache worker
-     10 min ; 429 → ligne Kalshi absente, jamais d'erreur affichée.
-     CONCLUSION (27/09 soir) : /markets ET /events?with_nested_markets=true → 429 en
-     continu via le worker (IP Cloudflare partagées, limite Kalshi déjà atteinte) ;
-     le worker ne met PAS les erreurs en cache. Kalshi = NON FIABLE en gratuit →
-     bloc « 3 avis » ABANDONNÉ. La route host=kalshi reste dans worker.js (inoffensive) ;
-     on peut retenter un jour (autre heure) avant de la retirer.
-     Repli possible, à proposer si Antoine le demande : « 2 avis » ESPN (predictor) /
-     cotes DraftKings sans marge, alerte si écart > 8 points.
-     Ancienne liste de séries à tester (faite) :
-     KXNBAGAME, KXNHLGAME, KXMLBGAME, KXEPLGAME, KXUCLGAME, KXLALIGAGAME, KXLIGUE1GAME.
-     Maquette proposée (pas encore validée) : bloc « QUI VA GAGNER ? — 3 AVIS » sous les cotes :
-     ESPN (predictor) / cotes (DraftKings sans marge) / Kalshi, alerte si écart > 8 points.
-     ⚠ Tout test console lancé SUR la page BET45 est soumis à sa CSP : pour sonder
-     un domaine absent de connect-src, ouvrir l'URL dans un onglet ou passer par le worker.
-   - Après la trêve internationale : vérifier si le foot a des « Preview » ESPN
-     (commande : scoreboard + summary sans lang=fr, champ article.type).
-1. fenotte45, paysage (plus tard, à la demande d'Antoine) : dans l'APK remplacer les
-   boutons Orientation par une phrase (« Rotation auto ») ; en portrait, « Connexion »
-   chevauche le logo ; déclarer le manifeste comme sur gones45.
-   APK : récupérer le projet Android (ordi d'Antoine) pour le pont d'orientation.
-   Vu en paysage sur gones45, laissé tel quel : en-tête transparent (sans flou),
-   graphique « réussite par sport » qui dépasse à droite.
-2. KHL : repérer les playoffs (filtre Phase des Classements) — à sonder au printemps.
-3. Curseurs KHL (module séparé) ; confirmer les lignes estimées (NFL, rugby, périodes).
-4. Logo Lakers en 404 ; logo hockey `teamlogos/hockey/500/113.png` en 404 (logo par id au lieu de l'abréviation).
-5. Liste d'avant : graphique pression en portrait, « 1. FC », cartes KHL dans
-   Suivies, crédits photos, remonter --t3, compos rugby, garanties restantes.
+EN COURS / À FAIRE DE SUITE (maquettes proposées le 28/09) :
+- (4) Classements foot : comparaison 1re MT vs 2e MT côte à côte (Over).
+- (5) Bloc « 2 avis » dans la fenêtre de match : proba ESPN (predictor) vs proba des
+  cotes (DraftKings, marge retirée), alerte si écart > 8 points.
+- (8) CLV : cote prise vs cote de clôture, sur les paris réglés (sonder d'abord ce
+  qu'ESPN garde des cotes après le match : moneyline.*.close / pickcenter).
+
+À VOIR (en attente d'un retour d'Antoine) :
+- Notifications multi-appareils (28g + worker redéployé : « N appareils reliés ») :
+  vérifier qu'un pari saisi sur PC fait sonner le téléphone. Détail technique :
+  `_g45NotifCompte()` (empreinte SHA-256 du compte), route /psub du worker (listes
+  partagées entre appareils de même `compte`).
+- Après la trêve : ESPN écrit-il des « Preview » pour le foot ? (summary sans lang=fr,
+  article.type).
+
+RÉGLÉ OU ABANDONNÉ (ne pas reproposer) :
+- APK bet45 sans barre d'adresse : OK. Logos Lakers / hockey : OK. « Connexion » sur le
+  logo, paysage gones, pression en portrait, « 1. FC », cartes KHL, compos rugby : OK
+  selon Antoine. APK : garder l'ouverture actuelle (page d'accueil).
+- Kalshi / Polymarket : abandonnés (429 en continu / bloqué ANJ). Voir §6.
+
+PLUS TARD (saison) : KHL playoffs + curseurs KHL (printemps) ; bloc Arbitre rugby
+(scoreboard par plage → 400).
+
+HISTORIQUE UTILE (détails techniques) :
+- APK TWA bet45 : paquet fr.bet45.twa, empreinte CE:21:79:F3:…:3C:2C ; fenotte45 :
+  manifest.json, .well-known/assetlinks.json + .nojekyll, telecharger/bet45.apk ;
+  bloc Outils `g45InstPoser` (bet45 seulement). La clé de signature est chez Antoine :
+  NE JAMAIS la demander ni la mettre dans un dépôt.
+- gones45 : icône = logo Bad Gones (icon-gones-192/512.png) ; installé par le navigateur.
+- Kalshi : route host=kalshi dans worker.js (inoffensive), séries KX…GAME ; 429 via
+  Cloudflare. Polymarket bloqué en France (ANJ) : ne pas contourner.
+- Tout test console lancé SUR la page BET45 subit sa CSP : sonder un domaine absent de
+  connect-src dans un onglet à part ou via le worker.
 
 ## 8. Façon de travailler en session cloud
 
