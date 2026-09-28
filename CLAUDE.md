@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 27/09/2026 au soir (version déployée : 20260928l, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 27/09/2026 au soir (version déployée : 20260928m, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -346,9 +346,15 @@ EN COURS / À FAIRE DE SUITE (maquettes proposées le 28/09) :
 - (5) FAIT 28l : `_g45DeuxAvis(data, eid, hN, aN)` dans `_renderGenericDetail` (hors foot) :
   predictor ESPN vs moneyline (hDec/aDec ajoutés à window._g45LastUsOdds), marge
   retirée, alerte > 8 pts orientée vers l'équipe qu'ESPN voit plus haut.
-- (8) CLV : cote prise vs cote de clôture, sur les paris réglés. Sondé 28/09 :
-  scoreboard d'un match JOUÉ (eng.1, 20/09) → competitions[0].odds = [null]. Reste à
-  sonder summary?event= (pickcenter / odds) d'un match joué.
+- (8) FAIT 28m : bloc « 📈 Tes cotes contre la clôture » en tête du Bilan (#g45-clv,
+  `_g45ClvPoser`, greffé sur renderBilanTab, même si la courbe échoue ; suit filteredA).
+  SONDÉ 28/09 : scoreboard d'un match joué → odds [null] ; soccer/all/summary?event=ID
+  → pickcenter[0] DraftKings (home/away/drawOdds.moneyLine US, overUnder + over/
+  underOdds) ; soccer/summary sans « all » → 404. Match retrouvé par
+  soccer/all/scoreboard?dates=JOUR (noms, 2 camps sinon match unique). V1 = FOOT,
+  paris simples 1 jambe : victoire / nul / défaite, over-under sur LA ligne de clôture ;
+  exclus combiné, lay, boost (isFlash), joueur. Cache g45clv1_<id> (négatif 3 j).
+  À faire plus tard si Antoine le demande : autres sports (summary US par ligue).
 
 À VOIR (en attente d'un retour d'Antoine) :
 - Notifications multi-appareils (28g + worker redéployé : « N appareils reliés ») :
