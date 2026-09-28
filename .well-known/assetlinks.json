@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "fr.bet45.twa",
+        "sha256_cert_fingerprints": ["CE:21:79:F3:FF:20:9C:94:74:9B:C1:A7:F4:7A:64:D6:DD:18:D8:23:A2:23:43:C8:37:05:D9:DE:23:05:3C:2C"]
+      }
+    }]
