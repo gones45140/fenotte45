@@ -45273,8 +45273,9 @@ function _g45ClsProchains(lg) {
           var un = (typeof _g45TrDec === 'function') ? (_g45TrDec(o0.underOdds) || _g45TrDec(pk(tot.under)) || (cur.under && _g45TrDec(cur.under.decimal || cur.under.american))) : 0;
           od = { h: t && t.h, d: t && t.d, a: t && t.a, line: o0.overUnder != null ? parseFloat(o0.overUnder) : (t && t.line), over: ov, under: un };
         } catch (er) {}
-        if (!d[hi]) d[hi] = { txt: jour + ' vs ' + (A.team.shortDisplayName || A.team.displayName || '?'), dom: true, od: od };
-        if (!d[ai]) d[ai] = { txt: jour + ' @ ' + (H.team.shortDisplayName || H.team.displayName || '?'), dom: false, od: od };
+        var hn = H.team.displayName || H.team.shortDisplayName || '', an = A.team.displayName || A.team.shortDisplayName || '';
+        if (!d[hi]) d[hi] = { txt: jour + ' vs ' + (A.team.shortDisplayName || A.team.displayName || '?'), dom: true, od: od, hn: hn, an: an, date: e.date };
+        if (!d[ai]) d[ai] = { txt: jour + ' @ ' + (H.team.shortDisplayName || H.team.displayName || '?'), dom: false, od: od, hn: hn, an: an, date: e.date };
       });
       _g45ClsProch[lg] = { t: Date.now(), d: d };
     })
@@ -45295,6 +45296,60 @@ function _g45SerieCote(ev, avec, pm) {
   return ev === 'v' ? (moi || 0) : ev === 'n' ? (o.d || 0) : ev === 'd' ? (lui || 0) : 0;
 }
 window._g45SerieCote = _g45SerieCote;
+/* ═══ COTES DE SECOURS : THE ODDS API (28/09/2026, Antoine : « ESPN en 1er, Odds
+   seulement si ESPN ne sert à rien ») ═══
+   Appelée UNIQUEMENT quand une équipe en série n'a pas de cote ESPN (ligne
+   DraftKings différente, pas de cote). Via le worker (host=oddsapi, clé secrète
+   ODDSAPI_KEY) : UNE requête = championnat + marché (totals → région eu ;
+   h2h → région fr, bookmakers français), 12 h en cache worker ET appareil
+   (g45oa1_<ligue>_<marché>). Refus / plafond : on reste sur ESPN, sans message. */
+var _G45_OA_LIGUES = { 'fra.1': 'soccer_france_ligue_one', 'fra.2': 'soccer_france_ligue_two', 'eng.1': 'soccer_epl', 'eng.2': 'soccer_efl_champ',
+  'esp.1': 'soccer_spain_la_liga', 'ita.1': 'soccer_italy_serie_a', 'ger.1': 'soccer_germany_bundesliga', 'ned.1': 'soccer_netherlands_eredivisie',
+  'por.1': 'soccer_portugal_primeira_liga', 'bel.1': 'soccer_belgium_first_div', 'uefa.champions': 'soccer_uefa_champs_league', 'uefa.europa': 'soccer_uefa_europa_league' };
+var _g45OaEnCours = {};
+function _g45OaLire(lg, mk) {
+  var k = 'g45oa1_' + lg + '_' + mk;
+  try { var c = JSON.parse(localStorage.getItem(k) || 'null'); if (c && Date.now() - c.t < 12 * 3600000) return c.d; } catch (e) {}
+  if (_g45OaEnCours[k] || !_G45_OA_LIGUES[lg] || typeof FD_PROXY === 'undefined') return null;
+  _g45OaEnCours[k] = 1;
+  fetch(FD_PROXY + '?key=_worker_&host=oddsapi&oamarket=' + mk + '&oaregion=' + (mk === 'h2h' ? 'fr' : 'eu') + '&path=' + encodeURIComponent('/v4/sports/' + _G45_OA_LIGUES[lg] + '/odds'))
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (j) {   /* échec (worker pas à jour, plafond) : nouvel essai dans 30 min, pas 12 h */
+      var ok = Array.isArray(j), d = ok ? j : [];
+      try { localStorage.setItem(k, JSON.stringify({ t: ok ? Date.now() : Date.now() - 11.5 * 3600000, d: d })); } catch (e) {} })
+    .catch(function () {})
+    .then(function () {
+      try { var D = window._g45ClsDernier, body = document.getElementById('g45-compet-body');
+        if (D && body && D.c && D.c.s === lg && _g45ClsCtx.catE === 'serie') g45ClsRender(D.c, body); } catch (e) {}
+    });
+  return null;
+}
+function _g45OaNrm(x) { return String(x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\b(fc|ac|as|rc|sc|ogc|stade|olympique|de|club|cf|afc|sv|vfb|vfl|1\.)\b/g, '').replace(/[^a-z0-9]/g, ''); }
+function _g45OaPareil(a, b) { a = _g45OaNrm(a); b = _g45OaNrm(b); return !!a && !!b && (a === b || (a.length > 3 && b.length > 3 && (a.indexOf(b) >= 0 || b.indexOf(a) >= 0))); }
+/* {c, bk} : meilleure cote de fin de série trouvée, ou null. */
+function _g45OaCote(lg, ev, avec, pm) {
+  if (!pm || !pm.hn) return null;
+  var L = { o05: 0.5, o15: 1.5, o25: 2.5, o35: 3.5 }[ev], mk = L != null ? 'totals' : (/^(v|n|d)$/.test(ev) && !avec ? 'h2h' : '');
+  if (!mk) return null;
+  var d = _g45OaLire(lg, mk); if (!d) return null;
+  var t0 = Date.parse(pm.date) || 0;
+  var e = d.filter(function (x) { return Math.abs((Date.parse(x.commence_time) || 0) - t0) < 36 * 3600000 && _g45OaPareil(x.home_team, pm.hn) && _g45OaPareil(x.away_team, pm.an); })[0];
+  if (!e) return null;
+  var cible = mk === 'totals' ? (avec ? 'Under' : 'Over') : (ev === 'n' ? 'Draw' : ((ev === 'v') === pm.dom ? e.home_team : e.away_team));
+  var best = null;
+  (e.bookmakers || []).forEach(function (b) {
+    (b.markets || []).forEach(function (m) {
+      if (m.key !== mk) return;
+      (m.outcomes || []).forEach(function (o) {
+        if (o.name !== cible) return;
+        if (mk === 'totals' && !(Math.abs(parseFloat(o.point) - L) < 0.01)) return;
+        if (!best || o.price > best.c) best = { c: +o.price, bk: String(b.title || '').replace(/[<>]/g, '') };
+      });
+    });
+  });
+  return best;
+}
+window._g45OaCote = _g45OaCote;
 function _g45ClsTableSerie(c, PE, saisonTxt, lieuTxt) {
   var X = _g45ClsCtx, avec = X.sMode === 'avec', ev = X.sEv;
   var lib = (_G45_SERIE_EV.filter(function (e) { return e[0] === ev; })[0] || ['', ev])[1];
@@ -45303,9 +45358,10 @@ function _g45ClsTableSerie(c, PE, saisonTxt, lieuTxt) {
   Object.keys(PE.par).forEach(function (id) {
     var r = _g45SerieCalc(id, PE.par[id], ev, avec);
     if (!(r.n && r.serie > 0)) return;
-    var pm = proch ? proch[id] : null, cote = _g45SerieCote(ev, avec, pm);
+    var pm = proch ? proch[id] : null, cote = _g45SerieCote(ev, avec, pm), src = cote > 1 ? 'DraftKings' : '';
+    if (!(cote > 1) && pm) { var oa = _g45OaCote(c.s, ev, avec, pm); if (oa) { cote = oa.c; src = oa.bk; } }
     if (X.sCote && proch && !(cote >= 1.5)) return;
-    rows.push({ id: id, nom: PE.info[id].nom, logo: PE.info[id].logo, r: r, pm: pm, cote: cote });
+    rows.push({ id: id, nom: PE.info[id].nom, logo: PE.info[id].logo, r: r, pm: pm, cote: cote, src: src });
   });
   rows.sort(function (a, b) { return b.r.serie - a.r.serie || (b.r.serie >= b.r.rec) - (a.r.serie >= a.r.rec) || a.nom.localeCompare(b.nom); });
   var h = _g45ClsEnTete('🔁 Série ' + (avec ? 'AVEC' : 'SANS') + ' « ' + lib + ' » · ' + c.n + ' ' + saisonTxt + ' · ' + lieuTxt,
@@ -45319,7 +45375,7 @@ function _g45ClsTableSerie(c, PE, saisonTxt, lieuTxt) {
     var _od = x.pm && x.pm.od, _L = { o05: 0.5, o15: 1.5, o25: 2.5, o35: 3.5 }[ev];
     var _autre = (!(x.cote > 1) && _od && _L != null && _od.line != null && Math.abs(_od.line - _L) > 0.01)
       ? ' (DraftKings propose la ligne ' + String(_od.line).replace('.', ',') + (_od.over > 1 ? ' : over ' + _od.over.toFixed(2) : '') + (_od.under > 1 ? ' / under ' + _od.under.toFixed(2) : '') + ')' : '';
-    if (x.pm) pr += x.cote > 1 ? (' · cote fin de série <b style="color:' + (x.cote >= 1.5 ? '#1ed760' : '#ffb13d') + ';">' + x.cote.toFixed(2) + (x.cote >= 1.5 ? ' ✅' : ' (< 1,5)') + '</b>') : ' · cote : —' + _autre;
+    if (x.pm) pr += x.cote > 1 ? (' · cote fin de série <b style="color:' + (x.cote >= 1.5 ? '#1ed760' : '#ffb13d') + ';">' + x.cote.toFixed(2) + (x.cote >= 1.5 ? ' ✅' : ' (< 1,5)') + '</b>' + (x.src ? ' <span style="color:#c9d3ee;font-weight:600;">(' + x.src + ')</span>' : '')) : ' · cote : —' + _autre;
     h += '<div onclick="g45CompetOuvrir(\'' + String(x.nom).replace(/'/g, "\\'") + '\',\'' + x.id + '\',\'' + c.s + '\',\'soccer\')" style="border-top:1px solid rgba(255,255,255,.08);cursor:pointer;">'
       + '<div style="' + GR + '">'
       + '<span style="font-size:13px;font-weight:800;color:' + (i ? '#c9d3ee' : '#f0b020') + ';">' + (i + 1) + '</span>'
