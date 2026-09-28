@@ -45299,8 +45299,8 @@ window._g45SerieCote = _g45SerieCote;
 /* ═══ COTES DE SECOURS : THE ODDS API (28/09/2026, Antoine : « ESPN en 1er, Odds
    seulement si ESPN ne sert à rien ») ═══
    Appelée UNIQUEMENT quand une équipe en série n'a pas de cote ESPN (ligne
-   DraftKings différente, pas de cote). Via le worker (host=oddsapi, clé secrète
-   ODDSAPI_KEY) : UNE requête = championnat + marché (totals → région eu ;
+   DraftKings différente, pas de cote). Via la route /odds du worker (secret
+   ODDS_API_KEY, déjà utilisée par « Cotes réelles ») : UNE requête = championnat + marché (totals → région eu ;
    h2h → région fr, bookmakers français), 12 h en cache worker ET appareil
    (g45oa1_<ligue>_<marché>). Refus / plafond : on reste sur ESPN, sans message. */
 var _G45_OA_LIGUES = { 'fra.1': 'soccer_france_ligue_one', 'fra.2': 'soccer_france_ligue_two', 'eng.1': 'soccer_epl', 'eng.2': 'soccer_efl_champ',
@@ -45312,7 +45312,9 @@ function _g45OaLire(lg, mk) {
   try { var c = JSON.parse(localStorage.getItem(k) || 'null'); if (c && Date.now() - c.t < 12 * 3600000) return c.d; } catch (e) {}
   if (_g45OaEnCours[k] || !_G45_OA_LIGUES[lg] || typeof FD_PROXY === 'undefined') return null;
   _g45OaEnCours[k] = 1;
-  fetch(FD_PROXY + '?key=_worker_&host=oddsapi&oamarket=' + mk + '&oaregion=' + (mk === 'h2h' ? 'fr' : 'eu') + '&path=' + encodeURIComponent('/v4/sports/' + _G45_OA_LIGUES[lg] + '/odds'))
+  /* Route /odds DÉJÀ présente dans le worker (secret ODDS_API_KEY, cache 3 h, plafond
+     « odds ») — la même que « Cotes réelles (bookmakers FR) ». */
+  fetch(FD_PROXY + '/odds?sport=' + _G45_OA_LIGUES[lg] + '&regions=' + (mk === 'h2h' ? 'fr' : 'eu') + '&markets=' + mk)
     .then(function (r) { return r.ok ? r.json() : null; })
     .then(function (j) {   /* échec (worker pas à jour, plafond) : nouvel essai dans 30 min, pas 12 h */
       var ok = Array.isArray(j), d = ok ? j : [];
