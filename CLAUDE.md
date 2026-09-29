@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 29/09/2026 (version déployée : 20260929c, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 29/09/2026 (version déployée : 20260929d, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -212,6 +212,11 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   2500 pour Groq ; finish_reason « length » signalé dans l'avis. `_g45IaNettoyer` retire
   les « < … > » et les lignes « REGLE … » recopiées (Workers AI, étiqueté « petit
   modèle, moins fiable »). Ligne The Odds API (Pinnacle) : probas sans marge ajoutées.
+  29d (« si il dit pas de connerie, oui ») : `_g45IaIncoherent(txt, facts)` écarte le 4e avis
+  Workers AI (ligne « écarté : raison ») si format absent, probas ≠ ~100 % ou à > 20 pts
+  des cotes sans marge, consigne recopiée, « a perdu/gagné tous » contredit par les bilans
+  nV nN nD des faits, ou > 1 chiffre des points clés absent des faits. Gemini : des 429
+  en console sur les premiers modèles de la cascade sont normaux (le suivant répond).
 - Photos plus hautes que larges (Wikipédia en pied) : `_g45Cadrer(img)` au onload →
   object-position 50 % 6 % (terrain `g45PitchPhotosAppliquer` + rendu direct,
   Compo `_g45CompoWiki`, effectif `_g45SquadPhotos`) — 28b.

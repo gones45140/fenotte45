@@ -31033,7 +31033,12 @@ async function _g45MultiAI(box, boxId, sys, facts, title){
         var _cfR=await fetch(FD_PROXY+'/cfai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:msg, max_tokens:700})});
         var _cfJ=await _cfR.json();
         var _cfT=lireOAI(_cfJ);
-        if(_cfT){
+        var _cfKo=_cfT?_g45IaIncoherent(_cfT, facts):'';
+        if(_cfT && _cfKo){
+          /* « Si il dit pas de connerie, oui » (Antoine, 29/09) : réponse écartée. */
+          try{ localStorage.removeItem('g45_cfai_veille'); }catch(e){}
+          poser('ms',{err:'☁️ Workers AI écarté : '+_cfKo+'.'});
+        } else if(_cfT){
           try{ localStorage.removeItem('g45_cfai_veille'); }catch(e){}
           poser('ms',{txt:_cfT,lbl:'Workers AI (Cloudflare) — petit modèle, moins fiable',col:'#f0c828'});
         } else {
@@ -31072,6 +31077,39 @@ async function _g45MultiAI(box, boxId, sys, facts, title){
   }catch(e5){}
 }
 /* ── Outils des avis IA (29/09/2026) ── */
+/* GARDE-FOU DU 4e AVIS (29d, « si il dit pas de connerie oui ») : Workers AI est
+   un petit modèle. Sa réponse est écartée si (1) le format manque (🎯 / 📊),
+   (2) ses probabilités ne font pas ~100 %, (3) sa proba du favori s'écarte de
+   plus de 20 points de celle des cotes (sans marge) fournies, (4) ses points
+   clés citent plus d'un chiffre absent des FAITS. Rend la raison, ou ''. */
+function _g45IaIncoherent(txt, facts){
+  var t=_g45IaNettoyer(txt), F=(facts||[]).join('\n').replace(/,(\d)/g,'.$1');
+  var pr=_g45IaChamp(t, /PRONOSTIC/i), pb=_g45IaChamp(t, /PROBAS/i);
+  if(!pr || !pb) return 'format non respecté';
+  /* 29d, 2e capture d'Antoine : consigne recopiée (« ton estimation ; rappelle
+     celle des cotes… », « ta probabilite estimee… ») = le modèle n'a pas compris. */
+  if(/ton estimation|rappelle celle|ta probabilit|contre celle de la cote|<\s*(nom|x-y|p|point)\b/i.test(t)) return 'consigne recopiée au lieu d\'une analyse';
+  /* « X a perdu / gagné TOUS ses matchs » : vérifié contre les bilans « nV nN nD » des faits. */
+  var tous=t.match(/([A-ZÀ-Ü][\wÀ-ü'.-]*(?:\s+[A-ZÀ-Ü][\wÀ-ü'.-]*)*)\s+(?:a|ont)\s+(perdu|gagné|remporté)\s+tous/);
+  if(tous){
+    var eq=tous[1].split(/\s+/)[0], perd=tous[2]==='perdu';
+    var bil=(facts||[]).filter(function(f){ return f.indexOf(eq)===0; }).join(' ').match(/(\d+)V (\d+)N (\d+)D/g)||[];
+    /* Faux si AUCUN bilan de l'équipe n'est « 0V 0N » (perdu tous) ou « 0N 0D » (gagné tous). */
+    var faux=bil.length && !bil.some(function(b){ var x=b.match(/(\d+)V (\d+)N (\d+)D/); return perd ? (+x[1]+ +x[2])===0 : (+x[2]+ +x[3])===0; });
+    if(faux) return 'affirmation fausse (« '+tous[0]+' »)';
+  }
+  var m=pb.match(/1\s*:?\s*(\d{1,3})\s*%[^%]*?X\s*:?\s*(\d{1,3})\s*%[^%]*?2\s*:?\s*(\d{1,3})\s*%/i);
+  if(m){
+    var p1=+m[1], px=+m[2], p2=+m[3], som=p1+px+p2;
+    if(som<85 || som>115) return 'probabilités incohérentes ('+som+' %)';
+    var c=F.match(/marge retirée : 1 (\d+) %, X (\d+) %, 2 (\d+) %/);
+    if(c && Math.max(Math.abs(p1-c[1]), Math.abs(p2-c[3]))>20) return 'probabilités très loin des cotes ('+p1+' % contre '+c[1]+' %)';
+  }
+  var pts=t.split('\n').filter(function(l){ return /^\s*[-•]/.test(l); }).join(' ').replace(/,(\d)/g,'.$1');
+  var inconnus=(pts.match(/\d+(?:\.\d+)?/g)||[]).filter(function(n){ return !new RegExp('(^|[^\\d.])'+n.replace('.','\\.')+'(?![\\d])').test(F); });
+  if(inconnus.length>1) return 'chiffres absents des stats ('+inconnus.slice(0,3).join(', ')+')';
+  return '';
+}
 /* NETTOYAGE (29c, capture d'Antoine) : Workers AI recopiait les repères du
    modèle de réponse (« 1 < Real Madrid > », « 1 <45 % ») et les lignes de la
    consigne (« REGLE DOMICILE/EXTERIEUR : … »). On retire ces restes. */
