@@ -31277,7 +31277,9 @@ function _g45IaAccord(liste, titre){
       var der=mots[mots.length-1];
       if(der && (' '+nrm(p)+' ').indexOf(' '+der+' ')>=0){ k='E'+i; }
     });
-    if(!k) k=p.toLowerCase().replace(/[^a-z0-9à-ü]/g,'');
+    /* 29/09 (F1) : « Antonelli » = « Kimi Antonelli » → regroupés par NOM DE FAMILLE
+       (dernier mot, parenthèses retirées) quand le titre n'a pas « A vs B ». */
+    if(!k){ var _mts=nrm(p.replace(/\(.*$/,'')).split(/\s+/).filter(function(w){ return w.length>=3; }); k=_mts.length?'N'+_mts[_mts.length-1]:p.toLowerCase().replace(/[^a-z0-9à-ü]/g,''); }
     if(!grp[k]){ grp[k]={lib:p, n:0}; ordre.push(k); }
     grp[k].n++;
   });
