@@ -30798,7 +30798,7 @@ async function g45LoadMatchAI(btn){
      ne laisse presque jamais de value. Règle domicile/extérieur d'Antoine. */
   var sys='Tu es un analyste paris sportifs francophone, concis et prudent. Reponds STRICTEMENT dans ce format, sans rien avant ni apres:\n'
     +'🎯 PRONOSTIC : <1, X ou 2> (<nom de l\'equipe ou "nul">) — score probable <x-y> — confiance <1 a 5>/5\n'
-    +'📊 PROBAS : 1 <p> % · X <p> % · 2 <p> % (ton estimation ; rappelle celle des cotes si elle est fournie)\n'
+    +'📊 PROBAS : 1 <p> % · X <p> % · 2 <p> % (cotes : 1 <p> % · X <p> % · 2 <p> %, ou "cotes non fournies")\n'
     +'💎 VALEUR : <le meilleur pari parmi 1X2, double chance, Over/Under, BTS, handicap : ta probabilite estimee contre celle de la cote ; ou "pas de value claire">\n'
     +'🔑 POINTS CLES :\n- <point 1 avec un chiffre des FAITS>\n- <point 2 avec un chiffre des FAITS>\n- <point 3 avec un chiffre des FAITS>\n'
     +'⚠️ <principale incertitude en 1 phrase>\n'
@@ -30971,7 +30971,7 @@ async function _g45MultiAI(box, boxId, sys, facts, title){
   var fin=function(){
     var liste=avis.filter(function(a){ return a && a.txt; });
     var ac=document.getElementById(boxId+'-ac');
-    if(ac) ac.outerHTML=_g45IaAccord(liste);
+    if(ac) ac.outerHTML=_g45IaAccord(liste, title);
     var pied=document.getElementById(boxId+'-pied');
     if(pied) pied.innerHTML='<div style="font-size:13px;color:#c9d3ee;text-align:center;margin-top:8px;font-style:italic;line-height:1.5;">Estimations IA, pas des prédictions fiables — les cotes intègrent déjà l\'essentiel de l\'info.'
       +(mem?' Avis gardé depuis '+_g45IaHeure(mem.t)+'.':'')+'</div>'
@@ -31191,7 +31191,11 @@ function _g45IaChamp(txt, re){
   return l ? l.replace(/^[^:]*:\s*/,'').trim() : '';
 }
 /* BLOC « ACCORD DES IA » : le pronostic de chacun, regroupé ; la value de chacun. */
-function _g45IaAccord(liste){
+function _g45IaAccord(liste, titre){
+  /* 29/09 (autres sports) : « Lakers » et « Los Angeles Lakers » = même avis.
+     On rapproche du nom d'équipe du titre « A vs B » par son dernier mot. */
+  var noms=String(titre||'').split(/\s+vs\.?\s+/i).filter(Boolean);
+  var nrm=function(x){ return String(x).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9 ]/g,' '); };
   if(!liste || liste.length<2) return '';
   var ea=function(x){return String(x).replace(/&/g,'&amp;').replace(/</g,'&lt;');};
   var grp={}, ordre=[];
@@ -31199,7 +31203,14 @@ function _g45IaAccord(liste){
     var p=_g45IaChamp(a.txt, /PRONOSTIC/i).split(/\s+[—–-]\s+/)[0].trim();
     if(!p) return;
     var m1=p.match(/^(1|X|N|2)(?![0-9])/i);     /* « 1 (Real) » et « 1 (Real Madrid) » = même avis */
-    var k=m1 ? m1[1].toUpperCase().replace('N','X') : p.toLowerCase().replace(/[^a-z0-9à-ü]/g,'');
+    var k=m1 ? m1[1].toUpperCase().replace('N','X') : '';
+    if(!k) noms.forEach(function(nm, i){
+      if(k) return;
+      var mots=nrm(nm).split(/\s+/).filter(function(w){ return w.length>=3; });
+      var der=mots[mots.length-1];
+      if(der && (' '+nrm(p)+' ').indexOf(' '+der+' ')>=0){ k='E'+i; }
+    });
+    if(!k) k=p.toLowerCase().replace(/[^a-z0-9à-ü]/g,'');
     if(!grp[k]){ grp[k]={lib:p, n:0}; ordre.push(k); }
     grp[k].n++;
   });
@@ -31443,6 +31454,100 @@ async function g45ArticleTraduire(btn) {
 }
 window.g45ArticleTraduire = g45ArticleTraduire; window._g45ArticleBloc = _g45ArticleBloc;
 
+/* ═══ ANALYSE IA — AUTRES SPORTS : LES STATS DE L'ÉCRAN (29/09/2026, « OUI » d'Antoine) ═══
+   Même règle que le foot (_g45IaFaitsEcran) pour NBA, NHL, NFL, MLB, WNBA,
+   rugby, NRL : l'équipe qui REÇOIT jugée sur ses matchs À DOMICILE, celle qui
+   SE DÉPLACE sur ses matchs À L'EXTÉRIEUR, + forme globale. Aucune source
+   nouvelle : les calendriers du bouton « 🏠 Domicile / 🚌 Extérieur »
+   (g45DomExtGenLancer : _g45CompetEquipes + _g45CompetMatchs, cache 12 h
+   g45cm9_ partagé avec Saisons), le point de vue de chaque équipe
+   (_g45SgCalc), les lignes des curseurs de Saisons cochés « dans le calcul »
+   (_g45SgCursClesActives + _g45DeStats), le face-à-face du résumé
+   (_g45H2HDepuisResume), les cotes ESPN déjà lues (window._g45LastUsOdds)
+   avec les probabilités SANS marge. Saison régulière seulement pour les
+   stats par côté (comme le bouton) ; 20 s max : le premier chargement d'une
+   ligue lit un calendrier par équipe. */
+async function _g45IaFaitsGen(sp, lg, eid, hId, aId, hN, aN) {
+  var out = [];
+  if (!sp || !lg || !hId || !aId || typeof _G45_SG_L === 'undefined' || !_G45_SG_L[sp]) return out;
+  var s0 = (typeof _g45CompetAnnee === 'function') ? _g45CompetAnnee(lg) : new Date().getFullYear(), s1 = s0 - 1;
+  var charge = (async function () {
+    var ids = [];
+    try { var eq = await _g45CompetEquipes({ sp: sp, s: lg, an: s0 }); ids = (eq || []).map(function (t) { return t.id; }).filter(Boolean); } catch (e) {}
+    if (ids.indexOf(String(hId)) < 0 && ids.indexOf(hId) < 0) ids.push(hId);
+    if (ids.indexOf(String(aId)) < 0 && ids.indexOf(aId) < 0) ids.push(aId);
+    var a = null, b = null;
+    try { a = await _g45CompetMatchs(sp, lg, s0, ids); } catch (e) {}
+    try { b = await _g45CompetMatchs(sp, lg, s1, ids); } catch (e) {}
+    return [a || [], b || []];
+  })();
+  var ms = await _g45IaDelai(charge, 20000);
+  if (ms) {
+    var mot = (sp === 'hockey') ? 'buts' : 'pts';
+    var f1 = function (x) { return x.toFixed(1); };
+    var bil = function (l) {
+      var v = 0, n = 0, d = 0, bp = 0, bc = 0;
+      l.forEach(function (m) { if (m.res === 'V') v++; else if (m.res === 'D') d++; else n++; bp += m.pour; bc += m.contre; });
+      return v + 'V ' + (n ? n + 'N ' : '') + d + 'D, ' + mot + ' marqués ' + f1(bp / l.length) + ' et encaissés ' + f1(bc / l.length) + ' par match, total moyen ' + f1((bp + bc) / l.length);
+    };
+    var reg = function (x) { return (x || []).filter(function (m) { return !m.po; }); };
+    var L0 = { h: _g45SgCalc(ms[0], hId, hN).liste, a: _g45SgCalc(ms[0], aId, aN).liste };
+    var L1 = { h: _g45SgCalc(ms[1], hId, hN).liste, a: _g45SgCalc(ms[1], aId, aN).liste };
+    var cles = [];
+    try { cles = _g45SgCursClesActives(reg(L0.h).concat(reg(L0.a), reg(L1.h), reg(L1.a)), sp) || []; } catch (e) {}
+    var equipe = function (nom, k, dom) {
+      var cote = dom ? 'À DOMICILE' : 'À L\'EXTÉRIEUR';
+      var tout = L0[k].concat(L1[k]);                        /* du plus récent au plus ancien, saison en cours d'abord */
+      var der = tout.filter(function (m) { return m.dom === dom; }).slice(0, 5);
+      if (der.length) out.push(nom + ' — ' + der.length + ' derniers matchs ' + cote + ' (du plus récent au plus ancien) : '
+        + der.map(function (m) { return (m.res === 'V' ? 'G' : m.res === 'D' ? 'P' : 'N') + ' ' + m.pour + '-' + m.contre + (dom ? ' contre ' : ' à ') + (m.adv || '?') + (m.po ? ' (phase finale)' : ''); }).join(' ; ')
+        + ' → ' + bil(der));
+      var g8 = tout.slice(0, 8);
+      if (g8.length) out.push(nom + ' — FORME GLOBALE, ' + g8.length + ' derniers matchs (domicile et extérieur) : ' + bil(g8));
+      [[L0, s0, 'saison en cours'], [L1, s1, 'saison précédente']].forEach(function (x) {
+        var l = reg(x[0][k]).filter(function (m) { return m.dom === dom; });
+        if (!l.length) return;
+        var st = _g45DeStats(l, cles, sp);
+        var lib = (typeof _g45SgLabel === 'function') ? _g45SgLabel(lg, x[1]) : String(x[1]);
+        var lg2 = st.lignes.filter(function (z) { return z.n; }).map(function (z) { return _g45DeLib(z.k, sp) + ' ' + Math.round(z.ok * 100 / z.n) + ' % (' + z.ok + '/' + z.n + ')'; });
+        out.push(nom + ' ' + cote + ', saison régulière ' + lib + ' (' + x[2] + ') : ' + st.n + ' matchs' + (st.n < 5 ? ' — PEU DE MATCHS, échantillon faible' : '')
+          + ' — ' + bil(l) + (lg2.length ? ' ; lignes suivies par l\'utilisateur : ' + lg2.join(', ') : ''));
+      });
+    };
+    try { equipe(hN, 'h', true); } catch (e) {}
+    try { equipe(aN, 'a', false); } catch (e) {}
+  }
+  /* Face-à-face (résumé ESPN), vu depuis l'équipe qui reçoit. */
+  try {
+    var d = _g45ResumeIA[String(eid || '')];
+    var h2 = d && _g45H2HDepuisResume(d, hId);
+    if (h2 && h2.length) {
+      var g = 0, p = 0;
+      h2.forEach(function (x) { if (+x.pour > +x.contre) g++; else if (+x.pour < +x.contre) p++; });
+      out.push('FACE-À-FACE (' + h2.length + ' derniers) : ' + hN + ' ' + g + ' victoires, ' + aN + ' ' + p + ' victoires ; scores (côté ' + hN + ') : '
+        + h2.map(function (x) { return x.pour + '-' + x.contre + (x.domicile ? ' à domicile' : ' à l\'extérieur'); }).join(', '));
+    }
+  } catch (e) {}
+  return out;
+}
+window._g45IaFaitsGen = _g45IaFaitsGen;
+/* Probabilités SANS marge des cotes US déjà lues (_g45EspnUsOdds). */
+function _g45IaProbasUs(od, hN, aN) {
+  var out = [];
+  try {
+    if (od.hDec > 1 && od.aDec > 1) {
+      var s = 1 / od.hDec + 1 / od.aDec;
+      out.push('Cotes vainqueur (' + (od.prov || 'ESPN') + ') : ' + hN + ' ' + (+od.hDec).toFixed(2) + ', ' + aN + ' ' + (+od.aDec).toFixed(2)
+        + ' → probabilités des cotes, marge retirée : ' + hN + ' ' + Math.round(100 / od.hDec / s) + ' %, ' + aN + ' ' + Math.round(100 / od.aDec / s) + ' %');
+    }
+    if (od.over > 1 && od.under > 1 && od.line != null) {
+      var s2 = 1 / od.over + 1 / od.under;
+      out.push('Total ' + od.line + ' : Over ' + (+od.over).toFixed(2) + ', Under ' + (+od.under).toFixed(2) + ' → marge retirée : Over '
+        + Math.round(100 / od.over / s2) + ' %, Under ' + Math.round(100 / od.under / s2) + ' %');
+    }
+  } catch (e) {}
+  return out;
+}
 async function g45LoadUsAI(btn){
   var box=document.getElementById(btn.dataset.box); if(!box) return;
   if(box.getAttribute('data-loaded')==='1'){ box.style.display=(box.style.display==='none'?'':'none'); return; }
@@ -31485,8 +31590,22 @@ async function g45LoadUsAI(btn){
       if(od.favName) seg.push('favori '+od.favName+(od.favDec?(' @'+od.favDec.toFixed(2)):''));
       if(od.over||od.under) seg.push('total '+od.line+' (over '+(od.over?od.over.toFixed(2):'?')+' / under '+(od.under?od.under.toFixed(2):'?')+')');
       if(seg.length) facts.push('Cotes ('+(od.prov||'ESPN')+') : '+seg.join(' · '));
+      _g45IaProbasUs(od, hN, aN).forEach(function(f){ facts.push(f); });
     }
   }catch(e){}
+  /* 29/09/2026 (« OUI » d'Antoine) : résumé ESPN + stats de l'écran (domicile /
+     extérieur, forme globale, face-à-face) — sports d'équipe seulement. */
+  var _equipe=(sp!=='tennis'&&sp!=='mma');
+  var _dejaIa=!_g45IaForcer[btn.dataset.box] && !!_g45IaMemLire(_g45IaCle(hN+' vs '+aN, facts));
+  if(_equipe && eid && !_dejaIa){
+    box.innerHTML='<div style="color:#c9d3ee;font-size:13px;padding:10px;text-align:center;">🧠 Je rassemble les stats domicile/extérieur, la forme et les cotes, puis j\'analyse… (le premier chargement d\'une ligue peut prendre quelques secondes)</div>';
+    try{ _g45FaitsDuResume(eid, hN, aN).forEach(function(f){ facts.push(f); }); }catch(e){}
+    try{
+      var _rs=_g45ResumeIA[String(eid)], _cp=(((_rs||{}).header||{}).competitions||[])[0]||{}, _cs=_cp.competitors||[];
+      var _H=_cs.filter(function(c){ return c.homeAway==='home'; })[0], _A=_cs.filter(function(c){ return c.homeAway==='away'; })[0];
+      if(_H&&_A&&_H.team&&_A.team) (await _g45IaFaitsGen(sp, lg, eid, String(_H.team.id), String(_A.team.id), hN, aN)).forEach(function(f){ facts.push(f); });
+    }catch(e){}
+  }
   try{
     var EMO={mlb:'⚾',nba:'🏀',nfl:'🏈',nhl:'🏒'};
     var EMOS={rugby:'🏉','rugby-league':'🏉🇦🇺',tennis:'🎾'};
@@ -31494,7 +31613,13 @@ async function g45LoadUsAI(btn){
       g45StatsForEvent({sport:EMO[lg]||EMOS[sp]||'',teams:[hN,aN],comp:(LG[lg]||LGS[sp]||lg||'').toUpperCase(),place:''}).slice(0,4).forEach(function(st){ facts.push('Note perso de l\'utilisateur : '+st.text); });
     }
   }catch(e){}
-  var sys='Tu es un analyste paris sportifs francophone, concis et prudent. Reponds STRICTEMENT dans ce format, sans rien avant ni apres:\n🎯 PRONOSTIC : <vainqueur> — score probable <x-y>\n💎 VALEUR : <compare ton estimation aux cotes fournies, ou dis "pas de value claire">\n🔑 POINTS CLES :\n- <point 1>\n- <point 2>\n- <point 3>\n⚠️ <principale incertitude en 1 phrase>\nAppuie-toi sur les faits fournis et tes connaissances des equipes. REGLE ABSOLUE : ne cite JAMAIS une forme recente, une serie, un historique de confrontations, un score passe, une blessure ou un classement qui ne figure PAS dans les FAITS fournis. Si une info te manque, raisonne au conditionnel ou dis que la donnee manque, sans l\'inventer.';
+  /* FORMAT CHIFFRÉ (29/09/2026) : même consigne que le foot, sans le nul
+     (vainqueur ou handicap / total selon le sport). Tennis et MMA gardent
+     leurs règles ci-dessous. */
+  var sys='Tu es un analyste paris sportifs francophone, concis et prudent. Reponds STRICTEMENT dans ce format, sans rien avant ni apres:\n🎯 PRONOSTIC : <nom du vainqueur> — score probable <x-y> — confiance <1 a 5>/5\n📊 PROBAS : '+hN+' <p> % · '+aN+' <p> % (cotes : '+hN+' <p> % · '+aN+' <p> %, ou "cotes non fournies")\n💎 VALEUR : <le meilleur pari parmi vainqueur, handicap, total de points : ta probabilite contre celle de la cote ; ou "pas de value claire">\n🔑 POINTS CLES :\n- <point 1 avec un chiffre des FAITS>\n- <point 2 avec un chiffre des FAITS>\n- <point 3 avec un chiffre des FAITS>\n⚠️ <principale incertitude en 1 phrase>\n'
+    +(_equipe&&!_neutU?'REGLE DOMICILE/EXTERIEUR : juge l\'equipe qui RECOIT d\'abord sur ses matchs A DOMICILE, et l\'equipe qui SE DEPLACE d\'abord sur ses matchs A L\'EXTERIEUR ; la FORME GLOBALE complete. Moins de 5 matchs = echantillon faible : appuie-toi aussi sur la saison precedente. ':'')
+    +'Pour la value, compare TA probabilite a celle des cotes fournies (marge deja retiree) : value seulement si ton estimation la depasse d\'au moins 5 points. Recopie les chiffres des FAITS tels quels, ne les recalcule pas.\n';
+  sys+='Appuie-toi sur les faits fournis et tes connaissances des equipes. REGLE ABSOLUE : ne cite JAMAIS une forme recente, une serie, un historique de confrontations, un score passe, une blessure ou un classement qui ne figure PAS dans les FAITS fournis. Si une info te manque, raisonne au conditionnel ou dis que la donnee manque, sans l\'inventer.';
   if(sp==='tennis'){
     sys+='\nTENNIS — REGLE ABSOLUE SUR LE SCORE : le "score probable" doit etre exprime EN SETS (ex. 3-1 ou 2-0), jamais en jeux (pas de "6-4 6-4"). Respecte IMPERATIVEMENT le FORMAT DU MATCH indique dans les FAITS : en best of 5, le vainqueur a TOUJOURS 3 sets (3-0, 3-1 ou 3-2) ; en best of 3, le vainqueur a TOUJOURS 2 sets (2-0 ou 2-1). Un score comme 2-1 est INTERDIT en best of 5.\nNe parle JAMAIS d\'avantage du terrain ni de "domicile/exterieur" : au tennis, aucun joueur ne recoit.';
   } else if(sp==='mma'){
@@ -32568,6 +32693,7 @@ async function _renderGenericDetail(el, sport, lg, eid){
   try{
     var r=await fetch('https://site.api.espn.com/apis/site/v2/sports/'+sport+'/'+lg+'/summary?event='+eid);
     var data=await r.json();
+    try { _g45ResumeIA[String(eid)] = data; } catch (e) {}   /* 29/09 : relu par l'analyse IA (forme, classement, face-à-face) */
     var comp=(data.header&&data.header.competitions&&data.header.competitions[0])||{};
     var cps=comp.competitors||[];
     var home=cps.filter(function(c){return c.homeAway==='home';})[0]||cps[0]||{};

@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 29/09/2026 (version déployée : 20260929e, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 29/09/2026 (version déployée : 20260929f, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -221,6 +221,17 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   [null]) → `_g45IaFaitsEcran` lit les cotes dans le scoreboard du jour
   (soccer/<lg>/scoreboard?dates=AAAAMMJJ, event par id : moneyline.home|away|draw,
   total.over|under.close|open.odds, overUnder) ; seules les clés manquantes sont complétées.
+  29f — AUTRES SPORTS (NBA, NHL, NFL, MLB, WNBA, rugby, NRL) : `g45LoadUsAI` reçoit
+  `_g45FaitsDuResume` (résumé gardé dans `_g45ResumeIA` par `_renderGenericDetail`) +
+  `_g45IaFaitsGen(sp, lg, eid, hId, aId, hN, aN)` = mêmes calendriers que le bouton
+  Dom/Ext (`_g45CompetEquipes` + `_g45CompetMatchs`, cache g45cm9_, 20 s max) : derniers
+  matchs du BON côté, forme globale (8), saison régulière en cours + précédente du bon
+  côté avec les lignes des curseurs cochés (`_g45DeStats`/`_g45DeLib`), face-à-face ;
+  `_g45IaProbasUs` (vainqueur + total, marge retirée). Même format chiffré que le foot
+  (PROBAS en noms d'équipes) ; tennis / MMA gardent leurs règles, sans règle domicile.
+  Accord : `_g45IaAccord(liste, titre)` rapproche « Lakers » de « Los Angeles Lakers »
+  (dernier mot du nom). Consigne : plus de « (ton estimation ; rappelle celle des
+  cotes…) », que Workers AI recopiait.
 - Photos plus hautes que larges (Wikipédia en pied) : `_g45Cadrer(img)` au onload →
   object-position 50 % 6 % (terrain `g45PitchPhotosAppliquer` + rendu direct,
   Compo `_g45CompoWiki`, effectif `_g45SquadPhotos`) — 28b.
