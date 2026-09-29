@@ -30650,25 +30650,57 @@ async function _g45IaFaitsEcran(eid, lgBtn, iso) {
         + ', Over 2.5 ' + o25 + '/' + h2.length + ' ; scores (côté ' + hN + ') : ' + h2.map(function (x) { return x.pour + '-' + x.contre + (x.domicile ? ' à domicile' : ' à l\'extérieur'); }).join(', '));
     }
   } catch (e) {}
-  /* Cotes ESPN du match, avec les probabilités SANS marge du bookmaker. */
+  /* Cotes ESPN du match, avec les probabilités SANS marge du bookmaker.
+     29e — SONDÉ PAR ANTOINE sur Real Madrid–Villarreal : le résumé n'a AUCUNE
+     cote (pickcenter = [null]). Les cotes d'un match À VENIR sont dans le
+     SCOREBOARD du jour (sondé 28/09 sur Lyon–Lens : moneyline.home|away|draw,
+     total.over|under.close|open.odds « +130 », overUnder) → on va les y
+     chercher quand le résumé n'en a pas. Sans ça, aucune cote Over/Under :
+     les IA ne pouvaient pas juger ce marché. */
   try {
-    var pk = (d.pickcenter || d.odds || [])[0];
-    if (pk) {
-      var dec = function (x) { var v = parseFloat(_espnAmDec(x)); return v > 1 ? v : null; };
-      var c1 = dec(pk.homeTeamOdds && pk.homeTeamOdds.moneyLine), c2 = dec(pk.awayTeamOdds && pk.awayTeamOdds.moneyLine), cx = dec(pk.drawOdds && pk.drawOdds.moneyLine);
-      var prov = (pk.provider && pk.provider.name) || 'ESPN';
-      if (c1 && c2 && cx) {
-        var s = 1 / c1 + 1 / cx + 1 / c2, r = function (c) { return Math.round(100 / c / s) + ' %'; };
-        out.push('Cotes 1X2 (' + prov + ') : 1=' + c1.toFixed(2) + ' X=' + cx.toFixed(2) + ' 2=' + c2.toFixed(2)
-          + ' → probabilités des cotes, marge retirée : 1 ' + r(c1) + ', X ' + r(cx) + ', 2 ' + r(c2));
+    var dec = function (x) { var v = parseFloat(_espnAmDec(x)); return v > 1 ? v : null; };
+    var cl = function (o) { return o && ((o.close && o.close.odds) || (o.open && o.open.odds)); };
+    var lire = function (pk) {
+      if (!pk) return null;
+      var ml = pk.moneyline || {}, t = pk.total || {};
+      var x = {
+        prov: (pk.provider && pk.provider.name) || 'ESPN',
+        c1: dec(pk.homeTeamOdds && pk.homeTeamOdds.moneyLine) || dec(cl(ml.home)),
+        c2: dec(pk.awayTeamOdds && pk.awayTeamOdds.moneyLine) || dec(cl(ml.away)),
+        cx: dec(pk.drawOdds && pk.drawOdds.moneyLine) || dec(cl(ml.draw)),
+        co: dec(pk.overOdds) || dec(cl(t.over)),
+        cu: dec(pk.underOdds) || dec(cl(t.under))
+      };
+      var L = pk.overUnder != null ? parseFloat(pk.overUnder) : NaN;
+      if (isNaN(L)) { var ln = t.over && ((t.over.close && t.over.close.line) || (t.over.open && t.over.open.line)); L = parseFloat(String(ln == null ? '' : ln).replace(/^[ou]/i, '')); }
+      x.L = isNaN(L) ? null : L;
+      return x;
+    };
+    var od = lire((d.pickcenter || d.odds || [])[0]);
+    if ((!od || !od.co || !od.cu || !od.c1) && lg) {
+      var jour = new Date(cp.date || iso || '');
+      if (!isNaN(jour)) {
+        var ymd = jour.toISOString().slice(0, 10).replace(/-/g, '');
+        var sb = await _g45IaDelai(fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/' + lg + '/scoreboard?dates=' + ymd)
+          .then(function (r) { return r.ok ? r.json() : null; }));
+        var evS = ((sb && sb.events) || []).filter(function (e) { return String(e.id) === String(eid); })[0];
+        var o2 = lire(evS && evS.competitions && evS.competitions[0] && (evS.competitions[0].odds || [])[0]);
+        if (o2) {
+          if (!od) od = o2;
+          else ['c1', 'c2', 'cx', 'co', 'cu', 'L'].forEach(function (k) { if (!od[k] && o2[k]) od[k] = o2[k]; });
+        }
       }
-      var L = pk.overUnder != null ? parseFloat(pk.overUnder) : null, t = pk.total || {};
-      var co = dec(pk.overOdds) || dec(t.over && ((t.over.close && t.over.close.odds) || (t.over.open && t.over.open.odds)));
-      var cu = dec(pk.underOdds) || dec(t.under && ((t.under.close && t.under.close.odds) || (t.under.open && t.under.open.odds)));
-      if (L && co && cu) {
-        var s2 = 1 / co + 1 / cu;
-        out.push('Cotes Over/Under ' + L + ' buts (' + prov + ') : Over=' + co.toFixed(2) + ' Under=' + cu.toFixed(2)
-          + ' → probabilités, marge retirée : Over ' + Math.round(100 / co / s2) + ' %, Under ' + Math.round(100 / cu / s2) + ' %');
+    }
+    if (od) {
+      if (od.c1 && od.c2 && od.cx) {
+        var s = 1 / od.c1 + 1 / od.cx + 1 / od.c2, r = function (c) { return Math.round(100 / c / s) + ' %'; };
+        out.push('Cotes 1X2 (' + od.prov + ') : 1=' + od.c1.toFixed(2) + ' X=' + od.cx.toFixed(2) + ' 2=' + od.c2.toFixed(2)
+          + ' → probabilités des cotes, marge retirée : 1 ' + r(od.c1) + ', X ' + r(od.cx) + ', 2 ' + r(od.c2));
+      }
+      if (od.L && od.co && od.cu) {
+        var s2 = 1 / od.co + 1 / od.cu;
+        out.push('Cotes Over/Under ' + od.L + ' buts (' + od.prov + ') : Over=' + od.co.toFixed(2) + ' Under=' + od.cu.toFixed(2)
+          + ' → probabilités, marge retirée : Over ' + Math.round(100 / od.co / s2) + ' %, Under ' + Math.round(100 / od.cu / s2) + ' %');
       }
     }
   } catch (e) {}

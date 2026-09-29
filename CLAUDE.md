@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 29/09/2026 (version déployée : 20260929d, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 29/09/2026 (version déployée : 20260929e, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -217,6 +217,10 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   des cotes sans marge, consigne recopiée, « a perdu/gagné tous » contredit par les bilans
   nV nN nD des faits, ou > 1 chiffre des points clés absent des faits. Gemini : des 429
   en console sur les premiers modèles de la cascade sont normaux (le suivant répond).
+  29e — SONDÉ PAR ANTOINE (Real–Villarreal) : résumé ESPN foot SANS cote (pickcenter
+  [null]) → `_g45IaFaitsEcran` lit les cotes dans le scoreboard du jour
+  (soccer/<lg>/scoreboard?dates=AAAAMMJJ, event par id : moneyline.home|away|draw,
+  total.over|under.close|open.odds, overUnder) ; seules les clés manquantes sont complétées.
 - Photos plus hautes que larges (Wikipédia en pied) : `_g45Cadrer(img)` au onload →
   object-position 50 % 6 % (terrain `g45PitchPhotosAppliquer` + rendu direct,
   Compo `_g45CompoWiki`, effectif `_g45SquadPhotos`) — 28b.
