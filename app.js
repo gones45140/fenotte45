@@ -45235,7 +45235,7 @@ window._g45CompetMatchs = _g45CompetMatchs;
    FINAL ; si aucune ne colle (détail incomplet), le match est écarté des
    catégories tirées des buts, et gardé pour celles tirées du score.
    ═══════════════════════════════════════════════════════════════════════════ */
-var _g45ClsCtx = { mode: 'eq', catE: 'bm', catJ: 'buts', lieu: 'all', n: 0, inv: false, phase: 'reg', tot: false, ouP: 'ft', ouL: 2.5, vsTri: 'd', vsInv: false, sMode: 'sans', sEv: 'o15', sCote: false, qMode: 'pour', qTri: 'm2', qInv: false, qOuvert: '', stP: 'pour' };
+var _g45ClsCtx = { mode: 'eq', catE: 'bm', catJ: 'buts', lieu: 'all', n: 0, inv: false, phase: 'reg', tot: false, ouP: 'ft', ouL: 2.5, vsTri: 'd', vsInv: false, sMode: 'sans', sEv: 'o15', sCote: false, qMode: 'pour', qTri: 'm2', qInv: false, qOuvert: '', stP: 'pour', xgTri: 'xg', xgInv: false };
 try { (function () { var o = JSON.parse(localStorage.getItem('g45_cls_ou') || 'null');
   if (o && /^(ft|1|2|vs)$/.test(o.p)) _g45ClsCtx.ouP = o.p;
   if (o && [0.5, 1.5, 2.5, 3.5, 4.5].indexOf(o.l) >= 0) _g45ClsCtx.ouL = o.l; })(); } catch (e) {}
@@ -45314,7 +45314,14 @@ var _G45_CLS_JO = [
   ['buts', 'Buts', 'b'], ['hp', 'Hors penalty', 'b'], ['p1b', '⚡ 1er buteur', 'b'], ['mt1', 'Buts 1re MT', 'b'],
   ['pd', 'Passes D', 'l', ['assists', 'assistsLeaders']], ['tc', 'Tirs cadrés', 'l', ['shotsOnTarget']],
   ['ti', 'Tirs', 'l', ['totalShots']], ['cj', 'Cartons jaunes', 'b'], ['fs', 'Fautes subies', 'l', ['foulsSuffered']],
-  ['ar', 'Arrêts (gardiens)', 'l', ['saves']]
+  ['ar', 'Arrêts (gardiens)', 'l', ['saves']],
+  /* 29/09/2026 (maquette validée) — SONDÉ PAR ANTOINE, catégories des leaders ESPN
+     foot : goalsLeaders, assistsLeaders, goals, assists, shotsOnTarget, yellowCards,
+     redCards, foulsCommitted, foulsSuffered, totalShots, accuratePasses, saves (PAS de
+     minutes jouées → aucune stat « par 90 »). xG joueurs : source 'x', calculés sur les
+     tirs (_g45ClsTableXg). */
+  ['pr', '🎯 Passes réussies', 'l', ['accuratePasses']], ['cro', '🟥 Cartons rouges', 'l', ['redCards']],
+  ['fc', '🦵 Fautes commises', 'l', ['foulsCommitted']], ['pen', '⚽ Penalties marqués', 'b'], ['xg', '📊 xG joueurs', 'x']
 ];
 
 function _g45ClsYmd(d) { return d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0'); }
@@ -45721,7 +45728,7 @@ async function g45ClsRender(c, body) {
       + '<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-bottom:10px;">'
       + _g45ClsBtn(X.qMode === 'pour', 'Marqués', "g45ClsSet('qMode','pour')") + _g45ClsBtn(X.qMode === 'contre', 'Encaissés', "g45ClsSet('qMode','contre')") + '</div>';
   }
-  var filtrable = X.mode === 'eq' || def[2] === 'b';
+  var filtrable = X.mode === 'eq' || def[2] === 'b' || def[2] === 'x';
   if (filtrable) {
     h += _ph.html + '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-bottom:6px;">'
       + _g45ClsBtn(X.lieu === 'all', 'Global', "g45ClsSet('lieu','all')") + _g45ClsBtn(X.lieu === 'dom', 'Dom', "g45ClsSet('lieu','dom')") + _g45ClsBtn(X.lieu === 'ext', 'Ext', "g45ClsSet('lieu','ext')") + '</div>'
@@ -46104,7 +46111,7 @@ function _g45ClsJoueursButs(def, PE) {
       if (b[1] !== null && b[1] <= 45) j.mt1++;
     });
   });
-  var val = function (j) { return def[0] === 'buts' ? j.buts : def[0] === 'hp' ? j.buts - j.pen : def[0] === 'p1b' ? j.p1b : def[0] === 'mt1' ? j.mt1 : j.cj; };
+  var val = function (j) { return def[0] === 'buts' ? j.buts : def[0] === 'hp' ? j.buts - j.pen : def[0] === 'pen' ? j.pen : def[0] === 'p1b' ? j.p1b : def[0] === 'mt1' ? j.mt1 : j.cj; };
   return Object.keys(J).map(function (k) { var j = J[k]; j.v = val(j); return j; }).filter(function (j) { return j.v > 0; });
 }
 
@@ -46145,8 +46152,107 @@ async function _g45ClsJoueursLeaders(c, def, an, body) {
   return out;
 }
 
+/* ═══ xG JOUEURS (29/09/2026, maquette validée) ═══
+   ESPN ne publie aucun xG par joueur : on somme les tirs de chaque match
+   (g45TirsMatch : xG et xGOT ESPN de chaque tir). Les tirs ne portent PAS
+   d'identifiant de joueur, seulement son nom (shortText) : regroupement par
+   nom + club. Csc exclus. STOCKAGE (saturé en septembre, 5,7 Mo) : on garde
+   par match un RÉSUMÉ compact g45xgj1_<ligue>_<match> = [[club, nom, xG, xGOT,
+   buts, tirs], …] (~0,5 Ko) ; les tirs complets (~6 Ko) lus pour l'occasion
+   sont effacés s'ils n'étaient pas déjà en cache. Lecture sur BOUTON (tous
+   les matchs de la ligue), jamais automatique. Filtres lieu / derniers
+   matchs / phase respectés. */
+var _g45ClsXgKo = {};
+function _g45ClsXgResume(t) {
+  var P = {};
+  (t || []).forEach(function (x) {
+    if (x.csc || !x.qui) return;
+    var k = x.equipe + '|' + x.qui, j = P[k] = P[k] || [x.equipe, x.qui, 0, 0, 0, 0];
+    j[2] += (+x.xg || 0); if (x.xgot != null) j[3] += (+x.xgot || 0); if (x.but) j[4]++; j[5]++;
+  });
+  return Object.keys(P).map(function (k) { var j = P[k]; j[2] = Math.round(j[2] * 100) / 100; j[3] = Math.round(j[3] * 100) / 100; return j; });
+}
+function _g45ClsXgLire(slug, id) {
+  try { var c = JSON.parse(localStorage.getItem('g45xgj1_' + slug + '_' + id) || 'null'); if (c) return c; } catch (e) {}
+  try {
+    var t = JSON.parse(localStorage.getItem('g45_tirs2_' + slug + '_' + id) || 'null');
+    if (t && t.l) { var r = _g45ClsXgResume(t.l); try { localStorage.setItem('g45xgj1_' + slug + '_' + id, JSON.stringify(r)); } catch (e) {} return r; }
+  } catch (e) {}
+  return null;
+}
+var _g45ClsXgEnCours = false;
+window.g45ClsXgCalc = async function (slug, ids) {
+  if (_g45ClsXgEnCours) return;
+  _g45ClsXgEnCours = true;
+  var file = String(ids || '').split(',').filter(Boolean), fait = 0, n = file.length;
+  var travail = async function () {
+    while (file.length) {
+      var id = file.shift(), avait = false;
+      try { avait = !!localStorage.getItem('g45_tirs2_' + slug + '_' + id); } catch (e) {}
+      var t = null;
+      try { t = await g45TirsMatch(slug, id, true); } catch (e) {}
+      if (t && t.length) {
+        try { localStorage.setItem('g45xgj1_' + slug + '_' + id, JSON.stringify(_g45ClsXgResume(t))); } catch (e) {}
+        if (!avait) { try { localStorage.removeItem('g45_tirs2_' + slug + '_' + id); } catch (e) {} }
+      } else _g45ClsXgKo[slug + '_' + id] = 1;
+      fait++;
+      var pb = document.getElementById('g45-cls-xgprog'); if (pb) pb.textContent = '⏳ Lecture des tirs : ' + fait + '/' + n + ' matchs';
+    }
+  };
+  try { await Promise.all([travail(), travail(), travail()]); } catch (e) {}
+  _g45ClsXgEnCours = false;
+  window.g45ClsSet('_', null);
+};
+function _g45ClsTableXg(c, PE, saisonTxt, lieuTxt) {
+  var X = _g45ClsCtx, ok = {}, all = {};
+  Object.keys(PE.par).forEach(function (id) { ok[id] = {}; PE.par[id].forEach(function (m) { ok[id][m.id] = 1; all[m.id] = 1; }); });
+  var manque = [], J = {}, lus = 0;
+  Object.keys(all).forEach(function (mid) {
+    var r = _g45ClsXgLire(c.s, mid);
+    if (!r) { if (!_g45ClsXgKo[c.s + '_' + mid]) manque.push(mid); return; }
+    lus++;
+    r.forEach(function (x) {
+      if (!ok[x[0]] || !ok[x[0]][mid]) return;              /* filtres lieu / derniers matchs */
+      var k = x[0] + '|' + x[1], j = J[k] = J[k] || { tm: x[0], nom: x[1], xg: 0, xgot: 0, buts: 0, tirs: 0 };
+      j.xg += x[2]; j.xgot += x[3]; j.buts += x[4]; j.tirs += x[5];
+    });
+  });
+  var h = _g45ClsEnTete('📊 xG joueurs · ' + c.n + ' ' + saisonTxt + ' · ' + lieuTxt,
+    lus + ' match(s) lus sur ' + Object.keys(all).length + ' · xG = buts attendus, xGOT = buts attendus sur les tirs cadrés');
+  if (manque.length) {
+    h += '<div style="background:rgba(11,16,29,.72);border-radius:8px;padding:10px;margin-bottom:8px;">'
+      + '<div id="g45-cls-xgprog" style="font-size:13px;color:#fff;margin-bottom:8px;">' + manque.length + ' match(s) pas encore lus (1 à 4 requêtes ESPN gratuites chacun, puis gardés en mémoire).</div>'
+      + '<button onclick="g45ClsXgCalc(\'' + c.s + '\',\'' + manque.join(',') + '\')" style="width:100%;box-sizing:border-box;font-size:13px;font-weight:800;padding:10px 12px;border-radius:9px;cursor:pointer;border:1.5px solid rgba(34,211,238,.5);background:rgba(34,211,238,.10);color:#22d3ee;">📊 Calculer les xG : ' + manque.length + ' match(s) à lire</button></div>';
+  }
+  var rows = Object.keys(J).map(function (k) { var j = J[k]; j.diff = j.buts - j.xg; return j; }).filter(function (j) { return j.tirs > 0; });
+  if (!rows.length) return h + (manque.length ? '' : '<div style="color:#c9d3ee;font-size:13px;padding:8px;">Aucun tir trouvé.</div>');
+  var cle = X.xgTri || 'xg', sens = X.xgInv ? 1 : -1;
+  rows.sort(function (a, b) { return (a[cle] - b[cle]) * sens || b.xg - a.xg || String(a.nom).localeCompare(String(b.nom)); });
+  rows = rows.slice(0, 30);
+  var col = function (k, lib) { return '<span onclick="g45ClsSet(\'xgTri\',\'' + k + '\')" style="text-align:right;cursor:pointer;text-decoration:underline;color:' + (cle === k ? '#fff' : '#c9d3ee') + ';">' + lib + (cle === k ? (sens < 0 ? ' ▼' : ' ▲') : '') + '</span>'; };
+  var grille = 'display:grid;grid-template-columns:26px minmax(0,1fr) 44px 48px 42px 56px;gap:5px;padding:8px 8px;';
+  h += '<div style="background:rgba(11,16,29,.50);border-radius:8px;overflow:hidden;">'
+    + '<div style="' + grille + 'font-size:12px;font-weight:700;color:#c9d3ee;"><span>#</span><span>Joueur</span>' + col('xg', 'xG') + col('xgot', 'xGOT') + col('buts', 'Buts') + col('diff', 'B−xG') + '</div>';
+  rows.forEach(function (r, i) {
+    var eq = (PE.info[r.tm] && PE.info[r.tm].nom) || '';
+    var dc = r.diff >= 0.5 ? '#3ddf78' : (r.diff <= -0.5 ? '#ff6b6b' : '#c9d3ee');
+    var d = (Math.abs(r.diff) < 0.05 ? '' : (r.diff > 0 ? '+' : '−')) + _g45ClsFr(Math.abs(r.diff), 1);
+    h += '<div style="' + grille + 'border-top:1px solid rgba(255,255,255,.08);align-items:center;">'
+      + '<span style="font-size:13px;font-weight:800;color:' + (i ? '#c9d3ee' : '#f0b020') + ';">' + (i + 1) + '</span>'
+      + '<span style="min-width:0;"><span style="display:block;font-size:14px;font-weight:800;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + _g45Esc(r.nom) + '</span>'
+      + '<span style="display:block;font-size:12px;color:#c9d3ee;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + _g45Esc(eq) + ' · ' + r.tirs + ' tirs</span></span>'
+      + '<span style="text-align:right;font-size:14px;font-weight:900;color:#22d3ee;">' + _g45ClsFr(r.xg, 1) + '</span>'
+      + '<span style="text-align:right;font-size:14px;font-weight:800;color:#fff;">' + _g45ClsFr(r.xgot, 1) + '</span>'
+      + '<span style="text-align:right;font-size:14px;font-weight:800;color:#fff;">' + r.buts + '</span>'
+      + '<span style="text-align:right;font-size:14px;font-weight:900;color:' + dc + ';">' + d + '</span></div>';
+  });
+  return h + '</div><div style="font-size:12px;color:#c9d3ee;margin-top:6px;">Touche une colonne pour trier · B−xG vert = marque plus que ses occasions (réussite), rouge = moins (malchance)</div>';
+}
+window._g45ClsTableXg = _g45ClsTableXg; window._g45ClsXgResume = _g45ClsXgResume;
+
 async function _g45ClsTableJo(c, def, PE, saisonTxt, lieuTxt, an, body) {
   var X = _g45ClsCtx, rows;
+  if (def[2] === 'x') return _g45ClsTableXg(c, PE, saisonTxt, lieuTxt);
   if (def[2] === 'b') rows = _g45ClsJoueursButs(def, PE);
   else {
     body.innerHTML = '<div id="g45-cls-prog" style="color:#fff;font-size:13px;">⏳ Top 25 ESPN…</div>';
@@ -46179,6 +46285,7 @@ window.g45ClsSet = function (k, v) {
   else if (k === 'qTri') { if (_g45ClsCtx.qTri === v) _g45ClsCtx.qInv = !_g45ClsCtx.qInv; else { _g45ClsCtx.qTri = v; _g45ClsCtx.qInv = false; } }
   else if (k === 'vsTri') { if (_g45ClsCtx.vsTri === v) _g45ClsCtx.vsInv = !_g45ClsCtx.vsInv; else { _g45ClsCtx.vsTri = v; _g45ClsCtx.vsInv = false; } }
   else if (k === 'qOuvert') { _g45ClsCtx.qOuvert = (_g45ClsCtx.qOuvert === v) ? '' : v; }
+  else if (k === 'xgTri') { if (_g45ClsCtx.xgTri === v) _g45ClsCtx.xgInv = !_g45ClsCtx.xgInv; else { _g45ClsCtx.xgTri = v; _g45ClsCtx.xgInv = false; } }
   else { _g45ClsCtx[k] = v; if (k !== 'lieu' && k !== 'n' && k !== 'phase' && k !== 'tot' && k !== 'ouP' && k !== 'ouL' && k !== 'qMode' && k !== 'sMode' && k !== 'sEv' && k !== 'sCote' && k !== 'stP') _g45ClsCtx.inv = false; }
   if (k === 'ouP' || k === 'ouL') { try { localStorage.setItem('g45_cls_ou', JSON.stringify({ p: _g45ClsCtx.ouP, l: _g45ClsCtx.ouL })); } catch (e) {} }
   var D = window._g45ClsDernier, body = document.getElementById('g45-compet-body');
@@ -60853,7 +60960,7 @@ window._g45ClvSelection = _g45ClvSelection; window._g45ClvPoser = _g45ClvPoser; 
 var _G45_CACHE_MORTS = ['g45cls4_' /* 29/09 : → g45cls5_ (stats de match) */, 'g45news7_', 'g45cm_', 'g45cm2_', 'g45cm3_', 'g45cm4_', 'g45cm5_', 'g45cm6_', 'g45cm7_', 'g45cm8_',
   'g45khl_fiche_', 'g45_saisons_cache_v2_', 'g45_score_', 'g45_score2_', 'g45_score3_'];
 try {
-  ['g45cm9_', 'g45khl_fiche2_', 'g45khl_plage_', 'g45cls3_', 'g45cls5_', 'g45photostsdb_', 'g45wk1_', 'g45jv_', 'g45art1_', 'g45clv1_', 'g45arb1_', 'g45_herologo_', 'g45cm3_']
+  ['g45cm9_', 'g45xgj1_', 'g45khl_fiche2_', 'g45khl_plage_', 'g45cls3_', 'g45cls5_', 'g45photostsdb_', 'g45wk1_', 'g45jv_', 'g45art1_', 'g45clv1_', 'g45arb1_', 'g45_herologo_', 'g45cm3_']
     .forEach(function (p) { if (_G45_CACHE_PREFIXES.indexOf(p) < 0) _G45_CACHE_PREFIXES.push(p); });
 } catch (e) {}
 function g45MenageStockage() {
