@@ -31131,7 +31131,7 @@ async function _g45MultiAI(box, boxId, sys, facts, title){
         var _cfR=await fetch(FD_PROXY+'/cfai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:msg, max_tokens:700})});
         var _cfJ=await _cfR.json();
         var _cfT=lireOAI(_cfJ);
-        var _cfKo=_cfT?_g45IaIncoherent(_cfT, facts):'';
+        var _cfKo=_cfT?_g45IaIncoherent(_cfT, facts, sys):'';
         if(_cfT && _cfKo){
           /* « Si il dit pas de connerie, oui » (Antoine, 29/09) : réponse écartée. */
           try{ localStorage.removeItem('g45_cfai_veille'); }catch(e){}
@@ -31180,10 +31180,14 @@ async function _g45MultiAI(box, boxId, sys, facts, title){
    (2) ses probabilités ne font pas ~100 %, (3) sa proba du favori s'écarte de
    plus de 20 points de celle des cotes (sans marge) fournies, (4) ses points
    clés citent plus d'un chiffre absent des FAITS. Rend la raison, ou ''. */
-function _g45IaIncoherent(txt, facts){
+function _g45IaIncoherent(txt, facts, sys){
   var t=_g45IaNettoyer(txt), F=(facts||[]).join('\n').replace(/,(\d)/g,'.$1');
-  var pr=_g45IaChamp(t, /PRONOSTIC/i), pb=_g45IaChamp(t, /PROBAS/i);
-  if(!pr || !pb) return 'format non respecté';
+  /* 29/09 (F1, capture d'Antoine) : F1 / cyclisme / MotoGP demandent « FAVORI » et pas
+     de PROBAS → Workers AI était écarté à chaque fois. On n'exige que ce que la
+     consigne (sys) demande. */
+  var pr=_g45IaChamp(t, /PRONOSTIC|FAVORI/i), pb=_g45IaChamp(t, /PROBAS/i);
+  var veutPb=!sys || /PROBAS/.test(sys);
+  if(!pr || (veutPb && !pb)) return 'format non respecté';
   /* 29d, 2e capture d'Antoine : consigne recopiée (« ton estimation ; rappelle
      celle des cotes… », « ta probabilite estimee… ») = le modèle n'a pas compris. */
   if(/ton estimation|rappelle celle|ta probabilit|contre celle de la cote|<\s*(nom|x-y|p|point)\b/i.test(t)) return 'consigne recopiée au lieu d\'une analyse';
@@ -31285,7 +31289,7 @@ function _g45IaAccord(liste, titre){
   var ea=function(x){return String(x).replace(/&/g,'&amp;').replace(/</g,'&lt;');};
   var grp={}, ordre=[];
   liste.forEach(function(a){
-    var p=_g45IaChamp(a.txt, /PRONOSTIC/i).split(/\s+[—–-]\s+/)[0].trim();
+    var p=_g45IaChamp(a.txt, /PRONOSTIC|FAVORI/i).split(/\s+[—–-]\s+/)[0].trim();   /* FAVORI : F1, cyclisme, MotoGP (29/09) */
     if(!p) return;
     var m1=p.match(/^(1|X|N|2)(?![0-9])/i);     /* « 1 (Real) » et « 1 (Real Madrid) » = même avis */
     var k=m1 ? m1[1].toUpperCase().replace('N','X') : '';
