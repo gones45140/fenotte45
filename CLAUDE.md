@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 29/09/2026 (version déployée : 20260929j, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 29/09/2026 (version déployée : 20260929k, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -245,6 +245,8 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   cours tout seul (`_g45DeXgRemplir` → `_g45DeXgCalc` sur m.espnId + ligue du bloc,
   `_g45DeXgTuiles` : xG pour–contre, Buts − xG vert/rouge, buts marqués) ; saison
   précédente = bouton `g45DeXgBouton(slot)`. xG = FOOT SEULEMENT (ESPN n'en a pas ailleurs).
+  29k — tirs / cadrés / corners / possession du bon côté ajoutés aux faits IA (depuis
+  `_g45ClsMatchs`, voir Classements ci-dessous).
 - Photos plus hautes que larges (Wikipédia en pied) : `_g45Cadrer(img)` au onload →
   object-position 50 % 6 % (terrain `g45PitchPhotosAppliquer` + rendu direct,
   Compo `_g45CompoWiki`, effectif `_g45SquadPhotos`) — 28b.
@@ -276,6 +278,14 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   o25 et o15mt, dont les cas restent dans `_g45ClsValEq`) ; période `_g45ClsCtx.ouP`
   ('ft' | '1' | '2', 2e MT = score final − pause) et ligne `ouL` (0,5 à 4,5), gardées
   dans localStorage `g45_cls_ou`. Mi-temps : seulement les matchs `m.f` (détail complet).
+- Classements foot, STATS DE MATCH (29k, maquette validée) : SONDÉ PAR ANTOINE, le scoreboard
+  foot donne par camp foulsCommitted, wonCorners, goalAssists, possessionPct, shotAssists,
+  shotsOnTarget, totalGoals, totalShots (PAS d'arrêts ni de xG). `_g45ClsLireMatch` garde
+  m.sh / m.sa = [tirs, cadrés, corners, possession, fautes] (null si absent) ; cache
+  g45cls4_ → g45cls5_ (ancien dans _G45_CACHE_MORTS). Catégories `ti`, `tc`, `co`, `pos`,
+  `fau` de `_G45_CLS_EQ` ; sélecteur `_g45ClsCtx.stP` ('pour'|'contre'|'tot' = total match ;
+  Possession toujours « pour »). Tacles, interceptions, grosses occasions… : PAS dans le
+  scoreboard (résumé par match trop lourd, ou propre à FotMob — non utilisable, CGU).
 - Classements foot, « ⏱️ Quand ? » (28k) : catégorie `quand` → `_g45ClsTableQuand`
   (au lieu de _g45ClsTableEq) ; calcul `_g45ClsQuandEq(id, liste, mode)` sur m.b
   (m.f seulement) : % 1re MT (minute ≤ 45, 45'+x compris) / 2e MT (reste, prolongation
