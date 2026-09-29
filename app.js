@@ -38829,6 +38829,69 @@ function _g45DomExtTuiles(st, complet) {
   return h;
 }
 
+/* ═══ xG DANS LE BLOC DOMICILE / EXTÉRIEUR (29/09/2026, maquette validée) ═══
+   Foot seulement : ESPN ne publie de xG pour aucun autre sport. Calculés depuis
+   les tirs de chaque match (g45TirsMatch, cache DÉFINITIF g45_tirs2_ partagé
+   avec « 📊 xG de la saison » et l'analyse IA), sur les matchs du BON CÔTÉ.
+   Saison en cours : automatique (peu de matchs). Saison précédente : bouton
+   (19 matchs par équipe, jusqu'à ~75 requêtes). Camp identifié par l'id ESPN
+   de l'équipe dans les tirs ; match écarté sinon. */
+var _g45DeXgCtx = {};
+async function _g45DeXgCalc(matchs, id, dom, slug, prog) {
+  var l = _g45DomExtFiltre(matchs, id, dom).filter(function (m) { return m.espnId; });
+  var A = { n: 0, xp: 0, xc: 0, bp: 0, bc: 0, tot: l.length };
+  for (var i = 0; i < l.length; i++) {
+    if (prog) prog(i + 1, l.length);
+    var t = null;
+    try { t = await g45TirsMatch(slug, l[i].espnId, true); } catch (e) {}
+    if (!t || !t.length || !t.some(function (x) { return String(x.equipe) === String(id); })) continue;
+    t.forEach(function (x) { if (String(x.equipe) === String(id)) A.xp += (+x.xg || 0); else A.xc += (+x.xg || 0); });
+    var ft = (l[i].score && l[i].score.fullTime) || {}, h = +ft.home || 0, a = +ft.away || 0;
+    A.bp += dom ? h : a; A.bc += dom ? a : h; A.n++;
+  }
+  return A;
+}
+function _g45DeXgTuiles(A) {
+  if (!A || !A.n) return '<div style="font-size:12px;font-weight:700;color:#c8d3ea;padding:6px 2px;">xG indisponibles pour ces matchs.</div>';
+  var f = function (v) { return (v / A.n).toFixed(1); };
+  var ec = (A.bp - A.xp) / A.n;
+  var col = ec >= 0.1 ? '#3ddf78' : (ec <= -0.1 ? '#ff6b6b' : '#c8d3ea');
+  var tuile = function (val, lib, detail, coul) {
+    return '<div style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:2px;padding:9px 5px;border-radius:9px;background:rgba(255,255,255,.05);">'
+      + '<span style="font-size:18px;font-weight:800;color:' + coul + ';">' + val + '</span>'
+      + '<span style="font-size:11px;font-weight:700;color:#c8d3ea;text-align:center;line-height:1.25;">' + lib + '</span>'
+      + (detail ? '<span style="font-size:10.5px;font-weight:700;color:#8e9dbd;">' + detail + '</span>' : '') + '</div>';
+  };
+  return '<div style="display:flex;gap:5px;">'
+    + tuile(f(A.xp) + ' – ' + f(A.xc), 'xG pour – contre', 'par match', '#22d3ee')
+    + tuile((ec > 0 ? '+' : (ec < 0 ? '−' : '')) + Math.abs(ec).toFixed(1), 'Buts − xG', ec >= 0.1 ? 'réussite' : (ec <= -0.1 ? 'malchance' : 'normal'), col)
+    + tuile(f(A.bp), 'Buts marqués', 'par match' + (A.n < A.tot ? ' · ' + A.n + '/' + A.tot + ' matchs' : ''), '#4d84ff')
+    + '</div>';
+}
+async function _g45DeXgRemplir(slotId, matchs, id, dom, slug) {
+  var el = document.getElementById(slotId); if (!el) return;
+  el.innerHTML = '<div style="font-size:12px;font-weight:700;color:#c8d3ea;padding:6px 2px;">⏳ Calcul des xG…</div>';
+  var A = await _g45DeXgCalc(matchs, id, dom, slug, function (i, n) {
+    var z = document.getElementById(slotId); if (z && i > 1) z.firstChild && (z.firstChild.textContent = '⏳ Calcul des xG… ' + i + '/' + n);
+  });
+  el = document.getElementById(slotId); if (el) el.innerHTML = _g45DeXgTuiles(A);
+}
+function _g45DeXgLancer(boxId, res, hId, aId, lg, s1) {
+  try {
+    if (!lg) return;
+    var cles = [['h0', res[0], hId, true], ['a0', res[2], aId, false], ['h1', res[1], hId, true], ['a1', res[3], aId, false]];
+    cles.forEach(function (c) {
+      var slot = boxId + '-xg-' + c[0];
+      if (!document.getElementById(slot)) return;
+      _g45DeXgCtx[slot] = { m: c[1], id: c[2], dom: c[3], lg: lg };
+      if (c[0].charAt(1) === '0') _g45DeXgRemplir(slot, c[1], c[2], c[3], lg);
+      else document.getElementById(slot).innerHTML = '<button onclick="g45DeXgBouton(\'' + slot + '\')" style="width:100%;box-sizing:border-box;font-size:13px;font-weight:800;padding:8px 10px;border-radius:9px;cursor:pointer;border:1.5px solid rgba(34,211,238,.5);background:rgba(34,211,238,.10);color:#22d3ee;">📊 Calculer les xG ' + s1 + '-' + String(s1 + 1).slice(2) + '</button>';
+    });
+  } catch (e) {}
+}
+window.g45DeXgBouton = function (slot) { var c = _g45DeXgCtx[slot]; if (c) _g45DeXgRemplir(slot, c.m, c.id, c.dom, c.lg); };
+window._g45DeXgCalc = _g45DeXgCalc; window._g45DeXgTuiles = _g45DeXgTuiles;
+
 async function g45DomExtLancer(btn) {
   var box = document.getElementById(btn.getAttribute('data-box'));
   if (!box) return;
@@ -38855,7 +38918,12 @@ async function g45DomExtLancer(btn) {
     var f = _g45DomExtFiltre(liste, id, dom);
     return f.length ? calcSaisonStats(f, id) : { n: 0 };
   };
-  var cellule = function (liste, id, dom, complet) { return _g45DomExtTuiles(st(liste, id, dom), complet); };
+  /* xG (29h bis, maquette validée « OUI ») : une place par équipe et par saison, remplie
+     APRÈS l'affichage par _g45DeXgLancer (saison en cours) ou par un bouton (précédente). */
+  var cellule = function (liste, id, dom, complet) {
+    var k = (liste && liste.length) ? (liste === res[0] ? 'h0' : liste === res[1] ? 'h1' : liste === res[2] ? 'a0' : liste === res[3] ? 'a1' : '') : '';
+    return _g45DomExtTuiles(st(liste, id, dom), complet) + (k ? '<div id="' + box.id + '-xg-' + k + '" style="margin-top:5px;"></div>' : '');
+  };
   var ligne = function (lib, sous, coulSous, a, b) {
     return '<div style="display:grid;grid-template-columns:96px 1fr 1fr;gap:9px;align-items:start;margin-bottom:9px;">'
       + '<div style="display:flex;flex-direction:column;gap:2px;padding-top:2px;">'
@@ -38891,7 +38959,8 @@ async function g45DomExtLancer(btn) {
       + '<div style="font-size:11px;font-weight:600;color:#9fb0c7;line-height:1.5;margin-top:4px;">'
       + 'Même championnat pour les deux. Les statistiques de mi-temps ne sont pas affichées ici : '
       + 'elles demandent un identifiant que cette fenêtre ne peut pas garantir.</div></div>';
-    btn.style.display = 'none';
+    _g45DeXgLancer(box.id, res, hId, aId, lg, s1);
+  btn.style.display = 'none';
     return;
   }
   box.innerHTML = '<div style="padding:12px;border-radius:11px;background:rgba(11,16,29,.88);border:1px solid rgba(70,220,240,.35);">'
@@ -38904,6 +38973,7 @@ async function g45DomExtLancer(btn) {
     + '<div style="font-size:11px;font-weight:600;color:#9fb0c7;line-height:1.5;margin-top:4px;">'
     + 'Même championnat pour les deux. Les statistiques de mi-temps ne sont pas affichées ici : '
     + 'elles demandent un identifiant que cette fenêtre ne peut pas garantir.</div></div>';
+  _g45DeXgLancer(box.id, res, hId, aId, lg, s1);
   btn.style.display = 'none';
 }
 window.g45DomExtLancer = g45DomExtLancer;

@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 29/09/2026 (version déployée : 20260929h, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 29/09/2026 (version déployée : 20260929i, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -240,6 +240,11 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   depuis les tirs (`g45TirsMatch(slug, id, true)`, cache définitif g45_tirs2_) des 5 derniers
   matchs DU BON CÔTÉ (liste « all » : `_g45IaVue` garde id + slug de compétition) ; 15 s max,
   camp identifié par l'id ESPN dans les tirs ; écart buts − xG ≥ 0,3/match signalé.
+  29i — xG dans le bloc Domicile/Extérieur foot (`g45DomExtLancer`, maquette validée) :
+  place `<box>-xg-h0|a0|h1|a1` sous chaque cellule ; `_g45DeXgLancer` remplit la saison en
+  cours tout seul (`_g45DeXgRemplir` → `_g45DeXgCalc` sur m.espnId + ligue du bloc,
+  `_g45DeXgTuiles` : xG pour–contre, Buts − xG vert/rouge, buts marqués) ; saison
+  précédente = bouton `g45DeXgBouton(slot)`. xG = FOOT SEULEMENT (ESPN n'en a pas ailleurs).
 - Photos plus hautes que larges (Wikipédia en pied) : `_g45Cadrer(img)` au onload →
   object-position 50 % 6 % (terrain `g45PitchPhotosAppliquer` + rendu direct,
   Compo `_g45CompoWiki`, effectif `_g45SquadPhotos`) — 28b.
