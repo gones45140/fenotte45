@@ -45746,6 +45746,7 @@ async function g45ClsRender(c, body) {
   else if (X.mode === 'eq') h += _g45ClsTableEq(c, def, PE, saisonTxt, lieuTxt, ms);
   else h += await _g45ClsTableJo(c, def, PE, saisonTxt, filtrable ? lieuTxt : 'saison', an, body);
   body.innerHTML = _g45ClsFond(c, h);
+  if (X.mode === 'jo') _g45ClsPhotos(body);   /* 29/09 : photos des joueurs, après le rendu */
 }
 
 function _g45ClsEnTete(titre, sous) {
@@ -46152,6 +46153,43 @@ async function _g45ClsJoueursLeaders(c, def, an, body) {
   return out;
 }
 
+/* ═══ PHOTO + LOGO DANS LES CLASSEMENTS JOUEURS (29/09/2026, maquette validée :
+   « oui partout ») ═══ Photo ronde 40 px entourée de la couleur du club
+   (g45CouleursDe, éclaircie pour rester visible sur fond sombre), pastille du
+   logo ESPN du club (PE.info[club].logo), initiales tant que la photo n'est pas
+   là. Photos Wikipédia (_g45WkPhoto, cache g45wk1_ : trouvé = définitif, rien =
+   14 j) posées APRÈS le rendu par _g45ClsPhotos, 3 à la fois. Nom jamais coupé. */
+function _g45ClsAvatar(nom, eqNom, logo) {
+  var ini = String(nom || '?').split(/\s+/).filter(Boolean).map(function (w) { return w.charAt(0); }).join('').slice(0, 2).toUpperCase();
+  var coul = '#4d84ff';
+  try { coul = (g45CouleursDe(eqNom) || [])[0] || coul; if (typeof _g45CoulClaire === 'function') coul = _g45CoulClaire(coul) || coul; } catch (e) {}
+  return '<div data-g45clsph="' + _g45Esc(nom) + '" style="position:relative;width:40px;height:40px;border-radius:50%;background:#26324f center 8%/cover no-repeat;border:2px solid ' + coul + ';box-sizing:border-box;display:flex;align-items:center;justify-content:center;">'
+    + '<span style="font-size:14px;font-weight:900;color:#fff;">' + _g45Esc(ini) + '</span>'
+    + (logo ? '<img src="' + _g45Esc(logo) + '" alt="" loading="lazy" onerror="this.style.display=\'none\'" style="position:absolute;right:-5px;bottom:-5px;width:19px;height:19px;border-radius:50%;background:#fff;object-fit:contain;padding:1px;box-sizing:border-box;border:1.5px solid #0b101d;">' : '')
+    + '</div>';
+}
+function _g45ClsClub(eqNom, logo, extra) {
+  return '<span style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;font-size:12px;color:#c9d3ee;margin-top:2px;">'
+    + (logo ? '<img src="' + _g45Esc(logo) + '" alt="" loading="lazy" onerror="this.style.display=\'none\'" style="width:16px;height:16px;object-fit:contain;flex:none;">' : '')
+    + [_g45Esc(eqNom || ''), extra || ''].filter(Boolean).join(' · ') + '</span>';
+}
+async function _g45ClsPhotos(racine) {
+  try {
+    var els = Array.prototype.slice.call((racine || document).querySelectorAll('[data-g45clsph]'));
+    var travail = async function () {
+      while (els.length) {
+        var el = els.shift(), u = '';
+        try { u = await _g45WkPhoto(el.getAttribute('data-g45clsph')); } catch (e) {}
+        if (u && el.isConnected) {
+          el.style.backgroundImage = 'url("' + String(u).replace(/"/g, '%22') + '")';
+          var sp = el.querySelector('span'); if (sp) sp.style.visibility = 'hidden';
+        }
+      }
+    };
+    await Promise.all([travail(), travail(), travail()]);
+  } catch (e) {}
+}
+window._g45ClsPhotos = _g45ClsPhotos;
 /* ═══ xG JOUEURS (29/09/2026, maquette validée) ═══
    ESPN ne publie aucun xG par joueur : on somme les tirs de chaque match
    (g45TirsMatch : xG et xGOT ESPN de chaque tir). Les tirs ne portent PAS
@@ -46230,17 +46268,18 @@ function _g45ClsTableXg(c, PE, saisonTxt, lieuTxt) {
   rows.sort(function (a, b) { return (a[cle] - b[cle]) * sens || b.xg - a.xg || String(a.nom).localeCompare(String(b.nom)); });
   rows = rows.slice(0, 30);
   var col = function (k, lib) { return '<span onclick="g45ClsSet(\'xgTri\',\'' + k + '\')" style="text-align:right;cursor:pointer;text-decoration:underline;color:' + (cle === k ? '#fff' : '#c9d3ee') + ';">' + lib + (cle === k ? (sens < 0 ? ' ▼' : ' ▲') : '') + '</span>'; };
-  var grille = 'display:grid;grid-template-columns:26px minmax(0,1fr) 44px 48px 42px 56px;gap:5px;padding:8px 8px;';
+  var grille = 'display:grid;grid-template-columns:18px 42px minmax(0,1fr) 34px 38px 26px 42px;gap:5px;padding:8px 6px;';
   h += '<div style="background:rgba(11,16,29,.50);border-radius:8px;overflow:hidden;">'
-    + '<div style="' + grille + 'font-size:12px;font-weight:700;color:#c9d3ee;"><span>#</span><span>Joueur</span>' + col('xg', 'xG') + col('xgot', 'xGOT') + col('buts', 'Buts') + col('diff', 'B−xG') + '</div>';
+    + '<div style="' + grille + 'font-size:12px;font-weight:700;color:#c9d3ee;"><span>#</span><span></span><span>Joueur</span>' + col('xg', 'xG') + col('xgot', 'xGOT') + col('buts', 'Buts') + col('diff', 'B−xG') + '</div>';
   rows.forEach(function (r, i) {
     var eq = (PE.info[r.tm] && PE.info[r.tm].nom) || '';
     var dc = r.diff >= 0.5 ? '#3ddf78' : (r.diff <= -0.5 ? '#ff6b6b' : '#c9d3ee');
     var d = (Math.abs(r.diff) < 0.05 ? '' : (r.diff > 0 ? '+' : '−')) + _g45ClsFr(Math.abs(r.diff), 1);
     h += '<div style="' + grille + 'border-top:1px solid rgba(255,255,255,.08);align-items:center;">'
       + '<span style="font-size:13px;font-weight:800;color:' + (i ? '#c9d3ee' : '#f0b020') + ';">' + (i + 1) + '</span>'
-      + '<span style="min-width:0;"><span style="display:block;font-size:14px;font-weight:800;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + _g45Esc(r.nom) + '</span>'
-      + '<span style="display:block;font-size:12px;color:#c9d3ee;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + _g45Esc(eq) + ' · ' + r.tirs + ' tirs</span></span>'
+      + _g45ClsAvatar(r.nom, eq, (PE.info[r.tm] && PE.info[r.tm].logo) || '')
+      + '<span style="min-width:0;"><span style="display:block;font-size:14px;font-weight:800;color:#fff;line-height:1.2;overflow-wrap:anywhere;">' + _g45Esc(r.nom) + '</span>'
+      + _g45ClsClub(eq, (PE.info[r.tm] && PE.info[r.tm].logo) || '', r.tirs + ' tirs') + '</span>'
       + '<span style="text-align:right;font-size:14px;font-weight:900;color:#22d3ee;">' + _g45ClsFr(r.xg, 1) + '</span>'
       + '<span style="text-align:right;font-size:14px;font-weight:800;color:#fff;">' + _g45ClsFr(r.xgot, 1) + '</span>'
       + '<span style="text-align:right;font-size:14px;font-weight:800;color:#fff;">' + r.buts + '</span>'
@@ -46265,15 +46304,17 @@ async function _g45ClsTableJo(c, def, PE, saisonTxt, lieuTxt, an, body) {
   var h = _g45ClsEnTete(def[1] + ' · ' + c.n + ' ' + saisonTxt + ' · ' + lieuTxt, def[0] === 'p1b' ? 'Auteur du 1er but du match (csc exclus)' : (def[0] === 'cj' ? 'Rouges indiqués sous le nom' : ''));
   if (!rows.length) return h + '<div style="color:#c9d3ee;font-size:13px;padding:8px;">Personne pour l\'instant.</div>';
   h += '<div style="background:rgba(11,16,29,.50);border-radius:8px;overflow:hidden;">'
-    + '<div style="display:grid;grid-template-columns:30px minmax(0,1fr) 50px;gap:6px;padding:8px 10px;font-size:12px;color:#c9d3ee;font-weight:700;">'
-    + '<span>#</span><span>Joueur</span><span onclick="g45ClsSet(\'inv\')" style="text-align:right;cursor:pointer;text-decoration:underline;">' + (sens > 0 ? '▼' : '▲') + '</span></div>';
+    + '<div style="display:grid;grid-template-columns:24px 42px minmax(0,1fr) 50px;gap:6px;padding:8px 8px;font-size:12px;color:#c9d3ee;font-weight:700;">'
+    + '<span>#</span><span></span><span>Joueur</span><span onclick="g45ClsSet(\'inv\')" style="text-align:right;cursor:pointer;text-decoration:underline;">' + (sens > 0 ? '▼' : '▲') + '</span></div>';
   rows.forEach(function (r, i) {
     var eq = r.tname || (PE.info[r.tm] && PE.info[r.tm].nom) || '';
     var det = def[2] === 'b' ? (def[0] === 'cj' ? (r.cr ? r.cr + ' rouge' + (r.cr > 1 ? 's' : '') : '') : (r.buts + ' but' + (r.buts > 1 ? 's' : '') + (r.pen ? ' dont ' + r.pen + ' pen.' : ''))) : '';
-    h += '<div onclick="g45ScorerOuvrir(\'' + r.aid + '\')" style="display:grid;grid-template-columns:30px minmax(0,1fr) 50px;gap:6px;padding:8px 10px;border-top:1px solid rgba(255,255,255,.08);align-items:center;cursor:pointer;">'
+    var lgo = (PE.info[r.tm] && PE.info[r.tm].logo) || '';
+    h += '<div onclick="g45ScorerOuvrir(\'' + r.aid + '\')" style="display:grid;grid-template-columns:24px 42px minmax(0,1fr) 50px;gap:6px;padding:8px 8px;border-top:1px solid rgba(255,255,255,.08);align-items:center;cursor:pointer;">'
       + '<span style="font-size:13px;font-weight:800;color:' + (i ? '#c9d3ee' : '#f0b020') + ';">' + (i + 1) + '</span>'
-      + '<span style="min-width:0;"><span style="display:block;font-size:14px;font-weight:800;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + r.nom + '</span>'
-      + '<span style="display:block;font-size:12px;color:#c9d3ee;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + [eq, det].filter(Boolean).join(' · ') + '</span></span>'
+      + _g45ClsAvatar(r.nom, eq, lgo)
+      + '<span style="min-width:0;"><span style="display:block;font-size:14px;font-weight:800;color:#fff;line-height:1.2;overflow-wrap:anywhere;">' + r.nom + '</span>'
+      + _g45ClsClub(eq, lgo, det) + '</span>'
       + '<span style="text-align:right;font-size:18px;font-weight:900;color:' + (i < 3 ? '#f0b020' : '#fff') + ';">' + _g45ClsFr(r.v, r.v % 1 ? 1 : 0) + '</span></div>'
       + '<div id="g45-pst-' + r.aid + '"></div>';
   });
