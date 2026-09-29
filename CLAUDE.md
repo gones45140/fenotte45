@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 29/09/2026 (version déployée : 20260929u, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 29/09/2026 (version déployée : 20260929v, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -144,6 +144,10 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   (plein écran + screen.orientation.lock ; refus → retour « auto »), `g45OriPoser`
   (bloc en tête d'Outils), clé `g45_orientation`.
 - Bandeau de scores `g45BandeauMaj` : si tout tient à l'écran, UNE copie, sans défilement.
+- Suivies « Matchs à venir / direct » (`g45DirectMesEquipes`, groupes `_g45DirEquipes`) : 29v —
+  le plafond (10) porte sur les REQUÊTES réelles (`aInterroger`, tout le foot = 1 requête `all`),
+  plus sur les championnats : les ligues de foot d'Antoine occupaient les 8 places et la NHL
+  (Hurricanes id 7, Avalanche id 17, SONDÉ : scoreboard OK, type 2) n'était jamais interrogée.
 - PWA gones45 : index.html déclare manifest.json (icônes locales icon-192/512.png,
   display standalone). fenotte45 : manifeste PAS encore déclaré dans indexfenotte.html.
 - Fenêtre de match hors foot (`_renderGenericDetail`) : ligne stade + ville sous le score

@@ -51918,7 +51918,13 @@ async function g45DirectMesEquipes(silencieux) {
   var box = document.getElementById('g45-direct-body');
   if (!box) return;
   var grp = _g45DirEquipes();
-  var cles = Object.keys(grp).slice(0, 8);        /* plafond : 8 requêtes */
+  /* PLAFOND CORRIGÉ (29/09/2026, Antoine : « failli rater la NHL » — Hurricanes et
+     Avalanche absents alors qu'ESPN avait bien leurs matchs, ids 7 et 17). Le
+     plafond de 8 était appliqué ICI, sur les championnats, AVANT de regrouper le
+     football sous `all` : ses nombreuses ligues de foot (Liga, PL, L1, Serie A,
+     Bundesliga, Mondial, Ligue des nations…) prenaient les 8 places, la NHL
+     sautait. Le plafond porte désormais sur les REQUÊTES réelles (aInterroger). */
+  var cles = Object.keys(grp);
   if (!cles.length) {
     box.innerHTML = '<div style="font-size:11.5px;color:var(--t3);padding:12px;text-align:center;line-height:1.6;">'
       + 'Aucune \u00e9quipe exploitable.<br><span style="opacity:.7;">Ouvre une \u00e9quipe depuis Comp\u00e9titions ou pose une \u00e9toile \u2606 : '
@@ -51975,6 +51981,7 @@ async function g45DirectMesEquipes(silencieux) {
   });
   var aInterroger = cles.filter(function (k) { return grp[k].sp !== 'soccer'; }).map(function (k) { return grp[k]; });
   if (aDuFoot) aInterroger.unshift(grpFoot);
+  aInterroger = aInterroger.slice(0, 10);          /* plafond : 10 requêtes (foot = 1) */
 
   for (var i = 0; i < aInterroger.length; i++) {
     var g = aInterroger[i], js = null, r;
