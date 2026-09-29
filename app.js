@@ -30854,7 +30854,7 @@ async function g45LoadMatchAI(btn){
   try{
     if(typeof g45StatsForEvent==='function'){
       var ds=g45StatsForEvent({sport:'⚽',teams:[hN,aN],comp:comp,place:''});
-      ds.slice(0,4).forEach(function(st){ facts.push('Note perso de l\'utilisateur: '+st.text); });
+      ds.slice(0,4).forEach(function(st){ facts.push('Note perso de l\'utilisateur: '+_g45Accents(st.text)); });
     }
   }catch(e){}
   /* FORMAT CHIFFRÉ (29/09/2026, maquette validée par Antoine) : probabilités,
@@ -31679,7 +31679,7 @@ async function g45LoadUsAI(btn){
     var EMO={mlb:'⚾',nba:'🏀',nfl:'🏈',nhl:'🏒'};
     var EMOS={rugby:'🏉','rugby-league':'🏉🇦🇺',tennis:'🎾'};
     if(typeof g45StatsForEvent==='function'){
-      g45StatsForEvent({sport:EMO[lg]||EMOS[sp]||'',teams:[hN,aN],comp:(LG[lg]||LGS[sp]||lg||'').toUpperCase(),place:''}).slice(0,4).forEach(function(st){ facts.push('Note perso de l\'utilisateur : '+st.text); });
+      g45StatsForEvent({sport:EMO[lg]||EMOS[sp]||'',teams:[hN,aN],comp:(LG[lg]||LGS[sp]||lg||'').toUpperCase(),place:''}).slice(0,4).forEach(function(st){ facts.push('Note perso de l\'utilisateur : '+_g45Accents(st.text)); });
     }
   }catch(e){}
   /* FORMAT CHIFFRÉ (29/09/2026) : même consigne que le foot, sans le nul
@@ -31700,6 +31700,40 @@ async function g45LoadUsAI(btn){
   await _g45MultiAI(box, btn.dataset.box, sys, facts, hN+' vs '+aN);
   btn.disabled=false;
 }
+/* ═══ NOTES PERSO : ACCENTS RÉPARÉS + NOTES F1 DU BON GP (29/09/2026, « oui » d'Antoine) ═══
+   Vu en console : « Le GP d'Autriche ne rÃ©ussit pas Ã  Ferrari » — texte UTF-8
+   relu comme du Latin-1 (import). _g45Accents le répare (sans effet sur un texte
+   sain). Et cette note partait aux IA pour le GP de MALAISIE : GPT OSS citait
+   « Leclerc en Autriche ». _g45NoteGpOk garde une note F1 si elle ne parle
+   d'AUCUN GP, ou si elle parle de CELUI-CI (pays, ville ou circuit). */
+function _g45Accents(t) {
+  t = String(t == null ? '' : t);
+  if (!/Ã[\u0080-¿]|Ã[©¨ª«¢®´¹»§]|â€/.test(t)) return t;
+  try { return decodeURIComponent(escape(t)); } catch (e) {}
+  /* Repli : une espace abîmée (« Ã  » pour « à ») fait échouer la méthode générale. */
+  var M = { 'Ã©': 'é', 'Ã¨': 'è', 'Ãª': 'ê', 'Ã«': 'ë', 'Ã¢': 'â', 'Ã®': 'î', 'Ã¯': 'ï', 'Ã´': 'ô', 'Ã¶': 'ö', 'Ã¹': 'ù', 'Ã»': 'û', 'Ã¼': 'ü',
+    'Ã§': 'ç', 'Ã‰': 'É', 'Ãˆ': 'È', 'Ã€': 'À', 'Ã‡': 'Ç', 'â€™': '’', 'â€œ': '“', 'â€\u009d': '”', 'â€¦': '…', 'â€“': '–', 'â€”': '—', 'Ã\u00a0': 'à', 'Ã ': 'à' };
+  Object.keys(M).forEach(function (k) { t = t.split(k).join(M[k]); });
+  return t;
+}
+var _G45_GP_MOTS = [['bahrein', 'bahrain', 'sakhir'], ['arabie', 'saudi', 'jeddah', 'djeddah'], ['australie', 'australia', 'melbourne'], ['japon', 'japan', 'suzuka'],
+  ['chine', 'china', 'shanghai'], ['miami'], ['imola', 'emilie', 'emilia'], ['monaco'], ['canada', 'montreal'], ['espagne', 'spain', 'barcelone', 'barcelona', 'catalogne', 'madrid'],
+  ['autriche', 'austria', 'spielberg', 'red bull ring'], ['grande-bretagne', 'britain', 'british', 'silverstone', 'angleterre'], ['hongrie', 'hungary', 'hungaroring', 'budapest'],
+  ['belgique', 'belgium', 'spa'], ['pays-bas', 'netherlands', 'zandvoort', 'dutch'], ['italie', 'italy', 'monza'], ['azerbaidjan', 'azerbaijan', 'bakou', 'baku'],
+  ['singapour', 'singapore', 'marina bay'], ['etats-unis', 'austin', 'cota', 'united states'], ['mexique', 'mexico'], ['bresil', 'brazil', 'interlagos', 'sao paulo'],
+  ['las vegas', 'vegas'], ['qatar', 'lusail'], ['abou dhabi', 'abu dhabi', 'yas marina'], ['malaisie', 'malaysia', 'sepang', 'kuala lumpur'], ['portugal', 'portimao'], ['turquie', 'turkey', 'istanbul']];
+function _g45NoteGpOk(txt, lieu) {
+  var nr = function (x) { return ' ' + String(x || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9-]+/g, ' ') + ' '; };
+  var t = nr(_g45Accents(txt)), l = nr(lieu), cite = false, ici = false;
+  _G45_GP_MOTS.forEach(function (g) {
+    var dansNote = g.some(function (m) { return t.indexOf(' ' + m + ' ') >= 0; });
+    if (!dansNote) return;
+    cite = true;
+    if (g.some(function (m) { return l.indexOf(' ' + m + ' ') >= 0; })) ici = true;
+  });
+  return !cite || ici;
+}
+window._g45Accents = _g45Accents; window._g45NoteGpOk = _g45NoteGpOk;
 async function g45F1AI(btn){
   var box=document.getElementById(btn.dataset.box); if(!box) return;
   if(box.getAttribute('data-loaded')==='1'){ box.style.display=(box.style.display==='none'?'':'none'); return; }
@@ -31770,7 +31804,9 @@ async function g45F1AI(btn){
     }
   }catch(e){}
 
-  try{ if(typeof g45StatsForEvent==='function'){ g45StatsForEvent(_g45F1Ev(ev)).slice(0,4).forEach(function(st){ facts.push('Note perso de l\'utilisateur : '+st.text); }); } }catch(e){}
+  try{ if(typeof g45StatsForEvent==='function'){
+    var _lieuGp=[cir.fullName, ad.city, ad.locality, ad.country].filter(Boolean).join(' ');
+    g45StatsForEvent(_g45F1Ev(ev)).filter(function(st){ return _g45NoteGpOk(st.text, _lieuGp); }).slice(0,4).forEach(function(st){ facts.push('Note perso de l\'utilisateur : '+_g45Accents(st.text)); }); } }catch(e){}
   /* Consigne ajoutee le 04/09 : sans elle, le modele continue de raisonner sur
      le championnat meme quand la grille lui est fournie. */
   var sys='Tu es un analyste paris F1 francophone, concis et prudent. Si une GRILLE DE DEPART est fournie, elle prime sur le classement du championnat : un pilote partant loin ne peut pas etre donne favori sur la seule foi de ses points. Si la grille n\'est pas connue, dis-le au lieu de la deviner. Reponds STRICTEMENT dans ce format, sans rien avant ni apres:\n🎯 FAVORI : <pilote> — podium probable <P1, P2, P3>\n💎 OUTSIDER / VALUE : <pilote(s) potentiellement sous-cotes et pourquoi>\n🔑 POINTS CLES :\n- <point 1>\n- <point 2>\n- <point 3>\n⚠️ <principale incertitude en 1 phrase>\nAppuie-toi UNIQUEMENT sur les FAITS fournis (grille, championnat, forme, notes). REGLE ABSOLUE (29/09/2026, releve d\'Antoine : « Leclerc en Autriche, il pourrait me parler de Damon Hill ») : ne cite JAMAIS un GP, un resultat, une course passee, une ecurie en difficulte, une caracteristique de circuit (virages, chaleur, pneus, degradation, meteo, nuit) ni un pilote qui ne figure PAS dans les FAITS. Tes souvenirs datent : ils sont faux pour cette saison. Chaque point cle doit citer un chiffre ou un nom des FAITS. Si une info te manque, ecris que la donnee manque.';
@@ -35063,7 +35099,7 @@ async function g45MotoAI(eid, btn){
       if(cl.length){ facts.push('Championnat avant ce GP : '+cl.slice(0,5).map(function(r){ return (r.position||'?')+'. '+((r.rider&&r.rider.full_name)||'?')+' '+(r.points!=null?r.points:'?')+' pts'; }).join(' · ')); }
     }
   }catch(e){}
-  try{ if(typeof g45StatsForEvent==='function'){ g45StatsForEvent({sport:'🏍️',teams:[nm],comp:'MotoGP',place:(ev.circuit&&ev.circuit.name)||''}).slice(0,3).forEach(function(st){ facts.push('Note perso de l\'utilisateur : '+st.text); }); } }catch(e){}
+  try{ if(typeof g45StatsForEvent==='function'){ g45StatsForEvent({sport:'🏍️',teams:[nm],comp:'MotoGP',place:(ev.circuit&&ev.circuit.name)||''}).filter(function(st){ return _g45NoteGpOk(st.text, [ev.circuit&&ev.circuit.name, ev.circuit&&ev.circuit.country, ev.country, nm].filter(Boolean).join(' ')); }).slice(0,3).forEach(function(st){ facts.push('Note perso de l\'utilisateur : '+_g45Accents(st.text)); }); } }catch(e){}
   var sys='Tu es un analyste paris sportifs francophone, concis et prudent. Reponds STRICTEMENT dans ce format, sans rien avant ni apres:\n🎯 PRONOSTIC : <vainqueur probable> — podium <1er, 2e, 3e>\n💎 VALEUR : <ou serait la valeur, ou "pas de value claire">\n🔑 POINTS CLES :\n- <point 1>\n- <point 2>\n- <point 3>\n⚠️ <principale incertitude en 1 phrase>\nAppuie-toi UNIQUEMENT sur les FAITS fournis (grille, championnat, circuit). REGLE ABSOLUE : ne cite JAMAIS un resultat passe, une serie, une blessure, une meteo, une caracteristique de circuit ou une statistique qui ne figure PAS dans les FAITS (tes souvenirs datent, ils sont faux pour cette saison). Chaque point cle doit citer un chiffre ou un nom des FAITS. Il n\'y a ni domicile ni exterieur en MotoGP. Si une info te manque, dis-le au lieu de l\'inventer.';
   await _g45MultiAI(box, 'mgpai-'+eid, sys, facts, nm);
 }
@@ -39583,7 +39619,7 @@ function _g45StatCard(s){
   var tags=[]; if(s.sport)tags.push(s.sport); (s.targets||[]).forEach(function(t){tags.push(t);}); if(s.place)tags.push('📍'+s.place); if(s.comp)tags.push('🏆'+s.comp); if(s.context)tags.push('🎯'+s.context);
   var chips=tags.map(function(t){return '<span style="font-size:9px;background:rgba(77,132,255,.14);color:#8aa2ff;padding:1px 6px;border-radius:5px;">'+ea(t)+'</span>';}).join(' ');
   return '<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:9px;padding:10px;margin-bottom:8px;">'
-    +'<div style="font-size:12px;color:var(--t1,#e8ecf5);line-height:1.5;margin-bottom:6px;">'+ea(s.text)+'</div>'
+    +'<div style="font-size:12px;color:var(--t1,#e8ecf5);line-height:1.5;margin-bottom:6px;">'+ea(typeof _g45Accents==='function'?_g45Accents(s.text):s.text)+'</div>'
     +'<div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;">'+chips
     +'<button onclick="g45StatsEditUI(\''+s.id+'\')" style="margin-left:auto;background:none;border:none;color:#8aa2ff;font-size:13px;cursor:pointer;">✏️</button>'
     +'<button onclick="g45StatsDeleteUI(\''+s.id+'\')" style="background:none;border:none;color:#ff6b6b;font-size:13px;cursor:pointer;">🗑</button></div></div>';
@@ -39803,6 +39839,8 @@ async function g45F1Open(){
     }
     // ampoule stats du dico
     var stats=(typeof g45StatsForEvent==='function')?g45StatsForEvent(_g45F1Ev(ev)):[];
+    /* 29/09 : seulement les notes de CE GP (ou d'aucun GP) — voir _g45NoteGpOk. */
+    try{ var _lg=[(ev.circuit||{}).fullName, ((ev.circuit||{}).address||{}).city, ((ev.circuit||{}).address||{}).country].filter(Boolean).join(' '); if(_lg) stats=stats.filter(function(st){ return _g45NoteGpOk(st.text, _lg); }); }catch(e){}
     var sid='f1stat-'+(_fsn++);
     var bulb=stats.length?'<button onclick="event.stopPropagation();g45CalTglStat(\''+sid+'\')" style="background:rgba(240,200,40,.14);border:1px solid rgba(240,200,40,.5);color:#f0c828;border-radius:6px;font-size:11px;font-weight:800;padding:2px 7px;cursor:pointer;flex:none;">💡 '+stats.length+'</button>':'';
     /* DRAPEAU DU PAYS EN FOND (26/09/2026, maquette 2A validée) : vraie image

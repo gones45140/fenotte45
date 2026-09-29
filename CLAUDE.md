@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 29/09/2026 (version déployée : 20260929t, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 29/09/2026 (version déployée : 20260929u, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -253,6 +253,11 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   circuits » : GPT OSS citait « Leclerc en Autriche »), chaque point clé cite un chiffre ou un nom des FAITS.
   29t — accord : hors 1/X/2 et hors noms du titre « A vs B », regroupement par NOM DE FAMILLE
   (« Antonelli » = « Kimi Antonelli »). Faits d'une analyse en console : `_g45IaCtx[boxId].facts`.
+  29u — NOTES PERSO (Mémoire stats) : `_g45Accents(t)` répare le texte mal encodé (« rÃ©ussit »),
+  dans les faits IA et sur les cartes de stats ; F1 / MotoGP + ampoule 💡 du calendrier F1 :
+  `_g45NoteGpOk(txt, lieu)` garde une note seulement si elle ne cite AUCUN GP ou cite CE GP
+  (table `_G45_GP_MOTS` pays / ville / circuit, fr + en). Cause : la note d'Antoine « le GP
+  d'Autriche ne réussit pas à Ferrari » partait aux IA pour le GP de Malaisie.
   29k — tirs / cadrés / corners / possession du bon côté ajoutés aux faits IA (depuis
   `_g45ClsMatchs`, voir Classements ci-dessous).
 - Photos plus hautes que larges (Wikipédia en pied) : `_g45Cadrer(img)` au onload →
