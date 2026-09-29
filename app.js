@@ -60144,6 +60144,11 @@ function _g45ClvPompe() {
     _g45ClvResoudre(h).catch(function () {}).then(function () { _g45ClvActif--; delete _g45ClvEnCours[h.id]; _g45ClvPoser(); _g45ClvPompe(); });
   }
 }
+/* Nom affiché : jamais « - » (pari simple sans adversaire saisi). */
+function _g45ClvNom(h) {
+  var ok = function (x) { x = String(x || '').trim(); return x && x !== '-' && x !== 'SIMPLE' ? x : ''; };
+  return ok(h.eq) || ok(h.target) || ok(h.n) || ok(h.type) || 'Pari';
+}
 function _g45ClvPoser() {
   try {
     var hote = document.getElementById('bilan-normal'); if (!hote) return;
@@ -60153,7 +60158,7 @@ function _g45ClvPoser() {
     var elig = paris.filter(_g45ClvEligible), faits = [], aChercher = 0;
     elig.forEach(function (h) {
       var c = _g45ClvLire(h);
-      if (c && c.c) faits.push({ h: h, c: c, v: (parseFloat(h.cote) / c.c - 1) * 100 });
+      if (c && c.c) { var _eg = Math.abs(parseFloat(h.cote) - c.c) < 0.005; faits.push({ h: h, c: c, v: _eg ? 0 : (parseFloat(h.cote) / c.c - 1) * 100, eg: _eg }); }
       else if (c === undefined) { aChercher++; if (!_g45ClvEnCours[h.id] && _g45ClvFile.length < 40) { _g45ClvEnCours[h.id] = 1; _g45ClvFile.push(h); } }
     });
     _g45ClvPompe();
@@ -60162,19 +60167,21 @@ function _g45ClvPoser() {
     if (!faits.length) {
       h += '<div style="font-size:13px;color:#c9d3ee;margin-top:6px;line-height:1.5;">' + (aChercher ? '⏳ Recherche des cotes de clôture… (' + aChercher + ' pari(s) foot)' : 'Aucun pari comparable pour l’instant : foot, pari simple (victoire, nul, défaite, over / under sur la ligne de clôture), non boosté.') + '</div>';
     } else {
-      var bat = faits.filter(function (x) { return x.v > 0; }).length, moy = faits.reduce(function (a, x) { return a + x.v; }, 0) / faits.length;
+      /* Égalité (29/09, Antoine : « égalité en cote = perdu ? ») : ni battue ni
+         ratée → 🟰, comptée à part, 0 % dans la moyenne. */
+      var bat = faits.filter(function (x) { return x.v > 0; }).length, egal = faits.filter(function (x) { return x.eg; }).length, moy = faits.reduce(function (a, x) { return a + x.v; }, 0) / faits.length;
       var ok = moy > 0, col = ok ? '#1ed760' : '#ff6b6b';
       h += '<div style="font-size:13px;color:#dfe6f5;margin-top:6px;line-height:1.6;">Paris comparés : <b>' + faits.length + '</b>' + (aChercher ? ' <span style="color:#c9d3ee;">(+' + aChercher + ' en recherche)</span>' : '') + '<br>'
-        + 'Tu as battu la clôture : <b>' + bat + ' fois (' + Math.round(bat * 100 / faits.length) + ' %)</b><br>'
+        + 'Tu as battu la clôture : <b>' + bat + ' fois (' + Math.round(bat * 100 / faits.length) + ' %)</b>' + (egal ? ' · égalité : <b>' + egal + '</b>' : '') + '<br>'
         + 'En moyenne : <b style="color:' + col + ';">' + (moy >= 0 ? '+' : '') + moy.toFixed(1).replace('.', ',') + ' %</b> ' + (moy >= 0 ? 'de mieux' : 'de moins bien') + '</div>'
         + '<div style="font-size:13px;font-weight:800;color:' + col + ';margin-top:6px;">' + (faits.length < 10 ? 'ℹ️ Encore trop peu de paris pour conclure' : (ok ? '✅ Tu prends de bonnes cotes' : '❌ Tu prends souvent la cote trop tôt ou trop basse')) + '</div>';
       var der = faits.slice().sort(function (a, b) { return String(b.h.date).localeCompare(String(a.h.date)); }).slice(0, 5);
       h += '<div style="margin-top:8px;border-top:1px solid rgba(255,255,255,.08);padding-top:6px;">' + der.map(function (x) {
         var lib = { '1': 'dom.', '2': 'ext.', N: 'nul', o: 'over ' + String(x.c.l).replace('.', ','), u: 'under ' + String(x.c.l).replace('.', ',') }[x.c.s] || '';
-        return '<div style="display:flex;justify-content:space-between;gap:8px;font-size:13px;padding:3px 0;"><span style="color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(x.h.target || x.h.n) + ' <span style="color:#c9d3ee;">(' + lib + ')</span></span>'
-          + '<span style="white-space:nowrap;color:#dfe6f5;">@' + parseFloat(x.h.cote).toFixed(2) + ' → ' + x.c.c.toFixed(2) + ' ' + (x.v > 0 ? '✅' : '❌') + '</span></div>';
+        return '<div style="display:flex;justify-content:space-between;gap:8px;font-size:13px;padding:3px 0;"><span style="color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(_g45ClvNom(x.h)) + ' <span style="color:#c9d3ee;">(' + lib + ')</span></span>'
+          + '<span style="white-space:nowrap;color:#dfe6f5;">@' + parseFloat(x.h.cote).toFixed(2) + ' → ' + x.c.c.toFixed(2) + ' ' + (x.eg ? '🟰' : x.v > 0 ? '✅' : '❌') + '</span></div>';
       }).join('') + '</div>';
-      h += '<div style="font-size:11px;color:#c9d3ee;margin-top:6px;">Clôture = dernière cote DraftKings avant le match (ESPN). Foot seulement pour l’instant.</div>';
+      h += '<div style="font-size:13px;color:#c9d3ee;margin-top:6px;line-height:1.5;">✅ meilleure que la clôture · 🟰 égale · ❌ moins bonne.<br>Clôture = dernière cote DraftKings avant le match (ESPN). Foot seulement pour l’instant.</div>';
     }
     el.innerHTML = h;
   } catch (e) {}
