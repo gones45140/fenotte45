@@ -31117,34 +31117,12 @@ async function _g45MultiAI(box, boxId, sys, facts, title){
        en veille 24 h au premier refus ; il retente seul ensuite. */
     var _mVeille=0; try{ _mVeille=parseInt(localStorage.getItem('g45_mistral_veille')||'0',10)||0; }catch(e){}
     if(mk && (Date.now()-_mVeille) < 24*3600000) mk='';
-    /* WORKERS AI (24/09/2026) : si Mistral est en veille, /cfai du worker
-       (format de reponse OpenAI). */
-    var _cfAiOk=false;
-    try{ _cfAiOk = !!FD_PROXY; }catch(e){}
-    var _cfAiVeille=0; try{ _cfAiVeille=parseInt(localStorage.getItem('g45_cfai_veille')||'0',10)||0; }catch(e){}
-    if(Date.now()-_cfAiVeille < 24*3600000) _cfAiOk=false;
+    /* WORKERS AI SUPPRIMÉ (29/09/2026, Antoine : « on le brûle ») : petit modèle,
+       « FAVORI : N/A », points clés vides ou inventés, même filtré par
+       _g45IaIncoherent. Les 3 avis (Groq, Gemini, 3e Groq) suffisent ; Mistral
+       reste le 4e avis s'il sort de veille. La route /cfai du worker n'est plus appelée. */
     /* 4e avis : case posée juste AVANT le pied (mention + bouton Relancer). */
     var pied2=function(id, txt){ var dv=document.createElement('div'); dv.id=boxId+'-'+id; dv.setAttribute('style','font-size:13px;color:#c9d3ee;padding:8px;text-align:center;'); dv.textContent=txt; var pd=document.getElementById(boxId+'-pied'); if(pd&&pd.parentNode) pd.parentNode.insertBefore(dv, pd); else box.appendChild(dv); return dv; };
-    if(!mk && _cfAiOk){
-      pied2('ms','☁️ Workers AI réfléchit…');
-      try{
-        var _cfR=await fetch(FD_PROXY+'/cfai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:msg, max_tokens:700})});
-        var _cfJ=await _cfR.json();
-        var _cfT=lireOAI(_cfJ);
-        var _cfKo=_cfT?_g45IaIncoherent(_cfT, facts, sys):'';
-        if(_cfT && _cfKo){
-          /* « Si il dit pas de connerie, oui » (Antoine, 29/09) : réponse écartée. */
-          try{ localStorage.removeItem('g45_cfai_veille'); }catch(e){}
-          poser('ms',{err:'☁️ Workers AI écarté : '+_cfKo+'.'});
-        } else if(_cfT){
-          try{ localStorage.removeItem('g45_cfai_veille'); }catch(e){}
-          poser('ms',{txt:_cfT,lbl:'Workers AI (Cloudflare) — petit modèle, moins fiable',col:'#f0c828'});
-        } else {
-          try{ localStorage.setItem('g45_cfai_veille', String(Date.now())); }catch(e){}
-          poser('ms',{err:'☁️ Workers AI : limite atteinte pour aujourd\'hui.'});
-        }
-      }catch(_cfe){ var _b=document.getElementById(boxId+'-ms'); if(_b)_b.remove(); }
-    }
     if(mk){
       pied2('ms','🇫🇷 Mistral réfléchit…');
       /* MISTRAL (08/09) : le plan gratuit limite le DEBIT ; on laisse respirer
@@ -61053,7 +61031,7 @@ window._g45ClvSelection = _g45ClvSelection; window._g45ClvPoser = _g45ClvPoser; 
       (setItem et save) puisse les vider.
    3) Au-delà de 4 millions de caractères stockés, purge préventive des
       caches (jamais g45v5, les données). */
-var _G45_CACHE_MORTS = ['g45cls4_' /* 29/09 : → g45cls5_ (stats de match) */, 'g45news7_', 'g45cm_', 'g45cm2_', 'g45cm3_', 'g45cm4_', 'g45cm5_', 'g45cm6_', 'g45cm7_', 'g45cm8_',
+var _G45_CACHE_MORTS = ['g45_cfai_veille' /* 29/09 : Workers AI supprimé */, 'g45cls4_' /* 29/09 : → g45cls5_ (stats de match) */, 'g45news7_', 'g45cm_', 'g45cm2_', 'g45cm3_', 'g45cm4_', 'g45cm5_', 'g45cm6_', 'g45cm7_', 'g45cm8_',
   'g45khl_fiche_', 'g45_saisons_cache_v2_', 'g45_score_', 'g45_score2_', 'g45_score3_'];
 try {
   ['g45cm9_', 'g45xgj1_', 'g45khl_fiche2_', 'g45khl_plage_', 'g45cls3_', 'g45cls5_', 'g45photostsdb_', 'g45wk1_', 'g45jv_', 'g45art1_', 'g45clv1_', 'g45arb1_', 'g45_herologo_', 'g45cm3_']
