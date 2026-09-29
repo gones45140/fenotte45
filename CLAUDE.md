@@ -187,6 +187,14 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   cotes dans `_renderGenericDetail` ; foot : sous stade/arbitre dans
   `_renderSaisonDetail`, via `_g45ArticleFootEn` (résumé SANS lang=fr, voir §6).
   Mémoire `g45art1_<eid>_<typ>` (recap 30 j, preview 12 h), rendu `_g45ArtHtml` — 27y → 28c.
+- 🧠 « Analyse IA du match » (chantier ouvert le 29/09) : FOOT `g45LoadMatchAI(btn)`
+  (~l. 30281, bouton posé ~l. 27801), AUTRES SPORTS + tennis `g45LoadUsAI(btn)`
+  (~l. 30567). Trois avis : GROQ Llama (`g45IaUrl`, `g45GroqModele`), GEMINI 2e avis,
+  « 3e avis » en cascade de modèles Groq réellement dispo (`G45_GROQ_DISPO`, ~l. 8207) ;
+  Mistral en option (`g45MistralUrl`, mis en veille 24 h au refus :
+  `g45_mistral_veille`, `g45MistralReveil()`). Clés : worker (/ia, /gemini, /mistral)
+  ou clé locale. Format de réponse : 🎯 PRONOSTIC / 💎 VALEUR / 🔑 POINTS CLÉS / ⚠️.
+  ⚠ La mention « Estimations IA… » est en 9 px (< 13 px, à corriger).
 - Photos plus hautes que larges (Wikipédia en pied) : `_g45Cadrer(img)` au onload →
   object-position 50 % 6 % (terrain `g45PitchPhotosAppliquer` + rendu direct,
   Compo `_g45CompoWiki`, effectif `_g45SquadPhotos`) — 28b.
