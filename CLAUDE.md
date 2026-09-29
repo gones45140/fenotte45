@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 29/09/2026 (version déployée : 20260929b, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 29/09/2026 (version déployée : 20260929c, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -208,6 +208,10 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   8 s max par source (`_g45IaDelai`). Consigne : 🎯 PRONOSTIC (confiance /5) / 📊 PROBAS /
   💎 VALEUR (tous marchés, value si +5 pts) / 🔑 POINTS CLÉS chiffrés / ⚠️ ; aucun chiffre
   hors des FAITS.
+  29c : GPT-OSS (modèle qui raisonne) coupé après « PROBAS : » avec max_tokens 700 →
+  2500 pour Groq ; finish_reason « length » signalé dans l'avis. `_g45IaNettoyer` retire
+  les « < … > » et les lignes « REGLE … » recopiées (Workers AI, étiqueté « petit
+  modèle, moins fiable »). Ligne The Odds API (Pinnacle) : probas sans marge ajoutées.
 - Photos plus hautes que larges (Wikipédia en pied) : `_g45Cadrer(img)` au onload →
   object-position 50 % 6 % (terrain `g45PitchPhotosAppliquer` + rendu direct,
   Compo `_g45CompoWiki`, effectif `_g45SquadPhotos`) — 28b.

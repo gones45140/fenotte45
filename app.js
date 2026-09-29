@@ -30717,7 +30717,10 @@ async function g45LoadMatchAI(btn){
           if(pick){
             var pr=function(t){ var m=(pick.markets||[]).filter(function(x){return x.key==='h2h';})[0]; if(!m||!m.outcomes) return null; for(var j=0;j<m.outcomes.length;j++){ var o=m.outcomes[j]; if(t==='DRAW'){ if(/draw|nul/i.test(o.name)) return o.price; } else if(o.name===t) return o.price; } return null; };
             var c1=pr(homeEv), cx=pr('DRAW'), c2=pr(awayEv);
-            if(c1||c2) facts.push('Cotes 1X2 ('+(pick.title||pick.key)+', proche de Piwi): 1='+(c1||'?')+' X='+(cx||'?')+' 2='+(c2||'?'));
+            /* 29/09 (29c) : probabilités SANS marge calculées ici — Qwen refaisait
+               1/1,32 = 75,8 % (marge comprise) faute de les avoir. */
+            var _pm=''; if(c1&&cx&&c2){ var _s=1/c1+1/cx+1/c2, _r=function(c){ return Math.round(100/c/_s)+' %'; }; _pm=' → probabilités des cotes, marge retirée : 1 '+_r(c1)+', X '+_r(cx)+', 2 '+_r(c2); }
+            if(c1||c2) facts.push('Cotes 1X2 ('+(pick.title||pick.key)+', proche de Piwi): 1='+(c1||'?')+' X='+(cx||'?')+' 2='+(c2||'?')+_pm);
           }
         }
       }
@@ -30951,11 +30954,21 @@ async function _g45MultiAI(box, boxId, sys, facts, title){
     return;
   }
   var msg=[{role:'system',content:sys},{role:'user',content:facts.join('\n')}];
-  var lireOAI=function(d){ return ((d&&d.choices&&d.choices[0]&&d.choices[0].message&&d.choices[0].message.content)||'').replace(/<think>[\s\S]*?<\/think>/g,'').trim(); };
+  /* 29/09 (29c, capture d'Antoine) : GPT-OSS s'arrêtait après « PROBAS : ».
+     Modèle qui RAISONNE avant de répondre : son raisonnement consomme la
+     limite max_tokens (700), la réponse est coupée (finish_reason « length »).
+     Limite portée à 2500 pour les modèles Groq ; si c'est encore coupé, on le
+     DIT au lieu d'afficher un avis tronqué sans explication. */
+  var lireOAI=function(d){
+    var c=d&&d.choices&&d.choices[0];
+    var t=_g45IaNettoyer(((c&&c.message&&c.message.content)||'').replace(/<think>[\s\S]*?<\/think>/g,'').replace(/<think>[\s\S]*$/,''));
+    if(t && c && c.finish_reason==='length') t+='\n⚠️ Réponse coupée (limite de longueur atteinte) : relance si besoin.';
+    return t;
+  };
   var groq=(async function(){
     var m=g45GroqModele(), lbl=g45GroqLibelle(m)+' (Groq)';
     try{
-      var r=await fetch(g45IaUrl(),{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({model:m,messages:msg,temperature:0.4,max_tokens:700})});
+      var r=await fetch(g45IaUrl(),{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({model:m,messages:msg,temperature:0.4,max_tokens:2500})});
       var d=await r.json();
       var t=lireOAI(d);
       if(t) return {k:'gq',lbl:lbl,col:'#b07cd6',txt:t};
@@ -30973,7 +30986,7 @@ async function _g45MultiAI(box, boxId, sys, facts, title){
           var rg=await fetch(g45GeminiUrl(GM[gi]),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:sys+'\n\nFAITS :\n'+facts.join('\n')}]}],generationConfig:{temperature:0.4}})});
           dg=await rg.json();
           var gt=((dg.candidates&&dg.candidates[0]&&dg.candidates[0].content&&dg.candidates[0].content.parts&&dg.candidates[0].content.parts.map(function(pp){return pp.text||'';}).join(''))||'').trim();
-          if(gt) return {k:'gm',lbl:'Gemini (Google)',col:'#4d84ff',txt:gt};
+          if(gt) return {k:'gm',lbl:'Gemini (Google)',col:'#4d84ff',txt:_g45IaNettoyer(gt)};
         }catch(ge){}
       }
     }catch(e){ return {err:'🔷 Gemini injoignable.'}; }
@@ -30986,7 +30999,7 @@ async function _g45MultiAI(box, boxId, sys, facts, title){
     var dd=null;
     for(var di=0; di<DM.length; di++){
       try{
-        var rd=await fetch(g45IaUrl(),{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({model:DM[di][0],messages:msg,temperature:0.4,max_tokens:900})});
+        var rd=await fetch(g45IaUrl(),{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({model:DM[di][0],messages:msg,temperature:0.4,max_tokens:2500})});
         dd=await rd.json();
         var dt=lireOAI(dd);
         if(dt) return {k:'ds',lbl:DM[di][1]+' (Groq)',col:'#2dd4bf',txt:dt};
@@ -31022,7 +31035,7 @@ async function _g45MultiAI(box, boxId, sys, facts, title){
         var _cfT=lireOAI(_cfJ);
         if(_cfT){
           try{ localStorage.removeItem('g45_cfai_veille'); }catch(e){}
-          poser('ms',{txt:_cfT,lbl:'Workers AI (Cloudflare)',col:'#f0c828'});
+          poser('ms',{txt:_cfT,lbl:'Workers AI (Cloudflare) — petit modèle, moins fiable',col:'#f0c828'});
         } else {
           try{ localStorage.setItem('g45_cfai_veille', String(Date.now())); }catch(e){}
           poser('ms',{err:'☁️ Workers AI : limite atteinte pour aujourd\'hui.'});
@@ -31059,6 +31072,13 @@ async function _g45MultiAI(box, boxId, sys, facts, title){
   }catch(e5){}
 }
 /* ── Outils des avis IA (29/09/2026) ── */
+/* NETTOYAGE (29c, capture d'Antoine) : Workers AI recopiait les repères du
+   modèle de réponse (« 1 < Real Madrid > », « 1 <45 % ») et les lignes de la
+   consigne (« REGLE DOMICILE/EXTERIEUR : … »). On retire ces restes. */
+function _g45IaNettoyer(t){
+  return String(t||'').split('\n').filter(function(l){ return !/^\s*[-•*]?\s*REGLE\b/i.test(l); }).join('\n')
+    .replace(/<\s*([^<>\n]{1,40}?)\s*>/g,'$1').replace(/<\s*(?=\d)/g,'').trim();
+}
 var _g45IaCtx={}, _g45IaForcer={};
 function _g45IaCle(title, facts){
   var s=String(title)+'|'+String((facts||[])[0]||''), h=5381;
@@ -31082,7 +31102,7 @@ function _g45IaHeure(t){ var d=new Date(t); return String(d.getHours()).padStart
 /* Mise en forme d'un avis : titres des sections en gras, texte blanc 14 px. */
 function _g45IaTexteHtml(txt){
   var ea=function(x){return String(x).replace(/&/g,'&amp;').replace(/</g,'&lt;');};
-  return String(txt).replace(/\*\*/g,'').split('\n').filter(function(l){ return l.trim(); }).map(function(l){
+  return _g45IaNettoyer(txt).replace(/\*\*/g,'').split('\n').filter(function(l){ return l.trim(); }).map(function(l){
     l=ea(l.trim());
     /* « 🎯 PRONOSTIC : » en gras ; « ⚠️ La défaite… » : seul l'emoji (pas de mot en capitales suivi de « : »). */
     var m=l.match(/^(🎯|📊|💎|🔑|⚠️|⚠)(\s*[A-ZÀ-Ü][A-ZÀ-Ü' ]+:)?(.*)$/);
