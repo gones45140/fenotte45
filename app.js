@@ -38864,7 +38864,8 @@ function _g45DeXgTuiles(A) {
   };
   return '<div style="display:flex;gap:5px;">'
     + tuile(f(A.xp) + ' – ' + f(A.xc), 'xG pour – contre', 'par match', '#22d3ee')
-    + tuile((ec > 0 ? '+' : (ec < 0 ? '−' : '')) + Math.abs(ec).toFixed(1), 'Buts − xG', ec >= 0.1 ? 'réussite' : (ec <= -0.1 ? 'malchance' : 'normal'), col)
+    /* Signe seulement si l'arrondi n'est pas 0.0 (« +0.0 » vu par Antoine, 29/09). */
+    + tuile((Math.abs(ec) < 0.05 ? '' : (ec > 0 ? '+' : '−')) + Math.abs(ec).toFixed(1), 'Buts − xG', ec >= 0.1 ? 'réussite' : (ec <= -0.1 ? 'malchance' : 'normal'), col)
     + tuile(f(A.bp), 'Buts marqués', 'par match' + (A.n < A.tot ? ' · ' + A.n + '/' + A.tot + ' matchs' : ''), '#4d84ff')
     + '</div>';
 }
