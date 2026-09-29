@@ -30965,7 +30965,7 @@ async function _g45MultiAI(box, boxId, sys, facts, title){
   var avis=[];      /* {k, lbl, col, txt} dans l'ordre d'affichage */
   var poser=function(id, a){
     var el=document.getElementById(boxId+'-'+id); if(!el) return;
-    if(a && a.txt){ el.outerHTML=_g45IaCarte(a, id==='gq'?title:''); }
+    if(a && a.txt){ el.outerHTML=_g45IaCarte(a, id==='gq'?title:'', title); }
     else el.textContent=(a&&a.err)||'Avis indisponible.';
   };
   var fin=function(){
@@ -31170,20 +31170,39 @@ function _g45IaMemEcrire(cle, av){
 }
 function _g45IaHeure(t){ var d=new Date(t); return String(d.getHours()).padStart(2,'0')+'h'+String(d.getMinutes()).padStart(2,'0'); }
 /* Mise en forme d'un avis : titres des sections en gras, texte blanc 14 px. */
-function _g45IaTexteHtml(txt){
+/* COULEURS 1 / X / 2 (29/09/2026, maquette validée : « OUI ») — mêmes teintes que
+   le bloc Domicile/Extérieur : 1 et l'équipe qui reçoit en BLEU, X en gris clair,
+   2 et l'équipe qui se déplace en JAUNE. Seulement sur les lignes 🎯 / 📊 / 💎 et
+   dans l'accord. `h` est DÉJÀ échappé ; `match` = titre « A vs B ».
+   Un 1/X/2 n'est coloré que s'il est suivi d'un pourcentage, d'une parenthèse,
+   de « = » ou d'un tiret : « 2-0 », « Over 2.5 », « 4/5 » restent blancs. */
+var _G45_IA_COUL = { '1': '#6d9dff', 'X': '#c9d3ee', '2': '#f5c542' };
+function _g45IaCouleurs(h, match) {
+  h = String(h).replace(/(^|[\s(:·,])(1|X|2)(?![\d.,\/-])(?=\s?(?:\(|=|—|\d{1,3}(?:[.,]\d)?\s?%))/g, function (t, av, c) {
+    return av + '<b style="color:' + _G45_IA_COUL[c] + ';font-weight:800;">' + c + '</b>';
+  });
+  var noms = String(match || '').split(/\s+vs\.?\s+/i);
+  if (noms.length === 2) [[noms[0], '1'], [noms[1], '2']].forEach(function (x) {
+    var n = String(x[0]).trim().replace(/&/g, '&amp;').replace(/</g, '&lt;');
+    if (n.length < 3) return;
+    h = h.split(n).join('<b style="color:' + _G45_IA_COUL[x[1]] + ';font-weight:800;">' + n + '</b>');
+  });
+  return h;
+}
+function _g45IaTexteHtml(txt, match){
   var ea=function(x){return String(x).replace(/&/g,'&amp;').replace(/</g,'&lt;');};
   return _g45IaNettoyer(txt).replace(/\*\*/g,'').split('\n').filter(function(l){ return l.trim(); }).map(function(l){
     l=ea(l.trim());
     /* « 🎯 PRONOSTIC : » en gras ; « ⚠️ La défaite… » : seul l'emoji (pas de mot en capitales suivi de « : »). */
     var m=l.match(/^(🎯|📊|💎|🔑|⚠️|⚠)(\s*[A-ZÀ-Ü][A-ZÀ-Ü' ]+:)?(.*)$/);
-    if(m) return '<div style="margin-top:6px;"><b style="color:#fff;font-weight:800;">'+m[1]+(m[2]||'')+'</b>'+m[3]+'</div>';
+    if(m) return '<div style="margin-top:6px;"><b style="color:#fff;font-weight:800;">'+m[1]+(m[2]||'')+'</b>'+(/^(🎯|📊|💎)/.test(m[1])?_g45IaCouleurs(m[3], match):m[3])+'</div>';
     return '<div style="padding-left:10px;">'+l+'</div>';
   }).join('');
 }
-function _g45IaCarte(a, titre){
+function _g45IaCarte(a, titre, match){
   return '<div style="background:rgba(10,14,24,.93);border:1px solid rgba(255,255,255,.12);border-left:4px solid '+a.col+';border-radius:10px;padding:12px;margin-top:8px;">'
     +'<div style="font-size:13px;font-weight:800;color:'+a.col+';margin-bottom:6px;">'+String(a.lbl).replace(/</g,'&lt;')+(titre?' — <span style="color:#fff;">'+String(titre).replace(/</g,'&lt;')+'</span>':'')+'</div>'
-    +'<div style="font-size:14px;color:#fff;line-height:1.55;">'+_g45IaTexteHtml(a.txt)+'</div></div>';
+    +'<div style="font-size:14px;color:#fff;line-height:1.55;">'+_g45IaTexteHtml(a.txt, match)+'</div></div>';
 }
 /* Ce qui suit « PRONOSTIC : » / « VALEUR : » dans un avis, sur une ligne. */
 function _g45IaChamp(txt, re){
@@ -31219,9 +31238,9 @@ function _g45IaAccord(liste, titre){
   var n=liste.length, top=grp[ordre[0]];
   var h='<div style="background:rgba(10,14,24,.95);border:1.5px solid rgba(255,209,102,.55);border-radius:10px;padding:12px;">'
     +'<div style="font-size:13px;font-weight:800;color:#ffd166;letter-spacing:.4px;margin-bottom:6px;">🤝 ACCORD DES '+n+' IA</div>'
-    +'<div style="font-size:14px;color:#fff;line-height:1.55;">🎯 '+ordre.map(function(k){ return '<b>'+ea(grp[k].lib)+'</b> : '+grp[k].n+' IA'; }).join(' · ')+'</div>'
+    +'<div style="font-size:14px;color:#fff;line-height:1.55;">🎯 '+ordre.map(function(k){ return '<b>'+_g45IaCouleurs(ea(grp[k].lib), titre)+'</b> : '+grp[k].n+' IA'; }).join(' · ')+'</div>'
     +'<div style="font-size:14px;font-weight:800;color:'+(top.n===n?'#3ddf78':'#ffd166')+';margin-top:4px;">'+(top.n===n?'✅ Toutes d\'accord':(top.n>n/2?'➜ Majorité : '+ea(top.lib):'⚠️ Pas de majorité'))+'</div>';
-  var vals=liste.map(function(a){ var v=_g45IaChamp(a.txt, /VALEUR|VALUE/i); return v?'<div style="margin-top:3px;">💎 <b style="color:'+a.col+';">'+ea(String(a.lbl).replace(/\s*\(.*$/,''))+'</b> : '+ea(v.length>110?v.slice(0,107)+'…':v)+'</div>':''; }).join('');
+  var vals=liste.map(function(a){ var v=_g45IaChamp(a.txt, /VALEUR|VALUE/i); return v?'<div style="margin-top:3px;">💎 <b style="color:'+a.col+';">'+ea(String(a.lbl).replace(/\s*\(.*$/,''))+'</b> : '+_g45IaCouleurs(ea(v.length>110?v.slice(0,107)+'…':v), titre)+'</div>':''; }).join('');
   if(vals) h+='<div style="font-size:14px;color:#fff;line-height:1.5;margin-top:6px;">'+vals+'</div>';
   return h+'</div>';
 }
