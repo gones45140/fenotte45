@@ -46163,7 +46163,7 @@ function _g45ClsAvatar(nom, eqNom, logo) {
   var ini = String(nom || '?').split(/\s+/).filter(Boolean).map(function (w) { return w.charAt(0); }).join('').slice(0, 2).toUpperCase();
   var coul = '#4d84ff';
   try { coul = (g45CouleursDe(eqNom) || [])[0] || coul; if (typeof _g45CoulClaire === 'function') coul = _g45CoulClaire(coul) || coul; } catch (e) {}
-  return '<div data-g45clsph="' + _g45Esc(nom) + '" style="position:relative;width:40px;height:40px;border-radius:50%;background:#26324f center 8%/cover no-repeat;border:2px solid ' + coul + ';box-sizing:border-box;display:flex;align-items:center;justify-content:center;">'
+  return '<div data-g45clsph="' + _g45Esc(nom) + '" data-g45clseq="' + _g45Esc(eqNom || '') + '" style="position:relative;width:40px;height:40px;border-radius:50%;background:#26324f center 8%/cover no-repeat;border:2px solid ' + coul + ';box-sizing:border-box;display:flex;align-items:center;justify-content:center;">'
     + '<span style="font-size:14px;font-weight:900;color:#fff;">' + _g45Esc(ini) + '</span>'
     + (logo ? '<img src="' + _g45Esc(logo) + '" alt="" loading="lazy" onerror="this.style.display=\'none\'" style="position:absolute;right:-5px;bottom:-5px;width:19px;height:19px;border-radius:50%;background:#fff;object-fit:contain;padding:1px;box-sizing:border-box;border:1.5px solid #0b101d;">' : '')
     + '</div>';
@@ -46173,13 +46173,64 @@ function _g45ClsClub(eqNom, logo, extra) {
     + (logo ? '<img src="' + _g45Esc(logo) + '" alt="" loading="lazy" onerror="this.style.display=\'none\'" style="width:16px;height:16px;object-fit:contain;flex:none;">' : '')
     + [_g45Esc(eqNom || ''), extra || ''].filter(Boolean).join(' · ') + '</span>';
 }
+/* SOURCES DE PHOTO (29/09/2026, « oui » d'Antoine après « connaît pas Paulo
+   l'international » : Lepaul, Brunner, Mafouta, Mboup sans photo) — mêmes
+   sources que le tableau d'effectif, dans l'ordre : 1) photo perso du dépôt
+   (images/joueurs/, lue en cache seulement : _g45ImgPersoLire, aucun 404
+   provoqué) ; 2) Wikipédia (_g45WkPhoto) ; 3) TheSportsDB searchplayers
+   (_g45JoueurVisLire / _g45JoueurVisChercher, cache g45jv_ 30 j, échec 7 j ;
+   portrait puis détouré, adresses www → r2) ; 4) API-Sports : effectif du CLUB
+   en une requête (_g45PhotosFoot, cache g45photos_ 30 j) + _g45PhotoDe —
+   QUOTA : 5 clubs pas encore en cache au plus par affichage. Chaque adresse
+   est testée (Image) avant d'être posée : une image cassée passe à la suivante. */
+function _g45ClsImgOk(urls) {
+  return new Promise(function (ok) {
+    var l = (urls || []).filter(Boolean), i = 0;
+    var suiv = function () {
+      if (i >= l.length) return ok('');
+      var u = l[i++], im = new Image();
+      im.onload = function () { ok(u); }; im.onerror = suiv; im.src = u;
+    };
+    suiv();
+  });
+}
+async function _g45ClsPhotoDe(nom, club, budget) {
+  var u = '';
+  try { u = (typeof _g45ImgPersoLire === 'function' && _g45ImgPersoLire(nom)) || ''; } catch (e) {}
+  if (u) return u;
+  try { u = await _g45WkPhoto(nom); } catch (e) {}
+  if (u) return u;
+  try {
+    var jv = (typeof _g45JoueurVisLire === 'function') ? _g45JoueurVisLire(nom, 'soccer') : null;
+    if (jv === undefined && typeof _g45JoueurVisChercher === 'function') jv = await _g45JoueurVisChercher(nom, 'soccer');
+    if (jv && (jv.thumb || jv.cut)) {
+      var r2 = (typeof _g45R2 === 'function') ? _g45R2 : function (x) { return x; };
+      u = await _g45ClsImgOk([r2(jv.thumb), jv.thumb, r2(jv.cut), jv.cut]);
+      if (u) return u;
+    }
+  } catch (e) {}
+  try {
+    if (club && typeof _g45PhotosFoot === 'function') {
+      var enCache = false;
+      try { enCache = !!localStorage.getItem('g45photos_' + _g45SgNorm(club)); } catch (e) {}
+      if (enCache || budget.n > 0) {
+        if (!enCache) budget.n--;
+        var liste = await (budget.p[club] = budget.p[club] || _g45PhotosFoot(club));
+        u = _g45PhotoDe(liste || [], nom);
+        if (u) u = await _g45ClsImgOk([u]);
+      }
+    }
+  } catch (e) {}
+  return u || '';
+}
 async function _g45ClsPhotos(racine) {
   try {
     var els = Array.prototype.slice.call((racine || document).querySelectorAll('[data-g45clsph]'));
+    var budget = { n: 5, p: {} };
     var travail = async function () {
       while (els.length) {
         var el = els.shift(), u = '';
-        try { u = await _g45WkPhoto(el.getAttribute('data-g45clsph')); } catch (e) {}
+        try { u = await _g45ClsPhotoDe(el.getAttribute('data-g45clsph'), el.getAttribute('data-g45clseq') || '', budget); } catch (e) {}
         if (u && el.isConnected) {
           el.style.backgroundImage = 'url("' + String(u).replace(/"/g, '%22') + '")';
           var sp = el.querySelector('span'); if (sp) sp.style.visibility = 'hidden';
