@@ -30570,7 +30570,8 @@ function _g45IaVue(m, id) {
   var dom = String(m.homeId) === String(id);
   var a = dom ? m.homeScore : m.awayScore, b = dom ? m.awayScore : m.homeScore;
   if (a == null || b == null || isNaN(a) || isNaN(b)) return null;
-  return { pour: a, contre: b, dom: dom, adv: dom ? m.awayTeam : m.homeTeam, date: m.date, comp: m.competitionName || '' };
+  return { pour: a, contre: b, dom: dom, adv: dom ? m.awayTeam : m.homeTeam, date: m.date, comp: m.competitionName || '',
+           id: m.id || '', slug: m.competition || '' };   /* id + slug : pour lire les tirs (xG), 29h */
 }
 /* Résumé chiffré d'une liste de matchs vus depuis l'équipe. */
 function _g45IaBilan(l) {
@@ -30640,6 +30641,42 @@ async function _g45IaFaitsEcran(eid, lgBtn, iso) {
   };
   try { equipe(hN, hId, true, res[0], res[1], res[4]); } catch (e) {}
   try { equipe(aN, aId, false, res[2], res[3], res[5]); } catch (e) {}
+  /* ═══ xG (29h, demande d'Antoine : « on a rien sur les xG équipes ? ») ═══
+     SONDÉ PAR ANTOINE : le résumé ESPN d'avant-match n'a AUCUN xG d'équipe
+     (goalDifference, totalGoals, goalAssists, goalsConceded seulement). On
+     les CALCULE depuis les tirs de chaque match (g45TirsMatch : xG ESPN de
+     chaque tir, cache DÉFINITIF g45_tirs2_ partagé avec « 📊 xG de la
+     saison »), sur les 5 derniers matchs DU BON CÔTÉ, toutes compétitions.
+     1 à 4 requêtes ESPN gratuites par match au premier passage, 15 s max :
+     ce qui est lu à temps sert, le reste sera en cache la fois suivante.
+     Camp identifié par l'id ESPN de l'équipe dans les tirs ; match écarté
+     sinon (même prudence que g45XgSaison). */
+  try {
+    var xgAcc = {};
+    var xgEq = async function (cle, glob, id, dom) {
+      var c = (glob || []).filter(function (g) { return g.dom === dom && g.id && g.slug; }).slice(0, 5);
+      var A = xgAcc[cle] = { n: 0, xp: 0, xc: 0, bp: 0, bc: 0 };
+      for (var i = 0; i < c.length; i++) {
+        var t = null;
+        try { t = await g45TirsMatch(c[i].slug, c[i].id, true); } catch (e) {}
+        if (!t || !t.length) continue;
+        if (!t.some(function (x) { return String(x.equipe) === String(id); })) continue;
+        t.forEach(function (x) { if (String(x.equipe) === String(id)) A.xp += (+x.xg || 0); else A.xc += (+x.xg || 0); });
+        A.bp += c[i].pour; A.bc += c[i].contre; A.n++;
+      }
+    };
+    await _g45IaDelai(Promise.all([xgEq('h', res[4], hId, true), xgEq('a', res[5], aId, false)]), 15000);
+    [['h', hN, 'À DOMICILE'], ['a', aN, 'À L\'EXTÉRIEUR']].forEach(function (x) {
+      var A = xgAcc[x[0]];
+      if (!A || !A.n) return;
+      var f = function (v) { return (v / A.n).toFixed(2); };
+      var ec = (A.bp - A.xp) / A.n;
+      out.push(x[1] + ' — xG (buts attendus, calculés sur les tirs ESPN) sur ses ' + A.n + ' derniers matchs ' + x[2] + ' : xG pour ' + f(A.xp)
+        + ' et xG contre ' + f(A.xc) + ' par match ; buts réels ' + f(A.bp) + ' marqués et ' + f(A.bc) + ' encaissés par match'
+        + (Math.abs(ec) >= 0.3 ? ' → marque ' + (ec > 0 ? 'PLUS' : 'MOINS') + ' que son xG (' + (ec > 0 ? '+' : '') + ec.toFixed(2) + ' par match : '
+          + (ec > 0 ? 'réussite au-dessus de la normale, risque de baisse' : 'manque de réussite, possible rebond') + ')' : ''));
+    });
+  } catch (e) {}
   /* Face-à-face, vu depuis l'équipe qui reçoit. */
   try {
     var h2 = _g45H2HDepuisResume(d, hId);
@@ -30804,6 +30841,7 @@ async function g45LoadMatchAI(btn){
     +'⚠️ <principale incertitude en 1 phrase>\n'
     +'REGLE DOMICILE/EXTERIEUR : juge l\'equipe qui RECOIT d\'abord sur ses matchs A DOMICILE, et l\'equipe qui SE DEPLACE d\'abord sur ses matchs A L\'EXTERIEUR ; la FORME GLOBALE (toutes competitions) complete. Une defaite a l\'exterieur pese peu pour une equipe qui joue ce match a domicile, et inversement. '
     +'Moins de 5 matchs = echantillon faible : appuie-toi aussi sur la saison precedente. '
+    +'Si des xG sont fournis, sers-t\'en : une equipe qui marque bien plus que son xG risque de baisser, une equipe qui cree plus qu\'elle ne marque peut rebondir. '
     +'Pour la value, compare TA probabilite aux probabilites des cotes fournies (marge deja retiree) : value seulement si ton estimation depasse celle de la cote d\'au moins 5 points. '
     +'REGLE ABSOLUE : ne cite JAMAIS un chiffre, une forme, une serie, un score, une blessure ou un classement qui ne figure PAS dans les FAITS fournis ; recopie les chiffres tels quels, ne les recalcule pas. Si une info manque, dis que la donnee manque.';
   if(_neutral) sys+='\nREGLE ABSOLUE : ce match se joue sur TERRAIN NEUTRE. Ne parle JAMAIS d\'avantage du terrain, de "victoire domicile", de "jouer a domicile/exterieur", ni de public acquis a une equipe. Nomme les equipes par leur nom.';

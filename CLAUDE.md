@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 29/09/2026 (version déployée : 20260929g, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 29/09/2026 (version déployée : 20260929h, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -235,6 +235,11 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   29g — couleurs validées : `_g45IaCouleurs(h, "A vs B")` (1 + équipe qui reçoit bleu
   #6d9dff, X gris #c9d3ee, 2 + équipe qui se déplace jaune #f5c542) sur les lignes 🎯/📊/💎
   et l'accord ; 1/X/2 coloré seulement suivi de %, « ( », « = » ou « — » (pas 2-0, 2.5, 4/5).
+  29h — xG : SONDÉ PAR ANTOINE, le résumé ESPN d'avant-match n'a AUCUN xG d'équipe
+  (goalDifference, totalGoals, goalAssists, goalsConceded). `_g45IaFaitsEcran` les calcule
+  depuis les tirs (`g45TirsMatch(slug, id, true)`, cache définitif g45_tirs2_) des 5 derniers
+  matchs DU BON CÔTÉ (liste « all » : `_g45IaVue` garde id + slug de compétition) ; 15 s max,
+  camp identifié par l'id ESPN dans les tirs ; écart buts − xG ≥ 0,3/match signalé.
 - Photos plus hautes que larges (Wikipédia en pied) : `_g45Cadrer(img)` au onload →
   object-position 50 % 6 % (terrain `g45PitchPhotosAppliquer` + rendu direct,
   Compo `_g45CompoWiki`, effectif `_g45SquadPhotos`) — 28b.
