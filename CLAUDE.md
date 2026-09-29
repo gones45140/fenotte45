@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 27/09/2026 au soir (version déployée : 20260928t, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 29/09/2026 (version déployée : 20260929b, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -187,14 +187,27 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   cotes dans `_renderGenericDetail` ; foot : sous stade/arbitre dans
   `_renderSaisonDetail`, via `_g45ArticleFootEn` (résumé SANS lang=fr, voir §6).
   Mémoire `g45art1_<eid>_<typ>` (recap 30 j, preview 12 h), rendu `_g45ArtHtml` — 27y → 28c.
-- 🧠 « Analyse IA du match » (chantier ouvert le 29/09) : FOOT `g45LoadMatchAI(btn)`
-  (~l. 30281, bouton posé ~l. 27801), AUTRES SPORTS + tennis `g45LoadUsAI(btn)`
-  (~l. 30567). Trois avis : GROQ Llama (`g45IaUrl`, `g45GroqModele`), GEMINI 2e avis,
-  « 3e avis » en cascade de modèles Groq réellement dispo (`G45_GROQ_DISPO`, ~l. 8207) ;
-  Mistral en option (`g45MistralUrl`, mis en veille 24 h au refus :
-  `g45_mistral_veille`, `g45MistralReveil()`). Clés : worker (/ia, /gemini, /mistral)
-  ou clé locale. Format de réponse : 🎯 PRONOSTIC / 💎 VALEUR / 🔑 POINTS CLÉS / ⚠️.
-  ⚠ La mention « Estimations IA… » est en 9 px (< 13 px, à corriger).
+- 🧠 « Analyse IA du match » (refonte 29b) : FOOT `g45LoadMatchAI(btn)` (~l. 30679, bouton
+  ~l. 28046 avec data-lg), AUTRES SPORTS + tennis `g45LoadUsAI(btn)` (~l. 31356) ; tous
+  (F1, cyclisme, MotoGP aussi) passent par `_g45MultiAI(box, boxId, sys, facts, title)`
+  (~l. 30891). Les 3 avis partent EN PARALLÈLE et sont INDÉPENDANTS (Groq en panne ≠ tout
+  en panne) : GROQ principal (`g45GroqModele`, vrai nom via `g45GroqLibelle`), GEMINI,
+  3e avis cascade `g45GroqCascade` (souvent Qwen) ; puis 4e : Mistral (veille 24 h
+  `g45_mistral_veille`) ou Workers AI `/cfai` (réparé : lisait `_mBody` avant création).
+  Bloc « 🤝 ACCORD DES IA » `_g45IaAccord` (pronostic regroupé 1/X/2 ou nom, value de
+  chacun), cartes `_g45IaCarte` + `_g45IaTexteHtml` (14 px blanc). Avis gardés 6 h
+  (`g45ia1_`, `_g45IaCle(title, facts[0])`), bouton « 🔄 Relancer » `g45IaRelancer(boxId)`
+  (re-clique le bouton d'origine ; `_g45IaForcer`). Foot : si avis gardé, `_dejaIa` saute
+  Sofascore / The Odds API (quotas).
+  FAITS FOOT = STATS DE L'ÉCRAN `_g45IaFaitsEcran(eid, lg, iso)` : RÈGLE D'ANTOINE,
+  l'équipe qui REÇOIT jugée sur ses matchs À DOMICILE, celle qui SE DÉPLACE sur ses
+  matchs À L'EXTÉRIEUR, + FORME GLOBALE (8 derniers, toutes compétitions,
+  `espnClubSchedule(nom,null,'all')`) ; saison en cours + précédente côté du match
+  (`_g45DomExtCharger`, cache g45_domext1_) ; face-à-face `_g45H2HDepuisResume` ;
+  cotes ESPN pickcenter 1X2 + Over/Under avec probas SANS marge calculées par l'appli.
+  8 s max par source (`_g45IaDelai`). Consigne : 🎯 PRONOSTIC (confiance /5) / 📊 PROBAS /
+  💎 VALEUR (tous marchés, value si +5 pts) / 🔑 POINTS CLÉS chiffrés / ⚠️ ; aucun chiffre
+  hors des FAITS.
 - Photos plus hautes que larges (Wikipédia en pied) : `_g45Cadrer(img)` au onload →
   object-position 50 % 6 % (terrain `g45PitchPhotosAppliquer` + rendu direct,
   Compo `_g45CompoWiki`, effectif `_g45SquadPhotos`) — 28b.

@@ -28043,7 +28043,7 @@ async function _renderSaisonDetail(el, eventId, league){
       h+='<div style="margin-top:8px;"><button onclick="g45LoadOdds(this)" data-h="'+_eaAdv(hN)+'" data-a="'+_eaAdv(aN)+'" data-comp="'+_eaAdv(_compName||league||'')+'" data-box="'+_oddsId+'" style="width:100%;box-sizing:border-box;font-size:12px;font-weight:800;padding:9px 12px;border-radius:9px;cursor:pointer;border:1.5px solid rgba(46,204,113,.5);background:rgba(46,204,113,.12);color:#2ecc71;">💰 Cotes réelles (bookmakers FR)</button><div id="'+_oddsId+'" style="margin-top:8px;"></div></div>';
       var _moreId='g45more_'+(eventId||Math.random().toString(36).slice(2));
       h+='<div style="margin-top:8px;"><button onclick="g45LoadMoreOdds(this)" data-h="'+_eaAdv(hN)+'" data-a="'+_eaAdv(aN)+'" data-comp="'+_eaAdv(_compName||league||'')+'" data-box="'+_moreId+'" style="width:100%;box-sizing:border-box;font-size:12px;font-weight:800;padding:9px 12px;border-radius:9px;cursor:pointer;border:1.5px solid rgba(155,89,182,.5);background:rgba(155,89,182,.12);color:#b07cd6;">📋 Plus de marchés (O/U · BTTS · buteur)</button><div id="'+_moreId+'" style="margin-top:8px;"></div></div>';
-      h+='<div style="margin-top:8px;"><button onclick="g45LoadMatchAI(this)" data-eid="'+_eaAdv(eventId||'')+'" data-date="'+_eaAdv(comp.date||'')+'" data-h="'+_eaAdv(hN)+'" data-a="'+_eaAdv(aN)+'" data-comp="'+_eaAdv(_compName||league||'')+'" data-box="'+_oddsId+'ai" style="width:100%;box-sizing:border-box;font-size:12px;font-weight:800;padding:9px 12px;border-radius:9px;cursor:pointer;border:1.5px solid rgba(176,124,214,.5);background:rgba(176,124,214,.10);color:#b07cd6;">🧠 Analyse IA du match</button><div id="'+_oddsId+'ai" style="margin-top:8px;"></div></div>';
+      h+='<div style="margin-top:8px;"><button onclick="g45LoadMatchAI(this)" data-eid="'+_eaAdv(eventId||'')+'" data-lg="'+_eaAdv(league||'')+'" data-date="'+_eaAdv(comp.date||'')+'" data-h="'+_eaAdv(hN)+'" data-a="'+_eaAdv(aN)+'" data-comp="'+_eaAdv(_compName||league||'')+'" data-box="'+_oddsId+'ai" style="width:100%;box-sizing:border-box;font-size:12px;font-weight:800;padding:9px 12px;border-radius:9px;cursor:pointer;border:1.5px solid rgba(176,124,214,.5);background:rgba(176,124,214,.10);color:#b07cd6;">🧠 Analyse IA du match</button><div id="'+_oddsId+'ai" style="margin-top:8px;"></div></div>';
       added=true;
     }catch(e){}
     if(typeof _renderEspnMatchPitch==='function'){ try{ var pi=_renderEspnMatchPitch(data, '#4d84ff', function(x){return x;}); if(pi){ h+=pi; added=true; } }catch(e){} }
@@ -30545,26 +30545,165 @@ function _g45FaitsDuResume(eid, hN, aN){
 }
 window._g45FaitsDuResume = _g45FaitsDuResume;
 
+/* ═══ ANALYSE IA : LES MÊMES STATS QUE L'ÉCRAN (29/09/2026, demande d'Antoine) ═══
+   Constat d'Antoine sur Real Madrid – Villarreal : les trois IA citaient des
+   formes fausses (« Villarreal a perdu 3 de ses 5 derniers », « le Real a
+   gagné 3 de ses 5 dernières ») et ne parlaient que du 1X2. Elles ne voyaient
+   PAS les blocs affichés (domicile/extérieur, face-à-face, forme globale).
+   RÈGLE D'ANTOINE : l'équipe qui REÇOIT se juge sur ses matchs À DOMICILE,
+   celle qui SE DÉPLACE sur ses matchs À L'EXTÉRIEUR (et inversement si les
+   rôles changent), et on regarde AUSSI la forme globale, toutes compétitions.
+   Sources déjà utilisées par l'appli, aucune nouvelle API :
+   · saison en cours + précédente, championnat, côté du match :
+     _g45DomExtCharger (cache g45_domext1_, partagé avec le bouton Dom/Ext) ;
+   · forme globale et derniers matchs du bon côté, toutes compétitions :
+     espnClubSchedule(nom, null, 'all'), garde-fou sur l'id ESPN ;
+   · face-à-face : _g45H2HDepuisResume (seasonseries du résumé) ;
+   · cotes ESPN (pickcenter) : 1X2 ET Over/Under, probabilités sans marge
+     calculées ICI (les IA se trompent en calcul).
+   Chaque source a 8 s maximum : l'analyse ne doit jamais rester bloquée. */
+function _g45IaDelai(p, ms) {
+  return Promise.race([p, new Promise(function (ok) { setTimeout(function () { ok(null); }, ms || 8000); })]).catch(function () { return null; });
+}
+/* Scores vus DEPUIS l'équipe : {pour, contre, dom, adv, date, comp}. */
+function _g45IaVue(m, id) {
+  var dom = String(m.homeId) === String(id);
+  var a = dom ? m.homeScore : m.awayScore, b = dom ? m.awayScore : m.homeScore;
+  if (a == null || b == null || isNaN(a) || isNaN(b)) return null;
+  return { pour: a, contre: b, dom: dom, adv: dom ? m.awayTeam : m.homeTeam, date: m.date, comp: m.competitionName || '' };
+}
+/* Résumé chiffré d'une liste de matchs vus depuis l'équipe. */
+function _g45IaBilan(l) {
+  var v = 0, n = 0, d = 0, bm = 0, be = 0, bts = 0, o25 = 0, m2 = 0, cs = 0;
+  l.forEach(function (g) {
+    if (g.pour > g.contre) v++; else if (g.pour < g.contre) d++; else n++;
+    bm += g.pour; be += g.contre;
+    if (g.pour > 0 && g.contre > 0) bts++;
+    if (g.pour + g.contre > 2.5) o25++;
+    if (g.pour >= 2) m2++;
+    if (g.contre === 0) cs++;
+  });
+  var N = l.length;
+  return v + 'V ' + n + 'N ' + d + 'D, buts ' + bm + '-' + be + ', BTS ' + bts + '/' + N + ', Over 2.5 ' + o25 + '/' + N
+    + ', marque 2 buts ou plus ' + m2 + '/' + N + ', clean sheets ' + cs + '/' + N;
+}
+async function _g45IaFaitsEcran(eid, lgBtn, iso) {
+  var out = [];
+  var d = _g45ResumeIA[String(eid || '')];
+  if (!d) return out;
+  var cp = (((d.header || {}).competitions) || [])[0] || {};
+  var cps = cp.competitors || [];
+  var H = cps.filter(function (c) { return c.homeAway === 'home'; })[0] || cps[0];
+  var A = cps.filter(function (c) { return c.homeAway === 'away'; })[0] || cps[1];
+  if (!H || !A || !H.team || !A.team) return out;
+  var hId = String(H.team.id || ''), aId = String(A.team.id || '');
+  var hN = H.team.displayName || H.team.shortDisplayName || '', aN = A.team.displayName || A.team.shortDisplayName || '';
+  var lg = lgBtn || window._g45DernierLigue || '';
+  var s0 = _g45SaisonDe(iso || cp.date), s1 = s0 - 1;
+  var tout = function (nom, id) {
+    return espnClubSchedule(nom, null, 'all').then(function (r) {
+      if (!r || !r.team || String(r.team.id) !== String(id)) return null;   /* autre club du même nom : refusé */
+      return (r.matches || []).filter(function (m) { return m && m.completed; })
+        .sort(function (x, y) { return new Date(y.date) - new Date(x.date); })
+        .map(function (m) { return _g45IaVue(m, id); }).filter(Boolean);
+    });
+  };
+  var res = await Promise.all([
+    lg ? _g45IaDelai(_g45DomExtCharger(hN, hId, s0, lg)) : null,
+    lg ? _g45IaDelai(_g45DomExtCharger(hN, hId, s1, lg)) : null,
+    lg ? _g45IaDelai(_g45DomExtCharger(aN, aId, s0, lg)) : null,
+    lg ? _g45IaDelai(_g45DomExtCharger(aN, aId, s1, lg)) : null,
+    _g45IaDelai(tout(hN, hId)), _g45IaDelai(tout(aN, aId))
+  ]);
+  var fmt = function (g) { return (g.pour > g.contre ? 'G' : g.pour < g.contre ? 'P' : 'N') + ' ' + g.pour + '-' + g.contre + ' ' + (g.dom ? 'contre ' : 'à ') + g.adv + (g.comp ? ' (' + g.comp + ')' : ''); };
+  var equipe = function (nom, id, dom, sA, sB, glob) {
+    var cote = dom ? 'À DOMICILE' : 'À L\'EXTÉRIEUR';
+    if (glob && glob.length) {
+      var c = glob.filter(function (g) { return g.dom === dom; }).slice(0, 5);
+      if (c.length) out.push(nom + ' — ' + c.length + ' derniers matchs ' + cote + ' (toutes compétitions, du plus récent au plus ancien) : '
+        + c.map(fmt).join(' ; ') + ' → ' + _g45IaBilan(c));
+      var g8 = glob.slice(0, 8);
+      out.push(nom + ' — FORME GLOBALE, ' + g8.length + ' derniers matchs (toutes compétitions, domicile et extérieur) : ' + _g45IaBilan(g8));
+    }
+    [[sA, s0, 'saison en cours'], [sB, s1, 'saison précédente complète']].forEach(function (x) {
+      if (!x[0] || !x[0].length) return;
+      var f = _g45DomExtFiltre(x[0], id, dom);
+      if (!f.length) return;
+      var st = calcSaisonStats(f, id), n = st.n;
+      var w = dom ? st.domW : st.extW, nu = dom ? st.domD : st.extD, l = dom ? st.domL : st.extL;
+      var pc = function (v) { return Math.round((v || 0) * 100 / n) + ' % (' + (v || 0) + '/' + n + ')'; };
+      out.push(nom + ' ' + cote + ', championnat ' + x[1] + '-' + String(x[1] + 1).slice(2) + ' (' + x[2] + ') : ' + n + ' matchs'
+        + (n < 5 ? ' — PEU DE MATCHS, échantillon faible' : '') + ' — ' + w + 'V ' + nu + 'N ' + l + 'D, Over 2.5 ' + pc(st.over25)
+        + ', BTS ' + pc(st.bts) + ', clean sheets ' + pc(st.cleanSheet) + ', sans marquer ' + pc(st.failedToScore)
+        + ', buts marqués ' + (st.butsM / n).toFixed(1) + ' et encaissés ' + (st.butsE / n).toFixed(1) + ' par match');
+    });
+  };
+  try { equipe(hN, hId, true, res[0], res[1], res[4]); } catch (e) {}
+  try { equipe(aN, aId, false, res[2], res[3], res[5]); } catch (e) {}
+  /* Face-à-face, vu depuis l'équipe qui reçoit. */
+  try {
+    var h2 = _g45H2HDepuisResume(d, hId);
+    if (h2 && h2.length) {
+      var g = 0, n = 0, p = 0, bts = 0, o25 = 0;
+      h2.forEach(function (x) { var a = +x.pour, b = +x.contre; if (a > b) g++; else if (a < b) p++; else n++; if (a > 0 && b > 0) bts++; if (a + b > 2.5) o25++; });
+      out.push('FACE-À-FACE (' + h2.length + ' derniers) : ' + hN + ' ' + g + ' victoires, ' + n + ' nuls, ' + aN + ' ' + p + ' victoires ; BTS ' + bts + '/' + h2.length
+        + ', Over 2.5 ' + o25 + '/' + h2.length + ' ; scores (côté ' + hN + ') : ' + h2.map(function (x) { return x.pour + '-' + x.contre + (x.domicile ? ' à domicile' : ' à l\'extérieur'); }).join(', '));
+    }
+  } catch (e) {}
+  /* Cotes ESPN du match, avec les probabilités SANS marge du bookmaker. */
+  try {
+    var pk = (d.pickcenter || d.odds || [])[0];
+    if (pk) {
+      var dec = function (x) { var v = parseFloat(_espnAmDec(x)); return v > 1 ? v : null; };
+      var c1 = dec(pk.homeTeamOdds && pk.homeTeamOdds.moneyLine), c2 = dec(pk.awayTeamOdds && pk.awayTeamOdds.moneyLine), cx = dec(pk.drawOdds && pk.drawOdds.moneyLine);
+      var prov = (pk.provider && pk.provider.name) || 'ESPN';
+      if (c1 && c2 && cx) {
+        var s = 1 / c1 + 1 / cx + 1 / c2, r = function (c) { return Math.round(100 / c / s) + ' %'; };
+        out.push('Cotes 1X2 (' + prov + ') : 1=' + c1.toFixed(2) + ' X=' + cx.toFixed(2) + ' 2=' + c2.toFixed(2)
+          + ' → probabilités des cotes, marge retirée : 1 ' + r(c1) + ', X ' + r(cx) + ', 2 ' + r(c2));
+      }
+      var L = pk.overUnder != null ? parseFloat(pk.overUnder) : null, t = pk.total || {};
+      var co = dec(pk.overOdds) || dec(t.over && ((t.over.close && t.over.close.odds) || (t.over.open && t.over.open.odds)));
+      var cu = dec(pk.underOdds) || dec(t.under && ((t.under.close && t.under.close.odds) || (t.under.open && t.under.open.odds)));
+      if (L && co && cu) {
+        var s2 = 1 / co + 1 / cu;
+        out.push('Cotes Over/Under ' + L + ' buts (' + prov + ') : Over=' + co.toFixed(2) + ' Under=' + cu.toFixed(2)
+          + ' → probabilités, marge retirée : Over ' + Math.round(100 / co / s2) + ' %, Under ' + Math.round(100 / cu / s2) + ' %');
+      }
+    }
+  } catch (e) {}
+  return out;
+}
+window._g45IaFaitsEcran = _g45IaFaitsEcran;
+
 async function g45LoadMatchAI(btn){
   var box=document.getElementById(btn.dataset.box); if(!box) return;
   if(box.getAttribute('data-loaded')==='1'){ box.style.display=(box.style.display==='none'?'':'none'); return; }
   var key=(typeof getGeminiKey==='function')?getGeminiKey():localStorage.getItem('gones45_gemini_key');
   if(!(typeof g45IaDispo==='function' ? g45IaDispo() : !!key)){ box.innerHTML='<div style="color:#ff6b6b;font-size:11px;padding:8px;">Analyse IA indisponible : aucune clé et aucun Worker joignable.</div>'; return; }
   var hN=btn.dataset.h, aN=btn.dataset.a, comp=btn.dataset.comp||'', iso=btn.dataset.date||'';
-  box.innerHTML='<div style="color:var(--t3);font-size:11px;padding:10px;text-align:center;">🧠 Je rassemble cotes, tendance et tes notes, puis j\'analyse…</div>';
+  box.innerHTML='<div style="color:#c9d3ee;font-size:13px;padding:10px;text-align:center;">🧠 Je rassemble les stats domicile/extérieur, la forme, les cotes et tes notes, puis j\'analyse…</div>';
   btn.disabled=true;
   var facts=[];
   var _neutral=/coupe du monde|world cup|mondial|euro\b|championnat d'europe|copa am|copa america|can\b|coupe d'afrique|africa cup|gold cup|nations league finals|olymp|jeux olympiques|club world cup|supercoupe|super cup|finale/i.test(comp||'');
   facts.push('Match: '+hN+(_neutral?' vs ':' (domicile) vs ')+aN+(_neutral?'':' (extérieur)')+(comp?(' — '+comp):'')+(iso?(' — le '+iso.slice(0,10)):''));
   if(_neutral) facts.push('TERRAIN NEUTRE : ce match se joue sur terrain neutre (aucune des deux équipes ne reçoit). Il n\'y a PAS d\'avantage du terrain. Les libellés "1"/"2" désignent seulement la 1re et la 2e équipe, pas domicile/extérieur.');
+  /* Avis déjà gardés (6 h, 29/09) : inutile de rappeler Sofascore / The Odds
+     API (quotas) pour des faits qui ne serviront pas. « Relancer » force. */
+  var _dejaIa = !_g45IaForcer[btn.dataset.box] && !!_g45IaMemLire(_g45IaCle(hN+' vs '+aN, facts));
   /* Faits du resume ESPN — poses en premier : ce sont les plus denses. */
   try {
     if (btn.dataset.eid) _g45FaitsDuResume(btn.dataset.eid, hN, aN).forEach(function (f) { facts.push(f); });
   } catch (e) {}
+  /* 29/09/2026 : les stats de l'écran (domicile/extérieur, forme globale,
+     face-à-face, cotes Over/Under) — voir _g45IaFaitsEcran. */
+  try {
+    if (btn.dataset.eid && !_dejaIa) (await _g45IaFaitsEcran(btn.dataset.eid, btn.dataset.lg || '', iso)).forEach(function (f) { facts.push(f); });
+  } catch (e) {}
   // Cotes réelles (Worker, cache 15 min → souvent zéro quota)
   try{
     var sport=_g45OddsSportKey(comp);
-    if(sport){
+    if(sport && !_dejaIa){
       var base=(typeof FD_PROXY!=='undefined'?FD_PROXY:'https://fd-proxy.touraine-antoine.workers.dev');
       var r=await fetch(base+'/odds?sport='+encodeURIComponent(sport)+'&regions=eu&markets=h2h');
       var data=await r.json();
@@ -30587,7 +30726,7 @@ async function g45LoadMatchAI(btn){
   // Tendance du public (Sofascore, si clé RapidAPI)
   try{
     var rk=g45RapidKey();
-    if(rk && iso){
+    if(rk && iso && !_dejaIa){
       var d=new Date(iso);
       var ymd=function(dt){ return dt.getUTCFullYear()+'-'+String(dt.getUTCMonth()+1).padStart(2,'0')+'-'+String(dt.getUTCDate()).padStart(2,'0'); };
       var dates=[ymd(d), ymd(new Date(d.getTime()+86400000)), ymd(new Date(d.getTime()-86400000))];
@@ -30618,7 +30757,20 @@ async function g45LoadMatchAI(btn){
       ds.slice(0,4).forEach(function(st){ facts.push('Note perso de l\'utilisateur: '+st.text); });
     }
   }catch(e){}
-  var sys='Tu es un analyste paris sportifs francophone, concis et prudent. Reponds STRICTEMENT dans ce format, sans rien avant ni apres:\n🎯 PRONOSTIC : <1, X ou 2> — score probable <x-y>\n💎 VALEUR : <compare ton estimation aux cotes fournies ; indique ou serait la valeur, ou dis "pas de value claire">\n🔑 POINTS CLES :\n- <point 1>\n- <point 2>\n- <point 3>\n⚠️ <principale incertitude en 1 phrase>\nAppuie-toi sur les faits fournis (cotes, votes, notes perso) et tes connaissances generales des equipes. REGLE ABSOLUE : ne cite JAMAIS une forme recente, une serie, un historique de confrontations, un score passe, une blessure ou un classement qui ne figure PAS dans les FAITS fournis. Si une info te manque, raisonne au conditionnel ou dis que la donnee manque, sans l\'inventer.';
+  /* FORMAT CHIFFRÉ (29/09/2026, maquette validée par Antoine) : probabilités,
+     confiance, value cherchée sur TOUS les marchés (1X2, Over/Under, BTS,
+     double chance, handicap) et plus seulement sur le 1X2 — à 1,32 le 1X2
+     ne laisse presque jamais de value. Règle domicile/extérieur d'Antoine. */
+  var sys='Tu es un analyste paris sportifs francophone, concis et prudent. Reponds STRICTEMENT dans ce format, sans rien avant ni apres:\n'
+    +'🎯 PRONOSTIC : <1, X ou 2> (<nom de l\'equipe ou "nul">) — score probable <x-y> — confiance <1 a 5>/5\n'
+    +'📊 PROBAS : 1 <p> % · X <p> % · 2 <p> % (ton estimation ; rappelle celle des cotes si elle est fournie)\n'
+    +'💎 VALEUR : <le meilleur pari parmi 1X2, double chance, Over/Under, BTS, handicap : ta probabilite estimee contre celle de la cote ; ou "pas de value claire">\n'
+    +'🔑 POINTS CLES :\n- <point 1 avec un chiffre des FAITS>\n- <point 2 avec un chiffre des FAITS>\n- <point 3 avec un chiffre des FAITS>\n'
+    +'⚠️ <principale incertitude en 1 phrase>\n'
+    +'REGLE DOMICILE/EXTERIEUR : juge l\'equipe qui RECOIT d\'abord sur ses matchs A DOMICILE, et l\'equipe qui SE DEPLACE d\'abord sur ses matchs A L\'EXTERIEUR ; la FORME GLOBALE (toutes competitions) complete. Une defaite a l\'exterieur pese peu pour une equipe qui joue ce match a domicile, et inversement. '
+    +'Moins de 5 matchs = echantillon faible : appuie-toi aussi sur la saison precedente. '
+    +'Pour la value, compare TA probabilite aux probabilites des cotes fournies (marge deja retiree) : value seulement si ton estimation depasse celle de la cote d\'au moins 5 points. '
+    +'REGLE ABSOLUE : ne cite JAMAIS un chiffre, une forme, une serie, un score, une blessure ou un classement qui ne figure PAS dans les FAITS fournis ; recopie les chiffres tels quels, ne les recalcule pas. Si une info manque, dis que la donnee manque.';
   if(_neutral) sys+='\nREGLE ABSOLUE : ce match se joue sur TERRAIN NEUTRE. Ne parle JAMAIS d\'avantage du terrain, de "victoire domicile", de "jouer a domicile/exterieur", ni de public acquis a une equipe. Nomme les equipes par leur nom.';
   await _g45MultiAI(box, btn.dataset.box, sys, facts, hN+' vs '+aN);
   btn.disabled=false;
@@ -30754,118 +30906,137 @@ async function _g45MultiAI(box, boxId, sys, facts, title){
     box.setAttribute('data-loaded', '1');
     return;
   }
+  /* ═══ REFONTE DES AVIS (29/09/2026, demande d'Antoine) ═══
+     1. Les trois avis partent EN MÊME TEMPS (avant : l'un après l'autre).
+     2. Chaque avis est indépendant : avant, un échec de Groq faisait tout
+        tomber (« Erreur analyse IA ») et Gemini / 3e avis ne partaient jamais.
+     3. Vrais noms : le titre disait « GROQ (Llama 3.3) », modèle retiré par
+        Groq le 16/08 ; l'attente disait « DeepSeek » pour le 3e avis.
+     4. Texte blanc 14 px, titres 13 px, mention 13 px (Antoine est malvoyant).
+     5. Bloc « ACCORD DES IA » en tête : pronostic de chacun, value de chacun.
+     6. Avis gardés 6 h sur l'appareil (clé g45ia1_) : rouvrir le match ne
+        relance plus les IA ; bouton « 🔄 Relancer » pour forcer.
+     7. Workers AI (relais de Mistral en veille) lisait `_mBody` AVANT sa
+        création : JSON.parse(undefined) → exception → case supprimée, à
+        chaque fois. Le corps est maintenant construit à partir de sys/facts. */
   var key=(typeof getGeminiKey==='function')?getGeminiKey():localStorage.getItem('gones45_gemini_key');
   var eaf=function(x){return String(x).replace(/&/g,'&amp;').replace(/</g,'&lt;');};
-  try{
-    var r2=await fetch(g45IaUrl(),{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({model:g45GroqModele(),messages:[{role:'system',content:sys},{role:'user',content:facts.join('\n')}],temperature:0.4,max_tokens:450})});
-    var d2=await r2.json();
-    if(d2.error) throw new Error(d2.error.message);
-    var txt=((d2.choices&&d2.choices[0]&&d2.choices[0].message.content)||'').trim();
-    if(!txt) throw new Error('réponse vide');
-    box.innerHTML='<div style="background:rgba(10,14,24,.93);border:1px solid rgba(176,124,214,.4);border-radius:10px;padding:12px;">'
-      +'<div style="font-size:10px;font-weight:800;color:#b07cd6;margin-bottom:8px;">🧠 GROQ (Llama 3.3) — '+eaf(title)+'</div>'
-      +'<div style="font-size:12px;color:var(--t1);line-height:1.65;">'+eaf(txt).replace(/\n/g,'<br>')+'</div>'
-      +'<div style="font-size:9px;color:var(--t3);text-align:center;margin-top:8px;font-style:italic;">Estimations IA, pas des prédictions fiables — les cotes intègrent déjà l\'essentiel de l\'info.</div>'
-      +'</div>';
-    box.setAttribute('data-loaded','1');
-    var gk=g45GoogleCle();
-    if(gk){
-      box.innerHTML+='<div id="'+boxId+'-gm" style="font-size:10px;color:var(--t3);padding:6px;text-align:center;">🔷 Gemini réfléchit…</div>';
-      try{
-        /* Liste decouverte aupres de Google plutot que codee en dur : un modele
-           retire ne casse plus le maillon correspondant. */
-        var GM = await g45GeminiModeles();
-        var gt='', dg=null;
-        for(var gi=0; gi<GM.length && !gt; gi++){
-          try{
-            var rg=await fetch(g45GeminiUrl(GM[gi]),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:sys+'\n\nFAITS :\n'+facts.join('\n')}]}]})});
-            dg=await rg.json();
-            gt=((dg.candidates&&dg.candidates[0]&&dg.candidates[0].content&&dg.candidates[0].content.parts&&dg.candidates[0].content.parts.map(function(pp){return pp.text||'';}).join(''))||'').trim();
-          }catch(ge){}
-        }
-        var gmBox=document.getElementById(boxId+'-gm');
-        if(gt && gmBox){
-          gmBox.outerHTML='<div style="background:rgba(10,14,24,.93);border:1px solid rgba(77,132,255,.4);border-radius:10px;padding:12px;margin-top:8px;">'
-            +'<div style="font-size:10px;font-weight:800;color:#4d84ff;margin-bottom:8px;">🔷 GEMINI (Google) — 2ᵉ avis</div>'
-            +'<div style="font-size:12px;color:var(--t1);line-height:1.65;">'+eaf(gt.trim()).replace(/\n/g,'<br>')+'</div>'
-            +'</div>';
-        } else if(gmBox){
-          gmBox.textContent='🔷 Gemini indisponible'+((dg&&dg.error&&dg.error.message)?(' : '+String(dg.error.message).slice(0,60)):'')+'.';
-        }
-      }catch(e2){ var gb=document.getElementById(boxId+'-gm'); if(gb) gb.textContent='🔷 Gemini injoignable.'; }
-    }
+  _g45IaCtx[boxId]={sys:sys, facts:facts, title:title};
+  var cle=_g45IaCle(title, facts);
+  var force=_g45IaForcer[boxId]; delete _g45IaForcer[boxId];
+  var mem=force?null:_g45IaMemLire(cle);
+  var slot=function(id, txt){ return '<div id="'+boxId+'-'+id+'" style="font-size:13px;color:#c9d3ee;padding:8px;text-align:center;">'+txt+'</div>'; };
+  var gk=g45GoogleCle();
+  var avis=[];      /* {k, lbl, col, txt} dans l'ordre d'affichage */
+  var poser=function(id, a){
+    var el=document.getElementById(boxId+'-'+id); if(!el) return;
+    if(a && a.txt){ el.outerHTML=_g45IaCarte(a, id==='gq'?title:''); }
+    else el.textContent=(a&&a.err)||'Avis indisponible.';
+  };
+  var fin=function(){
+    var liste=avis.filter(function(a){ return a && a.txt; });
+    var ac=document.getElementById(boxId+'-ac');
+    if(ac) ac.outerHTML=_g45IaAccord(liste);
+    var pied=document.getElementById(boxId+'-pied');
+    if(pied) pied.innerHTML='<div style="font-size:13px;color:#c9d3ee;text-align:center;margin-top:8px;font-style:italic;line-height:1.5;">Estimations IA, pas des prédictions fiables — les cotes intègrent déjà l\'essentiel de l\'info.'
+      +(mem?' Avis gardé depuis '+_g45IaHeure(mem.t)+'.':'')+'</div>'
+      +'<button onclick="g45IaRelancer(\''+boxId+'\')" style="display:block;margin:8px auto 0;font-size:13px;font-weight:800;padding:8px 14px;border-radius:9px;cursor:pointer;border:1.5px solid rgba(176,124,214,.5);background:rgba(176,124,214,.10);color:#d9b8f0;">🔄 Relancer les IA</button>';
+    return liste;
+  };
+  box.innerHTML='<div id="'+boxId+'-ac"></div>'+slot('gq','🧠 1ᵉʳ avis — l\'IA réfléchit…')+(gk||mem?slot('gm','🔷 Gemini réfléchit…'):'')+slot('ds','🧩 3ᵉ avis — l\'IA réfléchit…')+'<div id="'+boxId+'-pied"></div>';
+  box.setAttribute('data-loaded','1');
+  if(mem){
+    ['gq','gm','ds'].forEach(function(id){ var a=mem.av.filter(function(x){return x.k===id;})[0]; avis.push(a||null); if(a) poser(id,a); else { var el=document.getElementById(boxId+'-'+id); if(el) el.remove(); } });
+    fin();
+    return;
+  }
+  var msg=[{role:'system',content:sys},{role:'user',content:facts.join('\n')}];
+  var lireOAI=function(d){ return ((d&&d.choices&&d.choices[0]&&d.choices[0].message&&d.choices[0].message.content)||'').replace(/<think>[\s\S]*?<\/think>/g,'').trim(); };
+  var groq=(async function(){
+    var m=g45GroqModele(), lbl=g45GroqLibelle(m)+' (Groq)';
     try{
-      box.innerHTML+='<div id="'+boxId+'-ds" style="font-size:10px;color:var(--t3);padding:6px;text-align:center;">🐋 DeepSeek réfléchit…</div>';
-      /* 11/09/2026 : la liste etait en dur et trois de ses quatre noms etaient
-         deja retires (qwen3-32b, kimi-k2, llama-3.1-8b). Elle vient maintenant du
-         catalogue reellement servi. */
-      var DM=(typeof g45GroqCascade==='function')?g45GroqCascade():[['openai/gpt-oss-120b','GPT OSS 120B']];
-      var dt='', dd=null, _dLbl='3ᵉ IA';
-      for(var di=0; di<DM.length && !dt; di++){
+      var r=await fetch(g45IaUrl(),{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({model:m,messages:msg,temperature:0.4,max_tokens:700})});
+      var d=await r.json();
+      var t=lireOAI(d);
+      if(t) return {k:'gq',lbl:lbl,col:'#b07cd6',txt:t};
+      return {err:'🧠 '+lbl+' indisponible'+((d&&d.error)?' : '+String(d.error.message||d.error).slice(0,60):'')+'.'};
+    }catch(e){ return {err:'🧠 '+lbl+' injoignable.'}; }
+  })().then(function(a){ avis[0]=a&&a.txt?a:null; poser('gq',a); });
+  var gemini=!gk?Promise.resolve():(async function(){
+    var dg=null;
+    try{
+      /* Liste decouverte aupres de Google plutot que codee en dur : un modele
+         retire ne casse plus le maillon correspondant. */
+      var GM=await g45GeminiModeles();
+      for(var gi=0; gi<GM.length; gi++){
         try{
-          var rd=await fetch(g45IaUrl(),{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({model:DM[di][0],messages:[{role:'system',content:sys},{role:'user',content:facts.join('\n')}],temperature:0.4,max_tokens:800})});
-          dd=await rd.json();
-          dt=((dd.choices&&dd.choices[0]&&dd.choices[0].message&&dd.choices[0].message.content)||'').replace(/<think>[\s\S]*?<\/think>/g,'').trim();
-          if(dt) _dLbl=DM[di][1];
-        }catch(de){}
+          var rg=await fetch(g45GeminiUrl(GM[gi]),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:sys+'\n\nFAITS :\n'+facts.join('\n')}]}],generationConfig:{temperature:0.4}})});
+          dg=await rg.json();
+          var gt=((dg.candidates&&dg.candidates[0]&&dg.candidates[0].content&&dg.candidates[0].content.parts&&dg.candidates[0].content.parts.map(function(pp){return pp.text||'';}).join(''))||'').trim();
+          if(gt) return {k:'gm',lbl:'Gemini (Google)',col:'#4d84ff',txt:gt};
+        }catch(ge){}
       }
-      var dsBox=document.getElementById(boxId+'-ds');
-      if(dt && dsBox){
-        dsBox.outerHTML='<div style="background:rgba(10,14,24,.93);border:1px solid rgba(45,212,191,.4);border-radius:10px;padding:12px;margin-top:8px;">'
-          +'<div style="font-size:10px;font-weight:800;color:#2dd4bf;margin-bottom:8px;">🧩 '+_dLbl+' (via Groq) — 3ᵉ avis</div>'
-          +'<div style="font-size:12px;color:var(--t1);line-height:1.65;">'+eaf(dt).replace(/\n/g,'<br>')+'</div>'
-          +'</div>';
-      } else if(dsBox){ dsBox.textContent='🧩 3ᵉ avis indisponible'+((dd&&dd.error)?(' : '+String(dd.error.message||'').slice(0,60)):'')+'.'; }
-    }catch(e3){ var db3=document.getElementById(boxId+'-ds'); if(db3) db3.textContent='🐋 DeepSeek injoignable.'; }
+    }catch(e){ return {err:'🔷 Gemini injoignable.'}; }
+    return {err:'🔷 Gemini indisponible'+((dg&&dg.error&&dg.error.message)?(' : '+String(dg.error.message).slice(0,60)):'')+'.'};
+  })().then(function(a){ avis[1]=a&&a.txt?a:null; poser('gm',a); });
+  var troisieme=(async function(){
+    /* 11/09/2026 : la liste etait en dur et trois de ses quatre noms etaient
+       deja retires. Elle vient du catalogue reellement servi. */
+    var DM=(typeof g45GroqCascade==='function')?g45GroqCascade():[['openai/gpt-oss-120b','GPT OSS 120B']];
+    var dd=null;
+    for(var di=0; di<DM.length; di++){
+      try{
+        var rd=await fetch(g45IaUrl(),{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({model:DM[di][0],messages:msg,temperature:0.4,max_tokens:900})});
+        dd=await rd.json();
+        var dt=lireOAI(dd);
+        if(dt) return {k:'ds',lbl:DM[di][1]+' (Groq)',col:'#2dd4bf',txt:dt};
+      }catch(de){}
+    }
+    return {err:'🧩 3ᵉ avis indisponible'+((dd&&dd.error)?(' : '+String(dd.error.message||'').slice(0,60)):'')+'.'};
+  })().then(function(a){ avis[2]=a&&a.txt?a:null; poser('ds',a); });
+  await Promise.all([groq, gemini, troisieme]);
+  var ok=fin();
+  if(ok.length) _g45IaMemEcrire(cle, ok);
+  else box.insertAdjacentHTML('afterbegin','<div style="color:#ff8a8a;font-size:13px;font-weight:700;padding:8px;text-align:center;">Aucune IA n\'a répondu. Réessaie dans une minute.</div>');
+  try{
     var mk=g45MistralCle();
     /* MISE EN VEILLE (24/09/2026). Sonde d'Antoine : un appel ISOLE est refuse
-       (« rate_limited », code 1300) avec sa cle ET avec celle du serveur. Ce
-       n'est plus du debit mais un refus de principe — tres probablement la fin
-       de l'allocation API gratuite de Mistral, relevee debut septembre. Plutot
-       que d'attendre 5 s et d'afficher « indisponible » a chaque analyse, on
-       met Mistral en veille 24 h au premier refus ; il retente seul ensuite,
-       et l'avis reviendra de lui-meme si l'acces gratuit rouvre. */
+       (« rate_limited », code 1300) avec sa cle ET avec celle du serveur —
+       tres probablement la fin de l'allocation gratuite de Mistral. On le met
+       en veille 24 h au premier refus ; il retente seul ensuite. */
     var _mVeille=0; try{ _mVeille=parseInt(localStorage.getItem('g45_mistral_veille')||'0',10)||0; }catch(e){}
     if(mk && (Date.now()-_mVeille) < 24*3600000) mk='';
-    /* WORKERS AI (24/09/2026) : si Mistral est en veille ET Workers AI est
-       disponible, on utilise /cfai. Le format de reponse est identique (OpenAI),
-       donc l'appli le lit sans modification. */
+    /* WORKERS AI (24/09/2026) : si Mistral est en veille, /cfai du worker
+       (format de reponse OpenAI). */
     var _cfAiOk=false;
     try{ _cfAiOk = !!FD_PROXY; }catch(e){}
     var _cfAiVeille=0; try{ _cfAiVeille=parseInt(localStorage.getItem('g45_cfai_veille')||'0',10)||0; }catch(e){}
     if(Date.now()-_cfAiVeille < 24*3600000) _cfAiOk=false;
+    /* 4e avis : case posée juste AVANT le pied (mention + bouton Relancer). */
+    var pied2=function(id, txt){ var dv=document.createElement('div'); dv.id=boxId+'-'+id; dv.setAttribute('style','font-size:13px;color:#c9d3ee;padding:8px;text-align:center;'); dv.textContent=txt; var pd=document.getElementById(boxId+'-pied'); if(pd&&pd.parentNode) pd.parentNode.insertBefore(dv, pd); else box.appendChild(dv); return dv; };
     if(!mk && _cfAiOk){
-      /* Workers AI : label distinct pour ne pas confondre avec Mistral. */
-      box.innerHTML+='<div id="'+boxId+'-ms" style="font-size:10px;color:var(--t3);padding:6px;text-align:center;">☁️ Workers AI réfléchit…</div>';
+      pied2('ms','☁️ Workers AI réfléchit…');
       try{
-        var _cfBody=JSON.stringify({messages:JSON.parse(_mBody).messages, max_tokens:512});
-        var _cfR=await fetch(FD_PROXY+'/cfai',{method:'POST',headers:{'Content-Type':'application/json'},body:_cfBody});
+        var _cfR=await fetch(FD_PROXY+'/cfai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:msg, max_tokens:700})});
         var _cfJ=await _cfR.json();
-        var _cfT=(_cfJ.choices&&_cfJ.choices[0]&&_cfJ.choices[0].message&&_cfJ.choices[0].message.content||'').trim();
-        var _cfBox=document.getElementById(boxId+'-ms');
-        if(_cfT && _cfBox){
+        var _cfT=lireOAI(_cfJ);
+        if(_cfT){
           try{ localStorage.removeItem('g45_cfai_veille'); }catch(e){}
-          _cfBox.innerHTML='<div class="aiv" style="border-left:3px solid #f0c828;padding:8px 10px;margin-top:8px;font-size:10px;line-height:1.5;color:var(--t1);">'
-            +'<span style="font-size:9px;font-weight:700;color:var(--t3);">☁️ Workers AI</span><br>'+_g45Esc(_cfT)+'</div>';
-        } else if(_cfR.status===429 || !_cfT){
+          poser('ms',{txt:_cfT,lbl:'Workers AI (Cloudflare)',col:'#f0c828'});
+        } else {
           try{ localStorage.setItem('g45_cfai_veille', String(Date.now())); }catch(e){}
-          if(_cfBox) _cfBox.textContent='\u2601\uFE0F Workers AI : limite atteinte pour aujourd\'hui.';
+          poser('ms',{err:'☁️ Workers AI : limite atteinte pour aujourd\'hui.'});
         }
       }catch(_cfe){ var _b=document.getElementById(boxId+'-ms'); if(_b)_b.remove(); }
     }
     if(mk){
-      box.innerHTML+='<div id="'+boxId+'-ms" style="font-size:10px;color:var(--t3);padding:6px;text-align:center;">🇫🇷 Mistral réfléchit…</div>';
+      pied2('ms','🇫🇷 Mistral réfléchit…');
+      /* MISTRAL (08/09) : le plan gratuit limite le DEBIT ; on laisse respirer
+         puis on retente UNE fois. */
+      var _mBody=JSON.stringify({model:'mistral-small-latest',messages:msg,temperature:0.4,max_tokens:700});
+      var _mAppel=function(){ return fetch(g45MistralUrl(),{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+mk},body:_mBody}); };
+      var _mLimite=function(o){ return !!(o && ((o.error && /rate limit|429|too many/i.test(String(o.error.message||o.error))) || /rate limit|429|too many/i.test(String(o.message||'')))); };
       try{
-        /* ═══ MISTRAL EST LE 4e APPEL D'UNE RAFALE (08/09) ═══
-           Le plan gratuit limite le DEBIT, pas seulement le volume : arrive en
-           dernier d'une salve, Mistral repondait « Rate limit exceeded » et
-           l'avis manquait a chaque fois (releve par Antoine). On lui laisse
-           donc respirer, puis on retente UNE fois — au-dela ce n'est plus une
-           rafale mais un vrai plafond, et insister ne servirait qu'a faire
-           patienter devant un message identique. */
-        var _mBody=JSON.stringify({model:'mistral-small-latest',messages:[{role:'system',content:sys},{role:'user',content:facts.join('\n')}],temperature:0.4,max_tokens:450});
-        var _mAppel=function(){ return fetch(g45MistralUrl(),{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+mk},body:_mBody}); };
-        var _mLimite=function(o){ return !!(o && ((o.error && /rate limit|429|too many/i.test(String(o.error.message||o.error))) || /rate limit|429|too many/i.test(String(o.message||'')))); };
         await new Promise(function(r){ setTimeout(r, 1200); });
         var rm=await _mAppel();
         var dm=await rm.json();
@@ -30876,24 +31047,93 @@ async function _g45MultiAI(box, boxId, sys, facts, title){
           rm=await _mAppel();
           dm=await rm.json();
         }
-        var mt=((dm.choices&&dm.choices[0]&&dm.choices[0].message&&dm.choices[0].message.content)||'').trim();
-        var msBox=document.getElementById(boxId+'-ms');
-        if(mt){ try{ localStorage.removeItem('g45_mistral_veille'); }catch(e){} }
+        var mt=lireOAI(dm);
+        if(mt){ try{ localStorage.removeItem('g45_mistral_veille'); }catch(e){} poser('ms',{txt:mt,lbl:'Mistral — 4ᵉ avis',col:'#f97316'}); }
         else if(rm.status===429 || _mLimite(dm)){
-          /* Toujours refuse apres la seconde tentative : veille 24 h, message UNE fois. */
           try{ localStorage.setItem('g45_mistral_veille', String(Date.now())); }catch(e){}
-          if(msBox){ msBox.textContent='🇫🇷 Mistral refuse les appels gratuits — mis en veille 24 h. Les autres avis ne sont pas concernés.'; msBox=null; }
+          poser('ms',{err:'🇫🇷 Mistral refuse les appels gratuits — mis en veille 24 h. Les autres avis ne sont pas concernés.'});
         }
-        if(mt && msBox){
-          msBox.outerHTML='<div style="background:rgba(10,14,24,.93);border:1px solid rgba(249,115,22,.4);border-radius:10px;padding:12px;margin-top:8px;">'
-            +'<div style="font-size:10px;font-weight:800;color:#f97316;margin-bottom:8px;">🇫🇷 MISTRAL — 4ᵉ avis</div>'
-            +'<div style="font-size:12px;color:var(--t1);line-height:1.65;">'+eaf(mt).replace(/\n/g,'<br>')+'</div>'
-            +'</div>';
-        } else if(msBox){ msBox.textContent='🇫🇷 Mistral indisponible'+((dm&&(dm.error||dm.message))?(' : '+String((dm.error&&dm.error.message)||dm.message||'').slice(0,60)):'')+'.'; }
-      }catch(e4){ var mb4=document.getElementById(boxId+'-ms'); if(mb4) mb4.textContent='🇫🇷 Mistral injoignable.'; }
+        else poser('ms',{err:'🇫🇷 Mistral indisponible'+((dm&&(dm.error||dm.message))?(' : '+String((dm.error&&dm.error.message)||dm.message||'').slice(0,60)):'')+'.'});
+      }catch(e4){ poser('ms',{err:'🇫🇷 Mistral injoignable.'}); }
     }
-  }catch(e){ box.innerHTML='<div style="color:#ff6b6b;font-size:11px;padding:8px;">Erreur analyse IA : '+String(e.message||e).slice(0,90)+'</div>'; }
+  }catch(e5){}
 }
+/* ── Outils des avis IA (29/09/2026) ── */
+var _g45IaCtx={}, _g45IaForcer={};
+function _g45IaCle(title, facts){
+  var s=String(title)+'|'+String((facts||[])[0]||''), h=5381;
+  for(var i=0;i<s.length;i++) h=((h<<5)+h+s.charCodeAt(i))|0;
+  return 'g45ia1_'+(h>>>0).toString(36);
+}
+function _g45IaMemLire(cle){
+  try{ var c=JSON.parse(localStorage.getItem(cle)||'null'); if(c&&c.av&&c.av.length&&Date.now()-(c.t||0)<6*3600000) return c; }catch(e){}
+  return null;
+}
+function _g45IaMemEcrire(cle, av){
+  try{
+    for(var i=localStorage.length-1;i>=0;i--){                 /* ménage : avis de plus de 6 h */
+      var k=localStorage.key(i);
+      if(k&&k.indexOf('g45ia1_')===0){ try{ var o=JSON.parse(localStorage.getItem(k)||'null'); if(!o||Date.now()-(o.t||0)>6*3600000) localStorage.removeItem(k); }catch(e){ localStorage.removeItem(k); } }
+    }
+    localStorage.setItem(cle, JSON.stringify({t:Date.now(), av:av.map(function(a){ return {k:a.k,lbl:a.lbl,col:a.col,txt:a.txt}; })}));
+  }catch(e){}
+}
+function _g45IaHeure(t){ var d=new Date(t); return String(d.getHours()).padStart(2,'0')+'h'+String(d.getMinutes()).padStart(2,'0'); }
+/* Mise en forme d'un avis : titres des sections en gras, texte blanc 14 px. */
+function _g45IaTexteHtml(txt){
+  var ea=function(x){return String(x).replace(/&/g,'&amp;').replace(/</g,'&lt;');};
+  return String(txt).replace(/\*\*/g,'').split('\n').filter(function(l){ return l.trim(); }).map(function(l){
+    l=ea(l.trim());
+    /* « 🎯 PRONOSTIC : » en gras ; « ⚠️ La défaite… » : seul l'emoji (pas de mot en capitales suivi de « : »). */
+    var m=l.match(/^(🎯|📊|💎|🔑|⚠️|⚠)(\s*[A-ZÀ-Ü][A-ZÀ-Ü' ]+:)?(.*)$/);
+    if(m) return '<div style="margin-top:6px;"><b style="color:#fff;font-weight:800;">'+m[1]+(m[2]||'')+'</b>'+m[3]+'</div>';
+    return '<div style="padding-left:10px;">'+l+'</div>';
+  }).join('');
+}
+function _g45IaCarte(a, titre){
+  return '<div style="background:rgba(10,14,24,.93);border:1px solid rgba(255,255,255,.12);border-left:4px solid '+a.col+';border-radius:10px;padding:12px;margin-top:8px;">'
+    +'<div style="font-size:13px;font-weight:800;color:'+a.col+';margin-bottom:6px;">'+String(a.lbl).replace(/</g,'&lt;')+(titre?' — <span style="color:#fff;">'+String(titre).replace(/</g,'&lt;')+'</span>':'')+'</div>'
+    +'<div style="font-size:14px;color:#fff;line-height:1.55;">'+_g45IaTexteHtml(a.txt)+'</div></div>';
+}
+/* Ce qui suit « PRONOSTIC : » / « VALEUR : » dans un avis, sur une ligne. */
+function _g45IaChamp(txt, re){
+  var l=String(txt).replace(/\*\*/g,'').split('\n').filter(function(x){ return re.test(x); })[0];
+  return l ? l.replace(/^[^:]*:\s*/,'').trim() : '';
+}
+/* BLOC « ACCORD DES IA » : le pronostic de chacun, regroupé ; la value de chacun. */
+function _g45IaAccord(liste){
+  if(!liste || liste.length<2) return '';
+  var ea=function(x){return String(x).replace(/&/g,'&amp;').replace(/</g,'&lt;');};
+  var grp={}, ordre=[];
+  liste.forEach(function(a){
+    var p=_g45IaChamp(a.txt, /PRONOSTIC/i).split(/\s+[—–-]\s+/)[0].trim();
+    if(!p) return;
+    var m1=p.match(/^(1|X|N|2)(?![0-9])/i);     /* « 1 (Real) » et « 1 (Real Madrid) » = même avis */
+    var k=m1 ? m1[1].toUpperCase().replace('N','X') : p.toLowerCase().replace(/[^a-z0-9à-ü]/g,'');
+    if(!grp[k]){ grp[k]={lib:p, n:0}; ordre.push(k); }
+    grp[k].n++;
+  });
+  if(!ordre.length) return '';
+  ordre.sort(function(x,y){ return grp[y].n-grp[x].n; });
+  var n=liste.length, top=grp[ordre[0]];
+  var h='<div style="background:rgba(10,14,24,.95);border:1.5px solid rgba(255,209,102,.55);border-radius:10px;padding:12px;">'
+    +'<div style="font-size:13px;font-weight:800;color:#ffd166;letter-spacing:.4px;margin-bottom:6px;">🤝 ACCORD DES '+n+' IA</div>'
+    +'<div style="font-size:14px;color:#fff;line-height:1.55;">🎯 '+ordre.map(function(k){ return '<b>'+ea(grp[k].lib)+'</b> : '+grp[k].n+' IA'; }).join(' · ')+'</div>'
+    +'<div style="font-size:14px;font-weight:800;color:'+(top.n===n?'#3ddf78':'#ffd166')+';margin-top:4px;">'+(top.n===n?'✅ Toutes d\'accord':(top.n>n/2?'➜ Majorité : '+ea(top.lib):'⚠️ Pas de majorité'))+'</div>';
+  var vals=liste.map(function(a){ var v=_g45IaChamp(a.txt, /VALEUR|VALUE/i); return v?'<div style="margin-top:3px;">💎 <b style="color:'+a.col+';">'+ea(String(a.lbl).replace(/\s*\(.*$/,''))+'</b> : '+ea(v.length>110?v.slice(0,107)+'…':v)+'</div>':''; }).join('');
+  if(vals) h+='<div style="font-size:14px;color:#fff;line-height:1.5;margin-top:6px;">'+vals+'</div>';
+  return h+'</div>';
+}
+/* Relancer : on repasse par le bouton d'origine (faits complets, recollectés) ;
+   à défaut, on relance avec les faits gardés. */
+window.g45IaRelancer=function(boxId){
+  var c=_g45IaCtx[boxId], box=document.getElementById(boxId);
+  if(!box) return;
+  _g45IaForcer[boxId]=1;
+  var bt=document.querySelector('button[data-box="'+boxId+'"]');
+  if(bt && /g45Load(Match|Us)AI/.test(bt.getAttribute('onclick')||'')){ box.removeAttribute('data-loaded'); box.style.display=''; bt.disabled=false; bt.click(); return; }
+  if(c) _g45MultiAI(box, boxId, c.sys, c.facts, c.title);
+};
 /* Pour forcer un nouvel essai sans attendre 24 h : g45MistralReveil() en console. */
 window.g45MistralReveil = function(){ try{ localStorage.removeItem('g45_mistral_veille'); }catch(e){} console.log('Mistral réactivé : il sera réessayé à la prochaine analyse.'); };
 async function g45TennisOdds(btn){
@@ -40600,7 +40840,7 @@ window.g45F1Session=g45F1Session;
    et les données utilisateur n'étaient JAMAIS écrites — l'ajout apparaissait à l'écran puis
    disparaissait au rechargement. Ce n'était ni la synchro GitHub, ni Dropbox, ni le cache
    du navigateur. Tous ces caches sont reconstructibles : ils cèdent la place aux données. */
-var _G45_CACHE_PREFIXES=['g45_mmeta2_','g45_mmeta1_','g45_tennis4_','g45_tennis3_',/* 16/09 : meta de match (domicile/lieu) et score tennis, reconstructibles */'g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dcf_','g45dc_',
+var _G45_CACHE_PREFIXES=['g45ia1_',/* 29/09 : avis IA gardés 6 h */'g45_mmeta2_','g45_mmeta1_','g45_tennis4_','g45_tennis3_',/* 16/09 : meta de match (domicile/lieu) et score tennis, reconstructibles */'g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dcf_','g45dc_',
   'g45trv3_','g45trv2_','g45trOdds_','g45tr_','g45but_st_','g45butL_','g45butA_','g45but_mur_',
   '_g45clv','g45clv_snaps','g45_saisons_cache_v3_','g45_saisons_cache_v2_',
   /* Ajoutes le 20/08 : ces caches, tous reconstructibles, n'etaient PAS declares
