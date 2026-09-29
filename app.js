@@ -218,7 +218,18 @@ var _espnTeamsCache = {};
 function espnLeagueOf(nom) {
   if(ESPN_TEAM_LEAGUE[nom]) return ESPN_TEAM_LEAGUE[nom];
   var low = (nom||'').toLowerCase();
-  for(var k in ESPN_TEAM_LEAGUE){ if(low.indexOf(k.toLowerCase())>=0 || k.toLowerCase().indexOf(low)>=0) return ESPN_TEAM_LEAGUE[k]; }
+  /* MOTS COURTS = MOT ENTIER (29/09/2026, relevé d'Antoine : Carolina Hurricanes
+     et Colorado Avalanche absents du bandeau). « OL » est caché dans
+     « carOLina » et « cOLorado » : les deux équipes NHL partaient chercher leurs
+     matchs en Ligue 1. Une clé de 4 lettres ou moins (OL, OM, PSG, Roma, Nice…)
+     doit donc être un MOT du nom, et un nom de moins de 4 lettres ne sert plus
+     de morceau à chercher dans les clés. */
+  var mots = ' ' + low.replace(/[^a-z0-9\u00e0-\u00ff]+/g, ' ') + ' ';
+  for(var k in ESPN_TEAM_LEAGUE){
+    var kl = k.toLowerCase();
+    if (kl.length <= 4 ? mots.indexOf(' ' + kl + ' ') >= 0 : low.indexOf(kl) >= 0) return ESPN_TEAM_LEAGUE[k];
+    if (low.length >= 4 && kl.indexOf(low) >= 0) return ESPN_TEAM_LEAGUE[k];
+  }
   return null;
 }
 
@@ -52146,7 +52157,10 @@ async function g45DirectMesEquipes(silencieux) {
   var rang = { 'in': 0, 'pre': 1, 'post': 2 };
   trouves.sort(function (a, b) {
     if (MODE === 'resultats') return Date.parse(b.date) - Date.parse(a.date);
-    return (rang[a.etat] || 3) - (rang[b.etat] || 3) || (Date.parse(a.date) - Date.parse(b.date));
+    /* 29/09/2026 : « rang[etat] || 3 » valait 3 pour 'in' (rang 0 = faux) : les
+       matchs EN DIRECT passaient sous les matchs à venir au lieu d'être en tête. */
+    var ra = (a.etat in rang) ? rang[a.etat] : 3, rb = (b.etat in rang) ? rang[b.etat] : 3;
+    return ra - rb || (Date.parse(a.date) - Date.parse(b.date));
   });
 
   if (!trouves.length) {
