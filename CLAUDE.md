@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 29/09/2026 (version déployée : 20260929n, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 29/09/2026 (version déployée : 20260929o, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -336,6 +336,17 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   chargement ; purge préventive au-delà de 4 M caractères). RÈGLE : quand on change
   la version d'une clé de cache (ex. g45cm8_ → g45cm9_), ajouter l'ANCIENNE à
   _G45_CACHE_MORTS et la NOUVELLE à _G45_CACHE_PREFIXES.
+- SOCIAL (social.js, dans les DEUX dépôts, chargé avec ?v= depuis 29o ; Supabase DÉJÀ en place
+  pour les comptes bet45 : tables bilans, paris, profils, abonnements, INCHANGÉES) — V1 29o,
+  maquette validée : partage `g45_soc_partage` ('non' défaut RGPD | 'bilan' | 'tout'), un compte
+  qui avait déjà un bilan en ligne passe à 'tout' (`_g45SocInitPartage`) ; `g45SocPartager(mode)`
+  ('non' efface bilan + paris, 'bilan' efface les paris) ; publication AUTO `_g45SocAuto` (20 s
+  après ouverture puis chaque minute ; si empreinte `g45_soc_sig` changée ET ≥ 10 min depuis
+  `g45_soc_der`) ; calcul via `_betSettleEffect` (freebet perdu = 0, mise freebet hors ROI) ;
+  potes : « à jour il y a… », 5 derniers (`_g45SocDerniers` sur la courbe), classement 30 j
+  (table paris, 10 paris min `_G45_SOC_MIN_CLS`), rafraîchi toutes les 2 min onglet ouvert ;
+  tickets `_renderBetTicket` (titre `_g45SocTitre`, date sans heure, freebet) ; mention 18+ ANJ.
+  IDÉES validées pour plus tard : carte bilan à partager, notifications, récap semaine, ligues.
 - Score d'un pari : `_g45ScoreTexte`, cache `g45_score4_<id>` (négatif gardé
   2 h) — effacé par `saveBetEdit` pour relancer la recherche.
 
