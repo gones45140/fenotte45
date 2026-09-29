@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 29/09/2026 (version déployée : 20260929r, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 29/09/2026 (version déployée : 20260929s, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -249,6 +249,8 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   29q — F1 / cyclisme / MotoGP (consigne « 🎯 FAVORI », sans PROBAS) : `_g45IaIncoherent(txt,
   facts, sys)` n'exige PROBAS que si `sys` les demande, et accepte FAVORI ; `_g45IaAccord` lit
   PRONOSTIC ou FAVORI (avant : Workers AI toujours écarté, pas de bloc Accord sur ces sports).
+  29s — consignes F1 et MotoGP durcies : FAITS UNIQUEMENT (plus de « tes connaissances des
+  circuits » : GPT OSS citait « Leclerc en Autriche »), chaque point clé cite un chiffre ou un nom des FAITS.
   29k — tirs / cadrés / corners / possession du bon côté ajoutés aux faits IA (depuis
   `_g45ClsMatchs`, voir Classements ci-dessous).
 - Photos plus hautes que larges (Wikipédia en pied) : `_g45Cadrer(img)` au onload →
