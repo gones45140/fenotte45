@@ -410,7 +410,8 @@ async function renderSocialConnected() {
     + '<button onclick="searchAndFollow()" style="padding:10px 16px;border-radius:8px;border:none;background:#1ed760;color:#000;font-size:14px;font-weight:800;cursor:pointer;">Suivre</button></div>'
     + '<div id="social-search-msg" style="margin-top:8px;font-size:13px;min-height:14px;"></div></div>';
   h += '<div id="social-cls"></div><div id="social-feed"><div style="text-align:center;padding:20px;color:#c9d3ee;font-size:13px;">⏳ Chargement des potes…</div></div>'
-    + '<div style="font-size:12px;color:#c9d3ee;text-align:center;margin:10px 0 4px;line-height:1.5;">18+ · Les jeux d\'argent comportent des risques : endettement, dépendance… Appelez le 09 74 75 13 13 (appel non surtaxé).</div>';
+    /* Formule officielle de prévention (29/09/2026, validée par Antoine), sans logo de l'État. */
+    + '<div style="font-size:13px;font-weight:700;color:#fff;text-align:center;margin:12px 0 4px;padding:10px 12px;line-height:1.5;background:rgba(11,16,29,.9);border:1px solid rgba(255,255,255,.12);border-radius:10px;">🔞 Les jeux d\'argent et de hasard peuvent être dangereux : pertes d\'argent, conflits familiaux, addiction… Retrouvez nos conseils sur joueurs-info-service.fr (09 74 75 13 13 – appel non surtaxé).</div>';
   h += '</div>';
   el.innerHTML = h;
   _g45SocCourbe('curve-me', bilan.courbe);

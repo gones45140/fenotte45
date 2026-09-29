@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 29/09/2026 (version déployée : 20260929o, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 29/09/2026 (version déployée : 20260929p, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -345,7 +345,7 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   `g45_soc_der`) ; calcul via `_betSettleEffect` (freebet perdu = 0, mise freebet hors ROI) ;
   potes : « à jour il y a… », 5 derniers (`_g45SocDerniers` sur la courbe), classement 30 j
   (table paris, 10 paris min `_G45_SOC_MIN_CLS`), rafraîchi toutes les 2 min onglet ouvert ;
-  tickets `_renderBetTicket` (titre `_g45SocTitre`, date sans heure, freebet) ; mention 18+ ANJ.
+  tickets `_renderBetTicket` (titre `_g45SocTitre`, date sans heure, freebet) ; formule officielle de prévention (29p, 🔞, SANS logo de l’État).
   IDÉES validées pour plus tard : carte bilan à partager, notifications, récap semaine, ligues.
 - Score d'un pari : `_g45ScoreTexte`, cache `g45_score4_<id>` (négatif gardé
   2 h) — effacé par `saveBetEdit` pour relancer la recherche.
