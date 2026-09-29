@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 29/09/2026 (version déployée : 20260929w, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 29/09/2026 (version déployée : 20260929x, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -152,6 +152,11 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
 - `espnLeagueOf(nom)` (29w) : une clé courte (≤ 4 lettres : OL, OM, PSG, Roma…) doit être un MOT
   ENTIER du nom. Avant, « OL » dans « CarOLina » / « COLorado » envoyait les équipes NHL du mur
   en Ligue 1 → absentes du bandeau `g45BandeauMaj` (`_g45BandChemin`). Colorado Rapids aussi.
+- NOTIFICATIONS, équipes du mur (29x) : `_g45NotifEquipes(p)` sert `g45SyncNotifs` ET son
+  enveloppe « paris » (≈ l. 42960). Avant : l'enveloppe renvoyait /psub avec le FOOT SEUL (/psub
+  écrase tout) → équipes NHL/NBA/NFL/MLB effacées ; et `_g45ResolveTeam` ne cherche qu'en foot.
+  Hors foot : id + championnat depuis `g45TeamsPerso()` (même sport) puis étoile Suivies ;
+  rien trouvé = pas envoyée. Détection des buts hors foot : côté Worker (code NON vu ici).
 - PWA gones45 : index.html déclare manifest.json (icônes locales icon-192/512.png,
   display standalone). fenotte45 : manifeste PAS encore déclaré dans indexfenotte.html.
 - Fenêtre de match hors foot (`_renderGenericDetail`) : ligne stade + ville sous le score

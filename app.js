@@ -27509,21 +27509,45 @@ async function _g45ResolveTeam(nom){
   return null;
 }
 
+/* ═══ ÉQUIPES ENVOYÉES AUX NOTIFICATIONS (29/09/2026, Antoine : « voir si les buts
+   NHL marchent en notif ») ═══ DEUX défauts, même cause : le hors-foot n'arrivait
+   jamais au Worker.
+   1. `_g45ResolveTeam` ne cherche QUE dans les championnats de foot : une équipe
+      NHL n'y est pas (ou pire, « Colorado Avalanche » ressortait « Colorado
+      Rapids », MLS). Hors foot, on prend donc l'équipe ENREGISTRÉE (g45TeamsPerso,
+      posée en ouvrant l'équipe depuis Compétitions ; sinon l'étoile ☆ des
+      Suivies) : id et championnat ESPN du bon sport. Rien trouvé = pas envoyée,
+      plutôt qu'un faux identifiant.
+   2. L'enveloppe du 27/09 (plus bas, « paris ») renvoyait /psub avec le FOOT
+      SEUL — /psub écrase tout l'enregistrement : les équipes NHL envoyées
+      juste avant étaient effacées. Les deux passent désormais par ici. */
+var _G45_NOTIF_SP = { '\u26bd':'soccer', '\ud83c\udfc8':'football', '\ud83c\udfc0':'basketball', '\ud83c\udfd2':'hockey', '\u26be':'baseball' };
+async function _g45NotifEquipes(p){
+  var favs=(typeof state!=='undefined'&&state.u?state.u:[]).filter(function(u){ return !!_G45_NOTIF_SP[(u.sport||'\u26bd')] && p.teams[u.n]; });
+  var perso={}; try{ perso=(typeof g45TeamsPerso==='function')?g45TeamsPerso():{}; }catch(e){}
+  var suiv=[]; try{ suiv=(typeof g45SuiviEqGet==='function')?g45SuiviEqGet():[]; }catch(e){}
+  var teams=[];
+  for(var i=0;i<favs.length;i++){
+    var sp=_G45_NOTIF_SP[favs[i].sport||'\u26bd']||'soccer', r=null;
+    if(sp==='soccer'){ r=await _g45ResolveTeam(favs[i].n); }
+    else {
+      var nm=String(favs[i].n).toLowerCase().trim(), pe=perso[nm];
+      if(pe&&pe.id&&pe.league&&(pe.sport||'')===sp) r={id:String(pe.id), league:pe.league};
+      if(!r) suiv.forEach(function(t){ if(!r&&t.id&&t.league&&t.sport===sp&&String(t.nom||'').toLowerCase().trim()===nm) r={id:String(t.id), league:t.league}; });
+    }
+    /* `sp` est le CHEMIN ESPN, pas l'emoji : le Worker n'a pas a connaitre
+       nos pictogrammes. Absent, il retombe sur le football. */
+    if(r) teams.push({n:favs[i].n, id:r.id, league:r.league, sp:sp});
+  }
+  return teams;
+}
+
 async function g45SyncNotifs(subOpt){
   var reg=await navigator.serviceWorker.getRegistration();
   var sub=subOpt||(reg&&await reg.pushManager.getSubscription());
   if(!sub) return;
   var p=g45NotifPrefs();
-  var _SP2 = { '\u26bd':'soccer', '\ud83c\udfc8':'football', '\ud83c\udfc0':'basketball', '\ud83c\udfd2':'hockey', '\u26be':'baseball' };
-  var favs=(typeof state!=='undefined'&&state.u?state.u:[]).filter(function(u){ return !!_SP2[(u.sport||'\u26bd')] && p.teams[u.n]; });
-  var teams=[];
-  for(var i=0;i<favs.length;i++){
-    var r=await _g45ResolveTeam(favs[i].n);
-    /* `sp` est le CHEMIN ESPN, pas l'emoji : le Worker n'a pas a connaitre
-       nos pictogrammes. Absent, il retombe sur le football, ce qui preserve
-       les abonnements deja enregistres. */
-    if(r) teams.push({n:favs[i].n, id:r.id, league:r.league, sp:(_SP2[favs[i].sport||'\u26bd']||'soccer')});
-  }
+  var teams=await _g45NotifEquipes(p);   /* 29/09 : tous sports, voir _g45NotifEquipes */
   var betTeams=[];
   if(p.bets!==false){ try{ betTeams=await g45BetTeams(); }catch(e){} } // Phase 2 : matchs des paris (foot + rugby), surveillés à part, taggés 🎯
   // Phase 3 : matchs suivis manuellement (⭐) → notifs sur cet event précis, hors favoris
@@ -42971,13 +42995,8 @@ window.g45SyncNotifs = async function(subOpt) {
     if (p.bets === false) return;
     var paris = await g45ParisPourNotif();
     /* On renvoie tout le paquet : /psub ecrase l'enregistrement complet. */
-    var favs = (typeof state !== 'undefined' && state.u ? state.u : [])
-      .filter(function(u) { return (u.sport || '\u26bd') === '\u26bd' && p.teams[u.n]; });
-    var teams = [];
-    for (var i = 0; i < favs.length; i++) {
-      var r = await _g45ResolveTeam(favs[i].n);
-      if (r) teams.push({ n: favs[i].n, id: r.id, league: r.league });
-    }
+    /* 29/09 : avant, FOOT SEUL ici → les équipes NHL/NBA/NFL/MLB étaient effacées. */
+    var teams = await _g45NotifEquipes(p);
     var betTeams = [];
     try { betTeams = await g45BetTeams(); } catch (e) {}
     var suivis = [];
