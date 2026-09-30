@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20260930j, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20260930k, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -437,6 +437,12 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   Antoine sur Lyon–Rennes 4-0 (capture 30/09) ; repli sur les tirs, ligne absente = retirée ; joueur le plus dangereux = buts + xG) → `_g45AmHtml`
   (course aux xG `_g45AmCourbe`). Direct : relu toutes les 2 min (`_g45AmTimer`, s'arrête carte fermée).
   Partage `g45AmPartager` : `_g45AmSvgPartage` (SVG sans logos) → canvas → PNG → navigator.share / téléchargement.
+- PROBABILITÉ DE VICTOIRE (30k, maquette validée) : `_g45WpBloc(data, eid, hN, aN, sport, lg)` dans
+  `_renderGenericDetail` (sous `_g45DeuxAvis`). SONDÉ PAR ANTOINE : summary.winprobability [{homeWinPercentage,
+  tiePercentage, playId}] en MLB pendant le match ; NFL/NBA/NHL/foot vides AVANT le match (pendant : à vérifier)
+  → bloc seulement si ≥ 2 points. Repères de période via summary.plays (playId → period). Cote avant-match =
+  `window._g45LastUsOdds` (hDec/aDec, marge retirée). « Ta cote en direct » (`g45WpCote`) → value = ESPN − 1/cote
+  (±3 pts). Direct : résumé relu chaque minute tant que #g45-wp-<eid> existe (`_g45WpEtat[eid].timer`).
 - Score d'un pari : `_g45ScoreTexte`, cache `g45_score4_<id>` (négatif gardé
   2 h) — effacé par `saveBetEdit` pour relancer la recherche.
 

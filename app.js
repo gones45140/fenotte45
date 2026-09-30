@@ -31785,6 +31785,107 @@ function _g45DeuxAvis(data, eid, hN, aN) {
 }
 window._g45DeuxAvis = _g45DeuxAvis;
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   PROBABILITÉ DE VICTOIRE EN DIRECT (30/09/2026, maquette validée : « oui »).
+   Antoine : « comment il se base pour les 54 % win en live ». SONDÉ PAR
+   ANTOINE sur Phillies–Braves en cours : summary.winprobability = 35 points
+   {homeWinPercentage 0.594, tiePercentage, playId} (MLB) ; NFL / NBA / NHL /
+   foot : rien AVANT le match (à vérifier pendant) → le bloc n'apparaît que si
+   ESPN fournit au moins 2 points. pickcenter = cote DraftKings (moneyline) =
+   window._g45LastUsOdds (hDec / aDec) posé par _g45EspnUsOdds.
+   · courbe de la proba du club qui reçoit (au-dessus de 50 % bleu, en dessous
+     jaune), repères de période lus dans summary.plays (playId → period) ;
+   · comparaison : cote avant-match sans marge, ESPN maintenant (+/− pts) ;
+   · « Ta cote en direct » : Antoine tape la cote de SON bookmaker (aucune
+     source gratuite de cotes en direct) → value = proba ESPN − 1/cote ;
+   · match en cours : résumé relu chaque minute tant que le bloc est affiché.
+   ═══════════════════════════════════════════════════════════════════════════ */
+var _g45WpEtat = {};
+function _g45WpPts(data) {
+  var w = (data && data.winprobability) || [], per = {};
+  ((data && data.plays) || []).forEach(function (p) { if (p && p.id != null) per[String(p.id)] = (p.period && (p.period.number || p.period.displayValue)) || null; });
+  return w.map(function (x) { return { p: +x.homeWinPercentage, t: +x.tiePercentage || 0, per: per[String(x.playId)] || null }; }).filter(function (x) { return isFinite(x.p); });
+}
+function _g45WpCourbe(P, sport) {
+  var W = 384, H = 150, n = P.length, X = function (i) { return 34 + i / Math.max(1, n - 1) * (W - 44); }, Y = function (v) { return 10 + (1 - v) * (H - 20); };
+  var s = '<defs><clipPath id="g45wpH"><rect x="0" y="0" width="' + W + '" height="' + Y(0.5) + '"/></clipPath><clipPath id="g45wpB"><rect x="0" y="' + Y(0.5) + '" width="' + W + '" height="' + H + '"/></clipPath></defs>';
+  [0, 0.25, 0.5, 0.75, 1].forEach(function (v) { s += '<line x1="34" x2="' + (W - 10) + '" y1="' + Y(v) + '" y2="' + Y(v) + '" stroke="rgba(255,255,255,' + (v === 0.5 ? 0.35 : 0.08) + ')"/><text x="0" y="' + (Y(v) + 4) + '" fill="#c3cfe6" font-size="12">' + (v * 100) + '%</text>'; });
+  var suf = sport === 'baseball' ? 'e' : (sport === 'hockey' ? 'e P' : (sport === 'basketball' || sport === 'football' ? 'e QT' : 'e'));
+  var vu = {};
+  P.forEach(function (x, i) { if (x.per != null && !vu[x.per]) { vu[x.per] = 1; s += '<line x1="' + X(i) + '" x2="' + X(i) + '" y1="10" y2="' + (H - 10) + '" stroke="rgba(255,255,255,.07)"/><text x="' + (X(i) + 2) + '" y="' + (H + 12) + '" fill="#c3cfe6" font-size="12">' + x.per + suf + '</text>'; } });
+  var ligne = P.map(function (x, i) { return X(i) + ',' + Y(x.p); }).join(' L');
+  var aire = 'M' + X(0) + ',' + Y(0.5) + ' L' + ligne + ' L' + X(n - 1) + ',' + Y(0.5) + ' Z';
+  s += '<path d="' + aire + '" fill="rgba(109,157,255,.22)" clip-path="url(#g45wpH)"/><path d="' + aire + '" fill="rgba(245,197,66,.22)" clip-path="url(#g45wpB)"/>';
+  s += '<path d="M' + ligne + '" fill="none" stroke="#fff" stroke-width="2.5" stroke-linejoin="round"/>';
+  return '<svg viewBox="0 0 ' + W + ' ' + (H + 16) + '" style="width:100%;display:block;margin-top:4px;">' + s + '</svg>';
+}
+function _g45WpFr(v) { return (Math.round(v * 10) / 10).toFixed(1).replace('.', ',') + ' %'; }
+function _g45WpContenu(eid) {
+  var E = _g45WpEtat[eid]; if (!E) return '';
+  var P = E.P, der = P[P.length - 1], ph = 100 * der.p, pt = 100 * (der.t || 0), pa = 100 - ph - pt;
+  var h = '<div style="font-size:13px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#c3cfe6;">📉 Probabilité de victoire · ESPN' + (E.live ? ' · <span style="color:#ff6b6b;">🔴 ' + _g45Esc(E.etat) + '</span>' : '') + '</div>'
+    + '<div style="display:grid;grid-template-columns:1fr ' + (pt > 0.5 ? '1fr ' : '') + '1fr;text-align:center;margin:10px 0 4px;">'
+    + '<div><div style="font-size:15px;font-weight:800;color:#f5c542;">' + _g45Esc(E.aN) + '</div><div style="font-size:30px;font-weight:900;color:#f5c542;">' + _g45WpFr(pa) + '</div></div>'
+    + (pt > 0.5 ? '<div><div style="font-size:15px;font-weight:800;color:#c9d3ee;">Nul</div><div style="font-size:30px;font-weight:900;color:#c9d3ee;">' + _g45WpFr(pt) + '</div></div>' : '')
+    + '<div><div style="font-size:15px;font-weight:800;color:#6d9dff;">' + _g45Esc(E.hN) + '</div><div style="font-size:30px;font-weight:900;color:#6d9dff;">' + _g45WpFr(ph) + '</div></div></div>'
+    + _g45WpCourbe(P, E.sport)
+    + '<div style="display:flex;justify-content:space-between;font-size:12.5px;margin-top:2px;"><span style="color:#f5c542;">↓ ' + _g45Esc(E.aN) + '</span><span style="color:#6d9dff;">↑ ' + _g45Esc(E.hN) + '</span></div>'
+    + '<div style="font-size:13px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#c3cfe6;margin-top:12px;">💰 Comparer avec les cotes</div>';
+  var ligne = function (a, b) { return '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:15px;padding:7px 0;border-top:1px solid rgba(255,255,255,.07);"><span>' + a + '</span><b style="text-align:right;white-space:nowrap;">' + b + '</b></div>'; };
+  var od = window._g45LastUsOdds, favH = ph >= pa;
+  if (od && String(od.eid) === String(eid) && od.hDec > 1 && od.aDec > 1) {
+    var qh = 1 / od.hDec, qa = 1 / od.aDec, ch = 100 * qh / (qh + qa), cote = favH ? ch : 100 - ch, espn = favH ? ph : pa, d = espn - cote;
+    h += ligne('Cote avant-match (' + _g45Esc(od.prov || 'ESPN') + ')', _g45Esc(favH ? E.hN : E.aN) + ' ' + _g45WpFr(cote))
+      + ligne('ESPN maintenant', '<span style="color:' + (favH ? '#6d9dff' : '#f5c542') + ';">' + _g45Esc(favH ? E.hN : E.aN) + ' ' + _g45WpFr(espn) + ' (' + (d >= 0 ? '+' : '−') + _g45WpFr(Math.abs(d)).replace(' %', '') + ' pts)</span>');
+  }
+  if (!E.cote) E.cote = { cote: '', cote_h: favH };
+  var ch2 = E.cote.cote_h;
+  h += '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:15px;padding:7px 0;border-top:1px solid rgba(255,255,255,.07);flex-wrap:wrap;">'
+    + '<span>Ta cote en direct</span><span style="display:flex;gap:6px;align-items:center;">'
+    + ['a', 'h'].map(function (c) { var on = (c === 'h') === ch2; return '<button onclick="g45WpCote(\'' + eid + '\',null,' + (c === 'h') + ')" style="padding:7px 10px;border-radius:8px;font-size:13px;font-weight:800;cursor:pointer;color:' + (on ? '#0b101d' : '#fff') + ';background:' + (on ? (c === 'h' ? '#6d9dff' : '#f5c542') : '#232d4b') + ';border:1px solid rgba(255,255,255,.18);">' + _g45Esc(c === 'h' ? E.hN : E.aN) + '</button>'; }).join('')
+    + '<input inputmode="decimal" placeholder="1,85" value="' + _g45Esc(E.cote.cote) + '" oninput="g45WpCote(\'' + eid + '\',this.value)" style="width:78px;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:#0f1729;color:#fff;font-size:16px;font-weight:800;text-align:center;"></span></div>'
+    + '<div id="g45-wp-val-' + eid + '">' + _g45WpValeur(eid) + '</div>'
+    + '<div style="font-size:13px;line-height:1.5;margin-top:8px;">' + (E.live ? 'Mise à jour chaque minute. ' : '') + 'Probabilité calculée par ESPN (score, temps restant, situation de jeu, force des équipes). Ce n\'est pas une garantie.</div>';
+  return h;
+}
+function _g45WpValeur(eid) {
+  var E = _g45WpEtat[eid]; if (!E || !E.cote) return '';
+  var c = parseFloat(String(E.cote.cote || '').replace(',', '.'));
+  if (!(c > 1)) return '';
+  var der = E.P[E.P.length - 1], ph = 100 * der.p, pt = 100 * (der.t || 0), espn = E.cote.cote_h ? ph : 100 - ph - pt, impl = 100 / c, d = espn - impl;
+  var coul = d >= 3 ? ['rgba(30,215,96,.12)', 'rgba(30,215,96,.4)', '💎 value'] : (d <= -3 ? ['rgba(255,69,69,.12)', 'rgba(255,69,69,.4)', '⚠️ cote trop basse'] : ['rgba(255,255,255,.05)', 'rgba(255,255,255,.2)', '≈ cote juste']);
+  return '<div style="margin-top:8px;padding:10px;border-radius:10px;background:' + coul[0] + ';border:1px solid ' + coul[1] + ';font-size:15px;font-weight:800;">'
+    + String(c).replace('.', ',') + ' = ' + _g45WpFr(impl) + ' · ESPN ' + _g45WpFr(espn) + ' → ' + coul[2] + ' ' + (d >= 0 ? '+' : '−') + _g45WpFr(Math.abs(d)).replace(' %', '') + ' pts</div>';
+}
+window.g45WpCote = function (eid, val, cote_h) {
+  var E = _g45WpEtat[eid]; if (!E) return;
+  if (!E.cote) E.cote = { cote: '', cote_h: true };
+  if (val != null) E.cote.cote = val;
+  if (cote_h != null) { E.cote.cote_h = cote_h; var b = document.getElementById('g45-wp-' + eid); if (b) b.innerHTML = _g45WpContenu(eid); return; }
+  var z = document.getElementById('g45-wp-val-' + eid); if (z) z.innerHTML = _g45WpValeur(eid);
+};
+/* Bloc pour _renderGenericDetail ; '' si ESPN n'a pas de courbe. */
+function _g45WpBloc(data, eid, hN, aN, sport, lg) {
+  var P = _g45WpPts(data); if (P.length < 2) return '';
+  var comp = (data.header && data.header.competitions && data.header.competitions[0]) || {}, st = (comp.status && comp.status.type) || {};
+  var ancien = _g45WpEtat[eid] || {};
+  _g45WpEtat[eid] = { P: P, hN: hN, aN: aN, sport: sport, lg: lg, live: st.state === 'in', etat: st.shortDetail || st.detail || '', cote: ancien.cote };
+  if (st.state === 'in') {
+    clearTimeout(ancien.timer);
+    _g45WpEtat[eid].timer = setTimeout(function tick() {
+      var b = document.getElementById('g45-wp-' + eid); if (!b) return;             /* fenêtre fermée : on s'arrête */
+      if (document.visibilityState !== 'visible') { _g45WpEtat[eid].timer = setTimeout(tick, 60000); return; }
+      fetch('https://site.api.espn.com/apis/site/v2/sports/' + sport + '/' + lg + '/summary?event=' + eid).then(function (r) { return r.json(); }).then(function (d2) {
+        var b2 = document.getElementById('g45-wp-' + eid); if (!b2) return;
+        var html = _g45WpBloc(d2, eid, hN, aN, sport, lg);
+        if (html) { var foc = document.activeElement && b2.contains(document.activeElement); if (!foc) b2.innerHTML = _g45WpContenu(eid); }
+      }).catch(function () { _g45WpEtat[eid].timer = setTimeout(tick, 60000); });
+    }, 60000);
+  }
+  return '<div id="g45-wp-' + eid + '" style="margin-top:10px;background:linear-gradient(160deg,rgba(27,36,64,.95),rgba(19,26,46,.95));border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:14px;color:#fff;">'
+    + _g45WpContenu(eid) + '</div>';
+}
+window._g45WpBloc = _g45WpBloc; window._g45WpPts = _g45WpPts;
 async function g45ArticleTraduire(btn) {
   var box = document.getElementById(btn.dataset.box); if (!box) return;
   if (box.getAttribute('data-loaded') === '1') { box.style.display = (box.style.display === 'none' ? '' : 'none'); return; }
@@ -33160,6 +33261,8 @@ async function _renderGenericDetail(el, sport, lg, eid){
     // Cotes ESPN (sports US : favori moneyline + total), en décimal — gratuit, sans quota
     try{ var _usOdds=await _g45EspnUsOdds(sport, lg, eid, comp.date||'', hN, aN); if(_usOdds) h+=_usOdds; }catch(e){}
     try{ var _2av=(typeof _g45DeuxAvis==='function')?_g45DeuxAvis(data, eid, hN, aN):''; if(_2av) h+=_2av; }catch(e){}
+    /* 30/09 : probabilité de victoire ESPN en direct (+ ta cote → value). */
+    try{ var _wpB=(typeof _g45WpBloc==='function')?_g45WpBloc(data, eid, hN, aN, sport, lg):''; if(_wpB) h+=_wpB; }catch(e){}
     try{ var _artB=(typeof _g45ArticleBloc==='function')?_g45ArticleBloc(data, eid, hN, aN):''; if(_artB) h+=_artB; }catch(e){}
     h+='<div style="margin-top:8px;"><button onclick="g45LoadUsAI(this)" data-lg="'+lg+'" data-sport="'+sport+'" data-eid="'+eid+'" data-h="'+String(hN).replace(/"/g,'&quot;')+'" data-a="'+String(aN).replace(/"/g,'&quot;')+'" data-date="'+(comp.date||'')+'" data-box="usai-'+eid+'" style="width:100%;box-sizing:border-box;font-size:12px;font-weight:800;padding:9px 12px;border-radius:9px;cursor:pointer;border:1.5px solid rgba(176,124,214,.5);background:rgba(176,124,214,.10);color:#b07cd6;">🧠 Analyse IA du match</button><div id="usai-'+eid+'" style="margin-top:8px;"></div></div>';
     var _tSlug=({mlb:'baseball',nba:'basketball',nfl:'american-football',nhl:'ice-hockey',wnba:'basketball'})[lg]||({rugby:'rugby','rugby-league':'rugby'})[sport]||'';
