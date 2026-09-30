@@ -44221,6 +44221,13 @@ function _g45CompetAnneeAuto(slug) {
   /* La NFL commence en septembre, pas en août : sinon on propose par défaut une
      saison sans un seul match joué, et tout s'affiche à zéro. */
   if (slug === 'nfl' || slug === 'college-football') return (m >= 9) ? d.getFullYear() : d.getFullYear() - 1;
+  /* NHL / NBA (30/09/2026, Antoine : « la 26/27 se mettra quand ? » — le menu
+     n'offrait que « Saison auto (2026) » = 2025-26). ESPN nomme ces saisons par
+     l'année où elles FINISSENT (2026-27 = 2027 ; SONDÉ PAR ANTOINE : 2027 =
+     1343 matchs). Même règle que _g45SgAnAuto (onglet Saisons, déjà juste).
+     Tant qu'aucun match 2027 n'est terminé, les Classements retombent d'eux-
+     mêmes sur 2025-26 (_g45ClsRenderUS, anU = an − 1). */
+  if (slug === 'nhl' || slug === 'nba') return (m >= 9) ? d.getFullYear() + 1 : d.getFullYear();
   return (m >= 8) ? d.getFullYear() : d.getFullYear() - 1;
 }
 
