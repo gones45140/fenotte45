@@ -31919,6 +31919,168 @@ function _g45WpBloc(data, eid, hN, aN, sport, lg) {
     + _g45WpContenu(eid) + '</div>';
 }
 window._g45WpBloc = _g45WpBloc; window._g45WpPts = _g45WpPts;
+/* ═══════════════════════════════════════════════════════════════════════════
+   MATCH EN DIRECT, FAÇON « GAMECAST » (30/09/2026, maquettes validées : « oui »).
+   ⚽ FOOT — SONDÉ PAR ANTOINE (Bayern–Benfica F, 27') : core …/competitions/<id>/
+   plays = TOUTES les actions (937, par pages de 400) avec type (Pass, Take On,
+   Tackle…), fieldPositionX/Y (départ) et fieldPosition2X/2Y (arrivée), équipe
+   (team.$ref) et texte « Pauleta (Benfica) Tackle at 27' ». Positions dans le
+   sens d'attaque de CHAQUE équipe → l'équipe qui se déplace est retournée
+   (x → 100−x, y → 100−y), comme la carte des tirs. On lit la DERNIÈRE page.
+   ⚾ MLB — SONDÉ PAR ANTOINE (Phillies–Braves) : summary.situation = balls,
+   strikes, outs, onFirst/onSecond/onThird {playerId}, batter, pitcher,
+   lastPlay.id, situationNotes (RISP_STATS). Noms via boxscore / rosters.
+   Les deux blocs se relisent toutes les 20 s tant qu'ils sont affichés, et le
+   dernier rendu est reposé tout de suite après le redessin de la fenêtre (30 s).
+   ═══════════════════════════════════════════════════════════════════════════ */
+var _g45LiveHtml = {}, _g45LiveTimer = {};
+var _G45_LIVE_TYPES = { 'pass': 'Passe', 'take on': 'Dribble', 'tackle': 'Tacle', 'interception': 'Interception', 'clearance': 'Dégagement',
+  'ball recovery': 'Récupération', 'aerial': 'Duel aérien', 'foul': 'Faute', 'offside': 'Hors-jeu', 'corner': 'Corner', 'throw in': 'Touche',
+  'free kick': 'Coup franc', 'save': 'Arrêt', 'shot': 'Tir', 'goal': 'BUT', 'yellow card': 'Carton jaune', 'red card': 'Carton rouge',
+  'substitution': 'Remplacement', 'dispossessed': 'Perte de balle', 'blocked': 'Contré', 'claim': 'Sortie du gardien', 'keeper pick-up': 'Gardien' };
+function _g45LiveType(t) {
+  var k = String(t || '').toLowerCase();
+  if (_G45_LIVE_TYPES[k]) return _G45_LIVE_TYPES[k];
+  for (var c in _G45_LIVE_TYPES) if (k.indexOf(c) === 0) return _G45_LIVE_TYPES[c];
+  return t || '';
+}
+/* ─── ⚽ FOOT ─── */
+async function _g45LiveFootActions(lg, eid) {
+  var base = 'https://sports.core.api.espn.com/v2/sports/soccer/leagues/' + lg + '/events/' + eid + '/competitions/' + eid + '/plays?limit=400';
+  var j = null;
+  try { j = await (await fetch(base + '&page=1')).json(); } catch (e) { return null; }
+  var n = (j && j.pageCount) || Math.ceil(((j && j.count) || 0) / 400) || 1, items = (j && j.items) || [];
+  if (n > 1) {
+    try { var jl = await (await fetch(base + '&page=' + n)).json(); var dern = (jl && jl.items) || [];
+      if (dern.length < 8 && n > 2) { var jp = await (await fetch(base + '&page=' + (n - 1))).json(); dern = ((jp && jp.items) || []).concat(dern); }
+      items = dern; } catch (e) {}
+  }
+  return items.filter(function (a) { return a && typeof a.fieldPositionX === 'number'; }).slice(-6);
+}
+function _g45LiveFootHtml(A, idH, nh, na, horloge, score) {
+  var W = 380, H = 250, M = 8, X = function (x) { return M + x / 100 * (W - 2 * M); }, Y = function (y) { return M + y / 100 * (H - 2 * M); };
+  var eqDe = function (a) { var m = String((a.team && a.team.$ref) || '').match(/teams\/(\d+)/); return m ? m[1] : ''; };
+  var s = '<rect width="' + W + '" height="' + H + '" rx="10" fill="#2f7a3f"/>';
+  for (var i = 0; i < 8; i++) s += '<rect x="' + (M + i * (W - 2 * M) / 8) + '" y="' + M + '" width="' + ((W - 2 * M) / 16) + '" height="' + (H - 2 * M) + '" fill="rgba(255,255,255,.04)"/>';
+  var L = 'fill="none" stroke="rgba(255,255,255,.7)" stroke-width="2"';
+  s += '<rect x="' + M + '" y="' + M + '" width="' + (W - 2 * M) + '" height="' + (H - 2 * M) + '" ' + L + '/><line x1="' + (W / 2) + '" x2="' + (W / 2) + '" y1="' + M + '" y2="' + (H - M) + '" stroke="rgba(255,255,255,.7)" stroke-width="2"/><circle cx="' + (W / 2) + '" cy="' + (H / 2) + '" r="30" ' + L + '/>';
+  s += '<rect x="' + M + '" y="' + Y(21) + '" width="58" height="' + (Y(79) - Y(21)) + '" ' + L + '/><rect x="' + (W - M - 58) + '" y="' + Y(21) + '" width="58" height="' + (Y(79) - Y(21)) + '" ' + L + '/>'
+    + '<rect x="' + M + '" y="' + Y(37) + '" width="20" height="' + (Y(63) - Y(37)) + '" ' + L + '/><rect x="' + (W - M - 20) + '" y="' + Y(37) + '" width="20" height="' + (Y(63) - Y(37)) + '" ' + L + '/>';
+  var prev = null, der = null;
+  A.forEach(function (a, i) {
+    var dom = eqDe(a) === String(idH), c = dom ? '#6d9dff' : '#f5c542', op = Math.min(1, 0.35 + i * 0.13);
+    var P = function (x, y) { return dom ? [x, y] : [100 - x, 100 - y]; };
+    var p = P(a.fieldPositionX, a.fieldPositionY);
+    if (prev) s += '<line x1="' + X(prev[0]) + '" y1="' + Y(prev[1]) + '" x2="' + X(p[0]) + '" y2="' + Y(p[1]) + '" stroke="#fff" stroke-dasharray="4 4" opacity=".45"/>';
+    s += '<circle cx="' + X(p[0]) + '" cy="' + Y(p[1]) + '" r="7" fill="' + c + '" stroke="#0b101d" stroke-width="2" opacity="' + op + '"/>';
+    if (typeof a.fieldPosition2X === 'number' && (a.fieldPosition2X || a.fieldPosition2Y)) {
+      var q = P(a.fieldPosition2X, a.fieldPosition2Y);
+      s += '<line x1="' + X(p[0]) + '" y1="' + Y(p[1]) + '" x2="' + X(q[0]) + '" y2="' + Y(q[1]) + '" stroke="' + c + '" stroke-width="3" opacity="' + op + '"/>';
+      prev = q;
+    } else prev = p;
+    der = { dom: dom };
+  });
+  if (prev) s += '<text x="' + X(prev[0]) + '" y="' + (Y(prev[1]) + 7) + '" font-size="18" text-anchor="middle">⚽</text>';
+  var qui = function (a) { var t = String(a.text || a.shortText || ''); var m = t.match(/^(.+?)\s*\(/); return m ? m[1] : ''; };
+  var h = '<div style="font-size:13px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#c3cfe6;">⚽ En direct · <span style="color:#ff6b6b;">🔴 ' + _g45Esc(horloge) + '</span></div>'
+    + '<div style="display:flex;justify-content:space-between;margin:8px 0 6px;font-size:16px;font-weight:900;"><span style="color:#6d9dff;">' + _g45Esc(nh) + ' →</span><span>' + _g45Esc(score) + '</span><span style="color:#f5c542;">← ' + _g45Esc(na) + '</span></div>'
+    + '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;display:block;">' + s + '</svg>';
+  if (der) h += '<div style="margin-top:8px;padding:10px;border-radius:10px;background:' + (der.dom ? 'rgba(109,157,255,.14)' : 'rgba(245,197,66,.14)') + ';font-size:15px;font-weight:800;">'
+    + (der.dom ? '🔵 ' + _g45Esc(nh) + ' a le ballon · attaque à droite' : '🟡 ' + _g45Esc(na) + ' a le ballon · attaque à gauche') + '</div>';
+  h += '<div style="font-size:13px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#c3cfe6;margin-top:12px;">Dernières actions</div>';
+  A.slice().reverse().forEach(function (a) {
+    var dom = eqDe(a) === String(idH);
+    h += '<div style="display:flex;gap:8px;font-size:14px;padding:6px 0;border-top:1px solid rgba(255,255,255,.07);"><span style="color:#c3cfe6;min-width:34px;">' + _g45Esc((a.clock && a.clock.displayValue) || '') + '</span>'
+      + '<span style="color:' + (dom ? '#6d9dff' : '#f5c542') + ';font-weight:800;">' + _g45Esc(dom ? nh : na) + '</span><span>' + _g45Esc(_g45LiveType(a.type && a.type.text)) + (qui(a) ? ' · ' + _g45Esc(qui(a)) : '') + '</span></div>';
+  });
+  return h + '<div style="font-size:13px;opacity:.85;margin-top:6px;">Mise à jour toutes les 20 s. Le trait montre le chemin du ballon.</div>';
+}
+async function _g45LiveFootMaj(lg, eid, idH, nh, na) {
+  var box = document.getElementById('g45-lfoot-' + eid); if (!box) return;
+  var A = await _g45LiveFootActions(lg, eid);
+  var horloge = '', score = '';
+  try {
+    var sb = await (await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/' + lg + '/summary?event=' + eid)).json();
+    var co = sb.header.competitions[0], st = co.status || {};
+    horloge = st.displayClock || (st.type && st.type.shortDetail) || '';
+    var H = co.competitors.filter(function (c) { return c.homeAway === 'home'; })[0] || {}, Aw = co.competitors.filter(function (c) { return c.homeAway === 'away'; })[0] || {};
+    score = (H.score || '0') + ' – ' + (Aw.score || '0');
+    if (st.type && st.type.state === 'post') { box.remove(); return; }
+  } catch (e) {}
+  box = document.getElementById('g45-lfoot-' + eid); if (!box) return;
+  if (A && A.length) { _g45LiveHtml['f' + eid] = _g45LiveFootHtml(A, idH, nh, na, horloge, score); box.innerHTML = _g45LiveHtml['f' + eid]; }
+  else if (!box.innerHTML) box.innerHTML = '<div style="font-size:14px;color:#fff;">⚽ En direct : ESPN ne publie pas encore les actions de ce match.</div>';
+  clearTimeout(_g45LiveTimer['f' + eid]);
+  var tick = function () { if (!document.getElementById('g45-lfoot-' + eid)) return; if (document.visibilityState !== 'visible') { _g45LiveTimer['f' + eid] = setTimeout(tick, 20000); return; } _g45LiveFootMaj(lg, eid, idH, nh, na); };
+  _g45LiveTimer['f' + eid] = setTimeout(tick, 20000);
+}
+function _g45LiveFootPoser(bloc, lg, eid, idH, nh, na) {
+  var d = document.createElement('div');
+  d.id = 'g45-lfoot-' + eid;
+  d.style.cssText = 'margin-bottom:10px;background:linear-gradient(160deg,rgba(27,36,64,.95),rgba(19,26,46,.95));border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:14px;color:#fff;';
+  d.innerHTML = _g45LiveHtml['f' + eid] || '<div style="font-size:14px;">⏳ Match en direct…</div>';
+  bloc.insertBefore(d, bloc.firstChild);
+  /* Différé : le bloc n'est posé dans la page qu'après ce retour (_g45SgCarteTirs). */
+  setTimeout(function () { _g45LiveFootMaj(lg, String(eid), idH, nh, na); }, 0);
+}
+/* ─── ⚾ MLB ─── */
+function _g45LiveMlbHtml(data) {
+  var si = data && data.situation; if (!si) return '';
+  var comp = (data.header && data.header.competitions && data.header.competitions[0]) || {}, st = (comp.status && comp.status.type) || {};
+  var cps = comp.competitors || [], H = cps.filter(function (c) { return c.homeAway === 'home'; })[0] || {}, Aw = cps.filter(function (c) { return c.homeAway === 'away'; })[0] || {};
+  var ab = function (c) { return (c.team && (c.team.abbreviation || c.team.shortDisplayName)) || '?'; };
+  var noms = {};
+  var ajoute = function (a) { if (a && a.id) noms[String(a.id)] = a.shortName || a.displayName || a.fullName || ''; };
+  ((data.boxscore && data.boxscore.players) || []).forEach(function (t) { (t.statistics || []).forEach(function (g) { (g.athletes || []).forEach(function (x) { ajoute(x.athlete); }); }); });
+  ((data.rosters) || []).forEach(function (t) { (t.roster || []).forEach(function (x) { ajoute(x.athlete); }); });
+  var nom = function (o) { return o ? (noms[String(o.playerId)] || '') : ''; };
+  var haut = /^top|^haut/i.test(st.shortDetail || '') || /top/i.test(st.detail || '');
+  var att = haut ? Aw : H;
+  var dot = function (n, max, col) { var r = ''; for (var i = 0; i < max; i++) r += '<span style="display:inline-block;width:14px;height:14px;border-radius:50%;margin-left:5px;border:2px solid rgba(255,255,255,.5);background:' + (i < n ? col : 'transparent') + ';"></span>'; return r; };
+  var base = function (x, y, o) { return '<rect x="' + (x - 7) + '" y="' + (y - 7) + '" width="14" height="14" transform="rotate(45 ' + x + ' ' + y + ')" fill="' + (o ? '#f5c542' : 'rgba(255,255,255,.35)') + '"' + (o ? ' stroke="#fff" stroke-width="2"' : '') + '/>' + (o && nom(o) ? '<text x="' + x + '" y="' + (y + (y < 100 ? -16 : 28)) + '" fill="#fff" font-size="13" font-weight="800" text-anchor="middle">' + _g45Esc(nom(o)) + '</text>' : ''); };
+  var svg = '<svg viewBox="0 0 300 235" style="width:100%;display:block;"><path d="M150 215 L20 90 Q150 -40 280 90 Z" fill="#2f6b3a"/><path d="M150 205 L85 140 L150 75 L215 140 Z" fill="#b4814f"/><path d="M150 190 L100 140 L150 90 L200 140 Z" fill="#3f8a49"/><circle cx="150" cy="140" r="9" fill="#b4814f"/>'
+    + '<rect x="143" y="198" width="14" height="14" transform="rotate(45 150 205)" fill="#fff"/>' + base(215, 140, si.onFirst) + base(150, 75, si.onSecond) + base(85, 140, si.onThird) + '</svg>';
+  var note = '';
+  (si.situationNotes || []).forEach(function (n) {
+    var m = String(n.text || '').match(/this year w\/ RISP: (\d+) for (\d+) \(([\d.]+) AVG\)/i);
+    if (m) note = 'Cette saison avec coureurs en position de marquer : ' + m[1] + ' sur ' + m[2] + ' (moyenne ' + m[3] + ')';
+  });
+  var dern = '';
+  if (si.lastPlay && si.lastPlay.id) { var pl = (data.plays || []).filter(function (p) { return String(p.id) === String(si.lastPlay.id); })[0]; if (pl) dern = String(pl.text || '').replace(/^Pitch \d+ : /, ''); }
+  var tr = function (t) { return t.replace(/^Strike (\d) Looking/i, 'Prise $1 (regardée)').replace(/^Strike (\d) Swinging/i, 'Prise $1 (élan)').replace(/^Strike (\d) Foul/i, 'Fausse balle, prise $1').replace(/^Ball (\d)/i, 'Balle $1').replace(/^Foul Ball/i, 'Fausse balle'); };
+  var manche = String(st.shortDetail || st.detail || '').replace(/^(Top|Bot|Bottom|Mid|Middle|End)\s+(\d+)(st|nd|rd|th)?/i, function (x, m, n) {
+    return ({ top: 'Haut', bot: 'Bas', bottom: 'Bas', mid: 'Milieu', middle: 'Milieu', end: 'Fin' })[m.toLowerCase()] + ' ' + n + (n === '1' ? 're' : 'e');
+  });
+  return '<div style="font-size:13px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#c3cfe6;">⚾ En direct · <span style="color:#ff6b6b;">🔴 ' + _g45Esc(manche) + '</span></div>'
+    + '<div style="display:flex;justify-content:center;gap:14px;margin:8px 0;font-size:17px;font-weight:900;"><span style="color:#f5c542;">' + _g45Esc(ab(Aw)) + ' ' + _g45Esc(Aw.score || '0') + '</span><span style="opacity:.6;">–</span><span style="color:#6d9dff;">' + _g45Esc(ab(H)) + ' ' + _g45Esc(H.score || '0') + '</span></div>'
+    + svg
+    + '<div style="display:flex;justify-content:center;gap:16px;flex-wrap:wrap;font-size:15px;font-weight:800;margin-top:8px;"><span>Balles' + dot(si.balls || 0, 3, '#1ed760') + '</span><span>Prises' + dot(si.strikes || 0, 2, '#ff6b6b') + '</span><span>Retraits' + dot(si.outs || 0, 2, '#ffd166') + '</span></div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;font-size:14px;">'
+    + '<div style="padding:8px;border-radius:10px;background:rgba(255,255,255,.06);">🏏 <b>Frappeur</b> (' + _g45Esc(ab(att)) + ')<br>' + _g45Esc(nom(si.batter) || '?') + (note ? '<br><span style="opacity:.85;">' + _g45Esc(note) + '</span>' : '') + '</div>'
+    + '<div style="padding:8px;border-radius:10px;background:rgba(255,255,255,.06);">⚾ <b>Lanceur</b><br>' + _g45Esc(nom(si.pitcher) || '?') + '</div></div>'
+    + (dern ? '<div style="margin-top:10px;font-size:14px;border-top:1px solid rgba(255,255,255,.1);padding-top:8px;">Dernier lancer : <b>' + _g45Esc(tr(dern)) + '</b></div>' : '')
+    + '<div style="font-size:13px;opacity:.85;margin-top:6px;">Mise à jour toutes les 20 s pendant le match.</div>';
+}
+function _g45LiveMlbBloc(data, eid, lg) {
+  var comp = (data.header && data.header.competitions && data.header.competitions[0]) || {}, st = (comp.status && comp.status.type) || {};
+  if (st.state !== 'in' || !data.situation) return '';
+  var h = _g45LiveMlbHtml(data); if (!h) return '';
+  clearTimeout(_g45LiveTimer['b' + eid]);
+  var tick = function () {
+    var box = document.getElementById('g45-lmlb-' + eid); if (!box) return;
+    if (document.visibilityState !== 'visible') { _g45LiveTimer['b' + eid] = setTimeout(tick, 20000); return; }
+    fetch('https://site.api.espn.com/apis/site/v2/sports/baseball/' + lg + '/summary?event=' + eid).then(function (r) { return r.json(); }).then(function (d) {
+      var b = document.getElementById('g45-lmlb-' + eid); if (!b) return;
+      var s2 = d && d.header && d.header.competitions && d.header.competitions[0] && d.header.competitions[0].status && d.header.competitions[0].status.type;
+      if (s2 && s2.state === 'post') { b.remove(); return; }
+      var hh = _g45LiveMlbHtml(d); if (hh) b.innerHTML = hh;
+      _g45LiveTimer['b' + eid] = setTimeout(tick, 20000);
+    }).catch(function () { _g45LiveTimer['b' + eid] = setTimeout(tick, 20000); });
+  };
+  _g45LiveTimer['b' + eid] = setTimeout(tick, 20000);
+  return '<div id="g45-lmlb-' + eid + '" style="margin-top:10px;background:linear-gradient(160deg,rgba(27,36,64,.95),rgba(19,26,46,.95));border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:14px;color:#fff;">' + h + '</div>';
+}
+window._g45LiveMlbHtml = _g45LiveMlbHtml; window._g45LiveFootHtml = _g45LiveFootHtml; window._g45LiveType = _g45LiveType;
 async function g45ArticleTraduire(btn) {
   var box = document.getElementById(btn.dataset.box); if (!box) return;
   if (box.getAttribute('data-loaded') === '1') { box.style.display = (box.style.display === 'none' ? '' : 'none'); return; }
@@ -33288,6 +33450,8 @@ async function _renderGenericDetail(el, sport, lg, eid){
       }
     }catch(e){}
     // Résumé baseball : déroulé des points (manche par manche)
+    /* 30/09 : MLB en direct (losange, balles/prises/retraits, frappeur/lanceur). */
+    if(sport==='baseball'){ try{ var _lmb=_g45LiveMlbBloc(data, eid, lg); if(_lmb) h+=_lmb; }catch(e){} }
     if(sport==='baseball'){ try{ var _bbr=_g45BaseballRecap(data); if(_bbr) h+=_bbr; }catch(e){} }
     // Avant-match (proba, stats d'équipe, forme, classement) pour les matchs à venir — tous sports
     if(stT.state==='pre'){ try{ var _pmG=_g45PreMatchBlock(data); if(_pmG) h+=_pmG; }catch(e){} }
@@ -49680,6 +49844,8 @@ async function _g45SgCarteTirs(panel, lg, eid, sum) {
     + 'border:1px solid rgba(109,157,255,.45);background:rgba(47,107,255,.14);color:#fff;font-size:14px;font-weight:800;cursor:pointer;">'
     + (st.state === 'in' ? '\ud83d\udd34 Carte du match en direct' : '\ud83d\udcca Carte du match') + '</button><div class="g45-am-zone"></div>';
   bloc.insertBefore(am, bloc.firstChild);
+  /* 30/09 : terrain en direct (actions ESPN) pour un match en cours. */
+  if (st.state === 'in') { try { _g45LiveFootPoser(bloc, lg, String(eid), idDom, nm(dom), nm(ext)); } catch (e) {} }
   panel.insertBefore(bloc, panel.firstChild);
   /* Rouverture après un rafraîchissement : derniers chiffres tout de suite, puis relecture. */
   try {

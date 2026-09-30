@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20260930p, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20260930q, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -450,6 +450,14 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   (±3 pts). Direct : résumé relu chaque minute tant que #g45-wp-<eid> existe (`_g45WpEtat[eid].timer`).
   30l : échelle EN MIROIR comme ESPN (100 % en haut = club qui reçoit, bleu ; 100 % en bas = visiteur,
   jaune ; 50 % au milieu), ligne colorée par moitié, « ↑ X favoris / ↓ Y favoris » (Antoine ne lisait pas 0→100 %).
+- MATCH EN DIRECT « gamecast » (30q, maquettes validées) : ⚽ `_g45LiveFootPoser` (dans `_g45SgCarteTirs`, match
+  'in') → `_g45LiveFootMaj` / `_g45LiveFootActions` : SONDÉ PAR ANTOINE, core …/competitions/<id>/plays = TOUTES les
+  actions (Pass, Take On, Tackle… ; fieldPositionX/Y départ, fieldPosition2X/2Y arrivée ; team.$ref ; texte
+  « Nom (Club) Type at 27' »), pages de 400 → on lit la DERNIÈRE page (+ l'avant-dernière si < 8) ; visiteur retourné
+  (x → 100−x) ; types traduits `_G45_LIVE_TYPES` ; relu toutes les 20 s, dernier rendu `_g45LiveHtml` reposé au redessin.
+  ⚾ `_g45LiveMlbBloc` (dans `_renderGenericDetail`, baseball 'in') : SONDÉ, summary.situation (balls, strikes, outs,
+  onFirst/Second/Third, batter, pitcher, lastPlay.id, situationNotes RISP traduite) ; noms via boxscore.players /
+  rosters ; manche traduite (Bot 6th → Bas 6e) ; relu toutes les 20 s. NFL / NBA / NHL : à sonder pendant un match.
 - FOOT FÉMININ (30m) : groupe « ⚽ Féminin » dans `G45_LEAGUE_GROUPS` (Compétitions, Résultats, Direct) +
   listes VS (`_G45_VJ_SPORTS`). SONDÉ PAR ANTOINE : uefa.wchampions, fra.w.1, eng.w.1, esp.w.1, usa.nwsl,
   fifa.wwc, uefa.weuro = 200 ; ger.w.1 et ita.w.1 = 400 ; Antoine confirme : Frauen-Bundesliga et
