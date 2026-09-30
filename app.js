@@ -49270,6 +49270,210 @@ var _g45CoulMatch = {};
 function _g45CoulDuMatch(eid) { return _g45CoulMatch[String(eid)] || null; }
 window._g45CoulDuMatch = _g45CoulDuMatch;
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   CARTE DU MATCH / D'APRÈS-MATCH (30/09/2026, maquette validée : « oui », « en
+   live ? » → oui). Bouton « 📊 Carte du match » à côté de la carte des tirs
+   (fenêtre d'un match de foot, _g45SgCarteTirs).
+   · Score, logos, buteurs (minute, pen., csc), xG de chaque équipe ;
+   · 📈 course aux xG : xG cumulé minute par minute, ⚽ sur chaque but ;
+   · 📊 stats en barres : possession, tirs, cadrés, grosses occasions (tirs à
+     xG ≥ 0,3 : ESPN ne les publie pas), corners, fautes, cartons jaunes —
+     boxscore du résumé ESPN si présent, sinon recalculé depuis les tirs ;
+   · ⭐ joueur le plus dangereux = buts + xG (calcul de l'appli, PAS l'homme du
+     match officiel) ;
+   · EN DIRECT : « 🔴 En direct · 63' », relu toutes les 2 min (résumé +
+     tirs ; g45TirsMatch garde les tirs d'un match en cours 2 min) ;
+   · 📤 Partager l'image : la carte est redessinée en SVG → PNG (sans les
+     logos, venus d'un autre site : ils bloqueraient l'export) → partage du
+     téléphone, sinon téléchargement.
+   ═══════════════════════════════════════════════════════════════════════════ */
+var _g45AmSum = {}, _g45AmTimer = {};
+function _g45AmMin(s) {
+  var m = String(s || '').match(/(\d+)(?:'?\s*\+\s*(\d+))?/);
+  if (!m) return 0;
+  return Math.min(+m[1] + (m[2] ? +m[2] : 0), m[1] > 45 ? 98 : 50);
+}
+function _g45AmCalc(tirs, sum) {
+  var comp = (sum && sum.header && sum.header.competitions && sum.header.competitions[0]) || {};
+  var cps = comp.competitors || [];
+  var H = cps.filter(function (c) { return c.homeAway === 'home'; })[0] || cps[0] || {};
+  var A = cps.filter(function (c) { return c.homeAway === 'away'; })[0] || cps[1] || {};
+  var idH = String((H.team && H.team.id) || H.id || ''), idA = String((A.team && A.team.id) || A.id || '');
+  var st = (comp.status && comp.status.type) || {};
+  var nom = function (c) { return (c.team && (c.team.shortDisplayName || c.team.displayName)) || '?'; };
+  var logo = function (c) { return (c.team && ((c.team.logos && c.team.logos[0] && c.team.logos[0].href) || c.team.logo)) || ''; };
+  var D = { idH: idH, idA: idA, nh: nom(H), na: nom(A), lh: logo(H), la: logo(A),
+    sh: H.score != null ? String(H.score) : '', sa: A.score != null ? String(A.score) : '',
+    live: st.state === 'in', fini: st.state === 'post' || st.completed === true,
+    horloge: (comp.status && comp.status.displayClock) || '', etat: st.shortDetail || st.detail || '',
+    ligue: (sum && sum.header && sum.header.league && sum.header.league.name) || '',
+    xh: 0, xa: 0, buts: [], courbe: { h: [[0, 0]], a: [[0, 0]] }, st: {}, joueur: null };
+  if (typeof _g45NomLigueFr === 'function') D.ligue = _g45NomLigueFr(D.ligue);
+  var T = (tirs || []).slice().sort(function (x, y) { return (x.periode - y.periode) || (_g45AmMin(x.min) - _g45AmMin(y.min)); });
+  var parJ = {}, tir = { h: [0, 0, 0], a: [0, 0, 0] };   /* tirs, cadrés, grosses occasions */
+  T.forEach(function (t) {
+    var cote = String(t.equipe) === idH ? 'h' : (String(t.equipe) === idA ? 'a' : '');
+    if (!cote) return;
+    var mn = _g45AmMin(t.min);
+    if (t.csc) {                                   /* csc : but pour l'adversaire, pas un tir */
+      var pour = cote === 'h' ? 'a' : 'h';
+      D.buts.push({ c: pour, qui: t.qui, min: t.min, pen: false, csc: true, mn: mn, x: D['x' + pour] });
+      return;
+    }
+    var xg = +t.xg || 0;
+    D['x' + cote] += xg;
+    D.courbe[cote].push([mn, D['x' + cote]]);
+    tir[cote][0]++; if (t.cadre) tir[cote][1]++; if (xg >= 0.3) tir[cote][2]++;
+    if (t.but) D.buts.push({ c: cote, qui: t.qui, min: t.min, pen: t.pen, csc: false, mn: mn, x: D['x' + cote] });
+    var k = cote + '|' + t.qui;
+    var J = parJ[k] = parJ[k] || { qui: t.qui, c: cote, b: 0, t: 0, x: 0 };
+    J.t++; J.x += xg; if (t.but) J.b++;
+  });
+  var best = null;
+  Object.keys(parJ).forEach(function (k) { var J = parJ[k]; if (J.qui && (!best || J.b + J.x > best.b + best.x)) best = J; });
+  D.joueur = best;
+  /* Stats du boxscore ESPN (par équipe), sinon depuis les tirs. */
+  var bs = {};
+  ((sum && sum.boxscore && sum.boxscore.teams) || []).forEach(function (t) {
+    var id = String((t.team && t.team.id) || ''), o = {};
+    (t.statistics || []).forEach(function (x) { if (x && x.name) o[x.name] = parseFloat(x.displayValue != null ? x.displayValue : x.value); });
+    bs[id] = o;
+  });
+  var v = function (id, n) { var o = bs[id] || {}; return isFinite(o[n]) ? o[n] : null; };
+  var paire = function (n, repliH, repliA) { var a = v(idH, n), b = v(idA, n); return [a != null ? a : repliH, b != null ? b : repliA]; };
+  D.st = [
+    ['Possession', paire('possessionPct', null, null), '%'],
+    ['Tirs', paire('totalShots', T.length ? tir.h[0] : null, T.length ? tir.a[0] : null)],
+    ['Tirs cadrés', paire('shotsOnTarget', T.length ? tir.h[1] : null, T.length ? tir.a[1] : null)],
+    ['Grosses occasions', T.length ? [tir.h[2], tir.a[2]] : [null, null]],
+    ['Corners', paire('wonCorners', null, null)],
+    ['Fautes', paire('foulsCommitted', null, null)],
+    ['Cartons jaunes', paire('yellowCards', null, null)]
+  ].filter(function (r) { return r[1][0] != null && r[1][1] != null; });
+  var fin = D.fini ? 95 : Math.max(_g45AmMin(D.horloge), 1);
+  D.courbe.h.push([fin, D.xh]); D.courbe.a.push([fin, D.xa]); D.finMin = fin;
+  return D;
+}
+var _G45_AM_C = ['#6d9dff', '#f5c542'];
+function _g45AmFr(v, d) { return (Math.round(v * Math.pow(10, d)) / Math.pow(10, d)).toFixed(d).replace('.', ','); }
+/* Course aux xG (SVG). */
+function _g45AmCourbe(D, W) {
+  W = W || 380; var H = 150, top = Math.max(1.5, Math.ceil(Math.max(D.xh, D.xa) * 2) / 2 + 0.3);
+  var X = function (m) { return 26 + Math.min(m, 98) / 98 * (W - 36); }, Y = function (v) { return H - 10 - v / top * (H - 22); };
+  var esc = function (P) { var d = 'M' + X(0) + ',' + Y(0), pv = 0; P.forEach(function (p) { d += ' L' + X(p[0]) + ',' + Y(pv) + ' L' + X(p[0]) + ',' + Y(p[1]); pv = p[1]; }); return d; };
+  var s = '';
+  for (var v = 0; v <= top + 0.01; v += (top > 3 ? 1 : 0.5)) s += '<line x1="26" x2="' + (W - 8) + '" y1="' + Y(v) + '" y2="' + Y(v) + '" stroke="rgba(255,255,255,.09)"/><text x="2" y="' + (Y(v) + 4) + '" fill="#c3cfe6" font-size="12">' + String(v).replace('.', ',') + '</text>';
+  s += '<line x1="' + X(45) + '" x2="' + X(45) + '" y1="8" y2="' + (H - 10) + '" stroke="rgba(255,255,255,.22)" stroke-dasharray="4 4"/><text x="' + (X(45) - 9) + '" y="' + (H + 6) + '" fill="#c3cfe6" font-size="12">MT</text>';
+  s += '<path d="' + esc(D.courbe.h) + '" fill="none" stroke="' + _G45_AM_C[0] + '" stroke-width="3"/><path d="' + esc(D.courbe.a) + '" fill="none" stroke="' + _G45_AM_C[1] + '" stroke-width="3"/>';
+  D.buts.forEach(function (b) {
+    var c = b.c === 'h' ? _G45_AM_C[0] : _G45_AM_C[1], y = b.csc ? Y(b.c === 'h' ? D.xh : D.xa) : Y(b.x);
+    if (b.csc) { var P = D.courbe[b.c], val = 0; P.forEach(function (p) { if (p[0] <= b.mn) val = p[1]; }); y = Y(val); }
+    s += '<circle cx="' + X(b.mn) + '" cy="' + y + '" r="8" fill="' + c + '" stroke="#0b101d" stroke-width="2"/><text x="' + X(b.mn) + '" y="' + (y + 4) + '" font-size="10" text-anchor="middle">⚽</text>';
+  });
+  return '<svg viewBox="0 0 ' + W + ' ' + (H + 10) + '" style="width:100%;display:block;">' + s + '</svg>';
+}
+function _g45AmButs(D, c) {
+  return D.buts.filter(function (b) { return b.c === c; }).map(function (b) {
+    return (c === 'h' ? '⚽ ' : '') + _g45Esc(b.qui || '?') + ' ' + _g45Esc(b.min) + (b.pen ? ' (pen.)' : '') + (b.csc ? ' (csc)' : '') + (c === 'a' ? ' ⚽' : '');
+  }).join('<br>');
+}
+function _g45AmHtml(D, eid) {
+  var sec = function (t) { return '<div style="font-size:13px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;margin:14px 0 6px;color:#c3cfe6;">' + t + '</div>'; };
+  var lg = function (u, n, col) { return u ? '<img src="' + u + '" alt="" style="width:50px;height:50px;object-fit:contain;display:block;margin:0 auto 4px;" onerror="this.remove()">' : ''; };
+  var etat = D.live ? '<span style="color:#ff6b6b;font-weight:800;">🔴 En direct · ' + _g45Esc(D.horloge || D.etat) + '</span>' : (D.fini ? 'Terminé' : _g45Esc(D.etat));
+  var h = '<div style="background:linear-gradient(160deg,rgba(27,36,64,.95),rgba(19,26,46,.95));border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:16px;color:#fff;margin-bottom:10px;">'
+    + '<div style="font-size:13px;text-align:center;margin-bottom:8px;">' + _g45Esc(D.ligue) + (D.ligue ? ' · ' : '') + etat + '</div>'
+    + '<div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;text-align:center;">'
+    + '<div>' + lg(D.lh) + '<div style="font-weight:800;font-size:15px;color:' + _G45_AM_C[0] + ';">' + _g45Esc(D.nh) + '</div></div>'
+    + '<div><div style="font-size:42px;font-weight:900;letter-spacing:2px;">' + _g45Esc(D.sh) + ' – ' + _g45Esc(D.sa) + '</div>'
+    + '<div style="font-size:13px;">xG ' + _g45AmFr(D.xh, 2) + ' – ' + _g45AmFr(D.xa, 2) + '</div></div>'
+    + '<div>' + lg(D.la) + '<div style="font-weight:800;font-size:15px;color:' + _G45_AM_C[1] + ';">' + _g45Esc(D.na) + '</div></div></div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;margin-top:8px;font-size:13.5px;line-height:1.5;"><div>' + _g45AmButs(D, 'h') + '</div><div style="text-align:right;">' + _g45AmButs(D, 'a') + '</div></div>'
+    + sec('📈 Course aux xG') + _g45AmCourbe(D)
+    + sec('📊 Stats du match');
+  D.st.forEach(function (r) {
+    var a = r[1][0], b = r[1][1], t = (a + b) || 1, u = r[2] || '';
+    h += '<div style="margin:9px 0;"><div style="display:flex;justify-content:space-between;font-size:15px;font-weight:800;">'
+      + '<span style="color:' + _G45_AM_C[0] + ';">' + Math.round(a) + u + '</span><span style="font-size:13.5px;font-weight:600;">' + r[0] + '</span><span style="color:' + _G45_AM_C[1] + ';">' + Math.round(b) + u + '</span></div>'
+      + '<div style="display:flex;height:9px;border-radius:5px;overflow:hidden;margin-top:4px;background:rgba(255,255,255,.08);"><div style="width:' + (a / t * 100) + '%;background:' + _G45_AM_C[0] + ';"></div><div style="width:' + (b / t * 100) + '%;background:' + _G45_AM_C[1] + ';"></div></div></div>';
+  });
+  if (D.joueur) h += sec('⭐ Joueur le plus dangereux') + '<div style="font-size:14px;"><b style="color:' + _G45_AM_C[D.joueur.c === 'h' ? 0 : 1] + ';">' + _g45Esc(D.joueur.qui) + '</b> : '
+    + D.joueur.b + ' but' + (D.joueur.b > 1 ? 's' : '') + ', ' + D.joueur.t + ' tir' + (D.joueur.t > 1 ? 's' : '') + ', ' + _g45AmFr(D.joueur.x, 2) + ' xG</div>'
+    + '<div style="font-size:12.5px;opacity:.85;margin-top:2px;">Calculé par l\'appli (buts + xG), pas l\'homme du match officiel.</div>';
+  h += '<button onclick="g45AmPartager(\'' + eid + '\')" style="width:100%;margin-top:14px;padding:11px;border-radius:10px;border:none;background:#2f6bff;color:#fff;font-size:14px;font-weight:800;cursor:pointer;">📤 Partager l\'image</button>'
+    + (D.live ? '<div style="font-size:12.5px;text-align:center;margin-top:6px;opacity:.85;">Mise à jour toutes les 2 min · ESPN publie les tirs avec un peu de retard</div>' : '') + '</div>';
+  return h;
+}
+var _g45AmDonnees = {};
+async function _g45AmCharger(zone, lg, eid, relire) {
+  var sum = _g45AmSum[eid];
+  if (relire || !sum) {
+    try { var r = await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/' + lg + '/summary?event=' + eid); if (r.ok) { sum = await r.json(); _g45AmSum[eid] = sum; } } catch (e) {}
+  }
+  var st = sum && sum.header && sum.header.competitions && sum.header.competitions[0] && sum.header.competitions[0].status && sum.header.competitions[0].status.type;
+  var tirs = null; try { tirs = await g45TirsMatch(lg, eid, !!(st && (st.completed || st.state === 'post'))); } catch (e) {}
+  var D = _g45AmCalc(tirs || [], sum || {});
+  _g45AmDonnees[eid] = D;
+  if (!document.body.contains(zone) || !zone.innerHTML) return;   /* carte refermée entre-temps */
+  zone.innerHTML = _g45AmHtml(D, eid);
+  clearTimeout(_g45AmTimer[eid]);
+  var tick = function () {
+    if (!document.body.contains(zone) || !zone.innerHTML) return;          /* carte fermée : on s'arrête */
+    if (document.visibilityState === 'visible') _g45AmCharger(zone, lg, eid, true);
+    else _g45AmTimer[eid] = setTimeout(tick, 120000);
+  };
+  if (D.live) _g45AmTimer[eid] = setTimeout(tick, 120000);
+}
+window.g45AmOuvrir = function (btn, lg, eid) {
+  var zone = btn.parentNode.querySelector('.g45-am-zone'); if (!zone) return;
+  if (zone.innerHTML) { zone.innerHTML = ''; clearTimeout(_g45AmTimer[eid]); return; }
+  zone.innerHTML = '<div style="font-size:14px;color:#fff;padding:10px;">⏳ Carte du match…</div>';
+  _g45AmCharger(zone, lg, eid, false);
+};
+/* Image à partager : même contenu, dessiné en SVG pur puis converti en PNG. */
+function _g45AmSvgPartage(D) {
+  var W = 420, y = 0, s = '', t = function (x, yy, txt, taille, coul, anc, gras) {
+    return '<text x="' + x + '" y="' + yy + '" fill="' + (coul || '#fff') + '" font-size="' + (taille || 14) + '" font-family="Arial, sans-serif" font-weight="' + (gras || 700) + '" text-anchor="' + (anc || 'start') + '">' + String(txt).replace(/&/g, '&amp;').replace(/</g, '&lt;') + '</text>';
+  };
+  s += t(W / 2, 28, (D.ligue ? D.ligue + ' · ' : '') + (D.live ? 'En direct ' + D.horloge : 'Terminé'), 14, '#c3cfe6', 'middle', 600);
+  s += t(W / 4, 78, D.nh, 18, _G45_AM_C[0], 'middle', 800) + t(3 * W / 4, 78, D.na, 18, _G45_AM_C[1], 'middle', 800);
+  s += t(W / 2, 84, D.sh + ' – ' + D.sa, 44, '#fff', 'middle', 900) + t(W / 2, 108, 'xG ' + _g45AmFr(D.xh, 2) + ' – ' + _g45AmFr(D.xa, 2), 14, '#fff', 'middle', 600);
+  y = 132;
+  var bh = D.buts.filter(function (b) { return b.c === 'h'; }), ba = D.buts.filter(function (b) { return b.c === 'a'; });
+  for (var i = 0; i < Math.max(bh.length, ba.length); i++) {
+    if (bh[i]) s += t(16, y, '⚽ ' + bh[i].qui + ' ' + bh[i].min + (bh[i].pen ? ' (pen.)' : '') + (bh[i].csc ? ' (csc)' : ''), 13);
+    if (ba[i]) s += t(W - 16, y, ba[i].qui + ' ' + ba[i].min + (ba[i].pen ? ' (pen.)' : '') + (ba[i].csc ? ' (csc)' : '') + ' ⚽', 13, '#fff', 'end');
+    y += 18;
+  }
+  y += 10; s += t(16, y, 'COURSE AUX xG', 13, '#c3cfe6', 'start', 800); y += 6;
+  s += '<g transform="translate(10,' + y + ')">' + _g45AmCourbe(D, 400).replace(/^<svg[^>]*>/, '').replace(/<\/svg>$/, '') + '</g>'; y += 172;
+  s += t(16, y, 'STATS DU MATCH', 13, '#c3cfe6', 'start', 800); y += 8;
+  D.st.forEach(function (r) {
+    var a = r[1][0], b = r[1][1], tt = (a + b) || 1, u = r[2] || '';
+    y += 20; s += t(16, y, Math.round(a) + u, 15, _G45_AM_C[0], 'start', 800) + t(W / 2, y, r[0], 13.5, '#fff', 'middle', 600) + t(W - 16, y, Math.round(b) + u, 15, _G45_AM_C[1], 'end', 800);
+    y += 7; var L = W - 32; s += '<rect x="16" y="' + y + '" width="' + (L * a / tt) + '" height="8" fill="' + _G45_AM_C[0] + '"/><rect x="' + (16 + L * a / tt) + '" y="' + y + '" width="' + (L * b / tt) + '" height="8" fill="' + _G45_AM_C[1] + '"/>';
+    y += 8;
+  });
+  if (D.joueur) { y += 26; s += t(16, y, '⭐ ' + D.joueur.qui + ' : ' + D.joueur.b + ' but' + (D.joueur.b > 1 ? 's' : '') + ', ' + D.joueur.t + ' tir' + (D.joueur.t > 1 ? 's' : '') + ', ' + _g45AmFr(D.joueur.x, 2) + ' xG', 14); }
+  y += 26; s += t(W / 2, y, 'BET45', 14, '#ff5a5a', 'middle', 900); y += 14;
+  return { svg: '<svg xmlns="http://www.w3.org/2000/svg" width="' + W + '" height="' + y + '" viewBox="0 0 ' + W + ' ' + y + '"><rect width="100%" height="100%" rx="18" fill="#141b2f"/>' + s + '</svg>', w: W, h: y };
+}
+window.g45AmPartager = function (eid) {
+  var D = _g45AmDonnees[eid]; if (!D) return;
+  var P = _g45AmSvgPartage(D), img = new Image(), url = URL.createObjectURL(new Blob([P.svg], { type: 'image/svg+xml' }));
+  img.onload = function () {
+    var c = document.createElement('canvas'); c.width = P.w * 2; c.height = P.h * 2;
+    var x = c.getContext('2d'); x.scale(2, 2); x.drawImage(img, 0, 0); URL.revokeObjectURL(url);
+    c.toBlob(function (bl) {
+      if (!bl) return;
+      var f = new File([bl], 'match-' + eid + '.png', { type: 'image/png' });
+      if (navigator.canShare && navigator.canShare({ files: [f] })) { navigator.share({ files: [f], title: D.nh + ' – ' + D.na }).catch(function () {}); return; }
+      var a = document.createElement('a'); a.href = URL.createObjectURL(bl); a.download = f.name; document.body.appendChild(a); a.click(); a.remove();
+    }, 'image/png');
+  };
+  img.src = url;
+};
+window._g45AmCalc = _g45AmCalc; window._g45AmHtml = _g45AmHtml; window._g45AmSvgPartage = _g45AmSvgPartage;
 async function _g45SgCarteTirs(panel, lg, eid, sum) {
   if (!panel) return;
   var comp = (sum && sum.header && sum.header.competitions && sum.header.competitions[0]) || {};
@@ -49281,6 +49485,7 @@ async function _g45SgCarteTirs(panel, lg, eid, sum) {
 
   var st = (comp.status && comp.status.type) || {};
   try { _g45CoulMatch[String(eid)] = g45CoulPaire(dom, ext); } catch (e) {}
+  if (sum) _g45AmSum[String(eid)] = sum;   /* 30/09 : carte du match */
 
   /* BOUTON plutot qu'affichage systematique : la carte demande 1 a 4 requetes
      par match, inutiles tant qu'on ne la regarde pas. Meme presentation que les
@@ -49294,6 +49499,12 @@ async function _g45SgCarteTirs(panel, lg, eid, sum) {
     + 'style="width:100%;margin-bottom:10px;padding:11px;border-radius:10px;border:1px solid rgba(255,107,107,.35);'
     + 'background:rgba(255,107,107,.08);color:#ff8a8a;font-size:13px;font-weight:800;cursor:pointer;">'
     + '\ud83c\udfaf Carte des tirs & xG</button><div class="g45-tirs-zone"></div>';
+  /* 30/09 : carte du match (d'après-match, et en direct). */
+  var am = document.createElement('div');
+  am.innerHTML = '<button onclick="g45AmOuvrir(this,\'' + lg + '\',\'' + eid + '\')" style="width:100%;margin-bottom:10px;padding:11px;border-radius:10px;'
+    + 'border:1px solid rgba(109,157,255,.45);background:rgba(47,107,255,.14);color:#fff;font-size:14px;font-weight:800;cursor:pointer;">'
+    + (st.state === 'in' ? '\ud83d\udd34 Carte du match en direct' : '\ud83d\udcca Carte du match') + '</button><div class="g45-am-zone"></div>';
+  bloc.insertBefore(am, bloc.firstChild);
   panel.insertBefore(bloc, panel.firstChild);
 }
 window._g45SgCarteTirs = _g45SgCarteTirs;

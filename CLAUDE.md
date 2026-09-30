@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20260930i, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20260930j, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -429,6 +429,14 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   strikeouts/walks/wins/strikeoutsPerNineInnings OK ; NFL défense defensive.totalTackles/soloTackles/sacks/
   tacklesForLoss/passesDefended, defensiveInterceptions.interceptions, general.fumblesForced OK ; coureurs /
   receveurs NFL : 404 sur les joueurs testés, noms rushing.* / receiving.* toujours NON vérifiés.
+- CARTE DU MATCH foot (30j, maquette validée, live compris) : bouton « 📊 Carte du match » (« 🔴 … en
+  direct » si state 'in') ajouté par `_g45SgCarteTirs` au-dessus de la carte des tirs ; `g45AmOuvrir` →
+  `_g45AmCharger` (résumé `_g45AmSum[eid]`, relu site v2 soccer/<lg>/summary?event= ; tirs
+  `g45TirsMatch`) → `_g45AmCalc` (xG cumulé, buts pen./csc, grosses occasions = tirs xG ≥ 0,3, stats
+  boxscore possessionPct/totalShots/shotsOnTarget/wonCorners/foulsCommitted/yellowCards — NOMS NON SONDÉS,
+  repli sur les tirs, ligne absente = retirée ; joueur le plus dangereux = buts + xG) → `_g45AmHtml`
+  (course aux xG `_g45AmCourbe`). Direct : relu toutes les 2 min (`_g45AmTimer`, s'arrête carte fermée).
+  Partage `g45AmPartager` : `_g45AmSvgPartage` (SVG sans logos) → canvas → PNG → navigator.share / téléchargement.
 - Score d'un pari : `_g45ScoreTexte`, cache `g45_score4_<id>` (négatif gardé
   2 h) — effacé par `saveBetEdit` pour relancer la recherche.
 
