@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20260930f, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20260930g, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -406,6 +406,15 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   cache g45prad1_ 12 h, < 90 min → saison précédente ; PAR 90 MIN ; gabarits `_G45_RAD_GAB`
   att/mil/def (bords FIXES, pas des centiles), poste deviné `_g45RadDevine` ; « ➕ Comparer »
   `g45RadComparer` superpose le radar suivant.
+- VS JOUEURS (30g, maquette validée « oui tout ») : bascule `g45VsBascule('eq'|'jo')` posée par
+  `initComparateur` en tête de #t-comp (#g45-vs-bascule, boîte #g45-vsj) ; sports `_G45_VJ_SPORTS`
+  (⚽ 8 ligues, NBA/WNBA, NHL, NFL, MLB) → équipes `_g45CompetEquipes` → effectif site v2
+  …/teams/<id>/roster (`_g45VjRoster`, liste simple OU groupée items[]) → stats : foot
+  `_g45RadStats`, US `_g45VjStatsUS` (core types/2, `_g45SgAnAuto` puis an−1 si < 3 matchs, cache
+  g45vsj1_, chaque stat en « nom » ET « catégorie.nom ») ; gabarits `_G45_VJ_GAB` (nba, nhlJ, nhlG,
+  mlbF, mlbL, nflQB, nflRB, nflWR, nflD ; choix `_G45_VJ_CHOIX`, poste `_g45VjGabPoste`) ; axe sans
+  valeur retiré, < 4 axes → message. NON SONDÉS : noms des stats lanceurs MLB (pitching.ERA, WHIP,
+  innings…) et NFL hors quarterback (rushing.*, receiving.*, defensive.*).
 - Score d'un pari : `_g45ScoreTexte`, cache `g45_score4_<id>` (négatif gardé
   2 h) — effacé par `saveBetEdit` pour relancer la recherche.
 
