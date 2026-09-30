@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20260930n, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20260930o, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -167,6 +167,8 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   plus sur les championnats : les ligues de foot d'Antoine occupaient les 8 places et la NHL
   (Hurricanes id 7, Avalanche id 17, SONDÉ : scoreboard OK, type 2) n'était jamais interrogée.
   29w — tri : un match EN DIRECT passe en tête (avant, `rang['in'] || 3` = 3 → en dernier).
+  30o — la KHL n'est plus demandée à ESPN (400 à chaque rafraîchissement, vu en console : sa carte vient du
+  site KHL) ; tout championnat en 400/404 est mis de côté pour la session (`_g45DirKo`).
 - `espnLeagueOf(nom)` (29w) : une clé courte (≤ 4 lettres : OL, OM, PSG, Roma…) doit être un MOT
   ENTIER du nom. Avant, « OL » dans « CarOLina » / « COLorado » envoyait les équipes NHL du mur
   en Ligue 1 → absentes du bandeau `g45BandeauMaj` (`_g45BandChemin`). Colorado Rapids aussi.

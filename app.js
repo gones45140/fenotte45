@@ -53316,6 +53316,7 @@ async function _g45F1DirectCartes(limite){
   return out;
 }
 
+var _g45DirKo = {};   /* championnats refusés par ESPN (400/404), pour la session */
 async function g45DirectMesEquipes(silencieux) {
   var box = document.getElementById('g45-direct-body');
   if (!box) return;
@@ -53381,7 +53382,12 @@ async function g45DirectMesEquipes(silencieux) {
       grpFoot.lgDe[id] = grp[k].lg;
     });
   });
-  var aInterroger = cles.filter(function (k) { return grp[k].sp !== 'soccer'; }).map(function (k) { return grp[k]; });
+  /* 30/09/2026 (console d'Antoine : « la console recherche la KHL sans arrêt ») :
+     HC Sotchi est suivi, donc hockey/khl était demandé à ESPN à CHAQUE
+     rafraîchissement → 400 à chaque fois (ESPN n'a pas la KHL ; sa carte vient
+     du site KHL, ailleurs). La KHL n'est plus demandée ici, et tout championnat
+     qui répond 400 est mis de côté jusqu'au rechargement de la page. */
+  var aInterroger = cles.filter(function (k) { return grp[k].sp !== 'soccer' && grp[k].lg !== 'khl' && !_g45DirKo[grp[k].sp + '/' + grp[k].lg]; }).map(function (k) { return grp[k]; });
   if (aDuFoot) aInterroger.unshift(grpFoot);
   aInterroger = aInterroger.slice(0, 10);          /* plafond : 10 requêtes (foot = 1) */
 
@@ -53396,7 +53402,10 @@ async function g45DirectMesEquipes(silencieux) {
          manquait. Non teste en conditions reelles — a confirmer que Real
          Madrid et Arsenal reapparaissent vraiment avec cette valeur. */
       r = await fetch('https://site.api.espn.com/apis/site/v2/sports/' + g.sp + '/' + g.lg + '/scoreboard?dates=' + jour + '&limit=400');
-      if (!r.ok) { console.warn('Suivies scoreboard en erreur pour "' + g.lg + '" (' + g.sp + ') : statut ' + r.status); continue; }
+      if (!r.ok) {
+        if (r.status === 400 || r.status === 404) _g45DirKo[g.sp + '/' + g.lg] = 1;   /* inconnu d'ESPN : plus redemandé */
+        console.warn('Suivies scoreboard en erreur pour "' + g.lg + '" (' + g.sp + ') : statut ' + r.status); continue;
+      }
       js = await r.json();
     } catch (e) { console.warn('Suivies scoreboard en erreur pour "' + g.lg + '" (' + g.sp + ') :', e); continue; }
 
