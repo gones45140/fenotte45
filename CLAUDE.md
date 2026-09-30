@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20260930y, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20260930z, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -523,6 +523,17 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   photo.sm}, team{team_name, logo_white.sm}}) ; chemins ajoutés à la liste blanche du worker (redéployé par Antoine) ;
   cache g45proast1_<an>_<mode> 1 h ; boutons `g45PsMode` / `g45PsCat`. % : valeur ≤ 1 × 100 (format NON vérifié) ;
   valeurs = total ou moyenne ? NON vérifié (après 1 journée c'est pareil) → aucun libellé « par match ».
+  30z — SAISONS DEPUIS 1987 + PLAYOFFS / LEADERS CUP (maquette validée) : sélecteur Saison ▾ (`g45PaAn`, `_g45PaAn`,
+  0 = auto) + boutons Saison régulière / Playoffs / Leaders Cup (`g45PaComp`, `_g45PaComp` 'rs'|'po'|'lc', grisé si
+  absent) ; `_g45ElAn()` = saison affichée, `_g45ElCle()` inclut la compétition. SONDÉ PAR ANTOINE : GET
+  competition/getStandingCompetitions?division_external_id=1&year=<an>&is_final_show=true → {external_id, name} (2025 :
+  302 / 308 Leaders Cup / 311 Playoffs ; 2020 : 12 LC / 18 Jeep ÉLITE / 19 Phase Finale ; 1987 : 260 N1A / 261 Playoffs
+  N1A ; J1 = 8 matchs partout). ⚠ 1re de la liste ≠ championnat → tri par NOM (`_g45PaComps`, cache g45proacid1_<an>).
+  Cache des journées PAR COMPÉTITION : g45proa1_<cid>, mémoire 'proaR'+cid. Playoffs / LC : tours via
+  competition/getCompetitionRounds (NON vérifié pour ces compétitions), sinon 1, 2, 3… ; titre = round_description ;
+  pas d'onglet Classement hors saison régulière. Saison finie : dernière journée dépliée. Worker : liste blanche LNB
+  élargie à toutes les lectures /(match|competition|altrstats)/get… (redéploiement demandé à Antoine le 30/09).
+  `_G45_PROA_CID` ne sert plus que de secours pour 2026.
 - Score d'un pari : `_g45ScoreTexte`, cache `g45_score4_<id>` (négatif gardé
   2 h) — effacé par `saveBetEdit` pour relancer la recherche.
 

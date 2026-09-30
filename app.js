@@ -42130,7 +42130,7 @@ window.g45F1Session=g45F1Session;
    et les données utilisateur n'étaient JAMAIS écrites — l'ajout apparaissait à l'écran puis
    disparaissait au rechargement. Ce n'était ni la synchro GitHub, ni Dropbox, ni le cache
    du navigateur. Tous ces caches sont reconstructibles : ils cèdent la place aux données. */
-var _G45_CACHE_PREFIXES=['g45proast1_',/* 30/09 : stats Pro A */'g45proa1_',/* 30/09 : Pro A par journée */'g45el1_',/* 30/09 : Euroleague (compact) */'g45buts1_',/* 30/09 : buts en action (match fini) */'g45prad1_','g45vsj1_','g45vse1_',/* 30/09 : radars joueurs */'g45ia1_',/* 29/09 : avis IA gardés 6 h */'g45_mmeta2_','g45_mmeta1_','g45_tennis4_','g45_tennis3_',/* 16/09 : meta de match (domicile/lieu) et score tennis, reconstructibles */'g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dcf_','g45dc_',
+var _G45_CACHE_PREFIXES=['g45proacid1_',/* 30/09 : numéros LNB par saison */'g45proast1_',/* 30/09 : stats Pro A */'g45proa1_',/* 30/09 : Pro A par journée */'g45el1_',/* 30/09 : Euroleague (compact) */'g45buts1_',/* 30/09 : buts en action (match fini) */'g45prad1_','g45vsj1_','g45vse1_',/* 30/09 : radars joueurs */'g45ia1_',/* 29/09 : avis IA gardés 6 h */'g45_mmeta2_','g45_mmeta1_','g45_tennis4_','g45_tennis3_',/* 16/09 : meta de match (domicile/lieu) et score tennis, reconstructibles */'g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dcf_','g45dc_',
   'g45trv3_','g45trv2_','g45trOdds_','g45tr_','g45but_st_','g45butL_','g45butA_','g45but_mur_',
   '_g45clv','g45clv_snaps','g45_saisons_cache_v3_','g45_saisons_cache_v2_',
   /* Ajoutes le 20/08 : ces caches, tous reconstructibles, n'etaient PAS declares
@@ -59881,17 +59881,50 @@ function _g45ElCompact(g) {
    Serveur NON public (celui de leur site) : peut changer sans prévenir — Antoine prévenu. */
 var _g45ElLigue = 'el';
 var _G45_PROA_CID = { 2026: 317 };
-function _g45ElCle(an) { return _g45ElLigue + (an || _g45ElSaison()); }
+/* 30z — SAISONS DEPUIS 1987 + PLAYOFFS / LEADERS CUP (maquette validée : « oui »). SONDÉ PAR ANTOINE : GET
+   competition/getStandingCompetitions?division_external_id=1&year=<an>&is_final_show=true → data[] {external_id,
+   name} : 2025 → 302 Betclic ÉLITE, 308 Leaders Cup, 311 Betclic ÉLITE - Playoffs ; 2020 → 12 Leaders Cup, 18 Jeep
+   ÉLITE, 19 Jeep ÉLITE - Phase Finale ; 1987 → 260 Nationale 1A, 261 Playoffs N1A (J1 = 8 matchs jusqu'en 1987).
+   ⚠ La 1re de la liste n'est PAS toujours le championnat (Leaders Cup en 2020 / 2015) : tri par NOM
+   (`_g45PaComps` : lc = /leaders cup/, po = /playoff|phase finale/, rs = le reste). Numéros de journée des
+   playoffs / Leaders Cup NON vérifiés : competition/getCompetitionRounds d'abord, lecture 1, 2, 3… sinon. */
+var _g45PaAn = 0, _g45PaComp = 'rs', _g45PaCompsMem = {};
+function _g45ElAn() { return (_g45ElLigue === 'proa' && _g45PaAn) ? _g45PaAn : _g45ElSaison(); }
+function _g45ElCle(an) { an = an || _g45ElAn(); return _g45ElLigue + an + (_g45ElLigue === 'proa' ? _g45PaComp : ''); }
+async function _g45PaComps(an) {
+  if (_g45PaCompsMem[an]) return _g45PaCompsMem[an];
+  var cle = 'g45proacid1_' + an, now = Date.now(), m = null;
+  try { m = JSON.parse(localStorage.getItem(cle) || 'null'); } catch (e) {}
+  if (m && m.x > now) return (_g45PaCompsMem[an] = m.c);
+  var c = {};
+  try {
+    var r = await fetch(FD_PROXY + '?host=lnb&path=' + encodeURIComponent('/competition/getStandingCompetitions?division_external_id=1&year=' + an + '&is_final_show=true'));
+    var j = r.ok ? await r.json() : {};
+    (j.data || []).forEach(function (x) {
+      var nm = x.name || x.competition_name || '', k = /leaders\s*cup/i.test(nm) ? 'lc' : /playoff|phase finale/i.test(nm) ? 'po' : 'rs';
+      if (!c[k]) c[k] = { id: x.external_id, n: nm };
+    });
+  } catch (e) {}
+  if (!c.rs && _G45_PROA_CID[an]) c.rs = { id: _G45_PROA_CID[an], n: 'Betclic Élite' };
+  if (!c.rs && m) c = m.c;
+  if (c.rs) { try { localStorage.setItem(cle, JSON.stringify({ c: c, x: now + (an >= _g45ElSaison() ? 1 : 60) * 86400000 })); } catch (e) {} }
+  return (_g45PaCompsMem[an] = c);
+}
+function g45PaAn(v) { _g45PaAn = +v || 0; _g45PaComp = 'rs'; _g45ElPlie = {}; _g45ElOuvert = {}; _g45ElRedessiner(); }
+function g45PaComp(k) { _g45PaComp = k; _g45ElPlie = {}; _g45ElOuvert = {}; if (k !== 'rs' && _g45ElVue === 'classement') _g45ElVue = 'journees'; _g45ElRedessiner(); }
+window.g45PaAn = g45PaAn; window.g45PaComp = g45PaComp; window._g45PaComps = _g45PaComps;
 function _g45ProaCompact(x) {
   var tm = x.teams || [];
   var eq = function (t) { t = t || {}; var lg = t.logo_white || t.logo_black || {}; return { c: t.team_code || '', n: t.team_name || '?', l: lg.md || lg.sm || lg.lg || '', s: t.score_string != null && t.score_string !== '' ? +t.score_string : null, q: [], ot: [] }; };
-  return { id: x.external_id || x.id, r: x.round_number, ph: 'RS', pha: x.round_description || '', t: Date.parse(x.match_time_utc) || 0,
+  return { id: x.external_id || x.id, r: x.round_number, ph: _g45PaComp === 'rs' ? 'RS' : 'PO', pha: x.round_description || '', t: Date.parse(x.match_time_utc) || 0,
     p: /COMPLETE|FINAL|FINISH/i.test(x.match_status || ''), st: x.match_status || '', h: eq(tm[0]), a: eq(tm[1]), v: x.venue_name || '', ar: [] };
 }
 async function _g45ProaMatchs(an) {
-  var cid = _G45_PROA_CID[an]; if (!cid) throw new Error('saison ' + an + ' pas encore connue');
-  var cle = 'g45proa1_' + an, now = Date.now();
-  var M = _g45ElMem['proaR' + an];
+  var comps = await _g45PaComps(an), co = comps[_g45PaComp];
+  if (!co) throw new Error(_g45PaComp === 'rs' ? 'saison ' + an + ' introuvable à la LNB' : 'pas de ' + (_g45PaComp === 'po' ? 'playoffs' : 'Leaders Cup') + ' cette saison');
+  var cid = co.id;
+  var cle = 'g45proa1_' + cid, now = Date.now();
+  var M = _g45ElMem['proaR' + cid];
   if (!M) { try { M = JSON.parse(localStorage.getItem(cle) || 'null'); } catch (e) { M = null; } }
   M = M || { r: {} };
   var lire = async function (n) {
@@ -59907,13 +59940,27 @@ async function _g45ProaMatchs(an) {
     } catch (e) { return c ? c.g : null; }
   };
   var tout = [];
-  for (var d = 1, fin = false; d <= 40 && !fin; d += 5) {
-    var lot = await Promise.all([d, d + 1, d + 2, d + 3, d + 4].map(lire));
-    for (var i = 0; i < lot.length; i++) { if (!lot[i] || !lot[i].length) { fin = true; break; } tout = tout.concat(lot[i]); }
+  /* Playoffs / Leaders Cup : numéros de tours demandés à la LNB (NON vérifiés) ; saison régulière : 1, 2, 3… */
+  var liste = null;
+  if (_g45PaComp !== 'rs') {
+    try {
+      var rr = await fetch(FD_PROXY + '?host=lnb&path=' + encodeURIComponent('/competition/getCompetitionRounds?competition_external_id=' + cid));
+      var jr = rr.ok ? await rr.json() : {};
+      liste = (jr.data || []).map(function (x) { return +x.round_number; }).filter(function (x) { return x > 0; });
+    } catch (e) {}
   }
-  M.x = now; _g45ElMem['proaR' + an] = M;
+  if (liste && liste.length) {
+    var lots = await Promise.all(liste.map(lire));
+    lots.forEach(function (x) { if (x) tout = tout.concat(x); });
+  } else {
+    for (var d = 1, fin = false; d <= 40 && !fin; d += 5) {
+      var lot = await Promise.all([d, d + 1, d + 2, d + 3, d + 4].map(lire));
+      for (var i = 0; i < lot.length; i++) { if (!lot[i] || !lot[i].length) { fin = true; break; } tout = tout.concat(lot[i]); }
+    }
+  }
+  M.x = now; _g45ElMem['proaR' + cid] = M;
   try { localStorage.setItem(cle, JSON.stringify(M)); } catch (e) {}
-  if (!tout.length) throw new Error('LNB injoignable');
+  if (!tout.length) throw new Error(_g45PaComp === 'rs' ? 'LNB injoignable' : 'aucun match trouvé pour cette compétition');
   var g2 = tout.sort(function (x, y) { return x.t - y.t; });
   _g45ElMem[_g45ElCle(an)] = { g: g2 };
   return g2;
@@ -59941,16 +59988,32 @@ function _g45ElLogo(e, px) {
 }
 var _g45ElDerLigue = null;
 async function _g45ElRendre(box, retourHtml) {
-  var an = _g45ElSaison();
+  var an = _g45ElAn();
   if (_g45ElDerLigue !== _g45ElLigue) { _g45ElDerLigue = _g45ElLigue; _g45ElPlie = {}; _g45ElOuvert = {}; }   /* Euroleague ↔ Pro A */
   if (_g45ElVue === 'stats' && _g45ElLigue !== 'proa') _g45ElVue = 'journees';
-  var onglets = [['journees', '📅 Journées'], ['classement', '🏆 Classement']].concat(_g45ElLigue === 'proa' ? [['stats', '📊 Stats']] : []).map(function (v) {
+  var tete = '', titreLigue = 'Euroleague';
+  if (_g45ElLigue === 'proa') {
+    var comps = {}; try { comps = await _g45PaComps(an); } catch (e) {}
+    if (!comps[_g45PaComp]) _g45PaComp = 'rs';
+    if (_g45PaComp !== 'rs' && _g45ElVue === 'classement') _g45ElVue = 'journees';
+    titreLigue = (comps.rs && comps.rs.n) || 'Betclic Élite (Pro A)';
+    var opts = ''; for (var y = _g45ElSaison(); y >= 1987; y--) opts += '<option value="' + y + '"' + (y === an ? ' selected' : '') + '>' + y + '-' + String(y + 1).slice(2) + '</option>';
+    var bc = function (k, txt) {
+      var ok = !!comps[k], on = _g45PaComp === k;
+      return '<button ' + (ok ? 'onclick="g45PaComp(\'' + k + '\')"' : 'disabled') + ' style="flex:1;padding:9px 6px;font-size:13px;font-weight:800;border-radius:9px;cursor:' + (ok ? 'pointer' : 'default') + ';'
+        + (on ? 'background:#2563eb;border:1px solid #3b82f6;color:#fff;' : ok ? 'background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#c9d3ee;' : 'background:#111827;border:1px solid rgba(255,255,255,.06);color:#5b6478;') + '">' + txt + '</button>';
+    };
+    tete = '<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;"><span style="color:#fff;font-size:14px;font-weight:800;">Saison</span>'
+      + '<select onchange="g45PaAn(this.value)" style="flex:1;padding:9px;font-size:14px;font-weight:800;border-radius:9px;background:#1a2235;color:#fff;border:1px solid rgba(255,255,255,.2);">' + opts + '</select></div>'
+      + '<div style="display:flex;gap:6px;margin-bottom:10px;">' + bc('rs', 'Saison régulière') + bc('po', 'Playoffs') + bc('lc', 'Leaders Cup') + '</div>';
+  }
+  var onglets = [['journees', '📅 Journées']].concat(_g45ElLigue === 'proa' && _g45PaComp !== 'rs' ? [] : [['classement', '🏆 Classement']]).concat(_g45ElLigue === 'proa' ? [['stats', '📊 Stats']] : []).map(function (v) {
     var on = _g45ElVue === v[0];
     return '<button onclick="g45ElVue(\'' + v[0] + '\')" style="flex:1;padding:10px;font-size:14px;font-weight:800;cursor:pointer;border-radius:9px;'
       + (on ? 'background:#2563eb;border:1px solid #3b82f6;color:#fff;' : 'background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#c9d3ee;') + '">' + v[1] + '</button>';
   }).join('');
-  box.innerHTML = (retourHtml || '') + '<div class="sec" style="margin-top:0;">🏀 ' + (_g45ElLigue === 'proa' ? 'Betclic Élite (Pro A)' : 'Euroleague') + ' ' + an + '-' + String(an + 1).slice(2) + '</div>'
-    + '<div style="display:flex;gap:8px;margin-bottom:12px;">' + onglets + '</div><div id="g45-el-body"><div style="color:#fff;font-size:14px;">⏳ Chargement…</div></div>';
+  box.innerHTML = (retourHtml || '') + '<div class="sec" style="margin-top:0;">🏀 ' + _g45ElEsc(titreLigue) + ' ' + an + '-' + String(an + 1).slice(2) + '</div>'
+    + tete + '<div style="display:flex;gap:8px;margin-bottom:12px;">' + onglets + '</div><div id="g45-el-body"><div style="color:#fff;font-size:14px;">⏳ Chargement…</div></div>';
   var body = document.getElementById('g45-el-body');
   try {
     if (_g45ElVue === 'stats') { body.innerHTML = await _g45PsHtml(an); return; }
@@ -59970,6 +60033,7 @@ function _g45ElJourneesHtml(g) {
   g.forEach(function (m) { var k = (m.ph || '') + '|' + m.r; if (!par[k]) { par[k] = []; ordre.push(k); } par[k].push(m); });
   var now = Date.now(), cours = null;
   ordre.forEach(function (k) { if (!cours && par[k].some(function (m) { return !m.p; })) cours = k; });
+  if (!cours && ordre.length) cours = ordre[ordre.length - 1];   /* saison finie (anciennes saisons) : dernière journée ouverte */
   var fmt = function (t) { return new Date(t).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }); };
   var h = '';
   ordre.forEach(function (k) {
@@ -60047,6 +60111,7 @@ function g45ElOuvrir(id) { _g45ElOuvert[id] = !_g45ElOuvert[id]; _g45ElRedessine
 function g45ElPlier(k) {
   var g = (_g45ElMem[_g45ElCle()] || {}).g || [];
   var cours = null; g.some(function (m) { if (!m.p) { cours = (m.ph || '') + '|' + m.r; return true; } return false; });
+  if (!cours && g.length) cours = (g[g.length - 1].ph || '') + '|' + g[g.length - 1].r;
   var actuel = _g45ElPlie[k] != null ? _g45ElPlie[k] : (k !== cours);
   _g45ElPlie[k] = !actuel; _g45ElRedessinerSurPlace();
 }
@@ -60068,10 +60133,10 @@ window.g45ElVue = g45ElVue; window.g45ElOuvrir = g45ElOuvrir; window.g45ElPlier 
    Format des pourcentages (0,55 ou 55 ?) NON vérifié : une valeur ≤ 1 est multipliée par 100. */
 var _g45PsMode = 'jo', _g45PsCat = 'sPoints', _g45PsMem = {};
 async function _g45PsLire(an, mode) {
-  var cle = 'g45proast1_' + an + '_' + mode, now = Date.now(), m = _g45PsMem[cle];
+  var cle = 'g45proast1_' + an + _g45PaComp + '_' + mode, now = Date.now(), m = _g45PsMem[cle];
   if (!m) { try { m = JSON.parse(localStorage.getItem(cle) || 'null'); } catch (e) { m = null; } }
   if (m && m.x > now) { _g45PsMem[cle] = m; return m.d; }
-  var cid = _G45_PROA_CID[an]; if (!cid) throw new Error('saison ' + an + ' pas encore connue');
+  var co = (await _g45PaComps(an))[_g45PaComp]; if (!co) throw new Error('compétition introuvable'); var cid = co.id;
   var corps = mode === 'jo' ? { competitionExternalId: cid, year: an } : { competitionExternalId: cid };
   var r = await fetch(FD_PROXY + '?host=lnb&path=' + encodeURIComponent('/altrstats/' + (mode === 'jo' ? 'getPersonsLeaders' : 'getTeamsLeaders')) + '&post=' + encodeURIComponent(JSON.stringify(corps)));
   if (!r.ok) { if (m) return m.d; throw new Error('LNB ' + r.status); }
@@ -60115,7 +60180,7 @@ async function _g45PsHtml(an) {
 }
 async function _g45PsRedessiner() {
   var body = document.getElementById('g45-el-body'); if (!body) return;
-  try { body.innerHTML = await _g45PsHtml(_g45ElSaison()); }
+  try { body.innerHTML = await _g45PsHtml(_g45ElAn()); }
   catch (e) { body.innerHTML = '<div style="color:#ff6b6b;font-size:14px;">❌ Stats indisponibles pour le moment (' + _g45ElEsc(e && e.message || 'erreur') + ')</div>'; }
 }
 function g45PsMode(m) { _g45PsMode = m; _g45PsRedessiner(); }
