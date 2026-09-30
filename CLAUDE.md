@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20260930w, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20260930x, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -506,8 +506,17 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   Classement `_g45ElClassement` (saison régulière RECALCULÉE : V, D, points ±). Branché comme la KHL : tuile dans
   G45_SPORTS basketball, interception de loadCompetTab (Compétitions) ET de g45LoadCalendar (Résultats → Basket).
   « En cours » = non joué et commencé depuis < 3 h (score de la liste, cache 10 min : pas un vrai direct).
-  PRO A (Betclic Élite) : TheSportsDB id 4423 mais clé gratuite = 1 prochain / 1 dernier / 5 matchs → inutilisable ;
-  site lnb.fr (classement /fr/standings/betclicelite?…&yid=2026&cid=317) : source de données À SONDER.
+  PRO A (30x, « pareil que l'Euroleague ») : MÊME écran (`_g45ElLigue` = 'el' | 'proa', mémoire `_g45ElMem[_g45ElCle()]`,
+  tuile slug 'proa' dans la carte Basket, mêmes interceptions). TheSportsDB (id 4423) écarté : clé gratuite = 1 prochain /
+  1 dernier / 5 matchs. SONDÉ PAR ANTOINE : serveur api-prod.lnb.fr (celui du site lnb.fr, NON public : peut changer,
+  Antoine prévenu), SANS jeton, CORS refusé → worker host=lnb (liste blanche de chemins ; POST quand `post=<json>`,
+  corps dans la clé de cache). POST match/getMatchesByCompetitionAndRound {competition_external_id, round_number} →
+  data.matches[] (teams[0] = club qui reçoit) — `_g45ProaMatchs` lit par lots de 5 jusqu'à une journée vide, cache
+  `g45proa1_<an>` PAR JOURNÉE (jouée entière 7 j, sinon 10 min / 2 h), mémoire des journées `_g45ElMem['proaR'+an]`
+  (⚠ pas 'proa'+an : collision avec la clé de liste, bug vu en test). Pas de quarts-temps ni d'arbitres. GET
+  match/getCalenderByDivision?division_external_id=1&year=2026 = 10 matchs seulement (semaine en cours + suivante).
+  Classement officiel altrstats/getStandingByCompetition = POST qui exige competition_filter_name + round_numbers
+  (non utilisé : recalculé). competition_external_id par saison `_G45_PROA_CID` (2026 = 317) : À COMPLÉTER chaque été.
 - Score d'un pari : `_g45ScoreTexte`, cache `g45_score4_<id>` (négatif gardé
   2 h) — effacé par `saveBetEdit` pour relancer la recherche.
 

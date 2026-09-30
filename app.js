@@ -42130,7 +42130,7 @@ window.g45F1Session=g45F1Session;
    et les données utilisateur n'étaient JAMAIS écrites — l'ajout apparaissait à l'écran puis
    disparaissait au rechargement. Ce n'était ni la synchro GitHub, ni Dropbox, ni le cache
    du navigateur. Tous ces caches sont reconstructibles : ils cèdent la place aux données. */
-var _G45_CACHE_PREFIXES=['g45el1_',/* 30/09 : Euroleague (compact) */'g45buts1_',/* 30/09 : buts en action (match fini) */'g45prad1_','g45vsj1_','g45vse1_',/* 30/09 : radars joueurs */'g45ia1_',/* 29/09 : avis IA gardés 6 h */'g45_mmeta2_','g45_mmeta1_','g45_tennis4_','g45_tennis3_',/* 16/09 : meta de match (domicile/lieu) et score tennis, reconstructibles */'g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dcf_','g45dc_',
+var _G45_CACHE_PREFIXES=['g45proa1_',/* 30/09 : Pro A par journée */'g45el1_',/* 30/09 : Euroleague (compact) */'g45buts1_',/* 30/09 : buts en action (match fini) */'g45prad1_','g45vsj1_','g45vse1_',/* 30/09 : radars joueurs */'g45ia1_',/* 29/09 : avis IA gardés 6 h */'g45_mmeta2_','g45_mmeta1_','g45_tennis4_','g45_tennis3_',/* 16/09 : meta de match (domicile/lieu) et score tennis, reconstructibles */'g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dcf_','g45dc_',
   'g45trv3_','g45trv2_','g45trOdds_','g45tr_','g45but_st_','g45butL_','g45butA_','g45but_mur_',
   '_g45clv','g45clv_snaps','g45_saisons_cache_v3_','g45_saisons_cache_v2_',
   /* Ajoutes le 20/08 : ces caches, tous reconstructibles, n'etaient PAS declares
@@ -59869,18 +59869,68 @@ function _g45ElCompact(g) {
     t: Date.parse(g.utcDate || g.date) || 0, p: !!g.played, h: eq(g.local), a: eq(g.road),
     v: (typeof v === 'string' ? v : (v.name || '')), ar: [g.referee1, g.referee2, g.referee3].map(_g45ElNomArb).filter(Boolean) };
 }
+/* 🏀 PRO A / BETCLIC ÉLITE (30x, 30/09/2026) — même écran que l'Euroleague (maquette validée pour l'Euroleague).
+   SONDÉ PAR ANTOINE : serveur api-prod.lnb.fr du site lnb.fr, SANS jeton mais refusé aux autres sites (CORS) →
+   worker host=lnb (redéployé le 30/09 ; POST via `post=`). POST match/getMatchesByCompetitionAndRound
+   {competition_external_id, round_number} → data.matches[] {external_id, match_time_utc, match_status COMPLETE|
+   SCHEDULED|…, round_number, venue_name, teams[2] {team_code, team_name, score_string, logo_white.md}} ; teams[0] =
+   club qui REÇOIT (vérifié : Dijon à Dijon, Nancy à Nancy). ≈ 37 Ko par journée : lues par lots de 5 jusqu'à une
+   journée vide ; journée entièrement jouée gardée 7 j, les autres 10 min / 2 h (cache g45proa1_<an>).
+   PAS de quarts-temps ni d'arbitres dans cette réponse. competition_external_id par saison : _G45_PROA_CID
+   (2026 = 317, vu sur lnb.fr ; à compléter chaque été : lnb.fr/fr/standings/betclicelite?…&cid=…).
+   Serveur NON public (celui de leur site) : peut changer sans prévenir — Antoine prévenu. */
+var _g45ElLigue = 'el';
+var _G45_PROA_CID = { 2026: 317 };
+function _g45ElCle(an) { return _g45ElLigue + (an || _g45ElSaison()); }
+function _g45ProaCompact(x) {
+  var tm = x.teams || [];
+  var eq = function (t) { t = t || {}; var lg = t.logo_white || t.logo_black || {}; return { c: t.team_code || '', n: t.team_name || '?', l: lg.md || lg.sm || lg.lg || '', s: t.score_string != null && t.score_string !== '' ? +t.score_string : null, q: [], ot: [] }; };
+  return { id: x.external_id || x.id, r: x.round_number, ph: 'RS', pha: x.round_description || '', t: Date.parse(x.match_time_utc) || 0,
+    p: /COMPLETE|FINAL|FINISH/i.test(x.match_status || ''), st: x.match_status || '', h: eq(tm[0]), a: eq(tm[1]), v: x.venue_name || '', ar: [] };
+}
+async function _g45ProaMatchs(an) {
+  var cid = _G45_PROA_CID[an]; if (!cid) throw new Error('saison ' + an + ' pas encore connue');
+  var cle = 'g45proa1_' + an, now = Date.now();
+  var M = _g45ElMem['proaR' + an];
+  if (!M) { try { M = JSON.parse(localStorage.getItem(cle) || 'null'); } catch (e) { M = null; } }
+  M = M || { r: {} };
+  var lire = async function (n) {
+    var c = M.r[n]; if (c && c.x > now) return c.g;
+    var u = FD_PROXY + '?host=lnb&path=' + encodeURIComponent('/match/getMatchesByCompetitionAndRound') + '&post=' + encodeURIComponent(JSON.stringify({ competition_external_id: cid, round_number: n }));
+    try {
+      var r = await fetch(u); if (!r.ok) return c ? c.g : null;
+      var j = await r.json(), g = (((j.data || {}).matches) || []).map(_g45ProaCompact);
+      var fini = g.length && g.every(function (m) { return m.p; });
+      var jour = g.some(function (m) { return !m.p && Math.abs(m.t - now) < 12 * 3600000; });
+      M.r[n] = { g: g, x: now + (fini ? 7 * 1440 : jour ? 10 : 120) * 60000 };
+      return g;
+    } catch (e) { return c ? c.g : null; }
+  };
+  var tout = [];
+  for (var d = 1, fin = false; d <= 40 && !fin; d += 5) {
+    var lot = await Promise.all([d, d + 1, d + 2, d + 3, d + 4].map(lire));
+    for (var i = 0; i < lot.length; i++) { if (!lot[i] || !lot[i].length) { fin = true; break; } tout = tout.concat(lot[i]); }
+  }
+  M.x = now; _g45ElMem['proaR' + an] = M;
+  try { localStorage.setItem(cle, JSON.stringify(M)); } catch (e) {}
+  if (!tout.length) throw new Error('LNB injoignable');
+  var g2 = tout.sort(function (x, y) { return x.t - y.t; });
+  _g45ElMem[_g45ElCle(an)] = { g: g2 };
+  return g2;
+}
 async function _g45ElMatchs(an) {
+  if (_g45ElLigue === 'proa') return _g45ProaMatchs(an);
   var cle = 'g45el1_' + an, now = Date.now();
   var m = _g45ElMem[an];
   if (!m) { try { m = JSON.parse(localStorage.getItem(cle) || 'null'); } catch (e) { m = null; } }
-  if (m && m.x > now) { _g45ElMem[an] = m; return m.g; }
+  if (m && m.x > now) { _g45ElMem[an] = m; _g45ElMem[_g45ElCle(an)] = m; return m.g; }
   var r = await fetch(FD_PROXY + '?host=euroleague&path=' + encodeURIComponent('/v2/competitions/E/seasons/E' + an + '/games'));
   if (!r.ok) { if (m) return m.g; throw new Error('Euroleague ' + r.status); }
   var j = await r.json();
   var g = (j.data || []).map(_g45ElCompact).sort(function (x, y) { return x.t - y.t; });
   var jour = g.some(function (x) { return !x.p && Math.abs(x.t - now) < 12 * 3600000; });
   m = { g: g, x: now + (jour ? 10 : 120) * 60000 };
-  _g45ElMem[an] = m;
+  _g45ElMem[an] = m; _g45ElMem[_g45ElCle(an)] = m;
   try { localStorage.setItem(cle, JSON.stringify(m)); } catch (e) {}
   return g;
 }
@@ -59889,14 +59939,16 @@ function _g45ElLogo(e, px) {
   return e.l ? '<img src="' + _g45ElEsc(e.l) + '" alt="" style="width:' + px + 'px;height:' + px + 'px;object-fit:contain;flex:none;" onerror="this.style.visibility=\'hidden\'">'
     : '<span style="width:' + px + 'px;flex:none;"></span>';
 }
+var _g45ElDerLigue = null;
 async function _g45ElRendre(box, retourHtml) {
   var an = _g45ElSaison();
+  if (_g45ElDerLigue !== _g45ElLigue) { _g45ElDerLigue = _g45ElLigue; _g45ElPlie = {}; _g45ElOuvert = {}; }   /* Euroleague ↔ Pro A */
   var onglets = [['journees', '📅 Journées'], ['classement', '🏆 Classement']].map(function (v) {
     var on = _g45ElVue === v[0];
     return '<button onclick="g45ElVue(\'' + v[0] + '\')" style="flex:1;padding:10px;font-size:14px;font-weight:800;cursor:pointer;border-radius:9px;'
       + (on ? 'background:#2563eb;border:1px solid #3b82f6;color:#fff;' : 'background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#c9d3ee;') + '">' + v[1] + '</button>';
   }).join('');
-  box.innerHTML = (retourHtml || '') + '<div class="sec" style="margin-top:0;">🏀 Euroleague ' + an + '-' + String(an + 1).slice(2) + '</div>'
+  box.innerHTML = (retourHtml || '') + '<div class="sec" style="margin-top:0;">🏀 ' + (_g45ElLigue === 'proa' ? 'Betclic Élite (Pro A)' : 'Euroleague') + ' ' + an + '-' + String(an + 1).slice(2) + '</div>'
     + '<div style="display:flex;gap:8px;margin-bottom:12px;">' + onglets + '</div><div id="g45-el-body"><div style="color:#fff;font-size:14px;">⏳ Chargement…</div></div>';
   var body = document.getElementById('g45-el-body');
   try {
@@ -59908,7 +59960,7 @@ async function _g45ElRendre(box, retourHtml) {
       if (cible && !box._g45ElDefile) { box._g45ElDefile = 1; try { cible.scrollIntoView({ block: 'start' }); } catch (e) {} }
     }
   } catch (e) {
-    body.innerHTML = '<div style="color:#ff6b6b;font-size:14px;">❌ Euroleague indisponible pour le moment (' + _g45ElEsc(e && e.message || 'erreur') + ')</div>';
+    body.innerHTML = '<div style="color:#ff6b6b;font-size:14px;">❌ ' + (_g45ElLigue === 'proa' ? 'Pro A' : 'Euroleague') + ' indisponible pour le moment (' + _g45ElEsc(e && e.message || 'erreur') + ')</div>';
   }
 }
 function _g45ElJourneesHtml(g) {
@@ -59991,14 +60043,14 @@ function _g45ElRedessiner() { if (_g45ElBox && document.body.contains(_g45ElBox)
 function g45ElVue(v) { _g45ElVue = v; _g45ElRedessiner(); }
 function g45ElOuvrir(id) { _g45ElOuvert[id] = !_g45ElOuvert[id]; _g45ElRedessinerSurPlace(); }
 function g45ElPlier(k) {
-  var g = (_g45ElMem[_g45ElSaison()] || {}).g || [];
+  var g = (_g45ElMem[_g45ElCle()] || {}).g || [];
   var cours = null; g.some(function (m) { if (!m.p) { cours = (m.ph || '') + '|' + m.r; return true; } return false; });
   var actuel = _g45ElPlie[k] != null ? _g45ElPlie[k] : (k !== cours);
   _g45ElPlie[k] = !actuel; _g45ElRedessinerSurPlace();
 }
 /* Déplier un match ou une journée ne recharge rien et ne bouge pas l'écran. */
 function _g45ElRedessinerSurPlace() {
-  var body = document.getElementById('g45-el-body'), g = (_g45ElMem[_g45ElSaison()] || {}).g;
+  var body = document.getElementById('g45-el-body'), g = (_g45ElMem[_g45ElCle()] || {}).g;
   if (!body || !g) return _g45ElRedessiner();
   body.innerHTML = _g45ElVue === 'classement' ? _g45ElClassementHtml(g) : _g45ElJourneesHtml(g);
 }
@@ -60012,11 +60064,15 @@ window._g45ElCompact = _g45ElCompact; window._g45ElClassement = _g45ElClassement
     if (bk && bk.groups && bk.groups[0] && !bk.groups[0].leagues.some(function (l) { return l.slug === 'euroleague'; })) {
       bk.groups[0].leagues.push({ name: 'Euroleague', slug: 'euroleague', ico: '🇪🇺' });
     }
+    if (bk && bk.groups && bk.groups[0] && !bk.groups[0].leagues.some(function (l) { return l.slug === 'proa'; })) {
+      bk.groups[0].leagues.push({ name: 'Pro A', slug: 'proa', ico: '🇫🇷' });
+    }
   } catch (e) {}
   if (typeof loadCompetTab === 'function' && !loadCompetTab._g45El) {
     var origine = loadCompetTab;
     var enveloppe = async function () {
-      if (typeof _g45CompetSport !== 'undefined' && _g45CompetSport === 'basketball' && _g45CompetSel === 'euroleague') {
+      if (typeof _g45CompetSport !== 'undefined' && _g45CompetSport === 'basketball' && (_g45CompetSel === 'euroleague' || _g45CompetSel === 'proa')) {
+        _g45ElLigue = _g45CompetSel === 'proa' ? 'proa' : 'el';
         var el = document.getElementById('t-compet');
         if (!el) return;
         _g45ElBox = el; el._g45ElDefile = 0;
@@ -60031,7 +60087,8 @@ window._g45ElCompact = _g45ElCompact; window._g45ElClassement = _g45ElClassement
   if (typeof g45LoadCalendar === 'function' && !g45LoadCalendar._g45El) {
     var origCal = g45LoadCalendar;
     var envCal = async function (slug, btn) {
-      if (slug === 'euroleague') {
+      if (slug === 'euroleague' || slug === 'proa') {
+        _g45ElLigue = slug === 'proa' ? 'proa' : 'el';
         try { document.querySelectorAll('.g45lg-chip').forEach(function (b) { b.style.background = 'rgba(255,255,255,.06)'; b.style.color = 'var(--t2)'; }); if (btn) { btn.style.background = '#4d84ff'; btn.style.color = '#fff'; } } catch (e) {}
         var list = document.getElementById(window._g45ListId || 'g45-res-list'); if (!list) return;
         _g45ElBox = list; _g45ElRetour = ''; list._g45ElDefile = 0;
