@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20260930x, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20260930y, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -517,6 +517,12 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   match/getCalenderByDivision?division_external_id=1&year=2026 = 10 matchs seulement (semaine en cours + suivante).
   Classement officiel altrstats/getStandingByCompetition = POST qui exige competition_filter_name + round_numbers
   (non utilisé : recalculé). competition_external_id par saison `_G45_PROA_CID` (2026 = 317) : À COMPLÉTER chaque été.
+  30y — onglet 📊 Stats (Pro A seulement, maquette validée) : `_g45PsHtml` / `_g45PsLire(an, 'jo'|'eq')` ; SONDÉ PAR
+  ANTOINE : POST altrstats/getPersonsLeaders {competitionExternalId, year} (sans year → 400) et getTeamsLeaders
+  {competitionExternalId} → 12 catégories (type sPoints…, title FR, items[5] {value, person{first_name, family_name,
+  photo.sm}, team{team_name, logo_white.sm}}) ; chemins ajoutés à la liste blanche du worker (redéployé par Antoine) ;
+  cache g45proast1_<an>_<mode> 1 h ; boutons `g45PsMode` / `g45PsCat`. % : valeur ≤ 1 × 100 (format NON vérifié) ;
+  valeurs = total ou moyenne ? NON vérifié (après 1 journée c'est pareil) → aucun libellé « par match ».
 - Score d'un pari : `_g45ScoreTexte`, cache `g45_score4_<id>` (négatif gardé
   2 h) — effacé par `saveBetEdit` pour relancer la recherche.
 
