@@ -58086,7 +58086,7 @@ async function _g45KhlJoueurs(progres) {
        joueurs sont redemandes par identifiants (q[id_in][]) ; si ca echoue
        aussi, ils restent sans stats plutot que de bloquer tout l'ecran. */
   var light = await g45KhlApi('players_v2_light', { stage_id: stage });
-  if (!Array.isArray(light) || !light.length) return [];
+  if (!Array.isArray(light) || !light.length) return _g45KhlJoueursSansLight(stage, cle, dire);
   var parId = {}, tous = [];
   var ajouter = function (j) {
     (Array.isArray(j) ? j : []).forEach(function (x) {
@@ -58132,6 +58132,47 @@ async function _g45KhlJoueurs(progres) {
   var avecStats = tous.filter(function (p) { return p.st && p.st.gp != null; }).length;
   /* On ne met en cache que si l'essentiel est la : sinon on retentera. */
   if (avecStats >= light.length * 0.9) { try { localStorage.setItem(cle, JSON.stringify({ t: Date.now(), l: tous })); } catch (e) {} }
+  return tous;
+}
+/* SANS LA LISTE ALLÉGÉE (30/09/2026, SONDÉ PAR ANTOINE : « Effectif KHL non reçu
+   pour HC Sotchi ») : players_v2_light → 522 après 20 s, alors que players_v2
+   page 2 → 200 en 3 s. Avant, l'échec de la liste allégée vidait TOUT l'effectif
+   (return []). On lit donc directement les pages de 16 joueurs, par lots de 4,
+   jusqu'à une page incomplète (la dernière). La page 1 est tentée à part : elle
+   ne répondait jamais le 17/09 ; si elle échoue, ses 16 joueurs manquent, mais
+   le reste des effectifs s'affiche. */
+async function _g45KhlJoueursSansLight(stage, cle, dire) {
+  var parId = {}, tous = [], ratees = [], fin = false;
+  var ajouter = function (j) {
+    (Array.isArray(j) ? j : []).forEach(function (x) {
+      var p = _g45KhlJoueur(x);
+      if (p.id != null && !parId[p.id]) { parId[p.id] = p; tous.push(p); }
+    });
+  };
+  var page1 = g45KhlApi('players_v2', { stage_id: stage, page: 1 });
+  for (var pg = 2; pg <= 60 && !fin; pg += 4) {
+    var nums = [pg, pg + 1, pg + 2, pg + 3];
+    var res = await Promise.all(nums.map(function (n) { return g45KhlApi('players_v2', { stage_id: stage, page: n }); }));
+    res.forEach(function (j, k) {
+      if (!Array.isArray(j)) { ratees.push(nums[k]); return; }
+      ajouter(j);
+      if (j.length < 16) fin = true;          /* dernière page atteinte */
+    });
+    dire(tous.length, 0);
+    /* Lot entièrement perdu : serveur en panne, inutile d'enchaîner 60 pages. */
+    if (res.every(function (j) { return !Array.isArray(j); })) break;
+  }
+  /* Seconde passe sur les pages coupées (le Worker a pu les mettre en cache). */
+  var encore = [];
+  for (var i = 0; i < ratees.length; i += 4) {
+    var lot = ratees.slice(i, i + 4);
+    (await Promise.all(lot.map(function (n) { return g45KhlApi('players_v2', { stage_id: stage, page: n }); })))
+      .forEach(function (j, k) { if (Array.isArray(j)) ajouter(j); else encore.push(lot[k]); });
+  }
+  var p1 = await page1;
+  ajouter(p1);
+  /* En cache seulement si rien n'a manqué : sinon on retentera au prochain affichage. */
+  if (fin && !encore.length && Array.isArray(p1) && tous.length) { try { localStorage.setItem(cle, JSON.stringify({ t: Date.now(), l: tous })); } catch (e) {} }
   return tous;
 }
 function _g45KhlFmt(v, f) {
