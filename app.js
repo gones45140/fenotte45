@@ -59248,6 +59248,15 @@ async function g45KhlCompoFiche(el, e) {
       });
     });
   }
+  /* ALIGNEMENT (30/09/2026, Antoine : « le tableau des joueurs est pas aligné ») :
+     la colonne des pastilles faisait ~200 px sur chaque ligne mais seulement la
+     largeur du texte « 9 derniers » dans l'en-tête → la colonne Joueur (flex:1)
+     n'avait pas la même largeur en-tête / lignes et tous les chiffres glissaient
+     à gauche des titres ; les noms, écrasés, devenaient « V… ». Largeurs FIXES
+     partout : pastilles = PAST_L px, nom ≥ 150 px, tableau ≥ LARG_MIN px
+     (défilement horizontal au-delà, comme avant). */
+  var PAST_L = Math.max(60, siens.length * 20 + Math.max(0, siens.length - 1) * 3);
+  var LARG_MIN = 36 + 150 + 5 * 38 + 44 + PAST_L + 8 * 6 + 12;
   var pastilles = function (p) {
     var par = perMatch[_g45KhlNorm(p.n)] || {};
     return '<span style="display:inline-flex;gap:3px;">' + siens.map(function (m) {
@@ -59279,11 +59288,11 @@ async function g45KhlCompoFiche(el, e) {
   var POSTE_FR = { g: 'gardien', d: 'd\u00e9fenseur', f: 'attaquant' };
   var cel = function (v, largeur) {
     var nul = (v === '0' || v === 0 || v === '\u2013');
-    return '<span style="width:' + (largeur || 38) + 'px;text-align:center;font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;'
+    return '<span style="width:' + (largeur || 38) + 'px;flex:none;text-align:center;font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;'
       + 'color:' + (nul ? '#5c6785' : '#dbe3f5') + ';">' + v + '</span>';
   };
   var past = function (v, fond, coul) {
-    return '<span style="width:38px;text-align:center;font-size:12px;font-weight:800;border-radius:7px;padding:3px 0;'
+    return '<span style="width:38px;flex:none;text-align:center;font-size:12px;font-weight:800;border-radius:7px;padding:3px 0;'
       + 'font-variant-numeric:tabular-nums;background:' + fond + ';color:' + coul + ';">' + v + '</span>';
   };
   var ligne = function (p, gardien, rang) {
@@ -59310,17 +59319,17 @@ async function g45KhlCompoFiche(el, e) {
       + (p.img ? '<img src="' + _g45KhlEsc(p.img) + '" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;" onerror="this.remove()">' : '')
       + (p.num != null ? '<span style="position:absolute;left:-2px;top:-2px;background:#0f1729;border:1px solid rgba(255,255,255,.2);border-radius:5px;font-size:8.5px;font-weight:800;padding:0 3px;color:#dbe3f5;">' + p.num + '</span>' : '')
       + '</span>'
-      + '<div style="flex:1;min-width:0;"><div style="font-weight:800;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + _g45KhlEsc(p.n) + '</div>'
-      + '<div style="font-size:11px;color:#fff;">' + drapeau + _g45KhlEsc(p.pays || '') + (p.age ? ' \u00b7 ' + p.age + ' ans' : '')
+      + '<div style="flex:1;min-width:150px;"><div style="font-weight:800;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + _g45KhlEsc(p.n) + '</div>'
+      + '<div style="font-size:11px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + drapeau + _g45KhlEsc(p.pays || '') + (p.age ? ' \u00b7 ' + p.age + ' ans' : '')
       + ' \u00b7 ' + POSTE_FR[_g45KhlPoste(p.r)] + '</div></div>'
       + cols
-      + '<span style="min-width:0;">' + pastilles(p) + '</span></div>';
+      + '<span style="width:' + PAST_L + 'px;flex:none;">' + pastilles(p) + '</span></div>';
   };
   var entete = function (libs) {
     return '<div style="display:flex;gap:6px;padding:0 6px 6px;color:#7c89a8;font-size:9px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;">'
-      + '<span style="width:36px;"></span><span style="flex:1;">Joueur</span>'
-      + libs.map(function (l, i) { return '<span style="width:' + (i === libs.length - 1 ? 44 : 38) + 'px;text-align:center;">' + l + '</span>'; }).join('')
-      + '<span style="text-align:center;">' + siens.length + ' derniers</span></div>';
+      + '<span style="width:36px;flex:none;"></span><span style="flex:1;min-width:150px;">Joueur</span>'
+      + libs.map(function (l, i) { return '<span style="width:' + (i === libs.length - 1 ? 44 : 38) + 'px;flex:none;text-align:center;">' + l + '</span>'; }).join('')
+      + '<span style="width:' + PAST_L + 'px;flex:none;text-align:center;">' + siens.length + ' derniers</span></div>';
   };
   var champ = eff.filter(function (p) { return _g45KhlPoste(p.r) !== 'g'; })
     .sort(function (x, y) { return (y.st.pts || 0) - (x.st.pts || 0) || (y.st.toi_avg || 0) - (x.st.toi_avg || 0); });
@@ -59336,7 +59345,7 @@ async function g45KhlCompoFiche(el, e) {
     + _g45KhlChip('Attaquants', _g45KhlCompoPoste === 'f', "g45KhlCompoPoste('f')")
     + _g45KhlChip('D\u00e9fenseurs', _g45KhlCompoPoste === 'd', "g45KhlCompoPoste('d')")
     + _g45KhlChip('Gardiens', _g45KhlCompoPoste === 'g', "g45KhlCompoPoste('g')") + '</div>'
-    + '<div style="overflow-x:auto;"><div style="min-width:560px;">';
+    + '<div style="overflow-x:auto;"><div style="min-width:' + LARG_MIN + 'px;">';
   if (_g45KhlCompoPoste !== 'g' && champ.length) {
     h += '<div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#c3cfe6;margin:10px 0 4px;">Joueurs de champ (' + champ.length + ')</div>'
       + entete(['MJ', 'B', 'A', 'PTS', '+/\u2212', 'Glace']) + champ.map(function (p, i) { return ligne(p, false, i); }).join('');

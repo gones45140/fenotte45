@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20260930b, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20260930c, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -124,6 +124,9 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   q[team_id_eq]=<id> (SONDÉ : 16 joueurs de l'équipe 113 seulement, 3 s), pages de 16 tant que
   pleines et nouvelles ; cache g45khl_eq1_<stage>_<id> 3 h. La ligue entière (231 Ko, jamais
   stockée : relue à chaque ouverture, ≈ 5 min) n'est plus qu'un secours.
+  30c — tableau aligné (maquette validée) : largeurs FIXES (flex:none) ; colonne pastilles
+  PAST_L px en-tête ET lignes (avant : texte « 9 derniers » seul en en-tête → chiffres décalés),
+  nom ≥ 150 px, largeur mini LARG_MIN (défilement horizontal au-delà).
 - COMPTABILITÉ DES PARIS : `_g45BetEffetTotal` / `_g45BetAppliquer` = seule
   source de vérité (mise retirée AU PLACEMENT ; gagné +m×cote ; freebet :
   cagnotte −m, gain m×(cote−1)). `deleteArchived` (DEUX copies) et
