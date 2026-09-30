@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20260930v, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20260930w, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -494,6 +494,20 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   30n : logos manquants des équipes féminines (Classements foot) complétés par `_g45ClsLogosFem(slug, ms)`
   (appelé dans g45ClsRender) avec le logo du club MASCULIN du même pays (`_G45_FEM_HOMMES`, _g45CompetEquipes),
   sur nom IDENTIQUE seulement (`_g45FemNorm`, nom long ou court) : Paris FC ≠ PSG, Saint-Malo reste sans logo.
+- 🏀 EUROLEAGUE (30w, maquette validée) : SONDÉ PAR ANTOINE, ESPN n'a NI Euroleague NI Pro A (ligues basket ESPN :
+  fiba, NBA, NBA dev/summer, NBL, WNBA, NCAA H/F, JO). API officielle api-live.euroleague.net via le WORKER
+  (host=euroleague, ajouté et redéployé par Antoine le 30/09 : chemins /v2|v3/competitions/<X>/seasons/<X><an>… seulement ;
+  la saison 2026-27 est refusée en direct navigateur — CORS — alors que 2025-26 passait). /v2/competitions/E/seasons/
+  E<an>/games → data[] {gameCode, round, phaseType{code RS…, alias}, played, utcDate, local/road {club{code, editorialName,
+  images.crest}, score, partials{partials1..4, extraPeriods}}, venue, referee1..4} (≈ 1 Mo ; 380 matchs 2026-27 au 30/09).
+  `_g45ElMatchs(an)` compacte (`_g45ElCompact`), cache `g45el1_<an>` (10 min si match du jour, sinon 2 h) ; saison =
+  année de DÉBUT (`_g45ElSaison`, dès septembre). Vues `_g45ElRendre` : Journées `_g45ElJourneesHtml` (par round, journée en
+  cours dépliée, match déplié = quarts-temps / salle / arbitres ; format venue et referee NON vérifiés : lus en .name) et
+  Classement `_g45ElClassement` (saison régulière RECALCULÉE : V, D, points ±). Branché comme la KHL : tuile dans
+  G45_SPORTS basketball, interception de loadCompetTab (Compétitions) ET de g45LoadCalendar (Résultats → Basket).
+  « En cours » = non joué et commencé depuis < 3 h (score de la liste, cache 10 min : pas un vrai direct).
+  PRO A (Betclic Élite) : TheSportsDB id 4423 mais clé gratuite = 1 prochain / 1 dernier / 5 matchs → inutilisable ;
+  site lnb.fr (classement /fr/standings/betclicelite?…&yid=2026&cid=317) : source de données À SONDER.
 - Score d'un pari : `_g45ScoreTexte`, cache `g45_score4_<id>` (négatif gardé
   2 h) — effacé par `saveBetEdit` pour relancer la recherche.
 
