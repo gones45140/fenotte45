@@ -433,8 +433,8 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   direct » si state 'in') ajouté par `_g45SgCarteTirs` au-dessus de la carte des tirs ; `g45AmOuvrir` →
   `_g45AmCharger` (résumé `_g45AmSum[eid]`, relu site v2 soccer/<lg>/summary?event= ; tirs
   `g45TirsMatch`) → `_g45AmCalc` (xG cumulé, buts pen./csc, grosses occasions = tirs xG ≥ 0,3, stats
-  boxscore possessionPct/totalShots/shotsOnTarget/wonCorners/foulsCommitted/yellowCards — NOMS NON SONDÉS,
-  repli sur les tirs, ligne absente = retirée ; joueur le plus dangereux = buts + xG) → `_g45AmHtml`
+  boxscore possessionPct/totalShots/shotsOnTarget/wonCorners/foulsCommitted/yellowCards — CONFIRMÉS par
+  Antoine sur Lyon–Rennes 4-0 (capture 30/09) ; repli sur les tirs, ligne absente = retirée ; joueur le plus dangereux = buts + xG) → `_g45AmHtml`
   (course aux xG `_g45AmCourbe`). Direct : relu toutes les 2 min (`_g45AmTimer`, s'arrête carte fermée).
   Partage `g45AmPartager` : `_g45AmSvgPartage` (SVG sans logos) → canvas → PNG → navigator.share / téléchargement.
 - Score d'un pari : `_g45ScoreTexte`, cache `g45_score4_<id>` (négatif gardé
