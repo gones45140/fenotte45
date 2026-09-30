@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20260930s, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20260930t, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -459,6 +459,9 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   (x → 100−x) ; types traduits `_G45_LIVE_TYPES` ; relu toutes les 20 s, dernier rendu `_g45LiveHtml` reposé au redessin.
   30r (« ça bouge pas ») : à chaque NOUVELLE action le ⚽ roule le long des dernières actions (animateMotion SVG,
   clé `_g45LiveHtml['k'+eid]`), sinon immobile ; fetch en cache:'no-store' ; ballon borné dans le terrain ; Out / Ball touch traduits.
+  30t (« OUI ») : relecture toutes les 10 s (foot et MLB) ; foot = UNE demande d'actions (numéro de dernière page retenu dans
+  `_g45LiveFootMem[eid]`, page suivante si pleine, dernières actions vues gardées en file) ; résumé relu 1 fois sur 3 ;
+  message `_g45LiveDonnees()` « environ 1 Mo par minute, en 4G préfère le Wi-Fi » (orange si navigator.connection = cellular).
   ⚾ `_g45LiveMlbBloc` (dans `_renderGenericDetail`, baseball 'in') : SONDÉ, summary.situation (balls, strikes, outs,
   onFirst/Second/Third, batter, pitcher, lastPlay.id, situationNotes RISP traduite) ; noms via boxscore.players /
   rosters ; manche traduite (Bot 6th → Bas 6e) ; relu toutes les 20 s. NFL / NBA / NHL : à sonder pendant un match.

@@ -31958,17 +31958,33 @@ function _g45LiveType(t) {
   return t || '';
 }
 /* ─── ⚽ FOOT ─── */
+/* UNE SEULE DEMANDE PAR RELECTURE (30/09, « oui ») : on retient le numéro de la
+   dernière page (400 actions par page) au lieu de relire la page 1 à chaque fois ;
+   si elle est pleine on tente la suivante ; les dernières actions déjà vues
+   complètent une page presque vide (plus de relecture de l'avant-dernière). */
+var _g45LiveFootMem = {};
 async function _g45LiveFootActions(lg, eid) {
   var base = 'https://sports.core.api.espn.com/v2/sports/soccer/leagues/' + lg + '/events/' + eid + '/competitions/' + eid + '/plays?limit=400';
-  var j = null;
-  try { j = await (await fetch(base + '&page=1', { cache: 'no-store' })).json(); } catch (e) { return null; }
-  var n = (j && j.pageCount) || Math.ceil(((j && j.count) || 0) / 400) || 1, items = (j && j.items) || [];
-  if (n > 1) {
-    try { var jl = await (await fetch(base + '&page=' + n, { cache: 'no-store' })).json(); var dern = (jl && jl.items) || [];
-      if (dern.length < 8 && n > 2) { var jp = await (await fetch(base + '&page=' + (n - 1), { cache: 'no-store' })).json(); dern = ((jp && jp.items) || []).concat(dern); }
-      items = dern; } catch (e) {}
+  var get = async function (pg) { try { var j = await (await fetch(base + '&page=' + pg, { cache: 'no-store' })).json(); return j; } catch (e) { return null; } };
+  var mem = _g45LiveFootMem[eid], j, items;
+  if (!mem) {
+    j = await get(1); if (!j) return null;
+    var n = j.pageCount || Math.ceil((j.count || 0) / 400) || 1;
+    items = j.items || [];
+    if (n > 1) { var jl = await get(n); if (jl && jl.items && jl.items.length) items = jl.items; else n = 1; }
+    mem = _g45LiveFootMem[eid] = { n: n, queue: [] };
+  } else {
+    j = await get(mem.n); if (!j) return null;
+    items = j.items || [];
+    if (items.length >= 400) { var js = await get(mem.n + 1); if (js && js.items && js.items.length) { mem.n++; items = js.items; } }
   }
-  return items.filter(function (a) { return a && typeof a.fieldPositionX === 'number'; }).slice(-6);
+  var avec = items.filter(function (a) { return a && typeof a.fieldPositionX === 'number'; });
+  if (avec.length < 8 && mem.queue.length) {
+    var vus = {}; avec.forEach(function (a) { vus[String(a.id)] = 1; });
+    avec = mem.queue.filter(function (a) { return !vus[String(a.id)]; }).concat(avec);
+  }
+  mem.queue = avec.slice(-8);
+  return avec.slice(-6);
 }
 function _g45LiveFootHtml(A, idH, nh, na, horloge, score, animer) {
   /* Bornes : un ballon sur la ligne de touche restait à moitié hors du dessin. */
@@ -32016,18 +32032,29 @@ function _g45LiveFootHtml(A, idH, nh, na, horloge, score, animer) {
     h += '<div style="display:flex;gap:8px;font-size:14px;padding:6px 0;border-top:1px solid rgba(255,255,255,.07);"><span style="color:#c3cfe6;min-width:34px;">' + _g45Esc((a.clock && a.clock.displayValue) || '') + '</span>'
       + '<span style="color:' + (dom ? '#6d9dff' : '#f5c542') + ';font-weight:800;">' + _g45Esc(dom ? nh : na) + '</span><span>' + _g45Esc(_g45LiveType(a.type && a.type.text)) + (qui(a) ? ' · ' + _g45Esc(qui(a)) : '') + '</span></div>';
   });
-  return h + '<div style="font-size:13px;opacity:.85;margin-top:6px;">Mise à jour toutes les 20 s. Le trait montre le chemin du ballon.</div>';
+  return h + '<div style="font-size:13px;opacity:.85;margin-top:6px;">Mise à jour toutes les 10 s. Le trait montre le chemin du ballon.</div>' + _g45LiveDonnees();
+}
+/* AVERTISSEMENT DONNÉES (30/09, « juste mettre un message ») : orange si le téléphone
+   dit être en données mobiles (navigator.connection, Chrome Android), sinon discret. */
+function _g45LiveDonnees() {
+  var c = navigator.connection || navigator.mozConnection || navigator.webkitConnection, mobile = false;
+  try { mobile = !!c && (c.type === 'cellular' || c.saveData === true); } catch (e) {}
+  return '<div style="font-size:13px;margin-top:6px;' + (mobile ? 'color:#ffb13d;font-weight:800;' : 'opacity:.8;') + '">📶 En direct : environ 1 Mo par minute. En 4G, préfère le Wi-Fi.</div>';
 }
 async function _g45LiveFootMaj(lg, eid, idH, nh, na) {
   var box = document.getElementById('g45-lfoot-' + eid); if (!box) return;
   var A = await _g45LiveFootActions(lg, eid);
-  var horloge = '', score = '';
-  try {
+  /* Résumé (lourd) une relecture sur 3 seulement ; entre-temps, minute de la dernière action. */
+  var M = _g45LiveFootMem[eid] || {}, horloge = M.horloge || '', score = M.score || '';
+  M.tour = (M.tour || 0) + 1;
+  if (A && A.length && A[A.length - 1].clock) horloge = A[A.length - 1].clock.displayValue || horloge;
+  if (M.tour % 3 === 1 || !score) try {
     var sb = await (await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/' + lg + '/summary?event=' + eid, { cache: 'no-store' })).json();
     var co = sb.header.competitions[0], st = co.status || {};
     horloge = st.displayClock || (st.type && st.type.shortDetail) || '';
     var H = co.competitors.filter(function (c) { return c.homeAway === 'home'; })[0] || {}, Aw = co.competitors.filter(function (c) { return c.homeAway === 'away'; })[0] || {};
     score = (H.score || '0') + ' – ' + (Aw.score || '0');
+    if (_g45LiveFootMem[eid]) { _g45LiveFootMem[eid].horloge = horloge; _g45LiveFootMem[eid].score = score; }
     if (st.type && st.type.state === 'post') { box.remove(); return; }
   } catch (e) {}
   box = document.getElementById('g45-lfoot-' + eid); if (!box) return;
@@ -32040,8 +32067,8 @@ async function _g45LiveFootMaj(lg, eid, idH, nh, na) {
   }
   else if (!box.innerHTML) box.innerHTML = '<div style="font-size:14px;color:#fff;">⚽ En direct : ESPN ne publie pas encore les actions de ce match.</div>';
   clearTimeout(_g45LiveTimer['f' + eid]);
-  var tick = function () { if (!document.getElementById('g45-lfoot-' + eid)) return; if (document.visibilityState !== 'visible') { _g45LiveTimer['f' + eid] = setTimeout(tick, 20000); return; } _g45LiveFootMaj(lg, eid, idH, nh, na); };
-  _g45LiveTimer['f' + eid] = setTimeout(tick, 20000);
+  var tick = function () { if (!document.getElementById('g45-lfoot-' + eid)) return; if (document.visibilityState !== 'visible') { _g45LiveTimer['f' + eid] = setTimeout(tick, 10000); return; } _g45LiveFootMaj(lg, eid, idH, nh, na); };
+  _g45LiveTimer['f' + eid] = setTimeout(tick, 10000);
 }
 function _g45LiveFootPoser(bloc, lg, eid, idH, nh, na) {
   var d = document.createElement('div');
@@ -32088,7 +32115,7 @@ function _g45LiveMlbHtml(data) {
     + '<div style="padding:8px;border-radius:10px;background:rgba(255,255,255,.06);">🏏 <b>Frappeur</b> (' + _g45Esc(ab(att)) + ')<br>' + _g45Esc(nom(si.batter) || '?') + (note ? '<br><span style="opacity:.85;">' + _g45Esc(note) + '</span>' : '') + '</div>'
     + '<div style="padding:8px;border-radius:10px;background:rgba(255,255,255,.06);">⚾ <b>Lanceur</b><br>' + _g45Esc(nom(si.pitcher) || '?') + '</div></div>'
     + (dern ? '<div style="margin-top:10px;font-size:14px;border-top:1px solid rgba(255,255,255,.1);padding-top:8px;">Dernier lancer : <b>' + _g45Esc(tr(dern)) + '</b></div>' : '')
-    + '<div style="font-size:13px;opacity:.85;margin-top:6px;">Mise à jour toutes les 20 s pendant le match.</div>';
+    + '<div style="font-size:13px;opacity:.85;margin-top:6px;">Mise à jour toutes les 10 s pendant le match.</div>' + _g45LiveDonnees();
 }
 function _g45LiveMlbBloc(data, eid, lg) {
   var comp = (data.header && data.header.competitions && data.header.competitions[0]) || {}, st = (comp.status && comp.status.type) || {};
@@ -32097,16 +32124,16 @@ function _g45LiveMlbBloc(data, eid, lg) {
   clearTimeout(_g45LiveTimer['b' + eid]);
   var tick = function () {
     var box = document.getElementById('g45-lmlb-' + eid); if (!box) return;
-    if (document.visibilityState !== 'visible') { _g45LiveTimer['b' + eid] = setTimeout(tick, 20000); return; }
+    if (document.visibilityState !== 'visible') { _g45LiveTimer['b' + eid] = setTimeout(tick, 10000); return; }
     fetch('https://site.api.espn.com/apis/site/v2/sports/baseball/' + lg + '/summary?event=' + eid, { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (d) {
       var b = document.getElementById('g45-lmlb-' + eid); if (!b) return;
       var s2 = d && d.header && d.header.competitions && d.header.competitions[0] && d.header.competitions[0].status && d.header.competitions[0].status.type;
       if (s2 && s2.state === 'post') { b.remove(); return; }
       var hh = _g45LiveMlbHtml(d); if (hh) b.innerHTML = hh;
-      _g45LiveTimer['b' + eid] = setTimeout(tick, 20000);
-    }).catch(function () { _g45LiveTimer['b' + eid] = setTimeout(tick, 20000); });
+      _g45LiveTimer['b' + eid] = setTimeout(tick, 10000);
+    }).catch(function () { _g45LiveTimer['b' + eid] = setTimeout(tick, 10000); });
   };
-  _g45LiveTimer['b' + eid] = setTimeout(tick, 20000);
+  _g45LiveTimer['b' + eid] = setTimeout(tick, 10000);
   return '<div id="g45-lmlb-' + eid + '" style="margin-top:10px;background:linear-gradient(160deg,rgba(27,36,64,.95),rgba(19,26,46,.95));border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:14px;color:#fff;">' + h + '</div>';
 }
 window._g45LiveMlbHtml = _g45LiveMlbHtml; window._g45LiveFootHtml = _g45LiveFootHtml; window._g45LiveType = _g45LiveType;
