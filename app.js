@@ -31806,17 +31806,26 @@ function _g45WpPts(data) {
   ((data && data.plays) || []).forEach(function (p) { if (p && p.id != null) per[String(p.id)] = (p.period && (p.period.number || p.period.displayValue)) || null; });
   return w.map(function (x) { return { p: +x.homeWinPercentage, t: +x.tiePercentage || 0, per: per[String(x.playId)] || null }; }).filter(function (x) { return isFinite(x.p); });
 }
-function _g45WpCourbe(P, sport) {
+function _g45WpCourbe(P, sport, noms) {
   var W = 384, H = 150, n = P.length, X = function (i) { return 34 + i / Math.max(1, n - 1) * (W - 44); }, Y = function (v) { return 10 + (1 - v) * (H - 20); };
   var s = '<defs><clipPath id="g45wpH"><rect x="0" y="0" width="' + W + '" height="' + Y(0.5) + '"/></clipPath><clipPath id="g45wpB"><rect x="0" y="' + Y(0.5) + '" width="' + W + '" height="' + H + '"/></clipPath></defs>';
-  [0, 0.25, 0.5, 0.75, 1].forEach(function (v) { s += '<line x1="34" x2="' + (W - 10) + '" y1="' + Y(v) + '" y2="' + Y(v) + '" stroke="rgba(255,255,255,' + (v === 0.5 ? 0.35 : 0.08) + ')"/><text x="0" y="' + (Y(v) + 4) + '" fill="#c3cfe6" font-size="12">' + (v * 100) + '%</text>'; });
+  /* ÉCHELLE EN MIROIR (30/09, Antoine : « le 0 25 50 75 100 pas bon par rapport à
+     la courbe, je pige pas ») : comme ESPN, 100 % en haut (club qui reçoit) ET en
+     bas (visiteur), 50 % au milieu ; chaque moitié à la couleur de son équipe. */
+  [0, 0.25, 0.5, 0.75, 1].forEach(function (v) {
+    var lib = v === 0.5 ? '50%' : (Math.round(Math.abs(v - 0.5) * 100 + 50) + '%'), col = v > 0.5 ? '#6d9dff' : (v < 0.5 ? '#f5c542' : '#c3cfe6');
+    s += '<line x1="34" x2="' + (W - 10) + '" y1="' + Y(v) + '" y2="' + Y(v) + '" stroke="rgba(255,255,255,' + (v === 0.5 ? 0.35 : 0.08) + ')"/><text x="0" y="' + (Y(v) + 4) + '" fill="' + col + '" font-size="12" font-weight="700">' + lib + '</text>';
+  });
+  if (noms) s += '<text x="40" y="24" fill="#6d9dff" font-size="12.5" font-weight="800">↑ ' + _g45Esc(noms[0]) + ' favoris</text>'
+    + '<text x="40" y="' + (H - 16) + '" fill="#f5c542" font-size="12.5" font-weight="800">↓ ' + _g45Esc(noms[1]) + ' favoris</text>';
   var suf = sport === 'baseball' ? 'e' : (sport === 'hockey' ? 'e P' : (sport === 'basketball' || sport === 'football' ? 'e QT' : 'e'));
   var vu = {};
   P.forEach(function (x, i) { if (x.per != null && !vu[x.per]) { vu[x.per] = 1; s += '<line x1="' + X(i) + '" x2="' + X(i) + '" y1="10" y2="' + (H - 10) + '" stroke="rgba(255,255,255,.07)"/><text x="' + (X(i) + 2) + '" y="' + (H + 12) + '" fill="#c3cfe6" font-size="12">' + x.per + suf + '</text>'; } });
   var ligne = P.map(function (x, i) { return X(i) + ',' + Y(x.p); }).join(' L');
   var aire = 'M' + X(0) + ',' + Y(0.5) + ' L' + ligne + ' L' + X(n - 1) + ',' + Y(0.5) + ' Z';
   s += '<path d="' + aire + '" fill="rgba(109,157,255,.22)" clip-path="url(#g45wpH)"/><path d="' + aire + '" fill="rgba(245,197,66,.22)" clip-path="url(#g45wpB)"/>';
-  s += '<path d="M' + ligne + '" fill="none" stroke="#fff" stroke-width="2.5" stroke-linejoin="round"/>';
+  s += '<path d="M' + ligne + '" fill="none" stroke="#6d9dff" stroke-width="3" stroke-linejoin="round" clip-path="url(#g45wpH)"/>'
+    + '<path d="M' + ligne + '" fill="none" stroke="#f5c542" stroke-width="3" stroke-linejoin="round" clip-path="url(#g45wpB)"/>';
   return '<svg viewBox="0 0 ' + W + ' ' + (H + 16) + '" style="width:100%;display:block;margin-top:4px;">' + s + '</svg>';
 }
 function _g45WpFr(v) { return (Math.round(v * 10) / 10).toFixed(1).replace('.', ',') + ' %'; }
@@ -31828,8 +31837,7 @@ function _g45WpContenu(eid) {
     + '<div><div style="font-size:15px;font-weight:800;color:#f5c542;">' + _g45Esc(E.aN) + '</div><div style="font-size:30px;font-weight:900;color:#f5c542;">' + _g45WpFr(pa) + '</div></div>'
     + (pt > 0.5 ? '<div><div style="font-size:15px;font-weight:800;color:#c9d3ee;">Nul</div><div style="font-size:30px;font-weight:900;color:#c9d3ee;">' + _g45WpFr(pt) + '</div></div>' : '')
     + '<div><div style="font-size:15px;font-weight:800;color:#6d9dff;">' + _g45Esc(E.hN) + '</div><div style="font-size:30px;font-weight:900;color:#6d9dff;">' + _g45WpFr(ph) + '</div></div></div>'
-    + _g45WpCourbe(P, E.sport)
-    + '<div style="display:flex;justify-content:space-between;font-size:12.5px;margin-top:2px;"><span style="color:#f5c542;">↓ ' + _g45Esc(E.aN) + '</span><span style="color:#6d9dff;">↑ ' + _g45Esc(E.hN) + '</span></div>'
+    + _g45WpCourbe(P, E.sport, [E.hN, E.aN])
     + '<div style="font-size:13px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#c3cfe6;margin-top:12px;">💰 Comparer avec les cotes</div>';
   var ligne = function (a, b) { return '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:15px;padding:7px 0;border-top:1px solid rgba(255,255,255,.07);"><span>' + a + '</span><b style="text-align:right;white-space:nowrap;">' + b + '</b></div>'; };
   var od = window._g45LastUsOdds, favH = ph >= pa;
