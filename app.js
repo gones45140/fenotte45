@@ -48696,10 +48696,41 @@ async function _g45LnrPage(chemin){
    au bloc qui le contient, et on y cherche le nombre. Le rang vient de l'ordre
    d'apparition : il est parfois dans un element separe que la remontee
    n'attrape pas, alors que l'ordre, lui, est toujours juste. */
-function _g45LnrParse(html){
+/* 30/09/2026 (Antoine : « page reçue mais illisible ») — LA LNR A REFAIT SON SITE : plus aucun lien /joueur/
+   dans le HTML, les joueurs sont dans l'attribut JSON `:ranking` du composant <players-ranking> (SONDÉ PAR
+   ANTOINE sur meilleurs-realisateurs : liste de 100 {rank, player{name, url, image.original}, club{name,
+   logo…}, position, nbPoints, nbTries, nbPenalties, nbDrops, nbConversions, nbMatchesPlayed, nbMinutesPlayed}).
+   Champ lu selon la catégorie ; taux de transformation et cartons : noms de champs NON vérifiés (repérés par
+   motif). L'ancienne lecture par liens reste en secours. */
+function _g45LnrJson(doc, cat) {
+  var el = doc.querySelector('players-ranking'); if (!el) return [];
+  var L = []; try { L = JSON.parse(el.getAttribute(':ranking') || '[]'); } catch (e) { return []; }
+  if (!Array.isArray(L)) L = L.data || L.items || [];
+  var champ = function (x) {
+    var k = Object.keys(x), f;
+    if (/realisateurs/.test(cat)) return x.nbPoints;
+    if (/essais/.test(cat)) return x.nbTries;
+    if (/temps/.test(cat)) return x.nbMinutesPlayed;
+    if (/taux/.test(cat)) { f = k.filter(function (c) { return /percent|rate|ratio|taux|pct/i.test(c); })[0]; if (f) return String(x[f]).replace(/\s*%$/, ''); }
+    if (/cartons/.test(cat)) {
+      var ja = k.filter(function (c) { return /yellow|jaune/i.test(c); })[0], ro = k.filter(function (c) { return /red|rouge/i.test(c); })[0];
+      if (ja || ro) return (ja ? '\ud83d\udfe8 ' + x[ja] : '') + (ja && ro ? ' ' : '') + (ro ? '\ud83d\udfe5 ' + x[ro] : '');
+      f = k.filter(function (c) { return /card|carton/i.test(c); })[0]; if (f) return x[f];
+    }
+    f = k.filter(function (c) { return /^nb/.test(c) && !/MatchesPlayed|MinutesPlayed/.test(c); })[0];
+    return f ? x[f] : '';
+  };
+  return L.map(function (x) {
+    var p = x.player || {}, c = x.club || {}, id = (String(p.url || '').match(/joueur\/(\d+)/) || [])[1] || p.name;
+    return { id: id, nom: p.name || '?', club: c.name || '', val: champ(x) };
+  }).filter(function (r) { return r.val !== '' && r.val != null; });
+}
+function _g45LnrParse(html, cat){
   var out = [];
   try {
     var doc = new DOMParser().parseFromString(html, 'text/html');
+    out = _g45LnrJson(doc, cat || '');
+    if (out.length) return out;
     var vus = {};
     doc.querySelectorAll('a[href*="/joueur/"]').forEach(function(a){
       var m = String(a.getAttribute('href') || '').match(/\/joueur\/(\d+)-([a-z0-9\-]+)/i);
@@ -48739,7 +48770,7 @@ async function g45LnrRender(box, cat){
       + 'v\u00e9rifie que l\'h\u00f4te <b>lnr</b> y est bien d\u00e9clar\u00e9.</div>';
     return;
   }
-  var lignes = _g45LnrParse(html);
+  var lignes = _g45LnrParse(html, cat);
   if (!lignes.length) {
     box.innerHTML = chips + '<div style="color:#ffb13d;font-size:11px;padding:12px;line-height:1.6;">'
       + 'Page re\u00e7ue mais illisible \u2014 la LNR a sans doute chang\u00e9 sa mise en page. '

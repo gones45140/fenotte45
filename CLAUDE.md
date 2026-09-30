@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20260930z, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20261001a, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -534,6 +534,13 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   pas d'onglet Classement hors saison régulière. Saison finie : dernière journée dépliée. Worker : liste blanche LNB
   élargie à toutes les lectures /(match|competition|altrstats)/get… (redéploiement demandé à Antoine le 30/09).
   `_G45_PROA_CID` ne sert plus que de secours pour 2026.
+- Classements individuels TOP 14 (`g45LnrRender`, `_G45_LNR_CATS`, page top14.lnr.fr/classement/joueurs/<cat> via
+  worker host=lnr) : 20261001a — LA LNR A REFAIT SON SITE (« page reçue mais illisible ») : plus de liens /joueur/ ;
+  SONDÉ PAR ANTOINE : JSON dans l'attribut `:ranking` de <players-ranking> (100 joueurs {rank, player{name, url,
+  image.original}, club{name, logo}, position, nbPoints, nbTries, nbPenalties, nbDrops, nbConversions,
+  nbMatchesPlayed, nbMinutesPlayed}) → `_g45LnrJson(doc, cat)` d'abord, ancienne lecture par liens en secours.
+  Taux de transformation / cartons : champs repérés par motif (NON vérifiés). Textes encore en 9–11,5 px (à grossir
+  si Antoine le demande : changement visuel = maquette).
 - Score d'un pari : `_g45ScoreTexte`, cache `g45_score4_<id>` (négatif gardé
   2 h) — effacé par `saveBetEdit` pour relancer la recherche.
 
