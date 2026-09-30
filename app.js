@@ -58134,6 +58134,32 @@ async function _g45KhlJoueurs(progres) {
   if (avecStats >= light.length * 0.9) { try { localStorage.setItem(cle, JSON.stringify({ t: Date.now(), l: tous })); } catch (e) {} }
   return tous;
 }
+/* EFFECTIF D'UNE SEULE ÉQUIPE (30/09/2026, Antoine : « pas un peu problématique
+   pour un service que je veux mettre en abonnement d'attendre 5 mn »).
+   L'onglet Compo lisait les 668 joueurs de la KHL (42 pages, et la liste
+   complète — 231 Ko — trop grosse pour le stockage : relue à CHAQUE ouverture)
+   pour en garder 27. SONDÉ PAR ANTOINE : players_v2 accepte le filtre
+   q[team_id_eq]=<id> → 16 joueurs de l'équipe 113 seulement, en 3 s. Pages de
+   16 : on lit la page suivante tant qu'elle est pleine ET apporte du nouveau
+   (garde-fou si la pagination était ignorée). Cache 3 h par équipe (petit). */
+async function _g45KhlJoueursEquipe(eqId, dire) {
+  var stage = await g45KhlStageActuel(), cle = 'g45khl_eq1_' + stage + '_' + eqId;
+  try { var c = JSON.parse(localStorage.getItem(cle) || 'null'); if (c && c.l && c.l.length && Date.now() - c.t < 3 * 3600000) return c.l; } catch (e) {}
+  var parId = {}, out = [], complet = false;
+  for (var pg = 1; pg <= 6; pg++) {
+    var j = await g45KhlApi('players_v2', { stage_id: stage, 'q[team_id_eq]': eqId, page: pg });
+    if (!Array.isArray(j)) break;                        /* échec : pas de cache */
+    var neufs = 0;
+    j.forEach(function (x) {
+      var p = _g45KhlJoueur(x);
+      if (p.id != null && !parId[p.id] && String(p.eq) === String(eqId)) { parId[p.id] = p; out.push(p); neufs++; }
+    });
+    try { if (typeof dire === 'function') dire(out.length, 0); } catch (e) {}
+    if (j.length < 16 || !neufs) { complet = true; break; }
+  }
+  if (complet && out.length) { try { localStorage.setItem(cle, JSON.stringify({ t: Date.now(), l: out })); } catch (e) {} }
+  return out;
+}
 /* SANS LA LISTE ALLÉGÉE (30/09/2026, SONDÉ PAR ANTOINE : « Effectif KHL non reçu
    pour HC Sotchi ») : players_v2_light → 522 après 20 s, alors que players_v2
    page 2 → 200 en 3 s. Avant, l'échec de la liste allégée vidait TOUT l'effectif
@@ -59186,8 +59212,13 @@ async function g45KhlCompoFiche(el, e) {
   el.innerHTML = '<div class="fc" style="display:flex;align-items:center;gap:10px;padding:20px;color:var(--t3);font-size:12px;">'
     + '<div style="width:16px;height:16px;border:2px solid rgba(77,132,255,.2);border-top-color:#4d84ff;border-radius:50%;animation:spin .8s linear infinite;"></div>'
     + '<span id="g45-khl-compo-etat">Chargement de l\'effectif KHL\u2026</span></div>';
-  var tous = await _g45KhlJoueurs(dire);
-  var eff = (tous || []).filter(function (p) { return String(p.eq) === String(e.id); });
+  /* 30/09 : d'abord l'effectif de CETTE équipe seule (quelques secondes), la
+     ligue entière (668 joueurs, plusieurs minutes) seulement en secours. */
+  var eff = await _g45KhlJoueursEquipe(e.id, dire);
+  if (!eff.length) {
+    var tous = await _g45KhlJoueurs(dire);
+    eff = (tous || []).filter(function (p) { return String(p.eq) === String(e.id); });
+  }
   if (!eff.length) {
     el.innerHTML = '<div class="fc" style="text-align:center;color:#f0b020;padding:18px;font-size:12px;line-height:1.6;">'
       + '\u26a0\ufe0f Effectif KHL non re\u00e7u pour ' + _g45KhlEsc(e.fr) + '.<br>'

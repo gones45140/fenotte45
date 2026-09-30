@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20260930a, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20260930b, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -120,6 +120,10 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   players_v2_light → 522 (20 s) alors que players_v2 page 2 → 200 en 3 s. Si la liste allégée
   échoue : `_g45KhlJoueursSansLight` lit les pages de 16 (lots de 4) jusqu'à une page < 16,
   page 1 à part ; lot entier perdu = arrêt ; cache g45khl_joueurs_<stage> seulement si complet.
+  30b — Compo lit D'ABORD l'équipe seule : `_g45KhlJoueursEquipe(eqId)` = players_v2 avec
+  q[team_id_eq]=<id> (SONDÉ : 16 joueurs de l'équipe 113 seulement, 3 s), pages de 16 tant que
+  pleines et nouvelles ; cache g45khl_eq1_<stage>_<id> 3 h. La ligue entière (231 Ko, jamais
+  stockée : relue à chaque ouverture, ≈ 5 min) n'est plus qu'un secours.
 - COMPTABILITÉ DES PARIS : `_g45BetEffetTotal` / `_g45BetAppliquer` = seule
   source de vérité (mise retirée AU PLACEMENT ; gagné +m×cote ; freebet :
   cagnotte −m, gain m×(cote−1)). `deleteArchived` (DEUX copies) et
