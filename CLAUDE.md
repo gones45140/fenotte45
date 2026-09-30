@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20260930h, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20260930i, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -404,6 +404,13 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   `_g45VsN` (Matchs ▾ : 0 = tous, 5/10/15/20/30, `g45VsNb`), `_g45VsDE` (bouton Dom/Ext, `g45VsDE`) ;
   N derniers COMPLÉTÉS par la saison précédente (`_g45VsListe` / `_g45VsPrec`, lue à la demande),
   sous-titre « 10 (5 + 5 en 2025-26) ». `g45VsMode` gardé pour compatibilité.
+  30i (« oui les deux ») — NOUVEAU SÉLECTEUR #g45-vse (l'ancien, équipes du mur, est caché) : sport
+  (`_G45_VJ_SPORTS`) → ligue → par côté ÉQUIPE (toute la ligue, `_g45CompetEquipes`) + SAISON
+  (`_g45VeSaisons` : foot depuis 2016 — SONDÉ, stats de match ESPN présentes dès 2016 ; US 10 saisons) ;
+  même équipe des deux côtés permise. Foot → `_g45VeLancer` construit les T et appelle
+  `window._g45VsAfficher(D)` (D.picker : pas de liste Saison sous le radar). US → `_g45VeStatsUS`
+  (core …/types/2/teams/<id>/statistics, SONDÉ 2020 et 2026, « catégorie.nom », + ligne de classement
+  j/v/bp/bc dans S._R, cache g45vse1_) → gabarits `_G45_VE_GAB` (bords fixes), `_g45VeVals`.
 - RADAR JOUEUR foot (30f, maquette validée) : bouton « 🕸️ Radar du joueur » dans `_g45CompoJoueur`
   (Classements joueurs ET Compo) → `g45RadOuvrir(pid, lg, pos)` ; SONDÉ : core …/seasons/<an>/types/0/
   athletes/<id>/statistics (minutes, totalGoals, shotAssists, touches, duelsWon, recoveries…),
@@ -418,8 +425,10 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   g45vsj1_, chaque stat en « nom » ET « catégorie.nom ») ; gabarits `_G45_VJ_GAB` (nba, nhlJ, nhlG,
   mlbF, mlbL, nflQB, nflRB, nflWR, nflD ; choix `_G45_VJ_CHOIX`, poste `_g45VjGabPoste`) ; axe sans
   valeur retiré, < 4 axes → message. 30h : Saison ▾ `g45VjAn` (V.an ; `_g45RadStats` et
-  `_g45VjStatsUS` acceptent anForce = cette saison seulement, 1 match/minute suffit). NON SONDÉS : noms des stats lanceurs MLB (pitching.ERA, WHIP,
-  innings…) et NFL hors quarterback (rushing.*, receiving.*, defensive.*).
+  `_g45VjStatsUS` acceptent anForce = cette saison seulement, 1 match/minute suffit). 30i — SONDÉ PAR ANTOINE : lanceurs MLB pitching.ERA/WHIP/innings/
+  strikeouts/walks/wins/strikeoutsPerNineInnings OK ; NFL défense defensive.totalTackles/soloTackles/sacks/
+  tacklesForLoss/passesDefended, defensiveInterceptions.interceptions, general.fumblesForced OK ; coureurs /
+  receveurs NFL : 404 sur les joueurs testés, noms rushing.* / receiving.* toujours NON vérifiés.
 - Score d'un pari : `_g45ScoreTexte`, cache `g45_score4_<id>` (négatif gardé
   2 h) — effacé par `saveBetEdit` pour relancer la recherche.
 
