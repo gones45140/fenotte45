@@ -28404,6 +28404,19 @@ var G45_LEAGUE_GROUPS = [
     {name:'Qualif. C3', slug:'uefa.europa_qual', ico:'🥈'},
     {name:'Qualif. C4', slug:'uefa.europa.conf_qual', ico:'🥉'}
   ]},
+  /* FOOT FÉMININ (30/09/2026, Antoine : « on a rien sur les filles »). SONDÉ PAR
+     ANTOINE : scoreboards 200 pour uefa.wchampions (match 401917006), fra.w.1
+     (French Première Ligue), eng.w.1 (WSL), esp.w.1 (Liga F), usa.nwsl,
+     fifa.wwc, uefa.weuro ; ger.w.1 et ita.w.1 → 400 (noms ESPN inconnus). */
+  {grp:'⚽ Féminin', leagues:[
+    {name:'Champions L. F', slug:'uefa.wchampions', ico:'🏆'},
+    {name:'Première Ligue', slug:'fra.w.1', ico:'🇫🇷'},
+    {name:'WSL', slug:'eng.w.1', ico:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
+    {name:'Liga F', slug:'esp.w.1', ico:'🇪🇸'},
+    {name:'NWSL', slug:'usa.nwsl', ico:'🇺🇸'},
+    {name:'Coupe du monde F', slug:'fifa.wwc', ico:'🌍'},
+    {name:'Euro F', slug:'uefa.weuro', ico:'🇪🇺'}
+  ]},
   {grp:'🌍 Autres championnats', leagues:[
     {name:'Primeira', slug:'por.1', ico:'🇵🇹'},
     {name:'Eredivisie', slug:'ned.1', ico:'🇳🇱'},
@@ -44600,7 +44613,8 @@ var G45_LIGUES_CIVILES = [
   'nor.1','nor.2','swe.1','swe.2','fin.1','irl.1','isl.1','est.1','lva.1','ltu.1',
   'jpn.1','jpn.2','kor.1','chn.1','aus.1','sgp.1',
   'conmebol.libertadores','conmebol.america','242041','fifa.world',
-  '3','mlb','wnba'   /* wnba : 30/09/2026, sondé (saison « 2026 », avril → novembre) */
+  '3','mlb','wnba',   /* wnba : 30/09/2026, sondé (saison « 2026 », avril → novembre) */
+  'usa.nwsl','fifa.wwc','uefa.weuro'   /* 30/09 : foot féminin en année civile */
 ];
 
 function _g45CompetAnneeAuto(slug) {
@@ -50571,7 +50585,8 @@ window.g45RadOuvrir = async function (pid, lg, pos, nom) {
    Bords FIXES = niveau d'un très bon joueur de la ligue (pas des centiles).
    ═══════════════════════════════════════════════════════════════════════════ */
 var _G45_VJ_SPORTS = [
-  { sp: 'soccer', ico: '⚽', lgs: [['fra.1', 'Ligue 1'], ['eng.1', 'Premier League'], ['esp.1', 'Liga'], ['ita.1', 'Serie A'], ['ger.1', 'Bundesliga'], ['por.1', 'Liga Portugal'], ['ned.1', 'Eredivisie'], ['fra.2', 'Ligue 2']] },
+  { sp: 'soccer', ico: '⚽', lgs: [['fra.1', 'Ligue 1'], ['eng.1', 'Premier League'], ['esp.1', 'Liga'], ['ita.1', 'Serie A'], ['ger.1', 'Bundesliga'], ['por.1', 'Liga Portugal'], ['ned.1', 'Eredivisie'], ['fra.2', 'Ligue 2'],
+    /* 30/09 : foot féminin */ ['uefa.wchampions', 'Champions L. F'], ['fra.w.1', 'Première Ligue F'], ['eng.w.1', 'WSL'], ['esp.w.1', 'Liga F'], ['usa.nwsl', 'NWSL']] },
   { sp: 'basketball', ico: '🏀', lgs: [['nba', 'NBA'], ['wnba', 'WNBA']] },
   { sp: 'hockey', ico: '🏒', lgs: [['nhl', 'NHL']] },
   { sp: 'football', ico: '🏈', lgs: [['nfl', 'NFL']] },

@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20260930l, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20260930m, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -445,6 +445,10 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   (±3 pts). Direct : résumé relu chaque minute tant que #g45-wp-<eid> existe (`_g45WpEtat[eid].timer`).
   30l : échelle EN MIROIR comme ESPN (100 % en haut = club qui reçoit, bleu ; 100 % en bas = visiteur,
   jaune ; 50 % au milieu), ligne colorée par moitié, « ↑ X favoris / ↓ Y favoris » (Antoine ne lisait pas 0→100 %).
+- FOOT FÉMININ (30m) : groupe « ⚽ Féminin » dans `G45_LEAGUE_GROUPS` (Compétitions, Résultats, Direct) +
+  listes VS (`_G45_VJ_SPORTS`). SONDÉ PAR ANTOINE : uefa.wchampions, fra.w.1, eng.w.1, esp.w.1, usa.nwsl,
+  fifa.wwc, uefa.weuro = 200 ; ger.w.1 et ita.w.1 = 400 (slugs ESPN inconnus, à chercher). NWSL / CdM / Euro
+  dans G45_LIGUES_CIVILES ; D1 / WSL / Liga F comme les hommes (août → juillet, NON vérifié chez ESPN).
 - Score d'un pari : `_g45ScoreTexte`, cache `g45_score4_<id>` (négatif gardé
   2 h) — effacé par `saveBetEdit` pour relancer la recherche.
 
