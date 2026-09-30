@@ -31937,7 +31937,9 @@ var _g45LiveHtml = {}, _g45LiveTimer = {};
 var _G45_LIVE_TYPES = { 'pass': 'Passe', 'take on': 'Dribble', 'tackle': 'Tacle', 'interception': 'Interception', 'clearance': 'Dégagement',
   'ball recovery': 'Récupération', 'aerial': 'Duel aérien', 'foul': 'Faute', 'offside': 'Hors-jeu', 'corner': 'Corner', 'throw in': 'Touche',
   'free kick': 'Coup franc', 'save': 'Arrêt', 'shot': 'Tir', 'goal': 'BUT', 'yellow card': 'Carton jaune', 'red card': 'Carton rouge',
-  'substitution': 'Remplacement', 'dispossessed': 'Perte de balle', 'blocked': 'Contré', 'claim': 'Sortie du gardien', 'keeper pick-up': 'Gardien' };
+  'substitution': 'Remplacement', 'dispossessed': 'Perte de balle', 'blocked': 'Contré', 'claim': 'Sortie du gardien', 'keeper pick-up': 'Gardien',
+  /* 30/09 (vus en direct sur OL Lyonnes – Chelsea) */ 'out': 'Ballon sorti', 'ball touch': 'Contrôle manqué', 'cross': 'Centre', 'long ball': 'Long ballon',
+  'goal kick': 'Six mètres', 'challenge': 'Duel', 'error': 'Erreur', 'penalty': 'Penalty', 'end period': 'Fin de période', 'start': 'Coup d\'envoi' };
 function _g45LiveType(t) {
   var k = String(t || '').toLowerCase();
   if (_G45_LIVE_TYPES[k]) return _G45_LIVE_TYPES[k];
@@ -31948,17 +31950,19 @@ function _g45LiveType(t) {
 async function _g45LiveFootActions(lg, eid) {
   var base = 'https://sports.core.api.espn.com/v2/sports/soccer/leagues/' + lg + '/events/' + eid + '/competitions/' + eid + '/plays?limit=400';
   var j = null;
-  try { j = await (await fetch(base + '&page=1')).json(); } catch (e) { return null; }
+  try { j = await (await fetch(base + '&page=1', { cache: 'no-store' })).json(); } catch (e) { return null; }
   var n = (j && j.pageCount) || Math.ceil(((j && j.count) || 0) / 400) || 1, items = (j && j.items) || [];
   if (n > 1) {
-    try { var jl = await (await fetch(base + '&page=' + n)).json(); var dern = (jl && jl.items) || [];
-      if (dern.length < 8 && n > 2) { var jp = await (await fetch(base + '&page=' + (n - 1))).json(); dern = ((jp && jp.items) || []).concat(dern); }
+    try { var jl = await (await fetch(base + '&page=' + n, { cache: 'no-store' })).json(); var dern = (jl && jl.items) || [];
+      if (dern.length < 8 && n > 2) { var jp = await (await fetch(base + '&page=' + (n - 1), { cache: 'no-store' })).json(); dern = ((jp && jp.items) || []).concat(dern); }
       items = dern; } catch (e) {}
   }
   return items.filter(function (a) { return a && typeof a.fieldPositionX === 'number'; }).slice(-6);
 }
-function _g45LiveFootHtml(A, idH, nh, na, horloge, score) {
-  var W = 380, H = 250, M = 8, X = function (x) { return M + x / 100 * (W - 2 * M); }, Y = function (y) { return M + y / 100 * (H - 2 * M); };
+function _g45LiveFootHtml(A, idH, nh, na, horloge, score, animer) {
+  /* Bornes : un ballon sur la ligne de touche restait à moitié hors du dessin. */
+  var W = 380, H = 250, M = 8, X = function (x) { return M + Math.max(2, Math.min(98, x)) / 100 * (W - 2 * M); }, Y = function (y) { return M + Math.max(4, Math.min(96, y)) / 100 * (H - 2 * M); };
+  var chemin = [];
   var eqDe = function (a) { var m = String((a.team && a.team.$ref) || '').match(/teams\/(\d+)/); return m ? m[1] : ''; };
   var s = '<rect width="' + W + '" height="' + H + '" rx="10" fill="#2f7a3f"/>';
   for (var i = 0; i < 8; i++) s += '<rect x="' + (M + i * (W - 2 * M) / 8) + '" y="' + M + '" width="' + ((W - 2 * M) / 16) + '" height="' + (H - 2 * M) + '" fill="rgba(255,255,255,.04)"/>';
@@ -31973,14 +31977,22 @@ function _g45LiveFootHtml(A, idH, nh, na, horloge, score) {
     var p = P(a.fieldPositionX, a.fieldPositionY);
     if (prev) s += '<line x1="' + X(prev[0]) + '" y1="' + Y(prev[1]) + '" x2="' + X(p[0]) + '" y2="' + Y(p[1]) + '" stroke="#fff" stroke-dasharray="4 4" opacity=".45"/>';
     s += '<circle cx="' + X(p[0]) + '" cy="' + Y(p[1]) + '" r="7" fill="' + c + '" stroke="#0b101d" stroke-width="2" opacity="' + op + '"/>';
+    chemin.push([X(p[0]), Y(p[1])]);
     if (typeof a.fieldPosition2X === 'number' && (a.fieldPosition2X || a.fieldPosition2Y)) {
       var q = P(a.fieldPosition2X, a.fieldPosition2Y);
       s += '<line x1="' + X(p[0]) + '" y1="' + Y(p[1]) + '" x2="' + X(q[0]) + '" y2="' + Y(q[1]) + '" stroke="' + c + '" stroke-width="3" opacity="' + op + '"/>';
       prev = q;
+      chemin.push([X(q[0]), Y(q[1])]);
     } else prev = p;
     der = { dom: dom };
   });
-  if (prev) s += '<text x="' + X(prev[0]) + '" y="' + (Y(prev[1]) + 7) + '" font-size="18" text-anchor="middle">⚽</text>';
+  /* LE BALLON ROULE (30/09, Antoine : « mouais, ça bouge pas ») : à chaque NOUVELLE
+     action, le ⚽ parcourt le chemin des dernières actions (animateMotion SVG,
+     0,45 s par étape) puis reste à la fin ; sans nouvelle action, il ne bouge pas. */
+  if (prev && animer && chemin.length > 1) {
+    var d = 'M' + chemin.map(function (c) { return c[0].toFixed(1) + ',' + c[1].toFixed(1); }).join(' L');
+    s += '<g><text x="0" y="7" font-size="18" text-anchor="middle">⚽</text><animateMotion dur="' + (0.45 * (chemin.length - 1)).toFixed(2) + 's" path="' + d + '" fill="freeze" calcMode="linear"/></g>';
+  } else if (prev) s += '<text x="' + X(prev[0]) + '" y="' + (Y(prev[1]) + 7) + '" font-size="18" text-anchor="middle">⚽</text>';
   var qui = function (a) { var t = String(a.text || a.shortText || ''); var m = t.match(/^(.+?)\s*\(/); return m ? m[1] : ''; };
   var h = '<div style="font-size:13px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#c3cfe6;">⚽ En direct · <span style="color:#ff6b6b;">🔴 ' + _g45Esc(horloge) + '</span></div>'
     + '<div style="display:flex;justify-content:space-between;margin:8px 0 6px;font-size:16px;font-weight:900;"><span style="color:#6d9dff;">' + _g45Esc(nh) + ' →</span><span>' + _g45Esc(score) + '</span><span style="color:#f5c542;">← ' + _g45Esc(na) + '</span></div>'
@@ -32000,7 +32012,7 @@ async function _g45LiveFootMaj(lg, eid, idH, nh, na) {
   var A = await _g45LiveFootActions(lg, eid);
   var horloge = '', score = '';
   try {
-    var sb = await (await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/' + lg + '/summary?event=' + eid)).json();
+    var sb = await (await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/' + lg + '/summary?event=' + eid, { cache: 'no-store' })).json();
     var co = sb.header.competitions[0], st = co.status || {};
     horloge = st.displayClock || (st.type && st.type.shortDetail) || '';
     var H = co.competitors.filter(function (c) { return c.homeAway === 'home'; })[0] || {}, Aw = co.competitors.filter(function (c) { return c.homeAway === 'away'; })[0] || {};
@@ -32008,7 +32020,13 @@ async function _g45LiveFootMaj(lg, eid, idH, nh, na) {
     if (st.type && st.type.state === 'post') { box.remove(); return; }
   } catch (e) {}
   box = document.getElementById('g45-lfoot-' + eid); if (!box) return;
-  if (A && A.length) { _g45LiveHtml['f' + eid] = _g45LiveFootHtml(A, idH, nh, na, horloge, score); box.innerHTML = _g45LiveHtml['f' + eid]; }
+  if (A && A.length) {
+    var der = A[A.length - 1], cle = String(der.id || '') + '|' + ((der.clock && der.clock.displayValue) || '') + '|' + A.length + '|' + (der.fieldPositionX || '');
+    var nouveau = _g45LiveHtml['k' + eid] !== cle;
+    _g45LiveHtml['k' + eid] = cle;
+    _g45LiveHtml['f' + eid] = _g45LiveFootHtml(A, idH, nh, na, horloge, score, false);
+    box.innerHTML = nouveau ? _g45LiveFootHtml(A, idH, nh, na, horloge, score, true) : _g45LiveHtml['f' + eid];
+  }
   else if (!box.innerHTML) box.innerHTML = '<div style="font-size:14px;color:#fff;">⚽ En direct : ESPN ne publie pas encore les actions de ce match.</div>';
   clearTimeout(_g45LiveTimer['f' + eid]);
   var tick = function () { if (!document.getElementById('g45-lfoot-' + eid)) return; if (document.visibilityState !== 'visible') { _g45LiveTimer['f' + eid] = setTimeout(tick, 20000); return; } _g45LiveFootMaj(lg, eid, idH, nh, na); };
@@ -32069,7 +32087,7 @@ function _g45LiveMlbBloc(data, eid, lg) {
   var tick = function () {
     var box = document.getElementById('g45-lmlb-' + eid); if (!box) return;
     if (document.visibilityState !== 'visible') { _g45LiveTimer['b' + eid] = setTimeout(tick, 20000); return; }
-    fetch('https://site.api.espn.com/apis/site/v2/sports/baseball/' + lg + '/summary?event=' + eid).then(function (r) { return r.json(); }).then(function (d) {
+    fetch('https://site.api.espn.com/apis/site/v2/sports/baseball/' + lg + '/summary?event=' + eid, { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (d) {
       var b = document.getElementById('g45-lmlb-' + eid); if (!b) return;
       var s2 = d && d.header && d.header.competitions && d.header.competitions[0] && d.header.competitions[0].status && d.header.competitions[0].status.type;
       if (s2 && s2.state === 'post') { b.remove(); return; }
