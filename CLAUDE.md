@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20260930t, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20260930u, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -444,6 +444,12 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   tout de suite) ; défilement gardé par `_g45GarderDefilement(el, redessiner)` — 30s : hauteur mini GELÉE 4 s (sinon la
   fenêtre #g45-betlive-modal .g45-bl-card rétrécit pendant le rechargement et remonte en haut) + remise en place toutes les
   150 ms, arrêtée si Antoine fait défiler (wheel/touchstart/keydown). Reproduit en test PC (1280×800) : 900 → 37 avant, 900 → 900 après.
+  30u (« le fait que ça saute m'énerve sérieusement » — 30s ne suffisait pas chez Antoine : les blocs du HAUT, terrain
+  en direct / Carte du match / tirs, étaient recréés 60 ms après le redessin) : `_g45RedessinDoux(el, eid, lg)` prépare
+  le nouveau contenu dans une div DÉTACHÉE (tmp._refresh = 1 : pas de 2e minuterie ; _lastScore recopié), puis échange
+  d'un coup les enfants de el SAUF le bloc `#g45-tirs-<eid>` (gardé tel quel, avec ses propres minuteries) ; position
+  remise dans la même image ; échec réseau = ancien contenu gardé. `_g45GarderDefilement` n'est plus appelé (gardé).
+  Foot seulement ; `_renderGenericDetail` (MLB…) redessine encore en entier.
 - PROBABILITÉ DE VICTOIRE (30k, maquette validée) : `_g45WpBloc(data, eid, hN, aN, sport, lg)` dans
   `_renderGenericDetail` (sous `_g45DeuxAvis`). SONDÉ PAR ANTOINE : summary.winprobability [{homeWinPercentage,
   tiePercentage, playId}] en MLB pendant le match ; NFL/NBA/NHL/foot vides AVANT le match (pendant : à vérifier)

@@ -28263,6 +28263,44 @@ function _g45GarderDefilement(el, redessiner) {
   remettre();
   Promise.resolve(r).then(boucle, boucle);
 }
+/* 30u — LA FENÊTRE EN DIRECT NE SAUTE PLUS (30/09, Antoine : « le fait que ça
+   saute m'énerve sérieusement »). 30p et 30s remettaient la position APRÈS coup :
+   le redessin vidait la fenêtre (el.innerHTML), le terrain en direct et les cartes
+   étaient reposés 60 ms plus tard, et le navigateur avait déjà remonté en haut.
+   Maintenant le nouveau contenu est préparé HORS de l'écran (div détachée), puis
+   échangé d'un seul coup, sans passage par une fenêtre vide ; le bloc du haut
+   (terrain en direct, Carte du match, tirs) n'est PAS recréé : il reste en place
+   avec ses propres rafraîchissements (10 s / 2 min). Position remise dans la
+   même image, avant tout affichage. */
+async function _g45RedessinDoux(el, eventId, league) {
+  if (el._g45Doux) return;                        /* un redessin à la fois */
+  el._g45Doux = 1;
+  try {
+    var tmp = document.createElement('div');
+    tmp.setAttribute('data-open', '1');
+    tmp._refresh = 1;                             /* pas de 2e minuterie */
+    tmp._lastScore = el._lastScore;               /* bannière BUT */
+    await _renderSaisonDetail(tmp, eventId, league);
+    if (el.getAttribute('data-open') !== '1' || !el.isConnected) return;
+    if (!tmp.querySelector('*') || /Résumé indisponible/.test(tmp.textContent) && tmp.children.length === 1) return;  /* échec réseau : on garde l'ancien */
+    el._lastScore = tmp._lastScore;
+    var pos = [], n = el;
+    while (n && n !== document.body) { if (n.scrollTop) pos.push([n, n.scrollTop]); n = n.parentElement; }
+    var se = document.scrollingElement || document.documentElement; pos.push([se, se.scrollTop]);
+    var remettre = function () { pos.forEach(function (p) { try { if (p[0].scrollTop !== p[1]) p[0].scrollTop = p[1]; } catch (e) {} }); };
+    var uid = 'g45-tirs-' + eventId, haut = document.getElementById(uid);
+    if (haut && haut.parentNode !== el) haut = null;
+    var frag = document.createDocumentFragment();
+    while (tmp.firstChild) frag.appendChild(tmp.firstChild);
+    Array.prototype.slice.call(el.childNodes).forEach(function (c) { if (c !== haut) el.removeChild(c); });
+    el.appendChild(frag);
+    remettre();
+    requestAnimationFrame(function () { remettre(); });
+    try { if (typeof _g45ArbRemplir === 'function') _g45ArbRemplir(el, league, eventId, _g45ResumeIA[String(eventId)]); } catch (e) {}
+    if (!haut) setTimeout(function () { try { if (!document.getElementById(uid)) _g45SgCarteTirs(el, league || 'eng.1', eventId, _g45ResumeIA[String(eventId)]); } catch (e) {} }, 80);
+  } catch (e) {} finally { el._g45Doux = 0; }
+}
+window._g45RedessinDoux = _g45RedessinDoux;
 async function _renderSaisonDetail(el, eventId, league){
   window._g45DernierLigue = String(league || '');   /* lu par le bouton domicile/exterieur */
   try{
@@ -28403,7 +28441,7 @@ async function _renderSaisonDetail(el, eventId, league){
 
     // ── Rafraîchissement auto pendant le match (toutes les 30 s) ──
     if(isLive){
-      if(!el._refresh){ el._refresh=setInterval(function(){ if(el.getAttribute('data-open')!=='1'){ clearInterval(el._refresh); el._refresh=null; return; } if(document.hidden||el.offsetParent===null) return; _g45GarderDefilement(el, function(){ return _renderSaisonDetail(el, eventId, league); }); }, 30000); }
+      if(!el._refresh){ el._refresh=setInterval(function(){ if(el.getAttribute('data-open')!=='1'){ clearInterval(el._refresh); el._refresh=null; return; } if(document.hidden||el.offsetParent===null) return; _g45RedessinDoux(el, eventId, league); }, 30000); }
     } else if(el._refresh){ clearInterval(el._refresh); el._refresh=null; }
   }catch(e){ el.innerHTML='<div style="padding:12px;color:#ff6b6b;font-size:11px;text-align:center;">Résumé indisponible.</div>'; }
 }
