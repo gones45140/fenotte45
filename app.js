@@ -28245,12 +28245,23 @@ async function toggleSaisonMatchDetail(rowEl){
    On note le défilement de chaque conteneur parent (et de la page) avant, et on
    le remet après — deux fois, les cartes étant reposées 60 ms plus tard. */
 function _g45GarderDefilement(el, redessiner) {
+  /* 30/09 (« ça saute encore ») : pendant le redessin la fenêtre devenait courte
+     (blocs rechargés un par un) → le navigateur remontait en haut AVANT la remise
+     en place. Donc : 1) hauteur minimale gelée pendant 4 s ; 2) position remise
+     toutes les 150 ms tant que le contenu revient, sauf si Antoine fait défiler. */
   var pos = [], n = el;
   while (n && n !== document.body) { if (n.scrollTop) pos.push([n, n.scrollTop]); n = n.parentElement; }
   var se = document.scrollingElement || document.documentElement; pos.push([se, se.scrollTop]);
-  var remettre = function () { pos.forEach(function (p) { try { p[0].scrollTop = p[1]; } catch (e) {} }); };
+  var hMin = el.offsetHeight, ancienMin = el.style.minHeight, touche = false;
+  if (hMin) el.style.minHeight = hMin + 'px';
+  var main = function () { touche = true; };
+  ['wheel', 'touchstart', 'keydown'].forEach(function (ev) { window.addEventListener(ev, main, { passive: true, once: true }); });
+  var remettre = function () { if (touche) return; pos.forEach(function (p) { try { if (Math.abs(p[0].scrollTop - p[1]) > 2) p[0].scrollTop = p[1]; } catch (e) {} }); };
   var r = null; try { r = redessiner(); } catch (e) {}
-  Promise.resolve(r).then(function () { remettre(); setTimeout(remettre, 120); setTimeout(remettre, 600); }, remettre);
+  var debut = Date.now();
+  var boucle = function () { remettre(); if (Date.now() - debut < 4000 && !touche) setTimeout(boucle, 150); else { el.style.minHeight = ancienMin; ['wheel', 'touchstart', 'keydown'].forEach(function (ev) { window.removeEventListener(ev, main); }); } };
+  remettre();
+  Promise.resolve(r).then(boucle, boucle);
 }
 async function _renderSaisonDetail(el, eventId, league){
   window._g45DernierLigue = String(league || '');   /* lu par le bouton domicile/exterieur */
