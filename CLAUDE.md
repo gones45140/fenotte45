@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20260930e, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20260930f, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -68,8 +68,8 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
 
 1. `node --check app.js` (et tout fichier JS modifié), puis OBLIGATOIRE :
    `node tests/smoke.js` (dans gones45) — ouvre l'appli dans Chromium, tout
-   l'extérieur simulé, 9 contrôles (démarrage, pari simple + joueur, montante,
-   render, fenêtre de match, Outils/santé, règles gagné/perdu, zéro erreur JS).
+   l'extérieur simulé, 11 contrôles (démarrage, pari simple + joueur, montante,
+   render, fenêtre de match, Outils/santé, règles gagné/perdu, avis IA, radars, zéro erreur JS).
    Code de sortie 1 = NE PAS LIVRER. Ajouter un contrôle quand on crée une
    fonction importante.
 2. Simulations node : extraire la zone modifiée (entre deux repères de texte),
@@ -391,6 +391,21 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   (table paris, 10 paris min `_G45_SOC_MIN_CLS`), rafraîchi toutes les 2 min onglet ouvert ;
   tickets `_renderBetTicket` (titre `_g45SocTitre`, date sans heure, freebet) ; formule officielle de prévention (29p, 🔞, SANS logo de l’État).
   IDÉES validées pour plus tard : carte bilan à partager, notifications, récap semaine, ligues.
+- VS ÉQUIPES avec radar (30f, maquette validée) : onglet Pari → VS, `runComparateur` appelle d'abord
+  `_g45VsV2(n1, n2)` (bloc dans une portée FERMÉE : helpers exposés sur window pour smoke.js) :
+  `espnResolveTeam` → ligue, matchs du championnat `_g45ClsMatchs` (moins de 4 matchs → saison
+  précédente), `_g45VsAgg` (buts, tirs, cadrés, corners, possession, fautes, Over, BTS, CS, marque
+  en 1er, BTS 1re MT, victoires dom/ext), bornes = toutes les équipes de la/des ligues
+  `_g45VsBornes` (3 matchs mini), radar `_g45VsRadar` (10 axes `_G45_VS_AXES`, bleu #6d9dff /
+  jaune #f5c542), filtres `g45VsMode` ('saison'|'der5'|'domext' : gauche à DOMICILE, droite à
+  l'EXTÉRIEUR), xG 8 derniers `_g45VsXg` (g45TirsMatch). Sélection / équipe inconnue / < 2 matchs →
+  ancien comparateur inchangé.
+- RADAR JOUEUR foot (30f, maquette validée) : bouton « 🕸️ Radar du joueur » dans `_g45CompoJoueur`
+  (Classements joueurs ET Compo) → `g45RadOuvrir(pid, lg, pos)` ; SONDÉ : core …/seasons/<an>/types/0/
+  athletes/<id>/statistics (minutes, totalGoals, shotAssists, touches, duelsWon, recoveries…),
+  cache g45prad1_ 12 h, < 90 min → saison précédente ; PAR 90 MIN ; gabarits `_G45_RAD_GAB`
+  att/mil/def (bords FIXES, pas des centiles), poste deviné `_g45RadDevine` ; « ➕ Comparer »
+  `g45RadComparer` superpose le radar suivant.
 - Score d'un pari : `_g45ScoreTexte`, cache `g45_score4_<id>` (négatif gardé
   2 h) — effacé par `saveBetEdit` pour relancer la recherche.
 
