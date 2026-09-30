@@ -48674,9 +48674,9 @@ window.g45SofaClassement = g45SofaClassement;
    RESERVE HONNETE : une partie des statistiques du site est reservee aux
    comptes MyRugby. On lit ce que voit un visiteur non connecte, rien de plus. */
 var _G45_LNR_CATS = [
-  { s:'meilleurs-realisateurs',        n:'Meilleurs r\u00e9alisateurs', u:'points' },
-  { s:'meilleurs-marqueurs-dessais',   n:'Marqueurs d\'essais',        u:'essais' },
-  { s:'meilleurs-taux-de-transformation', n:'Taux de transformation',  u:'%' },
+  { s:'meilleurs-realisateurs',        n:'R\u00e9alisateurs', u:'points' },
+  { s:'meilleurs-marqueurs-dessais',   n:'Essais',        u:'essais' },
+  { s:'meilleurs-taux-de-transformation', n:'Transfo %',  u:'%' },
   { s:'temps-de-jeu',                  n:'Temps de jeu',               u:'min' },
   { s:'nombre-de-cartons',             n:'Cartons',                    u:'cartons' }
 ];
@@ -48714,7 +48714,7 @@ function _g45LnrJson(doc, cat) {
     if (/taux/.test(cat)) { f = k.filter(function (c) { return /percent|rate|ratio|taux|pct/i.test(c); })[0]; if (f) return String(x[f]).replace(/\s*%$/, ''); }
     if (/cartons/.test(cat)) {
       var ja = k.filter(function (c) { return /yellow|jaune/i.test(c); })[0], ro = k.filter(function (c) { return /red|rouge/i.test(c); })[0];
-      if (ja || ro) return (ja ? '\ud83d\udfe8 ' + x[ja] : '') + (ja && ro ? ' ' : '') + (ro ? '\ud83d\udfe5 ' + x[ro] : '');
+      if (ja || ro) return (ja ? '\ud83d\udfe8 ' + x[ja] : '') + (ja && ro ? ' \u00a0' : '') + (ro ? '\ud83d\udfe5 ' + x[ro] : '');
       f = k.filter(function (c) { return /card|carton/i.test(c); })[0]; if (f) return x[f];
     }
     f = k.filter(function (c) { return /^nb/.test(c) && !/MatchesPlayed|MinutesPlayed/.test(c); })[0];
@@ -48722,7 +48722,9 @@ function _g45LnrJson(doc, cat) {
   };
   return L.map(function (x) {
     var p = x.player || {}, c = x.club || {}, id = (String(p.url || '').match(/joueur\/(\d+)/) || [])[1] || p.name;
-    return { id: id, nom: p.name || '?', club: c.name || '', val: champ(x) };
+    var lg = c.logo || {};
+    return { id: id, nom: p.name || '?', club: c.name || '', val: champ(x), ph: (p.image && p.image.original) || '',
+      cl: lg['thumbnail-1x'] || lg['thumbnail-2x'] || lg.original || '', mj: x.nbMatchesPlayed };
   }).filter(function (r) { return r.val !== '' && r.val != null; });
 }
 function _g45LnrParse(html, cat){
@@ -48758,8 +48760,8 @@ async function g45LnrRender(box, cat){
   var chips = '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">'
     + _G45_LNR_CATS.map(function(c){
         var on = (c.s === cat);
-        return '<button onclick="g45LnrRender(this.closest(\'[data-lnr]\'),\'' + c.s + '\')" style="border:none;cursor:pointer;border-radius:8px;padding:6px 11px;font-size:11px;font-weight:700;'
-          + 'background:' + (on ? 'var(--a)' : 'rgba(255,255,255,.06)') + ';color:' + (on ? '#0b1020' : 'var(--t2)') + ';">' + c.n + '</button>';
+        return '<button onclick="g45LnrRender(this.closest(\'[data-lnr]\'),\'' + c.s + '\')" style="cursor:pointer;border-radius:9px;padding:9px 12px;font-size:14px;font-weight:800;'
+          + (on ? 'background:#2563eb;border:1px solid #3b82f6;color:#fff;' : 'background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#c9d3ee;') + '">' + c.n + '</button>';
       }).join('') + '</div>';
   box.setAttribute('data-lnr', '1');
   box.innerHTML = chips + '<div style="color:var(--t3);font-size:11px;padding:12px;text-align:center;">\u23f3 Chargement\u2026</div>';
@@ -48778,19 +48780,30 @@ async function g45LnrRender(box, cat){
     return;
   }
   var unite = (_G45_LNR_CATS.filter(function(c){ return c.s === cat; })[0] || {}).u || '';
-  var h = chips + '<div style="display:flex;flex-direction:column;gap:3px;">';
-  lignes.slice(0, 40).forEach(function(r, i){
-    var col = i === 0 ? '#f5c542' : (i === 1 ? '#dfe6f5' : (i === 2 ? '#e2a06a' : 'var(--t3)'));
-    h += '<div style="display:grid;grid-template-columns:28px 1fr auto;gap:8px;align-items:center;padding:7px 9px;border-radius:6px;background:rgba(255,255,255,' + (i % 2 ? '.02' : '.045') + ');">'
-      + '<span style="font-size:11px;font-weight:800;color:' + col + ';">' + (i + 1) + '</span>'
-      + '<span style="font-size:11.5px;font-weight:' + (i < 3 ? '800' : '600') + ';color:var(--t1);overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">'
-        + r.nom + (r.club ? ('<span style="color:var(--t3);font-weight:400;font-size:10px;"> \u00b7 ' + r.club + '</span>') : '') + '</span>'
-      + '<span style="font-size:12px;font-weight:800;color:var(--a);">' + r.val + '<span style="font-size:9px;color:var(--t3);font-weight:400;"> ' + unite + '</span></span>'
-      + '</div>';
+  /* 20261001b — LIFTING (maquette validée « oui ») : fond sombre, 13–18 px, photo ronde + logo du club (fournis
+     par la LNR depuis la refonte), podium or / argent / bronze, matchs joués, cartons sans unité, 30 puis « Voir plus ». */
+  var nb = _g45LnrPlus[cat] ? 100 : 30, med = ['#f5c542', '#dfe6f5', '#e2a06a'];
+  var esc = function (x) { return String(x == null ? '' : x).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+  var h = chips + '<div style="background:rgba(11,16,29,.9);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:4px 12px;">';
+  lignes.slice(0, nb).forEach(function(r, i){
+    var ini = String(r.nom || '?').split(/\s+/).map(function (w) { return w.charAt(0); }).join('').slice(0, 2);
+    var photo = '<span style="position:relative;width:46px;height:46px;flex:none;"><span style="position:absolute;inset:0;border-radius:50%;background:#dfe6f5;color:#0b101d;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;">' + esc(ini) + '</span>'
+      + (r.ph ? '<img src="' + esc(r.ph) + '" alt="" loading="lazy" style="position:absolute;inset:0;width:46px;height:46px;border-radius:50%;object-fit:cover;object-position:50% 12%;background:#dfe6f5;" onerror="this.remove()">' : '') + '</span>';
+    var logo = r.cl ? '<img src="' + esc(r.cl) + '" alt="" loading="lazy" style="width:18px;height:18px;object-fit:contain;flex:none;" onerror="this.remove()">' : '';
+    var val = /cartons/.test(cat) ? esc(r.val) : esc(r.val) + ' <span style="font-size:13px;font-weight:600;color:#c9d3ee;">' + esc(unite) + '</span>';
+    h += '<div style="display:flex;align-items:center;gap:10px;padding:9px 0;' + (i ? 'border-top:1px solid rgba(255,255,255,.08);' : '') + '">'
+      + '<span style="width:24px;font-size:15px;font-weight:800;color:' + (med[i] || '#c9d3ee') + ';flex:none;">' + (i + 1) + '</span>' + photo
+      + '<span style="flex:1;min-width:0;"><span style="display:block;color:#fff;font-size:15px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(r.nom) + '</span>'
+      + '<span style="display:flex;align-items:center;gap:6px;color:#c9d3ee;font-size:13px;min-width:0;">' + logo + '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(r.club)
+      + (r.mj != null && r.mj !== '' ? ' \u00b7 ' + esc(r.mj) + ' match' + (+r.mj > 1 ? 's' : '') : '') + '</span></span></span>'
+      + '<span style="font-size:18px;font-weight:800;color:#fff;white-space:nowrap;flex:none;">' + val + '</span></div>';
   });
-  box.innerHTML = h + '</div><div style="font-size:9px;color:var(--t3);margin-top:8px;line-height:1.5;">'
+  h += '</div>';
+  if (lignes.length > nb) h += '<button onclick="_g45LnrPlus[\'' + cat + '\']=1;g45LnrRender(this.closest(\'[data-lnr]\'),\'' + cat + '\')" style="width:100%;margin-top:8px;padding:10px;border-radius:9px;border:1px solid rgba(109,157,255,.5);background:rgba(47,107,255,.18);color:#fff;font-size:14px;font-weight:800;cursor:pointer;">Voir plus (' + lignes.length + ' joueurs)</button>';
+  box.innerHTML = h + '<div style="font-size:13px;color:#fff;margin-top:8px;line-height:1.5;background:rgba(11,16,29,.8);padding:6px 8px;border-radius:8px;">'
     + 'Source : LNR (top14.lnr.fr). Certaines statistiques du site sont r\u00e9serv\u00e9es aux comptes MyRugby et ne sont pas reprises ici.</div>';
 }
+var _g45LnrPlus = {};
 window.g45LnrRender = g45LnrRender;
 
 async function g45StatsIndRender(c, box) {
