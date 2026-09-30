@@ -26118,38 +26118,74 @@ function _g45VsLigne(lib, a, b, unit, inv, dec) {
     + '<div style="color:#f5c542;font-weight:' + (bb ? 800 : 600) + ';opacity:' + (bb || !ok ? 1 : .65) + ';">' + f(b) + '</div></div>';
 }
 function _g45VsSec(t) { return '<div style="font-size:13px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;margin:14px 0 4px;color:#c3cfe6;">' + t + '</div>'; }
-function _g45VsChip(lib, on, mode) {
-  return '<button onclick="g45VsMode(\'' + mode + '\')" style="padding:7px 12px;border-radius:9px;font-size:13px;font-weight:700;margin:8px 4px 0;cursor:pointer;color:#fff;'
-    + 'background:' + (on ? '#2f6bff' : '#232d4b') + ';border:1px solid ' + (on ? '#2f6bff' : 'rgba(255,255,255,.15)') + ';">' + lib + '</button>';
+/* RÉGLAGES (30/09/2026, demande d'Antoine : « faudrait choisir une saison » puis
+   « sélecteur 5, 10, 15, 20, 30 », « oui tout ») :
+   · Saison ▾ : auto (saison en cours, ou précédente si < 4 matchs) ou une saison
+     précise ; les bornes du radar = championnat de CETTE saison ;
+   · Matchs ▾ : toute la saison ou les N derniers (5, 10, 15, 20, 30). S'il en
+     manque, on COMPLÈTE avec la fin de la saison précédente (lue à la demande)
+     et le sous-titre le dit : « 10 matchs (5 + 5 en 2025-26) » ;
+   · Dom / Ext : bouton marche/arrêt (gauche à domicile, droite à l'extérieur),
+     combinable avec les deux autres. */
+var _g45VsN = 0, _g45VsDE = false, _g45VsAn = 0;
+function _g45VsSelect(id, opts, val, onch) {
+  return '<select id="' + id + '" onchange="' + onch + '" style="width:100%;padding:9px 8px;border-radius:9px;background:#0f1729;color:#fff;border:1px solid rgba(255,255,255,.18);font-size:14px;font-weight:700;font-family:inherit;min-width:0;">'
+    + opts.map(function (o) { return '<option value="' + o[0] + '"' + (String(o[0]) === String(val) ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select>';
 }
 function _g45VsLogo(T) {
   return T.logo ? '<img src="' + T.logo + '" alt="" style="width:40px;height:40px;object-fit:contain;display:block;margin:0 auto 4px;" onerror="this.remove()">' : '';
+}
+/* Matchs retenus pour une équipe : filtre Dom/Ext, N derniers, complément
+   avec la saison précédente si besoin. {ms, prev, attente}. */
+function _g45VsListe(T, cote) {
+  var base = _g45VsFiltre(T.ms, T.id, cote || 'saison');
+  if (!_g45VsN) return { ms: base, prev: 0 };
+  if (base.length >= _g45VsN) return { ms: base.slice(-_g45VsN), prev: 0 };
+  if (T.msPrev === undefined) { _g45VsPrec(T); return { ms: base, prev: 0, attente: true }; }
+  if (T.msPrev === null) return { ms: base, prev: 0, attente: true };
+  var p = _g45VsFiltre(T.msPrev, T.id, cote || 'saison'), add = p.slice(-(_g45VsN - base.length));
+  return { ms: add.concat(base), prev: add.length };
+}
+async function _g45VsPrec(T) {
+  T.msPrev = null;
+  var L = null; try { L = await _g45ClsMatchs(T.lg, T.an - 1); } catch (e) {}
+  T.msPrev = _g45VsSiens(L, T.id);
+  _g45VsRendre();
 }
 /* Rendu depuis les données gardées (les filtres ne relisent rien). */
 function _g45VsRendre() {
   var D = _g45VsData; if (!D) return;
   var cont = document.getElementById('comp-content'); if (!cont) return;
-  var mode = _g45VsMode, T1 = D.t1, T2 = D.t2;
-  var m1 = _g45VsFiltre(T1.ms, T1.id, mode === 'domext' ? 'dom' : mode);
-  var m2 = _g45VsFiltre(T2.ms, T2.id, mode === 'domext' ? 'ext' : mode);
+  var T1 = D.t1, T2 = D.t2;
+  var r1 = _g45VsListe(T1, _g45VsDE ? 'dom' : ''), r2 = _g45VsListe(T2, _g45VsDE ? 'ext' : '');
+  var m1 = r1.ms, m2 = r2.ms;
   var g1 = _g45VsAgg(m1, T1.id), g2 = _g45VsAgg(m2, T2.id);
-  var sousT = (T1.lg === T2.lg ? T1.lgNom : T1.lgNom + ' / ' + T2.lgNom) + ' · ' + T1.saison + ' · '
-    + (mode === 'domext' ? m1.length + ' matchs à dom. / ' + m2.length + ' à l\'ext.' : m1.length + ' / ' + m2.length + ' matchs') + ' · par match';
+  var prevLib = function (T) { return (typeof _g45SgLabel === 'function') ? _g45SgLabel(T.lg, T.an - 1) : (T.an - 1); };
+  var cpt = function (T, r) { return r.ms.length + (r.prev ? ' (' + (r.ms.length - r.prev) + ' + ' + r.prev + ' en ' + prevLib(T) + ')' : ''); };
+  var an0 = _g45CompetAnneeAuto(T1.lg), ans = [[0, 'Auto (' + T1.saison + ')']];
+  for (var y = an0; y > an0 - 4; y--) ans.push([y, (typeof _g45SgLabel === 'function') ? _g45SgLabel(T1.lg, y) : y]);
+  var nbs = [[0, 'Tous les matchs'], [5, '5 derniers'], [10, '10 derniers'], [15, '15 derniers'], [20, '20 derniers'], [30, '30 derniers']];
   var h = '<div style="background:linear-gradient(160deg,rgba(27,36,64,.92),rgba(19,26,46,.92));border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:14px;color:#fff;">'
     + '<div style="display:grid;grid-template-columns:1fr 40px 1fr;align-items:center;text-align:center;">'
     + '<div>' + _g45VsLogo(T1) + '<div style="font-size:17px;font-weight:800;color:#6d9dff;">' + _g45Esc(T1.nom) + '</div></div>'
     + '<div style="font-weight:800;opacity:.75;">VS</div>'
     + '<div>' + _g45VsLogo(T2) + '<div style="font-size:17px;font-weight:800;color:#f5c542;">' + _g45Esc(T2.nom) + '</div></div></div>'
-    + '<div style="font-size:13px;text-align:center;margin-top:6px;">' + sousT + '</div>'
-    + '<div style="text-align:center;">' + _g45VsChip('Saison', mode === 'saison', 'saison') + _g45VsChip('5 der.', mode === 'der5', 'der5')
-    + _g45VsChip('Dom / Ext', mode === 'domext', 'domext') + '</div>';
+    + '<div style="font-size:13px;text-align:center;margin-top:6px;">' + (T1.lg === T2.lg ? T1.lgNom : T1.lgNom + ' / ' + T2.lgNom) + ' · ' + T1.saison + ' · par match</div>'
+    + '<div style="font-size:13px;text-align:center;margin-top:2px;"><span style="color:#6d9dff;">' + cpt(T1, r1) + (_g45VsDE ? ' à dom.' : '') + '</span> / '
+    + '<span style="color:#f5c542;">' + cpt(T2, r2) + (_g45VsDE ? ' à l\'ext.' : '') + '</span> matchs'
+    + (r1.attente || r2.attente ? ' · ⏳ saison précédente…' : '') + '</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px;">'
+    + _g45VsSelect('g45-vs-an', ans, _g45VsAn, 'g45VsSaison(this.value)')
+    + _g45VsSelect('g45-vs-nb', nbs, _g45VsN, 'g45VsNb(this.value)')
+    + '<button onclick="g45VsDE()" style="grid-column:1 / -1;padding:9px 12px;border-radius:9px;font-size:14px;font-weight:800;cursor:pointer;color:#fff;background:' + (_g45VsDE ? '#2f6bff' : '#232d4b')
+    + ';border:1px solid ' + (_g45VsDE ? '#2f6bff' : 'rgba(255,255,255,.15)') + ';">Dom / Ext</button></div>';
   if (!m1.length || !m2.length) {
-    h += '<div style="font-size:14px;color:#f0b020;text-align:center;padding:16px;">Pas assez de matchs pour ce filtre.</div></div>';
+    h += '<div style="font-size:14px;color:#f0b020;text-align:center;padding:16px;">Pas assez de matchs pour ce choix.</div></div>';
     cont.innerHTML = h; return;
   }
   h += _g45VsRadar(g1, g2, D.B)
-    + '<div style="font-size:13px;line-height:1.5;margin-top:4px;">Bord du radar = <b>la meilleure équipe du championnat</b>, centre = la moins bonne. '
-    + 'Pour « encaissés » et « tirs concédés », le bord = en concéder le moins.' + (mode === 'domext' ? ' Gauche jugée à domicile, droite à l\'extérieur.' : '') + '</div>'
+    + '<div style="font-size:13px;line-height:1.5;margin-top:4px;">Bord du radar = <b>la meilleure équipe du championnat ' + T1.saison + '</b>, centre = la moins bonne. '
+    + 'Pour « encaissés » et « tirs concédés », le bord = en concéder le moins.' + (_g45VsDE ? ' Gauche jugée à domicile, droite à l\'extérieur.' : '') + '</div>'
     + _g45VsSec('Attaque')
     + _g45VsLigne('Buts marqués', g1.bm, g2.bm) + '<div id="g45-vs-xg"></div>'
     + _g45VsLigne('Tirs', g1.ti, g2.ti) + _g45VsLigne('Tirs cadrés', g1.tc, g2.tc) + _g45VsLigne('Corners', g1.co, g2.co)
@@ -26163,7 +26199,8 @@ function _g45VsRendre() {
     + _g45VsLigne('Victoires dom.', g1.vd, g2.vd, '%') + _g45VsLigne('Victoires ext.', g1.ve, g2.ve, '%')
     + '</div>';
   cont.innerHTML = h;
-  _g45VsXg(m1.slice(-8), T1, m2.slice(-8), T2, mode);
+  _g45VsMode = [_g45VsAn, _g45VsN, _g45VsDE, m1.length, m2.length].join('|');
+  _g45VsXg(m1.slice(-8), T1, m2.slice(-8), T2, _g45VsMode);
 }
 /* xG (8 derniers matchs du filtre), posé après l'affichage. */
 async function _g45VsXg(m1, T1, m2, T2, mode) {
@@ -26186,11 +26223,24 @@ async function _g45VsXg(m1, T1, m2, T2, mode) {
   if (!r[0] && !r[1]) { slot.innerHTML = ''; return; }
   slot.innerHTML = _g45VsLigne('xG', r[0] && r[0].p, r[1] && r[1].p) + _g45VsLigne('xG concédés', r[0] && r[0].c, r[1] && r[1].c, '', 1);
 }
-function g45VsMode(m) { _g45VsMode = m; _g45VsRendre(); }
+/* Compatibilité (anciens boutons) : 'saison' | 'der5' | 'domext'. */
+function g45VsMode(m) { _g45VsN = (m === 'der5') ? 5 : 0; _g45VsDE = (m === 'domext'); _g45VsRendre(); }
 window.g45VsMode = g45VsMode;
+window.g45VsNb = function (v) { _g45VsN = parseInt(v, 10) || 0; _g45VsRendre(); };
+window.g45VsDE = function () { _g45VsDE = !_g45VsDE; _g45VsRendre(); };
+window.g45VsSaison = async function (v) {
+  _g45VsAn = parseInt(v, 10) || 0;
+  var D = _g45VsData; if (!D) return;
+  var cont = document.getElementById('comp-content');
+  if (cont) cont.insertAdjacentHTML('afterbegin', '<div style="font-size:14px;color:#fff;text-align:center;padding:8px;">⏳ Lecture de la saison…</div>');
+  var ok = false; try { ok = await _g45VsV2(D.n1, D.n2); } catch (e) {}
+  if (!ok && cont) cont.innerHTML = '<div style="font-size:14px;color:#f0b020;text-align:center;padding:16px;">Pas de matchs pour cette saison. '
+    + '<button onclick="g45VsSaison(0)" style="margin-left:6px;padding:6px 10px;border-radius:8px;border:none;background:#2f6bff;color:#fff;font-weight:800;">Saison auto</button></div>';
+};
 /* Exposées pour tests/smoke.js (ce bloc vit dans une portée fermée). */
 window._g45VsAgg = _g45VsAgg; window._g45VsSiens = _g45VsSiens; window._g45VsRadar = _g45VsRadar; window._g45VsBornes = _g45VsBornes;
-/* Retourne true si le nouveau comparateur a pu s'afficher. */
+/* Retourne true si le nouveau comparateur a pu s'afficher. Saison : _g45VsAn
+   (0 = auto : en cours, ou précédente si moins de 4 matchs). */
 async function _g45VsV2(n1, n2) {
   var T = [], i;
   var noms = [n1, n2];
@@ -26201,11 +26251,11 @@ async function _g45VsV2(n1, n2) {
     T.push({ nom: noms[i], id: String(r.id), lg: r.league });
   }
   for (i = 0; i < 2; i++) {
-    var an = _g45CompetAnneeAuto(T[i].lg), L = null, ms = [];
+    var an = _g45VsAn || _g45CompetAnneeAuto(T[i].lg), L = null, ms = [];
     try { L = await _g45ClsMatchs(T[i].lg, an); } catch (e) {}
     ms = _g45VsSiens(L, T[i].id);
-    /* Début de saison : moins de 4 matchs → saison précédente. */
-    if (ms.length < 4) {
+    /* Saison auto, début de saison : moins de 4 matchs → saison précédente. */
+    if (!_g45VsAn && ms.length < 4) {
       var L2 = null; try { L2 = await _g45ClsMatchs(T[i].lg, an - 1); } catch (e) {}
       var ms2 = _g45VsSiens(L2, T[i].id);
       if (ms2.length > ms.length) { L = L2; ms = ms2; an = an - 1; }
@@ -26218,7 +26268,7 @@ async function _g45VsV2(n1, n2) {
     T[i].saison = (typeof _g45SgLabel === 'function') ? _g45SgLabel(T[i].lg, an) : an;
   }
   var listes = [T[0].L]; if (T[1].L !== T[0].L) listes.push(T[1].L);
-  _g45VsData = { t1: T[0], t2: T[1], B: _g45VsBornes(listes) };
+  _g45VsData = { n1: n1, n2: n2, t1: T[0], t2: T[1], B: _g45VsBornes(listes) };
   _g45VsRendre();
   return true;
 }
@@ -50063,9 +50113,10 @@ var _G45_RAD_GAB = {
 };
 var _G45_RAD_NOMS = { att: 'Attaquant', mil: 'Milieu', def: 'Défenseur' };
 var _g45RadGab = {}, _g45RadRef = null, _g45RadData = {};
-async function _g45RadStats(lg, pid) {
-  var anA = _g45CompetAnneeAuto(lg);
-  for (var an = anA; an >= anA - 1; an--) {
+async function _g45RadStats(lg, pid, anForce) {
+  /* anForce (30/09, VS Joueurs « Saison ▾ ») : cette saison seulement. */
+  var anA = anForce || _g45CompetAnneeAuto(lg);
+  for (var an = anA; an >= (anForce ? anA : anA - 1); an--) {
     var ck = 'g45prad1_' + lg + '_' + an + '_' + pid, S = null;
     try { var c = JSON.parse(localStorage.getItem(ck) || 'null'); if (c && c.x > Date.now()) S = c.d; } catch (e) {}
     if (!S) {
@@ -50079,7 +50130,7 @@ async function _g45RadStats(lg, pid) {
       } catch (e) {}
     }
     /* Début de saison (moins d'un match complet) : saison précédente. */
-    if (S && S.minutes >= 90) {
+    if (S && S.minutes >= (anForce ? 1 : 90)) {
       S._tirs = (S.totalShots != null) ? S.totalShots : ((S.shotsOnTarget || 0) + (S.shotsOffTarget || 0));
       if (S.totalGoals == null && S.goals != null) S.totalGoals = S.goals;
       S._an = an; S._lg = lg;
@@ -50306,9 +50357,9 @@ function _g45VjGabPoste(sp, pos, S) {
   return '';
 }
 /* Stats saison d'un joueur US (types/2), cache g45vsj1_ 12 h. */
-async function _g45VjStatsUS(sp, lg, pid) {
-  var anA = (typeof _g45SgAnAuto === 'function') ? _g45SgAnAuto(lg) : new Date().getFullYear();
-  for (var an = anA; an >= anA - 1; an--) {
+async function _g45VjStatsUS(sp, lg, pid, anForce) {
+  var anA = anForce || ((typeof _g45SgAnAuto === 'function') ? _g45SgAnAuto(lg) : new Date().getFullYear());
+  for (var an = anA; an >= (anForce ? anA : anA - 1); an--) {
     var ck = 'g45vsj1_' + lg + '_' + an + '_' + pid, S = null;
     try { var c = JSON.parse(localStorage.getItem(ck) || 'null'); if (c && c.x > Date.now()) S = c.d; } catch (e) {}
     if (!S) {
@@ -50328,7 +50379,7 @@ async function _g45VjStatsUS(sp, lg, pid) {
       } catch (e) {}
     }
     var gp = S && (S.gamesPlayed || S.games || S['general.gamesPlayed'] || 0);
-    if (S && gp >= 3) { S._an = an; S._gp = gp; return S; }
+    if (S && gp >= (anForce ? 1 : 3)) { S._an = an; S._gp = gp; return S; }
   }
   return null;
 }
@@ -50384,6 +50435,11 @@ function _g45VjDessiner() {
     + '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;">'
     + _G45_VJ_SPORTS.map(function (x) { return _g45VjBtn(x.ico, x.sp === V.sp, "g45VjSport('" + x.sp + "')", 'font-size:20px;'); }).join('') + '</div>'
     + _g45VjSel('g45-vj-lg', SP.lgs, V.lg, 'g45VjLigue(this.value)')
+    /* Saison (30/09) : auto = en cours, ou précédente si trop peu joué. */
+    + _g45VjSel('g45-vj-an', (function () {
+        var a0 = V.sp === 'soccer' ? _g45CompetAnneeAuto(V.lg) : _g45SgAnAuto(V.lg), o = [[0, 'Saison auto']];
+        for (var y = a0; y > a0 - 4; y--) o.push([y, 'Saison ' + ((typeof _g45SgLabel === 'function') ? _g45SgLabel(V.lg, y) : y)]);
+        return o; })(), V.an || 0, 'g45VjAn(this.value)')
     + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">';
   [0, 1].forEach(function (i) {
     var C = V.cotes[i], col = i ? '#f5c542' : '#6d9dff';
@@ -50463,7 +50519,7 @@ window.g45VjSport = function (sp) {
   _g45Vj = { sp: sp, lg: SP.lgs[0][0], eqs: [], cotes: [{}, {}], gab: '' };
   _g45VjChargerEquipes();
 };
-window.g45VjLigue = function (lg) { _g45Vj.lg = lg; _g45Vj.cotes = [{}, {}]; _g45Vj.gab = ''; _g45VjChargerEquipes(); };
+window.g45VjLigue = function (lg) { _g45Vj.lg = lg; _g45Vj.cotes = [{}, {}]; _g45Vj.gab = ''; _g45Vj.an = 0; _g45VjChargerEquipes(); };
 window.g45VjEquipe = async function (i, id) {
   var V = _g45Vj; V.cotes[i] = { eq: id }; V.gab = '';
   _g45VjDessiner();
@@ -50480,13 +50536,18 @@ window.g45VjJoueur = async function (i, pid) {
   var a = (C.roster || []).filter(function (x) { return x.id === pid; })[0] || {};
   C.nom = a.nom || ('#' + pid); C.pos = a.pos || ''; C.charge = true;
   _g45VjResultat();
-  var S = (V.sp === 'soccer') ? await _g45RadStats(V.lg, pid) : await _g45VjStatsUS(V.sp, V.lg, pid);
+  var S = (V.sp === 'soccer') ? await _g45RadStats(V.lg, pid, V.an || 0) : await _g45VjStatsUS(V.sp, V.lg, pid, V.an || 0);
   if (C.jo !== pid) return;
   C.charge = false; C.S = S;
-  if (!S) C.err = 'Pas assez de matchs pour ' + C.nom + ' (ou stats ESPN indisponibles).';
+  if (!S) C.err = 'Pas assez de matchs pour ' + C.nom + (V.an ? ' cette saison' : '') + ' (ou stats ESPN indisponibles).';
   _g45VjResultat();
 };
 window.g45VjGab = function (k) { _g45Vj.gab = k; _g45VjResultat(); };
+window.g45VjAn = function (v) {
+  var V = _g45Vj; V.an = parseInt(v, 10) || 0;
+  [0, 1].forEach(function (i) { var C = V.cotes[i]; if (C.jo) { C.S = null; window.g45VjJoueur(i, C.jo); } });
+  _g45VjResultat();
+};
 /* Bascule Équipes / Joueurs, posée une fois en tête de l'onglet VS. */
 window.g45VsBascule = function (m) {
   _g45VjMode = m; window._g45VjModeW = m;
