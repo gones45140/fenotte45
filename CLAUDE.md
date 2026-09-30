@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20260930o, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20260930p, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -439,6 +439,9 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   Antoine sur Lyon–Rennes 4-0 (capture 30/09) ; repli sur les tirs, ligne absente = retirée ; joueur le plus dangereux = buts + xG) → `_g45AmHtml`
   (course aux xG `_g45AmCourbe`). Direct : relu toutes les 2 min (`_g45AmTimer`, s'arrête carte fermée).
   Partage `g45AmPartager` : `_g45AmSvgPartage` (SVG sans logos) → canvas → PNG → navigator.share / téléchargement.
+  30p : la fenêtre foot d'un match en cours est REDESSINÉE toutes les 30 s (`_renderSaisonDetail`, el._refresh) →
+  cartes ouvertes retenues (`_g45AmOuvert` / `_g45TirsOuvert`) et rouvertes par `_g45SgCarteTirs` (derniers chiffres
+  tout de suite) ; défilement gardé par `_g45GarderDefilement(el, redessiner)`.
 - PROBABILITÉ DE VICTOIRE (30k, maquette validée) : `_g45WpBloc(data, eid, hN, aN, sport, lg)` dans
   `_renderGenericDetail` (sous `_g45DeuxAvis`). SONDÉ PAR ANTOINE : summary.winprobability [{homeWinPercentage,
   tiePercentage, playId}] en MLB pendant le match ; NFL/NBA/NHL/foot vides AVANT le match (pendant : à vérifier)

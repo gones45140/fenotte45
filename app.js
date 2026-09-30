@@ -28240,6 +28240,18 @@ async function toggleSaisonMatchDetail(rowEl){
   await _renderSaisonDetail(el, eventId, league);
 }
 // Rendu du détail Saisons — même traitement live que la Coupe du Monde, re-jouable pour le rafraîchissement
+/* POSITION GARDÉE (30/09, Antoine : « au rafraîchissement ça saute ») : le
+   redessin toutes les 30 s d'un match en cours renvoyait en haut de la fenêtre.
+   On note le défilement de chaque conteneur parent (et de la page) avant, et on
+   le remet après — deux fois, les cartes étant reposées 60 ms plus tard. */
+function _g45GarderDefilement(el, redessiner) {
+  var pos = [], n = el;
+  while (n && n !== document.body) { if (n.scrollTop) pos.push([n, n.scrollTop]); n = n.parentElement; }
+  var se = document.scrollingElement || document.documentElement; pos.push([se, se.scrollTop]);
+  var remettre = function () { pos.forEach(function (p) { try { p[0].scrollTop = p[1]; } catch (e) {} }); };
+  var r = null; try { r = redessiner(); } catch (e) {}
+  Promise.resolve(r).then(function () { remettre(); setTimeout(remettre, 120); setTimeout(remettre, 600); }, remettre);
+}
 async function _renderSaisonDetail(el, eventId, league){
   window._g45DernierLigue = String(league || '');   /* lu par le bouton domicile/exterieur */
   try{
@@ -28380,7 +28392,7 @@ async function _renderSaisonDetail(el, eventId, league){
 
     // ── Rafraîchissement auto pendant le match (toutes les 30 s) ──
     if(isLive){
-      if(!el._refresh){ el._refresh=setInterval(function(){ if(el.getAttribute('data-open')!=='1'){ clearInterval(el._refresh); el._refresh=null; return; } if(document.hidden||el.offsetParent===null) return; _renderSaisonDetail(el, eventId, league); }, 30000); }
+      if(!el._refresh){ el._refresh=setInterval(function(){ if(el.getAttribute('data-open')!=='1'){ clearInterval(el._refresh); el._refresh=null; return; } if(document.hidden||el.offsetParent===null) return; _g45GarderDefilement(el, function(){ return _renderSaisonDetail(el, eventId, league); }); }, 30000); }
     } else if(el._refresh){ clearInterval(el._refresh); el._refresh=null; }
   }catch(e){ el.innerHTML='<div style="padding:12px;color:#ff6b6b;font-size:11px;text-align:center;">Résumé indisponible.</div>'; }
 }
@@ -49582,9 +49594,14 @@ async function _g45AmCharger(zone, lg, eid, relire) {
   };
   if (D.live) _g45AmTimer[eid] = setTimeout(tick, 120000);
 }
+/* OUVERTE OU NON (30/09, Antoine : « la carte saute au rafraîchissement ») : la
+   fenêtre d'un match en cours est redessinée toutes les 30 s (_renderSaisonDetail) ;
+   on retient les cartes ouvertes pour les rouvrir aussitôt (_g45SgCarteTirs). */
+var _g45AmOuvert = {}, _g45TirsOuvert = {};
 window.g45AmOuvrir = function (btn, lg, eid) {
   var zone = btn.parentNode.querySelector('.g45-am-zone'); if (!zone) return;
-  if (zone.innerHTML) { zone.innerHTML = ''; clearTimeout(_g45AmTimer[eid]); return; }
+  if (zone.innerHTML) { zone.innerHTML = ''; clearTimeout(_g45AmTimer[eid]); _g45AmOuvert[eid] = false; return; }
+  _g45AmOuvert[eid] = true;
   zone.innerHTML = '<div style="font-size:14px;color:#fff;padding:10px;">⏳ Carte du match…</div>';
   _g45AmCharger(zone, lg, eid, false);
 };
@@ -49664,6 +49681,18 @@ async function _g45SgCarteTirs(panel, lg, eid, sum) {
     + (st.state === 'in' ? '\ud83d\udd34 Carte du match en direct' : '\ud83d\udcca Carte du match') + '</button><div class="g45-am-zone"></div>';
   bloc.insertBefore(am, bloc.firstChild);
   panel.insertBefore(bloc, panel.firstChild);
+  /* Rouverture après un rafraîchissement : derniers chiffres tout de suite, puis relecture. */
+  try {
+    if (_g45AmOuvert[String(eid)]) {
+      var zAm = am.querySelector('.g45-am-zone'), D0 = _g45AmDonnees[String(eid)];
+      zAm.innerHTML = D0 ? _g45AmHtml(D0, eid) : '<div style="font-size:14px;color:#fff;padding:10px;">⏳ Carte du match…</div>';
+      _g45AmCharger(zAm, lg, String(eid), false);
+    }
+    if (_g45TirsOuvert[String(eid)]) {
+      var bT = bloc.querySelector('.g45-tirs-zone'); bT = bT && bT.previousElementSibling;
+      if (bT) _g45SgOuvrirTirs(bT, lg, eid, idDom, String(nm(dom)).replace(/'/g, ''), String(nm(ext)).replace(/'/g, ''), st.completed === true);
+    }
+  } catch (e) {}
 }
 window._g45SgCarteTirs = _g45SgCarteTirs;
 
@@ -49674,8 +49703,10 @@ async function _g45SgOuvrirTirs(btn, lg, eid, idDom, nomDom, nomExt, termine) {
   if (zone.innerHTML) {                       /* deja ouverte : on replie */
     zone.innerHTML = '';
     btn.textContent = '\ud83c\udfaf Carte des tirs & xG';
+    _g45TirsOuvert[String(eid)] = false;
     return;
   }
+  _g45TirsOuvert[String(eid)] = true;
   btn.textContent = '\u23f3 Lecture des actions\u2026';
   var tirs = null;
   try { tirs = await g45TirsMatch(lg, eid, termine === true || termine === 'true'); } catch (e) {}
