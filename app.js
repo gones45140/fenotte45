@@ -44211,7 +44211,7 @@ var G45_LIGUES_CIVILES = [
   'nor.1','nor.2','swe.1','swe.2','fin.1','irl.1','isl.1','est.1','lva.1','ltu.1',
   'jpn.1','jpn.2','kor.1','chn.1','aus.1','sgp.1',
   'conmebol.libertadores','conmebol.america','242041','fifa.world',
-  '3','mlb'
+  '3','mlb','wnba'   /* wnba : 30/09/2026, sondé (saison « 2026 », avril → novembre) */
 ];
 
 function _g45CompetAnneeAuto(slug) {
@@ -44227,7 +44227,7 @@ function _g45CompetAnneeAuto(slug) {
      1343 matchs). Même règle que _g45SgAnAuto (onglet Saisons, déjà juste).
      Tant qu'aucun match 2027 n'est terminé, les Classements retombent d'eux-
      mêmes sur 2025-26 (_g45ClsRenderUS, anU = an − 1). */
-  if (slug === 'nhl' || slug === 'nba') return (m >= 9) ? d.getFullYear() + 1 : d.getFullYear();
+  if (slug === 'nhl' || slug === 'nba' || slug === 'mens-college-basketball') return (m >= 9) ? d.getFullYear() + 1 : d.getFullYear();
   return (m >= 8) ? d.getFullYear() : d.getFullYear() - 1;
 }
 
@@ -44558,7 +44558,7 @@ async function loadCompetTab() {
   var c = { s: choisie.slug, n: choisie.name, sp: sp.key, ico: choisie.ico || sp.ico };
 
   var anAuto = _g45CompetAnneeAuto(c.s);
-  var civil = ['bra.1','usa.1','arg.1','nor.1','swe.1','jpn.1','chn.1','3','mlb'].indexOf(c.s) >= 0;
+  var civil = ['bra.1','usa.1','arg.1','nor.1','swe.1','jpn.1','chn.1','3','mlb','wnba'].indexOf(c.s) >= 0;
   var opts = '<option value="">Saison auto (' + anAuto + ')</option>';
   for (var y = anAuto; y >= 2002; y--) {
     opts += '<option value="' + y + '"' + (_g45CompetSaison === y ? ' selected' : '') + '>'
@@ -48023,9 +48023,12 @@ function _g45SgCle(n) { return String(n || '').toLowerCase().trim(); }
    2025-26), l'annee civile pour le NRL et la MLB, et l'annee de DEBUT pour le
    football et le rugby. Sans ca, une chip « 2026 » sur les Avalanche montre en
    fait 2025-26 : on croit consulter une saison et on en voit une autre. */
+/* 30/09/2026 — SONDÉ PAR ANTOINE (saison courante de chaque ligue ESPN) : WNBA
+   = ANNÉE CIVILE (« 2026 », avril → novembre), pas l'année de fin comme la NBA ;
+   NCAA basket (mens-college-basketball) = année de FIN (« 2026-27 » = 2027). */
 function _g45SgLabel(lg, y) {
-  if (['3', 'mlb'].indexOf(lg) >= 0) return String(y);                 /* annee civile */
-  if (['nhl', 'nba', 'wnba', 'khl'].indexOf(lg) >= 0)                  /* annee de FIN */
+  if (['3', 'mlb', 'wnba'].indexOf(lg) >= 0) return String(y);         /* annee civile */
+  if (['nhl', 'nba', 'khl', 'mens-college-basketball'].indexOf(lg) >= 0) /* annee de FIN */
     return (y - 1) + '-' + String(y).slice(2);
   return y + '-' + String(y + 1).slice(2);                             /* annee de DEBUT */
 }
@@ -48041,8 +48044,8 @@ function _g45SgLabel(lg, y) {
    que le football europeen bascule des aout. */
 function _g45SgAnAuto(lg) {
   var d = new Date(), y = d.getFullYear(), m = d.getMonth() + 1;
-  if (['3', 'mlb'].indexOf(lg) >= 0) return y;                          /* annee civile */
-  if (['nhl', 'nba', 'wnba', 'khl'].indexOf(lg) >= 0) return (m >= 9) ? (y + 1) : y;
+  if (['3', 'mlb', 'wnba'].indexOf(lg) >= 0) return y;                  /* annee civile (wnba : 30/09) */
+  if (['nhl', 'nba', 'khl', 'mens-college-basketball'].indexOf(lg) >= 0) return (m >= 9) ? (y + 1) : y;
   if (['nfl', 'college-football'].indexOf(lg) >= 0) return (m >= 9) ? y : (y - 1);
   return (m >= 8) ? y : (y - 1);                                        /* football, rugby */
 }

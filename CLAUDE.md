@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20260930d, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20260930e, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -102,6 +102,11 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   `_g45CompetMatchs` (un calendrier par équipe, cache 12 h, périodes hp/ap).
   Année auto `_g45CompetAnneeAuto` (30d) : NHL / NBA = année de FIN (dès septembre, 2026-27 =
   2027, comme `_g45SgAnAuto`) ; avant, 2026 = 2025-26 et 2026-27 n'était jamais demandée.
+  30e — SONDÉ PAR ANTOINE (season.year du scoreboard de chaque ligue) : WNBA = année CIVILE
+  (ajoutée à G45_LIGUES_CIVILES, `_g45SgLabel`, `_g45SgAnAuto` ; avant traitée comme la NBA) ;
+  NCAA basket = année de FIN. Rugby : NE PAS toucher — l'appli lit ses matchs par DATES
+  (août → juillet, `_g45ClsLireSaison`), ESPN mélange les conventions (Premiership/URC/Challenge
+  = fin, Top 14/Six Nations/Tests = civile) ; les classements (standings) essaient plusieurs années.
 - 🏅 Classements par catégorie : `g45ClsRender` (foot : scoreboard) ;
   US : `_g45ClsRenderUS` → `_g45ClsAfficherUS`, catégories `_G45_CLS_US`,
   valeurs `_g45ClsValUS`, ligues `_G45_CLS_US_LIGUES` / `_g45ClsUsOk`
