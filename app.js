@@ -46137,6 +46137,38 @@ function _g45ClsBtn(on, txt, clic, extra) {
     + 'border:1px solid ' + (on ? (extra || '#4d84ff') : 'rgba(255,255,255,.18)') + ';background:' + (on ? '#1b2a52' : 'rgba(11,16,29,.85)') + ';color:' + (on ? '#fff' : '#c9d3ee') + ';">' + txt + '</button>';
 }
 
+/* LOGOS DES ÉQUIPES FÉMININES (30/09/2026, Antoine sur la Première Ligue :
+   « Saint-Malo pas de logo ok, mais le reste ? »). ESPN ne donne pas de logo à
+   plusieurs équipes féminines (Toulouse, Lens, Marseille, Strasbourg, Nantes…)
+   alors que le club masculin du même nom en a un. On complète m.hl / m.al
+   MANQUANTS avec le logo du club masculin du même pays (classement ESPN via
+   _g45CompetEquipes, cache 6 h) — seulement sur nom identique (nom long ou
+   court), jamais « à peu près » : Paris FC ≠ Paris Saint-Germain. */
+var _G45_FEM_HOMMES = { 'fra.w.1': ['fra.1', 'fra.2'], 'eng.w.1': ['eng.1', 'eng.2'], 'esp.w.1': ['esp.1', 'esp.2'],
+  'uefa.wchampions': ['fra.1', 'eng.1', 'esp.1', 'ger.1', 'ita.1', 'por.1', 'ned.1'], 'usa.nwsl': ['usa.1'] };
+function _g45FemNorm(x) {
+  return String(x || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/\b(women|womens|feminines?|femenino|ladies|w)\b/g, '').replace(/[^a-z0-9]/g, '');
+}
+async function _g45ClsLogosFem(slug, ms) {
+  var hommes = _G45_FEM_HOMMES[slug];
+  if (!hommes || !ms || !ms.some(function (m) { return !m.hl || !m.al; })) return ms;
+  var parNom = {};
+  for (var i = 0; i < hommes.length; i++) {
+    var eq = [];
+    try { eq = await _g45CompetEquipes({ sp: 'soccer', s: hommes[i], an: _g45CompetAnneeAuto(hommes[i]) }); } catch (e) {}
+    (eq || []).forEach(function (t) {
+      if (!t.logo) return;
+      [t.nom, t.court].forEach(function (n) { var k = _g45FemNorm(n); if (k && !parNom[k]) parNom[k] = t.logo; });
+    });
+  }
+  ms.forEach(function (m) {
+    if (!m.hl) m.hl = parNom[_g45FemNorm(m.hn)] || '';
+    if (!m.al) m.al = parNom[_g45FemNorm(m.an)] || '';
+  });
+  return ms;
+}
+window._g45ClsLogosFem = _g45ClsLogosFem;
 async function g45ClsRender(c, body) {
   if (c.sp !== 'soccer') {
     window._g45ClsDernier = { c: c, an: _g45CompetAnnee(c.s) };
@@ -46150,6 +46182,7 @@ async function g45ClsRender(c, body) {
   if ((!ms || !ms.length) && !_g45CompetSaison) { an = an - 1; try { ms = await _g45ClsMatchs(c.s, an); } catch (e) {} }
   if (!ms || !ms.length) { body.innerHTML = '<div style="color:#ffb13d;font-size:13px;">Aucun match terminé trouvé pour cette compétition.</div>'; return; }
   ms = _g45ClsGarderLigue(ms, null);
+  try { ms = await _g45ClsLogosFem(c.s, ms); } catch (e) {}   /* 30/09 : logos manquants des équipes féminines */
   var _ph = _g45ClsPhase(ms); ms = _ph.ms;
   window._g45ScorerCtx = { sp: 'soccer', lg: c.s };
   window._g45ClsDernier = { c: c, an: an };
