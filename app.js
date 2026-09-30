@@ -28272,7 +28272,7 @@ function _g45GarderDefilement(el, redessiner) {
    (terrain en direct, Carte du match, tirs) n'est PAS recréé : il reste en place
    avec ses propres rafraîchissements (10 s / 2 min). Position remise dans la
    même image, avant tout affichage. */
-async function _g45RedessinDoux(el, eventId, league) {
+async function _g45RedessinDoux(el, eventId, league, rendre) {
   if (el._g45Doux) return;                        /* un redessin à la fois */
   el._g45Doux = 1;
   try {
@@ -28280,10 +28280,13 @@ async function _g45RedessinDoux(el, eventId, league) {
     tmp.setAttribute('data-open', '1');
     tmp._refresh = 1;                             /* pas de 2e minuterie */
     tmp._lastScore = el._lastScore;               /* bannière BUT */
-    await _renderSaisonDetail(tmp, eventId, league);
+    tmp._lastScoreR = el._lastScoreR;
+    /* 30v : sert aussi la fenêtre « générique » (_renderGenericDetail : cotes, stats d'équipe…), celle qu'Antoine
+       ouvre depuis Saisons/Direct — elle effaçait les blocs du haut (buteurs, carte, tirs) toutes les 30 s. */
+    if (rendre) await rendre(tmp); else await _renderSaisonDetail(tmp, eventId, league);
     if (el.getAttribute('data-open') !== '1' || !el.isConnected) return;
     if (!tmp.querySelector('*') || /Résumé indisponible/.test(tmp.textContent) && tmp.children.length === 1) return;  /* échec réseau : on garde l'ancien */
-    el._lastScore = tmp._lastScore;
+    el._lastScore = tmp._lastScore; el._lastScoreR = tmp._lastScoreR;
     var pos = [], n = el;
     while (n && n !== document.body) { if (n.scrollTop) pos.push([n, n.scrollTop]); n = n.parentElement; }
     var se = document.scrollingElement || document.documentElement; pos.push([se, se.scrollTop]);
@@ -28292,11 +28295,12 @@ async function _g45RedessinDoux(el, eventId, league) {
     if (haut && haut.parentNode !== el) haut = null;
     var frag = document.createDocumentFragment();
     while (tmp.firstChild) frag.appendChild(tmp.firstChild);
-    Array.prototype.slice.call(el.childNodes).forEach(function (c) { if (c !== haut) el.removeChild(c); });
+    Array.prototype.slice.call(el.childNodes).forEach(function (c) { if (c !== haut && !(c.getAttribute && c.getAttribute('data-g45garde'))) el.removeChild(c); });
     el.appendChild(frag);
     remettre();
     requestAnimationFrame(function () { remettre(); });
     try { if (typeof _g45ArbRemplir === 'function') _g45ArbRemplir(el, league, eventId, _g45ResumeIA[String(eventId)]); } catch (e) {}
+    if (rendre) { try { if (el.querySelector('[data-g45garde]')) _g45SgButeurs(el, league, eventId, _g45ResumeIA[String(eventId)]); } catch (e) {} return; }
     if (!haut) setTimeout(function () { try { if (!document.getElementById(uid)) _g45SgCarteTirs(el, league || 'eng.1', eventId, _g45ResumeIA[String(eventId)]); } catch (e) {} }, 80);
   } catch (e) {} finally { el._g45Doux = 0; }
 }
@@ -32108,6 +32112,191 @@ async function _g45LiveFootMaj(lg, eid, idH, nh, na) {
   var tick = function () { if (!document.getElementById('g45-lfoot-' + eid)) return; if (document.visibilityState !== 'visible') { _g45LiveTimer['f' + eid] = setTimeout(tick, 10000); return; } _g45LiveFootMaj(lg, eid, idH, nh, na); };
   _g45LiveTimer['f' + eid] = setTimeout(tick, 10000);
 }
+/* ═══ ⚽ LES BUTS EN ACTION (30v, 30/09 — maquette validée : « oui pour les 2 ») ═══
+   Remplace le terrain qui bougeait toutes les 10 s (« on va faire seulement
+   l'action complète de chaque but »). SONDÉ PAR ANTOINE (Lens–Monaco) : core
+   …/competitions/<id>/plays = toutes les actions, scoringPlay = true sur le but,
+   types « Goal », « Goal - Header », « Own Goal » ; « Assist » juste après
+   (sans coordonnées) ; coordonnées dans le sens d'attaque de CHAQUE équipe
+   (vers x = 100). On remonte depuis le but tant que c'est la même équipe
+   (duels, arrêts, contrôles adverses ignorés) jusqu'à un coup de pied arrêté,
+   un ballon perdu ou 12 actions. Les pages pleines (400) ne changent plus :
+   lues une fois ; en direct, on ne relit la dernière page que si le SCORE a
+   changé (vérifié toutes les 30 s sur le résumé déjà chargé par la fenêtre). */
+var _g45ButsMem = {};
+function _g45ButsCompact(a) {
+  var m = String((a.team && a.team.$ref) || '').match(/teams\/(\d+)/), tx = String(a.text || '');
+  var o = { t: m ? m[1] : '', ty: (a.type && a.type.text) || '', x: a.fieldPositionX, y: a.fieldPositionY, x2: a.fieldPosition2X, y2: a.fieldPosition2Y,
+    c: (a.clock && a.clock.displayValue) || '', nm: (tx.match(/^(.+?) \(/) || [])[1] || '' };
+  if (a.scoringPlay) { o.sc = 1; o.tx = tx.slice(0, 220); }
+  if (/^assist$/i.test(o.ty)) o.as = 1;
+  if (typeof o.x !== 'number') o.x = null;
+  if (typeof o.x2 !== 'number') o.x2 = null;
+  return o;
+}
+async function _g45ButsLire(lg, eid, M) {
+  var base = 'https://sports.core.api.espn.com/v2/sports/soccer/leagues/' + lg + '/events/' + eid + '/competitions/' + eid + '/plays?limit=400&page=';
+  var get = async function (p) { try { var r = await fetch(base + p, { cache: 'no-store' }); if (!r.ok) return null; return await r.json(); } catch (e) { return null; } };
+  if (!M.n) {
+    var j1 = await get(1); if (!j1) return false;
+    M.pages[1] = (j1.items || []).map(_g45ButsCompact);
+    var n = j1.pageCount || 1; M.n = n;
+    var ps = []; for (var p = 2; p <= n; p++) ps.push(p);
+    var rs = await Promise.all(ps.map(get));
+    for (var i = 0; i < ps.length; i++) { if (!rs[i]) return false; M.pages[ps[i]] = (rs[i].items || []).map(_g45ButsCompact); }
+  } else {
+    for (var k = 0; k < 3; k++) {
+      var jn = await get(M.n); if (!jn) return false;
+      M.pages[M.n] = (jn.items || []).map(_g45ButsCompact);
+      if ((jn.items || []).length < 400) break;
+      M.n++;
+    }
+  }
+  return true;
+}
+function _g45ButsMin(c) { var m = String(c || '').match(/(\d+)(?:'\s*\+\s*(\d+))?/); return m ? (+m[1] + (m[2] ? +m[2] : 0)) : 0; }
+function _g45ButsSeq(P, idH, idA) {
+  var out = [], sc = {}; sc[idH] = 0; sc[idA] = 0;
+  var neutre = /attempted tackle|aerial|save|shield|challenge|smother|claim|keeper|ball touch|blocked pass/i;
+  var depart = /kickoff|kick off|corner|free kick|throw in|goal kick/i;
+  P.forEach(function (g, gi) {
+    if (!g.sc) return;
+    var csc = /own/i.test(g.ty), T = csc ? (String(g.t) === String(idH) ? idA : idH) : g.t;
+    if (!T) return;
+    sc[T] = (sc[T] || 0) + 1;
+    var seq = [], mg = _g45ButsMin(g.c);
+    for (var j = gi - 1; j >= 0 && seq.length < 12; j--) {
+      var a = P[j];
+      if (a.sc) break;
+      if (a.x == null) continue;
+      if (mg - _g45ButsMin(a.c) > 2) break;
+      if (String(a.t) === String(T)) {
+        if (/^out$/i.test(a.ty)) break;
+        seq.unshift({ x: a.x, y: a.y, x2: a.x2, y2: a.y2, nm: a.nm, ty: a.ty });
+        if (depart.test(a.ty)) break;
+      } else if (!neutre.test(a.ty)) break;
+    }
+    var tir = { x: g.x, y: g.y, x2: g.x2, y2: g.y2, ty: g.ty, but: 1 };
+    if (csc && tir.x != null) { tir.x = 100 - tir.x; tir.y = 100 - tir.y; }
+    if (tir.x == null && seq.length) { var d = seq[seq.length - 1]; tir.x = d.x2 != null ? d.x2 : d.x; tir.y = d.y2 != null ? d.y2 : d.y; }
+    if (tir.x == null) { tir.x = 88; tir.y = 50; }
+    tir.x2 = 100; tir.y2 = (g.y2 != null && !csc) ? g.y2 : 50;
+    var tx = g.tx || '';
+    var nom = (tx.match(/Own Goal by (.+?),/i) || tx.match(/\d\.\s+(.+?)\s\(/) || [])[1] || g.nm || '?';
+    tir.nm = nom;
+    var pas = ''; for (var q = gi + 1; q < Math.min(P.length, gi + 4); q++) if (P[q].as) { pas = P[q].nm; break; }
+    var comment = csc ? 'contre son camp' : /penalty/i.test(tx) ? 'sur penalty' : /header|head/i.test(tx + g.ty) ? 'de la tête' : /left foot/i.test(tx) ? 'frappe du gauche' : /right foot/i.test(tx) ? 'frappe du droit' : 'tir';
+    out.push({ min: g.c, T: String(T), nom: nom, pas: pas, csc: csc, comment: comment, sH: sc[idH], sA: sc[idA], seq: seq.concat([tir]) });
+  });
+  return out;
+}
+function _g45ButsNom(n) { var p = String(n || '').trim().split(/\s+/); return p.length > 1 ? p.slice(1).join(' ') : (p[0] || '?'); }
+function _g45ButsSvg(B, col, id) {
+  var W = 380, H = 250, M = 8, X = function (x) { return (M + Math.max(1, Math.min(99, x)) / 100 * (W - 2 * M)).toFixed(1); }, Y = function (y) { return (M + Math.max(2, Math.min(98, y)) / 100 * (H - 2 * M)).toFixed(1); };
+  var L = 'fill="none" stroke="rgba(255,255,255,.6)" stroke-width="2"';
+  var s = '<rect width="' + W + '" height="' + H + '" rx="10" fill="#2f7a3f"/><rect x="' + M + '" y="' + M + '" width="' + (W - 2 * M) + '" height="' + (H - 2 * M) + '" ' + L + '/>'
+    + '<line x1="' + W / 2 + '" x2="' + W / 2 + '" y1="' + M + '" y2="' + (H - M) + '" stroke="rgba(255,255,255,.6)" stroke-width="2"/><circle cx="' + W / 2 + '" cy="' + H / 2 + '" r="28" ' + L + '/>'
+    + '<rect x="' + M + '" y="' + Y(21) + '" width="58" height="' + (Y(79) - Y(21)) + '" ' + L + '/><rect x="' + (W - M - 58) + '" y="' + Y(21) + '" width="58" height="' + (Y(79) - Y(21)) + '" ' + L + '/>'
+    + '<rect x="' + (W - M - 6) + '" y="' + Y(44) + '" width="6" height="' + (Y(56) - Y(44)) + '" fill="#fff"/>'
+    + '<defs><marker id="' + id + 'f" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6z" fill="#fff"/></marker>'
+    + '<marker id="' + id + 'r" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6z" fill="#ff5c5c"/></marker></defs>';
+  var prev = null, pts = [];
+  B.seq.forEach(function (a) {
+    if (prev && (Math.abs(prev[0] - a.x) > 1 || Math.abs(prev[1] - a.y) > 1)) s += '<line x1="' + X(prev[0]) + '" y1="' + Y(prev[1]) + '" x2="' + X(a.x) + '" y2="' + Y(a.y) + '" stroke="#fff" stroke-dasharray="3 4" opacity=".7"/>';
+    pts.push(X(a.x) + ',' + Y(a.y));
+    if (a.x2 != null) {
+      s += '<line x1="' + X(a.x) + '" y1="' + Y(a.y) + '" x2="' + X(a.x2) + '" y2="' + Y(a.y2) + '" stroke="' + (a.but ? '#ff5c5c' : '#fff') + '" stroke-width="' + (a.but ? 3 : 2) + '" marker-end="url(#' + id + (a.but ? 'r' : 'f') + ')"/>';
+      pts.push(X(a.x2) + ',' + Y(a.y2)); prev = [a.x2, a.y2];
+    } else prev = [a.x, a.y];
+  });
+  B.seq.forEach(function (a, i) {
+    s += '<circle cx="' + X(a.x) + '" cy="' + Y(a.y) + '" r="10" fill="' + col + '" stroke="#0b101d" stroke-width="2"/><text x="' + X(a.x) + '" y="' + (+Y(a.y) + 4.5) + '" font-size="12" font-weight="800" text-anchor="middle" fill="#0b101d">' + (i + 1) + '</text>';
+  });
+  var dur = Math.max(2, Math.min(8, pts.length * 0.5));
+  if (pts.length > 1) s += '<circle r="6" fill="#fff" stroke="#000"><animateMotion dur="' + dur + 's" fill="freeze" path="M' + pts.join(' L') + '"/></circle>';
+  return '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;display:block;">' + s + '</svg>';
+}
+function _g45ButsHtml(eid) {
+  var M = _g45ButsMem[eid]; if (!M || !M.buts) return '';
+  if (!M.buts.length) return '<div style="font-size:14px;color:#c9d3ee;padding:6px 0;">⚽ Pas encore de but dans ce match.</div>';
+  var h = '<div style="font-size:15px;font-weight:800;color:#fff;margin-bottom:8px;">⚽ LES BUTS EN ACTION</div>';
+  var ordre = M.buts.map(function (b, i) { return i; }).reverse();
+  ordre.forEach(function (i, k) {
+    var B = M.buts[i], dom = B.T === String(M.idH), col = dom ? '#6d9dff' : '#f5c542';
+    var ouvert = M.ouv[i] != null ? M.ouv[i] : k === 0;
+    var titre = '<span style="color:' + col + ';">' + B.min + ' ' + B.nom + (B.csc ? ' (csc)' : '') + '</span> — ' + M.nh + ' ' + B.sH + '-' + B.sA + ' ' + M.na;
+    h += '<div style="background:rgba(11,16,29,.85);border:1px solid ' + (dom ? 'rgba(109,157,255,.45)' : 'rgba(245,197,66,.45)') + ';border-radius:12px;padding:10px;margin-bottom:10px;">'
+      + '<div onclick="g45ButsOuvrir(\'' + eid + '\',' + i + ')" style="cursor:pointer;font-size:15px;font-weight:800;color:#fff;">' + titre
+      + (ouvert ? '' : ' <span style="font-size:13px;color:#c9d3ee;font-weight:400;">▸ toucher pour voir</span>') + '</div>';
+    if (ouvert) {
+      var n = B.seq.length;
+      h += '<div style="font-size:13px;color:#c9d3ee;margin:6px 0 8px;">' + (B.pas ? 'Passe décisive : ' + _g45ButsNom(B.pas) + ' · ' : '') + n + ' action' + (n > 1 ? 's' : '') + '</div>'
+        + '<div id="g45-buts-svg-' + eid + '-' + i + '">' + _g45ButsSvg(B, col, 'gb' + eid + '_' + i) + '</div>'
+        + '<div style="font-size:14px;margin-top:6px;color:#fff;">';
+      B.seq.forEach(function (a, j) {
+        var lib = a.but ? '⚽ BUT, ' + B.comment : (typeof _g45LiveType === 'function' ? _g45LiveType(a.ty) : a.ty);
+        h += '<div style="display:flex;gap:8px;align-items:center;margin:3px 0;"><span style="flex:none;background:' + col + ';color:#0b101d;border-radius:50%;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;">' + (j + 1) + '</span>'
+          + '<b>' + _g45ButsNom(a.nm) + '</b><span style="color:#c9d3ee;">' + String(lib).toLowerCase().replace(/^⚽ but/, '⚽ BUT') + '</span></div>';
+      });
+      h += '</div><button onclick="g45ButsRevoir(\'' + eid + '\',' + i + ')" style="width:100%;margin-top:8px;padding:10px;border-radius:9px;border:1px solid rgba(109,157,255,.5);background:rgba(47,107,255,.18);color:#fff;font-size:14px;font-weight:800;cursor:pointer;">▶ Revoir l\'action</button>';
+    }
+    h += '</div>';
+  });
+  return h;
+}
+function g45ButsOuvrir(eid, i) {
+  var M = _g45ButsMem[eid]; if (!M) return;
+  var k = M.buts.length - 1 - i, actuel = M.ouv[i] != null ? M.ouv[i] : k === 0;
+  M.ouv[i] = !actuel;
+  var z = document.getElementById('g45-buts-' + eid); if (z) z.innerHTML = _g45ButsHtml(eid);
+}
+function g45ButsRevoir(eid, i) {
+  var M = _g45ButsMem[eid], z = document.getElementById('g45-buts-svg-' + eid + '-' + i); if (!M || !z) return;
+  var B = M.buts[i]; z.innerHTML = _g45ButsSvg(B, B.T === String(M.idH) ? '#6d9dff' : '#f5c542', 'gb' + eid + '_' + i + '_' + Date.now());
+}
+window.g45ButsOuvrir = g45ButsOuvrir; window.g45ButsRevoir = g45ButsRevoir; window._g45ButsSeq = _g45ButsSeq; window._g45ButsHtml = _g45ButsHtml;
+function _g45ButsScore(eid) {
+  var s = (typeof _g45AmSum !== 'undefined' && _g45AmSum[eid]) || (typeof _g45ResumeIA !== 'undefined' && _g45ResumeIA[eid]);
+  var cp = (((s || {}).header || {}).competitions || [])[0] || {};
+  var t = 0, ok = false; (cp.competitors || []).forEach(function (c) { if (c.score != null && c.score !== '') { t += +c.score || 0; ok = true; } });
+  return { total: ok ? t : null, fini: !!(cp.status && cp.status.type && cp.status.type.completed) };
+}
+async function _g45ButsMaj(lg, eid) {
+  var M = _g45ButsMem[eid]; if (!M || M.enCours) return;
+  var z = document.getElementById('g45-buts-' + eid); if (!z) return;
+  var S = _g45ButsScore(eid);
+  if (M.buts && S.total != null && S.total === M.buts.length && !M.relire) return;   /* rien de neuf : aucune requête */
+  M.enCours = 1;
+  try {
+    var ok = await _g45ButsLire(lg, eid, M);
+    if (ok) {
+      var P = []; for (var p = 1; p <= M.n; p++) P = P.concat(M.pages[p] || []);
+      M.buts = _g45ButsSeq(P, M.idH, M.idA);
+      M.relire = S.total != null && M.buts.length < S.total;   /* ESPN en retard sur le score : on repassera */
+      if (S.fini && !M.relire) { try { localStorage.setItem('g45buts1_' + eid, JSON.stringify(M.buts)); } catch (e) {} }
+      var z2 = document.getElementById('g45-buts-' + eid); if (z2) z2.innerHTML = _g45ButsHtml(eid);
+    } else if (!M.buts) { z.innerHTML = '<div style="font-size:14px;color:#ffb13d;">ESPN ne publie pas le détail des actions pour ce match.</div>'; }
+  } finally { M.enCours = 0; }
+}
+/* Posé par _g45SgCarteTirs : direct = tout de suite ; match fini = sur bouton. */
+function _g45ButsPoser(bloc, lg, eid, idH, idA, nh, na, direct) {
+  eid = String(eid);
+  var M = _g45ButsMem[eid] = _g45ButsMem[eid] || { pages: {}, n: 0, ouv: {} };
+  M.idH = String(idH); M.idA = String(idA); M.nh = nh; M.na = na;
+  if (!M.buts) { try { var c = JSON.parse(localStorage.getItem('g45buts1_' + eid) || 'null'); if (c) M.buts = c; } catch (e) {} }
+  var d = document.createElement('div');
+  d.style.cssText = 'margin-bottom:10px;';
+  var z = '<div id="g45-buts-' + eid + '">' + (M.buts ? _g45ButsHtml(eid) : (direct ? '<div style="font-size:14px;color:#fff;">⏳ Les buts en action…</div>' : '')) + '</div>';
+  if (!direct && !M.buts) {
+    d.innerHTML = '<button onclick="this.remove();_g45ButsMaj(\'' + lg + '\',\'' + eid + '\')" style="width:100%;margin-bottom:10px;padding:11px;border-radius:10px;border:1px solid rgba(109,157,255,.45);background:rgba(47,107,255,.14);color:#fff;font-size:14px;font-weight:800;cursor:pointer;">⚽ Les buts en action</button>' + z;
+  } else d.innerHTML = z;
+  bloc.insertBefore(d, bloc.firstChild);
+  if (direct) {
+    setTimeout(function () { _g45ButsMaj(lg, eid); }, 0);
+    clearInterval(M.timer);
+    M.timer = setInterval(function () { if (!document.getElementById('g45-buts-' + eid)) { clearInterval(M.timer); return; } if (!document.hidden) _g45ButsMaj(lg, eid); }, 30000);
+  }
+}
 function _g45LiveFootPoser(bloc, lg, eid, idH, nh, na) {
   var d = document.createElement('div');
   d.id = 'g45-lfoot-' + eid;
@@ -33630,7 +33819,7 @@ async function _renderGenericDetail(el, sport, lg, eid){
        chose — piege deja corrige ailleurs sur ce projet. */
     el.innerHTML=_g45EnveloppeMatch(_rugbyBanner+h, (typeof _g45SgNomCourant !== 'undefined' ? _g45SgNomCourant : ''), data);
     if(stT.state==='pre'){ try{ _g45FillForm(el, sport+'/'+lg); _g45FillStandings(el, sport+'/'+lg); }catch(e){} }
-    if(isLive){ if(!el._refresh){ el._refresh=setInterval(function(){ if(el.getAttribute('data-open')!=='1'){ clearInterval(el._refresh); el._refresh=null; return; } if(document.hidden||el.offsetParent===null) return; _renderGenericDetail(el,sport,lg,eid); },30000); } } else if(el._refresh){ clearInterval(el._refresh); el._refresh=null; }
+    if(isLive){ if(!el._refresh){ el._refresh=setInterval(function(){ if(el.getAttribute('data-open')!=='1'){ clearInterval(el._refresh); el._refresh=null; return; } if(document.hidden||el.offsetParent===null) return; _g45RedessinDoux(el, eid, lg, function(t){ return _renderGenericDetail(t,sport,lg,eid); }); },30000); } } else if(el._refresh){ clearInterval(el._refresh); el._refresh=null; }
   }catch(e){ el.innerHTML='<div style="padding:12px;color:#ff6b6b;font-size:11px;text-align:center;">Détail indisponible.</div>'; }
 }
 window.toggleGenericMatchDetail=toggleGenericMatchDetail;
@@ -41941,7 +42130,7 @@ window.g45F1Session=g45F1Session;
    et les données utilisateur n'étaient JAMAIS écrites — l'ajout apparaissait à l'écran puis
    disparaissait au rechargement. Ce n'était ni la synchro GitHub, ni Dropbox, ni le cache
    du navigateur. Tous ces caches sont reconstructibles : ils cèdent la place aux données. */
-var _G45_CACHE_PREFIXES=['g45prad1_','g45vsj1_','g45vse1_',/* 30/09 : radars joueurs */'g45ia1_',/* 29/09 : avis IA gardés 6 h */'g45_mmeta2_','g45_mmeta1_','g45_tennis4_','g45_tennis3_',/* 16/09 : meta de match (domicile/lieu) et score tennis, reconstructibles */'g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dcf_','g45dc_',
+var _G45_CACHE_PREFIXES=['g45buts1_',/* 30/09 : buts en action (match fini) */'g45prad1_','g45vsj1_','g45vse1_',/* 30/09 : radars joueurs */'g45ia1_',/* 29/09 : avis IA gardés 6 h */'g45_mmeta2_','g45_mmeta1_','g45_tennis4_','g45_tennis3_',/* 16/09 : meta de match (domicile/lieu) et score tennis, reconstructibles */'g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dcf_','g45dc_',
   'g45trv3_','g45trv2_','g45trOdds_','g45tr_','g45but_st_','g45butL_','g45butA_','g45but_mur_',
   '_g45clv','g45clv_snaps','g45_saisons_cache_v3_','g45_saisons_cache_v2_',
   /* Ajoutes le 20/08 : ces caches, tous reconstructibles, n'etaient PAS declares
@@ -49588,10 +49777,10 @@ window._g45SgMatch = _g45SgMatch;
 
 /* Buteurs, passeurs et cartons d'un match de football, lus dans le resume ESPN.
    Une requete, uniquement a l'ouverture du detail. */
-async function _g45SgButeurs(panel, lg, eid) {
+async function _g45SgButeurs(panel, lg, eid, sumDeja) {
   if (!panel) return;
-  var sum = null;
-  try {
+  var sum = sumDeja || null;
+  if (!sum) try {
     var r = await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/' + lg + '/summary?event=' + eid);
     if (!r.ok) return;
     sum = await r.json();
@@ -49627,20 +49816,25 @@ async function _g45SgButeurs(panel, lg, eid) {
     var csc = /own/.test(typ);
     var eq = (g.team && (g.team.displayName || g.team.abbreviation)) || '';
     var ico = but ? (csc ? '\u26bd\ufe0f' : '\u26bd') : (rouge ? '\ud83d\udfe5' : '\ud83d\udfe8');
-    lignes.push('<div style="display:flex;align-items:center;gap:8px;padding:5px 2px;border-bottom:1px solid rgba(255,255,255,.05);font-size:11.5px;">'
-      + '<div style="width:34px;color:var(--t3);font-size:10px;">' + (min || '') + '</div>'
+    lignes.push('<div style="display:flex;align-items:center;gap:8px;padding:5px 2px;border-bottom:1px solid rgba(255,255,255,.05);font-size:14px;color:#fff;">'
+      + '<div style="width:44px;color:#c9d3ee;font-size:13px;">' + (min || '') + '</div>'
       + '<div style="width:18px;">' + ico + '</div>'
       + '<div style="flex:1;min-width:0;"><b>' + (qui || '?') + '</b>' + (csc ? ' <span style="color:#ff8a8a;">(csc)</span>' : '')
       + (passeur && but && !csc ? ('<span style="color:var(--t3);"> \u00b7 passe ' + passeur + '</span>') : '')
       + '</div>'
-      + '<div style="font-size:9px;color:var(--t3);">' + eq + '</div></div>');
+      + '<div style="font-size:13px;color:#c9d3ee;">' + eq + '</div></div>');
   });
   if (!lignes.length) return;
 
-  var bloc = document.createElement('div');
-  bloc.style.cssText = 'margin-bottom:12px;padding:10px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);';
-  bloc.innerHTML = '<div style="font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#4f5d88;margin-bottom:6px;">'
+  /* 30v : fond sombre + texte 13–14 px ; au rafraîchissement, contenu remplacé SUR PLACE (bloc gardé). */
+  var contenu = '<div style="font-size:13px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#fff;margin-bottom:6px;">'
     + '\u26bd Buteurs & passeurs</div>' + lignes.join('');
+  var deja = document.getElementById('g45-sgbut-' + eid);
+  if (deja) { deja.innerHTML = contenu; return; }
+  var bloc = document.createElement('div');
+  bloc.id = 'g45-sgbut-' + eid; bloc.setAttribute('data-g45garde', '1');
+  bloc.style.cssText = 'margin-bottom:12px;padding:10px;border-radius:12px;background:rgba(11,16,29,.80);border:1px solid rgba(255,255,255,.07);';
+  bloc.innerHTML = contenu;
   panel.insertBefore(bloc, panel.firstChild);
 }
 window._g45SgButeurs = _g45SgButeurs;
@@ -49648,6 +49842,7 @@ window._g45SgButeurs = _g45SgButeurs;
 /* Bloc des absences, construit depuis le resume deja telecharge. */
 function _g45SgAbsences(panel, sum) {
   if (!panel || !sum) return;
+  if (panel.querySelector('[data-g45abs]')) return;   /* 30v : déjà posé (bloc gardé au rafraîchissement) */
   var grp = (sum.injuries || []).filter(function (g) { return (g.injuries || []).length; });
   if (!grp.length) return;
 
@@ -49687,6 +49882,7 @@ function _g45SgAbsences(panel, sum) {
     + '\ud83e\ude79 Absences & incertitudes</div>'
     + '<div style="display:flex;gap:14px;flex-wrap:wrap;">' + colonnes + '</div>'
     + '<div style="font-size:9px;color:var(--t3);margin-top:6px;">\u26d4 forfait \u00b7 \u2753 incertain \u2014 source ESPN, v\u00e9rifie avant de miser gros.</div>';
+  bloc.setAttribute('data-g45abs', '1'); bloc.setAttribute('data-g45garde', '1');
   panel.insertBefore(bloc, panel.firstChild);
 }
 window._g45SgAbsences = _g45SgAbsences;
@@ -49927,6 +50123,9 @@ async function _g45SgCarteTirs(panel, lg, eid, sum) {
   if (document.getElementById(uid)) return;
   var bloc = document.createElement('div');
   bloc.id = uid;
+  /* 30v : gardé au rafraîchissement (_g45RedessinDoux) + même fond sombre que le reste de la fenêtre. */
+  bloc.setAttribute('data-g45garde', '1');
+  bloc.style.cssText = 'background:rgba(11,16,29,.80);border-radius:12px;padding:10px 10px 1px;margin-bottom:10px;';
   bloc.innerHTML = '<button onclick="_g45SgOuvrirTirs(this,\'' + lg + '\',\'' + eid + '\',\'' + idDom + '\',\''
     + String(nm(dom)).replace(/'/g, '') + '\',\'' + String(nm(ext)).replace(/'/g, '') + '\',' + (st.completed === true) + ')" '
     + 'style="width:100%;margin-bottom:10px;padding:11px;border-radius:10px;border:1px solid rgba(255,107,107,.35);'
@@ -49939,7 +50138,11 @@ async function _g45SgCarteTirs(panel, lg, eid, sum) {
     + (st.state === 'in' ? '\ud83d\udd34 Carte du match en direct' : '\ud83d\udcca Carte du match') + '</button><div class="g45-am-zone"></div>';
   bloc.insertBefore(am, bloc.firstChild);
   /* 30/09 : terrain en direct (actions ESPN) pour un match en cours. */
-  if (st.state === 'in') { try { _g45LiveFootPoser(bloc, lg, String(eid), idDom, nm(dom), nm(ext)); } catch (e) {} }
+  /* 30v : le terrain qui bougeait toutes les 10 s (_g45LiveFootPoser, gardé) est remplacé par LES BUTS EN ACTION :
+     en direct tout de suite, après le match sur bouton (s'il y a eu au moins un but). */
+  var idExt = String((ext.team && ext.team.id) || ext.id || ''), nButs = (+dom.score || 0) + (+ext.score || 0);
+  if (st.state === 'in') { try { _g45ButsPoser(bloc, lg, String(eid), idDom, idExt, nm(dom), nm(ext), true); } catch (e) {} }
+  else if (st.state === 'post' && nButs > 0) { try { _g45ButsPoser(bloc, lg, String(eid), idDom, idExt, nm(dom), nm(ext), false); } catch (e) {} }
   panel.insertBefore(bloc, panel.firstChild);
   /* Rouverture après un rafraîchissement : derniers chiffres tout de suite, puis relecture. */
   try {

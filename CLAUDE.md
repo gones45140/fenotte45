@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20260930u, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20260930v, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -449,7 +449,12 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   le nouveau contenu dans une div DÉTACHÉE (tmp._refresh = 1 : pas de 2e minuterie ; _lastScore recopié), puis échange
   d'un coup les enfants de el SAUF le bloc `#g45-tirs-<eid>` (gardé tel quel, avec ses propres minuteries) ; position
   remise dans la même image ; échec réseau = ancien contenu gardé. `_g45GarderDefilement` n'est plus appelé (gardé).
-  Foot seulement ; `_renderGenericDetail` (MLB…) redessine encore en entier.
+  30v — LA FENÊTRE D'ANTOINE ÉTAIT L'AUTRE : Saisons/Direct ouvre le foot par `_renderGenericDetail` + `_g45SgButeurs`
+  (cotes DraftKings, « Statistiques d'équipe ») ; son redessin de 30 s effaçait buteurs / carte / tirs. Son minuteur passe
+  aussi par `_g45RedessinDoux(el, eid, lg, rendre)` (tous sports) : tout enfant direct marqué `data-g45garde` est GARDÉ
+  (bloc `#g45-tirs-<eid>`, buteurs `#g45-sgbut-<eid>`, absences `[data-g45abs]`) ; puis `_g45SgButeurs(el, lg, eid, sum)`
+  met la liste des buteurs à jour SUR PLACE (sum = `_g45ResumeIA`, aucune requête). Blocs du haut sur fond sombre
+  rgba(11,16,29,.80), buteurs en 13–14 px.
 - PROBABILITÉ DE VICTOIRE (30k, maquette validée) : `_g45WpBloc(data, eid, hN, aN, sport, lg)` dans
   `_renderGenericDetail` (sous `_g45DeuxAvis`). SONDÉ PAR ANTOINE : summary.winprobability [{homeWinPercentage,
   tiePercentage, playId}] en MLB pendant le match ; NFL/NBA/NHL/foot vides AVANT le match (pendant : à vérifier)
@@ -468,6 +473,16 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   30t (« OUI ») : relecture toutes les 10 s (foot et MLB) ; foot = UNE demande d'actions (numéro de dernière page retenu dans
   `_g45LiveFootMem[eid]`, page suivante si pleine, dernières actions vues gardées en file) ; résumé relu 1 fois sur 3 ;
   message `_g45LiveDonnees()` « environ 1 Mo par minute, en 4G préfère le Wi-Fi » (orange si navigator.connection = cellular).
+  30v (« on va faire seulement l'action complète de chaque but », maquette validée) : le terrain 10 s n'est PLUS posé
+  (`_g45LiveFootPoser` gardé, inutilisé). ⚽ LES BUTS EN ACTION `_g45ButsPoser` (dans `_g45SgCarteTirs` : direct = auto,
+  match fini = bouton si score > 0). SONDÉ PAR ANTOINE (Lens–Monaco) : but = scoringPlay (types Goal, Goal - Header, Own
+  Goal), « Assist » juste après sans coordonnées, texte « Goal! Monaco 1, Lens 0. Paris Brunner (Monaco) right footed… ».
+  `_g45ButsLire` (pages de 400, toutes lues une fois, compactées `_g45ButsCompact`), `_g45ButsSeq` (remonte depuis le but :
+  même équipe, adversaire « neutre » ignoré — duel, arrêt, contrôle —, arrêt sur Out / autre action adverse / coup de pied
+  arrêté inclus / > 2 min / 12 actions ; csc : équipe créditée = l'autre, tir retourné), rendu `_g45ButsHtml` + `_g45ButsSvg`
+  (numéros, flèches, pointillés = conduite, tir rouge, ballon animé une fois ; « ▶ Revoir » `g45ButsRevoir`, repli
+  `g45ButsOuvrir`). Direct : toutes les 30 s `_g45ButsMaj` compare le SCORE du résumé déjà chargé (`_g45AmSum`) au nombre de
+  buts trouvés — aucune requête si égal ; sinon relit la dernière page. Match fini : cache `g45buts1_<eid>` (permanent).
   ⚾ `_g45LiveMlbBloc` (dans `_renderGenericDetail`, baseball 'in') : SONDÉ, summary.situation (balls, strikes, outs,
   onFirst/Second/Third, batter, pitcher, lastPlay.id, situationNotes RISP traduite) ; noms via boxscore.players /
   rosters ; manche traduite (Bot 6th → Bas 6e) ; relu toutes les 20 s. NFL / NBA / NHL : à sonder pendant un match.
