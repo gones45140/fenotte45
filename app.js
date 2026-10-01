@@ -60875,14 +60875,114 @@ async function _g45Pd2Rendre(el) {
       var fin = m.sh != null, gH = fin && m.sh > m.sa, gA = fin && m.sa > m.sh;
       var cote = function (c, g, d) { return '<span style="display:flex;align-items:center;gap:6px;' + (d ? 'flex-direction:row-reverse;text-align:right;' : '') + 'min-width:0;">' + _g45Pd2Logo(c.l, 26)
         + '<span style="min-width:0;"><span style="display:block;font-size:14px;font-weight:' + (g ? 800 : 600) + ';">' + _g45ElEsc(c.n) + '</span><span style="font-size:13px;color:#c9d3ee;">' + _g45ElEsc(c.r) + '</span></span></span>'; };
-      t2 += '<div style="display:grid;grid-template-columns:1fr 74px 1fr;align-items:center;padding:8px 0;' + (i ? 'border-top:1px solid rgba(255,255,255,.08);' : '') + '">'
-        + cote(m.h, gH, 0) + '<span style="text-align:center;font-size:' + (fin ? 17 : 13) + 'px;font-weight:800;">' + (fin ? m.sh + ' - ' + m.sa : _g45ElEsc(m.hr || '—')) + '</span>' + cote(m.a, gA, 1) + '</div>';
+      var det = m.u && fin;   /* détails : matchs joués seulement (feuille vide avant) */
+      t2 += '<div' + (det ? ' onclick="g45Pd2Match(' + i + ')"' : '') + ' style="display:grid;grid-template-columns:1fr 74px 1fr;align-items:center;padding:8px 0;' + (det ? 'cursor:pointer;' : '') + (i ? 'border-top:1px solid rgba(255,255,255,.08);' : '') + '">'
+        + cote(m.h, gH, 0) + '<span style="text-align:center;font-size:' + (fin ? 17 : 13) + 'px;font-weight:800;">' + (fin ? m.sh + ' - ' + m.sa : _g45ElEsc(m.hr || '—')) + (det ? '<span style="display:block;font-size:12px;color:#c9d3ee;font-weight:600;">▾ détails</span>' : '') + '</span>' + cote(m.a, gA, 1) + '</div>'
+        + '<div id="g45pd2-m-' + i + '"></div>';
     });
-    el.innerHTML = h + sel + carte(t2 + '<div style="font-size:13px;color:#c9d3ee;margin-top:6px;">Source LNR · le premier club reçoit</div>');
+    _g45Pd2.M = M; _g45Pd2.wn = w.n;
+    el.innerHTML = h + sel + carte(t2 + '<div style="font-size:13px;color:#c9d3ee;margin-top:6px;">Source LNR · le premier club reçoit · touche un match pour les détails</div>');
   } catch (e) {
     el.innerHTML = tete('') + '<div style="color:#ff6b6b;font-size:14px;">❌ Pro D2 indisponible pour le moment (' + _g45ElEsc(e && e.message || 'erreur') + ')</div>';
   }
 }
+/* ═══ PRO D2 — FENÊTRE DE MATCH (20261001n, maquette validée « oui ») ═══
+   SONDÉ PAR ANTOINE (Brive–Colomiers, /feuille-de-match/2026-2027/j5/12043-brive-colomiers) : page principale →
+   <header-timeline :game-facts=[{type « Point » | « Exclusion joueur », subtype « Essai » | « Pénalité » | « Jaune »…,
+   club 'home'|'away', period, minute, additionalMinute, score [dom, ext] (score APRÈS l'action), player {photo,
+   firstName, …}}] (12 faits, PAS de transformations) ; <video-block :item {title « …Résumé… » (accents décomposés),
+   url geo.dailymotion.com/player.html?video=…}> (résumé + replay). Onglet /statistiques-du-match → 2 × <players-ranking
+   :ranking=[{player{image.original, name « V. ABDALADZE »}, position, tempsJeu, nbPoints, nbEssais, offload, lineBreak,
+   totalSuccessfulTackles, nbCartonsJaunes|Oranges|Rouges}]> (1er = club qui reçoit : NON vérifié). Onglet /compositions :
+   pas de JSON → non utilisé. Dailymotion ajouté au frame-src de la CSP (index.html, indexfenotte.html).
+   Cache g45pd2_f_<chemin> : match fini 30 j, sinon 5 min. */
+function _g45Pd2Feuille(main, stats) {
+  var d = _g45Pd2Doc(main), e = _g45Pd2Doc(stats || ''), F = [], V = [], J = [];
+  try { F = JSON.parse((d.querySelector('header-timeline') || { getAttribute: function () { return ''; } }).getAttribute(':game-facts') || '[]'); } catch (x) {}
+  d.querySelectorAll('video-block').forEach(function (b) { try { var it = JSON.parse(b.getAttribute(':item') || 'null'); if (it && it.url) V.push({ t: it.title || '', u: it.url }); } catch (x) {} });
+  e.querySelectorAll('players-ranking').forEach(function (b) { try { J.push((JSON.parse(b.getAttribute(':ranking') || '[]') || []).map(function (x) {
+    var p = x.player || {};
+    return { n: p.name || '', ph: (p.image && p.image.original) || '', po: x.position || '', mi: x.tempsJeu, pt: x.nbPoints, es: x.nbEssais, pl: x.totalSuccessfulTackles,
+      fr: x.lineBreak, of: x.offload, cj: +(x.nbCartonsJaunes || 0) + +(x.nbCartonsOranges || 0), cr: +(x.nbCartonsRouges || 0) };
+  })); } catch (x) {} });
+  F = (F || []).map(function (f) {
+    var p = f.player || {}, nom = p.lastName || p.name || p.shortName || '';
+    nom = (p.firstName && p.lastName) ? p.firstName.charAt(0) + '. ' + p.lastName : (nom || ((p.firstName || '') + ' ' + (p.lastName || '')).trim());
+    return { ty: f.type || '', st: f.subtype || '', c: f.club, pe: f.period, mi: f.minute, am: f.additionalMinute, sc: f.score, j: nom };
+  });
+  if (!F.length && !V.length && !J.length) return null;
+  return { F: F, V: V, J: J };
+}
+async function g45Pd2Match(i) {
+  var box = document.getElementById('g45pd2-m-' + i), m = _g45Pd2.M && _g45Pd2.M[i];
+  if (!box || !m || !m.u) return;
+  if (box.innerHTML) { box.innerHTML = ''; return; }
+  var chemin; try { chemin = new URL(m.u, 'https://prod2.lnr.fr').pathname.replace(/\/$/, ''); } catch (x) { return; }
+  box.innerHTML = '<div style="color:#fff;font-size:14px;padding:8px 0;">⏳ Feuille de match LNR…</div>';
+  var cle = 'g45pd2_f_' + chemin, now = Date.now(), c = null, D = null;
+  try { c = JSON.parse(localStorage.getItem(cle) || 'null'); } catch (x) {}
+  if (c && c.x > now) D = c.d;
+  if (!D) {
+    try {
+      var r = await Promise.all([fetch(_g45Pd2Url(chemin)).then(function (q) { return q.ok ? q.text() : ''; }), fetch(_g45Pd2Url(chemin + '/statistiques-du-match')).then(function (q) { return q.ok ? q.text() : ''; }).catch(function () { return ''; })]);
+      D = _g45Pd2Feuille(r[0], r[1]);
+      if (D) try { localStorage.setItem(cle, JSON.stringify({ d: D, x: now + (m.sh != null ? 30 * 86400e3 : 300e3) })); } catch (x) {}
+    } catch (x) {}
+    if (!D && c) D = c.d;
+  }
+  box = document.getElementById('g45pd2-m-' + i); if (!box) return;
+  if (!D) { box.innerHTML = '<div style="color:#ffb13d;font-size:14px;padding:8px 0;">Feuille de match illisible pour le moment.</div>'; return; }
+  _g45Pd2.D = _g45Pd2.D || {}; _g45Pd2.D[i] = { D: D, eq: 0 };
+  _g45Pd2MatchRendre(i);
+}
+function _g45Pd2MatchRendre(i) {
+  var box = document.getElementById('g45pd2-m-' + i), m = _g45Pd2.M[i], S = _g45Pd2.D[i], D = S.D, esc = _g45ElEsc;
+  if (!box) return;
+  var mt = null; D.F.forEach(function (f) { if (f.pe === 1 && f.sc) mt = f.sc; });
+  if (!mt && D.F.length) mt = [0, 0];
+  var logo = function (c) { return c.l ? '<img src="' + esc(c.l) + '" alt="" style="width:44px;height:44px;object-fit:contain;" onerror="this.remove()">' : ''; };
+  var h = '<div style="background:rgba(27,36,64,.95);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px;margin:4px 0 10px;">'
+    + '<div style="display:grid;grid-template-columns:1fr 96px 1fr;align-items:center;text-align:center;">'
+    + '<div>' + logo(m.h) + '<div style="font-size:15px;font-weight:800;">' + esc(m.h.n) + '</div></div>'
+    + '<div><div style="font-size:26px;font-weight:800;">' + (m.sh != null ? m.sh + ' - ' + m.sa : esc(m.hr || '—')) + '</div>' + (mt && m.sh != null ? '<div style="font-size:13px;color:#c9d3ee;">mi-temps ' + mt[0] + ' - ' + mt[1] + '</div>' : '') + '</div>'
+    + '<div>' + logo(m.a) + '<div style="font-size:15px;font-weight:800;">' + esc(m.a.n) + '</div></div></div>'
+    + '<div style="font-size:13px;color:#c9d3ee;text-align:center;margin-top:4px;">' + esc([_g45Pd2.wn, m.j, m.hr].filter(function (x) { return x; }).join(' · ')) + '</div>';
+  var nf = function (t) { return String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); };
+  var vid = D.V.filter(function (v) { return /resume/.test(nf(v.t)); })[0] || D.V[0];
+  if (vid) h += '<button onclick="g45Pd2Video(this,\'' + esc(vid.u) + '\')" style="width:100%;margin-top:10px;padding:11px;border-radius:10px;border:1px solid rgba(255,80,80,.5);background:rgba(255,60,60,.15);color:#fff;font-size:14px;font-weight:800;cursor:pointer;">▶ ' + (/resume/.test(nf(vid.t)) ? 'Résumé vidéo' : 'Vidéo du match') + ' (LNR)</button><div></div>';
+  if (D.F.length) {
+    h += '<div style="font-size:15px;font-weight:800;margin:14px 0 6px;">⏱️ Temps forts</div>';
+    D.F.forEach(function (f) {
+      var s = nf(f.st), ic = /essai/.test(s) ? '🏉' : /penal/.test(s) ? '🎯' : /transfo/.test(s) ? '🥅' : /drop/.test(s) ? '🦶' : /jaune/.test(s) ? '🟨' : /orange/.test(s) ? '🟧' : /rouge/.test(s) ? '🟥' : '•';
+      h += '<div style="display:grid;grid-template-columns:44px 1fr 56px;align-items:center;padding:7px 0;border-top:1px solid rgba(255,255,255,.08);font-size:14px;">'
+        + '<b>' + esc(f.mi) + (f.am ? '+' + esc(f.am) : '') + '\'</b><span><span style="color:' + (f.c === 'home' ? '#6d9dff' : '#f5c542') + ';font-weight:800;">' + ic + ' ' + esc(/exclusion/i.test(f.ty) && f.st ? 'Carton ' + f.st.toLowerCase() : (f.st || f.ty)) + '</span>' + (f.j ? ' · ' + esc(f.j) : '') + '</span>'
+        + '<b style="text-align:right;">' + (f.ty === 'Point' && f.sc ? f.sc[0] + '-' + f.sc[1] : '') + '</b></div>';
+    });
+  }
+  if (D.J.length) {
+    var bt = function (k, nom, col) { var on = S.eq === k; return '<button onclick="g45Pd2Eq(' + i + ',' + k + ')" style="flex:1;padding:9px;font-size:14px;font-weight:800;cursor:pointer;border-radius:9px;' + (on ? 'background:' + col + ';color:#0b101d;border:1px solid ' + col + ';' : 'background:#1a2235;color:#c9d3ee;border:1px solid rgba(255,255,255,.14);') + '">' + esc(nom) + '</button>'; };
+    h += '<div style="font-size:15px;font-weight:800;margin:14px 0 6px;">👥 Joueurs</div><div style="display:flex;gap:6px;margin-bottom:6px;">' + bt(0, m.h.n, '#6d9dff') + (D.J[1] ? bt(1, m.a.n, '#f5c542') : '') + '</div>';
+    (D.J[S.eq] || []).forEach(function (j) {
+      var ini = j.n.replace(/\./g, '').split(/\s+/).map(function (w) { return w.charAt(0); }).join('').slice(0, 2);
+      var l2 = [j.pt != null ? j.pt + ' pts' : '', j.es != null ? j.es + ' essai' + (+j.es > 1 ? 's' : '') : '', j.pl != null ? j.pl + ' plaquages' : '', j.fr != null ? j.fr + ' franch.' : '', j.of != null ? j.of + ' offloads' : '']
+        .filter(function (x) { return x; }).join(' · ') + (j.cj ? ' · 🟨' + (j.cj > 1 ? j.cj : '') : '') + (j.cr ? ' · 🟥' : '');
+      h += '<div style="display:flex;gap:10px;align-items:center;padding:7px 0;border-top:1px solid rgba(255,255,255,.08);">'
+        + '<span style="position:relative;width:42px;height:42px;flex:none;"><span style="position:absolute;inset:0;border-radius:50%;background:#3b4b78;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:#fff;">' + esc(ini) + '</span>'
+        + (j.ph ? '<img src="' + esc(j.ph) + '" alt="" loading="lazy" style="position:absolute;inset:0;width:42px;height:42px;border-radius:50%;object-fit:cover;object-position:50% 8%;background:#dfe6f5;" onerror="this.remove()">' : '') + '</span>'
+        + '<span style="flex:1;min-width:0;"><span style="display:block;font-size:15px;font-weight:800;">' + esc(j.n) + '</span><span style="display:block;font-size:13px;color:#dfe6ff;">' + esc(j.po) + (j.mi != null ? ' · ' + esc(j.mi) + ' min' : '') + '</span>'
+        + '<span style="display:block;font-size:13px;color:#dfe6ff;">' + esc(l2) + '</span></span></div>';
+    });
+  }
+  box.innerHTML = h + '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">Source : feuille de match LNR</div></div>';
+}
+function g45Pd2Eq(i, k) { if (_g45Pd2.D && _g45Pd2.D[i]) { _g45Pd2.D[i].eq = k; _g45Pd2MatchRendre(i); } }
+function g45Pd2Video(btn, u) {
+  var z = btn.nextElementSibling; if (!z) return;
+  if (z.innerHTML) { z.innerHTML = ''; return; }
+  if (!/^https:\/\/(geo|www)\.dailymotion\.com\//.test(u)) { window.open(u, '_blank'); return; }
+  z.innerHTML = '<div style="position:relative;padding-top:56.25%;margin-top:8px;border-radius:10px;overflow:hidden;background:#000;"><iframe src="' + _g45ElEsc(u) + '" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0;"></iframe></div>';
+}
+window.g45Pd2Match = g45Pd2Match; window.g45Pd2Eq = g45Pd2Eq; window.g45Pd2Video = g45Pd2Video; window._g45Pd2Feuille = _g45Pd2Feuille;
 function g45Pd2Vue(v) { _g45Pd2.vue = v; var el = document.getElementById('t-compet'); if (el) _g45Pd2Rendre(el); }
 function g45Pd2Sem(s) { _g45Pd2.sem = s; var el = document.getElementById('t-compet'); if (el) _g45Pd2Rendre(el); }
 window.g45Pd2Vue = g45Pd2Vue; window.g45Pd2Sem = g45Pd2Sem;

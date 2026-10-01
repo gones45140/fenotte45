@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20261001m, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20261001n, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -606,6 +606,16 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   --ranking-scrollable (club | Pts | M | G | N | P | Bonus | Pts M. | Pts E. | Diff | forme | prochain) → `_g45Pd2Classement`
   (OFFICIEL : bonus offensif non recalculable). Rendu `_g45Pd2Rendre`, `g45Pd2Vue('j'|'c')`, `g45Pd2Sem(slug)`.
   Cache g45pd2_ (index 1 h, classement 10 min, journée finie 7 j sinon 10 min). Plus tard : effectifs Pro D2, saisons passées.
+  20261001n — FENÊTRE DE MATCH (maquette validée) : match JOUÉ cliquable → `g45Pd2Match(i)` (liste `_g45Pd2.M`) lit la
+  feuille /feuille-de-match/<saison>/<jN>/<id-a-b> + /statistiques-du-match → `_g45Pd2Feuille`. SONDÉ PAR ANTOINE (Brive–
+  Colomiers) : <header-timeline :game-facts> [{type Point|Exclusion joueur, subtype Essai|Pénalité|Jaune…, club home|away,
+  period, minute, additionalMinute, score [dom, ext] APRÈS l'action, player{firstName…}}] (PAS de transformations ; nom de
+  famille du joueur : lastName NON vérifié) ; <video-block :item {title « Résumé » (accents décomposés), url
+  geo.dailymotion.com/player.html?video=…}> ; stats : 2 × <players-ranking :ranking> {player{name, image.original},
+  position, tempsJeu, nbPoints, nbEssais, offload, lineBreak, totalSuccessfulTackles, nbCartons*} (1er = reçoit, NON vérifié).
+  Mi-temps = score du dernier fait de la période 1. Rendu `_g45Pd2MatchRendre`, équipe `g45Pd2Eq`, vidéo `g45Pd2Video`
+  (iframe ; CSP frame-src + geo/www.dailymotion.com dans index.html ET indexfenotte.html). /compositions : pas de JSON,
+  non utilisé. Cache g45pd2_f_<chemin> 30 j (5 min si pas fini).
 - 🔥 CARTES DE CHALEUR foot (20261001j, maquette validée) : bouton posé par `_g45ChPoser` dans `_g45SgCarteTirs` (match 'in'
   ou 'post', avant le bouton des tirs) → `g45ChOuvrir` (2e appui = refermer) relit les actions avec `_g45ButsLire` (mêmes
   pages que « les buts en action », `_g45ButsMem`) → `_g45ChRendre` (équipe bleu / jaune, joueurs triés par nombre
