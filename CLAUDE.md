@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261001t, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261001u, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -659,6 +659,12 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   Effectif en cartes (photo ronde 44 px `_g45KboAvatar`, bord = `_g45KboCoul` (teintes NON vérifiées), initiales dessous),
   postes traduits `_G45_KBO_POSTES` (CP = closeur). Photos aussi dans Classements joueurs (40 px) et feuille de match
   (28 px) SI le site en donne (NON vérifié). Clés de cache eq2_ / top2_ / m2_ (anciennes sans photo).
+  20261001u — SAISONS PASSÉES (maquette validée « OUI ») : sélecteur Saison ▾ (`g45KboAn`, _g45Kbo.an, 0 = en cours) ;
+  années lues dans <select id="stats_year"> de /stats/top/hr (`_g45KboAnsLire`, cache 24 h). SONDÉ PAR ANTOINE :
+  /stats/top/<cat>?year= et /stats/team_splits?year= OK ; /standings?year|season= et /teams/<id>?year= IGNORÉS ;
+  /schedule/week_of/<date> OK pour 2024/2025. Saison passée : Classement RECALCULÉ `_g45KboClsDepuisSplits` (pas de
+  série), Équipes et Forme grisés, Matchs = semaine du mardi ≤ 30/09 (`_g45KboSemFin`). « Rained Out » → (pluie).
+  Worker : ?year=AAAA ajouté à la liste blanche host=mykbo (fichier complet donné à Antoine).
 - Score d'un pari : `_g45ScoreTexte`, cache `g45_score4_<id>` (négatif gardé
   2 h) — effacé par `saveBetEdit` pour relancer la recherche.
 
