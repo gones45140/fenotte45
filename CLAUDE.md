@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20261001p, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20261001q, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -625,6 +625,11 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   catégories `_G45_PD2_CAT` / `_g45Pd2Val` ; réglages `_g45Pd2S` via `g45Pd2Reg` (nF Forme = 5, nS Classements = saison).
   Mi-temps (mène à la pause, 1re MT, 2e MT) : ABANDONNÉ (Antoine : « on laisse tomber »). Joueurs : `g45LnrRender` sur une
   boîte data-lnrhost="prod2.lnr.fr" (`_g45LnrPage(chemin, hote)`) ; SONDÉ : players-ranking identique au Top 14.
+  20261001q — onglet 👥 Équipes EN PREMIER (maquette validée, « placer 1er ») : `_g45Pd2Clubs` (16 clubs du classement
+  officiel, club = SLUG de son logo `_g45Pd2Slug`) → fiche dans l'écran Pro D2 `_g45Pd2Fiche` (`g45Pd2Club`, `g45Pd2ClubVue`
+  'r'|'e'|'s') : Résultats (`_g45Pd2Tous(I, null, true)` = matchs à venir + journée suivante), Effectif = `g45T14Compo(el,
+  nom, 'prod2.lnr.fr', slug)` (SONDÉ : page effectif-staff identique, Brive 52 joueurs ; cache g45t14sq1_p2_<slug>),
+  Stats Global / Domicile / Extérieur (`_g45Pd2Equipes`).
 - 🔥 CARTES DE CHALEUR foot (20261001j, maquette validée) : bouton posé par `_g45ChPoser` dans `_g45SgCarteTirs` (match 'in'
   ou 'post', avant le bouton des tirs) → `g45ChOuvrir` (2e appui = refermer) relit les actions avec `_g45ButsLire` (mêmes
   pages que « les buts en action », `_g45ButsMem`) → `_g45ChRendre` (équipe bleu / jaune, joueurs triés par nombre

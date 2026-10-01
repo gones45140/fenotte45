@@ -49137,15 +49137,17 @@ function _g45T14Lire(html) {
   });
   return P;
 }
-async function g45T14Compo(el, nom) {
-  var slug = _g45T14Slug(nom); if (!slug) return false;
-  var cle = 'g45t14sq1_' + slug, now = Date.now(), m = null;
+async function g45T14Compo(el, nom, hote, slugForce) {
+  /* 20261001q : hote / slugForce = Pro D2 (prod2.lnr.fr, page effectif-staff IDENTIQUE — SONDÉ : Brive 52 joueurs). */
+  hote = hote || 'top14.lnr.fr';
+  var slug = slugForce || _g45T14Slug(nom); if (!slug) return false;
+  var cle = 'g45t14sq1_' + (hote === 'top14.lnr.fr' ? '' : 'p2_') + slug, now = Date.now(), m = null;
   try { m = JSON.parse(localStorage.getItem(cle) || 'null'); } catch (e) {}
   var P = m && m.x > now ? m.p : null;
   if (!P) {
     el.innerHTML = '<div style="color:#fff;font-size:14px;padding:14px;">⏳ Effectif officiel LNR…</div>';
     try {
-      var r = await fetch(FD_PROXY + '?host=lnr&lnrhost=top14.lnr.fr&path=' + encodeURIComponent('/club/' + slug + '/effectif-staff'));
+      var r = await fetch(FD_PROXY + '?host=lnr&lnrhost=' + hote + '&path=' + encodeURIComponent('/club/' + slug + '/effectif-staff'));
       if (!r.ok) throw new Error(r.status);
       P = _g45T14Lire(await r.text());
       if (!P.length) throw new Error('vide');
@@ -49160,7 +49162,7 @@ async function g45T14Compo(el, nom) {
   var pl = function (v, mot) { return v == null ? '' : v + ' ' + mot + (v > 1 ? 's' : ''); };
   var h = '<div style="background:rgba(11,16,29,.88);border-radius:14px;padding:12px;">'
     + '<div style="font-size:16px;font-weight:800;color:#fff;">👥 Effectif ' + esc(nom) + ' <span style="font-size:13px;font-weight:600;color:#c9d3ee;">· ' + P.length + ' joueurs · source LNR</span></div>'
-    + '<div style="font-size:13px;color:#c9d3ee;margin:4px 0 4px;">Matchs, minutes et points : saison en cours de Top 14.</div>';
+    + '<div style="font-size:13px;color:#c9d3ee;margin:4px 0 4px;">Matchs, minutes et points : saison en cours de ' + (hote === 'top14.lnr.fr' ? 'Top 14' : 'Pro D2') + '.</div>';
   ordre.forEach(function (lib) {
     h += '<div style="background:#2b3a63;border-radius:8px;padding:7px 10px;margin:10px 0 4px;font-size:14px;font-weight:800;color:#fff;">' + esc(lib) + ' <span style="font-weight:600;color:#c9d3ee;">· ' + G[lib].length + '</span></div>';
     G[lib].forEach(function (j, i) {
@@ -60863,12 +60865,13 @@ async function _g45Pd2Rendre(el) {
   var B = '<button onclick="g45CompetSel(null)" style="border:none;background:rgba(255,255,255,.06);color:#fff;border-radius:8px;padding:6px 12px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:10px;">← Rugby</button>';
   var onglet = function (k, t) { var on = _g45Pd2.vue === k; return '<button onclick="g45Pd2Vue(\'' + k + '\')" style="flex:1;padding:10px;border-radius:9px;font-size:14px;font-weight:800;cursor:pointer;color:#fff;' + (on ? 'border:none;background:#2f6bff;' : 'border:1px solid rgba(255,255,255,.15);background:#232d4b;') + '">' + t + '</button>'; };
   var tete = function (sais) { return B + '<div style="font-size:20px;font-weight:800;color:#fff;margin-bottom:8px;">🏉 Pro D2' + (sais ? ' <span style="font-size:14px;color:#c9d3ee;font-weight:600;">· ' + _g45ElEsc(sais) + '</span>' : '') + '</div>'
-    + '<div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;">' + onglet('j', '📅 Journées') + onglet('c', '🏆 Classement') + onglet('f', '📈 Forme') + onglet('s', '🏅 Classements') + '</div>'; };
+    + '<div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;">' + onglet('e', '👥 Équipes') + onglet('j', '📅 Journées') + onglet('c', '🏆 Classement') + onglet('f', '📈 Forme') + onglet('s', '🏅 Classements') + '</div>'; };
   el.innerHTML = tete('') + '<div style="color:#fff;font-size:14px;">⏳ Lecture du site LNR…</div>';
   try {
     var I = _g45Pd2.idx = await _g45Pd2Lire('idx', '/calendrier-et-resultats', 3600e3, _g45Pd2Index);
     var h = tete(I.saison.replace(/^(\d{4})-\d{2}(\d{2})$/, '$1-$2'));
     var carte = function (x) { return '<div style="background:rgba(11,16,29,.9);border-radius:12px;padding:10px;color:#fff;">' + x + '</div>'; };
+    if (_g45Pd2.vue === 'e') { el.innerHTML = h + '<div id="g45pd2-z"></div>'; return _g45Pd2Clubs(document.getElementById('g45pd2-z'), I); }
     if (_g45Pd2.vue === 'f' || _g45Pd2.vue === 's') { el.innerHTML = h + '<div id="g45pd2-z"></div>'; return _g45Pd2Stats(document.getElementById('g45pd2-z'), I); }
     if (_g45Pd2.vue === 'c') {
       var C = await _g45Pd2Lire('cls', '/classement', 600e3, _g45Pd2Classement);
@@ -61014,15 +61017,16 @@ window.g45Pd2Match = g45Pd2Match; window.g45Pd2Eq = g45Pd2Eq; window.g45Pd2Video
    1re MT / 2e MT » absentes. Joueurs : prod2.lnr.fr/classement/joueurs/<cat> (SONDÉ : players-ranking :ranking,
    100 joueurs, comme le Top 14) → g45LnrRender sur une boîte data-lnrhost="prod2.lnr.fr". */
 var _g45Pd2S = { lieu: 'g', nF: 5, nS: 0, tri: 'pts', cat: 'pts', tot: 0, mode: 'eq', inv: 0 };
-async function _g45Pd2Tous(I, prog) {
-  var cour = I.sem.filter(function (w) { return w.s === I.cour; })[0], max = cour ? cour.num : 30, L = I.sem.filter(function (w) { return w.num <= max; }), out = [];
+async function _g45Pd2Tous(I, prog, avenir) {
+  /* avenir (20261001q, fiche club) : garde aussi les matchs non joués et lit la journée suivante. */
+  var cour = I.sem.filter(function (w) { return w.s === I.cour; })[0], max = (cour ? cour.num : 30) + (avenir ? 1 : 0), L = I.sem.filter(function (w) { return w.num <= max; }), out = [];
   for (var k = 0; k < L.length; k += 4) {
     if (prog) prog(Math.min(k + 4, L.length), L.length);
     var lot = await Promise.all(L.slice(k, k + 4).map(function (w) {
       return _g45Pd2Lire('j_' + I.saison + '_' + w.s, '/calendrier-et-resultats/' + I.saison + '/' + w.s,
         function (X) { return X.every(function (m) { return m.sh != null; }) ? 7 * 86400e3 : 600e3; }, _g45Pd2Journee).then(function (X) { return { w: w, X: X }; }, function () { return null; });
     }));
-    lot.forEach(function (r) { if (r && r.X) r.X.forEach(function (m) { if (m.sh != null) out.push({ w: r.w.num, h: m.h, a: m.a, sh: m.sh, sa: m.sa }); }); });
+    lot.forEach(function (r) { if (r && r.X) r.X.forEach(function (m) { if (m.sh != null || avenir) out.push({ w: r.w.num, h: m.h, a: m.a, sh: m.sh, sa: m.sa, hr: m.hr, j: m.j }); }); });
   }
   out.sort(function (x, y) { return x.w - y.w; });
   return out;
@@ -61118,6 +61122,80 @@ function g45Pd2Reg(k, v) {
   if (z && _g45Pd2.idx) _g45Pd2Stats(z, _g45Pd2.idx);
 }
 window.g45Pd2Reg = g45Pd2Reg; window._g45Pd2Equipes = _g45Pd2Equipes; window._g45Pd2Val = _g45Pd2Val;
+/* ═══ PRO D2 — ONGLET ÉQUIPES + FICHE CLUB (20261001q, maquette proposée le 01/10) ═══
+   16 clubs = classement officiel (nom, logo, rang, points) ; club identifié par le SLUG de son logo
+   (cdn.lnr.fr/club/<slug>/…, même motif dans les lignes de match). Fiche dans l'écran Pro D2 (ESPN n'a pas ces clubs) :
+   Résultats (journées lues jusqu'à la suivante), Effectif (g45T14Compo sur prod2.lnr.fr), Stats (calculées). */
+function _g45Pd2Slug(u) { var m = String(u || '').match(/\/club\/([a-z0-9-]+)\//); return m ? m[1] : ''; }
+async function _g45Pd2Clubs(z, I) {
+  var esc = _g45ElEsc, C = null;
+  z.innerHTML = '<div style="color:#fff;font-size:14px;">⏳ Clubs…</div>';
+  try { C = await _g45Pd2Lire('cls', '/classement', 600e3, _g45Pd2Classement); } catch (e) {}
+  if (!C || !C.length) { z.innerHTML = '<div style="color:#ffb13d;font-size:14px;">Liste des clubs indisponible.</div>'; return; }
+  _g45Pd2.C = C;
+  var tri = C.slice().sort(function (a, b) { return a.n.localeCompare(b.n, 'fr'); });
+  var h = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:6px;margin-bottom:12px;">';
+  tri.forEach(function (c) {
+    var sl = _g45Pd2Slug(c.l), on = sl && sl === _g45Pd2.club;
+    h += '<div onclick="g45Pd2Club(\'' + esc(sl) + '\')" style="cursor:pointer;background:rgba(11,16,29,.9);border:1px solid ' + (on ? '#2f6bff' : 'rgba(255,255,255,.1)') + ';border-radius:10px;padding:9px;display:flex;align-items:center;gap:8px;font-size:14px;font-weight:800;color:#fff;">'
+      + _g45Pd2Logo(c.l, 26) + '<span style="min-width:0;">' + esc(c.n) + '</span></div>';
+  });
+  z.innerHTML = h + '</div><div id="g45pd2-club"></div>';
+  if (_g45Pd2.club) _g45Pd2Fiche(I);
+}
+async function _g45Pd2Fiche(I) {
+  var box = document.getElementById('g45pd2-club'), esc = _g45ElEsc, sl = _g45Pd2.club;
+  if (!box || !sl) return;
+  var c = (_g45Pd2.C || []).filter(function (x) { return _g45Pd2Slug(x.l) === sl; })[0]; if (!c) return;
+  var cv = _g45Pd2.cv || 'r';
+  var bt = function (k, t) { var on = cv === k; return '<button onclick="g45Pd2ClubVue(\'' + k + '\')" style="flex:1;padding:9px 6px;border-radius:9px;font-size:13px;font-weight:800;cursor:pointer;color:#fff;' + (on ? 'border:none;background:#2f6bff;' : 'border:1px solid rgba(255,255,255,.15);background:#232d4b;') + '">' + t + '</button>'; };
+  var tete = '<div style="background:rgba(27,36,64,.95);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px;color:#fff;">'
+    + '<div style="display:flex;align-items:center;gap:10px;">' + _g45Pd2Logo(c.l, 44) + '<div><div style="font-size:18px;font-weight:800;">' + esc(c.n) + '</div>'
+    + '<div style="font-size:13px;color:#c9d3ee;">' + c.r + (c.r === 1 ? 'er' : 'e') + ' · ' + esc(c.p) + ' pts · ' + esc(c.g) + 'V ' + esc(c.nu) + 'N ' + esc(c.pe) + 'D</div></div></div>'
+    + '<div style="display:flex;gap:6px;margin:10px 0;">' + bt('r', 'Résultats') + bt('e', 'Effectif') + bt('s', 'Stats') + '</div><div id="g45pd2-cz">';
+  if (cv === 'e') {
+    box.innerHTML = tete + '</div></div>';
+    var z = document.getElementById('g45pd2-cz');
+    if (!(await g45T14Compo(z, c.n, 'prod2.lnr.fr', sl))) z.innerHTML = '<div style="color:#ffb13d;font-size:14px;">Effectif illisible sur le site LNR.</div>';
+    return;
+  }
+  box.innerHTML = tete + '<div style="font-size:14px;">⏳ Lecture des journées…</div></div></div>';
+  var ms = await _g45Pd2Tous(I, null, true);
+  var z2 = document.getElementById('g45pd2-cz'); if (!z2 || _g45Pd2.club !== sl) return;
+  var mes = ms.filter(function (m) { return _g45Pd2Slug(m.h.l) === sl || _g45Pd2Slug(m.a.l) === sl; });
+  if (!mes.length) { z2.innerHTML = '<div style="color:#ffb13d;font-size:14px;">Aucun match trouvé.</div>'; return; }
+  var t = '';
+  if (cv === 'r') {
+    mes.forEach(function (m, i) {
+      var dom = _g45Pd2Slug(m.h.l) === sl, adv = dom ? m.a : m.h, fin = m.sh != null;
+      var p = dom ? m.sh : m.sa, q = dom ? m.sa : m.sh, col = !fin ? '#fff' : p > q ? '#3ddc84' : p < q ? '#ff6b6b' : '#c9d3ee';
+      t += '<div style="display:grid;grid-template-columns:36px 1fr 104px;align-items:center;padding:8px 0;' + (i ? 'border-top:1px solid rgba(255,255,255,.08);' : '') + 'font-size:14px;">'
+        + '<b>J' + m.w + '</b><span style="display:flex;align-items:center;gap:6px;min-width:0;">' + (dom ? '🏠' : '✈️') + _g45Pd2Logo(adv.l, 22) + esc(adv.n) + '</span>'
+        + '<b style="text-align:right;color:' + col + ';font-size:' + (fin ? 15 : 13) + 'px;">' + (fin ? m.sh + ' - ' + m.sa : esc([m.j, m.hr].filter(function (x) { return x; }).join(' ') || '—')) + '</b></div>';
+    });
+    t += '<div style="font-size:13px;color:#c9d3ee;margin-top:6px;">🏠 à domicile · ✈️ à l\'extérieur · score : club qui reçoit en premier</div>';
+  } else {
+    var nb = function (v) { return (Math.round(v * 10) / 10).toFixed(1).replace('.', ','); };
+    var joues = mes.filter(function (m) { return m.sh != null; });
+    var lignes = [['g', 'Global'], ['d', 'Domicile'], ['e', 'Extérieur']].map(function (L) {
+      var e = _g45Pd2Equipes(joues, L[0], 0).filter(function (x) { return _g45Pd2Slug(x.l) === sl; })[0];
+      return [L[1], e];
+    });
+    var g = 'display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;text-align:center;';
+    t = '<div style="' + g + 'font-size:13px;color:#c9d3ee;padding-bottom:4px;"><span></span>' + lignes.map(function (L) { return '<b style="color:#fff;">' + L[0] + '</b>'; }).join('') + '</div>';
+    [['Matchs', function (e) { return e.mj; }], ['Bilan', function (e) { return e.v + 'V ' + e.nu + 'N ' + e.d + 'D'; }], ['Marqués / match', function (e) { return nb(e.p / e.mj); }],
+     ['Encaissés / match', function (e) { return nb(e.c / e.mj); }], ['Écart / match', function (e) { var x = (e.p - e.c) / e.mj; return (x > 0 ? '+' : '') + nb(x); }],
+     ['% victoires', function (e) { return Math.round(100 * e.v / e.mj) + ' %'; }], ['Victoires de +12', function (e) { return e.v12; }], ['Bonus défensif', function (e) { return e.bd; }]].forEach(function (R) {
+      t += '<div style="' + g + 'align-items:center;padding:7px 0;border-top:1px solid rgba(255,255,255,.08);font-size:14px;"><span style="text-align:left;color:#dfe6ff;font-size:13px;">' + R[0] + '</span>'
+        + lignes.map(function (L) { return '<b>' + (L[1] && L[1].mj ? R[1](L[1]) : '–') + '</b>'; }).join('') + '</div>';
+    });
+    t += '<div style="font-size:13px;color:#c9d3ee;margin-top:6px;">Calculé depuis les scores LNR · ' + joues.length + ' matchs joués</div>';
+  }
+  z2.innerHTML = t;
+}
+function g45Pd2Club(sl) { _g45Pd2.club = (_g45Pd2.club === sl ? '' : sl); _g45Pd2.cv = 'r'; var z = document.getElementById('g45pd2-z'); if (z && _g45Pd2.idx) _g45Pd2Clubs(z, _g45Pd2.idx); }
+function g45Pd2ClubVue(k) { _g45Pd2.cv = k; if (_g45Pd2.idx) _g45Pd2Fiche(_g45Pd2.idx); }
+window.g45Pd2Club = g45Pd2Club; window.g45Pd2ClubVue = g45Pd2ClubVue; window._g45Pd2Slug = _g45Pd2Slug;
 function g45Pd2Vue(v) { _g45Pd2.vue = v; var el = document.getElementById('t-compet'); if (el) _g45Pd2Rendre(el); }
 function g45Pd2Sem(s) { _g45Pd2.sem = s; var el = document.getElementById('t-compet'); if (el) _g45Pd2Rendre(el); }
 window.g45Pd2Vue = g45Pd2Vue; window.g45Pd2Sem = g45Pd2Sem;
