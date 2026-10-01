@@ -65287,6 +65287,52 @@ function _g45EbCarte(x) {
     + '<div style="font-size:13px;color:#c9d3ee;margin-top:10px;">📅 ' + new Date(m.t).toLocaleString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })
     + (m.v ? '<br>🏟️ ' + esc(m.v) : '') + (m.ar && m.ar.length ? '<br>🧑‍⚖️ ' + m.ar.map(esc).join(', ') : '') + (m.p ? '' : '<br>⏳ Match à venir') + '</div></div>';
 }
+/* 20261001za (« oui ») — comme la fiche foot du PSG : prochains matchs EN HAUT + « Filtrer par compétition »
+   (Toutes / Euroleague / Pro A, seulement si le club a des matchs dans les deux) ; filtre appliqué AVANT le calcul
+   (interception de _g45CompetMatchs), mémoire du panneau vidée à chaque changement. */
+var _g45EbComp = 'tout', _g45EbComps = {};
+function g45EbComp(v) {
+  _g45EbComp = v;
+  try { Object.keys(_g45SgMem).forEach(function (k) { if (/^basketball\|eb:/.test(k)) delete _g45SgMem[k]; }); } catch (e) {}
+  if (typeof loadTeamSaisons === 'function') loadTeamSaisons();
+}
+window.g45EbComp = g45EbComp;
+function _g45EbHaut(el, R) {
+  var racine = el.firstElementChild; if (!racine) return;
+  var bloc = [].filter.call(el.querySelectorAll('div'), function (d) { return d.firstElementChild && /Prochains matchs/.test(d.firstElementChild.textContent || '') && d.firstElementChild.children.length === 0; })[0];
+  var cs = Object.keys(_g45EbComps);
+  var filtre = null;
+  if (cs.length > 1 || _g45EbComp !== 'tout') {
+    filtre = document.createElement('div');
+    filtre.style.cssText = 'margin:0 0 12px;padding:10px 12px;border-radius:11px;background:rgba(11,16,29,.88);border:1px solid rgba(255,255,255,.07);';
+    var btn = function (v, t) { var on = _g45EbComp === v;
+      return '<button onclick="g45EbComp(\'' + v + '\')" style="padding:7px 12px;border-radius:9px;font-size:13px;font-weight:800;cursor:pointer;color:#fff;' + (on ? 'border:1px solid #3b82f6;background:#2563eb;' : 'border:1px solid rgba(255,255,255,.14);background:#1a2235;') + '">' + t + '</button>'; };
+    filtre.innerHTML = '<div style="font-size:11px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#9fb6ff;margin-bottom:8px;">Filtrer par compétition</div>'
+      + '<div style="display:flex;gap:6px;flex-wrap:wrap;">' + btn('tout', 'Toutes') + ['Euroleague', 'Pro A'].filter(function (c) { return _g45EbComps[c] || _g45EbComp === c; }).map(function (c) { return btn(c, c); }).join('') + '</div>';
+  }
+  if (filtre) racine.insertBefore(filtre, racine.firstChild);
+  if (bloc) racine.insertBefore(bloc, racine.firstChild);
+}
+/* Logo officiel (écusson Euroleague) dans l'en-tête, comme le badge NRL : remplace le ballon générique / TheSportsDB. */
+if (typeof _g45HeroLogo === 'function' && !_g45HeroLogo._g45Eb) {
+  var _g45EbHeroOrig = _g45HeroLogo;
+  _g45HeroLogo = async function (nom) {
+    try {
+      var u = ((typeof state !== 'undefined' && state && state.u) || []).filter(function (x) { return x && x.n === nom; })[0];
+      var nba = (typeof NBA_TEAMS !== 'undefined' && NBA_TEAMS[nom]) || (typeof resolveNbaTeam === 'function' && resolveNbaTeam(nom));
+      if (u && /🏀/.test(u.sport || '') && !nba) {
+        var C = await _g45EbClubsEl(), e = C.filter(function (c) { return _g45EbCorrespond(nom, c.al); })[0];
+        if (e && e.l) {
+          if (u.logoUrl !== e.l) { u.logoUrl = e.l; try { if (typeof save === 'function') save(); } catch (x) {} }
+          if (typeof _g45HeroPoser === 'function') _g45HeroPoser(nom, e.l, u);
+          return;
+        }
+      }
+    } catch (e2) {}
+    return _g45EbHeroOrig.apply(this, arguments);
+  };
+  _g45HeroLogo._g45Eb = true; window._g45HeroLogo = _g45HeroLogo;
+}
 window._g45EbResoudre = _g45EbResoudre; window._g45EbCharger = _g45EbCharger; window._g45EbCorrespond = _g45EbCorrespond;
 (function _g45EbBrancher() {
   if (typeof _g45CompetEquipes === 'function' && !_g45CompetEquipes._g45Eb) {
@@ -65304,9 +65350,10 @@ window._g45EbResoudre = _g45EbResoudre; window._g45EbCharger = _g45EbCharger; wi
     var oMs = _g45CompetMatchs;
     var eMs = async function (sp, lg, an) {
       if (sp !== 'basketball' || !/^eb:/.test(String(lg))) return oMs.apply(this, arguments);
-      var D = await _g45EbCharger(lg, an);
-      _g45CompetAVenir[sp + '|' + lg + '|' + an] = D.av;
-      return D.fini;
+      var D = await _g45EbCharger(lg, an), f = function (m) { return _g45EbComp === 'tout' || m.comp === _g45EbComp; };
+      _g45EbComps = {}; D.fini.concat(D.av).forEach(function (m) { _g45EbComps[m.comp] = 1; });
+      _g45CompetAVenir[sp + '|' + lg + '|' + an] = D.av.filter(f);
+      return D.fini.filter(f);
     };
     eMs._g45Eb = true; Object.keys(oMs).forEach(function (k) { if (/^_g45/.test(k)) eMs[k] = oMs[k]; });
     _g45CompetMatchs = eMs; window._g45CompetMatchs = eMs;
@@ -65341,7 +65388,9 @@ window._g45EbResoudre = _g45EbResoudre; window._g45EbCharger = _g45EbCharger; wi
           var R = await _g45EbResoudre(nom);
           if (R) {
             if (typeof _g45SgNomCourant !== 'undefined' && _g45SgNomCourant !== nom) { _g45SgNomCourant = nom; _g45SgAn = null; _g45SgPhase = 'tout'; }
-            return await _g45SaisonsGen(el, nom, { sport: 'basketball', league: 'eb:' + R.el + '|' + R.pa, id: 'EB' });
+            var res = await _g45SaisonsGen(el, nom, { sport: 'basketball', league: 'eb:' + R.el + '|' + R.pa, id: 'EB' });
+            try { _g45EbHaut(el, R); } catch (eH) {}
+            return res;
           }
         }
       } catch (err) { console.warn('Euroleague/Pro A saisons :', err && err.message); }

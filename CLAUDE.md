@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261001z, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261002a, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -575,8 +575,11 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   API-Sports basket gratuit (ligue LNB = id 2) : « Free plans do not have access to this season, try from 2022 to 2024 ».
   → tuile Pro A RETIRÉE sur bet45 (`_g45ProaCachee()` : window._g45User ou hôte bet45.fr), GARDÉE sur gones45 pour voir si la LNB
   rouvre (demande d'Antoine). Refus 401/403 → window._g45LnbKo : les équipes du mur ne redemandent plus la Pro A de la session.
-  En attente (« oui » non donné) pour les équipes Euroleague du mur : logo officiel (crest), prochains matchs en haut, filtre
-  Toutes / Euroleague / Pro A.
+  20261002a (« oui ») — équipes Euroleague / Pro A du mur, comme la fiche foot du PSG : `_g45EbHaut(el, R)` (après
+  _g45SaisonsGen dans l'enveloppe de loadTeamSaisons) remonte « Prochains matchs » EN HAUT et pose « Filtrer par compétition »
+  (Toutes / Euroleague / Pro A, si le club a des matchs dans les deux ; `g45EbComp`, filtre dans l'interception de
+  _g45CompetMatchs, _g45SgMem 'basketball|eb:' vidé) ; logo officiel = écusson Euroleague (enveloppe de `_g45HeroLogo`,
+  u.logoUrl remplacé comme le badge NRL).
 - Classements individuels TOP 14 (`g45LnrRender`, `_G45_LNR_CATS`, page top14.lnr.fr/classement/joueurs/<cat> via
   worker host=lnr) : 20261001a — LA LNR A REFAIT SON SITE (« page reçue mais illisible ») : plus de liens /joueur/ ;
   SONDÉ PAR ANTOINE : JSON dans l'attribut `:ranking` de <players-ranking> (100 joueurs {rank, player{name, url,
