@@ -60497,7 +60497,7 @@ async function _g45ProaMatchs(an) {
     var c = M.r[n]; if (c && c.x > now) return c.g;
     var u = FD_PROXY + '?host=lnb&path=' + encodeURIComponent('/match/getMatchesByCompetitionAndRound') + '&post=' + encodeURIComponent(JSON.stringify({ competition_external_id: cid, round_number: n }));
     try {
-      var r = await fetch(u); if (!r.ok) return c ? c.g : null;
+      var r = await fetch(u); if (!r.ok) { if (r.status === 401 || r.status === 403) window._g45LnbKo = true; return c ? c.g : null; }
       var j = await r.json(), g = (((j.data || {}).matches) || []).map(_g45ProaCompact);
       var fini = g.length && g.every(function (m) { return m.p; });
       var jour = g.some(function (m) { return !m.p && Math.abs(m.t - now) < 12 * 3600000; });
@@ -60932,13 +60932,20 @@ window.g45PsMode = g45PsMode; window.g45PsCat = g45PsCat; window._g45PsVal = _g4
 window._g45ElCompact = _g45ElCompact; window._g45ElClassement = _g45ElClassement; window._g45ElJourneesHtml = _g45ElJourneesHtml;
 
 /* Branchement : tuile dans la carte Basket + interceptions (Compétitions, Résultats). */
+function _g45ProaCachee() {
+  try { if (typeof window._g45User !== 'undefined') return true; if (/(^|\.)bet45\.fr$/i.test(location.hostname) || /fenotte/i.test(location.pathname)) return true; } catch (e) {}
+  return false;
+}
 (function _g45ElBrancher() {
   try {
     var bk = (typeof G45_SPORTS !== 'undefined') && G45_SPORTS.filter(function (s) { return s.key === 'basketball'; })[0];
     if (bk && bk.groups && bk.groups[0] && !bk.groups[0].leagues.some(function (l) { return l.slug === 'euroleague'; })) {
       bk.groups[0].leagues.push({ name: 'Euroleague', slug: 'euroleague', ico: '🇪🇺' });
     }
-    if (bk && bk.groups && bk.groups[0] && !bk.groups[0].leagues.some(function (l) { return l.slug === 'proa'; })) {
+    /* 20261001z — LA LNB A FERMÉ SON SERVEUR le 01/10 (« Authorization header missing » à toute demande, vu par Antoine ;
+       API-Sports gratuit : « Free plans do not have access to this season ») → tuile Pro A RETIRÉE sur bet45 (demande
+       d'Antoine), gardée sur gones45 pour voir si ça remarche. */
+    if (!_g45ProaCachee() && bk && bk.groups && bk.groups[0] && !bk.groups[0].leagues.some(function (l) { return l.slug === 'proa'; })) {
       bk.groups[0].leagues.push({ name: 'Pro A', slug: 'proa', ico: '🇫🇷' });
     }
   } catch (e) {}
@@ -65204,7 +65211,7 @@ async function _g45EbResoudre(nom) {
   var C = await _g45EbClubsEl();
   var e = C.filter(function (c) { return _g45EbCorrespond(nom, c.al); })[0];
   if (e) { out.el = e.c; out.l = e.l; out.nom = e.n; }
-  try {
+  if (!_g45ProaCachee() && !window._g45LnbKo) try {
     var anc = _g45PaComp; _g45PaComp = 'rs';
     var g = []; try { g = await _g45ProaMatchs(_g45EbAnCour()); } finally { _g45PaComp = anc; }
     var vu = {};
@@ -65244,7 +65251,7 @@ async function _g45EbCharger(lg, an) {
         g.forEach(function (m) { var s = m.h.c === el ? 'h' : m.a.c === el ? 'a' : null; if (s) ajouter(m, 'Euroleague', m.ph && !/^RS$/i.test(m.ph), s); });
       } catch (e) {}
     }
-    if (pa) {
+    if (pa && !window._g45LnbKo) {
       var anc = _g45PaComp;
       for (var ph of ['rs', 'po']) {
         try {

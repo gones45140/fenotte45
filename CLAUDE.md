@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261001y, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261001z, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -569,6 +569,14 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   (Euroleague seulement) ; ids 7<an><gameCode> / 8<external_id> → `_g45EbIdx` ; clic = `_g45EbCarte`. Onglet Compo : PAS encore
   (effectif SONDÉ : /v2/competitions/E/seasons/E<an>/clubs/<code>/people → type J joueurs, dorsal, positionName, images.headshot,
   person{name, height, birthDate, country} ; maquette proposée, « oui » non donné). Pro A : effectif non sondé.
+- ⛔ PRO A FERMÉE (20261001z) : le 01/10 après-midi, api-prod.lnb.fr répond à TOUT {"success":false,"message":"Authorization
+  header missing"} (VU PAR ANTOINE ; worker et appli inchangés, vérifié ligne à ligne). Ne PAS récupérer le jeton du site lnb.fr
+  (contournement). lnb.fr : pages vides (données chargées après coup avec ce jeton) ; robots.txt sans interdiction (mal configuré).
+  API-Sports basket gratuit (ligue LNB = id 2) : « Free plans do not have access to this season, try from 2022 to 2024 ».
+  → tuile Pro A RETIRÉE sur bet45 (`_g45ProaCachee()` : window._g45User ou hôte bet45.fr), GARDÉE sur gones45 pour voir si la LNB
+  rouvre (demande d'Antoine). Refus 401/403 → window._g45LnbKo : les équipes du mur ne redemandent plus la Pro A de la session.
+  En attente (« oui » non donné) pour les équipes Euroleague du mur : logo officiel (crest), prochains matchs en haut, filtre
+  Toutes / Euroleague / Pro A.
 - Classements individuels TOP 14 (`g45LnrRender`, `_G45_LNR_CATS`, page top14.lnr.fr/classement/joueurs/<cat> via
   worker host=lnr) : 20261001a — LA LNR A REFAIT SON SITE (« page reçue mais illisible ») : plus de liens /joueur/ ;
   SONDÉ PAR ANTOINE : JSON dans l'attribut `:ranking` de <players-ranking> (100 joueurs {rank, player{name, url,
