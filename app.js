@@ -42130,7 +42130,7 @@ window.g45F1Session=g45F1Session;
    et les données utilisateur n'étaient JAMAIS écrites — l'ajout apparaissait à l'écran puis
    disparaissait au rechargement. Ce n'était ni la synchro GitHub, ni Dropbox, ni le cache
    du navigateur. Tous ces caches sont reconstructibles : ils cèdent la place aux données. */
-var _G45_CACHE_PREFIXES=['g45nrlst2_',/* 01/10 : classements NRL */'g45proacid1_',/* 30/09 : numéros LNB par saison */'g45proast1_',/* 30/09 : stats Pro A */'g45proa1_',/* 30/09 : Pro A par journée */'g45el1_',/* 30/09 : Euroleague (compact) */'g45buts1_',/* 30/09 : buts en action (match fini) */'g45prad1_','g45vsj1_','g45vse1_',/* 30/09 : radars joueurs */'g45ia1_',/* 29/09 : avis IA gardés 6 h */'g45_mmeta2_','g45_mmeta1_','g45_tennis4_','g45_tennis3_',/* 16/09 : meta de match (domicile/lieu) et score tennis, reconstructibles */'g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dcf_','g45dc_',
+var _G45_CACHE_PREFIXES=['g45nrlsq1_',/* 01/10 : effectifs NRL */'g45nrlst2_',/* 01/10 : classements NRL */'g45proacid1_',/* 30/09 : numéros LNB par saison */'g45proast1_',/* 30/09 : stats Pro A */'g45proa1_',/* 30/09 : Pro A par journée */'g45el1_',/* 30/09 : Euroleague (compact) */'g45buts1_',/* 30/09 : buts en action (match fini) */'g45prad1_','g45vsj1_','g45vse1_',/* 30/09 : radars joueurs */'g45ia1_',/* 29/09 : avis IA gardés 6 h */'g45_mmeta2_','g45_mmeta1_','g45_tennis4_','g45_tennis3_',/* 16/09 : meta de match (domicile/lieu) et score tennis, reconstructibles */'g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dcf_','g45dc_',
   'g45trv3_','g45trv2_','g45trOdds_','g45tr_','g45but_st_','g45butL_','g45butA_','g45but_mur_',
   '_g45clv','g45clv_snaps','g45_saisons_cache_v3_','g45_saisons_cache_v2_',
   /* Ajoutes le 20/08 : ces caches, tous reconstructibles, n'etaient PAS declares
@@ -48915,6 +48915,74 @@ function g45NrlReg(k, v) {
 }
 window.g45NrlStatsRender = g45NrlStatsRender; window.g45NrlReg = g45NrlReg;
 
+/* ═══ NRL — EFFECTIF OFFICIEL (20261001g, maquette validée : « oui ») ═══
+   SONDÉ PAR ANTOINE : www.nrl.com/players/data?competition=111&team=<id> (JSON public, 34 Ko) → filterTeams[18]
+   {value, name}, profileGroups[0].profiles[] {firstName, lastName, position (« 2nd Row »…), bodyImage « /remote.axd?
+   http://rugbyimages.statsperform.com/Player%20Bodyshots/… », url « /players/nrl-premiership/roosters/… »}.
+   Worker host=nrl (chemins /players/data et /stats/players/data). Club retrouvé par son SURNOM dans le nom ESPN
+   (`_G45_NRL_EQ`). Photo : portrait déduit du plan en pied (même fichier dans « Player Profile Headshots », comme
+   les headImage des stats), plan en pied en secours, initiales sinon. Cache g45nrlsq1_<id> 24 h. */
+var _G45_NRL_EQ = { 'bears': 500947, 'broncos': 500011, 'bulldogs': 500010, 'cowboys': 500012, 'dolphins': 500723, 'dragons': 500022,
+  'eels': 500031, 'knights': 500003, 'panthers': 500014, 'rabbitohs': 500005, 'raiders': 500013, 'roosters': 500001, 'sea eagles': 500002,
+  'sharks': 500028, 'storm': 500021, 'titans': 500004, 'warriors': 500032, 'wests tigers': 500023 };
+var _G45_NRL_POSTES = [['Fullback', 'Arrière'], ['Winger', 'Ailiers'], ['Wing', 'Ailiers'], ['Centre', 'Centres'], ['Five-Eighth', 'Demi d’ouverture'],
+  ['Halfback', 'Demi de mêlée'], ['Prop', 'Piliers'], ['Hooker', 'Talonneur'], ['2nd Row', '2e ligne'], ['Second Row', '2e ligne'], ['Lock', '3e ligne centre'],
+  ['Interchange', 'Remplaçants'], ['Replacement', 'Remplaçants']];
+function _g45NrlEqId(nom) {
+  var n = ' ' + String(nom || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z ]/g, ' ').replace(/\s+/g, ' ') + ' ';
+  var best = null;
+  Object.keys(_G45_NRL_EQ).forEach(function (k) { if (n.indexOf(' ' + k + ' ') >= 0 && (!best || k.length > best.length)) best = k; });
+  if (best === 'tigers' ) best = 'wests tigers';
+  return best ? _G45_NRL_EQ[best] : null;
+}
+async function g45NrlCompo(el, nom) {
+  var id = _g45NrlEqId(nom); if (!id) return false;
+  var cle = 'g45nrlsq1_' + id, now = Date.now(), m = null;
+  try { m = JSON.parse(localStorage.getItem(cle) || 'null'); } catch (e) {}
+  var P = m && m.x > now ? m.p : null;
+  if (!P) {
+    el.innerHTML = '<div style="color:#fff;font-size:14px;padding:14px;">⏳ Effectif officiel NRL…</div>';
+    try {
+      var r = await fetch(FD_PROXY + '?host=nrl&path=' + encodeURIComponent('/players/data?competition=111&team=' + id));
+      if (!r.ok) throw new Error(r.status);
+      var q = await r.json();
+      P = [];
+      (q.profileGroups || []).forEach(function (g) { (g.profiles || []).forEach(function (x) {
+        var body = String(x.bodyImage || ''), mo = body.match(/remote\.axd\?(https?:\/\/[^?]+)/), orig = mo ? mo[1].replace(/^http:/, 'https:') : '';
+        P.push({ n: ((x.firstName || '') + ' ' + (x.lastName || '')).trim(), po: x.position || '',
+          ph: orig ? orig.replace('Player%20Bodyshots', 'Player%20Profile%20Headshots') : '', ph2: orig, u: x.url ? 'https://www.nrl.com' + x.url : '' });
+      }); });
+      if (!P.length) throw new Error('vide');
+      try { localStorage.setItem(cle, JSON.stringify({ p: P, x: now + 86400000 })); } catch (e) {}
+    } catch (e) { if (m && m.p) P = m.p; else return false; }
+  }
+  var esc = function (x) { return String(x == null ? '' : x).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+  var groupes = {}, ordre = [];
+  P.forEach(function (j) {
+    var lib = (_G45_NRL_POSTES.filter(function (x) { return x[0].toLowerCase() === String(j.po).toLowerCase(); })[0] || [0, j.po || 'Autres'])[1];
+    if (!groupes[lib]) { groupes[lib] = []; ordre.push(lib); }
+    groupes[lib].push(j);
+  });
+  var rang = function (lib) { for (var i = 0; i < _G45_NRL_POSTES.length; i++) if (_G45_NRL_POSTES[i][1] === lib) return i; return 99; };
+  ordre.sort(function (a, b) { return rang(a) - rang(b); });
+  var h = '<div style="font-size:15px;font-weight:800;color:#fff;margin:4px 0 10px;">👥 Effectif officiel · ' + esc(nom) + ' <span style="font-size:13px;font-weight:600;color:#c9d3ee;">(' + P.length + ' joueurs)</span></div>';
+  ordre.forEach(function (lib) {
+    h += '<div style="font-size:14px;font-weight:800;color:#c9d3ee;margin:12px 0 6px;">' + esc(lib) + '</div><div style="background:rgba(11,16,29,.9);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:2px 12px;">';
+    groupes[lib].forEach(function (j, i) {
+      var ini = j.n.split(/\s+/).map(function (w) { return w.charAt(0); }).join('').slice(0, 2);
+      h += '<a href="' + esc(j.u || '#') + '" target="_blank" rel="noopener" data-g45-direct="1" style="display:flex;align-items:center;gap:10px;padding:8px 0;text-decoration:none;' + (i ? 'border-top:1px solid rgba(255,255,255,.08);' : '') + '">'
+        + '<span style="position:relative;width:44px;height:44px;flex:none;"><span style="position:absolute;inset:0;border-radius:50%;background:#dfe6f5;color:#0b101d;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;">' + esc(ini) + '</span>'
+        + (j.ph ? '<img src="' + esc(j.ph) + '" data-alt="' + esc(j.ph2 || '') + '" referrerpolicy="no-referrer" alt="" loading="lazy" style="position:absolute;inset:0;width:44px;height:44px;border-radius:50%;object-fit:cover;object-position:50% 12%;background:#dfe6f5;" onerror="if(this.dataset.alt){this.src=this.dataset.alt;this.dataset.alt=\'\';this.style.objectPosition=\'50% 3%\'}else this.remove()">' : '') + '</span>'
+        + '<span style="flex:1;min-width:0;"><span style="display:block;color:#fff;font-size:15px;font-weight:800;">' + esc(j.n) + '</span>'
+        + '<span style="display:block;color:#c9d3ee;font-size:13px;">' + esc(lib) + '</span></span><span style="color:#c9d3ee;font-size:16px;">›</span></a>';
+    });
+    h += '</div>';
+  });
+  el.innerHTML = h + '<div style="font-size:13px;color:#fff;margin-top:10px;background:rgba(11,16,29,.8);padding:6px 8px;border-radius:8px;">Source : NRL.com. Touche un joueur pour ouvrir sa fiche officielle.</div>';
+  return true;
+}
+window.g45NrlCompo = g45NrlCompo; window._g45NrlEqId = _g45NrlEqId;
+
 async function g45StatsIndRender(c, box) {
   if (!_g45NrlMatchs || !_g45NrlMatchs.length) {
     box.innerHTML = '<div style="color:#ffb13d;font-size:11.5px;">Charge d\'abord la saison depuis l\'onglet '
@@ -50773,6 +50841,9 @@ async function _g45CompoEffectif(el, nom, avecFoot) {
     await _g45NbaTableau(el.querySelector('.cwrap > div:last-child'), nom, ctx.ref);
     return;
   }
+
+  /* 20261001g — NRL : ESPN ne renvoie AUCUN joueur (Roosters, capture d'Antoine) → effectif officiel nrl.com. */
+  if (ctx.sp === 'rugby-league' && typeof g45NrlCompo === 'function') { try { if (await g45NrlCompo(el, nom)) return; } catch (e) {} }
 
   el.innerHTML = '<div style="display:flex;align-items:center;gap:9px;padding:16px;color:var(--t3);font-size:11.5px;">'
     + '<div style="width:14px;height:14px;border:2px solid rgba(77,132,255,.2);border-top-color:#4d84ff;border-radius:50%;animation:spin .8s linear infinite;"></div>Chargement de l\'effectif\u2026</div>';

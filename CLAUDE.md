@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20261001f, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20261001g, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -562,7 +562,13 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   dernier transfert > 90 j. Aucune source gratuite de transferts foot trouvée (Transfermarkt : CGU, ne pas scraper).
   Plafond 400 par réponse (NHL 2026 atteint) ; pagination `page=` NON vérifiée.
   20261001f — onglet Transferts RETIRÉ pour le foot (demande d'Antoine), gardé pour les autres sports.
-- Compo NRL (Roosters, rugby-league/3 id 289204) : « Aucun joueur renvoyé par ESPN » (capture 01/10) — piste nrl.com À SONDER.
+- Compo NRL (20261001g, maquette validée) : ESPN = « Aucun joueur renvoyé » (Roosters, rugby-league/3 id 289204) →
+  `g45NrlCompo(el, nom)` appelé en tête de `_g45CompoEffectif` si ctx.sp === 'rugby-league' (sinon ancien chemin ESPN).
+  SONDÉ PAR ANTOINE : www.nrl.com/players/data?competition=111&team=<id> → filterTeams[18] (ids dans `_G45_NRL_EQ`,
+  club retrouvé par SURNOM dans le nom ESPN, `_g45NrlEqId`), profileGroups[0].profiles[] {firstName, lastName, position,
+  bodyImage /remote.axd?http://rugbyimages.statsperform.com/Player%20Bodyshots/…, url}. Worker host=nrl élargi à
+  /players/data (redéployé, 33 joueurs Roosters vérifiés). Postes traduits `_G45_NRL_POSTES` ; photo = portrait
+  DÉDUIT (Bodyshots → Player%20Profile%20Headshots, NON vérifié), plan en pied en secours. Cache g45nrlsq1_<id> 24 h.
 - Score d'un pari : `_g45ScoreTexte`, cache `g45_score4_<id>` (négatif gardé
   2 h) — effacé par `saveBetEdit` pour relancer la recherche.
 
