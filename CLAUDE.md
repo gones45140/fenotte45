@@ -823,10 +823,10 @@ PROCHAINE SESSION : baseball JAPONAIS (NPB), même écran que la KBO (§5). ESPN
   npbstats.com/eng, en.baseball-data.jp ; 102.jp (DELTA) en partie payant → non. Sonder avant, rien de payant, aucune
   connexion à contourner. KBO : CONFIRMÉ « c'est bon » par Antoine (01/10, worker host=mykbo déployé) ; états
   « en cours » / annulé d'un match toujours NON vus.
-À VÉRIFIER (worker, 01/10) : cron « exceededCpu » (cpuTimeMs 10) à CHAQUE passage — vu par Antoine dans Observability.
+RÉGLÉ (worker, 01/10) : cron « exceededCpu » (cpuTimeMs 10) à CHAQUE passage — vu par Antoine dans Observability.
   Correction livrée (fichier worker complet) : calendriers COMPACTS clé scht: {ts, e:[{id, d}]} (`schedPoser` /
   `schedLire`) au lieu de décoder le calendrier ESPN complet 2 × N + 4 fois par passage ; runRappelCron sort avant Intl
-  hors 6-11 h UTC. Simulé (D1 et ESPN factices) : OK. Effet réel À CONFIRMER par Antoine (lignes */5 plus rouges ?).
+  hors 6-11 h UTC. CONFIRMÉ par Antoine (Observability 01/10) : dernier cron rouge vers 14:47, ensuite */5 en « info ».
 À VOIR (en attente d'un retour d'Antoine) :
 - Notifications multi-appareils (28g + worker redéployé : « N appareils reliés ») :
   vérifier qu'un pari saisi sur PC fait sonner le téléphone. Détail technique :
