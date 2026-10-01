@@ -60450,7 +60450,12 @@ var _G45_PROA_CID = { 2026: 317 };
    (`_g45PaComps` : lc = /leaders cup/, po = /playoff|phase finale/, rs = le reste). Numéros de journée des
    playoffs / Leaders Cup NON vérifiés : competition/getCompetitionRounds d'abord, lecture 1, 2, 3… sinon. */
 var _g45PaAn = 0, _g45PaComp = 'rs', _g45PaCompsMem = {};
-function _g45ElAn() { return (_g45ElLigue === 'proa' && _g45PaAn) ? _g45PaAn : _g45ElSaison(); }
+/* 20261001x — SAISONS PASSÉES EUROLEAGUE (maquette validée « OUI ») : SONDÉ PAR ANTOINE, /v2/…/seasons/E<an>/games et
+   statistics/players/traditional répondent de 2000-01 à 2025-26 (158 à 330 matchs, 156 à 201 joueurs). _g45ElAnEl = 0 → en cours. */
+var _g45ElAnEl = 0;
+function _g45ElAn() { return _g45ElLigue === 'proa' ? (_g45PaAn || _g45ElSaison()) : (_g45ElAnEl || _g45ElSaison()); }
+function g45ElAnSel(v) { _g45ElAnEl = +v || 0; if (_g45ElAnEl === _g45ElSaison()) _g45ElAnEl = 0; _g45ElPlie = {}; _g45ElOuvert = {}; if (typeof _g45Es !== 'undefined') { _g45Es.plus = 0; _g45Es.club = ''; } _g45ElRedessiner(); }
+window.g45ElAnSel = g45ElAnSel;
 function _g45ElCle(an) { an = an || _g45ElAn(); return _g45ElLigue + an + (_g45ElLigue === 'proa' ? _g45PaComp : ''); }
 async function _g45PaComps(an) {
   if (_g45PaCompsMem[an]) return _g45PaCompsMem[an];
@@ -60537,7 +60542,7 @@ async function _g45ElMatchs(an) {
   var j = await r.json();
   var g = (j.data || []).map(_g45ElCompact).sort(function (x, y) { return x.t - y.t; });
   var jour = g.some(function (x) { return !x.p && Math.abs(x.t - now) < 12 * 3600000; });
-  m = { g: g, x: now + (jour ? 10 : 120) * 60000 };
+  m = { g: g, x: now + (an < _g45ElSaison() ? 7 * 1440 : jour ? 10 : 120) * 60000 };   /* saison passée : figée, 7 j */
   _g45ElMem[an] = m; _g45ElMem[_g45ElCle(an)] = m;
   try { localStorage.setItem(cle, JSON.stringify(m)); } catch (e) {}
   return g;
@@ -60739,6 +60744,11 @@ async function _g45ElRendre(box, retourHtml) {
     tete = '<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;"><span style="color:#fff;font-size:14px;font-weight:800;">Saison</span>'
       + '<select onchange="g45PaAn(this.value)" style="flex:1;padding:9px;font-size:14px;font-weight:800;border-radius:9px;background:#1a2235;color:#fff;border:1px solid rgba(255,255,255,.2);">' + opts + '</select></div>'
       + '<div style="display:flex;gap:6px;margin-bottom:10px;">' + bc('rs', 'Saison régulière') + bc('po', 'Playoffs') + bc('lc', 'Leaders Cup') + '</div>';
+  }
+  if (_g45ElLigue !== 'proa') {
+    var optsE = ''; for (var ye = _g45ElSaison(); ye >= 2000; ye--) optsE += '<option value="' + ye + '"' + (ye === an ? ' selected' : '') + '>' + ye + '-' + String(ye + 1).slice(2) + (ye === _g45ElSaison() ? ' (en cours)' : '') + '</option>';
+    tete = '<div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;"><span style="color:#fff;font-size:14px;font-weight:800;">Saison</span>'
+      + '<select onchange="g45ElAnSel(this.value)" aria-label="Saison" style="flex:1;padding:9px;font-size:14px;font-weight:800;border-radius:9px;background:#1a2235;color:#fff;border:1px solid rgba(255,255,255,.2);">' + optsE + '</select></div>';
   }
   var onglets = [['journees', '📅 Journées']].concat(_g45ElLigue === 'proa' && _g45PaComp !== 'rs' ? [] : [['classement', '🏆 Classement']]).concat([['stats', '📊 Stats']]).map(function (v) {
     var on = _g45ElVue === v[0];

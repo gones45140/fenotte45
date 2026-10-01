@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261001w, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261001x, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -553,6 +553,11 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   % en « 66.7% » bien lus. 20261001w (validé « OUI ») : les leaders % de l'API mettaient à 100 % des joueurs à 1 sur 1 →
   % JOUEURS RECALCULÉS depuis players/traditional (clé jo2_ avec m2/a2, m3/a3, mf/af par match), minimum de tentatives
   par match `_G45_ES_MIN` (2 pts : 3, 3 pts : 2, LF : 2), ligne « réussis / tentés par match ». % équipes inchangés.
+  20261001x — SAISONS PASSÉES Euroleague (maquette validée « OUI ») : sélecteur Saison ▾ 2000-01 → en cours (`g45ElAnSel`,
+  `_g45ElAnEl`, 0 = en cours ; `_g45ElAn()` le lit hors Pro A). SONDÉ PAR ANTOINE : games + players/traditional répondent de
+  E2000 à E2025. Saison passée : matchs gardés 7 j (g45el1_<an>), stats 7 j. Playoffs : la liste des matchs contient toutes
+  les phases (apparaîtront seules) ; stats joueurs de la saison EN COURS lues avec phaseTypeCode=RS → playoffs peut-être
+  NON comptés (à vérifier au printemps). Passage à la saison suivante automatique en septembre (`_g45ElSaison`).
 - Classements individuels TOP 14 (`g45LnrRender`, `_G45_LNR_CATS`, page top14.lnr.fr/classement/joueurs/<cat> via
   worker host=lnr) : 20261001a — LA LNR A REFAIT SON SITE (« page reçue mais illisible ») : plus de liens /joueur/ ;
   SONDÉ PAR ANTOINE : JSON dans l'attribut `:ranking` de <players-ranking> (100 joueurs {rank, player{name, url,
