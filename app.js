@@ -60570,6 +60570,8 @@ async function _g45ElMatchs(an) {
 }
 function _g45ElEnCours(m) { return !m.p && m.t && Date.now() > m.t && Date.now() - m.t < 3 * 3600000; }
 function _g45ElLogo(e, px) {
+  /* 20261002k (« oui ») : écusson sur pastille CLAIRE partout (Journées, Classement, Équipes) — ASVEL noir invisible. */
+  if (e.l && typeof _g45ElPastille === 'function') return _g45ElPastille(e.l, px + 4);
   return e.l ? '<img src="' + _g45ElEsc(e.l) + '" alt="" style="width:' + px + 'px;height:' + px + 'px;object-fit:contain;flex:none;" onerror="this.style.visibility=\'hidden\'">'
     : '<span style="width:' + px + 'px;flex:none;"></span>';
 }
@@ -60771,18 +60773,20 @@ async function _g45ElRendre(box, retourHtml) {
     tete = '<div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;"><span style="color:#fff;font-size:14px;font-weight:800;">Saison</span>'
       + '<select onchange="g45ElAnSel(this.value)" aria-label="Saison" style="flex:1;padding:9px;font-size:14px;font-weight:800;border-radius:9px;background:#1a2235;color:#fff;border:1px solid rgba(255,255,255,.2);">' + optsE + '</select></div>';
   }
-  var onglets = [['journees', '📅 Journées']].concat(_g45ElLigue === 'proa' && _g45PaComp !== 'rs' ? [] : [['classement', '🏆 Classement']]).concat([['stats', '📊 Stats']]).map(function (v) {
+  if (_g45ElLigue === 'proa' && _g45ElVue === 'equipes') _g45ElVue = 'journees';
+  var onglets = (_g45ElLigue === 'proa' ? [] : [['equipes', '👥 Équipes']]).concat([['journees', '📅 Journées']]).concat(_g45ElLigue === 'proa' && _g45PaComp !== 'rs' ? [] : [['classement', '🏆 Classement']]).concat([['stats', '📊 Stats']]).map(function (v) {
     var on = _g45ElVue === v[0];
-    return '<button onclick="g45ElVue(\'' + v[0] + '\')" style="flex:1;padding:10px;font-size:14px;font-weight:800;cursor:pointer;border-radius:9px;'
+    return '<button onclick="g45ElVue(\'' + v[0] + '\')" style="flex:1 1 auto;padding:10px 8px;font-size:14px;white-space:nowrap;font-weight:800;cursor:pointer;border-radius:9px;'
       + (on ? 'background:#2563eb;border:1px solid #3b82f6;color:#fff;' : 'background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#c9d3ee;') + '">' + v[1] + '</button>';
   }).join('');
   box.innerHTML = (retourHtml || '') + '<div class="sec" style="margin-top:0;">🏀 ' + _g45ElEsc(titreLigue) + ' ' + an + '-' + String(an + 1).slice(2) + '</div>'
-    + tete + '<div style="display:flex;gap:8px;margin-bottom:12px;">' + onglets + '</div><div id="g45-el-body"><div style="color:#fff;font-size:14px;">⏳ Chargement…</div></div>';
+    + tete + '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;">' + onglets + '</div><div id="g45-el-body"><div style="color:#fff;font-size:14px;">⏳ Chargement…</div></div>';
   var body = document.getElementById('g45-el-body');
   try {
     if (_g45ElVue === 'stats') { if (_g45ElLigue === 'proa') body.innerHTML = await _g45PsHtml(an); else await _g45EsRendre(body, an); return; }
     var g = await _g45ElMatchs(an);
     if (!g.length) { body.innerHTML = '<div style="color:#fff;font-size:14px;">Aucun match publié pour cette saison.</div>'; return; }
+    if (_g45ElVue === 'equipes') { _g45ElEquipesRendre(body, g, an); return; }
     body.innerHTML = _g45ElVue === 'classement' ? _g45ElClassementHtml(g) : _g45ElJourneesHtml(g);
     if (_g45ElVue !== 'classement') {
       var cible = document.getElementById('g45-el-cours');
@@ -60886,10 +60890,99 @@ function g45ElPlier(k) {
 /* Déplier un match ou une journée ne recharge rien et ne bouge pas l'écran. */
 function _g45ElRedessinerSurPlace() {
   var body = document.getElementById('g45-el-body'), g = (_g45ElMem[_g45ElCle()] || {}).g;
-  if (!body || !g) return _g45ElRedessiner();
+  if (!body || !g || _g45ElVue === 'equipes') return _g45ElRedessiner();
   body.innerHTML = _g45ElVue === 'classement' ? _g45ElClassementHtml(g) : _g45ElJourneesHtml(g);
 }
 window.g45ElVue = g45ElVue; window.g45ElOuvrir = g45ElOuvrir; window.g45ElPlier = g45ElPlier;
+
+/* ═══ 👥 ÉQUIPES EUROLEAGUE (20261002k, maquette validée « OUI » : « il manque les équipes à suivre ») ═══
+   Onglet en PREMIER (comme la Pro D2), Euroleague seulement : les clubs de la saison affichée (tirés de la liste des matchs
+   `_g45ElMatchs`), triés par nom, écusson sur pastille claire, rang + bilan du classement recalculé (`_g45ElClassement`),
+   ⭐ = g45SuiviEqEtoile (league 'euroleague', id = code club → Suivies, comme dans Classement).
+   Toucher un club = fiche dans le même écran (`_g45ElClub`) : Résultats (à venir + joués ; joué → g45ElFicheId),
+   Effectif (`g45EbCompo`, saison EN COURS), Stats (calculées sur les matchs joués de la saison affichée : bilan, dom / ext,
+   points marqués / encaissés par match, 5 derniers). */
+var _g45ElClub = '', _g45ElClubVue = 'r';
+function g45ElClub(c) { _g45ElClub = c || ''; _g45ElClubVue = 'r'; _g45ElRedessiner(); }
+function g45ElClubVue(v) { _g45ElClubVue = v; _g45ElRedessiner(); }
+window.g45ElClub = g45ElClub; window.g45ElClubVue = g45ElClubVue;
+function _g45ElClubs(g) {
+  var T = {};
+  g.forEach(function (m) { [m.h, m.a].forEach(function (e) { if (e && e.c && !T[e.c]) T[e.c] = { c: e.c, n: e.n, l: e.l }; }); });
+  var L = _g45ElClassement(g);
+  L.forEach(function (t, i) { if (T[t.c]) { T[t.c].rg = i + 1; T[t.c].v = t.v; T[t.c].d = t.d; } });
+  return Object.keys(T).map(function (k) { return T[k]; }).sort(function (a, b) { return a.n.localeCompare(b.n, 'fr'); });
+}
+function _g45ElEtoile(t) {
+  return typeof g45SuiviEqEtoile === 'function' ? g45SuiviEqEtoile({ nom: t.n, id: t.c, logo: t.l }, { s: 'euroleague', sp: 'basketball', ico: '🏀' }) : '';
+}
+function _g45ElEquipesRendre(body, g, an) {
+  var esc = _g45ElEsc, C = _g45ElClubs(g);
+  var t = _g45ElClub && C.filter(function (x) { return x.c === _g45ElClub; })[0];
+  if (!t) {
+    _g45ElClub = '';
+    body.innerHTML = '<div style="font-size:13px;color:#fff;margin-bottom:8px;background:rgba(11,16,29,.80);border-radius:8px;padding:6px 8px;">' + C.length + ' clubs · ☆ pour suivre un club dans Suivies · touche un club pour sa fiche</div>'
+      + C.map(function (x) {
+        var bil = x.rg ? x.rg + (x.rg === 1 ? 'er' : 'e') + ' · ' + x.v + 'V ' + x.d + 'D' : 'pas encore joué';
+        return '<div onclick="g45ElClub(\'' + esc(x.c) + '\')" style="cursor:pointer;display:flex;align-items:center;gap:10px;background:rgba(11,16,29,.80);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:9px 10px;margin-bottom:6px;">'
+          + _g45ElPastille(x.l, 34) + '<span style="flex:1;min-width:0;"><b style="display:block;font-size:15px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(x.n) + '</b>'
+          + '<span style="font-size:13px;color:#c9d3ee;">' + bil + '</span></span>' + _g45ElEtoile(x) + '</div>';
+      }).join('');
+    return;
+  }
+  var ms = g.filter(function (m) { return m.h.c === t.c || m.a.c === t.c; });
+  var sb = function (v, txt) { var on = _g45ElClubVue === v;
+    return '<button onclick="g45ElClubVue(\'' + v + '\')" style="flex:1;padding:9px 4px;font-size:14px;font-weight:800;border-radius:9px;cursor:pointer;' + (on ? 'background:#2563eb;border:1px solid #3b82f6;color:#fff;' : 'background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#c9d3ee;') + '">' + txt + '</button>'; };
+  var h = '<div onclick="g45ElClub(\'\')" style="cursor:pointer;color:#9fb6ff;font-size:14px;font-weight:800;margin-bottom:8px;">← Équipes</div>'
+    + '<div style="display:flex;align-items:center;gap:12px;background:rgba(11,16,29,.88);border-radius:12px;padding:10px 12px;margin-bottom:10px;">' + _g45ElPastille(t.l, 48)
+    + '<span style="flex:1;min-width:0;"><b style="display:block;font-size:17px;color:#fff;">' + esc(t.n) + '</b><span style="font-size:13px;color:#c9d3ee;">' + (t.rg ? t.rg + (t.rg === 1 ? 'er' : 'e') + ' · ' + t.v + ' V · ' + t.d + ' D' : 'pas encore joué') + '</span></span>' + _g45ElEtoile(t) + '</div>'
+    + '<div style="display:flex;gap:6px;margin-bottom:10px;">' + sb('r', '📅 Résultats') + sb('e', '👥 Effectif') + sb('s', '📊 Stats') + '</div><div id="g45-el-club"></div>';
+  body.innerHTML = h;
+  var z = document.getElementById('g45-el-club');
+  if (_g45ElClubVue === 'e') {
+    if (typeof g45EbCompo === 'function') g45EbCompo(z, { nom: t.n, el: t.c, l: t.l }).catch(function (e) { z.innerHTML = '<div style="color:#ff6b6b;font-size:14px;">❌ Effectif indisponible (' + esc(e && e.message || 'erreur') + ')</div>'; });
+    return;
+  }
+  var joues = ms.filter(function (m) { return m.p; }), avenir = ms.filter(function (m) { return !m.p; });
+  if (_g45ElClubVue === 's') { z.innerHTML = _g45ElClubStats(t, joues); return; }
+  var ligne = function (m) {
+    var dom = m.h.c === t.c, adv = dom ? m.a : m.h, moi = dom ? m.h : m.a;
+    var res = '';
+    if (m.p) { var v = (+moi.s || 0) > (+adv.s || 0); res = '<b style="color:' + (v ? '#4ade80' : '#ff6b6b') + ';">' + (v ? 'V' : 'D') + ' ' + moi.s + '–' + adv.s + '</b>'; }
+    else res = '<span style="color:#f0b020;">' + new Date(m.t).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) + '</span>';
+    return '<div ' + (m.p ? 'onclick="g45ElFicheId(\'' + m.id + '\')" ' : '') + 'style="' + (m.p ? 'cursor:pointer;' : '') + 'display:flex;align-items:center;gap:8px;background:rgba(11,16,29,.80);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:8px 10px;margin-bottom:6px;font-size:14px;color:#fff;">'
+      + '<span style="flex:none;width:78px;font-size:13px;color:#c9d3ee;">' + new Date(m.t).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) + '<br>' + (dom ? '🏠 dom.' : '✈️ ext.') + '</span>'
+      + _g45ElPastille(adv.l, 26) + '<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(adv.n) + '</span><span style="flex:none;">' + res + '</span>' + (m.p ? '<span style="color:#9fb6ff;">›</span>' : '') + '</div>';
+  };
+  var sec = function (x) { return '<div style="font-size:13px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#c9d3ee;margin:10px 0 6px;">' + x + '</div>'; };
+  z.innerHTML = (avenir.length ? sec('À venir') + avenir.slice(0, 5).map(ligne).join('') : '')
+    + (joues.length ? sec('Joués · touche un match pour sa fiche') + joues.slice().reverse().map(ligne).join('') : '')
+    || '<div style="color:#fff;font-size:14px;">Aucun match pour cette saison.</div>';
+}
+function _g45ElClubStats(t, joues) {
+  if (!joues.length) return '<div style="color:#fff;font-size:14px;background:rgba(11,16,29,.80);border-radius:10px;padding:10px;">Pas encore de match joué cette saison.</div>';
+  var S = { g: { j: 0, v: 0, pp: 0, pc: 0 }, d: { j: 0, v: 0, pp: 0, pc: 0 }, e: { j: 0, v: 0, pp: 0, pc: 0 } };
+  joues.forEach(function (m) {
+    var dom = m.h.c === t.c, moi = dom ? m.h : m.a, adv = dom ? m.a : m.h, a = +moi.s || 0, b = +adv.s || 0;
+    [S.g, dom ? S.d : S.e].forEach(function (x) { x.j++; x.pp += a; x.pc += b; if (a > b) x.v++; });
+  });
+  var moy = function (x, k) { return x.j ? (x[k] / x.j).toFixed(1).replace('.', ',') : '–'; };
+  var col = function (titre, x) {
+    return '<div style="flex:1;min-width:0;background:rgba(11,16,29,.85);border-radius:10px;padding:8px;text-align:center;color:#fff;">'
+      + '<div style="font-size:13px;font-weight:800;color:#c9d3ee;margin-bottom:4px;">' + titre + '</div>'
+      + '<div style="font-size:18px;font-weight:800;">' + x.v + ' V · ' + (x.j - x.v) + ' D</div>'
+      + '<div style="font-size:13px;color:#dfe6ff;margin-top:4px;">' + (x.j ? Math.round(100 * x.v / x.j) : 0) + ' % de victoires</div>'
+      + '<div style="font-size:14px;margin-top:6px;">🏀 <b>' + moy(x, 'pp') + '</b> marqués</div><div style="font-size:14px;">🛡️ <b>' + moy(x, 'pc') + '</b> encaissés</div>'
+      + '<div style="font-size:13px;margin-top:2px;color:' + (x.pp >= x.pc ? '#4ade80' : '#ff6b6b') + ';">écart ' + (x.j ? ((x.pp - x.pc) / x.j > 0 ? '+' : '') + ((x.pp - x.pc) / x.j).toFixed(1).replace('.', ',') : '–') + ' / match</div></div>';
+  };
+  var der = joues.slice(-5).map(function (m) {
+    var dom = m.h.c === t.c, a = +(dom ? m.h : m.a).s || 0, b = +(dom ? m.a : m.h).s || 0;
+    return '<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;font-size:13px;font-weight:800;color:#fff;background:' + (a > b ? '#16a34a' : '#dc2626') + ';">' + (a > b ? 'V' : 'D') + '</span>';
+  }).join(' ');
+  return '<div style="display:flex;gap:6px;">' + col('Global', S.g) + col('🏠 Domicile', S.d) + col('✈️ Extérieur', S.e) + '</div>'
+    + '<div style="background:rgba(11,16,29,.85);border-radius:10px;padding:8px 10px;margin-top:8px;color:#fff;font-size:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>5 derniers</b> ' + der + '</div>'
+    + '<div style="font-size:12px;color:#c9d3ee;margin-top:6px;">Calculé sur les matchs joués de la saison affichée (toutes phases).</div>';
+}
 
 /* 📊 STATS PRO A (30y, 30/09/2026 — maquette validée : « oui ») : onglet de la Pro A seulement.
    SONDÉ PAR ANTOINE (Stats Center de lnb.fr) : POST altrstats/getPersonsLeaders {competitionExternalId, year}

@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261002j, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261002k, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -614,6 +614,12 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   Nom absent d'une liste de plus de 10 min → liste refaite une fois par session (window._g45IdxRefait). CONFIRMÉ par Antoine (PC + téléphone, 01/10).
   20261002j — en-tête de la fiche (enveloppe EB de `_g45HeroLogo`) : logo PERSO du dépôt en priorité, écusson Euroleague en secours
   (noir sur rond sombre, capture d'Antoine).
+  20261002k (maquette validée « OUI » : « il manque les équipes à suivre ») — onglet 👥 ÉQUIPES en tête de l'écran Euroleague
+  (`_g45ElVue` 'equipes', pas en Pro A) : `_g45ElEquipesRendre(body, g, an)` = clubs de la saison tirés des matchs (`_g45ElClubs`,
+  rang + bilan de `_g45ElClassement`), ⭐ `_g45ElEtoile` (g45SuiviEqEtoile, league 'euroleague') ; fiche `g45ElClub(code)` /
+  `g45ElClubVue('r'|'e'|'s')` : Résultats (joué → g45ElFicheId), Effectif = `g45EbCompo` (saison EN COURS), Stats `_g45ElClubStats`
+  (global / dom / ext, marqués / encaissés par match, 5 derniers). `_g45ElLogo` = pastille claire partout. Onglets en flex-wrap
+  (2 × 2 sur téléphone). Contrôle ajouté dans smoke.js (bloc KBO + Euroleague).
 - Classements individuels TOP 14 (`g45LnrRender`, `_G45_LNR_CATS`, page top14.lnr.fr/classement/joueurs/<cat> via
   worker host=lnr) : 20261001a — LA LNR A REFAIT SON SITE (« page reçue mais illisible ») : plus de liens /joueur/ ;
   SONDÉ PAR ANTOINE : JSON dans l'attribut `:ranking` de <players-ranking> (100 joueurs {rank, player{name, url,
