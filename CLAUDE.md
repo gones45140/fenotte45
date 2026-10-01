@@ -722,6 +722,10 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   /schedule/week_of/<date> OK pour 2024/2025. Saison passée : Classement RECALCULÉ `_g45KboClsDepuisSplits` (pas de
   série), Équipes et Forme grisés, Matchs = semaine du mardi ≤ 30/09 (`_g45KboSemFin`). « Rained Out » → (pluie).
   Worker : ?year=AAAA ajouté à la liste blanche host=mykbo (déployé). CONFIRMÉ « ça marche » par Antoine (01/10).
+- KHL Saisons, liste de résultats en retard (vu par Antoine le 01/10, HC Sotchi) : la lecture par étape `_g45KhlMatchsStage`
+  (events_v2 + stage_id) s'arrêtait au 28/09 (96 matchs, aucun à venir) alors que `_g45KhlMatchsPlage` (par dates, Suivies) était
+  à jour ; RÉSOLU SEUL quelques minutes plus tard (retard côté KHL). Si ça revient : compléter la lecture par étape avec
+  `_g45KhlMatchsPlage(dernier match − 2 j, maintenant + 21 j)` quand enCours (correctif écrit puis jeté le 01/10).
 - Score d'un pari : `_g45ScoreTexte`, cache `g45_score4_<id>` (négatif gardé
   2 h) — effacé par `saveBetEdit` pour relancer la recherche.
 
