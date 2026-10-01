@@ -788,6 +788,10 @@ EN COURS / À FAIRE DE SUITE (maquettes proposées le 28/09) :
   exclus combiné, lay, boost (isFlash), joueur. Cache g45clv1_<id> (négatif 3 j).
   À faire plus tard si Antoine le demande : autres sports (summary US par ligue).
 
+PROCHAINE SESSION (demande d'Antoine le 01/10) : baseball JAPONAIS (NPB) et CORÉEN (KBO). Compétitions → Baseball n'a
+  que la MLB (G45_SPORTS key 'baseball'). Capture d'Antoine : le site ESPN liste « Japanese Baseball » et « Korean
+  Baseball » sous Baseball → SONDER d'abord les slugs ESPN (scoreboard baseball/<slug>) avant de coder ; sinon source
+  officielle via le worker, comme Euroleague / Pro A / Pro D2 (voir §5).
 À VOIR (en attente d'un retour d'Antoine) :
 - Notifications multi-appareils (28g + worker redéployé : « N appareils reliés ») :
   vérifier qu'un pari saisi sur PC fait sonner le téléphone. Détail technique :
