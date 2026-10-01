@@ -818,10 +818,11 @@ EN COURS / À FAIRE DE SUITE (maquettes proposées le 28/09) :
   exclus combiné, lay, boost (isFlash), joueur. Cache g45clv1_<id> (négatif 3 j).
   À faire plus tard si Antoine le demande : autres sports (summary US par ligue).
 
-PROCHAINE SESSION : baseball JAPONAIS (NPB), même écran que la KBO (§5). ESPN n'a RIEN (vérifié par Antoine le 01/10).
-  Pistes : npb.jp/eng (OFFICIEL : lire d'abord son robots.txt et ses conditions — la KBO officielle interdisait tout),
-  npbstats.com/eng, en.baseball-data.jp ; 102.jp (DELTA) en partie payant → non. Sonder avant, rien de payant, aucune
-  connexion à contourner. KBO : CONFIRMÉ « c'est bon » par Antoine (01/10, worker host=mykbo déployé) ; états
+NPB (baseball japonais) : ABANDONNÉ par Antoine le 01/10 (« laisse tomber ») — NE PAS reproposer. Sondé : ESPN rien ;
+  npb.jp = pas de robots.txt mais /policy/ « 二次利用および無断転載を固く禁じます » (utilisation secondaire interdite) ;
+  npbstats.com = dernières stats 2022 ; en.baseball-data.jp = crawl autorisé, mais ni matchs, ni logos, ni photos, ni stats
+  dans les effectifs (projet de fans) → jugé pas assez solide. Pistes non sondées : 102.jp (DELTA, en partie payant → non).
+KBO : CONFIRMÉ « c'est bon » par Antoine (01/10, worker host=mykbo déployé) ; états
   « en cours » / annulé d'un match toujours NON vus.
 RÉGLÉ (worker, 01/10) : cron « exceededCpu » (cpuTimeMs 10) à CHAQUE passage — vu par Antoine dans Observability.
   Correction livrée (fichier worker complet) : calendriers COMPACTS clé scht: {ts, e:[{id, d}]} (`schedPoser` /
