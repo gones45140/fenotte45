@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20261001b, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20261001c, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -543,6 +543,15 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   20261001b — LIFTING (maquette validée) : fond sombre, nom 15 px, club 13 px + logo (club.logo['thumbnail-1x']),
   photo ronde (player.image.original, initiales dessous), podium or/argent/bronze, « · N matchs » (nbMatchesPlayed),
   cartons 🟨 x 🟥 y sans unité, 30 lignes puis « Voir plus » (`_g45LnrPlus[cat]`, 100 max), boutons courts.
+- NRL — CLASSEMENTS JOUEURS OFFICIELS (20261001c, maquette validée) : `g45NrlStatsRender(box)` (onglet Individuel ET
+  Classements → Joueurs, c.s === '3') ; renvoie false si nrl.com muet → ancien calcul ESPN `g45StatsIndRender` (secours).
+  SONDÉ PAR ANTOINE : www.nrl.com/stats/players/data?competition=111&season=<an>&stat=<id> = JSON PUBLIC (la page HTML
+  /stats/players/?… renvoie au Worker un formulaire OpenID « login_required » : ne PAS la lire ni contourner la connexion).
+  → filterSeasons (2013→2026), filterStats[37], totalStats / averageStats.leaders[50] {firstName, lastName, theme.key,
+  theme.logos['badge.png'], headImage (/remote.axd?… relatif), teamName, value (texte), played}. Logo :
+  https://www.nrl.com/.theme/<key>/badge.png?bust=<version>. Worker host=nrl (chemin /stats/players/(data)?… seul,
+  redéployé par Antoine le 01/10). Réglages `_g45NrlSt` {an, stat, mode 'tot'|'moy', plus} via `g45NrlReg` ; stats
+  traduites `_G45_NRL_STATS` ; cache g45nrlst1_<an>_<stat> (1 h saison en cours, 7 j sinon).
 - Score d'un pari : `_g45ScoreTexte`, cache `g45_score4_<id>` (négatif gardé
   2 h) — effacé par `saveBetEdit` pour relancer la recherche.
 

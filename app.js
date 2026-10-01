@@ -42130,7 +42130,7 @@ window.g45F1Session=g45F1Session;
    et les données utilisateur n'étaient JAMAIS écrites — l'ajout apparaissait à l'écran puis
    disparaissait au rechargement. Ce n'était ni la synchro GitHub, ni Dropbox, ni le cache
    du navigateur. Tous ces caches sont reconstructibles : ils cèdent la place aux données. */
-var _G45_CACHE_PREFIXES=['g45proacid1_',/* 30/09 : numéros LNB par saison */'g45proast1_',/* 30/09 : stats Pro A */'g45proa1_',/* 30/09 : Pro A par journée */'g45el1_',/* 30/09 : Euroleague (compact) */'g45buts1_',/* 30/09 : buts en action (match fini) */'g45prad1_','g45vsj1_','g45vse1_',/* 30/09 : radars joueurs */'g45ia1_',/* 29/09 : avis IA gardés 6 h */'g45_mmeta2_','g45_mmeta1_','g45_tennis4_','g45_tennis3_',/* 16/09 : meta de match (domicile/lieu) et score tennis, reconstructibles */'g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dcf_','g45dc_',
+var _G45_CACHE_PREFIXES=['g45nrlst1_',/* 01/10 : classements NRL */'g45proacid1_',/* 30/09 : numéros LNB par saison */'g45proast1_',/* 30/09 : stats Pro A */'g45proa1_',/* 30/09 : Pro A par journée */'g45el1_',/* 30/09 : Euroleague (compact) */'g45buts1_',/* 30/09 : buts en action (match fini) */'g45prad1_','g45vsj1_','g45vse1_',/* 30/09 : radars joueurs */'g45ia1_',/* 29/09 : avis IA gardés 6 h */'g45_mmeta2_','g45_mmeta1_','g45_tennis4_','g45_tennis3_',/* 16/09 : meta de match (domicile/lieu) et score tennis, reconstructibles */'g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dcf_','g45dc_',
   'g45trv3_','g45trv2_','g45trOdds_','g45tr_','g45but_st_','g45butL_','g45butA_','g45but_mur_',
   '_g45clv','g45clv_snaps','g45_saisons_cache_v3_','g45_saisons_cache_v2_',
   /* Ajoutes le 20/08 : ces caches, tous reconstructibles, n'etaient PAS declares
@@ -45474,7 +45474,7 @@ async function loadCompetTab() {
       if (vide) { await g45LeadersGen(c, body, _g45CompetAnnee(c.s)); }
       return;
     }
-    if (c.s === '3') { await g45StatsIndRender(c, body); return; }
+    if (c.s === '3') { if (!(await g45NrlStatsRender(body))) await g45StatsIndRender(c, body); return; }
     /* Top 14 : la LNR publie ses classements individuels tout faits, la ou
        ESPN n'en a aucun et ou la reconstruction couterait ~200 requetes. */
     if (c.s === '270559') { await g45LnrRender(body); return; }
@@ -47616,7 +47616,7 @@ async function _g45ClsRenderRugby(c, body, an) {
   if (_g45ClsCtx.mode === 'jo') {
     /* Joueurs : les sources déjà en place (onglet Individuel). */
     return _g45ClsAfficherUS(c, body, c.sp, null, null, async function (sub) {
-      if (c.s === '3' && typeof g45StatsIndRender === 'function') await g45StatsIndRender(c, sub);
+      if (c.s === '3' && typeof g45StatsIndRender === 'function') { if (!(await g45NrlStatsRender(sub))) await g45StatsIndRender(c, sub); }
       else if (c.s === '270559' && typeof g45LnrRender === 'function') await g45LnrRender(sub);
       else if (typeof g45LeadersGen === 'function') await g45LeadersGen(c, sub, an);
     });
@@ -48805,6 +48805,94 @@ async function g45LnrRender(box, cat){
 }
 var _g45LnrPlus = {};
 window.g45LnrRender = g45LnrRender;
+
+/* ═══ NRL — CLASSEMENTS JOUEURS OFFICIELS (20261001c, maquette validée : « oui ») ═══
+   Avant : reconstruits depuis les feuilles de match ESPN (g45StatsIndRender, ~200 requêtes) — gardé en SECOURS.
+   SONDÉ PAR ANTOINE : www.nrl.com/stats/players/data?competition=111&season=<an>&stat=<id> = JSON public (la page
+   HTML, elle, renvoie au Worker un formulaire « login_required » : NE PAS la lire) → {filterSeasons[14] (2013→2026),
+   filterStats[37] {value, name}, totalStats / averageStats {statId, title, leaders[50] {firstName, lastName,
+   teamNickName, theme.key, theme.logos['badge.png'] (version), headImage « /remote.axd?… » (relatif à nrl.com),
+   teamName, value (texte), played}}}. Worker host=nrl (chemin /stats/players/(data)?… seulement). Cache
+   g45nrlst1_<an>_<stat> (1 h saison en cours, 7 j sinon). Noms de stats traduits `_G45_NRL_STATS`. */
+var _G45_NRL_STATS = { 76: 'Points', 38: 'Essais', 1000034: 'Buts (transfos + pénalités)', 1000288: 'Drops à 2 points', 1000287: 'Drops à 1 point',
+  30: 'Franchissements', 1000112: 'Mètres après contact', 1000025: 'Ligne engagée', 29: 'Plaquages cassés', 1000021: 'Demi-franchissements',
+  35: 'Passes d’essai', 28: 'Offloads', 31: 'Passes de franchissement', 1000378: 'Implication en franchissement', 1000028: 'Ballons reçus',
+  1000209: '% Transformations', 32: 'Mètres au pied', 33: 'Coups de pied', 82: '40/20', 1000299: 'Coups de pied offensifs', 1000415: 'Renvois courts',
+  3: 'Plaquages', 4: 'Plaquages manqués', 1000000: 'Contres au pied', 1000004: 'Interceptions', 1000038: 'Courses', 1000037: 'Mètres courus',
+  81: 'Courses du demi de mêlée', 78: 'Mètres en retour de jeu au pied', 37: 'Erreurs', 1000026: 'Pénalités concédées', 1000079: 'Fautes de main',
+  1000003: 'Plaquages inefficaces', 1000283: 'Fautes au ruck', 1000319: 'Set restarts concédés', 1000015: 'Soutien du porteur', 1000002: 'Courses leurres' };
+var _g45NrlSt = { an: 0, stat: 38, mode: 'tot', plus: 0 }, _g45NrlMem = {}, _g45NrlBox = null;
+function _g45NrlAnAuto() { return new Date().getFullYear(); }
+async function _g45NrlLire(an, stat) {
+  var cle = 'g45nrlst1_' + an + '_' + stat, now = Date.now(), m = _g45NrlMem[cle];
+  if (!m) { try { m = JSON.parse(localStorage.getItem(cle) || 'null'); } catch (e) { m = null; } }
+  if (m && m.x > now) return (_g45NrlMem[cle] = m).d;
+  var r = await fetch(FD_PROXY + '?host=nrl&path=' + encodeURIComponent('/stats/players/data?competition=111&season=' + an + '&stat=' + stat));
+  if (!r.ok) { if (m) return m.d; throw new Error('nrl.com ' + r.status); }
+  var j = await r.json();
+  var cmp = function (b) {
+    return ((b && b.leaders) || []).map(function (x) {
+      var th = x.theme || {}, lg = th.logos || {};
+      return { n: ((x.firstName || '') + ' ' + (x.lastName || '')).trim(), club: x.teamName || x.teamNickName || '',
+        ph: x.headImage ? (/^https?:/.test(x.headImage) ? x.headImage : 'https://www.nrl.com' + x.headImage) : '',
+        cl: th.key ? 'https://www.nrl.com/.theme/' + th.key + '/badge.png' + (lg['badge.png'] ? '?bust=' + lg['badge.png'] : '') : '',
+        v: x.value, pl: x.played };
+    });
+  };
+  var d = { s: (j.filterSeasons || []).map(function (x) { return +x.value; }).filter(Boolean), st: (j.filterStats || []).map(function (x) { return [+x.value, x.name]; }),
+    tot: cmp(j.totalStats), moy: cmp(j.averageStats) };
+  if (!d.tot.length && !d.moy.length) throw new Error('aucune donnée');
+  m = { d: d, x: now + (an >= _g45NrlAnAuto() ? 3600000 : 7 * 86400000) }; _g45NrlMem[cle] = m;
+  try { localStorage.setItem(cle, JSON.stringify(m)); } catch (e) {}
+  return d;
+}
+/* Rend le classement dans box ; renvoie false si nrl.com ne répond pas (l'appelant passe alors au calcul ESPN). */
+async function g45NrlStatsRender(box) {
+  if (!box) return false;
+  _g45NrlBox = box;
+  var an = _g45NrlSt.an || _g45NrlAnAuto(), stat = _g45NrlSt.stat;
+  if (!box.querySelector('#g45-nrl-liste')) box.innerHTML = '<div style="color:#fff;font-size:14px;padding:10px;">⏳ Classements NRL…</div>';
+  var d;
+  try { d = await _g45NrlLire(an, stat); }
+  catch (e) {
+    if (!_g45NrlSt.an && an === _g45NrlAnAuto()) { try { an = an - 1; d = await _g45NrlLire(an, stat); } catch (e2) {} }
+    if (!d) return false;
+  }
+  var esc = function (x) { return String(x == null ? '' : x).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+  var sel = 'flex:1;min-width:0;padding:9px;font-size:14px;font-weight:800;border-radius:9px;background:#1a2235;color:#fff;border:1px solid rgba(255,255,255,.2);';
+  var ans = (d.s.length ? d.s : [an]).map(function (y) { return '<option value="' + y + '"' + (y === an ? ' selected' : '') + '>' + y + '</option>'; }).join('');
+  var sts = (d.st.length ? d.st : [[stat, '']]).map(function (x) { return '<option value="' + x[0] + '"' + (x[0] === stat ? ' selected' : '') + '>' + esc(_G45_NRL_STATS[x[0]] || x[1]) + '</option>'; }).join('');
+  var bt = function (k, txt) { var on = _g45NrlSt.mode === k; return '<button onclick="g45NrlReg(\'mode\',\'' + k + '\')" style="flex:1;padding:9px;font-size:14px;font-weight:800;cursor:pointer;border-radius:9px;'
+    + (on ? 'background:#2563eb;border:1px solid #3b82f6;color:#fff;' : 'background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#c9d3ee;') + '">' + txt + '</button>'; };
+  var L = _g45NrlSt.mode === 'moy' ? d.moy : d.tot, nb = _g45NrlSt.plus ? 50 : 30, med = ['#f5c542', '#dfe6f5', '#e2a06a'];
+  var pct = stat === 1000209;
+  var h = '<div style="display:flex;gap:8px;margin-bottom:8px;"><select onchange="g45NrlReg(\'an\',this.value)" style="' + sel + 'flex:0 0 96px;">' + ans + '</select>'
+    + '<select onchange="g45NrlReg(\'stat\',this.value)" style="' + sel + '">' + sts + '</select></div>'
+    + '<div style="display:flex;gap:6px;margin-bottom:10px;">' + bt('tot', 'Total') + bt('moy', 'Moyenne par match') + '</div>'
+    + '<div id="g45-nrl-liste" style="background:rgba(11,16,29,.9);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:4px 12px;">';
+  if (!L.length) h += '<div style="color:#fff;font-size:14px;padding:10px 0;">Pas de classement pour ce choix.</div>';
+  L.slice(0, nb).forEach(function (r, i) {
+    var ini = String(r.n || '?').split(/\s+/).map(function (w) { return w.charAt(0); }).join('').slice(0, 2);
+    h += '<div style="display:flex;align-items:center;gap:10px;padding:9px 0;' + (i ? 'border-top:1px solid rgba(255,255,255,.08);' : '') + '">'
+      + '<span style="width:24px;font-size:15px;font-weight:800;color:' + (med[i] || '#c9d3ee') + ';flex:none;">' + (i + 1) + '</span>'
+      + '<span style="position:relative;width:46px;height:46px;flex:none;"><span style="position:absolute;inset:0;border-radius:50%;background:#dfe6f5;color:#0b101d;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;">' + esc(ini) + '</span>'
+      + (r.ph ? '<img src="' + esc(r.ph) + '" alt="" loading="lazy" style="position:absolute;inset:0;width:46px;height:46px;border-radius:50%;object-fit:cover;object-position:50% 15%;background:#dfe6f5;" onerror="this.remove()">' : '') + '</span>'
+      + '<span style="flex:1;min-width:0;"><span style="display:block;color:#fff;font-size:15px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(r.n) + '</span>'
+      + '<span style="display:flex;align-items:center;gap:6px;color:#c9d3ee;font-size:13px;min-width:0;">' + (r.cl ? '<img src="' + esc(r.cl) + '" alt="" loading="lazy" style="width:18px;height:18px;object-fit:contain;flex:none;" onerror="this.remove()">' : '')
+      + '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(r.club) + (r.pl != null ? ' · ' + esc(r.pl) + ' match' + (+r.pl > 1 ? 's' : '') : '') + '</span></span></span>'
+      + '<span style="font-size:18px;font-weight:800;color:#fff;white-space:nowrap;flex:none;">' + esc(r.v) + (pct && !/%/.test(String(r.v)) ? ' %' : '') + '</span></div>';
+  });
+  h += '</div>';
+  if (L.length > nb) h += '<button onclick="g45NrlReg(\'plus\',1)" style="width:100%;margin-top:8px;padding:10px;border-radius:9px;border:1px solid rgba(109,157,255,.5);background:rgba(47,107,255,.18);color:#fff;font-size:14px;font-weight:800;cursor:pointer;">Voir plus (' + L.length + ' joueurs)</button>';
+  box.innerHTML = h + '<div style="font-size:13px;color:#fff;margin-top:8px;background:rgba(11,16,29,.8);padding:6px 8px;border-radius:8px;">Source : NRL.com (classements officiels, saison ' + an + ').</div>';
+  return true;
+}
+function g45NrlReg(k, v) {
+  if (k === 'an') _g45NrlSt.an = +v || 0; else if (k === 'stat') _g45NrlSt.stat = +v; else if (k === 'mode') _g45NrlSt.mode = v; else _g45NrlSt.plus = 1;
+  if (k !== 'plus') _g45NrlSt.plus = 0;
+  if (_g45NrlBox && document.body.contains(_g45NrlBox)) g45NrlStatsRender(_g45NrlBox).then(function (ok) { if (!ok) _g45NrlBox.insertAdjacentHTML('afterbegin', '<div style="color:#ffb13d;font-size:14px;margin-bottom:8px;">nrl.com ne répond pas pour ce choix.</div>'); });
+}
+window.g45NrlStatsRender = g45NrlStatsRender; window.g45NrlReg = g45NrlReg;
 
 async function g45StatsIndRender(c, box) {
   if (!_g45NrlMatchs || !_g45NrlMatchs.length) {
