@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261002d, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261002e, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -597,6 +597,11 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   foulsCommited, plusMinus, startFive}}], team, total} → `_g45ElFeuilleLire` (cache g45eb1_f_ 30 j), barres `_g45ElBarre`,
   joueurs triés par minutes ; face-à-face CALCULÉ `_g45ElH2H` (5 saisons). playbyplay / events / comparison / headtohead /
   quarters = 404 → pas de moments forts. Pro A : carte simple.
+  CONFIRMÉ par Antoine (captures Panathinaikos–ASVEL 01/10 : stats d'équipe, face-à-face 9 matchs, joueurs, ★ 5 de départ).
+  20261002e (« oui ») — écussons sur pastille CLAIRE `_g45ElPastille` (fiche + cartes Suivies ; ASVEL noir illisible) ;
+  BANNIÈRE des clubs Euroleague du mur `_g45EbBannieres` (8 s après l'ouverture) : `_g45FanChercher(<nom officiel>, 'basketball')`
+  sur chaque nom de la liste Euroleague, image recopiée sous le nom de la carte (g45_fanart2_), un essai / 30 j (g45eb1_fan_),
+  sinon écusson (u.logoUrl) en filigrane. Présence de bannières basket chez TheSportsDB NON vérifiée (sonde non faite).
 - Classements individuels TOP 14 (`g45LnrRender`, `_G45_LNR_CATS`, page top14.lnr.fr/classement/joueurs/<cat> via
   worker host=lnr) : 20261001a — LA LNR A REFAIT SON SITE (« page reçue mais illisible ») : plus de liens /joueur/ ;
   SONDÉ PAR ANTOINE : JSON dans l'attribut `:ranking` de <players-ranking> (100 joueurs {rank, player{name, url,

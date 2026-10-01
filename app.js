@@ -65287,7 +65287,7 @@ function _g45EbCarte(x) {
       t += '<td ' + c + '><b>' + (e.s != null ? e.s : '–') + '</b></td></tr>'; });
     t += '</table>';
   }
-  var ligne = function (e, col) { return '<div style="display:flex;align-items:center;gap:10px;font-size:16px;font-weight:800;color:#fff;padding:4px 0;">' + _g45ElLogo(e, 30) + '<span style="flex:1;color:' + col + ';">' + esc(e.n) + '</span><span style="font-size:20px;">' + (m.p && e.s != null ? e.s : '') + '</span></div>'; };
+  var ligne = function (e, col) { return '<div style="display:flex;align-items:center;gap:10px;font-size:16px;font-weight:800;color:#fff;padding:4px 0;">' + _g45ElPastille(e.l, 34) + '<span style="flex:1;color:' + col + ';">' + esc(e.n) + '</span><span style="font-size:20px;">' + (m.p && e.s != null ? e.s : '') + '</span></div>'; };
   return '<div style="padding:12px;color:#fff;"><div style="font-size:13px;color:#c9d3ee;margin-bottom:8px;">🏀 ' + esc(x.comp) + (m.pha && !/^RS$/i.test(m.ph) ? ' · ' + esc(m.pha) : m.r ? ' · Journée ' + esc(m.r) : '') + '</div>'
     + ligne(m.h, '#6d9dff') + ligne(m.a, '#f5c542') + t
     + '<div style="font-size:13px;color:#c9d3ee;margin-top:10px;">📅 ' + new Date(m.t).toLocaleString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })
@@ -65417,7 +65417,7 @@ var _g45ElDirIdx = {};
 function _g45ElCarteDirect(m) {
   var esc = _g45ElEsc, live = typeof _g45ElEnCours === 'function' && _g45ElEnCours(m);
   var etat = m.p ? '<span style="color:#cfd8ea;">Terminé</span>' : live ? '<span style="color:#ff6b6b;">● En cours</span>' : '<span style="color:#f0b020;">À venir</span>';
-  var rond = function (e) { return '<span style="width:34px;height:34px;flex:none;border-radius:50%;background:rgba(255,255,255,.14);display:inline-flex;align-items:center;justify-content:center;overflow:hidden;">' + (e.l ? '<img src="' + esc(e.l) + '" alt="" loading="lazy" style="width:88%;height:88%;object-fit:contain;" onerror="this.remove()">' : '') + '</span>'; };
+  var rond = function (e) { return '<span style="width:34px;height:34px;flex:none;border-radius:50%;background:rgba(255,255,255,.85);display:inline-flex;align-items:center;justify-content:center;overflow:hidden;">' + (e.l ? '<img src="' + esc(e.l) + '" alt="" loading="lazy" style="width:88%;height:88%;object-fit:contain;" onerror="this.remove()">' : '') + '</span>'; };
   var pil = function (t) { return '<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border-radius:999px;background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.14);font-size:12px;color:#fff;margin:0 5px 4px 0;">' + t + '</span>'; };
   var d = new Date(m.t), jr = d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }), hr = d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
   var k = 'el' + m.id; _g45ElDirIdx[k] = m;
@@ -65474,6 +65474,38 @@ if (typeof g45DirectMesEquipes === 'function' && !g45DirectMesEquipes._g45El) {
    PAS d'actions (playbyplay / events / comparison / headtohead = 404) → pas de « Moments forts ». Face-à-face CALCULÉ sur les
    5 dernières saisons (`_g45ElMatchs`, codes clubs). Vidéo = lecteur YouTube intégré `g45YT` (s'ouvre DANS l'appli).
    Feuille compactée, cache g45eb1_f_<an>_<code> 30 j (match joué). Ouverte depuis Journées, Saisons du mur et Suivies. */
+/* 20261002e (« oui pastille ») : écusson sur pastille ronde CLAIRE — celui de l'ASVEL (noir / gris) disparaissait sur fond sombre. */
+function _g45ElPastille(u, t) {
+  return '<span style="width:' + t + 'px;height:' + t + 'px;flex:none;border-radius:50%;background:rgba(255,255,255,.85);display:inline-flex;align-items:center;justify-content:center;overflow:hidden;">'
+    + (u ? '<img src="' + _g45ElEsc(u) + '" alt="" loading="lazy" style="width:80%;height:80%;object-fit:contain;" onerror="this.remove()">' : '') + '</span>';
+}
+/* 20261002e (maquette validée « oui ») — BANNIÈRE des clubs Euroleague du mur : TheSportsDB cherchait le nom de la carte
+   (« ASVEL » → seulement l'équipe FÉMININE, refusée) → on cherche avec les NOMS OFFICIELS du club (liste Euroleague) en basket
+   (`_g45FanChercher(nom, 'basketball')`), et l'image trouvée est recopiée sous le nom de la carte (clé g45_fanart2_). Rien
+   trouvé : la carte garde l'écusson officiel (u.logoUrl) en filigrane. Un essai par club tous les 30 jours (g45eb1_fan_). */
+async function _g45EbBannieres() {
+  try {
+    var mur = ((state && state.u) || []).filter(function (u) { return u && /🏀/.test(u.sport || '') && !(typeof NBA_TEAMS !== 'undefined' && NBA_TEAMS[u.n]) && !(typeof resolveNbaTeam === 'function' && resolveNbaTeam(u.n)); });
+    if (!mur.length || typeof _g45FanChercher !== 'function') return;
+    var C = await _g45EbClubsEl(), maj = false;
+    for (var i = 0; i < mur.length; i++) {
+      var u = mur[i], k = 'g45eb1_fan_' + _g45SgNorm(u.n);
+      if (typeof _g45FanLire === 'function' && _g45FanLire(u.n)) continue;
+      try { var t0 = +localStorage.getItem(k) || 0; if (t0 && Date.now() - t0 < 30 * 864e5) continue; localStorage.setItem(k, String(Date.now())); } catch (e) {}
+      var e = C.filter(function (c) { return _g45EbCorrespond(u.n, c.al); })[0]; if (!e) continue;
+      var vus = {}, url = '';
+      for (var j = 0; j < e.al.length && !url; j++) {
+        var q = e.al[j]; if (!q || vus[_g45SgNorm(q)]) continue; vus[_g45SgNorm(q)] = 1;
+        try { url = await _g45FanChercher(q, 'basketball'); } catch (x) {}
+      }
+      if (url) { try { localStorage.setItem(_G45_FANART + _g45SgNorm(u.n), JSON.stringify({ u: url, t: Date.now() })); maj = true; } catch (x) {} }
+      if (!u.logoUrl && e.l) { u.logoUrl = e.l; maj = true; try { if (typeof save === 'function') save(); } catch (x) {} }
+    }
+    if (maj && typeof render === 'function') render();
+  } catch (e) {}
+}
+setTimeout(_g45EbBannieres, 8000);
+window._g45EbBannieres = _g45EbBannieres;
 function _g45ElSaisonDe(t) { var d = new Date(t); return d.getUTCMonth() >= 6 ? d.getUTCFullYear() : d.getUTCFullYear() - 1; }
 function _g45ElFeuilleLire(j) {
   if (!j || !j.local || !j.road) return null;
@@ -65538,7 +65570,7 @@ function _g45ElFeuilleHtml(F, m) {
     + '<div id="g45-el-h2h"></div>' + sec('👥 Stats joueurs');
   [[F.h, m.h, '#8fb4ff'], [F.a, m.a, '#ffb27a']].forEach(function (z) {
     var S = z[0], e = z[1], g = 'display:grid;grid-template-columns:minmax(0,1fr) 30px 30px 30px 30px 36px 32px;gap:3px;align-items:center;text-align:right;';
-    h += '<div style="display:flex;align-items:center;gap:8px;margin:10px 0 4px;">' + _g45ElLogo(e, 24) + '<b style="font-size:15px;color:' + z[2] + ';">' + esc(e.n) + '</b></div>'
+    h += '<div style="display:flex;align-items:center;gap:8px;margin:10px 0 4px;">' + _g45ElPastille(e.l, 28) + '<b style="font-size:15px;color:' + z[2] + ';">' + esc(e.n) + '</b></div>'
       + '<div style="' + g + 'font-size:12px;color:#c9d3ee;"><span style="text-align:left;">Joueur</span><span>Min</span><span>Pts</span><span>Reb</span><span>Pas</span><span>+/-</span><span>PIR</span></div>';
     S.P.slice().sort(function (x, y) { return y.mi - x.mi; }).forEach(function (p) {
       h += '<div style="' + g + 'font-size:14px;color:#fff;padding:4px 0;border-top:1px solid rgba(255,255,255,.07);"><span style="text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (p.d5 ? '<span style="color:#f0b020;">★</span> ' : '') + esc(p.n) + '</span>'
