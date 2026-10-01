@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261001x, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261001y, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -558,6 +558,17 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   E2000 à E2025. Saison passée : matchs gardés 7 j (g45el1_<an>), stats 7 j. Playoffs : la liste des matchs contient toutes
   les phases (apparaîtront seules) ; stats joueurs de la saison EN COURS lues avec phaseTypeCode=RS → playoffs peut-être
   NON comptés (à vérifier au printemps). Passage à la saison suivante automatique en septembre (`_g45ElSaison`).
+- 🏀 ÉQUIPES EUROLEAGUE / PRO A SUR LE MUR (20261001y, demande d'Antoine : « le même principe que Saisons des autres clubs ») :
+  bloc en FIN d'app.js `_g45EbBrancher` (enveloppe loadTeamSaisons, _g45CompetEquipes, _g45CompetMatchs, _g45SgMatch, comme la KHL).
+  Équipe du mur en 🏀 hors NBA (NBA_TEAMS / resolveNbaTeam) → `_g45EbResoudre(nom)` : noms des clubs Euroleague (SONDÉ PAR ANTOINE :
+  /v2/competitions/E/seasons/E<an>/clubs → code, name, abbreviatedName, editorialName, clubPermanentName/Alias ; cache g45eb1_clubs
+  7 j) + clubs de la Pro A en cours, comparaison `_g45EbCorrespond` (égalité normalisée ou inclusion ≥ 5 lettres). Panneau générique
+  `_g45SaisonsGen` avec perso {sport 'basketball', league 'eb:<code EL>|<code Pro A>', id 'EB'} (UN pseudo-championnat par club :
+  _g45SgMem est rangé par sport|lg|an) ; matchs `_g45EbCharger` = Euroleague (toutes phases, _g45ElLigue forcé à 'el' pendant la
+  lecture) + Pro A saison régulière + playoffs (_g45PaComp remis) ; m.comp affiché dans Prochains matchs ; quarts-temps hp/ap
+  (Euroleague seulement) ; ids 7<an><gameCode> / 8<external_id> → `_g45EbIdx` ; clic = `_g45EbCarte`. Onglet Compo : PAS encore
+  (effectif SONDÉ : /v2/competitions/E/seasons/E<an>/clubs/<code>/people → type J joueurs, dorsal, positionName, images.headshot,
+  person{name, height, birthDate, country} ; maquette proposée, « oui » non donné). Pro A : effectif non sondé.
 - Classements individuels TOP 14 (`g45LnrRender`, `_G45_LNR_CATS`, page top14.lnr.fr/classement/joueurs/<cat> via
   worker host=lnr) : 20261001a — LA LNR A REFAIT SON SITE (« page reçue mais illisible ») : plus de liens /joueur/ ;
   SONDÉ PAR ANTOINE : JSON dans l'attribut `:ranking` de <players-ranking> (100 joueurs {rank, player{name, url,
