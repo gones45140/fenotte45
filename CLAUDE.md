@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20261001l, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20261001m, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -595,6 +595,17 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   marqués » ; lecture `_g45T14Lire`. Slugs `_G45_T14_CLUBS` / `_g45T14Slug` (toulouse, toulon, pau, lyon, montpellier,
   clermont, bayonne, castres, vannes, racing-92, paris, la-rochelle, perpignan, bordeaux-begles). Cache g45t14sq1_<slug> 12 h.
   Pro D2 : NON fait (prod2.lnr.fr autorisé par le worker, slugs non sondés).
+- 🏉 PRO D2 (20261001m, maquette validée) : ESPN ne l'a pas → tuile slug 'prod2' (Compétitions → Rugby → Clubs, après Top 14,
+  `_g45Pd2Brancher` enveloppe loadCompetTab si _g45CompetSport 'rugby' et _g45CompetSel 'prod2' ; PAS dans Résultats). Site
+  prod2.lnr.fr via worker host=lnr&lnrhost=prod2.lnr.fr. SONDÉ PAR ANTOINE : /calendrier-et-resultats → <filters-fixtures
+  :current-week {slug « j6 », name, edition_id} :current-season {name « 2026-2027 »} :filter-list> (index `_g45Pd2Index` ;
+  liste des journées cherchée dans filter-list, NON vérifiée → repli j1…j30) ; /calendrier-et-resultats/<saison>/<jN> →
+  .match-calendar-line (2 .club-line, 1re = reçoit ; __name, __rank, __icon-img ; .match-line__score-wrapper « 41 - 26 » ou
+  « 21h00 ») → `_g45Pd2Journee` (titre du jour : texte « Vendredi… » au-dessus, NON vérifié) ; /classement = HTML DANS un
+  <template> (DOMParser n'y entre pas → `_g45Pd2Doc` remplace template par div) : .table-line--ranking-fixed (rang, logo) +
+  --ranking-scrollable (club | Pts | M | G | N | P | Bonus | Pts M. | Pts E. | Diff | forme | prochain) → `_g45Pd2Classement`
+  (OFFICIEL : bonus offensif non recalculable). Rendu `_g45Pd2Rendre`, `g45Pd2Vue('j'|'c')`, `g45Pd2Sem(slug)`.
+  Cache g45pd2_ (index 1 h, classement 10 min, journée finie 7 j sinon 10 min). Plus tard : effectifs Pro D2, saisons passées.
 - 🔥 CARTES DE CHALEUR foot (20261001j, maquette validée) : bouton posé par `_g45ChPoser` dans `_g45SgCarteTirs` (match 'in'
   ou 'post', avant le bouton des tirs) → `g45ChOuvrir` (2e appui = refermer) relit les actions avec `_g45ButsLire` (mêmes
   pages que « les buts en action », `_g45ButsMem`) → `_g45ChRendre` (équipe bleu / jaune, joueurs triés par nombre

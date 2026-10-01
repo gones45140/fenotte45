@@ -42221,7 +42221,7 @@ window.g45F1Session=g45F1Session;
    et les données utilisateur n'étaient JAMAIS écrites — l'ajout apparaissait à l'écran puis
    disparaissait au rechargement. Ce n'était ni la synchro GitHub, ni Dropbox, ni le cache
    du navigateur. Tous ces caches sont reconstructibles : ils cèdent la place aux données. */
-var _G45_CACHE_PREFIXES=['g45t14sq1_',/* 01/10 : effectifs Top 14 (LNR) */'g45nrlm1_','g45nrldr1_',/* 01/10 : feuilles et calendriers NRL */'g45nrlsq1_',/* 01/10 : effectifs NRL */'g45nrlst2_',/* 01/10 : classements NRL */'g45proacid1_',/* 30/09 : numéros LNB par saison */'g45proast1_',/* 30/09 : stats Pro A */'g45proa1_',/* 30/09 : Pro A par journée */'g45el1_',/* 30/09 : Euroleague (compact) */'g45buts1_',/* 30/09 : buts en action (match fini) */'g45prad1_','g45vsj1_','g45vse1_',/* 30/09 : radars joueurs */'g45ia1_',/* 29/09 : avis IA gardés 6 h */'g45_mmeta2_','g45_mmeta1_','g45_tennis4_','g45_tennis3_',/* 16/09 : meta de match (domicile/lieu) et score tennis, reconstructibles */'g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dcf_','g45dc_',
+var _G45_CACHE_PREFIXES=['g45pd2_',/* 01/10 : Pro D2 (LNR) */'g45t14sq1_',/* 01/10 : effectifs Top 14 (LNR) */'g45nrlm1_','g45nrldr1_',/* 01/10 : feuilles et calendriers NRL */'g45nrlsq1_',/* 01/10 : effectifs NRL */'g45nrlst2_',/* 01/10 : classements NRL */'g45proacid1_',/* 30/09 : numéros LNB par saison */'g45proast1_',/* 30/09 : stats Pro A */'g45proa1_',/* 30/09 : Pro A par journée */'g45el1_',/* 30/09 : Euroleague (compact) */'g45buts1_',/* 30/09 : buts en action (match fini) */'g45prad1_','g45vsj1_','g45vse1_',/* 30/09 : radars joueurs */'g45ia1_',/* 29/09 : avis IA gardés 6 h */'g45_mmeta2_','g45_mmeta1_','g45_tennis4_','g45_tennis3_',/* 16/09 : meta de match (domicile/lieu) et score tennis, reconstructibles */'g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dcf_','g45dc_',
   'g45trv3_','g45trv2_','g45trOdds_','g45tr_','g45but_st_','g45butL_','g45butA_','g45but_mur_',
   '_g45clv','g45clv_snaps','g45_saisons_cache_v3_','g45_saisons_cache_v2_',
   /* Ajoutes le 20/08 : ces caches, tous reconstructibles, n'etaient PAS declares
@@ -60759,6 +60759,154 @@ window._g45ElCompact = _g45ElCompact; window._g45ElClassement = _g45ElClassement
     };
     envCal._g45El = true;
     g45LoadCalendar = envCal; window.g45LoadCalendar = envCal;
+  }
+})();
+
+/* ═══ 🏉 PRO D2 (20261001m, maquette validée « oui ») ═══
+   ESPN n'a pas la Pro D2. Source : site officiel prod2.lnr.fr via le worker (host=lnr&lnrhost=prod2.lnr.fr, DÉJÀ
+   autorisé). SONDÉ PAR ANTOINE le 01/10 :
+   • /calendrier-et-resultats : <filters-fixtures :filter-list (JSON : seasons[{id, name « 2026-2027 »}]…) :current-week
+     {id, edition_id, name « Journée 6 », slug « j6 », number, starts_at, ends_at} :current-season {id, name}> ;
+   • /calendrier-et-resultats/<saison>/<slug> (ex. 2026-2027/j5) : 8 × .match-calendar-line → 2 × .club-line (la 1re =
+     club qui reçoit) {.club-line__name, .club-line__rank « 2e », .club-line__icon-img}, .match-line__score-wrapper
+     « 41 - 26 » ou heure « 21h00 », lien /feuille-de-match/2026-2027/j6/12051-montauban-brive ;
+   • /classement : HTML DANS un <template #first-tab> (DOMParser ne descend pas dedans → <template> remplacé par <div>) ;
+     .ranking--full : 16 × .table-line--ranking-fixed {rang, logo img} + 16 × .table-line--ranking-scrollable {club | Pts |
+     M | G | N | P | Bonus | Pts M. | Pts E. | Diff | Etat de forme « V V V V V » | Prochain match}. Classement OFFICIEL
+     (bonus offensif = essais, impossible à recalculer depuis les scores).
+   NON vérifié : liste des journées dans :filter-list (repli j1 → j30), jour du match (titre de jour au-dessus des lignes).
+   Cache g45pd2_ : index 1 h, classement 10 min, journée finie 7 j sinon 10 min. */
+var _g45Pd2 = { vue: 'j', sem: null, idx: null };
+function _g45Pd2Url(p) { return FD_PROXY + '?host=lnr&lnrhost=prod2.lnr.fr&path=' + encodeURIComponent(p); }
+function _g45Pd2Doc(html) { return new DOMParser().parseFromString(String(html).replace(/<(\/?)template\b/g, '<$1div'), 'text/html'); }
+async function _g45Pd2Lire(cle, chemin, duree, analyse) {
+  var now = Date.now(), m = null;
+  try { m = JSON.parse(localStorage.getItem('g45pd2_' + cle) || 'null'); } catch (e) {}
+  if (m && m.x > now) return m.d;
+  try {
+    var r = await fetch(_g45Pd2Url(chemin)); if (!r.ok) throw new Error('LNR ' + r.status);
+    var d = analyse(await r.text()); if (!d) throw new Error('page illisible');
+    try { localStorage.setItem('g45pd2_' + cle, JSON.stringify({ d: d, x: now + (typeof duree === 'function' ? duree(d) : duree) })); } catch (e) {}
+    return d;
+  } catch (e) { if (m && m.d) return m.d; throw e; }
+}
+function _g45Pd2Attr(doc, nom) { var e = doc.querySelector('filters-fixtures'); if (!e) return null; try { return JSON.parse(e.getAttribute(nom) || 'null'); } catch (x) { return null; } }
+function _g45Pd2Index(html) {
+  var d = _g45Pd2Doc(html), cw = _g45Pd2Attr(d, ':current-week'), cs = _g45Pd2Attr(d, ':current-season'), fl = _g45Pd2Attr(d, ':filter-list') || {};
+  if (!cw || !cs) return null;
+  var sem = [];
+  Object.keys(fl).forEach(function (k) {
+    if (!Array.isArray(fl[k])) return;
+    fl[k].forEach(function (w) { if (w && w.slug && w.number != null && (!w.edition_id || w.edition_id === cw.edition_id)) sem.push({ s: w.slug, n: w.name || ('Journée ' + w.number), num: +w.number }); });
+  });
+  if (!sem.length) for (var n = 1; n <= 30; n++) sem.push({ s: 'j' + n, n: 'Journée ' + n, num: n });
+  var vu = {}; sem = sem.filter(function (w) { if (vu[w.s]) return false; vu[w.s] = 1; return true; });
+  return { saison: cs.name, cour: cw.slug, sem: sem, deb: cw.starts_at, fin: cw.ends_at };
+}
+function _g45Pd2Journee(html) {
+  var d = _g45Pd2Doc(html), out = [], jour = '';
+  var reJ = /^(lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)\b/i;
+  d.querySelectorAll('*').forEach(function (e) {
+    var cn = typeof e.className === 'string' ? e.className : '';
+    if (/(^|\s)match-calendar-line(\s|$)/.test(cn)) {
+      var cl = e.querySelectorAll('.club-line'); if (cl.length < 2) return;
+      var club = function (c) { var nm = c.querySelector('.club-line__name'), rk = c.querySelector('.club-line__rank'), im = c.querySelector('.club-line__icon-img');
+        return { n: nm ? nm.textContent.trim() : '', r: rk ? rk.textContent.trim() : '', l: im ? im.getAttribute('src') || '' : '' }; };
+      var sw = e.querySelector('.match-line__score-wrapper') || e.querySelector('.match-line__result') || e;
+      var t = sw.textContent.replace(/\s+/g, ' ').trim(), sc = t.match(/(\d+)\s*-\s*(\d+)/), hr = t.match(/(\d{1,2})h(\d{2})/);
+      var a = e.querySelector('a[href*="/feuille-de-match/"]');
+      out.push({ h: club(cl[0]), a: club(cl[1]), sh: sc ? +sc[1] : null, sa: sc ? +sc[2] : null, hr: hr ? hr[0] : '', j: jour, u: a ? a.getAttribute('href') : '' });
+    } else if (!e.children.length) {
+      var tx = e.textContent.replace(/\s+/g, ' ').trim();
+      if (tx.length < 40 && reJ.test(tx)) jour = tx;
+    }
+  });
+  return out.length ? out : null;
+}
+function _g45Pd2Classement(html) {
+  var d = _g45Pd2Doc(html), F = d.querySelectorAll('.ranking--full .table-line--ranking-fixed'), S = d.querySelectorAll('.ranking--full .table-line--ranking-scrollable');
+  if (!S.length) return null;
+  var out = [];
+  for (var i = 0; i < S.length; i++) {
+    var c = [].map.call(S[i].children, function (x) { return x.textContent.replace(/\s+/g, ' ').trim(); });
+    var f = F[i], im = f && f.querySelector('img'), rg = f ? parseInt(f.textContent, 10) : i + 1;
+    var fo = (c[10] || '').replace(/[^VNDP]/gi, '').toUpperCase().replace(/P/g, 'D');
+    out.push({ r: isNaN(rg) ? i + 1 : rg, n: c[0], l: im ? im.getAttribute('src') || '' : '', p: c[1], m: c[2], g: c[3], nu: c[4], pe: c[5], b: c[6], pm: c[7], pc: c[8], df: c[9], fo: fo, pr: c[11] || '' });
+  }
+  return out;
+}
+function _g45Pd2Logo(u, t) { return u ? '<img src="' + _g45ElEsc(u) + '" alt="" loading="lazy" style="width:' + t + 'px;height:' + t + 'px;object-fit:contain;flex:none;" onerror="this.remove()">' : ''; }
+async function _g45Pd2Rendre(el) {
+  var B = '<button onclick="g45CompetSel(null)" style="border:none;background:rgba(255,255,255,.06);color:#fff;border-radius:8px;padding:6px 12px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:10px;">← Rugby</button>';
+  var onglet = function (k, t) { var on = _g45Pd2.vue === k; return '<button onclick="g45Pd2Vue(\'' + k + '\')" style="flex:1;padding:10px;border-radius:9px;font-size:14px;font-weight:800;cursor:pointer;color:#fff;' + (on ? 'border:none;background:#2f6bff;' : 'border:1px solid rgba(255,255,255,.15);background:#232d4b;') + '">' + t + '</button>'; };
+  var tete = function (sais) { return B + '<div style="font-size:20px;font-weight:800;color:#fff;margin-bottom:8px;">🏉 Pro D2' + (sais ? ' <span style="font-size:14px;color:#c9d3ee;font-weight:600;">· ' + _g45ElEsc(sais) + '</span>' : '') + '</div>'
+    + '<div style="display:flex;gap:6px;margin-bottom:10px;">' + onglet('j', '📅 Journées') + onglet('c', '🏆 Classement') + '</div>'; };
+  el.innerHTML = tete('') + '<div style="color:#fff;font-size:14px;">⏳ Lecture du site LNR…</div>';
+  try {
+    var I = _g45Pd2.idx = await _g45Pd2Lire('idx', '/calendrier-et-resultats', 3600e3, _g45Pd2Index);
+    var h = tete(I.saison.replace(/^(\d{4})-\d{2}(\d{2})$/, '$1-$2'));
+    var carte = function (x) { return '<div style="background:rgba(11,16,29,.9);border-radius:12px;padding:10px;color:#fff;">' + x + '</div>'; };
+    if (_g45Pd2.vue === 'c') {
+      var C = await _g45Pd2Lire('cls', '/classement', 600e3, _g45Pd2Classement);
+      var g = 'display:grid;grid-template-columns:24px 1fr 34px 24px 30px 42px;gap:4px;align-items:center;';
+      var t = '<div style="' + g + 'font-size:13px;color:#c9d3ee;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.15);"><span>#</span><span>Club</span><span>Pts</span><span>J</span><span>Bon.</span><span>Diff</span></div>';
+      C.forEach(function (x) {
+        var fo = x.fo.split('').map(function (v) { return '<b style="color:' + (v === 'V' ? '#3ddc84' : v === 'N' ? '#c9d3ee' : '#ff6b6b') + ';">' + v + '</b>'; }).join('');
+        t += '<div style="' + g + 'font-size:14px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.08);"><span style="font-weight:800;">' + x.r + '</span>'
+          + '<span style="display:flex;align-items:center;gap:6px;min-width:0;">' + _g45Pd2Logo(x.l, 24) + '<span style="min-width:0;"><span style="display:block;font-weight:700;">' + _g45ElEsc(x.n) + '</span><span style="font-size:12px;letter-spacing:2px;">' + fo + '</span></span></span>'
+          + '<span style="font-weight:800;">' + _g45ElEsc(x.p) + '</span><span>' + _g45ElEsc(x.m) + '</span><span>' + _g45ElEsc(x.b) + '</span>'
+          + '<span style="color:' + (/^-/.test(x.df) ? '#ff6b6b' : '#3ddc84') + ';">' + _g45ElEsc(x.df) + '</span></div>';
+      });
+      el.innerHTML = h + carte('<div style="font-size:15px;font-weight:800;margin-bottom:6px;">🏆 Classement</div>' + t + '<div style="font-size:13px;color:#c9d3ee;margin-top:6px;">Classement officiel · source LNR</div>');
+      return;
+    }
+    var sem = _g45Pd2.sem || I.cour, w = I.sem.filter(function (x) { return x.s === sem; })[0] || { s: sem, n: sem };
+    var sel = '<select onchange="g45Pd2Sem(this.value)" style="width:100%;padding:9px;border-radius:9px;background:#232d4b;color:#fff;border:1px solid rgba(255,255,255,.15);font-size:14px;font-weight:700;margin-bottom:10px;">'
+      + I.sem.map(function (x) { return '<option value="' + _g45ElEsc(x.s) + '"' + (x.s === sem ? ' selected' : '') + '>' + _g45ElEsc(x.n) + (x.s === I.cour ? ' (en cours)' : '') + '</option>'; }).join('') + '</select>';
+    el.innerHTML = h + sel + carte('<div style="font-size:14px;">⏳ ' + _g45ElEsc(w.n) + '…</div>');
+    var M = null;
+    try { M = await _g45Pd2Lire('j_' + I.saison + '_' + sem, '/calendrier-et-resultats/' + I.saison + '/' + sem,
+      function (L) { return L.every(function (m) { return m.sh != null; }) ? 7 * 86400e3 : 600e3; }, _g45Pd2Journee); } catch (e) {}
+    /* Journée illisible : on garde la liste pour en choisir une autre. */
+    if (!M) { el.innerHTML = h + sel + carte('<div style="color:#ffb13d;font-size:14px;">Aucun match lu pour ' + _g45ElEsc(w.n) + ' sur le site LNR.</div>'); return; }
+    var t2 = '<div style="font-size:15px;font-weight:800;margin-bottom:6px;">' + _g45ElEsc(w.n) + '</div>', jour = null;
+    M.forEach(function (m, i) {
+      if (m.j && m.j !== jour) { jour = m.j; t2 += '<div style="font-size:13px;font-weight:800;color:#c9d3ee;margin:8px 0 2px;">' + _g45ElEsc(m.j) + '</div>'; }
+      var fin = m.sh != null, gH = fin && m.sh > m.sa, gA = fin && m.sa > m.sh;
+      var cote = function (c, g, d) { return '<span style="display:flex;align-items:center;gap:6px;' + (d ? 'flex-direction:row-reverse;text-align:right;' : '') + 'min-width:0;">' + _g45Pd2Logo(c.l, 26)
+        + '<span style="min-width:0;"><span style="display:block;font-size:14px;font-weight:' + (g ? 800 : 600) + ';">' + _g45ElEsc(c.n) + '</span><span style="font-size:13px;color:#c9d3ee;">' + _g45ElEsc(c.r) + '</span></span></span>'; };
+      t2 += '<div style="display:grid;grid-template-columns:1fr 74px 1fr;align-items:center;padding:8px 0;' + (i ? 'border-top:1px solid rgba(255,255,255,.08);' : '') + '">'
+        + cote(m.h, gH, 0) + '<span style="text-align:center;font-size:' + (fin ? 17 : 13) + 'px;font-weight:800;">' + (fin ? m.sh + ' - ' + m.sa : _g45ElEsc(m.hr || '—')) + '</span>' + cote(m.a, gA, 1) + '</div>';
+    });
+    el.innerHTML = h + sel + carte(t2 + '<div style="font-size:13px;color:#c9d3ee;margin-top:6px;">Source LNR · le premier club reçoit</div>');
+  } catch (e) {
+    el.innerHTML = tete('') + '<div style="color:#ff6b6b;font-size:14px;">❌ Pro D2 indisponible pour le moment (' + _g45ElEsc(e && e.message || 'erreur') + ')</div>';
+  }
+}
+function g45Pd2Vue(v) { _g45Pd2.vue = v; var el = document.getElementById('t-compet'); if (el) _g45Pd2Rendre(el); }
+function g45Pd2Sem(s) { _g45Pd2.sem = s; var el = document.getElementById('t-compet'); if (el) _g45Pd2Rendre(el); }
+window.g45Pd2Vue = g45Pd2Vue; window.g45Pd2Sem = g45Pd2Sem;
+window._g45Pd2Index = _g45Pd2Index; window._g45Pd2Journee = _g45Pd2Journee; window._g45Pd2Classement = _g45Pd2Classement;
+(function _g45Pd2Brancher() {
+  try {
+    var rg = (typeof G45_SPORTS !== 'undefined') && G45_SPORTS.filter(function (s) { return s.key === 'rugby'; })[0];
+    var cl = rg && rg.groups && rg.groups[0];
+    if (cl && !cl.leagues.some(function (l) { return l.slug === 'prod2'; })) {
+      var k = cl.leagues.map(function (l) { return l.slug; }).indexOf('270559');
+      cl.leagues.splice(k >= 0 ? k + 1 : cl.leagues.length, 0, { name: 'Pro D2', slug: 'prod2', ico: '🇫🇷' });
+    }
+  } catch (e) {}
+  if (typeof loadCompetTab === 'function' && !loadCompetTab._g45Pd2) {
+    var origine = loadCompetTab;
+    var env = async function () {
+      if (typeof _g45CompetSport !== 'undefined' && _g45CompetSport === 'rugby' && _g45CompetSel === 'prod2') {
+        var el = document.getElementById('t-compet'); if (!el) return;
+        return _g45Pd2Rendre(el);
+      }
+      return origine.apply(this, arguments);
+    };
+    env._g45Pd2 = true; env._g45El = origine._g45El; env._g45Khl = origine._g45Khl;
+    loadCompetTab = env; window.loadCompetTab = env;
   }
 })();
 
