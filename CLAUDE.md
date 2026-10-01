@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261002f, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261002g, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -607,6 +607,8 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   dépôt (`_g45ImgPersoTester`) à chaque ouverture pour les clubs 🏀 hors NBA sans image ; sur la carte du mur (DEUX copies du
   rendu, l. ~3105 et ~11455), une image perso images/equipes|joueurs d'une équipe 🏀 = FILIGRANE CENTRÉ (86 %, opacité .32)
   au lieu du plein cadre (un logo carré n'en montrait qu'une tranche).
+  20261002g : `_g45ImgPersoTester` ajoute « ?j=AAAAMMJJ » aux adresses testées (404 périmé gardé par le navigateur : l'adresse nue
+  échouait, la même avec ?x= passait — console d'Antoine).
 - Classements individuels TOP 14 (`g45LnrRender`, `_G45_LNR_CATS`, page top14.lnr.fr/classement/joueurs/<cat> via
   worker host=lnr) : 20261001a — LA LNR A REFAIT SON SITE (« page reçue mais illisible ») : plus de liens /joueur/ ;
   SONDÉ PAR ANTOINE : JSON dans l'attribut `:ranking` de <players-ranking> (100 joueurs {rank, player{name, url,

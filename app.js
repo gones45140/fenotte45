@@ -53814,6 +53814,11 @@ function _g45ImgPersoTester(nom) {
   var cheminsBase = [_G45_PERSO_DIR_JOUEURS, _G45_PERSO_DIR];
   var exts = [];
   cheminsBase.forEach(function (d) { ['png', 'jpg'].forEach(function (e) { exts.push(d + _g45SgNorm(nom) + '.' + e); }); });
+  /* 20261002f (ASVEL, console d'Antoine) : images/equipes/asvel.png → ÉCHEC, la même adresse + « ?x=… » → OK. Le navigateur
+     ressert une vieille réponse 404 gardée en cache AVANT la mise en ligne du fichier. Marqueur du JOUR ajouté à l'adresse :
+     lecture fraîche une fois par jour au plus, puis cache normal. */
+  var _jr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+  exts = exts.map(function (x) { return x + '?j=' + _jr; });
   return new Promise(function (res) {
     var essayer = function (i) {
       if (i >= exts.length) {
