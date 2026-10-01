@@ -664,7 +664,7 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   /stats/top/<cat>?year= et /stats/team_splits?year= OK ; /standings?year|season= et /teams/<id>?year= IGNORÉS ;
   /schedule/week_of/<date> OK pour 2024/2025. Saison passée : Classement RECALCULÉ `_g45KboClsDepuisSplits` (pas de
   série), Équipes et Forme grisés, Matchs = semaine du mardi ≤ 30/09 (`_g45KboSemFin`). « Rained Out » → (pluie).
-  Worker : ?year=AAAA ajouté à la liste blanche host=mykbo (fichier complet donné à Antoine).
+  Worker : ?year=AAAA ajouté à la liste blanche host=mykbo (déployé). CONFIRMÉ « ça marche » par Antoine (01/10).
 - Score d'un pari : `_g45ScoreTexte`, cache `g45_score4_<id>` (négatif gardé
   2 h) — effacé par `saveBetEdit` pour relancer la recherche.
 
