@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20261001j, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20261001k, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -419,6 +419,10 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   cache g45prad1_ 12 h, < 90 min → saison précédente ; PAR 90 MIN ; gabarits `_G45_RAD_GAB`
   att/mil/def (bords FIXES, pas des centiles), poste deviné `_g45RadDevine` ; « ➕ Comparer »
   `g45RadComparer` superpose le radar suivant.
+  20261001k — GARDIEN (maquette validée) : gabarit `gk` de `_G45_RAD_GAB` (arrêts, % arrêts RECALCULÉ = arrêts ÷ (arrêts +
+  buts encaissés) car savePct ESPN faux, buts encaissés inversé, clean sheets %, bigChanceSaves, sorties aériennes =
+  crossesCaught + punches, longs ballons, % longs ballons, % passes, récupérations ; SONDÉ PAR ANTOINE sur Greif) ;
+  `_g45RadDevine` : poste G / GK / Goalkeeper (ou, sans poste, arrêts > 0) → 'gk' ; aussi dans `_G45_VJ_CHOIX.soccer`.
 - VS JOUEURS (30g, maquette validée « oui tout ») : bascule `g45VsBascule('eq'|'jo')` posée par
   `initComparateur` en tête de #t-comp (#g45-vs-bascule, boîte #g45-vsj) ; sports `_G45_VJ_SPORTS`
   (⚽ 8 ligues, NBA/WNBA, NHL, NFL, MLB) → équipes `_g45CompetEquipes` → effectif site v2

@@ -51412,9 +51412,23 @@ var _G45_RAD_GAB = {
         ['Passes réussies', function (S, p) { return p(S.accuratePasses); }, 0, 70],
         ['% passes', function (S) { return S.passPct != null ? 100 * S.passPct : null; }, 60, 92, '%'],
         ['Longs ballons', function (S, p) { return p(S.accurateLongBalls); }, 0, 7],
-        ['Fautes', function (S, p) { return p(S.foulsCommitted); }, 2.5, 0.3]]
+        ['Fautes', function (S, p) { return p(S.foulsCommitted); }, 2.5, 0.3]],
+  /* GARDIEN (20261001k, maquette validée « oui ») : avant, un gardien tombait dans « Défenseur » (tacles,
+     interceptions… à zéro). SONDÉ PAR ANTOINE (Greif, fra.1 2026) : catégorie goalKeeping = saves, goalsConceded,
+     cleanSheet, bigChanceSaves, crossesCaught, punches, savePct. ⚠ savePct ESPN FAUX (0,13 pour 13 arrêts / 2 buts)
+     → % arrêts recalculé = arrêts ÷ (arrêts + buts encaissés). */
+  gk:  [['Arrêts', function (S, p) { return p(S.saves); }, 0, 4],
+        ['% arrêts', function (S) { var t = (S.saves || 0) + (S.goalsConceded || 0); return t ? 100 * (S.saves || 0) / t : null; }, 55, 85, '%'],
+        ['Buts encaissés', function (S, p) { return p(S.goalsConceded || 0); }, 2, 0.6],
+        ['Clean sheets', function (S) { return S.appearances ? 100 * (S.cleanSheet || 0) / S.appearances : null; }, 0, 50, '%'],
+        ['Occasions arrêtées', function (S, p) { return p(S.bigChanceSaves); }, 0, 1],
+        ['Sorties aériennes', function (S, p) { return (S.crossesCaught == null && S.punches == null) ? null : p((S.crossesCaught || 0) + (S.punches || 0)); }, 0, 2],
+        ['Longs ballons', function (S, p) { return p(S.accurateLongBalls); }, 0, 10],
+        ['% longs ballons', function (S) { return S.longballPct != null ? 100 * S.longballPct : null; }, 30, 65, '%'],
+        ['% passes', function (S) { return S.passPct != null ? 100 * S.passPct : null; }, 60, 92, '%'],
+        ['Récupérations', function (S, p) { return p(S.recoveries); }, 0, 10]]
 };
-var _G45_RAD_NOMS = { att: 'Attaquant', mil: 'Milieu', def: 'Défenseur' };
+var _G45_RAD_NOMS = { gk: 'Gardien', att: 'Attaquant', mil: 'Milieu', def: 'Défenseur' };
 var _g45RadGab = {}, _g45RadRef = null, _g45RadData = {};
 async function _g45RadStats(lg, pid, anForce) {
   /* anForce (30/09, VS Joueurs « Saison ▾ ») : cette saison seulement. */
@@ -51445,6 +51459,7 @@ async function _g45RadStats(lg, pid, anForce) {
 /* Poste par défaut : celui de la Compo s'il est connu, sinon d'après les stats. */
 function _g45RadDevine(S, pos) {
   var p = String(pos || '').toUpperCase();
+  if (/^(G|GK|GOALKEEPER|GARDIEN)$/.test(p) || (!p && (S.saves || 0) + (S.crossesCaught || 0) + (S.punches || 0) > 0)) return 'gk';   /* 20261001k */
   if (/^(D|CB|LB|RB|WB|DF)/.test(p)) return 'def';
   if (/^(M|CM|DM|AM|MF)/.test(p)) return 'mil';
   if (/^(F|ST|CF|LW|RW|FW|A)/.test(p)) return 'att';
@@ -51491,7 +51506,7 @@ function _g45RadRendre(pid) {
   var h = '<div style="background:linear-gradient(160deg,rgba(27,36,64,.95),rgba(19,26,46,.95));border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:12px;margin:6px 0 8px;color:#fff;">'
     + '<div style="font-size:16px;font-weight:800;">🕸️ Radar du joueur</div>'
     + '<div style="font-size:13px;margin-top:2px;">' + saison + ' · ' + (S.appearances || 0) + ' matchs · ' + Math.round(S.minutes) + ' min · valeurs par 90 min</div>'
-    + '<div>' + chip('att') + chip('mil') + chip('def')
+    + '<div>' + chip('gk') + chip('att') + chip('mil') + chip('def')
     + (R2 ? '<button onclick="g45RadComparer(\'\')" style="padding:7px 12px;border-radius:9px;font-size:13px;font-weight:700;margin:6px 4px 0 0;cursor:pointer;color:#0b101d;background:#f5c542;border:none;">✕ ' + _g45Esc(R2.nom) + '</button>'
           : '<button onclick="g45RadComparer(\'' + pid + '\')" style="padding:7px 12px;border-radius:9px;font-size:13px;font-weight:700;margin:6px 4px 0 0;cursor:pointer;color:#fff;background:#232d4b;border:1px solid rgba(255,255,255,.15);">'
             + (_g45RadRef && _g45RadRef.pid === pid ? '✔ Gardé : ouvre un 2e radar' : '➕ Comparer') + '</button>') + '</div>'
@@ -51505,7 +51520,7 @@ function _g45RadRendre(pid) {
       + (v2 ? '<span style="text-align:right;font-weight:' + (bb ? 800 : 600) + ';color:#f5c542;">' + _g45RadFmt(b, ax[4]) + '</span>' : '') + '</div>';
   });
   h += '<div style="font-size:13px;line-height:1.5;margin-top:6px;">Le bord du radar = niveau d\'un très bon joueur de grand championnat. Plus la zone est grande, meilleur il est.'
-    + (gab === 'def' ? ' « Fautes » : le bord = en commettre peu.' : '') + '</div></div>';
+    + (gab === 'def' ? ' « Fautes » : le bord = en commettre peu.' : '') + (gab === 'gk' ? ' « Buts encaissés » : le bord = en prendre peu.' : '') + '</div></div>';
   box.innerHTML = h;
 }
 window.g45RadGab = function (pid, g) { _g45RadGab[pid] = g; _g45RadRendre(pid); };
@@ -51640,7 +51655,7 @@ var _G45_VJ_GAB = {
     ['Interceptions', function (g) { return g('defensiveInterceptions.interceptions', 'defensive.interceptions'); }, 0, 6, 'n'],
     ['Fumbles forcés', function (g) { return g('defensive.fumblesForced', 'general.fumblesForced'); }, 0, 4, 'n']] }
 };
-var _G45_VJ_CHOIX = { soccer: ['att', 'mil', 'def'], basketball: ['nba'], hockey: ['nhlJ', 'nhlG'], baseball: ['mlbF', 'mlbL'], football: ['nflQB', 'nflRB', 'nflWR', 'nflD'] };
+var _G45_VJ_CHOIX = { soccer: ['gk', 'att', 'mil', 'def'], basketball: ['nba'], hockey: ['nhlJ', 'nhlG'], baseball: ['mlbF', 'mlbL'], football: ['nflQB', 'nflRB', 'nflWR', 'nflD'] };
 var _g45Vj = { sp: 'soccer', lg: 'fra.1', eqs: [], cotes: [{}, {}], gab: '' };
 var _g45VjMode = 'eq';
 
