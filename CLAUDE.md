@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20261001o, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20261001p, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -619,6 +619,12 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   Mi-temps = score du dernier fait de la période 1. Rendu `_g45Pd2MatchRendre`, équipe `g45Pd2Eq`, vidéo `g45Pd2Video`
   (iframe ; CSP frame-src + geo/www.dailymotion.com dans index.html ET indexfenotte.html). /compositions : pas de JSON,
   non utilisé. Cache g45pd2_f_<chemin> 30 j (5 min si pas fini).
+  20261001p — onglets 📈 Forme (maquette validée) et 🏅 Classements Équipes / Joueurs (comme le Top 14, demande d'Antoine) :
+  `_g45Pd2Stats(z, I)` ; matchs joués de j1 → journée en cours `_g45Pd2Tous` (lots de 4, même cache que Journées) ; lignes
+  par club `_g45Pd2Equipes(ms, lieu 'g'|'d'|'e', n)` (pp = 4 V + 2 N, v12 = victoire > 12 pts, bd = défaite ≤ 5 pts) ;
+  catégories `_G45_PD2_CAT` / `_g45Pd2Val` ; réglages `_g45Pd2S` via `g45Pd2Reg` (nF Forme = 5, nS Classements = saison).
+  Mi-temps (mène à la pause, 1re MT, 2e MT) : ABANDONNÉ (Antoine : « on laisse tomber »). Joueurs : `g45LnrRender` sur une
+  boîte data-lnrhost="prod2.lnr.fr" (`_g45LnrPage(chemin, hote)`) ; SONDÉ : players-ranking identique au Top 14.
 - 🔥 CARTES DE CHALEUR foot (20261001j, maquette validée) : bouton posé par `_g45ChPoser` dans `_g45SgCarteTirs` (match 'in'
   ou 'post', avant le bouton des tirs) → `g45ChOuvrir` (2e appui = refermer) relit les actions avec `_g45ButsLire` (mêmes
   pages que « les buts en action », `_g45ButsMem`) → `_g45ChRendre` (équipe bleu / jaune, joueurs triés par nombre

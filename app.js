@@ -48814,14 +48814,17 @@ var _G45_LNR_CATS = [
   { s:'nombre-de-cartons',             n:'Cartons',                    u:'cartons' }
 ];
 var _g45LnrCache = {};
-async function _g45LnrPage(chemin){
-  if (_g45LnrCache[chemin]) return _g45LnrCache[chemin];
+async function _g45LnrPage(chemin, hote){
+  /* 20261001p : hote = top14.lnr.fr (défaut) ou prod2.lnr.fr (même site, SONDÉ par Antoine : players-ranking identique). */
+  hote = hote || 'top14.lnr.fr';
+  var ck = hote + chemin;
+  if (_g45LnrCache[ck]) return _g45LnrCache[ck];
   if (typeof FD_PROXY === 'undefined' || !FD_PROXY) return null;
   try {
-    var r = await fetch(FD_PROXY + '?host=lnr&lnrhost=top14.lnr.fr&path=' + encodeURIComponent(chemin));
+    var r = await fetch(FD_PROXY + '?host=lnr&lnrhost=' + hote + '&path=' + encodeURIComponent(chemin));
     if (!r.ok) return null;
     var t = await r.text();
-    if (t && t.length > 500) { _g45LnrCache[chemin] = t; return t; }
+    if (t && t.length > 500) { _g45LnrCache[ck] = t; return t; }
   } catch (e) {}
   return null;
 }
@@ -48898,7 +48901,8 @@ async function g45LnrRender(box, cat){
       }).join('') + '</div>';
   box.setAttribute('data-lnr', '1');
   box.innerHTML = chips + '<div style="color:var(--t3);font-size:11px;padding:12px;text-align:center;">\u23f3 Chargement\u2026</div>';
-  var html = await _g45LnrPage('/classement/joueurs/' + cat);
+  var hoteL = box.getAttribute('data-lnrhost') || 'top14.lnr.fr';
+  var html = await _g45LnrPage('/classement/joueurs/' + cat, hoteL);
   if (!html) {
     box.innerHTML = chips + '<div style="color:#ffb13d;font-size:11px;padding:12px;line-height:1.6;">'
       + 'Classement indisponible. Ces donn\u00e9es viennent du site de la LNR et passent par le Worker : '
@@ -48934,7 +48938,7 @@ async function g45LnrRender(box, cat){
   h += '</div>';
   if (lignes.length > nb) h += '<button onclick="_g45LnrPlus[\'' + cat + '\']=1;g45LnrRender(this.closest(\'[data-lnr]\'),\'' + cat + '\')" style="width:100%;margin-top:8px;padding:10px;border-radius:9px;border:1px solid rgba(109,157,255,.5);background:rgba(47,107,255,.18);color:#fff;font-size:14px;font-weight:800;cursor:pointer;">Voir plus (' + lignes.length + ' joueurs)</button>';
   box.innerHTML = h + '<div style="font-size:13px;color:#fff;margin-top:8px;line-height:1.5;background:rgba(11,16,29,.8);padding:6px 8px;border-radius:8px;">'
-    + 'Source : LNR (top14.lnr.fr). Certaines statistiques du site sont r\u00e9serv\u00e9es aux comptes MyRugby et ne sont pas reprises ici.</div>';
+    + 'Source : LNR (' + hoteL + '). Certaines statistiques du site sont r\u00e9serv\u00e9es aux comptes MyRugby et ne sont pas reprises ici.</div>';
 }
 var _g45LnrPlus = {};
 window.g45LnrRender = g45LnrRender;
@@ -60859,12 +60863,13 @@ async function _g45Pd2Rendre(el) {
   var B = '<button onclick="g45CompetSel(null)" style="border:none;background:rgba(255,255,255,.06);color:#fff;border-radius:8px;padding:6px 12px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:10px;">← Rugby</button>';
   var onglet = function (k, t) { var on = _g45Pd2.vue === k; return '<button onclick="g45Pd2Vue(\'' + k + '\')" style="flex:1;padding:10px;border-radius:9px;font-size:14px;font-weight:800;cursor:pointer;color:#fff;' + (on ? 'border:none;background:#2f6bff;' : 'border:1px solid rgba(255,255,255,.15);background:#232d4b;') + '">' + t + '</button>'; };
   var tete = function (sais) { return B + '<div style="font-size:20px;font-weight:800;color:#fff;margin-bottom:8px;">🏉 Pro D2' + (sais ? ' <span style="font-size:14px;color:#c9d3ee;font-weight:600;">· ' + _g45ElEsc(sais) + '</span>' : '') + '</div>'
-    + '<div style="display:flex;gap:6px;margin-bottom:10px;">' + onglet('j', '📅 Journées') + onglet('c', '🏆 Classement') + '</div>'; };
+    + '<div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;">' + onglet('j', '📅 Journées') + onglet('c', '🏆 Classement') + onglet('f', '📈 Forme') + onglet('s', '🏅 Classements') + '</div>'; };
   el.innerHTML = tete('') + '<div style="color:#fff;font-size:14px;">⏳ Lecture du site LNR…</div>';
   try {
     var I = _g45Pd2.idx = await _g45Pd2Lire('idx', '/calendrier-et-resultats', 3600e3, _g45Pd2Index);
     var h = tete(I.saison.replace(/^(\d{4})-\d{2}(\d{2})$/, '$1-$2'));
     var carte = function (x) { return '<div style="background:rgba(11,16,29,.9);border-radius:12px;padding:10px;color:#fff;">' + x + '</div>'; };
+    if (_g45Pd2.vue === 'f' || _g45Pd2.vue === 's') { el.innerHTML = h + '<div id="g45pd2-z"></div>'; return _g45Pd2Stats(document.getElementById('g45pd2-z'), I); }
     if (_g45Pd2.vue === 'c') {
       var C = await _g45Pd2Lire('cls', '/classement', 600e3, _g45Pd2Classement);
       var g = 'display:grid;grid-template-columns:24px 1fr 34px 24px 30px 42px;gap:4px;align-items:center;';
@@ -61002,6 +61007,117 @@ function g45Pd2Video(btn, u) {
   z.innerHTML = '<div style="position:relative;padding-top:56.25%;margin-top:8px;border-radius:10px;overflow:hidden;background:#000;"><iframe src="' + _g45ElEsc(u) + '" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0;"></iframe></div>';
 }
 window.g45Pd2Match = g45Pd2Match; window.g45Pd2Eq = g45Pd2Eq; window.g45Pd2Video = g45Pd2Video; window._g45Pd2Feuille = _g45Pd2Feuille;
+/* ═══ PRO D2 — FORME + CLASSEMENTS ÉQUIPES / JOUEURS (20261001p, maquette Forme validée ; Classements = même
+   présentation que le Top 14, demande d'Antoine « comme sur mes screens ») ═══
+   Équipes et Forme : CALCULÉS depuis les scores de toutes les journées jouées (j1 → journée en cours, lues par lots de 4,
+   même cache que l'onglet Journées). Pas de mi-temps (il faudrait lire chaque feuille de match) → catégories « pause /
+   1re MT / 2e MT » absentes. Joueurs : prod2.lnr.fr/classement/joueurs/<cat> (SONDÉ : players-ranking :ranking,
+   100 joueurs, comme le Top 14) → g45LnrRender sur une boîte data-lnrhost="prod2.lnr.fr". */
+var _g45Pd2S = { lieu: 'g', nF: 5, nS: 0, tri: 'pts', cat: 'pts', tot: 0, mode: 'eq', inv: 0 };
+async function _g45Pd2Tous(I, prog) {
+  var cour = I.sem.filter(function (w) { return w.s === I.cour; })[0], max = cour ? cour.num : 30, L = I.sem.filter(function (w) { return w.num <= max; }), out = [];
+  for (var k = 0; k < L.length; k += 4) {
+    if (prog) prog(Math.min(k + 4, L.length), L.length);
+    var lot = await Promise.all(L.slice(k, k + 4).map(function (w) {
+      return _g45Pd2Lire('j_' + I.saison + '_' + w.s, '/calendrier-et-resultats/' + I.saison + '/' + w.s,
+        function (X) { return X.every(function (m) { return m.sh != null; }) ? 7 * 86400e3 : 600e3; }, _g45Pd2Journee).then(function (X) { return { w: w, X: X }; }, function () { return null; });
+    }));
+    lot.forEach(function (r) { if (r && r.X) r.X.forEach(function (m) { if (m.sh != null) out.push({ w: r.w.num, h: m.h, a: m.a, sh: m.sh, sa: m.sa }); }); });
+  }
+  out.sort(function (x, y) { return x.w - y.w; });
+  return out;
+}
+/* Une ligne par club : ses matchs (ordre des journées), filtrés par lieu, N derniers. */
+function _g45Pd2Equipes(ms, lieu, n) {
+  var E = {};
+  ms.forEach(function (m) {
+    [[m.h, m.sh, m.sa, 'd'], [m.a, m.sa, m.sh, 'e']].forEach(function (c) {
+      var e = E[c[0].n] = E[c[0].n] || { n: c[0].n, l: c[0].l, L: [] };
+      if (!e.l && c[0].l) e.l = c[0].l;
+      if (lieu === 'g' || lieu === c[3]) e.L.push({ p: c[1], c: c[2], r: c[1] > c[2] ? 'V' : c[1] === c[2] ? 'N' : 'D' });
+    });
+  });
+  return Object.keys(E).map(function (k) {
+    var e = E[k], L = n ? e.L.slice(-n) : e.L, s = { n: e.n, l: e.l, L: L, mj: L.length, v: 0, nu: 0, d: 0, p: 0, c: 0, v12: 0, bd: 0 };
+    L.forEach(function (x) { if (x.r === 'V') s.v++; else if (x.r === 'N') s.nu++; else s.d++; s.p += x.p; s.c += x.c; if (x.p - x.c > 12) s.v12++; if (x.r === 'D' && x.c - x.p <= 5) s.bd++; });
+    s.pp = 4 * s.v + 2 * s.nu;
+    return s;
+  });
+}
+var _G45_PD2_CAT = [['pts', 'Points'], ['enc', 'Encaissés'], ['tot', 'Total/match'], ['ecart', 'Écart moyen'], ['pv', '% victoires'], ['v12', 'Victoire de +12'], ['bd', 'Bonus défensif']];
+function _g45Pd2Val(s, k, tot) {
+  var m = s.mj || 1, f = function (x) { return tot ? x : x / m; };
+  return { pts: f(s.p), enc: f(s.c), tot: f(s.p + s.c), ecart: f(s.p - s.c), pv: 100 * s.v / m, v12: tot ? s.v12 : 100 * s.v12 / m, bd: tot ? s.bd : 100 * s.bd / m }[k];
+}
+async function _g45Pd2Stats(z, I) {
+  var S = _g45Pd2S, esc = _g45ElEsc, nk = _g45Pd2.vue === 'f' ? 'nF' : 'nS';   /* Forme : 5 derniers ; Classements : saison */
+  var ch = function (t, on, js) { return '<button onclick="' + js + '" style="flex:1;min-width:64px;padding:9px 8px;border-radius:9px;font-size:13px;font-weight:800;cursor:pointer;color:#fff;' + (on ? 'border:none;background:#2f6bff;' : 'border:1px solid rgba(255,255,255,.15);background:#232d4b;') + '">' + t + '</button>'; };
+  var ligne = function (x) { return '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;">' + x + '</div>'; };
+  var carte = function (x) { return '<div style="background:rgba(11,16,29,.9);border-radius:12px;padding:10px;color:#fff;">' + x + '</div>'; };
+  var haut = '';
+  if (_g45Pd2.vue === 's') {
+    haut = ligne(ch('🛡️ Équipes', S.mode === 'eq', "g45Pd2Reg('mode','eq')") + ch('👤 Joueurs', S.mode === 'jo', "g45Pd2Reg('mode','jo')"));
+    if (S.mode === 'jo') {
+      z.innerHTML = haut + '<div id="g45pd2-jo" data-lnrhost="prod2.lnr.fr" style="background:rgba(11,16,29,.9);border-radius:12px;padding:10px;"></div>';
+      if (typeof g45LnrRender === 'function') return g45LnrRender(document.getElementById('g45pd2-jo'));
+      return;
+    }
+    haut += ligne(_G45_PD2_CAT.map(function (c) { return ch(c[1], S.cat === c[0], "g45Pd2Reg('cat','" + c[0] + "')"); }).join(''));
+  }
+  haut += ligne(ch('Global', S.lieu === 'g', "g45Pd2Reg('lieu','g')") + ch('Domicile', S.lieu === 'd', "g45Pd2Reg('lieu','d')") + ch('Extérieur', S.lieu === 'e', "g45Pd2Reg('lieu','e')"));
+  haut += ligne([[3, '3 der.'], [5, '5 der.'], [10, '10 der.'], [0, 'Saison']].map(function (x) { return ch(x[1], S[nk] === x[0], "g45Pd2Reg('n'," + x[0] + ")"); }).join(''));
+  if (_g45Pd2.vue === 's') haut += ligne(ch('Par match', !S.tot, "g45Pd2Reg('tot',0)") + ch('Total', !!S.tot, "g45Pd2Reg('tot',1)"));
+  z.innerHTML = haut + carte('<div style="font-size:14px;">⏳ Lecture des journées…</div>');
+  var ms = await _g45Pd2Tous(I, function (a, b) { var c = z.lastElementChild; if (c) c.innerHTML = '<div style="font-size:14px;">⏳ Journées ' + a + '/' + b + '…</div>'; });
+  if (!document.body.contains(z)) return;
+  if (!ms.length) { z.innerHTML = haut + carte('<div style="color:#ffb13d;font-size:14px;">Aucun match joué trouvé.</div>'); return; }
+  var E = _g45Pd2Equipes(ms, S.lieu, S[nk]).filter(function (e) { return e.mj; });
+  var nb = function (v, d) { return (Math.round(v * Math.pow(10, d)) / Math.pow(10, d)).toFixed(d).replace('.', ','); };
+  var lieuT = { g: 'Global', d: 'Domicile', e: 'Extérieur' }[S.lieu], nT = S[nk] ? S[nk] + ' derniers' : 'Saison';
+  var logo = function (u) { return u ? '<img src="' + esc(u) + '" alt="" loading="lazy" style="width:24px;height:24px;object-fit:contain;flex:none;" onerror="this.remove()">' : ''; };
+  var t = '';
+  if (_g45Pd2.vue === 'f') {
+    var cle = { pts: function (e) { return e.pp / e.mj; }, m: function (e) { return e.p / e.mj; }, e: function (e) { return -e.c / e.mj; } }[S.tri] || function (e) { return e.pp; };
+    E.sort(function (a, b) { return cle(b) - cle(a) || (b.p - b.c) - (a.p - a.c); });
+    var g = 'display:grid;grid-template-columns:1fr 96px 46px 46px;gap:4px;align-items:center;';
+    var th = function (k, txt) { return '<span onclick="g45Pd2Reg(\'tri\',\'' + k + '\')" style="cursor:pointer;' + (S.tri === k ? 'color:#fff;text-decoration:underline;' : '') + '">' + txt + '</span>'; };
+    t = '<div style="font-size:15px;font-weight:800;">📈 Forme · ' + nT + ' · ' + lieuT + '</div><div style="font-size:13px;color:#c9d3ee;margin-bottom:6px;">Trié par ' + ({ pts: 'points pris (victoire 4, nul 2)', m: 'points marqués', e: 'points encaissés' }[S.tri]) + ' · touche une colonne pour trier</div>'
+      + '<div style="' + g + 'font-size:13px;color:#c9d3ee;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.15);">' + th('pts', 'Club') + '<span>Forme</span>' + th('m', 'Marq.') + th('e', 'Enc.') + '</div>';
+    E.forEach(function (e) {
+      var pa = e.L.map(function (x) { return '<b style="display:inline-block;width:16px;height:16px;border-radius:50%;background:' + ({ V: '#3ddc84', N: '#c9d3ee', D: '#ff6b6b' }[x.r]) + ';color:#0b101d;font-size:10px;text-align:center;line-height:16px;margin:0 1px 1px 0;">' + x.r + '</b>'; }).join('');
+      t += '<div style="' + g + 'padding:8px 0;border-bottom:1px solid rgba(255,255,255,.08);font-size:14px;"><span style="display:flex;align-items:center;gap:6px;min-width:0;">' + logo(e.l)
+        + '<span style="min-width:0;"><span style="display:block;font-weight:700;">' + esc(e.n) + '</span><span style="font-size:12px;color:#c9d3ee;font-weight:600;">' + e.v + 'V ' + e.nu + 'N ' + e.d + 'D</span></span></span>'
+        + '<span>' + pa + '</span><b>' + nb(e.p / e.mj, 1) + '</b><b>' + nb(e.c / e.mj, 1) + '</b></div>';
+    });
+  } else {
+    var k = S.cat, pct = k === 'pv' || ((k === 'v12' || k === 'bd') && !S.tot), bas = k === 'enc';
+    E.forEach(function (e) { e.val = _g45Pd2Val(e, k, S.tot); });
+    E.sort(function (a, b) { return (bas !== !!S.inv ? a.val - b.val : b.val - a.val); });
+    var moy = E.reduce(function (x, e) { return x + e.val; }, 0) / (E.length || 1);
+    var lib = (_G45_PD2_CAT.filter(function (c) { return c[0] === k; })[0] || [0, k])[1];
+    var g2 = 'display:grid;grid-template-columns:26px 1fr 70px 30px;gap:6px;align-items:center;';
+    t = '<div style="font-size:15px;font-weight:800;">' + esc(lib) + (pct ? '' : S.tot ? ' (total)' : ' par match') + ' · Pro D2 · ' + lieuT + ' · ' + nT + '</div>'
+      + '<div style="font-size:13px;color:#c9d3ee;margin-bottom:6px;">Moyenne du championnat : ' + nb(moy, 1) + (pct ? ' %' : '') + (k === 'bd' ? ' · défaites de 5 points ou moins' : k === 'v12' ? ' · victoires de plus de 12 points' : '') + '</div>'
+      + '<div style="' + g2 + 'font-size:13px;color:#c9d3ee;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.15);"><span>#</span><span>Équipe</span><span onclick="g45Pd2Reg(\'inv\',1)" style="cursor:pointer;text-align:right;text-decoration:underline;">' + (pct ? '%' : S.tot ? 'total' : '/ match') + ' ' + ((bas !== !!S.inv) ? '▲' : '▼') + '</span><span style="text-align:right;">MJ</span></div>';
+    E.forEach(function (e, i) {
+      var bon = bas ? e.val < moy : e.val > moy;
+      var sous = { pts: e.p + ' pts', enc: e.c + ' pts', tot: (e.p + e.c) + ' pts', ecart: (e.p - e.c > 0 ? '+' : '') + (e.p - e.c), pv: e.v + ' V', v12: e.v12 + ' fois', bd: e.bd + ' fois' }[k];
+      t += '<div style="' + g2 + 'padding:9px 0;border-bottom:1px solid rgba(255,255,255,.08);font-size:15px;"><span style="font-weight:800;color:' + (i < 3 ? '#f5c542' : '#fff') + ';">' + (i + 1) + '</span>'
+        + '<span style="display:flex;align-items:center;gap:8px;min-width:0;font-weight:800;">' + logo(e.l) + esc(e.n) + '</span>'
+        + '<span style="text-align:right;"><b style="color:' + (bon ? '#3ddc84' : '#fff') + ';">' + nb(e.val, (S.tot && (k === 'v12' || k === 'bd')) ? 0 : 1) + (pct ? ' %' : '') + '</b><span style="display:block;font-size:12px;color:#c9d3ee;">' + esc(sous) + '</span></span>'
+        + '<span style="text-align:right;color:#c9d3ee;">' + e.mj + '</span></div>';
+    });
+  }
+  z.innerHTML = haut + carte(t + '<div style="font-size:13px;color:#c9d3ee;margin-top:6px;">Calculé depuis les scores LNR · ' + ms.length + ' matchs joués</div>');
+}
+function g45Pd2Reg(k, v) {
+  var S = _g45Pd2S;
+  if (k === 'n') k = _g45Pd2.vue === 'f' ? 'nF' : 'nS';
+  if (k === 'inv') S.inv = S.inv ? 0 : 1; else { S[k] = v; if (k === 'cat') S.inv = 0; }
+  var z = document.getElementById('g45pd2-z');
+  if (z && _g45Pd2.idx) _g45Pd2Stats(z, _g45Pd2.idx);
+}
+window.g45Pd2Reg = g45Pd2Reg; window._g45Pd2Equipes = _g45Pd2Equipes; window._g45Pd2Val = _g45Pd2Val;
 function g45Pd2Vue(v) { _g45Pd2.vue = v; var el = document.getElementById('t-compet'); if (el) _g45Pd2Rendre(el); }
 function g45Pd2Sem(s) { _g45Pd2.sem = s; var el = document.getElementById('t-compet'); if (el) _g45Pd2Rendre(el); }
 window.g45Pd2Vue = g45Pd2Vue; window.g45Pd2Sem = g45Pd2Sem;
