@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20261001e, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20261001f, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -561,6 +561,7 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   eng.1 : sans saison / 2026 / 2027 = 0 ; 2025 = jusqu'au 08/09/2025 seulement) → bandeau « Liste ESPN figée » si
   dernier transfert > 90 j. Aucune source gratuite de transferts foot trouvée (Transfermarkt : CGU, ne pas scraper).
   Plafond 400 par réponse (NHL 2026 atteint) ; pagination `page=` NON vérifiée.
+  20261001f — onglet Transferts RETIRÉ pour le foot (demande d'Antoine), gardé pour les autres sports.
 - Compo NRL (Roosters, rugby-league/3 id 289204) : « Aucun joueur renvoyé par ESPN » (capture 01/10) — piste nrl.com À SONDER.
 - Score d'un pari : `_g45ScoreTexte`, cache `g45_score4_<id>` (négatif gardé
   2 h) — effacé par `saveBetEdit` pour relancer la recherche.

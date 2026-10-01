@@ -45437,6 +45437,12 @@ async function loadCompetTab() {
               ['transferts','\ud83d\udd04 Transferts'],
               /* Liste personnelle, sans rapport avec le mur : voir g45SuiviEqRender. */
               ['suivies','\u2b50 Suivies']]);
+  /* 20261001f (Antoine : « enlève transfert ou sinon faut chercher la source ailleurs ») : ESPN ne publie plus
+     les transferts de FOOT depuis le 08/09/2025 → onglet retiré pour le foot (gardé pour NBA, NHL…). */
+  if (c.sp === 'soccer') {
+    vues = vues.filter(function (v) { return v[0] !== 'transferts'; });
+    if (_g45CompetVue === 'transferts') _g45CompetVue = 'equipes';
+  }
   var onglets = vues.map(function (v) {
     var on = (v[0] === _g45CompetVue);
     return '<button onclick="g45CompetVue(\'' + v[0] + '\')" style="flex:1;min-width:96px;padding:10px;font-size:11.5px;font-weight:800;cursor:pointer;border-radius:9px;'
