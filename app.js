@@ -3112,7 +3112,7 @@ function render(){
         if(/\ud83c\udfc0|🏀/.test(u.sport||'') && /images\/(equipes|joueurs)\//.test(_vis)){
           _couche='<img src="'+_vis+'" alt="" loading="lazy" onerror="this.style.display=\'none\'" '
             +'style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);height:86%;width:auto;max-width:60%;'
-            +'object-fit:contain;opacity:.32;pointer-events:none;">';
+            +'object-fit:contain;opacity:.6;pointer-events:none;">';
         }
       }
       /* Logo nettement plus present : 86 px a 18 %. Une ligne du mur faisait
@@ -11469,7 +11469,7 @@ function render(){
         if(/\ud83c\udfc0|🏀/.test(u.sport||'') && /images\/(equipes|joueurs)\//.test(_vis)){
           _couche='<img src="'+_vis+'" alt="" loading="lazy" onerror="this.style.display=\'none\'" '
             +'style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);height:86%;width:auto;max-width:60%;'
-            +'object-fit:contain;opacity:.32;pointer-events:none;">';
+            +'object-fit:contain;opacity:.6;pointer-events:none;">';
         }
       }
       /* Logo nettement plus present : 86 px a 18 %. Une ligne du mur faisait
