@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20261001g, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20261001h, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -568,7 +568,16 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   club retrouvé par SURNOM dans le nom ESPN, `_g45NrlEqId`), profileGroups[0].profiles[] {firstName, lastName, position,
   bodyImage /remote.axd?http://rugbyimages.statsperform.com/Player%20Bodyshots/…, url}. Worker host=nrl élargi à
   /players/data (redéployé, 33 joueurs Roosters vérifiés). Postes traduits `_G45_NRL_POSTES` ; photo = portrait
-  DÉDUIT (Bodyshots → Player%20Profile%20Headshots, NON vérifié), plan en pied en secours. Cache g45nrlsq1_<id> 24 h.
+  DÉDUIT (Bodyshots → Player%20Profile%20Headshots) : CONFIRMÉ par Antoine (capture Panthers). Cache g45nrlsq1_<id> 24 h.
+  20261001h — STATS DU JOUEUR DANS BET45 (maquette validée « OUI ») : toucher un joueur déplie `g45NrlJoueur(k, id)`
+  (titres de poste sur bande sombre). Fiche nrl.com : …/data = 404 et HTML bloqué → SONDÉ PAR ANTOINE :
+  /draw/data?competition=111&season=<an>&team=<id> (29 matchs Panthers d'un coup ; matchMode 'Post', matchState
+  'FullTime', matchCentreUrl) puis <matchCentreUrl>data → stats.players.homeTeam|awayTeam[] {playerId, minutesPlayed,
+  allRunMetres, allRuns, lineBreaks, offloads, missedTackles, errors, conversions, kickMetres…} + homeTeam.players
+  (noms ; présence de playerId À CONFIRMER). Somme saison = `_g45NrlEquipeStats` (4 feuilles à la fois, compteur
+  « Match n/N »), feuilles compactées POUR TOUJOURS g45nrlm1_<url>, calendrier g45nrldr1_<an>_<id> 1 h ; saison =
+  année civile, aucun match fini → an − 1. Libellés `_G45_NRL_JS` (tries / tryAssists / tacklesMade / tackleBreaks /
+  penalties : noms NON vérifiés, ligne masquée si absente). Worker : /draw/data et /draw/…/data ajoutés (redéployé).
 - Score d'un pari : `_g45ScoreTexte`, cache `g45_score4_<id>` (négatif gardé
   2 h) — effacé par `saveBetEdit` pour relancer la recherche.
 
