@@ -45718,6 +45718,13 @@ window.g45TrfFiltrer = g45TrfFiltrer;
 
 async function g45TrfRender(c, body) {
   var an = _g45CompetAnnee(c.s);
+  /* 20261001e — SONDÉ PAR ANTOINE (transactions ESPN, 01/10/2026) : pour la NBA et la NHL, `season` = ANNÉE CIVILE
+     (2026 → janv.–sept. 2026 ; 2027 → 0). Or _g45CompetAnnee donne l'année de FIN (2027) dès septembre : on demandait
+     une liste vide. Hors foot, l'année civile en cours sert donc d'année par défaut. FOOT : ESPN a ARRÊTÉ de publier
+     (fra.1 / eng.1 : 2026 = 0, dernier transfert 2025 = 08/09/2025) → l'ancienne liste s'affichait comme si elle était
+     à jour ; elle est maintenant signalée « figée ». Plafond ESPN 400 par réponse (NHL 2026 = 400 : les plus anciens
+     de l'année manquent). */
+  if (c.sp !== 'soccer' && !_g45CompetSaison) an = new Date().getFullYear();
   body.innerHTML = '<div style="color:#9fb0c7;font-size:11.5px;">\u23f3 Chargement des transferts\u2026</div>';
 
   var liste = await g45Transferts(c.s, c.sp, an);
@@ -45725,9 +45732,12 @@ async function g45TrfRender(c, body) {
   var anAff = an;
   if (!liste.length && !_g45CompetSaison) { anAff = an - 1; liste = await g45Transferts(c.s, c.sp, anAff); }
   if (!liste.length) {
-    body.innerHTML = '<div style="color:#ffb13d;font-size:11.5px;">Aucun transfert publi\u00e9 par ESPN pour cette comp\u00e9tition.</div>';
+    body.innerHTML = '<div style="color:#fff;font-size:14px;background:rgba(11,16,29,.85);border-radius:10px;padding:10px 12px;">Aucun transfert publi\u00e9 par ESPN pour cette comp\u00e9tition'
+      + (c.sp === 'soccer' ? ' : ESPN a arr\u00eat\u00e9 de publier les transferts de football (dernier relev\u00e9 en septembre 2025).' : '.') + '</div>';
     return;
   }
+  var _dern = liste[0] && liste[0].date ? new Date(liste[0].date) : null;
+  var _fige = _dern && (Date.now() - _dern.getTime()) > 90 * 86400000;
 
   /* Clubs presents, pour filtrer par equipe. */
   var clubs = {};
@@ -45798,7 +45808,9 @@ async function g45TrfRender(c, body) {
     }).join('');
   }
 
-  body.innerHTML = '<div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap;">'
+  body.innerHTML = (_fige ? '<div style="color:#fff;font-size:14px;background:rgba(255,177,61,.18);border:1px solid rgba(255,177,61,.5);border-radius:10px;padding:9px 12px;margin-bottom:10px;">\u26a0\ufe0f Liste ESPN fig\u00e9e : dernier transfert publi\u00e9 le '
+      + _dern.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) + (c.sp === 'soccer' ? '. ESPN ne publie plus les transferts de football depuis.' : '.') + '</div>' : '')
+    + '<div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap;">'
       + '<select onchange="g45TrfFiltrer(this.value)" style="flex:1;min-width:180px;padding:9px 11px;font-size:12px;border-radius:9px;background:#0f1626;border:1px solid rgba(255,255,255,.14);color:#e6ecf5;">' + opts + '</select>'
       + '<span style="font-size:10px;color:var(--t3);">' + vis.length + ' transfert(s) \u00b7 saison ' + anAff + '</span>'
       + '</div>' + corps

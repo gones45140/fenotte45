@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20261001d, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20261001e, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -555,6 +555,13 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   Logos OK chez Antoine (capture 01/10). Photos : relais nrl.com/remote.axd = initiales chez Antoine → 1001d : adresse
   d'ORIGINE extraite (rugbyimages.statsperform.com/…png, sans ?center=) en premier, relais en secours (data-alt),
   referrerpolicy no-referrer. Résultat NON vérifié (domaines bloqués depuis la session cloud).
+- TRANSFERTS (`g45TrfRender`, `g45Transferts`, ESPN site v2 …/transactions?season=&limit=400) — 20261001e, SONDÉ PAR
+  ANTOINE le 01/10/2026 : NBA / NHL → `season` = ANNÉE CIVILE (2026 = janv.–sept. 2026, 2027 = 0) alors que
+  _g45CompetAnnee donne l'année de FIN → hors foot, année civile en cours par défaut. FOOT : ESPN a ARRÊTÉ (fra.1 /
+  eng.1 : sans saison / 2026 / 2027 = 0 ; 2025 = jusqu'au 08/09/2025 seulement) → bandeau « Liste ESPN figée » si
+  dernier transfert > 90 j. Aucune source gratuite de transferts foot trouvée (Transfermarkt : CGU, ne pas scraper).
+  Plafond 400 par réponse (NHL 2026 atteint) ; pagination `page=` NON vérifiée.
+- Compo NRL (Roosters, rugby-league/3 id 289204) : « Aucun joueur renvoyé par ESPN » (capture 01/10) — piste nrl.com À SONDER.
 - Score d'un pari : `_g45ScoreTexte`, cache `g45_score4_<id>` (négatif gardé
   2 h) — effacé par `saveBetEdit` pour relancer la recherche.
 
