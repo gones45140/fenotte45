@@ -611,7 +611,7 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   échouait, la même avec ?x= passait — console d'Antoine).
   20261002i — VRAIE CAUSE sur le PC : `_g45ImgPersoTester` est ENVELOPPÉ (`_g45BrancherIndexImages`) par une LISTE du dépôt
   (`g45IndexImages`, API GitHub, cache g45_idx_images 6 h) faite avant l'ajout du logo → « absent » sans essayer d'adresse.
-  Nom absent d'une liste de plus de 10 min → liste refaite une fois par session (window._g45IdxRefait).
+  Nom absent d'une liste de plus de 10 min → liste refaite une fois par session (window._g45IdxRefait). CONFIRMÉ par Antoine (PC + téléphone, 01/10).
 - Classements individuels TOP 14 (`g45LnrRender`, `_G45_LNR_CATS`, page top14.lnr.fr/classement/joueurs/<cat> via
   worker host=lnr) : 20261001a — LA LNR A REFAIT SON SITE (« page reçue mais illisible ») : plus de liens /joueur/ ;
   SONDÉ PAR ANTOINE : JSON dans l'attribut `:ranking` de <players-ranking> (100 joueurs {rank, player{name, url,
