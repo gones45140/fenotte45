@@ -62866,6 +62866,14 @@ window.g45IndexImages = g45IndexImages;
     return (async function () {
       var map = null;
       try { map = await g45IndexImages(); } catch (e) {}
+      /* 20261002i (ASVEL absent sur le PC d'Antoine, présent sur son téléphone) : la liste du dépôt est gardée 6 h ; faite
+         AVANT l'ajout d'images/equipes/asvel.png, elle déclarait le logo absent et aucune adresse n'était essayée. Nom absent
+         d'une liste de plus de 10 min → liste refaite, UNE fois par session (1 appel à l'API GitHub). */
+      if (map && !map[_g45SgNorm(nom)] && !window._g45IdxRefait) {
+        var _age = 0;
+        try { _age = Date.now() - ((JSON.parse(localStorage.getItem('g45_idx_images') || 'null') || {}).t || 0); } catch (e) {}
+        if (_age > 10 * 60000) { window._g45IdxRefait = 1; try { map = (await g45IndexImages(true)) || map; } catch (e) {} }
+      }
       var chemin = map && map[_g45SgNorm(nom)];
       if (chemin) {
         try { localStorage.setItem(_G45_PERSO_IMG + _g45SgNorm(nom), JSON.stringify({ u: chemin, t: Date.now() })); } catch (e) {}
