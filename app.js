@@ -32512,7 +32512,7 @@ window.g45ArticleTraduire = g45ArticleTraduire; window._g45ArticleBloc = _g45Art
    SE DÉPLACE sur ses matchs À L'EXTÉRIEUR, + forme globale. Aucune source
    nouvelle : les calendriers du bouton « 🏠 Domicile / 🚌 Extérieur »
    (g45DomExtGenLancer : _g45CompetEquipes + _g45CompetMatchs, cache 12 h
-   g45cm9_ partagé avec Saisons), le point de vue de chaque équipe
+   g45cm10_ partagé avec Saisons), le point de vue de chaque équipe
    (_g45SgCalc), les lignes des curseurs de Saisons cochés « dans le calcul »
    (_g45SgCursClesActives + _g45DeStats), le face-à-face du résumé
    (_g45H2HDepuisResume), les cotes ESPN déjà lues (window._g45LastUsOdds)
@@ -45961,7 +45961,7 @@ window.g45FormeN = g45FormeN;
    parametre — la vue Forme marche donc aussi en NBA, NHL, NFL, MLB et rugby.
    Cache 12 h par sport+ligue+saison, car c'est une requete par equipe. */
 async function _g45CompetMatchs(sportPath, slug, an, ids, progres) {
-  var ck = 'g45cm9_' + sportPath + '_' + slug + '_' + an;   /* v9 (27/09) : phase finale NRL marquée (po) · v8 (24/09 soir) : seasontype=2 demande — la presaison n'est plus telechargee */
+  var ck = 'g45cm10_' + sportPath + '_' + slug + '_' + an;   /* v9 (27/09) : phase finale NRL marquée (po) · v8 (24/09 soir) : seasontype=2 demande — la presaison n'est plus telechargee */
   try {
     var cc = JSON.parse(localStorage.getItem(ck) || 'null');
     if (cc && (Date.now() - cc.t) < 12 * 3600000) {
@@ -46075,6 +46075,12 @@ async function _g45CompetMatchs(sportPath, slug, an, ids, progres) {
         var jp = await rp.json();
         ((jp && jp.events) || []).forEach(function (e) {
           if (vus[e.id]) return;
+          /* 20261001r — PRÉSAISON MARQUÉE « PO » (capture d'Antoine, Avalanche fin septembre) : en début de saison la
+             fenêtre « après le dernier match » tombe sur la présaison, et ESPN renvoie ces matchs malgré seasontype=3.
+             On ne garde que les vraies phases finales : slug de saison (post-season, final…, cf. _g45ClsEstPO, NRL
+             « 2026-final-nrl » = type 2) sinon season.type === 3. Sans info de saison : gardé comme avant. */
+          var _seP = e.season || {};
+          if (_seP.slug ? !_g45ClsEstPO(e) : (_seP.type != null && +_seP.type !== 3)) return;
           var cp = (e.competitions && e.competitions[0]) || {};
           var stp = (cp.status && cp.status.type) || (e.status && e.status.type) || {};
           if (stp.completed !== true) return;
@@ -64454,10 +64460,10 @@ window._g45ClvSelection = _g45ClvSelection; window._g45ClvPoser = _g45ClvPoser; 
       (setItem et save) puisse les vider.
    3) Au-delà de 4 millions de caractères stockés, purge préventive des
       caches (jamais g45v5, les données). */
-var _G45_CACHE_MORTS = ['g45nrlst1_' /* 01/10 : → g45nrlst2_ */, 'g45_cfai_veille' /* 29/09 : Workers AI supprimé */, 'g45cls4_' /* 29/09 : → g45cls5_ (stats de match) */, 'g45news7_', 'g45cm_', 'g45cm2_', 'g45cm3_', 'g45cm4_', 'g45cm5_', 'g45cm6_', 'g45cm7_', 'g45cm8_',
+var _G45_CACHE_MORTS = ['g45cm9_' /* 01/10 : → g45cm10_ (présaison NHL marquée PO) */, 'g45nrlst1_' /* 01/10 : → g45nrlst2_ */, 'g45_cfai_veille' /* 29/09 : Workers AI supprimé */, 'g45cls4_' /* 29/09 : → g45cls5_ (stats de match) */, 'g45news7_', 'g45cm_', 'g45cm2_', 'g45cm3_', 'g45cm4_', 'g45cm5_', 'g45cm6_', 'g45cm7_', 'g45cm8_',
   'g45khl_fiche_', 'g45_saisons_cache_v2_', 'g45_score_', 'g45_score2_', 'g45_score3_'];
 try {
-  ['g45cm9_', 'g45xgj1_', 'g45khl_fiche2_', 'g45khl_plage_', 'g45cls3_', 'g45cls5_', 'g45photostsdb_', 'g45wk1_', 'g45jv_', 'g45art1_', 'g45clv1_', 'g45arb1_', 'g45_herologo_', 'g45cm3_']
+  ['g45cm10_', 'g45xgj1_', 'g45khl_fiche2_', 'g45khl_plage_', 'g45cls3_', 'g45cls5_', 'g45photostsdb_', 'g45wk1_', 'g45jv_', 'g45art1_', 'g45clv1_', 'g45arb1_', 'g45_herologo_', 'g45cm3_']
     .forEach(function (p) { if (_G45_CACHE_PREFIXES.indexOf(p) < 0) _G45_CACHE_PREFIXES.push(p); });
 } catch (e) {}
 function g45MenageStockage() {
