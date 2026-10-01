@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20261001c, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20261001d, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -551,7 +551,10 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   theme.logos['badge.png'], headImage (/remote.axd?… relatif), teamName, value (texte), played}. Logo :
   https://www.nrl.com/.theme/<key>/badge.png?bust=<version>. Worker host=nrl (chemin /stats/players/(data)?… seul,
   redéployé par Antoine le 01/10). Réglages `_g45NrlSt` {an, stat, mode 'tot'|'moy', plus} via `g45NrlReg` ; stats
-  traduites `_G45_NRL_STATS` ; cache g45nrlst1_<an>_<stat> (1 h saison en cours, 7 j sinon).
+  traduites `_G45_NRL_STATS` ; cache g45nrlst2_<an>_<stat> (1 h saison en cours, 7 j sinon ; g45nrlst1_ → MORTS).
+  Logos OK chez Antoine (capture 01/10). Photos : relais nrl.com/remote.axd = initiales chez Antoine → 1001d : adresse
+  d'ORIGINE extraite (rugbyimages.statsperform.com/…png, sans ?center=) en premier, relais en secours (data-alt),
+  referrerpolicy no-referrer. Résultat NON vérifié (domaines bloqués depuis la session cloud).
 - Score d'un pari : `_g45ScoreTexte`, cache `g45_score4_<id>` (négatif gardé
   2 h) — effacé par `saveBetEdit` pour relancer la recherche.
 

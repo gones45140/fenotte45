@@ -42130,7 +42130,7 @@ window.g45F1Session=g45F1Session;
    et les données utilisateur n'étaient JAMAIS écrites — l'ajout apparaissait à l'écran puis
    disparaissait au rechargement. Ce n'était ni la synchro GitHub, ni Dropbox, ni le cache
    du navigateur. Tous ces caches sont reconstructibles : ils cèdent la place aux données. */
-var _G45_CACHE_PREFIXES=['g45nrlst1_',/* 01/10 : classements NRL */'g45proacid1_',/* 30/09 : numéros LNB par saison */'g45proast1_',/* 30/09 : stats Pro A */'g45proa1_',/* 30/09 : Pro A par journée */'g45el1_',/* 30/09 : Euroleague (compact) */'g45buts1_',/* 30/09 : buts en action (match fini) */'g45prad1_','g45vsj1_','g45vse1_',/* 30/09 : radars joueurs */'g45ia1_',/* 29/09 : avis IA gardés 6 h */'g45_mmeta2_','g45_mmeta1_','g45_tennis4_','g45_tennis3_',/* 16/09 : meta de match (domicile/lieu) et score tennis, reconstructibles */'g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dcf_','g45dc_',
+var _G45_CACHE_PREFIXES=['g45nrlst2_',/* 01/10 : classements NRL */'g45proacid1_',/* 30/09 : numéros LNB par saison */'g45proast1_',/* 30/09 : stats Pro A */'g45proa1_',/* 30/09 : Pro A par journée */'g45el1_',/* 30/09 : Euroleague (compact) */'g45buts1_',/* 30/09 : buts en action (match fini) */'g45prad1_','g45vsj1_','g45vse1_',/* 30/09 : radars joueurs */'g45ia1_',/* 29/09 : avis IA gardés 6 h */'g45_mmeta2_','g45_mmeta1_','g45_tennis4_','g45_tennis3_',/* 16/09 : meta de match (domicile/lieu) et score tennis, reconstructibles */'g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dcf_','g45dc_',
   'g45trv3_','g45trv2_','g45trOdds_','g45tr_','g45but_st_','g45butL_','g45butA_','g45but_mur_',
   '_g45clv','g45clv_snaps','g45_saisons_cache_v3_','g45_saisons_cache_v2_',
   /* Ajoutes le 20/08 : ces caches, tous reconstructibles, n'etaient PAS declares
@@ -48821,10 +48821,10 @@ var _G45_NRL_STATS = { 76: 'Points', 38: 'Essais', 1000034: 'Buts (transfos + p�
   3: 'Plaquages', 4: 'Plaquages manqués', 1000000: 'Contres au pied', 1000004: 'Interceptions', 1000038: 'Courses', 1000037: 'Mètres courus',
   81: 'Courses du demi de mêlée', 78: 'Mètres en retour de jeu au pied', 37: 'Erreurs', 1000026: 'Pénalités concédées', 1000079: 'Fautes de main',
   1000003: 'Plaquages inefficaces', 1000283: 'Fautes au ruck', 1000319: 'Set restarts concédés', 1000015: 'Soutien du porteur', 1000002: 'Courses leurres' };
-var _g45NrlSt = { an: 0, stat: 38, mode: 'tot', plus: 0 }, _g45NrlMem = {}, _g45NrlBox = null;
+var _g45NrlSt = { an: 0, stat: 38, mode: 'tot', plus: 0 }, _g45NrlMem = {}, _g45NrlBox = null;   /* cache g45nrlst2_ (ph2 ajouté en 1001d) */
 function _g45NrlAnAuto() { return new Date().getFullYear(); }
 async function _g45NrlLire(an, stat) {
-  var cle = 'g45nrlst1_' + an + '_' + stat, now = Date.now(), m = _g45NrlMem[cle];
+  var cle = 'g45nrlst2_' + an + '_' + stat, now = Date.now(), m = _g45NrlMem[cle];
   if (!m) { try { m = JSON.parse(localStorage.getItem(cle) || 'null'); } catch (e) { m = null; } }
   if (m && m.x > now) return (_g45NrlMem[cle] = m).d;
   var r = await fetch(FD_PROXY + '?host=nrl&path=' + encodeURIComponent('/stats/players/data?competition=111&season=' + an + '&stat=' + stat));
@@ -48834,7 +48834,10 @@ async function _g45NrlLire(an, stat) {
     return ((b && b.leaders) || []).map(function (x) {
       var th = x.theme || {}, lg = th.logos || {};
       return { n: ((x.firstName || '') + ' ' + (x.lastName || '')).trim(), club: x.teamName || x.teamNickName || '',
-        ph: x.headImage ? (/^https?:/.test(x.headImage) ? x.headImage : 'https://www.nrl.com' + x.headImage) : '',
+        /* 20261001d (Antoine : initiales partout) : le relais nrl.com/remote.axd ne sert pas les autres sites →
+           d'abord l'adresse d'ORIGINE écrite dedans (rugbyimages.statsperform.com, sans ?center=), relais en secours. */
+        ph: x.headImage ? (function (u) { var m = String(u).match(/remote\.axd\?(https?:\/\/[^?]+)/); return m ? m[1] : (/^https?:/.test(u) ? u : 'https://www.nrl.com' + u); })(x.headImage) : '',
+        ph2: x.headImage ? (/^https?:/.test(x.headImage) ? x.headImage : 'https://www.nrl.com' + x.headImage) : '',
         cl: th.key ? 'https://www.nrl.com/.theme/' + th.key + '/badge.png' + (lg['badge.png'] ? '?bust=' + lg['badge.png'] : '') : '',
         v: x.value, pl: x.played };
     });
@@ -48876,7 +48879,7 @@ async function g45NrlStatsRender(box) {
     h += '<div style="display:flex;align-items:center;gap:10px;padding:9px 0;' + (i ? 'border-top:1px solid rgba(255,255,255,.08);' : '') + '">'
       + '<span style="width:24px;font-size:15px;font-weight:800;color:' + (med[i] || '#c9d3ee') + ';flex:none;">' + (i + 1) + '</span>'
       + '<span style="position:relative;width:46px;height:46px;flex:none;"><span style="position:absolute;inset:0;border-radius:50%;background:#dfe6f5;color:#0b101d;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;">' + esc(ini) + '</span>'
-      + (r.ph ? '<img src="' + esc(r.ph) + '" alt="" loading="lazy" style="position:absolute;inset:0;width:46px;height:46px;border-radius:50%;object-fit:cover;object-position:50% 15%;background:#dfe6f5;" onerror="this.remove()">' : '') + '</span>'
+      + (r.ph ? '<img src="' + esc(r.ph) + '" data-alt="' + esc(r.ph2 && r.ph2 !== r.ph ? r.ph2 : '') + '" referrerpolicy="no-referrer" alt="" loading="lazy" style="position:absolute;inset:0;width:46px;height:46px;border-radius:50%;object-fit:cover;object-position:50% 15%;background:#dfe6f5;" onerror="if(this.dataset.alt){this.src=this.dataset.alt;this.dataset.alt=\'\'}else this.remove()">' : '') + '</span>'
       + '<span style="flex:1;min-width:0;"><span style="display:block;color:#fff;font-size:15px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(r.n) + '</span>'
       + '<span style="display:flex;align-items:center;gap:6px;color:#c9d3ee;font-size:13px;min-width:0;">' + (r.cl ? '<img src="' + esc(r.cl) + '" alt="" loading="lazy" style="width:18px;height:18px;object-fit:contain;flex:none;" onerror="this.remove()">' : '')
       + '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(r.club) + (r.pl != null ? ' · ' + esc(r.pl) + ' match' + (+r.pl > 1 ? 's' : '') : '') + '</span></span></span>'
@@ -63595,7 +63598,7 @@ window._g45ClvSelection = _g45ClvSelection; window._g45ClvPoser = _g45ClvPoser; 
       (setItem et save) puisse les vider.
    3) Au-delà de 4 millions de caractères stockés, purge préventive des
       caches (jamais g45v5, les données). */
-var _G45_CACHE_MORTS = ['g45_cfai_veille' /* 29/09 : Workers AI supprimé */, 'g45cls4_' /* 29/09 : → g45cls5_ (stats de match) */, 'g45news7_', 'g45cm_', 'g45cm2_', 'g45cm3_', 'g45cm4_', 'g45cm5_', 'g45cm6_', 'g45cm7_', 'g45cm8_',
+var _G45_CACHE_MORTS = ['g45nrlst1_' /* 01/10 : → g45nrlst2_ */, 'g45_cfai_veille' /* 29/09 : Workers AI supprimé */, 'g45cls4_' /* 29/09 : → g45cls5_ (stats de match) */, 'g45news7_', 'g45cm_', 'g45cm2_', 'g45cm3_', 'g45cm4_', 'g45cm5_', 'g45cm6_', 'g45cm7_', 'g45cm8_',
   'g45khl_fiche_', 'g45_saisons_cache_v2_', 'g45_score_', 'g45_score2_', 'g45_score3_'];
 try {
   ['g45cm9_', 'g45xgj1_', 'g45khl_fiche2_', 'g45khl_plage_', 'g45cls3_', 'g45cls5_', 'g45photostsdb_', 'g45wk1_', 'g45jv_', 'g45art1_', 'g45clv1_', 'g45arb1_', 'g45_herologo_', 'g45cm3_']
