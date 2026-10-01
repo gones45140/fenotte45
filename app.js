@@ -60610,13 +60610,20 @@ function _g45EsLeadersLire(j) {
 }
 function _g45EsJoueursLire(j) {
   if (!j || !Array.isArray(j.players) || !j.players.length) return null;
-  return j.players.map(function (x) { var o = _g45EsJoueur(null, x); o.mi = x.minutesPlayed; o.pt = x.pointsScored; o.rb = x.totalRebounds; o.as = x.assists; o.pir = x.pir; return o; });
+  return j.players.map(function (x) { var o = _g45EsJoueur(null, x); o.mi = x.minutesPlayed; o.pt = x.pointsScored; o.rb = x.totalRebounds; o.as = x.assists; o.pir = x.pir;
+    o.m2 = x.twoPointersMade; o.a2 = x.twoPointersAttempted; o.m3 = x.threePointersMade; o.a3 = x.threePointersAttempted; o.mf = x.freeThrowsMade; o.af = x.freeThrowsAttempted; return o; });
 }
 function _g45EsEquipesLire(j) {
   if (!j || !Array.isArray(j.teams) || !j.teams.length) return null;
   return j.teams.map(function (x) { var t = x.team || {};
     return { c: t.code || '', n: t.name || '', l: t.imageUrl || '', g: x.gamesPlayed, pt: x.pointsScored, rb: x.totalRebounds, as: x.assists, st: x.steals, to: x.turnovers,
       p2: x.twoPointersPercentage, p3: x.threePointersPercentage, pf: x.freeThrowsPercentage }; });
+}
+var _G45_ES_MIN = { twoPointersPercentage: ['2', 3], threePointersPercentage: ['3', 2], freeThrowsPercentage: ['f', 2] };
+async function _g45EsJoueurs(an, duree) {
+  var B = '/v3/competitions/E/statistics/', E = 'E' + an;
+  return _g45EsGet('jo2_' + an, [B + 'players/traditional?seasonMode=Single&seasonCode=' + E + '&phaseTypeCode=RS&statisticMode=perGame&limit=400',
+    B + 'players/traditional?seasonMode=Single&seasonCode=' + E + '&limit=400', B + 'players/traditional?seasonMode=Single&seasonCode=' + E + '&statisticMode=PerGame&limit=400'], duree, _g45EsJoueursLire);
 }
 function _g45EsAvatar(ph, nom, t) {
   var ini = String(nom || '').split(/\s+/).slice(0, 2).map(function (x) { return x.charAt(0).toUpperCase(); }).join('');
@@ -60643,8 +60650,7 @@ async function _g45EsRendre(body, an) {
     body.innerHTML = haut + _g45EsCarte('<div style="font-size:14px;">⏳ Lecture des stats Euroleague…</div>');
     var n = S.plus ? 100 : 30;
     if (S.cat === 'tous') {
-      var P = await _g45EsGet('jo_' + an, [B + 'players/traditional?seasonMode=Single&seasonCode=' + E + '&phaseTypeCode=RS&statisticMode=perGame&limit=400',
-        B + 'players/traditional?seasonMode=Single&seasonCode=' + E + '&limit=400', B + 'players/traditional?seasonMode=Single&seasonCode=' + E + '&statisticMode=PerGame&limit=400'], duree, _g45EsJoueursLire);
+      var P = await _g45EsJoueurs(an, duree);
       var clubs = {}; P.forEach(function (o) { if (o.tc) clubs[o.tc] = o.tn; });
       var L = P.filter(function (o) { return !S.club || o.tc === S.club; }).sort(function (a, b) { return (_g45EsNum(b[S.tri]) || 0) - (_g45EsNum(a[S.tri]) || 0); });
       var selS = 'padding:8px;border-radius:9px;background:#1a2235;color:#fff;border:1px solid rgba(255,255,255,.2);font-size:14px;font-weight:700;flex:1;min-width:140px;';
@@ -60661,6 +60667,26 @@ async function _g45EsRendre(body, an) {
       if (!S.club && L.length > n) h += '<button onclick="g45EsReg(\'plus\',1)" style="width:100%;margin-top:8px;padding:9px;border-radius:9px;border:1px solid rgba(255,255,255,.15);background:#1a2235;color:#fff;font-size:14px;font-weight:700;cursor:pointer;">Voir plus</button>';
       h += '<div style="font-size:12px;color:#c9d3ee;margin-top:6px;">Moyennes par match · Min minutes · Reb rebonds · Pas passes · PIR évaluation</div>';
       body.innerHTML = haut + _g45EsCarte('<div style="font-size:15px;font-weight:800;margin-bottom:6px;">📋 Tous les joueurs (' + L.length + ')</div>' + h);
+      return;
+    }
+    /* 20261001w — % joueurs (validé « OUI ») : l'API classe à 100 % un joueur à 1 sur 1 (capture d'Antoine, 2 journées) →
+       classement RECALCULÉ depuis les stats complètes avec un minimum de tentatives par match (_G45_ES_MIN). */
+    var mn = _G45_ES_MIN[S.cat];
+    if (mn) {
+      var Pp = await _g45EsJoueurs(an, duree), k = mn[0];
+      var Lp = Pp.filter(function (o) { return (_g45EsNum(o['a' + k]) || 0) >= mn[1]; }).map(function (o) { var m = _g45EsNum(o['m' + k]) || 0, t = _g45EsNum(o['a' + k]); return { o: o, m: m, t: t, p: 100 * m / t }; })
+        .sort(function (x, y) { return (y.p - x.p) || (y.t - x.t); });
+      Lp.slice(0, n).forEach(function (r, i) {
+        var o = r.o;
+        h += '<div style="display:flex;align-items:center;gap:9px;padding:7px 0;border-top:1px solid rgba(255,255,255,.08);"><b style="width:24px;font-size:14px;color:' + (med[i] || '#fff') + ';">' + (i + 1) + '</b>' + _g45EsAvatar(o.ph, o.n, 40)
+          + '<span style="flex:1;min-width:0;"><b style="display:block;font-size:15px;">' + esc(o.n) + '</b><span style="display:inline-flex;align-items:center;gap:5px;font-size:13px;color:#c9d3ee;">' + _g45EsLogo(o.tl, 16) + esc(o.tn) + ' · ' + _g45EsAff(r.m) + ' / ' + _g45EsAff(r.t) + ' par match</span></span>'
+          + '<b style="font-size:17px;">' + _g45EsAff(r.p, true) + '</b></div>';
+      });
+      if (!Lp.length) h = '<div style="font-size:14px;">Aucun joueur n\'atteint encore le minimum de tentatives.</div>';
+      if (Lp.length > n) h += '<button onclick="g45EsReg(\'plus\',1)" style="width:100%;margin-top:8px;padding:9px;border-radius:9px;border:1px solid rgba(255,255,255,.15);background:#1a2235;color:#fff;font-size:14px;font-weight:700;cursor:pointer;">Voir plus</button>';
+      var catp = _G45_ES_CATS.filter(function (c) { return c[0] === S.cat; })[0];
+      body.innerHTML = haut + _g45EsCarte('<div style="font-size:15px;font-weight:800;margin-bottom:4px;">🏅 ' + esc(catp[1]) + '</div>' + h
+        + '<div style="font-size:12px;color:#c9d3ee;margin-top:6px;">Minimum ' + mn[1] + ' tentative' + (mn[1] > 1 ? 's' : '') + ' par match · réussis / tentés par match</div>');
       return;
     }
     var D = await _g45EsGet('ld_' + an, [B + 'players/leaders?seasonMode=Single&seasonCode=' + E + '&limit=100', B + 'players/leaders?seasonMode=Single&seasonCode=' + E + '&phaseTypeCode=RS&limit=100'], duree, _g45EsLeadersLire);
