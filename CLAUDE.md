@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261002e, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261002f, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -602,6 +602,11 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   BANNIÈRE des clubs Euroleague du mur `_g45EbBannieres` (8 s après l'ouverture) : `_g45FanChercher(<nom officiel>, 'basketball')`
   sur chaque nom de la liste Euroleague, image recopiée sous le nom de la carte (g45_fanart2_), un essai / 30 j (g45eb1_fan_),
   sinon écusson (u.logoUrl) en filigrane. Présence de bannières basket chez TheSportsDB NON vérifiée (sonde non faite).
+  20261002f (« je vois rien ») — logo perso de l'ASVEL (images/equipes/asvel.png, BLANC sur transparent, 700×700, recolorié
+  depuis le fichier d'Antoine) caché par un « pas d'image » mémorisé 3 h avant sa publication → `_g45EbBannieres` reteste le
+  dépôt (`_g45ImgPersoTester`) à chaque ouverture pour les clubs 🏀 hors NBA sans image ; sur la carte du mur (DEUX copies du
+  rendu, l. ~3105 et ~11455), une image perso images/equipes|joueurs d'une équipe 🏀 = FILIGRANE CENTRÉ (86 %, opacité .32)
+  au lieu du plein cadre (un logo carré n'en montrait qu'une tranche).
 - Classements individuels TOP 14 (`g45LnrRender`, `_G45_LNR_CATS`, page top14.lnr.fr/classement/joueurs/<cat> via
   worker host=lnr) : 20261001a — LA LNR A REFAIT SON SITE (« page reçue mais illisible ») : plus de liens /joueur/ ;
   SONDÉ PAR ANTOINE : JSON dans l'attribut `:ranking` de <players-ranking> (100 joueurs {rank, player{name, url,

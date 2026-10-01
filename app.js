@@ -3107,6 +3107,13 @@ function render(){
           +'pointer-events:none;">'
           +'<div style="position:absolute;inset:0;pointer-events:none;'
           +'background:rgba(10,14,26,'+_vl+');"></div>';
+        /* 20261002f — LOGO PERSO D'UN CLUB DE BASKET (ASVEL, Euroleague) : images/equipes/asvel.png est un logo CARRE
+           blanc ; en plein cadre (cover, 150 %) on n'en voyait qu'une tranche. Pose en FILIGRANE centre, entier. */
+        if(/\ud83c\udfc0|🏀/.test(u.sport||'') && /images\/(equipes|joueurs)\//.test(_vis)){
+          _couche='<img src="'+_vis+'" alt="" loading="lazy" onerror="this.style.display=\'none\'" '
+            +'style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);height:86%;width:auto;max-width:60%;'
+            +'object-fit:contain;opacity:.32;pointer-events:none;">';
+        }
       }
       /* Logo nettement plus present : 86 px a 18 %. Une ligne du mur faisait
          10 px de haut de matiere pour 100 % de largeur vide — l'effet « salon
@@ -11457,6 +11464,13 @@ function render(){
           +'pointer-events:none;">'
           +'<div style="position:absolute;inset:0;pointer-events:none;'
           +'background:rgba(10,14,26,'+_vl+');"></div>';
+        /* 20261002f — LOGO PERSO D'UN CLUB DE BASKET (ASVEL, Euroleague) : images/equipes/asvel.png est un logo CARRE
+           blanc ; en plein cadre (cover, 150 %) on n'en voyait qu'une tranche. Pose en FILIGRANE centre, entier. */
+        if(/\ud83c\udfc0|🏀/.test(u.sport||'') && /images\/(equipes|joueurs)\//.test(_vis)){
+          _couche='<img src="'+_vis+'" alt="" loading="lazy" onerror="this.style.display=\'none\'" '
+            +'style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);height:86%;width:auto;max-width:60%;'
+            +'object-fit:contain;opacity:.32;pointer-events:none;">';
+        }
       }
       /* Logo nettement plus present : 86 px a 18 %. Une ligne du mur faisait
          10 px de haut de matiere pour 100 % de largeur vide — l'effet « salon
@@ -65487,10 +65501,23 @@ async function _g45EbBannieres() {
   try {
     var mur = ((state && state.u) || []).filter(function (u) { return u && /🏀/.test(u.sport || '') && !(typeof NBA_TEAMS !== 'undefined' && NBA_TEAMS[u.n]) && !(typeof resolveNbaTeam === 'function' && resolveNbaTeam(u.n)); });
     if (!mur.length || typeof _g45FanChercher !== 'function') return;
+    var maj0 = false;
+    /* 20261002f (« je vois rien ») : le logo déposé (images/equipes/asvel.png) restait caché par un « pas d'image » mémorisé
+       3 h AVANT sa publication → on reteste le dépôt À CHAQUE ouverture pour les clubs de basket du mur (requête locale, gratuite). */
+    for (var i0 = 0; i0 < mur.length; i0++) {
+      try {
+        if (typeof _g45ImgPersoTester === 'function' && !(_g45ImgPersoLire(mur[i0].n))) {
+          localStorage.removeItem(_G45_PERSO_IMG + _g45SgNorm(mur[i0].n));
+          if (await _g45ImgPersoTester(mur[i0].n)) maj0 = true;
+        }
+      } catch (e) {}
+    }
+    if (maj0 && typeof render === 'function') { try { render(); } catch (e) {} }
     var C = await _g45EbClubsEl(), maj = false;
     for (var i = 0; i < mur.length; i++) {
       var u = mur[i], k = 'g45eb1_fan_' + _g45SgNorm(u.n);
       if (typeof _g45FanLire === 'function' && _g45FanLire(u.n)) continue;
+      if (typeof _g45ImgPersoLire === 'function' && _g45ImgPersoLire(u.n)) continue;
       try { var t0 = +localStorage.getItem(k) || 0; if (t0 && Date.now() - t0 < 30 * 864e5) continue; localStorage.setItem(k, String(Date.now())); } catch (e) {}
       var e = C.filter(function (c) { return _g45EbCorrespond(u.n, c.al); })[0]; if (!e) continue;
       var vus = {}, url = '';
