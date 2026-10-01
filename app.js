@@ -32297,6 +32297,97 @@ function _g45ButsPoser(bloc, lg, eid, idH, idA, nh, na, direct) {
     M.timer = setInterval(function () { if (!document.getElementById('g45-buts-' + eid)) { clearInterval(M.timer); return; } if (!document.hidden) _g45ButsMaj(lg, eid); }, 30000);
   }
 }
+/* ═══ 🔥 CARTES DE CHALEUR (20261001j, maquette validée : « oui ») ═══
+   Données RÉELLES : chaque action ESPN du joueur (plays core, mêmes pages que « les buts en action », lues par
+   `_g45ButsLire`, compactées {t équipe, ty, x, y, nm}). VÉRIFIÉ PAR ANTOINE contre Sofascore (Tolisso et Openda,
+   Rennes–Lyon) : mêmes zones à condition de RETOURNER la largeur (y → 100 − y) ; ESPN : chaque équipe attaque vers
+   x = 100. Rendu par DENSITÉ (noyau gaussien) : jaune → orange → rouge = zones les plus fréquentées, bords en fondu,
+   terrain vert clair. Choix équipe (bleu / jaune) puis joueur (nombre d'actions). Aucune requête tant qu'on n'ouvre pas. */
+var _g45ChEtat = {};
+function _g45ChPoser(bloc, lg, eid, idH, idA, nh, na) {
+  var d = document.createElement('div');
+  d.innerHTML = '<button onclick="g45ChOuvrir(this,\'' + lg + '\',\'' + eid + '\')" style="width:100%;margin-bottom:10px;padding:11px;border-radius:10px;border:1px solid rgba(255,152,0,.5);background:rgba(255,152,0,.14);color:#fff;font-size:14px;font-weight:800;cursor:pointer;">🔥 Cartes de chaleur</button><div class="g45-ch-zone"></div>';
+  _g45ChEtat[eid] = { idH: String(idH), idA: String(idA), nh: nh, na: na, eq: String(idH), j: null };
+  var tirs = bloc.querySelector('.g45-tirs-zone');
+  if (tirs && tirs.previousElementSibling) bloc.insertBefore(d, tirs.previousElementSibling); else bloc.appendChild(d);
+}
+async function g45ChOuvrir(btn, lg, eid) {
+  var z = btn.parentNode.querySelector('.g45-ch-zone'); if (!z) return;
+  if (z.innerHTML) { z.innerHTML = ''; return; }   /* 2e appui = refermer */
+  z.innerHTML = '<div style="color:#fff;font-size:14px;padding:6px 0;">⏳ Lecture des actions du match…</div>';
+  var M = _g45ButsMem[eid] = _g45ButsMem[eid] || { pages: {}, n: 0, ouv: {} };
+  var ok = false; try { ok = await _g45ButsLire(lg, eid, M); } catch (e) {}
+  var P = []; for (var p = 1; p <= (M.n || 0); p++) P = P.concat(M.pages[p] || []);
+  P = P.filter(function (a) { return a.x != null && a.nm; });
+  if (!P.length) { z.innerHTML = '<div style="color:#ffb13d;font-size:14px;padding:6px 0;">ESPN ne publie pas le détail des actions pour ce match.</div>'; return; }
+  _g45ChEtat[eid].P = P;
+  _g45ChRendre(z, eid);
+}
+function g45ChChoix(eid, k, v) {
+  var E = _g45ChEtat[eid]; if (!E) return;
+  if (k === 'eq') { E.eq = v; E.j = null; } else E.j = (E.j === v ? null : v);
+  var z = document.querySelector('[data-g45ch="' + eid + '"]'); if (z) _g45ChRendre(z, eid);
+}
+function _g45ChRendre(z, eid) {
+  var E = _g45ChEtat[eid], esc = function (x) { return String(x == null ? '' : x).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+  z.setAttribute('data-g45ch', eid);
+  var bt = function (id, nom, col) { var on = E.eq === id; return '<button onclick="g45ChChoix(\'' + eid + '\',\'eq\',\'' + id + '\')" style="flex:1;padding:9px;font-size:14px;font-weight:800;cursor:pointer;border-radius:9px;'
+    + (on ? 'background:' + col + ';color:#0b101d;border:1px solid ' + col + ';' : 'background:#1a2235;color:#c9d3ee;border:1px solid rgba(255,255,255,.14);') + '">' + esc(nom) + '</button>'; };
+  var cpt = {}; E.P.forEach(function (a) { if (String(a.t) === E.eq) cpt[a.nm] = (cpt[a.nm] || 0) + 1; });
+  var L = Object.keys(cpt).sort(function (a, b) { return cpt[b] - cpt[a]; });
+  var col = E.eq === E.idH ? '#6d9dff' : '#f5c542';
+  var h = '<div style="display:flex;gap:6px;margin-bottom:8px;">' + bt(E.idH, E.nh, '#6d9dff') + bt(E.idA, E.na, '#f5c542') + '</div>';
+  if (E.j && cpt[E.j]) h += '<div id="g45-ch-carte-' + eid + '" style="background:rgba(11,16,29,.9);border-radius:12px;padding:10px;margin-bottom:8px;"><div style="color:#fff;font-size:15px;font-weight:800;margin-bottom:6px;">' + esc(E.j)
+    + ' <span style="font-size:13px;font-weight:600;color:#c9d3ee;">· ' + cpt[E.j] + ' actions · sens de l’attaque →</span></div></div>';
+  h += '<div style="background:rgba(11,16,29,.9);border-radius:12px;padding:4px 12px;">';
+  if (!L.length) h += '<div style="color:#fff;font-size:14px;padding:8px 0;">Aucune action relevée pour cette équipe.</div>';
+  L.forEach(function (n, i) {
+    var on = n === E.j;
+    h += '<div onclick="g45ChChoix(\'' + eid + '\',\'j\',this.getAttribute(\'data-n\'))" data-n="' + esc(n) + '" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:8px 0;font-size:14px;color:#fff;' + (i ? 'border-top:1px solid rgba(255,255,255,.08);' : '')
+      + (on ? 'font-weight:800;' : '') + '"><span>' + (on ? '🔥 ' : '') + esc(n) + '</span><span style="color:' + col + ';font-weight:800;">' + cpt[n] + '</span></div>';
+  });
+  z.innerHTML = h + '</div>';
+  if (E.j && cpt[E.j]) {
+    var pts = E.P.filter(function (a) { return String(a.t) === E.eq && a.nm === E.j; });
+    var c = _g45ChCanvas(pts); var bx = document.getElementById('g45-ch-carte-' + eid); if (bx && c) bx.appendChild(c);
+  }
+}
+function _g45ChCanvas(pts) {
+  try {
+    var W = 315, H = 204, G = new Float32Array(W * H), s = 9, m = 0, i;
+    pts.forEach(function (a) {
+      var cx = a.x * W / 100, cy = (100 - a.y) * H / 100;   /* largeur RETOURNÉE (vérifié contre Sofascore) */
+      for (var y = Math.max(0, (cy - 3 * s) | 0); y < Math.min(H, cy + 3 * s); y++)
+        for (var x = Math.max(0, (cx - 3 * s) | 0); x < Math.min(W, cx + 3 * s); x++)
+          G[y * W + x] += Math.exp(-((x - cx) * (x - cx) + (y - cy) * (y - cy)) / (2 * s * s));
+    });
+    for (i = 0; i < G.length; i++) if (G[i] > m) m = G[i];
+    var c = document.createElement('canvas'); c.width = W; c.height = H;
+    var g = c.getContext('2d');
+    g.fillStyle = '#b9dca8'; g.fillRect(0, 0, W, H);
+    var o = document.createElement('canvas'); o.width = W; o.height = H;
+    var go = o.getContext('2d'), im = go.createImageData(W, H);
+    var ramp = function (t) {   /* jaune → orange → rouge */
+      if (t < 0.5) { var u = t / 0.5; return [255, Math.round(235 - u * 83), Math.round(59 - u * 59)]; }
+      var v = (t - 0.5) / 0.5; return [Math.round(255 - v * 11), Math.round(152 - v * 85), Math.round(v * 54)];
+    };
+    for (i = 0; i < W * H; i++) {
+      var t = m ? G[i] / m : 0; if (t < 0.06) continue;
+      var rgb = ramp(Math.min(1, (t - 0.06) / 0.94));
+      im.data[i * 4] = rgb[0]; im.data[i * 4 + 1] = rgb[1]; im.data[i * 4 + 2] = rgb[2];
+      im.data[i * 4 + 3] = Math.round(255 * Math.min(1, (t - 0.06) / 0.3));   /* bords en fondu */
+    }
+    go.putImageData(im, 0, 0); g.drawImage(o, 0, 0);
+    g.strokeStyle = 'rgba(255,255,255,.9)'; g.lineWidth = 1.5;
+    g.strokeRect(3, 3, W - 6, H - 6); g.beginPath(); g.moveTo(W / 2, 3); g.lineTo(W / 2, H - 3); g.stroke();
+    g.beginPath(); g.arc(W / 2, H / 2, 27, 0, 7); g.stroke();
+    g.strokeRect(3, H * 0.21, 50, H * 0.58); g.strokeRect(W - 53, H * 0.21, 50, H * 0.58);
+    g.strokeRect(3, H * 0.37, 17, H * 0.26); g.strokeRect(W - 20, H * 0.37, 17, H * 0.26);
+    c.style.cssText = 'width:100%;display:block;border-radius:8px;';
+    return c;
+  } catch (e) { return null; }
+}
+window.g45ChOuvrir = g45ChOuvrir; window.g45ChChoix = g45ChChoix; window._g45ChCanvas = _g45ChCanvas;
 function _g45LiveFootPoser(bloc, lg, eid, idH, nh, na) {
   var d = document.createElement('div');
   d.id = 'g45-lfoot-' + eid;
@@ -50482,6 +50573,8 @@ async function _g45SgCarteTirs(panel, lg, eid, sum) {
      en direct tout de suite, après le match sur bouton (s'il y a eu au moins un but). */
   var idExt = String((ext.team && ext.team.id) || ext.id || ''), nButs = (+dom.score || 0) + (+ext.score || 0);
   if (st.state === 'in') { try { _g45ButsPoser(bloc, lg, String(eid), idDom, idExt, nm(dom), nm(ext), true); } catch (e) {} }
+  /* 20261001j : cartes de chaleur (match commencé ou fini). */
+  if (st.state === 'in' || st.state === 'post') { try { _g45ChPoser(bloc, lg, String(eid), idDom, idExt, nm(dom), nm(ext)); } catch (e) {} }
   else if (st.state === 'post' && nButs > 0) { try { _g45ButsPoser(bloc, lg, String(eid), idDom, idExt, nm(dom), nm(ext), false); } catch (e) {} }
   panel.insertBefore(bloc, panel.firstChild);
   /* Rouverture après un rafraîchissement : derniers chiffres tout de suite, puis relecture. */
