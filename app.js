@@ -42221,7 +42221,7 @@ window.g45F1Session=g45F1Session;
    et les données utilisateur n'étaient JAMAIS écrites — l'ajout apparaissait à l'écran puis
    disparaissait au rechargement. Ce n'était ni la synchro GitHub, ni Dropbox, ni le cache
    du navigateur. Tous ces caches sont reconstructibles : ils cèdent la place aux données. */
-var _G45_CACHE_PREFIXES=['g45kbo1_',/* 01/10 : KBO (mykbostats) */'g45t14lg1',/* 01/10 : logos Top 14 (LNR) */'g45pd2_',/* 01/10 : Pro D2 (LNR) */'g45t14sq1_',/* 01/10 : effectifs Top 14 (LNR) */'g45nrlm1_','g45nrldr1_',/* 01/10 : feuilles et calendriers NRL */'g45nrlsq1_',/* 01/10 : effectifs NRL */'g45nrlst2_',/* 01/10 : classements NRL */'g45proacid1_',/* 30/09 : numéros LNB par saison */'g45proast1_',/* 30/09 : stats Pro A */'g45proa1_',/* 30/09 : Pro A par journée */'g45el1_',/* 30/09 : Euroleague (compact) */'g45buts1_',/* 30/09 : buts en action (match fini) */'g45prad1_','g45vsj1_','g45vse1_',/* 30/09 : radars joueurs */'g45ia1_',/* 29/09 : avis IA gardés 6 h */'g45_mmeta2_','g45_mmeta1_','g45_tennis4_','g45_tennis3_',/* 16/09 : meta de match (domicile/lieu) et score tennis, reconstructibles */'g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dcf_','g45dc_',
+var _G45_CACHE_PREFIXES=['g45es1_',/* 01/10 : stats Euroleague */'g45kbo1_',/* 01/10 : KBO (mykbostats) */'g45t14lg1',/* 01/10 : logos Top 14 (LNR) */'g45pd2_',/* 01/10 : Pro D2 (LNR) */'g45t14sq1_',/* 01/10 : effectifs Top 14 (LNR) */'g45nrlm1_','g45nrldr1_',/* 01/10 : feuilles et calendriers NRL */'g45nrlsq1_',/* 01/10 : effectifs NRL */'g45nrlst2_',/* 01/10 : classements NRL */'g45proacid1_',/* 30/09 : numéros LNB par saison */'g45proast1_',/* 30/09 : stats Pro A */'g45proa1_',/* 30/09 : Pro A par journée */'g45el1_',/* 30/09 : Euroleague (compact) */'g45buts1_',/* 30/09 : buts en action (match fini) */'g45prad1_','g45vsj1_','g45vse1_',/* 30/09 : radars joueurs */'g45ia1_',/* 29/09 : avis IA gardés 6 h */'g45_mmeta2_','g45_mmeta1_','g45_tennis4_','g45_tennis3_',/* 16/09 : meta de match (domicile/lieu) et score tennis, reconstructibles */'g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dcf_','g45dc_',
   'g45trv3_','g45trv2_','g45trOdds_','g45tr_','g45but_st_','g45butL_','g45butA_','g45but_mur_',
   '_g45clv','g45clv_snaps','g45_saisons_cache_v3_','g45_saisons_cache_v2_',
   /* Ajoutes le 20/08 : ces caches, tous reconstructibles, n'etaient PAS declares
@@ -60547,11 +60547,157 @@ function _g45ElLogo(e, px) {
   return e.l ? '<img src="' + _g45ElEsc(e.l) + '" alt="" style="width:' + px + 'px;height:' + px + 'px;object-fit:contain;flex:none;" onerror="this.style.visibility=\'hidden\'">'
     : '<span style="width:' + px + 'px;flex:none;"></span>';
 }
+/* ═══ 📊 EUROLEAGUE — STATS JOUEURS / ÉQUIPES (20261001v, maquette validée « OUI ») ═══
+   SONDÉ PAR ANTOINE le 01/10 (onglet api-live.euroleague.net) :
+   • /v3/competitions/E/statistics/players/leaders?seasonMode=Single&seasonCode=E<an>[&limit=N] → {points, rebounds, assists,
+     steals, blocks, pir (VIDE), twoPointersPercentage, threePointersPercentage, freeThrowsPercentage, offensiveRebounds} :
+     [{details{code, name « SHORTS, TJ », age, position, imageUrl, team{code, name, imageUrl}}, rank, gamesPlayed, average}]
+     (sans limit : 200 par catégorie, 600 Ko ; limit=10 : 36 Ko). Valeur des catégories « % » : champ NON vérifié
+     (average, sinon value / percentage / total).
+   • …/statistics/players/traditional : E2026 → total 0 SAUF avec phaseTypeCode=RS&statisticMode=perGame (160 joueurs) ;
+     E2025 sans paramètre → 208. Colonnes : gamesPlayed gamesStarted minutesPlayed pointsScored … totalRebounds assists steals
+     turnovers blocks … pir ; player{code, name, imageUrl, team{code, name, imageUrl}}.
+   • …/statistics/teams/traditional : E2026 → 20 équipes avec statisticMode=PerGame (P MAJUSCULE ; RS → 0) ; E2025 sans
+     paramètre. Mêmes colonnes ; % en texte « 51.7% ».
+   Points encaissés / écart : recalculés depuis les matchs de _g45ElMatchs (code club = team.code, NON vérifié identique).
+   Worker host=euroleague : liste blanche élargie à /v3/competitions/<X>/statistics/(players|teams)/(traditional|leaders)?….
+   Cache g45es1_ (1 h ; saison passée 7 j). */
+var _g45Es = { mode: 'jo', cat: 'points', plus: 0, tri: 'pt', club: '', eq: 'pt' };
+var _G45_ES_CATS = [['points', 'Points'], ['rebounds', 'Rebonds'], ['assists', 'Passes'], ['steals', 'Intercept.'], ['blocks', 'Contres'], ['offensiveRebounds', 'Rebonds off.'],
+  ['twoPointersPercentage', '% 2 pts'], ['threePointersPercentage', '% 3 pts'], ['freeThrowsPercentage', '% LF'], ['tous', '📋 Tous']];
+var _G45_ES_EQ = [['pt', 'Points marqués', 1], ['pc', 'Points encaissés', 0], ['ec', 'Écart', 1], ['rb', 'Rebonds', 1], ['as', 'Passes', 1], ['st', 'Intercept.', 1],
+  ['to', 'Balles perdues', 0], ['p2', '% 2 pts', 1], ['p3', '% 3 pts', 1], ['pf', '% LF', 1]];
+var _G45_ES_TRI = [['pt', 'Points'], ['rb', 'Rebonds'], ['as', 'Passes'], ['pir', 'Évaluation (PIR)'], ['mi', 'Minutes']];
+/* « SHORTS, TJ » → « TJ Shorts » ; « DE COLO, NANDO » → « Nando De Colo ». */
+function _g45EsNom(n) {
+  var p = String(n || '').split(','), s = p.length > 1 ? p.slice(1).join(',').trim() + ' ' + p[0].trim() : String(n || '');
+  /* mot de 2-3 lettres sans voyelle = initiales (TJ, CJ) : gardé en majuscules */
+  return s.toLowerCase().replace(/(^|[\s'’-])([a-zà-ÿ])/g, function (m, a, b) { return a + b.toUpperCase(); }).replace(/\b([A-Z][bcdfghj-np-tv-xz]{1,2})\b/g, function (w) { return w.toUpperCase(); }).trim();
+}
+function _g45EsNum(x) { if (x == null || x === '') return null; var v = parseFloat(String(x).replace('%', '').replace(',', '.')); return isNaN(v) ? null : v; }
+function _g45EsAff(x, pct) { var v = _g45EsNum(x); if (v == null) return '–'; if (pct && v <= 1 && !/%/.test(String(x))) v *= 100; return (pct ? (Math.round(v * 10) / 10) + ' %' : (Math.round(v * 10) / 10).toFixed(1)).replace('.', ','); }
+async function _g45EsGet(cle, chemins, duree, analyse) {
+  var now = Date.now(), m = null;
+  try { m = JSON.parse(localStorage.getItem('g45es1_' + cle) || 'null'); } catch (e) {}
+  if (m && m.x > now) return m.d;
+  var err = null;
+  for (var i = 0; i < chemins.length; i++) {
+    try {
+      var r = await fetch(FD_PROXY + '?host=euroleague&path=' + encodeURIComponent(chemins[i]));
+      if (!r.ok) { err = new Error(r.status === 403 ? 'le worker n\'autorise pas encore les stats Euroleague (403)' : 'Euroleague ' + r.status); continue; }
+      var d = analyse(await r.json());
+      if (!d) continue;
+      try { localStorage.setItem('g45es1_' + cle, JSON.stringify({ d: d, x: now + duree })); } catch (e) {}
+      return d;
+    } catch (e) { err = e; }
+  }
+  if (m && m.d) return m.d;
+  throw err || new Error('aucune stat publiée');
+}
+function _g45EsJoueur(o, j) {
+  var p = j.player || j.details || {}, t = p.team || {};
+  return { n: _g45EsNom(p.name), ph: p.imageUrl || '', tc: t.code || '', tn: t.name || '', tl: t.imageUrl || '', g: j.gamesPlayed };
+}
+function _g45EsLeadersLire(j) {
+  if (!j || typeof j !== 'object') return null;
+  var out = {}, n = 0;
+  _G45_ES_CATS.forEach(function (c) {
+    var L = j[c[0]]; if (!Array.isArray(L) || !L.length) return;
+    out[c[0]] = L.slice(0, 100).map(function (x) { var o = _g45EsJoueur(null, x); o.x = x.average != null ? x.average : x.value != null ? x.value : x.percentage != null ? x.percentage : x.total; return o; });
+    n++;
+  });
+  return n ? out : null;
+}
+function _g45EsJoueursLire(j) {
+  if (!j || !Array.isArray(j.players) || !j.players.length) return null;
+  return j.players.map(function (x) { var o = _g45EsJoueur(null, x); o.mi = x.minutesPlayed; o.pt = x.pointsScored; o.rb = x.totalRebounds; o.as = x.assists; o.pir = x.pir; return o; });
+}
+function _g45EsEquipesLire(j) {
+  if (!j || !Array.isArray(j.teams) || !j.teams.length) return null;
+  return j.teams.map(function (x) { var t = x.team || {};
+    return { c: t.code || '', n: t.name || '', l: t.imageUrl || '', g: x.gamesPlayed, pt: x.pointsScored, rb: x.totalRebounds, as: x.assists, st: x.steals, to: x.turnovers,
+      p2: x.twoPointersPercentage, p3: x.threePointersPercentage, pf: x.freeThrowsPercentage }; });
+}
+function _g45EsAvatar(ph, nom, t) {
+  var ini = String(nom || '').split(/\s+/).slice(0, 2).map(function (x) { return x.charAt(0).toUpperCase(); }).join('');
+  return '<span style="position:relative;flex:none;display:inline-flex;align-items:center;justify-content:center;width:' + t + 'px;height:' + t + 'px;border-radius:50%;border:2px solid #6d9dff;background:#232d4b;color:#fff;font-size:' + Math.round(t * 0.34) + 'px;font-weight:800;overflow:hidden;">' + _g45ElEsc(ini)
+    + (ph ? '<img src="' + _g45ElEsc(ph) + '" alt="" loading="lazy" referrerpolicy="no-referrer" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 10%;background:#232d4b;" onerror="this.remove()">' : '') + '</span>';
+}
+function _g45EsLogo(u, t) { return u ? '<img src="' + _g45ElEsc(u) + '" alt="" loading="lazy" style="width:' + t + 'px;height:' + t + 'px;object-fit:contain;flex:none;" onerror="this.style.visibility=\'hidden\'">' : ''; }
+function _g45EsBtn(t, on, js) { return '<button onclick="' + js + '" style="flex:1 1 auto;min-width:64px;padding:9px 8px;border-radius:9px;font-size:13px;font-weight:800;cursor:pointer;color:#fff;' + (on ? 'border:1px solid #3b82f6;background:#2563eb;' : 'border:1px solid rgba(255,255,255,.14);background:#1a2235;') + '">' + t + '</button>'; }
+function _g45EsLigne(x) { return '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">' + x + '</div>'; }
+function _g45EsCarte(x) { return '<div style="background:rgba(11,16,29,.88);border-radius:12px;padding:10px;color:#fff;">' + x + '</div>'; }
+/* Points encaissés et écart par club, depuis les matchs joués (toutes phases). */
+function _g45EsDefense(g) {
+  var T = {};
+  (g || []).forEach(function (m) { if (!m.p) return; [[m.h, m.a], [m.a, m.h]].forEach(function (x) { var k = x[0].c || x[0].n, t = T[k] = T[k] || { j: 0, pp: 0, pc: 0 }; t.j++; t.pp += +x[0].s || 0; t.pc += +x[1].s || 0; }); });
+  return T;
+}
+async function _g45EsRendre(body, an) {
+  var S = _g45Es, esc = _g45ElEsc, E = 'E' + an, passe = an < _g45ElSaison(), duree = passe ? 7 * 864e5 : 3600e3, med = ['#ffd700', '#c0c0c0', '#cd7f32'];
+  var B = '/v3/competitions/E/statistics/';
+  var haut = _g45EsLigne(_g45EsBtn('👤 Joueurs', S.mode === 'jo', "g45EsReg('mode','jo')") + _g45EsBtn('🛡️ Équipes', S.mode === 'eq', "g45EsReg('mode','eq')"));
+  var h = '';
+  if (S.mode === 'jo') {
+    haut += _g45EsLigne(_G45_ES_CATS.map(function (c) { return _g45EsBtn(c[1], S.cat === c[0], "g45EsReg('cat','" + c[0] + "')"); }).join(''));
+    body.innerHTML = haut + _g45EsCarte('<div style="font-size:14px;">⏳ Lecture des stats Euroleague…</div>');
+    var n = S.plus ? 100 : 30;
+    if (S.cat === 'tous') {
+      var P = await _g45EsGet('jo_' + an, [B + 'players/traditional?seasonMode=Single&seasonCode=' + E + '&phaseTypeCode=RS&statisticMode=perGame&limit=400',
+        B + 'players/traditional?seasonMode=Single&seasonCode=' + E + '&limit=400', B + 'players/traditional?seasonMode=Single&seasonCode=' + E + '&statisticMode=PerGame&limit=400'], duree, _g45EsJoueursLire);
+      var clubs = {}; P.forEach(function (o) { if (o.tc) clubs[o.tc] = o.tn; });
+      var L = P.filter(function (o) { return !S.club || o.tc === S.club; }).sort(function (a, b) { return (_g45EsNum(b[S.tri]) || 0) - (_g45EsNum(a[S.tri]) || 0); });
+      var selS = 'padding:8px;border-radius:9px;background:#1a2235;color:#fff;border:1px solid rgba(255,255,255,.2);font-size:14px;font-weight:700;flex:1;min-width:140px;';
+      h += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;"><select onchange="g45EsReg(\'tri\',this.value)" style="' + selS + '">' + _G45_ES_TRI.map(function (t) { return '<option value="' + t[0] + '"' + (S.tri === t[0] ? ' selected' : '') + '>Tri : ' + t[1] + '</option>'; }).join('') + '</select>'
+        + '<select onchange="g45EsReg(\'club\',this.value)" style="' + selS + '"><option value="">Tous les clubs</option>' + Object.keys(clubs).sort(function (a, b) { return clubs[a].localeCompare(clubs[b]); }).map(function (c) { return '<option value="' + esc(c) + '"' + (S.club === c ? ' selected' : '') + '>' + esc(clubs[c]) + '</option>'; }).join('') + '</select></div>';
+      var g = 'display:grid;grid-template-columns:minmax(0,1fr) 34px 34px 34px 34px 34px;gap:4px;align-items:center;';
+      h += '<div style="' + g + 'font-size:12px;color:#c9d3ee;padding:0 0 4px;text-align:right;"><span style="text-align:left;">Joueur</span><span>Min</span><span>Pts</span><span>Reb</span><span>Pas</span><span>PIR</span></div>';
+      L.slice(0, S.club ? 400 : n).forEach(function (o) {
+        var c = function (k) { return '<span style="text-align:right;' + (S.tri === k ? 'font-weight:800;color:#fff;' : 'color:#dfe6ff;') + '">' + _g45EsAff(o[k]) + '</span>'; };
+        h += '<div style="' + g + 'font-size:14px;padding:6px 0;border-top:1px solid rgba(255,255,255,.08);"><span style="display:flex;align-items:center;gap:7px;min-width:0;">' + _g45EsAvatar(o.ph, o.n, 34)
+          + '<span style="min-width:0;"><b style="display:block;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(o.n) + '</b><span style="display:flex;align-items:center;gap:4px;font-size:12px;color:#c9d3ee;">' + _g45EsLogo(o.tl, 14) + '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(o.tn) + '</span></span></span></span>'
+          + c('mi') + c('pt') + c('rb') + c('as') + c('pir') + '</div>';
+      });
+      if (!S.club && L.length > n) h += '<button onclick="g45EsReg(\'plus\',1)" style="width:100%;margin-top:8px;padding:9px;border-radius:9px;border:1px solid rgba(255,255,255,.15);background:#1a2235;color:#fff;font-size:14px;font-weight:700;cursor:pointer;">Voir plus</button>';
+      h += '<div style="font-size:12px;color:#c9d3ee;margin-top:6px;">Moyennes par match · Min minutes · Reb rebonds · Pas passes · PIR évaluation</div>';
+      body.innerHTML = haut + _g45EsCarte('<div style="font-size:15px;font-weight:800;margin-bottom:6px;">📋 Tous les joueurs (' + L.length + ')</div>' + h);
+      return;
+    }
+    var D = await _g45EsGet('ld_' + an, [B + 'players/leaders?seasonMode=Single&seasonCode=' + E + '&limit=100', B + 'players/leaders?seasonMode=Single&seasonCode=' + E + '&phaseTypeCode=RS&limit=100'], duree, _g45EsLeadersLire);
+    var C = D[S.cat] || [], pct = /Percentage$/.test(S.cat);
+    C.slice(0, n).forEach(function (o, i) {
+      h += '<div style="display:flex;align-items:center;gap:9px;padding:7px 0;border-top:1px solid rgba(255,255,255,.08);"><b style="width:24px;font-size:14px;color:' + (med[i] || '#fff') + ';">' + (i + 1) + '</b>' + _g45EsAvatar(o.ph, o.n, 40)
+        + '<span style="flex:1;min-width:0;"><b style="display:block;font-size:15px;">' + esc(o.n) + '</b><span style="display:inline-flex;align-items:center;gap:5px;font-size:13px;color:#c9d3ee;">' + _g45EsLogo(o.tl, 16) + esc(o.tn) + (o.g != null ? ' · ' + o.g + ' match' + (o.g > 1 ? 's' : '') : '') + '</span></span>'
+        + '<b style="font-size:17px;">' + _g45EsAff(o.x, pct) + '</b></div>';
+    });
+    if (!C.length) h = '<div style="font-size:14px;">Pas encore de classement dans cette catégorie.</div>';
+    if (C.length > n) h += '<button onclick="g45EsReg(\'plus\',1)" style="width:100%;margin-top:8px;padding:9px;border-radius:9px;border:1px solid rgba(255,255,255,.15);background:#1a2235;color:#fff;font-size:14px;font-weight:700;cursor:pointer;">Voir plus</button>';
+    var cat = _G45_ES_CATS.filter(function (c) { return c[0] === S.cat; })[0];
+    body.innerHTML = haut + _g45EsCarte('<div style="font-size:15px;font-weight:800;margin-bottom:4px;">🏅 ' + esc(cat ? cat[1] : S.cat) + (pct ? '' : ' <span style="font-size:13px;color:#c9d3ee;font-weight:600;">par match</span>') + '</div>' + h);
+    return;
+  }
+  haut += _g45EsLigne(_G45_ES_EQ.map(function (c) { return _g45EsBtn(c[1], S.eq === c[0], "g45EsReg('eq','" + c[0] + "')"); }).join(''));
+  body.innerHTML = haut + _g45EsCarte('<div style="font-size:14px;">⏳ Lecture des stats Euroleague…</div>');
+  var T = await _g45EsGet('eq_' + an, [B + 'teams/traditional?seasonMode=Single&seasonCode=' + E + '&statisticMode=PerGame', B + 'teams/traditional?seasonMode=Single&seasonCode=' + E], duree, _g45EsEquipesLire);
+  var def = {}; try { def = _g45EsDefense(await _g45ElMatchs(an)); } catch (e) {}
+  T.forEach(function (t) { var d = def[t.c]; if (d && d.j) { t.pc = d.pc / d.j; t.ec = (d.pp - d.pc) / d.j; } });
+  var c = _G45_ES_EQ.filter(function (x) { return x[0] === S.eq; })[0] || _G45_ES_EQ[0], pctE = /^p[23f]$/.test(c[0]);
+  var L2 = T.filter(function (t) { return _g45EsNum(t[c[0]]) != null; }).sort(function (a, b) { var x = _g45EsNum(a[c[0]]), y = _g45EsNum(b[c[0]]); return c[2] ? y - x : x - y; });
+  L2.forEach(function (t, i) {
+    var v = _g45EsNum(t[c[0]]), txt = c[0] === 'ec' ? (v > 0 ? '+' : '') + _g45EsAff(v) : _g45EsAff(v, pctE);
+    h += '<div style="display:flex;align-items:center;gap:9px;padding:7px 0;border-top:1px solid rgba(255,255,255,.08);"><b style="width:24px;font-size:14px;color:' + (med[i] || '#fff') + ';">' + (i + 1) + '</b>' + _g45EsLogo(t.l, 28)
+      + '<b style="flex:1;min-width:0;font-size:15px;">' + esc(t.n) + '</b><b style="font-size:17px;' + (c[0] === 'ec' ? 'color:' + (v >= 0 ? '#3ddc84' : '#ff6b6b') + ';' : '') + '">' + txt + '</b></div>';
+  });
+  if (!L2.length) h = '<div style="font-size:14px;">Pas encore de données dans cette catégorie.</div>';
+  body.innerHTML = haut + _g45EsCarte('<div style="font-size:15px;font-weight:800;margin-bottom:4px;">🛡️ ' + esc(c[1]) + (pctE ? '' : ' <span style="font-size:13px;color:#c9d3ee;font-weight:600;">par match</span>') + '</div>' + h
+    + (/^(pc|ec)$/.test(c[0]) ? '<div style="font-size:12px;color:#c9d3ee;margin-top:6px;">Calculé depuis les scores des Journées</div>' : ''));
+}
+function g45EsReg(k, v) { _g45Es[k] = v; if (k !== 'plus') _g45Es.plus = 0; if (k === 'mode' || k === 'cat') _g45Es.club = ''; var body = document.getElementById('g45-el-body'); if (body) _g45EsRendre(body, _g45ElAn()).catch(function (e) { body.innerHTML = '<div style="color:#ff6b6b;font-size:14px;">❌ ' + _g45ElEsc(e.message) + '</div>'; }); }
+window.g45EsReg = g45EsReg; window._g45EsNom = _g45EsNom; window._g45EsLeadersLire = _g45EsLeadersLire; window._g45EsJoueursLire = _g45EsJoueursLire; window._g45EsEquipesLire = _g45EsEquipesLire; window._g45EsRendre = _g45EsRendre;
 var _g45ElDerLigue = null;
 async function _g45ElRendre(box, retourHtml) {
   var an = _g45ElAn();
   if (_g45ElDerLigue !== _g45ElLigue) { _g45ElDerLigue = _g45ElLigue; _g45ElPlie = {}; _g45ElOuvert = {}; }   /* Euroleague ↔ Pro A */
-  if (_g45ElVue === 'stats' && _g45ElLigue !== 'proa') _g45ElVue = 'journees';
   var tete = '', titreLigue = 'Euroleague';
   if (_g45ElLigue === 'proa') {
     var comps = {}; try { comps = await _g45PaComps(an); } catch (e) {}
@@ -60568,7 +60714,7 @@ async function _g45ElRendre(box, retourHtml) {
       + '<select onchange="g45PaAn(this.value)" style="flex:1;padding:9px;font-size:14px;font-weight:800;border-radius:9px;background:#1a2235;color:#fff;border:1px solid rgba(255,255,255,.2);">' + opts + '</select></div>'
       + '<div style="display:flex;gap:6px;margin-bottom:10px;">' + bc('rs', 'Saison régulière') + bc('po', 'Playoffs') + bc('lc', 'Leaders Cup') + '</div>';
   }
-  var onglets = [['journees', '📅 Journées']].concat(_g45ElLigue === 'proa' && _g45PaComp !== 'rs' ? [] : [['classement', '🏆 Classement']]).concat(_g45ElLigue === 'proa' ? [['stats', '📊 Stats']] : []).map(function (v) {
+  var onglets = [['journees', '📅 Journées']].concat(_g45ElLigue === 'proa' && _g45PaComp !== 'rs' ? [] : [['classement', '🏆 Classement']]).concat([['stats', '📊 Stats']]).map(function (v) {
     var on = _g45ElVue === v[0];
     return '<button onclick="g45ElVue(\'' + v[0] + '\')" style="flex:1;padding:10px;font-size:14px;font-weight:800;cursor:pointer;border-radius:9px;'
       + (on ? 'background:#2563eb;border:1px solid #3b82f6;color:#fff;' : 'background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#c9d3ee;') + '">' + v[1] + '</button>';
@@ -60577,7 +60723,7 @@ async function _g45ElRendre(box, retourHtml) {
     + tete + '<div style="display:flex;gap:8px;margin-bottom:12px;">' + onglets + '</div><div id="g45-el-body"><div style="color:#fff;font-size:14px;">⏳ Chargement…</div></div>';
   var body = document.getElementById('g45-el-body');
   try {
-    if (_g45ElVue === 'stats') { body.innerHTML = await _g45PsHtml(an); return; }
+    if (_g45ElVue === 'stats') { if (_g45ElLigue === 'proa') body.innerHTML = await _g45PsHtml(an); else await _g45EsRendre(body, an); return; }
     var g = await _g45ElMatchs(an);
     if (!g.length) { body.innerHTML = '<div style="color:#fff;font-size:14px;">Aucun match publié pour cette saison.</div>'; return; }
     body.innerHTML = _g45ElVue === 'classement' ? _g45ElClassementHtml(g) : _g45ElJourneesHtml(g);

@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261001u, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261001v, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -540,6 +540,16 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   pas d'onglet Classement hors saison régulière. Saison finie : dernière journée dépliée. Worker : liste blanche LNB
   élargie à toutes les lectures /(match|competition|altrstats)/get… (redéploiement demandé à Antoine le 30/09).
   `_G45_PROA_CID` ne sert plus que de secours pour 2026.
+- 📊 EUROLEAGUE STATS (20261001v, maquette validée « OUI ») : onglet 📊 Stats aussi pour l'Euroleague (avant : Pro A seule) →
+  `_g45EsRendre(body, an)` (Pro A garde `_g45PsHtml`). SONDÉ PAR ANTOINE (onglet api-live.euroleague.net) :
+  /v3/competitions/E/statistics/players/leaders?seasonMode=Single&seasonCode=E<an>&limit=N (catégories points, rebounds,
+  assists, steals, blocks, offensiveRebounds, 2P/3P/FT Percentage ; pir VIDE ; details{name « SHORTS, TJ », imageUrl,
+  team{code,name,imageUrl}}, gamesPlayed, average) ; players/traditional E2026 = 0 SAUF phaseTypeCode=RS&statisticMode=perGame,
+  E2025 sans paramètre ; teams/traditional E2026 = statisticMode=PerGame (P MAJUSCULE), E2025 sans paramètre. Chaque
+  lecture essaie les variantes dans l'ordre (`_g45EsGet`). Noms `_g45EsNom` (« TJ Shorts », « Nando De Colo ») ; vues
+  Joueurs (leaders + 📋 Tous : tri + filtre club) / Équipes (points encaissés et écart RECALCULÉS depuis les matchs,
+  `_g45EsDefense`). Valeur des catégories % : champ NON vérifié. Cache g45es1_. Worker host=euroleague : liste blanche
+  + statistics/(players|teams)/(traditional|leaders) (fichier complet donné à Antoine le 01/10).
 - Classements individuels TOP 14 (`g45LnrRender`, `_G45_LNR_CATS`, page top14.lnr.fr/classement/joueurs/<cat> via
   worker host=lnr) : 20261001a — LA LNR A REFAIT SON SITE (« page reçue mais illisible ») : plus de liens /joueur/ ;
   SONDÉ PAR ANTOINE : JSON dans l'attribut `:ranking` de <players-ranking> (100 joueurs {rank, player{name, url,
