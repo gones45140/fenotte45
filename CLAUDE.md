@@ -906,6 +906,11 @@ NPB (baseball japonais) : ABANDONNÉ par Antoine le 01/10 (« laisse tomber ») 
   npb.jp = pas de robots.txt mais /policy/ « 二次利用および無断転載を固く禁じます » (utilisation secondaire interdite) ;
   npbstats.com = dernières stats 2022 ; en.baseball-data.jp = crawl autorisé, mais ni matchs, ni logos, ni photos, ni stats
   dans les effectifs (projet de fans) → jugé pas assez solide. Pistes non sondées : 102.jp (DELTA, en partie payant → non).
+HANDBALL (LNH, Starligue) : SONDÉ PAR ANTOINE le 01/10 — pas de robots.txt (404), classement écrit dans la page HTML,
+  MAIS www.lnh.fr/mentions-legales : « Toute reproduction… diffusion… traitement ou utilisation, même partielle… sans l'autorisation
+  expresse et préalable de la LNH est interdite » (logos aussi) → NE PAS lire lnh.fr. ESPN n'a pas de handball. Seule voie propre :
+  autorisation écrite de la LNH, ou une autre source gratuite qui le permet (non trouvée).
+  ⚠ Le jeton lnb.fr/api/token (basket) apparaît dans les sondes : NE PAS l'utiliser (règle Pro A).
 KBO : CONFIRMÉ « c'est bon » par Antoine (01/10, worker host=mykbo déployé) ; états
   « en cours » / annulé d'un match toujours NON vus.
 RÉGLÉ (worker, 01/10) : cron « exceededCpu » (cpuTimeMs 10) à CHAQUE passage — vu par Antoine dans Observability.
