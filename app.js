@@ -43647,6 +43647,25 @@ async function _g45HeroLogo(nom) {
   try {
     if (!nom || (typeof flagUrl === 'function' && flagUrl(nom))) return;
     var u = ((typeof state !== 'undefined' && state && state.u) || []).filter(function (x) { return x && x.n === nom; })[0];
+    /* 20261001i (Antoine : « le logo Panthers c'est le bon ? » — non : TheSportsDB avait renvoyé une panthère au
+       ballon de BASKET) : club NRL (sport 🏉🇦🇺 du mur, ou équipe NRL ouverte depuis Compétitions) → badge OFFICIEL
+       nrl.com (https://www.nrl.com/.theme/<surnom>/badge.png, forme vue sur les stats NRL), même si un logo était déjà
+       mémorisé. Surnom à deux mots → tiret (sea-eagles, wests-tigers : NON vérifié). */
+    try {
+      var spN = (u && u.sport) || '';
+      if (!spN) { var tpN = (typeof g45TeamsPerso === 'function') ? g45TeamsPerso() : {}; var eN = tpN[String(nom).toLowerCase().trim()]; if (eN && eN.sport) spN = _G45_HERO_SP[eN.sport] || ''; }
+      var idN = (/\ud83c\udde6\ud83c\uddfa/.test(spN) && typeof _g45NrlEqId === 'function') ? _g45NrlEqId(nom) : null;
+      if (idN) {
+        var surN = Object.keys(_G45_NRL_EQ).filter(function (x) { return _G45_NRL_EQ[x] === idN; })[0];
+        var urlN = 'https://www.nrl.com/.theme/' + surN.replace(/\s+/g, '-') + '/badge.png';
+        if (!(u && u.logoUrl === urlN)) {
+          if (u) { u.logoUrl = urlN; try { if (typeof save === 'function') save(); } catch (e) {} }
+          else { try { localStorage.setItem('g45_herologo_' + ((typeof _g45SgNorm === 'function') ? _g45SgNorm(nom) : nom), urlN); } catch (e) {} }
+          _g45HeroPoser(nom, urlN, u);
+        }
+        return;
+      }
+    } catch (e) {}
     if ((u && u.logoUrl) || (typeof LOGOS !== 'undefined' && LOGOS[nom])) return;
     if (typeof _G45_NON_CLUB !== 'undefined' && _G45_NON_CLUB.test(String(nom).trim())) return;
     var k = (typeof _g45SgNorm === 'function') ? _g45SgNorm(nom) : nom;

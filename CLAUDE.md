@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20261001h, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20261001i, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -577,7 +577,12 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   (noms ; présence de playerId À CONFIRMER). Somme saison = `_g45NrlEquipeStats` (4 feuilles à la fois, compteur
   « Match n/N »), feuilles compactées POUR TOUJOURS g45nrlm1_<url>, calendrier g45nrldr1_<an>_<id> 1 h ; saison =
   année civile, aucun match fini → an − 1. Libellés `_G45_NRL_JS` (tries / tryAssists / tacklesMade / tackleBreaks /
-  penalties : noms NON vérifiés, ligne masquée si absente). Worker : /draw/data et /draw/…/data ajoutés (redéployé).
+  penalties : CONFIRMÉS par Antoine — capture Dylan Edwards, toutes les lignes présentes). Worker : /draw/data et
+  /draw/…/data ajoutés (redéployé).
+  20261001i — LOGO DES CLUBS NRL (en-tête, `_g45HeroLogo`) : TheSportsDB avait donné aux Panthers une panthère au ballon
+  de BASKET → si le club est NRL (sport du mur contenant 🇦🇺, ou équipe perso rugby-league) et reconnu par `_g45NrlEqId`,
+  badge officiel https://www.nrl.com/.theme/<surnom>/badge.png, qui REMPLACE un logo mémorisé (u.logoUrl). Carolina
+  Panthers (🏈) non touché. Surnoms à 2 mots → tiret (sea-eagles, wests-tigers : NON vérifié).
 - Score d'un pari : `_g45ScoreTexte`, cache `g45_score4_<id>` (négatif gardé
   2 h) — effacé par `saveBetEdit` pour relancer la recherche.
 
