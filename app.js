@@ -60818,6 +60818,7 @@ function _g45ElMatchHtml(m) {
       };
       h += '<table style="width:100%;margin-top:8px;border-collapse:collapse;font-size:13px;color:#fff;">' + ent + lig(m.h, '#6d9dff') + lig(m.a, '#f5c542') + '</table>';
     }
+    if (m.p && _g45ElLigue !== 'proa') h += '<button onclick="event.stopPropagation();g45ElFicheId(\'' + m.id + '\')" style="width:100%;margin-top:8px;padding:9px;border-radius:9px;border:1px solid #3b82f6;background:#2563eb;color:#fff;font-size:14px;font-weight:800;cursor:pointer;">📊 Fiche complète du match</button>';
     h += '<div style="font-size:13px;color:#c9d3ee;margin-top:6px;">📅 ' + new Date(m.t).toLocaleString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })
       + (m.v ? '<br>🏟️ ' + _g45ElEsc(m.v) : '') + (m.ar.length ? '<br>🧑‍⚖️ ' + m.ar.map(_g45ElEsc).join(', ') : '') + '</div>';
   }
@@ -65430,6 +65431,7 @@ function _g45ElCarteDirect(m) {
 }
 function g45ElDirOuvrir(k) {
   var m = _g45ElDirIdx[k]; if (!m) return;
+  return g45ElFiche(m, 'Euroleague');
   if (typeof _g45SgFermerMatch === 'function') _g45SgFermerMatch();
   var mo = document.createElement('div'); mo.id = 'g45-sg-modal';
   mo.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:14px;overflow-y:auto;';
@@ -65464,6 +65466,119 @@ if (typeof g45DirectMesEquipes === 'function' && !g45DirectMesEquipes._g45El) {
   };
   g45DirectMesEquipes._g45El = true; g45DirectMesEquipes._g45Khl = _g45ElDirOrig._g45Khl; window.g45DirectMesEquipes = g45DirectMesEquipes;
 }
+/* ═══ 🏀 FICHE DE MATCH EUROLEAGUE COMPLÈTE (20261002d, maquette validée « oui ») ═══
+   SONDÉ PAR ANTOINE (match 20, Panathinaikos–ASVEL) : /v3/competitions/E/seasons/E<an>/games/<code>/stats →
+   {local|road: {coach{name}, players[{player{person{name…}, dorsal, positionName…}, stats{timePlayed (s), valuation, points,
+   fieldGoalsMade2/Attempted2, fieldGoalsMade3/Attempted3, freeThrowsMade/Attempted, totalRebounds, offensiveRebounds,
+   assistances, steals, turnovers, blocksFavour, foulsCommited, plusMinus, startFive…}}], team{…rebonds d'équipe}, total{…}}}.
+   PAS d'actions (playbyplay / events / comparison / headtohead = 404) → pas de « Moments forts ». Face-à-face CALCULÉ sur les
+   5 dernières saisons (`_g45ElMatchs`, codes clubs). Vidéo = lecteur YouTube intégré `g45YT` (s'ouvre DANS l'appli).
+   Feuille compactée, cache g45eb1_f_<an>_<code> 30 j (match joué). Ouverte depuis Journées, Saisons du mur et Suivies. */
+function _g45ElSaisonDe(t) { var d = new Date(t); return d.getUTCMonth() >= 6 ? d.getUTCFullYear() : d.getUTCFullYear() - 1; }
+function _g45ElFeuilleLire(j) {
+  if (!j || !j.local || !j.road) return null;
+  var cote = function (s) {
+    var P = (s.players || []).map(function (x) {
+      var p = (x.player && x.player.person) || {}, st = x.stats || {};
+      return { n: _g45EsNom(p.name), no: (x.player && x.player.dorsal) || st.dorsal || '', d5: !!st.startFive, mi: Math.round((+st.timePlayed || 0) / 60),
+        pt: +st.points || 0, rb: +st.totalRebounds || 0, as: +st.assistances || 0, pm: st.plusMinus, pir: st.valuation };
+    }).filter(function (x) { return x.mi > 0 || x.pt > 0; });
+    var t = s.total || {}, som = function (k) { return (s.players || []).reduce(function (a, x) { return a + (+((x.stats || {})[k]) || 0); }, 0); };
+    var g = function (k) { return t[k] != null && (+t[k] || !som(k)) ? +t[k] : som(k); };
+    return { co: (s.coach && _g45EsNom(s.coach.name)) || '', P: P, T: { m2: g('fieldGoalsMade2'), a2: g('fieldGoalsAttempted2'), m3: g('fieldGoalsMade3'), a3: g('fieldGoalsAttempted3'),
+      mf: g('freeThrowsMade'), af: g('freeThrowsAttempted'), rb: g('totalRebounds'), ro: g('offensiveRebounds'), as: g('assistances'), st: g('steals'), to: g('turnovers'),
+      bl: g('blocksFavour'), fo: g('foulsCommited'), pir: g('valuation') } };
+  };
+  return { h: cote(j.local), a: cote(j.road) };
+}
+async function _g45ElFeuille(an, code) {
+  var cle = 'g45eb1_f_' + an + '_' + code, m = null;
+  try { m = JSON.parse(localStorage.getItem(cle) || 'null'); } catch (e) {}
+  if (m) return m;
+  var r = await fetch(FD_PROXY + '?host=euroleague&path=' + encodeURIComponent('/v3/competitions/E/seasons/E' + an + '/games/' + code + '/stats'));
+  if (!r.ok) throw new Error('feuille ' + r.status);
+  var d = _g45ElFeuilleLire(await r.json()); if (!d) throw new Error('feuille vide');
+  try { localStorage.setItem(cle, JSON.stringify(d)); } catch (e) {}
+  return d;
+}
+async function _g45ElH2H(cA, cB, an) {
+  var tot = { n: 0, va: 0, vb: 0, pa: 0, pb: 0 };
+  for (var y = an; y > an - 5; y--) {
+    var ancL = _g45ElLigue, g = []; _g45ElLigue = 'el';
+    try { g = await _g45ElMatchs(y); } catch (e) {} finally { _g45ElLigue = ancL; }
+    g.forEach(function (m) {
+      if (!m.p || m.h.s == null) return;
+      var A = m.h.c === cA ? m.h : m.a.c === cA ? m.a : null, B = m.h.c === cB ? m.h : m.a.c === cB ? m.a : null;
+      if (!A || !B || A === B) return;
+      tot.n++; tot.pa += +A.s; tot.pb += +B.s; if (+A.s > +B.s) tot.va++; else tot.vb++;
+    });
+  }
+  return tot;
+}
+function _g45ElBarre(lib, gA, gB, vA, vB) {
+  var s = (+vA || 0) + (+vB || 0), p = s ? Math.round(100 * (+vA || 0) / s) : 50;
+  return '<div style="margin:7px 0;"><div style="display:flex;justify-content:space-between;align-items:baseline;font-size:14px;color:#fff;"><b style="color:#8fb4ff;">' + gA + '</b><span style="font-size:13px;color:#dfe6ff;">' + lib + '</span><b style="color:#ffb27a;">' + gB + '</b></div>'
+    + '<div style="display:flex;height:6px;border-radius:3px;overflow:hidden;margin-top:3px;"><div style="width:' + p + '%;background:#4d84ff;"></div><div style="flex:1;background:#e08850;"></div></div></div>';
+}
+function _g45ElTir(m, a) { return m + '/' + a + (a ? ' · ' + Math.round(100 * m / a) + ' %' : ''); }
+function _g45ElFeuilleHtml(F, m) {
+  var esc = _g45ElEsc, H = F.h.T, A = F.a.T, sec = function (t) { return '<div style="font-size:13px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#c9d3ee;margin:16px 0 6px;">' + t + '</div>'; };
+  var h = sec('📊 Stats d\'équipe') + '<div style="background:rgba(11,16,29,.7);border-radius:10px;padding:8px 10px;">'
+    + '<div style="display:flex;justify-content:space-between;font-size:14px;font-weight:800;"><span style="color:#8fb4ff;">' + esc(m.h.n) + '</span><span style="color:#ffb27a;">' + esc(m.a.n) + '</span></div>'
+    + _g45ElBarre('Tirs (total)', _g45ElTir(H.m2 + H.m3, H.a2 + H.a3), _g45ElTir(A.m2 + A.m3, A.a2 + A.a3), (H.m2 + H.m3) / (H.a2 + H.a3 || 1), (A.m2 + A.m3) / (A.a2 + A.a3 || 1))
+    + _g45ElBarre('3 points', _g45ElTir(H.m3, H.a3), _g45ElTir(A.m3, A.a3), H.m3 / (H.a3 || 1), A.m3 / (A.a3 || 1))
+    + _g45ElBarre('Lancers francs', _g45ElTir(H.mf, H.af), _g45ElTir(A.mf, A.af), H.mf / (H.af || 1), A.mf / (A.af || 1))
+    + _g45ElBarre('Rebonds', H.rb + ' (' + H.ro + ' off.)', A.rb + ' (' + A.ro + ' off.)', H.rb, A.rb)
+    + _g45ElBarre('Passes', H.as, A.as, H.as, A.as)
+    + _g45ElBarre('Interceptions', H.st, A.st, H.st, A.st)
+    + _g45ElBarre('Balles perdues', H.to, A.to, H.to, A.to)
+    + _g45ElBarre('Contres', H.bl, A.bl, H.bl, A.bl)
+    + _g45ElBarre('Fautes', H.fo, A.fo, H.fo, A.fo)
+    + _g45ElBarre('Évaluation (PIR)', H.pir, A.pir, Math.max(0, H.pir), Math.max(0, A.pir)) + '</div>'
+    + '<div id="g45-el-h2h"></div>' + sec('👥 Stats joueurs');
+  [[F.h, m.h, '#8fb4ff'], [F.a, m.a, '#ffb27a']].forEach(function (z) {
+    var S = z[0], e = z[1], g = 'display:grid;grid-template-columns:minmax(0,1fr) 30px 30px 30px 30px 36px 32px;gap:3px;align-items:center;text-align:right;';
+    h += '<div style="display:flex;align-items:center;gap:8px;margin:10px 0 4px;">' + _g45ElLogo(e, 24) + '<b style="font-size:15px;color:' + z[2] + ';">' + esc(e.n) + '</b></div>'
+      + '<div style="' + g + 'font-size:12px;color:#c9d3ee;"><span style="text-align:left;">Joueur</span><span>Min</span><span>Pts</span><span>Reb</span><span>Pas</span><span>+/-</span><span>PIR</span></div>';
+    S.P.slice().sort(function (x, y) { return y.mi - x.mi; }).forEach(function (p) {
+      h += '<div style="' + g + 'font-size:14px;color:#fff;padding:4px 0;border-top:1px solid rgba(255,255,255,.07);"><span style="text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (p.d5 ? '<span style="color:#f0b020;">★</span> ' : '') + esc(p.n) + '</span>'
+        + '<span>' + p.mi + '</span><b>' + p.pt + '</b><span>' + p.rb + '</span><span>' + p.as + '</span><span style="color:' + ((+p.pm || 0) >= 0 ? '#4ade80' : '#ff6b6b') + ';">' + (p.pm > 0 ? '+' : '') + (p.pm != null ? p.pm : '') + '</span><span>' + (p.pir != null ? p.pir : '') + '</span></div>';
+    });
+    if (S.co) h += '<div style="font-size:13px;color:#c9d3ee;margin-top:4px;">Coach : <b style="color:#fff;">' + esc(S.co) + '</b></div>';
+  });
+  return h + '<div style="font-size:12px;color:#c9d3ee;margin-top:8px;">★ = 5 de départ · +/- = écart de points pendant que le joueur était sur le terrain · PIR = évaluation</div>';
+}
+/* Fenêtre unique : carte de base tout de suite, puis vidéo + feuille + face-à-face (Euroleague, match joué). */
+async function g45ElFiche(m, comp) {
+  if (typeof _g45SgFermerMatch === 'function') _g45SgFermerMatch();
+  var mo = document.createElement('div'); mo.id = 'g45-sg-modal';
+  mo.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:14px;overflow-y:auto;';
+  mo.onclick = function (e) { if (e.target === mo && typeof _g45SgFermerMatch === 'function') _g45SgFermerMatch(); };
+  var q = (comp || 'Euroleague') + ' highlights ' + m.h.n + ' ' + m.a.n + ' ' + new Date(m.t).getFullYear();
+  var video = m.p ? '<div style="padding:0 12px;"><div style="font-size:13px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#c9d3ee;margin:6px 0;">▶ Vidéo</div>'
+    + '<button onclick="g45YT(\'' + _g45ElEsc(q).replace(/'/g, "\\'") + '\')" style="width:100%;padding:12px;border-radius:10px;border:1px solid rgba(255,90,90,.5);background:#3a1414;color:#fff;font-size:14px;font-weight:800;cursor:pointer;">▶ Résumé du match (YouTube)</button></div>' : '';
+  mo.innerHTML = '<div style="background:#0f1526;border:1px solid rgba(255,255,255,.15);border-radius:14px;max-width:600px;width:100%;position:relative;margin:auto 0;color:#fff;">'
+    + '<button onclick="_g45SgFermerMatch()" style="position:absolute;top:8px;right:12px;background:none;border:none;color:#fff;font-size:22px;cursor:pointer;">✕</button>'
+    + _g45EbCarte({ m: m, comp: comp || 'Euroleague' }) + video + '<div id="g45-el-fiche" style="padding:0 12px 14px;"></div></div>';
+  document.body.appendChild(mo);
+  if (!m.p || (comp && comp !== 'Euroleague') || !m.h.c) return;
+  var z = document.getElementById('g45-el-fiche'), an = _g45ElSaisonDe(m.t);
+  z.innerHTML = '<div style="font-size:14px;padding:8px 0;">⏳ Feuille de match…</div>';
+  try { var F = await _g45ElFeuille(an, m.id); z = document.getElementById('g45-el-fiche'); if (z) z.innerHTML = _g45ElFeuilleHtml(F, m); }
+  catch (e) { z = document.getElementById('g45-el-fiche'); if (z) z.innerHTML = '<div style="font-size:14px;color:#ff6b6b;">❌ Feuille de match indisponible (' + _g45ElEsc(e.message) + ')</div>'; }
+  try {
+    var hz = document.getElementById('g45-el-h2h'); if (hz) hz.innerHTML = '<div style="font-size:13px;color:#c9d3ee;margin-top:12px;">⏳ Face-à-face…</div>';
+    var X = await _g45ElH2H(m.h.c, m.a.c, an);
+    hz = document.getElementById('g45-el-h2h'); if (!hz) return;
+    hz.innerHTML = '<div style="font-size:13px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#c9d3ee;margin:16px 0 6px;">🤝 Face-à-face (Euroleague, 5 saisons)</div>'
+      + '<div style="background:rgba(11,16,29,.7);border-radius:10px;padding:10px;font-size:15px;">' + (X.n
+        ? X.n + ' match' + (X.n > 1 ? 's' : '') + ' · <b style="color:#8fb4ff;">' + _g45ElEsc(m.h.n) + ' ' + X.va + ' V</b> – <b style="color:#ffb27a;">' + X.vb + ' V ' + _g45ElEsc(m.a.n) + '</b><br><span style="font-size:13px;color:#c9d3ee;">Moyenne : ' + (X.pa / X.n).toFixed(1).replace('.', ',') + ' – ' + (X.pb / X.n).toFixed(1).replace('.', ',') + ' (match compris)</span>'
+        : 'Aucune rencontre en Euroleague sur les 5 dernières saisons.') + '</div>';
+  } catch (e) {}
+}
+window.g45ElFiche = g45ElFiche; window._g45ElFeuilleLire = _g45ElFeuilleLire;
+function g45ElFicheId(id) { var g = ((_g45ElMem[_g45ElCle()] || {}).g) || []; var m = g.filter(function (x) { return String(x.id) === String(id); })[0]; if (m) g45ElFiche(m, _g45ElLigue === 'proa' ? 'Pro A' : 'Euroleague'); }
+window.g45ElFicheId = g45ElFicheId;
 window._g45EbResoudre = _g45EbResoudre; window._g45EbCharger = _g45EbCharger; window._g45EbCorrespond = _g45EbCorrespond;
 (function _g45EbBrancher() {
   if (typeof _g45CompetEquipes === 'function' && !_g45CompetEquipes._g45Eb) {
@@ -65494,6 +65609,7 @@ window._g45EbResoudre = _g45EbResoudre; window._g45EbCharger = _g45EbCharger; wi
     var eSm = async function (eid) {
       if (!(typeof _g45SgCtx !== 'undefined' && _g45SgCtx && /^eb:/.test(String(_g45SgCtx.lg)))) return oSm.apply(this, arguments);
       var x = _g45EbIdx[String(eid)]; if (!x) return;
+      return g45ElFiche(x.m, x.comp);
       if (typeof _g45SgFermerMatch === 'function') _g45SgFermerMatch();
       var mo = document.createElement('div'); mo.id = 'g45-sg-modal';
       mo.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:14px;overflow-y:auto;';

@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261002c, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261002d, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -590,6 +590,13 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   g45DirectMesEquipes → `g45ElDirectSuivies` (zone #g45-el-direct, clubs = étoiles + équipes 🏀 du mur reconnues
   `_g45ElCodesSuivis`, à venir −3 h → +7 j, résultats 7 j), cartes `_g45ElCarteDirect`, clic `g45ElDirOuvrir` → `_g45EbCarte`.
   Compo : équipe suivie hors mur reconnue aussi via g45TeamsPerso (sport basketball).
+  20261002d (maquette validée « oui ») — FICHE DE MATCH COMPLÈTE `g45ElFiche(m, comp)` (Journées : bouton « 📊 Fiche complète »
+  `g45ElFicheId` ; Saisons du mur ; Suivies) : vidéo = g45YT (lecteur DANS l'appli, demande d'Antoine) ; SONDÉ PAR ANTOINE
+  /v3/…/seasons/E<an>/games/<code>/stats → local|road {coach, players[{player.person, stats{timePlayed s, valuation, points,
+  fieldGoalsMade/Attempted2|3, freeThrows…, totalRebounds, offensiveRebounds, assistances, steals, turnovers, blocksFavour,
+  foulsCommited, plusMinus, startFive}}], team, total} → `_g45ElFeuilleLire` (cache g45eb1_f_ 30 j), barres `_g45ElBarre`,
+  joueurs triés par minutes ; face-à-face CALCULÉ `_g45ElH2H` (5 saisons). playbyplay / events / comparison / headtohead /
+  quarters = 404 → pas de moments forts. Pro A : carte simple.
 - Classements individuels TOP 14 (`g45LnrRender`, `_G45_LNR_CATS`, page top14.lnr.fr/classement/joueurs/<cat> via
   worker host=lnr) : 20261001a — LA LNR A REFAIT SON SITE (« page reçue mais illisible ») : plus de liens /joueur/ ;
   SONDÉ PAR ANTOINE : JSON dans l'attribut `:ranking` de <players-ranking> (100 joueurs {rank, player{name, url,
