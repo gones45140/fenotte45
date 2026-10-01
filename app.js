@@ -65357,7 +65357,10 @@ if (typeof _g45HeroLogo === 'function' && !_g45HeroLogo._g45Eb) {
         var C = await _g45EbClubsEl(), e = C.filter(function (c) { return _g45EbCorrespond(nom, c.al); })[0];
         if (e && e.l) {
           if (u.logoUrl !== e.l) { u.logoUrl = e.l; try { if (typeof save === 'function') save(); } catch (x) {} }
-          if (typeof _g45HeroPoser === 'function') _g45HeroPoser(nom, e.l, u);
+          /* 20261002j (capture d'Antoine, fiche ASVEL : écusson Euroleague noir sur rond sombre, illisible) : logo PERSO du
+             dépôt (images/equipes/asvel.png, blanc) en priorité dans l'en-tête ; l'écusson officiel reste en secours. */
+          var _pe = (typeof _g45ImgPersoLire === 'function') ? _g45ImgPersoLire(nom) : '';
+          if (typeof _g45HeroPoser === 'function') _g45HeroPoser(nom, _pe || e.l, u);
           return;
         }
       }
