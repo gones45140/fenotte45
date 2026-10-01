@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20261001r, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261001s, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -637,6 +637,23 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   pages que « les buts en action », `_g45ButsMem`) → `_g45ChRendre` (équipe bleu / jaune, joueurs triés par nombre
   d'actions, `g45ChChoix`) → `_g45ChCanvas` (densité gaussienne, jaune → orange → rouge, terrain vert clair dessiné AVANT).
   VÉRIFIÉ PAR ANTOINE contre Sofascore (Tolisso, Openda) : largeur RETOURNÉE (y → 100 − y) ; chaque équipe attaque vers x = 100.
+- ⚾🇰🇷 KBO (20261001s, maquette validée « yes we can ») : tuile slug 'kbo' (Compétitions → Baseball, après MLB),
+  `_g45KboBrancher` enveloppe loadCompetTab (_g45CompetSport 'baseball' + _g45CompetSel 'kbo'). koreabaseball.com ÉCARTÉ
+  (robots.txt « Disallow: / » + « collecte automatique interdite sans autorisation », SONDÉ PAR ANTOINE — ne pas y revenir,
+  même si /ws/Main.asmx/GetKboGameList et /ws/Schedule.asmx/GetScheduleList renvoient du JSON). Source = mykbostats.com
+  (site de FANS ; robots : tout permis sauf /stats/compare/, Crawl-delay 5) via worker host=mykbo (À AJOUTER par Antoine,
+  liste blanche : /games, /games/<n>-…, /schedule/week_of/<date>, /standings, /stats/top/<cat>, /stats/team_splits,
+  /teams/<n>-<Nom>). HTML seulement (standings.json / games.json = 404). SONDÉ : cartes a#game-line-<n>
+  (data-game-datetime UTC, 1re ligne = VISITEUR, 2e = club qui REÇOIT, « Final ») ; semaines du MARDI
+  (/schedule/week_of/…, liens ◀ ▶ lus dans la page) ; feuille : div.scoreboard (en-tête « '' 1…9 '' R H E B », lignes
+  dont la 1re case a la classe team), tables frappeurs (AB) / lanceurs (ERA + IP) / notes (Deciding Hit, HR, 2B…).
+  Lecture : `_g45KboTable` (alignement depuis la cellule du NOM : lien /players/, sinon /teams/, sinon 1re avec lettres ;
+  « Rank » sauté côté en-têtes), `_g45KboSemaine`, `_g45KboFeuille`, `_g45KboClassement`, `_g45KboEquipe`,
+  `_g45KboLeaders` (colonne affichée = 1re après Team, NON vérifié), `_g45KboSplits`. Vues `_g45KboRendre`
+  (Équipes → fiche Effectif / Résultats, Matchs par semaine + feuille dépliée `g45KboMatch`, Classement officiel, Forme =
+  L10 + série du classement + pastilles des 3 dernières semaines `_g45KboRecents`, Classements Équipes (team splits) /
+  Joueurs (9 catégories `_G45_KBO_CATS`)). Cache g45kbo1_ (classement 10 min, semaine finie 7 j, feuille finie 30 j,
+  effectif 6 h, stats 1 h). NON vérifié : texte d'un match en cours / annulé. Logos chargés depuis mykbostats.com.
 - Score d'un pari : `_g45ScoreTexte`, cache `g45_score4_<id>` (négatif gardé
   2 h) — effacé par `saveBetEdit` pour relancer la recherche.
 
@@ -790,14 +807,10 @@ EN COURS / À FAIRE DE SUITE (maquettes proposées le 28/09) :
   exclus combiné, lay, boost (isFlash), joueur. Cache g45clv1_<id> (négatif 3 j).
   À faire plus tard si Antoine le demande : autres sports (summary US par ligue).
 
-PROCHAINE SESSION (demande d'Antoine le 01/10) : baseball JAPONAIS (NPB) et CORÉEN (KBO). Compétitions → Baseball n'a
-  que la MLB (G45_SPORTS key 'baseball'). Capture d'Antoine : le site ESPN liste « Japanese Baseball » et « Korean
-  Baseball » sous Baseball, MAIS Antoine a vérifié : ESPN n'a RIEN (01/10) → chercher une source officielle / gratuite
-  (sites des ligues npb.jp, koreabaseball.com…) via le worker, comme Euroleague / Pro A / Pro D2 (voir §5) ; sonder avant.
-  Pistes données par Antoine (01/10) : KBO → mykbo.net (anglais), statiz.co.kr (stats avancées, coréen) ; NPB →
-  npbstats.com/eng, en.baseball-data.jp, 102.jp (DELTA, japonais, en partie payant). Ce sont des sites de FANS / tiers :
-  vérifier leurs conditions d'utilisation et préférer les sites OFFICIELS (eng.koreabaseball.com, npb.jp/eng) ; aucune
-  connexion à contourner, rien de payant.
+PROCHAINE SESSION : baseball JAPONAIS (NPB), même écran que la KBO (§5). ESPN n'a RIEN (vérifié par Antoine le 01/10).
+  Pistes : npb.jp/eng (OFFICIEL : lire d'abord son robots.txt et ses conditions — la KBO officielle interdisait tout),
+  npbstats.com/eng, en.baseball-data.jp ; 102.jp (DELTA) en partie payant → non. Sonder avant, rien de payant, aucune
+  connexion à contourner. KBO : vérifier chez Antoine après ajout de host=mykbo au worker (états « en cours » / annulé).
 À VOIR (en attente d'un retour d'Antoine) :
 - Notifications multi-appareils (28g + worker redéployé : « N appareils reliés ») :
   vérifier qu'un pari saisi sur PC fait sonner le téléphone. Détail technique :

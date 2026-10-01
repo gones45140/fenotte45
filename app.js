@@ -42221,7 +42221,7 @@ window.g45F1Session=g45F1Session;
    et les données utilisateur n'étaient JAMAIS écrites — l'ajout apparaissait à l'écran puis
    disparaissait au rechargement. Ce n'était ni la synchro GitHub, ni Dropbox, ni le cache
    du navigateur. Tous ces caches sont reconstructibles : ils cèdent la place aux données. */
-var _G45_CACHE_PREFIXES=['g45t14lg1',/* 01/10 : logos Top 14 (LNR) */'g45pd2_',/* 01/10 : Pro D2 (LNR) */'g45t14sq1_',/* 01/10 : effectifs Top 14 (LNR) */'g45nrlm1_','g45nrldr1_',/* 01/10 : feuilles et calendriers NRL */'g45nrlsq1_',/* 01/10 : effectifs NRL */'g45nrlst2_',/* 01/10 : classements NRL */'g45proacid1_',/* 30/09 : numéros LNB par saison */'g45proast1_',/* 30/09 : stats Pro A */'g45proa1_',/* 30/09 : Pro A par journée */'g45el1_',/* 30/09 : Euroleague (compact) */'g45buts1_',/* 30/09 : buts en action (match fini) */'g45prad1_','g45vsj1_','g45vse1_',/* 30/09 : radars joueurs */'g45ia1_',/* 29/09 : avis IA gardés 6 h */'g45_mmeta2_','g45_mmeta1_','g45_tennis4_','g45_tennis3_',/* 16/09 : meta de match (domicile/lieu) et score tennis, reconstructibles */'g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dcf_','g45dc_',
+var _G45_CACHE_PREFIXES=['g45kbo1_',/* 01/10 : KBO (mykbostats) */'g45t14lg1',/* 01/10 : logos Top 14 (LNR) */'g45pd2_',/* 01/10 : Pro D2 (LNR) */'g45t14sq1_',/* 01/10 : effectifs Top 14 (LNR) */'g45nrlm1_','g45nrldr1_',/* 01/10 : feuilles et calendriers NRL */'g45nrlsq1_',/* 01/10 : effectifs NRL */'g45nrlst2_',/* 01/10 : classements NRL */'g45proacid1_',/* 30/09 : numéros LNB par saison */'g45proast1_',/* 30/09 : stats Pro A */'g45proa1_',/* 30/09 : Pro A par journée */'g45el1_',/* 30/09 : Euroleague (compact) */'g45buts1_',/* 30/09 : buts en action (match fini) */'g45prad1_','g45vsj1_','g45vse1_',/* 30/09 : radars joueurs */'g45ia1_',/* 29/09 : avis IA gardés 6 h */'g45_mmeta2_','g45_mmeta1_','g45_tennis4_','g45_tennis3_',/* 16/09 : meta de match (domicile/lieu) et score tennis, reconstructibles */'g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dcf_','g45dc_',
   'g45trv3_','g45trv2_','g45trOdds_','g45tr_','g45but_st_','g45butL_','g45butA_','g45but_mur_',
   '_g45clv','g45clv_snaps','g45_saisons_cache_v3_','g45_saisons_cache_v2_',
   /* Ajoutes le 20/08 : ces caches, tous reconstructibles, n'etaient PAS declares
@@ -61225,6 +61225,433 @@ window._g45Pd2Index = _g45Pd2Index; window._g45Pd2Journee = _g45Pd2Journee; wind
       return origine.apply(this, arguments);
     };
     env._g45Pd2 = true; env._g45El = origine._g45El; env._g45Khl = origine._g45Khl;
+    loadCompetTab = env; window.loadCompetTab = env;
+  }
+})();
+
+/* ═══ ⚾🇰🇷 KBO — baseball coréen (20261001s, maquette validée « yes we can ») ═══
+   ESPN n'a pas la KBO. Site OFFICIEL koreabaseball.com ÉCARTÉ : robots.txt « User-agent: * Disallow: / » + phrase
+   « collecte / crawling / copie automatiques interdits sans autorisation préalable » (SONDÉ PAR ANTOINE le 01/10) — ne
+   pas y revenir. Source : mykbostats.com (site de FANS, peut changer sans prévenir) : robots.txt = tout permis sauf
+   /stats/compare/, Crawl-delay 5 → caches longs ici + cache du worker (host=mykbo, liste blanche de chemins).
+   SONDÉ PAR ANTOINE le 01/10 (HTML, pas de JSON : /standings.json et /games.json = 404) :
+   • /games (semaine en cours) et /schedule/week_of/AAAA-MM-JJ (semaines du MARDI, liens ◀ ▶ dans la page) :
+     section.ds-schedule-day > a#game-line-<n> [href /games/<n>-A-vs-B-AAAAMMJJ, data-game-datetime ISO UTC] → 2 lignes
+     {img /assets/images/team-logos-alt/<club>.png, span nom « Hanwha<span> Eagles</span> », span score} + état
+     « Final ». 1re ligne = VISITEUR, 2e = club qui REÇOIT (vérifié : NC–Doosan à Jamsil).
+   • /games/<n>-… : div.scoreboard (grille : en-tête « '' 1…9 '' R H E B » puis une ligne par équipe, 1re case
+     class « team ») ; table 0/1 frappeurs (… Pos BA AB R H HR RBI BB SO HBP), 2/3 lanceurs (… ERA IP NP R ER H HR SO
+     BB HB GS), 4 notes (Deciding Hit / HR / 2B…) ; texte « Jamsil Baseball Stadium », bilans « 62–72–2 · 6th ».
+   • /standings : Rank / Team W L D PCT GB STRK (« 3W ») L10 (« 7W 0D 3L ») ; /teams/<id>-<Nom> : tables Pitchers
+     (ERA WHIP IP SO BB K/BB) et Hitters (AVG/OBP/SLG OPS PA H HR RBI BB SO) ; /stats/top/<cat> (ops ba hr rbi sb era
+     w sv k) : Rank / Player Team <stat>… ; /stats/team_splits : Season G W L D W% R/G -R/G … BA ERASP ERARP.
+   NON vérifié : états d'un match en cours / annulé (texte de la carte), 1re colonne de stat = celle du classement
+   (/stats/top/<cat>), forme exacte des cellules du stade et des bilans. Cache g45kbo1_. */
+var _g45Kbo = { vue: 'e', sem: null, club: '', cv: 'e', cat: 'hr', eq: 'W%', mode: 'jo', plus: 0, ouv: {}, tok: 0 };
+var _G45_KBO_BASE = 'https://mykbostats.com';
+function _g45KboUrl(p) { return FD_PROXY + '?host=mykbo&path=' + encodeURIComponent(p); }
+function _g45KboAbs(u) { return !u ? '' : /^https?:/.test(u) ? u : _G45_KBO_BASE + (u.charAt(0) === '/' ? '' : '/') + u; }
+function _g45KboTx(e) { return e ? String(e.textContent || '').replace(/\s+/g, ' ').trim() : ''; }
+function _g45KboCle(n) { return String(n || '').toLowerCase().replace(/[^a-z0-9 ]/g, '').trim().split(' ')[0]; }
+var _g45KboAttente = {};
+async function _g45KboLire(cle, chemin, duree, analyse) {
+  var now = Date.now(), m = null;
+  try { m = JSON.parse(localStorage.getItem('g45kbo1_' + cle) || 'null'); } catch (e) {}
+  if (m && m.x > now) return m.d;
+  if (_g45KboAttente[cle]) return _g45KboAttente[cle];
+  var p = (async function () {
+    try {
+      var r = await fetch(_g45KboUrl(chemin));
+      if (!r.ok) throw new Error(r.status === 400 || r.status === 403 ? 'le worker ne connaît pas encore mykbostats (host=mykbo, ' + r.status + ')' : 'mykbostats ' + r.status);
+      var d = analyse(await r.text()); if (!d) throw new Error('page illisible');
+      try { localStorage.setItem('g45kbo1_' + cle, JSON.stringify({ d: d, x: now + (typeof duree === 'function' ? duree(d) : duree) })); } catch (e) {}
+      return d;
+    } catch (e) { if (m && m.d) return m.d; throw e; }
+    finally { delete _g45KboAttente[cle]; }
+  })();
+  _g45KboAttente[cle] = p;
+  return p;
+}
+/* Tableau HTML → {h: en-têtes, r: [{n: nom, v: {en-tête: valeur}, l: logo, a: lien}]}. Alignement depuis la cellule du
+   NOM (1re cellule avec des lettres ; côté en-tête, « Rank » et cases vides sautées) : numéro d'ordre avant le nom
+   ou colonne « Age / DOB » coupée en deux en fin de ligne ne décalent rien. */
+function _g45KboTable(t) {
+  var tr = [].slice.call(t.querySelectorAll('tr')); if (tr.length < 2) return null;
+  var cel = function (r) { return [].map.call(r.children, _g45KboTx); };
+  var lettres = function (x) { return /[A-Za-zㄱ-힝]{2}/.test(x); };
+  var H = cel(tr[0]), hk = -1;
+  for (var i = 0; i < H.length; i++) if (lettres(H[i]) && !/^rank$/i.test(H[i])) { hk = i; break; }
+  if (hk < 0) return null;
+  var R = [];
+  tr.slice(1).forEach(function (r) {
+    var c = cel(r), k = -1, td = [].slice.call(r.children);
+    /* cellule du nom : celle du lien joueur, sinon du lien équipe, sinon 1re avec des lettres */
+    ['a[href^="/players/"]', 'a[href^="/teams/"]'].some(function (s) { for (var j = 0; j < td.length; j++) if (td[j].querySelector(s)) { k = j; return true; } return false; });
+    if (k < 0) for (var j = 0; j < c.length; j++) if (lettres(c[j])) { k = j; break; }
+    if (k < 0) return;
+    var o = { n: c[k].replace(/^\d+\s+/, ''), v: {} };
+    for (var q = 1; hk + q < H.length && k + q < c.length; q++) o.v[H[hk + q]] = c[k + q];
+    var im = r.querySelector('img'), a = r.querySelector('a[href^="/teams/"]');
+    if (im && im.getAttribute('src')) o.l = _g45KboAbs(im.getAttribute('src'));
+    if (a) o.a = a.getAttribute('href');
+    R.push(o);
+  });
+  return { h: H.slice(hk), r: R };
+}
+function _g45KboNomEq(href, repli) { var m = /^\/teams\/(\d+-[^/?#]+)/.exec(href || ''); return m ? m[1].replace(/^\d+-/, '').replace(/-/g, ' ') : repli; }
+/* Une semaine de matchs (/games ou /schedule/week_of/…). */
+function _g45KboSemaine(html) {
+  var d = new DOMParser().parseFromString(String(html), 'text/html'), M = [];
+  d.querySelectorAll('a[id^="game-line-"]').forEach(function (a) {
+    var im = a.querySelectorAll('img'); if (im.length < 2) return;
+    var reste = _g45KboTx(a);
+    var eq = [im[0], im[1]].map(function (i) {
+      var row = i.parentElement, sp = [].filter.call(row.children, function (c) { return c.tagName === 'SPAN'; });
+      var sc = sp.length > 1 ? _g45KboTx(sp[sp.length - 1]) : '';
+      reste = reste.replace(_g45KboTx(row), ' ');
+      return { n: sp[0] ? _g45KboTx(sp[0]) : '', l: _g45KboAbs(i.getAttribute('src')), s: /^\d+$/.test(sc) ? +sc : null };
+    });
+    var dt = Date.parse(a.getAttribute('data-game-datetime') || '');
+    M.push({ u: a.getAttribute('href') || '', t: isNaN(dt) ? 0 : dt, a: eq[0], h: eq[1], st: reste.replace(/\s+/g, ' ').trim() });
+  });
+  var L = [];
+  d.querySelectorAll('a[href^="/schedule/week_of/"]').forEach(function (a) { var h = a.getAttribute('href'); if (L.indexOf(h) < 0) L.push(h); });
+  L.sort();
+  var t0 = M.length ? Math.min.apply(null, M.map(function (m) { return m.t || Infinity; })) : Date.now();
+  var jour = function (h) { return Date.parse(h.replace('/schedule/week_of/', '') + 'T12:00:00Z'); };
+  var prev = L.filter(function (h) { return jour(h) < t0; }).pop() || null, next = L.filter(function (h) { return jour(h) > t0; })[0] || null;
+  if (!M.length && !L.length) return null;
+  return { M: M, prev: prev, next: next };
+}
+/* État d'un match : 'fin' | 'ann' | 'in' | 'pre'. */
+function _g45KboEtat(m) {
+  if (/cancel|postpon|rain|suspend/i.test(m.st)) return 'ann';
+  if (m.a.s != null && m.h.s != null) return /final/i.test(m.st) ? 'fin' : 'in';
+  return 'pre';
+}
+function _g45KboDureeSem(cur) {
+  return function (S) {
+    var now = Date.now(), att = S.M.some(function (m) { var e = _g45KboEtat(m); return (e === 'pre' || e === 'in') && m.t < now + 864e5; });
+    var fini = S.M.length && S.M.every(function (m) { var e = _g45KboEtat(m); return e === 'fin' || e === 'ann'; });
+    return att ? 300e3 : cur ? 3600e3 : fini ? 7 * 864e5 : 600e3;
+  };
+}
+async function _g45KboSem(chemin) { return _g45KboLire(chemin ? 'w_' + chemin.replace(/\D/g, '') : 'w_cur', chemin || '/games', _g45KboDureeSem(!chemin), _g45KboSemaine); }
+/* Matchs récents : semaine en cours + les 2 précédentes (Forme, résultats d'un club). */
+async function _g45KboRecents() {
+  var S = await _g45KboSem(null), tout = S.M.slice(), p = S.prev;
+  for (var i = 0; i < 2 && p; i++) { try { var P = await _g45KboSem(p); tout = P.M.concat(tout); p = P.prev; } catch (e) { break; } }
+  var vu = {}; return tout.filter(function (m) { if (vu[m.u]) return false; vu[m.u] = 1; return true; }).sort(function (x, y) { return x.t - y.t; });
+}
+/* Feuille de match. */
+var _G45_KBO_NOTES = { 'Deciding Hit': 'Coup sûr décisif', 'HR': 'Home runs', '2B': 'Doubles', '3B': 'Triples', 'SB': 'Bases volées', 'CS': 'Pris en volant', 'E': 'Erreurs', 'DP': 'Doubles jeux', 'WP': 'Lancers fous', 'PB': 'Balles passées' };
+function _g45KboFeuille(html) {
+  var d = new DOMParser().parseFromString(String(html), 'text/html'), F = { ls: null, bat: [], pit: [], no: [], st: '', rec: [] };
+  var sb = d.querySelector('.scoreboard');
+  if (sb) {
+    var ch = [].slice.call(sb.children), L = -1;
+    for (var i = 0; i < ch.length; i++) if (/(^|\s)team(\s|$)/.test(ch[i].className || '')) { L = i; break; }
+    if (L > 0) { F.ls = { t: ch.slice(0, L).map(_g45KboTx), r: [] }; for (var j = L; j + L <= ch.length; j += L) F.ls.r.push(ch.slice(j, j + L).map(_g45KboTx)); }
+  }
+  var garde = function (T, cles) { return { e: T.h[0], r: T.r.map(function (o) { var v = {}; cles.forEach(function (k) { if (o.v[k] != null) v[k] = o.v[k]; }); return { n: o.n, v: v }; }) }; };
+  d.querySelectorAll('table').forEach(function (t) {
+    var T = _g45KboTable(t);
+    if (T && T.h.indexOf('AB') >= 0) F.bat.push(garde(T, ['Pos', 'AB', 'R', 'H', 'HR', 'RBI', 'BB', 'SO', 'BA']));
+    else if (T && T.h.indexOf('ERA') >= 0 && T.h.indexOf('IP') >= 0) F.pit.push(garde(T, ['IP', 'NP', 'H', 'R', 'ER', 'SO', 'BB', 'ERA']));
+    else [].forEach.call(t.querySelectorAll('tr'), function (r) { var c = [].map.call(r.children, _g45KboTx); if (c.length === 2 && c[0] && c[1]) F.no.push(c); });
+  });
+  d.querySelectorAll('body *').forEach(function (e) {
+    if (e.children.length || /^(SCRIPT|STYLE)$/.test(e.tagName)) return;
+    var t = _g45KboTx(e);
+    if (!F.st && t.length < 90 && /(stadium|park|dome|field|ballpark)/i.test(t)) F.st = t.replace(/^.*·\s*/, '');
+    var r = /^(\d+)[–-](\d+)[–-](\d+)(?:\s*·\s*(\d+))?/.exec(t);
+    if (r && F.rec.length < 2) F.rec.push({ v: +r[1], d: +r[2], n: +r[3], rg: r[4] ? +r[4] : null });
+  });
+  return F.ls || F.bat.length ? F : null;
+}
+function _g45KboClassement(html) {
+  var d = new DOMParser().parseFromString(String(html), 'text/html'), out = null;
+  [].some.call(d.querySelectorAll('table'), function (t) {
+    var T = _g45KboTable(t); if (!T || T.h.indexOf('PCT') < 0) return false;
+    out = T.r.map(function (o, i) {
+      var v = o.v, f = function (x) { return String(x || '').replace(/(\d+)W/g, '$1 V').replace(/(\d+)D/g, '$1 N').replace(/(\d+)L/g, '$1 D'); };
+      return { r: i + 1, n: _g45KboNomEq(o.a, o.n), a: o.a || '', l: o.l || '', w: v.W, lo: v.L, d: v.D, pct: v.PCT, gb: v.GB, se: f(v.STRK), l10: f(v.L10) };
+    });
+    return out.length > 0;
+  });
+  return out && out.length ? out : null;
+}
+function _g45KboEquipe(html) {
+  var d = new DOMParser().parseFromString(String(html), 'text/html'), E = { p: [], b: [] };
+  d.querySelectorAll('table').forEach(function (t) {
+    var T = _g45KboTable(t); if (!T) return;
+    var cles = /^pitch/i.test(T.h[0]) ? ['ERA', 'WHIP', 'IP', 'SO', 'BB'] : /^hit/i.test(T.h[0]) ? ['AVG/OBP/SLG', 'OPS', 'PA', 'H', 'HR', 'RBI', 'SO'] : null;
+    if (!cles) return;
+    T.r.forEach(function (o) {
+      var p = o.n.split('·').map(function (x) { return x.trim(); }), v = {};
+      cles.forEach(function (k) { if (o.v[k] != null) v[k] = o.v[k]; });
+      (cles[0] === 'ERA' ? E.p : E.b).push({ n: p[0].replace(/\s*#\d+$/, ''), no: (/#(\d+)/.exec(p[0]) || [])[1] || '', po: p[1] || '', v: v });
+    });
+  });
+  return E.p.length || E.b.length ? E : null;
+}
+function _g45KboLeaders(html) {
+  var t = new DOMParser().parseFromString(String(html), 'text/html').querySelector('table'), T = t && _g45KboTable(t);
+  if (!T || !T.r.length) return null;
+  var cles = T.h.slice(1), it = cles.indexOf('Team'), cs = cles[it + 1] || cles[0];
+  return { k: cs, r: T.r.slice(0, 100).map(function (o) { return { n: o.n, eq: o.v.Team || '', l: o.l || '', x: o.v[cs] || '' }; }) };
+}
+function _g45KboSplits(html) {
+  var d = new DOMParser().parseFromString(String(html), 'text/html'), out = null;
+  [].some.call(d.querySelectorAll('table'), function (t) { var T = _g45KboTable(t); if (T && T.h.indexOf('W%') >= 0) { out = T.r.map(function (o) { return { n: o.n, v: o.v }; }); return true; } return false; });
+  return out && out.length ? out : null;
+}
+/* ── Rendu ── */
+var _G45_KBO_CATS = [['hr', 'Home runs'], ['ba', 'Moyenne'], ['ops', 'OPS'], ['rbi', 'Points produits'], ['sb', 'Bases volées'], ['era', 'ERA'], ['w', 'Victoires'], ['sv', 'Sauvetages'], ['k', 'Retraits K']];
+var _G45_KBO_EQ = [['W%', '% victoires', 1], ['R/G', 'Points marqués / match', 1], ['-R/G', 'Points encaissés / match', 0], ['dR', 'Différence de points', 1], ['H/G', 'Coups sûrs / match', 1], ['BA', 'Moyenne au bâton', 1], ['ERASP', 'ERA des partants', 0], ['ERARP', 'ERA des releveurs', 0]];
+function _g45KboLogo(u, t) { return u ? '<img src="' + _g45ElEsc(u) + '" alt="" loading="lazy" referrerpolicy="no-referrer" style="width:' + t + 'px;height:' + t + 'px;object-fit:contain;flex:none;" onerror="this.style.visibility=\'hidden\'">' : '<span style="width:' + t + 'px;flex:none;"></span>'; }
+function _g45KboCarte(x) { return '<div style="background:rgba(11,16,29,.9);border-radius:12px;padding:10px;color:#fff;margin-bottom:8px;">' + x + '</div>'; }
+function _g45KboBtn(t, on, js) { return '<button onclick="' + js + '" style="flex:1;min-width:64px;padding:9px 8px;border-radius:9px;font-size:13px;font-weight:800;cursor:pointer;color:#fff;' + (on ? 'border:none;background:#2f6bff;' : 'border:1px solid rgba(255,255,255,.15);background:#232d4b;') + '">' + t + '</button>'; }
+function _g45KboLigne(x) { return '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">' + x + '</div>'; }
+function _g45KboHeure(t) { try { return new Date(t).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }).replace(':', 'h'); } catch (e) { return ''; } }
+function _g45KboJour(t) { try { return new Date(t).toLocaleDateString('fr-FR', { timeZone: 'Asia/Seoul', weekday: 'long', day: 'numeric', month: 'long' }); } catch (e) { return ''; } }
+/* Carte d'un match (visiteur en haut, club qui reçoit en bas, perdant en gris). */
+function _g45KboMatchHtml(m, i) {
+  var esc = _g45ElEsc, e = _g45KboEtat(m), fin = e === 'fin';
+  var row = function (c, o, dom) {
+    var perd = fin && c.s < o.s;
+    return '<div style="display:flex;align-items:center;gap:8px;font-size:14px;padding:2px 0;' + (perd ? 'color:#9aa6c4;' : 'color:#fff;') + '">' + _g45KboLogo(c.l, 24)
+      + '<span style="flex:1;min-width:0;font-weight:700;">' + esc(c.n) + (dom ? ' <span style="font-size:12px;">🏠</span>' : '') + '</span><b style="font-size:16px;">' + (c.s == null ? '' : c.s) + '</b></div>';
+  };
+  var pied = e === 'fin' ? 'Terminé' : e === 'ann' ? '❌ ' + esc(m.st || 'Annulé').replace(/cancel+ed/i, 'Annulé').replace(/postponed/i, 'Reporté') : e === 'in' ? '🔴 En cours' + (m.st ? ' · ' + esc(m.st) : '') : '🕒 ' + _g45KboHeure(m.t);
+  var clic = (e === 'fin' || e === 'in') ? ' onclick="g45KboMatch(' + i + ')" style="cursor:pointer;' : ' style="';
+  return '<div' + clic + 'background:rgba(11,16,29,.9);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:8px 10px;margin-top:6px;">'
+    + row(m.a, m.h, false) + row(m.h, m.a, true)
+    + '<div style="font-size:13px;color:#c9d3ee;margin-top:3px;">' + pied + ((e === 'fin' || e === 'in') ? ' · <span style="color:#6d9dff;">' + (_g45Kbo.ouv[m.u] ? '▲ fermer' : '▼ feuille de match') + '</span>' : '') + '</div></div>'
+    + '<div id="g45kbo-m-' + i + '"></div>';
+}
+function _g45KboTabHtml(cols, lignes) {
+  var th = cols.map(function (c, i) { return '<th style="padding:4px 3px;font-weight:600;color:#c9d3ee;text-align:' + (i ? 'right' : 'left') + ';">' + c[1] + '</th>'; }).join('');
+  var tb = lignes.map(function (o) { return '<tr>' + cols.map(function (c, i) { var x = c[0] === '_n' ? o.n : (o.v[c[0]] || ''); return '<td style="padding:5px 3px;border-top:1px solid rgba(255,255,255,.08);text-align:' + (i ? 'right' : 'left') + ';' + (i ? 'white-space:nowrap;' : '') + '">' + _g45ElEsc(x) + '</td>'; }).join('') + '</tr>'; }).join('');
+  return '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:13px;color:#fff;">' + '<tr>' + th + '</tr>' + tb + '</table></div>';
+}
+function _g45KboFeuilleHtml(F, m) {
+  var esc = _g45ElEsc, h = '';
+  if (F.st) h += '<div style="font-size:13px;color:#c9d3ee;margin-bottom:6px;">🏟️ ' + esc(F.st) + '</div>';
+  if (F.ls && F.ls.r.length) {
+    var garde = [], lib = { R: 'Pts', H: 'CS', E: 'Err' };
+    F.ls.t.forEach(function (x, i) { if (i === 0 || /^\d+$/.test(x) || lib[x]) garde.push(i); });
+    var cel = function (x, i, b) { return '<td style="padding:4px 2px;text-align:' + (i ? 'center' : 'left') + ';' + (b ? 'font-weight:800;' : '') + '">' + esc(x) + '</td>'; };
+    h += '<div style="overflow-x:auto;margin-bottom:8px;"><table style="width:100%;border-collapse:collapse;font-size:13px;color:#fff;"><tr style="color:#c9d3ee;">'
+      + garde.map(function (i, k) { return cel(k ? (lib[F.ls.t[i]] || F.ls.t[i]) : 'Manche', k, false); }).join('') + '</tr>'
+      + F.ls.r.map(function (r) { return '<tr style="border-top:1px solid rgba(255,255,255,.1);">' + garde.map(function (i, k) { return cel(k ? (r[i] === '' ? '–' : r[i]) : r[i].split(' ')[0], k, k && lib[F.ls.t[i]]); }).join('') + '</tr>'; }).join('')
+      + '</table></div><div style="font-size:12px;color:#c9d3ee;margin-bottom:8px;">Pts = points · CS = coups sûrs · Err = erreurs</div>';
+  }
+  var noms = [m.a.n, m.h.n];
+  [0, 1].forEach(function (k) {
+    var b = F.bat[k], p = F.pit[k];
+    if (!b && !p) return;
+    h += '<div style="font-size:15px;font-weight:800;margin:10px 0 4px;color:' + (k ? '#6d9dff' : '#f5c542') + ';">' + esc(noms[k]) + (k ? ' 🏠' : '') + '</div>';
+    if (b) h += '<div style="font-size:13px;font-weight:700;margin:4px 0;">🏏 Frappeurs</div>' + _g45KboTabHtml([['_n', 'Joueur'], ['Pos', 'Pos'], ['AB', 'AB'], ['H', 'CS'], ['R', 'Pts'], ['HR', 'HR'], ['RBI', 'PP'], ['BB', 'BB'], ['SO', 'K']], b.r);
+    if (p) h += '<div style="font-size:13px;font-weight:700;margin:8px 0 4px;">⚾ Lanceurs</div>' + _g45KboTabHtml([['_n', 'Joueur'], ['IP', 'Manches'], ['NP', 'Lancers'], ['H', 'CS'], ['R', 'Pts'], ['ER', 'PM'], ['SO', 'K'], ['BB', 'BB']], p.r);
+  });
+  if (F.bat.length || F.pit.length) h += '<div style="font-size:12px;color:#c9d3ee;margin-top:6px;">AB = passages au bâton · CS = coups sûrs · PP = points produits · BB = buts sur balles · K = retraits sur prises · PM = points mérités</div>';
+  if (F.no.length) h += '<div style="margin-top:8px;font-size:13px;">' + F.no.map(function (c) { return '<div style="padding:3px 0;"><b>' + esc(_G45_KBO_NOTES[c[0]] || c[0]) + '</b> : ' + esc(c[1]) + '</div>'; }).join('') + '</div>';
+  return h || '<div style="font-size:14px;">Feuille de match vide.</div>';
+}
+async function g45KboMatch(i) {
+  var m = (_g45Kbo.M || [])[i], z = document.getElementById('g45kbo-m-' + i); if (!m || !z) return;
+  if (_g45Kbo.ouv[m.u]) { delete _g45Kbo.ouv[m.u]; z.innerHTML = ''; return _g45KboRafraichirCartes(); }
+  _g45Kbo.ouv[m.u] = 1; _g45KboRafraichirCartes();
+  z = document.getElementById('g45kbo-m-' + i);
+  z.innerHTML = _g45KboCarte('<div style="font-size:14px;">⏳ Feuille de match…</div>');
+  try {
+    var fin = _g45KboEtat(m) === 'fin';
+    var F = await _g45KboLire('m_' + m.u.replace(/\D/g, '').slice(0, 12), m.u, fin ? 30 * 864e5 : 180e3, _g45KboFeuille);
+    z = document.getElementById('g45kbo-m-' + i); if (z && _g45Kbo.ouv[m.u]) z.innerHTML = _g45KboCarte(_g45KboFeuilleHtml(F, m));
+  } catch (e) { z = document.getElementById('g45kbo-m-' + i); if (z) z.innerHTML = _g45KboCarte('<div style="font-size:14px;">❌ ' + _g45ElEsc(e.message) + '</div>'); }
+}
+function _g45KboRafraichirCartes() {
+  (_g45Kbo.M || []).forEach(function (m, i) {
+    var z = document.getElementById('g45kbo-m-' + i), c = z && z.previousElementSibling;
+    if (c) { var tmp = document.createElement('div'); tmp.innerHTML = _g45KboMatchHtml(m, i); c.replaceWith(tmp.firstElementChild); }
+  });
+}
+function _g45KboListeMatchs(M) {
+  _g45Kbo.M = M;
+  var h = '', jour = '';
+  M.forEach(function (m, i) {
+    var j = _g45KboJour(m.t);
+    if (j !== jour) { jour = j; h += '<div style="font-size:15px;font-weight:800;color:#fff;margin:12px 0 2px;text-transform:capitalize;background:rgba(11,16,29,.85);border-radius:8px;padding:6px 10px;">' + _g45ElEsc(j) + '</div>'; }
+    h += _g45KboMatchHtml(m, i);
+  });
+  return h;
+}
+async function _g45KboVueMatchs(z, tok) {
+  var S = await _g45KboSem(_g45Kbo.sem);
+  if (tok !== _g45Kbo.tok) return;
+  var nav = function (p, t) { return p ? '<button onclick="g45KboSem(\'' + _g45ElEsc(p) + '\')" style="border:none;background:#232d4b;color:#fff;border-radius:8px;padding:8px 14px;font-size:16px;font-weight:800;cursor:pointer;">' + t + '</button>' : '<span style="width:46px;"></span>'; };
+  var t0 = S.M.length ? Math.min.apply(null, S.M.map(function (m) { return m.t || Infinity; })) : 0; if (!isFinite(t0)) t0 = 0;
+  var titre = t0 ? 'Semaine du ' + new Date(t0).toLocaleDateString('fr-FR', { timeZone: 'Asia/Seoul', day: 'numeric', month: 'long' }) : 'Semaine sans match';
+  var h = '<div style="display:flex;align-items:center;justify-content:space-between;background:rgba(11,16,29,.9);border-radius:10px;padding:6px 8px;color:#fff;">'
+    + nav(S.prev, '◀') + '<b style="font-size:15px;">' + titre + '</b>' + nav(S.next, '▶') + '</div>'
+    + (_g45Kbo.sem ? '<div style="text-align:center;margin-top:6px;"><button onclick="g45KboSem(\'\')" style="border:1px solid rgba(255,255,255,.15);background:transparent;color:#c9d3ee;border-radius:8px;padding:5px 10px;font-size:13px;cursor:pointer;">Revenir à cette semaine</button></div>' : '');
+  h += S.M.length ? _g45KboListeMatchs(S.M) : _g45KboCarte('<div style="font-size:14px;">Aucun match cette semaine.</div>');
+  h += '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">Heures françaises · jours de Corée · 🏠 = club qui reçoit (en bas)</div>';
+  z.innerHTML = h;
+  Object.keys(_g45Kbo.ouv).forEach(function (u) { S.M.forEach(function (m, i) { if (m.u === u) { delete _g45Kbo.ouv[u]; g45KboMatch(i); } }); });
+}
+async function _g45KboCls() { return _g45KboLire('cls', '/standings', 600e3, _g45KboClassement); }
+function _g45KboLogoDe(C, nom) { var k = _g45KboCle(nom), x = (C || []).filter(function (c) { return _g45KboCle(c.n) === k; })[0]; return x ? x.l : ''; }
+async function _g45KboVueClassement(z, tok) {
+  var C = await _g45KboCls(); if (tok !== _g45Kbo.tok) return;
+  var esc = _g45ElEsc, g = 'display:grid;grid-template-columns:22px minmax(0,1fr) 30px 30px 22px 42px 36px 40px;gap:4px;align-items:center;';
+  var t = '<div style="' + g + 'font-size:13px;color:#c9d3ee;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.15);"><span>#</span><span>Équipe</span><span>V</span><span>D</span><span>N</span><span>%</span><span>Écart</span><span>Série</span></div>';
+  C.forEach(function (x) {
+    t += '<div style="' + g + 'font-size:14px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.08);"><span style="font-weight:800;">' + x.r + '</span>'
+      + '<span style="display:flex;align-items:center;gap:6px;min-width:0;">' + _g45KboLogo(x.l, 22) + '<b style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(x.n.length > 9 ? x.n.split(' ')[0] : x.n) + '</b></span>'
+      + '<span>' + esc(x.w) + '</span><span>' + esc(x.lo) + '</span><span>' + esc(x.d) + '</span><span>' + esc(x.pct) + '</span><span>' + esc(/^0(\.0)?$/.test(x.gb) ? '–' : String(x.gb).replace('.', ',')) + '</span>'
+      + '<span style="color:' + (/V/.test(x.se) ? '#3ddc84' : /D/.test(x.se) ? '#ff6b6b' : '#c9d3ee') + ';font-weight:700;">' + esc(x.se) + '</span></div>';
+  });
+  z.innerHTML = _g45KboCarte('<div style="font-size:15px;font-weight:800;margin-bottom:6px;">📊 Classement</div>' + t + '<div style="font-size:13px;color:#c9d3ee;margin-top:6px;">V victoires · D défaites · N nuls · Écart = matchs de retard sur le 1er</div>');
+}
+function _g45KboPastilles(L) { return L.map(function (r) { return '<span style="display:inline-block;width:18px;height:18px;border-radius:4px;margin-left:2px;font-size:11px;line-height:18px;text-align:center;font-weight:800;color:#0b101d;background:' + (r === 'V' ? '#3ddc84' : r === 'D' ? '#ff6b6b' : '#c9d3ee') + ';">' + r + '</span>'; }).join(''); }
+function _g45KboResultats(R, nom) {
+  var k = _g45KboCle(nom), out = [];
+  R.forEach(function (m) {
+    if (_g45KboEtat(m) !== 'fin') return;
+    var moi = _g45KboCle(m.h.n) === k ? m.h : _g45KboCle(m.a.n) === k ? m.a : null; if (!moi) return;
+    var lui = moi === m.h ? m.a : m.h;
+    out.push({ m: m, moi: moi, lui: lui, dom: moi === m.h, r: moi.s > lui.s ? 'V' : moi.s < lui.s ? 'D' : 'N' });
+  });
+  return out;
+}
+async function _g45KboVueForme(z, tok) {
+  var C = await _g45KboCls(), R = [];
+  try { R = await _g45KboRecents(); } catch (e) {}
+  if (tok !== _g45Kbo.tok) return;
+  var t = '';
+  C.forEach(function (x) {
+    var L = _g45KboResultats(R, x.n).slice(-5).reverse().map(function (o) { return o.r; });
+    t += '<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.08);">' + _g45KboLogo(x.l, 28)
+      + '<span style="flex:1;min-width:0;"><b style="font-size:14px;">' + _g45ElEsc(x.n) + '</b><br><span style="font-size:13px;color:#c9d3ee;">10 derniers : ' + _g45ElEsc(x.l10 || '–') + ' · série ' + _g45ElEsc(x.se || '–') + '</span></span>'
+      + '<span style="white-space:nowrap;">' + _g45KboPastilles(L) + '</span></div>';
+  });
+  z.innerHTML = _g45KboCarte('<div style="font-size:15px;font-weight:800;margin-bottom:4px;">📈 Forme</div>' + t
+    + '<div style="font-size:13px;color:#c9d3ee;margin-top:6px;">Pastilles : 5 derniers matchs des 3 dernières semaines, le plus récent à gauche</div>');
+}
+async function _g45KboVueEquipes(z, tok) {
+  var C = await _g45KboCls(); if (tok !== _g45Kbo.tok) return;
+  var h = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">';
+  C.forEach(function (x) {
+    var on = _g45Kbo.club === x.a;
+    h += '<div onclick="g45KboClub(\'' + _g45ElEsc(x.a) + '\')" style="display:flex;align-items:center;gap:8px;background:rgba(11,16,29,.9);border:1px solid ' + (on ? '#6d9dff' : 'rgba(255,255,255,.12)') + ';border-radius:10px;padding:9px;cursor:pointer;color:#fff;font-size:14px;font-weight:700;">' + _g45KboLogo(x.l, 30) + '<span style="min-width:0;">' + _g45ElEsc(x.n) + '</span></div>';
+  });
+  z.innerHTML = h + '</div><div id="g45kbo-fiche" style="margin-top:10px;"></div>';
+  if (_g45Kbo.club) _g45KboFiche(C, tok);
+}
+async function _g45KboFiche(C, tok) {
+  var f = document.getElementById('g45kbo-fiche'); if (!f) return;
+  var x = C.filter(function (c) { return c.a === _g45Kbo.club; })[0]; if (!x) return;
+  var tete = '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">' + _g45KboLogo(x.l, 40) + '<div><div style="font-size:17px;font-weight:800;">' + _g45ElEsc(x.n) + '</div><div style="font-size:13px;color:#c9d3ee;">' + x.r + 'e · ' + _g45ElEsc(x.w + ' V · ' + x.lo + ' D · ' + x.d + ' N') + '</div></div></div>'
+    + _g45KboLigne(_g45KboBtn('👥 Effectif', _g45Kbo.cv === 'e', "g45KboClubVue('e')") + _g45KboBtn('📅 Résultats', _g45Kbo.cv === 'r', "g45KboClubVue('r')"));
+  f.innerHTML = _g45KboCarte(tete + '<div style="font-size:14px;">⏳ …</div>');
+  try {
+    var h = '';
+    if (_g45Kbo.cv === 'r') {
+      var R = await _g45KboRecents(), L = _g45KboResultats(R, x.n).reverse();
+      var aVenir = R.filter(function (m) { var e = _g45KboEtat(m); return (e === 'pre' || e === 'in') && (_g45KboCle(m.h.n) === _g45KboCle(x.n) || _g45KboCle(m.a.n) === _g45KboCle(x.n)); });
+      aVenir.forEach(function (m) { var dom = _g45KboCle(m.h.n) === _g45KboCle(x.n), o = dom ? m.a : m.h;
+        h += '<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.08);font-size:14px;"><span style="width:96px;color:#c9d3ee;font-size:13px;">' + _g45KboJour(m.t).replace(/^\w+\s/, '') + '</span>' + (dom ? '🏠' : '✈️') + _g45KboLogo(o.l, 20) + '<span style="flex:1;">' + _g45ElEsc(o.n) + '</span><b style="color:#c9d3ee;">' + (_g45KboEtat(m) === 'in' ? '🔴' : _g45KboHeure(m.t)) + '</b></div>'; });
+      L.forEach(function (o) {
+        h += '<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.08);font-size:14px;"><span style="width:96px;color:#c9d3ee;font-size:13px;">' + _g45KboJour(o.m.t).replace(/^\w+\s/, '') + '</span>' + (o.dom ? '🏠' : '✈️') + _g45KboLogo(o.lui.l, 20)
+          + '<span style="flex:1;">' + _g45ElEsc(o.lui.n) + '</span><b style="color:' + (o.r === 'V' ? '#3ddc84' : o.r === 'D' ? '#ff6b6b' : '#c9d3ee') + ';">' + o.r + ' ' + o.moi.s + '-' + o.lui.s + '</b></div>';
+      });
+      h = (h || '<div style="font-size:14px;">Aucun match ces 3 dernières semaines.</div>') + '<div style="font-size:13px;color:#c9d3ee;margin-top:6px;">3 dernières semaines · 🏠 domicile · ✈️ extérieur</div>';
+    } else {
+      var E = await _g45KboLire('eq_' + x.a.replace(/\D/g, ''), x.a, 6 * 3600e3, _g45KboEquipe);
+      var po = function (p) { return String(p || '').replace(/^SP\/RP$/, 'partant/releveur').replace(/^SP$/, 'partant').replace(/^RP$/, 'releveur'); };
+      var lig = function (L) { return L.map(function (j) { return { n: (j.no ? '#' + j.no + ' ' : '') + j.n + (j.po ? ' · ' + po(j.po) : ''), v: j.v }; }); };
+      if (E.p.length) h += '<div style="font-size:14px;font-weight:800;margin:4px 0;">⚾ Lanceurs</div>' + _g45KboTabHtml([['_n', 'Lanceur'], ['ERA', 'ERA'], ['WHIP', 'WHIP'], ['IP', 'Manches'], ['SO', 'K'], ['BB', 'BB']], lig(E.p));
+      if (E.b.length) h += '<div style="font-size:14px;font-weight:800;margin:12px 0 4px;">🏏 Frappeurs</div>' + _g45KboTabHtml([['_n', 'Frappeur'], ['AVG/OBP/SLG', 'Moy./OBP/SLG'], ['OPS', 'OPS'], ['H', 'CS'], ['HR', 'HR'], ['RBI', 'PP'], ['SO', 'K']], lig(E.b));
+      h += '<div style="font-size:12px;color:#c9d3ee;margin-top:6px;">K = retraits sur prises · BB = buts sur balles · CS = coups sûrs · PP = points produits</div>';
+    }
+    if (tok !== _g45Kbo.tok) return;
+    f = document.getElementById('g45kbo-fiche'); if (f) f.innerHTML = _g45KboCarte(tete + h);
+  } catch (e) { f = document.getElementById('g45kbo-fiche'); if (f) f.innerHTML = _g45KboCarte(tete + '<div style="font-size:14px;">❌ ' + _g45ElEsc(e.message) + '</div>'); }
+}
+async function _g45KboVueStats(z, tok) {
+  var S = _g45Kbo, esc = _g45ElEsc, C = await _g45KboCls();
+  var haut = _g45KboLigne(_g45KboBtn('🛡️ Équipes', S.mode === 'eq', "g45KboReg('mode','eq')") + _g45KboBtn('👤 Joueurs', S.mode === 'jo', "g45KboReg('mode','jo')"));
+  var med = ['#ffd700', '#c0c0c0', '#cd7f32'], h = '';
+  if (S.mode === 'jo') {
+    haut += _g45KboLigne(_G45_KBO_CATS.map(function (c) { return _g45KboBtn(c[1], S.cat === c[0], "g45KboReg('cat','" + c[0] + "')"); }).join(''));
+    z.innerHTML = haut + _g45KboCarte('<div style="font-size:14px;">⏳ …</div>');
+    var D = await _g45KboLire('top_' + S.cat, '/stats/top/' + S.cat, 3600e3, _g45KboLeaders); if (tok !== _g45Kbo.tok) return;
+    var n = S.plus ? 100 : 30;
+    D.r.slice(0, n).forEach(function (o, i) {
+      h += '<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.08);"><b style="width:24px;font-size:14px;color:' + (med[i] || '#fff') + ';">' + (i + 1) + '</b>'
+        + _g45KboLogo(o.l || _g45KboLogoDe(C, o.eq), 24) + '<span style="flex:1;min-width:0;"><b style="font-size:15px;">' + esc(o.n) + '</b><br><span style="font-size:13px;color:#c9d3ee;">' + esc(o.eq) + '</span></span>'
+        + '<b style="font-size:16px;">' + esc(o.x) + '</b></div>';
+    });
+    if (D.r.length > n) h += '<button onclick="g45KboReg(\'plus\',1)" style="width:100%;margin-top:8px;padding:9px;border-radius:9px;border:1px solid rgba(255,255,255,.15);background:#232d4b;color:#fff;font-size:14px;font-weight:700;cursor:pointer;">Voir plus</button>';
+    var cat = _G45_KBO_CATS.filter(function (c) { return c[0] === S.cat; })[0];
+    z.innerHTML = haut + _g45KboCarte('<div style="font-size:15px;font-weight:800;margin-bottom:4px;">🏅 ' + esc(cat ? cat[1] : S.cat) + ' <span style="font-size:13px;color:#c9d3ee;font-weight:600;">(' + esc(D.k) + ')</span></div>' + h);
+    return;
+  }
+  haut += _g45KboLigne(_G45_KBO_EQ.map(function (c) { return _g45KboBtn(c[1], S.eq === c[0], "g45KboReg('eq','" + c[0] + "')"); }).join(''));
+  z.innerHTML = haut + _g45KboCarte('<div style="font-size:14px;">⏳ …</div>');
+  var T = await _g45KboLire('splits', '/stats/team_splits', 3600e3, _g45KboSplits); if (tok !== _g45Kbo.tok) return;
+  var c = _G45_KBO_EQ.filter(function (x) { return x[0] === S.eq; })[0] || _G45_KBO_EQ[0];
+  var L = T.filter(function (o) { return o.v[c[0]] != null && !isNaN(parseFloat(o.v[c[0]])); }).sort(function (a, b) { var x = parseFloat(a.v[c[0]]), y = parseFloat(b.v[c[0]]); return c[2] ? y - x : x - y; });
+  L.forEach(function (o, i) {
+    h += '<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.08);"><b style="width:24px;font-size:14px;color:' + (med[i] || '#fff') + ';">' + (i + 1) + '</b>'
+      + _g45KboLogo(_g45KboLogoDe(C, o.n), 24) + '<b style="flex:1;font-size:15px;">' + esc(o.n) + '</b><b style="font-size:16px;">' + esc(o.v[c[0]]) + '</b></div>';
+  });
+  z.innerHTML = haut + _g45KboCarte('<div style="font-size:15px;font-weight:800;margin-bottom:4px;">🏅 ' + esc(c[1]) + '</div>' + (h || '<div style="font-size:14px;">Aucune donnée.</div>') + '<div style="font-size:13px;color:#c9d3ee;margin-top:6px;">Toute la saison · source mykbostats</div>');
+}
+async function _g45KboRendre(el) {
+  var tok = ++_g45Kbo.tok;
+  var onglet = function (k, t) { return _g45KboBtn(t, _g45Kbo.vue === k, "g45KboVue('" + k + "')").replace('flex:1;min-width:64px;', 'flex:1 1 30%;'); };
+  el.innerHTML = '<button onclick="g45CompetSel(null)" style="border:none;background:rgba(255,255,255,.06);color:#fff;border-radius:8px;padding:6px 12px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:10px;">← Baseball</button>'
+    + '<div style="font-size:20px;font-weight:800;color:#fff;margin-bottom:8px;">⚾ KBO 🇰🇷 <span style="font-size:14px;color:#c9d3ee;font-weight:600;">· ' + new Date().getFullYear() + '</span></div>'
+    + _g45KboLigne(onglet('e', '👥 Équipes') + onglet('m', '📅 Matchs') + onglet('c', '📊 Classement') + onglet('f', '📈 Forme') + onglet('s', '🏅 Classements'))
+    + '<div id="g45kbo-z">' + _g45KboCarte('<div style="font-size:14px;">⏳ Lecture de mykbostats…</div>') + '</div>'
+    + '<div style="font-size:12px;color:#c9d3ee;margin-top:8px;">Source : mykbostats.com (site de fans)</div>';
+  var z = document.getElementById('g45kbo-z');
+  try {
+    var v = _g45Kbo.vue;
+    if (v === 'm') await _g45KboVueMatchs(z, tok);
+    else if (v === 'c') await _g45KboVueClassement(z, tok);
+    else if (v === 'f') await _g45KboVueForme(z, tok);
+    else if (v === 's') await _g45KboVueStats(z, tok);
+    else await _g45KboVueEquipes(z, tok);
+  } catch (e) { if (tok === _g45Kbo.tok && z) z.innerHTML = _g45KboCarte('<div style="font-size:14px;">❌ ' + _g45ElEsc(e.message) + '</div>'); }
+}
+function _g45KboRe() { var el = document.getElementById('t-compet'); if (el) _g45KboRendre(el); }
+function g45KboVue(v) { _g45Kbo.vue = v; _g45KboRe(); }
+function g45KboSem(p) { _g45Kbo.sem = p || null; _g45KboRe(); }
+function g45KboClub(a) { _g45Kbo.club = _g45Kbo.club === a ? '' : a; _g45Kbo.cv = 'e'; _g45KboRe(); }
+function g45KboClubVue(k) { _g45Kbo.cv = k; _g45KboCls().then(function (C) { _g45KboFiche(C, _g45Kbo.tok); }); }
+function g45KboReg(k, v) { _g45Kbo[k] = v; if (k !== 'plus') _g45Kbo.plus = 0; _g45KboRe(); }
+window.g45KboVue = g45KboVue; window.g45KboSem = g45KboSem; window.g45KboClub = g45KboClub; window.g45KboClubVue = g45KboClubVue; window.g45KboReg = g45KboReg; window.g45KboMatch = g45KboMatch;
+window._g45KboSemaine = _g45KboSemaine; window._g45KboFeuille = _g45KboFeuille; window._g45KboClassement = _g45KboClassement; window._g45KboEquipe = _g45KboEquipe; window._g45KboLeaders = _g45KboLeaders; window._g45KboSplits = _g45KboSplits;
+(function _g45KboBrancher() {
+  try {
+    var bb = (typeof G45_SPORTS !== 'undefined') && G45_SPORTS.filter(function (s) { return s.key === 'baseball'; })[0];
+    var gr = bb && bb.groups && bb.groups[0];
+    if (gr && !gr.leagues.some(function (l) { return l.slug === 'kbo'; })) gr.leagues.push({ name: 'KBO', slug: 'kbo', ico: '🇰🇷' });
+  } catch (e) {}
+  if (typeof loadCompetTab === 'function' && !loadCompetTab._g45Kbo) {
+    var origine = loadCompetTab;
+    var env = async function () {
+      if (typeof _g45CompetSport !== 'undefined' && _g45CompetSport === 'baseball' && _g45CompetSel === 'kbo') {
+        var el = document.getElementById('t-compet'); if (!el) return;
+        return _g45KboRendre(el);
+      }
+      return origine.apply(this, arguments);
+    };
+    env._g45Kbo = true; env._g45Pd2 = origine._g45Pd2; env._g45El = origine._g45El; env._g45Khl = origine._g45Khl;
     loadCompetTab = env; window.loadCompetTab = env;
   }
 })();
