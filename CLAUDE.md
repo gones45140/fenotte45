@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261002a, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261002b, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -580,6 +580,12 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   (Toutes / Euroleague / Pro A, si le club a des matchs dans les deux ; `g45EbComp`, filtre dans l'interception de
   _g45CompetMatchs, _g45SgMem 'basketball|eb:' vidé) ; logo officiel = écusson Euroleague (enveloppe de `_g45HeroLogo`,
   u.logoUrl remplacé comme le badge NRL).
+  20261002b — Compo des clubs Euroleague du mur (demandée par Antoine, « aucune compo ») : enveloppe de loadTeamCompo →
+  `g45EbCompo(el, R)` : effectif `_g45EbEffectif(code, an)` (clubs/<code>/people, type J + coach E, cache g45eb1_ro_ 12 h),
+  postes `_G45_EB_POSTES`, stats par match de `_g45EsJoueurs` (team.code), tri par points. Fond du panneau Saisons :
+  écusson `window._g45EbCrestMap[lg]` au lieu du CDN ESPN (EB.png = 404 vu en console). Captures d'Antoine en version y :
+  logo absent (corrigé en a, à revérifier) ; DEMANDES EN ATTENTE : ⭐ suivre les clubs Euroleague depuis l'écran
+  Compétitions → cartes dans Suivies « Matchs à venir / direct » ; bannière de la carte du mur (ASVEL sans image).
 - Classements individuels TOP 14 (`g45LnrRender`, `_G45_LNR_CATS`, page top14.lnr.fr/classement/joueurs/<cat> via
   worker host=lnr) : 20261001a — LA LNR A REFAIT SON SITE (« page reçue mais illisible ») : plus de liens /joueur/ ;
   SONDÉ PAR ANTOINE : JSON dans l'attribut `:ranking` de <players-ranking> (100 joueurs {rank, player{name, url,

@@ -50142,7 +50142,9 @@ async function _g45SaisonsGen(el, nom, perso) {
      Si l'image manque, `g45FondClubHtml` ne pose que le degrade : jamais de trou. */
   var _crestG = '';
   try {
-    if (_g45SgCtx && _g45SgCtx.sp && _g45SgCtx.id) {
+    /* 20261002b : clubs Euroleague / Pro A du mur (lg 'eb:…', id 'EB') → écusson officiel, pas le CDN ESPN (EB.png = 404) */
+    if (_g45SgCtx && /^eb:/.test(String(_g45SgCtx.lg))) _crestG = (window._g45EbCrestMap || {})[_g45SgCtx.lg] || '';
+    else if (_g45SgCtx && _g45SgCtx.sp && _g45SgCtx.id) {
       _crestG = 'https://a.espncdn.com/i/teamlogos/' + _g45SgCtx.sp + '/500/' + _g45SgCtx.id + '.png';
     }
   } catch (e) {}
@@ -65333,6 +65335,65 @@ if (typeof _g45HeroLogo === 'function' && !_g45HeroLogo._g45Eb) {
   };
   _g45HeroLogo._g45Eb = true; window._g45HeroLogo = _g45HeroLogo;
 }
+/* ═══ 👥 COMPO des clubs Euroleague du mur (20261002b ; maquette proposée le 01/10, demandée par Antoine : « aucune compo ») ═══
+   SONDÉ PAR ANTOINE : /v2/competitions/E/seasons/E<an>/clubs/<code>/people → [{type J joueur | E coach | A assistant…, dorsal,
+   positionName (Guard / Forward / Center), images.headshot, person{name « CROWDER, JAE », height (cm), birthDate, country{name}}}].
+   Stats par match = players/traditional de l'onglet Stats (`_g45EsJoueurs`, filtrées sur team.code). Cache g45eb1_ro_ 12 h.
+   Pro A : effectif NON disponible (LNB fermée). */
+var _G45_EB_POSTES = { Guard: 'arrière / meneur', Forward: 'ailier', Center: 'pivot', 'Guard-Forward': 'arrière / ailier', 'Forward-Center': 'ailier fort' };
+async function _g45EbEffectif(code, an) {
+  var cle = 'g45eb1_ro_' + code + '_' + an, now = Date.now(), m = null;
+  try { m = JSON.parse(localStorage.getItem(cle) || 'null'); } catch (e) {}
+  if (m && m.x > now) return m.d;
+  var r = await fetch(FD_PROXY + '?host=euroleague&path=' + encodeURIComponent('/v2/competitions/E/seasons/E' + an + '/clubs/' + code + '/people'));
+  if (!r.ok) { if (m) return m.d; throw new Error('Euroleague ' + r.status); }
+  var j = await r.json(), L = Array.isArray(j) ? j : (j.data || []);
+  var d = L.filter(function (x) { return x && x.active !== false && (x.type === 'J' || x.type === 'E'); }).map(function (x) {
+    var p = x.person || {}, im = x.images || p.images || {};
+    var age = p.birthDate ? Math.floor((now - Date.parse(p.birthDate)) / (365.25 * 864e5)) : null;
+    return { t: x.type, n: _g45EsNom(p.name), k: p.code || '', no: x.dorsal || '', po: x.positionName || '', ph: im.headshot || im.action || '', ta: p.height || 0, age: age, pays: (p.country && p.country.name) || '' };
+  });
+  try { localStorage.setItem(cle, JSON.stringify({ d: d, x: now + 12 * 3600e3 })); } catch (e) {}
+  return d;
+}
+async function g45EbCompo(el, R) {
+  var an = _g45EbAnCour(), esc = _g45ElEsc;
+  el.innerHTML = '<div style="padding:16px;color:#fff;font-size:14px;">⏳ Effectif de ' + esc(R.nom) + '…</div>';
+  var E = await _g45EbEffectif(R.el, an), S = {};
+  try { (await _g45EsJoueurs(an, 3600e3)).forEach(function (o) { if (o.tc === R.el) S[_g45EbNorm(o.n)] = o; }); } catch (e) {}
+  var J = E.filter(function (x) { return x.t === 'J'; }), C = E.filter(function (x) { return x.t === 'E'; });
+  J.sort(function (a, b) { var sa = S[_g45EbNorm(a.n)], sb = S[_g45EbNorm(b.n)]; return ((sb && +sb.pt) || -1) - ((sa && +sa.pt) || -1); });
+  var h = '<div style="background:rgba(11,16,29,.9);border-radius:12px;padding:10px 12px;color:#fff;">'
+    + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">' + (R.l ? '<img src="' + esc(R.l) + '" alt="" style="width:34px;height:34px;object-fit:contain;" onerror="this.remove()">' : '')
+    + '<b style="font-size:16px;">👥 Effectif Euroleague ' + an + '-' + String(an + 1).slice(2) + '</b></div>';
+  J.forEach(function (j) {
+    var s = S[_g45EbNorm(j.n)], inf = [j.no ? '#' + j.no : '', _G45_EB_POSTES[j.po] || j.po, j.age ? j.age + ' ans' : '', j.ta ? (j.ta / 100).toFixed(2).replace('.', ',') + ' m' : '', j.pays].filter(Boolean).join(' · ');
+    h += '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid rgba(255,255,255,.08);">' + _g45EsAvatar(j.ph, j.n, 44)
+      + '<span style="flex:1;min-width:0;"><b style="display:block;font-size:15px;">' + esc(j.n) + '</b><span style="font-size:13px;color:#c9d3ee;">' + esc(inf) + '</span></span>'
+      + '<span style="text-align:right;font-size:14px;line-height:1.5;white-space:nowrap;">' + (s ? '<b>' + _g45EsAff(s.pt) + '</b> pts<br><span style="color:#dfe6ff;">' + _g45EsAff(s.rb) + ' reb · ' + _g45EsAff(s.as) + ' pas</span>' : '<span style="color:#9aa6c4;">pas encore joué</span>') + '</span></div>';
+  });
+  if (C.length) h += '<div style="font-size:14px;color:#c9d3ee;margin-top:8px;">🧑‍💼 Coach : <b style="color:#fff;">' + C.map(function (c) { return esc(c.n); }).join(', ') + '</b></div>';
+  h += '<div style="font-size:12px;color:#c9d3ee;margin-top:6px;">Moyennes par match en Euroleague · source API Euroleague</div></div>';
+  el.innerHTML = J.length ? h : '<div style="padding:16px;color:#fff;font-size:14px;">Aucun joueur publié pour ' + esc(R.nom) + '.</div>';
+}
+window.g45EbCompo = g45EbCompo;
+if (typeof loadTeamCompo === 'function' && !loadTeamCompo._g45Eb) {
+  var _g45EbCompoOrig = loadTeamCompo;
+  loadTeamCompo = async function () {
+    try {
+      var nom = (typeof _currentTeam !== 'undefined' ? _currentTeam : '') || (typeof _currentUnitNom !== 'undefined' ? _currentUnitNom : '') || '';
+      var u = (state.u || []).find(function (x) { return x.n === nom; }) || {};
+      var nba = (typeof NBA_TEAMS !== 'undefined' && NBA_TEAMS[nom]) || (typeof resolveNbaTeam === 'function' && resolveNbaTeam(nom));
+      var el = document.getElementById('ip-compo');
+      if (el && /🏀/.test(u.sport || '') && !nba) {
+        var R = await _g45EbResoudre(nom);
+        if (R && R.el) return await g45EbCompo(el, R);
+      }
+    } catch (err) { console.warn('Euroleague compo :', err && err.message); }
+    return _g45EbCompoOrig.apply(this, arguments);
+  };
+  loadTeamCompo._g45Eb = true; window.loadTeamCompo = loadTeamCompo;
+}
 window._g45EbResoudre = _g45EbResoudre; window._g45EbCharger = _g45EbCharger; window._g45EbCorrespond = _g45EbCorrespond;
 (function _g45EbBrancher() {
   if (typeof _g45CompetEquipes === 'function' && !_g45CompetEquipes._g45Eb) {
@@ -65388,6 +65449,7 @@ window._g45EbResoudre = _g45EbResoudre; window._g45EbCharger = _g45EbCharger; wi
           var R = await _g45EbResoudre(nom);
           if (R) {
             if (typeof _g45SgNomCourant !== 'undefined' && _g45SgNomCourant !== nom) { _g45SgNomCourant = nom; _g45SgAn = null; _g45SgPhase = 'tout'; }
+            window._g45EbCrestMap = window._g45EbCrestMap || {}; window._g45EbCrestMap['eb:' + R.el + '|' + R.pa] = R.l || '';
             var res = await _g45SaisonsGen(el, nom, { sport: 'basketball', league: 'eb:' + R.el + '|' + R.pa, id: 'EB' });
             try { _g45EbHaut(el, R); } catch (eH) {}
             return res;
