@@ -42221,7 +42221,7 @@ window.g45F1Session=g45F1Session;
    et les données utilisateur n'étaient JAMAIS écrites — l'ajout apparaissait à l'écran puis
    disparaissait au rechargement. Ce n'était ni la synchro GitHub, ni Dropbox, ni le cache
    du navigateur. Tous ces caches sont reconstructibles : ils cèdent la place aux données. */
-var _G45_CACHE_PREFIXES=['g45pd2_',/* 01/10 : Pro D2 (LNR) */'g45t14sq1_',/* 01/10 : effectifs Top 14 (LNR) */'g45nrlm1_','g45nrldr1_',/* 01/10 : feuilles et calendriers NRL */'g45nrlsq1_',/* 01/10 : effectifs NRL */'g45nrlst2_',/* 01/10 : classements NRL */'g45proacid1_',/* 30/09 : numéros LNB par saison */'g45proast1_',/* 30/09 : stats Pro A */'g45proa1_',/* 30/09 : Pro A par journée */'g45el1_',/* 30/09 : Euroleague (compact) */'g45buts1_',/* 30/09 : buts en action (match fini) */'g45prad1_','g45vsj1_','g45vse1_',/* 30/09 : radars joueurs */'g45ia1_',/* 29/09 : avis IA gardés 6 h */'g45_mmeta2_','g45_mmeta1_','g45_tennis4_','g45_tennis3_',/* 16/09 : meta de match (domicile/lieu) et score tennis, reconstructibles */'g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dcf_','g45dc_',
+var _G45_CACHE_PREFIXES=['g45t14lg1',/* 01/10 : logos Top 14 (LNR) */'g45pd2_',/* 01/10 : Pro D2 (LNR) */'g45t14sq1_',/* 01/10 : effectifs Top 14 (LNR) */'g45nrlm1_','g45nrldr1_',/* 01/10 : feuilles et calendriers NRL */'g45nrlsq1_',/* 01/10 : effectifs NRL */'g45nrlst2_',/* 01/10 : classements NRL */'g45proacid1_',/* 30/09 : numéros LNB par saison */'g45proast1_',/* 30/09 : stats Pro A */'g45proa1_',/* 30/09 : Pro A par journée */'g45el1_',/* 30/09 : Euroleague (compact) */'g45buts1_',/* 30/09 : buts en action (match fini) */'g45prad1_','g45vsj1_','g45vse1_',/* 30/09 : radars joueurs */'g45ia1_',/* 29/09 : avis IA gardés 6 h */'g45_mmeta2_','g45_mmeta1_','g45_tennis4_','g45_tennis3_',/* 16/09 : meta de match (domicile/lieu) et score tennis, reconstructibles */'g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dcf_','g45dc_',
   'g45trv3_','g45trv2_','g45trOdds_','g45tr_','g45but_st_','g45butL_','g45butA_','g45but_mur_',
   '_g45clv','g45clv_snaps','g45_saisons_cache_v3_','g45_saisons_cache_v2_',
   /* Ajoutes le 20/08 : ces caches, tous reconstructibles, n'etaient PAS declares
@@ -47759,6 +47759,11 @@ async function _g45ClsRenderRugby(c, body, an) {
   ms = _g45ClsGarderLigue(ms, ids);
   var info = {};
   ms.forEach(function (m) { info[m.h] = info[m.h] || { nom: m.hn, logo: m.hl }; info[m.a] = info[m.a] || { nom: m.an, logo: m.al }; });
+  /* 20261001o — Top 14 : ESPN donne à Perpignan un DRAPEAU AMÉRICAIN et rien à Bayonne (captures d'Antoine) →
+     logos officiels LNR (les mêmes que dans le classement des joueurs). */
+  if (c.s === '270559' && typeof _g45T14Logos === 'function') {
+    try { var LG = await _g45T14Logos(); Object.keys(info).forEach(function (id) { var sl = _g45T14Slug(info[id].nom); if (sl && LG[sl]) info[id].logo = LG[sl]; }); } catch (e) {}
+  }
   var lbl = (typeof _g45SgLabel === 'function') ? _g45SgLabel(c.s, anU) : anU;
   var sansMt = ms.filter(function (m) { return m.mh === null; }).length;
   window._g45ClsRgSansMt = sansMt;
@@ -49169,6 +49174,20 @@ async function g45T14Compo(el, nom) {
   el.innerHTML = h + '</div>';
   return true;
 }
+/* Logos officiels des clubs du Top 14 (20261001o) : adresses cdn.lnr.fr/club/<slug>/photo/logo… relevées dans la page
+   /classement du site LNR (même motif vu sur prod2.lnr.fr) ; une carte slug → logo, gardée 7 j (g45t14lg1). */
+async function _g45T14Logos() {
+  try { var c = JSON.parse(localStorage.getItem('g45t14lg1') || 'null'); if (c && c.x > Date.now()) return c.d; } catch (e) {}
+  var r = await fetch(FD_PROXY + '?host=lnr&lnrhost=top14.lnr.fr&path=' + encodeURIComponent('/classement'));
+  if (!r.ok) throw new Error(r.status);
+  var t = await r.text(), d = {}, re = /https:\/\/cdn\.lnr\.fr\/club\/([a-z0-9-]+)\/photo\/logo[.\w-]*/g, m;
+  t = t.replace(/\\\//g, '/');
+  while ((m = re.exec(t))) { if (!d[m[1]] || /thumbnail/.test(d[m[1]])) d[m[1]] = m[0]; }
+  if (Object.keys(d).length < 8) throw new Error('logos introuvables');
+  try { localStorage.setItem('g45t14lg1', JSON.stringify({ d: d, x: Date.now() + 7 * 86400e3 })); } catch (e) {}
+  return d;
+}
+window._g45T14Logos = _g45T14Logos;
 window.g45T14Compo = g45T14Compo; window._g45T14Slug = _g45T14Slug; window._g45T14Lire = _g45T14Lire;
 
 /* ═══ NRL — STATS D'UN JOUEUR DANS BET45 (20261001h, maquette validée : « OUI ») ═══

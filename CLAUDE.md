@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20261001n, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20261001o, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -595,6 +595,9 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   marqués » ; lecture `_g45T14Lire`. Slugs `_G45_T14_CLUBS` / `_g45T14Slug` (toulouse, toulon, pau, lyon, montpellier,
   clermont, bayonne, castres, vannes, racing-92, paris, la-rochelle, perpignan, bordeaux-begles). Cache g45t14sq1_<slug> 12 h.
   Pro D2 : NON fait (prod2.lnr.fr autorisé par le worker, slugs non sondés).
+  20261001o — LOGOS Top 14 dans Classements → Équipes (`_g45ClsRenderRugby`, c.s 270559) : ESPN donnait un drapeau US à
+  Perpignan et rien à Bayonne (captures d'Antoine) → `_g45T14Logos()` relève les cdn.lnr.fr/club/<slug>/photo/logo… de
+  top14.lnr.fr/classement (motif vu sur prod2 ; page top14 NON sondée), cache g45t14lg1 7 j ; nom ESPN → slug `_g45T14Slug`.
 - 🏉 PRO D2 (20261001m, maquette validée) : ESPN ne l'a pas → tuile slug 'prod2' (Compétitions → Rugby → Clubs, après Top 14,
   `_g45Pd2Brancher` enveloppe loadCompetTab si _g45CompetSport 'rugby' et _g45CompetSel 'prod2' ; PAS dans Résultats). Site
   prod2.lnr.fr via worker host=lnr&lnrhost=prod2.lnr.fr. SONDÉ PAR ANTOINE : /calendrier-et-resultats → <filters-fixtures
