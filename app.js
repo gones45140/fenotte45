@@ -60828,7 +60828,7 @@ function _g45ElClassement(g) {
   g.forEach(function (m) {
     if (!m.p || (m.ph && !/^RS$/i.test(m.ph))) return;
     [[m.h, m.a], [m.a, m.h]].forEach(function (x) {
-      var e = x[0], o = x[1], t = T[e.c || e.n] = T[e.c || e.n] || { n: e.n, l: e.l, v: 0, d: 0, pp: 0, pc: 0, j: 0 };
+      var e = x[0], o = x[1], t = T[e.c || e.n] = T[e.c || e.n] || { n: e.n, c: e.c, l: e.l, v: 0, d: 0, pp: 0, pc: 0, j: 0 };
       t.j++; t.pp += +e.s || 0; t.pc += +o.s || 0; if ((+e.s || 0) > (+o.s || 0)) t.v++; else t.d++;
     });
   });
@@ -60843,7 +60843,10 @@ function _g45ElClassementHtml(g) {
   L.forEach(function (t, i) {
     var ec = t.pp - t.pc;
     h += '<tr style="border-top:1px solid rgba(255,255,255,.08);"><td ' + c + '>' + (i + 1) + '</td>'
-      + '<td style="padding:6px 4px;"><span style="display:inline-flex;align-items:center;gap:6px;">' + _g45ElLogo(t, 20) + _g45ElEsc(t.n) + '</span></td>'
+      + '<td style="padding:6px 4px;"><span style="display:inline-flex;align-items:center;gap:6px;">' + _g45ElLogo(t, 20) + _g45ElEsc(t.n)
+      /* 20261002c (« oui ») : ⭐ suivre un club Euroleague → cartes dans Suivies (g45ElDirectSuivies) */
+      + (_g45ElLigue === 'el' && t.c && typeof g45SuiviEqEtoile === 'function' ? g45SuiviEqEtoile({ nom: t.n, id: t.c, logo: t.l }, { s: 'euroleague', sp: 'basketball', ico: '🏀' }).replace('margin-left:auto;', 'margin-left:6px;') : '')
+      + '</span></td>'
       + '<td ' + c + '>' + t.j + '</td><td ' + c + '><b>' + t.v + '</b></td><td ' + c + '>' + t.d + '</td><td ' + c + '>' + t.pp + '</td><td ' + c + '>' + t.pc + '</td>'
       + '<td ' + c + ' ><span style="color:' + (ec >= 0 ? '#4ade80' : '#ff6b6b') + ';">' + (ec > 0 ? '+' : '') + ec + '</span></td></tr>';
   });
@@ -65384,8 +65387,9 @@ if (typeof loadTeamCompo === 'function' && !loadTeamCompo._g45Eb) {
       var nom = (typeof _currentTeam !== 'undefined' ? _currentTeam : '') || (typeof _currentUnitNom !== 'undefined' ? _currentUnitNom : '') || '';
       var u = (state.u || []).find(function (x) { return x.n === nom; }) || {};
       var nba = (typeof NBA_TEAMS !== 'undefined' && NBA_TEAMS[nom]) || (typeof resolveNbaTeam === 'function' && resolveNbaTeam(nom));
-      var el = document.getElementById('ip-compo');
-      if (el && /🏀/.test(u.sport || '') && !nba) {
+      var el = document.getElementById('ip-compo'), spC = u.sport || '';
+      if (!spC) { try { var pc = (typeof g45TeamsPerso === 'function' ? g45TeamsPerso() : {})[String(nom).toLowerCase().trim()]; if (pc && pc.sport === 'basketball') spC = '🏀'; } catch (e) {} }
+      if (el && /🏀/.test(spC) && !nba) {
         var R = await _g45EbResoudre(nom);
         if (R && R.el) return await g45EbCompo(el, R);
       }
@@ -65393,6 +65397,72 @@ if (typeof loadTeamCompo === 'function' && !loadTeamCompo._g45Eb) {
     return _g45EbCompoOrig.apply(this, arguments);
   };
   loadTeamCompo._g45Eb = true; window.loadTeamCompo = loadTeamCompo;
+}
+/* ═══ ⭐ CLUBS EUROLEAGUE SUIVIS → Suivies « Matchs à venir / direct » (20261002c, maquette validée « oui ») ═══
+   Comme la KHL (g45KhlDirectSuivies) : enveloppe de g45DirectMesEquipes, zone #g45-el-direct en tête de #g45-direct-body.
+   Clubs = étoiles (state.suiviEq, league 'euroleague', id = code club) + équipes 🏀 du mur reconnues en Euroleague.
+   À venir / direct : non joués de -3 h à +7 jours ; Résultats : joués des 7 derniers jours. Scores = liste des matchs
+   (cache 10 min un jour de match) : PAS un vrai direct. Clic → `_g45EbCarte`. */
+async function _g45ElCodesSuivis() {
+  var ids = {};
+  try { (typeof g45SuiviEqGet === 'function' ? g45SuiviEqGet() : []).forEach(function (t) { if (t && String(t.league) === 'euroleague' && t.id) ids[t.id] = 1; }); } catch (e) {}
+  try {
+    var mur = ((state && state.u) || []).filter(function (u) { return u && /🏀/.test(u.sport || ''); });
+    if (mur.length) { var C = await _g45EbClubsEl(); mur.forEach(function (u) { var e = C.filter(function (c) { return _g45EbCorrespond(u.n, c.al); })[0]; if (e) ids[e.c] = 1; }); }
+  } catch (e) {}
+  return Object.keys(ids);
+}
+var _g45ElDirIdx = {};
+function _g45ElCarteDirect(m) {
+  var esc = _g45ElEsc, live = typeof _g45ElEnCours === 'function' && _g45ElEnCours(m);
+  var etat = m.p ? '<span style="color:#cfd8ea;">Terminé</span>' : live ? '<span style="color:#ff6b6b;">● En cours</span>' : '<span style="color:#f0b020;">À venir</span>';
+  var rond = function (e) { return '<span style="width:34px;height:34px;flex:none;border-radius:50%;background:rgba(255,255,255,.14);display:inline-flex;align-items:center;justify-content:center;overflow:hidden;">' + (e.l ? '<img src="' + esc(e.l) + '" alt="" loading="lazy" style="width:88%;height:88%;object-fit:contain;" onerror="this.remove()">' : '') + '</span>'; };
+  var pil = function (t) { return '<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border-radius:999px;background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.14);font-size:12px;color:#fff;margin:0 5px 4px 0;">' + t + '</span>'; };
+  var d = new Date(m.t), jr = d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }), hr = d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  var k = 'el' + m.id; _g45ElDirIdx[k] = m;
+  return '<div onclick="g45ElDirOuvrir(\'' + k + '\')" style="cursor:pointer;position:relative;border-radius:14px;overflow:hidden;border:1px solid rgba(255,255,255,.1);margin-bottom:10px;background:linear-gradient(105deg,#3a2a10 0%,#16233f 48%,#10203a 100%);">'
+    + '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:space-between;padding:0 6px;opacity:.15;" aria-hidden="true">' + (m.h.l ? '<img src="' + esc(m.h.l) + '" alt="" style="height:78%;object-fit:contain;" onerror="this.remove()">' : '<span></span>') + (m.a.l ? '<img src="' + esc(m.a.l) + '" alt="" style="height:78%;object-fit:contain;" onerror="this.remove()">' : '') + '</div>'
+    + '<div style="position:relative;padding:11px 12px;color:#fff;"><div style="display:flex;justify-content:space-between;gap:8px;font-size:12px;color:#cfd8ea;"><span>🏀 Euroleague' + (m.pha && !/^RS$/i.test(m.ph) ? ' · ' + esc(m.pha) : m.r ? ' · Journée ' + esc(m.r) : '') + '</span>' + etat + '</div>'
+    + '<div style="display:flex;align-items:center;gap:10px;margin:9px 0 7px;">' + rond(m.h) + '<div style="flex:1;min-width:0;font-weight:800;font-size:15px;">' + esc(m.h.n) + '</div>'
+    + (m.p || (live && m.h.s != null) ? '<div style="font-size:23px;font-weight:800;white-space:nowrap;">' + m.h.s + ' – ' + m.a.s + '</div>' : '<div style="font-size:15px;color:#cfd8ea;">vs</div>')
+    + '<div style="flex:1;min-width:0;text-align:right;font-weight:800;font-size:15px;">' + esc(m.a.n) + '</div>' + rond(m.a) + '</div>'
+    + '<div>' + pil('🏀 Euroleague') + pil('🕗 ' + jr + ' ' + hr) + (m.v ? pil('📍 ' + esc(m.v)) : '') + '</div></div></div>';
+}
+function g45ElDirOuvrir(k) {
+  var m = _g45ElDirIdx[k]; if (!m) return;
+  if (typeof _g45SgFermerMatch === 'function') _g45SgFermerMatch();
+  var mo = document.createElement('div'); mo.id = 'g45-sg-modal';
+  mo.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:14px;overflow-y:auto;';
+  mo.onclick = function (e) { if (e.target === mo && typeof _g45SgFermerMatch === 'function') _g45SgFermerMatch(); };
+  mo.innerHTML = '<div style="background:#0f1526;border:1px solid rgba(255,255,255,.15);border-radius:14px;max-width:560px;width:100%;position:relative;margin:auto 0;"><button onclick="_g45SgFermerMatch()" style="position:absolute;top:8px;right:12px;background:none;border:none;color:#fff;font-size:22px;cursor:pointer;">\u2715</button>' + _g45EbCarte({ m: m, comp: 'Euroleague' }) + '</div>';
+  document.body.appendChild(mo);
+}
+window.g45ElDirOuvrir = g45ElDirOuvrir;
+async function g45ElDirectSuivies() {
+  var box = document.getElementById('g45-direct-body'); if (!box) return;
+  var anc = document.getElementById('g45-el-direct'); if (anc) anc.innerHTML = '';
+  var ids = await _g45ElCodesSuivis(); if (!ids.length) return;
+  var resultats = (window._G45_SUIVI_MODE === 'resultats'), now = Date.now();
+  var ancL = _g45ElLigue, g; _g45ElLigue = 'el';
+  try { g = await _g45ElMatchs(_g45ElSaison()); } finally { _g45ElLigue = ancL; }
+  var ms = g.filter(function (m) {
+    if (ids.indexOf(m.h.c) < 0 && ids.indexOf(m.a.c) < 0) return false;
+    return resultats ? (m.p && m.t > now - 7 * 864e5) : (!m.p && m.t > now - 3 * 3600e3 && m.t < now + 7 * 864e5);
+  }).sort(function (x, y) { return resultats ? y.t - x.t : x.t - y.t; });
+  if (!ms.length) return;
+  box = document.getElementById('g45-direct-body'); if (!box) return;
+  var zone = document.getElementById('g45-el-direct');
+  if (!zone) { zone = document.createElement('div'); zone.id = 'g45-el-direct'; box.insertBefore(zone, box.firstChild); }
+  zone.innerHTML = ms.map(_g45ElCarteDirect).join('');
+}
+window.g45ElDirectSuivies = g45ElDirectSuivies;
+if (typeof g45DirectMesEquipes === 'function' && !g45DirectMesEquipes._g45El) {
+  var _g45ElDirOrig = g45DirectMesEquipes;
+  g45DirectMesEquipes = async function () {
+    try { await _g45ElDirOrig.apply(this, arguments); } catch (e) {}
+    try { await g45ElDirectSuivies(); } catch (e) { console.warn('Euroleague suivies :', e && e.message); }
+  };
+  g45DirectMesEquipes._g45El = true; g45DirectMesEquipes._g45Khl = _g45ElDirOrig._g45Khl; window.g45DirectMesEquipes = g45DirectMesEquipes;
 }
 window._g45EbResoudre = _g45EbResoudre; window._g45EbCharger = _g45EbCharger; window._g45EbCorrespond = _g45EbCorrespond;
 (function _g45EbBrancher() {

@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261002b, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261002c, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -584,8 +584,12 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   `g45EbCompo(el, R)` : effectif `_g45EbEffectif(code, an)` (clubs/<code>/people, type J + coach E, cache g45eb1_ro_ 12 h),
   postes `_G45_EB_POSTES`, stats par match de `_g45EsJoueurs` (team.code), tri par points. Fond du panneau Saisons :
   écusson `window._g45EbCrestMap[lg]` au lieu du CDN ESPN (EB.png = 404 vu en console). Captures d'Antoine en version y :
-  logo absent (corrigé en a, à revérifier) ; DEMANDES EN ATTENTE : ⭐ suivre les clubs Euroleague depuis l'écran
-  Compétitions → cartes dans Suivies « Matchs à venir / direct » ; bannière de la carte du mur (ASVEL sans image).
+  logo absent (corrigé en a, à revérifier) ; bannière de la carte du mur (ASVEL sans image) : À VOIR après Ctrl+Maj+R.
+  20261002c (maquette validée « oui ») — ⭐ dans le Classement Euroleague (`_g45ElClassementHtml`, g45SuiviEqEtoile, league
+  'euroleague', id = code club ; t.c ajouté à `_g45ElClassement`) ; Suivies « À venir / direct » et « Résultats » : enveloppe de
+  g45DirectMesEquipes → `g45ElDirectSuivies` (zone #g45-el-direct, clubs = étoiles + équipes 🏀 du mur reconnues
+  `_g45ElCodesSuivis`, à venir −3 h → +7 j, résultats 7 j), cartes `_g45ElCarteDirect`, clic `g45ElDirOuvrir` → `_g45EbCarte`.
+  Compo : équipe suivie hors mur reconnue aussi via g45TeamsPerso (sport basketball).
 - Classements individuels TOP 14 (`g45LnrRender`, `_G45_LNR_CATS`, page top14.lnr.fr/classement/joueurs/<cat> via
   worker host=lnr) : 20261001a — LA LNR A REFAIT SON SITE (« page reçue mais illisible ») : plus de liens /joueur/ ;
   SONDÉ PAR ANTOINE : JSON dans l'attribut `:ranking` de <players-ranking> (100 joueurs {rank, player{name, url,
