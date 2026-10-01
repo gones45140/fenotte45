@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20261001k, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 30/09/2026 (version déployée : 20261001l, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -587,6 +587,14 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   de BASKET → si le club est NRL (sport du mur contenant 🇦🇺, ou équipe perso rugby-league) et reconnu par `_g45NrlEqId`,
   badge officiel https://www.nrl.com/.theme/<surnom>/badge.png, qui REMPLACE un logo mémorisé (u.logoUrl). Carolina
   Panthers (🏈) non touché. Surnoms à 2 mots → tiret (sea-eagles, wests-tigers : NON vérifié).
+- Compo TOP 14 (20261001l, maquette validée) : ESPN = « Aucun joueur renvoyé » (rugby/270559) → `g45T14Compo(el, nom)` en tête
+  de `_g45CompoEffectif` si ctx.sp === 'rugby' (sinon chemin ESPN). SONDÉ PAR ANTOINE : top14.lnr.fr/club/<slug>/effectif-staff
+  (worker host=lnr) = HTML sans JSON, <a class="player-block"> : .player-block__player-img (photo cdn.lnr.fr …/photoFull.<hash>
+  SANS extension — la console Chrome raccourcit l'adresse avec « … », elle est entière), __name, __position (8 postes
+  `_G45_T14_POSTES`), __country (alt = pays, src = drapeau), __statistics « N matches joués / N minutes jouées / N points
+  marqués » ; lecture `_g45T14Lire`. Slugs `_G45_T14_CLUBS` / `_g45T14Slug` (toulouse, toulon, pau, lyon, montpellier,
+  clermont, bayonne, castres, vannes, racing-92, paris, la-rochelle, perpignan, bordeaux-begles). Cache g45t14sq1_<slug> 12 h.
+  Pro D2 : NON fait (prod2.lnr.fr autorisé par le worker, slugs non sondés).
 - 🔥 CARTES DE CHALEUR foot (20261001j, maquette validée) : bouton posé par `_g45ChPoser` dans `_g45SgCarteTirs` (match 'in'
   ou 'post', avant le bouton des tirs) → `g45ChOuvrir` (2e appui = refermer) relit les actions avec `_g45ButsLire` (mêmes
   pages que « les buts en action », `_g45ButsMem`) → `_g45ChRendre` (équipe bleu / jaune, joueurs triés par nombre

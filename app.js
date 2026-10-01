@@ -42221,7 +42221,7 @@ window.g45F1Session=g45F1Session;
    et les données utilisateur n'étaient JAMAIS écrites — l'ajout apparaissait à l'écran puis
    disparaissait au rechargement. Ce n'était ni la synchro GitHub, ni Dropbox, ni le cache
    du navigateur. Tous ces caches sont reconstructibles : ils cèdent la place aux données. */
-var _G45_CACHE_PREFIXES=['g45nrlm1_','g45nrldr1_',/* 01/10 : feuilles et calendriers NRL */'g45nrlsq1_',/* 01/10 : effectifs NRL */'g45nrlst2_',/* 01/10 : classements NRL */'g45proacid1_',/* 30/09 : numéros LNB par saison */'g45proast1_',/* 30/09 : stats Pro A */'g45proa1_',/* 30/09 : Pro A par journée */'g45el1_',/* 30/09 : Euroleague (compact) */'g45buts1_',/* 30/09 : buts en action (match fini) */'g45prad1_','g45vsj1_','g45vse1_',/* 30/09 : radars joueurs */'g45ia1_',/* 29/09 : avis IA gardés 6 h */'g45_mmeta2_','g45_mmeta1_','g45_tennis4_','g45_tennis3_',/* 16/09 : meta de match (domicile/lieu) et score tennis, reconstructibles */'g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dcf_','g45dc_',
+var _G45_CACHE_PREFIXES=['g45t14sq1_',/* 01/10 : effectifs Top 14 (LNR) */'g45nrlm1_','g45nrldr1_',/* 01/10 : feuilles et calendriers NRL */'g45nrlsq1_',/* 01/10 : effectifs NRL */'g45nrlst2_',/* 01/10 : classements NRL */'g45proacid1_',/* 30/09 : numéros LNB par saison */'g45proast1_',/* 30/09 : stats Pro A */'g45proa1_',/* 30/09 : Pro A par journée */'g45el1_',/* 30/09 : Euroleague (compact) */'g45buts1_',/* 30/09 : buts en action (match fini) */'g45prad1_','g45vsj1_','g45vse1_',/* 30/09 : radars joueurs */'g45ia1_',/* 29/09 : avis IA gardés 6 h */'g45_mmeta2_','g45_mmeta1_','g45_tennis4_','g45_tennis3_',/* 16/09 : meta de match (domicile/lieu) et score tennis, reconstructibles */'g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dcf_','g45dc_',
   'g45trv3_','g45trv2_','g45trOdds_','g45tr_','g45but_st_','g45butL_','g45butA_','g45but_mur_',
   '_g45clv','g45clv_snaps','g45_saisons_cache_v3_','g45_saisons_cache_v2_',
   /* Ajoutes le 20/08 : ces caches, tous reconstructibles, n'etaient PAS declares
@@ -49094,6 +49094,83 @@ async function g45NrlCompo(el, nom) {
 }
 window.g45NrlCompo = g45NrlCompo; window._g45NrlEqId = _g45NrlEqId;
 
+/* ═══ TOP 14 — EFFECTIF OFFICIEL LNR (20261001l, maquette validée) ═══
+   ESPN ne renvoie AUCUN joueur pour les clubs du Top 14 (rugby/270559, ex. Toulouse id 25922). SONDÉ PAR ANTOINE :
+   page top14.lnr.fr/club/<slug>/effectif-staff (worker host=lnr, déjà utilisé par les classements) = HTML, PAS de JSON :
+   57 <a class="player-block"> pour Toulouse {img.player-block__player-img (photo cdn.lnr.fr/…/photoFull.<hash>, sans
+   extension ; la console Chrome AFFICHE l'adresse raccourcie avec « … » mais elle est entière), .player-block__name,
+   .player-block__position (1ère ligne, 2ème ligne, 3ème ligne, Demi de mêlée, Demi d'ouverture, Centre, Ailier, Arrière),
+   .player-block__country (img alt = pays, src = drapeau svg), 3 × .player-block__statistics-line « 2 matches joués »,
+   « 66 minutes jouées », « 0 point marqué »}. Slugs des 14 clubs lus sur /clubs le 01/10 (`_G45_T14_CLUBS`).
+   Cache g45t14sq1_<slug> 12 h. Rien trouvé → retour au chemin ESPN. */
+var _G45_T14_CLUBS = [['toulous', 'toulouse'], ['toulon', 'toulon'], ['paloise', 'pau'], ['pau', 'pau'], ['lyon', 'lyon'], ['montpellier', 'montpellier'],
+  ['clermont', 'clermont'], ['bayonn', 'bayonne'], ['castres', 'castres'], ['vannes', 'vannes'], ['racing', 'racing-92'], ['francais', 'paris'],
+  ['paris', 'paris'], ['rochel', 'la-rochelle'], ['perpignan', 'perpignan'], ['usap', 'perpignan'], ['bordeaux', 'bordeaux-begles'], ['begles', 'bordeaux-begles']];
+var _G45_T14_POSTES = ['1ère ligne', '2ème ligne', '3ème ligne', 'Demi de mêlée', 'Demi d\'ouverture', 'Centre', 'Ailier', 'Arrière'];
+function _g45T14Slug(nom) {
+  var n = ' ' + String(nom || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ') + ' ';
+  for (var i = 0; i < _G45_T14_CLUBS.length; i++) {
+    var k = _G45_T14_CLUBS[i][0];
+    if (k.length <= 4 ? n.indexOf(' ' + k + ' ') >= 0 : n.indexOf(k) >= 0) return _G45_T14_CLUBS[i][1];
+  }
+  return null;
+}
+function _g45T14Lire(html) {
+  var d = new DOMParser().parseFromString(html, 'text/html'), P = [];
+  d.querySelectorAll('a.player-block').forEach(function (b) {
+    var q = function (c) { return b.querySelector(c); }, tx = function (c) { var e = q(c); return e ? e.textContent.replace(/\s+/g, ' ').trim() : ''; };
+    var st = tx('.player-block__statistics'), num = function (re) { var m = st.match(re); return m ? +m[1] : null; };
+    var im = q('.player-block__player-img'), pa = q('.player-block__country');
+    var n = tx('.player-block__name') || (im && im.getAttribute('alt')) || '';
+    if (!n) return;
+    P.push({ n: n, po: tx('.player-block__position'), ph: im ? im.getAttribute('src') || '' : '', pays: pa ? pa.getAttribute('alt') || '' : '',
+      dr: pa ? pa.getAttribute('src') || '' : '', m: num(/(\d+)\s*match/i), mi: num(/(\d+)\s*minute/i), pt: num(/(\d+)\s*point/i) });
+  });
+  return P;
+}
+async function g45T14Compo(el, nom) {
+  var slug = _g45T14Slug(nom); if (!slug) return false;
+  var cle = 'g45t14sq1_' + slug, now = Date.now(), m = null;
+  try { m = JSON.parse(localStorage.getItem(cle) || 'null'); } catch (e) {}
+  var P = m && m.x > now ? m.p : null;
+  if (!P) {
+    el.innerHTML = '<div style="color:#fff;font-size:14px;padding:14px;">⏳ Effectif officiel LNR…</div>';
+    try {
+      var r = await fetch(FD_PROXY + '?host=lnr&lnrhost=top14.lnr.fr&path=' + encodeURIComponent('/club/' + slug + '/effectif-staff'));
+      if (!r.ok) throw new Error(r.status);
+      P = _g45T14Lire(await r.text());
+      if (!P.length) throw new Error('vide');
+      try { localStorage.setItem(cle, JSON.stringify({ p: P, x: now + 12 * 3600e3 })); } catch (e) {}
+    } catch (e) { if (m && m.p) P = m.p; else return false; }
+  }
+  var esc = function (x) { return String(x == null ? '' : x).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+  var G = {}, ordre = [];
+  P.forEach(function (j) { var lib = j.po || 'Autres'; if (!G[lib]) { G[lib] = []; ordre.push(lib); } G[lib].push(j); });
+  var rang = function (l) { var i = _G45_T14_POSTES.indexOf(l); return i < 0 ? 99 : i; };
+  ordre.sort(function (a, b) { return rang(a) - rang(b); });
+  var pl = function (v, mot) { return v == null ? '' : v + ' ' + mot + (v > 1 ? 's' : ''); };
+  var h = '<div style="background:rgba(11,16,29,.88);border-radius:14px;padding:12px;">'
+    + '<div style="font-size:16px;font-weight:800;color:#fff;">👥 Effectif ' + esc(nom) + ' <span style="font-size:13px;font-weight:600;color:#c9d3ee;">· ' + P.length + ' joueurs · source LNR</span></div>'
+    + '<div style="font-size:13px;color:#c9d3ee;margin:4px 0 4px;">Matchs, minutes et points : saison en cours de Top 14.</div>';
+  ordre.forEach(function (lib) {
+    h += '<div style="background:#2b3a63;border-radius:8px;padding:7px 10px;margin:10px 0 4px;font-size:14px;font-weight:800;color:#fff;">' + esc(lib) + ' <span style="font-weight:600;color:#c9d3ee;">· ' + G[lib].length + '</span></div>';
+    G[lib].forEach(function (j, i) {
+      var ini = j.n.split(/\s+/).map(function (w) { return w.charAt(0); }).join('').slice(0, 2).toUpperCase();
+      var ligne = [pl(j.m, 'match'), j.mi == null ? '' : j.mi + ' min', pl(j.pt, 'pt')].filter(function (x) { return x; }).join(' · ');
+      h += '<div style="display:flex;align-items:center;gap:10px;padding:7px 4px;' + (i ? 'border-top:1px solid rgba(255,255,255,.08);' : '') + '">'
+        + '<span style="position:relative;width:44px;height:44px;flex:none;"><span style="position:absolute;inset:0;border-radius:50%;background:#3b4b78;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;">' + esc(ini) + '</span>'
+        + (j.ph ? '<img src="' + esc(j.ph) + '" alt="" loading="lazy" referrerpolicy="no-referrer" style="position:absolute;inset:0;width:44px;height:44px;border-radius:50%;object-fit:cover;object-position:50% 8%;background:#dfe6f5;" onerror="this.remove()">' : '') + '</span>'
+        + '<span style="flex:1;min-width:0;"><span style="display:block;color:#fff;font-size:15px;font-weight:800;">' + esc(j.n) + '</span>'
+        + '<span style="display:flex;align-items:center;gap:5px;color:#dfe6ff;font-size:13px;">'
+        + (j.dr ? '<img src="' + esc(j.dr) + '" alt="" style="width:18px;height:12px;object-fit:cover;border-radius:2px;flex:none;" onerror="this.remove()">' : '')
+        + esc([j.pays, ligne].filter(function (x) { return x; }).join(' · ')) + '</span></span></div>';
+    });
+  });
+  el.innerHTML = h + '</div>';
+  return true;
+}
+window.g45T14Compo = g45T14Compo; window._g45T14Slug = _g45T14Slug; window._g45T14Lire = _g45T14Lire;
+
 /* ═══ NRL — STATS D'UN JOUEUR DANS BET45 (20261001h, maquette validée : « OUI ») ═══
    La fiche nrl.com n'a pas d'adresse de données (…/data → 404) et sa page HTML renvoie au Worker le formulaire de
    connexion. SONDÉ PAR ANTOINE : /draw/data?competition=111&season=<an>&team=<id> → fixtures[] (29 pour les Panthers
@@ -51056,6 +51133,8 @@ async function _g45CompoEffectif(el, nom, avecFoot) {
 
   /* 20261001g — NRL : ESPN ne renvoie AUCUN joueur (Roosters, capture d'Antoine) → effectif officiel nrl.com. */
   if (ctx.sp === 'rugby-league' && typeof g45NrlCompo === 'function') { try { if (await g45NrlCompo(el, nom)) return; } catch (e) {} }
+  /* 20261001l : Top 14 → effectif officiel LNR (ESPN n'a aucun joueur). */
+  if (ctx.sp === 'rugby' && typeof g45T14Compo === 'function') { try { if (await g45T14Compo(el, nom)) return; } catch (e) {} }
 
   el.innerHTML = '<div style="display:flex;align-items:center;gap:9px;padding:16px;color:var(--t3);font-size:11.5px;">'
     + '<div style="width:14px;height:14px;border:2px solid rgba(77,132,255,.2);border-top-color:#4d84ff;border-radius:50%;animation:spin .8s linear infinite;"></div>Chargement de l\'effectif\u2026</div>';
