@@ -996,6 +996,12 @@ HANDBALL (LNH, Starligue) : SONDÉ PAR ANTOINE le 01/10 — pas de robots.txt (4
   expresse et préalable de la LNH est interdite » (logos aussi) → NE PAS lire lnh.fr. ESPN n'a pas de handball. Seule voie propre :
   autorisation écrite de la LNH, ou une autre source gratuite qui le permet (non trouvée).
   ⚠ Le jeton lnb.fr/api/token (basket) apparaît dans les sondes : NE PAS l'utiliser (règle Pro A).
+PRO A — PISTE BE-BASKETBALL (02/10) : www.be-basketball.com (SAS NEO BASKET, Montarnaud) a les stats Betclic ÉLITE 2026-27
+  (équipes : ORTG, DRTG, NRTG, POSS., PTS, REB… ; joueurs ; calendrier). robots.txt : seuls /_health, /my-account/*,
+  /manage-newsletters/* interdits ; Legal Notice : SEULES les PHOTOS sont protégées (reproduction interdite sans accord écrit).
+  ACCORD DONNÉ PAR TÉLÉPHONE à Antoine le 02/10 (confirmation écrite conseillée). Ne JAMAIS reprendre leurs photos.
+  À FAIRE : sonder comment les données arrivent (page stats équipes, console : __NEXT_DATA__ / appels api|json) — domaine bloqué
+  depuis la session cloud ; sera à ajouter au worker (liste blanche) une fois le chemin connu.
 SKI ALPIN (FIS) : SONDÉ PAR ANTOINE le 02/10 — robots.txt « Allow: / » (sauf /api/, /_next/…), MAIS
   www.fis-ski.com/terms-and-conditions : « You may not scrape the content on this Website » + reproduction sans autorisation
   écrite interdite ; flux RSS = usage privé, republication interdite → NE PAS lire fis-ski.com. ESPN : pas de ski.
