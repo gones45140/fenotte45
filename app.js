@@ -27244,7 +27244,7 @@ function _renderEspnMatchPitch(s, col, nameFn){
         var frac = nL>1 ? li/(nL-1) : 0;
         /* 20261003d (capture d'Antoine, France–Italie en 4-3-3) : 4→47 % et 96→53 % ne laissaient que 6 % entre les deux lignes
            d'attaque ; le nom, écrit SOUS la photo, recouvrait l'attaquant d'en face. Lignes resserrées : 5→42 % / 95→58 %. */
-        var y = fromTop ? (6+frac*36) : (94-frac*36);
+        var y = fromTop ? (9+frac*33) : (91-frac*33);   /* 20261003h : gardien descendu (9 %) pour laisser voir la cage */
         var n=line.length;
         /* Le terrain passe de 430 a 660 px sur grand ecran (il restait dimensionne
            pour le telephone). On elargit donc aussi les noms, sinon ils seraient
@@ -27320,12 +27320,17 @@ function _renderEspnMatchPitch(s, col, nameFn){
        des tirs et dans les statistiques. Le calcul local a ete supprime. */
     var _cp = g45CoulPaire(hR, aR);
     var homeCol = _cp[0], awayCol = _cp[1];
-    var pitch='<div style="position:relative;width:100%;max-width:min(660px,100%);margin:4px auto 2px;aspect-ratio:5/8;min-height:620px;container-type:inline-size;background:linear-gradient(180deg,#1f7a3f 0%,#19682f 50%,#1f7a3f 100%);border-radius:10px;overflow:hidden;border:1px solid rgba(255,255,255,.12);">'
+    var pitch='<div style="position:relative;width:100%;max-width:min(660px,100%);margin:4px auto 2px;aspect-ratio:5/8;min-height:660px;container-type:inline-size;background:linear-gradient(180deg,#1f7a3f 0%,#19682f 50%,#1f7a3f 100%);border-radius:10px;overflow:hidden;border:1px solid rgba(255,255,255,.12);">'
       +'<div style="position:absolute;inset:5px;border:2px solid rgba(255,255,255,.18);border-radius:6px;"></div>'
       +'<div style="position:absolute;top:50%;left:5px;right:5px;height:2px;background:rgba(255,255,255,.22);"></div>'
       +'<div style="position:absolute;top:50%;left:50%;width:72px;height:72px;border:2px solid rgba(255,255,255,.22);border-radius:50%;transform:translate(-50%,-50%);"></div>'
       +'<div style="position:absolute;top:5px;left:50%;width:44%;height:12%;border:2px solid rgba(255,255,255,.16);border-top:none;transform:translateX(-50%);"></div>'
       +'<div style="position:absolute;bottom:5px;left:50%;width:44%;height:12%;border:2px solid rgba(255,255,255,.16);border-bottom:none;transform:translateX(-50%);"></div>'
+      /* 20261003h (« il manque des cages de but ») : surface de but + cage avec filet, en haut et en bas. */
+      +'<div style="position:absolute;top:5px;left:50%;width:20%;height:4.5%;border:2px solid rgba(255,255,255,.16);border-top:none;transform:translateX(-50%);"></div>'
+      +'<div style="position:absolute;bottom:5px;left:50%;width:20%;height:4.5%;border:2px solid rgba(255,255,255,.16);border-bottom:none;transform:translateX(-50%);"></div>'
+      +'<div style="position:absolute;top:0;left:50%;width:12%;height:9px;border:2px solid rgba(255,255,255,.6);border-top:none;transform:translateX(-50%);background:repeating-linear-gradient(90deg,rgba(255,255,255,.28) 0 1px,transparent 1px 6px),repeating-linear-gradient(0deg,rgba(255,255,255,.28) 0 1px,transparent 1px 6px),rgba(0,0,0,.18);"></div>'
+      +'<div style="position:absolute;bottom:0;left:50%;width:12%;height:9px;border:2px solid rgba(255,255,255,.6);border-bottom:none;transform:translateX(-50%);background:repeating-linear-gradient(90deg,rgba(255,255,255,.28) 0 1px,transparent 1px 6px),repeating-linear-gradient(0deg,rgba(255,255,255,.28) 0 1px,transparent 1px 6px),rgba(0,0,0,.18);"></div>'
       +placeTeam(aR,awayCol,true)+placeTeam(hR,homeCol,false)
       +'</div>';
     var head='<div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;font-weight:800;margin-bottom:4px;gap:8px;">'
