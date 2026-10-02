@@ -225,7 +225,7 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
 - 20261003e : la fenêtre générique sert AUSSI au foot depuis Suivies (France–Italie) → libellés foot ajoutés à
   `_G45_US_STATS_FR` (Goal Difference, Total Goals, Goals Against…) et « Meilleurs joueurs » traduit par `_g45LdFr` (Matches, Goals,
   Assists, Total Shots). 20261003f : `_genericLineups` enveloppée → foot = terrain `_renderEspnMatchPitch` (changements + banc
-  dessous), liste en secours ; autres sports inchangés.
+  dessous), liste en secours ; autres sports inchangés. CONFIRMÉ par Antoine (03/10).
 - Fenêtre de match hors foot (`_renderGenericDetail`) : ligne stade + ville sous le score
   (gameInfo.venue, repli comp.venue), comme la fenêtre foot.
 - Saisons (`_g45SaisonsGen`) : « Points par match » et « Stats clés » calculés sur `sf`
