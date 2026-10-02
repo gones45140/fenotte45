@@ -66180,8 +66180,8 @@ window._g45F1ArchMap = _g45F1ArchMap; window._g45F1ArchNom = _g45F1ArchNom;
    ESPN : scoreboard tennis = drapeau seulement, et a.espncdn.com/i/headshots/tennis/players/full/<id>.png = image VIDE
    (SONDÉ PAR ANTOINE, 3666 Ugo Carabelli). TheSportsDB searchplayers (SONDÉ : Sinner, Swiatek, Fils → strSport « Tennis »,
    détouré + portrait). Rendu : photo ronde à la place du drapeau (`_g45EspnTennisFlag` enveloppée), drapeau en petit en bas à
-   droite ; initiales tant que rien n'est trouvé ; doubles inchangés (roster). Recherche `_g45TenPhotos(racine)` : 10 noms
-   NOUVEAUX par passage, l'un après l'autre ; mémoire g45tph1_<nom> : trouvée = POUR TOUJOURS (demande d'Antoine), rien = 14 j. */
+   droite ; initiales tant que rien n'est trouvé ; doubles inchangés (roster). Recherche `_g45TenPhotos(racine)` : noms
+   NOUVEAUX à l'écran, l'un après l'autre (voir 20261003b) ; mémoire g45tph1_<nom> : trouvée = POUR TOUJOURS (demande d'Antoine), rien = 14 j. */
 var _G45_TPH = 'g45tph1_', _g45TenGrand = 0, _g45TenEnCours = 0;
 function _g45TenNorm(n) { return String(n || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z]/g, ''); }
 function _g45TenPhLire(nom) {
@@ -66203,32 +66203,41 @@ function _g45TenAvatar(a, px) {
     + fl + '</span>';
 }
 async function _g45TenPhotos(racine) {
-  if (_g45TenEnCours || !racine || !racine.querySelectorAll) return;
-  var noms = [];
-  racine.querySelectorAll('[data-g45tph]').forEach(function (s) { var n = s.getAttribute('data-g45tph'); if (n && noms.indexOf(n) < 0 && _g45TenPhLire(n) === undefined) noms.push(n); });
-  noms = noms.slice(0, 10); if (!noms.length) return;
+  /* 20261003b (« Djokovic sans photo ») : 10 noms par affichage laissaient la fin d'un gros tournoi en initiales. La recherche
+     CONTINUE maintenant tant qu'il reste un rond sans photo à l'écran, une demande toutes les 2,5 s (≈ 24/min, sous la limite
+     gratuite de TheSportsDB) ; la page est relue à chaque tour (changement de jour / de filtre pris en compte). */
+  if (_g45TenEnCours) return;
   _g45TenEnCours = 1;
-  for (var i = 0; i < noms.length; i++) {
-    var n = noms[i], u = '';
-    try {
-      var r = await fetch('https://www.thesportsdb.com/api/v1/json/3/searchplayers.php?p=' + encodeURIComponent(n));
-      if (r.status === 429) break;                                 /* quota de la minute : on s'arrête, rien n'est mémorisé */
-      if (r.ok) {
-        var l = ((await r.json()) || {}).player || [], cible = _g45TenNorm(n);
-        var t = l.filter(function (p) { return /^tennis$/i.test(p.strSport || ''); });
-        var p0 = t.filter(function (p) { return _g45TenNorm(p.strPlayer) === cible; })[0] || (t.length === 1 ? t[0] : null);
-        if (p0) u = _g45R2(p0.strThumb || p0.strCutout || '');
-        try { localStorage.setItem(_G45_TPH + cible, JSON.stringify({ u: u, t: Date.now() })); } catch (e) {}
-      }
-    } catch (e) {}
-    if (u) document.querySelectorAll('[data-g45tph]').forEach(function (s) {
-      if (s.getAttribute('data-g45tph') !== n) return;
-      s.removeAttribute('data-g45tph');
-      var im = document.createElement('img'); im.src = u; im.alt = ''; im.onerror = function () { im.remove(); };
-      im.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border-radius:50%;object-fit:cover;object-position:50% 12%;border:2px solid #3a4870;box-sizing:border-box;background:#33405e;';
-      s.insertBefore(im, s.children[1] || null);
-    });
-  }
+  var vus = {};
+  try {
+    for (var tour = 0; tour < 200; tour++) {
+      var n = '';
+      document.querySelectorAll('[data-g45tph]').forEach(function (s) { var x = s.getAttribute('data-g45tph'); if (!n && x && !vus[x] && _g45TenPhLire(x) === undefined) n = x; });
+      if (!n) break;
+      vus[n] = 1;
+      var u = '';
+      try {
+        var r = await fetch('https://www.thesportsdb.com/api/v1/json/3/searchplayers.php?p=' + encodeURIComponent(n));
+        if (r.status === 429) { await new Promise(function (ok) { setTimeout(ok, 60000); }); delete vus[n]; continue; }
+        if (r.ok) {
+          var l = ((await r.json()) || {}).player || [], cible = _g45TenNorm(n);
+          var t = l.filter(function (p) { return /^tennis$/i.test(p.strSport || ''); });
+          var p0 = t.filter(function (p) { return _g45TenNorm(p.strPlayer) === cible; })[0] || (t.length === 1 ? t[0] : null);
+          if (p0) u = _g45R2(p0.strThumb || p0.strCutout || '');
+          try { localStorage.setItem(_G45_TPH + cible, JSON.stringify({ u: u, t: Date.now() })); } catch (e) {}
+        }
+      } catch (e) {}
+      document.querySelectorAll('[data-g45tph]').forEach(function (s) {
+        if (s.getAttribute('data-g45tph') !== n) return;
+        s.removeAttribute('data-g45tph');
+        if (!u) return;
+        var im = document.createElement('img'); im.src = u; im.alt = ''; im.onerror = function () { im.remove(); };
+        im.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border-radius:50%;object-fit:cover;object-position:50% 12%;border:2px solid #3a4870;box-sizing:border-box;background:#33405e;';
+        s.insertBefore(im, s.children[1] || null);
+      });
+      await new Promise(function (ok) { setTimeout(ok, 2500); });
+    }
+  } catch (e) {}
   _g45TenEnCours = 0;
 }
 (function _g45TenPhBrancher() {
