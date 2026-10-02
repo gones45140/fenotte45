@@ -27324,6 +27324,11 @@ function _renderEspnMatchPitch(s, col, nameFn){
       +'<div style="position:absolute;inset:5px;border:2px solid rgba(255,255,255,.18);border-radius:6px;"></div>'
       +'<div style="position:absolute;top:50%;left:5px;right:5px;height:2px;background:rgba(255,255,255,.22);"></div>'
       +'<div style="position:absolute;top:50%;left:50%;width:72px;height:72px;border:2px solid rgba(255,255,255,.22);border-radius:50%;transform:translate(-50%,-50%);"></div>'
+      /* 20261003j (maquette validée « oui c'est mieux » ; panneaux tout autour refusés : « ça fait un poil chargé ») : marque en
+         filigrane dans le rond central — BET45 sur bet45.fr (ou compte auth-guard), GONES45 ailleurs. */
+      +(function(){ var b45=false; try{ b45=!!window._g45User||/(^|\.)bet45\.fr$/i.test(location.hostname); }catch(e){}
+         return '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font:900 13px/1 system-ui,sans-serif;letter-spacing:1.5px;color:rgba(255,255,255,.32);pointer-events:none;z-index:1;white-space:nowrap;">'
+           +(b45?'BET':'GONES')+'<span style="color:rgba(255,77,77,.55);">45</span></div>'; })()
       +'<div style="position:absolute;top:5px;left:50%;width:44%;height:12%;border:2px solid rgba(255,255,255,.16);border-top:none;transform:translateX(-50%);"></div>'
       +'<div style="position:absolute;bottom:5px;left:50%;width:44%;height:12%;border:2px solid rgba(255,255,255,.16);border-bottom:none;transform:translateX(-50%);"></div>'
       /* 20261003i (« et poteau de corner ») : quart de cercle + drapeau 🚩 aux quatre coins (dans la ligne de touche, inset 5 px). */
