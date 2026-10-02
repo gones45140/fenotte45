@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261003b, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261003c, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -188,7 +188,8 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   337×183, envoyée par Antoine — photo de presse probable, droits signalés) avant l'image TheSportsDB. 20261002t : nombre impair de tuiles → la dernière sur toute la largeur (grid-column 1 / -1) ; tuile « ➕ Ajouter » refusée (« illogique »). 20261002u : `img` dans `_G45_ACC_SPORTS` (biathlon.png) = fichier posé directement (mémoire négative 3 h du perso l'avait caché). CONFIRMÉ en capture : MotoGP 4407 et UFC 4443 = images OK.
   20261002z — IMAGES PERSO SUR BET45 : `g45IndexImages` lisait TOUJOURS l'arbre gones45 (`_G45_DEPOT_ARBRE`) → tennis.png (fenotte45
   seulement) déclarée absente sur bet45 ; bloc `_g45IdxDepotBet45` (fin d'app.js) : bet45.fr → arbre fenotte45, ancienne liste et
-  « pas d'image » effacés une fois (clé g45_idx_fen). 🎾 JOUEURS DE TENNIS SUR LE MUR (`_g45TennisMurBrancher`) : SONDÉ PAR ANTOINE,
+  « pas d'image » effacés une fois (clé g45_idx_fen). 20261003c : images/equipes/tennis.png (dessin) RETIRÉE de fenotte45 (« moche ») →
+  tuile Tennis = image ATP TheSportsDB comme gones ; clé g45_idx_fen2 efface liste + mémoire perso « tennis » une fois. 🎾 JOUEURS DE TENNIS SUR LE MUR (`_g45TennisMurBrancher`) : SONDÉ PAR ANTOINE,
   TheSportsDB searchplayers Sinner / Swiatek / Fils = strSport « Tennis », strTeam « ATP Mens » / « WTA Tour Womens », détouré +
   portrait, pas de fanart → `_G45_VIS_SPORT.tennis`, passe dédiée aux cartes 🎾 (clé g45jv_tennis_<nom>), `_g45JoueurVisLire(nom)`
   sans sport retombe sur la clé tennis, pas de logo de club pour le tennis. Tuile : photo d'un joueur du mur (g.jv) avant l'image de ligue.

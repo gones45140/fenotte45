@@ -66173,6 +66173,13 @@ window._g45F1ArchMap = _g45F1ArchMap; window._g45F1ArchNom = _g45F1ArchNom;
       }
       localStorage.setItem('g45_idx_fen', '1');
     }
+    /* 20261003c : images/equipes/tennis.png RETIRÉE de fenotte45 (« elle est moche », Antoine) → la tuile Tennis reprend l'image
+       ATP de TheSportsDB comme sur gones45 ; la liste du dépôt et l'image « trouvée » gardées par l'appareil sont oubliées une fois. */
+    if (localStorage.getItem('g45_idx_fen2') !== '1') {
+      localStorage.removeItem('g45_idx_images');
+      localStorage.removeItem(_G45_PERSO_IMG + _g45SgNorm('Tennis'));
+      localStorage.setItem('g45_idx_fen2', '1');
+    }
   } catch (e) {}
 })();
 
