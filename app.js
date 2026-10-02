@@ -33894,7 +33894,7 @@ async function _renderGenericDetail(el, sport, lg, eid){
         L.slice(0,2).forEach(function(tl){
           (tl.leaders||[]).slice(0,3).forEach(function(cat){
             var ld=(cat.leaders&&cat.leaders[0])||null;
-            if(ld&&ld.athlete) h+='<div style="font-size:10px;color:var(--t2);padding:2px 0;">'+(cat.displayName||cat.shortDisplayName||'')+' : <b style="color:var(--t1);">'+(ld.athlete.displayName||'')+'</b> <span style="color:var(--t3);">('+(ld.displayValue||ld.value||'')+')</span></div>';
+            if(ld&&ld.athlete) h+='<div style="font-size:10px;color:var(--t2);padding:2px 0;">'+_g45LdFr(cat.displayName||cat.shortDisplayName||'')+' : <b style="color:var(--t1);">'+(ld.athlete.displayName||'')+'</b> <span style="color:var(--t3);">('+_g45LdFr(String(ld.displayValue||ld.value||''))+')</span></div>';
           });
         });
         h+='</div>';
@@ -66279,3 +66279,22 @@ async function _g45TenPhotos(racine) {
   }
 })();
 window._g45TenPhotos = _g45TenPhotos; window._g45TenAvatar = _g45TenAvatar;
+
+/* ═══ FRANÇAIS DANS LA FENÊTRE DE MATCH GÉNÉRIQUE (20261003e, capture d'Antoine : France–Italie ouvert depuis Suivies) ═══
+   « Goal Difference », « Total Goals », « Goals Against » (stats d'équipe `_g45UsTeamStats` → `_g45UsStatFr`) et, dans
+   « Meilleurs joueurs », « Goals / Assists / Total Shots » + « (Matches: 2, Goals: 1) » restaient en anglais. */
+(function _g45FrGenerique() {
+  try {
+    if (typeof _G45_US_STATS_FR !== 'undefined') {
+      var t = { 'goal difference': 'Différence de buts', 'total goals': 'Buts marqués', 'goals against': 'Buts encaissés',
+        'goals for': 'Buts marqués', 'goal assists': 'Passes décisives', 'assists': 'Passes décisives', 'appearances': 'Matchs joués',
+        'shots on target': 'Tirs cadrés', 'total shots': 'Tirs', 'shots': 'Tirs', 'fouls committed': 'Fautes', 'fouls': 'Fautes',
+        'won corners': 'Corners', 'corner kicks': 'Corners', 'offsides': 'Hors-jeu', 'saves': 'Arrêts', 'yellow cards': 'Cartons jaunes',
+        'red cards': 'Cartons rouges', 'possession': 'Possession', 'clean sheets': 'Clean sheets' };
+      Object.keys(t).forEach(function (k) { if (!_G45_US_STATS_FR[k]) _G45_US_STATS_FR[k] = t[k]; });
+    }
+  } catch (e) {}
+})();
+var _G45_LD_FR = [[/\bTotal Shots\b/g, 'Tirs'], [/\bShots on Target\b/gi, 'Tirs cadrés'], [/\bMatches\b/g, 'Matchs'], [/\bGoals\b/g, 'Buts'],
+  [/\bAssists\b/g, 'Passes déc.'], [/\bSaves\b/g, 'Arrêts'], [/\bPoints\b/g, 'Points'], [/\bRebounds\b/g, 'Rebonds']];
+function _g45LdFr(t) { var x = String(t || ''); _G45_LD_FR.forEach(function (r) { x = x.replace(r[0], r[1]); }); return x; }
