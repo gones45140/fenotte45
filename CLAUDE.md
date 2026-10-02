@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261003j, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261003k, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -676,6 +676,12 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   `g45ElClubVue('r'|'e'|'s')` : Résultats (joué → g45ElFicheId), Effectif = `g45EbCompo` (saison EN COURS), Stats `_g45ElClubStats`
   (global / dom / ext, marqués / encaissés par match, 5 derniers). `_g45ElLogo` = pastille claire partout. Onglets en flex-wrap
   (2 × 2 sur téléphone). Contrôle ajouté dans smoke.js (bloc KBO + Euroleague).
+  20261003k — EUROLEAGUE EN DIRECT : la liste …/games ne donne le score qu'APRÈS le match (en cours = 0-0, played false) et
+  …/games/<code>/stats est VIDE pendant le match (SONDÉ PAR ANTOINE, match 26 ASVEL–Valencia). SONDÉ : live.euroleague.net/api/Header?
+  gamecode=<n>&seasoncode=E<an> → Live, ScoreA/ScoreB (A = club qui reçoit), Quarter (« » à la pause), RemainingPartialTime,
+  FoultsA/B, TimeoutsA/B. Worker host=eulive (ce chemin seul, cache 60 s) — À DÉPLOYER par Antoine. Appli : `_g45ElMatchs` enveloppée
+  (`_g45ElLiveBrancher`) → m.lv via `_g45ElLiveLire` (30 s mini), score du moment dans m.h.s / m.a.s, Live false + score → m.p ;
+  carte Suivies « ● QT3 · 05:12 / Pause » (`_g45ElLvTexte`), fiche `_g45EbCarte` « 🔴 EN DIRECT ». Format de Quarter NON vérifié hors pause.
 - Classements individuels TOP 14 (`g45LnrRender`, `_G45_LNR_CATS`, page top14.lnr.fr/classement/joueurs/<cat> via
   worker host=lnr) : 20261001a — LA LNR A REFAIT SON SITE (« page reçue mais illisible ») : plus de liens /joueur/ ;
   SONDÉ PAR ANTOINE : JSON dans l'attribut `:ranking` de <players-ranking> (100 joueurs {rank, player{name, url,

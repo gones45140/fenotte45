@@ -66334,3 +66334,72 @@ function _g45LdFr(t) { var x = String(t || ''); _G45_LD_FR.forEach(function (r) 
   };
   _genericLineups._g45Terrain = true; window._genericLineups = _genericLineups;
 })();
+
+/* ═══ 🏀 EUROLEAGUE EN DIRECT (20261003k, capture d'Antoine : ASVEL–Valencia « En cours 0-0 » et « Match à venir » à 61-50) ═══
+   La liste officielle (api-live …/games) ne donne le score qu'une fois le match JOUÉ, et …/games/<code>/stats est VIDE pendant le
+   match (SONDÉ PAR ANTOINE : players 0, total null). SONDÉ PAR ANTOINE (02/10, match 26 en cours) : live.euroleague.net/api/Header?
+   gamecode=<n>&seasoncode=E<an> → {Live true, ScoreA/ScoreB (A = club qui REÇOIT, CodeTeamA ASV), Quarter « » à la pause,
+   RemainingPartialTime « 00:00 », FoultsA/B, TimeoutsA/B, ScoreQuarter1A…}. Lu via le worker host=eulive (route AJOUTÉE, à
+   déployer par Antoine ; cache 60 s). Pour chaque match « en cours » (`_g45ElEnCours`), `_g45ElMatchs` ENVELOPPÉE pose m.lv =
+   {a, b, q, t, live} (relu au plus toutes les 30 s) ; m.h.s / m.a.s = score du moment. Live false avec un score → m.p (fini). */
+var _g45ElLv = {};
+async function _g45ElLiveLire(m, an) {
+  var k = an + '_' + m.id, o = _g45ElLv[k];
+  if (o && Date.now() - o.t < 30000) return o.v;
+  _g45ElLv[k] = { t: Date.now(), v: o ? o.v : null };
+  try {
+    var r = await fetch(FD_PROXY + '?host=eulive&path=' + encodeURIComponent('/api/Header?gamecode=' + m.id + '&seasoncode=E' + an), { cache: 'no-store' });
+    if (!r.ok) return o ? o.v : null;
+    var j = await r.json();
+    if (!j || j.ScoreA == null) return o ? o.v : null;
+    var v = { a: +j.ScoreA || 0, b: +j.ScoreB || 0, q: String(j.Quarter || '').trim(), t: String(j.RemainingPartialTime || '').trim(), live: !!j.Live };
+    _g45ElLv[k] = { t: Date.now(), v: v };
+    return v;
+  } catch (e) { return o ? o.v : null; }
+}
+function _g45ElLvTexte(v) {
+  if (!v) return '';
+  if (!v.live) return 'Terminé';
+  if (v.q) return (/^\d$/.test(v.q) ? 'QT' + v.q : v.q) + (v.t && v.t !== '00:00' ? ' · ' + v.t : '');
+  return v.t === '00:00' ? 'Pause' : 'En cours';
+}
+(function _g45ElLiveBrancher() {
+  if (typeof _g45ElMatchs !== 'function' || _g45ElMatchs._g45Lv) return;
+  var orig = _g45ElMatchs;
+  _g45ElMatchs = async function (an) {
+    var g = await orig.apply(this, arguments);
+    try {
+      if (_g45ElLigue === 'el' && Array.isArray(g)) {
+        var cours = g.filter(function (m) { return _g45ElEnCours(m) || m.lv; }).slice(0, 6);
+        await Promise.all(cours.map(async function (m) {
+          if (m.p) return;
+          var v = await _g45ElLiveLire(m, an); if (!v) return;
+          m.lv = v; m.h.s = v.a; m.a.s = v.b;
+          if (!v.live && (v.a || v.b)) m.p = true;
+        }));
+      }
+    } catch (e) {}
+    return g;
+  };
+  _g45ElMatchs._g45Lv = true; window._g45ElMatchs = _g45ElMatchs;
+  if (typeof _g45ElCarteDirect === 'function') {
+    var carte = _g45ElCarteDirect;
+    _g45ElCarteDirect = function (m) {
+      var h = carte.apply(this, arguments);
+      if (m && m.lv && m.lv.live && !m.p) h = h.replace('● En cours</span>', '● ' + _g45ElLvTexte(m.lv) + '</span>');
+      return h;
+    };
+    window._g45ElCarteDirect = _g45ElCarteDirect;
+  }
+  if (typeof _g45EbCarte === 'function') {
+    var eb = _g45EbCarte;
+    _g45EbCarte = function (x) {
+      var m = x && x.m;
+      if (!m || !m.lv || m.p) return eb.apply(this, arguments);
+      var c = Object.assign({}, m, { p: true }), h = eb.call(this, Object.assign({}, x, { m: c }));
+      return h.replace('<div style="font-size:13px;color:#c9d3ee;margin-top:10px;">📅 ', '<div style="font-size:14px;font-weight:800;color:#ff6b6b;margin-top:10px;">🔴 EN DIRECT · '
+        + _g45ElLvTexte(m.lv) + '</div><div style="font-size:13px;color:#c9d3ee;margin-top:6px;">📅 ');
+    };
+    window._g45EbCarte = _g45EbCarte;
+  }
+})();
