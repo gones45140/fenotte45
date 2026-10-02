@@ -65957,6 +65957,8 @@ function _g45AccRegrouper() {
       /* bannière d'une carte « catégorie » (FORMULE 1…) prioritaire, sinon 1er visuel trouvé */
       if (v && (!G[s.v].vis || (_G45_ACC_NOMS.some(function (x) { return x[0].test(String(u.n).trim()); }) && !G[s.v].cat))) { G[s.v].vis = v; if (_G45_ACC_NOMS.some(function (x) { return x[0].test(String(u.n).trim()); })) G[s.v].cat = 1; } }
     if (!G[s.v].logo && typeof g45LogoUrlDe === 'function') G[s.v].logo = g45LogoUrlDe(u.n) || '';
+    /* 20261002z : photo d'un JOUEUR du mur (détouré TheSportsDB, tennis compris) en secours du visuel de tuile */
+    if (!G[s.v].jv && typeof _g45JoueurVisLire === 'function') { var jv0 = _g45JoueurVisLire(u.n); if (jv0 && (jv0.cut || jv0.thumb)) G[s.v].jv = _g45R2(jv0.cut || jv0.thumb); }
   });
   if (_g45AccSel && !(G[_g45AccSel] && G[_g45AccSel].c.length)) _g45AccSel = '';
   var zone = document.createElement('div'); zone.id = 'g45-acc-zone';
@@ -65977,6 +65979,7 @@ function _g45AccRegrouper() {
           try { Promise.resolve(_g45ImgPersoTester(g.s.n)).then(function (u) { if (u) { try { _g45AccRegrouper(); } catch (e) {} } }); } catch (e) {}
         }
       }
+      if (!g.vis && g.jv) g.vis = g.jv;
       if (!g.vis && !g.logo) { var li = _g45AccLigueImg(k); if (li) g.vis = li; }
       var fond = g.vis ? '<img src="' + _g45AccEsc(g.vis) + '" alt="" loading="lazy" onerror="this.remove()" onload="if(this.naturalWidth<this.naturalHeight*1.3){this.style.objectFit=\'contain\';this.style.height=\'62%\';this.style.top=\'4px\';this.style.inset=\'4px 0 auto 0\';this.style.opacity=\'.75\';}else if(this.naturalWidth>this.naturalHeight*2.2){this.style.objectFit=\'contain\';this.style.inset=\'2px 0 auto 0\';this.style.height=\'64%\';}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;">'
         : g.logo ? '<img src="' + _g45AccEsc(g.logo) + '" alt="" loading="lazy" onerror="this.remove()" style="position:absolute;left:0;right:0;margin:auto;top:6px;height:58%;width:auto;max-width:80%;opacity:.7;object-fit:contain;pointer-events:none;">'
@@ -66110,3 +66113,65 @@ async function _g45F1ArchMap(ev, c, o) {
   _g45F1SessOF1._g45Arch = true; window._g45F1SessOF1 = _g45F1SessOF1;
 })();
 window._g45F1ArchMap = _g45F1ArchMap; window._g45F1ArchNom = _g45F1ArchNom;
+
+/* ═══ 🎾 JOUEURS DE TENNIS SUR LE MUR (20261002z, Antoine : « on peut pas avoir un/e joueur de tennis individuel dans le mur ») ═══
+   La recherche de photo de JOUEUR (`_g45JoueurVisChercher`, TheSportsDB searchplayers) ne connaissait que foot / hockey / rugby,
+   et la passe du mur (`_g45BrancherMurJoueur`) écartait tout ce qui n'est pas du foot → carte « Jannik Sinner » vide, tuile Tennis
+   sans image. SONDÉ PAR ANTOINE (02/10) : Sinner, Swiatek, Fils → strSport « Tennis », strTeam « ATP Mens » / « WTA Tour Womens »,
+   détouré + portrait, pas de fanart. Donc : sport tennis ajouté ; passe dédiée aux cartes 🎾 (clé g45jv_tennis_<nom>) ;
+   les cartes lisent `_g45JoueurVisLire(u.n)` SANS sport → repli sur la clé tennis ; pas de « logo du club » (ATP Mens n'en est pas un). */
+(function _g45TennisMurBrancher() {
+  if (typeof _G45_VIS_SPORT === 'undefined' || typeof _g45JoueurVisLire !== 'function' || _g45JoueurVisLire._g45Ten) return;
+  _G45_VIS_SPORT.tennis = /^tennis$/i;
+  var lire = _g45JoueurVisLire;
+  _g45JoueurVisLire = function (nom, sport) {
+    var r = lire.apply(this, arguments);
+    if (sport || r) return r;
+    var t = lire(nom, 'tennis');
+    return t ? t : r;
+  };
+  _g45JoueurVisLire._g45Ten = true; window._g45JoueurVisLire = _g45JoueurVisLire;
+  if (typeof _g45JoueurClubLogo === 'function') {
+    var club = _g45JoueurClubLogo;
+    _g45JoueurClubLogo = function (u) { if (typeof g45SportDe === 'function' && g45SportDe(u) === 'tennis') return ''; return club.apply(this, arguments); };
+    window._g45JoueurClubLogo = _g45JoueurClubLogo;
+  }
+  if (typeof _g45FanCompleter === 'function') {
+    var comp = _g45FanCompleter;
+    var env = async function (noms) {
+      var maj = false;
+      try { maj = !!(await comp.apply(this, arguments)); } catch (e) {}
+      try {
+        var aFaire = ((typeof state !== 'undefined' && state && state.u) || []).filter(function (u) {
+          if (!u || !u.n || typeof g45SportDe !== 'function' || g45SportDe(u) !== 'tennis') return false;
+          if (typeof _g45ImgPersoLire === 'function' && _g45ImgPersoLire(u.n)) return false;
+          return lire(u.n, 'tennis') === undefined;
+        }).slice(0, 3);
+        for (var i = 0; i < aFaire.length; i++) { if (await _g45JoueurVisChercher(aFaire[i].n, 'tennis')) maj = true; }
+      } catch (e) {}
+      return maj;
+    };
+    env._g45Joueur = true; env._g45Ten = true;
+    _g45FanCompleter = env; window._g45FanCompleter = env;
+  }
+})();
+
+/* ═══ IMAGES PERSO SUR BET45 (20261002z, Antoine : « gones a bien sa bannière mais pas bet45 ») ═══
+   La liste des images du dépôt (`g45IndexImages`, `_G45_DEPOT_ARBRE`) lisait TOUJOURS l'arbre de gones45, même sur bet45.fr
+   (fenotte45) : images/equipes/tennis.png, présente seulement dans fenotte45, était déclarée absente sans essai d'adresse.
+   Sur bet45 → arbre de fenotte45 ; une fois par appareil, l'ancienne liste et les « pas d'image » mémorisés sont effacés. */
+(function _g45IdxDepotBet45() {
+  try {
+    if (!/(^|\.)bet45\.fr$/i.test(location.hostname) && !/\/fenotte45\//i.test(location.pathname)) return;
+    _G45_DEPOT_ARBRE = 'https://api.github.com/repos/gones45140/fenotte45/git/trees/main?recursive=1';
+    _g45IdxImages = null;
+    if (localStorage.getItem('g45_idx_fen') !== '1') {
+      localStorage.removeItem('g45_idx_images');
+      for (var i = localStorage.length - 1; i >= 0; i--) {
+        var k = localStorage.key(i);
+        if (k && k.indexOf(_G45_PERSO_IMG) === 0) { try { var o = JSON.parse(localStorage.getItem(k) || 'null'); if (o && !o.u) localStorage.removeItem(k); } catch (e) {} }
+      }
+      localStorage.setItem('g45_idx_fen', '1');
+    }
+  } catch (e) {}
+})();
