@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261002s, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261002t, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -185,7 +185,7 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   visuel ni logo) : SONDÉ PAR ANTOINE 4464 ATP (tennis), 4465 UCI World Tour (cyclisme) ; MotoGP 4407 / UFC 4443 NON sondés →
   gardés seulement si strLeague correspond ; Biathlon / Skiing / Fighting : aucune image chez TheSportsDB. Cache g45acc_img_<emoji>.
   20261002s : tuile sans visuel → image PERSO au NOM du sport (`_g45ImgPersoLire(g.s.n)` : images/equipes/biathlon.png ajoutée,
-  337×183, envoyée par Antoine — photo de presse probable, droits signalés) avant l'image TheSportsDB.
+  337×183, envoyée par Antoine — photo de presse probable, droits signalés) avant l'image TheSportsDB. 20261002t : nombre impair de tuiles → la dernière sur toute la largeur (grid-column 1 / -1) ; tuile « ➕ Ajouter » refusée (« illogique »).
 - Bandeau de scores `g45BandeauMaj` : si tout tient à l'écran, UNE copie, sans défilement.
 - Suivies « Matchs à venir / direct » (`g45DirectMesEquipes`, groupes `_g45DirEquipes`) : 29v —
   le plafond (10) porte sur les REQUÊTES réelles (`aInterroger`, tout le foot = 1 requête `all`),

@@ -65962,7 +65962,9 @@ function _g45AccRegrouper() {
       if (n) ligne = '<span style="color:#dfe6ff;">' + n + ' équipe' + (n > 1 ? 's' : '') + '</span><b style="color:' + (g.p >= 0 ? '#4ade80' : '#ff6b6b') + ';white-space:nowrap;">' + fmtE(g.p) + '</b>';
       else if (d.go) { var P = _g45AccParis(k); ligne = '<span style="color:#9fb6ff;font-weight:700;">' + d.lib + ' ›</span>' + (P.n ? '<b style="color:' + (P.p >= 0 ? '#4ade80' : '#ff6b6b') + ';white-space:nowrap;">' + fmtE(P.p) + '</b>' : ''); }
       else ligne = '<span style="color:#9fb6ff;font-weight:700;">Compétitions ›</span>';
-      return '<div data-k="' + _g45AccEsc(k) + '" onclick="g45AccChoisir(this.dataset.k)" role="button" style="position:relative;overflow:hidden;cursor:pointer;min-height:clamp(96px,22vw,130px);border-radius:12px;border:1px solid rgba(255,255,255,.1);background:' + (_G45_ACC_COUL[k] || 'linear-gradient(135deg,#1e2a4a,#10172b)') + ';">'
+      /* 20261002t : nombre impair de tuiles → la DERNIÈRE prend toute la largeur (Antoine : « il manque un sport pour un chiffre pair »). */
+      var pleine = (ordre.length % 2 === 1 && k === ordre[ordre.length - 1]) ? 'grid-column:1 / -1;' : '';
+      return '<div data-k="' + _g45AccEsc(k) + '" onclick="g45AccChoisir(this.dataset.k)" role="button" style="' + pleine + 'position:relative;overflow:hidden;cursor:pointer;min-height:clamp(96px,22vw,130px);border-radius:12px;border:1px solid rgba(255,255,255,.1);background:' + (_G45_ACC_COUL[k] || 'linear-gradient(135deg,#1e2a4a,#10172b)') + ';">'
         + fond + '<div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,14,26,.15) 0%,rgba(10,14,26,.55) 100%);pointer-events:none;"></div>'
         + '<div style="position:absolute;left:8px;bottom:8px;max-width:calc(100% - 16px);background:rgba(11,16,29,.72);border-radius:9px;padding:5px 9px;color:#fff;">'
         + '<div style="font-size:15px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + g.s.v + ' ' + _g45AccEsc(g.s.n) + '</div>'
