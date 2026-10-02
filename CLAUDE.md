@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261002q, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261002r, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -180,6 +180,10 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   « catégorie » du mur (FORMULE 1, AU NRL, TENNIS, Basket, RUGBY, MMA, MotoGP…), et un club NRL connu (`_g45NrlEqId`) saisi en 🏉
   va en NRL ; images PERSO permises en fond de tuile (bannière de la carte catégorie prioritaire) ; image presque carrée
   (largeur < 1,3 × hauteur : logo ASVEL, aunrl.png) posée ENTIÈRE (contain) ; 20261002q : bannière très allongée (largeur > 2,2 × hauteur : formule1.png 584×192) aussi ENTIÈRE, en haut de la tuile ; couleur par sport `_G45_ACC_COUL` ; emoji 52 px à 60 %.
+  20261002r (« le cache noir sur PC cache vraiment l'image ») : bandeau du texte à la largeur du TEXTE (plus 100 %), fond .72,
+  tuile min-height clamp(96px, 22vw, 130px). Images de compétition TheSportsDB `_g45AccLigueImg` / `_G45_ACC_LIGUES` (tuile sans
+  visuel ni logo) : SONDÉ PAR ANTOINE 4464 ATP (tennis), 4465 UCI World Tour (cyclisme) ; MotoGP 4407 / UFC 4443 NON sondés →
+  gardés seulement si strLeague correspond ; Biathlon / Skiing / Fighting : aucune image chez TheSportsDB. Cache g45acc_img_<emoji>.
 - Bandeau de scores `g45BandeauMaj` : si tout tient à l'écran, UNE copie, sans défilement.
 - Suivies « Matchs à venir / direct » (`g45DirectMesEquipes`, groupes `_g45DirEquipes`) : 29v —
   le plafond (10) porte sur les REQUÊTES réelles (`aInterroger`, tout le foot = 1 requête `all`),

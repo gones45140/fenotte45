@@ -65871,6 +65871,28 @@ var _G45_ACC_COUL = {
   '🥊': 'linear-gradient(135deg,#7f1d1d,#1c0707)', '🏍': 'linear-gradient(135deg,#c2410c,#1f0f05)', '🚴': 'linear-gradient(135deg,#ca8a04,#3b2a05)',
   '🎿': 'linear-gradient(135deg,#0e7490,#e0f2fe 160%)'
 };
+/* 20261002r — IMAGE DE COMPÉTITION pour les tuiles sans bannière. SONDÉ PAR ANTOINE (search_all_leagues TheSportsDB) :
+   Tennis 4464 ATP World Tour (fanart), Cyclisme 4465 UCI World Tour (fanart) ; Biathlon / Skiing / Fighting : aucune image.
+   MotoGP / MMA : id NON sondés (4407, 4443) → lookupleague à l'exécution, image gardée SEULEMENT si le nom de la ligue
+   correspond (`re`) ; cache g45acc_img_<emoji> 30 j (rien trouvé : 7 j). Une lecture par sport et par mois, en tâche de fond. */
+var _G45_ACC_LIGUES = { '🎾': { id: 4464, re: /atp/i }, '🚴': { id: 4465, re: /uci|world tour/i }, '🏍': { id: 4407, re: /motogp/i }, '🥊': { id: 4443, re: /ufc|mma/i } };
+var _g45AccImgEnCours = {};
+function _g45AccLigueImg(v) {
+  var L = _G45_ACC_LIGUES[v]; if (!L) return '';
+  var cle = 'g45acc_img_' + v, o = null;
+  try { o = JSON.parse(localStorage.getItem(cle) || 'null'); } catch (e) {}
+  if (o && Date.now() - o.t < (o.u ? 30 : 7) * 864e5) return o.u || '';
+  if (_g45AccImgEnCours[v]) return (o && o.u) || '';
+  _g45AccImgEnCours[v] = 1;
+  fetch('https://www.thesportsdb.com/api/v1/json/3/lookupleague.php?id=' + L.id).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+    var l = j && (j.leagues || [])[0], u = '';
+    if (l && L.re.test(l.strLeague || '')) u = l.strFanart1 || l.strFanart2 || l.strFanart3 || l.strBanner || '';
+    if (u) u = u.replace('://www.thesportsdb.com/images/', '://r2.thesportsdb.com/images/');
+    try { localStorage.setItem(cle, JSON.stringify({ u: u, t: Date.now() })); } catch (e) {}
+    if (u) { try { _g45AccRegrouper(); } catch (e) {} }
+  }).catch(function () {});
+  return (o && o.u) || '';
+}
 function _g45AccDef(v) { return _G45_ACC_SPORTS.filter(function (x) { return x.v === v; })[0] || null; }
 function _g45AccParis(v) {
   return ((state && state.a) || []).filter(function (h) { var sp = String(h.sport || ''); return sp.indexOf(v) >= 0 && !(v === '🏉' && sp.indexOf('🇦🇺') >= 0); })
@@ -65923,6 +65945,7 @@ function _g45AccRegrouper() {
     zone.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:2px 0 6px;">' + ordre.map(function (k) {
       var g = G[k], n = g.c.length, d = g.d || {};
       /* 20261002p : image presque carrée (logo ASVEL, AU NRL) → posée ENTIÈRE au-dessus du bandeau (contain), sinon plein cadre. */
+      if (!g.vis && !g.logo) { var li = _g45AccLigueImg(k); if (li) g.vis = li; }
       var fond = g.vis ? '<img src="' + _g45AccEsc(g.vis) + '" alt="" loading="lazy" onerror="this.remove()" onload="if(this.naturalWidth<this.naturalHeight*1.3){this.style.objectFit=\'contain\';this.style.height=\'62%\';this.style.top=\'4px\';this.style.inset=\'4px 0 auto 0\';this.style.opacity=\'.75\';}else if(this.naturalWidth>this.naturalHeight*2.2){this.style.objectFit=\'contain\';this.style.inset=\'2px 0 auto 0\';this.style.height=\'64%\';}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;">'
         : g.logo ? '<img src="' + _g45AccEsc(g.logo) + '" alt="" loading="lazy" onerror="this.remove()" style="position:absolute;left:0;right:0;margin:auto;top:6px;height:58%;width:auto;max-width:80%;opacity:.7;object-fit:contain;pointer-events:none;">'
         : '<span aria-hidden="true" style="position:absolute;left:0;right:0;top:2px;text-align:center;font-size:52px;opacity:.6;pointer-events:none;">' + g.s.v + '</span>';
@@ -65930,11 +65953,11 @@ function _g45AccRegrouper() {
       if (n) ligne = '<span style="color:#dfe6ff;">' + n + ' équipe' + (n > 1 ? 's' : '') + '</span><b style="color:' + (g.p >= 0 ? '#4ade80' : '#ff6b6b') + ';white-space:nowrap;">' + fmtE(g.p) + '</b>';
       else if (d.go) { var P = _g45AccParis(k); ligne = '<span style="color:#9fb6ff;font-weight:700;">' + d.lib + ' ›</span>' + (P.n ? '<b style="color:' + (P.p >= 0 ? '#4ade80' : '#ff6b6b') + ';white-space:nowrap;">' + fmtE(P.p) + '</b>' : ''); }
       else ligne = '<span style="color:#9fb6ff;font-weight:700;">Compétitions ›</span>';
-      return '<div data-k="' + _g45AccEsc(k) + '" onclick="g45AccChoisir(this.dataset.k)" role="button" style="position:relative;overflow:hidden;cursor:pointer;min-height:96px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:' + (_G45_ACC_COUL[k] || 'linear-gradient(135deg,#1e2a4a,#10172b)') + ';">'
+      return '<div data-k="' + _g45AccEsc(k) + '" onclick="g45AccChoisir(this.dataset.k)" role="button" style="position:relative;overflow:hidden;cursor:pointer;min-height:clamp(96px,22vw,130px);border-radius:12px;border:1px solid rgba(255,255,255,.1);background:' + (_G45_ACC_COUL[k] || 'linear-gradient(135deg,#1e2a4a,#10172b)') + ';">'
         + fond + '<div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,14,26,.15) 0%,rgba(10,14,26,.55) 100%);pointer-events:none;"></div>'
-        + '<div style="position:absolute;left:8px;right:8px;bottom:8px;background:rgba(11,16,29,.86);border-radius:9px;padding:6px 8px;color:#fff;">'
+        + '<div style="position:absolute;left:8px;bottom:8px;max-width:calc(100% - 16px);background:rgba(11,16,29,.72);border-radius:9px;padding:5px 9px;color:#fff;">'
         + '<div style="font-size:15px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + g.s.v + ' ' + _g45AccEsc(g.s.n) + '</div>'
-        + '<div style="display:flex;justify-content:space-between;gap:6px;font-size:13px;margin-top:2px;">' + ligne + '</div></div></div>';
+        + '<div style="display:flex;gap:12px;font-size:13px;margin-top:2px;white-space:nowrap;">' + ligne + '</div></div></div>';
     }).join('') + '</div>';
     cartes.forEach(function (c) { c.style.display = 'none'; });
     [].forEach.call(dash.querySelectorAll(':scope > .empty'), function (e) { e.style.display = 'none'; });
