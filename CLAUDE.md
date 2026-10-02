@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261003n, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261003o, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -690,6 +690,8 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   → format …/stats → `_g45ElFeuilleLire` + `_g45ElFeuilleHtml` ; `g45ElFiche` enveloppée (m.lv) : relue toutes les 30 s fiche ouverte.
   Worker host=eulive : chemin (Header|Boxscore) — REDÉPLOYÉ et feuille live CONFIRMÉE par Antoine (02/10, « c bon »). QT3 · 09:01 CONFIRMÉ (capture). 20261003n : erreur
   de la feuille live affichée au lieu du « ⏳ » figé.
+  20261003o (« le score aussi, ça bouge pas ») : à chaque tour de 30 s, la carte du HAUT (score + quarts-temps) est refaite ; score et
+  quarts-temps pris dans le Boxscore (totr.Points, ByQuarter) pour coller à la feuille ; Header = chrono seulement. Cache worker 60 s.
 - Classements individuels TOP 14 (`g45LnrRender`, `_G45_LNR_CATS`, page top14.lnr.fr/classement/joueurs/<cat> via
   worker host=lnr) : 20261001a — LA LNR A REFAIT SON SITE (« page reçue mais illisible ») : plus de liens /joueur/ ;
   SONDÉ PAR ANTOINE : JSON dans l'attribut `:ranking` de <players-ranking> (100 joueurs {rank, player{name, url,

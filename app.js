@@ -66453,6 +66453,23 @@ function _g45ElBoxVersStats(j) {
         var j = await rep.json(), F = _g45ElFeuilleLire(_g45ElBoxVersStats(j));
         var v = await _g45ElLiveLire(m, an);
         z = document.getElementById('g45-el-fiche'); if (!z) return false;
+        /* 20261003o (« relu toutes les 30 s, le score aussi, ça bouge pas ») : la carte du HAUT (score + quarts-temps) n'était dessinée
+           qu'à l'ouverture → elle est refaite à chaque tour avec le dernier score (2e enfant de la fenêtre, après le bouton ✕). */
+        /* Même source que la feuille pour le score et les quarts-temps (Boxscore : totr.Points, ByQuarter) : sinon le haut et le bas
+           peuvent différer d'une minute (les deux lectures ont chacune leur cache de 60 s au worker). Header ne sert plus qu'au chrono. */
+        try {
+          var S = j.Stats || [], pa = S[0] && S[0].totr && S[0].totr.Points, pb = S[1] && S[1].totr && S[1].totr.Points;
+          if (v && pa != null && pb != null) {
+            var bq = function (o) { var c = [1, 2, 3, 4].map(function (i) { return o ? +o['Quarter' + i] || 0 : 0; }), d = -1; c.forEach(function (x, i) { if (x > 0) d = i; }); return c.map(function (x, i) { return i > d ? null : x; }); };
+            var BQ = j.ByQuarter || [];
+            v = Object.assign({}, v, { a: +pa, b: +pb }, BQ.length > 1 ? { qa: bq(BQ[0]), qb: bq(BQ[1]) } : {});
+          }
+        } catch (e) {}
+        if (v) {
+          m.lv = v; m.h.s = v.a; m.a.s = v.b;
+          try { var boite = mo && mo.firstElementChild, carte = boite && boite.children[1];
+            if (carte && typeof _g45EbCarte === 'function') { var tmp = document.createElement('div'); tmp.innerHTML = _g45EbCarte({ m: m, comp: comp || 'Euroleague' }); if (tmp.firstElementChild) boite.replaceChild(tmp.firstElementChild, carte); } } catch (e) {}
+        }
         var tete = '<div style="background:rgba(255,80,80,.12);border:1px solid rgba(255,107,107,.45);border-radius:10px;padding:9px 11px;margin:6px 0 10px;font-size:15px;font-weight:800;color:#fff;">'
           + '🔴 ' + (j.Live === false ? 'Terminé' : 'EN DIRECT') + (v ? ' · ' + _g45ElEsc(_g45ElLvTexte(v)) + ' — ' + _g45ElEsc(m.h.n) + ' ' + v.a + ' – ' + v.b + ' ' + _g45ElEsc(m.a.n) : '')
           + '<div style="font-size:13px;font-weight:600;color:#c9d3ee;margin-top:3px;">Feuille relue toutes les 30 s</div></div>';
