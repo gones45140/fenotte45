@@ -688,7 +688,7 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   ByQuarter = quarts-temps NON cumulés, EndOfQuarter = cumulés → confirme 20261003l ; Stats[0] = club qui reçoit, PlayersStats{Player
   « NOM, PRÉNOM », Dorsal, IsStarter, IsPlaying, Minutes « mm:ss » | « DNP », Points…, Plusminus}, totr = totaux). `_g45ElBoxVersStats`
   → format …/stats → `_g45ElFeuilleLire` + `_g45ElFeuilleHtml` ; `g45ElFiche` enveloppée (m.lv) : relue toutes les 30 s fiche ouverte.
-  Worker host=eulive : chemin (Header|Boxscore) — fichier donné à Antoine, À REDÉPLOYER. QT3 · 09:01 CONFIRMÉ (capture). 20261003n : erreur
+  Worker host=eulive : chemin (Header|Boxscore) — REDÉPLOYÉ et feuille live CONFIRMÉE par Antoine (02/10, « c bon »). QT3 · 09:01 CONFIRMÉ (capture). 20261003n : erreur
   de la feuille live affichée au lieu du « ⏳ » figé.
 - Classements individuels TOP 14 (`g45LnrRender`, `_G45_LNR_CATS`, page top14.lnr.fr/classement/joueurs/<cat> via
   worker host=lnr) : 20261001a — LA LNR A REFAIT SON SITE (« page reçue mais illisible ») : plus de liens /joueur/ ;
