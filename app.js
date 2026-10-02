@@ -65949,9 +65949,8 @@ function _g45AccRepliables() {
   };
   plier(obj, 'g45_acc_obj', '🎯 Objectif bankroll');
   plier(pdj, 'g45_acc_pdj', '⚡ Pari du jour');
-  /* Ligne « Aujourd'hui » juste sous Bankroll / Bénéfice */
-  var kpi = tab.querySelector('.kpi2');
-  if (kpi && !document.getElementById('g45-acc-auj')) { var a = document.createElement('div'); a.id = 'g45-acc-auj'; kpi.parentNode.insertBefore(a, kpi.nextSibling); }
+  /* 20261002o (« il est déjà dans le bandeau non ? » → « oui enlève la ») : la ligne « Aujourd'hui » lisait la MÊME liste
+     que le bandeau du haut (`_g45BandMesEquipes`) : doublon, retirée. `_g45AccAujourdhui` reste (sans zone #g45-acc-auj, il ne fait rien). */
 }
 var _g45AccAujT = 0;
 async function _g45AccAujourdhui(force) {
@@ -65983,10 +65982,10 @@ async function _g45AccAujourdhui(force) {
   var orig = render;
   render = function () {
     var r = orig.apply(this, arguments);
-    try { _g45AccRepliables(); _g45AccRegrouper(); _g45AccAujourdhui(); } catch (e) { console.warn('accueil par sport :', e && e.message); }
+    try { _g45AccRepliables(); _g45AccRegrouper(); } catch (e) { console.warn('accueil par sport :', e && e.message); }
     return r;
   };
   render._g45Acc = true; window.render = render;
-  try { _g45AccRepliables(); _g45AccRegrouper(); setTimeout(function () { _g45AccAujourdhui(true); }, 4000); } catch (e) {}
+  try { _g45AccRepliables(); _g45AccRegrouper(); } catch (e) {}
 })();
 window._g45AccRegrouper = _g45AccRegrouper; window._g45AccSport = _g45AccSport;
