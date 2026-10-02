@@ -65923,7 +65923,7 @@ function _g45AccRegrouper() {
     zone.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:2px 0 6px;">' + ordre.map(function (k) {
       var g = G[k], n = g.c.length, d = g.d || {};
       /* 20261002p : image presque carrée (logo ASVEL, AU NRL) → posée ENTIÈRE au-dessus du bandeau (contain), sinon plein cadre. */
-      var fond = g.vis ? '<img src="' + _g45AccEsc(g.vis) + '" alt="" loading="lazy" onerror="this.remove()" onload="if(this.naturalWidth<this.naturalHeight*1.3){this.style.objectFit=\'contain\';this.style.height=\'62%\';this.style.top=\'4px\';this.style.inset=\'4px 0 auto 0\';this.style.opacity=\'.75\';}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;">'
+      var fond = g.vis ? '<img src="' + _g45AccEsc(g.vis) + '" alt="" loading="lazy" onerror="this.remove()" onload="if(this.naturalWidth<this.naturalHeight*1.3){this.style.objectFit=\'contain\';this.style.height=\'62%\';this.style.top=\'4px\';this.style.inset=\'4px 0 auto 0\';this.style.opacity=\'.75\';}else if(this.naturalWidth>this.naturalHeight*2.2){this.style.objectFit=\'contain\';this.style.inset=\'2px 0 auto 0\';this.style.height=\'64%\';}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;">'
         : g.logo ? '<img src="' + _g45AccEsc(g.logo) + '" alt="" loading="lazy" onerror="this.remove()" style="position:absolute;left:0;right:0;margin:auto;top:6px;height:58%;width:auto;max-width:80%;opacity:.7;object-fit:contain;pointer-events:none;">'
         : '<span aria-hidden="true" style="position:absolute;left:0;right:0;top:2px;text-align:center;font-size:52px;opacity:.6;pointer-events:none;">' + g.s.v + '</span>';
       var ligne;
