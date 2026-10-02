@@ -66066,3 +66066,47 @@ async function _g45AccAujourdhui(force) {
   try { _g45AccRepliables(); _g45AccRegrouper(); } catch (e) {}
 })();
 window._g45AccRegrouper = _g45AccRegrouper; window._g45AccSport = _g45AccSport;
+
+/* ═══ 🏁 F1 — ARCHIVES OFFICIELLES EN SECOURS D'OPENF1 (20261002y, demande d'Antoine : « met photo et chrono » dans FP1) ═══
+   OpenF1 répond 401 à TOUT pendant une séance (−30 min → +30 min) : l'onglet FP1 n'avait alors ni photos ni chronos (capture
+   d'Antoine pendant FP2). SONDÉ PAR ANTOINE : livetiming.formula1.com/static/<an>/<Path>{TimingData,TimingAppData,DriverList}.json
+   = publics (200) pendant la séance, HeadshotUrl présent. Worker /f1arch?q=<ville>&s=<nom de séance>&d=<date> les réduit.
+   Si `_g45F1SessOF1` ne rend rien, on construit la MÊME carte {tyre, time, kind, team, col, photo} depuis /f1arch. */
+function _g45F1ArchNom(o) {
+  var t = String((o && o.type) || '').toUpperCase(), m = t.match(/^FP\s*(\d)/);
+  if (m) return 'Practice ' + m[1];
+  if (o.sprintQual) return 'Sprint Qualifying';
+  if (o.isSprint) return 'Sprint';
+  if (o.isQual) return 'Qualifying';
+  if (o.isRace) return 'Race';
+  return '';
+}
+async function _g45F1ArchMap(ev, c, o) {
+  try {
+    var ad = (ev && ev.circuit && ev.circuit.address) || {}, q = String(ad.city || ad.country || '').toLowerCase().trim(), s = _g45F1ArchNom(o || {});
+    if (!q || !s || typeof FD_PROXY === 'undefined') return null;
+    var d = (c && (c.date || c.startDate)) || (ev && ev.date) || '';
+    var r = await fetch(FD_PROXY + '/f1arch?q=' + encodeURIComponent(q) + '&s=' + encodeURIComponent(s) + '&d=' + encodeURIComponent(d));
+    if (!r.ok) return null;
+    var j = await r.json(), map = {}, n = 0, isR = o && (o.isRace || o.isSprint);
+    (j.pilotes || []).forEach(function (p) {
+      var k = _g45F1Key(p.nom || ''); if (!k) return;
+      var tm = isR ? (p.pos === 1 ? 'Leader' : (p.ecart || '')) : (p.meilleur || '');
+      map[k] = { tyre: p.pneu || '', time: tm, kind: isR ? 'gap' : 'lap', team: p.eq || '', col: p.coul || '', photo: p.ph || '' };
+      n++;
+    });
+    return n ? map : null;
+  } catch (e) { return null; }
+}
+(function _g45F1ArchBrancher() {
+  if (typeof _g45F1SessOF1 !== 'function' || _g45F1SessOF1._g45Arch) return;
+  var orig = _g45F1SessOF1;
+  _g45F1SessOF1 = async function (ev, c, o) {
+    var m = null;
+    try { m = await orig.apply(this, arguments); } catch (e) {}
+    if (m) return m;
+    return _g45F1ArchMap(ev, c, o);
+  };
+  _g45F1SessOF1._g45Arch = true; window._g45F1SessOF1 = _g45F1SessOF1;
+})();
+window._g45F1ArchMap = _g45F1ArchMap; window._g45F1ArchNom = _g45F1ArchNom;

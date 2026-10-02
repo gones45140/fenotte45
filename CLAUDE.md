@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261002x, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261002y, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -832,7 +832,11 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   20261002x (« oui les deux ») : en PAYSAGE le tableau tient entier (constaté par Antoine) → pas de refonte ; en portrait tactile,
   ligne « 📱↻ Tourne ton téléphone… » ; photo ronde 26 px si p.ph — worker /f1live : ph = DriverList.HeadshotUrl (champ NON vérifié,
   fichier worker redonné à Antoine). Photos / chronos des onglets FP1… : OpenF1 (bloqué pendant une séance) ; archive officielle
-  livetiming /static/2026/<Path>… à sonder (commande donnée à Antoine). Tableau façon feuille de
+  livetiming /static/2026/<Path>… SONDÉ PAR ANTOINE (02/10, FP1 Malaisie, Path 2026/2026-10-04_Bahrain_Grand_Prix/2026-10-02_Practice_1/) :
+  TimingData.json / TimingAppData.json / DriverList.json = 200 PENDANT FP2 (HeadshotUrl confirmé) → worker route /f1arch?q=<ville>&s=
+  <Practice 1|Qualifying|Race|Sprint|Sprint Qualifying>&d=<date> (Index.json → séance la plus proche de d, cache 10 min) ; appli
+  20261002y : `_g45F1SessOF1` ENVELOPPÉE → si OpenF1 ne rend rien, `_g45F1ArchMap` (même forme {tyre,time,kind,team,col,photo}) ;
+  `_g45F1ArchNom` (FP1→Practice 1, SS→Sprint Qualifying…). Worker à redéployer (fichier complet donné). Tableau façon feuille de
   chrono (mini-secteurs : codes 2051 violet, 2049 vert, 2048 jaune, 2064
   stand) + chronologie : messages de course (30 derniers) et événements
   DÉDUITS de deux instantanés (`_g45F1OffEvenements`), donc seulement depuis
