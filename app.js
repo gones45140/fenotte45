@@ -27240,7 +27240,9 @@ function _renderEspnMatchPitch(s, col, nameFn){
       var nL=lines.length, html='';
       lines.forEach(function(line,li){
         var frac = nL>1 ? li/(nL-1) : 0;
-        var y = fromTop ? (4+frac*43) : (96-frac*43);
+        /* 20261003d (capture d'Antoine, France–Italie en 4-3-3) : 4→47 % et 96→53 % ne laissaient que 6 % entre les deux lignes
+           d'attaque ; le nom, écrit SOUS la photo, recouvrait l'attaquant d'en face. Lignes resserrées : 5→42 % / 95→58 %. */
+        var y = fromTop ? (5+frac*37) : (95-frac*37);
         var n=line.length;
         /* Le terrain passe de 430 a 660 px sur grand ecran (il restait dimensionne
            pour le telephone). On elargit donc aussi les noms, sinon ils seraient
