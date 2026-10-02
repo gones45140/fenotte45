@@ -66460,7 +66460,8 @@ function _g45ElBoxVersStats(j) {
         return j.Live !== false;
       } catch (e) {
         z = document.getElementById('g45-el-fiche');
-        if (z && !z.innerHTML) z.innerHTML = '<div style="font-size:14px;color:#ff6b6b;">❌ Feuille en direct indisponible (' + _g45ElEsc(e.message) + ')</div>';
+        /* 20261003n : le « ⏳ » restait affiché sur une erreur (worker pas encore redéployé → 403) : il est remplacé par le message. */
+        if (z && (!z.innerHTML || /⏳/.test(z.innerHTML))) z.innerHTML = '<div style="font-size:14px;color:#ff6b6b;">❌ Feuille en direct indisponible (' + _g45ElEsc(e.message) + ')</div>';
         return true;
       }
     };
