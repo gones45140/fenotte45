@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261003k, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261003l, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -682,6 +682,8 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   FoultsA/B, TimeoutsA/B. Worker host=eulive (ce chemin seul, cache 60 s) — À DÉPLOYER par Antoine. Appli : `_g45ElMatchs` enveloppée
   (`_g45ElLiveBrancher`) → m.lv via `_g45ElLiveLire` (30 s mini), score du moment dans m.h.s / m.a.s, Live false + score → m.p ;
   carte Suivies « ● QT3 · 05:12 / Pause » (`_g45ElLvTexte`), fiche `_g45EbCarte` « 🔴 EN DIRECT ». Format de Quarter NON vérifié hors pause.
+  CONFIRMÉ par Antoine (capture 61-50 « EN DIRECT · Pause », worker redéployé). 20261003l : quarts-temps du direct = ScoreQuarterN
+  CUMULÉS (Q1A 33, Q2A 61, Q3A 61, Q4A 0 à la pause) → différences (lv.qa / lv.qb) ; hypothèse vue sur un seul instantané.
 - Classements individuels TOP 14 (`g45LnrRender`, `_G45_LNR_CATS`, page top14.lnr.fr/classement/joueurs/<cat> via
   worker host=lnr) : 20261001a — LA LNR A REFAIT SON SITE (« page reçue mais illisible ») : plus de liens /joueur/ ;
   SONDÉ PAR ANTOINE : JSON dans l'attribut `:ranking` de <players-ranking> (100 joueurs {rank, player{name, url,

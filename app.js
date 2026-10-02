@@ -66353,6 +66353,16 @@ async function _g45ElLiveLire(m, an) {
     var j = await r.json();
     if (!j || j.ScoreA == null) return o ? o.v : null;
     var v = { a: +j.ScoreA || 0, b: +j.ScoreB || 0, q: String(j.Quarter || '').trim(), t: String(j.RemainingPartialTime || '').trim(), live: !!j.Live };
+    /* 20261003l (capture : tableau des quarts-temps à 0 pendant le match) : ScoreQuarterN = score CUMULÉ (vu à la pause : Q1A 33,
+       Q2A 61, Q3A 61 = Q3 pas commencé, Q4A 0) → quart-temps N = cumulé N − cumulé N−1, jusqu'au dernier cumulé non nul ; au-delà « – ».
+       Hypothèse cumulée vérifiée sur UN instantané seulement : si une différence est négative, valeurs brutes. */
+    var qt = function (L) {
+      var c = [1, 2, 3, 4].map(function (i) { return +j['ScoreQuarter' + i + L] || 0; }), der = -1;
+      c.forEach(function (x, i) { if (x > 0) der = i; });
+      var p = c.map(function (x, i) { return i > der ? null : (i ? x - c[i - 1] : x); });
+      return p.some(function (x) { return x != null && x < 0; }) ? c.map(function (x, i) { return i > der ? null : x; }) : p;
+    };
+    v.qa = qt('A'); v.qb = qt('B');
     _g45ElLv[k] = { t: Date.now(), v: v };
     return v;
   } catch (e) { return o ? o.v : null; }
@@ -66396,7 +66406,7 @@ function _g45ElLvTexte(v) {
     _g45EbCarte = function (x) {
       var m = x && x.m;
       if (!m || !m.lv || m.p) return eb.apply(this, arguments);
-      var c = Object.assign({}, m, { p: true }), h = eb.call(this, Object.assign({}, x, { m: c }));
+      var c = Object.assign({}, m, { p: true, h: Object.assign({}, m.h, { q: m.lv.qa || [], ot: [] }), a: Object.assign({}, m.a, { q: m.lv.qb || [], ot: [] }) }), h = eb.call(this, Object.assign({}, x, { m: c }));
       return h.replace('<div style="font-size:13px;color:#c9d3ee;margin-top:10px;">📅 ', '<div style="font-size:14px;font-weight:800;color:#ff6b6b;margin-top:10px;">🔴 EN DIRECT · '
         + _g45ElLvTexte(m.lv) + '</div><div style="font-size:13px;color:#c9d3ee;margin-top:6px;">📅 ');
     };
