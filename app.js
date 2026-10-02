@@ -65945,6 +65945,15 @@ function _g45AccRegrouper() {
     zone.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:2px 0 6px;">' + ordre.map(function (k) {
       var g = G[k], n = g.c.length, d = g.d || {};
       /* 20261002p : image presque carrée (logo ASVEL, AU NRL) → posée ENTIÈRE au-dessus du bandeau (contain), sinon plein cadre. */
+      /* 20261002s : image PERSO au nom du sport (images/equipes/biathlon.png…, envoyée par Antoine), avant celle de TheSportsDB. */
+      if (!g.vis && typeof _g45ImgPersoLire === 'function') {
+        var pe = _g45ImgPersoLire(g.s.n);
+        if (pe) g.vis = pe;
+        else if (pe === undefined && typeof _g45ImgPersoTester === 'function' && !_g45AccImgEnCours['p' + k]) {
+          _g45AccImgEnCours['p' + k] = 1;
+          try { Promise.resolve(_g45ImgPersoTester(g.s.n)).then(function (u) { if (u) { try { _g45AccRegrouper(); } catch (e) {} } }); } catch (e) {}
+        }
+      }
       if (!g.vis && !g.logo) { var li = _g45AccLigueImg(k); if (li) g.vis = li; }
       var fond = g.vis ? '<img src="' + _g45AccEsc(g.vis) + '" alt="" loading="lazy" onerror="this.remove()" onload="if(this.naturalWidth<this.naturalHeight*1.3){this.style.objectFit=\'contain\';this.style.height=\'62%\';this.style.top=\'4px\';this.style.inset=\'4px 0 auto 0\';this.style.opacity=\'.75\';}else if(this.naturalWidth>this.naturalHeight*2.2){this.style.objectFit=\'contain\';this.style.inset=\'2px 0 auto 0\';this.style.height=\'64%\';}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;">'
         : g.logo ? '<img src="' + _g45AccEsc(g.logo) + '" alt="" loading="lazy" onerror="this.remove()" style="position:absolute;left:0;right:0;margin:auto;top:6px;height:58%;width:auto;max-width:80%;opacity:.7;object-fit:contain;pointer-events:none;">'
