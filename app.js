@@ -65830,8 +65830,17 @@ window._g45EbResoudre = _g45EbResoudre; window._g45EbCharger = _g45EbCharger; wi
    Objectif bankroll et 🎯 Pari du jour passent SOUS les équipes, REPLIÉS par défaut (clés g45_acc_obj / g45_acc_pdj). */
 var _g45AccSel = '';
 try { _g45AccSel = sessionStorage.getItem('g45_acc_sel') || ''; } catch (e) {}
+/* 20261002p (« NRL aussi que tu as mis dans rugby ») : les cartes « catégorie » du mur (FORMULE 1, AU NRL, TENNIS, Basket,
+   RUGBY…) portent souvent un emoji par défaut (⚽ ou 🏉) → rangées d'après leur NOM d'abord ; un club NRL connu
+   (`_g45NrlEqId`) saisi en 🏉 va en NRL. */
+var _G45_ACC_NOMS = [[/^(au\s*)?nrl$|rugby\s*(a|à)\s*xiii|rugby\s*league|^xiii$/i, '🏉🇦🇺'], [/^(formule|formula)\s*1$|^f1$/i, '🏎'],
+  [/^tennis$/i, '🎾'], [/^basket(ball)?$/i, '🏀'], [/^rugby$/i, '🏉'], [/^(mma|ufc)$/i, '🥊'], [/^moto\s*gp$/i, '🏍'],
+  [/^(cyclisme|velo|vélo)$/i, '🚴'], [/^biathlon$/i, '🎿'], [/^hockey$/i, '🏒'], [/^baseball$/i, '⚾'], [/^(football|foot)$/i, '⚽'], [/^(nfl|foot\s*us)$/i, '🏈']];
 function _g45AccSport(u) {
+  var nm = String((u && u.n) || '').trim();
+  for (var j = 0; j < _G45_ACC_NOMS.length; j++) if (_G45_ACC_NOMS[j][0].test(nm)) { var vv = _G45_ACC_NOMS[j][1]; return _g45AccDef(vv) ? { v: vv, n: _g45AccDef(vv).n } : { v: vv, n: vv }; }
   var s = String((u && u.sport) || '');
+  if (s.indexOf('🏉') >= 0 && s.indexOf('🇦🇺') < 0 && typeof _g45NrlEqId === 'function') { try { if (_g45NrlEqId(nm)) return { v: '🏉🇦🇺', n: 'NRL' }; } catch (e) {} }
   var L = (typeof G45_SPORTS_PARI !== 'undefined' ? G45_SPORTS_PARI : []).slice().sort(function (a, b) { return b.v.length - a.v.length; });
   for (var i = 0; i < L.length; i++) if (s.indexOf(L[i].v) >= 0) return L[i];
   return s ? { v: s.trim(), n: 'Autre' } : { v: '⚽', n: 'Football' };
@@ -65854,6 +65863,14 @@ var _G45_ACC_SPORTS = [
   { v: '🏍', n: 'MotoGP', go: 'g45MotoOpen()', lib: 'Calendrier' }, { v: '🚴', n: 'Cyclisme', go: "g45CyclingOpen('tdf')", lib: 'Courses' },
   { v: '🎿', n: 'Biathlon', go: 'g45BiaOpen()', lib: 'Coupe du monde' }
 ];
+/* 20261002p : couleur de fond par sport (tuile sans bannière : MMA, MotoGP, cyclisme, biathlon…). */
+var _G45_ACC_COUL = {
+  '⚽': 'linear-gradient(135deg,#14532d,#0b1f14)', '🏀': 'linear-gradient(135deg,#9a3412,#2a1208)', '🏒': 'linear-gradient(135deg,#1e3a8a,#0b1530)',
+  '⚾': 'linear-gradient(135deg,#1d4ed8,#7f1d1d)', '🏈': 'linear-gradient(135deg,#78350f,#1c1208)', '🏉': 'linear-gradient(135deg,#166534,#3f1d0b)',
+  '🏉🇦🇺': 'linear-gradient(135deg,#15803d,#a16207)', '🎾': 'linear-gradient(135deg,#4d7c0f,#a3a10b)', '🏎': 'linear-gradient(135deg,#b91c1c,#1f0a0a)',
+  '🥊': 'linear-gradient(135deg,#7f1d1d,#1c0707)', '🏍': 'linear-gradient(135deg,#c2410c,#1f0f05)', '🚴': 'linear-gradient(135deg,#ca8a04,#3b2a05)',
+  '🎿': 'linear-gradient(135deg,#0e7490,#e0f2fe 160%)'
+};
 function _g45AccDef(v) { return _G45_ACC_SPORTS.filter(function (x) { return x.v === v; })[0] || null; }
 function _g45AccParis(v) {
   return ((state && state.a) || []).filter(function (h) { var sp = String(h.sport || ''); return sp.indexOf(v) >= 0 && !(v === '🏉' && sp.indexOf('🇦🇺') >= 0); })
@@ -65894,7 +65911,9 @@ function _g45AccRegrouper() {
     var u = U[c.getAttribute('data-nom')] || { n: c.getAttribute('data-nom') }, s = _g45AccSport(u);
     if (!G[s.v]) { G[s.v] = { s: s, d: null, c: [], p: 0, vis: '' }; ordre.push(s.v); }
     G[s.v].c.push(c); G[s.v].p += _g45AccProfit(u.n);
-    if (!G[s.v].vis && typeof g45VisuelCache === 'function') { var v = g45VisuelCache(u.n); if (v && !/images\/(equipes|joueurs)\//.test(v)) G[s.v].vis = v; }
+    if (typeof g45VisuelCache === 'function') { var v = g45VisuelCache(u.n);
+      /* bannière d'une carte « catégorie » (FORMULE 1…) prioritaire, sinon 1er visuel trouvé */
+      if (v && (!G[s.v].vis || (_G45_ACC_NOMS.some(function (x) { return x[0].test(String(u.n).trim()); }) && !G[s.v].cat))) { G[s.v].vis = v; if (_G45_ACC_NOMS.some(function (x) { return x[0].test(String(u.n).trim()); })) G[s.v].cat = 1; } }
     if (!G[s.v].logo && typeof g45LogoUrlDe === 'function') G[s.v].logo = g45LogoUrlDe(u.n) || '';
   });
   if (_g45AccSel && !(G[_g45AccSel] && G[_g45AccSel].c.length)) _g45AccSel = '';
@@ -65903,14 +65922,15 @@ function _g45AccRegrouper() {
   if (!_g45AccSel) {
     zone.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:2px 0 6px;">' + ordre.map(function (k) {
       var g = G[k], n = g.c.length, d = g.d || {};
-      var fond = g.vis ? '<img src="' + _g45AccEsc(g.vis) + '" alt="" loading="lazy" onerror="this.remove()" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;">'
-        : g.logo ? '<img src="' + _g45AccEsc(g.logo) + '" alt="" loading="lazy" onerror="this.remove()" style="position:absolute;right:6px;top:6px;height:52%;opacity:.35;object-fit:contain;pointer-events:none;">'
-        : '<span aria-hidden="true" style="position:absolute;right:8px;top:4px;font-size:46px;opacity:.28;pointer-events:none;">' + g.s.v + '</span>';
+      /* 20261002p : image presque carrée (logo ASVEL, AU NRL) → posée ENTIÈRE au-dessus du bandeau (contain), sinon plein cadre. */
+      var fond = g.vis ? '<img src="' + _g45AccEsc(g.vis) + '" alt="" loading="lazy" onerror="this.remove()" onload="if(this.naturalWidth<this.naturalHeight*1.3){this.style.objectFit=\'contain\';this.style.height=\'62%\';this.style.top=\'4px\';this.style.inset=\'4px 0 auto 0\';this.style.opacity=\'.75\';}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;">'
+        : g.logo ? '<img src="' + _g45AccEsc(g.logo) + '" alt="" loading="lazy" onerror="this.remove()" style="position:absolute;left:0;right:0;margin:auto;top:6px;height:58%;width:auto;max-width:80%;opacity:.7;object-fit:contain;pointer-events:none;">'
+        : '<span aria-hidden="true" style="position:absolute;left:0;right:0;top:2px;text-align:center;font-size:52px;opacity:.6;pointer-events:none;">' + g.s.v + '</span>';
       var ligne;
       if (n) ligne = '<span style="color:#dfe6ff;">' + n + ' équipe' + (n > 1 ? 's' : '') + '</span><b style="color:' + (g.p >= 0 ? '#4ade80' : '#ff6b6b') + ';white-space:nowrap;">' + fmtE(g.p) + '</b>';
       else if (d.go) { var P = _g45AccParis(k); ligne = '<span style="color:#9fb6ff;font-weight:700;">' + d.lib + ' ›</span>' + (P.n ? '<b style="color:' + (P.p >= 0 ? '#4ade80' : '#ff6b6b') + ';white-space:nowrap;">' + fmtE(P.p) + '</b>' : ''); }
       else ligne = '<span style="color:#9fb6ff;font-weight:700;">Compétitions ›</span>';
-      return '<div data-k="' + _g45AccEsc(k) + '" onclick="g45AccChoisir(this.dataset.k)" role="button" style="position:relative;overflow:hidden;cursor:pointer;min-height:96px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:linear-gradient(135deg,#1e2a4a,#10172b);">'
+      return '<div data-k="' + _g45AccEsc(k) + '" onclick="g45AccChoisir(this.dataset.k)" role="button" style="position:relative;overflow:hidden;cursor:pointer;min-height:96px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:' + (_G45_ACC_COUL[k] || 'linear-gradient(135deg,#1e2a4a,#10172b)') + ';">'
         + fond + '<div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,14,26,.15) 0%,rgba(10,14,26,.55) 100%);pointer-events:none;"></div>'
         + '<div style="position:absolute;left:8px;right:8px;bottom:8px;background:rgba(11,16,29,.86);border-radius:9px;padding:6px 8px;color:#fff;">'
         + '<div style="font-size:15px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + g.s.v + ' ' + _g45AccEsc(g.s.n) + '</div>'
