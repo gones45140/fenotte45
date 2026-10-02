@@ -66413,3 +66413,62 @@ function _g45ElLvTexte(v) {
     window._g45EbCarte = _g45EbCarte;
   }
 })();
+
+/* ═══ 🏀 FEUILLE DES JOUEURS EN DIRECT (20261003m, Antoine : « AUCUNE STAT JOUEUR EN DIRECT ? ») ═══
+   SONDÉ PAR ANTOINE (02/10, ASVEL–Valencia à la pause) : live.euroleague.net/api/Boxscore?gamecode=<n>&seasoncode=E<an> →
+   {Live, ByQuarter[2]{Quarter1..4}, Stats[2]{Team, Coach, PlayersStats[{Player « CALE, MYLES », Dorsal, IsStarter, IsPlaying,
+   Minutes « 08:46 » | « DNP », Points, FieldGoalsMade2/Attempted2, …3, FreeThrows…, Offensive/Defensive/TotalRebounds, Assistances,
+   Steals, Turnovers, BlocksFavour, FoulsCommited, Valuation, Plusminus}], totr{…totaux}}} (Stats[0] = club qui reçoit). Converti
+   au format de …/games/<code>/stats (`_g45ElBoxVersStats`) → MÊME rendu que la feuille d'un match fini (`_g45ElFeuilleLire` +
+   `_g45ElFeuilleHtml`). `g45ElFiche` enveloppée : match en direct (m.lv) → feuille relue toutes les 30 s tant que la fiche est
+   ouverte (worker host=eulive, chemin Boxscore ajouté, cache 60 s). */
+function _g45ElBoxVersStats(j) {
+  if (!j || !Array.isArray(j.Stats) || j.Stats.length < 2) return null;
+  var sec = function (t) { var m = String(t || '').match(/^(\d+):(\d+)$/); return m ? (+m[1]) * 60 + (+m[2]) : 0; };
+  var st = function (x) {
+    return { timePlayed: sec(x.Minutes), points: x.Points, valuation: x.Valuation, plusMinus: x.Plusminus, startFive: !!x.IsStarter,
+      fieldGoalsMade2: x.FieldGoalsMade2, fieldGoalsAttempted2: x.FieldGoalsAttempted2, fieldGoalsMade3: x.FieldGoalsMade3, fieldGoalsAttempted3: x.FieldGoalsAttempted3,
+      freeThrowsMade: x.FreeThrowsMade, freeThrowsAttempted: x.FreeThrowsAttempted, totalRebounds: x.TotalRebounds, offensiveRebounds: x.OffensiveRebounds,
+      assistances: x.Assistances, steals: x.Steals, turnovers: x.Turnovers, blocksFavour: x.BlocksFavour, foulsCommited: x.FoulsCommited };
+  };
+  var cote = function (S) {
+    return { coach: { name: S.Coach || '' }, players: (S.PlayersStats || []).map(function (x) { return { player: { person: { name: x.Player || '' }, dorsal: x.Dorsal || '' }, stats: st(x) }; }),
+      total: S.totr ? st(S.totr) : null };
+  };
+  return { local: cote(j.Stats[0]), road: cote(j.Stats[1]) };
+}
+(function _g45ElFicheLiveBrancher() {
+  if (typeof g45ElFiche !== 'function' || g45ElFiche._g45Lv) return;
+  var orig = g45ElFiche;
+  g45ElFiche = async function (m, comp) {
+    var r = await orig.apply(this, arguments);
+    if (!m || m.p || !m.lv || (comp && comp !== 'Euroleague')) return r;
+    var an = _g45ElSaisonDe(m.t), mo = document.getElementById('g45-sg-modal');
+    var tour = async function () {
+      var z = document.getElementById('g45-el-fiche');
+      if (!z || document.getElementById('g45-sg-modal') !== mo) return false;
+      try {
+        var rep = await fetch(FD_PROXY + '?host=eulive&path=' + encodeURIComponent('/api/Boxscore?gamecode=' + m.id + '&seasoncode=E' + an), { cache: 'no-store' });
+        if (!rep.ok) throw new Error('HTTP ' + rep.status);
+        var j = await rep.json(), F = _g45ElFeuilleLire(_g45ElBoxVersStats(j));
+        var v = await _g45ElLiveLire(m, an);
+        z = document.getElementById('g45-el-fiche'); if (!z) return false;
+        var tete = '<div style="background:rgba(255,80,80,.12);border:1px solid rgba(255,107,107,.45);border-radius:10px;padding:9px 11px;margin:6px 0 10px;font-size:15px;font-weight:800;color:#fff;">'
+          + '🔴 ' + (j.Live === false ? 'Terminé' : 'EN DIRECT') + (v ? ' · ' + _g45ElEsc(_g45ElLvTexte(v)) + ' — ' + _g45ElEsc(m.h.n) + ' ' + v.a + ' – ' + v.b + ' ' + _g45ElEsc(m.a.n) : '')
+          + '<div style="font-size:13px;font-weight:600;color:#c9d3ee;margin-top:3px;">Feuille relue toutes les 30 s</div></div>';
+        z.innerHTML = tete + (F ? _g45ElFeuilleHtml(F, m) : '<div style="font-size:14px;">Feuille pas encore disponible.</div>');
+        return j.Live !== false;
+      } catch (e) {
+        z = document.getElementById('g45-el-fiche');
+        if (z && !z.innerHTML) z.innerHTML = '<div style="font-size:14px;color:#ff6b6b;">❌ Feuille en direct indisponible (' + _g45ElEsc(e.message) + ')</div>';
+        return true;
+      }
+    };
+    var z0 = document.getElementById('g45-el-fiche'); if (z0) z0.innerHTML = '<div style="font-size:14px;padding:8px 0;">⏳ Feuille de match en direct…</div>';
+    var encore = await tour();
+    var t = setInterval(async function () { if (!(await tour())) clearInterval(t); }, 30000);
+    if (!encore) clearInterval(t);
+    return r;
+  };
+  g45ElFiche._g45Lv = true; window.g45ElFiche = g45ElFiche;
+})();
