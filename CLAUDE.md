@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261002z, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261003a, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -193,7 +193,12 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   portrait, pas de fanart → `_G45_VIS_SPORT.tennis`, passe dédiée aux cartes 🎾 (clé g45jv_tennis_<nom>), `_g45JoueurVisLire(nom)`
   sans sport retombe sur la clé tennis, pas de logo de club pour le tennis. Tuile : photo d'un joueur du mur (g.jv) avant l'image de ligue.
   Photos des joueurs dans Résultats tennis : ESPN scoreboard = drapeau seulement (athlete sans headshot, id dans links /id/3666/) ;
-  a.espncdn.com/i/headshots/tennis/players/full/<id>.png NON vérifié.
+  a.espncdn.com/i/headshots/tennis/players/full/<id>.png = image VIDE (SONDÉ PAR ANTOINE, id 3666).
+  20261003a (maquette validée « oui ») — PHOTOS DANS RÉSULTATS TENNIS : `_g45EspnTennisFlag` enveloppée → `_g45TenAvatar(a, 32|40)`
+  (photo ronde, drapeau en petit en bas à droite, initiales dessous ; 40 px dans le détail `_g45EspnTennisDetail` ; doubles inchangés) ;
+  `_g45TenPhotos(racine)` après `_g45RenderTennisRes`, `g45EspnTennisToggle`, `g45TennisBracket` : TheSportsDB searchplayers sur le
+  NOM COMPLET ESPN, strSport Tennis, 10 noms nouveaux par passage, 429 = arrêt ; mémoire g45tph1_<nom> trouvée = POUR TOUJOURS
+  (demande d'Antoine), rien = 14 j ; image strThumb puis strCutout (www → r2).
 - Bandeau de scores `g45BandeauMaj` : si tout tient à l'écran, UNE copie, sans défilement.
 - Suivies « Matchs à venir / direct » (`g45DirectMesEquipes`, groupes `_g45DirEquipes`) : 29v —
   le plafond (10) porte sur les REQUÊTES réelles (`aInterroger`, tout le foot = 1 requête `all`),

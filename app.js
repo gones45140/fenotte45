@@ -66175,3 +66175,89 @@ window._g45F1ArchMap = _g45F1ArchMap; window._g45F1ArchNom = _g45F1ArchNom;
     }
   } catch (e) {}
 })();
+
+/* ═══ 🎾 PHOTOS DES JOUEURS DANS LES RÉSULTATS TENNIS (20261003a, maquette validée « oui ») ═══
+   ESPN : scoreboard tennis = drapeau seulement, et a.espncdn.com/i/headshots/tennis/players/full/<id>.png = image VIDE
+   (SONDÉ PAR ANTOINE, 3666 Ugo Carabelli). TheSportsDB searchplayers (SONDÉ : Sinner, Swiatek, Fils → strSport « Tennis »,
+   détouré + portrait). Rendu : photo ronde à la place du drapeau (`_g45EspnTennisFlag` enveloppée), drapeau en petit en bas à
+   droite ; initiales tant que rien n'est trouvé ; doubles inchangés (roster). Recherche `_g45TenPhotos(racine)` : 10 noms
+   NOUVEAUX par passage, l'un après l'autre ; mémoire g45tph1_<nom> : trouvée = POUR TOUJOURS (demande d'Antoine), rien = 14 j. */
+var _G45_TPH = 'g45tph1_', _g45TenGrand = 0, _g45TenEnCours = 0;
+function _g45TenNorm(n) { return String(n || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z]/g, ''); }
+function _g45TenPhLire(nom) {
+  try {
+    var o = JSON.parse(localStorage.getItem(_G45_TPH + _g45TenNorm(nom)) || 'null');
+    if (!o) return undefined;
+    if (o.u) return o.u;
+    return (Date.now() - (o.t || 0) < 14 * 864e5) ? '' : undefined;
+  } catch (e) { return undefined; }
+}
+function _g45TenAvatar(a, px) {
+  var nom = a.displayName || a.fullName || a.shortName || '', u = _g45TenPhLire(nom);
+  var ini = nom.split(/\s+/).filter(Boolean).map(function (x) { return x[0]; }).slice(0, 2).join('').toUpperCase();
+  var ea = function (s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;'); };
+  var fl = a.flag && a.flag.href ? '<img src="' + ea(a.flag.href) + '" alt="" style="position:absolute;right:-4px;bottom:-2px;width:15px;height:10px;object-fit:cover;border-radius:2px;box-shadow:0 0 0 1px rgba(0,0,0,.6);">' : '';
+  return '<span class="g45-tav"' + (u === undefined ? ' data-g45tph="' + ea(nom) + '"' : '') + ' style="position:relative;display:inline-block;vertical-align:middle;width:' + px + 'px;height:' + px + 'px;margin:0 5px;flex-shrink:0;">'
+    + '<span style="position:absolute;inset:0;border-radius:50%;background:#33405e;border:2px solid #3a4870;box-sizing:border-box;display:flex;align-items:center;justify-content:center;font-size:' + Math.round(px * .36) + 'px;font-weight:800;color:#e8ecf5;">' + ea(ini) + '</span>'
+    + (u ? '<img src="' + ea(u) + '" alt="" loading="lazy" onerror="this.remove()" style="position:absolute;inset:0;width:100%;height:100%;border-radius:50%;object-fit:cover;object-position:50% 12%;border:2px solid #3a4870;box-sizing:border-box;background:#33405e;">' : '')
+    + fl + '</span>';
+}
+async function _g45TenPhotos(racine) {
+  if (_g45TenEnCours || !racine || !racine.querySelectorAll) return;
+  var noms = [];
+  racine.querySelectorAll('[data-g45tph]').forEach(function (s) { var n = s.getAttribute('data-g45tph'); if (n && noms.indexOf(n) < 0 && _g45TenPhLire(n) === undefined) noms.push(n); });
+  noms = noms.slice(0, 10); if (!noms.length) return;
+  _g45TenEnCours = 1;
+  for (var i = 0; i < noms.length; i++) {
+    var n = noms[i], u = '';
+    try {
+      var r = await fetch('https://www.thesportsdb.com/api/v1/json/3/searchplayers.php?p=' + encodeURIComponent(n));
+      if (r.status === 429) break;                                 /* quota de la minute : on s'arrête, rien n'est mémorisé */
+      if (r.ok) {
+        var l = ((await r.json()) || {}).player || [], cible = _g45TenNorm(n);
+        var t = l.filter(function (p) { return /^tennis$/i.test(p.strSport || ''); });
+        var p0 = t.filter(function (p) { return _g45TenNorm(p.strPlayer) === cible; })[0] || (t.length === 1 ? t[0] : null);
+        if (p0) u = _g45R2(p0.strThumb || p0.strCutout || '');
+        try { localStorage.setItem(_G45_TPH + cible, JSON.stringify({ u: u, t: Date.now() })); } catch (e) {}
+      }
+    } catch (e) {}
+    if (u) document.querySelectorAll('[data-g45tph]').forEach(function (s) {
+      if (s.getAttribute('data-g45tph') !== n) return;
+      s.removeAttribute('data-g45tph');
+      var im = document.createElement('img'); im.src = u; im.alt = ''; im.onerror = function () { im.remove(); };
+      im.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border-radius:50%;object-fit:cover;object-position:50% 12%;border:2px solid #3a4870;box-sizing:border-box;background:#33405e;';
+      s.insertBefore(im, s.children[1] || null);
+    });
+  }
+  _g45TenEnCours = 0;
+}
+(function _g45TenPhBrancher() {
+  if (typeof _g45EspnTennisFlag !== 'function' || _g45EspnTennisFlag._g45Ph) return;
+  var fl = _g45EspnTennisFlag;
+  _g45EspnTennisFlag = function (comp) {
+    var a = comp && comp.athlete;
+    if (a && (a.displayName || a.fullName)) { try { return _g45TenAvatar(a, _g45TenGrand ? 40 : 32); } catch (e) {} }
+    return fl.apply(this, arguments);
+  };
+  _g45EspnTennisFlag._g45Ph = true;
+  if (typeof _g45EspnTennisDetail === 'function') {
+    var det = _g45EspnTennisDetail;
+    _g45EspnTennisDetail = function () { _g45TenGrand = 1; try { return det.apply(this, arguments); } finally { _g45TenGrand = 0; } };
+  }
+  if (typeof _g45RenderTennisRes === 'function') {
+    var ren = _g45RenderTennisRes;
+    _g45RenderTennisRes = function () { var r = ren.apply(this, arguments); try { _g45TenPhotos(document.getElementById('g45-tennis-res')); } catch (e) {} return r; };
+    window._g45RenderTennisRes = _g45RenderTennisRes;
+  }
+  if (typeof g45EspnTennisToggle === 'function') {
+    var tg = g45EspnTennisToggle;
+    g45EspnTennisToggle = function (el) { var r = tg.apply(this, arguments); try { _g45TenPhotos(el && el.parentNode); } catch (e) {} return r; };
+    window.g45EspnTennisToggle = g45EspnTennisToggle;
+  }
+  if (typeof g45TennisBracket === 'function') {
+    var br = g45TennisBracket;
+    g45TennisBracket = async function () { var r = await br.apply(this, arguments); try { _g45TenPhotos(document.getElementById('g45-tennis-res')); } catch (e) {} return r; };
+    window.g45TennisBracket = g45TennisBracket;
+  }
+})();
+window._g45TenPhotos = _g45TenPhotos; window._g45TenAvatar = _g45TenAvatar;
