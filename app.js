@@ -27326,6 +27326,13 @@ function _renderEspnMatchPitch(s, col, nameFn){
       +'<div style="position:absolute;top:50%;left:50%;width:72px;height:72px;border:2px solid rgba(255,255,255,.22);border-radius:50%;transform:translate(-50%,-50%);"></div>'
       +'<div style="position:absolute;top:5px;left:50%;width:44%;height:12%;border:2px solid rgba(255,255,255,.16);border-top:none;transform:translateX(-50%);"></div>'
       +'<div style="position:absolute;bottom:5px;left:50%;width:44%;height:12%;border:2px solid rgba(255,255,255,.16);border-bottom:none;transform:translateX(-50%);"></div>'
+      /* 20261003i (« et poteau de corner ») : quart de cercle + drapeau 🚩 aux quatre coins (dans la ligne de touche, inset 5 px). */
+      +'<div style=position:absolute;width:12px;height:12px;border:0 solid rgba(255,255,255,.3);top:5px;left:5px;border-right-width:2px;border-bottom-width:2px;border-radius:0 0 12px 0;"></div>'
+      +'<div style=position:absolute;width:12px;height:12px;border:0 solid rgba(255,255,255,.3);top:5px;right:5px;border-left-width:2px;border-bottom-width:2px;border-radius:0 0 0 12px;"></div>'
+      +'<div style=position:absolute;width:12px;height:12px;border:0 solid rgba(255,255,255,.3);bottom:5px;left:5px;border-right-width:2px;border-top-width:2px;border-radius:0 12px 0 0;"></div>'
+      +'<div style=position:absolute;width:12px;height:12px;border:0 solid rgba(255,255,255,.3);bottom:5px;right:5px;border-left-width:2px;border-top-width:2px;border-radius:12px 0 0 0;"></div>'
+      +'<span style=position:absolute;font-size:13px;line-height:1;pointer-events:none;top:4px;left:5px;">🚩</span><span style=position:absolute;font-size:13px;line-height:1;pointer-events:none;top:4px;right:5px;transform:scaleX(-1);">🚩</span>'
+      +'<span style=position:absolute;font-size:13px;line-height:1;pointer-events:none;bottom:8px;left:5px;">🚩</span><span style=position:absolute;font-size:13px;line-height:1;pointer-events:none;bottom:8px;right:5px;transform:scaleX(-1);">🚩</span>'
       /* 20261003h (« il manque des cages de but ») : surface de but + cage avec filet, en haut et en bas. */
       +'<div style="position:absolute;top:5px;left:50%;width:20%;height:4.5%;border:2px solid rgba(255,255,255,.16);border-top:none;transform:translateX(-50%);"></div>'
       +'<div style="position:absolute;bottom:5px;left:50%;width:20%;height:4.5%;border:2px solid rgba(255,255,255,.16);border-bottom:none;transform:translateX(-50%);"></div>'

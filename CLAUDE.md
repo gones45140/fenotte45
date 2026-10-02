@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261003h, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261003i, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -150,6 +150,7 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   de 272 px — badge 11 px sur la photo), cases égales x = (rang+0,5)/n, nom ≤ 100cqw/n (container-type sur le terrain), min-height 620.
   Vérifié en rendu Chromium à 272 px : seuls les noms longs d'une ligne de 4 sont coupés (Calafi…, Upam…).
   20261003h (« il manque des cages ») : surfaces de but + cages à filet (haut / bas) ; lignes 9→42 / 91→58, min-height 660.
+  20261003i : quarts de cercle + drapeaux 🚩 de corner (« on met pas les tribunes » — promis).
 - Photos sur le terrain : `_g45PitchPrecharger` (perso dépôt → api-sports/TheSportsDB) puis
   `_g45PitchWiki` pour les joueurs restés sans photo (attribut `data-nm`) ; recherche
   `_g45WkPhoto` (cache `g45wk1_<nom>` : trouvé = permanent, rien = 14 j), garde-fou
