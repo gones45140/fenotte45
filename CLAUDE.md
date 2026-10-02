@@ -936,6 +936,9 @@ HANDBALL (LNH, Starligue) : SONDÉ PAR ANTOINE le 01/10 — pas de robots.txt (4
   expresse et préalable de la LNH est interdite » (logos aussi) → NE PAS lire lnh.fr. ESPN n'a pas de handball. Seule voie propre :
   autorisation écrite de la LNH, ou une autre source gratuite qui le permet (non trouvée).
   ⚠ Le jeton lnb.fr/api/token (basket) apparaît dans les sondes : NE PAS l'utiliser (règle Pro A).
+SKI ALPIN (FIS) : SONDÉ PAR ANTOINE le 02/10 — robots.txt « Allow: / » (sauf /api/, /_next/…), MAIS
+  www.fis-ski.com/terms-and-conditions : « You may not scrape the content on this Website » + reproduction sans autorisation
+  écrite interdite ; flux RSS = usage privé, republication interdite → NE PAS lire fis-ski.com. ESPN : pas de ski.
 KBO : CONFIRMÉ « c'est bon » par Antoine (01/10, worker host=mykbo déployé) ; états
   « en cours » / annulé d'un match toujours NON vus.
 RÉGLÉ (worker, 01/10) : cron « exceededCpu » (cpuTimeMs 10) à CHAQUE passage — vu par Antoine dans Observability.
