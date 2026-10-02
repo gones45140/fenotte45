@@ -827,7 +827,8 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   02/10/2026 (FP2 Malaisie) — /f1live répondait 502 : la route n'ENVOYAIT ni la poignée de main SignalR ni le Subscribe
   (seul /f1test le faisait) → worker corrigé (fichier complet donné à Antoine, à redéployer). /f1test OK pendant FP2 (negotiate 200,
   WS 101, type 3 reçu). PIÈGE : la F1 nomme ce GP « Bahrain Grand Prix » (« … BAHRAIN GRAND PRIX IN MALAYSIA 2026 »), lieu
-  Kuala Lumpur → `_g45F1OffCorrespond` accepte aussi le lieu F1 trouvé dans nom du GP / circuit / ville ESPN (20261002w). Tableau façon feuille de
+  Kuala Lumpur → `_g45F1OffCorrespond` accepte aussi le lieu F1 trouvé dans nom du GP / circuit / ville ESPN (20261002w).
+  CONFIRMÉ par Antoine (capture 02/10 10:19, FP2) : worker redéployé, tableau en direct affiché (statut, chrono, météo, pneus, mini-secteurs). Tableau façon feuille de
   chrono (mini-secteurs : codes 2051 violet, 2049 vert, 2048 jaune, 2064
   stand) + chronologie : messages de course (30 derniers) et événements
   DÉDUITS de deux instantanés (`_g45F1OffEvenements`), donc seulement depuis
