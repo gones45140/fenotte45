@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261003e, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261003f, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -224,7 +224,8 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   display standalone). fenotte45 : manifeste PAS encore déclaré dans indexfenotte.html.
 - 20261003e : la fenêtre générique sert AUSSI au foot depuis Suivies (France–Italie) → libellés foot ajoutés à
   `_G45_US_STATS_FR` (Goal Difference, Total Goals, Goals Against…) et « Meilleurs joueurs » traduit par `_g45LdFr` (Matches, Goals,
-  Assists, Total Shots). Compositions = liste `_genericLineups` (pas le terrain).
+  Assists, Total Shots). 20261003f : `_genericLineups` enveloppée → foot = terrain `_renderEspnMatchPitch` (changements + banc
+  dessous), liste en secours ; autres sports inchangés.
 - Fenêtre de match hors foot (`_renderGenericDetail`) : ligne stade + ville sous le score
   (gameInfo.venue, repli comp.venue), comme la fenêtre foot.
 - Saisons (`_g45SaisonsGen`) : « Points par match » et « Stats clés » calculés sur `sf`

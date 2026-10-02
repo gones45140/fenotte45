@@ -66298,3 +66298,19 @@ window._g45TenPhotos = _g45TenPhotos; window._g45TenAvatar = _g45TenAvatar;
 var _G45_LD_FR = [[/\bTotal Shots\b/g, 'Tirs'], [/\bShots on Target\b/gi, 'Tirs cadrés'], [/\bMatches\b/g, 'Matchs'], [/\bGoals\b/g, 'Buts'],
   [/\bAssists\b/g, 'Passes déc.'], [/\bSaves\b/g, 'Arrêts'], [/\bPoints\b/g, 'Points'], [/\bRebounds\b/g, 'Rebonds']];
 function _g45LdFr(t) { var x = String(t || ''); _G45_LD_FR.forEach(function (r) { x = x.replace(r[0], r[1]); }); return x; }
+
+/* ═══ ⚽ TERRAIN DANS LA FENÊTRE GÉNÉRIQUE (20261003f, Antoine : « ça serait mieux, AVEC LES REMPLAÇANTS EN DESSOUS ») ═══
+   Ouvert depuis Suivies, un match de foot passe par `_renderGenericDetail`, dont les compositions étaient une LISTE
+   (`_genericLineups`). Foot → même terrain que l'autre fenêtre (`_renderEspnMatchPitch` : photos, numéros, changements et
+   banc dessous) ; s'il ne rend rien (pas de titulaires), l'ancienne liste. Autres sports inchangés. */
+(function _g45TerrainGenerique() {
+  if (typeof _genericLineups !== 'function' || _genericLineups._g45Terrain) return;
+  var orig = _genericLineups;
+  _genericLineups = function (data, sport) {
+    if (sport === 'soccer' && typeof _renderEspnMatchPitch === 'function') {
+      try { var t = _renderEspnMatchPitch(data, '#4d84ff', (typeof wcFr === 'function' ? wcFr : null)); if (t) return t; } catch (e) {}
+    }
+    return orig.apply(this, arguments);
+  };
+  _genericLineups._g45Terrain = true; window._genericLineups = _genericLineups;
+})();
