@@ -26930,11 +26930,10 @@ function g45PitchPhotosAppliquer() {
       if (!url) return;
       var num = sp.getAttribute('data-num') || '', c = sp.getAttribute('data-col') || '#4d84ff';
       sp.setAttribute('data-fait', '1');
-      sp.innerHTML = '<span style="position:relative;display:inline-flex;width:clamp(26px,3.4vw,38px);height:clamp(26px,3.4vw,38px);">'
+      sp.innerHTML = '<span style="position:relative;display:inline-flex;width:clamp(44px,5vw,52px);height:clamp(44px,5vw,52px);">'
         + '<img src="' + url + '" alt="" loading="lazy" onload="if(window._g45Cadrer)_g45Cadrer(this)" style="width:100%;height:100%;object-fit:cover;border-radius:22%;border:2px solid ' + c + ';'
         + 'background:#26324d;filter:drop-shadow(0 1px 3px rgba(0,0,0,.6));">'
-        + '<span style="position:absolute;left:-3px;top:-3px;background:rgba(0,0,0,.75);color:#fff;border-radius:5px;padding:0 3px;'
-        + 'font-size:clamp(7px,0.85vw,9px);font-weight:800;">' + num + '</span></span>';
+        + '<span style="position:absolute;left:-4px;top:-4px;background:rgba(0,0,0,.8);color:#fff;border-radius:5px;padding:0 4px;font-size:11px;font-weight:800;">' + num + '</span></span>';
     });
   } catch (e) {}
 }
@@ -27050,6 +27049,10 @@ async function _g45PitchWiki() {
 }
 window._g45WkValide = _g45WkValide; window._g45WkPhoto = _g45WkPhoto; window._g45PitchWiki = _g45PitchWiki;
 
+/* 20261003g — PLUS GRAND (Antoine : « un poil trop petit », capture Flashscore à côté ; maquette décrite, « oui ») : photos et
+   maillots 26–38 → 44–52 px, nom 7,5–11 → 13 px blanc sur bande sombre (numéro devant ESSAYÉ : trop large sur téléphone → badge 11 px
+   gardé sur la photo, aussi dans g45PitchPhotosAppliquer), icônes 12 px, terrain min-height 440 → 620 px ; largeur d'un nom ≤ 1/(n+1) du terrain (container-type + cqw) : sinon les
+   lignes de 4 se chevauchaient sur téléphone (rendu Chromium 272 px). */
 function _renderEspnMatchPitch(s, col, nameFn){
   try {
     var rosters = s.rosters||[];
@@ -27181,7 +27184,7 @@ function _renderEspnMatchPitch(s, col, nameFn){
     });
     function _evOf(p){ var id=_aid(p); return id?evMap[id]:null; }
     function _icoStr(ev){ if(!ev) return ''; var o='',i; for(i=0;i<Math.min(ev.g,4);i++) o+='⚽'; for(i=0;i<ev.og;i++) o+='🥅'; if(ev.a) o+='👟'; if(ev.yc) o+='🟨'; if(ev.rc) o+='🟥'; return o; }
-    function badge(p,c,maxW){
+    function badge(p,c,maxW,nCase){
       var num=(p.jersey!=null)?p.jersey:((p.athlete&&p.athlete.jersey)||'');
       var nm=lastName((p.athlete&&(p.athlete.displayName||p.athlete.shortName))||'');
       var ev=_evOf(p), ic=_icoStr(ev);
@@ -27202,7 +27205,7 @@ function _renderEspnMatchPitch(s, col, nameFn){
       /* Les icones (but, carton, passe, sortie) etaient figees a 7 px : illisibles
          des que le terrain s'est elargi. Meme regle d'echelle que le maillot et
          le nom, avec un plancher identique pour le telephone. */
-      var row=(ic||subTag)?'<div style="font-size:clamp(7px,1.05vw,12px);line-height:1.15;margin-top:2px;white-space:nowrap;text-shadow:0 1px 2px rgba(0,0,0,.9);">'+ic+subTag+'</div>':'';
+      var row=(ic||subTag)?'<div style="font-size:12px;line-height:1.15;margin-top:2px;white-space:nowrap;text-shadow:0 1px 2px rgba(0,0,0,.9);">'+ic+subTag+'</div>':'';
       return '<div style="display:flex;flex-direction:column;align-items:center;gap:1px;">'
         /* MAILLOT plutot qu'un rond (20/08) : meme couleur de club, meme place,
            mais l'equipe se reconnait d'un coup d'oeil. Dessine en SVG — aucune
@@ -27222,18 +27225,17 @@ function _renderEspnMatchPitch(s, col, nameFn){
              return '<span class="g45-pitch-ph" data-nom="'+_g45SgNorm(nomComplet)+'" data-nm="'+String(nomComplet).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;')+'" data-num="'+num+'" data-col="'+c+'" style="display:inline-flex;">'+contenu+'</span>';
            };
            if(ph){
-             return enveloppe('<span style="position:relative;display:inline-flex;width:clamp(26px,3.4vw,38px);height:clamp(26px,3.4vw,38px);">'
+             return enveloppe('<span style="position:relative;display:inline-flex;width:clamp(44px,5vw,52px);height:clamp(44px,5vw,52px);">'
                +'<img src="'+ph+'" alt="" loading="lazy" onload="if(window._g45Cadrer)_g45Cadrer(this)" style="width:100%;height:100%;object-fit:cover;border-radius:22%;border:2px solid '+c+';'
                +'background:#26324d;filter:drop-shadow(0 1px 3px rgba(0,0,0,.6));" onerror="this.parentNode.style.display=\'none\'">'
-               +'<span style="position:absolute;left:-3px;top:-3px;background:rgba(0,0,0,.75);color:#fff;border-radius:5px;padding:0 3px;'
-               +'font-size:clamp(7px,0.85vw,9px);font-weight:800;">'+num+'</span></span>');
+               +'<span style="position:absolute;left:-4px;top:-4px;background:rgba(0,0,0,.8);color:#fff;border-radius:5px;padding:0 4px;font-size:11px;font-weight:800;">'+num+'</span></span>');
            }
-           return enveloppe('<svg viewBox="0 0 24 24" style="width:clamp(26px,3.4vw,38px);height:clamp(26px,3.4vw,38px);filter:drop-shadow(0 1px 3px rgba(0,0,0,.6));">'
+           return enveloppe('<svg viewBox="0 0 24 24" style="width:clamp(44px,5vw,52px);height:clamp(44px,5vw,52px);filter:drop-shadow(0 1px 3px rgba(0,0,0,.6));">'
             +'<path d="M8 2 L4 4 L2 8 L5 9.5 L5 22 L19 22 L19 9.5 L22 8 L20 4 L16 2 L14.5 3.6 A3.2 3.2 0 0 1 9.5 3.6 Z" fill="'+c+'" stroke="rgba(0,0,0,.45)" stroke-width="1"/>'
             +'<path d="M8 2 L9.5 3.6 A3.2 3.2 0 0 0 14.5 3.6 L16 2 L14 1.4 A4.6 4.6 0 0 1 10 1.4 Z" fill="rgba(0,0,0,.35)"/>'
             +'<text x="12" y="16.5" text-anchor="middle" font-size="9" font-weight="800" fill="#fff" stroke="rgba(0,0,0,.55)" stroke-width="0.5" paint-order="stroke">'+num+'</text></svg>');
          })()
-        +'<div style="font-size:clamp(7.5px,0.95vw,11px);font-weight:700;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.95);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:'+(maxW||44)+'px;text-align:center;">'+nm+'</div>'+row+'</div>';
+        +'<div style="font-size:13px;font-weight:700;color:#fff;background:rgba(10,14,26,.82);border-radius:6px;padding:1px 4px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:'+(maxW||44)+'px;max-width:calc(100cqw / '+(nCase||4)+' - 2px);box-sizing:border-box;text-align:center;">'+nm+'</div>'+row+'</div>';
     }
     function placeTeam(r,c,fromTop){
       var lines=getLines(r); if(!lines.length) return '';
@@ -27242,12 +27244,13 @@ function _renderEspnMatchPitch(s, col, nameFn){
         var frac = nL>1 ? li/(nL-1) : 0;
         /* 20261003d (capture d'Antoine, France–Italie en 4-3-3) : 4→47 % et 96→53 % ne laissaient que 6 % entre les deux lignes
            d'attaque ; le nom, écrit SOUS la photo, recouvrait l'attaquant d'en face. Lignes resserrées : 5→42 % / 95→58 %. */
-        var y = fromTop ? (5+frac*37) : (95-frac*37);
+        var y = fromTop ? (6+frac*36) : (94-frac*36);
         var n=line.length;
         /* Le terrain passe de 430 a 660 px sur grand ecran (il restait dimensionne
            pour le telephone). On elargit donc aussi les noms, sinon ils seraient
            tronques pour rien au milieu d'un terrain devenu large. */
-        var maxW = n>=6?46:(n===5?54:64);
+        /* 20261003g (maquette validée « oui », comparaison Flashscore) : noms à 13 px sur bande sombre, numéro devant → cases plus larges. */
+        var maxW = n>=6?56:(n===5?64:(n===4?78:96));
         var cw = maxW+6;
         line.forEach(function(p,i){
           /* SENS DE JEU (corrige le 20/08) : l'equipe du HAUT attaque vers le
@@ -27256,8 +27259,8 @@ function _renderEspnMatchPitch(s, col, nameFn){
              de vue de l'adversaire. Les lignes sont deja triees gauche->droite
              dans le repere du terrain ; il suffit de les lire a l'envers. */
           var rang = fromTop ? (n-1-i) : i;
-          var x=(rang+1)/(n+1)*100;
-          html+='<div style="position:absolute;left:'+x+'%;top:'+y+'%;transform:translate(-50%,-50%);width:'+cw+'px;z-index:2;">'+badge(p,c,maxW)+'</div>';
+          var x=(rang+0.5)/n*100;   /* 20261003g : cases égales sur toute la largeur (comme Flashscore) → noms plus larges */
+          html+='<div style="position:absolute;left:'+x+'%;top:'+y+'%;transform:translate(-50%,-50%);width:'+cw+'px;max-width:calc(100cqw / '+n+');z-index:2;">'+badge(p,c,maxW,n)+'</div>';
         });
       });
       return html;
@@ -27317,7 +27320,7 @@ function _renderEspnMatchPitch(s, col, nameFn){
        des tirs et dans les statistiques. Le calcul local a ete supprime. */
     var _cp = g45CoulPaire(hR, aR);
     var homeCol = _cp[0], awayCol = _cp[1];
-    var pitch='<div style="position:relative;width:100%;max-width:min(660px,100%);margin:4px auto 2px;aspect-ratio:5/8;min-height:440px;background:linear-gradient(180deg,#1f7a3f 0%,#19682f 50%,#1f7a3f 100%);border-radius:10px;overflow:hidden;border:1px solid rgba(255,255,255,.12);">'
+    var pitch='<div style="position:relative;width:100%;max-width:min(660px,100%);margin:4px auto 2px;aspect-ratio:5/8;min-height:620px;container-type:inline-size;background:linear-gradient(180deg,#1f7a3f 0%,#19682f 50%,#1f7a3f 100%);border-radius:10px;overflow:hidden;border:1px solid rgba(255,255,255,.12);">'
       +'<div style="position:absolute;inset:5px;border:2px solid rgba(255,255,255,.18);border-radius:6px;"></div>'
       +'<div style="position:absolute;top:50%;left:5px;right:5px;height:2px;background:rgba(255,255,255,.22);"></div>'
       +'<div style="position:absolute;top:50%;left:50%;width:72px;height:72px;border:2px solid rgba(255,255,255,.22);border-radius:50%;transform:translate(-50%,-50%);"></div>'

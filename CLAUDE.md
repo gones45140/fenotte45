@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261003f, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261003g, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -145,7 +145,10 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   `g45cls4_`) + arbitre de chaque match `_g45ArbOfficiel` (cache PERMANENT
   `g45arb1_<id>`) ; cumul `_g45ArbCumul`, verdict `_g45ArbVerdict` (±10 %, < 4 matchs = « peu »).
 - Terrain des compositions (placeTeam, ≈ l. 27243) : 20261003d — lignes 5→42 % (haut) / 95→58 % (bas) ; avant 4→47 / 96→53 :
-  les deux lignes d'attaque se chevauchaient (capture France–Italie).
+  les deux lignes d'attaque se chevauchaient (capture France–Italie). 20261003g — 6→42 / 94→58 ; PLUS GRAND (« un poil trop petit »,
+  validé « oui ») : photos/maillots 44–52 px, nom 13 px sur bande sombre (numéro devant ESSAYÉ puis retiré : trop large sur un terrain
+  de 272 px — badge 11 px sur la photo), cases égales x = (rang+0,5)/n, nom ≤ 100cqw/n (container-type sur le terrain), min-height 620.
+  Vérifié en rendu Chromium à 272 px : seuls les noms longs d'une ligne de 4 sont coupés (Calafi…, Upam…).
 - Photos sur le terrain : `_g45PitchPrecharger` (perso dépôt → api-sports/TheSportsDB) puis
   `_g45PitchWiki` pour les joueurs restés sans photo (attribut `data-nm`) ; recherche
   `_g45WkPhoto` (cache `g45wk1_<nom>` : trouvé = permanent, rien = 14 j), garde-fou
