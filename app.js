@@ -41118,6 +41118,14 @@ function _g45F1OffCorrespond(j, ev) {
   var ad = (ev && ev.circuit && ev.circuit.address) || {};
   var pays = String(_g45OF1CountryEN(ad.country || '') || '').toLowerCase(), ville = String(ad.city || '').toLowerCase();
   var ok = (!!pays && pays === String(j.sess.pays || '').toLowerCase()) || (!!ville && ville === String(j.sess.lieu || '').toLowerCase());
+  /* 20261002w — SONDÉ PAR ANTOINE (/f1test pendant FP2) : la F1 nomme ce GP « Bahrain Grand Prix » (« … BAHRAIN GRAND PRIX IN
+     MALAYSIA 2026 »), lieu « Kuala Lumpur » → le pays ne colle pas avec la Malaisie d'ESPN. On accepte aussi le LIEU de la F1
+     retrouvé dans le nom du GP, du circuit ou la ville ESPN (sans accents, en minuscules). */
+  if (!ok) {
+    var nz = function (x) { return String(x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); };
+    var lieuF1 = nz(j.sess.lieu), tout = nz([ev && ev.name, ev && ev.circuit && ev.circuit.fullName, ad.city, ad.country].join(' '));
+    if (lieuF1.length >= 4 && tout.indexOf(lieuF1) >= 0) ok = true;
+  }
   var d0 = Date.parse(j.sess.debut), dv = Date.parse(ev && ev.date);
   if (!isNaN(d0) && !isNaN(dv) && Math.abs(d0 - dv) > 5 * 86400000) ok = false;
   return ok;
