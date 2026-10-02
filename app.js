@@ -41252,6 +41252,11 @@ function _g45F1OffHtml(j, apercu) {
   }
   /* Tableau */
   var th = 'padding:7px 6px;font-size:12px;color:#c9d3ee;font-weight:700;';
+  /* 20261002x (« oui les deux ») : téléphone en PORTRAIT → astuce paysage (le tableau entier, S1 S2 S3 compris, y tient). */
+  try {
+    if (window.matchMedia && matchMedia('(pointer: coarse) and (orientation: portrait)').matches)
+      h += '<div style="font-size:13px;color:#fff;background:rgba(11,16,29,.8);border-radius:8px;padding:7px 10px;margin-bottom:8px;">📱↻ Tourne ton téléphone pour voir les secteurs S1 S2 S3</div>';
+  } catch (eP) {}
   h += '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:8px;background:#141b2e;margin-bottom:10px;">'
     + '<table style="border-collapse:collapse;white-space:nowrap;font-size:14px;color:#fff;width:100%;"><tr>'
     + '<th style="' + th + 'position:sticky;left:0;z-index:2;background:#141b2e;text-align:left;min-width:34px;">#</th>'
@@ -41274,7 +41279,7 @@ function _g45F1OffHtml(j, apercu) {
     h += '<tr style="' + (p.abandon ? 'opacity:.5;' : '') + '">'
       + '<td style="' + cel + 'position:sticky;left:0;z-index:1;background:#141b2e;font-weight:800;color:' + (fd > 0 ? '#1ed760' : (fd < 0 ? '#ff8a8a' : (i ? '#c9d3ee' : '#f0b020'))) + ';">'
       + (p.pos < 99 ? p.pos : '—') + (fd > 0 ? '▲' : (fd < 0 ? '▼' : '')) + '</td>'
-      + '<td style="' + cel + 'position:sticky;left:40px;z-index:1;background:#141b2e;font-weight:800;border-left:3px solid ' + (p.coul || '#8b97c4') + ';">' + e(p.tla || p.nom) + badge + '</td>'
+      + '<td style="' + cel + 'position:sticky;left:40px;z-index:1;background:#141b2e;font-weight:800;border-left:3px solid ' + (p.coul || '#8b97c4') + ';">' + (p.ph ? '<img src="' + e(p.ph) + '" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()" style="width:26px;height:26px;border-radius:50%;object-fit:cover;object-position:50% 12%;vertical-align:middle;margin-right:6px;background:' + (p.coul || '#2a3350') + ';">' : '') + e(p.tla || p.nom) + badge + '</td>'
       + '<td style="' + cel + 'text-align:right;font-weight:800;">' + ecart + '</td>'
       + '<td style="' + cel + 'font-weight:900;color:' + (pn ? pn[1] : '#c9d3ee') + ';">' + (pn ? pn[0] : '—') + (p.age != null ? '<sub style="font-size:10px;color:#c9d3ee;">' + p.age + '</sub>' : '') + '</td>'
       + '<td style="' + cel + 'text-align:right;font-weight:800;color:' + (p.dernierB ? '#b57bff' : (p.dernierP ? '#1ed760' : '#fff')) + ';">' + e(p.dernier || '—') + '</td>';

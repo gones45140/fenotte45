@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261002w, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261002x, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -828,7 +828,11 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   (seul /f1test le faisait) → worker corrigé (fichier complet donné à Antoine, à redéployer). /f1test OK pendant FP2 (negotiate 200,
   WS 101, type 3 reçu). PIÈGE : la F1 nomme ce GP « Bahrain Grand Prix » (« … BAHRAIN GRAND PRIX IN MALAYSIA 2026 »), lieu
   Kuala Lumpur → `_g45F1OffCorrespond` accepte aussi le lieu F1 trouvé dans nom du GP / circuit / ville ESPN (20261002w).
-  CONFIRMÉ par Antoine (capture 02/10 10:19, FP2) : worker redéployé, tableau en direct affiché (statut, chrono, météo, pneus, mini-secteurs). Tableau façon feuille de
+  CONFIRMÉ par Antoine (capture 02/10 10:19, FP2) : worker redéployé, tableau en direct affiché (statut, chrono, météo, pneus, mini-secteurs).
+  20261002x (« oui les deux ») : en PAYSAGE le tableau tient entier (constaté par Antoine) → pas de refonte ; en portrait tactile,
+  ligne « 📱↻ Tourne ton téléphone… » ; photo ronde 26 px si p.ph — worker /f1live : ph = DriverList.HeadshotUrl (champ NON vérifié,
+  fichier worker redonné à Antoine). Photos / chronos des onglets FP1… : OpenF1 (bloqué pendant une séance) ; archive officielle
+  livetiming /static/2026/<Path>… à sonder (commande donnée à Antoine). Tableau façon feuille de
   chrono (mini-secteurs : codes 2051 violet, 2049 vert, 2048 jaune, 2064
   stand) + chronologie : messages de course (30 derniers) et événements
   DÉDUITS de deux instantanés (`_g45F1OffEvenements`), donc seulement depuis
