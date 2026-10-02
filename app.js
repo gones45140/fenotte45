@@ -65816,3 +65816,137 @@ window._g45EbResoudre = _g45EbResoudre; window._g45EbCharger = _g45EbCharger; wi
     loadTeamSaisons = eTs; window.loadTeamSaisons = eTs;
   }
 })();
+
+/* ═══ 🏠 ACCUEIL PAR SPORT (20261002l, maquette validée « oui » + « les replier serait bien aussi ») ═══
+   Demande d'Antoine : le Mur (onglet d'accueil #t-dash) mélange 13 sports en une seule colonne de grandes cartes.
+   → Le Mur montre d'abord une TUILE PAR SPORT (2 par ligne, même grammaire que les cartes : visuel d'une équipe du sport
+   derrière, bande sombre sous le texte) avec le nombre d'équipes et le gain / la perte du sport (même calcul que la
+   carte : gagné = m × cote − m, perdu = −m). Toucher une tuile → les MÊMES grandes cartes, filtrées sur ce sport, avec
+   « ← Sports ». Sport sans équipe = pas de tuile.
+   POURQUOI EN POST-TRAITEMENT : render() existe en DEUX copies et sa carte d'équipe fait ~300 lignes ; on ne la touche
+   pas. On enveloppe render : après son dessin, les .g45-murcard de #dash-units sont regroupées (masquées / montrées).
+   Ligne « 🔴 AUJOURD'HUI » sous Bankroll / Bénéfice : matchs du jour des équipes du mur, lus par `_g45BandMesEquipes`
+   (même source et même cache que le bandeau du haut : ESPN seulement — KHL / Euroleague n'y figurent pas).
+   Objectif bankroll et 🎯 Pari du jour passent SOUS les équipes, REPLIÉS par défaut (clés g45_acc_obj / g45_acc_pdj). */
+var _g45AccSel = '';
+try { _g45AccSel = sessionStorage.getItem('g45_acc_sel') || ''; } catch (e) {}
+function _g45AccSport(u) {
+  var s = String((u && u.sport) || '');
+  var L = (typeof G45_SPORTS_PARI !== 'undefined' ? G45_SPORTS_PARI : []).slice().sort(function (a, b) { return b.v.length - a.v.length; });
+  for (var i = 0; i < L.length; i++) if (s.indexOf(L[i].v) >= 0) return L[i];
+  return s ? { v: s.trim(), n: 'Autre' } : { v: '⚽', n: 'Football' };
+}
+function _g45AccEsc(x) { return String(x == null ? '' : x).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function _g45AccProfit(n) {
+  return ((state && state.a) || []).filter(function (h) { return h.n === n; })
+    .reduce(function (a, h) { return a + (h.win ? (h.m * h.cote) - h.m : -h.m); }, 0);
+}
+function g45AccChoisir(v) {
+  _g45AccSel = v || '';
+  try { sessionStorage.setItem('g45_acc_sel', _g45AccSel); } catch (e) {}
+  _g45AccRegrouper();
+  try { var d = document.getElementById('dash-units'); if (d && d.getBoundingClientRect().top < 0) d.scrollIntoView({ block: 'start' }); } catch (e) {}
+}
+window.g45AccChoisir = g45AccChoisir;
+function _g45AccRegrouper() {
+  var dash = document.getElementById('dash-units');
+  if (!dash) return;
+  var cartes = [].slice.call(dash.querySelectorAll('.g45-murcard'));
+  var vieux = dash.querySelector('#g45-acc-zone'); if (vieux) vieux.remove();
+  if (!cartes.length) return;
+  var U = {}; ((state && state.u) || []).forEach(function (u) { if (u && u.n) U[u.n] = u; });
+  var G = {}, ordre = [];
+  cartes.forEach(function (c) {
+    var u = U[c.getAttribute('data-nom')] || { n: c.getAttribute('data-nom') }, s = _g45AccSport(u);
+    if (!G[s.v]) { G[s.v] = { s: s, c: [], p: 0, vis: '' }; ordre.push(s.v); }
+    G[s.v].c.push(c); G[s.v].p += _g45AccProfit(u.n);
+    if (!G[s.v].vis && typeof g45VisuelCache === 'function') { var v = g45VisuelCache(u.n); if (v && !/images\/(equipes|joueurs)\//.test(v)) G[s.v].vis = v; }
+    if (!G[s.v].logo && typeof g45LogoUrlDe === 'function') G[s.v].logo = g45LogoUrlDe(u.n) || '';
+  });
+  if (_g45AccSel && !G[_g45AccSel]) _g45AccSel = '';
+  var zone = document.createElement('div'); zone.id = 'g45-acc-zone';
+  var fmtE = function (p) { return (p >= 0 ? '+' : '') + p.toFixed(2).replace('.', ',') + ' €'; };
+  if (!_g45AccSel) {
+    zone.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:2px 0 6px;">' + ordre.map(function (k) {
+      var g = G[k], n = g.c.length;
+      var fond = g.vis ? '<img src="' + _g45AccEsc(g.vis) + '" alt="" loading="lazy" onerror="this.remove()" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;">'
+        : (g.logo ? '<img src="' + _g45AccEsc(g.logo) + '" alt="" loading="lazy" onerror="this.remove()" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);height:80%;opacity:.35;object-fit:contain;pointer-events:none;">' : '');
+      return '<div data-k="' + _g45AccEsc(k) + '" onclick="g45AccChoisir(this.dataset.k)" role="button" style="position:relative;overflow:hidden;cursor:pointer;min-height:96px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:linear-gradient(135deg,#1e2a4a,#10172b);">'
+        + fond + '<div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,14,26,.15) 0%,rgba(10,14,26,.55) 100%);pointer-events:none;"></div>'
+        + '<div style="position:absolute;left:8px;right:8px;bottom:8px;background:rgba(11,16,29,.86);border-radius:9px;padding:6px 8px;color:#fff;">'
+        + '<div style="font-size:15px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + g.s.v + ' ' + _g45AccEsc(g.s.n) + '</div>'
+        + '<div style="display:flex;justify-content:space-between;gap:6px;font-size:13px;margin-top:2px;"><span style="color:#dfe6ff;">' + n + ' équipe' + (n > 1 ? 's' : '') + '</span>'
+        + '<b style="color:' + (g.p >= 0 ? '#4ade80' : '#ff6b6b') + ';white-space:nowrap;">' + fmtE(g.p) + '</b></div></div></div>';
+    }).join('') + '</div>';
+    cartes.forEach(function (c) { c.style.display = 'none'; });
+  } else {
+    var g = G[_g45AccSel];
+    zone.innerHTML = '<div style="display:flex;align-items:center;gap:10px;margin:2px 0 8px;">'
+      + '<button onclick="g45AccChoisir(\'\')" style="padding:9px 12px;border-radius:9px;border:1px solid rgba(255,255,255,.18);background:#1a2235;color:#fff;font-size:14px;font-weight:800;cursor:pointer;">← Sports</button>'
+      + '<b style="flex:1;font-size:16px;color:#fff;">' + g.s.v + ' ' + _g45AccEsc(g.s.n) + ' · ' + g.c.length + '</b>'
+      + '<b style="font-size:14px;color:' + (g.p >= 0 ? '#4ade80' : '#ff6b6b') + ';">' + fmtE(g.p) + '</b></div>';
+    cartes.forEach(function (c) { c.style.display = g.c.indexOf(c) >= 0 ? '' : 'none'; });
+  }
+  dash.insertBefore(zone, dash.firstChild);
+}
+/* Objectif + Pari du jour : déplacés sous les équipes, repliables (titre cliquable ▸ / ▾). */
+function _g45AccRepliables() {
+  var tab = document.getElementById('t-dash'), dashCard = document.getElementById('dash-units');
+  if (!tab || !dashCard || tab._g45Acc) return;
+  var carteEq = dashCard.closest('.card'); if (!carteEq) return;
+  var obj = (document.getElementById('g-fill') || {}).closest ? document.getElementById('g-fill').closest('.card') : null;
+  var pdj = (document.getElementById('pari-du-jour-content') || {}).closest ? document.getElementById('pari-du-jour-content').closest('.fc') : null;
+  tab._g45Acc = 1;
+  var plier = function (bloc, cle, titre) {
+    if (!bloc) return;
+    var ouvert = false; try { ouvert = localStorage.getItem(cle) === '1'; } catch (e) {}
+    var tete = document.createElement('div');
+    tete.style.cssText = 'cursor:pointer;display:flex;align-items:center;justify-content:space-between;background:rgba(11,16,29,.86);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:11px 14px;margin:10px 0 0;color:#fff;font-size:14px;font-weight:800;';
+    var maj = function () { tete.innerHTML = '<span>' + titre + '</span><span style="color:#9fb6ff;">' + (ouvert ? '▾ replier' : '▸ ouvrir') + '</span>'; bloc.style.display = ouvert ? '' : 'none'; };
+    tete.onclick = function () { ouvert = !ouvert; try { localStorage.setItem(cle, ouvert ? '1' : '0'); } catch (e) {} maj(); };
+    carteEq.parentNode.insertBefore(tete, null); carteEq.parentNode.insertBefore(bloc, null);
+    bloc.style.marginTop = '6px'; maj();
+  };
+  plier(obj, 'g45_acc_obj', '🎯 Objectif bankroll');
+  plier(pdj, 'g45_acc_pdj', '⚡ Pari du jour');
+  /* Ligne « Aujourd'hui » juste sous Bankroll / Bénéfice */
+  var kpi = tab.querySelector('.kpi2');
+  if (kpi && !document.getElementById('g45-acc-auj')) { var a = document.createElement('div'); a.id = 'g45-acc-auj'; kpi.parentNode.insertBefore(a, kpi.nextSibling); }
+}
+var _g45AccAujT = 0;
+async function _g45AccAujourdhui(force) {
+  var box = document.getElementById('g45-acc-auj');
+  if (!box || typeof _g45BandMesEquipes !== 'function') return;
+  if (!force && Date.now() - _g45AccAujT < 5 * 60000) return;
+  _g45AccAujT = Date.now();
+  var L = [];
+  try { L = await _g45BandMesEquipes(); } catch (e) { return; }
+  var auj = new Date().toDateString();
+  var M = (L || []).filter(function (o) {
+    var st = ((o.ev.status || {}).type || {}).state, d = new Date(o.ev.date);
+    return st === 'in' || d.toDateString() === auj;
+  });
+  if (!M.length) { box.innerHTML = ''; return; }
+  box.innerHTML = '<div style="display:flex;gap:6px;overflow-x:auto;padding:8px 0 4px;-webkit-overflow-scrolling:touch;">'
+    + '<span style="flex:none;align-self:center;font-size:13px;font-weight:800;color:#ff6b6b;">🔴 AUJOURD\'HUI</span>'
+    + M.map(function (o) {
+      var st = (o.ev.status || {}).type || {}, live = st.state === 'in', fin = st.state === 'post';
+      var cs = ((o.ev.competitions || [])[0] || {}).competitors || [];
+      var sc = cs.map(function (c) { return c.score; }).join('–');
+      var info = live ? '<span style="color:#ff6b6b;">● ' + _g45AccEsc(sc) + '</span>' : fin ? _g45AccEsc(sc) : new Date(o.ev.date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+      return '<button onclick="openClubFromDash(this.dataset.n)" data-n="' + _g45AccEsc(o.n) + '" style="flex:none;padding:7px 11px;border-radius:999px;border:1px solid ' + (live ? 'rgba(255,107,107,.6)' : 'rgba(255,255,255,.16)') + ';background:rgba(11,16,29,.86);color:#fff;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap;">'
+        + _g45AccEsc(o.n) + ' <span style="color:#f0b020;">' + info + '</span></button>';
+    }).join('') + '</div>';
+}
+(function _g45AccBrancher() {
+  if (typeof render !== 'function' || render._g45Acc) return;
+  var orig = render;
+  render = function () {
+    var r = orig.apply(this, arguments);
+    try { _g45AccRepliables(); _g45AccRegrouper(); _g45AccAujourdhui(); } catch (e) { console.warn('accueil par sport :', e && e.message); }
+    return r;
+  };
+  render._g45Acc = true; window.render = render;
+  try { _g45AccRepliables(); _g45AccRegrouper(); setTimeout(function () { _g45AccAujourdhui(true); }, 4000); } catch (e) {}
+})();
+window._g45AccRegrouper = _g45AccRegrouper; window._g45AccSport = _g45AccSport;

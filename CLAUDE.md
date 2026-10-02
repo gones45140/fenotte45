@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261002k, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261002l, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -161,6 +161,14 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   Réglage Orientation (app.js) : `_g45OriDispo` (lit --g45-paysage), `_g45OriAppliquer`
   (plein écran + screen.orientation.lock ; refus → retour « auto »), `g45OriPoser`
   (bloc en tête d'Outils), clé `g45_orientation`.
+- 🏠 ACCUEIL PAR SPORT (20261002l, maquette validée « oui » + « les replier serait bien aussi ») : bloc en FIN d'app.js,
+  enveloppe de `render` (render existe en DEUX copies, la 2e ≈ l. 11287 gagne ; carte d'équipe NON touchée) → `_g45AccRegrouper`
+  regroupe les `.g45-murcard` de #dash-units par sport (`_g45AccSport` = G45_SPORTS_PARI, emoji le plus long d'abord : 🏉🇦🇺 NRL
+  ≠ 🏉 Rugby) : tuiles 2 par ligne (#g45-acc-zone, visuel TheSportsDB d'une équipe du sport, nb d'équipes, gain = m×cote−m /
+  −m), `g45AccChoisir(emoji)` = cartes du sport + « ← Sports » (sessionStorage g45_acc_sel). `_g45AccRepliables` déplace
+  Objectif bankroll et Pari du jour SOUS les équipes, repliés (localStorage g45_acc_obj / g45_acc_pdj = '1' ouvert) ;
+  ligne #g45-acc-auj « 🔴 AUJOURD'HUI » sous Bankroll (`_g45AccAujourdhui`, source `_g45BandMesEquipes` = ESPN seulement,
+  pas de KHL / Euroleague ; 5 min mini entre deux lectures). Contrôle « Accueil par sport » dans smoke.js (13 contrôles).
 - Bandeau de scores `g45BandeauMaj` : si tout tient à l'écran, UNE copie, sans défilement.
 - Suivies « Matchs à venir / direct » (`g45DirectMesEquipes`, groupes `_g45DirEquipes`) : 29v —
   le plafond (10) porte sur les REQUÊTES réelles (`aInterroger`, tout le foot = 1 requête `all`),
