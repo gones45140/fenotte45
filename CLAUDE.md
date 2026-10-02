@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261002u, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261002v, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -318,6 +318,8 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   `_g45NoteGpOk(txt, lieu)` garde une note seulement si elle ne cite AUCUN GP ou cite CE GP
   (table `_G45_GP_MOTS` pays / ville / circuit, fr + en). Cause : la note d'Antoine « le GP
   d'Autriche ne réussit pas à Ferrari » partait aux IA pour le GP de Malaisie.
+  20261002v : le bloc « 💡 STATS DU DICO » de la fiche GP (`g45F1Detail`) n'appliquait NI `_g45NoteGpOk` NI `_g45Accents`
+  (capture d'Antoine : note Autriche, « rÃ©ussit », sur le GP de Singapour) → filtrés et réparés (texte + place + contexte).
   29k — tirs / cadrés / corners / possession du bon côté ajoutés aux faits IA (depuis
   `_g45ClsMatchs`, voir Classements ci-dessous).
 - Photos plus hautes que larges (Wikipédia en pied) : `_g45Cadrer(img)` au onload →

@@ -41652,6 +41652,13 @@ function g45F1Detail(eid){
   window._g45F1Eid=eid;
   var d=new Date(ev.date);
   var stats=(typeof g45StatsForEvent==='function')?g45StatsForEvent(_g45F1Ev(ev)):[];
+  /* 20261002v (capture d'Antoine, GP de Singapour) : ce bloc « STATS DU DICO » montrait la note sur l'AUTRICHE, accents cassés
+     (« rÃ©ussit ») — le filtre par GP `_g45NoteGpOk` et `_g45Accents` (29u) n'étaient appliqués qu'ailleurs. */
+  try{
+    var _lieuGp=[ev.name,cir.fullName,ad.city,ad.country,(typeof _g45F1CountryFR==='function'?_g45F1CountryFR(ad.country||''):'')].join(' ');
+    if(typeof _g45NoteGpOk==='function') stats=stats.filter(function(s){ return _g45NoteGpOk([s.text,s.place,s.context].join(' '),_lieuGp); });
+    if(typeof _g45Accents==='function') stats=stats.map(function(s){ var c={}; for(var k in s) c[k]=s[k]; c.text=_g45Accents(s.text); c.place=_g45Accents(s.place); c.context=_g45Accents(s.context); c.comp=_g45Accents(s.comp); return c; });
+  }catch(eS){}
   var html='<button onclick="g45F1Open()" style="border:none;background:rgba(255,255,255,.06);color:var(--t2);border-radius:8px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;margin-bottom:10px;">← Saison F1</button>'
     +'<div class="sec" style="margin-top:0;">🏁 '+ea(ev.name||'GP')+'</div>'
     +'<div style="font-size:11px;color:var(--t3);margin-bottom:8px;">📍 '+ea((cir.fullName||'')+(ad.city?' · '+ad.city:'')+(ad.country?' · '+(_g45F1CountryFR(ad.country).split(' ')[0]||ad.country):''))+(isNaN(d)?'':' · 📅 '+d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'}))+'</div>';
