@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261002m, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261002n, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -173,6 +173,8 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   tuile ; sans équipe au mur → `_g45AccAller(v)` : sport d'équipe = showTab t-compet + g45CompetSport(comp), sport individuel =
   showTab t-resultats + son écran (g45F1Open, g45TennisResults(0), g45MmaOpen(0), g45MotoOpen, g45CyclingOpen('tdf'), g45BiaOpen)
   et gain / perte des PARIS du sport (`_g45AccParis`, h.sport ; 🏉 sans 🇦🇺). Avec entrées au mur : filtre + bouton 📅 / 🏆.
+  Une équipe créée se range dans la tuile de son u.sport (liste #u-sport du formulaire) ; 20261002n : 🏍 MotoGP et 🎿 Biathlon
+  ajoutés à #u-sport (index.html ET indexfenotte.html).
 - Bandeau de scores `g45BandeauMaj` : si tout tient à l'écran, UNE copie, sans défilement.
 - Suivies « Matchs à venir / direct » (`g45DirectMesEquipes`, groupes `_g45DirEquipes`) : 29v —
   le plafond (10) porte sur les REQUÊTES réelles (`aInterroger`, tout le foot = 1 requête `all`),
