@@ -65861,7 +65861,7 @@ var _G45_ACC_SPORTS = [
   { v: '🏉🇦🇺', n: 'NRL', comp: 'rugby-league' }, { v: '🎾', n: 'Tennis', go: 'g45TennisResults(0)', lib: 'Résultats' },
   { v: '🏎', n: 'F1', go: 'g45F1Open()', lib: 'Calendrier' }, { v: '🥊', n: 'MMA', go: 'g45MmaOpen(0)', lib: 'Combats' },
   { v: '🏍', n: 'MotoGP', go: 'g45MotoOpen()', lib: 'Calendrier' }, { v: '🚴', n: 'Cyclisme', go: "g45CyclingOpen('tdf')", lib: 'Courses' },
-  { v: '🎿', n: 'Biathlon', go: 'g45BiaOpen()', lib: 'Coupe du monde' }
+  { v: '🎿', n: 'Biathlon', go: 'g45BiaOpen()', lib: 'Coupe du monde', img: 'images/equipes/biathlon.png' }
 ];
 /* 20261002p : couleur de fond par sport (tuile sans bannière : MMA, MotoGP, cyclisme, biathlon…). */
 var _G45_ACC_COUL = {
@@ -65946,6 +65946,9 @@ function _g45AccRegrouper() {
       var g = G[k], n = g.c.length, d = g.d || {};
       /* 20261002p : image presque carrée (logo ASVEL, AU NRL) → posée ENTIÈRE au-dessus du bandeau (contain), sinon plein cadre. */
       /* 20261002s : image PERSO au nom du sport (images/equipes/biathlon.png…, envoyée par Antoine), avant celle de TheSportsDB. */
+      /* 20261002u : fichier CONNU du dépôt (d.img) posé directement — la mémoire « pas d'image » (3 h) du mécanisme perso
+         l'avait caché, comme l'ASVEL le 01/10. */
+      if (!g.vis && g.d && g.d.img) g.vis = g.d.img;
       if (!g.vis && typeof _g45ImgPersoLire === 'function') {
         var pe = _g45ImgPersoLire(g.s.n);
         if (pe) g.vis = pe;
