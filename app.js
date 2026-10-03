@@ -60843,7 +60843,7 @@ async function _g45ElRendre(box, retourHtml) {
     };
     tete = '<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;"><span style="color:#fff;font-size:14px;font-weight:800;">Saison</span>'
       + '<select onchange="g45PaAn(this.value)" style="flex:1;padding:9px;font-size:14px;font-weight:800;border-radius:9px;background:#1a2235;color:#fff;border:1px solid rgba(255,255,255,.2);">' + opts + '</select></div>'
-      + '<div style="display:flex;gap:6px;margin-bottom:10px;">' + bc('rs', 'Saison régulière') + bc('po', 'Playoffs') + bc('lc', 'Leaders Cup') + '</div>';
+      + '<div style="display:flex;gap:6px;margin-bottom:10px;">' + bc('rs', 'Saison régulière') + bc('po', 'Playoffs') + '</div>';   /* 20261003u : bouton Leaders Cup RETIRÉ (absente de be-basketball, « oui retire ») */
   }
   if (_g45ElLigue !== 'proa') {
     var optsE = ''; for (var ye = _g45ElSaison(); ye >= 2000; ye--) optsE += '<option value="' + ye + '"' + (ye === an ? ' selected' : '') + '>' + ye + '-' + String(ye + 1).slice(2) + (ye === _g45ElSaison() ? ' (en cours)' : '') + '</option>';
