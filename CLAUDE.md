@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261003y, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261003z, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -881,7 +881,12 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   Aperçu hors séance : `g45F1Apercu()` en console.
   20261003y — tableau ABSENT sur téléphone pendant les qualifs (capture d'Antoine, PC OK) : `_g45F1LiveStart` ne lisait /f1live
   qu'à l'ouverture de la fiche (ouverte avant la séance ou pendant une pause Q1/Q2 → rien, pour toujours). Enveloppe `_g45F1Veille` :
-  /f1live relu chaque minute tant que la fiche est ouverte ; séance de CE GP en direct et rien ne se rafraîchit → `_g45F1OffDemarrer`.
+  /f1live relu chaque minute tant que la fiche est ouverte ; séance de CE GP en direct et rien ne se rafraîchit → `_g45F1OffDemarrer`. CONFIRMÉ (« c'était juste long »).
+  20261003z (« oui tu peux ») — QUALIFS EN 3 MANCHES : SONDÉ PAR ANTOINE (archive TimingData.json d'une qualif 2026 ; l'archive du
+  jour n'est publiée qu'après coup, Path absent d'Index.json) : racine SessionPart 1|2|3, NoEntries [22,16,10], CutOffTime ; par
+  pilote KnockedOut, BestLapTimes[] (une case par manche). Worker /f1live : sess.part, sess.entrees, p.ko (À REDÉPLOYER). App
+  (`_g45F1OffHtml`) : « · Q2 » (SQ en sprint), éliminé grisé « Éliminé Q1/Q2 » (manche d'après place > NoEntries[1|2]), ligne rouge
+  « Zone d'élimination » sous la place NoEntries[part] en Q1/Q2.
   02/10/2026 (FP2 Malaisie) — /f1live répondait 502 : la route n'ENVOYAIT ni la poignée de main SignalR ni le Subscribe
   (seul /f1test le faisait) → worker corrigé (fichier complet donné à Antoine, à redéployer). /f1test OK pendant FP2 (negotiate 200,
   WS 101, type 3 reçu). PIÈGE : la F1 nomme ce GP « Bahrain Grand Prix » (« … BAHRAIN GRAND PRIX IN MALAYSIA 2026 »), lieu

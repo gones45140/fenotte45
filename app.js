@@ -41263,11 +41263,17 @@ function _g45F1OffEvenements(av, ap) {
 function _g45F1OffHtml(j, apercu) {
   var e = function (x) { return String(x == null ? '' : x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); };
   var direct = _g45F1OffEnDirect(j), course = _g45F1OffCourse(j), ps = _G45_F1_PISTE[j.piste.s] || null, S = _g45F1Off;
+  /* 20261003z (« oui tu peux ») — QUALIFS EN 3 MANCHES. SONDÉ PAR ANTOINE (archive TimingData.json d'une qualif 2026) : SessionPart
+     1|2|3, NoEntries [22,16,10], KnockedOut par pilote → worker /f1live : sess.part, sess.entrees, p.ko. En-tête « · Q2 », pilote
+     éliminé grisé avec « Éliminé Q1 / Q2 » (manche d'après sa place et NoEntries), trait rouge sous la dernière place qualificative. */
+  var qPart = (!course && /qualif|shootout/i.test(String(j.sess.libelle || j.sess.type || ''))) ? (+j.sess.part || 0) : 0;
+  var qE = Array.isArray(j.sess.entrees) ? j.sess.entrees : [], qSp = /sprint/i.test(String(j.sess.libelle || ''));
+  var qNom = function (n) { return (qSp ? 'SQ' : 'Q') + n; };
   var age = Math.max(0, Math.round((Date.now() - (j.t || Date.now())) / 1000));
   var h = '<div style="background:rgba(11,16,29,.92);border-radius:12px;padding:10px;color:#fff;margin:8px 0;">';
   /* Bandeau */
   h += '<div style="background:linear-gradient(' + (ps ? ps[2] : '#26324f') + ',#141b2e);border-radius:8px;padding:10px;text-align:center;margin-bottom:8px;">'
-    + '<div style="font-size:14px;font-weight:900;letter-spacing:2px;">' + (ps ? ps[0].toUpperCase() : '') + ' · ' + e(_g45F1SessFr(j.sess.libelle || j.sess.type).toUpperCase()) + '</div>'
+    + '<div style="font-size:14px;font-weight:900;letter-spacing:2px;">' + (ps ? ps[0].toUpperCase() : '') + ' · ' + e(_g45F1SessFr(j.sess.libelle || j.sess.type).toUpperCase()) + (qPart ? ' · ' + qNom(qPart) : '') + '</div>'
     + '<div style="font-size:13px;color:#c9d3ee;margin-top:2px;">' + (direct ? '🔴 En direct' : '⏺ Dernier état connu') + ' · ' + e(j.sess.lieu)
     + (j.tour.tot ? ' · <b style="color:#f0b020;">Tour ' + j.tour.cur + ' / ' + j.tour.tot + '</b>' : (j.sess.horloge ? ' · ⏱️ ' + e(j.sess.horloge) : ''))
     + ' · il y a ' + age + ' s</div>'
@@ -41311,9 +41317,10 @@ function _g45F1OffHtml(j, apercu) {
       : (p.stand ? ' <span style="font-size:11px;background:#1b2a52;color:#9fc3ff;padding:1px 4px;border-radius:4px;">STAND</span>' : '');
     var cs = function (x) { return !x[0] ? '#8c97b8' : (x[1] === 2 ? '#b57bff' : (x[1] === 1 ? '#1ed760' : '#f0b020')); };
     var cel = 'padding:6px 6px;border-top:1px solid rgba(255,255,255,.08);';
-    h += '<tr style="' + (p.abandon ? 'opacity:.5;' : '') + '">'
-      + '<td style="' + cel + 'position:sticky;left:0;z-index:1;background:#141b2e;font-weight:800;color:' + (fd > 0 ? '#1ed760' : (fd < 0 ? '#ff8a8a' : (i ? '#c9d3ee' : '#f0b020'))) + ';">'
-      + (p.pos < 99 ? p.pos : '—') + (fd > 0 ? '▲' : (fd < 0 ? '▼' : '')) + '</td>'
+    var qKo = qPart && p.ko, qM = qKo ? (qE[1] && p.pos > qE[1] ? 1 : qE[2] && p.pos > qE[2] ? 2 : Math.max(1, qPart - 1)) : 0;
+    h += '<tr style="' + (p.abandon || qKo ? 'opacity:.5;' : '') + '">'
+      + '<td style="' + cel + 'position:sticky;left:0;z-index:1;background:#141b2e;font-weight:800;color:' + (qKo ? '#c9d3ee' : (fd > 0 ? '#1ed760' : (fd < 0 ? '#ff8a8a' : (i ? '#c9d3ee' : '#f0b020')))) + ';">'
+      + (p.pos < 99 ? p.pos : '—') + (qKo ? '<div style="font-size:11px;font-weight:700;color:#ff8a8a;white-space:nowrap;">Éliminé ' + qNom(qM) + '</div>' : (fd > 0 ? '▲' : (fd < 0 ? '▼' : ''))) + '</td>'
       + '<td style="' + cel + 'position:sticky;left:40px;z-index:1;background:#141b2e;font-weight:800;border-left:3px solid ' + (p.coul || '#8b97c4') + ';">' + (p.ph ? '<img src="' + e(p.ph) + '" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()" style="width:26px;height:26px;border-radius:50%;object-fit:cover;object-position:50% 12%;vertical-align:middle;margin-right:6px;background:' + (p.coul || '#2a3350') + ';">' : '') + e(p.tla || p.nom) + badge + '</td>'
       + '<td style="' + cel + 'text-align:right;font-weight:800;">' + ecart + '</td>'
       + '<td style="' + cel + 'font-weight:900;color:' + (pn ? pn[1] : '#c9d3ee') + ';">' + (pn ? pn[0] : '—') + (p.age != null ? '<sub style="font-size:10px;color:#c9d3ee;">' + p.age + '</sub>' : '') + '</td>'
@@ -41324,6 +41331,8 @@ function _g45F1OffHtml(j, apercu) {
         + '<span style="font-weight:700;color:' + cs(x) + ';">' + e(x[0] || '—') + '</span></td>';
     }
     h += '</tr>';
+    if (qPart && qPart < 3 && qE[qPart] && p.pos === qE[qPart])
+      h += '<tr><td colspan="8" style="padding:3px 8px;border-top:3px solid #ff3b3b;background:#2a1418;color:#ff8a8a;font-size:13px;font-weight:800;">▼ Zone d\'élimination : en dessous, éliminé si la ' + qNom(qPart) + ' s\'arrêtait maintenant</td></tr>';
   });
   h += '</table></div>';
   /* Chronologie : messages de course (historique) + événements déduits */
