@@ -66620,7 +66620,11 @@ async function _g45BbMois(an, mode, mo) {
       .filter(function (m) { return m.t >= deb && m.t < fin; });
     var duMois = g.filter(function (m) { return m.t >= d0 && m.t < d1; });
     var jour = g.some(function (m) { return !m.p && Math.abs(m.t - now) < 12 * 3600000; });
-    var duree = d1 < now && duMois.every(function (m) { return m.p; }) ? 30 * 1440 : d0 > now ? 360 : jour ? 10 : 120;
+    /* 20261004a — SONDÉ PAR ANTOINE pendant Bourg–Chalon (03/10) : be-basketball n'a AUCUN direct (liste : marking none et points
+       null pendant le match ; fiche : 0-0 ; page « direct » absente) → le score n'arrive qu'à la fin. Pour qu'il arrive vite, un match
+       commencé et pas fini → mois relu toutes les 3 min (worker : calendrier en cache 60 s, comme les données « live »). */
+    var commence = g.some(function (m) { return !m.p && m.t && m.t < now && now - m.t < 4 * 3600000; });
+    var duree = d1 < now && duMois.every(function (m) { return m.p; }) ? 30 * 1440 : d0 > now ? 360 : commence ? 3 : jour ? 10 : 120;
     try { localStorage.setItem(cle, JSON.stringify({ g: g, x: now + duree * 60000 })); } catch (e) {}
     return g;
   } catch (e) { if (c) return c.g; throw e; }
