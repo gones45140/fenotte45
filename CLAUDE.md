@@ -1079,7 +1079,7 @@ RÉGLÉ (worker, 01/10) : cron « exceededCpu » (cpuTimeMs 10) à CHAQUE passag
   passage (8 équipes en direct + ⭐ + scoreboards des paris), passage tué toujours au même endroit. Worker corrigé (fichier complet
   donné, À REDÉPLOYER) : budget `_lourd()` de 4 lectures lourdes par passage, `sumLire` (fiche d'un match lue une fois par passage,
   partagée équipe du mur / ⭐), rotation `_tourne` (paris, ⭐, détection et traitement des équipes en direct). Notification possiblement
-  retardée de 5-10 min un soir très chargé. À vérifier dans Observability le prochain soir chargé.
+  retardée de 5-10 min un soir très chargé. Redéployé le 03/10 au soir : passages « ok » (Antoine) ; à revérifier un soir chargé (dimanche).
   03/10 — « seulement celles d'après match » : les cases « Types d'alertes » (Outils → Notifications, rec.ev compo/start/goals/end)
   n'étaient respectées que pour les équipes du mur (evaluateMatch) ; paris (b…) et ⭐ (f…) les ignoraient → worker `_evType(tag)` /
   `_evRefuse(rec, ev)` (bstart/fstart → start ; bscore/fscore/bvar/bqt → goals ; bend/fend → end ; verdicts, jambes, rappels : toujours).
