@@ -38758,6 +38758,7 @@ function _g45ScorePompe() {
 function _g45ScoreTache(fn) { _g45ScoreQ.push(fn); _g45ScorePompe(); }
 window._g45ScoreTache = _g45ScoreTache;
 
+var _g45MdTente = {}, _g45MdAncien = {};
 function _g45ScoreTexte(h) {
   /* ELARGI AU PARI SIMPLE (28/08). Une montante a son equipe dans `h.n` ; un
      pari simple (h.n==='SIMPLE') l'a dans `h.target`, sous la forme "Equipe
@@ -38826,7 +38827,10 @@ function _g45ScoreTexte(h) {
        traite comme perime et retente immediatement. */
     try {
       var c = JSON.parse(raw);
-      if (c && c.hs != null && c.as != null) return c.hs + '-' + c.as;
+      /* 20261003q : score NHL mémorisé SANS « md » (mon équipe à domicile ?) → relu UNE fois par session pour le savoir. */
+      if (c && c.hs != null && c.as != null && h.sport === '\ud83c\udfd2' && c.md === undefined && !_g45MdTente[ck]
+          && typeof NHL_TEAMS !== 'undefined' && (NHL_TEAMS[nomEquipe] || NHL_TEAMS[nomAdverse])) { _g45MdTente[ck] = 1; _g45MdAncien[ck] = c; }
+      else if (c && c.hs != null && c.as != null) return c.hs + '-' + c.as;
       if (c && c.txt) return c.txt;   // tennis : score de sets, deja formate en texte
       if (c && c.neg && (Date.now() - (c.t || 0)) < 2 * 3600000) return '';   // negatif encore frais
     } catch(e) { /* ancien format brut : on retente ci-dessous */ }
@@ -38837,9 +38841,11 @@ function _g45ScoreTexte(h) {
   if (_g45ScoreEnVol[ck]) return '';
   _g45ScoreEnVol[ck] = 1;
   var betDay = String(h.date).slice(0, 10);
-  var finir = function(hs, as) {
+  var finir = function(hs, as, plus) {
     delete _g45ScoreEnVol[ck];
-    var payload = (hs != null && as != null) ? {hs: hs, as: as} : {neg: true, t: Date.now()};
+    var payload = (hs != null && as != null) ? Object.assign({hs: hs, as: as}, plus || {}) : {neg: true, t: Date.now()};
+    /* 20261003q : une relecture (ajout de « md ») qui échoue ne doit pas effacer un score déjà trouvé. */
+    if (hs == null && _g45MdAncien[ck]) { payload = _g45MdAncien[ck]; }
     try { localStorage.setItem(ck, JSON.stringify(payload)); } catch(e) {}
     if (!_g45ScoreVus[ck]) {
       _g45ScoreVus[ck] = 1;
@@ -39070,22 +39076,29 @@ function _g45ScoreTexte(h) {
     /* NHL : api-web.nhle.com, endpoint different de tous les autres —
        `club-schedule-season` renvoie la saison complete, filtree par date. */
     _g45ScoreTache(async function() {
-      var hs = null, as = null;
+      var hs = null, as = null; var mdNhl = null;
       try {
         var info = (typeof NHL_TEAMS !== 'undefined') ? (NHL_TEAMS[nomEquipe] || NHL_TEAMS[nomAdverse]) : null;
         if (info) {
           var chemin = '/v1/club-schedule-season/' + info.abbr + '/now';
           var r = await fetch(FD_PROXY + '?key=nhl&path=' + encodeURIComponent(chemin) + '&host=nhl');
           var d = await r.json();
-          var jeu = (d.games || []).filter(function(g) {
+          var _cand = (d.games || []).filter(function(g) {
             return g && joursUS.indexOf(String(g.gameDate || '').slice(0, 10)) >= 0;
-          })[0];
+          });
+          /* 20261003q : deux matchs possibles (aller-retour sur 2 soirs) → celui dont le coup d'envoi est le plus proche de l'heure du pari. */
+          var _tP = 0; try { if (h.heure) _tP = new Date(betDay + 'T' + ('0' + String(h.heure).trim()).slice(-5) + ':00').getTime() || 0; } catch (e) {}
+          if (_tP && _cand.length > 1) _cand.sort(function (x, y) { return Math.abs((Date.parse(x.startTimeUTC) || 0) - _tP) - Math.abs((Date.parse(y.startTimeUTC) || 0) - _tP); });
+          var jeu = _cand[0];
           if (jeu && jeu.gameState && /OFF|FINAL/i.test(jeu.gameState) && jeu.homeTeam && jeu.awayTeam) {
             hs = jeu.homeTeam.score; as = jeu.awayTeam.score;
+            /* 20261003q : qui recevait, selon la NHL elle-même (sert à ranger les noms autour du score). */
+            var _infoMoi = NHL_TEAMS[nomEquipe], _hab = String(jeu.homeTeam.abbrev || '');
+            if (_hab) mdNhl = _infoMoi ? (_hab === _infoMoi.abbr) : (_hab !== info.abbr);
           }
         }
       } catch(e) {}
-      finir(hs, as);
+      finir(hs, as, mdNhl == null ? null : { md: mdNhl });
     });
     return '';
   }
@@ -59780,6 +59793,17 @@ function _g45LigneMatch(h, titreDefaut, typeTxt, cote){
     gauche = moiAGauche ? moi : autre;
     droite = moiAGauche ? autre : moi;
   }
+  /* 20261003q (« Hurricanes devrait être en haut ») : le score vient de la NHL avec « md » (mon équipe recevait-elle ?) — source la
+     plus sûre, elle passe AVANT la fiche ESPN et le choix domicile du pari (un aller-retour de présaison les avait trompés). */
+  try {
+    var _scm = JSON.parse(localStorage.getItem('g45_score4_' + h.id) || 'null');
+    if (_scm && typeof _scm.md === 'boolean' && _scm.md !== moiAGauche) {
+      var _hn = meta && meta.hn, _an = meta && meta.an;
+      moiAGauche = _scm.md;
+      gauche = moiAGauche ? moi : (autre || _an || _hn);
+      droite = moiAGauche ? (autre || _an || _hn) : moi;
+    }
+  } catch (e) {}
   return {
     titre: function (sc) {
       return (moiAGauche ? or(gauche) : blanc(gauche)) + badge(sc) + (moiAGauche ? blanc(droite) : or(droite));
