@@ -65365,7 +65365,7 @@ window._g45ClvSelection = _g45ClvSelection; window._g45ClvPoser = _g45ClvPoser; 
       (setItem et save) puisse les vider.
    3) Au-delà de 4 millions de caractères stockés, purge préventive des
       caches (jamais g45v5, les données). */
-var _G45_CACHE_MORTS = ['g45bbjc1' /* 03/10 : → g45bbjc2 (clubs par saison) */, 'g45bbph1_' /* 03/10 : → g45bbph2_ (secours Wikipédia) */, 'g45cm9_' /* 01/10 : → g45cm10_ (présaison NHL marquée PO) */, 'g45nrlst1_' /* 01/10 : → g45nrlst2_ */, 'g45_cfai_veille' /* 29/09 : Workers AI supprimé */, 'g45cls4_' /* 29/09 : → g45cls5_ (stats de match) */, 'g45news7_', 'g45cm_', 'g45cm2_', 'g45cm3_', 'g45cm4_', 'g45cm5_', 'g45cm6_', 'g45cm7_', 'g45cm8_',
+var _G45_CACHE_MORTS = ['g45f1tr1_' /* 04/10 : → g45f1tr2_ (voie des stands) */, 'g45bbjc1' /* 03/10 : → g45bbjc2 (clubs par saison) */, 'g45bbph1_' /* 03/10 : → g45bbph2_ (secours Wikipédia) */, 'g45cm9_' /* 01/10 : → g45cm10_ (présaison NHL marquée PO) */, 'g45nrlst1_' /* 01/10 : → g45nrlst2_ */, 'g45_cfai_veille' /* 29/09 : Workers AI supprimé */, 'g45cls4_' /* 29/09 : → g45cls5_ (stats de match) */, 'g45news7_', 'g45cm_', 'g45cm2_', 'g45cm3_', 'g45cm4_', 'g45cm5_', 'g45cm6_', 'g45cm7_', 'g45cm8_',
   'g45khl_fiche_', 'g45_saisons_cache_v2_', 'g45_score_', 'g45_score2_', 'g45_score3_'];
 try {
   ['g45cm10_', 'g45xgj1_', 'g45khl_fiche2_', 'g45khl_plage_', 'g45cls3_', 'g45cls5_', 'g45photostsdb_', 'g45wk1_', 'g45jv_', 'g45art1_', 'g45clv1_', 'g45arb1_', 'g45_herologo_', 'g45cm3_']
@@ -67323,7 +67323,7 @@ window._g45BbQuartsTexte = _g45BbQuartsTexte;
    Voitures au stand / abandon : listées sous la carte, pas dessinées. Animation 4 images/s tant que la carte est visible. */
 var _g45F1Ct = { tr: null, cle: '', suivi: {}, timer: null, ev: null, ouvert: true };
 try { _g45F1Ct.ouvert = localStorage.getItem('g45_f1carte') !== '0'; } catch (e) {}
-function _g45F1CtCle(ev) { var c = ev && ev.circuit; return 'g45f1tr1_' + String((c && (c.id || c.fullName)) || (ev && ev.name) || '').replace(/\W+/g, '_').slice(0, 40); }
+function _g45F1CtCle(ev) { var c = ev && ev.circuit; return 'g45f1tr2_' + String((c && (c.id || c.fullName)) || (ev && ev.name) || '').replace(/\W+/g, '_').slice(0, 40); }
 async function _g45F1TraceLire(ev) {
   var cle = _g45F1CtCle(ev);
   try { var c0 = JSON.parse(localStorage.getItem(cle) || 'null'); if (c0 && c0.P && c0.P.length > 50) return c0; } catch (e) {}
@@ -67344,6 +67344,18 @@ async function _g45F1TraceLire(ev) {
       if (!P || P.length < 50) continue;
       var tr = { T: L.lap_duration, D: [L.duration_sector_1, L.duration_sector_2, L.duration_sector_3],
         P: P.map(function (p) { return [Math.round((Date.parse(p.date) - +d0) / 100) / 10, p.x, p.y]; }).filter(function (p) { return p[0] >= 0; }) };
+      /* 20261004g — VOIE DES STANDS : SONDÉ PAR ANTOINE (OpenF1 pit?session_key=11730 : 81 passages {date, driver_number, lane_duration
+         (souvent null), lap_number} ; location du pilote de date − 15 s à date + durée + 15 s = 251 points). La voie = plus longue suite de
+         points ÉLOIGNÉS du tracé (> 6 m, coordonnées en dixièmes de mètre). Jusqu'à 3 passages essayés. */
+      try {
+        var Pi = (await g('pit?session_key=' + k)).filter(function (x) { return x.date; }).sort(function (a, b) { return (b.lane_duration || 0) - (a.lane_duration || 0); });
+        for (var q = 0; q < Math.min(3, Pi.length) && !tr.pit; q++) {
+          var pd = new Date(Pi[q].date), du = +(Pi[q].lane_duration || 30);
+          var Lp = await g('location?session_key=' + k + '&driver_number=' + Pi[q].driver_number + '&date>' + new Date(+pd - 15000).toISOString() + '&date<' + new Date(+pd + (du + 15) * 1000).toISOString());
+          tr.pit = _g45F1PitVoie(tr, Lp || []);
+        }
+      } catch (e) {}
+      tr.k = k;
       try { localStorage.setItem(cle, JSON.stringify(tr)); } catch (e) {}
       return tr;
     }
@@ -67402,6 +67414,13 @@ function _g45F1CtSvg() {
     + '<path d="' + d + '" fill="none" stroke="#3a4567" stroke-width="' + (u * 3.2) + '" stroke-linejoin="round"/>'
     + '<path d="' + d + '" fill="none" stroke="#e8ecf5" stroke-width="' + (u * 1.4) + '" stroke-linejoin="round"/>'
     + '<circle cx="' + s0[1] + '" cy="' + (-s0[2]) + '" r="' + (u * 1.6) + '" fill="#fff" stroke="#000" stroke-width="' + (u * 0.4) + '"/>';
+  /* 20261004g : voie des stands (pointillé blanc) + numéros des virages (MultiViewer) */
+  if (tr.pit && tr.pit.length > 3) h += '<path d="' + tr.pit.map(function (p, i) { return (i ? 'L' : 'M') + p[0] + ' ' + (-p[1]); }).join(' ') + '" fill="none" stroke="#fff" stroke-width="' + (u * 0.7) + '" stroke-dasharray="' + (u * 1.4) + ' ' + (u * 1.2) + '" opacity=".85"/>';
+  (_g45F1Ct.virages || []).forEach(function (c) {
+    var a = (c.angle || 0) * Math.PI / 180, cx = c.x + Math.cos(a) * u * 7, cy = c.y + Math.sin(a) * u * 7;
+    h += '<g transform="translate(' + cx.toFixed(0) + ' ' + (-cy).toFixed(0) + ')"><circle r="' + (u * 2.6) + '" fill="#1a2235" stroke="#8b97c4" stroke-width="' + (u * 0.35) + '"/>'
+      + '<text text-anchor="middle" dy="' + (u * 1) + '" font-size="' + (u * 2.8) + '" font-weight="800" fill="#fff">' + c.n + '</text></g>';
+  });
   var L = (j.pilotes || []).slice().sort(function (a, b) { return b.pos - a.pos; });   /* le leader dessiné en dernier, au-dessus */
   L.forEach(function (p) {
     if (p.stand || p.abandon) return;
@@ -67467,3 +67486,52 @@ function _g45F1CtPoser() {
   }
 })();
 window._g45F1CtPoint = _g45F1CtPoint; window._g45F1CtBornes = _g45F1CtBornes; window._g45F1CtPasses = _g45F1CtPasses; window._g45F1CtPos = _g45F1CtPos;
+
+/* 20261004g — voie des stands et numéros de virages pour la carte F1 (« oui » d'Antoine). */
+function _g45F1PitVoie(tr, L) {
+  var P = tr.P, pts = (L || []).filter(function (p) { return p && p.x != null && p.y != null; });
+  if (pts.length < 10) return null;
+  var d2 = function (x, y) { var m = Infinity; for (var i = 0; i < P.length; i++) { var dx = P[i][1] - x, dy = P[i][2] - y, v = dx * dx + dy * dy; if (v < m) m = v; } return Math.sqrt(m); };
+  var best = [], cur = [];
+  pts.forEach(function (p) { if (d2(p.x, p.y) > 60) cur.push([p.x, p.y]); else { if (cur.length > best.length) best = cur; cur = []; } });
+  if (cur.length > best.length) best = cur;
+  return best.length >= 8 ? best : null;
+}
+/* MultiViewer (via le worker host=mv) — SONDÉ PAR ANTOINE : /api/v1/circuits/<clé F1>/<année> → corners[{number, angle, trackPosition{x,y}}],
+   rotation, x[], y[] ; la liste /api/v1/circuits (32 circuits) n'a PAS la Malaisie (clé 12) ni aucune année 2026 → on essaie l'année du GP
+   puis jusqu'à 6 ans en arrière. Même repère que les positions F1 (NON vérifié sur un vrai GP : à confirmer à Austin). Cache g45f1mv1_<clé>
+   pour toujours (« rien » : 7 j). Clé du circuit = sess.cle de /f1live (worker). */
+async function _g45F1Virages(cle, an) {
+  if (!cle) return null;
+  var k = 'g45f1mv1_' + cle;
+  try { var c = JSON.parse(localStorage.getItem(k) || 'null'); if (c && (c.v || Date.now() - c.t < 7 * 864e5)) return c.v || null; } catch (e) {}
+  var v = null;
+  for (var y = an; y >= an - 6 && !v; y--) {
+    try {
+      var r = await fetch(FD_PROXY + '?host=mv&path=' + encodeURIComponent('/api/v1/circuits/' + cle + '/' + y));
+      if (r.status === 403) break;
+      if (!r.ok) continue;
+      var j = await r.json();
+      if (j && Array.isArray(j.corners) && j.corners.length) v = j.corners.map(function (c) { var t = c.trackPosition || {}; return { n: c.number, x: t.x, y: t.y, angle: c.angle }; }).filter(function (c) { return c.x != null; });
+    } catch (e) {}
+  }
+  try { localStorage.setItem(k, JSON.stringify(v ? { v: v } : { t: Date.now() })); } catch (e) {}
+  return v;
+}
+(function () {
+  if (typeof _g45F1OffDessiner !== 'function' || _g45F1OffDessiner._g45Vi) return;
+  var d = _g45F1OffDessiner;
+  _g45F1OffDessiner = function () {
+    var r = d.apply(this, arguments);
+    try {
+      var j = _g45F1Off.dernier, cle = j && j.sess && j.sess.cle;
+      if (cle && _g45F1Ct.viCle !== cle) {
+        _g45F1Ct.viCle = cle; _g45F1Ct.virages = null;
+        _g45F1Virages(cle, new Date().getFullYear()).then(function (v) { if (_g45F1Ct.viCle === cle) { _g45F1Ct.virages = v; _g45F1CtDessiner(); } });
+      }
+    } catch (e) {}
+    return r;
+  };
+  _g45F1OffDessiner._g45Vi = true; _g45F1OffDessiner._g45Ct = d._g45Ct;
+})();
+window._g45F1PitVoie = _g45F1PitVoie;

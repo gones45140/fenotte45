@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261004f, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261004g, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -894,7 +894,13 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   location?…&date>&date< = 373 points) → `_g45F1TraceLire(ev)` (séances finies du week-end, qualifs d'abord), cache PERMANENT
   g45f1tr1_<circuit> ; pendant une séance OpenF1 = 401 → il faut avoir ouvert la fiche du GP une fois HORS séance. Bloc #g45-f1-carte
   posé AVANT #f1-live (`_g45F1CtPoser`, enveloppe de `_g45F1OffDessiner`), animé 4 fois/s pendant le direct, bouton `g45F1CarteBasculer`
-  (clé g45_f1carte) ; stand / abandon listés sous la carte. NON vérifié en vrai : sens du tracé (y inversé), justesse des positions.
+  (clé g45_f1carte) ; stand / abandon listés sous la carte. Sens du tracé CONFIRMÉ (aperçu comparé à F1 Pulse) ; justesse des positions NON vérifiée.
+  20261004g (« oui ») — VOIE DES STANDS : SONDÉ PAR ANTOINE OpenF1 pit?session_key=11730 (81 passages {date, driver_number, lane_duration
+  souvent null}) + location autour du passage (251 points) → `_g45F1PitVoie` (plus longue suite de points à > 6 m du tracé), tr.pit ; cache
+  g45f1tr2_ (g45f1tr1_ → MORTS). VIRAGES : MultiViewer via worker host=mv (/api/v1/circuits/<clé>/<an>, cache 7 j) — SONDÉ : corners
+  [{number, angle, trackPosition{x,y}}], rotation, x[], y[] ; PAS de Malaisie (clé 12), aucune année 2026 dans la liste → `_g45F1Virages`
+  essaie l'année puis 6 ans en arrière (g45f1mv1_<clé>) ; clé = /f1live sess.cle (worker). Repère MultiViewer = repère OpenF1 : NON vérifié
+  (à voir à Austin). Zones d'aileron (pointillés rouges de F1 Pulse) : aucune source gratuite trouvée.
   02/10/2026 (FP2 Malaisie) — /f1live répondait 502 : la route n'ENVOYAIT ni la poignée de main SignalR ni le Subscribe
   (seul /f1test le faisait) → worker corrigé (fichier complet donné à Antoine, à redéployer). /f1test OK pendant FP2 (negotiate 200,
   WS 101, type 3 reçu). PIÈGE : la F1 nomme ce GP « Bahrain Grand Prix » (« … BAHRAIN GRAND PRIX IN MALAYSIA 2026 »), lieu
