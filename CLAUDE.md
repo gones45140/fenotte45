@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261003x, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261003y, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -879,6 +879,9 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   app : `_g45F1OffLire` / `_g45F1OffHtml` / `_g45F1OffDemarrer`, prioritaire
   dans `_g45F1LiveStart` si la séance EN COURS est celle du GP ouvert.
   Aperçu hors séance : `g45F1Apercu()` en console.
+  20261003y — tableau ABSENT sur téléphone pendant les qualifs (capture d'Antoine, PC OK) : `_g45F1LiveStart` ne lisait /f1live
+  qu'à l'ouverture de la fiche (ouverte avant la séance ou pendant une pause Q1/Q2 → rien, pour toujours). Enveloppe `_g45F1Veille` :
+  /f1live relu chaque minute tant que la fiche est ouverte ; séance de CE GP en direct et rien ne se rafraîchit → `_g45F1OffDemarrer`.
   02/10/2026 (FP2 Malaisie) — /f1live répondait 502 : la route n'ENVOYAIT ni la poignée de main SignalR ni le Subscribe
   (seul /f1test le faisait) → worker corrigé (fichier complet donné à Antoine, à redéployer). /f1test OK pendant FP2 (negotiate 200,
   WS 101, type 3 reçu). PIÈGE : la F1 nomme ce GP « Bahrain Grand Prix » (« … BAHRAIN GRAND PRIX IN MALAYSIA 2026 »), lieu

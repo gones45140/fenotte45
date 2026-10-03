@@ -67069,3 +67069,36 @@ async function _g45BbEffectif(z, x) {
     window.g45EbCompo = g45EbCompo;
   }
 })();
+
+/* 20261003y — F1 EN DIRECT ABSENT SUR TÉLÉPHONE (capture d'Antoine pendant les qualifs de Malaisie : tableau sur PC, rien sur
+   le téléphone). CAUSE : `_g45F1LiveStart` ne regarde le flux officiel (/f1live) QU'À L'OUVERTURE de la fiche du GP ; fiche
+   ouverte avant la séance, ou pendant une pause (entre Q1 / Q2 / Q3, statut ≠ Started) → aucun tableau, jamais, et le
+   rafraîchissement s'arrêtait aussi définitivement à la première pause. CORRECTION : tant que la fiche est ouverte (et l'appli
+   visible), /f1live est relu CHAQUE MINUTE (petite réponse, cache worker 5 s) ; si la séance de CE GP est en direct et que rien
+   ne se rafraîchit, le tableau est (re)lancé. Aucun appel OpenF1 en plus. */
+(function _g45F1Veille() {
+  if (typeof _g45F1LiveStart !== 'function' || _g45F1LiveStart._g45V) return;
+  var o = _g45F1LiveStart;
+  _g45F1LiveStart = async function (ev) {
+    var r = await o.apply(this, arguments);
+    clearTimeout(window._g45F1VeilleT);
+    var eid = window._g45F1Eid;
+    var veille = async function () {
+      if (!document.getElementById('f1-live') || window._g45F1Eid !== eid) return;
+      try {
+        if (!document.hidden && !(_g45F1Off && _g45F1Off.timer) && !(_g45OF1 && _g45OF1.timer)) {
+          var off = await _g45F1OffLire();
+          if (off && _g45F1OffCorrespond(off, ev) && _g45F1OffEnDirect(off) && document.getElementById('f1-live') && window._g45F1Eid === eid) {
+            var b = document.getElementById('f1-live'); _g45F1Off.box = b;
+            var mb = document.getElementById('f1-livemap'); if (mb) mb.innerHTML = '';
+            _g45F1OffDemarrer(b, off);
+          }
+        }
+      } catch (e) {}
+      window._g45F1VeilleT = setTimeout(veille, 60000);
+    };
+    window._g45F1VeilleT = setTimeout(veille, 60000);
+    return r;
+  };
+  _g45F1LiveStart._g45V = true; window._g45F1LiveStart = _g45F1LiveStart;
+})();
