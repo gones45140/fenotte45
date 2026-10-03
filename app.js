@@ -67309,3 +67309,161 @@ async function _g45BbQuartsLire(m) {
   }
 })();
 window._g45BbQuartsTexte = _g45BbQuartsTexte;
+
+/* ═══ 🗺️ F1 — CARTE EN DIRECT ESTIMÉE (20261004f, « la F1 manque juste ça », comme F1 Pulse ; principe validé « ok ») ═══
+   La position GPS des voitures est réservée à F1 TV depuis 2025 (sources : F1 Pulse « important notice », undercut-f1). F1 Pulse
+   affiche son tracé SANS données de position : on fait pareil, position ESTIMÉE depuis le chronométrage déjà reçu (/f1live) :
+   mini-secteurs franchis dans le tour (p.s[k][2], code ≠ 0) + temps écoulé depuis le dernier franchi.
+   TRACÉ : SONDÉ PAR ANTOINE (qualifs Malaisie, OpenF1 session 11730) : laps → meilleur tour (lap_duration 95.757, date_start,
+   duration_sector_1..3 = 24.934 / 31.481 / 39.342, segments 5 / 6 / 9) ; location?session_key&driver_number&date>&date< = 373 points
+   {date, x, y, z} sur le tour. Gardé POUR TOUJOURS par circuit (g45f1tr1_<circuit>) : OpenF1 répond 401 pendant une séance →
+   le tracé doit être lu une fois hors séance (ouverture de la fiche du GP). Repère temporel de chaque point = temps depuis la ligne.
+   Position d'une voiture au temps τ du tour de référence : τ = début du mini-secteur franchi (secteur k = somme des secteurs avant +
+   j/n_k de sa durée) + temps écoulé × (tour de réf / dernier tour du pilote), plafonné à la fin du mini-secteur suivant.
+   Voitures au stand / abandon : listées sous la carte, pas dessinées. Animation 4 images/s tant que la carte est visible. */
+var _g45F1Ct = { tr: null, cle: '', suivi: {}, timer: null, ev: null, ouvert: true };
+try { _g45F1Ct.ouvert = localStorage.getItem('g45_f1carte') !== '0'; } catch (e) {}
+function _g45F1CtCle(ev) { var c = ev && ev.circuit; return 'g45f1tr1_' + String((c && (c.id || c.fullName)) || (ev && ev.name) || '').replace(/\W+/g, '_').slice(0, 40); }
+async function _g45F1TraceLire(ev) {
+  var cle = _g45F1CtCle(ev);
+  try { var c0 = JSON.parse(localStorage.getItem(cle) || 'null'); if (c0 && c0.P && c0.P.length > 50) return c0; } catch (e) {}
+  if (typeof _g45OF1EstBloque === 'function' && _g45OF1EstBloque()) return null;
+  try {
+    var g = async function (u) { var r = await fetch('https://api.openf1.org/v1/' + u); if (r.status === 401 && typeof _g45OF1Bloque === 'function') _g45OF1Bloque(); if (!r.ok) throw new Error('openf1 ' + r.status); return r.json(); };
+    var ses = (await _g45OF1EventSessions(ev)) || [], now = Date.now();
+    var finies = ses.filter(function (s) { return Date.parse(s.date_end) < now - 600000; });
+    var rang = function (s) { var n = String(s.session_name || ''); return /^qualifying$/i.test(n) ? 4 : /race/i.test(n) ? 3 : /qualif/i.test(n) ? 2 : 1; };
+    finies.sort(function (a, b) { return rang(b) - rang(a) || Date.parse(b.date_start) - Date.parse(a.date_start); });
+    for (var i = 0; i < Math.min(finies.length, 3); i++) {
+      var k = finies[i].session_key;
+      var L = (await g('laps?session_key=' + k)).filter(function (l) { return l.lap_duration && l.date_start && !l.is_pit_out_lap && l.duration_sector_1 && l.duration_sector_2 && l.duration_sector_3; })
+        .sort(function (a, b) { return a.lap_duration - b.lap_duration; })[0];
+      if (!L) continue;
+      var d0 = new Date(L.date_start), d1 = new Date(+d0 + L.lap_duration * 1000);
+      var P = await g('location?session_key=' + k + '&driver_number=' + L.driver_number + '&date>' + d0.toISOString() + '&date<' + d1.toISOString());
+      if (!P || P.length < 50) continue;
+      var tr = { T: L.lap_duration, D: [L.duration_sector_1, L.duration_sector_2, L.duration_sector_3],
+        P: P.map(function (p) { return [Math.round((Date.parse(p.date) - +d0) / 100) / 10, p.x, p.y]; }).filter(function (p) { return p[0] >= 0; }) };
+      try { localStorage.setItem(cle, JSON.stringify(tr)); } catch (e) {}
+      return tr;
+    }
+  } catch (e) {}
+  return null;
+}
+/* point du tracé au temps tau (interpolation linéaire) */
+function _g45F1CtPoint(tr, tau) {
+  var P = tr.P, n = P.length; tau = ((tau % tr.T) + tr.T) % tr.T;
+  var lo = 0, hi = n - 1;
+  if (tau <= P[0][0]) return [P[0][1], P[0][2]];
+  if (tau >= P[hi][0]) return [P[hi][1], P[hi][2]];
+  while (hi - lo > 1) { var mi = (lo + hi) >> 1; if (P[mi][0] <= tau) lo = mi; else hi = mi; }
+  var a = P[lo], b = P[hi], f = (tau - a[0]) / ((b[0] - a[0]) || 1);
+  return [a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f];
+}
+function _g45F1CtSec(t) { var m = String(t || '').match(/^(?:(\d+):)?(\d+(?:\.\d+)?)$/); return m ? (+(m[1] || 0)) * 60 + (+m[2]) : 0; }
+/* bornes (temps de référence) des mini-secteurs pour un pilote */
+function _g45F1CtBornes(tr, p) {
+  var B = [0], cum = 0;
+  for (var k = 0; k < 3; k++) {
+    var n = (((p.s || [])[k] || [])[2] || []).length || 1, D = tr.D[k] || tr.T / 3;
+    for (var j = 1; j <= n; j++) B.push(cum + D * j / n);
+    cum += D;
+  }
+  return B;
+}
+function _g45F1CtPasses(p) {
+  var c = 0;
+  for (var k = 0; k < 3; k++) { var sg = (((p.s || [])[k] || [])[2]) || []; for (var j = 0; j < sg.length; j++) { if (!sg[j]) return c; c++; } }
+  return c;
+}
+function _g45F1CtSuivre(j) {
+  var now = Date.now();
+  (j.pilotes || []).forEach(function (p) {
+    var n = _g45F1CtPasses(p), T = _g45F1Ct.suivi[p.n];
+    if (!T || T.tours !== p.tours || T.n !== n) _g45F1Ct.suivi[p.n] = { tours: p.tours, n: n, t: T ? now - 2500 : now };   /* changement vu au plus 5 s après : on recule de 2,5 s */
+  });
+}
+function _g45F1CtPos(tr, p) {
+  var T = _g45F1Ct.suivi[p.n]; if (!T) return null;
+  var B = _g45F1CtBornes(tr, p), n = Math.min(T.n, B.length - 1);
+  var der = _g45F1CtSec(p.dernier), f = der > tr.T * 0.7 && der < tr.T * 1.5 ? tr.T / der : 1;
+  var fin = n + 1 < B.length ? B[n + 1] : tr.T;
+  return Math.min(B[n] + (Date.now() - T.t) / 1000 * f, fin);
+}
+function _g45F1CtSvg() {
+  var tr = _g45F1Ct.tr, j = _g45F1Off.dernier; if (!tr || !j) return '';
+  var xs = tr.P.map(function (p) { return p[1]; }), ys = tr.P.map(function (p) { return -p[2]; });
+  var x0 = Math.min.apply(null, xs), x1 = Math.max.apply(null, xs), y0 = Math.min.apply(null, ys), y1 = Math.max.apply(null, ys), pad = Math.max(x1 - x0, y1 - y0) * 0.06;
+  var vb = (x0 - pad) + ' ' + (y0 - pad) + ' ' + (x1 - x0 + 2 * pad) + ' ' + (y1 - y0 + 2 * pad), u = Math.max(x1 - x0, y1 - y0) / 100;
+  var d = tr.P.map(function (p, i) { return (i ? 'L' : 'M') + p[1] + ' ' + (-p[2]); }).join(' ') + ' Z';
+  var e = function (x) { return String(x == null ? '' : x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); };
+  var s0 = tr.P[0];
+  var h = '<svg viewBox="' + vb + '" style="width:100%;max-height:340px;display:block;" xmlns="http://www.w3.org/2000/svg">'
+    + '<path d="' + d + '" fill="none" stroke="#3a4567" stroke-width="' + (u * 3.2) + '" stroke-linejoin="round"/>'
+    + '<path d="' + d + '" fill="none" stroke="#e8ecf5" stroke-width="' + (u * 1.4) + '" stroke-linejoin="round"/>'
+    + '<circle cx="' + s0[1] + '" cy="' + (-s0[2]) + '" r="' + (u * 1.6) + '" fill="#fff" stroke="#000" stroke-width="' + (u * 0.4) + '"/>';
+  var L = (j.pilotes || []).slice().sort(function (a, b) { return b.pos - a.pos; });   /* le leader dessiné en dernier, au-dessus */
+  L.forEach(function (p) {
+    if (p.stand || p.abandon) return;
+    var tau = _g45F1CtPos(tr, p); if (tau == null) return;
+    var pt = _g45F1CtPoint(tr, tau);
+    h += '<g data-g45ct="' + e(p.n) + '" transform="translate(' + pt[0].toFixed(0) + ' ' + (-pt[1]).toFixed(0) + ')">'
+      + '<circle r="' + (u * 3.4) + '" fill="' + e(p.coul || '#8b97c4') + '" stroke="#0b101d" stroke-width="' + (u * 0.6) + '"/>'
+      + '<text text-anchor="middle" dy="' + (u * 1.2) + '" font-size="' + (u * 3.2) + '" font-weight="900" fill="#fff" stroke="#0b101d" stroke-width="' + (u * 0.5) + '" paint-order="stroke">' + e(p.tla || p.n) + '</text></g>';
+  });
+  return h + '</svg>';
+}
+function _g45F1CtDessiner() {
+  var z = document.getElementById('g45-f1-carte'); if (!z) return;
+  var corps = document.getElementById('g45-f1-carte-c'); if (!corps || !_g45F1Ct.ouvert) return;
+  var j = _g45F1Off.dernier;
+  if (!_g45F1Ct.tr) { corps.innerHTML = '<div style="font-size:14px;color:#fff;padding:8px;">Tracé du circuit pas encore enregistré : il se lit en dehors d\'une séance (ouvre cette fiche entre deux séances, une seule fois).</div>'; return; }
+  var st = (j && j.pilotes || []).filter(function (p) { return p.stand && !p.abandon; }).map(function (p) { return p.tla || p.n; });
+  corps.innerHTML = _g45F1CtSvg() + '<div style="font-size:13px;color:#fff;margin-top:4px;line-height:1.45;">' + (st.length ? '🔧 Au stand : <b>' + st.join(', ') + '</b><br>' : '')
+    + '<span style="color:#c9d3ee;">Position estimée d\'après le chronométrage (mini-secteurs), pas le GPS.</span></div>';
+}
+function g45F1CarteBasculer() {
+  _g45F1Ct.ouvert = !_g45F1Ct.ouvert; try { localStorage.setItem('g45_f1carte', _g45F1Ct.ouvert ? '1' : '0'); } catch (e) {}
+  _g45F1CtPoser();
+}
+window.g45F1CarteBasculer = g45F1CarteBasculer;
+function _g45F1CtPoser() {
+  var box = _g45F1Off.box; if (!box || !box.isConnected || !_g45F1Off.dernier) return;
+  var z = document.getElementById('g45-f1-carte');
+  if (!z) { z = document.createElement('div'); z.id = 'g45-f1-carte'; box.parentNode.insertBefore(z, box); }
+  z.innerHTML = '<div style="background:rgba(11,16,29,.92);border-radius:12px;padding:10px;margin:8px 0;color:#fff;">'
+    + '<button onclick="g45F1CarteBasculer()" style="width:100%;padding:9px;border-radius:9px;border:1px solid rgba(255,255,255,.18);background:#1a2235;color:#fff;font-size:14px;font-weight:800;cursor:pointer;">🗺️ Carte en direct (estimée) ' + (_g45F1Ct.ouvert ? '▾' : '▸') + '</button>'
+    + (_g45F1Ct.ouvert ? '<div id="g45-f1-carte-c" style="margin-top:8px;"></div>' : '') + '</div>';
+  _g45F1CtDessiner();
+  if (!_g45F1Ct.timer) _g45F1Ct.timer = setInterval(function () {
+    if (!document.getElementById('g45-f1-carte') || !_g45F1Off.box || !_g45F1Off.box.isConnected) { clearInterval(_g45F1Ct.timer); _g45F1Ct.timer = null; var z2 = document.getElementById('g45-f1-carte'); if (z2 && !(_g45F1Off.box && _g45F1Off.box.isConnected)) z2.remove(); return; }
+    if (document.hidden || !_g45F1Ct.ouvert || !_g45F1Off.timer) return;   /* animée seulement pendant le direct */
+    _g45F1CtDessiner();
+  }, 250);
+}
+(function _g45F1CtBrancher() {
+  if (typeof _g45F1LiveStart === 'function' && !_g45F1LiveStart._g45Ct) {
+    var o = _g45F1LiveStart;
+    _g45F1LiveStart = async function (ev) {
+      _g45F1Ct.ev = ev;
+      var cle = _g45F1CtCle(ev);
+      if (_g45F1Ct.cle !== cle) { _g45F1Ct.cle = cle; _g45F1Ct.tr = null; _g45F1Ct.suivi = {}; }
+      var r = await o.apply(this, arguments);
+      /* tracé lu (ou relu du cache) — hors séance OpenF1 répond, pendant la séance seul le cache sert */
+      _g45F1TraceLire(ev).then(function (tr) { if (tr && _g45F1Ct.cle === cle) { _g45F1Ct.tr = tr; _g45F1CtPoser(); } });
+      return r;
+    };
+    ['_g45V'].forEach(function (k) { _g45F1LiveStart[k] = o[k]; });
+    _g45F1LiveStart._g45Ct = true; window._g45F1LiveStart = _g45F1LiveStart;
+  }
+  if (typeof _g45F1OffDessiner === 'function' && !_g45F1OffDessiner._g45Ct) {
+    var d = _g45F1OffDessiner;
+    _g45F1OffDessiner = function () {
+      var r = d.apply(this, arguments);
+      try { if (_g45F1Off.dernier) { _g45F1CtSuivre(_g45F1Off.dernier); _g45F1CtPoser(); } } catch (e) {}
+      return r;
+    };
+    _g45F1OffDessiner._g45Ct = true;
+  }
+})();
+window._g45F1CtPoint = _g45F1CtPoint; window._g45F1CtBornes = _g45F1CtBornes; window._g45F1CtPasses = _g45F1CtPasses; window._g45F1CtPos = _g45F1CtPos;

@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261004e, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261004f, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -887,6 +887,14 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   pilote KnockedOut, BestLapTimes[] (une case par manche). Worker /f1live : sess.part, sess.entrees, p.ko (À REDÉPLOYER). App
   (`_g45F1OffHtml`) : « · Q2 » (SQ en sprint), éliminé grisé « Éliminé Q1/Q2 » (manche d'après place > NoEntries[1|2]), ligne rouge
   « Zone d'élimination » sous la place NoEntries[part] en Q1/Q2.
+  20261004f (« la F1 manque juste ça », comme F1 Pulse ; « ok ») — 🗺️ CARTE EN DIRECT ESTIMÉE : GPS des voitures = F1 TV seulement depuis le GP
+  des Pays-Bas 2025 ; F1 Pulse affiche un tracé SANS données de position (leur « important notice ») → position ESTIMÉE depuis les
+  mini-secteurs de /f1live (`_g45F1CtPasses`, `_g45F1CtBornes`, `_g45F1CtPos` : début du mini-secteur franchi + temps écoulé × tour de réf /
+  dernier tour, plafonné). TRACÉ : SONDÉ PAR ANTOINE (OpenF1 qualifs Malaisie 11730 : laps → meilleur tour, duration_sector_1..3,
+  location?…&date>&date< = 373 points) → `_g45F1TraceLire(ev)` (séances finies du week-end, qualifs d'abord), cache PERMANENT
+  g45f1tr1_<circuit> ; pendant une séance OpenF1 = 401 → il faut avoir ouvert la fiche du GP une fois HORS séance. Bloc #g45-f1-carte
+  posé AVANT #f1-live (`_g45F1CtPoser`, enveloppe de `_g45F1OffDessiner`), animé 4 fois/s pendant le direct, bouton `g45F1CarteBasculer`
+  (clé g45_f1carte) ; stand / abandon listés sous la carte. NON vérifié en vrai : sens du tracé (y inversé), justesse des positions.
   02/10/2026 (FP2 Malaisie) — /f1live répondait 502 : la route n'ENVOYAIT ni la poignée de main SignalR ni le Subscribe
   (seul /f1test le faisait) → worker corrigé (fichier complet donné à Antoine, à redéployer). /f1test OK pendant FP2 (negotiate 200,
   WS 101, type 3 reçu). PIÈGE : la F1 nomme ce GP « Bahrain Grand Prix » (« … BAHRAIN GRAND PRIX IN MALAYSIA 2026 »), lieu
