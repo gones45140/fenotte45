@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261003q, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261003r, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1006,7 +1006,21 @@ HANDBALL (LNH, Starligue) : SONDÉ PAR ANTOINE le 01/10 — pas de robots.txt (4
   expresse et préalable de la LNH est interdite » (logos aussi) → NE PAS lire lnh.fr. ESPN n'a pas de handball. Seule voie propre :
   autorisation écrite de la LNH, ou une autre source gratuite qui le permet (non trouvée).
   ⚠ Le jeton lnb.fr/api/token (basket) apparaît dans les sondes : NE PAS l'utiliser (règle Pro A).
-PRO A — PISTE BE-BASKETBALL (02/10) : www.be-basketball.com (SAS NEO BASKET, Montarnaud) a les stats Betclic ÉLITE 2026-27
+PRO A — BE-BASKETBALL BRANCHÉ (20261003r, maquette validée « oui ») : bloc en fin d'app.js qui REMPLACE `_g45ProaMatchs`,
+  `_g45PaComps` (rs + po, pas de Leaders Cup) et `_g45PsHtml` (→ `_g45BbStatsHtml`) ; écran `_g45ElRendre` inchangé ; tuile Pro A
+  rendue à bet45 (`_g45ProaCachee` = faux). Worker host=bebasket (liste blanche : calendar/<an>?mode=&month=, teams-stats,
+  leaders, game/<uuid>) — À DÉPLOYER par Antoine. SONDÉ PAR ANTOINE : /league/betclic-elite/calendar/<an>?mode=regular|playoff
+  &month=<n> (an = DÉBUT de saison ; /ligue/…/calendrier = 404) → données Next.js `_g45BbFlight` (morceaux __next_f recollés)
+  → objets match `_g45BbMatchsLire` {id uuid, datetime.atom, mode, number, displayStage, marking finished|none, teams.home|away
+  {name, abbreviation, slug, image.src}, statTeams.home|away.points} ; chaque page contient d'autres matchs (finale de juin,
+  derniers résultats) → fenêtre de saison + uuid unique ; `_g45BbCompact` (id = 12 derniers chiffres hex de l'uuid). Cache
+  g45bb1_<an><r|p><mois>. Stats d'équipes : /teams-stats = <table> (ORtg, DRtg, NRtg, Poss., PTS… ; 3 groupes M A % = 2 pts,
+  3 pts, LF) → `_g45BbTableEquipes`, cache g45bbst1_<an> 1 h, saison en cours seulement ; tri `g45BbTri`, 4e colonne `g45BbCol`.
+  Logo : perso du dépôt puis be-basketball (accord d'Antoine). À SONDER : leaders (catégories : 1 seul tableau Rank|Player|
+  Average|Total|Games), feuille de match /game/<uuid> (table « Starting Five | min | PTS… », clé statPlayers), saisons passées
+  des stats, plus ancienne saison du calendrier, valeur de marking pendant un match. Photos joueurs prévues (accord) :
+  Euroleague → TheSportsDB → Wikipédia → initiales, JAMAIS celles de be-basketball.
+  Ancienne note (02/10) : www.be-basketball.com (SAS NEO BASKET, Montarnaud) a les stats Betclic ÉLITE 2026-27
   (équipes : ORTG, DRTG, NRTG, POSS., PTS, REB… ; joueurs ; calendrier). robots.txt : seuls /_health, /my-account/*,
   /manage-newsletters/* interdits ; Legal Notice : SEULES les PHOTOS sont protégées (reproduction interdite sans accord écrit).
   ACCORD DONNÉ PAR TÉLÉPHONE à Antoine le 02/10 (confirmation écrite conseillée). Ne JAMAIS reprendre leurs photos.

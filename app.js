@@ -66537,3 +66537,205 @@ function _g45ElBoxVersStats(j) {
     if (((typeof state !== 'undefined' && state && state.h) || []).length) localStorage.setItem('g45_mmeta_us1', '1');
   } catch (e) {} }, 4000);   /* après le chargement des paris ; drapeau posé seulement si la liste était là */
 })();
+
+/* ═══ 🏀 PRO A — SOURCE BE-BASKETBALL (20261003r, maquette validée « oui » le 03/10) ═══
+   La LNB a fermé son serveur le 01/10 (voir 20261001z). Nouvelle source : www.be-basketball.com (SAS NEO BASKET) — ACCORD DONNÉ
+   PAR TÉLÉPHONE à Antoine le 02/10 ; leurs PHOTOS sont protégées (Legal Notice) : JAMAIS reprises. Lu via le worker (host=bebasket,
+   liste blanche de chemins). Site Next.js : données dans les morceaux self.__next_f.push([1,"…"]) de la page.
+   SONDÉ PAR ANTOINE (03/10) :
+   • /league/betclic-elite/calendar/<an>?mode=regular|playoff&month=<1..12> (an = année de DÉBUT de saison ; month=1 → janvier an+1)
+     → objets {id (uuid), datetime{atom « 2026-10-02T18:00:00+00:00 »}, mode, number (journée ; n° de match en playoffs), stage,
+     displayStage, marking « finished » | « none », teams{home, away{name, abbreviation, slug, image{src}}}, statTeams{home,
+     away{points, isWinner}}}. Chaque page contient AUSSI d'autres matchs (finale de juin, derniers résultats) → gardés seulement
+     dans la fenêtre de la saison (1er août → 31 juillet), sans doublon (uuid). Adresse française /ligue/…/calendrier = 404.
+   • /league/betclic-elite/teams-stats → <table> rendue dans la page : Team | Games | ORtg | DRtg | NRtg | Poss. | PTS | REB | AST |
+     STL | BLK | M A % (2 pts) | M A % (3 pts) | M A % (LF) | TS% | eFG% | … | TO | … | PIR … ; équipe = img alt + lien /team/<slug>.
+   Remplace (par enveloppe) _g45ProaMatchs, _g45PaComps et _g45PsHtml ; l'écran Pro A (_g45ElRendre) est inchangé.
+   Leaders Cup : absente de be-basketball (non vue). Joueurs (leaders, feuille de match /game/<uuid>) : À SONDER avant de coder.
+   Cache g45bb1_<an><r|p><mois> (mois fini 30 j, mois en cours 10 min si match du jour sinon 2 h, mois à venir 6 h). */
+var _G45_BB_MOIS = { regular: [9, 10, 11, 12, 1, 2, 3, 4, 5], playoff: [5, 6] };
+function _g45BbUrl(p) { return FD_PROXY + '?host=bebasket&path=' + encodeURIComponent(p); }
+/* Texte des données Next.js : morceaux recollés dans l'ordre (un objet peut être coupé entre deux morceaux). */
+function _g45BbFlight(html) {
+  var out = '', re = /self\.__next_f\.push\(\[1,("(?:[^"\\]|\\.)*")\]\)/g, m;
+  html = String(html || '');
+  while ((m = re.exec(html))) { try { out += JSON.parse(m[1]); } catch (e) {} }
+  return out || html.replace(/\\"/g, '"');
+}
+/* Objet JSON qui commence à F[i] ('{') : accolades comptées hors chaînes. */
+function _g45BbBloc(F, i) {
+  var n = 0, s = false, esc = false;
+  for (var j = i; j < F.length; j++) {
+    var c = F.charAt(j);
+    if (s) { if (esc) esc = false; else if (c === '\\') esc = true; else if (c === '"') s = false; continue; }
+    if (c === '"') s = true; else if (c === '{') n++; else if (c === '}') { n--; if (!n) return F.slice(i, j + 1); }
+  }
+  return null;
+}
+function _g45BbMatchsLire(F) {
+  var re = /\{"id":"[0-9a-f-]{36}","datetime":\{/g, m, out = [], vu = {};
+  while ((m = re.exec(F))) {
+    var b = _g45BbBloc(F, m.index); if (!b) continue;
+    try { var o = JSON.parse(b); if (o && o.teams && !vu[o.id]) { vu[o.id] = 1; out.push(o); } } catch (e) {}
+  }
+  return out;
+}
+function _g45BbId(u) { return parseInt(String(u).replace(/-/g, '').slice(-12), 16) || 0; }
+function _g45BbCompact(x) {
+  var T = x.teams || {}, S = x.statTeams || {}, fini = x.marking === 'finished';
+  var eq = function (t, s) {
+    t = (t && typeof t === 'object') ? t : {}; s = (s && typeof s === 'object') ? s : {};
+    var im = t.image || {}, pts = s.points != null && s.points !== '' ? +s.points : null;
+    return { c: t.abbreviation || t.slug || t.name || '', n: t.name || '?', l: im.src || '', sl: t.slug || '', s: fini || pts ? pts : null, q: [], ot: [] };
+  };
+  var po = x.mode && x.mode !== 'regular', st = String(x.displayStage || x.stage || x.number || '').replace(/['"|]/g, ' ');
+  return { id: _g45BbId(x.id), u: x.id, r: po ? st : (+x.number || 0), ph: po ? 'PO' : 'RS', pha: po ? 'Playoffs' : '',
+    t: Date.parse(x.datetime && x.datetime.atom) || 0, p: fini, st: x.marking || '', h: eq(T.home, S.home), a: eq(T.away, S.away), v: '', ar: [], md: x.mode || '' };
+}
+async function _g45BbMois(an, mode, mo) {
+  var cle = 'g45bb1_' + an + mode.charAt(0) + mo, now = Date.now(), c = null;
+  try { c = JSON.parse(localStorage.getItem(cle) || 'null'); } catch (e) {}
+  if (c && c.x > now) return c.g;
+  var y = mo >= 8 ? an : an + 1, d0 = Date.UTC(y, mo - 1, 1), d1 = Date.UTC(y, mo, 1);
+  var deb = Date.UTC(an, 7, 1), fin = Date.UTC(an + 1, 7, 1);
+  try {
+    var r = await fetch(_g45BbUrl('/league/betclic-elite/calendar/' + an + '?mode=' + mode + '&month=' + mo));
+    if (r.status === 403) throw new Error('le worker n\'autorise pas encore be-basketball (403)');
+    if (!r.ok) { if (c) return c.g; if (r.status === 404) return []; throw new Error('be-basketball ' + r.status); }
+    var g = _g45BbMatchsLire(_g45BbFlight(await r.text())).filter(function (x) { return !mode || !x.mode || x.mode === mode; }).map(_g45BbCompact)
+      .filter(function (m) { return m.t >= deb && m.t < fin; });
+    var duMois = g.filter(function (m) { return m.t >= d0 && m.t < d1; });
+    var jour = g.some(function (m) { return !m.p && Math.abs(m.t - now) < 12 * 3600000; });
+    var duree = d1 < now && duMois.every(function (m) { return m.p; }) ? 30 * 1440 : d0 > now ? 360 : jour ? 10 : 120;
+    try { localStorage.setItem(cle, JSON.stringify({ g: g, x: now + duree * 60000 })); } catch (e) {}
+    return g;
+  } catch (e) { if (c) return c.g; throw e; }
+}
+(function _g45BbBrancher() {
+  if (typeof _g45ProaMatchs !== 'function' || _g45ProaMatchs._g45Bb) return;
+  _g45ProaMatchs = async function (an) {
+    if (_g45PaComp === 'lc') throw new Error('pas de Leaders Cup chez be-basketball');
+    var mode = _g45PaComp === 'po' ? 'playoff' : 'regular', L = _G45_BB_MOIS[mode], tout = [], err = null;
+    for (var i = 0; i < L.length; i += 3) {
+      var lot = await Promise.all(L.slice(i, i + 3).map(function (mo) { return _g45BbMois(an, mode, mo).catch(function (e) { err = e; return null; }); }));
+      lot.forEach(function (x) { if (x) tout = tout.concat(x); });
+    }
+    var vu = {}, g = tout.filter(function (m) { if (vu[m.u]) return false; vu[m.u] = 1; return true; }).sort(function (x, y) { return x.t - y.t; });
+    if (!g.length) throw err || new Error(mode === 'playoff' ? 'pas encore de playoffs cette saison' : 'aucun match trouvé chez be-basketball');
+    _g45ElMem[_g45ElCle(an)] = { g: g };
+    return g;
+  };
+  _g45ProaMatchs._g45Bb = true; window._g45ProaMatchs = _g45ProaMatchs;
+  /* Compétitions : saison régulière + playoffs (Leaders Cup absente → bouton grisé). */
+  _g45PaComps = async function () { return { rs: { id: 'bb', n: 'Betclic ÉLITE' }, po: { id: 'bbpo', n: 'Betclic ÉLITE - Playoffs' } }; };
+  window._g45PaComps = _g45PaComps;
+  _g45PsHtml = _g45BbStatsHtml; window._g45PsHtml = _g45PsHtml;
+})();
+/* 20261003r — la tuile Pro A revient sur bet45 (elle avait été retirée quand la LNB a fermé, voir 20261001z). */
+_g45ProaCachee = function () { return false; };
+window._g45ProaCachee = _g45ProaCachee;
+(function () {
+  try {
+    var bk = (typeof G45_SPORTS !== 'undefined') && G45_SPORTS.filter(function (s) { return s.key === 'basketball'; })[0];
+    if (bk && bk.groups && bk.groups[0] && !bk.groups[0].leagues.some(function (l) { return l.slug === 'proa'; })) bk.groups[0].leagues.push({ name: 'Pro A', slug: 'proa', ico: '🇫🇷' });
+  } catch (e) {}
+})();
+
+/* 📊 Stats d'équipes Pro A (be-basketball /teams-stats). Colonnes repérées par leur titre (en-tête de la dernière ligne du
+   <thead>) ; les trois groupes « M A % » sont, dans l'ordre, 2 pts, 3 pts, lancers francs. Valeurs = moyennes par match
+   (décimales ; NON vérifié avec plusieurs matchs). Logo : image perso du dépôt d'abord, celui de be-basketball en secours
+   (logos de clubs, pas des photos — accord d'Antoine). Saison en cours seulement (paramètre de saison NON sondé). */
+var _G45_BB_COLS = [['or', 'ORtg', 1], ['dr', 'DRtg', 0], ['nr', 'Net', 1], ['pt', 'Points', 1], ['rb', 'Rebonds', 1], ['as', 'Passes', 1], ['st', 'Intercept.', 1],
+  ['bl', 'Contres', 1], ['to', 'Balles perdues', 0], ['p2', '% 2 pts', 1], ['p3', '% 3 pts', 1], ['pf', '% LF', 1], ['ts', 'TS %', 1], ['po', 'Possessions', 1], ['pir', 'PIR', 1]];
+var _g45BbSt = { tri: 'nr', col: 'pt', inv: 0 };
+function _g45BbLogoUrl(img) {
+  if (!img) return '';
+  var s = img.getAttribute('src') || '', ss = img.getAttribute('srcset') || '', m = /[?&]url=([^&\s]+)/.exec(s) || /[?&]url=([^&\s]+)/.exec(ss);
+  if (m) { try { return decodeURIComponent(m[1]); } catch (e) {} }
+  return /^https?:/.test(s) ? s : '';
+}
+function _g45BbTableEquipes(html) {
+  var d = new DOMParser().parseFromString(html, 'text/html'), t = d.querySelector('table');
+  if (!t) return null;
+  var trs = t.querySelectorAll('thead tr'), hr = trs.length ? trs[trs.length - 1] : t.querySelector('tr');
+  if (!hr) return null;
+  var idx = {}, trip = 0, motifs = [['eq', /^(Team|Équipe)/i], ['g', /^(Games|Matchs)/i], ['or', /^ORtg/i], ['dr', /^DRtg/i], ['nr', /^NRtg/i], ['po', /^Poss/i], ['pt', /^PTS/],
+    ['rb', /^REB/], ['as', /^AST(?![%-])/], ['st', /^STL(?!%)/], ['bl', /^BLK(?!%)/], ['ts', /^TS%/], ['to', /^TO(?!%)/], ['pir', /^PIR/]];
+  Array.prototype.forEach.call(hr.children, function (th, i) {
+    var x = (th.textContent || '').trim();
+    if (x === '%') { var k = ['p2', 'p3', 'pf'][trip++]; if (k && idx[k] == null) idx[k] = i; return; }
+    motifs.forEach(function (mo) { if (idx[mo[0]] == null && mo[1].test(x)) idx[mo[0]] = i; });
+  });
+  if (idx.eq == null) idx.eq = 0;
+  var L = [];
+  Array.prototype.forEach.call(t.querySelectorAll('tbody tr'), function (tr) {
+    var td = tr.children; if (!td.length) return;
+    var cel = td[idx.eq], img = cel && cel.querySelector('img'), a = cel && cel.querySelector('a[href^="/team/"]');
+    var n = (img && img.getAttribute('alt')) || (cel && cel.textContent.trim()) || '';
+    if (!n) return;
+    var o = { n: n, sl: a ? a.getAttribute('href').split('/').pop() : '', l: _g45BbLogoUrl(img) };
+    Object.keys(idx).forEach(function (k) {
+      if (k === 'eq' || !td[idx[k]]) return;
+      var v = parseFloat(String(td[idx[k]].textContent).replace('%', '').replace(',', '.'));
+      o[k] = isNaN(v) ? null : v;
+    });
+    L.push(o);
+  });
+  return L.length ? L : null;
+}
+async function _g45BbEquipes(an) {
+  var cle = 'g45bbst1_' + an, now = Date.now(), c = null;
+  try { c = JSON.parse(localStorage.getItem(cle) || 'null'); } catch (e) {}
+  if (c && c.x > now) return c.d;
+  var r = await fetch(_g45BbUrl('/league/betclic-elite/teams-stats'));
+  if (!r.ok) { if (c) return c.d; throw new Error(r.status === 403 ? 'le worker n\'autorise pas encore be-basketball (403)' : 'be-basketball ' + r.status); }
+  var d = _g45BbTableEquipes(await r.text());
+  if (!d) { if (c) return c.d; throw new Error('tableau des équipes illisible'); }
+  try { localStorage.setItem(cle, JSON.stringify({ d: d, x: now + 3600000 })); } catch (e) {}
+  return d;
+}
+function _g45BbLogo(o, px) {
+  var p = ''; try { p = typeof _g45ImgPersoLire === 'function' ? (_g45ImgPersoLire(o.n) || '') : ''; } catch (e) {}
+  return _g45ElLogo({ l: p || o.l }, px);
+}
+function _g45BbAff(v, k) {
+  if (v == null) return '–';
+  var s = (Math.round(v * 10) / 10).toFixed(1).replace('.', ',');
+  return (k === 'nr' && v > 0 ? '+' : '') + s + (/^(p2|p3|pf|ts)$/.test(k) ? ' %' : '');
+}
+async function _g45BbStatsHtml(an) {
+  if (an !== _g45ElSaison()) return '<div style="color:#fff;font-size:14px;background:rgba(11,16,29,.80);border-radius:10px;padding:10px;">Stats d\'équipes : saison en cours seulement pour l\'instant.</div>';
+  if (_g45PaComp !== 'rs') return '<div style="color:#fff;font-size:14px;background:rgba(11,16,29,.80);border-radius:10px;padding:10px;">Stats d\'équipes : saison régulière seulement.</div>';
+  var L = await _g45BbEquipes(an), S = _g45BbSt, esc = _g45ElEsc;
+  var def = function (k) { return (_G45_BB_COLS.filter(function (c) { return c[0] === k; })[0] || [k, k, 1]); };
+  var tri = def(S.tri), sens = tri[2] ? 1 : -1; if (S.inv) sens = -sens;
+  L = L.slice().sort(function (a, b) { var x = a[S.tri], y = b[S.tri]; if (x == null) return 1; if (y == null) return -1; return sens * (y - x); });
+  var cols = ['or', 'dr', 'nr', S.col];
+  var th = function (k) { var on = S.tri === k; return '<th onclick="g45BbTri(\'' + k + '\')" style="cursor:pointer;padding:7px 4px;text-align:right;font-size:13px;white-space:nowrap;color:' + (on ? '#fff' : '#c9d3ee') + ';">' + esc(def(k)[1]) + (on ? (sens > 0 ? ' ▼' : ' ▲') : '') + '</th>'; };
+  var h = '<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;"><span style="color:#fff;font-size:14px;font-weight:800;">4e colonne</span>'
+    + '<select onchange="g45BbCol(this.value)" style="flex:1;padding:8px;font-size:14px;font-weight:700;border-radius:9px;background:#1a2235;color:#fff;border:1px solid rgba(255,255,255,.2);">'
+    + _G45_BB_COLS.filter(function (c) { return !/^(or|dr|nr)$/.test(c[0]); }).map(function (c) { return '<option value="' + c[0] + '"' + (S.col === c[0] ? ' selected' : '') + '>' + esc(c[1]) + '</option>'; }).join('') + '</select></div>'
+    + '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:14px;color:#fff;background:rgba(11,16,29,.85);border-radius:10px;">'
+    + '<tr style="border-bottom:1px solid rgba(255,255,255,.15);"><th style="padding:7px 4px;text-align:left;font-size:13px;color:#c9d3ee;">Équipe</th>' + cols.map(th).join('') + '</tr>';
+  L.forEach(function (o, i) {
+    h += '<tr style="border-top:1px solid rgba(255,255,255,.08);"><td style="padding:7px 4px;"><span style="display:flex;align-items:center;gap:6px;min-width:0;"><span style="width:18px;color:#c9d3ee;font-size:13px;flex:none;">' + (i + 1) + '</span>'
+      + _g45BbLogo(o, 22) + '<b style="font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(o.n) + '</b></span></td>'
+      + cols.map(function (k) { var v = o[k]; return '<td style="padding:7px 4px;text-align:right;font-weight:' + (S.tri === k ? 800 : 600) + ';' + (k === 'nr' && v != null ? 'color:' + (v >= 0 ? '#4ade80' : '#ff6b6b') + ';' : '') + '">' + _g45BbAff(v, k) + '</td>'; }).join('') + '</tr>';
+  });
+  return h + '</table></div><div style="font-size:13px;color:#fff;margin-top:6px;background:rgba(11,16,29,.80);border-radius:8px;padding:6px 8px;line-height:1.45;">'
+    + 'ORtg = points marqués pour 100 possessions · DRtg = encaissés · Net = différence. Touche un titre de colonne pour trier.<br>Données : BeBasketball</div>';
+}
+function g45BbTri(k) { if (_g45BbSt.tri === k) _g45BbSt.inv = _g45BbSt.inv ? 0 : 1; else { _g45BbSt.tri = k; _g45BbSt.inv = 0; } if (typeof _g45PsRedessiner === 'function') _g45PsRedessiner(); }
+function g45BbCol(k) { _g45BbSt.col = k; _g45BbSt.tri = k; _g45BbSt.inv = 0; if (typeof _g45PsRedessiner === 'function') _g45PsRedessiner(); }
+window.g45BbTri = g45BbTri; window.g45BbCol = g45BbCol;
+window._g45BbFlight = _g45BbFlight; window._g45BbMatchsLire = _g45BbMatchsLire; window._g45BbCompact = _g45BbCompact; window._g45BbTableEquipes = _g45BbTableEquipes;
+/* Mention de la source sous les Journées de la Pro A (maquette). */
+(function () {
+  if (typeof _g45ElJourneesHtml !== 'function' || _g45ElJourneesHtml._g45Bb) return;
+  var o = _g45ElJourneesHtml;
+  _g45ElJourneesHtml = function (g) {
+    var h = o.apply(this, arguments);
+    return _g45ElLigue === 'proa' ? h + '<div style="font-size:12px;color:#c9d3ee;text-align:right;margin-top:4px;">Données : BeBasketball</div>' : h;
+  };
+  _g45ElJourneesHtml._g45Bb = true; window._g45ElJourneesHtml = _g45ElJourneesHtml;
+})();
