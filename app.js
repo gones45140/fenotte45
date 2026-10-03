@@ -67329,7 +67329,19 @@ async function _g45F1TraceLire(ev) {
   try { var c0 = JSON.parse(localStorage.getItem(cle) || 'null'); if (c0 && c0.P && c0.P.length > 50) return c0; } catch (e) {}
   if (typeof _g45OF1EstBloque === 'function' && _g45OF1EstBloque()) return null;
   try {
-    var g = async function (u) { var r = await fetch('https://api.openf1.org/v1/' + u); if (r.status === 401 && typeof _g45OF1Bloque === 'function') _g45OF1Bloque(); if (!r.ok) throw new Error('openf1 ' + r.status); return r.json(); };
+    /* 20261004h (capture d'Antoine : 429 « Too Many Requests » sur laps / location / sessions) : OpenF1 limite le débit et la fiche du GP
+       fait déjà ses propres demandes → 1,2 s entre deux demandes du tracé, et sur 429 : attente 4 s, 8 s, 12 s puis abandon. */
+    var g = async function (u) {
+      for (var essai = 0; essai < 4; essai++) {
+        await new Promise(function (ok) { setTimeout(ok, essai ? essai * 4000 : 1200); });
+        var r = await fetch('https://api.openf1.org/v1/' + u);
+        if (r.status === 429) continue;
+        if (r.status === 401 && typeof _g45OF1Bloque === 'function') _g45OF1Bloque();
+        if (!r.ok) throw new Error('openf1 ' + r.status);
+        return r.json();
+      }
+      throw new Error('openf1 429');
+    };
     var ses = (await _g45OF1EventSessions(ev)) || [], now = Date.now();
     var finies = ses.filter(function (s) { return Date.parse(s.date_end) < now - 600000; });
     var rang = function (s) { var n = String(s.session_name || ''); return /^qualifying$/i.test(n) ? 4 : /race/i.test(n) ? 3 : /qualif/i.test(n) ? 2 : 1; };
@@ -67469,7 +67481,15 @@ function _g45F1CtPoser() {
       if (_g45F1Ct.cle !== cle) { _g45F1Ct.cle = cle; _g45F1Ct.tr = null; _g45F1Ct.suivi = {}; }
       var r = await o.apply(this, arguments);
       /* tracé lu (ou relu du cache) — hors séance OpenF1 répond, pendant la séance seul le cache sert */
-      _g45F1TraceLire(ev).then(function (tr) { if (tr && _g45F1Ct.cle === cle) { _g45F1Ct.tr = tr; _g45F1CtPoser(); } });
+      /* 20261004h : échec (429…) → nouvel essai toutes les 60 s, 5 fois, tant que la fiche de ce GP est ouverte */
+      var essai = 0, lire = function () {
+        _g45F1TraceLire(ev).then(function (tr) {
+          if (_g45F1Ct.cle !== cle) return;
+          if (tr) { _g45F1Ct.tr = tr; _g45F1CtPoser(); return; }
+          if (++essai < 5) setTimeout(function () { if (_g45F1Ct.cle === cle && document.getElementById('f1-live')) lire(); }, 60000);
+        });
+      };
+      lire();
       return r;
     };
     ['_g45V'].forEach(function (k) { _g45F1LiveStart[k] = o[k]; });

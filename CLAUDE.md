@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261004g, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261004h, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -901,6 +901,8 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   [{number, angle, trackPosition{x,y}}], rotation, x[], y[] ; PAS de Malaisie (clé 12), aucune année 2026 dans la liste → `_g45F1Virages`
   essaie l'année puis 6 ans en arrière (g45f1mv1_<clé>) ; clé = /f1live sess.cle (worker). Repère MultiViewer = repère OpenF1 : NON vérifié
   (à voir à Austin). Zones d'aileron (pointillés rouges de F1 Pulse) : aucune source gratuite trouvée.
+  20261004h — OpenF1 429 « Too Many Requests » (capture d'Antoine) : demandes du tracé espacées de 1,2 s, 429 → attente 4/8/12 s ; tracé
+  absent → nouvel essai toutes les 60 s (5 fois) tant que la fiche du GP est ouverte.
   02/10/2026 (FP2 Malaisie) — /f1live répondait 502 : la route n'ENVOYAIT ni la poignée de main SignalR ni le Subscribe
   (seul /f1test le faisait) → worker corrigé (fichier complet donné à Antoine, à redéployer). /f1test OK pendant FP2 (negotiate 200,
   WS 101, type 3 reçu). PIÈGE : la F1 nomme ce GP « Bahrain Grand Prix » (« … BAHRAIN GRAND PRIX IN MALAYSIA 2026 »), lieu
