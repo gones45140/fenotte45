@@ -885,7 +885,7 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   Kuala Lumpur → `_g45F1OffCorrespond` accepte aussi le lieu F1 trouvé dans nom du GP / circuit / ville ESPN (20261002w).
   CONFIRMÉ par Antoine (capture 02/10 10:19, FP2) : worker redéployé, tableau en direct affiché (statut, chrono, météo, pneus, mini-secteurs).
   20261002x (« oui les deux ») : en PAYSAGE le tableau tient entier (constaté par Antoine) → pas de refonte ; en portrait tactile,
-  ligne « 📱↻ Tourne ton téléphone… » ; photo ronde 26 px si p.ph — worker /f1live : ph = DriverList.HeadshotUrl (champ NON vérifié,
+  ligne « 📱↻ Tourne ton téléphone… » ; photo ronde 26 px si p.ph — worker /f1live : ph = DriverList.HeadshotUrl (CONFIRMÉ par Antoine, capture des qualifs Malaisie 03/10 : photos rondes affichées ;
   fichier worker redonné à Antoine). Photos / chronos des onglets FP1… : OpenF1 (bloqué pendant une séance) ; archive officielle
   livetiming /static/2026/<Path>… SONDÉ PAR ANTOINE (02/10, FP1 Malaisie, Path 2026/2026-10-04_Bahrain_Grand_Prix/2026-10-02_Practice_1/) :
   TimingData.json / TimingAppData.json / DriverList.json = 200 PENDANT FP2 (HeadshotUrl confirmé) → worker route /f1arch?q=<ville>&s=
