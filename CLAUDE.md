@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261003o, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261003p, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -823,6 +823,11 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   `_g45KhlMatchsPlage(dernier match − 2 j, maintenant + 21 j)` quand enCours (correctif écrit puis jeté le 01/10).
 - Score d'un pari : `_g45ScoreTexte`, cache `g45_score4_<id>` (négatif gardé
   2 h) — effacé par `saveBetEdit` pour relancer la recherche.
+  Score = {hs: DOMICILE, as: EXTÉRIEUR} ; la ligne du pari (`_g45LigneMatch`) met le club qui reçoit À GAUCHE d'après la fiche
+  `_g45MatchMeta` (ESPN, `_g45EclairTrouver`, cache g45_mmeta2_). 20261003p (capture d'Antoine : « Washington 2-5 Carolina », vrai
+  5-2 pour Washington) : aller-retour de présaison NHL deux soirs de suite → la fiche prenait le match du LENDEMAIN (scoreboard de
+  la date du pari lu en premier). `_g45EclairTrouver(c, jour, heure)` : avec l'heure, garde le match au coup d'envoi le plus proche
+  de l'heure du pari (3 jours parcourus) ; fiches US (🏒🏀⚾🏈) effacées une fois (clé g45_mmeta_us1).
 
 ## 6. Sources sondées (ne pas re-deviner)
 

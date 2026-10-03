@@ -59056,7 +59056,12 @@ function _g45EclairSport(emoji, comp) {
   return null;   // tennis, F1, MMA, cyclisme... : pas de detail de match dans l'appli
 }
 
-async function _g45EclairTrouver(c, jourPari) {
+/* 20261003p (capture d'Antoine : « Washington capitals 2-5 Carolina » alors que Washington a gagné 5-2) : en présaison NHL,
+   Carolina et Washington jouaient DEUX soirs de suite (aller-retour). Le pari de 01:15 (heure de Paris) = match du 2/10 à Carolina ;
+   la recherche lisait D'ABORD le scoreboard du 3/10 (date du pari) et prenait le match retour, à Washington → noms inversés autour
+   du score (lui juste : api NHL, match du 2/10). Avec l'heure du pari (3e paramètre), on parcourt les 3 jours et on garde le match
+   dont le coup d'envoi est le PLUS PROCHE de l'heure du pari ; sans heure, comportement inchangé. */
+async function _g45EclairTrouver(c, jourPari, heurePari) {
   var spl = _g45EclairSport(c.sport, c.comp);
   if (!spl) return null;
   var nrm = function (x) { return String(x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, ''); };
@@ -59074,6 +59079,8 @@ async function _g45EclairTrouver(c, jourPari) {
     var noms = [team.displayName, team.shortDisplayName, team.name, team.location, team.abbreviation].map(nrm).filter(Boolean);
     return noms.some(function (x) { return x === cle || (x.length >= 4 && cle.length >= 4 && (x.indexOf(cle) >= 0 || cle.indexOf(x) >= 0)); });
   };
+  var _tPari = 0, _proche = null;
+  try { if (heurePari && /^\d{1,2}:\d{2}/.test(String(heurePari))) _tPari = new Date(jourPari + 'T' + ('0' + String(heurePari).trim()).slice(-5) + ':00').getTime() || 0; } catch (e) {}
   var jours = [jourPari];
   try {
     var d = new Date(jourPari + 'T00:00:00Z');
@@ -59108,9 +59115,13 @@ async function _g45EclairTrouver(c, jourPari) {
         var m = String(meilleur.uid || '').match(/~l:(\d+)/);
         lg = (m && lgParId[m[1]]) || lgFoot || 'all';
       }
-      return { eid: String(meilleur.id), sp: spl.sp, lg: lg, ev: meilleur };
+      var trouve = { eid: String(meilleur.id), sp: spl.sp, lg: lg, ev: meilleur };
+      if (!(_tPari > 0)) return trouve;
+      var ecart = Math.abs((Date.parse(meilleur.date) || 0) - _tPari);
+      if (!_proche || ecart < _proche.ecart) _proche = { ecart: ecart, r: trouve };
     }
   }
+  if (_proche) return _proche.r;
   return { introuvable: true };
 }
 
@@ -59127,7 +59138,7 @@ async function g45EclairOuvrirCible(betId, i) {
   }
   document.body.style.cursor = 'progress';
   var res = null;
-  try { res = await _g45EclairTrouver(c, String(h.date || '').slice(0, 10)); } catch (e) {}
+  try { res = await _g45EclairTrouver(c, String(h.date || '').slice(0, 10), h.heure); } catch (e) {}
   document.body.style.cursor = '';
   if (res && res.eid && typeof _g45SgMatchDepuisDirect === 'function') {
     _g45SgMatchDepuisDirect(res.eid, res.sp, res.lg);
@@ -59219,7 +59230,7 @@ async function _g45MetaSuivant(){
     var h = _g45MetaFile.shift(), ck = _G45_META_CLE + h.id, out = null;
     try {
       var c = _g45EclairCibles(h)[0];
-      var r = c ? await _g45EclairTrouver(c, String(h.date).slice(0, 10)) : null;
+      var r = c ? await _g45EclairTrouver(c, String(h.date).slice(0, 10), h.heure) : null;
       if (r && r.ev) {
         var cp = (r.ev.competitions && r.ev.competitions[0]) || {};
         var cps = cp.competitors || [];
@@ -66489,4 +66500,16 @@ function _g45ElBoxVersStats(j) {
     return r;
   };
   g45ElFiche._g45Lv = true; window.g45ElFiche = g45ElFiche;
+})();
+
+/* 20261003p — les fiches de match déjà mémorisées pour les paris US (🏒 🏀 ⚾ 🏈) ont pu prendre le mauvais match d'un
+   aller-retour (voir _g45EclairTrouver) : effacées UNE fois (clé g45_mmeta_us1) pour être recherchées avec l'heure du pari. */
+(function _g45MetaUsPurge() {
+  setTimeout(function () { try {
+    if (localStorage.getItem('g45_mmeta_us1') === '1') return;
+    ((typeof state !== 'undefined' && state && state.h) || []).forEach(function (h) {
+      if (h && h.id && /\ud83c\udfd2|\ud83c\udfc0|\u26be|\ud83c\udfc8/.test(String(h.sport || ''))) localStorage.removeItem(_G45_META_CLE + h.id);
+    });
+    if (((typeof state !== 'undefined' && state && state.h) || []).length) localStorage.setItem('g45_mmeta_us1', '1');
+  } catch (e) {} }, 4000);   /* après le chargement des paris ; drapeau posé seulement si la liste était là */
 })();
