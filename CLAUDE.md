@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261003r, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261003s, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1020,6 +1020,11 @@ PRO A — BE-BASKETBALL BRANCHÉ (20261003r, maquette validée « oui ») : bloc
   Average|Total|Games), feuille de match /game/<uuid> (table « Starting Five | min | PTS… », clé statPlayers), saisons passées
   des stats, plus ancienne saison du calendrier, valeur de marking pendant un match. Photos joueurs prévues (accord) :
   Euroleague → TheSportsDB → Wikipédia → initiales, JAMAIS celles de be-basketball.
+  20261003s — LEADERS JOUEURS (stats → 👤 Joueurs) : SONDÉ PAR ANTOINE /league/betclic-elite/leaders/<an>/<pts|reb|ast>?mode=regular
+  → "leaders":[{games, total, average, rank, player{firstname, lastname, slug, image (JAMAIS reprise)…}}] (`_g45BbLeadersLire`, club :
+  clé NON vue → team | player.team si présent) ; cache g45bbld1_ ; autres catégories NON sondées. Photos `_g45BbPhotos` =
+  TheSportsDB (strSport Basketball, nom exact, g45bbph1_ : trouvée pour toujours, rien 14 j), sinon initiales. Worker : chemin
+  leaders/<an>/<cat>?mode= ajouté (À REDÉPLOYER). `_g45BbBloc` lit aussi les tableaux [ ].
   Ancienne note (02/10) : www.be-basketball.com (SAS NEO BASKET, Montarnaud) a les stats Betclic ÉLITE 2026-27
   (équipes : ORTG, DRTG, NRTG, POSS., PTS, REB… ; joueurs ; calendrier). robots.txt : seuls /_health, /my-account/*,
   /manage-newsletters/* interdits ; Legal Notice : SEULES les PHOTOS sont protégées (reproduction interdite sans accord écrit).

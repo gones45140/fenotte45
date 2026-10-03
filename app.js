@@ -66568,7 +66568,7 @@ function _g45BbBloc(F, i) {
   for (var j = i; j < F.length; j++) {
     var c = F.charAt(j);
     if (s) { if (esc) esc = false; else if (c === '\\') esc = true; else if (c === '"') s = false; continue; }
-    if (c === '"') s = true; else if (c === '{') n++; else if (c === '}') { n--; if (!n) return F.slice(i, j + 1); }
+    if (c === '"') s = true; else if (c === '{' || c === '[') n++; else if (c === '}' || c === ']') { n--; if (!n) return F.slice(i, j + 1); }   /* 20261003s : tableaux aussi (leaders) */
   }
   return null;
 }
@@ -66704,15 +66704,16 @@ function _g45BbAff(v, k) {
   return (k === 'nr' && v > 0 ? '+' : '') + s + (/^(p2|p3|pf|ts)$/.test(k) ? ' %' : '');
 }
 async function _g45BbStatsHtml(an) {
-  if (an !== _g45ElSaison()) return '<div style="color:#fff;font-size:14px;background:rgba(11,16,29,.80);border-radius:10px;padding:10px;">Stats d\'équipes : saison en cours seulement pour l\'instant.</div>';
-  if (_g45PaComp !== 'rs') return '<div style="color:#fff;font-size:14px;background:rgba(11,16,29,.80);border-radius:10px;padding:10px;">Stats d\'équipes : saison régulière seulement.</div>';
+  if (_g45BbSt.mode === 'jo') return _g45BbJoueursHtml(an);
+  if (an !== _g45ElSaison()) return _g45BbModeBtns() + '<div style="color:#fff;font-size:14px;background:rgba(11,16,29,.80);border-radius:10px;padding:10px;">Stats d\'équipes : saison en cours seulement pour l\'instant.</div>';
+  if (_g45PaComp !== 'rs') return _g45BbModeBtns() + '<div style="color:#fff;font-size:14px;background:rgba(11,16,29,.80);border-radius:10px;padding:10px;">Stats d\'équipes : saison régulière seulement.</div>';
   var L = await _g45BbEquipes(an), S = _g45BbSt, esc = _g45ElEsc;
   var def = function (k) { return (_G45_BB_COLS.filter(function (c) { return c[0] === k; })[0] || [k, k, 1]); };
   var tri = def(S.tri), sens = tri[2] ? 1 : -1; if (S.inv) sens = -sens;
   L = L.slice().sort(function (a, b) { var x = a[S.tri], y = b[S.tri]; if (x == null) return 1; if (y == null) return -1; return sens * (y - x); });
   var cols = ['or', 'dr', 'nr', S.col];
   var th = function (k) { var on = S.tri === k; return '<th onclick="g45BbTri(\'' + k + '\')" style="cursor:pointer;padding:7px 4px;text-align:right;font-size:13px;white-space:nowrap;color:' + (on ? '#fff' : '#c9d3ee') + ';">' + esc(def(k)[1]) + (on ? (sens > 0 ? ' ▼' : ' ▲') : '') + '</th>'; };
-  var h = '<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;"><span style="color:#fff;font-size:14px;font-weight:800;">4e colonne</span>'
+  var h = _g45BbModeBtns() + '<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;"><span style="color:#fff;font-size:14px;font-weight:800;">4e colonne</span>'
     + '<select onchange="g45BbCol(this.value)" style="flex:1;padding:8px;font-size:14px;font-weight:700;border-radius:9px;background:#1a2235;color:#fff;border:1px solid rgba(255,255,255,.2);">'
     + _G45_BB_COLS.filter(function (c) { return !/^(or|dr|nr)$/.test(c[0]); }).map(function (c) { return '<option value="' + c[0] + '"' + (S.col === c[0] ? ' selected' : '') + '>' + esc(c[1]) + '</option>'; }).join('') + '</select></div>'
     + '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:14px;color:#fff;background:rgba(11,16,29,.85);border-radius:10px;">'
@@ -66738,4 +66739,128 @@ window._g45BbFlight = _g45BbFlight; window._g45BbMatchsLire = _g45BbMatchsLire; 
     return _g45ElLigue === 'proa' ? h + '<div style="font-size:12px;color:#c9d3ee;text-align:right;margin-top:4px;">Données : BeBasketball</div>' : h;
   };
   _g45ElJourneesHtml._g45Bb = true; window._g45ElJourneesHtml = _g45ElJourneesHtml;
+})();
+
+/* ═══ 👤 PRO A — LEADERS JOUEURS (20261003s, demande d'Antoine : « des stats joueurs ? ») ═══
+   SONDÉ PAR ANTOINE (03/10) : /league/betclic-elite/leaders/<an>/<cat>?mode=regular (liens de la page : pts, reb, ast) →
+   données Next.js "leaders":[{games, total, average, rank, player{firstname, lastname, slug, positions, image (PHOTO
+   be-basketball : JAMAIS reprise), country1…}, …}] ; club du joueur : clé NON vue dans la sonde (lu dans team | player.team
+   si présent). Autres catégories (interceptions, contres, évaluation…) : NON sondées → pas proposées.
+   PHOTOS (accord d'Antoine : « aucun site les donne ? ») : TheSportsDB searchplayers, strSport Basketball, nom exact
+   (`_g45BbPhotos`, même rythme que le tennis : 1 demande / 2,5 s, 429 = pause 60 s ; trouvée = pour toujours, rien = 14 j,
+   clé g45bbph1_<nom>), sinon initiales. Cache des leaders g45bbld1_<an><r|p>_<cat> 1 h (saison passée 7 j). */
+var _G45_BB_JCATS = [['pts', 'Points'], ['reb', 'Rebonds'], ['ast', 'Passes']];
+_g45BbSt.mode = 'eq'; _g45BbSt.cat = 'pts';
+function _g45BbModeBtns() {
+  var b = function (k, t) { var on = _g45BbSt.mode === k; return '<button onclick="g45BbMode(\'' + k + '\')" style="flex:1;padding:10px 8px;font-size:14px;font-weight:800;cursor:pointer;border-radius:9px;'
+    + (on ? 'background:#2563eb;border:1px solid #3b82f6;color:#fff;' : 'background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#c9d3ee;') + '">' + t + '</button>'; };
+  return '<div style="display:flex;gap:8px;margin-bottom:10px;">' + b('eq', '🛡️ Équipes') + b('jo', '👤 Joueurs') + '</div>';
+}
+function _g45BbLeadersLire(F) {
+  var i = F.indexOf('"leaders":['); if (i < 0) return null;
+  var b = _g45BbBloc(F, i + 10); if (!b) return null;
+  try {
+    var L = JSON.parse(b); if (!Array.isArray(L)) return null;
+    return L.map(function (x) {
+      var p = x.player || {}, t = x.team || p.team || {}, ti = (t && t.image) || {};
+      return { rg: x.rank, n: ((p.firstname || '') + ' ' + (p.lastname || '')).trim() || p.name || '?', sl: p.slug || '', av: x.average, to: x.total, g: x.games,
+        club: (t && t.name) || '', cl: ti.src || '' };
+    });
+  } catch (e) { return null; }
+}
+async function _g45BbLeaders(an, cat) {
+  var mode = _g45PaComp === 'po' ? 'playoff' : 'regular', cle = 'g45bbld1_' + an + mode.charAt(0) + '_' + cat, now = Date.now(), c = null;
+  try { c = JSON.parse(localStorage.getItem(cle) || 'null'); } catch (e) {}
+  if (c && c.x > now) return c.d;
+  var r = await fetch(_g45BbUrl('/league/betclic-elite/leaders/' + an + '/' + cat + '?mode=' + mode));
+  if (!r.ok) { if (c) return c.d; throw new Error(r.status === 403 ? 'le worker n\'autorise pas encore les leaders (403) : redéploie-le' : 'be-basketball ' + r.status); }
+  var d = _g45BbLeadersLire(_g45BbFlight(await r.text()));
+  if (!d) { if (c) return c.d; throw new Error('liste des joueurs illisible'); }
+  try { localStorage.setItem(cle, JSON.stringify({ d: d, x: now + (an < _g45ElSaison() ? 7 * 864e5 : 3600e3) })); } catch (e) {}
+  return d;
+}
+function _g45BbPhLire(nom) {
+  try {
+    var o = JSON.parse(localStorage.getItem('g45bbph1_' + _g45TenNorm(nom)) || 'null');
+    if (!o) return undefined; if (o.u) return o.u;
+    return (Date.now() - (o.t || 0) < 14 * 864e5) ? '' : undefined;
+  } catch (e) { return undefined; }
+}
+function _g45BbAvatar(nom, px) {
+  var u = _g45BbPhLire(nom), esc = _g45ElEsc;
+  var ini = String(nom || '').split(/\s+/).filter(Boolean).map(function (x) { return x[0]; }).slice(0, 2).join('').toUpperCase();
+  return '<span' + (u === undefined ? ' data-g45bbph="' + esc(nom) + '"' : '') + ' style="position:relative;flex:none;display:inline-block;width:' + px + 'px;height:' + px + 'px;">'
+    + '<span style="position:absolute;inset:0;border-radius:50%;background:#33405e;border:2px solid #6d9dff;box-sizing:border-box;display:flex;align-items:center;justify-content:center;font-size:' + Math.round(px * .34) + 'px;font-weight:800;color:#e8ecf5;">' + esc(ini) + '</span>'
+    + (u ? '<img src="' + esc(u) + '" alt="" loading="lazy" onerror="this.remove()" style="position:absolute;inset:0;width:100%;height:100%;border-radius:50%;object-fit:cover;object-position:50% 12%;border:2px solid #6d9dff;box-sizing:border-box;background:#33405e;">' : '')
+    + '</span>';
+}
+var _g45BbPhEnCours = 0;
+async function _g45BbPhotos() {
+  if (_g45BbPhEnCours) return;
+  _g45BbPhEnCours = 1;
+  var vus = {};
+  try {
+    for (var tour = 0; tour < 200; tour++) {
+      var n = '';
+      document.querySelectorAll('[data-g45bbph]').forEach(function (s) { var x = s.getAttribute('data-g45bbph'); if (!n && x && !vus[x] && _g45BbPhLire(x) === undefined) n = x; });
+      if (!n) break;
+      vus[n] = 1;
+      var u = '';
+      try {
+        var r = await fetch('https://www.thesportsdb.com/api/v1/json/3/searchplayers.php?p=' + encodeURIComponent(n));
+        if (r.status === 429) { await new Promise(function (ok) { setTimeout(ok, 60000); }); delete vus[n]; continue; }
+        if (r.ok) {
+          var l = ((await r.json()) || {}).player || [], cible = _g45TenNorm(n);
+          var p0 = l.filter(function (p) { return /^basketball$/i.test(p.strSport || '') && _g45TenNorm(p.strPlayer) === cible; })[0];
+          if (p0) u = _g45R2(p0.strThumb || p0.strCutout || '');
+          try { localStorage.setItem('g45bbph1_' + cible, JSON.stringify({ u: u, t: Date.now() })); } catch (e) {}
+        }
+      } catch (e) {}
+      document.querySelectorAll('[data-g45bbph]').forEach(function (s) {
+        if (s.getAttribute('data-g45bbph') !== n) return;
+        s.removeAttribute('data-g45bbph');
+        if (!u) return;
+        var im = document.createElement('img'); im.src = u; im.alt = ''; im.onerror = function () { im.remove(); };
+        im.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border-radius:50%;object-fit:cover;object-position:50% 12%;border:2px solid #6d9dff;box-sizing:border-box;background:#33405e;';
+        s.appendChild(im);
+      });
+      await new Promise(function (ok) { setTimeout(ok, 2500); });
+    }
+  } catch (e) {}
+  _g45BbPhEnCours = 0;
+}
+async function _g45BbJoueursHtml(an) {
+  var S = _g45BbSt, esc = _g45ElEsc, med = ['#ffd700', '#c0c0c0', '#cd7f32'];
+  var h = _g45BbModeBtns() + '<div style="display:flex;gap:6px;margin-bottom:10px;">' + _G45_BB_JCATS.map(function (c) {
+    var on = S.cat === c[0];
+    return '<button onclick="g45BbCat(\'' + c[0] + '\')" style="flex:1;padding:9px 6px;font-size:14px;font-weight:800;cursor:pointer;border-radius:9px;' + (on ? 'background:#2563eb;border:1px solid #3b82f6;color:#fff;' : 'background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#c9d3ee;') + '">' + c[1] + '</button>';
+  }).join('') + '</div>';
+  var L = await _g45BbLeaders(an, S.cat);
+  if (!L.length) return h + '<div style="color:#fff;font-size:14px;background:rgba(11,16,29,.80);border-radius:10px;padding:10px;">Pas encore de classement.</div>';
+  var f = function (v) { return v == null ? '–' : (Math.round(v * 10) / 10).toLocaleString('fr-FR', { maximumFractionDigits: 1 }); };
+  h += '<div style="background:rgba(11,16,29,.88);border-radius:12px;padding:4px 10px;">';
+  L.forEach(function (o, i) {
+    h += '<div style="display:flex;align-items:center;gap:9px;padding:8px 0;' + (i ? 'border-top:1px solid rgba(255,255,255,.08);' : '') + '">'
+      + '<b style="width:24px;font-size:14px;flex:none;color:' + (med[i] || '#fff') + ';">' + (o.rg || i + 1) + '</b>' + _g45BbAvatar(o.n, 40)
+      + '<span style="flex:1;min-width:0;"><b style="display:block;font-size:15px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(o.n) + '</b>'
+      + '<span style="display:flex;align-items:center;gap:5px;font-size:13px;color:#c9d3ee;">' + (o.club ? _g45BbLogo({ n: o.club, l: o.cl }, 16) + esc(o.club) + ' · ' : '')
+      + 'total ' + f(o.to) + ' · ' + (o.g || 0) + ' match' + (o.g > 1 ? 's' : '') + '</span></span>'
+      + '<b style="font-size:18px;color:#fff;flex:none;">' + f(o.av) + '</b></div>';
+  });
+  return h + '</div><div style="font-size:13px;color:#fff;margin-top:6px;background:rgba(11,16,29,.80);border-radius:8px;padding:6px 8px;line-height:1.45;">Grand chiffre = moyenne par match. Photos : TheSportsDB (initiales si introuvable).<br>Données : BeBasketball</div>';
+}
+function g45BbMode(k) { _g45BbSt.mode = k; if (typeof _g45PsRedessiner === 'function') _g45PsRedessiner(); }
+function g45BbCat(k) { _g45BbSt.cat = k; if (typeof _g45PsRedessiner === 'function') _g45PsRedessiner(); }
+window.g45BbMode = g45BbMode; window.g45BbCat = g45BbCat; window._g45BbLeadersLire = _g45BbLeadersLire;
+/* Photos cherchées après chaque affichage des stats Pro A. */
+(function () {
+  if (typeof _g45PsRedessiner !== 'function' || _g45PsRedessiner._g45Bb) return;
+  var o = _g45PsRedessiner;
+  _g45PsRedessiner = async function () { var r = await o.apply(this, arguments); try { _g45BbPhotos(); } catch (e) {} return r; };
+  _g45PsRedessiner._g45Bb = true; window._g45PsRedessiner = _g45PsRedessiner;
+  if (typeof _g45ElRendre === 'function' && !_g45ElRendre._g45Bb) {
+    var er = _g45ElRendre;
+    _g45ElRendre = async function () { var r = await er.apply(this, arguments); try { if (_g45ElLigue === 'proa' && _g45ElVue === 'stats') _g45BbPhotos(); } catch (e) {} return r; };
+    _g45ElRendre._g45Bb = true; window._g45ElRendre = _g45ElRendre;
+  }
 })();
