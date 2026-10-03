@@ -60850,8 +60850,8 @@ async function _g45ElRendre(box, retourHtml) {
     tete = '<div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;"><span style="color:#fff;font-size:14px;font-weight:800;">Saison</span>'
       + '<select onchange="g45ElAnSel(this.value)" aria-label="Saison" style="flex:1;padding:9px;font-size:14px;font-weight:800;border-radius:9px;background:#1a2235;color:#fff;border:1px solid rgba(255,255,255,.2);">' + optsE + '</select></div>';
   }
-  if (_g45ElLigue === 'proa' && _g45ElVue === 'equipes') _g45ElVue = 'journees';
-  var onglets = (_g45ElLigue === 'proa' ? [] : [['equipes', '👥 Équipes']]).concat([['journees', '📅 Journées']]).concat(_g45ElLigue === 'proa' && _g45PaComp !== 'rs' ? [] : [['classement', '🏆 Classement']]).concat([['stats', '📊 Stats']]).map(function (v) {
+  /* 20261003w : onglet 👥 Équipes aussi pour la Pro A (« compo de chaque équipe… la mettre dans le mur ») */
+  var onglets = [['equipes', '👥 Équipes']].concat([['journees', '📅 Journées']]).concat(_g45ElLigue === 'proa' && _g45PaComp !== 'rs' ? [] : [['classement', '🏆 Classement']]).concat([['stats', '📊 Stats']]).map(function (v) {
     var on = _g45ElVue === v[0];
     return '<button onclick="g45ElVue(\'' + v[0] + '\')" style="flex:1 1 auto;padding:10px 8px;font-size:14px;white-space:nowrap;font-weight:800;cursor:pointer;border-radius:9px;'
       + (on ? 'background:#2563eb;border:1px solid #3b82f6;color:#fff;' : 'background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#c9d3ee;') + '">' + v[1] + '</button>';
@@ -66975,3 +66975,88 @@ async function _g45BbClubsCompleter(an) {
   _g45BbLeaders._g45Club = true;
 })();
 window._g45BbStatsVersEl = _g45BbStatsVersEl;
+
+/* ═══ 👥 PRO A — ÉQUIPES : EFFECTIF + « ➕ MUR » (20261003w, demande d'Antoine : « compo de chaque équipe… pouvoir la suivre,
+   la mettre dans le mur ») ═══
+   Même onglet que l'Euroleague (`_g45ElEquipesRendre`, design déjà validé) ouvert à la Pro A. La page club be-basketball
+   /team/<slug> n'a PAS d'effectif lisible (SONDÉ PAR ANTOINE : seuls des liens d'articles et le pied de page) → EFFECTIF
+   CONSTRUIT depuis les feuilles de match de la saison affichée (`_g45BbFeuille`, gardées pour toujours) : joueurs ayant joué,
+   n° de maillot, matchs, moyennes minutes / points / rebonds / passes, nombre de titularisations. Un joueur qui n'a pas encore
+   joué n'apparaît pas. Photos `_g45BbPhotos` (TheSportsDB puis Wikipédia, jamais be-basketball).
+   Suivre : bouton « ➕ Mur » à la place de l'étoile (l'étoile Suivies ne connaît que l'Euroleague) → carte 🏀 sur le mur
+   (state.u, comme addUnit) ; le club y est reconnu par `_g45EbResoudre` (nom identique à la Pro A) → Saisons, Compo. */
+var _g45BbEqAppel = 0, _g45BbEqCtx = null;
+function _g45BbAuMur(n) { try { return !!(state && state.u || []).filter(function (u) { return u && u.n === n; })[0]; } catch (e) { return false; } }
+function _g45BbMurBtn(t) {
+  var dedans = _g45BbAuMur(t.n);
+  return '<button onclick="event.stopPropagation();' + (dedans ? '' : 'g45BbMur(\'' + _g45ElEsc(t.c).replace(/'/g, '') + '\')') + '" style="flex:none;padding:7px 10px;border-radius:9px;font-size:13px;font-weight:800;cursor:' + (dedans ? 'default' : 'pointer') + ';'
+    + (dedans ? 'background:#14361f;border:1px solid #2f8f4e;color:#7ee2a0;' : 'background:#1a2235;border:1px solid #3b82f6;color:#fff;') + '">' + (dedans ? '✓ Au mur' : '➕ Mur') + '</button>';
+}
+function g45BbMur(code) {
+  var g = ((_g45ElMem[_g45ElCle()] || {}).g) || [], t = null;
+  g.some(function (m) { [m.h, m.a].forEach(function (e) { if (!t && e.c === code) t = e; }); return !!t; });
+  if (!t || _g45BbAuMur(t.n)) return;
+  var p = ''; try { p = (typeof _g45ImgPersoLire === 'function' && _g45ImgPersoLire(t.n)) || ''; } catch (e) {}
+  try {
+    state.u.push({ n: t.n, abbr: String(t.c || t.n).slice(0, 3).toUpperCase(), color: '#1d4ed8', s: '3', l: 1, sport: '🏀', logoUrl: p || t.l || '', link: '', link2: '', note: '', type: 'club' });
+    if (typeof save === 'function') save();
+    try { if (typeof _g45PushBetsGithub === 'function') _g45PushBetsGithub(true); } catch (e) {}
+    try { if (typeof render === 'function') render(); } catch (e) {}
+  } catch (e) { alert('Ajout impossible : ' + e.message); return; }
+  _g45ElRedessiner();
+}
+window.g45BbMur = g45BbMur;
+async function _g45BbEffectif(z, x) {
+  var C = _g45BbEqCtx || {}, g = C.g || [], esc = _g45ElEsc;
+  var ms = g.filter(function (m) { return m.p && m.u && (m.h.c === x.el || m.a.c === x.el); });
+  if (!ms.length) { z.innerHTML = '<div style="color:#fff;font-size:14px;background:rgba(11,16,29,.80);border-radius:10px;padding:10px;">Pas encore de match joué : l\'effectif se construit à partir des feuilles de match.</div>'; return; }
+  z.innerHTML = '<div style="color:#fff;font-size:14px;">⏳ Lecture des feuilles de match (' + ms.length + ')…</div>';
+  var Fs = [];
+  for (var i = 0; i < ms.length; i += 4) {
+    var lot = await Promise.all(ms.slice(i, i + 4).map(function (m) { return _g45BbFeuille(m).then(function (F) { return { m: m, F: F }; }).catch(function () { return null; }); }));
+    lot.forEach(function (y) { if (y) Fs.push(y); });
+    var zz = document.getElementById('g45-el-club'); if (zz !== z) return;
+    z.innerHTML = '<div style="color:#fff;font-size:14px;">⏳ Lecture des feuilles de match (' + Fs.length + '/' + ms.length + ')…</div>';
+  }
+  var J = {};
+  Fs.forEach(function (y) {
+    var S = y.m.h.c === x.el ? y.F.h : y.F.a;
+    (S.P || []).forEach(function (p) {
+      var k = p.n, o = J[k] = J[k] || { n: p.n, no: '', j: 0, d5: 0, mi: 0, pt: 0, rb: 0, as: 0 };
+      if (p.no) o.no = p.no; o.j++; if (p.d5) o.d5++; o.mi += p.mi || 0; o.pt += p.pt || 0; o.rb += p.rb || 0; o.as += p.as || 0;
+    });
+  });
+  var L = Object.keys(J).map(function (k) { return J[k]; }).sort(function (a, b) { return (b.pt / b.j) - (a.pt / a.j); });
+  if (!L.length) { z.innerHTML = '<div style="color:#fff;font-size:14px;">Feuilles de match indisponibles pour le moment.</div>'; return; }
+  var f = function (v, j) { return (Math.round(10 * v / j) / 10).toLocaleString('fr-FR', { maximumFractionDigits: 1 }); };
+  var gr = 'display:grid;grid-template-columns:minmax(0,1fr) 34px 34px 34px 34px;gap:4px;align-items:center;text-align:right;';
+  var h = '<div style="background:rgba(11,16,29,.88);border-radius:12px;padding:6px 10px;"><div style="' + gr + 'font-size:12px;color:#c9d3ee;padding-bottom:4px;"><span style="text-align:left;">Joueur</span><span>Min</span><span>Pts</span><span>Reb</span><span>Pas</span></div>';
+  L.forEach(function (o) {
+    h += '<div style="' + gr + 'font-size:14px;color:#fff;padding:6px 0;border-top:1px solid rgba(255,255,255,.08);"><span style="display:flex;align-items:center;gap:8px;min-width:0;text-align:left;">' + _g45BbAvatar(o.n, 38)
+      + '<span style="min-width:0;"><b style="display:block;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(o.n) + '</b><span style="font-size:13px;color:#c9d3ee;">' + (o.no ? '#' + esc(o.no) + ' · ' : '') + o.j + ' match' + (o.j > 1 ? 's' : '') + (o.d5 ? ' · ' + o.d5 + ' ★' : '') + '</span></span></span>'
+      + '<span>' + f(o.mi, o.j) + '</span><b>' + f(o.pt, o.j) + '</b><span>' + f(o.rb, o.j) + '</span><span>' + f(o.as, o.j) + '</span></div>';
+  });
+  z.innerHTML = h + '</div><div style="font-size:13px;color:#fff;margin-top:6px;background:rgba(11,16,29,.80);border-radius:8px;padding:6px 8px;line-height:1.45;">Joueurs ayant joué cette saison (d\'après les feuilles de match) · moyennes par match · ★ = titularisations.<br>Données : BeBasketball</div>';
+  try { _g45BbPhotos(); } catch (e) {}
+}
+(function _g45BbEquipesBrancher() {
+  if (typeof _g45ElEquipesRendre !== 'function' || _g45ElEquipesRendre._g45Bb) return;
+  var o = _g45ElEquipesRendre;
+  _g45ElEquipesRendre = function (body, g, an) {
+    if (_g45ElLigue !== 'proa') return o.apply(this, arguments);
+    _g45BbEqAppel = 1; _g45BbEqCtx = { g: g, an: an };
+    try { var r = o.apply(this, arguments); } finally { _g45BbEqAppel = 0; }
+    if (!_g45ElClub) try { body.innerHTML = body.innerHTML.replace(/☆ pour suivre un club dans Suivies/, '➕ Mur pour mettre un club sur ton mur'); } catch (e) {}
+    return r;
+  };
+  _g45ElEquipesRendre._g45Bb = true; window._g45ElEquipesRendre = _g45ElEquipesRendre;
+  if (typeof _g45ElEtoile === 'function') {
+    var et = _g45ElEtoile;
+    _g45ElEtoile = function (t) { return _g45BbEqAppel ? _g45BbMurBtn(t) : et.apply(this, arguments); };
+  }
+  if (typeof g45EbCompo === 'function') {
+    var co = g45EbCompo;
+    g45EbCompo = function (z, x) { return _g45BbEqAppel ? _g45BbEffectif(z, x) : co.apply(this, arguments); };
+    window.g45EbCompo = g45EbCompo;
+  }
+})();

@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261003v, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261003w, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1034,6 +1034,9 @@ PRO A — BE-BASKETBALL BRANCHÉ (20261003r, maquette validée « oui ») : bloc
   g45bbph2_, g45bbph1_ → MORTS).
   20261003u — bouton Leaders Cup RETIRÉ de l'écran Pro A (« oui retire »).
   20261003v — clubs des leaders rangés PAR SAISON (g45bbjc2 = {an: {slug: [nom, logo]}}, g45bbjc1 → MORTS) et complétés aussi pour les saisons passées.
+  20261003w — onglet 👥 Équipes ouvert à la Pro A (enveloppe `_g45ElEquipesRendre`, drapeau `_g45BbEqAppel`) : étoile remplacée par « ➕ Mur »
+  (`g45BbMur` → state.u sport 🏀, comme addUnit) ; Effectif = `_g45BbEffectif` CONSTRUIT depuis les feuilles de match (page /team/<slug> SANS
+  effectif, SONDÉ PAR ANTOINE) : joueurs ayant joué, n°, matchs, moyennes, titularisations. Contrôle ajouté dans smoke.js.
   Ancienne note (02/10) : www.be-basketball.com (SAS NEO BASKET, Montarnaud) a les stats Betclic ÉLITE 2026-27
   (équipes : ORTG, DRTG, NRTG, POSS., PTS, REB… ; joueurs ; calendrier). robots.txt : seuls /_health, /my-account/*,
   /manage-newsletters/* interdits ; Legal Notice : SEULES les PHOTOS sont protégées (reproduction interdite sans accord écrit).
