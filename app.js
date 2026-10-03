@@ -66636,9 +66636,15 @@ async function _g45BbMois(an, mode, mo) {
     var mode = _g45PaComp === 'po' ? 'playoff' : 'regular', L = _G45_BB_MOIS[mode], tout = [], err = null;
     for (var i = 0; i < L.length; i += 3) {
       var lot = await Promise.all(L.slice(i, i + 3).map(function (mo) { return _g45BbMois(an, mode, mo).catch(function (e) { err = e; return null; }); }));
-      lot.forEach(function (x) { if (x) tout = tout.concat(x); });
+      lot.forEach(function (x, k) { if (x) { var mo = L[i + k]; tout = tout.concat(x.map(function (m) { return Object.assign({}, m, { _mo: mo }); })); } });
     }
-    var vu = {}, g = tout.filter(function (m) { if (vu[m.u]) return false; vu[m.u] = 1; return true; }).sort(function (x, y) { return x.t - y.t; });
+    /* 20261004c (capture d'Antoine : Nancy–Cholet fini 76-85 affiché « 18:00 ») : une page mensuelle contient aussi des matchs
+       d'AUTRES mois ; la page de septembre (gardée 30 j) avait une VIEILLE copie des matchs du 3 octobre, « à jouer », et la 1re
+       copie lue gagnait. Désormais : copie TERMINÉE d'abord, sinon celle de la page de SON mois. */
+    var rang = function (m) { return (m.p ? 2 : 0) + (new Date(m.t).getUTCMonth() + 1 === m._mo ? 1 : 0); };
+    var best = {};
+    tout.forEach(function (m) { var b = best[m.u]; if (!b || rang(m) > rang(b)) best[m.u] = m; });
+    var g = Object.keys(best).map(function (k) { var m = best[k]; delete m._mo; return m; }).sort(function (x, y) { return x.t - y.t; });
     if (!g.length) throw err || new Error(mode === 'playoff' ? 'pas encore de playoffs cette saison' : 'aucun match trouvé chez be-basketball');
     _g45ElMem[_g45ElCle(an)] = { g: g };
     return g;
