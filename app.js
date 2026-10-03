@@ -41719,7 +41719,8 @@ function g45F1Detail(eid){
   }catch(eS){}
   var html='<button onclick="g45F1Open()" style="border:none;background:rgba(255,255,255,.06);color:var(--t2);border-radius:8px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;margin-bottom:10px;">← Saison F1</button>'
     +'<div class="sec" style="margin-top:0;">🏁 '+ea(ev.name||'GP')+'</div>'
-    +'<div style="font-size:11px;color:var(--t3);margin-bottom:8px;">📍 '+ea((cir.fullName||'')+(ad.city?' · '+ad.city:'')+(ad.country?' · '+(_g45F1CountryFR(ad.country).split(' ')[0]||ad.country):''))+(isNaN(d)?'':' · 📅 '+d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'}))+'</div>';
+    /* 20261004m : lisible (Antoine ne la voyait pas sur la photo de fond) — blanc 14 px sur bande sombre */
+    +'<div style="display:inline-block;max-width:100%;box-sizing:border-box;background:rgba(11,16,29,.80);border-radius:8px;padding:4px 10px;font-size:14px;font-weight:700;color:#fff;line-height:1.4;margin-bottom:10px;">📍 '+ea((cir.fullName||'')+(ad.city?' · '+ad.city:'')+(ad.country?' · '+(_g45F1CountryFR(ad.country).split(' ')[0]||ad.country):''))+(isNaN(d)?'':' · 📅 '+d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'}))+'</div>';
   if(stats.length){
     html+='<div style="background:rgba(240,200,40,.06);border:1px solid rgba(240,200,40,.25);border-radius:8px;padding:9px 11px;margin-bottom:10px;">'
       +'<div style="font-size:10px;font-weight:800;color:#f0c828;margin-bottom:5px;">💡 STATS DU DICO ('+stats.length+')</div>'
@@ -41764,7 +41765,7 @@ async function _g45F1Map(ev){
     if(!img) return;
     box.innerHTML='<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:10px;margin-bottom:10px;text-align:center;">'
       +'<img src="'+String(img).replace(/"/g,'&quot;')+'" style="max-width:100%;max-height:220px;border-radius:8px;background:#fff;padding:8px;box-sizing:border-box;" onerror="this.parentNode.style.display=\'none\'">'
-      +'<div style="font-size:9px;color:var(--t3);margin-top:5px;">Tracé du circuit · Wikipédia</div></div>';
+      +'<div style="display:inline-block;background:rgba(11,16,29,.80);border-radius:6px;padding:3px 9px;font-size:13px;color:#fff;margin-top:6px;">Tracé du circuit · Wikipédia</div></div>';   /* 20261004m */
   }catch(e){}
 }
 var _g45F1Jol={schedYear:null, sched:null, res:{}, qual:{}};

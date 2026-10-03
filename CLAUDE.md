@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261004l, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261004m, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -914,6 +914,7 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   20261004l — fiche d'un GP PASSÉ (enveloppe `_g45F1PasseBrancher` de g45F1Detail) : ESPN recopie le circuit ACTUEL sur les vieilles courses
   (France 1950 = « Paul Ricard » au lieu de Reims, capture d'Antoine) → ligne 📍 refaite depuis Jolpica ergast/f1/<an>.json (`_g45F1JolCircuits`,
   cache permanent g45f1jc1_<an> ; `_g45F1JolProche` = course à ≤ 4 j de la date ESPN) ; « Analyse IA du GP » et « Résumés vidéo » retirés.
+  20261004m : ligne 📍 de la fiche GP et légende « Tracé du circuit · Wikipédia » en blanc 13–14 px sur bande sombre (illisibles sur la photo de fond).
   02/10/2026 (FP2 Malaisie) — /f1live répondait 502 : la route n'ENVOYAIT ni la poignée de main SignalR ni le Subscribe
   (seul /f1test le faisait) → worker corrigé (fichier complet donné à Antoine, à redéployer). /f1test OK pendant FP2 (negotiate 200,
   WS 101, type 3 reçu). PIÈGE : la F1 nomme ce GP « Bahrain Grand Prix » (« … BAHRAIN GRAND PRIX IN MALAYSIA 2026 »), lieu
