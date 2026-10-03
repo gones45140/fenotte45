@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261004k, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261004l, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -911,6 +911,9 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   `_g45F1AnSel()` donne l'année à `g45F1Open` ET `g45F1Standings` (Jolpica) ; window._g45F1An (0 = en cours) remis à 0 par l'enveloppe de
   loadResultatsTab, `g45DirectF1` et `g45GoF1`. SONDÉ PAR ANTOINE : ESPN scoreboard?dates=2025 / 2020 / 2010 = 24 / 17 / 19 GP.
   20261004k — SONDÉ PAR ANTOINE : 2005 / 1995 / 1990 / 1980 / 1970 / 1960 / 1950 = 19 / 17 / 16 / 14 / 13 / 10 / 7 GP → `_G45_F1_AN_MIN` = 1950.
+  20261004l — fiche d'un GP PASSÉ (enveloppe `_g45F1PasseBrancher` de g45F1Detail) : ESPN recopie le circuit ACTUEL sur les vieilles courses
+  (France 1950 = « Paul Ricard » au lieu de Reims, capture d'Antoine) → ligne 📍 refaite depuis Jolpica ergast/f1/<an>.json (`_g45F1JolCircuits`,
+  cache permanent g45f1jc1_<an> ; `_g45F1JolProche` = course à ≤ 4 j de la date ESPN) ; « Analyse IA du GP » et « Résumés vidéo » retirés.
   02/10/2026 (FP2 Malaisie) — /f1live répondait 502 : la route n'ENVOYAIT ni la poignée de main SignalR ni le Subscribe
   (seul /f1test le faisait) → worker corrigé (fichier complet donné à Antoine, à redéployer). /f1test OK pendant FP2 (negotiate 200,
   WS 101, type 3 reçu). PIÈGE : la F1 nomme ce GP « Bahrain Grand Prix » (« … BAHRAIN GRAND PRIX IN MALAYSIA 2026 »), lieu

@@ -67671,3 +67671,62 @@ window.g45F1An = g45F1An; window._g45F1AnSel = _g45F1AnSel; window._g45F1AnSelec
   loadResultatsTab._g45F1An = true; window.loadResultatsTab = loadResultatsTab;
 })();
 
+
+/* ═══ 20261004l — F1, FICHE D'UN GP D'UNE SAISON PASSÉE (« sinon oui ») ═══
+   Capture d'Antoine (GP de France 1950) : ESPN donnait « Circuit Paul Ricard · Le Castellet » au lieu de Reims
+   (circuit actuel recopié sur les vieilles courses) → circuit pris chez Jolpica (ergast/f1/<an>.json,
+   Races[] {date, raceName, Circuit{circuitName, Location{locality, country}}}), course la plus proche (≤ 4 j)
+   de la date ESPN ; cache PERMANENT g45f1jc1_<an> (saison finie). « Analyse IA du GP » et « Résumés vidéo »
+   retirés sur une saison passée (rien à analyser, pas de vidéo). Saison en cours : fiche inchangée. */
+async function _g45F1JolCircuits(an) {
+  var k = 'g45f1jc1_' + an;
+  try { var c = JSON.parse(localStorage.getItem(k) || 'null'); if (c && c.length) return c; } catch (e) {}
+  try {
+    var r = await fetch('https://api.jolpi.ca/ergast/f1/' + an + '.json?limit=100');
+    if (!r.ok) return [];
+    var j = await r.json();
+    var a = (((j.MRData || {}).RaceTable || {}).Races || []).map(function (x) {
+      var C = x.Circuit || {}, L = C.Location || {};
+      return { d: x.date, n: C.circuitName || '', v: L.locality || '', p: L.country || '' };
+    });
+    if (a.length) try { localStorage.setItem(k, JSON.stringify(a)); } catch (e) {}
+    return a;
+  } catch (e) { return []; }
+}
+function _g45F1JolProche(liste, ev) {
+  var t = [new Date(ev.date).getTime(), new Date(ev.endDate || ev.date).getTime()], best = null, bd = 4 * 86400000;
+  (liste || []).forEach(function (x) {
+    var tx = new Date(x.d + 'T12:00:00Z').getTime();
+    t.forEach(function (ti) { var dd = Math.abs(tx - ti); if (!isNaN(dd) && dd <= bd) { bd = dd; best = x; } });
+  });
+  return best;
+}
+(function _g45F1PasseBrancher() {
+  if (typeof g45F1Detail !== 'function' || g45F1Detail._g45Passe) return;
+  var o = g45F1Detail;
+  g45F1Detail = function (eid) {
+    var r = o.apply(this, arguments);
+    try {
+      var an = (typeof _g45F1AnSel === 'function') ? _g45F1AnSel() : new Date().getFullYear();
+      if (an === new Date().getFullYear()) return r;
+      var el = document.getElementById('t-resultats'); if (!el) return r;
+      var bIa = el.querySelector('button[onclick^="g45F1AI"]');
+      if (bIa && bIa.parentNode) bIa.parentNode.remove();
+      Array.prototype.slice.call(el.children).forEach(function (d) {
+        var f = d.firstElementChild;
+        if (f && /RÉSUMÉS VIDÉO/.test(f.textContent || '')) d.remove();
+      });
+      var ev = (_g45F1Cache.events || []).filter(function (e) { return String(e.id) === String(eid); })[0];
+      var lieu = Array.prototype.slice.call(el.children).filter(function (d) { return /^📍/.test((d.textContent || '').trim()); })[0];
+      if (ev && lieu) _g45F1JolCircuits(an).then(function (liste) {
+        var x = _g45F1JolProche(liste, ev);
+        if (!x || !x.n || !lieu.isConnected || String(window._g45F1Eid) !== String(eid)) return;
+        var txt = lieu.textContent, i = txt.indexOf(' · 📅');
+        var pays = (typeof _g45F1CountryFR === 'function' && _g45F1CountryFR(x.p)) ? String(_g45F1CountryFR(x.p)).split(' ')[0] : x.p;
+        lieu.textContent = '📍 ' + [x.n, x.v, pays].filter(Boolean).join(' · ') + (i >= 0 ? txt.slice(i) : '');
+      });
+    } catch (e) {}
+    return r;
+  };
+  g45F1Detail._g45Passe = true; window.g45F1Detail = g45F1Detail;
+})();
