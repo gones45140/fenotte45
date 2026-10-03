@@ -1059,6 +1059,7 @@ PRO A — BE-BASKETBALL BRANCHÉ (20261003r, maquette validée « oui ») : bloc
   20261004c — BUG doublons : la page de SEPTEMBRE (cache 30 j) contenait une vieille copie « à jouer » des matchs du 3/10 et la 1re
   copie lue gagnait (Nancy–Cholet fini affiché 18:00) → `_g45ProaMatchs` garde la copie TERMINÉE, sinon celle de la page de SON mois (_mo).
   20261004d (choix B d'Antoine) — date du match (« sam. 10/10 ») au-dessus de l'heure ou du score dans `_g45ElMatchHtml` (Euroleague + Pro A, pas en direct).
+  Stats des joueurs EN DIRECT via Sofascore : proposées (1 demande de plus par match ouvert), REFUSÉES par Antoine (« laisse comme ça ») — ne pas reproposer.
   Ancienne note (02/10) : www.be-basketball.com (SAS NEO BASKET, Montarnaud) a les stats Betclic ÉLITE 2026-27
   (équipes : ORTG, DRTG, NRTG, POSS., PTS, REB… ; joueurs ; calendrier). robots.txt : seuls /_health, /my-account/*,
   /manage-newsletters/* interdits ; Legal Notice : SEULES les PHOTOS sont protégées (reproduction interdite sans accord écrit).
