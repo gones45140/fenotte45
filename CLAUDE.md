@@ -1075,6 +1075,11 @@ RÉGLÉ (worker, 01/10) : cron « exceededCpu » (cpuTimeMs 10) à CHAQUE passag
   Correction livrée (fichier worker complet) : calendriers COMPACTS clé scht: {ts, e:[{id, d}]} (`schedPoser` /
   `schedLire`) au lieu de décoder le calendrier ESPN complet 2 × N + 4 fois par passage ; runRappelCron sort avant Intl
   hors 6-11 h UTC. CONFIRMÉ par Antoine (Observability 01/10) : dernier cron rouge vers 14:47, ensuite */5 en « info ».
+  REVENU le samedi 03/10 19:50 UTC (soirée chargée : foot + NHL + paris en direct ; cpuTimeMs 10) : trop de fiches ESPN décodées par
+  passage (8 équipes en direct + ⭐ + scoreboards des paris), passage tué toujours au même endroit. Worker corrigé (fichier complet
+  donné, À REDÉPLOYER) : budget `_lourd()` de 4 lectures lourdes par passage, `sumLire` (fiche d'un match lue une fois par passage,
+  partagée équipe du mur / ⭐), rotation `_tourne` (paris, ⭐, détection et traitement des équipes en direct). Notification possiblement
+  retardée de 5-10 min un soir très chargé. À vérifier dans Observability le prochain soir chargé.
 À VOIR (en attente d'un retour d'Antoine) :
 - Notifications multi-appareils (28g + worker redéployé : « N appareils reliés ») :
   vérifier qu'un pari saisi sur PC fait sonner le téléphone. Détail technique :
