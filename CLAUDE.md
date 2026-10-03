@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261004c, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261004d, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1058,6 +1058,7 @@ PRO A — BE-BASKETBALL BRANCHÉ (20261003r, maquette validée « oui ») : bloc
   40 lectures / jour / appareil (g45bblv_j).
   20261004c — BUG doublons : la page de SEPTEMBRE (cache 30 j) contenait une vieille copie « à jouer » des matchs du 3/10 et la 1re
   copie lue gagnait (Nancy–Cholet fini affiché 18:00) → `_g45ProaMatchs` garde la copie TERMINÉE, sinon celle de la page de SON mois (_mo).
+  20261004d (choix B d'Antoine) — date du match (« sam. 10/10 ») au-dessus de l'heure ou du score dans `_g45ElMatchHtml` (Euroleague + Pro A, pas en direct).
   Ancienne note (02/10) : www.be-basketball.com (SAS NEO BASKET, Montarnaud) a les stats Betclic ÉLITE 2026-27
   (équipes : ORTG, DRTG, NRTG, POSS., PTS, REB… ; joueurs ; calendrier). robots.txt : seuls /_health, /my-account/*,
   /manage-newsletters/* interdits ; Legal Notice : SEULES les PHOTOS sont protégées (reproduction interdite sans accord écrit).

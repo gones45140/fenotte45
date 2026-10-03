@@ -60908,6 +60908,9 @@ function _g45ElMatchHtml(m) {
   var centre = m.p ? '<b>' + hs + ' – ' + as + '</b>' + (m.h.ot.length ? ' <span style="font-size:12px;color:#f0b020;">prol.</span>' : '')
     : live ? '<span style="color:#ff5c5c;">🔴 ' + (hs || as ? hs + ' – ' + as : 'en cours') + '</span>'
     : '<span style="color:#f0b020;">' + new Date(m.t).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) + '</span>';
+  /* 20261004d (choix B d'Antoine : « mettre les vraies dates ») : une journée s'étale sur plusieurs jours → date du match au-dessus
+     de l'heure ou du score (Euroleague et Pro A ; pas pendant le direct). */
+  if (!live && m.t) centre = '<span style="display:block;font-size:12px;font-weight:700;color:#c9d3ee;">' + new Date(m.t).toLocaleDateString('fr-FR', { weekday: 'short', day: '2-digit', month: '2-digit' }) + '</span>' + centre;
   var gH = m.p && hs < as ? 'color:#8a93ad;' : 'color:#fff;', gA = m.p && as < hs ? 'color:#8a93ad;' : 'color:#fff;';
   var h = '<div onclick="g45ElOuvrir(' + m.id + ')" style="cursor:pointer;background:rgba(11,16,29,.80);border:1px solid ' + (ouvert ? 'rgba(37,99,235,.6)' : 'rgba(255,255,255,.08)') + ';border-radius:10px;padding:9px 10px;margin-bottom:6px;">'
     + '<div style="display:flex;align-items:center;gap:8px;font-size:14px;">'
