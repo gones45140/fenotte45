@@ -65353,7 +65353,7 @@ window._g45ClvSelection = _g45ClvSelection; window._g45ClvPoser = _g45ClvPoser; 
       (setItem et save) puisse les vider.
    3) Au-delà de 4 millions de caractères stockés, purge préventive des
       caches (jamais g45v5, les données). */
-var _G45_CACHE_MORTS = ['g45bbph1_' /* 03/10 : → g45bbph2_ (secours Wikipédia) */, 'g45cm9_' /* 01/10 : → g45cm10_ (présaison NHL marquée PO) */, 'g45nrlst1_' /* 01/10 : → g45nrlst2_ */, 'g45_cfai_veille' /* 29/09 : Workers AI supprimé */, 'g45cls4_' /* 29/09 : → g45cls5_ (stats de match) */, 'g45news7_', 'g45cm_', 'g45cm2_', 'g45cm3_', 'g45cm4_', 'g45cm5_', 'g45cm6_', 'g45cm7_', 'g45cm8_',
+var _G45_CACHE_MORTS = ['g45bbjc1' /* 03/10 : → g45bbjc2 (clubs par saison) */, 'g45bbph1_' /* 03/10 : → g45bbph2_ (secours Wikipédia) */, 'g45cm9_' /* 01/10 : → g45cm10_ (présaison NHL marquée PO) */, 'g45nrlst1_' /* 01/10 : → g45nrlst2_ */, 'g45_cfai_veille' /* 29/09 : Workers AI supprimé */, 'g45cls4_' /* 29/09 : → g45cls5_ (stats de match) */, 'g45news7_', 'g45cm_', 'g45cm2_', 'g45cm3_', 'g45cm4_', 'g45cm5_', 'g45cm6_', 'g45cm7_', 'g45cm8_',
   'g45khl_fiche_', 'g45_saisons_cache_v2_', 'g45_score_', 'g45_score2_', 'g45_score3_'];
 try {
   ['g45cm10_', 'g45xgj1_', 'g45khl_fiche2_', 'g45khl_plage_', 'g45cls3_', 'g45cls5_', 'g45photostsdb_', 'g45wk1_', 'g45jv_', 'g45art1_', 'g45clv1_', 'g45arb1_', 'g45_herologo_', 'g45cm3_']
@@ -66900,7 +66900,9 @@ function _g45BbStatsVersEl(sp) {
   };
   return { local: cote(sp.home), road: cote(sp.away) };
 }
-function _g45BbClubsLire() { try { return JSON.parse(localStorage.getItem('g45bbjc1') || '{}') || {}; } catch (e) { return {}; } }
+/* 20261003v : clubs rangés PAR SAISON (g45bbjc2 = {an: {slug: [nom, logo]}}) — un joueur transféré gardait son club actuel sur les saisons passées. */
+function _g45BbAnDe(t) { var d = new Date(t || Date.now()); return d.getMonth() >= 7 ? d.getFullYear() : d.getFullYear() - 1; }
+function _g45BbClubsLire() { try { return JSON.parse(localStorage.getItem('g45bbjc2') || '{}') || {}; } catch (e) { return {}; } }
 async function _g45BbFeuille(m) {
   var cle = 'g45bbf1_' + m.u, c = null;
   try { c = JSON.parse(localStorage.getItem(cle) || 'null'); } catch (e) {}
@@ -66914,9 +66916,9 @@ async function _g45BbFeuille(m) {
   if (!F || (!F.h.P.length && !F.a.P.length)) throw new Error('feuille vide');
   /* club de chaque joueur (pour les leaders) */
   try {
-    var J = _g45BbClubsLire();
-    [['home', m.h], ['away', m.a]].forEach(function (z) { (sp[z[0]] || []).forEach(function (x) { var s = x.player && x.player.slug; if (s) J[s] = [z[1].n, z[1].l || '']; }); });
-    localStorage.setItem('g45bbjc1', JSON.stringify(J));
+    var J = _g45BbClubsLire(), A = J[_g45BbAnDe(m.t)] = J[_g45BbAnDe(m.t)] || {};
+    [['home', m.h], ['away', m.a]].forEach(function (z) { (sp[z[0]] || []).forEach(function (x) { var s = x.player && x.player.slug; if (s) A[s] = [z[1].n, z[1].l || '']; }); });
+    localStorage.setItem('g45bbjc2', JSON.stringify(J));
   } catch (e) {}
   try { localStorage.setItem(cle, JSON.stringify({ F: F, fini: !!m.p, x: Date.now() + 120000 })); } catch (e) {}
   return F;
@@ -66947,10 +66949,10 @@ async function _g45BbFeuille(m) {
   }
 })();
 /* Leaders : club depuis g45bbjc1 ; s'il en manque, lecture des feuilles des derniers matchs joués (8 max par affichage). */
-var _g45BbClubsLu = 0;
+var _g45BbClubsLu = {};
 async function _g45BbClubsCompleter(an) {
-  if (_g45BbClubsLu) return false;
-  _g45BbClubsLu = 1;
+  if (_g45BbClubsLu[an]) return false;
+  _g45BbClubsLu[an] = 1;
   try {
     var anc = _g45PaComp, g;
     try { _g45PaComp = 'rs'; g = await _g45ProaMatchs(an); } finally { _g45PaComp = anc; }
@@ -66959,15 +66961,15 @@ async function _g45BbClubsCompleter(an) {
     for (var i = 0; i < aLire.length; i += 4) await Promise.all(aLire.slice(i, i + 4).map(function (m) { return _g45BbFeuille(m).catch(function () {}); }));
     return true;
   } catch (e) { return false; }
-  finally { setTimeout(function () { _g45BbClubsLu = 0; }, 120000); }
+  finally { setTimeout(function () { _g45BbClubsLu[an] = 0; }, 120000); }
 }
 (function () {
   if (typeof _g45BbLeaders !== 'function' || _g45BbLeaders._g45Club) return;
   var o = _g45BbLeaders;
   _g45BbLeaders = async function (an, cat) {
-    var L = await o.apply(this, arguments), J = _g45BbClubsLire(), manque = false;
+    var L = await o.apply(this, arguments), J = _g45BbClubsLire()[an] || {}, manque = false;
     L = L.map(function (x) { var c = x.sl && J[x.sl]; if (c && !x.club) { x = Object.assign({}, x, { club: c[0], cl: c[1] }); } if (!x.club) manque = true; return x; });
-    if (manque && an === _g45ElSaison()) _g45BbClubsCompleter(an).then(function (lu) { if (lu && _g45BbSt.mode === 'jo' && document.getElementById('g45-el-body') && typeof _g45PsRedessiner === 'function') _g45PsRedessiner(); });
+    if (manque) _g45BbClubsCompleter(an).then(function (lu) { if (lu && _g45BbSt.mode === 'jo' && document.getElementById('g45-el-body') && typeof _g45PsRedessiner === 'function') _g45PsRedessiner(); });
     return L;
   };
   _g45BbLeaders._g45Club = true;
