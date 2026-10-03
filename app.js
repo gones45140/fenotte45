@@ -67230,3 +67230,82 @@ function _g45BbLvAppliquer(g, L) {
   }
 })();
 window._g45BbLvMeme = _g45BbLvMeme; window._g45BbLvTexte = _g45BbLvTexte; window._g45BbLvAppliquer = _g45BbLvAppliquer;
+
+/* ═══ PRO A — QUARTS-TEMPS D'UN MATCH FINI (20261004e, capture d'Antoine : « match fini j'ai pas les pts par 1/4 temps ») ═══
+   Le calendrier be-basketball n'a que le score final ; le direct Sofascore les donne mais disparaît à la fin. SONDÉ PAR ANTOINE
+   (Pau–Dijon) : la fiche /game/<uuid> a, par équipe, « pointsQuarter1..4, pointsOverTime » (home puis away, dans cet ordre).
+   Lus quand on DÉPLIE un match fini (Journées) ou qu'on ouvre sa fiche complète ; gardés POUR TOUJOURS (g45bbq1_<uuid> = {h, a, ho, ao}),
+   reposés ensuite sans aucune requête sur chaque match fini de la liste. */
+function _g45BbQuartsTexte(Fl) {
+  var re = /"pointsQuarter1":(\d+|null),"pointsQuarter2":(\d+|null),"pointsQuarter3":(\d+|null),"pointsQuarter4":(\d+|null),"pointsOverTime":(\d+|null)/g, L = [], x;
+  while ((x = re.exec(Fl)) && L.length < 2) L.push(x.slice(1).map(function (v) { return v === 'null' ? null : +v; }));
+  if (L.length < 2) return null;
+  return { h: L[0].slice(0, 4).filter(function (v) { return v != null; }), a: L[1].slice(0, 4).filter(function (v) { return v != null; }), ho: L[0][4], ao: L[1][4] };
+}
+function _g45BbQuartsCache(u) { try { return JSON.parse(localStorage.getItem('g45bbq1_' + u) || 'null'); } catch (e) { return null; } }
+function _g45BbQuartsPoser(m, Q) {
+  if (!m || !Q || !Q.h || !Q.h.length) return false;
+  m.h.q = Q.h.slice(); m.a.q = Q.a.slice(); m.h.ot = Q.ho ? [Q.ho] : []; m.a.ot = Q.ao ? [Q.ao] : [];
+  return true;
+}
+var _g45BbQuartsEnCours = {};
+async function _g45BbQuartsLire(m) {
+  var c = _g45BbQuartsCache(m.u); if (c) return c;
+  if (_g45BbQuartsEnCours[m.u]) return _g45BbQuartsEnCours[m.u];
+  _g45BbQuartsEnCours[m.u] = (async function () {
+    try {
+      var r = await fetch(_g45BbUrl('/game/' + m.u)); if (!r.ok) return null;
+      var Q = _g45BbQuartsTexte(_g45BbFlight(await r.text()));
+      if (Q && Q.h.length && m.p) { try { localStorage.setItem('g45bbq1_' + m.u, JSON.stringify(Q)); } catch (e) {} }
+      return Q;
+    } catch (e) { return null; } finally { delete _g45BbQuartsEnCours[m.u]; }
+  })();
+  return _g45BbQuartsEnCours[m.u];
+}
+(function _g45BbQuartsBrancher() {
+  /* 1) quarts-temps déjà connus reposés sur les matchs finis (aucune requête) */
+  if (typeof _g45ProaMatchs === 'function' && !_g45ProaMatchs._g45Q) {
+    var o = _g45ProaMatchs;
+    _g45ProaMatchs = async function () {
+      var g = await o.apply(this, arguments);
+      g.forEach(function (m) { if (m.p && m.u && !(m.h.q && m.h.q.length)) _g45BbQuartsPoser(m, _g45BbQuartsCache(m.u)); });
+      return g;
+    };
+    ['_g45Bb', '_g45Lv'].forEach(function (k) { _g45ProaMatchs[k] = o[k]; });
+    _g45ProaMatchs._g45Q = true; window._g45ProaMatchs = _g45ProaMatchs;
+  }
+  /* 2) match fini déplié sans quarts-temps → lecture de sa fiche, puis redessin sur place */
+  if (typeof g45ElOuvrir === 'function' && !g45ElOuvrir._g45Q) {
+    var ov = g45ElOuvrir;
+    g45ElOuvrir = function (id) {
+      var r = ov.apply(this, arguments);
+      try {
+        if (_g45ElLigue === 'proa' && _g45ElOuvert[id]) {
+          var g = ((_g45ElMem[_g45ElCle()] || {}).g) || [], m = g.filter(function (x) { return String(x.id) === String(id); })[0];
+          if (m && m.p && m.u && !(m.h.q && m.h.q.length)) _g45BbQuartsLire(m).then(function (Q) { if (_g45BbQuartsPoser(m, Q) && _g45ElLigue === 'proa') _g45ElRedessinerSurPlace(); });
+        }
+      } catch (e) {}
+      return r;
+    };
+    g45ElOuvrir._g45Q = true; window.g45ElOuvrir = g45ElOuvrir;
+  }
+  /* 3) fiche complète : quarts-temps posés avant l'affichage (connus) ou carte du haut refaite après lecture */
+  if (typeof g45ElFiche === 'function' && !g45ElFiche._g45Q) {
+    var fi = g45ElFiche;
+    g45ElFiche = async function (m, comp) {
+      if (m && m.u && m.p && comp === 'Pro A' && !(m.h.q && m.h.q.length)) _g45BbQuartsPoser(m, _g45BbQuartsCache(m.u));
+      var p = fi.apply(this, arguments);
+      if (m && m.u && m.p && comp === 'Pro A' && !(m.h.q && m.h.q.length)) {
+        _g45BbQuartsLire(m).then(function (Q) {
+          if (!_g45BbQuartsPoser(m, Q)) return;
+          var mo = document.getElementById('g45-sg-modal'), box = mo && mo.firstElementChild, carte = box && box.children[1];
+          if (carte && typeof _g45EbCarte === 'function') carte.outerHTML = _g45EbCarte({ m: m, comp: comp });
+        });
+      }
+      return p;
+    };
+    ['_g45Lv', '_g45Bb'].forEach(function (k) { g45ElFiche[k] = fi[k]; });
+    g45ElFiche._g45Q = true; window.g45ElFiche = g45ElFiche;
+  }
+})();
+window._g45BbQuartsTexte = _g45BbQuartsTexte;
