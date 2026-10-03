@@ -1080,6 +1080,9 @@ RÉGLÉ (worker, 01/10) : cron « exceededCpu » (cpuTimeMs 10) à CHAQUE passag
   donné, À REDÉPLOYER) : budget `_lourd()` de 4 lectures lourdes par passage, `sumLire` (fiche d'un match lue une fois par passage,
   partagée équipe du mur / ⭐), rotation `_tourne` (paris, ⭐, détection et traitement des équipes en direct). Notification possiblement
   retardée de 5-10 min un soir très chargé. À vérifier dans Observability le prochain soir chargé.
+  03/10 — « seulement celles d'après match » : les cases « Types d'alertes » (Outils → Notifications, rec.ev compo/start/goals/end)
+  n'étaient respectées que pour les équipes du mur (evaluateMatch) ; paris (b…) et ⭐ (f…) les ignoraient → worker `_evType(tag)` /
+  `_evRefuse(rec, ev)` (bstart/fstart → start ; bscore/fscore/bvar/bqt → goals ; bend/fend → end ; verdicts, jambes, rappels : toujours).
 À VOIR (en attente d'un retour d'Antoine) :
 - Notifications multi-appareils (28g + worker redéployé : « N appareils reliés ») :
   vérifier qu'un pari saisi sur PC fait sonner le téléphone. Détail technique :
