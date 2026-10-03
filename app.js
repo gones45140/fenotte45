@@ -67555,3 +67555,85 @@ async function _g45F1Virages(cle, an) {
   _g45F1OffDessiner._g45Vi = true; _g45F1OffDessiner._g45Ct = d._g45Ct;
 })();
 window._g45F1PitVoie = _g45F1PitVoie;
+
+/* ═══ 🗺️ F1 — PLAN DU CIRCUIT SOMBRE DANS LA FICHE DU GP (20261004i, proposé puis validé « OUI ») ═══
+   Remplace l'image Wikipédia (claire, floue) par le tracé de la carte en direct : ligne blanche épaisse sur fond sombre, 3 secteurs
+   en couleur (rouge / bleu / jaune, d'après les temps de secteur du tour de référence OpenF1), ligne de départ, voie des stands en
+   pointillé, numéros des virages (MultiViewer) si le circuit y est. Source du tracé : OpenF1 (`_g45F1TraceLire`, séances finies du
+   week-end) ; sinon contour MultiViewer x[] / y[] (GP à venir ; clé du circuit = circuit_key des séances OpenF1 du GP, NON vérifié
+   identique à la clé F1 — sondé seulement côté F1 : Malaisie = 12) ; sinon l'image Wikipédia reste. Longueur / nombre de tours :
+   PAS affichés (unités des coordonnées non vérifiées). Sens / orientation : comme la carte en direct (y inversé, pas de rotation). */
+async function _g45F1MvLire(cle, an) {
+  if (!cle) return null;
+  var k = 'g45f1mv2_' + cle;
+  try { var c = JSON.parse(localStorage.getItem(k) || 'null'); if (c && (c.v || Date.now() - c.t < 7 * 864e5)) return c.v || null; } catch (e) {}
+  var v = null;
+  for (var y = an; y >= an - 6 && !v; y--) {
+    try {
+      var r = await fetch(FD_PROXY + '?host=mv&path=' + encodeURIComponent('/api/v1/circuits/' + cle + '/' + y));
+      if (r.status === 403) break;
+      if (!r.ok) continue;
+      var j = await r.json();
+      if (j && Array.isArray(j.x) && j.x.length > 50) v = {
+        x: j.x, y: j.y,
+        c: (j.corners || []).map(function (c) { var t = c.trackPosition || {}; return { n: c.number, x: t.x, y: t.y, angle: c.angle }; }).filter(function (c) { return c.x != null; })
+      };
+    } catch (e) {}
+  }
+  try { localStorage.setItem(k, JSON.stringify(v ? { v: v } : { t: Date.now() })); } catch (e) {}
+  return v;
+}
+async function _g45F1CleOF1(ev) {
+  try { var s = await _g45OF1EventSessions(ev); var x = (s || []).filter(function (q) { return q.circuit_key; })[0]; return x ? x.circuit_key : null; } catch (e) { return null; }
+}
+function _g45F1PlanSvg(tr, mv) {
+  var pts = tr ? tr.P.map(function (p) { return [p[1], p[2], p[0]]; }) : mv.x.map(function (x, i) { return [x, mv.y[i], null]; });
+  if (!pts.length) return '';
+  var xs = pts.map(function (p) { return p[0]; }), ys = pts.map(function (p) { return -p[1]; });
+  var x0 = Math.min.apply(null, xs), x1 = Math.max.apply(null, xs), y0 = Math.min.apply(null, ys), y1 = Math.max.apply(null, ys), pad = Math.max(x1 - x0, y1 - y0) * 0.07;
+  var u = Math.max(x1 - x0, y1 - y0) / 100;
+  var vb = (x0 - pad) + ' ' + (y0 - pad) + ' ' + (x1 - x0 + 2 * pad) + ' ' + (y1 - y0 + 2 * pad);
+  var chemin = function (L) { return L.map(function (p, i) { return (i ? 'L' : 'M') + p[0] + ' ' + (-p[1]); }).join(' '); };
+  var h = '<svg viewBox="' + vb + '" style="width:100%;max-height:360px;display:block;" xmlns="http://www.w3.org/2000/svg">'
+    + '<path d="' + chemin(pts) + ' Z" fill="none" stroke="#3a4567" stroke-width="' + (u * 3.4) + '" stroke-linejoin="round"/>';
+  /* 3 secteurs (tracé OpenF1 : temps de chaque point) */
+  if (tr && tr.D && tr.D[0]) {
+    var b1 = tr.D[0], b2 = tr.D[0] + tr.D[1], coul = ['#ff4d6a', '#4d9bff', '#f5c542'], seg = [[], [], []];
+    pts.forEach(function (p, i) { var s = p[2] < b1 ? 0 : p[2] < b2 ? 1 : 2; seg[s].push(p); if (i && seg[s].length === 1 && seg[s - 1 >= 0 ? s - 1 : 0].length) seg[s].unshift(seg[s - 1][seg[s - 1].length - 1]); });
+    seg[2].push(pts[0]);
+    seg.forEach(function (L, s) { if (L.length > 1) h += '<path d="' + chemin(L) + '" fill="none" stroke="' + coul[s] + '" stroke-width="' + (u * 1.6) + '" stroke-linejoin="round" stroke-linecap="round"/>'; });
+  } else h += '<path d="' + chemin(pts) + ' Z" fill="none" stroke="#e8ecf5" stroke-width="' + (u * 1.6) + '" stroke-linejoin="round"/>';
+  if (tr && tr.pit && tr.pit.length > 3) h += '<path d="' + chemin(tr.pit) + '" fill="none" stroke="#fff" stroke-width="' + (u * 0.7) + '" stroke-dasharray="' + (u * 1.4) + ' ' + (u * 1.2) + '" opacity=".85"/>';
+  var s0 = pts[0];
+  h += '<circle cx="' + s0[0] + '" cy="' + (-s0[1]) + '" r="' + (u * 1.8) + '" fill="#fff" stroke="#000" stroke-width="' + (u * 0.4) + '"/>';
+  ((mv && mv.c) || []).forEach(function (c) {
+    var a = (c.angle || 0) * Math.PI / 180, cx = c.x + Math.cos(a) * u * 7, cy = c.y + Math.sin(a) * u * 7;
+    h += '<g transform="translate(' + cx.toFixed(0) + ' ' + (-cy).toFixed(0) + ')"><circle r="' + (u * 2.8) + '" fill="#1a2235" stroke="#8b97c4" stroke-width="' + (u * 0.35) + '"/>'
+      + '<text text-anchor="middle" dy="' + (u * 1.05) + '" font-size="' + (u * 3) + '" font-weight="800" fill="#fff">' + c.n + '</text></g>';
+  });
+  return h + '</svg>';
+}
+(function _g45F1PlanBrancher() {
+  if (typeof _g45F1Map !== 'function' || _g45F1Map._g45Plan) return;
+  var o = _g45F1Map;
+  _g45F1Map = async function (ev) {
+    var r = o.apply(this, arguments);   /* image Wikipédia d'abord (secours), remplacée dès que le tracé est prêt */
+    try {
+      var an = new Date(ev.date).getFullYear();
+      var res = await Promise.all([_g45F1TraceLire(ev), _g45F1CleOF1(ev).then(function (k) { return k ? _g45F1MvLire(k, an) : null; })]);
+      var tr = res[0], mv = res[1];
+      if (!tr && !mv) return r;
+      await r;
+      var box = document.getElementById('f1-map'); if (!box) return;
+      var leg = '<span style="color:#ff4d6a;">■</span> Secteur 1 · <span style="color:#4d9bff;">■</span> Secteur 2 · <span style="color:#f5c542;">■</span> Secteur 3';
+      box.innerHTML = '<div style="background:rgba(11,16,29,.92);border-radius:12px;padding:10px;margin-bottom:10px;color:#fff;">'
+        + '<div style="font-size:14px;font-weight:800;margin-bottom:6px;">🏁 Tracé du circuit</div>' + _g45F1PlanSvg(tr, mv)
+        + '<div style="font-size:13px;color:#fff;margin-top:6px;line-height:1.5;">' + (tr && tr.D ? leg + '<br>' : '')
+        + '⚪ ligne de départ' + (tr && tr.pit ? ' · ┅ voie des stands' : '') + (mv && mv.c && mv.c.length ? ' · ① virages' : '')
+        + '<br><span style="color:#c9d3ee;">' + (tr ? 'Tracé GPS d\'un tour (OpenF1)' : 'Tracé MultiViewer') + (mv && mv.c && mv.c.length ? ' · virages MultiViewer' : '') + '</span></div></div>';
+    } catch (e) {}
+    return r;
+  };
+  _g45F1Map._g45Plan = true; window._g45F1Map = _g45F1Map;
+})();
+window._g45F1PlanSvg = _g45F1PlanSvg;

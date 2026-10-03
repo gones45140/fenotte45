@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261004h, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261004i, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -903,6 +903,10 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   (à voir à Austin). Zones d'aileron (pointillés rouges de F1 Pulse) : aucune source gratuite trouvée.
   20261004h — OpenF1 429 « Too Many Requests » (capture d'Antoine) : demandes du tracé espacées de 1,2 s, 429 → attente 4/8/12 s ; tracé
   absent → nouvel essai toutes les 60 s (5 fois) tant que la fiche du GP est ouverte.
+  20261004i (« OUI ») — PLAN DU CIRCUIT dans la fiche du GP (`_g45F1Map` enveloppée, `_g45F1PlanBrancher`) : l'image Wikipédia s'affiche
+  d'abord puis est remplacée par une boîte sombre « 🏁 Tracé du circuit » `_g45F1PlanSvg(tr, mv)` : 3 secteurs rouge / bleu / jaune (tr.D),
+  voie des stands pointillée, ligne de départ, virages ; tracé OpenF1 (`_g45F1TraceLire`, clé circuit_key `_g45F1CleOF1`) sinon contour
+  MultiViewer `_g45F1MvLire` (g45f1mv2_). Aucun tracé (GP pas encore couru, pas de MultiViewer) → image Wikipédia gardée.
   02/10/2026 (FP2 Malaisie) — /f1live répondait 502 : la route n'ENVOYAIT ni la poignée de main SignalR ni le Subscribe
   (seul /f1test le faisait) → worker corrigé (fichier complet donné à Antoine, à redéployer). /f1test OK pendant FP2 (negotiate 200,
   WS 101, type 3 reçu). PIÈGE : la F1 nomme ce GP « Bahrain Grand Prix » (« … BAHRAIN GRAND PRIX IN MALAYSIA 2026 »), lieu
