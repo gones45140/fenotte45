@@ -40834,7 +40834,7 @@ async function g45F1Open(){
   el.innerHTML='<button onclick="loadResultatsTab()" style="border:none;background:rgba(255,255,255,.06);color:var(--t2);border-radius:8px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;margin-bottom:10px;">← Sports</button>'
     +'<div class="sec" style="margin-top:0;">🏎️ Formule 1</div>'
     +'<div style="display:flex;align-items:center;gap:8px;padding:20px;color:var(--t3);"><div style="width:14px;height:14px;border:2px solid rgba(77,132,255,.2);border-top-color:#e8002d;border-radius:50%;animation:spin .8s linear infinite;"></div>Chargement du calendrier F1...</div>';
-  var year=new Date().getFullYear();
+  var year=(typeof _g45F1AnSel==='function')?_g45F1AnSel():new Date().getFullYear();   /* 20261004j : saison choisie (Saison ▾) */
   try{
     if(_g45F1Cache.year!==year || !_g45F1Cache.events.length){
       var r=await fetch('https://site.api.espn.com/apis/site/v2/sports/racing/f1/scoreboard?dates='+year);
@@ -40849,7 +40849,8 @@ async function g45F1Open(){
   var evs=_g45F1Cache.events.slice().sort(function(a,b){ return new Date(a.date)-new Date(b.date); });
   function ea(x){return String(x==null?'':x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
   var html='<button onclick="loadResultatsTab()" style="border:none;background:rgba(255,255,255,.06);color:var(--t2);border-radius:8px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;margin-bottom:10px;">← Sports</button>'
-    +'<div class="sec" style="margin-top:0;">🏎️ Formule 1 — Saison '+year+' ('+evs.length+' GP)</div>';
+    +'<div class="sec" style="margin-top:0;">🏎️ Formule 1 — Saison '+year+' ('+evs.length+' GP)</div>'
+    +((typeof _g45F1AnSelect==='function')?_g45F1AnSelect(year):'');   /* 20261004j */
   html+='<button onclick="g45F1Standings(\'d\')" style="border:none;cursor:pointer;font-size:11px;font-weight:700;padding:8px 12px;border-radius:8px;background:rgba(240,200,40,.12);border:1px solid rgba(240,200,40,.4);color:#f0c828;margin-bottom:10px;">🏆 Classements du championnat</button>';
   var _fsn=0;
   html+=evs.map(function(ev){
@@ -42136,7 +42137,7 @@ async function g45F1Standings(tab){
   _g45F1LiveStop();
   var el=document.getElementById('t-resultats'); if(!el) return;
   tab=tab||'d';
-  var year=new Date().getFullYear();
+  var year=(typeof _g45F1AnSel==='function')?_g45F1AnSel():new Date().getFullYear();   /* 20261004j : saison choisie (Saison ▾) */
   function ea(x){return String(x==null?'':x).replace(/&/g,'&amp;').replace(/</g,'&lt;');}
   function chip(id,lbl,on){ return '<button onclick="g45F1Standings(\''+id+'\')" style="border:none;cursor:pointer;font-size:11px;font-weight:700;padding:7px 11px;border-radius:8px;background:'+(on?'rgba(232,0,45,.18);color:#ff6b81':'rgba(255,255,255,.06);color:var(--t2)')+';">'+lbl+'</button>'; }
   el.innerHTML='<button onclick="g45F1Open()" style="border:none;background:rgba(255,255,255,.06);color:var(--t2);border-radius:8px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;margin-bottom:10px;">← Saison F1</button>'
@@ -42225,6 +42226,7 @@ async function g45F1Standings(tab){
 window.g45F1Standings=g45F1Standings;
 async function g45DirectF1(){
   try{ showTab('t-resultats', null); }catch(e){}
+  window._g45F1An=0;   /* 20261004j : direct / GP du bandeau = toujours la saison en cours */
   await g45F1Open();
   try{
     var live=_g45F1Cache.events.filter(function(e){ var st=(e.status&&e.status.type)||{}; return st.state==='in'; })[0];
@@ -42237,6 +42239,7 @@ async function g45DirectF1(){
 window.g45DirectF1=g45DirectF1;
 async function g45GoF1(eid){
   try{ showTab('t-resultats', null); }catch(e){}
+  window._g45F1An=0;   /* 20261004j : direct / GP du bandeau = toujours la saison en cours */
   await g45F1Open();
   if(eid) g45F1Detail(eid);
 }
@@ -67637,3 +67640,34 @@ function _g45F1PlanSvg(tr, mv) {
   _g45F1Map._g45Plan = true; window._g45F1Map = _g45F1Map;
 })();
 window._g45F1PlanSvg = _g45F1PlanSvg;
+
+/* ═══ 20261004j — F1 : SAISONS PASSÉES (maquette validée « OUI ») ═══
+   Avant : calendrier et championnat toujours sur l'année en cours (« j'ai que 2026 ? »).
+   SONDÉ PAR ANTOINE : ESPN racing/f1/scoreboard?dates=<an> rend 2025 (24 GP), 2020 (17), 2010 (19) ;
+   championnat = Jolpica (ergast/f1/<an>/…), toutes saisons. Choix gardé en mémoire seulement
+   (window._g45F1An, 0 = en cours) et remis à 0 quand on revient sur l'écran des sports (loadResultatsTab). */
+var _G45_F1_AN_MIN = 2010;
+function _g45F1AnSel() {
+  var cur = new Date().getFullYear(), a = +window._g45F1An || 0;
+  return (a >= _G45_F1_AN_MIN && a <= cur) ? a : cur;
+}
+function _g45F1AnSelect(year) {
+  var cur = new Date().getFullYear(), o = '';
+  for (var a = cur; a >= _G45_F1_AN_MIN; a--) o += '<option value="' + a + '"' + (a === year ? ' selected' : '') + '>Saison ' + a + '</option>';
+  return '<div style="margin:0 0 10px;"><select onchange="g45F1An(this.value)" aria-label="Saison" style="background:#1d2540;color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:8px;padding:8px 10px;font-size:14px;font-weight:700;cursor:pointer;">' + o + '</select>'
+    + (year !== cur ? ' <span style="font-size:13px;color:#c9d3ee;">résultats seulement</span>' : '') + '</div>';
+}
+function g45F1An(v) {
+  var a = parseInt(v, 10) || 0;
+  window._g45F1An = (a === new Date().getFullYear()) ? 0 : a;
+  try { _g45F1LiveStop(); } catch (e) {}
+  g45F1Open();
+}
+window.g45F1An = g45F1An; window._g45F1AnSel = _g45F1AnSel; window._g45F1AnSelect = _g45F1AnSelect;
+(function _g45F1AnBrancher() {
+  if (typeof loadResultatsTab !== 'function' || loadResultatsTab._g45F1An) return;
+  var o = loadResultatsTab;
+  loadResultatsTab = function () { window._g45F1An = 0; return o.apply(this, arguments); };
+  loadResultatsTab._g45F1An = true; window.loadResultatsTab = loadResultatsTab;
+})();
+
