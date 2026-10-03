@@ -67115,3 +67115,109 @@ async function _g45BbEffectif(z, x) {
   };
   _g45F1LiveStart._g45V = true; window._g45F1LiveStart = _g45F1LiveStart;
 })();
+
+/* ═══ 🔴 PRO A EN DIRECT VIA SOFASCORE (20261004b, demande d'Antoine : « Sofa aussi le donne ») ═══
+   be-basketball n'a pas de direct (20261004a). Sofascore par RapidAPI (sofascore6, clé du worker, DÉJÀ utilisé pour la tendance
+   du public) : SONDÉ PAR ANTOINE pendant Bourg–Chalon (03/10) : /api/sofascore/v1/match/live?sport_slug=basketball = 44 matchs,
+   145 Ko (la liste du jour pèse 2,3 Mo : écartée) → {id, homeTeam.name « JL Bourg Basket », awayTeam.name « Élan Chalon »,
+   tournament.name « France Pro A », status{type inprogress, description « 3rd quarter »}, homeScore{current, period1..3},
+   time{played 1439 s, periodLength 600}}. QUOTA : la clé est celle du worker, PARTAGÉE par tous → le worker garde cette
+   réponse 2 min pour tout le monde (au plus 30 demandes / heure de match, quel que soit le nombre d'utilisateurs).
+   Lu SEULEMENT si un match de Pro A est commencé et pas fini (be-basketball) ; écran Pro A ouvert → relu toutes les 2 min.
+   Club retrouvé par MOTS du nom (≥ 4 lettres, hors mots génériques) — les DEUX clubs doivent correspondre ; ASVEL : alias. */
+var _g45BbLv = { t: 0, L: null, enCours: null, timer: null };
+var _G45_BB_LV_VIDES = { basket: 1, basketball: 1, club: 1, elan: 1, sport: 1, sporting: 1, union: 1, jeunesse: 1, laique: 1, sarthe: 1, dordogne: 1 };
+function _g45BbLvMots(n) {
+  var s = String(n || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  if (/villeurbanne|asvel|ldlc/.test(s)) s += ' asvel';
+  return s.split(/[^a-z0-9]+/).filter(function (w) { return w.length >= 4 && !_G45_BB_LV_VIDES[w]; });
+}
+function _g45BbLvMeme(a, b) { var A = _g45BbLvMots(a), B = _g45BbLvMots(b); return A.some(function (w) { return B.indexOf(w) >= 0; }); }
+async function _g45BbLvLire() {
+  var now = Date.now();
+  if (_g45BbLv.L && now - _g45BbLv.t < 110000) return _g45BbLv.L;
+  if (_g45BbLv.enCours) return _g45BbLv.enCours;
+  _g45BbLv.enCours = (async function () {
+    try {
+      if (typeof g45Sofa6 !== 'function') return null;
+      /* « faut pas que ça explose le reste » (Antoine) : quota RapidAPI partagé avec la tendance du public →
+         429 = direct Pro A coupé 1 h ; 40 lectures max par jour et par appareil (clé g45bblv_j). */
+      var jour = new Date().toISOString().slice(0, 10), C = { j: jour, n: 0, ko: 0 };
+      try { var c0 = JSON.parse(localStorage.getItem('g45bblv_j') || 'null'); if (c0 && c0.j === jour) C = c0; else if (c0) C.ko = c0.ko || 0; } catch (e) {}
+      if ((C.ko && Date.now() < C.ko) || C.n >= 40) return _g45BbLv.L;
+      C.n++;
+      var j = await g45Sofa6('/api/sofascore/v1/match/live?sport_slug=basketball');
+      if (j && j.__err === 429) C.ko = Date.now() + 3600000;
+      try { localStorage.setItem('g45bblv_j', JSON.stringify(C)); } catch (e) {}
+      if (!j || j.__err) return _g45BbLv.L;
+      var L = Array.isArray(j) ? j : (j.events || j.data || Object.keys(j).map(function (k) { return j[k]; }));
+      _g45BbLv.L = L.filter(function (e) { return e && /pro a|elite|lnb/i.test(((e.tournament || {}).name) || '') && /france/i.test(JSON.stringify((e.tournament || {}).category || e.tournament || {}) + ((e.homeTeam || {}).country || {}).name); });
+      _g45BbLv.t = Date.now();
+      return _g45BbLv.L;
+    } catch (e) { return _g45BbLv.L; } finally { _g45BbLv.enCours = null; }
+  })();
+  return _g45BbLv.enCours;
+}
+function _g45BbLvTexte(e) {
+  var st = e.status || {}, d = String(st.description || ''), t = e.time || {}, n = (d.match(/(\d)(st|nd|rd|th) quarter/i) || [])[1];
+  if (/half/i.test(d)) return 'Mi-temps';
+  if (/break|pause/i.test(d)) return 'Pause';
+  if (/overtime/i.test(d)) return 'Prolongation';
+  if (!n) return d ? d : 'en cours';
+  var pl = +t.periodLength || 600, rest = n * pl - (+t.played || 0), txt = 'QT' + n;
+  if (t.played != null && rest >= 0 && rest <= pl) txt += ' · ' + String(Math.floor(rest / 60)).padStart(2, '0') + ':' + String(rest % 60).padStart(2, '0');
+  return txt;
+}
+function _g45BbLvAppliquer(g, L) {
+  var n = 0;
+  g.forEach(function (m) {
+    if (m.p || !m.t || Date.now() < m.t - 600000 || Date.now() - m.t > 4 * 3600000) return;
+    var e = (L || []).filter(function (x) { return _g45BbLvMeme(m.h.n, (x.homeTeam || {}).name) && _g45BbLvMeme(m.a.n, (x.awayTeam || {}).name); })[0];
+    if (!e) return;
+    var hs = e.homeScore || {}, as = e.awayScore || {};
+    var per = function (s) { var q = []; for (var i = 1; i <= 4; i++) if (s['period' + i] != null) q.push(s['period' + i]); return q; };
+    var ot = function (s) { return Object.keys(s).filter(function (k) { return /^overtime\d*$/.test(k); }).sort().map(function (k) { return s[k]; }); };
+    m.h.s = hs.current != null ? +hs.current : m.h.s; m.a.s = as.current != null ? +as.current : m.a.s;
+    m.h.q = per(hs); m.a.q = per(as); m.h.ot = ot(hs); m.a.ot = ot(as);
+    m.lvTxt = _g45BbLvTexte(e); n++;
+  });
+  return n;
+}
+(function _g45BbLvBrancher() {
+  if (typeof _g45ProaMatchs !== 'function' || _g45ProaMatchs._g45Lv) return;
+  var o = _g45ProaMatchs;
+  _g45ProaMatchs = async function (an) {
+    var g = await o.apply(this, arguments);
+    var actif = g.some(function (m) { return !m.p && m.t && Date.now() > m.t && Date.now() - m.t < 4 * 3600000; });
+    if (!actif) return g;
+    try {
+      var L = await Promise.race([_g45BbLvLire(), new Promise(function (ok) { setTimeout(function () { ok(null); }, 8000); })]);
+      if (L) _g45BbLvAppliquer(g, L);
+    } catch (e) {}
+    /* écran Pro A ouvert : relecture toutes les 2 min tant qu'un match est en cours */
+    if (!_g45BbLv.timer) _g45BbLv.timer = setInterval(async function () {
+      var vu = _g45ElBox && document.body.contains(_g45ElBox) && _g45ElLigue === 'proa' && _g45ElVue === 'journees';
+      if (!vu) { clearInterval(_g45BbLv.timer); _g45BbLv.timer = null; return; }
+      if (document.hidden) return;
+      try {
+        var g2 = await _g45ProaMatchs(_g45ElAn());
+        if (!g2.some(function (m) { return !m.p && m.t && Date.now() > m.t && Date.now() - m.t < 4 * 3600000; })) { clearInterval(_g45BbLv.timer); _g45BbLv.timer = null; }
+        if (_g45ElLigue === 'proa' && _g45ElVue === 'journees') _g45ElRedessinerSurPlace();
+      } catch (e) {}
+    }, 120000);
+    return g;
+  };
+  _g45ProaMatchs._g45Lv = true; _g45ProaMatchs._g45Bb = true; window._g45ProaMatchs = _g45ProaMatchs;
+  /* quart-temps sous le score « 🔴 63 – 41 » dans Journées */
+  if (typeof _g45ElMatchHtml === 'function' && !_g45ElMatchHtml._g45Lv) {
+    var mh = _g45ElMatchHtml;
+    _g45ElMatchHtml = function (m) {
+      var h = mh.apply(this, arguments);
+      if (!m.lvTxt || m.p) return h;
+      var cle = '🔴 ' + (+m.h.s || 0) + ' – ' + (+m.a.s || 0) + '</span>';
+      return h.replace(cle, '🔴 ' + (+m.h.s || 0) + ' – ' + (+m.a.s || 0) + '<span style="display:block;font-size:12px;font-weight:700;color:#ffb3b3;">' + _g45ElEsc(m.lvTxt) + '</span></span>');
+    };
+    _g45ElMatchHtml._g45Lv = true; _g45ElMatchHtml._g45Bb = true; window._g45ElMatchHtml = _g45ElMatchHtml;
+  }
+})();
+window._g45BbLvMeme = _g45BbLvMeme; window._g45BbLvTexte = _g45BbLvTexte; window._g45BbLvAppliquer = _g45BbLvAppliquer;

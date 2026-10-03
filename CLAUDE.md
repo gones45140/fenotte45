@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261004a, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261004b, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1050,6 +1050,12 @@ PRO A — BE-BASKETBALL BRANCHÉ (20261003r, maquette validée « oui ») : bloc
   20261004a — PAS DE DIRECT chez be-basketball (SONDÉ PAR ANTOINE pendant Bourg–Chalon 03/10 : liste marking none + points null,
   fiche /game 0-0, /games-of-the-day/direct absente, bebasket.fr « - - ») → score seulement à la fin ; mois relu toutes les 3 min si un
   match est commencé (`_g45BbMois`), worker : calendrier bebasket traité comme « live » (cache 60 s, À REDÉPLOYER).
+  20261004b — PRO A EN DIRECT VIA SOFASCORE (RapidAPI sofascore6, clé du worker PARTAGÉE) : SONDÉ PAR ANTOINE (Bourg–Chalon) /api/sofascore/v1/match/live?sport_slug=basketball
+  (145 Ko ; la liste du jour = 2,3 Mo, écartée) → tournament.name « France Pro A », homeTeam.name « JL Bourg Basket », status.description
+  « 3rd quarter », homeScore{current, period1..}, time{played s, periodLength}. `_g45BbLvLire` (seulement si un match est commencé),
+  `_g45BbLvAppliquer` (les DEUX clubs par mots ≥ 4 lettres `_g45BbLvMeme`, alias ASVEL), `_g45BbLvTexte` (QT3 · 06:01), écran Journées relu
+  toutes les 2 min. QUOTA (« faut pas que ça explose le reste ») : worker cache 120 s sur match/live (À REDÉPLOYER), 429 → coupé 1 h,
+  40 lectures / jour / appareil (g45bblv_j).
   Ancienne note (02/10) : www.be-basketball.com (SAS NEO BASKET, Montarnaud) a les stats Betclic ÉLITE 2026-27
   (équipes : ORTG, DRTG, NRTG, POSS., PTS, REB… ; joueurs ; calendrier). robots.txt : seuls /_health, /my-account/*,
   /manage-newsletters/* interdits ; Legal Notice : SEULES les PHOTOS sont protégées (reproduction interdite sans accord écrit).
