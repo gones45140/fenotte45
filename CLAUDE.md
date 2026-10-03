@@ -227,6 +227,8 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   écrase tout) → équipes NHL/NBA/NFL/MLB effacées ; et `_g45ResolveTeam` ne cherche qu'en foot.
   Hors foot : id + championnat depuis `g45TeamsPerso()` (même sport) puis étoile Suivies ;
   rien trouvé = pas envoyée. Détection des buts hors foot : côté Worker (code NON vu ici).
+  CONFIRMÉ (capture d'Antoine, 03/10 05:14) : notifications NHL reçues — chaque BUT (« Hurricanes 1-4 Capitals · Aho Goal (sup. num.)
+  … — passes … »), « 🎯 Pari — fin du match », « ❌ Pari PERDU », « ⏱️ Fin du match Carolina Hurricanes 2-5 Washington Capitals ».
 - PWA gones45 : index.html déclare manifest.json (icônes locales icon-192/512.png,
   display standalone). fenotte45 : manifeste PAS encore déclaré dans indexfenotte.html.
 - 20261003e : la fenêtre générique sert AUSSI au foot depuis Suivies (France–Italie) → libellés foot ajoutés à
