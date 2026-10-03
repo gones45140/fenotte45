@@ -67646,7 +67646,7 @@ window._g45F1PlanSvg = _g45F1PlanSvg;
    SONDÉ PAR ANTOINE : ESPN racing/f1/scoreboard?dates=<an> rend 2025 (24 GP), 2020 (17), 2010 (19) ;
    championnat = Jolpica (ergast/f1/<an>/…), toutes saisons. Choix gardé en mémoire seulement
    (window._g45F1An, 0 = en cours) et remis à 0 quand on revient sur l'écran des sports (loadResultatsTab). */
-var _G45_F1_AN_MIN = 2010;
+var _G45_F1_AN_MIN = 1950;   /* 20261004k : SONDÉ PAR ANTOINE, ESPN rend 1950 (7 GP), 1960, 1970, 1980, 1990, 1995, 2005 */
 function _g45F1AnSel() {
   var cur = new Date().getFullYear(), a = +window._g45F1An || 0;
   return (a >= _G45_F1_AN_MIN && a <= cur) ? a : cur;
