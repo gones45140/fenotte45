@@ -65418,7 +65418,12 @@ async function _g45EbResoudre(nom) {
     var anc = _g45PaComp; _g45PaComp = 'rs';
     var g = []; try { g = await _g45ProaMatchs(_g45EbAnCour()); } finally { _g45PaComp = anc; }
     var vu = {};
-    g.forEach(function (m) { [m.h, m.a].forEach(function (s) { if (!out.pa && !vu[s.c] && _g45EbCorrespond(nom, [s.n].concat(e ? e.al : []))) { out.pa = s.c; out.pan = s.n; if (!out.l) out.l = s.l; } vu[s.c] = 1; }); });
+    /* 20261003x — BUG : la liste comparée mêlait le nom Pro A ET les alias Euroleague → un club Euroleague du mur (ASVEL)
+       était rattaché au PREMIER club Pro A lu. Désormais : le nom du mur ou un alias Euroleague doit correspondre AU NOM PRO A.
+       be-basketball appelle l'ASVEL « Lyon-Villeurbanne » (slug lyon-villeurbanne vu dans la console d'Antoine) → alias ajouté. */
+    var noms = [nom].concat(e ? e.al : []);
+    if (/asvel|villeurbanne/i.test(noms.join(' '))) noms.push('Lyon-Villeurbanne', 'LDLC ASVEL');
+    g.forEach(function (m) { [m.h, m.a].forEach(function (s) { if (!out.pa && !vu[s.c] && noms.some(function (x) { return _g45EbCorrespond(x, [s.n]); })) { out.pa = s.c; out.pan = s.n; if (!out.l) out.l = s.l; } vu[s.c] = 1; }); });
   } catch (e2) {}
   var r = (out.el || out.pa) ? out : null;
   _g45EbMemo['r' + k] = r;
@@ -66986,7 +66991,11 @@ window._g45BbStatsVersEl = _g45BbStatsVersEl;
    Suivre : bouton « ➕ Mur » à la place de l'étoile (l'étoile Suivies ne connaît que l'Euroleague) → carte 🏀 sur le mur
    (state.u, comme addUnit) ; le club y est reconnu par `_g45EbResoudre` (nom identique à la Pro A) → Saisons, Compo. */
 var _g45BbEqAppel = 0, _g45BbEqCtx = null;
-function _g45BbAuMur(n) { try { return !!(state && state.u || []).filter(function (u) { return u && u.n === n; })[0]; } catch (e) { return false; } }
+function _g45BbAuMur(n) {
+  /* 20261003x : l'ASVEL est déjà au mur sous « ASVEL » alors que be-basketball dit « Lyon-Villeurbanne » → noms rapprochés (pas de doublon). */
+  var noms = [n]; if (/villeurbanne|asvel/i.test(n)) noms.push('ASVEL', 'LDLC ASVEL', 'LDLC ASVEL Villeurbanne');
+  try { return !!(state && state.u || []).filter(function (u) { return u && (u.n === n || (/🏀/.test(u.sport || '') && typeof _g45EbCorrespond === 'function' && noms.some(function (x) { return _g45EbCorrespond(u.n, [x]); }))); })[0]; } catch (e) { return false; }
+}
 function _g45BbMurBtn(t) {
   var dedans = _g45BbAuMur(t.n);
   return '<button onclick="event.stopPropagation();' + (dedans ? '' : 'g45BbMur(\'' + _g45ElEsc(t.c).replace(/'/g, '') + '\')') + '" style="flex:none;padding:7px 10px;border-radius:9px;font-size:13px;font-weight:800;cursor:' + (dedans ? 'default' : 'pointer') + ';'

@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261003w, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261003x, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1037,6 +1037,8 @@ PRO A — BE-BASKETBALL BRANCHÉ (20261003r, maquette validée « oui ») : bloc
   20261003w — onglet 👥 Équipes ouvert à la Pro A (enveloppe `_g45ElEquipesRendre`, drapeau `_g45BbEqAppel`) : étoile remplacée par « ➕ Mur »
   (`g45BbMur` → state.u sport 🏀, comme addUnit) ; Effectif = `_g45BbEffectif` CONSTRUIT depuis les feuilles de match (page /team/<slug> SANS
   effectif, SONDÉ PAR ANTOINE) : joueurs ayant joué, n°, matchs, moyennes, titularisations. Contrôle ajouté dans smoke.js.
+  20261003x — BUG `_g45EbResoudre` : alias Euroleague mêlés au nom Pro A → un club Euroleague du mur (ASVEL) rattaché au 1er club Pro A lu ;
+  corrigé (nom du mur ou alias EL comparé AU nom Pro A) ; be-basketball = « Lyon-Villeurbanne » pour l'ASVEL (alias ajouté, aussi dans `_g45BbAuMur`).
   Ancienne note (02/10) : www.be-basketball.com (SAS NEO BASKET, Montarnaud) a les stats Betclic ÉLITE 2026-27
   (équipes : ORTG, DRTG, NRTG, POSS., PTS, REB… ; joueurs ; calendrier). robots.txt : seuls /_health, /my-account/*,
   /manage-newsletters/* interdits ; Legal Notice : SEULES les PHOTOS sont protégées (reproduction interdite sans accord écrit).
