@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261003s, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261003t, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1025,6 +1025,13 @@ PRO A — BE-BASKETBALL BRANCHÉ (20261003r, maquette validée « oui ») : bloc
   clé NON vue → team | player.team si présent) ; cache g45bbld1_ ; autres catégories NON sondées. Photos `_g45BbPhotos` =
   TheSportsDB (strSport Basketball, nom exact, g45bbph1_ : trouvée pour toujours, rien 14 j), sinon initiales. Worker : chemin
   leaders/<an>/<cat>?mode= ajouté (À REDÉPLOYER). `_g45BbBloc` lit aussi les tableaux [ ].
+  20261003t — CLUB DES LEADERS + FEUILLE DE MATCH : leaders SANS club (SONDÉ : aucune clé d'équipe) → club pris dans la fiche
+  de match /game/<uuid> "statPlayers":{home:[…], away:[…]} {player{firstname, lastname, slug}, playerNumber, timePlayed (unité
+  NON vérifiée : > 60 → secondes), points, twoPointersMade…, rebounds, reboundsOffensive, assists, steals, turnovers, blocks, fouls,
+  plusMinus, isStarter, pir} ; `_g45BbStatsVersEl` → format Euroleague → `_g45ElFeuilleHtml` ; bouton « 📊 Fiche complète » en
+  Pro A (enveloppes `_g45ElMatchHtml`, `g45ElFiche`) ; `_g45BbFeuille` (g45bbf1_<uuid> pour toujours si fini), clubs g45bbjc1
+  (slug → [nom, logo]) ; `_g45BbClubsCompleter` lit 8 feuilles max par affichage. Photos : + Wikipédia fr en secours (clé
+  g45bbph2_, g45bbph1_ → MORTS).
   Ancienne note (02/10) : www.be-basketball.com (SAS NEO BASKET, Montarnaud) a les stats Betclic ÉLITE 2026-27
   (équipes : ORTG, DRTG, NRTG, POSS., PTS, REB… ; joueurs ; calendrier). robots.txt : seuls /_health, /my-account/*,
   /manage-newsletters/* interdits ; Legal Notice : SEULES les PHOTOS sont protégées (reproduction interdite sans accord écrit).

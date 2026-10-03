@@ -42290,7 +42290,7 @@ window.g45F1Session=g45F1Session;
    et les données utilisateur n'étaient JAMAIS écrites — l'ajout apparaissait à l'écran puis
    disparaissait au rechargement. Ce n'était ni la synchro GitHub, ni Dropbox, ni le cache
    du navigateur. Tous ces caches sont reconstructibles : ils cèdent la place aux données. */
-var _G45_CACHE_PREFIXES=['g45es1_',/* 01/10 : stats Euroleague */'g45kbo1_',/* 01/10 : KBO (mykbostats) */'g45t14lg1',/* 01/10 : logos Top 14 (LNR) */'g45pd2_',/* 01/10 : Pro D2 (LNR) */'g45t14sq1_',/* 01/10 : effectifs Top 14 (LNR) */'g45nrlm1_','g45nrldr1_',/* 01/10 : feuilles et calendriers NRL */'g45nrlsq1_',/* 01/10 : effectifs NRL */'g45nrlst2_',/* 01/10 : classements NRL */'g45proacid1_',/* 30/09 : numéros LNB par saison */'g45proast1_',/* 30/09 : stats Pro A */'g45proa1_',/* 30/09 : Pro A par journée */'g45el1_',/* 30/09 : Euroleague (compact) */'g45buts1_',/* 30/09 : buts en action (match fini) */'g45prad1_','g45vsj1_','g45vse1_',/* 30/09 : radars joueurs */'g45ia1_',/* 29/09 : avis IA gardés 6 h */'g45_mmeta2_','g45_mmeta1_','g45_tennis4_','g45_tennis3_',/* 16/09 : meta de match (domicile/lieu) et score tennis, reconstructibles */'g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dcf_','g45dc_',
+var _G45_CACHE_PREFIXES=['g45bb1_','g45bbst1_','g45bbld1_','g45bbf1_',/* 03/10 : Pro A be-basketball */'g45es1_',/* 01/10 : stats Euroleague */'g45kbo1_',/* 01/10 : KBO (mykbostats) */'g45t14lg1',/* 01/10 : logos Top 14 (LNR) */'g45pd2_',/* 01/10 : Pro D2 (LNR) */'g45t14sq1_',/* 01/10 : effectifs Top 14 (LNR) */'g45nrlm1_','g45nrldr1_',/* 01/10 : feuilles et calendriers NRL */'g45nrlsq1_',/* 01/10 : effectifs NRL */'g45nrlst2_',/* 01/10 : classements NRL */'g45proacid1_',/* 30/09 : numéros LNB par saison */'g45proast1_',/* 30/09 : stats Pro A */'g45proa1_',/* 30/09 : Pro A par journée */'g45el1_',/* 30/09 : Euroleague (compact) */'g45buts1_',/* 30/09 : buts en action (match fini) */'g45prad1_','g45vsj1_','g45vse1_',/* 30/09 : radars joueurs */'g45ia1_',/* 29/09 : avis IA gardés 6 h */'g45_mmeta2_','g45_mmeta1_','g45_tennis4_','g45_tennis3_',/* 16/09 : meta de match (domicile/lieu) et score tennis, reconstructibles */'g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dcf_','g45dc_',
   'g45trv3_','g45trv2_','g45trOdds_','g45tr_','g45but_st_','g45butL_','g45butA_','g45but_mur_',
   '_g45clv','g45clv_snaps','g45_saisons_cache_v3_','g45_saisons_cache_v2_',
   /* Ajoutes le 20/08 : ces caches, tous reconstructibles, n'etaient PAS declares
@@ -65353,7 +65353,7 @@ window._g45ClvSelection = _g45ClvSelection; window._g45ClvPoser = _g45ClvPoser; 
       (setItem et save) puisse les vider.
    3) Au-delà de 4 millions de caractères stockés, purge préventive des
       caches (jamais g45v5, les données). */
-var _G45_CACHE_MORTS = ['g45cm9_' /* 01/10 : → g45cm10_ (présaison NHL marquée PO) */, 'g45nrlst1_' /* 01/10 : → g45nrlst2_ */, 'g45_cfai_veille' /* 29/09 : Workers AI supprimé */, 'g45cls4_' /* 29/09 : → g45cls5_ (stats de match) */, 'g45news7_', 'g45cm_', 'g45cm2_', 'g45cm3_', 'g45cm4_', 'g45cm5_', 'g45cm6_', 'g45cm7_', 'g45cm8_',
+var _G45_CACHE_MORTS = ['g45bbph1_' /* 03/10 : → g45bbph2_ (secours Wikipédia) */, 'g45cm9_' /* 01/10 : → g45cm10_ (présaison NHL marquée PO) */, 'g45nrlst1_' /* 01/10 : → g45nrlst2_ */, 'g45_cfai_veille' /* 29/09 : Workers AI supprimé */, 'g45cls4_' /* 29/09 : → g45cls5_ (stats de match) */, 'g45news7_', 'g45cm_', 'g45cm2_', 'g45cm3_', 'g45cm4_', 'g45cm5_', 'g45cm6_', 'g45cm7_', 'g45cm8_',
   'g45khl_fiche_', 'g45_saisons_cache_v2_', 'g45_score_', 'g45_score2_', 'g45_score3_'];
 try {
   ['g45cm10_', 'g45xgj1_', 'g45khl_fiche2_', 'g45khl_plage_', 'g45cls3_', 'g45cls5_', 'g45photostsdb_', 'g45wk1_', 'g45jv_', 'g45art1_', 'g45clv1_', 'g45arb1_', 'g45_herologo_', 'g45cm3_']
@@ -66748,7 +66748,7 @@ window._g45BbFlight = _g45BbFlight; window._g45BbMatchsLire = _g45BbMatchsLire; 
    si présent). Autres catégories (interceptions, contres, évaluation…) : NON sondées → pas proposées.
    PHOTOS (accord d'Antoine : « aucun site les donne ? ») : TheSportsDB searchplayers, strSport Basketball, nom exact
    (`_g45BbPhotos`, même rythme que le tennis : 1 demande / 2,5 s, 429 = pause 60 s ; trouvée = pour toujours, rien = 14 j,
-   clé g45bbph1_<nom>), sinon initiales. Cache des leaders g45bbld1_<an><r|p>_<cat> 1 h (saison passée 7 j). */
+   clé g45bbph2_<nom>), sinon initiales. Cache des leaders g45bbld1_<an><r|p>_<cat> 1 h (saison passée 7 j). */
 var _G45_BB_JCATS = [['pts', 'Points'], ['reb', 'Rebonds'], ['ast', 'Passes']];
 _g45BbSt.mode = 'eq'; _g45BbSt.cat = 'pts';
 function _g45BbModeBtns() {
@@ -66781,7 +66781,7 @@ async function _g45BbLeaders(an, cat) {
 }
 function _g45BbPhLire(nom) {
   try {
-    var o = JSON.parse(localStorage.getItem('g45bbph1_' + _g45TenNorm(nom)) || 'null');
+    var o = JSON.parse(localStorage.getItem('g45bbph2_' + _g45TenNorm(nom)) || 'null');
     if (!o) return undefined; if (o.u) return o.u;
     return (Date.now() - (o.t || 0) < 14 * 864e5) ? '' : undefined;
   } catch (e) { return undefined; }
@@ -66813,7 +66813,16 @@ async function _g45BbPhotos() {
           var l = ((await r.json()) || {}).player || [], cible = _g45TenNorm(n);
           var p0 = l.filter(function (p) { return /^basketball$/i.test(p.strSport || '') && _g45TenNorm(p.strPlayer) === cible; })[0];
           if (p0) u = _g45R2(p0.strThumb || p0.strCutout || '');
-          try { localStorage.setItem('g45bbph1_' + cible, JSON.stringify({ u: u, t: Date.now() })); } catch (e) {}
+          /* 20261003t — secours Wikipédia (photos libres) : page dont la description parle de basket et dont le titre contient le nom de famille */
+          if (!u) { try {
+            var rw = await fetch('https://fr.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=' + encodeURIComponent(n + ' basket-ball') + '&gsrlimit=3&prop=pageimages|description&piprop=thumbnail&pithumbsize=200&format=json&origin=*');
+            var pg = rw.ok ? ((((await rw.json()) || {}).query || {}).pages || {}) : {}, fam = _g45TenNorm(n.split(/\s+/).slice(-1)[0]);
+            Object.keys(pg).map(function (k) { return pg[k]; }).sort(function (x, y) { return (x.index || 0) - (y.index || 0); }).some(function (w) {
+              if (!u && w.thumbnail && /basket/i.test(w.description || '') && fam && _g45TenNorm(w.title).indexOf(fam) >= 0) u = w.thumbnail.source;
+              return !!u;
+            });
+          } catch (e) {} }
+          try { localStorage.setItem('g45bbph2_' + cible, JSON.stringify({ u: u, t: Date.now() })); } catch (e) {}
         }
       } catch (e) {}
       document.querySelectorAll('[data-g45bbph]').forEach(function (s) {
@@ -66864,3 +66873,103 @@ window.g45BbMode = g45BbMode; window.g45BbCat = g45BbCat; window._g45BbLeadersLi
     _g45ElRendre._g45Bb = true; window._g45ElRendre = _g45ElRendre;
   }
 })();
+
+/* ═══ 📋 PRO A — FEUILLE DE MATCH + CLUB DES JOUEURS (20261003t, demande d'Antoine : « manque le club ») ═══
+   La liste des leaders n'a PAS le club (SONDÉ PAR ANTOINE : clés leaders, games, total, average, rank, player{firstname,
+   lastname, height, birthdate, slug, positions, image, country1, country2} — aucune équipe). Le club est pris dans la FICHE DE
+   MATCH : SONDÉ PAR ANTOINE /game/<uuid> → "statPlayers":{home:[…], away:[…]} {player{firstname, lastname, slug, image (JAMAIS
+   reprise)}, venue, playerNumber, timePlayed, points, twoPointersMade/Attempted, threePointers…, freeThrows…, fouls, foulsOn,
+   reboundsOffensive/Defensive, rebounds, steals, turnovers, blocks, blocksAgainst, assists, plusMinus, isStarter, efficiency, pir…}.
+   home = club qui reçoit (celui du match). Unité de timePlayed NON vérifiée (0 vu sur un remplaçant) : > 60 chez un joueur →
+   secondes, sinon minutes. Feuille convertie au format Euroleague → `_g45ElFeuilleLire` / `_g45ElFeuilleHtml` (même rendu,
+   « 📊 Fiche complète du match » maintenant aussi en Pro A). Feuille d'un match fini gardée POUR TOUJOURS (g45bbf1_<uuid>) ;
+   clubs des joueurs g45bbjc1 (slug → [nom, logo]) : remplis à chaque feuille lue ; pour les leaders sans club, jusqu'à 8
+   feuilles des derniers matchs joués sont lues par affichage (≈ 320 Ko chacune, une seule fois). */
+function _g45BbStatsVersEl(sp) {
+  if (!sp || !Array.isArray(sp.home) || !Array.isArray(sp.away)) return null;
+  var tous = sp.home.concat(sp.away), sec = tous.some(function (x) { return (+x.timePlayed || 0) > 60; });
+  var cote = function (L) {
+    return { coach: null, total: null, players: L.map(function (x) {
+      var p = x.player || {};
+      return { player: { person: { name: ((p.firstname || '') + ' ' + (p.lastname || '')).trim() }, dorsal: x.playerNumber || '' },
+        stats: { timePlayed: (+x.timePlayed || 0) * (sec ? 1 : 60), points: x.points, valuation: x.pir != null ? x.pir : x.efficiency, plusMinus: x.plusMinus, startFive: !!x.isStarter,
+          fieldGoalsMade2: x.twoPointersMade, fieldGoalsAttempted2: x.twoPointersAttempted, fieldGoalsMade3: x.threePointersMade, fieldGoalsAttempted3: x.threePointersAttempted,
+          freeThrowsMade: x.freeThrowsMade, freeThrowsAttempted: x.freeThrowsAttempted, totalRebounds: x.rebounds, offensiveRebounds: x.reboundsOffensive,
+          assistances: x.assists, steals: x.steals, turnovers: x.turnovers, blocksFavour: x.blocks, foulsCommited: x.fouls } };
+    }) };
+  };
+  return { local: cote(sp.home), road: cote(sp.away) };
+}
+function _g45BbClubsLire() { try { return JSON.parse(localStorage.getItem('g45bbjc1') || '{}') || {}; } catch (e) { return {}; } }
+async function _g45BbFeuille(m) {
+  var cle = 'g45bbf1_' + m.u, c = null;
+  try { c = JSON.parse(localStorage.getItem(cle) || 'null'); } catch (e) {}
+  if (c && (c.fini || c.x > Date.now())) return c.F;
+  var r = await fetch(_g45BbUrl('/game/' + m.u));
+  if (!r.ok) { if (c) return c.F; throw new Error(r.status === 403 ? 'le worker n\'autorise pas encore les fiches de match (403)' : 'be-basketball ' + r.status); }
+  var Fl = _g45BbFlight(await r.text()), i = Fl.indexOf('"statPlayers":{');
+  var b = i >= 0 ? _g45BbBloc(Fl, i + 14) : null, sp = null;
+  try { sp = b ? JSON.parse(b) : null; } catch (e) {}
+  var F = _g45ElFeuilleLire(_g45BbStatsVersEl(sp));
+  if (!F || (!F.h.P.length && !F.a.P.length)) throw new Error('feuille vide');
+  /* club de chaque joueur (pour les leaders) */
+  try {
+    var J = _g45BbClubsLire();
+    [['home', m.h], ['away', m.a]].forEach(function (z) { (sp[z[0]] || []).forEach(function (x) { var s = x.player && x.player.slug; if (s) J[s] = [z[1].n, z[1].l || '']; }); });
+    localStorage.setItem('g45bbjc1', JSON.stringify(J));
+  } catch (e) {}
+  try { localStorage.setItem(cle, JSON.stringify({ F: F, fini: !!m.p, x: Date.now() + 120000 })); } catch (e) {}
+  return F;
+}
+(function _g45BbFicheBrancher() {
+  if (typeof g45ElFiche !== 'function' || g45ElFiche._g45Bb) return;
+  var orig = g45ElFiche;
+  g45ElFiche = async function (m, comp) {
+    var r = await orig.apply(this, arguments);
+    if (!m || !m.u || comp !== 'Pro A' || !m.p) return r;
+    var z = document.getElementById('g45-el-fiche'); if (!z) return r;
+    z.innerHTML = '<div style="font-size:14px;padding:8px 0;">⏳ Feuille de match…</div>';
+    try { var F = await _g45BbFeuille(m); z = document.getElementById('g45-el-fiche'); if (z) z.innerHTML = _g45ElFeuilleHtml(F, m) + '<div style="font-size:12px;color:#c9d3ee;text-align:right;margin-top:6px;">Données : BeBasketball</div>'; }
+    catch (e) { z = document.getElementById('g45-el-fiche'); if (z) z.innerHTML = '<div style="font-size:14px;color:#ff6b6b;">❌ Feuille de match indisponible (' + _g45ElEsc(e.message) + ')</div>'; }
+    return r;
+  };
+  g45ElFiche._g45Bb = true; g45ElFiche._g45Lv = orig._g45Lv; window.g45ElFiche = g45ElFiche;
+  if (typeof _g45ElMatchHtml === 'function' && !_g45ElMatchHtml._g45Bb) {
+    var mh = _g45ElMatchHtml;
+    _g45ElMatchHtml = function (m) {
+      var h = mh.apply(this, arguments);
+      if (_g45ElLigue !== 'proa' || !m.p || !m.u || !_g45ElOuvert[m.id]) return h;
+      var bt = '<button onclick="event.stopPropagation();g45ElFicheId(\'' + m.id + '\')" style="width:100%;margin-top:8px;padding:9px;border-radius:9px;border:1px solid #3b82f6;background:#2563eb;color:#fff;font-size:14px;font-weight:800;cursor:pointer;">📊 Fiche complète du match</button>';
+      var k = h.lastIndexOf('</div>');
+      return k > 0 ? h.slice(0, k) + bt + h.slice(k) : h + bt;
+    };
+    _g45ElMatchHtml._g45Bb = true; window._g45ElMatchHtml = _g45ElMatchHtml;
+  }
+})();
+/* Leaders : club depuis g45bbjc1 ; s'il en manque, lecture des feuilles des derniers matchs joués (8 max par affichage). */
+var _g45BbClubsLu = 0;
+async function _g45BbClubsCompleter(an) {
+  if (_g45BbClubsLu) return false;
+  _g45BbClubsLu = 1;
+  try {
+    var anc = _g45PaComp, g;
+    try { _g45PaComp = 'rs'; g = await _g45ProaMatchs(an); } finally { _g45PaComp = anc; }
+    var aLire = g.filter(function (m) { if (!m.p || !m.u) return false; try { return !localStorage.getItem('g45bbf1_' + m.u); } catch (e) { return true; } }).slice(-8).reverse();
+    if (!aLire.length) return false;
+    for (var i = 0; i < aLire.length; i += 4) await Promise.all(aLire.slice(i, i + 4).map(function (m) { return _g45BbFeuille(m).catch(function () {}); }));
+    return true;
+  } catch (e) { return false; }
+  finally { setTimeout(function () { _g45BbClubsLu = 0; }, 120000); }
+}
+(function () {
+  if (typeof _g45BbLeaders !== 'function' || _g45BbLeaders._g45Club) return;
+  var o = _g45BbLeaders;
+  _g45BbLeaders = async function (an, cat) {
+    var L = await o.apply(this, arguments), J = _g45BbClubsLire(), manque = false;
+    L = L.map(function (x) { var c = x.sl && J[x.sl]; if (c && !x.club) { x = Object.assign({}, x, { club: c[0], cl: c[1] }); } if (!x.club) manque = true; return x; });
+    if (manque && an === _g45ElSaison()) _g45BbClubsCompleter(an).then(function (lu) { if (lu && _g45BbSt.mode === 'jo' && document.getElementById('g45-el-body') && typeof _g45PsRedessiner === 'function') _g45PsRedessiner(); });
+    return L;
+  };
+  _g45BbLeaders._g45Club = true;
+})();
+window._g45BbStatsVersEl = _g45BbStatsVersEl;
