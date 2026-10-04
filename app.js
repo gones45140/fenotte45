@@ -67731,3 +67731,56 @@ function _g45F1JolProche(liste, ev) {
   };
   g45F1Detail._g45Passe = true; window.g45F1Detail = g45F1Detail;
 })();
+
+/* ═══ 20261004n — CARTE F1 PENDANT UN DRAPEAU ROUGE (capture d'Antoine, GP de Malaisie, tour 1) ═══
+   Course arrêtée : F1 Pulse montre toutes les voitures alignées dans la voie des stands ; notre carte laissait
+   VER / ANT / HAM / ALB figés là où leur dernier mini-secteur s'était arrêté (aucun nouveau passage → immobiles).
+   Drapeau rouge (j.piste.s === '5', `_G45_F1_PISTE`) → voitures rangées dans la voie des stands (tr.pit, du
+   leader à la sortie vers le dernier à l'entrée), sinon alignées avant la ligne ; message sous la carte. */
+(function _g45F1CtRougeBrancher() {
+  if (typeof _g45F1CtSvg !== 'function' || _g45F1CtSvg._g45Rouge) return;
+  var oSvg = _g45F1CtSvg, oDes = _g45F1CtDessiner;
+  function rouge() { var j = _g45F1Off && _g45F1Off.dernier; return !!(j && j.piste && String(j.piste.s) === '5'); }
+  _g45F1CtSvg = function () {
+    var j = _g45F1Off.dernier, tr = _g45F1Ct.tr;
+    if (!rouge() || !tr || !j) return oSvg.apply(this, arguments);
+    var P = (j.pilotes || []).filter(function (p) { return !p.abandon; }).sort(function (a, b) { return (a.pos || 99) - (b.pos || 99); });
+    var sv = (j.pilotes || []).map(function (p) { var s = p.stand; p.stand = true; return s; });   /* tracé + stands + virages, sans voitures */
+    var h; try { h = oSvg.apply(this, arguments); } finally { (j.pilotes || []).forEach(function (p, i) { p.stand = sv[i]; }); }
+    if (!h) return h;
+    var xs = tr.P.map(function (p) { return p[1]; }), ys = tr.P.map(function (p) { return p[2]; });
+    var u = Math.max(Math.max.apply(null, xs) - Math.min.apply(null, xs), Math.max.apply(null, ys) - Math.min.apply(null, ys)) / 100;
+    var e = function (x) { return String(x == null ? '' : x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); };
+    var pts = [];
+    var pit = (tr.pit && tr.pit.length > 3) ? tr.pit : null;
+    if (pit) {
+      var L = [0]; for (var i = 1; i < pit.length; i++) L.push(L[i - 1] + Math.hypot(pit[i][0] - pit[i - 1][0], pit[i][1] - pit[i - 1][1]));
+      var tot = L[L.length - 1], pas = Math.min(tot * 0.8 / Math.max(P.length, 1), u * 6);
+      P.forEach(function (p, k) {
+        var d = Math.max(tot * 0.92 - k * pas, 0), m = 1; while (m < L.length - 1 && L[m] < d) m++;
+        var a = pit[m - 1], b = pit[m], f = (L[m] - L[m - 1]) ? (d - L[m - 1]) / (L[m] - L[m - 1]) : 0;
+        pts.push([a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f]);
+      });
+    } else {
+      P.forEach(function (p, k) { pts.push(_g45F1CtPoint(tr, Math.max(tr.T - 0.6 - k * 0.5, 0))); });
+    }
+    var g = '';
+    for (var k = P.length - 1; k >= 0; k--) {   /* le leader dessiné en dernier, au-dessus */
+      var p = P[k], pt = pts[k];
+      g += '<g data-g45ct="' + e(p.n) + '" transform="translate(' + pt[0].toFixed(0) + ' ' + (-pt[1]).toFixed(0) + ')">'
+        + '<circle r="' + (u * 3.4) + '" fill="' + e(p.coul || '#8b97c4') + '" stroke="#0b101d" stroke-width="' + (u * 0.6) + '"/>'
+        + '<text text-anchor="middle" dy="' + (u * 1.2) + '" font-size="' + (u * 3.2) + '" font-weight="900" fill="#fff" stroke="#0b101d" stroke-width="' + (u * 0.5) + '" paint-order="stroke">' + e(p.tla || p.n) + '</text></g>';
+    }
+    return h.replace(/<\/svg>$/, g + '</svg>');
+  };
+  _g45F1CtSvg._g45Rouge = true;
+  _g45F1CtDessiner = function () {
+    var r = oDes.apply(this, arguments);
+    try {
+      var corps = document.getElementById('g45-f1-carte-c');
+      if (corps && rouge() && _g45F1Ct.tr) corps.insertAdjacentHTML('afterbegin', '<div style="background:#5a1616;color:#fff;font-size:14px;font-weight:800;border-radius:8px;padding:6px 10px;margin-bottom:6px;">🟥 Drapeau rouge : course arrêtée, voitures rangées dans la voie des stands (ordre du classement).</div>');
+    } catch (e) {}
+    return r;
+  };
+  window._g45F1CtSvg = _g45F1CtSvg; window._g45F1CtDessiner = _g45F1CtDessiner;
+})();
