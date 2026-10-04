@@ -67815,13 +67815,33 @@ window._g45F1PluieRc = _g45F1PluieRc;
    AFFICHÉE est lissée — elle rattrape l'estimation à 1,6 × la vitesse, ne recule jamais (si elle est en avance, elle ralentit
    à 0,3 ×, 3 s d'avance au plus), et se recale d'un coup seulement si l'écart dépasse 20 s (changement de tour, stand, reprise). */
 var _g45F1CtLisse = {};
+function _g45F1CtVit(tr, p) { var der = _g45F1CtSec(p.dernier); return der > tr.T * 0.7 && der < tr.T * 1.5 ? tr.T / der : 1; }
+/* estimation brute (non lissée) d'après les mini-secteurs : jusqu'à 12 s après le dernier franchi */
+function _g45F1CtBrut(tr, p) {
+  var T = _g45F1Ct.suivi[p.n]; if (!T) return null;
+  var B = _g45F1CtBornes(tr, p), n = Math.min(T.n, B.length - 1);
+  return (+T.tours || 0) * tr.T + B[n] + Math.min((Date.now() - T.t) / 1000 * _g45F1CtVit(tr, p), 12);
+}
+/* « +2.451 » / « +1:02.345 » → secondes ; « 1 LAP », « LAP 7 », vide → null */
+function _g45F1CtGap(t) { var m = String(t || '').trim().match(/^\+?(?:(\d+):)?(\d+(?:\.\d+)?)$/); return m ? (+(m[1] || 0)) * 60 + (+m[2]) : null; }
 (function _g45F1CtLisseBrancher() {
   if (typeof _g45F1CtPos !== 'function' || _g45F1CtPos._g45L) return;
   _g45F1CtPos = function (tr, p) {
-    var T = _g45F1Ct.suivi[p.n]; if (!T) return null;
-    var B = _g45F1CtBornes(tr, p), n = Math.min(T.n, B.length - 1), now = Date.now();
-    var der = _g45F1CtSec(p.dernier), f = der > tr.T * 0.7 && der < tr.T * 1.5 ? tr.T / der : 1;
-    var cible = (+T.tours || 0) * tr.T + B[n] + Math.min((now - T.t) / 1000 * f, 12);
+    var now = Date.now(), f = _g45F1CtVit(tr, p), cible = _g45F1CtBrut(tr, p);
+    if (cible == null) return null;
+    /* 20261004r (« manque des voitures ») : en COURSE, les voitures du même mini-secteur tombaient au même point (VER caché sous ANT,
+       2,4 s derrière) → position = celle du LEADER moins son écart (GapToLeader « +2.451 », converti en temps du tour de référence). */
+    try {
+      var j = _g45F1Off.dernier, g = _g45F1CtGap(p.gap);
+      if (j && g != null && g > 0 && typeof _g45F1OffCourse === 'function' && _g45F1OffCourse(j)) {
+        var L = (j.pilotes || []).filter(function (x) { return +x.pos === 1; })[0];
+        var cL = L && L !== p ? _g45F1CtBrut(tr, L) : null;
+        if (cL != null) {
+          var c2 = cL - g * f;
+          cible = c2 + Math.round((cible - c2) / tr.T) * tr.T;   /* même tour que sa propre estimation (le dessin est modulo un tour) */
+        }
+      }
+    } catch (eG) {}
     var D = _g45F1CtLisse[p.n];
     if (!D || D.cle !== _g45F1Ct.cle || Math.abs(cible - D.v) > 20) { _g45F1CtLisse[p.n] = { v: cible, t: now, cle: _g45F1Ct.cle }; return cible; }
     var dt = Math.min((now - D.t) / 1000, 2); D.t = now;
