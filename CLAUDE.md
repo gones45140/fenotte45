@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261004r, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261004s, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -932,6 +932,9 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   20261004r (« manque des voitures ») : les voitures d'un même mini-secteur, changé dans le même instantané, tombaient au MÊME point (VER caché
   sous ANT) → en COURSE, cible = estimation du LEADER (`_g45F1CtBrut`) − écart GapToLeader (`_g45F1CtGap`, « +2.451 » / « +1:02.3 ») × vitesse
   (`_g45F1CtVit`) ; « 1 LAP » / leader / hors course = mini-secteurs comme avant ; même lissage.
+  20261004s (maquette validée « oui », idée d'Antoine) — COULEUR DE LA PISTE sur la carte (`_g45F1CtCouleurBrancher`, enveloppes de
+  `_g45F1CtSvg` / `_g45F1CtDessiner`) : j.piste.s 2 / 4 / 6 / 7 → tracé jaune #f5c542, 5 → rouge #ff4545, sinon blanc ; bandeau « 🚗 Safety car
+  en piste » / « VSC » / « Fin de VSC ». Toute la piste (secteurs de commissaires ≠ notre tracé).
   02/10/2026 (FP2 Malaisie) — /f1live répondait 502 : la route n'ENVOYAIT ni la poignée de main SignalR ni le Subscribe
   (seul /f1test le faisait) → worker corrigé (fichier complet donné à Antoine, à redéployer). /f1test OK pendant FP2 (negotiate 200,
   WS 101, type 3 reçu). PIÈGE : la F1 nomme ce GP « Bahrain Grand Prix » (« … BAHRAIN GRAND PRIX IN MALAYSIA 2026 »), lieu

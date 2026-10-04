@@ -67851,3 +67851,29 @@ function _g45F1CtGap(t) { var m = String(t || '').trim().match(/^\+?(?:(\d+):)?(
   };
   _g45F1CtPos._g45L = true; window._g45F1CtPos = _g45F1CtPos;
 })();
+
+/* ═══ 20261004s — CARTE F1 : COULEUR DE LA PISTE SELON L'ÉTAT (maquette validée « oui ») ═══
+   Idée d'Antoine (Safety car en Malaisie) : tracé blanc = piste libre ; JAUNE = drapeau jaune (2), Safety car (4), VSC (6) et fin
+   de VSC (7) ; ROUGE = drapeau rouge (5, le bandeau rouge de 20261004n reste). Toute la piste : les secteurs de commissaires des
+   messages (« TRACK SECTOR 7 ») ne correspondent pas à notre tracé. SC / VSC : petit bandeau en haut de la carte. Pastilles inchangées. */
+(function _g45F1CtCouleurBrancher() {
+  if (typeof _g45F1CtSvg !== 'function' || _g45F1CtSvg._g45Coul) return;
+  var oSvg = _g45F1CtSvg, oDes = _g45F1CtDessiner;
+  function etat() { var j = _g45F1Off && _g45F1Off.dernier; return j && j.piste ? String(j.piste.s) : ''; }
+  _g45F1CtSvg = function () {
+    var h = oSvg.apply(this, arguments), s = etat();
+    var c = s === '5' ? '#ff4545' : (/^[2467]$/.test(s) ? '#f5c542' : '');
+    return (h && c) ? h.replace('stroke="#e8ecf5"', 'stroke="' + c + '"') : h;   /* 1re occurrence = ligne claire de la piste */
+  };
+  _g45F1CtSvg._g45Coul = true; _g45F1CtSvg._g45Rouge = true;
+  _g45F1CtDessiner = function () {
+    var r = oDes.apply(this, arguments);
+    try {
+      var s = etat(), corps = document.getElementById('g45-f1-carte-c');
+      var t = s === '4' ? '🚗 Safety car en piste' : (s === '6' ? '🚗 Voiture de sécurité virtuelle (VSC)' : (s === '7' ? '🚗 Fin de VSC' : ''));
+      if (corps && t && _g45F1Ct.tr) corps.insertAdjacentHTML('afterbegin', '<div style="background:#5a4a12;color:#fff;font-size:14px;font-weight:800;border-radius:8px;padding:6px 10px;margin-bottom:6px;">' + t + '</div>');
+    } catch (e) {}
+    return r;
+  };
+  window._g45F1CtSvg = _g45F1CtSvg; window._g45F1CtDessiner = _g45F1CtDessiner;
+})();
