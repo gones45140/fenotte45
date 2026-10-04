@@ -67957,3 +67957,46 @@ function _g45F1CtBleus(j) {
   _g45F1CtSvg._g45Ret = true; window._g45F1CtSvg = _g45F1CtSvg;
 })();
 window._g45F1CtTours = _g45F1CtTours; window._g45F1CtBleus = _g45F1CtBleus;
+
+/* ═══ 20261004v — TRACÉ F1 PARTAGÉ PAR LE WORKER (« c'est chiant de devoir lire la carte avant », essai sur bet45) ═══
+   Le tracé vient d'OpenF1, qui répond 401 PENDANT une séance : un appareil qui n'avait jamais ouvert la fiche du GP hors séance
+   n'avait pas de carte (« Tracé du circuit pas encore enregistré »). Enveloppe de `_g45F1TraceLire` : tracé lu chez OpenF1 → déposé
+   une fois sur le worker (POST /f1trace?c=<clé>, texte JSON : pas de pré-vol CORS) ; rien chez OpenF1 → relu sur le worker (GET), contrôlé
+   (nombres seulement) puis gardé dans localStorage comme d'habitude. Route worker /f1trace : stockage D1, premier dépôt gardé. */
+function _g45F1TrPropre(t) {
+  var num = function (v) { return typeof v === 'number' && isFinite(v); };
+  if (!t || !Array.isArray(t.P) || t.P.length < 50 || !(t.T > 30 && t.T < 300)) return null;
+  if (!t.P.every(function (q) { return Array.isArray(q) && q.length === 3 && q.every(num); })) return null;
+  var o = { P: t.P, T: t.T };
+  if (Array.isArray(t.D) && t.D.every(num)) o.D = t.D;
+  if (Array.isArray(t.pit) && t.pit.every(function (q) { return Array.isArray(q) && q.length === 2 && q.every(num); })) o.pit = t.pit;
+  if (num(t.k)) o.k = t.k;
+  return o;
+}
+(function _g45F1TrPartageBrancher() {
+  if (typeof _g45F1TraceLire !== 'function' || _g45F1TraceLire._g45Part) return;
+  var o = _g45F1TraceLire;
+  _g45F1TraceLire = async function (ev) {
+    var cle = _g45F1CtCle(ev), tr = null;
+    try { tr = await o.apply(this, arguments); } catch (e) {}
+    var url = FD_PROXY + '/f1trace?c=' + encodeURIComponent(cle);
+    if (tr) {
+      try {
+        if (!sessionStorage.getItem('g45f1trp_' + cle)) {
+          sessionStorage.setItem('g45f1trp_' + cle, '1');
+          var p = _g45F1TrPropre(tr);
+          if (p) fetch(url, { method: 'POST', body: JSON.stringify(p) }).catch(function () {});
+        }
+      } catch (e) {}
+      return tr;
+    }
+    try {
+      var r = await fetch(url);
+      if (!r.ok) return null;
+      var t = _g45F1TrPropre(await r.json());
+      if (t) { try { localStorage.setItem(cle, JSON.stringify(t)); } catch (e) {} }
+      return t;
+    } catch (e) { return null; }
+  };
+  _g45F1TraceLire._g45Part = true; window._g45F1TraceLire = _g45F1TraceLire;
+})();

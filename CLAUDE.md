@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261004u, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261004v, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -941,6 +941,10 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   20261004u (maquette validée « OUI ») — RETARDATAIRES : `_g45F1CtRetardBrancher` (enveloppe de `_g45F1CtSvg`) : GapToLeader « 1 LAP » / « 2 LAPS »
   (`_g45F1CtTours`) → pastille opacité .6 + « +1T » ; drapeau bleu (`_g45F1CtBleus` : j.rc drapeau BLUE, numéro après « CAR », < 60 s ; format du
   message NON vérifié) → liseré bleu #3b82ff. Placement des retardataires inchangé (choix 1, écart à la voiture devant, NON retenu).
+  20261004v (« c'est chiant de devoir lire la carte avant », essai sur bet45) — TRACÉ PARTAGÉ : nouvelle route worker /f1trace?c=<clé g45f1tr2_…>
+  (GET = tracé déposé, POST texte JSON = dépôt ; D1 via d1kv, clé f1trace:<clé>, premier dépôt gardé, nombres seulement P/T/D/pit/k, 120 Ko max)
+  — À REDÉPLOYER par Antoine. App : enveloppe `_g45F1TrPartageBrancher` de `_g45F1TraceLire` : tracé lu (OpenF1 ou cache local) → déposé une fois
+  par session (sessionStorage g45f1trp_) ; rien → GET worker, contrôlé `_g45F1TrPropre`, gardé en localStorage.
   02/10/2026 (FP2 Malaisie) — /f1live répondait 502 : la route n'ENVOYAIT ni la poignée de main SignalR ni le Subscribe
   (seul /f1test le faisait) → worker corrigé (fichier complet donné à Antoine, à redéployer). /f1test OK pendant FP2 (negotiate 200,
   WS 101, type 3 reçu). PIÈGE : la F1 nomme ce GP « Bahrain Grand Prix » (« … BAHRAIN GRAND PRIX IN MALAYSIA 2026 »), lieu
