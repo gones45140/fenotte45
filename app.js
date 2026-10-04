@@ -41167,6 +41167,11 @@ function _g45F1OffCorrespond(j, ev) {
   return ok;
 }
 function _g45F1OffEnDirect(j) { return /^(Started|Aborted|Suspended)$/i.test(String(j.sess.statut || '')); }
+/* 20261004p (« obligé de faire g45F1Apercu() à chaque fois sur le PC ») : pendant le départ RETARDÉ par la pluie et le drapeau rouge de
+   Malaisie, le statut n'était ni Started ni Aborted ni Suspended (bandeau « Dernier état connu ») → aucun tableau sans l'aperçu, et l'aperçu
+   ne se rafraîchissait pas. Séance ACTIVE = toute séance de ce GP pas encore finie (Finished / Finalised / Ends) : tableau posé et relu toutes
+   les 5 s. Le bandeau garde « 🔴 En direct » pour Started / Aborted / Suspended seulement. */
+function _g45F1OffActif(j) { return _g45F1OffEnDirect(j) || !/^(Finished|Finalised|Ends)$/i.test(String((j.sess || {}).statut || '')); }
 function _g45F1OffCourse(j) { return /race|sprint$/i.test(String(j.sess.type || j.sess.libelle || '')) && !/qualif|shootout/i.test(String(j.sess.libelle || '')); }
 var _G45_F1_PISTE = { '1': ['🟢 Piste libre', '#1ed760', '#0f5a2c'], '2': ['🟨 Drapeau jaune', '#f0b020', '#5a4a12'], '4': ['🚗 Safety Car', '#f0b020', '#5a4a12'],
   '5': ['🟥 Drapeau rouge', '#ff4545', '#5a1616'], '6': ['🚗 VSC', '#f0b020', '#5a4a12'], '7': ['🚗 Fin de VSC', '#f0b020', '#5a4a12'] };
@@ -41382,13 +41387,13 @@ async function _g45F1OffDemarrer(box, j) {
   var S = _g45F1Off;
   S.box = box; _g45F1OffAppliquer(j); _g45F1OffDessiner();
   if (S.timer) clearInterval(S.timer);
-  if (!_g45F1OffEnDirect(j)) return;                     /* aperçu ou séance finie : pas de rafraîchissement */
+  if (!_g45F1OffActif(j)) return;                       /* séance finie : pas de rafraîchissement (20261004p : retard / drapeau rouge = actif) */
   S.timer = setInterval(async function () {
     if (!box.isConnected) { clearInterval(S.timer); S.timer = null; return; }
     if (document.hidden) return;
     var n = await _g45F1OffLire(); if (!n || !box.isConnected) return;
     _g45F1OffAppliquer(n); _g45F1OffDessiner();
-    if (!_g45F1OffEnDirect(n)) { clearInterval(S.timer); S.timer = null; }
+    if (!_g45F1OffActif(n)) { clearInterval(S.timer); S.timer = null; }
   }, 5000);
 }
 window.g45F1Apercu = function () {
@@ -41404,7 +41409,7 @@ async function _g45F1LiveStart(ev){
         DIRECT et que la séance est celle de ce GP. */
   try {
     var off=await _g45F1OffLire();
-    if(off && _g45F1OffCorrespond(off, ev) && (_g45F1OffEnDirect(off) || window._g45F1OffApercu)){
+    if(off && _g45F1OffCorrespond(off, ev) && (_g45F1OffActif(off) || window._g45F1OffApercu)){
       var mb0=document.getElementById('f1-livemap'); if(mb0) mb0.innerHTML='';
       _g45F1OffDemarrer(box, off); return;
     }
@@ -67112,9 +67117,10 @@ async function _g45BbEffectif(z, x) {
     var veille = async function () {
       if (!document.getElementById('f1-live') || window._g45F1Eid !== eid) return;
       try {
-        if (!document.hidden && !(_g45F1Off && _g45F1Off.timer) && !(_g45OF1 && _g45OF1.timer)) {
+        if (!document.hidden && !(_g45F1Off && _g45F1Off.timer)) {   /* 20261004p : la boucle OpenF1 (bloquée en séance) ne garde plus la place */
           var off = await _g45F1OffLire();
-          if (off && _g45F1OffCorrespond(off, ev) && _g45F1OffEnDirect(off) && document.getElementById('f1-live') && window._g45F1Eid === eid) {
+          if (off && _g45F1OffCorrespond(off, ev) && _g45F1OffActif(off) && document.getElementById('f1-live') && window._g45F1Eid === eid) {
+            try { _g45F1LiveStop(); } catch (eS) {}
             var b = document.getElementById('f1-live'); _g45F1Off.box = b;
             var mb = document.getElementById('f1-livemap'); if (mb) mb.innerHTML = '';
             _g45F1OffDemarrer(b, off);

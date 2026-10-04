@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261004o, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261004p, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -921,6 +921,10 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   20261004o — « pas de pluie » affiché pendant un départ retardé par la pluie : la case ne lisait que WeatherData.Rainfall (pluviomètre
   officiel, resté à 0) → `_g45F1PluieRc(j)` lit aussi les messages de course j.rc des 90 dernières min (RAIN, WET, SLIPPERY… → « 🌧️ pluie
   (direction de course) » ; RISK OF RAIN seul → « 🌦️ risque de pluie »). Textes exacts des messages de pluie NON vérifiés.
+  20261004p (« obligé de faire g45F1Apercu() à chaque fois sur le PC ») : pendant le retard pluie / drapeau rouge, statut ≠ Started|Aborted|
+  Suspended (« Dernier état connu ») → aucun tableau, aperçu non rafraîchi. `_g45F1OffActif(j)` = séance pas finie (≠ Finished|Finalised|Ends)
+  utilisé par _g45F1LiveStart, _g45F1OffDemarrer (relecture 5 s) et la veille ; la veille ne s'efface plus devant la boucle OpenF1
+  (_g45OF1.timer, bloquée en séance) : _g45F1LiveStop puis tableau officiel. Statut exact pendant le retard NON vu (« Inactive » supposé).
   02/10/2026 (FP2 Malaisie) — /f1live répondait 502 : la route n'ENVOYAIT ni la poignée de main SignalR ni le Subscribe
   (seul /f1test le faisait) → worker corrigé (fichier complet donné à Antoine, à redéployer). /f1test OK pendant FP2 (negotiate 200,
   WS 101, type 3 reçu). PIÈGE : la F1 nomme ce GP « Bahrain Grand Prix » (« … BAHRAIN GRAND PRIX IN MALAYSIA 2026 »), lieu
