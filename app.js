@@ -41278,7 +41278,7 @@ function _g45F1OffHtml(j, apercu) {
     + '<div style="font-size:13px;color:#c9d3ee;margin-top:2px;">' + (direct ? '🔴 En direct' : '⏺ Dernier état connu') + ' · ' + e(j.sess.lieu)
     + (j.tour.tot ? ' · <b style="color:#f0b020;">Tour ' + j.tour.cur + ' / ' + j.tour.tot + '</b>' : (j.sess.horloge ? ' · ⏱️ ' + e(j.sess.horloge) : ''))
     + ' · il y a ' + age + ' s</div>'
-    + '<div style="font-size:12px;color:#c9d3ee;margin-top:2px;">🌡️ Air ' + e(j.meteo.air) + ' °C · piste ' + e(j.meteo.piste) + ' °C · ' + (j.meteo.pluie ? '🌧️ pluie' : '💧 pas de pluie') + '</div></div>';
+    + '<div style="font-size:12px;color:#c9d3ee;margin-top:2px;">🌡️ Air ' + e(j.meteo.air) + ' °C · piste ' + e(j.meteo.piste) + ' °C · ' + (j.meteo.pluie ? '🌧️ pluie' : (typeof _g45F1PluieRc === 'function' && _g45F1PluieRc(j)) || '💧 pas de pluie') + '</div></div>';   /* 20261004o */
   /* Batailles : groupes consécutifs à moins d'1 s (course seulement) */
   var bat = {};
   if (course) {
@@ -67784,3 +67784,20 @@ function _g45F1JolProche(liste, ev) {
   };
   window._g45F1CtSvg = _g45F1CtSvg; window._g45F1CtDessiner = _g45F1CtDessiner;
 })();
+
+/* ═══ 20261004o — PLUIE : « pas de pluie » affiché pendant un départ RETARDÉ PAR LA PLUIE (Antoine, Malaisie) ═══
+   La case vient du seul pluviomètre officiel (WeatherData.Rainfall du worker /f1live), resté à 0. On lit aussi les messages de
+   la direction de course (j.rc, 90 dernières minutes) : pluie / piste mouillée / glissante → « 🌧️ pluie (direction de course) » ;
+   « RISK OF RAIN … » seul → « 🌦️ risque de pluie ». Le pluviomètre reste prioritaire quand il dit « pluie ». */
+function _g45F1PluieRc(j) {
+  var lim = Date.now() - 90 * 60000, pluie = false, risque = false;
+  (j && j.rc || []).forEach(function (m) {
+    var t = Date.parse(m.utc); if (t && t < lim) return;
+    var x = String(m.msg || '').toUpperCase();
+    if (/RISK OF RAIN/.test(x)) { risque = true; x = x.replace(/RISK OF RAIN[^.]*/g, ''); }
+    if (/\bRAIN\b|\bWET\b|SLIPPERY|INTERMEDIATE|STANDING WATER|SPRAY/.test(x)) pluie = true;
+  });
+  return pluie ? '🌧️ pluie (direction de course)' : (risque ? '🌦️ risque de pluie' : '');
+}
+window._g45F1PluieRc = _g45F1PluieRc;
+

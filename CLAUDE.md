@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261004n, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261004o, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -918,6 +918,9 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   20261004n — DRAPEAU ROUGE sur la carte estimée (capture d'Antoine, Malaisie tour 1 : F1 Pulse = voitures dans la voie des stands, nous = 4
   pastilles figées sur la piste) : enveloppes `_g45F1CtRougeBrancher` de `_g45F1CtSvg` / `_g45F1CtDessiner` — j.piste.s === '5' → voitures rangées
   sur tr.pit (leader côté sortie), sinon alignées avant la ligne ; bandeau « 🟥 Drapeau rouge ».
+  20261004o — « pas de pluie » affiché pendant un départ retardé par la pluie : la case ne lisait que WeatherData.Rainfall (pluviomètre
+  officiel, resté à 0) → `_g45F1PluieRc(j)` lit aussi les messages de course j.rc des 90 dernières min (RAIN, WET, SLIPPERY… → « 🌧️ pluie
+  (direction de course) » ; RISK OF RAIN seul → « 🌦️ risque de pluie »). Textes exacts des messages de pluie NON vérifiés.
   02/10/2026 (FP2 Malaisie) — /f1live répondait 502 : la route n'ENVOYAIT ni la poignée de main SignalR ni le Subscribe
   (seul /f1test le faisait) → worker corrigé (fichier complet donné à Antoine, à redéployer). /f1test OK pendant FP2 (negotiate 200,
   WS 101, type 3 reçu). PIÈGE : la F1 nomme ce GP « Bahrain Grand Prix » (« … BAHRAIN GRAND PRIX IN MALAYSIA 2026 »), lieu
