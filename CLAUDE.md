@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261004t, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261004u, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -938,6 +938,9 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   20261004t (« quand une voiture va au stand rien le dessine ») : enveloppe `_g45F1CtStandBrancher` de `_g45F1CtSvg` — voiture p.stand dessinée
   DANS tr.pit (bord blanc pointillé), avance de l'entrée vers la sortie en ≈ 25 s (`_g45F1CtStand[n]` = heure d'entrée, effacée à la sortie),
   puis attend près de la sortie ; drapeau rouge inchangé ; sans voie des stands connue : liste « Au stand » seule.
+  20261004u (maquette validée « OUI ») — RETARDATAIRES : `_g45F1CtRetardBrancher` (enveloppe de `_g45F1CtSvg`) : GapToLeader « 1 LAP » / « 2 LAPS »
+  (`_g45F1CtTours`) → pastille opacité .6 + « +1T » ; drapeau bleu (`_g45F1CtBleus` : j.rc drapeau BLUE, numéro après « CAR », < 60 s ; format du
+  message NON vérifié) → liseré bleu #3b82ff. Placement des retardataires inchangé (choix 1, écart à la voiture devant, NON retenu).
   02/10/2026 (FP2 Malaisie) — /f1live répondait 502 : la route n'ENVOYAIT ni la poignée de main SignalR ni le Subscribe
   (seul /f1test le faisait) → worker corrigé (fichier complet donné à Antoine, à redéployer). /f1test OK pendant FP2 (negotiate 200,
   WS 101, type 3 reçu). PIÈGE : la F1 nomme ce GP « Bahrain Grand Prix » (« … BAHRAIN GRAND PRIX IN MALAYSIA 2026 »), lieu

@@ -67915,3 +67915,45 @@ var _g45F1CtStand = {};
   ['_g45Coul', '_g45Rouge'].forEach(function (k) { _g45F1CtSvg[k] = oSvg[k]; });
   _g45F1CtSvg._g45Stand = true; window._g45F1CtSvg = _g45F1CtSvg;
 })();
+
+/* ═══ 20261004u — CARTE F1 : RETARDATAIRES (maquette validée « OUI », choix 2 d'Antoine) ═══
+   Voiture prise d'un ou plusieurs tours (GapToLeader « 1 LAP » / « 2 LAPS ») : pastille plus transparente (.6) et petit « +1T »
+   à droite ; drapeau BLEU (message de course drapeau 'BLUE', texte « WAVED BLUE FLAG FOR CAR 23 (ALB)… » — format NON vérifié,
+   numéro lu après « CAR ») de moins de 60 s → liseré bleu autour de la pastille, comme à la télé. Placement inchangé. */
+function _g45F1CtTours(gap) { var m = String(gap || '').trim().match(/^\+?\s*(\d+)\s*L/i); return m ? +m[1] : 0; }
+function _g45F1CtBleus(j) {
+  var B = {}, lim = Date.now() - 60000;
+  (j && j.rc || []).forEach(function (m) {
+    if (!/BLUE/i.test(String(m.drapeau || '') + ' ' + String(m.msg || ''))) return;
+    var u = String(m.utc || ''), t = Date.parse(/Z|[+-]\d\d:?\d\d$/.test(u) ? u : u + 'Z');
+    if (t && t < lim) return;
+    var c = String(m.msg || '').match(/CAR\s+(\d+)/i); if (c) B[c[1]] = 1;
+  });
+  return B;
+}
+(function _g45F1CtRetardBrancher() {
+  if (typeof _g45F1CtSvg !== 'function' || _g45F1CtSvg._g45Ret) return;
+  var oSvg = _g45F1CtSvg;
+  _g45F1CtSvg = function () {
+    var h = oSvg.apply(this, arguments);
+    try {
+      var j = _g45F1Off.dernier, tr = _g45F1Ct.tr; if (!h || !j || !tr) return h;
+      var info = {}, bleus = _g45F1CtBleus(j), rien = true;
+      (j.pilotes || []).forEach(function (p) { var k = _g45F1CtTours(p.gap); if (k || bleus[p.n]) { info[p.n] = { k: k, b: !!bleus[p.n] }; rien = false; } });
+      if (rien) return h;
+      var xs = tr.P.map(function (q) { return q[1]; }), ys = tr.P.map(function (q) { return q[2]; });
+      var u = Math.max(Math.max.apply(null, xs) - Math.min.apply(null, xs), Math.max.apply(null, ys) - Math.min.apply(null, ys)) / 100;
+      return h.replace(/<g data-g45ct="([^"]+)" transform="([^"]+)">([\s\S]*?)<\/g>/g, function (tout, n, tf, corps) {
+        var I = info[n]; if (!I) return tout;
+        var plus = '';
+        if (I.b) plus += '<circle r="' + (u * 4.4) + '" fill="none" stroke="#3b82ff" stroke-width="' + (u * 1) + '"/>';
+        if (I.k) plus += '<text x="' + (u * 4.2) + '" y="' + (-u * 2.6) + '" font-size="' + (u * 2.6) + '" font-weight="900" fill="#fff" stroke="#0b101d" stroke-width="' + (u * 0.5) + '" paint-order="stroke">+' + I.k + 'T</text>';
+        return '<g data-g45ct="' + n + '" transform="' + tf + '"' + (I.k ? ' opacity=".6"' : '') + '>' + corps + '</g>'
+          + (plus ? '<g transform="' + tf + '">' + plus + '</g>' : '');
+      });
+    } catch (eR) { return h; }
+  };
+  ['_g45Coul', '_g45Rouge', '_g45Stand'].forEach(function (k) { _g45F1CtSvg[k] = oSvg[k]; });
+  _g45F1CtSvg._g45Ret = true; window._g45F1CtSvg = _g45F1CtSvg;
+})();
+window._g45F1CtTours = _g45F1CtTours; window._g45F1CtBleus = _g45F1CtBleus;
