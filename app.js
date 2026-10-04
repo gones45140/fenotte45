@@ -67807,3 +67807,27 @@ function _g45F1PluieRc(j) {
 }
 window._g45F1PluieRc = _g45F1PluieRc;
 
+
+/* ═══ 20261004q — CARTE F1 : « roule 3 secondes et s'arrête » (capture d'Antoine, course de Malaisie) ═══
+   `_g45F1CtPos` plafonnait la position estimée à la FIN du mini-secteur en cours (≈ 2-4 s de piste) ; les données /f1live
+   arrivent toutes les 5 s (+ cache worker 5 s) → la pastille attendait immobile puis sautait. Maintenant : l'estimation
+   continue jusqu'à 12 s après le dernier mini-secteur franchi (au-delà : voiture arrêtée / données figées), et la position
+   AFFICHÉE est lissée — elle rattrape l'estimation à 1,6 × la vitesse, ne recule jamais (si elle est en avance, elle ralentit
+   à 0,3 ×, 3 s d'avance au plus), et se recale d'un coup seulement si l'écart dépasse 20 s (changement de tour, stand, reprise). */
+var _g45F1CtLisse = {};
+(function _g45F1CtLisseBrancher() {
+  if (typeof _g45F1CtPos !== 'function' || _g45F1CtPos._g45L) return;
+  _g45F1CtPos = function (tr, p) {
+    var T = _g45F1Ct.suivi[p.n]; if (!T) return null;
+    var B = _g45F1CtBornes(tr, p), n = Math.min(T.n, B.length - 1), now = Date.now();
+    var der = _g45F1CtSec(p.dernier), f = der > tr.T * 0.7 && der < tr.T * 1.5 ? tr.T / der : 1;
+    var cible = (+T.tours || 0) * tr.T + B[n] + Math.min((now - T.t) / 1000 * f, 12);
+    var D = _g45F1CtLisse[p.n];
+    if (!D || D.cle !== _g45F1Ct.cle || Math.abs(cible - D.v) > 20) { _g45F1CtLisse[p.n] = { v: cible, t: now, cle: _g45F1Ct.cle }; return cible; }
+    var dt = Math.min((now - D.t) / 1000, 2); D.t = now;
+    if (cible > D.v) D.v = Math.min(cible, D.v + dt * f * 1.6);
+    else D.v = Math.min(D.v + dt * f * 0.3, Math.max(D.v, cible + 3));   /* en avance : ralentit, 3 s d'avance au plus */
+    return D.v;
+  };
+  _g45F1CtPos._g45L = true; window._g45F1CtPos = _g45F1CtPos;
+})();

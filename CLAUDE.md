@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261004p, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261004q, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -925,6 +925,10 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   Suspended (« Dernier état connu ») → aucun tableau, aperçu non rafraîchi. `_g45F1OffActif(j)` = séance pas finie (≠ Finished|Finalised|Ends)
   utilisé par _g45F1LiveStart, _g45F1OffDemarrer (relecture 5 s) et la veille ; la veille ne s'efface plus devant la boucle OpenF1
   (_g45OF1.timer, bloquée en séance) : _g45F1LiveStop puis tableau officiel. Statut exact pendant le retard NON vu (« Inactive » supposé).
+  20261004q (« roule 3 secondes et s'arrête », « les pastilles s'arrêtent puis font un bond ») : `_g45F1CtPos` plafonnait l'estimation à la fin
+  du mini-secteur (2-4 s) alors que /f1live arrive toutes les 5 s + cache 5 s → enveloppe `_g45F1CtLisseBrancher` : estimation jusqu'à 12 s après le
+  dernier mini-secteur, position AFFICHÉE lissée (`_g45F1CtLisse` : rattrape à 1,6 ×, jamais en arrière, en avance → 0,3 × et 3 s max, recalage si
+  écart > 20 s). Rendu réel NON vérifié.
   02/10/2026 (FP2 Malaisie) — /f1live répondait 502 : la route n'ENVOYAIT ni la poignée de main SignalR ni le Subscribe
   (seul /f1test le faisait) → worker corrigé (fichier complet donné à Antoine, à redéployer). /f1test OK pendant FP2 (negotiate 200,
   WS 101, type 3 reçu). PIÈGE : la F1 nomme ce GP « Bahrain Grand Prix » (« … BAHRAIN GRAND PRIX IN MALAYSIA 2026 »), lieu
