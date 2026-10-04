@@ -67877,3 +67877,41 @@ function _g45F1CtGap(t) { var m = String(t || '').trim().match(/^\+?(?:(\d+):)?(
   };
   window._g45F1CtSvg = _g45F1CtSvg; window._g45F1CtDessiner = _g45F1CtDessiner;
 })();
+
+/* ═══ 20261004t — CARTE F1 : VOITURE AU STAND DESSINÉE (« quand une voiture va au stand rien le dessine ») ═══
+   `_g45F1CtSvg` sautait les voitures p.stand (seulement listées sous la carte). Maintenant : pastille posée DANS la voie des stands
+   (tr.pit), qui avance de l'entrée vers la sortie selon le temps passé au stand (≈ 25 s pour la traverser, arrêt compris ; au-delà
+   elle attend près de la sortie). Mémoire de l'heure d'entrée `_g45F1CtStand[n]` (effacée à la sortie). Drapeau rouge : inchangé
+   (toutes les voitures déjà rangées par 20261004n). Pas de voie des stands connue → rien de plus (liste « Au stand » comme avant). */
+var _g45F1CtStand = {};
+(function _g45F1CtStandBrancher() {
+  if (typeof _g45F1CtSvg !== 'function' || _g45F1CtSvg._g45Stand) return;
+  var oSvg = _g45F1CtSvg;
+  _g45F1CtSvg = function () {
+    var h = oSvg.apply(this, arguments);
+    try {
+      var j = _g45F1Off.dernier, tr = _g45F1Ct.tr, now = Date.now();
+      (j && j.pilotes || []).forEach(function (p) { if (!p.stand) delete _g45F1CtStand[p.n]; else if (!_g45F1CtStand[p.n]) _g45F1CtStand[p.n] = now; });
+      if (!h || !j || !tr || !tr.pit || tr.pit.length < 4 || (j.piste && String(j.piste.s) === '5')) return h;
+      var pit = tr.pit, L = [0];
+      for (var i = 1; i < pit.length; i++) L.push(L[i - 1] + Math.hypot(pit[i][0] - pit[i - 1][0], pit[i][1] - pit[i - 1][1]));
+      var tot = L[L.length - 1];
+      var xs = tr.P.map(function (q) { return q[1]; }), ys = tr.P.map(function (q) { return q[2]; });
+      var u = Math.max(Math.max.apply(null, xs) - Math.min.apply(null, xs), Math.max.apply(null, ys) - Math.min.apply(null, ys)) / 100;
+      var e = function (x) { return String(x == null ? '' : x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); };
+      var g = '';
+      (j.pilotes || []).filter(function (p) { return p.stand && !p.abandon; }).forEach(function (p) {
+        var fr = Math.min((now - (_g45F1CtStand[p.n] || now)) / 25000, 1) * 0.9 + 0.05, d = tot * fr, m = 1;
+        while (m < L.length - 1 && L[m] < d) m++;
+        var a = pit[m - 1], b = pit[m], f = (L[m] - L[m - 1]) ? (d - L[m - 1]) / (L[m] - L[m - 1]) : 0;
+        var x = a[0] + (b[0] - a[0]) * f, y = a[1] + (b[1] - a[1]) * f;
+        g += '<g data-g45ct="' + e(p.n) + '" transform="translate(' + x.toFixed(0) + ' ' + (-y).toFixed(0) + ')">'
+          + '<circle r="' + (u * 3.4) + '" fill="' + e(p.coul || '#8b97c4') + '" stroke="#fff" stroke-width="' + (u * 0.6) + '" stroke-dasharray="' + (u * 1.2) + ' ' + (u * 0.8) + '"/>'
+          + '<text text-anchor="middle" dy="' + (u * 1.2) + '" font-size="' + (u * 3.2) + '" font-weight="900" fill="#fff" stroke="#0b101d" stroke-width="' + (u * 0.5) + '" paint-order="stroke">' + e(p.tla || p.n) + '</text></g>';
+      });
+      return g ? h.replace(/<\/svg>$/, g + '</svg>') : h;
+    } catch (eS) { return h; }
+  };
+  ['_g45Coul', '_g45Rouge'].forEach(function (k) { _g45F1CtSvg[k] = oSvg[k]; });
+  _g45F1CtSvg._g45Stand = true; window._g45F1CtSvg = _g45F1CtSvg;
+})();

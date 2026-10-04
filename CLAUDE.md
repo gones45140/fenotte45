@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261004s, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261004t, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -935,6 +935,9 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   20261004s (maquette validée « oui », idée d'Antoine) — COULEUR DE LA PISTE sur la carte (`_g45F1CtCouleurBrancher`, enveloppes de
   `_g45F1CtSvg` / `_g45F1CtDessiner`) : j.piste.s 2 / 4 / 6 / 7 → tracé jaune #f5c542, 5 → rouge #ff4545, sinon blanc ; bandeau « 🚗 Safety car
   en piste » / « VSC » / « Fin de VSC ». Toute la piste (secteurs de commissaires ≠ notre tracé).
+  20261004t (« quand une voiture va au stand rien le dessine ») : enveloppe `_g45F1CtStandBrancher` de `_g45F1CtSvg` — voiture p.stand dessinée
+  DANS tr.pit (bord blanc pointillé), avance de l'entrée vers la sortie en ≈ 25 s (`_g45F1CtStand[n]` = heure d'entrée, effacée à la sortie),
+  puis attend près de la sortie ; drapeau rouge inchangé ; sans voie des stands connue : liste « Au stand » seule.
   02/10/2026 (FP2 Malaisie) — /f1live répondait 502 : la route n'ENVOYAIT ni la poignée de main SignalR ni le Subscribe
   (seul /f1test le faisait) → worker corrigé (fichier complet donné à Antoine, à redéployer). /f1test OK pendant FP2 (negotiate 200,
   WS 101, type 3 reçu). PIÈGE : la F1 nomme ce GP « Bahrain Grand Prix » (« … BAHRAIN GRAND PRIX IN MALAYSIA 2026 »), lieu
