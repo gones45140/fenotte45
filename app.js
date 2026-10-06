@@ -37491,6 +37491,24 @@ function g45ToggleStandings(slug, sportPath, btn){
   if(btn){ btn.style.background='#f0b020'; btn.style.color='#0d1220'; }
   g45LoadStandings(slug, sportPath, box);
 }
+/* 20261004x — annee de la saison en cours si la ligue est en PRESAISON (scoreboard
+   ESPN, leagues[0].season {year, type.type}), sinon null. Sports US seulement ;
+   memorise pour la session. */
+var _g45StPreMem = {};
+async function _g45StPresaison(sportPath, slug){
+  if(['football','basketball','hockey','baseball'].indexOf(sportPath)<0) return null;
+  var k=sportPath+'/'+slug;
+  if(k in _g45StPreMem) return _g45StPreMem[k];
+  var an=null;
+  try{
+    var r=await fetch('https://site.api.espn.com/apis/site/v2/sports/'+k+'/scoreboard');
+    if(r.ok){ var j=await r.json(); var se=(j.leagues&&j.leagues[0]&&j.leagues[0].season)||j.season||{};
+      var ty=se.type; ty=(ty&&typeof ty==='object')?ty.type:ty;
+      if(String(ty)==='1' && se.year) an=parseInt(se.year,10)||null; }
+  }catch(e){}
+  _g45StPreMem[k]=an;
+  return an;
+}
 async function g45LoadStandings(slug, sportPath, box){
   box.innerHTML='<div style="display:flex;align-items:center;gap:8px;padding:14px;color:var(--t3);font-size:11px;"><div style="width:12px;height:12px;border:2px solid rgba(240,176,32,.2);border-top-color:#f0b020;border-radius:50%;animation:spin .8s linear infinite;"></div>Chargement du classement…</div>';
   var now=new Date(), curY=now.getFullYear(), mois=now.getMonth()+1;
@@ -37506,9 +37524,16 @@ async function g45LoadStandings(slug, sportPath, box){
      purement et simplement ignorée ici. */
   if(typeof _g45CompetSaison!=='undefined' && _g45CompetSaison) seasons.push(_g45CompetSaison);
   seasons=seasons.concat([primary,augY,curY,curY-1]).filter(function(y){ if(seen[y])return false; seen[y]=1; return true; });
+  /* 20261004x — SONDE D'ANTOINE (06/10) : &seasontype=2 est IGNORE par le
+     classement (NHL 2027 = 3 matchs de presaison avec ou sans). On demande donc
+     au scoreboard de la ligue si la saison en cours est en presaison
+     (leagues[0].season.type.type 1) ; cette annee-la ne sert alors que de
+     dernier repli. */
+  var _preAn=(typeof _g45StPresaison==='function')?await _g45StPresaison(sportPath, slug):null;
   try{
     var data=null, used=null, repli=null, repliAn=null;
     for(var i=0;i<seasons.length;i++){
+      if(_preAn && seasons[i]===_preAn){ continue; }
       /* 20261004w — PRESAISON (captures d'Antoine 06/10 : NBA 2026-27 = matchs de
          presaison au classement). Sports US : saison reguliere seule
          (&seasontype=2, comme les calendriers) ; refus → ancienne adresse. */
@@ -37532,6 +37557,10 @@ async function g45LoadStandings(slug, sportPath, box){
       if(tot>0 && !repli){ repli=j; repliAn=seasons[i]; }
     }
     if(!data && repli){ data=repli; used=repliAn; }
+    if(!data && _preAn){
+      try{ var _rp=await fetch('https://site.api.espn.com/apis/v2/sports/'+sportPath+'/'+slug+'/standings?season='+_preAn);
+           if(_rp.ok){ data=await _rp.json(); used=_preAn; } }catch(_e){}
+    }
     if(!data){
       /* ═══ MESSAGE EXPLICITE (04/09) ═══
          Antoine a cherche un bug la ou il n'y en avait pas : ESPN a CESSE de

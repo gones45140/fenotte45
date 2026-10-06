@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261004w, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261004x, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -103,6 +103,10 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   — le « rank » ESPN classait Thunder 15e, Jets 16e ; J absent = V+N+D ; hockey N = otLosses/overtimeLosses (noms NON vérifiés).
   Journées (`g45NrlCharger`) : calendrier par équipe en &seasontype=2 + événement seasonType.type 1 écarté (US seulement, pas NRL) ;
   cache g45nrlcal11_ → g45nrlcal12_.
+  20261004x — SONDÉ PAR ANTOINE (NHL) : le classement IGNORE &seasontype=2 (2027 = 3 matchs de présaison avec ou sans) ;
+  colonnes otLosses ET overtimeLosses présentes. → `_g45StPresaison(sp, slug)` lit le scoreboard (leagues[0].season.type.type 1 =
+  présaison, année season.year ; type NON vu dans la sonde) : cette année-là sautée, gardée en dernier repli. Capture « Jets 16e » =
+  saison 2024-25 (season=2025) : tri corrigé en w.
 - Compétitions : `loadCompetTab`, vues `_g45CompetVue` ; matchs d'une ligue
   `_g45CompetMatchs` (un calendrier par équipe, cache 12 h, périodes hp/ap).
   Année auto `_g45CompetAnneeAuto` (30d) : NHL / NBA = année de FIN (dès septembre, 2026-27 =
