@@ -50291,9 +50291,15 @@ async function _g45SaisonsGen(el, nom, perso) {
      coches a la fois. Chaque barre prise isolement dit 55% et 47% ; leur
      intersection dit 39%, et c'est elle qu'on parie. Calcule sur la liste
      FILTREE, donc il suit le choix Global / Domicile / Exterieur. */
+  /* 20261005c (capture d'Antoine : « 0/50 — WIN + AO0.5 · 0% » alors que la liste montre des victoires avec but adverse) :
+     les clés des CURSEURS (AO0.5, EU1.5, H-1.5, MT:…) ne sont pas connues de _g45SgCompte → toujours « faux ». Elles passent
+     par le moteur des marchés, comme les barres au-dessus ; donnée inconnue (null) = ne bloque pas, comme en football. */
   var combN = 0;
   liste.forEach(function (m) {
-    if (coches.every(function (k) { return _g45SgCompte([m], k) === 1; })) combN++;
+    if (coches.every(function (k) {
+      if (CLES.indexOf(k) >= 0) return _g45SgCompte([m], k) === 1;
+      var r = _g45MarcheEval(k, _g45SgX(m, sp)); return r == null ? true : r;
+    })) combN++;
   });
   var combPc = pct(combN, nF);
   var combCol = combPc >= 60 ? '#1ed760' : (combPc >= 40 ? '#f0b020' : '#ff7b54');
@@ -50336,11 +50342,15 @@ async function _g45SaisonsGen(el, nom, perso) {
   html += '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:6px;">'
     + '<div id="g45-sg-titre-resultats" style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#4f5d88;">R\u00e9sultats (' + nF + ' matchs)</div>'
     + '<div style="font-size:11px;font-weight:800;color:' + combCol + ';background:' + combCol + '1a;border:1px solid ' + combCol + '55;border-radius:12px;padding:3px 10px;">'
-    + '\u2705 ' + combN + '/' + nF + ' \u2014 ' + coches.join(' + ') + ' \u00b7 ' + combPc + '%</div></div>';
+    + '\u2705 ' + combN + '/' + nF + ' \u2014 ' + coches.map(function (k) { return CLES.indexOf(k) >= 0 ? libelleDe(k) : _g45MarcheCourt(k); }).join(' + ') + ' \u00b7 ' + combPc + '%</div></div>';
   liste.forEach(function (m) {
     var col = m.res === 'V' ? '#1ed760' : (m.res === 'N' ? '#f0b020' : '#ff4545');
     var d = new Date(m.t);
-    var passes = coches.filter(function (k) { return _g45SgCompte([m], k) === 1; });
+    /* 20261005c : clés des curseurs lues par le moteur des marchés (sinon toujours « faux » → barre rouge, étiquette absente). */
+    var passes = coches.filter(function (k) {
+      if (CLES.indexOf(k) >= 0) return _g45SgCompte([m], k) === 1;
+      var r = _g45MarcheEval(k, _g45SgX(m, sp)); return r == null ? true : r;
+    });
     /* ═══ LA BARRE SUIT LE COMBINE, PAS LE RESULTAT (08/09) ═══
        Elle etait coloree sur `m.res` : un match gagne 28-20 ressortait en VERT
        alors que le combine coche etait « O49.5 + WIN » et que le total, a 48,
