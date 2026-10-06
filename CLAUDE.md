@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261004v, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261004w, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -98,6 +98,11 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   NBA → `_g45NbaTableau` (vues Saison / 10 / 5 / Match).
 - Fenêtre de match : `_renderGenericDetail` ; stats d'équipe US `_g45UsTeamStats`
   (couleurs via `g45CoulPaire` + `_g45CoulTexte`) ; feuille des joueurs NBA `_g45NbaFeuilleHtml`.
+- 20261004w (captures d'Antoine 06/10) — Compétitions sports US : Classement (`g45LoadStandings`) demande &seasontype=2 (refus →
+  ancienne adresse ; prise en compte par ESPN NON vérifiée) ; `g45RenderStandings` TRIE lui-même NHL/KHL (points) et NBA/NFL/MLB (% V)
+  — le « rank » ESPN classait Thunder 15e, Jets 16e ; J absent = V+N+D ; hockey N = otLosses/overtimeLosses (noms NON vérifiés).
+  Journées (`g45NrlCharger`) : calendrier par équipe en &seasontype=2 + événement seasonType.type 1 écarté (US seulement, pas NRL) ;
+  cache g45nrlcal11_ → g45nrlcal12_.
 - Compétitions : `loadCompetTab`, vues `_g45CompetVue` ; matchs d'une ligue
   `_g45CompetMatchs` (un calendrier par équipe, cache 12 h, périodes hp/ap).
   Année auto `_g45CompetAnneeAuto` (30d) : NHL / NBA = année de FIN (dès septembre, 2026-27 =

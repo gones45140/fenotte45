@@ -37509,7 +37509,13 @@ async function g45LoadStandings(slug, sportPath, box){
   try{
     var data=null, used=null, repli=null, repliAn=null;
     for(var i=0;i<seasons.length;i++){
-      var r=await fetch('https://site.api.espn.com/apis/v2/sports/'+sportPath+'/'+slug+'/standings?season='+seasons[i]);
+      /* 20261004w — PRESAISON (captures d'Antoine 06/10 : NBA 2026-27 = matchs de
+         presaison au classement). Sports US : saison reguliere seule
+         (&seasontype=2, comme les calendriers) ; refus → ancienne adresse. */
+      var _stU=(['football','basketball','hockey','baseball'].indexOf(sportPath)>=0)?'&seasontype=2':'';
+      var _uS='https://site.api.espn.com/apis/v2/sports/'+sportPath+'/'+slug+'/standings?season='+seasons[i];
+      var r=await fetch(_uS+_stU);
+      if(!r.ok && _stU) r=await fetch(_uS);
       if(!r.ok) continue;
       var j=await r.json();
       var groups=j.children||(j.standings?[j]:[]);
@@ -37517,7 +37523,7 @@ async function g45LoadStandings(slug, sportPath, box){
       groups.forEach(function(g){
         var es=((g.standings&&g.standings.entries)||g.entries||[]);
         tot+=es.length;
-        es.forEach(function(e){ joues += (parseFloat(_g45Stat(e.stats,['gamesPlayed','games','wins','losses']))||0); });
+        es.forEach(function(e){ joues += (parseFloat(_g45Stat(e.stats,['gamesPlayed','games']))||0) + (parseFloat(_g45Stat(e.stats,['wins']))||0) + (parseFloat(_g45Stat(e.stats,['losses']))||0); });
       });
       /* UN CLASSEMENT A ZERO N'EST PAS UN CLASSEMENT : une saison a venir renvoie
          toutes ses equipes avec 0 match joue, et c'etait accepte comme valide.
@@ -37624,6 +37630,19 @@ function g45RenderStandings(data, season, sportPath, slug){
       var ra=parseFloat(_g45Stat(a.stats,['rank']))||999, rb=parseFloat(_g45Stat(b.stats,['rank']))||999;
       return ra-rb;
     });
+    /* 20261004w — TRI DES SPORTS US (captures d'Antoine 06/10 : Thunder 78 % 15e de
+       l'Ouest, Jets 116 pts 16e) : le « rank » ESPN n'y vaut rien. NHL / KHL =
+       points, puis victoires ; NBA / NFL / MLB = % de victoires, puis victoires ;
+       ecart de points ensuite. */
+    if(usePct||sportPath==='hockey'){
+      var _n=function(e,k){ var v=parseFloat(_g45Stat(e.stats,k)); return isNaN(v)?-1e9:v; };
+      var _pc=function(e){ var w=parseFloat(_g45Stat(e.stats,['winPercent'])); if(!isNaN(w)) return w<=1?w:w/100;
+        var v=parseFloat(_g45Stat(e.stats,['wins']))||0, d=parseFloat(_g45Stat(e.stats,['losses']))||0; return (v+d)?v/(v+d):-1; };
+      entries.sort(function(a,b){
+        var k=usePct?(_pc(b)-_pc(a)):(_n(b,['points'])-_n(a,['points']));
+        return k || (_n(b,['wins'])-_n(a,['wins'])) || (_n(b,['pointDifferential','differential'])-_n(a,['pointDifferential','differential']));
+      });
+    }
     if(multi){ out+='<div style="font-size:11px;font-weight:800;color:var(--t1);margin:10px 0 4px;">'+(g.name||g.abbreviation||'Groupe')+'</div>'; }
     /* LISIBILITE (18/09/2026) : Antoine lit mal les petits caracteres gris.
        Toutes les colonnes passent en chiffres a largeur fixe (tabular-nums),
@@ -37648,8 +37667,12 @@ function g45RenderStandings(data, season, sportPath, slug){
       var logo=''; try{ logo=(t.logos&&t.logos[0]&&t.logos[0].href)||''; }catch(_){ }
       var nm=_g45EntName(e)||'?';
       var J=_g45Stat(st,['gamesPlayed']), V=_g45Stat(st,['wins','gamesWon']), N=_g45Stat(st,['ties','draws','gamesDrawn']), D=_g45Stat(st,['losses','gamesLost']);
+      /* 20261004w : hockey, N = defaites en prolongation / TAB (colonne vide chez
+         Antoine) ; J absent (NBA) = V + N + D. */
+      if(sportPath==='hockey'){ var _ot=_g45Stat(st,['otLosses','overtimeLosses','OTLosses','OTL','OT']); if(_ot!=='') N=_ot; }
+      if(J===''&&(V!==''||D!=='')) J=String((parseFloat(V)||0)+(parseFloat(N)||0)+(parseFloat(D)||0));
       var BP=_g45Stat(st,['pointsFor']), BC=_g45Stat(st,['pointsAgainst']);
-      var DF=_g45Stat(st,['pointDifferential']), PT=_g45Stat(st,['points']);
+      var DF=_g45Stat(st,['pointDifferential','differential']), PT=_g45Stat(st,['points']);
       var lastCol=PT!==''?PT:'-';
       if(usePct){
         var WP=parseFloat(_g45Stat(st,['winPercent']));
@@ -42320,7 +42343,7 @@ var _G45_CACHE_PREFIXES=['g45bb1_','g45bbst1_','g45bbld1_','g45bbf1_',/* 03/10 :
   'g45nrlcal2_','g45core2_','g45core_','g45_fx_faits','g45_veille_','g45_compet_logos','g45_groq_modele','g45_groq_modele3','g45_groq_vision','g45_gemini_modeles',
   /* 12/09 : g45nrlcal6_ rejoint la liste, remplace par g45nrlcal7_ ci-dessus —
      meme raison que g45nrlcal2_ et g45nrlcal3_ avant lui. */
-  'g45nrlcal6_','g45nrlcal7_','g45nrlcal8_','g45nrlcal9_','g45nrlcal10_',
+  'g45nrlcal6_','g45nrlcal7_','g45nrlcal8_','g45nrlcal9_','g45nrlcal10_','g45nrlcal11_','g45nrlcal12_',
   /* MESURE DU 20/08 sur le stockage reel d'Antoine (5,1 Mo, sature) :
        fpl_bootstrap_cache ... 1951 Ko  <- a lui seul 38 % du total
        g45itf_*            ... 1779 Ko  <- tennis ITF/Challenger, par date
@@ -44652,12 +44675,18 @@ async function g45NrlCharger(annee) {
   for (var i = 0; i < listeIds.length; i++) {
     _g45NrlMsg('⏳ Équipe ' + (i + 1) + '/' + listeIds.length + '…');
     try {
-      var r = await fetch('https://site.api.espn.com/apis/site/v2/sports/' + _g45NrlCtx.sport + '/' + _g45NrlCtx.ligue + '/teams/' + listeIds[i] + '/schedule?season=' + annee);
+      /* 20261004w — PRESAISON (capture d'Antoine 06/10 : Journees NBA 2026-27 =
+         matchs de presaison du 03 au 06/10). Sports US : &seasontype=2, et un
+         evenement de type 1 est ecarte (comme _g45CompetMatchs). Pas le NRL :
+         chez lui le type 1 EST la saison reguliere. */
+      var _usJ = (['football', 'basketball', 'hockey', 'baseball'].indexOf(_g45NrlCtx.sport) >= 0);
+      var r = await fetch('https://site.api.espn.com/apis/site/v2/sports/' + _g45NrlCtx.sport + '/' + _g45NrlCtx.ligue + '/teams/' + listeIds[i] + '/schedule?season=' + annee + (_usJ ? '&seasontype=2' : ''));
       if (!r.ok) continue;
       var d = await r.json();
       (d.events || []).forEach(function (e) {
         var id = String(e.id);
         if (vus[id]) return;
+        if (_usJ && e.seasonType && String(e.seasonType.type) === '1') return;
         var c = (e.competitions && e.competitions[0]) || {};
         var st = (c.status && c.status.type) || {};
         var joue = (st.completed === true || st.state === 'post');
@@ -52606,7 +52635,8 @@ function _g45NrlCleCache(annee) {
   /* Cle changee le 12/09 (quater) : alias Spurs/Palace/Forest/AZ/Cologne. */
   /* Cle changee le 12/09 (quinquies) : correction ø, alias bidirectionnels,
      AEK/Bratislava/Prague ajoutes. */
-  return 'g45nrlcal11_' + _g45NrlCtx.sport + '_' + _g45NrlCtx.ligue + '_' + annee;
+  /* 20261004w : g45nrlcal12_ — presaison US ecartee (g45nrlcal11_ → MORTS). */
+  return 'g45nrlcal12_' + _g45NrlCtx.sport + '_' + _g45NrlCtx.ligue + '_' + annee;
 }
 
 var _g45NrlChargerOrig = (typeof g45NrlCharger === 'function') ? g45NrlCharger : null;
@@ -65374,7 +65404,7 @@ window._g45ClvSelection = _g45ClvSelection; window._g45ClvPoser = _g45ClvPoser; 
       (setItem et save) puisse les vider.
    3) Au-delà de 4 millions de caractères stockés, purge préventive des
       caches (jamais g45v5, les données). */
-var _G45_CACHE_MORTS = ['g45f1tr1_' /* 04/10 : → g45f1tr2_ (voie des stands) */, 'g45bbjc1' /* 03/10 : → g45bbjc2 (clubs par saison) */, 'g45bbph1_' /* 03/10 : → g45bbph2_ (secours Wikipédia) */, 'g45cm9_' /* 01/10 : → g45cm10_ (présaison NHL marquée PO) */, 'g45nrlst1_' /* 01/10 : → g45nrlst2_ */, 'g45_cfai_veille' /* 29/09 : Workers AI supprimé */, 'g45cls4_' /* 29/09 : → g45cls5_ (stats de match) */, 'g45news7_', 'g45cm_', 'g45cm2_', 'g45cm3_', 'g45cm4_', 'g45cm5_', 'g45cm6_', 'g45cm7_', 'g45cm8_',
+var _G45_CACHE_MORTS = ['g45nrlcal11_' /* 06/10 : → g45nrlcal12_ (présaison US écartée) */, 'g45f1tr1_' /* 04/10 : → g45f1tr2_ (voie des stands) */, 'g45bbjc1' /* 03/10 : → g45bbjc2 (clubs par saison) */, 'g45bbph1_' /* 03/10 : → g45bbph2_ (secours Wikipédia) */, 'g45cm9_' /* 01/10 : → g45cm10_ (présaison NHL marquée PO) */, 'g45nrlst1_' /* 01/10 : → g45nrlst2_ */, 'g45_cfai_veille' /* 29/09 : Workers AI supprimé */, 'g45cls4_' /* 29/09 : → g45cls5_ (stats de match) */, 'g45news7_', 'g45cm_', 'g45cm2_', 'g45cm3_', 'g45cm4_', 'g45cm5_', 'g45cm6_', 'g45cm7_', 'g45cm8_',
   'g45khl_fiche_', 'g45_saisons_cache_v2_', 'g45_score_', 'g45_score2_', 'g45_score3_'];
 try {
   ['g45cm10_', 'g45xgj1_', 'g45khl_fiche2_', 'g45khl_plage_', 'g45cls3_', 'g45cls5_', 'g45photostsdb_', 'g45wk1_', 'g45jv_', 'g45art1_', 'g45clv1_', 'g45arb1_', 'g45_herologo_', 'g45cm3_']
