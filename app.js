@@ -68059,3 +68059,133 @@ function _g45F1TrPropre(t) {
   };
   _g45F1TraceLire._g45Part = true; window._g45F1TraceLire = _g45F1TraceLire;
 })();
+
+/* ═══ 20261004y — PHOTOS DANS « LES BUTS EN ACTION » (maquette PC validée « OUI » le 06/10) ═══
+   Antoine : « si on met la photo des joueurs ça serait mieux ? ». Sur TÉLÉPHONE une photo de 36 px dans le rond ne se
+   reconnaît pas et cache le numéro (l'ordre de l'action) → terrain inchangé, photos dans l'EN-TÊTE (buteur 56 px,
+   passeur) et dans la LISTE numérotée sous le terrain. Sur PC (bloc ≥ 700 px de large) : terrain redessiné à la taille
+   réelle (`_g45ButsSvgPc`), photo DANS chaque rond (bord bleu / jaune, buteur plus grand bord rouge), numéro en pastille
+   noire en haut à droite, nom blanc sur bande sombre. Photos = `_g45ClsPhotoDe` (perso → Wikipédia → TheSportsDB →
+   API-Sports, 2 clubs non en cache max), mémoire de session `_g45ButsPh` ; aucune → initiales. Le terrain PC n'est
+   redessiné qu'UNE fois, quand toutes les photos sont connues (8 s max), pour ne pas rejouer le ballon animé. */
+var _g45ButsPh = {};
+function _g45ButsIni(n) { var p = String(n || '?').trim().split(/\s+/); return ((p[0] || '?')[0] + (p.length > 1 ? p[p.length - 1][0] : '')).toUpperCase(); }
+function _g45ButsAv(nom, px, bord) {
+  var u = _g45ButsPh[nom];
+  return '<span data-g45bph="' + _g45Esc(nom) + '" style="flex:none;width:' + px + 'px;height:' + px + 'px;border-radius:50%;border:3px solid ' + bord + ';'
+    + 'background:#1b2540 ' + (u ? 'url(&quot;' + _g45Esc(u) + '&quot;)' : '') + ' 50% 12%/cover no-repeat;display:inline-flex;align-items:center;justify-content:center;'
+    + 'color:#fff;font-weight:800;font-size:' + Math.round(px * 0.36) + 'px;box-sizing:border-box;">' + (u ? '' : _g45Esc(_g45ButsIni(nom))) + '</span>';
+}
+function _g45ButsSvgPc(B, col, id, W) {
+  var H = Math.round(W * 250 / 380), k = W / 380, M = 8 * k, R = W >= 1000 ? 38 : 30;
+  var X = function (x) { return M + Math.max(1, Math.min(99, x)) / 100 * (W - 2 * M); }, Y = function (y) { return M + Math.max(2, Math.min(98, y)) / 100 * (H - 2 * M); };
+  var f = function (v) { return (+v).toFixed(1); };
+  var L = 'fill="none" stroke="rgba(255,255,255,.7)" stroke-width="3"';
+  var s = '<rect width="' + W + '" height="' + H + '" rx="18" fill="#2f7a3f"/><rect x="' + f(M) + '" y="' + f(M) + '" width="' + f(W - 2 * M) + '" height="' + f(H - 2 * M) + '" ' + L + '/>'
+    + '<line x1="' + W / 2 + '" x2="' + W / 2 + '" y1="' + f(M) + '" y2="' + f(H - M) + '" stroke="rgba(255,255,255,.7)" stroke-width="3"/><circle cx="' + W / 2 + '" cy="' + H / 2 + '" r="' + f(28 * k) + '" ' + L + '/>'
+    + '<rect x="' + f(M) + '" y="' + f(Y(21)) + '" width="' + f(58 * k) + '" height="' + f(Y(79) - Y(21)) + '" ' + L + '/><rect x="' + f(W - M - 58 * k) + '" y="' + f(Y(21)) + '" width="' + f(58 * k) + '" height="' + f(Y(79) - Y(21)) + '" ' + L + '/>'
+    + '<rect x="' + f(W - M - 6 * k) + '" y="' + f(Y(44)) + '" width="' + f(6 * k) + '" height="' + f(Y(56) - Y(44)) + '" fill="#fff"/>'
+    + '<defs><marker id="' + id + 'f" markerWidth="6" markerHeight="6" refX="4" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6z" fill="#fff"/></marker>'
+    + '<marker id="' + id + 'r" markerWidth="6" markerHeight="6" refX="4" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6z" fill="#ff5c5c"/></marker></defs>';
+  var C = B.seq.map(function (a) { return [X(a.x), Y(a.y), a.but ? Math.round(R * 1.2) : R]; });
+  /* bout de ligne raccourci s'il tombe sur un rond (sinon la flèche est cachée dessous) */
+  var court = function (x1, y1, x2, y2, r1) {
+    var dx = x2 - x1, dy = y2 - y1, d = Math.hypot(dx, dy) || 1, r2 = 0;
+    C.forEach(function (c) { if (Math.hypot(c[0] - x2, c[1] - y2) < c[2]) r2 = Math.max(r2, c[2] + 8); });
+    if (d <= r1 + r2 + 6) return null;
+    return [x1 + dx / d * r1, y1 + dy / d * r1, x2 - dx / d * r2, y2 - dy / d * r2];
+  };
+  var prev = null, pts = [];
+  B.seq.forEach(function (a, i) {
+    var cx = C[i][0], cy = C[i][1];
+    if (prev && Math.hypot(prev[0] - cx, prev[1] - cy) > 4) s += '<line x1="' + f(prev[0]) + '" y1="' + f(prev[1]) + '" x2="' + f(cx) + '" y2="' + f(cy) + '" stroke="#fff" stroke-width="3" stroke-dasharray="10 8" opacity=".75"/>';
+    pts.push(f(cx) + ',' + f(cy));
+    if (a.x2 != null) {
+      var ex = X(a.x2), ey = Y(a.y2), l = court(cx, cy, ex, ey, C[i][2]);
+      if (l) s += '<line x1="' + f(l[0]) + '" y1="' + f(l[1]) + '" x2="' + f(l[2]) + '" y2="' + f(l[3]) + '" stroke="' + (a.but ? '#ff5c5c' : '#fff') + '" stroke-width="' + (a.but ? 6 : 5) + '" marker-end="url(#' + id + (a.but ? 'r' : 'f') + ')"/>';
+      pts.push(f(ex) + ',' + f(ey)); prev = [ex, ey];
+    } else prev = [cx, cy];
+  });
+  B.seq.forEach(function (a, i) {
+    var cx = C[i][0], cy = C[i][1], r = C[i][2], nm = a.nm || (a.but ? B.nom : ''), u = _g45ButsPh[nm], cid = id + 'c' + i;
+    s += '<clipPath id="' + cid + '"><circle cx="' + f(cx) + '" cy="' + f(cy) + '" r="' + r + '"/></clipPath><circle cx="' + f(cx) + '" cy="' + f(cy) + '" r="' + r + '" fill="#1b2540"/>';
+    if (u) s += '<image href="' + _g45Esc(u) + '" x="' + f(cx - r) + '" y="' + f(cy - r) + '" width="' + 2 * r + '" height="' + 2 * r + '" preserveAspectRatio="xMidYMin slice" clip-path="url(#' + cid + ')"/>';
+    else s += '<text x="' + f(cx) + '" y="' + f(cy + r * 0.3) + '" text-anchor="middle" font-size="' + Math.round(r * 0.8) + '" font-weight="800" fill="#fff">' + _g45Esc(_g45ButsIni(nm)) + '</text>';
+    s += '<circle cx="' + f(cx) + '" cy="' + f(cy) + '" r="' + r + '" fill="none" stroke="' + (a.but ? '#ff4545' : col) + '" stroke-width="' + (a.but ? 6 : 5) + '"/>';
+    var bx = cx + r * 0.72, by = cy - r * 0.72;
+    s += '<circle cx="' + f(bx) + '" cy="' + f(by) + '" r="15" fill="#0b101d" stroke="#fff" stroke-width="2"/><text x="' + f(bx) + '" y="' + f(by + 5.5) + '" text-anchor="middle" font-size="16" font-weight="800" fill="#fff">' + (i + 1) + '</text>';
+    var nom = _g45ButsNom(nm), lw = Math.max(60, nom.length * 8.5 + 16);
+    if (nm) s += '<rect x="' + f(cx - lw / 2) + '" y="' + f(cy + r + 4) + '" width="' + f(lw) + '" height="22" rx="6" fill="rgba(11,16,29,.85)"/><text x="' + f(cx) + '" y="' + f(cy + r + 20) + '" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">' + _g45Esc(nom) + '</text>';
+  });
+  var dur = Math.max(2, Math.min(8, pts.length * 0.5));
+  if (pts.length > 1) s += '<circle r="16" fill="#fff" stroke="#000" stroke-width="3"><animateMotion dur="' + dur + 's" fill="freeze" path="M' + pts.join(' L') + '"/></circle>';
+  return '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;display:block;">' + s + '</svg>';
+}
+async function _g45ButsPhotosPoser(eid) {
+  var M = _g45ButsMem[eid], z = document.getElementById('g45-buts-' + eid);
+  if (!M || !M.buts || !z) return;
+  var blocs = Array.prototype.slice.call(z.querySelectorAll('[id^="g45-buts-svg-' + eid + '-"]'));
+  var noms = {}, club = function (T) { return String(T) === String(M.idH) ? M.nh : M.na; };
+  blocs.forEach(function (sv) {
+    var i = +sv.id.split('-').pop(), B = M.buts[i]; if (!B) return;
+    var dom = B.T === String(M.idH), col = dom ? '#6d9dff' : '#f5c542', carte = sv.parentNode, pc = sv.offsetWidth >= 700;
+    if (carte.getAttribute('data-g45bph-ok')) return;
+    carte.setAttribute('data-g45bph-ok', '1');
+    B.seq.forEach(function (a) { var nm = a.nm || (a.but ? B.nom : ''); if (nm) noms[nm] = club(B.T); });
+    noms[B.nom] = noms[B.nom] || club(B.T); if (B.pas) noms[B.pas] = noms[B.pas] || club(B.T);
+    /* en-tête : grande photo du buteur, petite du passeur */
+    var t = carte.firstElementChild;
+    if (t) {
+      var w = document.createElement('div');
+      w.style.cssText = 'display:flex;align-items:center;gap:12px;';
+      w.innerHTML = _g45ButsAv(B.nom, pc ? 72 : 56, '#ff4545');
+      carte.insertBefore(w, t); w.appendChild(t);
+      var inf = w.nextElementSibling;
+      if (inf && /actions?<\/?|action/.test(inf.innerHTML)) {
+        var n = B.seq.length;
+        inf.style.cssText += ';display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:14px;';
+        inf.innerHTML = (B.pas ? 'Passe décisive : ' + _g45ButsAv(B.pas, 30, col) + '<b style="color:#fff;">' + _g45Esc(_g45ButsNom(B.pas)) + '</b> · ' : '') + n + ' action' + (n > 1 ? 's' : '');
+        var col2 = document.createElement('div'); col2.appendChild(t); col2.appendChild(inf); w.appendChild(col2);
+      }
+    }
+    /* liste numérotée : photo entre le numéro et le nom */
+    var li = sv.nextElementSibling;
+    if (li) Array.prototype.forEach.call(li.children, function (row, j) {
+      var a = B.seq[j]; if (!a || !row.firstElementChild) return;
+      var nm = a.nm || (a.but ? B.nom : '');
+      row.firstElementChild.insertAdjacentHTML('afterend', _g45ButsAv(nm, 36, a.but ? '#ff4545' : col));
+    });
+    if (pc) { B._pcW = Math.round(sv.offsetWidth); sv.setAttribute('data-g45pc', '1'); }
+  });
+  /* photos manquantes : 3 recherches à la fois, 8 s maximum */
+  var manque = Object.keys(noms).filter(function (n) { return !(n in _g45ButsPh); });
+  if (manque.length) {
+    var budget = { n: 2, p: {} }, file = manque.slice();
+    var trav = async function () { while (file.length) { var n = file.shift(), u = ''; try { u = await _g45ClsPhotoDe(n, noms[n], budget); } catch (e) {} _g45ButsPh[n] = u || ''; } };
+    await Promise.race([Promise.all([trav(), trav(), trav()]), new Promise(function (ok) { setTimeout(ok, 8000); })]);
+  }
+  if (!z.isConnected) return;
+  Array.prototype.forEach.call(z.querySelectorAll('[data-g45bph]'), function (el) {
+    var u = _g45ButsPh[el.getAttribute('data-g45bph')];
+    if (u) { el.style.backgroundImage = 'url("' + String(u).replace(/"/g, '%22') + '")'; el.textContent = ''; }
+  });
+  z.querySelectorAll('[data-g45pc="1"]').forEach(function (sv) {
+    var i = +sv.id.split('-').pop(), B = M.buts[i]; if (!B) return;
+    sv.innerHTML = _g45ButsSvg(B, B.T === String(M.idH) ? '#6d9dff' : '#f5c542', 'gb' + eid + '_' + i + '_p');
+  });
+}
+(function _g45ButsPhotosBrancher() {
+  if (typeof _g45ButsHtml !== 'function' || _g45ButsHtml._g45Ph) return;
+  var oH = _g45ButsHtml, oS = _g45ButsSvg;
+  _g45ButsHtml = function (eid) {
+    var h = oH.apply(this, arguments);
+    setTimeout(function () { _g45ButsPhotosPoser(String(eid)).catch(function () {}); }, 0);
+    return h;
+  };
+  _g45ButsSvg = function (B, col, id) {
+    if (B && B._pcW >= 700) { try { return _g45ButsSvgPc(B, col, id, B._pcW); } catch (e) {} }
+    return oS.apply(this, arguments);
+  };
+  _g45ButsHtml._g45Ph = true;
+  window._g45ButsHtml = _g45ButsHtml; window._g45ButsSvg = _g45ButsSvg; window._g45ButsSvgPc = _g45ButsSvgPc;
+})();

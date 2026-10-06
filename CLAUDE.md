@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261004x, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261004y, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -556,6 +556,10 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   (numéros, flèches, pointillés = conduite, tir rouge, ballon animé une fois ; « ▶ Revoir » `g45ButsRevoir`, repli
   `g45ButsOuvrir`). Direct : toutes les 30 s `_g45ButsMaj` compare le SCORE du résumé déjà chargé (`_g45AmSum`) au nombre de
   buts trouvés — aucune requête si égal ; sinon relit la dernière page. Match fini : cache `g45buts1_<eid>` (permanent).
+  20261004y (maquette PC validée « OUI ») — PHOTOS dans « Les buts en action » : enveloppes `_g45ButsPhotosBrancher` de `_g45ButsHtml`
+  (→ `_g45ButsPhotosPoser(eid)` après rendu : en-tête buteur 56/72 px + passeur, photo 36 px dans la liste) et de `_g45ButsSvg` (B._pcW ≥ 700 =
+  bloc large → `_g45ButsSvgPc` : terrain à la taille réelle, photo DANS le rond, numéro en pastille, nom sur bande sombre ; téléphone inchangé).
+  Photos `_g45ClsPhotoDe` (budget API-Sports 2 clubs), mémoire de session `_g45ButsPh`, initiales sinon ; terrain PC redessiné une fois (8 s max).
   ⚾ `_g45LiveMlbBloc` (dans `_renderGenericDetail`, baseball 'in') : SONDÉ, summary.situation (balls, strikes, outs,
   onFirst/Second/Third, batter, pitcher, lastPlay.id, situationNotes RISP traduite) ; noms via boxscore.players /
   rosters ; manche traduite (Bot 6th → Bas 6e) ; relu toutes les 20 s. NFL / NBA / NHL : à sonder pendant un match.
