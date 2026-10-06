@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261004z, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261005a, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -563,6 +563,8 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   20261004z (capture d'Antoine) : nom « saved. Igor Matanovic » (texte ESPN « Attempt saved. Igor Matanovic (Croatia)… ») → `_g45ButsNet`
   (après le dernier « . », aussi via l'enveloppe de `_g45ButsNom`) ; ronds PC qui se chevauchaient → boîtes rond + pastille + nom écartées
   (axe le moins coûteux, 60 tours), flèches raccrochées au rond déplacé si la fin de passe est à < 8 unités du départ suivant.
+  20261005a (« C'EST UNE CAGE DE HOCKEY SUR GLACE ? ») : vraie cage `_g45ButsCage` DERRIÈRE la ligne (filet quadrillé, poteaux, barre), des deux
+  côtés, + petites surfaces (5,2 % × 36,5→63,5 %) ; PC dans `_g45ButsSvgPc`, téléphone par remplacement du petit rectangle dans l'enveloppe de `_g45ButsSvg`.
   ⚾ `_g45LiveMlbBloc` (dans `_renderGenericDetail`, baseball 'in') : SONDÉ, summary.situation (balls, strikes, outs,
   onFirst/Second/Third, batter, pitcher, lastPlay.id, situationNotes RISP traduite) ; noms via boxscore.players /
   rosters ; manche traduite (Bot 6th → Bas 6e) ; relu toutes les 20 s. NFL / NBA / NHL : à sonder pendant un match.

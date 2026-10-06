@@ -68079,6 +68079,18 @@ function _g45ButsAv(nom, px, bord) {
     + 'background:#1b2540 ' + (u ? 'url(&quot;' + _g45Esc(u) + '&quot;)' : '') + ' 50% 12%/cover no-repeat;display:inline-flex;align-items:center;justify-content:center;'
     + 'color:#fff;font-weight:800;font-size:' + Math.round(px * 0.36) + 'px;box-sizing:border-box;">' + (u ? '' : _g45Esc(_g45ButsIni(nom))) + '</span>';
 }
+/* 20261005a (« C'EST UNE CAGE DE HOCKEY SUR GLACE ? ») : le but était un petit rectangle blanc posé SUR la ligne.
+   Vraie cage DERRIÈRE la ligne de but (filet quadrillé, poteaux et barre blancs), des deux côtés, + petites surfaces
+   (5,5 m sur 105 = 5,2 % de long, 18,3 m sur 68 = 36,5 → 63,5 % de large). xl = ligne de but, sens = +1 (droite) / −1. */
+function _g45ButsCage(xl, y1, y2, prof, sens) {
+  var f = function (v) { return (+v).toFixed(1); }, x2 = xl + sens * prof, s = '';
+  s += '<rect x="' + f(Math.min(xl, x2)) + '" y="' + f(y1) + '" width="' + f(prof) + '" height="' + f(y2 - y1) + '" fill="rgba(255,255,255,.12)"/>';
+  for (var i = 1; i < 3; i++) { var xx = xl + sens * prof * i / 3; s += '<line x1="' + f(xx) + '" y1="' + f(y1) + '" x2="' + f(xx) + '" y2="' + f(y2) + '" stroke="rgba(255,255,255,.45)" stroke-width="1"/>'; }
+  var n = Math.max(3, Math.round((y2 - y1) / 6));
+  for (var j = 1; j < n; j++) { var yy = y1 + (y2 - y1) * j / n; s += '<line x1="' + f(xl) + '" y1="' + f(yy) + '" x2="' + f(x2) + '" y2="' + f(yy) + '" stroke="rgba(255,255,255,.45)" stroke-width="1"/>'; }
+  s += '<path d="M' + f(xl) + ',' + f(y1) + ' L' + f(x2) + ',' + f(y1) + ' L' + f(x2) + ',' + f(y2) + ' L' + f(xl) + ',' + f(y2) + '" fill="none" stroke="#fff" stroke-width="' + (prof > 12 ? 4 : 2) + '" stroke-linejoin="round"/>';
+  return s;
+}
 function _g45ButsSvgPc(B, col, id, W) {
   var H = Math.round(W * 250 / 380), k = W / 380, M = 8 * k, R = W >= 1000 ? 38 : 30;
   var X = function (x) { return M + Math.max(1, Math.min(99, x)) / 100 * (W - 2 * M); }, Y = function (y) { return M + Math.max(2, Math.min(98, y)) / 100 * (H - 2 * M); };
@@ -68087,7 +68099,9 @@ function _g45ButsSvgPc(B, col, id, W) {
   var s = '<rect width="' + W + '" height="' + H + '" rx="18" fill="#2f7a3f"/><rect x="' + f(M) + '" y="' + f(M) + '" width="' + f(W - 2 * M) + '" height="' + f(H - 2 * M) + '" ' + L + '/>'
     + '<line x1="' + W / 2 + '" x2="' + W / 2 + '" y1="' + f(M) + '" y2="' + f(H - M) + '" stroke="rgba(255,255,255,.7)" stroke-width="3"/><circle cx="' + W / 2 + '" cy="' + H / 2 + '" r="' + f(28 * k) + '" ' + L + '/>'
     + '<rect x="' + f(M) + '" y="' + f(Y(21)) + '" width="' + f(58 * k) + '" height="' + f(Y(79) - Y(21)) + '" ' + L + '/><rect x="' + f(W - M - 58 * k) + '" y="' + f(Y(21)) + '" width="' + f(58 * k) + '" height="' + f(Y(79) - Y(21)) + '" ' + L + '/>'
-    + '<rect x="' + f(W - M - 6 * k) + '" y="' + f(Y(44)) + '" width="' + f(6 * k) + '" height="' + f(Y(56) - Y(44)) + '" fill="#fff"/>'
+    + '<rect x="' + f(M) + '" y="' + f(Y(36.5)) + '" width="' + f((W - 2 * M) * 0.052) + '" height="' + f(Y(63.5) - Y(36.5)) + '" ' + L + '/>'
+    + '<rect x="' + f(W - M - (W - 2 * M) * 0.052) + '" y="' + f(Y(36.5)) + '" width="' + f((W - 2 * M) * 0.052) + '" height="' + f(Y(63.5) - Y(36.5)) + '" ' + L + '/>'
+    + _g45ButsCage(M, Y(44.6), Y(55.4), M - 3, -1) + _g45ButsCage(W - M, Y(44.6), Y(55.4), M - 3, 1)
     + '<defs><marker id="' + id + 'f" markerWidth="6" markerHeight="6" refX="4" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6z" fill="#fff"/></marker>'
     + '<marker id="' + id + 'r" markerWidth="6" markerHeight="6" refX="4" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6z" fill="#ff5c5c"/></marker></defs>';
   var C = B.seq.map(function (a) { var nm = _g45ButsNom(a.nm || (a.but ? B.nom : '')); return [X(a.x), Y(a.y), a.but ? Math.round(R * 1.2) : R, Math.max(60, nm.length * 8.5 + 16)]; });
@@ -68207,7 +68221,16 @@ async function _g45ButsPhotosPoser(eid) {
   };
   _g45ButsSvg = function (B, col, id) {
     if (B && B._pcW >= 700) { try { return _g45ButsSvgPc(B, col, id, B._pcW); } catch (e) {} }
-    return oS.apply(this, arguments);
+    var h = oS.apply(this, arguments);
+    /* téléphone (380 × 250, marge 8) : même cage et petites surfaces que sur PC */
+    try {
+      var Yt = function (y) { return 8 + y / 100 * 234; }, Lt = 'fill="none" stroke="rgba(255,255,255,.6)" stroke-width="2"';
+      h = h.replace(/<rect x="[\d.]+" y="[\d.]+" width="6" height="[\d.]+" fill="#fff"\/>/,
+        '<rect x="8" y="' + Yt(36.5).toFixed(1) + '" width="19" height="' + (Yt(63.5) - Yt(36.5)).toFixed(1) + '" ' + Lt + '/>'
+        + '<rect x="353" y="' + Yt(36.5).toFixed(1) + '" width="19" height="' + (Yt(63.5) - Yt(36.5)).toFixed(1) + '" ' + Lt + '/>'
+        + _g45ButsCage(8, Yt(44.6), Yt(55.4), 7, -1) + _g45ButsCage(372, Yt(44.6), Yt(55.4), 7, 1));
+    } catch (e) {}
+    return h;
   };
   _g45ButsHtml._g45Ph = true;
   window._g45ButsHtml = _g45ButsHtml; window._g45ButsSvg = _g45ButsSvg; window._g45ButsSvgPc = _g45ButsSvgPc;
