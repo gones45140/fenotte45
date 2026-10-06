@@ -25923,6 +25923,7 @@ async function loadCalendrier() {
           compSlug: _g.lg,
           venue: (cp.venue && cp.venue.fullName) || '',
           suivi: true,
+          sp: _g.sp,
           id: String(e.id)
         });
       });
@@ -25960,21 +25961,37 @@ async function loadCalendrier() {
 
   var html = '';
   var _csn = 0;
+  /* 20261005b (« il manque peut-être le sport ? », maquette validée « OUI ») : rond du SPORT à gauche (emoji + couleur par
+     sport, aussi sur la barre), compétition en NOM COURT (NHL, MLB, Ligue 1… au lieu de « National Hockey League » / « fra.1 »),
+     jours en blanc 14 px sur bande sombre, équipes 15 px, heure 15 px. */
+  var _agSp = function(m){
+    var sl = String(m.compSlug || '').toLowerCase(), nm = String(m.comp || ''), sp = m.sp || '';
+    var T = { hockey:['🏒','#5ad6ff'], baseball:['⚾','#ff9f43'], basketball:['🏀','#ff7a2f'], football:['🏈','#c084fc'], 'rugby-league':['🏉','#f5c542'], rugby:['🏉','#f5c542'], soccer:['⚽','#1ed760'] };
+    if (!sp) sp = (/^(nhl|khl)$/.test(sl) || /hockey/i.test(nm)) ? 'hockey' : (/^(mlb|kbo)$/.test(sl) || /baseball/i.test(nm)) ? 'baseball'
+      : (/^(nba|wnba)$/.test(sl) || /basketball|euroleague/i.test(nm)) ? 'basketball' : (sl === 'nfl' || /national football league/i.test(nm)) ? 'football'
+      : (sl === '3' || /rugby league|nrl/i.test(nm)) ? 'rugby-league' : /rugby/i.test(nm) ? 'rugby' : 'soccer';
+    var court = { 'national hockey league':'NHL', 'major league baseball':'MLB', 'national basketball association':'NBA', "women's national basketball association":'WNBA', 'national football league':'NFL', 'national rugby league':'NRL' }[nm.toLowerCase()];
+    if (!court && /^(nhl|mlb|nba|wnba|nfl|khl|kbo)$/.test(sl)) court = sl.toUpperCase();
+    if (!court && sl) { try { (G45_LEAGUE_GROUPS || []).forEach(function(g){ (g.leagues || []).forEach(function(l){ if (!court && String(l.slug).toLowerCase() === sl) court = l.name; }); }); } catch(e){} }
+    if (!court && sl === '3') court = 'NRL';
+    var t = T[sp] || T.soccer;
+    return { e: t[0], c: t[1], lg: court || nm || sl };
+  };
   Object.keys(byDate).forEach(function(dateKey){
-    html += '<div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#4f5d88;margin:12px 0 6px;">'+dateKey+'</div>';
+    html += '<div><div style="display:inline-block;background:rgba(11,16,29,.85);color:#fff;font-size:14px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;border-radius:8px;padding:5px 12px;margin:14px 0 8px;">'+dateKey+'</div></div>';
     byDate[dateKey].forEach(function(m){
       var d = new Date(m.date);
       var time = d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
-      var compIco3 = getCompIcon(m.comp || m.compSlug);
-      var compLabel = m.comp || m.compSlug || '';
-      html += '<div style="display:flex;align-items:center;padding:10px 12px;background:var(--s1);border-radius:var(--r6);margin-bottom:6px;border-left:3px solid '+m.color+';">';
-      html += '<div style="flex:1;">';
-      html += '<div style="font-size:12px;font-weight:700;color:var(--t1);">'+m.ourName+' '+(m.suivi?'<span style="color:#1ed760;">vs</span>':(m.isDom?'<span style="color:#3fb950;">vs</span>':'<span style="color:#f0883e;">@</span>'))+' '+m.adv+'</div>';
-      html += '<div style="font-size:10px;color:var(--t3);margin-top:2px;">'+compIco3+' '+compLabel+(m.suivi?' · ⭐ Suivi':(m.isDom?' · 🏠 Domicile':' · ✈️ Extérieur'))+'</div>';
+      var _S = _agSp(m);
+      html += '<div style="display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--s1);border-radius:10px;margin-bottom:7px;border-left:4px solid '+_S.c+';">';
+      html += '<div style="flex:none;width:44px;height:44px;border-radius:50%;background:rgba(11,16,29,.9);border:2px solid '+_S.c+';display:flex;align-items:center;justify-content:center;font-size:24px;">'+_S.e+'</div>';
+      html += '<div style="flex:1;min-width:0;">';
+      html += '<div style="font-size:15px;font-weight:800;color:#fff;">'+m.ourName+' '+(m.suivi?'<span style="color:#1ed760;">vs</span>':(m.isDom?'<span style="color:#3fb950;">vs</span>':'<span style="color:#f0883e;">@</span>'))+' '+m.adv+'</div>';
+      html += '<div style="font-size:13px;color:#c9d3ee;margin-top:2px;"><b style="color:'+_S.c+';">'+_S.lg+'</b>'+(m.suivi?' · ⭐ Suivi':(m.isDom?' · 🏠 Domicile':' · ✈️ Extérieur'))+'</div>';
       html += '</div>';
       var _stm = (typeof g45StatsForEvent==='function') ? g45StatsForEvent({sport:'⚽',teams:[m.ourName,m.adv],comp:(m.comp||m.compSlug||''),place:m.venue||''}) : [];
       var _csId = 'calstat-'+(_csn++);
-      html += '<div style="text-align:right;display:flex;align-items:center;gap:8px;flex:none;"><div style="font-size:12px;font-weight:700;color:var(--a);">'+time+'</div>';
+      html += '<div style="text-align:right;display:flex;align-items:center;gap:8px;flex:none;"><div style="font-size:15px;font-weight:800;color:#8ab4ff;">'+time+'</div>';
       if(_stm.length) html += '<button onclick="g45CalTglStat(\''+_csId+'\')" title="Stats du dico" style="background:rgba(240,200,40,.14);border:1px solid rgba(240,200,40,.5);color:#f0c828;border-radius:6px;font-size:11px;font-weight:800;padding:2px 7px;cursor:pointer;flex:none;">💡 '+_stm.length+'</button>';
       if(m.suivi) html += '<button onclick="g45SuiviRemove(\''+String(m.id).replace(/'/g,'')+'\')" title="Retirer du calendrier" style="background:none;border:1px solid rgba(255,69,69,.3);color:#ff6b6b;border-radius:6px;font-size:12px;font-weight:700;padding:2px 7px;cursor:pointer;flex:none;">✕</button>';
       html += '</div>';

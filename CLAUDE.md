@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261005a, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261005b, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -220,6 +220,10 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   (demande d'Antoine), rien = 14 j ; image strThumb puis strCutout (www → r2).
   20261003b (« Djokovic sans photo ») : plus de plafond de 10 — la recherche continue tant qu'il reste un rond sans photo à l'écran,
   1 demande / 2,5 s (≈ 24/min), page relue à chaque tour, 429 = pause 60 s.
+- 📅 AGENDA (`loadCalendrier`, onglet Agenda) — 20261005b (« il manque peut-être le sport ? », maquette validée « OUI ») : `_agSp(m)`
+  (dans loadCalendrier) = rond du sport 44 px (emoji + couleur : 🏒 #5ad6ff, ⚾ #ff9f43, 🏀 #ff7a2f, 🏈 #c084fc, 🏉 #f5c542, ⚽ #1ed760, aussi sur la
+  barre de gauche), compétition en nom court (NHL, MLB… ; foot : nom de G45_LEAGUE_GROUPS par slug), m.sp ajouté aux matchs ⭐ hors foot ;
+  jours blanc 14 px sur bande sombre, équipes 15 px, heure 15 px.
 - Bandeau de scores `g45BandeauMaj` : si tout tient à l'écran, UNE copie, sans défilement.
 - Suivies « Matchs à venir / direct » (`g45DirectMesEquipes`, groupes `_g45DirEquipes`) : 29v —
   le plafond (10) porte sur les REQUÊTES réelles (`aInterroger`, tout le foot = 1 requête `all`),
