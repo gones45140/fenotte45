@@ -68069,6 +68069,9 @@ function _g45F1TrPropre(t) {
    API-Sports, 2 clubs non en cache max), mémoire de session `_g45ButsPh` ; aucune → initiales. Le terrain PC n'est
    redessiné qu'UNE fois, quand toutes les photos sont connues (8 s max), pour ne pas rejouer le ballon animé. */
 var _g45ButsPh = {};
+/* 20261004z : « Attempt saved. Igor Matanovic (Croatia)… » → le nom compacté valait « Attempt saved. Igor Matanovic »
+   (capture d'Antoine) : on garde ce qui suit le dernier « . ». Les buts gardés pour toujours (g45buts1_) aussi. */
+function _g45ButsNet(n) { return String(n || '').replace(/^.*\.\s+(?=\S)/, '').trim(); }
 function _g45ButsIni(n) { var p = String(n || '?').trim().split(/\s+/); return ((p[0] || '?')[0] + (p.length > 1 ? p[p.length - 1][0] : '')).toUpperCase(); }
 function _g45ButsAv(nom, px, bord) {
   var u = _g45ButsPh[nom];
@@ -68087,7 +68090,24 @@ function _g45ButsSvgPc(B, col, id, W) {
     + '<rect x="' + f(W - M - 6 * k) + '" y="' + f(Y(44)) + '" width="' + f(6 * k) + '" height="' + f(Y(56) - Y(44)) + '" fill="#fff"/>'
     + '<defs><marker id="' + id + 'f" markerWidth="6" markerHeight="6" refX="4" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6z" fill="#fff"/></marker>'
     + '<marker id="' + id + 'r" markerWidth="6" markerHeight="6" refX="4" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6z" fill="#ff5c5c"/></marker></defs>';
-  var C = B.seq.map(function (a) { return [X(a.x), Y(a.y), a.but ? Math.round(R * 1.2) : R]; });
+  var C = B.seq.map(function (a) { var nm = _g45ButsNom(a.nm || (a.but ? B.nom : '')); return [X(a.x), Y(a.y), a.but ? Math.round(R * 1.2) : R, Math.max(60, nm.length * 8.5 + 16)]; });
+  /* 20261004z (capture d'Antoine : 5 sur 2, 6 sur le nom de 1) : ronds trop proches ÉCARTÉS (distance mini = rayons +
+     place du nom), dans le terrain ; les flèches partent / arrivent aux ronds déplacés. */
+  for (var it = 0; it < 60; it++) {
+    var bouge = false;
+    for (var p1 = 0; p1 < C.length; p1++) for (var p2 = p1 + 1; p2 < C.length; p2++) {
+      /* BOÎTES : rond + pastille au-dessus + nom (22 px) dessous ; poussée sur l'axe qui demande le moins */
+      var A1 = C[p1], A2 = C[p2], w1 = Math.max(A1[2], A1[3] / 2) + 6, w2 = Math.max(A2[2], A2[3] / 2) + 6;
+      var ox = (w1 + w2) - Math.abs(A2[0] - A1[0]);
+      var oy = (A2[1] >= A1[1]) ? (A1[2] + 28 + A2[2] + 8) - (A2[1] - A1[1]) : (A2[2] + 28 + A1[2] + 8) - (A1[1] - A2[1]);
+      if (ox <= 0 || oy <= 0) continue;
+      if (ox < oy) { var sx = (A2[0] >= A1[0] ? 1 : -1) * (ox / 2 + 0.5); A1[0] -= sx; A2[0] += sx; }
+      else { var sy = (A2[1] >= A1[1] ? 1 : -1) * (oy / 2 + 0.5); A1[1] -= sy; A2[1] += sy; }
+      bouge = true;
+    }
+    C.forEach(function (c) { c[0] = Math.max(M + c[2], Math.min(W - M - c[2], c[0])); c[1] = Math.max(M + c[2], Math.min(H - M - c[2] - 26, c[1])); });
+    if (!bouge) break;
+  }
   /* bout de ligne raccourci s'il tombe sur un rond (sinon la flèche est cachée dessous) */
   var court = function (x1, y1, x2, y2, r1) {
     var dx = x2 - x1, dy = y2 - y1, d = Math.hypot(dx, dy) || 1, r2 = 0;
@@ -68101,13 +68121,15 @@ function _g45ButsSvgPc(B, col, id, W) {
     if (prev && Math.hypot(prev[0] - cx, prev[1] - cy) > 4) s += '<line x1="' + f(prev[0]) + '" y1="' + f(prev[1]) + '" x2="' + f(cx) + '" y2="' + f(cy) + '" stroke="#fff" stroke-width="3" stroke-dasharray="10 8" opacity=".75"/>';
     pts.push(f(cx) + ',' + f(cy));
     if (a.x2 != null) {
-      var ex = X(a.x2), ey = Y(a.y2), l = court(cx, cy, ex, ey, C[i][2]);
+      var ex = X(a.x2), ey = Y(a.y2), nx = B.seq[i + 1];
+      if (nx && !a.but && Math.hypot(a.x2 - nx.x, a.y2 - nx.y) < 8) { ex = C[i + 1][0]; ey = C[i + 1][1]; }
+      var l = court(cx, cy, ex, ey, C[i][2]);
       if (l) s += '<line x1="' + f(l[0]) + '" y1="' + f(l[1]) + '" x2="' + f(l[2]) + '" y2="' + f(l[3]) + '" stroke="' + (a.but ? '#ff5c5c' : '#fff') + '" stroke-width="' + (a.but ? 6 : 5) + '" marker-end="url(#' + id + (a.but ? 'r' : 'f') + ')"/>';
       pts.push(f(ex) + ',' + f(ey)); prev = [ex, ey];
     } else prev = [cx, cy];
   });
   B.seq.forEach(function (a, i) {
-    var cx = C[i][0], cy = C[i][1], r = C[i][2], nm = a.nm || (a.but ? B.nom : ''), u = _g45ButsPh[nm], cid = id + 'c' + i;
+    var cx = C[i][0], cy = C[i][1], r = C[i][2], nm = _g45ButsNet(a.nm || (a.but ? B.nom : '')), u = _g45ButsPh[nm], cid = id + 'c' + i;
     s += '<clipPath id="' + cid + '"><circle cx="' + f(cx) + '" cy="' + f(cy) + '" r="' + r + '"/></clipPath><circle cx="' + f(cx) + '" cy="' + f(cy) + '" r="' + r + '" fill="#1b2540"/>';
     if (u) s += '<image href="' + _g45Esc(u) + '" x="' + f(cx - r) + '" y="' + f(cy - r) + '" width="' + 2 * r + '" height="' + 2 * r + '" preserveAspectRatio="xMidYMin slice" clip-path="url(#' + cid + ')"/>';
     else s += '<text x="' + f(cx) + '" y="' + f(cy + r * 0.3) + '" text-anchor="middle" font-size="' + Math.round(r * 0.8) + '" font-weight="800" fill="#fff">' + _g45Esc(_g45ButsIni(nm)) + '</text>';
@@ -68131,20 +68153,20 @@ async function _g45ButsPhotosPoser(eid) {
     var dom = B.T === String(M.idH), col = dom ? '#6d9dff' : '#f5c542', carte = sv.parentNode, pc = sv.offsetWidth >= 700;
     if (carte.getAttribute('data-g45bph-ok')) return;
     carte.setAttribute('data-g45bph-ok', '1');
-    B.seq.forEach(function (a) { var nm = a.nm || (a.but ? B.nom : ''); if (nm) noms[nm] = club(B.T); });
-    noms[B.nom] = noms[B.nom] || club(B.T); if (B.pas) noms[B.pas] = noms[B.pas] || club(B.T);
+    B.seq.forEach(function (a) { var nm = _g45ButsNet(a.nm || (a.but ? B.nom : '')); if (nm) noms[nm] = club(B.T); });
+    noms[_g45ButsNet(B.nom)] = club(B.T); if (B.pas) noms[_g45ButsNet(B.pas)] = club(B.T);
     /* en-tête : grande photo du buteur, petite du passeur */
     var t = carte.firstElementChild;
     if (t) {
       var w = document.createElement('div');
       w.style.cssText = 'display:flex;align-items:center;gap:12px;';
-      w.innerHTML = _g45ButsAv(B.nom, pc ? 72 : 56, '#ff4545');
+      w.innerHTML = _g45ButsAv(_g45ButsNet(B.nom), pc ? 72 : 56, '#ff4545');
       carte.insertBefore(w, t); w.appendChild(t);
       var inf = w.nextElementSibling;
       if (inf && /actions?<\/?|action/.test(inf.innerHTML)) {
         var n = B.seq.length;
         inf.style.cssText += ';display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:14px;';
-        inf.innerHTML = (B.pas ? 'Passe décisive : ' + _g45ButsAv(B.pas, 30, col) + '<b style="color:#fff;">' + _g45Esc(_g45ButsNom(B.pas)) + '</b> · ' : '') + n + ' action' + (n > 1 ? 's' : '');
+        inf.innerHTML = (B.pas ? 'Passe décisive : ' + _g45ButsAv(_g45ButsNet(B.pas), 30, col) + '<b style="color:#fff;">' + _g45Esc(_g45ButsNom(B.pas)) + '</b> · ' : '') + n + ' action' + (n > 1 ? 's' : '');
         var col2 = document.createElement('div'); col2.appendChild(t); col2.appendChild(inf); w.appendChild(col2);
       }
     }
@@ -68152,7 +68174,7 @@ async function _g45ButsPhotosPoser(eid) {
     var li = sv.nextElementSibling;
     if (li) Array.prototype.forEach.call(li.children, function (row, j) {
       var a = B.seq[j]; if (!a || !row.firstElementChild) return;
-      var nm = a.nm || (a.but ? B.nom : '');
+      var nm = _g45ButsNet(a.nm || (a.but ? B.nom : ''));
       row.firstElementChild.insertAdjacentHTML('afterend', _g45ButsAv(nm, 36, a.but ? '#ff4545' : col));
     });
     if (pc) { B._pcW = Math.round(sv.offsetWidth); sv.setAttribute('data-g45pc', '1'); }
@@ -68176,7 +68198,8 @@ async function _g45ButsPhotosPoser(eid) {
 }
 (function _g45ButsPhotosBrancher() {
   if (typeof _g45ButsHtml !== 'function' || _g45ButsHtml._g45Ph) return;
-  var oH = _g45ButsHtml, oS = _g45ButsSvg;
+  var oH = _g45ButsHtml, oS = _g45ButsSvg, oN = _g45ButsNom;
+  _g45ButsNom = function (n) { return oN(_g45ButsNet(n)); };
   _g45ButsHtml = function (eid) {
     var h = oH.apply(this, arguments);
     setTimeout(function () { _g45ButsPhotosPoser(String(eid)).catch(function () {}); }, 0);
