@@ -96,6 +96,7 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   présents sur la feuille (`_g45JouPresents`, didNotPlay exclu) ; clé g45_jou_v1_ → g45_jou_v2_ (MORTS) = « Analyser les joueurs » à
   relancer une fois. `_g45JouAbsent(eid)` : filtre actif + joueur hors feuille → ligne grisée « 🚫 <nom> absent », match RETIRÉ du
   compteur combiné (« · N matchs sans X retirés »). Pas de feuille pour un match = jamais absent.
+  CONFIRMÉ par Antoine (capture 07/10, Oilers / McDavid : 7 matchs absents fin mars-avril grisés, compteur 4/34).
   filtre joueur NBA avec ligne : `_g45NbaPFBarre` / `_g45NbaPFCoul` / `_g45NbaPFLigne`.
 - Moteur des curseurs de marchés : `_g45MarcheEval`.
 - Onglet Compo : `loadTeamCompo` (DEUX copies) ; sports US → `_g45CompoEffectif` ;
