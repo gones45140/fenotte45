@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261005c, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261005d, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -224,6 +224,9 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   (dans loadCalendrier) = rond du sport 44 px (emoji + couleur : 🏒 #5ad6ff, ⚾ #ff9f43, 🏀 #ff7a2f, 🏈 #c084fc, 🏉 #f5c542, ⚽ #1ed760, aussi sur la
   barre de gauche), compétition en nom court (NHL, MLB… ; foot : nom de G45_LEAGUE_GROUPS par slug), m.sp ajouté aux matchs ⭐ hors foot ;
   jours blanc 14 px sur bande sombre, équipes 15 px, heure 15 px.
+  20261005d (capture : « Lyon @ Lens » + « OL Lyonnes @ Lens ») : `_calTeamSchedule` (par NOM) rattachait l'équipe FÉMININE du mur au club
+  masculin → dans loadCalendrier, équipe ESPN déjà vue sautée (`window._g45CalIdsVus`) et nom féminin (Lyonnes, féminin, women…) sans
+  AUCUNE compétition féminine dans son calendrier (.w., women, premiere-ligue, wsl, liga-f…) écarté. Matchs réels des OL Lyonnes : NON ajoutés.
 - Bandeau de scores `g45BandeauMaj` : si tout tient à l'écran, UNE copie, sans défilement.
 - Suivies « Matchs à venir / direct » (`g45DirectMesEquipes`, groupes `_g45DirEquipes`) : 29v —
   le plafond (10) porte sur les REQUÊTES réelles (`aInterroger`, tout le foot = 1 requête `all`),

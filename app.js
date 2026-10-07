@@ -25845,6 +25845,16 @@ async function loadCalendrier() {
     if(!sched || !sched.matches || !sched.matches.length) continue;
     var ourId = (sched.team && sched.team.id!=null) ? String(sched.team.id) : null;
     var ourName = (sched.team && sched.team.name) ? sched.team.name : u.n;
+    /* 20261005d (capture d'Antoine : « Lyon @ Lens » ET « OL Lyonnes @ Lens », même match) : la recherche par NOM rattachait
+       l'équipe FÉMININE du mur au club masculin. (1) une équipe ESPN déjà vue n'est pas reprise ; (2) un nom féminin dont le
+       calendrier ne contient AUCUNE compétition féminine (slug « .w. ») est écarté plutôt que d'afficher les matchs des hommes. */
+    try {
+      window._g45CalIdsVus = (i === 0) ? {} : (window._g45CalIdsVus || {});
+      if (ourId && window._g45CalIdsVus[ourId]) continue;
+      if (/lyonnes|f[ée]minin|\bwomen\b|\bladies\b|\bf[ée]m\b|\(f\)|\bfrauen\b|femenino|femminile/i.test(u.n)
+          && !sched.matches.some(function(m){ return /\.w\.|wchampions|weuro|nwsl|fifa\.wwc|women|femin|premiere-ligue|wsl|liga-f/i.test(String(m.competition || '') + ' ' + String(m.competitionName || '')); })) continue;
+      if (ourId) window._g45CalIdsVus[ourId] = 1;
+    } catch(e) {}
     sched.matches.forEach(function(m){
       if(m.completed) return;                         // déjà joué → pas dans le calendrier
       var t = new Date(m.date).getTime();
