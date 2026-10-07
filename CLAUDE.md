@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261005j, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261005k, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -128,6 +128,8 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   20261005j (capture : Edmonton 1-2 Colorado « Après TAB » compté en victoire, mode TR actif) : match aux TIRS AU BUT sans période > 3
   chez ESPN → le garde-fou renonçait. Hockey : 3 périodes présentes, égalité, final à 1 but d'écart = prolongation/TAB → score TR
   appliqué. Linescores ESPN d'un match aux TAB NON vérifiés (Antoine sur téléphone, ESPN bloqué depuis le cloud).
+  20261005k (« inchangé ») — VRAIE CAUSE : `_g45SaisonsGen` rangeait sa mémoire `_g45SgMem` par sport|ligue|année seulement →
+  activer le bouton reprenait la liste déjà chargée SANS le mode TR (enveloppe de _g45CompetMatchs jamais rappelée) ; clé + « |tr ».
 - Couleurs lisibles : `_g45CoulTexte`, `g45CoulEquipe`, `g45CoulPaire`.
 - Classements : filtre Phase `_g45ClsPhase` / `_g45ClsEstPO`, Par match / Total
   `_g45ClsCtx.tot` (`_g45ClsCelMoy`), lecture de saison MOIS PAR MOIS

@@ -50060,7 +50060,10 @@ async function _g45SaisonsGen(el, nom, perso) {
   var sp = perso.sport || 'soccer', lg = String(perso.league || '');
   var anAuto = _g45SgAnAuto(lg);
   var an = _g45SgAn || anAuto;
-  var memK = sp + '|' + lg + '|' + an;
+  /* 20261005k (« inchangé » : 12/04 prolongation et 14/04 TAB toujours comptés après « Temps réglementaire ») — la mémoire
+     n'était rangée que par sport|ligue|année : activer le bouton reprenait la liste DÉJÀ chargée sans le mode TR, et
+     l'enveloppe de _g45CompetMatchs (qui recalcule les scores) n'était plus jamais appelée. Le mode TR fait partie de la clé. */
+  var memK = sp + '|' + lg + '|' + an + ((typeof _g45SgTR !== 'undefined' && _g45SgTR) ? '|tr' : '');
 
   var ms = _g45SgMem[memK], eq = [];
   if (!ms) {
