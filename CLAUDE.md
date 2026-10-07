@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261005o, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261005p, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -92,11 +92,18 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
 - Filtres : lieu `_g45SgFiltre`, jours de repos `_g45SgRepos` (NBA, NHL),
   redessin qui garde la position : `_g45SgCursRedessiner(idAncre)`.
 - Filtre joueur binaire `_g45JouBarre` (NHL, NFL, MLB, rugby, NRL) ;
+  20261005p (« comment savoir si le joueur était pas absent », maquette validée « oui les deux ») : l'index garde idx.pres[eid] = ids
+  présents sur la feuille (`_g45JouPresents`, didNotPlay exclu) ; clé g45_jou_v1_ → g45_jou_v2_ (MORTS) = « Analyser les joueurs » à
+  relancer une fois. `_g45JouAbsent(eid)` : filtre actif + joueur hors feuille → ligne grisée « 🚫 <nom> absent », match RETIRÉ du
+  compteur combiné (« · N matchs sans X retirés »). Pas de feuille pour un match = jamais absent.
   filtre joueur NBA avec ligne : `_g45NbaPFBarre` / `_g45NbaPFCoul` / `_g45NbaPFLigne`.
 - Moteur des curseurs de marchés : `_g45MarcheEval`.
 - Onglet Compo : `loadTeamCompo` (DEUX copies) ; sports US → `_g45CompoEffectif` ;
   NBA → `_g45NbaTableau` (vues Saison / 10 / 5 / Match).
 - Fenêtre de match : `_renderGenericDetail` ; stats d'équipe US `_g45UsTeamStats`
+  20261005p (« j'ai pas les compo ») : hockey → « 👥 JOUEURS DU MATCH » `_g45NhlFeuilleHtml` (après la feuille NBA, même résumé, 0 requête) :
+  bouton par équipe, Attaquants / Défenseurs (B, A, Pts, Tirs, +/-, Temps) / Gardien (Arrêts, Tirs reçus, Buts, % arrêts, Temps) ;
+  catégories boxscore forwards/defenses/goalies, colonnes par clé puis libellé (`_G45_NHL_COLS`, noms NHL NON sondés : colonne absente = masquée).
   (couleurs via `g45CoulPaire` + `_g45CoulTexte`) ; feuille des joueurs NBA `_g45NbaFeuilleHtml`.
 - 20261004w (captures d'Antoine 06/10) — Compétitions sports US : Classement (`g45LoadStandings`) demande &seasontype=2 (refus →
   ancienne adresse ; prise en compte par ESPN NON vérifiée) ; `g45RenderStandings` TRIE lui-même NHL/KHL (points) et NBA/NFL/MLB (% V)
