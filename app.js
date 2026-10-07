@@ -50067,7 +50067,7 @@ async function _g45SaisonsGen(el, nom, perso) {
   /* 20261005k (« inchangé » : 12/04 prolongation et 14/04 TAB toujours comptés après « Temps réglementaire ») — la mémoire
      n'était rangée que par sport|ligue|année : activer le bouton reprenait la liste DÉJÀ chargée sans le mode TR, et
      l'enveloppe de _g45CompetMatchs (qui recalcule les scores) n'était plus jamais appelée. Le mode TR fait partie de la clé. */
-  var memK = sp + '|' + lg + '|' + an + ((typeof _g45SgTR !== 'undefined' && _g45SgTR) ? '|tr' : '');
+  var memK = sp + '|' + lg + '|' + an + ((typeof _g45SgTR !== 'undefined' && _g45SgTR && _g45SgTROk(sp)) ? '|tr' : '');
 
   var ms = _g45SgMem[memK], eq = [];
   if (!ms) {
@@ -50273,7 +50273,7 @@ async function _g45SaisonsGen(el, nom, perso) {
      Hockey d'abord : un 3-4 en prolongation est un 3-3 en temps reglementaire,
      et les books ne cotent pas la meme chose. Le bouton n'apparait que sur les
      sports concernes, pour ne pas encombrer le football de championnat. */
-  if (typeof g45SportTR === 'function' && g45SportTR(_g45SgCtx && _g45SgCtx.sp) && (_g45SgTRDispo || _g45SgTR)) {
+  if (typeof g45SportTR === 'function' && _g45SgTROk(_g45SgCtx && _g45SgCtx.sp) && (_g45SgTRDispo || _g45SgTR)) {
     html += '<div style="display:flex;gap:6px;margin-bottom:14px;">'
       + '<button onclick="_g45SgTRBascule()" style="flex:1;padding:7px 6px;border-radius:6px;cursor:pointer;font-size:10px;font-weight:'
       + (_g45SgTR ? '800' : '400') + ';border:1px solid ' + (_g45SgTR ? 'rgba(240,176,32,.55)' : 'rgba(255,255,255,.08)') + ';'
@@ -50978,6 +50978,13 @@ function _g45SgRefresh() { if (typeof loadTeamSaisons === 'function') loadTeamSa
 function _g45SgSaison(y) { _g45SgAn = y; _g45SgRefresh(); }
 function _g45SgLieu(f) { _g45SgFiltre = f; _g45SgRefresh(); }
 var _g45SgTR = false;
+/* 20261005o (Antoine : « NBA et NFL, pas besoin, mieux vaut prendre vainqueur ; la cote descend peu ») — le bouton Temps
+   réglementaire de Saisons ne sert qu'au HOCKEY (et autres sports où il reste utile) : retiré en NBA (basketball) et NFL
+   (football US). Un mode resté actif depuis la NHL n'est PAS appliqué sur ces deux sports. */
+function _g45SgTROk(sp) {
+  var k = String(sp || '').split('/')[0];
+  return !!(typeof g45SportTR === 'function' && g45SportTR(k)) && k !== 'basketball' && k !== 'football';
+}
 function _g45SgTRBascule() { _g45SgTR = !_g45SgTR; _g45SgRefresh(); }
 window._g45SgTRBascule = _g45SgTRBascule;
 function _g45SgPhaseSet(f) { _g45SgPhase = f; _g45SgRefresh(); }
@@ -64182,7 +64189,7 @@ window.g45SportTR = g45SportTR;
     var ms = await origine.apply(this, arguments);
     /* `typeof` plutot qu'un acces direct : ce module est charge en fin de
        fichier et doit rester inoffensif si l'etat n'existe pas encore. */
-    var actif = (typeof _g45SgTR !== 'undefined') && _g45SgTR;
+    var actif = (typeof _g45SgTR !== 'undefined') && _g45SgTR && (typeof _g45SgTROk !== 'function' || _g45SgTROk(sp));
     if (!Array.isArray(ms)) return ms;
     /* On repere les matchs prolonges a chaque chargement, meme mode inactif :
        c'est ce qui decide de l'affichage du bouton. */

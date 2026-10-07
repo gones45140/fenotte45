@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261005n, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261005o, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -136,6 +136,8 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   20261005m : `_g45CompetMatchs` garde m.ox (1 = « OT », 2 = « SO » dans status.type.detail, libellés « Final/OT » / « Final/SO » NON
   vérifiés sur cette adresse) ; `g45ScoreTR` sans périodes : hockey + ox + 1 but d'écart → min-min. Cache g45cm10_ → g45cm11_ (MORTS).
   CONFIRMÉ par Antoine (capture 07/10 : 14/04 = 1-1, 12/04 = 2-2) → « Final/OT » / « Final/SO » bien lus. 20261005n : ligne de diagnostic retirée.
+  20261005o (« NBA et NFL pas besoin, mieux vaut prendre vainqueur ») : `_g45SgTROk(sp)` — bouton TR de Saisons et son application
+  (clé mémoire, enveloppe de _g45CompetMatchs) EXCLUS pour basketball et football (US) ; hockey, baseball, NRL, foot inchangés.
 - Couleurs lisibles : `_g45CoulTexte`, `g45CoulEquipe`, `g45CoulPaire`.
 - Classements : filtre Phase `_g45ClsPhase` / `_g45ClsEstPO`, Par match / Total
   `_g45ClsCtx.tot` (`_g45ClsCelMoy`), lecture de saison MOIS PAR MOIS
