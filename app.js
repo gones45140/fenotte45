@@ -66232,7 +66232,10 @@ function _g45AccRegrouper() {
       + '<b style="flex:1;font-size:16px;color:#fff;">' + g.s.v + ' ' + _g45AccEsc(g.s.n) + ' · ' + g.c.length + '</b>'
       + (d.go || d.comp ? '<button data-k="' + _g45AccEsc(_g45AccSel) + '" onclick="_g45AccAller(this.dataset.k)" style="padding:9px 12px;border-radius:9px;border:1px solid #3b82f6;background:#2563eb;color:#fff;font-size:14px;font-weight:800;cursor:pointer;">' + (d.go ? '📅 ' + d.lib : '🏆 Compétitions') + '</button>' : '')
       + '<b style="font-size:14px;color:' + (g.p >= 0 ? '#4ade80' : '#ff6b6b') + ';">' + fmtE(g.p) + '</b></div>';
-    cartes.forEach(function (c) { c.style.display = g.c.indexOf(c) >= 0 ? '' : 'none'; });
+    /* 20261005g (captures d'Antoine : « screen 2 il depasse largement ») — '' EFFACAIT le display:flex
+       posé en ligne sur la carte → carte en bloc, bande sombre du texte et pastille du gain sur TOUTE la
+       largeur, gain repoussé dessous. On remet 'flex', la mise en page d'origine du mur. */
+    cartes.forEach(function (c) { c.style.display = g.c.indexOf(c) >= 0 ? 'flex' : 'none'; });
   }
   dash.insertBefore(zone, dash.firstChild);
 }

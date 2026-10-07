@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261005f, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261005g, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -194,6 +194,8 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   Une équipe créée se range dans la tuile de son u.sport (liste #u-sport du formulaire) ; 20261002n : 🏍 MotoGP et 🎿 Biathlon
   ajoutés à #u-sport (index.html ET indexfenotte.html).
   20261002o — ligne « 🔴 AUJOURD'HUI » RETIRÉE (doublon du bandeau du haut, même source ; « oui enlève la »).
+  20261005g (« screen 2 il depasse largement ») : `g45AccChoisir` remettait les cartes avec style.display='' → le display:flex
+  en ligne de la carte était EFFACÉ (bande du texte et gain sur toute la largeur) ; remis à 'flex'.
   20261002p (« F1 avait sa bannière, NRL aussi que tu as mis dans rugby ») : `_G45_ACC_NOMS` range d'abord par NOM les cartes
   « catégorie » du mur (FORMULE 1, AU NRL, TENNIS, Basket, RUGBY, MMA, MotoGP…), et un club NRL connu (`_g45NrlEqId`) saisi en 🏉
   va en NRL ; images PERSO permises en fond de tuile (bannière de la carte catégorie prioritaire) ; image presque carrée
