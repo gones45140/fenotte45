@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261005g, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261005h, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -232,6 +232,10 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   20261005e (« l'ASVEL et Sotchi n'y sont pas ») : loadCalendrier ajoute 🏀 clubs du mur hors NBA (4 max) → `_g45EbResoudre` +
   `_g45EbCharger(.av)` (Euroleague + Pro A, 21 j) et 🏒 KHL (mur + ⭐ `_g45KhlEquipesSuivies`, `_g45KhlMatchsPlage` 14 j, team_a = reçoit) ;
   mur sans foot mais avec 🏀/🏒 → plus de message « ajoute des équipes de foot ».
+- 🏷️ SPORT SUR CHAQUE PARI (20261005h, « il manque peut-être le sport ? », maquette validée « Oui ») : bloc en fin d'app.js —
+  `_g45ParisSport(h)` = h.sport, sinon u.sport de l'équipe du mur (h.n), sinon deviné par h.comp (`_G45_PARIS_COMP`, MotoGP avant F1) ;
+  rond `_g45ParisRond(h, px)` (couleurs Agenda `_G45_PARIS_COUL`) au-dessus du logo du book dans `_g45BetRowMini` (Paris filtrés) et
+  à la place de l'ancien sportIco (archive, DEUX copies) ; pastille « 🏈 NFL » `_g45ParisCompPastille` dans `_g45LigneMatch`.
 - Bandeau de scores `g45BandeauMaj` : si tout tient à l'écran, UNE copie, sans défilement.
 - Suivies « Matchs à venir / direct » (`g45DirectMesEquipes`, groupes `_g45DirEquipes`) : 29v —
   le plafond (10) porte sur les REQUÊTES réelles (`aInterroger`, tout le foot = 1 requête `all`),

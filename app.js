@@ -3639,7 +3639,7 @@ function renderArchive(){
            et sert aux tuiles de comptes comme au classement par bookmaker :
            l'appeler ici aligne les trois endroits et supprime une variante de
            plus a maintenir. */
-        var bkBadge='<span style="display:inline-flex;flex-shrink:0;">'+bkFavicon(h.b,22)+'</span>'; var sportIco=(h.sport?'<span style="position:relative;font-size:15px;flex-shrink:0;line-height:1;" title="Sport">'+h.sport+'</span>':'');
+        var bkBadge='<span style="display:inline-flex;flex-shrink:0;">'+bkFavicon(h.b,22)+'</span>'; var sportIco=_g45ParisRond(h,28); /* 20261005h : rond coloré, sport deviné si h.sport absent */
         /* TITRE CORRIGE (28/08, meme bug que celui deja corrige sur la liste du
            Bilan le 27/08) : `h.target` est l'ADVERSAIRE sur une montante, pas
            l'equipe jouee — "Real Madrid" contre "Malaga" affichait "Malaga"
@@ -11986,7 +11986,7 @@ function renderArchive(){
            et sert aux tuiles de comptes comme au classement par bookmaker :
            l'appeler ici aligne les trois endroits et supprime une variante de
            plus a maintenir. */
-        var bkBadge='<span style="display:inline-flex;flex-shrink:0;">'+bkFavicon(h.b,22)+'</span>'; var sportIco=(h.sport?'<span style="position:relative;font-size:15px;flex-shrink:0;line-height:1;" title="Sport">'+h.sport+'</span>':'');
+        var bkBadge='<span style="display:inline-flex;flex-shrink:0;">'+bkFavicon(h.b,22)+'</span>'; var sportIco=_g45ParisRond(h,28); /* 20261005h : rond coloré, sport deviné si h.sport absent */
         /* TITRE CORRIGE (28/08, meme bug que celui deja corrige sur la liste du
            Bilan le 27/08) : `h.target` est l'ADVERSAIRE sur une montante, pas
            l'equipe jouee — "Real Madrid" contre "Malaga" affichait "Malaga"
@@ -39548,7 +39548,8 @@ function _g45BetRowMini(h){
      titre et ne touche jamais les chiffres. */
   return '<div data-aid="'+h.id+'" onclick="try{openBetEdit(this.dataset.aid)}catch(e){}" style="position:relative;overflow:hidden;display:flex;align-items:center;padding:9px 10px;background:linear-gradient(100deg,'+_idColor+'45 0%,'+etatColor+'26 60%,var(--s1) 100%);border-radius:8px;margin-bottom:4px;border-left:4px solid '+etatColor+';gap:8px;cursor:pointer;">'
     +'<div style="position:relative;font-size:10px;font-weight:600;color:var(--t2);min-width:50px;flex-shrink:0;text-align:center;line-height:1.3;">'+(h.date||'')+(h.heure?'<br>'+h.heure:'')+'</div>'
-    +'<span style="position:relative;display:inline-flex;flex-shrink:0;">'+((typeof bkFavicon==='function')?bkFavicon(h.b,22):'')+'</span>'
+    /* 20261005h : rond du sport AU-DESSUS du logo du bookmaker (maquette validée « Oui »). */
+    +'<span style="position:relative;display:inline-flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;margin-right:6px;">'+_g45ParisRond(h,32)+((typeof bkFavicon==='function')?bkFavicon(h.b,22):'')+'</span>'
     +'<div style="position:relative;flex:1;min-width:0;overflow:hidden;">'
     +_idFilig
     +'<div style="position:relative;font-size:12px;font-weight:700;color:var(--t1);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word;line-height:1.25;">'+_lgM.titre(_score)+'</div>'
@@ -59920,7 +59921,9 @@ function _g45LigneMatch(h, titreDefaut, typeTxt, cote){
   if (h.garantie) { var _gl = _g45GarantieLabel(h.garantie, h.sport); if (_gl) typeTxt = (typeTxt ? typeTxt + ' \u00b7 ' : '') + '\ud83d\udee1\ufe0f ' + _g45Esc(_gl); }
   var sous = (typeTxt ? typeTxt + '<br>' : '')
     + '<span style="color:#7aa2ff;font-weight:800;font-size:11px;background:rgba(77,132,255,.16);padding:1px 7px;border-radius:5px;">' + coteTxt + '</span>'
-    + '<span style="margin-left:14px;">' + _g45Esc(h.comp || '') + (lieu ? (h.comp ? ' · ' : '') + '\ud83d\udccd ' + _g45Esc(lieu) : '') + '</span>';
+    /* 20261005h (« il manque peut-être le sport ? », maquette validée « Oui ») : compétition en PASTILLE colorée du sport
+       (« 🏈 NFL »), mêmes couleurs que l'Agenda ; sport deviné par _g45ParisSport. */
+    + '<span style="margin-left:8px;">' + _g45ParisCompPastille(h) + (lieu ? (h.comp ? ' · ' : '') + '\ud83d\udccd ' + _g45Esc(lieu) : '') + '</span>';
 
   if (h.isCombi) return { titre: function () { return titreDefaut; }, integre: false, sous: sous };
 
@@ -68323,3 +68326,60 @@ async function _g45ButsPhotosPoser(eid) {
   _g45ButsHtml._g45Ph = true;
   window._g45ButsHtml = _g45ButsHtml; window._g45ButsSvg = _g45ButsSvg; window._g45ButsSvgPc = _g45ButsSvgPc;
 })();
+
+
+/* ═══ 20261005h — LE SPORT SUR CHAQUE PARI (capture d'Antoine, liste « Paris filtrés » : « il manque peut-être le sport ? »,
+   maquette validée « Oui ») ═══
+   Rond du sport (emoji + couleur de l'Agenda) à côté du logo du book, et compétition en pastille colorée « 🏈 NFL ».
+   Beaucoup de paris n'ont PAS de h.sport (vu sur sa capture : rien affiché alors que l'ancien code le montrait si présent)
+   → sport deviné : h.sport, puis sport de l'équipe du mur (h.n), puis nom de la compétition (h.comp). Rien trouvé = rien affiché. */
+var _G45_PARIS_COUL = { '🏒':'#5ad6ff', '⚾':'#ff9f43', '🏀':'#ff7a2f', '🏈':'#c084fc', '🏉':'#f5c542', '⚽':'#1ed760',
+  '🎾':'#d7f04a', '🏎':'#ff4545', '🏍':'#ff6b6b', '🥊':'#ff5c8a', '👊':'#ff5c8a', '🥋':'#e2e8f0', '🚴':'#ffd166', '🎿':'#9ad0ff', '⛷':'#9ad0ff' };
+var _G45_PARIS_COMP = [
+  [/\bNRL\b|state of origin/i, '🏉🇦🇺'],
+  [/\bNFL\b|super bowl/i, '🏈'],
+  [/\bNHL\b|\bKHL\b|hockey/i, '🏒'],
+  [/\bW?NBA\b|euroleague|euroligue|pro ?a\b|betclic [ée]lite|basket/i, '🏀'],
+  [/\bMLB\b|\bKBO\b|baseball/i, '⚾'],
+  [/top ?14|pro ?d2|rugby|six nations|6 nations|champions cup|premiership|\bURC\b/i, '🏉'],
+  [/\bATP\b|\bWTA\b|tennis|roland|wimbledon|us open|open d'australie|australian open|masters 1000/i, '🎾'],
+  [/motogp/i, '🏍'],
+  [/\bF1\b|formule ?1|formula ?1|grand prix/i, '🏎'],
+  [/\bUFC\b|\bMMA\b/i, '🥊'],
+  [/judo/i, '🥋'],
+  [/ligue ?1|ligue ?2|premier league|liga|serie a|bundesliga|champions league|ligue des champions|europa|conference league|coupe de france|eredivisie|mls|liga portugal|\bCDM\b|coupe du monde|euro\b|foot/i, '⚽']
+];
+function _g45ParisSport(h) {
+  if (!h) return '';
+  if (h.sport) return String(h.sport);
+  try {
+    var u = (state.u || []).filter(function (x) { return x && x.n === h.n; })[0];
+    if (u && u.sport) return String(u.sport);
+  } catch (e) {}
+  var c = String(h.comp || '');
+  if (!c) return '';
+  for (var i = 0; i < _G45_PARIS_COMP.length; i++) if (_G45_PARIS_COMP[i][0].test(c)) return _G45_PARIS_COMP[i][1];
+  return '';
+}
+function _g45ParisCoul(sp) {
+  var k = Object.keys(_G45_PARIS_COUL).filter(function (e) { return sp.indexOf(e) === 0; })[0];
+  return k ? _G45_PARIS_COUL[k] : '#8ab4ff';
+}
+function _g45ParisRond(h, px) {
+  var sp = _g45ParisSport(h); if (!sp) return '';
+  var col = _g45ParisCoul(sp), e = sp.indexOf('🇦🇺') > 0 ? '🏉' : sp;
+  px = px || 32;
+  return '<span title="Sport" style="position:relative;width:' + px + 'px;height:' + px + 'px;border-radius:50%;flex-shrink:0;'
+    + 'background:' + col + '33;border:2px solid ' + col + ';box-sizing:border-box;display:inline-flex;align-items:center;'
+    + 'justify-content:center;font-size:' + Math.round(px * .52) + 'px;line-height:1;">' + e + '</span>';
+}
+function _g45ParisCompPastille(h) {
+  var c = String(h && h.comp || ''), sp = _g45ParisSport(h);
+  var esc = (typeof _g45Esc === 'function') ? _g45Esc : function (t) { return String(t).replace(/</g, '&lt;'); };
+  if (!c) return '';
+  if (!sp) return esc(c);
+  var col = _g45ParisCoul(sp), e = sp.indexOf('🇦🇺') > 0 ? '🏉' : sp;
+  return '<span style="display:inline-block;white-space:nowrap;font-weight:800;font-size:11px;color:' + col + ';background:' + col + '2e;'
+    + 'border:1px solid ' + col + '88;padding:1px 7px;border-radius:6px;">' + e + ' ' + esc(c) + '</span>';
+}
+window._g45ParisSport = _g45ParisSport;
