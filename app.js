@@ -5200,6 +5200,7 @@ var G45_SPORTS_PARI = [
   { v:'🤾',    n:'Handball' },
   { v:'🏐',    n:'Volley' },
   { v:'👊',    n:'Boxe' },
+  { v:'🥋',    n:'Judo' },      /* 20261005f : demande d'Antoine (« faudrait rajouter judo ») ; 🥋 n'était utilisé nulle part */
   { v:'⛳',    n:'Golf' },
   { v:'🎯',    n:'Fléchettes' },
   { v:'🏓',    n:'Tennis de table' },
