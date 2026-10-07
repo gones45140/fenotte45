@@ -50275,7 +50275,16 @@ async function _g45SaisonsGen(el, nom, perso) {
       + (_g45SgTR ? '800' : '400') + ';border:1px solid ' + (_g45SgTR ? 'rgba(240,176,32,.55)' : 'rgba(255,255,255,.08)') + ';'
       + 'background:' + (_g45SgTR ? 'rgba(240,176,32,.16)' : 'rgba(255,255,255,.04)') + ';color:' + (_g45SgTR ? '#f0b020' : 'var(--t3)') + ';">'
       + '\u23f1\ufe0f ' + g45LibelleTR(_g45SgCtx && _g45SgCtx.sp) + (_g45SgTR ? ' \u00b7 actif' : '') + '</button></div>'
-      + (_g45SgTR ? '<div style="font-size:10px;color:#f0b020;margin:-8px 0 12px;">Prolongations retir\u00e9es : les nuls r\u00e9apparaissent et les totaux baissent.</div>' : '');
+      + (_g45SgTR ? '<div style="font-size:10px;color:#f0b020;margin:-8px 0 12px;">Prolongations retir\u00e9es : les nuls r\u00e9apparaissent et les totaux baissent.</div>' : '')
+      /* 20261005l (« inchangé » sur téléphone, pas de console) : compte visible pour savoir OÙ ça bloque —
+         matchs recalculés (trProl) et matchs sans détail des périodes (hp vide = ESPN ne les donne pas). */
+      + (_g45SgTR ? (function () {
+          var L = ms || [], nR = 0, nV = 0;
+          L.forEach(function (m) { if (m.trProl) nR++; if (!m.hp || !m.hp.length) nV++; });
+          return '<div style="font-size:13px;color:#fff;background:rgba(11,16,29,.8);border-radius:6px;padding:6px 9px;margin:-6px 0 12px;">'
+            + nR + ' match' + (nR > 1 ? 's' : '') + ' prolong\u00e9' + (nR > 1 ? 's' : '') + ' recalcul\u00e9' + (nR > 1 ? 's' : '')
+            + ' \u00b7 ' + nV + ' sans d\u00e9tail des p\u00e9riodes \u00b7 v20261005l</div>';
+        })() : '');
   }
 
   /* ── Barres des marches coches ── */
