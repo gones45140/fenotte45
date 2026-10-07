@@ -1205,6 +1205,11 @@ RÉGLÉ (worker, 01/10) : cron « exceededCpu » (cpuTimeMs 10) à CHAQUE passag
   n'étaient respectées que pour les équipes du mur (evaluateMatch) ; paris (b…) et ⭐ (f…) les ignoraient → worker `_evType(tag)` /
   `_evRefuse(rec, ev)` (bstart/fstart → start ; bscore/fscore/bvar/bqt → goals ; bend/fend → end ; verdicts, jambes, rappels : toujours).
 À VOIR (en attente d'un retour d'Antoine) :
+- 🎯 BUTEURS LES PLUS RÉGULIERS (07/10, maquette « oui ») : Antoine veut un CLASSEMENT des 10 meilleurs buteurs de la LIGUE (NHL
+  d'abord, autres sports ensuite si ça lui plaît) : buts, matchs joués, % de matchs avec but, PIRE SÉRIE sans marquer (matchs joués
+  seulement, vert < 6 / orange 6-9 / rouge ≥ 10), série en cours ; toucher = filtre Buteur. Contrainte : « faut pas que ça bloque tout »
+  → chargement SUR BOUTON seulement, cache 12 h, ≤ 11 requêtes. SONDE À FAIRE PAR ANTOINE SUR PC (worker host=nhl) :
+  /v1/skater-stats-leaders/20252026/2?categories=goals&limit=10 puis /v1/player/<id>/game-log/20252026/2 — RIEN codé avant le résultat.
 - Notifications multi-appareils (28g + worker redéployé : « N appareils reliés ») :
   vérifier qu'un pari saisi sur PC fait sonner le téléphone. Détail technique :
   `_g45NotifCompte()` (empreinte SHA-256 du compte), route /psub du worker (listes
