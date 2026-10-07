@@ -46182,7 +46182,7 @@ window.g45FormeN = g45FormeN;
    parametre — la vue Forme marche donc aussi en NBA, NHL, NFL, MLB et rugby.
    Cache 12 h par sport+ligue+saison, car c'est une requete par equipe. */
 async function _g45CompetMatchs(sportPath, slug, an, ids, progres) {
-  var ck = 'g45cm10_' + sportPath + '_' + slug + '_' + an;   /* v9 (27/09) : phase finale NRL marquée (po) · v8 (24/09 soir) : seasontype=2 demande — la presaison n'est plus telechargee */
+  var ck = 'g45cm11_' + sportPath + '_' + slug + '_' + an;   /* v9 (27/09) : phase finale NRL marquée (po) · v8 (24/09 soir) : seasontype=2 demande — la presaison n'est plus telechargee */
   try {
     var cc = JSON.parse(localStorage.getItem(ck) || 'null');
     if (cc && (Date.now() - cc.t) < 12 * 3600000) {
@@ -46267,7 +46267,11 @@ async function _g45CompetMatchs(sportPath, slug, an, ids, progres) {
             return { p: (l.period != null ? +l.period : i + 1), v: (l.value != null ? +l.value : parseInt(l.displayValue, 10) || 0) };
           });
         };
-        ms.push({ id: String(e.id), h: hid, a: aid, hg: hg, ag: ag, t: t, hp: per(ho), ap: per(aw) });
+        /* 20261005m : le calendrier d'équipe NHL n'a AUCUNE période (diagnostic l chez Antoine : 1312 matchs sur 1312 sans
+           linescores) → on garde au moins le statut « Final/OT » / « Final/SO » (ox 1 = prolongation, 2 = tirs au but). */
+        var _stTxt = String(st.detail || st.shortDetail || st.description || '');
+        var ox = /\bSO\b/i.test(_stTxt) ? 2 : (/\bOT\b/i.test(_stTxt) ? 1 : 0);
+        ms.push({ id: String(e.id), h: hid, a: aid, hg: hg, ag: ag, t: t, hp: per(ho), ap: per(aw), ox: ox });
       });
     } catch (e) {}
   }
@@ -50279,11 +50283,11 @@ async function _g45SaisonsGen(el, nom, perso) {
       /* 20261005l (« inchangé » sur téléphone, pas de console) : compte visible pour savoir OÙ ça bloque —
          matchs recalculés (trProl) et matchs sans détail des périodes (hp vide = ESPN ne les donne pas). */
       + (_g45SgTR ? (function () {
-          var L = ms || [], nR = 0, nV = 0;
-          L.forEach(function (m) { if (m.trProl) nR++; if (!m.hp || !m.hp.length) nV++; });
+          var L = ms || [], nR = 0, nV = 0, nO = 0;
+          L.forEach(function (m) { if (m.trProl) nR++; if (!m.hp || !m.hp.length) nV++; if (m.ox) nO++; });
           return '<div style="font-size:13px;color:#fff;background:rgba(11,16,29,.8);border-radius:6px;padding:6px 9px;margin:-6px 0 12px;">'
             + nR + ' match' + (nR > 1 ? 's' : '') + ' prolong\u00e9' + (nR > 1 ? 's' : '') + ' recalcul\u00e9' + (nR > 1 ? 's' : '')
-            + ' \u00b7 ' + nV + ' sans d\u00e9tail des p\u00e9riodes \u00b7 v20261005l</div>';
+            + ' \u00b7 ' + nV + ' sans d\u00e9tail des p\u00e9riodes \u00b7 ' + nO + ' marqu\u00e9s OT/TAB \u00b7 v20261005m</div>';
         })() : '');
   }
 
@@ -64146,6 +64150,12 @@ function g45ScoreTR(m, sp) {
   var n = g45SportTR(sp);
   if (!n || !m) return null;
   var h = _g45SommePeriodes(m.hp, n), a = _g45SommePeriodes(m.ap, n);
+  /* 20261005m : SANS périodes (calendrier d'équipe NHL) mais statut Final/OT ou Final/SO : au hockey le match prolongé
+     était à égalité après 3 périodes et s'est joué sur UN but → score réglementaire = le plus petit des deux, des deux côtés. */
+  if ((h == null || a == null) && n === 3 && m.ox && Math.abs((+m.hg) - (+m.ag)) === 1) {
+    var mn = Math.min(+m.hg, +m.ag);
+    return { hg: mn, ag: mn, prol: true };
+  }
   if (h == null || a == null) return null;
   /* GARDE-FOU renforce : on n'accepte un ecart avec le score final QUE si
      des periodes au-dela du temps reglementaire existent vraiment. Sinon
@@ -64187,7 +64197,7 @@ window.g45SportTR = g45SportTR;
     var n = g45SportTR(sp), dispo = false;
     if (n) {
       dispo = ms.some(function (m) {
-        return ((m.hp || []).concat(m.ap || [])).some(function (x) { return x && x.p > n; });
+        return !!m.ox || ((m.hp || []).concat(m.ap || [])).some(function (x) { return x && x.p > n; });
       });
     }
     _g45SgTRDispo = dispo;
@@ -65546,10 +65556,10 @@ window._g45ClvSelection = _g45ClvSelection; window._g45ClvPoser = _g45ClvPoser; 
       (setItem et save) puisse les vider.
    3) Au-delà de 4 millions de caractères stockés, purge préventive des
       caches (jamais g45v5, les données). */
-var _G45_CACHE_MORTS = ['g45nrlcal11_' /* 06/10 : → g45nrlcal12_ (présaison US écartée) */, 'g45f1tr1_' /* 04/10 : → g45f1tr2_ (voie des stands) */, 'g45bbjc1' /* 03/10 : → g45bbjc2 (clubs par saison) */, 'g45bbph1_' /* 03/10 : → g45bbph2_ (secours Wikipédia) */, 'g45cm9_' /* 01/10 : → g45cm10_ (présaison NHL marquée PO) */, 'g45nrlst1_' /* 01/10 : → g45nrlst2_ */, 'g45_cfai_veille' /* 29/09 : Workers AI supprimé */, 'g45cls4_' /* 29/09 : → g45cls5_ (stats de match) */, 'g45news7_', 'g45cm_', 'g45cm2_', 'g45cm3_', 'g45cm4_', 'g45cm5_', 'g45cm6_', 'g45cm7_', 'g45cm8_',
+var _G45_CACHE_MORTS = ['g45nrlcal11_' /* 06/10 : → g45nrlcal12_ (présaison US écartée) */, 'g45f1tr1_' /* 04/10 : → g45f1tr2_ (voie des stands) */, 'g45bbjc1' /* 03/10 : → g45bbjc2 (clubs par saison) */, 'g45bbph1_' /* 03/10 : → g45bbph2_ (secours Wikipédia) */, 'g45cm10_' /* 07/10 : → g45cm11_ (statut OT/SO gardé) */, 'g45cm9_' /* 01/10 : → g45cm10_ (présaison NHL marquée PO) */, 'g45nrlst1_' /* 01/10 : → g45nrlst2_ */, 'g45_cfai_veille' /* 29/09 : Workers AI supprimé */, 'g45cls4_' /* 29/09 : → g45cls5_ (stats de match) */, 'g45news7_', 'g45cm_', 'g45cm2_', 'g45cm3_', 'g45cm4_', 'g45cm5_', 'g45cm6_', 'g45cm7_', 'g45cm8_',
   'g45khl_fiche_', 'g45_saisons_cache_v2_', 'g45_score_', 'g45_score2_', 'g45_score3_'];
 try {
-  ['g45cm10_', 'g45xgj1_', 'g45khl_fiche2_', 'g45khl_plage_', 'g45cls3_', 'g45cls5_', 'g45photostsdb_', 'g45wk1_', 'g45jv_', 'g45art1_', 'g45clv1_', 'g45arb1_', 'g45_herologo_', 'g45cm3_']
+  ['g45cm11_', 'g45xgj1_', 'g45khl_fiche2_', 'g45khl_plage_', 'g45cls3_', 'g45cls5_', 'g45photostsdb_', 'g45wk1_', 'g45jv_', 'g45art1_', 'g45clv1_', 'g45arb1_', 'g45_herologo_', 'g45cm3_']
     .forEach(function (p) { if (_G45_CACHE_PREFIXES.indexOf(p) < 0) _G45_CACHE_PREFIXES.push(p); });
 } catch (e) {}
 function g45MenageStockage() {

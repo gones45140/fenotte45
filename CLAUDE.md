@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261005l, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261005m, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -132,6 +132,10 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   activer le bouton reprenait la liste déjà chargée SANS le mode TR (enveloppe de _g45CompetMatchs jamais rappelée) ; clé + « |tr ».
   20261005l (toujours « inchangé », Antoine sur téléphone) : ligne de diagnostic sous le bouton TR actif (« N matchs prolongés recalculés ·
   M sans détail des périodes · v… ») pour savoir si ESPN donne les linescores du calendrier d'équipe NHL. À retirer une fois réglé.
+  Résultat chez Antoine : « 22 recalculés · 1312 sans détail » → le calendrier d'équipe NHL (teams/<id>/schedule) n'a PAS de linescores.
+  20261005m : `_g45CompetMatchs` garde m.ox (1 = « OT », 2 = « SO » dans status.type.detail, libellés « Final/OT » / « Final/SO » NON
+  vérifiés sur cette adresse) ; `g45ScoreTR` sans périodes : hockey + ox + 1 but d'écart → min-min. Cache g45cm10_ → g45cm11_ (MORTS).
+  Diagnostic : « … · N marqués OT/TAB · v… ».
 - Couleurs lisibles : `_g45CoulTexte`, `g45CoulEquipe`, `g45CoulPaire`.
 - Classements : filtre Phase `_g45ClsPhase` / `_g45ClsEstPO`, Par match / Total
   `_g45ClsCtx.tot` (`_g45ClsCelMoy`), lecture de saison MOIS PAR MOIS
