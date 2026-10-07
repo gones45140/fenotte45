@@ -25806,7 +25806,9 @@ async function loadCalendrier() {
   } catch(e) {}
 
   var _suivis = g45SuivisGet();
-  if(!teams.length && !_suivis.length) {
+  /* 20261005e : un mur sans foot mais avec du basket / hockey KHL a aussi un agenda */
+  var _agAutres = (state.u || []).some(function(u){ return u && /🏀|🏒/.test(u.sport || ''); });
+  if(!teams.length && !_suivis.length && !_agAutres) {
     el.innerHTML = '<div class="fc" style="color:var(--t3);text-align:center;">Ajoute des équipes de foot en favori, ou suis un match précis depuis l\'onglet Résultats (bouton ☆ Suivre).</div>';
     return;
   }
@@ -25939,6 +25941,51 @@ async function loadCalendrier() {
       });
     }
   } catch(e) { console.warn('agenda equipes suivies', e && e.message); }
+
+  /* 20261005e (« l'ASVEL et Sotchi n'y sont pas ») : l'Agenda ne lisait qu'ESPN (foot du mur + ⭐ hors foot). Ajout des sources déjà
+     utilisées par Saisons / Suivies : 🏀 clubs du mur hors NBA → Euroleague + Pro A (`_g45EbResoudre` / `_g45EbCharger`, déjà en
+     cache le plus souvent) ; 🏒 KHL → équipes du mur + ⭐ (`_g45KhlEquipesSuivies`, `_g45KhlMatchsPlage`, 14 jours). team_a = club
+     qui REÇOIT (même convention que les cartes KHL de Suivies). Échec d'une source = rien d'ajouté, le reste s'affiche. */
+  var _agFin = Date.now() + 21 * 86400000;
+  try {
+    if (typeof _g45EbResoudre === 'function' && typeof _g45EbCharger === 'function') {
+      var _ebMur = (state.u || []).filter(function (u) {
+        return u && /🏀/.test(u.sport || '') && !(typeof resolveNbaTeam === 'function' && resolveNbaTeam(u.n));
+      }).slice(0, 4);
+      for (var _ei = 0; _ei < _ebMur.length; _ei++) {
+        var _eu = _ebMur[_ei], _R = null;
+        try { _R = await _g45EbResoudre(_eu.n); } catch (e) {}
+        if (!_R) continue;
+        var _D = null;
+        try { _D = await _g45EbCharger('eb:' + (_R.el || '') + '|' + (_R.pa || ''), _g45EbAnCour()); } catch (e) {}
+        ((_D && _D.av) || []).forEach(function (x) {
+          var tt = x.t > 1e12 ? x.t : x.t * 1000;
+          if (!tt || tt < nowTs || tt > _agFin) return;
+          var dom = (x.h === 'EB');
+          allMatches.push({ date: new Date(tt).toISOString(), isDom: dom, adv: (dom ? x.an : x.hn) || '?', ourName: _eu.n,
+            color: '#ff7a2f', comp: x.comp || 'Euroleague', compSlug: '', venue: '', sp: 'basketball' });
+        });
+      }
+    }
+  } catch (e) { console.warn('agenda basket europe', e && e.message); }
+  try {
+    if (typeof _g45KhlEquipesSuivies === 'function' && typeof _g45KhlMatchsPlage === 'function') {
+      var _kIds = _g45KhlEquipesSuivies();
+      if (_kIds.length) {
+        var _kMs = await _g45KhlMatchsPlage(Date.now() - 2 * 3600000, Date.now() + 14 * 86400000);
+        (_kMs || []).forEach(function (m) {
+          if (_g45KhlFini(m)) return;
+          var moiA = _kIds.indexOf(m.a) >= 0, moiB = _kIds.indexOf(m.b) >= 0;
+          if (!moiA && !moiB) return;
+          var tt = m.t > 1e12 ? m.t : m.t * 1000;
+          if (!tt || tt < nowTs) return;
+          var nf = function (id) { return (typeof g45KhlNomFr === 'function' ? g45KhlNomFr(id) : '') || String(id); };
+          allMatches.push({ date: new Date(tt).toISOString(), isDom: moiA, adv: nf(moiA ? m.b : m.a), ourName: nf(moiA ? m.a : m.b),
+            color: '#5ad6ff', comp: 'KHL', compSlug: 'khl', venue: m.lieu || '', sp: 'hockey' });
+        });
+      }
+    }
+  } catch (e) { console.warn('agenda KHL', e && e.message); }
 
   // + matchs suivis manuellement (sélection dans Résultats), même hors favoris
   _suivis.forEach(function(s){
