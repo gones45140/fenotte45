@@ -64142,6 +64142,13 @@ function g45ScoreTR(m, sp) {
      score faux. */
   var sup = (m.hp || []).concat(m.ap || []).some(function (x) { return x && x.p > n; });
   var ecart = (h !== +m.hg || a !== +m.ag);
+  /* 20261005j (capture d'Antoine : Edmonton 1-2 Colorado « Après TAB » du 14/04 compté en victoire malgré « Temps réglementaire »).
+     Match gagné aux TIRS AU BUT : ESPN ne donne pas de période au-delà de la 3e → le garde-fou ci-dessous renonçait.
+     Au hockey, un match prolongé est FORCÉMENT à égalité après 3 périodes puis gagné d'UN seul but : si les 3 périodes
+     sont toutes là, égalité, et score final à 1 but d'écart, c'est une prolongation / des TAB, pas une liste incomplète. */
+  if (ecart && !sup && n === 3 && h === a && Math.abs((+m.hg) - (+m.ag)) === 1
+      && (m.hp || []).filter(function (x) { return x && x.p <= 3; }).length === 3
+      && (m.ap || []).filter(function (x) { return x && x.p <= 3; }).length === 3) sup = true;
   if (ecart && !sup) return null;
   var prol = ecart;
   return { hg: h, ag: a, prol: prol };
