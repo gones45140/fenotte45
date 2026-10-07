@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261005h, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261005i, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -268,6 +268,8 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   20261005c (capture « 0/50 — WIN + AO0.5 · 0% ») : compteur COMBINÉ (combN) et barre / étiquettes de chaque match (passes) passaient
   TOUTES les clés à `_g45SgCompte`, qui ne connaît pas les clés des curseurs (AO0.5, EU1.5, H-1.5, MT:…) → toujours faux. Hors CLES :
   `_g45MarcheEval(k, _g45SgX(m, sp))`, null = ne bloque pas (comme le foot) ; libellés du compteur lisibles (Victoire + Adv O0.5).
+  20261005i (« le nombre de buts, possible de le commencer plus bas ? ») : `_G45_SG_L.hockey.tot` 3,5→7,5 devient 0,5→7,5 ; l'index
+  mémorisé (g45_curs_gen_hockey, Match entier) est décalé de 3 une seule fois (drapeau e.h05) pour garder la même ligne.
 - `_g45CompetMatchs` : cache `g45cm10_` (20261001r ; g45cm9_ → MORTS) ; le repli scoreboard mensuel (NRL, rugby) pose
   `po` via `_g45ClsEstPO(e)` (slug de saison « …-final-… »). 20261001r — bloc PHASE FINALE (scoreboard seasontype=3 sur
   la fenêtre après le dernier match) : en début de saison il ramenait la PRÉSAISON NHL, marquée « PO » (capture d'Antoine,

@@ -49833,7 +49833,8 @@ function _g45SgEcart(m) {
   return o;
 }
 var _G45_SG_L = {
-  hockey:       { tot: [3.5, 7.5],     eq: [0.5, 4.5],    hand: 3.5,  totP: [0.5, 3.5],    eqP: [0.5, 2.5],  handP: 1.5,  per: '1re période' },
+  /* 20261005i (« le nombre de buts, possible de le commencer plus bas ? ») : hockey 3,5 → 0,5 ; index mémorisé décalé de 3 (_g45SgCursEtat). */
+  hockey:       { tot: [0.5, 7.5],     eq: [0.5, 4.5],    hand: 3.5,  totP: [0.5, 3.5],    eqP: [0.5, 2.5],  handP: 1.5,  per: '1re période' },
   baseball:     { tot: [1.5, 11.5],    eq: [0.5, 7.5],    hand: 3.5,  totP: [1.5, 7.5],    eqP: [0.5, 4.5],  handP: 2.5,  per: '5 premières manches' },
   basketball:   { tot: [200.5, 249.5], eq: [90.5, 135.5], hand: 20.5, totP: [95.5, 130.5], eqP: [45.5, 70.5], handP: 12.5, per: '1re mi-temps' },
   football:     { tot: [30.5, 60.5],   eq: [10.5, 40.5],  hand: 26.5, totP: [14.5, 34.5],  eqP: [3.5, 24.5], handP: 14.5, per: '1re mi-temps' },
@@ -49867,6 +49868,11 @@ function _g45SgCursEtat(sp) {
   var e = null;
   try { e = JSON.parse(localStorage.getItem('g45_curs_gen_' + sp) || 'null'); } catch (x) {}
   if (!e) e = { per: 'FT', tot: { i: -1, s: 'A', on: true }, eq: { w: 'E', i: -1, s: 'A', on: false }, hand: { i: -1, s: 'A', on: false } };
+  /* 20261005i : la plage hockey « Match entier » commence à 0,5 au lieu de 3,5 → une ligne déjà choisie (index) garde sa VALEUR. */
+  else if (sp === 'hockey' && !e.h05) {
+    if (e.per !== 'HT' && e.tot && e.tot.i >= 0) e.tot.i += 3;
+    e.h05 = 1; _g45SgCursSauver(sp, e);
+  }
   return e;
 }
 function _g45SgCursSauver(sp, e) { try { localStorage.setItem('g45_curs_gen_' + sp, JSON.stringify(e)); } catch (x) {} }
