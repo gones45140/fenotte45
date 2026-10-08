@@ -68704,7 +68704,9 @@ function _g45RegHtml() {
         : (o.ph ? '<img src="' + esc(o.ph) + '" alt="" style="width:30px;height:30px;border-radius:50%;object-fit:cover;background:#2a3350;' + (cc ? 'box-shadow:0 0 0 2px ' + cc + ';' : '') + '" onerror="this.style.display=\'none\'">' : ''))
       + '<span><b style="font-size:14px;' + (cc ? 'color:' + cc + ';' : '') + '">' + esc(o.nom) + '</b><br><span style="font-size:12px;color:#c9d3ee;">' + esc(o.eq)
       + (rg ? ' · <span style="color:' + cc + ';">n°' + rg + ' en ' + labP + '</span>' : '')
-      + (o.nv ? ' · <span style="color:#5aa9ff;font-weight:800;">🆕 nouveau</span>' : '') + '</span></span></span></td>'
+      + (o.nv ? ' · <span style="color:#5aa9ff;font-weight:800;">🆕 nouveau</span>' : '')
+      + (o.abs ? ' · <span style="color:#ff9f43;font-weight:800;">🚫 absent ' + (o.abs > 1 ? 'aux ' + o.abs + ' derniers matchs' : 'au dernier match') + (o.absD ? ' (' + esc(o.absD) + ')' : '') + '</span>' : '')   /* 20261006n */
+      + '</span></span></span></td>'
       + '<td align="center"><b>' + o.s.tot + '</b></td><td align="center">' + o.s.mj + '</td><td align="center">' + o.s.pct + ' %</td>'
       + '<td align="center"><b style="color:' + col(o.s.pire) + ';">' + o.s.pire + '</b></td>'
       + '<td align="center"><b style="color:#5aa9ff;">' + (o.s.best != null ? o.s.best : '–') + '</b></td>'
@@ -69383,7 +69385,7 @@ async function _g45RegLireRug(eq) {
       try { var c = JSON.parse(localStorage.getItem(ck) || 'null'); if (c && Date.now() - c.t < 7 * 864e5) return c.l; } catch (e) {}
       try {
         var X = _g45Pd2Journee(await _g45RegRugTexte('/calendrier-et-resultats/' + cs.name + '/j' + n)) || [];
-        var l = X.filter(function (m) { return m.sh != null && m.u; }).map(function (m) { return { n: n, u: m.u, h: [m.h.n, _g45Pd2Slug(m.h.l), m.h.l], a: [m.a.n, _g45Pd2Slug(m.a.l), m.a.l] }; });
+        var l = X.filter(function (m) { return m.sh != null && m.u; }).map(function (m) { return { n: n, u: m.u, j: m.j || '', h: [m.h.n, _g45Pd2Slug(m.h.l), m.h.l], a: [m.a.n, _g45Pd2Slug(m.a.l), m.a.l] }; });
         if (X.length && X.every(function (m) { return m.sh != null; })) { try { localStorage.setItem(ck, JSON.stringify({ t: Date.now(), l: l })); } catch (e) {} }
         return l;
       } catch (e) { return []; }
@@ -69413,7 +69415,10 @@ async function _g45RegLireRug(eq) {
     var p = P[k];
     p.L.sort(function (a, b) { return String(b.d).localeCompare(String(a.d)); });   /* plus récent d'abord */
     var c = p.L[0].club;
-    return { id: p.id, nom: p.nom, ph: p.ph, eq: c[0], club: c[0], logo: c[2], slug: c[1], s: _g45RegCalc(p.L, 'goals') };
+    /* 20261006n : matchs du club joués APRÈS sa dernière apparition = absences récentes */
+    var der = +String(p.L[0].d) - 1000, apres = matchs.filter(function (m) { return m.n > der && (m.h[1] === c[1] || m.a[1] === c[1]); }).sort(function (x, y) { return y.n - x.n; });
+    return { id: p.id, nom: p.nom, ph: p.ph, eq: c[0], club: c[0], logo: c[2], slug: c[1], s: _g45RegCalc(p.L, 'goals'),
+      abs: apres.length, absD: apres.length ? String(apres[0].j || ('J' + apres[0].n)).replace(/^(\S+)\s+/, function (x, w) { return w.slice(0, 3).toLowerCase() + '. '; }) : '' };
   }).filter(function (o) { return !slugEq || o.slug === slugEq; })
     .sort(function (a, b) { return (b.s.tot - a.s.tot) || (a.s.pire - b.s.pire); }).slice(0, 10);
   return out;
@@ -69484,20 +69489,22 @@ async function _g45RegLireNrl(an, cat, eq) {
     parEq[equipes[e]] = await _g45RegNrlEquipe(equipes[e], an, function () { prog('(équipe ' + (e + 1) + '/' + equipes.length + ' · feuille ' + cpt.n + ')'); }, cpt);
   }
   var col = cat === 'a' ? 3 : 2, nz = function (x) { return _g45NrlNorm(x); };
+  var absent = {};
   var serie = function (idE, nomN) {
-    var L = [];
-    (parEq[idE] || []).forEach(function (F, i) {
+    var L = [], der = -1, tous = parEq[idE] || [];
+    tous.forEach(function (F, i) {
       var c = F.h && F.h.id === String(idE) ? F.h : F.a;
       var x = ((c && c.j) || []).filter(function (y) { return nz(y[0]) === nomN; })[0];
-      if (x && x[1]) L.push({ goals: x[col], assists: 0, points: x[col], d: String(1000 + i) });
+      if (x && x[1]) { L.push({ goals: x[col], assists: 0, points: x[col], d: String(1000 + i) }); der = i; }
     });
+    absent[idE + '|' + nomN] = der >= 0 ? tous.length - 1 - der : 0;   /* 20261006n : matchs du club joués depuis sa dernière apparition */
     return L.reverse();   /* plus récent d'abord */
   };
-  if (top) return top.map(function (x) { return { id: nz(x.n), nom: x.n, ph: x.ph, eq: x.club, s: _g45RegCalc(serie(String(x.id), nz(x.n)), 'goals') }; });
+  if (top) return top.map(function (x) { var S = _g45RegCalc(serie(String(x.id), nz(x.n)), 'goals'); return { id: nz(x.n), nom: x.n, ph: x.ph, eq: x.club, s: S, abs: absent[String(x.id) + '|' + nz(x.n)] || 0 }; });
   /* fiche d'un club : tous ses joueurs */
   var J = {};
   (parEq[idEq] || []).forEach(function (F) { var c = F.h && F.h.id === idEq ? F.h : F.a; ((c && c.j) || []).forEach(function (y) { if (y[1]) J[nz(y[0])] = y[0]; }); });
-  return Object.keys(J).map(function (k) { return { id: k, nom: J[k], ph: '', eq: '', s: _g45RegCalc(serie(idEq, k), 'goals') }; })
+  return Object.keys(J).map(function (k) { var S = _g45RegCalc(serie(idEq, k), 'goals'); return { id: k, nom: J[k], ph: '', eq: '', s: S, abs: absent[idEq + '|' + k] || 0 }; })
     .filter(function (o) { return o.s.mj; }).sort(function (a, b) { return (b.s.tot - a.s.tot) || (a.s.pire - b.s.pire); }).slice(0, 10);
 }
 async function _g45RegPrecNrl(an, cat) {
