@@ -24843,6 +24843,19 @@ function renderSaisonsChart(el, results, nom) {
   })();
 
 
+  /* 20261005y (capture d'Antoine, Real Madrid : « on est passé le reste ») : le filtre est mémorisé pour TOUS les clubs ; une case
+     cochée ailleurs (ex. Ligue Europa) qui n'existe pas chez ce club = aucune case cochée, aucune saison affichée. Si aucune case
+     active ne correspond à ce club → « Toutes » pour cet affichage (le choix mémorisé n'est pas effacé). */
+  try {
+    if (_saisonFilters && !_saisonFilters.all) {
+      var _nzD = function(x){ return String(x||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,''); };
+      var _dispo = {};
+      Object.keys(compGroups).forEach(function(g){ if (compGroups[g].length) _dispo['sf-' + g.replace(/ /g,'_')] = 1; });
+      Object.keys(allComps).forEach(function(cn){ _dispo['sf-n:' + _nzD(cn)] = 1; });
+      var _utile = Object.keys(_saisonFilters).some(function(k){ return k !== 'all' && _saisonFilters[k] && _dispo[k]; });
+      if (!_utile) _saisonFilters = { all: true };
+    }
+  } catch (e) {}
   // Barre de filtres
   html += '<div class="cwrap" style="margin-bottom:10px;">';
   html += '<div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#4f5d88;margin-bottom:10px;">Filtrer par compétition</div>';
@@ -24891,7 +24904,7 @@ function renderSaisonsChart(el, results, nom) {
 
   saisons.forEach(function(s) {
     var matches = results[s];
-    var filters = JSON.parse(localStorage.getItem('g45_saison_filters')||'null');
+    var filters = _saisonFilters;   /* 20261005y : filtre EFFECTIF (voir plus haut) */
     var filteredMatches = filterMatchesByComp(matches, filters);
     /* On n'affiche PLUS tous les matchs quand le filtre ne rend rien : c'est
        exactement ce qui donnait l'impression que le filtre ne marchait pas.
