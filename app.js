@@ -68578,7 +68578,8 @@ function _g45RegCalc(log, cle) {
   var L = (log || []).slice().reverse();               /* chronologique */
   var n = L.length, avec = 0, tot = 0, pire = 0, cour = 0;
   L.forEach(function (g) {
-    var v = +g[cle] || 0; tot += v;
+    /* 20261005s : points = champ points du game-log, sinon buts + passes */
+    var v = cle === 'points' ? (g.points != null ? +g.points || 0 : (+g.goals || 0) + (+g.assists || 0)) : (+g[cle] || 0); tot += v;
     if (v > 0) { avec++; cour = 0; } else { cour++; if (cour > pire) pire = cour; }
   });
   return { mj: n, tot: tot, pct: n ? Math.round(avec * 100 / n) : 0, pire: pire, cours: cour };
@@ -68588,7 +68589,7 @@ async function _g45RegLire(saison, cat, eq) {
   var ck = 'g45reg1_' + saison + '_' + cat;
   try { var c = JSON.parse(localStorage.getItem(ck) || 'null'); if (c && Date.now() - c.t < 12 * 3600e3) return c.l; } catch (e) {}
   var P = FD_PROXY + '?key=nhl&host=nhl&path=';
-  var k = cat === 'a' ? 'assists' : 'goals';
+  var k = cat === 'a' ? 'assists' : (cat === 'p' ? 'points' : 'goals');
   var r = await fetch(P + encodeURIComponent('/v1/skater-stats-leaders/' + saison + '/2?categories=' + k + '&limit=10'));
   if (!r.ok) throw new Error('classement NHL ' + r.status);
   var j = await r.json();
@@ -68629,14 +68630,14 @@ function _g45RegHtml() {
   var L = _g45Reg.mem[_g45RegSaison(_g45Reg.an) + _g45Reg.cat + (_g45Reg.eq || '')] || [];
   var esc = function (t) { return String(t).replace(/[<>"&]/g, ''); };
   var b = function (on, txt, f) { return '<button onclick="' + f + '" style="flex:1;padding:8px 4px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:' + (on ? '900' : '700') + ';border:1px solid ' + (on ? '#4d84ff' : 'rgba(255,255,255,.18)') + ';background:' + (on ? '#1b2a52' : 'rgba(11,16,29,.85)') + ';color:' + (on ? '#fff' : '#c9d3ee') + ';">' + txt + '</button>'; };
-  var h = '<div style="display:flex;gap:6px;margin-bottom:6px;">' + b(_g45Reg.cat === 'g', '🥅 Buteurs', "g45RegSet('cat','g')") + b(_g45Reg.cat === 'a', '🎯 Passeurs', "g45RegSet('cat','a')") + '</div>'
-    + '<div style="display:flex;gap:6px;margin-bottom:8px;">' + b(_g45Reg.tri === 'pire', 'Pire série ▲', "g45RegSet('tri','pire')") + b(_g45Reg.tri === 'pct', '% matchs ' + (_g45Reg.cat === 'a' ? 'avec passe' : 'avec but'), "g45RegSet('tri','pct')") + '</div>';
+  var h = '<div style="display:flex;gap:6px;margin-bottom:6px;">' + b(_g45Reg.cat === 'g', '🥅 Buteurs', "g45RegSet('cat','g')") + b(_g45Reg.cat === 'a', '🎯 Passeurs', "g45RegSet('cat','a')") + b(_g45Reg.cat === 'p', '⭐ Pointeurs', "g45RegSet('cat','p')") + '</div>'
+    + '<div style="display:flex;gap:6px;margin-bottom:8px;">' + b(_g45Reg.tri === 'pire', 'Pire série ▲', "g45RegSet('tri','pire')") + b(_g45Reg.tri === 'pct', '% matchs ' + (_g45Reg.cat === 'a' ? 'avec passe' : (_g45Reg.cat === 'p' ? 'avec point' : 'avec but')), "g45RegSet('tri','pct')") + '</div>';
   var ok = L.filter(function (o) { return o.s && o.s.mj >= 10; });
   if (!ok.length) return h + '<div style="font-size:13px;color:#f0b020;">Pas encore assez de matchs cette saison (10 mini) — choisis la saison précédente dans Saison ▾.</div>';
   ok.sort(function (x, y) { return _g45Reg.tri === 'pct' ? (y.s.pct - x.s.pct) || (x.s.pire - y.s.pire) : (x.s.pire - y.s.pire) || (y.s.pct - x.s.pct); });
   var col = function (v) { return v < 6 ? '#1ed760' : (v < 10 ? '#f0b020' : '#ff6b6b'); };
   h += '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:14px;color:#fff;white-space:nowrap;">'
-    + '<tr style="color:#c9d3ee;font-size:12px;"><th style="text-align:left;padding:6px;">Joueur</th><th>' + (_g45Reg.cat === 'a' ? 'Passes' : 'Buts') + '</th><th>MJ</th><th>%</th><th>Pire série</th><th>En cours</th></tr>';
+    + '<tr style="color:#c9d3ee;font-size:12px;"><th style="text-align:left;padding:6px;">Joueur</th><th>' + (_g45Reg.cat === 'a' ? 'Passes' : (_g45Reg.cat === 'p' ? 'Points' : 'Buts')) + '</th><th>MJ</th><th>%</th><th>Pire série</th><th>En cours</th></tr>';
   ok.forEach(function (o) {
     h += '<tr style="border-top:1px solid rgba(255,255,255,.1);"><td style="padding:6px;"><span style="display:inline-flex;align-items:center;gap:7px;">'
       + (o.ph ? '<img src="' + esc(o.ph) + '" alt="" style="width:30px;height:30px;border-radius:50%;object-fit:cover;background:#2a3350;" onerror="this.style.display=\'none\'">' : '')
@@ -68645,7 +68646,7 @@ function _g45RegHtml() {
       + '<td align="center"><b style="color:' + col(o.s.pire) + ';">' + o.s.pire + '</b></td>'
       + '<td align="center"><b style="color:' + (o.s.cours >= 6 ? '#ff6b6b' : '#fff') + ';">' + o.s.cours + '</b></td></tr>';
   });
-  return h + '</table></div><div style="font-size:12px;color:#c9d3ee;margin-top:6px;">Vert : jamais 6 matchs de suite sans ' + (_g45Reg.cat === 'a' ? 'passe' : 'but') + ' · orange 6 à 9 · rouge 10 et plus</div>';
+  return h + '</table></div><div style="font-size:12px;color:#c9d3ee;margin-top:6px;">Vert : jamais 6 matchs de suite sans ' + (_g45Reg.cat === 'a' ? 'passe' : (_g45Reg.cat === 'p' ? 'point' : 'but')) + ' · orange 6 à 9 · rouge 10 et plus</div>';
 }
 async function g45RegOuvrir() {
   var box = document.getElementById('g45-reg-box'); if (!box) return;
@@ -68687,7 +68688,7 @@ async function _g45RegLireEq(saison, cat, abr) {
   var ck = 'g45reg1_' + saison + '_' + cat + '_' + abr;
   try { var c = JSON.parse(localStorage.getItem(ck) || 'null'); if (c && Date.now() - c.t < 12 * 3600e3) return c.l; } catch (e) {}
   var P = FD_PROXY + '?key=nhl&host=nhl&path=';
-  var k = cat === 'a' ? 'assists' : 'goals';
+  var k = cat === 'a' ? 'assists' : (cat === 'p' ? 'points' : 'goals');
   var r = await fetch(P + encodeURIComponent('/v1/club-stats/' + abr + '/' + saison + '/2'));
   if (!r.ok) throw new Error('effectif NHL ' + r.status);
   var j = await r.json();
