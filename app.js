@@ -68694,7 +68694,7 @@ function _g45RegHtml() {
   });
   var col = function (v) { return v < 6 ? '#1ed760' : (v < 10 ? '#f0b020' : '#ff6b6b'); };
   h += '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:14px;color:#fff;white-space:nowrap;">'
-    + '<tr style="color:#c9d3ee;font-size:12px;"><th style="text-align:left;padding:6px;">Joueur</th><th>' + LB.col + '</th><th>MJ</th><th>%</th><th>Pire série</th><th>Meilleure</th><th>En cours</th></tr>';
+    + '<tr style="color:#c9d3ee;font-size:12px;"><th style="text-align:left;padding:6px;">Joueur</th><th style="padding:6px 6px;">' + LB.col + '</th><th style="padding:6px 6px;">MJ</th><th style="padding:6px 6px;">%</th><th style="padding:6px 6px;">Pire série</th><th style="padding:6px 6px;">Meilleure</th><th style="padding:6px 6px;">En cours</th></tr>';   /* 20261006s : titres collés (« EssaisMJ ») */
   /* 20261005u : rang de l'an dernier (top 10 de la LIGUE, même catégorie) — ligue : or 1-3 / bronze 4-10 ; équipe : or seulement */
   var PR = _g45Reg.prev[_g45RegPK()] || {};
   var labP = lab(+_g45Reg.an - 1), nOr = 0;
