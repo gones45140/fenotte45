@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261006v, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261006w, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1320,6 +1320,10 @@ RÉGLÉ (worker, 01/10) : cron « exceededCpu » (cpuTimeMs 10) à CHAQUE passag
   NHL / foot / NFL / MLB / KHL par DATE : o.jours = jours joués (journal ; NHL date locale, ligne = UTC − 6 h ; autres UTC, `_g45RegJour`),
   absents = joueurs du tableau sans ce jour, ligne ignorée si aucun joueur du tableau ce jour-là. Lignes foot (loadTeamSaisons) marquées
   data-g45sgdom / data-g45sgt. Listes g45reg1_v3_ (équipe NHL) → v4_, g45reg1_f6_ → f7_.
+  20261006w (« différencie pas domicile et extérieur », maquette Tous / 🏠 / 🚌 acceptée) : chaque entrée de journal porte h (1 domicile,
+  0 extérieur) — ESPN atVs « vs » / « @ » (foot SONDÉ ; NFL / MLB supposé pareil), rugby cote 0 = reçoit, NRL F.h.id, KHL m.a = reçoit, NHL
+  homeRoadFlag H/R (NON SONDÉ : sinon « Lieu des matchs inconnu ») ; `_g45RegCalc` ajoute R.d / R.e ; `_g45RegHtml` vue par _g45Reg.lieu.
+  Listes g45reg1_v4_/v3_ → v5_, g45reg1_f7_ → f8_. SONDE NHL À FAIRE (Antoine sur PC) : player/8478402/game-log/20252026/2 → champ du lieu.
 - Saisons d'un club de FOOT (rendu après « Barre de filtres » dans loadTeamSaisons) — 20261005y (capture Real Madrid : seulement
   Prochains matchs, aucune case cochée) : le filtre g45_saison_filters est COMMUN à tous les clubs ; une case cochée ailleurs absente ici
   (Ligue Europa…) vidait toutes les saisons → si aucune case active n'existe chez ce club, « Toutes » pour cet affichage (sans effacer le choix).
