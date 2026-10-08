@@ -68572,7 +68572,7 @@ window._g45NhlFeuilleHtml = _g45NhlFeuilleHtml; window._g45NhlFeuilleLire = _g45
    au plus ancien, matchs JOUÉS seulement (une absence n'allonge donc jamais une série). Catégorie « assists » NON sondée (même
    forme supposée). Contrainte d'Antoine « faut pas que ça bloque tout » : rien ne part sans le bouton, 11 demandes au plus
    (3 à la fois), cache g45reg1_<saison>_<cat> 12 h, échec = message dans le bloc seulement. */
-var _g45Reg = { cat: 'g', tri: 'pire', mem: {} };
+var _g45Reg = { cat: 'g', tri: 'pire', mem: {}, prev: {} };
 function _g45RegSaison(an) { an = +an || new Date().getFullYear(); return (an - 1) + '' + an; }
 function _g45RegCalc(log, cle) {
   var L = (log || []).slice().reverse();               /* chronologique */
@@ -68646,22 +68646,37 @@ function _g45RegHtml() {
   var col = function (v) { return v < 6 ? '#1ed760' : (v < 10 ? '#f0b020' : '#ff6b6b'); };
   h += '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:14px;color:#fff;white-space:nowrap;">'
     + '<tr style="color:#c9d3ee;font-size:12px;"><th style="text-align:left;padding:6px;">Joueur</th><th>' + (_g45Reg.cat === 'a' ? 'Passes' : (_g45Reg.cat === 'p' ? 'Points' : 'Buts')) + '</th><th>MJ</th><th>%</th><th>Pire série</th><th>En cours</th></tr>';
+  /* 20261005u : rang de l'an dernier (top 10 de la LIGUE, même catégorie) — ligue : or 1-3 / bronze 4-10 ; équipe : or seulement */
+  var PR = _g45Reg.prev[_g45RegSaison(_g45Reg.an) + _g45Reg.cat] || {};
+  var labP = lab(+_g45Reg.an - 1), nOr = 0;
   ok.forEach(function (o) {
+    var rg = PR[o.id] || 0;
+    var cc = rg ? ((_g45Reg.eq || rg <= 3) ? '#f5c542' : '#e0915a') : '';
+    if (rg) nOr++;
     h += '<tr style="border-top:1px solid rgba(255,255,255,.1);"><td style="padding:6px;"><span style="display:inline-flex;align-items:center;gap:7px;">'
-      + (o.ph ? '<img src="' + esc(o.ph) + '" alt="" style="width:30px;height:30px;border-radius:50%;object-fit:cover;background:#2a3350;" onerror="this.style.display=\'none\'">' : '')
-      + '<span><b style="font-size:14px;">' + esc(o.nom) + '</b><br><span style="font-size:12px;color:#c9d3ee;">' + esc(o.eq) + '</span></span></span></td>'
+      + (o.ph ? '<img src="' + esc(o.ph) + '" alt="" style="width:30px;height:30px;border-radius:50%;object-fit:cover;background:#2a3350;' + (cc ? 'box-shadow:0 0 0 2px ' + cc + ';' : '') + '" onerror="this.style.display=\'none\'">' : '')
+      + '<span><b style="font-size:14px;' + (cc ? 'color:' + cc + ';' : '') + '">' + esc(o.nom) + '</b><br><span style="font-size:12px;color:#c9d3ee;">' + esc(o.eq)
+      + (rg ? ' · <span style="color:' + cc + ';">n°' + rg + ' en ' + labP + '</span>' : '') + '</span></span></span></td>'
       + '<td align="center"><b>' + o.s.tot + '</b></td><td align="center">' + o.s.mj + '</td><td align="center">' + o.s.pct + ' %</td>'
       + '<td align="center"><b style="color:' + col(o.s.pire) + ';">' + o.s.pire + '</b></td>'
       + '<td align="center"><b style="color:' + (o.s.cours >= 6 ? '#ff6b6b' : '#fff') + ';">' + o.s.cours + '</b></td></tr>';
   });
-  return h + '</table></div><div style="font-size:12px;color:#c9d3ee;margin-top:6px;">Vert : jamais 6 matchs de suite sans ' + (_g45Reg.cat === 'a' ? 'passe' : (_g45Reg.cat === 'p' ? 'point' : 'but')) + ' · orange 6 à 9 · rouge 10 et plus</div>';
+  var catL = _g45Reg.cat === 'a' ? 'passeurs' : (_g45Reg.cat === 'p' ? 'pointeurs' : 'buteurs');
+  var leg = _g45Reg.eq ? '<span style="color:#f5c542;font-weight:800;">Or</span> = dans le top 10 des ' + catL + ' de la NHL en ' + labP
+    : '<span style="color:#f5c542;font-weight:800;">Or</span> = top 3 · <span style="color:#e0915a;font-weight:800;">Bronze</span> = 4e à 10e des ' + catL + ' en ' + labP;
+  h += '</table></div><div style="font-size:13px;color:#fff;margin-top:6px;">' + leg + (_g45Reg.prev[_g45RegSaison(_g45Reg.an) + _g45Reg.cat] ? '' : ' (indisponible)') + '</div>';
+  return h + '<div style="font-size:12px;color:#c9d3ee;margin-top:6px;">Vert : jamais 6 matchs de suite sans ' + (_g45Reg.cat === 'a' ? 'passe' : (_g45Reg.cat === 'p' ? 'point' : 'but')) + ' · orange 6 à 9 · rouge 10 et plus</div>';
 }
 async function g45RegOuvrir() {
   var box = document.getElementById('g45-reg-box'); if (!box) return;
   var sa = _g45RegSaison(_g45Reg.an), k = sa + _g45Reg.cat + (_g45Reg.eq || '');
   if (!_g45Reg.mem[k]) {
     box.innerHTML = '<div style="font-size:13px;color:#c9d3ee;">⏳ Lecture des 10 joueurs…</div>';
-    try { _g45Reg.mem[k] = await _g45RegLire(sa, _g45Reg.cat, _g45Reg.eq); }
+    try {
+      var _pv = _g45RegPrec(sa, _g45Reg.cat);
+      _g45Reg.mem[k] = await _g45RegLire(sa, _g45Reg.cat, _g45Reg.eq);
+      var _pr = await _pv; if (_pr) _g45Reg.prev[sa + _g45Reg.cat] = _pr;
+    }
     catch (e) { box.innerHTML = '<div style="font-size:13px;color:#ff9aa8;">Classement indisponible (' + String(e.message || e).replace(/</g, '') + ').</div>'; return; }
   }
   box.innerHTML = _g45RegHtml();
@@ -68726,3 +68741,26 @@ async function _g45RegLireEq(saison, cat, abr) {
   return out;
 }
 window._g45RegEquipe = _g45RegEquipe;
+
+
+/* ═══ 20261005u — 🎯 RÉGULIERS : TOP 10 DE LA SAISON D'AVANT EN COULEUR (maquette validée, réponse « b et seulement or pour
+   les équipes ») : idée d'Antoine — sur 2026-27, les 10 meilleurs (même catégorie) de 2025-26 ressortent. Ligue : or = 1er à 3e,
+   bronze = 4e à 10e ; fiche d'équipe : or seulement, pour un joueur de l'équipe qui était dans le top 10 de TOUTE la NHL.
+   Une demande (leaders de la saison d'avant, limit 10, forme SONDÉE en 20261005q/r/s), cache g45reg1_p_<saison>_<cat> 7 j ;
+   échec = pas de couleur (« indisponible » dans la légende). Rang = position dans la liste. */
+async function _g45RegPrec(saison, cat) {
+  var a = +String(saison).slice(4);
+  var sp = _g45RegSaison(a - 1);
+  var ck = 'g45reg1_p_' + sp + '_' + cat;
+  try { var c = JSON.parse(localStorage.getItem(ck) || 'null'); if (c && Date.now() - c.t < 7 * 24 * 3600e3) return c.m; } catch (e) {}
+  var k = cat === 'a' ? 'assists' : (cat === 'p' ? 'points' : 'goals');
+  try {
+    var r = await fetch(FD_PROXY + '?key=nhl&host=nhl&path=' + encodeURIComponent('/v1/skater-stats-leaders/' + sp + '/2?categories=' + k + '&limit=10'));
+    if (!r.ok) return null;
+    var j = await r.json(), m = {};
+    ((j && j[k]) || []).slice(0, 10).forEach(function (p, i) { if (p && p.id != null) m[p.id] = i + 1; });
+    if (!Object.keys(m).length) return null;
+    try { localStorage.setItem(ck, JSON.stringify({ t: Date.now(), m: m })); } catch (e) {}
+    return m;
+  } catch (e) { return null; }
+}
