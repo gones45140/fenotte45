@@ -1298,7 +1298,8 @@ RÉGLÉ (worker, 01/10) : cron « exceededCpu » (cpuTimeMs 10) à CHAQUE passag
   20261006p — FOOT + NFL : SONDÉ PAR ANTOINE site v2 soccer/fra.1/teams/160/schedule (5 matchs finis, ordre NON chronologique) et
   football/nfl/teams/2/schedule?season=2026&seasontype=2 (17 matchs, 4 finis) → `_g45RegEspCal` (completed, g45reg1_es_ 3 h) +
   `_g45RegEspAbs` (o.tid, o.der = dernier match du joueur DANS LE CHAMPIONNAT) ; filtre LDC / coupes seules = pas de calcul ;
-  listes g45reg1_f5_ → f6_. Foot saison passée : ?season= NON vérifié.
+  listes g45reg1_f5_ → f6_. Foot saison passée CONFIRMÉE PAR ANTOINE : schedule?season=2025 = 34 matchs finis fra.1, du 17/08/2025
+  au 17/05/2026. KHL : à faire plus tard (« quand tout sera open », dixit Antoine).
 - Saisons d'un club de FOOT (rendu après « Barre de filtres » dans loadTeamSaisons) — 20261005y (capture Real Madrid : seulement
   Prochains matchs, aucune case cochée) : le filtre g45_saison_filters est COMMUN à tous les clubs ; une case cochée ailleurs absente ici
   (Ligue Europa…) vidait toutes les saisons → si aucune case active n'existe chez ce club, « Toutes » pour cet affichage (sans effacer le choix).
