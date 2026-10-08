@@ -50443,7 +50443,7 @@ async function _g45SaisonsGen(el, nom, perso) {
   try {
     if (typeof _g45JouBarre === 'function') html += _g45JouBarre(sp, lg, an, (perso && perso.id) || '', nom, st.liste);
     /* 20261005q : classement de régularité des 10 meilleurs buteurs / passeurs de la NHL (sur bouton). */
-    if (typeof _g45RegBloc === 'function') { try { html += _g45RegBloc(sp, lg, an, nom); } catch (e) {} }
+    if (typeof _g45RegBloc === 'function') { try { html += _g45RegBloc(sp, lg, an, nom, (perso && perso.id) || ''); } catch (e) {} }
   } catch (e) {}
   /* NBA : filtre joueur AVEC LIGNE (25/09/2026). Reçoit `liste` (matchs
      visibles) : le bandeau suit phase et domicile / extérieur. */
@@ -68639,7 +68639,8 @@ async function _g45RegLire(saison, cat, eq) {
   if (out.some(function (o) { return o.s && o.s.mj; })) { try { localStorage.setItem(ck, JSON.stringify({ t: Date.now(), l: out })); } catch (e) {} }
   return out;
 }
-function _g45RegBloc(sp, lg, an, nom) {
+function _g45RegBloc(sp, lg, an, nom, eqId) {
+  if (sp === 'football' && String(lg) === 'nfl' && eqId && typeof _g45RegBlocNflEq === 'function') return _g45RegBlocNflEq(an, nom, eqId);   /* 20261006j */
   if (sp !== 'hockey' || String(lg) !== 'nhl') return '';
   _g45Reg.an = an; _g45Reg.an0 = an; _g45Reg.lg = ''; _g45Reg.ligue = '';
   /* 20261005r : dans la fiche d'une équipe (Saisons), seulement SES joueurs (« je devrais seulement avoir les joueurs de
@@ -68671,7 +68672,7 @@ function _g45RegHtml() {
   var mjMax = ok.reduce(function (m, o) { return Math.max(m, o.s.mj); }, 0);
   if (prec) h += '<div style="font-size:13px;color:#c9d3ee;margin-bottom:6px;">Saison ' + lab(_g45Reg.an) + ' (précédente) ' + bs('↩ Revenir à ' + lab(a0)) + '</div>';
   else if (mjMax < 10) h += '<div style="font-size:13px;color:#f0b020;margin-bottom:6px;">Début de saison : ' + mjMax + ' match' + (mjMax > 1 ? 's' : '') + ' au plus, séries encore peu parlantes. ' + bs('📅 Voir ' + lab(+a0 - 1)) + '</div>';
-  if (FT && _g45Reg.eq) h += '<div style="font-size:13px;color:#fff;background:rgba(77,132,255,.14);border-radius:8px;padding:6px 8px;margin-bottom:6px;">📋 Compétitions comptées : <b>' + _g45RegCompsLib(L.comps) + '</b></div>';
+  if (FT && _g45Reg.eq && _g45Reg.lg !== 'nfl') h += '<div style="font-size:13px;color:#fff;background:rgba(77,132,255,.14);border-radius:8px;padding:6px 8px;margin-bottom:6px;">📋 Compétitions comptées : <b>' + _g45RegCompsLib(L.comps) + '</b></div>';
   if (!ok.length) return h + '<div style="font-size:13px;color:#c9d3ee;">Aucun match joué pour l\'instant.</div>';
   /* 20261006b (« qu'est-ce qui fait l'ordre ? » → « OUI ») : égalités départagées par le plus de buts / passes / points, puis la plus
      petite série EN COURS, puis le nom (avant : ordre d'arrivée des réponses, donc au hasard). */
@@ -68961,7 +68962,7 @@ async function _g45RegLireFoot(lg, an, cat, eq) {
   var anEsp = _g45RegEspAn(lg, an), ck = 'g45reg1_f4_' + lg + '_' + anEsp + '_' + cat + (eq ? '_' + eq + '_' + (_g45Reg.cf || 'L') : '');
   try { var c = JSON.parse(localStorage.getItem(ck) || 'null'); if (c && Date.now() - c.t < 12 * 3600e3) { if (c.c) c.l.comps = c.c; return c.l; } } catch (e) {}
   var top;
-  if (eq) top = await _g45RegCandidatsClub(lg, String(eq).slice(1), anEsp, cat);   /* 20261006e : joueurs du club */
+  if (eq) top = lg === 'nfl' ? await _g45RegCandidatsNfl(String(eq).slice(1), anEsp, cat) : await _g45RegCandidatsClub(lg, String(eq).slice(1), anEsp, cat);   /* 20261006e : joueurs du club ; NFL 20261006j */
   else {
     var d = lg === 'nfl' ? await _g45RegLeadersNfl(anEsp) : await _g45RegLeadersFoot(lg, anEsp);
     if (!d) throw new Error('aucun classement ESPN pour cette saison');
@@ -69268,4 +69269,53 @@ async function _g45RegPhotos(racine) {
     }
   };
   await Promise.all([travail(), travail()]);
+}
+
+
+/* ═══ 20261006j — 🏈 SÉRIES DE TD DANS LA FICHE D'UNE ÉQUIPE NFL (Saisons ; « NFL ok, maintenant club saison »).
+   SONDÉ PAR ANTOINE (Bills, id 2) : l'effectif site v2 n'a PAS de stats ; core …/nfl/seasons/2026/types/2/teams/<id>/leaders →
+   rushingTouchdowns (2 joueurs), receivingTouchdowns (5), passingTouchdowns (1), rushingLeader (7), receivingLeader (10)… = joueurs de
+   l'équipe classés. Candidats « Touchdowns » = marqueurs à la course / réception, complétés par les meilleurs coureurs / receveurs
+   jusqu'à 10 ; « Passes de TD » = passingTouchdowns + passingLeader. Puis journal de chacun (_g45RegLogNfl). Or = top 10 NFL an − 1.
+   Rien ne part sans le bouton. Cache g45reg1_nt_<an>_<id> 6 h. */
+function _g45RegBlocNflEq(an, nom, eqId) {
+  _g45Reg.lg = 'nfl'; _g45Reg.eq = 'T' + eqId; _g45Reg.ligue = 'NFL'; _g45Reg.cf = '';
+  if (_g45Reg.cat === 'p') _g45Reg.cat = 'g';
+  _g45Reg.club = { id: String(eqId), nom: nom, logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/' + eqId + '.png' };
+  _g45Reg.an = +an; _g45Reg.an0 = +an;
+  var t = String(nom || '').replace(/[<>"&]/g, '');
+  return '<div style="margin:2px 0 14px;background:rgba(11,16,29,.92);border-radius:10px;padding:10px;">'
+    + '<div style="font-size:14px;font-weight:800;letter-spacing:1px;color:#c9d3ee;">🎯 LES PLUS RÉGULIERS — ' + t.toUpperCase() + '</div>'
+    + '<div style="font-size:13px;color:#c9d3ee;margin:4px 0 8px;">Joueurs de l\'équipe · plus longue série SANS touchdown (matchs joués seulement)</div>'
+    + '<div id="g45-reg-box">' + (_g45Reg.mem[_g45RegK()] ? _g45RegHtml() :
+      '<button onclick="g45RegOuvrir()" style="padding:10px 16px;border-radius:10px;border:1.5px solid rgba(245,197,66,.55);background:rgba(245,197,66,.12);color:#f5c542;font-size:14px;font-weight:800;cursor:pointer;">🎯 Voir le classement (' + _g45RegLab(an) + ')</button>') + '</div></div>';
+}
+async function _g45RegCandidatsNfl(tid, an, cat) {
+  var ck = 'g45reg1_nt_' + an + '_' + tid, d = null;
+  try { var c = JSON.parse(localStorage.getItem(ck) || 'null'); if (c && Date.now() - c.t < 6 * 3600e3) d = c.d; } catch (e) {}
+  if (!d) {
+    var r = await fetch('https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/' + an + '/types/2/teams/' + tid + '/leaders');
+    if (!r.ok) throw new Error('leaders de l\'équipe ' + r.status);
+    var j = await r.json(); d = {};
+    (j.categories || []).forEach(function (c) {
+      if (!/^(rushingTouchdowns|receivingTouchdowns|passingTouchdowns|rushingLeader|receivingLeader|passingLeader)$/.test(c.name)) return;
+      d[c.name] = (c.leaders || []).map(function (L) {
+        var id = ((L.athlete && L.athlete.$ref) || '').match(/athletes\/(\d+)/);
+        return { id: id ? id[1] : '', ar: L.athlete && L.athlete.$ref, v: L.value };
+      }).filter(function (x) { return x.id; });
+    });
+    try { localStorage.setItem(ck, JSON.stringify({ t: Date.now(), d: d })); } catch (e) {}
+  }
+  var ordre = cat === 'a' ? ['passingTouchdowns', 'passingLeader'] : ['rushingTouchdowns', 'receivingTouchdowns', 'receivingLeader', 'rushingLeader'];
+  var vus = {}, top = [];
+  if (cat !== 'a') {   /* marqueurs de TD d'abord, triés par nombre de TD (course + réception) */
+    var tdv = {};
+    ['rushingTouchdowns', 'receivingTouchdowns'].forEach(function (k) { (d[k] || []).forEach(function (x) { tdv[x.id] = (tdv[x.id] || 0) + (+x.v || 0); }); });
+    var marq = [].concat(d.rushingTouchdowns || [], d.receivingTouchdowns || []).sort(function (a, b) { return (tdv[b.id] || 0) - (tdv[a.id] || 0); });
+    marq.forEach(function (x) { if (!vus[x.id] && top.length < 10) { vus[x.id] = 1; top.push(x); } });
+  }
+  ordre.forEach(function (k) { (d[k] || []).forEach(function (x) { if (!vus[x.id] && top.length < 10) { vus[x.id] = 1; top.push(x); } }); });
+  if (!top.length) throw new Error('aucun joueur pour cette saison');
+  var C = _g45Reg.club || {};
+  return top.map(function (x) { return { id: x.id, ar: x.ar, club: C.nom || '', logo: C.logo || '', ab: '', tid: tid }; });
 }
