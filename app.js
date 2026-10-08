@@ -45766,7 +45766,7 @@ async function loadCompetTab() {
               ['classement','\ud83d\udcca Classement'], ['forme','\ud83d\udcc8 Forme'],
               /* Classements par catégorie (25/09/2026) : football seulement. */
               ].concat((c.sp === 'soccer' || (typeof _g45ClsUsOk === 'function' && _g45ClsUsOk(c)) || c.sp === 'rugby' || c.sp === 'rugby-league') ? [['categories','\ud83c\udfc5 Classements']] : []).concat([
-              ['buteurs', c.sp === 'soccer' ? '\u26bd Buteurs' : '\ud83c\udfc5 Individuel'],
+              ['buteurs', c.sp === 'soccer' ? '\u26bd Buteurs' : (c.s === 'nhl' ? '\ud83c\udfaf S\u00e9ries individuelles' /* 20261005w (demande d'Antoine) */ : '\ud83c\udfc5 Individuel')],
               ['transferts','\ud83d\udd04 Transferts'],
               /* Liste personnelle, sans rapport avec le mur : voir g45SuiviEqRender. */
               ['suivies','\u2b50 Suivies']]);
