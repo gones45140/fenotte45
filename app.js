@@ -24815,8 +24815,9 @@ function renderSaisonsChart(el, results, nom) {
 
   var html = '<div style="padding:4px 0;">';
   html += _g45BlocAVenir(nom);
-  /* 20261006e (« faire comme la NHL, club saison ») : séries individuelles des joueurs DU CLUB (rempli après coup, sur bouton). */
-  try { if (typeof _g45RegClubFootPoser === 'function') html += _g45RegClubFootPoser(nom); } catch (e) {}
+  /* 20261006e/f : séries individuelles des joueurs DU CLUB — posées sous « Analyser buteurs / passeurs » de la 1re saison affichée
+     (capture d'Antoine 20261006f : « soit en dessous soit au dessus d'Analyser buteurs »). */
+  var _g45RegPose = false;
 
   /* Bandeau « Saison YYYY-YY+1 » vide, pour Antoine qui « croit ce qu'il voit ». Une saison
      sans match joué n'apparaît pas dans `results` (correctif du 30/07 qui filtre completed),
@@ -25173,6 +25174,7 @@ function renderSaisonsChart(el, results, nom) {
       html += '<div style="font-size:10px;font-weight:800;color:'+(matchCount>0?'#1ed760':'#ff4545')+';">✅ '+matchCount+'/'+allMatchesSorted.length+' — '+condLabel+'</div>';
       html += '</div>';
       html += _scoreBarHtml;
+      if (!_g45RegPose) { _g45RegPose = true; try { if (typeof _g45RegClubFootPoser === 'function') html += '<div style="position:relative;z-index:1;">' + _g45RegClubFootPoser(nom) + '</div>'; } catch (_re) {} }
       if (_scActive) { try { html += _g45TempsJeuSynthese(_scIdx, allMatchesSorted, _scF); } catch(_se){} }
       html += '<div style="position:relative;z-index:1;display:flex;flex-direction:column;gap:3px;">';
       allMatchesSorted.forEach(function(m){
