@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261005w, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261005x, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1232,6 +1232,14 @@ RÉGLÉ (worker, 01/10) : cron « exceededCpu » (cpuTimeMs 10) à CHAQUE passag
   game-log lu une fois par session `_g45RegLog` (buts + passes + points) → changer de bouton ne relit que les joueurs nouveaux.
   « cache non persisté (trop volumineux : 136 Ko) — g45cm11_hockey_nhl_2027 » en console = plafond VOULU de 60 Ko (_G45_CACHE_MAX), sans rapport.
   20261005w : onglet NHL renommé « 🎯 Séries individuelles » (« sinon impeccable »). SUITE demandée : foot, NFL, rugby, NRL, KHL (une sonde par sport).
+  20261005x — FOOT (« remplace Buteurs, pareil est déjà dans Classements ») : onglet ⚽ Buteurs de chaque championnat → « 🎯 Séries
+  individuelles » (`_g45RegBlocFoot(lg, anCompet, nom)`, même rendu `_g45RegHtml`, _g45Reg.lg = slug, clés `_g45RegK` / `_g45RegPK`,
+  libellé `_g45RegLab`). SONDÉ PAR ANTOINE (Gouiri 259743) : leaders core …/seasons/<an DÉBUT>/types/0/leaders (goalsLeaders /
+  assistsLeaders) ; journal common v3 via worker espnweb /apis/common/v3/sports/soccer/<lg>/athletes/<id>/gamelog → names
+  [totalGoals, goalAssists…], seasonTypes[].categories[].events[{eventId, stats}] (CE championnat, matchs joués), events{id:{gameDate}},
+  filters season. `_g45RegLogFoot` : ?season= NON sondé → saison renvoyée contrôlée (autre = joueur ignoré). « Buts + passes » =
+  top buteurs + top passeurs, sans couleur. Noms / clubs `_g45RegFtNom` (g45regft1_), photos `_g45ClsAvatar` + `_g45ClsPhotos`.
+  Saisons d'une équipe de foot : PAS encore (effectif à sonder). Restent : NFL, rugby, NRL, KHL.
   PÉRIMÈTRE voulu par Antoine (07/10) : foot buteur + passeur · hockey buteur + passeur · NFL touchdown · MLB run + home run ·
   rugby XV et NRL marqueur d'essai · PAS le basket (« un autre monde »). Chaque sport = sa propre sonde (sources différentes).
 - Notifications multi-appareils (28g + worker redéployé : « N appareils reliés ») :
