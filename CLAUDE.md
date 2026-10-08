@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261005s, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261005t, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1222,7 +1222,9 @@ RÉGLÉ (worker, 01/10) : cron « exceededCpu » (cpuTimeMs 10) à CHAQUE passag
   cache g45reg1_<saison>_<cat>_<ABR>) ; équipe non reconnue = ligue. Compétitions → NHL → 🏅 Individuel = classement de la LIGUE
   (chargé à l'ouverture de l'onglet) ; leaders toujours dans Classements → Joueurs. Catégorie « assists » SONDÉE (McDavid 90).
   20261005s (« on pourrait rajouter pointeur ? ») : 3e bouton ⭐ Pointeurs (cat 'p') ; points d'un match = gameLog.points, sinon buts + passes ;
-  équipe = club-stats points (sondé) ; ligue = leaders categories=points (NON sondé).
+  équipe = club-stats points (sondé) ; ligue = leaders categories=points (SONDÉ PAR ANTOINE : McDavid 138).
+  20261005t (« c'est chiant cette limite à 10 ») : plus de minimum de matchs ; < 10 matchs → avertissement « Début de saison » + bouton
+  `g45RegAn` (saison précédente ↔ retour, _g45Reg.an0 = saison du panneau).
   PÉRIMÈTRE voulu par Antoine (07/10) : foot buteur + passeur · hockey buteur + passeur · NFL touchdown · MLB run + home run ·
   rugby XV et NRL marqueur d'essai · PAS le basket (« un autre monde »). Chaque sport = sa propre sonde (sources différentes).
 - Notifications multi-appareils (28g + worker redéployé : « N appareils reliés ») :

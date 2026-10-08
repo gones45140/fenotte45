@@ -68615,7 +68615,7 @@ async function _g45RegLire(saison, cat, eq) {
 }
 function _g45RegBloc(sp, lg, an, nom) {
   if (sp !== 'hockey' || String(lg) !== 'nhl') return '';
-  _g45Reg.an = an;
+  _g45Reg.an = an; _g45Reg.an0 = an;
   /* 20261005r : dans la fiche d'une équipe (Saisons), seulement SES joueurs (« je devrais seulement avoir les joueurs de
      Colorado ») ; équipe non reconnue → classement de la ligue comme avant. */
   var E = nom ? _g45RegEquipe(nom) : null;
@@ -68632,8 +68632,16 @@ function _g45RegHtml() {
   var b = function (on, txt, f) { return '<button onclick="' + f + '" style="flex:1;padding:8px 4px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:' + (on ? '900' : '700') + ';border:1px solid ' + (on ? '#4d84ff' : 'rgba(255,255,255,.18)') + ';background:' + (on ? '#1b2a52' : 'rgba(11,16,29,.85)') + ';color:' + (on ? '#fff' : '#c9d3ee') + ';">' + txt + '</button>'; };
   var h = '<div style="display:flex;gap:6px;margin-bottom:6px;">' + b(_g45Reg.cat === 'g', '🥅 Buteurs', "g45RegSet('cat','g')") + b(_g45Reg.cat === 'a', '🎯 Passeurs', "g45RegSet('cat','a')") + b(_g45Reg.cat === 'p', '⭐ Pointeurs', "g45RegSet('cat','p')") + '</div>'
     + '<div style="display:flex;gap:6px;margin-bottom:8px;">' + b(_g45Reg.tri === 'pire', 'Pire série ▲', "g45RegSet('tri','pire')") + b(_g45Reg.tri === 'pct', '% matchs ' + (_g45Reg.cat === 'a' ? 'avec passe' : (_g45Reg.cat === 'p' ? 'avec point' : 'avec but')), "g45RegSet('tri','pct')") + '</div>';
-  var ok = L.filter(function (o) { return o.s && o.s.mj >= 10; });
-  if (!ok.length) return h + '<div style="font-size:13px;color:#f0b020;">Pas encore assez de matchs cette saison (10 mini) — choisis la saison précédente dans Saison ▾.</div>';
+  /* 20261005t (« c'est chiant cette limite à 10 ») : plus de minimum de 10 matchs ; début de saison = avertissement + bouton
+     vers la saison précédente (et retour), sans toucher au Saison ▾ du panneau. */
+  var ok = L.filter(function (o) { return o.s && o.s.mj >= 1; });
+  var lab = function (a) { return (a - 1) + '-' + String(a).slice(2); };
+  var a0 = _g45Reg.an0 || _g45Reg.an, prec = (+_g45Reg.an !== +a0);
+  var bs = function (txt) { return '<button onclick="g45RegAn()" style="margin-top:6px;padding:8px 12px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:800;border:1px solid rgba(245,197,66,.55);background:rgba(245,197,66,.12);color:#f5c542;">' + txt + '</button>'; };
+  var mjMax = ok.reduce(function (m, o) { return Math.max(m, o.s.mj); }, 0);
+  if (prec) h += '<div style="font-size:13px;color:#c9d3ee;margin-bottom:6px;">Saison ' + lab(_g45Reg.an) + ' (précédente) ' + bs('↩ Revenir à ' + lab(a0)) + '</div>';
+  else if (mjMax < 10) h += '<div style="font-size:13px;color:#f0b020;margin-bottom:6px;">Début de saison : ' + mjMax + ' match' + (mjMax > 1 ? 's' : '') + ' au plus, séries encore peu parlantes. ' + bs('📅 Voir ' + lab(+a0 - 1)) + '</div>';
+  if (!ok.length) return h + '<div style="font-size:13px;color:#c9d3ee;">Aucun match joué pour l\'instant.</div>';
   ok.sort(function (x, y) { return _g45Reg.tri === 'pct' ? (y.s.pct - x.s.pct) || (x.s.pire - y.s.pire) : (x.s.pire - y.s.pire) || (y.s.pct - x.s.pct); });
   var col = function (v) { return v < 6 ? '#1ed760' : (v < 10 ? '#f0b020' : '#ff6b6b'); };
   h += '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:14px;color:#fff;white-space:nowrap;">'
@@ -68660,6 +68668,7 @@ async function g45RegOuvrir() {
 }
 window.g45RegOuvrir = g45RegOuvrir;
 window.g45RegSet = function (q, v) { _g45Reg[q] = v; g45RegOuvrir(); };
+window.g45RegAn = function () { var a0 = _g45Reg.an0 || _g45Reg.an; _g45Reg.an = (+_g45Reg.an === +a0) ? +a0 - 1 : a0; g45RegOuvrir(); };
 window._g45RegCalc = _g45RegCalc;
 
 
