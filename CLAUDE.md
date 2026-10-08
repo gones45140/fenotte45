@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261005u, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261005v, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1228,6 +1228,9 @@ RÉGLÉ (worker, 01/10) : cron « exceededCpu » (cpuTimeMs 10) à CHAQUE passag
   20261005u (idée d'Antoine, « b et seulement or pour les équipes ») : top 10 de la saison D'AVANT (même catégorie, leaders LIGUE,
   `_g45RegPrec`, cache g45reg1_p_ 7 j, _g45Reg.prev) en couleur : ligue or 1-3 / bronze 4-10 ; fiche d'équipe or seulement ; « n°X en AAAA-AA ».
   Blessures / absences : le game-log ne contient que les matchs JOUÉS → jamais comptées dans une série.
+  20261005v (« les boutons ont du mal à réagir ») : boutons gardés pendant la lecture (`_g45Reg.cle` = dernier choix seul affiché) ;
+  game-log lu une fois par session `_g45RegLog` (buts + passes + points) → changer de bouton ne relit que les joueurs nouveaux.
+  « cache non persisté (trop volumineux : 136 Ko) — g45cm11_hockey_nhl_2027 » en console = plafond VOULU de 60 Ko (_G45_CACHE_MAX), sans rapport.
   PÉRIMÈTRE voulu par Antoine (07/10) : foot buteur + passeur · hockey buteur + passeur · NFL touchdown · MLB run + home run ·
   rugby XV et NRL marqueur d'essai · PAS le basket (« un autre monde »). Chaque sport = sa propre sonde (sources différentes).
 - Notifications multi-appareils (28g + worker redéployé : « N appareils reliés ») :

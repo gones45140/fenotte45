@@ -68602,8 +68602,7 @@ async function _g45RegLire(saison, cat, eq) {
       var o = { id: p.id, nom: ((p.firstName && p.firstName.default) || '') + ' ' + ((p.lastName && p.lastName.default) || ''),
         ph: p.headshot || '', eq: p.teamAbbrev || '', logo: p.teamLogo || '', val: p.value };
       try {
-        var g = await fetch(P + encodeURIComponent('/v1/player/' + p.id + '/game-log/' + saison + '/2'));
-        var jg = g.ok ? await g.json() : null;
+        var jg = await _g45RegLog(p.id, saison);
         o.s = _g45RegCalc((jg && jg.gameLog) || [], k);
       } catch (e) { o.s = null; }
       out.push(o);
@@ -68634,6 +68633,7 @@ function _g45RegHtml() {
     + '<div style="display:flex;gap:6px;margin-bottom:8px;">' + b(_g45Reg.tri === 'pire', 'Pire série ▲', "g45RegSet('tri','pire')") + b(_g45Reg.tri === 'pct', '% matchs ' + (_g45Reg.cat === 'a' ? 'avec passe' : (_g45Reg.cat === 'p' ? 'avec point' : 'avec but')), "g45RegSet('tri','pct')") + '</div>';
   /* 20261005t (« c'est chiant cette limite à 10 ») : plus de minimum de 10 matchs ; début de saison = avertissement + bouton
      vers la saison précédente (et retour), sans toucher au Saison ▾ du panneau. */
+  if (!_g45Reg.mem[_g45RegSaison(_g45Reg.an) + _g45Reg.cat + (_g45Reg.eq || '')]) return h + '<div style="font-size:14px;color:#fff;padding:10px 4px;">⏳ Lecture des joueurs…</div>';
   var ok = L.filter(function (o) { return o.s && o.s.mj >= 1; });
   var lab = function (a) { return (a - 1) + '-' + String(a).slice(2); };
   var a0 = _g45Reg.an0 || _g45Reg.an, prec = (+_g45Reg.an !== +a0);
@@ -68670,14 +68670,24 @@ function _g45RegHtml() {
 async function g45RegOuvrir() {
   var box = document.getElementById('g45-reg-box'); if (!box) return;
   var sa = _g45RegSaison(_g45Reg.an), k = sa + _g45Reg.cat + (_g45Reg.eq || '');
+  /* 20261005v (« les boutons ont du mal à réagir ») : les boutons restent affichés pendant la lecture, le bouton touché
+     s'allume tout de suite, et seul le DERNIER choix s'affiche (un clic pendant une lecture ne mélange plus les listes). */
+  _g45Reg.cle = k;
   if (!_g45Reg.mem[k]) {
-    box.innerHTML = '<div style="font-size:13px;color:#c9d3ee;">⏳ Lecture des 10 joueurs…</div>';
+    var cat = _g45Reg.cat, eq = _g45Reg.eq;
+    box.innerHTML = _g45RegHtml();
     try {
-      var _pv = _g45RegPrec(sa, _g45Reg.cat);
-      _g45Reg.mem[k] = await _g45RegLire(sa, _g45Reg.cat, _g45Reg.eq);
-      var _pr = await _pv; if (_pr) _g45Reg.prev[sa + _g45Reg.cat] = _pr;
+      var _pv = _g45RegPrec(sa, cat);
+      var L = await _g45RegLire(sa, cat, eq);
+      var _pr = await _pv; if (_pr) _g45Reg.prev[sa + cat] = _pr;
+      _g45Reg.mem[k] = L;
     }
-    catch (e) { box.innerHTML = '<div style="font-size:13px;color:#ff9aa8;">Classement indisponible (' + String(e.message || e).replace(/</g, '') + ').</div>'; return; }
+    catch (e) {
+      if (_g45Reg.cle !== k) return;
+      box = document.getElementById('g45-reg-box'); if (!box) return;
+      box.innerHTML = _g45RegHtml() + '<div style="font-size:13px;color:#ff9aa8;">Classement indisponible (' + String(e.message || e).replace(/</g, '') + ').</div>'; return; }
+    if (_g45Reg.cle !== k) return;
+    box = document.getElementById('g45-reg-box'); if (!box) return;
   }
   box.innerHTML = _g45RegHtml();
 }
@@ -68726,8 +68736,7 @@ async function _g45RegLireEq(saison, cat, abr) {
       var o = { id: p.playerId, nom: ((p.firstName && p.firstName.default) || '') + ' ' + ((p.lastName && p.lastName.default) || ''),
         ph: p.headshot || '', eq: ({ C: 'Centre', L: 'Ailier gauche', R: 'Ailier droit', D: 'Défenseur' })[p.positionCode] || '', val: p[k] };
       try {
-        var g = await fetch(P + encodeURIComponent('/v1/player/' + p.playerId + '/game-log/' + saison + '/2'));
-        var jg = g.ok ? await g.json() : null;
+        var jg = await _g45RegLog(p.playerId, saison);
         var log = (jg && jg.gameLog) || [];
         /* joueur échangé en cours de saison : si le game-log porte l'équipe, on ne garde que les matchs avec CETTE équipe */
         if (log.some(function (x) { return x && x.teamAbbrev; })) log = log.filter(function (x) { return x.teamAbbrev === abr; });
@@ -68763,4 +68772,22 @@ async function _g45RegPrec(saison, cat) {
     try { localStorage.setItem(ck, JSON.stringify({ t: Date.now(), m: m })); } catch (e) {}
     return m;
   } catch (e) { return null; }
+}
+
+
+/* ═══ 20261005v — game-log d'un joueur lu UNE fois par session et par saison : il contient buts, passes et points, donc
+   Buteurs → Passeurs → Pointeurs ne relit que les joueurs nouveaux (avant : 10 demandes à chaque bouton). */
+var _g45RegLogs = {};
+function _g45RegLog(id, saison) {
+  var k = saison + '_' + id;
+  if (!_g45RegLogs[k]) {
+    _g45RegLogs[k] = fetch(FD_PROXY + '?key=nhl&host=nhl&path=' + encodeURIComponent('/v1/player/' + id + '/game-log/' + saison + '/2'))
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) {
+        if (!j) { delete _g45RegLogs[k]; return null; }
+        return { gameLog: (j.gameLog || []).map(function (g) { return { goals: g.goals, assists: g.assists, points: g.points, teamAbbrev: g.teamAbbrev }; }) };
+      })
+      .catch(function () { delete _g45RegLogs[k]; return null; });
+  }
+  return _g45RegLogs[k];
 }
