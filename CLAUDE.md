@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261006p, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261006q, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1300,6 +1300,11 @@ RÉGLÉ (worker, 01/10) : cron « exceededCpu » (cpuTimeMs 10) à CHAQUE passag
   `_g45RegEspAbs` (o.tid, o.der = dernier match du joueur DANS LE CHAMPIONNAT) ; filtre LDC / coupes seules = pas de calcul ;
   listes g45reg1_f5_ → f6_. Foot saison passée CONFIRMÉE PAR ANTOINE : schedule?season=2025 = 34 matchs finis fra.1, du 17/08/2025
   au 17/05/2026. KHL : à faire plus tard (« quand tout sera open », dixit Antoine).
+  20261006q — ⚾ MLB (Compétitions → MLB → « 🎯 Séries individuelles » ; fiche Saisons baseball / mlb) : SONDÉ PAR ANTOINE : leaders core
+  …/baseball/leagues/mlb/seasons/2026/types/2/leaders (homeRuns, runs, avg, RBIs…) ; journal common v3 /baseball/mlb/athletes/<id>/gamelog
+  (names atBats, runs, hits, doubles, triples, homeRuns, RBIs… ; « 2026 Regular Season » 157 + « 2026 Postseason » 3 ; filters season,
+  category=batting). Boutons 💥 Home runs (g) / 🏃 Runs (a), saison régulière seule ; `_g45RegLeadersMlb`, `_g45RegLogMlb`,
+  `_g45RegCandidatsMlb` (team leaders, NON sondé MLB), `_g45RegBlocNflEq(an, nom, id, 'mlb')` ; calendrier schedule baseball (NON sondé MLB).
 - Saisons d'un club de FOOT (rendu après « Barre de filtres » dans loadTeamSaisons) — 20261005y (capture Real Madrid : seulement
   Prochains matchs, aucune case cochée) : le filtre g45_saison_filters est COMMUN à tous les clubs ; une case cochée ailleurs absente ici
   (Ligue Europa…) vidait toutes les saisons → si aucune case active n'existe chez ce club, « Toutes » pour cet affichage (sans effacer le choix).
