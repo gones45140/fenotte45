@@ -50525,6 +50525,7 @@ async function _g45SaisonsGen(el, nom, perso) {
     if (_absG) barre = '#6b7280';
     var _dG = String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0');
     html += '<div ' + (m.id ? 'onclick="_g45SgMatch(\'' + m.id + '\')" ' : '')
+      + 'data-g45sgadv="' + String(noms[m.advId] || m.adv || '').replace(/["<>&]/g, '') + '" data-g45sgdom="' + (m.dom ? 1 : 0) + '" data-g45sgt="' + (m.t || '') + '" '   /* 20261006t : repères pour « 🚫 Absents » */
       + 'style="border-left:3px solid ' + barre + ';border-radius:0 8px 8px 0;background:rgba(16,21,38,.42);padding:6px 9px;margin-bottom:6px;' + (m.id ? 'cursor:pointer;' : '') + (_absG ? 'opacity:.6;' : '') + '">'
       + '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:5px;">'
         + '<span style="font-size:10px;font-weight:800;color:#c2cee6;white-space:nowrap;">' + _dG
@@ -50549,6 +50550,7 @@ async function _g45SaisonsGen(el, nom, perso) {
   html += '</div></div>';        /* ferme le voile puis l'enveloppe au blason */
   html += '</div></div>';
   el.innerHTML = html;
+  try { if (typeof _g45RegAbsPoser === 'function') setTimeout(_g45RegAbsPoser, 0); } catch (e) {}   /* 20261006t */
 }
 
 /* ── Ouverture du detail d'un match ──────────────────────────────────────────
@@ -68753,6 +68755,7 @@ async function g45RegOuvrir() {
   }
   box.innerHTML = _g45RegHtml();
   if (_g45Reg.lg) _g45RegPhotos(box);
+  try { _g45RegAbsPoser(); } catch (e) {}   /* 20261006t */
 }
 window.g45RegOuvrir = g45RegOuvrir;
 window.g45RegSet = function (q, v) { _g45Reg[q] = v; g45RegOuvrir(); };
@@ -69411,12 +69414,17 @@ async function _g45RegLireRug(eq) {
   }
   var vus = {}; matchs = matchs.filter(function (m) { if (vus[m.u]) return false; vus[m.u] = 1; return true; });
   if (!matchs.length) throw new Error('aucun match joué');
-  var P = {}, fait = 0;
+  var P = {}, fait = 0, parMatch = [];
   for (var i = 0; i < matchs.length; i += 4) {
     await Promise.all(matchs.slice(i, i + 4).map(async function (m) {
       var S = null; try { S = await _g45RegRugMatch(m.u); } catch (e) {}
       fait++; prog('(match ' + fait + '/' + matchs.length + ')');
       if (!S) return;
+      [0, 1].forEach(function (cote) {   /* 20261006t : qui a joué, par club et par match */
+        var club = cote ? m.a : m.h, adv = cote ? m.h : m.a, ids = {};
+        (S[cote] || []).forEach(function (x) { ids[x[0]] = 1; });
+        parMatch.push({ slug: club[1], adv: adv[1], dom: !cote, ids: ids });
+      });
       [0, 1].forEach(function (cote) {
         var club = cote ? m.a : m.h;
         (S[cote] || []).forEach(function (x) {
@@ -69438,6 +69446,9 @@ async function _g45RegLireRug(eq) {
       abs: apres.length, absD: apres.length ? String(apres[0].j || ('J' + apres[0].n)).replace(/^(\S+)\s+/, function (x, w) { return w.slice(0, 3).toLowerCase() + '. '; }) : '' };
   }).filter(function (o) { return !slugEq || o.slug === slugEq; })
     .sort(function (a, b) { return (b.s.tot - a.s.tot) || (a.s.pire - b.s.pire); }).slice(0, 10);
+  if (slugEq) out.absM = parMatch.filter(function (x) { return x.slug === slugEq; }).map(function (x) {
+    return { adv: x.adv, dom: x.dom, noms: out.filter(function (o) { return !x.ids[o.id]; }).map(function (o) { return o.nom; }) };
+  });
   return out;
 }
 function _g45RegBlocRugEq(nom) {
@@ -69745,4 +69756,27 @@ async function _g45RegLireKhl(cat, eq) {
     return o;
   }).filter(function (o) { return o.s && o.s.mj; });
   return out.sort(function (a, b) { return b.s.tot - a.s.tot; }).slice(0, 10);
+}
+
+
+/* ═══ 20261006t — 🚫 ABSENTS SOUS CHAQUE MATCH DES RÉSULTATS (Saisons ; maquette « OUI » : « si mettre abs ici ? ») — Top 14 d'abord.
+   Une fois le tableau « Les plus réguliers » chargé (liste d'un club), chaque ligne de résultat (_g45SaisonsGen, repères data-g45sgadv /
+   data-g45sgdom) reçoit « 🚫 Absents : … » = joueurs DU TABLEAU qui n'étaient pas sur la feuille de ce match. Rugby : match retrouvé par
+   adversaire (`_g45T14Slug` du nom ESPN) + domicile / extérieur (chaque affiche n'a lieu qu'une fois par lieu). Aucune requête. */
+function _g45RegAbsPoser() {
+  var L = _g45Reg.mem[_g45RegK()];
+  if (!L || !L.absM || !_g45Reg.eq) return;
+  document.querySelectorAll('[data-g45sgadv]').forEach(function (row) {
+    var vieux = row.querySelector('.g45-reg-abs'); if (vieux) vieux.remove();
+    var adv = row.getAttribute('data-g45sgadv'), dom = row.getAttribute('data-g45sgdom') === '1';
+    var sl = (_g45Reg.lg === 'top14' && typeof _g45T14Slug === 'function') ? _g45T14Slug(adv) : null;
+    if (!sl) return;
+    var x = L.absM.filter(function (y) { return y.adv === sl && y.dom === dom; })[0];
+    if (!x || !x.noms.length) return;
+    var d = document.createElement('div');
+    d.className = 'g45-reg-abs';
+    d.style.cssText = 'margin-top:5px;font-size:13px;font-weight:700;color:#ff9f43;line-height:1.35;';
+    d.textContent = '🚫 Absents : ' + x.noms.join(', ');
+    row.appendChild(d);
+  });
 }
