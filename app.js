@@ -68676,7 +68676,8 @@ function _g45RegHtml() {
       + (o.ft ? '<span style="display:inline-block;border-radius:50%;flex:none;' + (cc ? 'box-shadow:0 0 0 2px ' + cc + ';' : '') + '">' + _g45ClsAvatar(o.nom, o.club || '', o.logo || '') + '</span>'
         : (o.ph ? '<img src="' + esc(o.ph) + '" alt="" style="width:30px;height:30px;border-radius:50%;object-fit:cover;background:#2a3350;' + (cc ? 'box-shadow:0 0 0 2px ' + cc + ';' : '') + '" onerror="this.style.display=\'none\'">' : ''))
       + '<span><b style="font-size:14px;' + (cc ? 'color:' + cc + ';' : '') + '">' + esc(o.nom) + '</b><br><span style="font-size:12px;color:#c9d3ee;">' + esc(o.eq)
-      + (rg ? ' · <span style="color:' + cc + ';">n°' + rg + ' en ' + labP + '</span>' : '') + '</span></span></span></td>'
+      + (rg ? ' · <span style="color:' + cc + ';">n°' + rg + ' en ' + labP + '</span>' : '')
+      + (o.nv ? ' · <span style="color:#5aa9ff;font-weight:800;">🆕 nouveau</span>' : '') + '</span></span></span></td>'
       + '<td align="center"><b>' + o.s.tot + '</b></td><td align="center">' + o.s.mj + '</td><td align="center">' + o.s.pct + ' %</td>'
       + '<td align="center"><b style="color:' + col(o.s.pire) + ';">' + o.s.pire + '</b></td>'
       + '<td align="center"><b style="color:' + (o.s.cours >= 6 ? '#ff6b6b' : '#fff') + ';">' + o.s.cours + '</b></td></tr>';
@@ -68925,7 +68926,7 @@ function _g45RegLogFoot(lg, id, anEsp) {
   return _g45RegLogsF[k];
 }
 async function _g45RegLireFoot(lg, an, cat) {
-  var anEsp = _g45RegEspAn(lg, an), ck = 'g45reg1_f2_' + lg + '_' + anEsp + '_' + cat;
+  var anEsp = _g45RegEspAn(lg, an), ck = 'g45reg1_f3_' + lg + '_' + anEsp + '_' + cat;
   try { var c = JSON.parse(localStorage.getItem(ck) || 'null'); if (c && Date.now() - c.t < 12 * 3600e3) return c.l; } catch (e) {}
   var d = await _g45RegLeadersFoot(lg, anEsp);
   if (!d) throw new Error('aucun classement ESPN pour cette saison');
@@ -68937,7 +68938,7 @@ async function _g45RegLireFoot(lg, an, cat) {
   async function w() {
     while (i < top.length) {
       var x = top[i++];
-      var o = { id: x.id, ft: 1, nom: '', eq: '', club: '', logo: '' };
+      var o = { id: x.id, ft: 1, nom: '', eq: '', club: '', logo: '', tid: x.tid };
       try { var m = await _g45RegFtNom(x); o.nom = m.n || '?'; o.eq = m.ab || ''; o.club = m.club || ''; o.logo = m.logo || ''; } catch (e) {}
       try { var jg = await _g45RegLogFoot(lg, x.id, anEsp); o.s = (jg && jg.gameLog) ? _g45RegCalc(jg.gameLog, k) : null; } catch (e) { o.s = null; }
       out.push(o);
@@ -68945,6 +68946,7 @@ async function _g45RegLireFoot(lg, an, cat) {
   }
   await Promise.all([w(), w(), w()]);
   if (cat === 'p') out = out.filter(function (o) { return o.s; }).sort(function (a, b) { return b.s.tot - a.s.tot; }).slice(0, 10);
+  try { await _g45RegNouveaux(lg, anEsp, out); } catch (e) {}
   if (out.some(function (o) { return o.s && o.s.mj; })) { try { localStorage.setItem(ck, JSON.stringify({ t: Date.now(), l: out })); } catch (e) {} }
   return out;
 }
@@ -68959,3 +68961,34 @@ async function _g45RegPrecFoot(lg, an, cat) {
   } catch (e) { return null; }
 }
 window._g45RegBlocFoot = _g45RegBlocFoot;
+
+
+/* ═══ 20261006a — 🆕 NOUVEAU AU CLUB (idée d'Antoine, capture Ferran Torres) : badge BLEU (#5aa9ff, « OUI COULEUR BLEU ») à côté du club si le joueur n'était PAS
+   dans l'effectif de son club la saison d'avant. SONDÉ PAR ANTOINE : site v2 soccer/<lg>/teams/<id>/roster?season=2025 → PSG 36
+   joueurs (Safonov, Chevalier…), Torres absent. Garde-fou : l'effectif actuel est relu aussi ; si les deux listes sont identiques
+   (paramètre ignoré) ou si l'ancienne est vide → aucun badge. 2 demandes par club, cache g45reg1_ro_ 7 j. */
+async function _g45RegEffectifIds(lg, tid, an) {
+  var ck = 'g45reg1_ro_' + lg + '_' + tid + '_' + (an || 'now');
+  try { var c = JSON.parse(localStorage.getItem(ck) || 'null'); if (c && Date.now() - c.t < 7 * 24 * 3600e3) return c.l; } catch (e) {}
+  var r = await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/' + lg + '/teams/' + tid + '/roster' + (an ? '?season=' + an : ''));
+  if (!r.ok) return null;
+  var j = await r.json();
+  var l = (j.athletes || []).reduce(function (acc, x) { return acc.concat(x && x.items ? x.items : [x]); }, [])
+    .map(function (x) { return x && x.id != null ? String(x.id) : ''; }).filter(Boolean);
+  try { localStorage.setItem(ck, JSON.stringify({ t: Date.now(), l: l })); } catch (e) {}
+  return l;
+}
+async function _g45RegNouveaux(lg, anEsp, out) {
+  var clubs = {};
+  out.forEach(function (o) { if (o.tid) clubs[o.tid] = 1; });
+  var res = {};
+  await Promise.all(Object.keys(clubs).map(async function (tid) {
+    try {
+      var av = await _g45RegEffectifIds(lg, tid, anEsp - 1), mt = await _g45RegEffectifIds(lg, tid, 0);
+      if (!av || !av.length || !mt) return;
+      if (av.length === mt.length && av.every(function (x) { return mt.indexOf(x) >= 0; })) return;   /* paramètre ignoré */
+      res[tid] = av;
+    } catch (e) {}
+  }));
+  out.forEach(function (o) { var av = res[o.tid]; o.nv = !!(av && av.indexOf(String(o.id)) < 0); });
+}
