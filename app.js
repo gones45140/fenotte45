@@ -42438,7 +42438,7 @@ window.g45F1Session=g45F1Session;
    et les données utilisateur n'étaient JAMAIS écrites — l'ajout apparaissait à l'écran puis
    disparaissait au rechargement. Ce n'était ni la synchro GitHub, ni Dropbox, ni le cache
    du navigateur. Tous ces caches sont reconstructibles : ils cèdent la place aux données. */
-var _G45_CACHE_PREFIXES=['g45bb1_','g45bbst1_','g45bbld1_','g45bbf1_',/* 03/10 : Pro A be-basketball */'g45es1_',/* 01/10 : stats Euroleague */'g45kbo1_',/* 01/10 : KBO (mykbostats) */'g45t14lg1',/* 01/10 : logos Top 14 (LNR) */'g45pd2_',/* 01/10 : Pro D2 (LNR) */'g45t14sq1_',/* 01/10 : effectifs Top 14 (LNR) */'g45nrlm1_','g45nrldr1_',/* 01/10 : feuilles et calendriers NRL */'g45nrlsq1_',/* 01/10 : effectifs NRL */'g45nrlst2_',/* 01/10 : classements NRL */'g45proacid1_',/* 30/09 : numéros LNB par saison */'g45proast1_',/* 30/09 : stats Pro A */'g45proa1_',/* 30/09 : Pro A par journée */'g45el1_',/* 30/09 : Euroleague (compact) */'g45buts1_',/* 30/09 : buts en action (match fini) */'g45prad1_','g45vsj1_','g45vse1_',/* 30/09 : radars joueurs */'g45ia1_',/* 29/09 : avis IA gardés 6 h */'g45_mmeta2_','g45_mmeta1_','g45_tennis4_','g45_tennis3_',/* 16/09 : meta de match (domicile/lieu) et score tennis, reconstructibles */'g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dcf_','g45dc_',
+var _G45_CACHE_PREFIXES=['g45reg1_',/* 08/10 : régularité buteurs NHL */'g45bb1_','g45bbst1_','g45bbld1_','g45bbf1_',/* 03/10 : Pro A be-basketball */'g45es1_',/* 01/10 : stats Euroleague */'g45kbo1_',/* 01/10 : KBO (mykbostats) */'g45t14lg1',/* 01/10 : logos Top 14 (LNR) */'g45pd2_',/* 01/10 : Pro D2 (LNR) */'g45t14sq1_',/* 01/10 : effectifs Top 14 (LNR) */'g45nrlm1_','g45nrldr1_',/* 01/10 : feuilles et calendriers NRL */'g45nrlsq1_',/* 01/10 : effectifs NRL */'g45nrlst2_',/* 01/10 : classements NRL */'g45proacid1_',/* 30/09 : numéros LNB par saison */'g45proast1_',/* 30/09 : stats Pro A */'g45proa1_',/* 30/09 : Pro A par journée */'g45el1_',/* 30/09 : Euroleague (compact) */'g45buts1_',/* 30/09 : buts en action (match fini) */'g45prad1_','g45vsj1_','g45vse1_',/* 30/09 : radars joueurs */'g45ia1_',/* 29/09 : avis IA gardés 6 h */'g45_mmeta2_','g45_mmeta1_','g45_tennis4_','g45_tennis3_',/* 16/09 : meta de match (domicile/lieu) et score tennis, reconstructibles */'g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dcf_','g45dc_',
   'g45trv3_','g45trv2_','g45trOdds_','g45tr_','g45but_st_','g45butL_','g45butA_','g45but_mur_',
   '_g45clv','g45clv_snaps','g45_saisons_cache_v3_','g45_saisons_cache_v2_',
   /* Ajoutes le 20/08 : ces caches, tous reconstructibles, n'etaient PAS declares
@@ -50409,6 +50409,8 @@ async function _g45SaisonsGen(el, nom, perso) {
      Extérieur : l'index doit couvrir tous les matchs, pas la moitié. */
   try {
     if (typeof _g45JouBarre === 'function') html += _g45JouBarre(sp, lg, an, (perso && perso.id) || '', nom, st.liste);
+    /* 20261005q : classement de régularité des 10 meilleurs buteurs / passeurs de la NHL (sur bouton). */
+    if (typeof _g45RegBloc === 'function') { try { html += _g45RegBloc(sp, lg, an); } catch (e) {} }
   } catch (e) {}
   /* NBA : filtre joueur AVEC LIGNE (25/09/2026). Reçoit `liste` (matchs
      visibles) : le bandeau suit phase et domicile / extérieur. */
@@ -68555,3 +68557,95 @@ window.g45NhlFeuilleEq = function (eid, i) {
   var box = document.getElementById('g45-nhlf-' + eid); if (box) box.innerHTML = _g45NhlFeuilleInterieur(eid);
 };
 window._g45NhlFeuilleHtml = _g45NhlFeuilleHtml; window._g45NhlFeuilleLire = _g45NhlFeuilleLire;
+
+
+/* ═══ 20261005q — 🎯 BUTEURS / PASSEURS LES PLUS RÉGULIERS (NHL) — maquette validée « oui », classement de la LIGUE demandé
+   (« les 10 meilleurs buteurs par exemple »). SONDÉ PAR ANTOINE le 08/10 via le worker host=nhl :
+   /v1/skater-stats-leaders/<saison>/2?categories=goals&limit=10 → goals[{id, firstName.default, lastName.default, headshot,
+   teamAbbrev, teamLogo, value}] ; /v1/player/<id>/game-log/<saison>/2 → gameLog[{gameDate, goals, assists, …}] du plus RÉCENT
+   au plus ancien, matchs JOUÉS seulement (une absence n'allonge donc jamais une série). Catégorie « assists » NON sondée (même
+   forme supposée). Contrainte d'Antoine « faut pas que ça bloque tout » : rien ne part sans le bouton, 11 demandes au plus
+   (3 à la fois), cache g45reg1_<saison>_<cat> 12 h, échec = message dans le bloc seulement. */
+var _g45Reg = { cat: 'g', tri: 'pire', mem: {} };
+function _g45RegSaison(an) { an = +an || new Date().getFullYear(); return (an - 1) + '' + an; }
+function _g45RegCalc(log, cle) {
+  var L = (log || []).slice().reverse();               /* chronologique */
+  var n = L.length, avec = 0, tot = 0, pire = 0, cour = 0;
+  L.forEach(function (g) {
+    var v = +g[cle] || 0; tot += v;
+    if (v > 0) { avec++; cour = 0; } else { cour++; if (cour > pire) pire = cour; }
+  });
+  return { mj: n, tot: tot, pct: n ? Math.round(avec * 100 / n) : 0, pire: pire, cours: cour };
+}
+async function _g45RegLire(saison, cat) {
+  var ck = 'g45reg1_' + saison + '_' + cat;
+  try { var c = JSON.parse(localStorage.getItem(ck) || 'null'); if (c && Date.now() - c.t < 12 * 3600e3) return c.l; } catch (e) {}
+  var P = FD_PROXY + '?key=nhl&host=nhl&path=';
+  var k = cat === 'a' ? 'assists' : 'goals';
+  var r = await fetch(P + encodeURIComponent('/v1/skater-stats-leaders/' + saison + '/2?categories=' + k + '&limit=10'));
+  if (!r.ok) throw new Error('classement NHL ' + r.status);
+  var j = await r.json();
+  var top = (j && j[k]) || [];
+  if (!top.length) throw new Error('aucun joueur pour cette saison');
+  var out = [], i = 0;
+  async function w() {
+    while (i < top.length) {
+      var p = top[i++];
+      var o = { id: p.id, nom: ((p.firstName && p.firstName.default) || '') + ' ' + ((p.lastName && p.lastName.default) || ''),
+        ph: p.headshot || '', eq: p.teamAbbrev || '', logo: p.teamLogo || '', val: p.value };
+      try {
+        var g = await fetch(P + encodeURIComponent('/v1/player/' + p.id + '/game-log/' + saison + '/2'));
+        var jg = g.ok ? await g.json() : null;
+        o.s = _g45RegCalc((jg && jg.gameLog) || [], k);
+      } catch (e) { o.s = null; }
+      out.push(o);
+    }
+  }
+  await Promise.all([w(), w(), w()]);
+  if (out.some(function (o) { return o.s && o.s.mj; })) { try { localStorage.setItem(ck, JSON.stringify({ t: Date.now(), l: out })); } catch (e) {} }
+  return out;
+}
+function _g45RegBloc(sp, lg, an) {
+  if (sp !== 'hockey' || String(lg) !== 'nhl') return '';
+  _g45Reg.an = an;
+  return '<div style="margin:2px 0 14px;background:rgba(11,16,29,.92);border-radius:10px;padding:10px;">'
+    + '<div style="font-size:14px;font-weight:800;letter-spacing:1px;color:#c9d3ee;">🎯 LES PLUS RÉGULIERS DE LA NHL</div>'
+    + '<div style="font-size:13px;color:#c9d3ee;margin:4px 0 8px;">10 meilleurs de la ligue · plus longue série SANS marquer (matchs joués seulement)</div>'
+    + '<div id="g45-reg-box">' + (_g45Reg.mem[_g45RegSaison(an) + _g45Reg.cat] ? _g45RegHtml() :
+      '<button onclick="g45RegOuvrir()" style="padding:10px 16px;border-radius:10px;border:1.5px solid rgba(245,197,66,.55);background:rgba(245,197,66,.12);color:#f5c542;font-size:14px;font-weight:800;cursor:pointer;">🎯 Voir le classement (' + _g45RegSaison(an).slice(0, 4) + '-' + _g45RegSaison(an).slice(6) + ')</button>') + '</div></div>';
+}
+function _g45RegHtml() {
+  var L = _g45Reg.mem[_g45RegSaison(_g45Reg.an) + _g45Reg.cat] || [];
+  var esc = function (t) { return String(t).replace(/[<>"&]/g, ''); };
+  var b = function (on, txt, f) { return '<button onclick="' + f + '" style="flex:1;padding:8px 4px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:' + (on ? '900' : '700') + ';border:1px solid ' + (on ? '#4d84ff' : 'rgba(255,255,255,.18)') + ';background:' + (on ? '#1b2a52' : 'rgba(11,16,29,.85)') + ';color:' + (on ? '#fff' : '#c9d3ee') + ';">' + txt + '</button>'; };
+  var h = '<div style="display:flex;gap:6px;margin-bottom:6px;">' + b(_g45Reg.cat === 'g', '🥅 Buteurs', "g45RegSet('cat','g')") + b(_g45Reg.cat === 'a', '🎯 Passeurs', "g45RegSet('cat','a')") + '</div>'
+    + '<div style="display:flex;gap:6px;margin-bottom:8px;">' + b(_g45Reg.tri === 'pire', 'Pire série ▲', "g45RegSet('tri','pire')") + b(_g45Reg.tri === 'pct', '% matchs ' + (_g45Reg.cat === 'a' ? 'avec passe' : 'avec but'), "g45RegSet('tri','pct')") + '</div>';
+  var ok = L.filter(function (o) { return o.s && o.s.mj >= 10; });
+  if (!ok.length) return h + '<div style="font-size:13px;color:#f0b020;">Pas encore assez de matchs cette saison (10 mini) — choisis la saison précédente dans Saison ▾.</div>';
+  ok.sort(function (x, y) { return _g45Reg.tri === 'pct' ? (y.s.pct - x.s.pct) || (x.s.pire - y.s.pire) : (x.s.pire - y.s.pire) || (y.s.pct - x.s.pct); });
+  var col = function (v) { return v < 6 ? '#1ed760' : (v < 10 ? '#f0b020' : '#ff6b6b'); };
+  h += '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:14px;color:#fff;white-space:nowrap;">'
+    + '<tr style="color:#c9d3ee;font-size:12px;"><th style="text-align:left;padding:6px;">Joueur</th><th>' + (_g45Reg.cat === 'a' ? 'Passes' : 'Buts') + '</th><th>MJ</th><th>%</th><th>Pire série</th><th>En cours</th></tr>';
+  ok.forEach(function (o) {
+    h += '<tr style="border-top:1px solid rgba(255,255,255,.1);"><td style="padding:6px;"><span style="display:inline-flex;align-items:center;gap:7px;">'
+      + (o.ph ? '<img src="' + esc(o.ph) + '" alt="" style="width:30px;height:30px;border-radius:50%;object-fit:cover;background:#2a3350;" onerror="this.style.display=\'none\'">' : '')
+      + '<span><b style="font-size:14px;">' + esc(o.nom) + '</b><br><span style="font-size:12px;color:#c9d3ee;">' + esc(o.eq) + '</span></span></span></td>'
+      + '<td align="center"><b>' + o.s.tot + '</b></td><td align="center">' + o.s.mj + '</td><td align="center">' + o.s.pct + ' %</td>'
+      + '<td align="center"><b style="color:' + col(o.s.pire) + ';">' + o.s.pire + '</b></td>'
+      + '<td align="center"><b style="color:' + (o.s.cours >= 6 ? '#ff6b6b' : '#fff') + ';">' + o.s.cours + '</b></td></tr>';
+  });
+  return h + '</table></div><div style="font-size:12px;color:#c9d3ee;margin-top:6px;">Vert : jamais 6 matchs de suite sans ' + (_g45Reg.cat === 'a' ? 'passe' : 'but') + ' · orange 6 à 9 · rouge 10 et plus</div>';
+}
+async function g45RegOuvrir() {
+  var box = document.getElementById('g45-reg-box'); if (!box) return;
+  var sa = _g45RegSaison(_g45Reg.an), k = sa + _g45Reg.cat;
+  if (!_g45Reg.mem[k]) {
+    box.innerHTML = '<div style="font-size:13px;color:#c9d3ee;">⏳ Lecture des 10 joueurs…</div>';
+    try { _g45Reg.mem[k] = await _g45RegLire(sa, _g45Reg.cat); }
+    catch (e) { box.innerHTML = '<div style="font-size:13px;color:#ff9aa8;">Classement indisponible (' + String(e.message || e).replace(/</g, '') + ').</div>'; return; }
+  }
+  box.innerHTML = _g45RegHtml();
+}
+window.g45RegOuvrir = g45RegOuvrir;
+window.g45RegSet = function (q, v) { _g45Reg[q] = v; g45RegOuvrir(); };
+window._g45RegCalc = _g45RegCalc;

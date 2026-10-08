@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261005p, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261005q, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1209,7 +1209,13 @@ RÉGLÉ (worker, 01/10) : cron « exceededCpu » (cpuTimeMs 10) à CHAQUE passag
   d'abord, autres sports ensuite si ça lui plaît) : buts, matchs joués, % de matchs avec but, PIRE SÉRIE sans marquer (matchs joués
   seulement, vert < 6 / orange 6-9 / rouge ≥ 10), série en cours ; toucher = filtre Buteur. Contrainte : « faut pas que ça bloque tout »
   → chargement SUR BOUTON seulement, cache 12 h, ≤ 11 requêtes. SONDE À FAIRE PAR ANTOINE SUR PC (worker host=nhl) :
-  /v1/skater-stats-leaders/20252026/2?categories=goals&limit=10 puis /v1/player/<id>/game-log/20252026/2 — RIEN codé avant le résultat.
+  SONDÉ PAR ANTOINE le 08/10 : les deux = 200 via le worker host=nhl (leaders goals[{id, firstName.default, lastName.default, headshot,
+  teamAbbrev, teamLogo, value}] ; gameLog[{gameDate, goals, assists, …}] du plus récent au plus ancien, matchs joués seulement).
+  20261005q — NHL LIVRÉ : bloc « 🎯 LES PLUS RÉGULIERS DE LA NHL » `_g45RegBloc(sp, lg, an)` sous `_g45JouBarre` dans `_g45SaisonsGen`
+  (hockey + nhl), bouton → `g45RegOuvrir` → `_g45RegLire(saison, 'g'|'a')` (10 leaders + 10 gameLogs, 3 à la fois, cache g45reg1_ 12 h)
+  → `_g45RegCalc(log, cle)` (mj, tot, pct, pire, cours) ; Buteurs / Passeurs, tri Pire série / % ; saison = Saison ▾ du panneau
+  (an = année de FIN → « 20252026 ») ; < 10 matchs → message. Catégorie « assists » NON sondée. « Toucher = filtre Buteur » NON fait
+  (joueurs d'autres équipes).
   PÉRIMÈTRE voulu par Antoine (07/10) : foot buteur + passeur · hockey buteur + passeur · NFL touchdown · MLB run + home run ·
   rugby XV et NRL marqueur d'essai · PAS le basket (« un autre monde »). Chaque sport = sa propre sonde (sources différentes).
 - Notifications multi-appareils (28g + worker redéployé : « N appareils reliés ») :
