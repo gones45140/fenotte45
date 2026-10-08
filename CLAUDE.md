@@ -1262,6 +1262,8 @@ RÉGLÉ (worker, 01/10) : cron « exceededCpu » (cpuTimeMs 10) à CHAQUE passag
   coupe d'Europe du joueur, L, C, E, K, N) ; compétitions = options du filtre league du journal ; autre compétition par
   `_g45RegLogAutre` (/soccer/athletes/<id>/gamelog?season=&league=<slug>, NON vérifié hors ligue) ; fusion `_g45RegLogClub` par eventId ;
   ligne « 📋 Compétitions comptées » (`_g45RegCompsLib`) ; club déjà ouvert (_g45Reg.ouvert) = relu tout seul au changement de filtre.
+  CONFIRMÉ par Antoine (capture Bayern, filtre LDC : « Compétitions comptées : Ligue des champions », 1 match, Olise 2 buts) → la forme
+  ?season=&league=uefa.champions marche aussi pour une coupe d'Europe. Restent : NFL, KHL, NRL, rugby.
 - Saisons d'un club de FOOT (rendu après « Barre de filtres » dans loadTeamSaisons) — 20261005y (capture Real Madrid : seulement
   Prochains matchs, aucune case cochée) : le filtre g45_saison_filters est COMMUN à tous les clubs ; une case cochée ailleurs absente ici
   (Ligue Europa…) vidait toutes les saisons → si aucune case active n'existe chez ce club, « Toutes » pour cet affichage (sans effacer le choix).
