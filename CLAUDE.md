@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261006c, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261006d, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1252,6 +1252,7 @@ RÉGLÉ (worker, 01/10) : cron « exceededCpu » (cpuTimeMs 10) à CHAQUE passag
   jouée (Marquinhos 2025 → Ligue des champions ; league/leagues/slug/team ignorés) ; /apis/common/v3/sports/soccer/athletes/<id>/gamelog
   ?season=2025&league=fra.1 (SANS ligue dans le chemin) = « 2025-26 Ligue 1 : 29 ». Saison en cours : chemin avec ligue, sans paramètre.
   Liste g45reg1_f3_ → f4_.
+  20261006d (« manque buts ») : 3e bouton de tri « Buts ▼ » (_g45Reg.tri 'tot' : total, puis %, puis pire série). Bloc foot dans Saisons d'un club : À SONDER.
 - Saisons d'un club de FOOT (rendu après « Barre de filtres » dans loadTeamSaisons) — 20261005y (capture Real Madrid : seulement
   Prochains matchs, aucune case cochée) : le filtre g45_saison_filters est COMMUN à tous les clubs ; une case cochée ailleurs absente ici
   (Ligue Europa…) vidait toutes les saisons → si aucune case active n'existe chez ce club, « Toutes » pour cet affichage (sans effacer le choix).

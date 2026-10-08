@@ -68649,7 +68649,8 @@ function _g45RegHtml() {
   var esc = function (t) { return String(t).replace(/[<>"&]/g, ''); };
   var b = function (on, txt, f) { return '<button onclick="' + f + '" style="flex:1;padding:8px 4px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:' + (on ? '900' : '700') + ';border:1px solid ' + (on ? '#4d84ff' : 'rgba(255,255,255,.18)') + ';background:' + (on ? '#1b2a52' : 'rgba(11,16,29,.85)') + ';color:' + (on ? '#fff' : '#c9d3ee') + ';">' + txt + '</button>'; };
   var h = '<div style="display:flex;gap:6px;margin-bottom:6px;">' + b(_g45Reg.cat === 'g', '🥅 Buteurs', "g45RegSet('cat','g')") + b(_g45Reg.cat === 'a', '🎯 Passeurs', "g45RegSet('cat','a')") + b(_g45Reg.cat === 'p', FT ? '⭐ Buts + passes' : '⭐ Pointeurs', "g45RegSet('cat','p')") + '</div>'
-    + '<div style="display:flex;gap:6px;margin-bottom:8px;">' + b(_g45Reg.tri === 'pire', 'Pire série ▲', "g45RegSet('tri','pire')") + b(_g45Reg.tri === 'pct', '% matchs ' + (_g45Reg.cat === 'a' ? 'avec passe' : (_g45Reg.cat === 'p' ? (FT ? 'décisif' : 'avec point') : 'avec but')), "g45RegSet('tri','pct')") + '</div>';
+    + '<div style="display:flex;gap:6px;margin-bottom:8px;">' + b(_g45Reg.tri === 'pire', 'Pire série ▲', "g45RegSet('tri','pire')") + b(_g45Reg.tri === 'pct', '% matchs ' + (_g45Reg.cat === 'a' ? 'avec passe' : (_g45Reg.cat === 'p' ? (FT ? 'décisif' : 'avec point') : 'avec but')), "g45RegSet('tri','pct')")
+      + b(_g45Reg.tri === 'tot', (_g45Reg.cat === 'a' ? 'Passes' : (_g45Reg.cat === 'p' ? (FT ? 'B+P' : 'Points') : 'Buts')) + ' ▼', "g45RegSet('tri','tot')") + '</div>';   /* 20261006d */
   /* 20261005t (« c'est chiant cette limite à 10 ») : plus de minimum de 10 matchs ; début de saison = avertissement + bouton
      vers la saison précédente (et retour), sans toucher au Saison ▾ du panneau. */
   if (!_g45Reg.mem[_g45RegK()]) return h + '<div style="font-size:14px;color:#fff;padding:10px 4px;">⏳ Lecture des joueurs…</div>';
@@ -68664,6 +68665,8 @@ function _g45RegHtml() {
   /* 20261006b (« qu'est-ce qui fait l'ordre ? » → « OUI ») : égalités départagées par le plus de buts / passes / points, puis la plus
      petite série EN COURS, puis le nom (avant : ordre d'arrivée des réponses, donc au hasard). */
   ok.sort(function (x, y) {
+    /* 20261006d (« manque buts ») : 3e tri = le plus de buts / passes / points, puis % puis pire série */
+    if (_g45Reg.tri === 'tot') return (y.s.tot - x.s.tot) || (y.s.pct - x.s.pct) || (x.s.pire - y.s.pire) || String(x.nom).localeCompare(String(y.nom));
     return (_g45Reg.tri === 'pct' ? (y.s.pct - x.s.pct) || (x.s.pire - y.s.pire) : (x.s.pire - y.s.pire) || (y.s.pct - x.s.pct))
       || (y.s.tot - x.s.tot) || (x.s.cours - y.s.cours) || String(x.nom).localeCompare(String(y.nom));
   });
