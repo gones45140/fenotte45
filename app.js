@@ -38978,7 +38978,12 @@ function _g45ScoreTexte(h) {
           && typeof NHL_TEAMS !== 'undefined' && (NHL_TEAMS[nomEquipe] || NHL_TEAMS[nomAdverse])) { _g45MdTente[ck] = 1; _g45MdAncien[ck] = c; }
       else if (c && c.hs != null && c.as != null) return c.hs + '-' + c.as;
       if (c && c.txt) return c.txt;   // tennis : score de sets, deja formate en texte
-      if (c && c.neg && (Date.now() - (c.t || 0)) < 2 * 3600000) return '';   // negatif encore frais
+      /* 20261006v (capture d'Antoine : Jets–Avalanche du 09/10 01:30 sans score) : un « pas trouvé » noté PENDANT ou juste après le
+         match bloquait 2 h → si le négatif a été écrit moins de 5 h après le coup d'envoi, nouvel essai au bout de 10 min. */
+      var _kick = 0;
+      try { if (h.date) _kick = new Date(String(h.date).slice(0, 10) + 'T' + (h.heure ? ('0' + String(h.heure).trim()).slice(-5) : '12:00') + ':00').getTime() || 0; } catch (e) {}
+      var _ttl = (_kick && (c && c.t || 0) < _kick + 5 * 3600000) ? 10 * 60000 : 2 * 3600000;
+      if (c && c.neg && (Date.now() - (c.t || 0)) < _ttl) return '';   // negatif encore frais
     } catch(e) { /* ancien format brut : on retente ci-dessous */ }
   }
   /* DEJA EN VOL (19/09) : le Bilan et l'archive rendent le MEME pari, et chaque

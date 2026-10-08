@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261006u, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261006v, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -893,6 +893,8 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   20261003q (« toujours pareil ») : NHL — le cache du score garde md (mon équipe recevait ? d'après homeTeam.abbrev de l'API NHL,
   match le plus proche de l'heure du pari via startTimeUTC) ; `_g45LigneMatch` le fait passer AVANT la fiche ESPN et h.domicile.
   Scores NHL sans md relus une fois par session (`_g45MdTente`, ancien score gardé si la relecture échoue `_g45MdAncien`).
+  20261006v (capture : Jets–Avalanche 09/10 01:30 sans score) : négatif « pas trouvé » écrit < 5 h après le coup d'envoi (h.date + h.heure)
+  = nouvel essai au bout de 10 min (avant : 2 h, un score cherché pendant le match restait vide). Cause exacte chez Antoine NON confirmée.
 
 ## 6. Sources sondées (ne pas re-deviner)
 
