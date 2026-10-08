@@ -24815,6 +24815,8 @@ function renderSaisonsChart(el, results, nom) {
 
   var html = '<div style="padding:4px 0;">';
   html += _g45BlocAVenir(nom);
+  /* 20261006e (« faire comme la NHL, club saison ») : séries individuelles des joueurs DU CLUB (rempli après coup, sur bouton). */
+  try { if (typeof _g45RegClubFootPoser === 'function') html += _g45RegClubFootPoser(nom); } catch (e) {}
 
   /* Bandeau « Saison YYYY-YY+1 » vide, pour Antoine qui « croit ce qu'il voit ». Une saison
      sans match joué n'apparaît pas dans `results` (correctif du 30/07 qui filtre completed),
@@ -68708,7 +68710,7 @@ async function g45RegOuvrir() {
     box.innerHTML = _g45RegHtml();
     try {
       var _pv = lg ? _g45RegPrecFoot(lg, an, cat) : _g45RegPrec(sa, cat);
-      var L = lg ? await _g45RegLireFoot(lg, an, cat) : await _g45RegLire(sa, cat, eq);
+      var L = lg ? await _g45RegLireFoot(lg, an, cat, eq) : await _g45RegLire(sa, cat, eq);
       var _pr = await _pv; if (_pr) _g45Reg.prev[pk] = _pr;
       _g45Reg.mem[k] = L;
     }
@@ -68936,12 +68938,16 @@ function _g45RegLogFoot(lg, id, anEsp) {
   }
   return _g45RegLogsF[k];
 }
-async function _g45RegLireFoot(lg, an, cat) {
-  var anEsp = _g45RegEspAn(lg, an), ck = 'g45reg1_f4_' + lg + '_' + anEsp + '_' + cat;
+async function _g45RegLireFoot(lg, an, cat, eq) {
+  var anEsp = _g45RegEspAn(lg, an), ck = 'g45reg1_f4_' + lg + '_' + anEsp + '_' + cat + (eq ? '_' + eq : '');
   try { var c = JSON.parse(localStorage.getItem(ck) || 'null'); if (c && Date.now() - c.t < 12 * 3600e3) return c.l; } catch (e) {}
-  var d = await _g45RegLeadersFoot(lg, anEsp);
-  if (!d) throw new Error('aucun classement ESPN pour cette saison');
-  var top = cat === 'a' ? (d.a || []) : (cat === 'g' ? (d.g || []) : (d.g || []).concat(d.a || []));
+  var top;
+  if (eq) top = await _g45RegCandidatsClub(lg, String(eq).slice(1), anEsp, cat);   /* 20261006e : joueurs du club */
+  else {
+    var d = await _g45RegLeadersFoot(lg, anEsp);
+    if (!d) throw new Error('aucun classement ESPN pour cette saison');
+    top = cat === 'a' ? (d.a || []) : (cat === 'g' ? (d.g || []) : (d.g || []).concat(d.a || []));
+  }
   var vus = {}; top = top.filter(function (x) { if (vus[x.id]) return false; vus[x.id] = 1; return true; });
   if (!top.length) throw new Error('aucun joueur pour cette saison');
   var k = cat === 'a' ? 'assists' : (cat === 'p' ? 'points' : 'goals');
@@ -68950,13 +68956,14 @@ async function _g45RegLireFoot(lg, an, cat) {
     while (i < top.length) {
       var x = top[i++];
       var o = { id: x.id, ft: 1, nom: '', eq: '', club: '', logo: '', tid: x.tid };
-      try { var m = await _g45RegFtNom(x); o.nom = m.n || '?'; o.eq = m.ab || ''; o.club = m.club || ''; o.logo = m.logo || ''; } catch (e) {}
+      if (x.nom) { o.nom = x.nom; o.eq = x.ab || ''; o.club = x.club || ''; o.logo = x.logo || ''; }
+      else { try { var m = await _g45RegFtNom(x); o.nom = m.n || '?'; o.eq = m.ab || ''; o.club = m.club || ''; o.logo = m.logo || ''; } catch (e) {} }
       try { var jg = await _g45RegLogFoot(lg, x.id, anEsp); o.s = (jg && jg.gameLog) ? _g45RegCalc(jg.gameLog, k) : null; } catch (e) { o.s = null; }
       out.push(o);
     }
   }
   await Promise.all([w(), w(), w()]);
-  if (cat === 'p') out = out.filter(function (o) { return o.s; }).sort(function (a, b) { return b.s.tot - a.s.tot; }).slice(0, 10);
+  if (cat === 'p' || eq) out = out.filter(function (o) { return o.s; }).sort(function (a, b) { return b.s.tot - a.s.tot; }).slice(0, 10);
   try { await _g45RegNouveaux(lg, anEsp, out); } catch (e) {}
   if (out.some(function (o) { return o.s && o.s.mj; })) { try { localStorage.setItem(ck, JSON.stringify({ t: Date.now(), l: out })); } catch (e) {} }
   return out;
@@ -69002,4 +69009,64 @@ async function _g45RegNouveaux(lg, anEsp, out) {
     } catch (e) {}
   }));
   out.forEach(function (o) { var av = res[o.tid]; o.nv = !!(av && av.indexOf(String(o.id)) < 0); });
+}
+
+
+/* ═══ 20261006e — 🎯 SÉRIES INDIVIDUELLES DANS LA FICHE D'UN CLUB DE FOOT (Saisons ; « faire comme la NHL, club saison »).
+   SONDÉ PAR ANTOINE : site v2 soccer/<lg>/teams/<id>/roster → athletes[] {id, displayName, position, injuries, statistics.splits
+   .categories[].stats[{name, value}]…} (PSG : 24 joueurs). Les stats de l'effectif servent à CHOISIR 12 candidats (buts, passes ou
+   les deux ; compétitions comptées NON vérifié) ; les vrais chiffres viennent ensuite du journal du championnat (_g45RegLogFoot),
+   10 gardés. Club et ligue par espnResolveTeam(nom) ; sélections nationales (fifa.world) écartées. Couleur or = top 10 de la LIGUE
+   la saison d'avant (même règle que la NHL). Rien ne part sans le bouton. Effectif gardé 6 h (g45reg1_rs_). */
+function _g45RegLigueNom(lg) {
+  try { for (var i = 0; i < G45_LEAGUE_GROUPS.length; i++) { var l = (G45_LEAGUE_GROUPS[i].leagues || []).filter(function (x) { return x.slug === lg; })[0]; if (l) return l.name; } } catch (e) {}
+  return lg;
+}
+function _g45RegClubFootPoser(nom) {
+  var z = 'g45-regf-' + Math.random().toString(36).slice(2, 8);
+  setTimeout(function () { _g45RegClubFootRemplir(z, nom); }, 0);
+  return '<div id="' + z + '"></div>';
+}
+async function _g45RegClubFootRemplir(z, nom) {
+  var el = document.getElementById(z); if (!el) return;
+  var R = null;
+  try { R = await espnResolveTeam(nom); } catch (e) {}
+  el = document.getElementById(z);
+  if (!el || !R || !R.id || !R.league || /^fifa\.|^uefa\.(?!w)|world|friendly/i.test(R.league)) return;
+  var lg = R.league, aC = _g45CompetAnneeAuto(lg);
+  _g45Reg.lg = lg; _g45Reg.eq = 'T' + R.id; _g45Reg.ligue = _g45RegLigueNom(lg);
+  _g45Reg.club = { id: String(R.id), nom: nom, logo: R.logo || ('https://a.espncdn.com/i/teamlogos/soccer/500/' + R.id + '.png') };
+  var an = _g45RegCivil(lg) ? +aC : +aC + 1;
+  _g45Reg.an = an; _g45Reg.an0 = an;
+  var t = String(nom || '').replace(/[<>"&]/g, '');
+  el.innerHTML = '<div style="margin:2px 0 14px;background:rgba(11,16,29,.92);border-radius:10px;padding:10px;">'
+    + '<div style="font-size:14px;font-weight:800;letter-spacing:1px;color:#c9d3ee;">🎯 LES PLUS RÉGULIERS — ' + t.toUpperCase() + '</div>'
+    + '<div style="font-size:13px;color:#c9d3ee;margin:4px 0 8px;">10 meilleurs du club en ' + _g45Reg.ligue.replace(/[<>"&]/g, '') + ' · plus longue série SANS marquer (matchs joués seulement)</div>'
+    + '<div id="g45-reg-box">' + (_g45Reg.mem[_g45RegK()] ? _g45RegHtml() :
+      '<button onclick="g45RegOuvrir()" style="padding:10px 16px;border-radius:10px;border:1.5px solid rgba(245,197,66,.55);background:rgba(245,197,66,.12);color:#f5c542;font-size:14px;font-weight:800;cursor:pointer;">🎯 Voir le classement (' + _g45RegLab(an) + ')</button>') + '</div></div>';
+  if (_g45Reg.mem[_g45RegK()] && typeof _g45ClsPhotos === 'function') _g45ClsPhotos(el);
+}
+async function _g45RegCandidatsClub(lg, tid, anEsp, cat) {
+  var ck = 'g45reg1_rs_' + lg + '_' + tid + '_' + anEsp, l = null;
+  try { var c = JSON.parse(localStorage.getItem(ck) || 'null'); if (c && Date.now() - c.t < 6 * 3600e3) l = c.l; } catch (e) {}
+  if (!l) {
+    var cour = _g45RegEspAn(lg, _g45RegCivil(lg) ? _g45CompetAnneeAuto(lg) : _g45CompetAnneeAuto(lg) + 1) === +anEsp;
+    var r = await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/' + lg + '/teams/' + tid + '/roster' + (cour ? '' : '?season=' + anEsp));
+    if (!r.ok) throw new Error('effectif ESPN ' + r.status);
+    var j = await r.json();
+    var st = function (a, nm) {
+      var v = 0;
+      try { ((a.statistics && a.statistics.splits && a.statistics.splits.categories) || []).forEach(function (c) { (c.stats || []).forEach(function (x) { if (x.name === nm) v = +x.value || 0; }); }); } catch (e) {}
+      return v;
+    };
+    l = (j.athletes || []).reduce(function (acc, x) { return acc.concat(x && x.items ? x.items : [x]); }, [])
+      .filter(function (a) { return a && a.id != null; })
+      .map(function (a) { return { id: String(a.id), nom: a.displayName || a.fullName || '?', g: st(a, 'totalGoals'), a: st(a, 'goalAssists') }; });
+    try { localStorage.setItem(ck, JSON.stringify({ t: Date.now(), l: l })); } catch (e) {}
+  }
+  var C = _g45Reg.club || {};
+  var val = function (x) { return cat === 'a' ? x.a : (cat === 'p' ? x.g + x.a : x.g); };
+  var top = l.filter(function (x) { return val(x) > 0; }).sort(function (a, b) { return val(b) - val(a); }).slice(0, 12);
+  if (!top.length) throw new Error('aucun ' + (cat === 'a' ? 'passeur' : 'buteur') + ' dans l\'effectif pour l\'instant');
+  return top.map(function (x) { return { id: x.id, nom: x.nom, club: C.nom || '', logo: C.logo || '', ab: '', tid: tid }; });
 }
