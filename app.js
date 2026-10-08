@@ -68605,17 +68605,17 @@ var _g45Reg = { cat: 'g', tri: 'pire', mem: {}, prev: {} };
 function _g45RegSaison(an) { an = +an || new Date().getFullYear(); return (an - 1) + '' + an; }
 function _g45RegCalc(log, cle) {
   var L = (log || []).slice().reverse();               /* chronologique */
-  var n = L.length, avec = 0, tot = 0, pire = 0, cour = 0;
+  var n = L.length, avec = 0, tot = 0, pire = 0, cour = 0, best = 0, bc = 0;   /* best = meilleure série AVEC (20261006l) */
   L.forEach(function (g) {
     /* 20261005s : points = champ points du game-log, sinon buts + passes */
     var v = cle === 'points' ? (g.points != null ? +g.points || 0 : (+g.goals || 0) + (+g.assists || 0)) : (+g[cle] || 0); tot += v;
-    if (v > 0) { avec++; cour = 0; } else { cour++; if (cour > pire) pire = cour; }
+    if (v > 0) { avec++; cour = 0; bc++; if (bc > best) best = bc; } else { cour++; if (cour > pire) pire = cour; bc = 0; }
   });
-  return { mj: n, tot: tot, pct: n ? Math.round(avec * 100 / n) : 0, pire: pire, cours: cour };
+  return { mj: n, tot: tot, pct: n ? Math.round(avec * 100 / n) : 0, pire: pire, cours: cour, best: best, bcours: bc };
 }
 async function _g45RegLire(saison, cat, eq) {
   if (eq) return _g45RegLireEq(saison, cat, eq);
-  var ck = 'g45reg1_' + saison + '_' + cat;
+  var ck = 'g45reg1_v2_' + saison + '_' + cat;   /* v2 (20261006l) : + meilleure série */
   try { var c = JSON.parse(localStorage.getItem(ck) || 'null'); if (c && Date.now() - c.t < 12 * 3600e3) return c.l; } catch (e) {}
   var P = FD_PROXY + '?key=nhl&host=nhl&path=';
   var k = cat === 'a' ? 'assists' : (cat === 'p' ? 'points' : 'goals');
@@ -68664,7 +68664,7 @@ function _g45RegHtml() {
   var LB = _g45RegLib(_g45Reg.cat);   /* 20261006h : libellés par sport (NHL, foot, NFL) */
   var h = '<div style="display:flex;gap:6px;margin-bottom:6px;">' + ['g', 'a', 'p'].filter(function (c) { return !!_g45RegLib(c).btn; }).map(function (c) { return b(_g45Reg.cat === c, _g45RegLib(c).btn, "g45RegSet('cat','" + c + "')"); }).join('') + '</div>'
     + '<div style="display:flex;gap:6px;margin-bottom:8px;">' + b(_g45Reg.tri === 'pire', 'Pire série ▲', "g45RegSet('tri','pire')") + b(_g45Reg.tri === 'pct', '% matchs ' + LB.avec, "g45RegSet('tri','pct')")
-      + b(_g45Reg.tri === 'tot', LB.col + ' ▼', "g45RegSet('tri','tot')") + '</div>';   /* 20261006d */
+      + b(_g45Reg.tri === 'tot', LB.col + ' ▼', "g45RegSet('tri','tot')") + b(_g45Reg.tri === 'best', 'Meilleure série ▼', "g45RegSet('tri','best')") + '</div>';   /* 20261006d ; 20261006l */
   /* 20261005t (« c'est chiant cette limite à 10 ») : plus de minimum de 10 matchs ; début de saison = avertissement + bouton
      vers la saison précédente (et retour), sans toucher au Saison ▾ du panneau. */
   if (!_g45Reg.mem[_g45RegK()]) return h + '<div style="font-size:14px;color:#fff;padding:10px 4px;">⏳ Lecture des joueurs… <span id="g45-reg-prog"></span></div>';
@@ -68681,13 +68681,14 @@ function _g45RegHtml() {
      petite série EN COURS, puis le nom (avant : ordre d'arrivée des réponses, donc au hasard). */
   ok.sort(function (x, y) {
     /* 20261006d (« manque buts ») : 3e tri = le plus de buts / passes / points, puis % puis pire série */
+    if (_g45Reg.tri === 'best') return ((y.s.best || 0) - (x.s.best || 0)) || (y.s.pct - x.s.pct) || (x.s.pire - y.s.pire) || String(x.nom).localeCompare(String(y.nom));
     if (_g45Reg.tri === 'tot') return (y.s.tot - x.s.tot) || (y.s.pct - x.s.pct) || (x.s.pire - y.s.pire) || String(x.nom).localeCompare(String(y.nom));
     return (_g45Reg.tri === 'pct' ? (y.s.pct - x.s.pct) || (x.s.pire - y.s.pire) : (x.s.pire - y.s.pire) || (y.s.pct - x.s.pct))
       || (y.s.tot - x.s.tot) || (x.s.cours - y.s.cours) || String(x.nom).localeCompare(String(y.nom));
   });
   var col = function (v) { return v < 6 ? '#1ed760' : (v < 10 ? '#f0b020' : '#ff6b6b'); };
   h += '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:14px;color:#fff;white-space:nowrap;">'
-    + '<tr style="color:#c9d3ee;font-size:12px;"><th style="text-align:left;padding:6px;">Joueur</th><th>' + LB.col + '</th><th>MJ</th><th>%</th><th>Pire série</th><th>En cours</th></tr>';
+    + '<tr style="color:#c9d3ee;font-size:12px;"><th style="text-align:left;padding:6px;">Joueur</th><th>' + LB.col + '</th><th>MJ</th><th>%</th><th>Pire série</th><th>Meilleure</th><th>En cours</th></tr>';
   /* 20261005u : rang de l'an dernier (top 10 de la LIGUE, même catégorie) — ligue : or 1-3 / bronze 4-10 ; équipe : or seulement */
   var PR = _g45Reg.prev[_g45RegPK()] || {};
   var labP = lab(+_g45Reg.an - 1), nOr = 0;
@@ -68703,6 +68704,7 @@ function _g45RegHtml() {
       + (o.nv ? ' · <span style="color:#5aa9ff;font-weight:800;">🆕 nouveau</span>' : '') + '</span></span></span></td>'
       + '<td align="center"><b>' + o.s.tot + '</b></td><td align="center">' + o.s.mj + '</td><td align="center">' + o.s.pct + ' %</td>'
       + '<td align="center"><b style="color:' + col(o.s.pire) + ';">' + o.s.pire + '</b></td>'
+      + '<td align="center"><b style="color:#5aa9ff;">' + (o.s.best != null ? o.s.best : '–') + '</b></td>'
       + '<td align="center"><b style="color:' + (o.s.cours >= 6 ? '#ff6b6b' : '#fff') + ';">' + o.s.cours + '</b></td></tr>';
   });
   var catL = LB.pl;
@@ -68710,7 +68712,7 @@ function _g45RegHtml() {
     : '<span style="color:#f5c542;font-weight:800;">Or</span> = top 3 · <span style="color:#e0915a;font-weight:800;">Bronze</span> = 4e à 10e des ' + catL + ' en ' + labP;
   if ((FT && _g45Reg.cat === 'p') || _g45Reg.lg === 'top14') h += '</table></div>';   /* foot : pas de classement « buts + passes » chez ESPN → pas de couleur */
   else h += '</table></div><div style="font-size:13px;color:#fff;margin-top:6px;">' + leg + (_g45Reg.prev[_g45RegPK()] ? '' : ' (indisponible)') + '</div>';
-  return h + '<div style="font-size:12px;color:#c9d3ee;margin-top:6px;">Vert : jamais 6 matchs de suite sans ' + LB.sans + ' · orange 6 à 9 · rouge 10 et plus</div>';
+  return h + '<div style="font-size:12px;color:#c9d3ee;margin-top:6px;">Pire série : vert = jamais 6 matchs de suite sans ' + LB.sans + ' · orange 6 à 9 · rouge 10 et plus. <span style="color:#5aa9ff;">Meilleure</span> = plus longue série de matchs AVEC ' + LB.sans + '.</div>';
 }
 async function g45RegOuvrir() {
   var box = document.getElementById('g45-reg-box'); if (!box) return;
@@ -68772,7 +68774,7 @@ function _g45RegEquipe(nom) {
   return null;
 }
 async function _g45RegLireEq(saison, cat, abr) {
-  var ck = 'g45reg1_' + saison + '_' + cat + '_' + abr;
+  var ck = 'g45reg1_v2_' + saison + '_' + cat + '_' + abr;
   try { var c = JSON.parse(localStorage.getItem(ck) || 'null'); if (c && Date.now() - c.t < 12 * 3600e3) return c.l; } catch (e) {}
   var P = FD_PROXY + '?key=nhl&host=nhl&path=';
   var k = cat === 'a' ? 'assists' : (cat === 'p' ? 'points' : 'goals');
@@ -68964,7 +68966,7 @@ function _g45RegLogFoot(lg, id, anEsp) {
 }
 async function _g45RegLireFoot(lg, an, cat, eq) {
   if (lg === 'top14') return _g45RegLireRug(eq);   /* 20261006k */
-  var anEsp = _g45RegEspAn(lg, an), ck = 'g45reg1_f4_' + lg + '_' + anEsp + '_' + cat + (eq ? '_' + eq + '_' + (_g45Reg.cf || 'L') : '');
+  var anEsp = _g45RegEspAn(lg, an), ck = 'g45reg1_f5_' + lg + '_' + anEsp + '_' + cat + (eq ? '_' + eq + '_' + (_g45Reg.cf || 'L') : '');
   try { var c = JSON.parse(localStorage.getItem(ck) || 'null'); if (c && Date.now() - c.t < 12 * 3600e3) { if (c.c) c.l.comps = c.c; return c.l; } } catch (e) {}
   var top;
   if (eq) top = lg === 'nfl' ? await _g45RegCandidatsNfl(String(eq).slice(1), anEsp, cat) : await _g45RegCandidatsClub(lg, String(eq).slice(1), anEsp, cat);   /* 20261006e : joueurs du club ; NFL 20261006j */
