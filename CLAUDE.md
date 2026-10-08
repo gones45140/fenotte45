@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261006q, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261006r, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1306,6 +1306,10 @@ RÉGLÉ (worker, 01/10) : cron « exceededCpu » (cpuTimeMs 10) à CHAQUE passag
   category=batting). Boutons 💥 Home runs (g) / 🏃 Runs (a), saison régulière seule ; `_g45RegLeadersMlb`, `_g45RegLogMlb`,
   `_g45RegCandidatsMlb` (team leaders), `_g45RegBlocNflEq(an, nom, id, 'mlb')` ; calendrier schedule baseball. CONFIRMÉ PAR ANTOINE (Yankees 10) :
   team leaders 200 (homeRuns 22, runs 22, hits 22…), schedule?season=2026&seasontype=2 = 165 matchs dont 161 finis.
+  20261006r — 🏒 KHL, FICHE D'ÉQUIPE seulement (Saisons, league 'khl') : SONDÉ PAR ANTOINE, players_v2 IGNORE le tri (q[s], order_by, sort →
+  alphabétique) et la ligue entière est trop lente → pas de classement de ligue (onglet Individuel KHL inchangé). `_g45RegLireKhl` :
+  effectif `_g45KhlJoueursEquipe` (st.g/a/pts, gardiens écartés, 12 candidats) + matchs finis `_g45KhlMatchsPlage` + feuilles `_g45KhlFiche`
+  (présence = sur la feuille, buts j.g, passes buts[].pa) ; absences ; saison en cours seulement, pas d'or.
 - Saisons d'un club de FOOT (rendu après « Barre de filtres » dans loadTeamSaisons) — 20261005y (capture Real Madrid : seulement
   Prochains matchs, aucune case cochée) : le filtre g45_saison_filters est COMMUN à tous les clubs ; une case cochée ailleurs absente ici
   (Ligue Europa…) vidait toutes les saisons → si aucune case active n'existe chez ce club, « Toutes » pour cet affichage (sans effacer le choix).

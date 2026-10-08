@@ -68647,6 +68647,7 @@ async function _g45RegLire(saison, cat, eq) {
 function _g45RegBloc(sp, lg, an, nom, eqId) {
   if (sp === 'football' && String(lg) === 'nfl' && eqId && typeof _g45RegBlocNflEq === 'function') return _g45RegBlocNflEq(an, nom, eqId);   /* 20261006j */
   if (sp === 'baseball' && String(lg) === 'mlb' && eqId && typeof _g45RegBlocNflEq === 'function') return _g45RegBlocNflEq(an, nom, eqId, 'mlb');   /* 20261006q */
+  if (sp === 'hockey' && String(lg) === 'khl' && eqId && typeof _g45RegBlocKhlEq === 'function') return _g45RegBlocKhlEq(an, nom, eqId);   /* 20261006r */
   if (sp === 'rugby' && String(lg) === '270559' && typeof _g45RegBlocRugEq === 'function') return _g45RegBlocRugEq(nom);   /* 20261006k */
   if (sp === 'rugby-league' && String(lg) === '3' && typeof _g45RegBlocNrlEq === 'function') return _g45RegBlocNrlEq(nom);   /* 20261006m */
   if (sp !== 'hockey' || String(lg) !== 'nhl') return '';
@@ -68679,8 +68680,8 @@ function _g45RegHtml() {
   var bs = function (txt) { return '<button onclick="g45RegAn()" style="margin-top:6px;padding:8px 12px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:800;border:1px solid rgba(245,197,66,.55);background:rgba(245,197,66,.12);color:#f5c542;">' + txt + '</button>'; };
   var mjMax = ok.reduce(function (m, o) { return Math.max(m, o.s.mj); }, 0);
   if (prec) h += '<div style="font-size:13px;color:#c9d3ee;margin-bottom:6px;">Saison ' + lab(_g45Reg.an) + ' (précédente) ' + bs('↩ Revenir à ' + lab(a0)) + '</div>';
-  else if (mjMax < 10) h += '<div style="font-size:13px;color:#f0b020;margin-bottom:6px;">Début de saison : ' + mjMax + ' match' + (mjMax > 1 ? 's' : '') + ' au plus, séries encore peu parlantes. ' + (_g45Reg.lg === 'top14' ? '' : bs('📅 Voir ' + lab(+a0 - 1))) + '</div>';
-  if (FT && _g45Reg.eq && _g45Reg.lg !== 'nfl' && _g45Reg.lg !== 'mlb' && _g45Reg.lg !== 'top14' && _g45Reg.lg !== 'nrl') h += '<div style="font-size:13px;color:#fff;background:rgba(77,132,255,.14);border-radius:8px;padding:6px 8px;margin-bottom:6px;">📋 Compétitions comptées : <b>' + _g45RegCompsLib(L.comps) + '</b></div>';
+  else if (mjMax < 10) h += '<div style="font-size:13px;color:#f0b020;margin-bottom:6px;">Début de saison : ' + mjMax + ' match' + (mjMax > 1 ? 's' : '') + ' au plus, séries encore peu parlantes. ' + ((_g45Reg.lg === 'top14' || _g45Reg.lg === 'khl') ? '' : bs('📅 Voir ' + lab(+a0 - 1))) + '</div>';
+  if (FT && _g45Reg.eq && _g45Reg.lg !== 'nfl' && _g45Reg.lg !== 'mlb' && _g45Reg.lg !== 'top14' && _g45Reg.lg !== 'nrl' && _g45Reg.lg !== 'khl') h += '<div style="font-size:13px;color:#fff;background:rgba(77,132,255,.14);border-radius:8px;padding:6px 8px;margin-bottom:6px;">📋 Compétitions comptées : <b>' + _g45RegCompsLib(L.comps) + '</b></div>';
   if (!ok.length) return h + '<div style="font-size:13px;color:#c9d3ee;">Aucun match joué pour l\'instant.</div>';
   /* 20261006b (« qu'est-ce qui fait l'ordre ? » → « OUI ») : égalités départagées par le plus de buts / passes / points, puis la plus
      petite série EN COURS, puis le nom (avant : ordre d'arrivée des réponses, donc au hasard). */
@@ -68717,7 +68718,7 @@ function _g45RegHtml() {
   var catL = LB.pl;
   var leg = _g45Reg.eq ? '<span style="color:#f5c542;font-weight:800;">Or</span> = dans le top 10 des ' + catL + ' de la ' + (_g45Reg.ligue || 'NHL') + ' en ' + labP
     : '<span style="color:#f5c542;font-weight:800;">Or</span> = top 3 · <span style="color:#e0915a;font-weight:800;">Bronze</span> = 4e à 10e des ' + catL + ' en ' + labP;
-  if ((FT && _g45Reg.cat === 'p') || _g45Reg.lg === 'top14') h += '</table></div>';   /* foot : pas de classement « buts + passes » chez ESPN → pas de couleur */
+  if ((FT && _g45Reg.cat === 'p') || _g45Reg.lg === 'top14' || _g45Reg.lg === 'khl') h += '</table></div>';   /* foot : pas de classement « buts + passes » chez ESPN → pas de couleur */
   else h += '</table></div><div style="font-size:13px;color:#fff;margin-top:6px;">' + leg + (_g45Reg.prev[_g45RegPK()] ? '' : ' (indisponible)') + '</div>';
   return h + '<div style="font-size:12px;color:#c9d3ee;margin-top:6px;">Pire série : vert = jamais 6 matchs de suite sans ' + LB.sans + ' · orange 6 à 9 · rouge 10 et plus. <span style="color:#5aa9ff;">Meilleure</span> = plus longue série de matchs AVEC ' + LB.sans + '.</div>';
 }
@@ -68975,6 +68976,7 @@ function _g45RegLogFoot(lg, id, anEsp) {
 }
 async function _g45RegLireFoot(lg, an, cat, eq) {
   if (lg === 'top14') return _g45RegLireRug(eq);   /* 20261006k */
+  if (lg === 'khl') return _g45RegLireKhl(cat, eq);   /* 20261006r */
   if (lg === 'nrl') return _g45RegLireNrl(an, cat, eq);   /* 20261006m */
   var anEsp = _g45RegEspAn(lg, an), ck = 'g45reg1_f6_' + lg + '_' + anEsp + '_' + cat + (eq ? '_' + eq + '_' + (_g45Reg.cf || 'L') : '');
   try { var c = JSON.parse(localStorage.getItem(ck) || 'null'); if (c && Date.now() - c.t < 12 * 3600e3) { if (c.c) c.l.comps = c.c; return c.l; } } catch (e) {}
@@ -69017,7 +69019,7 @@ async function _g45RegLireFoot(lg, an, cat, eq) {
   return out;
 }
 async function _g45RegPrecFoot(lg, an, cat) {
-  if (cat === 'p' || lg === 'top14') return null;
+  if (cat === 'p' || lg === 'top14' || lg === 'khl') return null;
   if (lg === 'nrl') return _g45RegPrecNrl(an, cat);
   try {
     var d = lg === 'nfl' ? await _g45RegLeadersNfl(_g45RegEspAn(lg, an) - 1) : lg === 'mlb' ? await _g45RegLeadersMlb(_g45RegEspAn(lg, an) - 1) : await _g45RegLeadersFoot(lg, _g45RegEspAn(lg, an) - 1);
@@ -69199,6 +69201,8 @@ async function _g45RegLogClub(lg, id, anEsp, cf, used) {
    « Touchdown marqué » = somme des colonnes …Touchdowns SAUF passingTouchdowns (course, réception, retours) ; « Passes de TD » = QB.
    Saison = année civile du début (2026). Photos : headshots ESPN NFL. Pas de bouton « nouveau » (effectif foot seulement). */
 function _g45RegLib(c) {
+  if (_g45Reg.lg === 'khl') return c === 'a' ? { btn: '🎯 Passeurs', col: 'Passes', avec: 'avec passe', sans: 'passe', pl: 'passeurs' }
+    : (c === 'p' ? { btn: '⭐ Pointeurs', col: 'Points', avec: 'avec point', sans: 'point', pl: 'pointeurs' } : { btn: '🥅 Buteurs', col: 'Buts', avec: 'avec but', sans: 'but', pl: 'buteurs' });
   if (_g45Reg.lg === 'nrl') return c === 'g' ? { btn: '🏉 Essais', col: 'Essais', avec: 'avec essai', sans: 'essai', pl: 'marqueurs d\'essais' }
     : (c === 'a' ? { btn: '🎯 Passes d\'essai', col: 'Passes', avec: 'avec passe d\'essai', sans: 'passe d\'essai', pl: 'passeurs d\'essai' } : { btn: '' });
   if (_g45Reg.lg === 'top14') return c === 'g' ? { btn: '🏉 Essais', col: 'Essais', avec: 'avec essai', sans: 'essai', pl: 'marqueurs d\'essais' } : { btn: '' };
@@ -69680,4 +69684,65 @@ async function _g45RegCandidatsMlb(tid, an, cat) {
   if (!top.length) throw new Error('aucun joueur pour cette saison');
   var C = _g45Reg.club || {};
   return top.map(function (x) { return { id: x.id, ar: x.ar, club: C.nom || '', logo: C.logo || '', ab: '', tid: tid }; });
+}
+
+
+/* ═══ 20261006r — 🏒🇷🇺 SÉRIES KHL, FICHE D'UNE ÉQUIPE (Saisons, perso {sport hockey, league khl, id}). SONDÉ PAR ANTOINE : players_v2
+   IGNORE tout tri (q[s] / order_by / sort → ordre alphabétique) et la ligue entière (668 joueurs) prend plusieurs minutes → PAS de
+   classement de la ligue. Fiche d'équipe = sources DÉJÀ en place pour l'onglet Compo : effectif `_g45KhlJoueursEquipe` (st.g / st.a /
+   st.pts, 3 h) → 12 candidats (gardiens écartés) ; matchs finis de l'équipe `_g45KhlMatchsPlage` ; feuille `_g45KhlFiche` (cache
+   permanent : ja / jb = joueurs sur la feuille avec buts, buts[].pa = passeurs) ; présence = sur la feuille. Saison en cours seulement. */
+function _g45RegBlocKhlEq(an, nom, eqId) {
+  _g45Reg.lg = 'khl'; _g45Reg.ligue = 'KHL'; _g45Reg.cf = '';
+  _g45Reg.eq = 'T' + eqId; _g45Reg.club = { id: String(eqId), nom: nom };
+  _g45Reg.an = +an; _g45Reg.an0 = +an;
+  var t = String(nom || '').replace(/[<>"&]/g, '');
+  return '<div style="margin:2px 0 14px;background:rgba(11,16,29,.92);border-radius:10px;padding:10px;">'
+    + '<div style="font-size:14px;font-weight:800;letter-spacing:1px;color:#c9d3ee;">🎯 LES PLUS RÉGULIERS — ' + t.toUpperCase() + '</div>'
+    + '<div style="font-size:13px;color:#c9d3ee;margin:4px 0 8px;">Joueurs de l\'équipe en KHL · plus longue série SANS marquer (matchs joués seulement)</div>'
+    + '<div id="g45-reg-box">' + (_g45Reg.mem[_g45RegK()] ? _g45RegHtml() :
+      '<button onclick="g45RegOuvrir()" style="padding:10px 16px;border-radius:10px;border:1.5px solid rgba(245,197,66,.55);background:rgba(245,197,66,.12);color:#f5c542;font-size:14px;font-weight:800;cursor:pointer;">🎯 Voir le classement (' + _g45RegLab(an) + ')</button>') + '</div></div>';
+}
+async function _g45RegLireKhl(cat, eq) {
+  var prog = function (t) { var e = document.getElementById('g45-reg-prog'); if (e) e.textContent = t; };
+  var id = String(eq || '').slice(1);
+  if (!id) throw new Error('classement de la ligue indisponible en KHL');
+  var eff = await _g45KhlJoueursEquipe(id);
+  if (!eff || !eff.length) throw new Error('effectif KHL non reçu');
+  var cle = cat === 'a' ? 'a' : (cat === 'p' ? 'pts' : 'g');
+  var top = eff.filter(function (p) { return !/goal/i.test(String(p.r || '')); })
+    .sort(function (x, y) { return ((y.st || {})[cle] || 0) - ((x.st || {})[cle] || 0); }).slice(0, 12);
+  var saison = await _g45KhlMatchsPlage(_g45KhlDebutSaison(), Date.now());
+  var siens = (saison || []).filter(function (m) { return (String(m.a) === id || String(m.b) === id) && _g45KhlFini(m); })
+    .sort(function (x, y) { return (x.t || 0) - (y.t || 0); });
+  if (!siens.length) throw new Error('aucun match joué');
+  var F = [];
+  for (var i = 0; i < siens.length; i += 4) {
+    (await Promise.all(siens.slice(i, i + 4).map(function (m) { return _g45KhlFiche(m).catch(function () { return null; }); })))
+      .forEach(function (f, k) { F.push({ m: siens[i + k], f: f }); });
+    prog('(match ' + Math.min(i + 4, siens.length) + '/' + siens.length + ')');
+  }
+  var out = top.map(function (p) {
+    var nk = _g45KhlNorm(p.n), L = [], der = -1;
+    F.forEach(function (x, idx) {
+      if (!x.f) return;
+      var moi = String(x.m.a) === id ? x.f.ja : x.f.jb;
+      var j = (moi || []).filter(function (y) { return _g45KhlNorm(y.n) === nk; })[0];
+      if (!j) return;
+      var a = (x.f.buts || []).filter(function (g) { return String(g.eq) === id && (g.pa || []).some(function (n) { return _g45KhlNorm(n) === nk; }); }).length;
+      var g = +j.g || 0;
+      L.push({ goals: g, assists: a, points: g + a, d: String(1000 + idx) });
+      der = idx;
+    });
+    L.reverse();
+    var o = { id: p.id, nom: p.n, ph: p.img || '', eq: '', s: _g45RegCalc(L, cat === 'a' ? 'assists' : (cat === 'p' ? 'points' : 'goals')) };
+    var lus = F.filter(function (x) { return x.f; }).length;
+    if (der >= 0) {
+      var apres = F.slice(der + 1).filter(function (x) { return x.f; });
+      o.abs = apres.length;
+      if (apres.length) { try { o.absD = new Date(apres[apres.length - 1].m.t).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }); } catch (e) {} }
+    }
+    return o;
+  }).filter(function (o) { return o.s && o.s.mj; });
+  return out.sort(function (a, b) { return b.s.tot - a.s.tot; }).slice(0, 10);
 }
