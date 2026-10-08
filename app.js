@@ -31888,7 +31888,8 @@ function _g45ArtMemLire(eid, typ) {
   try {
     var c = JSON.parse(localStorage.getItem(_g45ArtMemCle(eid, typ)) || 'null');
     var duree = typ === 'recap' ? 30 * 86400000 : 12 * 3600000;
-    if (c && c.txt && Date.now() - (c.t || 0) < duree) return c;
+    /* 20261006x : une traduction gardée AVANT v:2 a pu être COUPÉE (max_tokens 700, capture d'Antoine « Thatcher Demko ( ») → refaite. */
+    if (c && c.txt && c.v === 2 && Date.now() - (c.t || 0) < duree) return c;
   } catch (e) {}
   return null;
 }
@@ -31900,7 +31901,7 @@ function _g45ArtMemEcrire(eid, typ, txt, src) {
         try { var o = JSON.parse(localStorage.getItem(k) || 'null'); if (!o || Date.now() - (o.t || 0) > 30 * 86400000) localStorage.removeItem(k); } catch (e) { localStorage.removeItem(k); }
       }
     }
-    localStorage.setItem(_g45ArtMemCle(eid, typ), JSON.stringify({ t: Date.now(), txt: txt, src: src }));
+    localStorage.setItem(_g45ArtMemCle(eid, typ), JSON.stringify({ t: Date.now(), txt: txt, src: src, v: 2 }));
   } catch (e) {}
 }
 function _g45ArtHtml(txt, src) {
@@ -32604,15 +32605,20 @@ async function g45ArticleTraduire(btn) {
     + 'Regles : francais simple, phrases courtes, noms propres inchanges. N\'invente RIEN qui ne soit pas dans l\'article (score, buteurs, blesses, chiffres, forme).'
     + (recap ? ' Points cles : score, buteurs ou marqueurs, tournants du match, blesses, consequences.' : ' Si l\'article ne donne pas d\'avis sur l\'issue du match, ecris-le.');
   var user = 'Match : ' + art.hN + ' vs ' + art.aN + '\nTITRE : ' + art.titre + '\nCHAPEAU : ' + art.chapeau + '\nARTICLE :\n' + art.texte;
-  var txt = '', src = '';
+  var txt = '', src = '', coupe = false;
+  /* 20261006x (capture d'Antoine : résumé arrêté sur « Thatcher Demko ( ») : max_tokens 700 → le modèle Groq qui RAISONNE (GPT-OSS)
+     consomme une partie des jetons avant d'écrire, texte coupé (finish_reason « length »). Comme l'analyse IA (29c) : 2500 ; si c'est encore
+     coupé, Gemini est essayé ; coupé partout = affiché avec la mention, mais PAS gardé en mémoire. */
   try {
     var key = (typeof getGeminiKey === 'function') ? getGeminiKey() : localStorage.getItem('gones45_gemini_key');
     var r = await fetch(g45IaUrl(), { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
-      body: JSON.stringify({ model: g45GroqModele(), messages: [{ role: 'system', content: sys }, { role: 'user', content: user }], temperature: 0.2, max_tokens: 700 }) });
+      body: JSON.stringify({ model: g45GroqModele(), messages: [{ role: 'system', content: sys }, { role: 'user', content: user }], temperature: 0.2, max_tokens: 2500 }) });
     var d = await r.json();
     txt = ((d.choices && d.choices[0] && d.choices[0].message && d.choices[0].message.content) || '').replace(/<think>[\s\S]*?<\/think>/g, '').trim();
-    if (txt) src = 'Groq';
+    if (txt) { src = 'Groq'; coupe = !!(d.choices[0].finish_reason === 'length'); }
   } catch (e) {}
+  var txtGroq = coupe ? txt : '';
+  if (coupe) txt = '';
   if (!txt && typeof g45GeminiModeles === 'function') {
     try {
       var GM = await g45GeminiModeles();
@@ -32627,6 +32633,10 @@ async function g45ArticleTraduire(btn) {
     } catch (e) {}
   }
   btn.disabled = false;
+  if (!txt && txtGroq) {   /* coupé chez Groq, rien chez Gemini : montré tel quel, signalé, non gardé */
+    box.innerHTML = _g45ArtHtml(txtGroq, 'Groq') + '<div style="font-size:13px;color:#ffb347;margin-top:6px;">✂️ Texte coupé par l\'IA — touche à nouveau le bouton plus tard.</div>';
+    btn.disabled = false; return;
+  }
   if (!txt) { box.innerHTML = '<div style="color:#ff6b6b;font-size:13px;">Traduction indisponible pour le moment. Réessaie plus tard.</div>'; return; }
   _g45ArtMemEcrire(btn.dataset.eid, art.typ, txt, src);
   box.innerHTML = _g45ArtHtml(txt, src);

@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261006w, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261006x, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -329,6 +329,9 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   cotes dans `_renderGenericDetail` ; foot : sous stade/arbitre dans
   `_renderSaisonDetail`, via `_g45ArticleFootEn` (résumé SANS lang=fr, voir §6).
   Mémoire `g45art1_<eid>_<typ>` (recap 30 j, preview 12 h), rendu `_g45ArtHtml` — 27y → 28c.
+  20261006x (capture : résumé coupé sur « Thatcher Demko ( ») : g45ArticleTraduire avait max_tokens 700 (Groq GPT-OSS raisonne avant
+  d'écrire) → 2500 ; finish_reason « length » = Gemini essayé, sinon texte montré avec « ✂️ Texte coupé » et NON gardé ; mémoire lue
+  seulement si v:2 (anciennes traductions, peut-être coupées, refaites au prochain appui).
 - 🧠 « Analyse IA du match » (refonte 29b) : FOOT `g45LoadMatchAI(btn)` (~l. 30679, bouton
   ~l. 28046 avec data-lg), AUTRES SPORTS + tennis `g45LoadUsAI(btn)` (~l. 31356) ; tous
   (F1, cyclisme, MotoGP aussi) passent par `_g45MultiAI(box, boxId, sys, facts, title)`
