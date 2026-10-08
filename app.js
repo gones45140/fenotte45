@@ -68896,7 +68896,10 @@ function _g45RegLogFoot(lg, id, anEsp) {
        avec ?season=2026, ESPN renvoie UNE AUTRE COMPÉTITION (« League Phase » = Ligue des champions, 1 match, 3 buts) alors que
        filters dit toujours league=fra.1. → d'abord SANS paramètre ; seulement si la saison renvoyée n'est pas la bonne (saison
        passée), ?season=<an>&league=<lg> (NON vérifié) et le type de saison « League Phase / Knockout… » est refusé. */
-    var _url = function (q) { return FD_PROXY + '?host=espnweb&path=' + encodeURIComponent('/apis/common/v3/sports/soccer/' + lg + '/athletes/' + id + '/gamelog' + q); };
+    /* 20261006c — SONDÉ PAR ANTOINE (Marquinhos 159047, 2025-26) : avec la ligue DANS LE CHEMIN, ?season= renvoie la dernière
+       compétition jouée (Ligue des champions) quels que soient league / leagues / slug / team ; SANS ligue dans le chemin,
+       /soccer/athletes/<id>/gamelog?season=2025&league=fra.1 = « 2025-26 Ligue 1 : 29 matchs ». Saison en cours : sans paramètre. */
+    var _url = function (q) { return FD_PROXY + '?host=espnweb&path=' + encodeURIComponent(q ? '/apis/common/v3/sports/soccer/athletes/' + id + '/gamelog' + q : '/apis/common/v3/sports/soccer/' + lg + '/athletes/' + id + '/gamelog'); };
     var _lire = function (q) { return fetch(_url(q)).then(function (r) { return r.ok ? r.json() : null; }); };
     _g45RegLogsF[k] = _lire('')
       .then(function (j) {
@@ -68931,7 +68934,7 @@ function _g45RegLogFoot(lg, id, anEsp) {
   return _g45RegLogsF[k];
 }
 async function _g45RegLireFoot(lg, an, cat) {
-  var anEsp = _g45RegEspAn(lg, an), ck = 'g45reg1_f3_' + lg + '_' + anEsp + '_' + cat;
+  var anEsp = _g45RegEspAn(lg, an), ck = 'g45reg1_f4_' + lg + '_' + anEsp + '_' + cat;
   try { var c = JSON.parse(localStorage.getItem(ck) || 'null'); if (c && Date.now() - c.t < 12 * 3600e3) return c.l; } catch (e) {}
   var d = await _g45RegLeadersFoot(lg, anEsp);
   if (!d) throw new Error('aucun classement ESPN pour cette saison');
