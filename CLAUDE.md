@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261006x, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261006y, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -106,6 +106,13 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   bouton par équipe, Attaquants / Défenseurs (B, A, Pts, Tirs, +/-, Temps) / Gardien (Arrêts, Tirs reçus, Buts, % arrêts, Temps) ;
   catégories boxscore forwards/defenses/goalies, colonnes par clé puis libellé (`_G45_NHL_COLS`, noms NHL NON sondés : colonne absente = masquée).
   (couleurs via `g45CoulPaire` + `_g45CoulTexte`) ; feuille des joueurs NBA `_g45NbaFeuilleHtml`.
+  20261006y (maquette validée, « trier par buts sinon ok go ») — 👥 AVANT LE MATCH NHL (match 'pre', `_g45NhlAvPoser` dans `_renderGenericDetail`,
+  bloc en fin d'app.js) : SONDÉ PAR ANTOINE (2026020062) api-web /v1/gamecenter/<id>/play-by-play AVANT le match = rosterSpots 23 joueurs DISPONIBLES
+  par équipe (2 gardiens, pas de lignes) ; /landing → matchup.skaterSeasonStats / goalieSeasonStats. `_g45NhlAvLire` : absents = stats de la saison
+  de l'équipe sans rosterSpots (Bedard, Mangiapane) ; tri buts > points > passes ; patinoire `_g45NhlAvInterieur`, onglets `g45NhlAvEq`. Id NHL via
+  club-schedule-season/<ABR>/now (`_g45RegEquipe`), coup d'envoi le plus proche. Worker host=nhl : chemin /v1/gamecenter/… NON vérifié (si refusé →
+  ligne « indisponibles (…) »). Lignes / gardien titulaire : pas de source gratuite (Flashscore = CGU) ; piste : shiftcharts api.nhle.com
+  (sonde demandée à Antoine, match 2026020061). Contrôle « NHL avant le match » dans smoke.js (14 contrôles).
 - 20261004w (captures d'Antoine 06/10) — Compétitions sports US : Classement (`g45LoadStandings`) demande &seasontype=2 (refus →
   ancienne adresse ; prise en compte par ESPN NON vérifiée) ; `g45RenderStandings` TRIE lui-même NHL/KHL (points) et NBA/NFL/MLB (% V)
   — le « rank » ESPN classait Thunder 15e, Jets 16e ; J absent = V+N+D ; hockey N = otLosses/overtimeLosses (noms NON vérifiés).

@@ -34008,6 +34008,8 @@ async function _renderGenericDetail(el, sport, lg, eid){
       if (lg === 'nba' && typeof _g45NbaFeuilleHtml === 'function') { try { h += _g45NbaFeuilleHtml(data, eid, stT.state); } catch (e) {} }
       /* 20261005p (« j'ai pas les compo », maquette validée « oui les deux ») : joueurs du match NHL / hockey ESPN. */
       if (sport === 'hockey' && typeof _g45NhlFeuilleHtml === 'function') { try { h += _g45NhlFeuilleHtml(data, eid, stT.state); } catch (e) {} }
+      /* 20261006y : avant le coup d'envoi (NHL), joueurs disponibles + absents depuis l'API NHL (bloc en fin d'app.js). */
+      if (sport === 'hockey' && lg === 'nhl' && stT.state === 'pre' && typeof _g45NhlAvPoser === 'function') { try { h += _g45NhlAvPoser(eid, hN, aN, comp.date || ''); } catch (e) {} }
     }
     // Meilleurs joueurs
     try{
@@ -69840,3 +69842,130 @@ function _g45RegJour(t, h) {
   if (isNaN(d)) return '';
   return new Date(d.getTime() - (h || 0) * 3600e3).toISOString().slice(0, 10);
 }
+
+/* ═══ 20261006y — 👥 AVANT LE MATCH (NHL), maquette validée (« trier par buts sinon ok go ») ═══
+   Avant le coup d'envoi ESPN ne donne aucun joueur (_g45NhlFeuilleHtml ne s'affiche qu'en 'in' / 'post').
+   SONDÉ PAR ANTOINE (Islanders–Blackhawks 2026020062, 08/10) : api-web /v1/gamecenter/<id>/play-by-play AVANT le match →
+   rosterSpots[23 par équipe] {teamId, playerId, firstName/lastName.default, sweaterNumber, positionCode G|D|C|L|R, headshot}
+   = joueurs DISPONIBLES (pas les lignes, les 2 gardiens) ; /landing → matchup.skaterSeasonStats.skaters[{playerId, teamId,
+   name.default « C. Bedard », goals, assists, points, gamesPlayed (absent si 0 match)}] + goalieSeasonStats.goalies[{wins,
+   losses, otLosses, savePctg}]. ABSENT = dans les stats de la saison de son équipe mais PAS dans rosterSpots (Bedard,
+   Mangiapane). Id NHL du match : /v1/club-schedule-season/<ABR>/now (déjà lu par _g45ScoreTexte), coup d'envoi le plus
+   proche de comp.date. Tri : buts, puis points, puis passes (demande d'Antoine). Lignes et gardien titulaire : AUCUNE source
+   gratuite avant le match (Flashscore : CGU) → mention « titulaire pas encore annoncé ». Tout passe par le worker host=nhl. */
+var _g45NhlAv = {};
+function _g45NhlAvLire(pbp, land) {
+  var rs = (pbp && pbp.rosterSpots) || [];
+  var mu = (land && land.matchup) || {};
+  var sk = ((mu.skaterSeasonStats || {}).skaters) || [], gk = ((mu.goalieSeasonStats || {}).goalies) || [];
+  var S = {}; sk.concat(gk).forEach(function (p) { if (p && p.playerId) S[p.playerId] = p; });
+  var dispo = {}; rs.forEach(function (p) { dispo[p.playerId] = 1; });
+  var nm = function (o) { return (o && (o.default || o.fr)) || ''; };
+  var eq = function (t) {
+    t = t || {};
+    var E = { id: t.id, ab: t.abbrev || '', nom: nm(t.commonName) || t.abbrev || '?', G: [], D: [], F: [], abs: [] };
+    rs.forEach(function (p) {
+      if (p.teamId !== t.id) return;
+      var s = S[p.playerId] || {};
+      var j = { id: p.playerId, nom: nm(p.lastName), pre: nm(p.firstName), no: p.sweaterNumber, ph: p.headshot || '',
+        g: +s.goals || 0, a: +s.assists || 0, pts: (+s.points || ((+s.goals || 0) + (+s.assists || 0))), mj: +s.gamesPlayed || 0 };
+      if (p.positionCode === 'G') {
+        j.bil = s.gamesPlayed ? ((+s.wins || 0) + '-' + (+s.losses || 0) + (s.otLosses ? '-' + s.otLosses : '')) : '';
+        j.pct = (s.savePctg != null && s.gamesPlayed) ? (s.savePctg * 100).toFixed(1).replace('.', ',') + ' %' : '';
+        E.G.push(j);
+      } else (p.positionCode === 'D' ? E.D : E.F).push(j);
+    });
+    var tri = function (a, b) { return (b.g - a.g) || (b.pts - a.pts) || (b.a - a.a) || String(a.nom).localeCompare(String(b.nom)); };
+    E.D.sort(tri); E.F.sort(tri); E.G.sort(function (a, b) { return b.mj - a.mj; });
+    sk.concat(gk).forEach(function (p) {
+      if (p && p.teamId === t.id && !dispo[p.playerId]) E.abs.push({ nom: nm(p.name), mj: +p.gamesPlayed || 0 });
+    });
+    return E;
+  };
+  if (!rs.length) return null;
+  return [eq(pbp.homeTeam), eq(pbp.awayTeam)];
+}
+function _g45NhlAvJoueur(j, gros) {
+  var esc = function (x) { return String(x == null ? '' : x).replace(/[<>"&]/g, ''); };
+  var ini = (String(j.pre || '').charAt(0) + String(j.nom || '').charAt(0)).toUpperCase();
+  var t = gros ? 52 : 46;
+  var st = gros ? (j.bil ? j.bil + (j.pct ? ' · ' + j.pct : '') : 'pas encore joué')
+    : j.g + 'B · ' + j.a + 'A · <b style="color:#fff;">' + j.pts + (j.pts > 1 ? ' pts' : ' pt') + '</b>';
+  return '<div style="width:104px;text-align:center;">'
+    + '<div style="position:relative;width:' + t + 'px;height:' + t + 'px;margin:0 auto;border-radius:50%;background:#1d2b4a;border:2px solid #cfd6e6;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;color:#fff;">'
+    + '<span>' + esc(ini) + '</span>'
+    + (j.ph ? '<img src="' + esc(j.ph) + '" alt="" loading="lazy" onerror="this.remove()" style="position:absolute;inset:0;width:100%;height:100%;border-radius:50%;object-fit:cover;background:#1d2b4a;">' : '')
+    + (j.no != null ? '<span style="position:absolute;right:-6px;bottom:-4px;background:#c8102e;border-radius:8px;font-size:11px;padding:0 4px;font-weight:700;color:#fff;">' + esc(j.no) + '</span>' : '')
+    + '</div>'
+    + '<div style="margin-top:3px;display:inline-block;background:rgba(0,0,0,.7);border-radius:6px;padding:1px 5px;font-size:13px;font-weight:700;color:#fff;white-space:nowrap;max-width:100px;overflow:hidden;text-overflow:ellipsis;">' + esc(j.nom) + '</div>'
+    + '<div style="font-size:13px;color:#c9d3ee;white-space:nowrap;">' + st + '</div></div>';
+}
+function _g45NhlAvInterieur(eid) {
+  var A = _g45NhlAv[eid]; if (!A || !A.T) return '';
+  var E = A.T[A.sel] || A.T[0];
+  var h = '<div style="display:flex;gap:6px;margin-bottom:8px;">';
+  A.T.forEach(function (e, i) {
+    var on = i === A.sel;
+    h += '<button onclick="g45NhlAvEq(\'' + eid + '\',' + i + ')" style="flex:1;padding:8px;border-radius:10px;cursor:pointer;font-weight:700;font-size:14px;color:#fff;border:1px solid '
+      + (on ? '#c8102e' : '#3a4770') + ';background:' + (on ? '#c8102e' : 'rgba(11,16,29,.85)') + ';">' + String(e.nom).replace(/[<>"&]/g, '') + '</button>';
+  });
+  h += '</div>';
+  if (E.abs.length) h += '<div style="background:rgba(255,140,40,.15);border:1px solid #ff9b3d;border-radius:10px;padding:8px;font-size:14px;color:#ffb347;font-weight:700;margin-bottom:8px;">🚫 Absents (' + E.abs.length + ')'
+    + '<span style="color:#fff;font-weight:400;font-size:13px;display:block;margin-top:2px;">'
+    + E.abs.map(function (x) { return String(x.nom).replace(/[<>"&]/g, '') + (x.mj ? ' (' + x.mj + ' match' + (x.mj > 1 ? 's' : '') + ' joué' + (x.mj > 1 ? 's' : '') + ')' : ''); }).join(' · ') + '</span></div>';
+  var lab = function (t) { return '<div style="position:relative;text-align:center;margin:10px auto 4px;font-size:13px;font-weight:700;color:#fff;background:rgba(0,0,0,.55);border-radius:8px;padding:2px 10px;width:max-content;max-width:94%;">' + t + '</div>'; };
+  var rang = function (l, gros) { return '<div style="position:relative;display:flex;flex-wrap:wrap;justify-content:center;gap:4px 2px;">' + l.map(function (j) { return _g45NhlAvJoueur(j, gros); }).join('') + '</div>'; };
+  var ligne = function (top, coul, ep) { return '<div style="position:absolute;left:0;right:0;top:' + top + ';border-top:' + ep + 'px solid ' + coul + ';opacity:.8;"></div>'; };
+  h += '<div style="position:relative;background:#0f2238;border:3px solid #9fb3cf;border-radius:60px;padding:14px 6px 18px;overflow:hidden;">'
+    + '<div style="position:absolute;left:8%;right:8%;top:8px;border-top:2px solid #c8102e;opacity:.7;"></div>'
+    + '<div style="position:absolute;left:50%;top:8px;width:70px;height:34px;margin-left:-35px;border:2px solid #c8102e;border-top:none;border-radius:0 0 40px 40px;background:rgba(47,111,214,.25);"></div>'
+    + ligne('33%', '#2f6fd6', 4) + ligne('50%', '#c8102e', 4) + ligne('67%', '#2f6fd6', 4)
+    + '<div style="position:absolute;left:50%;top:50%;width:90px;height:90px;margin:-45px 0 0 -45px;border:2px solid #2f6fd6;border-radius:50%;opacity:.6;"></div>'
+    + '<div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:44px;font-weight:900;color:rgba(255,255,255,.06);letter-spacing:3px;">BET45</div>';
+  if (E.G.length) h += lab('🥅 Gardien' + (E.G.length > 1 ? 's · titulaire pas encore annoncé' : '')) + rang(E.G, true);
+  if (E.D.length) h += lab('🛡️ Défenseurs (' + E.D.length + ')') + rang(E.D);
+  if (E.F.length) h += lab('🏒 Attaquants (' + E.F.length + ') · triés par buts') + rang(E.F);
+  return h + '</div><div style="font-size:13px;color:#c9d3ee;margin-top:8px;line-height:1.4;">Joueurs <b>disponibles</b>, rangés par poste — pas les lignes du match.</div>';
+}
+window.g45NhlAvEq = function (eid, i) {
+  var A = _g45NhlAv[eid]; if (!A) return; A.sel = i;
+  var b = document.getElementById('g45-nhlav-in-' + eid); if (b) b.innerHTML = _g45NhlAvInterieur(eid);
+};
+async function _g45NhlAvCharger(eid, hN, aN, dIso) {
+  var box = document.getElementById('g45-nhlav-' + eid); if (!box) return;
+  var A = _g45NhlAv[eid];
+  if (!A || !A.T || Date.now() - A.t > 5 * 60e3) {
+    var P = FD_PROXY + '?key=nhl&host=nhl&path=';
+    var eqH = (typeof _g45RegEquipe === 'function') ? (_g45RegEquipe(hN) || _g45RegEquipe(aN)) : null;
+    if (!eqH) { box.remove(); return; }
+    var gid = A && A.gid;
+    if (!gid) {
+      var r = await fetch(P + encodeURIComponent('/v1/club-schedule-season/' + eqH[0] + '/now'));
+      if (!r.ok) throw new Error('calendrier NHL ' + r.status);
+      var cal = await r.json(), t0 = Date.parse(dIso) || Date.now(), best = null, ec = 1e15;
+      (cal.games || []).forEach(function (g) { var d = Math.abs((Date.parse(g.startTimeUTC) || 0) - t0); if (d < ec) { ec = d; best = g; } });
+      if (!best || ec > 12 * 3600e3) { box.remove(); return; }
+      gid = best.id;
+    }
+    var rr = await Promise.all([fetch(P + encodeURIComponent('/v1/gamecenter/' + gid + '/play-by-play')), fetch(P + encodeURIComponent('/v1/gamecenter/' + gid + '/landing'))]);
+    if (!rr[0].ok) throw new Error('feuille NHL ' + rr[0].status);
+    var pbp = await rr[0].json(), land = rr[1].ok ? await rr[1].json() : {};
+    var T = _g45NhlAvLire(pbp, land);
+    if (!T) { box.innerHTML = '<div style="font-size:13px;color:#c9d3ee;">👥 Joueurs pas encore publiés par la NHL.</div>'; return; }
+    _g45NhlAv[eid] = { gid: gid, T: T, sel: A ? A.sel : 0, t: Date.now() };
+  }
+  box.innerHTML = '<div style="font-size:15px;font-weight:800;letter-spacing:.5px;color:#fff;">👥 AVANT LE MATCH</div>'
+    + '<div style="font-size:13px;color:#c9d3ee;margin-bottom:8px;">' + String(hN + ' – ' + aN).replace(/[<>"&]/g, '') + ' · source NHL officielle</div>'
+    + '<div id="g45-nhlav-in-' + eid + '">' + _g45NhlAvInterieur(eid) + '</div>';
+}
+function _g45NhlAvPoser(eid, hN, aN, dIso) {
+  setTimeout(function () {
+    _g45NhlAvCharger(eid, hN, aN, dIso).catch(function (e) {
+      var b = document.getElementById('g45-nhlav-' + eid);
+      if (b) b.innerHTML = '<div style="font-size:13px;color:#ffb347;">👥 Joueurs d\'avant-match indisponibles (' + String(e && e.message || e).replace(/[<>"&]/g, '') + ').</div>';
+    });
+  }, 0);
+  return '<div id="g45-nhlav-' + eid + '" data-g45garde="1" style="margin-top:10px;background:rgba(11,16,29,.92);border:1px solid #2a3554;border-radius:14px;padding:10px;">'
+    + '<div style="font-size:13px;color:#c9d3ee;">👥 Joueurs d\'avant-match…</div></div>';
+}
+window._g45NhlAvLire = _g45NhlAvLire; window._g45NhlAvInterieur = _g45NhlAvInterieur; window._g45NhlAvPoser = _g45NhlAvPoser;
