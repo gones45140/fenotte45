@@ -68661,7 +68661,12 @@ function _g45RegHtml() {
   if (prec) h += '<div style="font-size:13px;color:#c9d3ee;margin-bottom:6px;">Saison ' + lab(_g45Reg.an) + ' (précédente) ' + bs('↩ Revenir à ' + lab(a0)) + '</div>';
   else if (mjMax < 10) h += '<div style="font-size:13px;color:#f0b020;margin-bottom:6px;">Début de saison : ' + mjMax + ' match' + (mjMax > 1 ? 's' : '') + ' au plus, séries encore peu parlantes. ' + bs('📅 Voir ' + lab(+a0 - 1)) + '</div>';
   if (!ok.length) return h + '<div style="font-size:13px;color:#c9d3ee;">Aucun match joué pour l\'instant.</div>';
-  ok.sort(function (x, y) { return _g45Reg.tri === 'pct' ? (y.s.pct - x.s.pct) || (x.s.pire - y.s.pire) : (x.s.pire - y.s.pire) || (y.s.pct - x.s.pct); });
+  /* 20261006b (« qu'est-ce qui fait l'ordre ? » → « OUI ») : égalités départagées par le plus de buts / passes / points, puis la plus
+     petite série EN COURS, puis le nom (avant : ordre d'arrivée des réponses, donc au hasard). */
+  ok.sort(function (x, y) {
+    return (_g45Reg.tri === 'pct' ? (y.s.pct - x.s.pct) || (x.s.pire - y.s.pire) : (x.s.pire - y.s.pire) || (y.s.pct - x.s.pct))
+      || (y.s.tot - x.s.tot) || (x.s.cours - y.s.cours) || String(x.nom).localeCompare(String(y.nom));
+  });
   var col = function (v) { return v < 6 ? '#1ed760' : (v < 10 ? '#f0b020' : '#ff6b6b'); };
   h += '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:14px;color:#fff;white-space:nowrap;">'
     + '<tr style="color:#c9d3ee;font-size:12px;"><th style="text-align:left;padding:6px;">Joueur</th><th>' + (_g45Reg.cat === 'a' ? 'Passes' : (_g45Reg.cat === 'p' ? (FT ? 'B+P' : 'Points') : 'Buts')) + '</th><th>MJ</th><th>%</th><th>Pire série</th><th>En cours</th></tr>';
