@@ -68718,6 +68718,10 @@ async function g45RegOuvrir() {
   if (!_g45Reg.mem[k]) {
     var cat = _g45Reg.cat, eq = _g45Reg.eq;
     box.innerHTML = _g45RegHtml();
+    /* 20261006i : même liste déjà en lecture (2e clic) → on attend la même lecture au lieu d'en relancer une */
+    _g45Reg.enCours = _g45Reg.enCours || {};
+    if (_g45Reg.enCours[k]) return;
+    _g45Reg.enCours[k] = 1;
     try {
       var _pv = lg ? _g45RegPrecFoot(lg, an, cat) : _g45RegPrec(sa, cat);
       var L = lg ? await _g45RegLireFoot(lg, an, cat, eq) : await _g45RegLire(sa, cat, eq);
@@ -68725,14 +68729,16 @@ async function g45RegOuvrir() {
       _g45Reg.mem[k] = L;
     }
     catch (e) {
+      delete _g45Reg.enCours[k];
       if (_g45Reg.cle !== k) return;
       box = document.getElementById('g45-reg-box'); if (!box) return;
       box.innerHTML = _g45RegHtml() + '<div style="font-size:13px;color:#ff9aa8;">Classement indisponible (' + String(e.message || e).replace(/</g, '') + ').</div>'; return; }
+    delete _g45Reg.enCours[k];
     if (_g45Reg.cle !== k) return;
     box = document.getElementById('g45-reg-box'); if (!box) return;
   }
   box.innerHTML = _g45RegHtml();
-  if (_g45Reg.lg && typeof _g45ClsPhotos === 'function') _g45ClsPhotos(box);
+  if (_g45Reg.lg) _g45RegPhotos(box);
 }
 window.g45RegOuvrir = g45RegOuvrir;
 window.g45RegSet = function (q, v) { _g45Reg[q] = v; g45RegOuvrir(); };
@@ -69063,7 +69069,7 @@ async function _g45RegClubFootRemplir(z, nom) {
     + '<div style="font-size:13px;color:#c9d3ee;margin:4px 0 8px;">10 meilleurs du club · suit « Filtrer par compétition » · plus longue série SANS marquer (matchs joués seulement)</div>'
     + '<div id="g45-reg-box">' + (_g45Reg.mem[_g45RegK()] ? _g45RegHtml() :
       '<button onclick="g45RegOuvrir()" style="padding:10px 16px;border-radius:10px;border:1.5px solid rgba(245,197,66,.55);background:rgba(245,197,66,.12);color:#f5c542;font-size:14px;font-weight:800;cursor:pointer;">🎯 Voir le classement (' + _g45RegLab(an) + ')</button>') + '</div></div>';
-  if (_g45Reg.mem[_g45RegK()] && typeof _g45ClsPhotos === 'function') _g45ClsPhotos(el);
+  if (_g45Reg.mem[_g45RegK()]) _g45RegPhotos(el);
   else if ((_g45Reg.ouvert || {})[R.id]) g45RegOuvrir();   /* 20261006g : déjà ouvert pour ce club → suit le filtre tout seul */
 }
 async function _g45RegCandidatsClub(lg, tid, anEsp, cat) {
@@ -69228,4 +69234,38 @@ function _g45RegLogNfl(id, an) {
       .catch(function () { delete _g45RegLogsN[k]; return null; });
   }
   return _g45RegLogsN[k];
+}
+
+
+/* ═══ 20261006i (« sans photo et bouton pas réactif ») — chaque bouton relançait _g45ClsPhotos (3 recherches en parallèle) SANS
+   arrêter la précédente : les recherches s'empilaient (Wikipédia, TheSportsDB → refus 429, API-Sports), le réseau saturait et les
+   photos ne venaient plus. → photos retenues pour la session (nom → adresse, '' = rien) et posées tout de suite au redessin ;
+   une seule recherche à la fois (jeton : un nouveau dessin arrête l'ancienne) ; budget API-Sports commun à la session. */
+var _g45RegPh = {}, _g45RegPhP = {}, _g45RegPhTok = 0, _g45RegPhBud = { n: 5, p: {} };
+function _g45RegPhPoser(el, u) {
+  if (!u || !el) return;
+  el.style.backgroundImage = 'url("' + String(u).replace(/"/g, '%22') + '")';
+  var sp = el.querySelector('span'); if (sp) sp.style.visibility = 'hidden';
+}
+async function _g45RegPhotos(racine) {
+  var tok = ++_g45RegPhTok, file = [];
+  try {
+    Array.prototype.slice.call((racine || document).querySelectorAll('[data-g45clsph]')).forEach(function (el) {
+      var cle = el.getAttribute('data-g45clsph') + '|' + (el.getAttribute('data-g45clseq') || '');
+      if (_g45RegPh[cle] !== undefined) _g45RegPhPoser(el, _g45RegPh[cle]); else file.push([el, cle]);
+    });
+  } catch (e) { return; }
+  if (typeof _g45ClsPhotoDe !== 'function') return;
+  var travail = async function () {
+    while (file.length && tok === _g45RegPhTok) {
+      var x = file.shift(), el = x[0], cle = x[1], u = '';
+      if (_g45RegPh[cle] !== undefined) { _g45RegPhPoser(el, _g45RegPh[cle]); continue; }
+      if (!_g45RegPhP[cle]) _g45RegPhP[cle] = _g45ClsPhotoDe(el.getAttribute('data-g45clsph'), el.getAttribute('data-g45clseq') || '', _g45RegPhBud).catch(function () { return ''; });   /* recherche déjà en cours = partagée */
+      try { u = await _g45RegPhP[cle]; } catch (e) {}
+      _g45RegPh[cle] = u || '';
+      if (u && el.isConnected) _g45RegPhPoser(el, u);
+      else if (u) { try { var el2 = document.querySelector('#g45-reg-box [data-g45clsph="' + String(el.getAttribute('data-g45clsph')).replace(/"/g, '') + '"]'); _g45RegPhPoser(el2, u); } catch (e) {} }
+    }
+  };
+  await Promise.all([travail(), travail()]);
 }

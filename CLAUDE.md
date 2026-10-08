@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261006h, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261006i, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1269,6 +1269,10 @@ RÉGLÉ (worker, 01/10) : cron « exceededCpu » (cpuTimeMs 10) à CHAQUE passag
   /football/nfl/athletes/<id>/gamelog (names par poste, « 2026 Regular Season », matchs joués). TD marqué = colonnes …Touchdowns sauf
   passingTouchdowns (receivingTouchdowns NON vu) ; Passes de TD = QB ; présaison écartée ; saison = année de début (2026) ;
   `_g45RegLeadersNfl`, `_g45RegLogNfl` (sans paramètre d'abord) ; photos headshots NFL ; caches noms g45regft1_n…. Restent : KHL, NRL, rugby.
+  20261006i (« sans photo et bouton pas réactif ») : chaque redessin relançait _g45ClsPhotos sans arrêter le précédent (recherches
+  empilées, 429 TheSportsDB) → `_g45RegPhotos` : mémoire de session _g45RegPh (posée tout de suite), recherches partagées _g45RegPhP,
+  jeton _g45RegPhTok (nouveau dessin = ancienne recherche arrêtée), budget API-Sports commun ; 2e clic pendant une lecture = pas de
+  2e lecture (_g45Reg.enCours).
 - Saisons d'un club de FOOT (rendu après « Barre de filtres » dans loadTeamSaisons) — 20261005y (capture Real Madrid : seulement
   Prochains matchs, aucune case cochée) : le filtre g45_saison_filters est COMMUN à tous les clubs ; une case cochée ailleurs absente ici
   (Ligue Europa…) vidait toutes les saisons → si aucune case active n'existe chez ce club, « Toutes » pour cet affichage (sans effacer le choix).
