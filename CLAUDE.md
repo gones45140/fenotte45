@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261006f, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261006g, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1258,6 +1258,10 @@ RÉGLÉ (worker, 01/10) : cron « exceededCpu » (cpuTimeMs 10) à CHAQUE passag
   athletes[] avec statistics.splits.categories[].stats (totalGoals, goalAssists ; compétitions comptées NON vérifié) + injuries →
   `_g45RegCandidatsClub` choisit 12 candidats, journal du championnat pour les vrais chiffres, 10 gardés ; or = top 10 de la LIGUE an − 1.
   20261006f (capture) : bloc posé SOUS « Analyser buteurs / passeurs » (après _scoreBarHtml, 1re saison affichée, drapeau _g45RegPose).
+  20261006g (« B en précisant ») : le bloc du club SUIT « Filtrer par compétition » (`_g45RegFiltreComp` → _g45Reg.cf : T = championnat +
+  coupe d'Europe du joueur, L, C, E, K, N) ; compétitions = options du filtre league du journal ; autre compétition par
+  `_g45RegLogAutre` (/soccer/athletes/<id>/gamelog?season=&league=<slug>, NON vérifié hors ligue) ; fusion `_g45RegLogClub` par eventId ;
+  ligne « 📋 Compétitions comptées » (`_g45RegCompsLib`) ; club déjà ouvert (_g45Reg.ouvert) = relu tout seul au changement de filtre.
 - Saisons d'un club de FOOT (rendu après « Barre de filtres » dans loadTeamSaisons) — 20261005y (capture Real Madrid : seulement
   Prochains matchs, aucune case cochée) : le filtre g45_saison_filters est COMMUN à tous les clubs ; une case cochée ailleurs absente ici
   (Ligue Europa…) vidait toutes les saisons → si aucune case active n'existe chez ce club, « Toutes » pour cet affichage (sans effacer le choix).
