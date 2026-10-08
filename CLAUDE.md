@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261005y, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261005z, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1240,6 +1240,11 @@ RÉGLÉ (worker, 01/10) : cron « exceededCpu » (cpuTimeMs 10) à CHAQUE passag
   filters season. `_g45RegLogFoot` : ?season= NON sondé → saison renvoyée contrôlée (autre = joueur ignoré). « Buts + passes » =
   top buteurs + top passeurs, sans couleur. Noms / clubs `_g45RegFtNom` (g45regft1_), photos `_g45ClsAvatar` + `_g45ClsPhotos`.
   Saisons d'une équipe de foot : PAS encore (effectif à sonder). Restent : NFL, rugby, NRL, KHL.
+  20261005z — SONDÉ PAR ANTOINE (Torres 265869, Marquinhos, Thauvin faux : « 3 buts en 1 match ») : gamelog?season=2026 renvoie la
+  LIGUE DES CHAMPIONS (« League Phase ») malgré filters league=fra.1 ; SANS paramètre = Ligue 1 en cours (5 matchs). → lecture sans
+  paramètre d'abord ; saison passée seulement : ?season=&league= (NON vérifié), types « phase/knockout/… » refusés. Cache g45reg1_f_ → f2_.
+  Joueur dont l'équipe par défaut est une sélection (268720 : team 10528, 0 match, &team= ignoré) → absent du tableau.
+  Idée d'Antoine EN ATTENTE (maquette à faire) : couleur « nouveau au club ».
 - Saisons d'un club de FOOT (rendu après « Barre de filtres » dans loadTeamSaisons) — 20261005y (capture Real Madrid : seulement
   Prochains matchs, aucune case cochée) : le filtre g45_saison_filters est COMMUN à tous les clubs ; une case cochée ailleurs absente ici
   (Ligue Europa…) vidait toutes les saisons → si aucune case active n'existe chez ce club, « Toutes » pour cet affichage (sans effacer le choix).

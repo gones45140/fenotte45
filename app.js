@@ -68886,8 +68886,22 @@ var _g45RegLogsF = {};
 function _g45RegLogFoot(lg, id, anEsp) {
   var k = lg + '_' + anEsp + '_' + id;
   if (!_g45RegLogsF[k]) {
-    _g45RegLogsF[k] = fetch(FD_PROXY + '?host=espnweb&path=' + encodeURIComponent('/apis/common/v3/sports/soccer/' + lg + '/athletes/' + id + '/gamelog?season=' + anEsp))
-      .then(function (r) { return r.ok ? r.json() : null; })
+    /* 20261005z — SONDÉ PAR ANTOINE (Torres 265869) : SANS paramètre = la saison en cours DU championnat (5 matchs de Ligue 1) ;
+       avec ?season=2026, ESPN renvoie UNE AUTRE COMPÉTITION (« League Phase » = Ligue des champions, 1 match, 3 buts) alors que
+       filters dit toujours league=fra.1. → d'abord SANS paramètre ; seulement si la saison renvoyée n'est pas la bonne (saison
+       passée), ?season=<an>&league=<lg> (NON vérifié) et le type de saison « League Phase / Knockout… » est refusé. */
+    var _url = function (q) { return FD_PROXY + '?host=espnweb&path=' + encodeURIComponent('/apis/common/v3/sports/soccer/' + lg + '/athletes/' + id + '/gamelog' + q); };
+    var _lire = function (q) { return fetch(_url(q)).then(function (r) { return r.ok ? r.json() : null; }); };
+    _g45RegLogsF[k] = _lire('')
+      .then(function (j) {
+        var f0 = j && (j.filters || []).filter(function (x) { return x && x.name === 'season'; })[0];
+        if (j && f0 && String(f0.value) === String(anEsp)) return j;
+        return _lire('?season=' + anEsp + '&league=' + lg).then(function (j2) {
+          if (!j2) return null;
+          var coupe = (j2.seasonTypes || []).some(function (st) { return /phase|knockout|qualif|group|playoff|round/i.test(st.displayName || ''); });
+          return coupe ? { filters: [{ name: 'season', value: 'autre' }] } : j2;
+        });
+      })
       .then(function (j) {
         if (!j) { delete _g45RegLogsF[k]; return null; }
         var f = (j.filters || []).filter(function (x) { return x && x.name === 'season'; })[0];
@@ -68911,7 +68925,7 @@ function _g45RegLogFoot(lg, id, anEsp) {
   return _g45RegLogsF[k];
 }
 async function _g45RegLireFoot(lg, an, cat) {
-  var anEsp = _g45RegEspAn(lg, an), ck = 'g45reg1_f_' + lg + '_' + anEsp + '_' + cat;
+  var anEsp = _g45RegEspAn(lg, an), ck = 'g45reg1_f2_' + lg + '_' + anEsp + '_' + cat;
   try { var c = JSON.parse(localStorage.getItem(ck) || 'null'); if (c && Date.now() - c.t < 12 * 3600e3) return c.l; } catch (e) {}
   var d = await _g45RegLeadersFoot(lg, anEsp);
   if (!d) throw new Error('aucun classement ESPN pour cette saison');
