@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261005q, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261005r, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1216,6 +1216,11 @@ RÉGLÉ (worker, 01/10) : cron « exceededCpu » (cpuTimeMs 10) à CHAQUE passag
   → `_g45RegCalc(log, cle)` (mj, tot, pct, pire, cours) ; Buteurs / Passeurs, tri Pire série / % ; saison = Saison ▾ du panneau
   (an = année de FIN → « 20252026 ») ; < 10 matchs → message. Catégorie « assists » NON sondée. « Toucher = filtre Buteur » NON fait
   (joueurs d'autres équipes).
+  20261005r (« je devrais seulement avoir les joueurs de Colorado » + « l'ensemble pourrait remplacer Individuel », maquette « OUI ») :
+  fiche d'équipe (Saisons) → 10 meilleurs de L'ÉQUIPE `_g45RegLireEq` (SONDÉ : /v1/club-stats/<ABR>/<saison>/2 → skaters[{playerId,
+  goals, assists, positionCode…}], abréviation NHL par nom `_G45_REG_EQ` / `_g45RegEquipe`, game-log filtré sur teamAbbrev s'il existe ;
+  cache g45reg1_<saison>_<cat>_<ABR>) ; équipe non reconnue = ligue. Compétitions → NHL → 🏅 Individuel = classement de la LIGUE
+  (chargé à l'ouverture de l'onglet) ; leaders toujours dans Classements → Joueurs. Catégorie « assists » SONDÉE (McDavid 90).
   PÉRIMÈTRE voulu par Antoine (07/10) : foot buteur + passeur · hockey buteur + passeur · NFL touchdown · MLB run + home run ·
   rugby XV et NRL marqueur d'essai · PAS le basket (« un autre monde »). Chaque sport = sa propre sonde (sources différentes).
 - Notifications multi-appareils (28g + worker redéployé : « N appareils reliés ») :

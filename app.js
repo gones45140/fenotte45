@@ -45814,6 +45814,12 @@ async function loadCompetTab() {
       return;
     }
     if (c.s === '3') { if (!(await g45NrlStatsRender(body))) await g45StatsIndRender(c, body); return; }
+    /* 20261005r (« l'ensemble pourrait remplacer Individuel, qui fait une copie de Classements ») : NHL → classement de
+       régularité de la LIGUE (10 meilleurs buteurs / passeurs) ; la liste des leaders reste dans Classements → Joueurs. */
+    if (c.sp === 'hockey' && c.s === 'nhl' && typeof _g45RegBloc === 'function') {
+      body.innerHTML = _g45RegBloc('hockey', 'nhl', _g45CompetAnnee(c.s), '');
+      g45RegOuvrir(); return;
+    }
     /* Top 14 : la LNR publie ses classements individuels tout faits, la ou
        ESPN n'en a aucun et ou la reconstruction couterait ~200 requetes. */
     if (c.s === '270559') { await g45LnrRender(body); return; }
@@ -50410,7 +50416,7 @@ async function _g45SaisonsGen(el, nom, perso) {
   try {
     if (typeof _g45JouBarre === 'function') html += _g45JouBarre(sp, lg, an, (perso && perso.id) || '', nom, st.liste);
     /* 20261005q : classement de régularité des 10 meilleurs buteurs / passeurs de la NHL (sur bouton). */
-    if (typeof _g45RegBloc === 'function') { try { html += _g45RegBloc(sp, lg, an); } catch (e) {} }
+    if (typeof _g45RegBloc === 'function') { try { html += _g45RegBloc(sp, lg, an, nom); } catch (e) {} }
   } catch (e) {}
   /* NBA : filtre joueur AVEC LIGNE (25/09/2026). Reçoit `liste` (matchs
      visibles) : le bandeau suit phase et domicile / extérieur. */
@@ -68577,7 +68583,8 @@ function _g45RegCalc(log, cle) {
   });
   return { mj: n, tot: tot, pct: n ? Math.round(avec * 100 / n) : 0, pire: pire, cours: cour };
 }
-async function _g45RegLire(saison, cat) {
+async function _g45RegLire(saison, cat, eq) {
+  if (eq) return _g45RegLireEq(saison, cat, eq);
   var ck = 'g45reg1_' + saison + '_' + cat;
   try { var c = JSON.parse(localStorage.getItem(ck) || 'null'); if (c && Date.now() - c.t < 12 * 3600e3) return c.l; } catch (e) {}
   var P = FD_PROXY + '?key=nhl&host=nhl&path=';
@@ -68605,17 +68612,21 @@ async function _g45RegLire(saison, cat) {
   if (out.some(function (o) { return o.s && o.s.mj; })) { try { localStorage.setItem(ck, JSON.stringify({ t: Date.now(), l: out })); } catch (e) {} }
   return out;
 }
-function _g45RegBloc(sp, lg, an) {
+function _g45RegBloc(sp, lg, an, nom) {
   if (sp !== 'hockey' || String(lg) !== 'nhl') return '';
   _g45Reg.an = an;
+  /* 20261005r : dans la fiche d'une équipe (Saisons), seulement SES joueurs (« je devrais seulement avoir les joueurs de
+     Colorado ») ; équipe non reconnue → classement de la ligue comme avant. */
+  var E = nom ? _g45RegEquipe(nom) : null;
+  _g45Reg.eq = E ? E[0] : '';
   return '<div style="margin:2px 0 14px;background:rgba(11,16,29,.92);border-radius:10px;padding:10px;">'
-    + '<div style="font-size:14px;font-weight:800;letter-spacing:1px;color:#c9d3ee;">🎯 LES PLUS RÉGULIERS DE LA NHL</div>'
-    + '<div style="font-size:13px;color:#c9d3ee;margin:4px 0 8px;">10 meilleurs de la ligue · plus longue série SANS marquer (matchs joués seulement)</div>'
-    + '<div id="g45-reg-box">' + (_g45Reg.mem[_g45RegSaison(an) + _g45Reg.cat] ? _g45RegHtml() :
+    + '<div style="font-size:14px;font-weight:800;letter-spacing:1px;color:#c9d3ee;">🎯 LES PLUS RÉGULIERS ' + (E ? '— ' + E[1].toUpperCase() : 'DE LA NHL') + '</div>'
+    + '<div style="font-size:13px;color:#c9d3ee;margin:4px 0 8px;">' + (E ? '10 meilleurs de l\'équipe' : '10 meilleurs de la ligue') + ' · plus longue série SANS marquer (matchs joués seulement)</div>'
+    + '<div id="g45-reg-box">' + (_g45Reg.mem[_g45RegSaison(an) + _g45Reg.cat + _g45Reg.eq] ? _g45RegHtml() :
       '<button onclick="g45RegOuvrir()" style="padding:10px 16px;border-radius:10px;border:1.5px solid rgba(245,197,66,.55);background:rgba(245,197,66,.12);color:#f5c542;font-size:14px;font-weight:800;cursor:pointer;">🎯 Voir le classement (' + _g45RegSaison(an).slice(0, 4) + '-' + _g45RegSaison(an).slice(6) + ')</button>') + '</div></div>';
 }
 function _g45RegHtml() {
-  var L = _g45Reg.mem[_g45RegSaison(_g45Reg.an) + _g45Reg.cat] || [];
+  var L = _g45Reg.mem[_g45RegSaison(_g45Reg.an) + _g45Reg.cat + (_g45Reg.eq || '')] || [];
   var esc = function (t) { return String(t).replace(/[<>"&]/g, ''); };
   var b = function (on, txt, f) { return '<button onclick="' + f + '" style="flex:1;padding:8px 4px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:' + (on ? '900' : '700') + ';border:1px solid ' + (on ? '#4d84ff' : 'rgba(255,255,255,.18)') + ';background:' + (on ? '#1b2a52' : 'rgba(11,16,29,.85)') + ';color:' + (on ? '#fff' : '#c9d3ee') + ';">' + txt + '</button>'; };
   var h = '<div style="display:flex;gap:6px;margin-bottom:6px;">' + b(_g45Reg.cat === 'g', '🥅 Buteurs', "g45RegSet('cat','g')") + b(_g45Reg.cat === 'a', '🎯 Passeurs', "g45RegSet('cat','a')") + '</div>'
@@ -68638,10 +68649,10 @@ function _g45RegHtml() {
 }
 async function g45RegOuvrir() {
   var box = document.getElementById('g45-reg-box'); if (!box) return;
-  var sa = _g45RegSaison(_g45Reg.an), k = sa + _g45Reg.cat;
+  var sa = _g45RegSaison(_g45Reg.an), k = sa + _g45Reg.cat + (_g45Reg.eq || '');
   if (!_g45Reg.mem[k]) {
     box.innerHTML = '<div style="font-size:13px;color:#c9d3ee;">⏳ Lecture des 10 joueurs…</div>';
-    try { _g45Reg.mem[k] = await _g45RegLire(sa, _g45Reg.cat); }
+    try { _g45Reg.mem[k] = await _g45RegLire(sa, _g45Reg.cat, _g45Reg.eq); }
     catch (e) { box.innerHTML = '<div style="font-size:13px;color:#ff9aa8;">Classement indisponible (' + String(e.message || e).replace(/</g, '') + ').</div>'; return; }
   }
   box.innerHTML = _g45RegHtml();
@@ -68649,3 +68660,59 @@ async function g45RegOuvrir() {
 window.g45RegOuvrir = g45RegOuvrir;
 window.g45RegSet = function (q, v) { _g45Reg[q] = v; g45RegOuvrir(); };
 window._g45RegCalc = _g45RegCalc;
+
+
+/* ═══ 20261005r — 🎯 RÉGULIERS : JOUEURS D'UNE SEULE ÉQUIPE (maquette validée « OUI ») ═══
+   SONDÉ PAR ANTOINE le 08/10 via le worker host=nhl : /v1/club-stats/<ABR>/<saison>/2 → skaters[{playerId, headshot,
+   firstName.default, lastName.default, positionCode, gamesPlayed, goals, assists, points…}] (COL vérifié) ; catégorie
+   « assists » des leaders aussi SONDÉE (McDavid 90). Les 10 meilleurs de l'équipe (buts ou passes) puis leur game-log :
+   11 demandes au plus, cache g45reg1_<saison>_<cat>_<ABR> 12 h. Abréviations NHL (NJD, TBL, LAK…) ≠ ESPN → table par nom. */
+var _G45_REG_EQ = [['ANA','Ducks','anaheim'],['BOS','Bruins','boston'],['BUF','Sabres','buffalo'],['CGY','Flames','calgary'],
+  ['CAR','Hurricanes','carolina'],['CHI','Blackhawks','chicago'],['COL','Avalanche','colorado'],['CBJ','Blue Jackets','columbus'],
+  ['DAL','Stars','dallas'],['DET','Red Wings','detroit'],['EDM','Oilers','edmonton'],['FLA','Panthers','florida'],
+  ['LAK','Kings','los angeles'],['MIN','Wild','minnesota'],['MTL','Canadiens','montreal'],['NSH','Predators','nashville'],
+  ['NJD','Devils','new jersey'],['NYI','Islanders'],['NYR','Rangers'],['OTT','Senators','ottawa'],['PHI','Flyers','philadelphia'],
+  ['PIT','Penguins','pittsburgh'],['SJS','Sharks','san jose'],['SEA','Kraken','seattle'],['STL','Blues','st louis'],
+  ['TBL','Lightning','tampa'],['TOR','Maple Leafs','toronto'],['UTA','Mammoth','utah'],['VAN','Canucks','vancouver'],
+  ['VGK','Golden Knights','vegas'],['WSH','Capitals','washington'],['WPG','Jets','winnipeg']];
+function _g45RegEquipe(nom) {
+  var n = ' ' + String(nom || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z]+/g, ' ') + ' ';
+  for (var i = 0; i < _G45_REG_EQ.length; i++) {
+    var e = _G45_REG_EQ[i];
+    for (var j = 1; j < e.length; j++) if (n.indexOf(' ' + e[j].toLowerCase() + ' ') >= 0) return [e[0], e[1]];
+  }
+  return null;
+}
+async function _g45RegLireEq(saison, cat, abr) {
+  var ck = 'g45reg1_' + saison + '_' + cat + '_' + abr;
+  try { var c = JSON.parse(localStorage.getItem(ck) || 'null'); if (c && Date.now() - c.t < 12 * 3600e3) return c.l; } catch (e) {}
+  var P = FD_PROXY + '?key=nhl&host=nhl&path=';
+  var k = cat === 'a' ? 'assists' : 'goals';
+  var r = await fetch(P + encodeURIComponent('/v1/club-stats/' + abr + '/' + saison + '/2'));
+  if (!r.ok) throw new Error('effectif NHL ' + r.status);
+  var j = await r.json();
+  var top = ((j && j.skaters) || []).filter(function (p) { return (+p[k] || 0) > 0; })
+    .sort(function (a, b) { return (+b[k] || 0) - (+a[k] || 0); }).slice(0, 10);
+  if (!top.length) throw new Error('aucun joueur pour cette saison');
+  var out = [], i = 0;
+  async function w() {
+    while (i < top.length) {
+      var p = top[i++];
+      var o = { id: p.playerId, nom: ((p.firstName && p.firstName.default) || '') + ' ' + ((p.lastName && p.lastName.default) || ''),
+        ph: p.headshot || '', eq: ({ C: 'Centre', L: 'Ailier gauche', R: 'Ailier droit', D: 'Défenseur' })[p.positionCode] || '', val: p[k] };
+      try {
+        var g = await fetch(P + encodeURIComponent('/v1/player/' + p.playerId + '/game-log/' + saison + '/2'));
+        var jg = g.ok ? await g.json() : null;
+        var log = (jg && jg.gameLog) || [];
+        /* joueur échangé en cours de saison : si le game-log porte l'équipe, on ne garde que les matchs avec CETTE équipe */
+        if (log.some(function (x) { return x && x.teamAbbrev; })) log = log.filter(function (x) { return x.teamAbbrev === abr; });
+        o.s = _g45RegCalc(log, k);
+      } catch (e) { o.s = null; }
+      out.push(o);
+    }
+  }
+  await Promise.all([w(), w(), w()]);
+  if (out.some(function (o) { return o.s && o.s.mj; })) { try { localStorage.setItem(ck, JSON.stringify({ t: Date.now(), l: out })); } catch (e) {} }
+  return out;
+}
+window._g45RegEquipe = _g45RegEquipe;
