@@ -1304,7 +1304,8 @@ RÉGLÉ (worker, 01/10) : cron « exceededCpu » (cpuTimeMs 10) à CHAQUE passag
   …/baseball/leagues/mlb/seasons/2026/types/2/leaders (homeRuns, runs, avg, RBIs…) ; journal common v3 /baseball/mlb/athletes/<id>/gamelog
   (names atBats, runs, hits, doubles, triples, homeRuns, RBIs… ; « 2026 Regular Season » 157 + « 2026 Postseason » 3 ; filters season,
   category=batting). Boutons 💥 Home runs (g) / 🏃 Runs (a), saison régulière seule ; `_g45RegLeadersMlb`, `_g45RegLogMlb`,
-  `_g45RegCandidatsMlb` (team leaders, NON sondé MLB), `_g45RegBlocNflEq(an, nom, id, 'mlb')` ; calendrier schedule baseball (NON sondé MLB).
+  `_g45RegCandidatsMlb` (team leaders), `_g45RegBlocNflEq(an, nom, id, 'mlb')` ; calendrier schedule baseball. CONFIRMÉ PAR ANTOINE (Yankees 10) :
+  team leaders 200 (homeRuns 22, runs 22, hits 22…), schedule?season=2026&seasontype=2 = 165 matchs dont 161 finis.
 - Saisons d'un club de FOOT (rendu après « Barre de filtres » dans loadTeamSaisons) — 20261005y (capture Real Madrid : seulement
   Prochains matchs, aucune case cochée) : le filtre g45_saison_filters est COMMUN à tous les clubs ; une case cochée ailleurs absente ici
   (Ligue Europa…) vidait toutes les saisons → si aucune case active n'existe chez ce club, « Toutes » pour cet affichage (sans effacer le choix).
