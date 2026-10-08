@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261006l, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261006m, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1285,6 +1285,10 @@ RÉGLÉ (worker, 01/10) : cron « exceededCpu » (cpuTimeMs 10) à CHAQUE passag
   qui reçoit (NON vérifié) ; club = slug du logo ; fiche club `_g45RegBlocRugEq` (_g45T14Slug). Saison en cours seulement, pas d'or. Pro D2 : pas fait.
   20261006l (« on aurait pu mettre meilleure série aussi ») : _g45RegCalc → best (plus longue série AVEC) / bcours ; colonne bleue « Meilleure »,
   4e tri « Meilleure série ▼ » (tri 'best') ; listes g45reg1_ → g45reg1_v2_ (NHL), g45reg1_f4_ → f5_ (foot / NFL).
+  20261006m — NRL (Compétitions → NRL → « 🎯 Séries individuelles » ; fiche Saisons d'un club rugby-league / '3') : sources déjà sondées —
+  `_g45NrlLire(an, 38|35)` (top 10 essais / passes d'essai), `_g45NrlCalendrier`, feuille <matchCentreUrl>data → `_g45RegNrlFeuille`
+  (les DEUX équipes : nom, joué = minutes > 0, tries, tryAssists ; g45reg1_nm_<url> permanent) ; `_g45RegLireNrl` (club = tous ses joueurs),
+  or = `_g45RegPrecNrl` (an − 1, par nom) ; saison civile (_g45NrlAnAuto). Reste : KHL.
 - Saisons d'un club de FOOT (rendu après « Barre de filtres » dans loadTeamSaisons) — 20261005y (capture Real Madrid : seulement
   Prochains matchs, aucune case cochée) : le filtre g45_saison_filters est COMMUN à tous les clubs ; une case cochée ailleurs absente ici
   (Ligue Europa…) vidait toutes les saisons → si aucune case active n'existe chez ce club, « Toutes » pour cet affichage (sans effacer le choix).
