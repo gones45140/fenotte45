@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261006o, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261006p, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1294,7 +1294,11 @@ RÉGLÉ (worker, 01/10) : cron « exceededCpu » (cpuTimeMs 10) à CHAQUE passag
   journée, format NON vérifié) et NRL (feuilles du club).
   20261006o — NHL : SONDÉ PAR ANTOINE /v1/club-schedule-season/COL/20262027 (worker host=nhl) → games[88] {id, gameDate, gameType 1|2,
   gameState FINAL} → `_g45RegNhlCal` (saison régulière finie FINAL/OFF, g45reg1_cs_ 3 h) + `_g45RegNhlAbs` (matchs de l'équipe après la
-  dernière date du journal) ; ligue et fiche d'équipe ; listes g45reg1_v2_ → v3_. Foot / NFL : calendrier d'équipe encore à sonder.
+  dernière date du journal) ; ligue et fiche d'équipe ; listes g45reg1_v2_ → v3_.
+  20261006p — FOOT + NFL : SONDÉ PAR ANTOINE site v2 soccer/fra.1/teams/160/schedule (5 matchs finis, ordre NON chronologique) et
+  football/nfl/teams/2/schedule?season=2026&seasontype=2 (17 matchs, 4 finis) → `_g45RegEspCal` (completed, g45reg1_es_ 3 h) +
+  `_g45RegEspAbs` (o.tid, o.der = dernier match du joueur DANS LE CHAMPIONNAT) ; filtre LDC / coupes seules = pas de calcul ;
+  listes g45reg1_f5_ → f6_. Foot saison passée : ?season= NON vérifié.
 - Saisons d'un club de FOOT (rendu après « Barre de filtres » dans loadTeamSaisons) — 20261005y (capture Real Madrid : seulement
   Prochains matchs, aucune case cochée) : le filtre g45_saison_filters est COMMUN à tous les clubs ; une case cochée ailleurs absente ici
   (Ligue Europa…) vidait toutes les saisons → si aucune case active n'existe chez ce club, « Toutes » pour cet affichage (sans effacer le choix).

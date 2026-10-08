@@ -68975,7 +68975,7 @@ function _g45RegLogFoot(lg, id, anEsp) {
 async function _g45RegLireFoot(lg, an, cat, eq) {
   if (lg === 'top14') return _g45RegLireRug(eq);   /* 20261006k */
   if (lg === 'nrl') return _g45RegLireNrl(an, cat, eq);   /* 20261006m */
-  var anEsp = _g45RegEspAn(lg, an), ck = 'g45reg1_f5_' + lg + '_' + anEsp + '_' + cat + (eq ? '_' + eq + '_' + (_g45Reg.cf || 'L') : '');
+  var anEsp = _g45RegEspAn(lg, an), ck = 'g45reg1_f6_' + lg + '_' + anEsp + '_' + cat + (eq ? '_' + eq + '_' + (_g45Reg.cf || 'L') : '');
   try { var c = JSON.parse(localStorage.getItem(ck) || 'null'); if (c && Date.now() - c.t < 12 * 3600e3) { if (c.c) c.l.comps = c.c; return c.l; } } catch (e) {}
   var top;
   if (eq) top = lg === 'nfl' ? await _g45RegCandidatsNfl(String(eq).slice(1), anEsp, cat) : await _g45RegCandidatsClub(lg, String(eq).slice(1), anEsp, cat);   /* 20261006e : joueurs du club ; NFL 20261006j */
@@ -68998,6 +68998,11 @@ async function _g45RegLireFoot(lg, an, cat, eq) {
       try {
         var jg = lg === 'nfl' ? await _g45RegLogNfl(x.id, anEsp) : ((eq && _g45Reg.cf && _g45Reg.cf !== 'L') ? await _g45RegLogClub(lg, x.id, anEsp, _g45Reg.cf, used) : await _g45RegLogFoot(lg, x.id, anEsp));
         o.s = (jg && jg.gameLog && jg.gameLog.length) ? _g45RegCalc(jg.gameLog, k) : ((jg && jg.gameLog) ? null : null);
+        /* 20261006p : date du dernier match JOUÉ dans le championnat (absences comparées au calendrier du club) */
+        if (lg === 'nfl' || !eq || !_g45Reg.cf || _g45Reg.cf === 'L' || _g45Reg.cf === 'T') {
+          var jb = (lg === 'nfl' || !(eq && _g45Reg.cf && _g45Reg.cf !== 'L')) ? jg : await _g45RegLogFoot(lg, x.id, anEsp);
+          o.der = String((((jb && jb.gameLog) || [])[0] || {}).d || '').slice(0, 10);
+        }
       } catch (e) { o.s = null; }
       out.push(o);
     }
@@ -69006,6 +69011,7 @@ async function _g45RegLireFoot(lg, an, cat, eq) {
   if (cat === 'p' || eq) out = out.filter(function (o) { return o.s; }).sort(function (a, b) { return b.s.tot - a.s.tot; }).slice(0, 10);
   if (lg !== 'nfl') { try { await _g45RegNouveaux(lg, anEsp, out); } catch (e) {} }
   if (eq) out.comps = Object.keys(used);   /* compétitions réellement comptées (libellé) */
+  try { await _g45RegEspAbs(out, lg, anEsp); } catch (e) {}   /* 20261006p */
   if (out.some(function (o) { return o.s && o.s.mj; })) { try { localStorage.setItem(ck, JSON.stringify({ t: Date.now(), l: out, c: out.comps || null })); } catch (e) {} }
   return out;
 }
@@ -69554,6 +69560,39 @@ async function _g45RegNhlAbs(out, saison) {
   out.forEach(function (o) {
     var d = cal[o.ab]; if (!d || !o.der) return;
     var der = String(o.der).slice(0, 10), apres = d.filter(function (x) { return x > der; });
+    o.abs = apres.length;
+    if (apres.length) { var z = apres[apres.length - 1].split('-'); o.absD = z[2] + '/' + z[1]; }
+  });
+}
+
+
+/* ═══ 20261006p — 🚫 ABSENT AU DERNIER MATCH EN FOOT ET EN NFL : SONDÉ PAR ANTOINE — site v2 soccer/fra.1/teams/160/schedule = 5 matchs
+   du championnat, tous finis (ordre NON chronologique : dernier élément = 23/08) ; football/nfl/teams/2/schedule?season=2026&seasontype=2
+   = 17 matchs, 4 finis. Matchs finis (competitions[0].status.type.completed) du club APRÈS la date du dernier match du joueur dans le
+   championnat (o.der) = absences. Foot : saison en cours sans paramètre, passée ?season= (NON vérifié) ; filtre LDC / coupes seules =
+   pas de calcul. Calendrier gardé 3 h (g45reg1_es_). */
+async function _g45RegEspCal(lg, tid, anEsp) {
+  var nfl = lg === 'nfl', ck = 'g45reg1_es_' + lg + '_' + tid + '_' + anEsp;
+  try { var c = JSON.parse(localStorage.getItem(ck) || 'null'); if (c && Date.now() - c.t < 3 * 3600e3) return c.d; } catch (e) {}
+  var cour = false;
+  try { cour = +_g45CompetAnneeAuto(lg) === +anEsp; } catch (e) {}
+  var u = 'https://site.api.espn.com/apis/site/v2/sports/' + (nfl ? 'football' : 'soccer') + '/' + lg + '/teams/' + tid + '/schedule'
+    + (nfl ? '?season=' + anEsp + '&seasontype=2' : (cour ? '' : '?season=' + anEsp));
+  var r = await fetch(u); if (!r.ok) return null;
+  var j = await r.json();
+  var d = (j.events || []).filter(function (e) { var st = (((e.competitions || [])[0] || {}).status || {}).type || {}; return st.completed; })
+    .map(function (e) { return String(e.date || '').slice(0, 10); }).filter(Boolean).sort();
+  try { localStorage.setItem(ck, JSON.stringify({ t: Date.now(), d: d })); } catch (e) {}
+  return d;
+}
+async function _g45RegEspAbs(out, lg, anEsp) {
+  var eqs = {};
+  out.forEach(function (o) { if (o.tid && o.der) eqs[o.tid] = 1; });
+  var cal = {};
+  await Promise.all(Object.keys(eqs).map(function (t) { return _g45RegEspCal(lg, t, anEsp).then(function (d) { cal[t] = d; }, function () {}); }));
+  out.forEach(function (o) {
+    var d = cal[o.tid]; if (!d || !o.der) return;
+    var apres = d.filter(function (x) { return x > o.der; });
     o.abs = apres.length;
     if (apres.length) { var z = apres[apres.length - 1].split('-'); o.absD = z[2] + '/' + z[1]; }
   });
