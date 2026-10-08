@@ -68617,7 +68617,7 @@ function _g45RegCalc(log, cle) {
 }
 async function _g45RegLire(saison, cat, eq) {
   if (eq) return _g45RegLireEq(saison, cat, eq);
-  var ck = 'g45reg1_v2_' + saison + '_' + cat;   /* v2 (20261006l) : + meilleure série */
+  var ck = 'g45reg1_v3_' + saison + '_' + cat;   /* v2 (20261006l) : + meilleure série */
   try { var c = JSON.parse(localStorage.getItem(ck) || 'null'); if (c && Date.now() - c.t < 12 * 3600e3) return c.l; } catch (e) {}
   var P = FD_PROXY + '?key=nhl&host=nhl&path=';
   var k = cat === 'a' ? 'assists' : (cat === 'p' ? 'points' : 'goals');
@@ -68634,12 +68634,13 @@ async function _g45RegLire(saison, cat, eq) {
         ph: p.headshot || '', eq: p.teamAbbrev || '', logo: p.teamLogo || '', val: p.value };
       try {
         var jg = await _g45RegLog(p.id, saison);
-        o.s = _g45RegCalc((jg && jg.gameLog) || [], k);
+        o.s = _g45RegCalc((jg && jg.gameLog) || [], k); o.der = (((jg && jg.gameLog) || [])[0] || {}).gameDate || ''; o.ab = p.teamAbbrev || '';
       } catch (e) { o.s = null; }
       out.push(o);
     }
   }
   await Promise.all([w(), w(), w()]);
+  try { await _g45RegNhlAbs(out, saison); } catch (e) {}   /* 20261006o */
   if (out.some(function (o) { return o.s && o.s.mj; })) { try { localStorage.setItem(ck, JSON.stringify({ t: Date.now(), l: out })); } catch (e) {} }
   return out;
 }
@@ -68779,7 +68780,7 @@ function _g45RegEquipe(nom) {
   return null;
 }
 async function _g45RegLireEq(saison, cat, abr) {
-  var ck = 'g45reg1_v2_' + saison + '_' + cat + '_' + abr;
+  var ck = 'g45reg1_v3_' + saison + '_' + cat + '_' + abr;
   try { var c = JSON.parse(localStorage.getItem(ck) || 'null'); if (c && Date.now() - c.t < 12 * 3600e3) return c.l; } catch (e) {}
   var P = FD_PROXY + '?key=nhl&host=nhl&path=';
   var k = cat === 'a' ? 'assists' : (cat === 'p' ? 'points' : 'goals');
@@ -68800,12 +68801,13 @@ async function _g45RegLireEq(saison, cat, abr) {
         var log = (jg && jg.gameLog) || [];
         /* joueur échangé en cours de saison : si le game-log porte l'équipe, on ne garde que les matchs avec CETTE équipe */
         if (log.some(function (x) { return x && x.teamAbbrev; })) log = log.filter(function (x) { return x.teamAbbrev === abr; });
-        o.s = _g45RegCalc(log, k);
+        o.s = _g45RegCalc(log, k); o.der = (log[0] || {}).gameDate || ''; o.ab = abr;
       } catch (e) { o.s = null; }
       out.push(o);
     }
   }
   await Promise.all([w(), w(), w()]);
+  try { await _g45RegNhlAbs(out, saison); } catch (e) {}   /* 20261006o */
   if (out.some(function (o) { return o.s && o.s.mj; })) { try { localStorage.setItem(ck, JSON.stringify({ t: Date.now(), l: out })); } catch (e) {} }
   return out;
 }
@@ -68845,7 +68847,7 @@ function _g45RegLog(id, saison) {
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (j) {
         if (!j) { delete _g45RegLogs[k]; return null; }
-        return { gameLog: (j.gameLog || []).map(function (g) { return { goals: g.goals, assists: g.assists, points: g.points, teamAbbrev: g.teamAbbrev }; }) };
+        return { gameLog: (j.gameLog || []).map(function (g) { return { goals: g.goals, assists: g.assists, points: g.points, teamAbbrev: g.teamAbbrev, gameDate: g.gameDate }; }) };
       })
       .catch(function () { delete _g45RegLogs[k]; return null; });
   }
@@ -69527,4 +69529,32 @@ function _g45RegBlocNrlEq(nom) {
     + '<div style="font-size:13px;color:#c9d3ee;margin:4px 0 8px;">Joueurs du club · plus longue série SANS essai (matchs joués seulement)</div>'
     + '<div id="g45-reg-box">' + (_g45Reg.mem[_g45RegK()] ? _g45RegHtml() :
       '<button onclick="g45RegOuvrir()" style="padding:10px 16px;border-radius:10px;border:1.5px solid rgba(245,197,66,.55);background:rgba(245,197,66,.12);color:#f5c542;font-size:14px;font-weight:800;cursor:pointer;">🎯 Voir le classement (' + _g45RegLab(an) + ')</button>') + '</div></div>';
+}
+
+
+/* ═══ 20261006o — 🚫 ABSENT AU DERNIER MATCH EN NHL (« NHL c'est déjà fait non ? » → la mention manquait) : SONDÉ PAR ANTOINE
+   /v1/club-schedule-season/COL/20262027 (worker host=nhl) → games[88] {id, gameDate « 2026-09-20 », gameType 1 présaison / 2 saison
+   régulière, gameState « FINAL »}. Matchs de saison régulière finis (FINAL / OFF) de l'équipe APRÈS la dernière date du journal du
+   joueur = absences récentes (o.abs, o.absD jj/mm). Calendrier gardé 3 h (g45reg1_cs_<ABR>_<saison>), une demande par équipe. */
+async function _g45RegNhlCal(abr, saison) {
+  var ck = 'g45reg1_cs_' + abr + '_' + saison;
+  try { var c = JSON.parse(localStorage.getItem(ck) || 'null'); if (c && Date.now() - c.t < 3 * 3600e3) return c.d; } catch (e) {}
+  var r = await fetch(FD_PROXY + '?key=nhl&host=nhl&path=' + encodeURIComponent('/v1/club-schedule-season/' + abr + '/' + saison));
+  if (!r.ok) return null;
+  var j = await r.json();
+  var d = (j.games || []).filter(function (g) { return +g.gameType === 2 && /^(FINAL|OFF)$/.test(g.gameState || ''); }).map(function (g) { return String(g.gameDate || '').slice(0, 10); }).sort();
+  try { localStorage.setItem(ck, JSON.stringify({ t: Date.now(), d: d })); } catch (e) {}
+  return d;
+}
+async function _g45RegNhlAbs(out, saison) {
+  var eqs = {};
+  out.forEach(function (o) { if (o.ab && o.der) eqs[o.ab] = 1; });
+  var cal = {};
+  await Promise.all(Object.keys(eqs).map(function (ab) { return _g45RegNhlCal(ab, saison).then(function (d) { cal[ab] = d; }, function () {}); }));
+  out.forEach(function (o) {
+    var d = cal[o.ab]; if (!d || !o.der) return;
+    var der = String(o.der).slice(0, 10), apres = d.filter(function (x) { return x > der; });
+    o.abs = apres.length;
+    if (apres.length) { var z = apres[apres.length - 1].split('-'); o.absD = z[2] + '/' + z[1]; }
+  });
 }
