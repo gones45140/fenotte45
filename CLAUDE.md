@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261006j, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261006k, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1277,6 +1277,12 @@ RÉGLÉ (worker, 01/10) : cron « exceededCpu » (cpuTimeMs 10) à CHAQUE passag
   effectif site v2 SANS stats ; core …/nfl/seasons/<an>/types/2/teams/<id>/leaders → rushingTouchdowns 2, receivingTouchdowns 5,
   passingTouchdowns 1, rushingLeader 7, receivingLeader 10… → `_g45RegCandidatsNfl` (marqueurs de TD puis meilleurs coureurs / receveurs,
   10 max ; QB pour Passes de TD), cache g45reg1_nt_ 6 h. NFL confirmée « ok » par Antoine (Compétitions).
+  20261006k — 🏉 TOP 14 (Compétitions → Rugby → Top 14 → « 🎯 Séries individuelles » ; fiche Saisons d'un club lg '270559') : la page
+  joueur LNR n'a que les totaux par saison (history-season-list) ; SONDÉ PAR ANTOINE : /calendrier-et-resultats (current-week number,
+  current-season name) → /calendrier-et-resultats/<saison>/jN (liens feuille-de-match) → <lien>/statistiques-du-match = 2 × players-ranking
+  (23 + 23, tempsJeu, nbEssais, player.url /joueur/<id>-…). `_g45RegLireRug` : journées j1 → en cours, page stats de chaque match joué
+  (4 à la fois, compteur), joué = tempsJeu > 0 ; match compact g45reg1_rm_<id> permanent, journée finie g45reg1_rj_ 7 j ; 1er bloc = club
+  qui reçoit (NON vérifié) ; club = slug du logo ; fiche club `_g45RegBlocRugEq` (_g45T14Slug). Saison en cours seulement, pas d'or. Pro D2 : pas fait.
 - Saisons d'un club de FOOT (rendu après « Barre de filtres » dans loadTeamSaisons) — 20261005y (capture Real Madrid : seulement
   Prochains matchs, aucune case cochée) : le filtre g45_saison_filters est COMMUN à tous les clubs ; une case cochée ailleurs absente ici
   (Ligue Europa…) vidait toutes les saisons → si aucune case active n'existe chez ce club, « Toutes » pour cet affichage (sans effacer le choix).
