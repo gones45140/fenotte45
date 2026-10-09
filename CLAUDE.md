@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261007g, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261007h, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1069,6 +1069,11 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   DÉDUITS de deux instantanés (`_g45F1OffEvenements`), donc seulement depuis
   l'ouverture de la page. Carte des voitures et
   temps aux stands : réservés à F1 TV en direct depuis 2025.
+- ⛔ MOTOGP = GONES45 SEULEMENT (20261007h, choix d'Antoine 09/10) : CGU motogp.com point 3 (lues par Antoine) = usage PERSONNEL seulement,
+  « not permitted to provide, copy… or transmit any Content… whether for profit or free of charge » (api.motogp.pulselive.com : pas de
+  robots.txt ; robots de motogp.com sans interdiction ; TimingPass = direct PAYANT). Bloc en fin d'app.js : `_g45MotoActive()` (= `_g45SanteActive`)
+  faux sur bet45 → `_g45MotoJ` neutralisé (aucune requête), g45MotoOpen / g45MotoOpenEvent = message, _g45MotoLiveCard coupée, tuile 🏍 retirée
+  de _G45_ACC_SPORTS, CSS [onclick*="g45MotoOpen"] caché. Direct MotoGP amélioré (tableau F1) : ABANDONNÉ, ne pas reproposer sur bet45.
 - MotoGP (style officiel, 26/09) : API motogp.com via le worker (host=motogp).
   `/riders` → cs.pictures.profile.main (photo), team.color / text_color /
   constructor.name ; `_g45MotoColors` (carte pilote→{col,photo,team,moto}),
