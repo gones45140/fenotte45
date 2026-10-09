@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261007e, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261007f, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -220,7 +220,11 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   d'openClub) → `_g45BgMaj` pose --bg-img = fanart TheSportsDB (strFanart1..4 puis strStadiumThumb, PAS le bandeau ; bon sport via u.sport /
   g45TeamsPerso, `_G45_BG_SPORT`), sinon logo en grand au centre (fixed) sur dégradé bleu nuit ; fiche fermée → fond d'avant (perso ou fond.jpg).
   Cache g45bgclub1_ (30 j / rien 7 j). Cause du flou d'origine : photo perso réduite à 900 px (applyBgFromFile, localStorage), fond.jpg 468 × 1024.
-  Proposé, NON fait : garder la photo perso en pleine taille (IndexedDB).
+  20261007f (« ok 2 ») : photo perso (Outils → Apparence → fichier) gardée en PLEINE TAILLE (≤ 2560 px, JPEG .88) dans IndexedDB (base g45,
+  magasin kv, clé 'bg') et posée en blob: ; localStorage = drapeau g45_bg_idb seulement (ancienne data:URL g45_bg_img effacée). Fonctions
+  d'Apparence dans une portée FERMÉE → enveloppes sur window.applyBgFromFile / resetBgDefault / applyBgFromUrl + #bg-file-input.onchange
+  rebranché. Vérifié dans Chromium (2560 × 1280, rechargement, remise à zéro). Antoine doit RE-CHOISIR sa photo une fois.
+  Fond clair « papier peint » multi-sports REFUSÉ (« ça fait papier peint ») ; filigrane BET45 d'accueil : proposé, sans suite.
 - Mode paysage téléphone (style.css, bloc « MODE PAYSAGE SUR TÉLÉPHONE », media
   landscape + max-height 520 + max-width 1099) : barre du bas → colonne de 80 px,
   logo dans la colonne, en-tête/bandeau affinés ; `--g45-paysage:1` sur :root.

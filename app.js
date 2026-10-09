@@ -70274,3 +70274,86 @@ async function _g45BgMaj() {
   }
 })();
 window._g45BgMaj = _g45BgMaj; window._g45BgChercher = _g45BgChercher;
+
+/* ═══ 20261007f — PHOTO DE FOND PERSO EN PLEINE TAILLE (« ok 2 ») ═══
+   Cause du flou (capture d'Antoine, fond piscine sur PC) : applyBgFromFile réduisait la photo à 900 px de large pour la ranger
+   en data:URL dans localStorage (presque plein, 5,7 Mo mesurés le 28/09). → la photo est gardée dans IndexedDB (base g45, magasin
+   kv, clé 'bg' = Blob JPEG), jusqu'à 2560 px de large (qualité .88), et posée via une adresse blob: ; localStorage ne garde que
+   le drapeau g45_bg_idb = '1' (l'ancienne data:URL g45_bg_img est effacée : place libérée). Lien par URL inchangé (déjà net).
+   IndexedDB indisponible (navigation privée…) → ancienne méthode 900 px en secours. */
+function _g45BgIdb() {
+  return new Promise(function (ok, ko) {
+    try {
+      var rq = indexedDB.open('g45', 1);
+      rq.onupgradeneeded = function () { try { rq.result.createObjectStore('kv'); } catch (e) {} };
+      rq.onsuccess = function () { ok(rq.result); };
+      rq.onerror = function () { ko(rq.error); };
+    } catch (e) { ko(e); }
+  });
+}
+async function _g45BgIdbOp(mode, val) {
+  var db = await _g45BgIdb();
+  return new Promise(function (ok, ko) {
+    var tx = db.transaction('kv', mode === 'get' ? 'readonly' : 'readwrite'), st = tx.objectStore('kv');
+    var rq = mode === 'get' ? st.get('bg') : (mode === 'put' ? st.put(val, 'bg') : st.delete('bg'));
+    rq.onsuccess = function () { ok(rq.result); }; rq.onerror = function () { ko(rq.error); };
+  });
+}
+function _g45BgStatut(msg, coul) { var e = document.getElementById('bg-status'); if (e) { e.textContent = msg; e.style.color = coul || 'var(--g)'; } }
+var _g45BgBlobUrl = '';
+function _g45BgPoserBlob(blob) {
+  try { if (_g45BgBlobUrl) URL.revokeObjectURL(_g45BgBlobUrl); } catch (e) {}
+  _g45BgBlobUrl = URL.createObjectURL(blob);
+  document.documentElement.style.setProperty('--bg-img', "url('" + _g45BgBlobUrl + "')");
+}
+var _g45ApplyBgFromFile0 = window.applyBgFromFile;
+window.applyBgFromFile = function (input) {
+  var f = input && input.files && input.files[0]; if (!f) return;
+  if (!/^image\//.test(f.type)) { _g45BgStatut('Fichier non image', '#ff6b6b'); return; }
+  if (typeof indexedDB === 'undefined') return _g45ApplyBgFromFile0(input);
+  _g45BgStatut('Traitement de l\'image…', 'var(--t3)');
+  var img = new Image(), src = URL.createObjectURL(f);
+  img.onload = function () {
+    var maxW = 2560, sc = Math.min(1, maxW / img.width);
+    var c = document.createElement('canvas'); c.width = Math.round(img.width * sc); c.height = Math.round(img.height * sc);
+    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+    try { URL.revokeObjectURL(src); } catch (e) {}
+    c.toBlob(function (blob) {
+      if (!blob) { _g45BgStatut('Erreur image', '#ff6b6b'); return; }
+      _g45BgIdbOp('put', blob).then(function () {
+        try { localStorage.removeItem('g45_bg_img'); localStorage.setItem('g45_bg_idb', '1'); } catch (e) {}
+        _g45BgPoserBlob(blob);
+        _g45BgStatut('✓ Photo appliquée en pleine taille (' + c.width + ' × ' + c.height + ')', 'var(--g)');
+        if (input) input.value = '';
+      }).catch(function () { _g45ApplyBgFromFile0(input); });
+    }, 'image/jpeg', 0.88);
+  };
+  img.onerror = function () { _g45BgStatut('Image illisible', '#ff6b6b'); };
+  img.src = src;
+};
+var _g45ResetBgDefault0 = window.resetBgDefault;
+window.resetBgDefault = function () {
+  try { localStorage.removeItem('g45_bg_idb'); } catch (e) {}
+  _g45BgIdbOp('del').catch(function () {});
+  try { if (_g45BgBlobUrl) URL.revokeObjectURL(_g45BgBlobUrl); } catch (e) {} _g45BgBlobUrl = '';
+  return _g45ResetBgDefault0();
+};
+var _g45ApplyBgFromUrl0 = window.applyBgFromUrl;
+window.applyBgFromUrl = function () {                       /* un lien choisi remplace la photo du fichier */
+  var r = _g45ApplyBgFromUrl0();
+  try { if (localStorage.getItem('g45_bg_img')) { localStorage.removeItem('g45_bg_idb'); _g45BgIdbOp('del').catch(function () {}); } } catch (e) {}
+  return r;
+};
+/* _syncBgControls (portée fermée) branche le champ fichier sur l'ANCIENNE fonction → rebranché ici. */
+(function () { var f = function () { var fi = document.getElementById('bg-file-input'); if (fi) fi.onchange = function () { window.applyBgFromFile(this); }; }; if (document.readyState !== 'loading') f(); else document.addEventListener('DOMContentLoaded', function () { setTimeout(f, 0); }); })();
+(function () {
+  try {
+    if (localStorage.getItem('g45_bg_idb') !== '1') return;
+    _g45BgIdbOp('get').then(function (blob) {
+      if (!blob) return;
+      /* une fiche d'équipe déjà ouverte (fond du club) garde son fond ; la photo perso servira au retour */
+      if (typeof _g45BgClub !== 'undefined' && _g45BgClub.nom) { _g45BgPoserBlob(blob); _g45BgClub.avant = document.documentElement.style.getPropertyValue('--bg-img'); if (typeof _g45BgClub !== 'undefined') { var n = _g45BgClub.nom; _g45BgClub.nom = null; _g45BgMaj(); } return; }
+      _g45BgPoserBlob(blob);
+    }).catch(function () {});
+  } catch (e) {}
+})();
