@@ -34018,6 +34018,13 @@ async function _renderGenericDetail(el, sport, lg, eid){
         h+='<div style="margin-top:10px;border-top:1px solid rgba(255,255,255,.06);padding-top:8px;">';
         h+='<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#8aa0ff;margin-bottom:6px;">Meilleurs joueurs</div>';
         L.slice(0,2).forEach(function(tl){
+          /* 20261007b (« Celebrini et Toffoli c'est qui ? ») : nom + logo de l'équipe au-dessus de ses 3 lignes, sinon on ne sait pas
+             quel groupe est à qui. Blanc 14 px sur bande sombre (règle de lisibilité d'Antoine). */
+          var _tt=tl.team||{}, _tn=String(_tt.displayName||_tt.shortDisplayName||_tt.name||'').replace(/[<>"&]/g,'');
+          var _tl=_tt.logo||(_tt.logos&&_tt.logos[0]&&_tt.logos[0].href)||'';
+          if(_tn) h+='<div style="display:flex;align-items:center;gap:8px;margin:8px 0 4px;background:rgba(11,16,29,.8);border-radius:8px;padding:5px 8px;">'
+            +(_tl?'<img src="'+String(_tl).replace(/"/g,'')+'" alt="" style="width:22px;height:22px;object-fit:contain;" onerror="this.remove()">':'')
+            +'<span style="font-size:14px;font-weight:800;color:#fff;text-transform:uppercase;letter-spacing:.5px;">'+_tn+'</span></div>';
           (tl.leaders||[]).slice(0,3).forEach(function(cat){
             var ld=(cat.leaders&&cat.leaders[0])||null;
             if(ld&&ld.athlete) h+='<div style="font-size:10px;color:var(--t2);padding:2px 0;">'+_g45LdFr(cat.displayName||cat.shortDisplayName||'')+' : <b style="color:var(--t1);">'+(ld.athlete.displayName||'')+'</b> <span style="color:var(--t3);">('+_g45LdFr(String(ld.displayValue||ld.value||''))+')</span></div>';
