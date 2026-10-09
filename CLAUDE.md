@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261007f, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261007g, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -456,6 +456,9 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   perdu avec garantie (explicite ou g45GarantieAutoPour). `_g45AvScanner`
   complète #live-strat / #live-norm APRÈS rendu (MutationObserver + 20 s) ;
   bouton « ✅/❌ Valider » → `result(id, v)` (débrief inchangé).
+  20261007g (« il y a victoire mais il manque vainqueur ») : type « Vainqueur » (prolongation / TAB compris, sans nul) ajouté après
+  Victoire dans MM_TYPES / MM_GROUPES (DEUX copies) et _CP_TYPES ; jugé sur le score final dans `_g45AvJambe` ET le Worker
+  (`_g45VerdictJambe`, + regex garantie d'écart) — worker.js complet donné à Antoine, À REDÉPLOYER.
 - Santé des sources (28d) : `_G45_SANTE` (ESPN, ESPN core, worker, TheSportsDB,
   Wikipédia, NHL, MLB, Groq et Gemini listes de modèles), `g45SanteTester(auto)`
   (retest des échecs après 10 s), bloc `#g45-sante` en tête d'Outils, bandeau

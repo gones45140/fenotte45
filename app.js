@@ -676,7 +676,7 @@ function saisonKey(base) {
   if(toMigrate.length > 0) console.log('Migration saison: '+toMigrate.length+' clés → 2526_');
   localStorage.setItem('g45_saison_migrated', '1');
 })();
-var _CP_TYPES = ['Victoire','Nul','Défaite','Domicile ou nul','Extérieur ou nul','Over 2.5','Under 2.5','BTS Oui','BTS Non','HC -1','HC +1','Mi-temps','1er buteur'];
+var _CP_TYPES = ['Victoire','Vainqueur','Nul','Défaite','Domicile ou nul','Extérieur ou nul','Over 2.5','Under 2.5','BTS Oui','BTS Non','HC -1','HC +1','Mi-temps','1er buteur'];
 var _chatParams = { equipe:'', lieu:'domicile', types:['Victoire','Over 2.5','BTS Oui'], champOnly:false };
 
 var BK={
@@ -6061,7 +6061,9 @@ var mmRows=[
   {type:'Victoire',cote:1.80},
   {type:'BTS Oui',cote:1.70}
 ];
-var MM_TYPES=['Victoire','Nul','Défaite','Domicile ou nul','Extérieur ou nul','BTS Oui','BTS Non','Over 1.5','Over 2.5','Under 2.5','HC -1','HC +1','Mi-temps','Buteur','Passeur','Décisif'];
+/* 20261007g (capture d'Antoine : « il y a victoire mais il manque vainqueur ») : « Vainqueur » = prolongation / TAB compris, sans nul
+   (NHL, NBA, NFL, MLB chez Winamax) ; « Victoire » reste le résultat au temps réglementaire. */
+var MM_TYPES=['Victoire','Vainqueur','Nul','Défaite','Domicile ou nul','Extérieur ou nul','BTS Oui','BTS Non','Over 1.5','Over 2.5','Under 2.5','HC -1','HC +1','Mi-temps','Buteur','Passeur','Décisif'];
 
 /* MARCHES GROUPES PAR FAMILLE (02/09, refonte de la page Pari). Les seize
    marches etaient affiches a plat, en seize pastilles identiques. Ils ne sont
@@ -6073,7 +6075,7 @@ var MM_TYPES=['Victoire','Nul','Défaite','Domicile ou nul','Extérieur ou nul',
    libelles enregistres ne changent pas d'un caractere — un pari deja en base
    reste lisible, et rien ne casse dans le bilan ni dans les archives. */
 var MM_GROUPES=[
-  {g:'Résultat', t:['Victoire','Nul','Défaite','Domicile ou nul','Extérieur ou nul','Mi-temps']},
+  {g:'Résultat', t:['Victoire','Vainqueur','Nul','Défaite','Domicile ou nul','Extérieur ou nul','Mi-temps']},
   {g:'Buts',     t:['BTS Oui','BTS Non','Over 1.5','Over 2.5','Under 2.5']},
   {g:'Handicap', t:['HC -1','HC +1']},
   {g:'Joueur',   t:['Buteur','Passeur','Décisif']}
@@ -13833,7 +13835,9 @@ var mmRows=[
   {type:'Victoire',cote:1.80},
   {type:'BTS Oui',cote:1.70}
 ];
-var MM_TYPES=['Victoire','Nul','Défaite','Domicile ou nul','Extérieur ou nul','BTS Oui','BTS Non','Over 1.5','Over 2.5','Under 2.5','HC -1','HC +1','Mi-temps','Buteur','Passeur','Décisif'];
+/* 20261007g (capture d'Antoine : « il y a victoire mais il manque vainqueur ») : « Vainqueur » = prolongation / TAB compris, sans nul
+   (NHL, NBA, NFL, MLB chez Winamax) ; « Victoire » reste le résultat au temps réglementaire. */
+var MM_TYPES=['Victoire','Vainqueur','Nul','Défaite','Domicile ou nul','Extérieur ou nul','BTS Oui','BTS Non','Over 1.5','Over 2.5','Under 2.5','HC -1','HC +1','Mi-temps','Buteur','Passeur','Décisif'];
 
 /* MARCHES GROUPES PAR FAMILLE (02/09, refonte de la page Pari). Les seize
    marches etaient affiches a plat, en seize pastilles identiques. Ils ne sont
@@ -13845,7 +13849,7 @@ var MM_TYPES=['Victoire','Nul','Défaite','Domicile ou nul','Extérieur ou nul',
    libelles enregistres ne changent pas d'un caractere — un pari deja en base
    reste lisible, et rien ne casse dans le bilan ni dans les archives. */
 var MM_GROUPES=[
-  {g:'Résultat', t:['Victoire','Nul','Défaite','Domicile ou nul','Extérieur ou nul','Mi-temps']},
+  {g:'Résultat', t:['Victoire','Vainqueur','Nul','Défaite','Domicile ou nul','Extérieur ou nul','Mi-temps']},
   {g:'Buts',     t:['BTS Oui','BTS Non','Over 1.5','Over 2.5','Under 2.5']},
   {g:'Handicap', t:['HC -1','HC +1']},
   {g:'Joueur',   t:['Buteur','Passeur','Décisif']}
@@ -65159,6 +65163,8 @@ function _g45AvJambe(txt, moiDom, hS, aS) {
   if (/ou nul/.test(t)) return camp ? mien >= autre : null;
   if (/sans nul|12\b/.test(t)) return hS !== aS;
   if (/victoire|gagn|\bwin\b/.test(t)) return camp ? mien > autre : null;
+  /* 20261007g : « Vainqueur » = prolongation / TAB compris (score final), comme le Worker. */
+  if (/vainqueur/.test(t)) return camp ? mien > autre : null;
   if (/defaite|perd|\blose\b/.test(t)) return camp ? mien < autre : null;
   if (/\bnul\b|\bdraw\b|match nul/.test(t)) return hS === aS;
   if (/clean sheet/.test(t)) return camp ? autre === 0 : null;
