@@ -70077,11 +70077,17 @@ function _g45NhlAvLigHtml(eid) {
   var A = _g45NhlAv[eid], E = A.T[A.sel] || A.T[0], Lg = E.lig;
   var raw = A.raw || {}, R = {}, S = {};
   ((raw.pbp && raw.pbp.rosterSpots) || []).forEach(function (p) { R[p.playerId] = p; });
-  if (!Object.keys(R).length) Object.defineProperty(R, '_vide', { value: true });
+  if (!Object.keys(R).length) {
+    /* 20261007c (« manque les photos ») : liste du match pas publiée → joueurs de l'effectif de la saison (E.G/D/F, photos déduites). */
+    [].concat(E.G, E.D, E.F).forEach(function (j) { if (j && j.id) R[j.id] = { playerId: j.id, lastName: { default: j.nom }, firstName: { default: j.pre }, sweaterNumber: j.no, headshot: j.ph }; });
+    Object.defineProperty(R, '_vide', { value: true });
+  }
+  var _sais = (raw.pbp && raw.pbp.season) || (raw.land && raw.land.season) || '';
   var mu = (raw.land && raw.land.matchup) || {};
   (((mu.skaterSeasonStats || {}).skaters) || []).concat(((mu.goalieSeasonStats || {}).goalies) || []).forEach(function (p) { if (p && p.playerId) S[p.playerId] = p; });
   var pj = function (id, gros, extra) {
     var j = _g45NhlAvLigJoueur(id, Lg, R, S);
+    if (!j.ph && _sais && E.ab) j.ph = 'https://assets.nhle.com/mugs/nhl/' + _sais + '/' + E.ab + '/' + id + '.png';
     var h = _g45NhlAvJoueur(j, gros);
     if (gros && extra) h = h.replace(/(<div style="font-size:13px;color:#c9d3ee;white-space:nowrap;">)/, '$1' + extra + ' · ');
     if (gros && extra) h = h.replace(' · pas encore joué', '');
