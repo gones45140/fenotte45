@@ -225,6 +225,10 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   d'Apparence dans une portée FERMÉE → enveloppes sur window.applyBgFromFile / resetBgDefault / applyBgFromUrl + #bg-file-input.onchange
   rebranché. Vérifié dans Chromium (2560 × 1280, rechargement, remise à zéro). Antoine doit RE-CHOISIR sa photo une fois.
   Fond clair « papier peint » multi-sports REFUSÉ (« ça fait papier peint ») ; filigrane BET45 d'accueil : proposé, sans suite.
+  09/10 — FOND PAR DÉFAUT DE BET45 : montage multi-sports d'Antoine (Gemini 1024 × 572 agrandi ×4 avec Upscayl → fond.png 4096 × 2288,
+  10,8 Mo, déposé dans gones45 SANS être utilisé) converti en JPEG fond-sports.jpg (2560, 580 Ko) / fond-sports-m.jpg (1280, 180 Ko, ≤ 900 px)
+  dans fenotte45 ; <style> en ligne dans indexfenotte.html juste après style.css. gones45 garde fond.jpg. « Voile » = curseur
+  d'assombrissement (--scrim, 60 % par défaut) d'Outils → Apparence.
 - Mode paysage téléphone (style.css, bloc « MODE PAYSAGE SUR TÉLÉPHONE », media
   landscape + max-height 520 + max-width 1099) : barre du bas → colonne de 80 px,
   logo dans la colonne, en-tête/bandeau affinés ; `--g45-paysage:1` sur :root.
