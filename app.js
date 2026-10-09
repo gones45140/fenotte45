@@ -70365,47 +70365,11 @@ window.applyBgFromUrl = function () {                       /* un lien choisi re
 })();
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   20261007h — MOTOGP SUR GONES45 SEULEMENT (choix d'Antoine, 09/10)
-   ───────────────────────────────────────────────────────────────────────────
-   Conditions d'utilisation de motogp.com (MotoGP Sports Entertainment Group, lues par Antoine), point 3 :
-   « You are only authorised to use Our Channels for personal purposes… You are not permitted to provide, copy,
-   exchange, modify, sell or transmit any Content… whether for profit or free of charge ». L'API (api.motogp.pulselive.com,
-   pas de robots.txt) sert ce contenu → usage PERSO d'Antoine seulement. Sur bet45 (même critère que la Santé,
-   `_g45SanteActive`) : aucune requête vers motogp (host=motogp), tuiles et boutons MotoGP retirés (Accueil, Résultats,
-   Compétitions, bouton d'épreuve des paris 🏍), carte « en direct » de l'onglet Direct coupée. gones45 inchangé.
+   20261007i — MOTOGP : TOUT REMIS SUR BET45 (choix « A » d'Antoine, après 20261007h qui retirait tout).
+   CGU motogp.com point 3 = usage personnel seulement ; Antoine garde quand même l'existant sur bet45.
+   Les AJOUTS à venir (direct détaillé façon F1 : chronos, circuit) restent réservés à gones45 → tester
+   `_g45MotoActive()` (= `_g45SanteActive`, faux sur bet45) avant de les afficher.
    ═══════════════════════════════════════════════════════════════════════════ */
 function _g45MotoActive() {
   try { return (typeof _g45SanteActive === 'function') ? _g45SanteActive() : true; } catch (e) { return true; }
 }
-(function () {
-  try {
-    if (_g45MotoActive()) return;
-    var refus = { __http: 403 };
-    /* plus aucune lecture de l'API MotoGP */
-    window._g45MotoJ = _g45MotoJ = async function () { return refus; };
-    var rien = function () { return Promise.resolve(); };
-    var msg = function () {
-      try {
-        var el = document.getElementById('t-resultats');
-        if (el) el.innerHTML = '<div style="padding:18px;font-size:14px;color:#fff;background:rgba(11,16,29,.8);border-radius:10px;">'
-          + '🏍️ MotoGP n\'est pas disponible sur BET45.</div>';
-      } catch (e) {}
-      return Promise.resolve();
-    };
-    window.g45MotoOpen = g45MotoOpen = msg;
-    window.g45MotoOpenEvent = g45MotoOpenEvent = msg;
-    window._g45MotoLiveCard = _g45MotoLiveCard = rien;
-    ['g45MotoCat', 'g45MotoEvent', 'g45MotoSession', 'g45MotoStandings', 'g45MotoGrid', 'g45MotoLive', 'g45MotoAI', 'g45MotoRider']
-      .forEach(function (n) { try { window[n] = rien; } catch (e) {} });
-    try { _g45MotoLiveStop(); } catch (e) {}
-    /* tuile de l'Accueil */
-    if (typeof _G45_ACC_SPORTS !== 'undefined') {
-      for (var i = _G45_ACC_SPORTS.length - 1; i >= 0; i--) if (_G45_ACC_SPORTS[i].v === '🏍') _G45_ACC_SPORTS.splice(i, 1);
-    }
-    /* boutons écrits en dur (Résultats, Compétitions, épreuve d'un pari 🏍) */
-    var st = document.createElement('style');
-    st.textContent = '[onclick*="g45MotoOpen"]{display:none!important}';
-    (document.head || document.documentElement).appendChild(st);
-    var c = document.getElementById('g45-motolivecard'); if (c) c.remove();
-  } catch (e) {}
-})();
