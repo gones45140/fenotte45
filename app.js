@@ -69952,7 +69952,7 @@ async function _g45NhlAvCharger(eid, hN, aN, dIso) {
     var pbp = await rr[0].json(), land = rr[1].ok ? await rr[1].json() : {};
     var T = _g45NhlAvLire(pbp, land);
     if (!T) { box.innerHTML = '<div style="font-size:13px;color:#c9d3ee;">👥 Joueurs pas encore publiés par la NHL.</div>'; return; }
-    _g45NhlAv[eid] = { gid: gid, T: T, sel: A ? A.sel : 0, t: Date.now() };
+    _g45NhlAv[eid] = { gid: gid, T: T, sel: A ? A.sel : 0, t: Date.now(), raw: { pbp: pbp, land: land }, vue: A ? A.vue : null };
   }
   box.innerHTML = '<div style="font-size:15px;font-weight:800;letter-spacing:.5px;color:#fff;">👥 AVANT LE MATCH</div>'
     + '<div style="font-size:13px;color:#c9d3ee;margin-bottom:8px;">' + String(hN + ' – ' + aN).replace(/[<>"&]/g, '') + ' · source NHL officielle</div>'
@@ -69969,3 +69969,183 @@ function _g45NhlAvPoser(eid, hN, aN, dIso) {
     + '<div style="font-size:13px;color:#c9d3ee;">👥 Joueurs d\'avant-match…</div></div>';
 }
 window._g45NhlAvLire = _g45NhlAvLire; window._g45NhlAvInterieur = _g45NhlAvInterieur; window._g45NhlAvPoser = _g45NhlAvPoser;
+
+
+/* ═══ 20261006z — 🏒 LIGNES PROBABLES (NHL, avant le match), maquette validée (ordre gardien → défense → attaque) ═══
+   Aucune source gratuite ne publie les lignes AVANT le match (Flashscore = CGU). SONDÉ PAR ANTOINE (Carolina–Vancouver
+   2026020061, le lendemain) : api.nhle.com/stats/rest/en/shiftcharts?cayenneExp=gameId=<id> = 721 présences sur la glace
+   {playerId, teamId, teamAbbrev, lastName, period, startTime « mm:ss », endTime, duration, typeCode 517} (VIDE pendant le
+   match, rempli après). Le temps passé ENSEMBLE sur la glace redonne exactement les lignes de Flashscore (vérifié à la main :
+   Svechnikov–Aho–Carrier, Blake–Stankoven–Hall, Martinook–Staal–Ehlers, Kotkaniemi–Jankowski–Robinson ; paires Walker–Miller,
+   Slavin–Chatfield, Reilly–Gostisbehere). → lignes du DERNIER match fini de chaque équipe (club-schedule-season/<ABR>/now),
+   regroupement glouton par chevauchement : paires de défense (2 par 2), puis trios d'attaque (meilleure paire + 3e qui
+   partage le plus de glace avec les deux). Poste = rosterSpots du match à venir, sinon landing (position). Joueur du dernier
+   match absent de rosterSpots = grisé « 🚫 absent ce soir ». Worker : host=nhlstats (chemin shiftcharts SEUL, à ajouter par
+   Antoine) ; refus → vue « Tous les joueurs » seule, sans message gênant. */
+function _g45NhlAvSec(t) { var m = String(t || '').split(':'); return (parseInt(m[0], 10) || 0) * 60 + (parseInt(m[1], 10) || 0); }
+function _g45NhlAvLignes(shifts, teamId, R, S) {
+  var sh = (shifts || []).filter(function (x) { return x && x.teamId === teamId && x.duration && x.startTime && x.endTime; })
+    .map(function (x) { return { id: x.playerId, p: x.period, a: _g45NhlAvSec(x.startTime), b: _g45NhlAvSec(x.endTime), nom: x.lastName, pre: x.firstName }; })
+    .filter(function (x) { return x.b > x.a; });
+  if (!sh.length) return null;
+  var tot = {}, ov = {}, info = {};
+  sh.forEach(function (x) { tot[x.id] = (tot[x.id] || 0) + x.b - x.a; if (!info[x.id]) info[x.id] = x; });
+  var parP = {}; sh.forEach(function (x) { (parP[x.p] = parP[x.p] || []).push(x); });
+  Object.keys(parP).forEach(function (k) {
+    var l = parP[k];
+    for (var i = 0; i < l.length; i++) for (var j = i + 1; j < l.length; j++) {
+      var x = l[i], y = l[j]; if (x.id === y.id) continue;
+      var o = Math.min(x.b, y.b) - Math.max(x.a, y.a);
+      if (o > 0) { var c = x.id < y.id ? x.id + '|' + y.id : y.id + '|' + x.id; ov[c] = (ov[c] || 0) + o; }
+    }
+  });
+  var O = function (x, y) { var c = x < y ? x + '|' + y : y + '|' + x; return ov[c] || 0; };
+  var pos = function (id) {
+    var r = R[id]; if (r && r.positionCode) return r.positionCode;
+    var s = S[id]; if (s) return s.position || (s.savePctg != null || s.goalsAgainst != null || s.shotsAgainst != null ? 'G' : '');
+    return '';
+  };
+  var ids = Object.keys(tot).map(Number);
+  var G = ids.filter(function (i) { return pos(i) === 'G'; }).sort(function (a, b) { return tot[b] - tot[a]; });
+  var D = ids.filter(function (i) { return pos(i) === 'D'; });
+  var F = ids.filter(function (i) { var q = pos(i); return q && q !== 'G' && q !== 'D'; });
+  var paires = [], reste = D.slice();
+  while (reste.length >= 2 && paires.length < 3) {
+    var best = null, bv = -1;
+    for (var i = 0; i < reste.length; i++) for (var j = i + 1; j < reste.length; j++) { var v = O(reste[i], reste[j]); if (v > bv) { bv = v; best = [reste[i], reste[j]]; } }
+    if (!best || bv <= 0) break;
+    paires.push({ ids: best, ens: bv }); reste = reste.filter(function (x) { return best.indexOf(x) < 0; });
+  }
+  var lignes = [], rf = F.slice();
+  while (rf.length >= 3 && lignes.length < 4) {
+    var bp = null, bpv = -1;
+    for (var a = 0; a < rf.length; a++) for (var b = a + 1; b < rf.length; b++) { var w = O(rf[a], rf[b]); if (w > bpv) { bpv = w; bp = [rf[a], rf[b]]; } }
+    if (!bp || bpv <= 0) break;
+    var t3 = null, tv = -1;
+    rf.forEach(function (x) { if (bp.indexOf(x) >= 0) return; var w = O(bp[0], x) + O(bp[1], x); if (w > tv) { tv = w; t3 = x; } });
+    if (t3 == null) break;
+    var tri = [bp[0], bp[1], t3];
+    lignes.push({ ids: tri, ens: Math.min(O(tri[0], tri[1]), O(tri[0], tri[2]), O(tri[1], tri[2])) });
+    rf = rf.filter(function (x) { return tri.indexOf(x) < 0; });
+  }
+  var somme = function (g) { return g.ids.reduce(function (s0, x) { return s0 + (tot[x] || 0); }, 0); };
+  paires.sort(function (x, y) { return somme(y) - somme(x); });
+  lignes.sort(function (x, y) { return somme(y) - somme(x); });
+  var ordre = { L: 0, C: 1, R: 2 };
+  lignes.forEach(function (l) { l.ids.sort(function (x, y) { return (ordre[pos(x)] == null ? 1 : ordre[pos(x)]) - (ordre[pos(y)] == null ? 1 : ordre[pos(y)]); }); });
+  return { G: G.slice(0, 1), Gmin: G.length ? Math.round(tot[G[0]] / 60) : 0, D: paires, F: lignes, info: info };
+}
+function _g45NhlAvLigJoueur(id, Lg, R, S) {
+  var r = R[id], s = S[id] || {}, i = Lg.info[id] || {};
+  var nm = function (o) { return (o && (o.default || o.fr)) || ''; };
+  var fix = function (t) { t = String(t || ''); return typeof _g45Accents === 'function' ? _g45Accents(t) : t; };
+  var j = r ? { nom: nm(r.lastName), pre: nm(r.firstName), no: r.sweaterNumber, ph: r.headshot || '' }
+    : { nom: fix(i.nom), pre: fix(i.pre), no: null, ph: '', abs: true };
+  j.g = +s.goals || 0; j.a = +s.assists || 0; j.pts = (+s.points || (j.g + j.a)); j.mj = +s.gamesPlayed || 0;
+  if (s.savePctg != null || s.wins != null) {
+    j.bil = s.gamesPlayed ? ((+s.wins || 0) + '-' + (+s.losses || 0) + (s.otLosses ? '-' + s.otLosses : '')) : '';
+    j.pct = (s.savePctg != null && s.gamesPlayed) ? (s.savePctg * 100).toFixed(1).replace('.', ',') + ' %' : '';
+  }
+  return j;
+}
+function _g45NhlAvLigHtml(eid) {
+  var A = _g45NhlAv[eid], E = A.T[A.sel] || A.T[0], Lg = E.lig;
+  var raw = A.raw || {}, R = {}, S = {};
+  ((raw.pbp && raw.pbp.rosterSpots) || []).forEach(function (p) { R[p.playerId] = p; });
+  var mu = (raw.land && raw.land.matchup) || {};
+  (((mu.skaterSeasonStats || {}).skaters) || []).concat(((mu.goalieSeasonStats || {}).goalies) || []).forEach(function (p) { if (p && p.playerId) S[p.playerId] = p; });
+  var pj = function (id, gros, extra) {
+    var j = _g45NhlAvLigJoueur(id, Lg, R, S);
+    var h = _g45NhlAvJoueur(j, gros);
+    if (gros && extra) h = h.replace(/(<div style="font-size:13px;color:#c9d3ee;white-space:nowrap;">)/, '$1' + extra + ' · ');
+    if (gros && extra) h = h.replace(' · pas encore joué', '');
+    if (j.abs) h = '<div style="opacity:.5;">' + h.replace(/<div style="font-size:13px;color:#c9d3ee;white-space:nowrap;">[\s\S]*?<\/div><\/div>$/, '<div style="font-size:13px;color:#ffb347;font-weight:700;white-space:nowrap;">🚫 absent ce soir</div></div>') + '</div>';
+    return h;
+  };
+  var lab = function (t) { return '<div style="position:relative;text-align:center;margin:10px auto 4px;font-size:13px;font-weight:700;color:#fff;background:rgba(0,0,0,.55);border-radius:8px;padding:2px 10px;width:max-content;max-width:94%;">' + t + '</div>'; };
+  var rang = function (ids, gros, extra) { return '<div style="position:relative;display:flex;justify-content:center;gap:2px;">' + ids.map(function (id) { return pj(id, gros, extra); }).join('') + '</div>'; };
+  var ligne = function (top, coul, ep) { return '<div style="position:absolute;left:0;right:0;top:' + top + ';border-top:' + ep + 'px solid ' + coul + ';opacity:.8;"></div>'; };
+  var mn = function (s0) { return Math.round(s0 / 60) + ' min ensemble'; };
+  var h = '<div style="font-size:13px;color:#fff;background:rgba(77,132,255,.15);border:1px solid #4d84ff;border-radius:10px;padding:7px 8px;margin-bottom:8px;line-height:1.35;">ℹ️ Lignes du <b>dernier match</b>'
+    + (Lg.date ? ' (' + Lg.date + (Lg.adv ? ' contre ' + String(Lg.adv).replace(/[<>"&]/g, '') : '') + ')' : '')
+    + ', retrouvées d\'après le temps passé ensemble sur la glace. L\'entraîneur peut les changer.</div>';
+  h += '<div style="position:relative;background:#0f2238;border:3px solid #9fb3cf;border-radius:60px;padding:14px 6px 18px;overflow:hidden;">'
+    + '<div style="position:absolute;left:8%;right:8%;top:8px;border-top:2px solid #c8102e;opacity:.7;"></div>'
+    + ligne('33%', '#2f6fd6', 4) + ligne('50%', '#c8102e', 4) + ligne('67%', '#2f6fd6', 4)
+    + '<div style="position:absolute;left:50%;top:50%;width:90px;height:90px;margin:-45px 0 0 -45px;border:2px solid #2f6fd6;border-radius:50%;opacity:.6;"></div>'
+    + '<div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:44px;font-weight:900;color:rgba(255,255,255,.06);letter-spacing:3px;">BET45</div>';
+  if (Lg.G.length) h += lab('🥅 Gardien du dernier match') + rang(Lg.G, true, Lg.Gmin + ' min');
+  Lg.D.forEach(function (p, i) { h += lab('🛡️ Paire ' + (i + 1) + ' · ' + mn(p.ens)) + rang(p.ids); });
+  Lg.F.forEach(function (l, i) { h += lab('🏒 Ligne ' + (i + 1) + ' · ' + mn(l.ens)) + rang(l.ids); });
+  return h + '</div><div style="font-size:13px;color:#c9d3ee;margin-top:8px;line-height:1.4;">Un joueur absent ce soir reste à sa place, grisé.</div>';
+}
+var _g45NhlAvInterieur0 = _g45NhlAvInterieur;
+_g45NhlAvInterieur = function (eid) {
+  var A = _g45NhlAv[eid]; if (!A || !A.T) return '';
+  var E = A.T[A.sel] || A.T[0];
+  var base = _g45NhlAvInterieur0(eid);
+  if (!E.lig && !A.ligEnCours) return base;
+  var vue = A.vue || (E.lig ? 'l' : 't');
+  var bt = function (v, t) {
+    var on = vue === v;
+    return '<button onclick="g45NhlAvVue(\'' + eid + '\',\'' + v + '\')" style="flex:1;padding:7px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:700;color:#fff;border:1px solid ' + (on ? '#4d84ff' : '#3a4770') + ';background:' + (on ? '#1b2a52' : 'rgba(11,16,29,.85)') + ';">' + t + '</button>';
+  };
+  var sw = '<div style="display:flex;gap:6px;margin-bottom:8px;">' + bt('l', '🏒 Lignes probables') + bt('t', '📋 Tous les joueurs') + '</div>';
+  var i = base.indexOf('</div>');                       /* fin de la rangée des boutons d'équipe */
+  var tete = base.slice(0, i + 6), reste = base.slice(i + 6);
+  if (vue === 't') return tete + sw + reste;
+  var abs = reste.indexOf('🚫 Absents') >= 0 ? reste.slice(0, reste.indexOf('<div style="position:relative;background:#0f2238')) : '';
+  var corps = E.lig ? _g45NhlAvLigHtml(eid) : '<div style="font-size:13px;color:#c9d3ee;padding:8px;">🏒 Lignes du dernier match…</div>';
+  return tete + sw + abs + corps;
+};
+window.g45NhlAvVue = function (eid, v) {
+  var A = _g45NhlAv[eid]; if (!A) return; A.vue = v;
+  var b = document.getElementById('g45-nhlav-in-' + eid); if (b) b.innerHTML = _g45NhlAvInterieur(eid);
+};
+async function _g45NhlAvLigCharger(eid) {
+  var A = _g45NhlAv[eid]; if (!A || !A.T || A.ligTente) return; A.ligTente = 1; A.ligEnCours = 1;
+  var P = FD_PROXY + '?key=nhl&host=nhl&path=', Q = FD_PROXY + '?key=nhl&host=nhlstats&path=';
+  var raw = A.raw || {}, R = {}, S = {};
+  ((raw.pbp && raw.pbp.rosterSpots) || []).forEach(function (p) { R[p.playerId] = p; });
+  var mu = (raw.land && raw.land.matchup) || {};
+  (((mu.skaterSeasonStats || {}).skaters) || []).concat(((mu.goalieSeasonStats || {}).goalies) || []).forEach(function (p) { if (p && p.playerId) S[p.playerId] = p; });
+  var t0 = Date.parse((raw.pbp && raw.pbp.startTimeUTC) || '') || Date.now();
+  await Promise.all(A.T.map(async function (E) {
+    try {
+      if (!E.ab) return;
+      var ck = 'g45nhlsh1_' + E.ab;
+      var c = null; try { c = JSON.parse(sessionStorage.getItem(ck) || 'null'); } catch (e) {}
+      var sh, jeu;
+      if (c && c.gid && c.sh) { jeu = c.jeu; sh = c.sh; }
+      else {
+        var r = await fetch(P + encodeURIComponent('/v1/club-schedule-season/' + E.ab + '/now'));
+        if (!r.ok) return;
+        var cal = await r.json();
+        var finis = (cal.games || []).filter(function (g) { return /FINAL|OFF/i.test(g.gameState || '') && (Date.parse(g.startTimeUTC) || 0) < t0; })
+          .sort(function (x, y) { return (Date.parse(y.startTimeUTC) || 0) - (Date.parse(x.startTimeUTC) || 0); });
+        var g = finis.filter(function (x) { return x.gameType === 2; })[0] || finis[0];
+        if (!g) return;
+        var rs = await fetch(Q + encodeURIComponent('/stats/rest/en/shiftcharts?cayenneExp=gameId=' + g.id));
+        if (!rs.ok) return;
+        var d = await rs.json();
+        sh = (d.data || []).filter(function (x) { return x.teamId === E.id && x.duration; })
+          .map(function (x) { return { playerId: x.playerId, teamId: x.teamId, period: x.period, startTime: x.startTime, endTime: x.endTime, duration: x.duration, lastName: x.lastName, firstName: x.firstName }; });
+        var adv = (g.homeTeam && g.homeTeam.abbrev === E.ab) ? g.awayTeam : g.homeTeam;
+        var dt = new Date(Date.parse(g.startTimeUTC) || 0);
+        jeu = { date: ('0' + dt.getDate()).slice(-2) + '/' + ('0' + (dt.getMonth() + 1)).slice(-2), adv: (adv && ((adv.commonName && adv.commonName.default) || adv.abbrev)) || '' };
+        if (sh.length) try { sessionStorage.setItem(ck, JSON.stringify({ gid: g.id, jeu: jeu, sh: sh })); } catch (e) {}
+      }
+      var Lg = _g45NhlAvLignes(sh, E.id, R, S);
+      if (Lg && (Lg.F.length || Lg.D.length)) { Lg.date = jeu.date; Lg.adv = jeu.adv; E.lig = Lg; }
+    } catch (e) {}
+  }));
+  A.ligEnCours = 0;
+  var b = document.getElementById('g45-nhlav-in-' + eid); if (b) b.innerHTML = _g45NhlAvInterieur(eid);
+}
+var _g45NhlAvCharger0 = _g45NhlAvCharger;
+_g45NhlAvCharger = async function (eid, hN, aN, dIso) {
+  await _g45NhlAvCharger0(eid, hN, aN, dIso);
+  var A = _g45NhlAv[eid];
+  if (A && A.T && !A.ligTente) _g45NhlAvLigCharger(eid);
+};
+window._g45NhlAvLignes = _g45NhlAvLignes; window._g45NhlAvLigHtml = _g45NhlAvLigHtml;

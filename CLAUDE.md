@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261006y, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261006z, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -112,7 +112,14 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   de l'équipe sans rosterSpots (Bedard, Mangiapane) ; tri buts > points > passes ; patinoire `_g45NhlAvInterieur`, onglets `g45NhlAvEq`. Id NHL via
   club-schedule-season/<ABR>/now (`_g45RegEquipe`), coup d'envoi le plus proche. Worker host=nhl : chemin /v1/gamecenter/… NON vérifié (si refusé →
   ligne « indisponibles (…) »). Lignes / gardien titulaire : pas de source gratuite (Flashscore = CGU) ; piste : shiftcharts api.nhle.com
-  (sonde demandée à Antoine, match 2026020061). Contrôle « NHL avant le match » dans smoke.js (14 contrôles).
+  (sonde demandée à Antoine, match 2026020061). Contrôle « NHL avant le match » dans smoke.js (14 contrôles). CONFIRMÉ par Antoine : le bloc s'affiche.
+  20261006z (maquette validée, ordre gardien → défense → attaque) — 🏒 LIGNES PROBABLES : SONDÉ PAR ANTOINE api.nhle.com/stats/rest/en/shiftcharts
+  ?cayenneExp=gameId=<id> (VIDE pendant le match, rempli après ; {playerId, teamId, period, startTime/endTime « mm:ss », duration, lastName}) ;
+  le temps passé ENSEMBLE redonne les lignes de Flashscore (Carolina–Vancouver vérifié). `_g45NhlAvLigCharger` : dernier match fini de chaque
+  équipe (club-schedule-season, gameType 2 d'abord) → shifts (sessionStorage g45nhlsh1_<ABR>) → `_g45NhlAvLignes` (paires de D puis trios,
+  glouton par chevauchement ; poste = rosterSpots puis landing position) → `_g45NhlAvLigHtml` ; enveloppes de `_g45NhlAvInterieur` (boutons
+  « 🏒 Lignes probables » / « 📋 Tous les joueurs », `g45NhlAvVue`) et de `_g45NhlAvCharger`. Joueur du dernier match hors rosterSpots = grisé.
+  Worker : host=nhlstats (chemin shiftcharts SEUL) — À AJOUTER / REDÉPLOYER par Antoine ; refus → vue « Tous les joueurs » seule.
 - 20261004w (captures d'Antoine 06/10) — Compétitions sports US : Classement (`g45LoadStandings`) demande &seasontype=2 (refus →
   ancienne adresse ; prise en compte par ESPN NON vérifiée) ; `g45RenderStandings` TRIE lui-même NHL/KHL (points) et NBA/NFL/MLB (% V)
   — le « rank » ESPN classait Thunder 15e, Jets 16e ; J absent = V+N+D ; hockey N = otLosses/overtimeLosses (noms NON vérifiés).
