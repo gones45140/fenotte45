@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261007d, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261007e, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -216,6 +216,11 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   photo ronde `_g45SquadAvatar` (perso synchrone, sinon initiales) complétée par
   `_g45SquadPhotos` (api-sports `_g45PhotosFoot`/`_g45PhotoDe`, puis Wikipédia). Même fond et mêmes
   photos en paysage/PC (colonne nom 180 px ; gardiens : 2 cases vides pour atteindre les 15 colonnes).
+- 🖼️ FOND PAR ÉQUIPE (20261007e, essai console validé par Antoine sur PC) : fiche d'équipe ouverte (#detail visible, MutationObserver + enveloppe
+  d'openClub) → `_g45BgMaj` pose --bg-img = fanart TheSportsDB (strFanart1..4 puis strStadiumThumb, PAS le bandeau ; bon sport via u.sport /
+  g45TeamsPerso, `_G45_BG_SPORT`), sinon logo en grand au centre (fixed) sur dégradé bleu nuit ; fiche fermée → fond d'avant (perso ou fond.jpg).
+  Cache g45bgclub1_ (30 j / rien 7 j). Cause du flou d'origine : photo perso réduite à 900 px (applyBgFromFile, localStorage), fond.jpg 468 × 1024.
+  Proposé, NON fait : garder la photo perso en pleine taille (IndexedDB).
 - Mode paysage téléphone (style.css, bloc « MODE PAYSAGE SUR TÉLÉPHONE », media
   landscape + max-height 520 + max-width 1099) : barre du bas → colonne de 80 px,
   logo dans la colonne, en-tête/bandeau affinés ; `--g45-paysage:1` sur :root.

@@ -70182,3 +70182,95 @@ _g45NhlAvCharger = async function (eid, hN, aN, dIso) {
   if (A && A.T && !A.ligTente) _g45NhlAvLigCharger(eid);
 };
 window._g45NhlAvLignes = _g45NhlAvLignes; window._g45NhlAvLigHtml = _g45NhlAvLigHtml;
+
+/* ═══ 20261007e — FOND D'ÉCRAN PAR ÉQUIPE (« l'image du stade ou logo équipe à chaque changement me plaît bien ») ═══
+   Essai validé par Antoine sur son PC (console : fanart TheSportsDB de Lyon en --bg-img). Cause du flou d'origine : la photo perso
+   (Outils → Apparence) est réduite à 900 px de large (applyBgFromFile) et fond.jpg fait 468 × 1024 → agrandies sur un écran de PC.
+   Fiche d'équipe ouverte (#detail visible) → --bg-img = photo grand format du club (strFanart1..4, sinon strStadiumThumb ; PAS le
+   bandeau strTeamBanner, trop étroit pour un plein écran), sinon LOGO en grand au centre sur un dégradé bleu nuit. Équipe du BON
+   sport (u.sport du mur ou équipe perso), nom exact puis contenance ≥ 6 lettres (mêmes garde-fous que _g45FanChercher). Fiche
+   fermée → fond précédent remis (perso ou fond.jpg). Le voile (--scrim, réglable) reste par-dessus. Cache g45bgclub1_<nom>
+   (trouvé 30 j, rien 7 j). */
+var _G45_BG_SPORT = { '⚽': 'soccer', '🏒': 'ice hockey', '🏀': 'basketball', '⚾': 'baseball', '🏈': 'american football', '🏉': 'rugby',
+  soccer: 'soccer', hockey: 'ice hockey', basketball: 'basketball', baseball: 'baseball', football: 'american football', rugby: 'rugby', 'rugby-league': 'rugby' };
+var _g45BgClub = { nom: null, avant: undefined, jeton: 0 };
+try { if (typeof _G45_CACHE_PREFIXES !== 'undefined' && _G45_CACHE_PREFIXES.indexOf('g45bgclub1_') < 0) _G45_CACHE_PREFIXES.push('g45bgclub1_'); } catch (e) {}
+function _g45BgSport(nom) {
+  var u = ((typeof state !== 'undefined' && state && state.u) || []).filter(function (x) { return x && x.n === nom; })[0];
+  var sp = (u && u.sport) || '';
+  if (!sp) { try { var tp = (typeof g45TeamsPerso === 'function') ? g45TeamsPerso() : {}; var e = tp[String(nom).toLowerCase().trim()]; if (e && e.sport) sp = e.sport; } catch (e) {} }
+  for (var k in _G45_BG_SPORT) if (sp && String(sp).indexOf(k) === 0) return _G45_BG_SPORT[k];
+  return '';
+}
+function _g45BgLogo(nom) {
+  var u = ((typeof state !== 'undefined' && state && state.u) || []).filter(function (x) { return x && x.n === nom; })[0];
+  if (u && u.logoUrl) return u.logoUrl;
+  try { if (typeof LOGOS !== 'undefined' && LOGOS[nom]) return LOGOS[nom]; } catch (e) {}
+  try { var k = (typeof _g45SgNorm === 'function') ? _g45SgNorm(nom) : nom; return localStorage.getItem('g45_herologo_' + k) || ''; } catch (e) {}
+  return '';
+}
+async function _g45BgChercher(nom) {
+  var norm = function (t) { return (typeof _g45SgNorm === 'function') ? _g45SgNorm(t) : String(t || '').toLowerCase(); };
+  var ck = 'g45bgclub1_' + norm(nom);
+  try { var c = JSON.parse(localStorage.getItem(ck) || 'null'); if (c && Date.now() - c.t < (c.u || c.l ? 30 : 7) * 864e5) return c; } catch (e) {}
+  var sport = _g45BgSport(nom), out = { u: '', l: '', t: Date.now() };
+  var essais = (typeof _g45FanVariantes === 'function') ? _g45FanVariantes(nom) : [nom];
+  var accept = {}; essais.concat([nom]).forEach(function (v) { var k = norm(v); if (k) accept[k] = 1; });
+  var noms = Object.keys(accept);
+  var marq = /(gloriosas|femenin|feminin|women|ladies|damen|dames|girls|youth|academy|reserve|\bu\s?1[4-9]\b|\bu\s?2[0-3]\b|\bii\b)/i;
+  for (var v = 0; v < essais.length && !out.u && !out.l; v++) {
+    try {
+      var r = await fetch('https://www.thesportsdb.com/api/v1/json/3/searchteams.php?t=' + encodeURIComponent(essais[v]));
+      if (!r.ok) continue;
+      var liste = ((await r.json()) || {}).teams || [];
+      liste = liste.filter(function (t) { return (!sport || norm(t.strSport || '') === norm(sport)) && (marq.test(nom) || !marq.test(String(t.strTeam || ''))); });
+      var t = liste.filter(function (x) { return accept[norm(x.strTeam || '')]; })[0]
+        || liste.filter(function (x) { var k = norm(x.strTeam || ''); return noms.some(function (a) { return a.length >= 6 && (k.indexOf(a) >= 0 || a.indexOf(k) >= 0); }); })[0];
+      if (t) {
+        var r2 = function (x) { return String(x || '').replace('://www.thesportsdb.com/', '://r2.thesportsdb.com/'); };
+        out.u = r2(t.strFanart1 || t.strFanart2 || t.strFanart3 || t.strFanart4 || t.strStadiumThumb || '');
+        out.l = r2(t.strBadge || '');
+      }
+    } catch (e) {}
+  }
+  try { localStorage.setItem(ck, JSON.stringify(out)); } catch (e) {}
+  return out;
+}
+function _g45BgPoser(val) {
+  var st = document.documentElement.style;
+  if (val == null) st.removeProperty('--bg-img'); else st.setProperty('--bg-img', val);
+}
+async function _g45BgMaj() {
+  var det = document.getElementById('detail');
+  var ouvert = !!(det && det.style.display !== 'none' && getComputedStyle(det).display !== 'none');
+  var nom = ouvert && (typeof _currentTeam !== 'undefined') ? _currentTeam : null;
+  if (nom === _g45BgClub.nom) return;
+  var jeton = ++_g45BgClub.jeton;
+  if (!nom) {                                                     /* fiche fermée : fond d'avant */
+    if (_g45BgClub.nom && _g45BgClub.avant !== undefined) _g45BgPoser(_g45BgClub.avant || null);
+    _g45BgClub.nom = null; _g45BgClub.avant = undefined; return;
+  }
+  if (_g45BgClub.avant === undefined) _g45BgClub.avant = document.documentElement.style.getPropertyValue('--bg-img') || '';
+  _g45BgClub.nom = nom;
+  var R = await _g45BgChercher(nom);
+  if (jeton !== _g45BgClub.jeton) return;                         /* une autre fiche a été ouverte entre-temps */
+  var degrade = 'linear-gradient(160deg,#0b1430 0%,#1a2550 50%,#0b101d 100%)';
+  if (R.u) _g45BgPoser("url('" + R.u.replace(/'/g, '%27') + "')");
+  else { var lg = R.l || _g45BgLogo(nom); _g45BgPoser(lg ? "url('" + lg.replace(/'/g, '%27') + "') center/min(60vh,60vw) no-repeat fixed, " + degrade : degrade); }
+}
+(function () {
+  var brancher = function () {
+    var det = document.getElementById('detail');
+    if (!det || det._g45Bg) return !!det;
+    det._g45Bg = 1;
+    new MutationObserver(function () { _g45BgMaj(); }).observe(det, { attributes: true, attributeFilter: ['style'] });
+    return true;
+  };
+  if (!brancher()) document.addEventListener('DOMContentLoaded', brancher);
+  if (typeof openClub === 'function' && !openClub._g45Bg) {
+    var o = openClub;
+    openClub = function () { var r = o.apply(this, arguments); setTimeout(_g45BgMaj, 0); return r; };
+    openClub._g45Bg = true; window.openClub = openClub;
+  }
+})();
+window._g45BgMaj = _g45BgMaj; window._g45BgChercher = _g45BgChercher;
