@@ -69859,6 +69859,21 @@ function _g45NhlAvLire(pbp, land) {
   var mu = (land && land.matchup) || {};
   var sk = ((mu.skaterSeasonStats || {}).skaters) || [], gk = ((mu.goalieSeasonStats || {}).goalies) || [];
   var S = {}; sk.concat(gk).forEach(function (p) { if (p && p.playerId) S[p.playerId] = p; });
+  /* 20261007a (capture d'Antoine : « Joueurs pas encore publiés par la NHL » sur un match à venir) : rosterSpots VIDE tant que la NHL
+     n'a pas publié la liste du match → effectif construit depuis les stats de la saison (landing), absents inconnus (synth). */
+  var synth = false;
+  if (!rs.length && (sk.length || gk.length)) {
+    synth = true;
+    var sais = (pbp && pbp.season) || (land && land.season) || '';
+    var abT = {}; [pbp && pbp.homeTeam, pbp && pbp.awayTeam, land && land.homeTeam, land && land.awayTeam].forEach(function (t) { if (t && t.id) abT[t.id] = t.abbrev; });
+    rs = sk.map(function (p) { return [p, p.position || 'C']; }).concat(gk.map(function (p) { return [p, 'G']; })).map(function (x) {
+      var p = x[0], nmc = String(((p.name && (p.name.default || p.name.fr)) || '')).trim();
+      var m = /^(\S+)\.\s*(.+)$/.exec(nmc);
+      return { teamId: p.teamId, playerId: p.playerId, sweaterNumber: p.sweaterNumber, positionCode: x[1],
+        firstName: { default: m ? m[1] : '' }, lastName: { default: m ? m[2] : nmc },
+        headshot: (sais && abT[p.teamId]) ? 'https://assets.nhle.com/mugs/nhl/' + sais + '/' + abT[p.teamId] + '/' + p.playerId + '.png' : '' };
+    });
+  }
   var dispo = {}; rs.forEach(function (p) { dispo[p.playerId] = 1; });
   var nm = function (o) { return (o && (o.default || o.fr)) || ''; };
   var eq = function (t) {
@@ -69880,6 +69895,7 @@ function _g45NhlAvLire(pbp, land) {
     sk.concat(gk).forEach(function (p) {
       if (p && p.teamId === t.id && !dispo[p.playerId]) E.abs.push({ nom: nm(p.name), mj: +p.gamesPlayed || 0 });
     });
+    E.synth = synth;
     return E;
   };
   if (!rs.length) return null;
@@ -69910,6 +69926,7 @@ function _g45NhlAvInterieur(eid) {
       + (on ? '#c8102e' : '#3a4770') + ';background:' + (on ? '#c8102e' : 'rgba(11,16,29,.85)') + ';">' + String(e.nom).replace(/[<>"&]/g, '') + '</button>';
   });
   h += '</div>';
+  if (E.synth) h += '<div style="font-size:13px;color:#fff;background:rgba(255,255,255,.08);border-radius:10px;padding:7px 8px;margin-bottom:8px;line-height:1.35;">⏳ Liste officielle du match pas encore publiée par la NHL : effectif de la saison, <b>absents inconnus</b>.</div>';
   if (E.abs.length) h += '<div style="background:rgba(255,140,40,.15);border:1px solid #ff9b3d;border-radius:10px;padding:8px;font-size:14px;color:#ffb347;font-weight:700;margin-bottom:8px;">🚫 Absents (' + E.abs.length + ')'
     + '<span style="color:#fff;font-weight:400;font-size:13px;display:block;margin-top:2px;">'
     + E.abs.map(function (x) { return String(x.nom).replace(/[<>"&]/g, '') + (x.mj ? ' (' + x.mj + ' match' + (x.mj > 1 ? 's' : '') + ' joué' + (x.mj > 1 ? 's' : '') + ')' : ''); }).join(' · ') + '</span></div>';
@@ -70037,6 +70054,7 @@ function _g45NhlAvLignes(shifts, teamId, R, S) {
 }
 function _g45NhlAvLigJoueur(id, Lg, R, S) {
   var r = R[id], s = S[id] || {}, i = Lg.info[id] || {};
+  if (!r && R._vide) r = { lastName: { default: (typeof _g45Accents === 'function' ? _g45Accents(String(i.nom || '')) : i.nom) }, firstName: { default: i.pre }, sweaterNumber: s.sweaterNumber, headshot: '' };   /* 20261007a : pas de liste officielle → personne n'est « absent ce soir » */
   var nm = function (o) { return (o && (o.default || o.fr)) || ''; };
   var fix = function (t) { t = String(t || ''); return typeof _g45Accents === 'function' ? _g45Accents(t) : t; };
   var j = r ? { nom: nm(r.lastName), pre: nm(r.firstName), no: r.sweaterNumber, ph: r.headshot || '' }
@@ -70052,6 +70070,7 @@ function _g45NhlAvLigHtml(eid) {
   var A = _g45NhlAv[eid], E = A.T[A.sel] || A.T[0], Lg = E.lig;
   var raw = A.raw || {}, R = {}, S = {};
   ((raw.pbp && raw.pbp.rosterSpots) || []).forEach(function (p) { R[p.playerId] = p; });
+  if (!Object.keys(R).length) Object.defineProperty(R, '_vide', { value: true });
   var mu = (raw.land && raw.land.matchup) || {};
   (((mu.skaterSeasonStats || {}).skaters) || []).concat(((mu.goalieSeasonStats || {}).goalies) || []).forEach(function (p) { if (p && p.playerId) S[p.playerId] = p; });
   var pj = function (id, gros, extra) {

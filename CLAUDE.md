@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261006z, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261007a, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -120,6 +120,11 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   glouton par chevauchement ; poste = rosterSpots puis landing position) → `_g45NhlAvLigHtml` ; enveloppes de `_g45NhlAvInterieur` (boutons
   « 🏒 Lignes probables » / « 📋 Tous les joueurs », `g45NhlAvVue`) et de `_g45NhlAvCharger`. Joueur du dernier match hors rosterSpots = grisé.
   Worker : host=nhlstats (chemin shiftcharts SEUL) — À AJOUTER / REDÉPLOYER par Antoine ; refus → vue « Tous les joueurs » seule.
+  (worker.js complet avec la route nhlstats donné à Antoine le 09/10.)
+  20261007a (capture : « Joueurs pas encore publiés par la NHL » sur San Jose–Edmonton à venir) : rosterSpots VIDE tant que la NHL n'a pas publié
+  la liste du match → `_g45NhlAvLire` construit l'effectif depuis landing (skaterSeasonStats position / goalies, nom « A. Frondell » coupé,
+  photo assets.nhle.com/mugs/nhl/<season>/<ABR>/<id>.png déduite), E.synth = bandeau « ⏳ Liste officielle pas encore publiée… absents inconnus » ;
+  lignes : sans liste officielle, personne n'est grisé (R._vide).
 - 20261004w (captures d'Antoine 06/10) — Compétitions sports US : Classement (`g45LoadStandings`) demande &seasontype=2 (refus →
   ancienne adresse ; prise en compte par ESPN NON vérifiée) ; `g45RenderStandings` TRIE lui-même NHL/KHL (points) et NBA/NFL/MLB (% V)
   — le « rank » ESPN classait Thunder 15e, Jets 16e ; J absent = V+N+D ; hockey N = otLosses/overtimeLosses (noms NON vérifiés).
