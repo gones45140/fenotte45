@@ -34027,7 +34027,8 @@ async function _renderGenericDetail(el, sport, lg, eid){
             +'<span style="font-size:14px;font-weight:800;color:#fff;text-transform:uppercase;letter-spacing:.5px;">'+_tn+'</span></div>';
           (tl.leaders||[]).slice(0,3).forEach(function(cat){
             var ld=(cat.leaders&&cat.leaders[0])||null;
-            if(ld&&ld.athlete) h+='<div style="font-size:10px;color:var(--t2);padding:2px 0;">'+_g45LdFr(cat.displayName||cat.shortDisplayName||'')+' : <b style="color:var(--t1);">'+(ld.athlete.displayName||'')+'</b> <span style="color:var(--t3);">('+_g45LdFr(String(ld.displayValue||ld.value||''))+')</span></div>';
+            /* 20261007d (« on voit à peine le chiffre ») : 14 px, chiffre en blanc gras sur pastille, libellé gris clair. */
+            if(ld&&ld.athlete) h+='<div style="font-size:14px;color:#c9d3ee;padding:3px 0 3px 4px;">'+_g45LdFr(cat.displayName||cat.shortDisplayName||'')+' : <b style="color:#fff;">'+(ld.athlete.displayName||'')+'</b> <span style="display:inline-block;margin-left:4px;padding:0 7px;border-radius:8px;background:rgba(255,255,255,.16);color:#fff;font-weight:800;">'+_g45LdFr(String(ld.displayValue||ld.value||''))+'</span></div>';
           });
         });
         h+='</div>';

@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261007c, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261007d, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -304,7 +304,8 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   Assists, Total Shots). 20261003f : `_genericLineups` enveloppée → foot = terrain `_renderEspnMatchPitch` (changements + banc
   dessous), liste en secours ; autres sports inchangés. CONFIRMÉ par Antoine (03/10).
 - « Meilleurs joueurs » de `_renderGenericDetail` (data.leaders ESPN) : 20261007b (« Celebrini et Toffoli c'est qui ? ») — nom + logo de l'équipe
-  (tl.team.displayName, logo ou logos[0].href) au-dessus de ses 3 lignes, blanc 14 px sur bande sombre.
+  (tl.team.displayName, logo ou logos[0].href) au-dessus de ses 3 lignes, blanc 14 px sur bande sombre. CONFIRMÉ (capture Ducks / Oilers).
+  20261007d (« on voit à peine le chiffre ») : lignes en 14 px, valeur en blanc gras sur pastille.
 - Fenêtre de match hors foot (`_renderGenericDetail`) : ligne stade + ville sous le score
   (gameInfo.venue, repli comp.venue), comme la fenêtre foot.
 - Saisons (`_g45SaisonsGen`) : « Points par match » et « Stats clés » calculés sur `sf`
