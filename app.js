@@ -70682,6 +70682,10 @@ async function _g45TicketIa(dataUrl) {
     + 'UNIBET = bandeau NOIR en haut avec « SIMPLE » / « COMBINÉ » en capitales blanches, corps blanc, match « Lille - Le Havre » (1re = reçoit), '
     + '« À 17h15 » en gris à droite (heure du match), marché « 1 N 2 - 90 Mins : Lille » avec sa cote à droite, pied gris « Cote totale | Mise | '
     + 'Gains potentiels » en gras, liseré jaune en bas. La cote à retenir est la « Cote totale » (elle peut différer de la cote de la ligne). '
+    + 'PMU (PMU PLAY) = cartes blanches avec barre de couleur à gauche (verte gagné, rouge perdu), « Simple @ 9,50 • Perdu » ou « Simple • Gagné », '
+    + '« Référence Du Pari: 12944653958 » (chiffres) sous une date « 26 Juil. 2026 • 18:47 » qui est la date du PARI, marché en gras, match en vert '
+    + '« France - Maroc » (1re = reçoit), « Cote: 1,90 2,50 » (la cote barrée est l\'ancienne : garde la DERNIÈRE), « Mise : 10,00 € • Gain : 25,03 € », '
+    + 'bandeaux vert foncé. Si la capture montre PLUSIEURS paris, lis seulement le PREMIER (le plus haut). '
     + 'Si le nom ou ces signes ne sont pas visibles, '
     + 'bookmaker = null et bookmaker_sur = false : ne devine pas.\n'
     + 'La date en bas à côté de « Réf » est la date du PARI, pas du match : date = celle du match si affichée près des équipes, sinon null.\n'
@@ -70713,7 +70717,7 @@ async function _g45TicketIa(dataUrl) {
     var _nzT = function (t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z]/g, ''); };
     if (o.equipe && o.joueur && _nzT(o.equipe) === _nzT(o.joueur)) o.equipe = null;
     /* 20261007q : bookmaker gardé seulement si l'IA en est sûre (sinon le choix du formulaire reste) */
-    if (o.bookmaker_sur === false && !/winamax|betclic|unibet/i.test(String(o.bookmaker || ''))) o.bookmaker = null;
+    if (o.bookmaker_sur === false && !/winamax|betclic|unibet|pmu|betify/i.test(String(o.bookmaker || ''))) o.bookmaker = null;
   } catch (x) {}
   /* 20261007o (capture : « Lun. 05/10 » lu 10/05/2025) : date au plus près d'aujourd'hui — jour et mois inversés, année de l'IA ignorée */
   try {
