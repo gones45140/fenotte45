@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261007k, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261007l, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -186,6 +186,13 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   30c — tableau aligné (maquette validée) : largeurs FIXES (flex:none) ; colonne pastilles
   PAST_L px en-tête ET lignes (avant : texte « 9 derniers » seul en en-tête → chiffres décalés),
   nom ≥ 150 px, largeur mini LARG_MIN (défilement horizontal au-delà).
+- SYNCHRO DES PARIS (GitHub, Antoine seul, données/paris_antoine.json chiffré) — 20261007l : le 09/10, PC éteint après 3 paris (22:16-22:20),
+  téléphone resté ANCIEN saisit Lens–Lyon → poussait SON état entier (23:19) → 3 paris perdus partout (restaurés par commande console depuis
+  le commit adc4c09). Correctif (bloc en fin d'app.js) : `_g45PushBetsGithub` REMPLACÉE — avant chaque envoi, version GitHub plus récente que
+  g45_betsync_ts → déchiffrée et fusionnée par `_g45BetsFusion` (pari absent ajouté + effet solde ; en cours ici / réglé là-bas → repris réglé,
+  palier recopié ; pierres tombales state.hOff 120 j via enveloppes deleteArchived / cancelBet) ; illisible → envoi ANNULÉ ; sha refusé → 1
+  nouvel essai ; envois sérialisés. NON fusionnés : modification d'un pari présent des deux côtés, dépôts / retraits manuels. Testé : 15 cas vm +
+  scénario complet Chromium avec faux GitHub (4 paris, solde juste).
 - COMPTABILITÉ DES PARIS : `_g45BetEffetTotal` / `_g45BetAppliquer` = seule
   source de vérité (mise retirée AU PLACEMENT ; gagné +m×cote ; freebet :
   cagnotte −m, gain m×(cote−1)). `deleteArchived` (DEUX copies) et

@@ -70426,3 +70426,152 @@ window.applyBgFromUrl = function () {                       /* un lien choisi re
 function _g45MotoActive() {
   try { return (typeof _g45SanteActive === 'function') ? _g45SanteActive() : true; } catch (e) { return true; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   20261007l — SYNCHRO DES PARIS : FUSION au lieu d'ÉCRASEMENT (10/10, 3 paris NHL perdus)
+   ───────────────────────────────────────────────────────────────────────────
+   Vécu : le 09/10, 3 paris saisis sur le PC (poussés 22:16 → 22:20), PC éteint ; le téléphone, resté sur une version
+   PLUS ANCIENNE, saisit Lens–Lyon → « modifié » → `_g45PushBetsGithub` envoyait SON état entier (23:19) par-dessus celui
+   du PC : les 3 paris disparaissaient partout. (Le garde-fou de `_g45PullBetsGithub` « local modifié → on pousse le
+   local » protégeait le téléphone, pas le PC.)
+   Désormais, avant chaque envoi : si la version GitHub a été écrite APRÈS notre dernière synchro (ts > g45_betsync_ts),
+   elle est déchiffrée et FUSIONNÉE (`_g45BetsFusion`) :
+     - pari distant absent ici (h en cours / a réglé) → ajouté, avec son effet sur le solde (`_g45BetAppliquer`) ;
+     - pari en cours ici mais réglé là-bas → repris réglé (effet en cours retiré, effet réglé appliqué, palier de
+       l'équipe recopié pour un pari de montante) ;
+     - pierres tombales state.hOff {id: date} (pari supprimé ou annulé, enveloppes de deleteArchived / cancelBet) :
+       un pari supprimé sur un appareil ne revient pas, et disparaît aussi de l'autre.
+   Non fusionnés (dernier envoi gagne, comme avant) : modification d'un pari déjà présent des deux côtés, dépôts /
+   retraits manuels sur un bookmaker. Déchiffrement impossible → envoi ANNULÉ (on n'écrase rien qu'on ne sait pas lire).
+   ═══════════════════════════════════════════════════════════════════════════ */
+function _g45BetsFusion(rem) {
+  var n = 0;
+  if (!rem || !state) return 0;
+  if (!state.h) state.h = [];
+  if (!state.a) state.a = [];
+  var off = {}, k, now = Date.now();
+  [rem.hOff, state.hOff].forEach(function (o) { if (o) for (k in o) off[k] = Math.max(off[k] || 0, +o[k] || 0); });
+  for (k in off) if (now - off[k] > 120 * 86400000) delete off[k];      /* pierres tombales gardées 120 jours */
+  state.hOff = off;
+  var applique = function (b, loc, sens) { try { if (typeof _g45BetAppliquer === 'function') _g45BetAppliquer(b, loc, sens); } catch (e) {} };
+  /* 1. supprimés ailleurs */
+  ['h', 'a'].forEach(function (loc) {
+    for (var i = state[loc].length - 1; i >= 0; i--) {
+      var b = state[loc][i];
+      if (b && b.id != null && off[String(b.id)]) { applique(b, loc, -1); state[loc].splice(i, 1); n++; }
+    }
+  });
+  var ici = function () { var m = {}; ['h', 'a'].forEach(function (loc) { state[loc].forEach(function (b, i) { if (b && b.id != null) m[String(b.id)] = { loc: loc, i: i }; }); }); return m; };
+  var L = ici();
+  /* 2. réglés ailleurs (en cours ici) */
+  (rem.a || []).forEach(function (b) {
+    if (!b || b.id == null) return;
+    var id = String(b.id), p = L[id];
+    if (off[id] || !p || p.loc !== 'h') return;
+    var loc0 = state.h[p.i];
+    applique(loc0, 'h', -1);
+    state.h.splice(p.i, 1);
+    var cp = JSON.parse(JSON.stringify(b));
+    state.a.unshift(cp); applique(cp, 'a', 1); n++;
+    if (cp.isS) {
+      try {
+        var ur = (rem.u || []).filter(function (x) { return x && x.n === cp.n; })[0];
+        var ul = (state.u || []).filter(function (x) { return x && x.n === cp.n; })[0];
+        if (ur && ul) { ul.l = ur.l; if (ur.lc) ul.lc = JSON.parse(JSON.stringify(ur.lc)); }
+      } catch (e) {}
+    }
+    L = ici();
+  });
+  /* 3. absents ici */
+  ['h', 'a'].forEach(function (loc) {
+    (rem[loc] || []).forEach(function (b) {
+      if (!b || b.id == null) return;
+      var id = String(b.id);
+      if (off[id] || L[id]) return;
+      var cp = JSON.parse(JSON.stringify(b));
+      state[loc].unshift(cp); applique(cp, loc, 1); n++;
+      L[id] = { loc: loc, i: 0 };
+    });
+  });
+  return n;
+}
+window._g45BetsFusion = _g45BetsFusion;
+
+(function () {
+  try {
+    /* Pierres tombales : un pari qui DISPARAÎT des deux listes (supprimé, annulé) est noté dans state.hOff. */
+    var noter = function (nom) {
+      var f = window[nom];
+      if (typeof f !== 'function' || f._g45off) return;
+      var g = function () {
+        var avant = {};
+        try { (state.h || []).concat(state.a || []).forEach(function (b) { if (b && b.id != null) avant[String(b.id)] = 1; }); } catch (e) {}
+        var r = f.apply(this, arguments);
+        try {
+          var apres = {}, perdus = [];
+          (state.h || []).concat(state.a || []).forEach(function (b) { if (b && b.id != null) apres[String(b.id)] = 1; });
+          for (var id in avant) if (!apres[id]) perdus.push(id);
+          if (perdus.length) {
+            if (!state.hOff) state.hOff = {};
+            perdus.forEach(function (id) { state.hOff[id] = Date.now(); });
+            save();
+          }
+        } catch (e) {}
+        return r;
+      };
+      g._g45off = true;
+      window[nom] = g;
+    };
+    noter('deleteArchived'); noter('cancelBet');
+    try { deleteArchived = window.deleteArchived; cancelBet = window.cancelBet; } catch (e) {}
+
+    /* Envoi : fusion avec la version distante si quelqu'un a écrit depuis notre dernière synchro. */
+    var enCours = false, encore = false;
+    var envoyer = async function () {
+      if (enCours) { encore = true; return; }
+      enCours = true;
+      try {
+        for (var essai = 0; essai < 2; essai++) {
+          var pass = _g45BetsPass();
+          if (!pass) { console.warn('⚠️ Synchro paris : pas de clé.'); return; }
+          var cur = await _gh_getBets();
+          if (!cur) return;
+          var der = parseInt(localStorage.getItem('g45_betsync_ts') || '0', 10);
+          if (cur.data && cur.data.enc && (+cur.data.ts || 0) > der) {
+            var rem = null;
+            try { rem = await _g45DecryptState(cur.data.enc, pass); }
+            catch (e) { console.warn('⚠️ Synchro paris : version GitHub illisible (clé différente ?) — envoi ANNULÉ pour ne rien écraser.'); return; }
+            var nb = _g45BetsFusion(rem);
+            try { localStorage.setItem('g45v5', JSON.stringify(state)); } catch (e) {}
+            if (nb) { console.warn('🔀 synchro : ' + nb + ' pari(s) repris de l\'autre appareil'); try { if (typeof render === 'function') render(); } catch (e) {} }
+          }
+          var enc = await _g45EncryptState(state, pass);
+          var ts = Date.now();
+          var ok = await _gh_saveBets({ ts: ts, enc: enc }, cur.sha);
+          if (ok) {
+            localStorage.setItem('g45_betsync_ts', String(ts));
+            try { localStorage.removeItem('g45_dirty'); } catch (e) {}
+            console.log('✅ paris poussés (chiffrés, fusionnés) sur GitHub');
+            return;
+          }
+          /* refus (sha périmé : l'autre appareil vient d'écrire) → on relit et on refusionne une fois */
+        }
+      } catch (e) { console.warn('push bets', e); }
+      finally {
+        enCours = false;
+        if (encore) { encore = false; setTimeout(envoyer, 1500); }
+      }
+    };
+    var tempo = null;
+    _g45PushBetsGithub = function (immediate) {
+      if (!_g45BetSyncOn()) return;
+      if (tempo) clearTimeout(tempo);
+      if (immediate) { tempo = null; envoyer(); } else tempo = setTimeout(function () { tempo = null; envoyer(); }, 800);
+    };
+    window._g45PushBetsGithub = _g45PushBetsGithub;
+    /* le filet « page qui se ferme » regardait _g45BetPushT : il doit voir la nouvelle minuterie */
+    _g45FlushBetSync = window._g45FlushBetSync = function () { if (tempo) { clearTimeout(tempo); tempo = null; envoyer(); } };
+    window.addEventListener('pagehide', function () { _g45FlushBetSync(); });
+    window.addEventListener('beforeunload', function () { _g45FlushBetSync(); });
+  } catch (e) {}
+})();
