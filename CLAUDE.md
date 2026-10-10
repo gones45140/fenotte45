@@ -1293,7 +1293,7 @@ RÉGLÉ (worker, 01/10) : cron « exceededCpu » (cpuTimeMs 10) à CHAQUE passag
   assistsLeaders) ; journal common v3 via worker espnweb /apis/common/v3/sports/soccer/<lg>/athletes/<id>/gamelog → names
   [totalGoals, goalAssists…], seasonTypes[].categories[].events[{eventId, stats}] (CE championnat, matchs joués), events{id:{gameDate}},
   filters season. `_g45RegLogFoot` : ?season= NON sondé → saison renvoyée contrôlée (autre = joueur ignoré). « Buts + passes » =
-  top buteurs + top passeurs, sans couleur. Noms / clubs `_g45RegFtNom` (g45regft1_), photos `_g45ClsAvatar` + `_g45ClsPhotos`.
+  top buteurs + top passeurs, sans couleur (or recalculé buts + passes de l'an − 1 PROPOSÉ le 10/10, REFUSÉ : « on laisse »). Noms / clubs `_g45RegFtNom` (g45regft1_), photos `_g45ClsAvatar` + `_g45ClsPhotos`.
   Saisons d'une équipe de foot : PAS encore (effectif à sonder). Restent : NFL, rugby, NRL, KHL.
   20261005z — SONDÉ PAR ANTOINE (Torres 265869, Marquinhos, Thauvin faux : « 3 buts en 1 match ») : gamelog?season=2026 renvoie la
   LIGUE DES CHAMPIONS (« League Phase ») malgré filters league=fra.1 ; SANS paramètre = Ligue 1 en cours (5 matchs). → lecture sans
