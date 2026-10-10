@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261007p, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261007q, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -202,6 +202,10 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   20261007p (capture Vilardi Winamax : compétition « Squad Game », heure 00:07 = heure de SAISIE à côté de « Réf », joueur dans Équipe) :
   consigne (Squad Game / MyMatch / Boost / Cashout = jeux Winamax ; heure « Réf » ≠ match ; pari joueur = club du joueur) + garde-fous :
   compétition « squad|mymatch|boost|cashout|freebet » → vidée et bookmaker winamax ; equipe = joueur → equipe vidée.
+  20261007q (« pour différencier les books ça va être compliqué », ticket Winamax Yamal envoyé) : consigne = signes WINAMAX (carte bleu nuit,
+  étiquette En cours / Gagné / Perdu, cote en pastille blanche chiffres rouges, Mise / Gains potentiels jaunes, COMPLÉTER, « Réf : … » + date
+  de saisie) ; champ bookmaker_sur : false (et pas Winamax) → bookmaker NON changé ; date « Réf » = date du pari, pas du match.
+  AUTRES BOOKMAKERS (Betclic, Unibet, PMU, Piwi…) : captures DEMANDÉES à Antoine pour écrire leurs signes.
   ⚠ app.js contient un jeton Dropbox en dur (localStorage.setItem('gones45_dbx_token', 'sl.…'), ≈ l. 15585 et sa copie) : SIGNALÉ à Antoine le 10/10.
 - SYNCHRO DES PARIS (GitHub, Antoine seul, données/paris_antoine.json chiffré) — 20261007l : le 09/10, PC éteint après 3 paris (22:16-22:20),
   téléphone resté ANCIEN saisit Lens–Lyon → poussait SON état entier (23:19) → 3 paris perdus partout (restaurés par commande console depuis
