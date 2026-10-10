@@ -70678,6 +70678,9 @@ async function _g45TicketIa(dataUrl) {
     + 'BETCLIC = carte BLANCHE, « Simple » / « Combiné » en haut à gauche, état en haut à droite (« Gagné » pastille verte…), marché écrit en VERT, '
     + 'cote dans une pastille JAUNE en chiffres noirs penchés, ligne « Lun. 05/10 20:45 » (date et heure DU MATCH) au-dessus des équipes, '
     + 'gains en vert penché, bas « Réf » + longue suite hexadécimale (6ac3e99f…) + « 05/10/2026 20:17 ». « Boost » existe chez les deux. '
+    + 'UNIBET = bandeau NOIR en haut avec « SIMPLE » / « COMBINÉ » en capitales blanches, corps blanc, match « Lille - Le Havre » (1re = reçoit), '
+    + '« À 17h15 » en gris à droite (heure du match), marché « 1 N 2 - 90 Mins : Lille » avec sa cote à droite, pied gris « Cote totale | Mise | '
+    + 'Gains potentiels » en gras, liseré jaune en bas. La cote à retenir est la « Cote totale » (elle peut différer de la cote de la ligne). '
     + 'Si le nom ou ces signes ne sont pas visibles, '
     + 'bookmaker = null et bookmaker_sur = false : ne devine pas.\n'
     + 'La date en bas à côté de « Réf » est la date du PARI, pas du match : date = celle du match si affichée près des équipes, sinon null.\n'
@@ -70709,7 +70712,7 @@ async function _g45TicketIa(dataUrl) {
     var _nzT = function (t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z]/g, ''); };
     if (o.equipe && o.joueur && _nzT(o.equipe) === _nzT(o.joueur)) o.equipe = null;
     /* 20261007q : bookmaker gardé seulement si l'IA en est sûre (sinon le choix du formulaire reste) */
-    if (o.bookmaker_sur === false && !/winamax|betclic/i.test(String(o.bookmaker || ''))) o.bookmaker = null;
+    if (o.bookmaker_sur === false && !/winamax|betclic|unibet/i.test(String(o.bookmaker || ''))) o.bookmaker = null;
   } catch (x) {}
   /* 20261007o (capture : « Lun. 05/10 » lu 10/05/2025) : date au plus près d'aujourd'hui — jour et mois inversés, année de l'IA ignorée */
   try {
