@@ -70947,7 +70947,8 @@ function _g45MmCouleurs() {
 (function () {
   ['renderMmRows', 'renderMmRowsSimple', 'setLieu'].forEach(function (n) {
     var f = window[n]; if (typeof f !== 'function' || f._g45Mm) return;
-    var w = function () { var x = f.apply(this, arguments); try { _g45MmCouleurs(); } catch (e) {} return x; };
+    /* 20261008a : les cadres des champs (Type de pari, cote) sont repeints aussitôt, sinon rouges jusqu'à 1,5 s après le clic */
+    var w = function () { var x = f.apply(this, arguments); try { _g45MmCouleurs(); _g45TkPeindre(); } catch (e) {} return x; };
     w._g45Mm = 1; for (var k in f) if (Object.prototype.hasOwnProperty.call(f, k)) w[k] = f[k]; window[n] = w;
   });
   document.addEventListener('change', function (e) { if (e.target && e.target.id === 'c-lieu') try { _g45MmCouleurs(); } catch (x) {} }, true);
