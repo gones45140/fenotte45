@@ -70673,6 +70673,10 @@ async function _g45TicketIa(dataUrl) {
     + '"type":"le ou les marchés en français court, joints par \' + \' (ex : Victoire Inter + Moins de 4,5 buts)",'
     + '"cote":cote TOTALE du ticket (PAS les gains potentiels),"mise":montant misé en euros,"gains":gains potentiels en euros ou null,"bookmaker":"nom du site"}\n'
     + 'Les gains = mise × cote : ne confonds pas. Nombre avec un point décimal. Rien d\'inventé : null si absent.\n'
+    + 'PIÈGES : « Squad Game », « MyMatch », « Boost », « Cashout », « Freebet » sont des JEUX ou OPTIONS du bookmaker (Winamax), JAMAIS la compétition : '
+    + 'competition = la ligue (NHL, NBA, Ligue 1, Liga…), déduite des équipes si elle n\'est pas écrite. Ces mots désignent Winamax comme bookmaker. '
+    + 'L\'heure écrite en bas à côté de « Réf » est l\'heure où le pari a été PLACÉ, pas celle du match : heure = null si l\'heure du match n\'est pas affichée. '
+    + 'Pari joueur : equipe = le CLUB du joueur (parmi les deux équipes du match), adversaire = l\'autre club, joueur = son nom.\n'
     + 'Les dates des tickets sont au format FRANÇAIS jour/mois (« Lun. 05/10 » = lundi 5 octobre). Nous sommes le ' + new Date().toISOString().slice(0, 10) + ' : sans année sur le ticket, prends celle-ci.';
   var r = await fetch(g45IaUrl(), {
     method: 'POST', headers: h,
@@ -70690,6 +70694,12 @@ async function _g45TicketIa(dataUrl) {
   if (a < 0 || b < a) throw new Error('pas de JSON');
   var o = JSON.parse(txt.slice(a, b + 1));
   /* garde-fou : si l'IA a pris les gains pour la cote, gains ≈ mise × cote */
+  /* 20261007p (capture Vilardi « Squad Game ») : jeu Winamax pris pour la compétition, joueur dans Équipe */
+  try {
+    if (/squad|my\s*match|boost|cash\s*out|freebet/i.test(String(o.competition || ''))) { o.competition = null; if (!o.bookmaker) o.bookmaker = 'winamax'; }
+    var _nzT = function (t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z]/g, ''); };
+    if (o.equipe && o.joueur && _nzT(o.equipe) === _nzT(o.joueur)) o.equipe = null;
+  } catch (x) {}
   /* 20261007o (capture : « Lun. 05/10 » lu 10/05/2025) : date au plus près d'aujourd'hui — jour et mois inversés, année de l'IA ignorée */
   try {
     var dm = String(o.date || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
