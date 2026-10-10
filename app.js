@@ -70575,3 +70575,144 @@ window._g45BetsFusion = _g45BetsFusion;
     window.addEventListener('beforeunload', function () { _g45FlushBetSync(); });
   } catch (e) {}
 })();
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   20261007m — LECTURE DU TICKET COLLÉ DANS LE PENSE-BÊTE (capture d'Antoine 10/10 : ticket MyMatch Winamax
+   « Inter Milan 18:00 Parme · Résultat Inter + Moins de 4,5 buts · 1,54 · mise 5,00 € · gains 7,70 € »
+   → l'appli mettait cote 7,70 (les GAINS), mise 10 (non lue), ni heure, ni équipes).
+   Cause : la lecture (DEUX copies, IIFE « SCAN TICKET via bloc-notes ») = Tesseract + expressions simples (1re
+   valeur « d,dd » = cote ; équipes = ligne contenant « - » ; mise « Mise 5,00 » sur une seule ligne) → faux dès
+   que la mise en page change. Désormais : capture du collage AVANT ces deux écouteurs (document, phase de capture),
+   image envoyée au modèle VISION de Groq (`g45GroqModeleVision`, même voie que les autres appels IA : clé locale
+   sinon worker /ia) qui rend un JSON, recopié dans le formulaire du pari simple (équipe, adversaire, lieu, date,
+   heure, compétition, sport, type, cote TOTALE, mise, bookmaker). Échec de l'IA → ancienne lecture Tesseract
+   (`_g45TicketTesseract`, mêmes règles qu'avant + mise sur la ligne suivante). Passage par le worker avec une
+   image : NON vérifié (taille de corps acceptée).
+   ═══════════════════════════════════════════════════════════════════════════ */
+function _g45TicketRemplir(o) {
+  var ids = [];
+  var met = function (id, v) {
+    var e = document.getElementById(id);
+    if (!e || v == null || v === '') return;
+    e.value = v; ids.push(id);
+    try { e.dispatchEvent(new Event('input', { bubbles: true })); e.dispatchEvent(new Event('change', { bubbles: true })); } catch (x) {}
+  };
+  var num = function (v) { var n = parseFloat(String(v == null ? '' : v).replace(',', '.').replace(/[^\d.]/g, '')); return isFinite(n) && n > 0 ? n : null; };
+  met('n-team', o.equipe); met('n-analysis', o.adversaire);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(String(o.date || ''))) met('n-date', o.date);
+  if (/^\d{1,2}:\d{2}$/.test(String(o.heure || ''))) met('n-heure', String(o.heure).padStart(5, '0'));
+  met('n-comp', o.competition); met('n-type', o.type);
+  var c = num(o.cote); if (c && c < 1000) met('n-cote', c.toFixed(2));
+  var m = num(o.mise); if (m) met('n-mise', m);
+  var SP = { football: '⚽', soccer: '⚽', basket: '🏀', basketball: '🏀', tennis: '🎾', nfl: '🏈', 'football americain': '🏈',
+             hockey: '🏒', baseball: '⚾', rugby: '🏉', nrl: '🏉🇦🇺', f1: '🏎', 'formule 1': '🏎', mma: '🥊', ufc: '🥊' };
+  var sp = SP[String(o.sport || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim()];
+  if (sp) { var se = document.getElementById('p-sport'); if (se && [].some.call(se.options, function (op) { return op.value === sp; })) { se.value = sp; ids.push('p-sport'); try { se.dispatchEvent(new Event('change', { bubbles: true })); } catch (x) {} } }
+  if (o.bookmaker) {
+    var be = document.getElementById('n-book'), bk = String(o.bookmaker).toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (be && bk) {
+      var op = [].filter.call(be.options, function (x) { var t = (x.value + ' ' + x.text).toLowerCase().replace(/[^a-z0-9 ]/g, ''); return t.replace(/ /g, '').indexOf(bk) >= 0; })[0];
+      if (op) { be.value = op.value; ids.push('n-book'); try { be.dispatchEvent(new Event('change', { bubbles: true })); } catch (x) {} }
+    }
+  }
+  if (o.domicile === true || o.domicile === false) { try { if (typeof setLieu === 'function') setLieu(o.domicile ? 'dom' : 'ext'); } catch (x) {} }
+  return ids;
+}
+async function _g45TicketIa(dataUrl) {
+  var cle = (typeof g45IaCle === 'function') ? g45IaCle() : '';
+  var h = { 'Content-Type': 'application/json' };
+  if (cle) h.Authorization = 'Bearer ' + cle;
+  var consigne = 'Ceci est la capture d\'un ticket de pari sportif (Winamax, Betclic, Unibet, PMU, Piwi, ZEbet…). Réponds UNIQUEMENT par un JSON, sans texte autour :\n'
+    + '{"equipe":"équipe (ou joueur) sur laquelle porte le pari, sinon la 1re équipe du match","adversaire":"l\'autre équipe du match",'
+    + '"domicile":true si l\'équipe pariée est la 1re affichée (celle qui reçoit), false sinon, null si inconnu,'
+    + '"date":"AAAA-MM-JJ ou null","heure":"HH:MM ou null","competition":"ou null","sport":"football, hockey, basket, tennis, rugby, nfl, baseball, mma, f1…",'
+    + '"type":"le ou les marchés en français court, joints par \' + \' (ex : Victoire Inter + Moins de 4,5 buts)",'
+    + '"cote":cote TOTALE du ticket (PAS les gains potentiels),"mise":montant misé en euros,"gains":gains potentiels en euros ou null,"bookmaker":"nom du site"}\n'
+    + 'Les gains = mise × cote : ne confonds pas. Nombre avec un point décimal. Rien d\'inventé : null si absent.';
+  var r = await fetch(g45IaUrl(), {
+    method: 'POST', headers: h,
+    body: JSON.stringify({
+      model: (typeof g45GroqModeleVision === 'function') ? g45GroqModeleVision() : 'qwen/qwen3.6-27b',
+      max_tokens: 1500, temperature: 0,
+      messages: [{ role: 'user', content: [{ type: 'image_url', image_url: { url: dataUrl } }, { type: 'text', text: consigne }] }]
+    })
+  });
+  var d = await r.json();
+  var txt = d && d.choices && d.choices[0] && d.choices[0].message && d.choices[0].message.content;
+  if (!txt) throw new Error((d && d.error && (d.error.message || d.error.type)) || ('réponse vide ' + r.status));
+  txt = String(txt).replace(/<think>[\s\S]*?<\/think>/g, '').replace(/```json|```/g, '');
+  var a = txt.indexOf('{'), b = txt.lastIndexOf('}');
+  if (a < 0 || b < a) throw new Error('pas de JSON');
+  var o = JSON.parse(txt.slice(a, b + 1));
+  /* garde-fou : si l'IA a pris les gains pour la cote, gains ≈ mise × cote */
+  var c = parseFloat(o.cote), m = parseFloat(o.mise), g = parseFloat(o.gains);
+  if (m > 0 && g > 0 && (!(c > 0) || Math.abs(g - c) < 0.01)) o.cote = (g / m).toFixed(2);
+  return o;
+}
+async function _g45TicketTesseract(dataUrl) {
+  if (typeof Tesseract === 'undefined') throw new Error('Tesseract non chargé');
+  var res = await Tesseract.recognize(dataUrl, 'fra');
+  var text = (res && res.data && res.data.text) || '', low = text.toLowerCase(), o = {};
+  var lignes = text.split('\n').map(function (l) { return l.trim(); }).filter(Boolean);
+  var nb = function (s) { var m = String(s || '').match(/(\d+[.,]\d{2})/); return m ? parseFloat(m[1].replace(',', '.')) : null; };
+  lignes.forEach(function (l, i) {
+    if (o.mise == null && /^mise\b/i.test(l)) o.mise = nb(l) || nb(lignes[i + 1]);
+    if (/gain/i.test(l)) o._g = nb(l) || nb(lignes[i + 1]);
+    var h = l.match(/^(.+?)\s+(\d{1,2}:\d{2})\s+(.+)$/); if (h && !o.equipe) { o.equipe = h[1]; o.heure = h[2]; o.adversaire = h[3]; o.domicile = true; }
+  });
+  var cotes = (text.match(/\b\d{1,3}[.,]\d{2}\b/g) || []).map(function (x) { return parseFloat(x.replace(',', '.')); })
+    .filter(function (x) { return x > 1 && x !== o.mise && x !== o._g; });
+  if (o.mise && o._g) o.cote = (o._g / o.mise).toFixed(2); else if (cotes.length) o.cote = cotes[0];
+  ['winamax', 'betclic', 'unibet', 'pmu', 'zebet', 'piwi', 'parions'].forEach(function (b) { if (!o.bookmaker && low.indexOf(b) >= 0) o.bookmaker = b; });
+  if (!o.bookmaker && /mymatch|squad game|cashout/.test(low)) o.bookmaker = 'winamax';
+  return o;
+}
+(function () {
+  var traiter = function (blob) {
+    var zone = document.getElementById('pc-note');
+    if (!zone || !blob) return;
+    var rd = new FileReader();
+    rd.onload = async function (ev) {
+      var url = ev.target.result;
+      zone.innerHTML = '<img src="' + url + '" alt="Pense-bête" style="max-width:100%;border-radius:6px;">';
+      try { localStorage.setItem('penseBeteImage', url); } catch (e) {}
+      var av = document.createElement('div');
+      av.style.cssText = 'position:absolute;bottom:10px;left:10px;right:10px;background:rgba(0,0,0,.85);color:#fff;padding:6px 10px;border-radius:6px;font-size:13px;font-weight:700;z-index:10;';
+      av.textContent = '🧠 Lecture du ticket… ⏳';
+      zone.style.position = 'relative'; zone.appendChild(av);
+      var o = null, via = 'IA';
+      try { o = await _g45TicketIa(url); }
+      catch (e) { console.warn('ticket IA', e && e.message); via = 'Tesseract'; try { o = await _g45TicketTesseract(url); } catch (e2) { console.warn('ticket Tesseract', e2 && e2.message); } }
+      if (!o) { av.textContent = '❌ Ticket illisible'; setTimeout(function () { av.remove(); }, 4000); return; }
+      console.log('ticket lu (' + via + ')', o);
+      var ids = _g45TicketRemplir(o);
+      av.textContent = ids.length ? ('✅ Ticket lu (' + via + ') : ' + ids.length + ' champs remplis — vérifie avant d\'enregistrer') : '⚠️ Rien trouvé sur le ticket';
+      setTimeout(function () { av.remove(); }, 6000);
+    };
+    rd.readAsDataURL(blob);
+  };
+  var image = function (dt) {
+    var l = (dt && (dt.items || dt.files)) || [];
+    for (var i = 0; i < l.length; i++) {
+      var it = l[i];
+      if (it && /^image\//.test(it.type || '')) return it.getAsFile ? it.getAsFile() : it;
+    }
+    return null;
+  };
+  var dansZone = function (t) { var z = document.getElementById('pc-note'); return z && t && (t === z || z.contains(t)); };
+  document.addEventListener('paste', function (e) {
+    if (!dansZone(e.target)) return;
+    var f = image(e.clipboardData);
+    if (!f) return;
+    e.preventDefault(); e.stopImmediatePropagation(); e.stopPropagation();
+    traiter(f);
+  }, true);
+  document.addEventListener('drop', function (e) {
+    if (!dansZone(e.target)) return;
+    var f = image(e.dataTransfer);
+    if (!f) return;
+    e.preventDefault(); e.stopImmediatePropagation(); e.stopPropagation();
+    traiter(f);
+  }, true);
+  document.addEventListener('dragover', function (e) { if (dansZone(e.target)) e.preventDefault(); }, true);
+})();
