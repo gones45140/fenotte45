@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261007n, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261007o, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -196,6 +196,9 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   #c-unit = équipe du mur au nom proche (sinon alerte « choisis l'équipe à la main ») + updMise / renderCrash, #c-target, #c-date, #c-heure,
   #c-comp, #c-sport, #c-lieu (+ g45LieuChange), mmRows = 1 ligne {type, cote totale} + renderMmRows, #c-mise = mise du TICKET (après le palier),
   #c-book. Testé Chromium : Cockpit (Inter, Parme, 18:00, @1.54, 5 €) ET Simple.
+  20261007o (capture Dembélé « décisif » France–Belgique : date « Lun. 05/10 » lue 10/05/2025, joueur mis dans Équipe) : consigne = dates
+  JJ/MM françaises + date du jour ; date corrigée au plus près d'aujourd'hui (jour/mois inversés, année ±1) ; nouveau champ JSON « joueur »
+  → #n-joueur / #c-joueur, « equipe » = l'ÉQUIPE du joueur. Testé Chromium (réponse simulée erronée → 2026-10-05, France, O. Dembélé).
   ⚠ app.js contient un jeton Dropbox en dur (localStorage.setItem('gones45_dbx_token', 'sl.…'), ≈ l. 15585 et sa copie) : SIGNALÉ à Antoine le 10/10.
 - SYNCHRO DES PARIS (GitHub, Antoine seul, données/paris_antoine.json chiffré) — 20261007l : le 09/10, PC éteint après 3 paris (22:16-22:20),
   téléphone resté ANCIEN saisit Lens–Lyon → poussait SON état entier (23:19) → 3 paris perdus partout (restaurés par commande console depuis

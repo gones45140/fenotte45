@@ -70599,6 +70599,7 @@ function _g45TicketRemplir(o) {
   };
   var num = function (v) { var n = parseFloat(String(v == null ? '' : v).replace(',', '.').replace(/[^\d.]/g, '')); return isFinite(n) && n > 0 ? n : null; };
   met('n-team', o.equipe); met('n-analysis', o.adversaire);
+  met('n-joueur', o.joueur);
   if (/^\d{4}-\d{2}-\d{2}$/.test(String(o.date || ''))) met('n-date', o.date);
   if (/^\d{1,2}:\d{2}$/.test(String(o.heure || ''))) met('n-heure', String(o.heure).padStart(5, '0'));
   met('n-comp', o.competition); met('n-type', o.type);
@@ -70640,6 +70641,7 @@ function _g45TicketRemplirCockpit(o) {
     if (choisi) { un.value = choisi.value; ids.push('c-unit'); try { if (typeof updMise === 'function') updMise(); if (typeof renderCrash === 'function') renderCrash(); } catch (x) {} }
   }
   met('c-target', o.adversaire);
+  met('c-joueur', o.joueur);
   if (/^\d{4}-\d{2}-\d{2}$/.test(String(o.date || ''))) met('c-date', o.date);
   if (/^\d{1,2}:\d{2}$/.test(String(o.heure || ''))) met('c-heure', String(o.heure).padStart(5, '0'));
   met('c-comp', o.competition);
@@ -70664,12 +70666,14 @@ async function _g45TicketIa(dataUrl) {
   var h = { 'Content-Type': 'application/json' };
   if (cle) h.Authorization = 'Bearer ' + cle;
   var consigne = 'Ceci est la capture d\'un ticket de pari sportif (Winamax, Betclic, Unibet, PMU, Piwi, ZEbet…). Réponds UNIQUEMENT par un JSON, sans texte autour :\n'
-    + '{"equipe":"équipe (ou joueur) sur laquelle porte le pari, sinon la 1re équipe du match","adversaire":"l\'autre équipe du match",'
+    + '{"equipe":"ÉQUIPE (jamais un joueur) sur laquelle porte le pari ; pour un pari joueur, l\'équipe de ce joueur ; sinon la 1re équipe du match","adversaire":"l\'autre équipe du match",'
+    + '"joueur":"nom du joueur si le pari porte sur un joueur (buteur, passeur, décisif…), sinon null",'
     + '"domicile":true si l\'équipe pariée est la 1re affichée (celle qui reçoit), false sinon, null si inconnu,'
     + '"date":"AAAA-MM-JJ ou null","heure":"HH:MM ou null","competition":"ou null","sport":"football, hockey, basket, tennis, rugby, nfl, baseball, mma, f1…",'
     + '"type":"le ou les marchés en français court, joints par \' + \' (ex : Victoire Inter + Moins de 4,5 buts)",'
     + '"cote":cote TOTALE du ticket (PAS les gains potentiels),"mise":montant misé en euros,"gains":gains potentiels en euros ou null,"bookmaker":"nom du site"}\n'
-    + 'Les gains = mise × cote : ne confonds pas. Nombre avec un point décimal. Rien d\'inventé : null si absent.';
+    + 'Les gains = mise × cote : ne confonds pas. Nombre avec un point décimal. Rien d\'inventé : null si absent.\n'
+    + 'Les dates des tickets sont au format FRANÇAIS jour/mois (« Lun. 05/10 » = lundi 5 octobre). Nous sommes le ' + new Date().toISOString().slice(0, 10) + ' : sans année sur le ticket, prends celle-ci.';
   var r = await fetch(g45IaUrl(), {
     method: 'POST', headers: h,
     body: JSON.stringify({
@@ -70686,6 +70690,22 @@ async function _g45TicketIa(dataUrl) {
   if (a < 0 || b < a) throw new Error('pas de JSON');
   var o = JSON.parse(txt.slice(a, b + 1));
   /* garde-fou : si l'IA a pris les gains pour la cote, gains ≈ mise × cote */
+  /* 20261007o (capture : « Lun. 05/10 » lu 10/05/2025) : date au plus près d'aujourd'hui — jour et mois inversés, année de l'IA ignorée */
+  try {
+    var dm = String(o.date || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (dm) {
+      var auj = Date.now(), best = null;
+      [[+dm[2], +dm[3]], [+dm[3], +dm[2]]].forEach(function (md) {
+        if (md[0] < 1 || md[0] > 12 || md[1] < 1 || md[1] > 31) return;
+        var y0 = new Date().getFullYear();
+        [y0 - 1, y0, y0 + 1].forEach(function (y) {
+          var t = new Date(y, md[0] - 1, md[1]).getTime(), e = Math.abs(t - auj);
+          if (!best || e < best.e) best = { e: e, s: y + '-' + String(md[0]).padStart(2, '0') + '-' + String(md[1]).padStart(2, '0') };
+        });
+      });
+      if (best) o.date = best.s;
+    }
+  } catch (x) {}
   var c = parseFloat(o.cote), m = parseFloat(o.mise), g = parseFloat(o.gains);
   if (m > 0 && g > 0 && (!(c > 0) || Math.abs(g - c) < 0.01)) o.cote = (g / m).toFixed(2);
   return o;
