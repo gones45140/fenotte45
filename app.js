@@ -26093,12 +26093,15 @@ async function loadCalendrier() {
      CHAMPIONNAT seulement (slug ESPN « fra.1 », « eng.1 »… ; coupes / Europe / sélections écartés). Palier = échelle du LIEU
      (`_g45PalLieu`, domicile ou extérieur comme le Cockpit), mise = STRATS de la stratégie de l'équipe (u.s). */
   var _agPalier = function(m){
-    if (!m || m.suivi || m.sp && m.sp !== 'soccer') return '';
+    /* 20261008c (capture Agenda : « on a que les paliers foot ») : tous les sports — hors foot, tout match d'une équipe du mur avec
+       stratégie compte comme championnat (Pro A, Top 14, NHL, KHL…) SAUF coupes / Euroleague / Eurocup / Champions Cup / amicaux. */
+    if (!m || m.suivi) return '';
     var u = (state.u || []).filter(function(x){ return x && x.n === m.ourName; })[0];
     if (!u || u.s == null || typeof STRATS === 'undefined' || !STRATS[u.s]) return '';
     var sl = String(m.compSlug || '').toLowerCase(), nm = String(m.comp || '').toLowerCase();
-    var champ = /^[a-z]{3}\.(w\.)?\d$/.test(sl);
-    if (!champ && !/champions|europa|conference|coupe|cup|copa|pokal|coppa|super|friendl|amical|qualif|nations|trophy|troph[ée]e|\.w?cup|uefa|fifa|conmebol/.test(sl + ' ' + nm))
+    var foot = !m.sp || m.sp === 'soccer';
+    var champ = foot ? /^[a-z]{3}\.(w\.)?\d$/.test(sl) : !/euroleague|eurocup|euroligue|coupe|cup|champions|super|friendl|amical|all.?star|pr[ée]saison|preseason/.test(sl + ' ' + nm);
+    if (foot && !champ && !/champions|europa|conference|coupe|cup|copa|pokal|coppa|super|friendl|amical|qualif|nations|trophy|troph[ée]e|\.w?cup|uefa|fifa|conmebol/.test(sl + ' ' + nm))
       champ = /ligue|liga|bundesliga|serie|premier|eredivisie|primeira|championship|mls|super lig|jupiler|pro league/.test(sl + ' ' + nm);
     if (!champ) return '';
     var p = (typeof _g45PalLieu === 'function') ? _g45PalLieu(u, m.isDom ? 'dom' : 'ext') : (parseInt(u.l, 10) || 1);
