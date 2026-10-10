@@ -70606,7 +70606,8 @@ function _g45TicketRemplir(o) {
   var c = num(o.cote); if (c && c < 1000) met('n-cote', c.toFixed(2));
   var m = num(o.mise); if (m) met('n-mise', m);
   var SP = { football: '⚽', soccer: '⚽', basket: '🏀', basketball: '🏀', tennis: '🎾', nfl: '🏈', 'football americain': '🏈',
-             hockey: '🏒', baseball: '⚾', rugby: '🏉', nrl: '🏉🇦🇺', f1: '🏎', 'formule 1': '🏎', mma: '🥊', ufc: '🥊' };
+             hockey: '🏒', baseball: '⚾', rugby: '🏉', nrl: '🏉🇦🇺', f1: '🏎', 'formule 1': '🏎', mma: '🥊', ufc: '🥊',
+             cyclisme: '🚴', cycling: '🚴', velo: '🚴' };
   var sp = SP[String(o.sport || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim()];
   if (sp) { var se = document.getElementById('p-sport'); if (se && [].some.call(se.options, function (op) { return op.value === sp; })) { se.value = sp; ids.push('p-sport'); try { se.dispatchEvent(new Event('change', { bubbles: true })); } catch (x) {} } }
   if (o.bookmaker) {
@@ -70645,7 +70646,7 @@ function _g45TicketRemplirCockpit(o) {
   if (/^\d{4}-\d{2}-\d{2}$/.test(String(o.date || ''))) met('c-date', o.date);
   if (/^\d{1,2}:\d{2}$/.test(String(o.heure || ''))) met('c-heure', String(o.heure).padStart(5, '0'));
   met('c-comp', o.competition);
-  var SP = { football: '⚽', soccer: '⚽', basket: '🏀', basketball: '🏀', tennis: '🎾', nfl: '🏈', hockey: '🏒', baseball: '⚾', rugby: '🏉', nrl: '🏉🇦🇺', f1: '🏎', mma: '🥊', ufc: '🥊' };
+  var SP = { football: '⚽', soccer: '⚽', basket: '🏀', basketball: '🏀', tennis: '🎾', nfl: '🏈', hockey: '🏒', baseball: '⚾', rugby: '🏉', nrl: '🏉🇦🇺', f1: '🏎', mma: '🥊', ufc: '🥊', cyclisme: '🚴', cycling: '🚴', velo: '🚴' };
   var sp = SP[nz(o.sport)];
   if (sp) { var se = document.getElementById('c-sport'); if (se && [].some.call(se.options, function (x) { return x.value === sp; })) { se.value = sp; ids.push('c-sport'); } }
   if (o.domicile === true || o.domicile === false) { var le = document.getElementById('c-lieu'); if (le) { le.value = o.domicile ? 'dom' : 'ext'; ids.push('c-lieu'); try { if (typeof g45LieuChange === 'function') g45LieuChange(); } catch (x) {} if (choisi && un) un.value = choisi.value; } }
@@ -70669,7 +70670,7 @@ async function _g45TicketIa(dataUrl) {
     + '{"equipe":"ÉQUIPE (jamais un joueur) sur laquelle porte le pari ; pour un pari joueur, l\'équipe de ce joueur ; sinon la 1re équipe du match","adversaire":"l\'autre équipe du match",'
     + '"joueur":"nom du joueur si le pari porte sur un joueur (buteur, passeur, décisif…), sinon null",'
     + '"domicile":true si l\'équipe pariée est la 1re affichée (celle qui reçoit), false sinon, null si inconnu,'
-    + '"date":"AAAA-MM-JJ ou null","heure":"HH:MM ou null","competition":"ou null","sport":"football, hockey, basket, tennis, rugby, nfl, baseball, mma, f1…",'
+    + '"date":"AAAA-MM-JJ ou null","heure":"HH:MM ou null","competition":"ou null","sport":"football, hockey, basket, tennis, rugby, nfl, baseball, mma, f1, cyclisme…",'
     + '"type":"le ou les marchés en français court, joints par \' + \' (ex : Victoire Inter + Moins de 4,5 buts)",'
     + '"cote":cote TOTALE du ticket (PAS les gains potentiels),"mise":montant misé en euros,"gains":gains potentiels en euros ou null,"bookmaker":"nom du site","bookmaker_sur":true ou false}\n'
     + 'BOOKMAKER : WINAMAX = carte bleu nuit, étiquette d\'état en haut à gauche (« En cours » jaune avec chrono, « Gagné » vert, « Perdu » rouge), '

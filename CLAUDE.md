@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261007s, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261007t, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -210,6 +210,7 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   « Réf » + hexadécimal long + « 05/10/2026 20:17 ». « Boost » = les deux sites (n'indique plus Winamax) ; bookmaker gardé si sûr OU
   Winamax / Betclic nommés. 20261007s — UNIBET (capture Lille–Le Havre) : bandeau NOIR « SIMPLE », « À 17h15 » gris = heure du match,
   « 1 N 2 - 90 Mins : Lille » + cote de ligne, pied gris Cote totale | Mise | Gains potentiels, liseré jaune ; cote retenue = « Cote totale ».
+  BETIFY (capture 10/10) : nom écrit sur le ticket (bookmaker « betify » déjà dans la liste). 20261007t : sport cyclisme → 🚴 (p-sport / c-sport).
   AUTRES (PMU, Piwi…) : captures à demander si besoin.
   ⚠ app.js contient un jeton Dropbox en dur (localStorage.setItem('gones45_dbx_token', 'sl.…'), ≈ l. 15585 et sa copie) : SIGNALÉ à Antoine le 10/10.
 - SYNCHRO DES PARIS (GitHub, Antoine seul, données/paris_antoine.json chiffré) — 20261007l : le 09/10, PC éteint après 3 paris (22:16-22:20),
