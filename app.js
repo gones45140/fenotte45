@@ -70674,7 +70674,11 @@ async function _g45TicketIa(dataUrl) {
     + '"cote":cote TOTALE du ticket (PAS les gains potentiels),"mise":montant misé en euros,"gains":gains potentiels en euros ou null,"bookmaker":"nom du site","bookmaker_sur":true ou false}\n'
     + 'BOOKMAKER : WINAMAX = carte bleu nuit, étiquette d\'état en haut à gauche (« En cours » jaune avec chrono, « Gagné » vert, « Perdu » rouge), '
     + 'cote dans une pastille BLANCHE en chiffres rouges, lignes « Mise » / « Gains potentiels » (gains en jaune), bouton « COMPLÉTER », bas de ticket '
-    + '« Réf : 6J… » + « 8h14 - 10 octobre 2026 », mots Squad Game / MyMatch / Boost. Si le nom ou ces signes ne sont pas visibles, '
+    + '« Réf : 6J… » + « 8h14 - 10 octobre 2026 », mots Squad Game / MyMatch. '
+    + 'BETCLIC = carte BLANCHE, « Simple » / « Combiné » en haut à gauche, état en haut à droite (« Gagné » pastille verte…), marché écrit en VERT, '
+    + 'cote dans une pastille JAUNE en chiffres noirs penchés, ligne « Lun. 05/10 20:45 » (date et heure DU MATCH) au-dessus des équipes, '
+    + 'gains en vert penché, bas « Réf » + longue suite hexadécimale (6ac3e99f…) + « 05/10/2026 20:17 ». « Boost » existe chez les deux. '
+    + 'Si le nom ou ces signes ne sont pas visibles, '
     + 'bookmaker = null et bookmaker_sur = false : ne devine pas.\n'
     + 'La date en bas à côté de « Réf » est la date du PARI, pas du match : date = celle du match si affichée près des équipes, sinon null.\n'
     + 'Les gains = mise × cote : ne confonds pas. Nombre avec un point décimal. Rien d\'inventé : null si absent.\n'
@@ -70701,11 +70705,11 @@ async function _g45TicketIa(dataUrl) {
   /* garde-fou : si l'IA a pris les gains pour la cote, gains ≈ mise × cote */
   /* 20261007p (capture Vilardi « Squad Game ») : jeu Winamax pris pour la compétition, joueur dans Équipe */
   try {
-    if (/squad|my\s*match|boost|cash\s*out|freebet/i.test(String(o.competition || ''))) { o.competition = null; if (!o.bookmaker) o.bookmaker = 'winamax'; }
+    if (/squad|my\s*match|boost|cash\s*out|freebet/i.test(String(o.competition || ''))) { if (!o.bookmaker && /squad|my\s*match/i.test(o.competition)) o.bookmaker = 'winamax'; o.competition = null; }
     var _nzT = function (t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z]/g, ''); };
     if (o.equipe && o.joueur && _nzT(o.equipe) === _nzT(o.joueur)) o.equipe = null;
     /* 20261007q : bookmaker gardé seulement si l'IA en est sûre (sinon le choix du formulaire reste) */
-    if (o.bookmaker_sur === false && !/winamax/i.test(String(o.bookmaker || '') + ' ' + String(o.competition || ''))) o.bookmaker = null;
+    if (o.bookmaker_sur === false && !/winamax|betclic/i.test(String(o.bookmaker || ''))) o.bookmaker = null;
   } catch (x) {}
   /* 20261007o (capture : « Lun. 05/10 » lu 10/05/2025) : date au plus près d'aujourd'hui — jour et mois inversés, année de l'IA ignorée */
   try {
