@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261007m, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261007n, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -192,6 +192,10 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   equipe / adversaire / domicile / date / heure / competition / sport / type / cote / mise / gains / bookmaker ; cote = gains ÷ mise si l'IA
   a pris les gains) → `_g45TicketRemplir` (n-team, n-analysis, n-date, n-heure, n-comp, n-type, n-cote, n-mise, n-book, p-sport, setLieu) ;
   échec → `_g45TicketTesseract`. Testé Chromium (réponse IA simulée). Worker /ia avec une image : NON vérifié.
+  20261007n (« marche pas en cockpit ») : mode Cockpit (`_g45TicketCockpit` = #sub-strat affiché + #btn-cpit « on ») → `_g45TicketRemplirCockpit` :
+  #c-unit = équipe du mur au nom proche (sinon alerte « choisis l'équipe à la main ») + updMise / renderCrash, #c-target, #c-date, #c-heure,
+  #c-comp, #c-sport, #c-lieu (+ g45LieuChange), mmRows = 1 ligne {type, cote totale} + renderMmRows, #c-mise = mise du TICKET (après le palier),
+  #c-book. Testé Chromium : Cockpit (Inter, Parme, 18:00, @1.54, 5 €) ET Simple.
   ⚠ app.js contient un jeton Dropbox en dur (localStorage.setItem('gones45_dbx_token', 'sl.…'), ≈ l. 15585 et sa copie) : SIGNALÉ à Antoine le 10/10.
 - SYNCHRO DES PARIS (GitHub, Antoine seul, données/paris_antoine.json chiffré) — 20261007l : le 09/10, PC éteint après 3 paris (22:16-22:20),
   téléphone resté ANCIEN saisit Lens–Lyon → poussait SON état entier (23:19) → 3 paris perdus partout (restaurés par commande console depuis

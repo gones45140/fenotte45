@@ -70618,6 +70618,47 @@ function _g45TicketRemplir(o) {
   if (o.domicile === true || o.domicile === false) { try { if (typeof setLieu === 'function') setLieu(o.domicile ? 'dom' : 'ext'); } catch (x) {} }
   return ids;
 }
+/* 20261007n (« marche pas en cockpit ») : le ticket ne remplissait que le pari SIMPLE (n-…). Onglet Cockpit visible (#c-unit affiché,
+   #n-team caché) → `_g45TicketRemplirCockpit` : équipe du mur choisie dans #c-unit (nom proche) puis updMise / renderCrash, adversaire
+   #c-target, date / heure, compétition, sport #c-sport, lieu #c-lieu (+ g45LieuChange), « Ton pari » = UNE ligne mmRows {type, cote totale}
+   (renderMmRows), mise du TICKET (remplace celle du palier, c'est la mise réelle), bookmaker #c-book. */
+function _g45TicketVisible(id) { var e = document.getElementById(id); return !!(e && e.offsetParent !== null); }
+function _g45TicketCockpit() { var ss = document.getElementById('sub-strat'), b = document.getElementById('btn-cpit'); return !!((ss && ss.style.display !== 'none' && getComputedStyle(ss).display !== 'none') && (!b || b.classList.contains('on'))); }
+function _g45TicketRemplirCockpit(o) {
+  var ids = [];
+  var ev = function (e) { try { e.dispatchEvent(new Event('input', { bubbles: true })); e.dispatchEvent(new Event('change', { bubbles: true })); } catch (x) {} };
+  var met = function (id, v) { var e = document.getElementById(id); if (!e || v == null || v === '') return; e.value = v; ids.push(id); ev(e); };
+  var nz = function (t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim(); };
+  var num = function (v) { var n = parseFloat(String(v == null ? '' : v).replace(',', '.').replace(/[^\d.]/g, '')); return isFinite(n) && n > 0 ? n : null; };
+  /* équipe du mur : nom égal, inclus, ou un mot de ≥ 4 lettres en commun (« Inter Milan » ↔ « Inter ») */
+  var un = document.getElementById('c-unit'), eq = nz(o.equipe), choisi = null;
+  if (un && eq) {
+    var ops = [].slice.call(un.options), mots = eq.split(' ').filter(function (w) { return w.length >= 4 || /^(om|ol|psg|inter|real|lyon)$/.test(w); });
+    choisi = ops.filter(function (op) { return nz(op.value) === eq || nz(op.text) === eq; })[0]
+      || ops.filter(function (op) { var v = nz(op.value); return v && (v.indexOf(eq) >= 0 || eq.indexOf(v) >= 0); })[0]
+      || ops.filter(function (op) { var v = ' ' + nz(op.value) + ' '; return mots.some(function (w) { return v.indexOf(' ' + w + ' ') >= 0; }); })[0];
+    if (choisi) { un.value = choisi.value; ids.push('c-unit'); try { if (typeof updMise === 'function') updMise(); if (typeof renderCrash === 'function') renderCrash(); } catch (x) {} }
+  }
+  met('c-target', o.adversaire);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(String(o.date || ''))) met('c-date', o.date);
+  if (/^\d{1,2}:\d{2}$/.test(String(o.heure || ''))) met('c-heure', String(o.heure).padStart(5, '0'));
+  met('c-comp', o.competition);
+  var SP = { football: '⚽', soccer: '⚽', basket: '🏀', basketball: '🏀', tennis: '🎾', nfl: '🏈', hockey: '🏒', baseball: '⚾', rugby: '🏉', nrl: '🏉🇦🇺', f1: '🏎', mma: '🥊', ufc: '🥊' };
+  var sp = SP[nz(o.sport)];
+  if (sp) { var se = document.getElementById('c-sport'); if (se && [].some.call(se.options, function (x) { return x.value === sp; })) { se.value = sp; ids.push('c-sport'); } }
+  if (o.domicile === true || o.domicile === false) { var le = document.getElementById('c-lieu'); if (le) { le.value = o.domicile ? 'dom' : 'ext'; ids.push('c-lieu'); try { if (typeof g45LieuChange === 'function') g45LieuChange(); } catch (x) {} if (choisi && un) un.value = choisi.value; } }
+  var c = num(o.cote);
+  if (c && c < 1000 && typeof mmRows !== 'undefined') {
+    try { mmRows.length = 0; mmRows.push({ type: String(o.type || 'Pari'), cote: +c.toFixed(2) }); var man = document.getElementById('mm-cote-manuelle'); if (man) man.value = ''; if (typeof renderMmRows === 'function') renderMmRows(); ids.push('mm-sel'); } catch (x) {}
+  }
+  var m = num(o.mise); if (m) met('c-mise', m);
+  if (o.bookmaker) {
+    var be = document.getElementById('c-book'), bk = String(o.bookmaker).toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (be && bk) { var op = [].filter.call(be.options, function (x) { return (x.value + x.text).toLowerCase().replace(/[^a-z0-9]/g, '').indexOf(bk) >= 0; })[0]; if (op) { be.value = op.value; ids.push('c-book'); ev(be); } }
+  }
+  if (!choisi && o.equipe) { try { alert('Ticket lu, mais « ' + o.equipe + ' » n\'est pas une équipe de ton mur : choisis l\'équipe à la main.'); } catch (x) {} }
+  return ids;
+}
 async function _g45TicketIa(dataUrl) {
   var cle = (typeof g45IaCle === 'function') ? g45IaCle() : '';
   var h = { 'Content-Type': 'application/json' };
@@ -70685,7 +70726,7 @@ async function _g45TicketTesseract(dataUrl) {
       catch (e) { console.warn('ticket IA', e && e.message); via = 'Tesseract'; try { o = await _g45TicketTesseract(url); } catch (e2) { console.warn('ticket Tesseract', e2 && e2.message); } }
       if (!o) { av.textContent = '❌ Ticket illisible'; setTimeout(function () { av.remove(); }, 4000); return; }
       console.log('ticket lu (' + via + ')', o);
-      var ids = _g45TicketRemplir(o);
+      var ids = _g45TicketCockpit() ? _g45TicketRemplirCockpit(o) : _g45TicketRemplir(o);
       av.textContent = ids.length ? ('✅ Ticket lu (' + via + ') : ' + ids.length + ' champs remplis — vérifie avant d\'enregistrer') : '⚠️ Rien trouvé sur le ticket';
       setTimeout(function () { av.remove(); }, 6000);
     };
