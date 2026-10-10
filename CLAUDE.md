@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261007x, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261007y, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -225,6 +225,10 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   et c-lieu) ; VERT = rempli PAR le ticket (ids), ROUGE + « ⚠️ X à remplir » (vide) / « à vérifier (pas lu sur le ticket) » (valeur par défaut,
   ex. date du jour), JAUNE « facultatif » = joueur / notes ; champ caché ignoré ; effacé au focus / saisie (`_g45TkEffacer`), tout effacé par
   enveloppes de pari / saveMmAsPari et au ticket suivant (`g45TkToutEffacer`). Testé Chromium (Simple + Cockpit, captures).
+  20261007y (« manuellement rouge puis vert », « OUI AUSSI POUR COCKPIT ») : couleurs PERMANENTES (`_g45TkPeindre`, cadre 2 px : vert rempli,
+  rouge obligatoire vide, jaune joueur / notes) sur Simple ET Cockpit, repeintes à chaque input / change (capture), renderMmRows et toutes les
+  1,5 s onglet Pari visible ; menus déjà choisis (équipe, sport, lieu, book) = verts d'office. Ticket : `_g45TkEtat` {msg, verif} = cadre 3 px +
+  texte jusqu'à ce que le champ soit bon (« à vérifier » tant qu'on n'y a pas touché). `_g45TkEffacer` supprimé.
   ⚠ app.js contient un jeton Dropbox en dur (localStorage.setItem('gones45_dbx_token', 'sl.…'), ≈ l. 15585 et sa copie) : SIGNALÉ à Antoine le 10/10.
 - SYNCHRO DES PARIS (GitHub, Antoine seul, données/paris_antoine.json chiffré) — 20261007l : le 09/10, PC éteint après 3 paris (22:16-22:20),
   téléphone resté ANCIEN saisit Lens–Lyon → poussait SON état entier (23:19) → 3 paris perdus partout (restaurés par commande console depuis
