@@ -25803,7 +25803,12 @@ async function loadCalendrier() {
   if(!el) return;
   el.innerHTML = '<div style="display:flex;align-items:center;gap:8px;padding:20px;color:var(--t3);"><div style="width:14px;height:14px;border:2px solid rgba(77,132,255,.2);border-top-color:#4d84ff;border-radius:50%;animation:spin .8s linear infinite;"></div>Chargement du calendrier...</div>';
   if(btn) btn.onclick = loadCalendrier;
-  try{ if(typeof g45StatsLocal==='function' && !g45StatsLocal().length && typeof g45StatsLoadPublic==='function'){ await g45StatsLoadPublic(); } }catch(e){}
+  /* 20261007j (capture d'Antoine : « met beaucoup de temps à chercher ») : TOUTES les sources étaient lues l'une APRÈS l'autre
+     (jusqu'à 14 équipes de foot × 1 à 3 requêtes, puis 6 scoreboards ⭐, puis Euroleague/Pro A, puis KHL) → la plus lente
+     de chaque étape s'additionnait. Désormais : foot (équipe par équipe), ⭐, basket européen et KHL partent EN MÊME TEMPS,
+     chaque source a un délai maximum (`_agMax`) — trop lente = ignorée, le reste s'affiche. Ordre et filtres inchangés. */
+  var _agMax = function (p, ms) { return Promise.race([Promise.resolve(p).catch(function () { return null; }), new Promise(function (r) { setTimeout(function () { r(null); }, ms); })]); };
+  try{ if(typeof g45StatsLocal==='function' && !g45StatsLocal().length && typeof g45StatsLoadPublic==='function'){ await _agMax(g45StatsLoadPublic(), 5000); } }catch(e){}
 
   // Équipes football favorites (résolution ESPN, comme l'onglet Saisons)
   var teams = state.u.filter(function(u){ return (u.sport||'⚽')==='⚽'; }).slice(0,8);
@@ -25837,8 +25842,8 @@ async function loadCalendrier() {
 
   var nowTs = Date.now() - 2*60*60*1000; // garde aussi les matchs commencés il y a <2h
   var allMatches = [];
-  for(var i=0; i<teams.length; i++) {
-    var u = teams[i];
+  /* 20261007j : chaque équipe de foot est lue en parallèle (calendrier + repli scoreboard), 20 s max par équipe. */
+  var _agFoot = async function (u) {
     var sched;
     try { sched = await _calTeamSchedule(u.n); } catch(e){ sched = null; }
 
@@ -25865,6 +25870,16 @@ async function loadCalendrier() {
         sched.matches = (sched.matches || []).concat(_aVenirSup);
       }
     }
+    return sched;
+  };
+  var _agFootP = Promise.all(teams.map(function (u) { return _agMax(_agFoot(u), 20000); }));
+  var _agSuiviP = _agMax(_agSuivis(), 15000);
+  var _agEbP = _agMax(_agEb(), 25000);
+  var _agKhlP = _agMax(_agKhl(), 20000);
+  var _agFootR = await _agFootP;
+  for(var i=0; i<teams.length; i++) {
+    var u = teams[i];
+    var sched = _agFootR[i];
 
     if(!sched || !sched.matches || !sched.matches.length) continue;
     var ourId = (sched.team && sched.team.id!=null) ? String(sched.team.id) : null;
@@ -25908,6 +25923,10 @@ async function loadCalendrier() {
      EQUIPE. On dispose de l'identifiant ESPN et du slug dans `state.suiviEq`,
      donc aucune resolution de nom, donc aucun risque de confusion (le piege
      Columbus/Lyon). */
+  /* 20261007j : les trois blocs ci-dessous (⭐ hors foot, basket européen, KHL) sont des fonctions lancées EN MÊME TEMPS que le foot ;
+     chacune remplit sa propre liste (allMatches local), versée ensuite dans l'ordre d'avant. */
+  async function _agSuivis() {
+  var allMatches = [];
   try {
     var _grpSui = {};
     (typeof g45SuiviEqGet === 'function' ? g45SuiviEqGet() : []).forEach(function(t){
@@ -25923,15 +25942,17 @@ async function loadCalendrier() {
     var _d1 = new Date(Date.now() - 2*3600000), _d2 = new Date(Date.now() + 21*86400000);
     var _cles = Object.keys(_grpSui).slice(0, 6);   /* plafond : 6 requetes maximum */
 
+    /* 20261007j : les scoreboards ⭐ sont demandés EN MÊME TEMPS (avant : un par un). */
+    var _jsTous = await Promise.all(_cles.map(function (k) {
+      var g = _grpSui[k];
+      return fetch('https://site.api.espn.com/apis/site/v2/sports/' + g.sp + '/' + g.lg
+                   + '/scoreboard?dates=' + _fmtJ(_d1) + '-' + _fmtJ(_d2) + '&limit=400')
+        .then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
+    }));
     for (var _gi = 0; _gi < _cles.length; _gi++) {
       var _g = _grpSui[_cles[_gi]];
-      var _js = null;
-      try {
-        var _r = await fetch('https://site.api.espn.com/apis/site/v2/sports/' + _g.sp + '/' + _g.lg
-                             + '/scoreboard?dates=' + _fmtJ(_d1) + '-' + _fmtJ(_d2) + '&limit=400');
-        if (!_r.ok) continue;
-        _js = await _r.json();
-      } catch(e) { continue; }
+      var _js = _jsTous[_gi];
+      if (!_js) continue;
 
       ((_js && _js.events) || []).forEach(function(e){
         var cp = (e.competitions && e.competitions[0]) || {};
@@ -25963,11 +25984,15 @@ async function loadCalendrier() {
       });
     }
   } catch(e) { console.warn('agenda equipes suivies', e && e.message); }
+  return allMatches;
+  }
 
   /* 20261005e (« l'ASVEL et Sotchi n'y sont pas ») : l'Agenda ne lisait qu'ESPN (foot du mur + ⭐ hors foot). Ajout des sources déjà
      utilisées par Saisons / Suivies : 🏀 clubs du mur hors NBA → Euroleague + Pro A (`_g45EbResoudre` / `_g45EbCharger`, déjà en
      cache le plus souvent) ; 🏒 KHL → équipes du mur + ⭐ (`_g45KhlEquipesSuivies`, `_g45KhlMatchsPlage`, 14 jours). team_a = club
      qui REÇOIT (même convention que les cartes KHL de Suivies). Échec d'une source = rien d'ajouté, le reste s'affiche. */
+  async function _agEb() {
+  var allMatches = [];
   var _agFin = Date.now() + 21 * 86400000;
   try {
     if (typeof _g45EbResoudre === 'function' && typeof _g45EbCharger === 'function') {
@@ -25990,6 +26015,10 @@ async function loadCalendrier() {
       }
     }
   } catch (e) { console.warn('agenda basket europe', e && e.message); }
+  return allMatches;
+  }
+  async function _agKhl() {
+  var allMatches = [];
   try {
     if (typeof _g45KhlEquipesSuivies === 'function' && typeof _g45KhlMatchsPlage === 'function') {
       var _kIds = _g45KhlEquipesSuivies();
@@ -26008,6 +26037,9 @@ async function loadCalendrier() {
       }
     }
   } catch (e) { console.warn('agenda KHL', e && e.message); }
+  return allMatches;
+  }
+  [await _agSuiviP, await _agEbP, await _agKhlP].forEach(function (L) { (L || []).forEach(function (m) { allMatches.push(m); }); });
 
   // + matchs suivis manuellement (sélection dans Résultats), même hors favoris
   _suivis.forEach(function(s){

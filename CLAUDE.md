@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261007i, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261007j, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -288,6 +288,10 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   20261005e (« l'ASVEL et Sotchi n'y sont pas ») : loadCalendrier ajoute 🏀 clubs du mur hors NBA (4 max) → `_g45EbResoudre` +
   `_g45EbCharger(.av)` (Euroleague + Pro A, 21 j) et 🏒 KHL (mur + ⭐ `_g45KhlEquipesSuivies`, `_g45KhlMatchsPlage` 14 j, team_a = reçoit) ;
   mur sans foot mais avec 🏀/🏒 → plus de message « ajoute des équipes de foot ».
+  20261007j (capture : « met beaucoup de temps à chercher ») : loadCalendrier lisait TOUT en série (14 équipes foot, 6 scoreboards ⭐,
+  Euroleague/Pro A, KHL) → foot (`_agFoot` par équipe), ⭐ (`_agSuivis`, scoreboards en parallèle), basket (`_agEb`) et KHL (`_agKhl`)
+  lancés EN MÊME TEMPS, délai max `_agMax` (foot 20 s/équipe, ⭐ 15 s, basket 25 s, KHL 20 s, stats publiques 5 s) ; source trop lente = ignorée.
+  Test Chromium (toutes réponses retardées de 0,7 s) : 110 s → 20 s. ⚠ _calTeamSchedule n'est pas surchargeable depuis window (portée).
 - 🏷️ SPORT SUR CHAQUE PARI (20261005h, « il manque peut-être le sport ? », maquette validée « Oui ») : bloc en fin d'app.js —
   `_g45ParisSport(h)` = h.sport, sinon u.sport de l'équipe du mur (h.n), sinon deviné par h.comp (`_G45_PARIS_COMP`, MotoGP avant F1) ;
   rond `_g45ParisRond(h, px)` (couleurs Agenda `_G45_PARIS_COUL`) au-dessus du logo du book dans `_g45BetRowMini` (Paris filtrés) et
