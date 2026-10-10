@@ -70690,6 +70690,12 @@ async function _g45TicketIa(dataUrl) {
     + 'état en haut à droite (« Perdu » pastille grise, « GAGNÉ » onglet turquoise), sélection « Isack Hadjar - Non 3.05 » (cote après le nom) avec le marché '
     + 'en dessous, « Pari personnalisé » = plusieurs sélections cochées d\'un même match avec UNE cote, équipes listées avec maillot et score (1re = reçoit), '
     + 'pied « Mise | Gains | ✓ 0,00 € Gagné » (ce dernier bouton n\'est PAS le gain). '
+    + 'BETSSON = carte BLEU MARINE foncé, en-tête « Pari Simple - Ouvert » (ou pastille verte « Gagné » en haut à droite), bouton bordé orange '
+    + '« Mon pari, ton bonus », ligne « 10/10/2026 09:37 · ID de pari: 13074980.1 » = date et heure du PARI (pas du match), ligne compétition avec '
+    + 'drapeau ou emoji du sport (« Ligue 1 McDonald\'s® - France », « Grand Prix d\'Autriche - Formule 1 ») et à droite « Aujourd\'hui 17:15 » = heure '
+    + 'du MATCH (Aujourd\'hui = date du jour), équipes sur deux lignes avec « - » à droite (1re = reçoit), marché « Résultat » puis la sélection en '
+    + 'dessous (« Lille », « Russell, George » = Prénom après la virgule), « Cote 1.38 », pied « Cote totale | Mise | Gains potentiels » (vert si gagné). '
+    + 'Si « Cote totale » vaut « - », prends la « Cote » de la sélection. '
     + 'Si le nom ou ces signes ne sont pas visibles, '
     + 'bookmaker = null et bookmaker_sur = false : ne devine pas.\n'
     + 'La date en bas à côté de « Réf » est la date du PARI, pas du match : date = celle du match si affichée près des équipes, sinon null.\n'
@@ -70721,7 +70727,7 @@ async function _g45TicketIa(dataUrl) {
     var _nzT = function (t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z]/g, ''); };
     if (o.equipe && o.joueur && _nzT(o.equipe) === _nzT(o.joueur)) o.equipe = null;
     /* 20261007q : bookmaker gardé seulement si l'IA en est sûre (sinon le choix du formulaire reste) */
-    if (o.bookmaker_sur === false && !/winamax|betclic|unibet|pmu|betify|bet365/i.test(String(o.bookmaker || ''))) o.bookmaker = null;
+    if (o.bookmaker_sur === false && !/winamax|betclic|unibet|pmu|betify|bet365|betsson/i.test(String(o.bookmaker || ''))) o.bookmaker = null;
   } catch (x) {}
   /* 20261007o (capture : « Lun. 05/10 » lu 10/05/2025) : date au plus près d'aujourd'hui — jour et mois inversés, année de l'IA ignorée */
   try {
