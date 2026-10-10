@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261008c, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261008d, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -237,6 +237,11 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   20261008b (« sur téléphone ça ne marche que sur PC », maquette « galerie oui, photo sert à rien ») — bouton « 📷 Lire un ticket (capture
   d'écran) » au-dessus de « Ton pari » (Cockpit + Simple, `_g45TicketBoutons`) → `g45TicketChoisir` (input file image/*, sans capture=) →
   `window._g45TicketTraiter` (traiter du collage exposé ; pense-bête caché → bandeau fixe en bas, 96 px). Testé Chromium 390 px (filechooser).
+  20261008d (capture Winamax MyMatch GP de Singapour « Vainqueur Verstappen ou Antonelli ou … » : Équipe vide, Antonelli en adversaire,
+  Verstappen seul en joueur, lieu Dom) : champ JSON « selections » + consigne COURSE ; garde-fou dans `_g45TicketIa` : F1 / MotoGP / cyclisme →
+  Équipe = carte du mur du sport (🏎 ou nom « FORMULE 1 »…) sinon « Formule 1 », Type = « Vainqueur : Verstappen, Antonelli… » (noms de famille),
+  adversaire / joueur vidés, compétition sans année ni « - Course », lieu neutre (setLieu('')) ; `window._g45TkCourse` → Adversaire jaune
+  « facultatif ». Testé Chromium (réponse simulée).
   ⚠ app.js contient un jeton Dropbox en dur (localStorage.setItem('gones45_dbx_token', 'sl.…'), ≈ l. 15585 et sa copie) : SIGNALÉ à Antoine le 10/10.
 - SYNCHRO DES PARIS (GitHub, Antoine seul, données/paris_antoine.json chiffré) — 20261007l : le 09/10, PC éteint après 3 paris (22:16-22:20),
   téléphone resté ANCIEN saisit Lens–Lyon → poussait SON état entier (23:19) → 3 paris perdus partout (restaurés par commande console depuis

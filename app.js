@@ -70621,6 +70621,8 @@ function _g45TicketRemplir(o) {
     }
   }
   if (o.domicile === true || o.domicile === false) { try { if (typeof setLieu === 'function') setLieu(o.domicile ? 'dom' : 'ext'); } catch (x) {} }
+  if (o.domicile === 'neutre') { try { if (typeof setLieu === 'function') setLieu(''); } catch (x) {} }
+  window._g45TkCourse = (o.domicile === 'neutre');
   return ids;
 }
 /* 20261007n (« marche pas en cockpit ») : le ticket ne remplissait que le pari SIMPLE (n-…). Onglet Cockpit visible (#c-unit affiché,
@@ -70662,6 +70664,7 @@ function _g45TicketRemplirCockpit(o) {
     var be = document.getElementById('c-book'), bk = String(o.bookmaker).toLowerCase().replace(/[^a-z0-9]/g, '');
     if (be && bk) { var op = [].filter.call(be.options, function (x) { return (x.value + x.text).toLowerCase().replace(/[^a-z0-9]/g, '').indexOf(bk) >= 0; })[0]; if (op) { be.value = op.value; ids.push('c-book'); ev(be); } }
   }
+  window._g45TkCourse = (o.domicile === 'neutre');
   if (!choisi && o.equipe) { try { alert('Ticket lu, mais « ' + o.equipe + ' » n\'est pas une équipe de ton mur : choisis l\'équipe à la main.'); } catch (x) {} }
   return ids;
 }
@@ -70675,6 +70678,7 @@ async function _g45TicketIa(dataUrl) {
     + '"domicile":true si l\'équipe pariée est la 1re affichée (celle qui reçoit), false sinon, null si inconnu,'
     + '"date":"AAAA-MM-JJ ou null","heure":"HH:MM ou null","competition":"ou null","sport":"football, hockey, basket, tennis, rugby, nfl, baseball, mma, f1, cyclisme…",'
     + '"type":"le ou les marchés en français court, joints par \' + \' (ex : Victoire Inter + Moins de 4,5 buts)",'
+    + '"selections":["TOUS les pilotes / coureurs choisis, pour une COURSE (F1, MotoGP, cyclisme)"] ou null,'
     + '"cote":cote TOTALE du ticket (PAS les gains potentiels),"mise":montant misé en euros,"gains":gains potentiels en euros ou null,"bookmaker":"nom du site","bookmaker_sur":true ou false}\n'
     + 'BOOKMAKER : WINAMAX = carte bleu nuit, étiquette d\'état en haut à gauche (« En cours » jaune avec chrono, « Gagné » vert, « Perdu » rouge), '
     + 'cote dans une pastille BLANCHE en chiffres rouges, lignes « Mise » / « Gains potentiels » (gains en jaune), bouton « COMPLÉTER », bas de ticket '
@@ -70707,6 +70711,9 @@ async function _g45TicketIa(dataUrl) {
     + 'competition = la ligue (NHL, NBA, Ligue 1, Liga…), déduite des équipes si elle n\'est pas écrite. Ces mots désignent Winamax comme bookmaker. '
     + 'L\'heure écrite en bas à côté de « Réf » est l\'heure où le pari a été PLACÉ, pas celle du match : heure = null si l\'heure du match n\'est pas affichée. '
     + 'Pari joueur : equipe = le CLUB du joueur (parmi les deux équipes du match), adversaire = l\'autre club, joueur = son nom.\n'
+    + 'COURSE (Grand Prix de F1 ou MotoGP, étape de cyclisme) : il n\'y a PAS d\'équipes ni d\'adversaire ; selections = la liste COMPLÈTE '
+    + 'des pilotes / coureurs choisis (« Verstappen ou Antonelli ou Leclerc » = 3 noms), type = le marché (Vainqueur, Podium, Top 10…), '
+    + 'competition = le nom du Grand Prix ou de la course, sans l\'année.\n'
     + 'Les dates des tickets sont au format FRANÇAIS jour/mois (« Lun. 05/10 » = lundi 5 octobre). Nous sommes le ' + new Date().toISOString().slice(0, 10) + ' : sans année sur le ticket, prends celle-ci.';
   var r = await fetch(g45IaUrl(), {
     method: 'POST', headers: h,
@@ -70731,6 +70738,29 @@ async function _g45TicketIa(dataUrl) {
     if (o.equipe && o.joueur && _nzT(o.equipe) === _nzT(o.joueur)) o.equipe = null;
     /* 20261007q : bookmaker gardé seulement si l'IA en est sûre (sinon le choix du formulaire reste) */
     if (o.bookmaker_sur === false && !/winamax|betclic|unibet|pmu|betify|bet365|betsson/i.test(String(o.bookmaker || ''))) o.bookmaker = null;
+  } catch (x) {}
+  /* 20261008d (capture Winamax MyMatch « Vainqueur Verstappen ou Antonelli ou … » au GP de Singapour : Équipe vide, Antonelli en
+     adversaire, Verstappen seul en joueur, lieu Dom) : COURSE (F1, MotoGP, cyclisme) → Équipe = la carte du mur de ce sport (« FORMULE 1 »…)
+     sinon le nom du sport, Type = « Vainqueur : Verstappen, Antonelli… » (noms de famille), pas d'adversaire ni de joueur, lieu neutre. */
+  try {
+    var _spC = String(o.sport || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    var _cmC = String(o.competition || '').toLowerCase();
+    var _kC = /moto/.test(_spC + ' ' + _cmC) ? 'moto' : (/f1|formule|formula/.test(_spC) || /grand prix|^gp /.test(_cmC) ? 'f1' : (/cycl|velo|cycling/.test(_spC) ? 'velo' : null));
+    if (_kC) {
+      var _noms = [];
+      var _aj = function (t) { String(t || '').split(/\s+ou\s+|\s*,\s*|\s*\/\s*|\s+or\s+/i).forEach(function (n) { n = n.trim(); if (n && _noms.indexOf(n) < 0) _noms.push(n); }); };
+      if (Array.isArray(o.selections)) o.selections.forEach(_aj);
+      if (!_noms.length) { _aj(o.joueur); _aj(o.equipe); _aj(o.adversaire); }
+      var _fam = function (n) { var p = n.split(/\s+/); return p.length > 1 ? p[p.length - 1] : n; };
+      var _base = String(o.type || 'Vainqueur').split(/\s*:\s*/)[0].replace(/\b(max|andrea|kimi|charles|lewis|george|lando|oscar)\b.*$/i, '').trim() || 'Vainqueur';
+      if (_noms.length) o.type = _base + ' : ' + _noms.map(_fam).join(', ');
+      var _emo = { f1: '🏎', moto: '🏍', velo: '🚴' }[_kC], _rx = { f1: /formule|\bf1\b/i, moto: /moto ?gp/i, velo: /cycl|tour de/i }[_kC];
+      var _carte = (typeof state !== 'undefined' && state.u || []).filter(function (u) { return u && (u.sport === _emo || _rx.test(u.n || '')); })[0];
+      o.equipe = _carte ? _carte.n : { f1: 'Formule 1', moto: 'MotoGP', velo: 'Cyclisme' }[_kC];
+      o.sport = { f1: 'f1', moto: 'motogp', velo: 'cyclisme' }[_kC];
+      o.adversaire = null; o.joueur = null; o.domicile = 'neutre';
+      if (o.competition) o.competition = String(o.competition).replace(/\s*\b(19|20)\d{2}\b/, '').replace(/\s*-\s*course$/i, '').trim();
+    }
   } catch (x) {}
   /* 20261007o (capture : « Lun. 05/10 » lu 10/05/2025) : date au plus près d'aujourd'hui — jour et mois inversés, année de l'IA ignorée */
   try {
@@ -70864,7 +70894,8 @@ function _g45TkPeindre() {
       var id = f[0], e = document.getElementById(id); if (!e) return;
       var m = document.getElementById('g45tk-m-' + id);
       if (e.offsetParent === null) { if (m) m.remove(); return; }
-      var plein = _g45TkRempli(id), fac = !!f[2], ok = plein && !_g45TkEtat.verif[id];
+      /* 20261008d : course (F1, MotoGP, cyclisme) lue sur un ticket → pas d'adversaire, champ facultatif (jaune) */
+      var plein = _g45TkRempli(id), fac = !!f[2] || (window._g45TkCourse && (id === 'n-analysis' || id === 'c-target')), ok = plein && !_g45TkEtat.verif[id];
       var coul = ok ? '#1ed760' : (fac ? '#f5c542' : '#ff4545');
       var tk = !!_g45TkEtat.msg[id] && !ok;
       var ol = (tk ? '3px' : '2px') + ' solid ' + coul;
@@ -70907,7 +70938,7 @@ function _g45TicketCouleurs(cockpit, lus) {
   if (typeof r === 'function' && !r._g45Tk) { var wr = function () { var x = r.apply(this, arguments); bientot(); return x; }; wr._g45Tk = 1; window.renderMmRows = wr; }
   ['pari', 'saveMmAsPari'].forEach(function (n) {
     var f = window[n]; if (typeof f !== 'function' || f._g45Tk) return;
-    var w = function () { _g45TkEtat = { msg: {}, verif: {} }; var x = f.apply(this, arguments); setTimeout(bientot, 60); return x; };
+    var w = function () { _g45TkEtat = { msg: {}, verif: {} }; window._g45TkCourse = false; var x = f.apply(this, arguments); setTimeout(bientot, 60); return x; };
     w._g45Tk = 1; window[n] = w;
   });
   setInterval(function () { var t = document.getElementById('t-paris'); if (t && t.offsetParent !== null && !document.hidden) bientot(); }, 1500);
