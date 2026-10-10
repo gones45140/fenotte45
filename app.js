@@ -70901,3 +70901,55 @@ function _g45TicketCouleurs(cockpit, lus) {
   setInterval(function () { var t = document.getElementById('t-paris'); if (t && t.offsetParent !== null && !document.hidden) bientot(); }, 1500);
   setTimeout(bientot, 1500);
 })();
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   20261007z — BOUTONS DE MARCHÉ EN COULEUR (maquette validée, « le choix contradictoire devient rouge », « over 2.5 / under 2.5
+   et over 1.5 vert », « oui fait le ») : dans #mm-types (Cockpit, mmRows) et #mm-types-simple (Simple, mmRowsSimple), après chaque
+   rendu : bouton CHOISI = fond vert + « ✓ » ; bouton CONTRADICTOIRE avec un choix = fond rouge barré (toujours cliquable) ;
+   bouton COUVERT par un choix (Over 2.5 ⇒ Over 1.5) = vert clair. Doubles chances selon le lieu (Simple #n-lieu, Cockpit #c-lieu ;
+   lieu inconnu = pas de règle). Mi-temps, HC +1, Buteur / Passeur / Décisif : aucune règle. La classe « pris » (grisé) est retirée.
+   ═══════════════════════════════════════════════════════════════════════════ */
+function _g45MmRegles(lieu) {
+  var K = {
+    'Victoire': ['Nul', 'Défaite'], 'Vainqueur': ['Défaite'], 'Nul': ['Victoire', 'Défaite', 'HC -1'],
+    'Défaite': ['Victoire', 'Vainqueur', 'Nul', 'HC -1'], 'HC -1': ['Nul', 'Défaite'],
+    'BTS Oui': ['BTS Non'], 'BTS Non': ['BTS Oui'], 'Over 2.5': ['Under 2.5'], 'Under 2.5': ['Over 2.5']
+  };
+  /* double chance de l'ADVERSAIRE (il gagne ou nul) ≠ Victoire ; MA double chance (je gagne ou nul) ≠ Défaite */
+  var adv = lieu === 'dom' ? 'Extérieur ou nul' : (lieu === 'ext' ? 'Domicile ou nul' : null);
+  var moi = lieu === 'dom' ? 'Domicile ou nul' : (lieu === 'ext' ? 'Extérieur ou nul' : null);
+  if (adv) { K['Victoire'].push(adv); K['HC -1'].push(adv); K[adv] = ['Victoire', 'HC -1']; }
+  if (moi) { K['Défaite'].push(moi); K[moi] = ['Défaite']; }
+  return { contra: K, couvre: { 'Over 2.5': ['Over 1.5'] } };
+}
+function _g45MmCouleurs() {
+  [['mm-types', typeof mmRows !== 'undefined' ? mmRows : [], 'c-lieu'], ['mm-types-simple', typeof mmRowsSimple !== 'undefined' ? mmRowsSimple : [], 'n-lieu']].forEach(function (z) {
+    var box = document.getElementById(z[0]); if (!box) return;
+    var lieuEl = document.getElementById(z[2]), lieu = lieuEl ? String(lieuEl.value || '') : '';
+    var R = _g45MmRegles(lieu);
+    var choisis = (z[1] || []).map(function (r) { return r && r.type; }).filter(Boolean);
+    var rouges = {}, couverts = {};
+    choisis.forEach(function (t) { (R.contra[t] || []).forEach(function (x) { rouges[x] = 1; }); (R.couvre[t] || []).forEach(function (x) { couverts[x] = 1; }); });
+    [].forEach.call(box.querySelectorAll('button.mm-type'), function (b) {
+      var t = b.getAttribute('data-t') || b.textContent.replace(/^✓\s*/, '').trim();
+      if (!b.getAttribute('data-t')) b.setAttribute('data-t', t);
+      var pris = choisis.indexOf(t) >= 0;
+      b.classList.remove('pris');
+      var st = '', txt = t;
+      if (pris) { st = 'background:#1ed760;color:#06210f;border-color:#1ed760;'; txt = '✓ ' + t; }
+      else if (rouges[t]) st = 'background:rgba(255,69,69,.55);color:#fff;border-color:#ff4545;text-decoration:line-through;';
+      else if (couverts[t]) st = 'background:rgba(30,215,96,.28);color:#fff;border-color:#1ed760;';
+      if (b.getAttribute('data-g45st') !== st) { b.style.cssText = st; b.setAttribute('data-g45st', st); }
+      if (b.textContent !== txt) b.textContent = txt;
+    });
+  });
+}
+(function () {
+  ['renderMmRows', 'renderMmRowsSimple', 'setLieu'].forEach(function (n) {
+    var f = window[n]; if (typeof f !== 'function' || f._g45Mm) return;
+    var w = function () { var x = f.apply(this, arguments); try { _g45MmCouleurs(); } catch (e) {} return x; };
+    w._g45Mm = 1; for (var k in f) if (Object.prototype.hasOwnProperty.call(f, k)) w[k] = f[k]; window[n] = w;
+  });
+  document.addEventListener('change', function (e) { if (e.target && e.target.id === 'c-lieu') try { _g45MmCouleurs(); } catch (x) {} }, true);
+  setTimeout(function () { try { _g45MmCouleurs(); } catch (e) {} }, 1500);
+})();
