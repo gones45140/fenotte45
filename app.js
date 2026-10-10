@@ -70768,18 +70768,26 @@ async function _g45TicketTesseract(dataUrl) {
   return o;
 }
 (function () {
+  /* 20261008b : aussi appelée par le bouton « 📷 Lire un ticket » (téléphone : pas de pense-bête) → `window._g45TicketTraiter` ;
+     pense-bête caché ou absent = image non posée dedans, bandeau fixé en bas de l'écran. */
   var traiter = function (blob) {
     var zone = document.getElementById('pc-note');
-    if (!zone || !blob) return;
+    if (!blob) return;
+    if (zone && zone.offsetParent === null) zone = null;
     var rd = new FileReader();
     rd.onload = async function (ev) {
       var url = ev.target.result;
-      zone.innerHTML = '<img src="' + url + '" alt="Pense-bête" style="max-width:100%;border-radius:6px;">';
-      try { localStorage.setItem('penseBeteImage', url); } catch (e) {}
       var av = document.createElement('div');
-      av.style.cssText = 'position:absolute;bottom:10px;left:10px;right:10px;background:rgba(0,0,0,.85);color:#fff;padding:6px 10px;border-radius:6px;font-size:13px;font-weight:700;z-index:10;';
+      if (zone) {
+        zone.innerHTML = '<img src="' + url + '" alt="Pense-bête" style="max-width:100%;border-radius:6px;">';
+        try { localStorage.setItem('penseBeteImage', url); } catch (e) {}
+        av.style.cssText = 'position:absolute;bottom:10px;left:10px;right:10px;background:rgba(0,0,0,.85);color:#fff;padding:6px 10px;border-radius:6px;font-size:13px;font-weight:700;z-index:10;';
+        zone.style.position = 'relative'; zone.appendChild(av);
+      } else {
+        av.style.cssText = 'position:fixed;bottom:96px;left:16px;right:16px;background:rgba(0,0,0,.92);color:#fff;padding:12px 14px;border-radius:10px;font-size:15px;font-weight:800;z-index:99999;text-align:center;border:2px solid #4f8cff;';
+        document.body.appendChild(av);
+      }
       av.textContent = '🧠 Lecture du ticket… ⏳';
-      zone.style.position = 'relative'; zone.appendChild(av);
       var o = null, via = 'IA';
       try { o = await _g45TicketIa(url); }
       catch (e) { console.warn('ticket IA', e && e.message); via = 'Tesseract'; try { o = await _g45TicketTesseract(url); } catch (e2) { console.warn('ticket Tesseract', e2 && e2.message); } }
@@ -70792,6 +70800,7 @@ async function _g45TicketTesseract(dataUrl) {
     };
     rd.readAsDataURL(blob);
   };
+  window._g45TicketTraiter = traiter;
   var image = function (dt) {
     var l = (dt && (dt.items || dt.files)) || [];
     for (var i = 0; i < l.length; i++) {
@@ -70954,3 +70963,32 @@ function _g45MmCouleurs() {
   document.addEventListener('change', function (e) { if (e.target && e.target.id === 'c-lieu') try { _g45MmCouleurs(); } catch (x) {} }, true);
   setTimeout(function () { try { _g45MmCouleurs(); } catch (e) {} }, 1500);
 })();
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   20261008b — BOUTON « 📷 Lire un ticket » (maquette validée : « la capture d'écran dans ta galerie oui, prendre une photo sert à
+   rien ») : sur téléphone le pense-bête (#pc-note) n'existe pas et on ne peut pas y coller d'image. Bouton posé au-dessus de
+   « Ton pari » (Cockpit #mm-sel, Simple #mm-sel-simple), sélecteur de fichier image (galerie, PAS de capture= caméra) →
+   `window._g45TicketTraiter` (même lecture IA, mêmes couleurs que le collage). Aussi visible sur PC.
+   ═══════════════════════════════════════════════════════════════════════════ */
+function g45TicketChoisir() {
+  var inp = document.getElementById('g45-ticket-fichier');
+  if (!inp) {
+    inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*'; inp.id = 'g45-ticket-fichier'; inp.style.display = 'none';
+    inp.onchange = function () { var f = inp.files && inp.files[0]; inp.value = ''; if (f && typeof window._g45TicketTraiter === 'function') window._g45TicketTraiter(f); };
+    document.body.appendChild(inp);
+  }
+  inp.click();
+}
+function _g45TicketBoutons() {
+  ['mm-sel', 'mm-sel-simple'].forEach(function (id) {
+    var sel = document.getElementById(id); if (!sel || document.getElementById('g45-tkb-' + id)) return;
+    var titre = sel.previousElementSibling && sel.previousElementSibling.classList.contains('mm-title') ? sel.previousElementSibling : sel;
+    var b = document.createElement('button');
+    b.id = 'g45-tkb-' + id; b.type = 'button'; b.onclick = g45TicketChoisir;
+    b.textContent = '📷 Lire un ticket (capture d\'écran)';
+    b.style.cssText = 'display:block;width:100%;margin:0 0 10px;padding:11px 12px;border:0;border-radius:10px;background:#4f8cff;color:#fff;font-size:15px;font-weight:800;cursor:pointer;';
+    titre.parentNode.insertBefore(b, titre);
+  });
+}
+setTimeout(_g45TicketBoutons, 800);
+document.addEventListener('DOMContentLoaded', _g45TicketBoutons);
