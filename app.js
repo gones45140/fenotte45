@@ -26095,8 +26095,16 @@ async function loadCalendrier() {
   var _agPalier = function(m){
     /* 20261008c (capture Agenda : « on a que les paliers foot ») : tous les sports — hors foot, tout match d'une équipe du mur avec
        stratégie compte comme championnat (Pro A, Top 14, NHL, KHL…) SAUF coupes / Euroleague / Eurocup / Champions Cup / amicaux. */
-    if (!m || m.suivi) return '';
-    var u = (state.u || []).filter(function(x){ return x && x.n === m.ourName; })[0];
+    /* 20261008e (capture : Hurricanes / Avalanche / Stade Toulousain sans palier) : ces équipes du mur arrivent dans l'Agenda par le
+       chemin ⭐ (m.suivi + m.sp, isDom juste) → équipe du mur cherchée par nom souple ; seuls les matchs suivis À LA MAIN (sans m.sp,
+       isDom toujours vrai) restent sans palier. */
+    if (!m || (m.suivi && !m.sp)) return '';
+    var _nzP = function(t){ return String(t||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim(); };
+    var _on = _nzP(m.ourName), _mots = _on.split(' ').filter(function(w){ return w.length >= 5 && !/^(stade|club|sporting|united|olympique|athletic|football|racing)$/.test(w); });
+    var u = (state.u || []).filter(function(x){ return x && x.n === m.ourName; })[0]
+      || (state.u || []).filter(function(x){ var n = _nzP(x && x.n); return n && (n === _on || (n.length >= 5 && (_on.indexOf(n) >= 0 || n.indexOf(_on) >= 0))); })[0]
+      || (state.u || []).filter(function(x){ var n = ' ' + _nzP(x && x.n) + ' '; return _mots.some(function(w){ return n.indexOf(' ' + w + ' ') >= 0; }); })[0]
+      || (state.u || []).filter(function(x){ var ws = _nzP(x && x.n).split(' ').filter(function(w){ return w.length >= 6; }); return _mots.some(function(w){ return w.length >= 6 && ws.some(function(v){ return v.slice(0, 6) === w.slice(0, 6); }); }); })[0];
     if (!u || u.s == null || typeof STRATS === 'undefined' || !STRATS[u.s]) return '';
     var sl = String(m.compSlug || '').toLowerCase(), nm = String(m.comp || '').toLowerCase();
     var foot = !m.sp || m.sp === 'soccer';

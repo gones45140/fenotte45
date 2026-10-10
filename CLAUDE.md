@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261008d, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261008e, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -362,6 +362,9 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   mise STRATS[u.s][p−1].
   20261008c (capture Agenda : « on a que les paliers foot ») : `_agPalier` pour TOUS les sports — hors foot, match d'une équipe du mur avec u.s
   = championnat sauf Euroleague / Eurocup / coupe / cup / Champions Cup / amical / présaison (testé vm 8/8). ⭐ Suivies toujours sans palier.
+  20261008e (capture : Hurricanes / Avalanche / Stade Toulousain sans palier — « nhl rugby baseball nfl ») : ces équipes du mur arrivent par le
+  chemin ⭐ (m.suivi + m.sp, isDom juste) → `_agPalier` cherche l'équipe du mur par nom souple (égal, inclus, mot ≥ 5 lettres, ou 6 premières
+  lettres : Toulousain ≈ Toulouse ; Toulon ≠ Toulouse) ; matchs suivis À LA MAIN (sans m.sp) toujours sans palier. Testé vm 6/6.
 - 🏷️ SPORT SUR CHAQUE PARI (20261005h, « il manque peut-être le sport ? », maquette validée « Oui ») : bloc en fin d'app.js —
   `_g45ParisSport(h)` = h.sport, sinon u.sport de l'équipe du mur (h.n), sinon deviné par h.comp (`_G45_PARIS_COMP`, MotoGP avant F1) ;
   rond `_g45ParisRond(h, px)` (couleurs Agenda `_G45_PARIS_COUL`) au-dessus du logo du book dans `_g45BetRowMini` (Paris filtrés) et
