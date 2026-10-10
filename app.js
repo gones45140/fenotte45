@@ -26088,6 +26088,26 @@ async function loadCalendrier() {
     var t = T[sp] || T.soccer;
     return { e: t[0], c: t[1], lg: court || nm || sl };
   };
+  /* 20261007k (« ce qui serait intéressant à rajouter c'est le palier actuel du cockpit », maquette validée « oui seulement
+     championnat ») : pastille « 🚀 Palier N · mise X € » sous la compétition, pour une équipe DU MUR (pas les ⭐) et un match de
+     CHAMPIONNAT seulement (slug ESPN « fra.1 », « eng.1 »… ; coupes / Europe / sélections écartés). Palier = échelle du LIEU
+     (`_g45PalLieu`, domicile ou extérieur comme le Cockpit), mise = STRATS de la stratégie de l'équipe (u.s). */
+  var _agPalier = function(m){
+    if (!m || m.suivi || m.sp && m.sp !== 'soccer') return '';
+    var u = (state.u || []).filter(function(x){ return x && x.n === m.ourName; })[0];
+    if (!u || u.s == null || typeof STRATS === 'undefined' || !STRATS[u.s]) return '';
+    var sl = String(m.compSlug || '').toLowerCase(), nm = String(m.comp || '').toLowerCase();
+    var champ = /^[a-z]{3}\.(w\.)?\d$/.test(sl);
+    if (!champ && !/champions|europa|conference|coupe|cup|copa|pokal|coppa|super|friendl|amical|qualif|nations|trophy|troph[ée]e|\.w?cup|uefa|fifa|conmebol/.test(sl + ' ' + nm))
+      champ = /ligue|liga|bundesliga|serie|premier|eredivisie|primeira|championship|mls|super lig|jupiler|pro league/.test(sl + ' ' + nm);
+    if (!champ) return '';
+    var p = (typeof _g45PalLieu === 'function') ? _g45PalLieu(u, m.isDom ? 'dom' : 'ext') : (parseInt(u.l, 10) || 1);
+    var mi = STRATS[u.s][p - 1];
+    if (mi == null) return '';
+    var miT = (Math.round(mi * 100) / 100).toLocaleString('fr-FR');
+    return '<div style="margin-top:5px;"><span style="display:inline-block;background:rgba(240,176,32,.22);border:1px solid #f0b020;color:#fff;'
+      + 'font-size:14px;font-weight:800;border-radius:7px;padding:2px 9px;">🚀 Palier ' + p + ' · mise ' + miT + ' €</span></div>';
+  };
   Object.keys(byDate).forEach(function(dateKey){
     html += '<div><div style="display:inline-block;background:rgba(11,16,29,.85);color:#fff;font-size:14px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;border-radius:8px;padding:5px 12px;margin:14px 0 8px;">'+dateKey+'</div></div>';
     byDate[dateKey].forEach(function(m){
@@ -26099,6 +26119,7 @@ async function loadCalendrier() {
       html += '<div style="flex:1;min-width:0;">';
       html += '<div style="font-size:15px;font-weight:800;color:#fff;">'+m.ourName+' '+(m.suivi?'<span style="color:#1ed760;">vs</span>':(m.isDom?'<span style="color:#3fb950;">vs</span>':'<span style="color:#f0883e;">@</span>'))+' '+m.adv+'</div>';
       html += '<div style="font-size:13px;color:#c9d3ee;margin-top:2px;"><b style="color:'+_S.c+';">'+_S.lg+'</b>'+(m.suivi?' · ⭐ Suivi':(m.isDom?' · 🏠 Domicile':' · ✈️ Extérieur'))+'</div>';
+      try { html += _agPalier(m); } catch(e) {}
       html += '</div>';
       var _stm = (typeof g45StatsForEvent==='function') ? g45StatsForEvent({sport:'⚽',teams:[m.ourName,m.adv],comp:(m.comp||m.compSlug||''),place:m.venue||''}) : [];
       var _csId = 'calstat-'+(_csn++);

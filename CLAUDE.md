@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261007j, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261007k, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -292,6 +292,10 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   Euroleague/Pro A, KHL) → foot (`_agFoot` par équipe), ⭐ (`_agSuivis`, scoreboards en parallèle), basket (`_agEb`) et KHL (`_agKhl`)
   lancés EN MÊME TEMPS, délai max `_agMax` (foot 20 s/équipe, ⭐ 15 s, basket 25 s, KHL 20 s, stats publiques 5 s) ; source trop lente = ignorée.
   Test Chromium (toutes réponses retardées de 0,7 s) : 110 s → 20 s. ⚠ _calTeamSchedule n'est pas surchargeable depuis window (portée).
+  CONFIRMÉ par Antoine (capture 10/10 : matchs foot affichés). 20261007k (« le palier actuel du cockpit », maquette validée « oui seulement
+  championnat ») : `_agPalier(m)` (dans loadCalendrier) → pastille jaune « 🚀 Palier N · mise X € » sous la compétition ; équipe DU MUR avec
+  u.s (pas ⭐), foot, CHAMPIONNAT seulement (slug « fra.1 »… ou nom de ligue, coupes / Europe écartées) ; palier `_g45PalLieu(u, dom|ext)`,
+  mise STRATS[u.s][p−1].
 - 🏷️ SPORT SUR CHAQUE PARI (20261005h, « il manque peut-être le sport ? », maquette validée « Oui ») : bloc en fin d'app.js —
   `_g45ParisSport(h)` = h.sport, sinon u.sport de l'équipe du mur (h.n), sinon deviné par h.comp (`_G45_PARIS_COMP`, MotoGP avant F1) ;
   rond `_g45ParisRond(h, px)` (couleurs Agenda `_G45_PARIS_COUL`) au-dessus du logo du book dans `_g45BetRowMini` (Paris filtrés) et
