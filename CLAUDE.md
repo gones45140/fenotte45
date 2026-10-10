@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261007w, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261007x, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -219,7 +219,12 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   d'un même match + UNE cote, équipes avec maillot + score (1re = reçoit), bouton « ✓ 0,00 € Gagné » ≠ gain. bet365 ajouté à la liste « sûr ».
   20261007w (deux tickets Betsson) : repères BETSSON (carte bleu marine, « Pari Simple - Ouvert », « Mon pari, ton bonus », date + « ID de pari » =
   date du PARI, « Aujourd'hui 17:15 » = heure du match, « Russell, George », « Cote totale - » → cote de la sélection) ; betsson ajouté à la liste « sûr ».
-  AUTRES (Piwi…) : captures à demander si besoin.
+  AUTRES : Piwi plus tard (Antoine enverra une capture « le moment venu »).
+  20261007x (maquette validée « oui » : « en rouge quand ça remplit pas, jaune pour facultatif, vert le reste ») — COULEURS APRÈS UN TICKET :
+  `_g45TicketCouleurs(cockpit, ids)` (bloc en fin d'app.js, appelé dans traiter) : champs `_G45_TK_CHAMPS` (s = Simple, c = Cockpit dont mm-sel
+  et c-lieu) ; VERT = rempli PAR le ticket (ids), ROUGE + « ⚠️ X à remplir » (vide) / « à vérifier (pas lu sur le ticket) » (valeur par défaut,
+  ex. date du jour), JAUNE « facultatif » = joueur / notes ; champ caché ignoré ; effacé au focus / saisie (`_g45TkEffacer`), tout effacé par
+  enveloppes de pari / saveMmAsPari et au ticket suivant (`g45TkToutEffacer`). Testé Chromium (Simple + Cockpit, captures).
   ⚠ app.js contient un jeton Dropbox en dur (localStorage.setItem('gones45_dbx_token', 'sl.…'), ≈ l. 15585 et sa copie) : SIGNALÉ à Antoine le 10/10.
 - SYNCHRO DES PARIS (GitHub, Antoine seul, données/paris_antoine.json chiffré) — 20261007l : le 09/10, PC éteint après 3 paris (22:16-22:20),
   téléphone resté ANCIEN saisit Lens–Lyon → poussait SON état entier (23:19) → 3 paris perdus partout (restaurés par commande console depuis

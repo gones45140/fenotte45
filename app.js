@@ -70785,7 +70785,8 @@ async function _g45TicketTesseract(dataUrl) {
       catch (e) { console.warn('ticket IA', e && e.message); via = 'Tesseract'; try { o = await _g45TicketTesseract(url); } catch (e2) { console.warn('ticket Tesseract', e2 && e2.message); } }
       if (!o) { av.textContent = '❌ Ticket illisible'; setTimeout(function () { av.remove(); }, 4000); return; }
       console.log('ticket lu (' + via + ')', o);
-      var ids = _g45TicketCockpit() ? _g45TicketRemplirCockpit(o) : _g45TicketRemplir(o);
+      var _ck = _g45TicketCockpit(); var ids = _ck ? _g45TicketRemplirCockpit(o) : _g45TicketRemplir(o);
+      try { _g45TicketCouleurs(_ck, ids); } catch (e) { console.warn('ticket couleurs', e && e.message); }
       av.textContent = ids.length ? ('✅ Ticket lu (' + via + ') : ' + ids.length + ' champs remplis — vérifie avant d\'enregistrer') : '⚠️ Rien trouvé sur le ticket';
       setTimeout(function () { av.remove(); }, 6000);
     };
@@ -70815,4 +70816,59 @@ async function _g45TicketTesseract(dataUrl) {
     traiter(f);
   }, true);
   document.addEventListener('dragover', function (e) { if (dansZone(e.target)) e.preventDefault(); }, true);
+})();
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   20261007x — COULEURS APRÈS UN TICKET COLLÉ (maquette validée « oui », idée d'Antoine : « quand ça remplit pas on pourrait mettre
+   en rouge » puis « jaune pour facultatif et en vert le reste ») : juste après la lecture d'un ticket, chaque champ du formulaire
+   (Simple ou Cockpit) est entouré : VERT = rempli PAR LE TICKET, ROUGE + « ⚠️ … à remplir » = obligatoire vide, JAUNE + « facultatif » = joueur /
+   notes vides (déjà rempli mais pas lu, ex. date du jour par défaut : rouge « à vérifier »). La couleur d'un champ s'efface dès qu'on le touche ; toutes s'effacent à l'enregistrement (enveloppes de pari /
+   saveMmAsPari) ou au ticket suivant. Champs cachés ignorés. Saisie normale : jamais de couleur.
+   ═══════════════════════════════════════════════════════════════════════════ */
+var _G45_TK_CHAMPS = {
+  s: [['n-date', 'Date'], ['n-heure', 'Heure'], ['p-sport', 'Sport'], ['n-team', 'Équipe'], ['n-analysis', 'Adversaire'], ['n-comp', 'Compétition'], ['n-type', 'Type de pari'],
+      ['n-cote', 'Cote'], ['n-mise', 'Mise'], ['n-book', 'Bookmaker'], ['n-joueur', 'Joueur', 1], ['n-notes', 'Notes', 1]],
+  c: [['c-unit', 'Équipe'], ['c-target', 'Adversaire'], ['c-date', 'Date'], ['c-heure', 'Heure'], ['c-sport', 'Sport'], ['c-lieu', 'Lieu'], ['c-comp', 'Compétition'], ['mm-sel', 'Ton pari (type + cote)'],
+      ['c-mise', 'Mise'], ['c-book', 'Bookmaker'], ['c-joueur', 'Joueur', 1], ['c-notes', 'Notes', 1]]
+};
+function _g45TkEffacer(e) {
+  if (!e) return;
+  e.style.outline = ''; e.style.outlineOffset = ''; e.style.background = e._g45TkFond != null ? e._g45TkFond : e.style.background; delete e._g45TkFond;
+  e.removeAttribute('data-g45tk');
+  var m = document.getElementById('g45tk-m-' + e.id); if (m) m.remove();
+}
+function g45TkToutEffacer() { [].forEach.call(document.querySelectorAll('[data-g45tk]'), _g45TkEffacer); [].forEach.call(document.querySelectorAll('.g45tk-msg'), function (m) { m.remove(); }); }
+function _g45TkRempli(id) {
+  if (id === 'mm-sel') return typeof mmRows !== 'undefined' && mmRows.length > 0;
+  var e = document.getElementById(id); return !!(e && String(e.value || '').trim());
+}
+function _g45TicketCouleurs(cockpit, lus) {
+  g45TkToutEffacer();
+  (_G45_TK_CHAMPS[cockpit ? 'c' : 's']).forEach(function (f) {
+    var e = document.getElementById(f[0]);
+    if (!e || e.offsetParent === null) return;
+    var plein = _g45TkRempli(f[0]), ok = lus ? lus.indexOf(f[0]) >= 0 : plein, fac = !!f[2];
+    var coul = ok ? '#1ed760' : (fac ? '#f5c542' : '#ff4545');
+    e.setAttribute('data-g45tk', '1');
+    e.style.outline = '3px solid ' + coul; e.style.outlineOffset = '1px';
+    if (!ok && !fac) { e._g45TkFond = e.style.background; e.style.background = 'rgba(255,69,69,.18)'; }
+    if (!ok) {
+      var m = document.createElement('div');
+      m.id = 'g45tk-m-' + f[0]; m.className = 'g45tk-msg';
+      m.style.cssText = 'font-size:14px;font-weight:800;margin-top:4px;padding:2px 8px;border-radius:5px;background:rgba(0,0,0,.6);display:inline-block;width:fit-content;max-width:100%;align-self:flex-start;color:' + coul;
+      m.textContent = fac ? f[1] + ' : facultatif' : '⚠️ ' + f[1] + (plein ? ' à vérifier (pas lu sur le ticket)' : ' à remplir');
+      var fg = e.closest('.fg') || e.parentNode; if (fg) fg.appendChild(m);
+    }
+    var fin = function () { _g45TkEffacer(e); e.removeEventListener('input', fin); e.removeEventListener('change', fin); e.removeEventListener('focus', fin); };
+    if (f[0] !== 'mm-sel') { e.addEventListener('input', fin); e.addEventListener('change', fin); e.addEventListener('focus', fin); }
+  });
+}
+(function () {
+  var r = window.renderMmRows;
+  if (typeof r === 'function' && !r._g45Tk) { var wr = function () { var x = r.apply(this, arguments); try { var e = document.getElementById('mm-sel'); if (e && e.getAttribute('data-g45tk') && !window._g45TkPose) _g45TkEffacer(e); } catch (er) {} return x; }; wr._g45Tk = 1; window.renderMmRows = wr; }
+  ['pari', 'saveMmAsPari'].forEach(function (n) {
+    var f = window[n]; if (typeof f !== 'function' || f._g45Tk) return;
+    var w = function () { try { g45TkToutEffacer(); } catch (e) {} return f.apply(this, arguments); };
+    w._g45Tk = 1; window[n] = w;
+  });
 })();
