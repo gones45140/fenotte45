@@ -42578,7 +42578,7 @@ window.g45F1Session=g45F1Session;
    et les données utilisateur n'étaient JAMAIS écrites — l'ajout apparaissait à l'écran puis
    disparaissait au rechargement. Ce n'était ni la synchro GitHub, ni Dropbox, ni le cache
    du navigateur. Tous ces caches sont reconstructibles : ils cèdent la place aux données. */
-var _G45_CACHE_PREFIXES=['g45agoa1_',/* 11/10 : cotes Agenda (The Odds API) */'g45reg1_',/* 08/10 : régularité buteurs NHL */'g45bb1_','g45bbst1_','g45bbld1_','g45bbf1_',/* 03/10 : Pro A be-basketball */'g45es1_',/* 01/10 : stats Euroleague */'g45kbo1_',/* 01/10 : KBO (mykbostats) */'g45t14lg1',/* 01/10 : logos Top 14 (LNR) */'g45pd2_',/* 01/10 : Pro D2 (LNR) */'g45t14sq1_',/* 01/10 : effectifs Top 14 (LNR) */'g45nrlm1_','g45nrldr1_',/* 01/10 : feuilles et calendriers NRL */'g45nrlsq1_',/* 01/10 : effectifs NRL */'g45nrlst2_',/* 01/10 : classements NRL */'g45proacid1_',/* 30/09 : numéros LNB par saison */'g45proast1_',/* 30/09 : stats Pro A */'g45proa1_',/* 30/09 : Pro A par journée */'g45el1_',/* 30/09 : Euroleague (compact) */'g45buts1_',/* 30/09 : buts en action (match fini) */'g45prad1_','g45vsj1_','g45vse1_',/* 30/09 : radars joueurs */'g45ia1_',/* 29/09 : avis IA gardés 6 h */'g45_mmeta2_','g45_mmeta1_','g45_tennis4_','g45_tennis3_',/* 16/09 : meta de match (domicile/lieu) et score tennis, reconstructibles */'g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dcf_','g45dc_',
+var _G45_CACHE_PREFIXES=['g45agoa2_',/* 11/10 : cotes Agenda (The Odds API) */'g45reg1_',/* 08/10 : régularité buteurs NHL */'g45bb1_','g45bbst1_','g45bbld1_','g45bbf1_',/* 03/10 : Pro A be-basketball */'g45es1_',/* 01/10 : stats Euroleague */'g45kbo1_',/* 01/10 : KBO (mykbostats) */'g45t14lg1',/* 01/10 : logos Top 14 (LNR) */'g45pd2_',/* 01/10 : Pro D2 (LNR) */'g45t14sq1_',/* 01/10 : effectifs Top 14 (LNR) */'g45nrlm1_','g45nrldr1_',/* 01/10 : feuilles et calendriers NRL */'g45nrlsq1_',/* 01/10 : effectifs NRL */'g45nrlst2_',/* 01/10 : classements NRL */'g45proacid1_',/* 30/09 : numéros LNB par saison */'g45proast1_',/* 30/09 : stats Pro A */'g45proa1_',/* 30/09 : Pro A par journée */'g45el1_',/* 30/09 : Euroleague (compact) */'g45buts1_',/* 30/09 : buts en action (match fini) */'g45prad1_','g45vsj1_','g45vse1_',/* 30/09 : radars joueurs */'g45ia1_',/* 29/09 : avis IA gardés 6 h */'g45_mmeta2_','g45_mmeta1_','g45_tennis4_','g45_tennis3_',/* 16/09 : meta de match (domicile/lieu) et score tennis, reconstructibles */'g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dcf_','g45dc_',
   'g45trv3_','g45trv2_','g45trOdds_','g45tr_','g45but_st_','g45butL_','g45butA_','g45but_mur_',
   '_g45clv','g45clv_snaps','g45_saisons_cache_v3_','g45_saisons_cache_v2_',
   /* Ajoutes le 20/08 : ces caches, tous reconstructibles, n'etaient PAS declares
@@ -65734,7 +65734,7 @@ window._g45ClvSelection = _g45ClvSelection; window._g45ClvPoser = _g45ClvPoser; 
       (setItem et save) puisse les vider.
    3) Au-delà de 4 millions de caractères stockés, purge préventive des
       caches (jamais g45v5, les données). */
-var _G45_CACHE_MORTS = ['g45nrlcal11_' /* 06/10 : → g45nrlcal12_ (présaison US écartée) */, 'g45f1tr1_' /* 04/10 : → g45f1tr2_ (voie des stands) */, 'g45bbjc1' /* 03/10 : → g45bbjc2 (clubs par saison) */, 'g45bbph1_' /* 03/10 : → g45bbph2_ (secours Wikipédia) */, 'g45cm10_' /* 07/10 : → g45cm11_ (statut OT/SO gardé) */, 'g45_jou_v1_' /* 07/10 : → g45_jou_v2_ (présence par match) */, 'g45cm9_' /* 01/10 : → g45cm10_ (présaison NHL marquée PO) */, 'g45nrlst1_' /* 01/10 : → g45nrlst2_ */, 'g45_cfai_veille' /* 29/09 : Workers AI supprimé */, 'g45cls4_' /* 29/09 : → g45cls5_ (stats de match) */, 'g45news7_', 'g45cm_', 'g45cm2_', 'g45cm3_', 'g45cm4_', 'g45cm5_', 'g45cm6_', 'g45cm7_', 'g45cm8_',
+var _G45_CACHE_MORTS = ['g45agoa1_' /* 11/10 : → g45agoa2_ (nom des books) */, 'g45nrlcal11_' /* 06/10 : → g45nrlcal12_ (présaison US écartée) */, 'g45f1tr1_' /* 04/10 : → g45f1tr2_ (voie des stands) */, 'g45bbjc1' /* 03/10 : → g45bbjc2 (clubs par saison) */, 'g45bbph1_' /* 03/10 : → g45bbph2_ (secours Wikipédia) */, 'g45cm10_' /* 07/10 : → g45cm11_ (statut OT/SO gardé) */, 'g45_jou_v1_' /* 07/10 : → g45_jou_v2_ (présence par match) */, 'g45cm9_' /* 01/10 : → g45cm10_ (présaison NHL marquée PO) */, 'g45nrlst1_' /* 01/10 : → g45nrlst2_ */, 'g45_cfai_veille' /* 29/09 : Workers AI supprimé */, 'g45cls4_' /* 29/09 : → g45cls5_ (stats de match) */, 'g45news7_', 'g45cm_', 'g45cm2_', 'g45cm3_', 'g45cm4_', 'g45cm5_', 'g45cm6_', 'g45cm7_', 'g45cm8_',
   'g45khl_fiche_', 'g45_saisons_cache_v2_', 'g45_score_', 'g45_score2_', 'g45_score3_'];
 try {
   ['g45cm11_', 'g45xgj1_', 'g45khl_fiche2_', 'g45khl_plage_', 'g45cls3_', 'g45cls5_', 'g45photostsdb_', 'g45wk1_', 'g45jv_', 'g45art1_', 'g45clv1_', 'g45arb1_', 'g45_herologo_', 'g45cm3_']
@@ -71203,7 +71203,7 @@ function _g45AgOdHtml(C, od, sp) {
    Cote = MÉDIANE des bookmakers ; match retrouvé par noms (_g45AgMemeEq) et coup d'envoi à ± 18 h. */
 var _g45AgOaMem = {};
 function _g45AgOaLire(k, reg) {
-  var ck = 'g45agoa1_' + k + '_' + reg;
+  var ck = 'g45agoa2_' + k + '_' + reg;   /* 20261008m : g45agoa1_ → 2_ (nom de chaque book gardé) */
   if (_g45AgOaMem[ck]) return _g45AgOaMem[ck];
   try { var c = JSON.parse(localStorage.getItem(ck) || 'null'); if (c && Date.now() - c.t < (c.ok ? 6 * 3600000 : 1800000)) return (_g45AgOaMem[ck] = Promise.resolve(c.d || [])); } catch (e) {}
   if (typeof FD_PROXY === 'undefined') return Promise.resolve([]);
@@ -71211,7 +71211,7 @@ function _g45AgOaLire(k, reg) {
     .then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; })
     .then(function (j) {
       var ok = Array.isArray(j), d = ok ? j.map(function (e) { return { h: e.home_team, a: e.away_team, t: e.commence_time,
-        b: (e.bookmakers || []).map(function (b) { var mk = (b.markets || []).filter(function (x) { return x.key === 'h2h'; })[0]; return mk ? mk.outcomes.map(function (o) { return [o.name, o.price]; }) : null; }).filter(Boolean) }; }) : [];
+        b: (e.bookmakers || []).map(function (b) { var mk = (b.markets || []).filter(function (x) { return x.key === 'h2h'; })[0]; return mk ? { n: String(b.title || b.key || '?').replace(/\s*\((fr|eu|uk)\)\s*$/i, ''), o: mk.outcomes.map(function (o) { return [o.name, o.price]; }) } : null; }).filter(Boolean) }; }) : [];
       try { localStorage.setItem(ck, JSON.stringify({ t: Date.now(), ok: ok, d: d })); } catch (e) {}
       return d;
     }));
@@ -71226,8 +71226,10 @@ function _g45AgOaTrouver(L, m) {
     if (!moiH && !moiA) return;
     var advOk = _g45AgMemeEq(m.adv, moiH ? e.a : e.h);
     if (!advOk && isNaN(t0)) return;
-    var pr = function (nom) { return _g45AgMed(e.b.map(function (bk) { var o = bk.filter(function (x) { return x[0] === nom; })[0]; return o ? o[1] : 0; })); };
-    best = { h: pr(e.h), a: pr(e.a), d: pr('Draw'), line: null, ov: 0, un: 0, moiDom: moiH, src: 'oa', nb: e.b.length };
+    var c1 = function (bk, nom) { var o = (bk.o || []).filter(function (x) { return x[0] === nom; })[0]; return o ? o[1] : 0; };
+    var pr = function (nom) { return _g45AgMed(e.b.map(function (bk) { return c1(bk, nom); })); };
+    best = { h: pr(e.h), a: pr(e.a), d: pr('Draw'), line: null, ov: 0, un: 0, moiDom: moiH, src: 'oa', nb: e.b.length, hN: e.h, aN: e.a,
+      books: e.b.map(function (bk) { return { n: bk.n, h: c1(bk, e.h), d: c1(bk, 'Draw'), a: c1(bk, e.a) }; }) };
   });
   return best;
 }
@@ -71291,17 +71293,44 @@ function _g45AgFrCle(m) {
   if ((m.sp && m.sp !== 'soccer') || !lg) return '';
   try { return (typeof _G45_TR_ODDSKEY !== 'undefined' && _G45_TR_ODDSKEY[lg]) || (typeof _G45_OA_LIGUES !== 'undefined' && _G45_OA_LIGUES[lg]) || ''; } catch (e) { return ''; }
 }
+/* 20261008m (« plus de détail serait mieux », maquette validée « oui ») : tableau un book par ligne (1 / Nul / 2), meilleure cote de
+   chaque colonne en vert, ⭐ sur la colonne de la consigne, ligne « meilleure cote … chez … » ; pastille tricolore « FR » au lieu du
+   drapeau emoji (Windows l'écrit « FR » en lettres). */
+var _G45_AG_FR = '<span style="display:inline-block;width:18px;height:12px;border-radius:2px;vertical-align:-1px;background:linear-gradient(90deg,#0055a4 0 33%,#fff 33% 66%,#ef4135 66%);margin-right:6px;"></span>';
 function _g45AgFrHtml(x, od) {
-  if (!od) return '<div style="margin-top:4px;color:#9fb0c7;font-size:13px;">🇫🇷 match pas trouvé chez les books français</div>';
+  if (!od) return '<div style="margin-top:4px;color:#9fb0c7;font-size:13px;">' + _G45_AG_FR + 'match pas trouvé chez les books français</div>';
   var f = function (c) { return c > 1 ? c.toFixed(2).replace('.', ',') : '–'; };
-  var moi = od.moiDom ? od.h : od.a, lui = od.moiDom ? od.a : od.h, vus = {}, parts = [];
+  var ea = function (t) { return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;'); };
+  var B = (od.books || []).filter(function (b) { return b.h > 1 || b.a > 1; });
+  if (!B.length) B = [{ n: 'Médiane', h: od.h, d: od.d, a: od.a }];
+  var avecNul = B.some(function (b) { return b.d > 1; });
+  var cols = avecNul ? ['h', 'd', 'a'] : ['h', 'a'];
+  var max = {}; cols.forEach(function (c) { max[c] = Math.max.apply(null, B.map(function (b) { return b[c] || 0; })); });
+  /* colonne de la consigne : victoire / vainqueur = mon camp, défaite = l'autre */
+  var cc = '', lib = '';
   (x.C.opts || []).forEach(function (L) { L.forEach(function (l) {
-    if ((l.k === 'vic' || l.k === 'vqr') && !vus.v) { vus.v = 1; parts.push('Victoire <b style="color:#1ed760;">' + f(moi) + '</b>'); }
-    if (l.k === 'def' && !vus.d) { vus.d = 1; parts.push('Défaite <b style="color:#1ed760;">' + f(lui) + '</b>'); }
+    if (cc) return;
+    if (l.k === 'vic' || l.k === 'vqr') { cc = od.moiDom ? 'h' : 'a'; lib = l.k === 'vic' ? 'victoire' : 'vainqueur'; }
+    else if (l.k === 'def') { cc = od.moiDom ? 'a' : 'h'; lib = 'défaite'; }
   }); });
-  if (!parts.length) parts = ['Victoire <b style="color:#1ed760;">' + f(moi) + '</b>', 'Nul <b style="color:#1ed760;">' + f(od.d) + '</b>', 'Défaite <b style="color:#1ed760;">' + f(lui) + '</b>'];
-  return '<div style="margin-top:5px;border-top:1px solid rgba(255,255,255,.12);padding-top:4px;">🇫🇷 ' + parts.join(' · ')
-    + '<div style="font-size:12px;color:#9fb0c7;">médiane de ' + od.nb + ' book' + (od.nb > 1 ? 's' : '') + ' français (The Odds API)</div></div>';
+  var tit = { h: od.hN || '1', d: 'Nul', a: od.aN || '2' };
+  var th = 'padding:3px 6px;font-size:13px;color:#c9d3ee;font-weight:700;text-align:center;';
+  var h = '<div style="margin-top:6px;border-top:1px solid rgba(255,255,255,.12);padding-top:6px;">'
+    + '<div style="font-size:14px;font-weight:800;color:#fff;margin-bottom:3px;">' + _G45_AG_FR + 'BOOKS FRANÇAIS</div>'
+    + '<div style="overflow-x:auto;"><table style="border-collapse:collapse;font-size:14px;color:#fff;">'
+    + '<tr><td style="' + th + 'text-align:left;"></td>' + cols.map(function (c) { return '<td style="' + th + 'max-width:110px;">' + ea(tit[c]) + '</td>'; }).join('') + '</tr>';
+  B.sort(function (p, q) { return cc ? (q[cc] || 0) - (p[cc] || 0) : 0; }).forEach(function (b) {
+    h += '<tr><td style="padding:3px 8px 3px 0;font-weight:700;white-space:nowrap;">' + ea(b.n) + '</td>' + cols.map(function (c) {
+      var v = b[c] || 0, top = v > 1 && v === max[c], etoile = top && c === cc;
+      return '<td style="padding:3px 6px;text-align:center;font-weight:' + (top ? 800 : 500) + ';color:' + (top ? '#1ed760' : '#fff') + ';">' + f(v) + (etoile ? ' ⭐' : '') + '</td>';
+    }).join('') + '</tr>';
+  });
+  h += '</table></div>';
+  if (cc && max[cc] > 1) {
+    var meil = B.filter(function (b) { return b[cc] === max[cc]; }).map(function (b) { return b.n; });
+    h += '<div style="margin-top:4px;font-size:14px;color:#fff;">Ta consigne (' + ea(lib) + ') : meilleure cote <b style="color:#1ed760;">' + f(max[cc]) + '</b> chez <b>' + ea(meil.join(', ')) + '</b></div>';
+  }
+  return h + '<div style="font-size:12px;color:#9fb0c7;">' + B.length + ' book' + (B.length > 1 ? 's' : '') + ' français · The Odds API</div></div>';
 }
 function _g45AgFrBtn(box, x) {
   try {
@@ -71309,9 +71338,9 @@ function _g45AgFrBtn(box, x) {
     var k = _g45AgFrCle(x.m); if (!k) return;
     _g45AgFrL[x.i] = x;
     var z = document.createElement('div'); z.id = 'g45agfr-' + x.i; box.appendChild(z);
-    var c = null; try { c = JSON.parse(localStorage.getItem('g45agoa1_' + k + '_fr') || 'null'); } catch (e) {}
+    var c = null; try { c = JSON.parse(localStorage.getItem('g45agoa2_' + k + '_fr') || 'null'); } catch (e) {}
     if (c && c.ok && Date.now() - c.t < 6 * 3600000) { z.innerHTML = _g45AgFrHtml(x, _g45AgOaTrouver(c.d, x.m)); return; }
-    z.innerHTML = '<button onclick="g45AgFr(' + x.i + ')" style="margin-top:6px;background:#1a2a4a;border:1px solid #4d84ff;color:#fff;font-size:14px;font-weight:800;border-radius:8px;padding:5px 12px;cursor:pointer;">🇫🇷 Cotes books FR</button>';
+    z.innerHTML = '<button onclick="g45AgFr(' + x.i + ')" style="margin-top:6px;background:#1a2a4a;border:1px solid #4d84ff;color:#fff;font-size:14px;font-weight:800;border-radius:8px;padding:5px 12px;cursor:pointer;">' + _G45_AG_FR + 'Cotes books FR</button>';
   } catch (e) {}
 }
 window.g45AgFr = function (i) {

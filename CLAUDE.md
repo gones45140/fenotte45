@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261008l, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261008m, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -388,6 +388,10 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   books FR » sous la ligne ESPN (`_g45AgFrBtn`, GONES45 SEULEMENT via `_g45SanteActive`) → `g45AgFr(i)` : h2h région fr du championnat
   (_G45_TR_ODDSKEY / _G45_OA_LIGUES, 1 crédit), cache g45agoa1_ 6 h partagé : championnat déjà lu = affiché sans bouton, autres matchs
   du même championnat mis à jour ; `_g45AgFrHtml` (victoire / défaite de la consigne, sinon 1N2). Testé Chromium : 1 appel pour 2 matchs, 0 bouton sur bet45.
+  CONFIRMÉ par Antoine (capture City @ Liverpool : ESPN 2,20 / FR 2,11, 4 books). 20261008m (« plus de détail », maquette « oui ») : `_g45AgFrHtml`
+  = tableau un book par ligne (nom title sans « (FR) », 1 / Nul / 2 avec noms The Odds API), meilleure cote par colonne en vert, ⭐ colonne de la
+  consigne, « Ta consigne (…) : meilleure cote X chez Y » ; pastille tricolore `_G45_AG_FR` (drapeau emoji = « FR » sous Windows) ; cache
+  g45agoa1_ → g45agoa2_ (MORTS) avec od.books / hN / aN. Testé Chromium.
 - 🏷️ SPORT SUR CHAQUE PARI (20261005h, « il manque peut-être le sport ? », maquette validée « Oui ») : bloc en fin d'app.js —
   `_g45ParisSport(h)` = h.sport, sinon u.sport de l'équipe du mur (h.n), sinon deviné par h.comp (`_G45_PARIS_COMP`, MotoGP avant F1) ;
   rond `_g45ParisRond(h, px)` (couleurs Agenda `_G45_PARIS_COUL`) au-dessus du logo du book dans `_g45BetRowMini` (Paris filtrés) et
