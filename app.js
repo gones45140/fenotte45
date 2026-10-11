@@ -4839,6 +4839,15 @@ function _g45CarteResultatHTML(h, logos){
   var verdictTxt=isPend?'⏳ En cours':(h.win?'✅ Gagné':'❌ Perdu');
   var verdictCls=isPend?'#f0b020':(h.win?'#1ed760':'#ff4545');
   var score=(typeof _g45ScoreTexte==='function')?(_g45ScoreTexte(h)||''):'';
+  /* 20261009a (carte partagée « Manchester City vs Liverpool 0-3 », match Liverpool 0-3 City) : le score est DOMICILE-EXTÉRIEUR
+     alors que la carte met MON équipe à gauche → mon équipe à l'extérieur = score retourné (même règle que _g45LigneMatch :
+     fiche ESPN _g45MatchMeta, sinon h.domicile). */
+  try {
+    var _mDom = true, _mt = (typeof _g45MatchMeta === 'function') ? _g45MatchMeta(h) : null;
+    if (_mt && _mt.hn && typeof _g45MemeNom === 'function') _mDom = !(_g45MemeNom(titreC, _mt.an) || (!_g45MemeNom(titreC, _mt.hn) && adversaireC && _g45MemeNom(adversaireC, _mt.hn)));
+    else _mDom = (h.domicile !== 'ext');
+    if (!_mDom && adversaireC) score = String(score).replace(/^(\s*)(\d+)\s*-\s*(\d+)/, function (x, e, a, b) { return e + b + '-' + a; });
+  } catch (eS) {}
   var typeTxtC=h.type||'';
   if(/^victoire\b/i.test(typeTxtC) && titreC.toLowerCase().indexOf(' vs ')===-1){ typeTxtC=titreC+' '+typeTxtC.replace(/^victoire\b/i,'gagne'); }
 
