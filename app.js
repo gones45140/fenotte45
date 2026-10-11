@@ -39715,9 +39715,11 @@ function _g45BetRowMini(h){
      titre et ne touche jamais les chiffres. */
   return '<div data-aid="'+h.id+'" onclick="try{openBetEdit(this.dataset.aid)}catch(e){}" style="position:relative;overflow:hidden;display:flex;align-items:center;padding:9px 10px;background:linear-gradient(100deg,'+_idColor+'45 0%,'+etatColor+'26 60%,var(--s1) 100%);border-radius:8px;margin-bottom:4px;border-left:4px solid '+etatColor+';gap:8px;cursor:pointer;">'
     /* 20261011j (« portrait ça coupe, on pourrait rapprocher à gauche ? ») : date courte JJ/MM en portrait (feuille #g45-row-portrait). */
+    +'<div class="g45-rg" style="display:flex;align-items:center;gap:8px;flex-shrink:0;">'
     +'<div class="g45-rdate" style="position:relative;font-size:10px;font-weight:600;color:var(--t2);min-width:50px;flex-shrink:0;text-align:center;line-height:1.3;"><span class="g45-dl">'+(h.date||'')+'</span><span class="g45-dc">'+(function(d){var m=/^\d{4}-(\d{2})-(\d{2})/.exec(d||'');return m?m[2]+'/'+m[1]:(d||'');})(h.date)+'</span>'+(h.heure?'<br>'+h.heure:'')+'</div>'
     /* 20261005h : rond du sport AU-DESSUS du logo du bookmaker (maquette validée « Oui »). */
-    +'<span style="position:relative;display:inline-flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;margin-right:6px;">'+_g45ParisRond(h,32)+((typeof bkFavicon==='function')?bkFavicon(h.b,22):'')+'</span>'
+    +'<span class="g45-ricones" style="position:relative;display:inline-flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;margin-right:6px;">'+_g45ParisRond(h,32)+((typeof bkFavicon==='function')?bkFavicon(h.b,22):'')+'</span>'
+    +'</div>'
     +'<div style="position:relative;flex:1;min-width:0;overflow:hidden;">'
     +_idFilig
     +'<div style="position:relative;font-size:12px;font-weight:700;color:var(--t1);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word;line-height:1.25;">'+_lgM.titre(_score)+'</div>'
@@ -72149,6 +72151,8 @@ function _g45CourbePropre(ch, dates) {
   var st = document.createElement('style'); st.id = 'g45-row-portrait';
   st.textContent = '.g45-dc{display:none;}'
     + '@media (max-width:599px){.g45-dl{display:none;}.g45-dc{display:inline;}.g45-rdate{min-width:40px !important;}'
-    + 'div:has(> [data-g45jph]) > div:not([data-g45jph]){padding-right:50px;}}';
+    + 'div:has(> [data-g45jph]) > div:not([data-g45jph]){padding-right:50px;}'
+    /* 20261011k (idée d'Antoine : « date en haut, logo sport et logo site en dessous ») : une seule colonne à gauche. */
+    + '.g45-rg{flex-direction:column !important;gap:5px !important;}.g45-ricones{flex-direction:row !important;margin-right:0 !important;}}';
   (document.head || document.documentElement).appendChild(st);
 })();

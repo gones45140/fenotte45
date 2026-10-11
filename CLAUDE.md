@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261011j, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261011k, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1587,6 +1587,7 @@ BILAN, courbes « Évolution bankroll » (#cg, GC) et « Bankroll totale » (#ch
 LIGNES DE PARI EN PORTRAIT (20261011j, « portrait ça coupe, rapprocher à gauche ? ») : `_g45BetRowMini` date en 2 versions (.g45-dl
   complète / .g45-dc JJ/MM) ; feuille #g45-row-portrait (< 600 px) : date courte, colonne 40 px, texte à 50 px du bord droit quand il y a la
   photo de joueur ([data-g45jph], sélecteur :has). Paysage / PC inchangés. Testé Chromium 412 px.
+  20261011k (idée d'Antoine, aperçu validé « je te fais confiance ») : portrait = UNE colonne à gauche (.g45-rg : date en haut, .g45-ricones = rond du sport + logo du book côte à côte dessous).
 RÉGLÉ OU ABANDONNÉ (ne pas reproposer) :
 - APK bet45 sans barre d'adresse : OK. Logos Lakers / hockey : OK. « Connexion » sur le
   logo, paysage gones, pression en portrait, « 1. FC », cartes KHL, compos rugby : OK
