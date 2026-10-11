@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261009d, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261009e, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1018,6 +1018,7 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   convertis en données intégrées (html2canvas). Photos réelles NON vérifiées (domaines bloqués depuis le cloud).
   20261009d (capture : initiales « RC » + carré « LIV ») : connect-src de la CSP (index.html ET indexfenotte.html) sans a.espncdn.com,
   upload.wikimedia.org, r2.thesportsdb.com → fetch de conversion bloqué ; ajoutés. CORS de ces 3 serveurs NON vérifié.
+  CONFIRMÉ par Antoine : logo Liverpool OK. 20261009e (console : photo Cherki = thumb.wikimedia.org/…, « donnee: 0 ») : *.wikimedia.org ajouté.
 - Bouton ⚡ « Ouvrir le match » des lignes de pari (`g45EclairPari` / `g45EclairOuvrirCible`) — 20261009b (« le flash fonctionne pas ») :
   cherchait le pari dans state.h SEULEMENT → muet sur un pari réglé (state.a) ; cherche maintenant state.h puis state.a (testé Chromium).
 - ⚾🇰🇷 KBO (20261001s, maquette validée « yes we can ») : tuile slug 'kbo' (Compétitions → Baseball, après MLB),
