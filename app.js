@@ -59520,7 +59520,8 @@ async function _g45EclairTrouver(c, jourPari, heurePari) {
 }
 
 async function g45EclairOuvrirCible(betId, i) {
-  var h = (state.h || []).find(function (x) { return String(x.id) === String(betId); });
+  /* 20261009b (« le flash fonctionne pas ») : le pari RÉGLÉ est dans state.a, pas state.h → ⚡ muet sur l'archive. */
+  var h = (state.h || []).concat(state.a || []).find(function (x) { return String(x.id) === String(betId); });
   if (!h) return;
   try { var ch = document.getElementById('g45-eclair-choix'); if (ch) ch.remove(); } catch (e) {}
   var c = _g45EclairCibles(h)[i || 0];
@@ -59543,7 +59544,8 @@ async function g45EclairOuvrirCible(betId, i) {
 window.g45EclairOuvrirCible = g45EclairOuvrirCible;
 
 function g45EclairPari(betId) {
-  var h = (state.h || []).find(function (x) { return String(x.id) === String(betId); });
+  /* 20261009b (« le flash fonctionne pas ») : le pari RÉGLÉ est dans state.a, pas state.h → ⚡ muet sur l'archive. */
+  var h = (state.h || []).concat(state.a || []).find(function (x) { return String(x.id) === String(betId); });
   if (!h) return;
   var cibles = _g45EclairCibles(h);
   if (cibles.length <= 1) { g45EclairOuvrirCible(betId, 0); return; }
