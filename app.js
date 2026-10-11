@@ -71468,3 +71468,18 @@ function _g45IdF1(h, avant) {
       + '<img src="images/equipes/formule1.png" alt="" loading="lazy" onerror="this.parentNode.style.display=\'none\'" style="width:118%;max-width:none;height:auto;flex:none;"></div>';
   } catch (e) { return avant; }
 }
+
+/* ===================== 20261008t — PC : PLUS DE COLONNE « ASSISTANT PARIS » À DROITE =====================
+   Antoine (captures avant / après, « c'est mieux sans lui à droite et ça agrandit ») : la colonne fixe
+   de droite (#pc-chat-sidebar, 300-320 px) est cachée, la page prend toute la largeur ; l'assistant
+   s'ouvre par « 💬 Assistant » dans la colonne de gauche (onglet #t-chat, le même que sur téléphone,
+   que style.css cachait sur PC ; showTab pose style.display en ligne → règle sur [style*="block"]). Feuille posée ici pour ne pas toucher style.css (partagé). */
+(function () {
+  try {
+    var st = document.createElement('style');
+    st.id = 'g45-pc-sans-chat';
+    st.textContent = '@media(min-width:1100px){#pc-chat-sidebar,.chat-sidebar{display:none !important;}'
+      + 'body{padding-right:0 !important;}body #t-chat[style*="block"]{display:block !important;}}';
+    (document.head || document.documentElement).appendChild(st);
+  } catch (e) {}
+})();
