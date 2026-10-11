@@ -1561,6 +1561,7 @@ ACCUEIL bet45 « CHOISIS TON CLUB » (20261011b, maquette validée « Parfait »
   (logo CJF Rugby Fleury, SANS droits — Antoine) et basket.png (photo 123RF avec filigrane) SUPPRIMÉS.
   20261011c (capture : « Utiliser le mot de passe enregistré ? » au bouton bleu) : plus de focus auto (case encadrée jaune 4 s) ;
   `_g45SansMdp` : input[type=password] (clés d'API d'Outils) → autocomplete new-password, u-name / u-search… → off. Effet sur Chrome Android NON vérifié.
+  11/10 : images/equipes/ladodgers.png (logo MLB sur fond blanc, « carré » dans la tuile Baseball) SUPPRIMÉ de fenotte45 (« pareil »).
 RÉGLÉ OU ABANDONNÉ (ne pas reproposer) :
 - APK bet45 sans barre d'adresse : OK. Logos Lakers / hockey : OK. « Connexion » sur le
   logo, paysage gones, pression en portrait, « 1. FC », cartes KHL, compos rugby : OK
