@@ -1547,7 +1547,7 @@ INSCRIPTION bet45 (11/10, « 0 création de compte possible », ami Cédric) : l
   resetPasswordForEmail, qui n'envoie RIEN pour une adresse inconnue → aucun nouveau compte possible depuis le 27/08. Remplacé par
   `lienPremiereConnexion` (supabase.js, fenotte45) = signInWithOtp shouldCreateUser + redirection reset.html (choix du mot de passe).
   Testé Chromium (Supabase simulé). Mails Supabase = SMTP Gmail badgone45000 (Brevo a suspendu le compte) ; avertissement « fournisseur
-  personnel » de Supabase = normal. Cédric créé à la main (Add user, Auto Confirm). Captures d'écran impossibles sur bet45 : NON expliqué.
+  personnel » de Supabase = normal. Cédric créé à la main (Add user, Auto Confirm). Captures impossibles = navigation privée Firefox (réglage). Lien « Mentions légales » de login.html DANS le cadre (maquette validée).
 RÉGLÉ OU ABANDONNÉ (ne pas reproposer) :
 - APK bet45 sans barre d'adresse : OK. Logos Lakers / hockey : OK. « Connexion » sur le
   logo, paysage gones, pression en portrait, « 1. FC », cartes KHL, compos rugby : OK
