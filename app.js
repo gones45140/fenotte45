@@ -71959,3 +71959,15 @@ function _g45SansMdp() {
   } catch (e) {}
 }
 setTimeout(_g45SansMdp, 1500);
+
+/* 20261011e — Bilan, barre d'info sous la courbe (« Global +493.79€ · Winamax +260.09€ · Betclic… » COUPÉ, capture d'Antoine
+   téléphone + paysage, « faudrait aller à la ligne ») : style.css met .cib-val en flex-shrink:0 → texte plus large que la barre.
+   Feuille posée ici (style.css inchangé) : la valeur passe à la ligne, et sous la date quand elle est longue. */
+(function () {
+  if (document.getElementById('g45-cib-ligne')) return;
+  var st = document.createElement('style'); st.id = 'g45-cib-ligne';
+  st.textContent = '.chart-info-bar{flex-wrap:wrap;}'
+    + '.chart-info-bar .cib-main{min-width:110px;}'
+    + '.chart-info-bar .cib-val{flex:1 1 220px;min-width:0;white-space:normal;overflow-wrap:anywhere;line-height:1.5;}';
+  (document.head || document.documentElement).appendChild(st);
+})();
