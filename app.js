@@ -65554,7 +65554,10 @@ function _g45InstAppareil() {
   if (/iPhone|iPad|iPod/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1)) return 'ios';
   return 'pc';
 }
-var _G45_APK = 'telecharger/bet45.apk';
+/* 20261008q (blocage SFR « malware » de bet45.fr, cause probable : APK hébergée sur le site) : APK déplacée dans une RELEASE GitHub
+   (fenotte45, tag apk-v1, publiée par Antoine le 11/10, sha256 identique) ; « latest/download » = toujours la dernière release.
+   telecharger/bet45.apk retiré du site. Adresse externe → pas de HEAD (CORS refusé par github.com) : disponible d'office. */
+var _G45_APK = 'https://github.com/gones45140/fenotte45/releases/latest/download/bet45.apk';
 async function g45InstPoser() {
   try {
     if (!_g45InstSurBet45() || _g45InstDejaInstalle()) return;
@@ -65569,7 +65572,8 @@ async function g45InstPoser() {
     var txt = function (t) { return '<div style="font-size:13px;color:#dfe6f5;line-height:1.55;margin-top:6px;">' + t + '</div>'; };
     if (app === 'android') {
       var dispo = false;
-      try { var r = await fetch(_G45_APK, { method: 'HEAD', cache: 'no-store' }); dispo = r.ok; } catch (e) {}
+      if (/^https?:/.test(_G45_APK)) dispo = true;
+      else { try { var r = await fetch(_G45_APK, { method: 'HEAD', cache: 'no-store' }); dispo = r.ok; } catch (e) {} }
       corps = dispo
         ? '<a href="' + _G45_APK + '" download="BET45.apk" data-g45-direct="1" style="display:block;text-align:center;margin-top:8px;padding:11px 14px;border-radius:10px;background:#4d84ff;color:#fff;font-size:14px;font-weight:800;text-decoration:none;">⬇️ Télécharger l\'appli Android</a>'
           + txt('Si Android le demande, autorise l\'installation depuis ton navigateur, puis ouvre le fichier téléchargé.')

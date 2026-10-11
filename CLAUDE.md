@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261008p, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261008q, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1505,8 +1505,9 @@ BLOCAGE SFR (11/10, capture d'un ami d'Antoine) : « Navigation protégée » SF
   requalification = Espace Client SFR (l'ami le fera). Contournement ami : DNS privé dns.google. Fait : fenotte45/mentions-legales.html
   (éditeur « Antoine T. », contact@bet45.fr = redirection créée par Antoine, hébergeur GitHub, Cloudflare/Supabase, données, cookies,
   propriété « toute copie interdite », formule officielle jeu responsable) + liens en pied d'accueil.html et bas fixe de login.html.
-  À FAIRE : Antoine publie bet45.apk en Release GitHub (tag apk-v1, fenotte45) → _G45_APK = https://github.com/gones45140/fenotte45/releases/
-  latest/download/bet45.apk et suppression de telecharger/bet45.apk.
+  20261008q — FAIT : Antoine a publié la Release GitHub « BET45 Android » (fenotte45, tag apk-v1, asset bet45.apk, sha256 = ancien fichier) ;
+  _G45_APK = https://github.com/gones45140/fenotte45/releases/latest/download/bet45.apk (pas de HEAD : CORS) ; telecharger/bet45.apk SUPPRIMÉ
+  de fenotte45. Nouvelle APK = nouvelle release avec un fichier nommé exactement bet45.apk. Ensuite : demande de requalification SFR par l'ami.
 RÉGLÉ OU ABANDONNÉ (ne pas reproposer) :
 - APK bet45 sans barre d'adresse : OK. Logos Lakers / hockey : OK. « Connexion » sur le
   logo, paysage gones, pression en portrait, « 1. FC », cartes KHL, compos rugby : OK
