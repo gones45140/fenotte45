@@ -26056,6 +26056,30 @@ async function loadCalendrier() {
   });
   allMatches.sort(function(a,b){ return new Date(a.date)-new Date(b.date); });
 
+  /* 20261008f (capture AS Roma « 📌 🏠 victoire+under 3.5 » : « je l'ai joué à domicile et non à l'extérieur, donc AS Roma extérieur ne
+     doit pas être dans l'agenda ») : équipe DU MUR (même recherche souple que le palier) dont la consigne 📌 ne cite QUE 🏠 → ses
+     matchs à l'extérieur sont retirés ; QUE ✈️ → ses matchs à domicile retirés. Consigne sans 🏠 ni ✈️, les deux, pas d'équipe du
+     mur, ou match suivi À LA MAIN (sans m.sp, lieu inconnu) : gardé. */
+  var _agMur = function(m){
+    if (!m || (m.suivi && !m.sp)) return null;
+    var _nzP = function(t){ return String(t||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim(); };
+    var _on = _nzP(m.ourName), _mots = _on.split(' ').filter(function(w){ return w.length >= 5 && !/^(stade|club|sporting|united|olympique|athletic|football|racing)$/.test(w); });
+    return (state.u || []).filter(function(x){ return x && x.n === m.ourName; })[0]
+      || (state.u || []).filter(function(x){ var n = _nzP(x && x.n); return n && (n === _on || (n.length >= 5 && (_on.indexOf(n) >= 0 || n.indexOf(_on) >= 0))); })[0]
+      || (state.u || []).filter(function(x){ var n = ' ' + _nzP(x && x.n) + ' '; return _mots.some(function(w){ return n.indexOf(' ' + w + ' ') >= 0; }); })[0]
+      || (state.u || []).filter(function(x){ var ws = _nzP(x && x.n).split(' ').filter(function(w){ return w.length >= 6; }); return _mots.some(function(w){ return w.length >= 6 && ws.some(function(v){ return v.slice(0, 6) === w.slice(0, 6); }); }); })[0]
+      || null;
+  };
+  window._g45AgLieuOk = function(m, u){
+    if (!m || (m.suivi && !m.sp) || !u || !u.note) return true;
+    var nt = String(u.note), dom = /🏠/.test(nt), ext = /✈|🛫/.test(nt);
+    if (dom === ext) return true;
+    return m.isDom ? dom : ext;
+  };
+  allMatches = allMatches.filter(function(m){
+    try { return window._g45AgLieuOk(m, _agMur(m)); } catch(e) { return true; }
+  });
+
   if(!allMatches.length) {
     el.innerHTML = '<div class="fc" style="color:var(--t3);text-align:center;">Aucun match à venir trouvé pour tes équipes.<br><small>(saison terminée ou calendrier pas encore publié)</small></div>';
     return;
@@ -26099,12 +26123,7 @@ async function loadCalendrier() {
        chemin ⭐ (m.suivi + m.sp, isDom juste) → équipe du mur cherchée par nom souple ; seuls les matchs suivis À LA MAIN (sans m.sp,
        isDom toujours vrai) restent sans palier. */
     if (!m || (m.suivi && !m.sp)) return '';
-    var _nzP = function(t){ return String(t||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim(); };
-    var _on = _nzP(m.ourName), _mots = _on.split(' ').filter(function(w){ return w.length >= 5 && !/^(stade|club|sporting|united|olympique|athletic|football|racing)$/.test(w); });
-    var u = (state.u || []).filter(function(x){ return x && x.n === m.ourName; })[0]
-      || (state.u || []).filter(function(x){ var n = _nzP(x && x.n); return n && (n === _on || (n.length >= 5 && (_on.indexOf(n) >= 0 || n.indexOf(_on) >= 0))); })[0]
-      || (state.u || []).filter(function(x){ var n = ' ' + _nzP(x && x.n) + ' '; return _mots.some(function(w){ return n.indexOf(' ' + w + ' ') >= 0; }); })[0]
-      || (state.u || []).filter(function(x){ var ws = _nzP(x && x.n).split(' ').filter(function(w){ return w.length >= 6; }); return _mots.some(function(w){ return w.length >= 6 && ws.some(function(v){ return v.slice(0, 6) === w.slice(0, 6); }); }); })[0];
+    var u = _agMur(m);
     if (!u || u.s == null || typeof STRATS === 'undefined' || !STRATS[u.s]) return '';
     var sl = String(m.compSlug || '').toLowerCase(), nm = String(m.comp || '').toLowerCase();
     var foot = !m.sp || m.sp === 'soccer';
