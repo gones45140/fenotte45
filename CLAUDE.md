@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261008h, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261008i, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -376,6 +376,9 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   20261008h — SONDÉ PAR ANTOINE (MLB Brewers–Dodgers) : odds[0] SANS moneyline, homeTeamOdds/awayTeamOdds sans cote, details « MIL -113 »
   (américaine du favori), overUnder 6 sans cotes over/under → `_g45AgOdEv` lit details (abréviation → camp) ; ligne seule = « publiées ».
   City @ Liverpool sans ligne : carte City SANS consigne 📌 (rien n'est cherché sans consigne). Rugby : NON vu.
+  20261008i (capture Winamax Flyers–Hurricanes : Résultat 1,88, Vainqueur 1,54 ; ESPN 1,56) : NHL ESPN = VAINQUEUR (prolong. + TAB) → jambe
+  « victoire » en hockey affichée « Vainqueur (prolong. comprise) » + ⚠️ « ta victoire = temps réglementaire… ». Agenda : match ⭐ avec m.sp
+  affiché « @ » / « vs » selon isDom + « · 🏠 Domicile / ✈️ Extérieur » (avant : toujours « vs »).
 - 🏷️ SPORT SUR CHAQUE PARI (20261005h, « il manque peut-être le sport ? », maquette validée « Oui ») : bloc en fin d'app.js —
   `_g45ParisSport(h)` = h.sport, sinon u.sport de l'équipe du mur (h.n), sinon deviné par h.comp (`_G45_PARIS_COMP`, MotoGP avant F1) ;
   rond `_g45ParisRond(h, px)` (couleurs Agenda `_G45_PARIS_COUL`) au-dessus du logo du book dans `_g45BetRowMini` (Paris filtrés) et

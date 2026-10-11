@@ -26148,8 +26148,8 @@ async function loadCalendrier() {
       html += '<div style="display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--s1);border-radius:10px;margin-bottom:7px;border-left:4px solid '+_S.c+';">';
       html += '<div style="flex:none;width:44px;height:44px;border-radius:50%;background:rgba(11,16,29,.9);border:2px solid '+_S.c+';display:flex;align-items:center;justify-content:center;font-size:24px;">'+_S.e+'</div>';
       html += '<div style="flex:1;min-width:0;">';
-      html += '<div style="font-size:15px;font-weight:800;color:#fff;">'+m.ourName+' '+(m.suivi?'<span style="color:#1ed760;">vs</span>':(m.isDom?'<span style="color:#3fb950;">vs</span>':'<span style="color:#f0883e;">@</span>'))+' '+m.adv+'</div>';
-      html += '<div style="font-size:13px;color:#c9d3ee;margin-top:2px;"><b style="color:'+_S.c+';">'+_S.lg+'</b>'+(m.suivi?' · ⭐ Suivi':(m.isDom?' · 🏠 Domicile':' · ✈️ Extérieur'))+'</div>';
+      html += '<div style="font-size:15px;font-weight:800;color:#fff;">'+m.ourName+' '+((m.suivi&&!m.sp)?'<span style="color:#1ed760;">vs</span>':(m.isDom?'<span style="color:#3fb950;">vs</span>':'<span style="color:#f0883e;">@</span>'))+' '+m.adv+'</div>';
+      html += '<div style="font-size:13px;color:#c9d3ee;margin-top:2px;"><b style="color:'+_S.c+';">'+_S.lg+'</b>'+(m.suivi?' · ⭐ Suivi'+(m.sp?(m.isDom?' · 🏠 Domicile':' · ✈️ Extérieur'):''):(m.isDom?' · 🏠 Domicile':' · ✈️ Extérieur'))+'</div>';
       try { html += _agPalier(m); } catch(e) {}
       /* 20261008g : consigne 📌 du lieu + cotes ESPN (rempli après coup par window._g45AgCotes). */
       try {
@@ -71163,12 +71163,15 @@ function _g45AgOdHtml(C, od, sp) {
   var f = function (x) { return x > 1 ? x.toFixed(2).replace('.', ',') : '–'; };
   var foot = !sp || sp === 'soccer';
   var moi = od.moiDom ? od.h : od.a, lui = od.moiDom ? od.a : od.h;
-  var lignes = [], seuilV = 0;
+  var lignes = [], seuilV = 0, noteHk = 0;
   C.opts.forEach(function (legs) {
     var parts = [], prod = 1, ok = true, nb = 0;
     legs.forEach(function (l) {
       var c = 0, lib = '';
-      if (l.k === 'vic' || l.k === 'vqr') { c = moi; lib = l.k === 'vic' ? 'Victoire' : 'Vainqueur'; if (!seuilV) seuilV = c; }
+      /* 20261008i (capture Winamax Flyers–Hurricanes : Résultat 1,88 / Vainqueur 1,54 ; ESPN 1,56) : en HOCKEY la cote ESPN est le
+         VAINQUEUR (prolongation + TAB compris) ; la « victoire » d'Antoine = temps réglementaire, absente chez ESPN → affichée en Vainqueur. */
+      if (l.k === 'vic' && sp === 'hockey') { c = moi; lib = 'Vainqueur (prolong. comprise)'; noteHk = 1; if (!seuilV) seuilV = c; }
+      else if (l.k === 'vic' || l.k === 'vqr') { c = moi; lib = l.k === 'vic' ? 'Victoire' : 'Vainqueur'; if (!seuilV) seuilV = c; }
       else if (l.k === 'def') { c = lui; lib = foot ? 'Défaite' : 'Défaite (adversaire gagne)'; if (!seuilV) seuilV = c; }
       else if (l.k === 'ov' || l.k === 'un') {
         lib = (l.k === 'ov' ? 'Over ' : 'Under ') + String(l.L).replace('.', ',');
@@ -71187,6 +71190,7 @@ function _g45AgOdHtml(C, od, sp) {
   var h = lignes.map(function (s, i) { return '<div style="margin-top:' + (i ? 3 : 0) + 'px;">' + (i ? 'OU ' : '💶 ') + s + '</div>'; }).join('');
   if (C.seuil && seuilV > 1) h += '<div style="margin-top:3px;font-weight:800;color:' + (seuilV < C.seuil ? '#1ed760' : '#ff6b6b') + ';">'
     + (seuilV < C.seuil ? '✅ cote ' + f(seuilV) + ' < ' + String(C.seuil).replace('.', ',') + ' : condition remplie' : '❌ cote ' + f(seuilV) + ' ≥ ' + String(C.seuil).replace('.', ',') + ' : condition non remplie') + '</div>';
+  if (noteHk) h += '<div style="font-size:13px;color:#ffb36b;margin-top:2px;">⚠️ ta victoire = temps réglementaire : ESPN ne la donne pas, sa cote sera plus haute chez ton book</div>';
   return h + '<div style="font-size:12px;color:#9fb0c7;margin-top:2px;">Cotes ESPN (DraftKings) : indication</div>';
 }
 /* Appelée par loadCalendrier : L = [{i, m, C}] (placeholder #g45agod-<i>). */
