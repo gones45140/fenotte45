@@ -1551,6 +1551,8 @@ INSCRIPTION bet45 (11/10, « 0 création de compte possible », ami Cédric) : l
 NOM DU COMPTE EN HAUT (20261011a, maquette B validée) : auth-guard.js `_g45NomCompte` — connecté → lien fixe « 👤 Connexion » caché (il
   renvoyait aussitôt dans l'appli et cachait le logo) et « 👤 <pseudo> » sous le Capital (.top-cap) ; pseudo = profils (social) sinon
   user_metadata.pseudo sinon début du mail ; toucher = showTab('t-outils') + bloc « Mon compte ». Testé Chromium (Supabase simulé).
+VITRINE (11/10, « la page revient trop souvent en rafraîchissant ») : index.html de fenotte45 envoyait TOUJOURS sur accueil.html sans ?code= ;
+  maintenant session Supabase (localStorage sb-…-auth-token) ou appli déjà utilisée (g45v5__fen) → indexfenotte.html (testé Chromium 3/3).
 RÉGLÉ OU ABANDONNÉ (ne pas reproposer) :
 - APK bet45 sans barre d'adresse : OK. Logos Lakers / hockey : OK. « Connexion » sur le
   logo, paysage gones, pression en portrait, « 1. FC », cartes KHL, compos rugby : OK

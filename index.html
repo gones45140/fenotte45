@@ -32,7 +32,17 @@
      s'interposer sur ce cas precis. -->
 <script>
   var aUnCode = /[?&]code=/.test(window.location.search) || /access_token=/.test(window.location.hash);
-  var cible = aUnCode ? './indexfenotte.html' : './accueil.html';
+  /* 11/10/2026 (« la page revient trop souvent en rafraîchissant ») : la vitrine
+     s'affichait à CHAQUE ouverture de bet45.fr, même connecté. Session Supabase
+     (clé sb-…-auth-token) ou appli déjà utilisée (g45v5__fen) → appli directe. */
+  var dejaVenu = false;
+  try {
+    for (var i = 0; i < localStorage.length; i++) {
+      var k = localStorage.key(i) || '';
+      if ((k.indexOf('sb-') === 0 && k.indexOf('auth-token') > 0) || k === 'g45v5__fen') { dejaVenu = true; break; }
+    }
+  } catch (e) {}
+  var cible = (aUnCode || dejaVenu) ? './indexfenotte.html' : './accueil.html';
   location.replace(cible + window.location.search + window.location.hash);
 </script>
 <noscript>
