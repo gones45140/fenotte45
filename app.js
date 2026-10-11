@@ -71856,3 +71856,78 @@ function _g45IdJoueur(h, avant) {
     _g45IdF1._g45Jph = true;
   } catch (e) {}
 })();
+
+/* ═══ 20261011b — ACCUEIL bet45 : « Choisis ton club » (maquette validée « Parfait » par Antoine, 11/10) ═══
+   Capture d'un compte bet45 : tuile Rugby = logo du CJF Rugby Fleury (images/equipes/rugby.png, carte « RUGBY »),
+   coupé et SANS droits ; Basket / Tennis vides. Sur bet45 SEULEMENT (gones45 = cartes catégorie d'Antoine, où il
+   parie), un sport d'équipe (+ tennis) sans VRAI club au mur — aucune carte, ou seulement des cartes « catégorie »
+   (RUGBY, TENNIS, Basket… = _G45_ACC_NOMS) — affiche « Choisis ton club › » (tennis : joueur), sans l'image de la carte
+   catégorie, et ouvre une fenêtre qui explique la démarche. La recherche d'Outils (CLUB_DB) ne connaît que le FOOT :
+   pour les autres sports, la fenêtre pré-règle #u-sport et place le curseur dans #u-name (ajout manuel). */
+var _G45_CLUB_EX = { '⚽': 'Lyon', '🏀': 'Los Angeles Lakers', '🏒': 'Colorado Avalanche', '⚾': 'New York Yankees', '🏈': 'Kansas City Chiefs',
+  '🏉': 'Stade Toulousain', '🏉🇦🇺': 'Penrith Panthers', '🎾': 'Jannik Sinner' };
+function _g45ClubBet45() {
+  try { if (typeof _g45SanteActive === 'function') return !_g45SanteActive(); } catch (e) {}
+  return typeof window._g45User !== 'undefined' || /(^|\.)bet45\.fr$/.test(location.hostname);
+}
+function _g45ClubSansVrai(v) {
+  var cat = function (n) { return _G45_ACC_NOMS.some(function (x) { return x[0].test(String(n || '').trim()); }); };
+  return !((state && state.u) || []).some(function (u) { return u && u.n && _g45AccSport(u).v === v && !cat(u.n); });
+}
+function _g45ClubTuiles() {
+  if (!_g45ClubBet45()) return;
+  var zone = document.getElementById('g45-acc-zone'); if (!zone) return;
+  [].forEach.call(zone.querySelectorAll('[data-k]'), function (t) {
+    var v = t.getAttribute('data-k'), d = _g45AccDef(v);
+    if (!d || !_G45_CLUB_EX[v] || !_g45ClubSansVrai(v)) return;
+    [].forEach.call(t.querySelectorAll('img'), function (im) { im.remove(); });
+    var li = v === '🎾' ? _g45AccLigueImg(v) : '';
+    var fond = li ? '<img src="' + _g45AccEsc(li) + '" alt="" loading="lazy" onerror="this.remove()" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;">'
+      : '<span aria-hidden="true" style="position:absolute;left:0;right:0;top:2px;text-align:center;font-size:52px;opacity:.6;pointer-events:none;">' + d.v + '</span>';
+    if (!t.querySelector(':scope > span[aria-hidden]')) t.insertAdjacentHTML('afterbegin', fond);
+    var bande = t.lastElementChild, ligne = bande && bande.lastElementChild;
+    if (ligne) ligne.innerHTML = '<span style="color:#9fb6ff;font-weight:700;">Choisis ton ' + (v === '🎾' ? 'joueur' : 'club') + ' ›</span>';
+    t.setAttribute('onclick', 'g45AccClub(this.dataset.k)');
+  });
+}
+function g45AccClub(v) {
+  var d = _g45AccDef(v); if (!d) return;
+  var old = document.getElementById('g45-acc-club'); if (old) old.remove();
+  var foot = v === '⚽', qui = v === '🎾' ? 'joueur' : 'club', ex = _G45_CLUB_EX[v] || '';
+  var cats = ((state && state.u) || []).filter(function (u) { return u && u.n && _g45AccSport(u).v === v; }).map(function (u) { return u.n; });
+  var etapes = foot
+    ? '1. Touche <b>🔍 Chercher mon club</b><br>2. Tape son nom (ex. <i>' + ex + '</i>)<br>3. Touche le club trouvé, puis <b>Ajouter</b> → il arrive sur ton mur'
+    : '1. Touche <b>✏️ Ajouter mon ' + qui + '</b><br>2. Écris son nom (ex. <i>' + _g45AccEsc(ex) + '</i>)<br>3. Le sport est déjà réglé sur ' + d.v + ' ' + _g45AccEsc(d.n) + '<br>4. Touche <b>Ajouter</b> → il arrive sur ton mur';
+  var w = document.createElement('div'); w.id = 'g45-acc-club';
+  w.style.cssText = 'position:fixed;inset:0;z-index:99990;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:16px;';
+  w.onclick = function (e) { if (e.target === w) w.remove(); };
+  w.innerHTML = '<div style="width:100%;max-width:420px;background:#141b2e;border:1px solid #2a3350;border-radius:12px;padding:14px;color:#fff;">'
+    + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><b style="flex:1;font-size:16px;">' + d.v + ' Ajoute ton ' + qui + (v === '🎾' ? '' : ' de ' + _g45AccEsc(d.n.toLowerCase())) + '</b>'
+    + '<button onclick="this.closest(\'#g45-acc-club\').remove()" style="background:none;border:0;color:#fff;font-size:20px;cursor:pointer;">✕</button></div>'
+    + '<div style="font-size:14px;line-height:1.7;color:#e6ecf5;">' + etapes + '</div>'
+    + '<div style="display:flex;gap:8px;margin-top:12px;">'
+    + '<button onclick="g45AccClubAller(\'' + v + '\')" style="flex:1;padding:11px;border-radius:10px;border:0;background:#2563eb;color:#fff;font-weight:800;font-size:14px;cursor:pointer;">' + (foot ? '🔍 Chercher mon club' : '✏️ Ajouter mon ' + qui) + '</button>'
+    + '<button onclick="document.getElementById(\'g45-acc-club\').remove();_g45AccAller(\'' + v + '\')" style="flex:1;padding:11px;border-radius:10px;border:1px solid #3b82f6;background:transparent;color:#fff;font-weight:800;font-size:14px;cursor:pointer;">' + (d.comp ? '🏆 Compétitions' : '📅 ' + _g45AccEsc(d.lib || 'Résultats')) + '</button></div>'
+    + (cats.length ? '<div style="font-size:13px;color:#c9d3ee;margin-top:10px;">La carte « ' + _g45AccEsc(cats.join(' », « ')) + ' » reste au mur (tu peux la supprimer).</div>' : '')
+    + '</div>';
+  document.body.appendChild(w);
+}
+window.g45AccClub = g45AccClub;
+function g45AccClubAller(v) {
+  var w = document.getElementById('g45-acc-club'); if (w) w.remove();
+  try { showTab('t-outils', document.querySelector('.ni[onclick*="t-outils"]') || null); } catch (e) {}
+  setTimeout(function () {
+    /* Outils est rangé en sections (g45OutilsSection) : le formulaire d'équipe est dans « eq ». */
+    try { if (typeof g45OutilsSection === 'function') g45OutilsSection('eq'); } catch (e) {}
+    var sp = document.getElementById('u-sport'); if (sp) sp.value = v;
+    var cible = document.getElementById(v === '⚽' ? 'u-search' : 'u-name');
+    if (cible) { cible.scrollIntoView({ block: 'center' }); try { cible.focus(); } catch (e) {} }
+  }, 200);
+}
+window.g45AccClubAller = g45AccClubAller;
+(function () {
+  if (typeof _g45AccRegrouper !== 'function') return;
+  var orig = _g45AccRegrouper;
+  _g45AccRegrouper = function () { var r = orig.apply(this, arguments); try { _g45ClubTuiles(); } catch (e) {} return r; };
+  window._g45AccRegrouper = _g45AccRegrouper;
+})();

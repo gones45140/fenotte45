@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261011a, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261011b, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1553,6 +1553,12 @@ NOM DU COMPTE EN HAUT (20261011a, maquette B validée) : auth-guard.js `_g45NomC
   user_metadata.pseudo sinon début du mail ; toucher = showTab('t-outils') + bloc « Mon compte ». Testé Chromium (Supabase simulé).
 VITRINE (11/10, « la page revient trop souvent en rafraîchissant ») : index.html de fenotte45 envoyait TOUJOURS sur accueil.html sans ?code= ;
   maintenant session Supabase (localStorage sb-…-auth-token) ou appli déjà utilisée (g45v5__fen) → indexfenotte.html (testé Chromium 3/3).
+ACCUEIL bet45 « CHOISIS TON CLUB » (20261011b, maquette validée « Parfait ») : bloc en fin d'app.js, enveloppe de `_g45AccRegrouper` →
+  `_g45ClubTuiles` (bet45 seulement, `_g45ClubBet45`) : sport d'équipe ou tennis sans VRAI club (`_g45ClubSansVrai` : cartes « catégorie »
+  _G45_ACC_NOMS seules, ou aucune) → « Choisis ton club › » (tennis : joueur), image de la carte catégorie retirée ; `g45AccClub(v)` = fenêtre
+  de la démarche ; `g45AccClubAller(v)` → Outils, g45OutilsSection('eq'), #u-sport réglé, curseur dans #u-search (foot : CLUB_DB = FOOT
+  SEULEMENT) ou #u-name. Exemples `_G45_CLUB_EX`. Contrôle ajouté au test « Accueil par sport ». fenotte45 : images/equipes/rugby.png
+  (logo CJF Rugby Fleury, SANS droits — Antoine) et basket.png (photo 123RF avec filigrane) SUPPRIMÉS.
 RÉGLÉ OU ABANDONNÉ (ne pas reproposer) :
 - APK bet45 sans barre d'adresse : OK. Logos Lakers / hockey : OK. « Connexion » sur le
   logo, paysage gones, pression en portrait, « 1. FC », cartes KHL, compos rugby : OK
