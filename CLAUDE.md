@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261011f, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261011g, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1576,7 +1576,8 @@ BILAN, barre d'info sous la courbe (20261011e, capture : « Global … · Winama
   feuille #g45-cib-ligne (app.js) : .chart-info-bar flex-wrap, .cib-val flex 1 1 220px + retour à la ligne (sous la date si longue). Testé Chromium 412 px.
 BILAN « Répartition par type » (20261011f, maquette validée « c'est mieux oui ») : renderChartTypeDonut REDÉFINIE en fin d'app.js (gagne sur
   les DEUX copies) : rond = 8 types les plus joués (`_G45_TYPE_MAX`) + « Autres » gris ; légende Chart.js retirée ; pastilles avec nombre ;
-  bouton « Voir les N autres types » (window._g45TypeTout). « Bénéfice par type » (renderChartTypeBen, 40+ barres) : maquette à proposer.
+  bouton « Voir les N autres types » (window._g45TypeTout). 20261011g (maquette validée « ok ») : renderChartTypeBen REDÉFINIE aussi :
+  canvas #chart-type-ben caché, boîte #g45-typeben = 5 meilleurs / 5 pires en lignes (nom entier 14 px, barre), reste dépliable (_g45TypeBenTout).
 RÉGLÉ OU ABANDONNÉ (ne pas reproposer) :
 - APK bet45 sans barre d'adresse : OK. Logos Lakers / hockey : OK. « Connexion » sur le
   logo, paysage gones, pression en portrait, « 1. FC », cartes KHL, compos rugby : OK

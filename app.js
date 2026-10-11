@@ -72026,3 +72026,44 @@ function renderChartTypeDonut(){
   picker.innerHTML=h;
 }
 window.renderChartTypeDonut=renderChartTypeDonut;
+
+/* ═══ 20261011g — BÉNÉFICE PAR TYPE DE PARI en lignes (maquette validée « ok », 11/10) ═══
+   Capture d'Antoine : ~40 barres debout, noms coupés en biais, illisible. Remplace renderChartTypeBen (DEUX copies plus haut,
+   celle-ci, déclarée en dernier, l'emporte) : le canvas #chart-type-ben est caché, une boîte #g45-typeben le suit :
+   « ✅ Ce qui te rapporte le plus » (5 meilleurs > 0), « ❌ Ce qui te coûte le plus » (5 pires < 0), nom ENTIER 14 px, gain en
+   gras, barre proportionnelle au plus grand écart ; le reste derrière « ➕ Voir les N autres types » (window._g45TypeBenTout). */
+function renderChartTypeBen(){
+  var ctx=$i('chart-type-ben');if(!ctx)return;
+  if(window._gcTypeBen){try{window._gcTypeBen.destroy();}catch(e){} window._gcTypeBen=null;}
+  var wrap=ctx.parentNode; if(wrap) wrap.style.display='none';
+  var boite=$i('g45-typeben');
+  if(!boite){ boite=document.createElement('div'); boite.id='g45-typeben'; boite.style.cssText='padding:4px 2px;';
+    if(wrap&&wrap.parentNode) wrap.parentNode.insertBefore(boite, wrap.nextSibling); else return; }
+  var types={};
+  state.a.forEach(function(h){ var t=_normType(h.type); types[t]=(types[t]||0)+(h.win?(h.m*h.cote)-h.m:-h.m); });
+  var E=Object.entries(types).map(function(e){return [e[0], parseFloat(e[1].toFixed(2))];});
+  if(!E.length){ boite.innerHTML=''; return; }
+  var mx=Math.max.apply(null, E.map(function(e){return Math.abs(e[1]);}))||1;
+  var esc=function(x){return String(x==null?'':x).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});};
+  var ligne=function(e){
+    var v=e[1], col=v>0?'#1ed760':(v<0?'#ff6b6b':'#c9d3ee'), w=Math.max(2, Math.round(Math.abs(v)/mx*100));
+    return '<div style="margin-bottom:9px;"><div style="display:flex;justify-content:space-between;gap:10px;font-size:14px;color:#fff;">'
+      +'<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+esc(e[0])+'">'+esc(e[0])+'</span>'
+      +'<b style="color:'+col+';white-space:nowrap;">'+(v>0?'+':'')+v.toFixed(2)+' €</b></div>'
+      +'<div style="height:9px;background:#1a2235;border-radius:5px;margin-top:3px;"><div style="width:'+w+'%;height:100%;background:'+col+';border-radius:5px;"></div></div></div>';
+  };
+  var pos=E.filter(function(e){return e[1]>0;}).sort(function(a,b){return b[1]-a[1];}).slice(0,5);
+  var neg=E.filter(function(e){return e[1]<0;}).sort(function(a,b){return a[1]-b[1];}).slice(0,5).reverse();
+  var pris={}; pos.concat(neg).forEach(function(e){ pris[e[0]]=1; });
+  var reste=E.filter(function(e){return !pris[e[0]];}).sort(function(a,b){return b[1]-a[1];});
+  var h='';
+  if(pos.length) h+='<div style="font-size:15px;font-weight:800;color:#1ed760;margin-bottom:8px;">✅ Ce qui te rapporte le plus</div>'+pos.map(ligne).join('');
+  if(neg.length) h+='<div style="font-size:15px;font-weight:800;color:#ff6b6b;margin:'+(pos.length?'14px':'0')+' 0 8px;">❌ Ce qui te coûte le plus</div>'+neg.map(ligne).join('');
+  if(reste.length){
+    h+='<button onclick="window._g45TypeBenTout=!window._g45TypeBenTout;renderChartTypeBen();" style="width:100%;margin-top:8px;padding:10px;border-radius:10px;border:1px solid #3b82f6;background:transparent;color:#fff;font-size:14px;font-weight:800;cursor:pointer;">'
+      +(window._g45TypeBenTout?'➖ Masquer les autres types ▴':'➕ Voir les '+reste.length+' autres types ▾')+'</button>';
+    if(window._g45TypeBenTout) h+='<div style="margin-top:10px;">'+reste.map(ligne).join('')+'</div>';
+  }
+  boite.innerHTML=h;
+}
+window.renderChartTypeBen=renderChartTypeBen;
