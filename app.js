@@ -3670,6 +3670,8 @@ function renderArchive(){
         var _idFilig=_idLogo
           ?('<img src="'+_idLogo+'" alt="" loading="lazy" onerror="this.style.display=\'none\'" style="position:absolute;right:2px;top:50%;transform:translateY(-50%);height:32px;width:32px;object-fit:contain;opacity:.5;filter:drop-shadow(0 1px 3px rgba(0,0,0,.5));pointer-events:none;">')
           :((isSimpleA&&(b2.logo||b2.d))?('<img src="'+(b2.logo||('https://www.google.com/s2/favicons?domain='+b2.d+'&sz=64'))+'" alt="" loading="lazy" onerror="this.style.display=\'none\'" style="position:absolute;right:2px;top:50%;transform:translateY(-50%);height:24px;width:24px;object-fit:contain;opacity:.55;border-radius:6px;filter:drop-shadow(0 1px 3px rgba(0,0,0,.5));pointer-events:none;">'):'');
+        /* 20261008s : carte FORMULE 1 du mur → petit logo F1 au lieu du logo mémorisé (W). */
+        _idFilig=_g45IdF1(h,_idFilig);
         /* FOND TEINTE PAR LE RESULTAT (02/09, demande d'Antoine : « pari gagné
            vert, pari perdu rouge, pari en cours jaune »). Le degrade partait de
            `_idColor`, la couleur du CLUB — d'ou un fond vert sur Athletics et
@@ -12019,6 +12021,8 @@ function renderArchive(){
         var _idFilig=_idLogo
           ?('<img src="'+_idLogo+'" alt="" loading="lazy" onerror="this.style.display=\'none\'" style="position:absolute;right:2px;top:50%;transform:translateY(-50%);height:32px;width:32px;object-fit:contain;opacity:.5;filter:drop-shadow(0 1px 3px rgba(0,0,0,.5));pointer-events:none;">')
           :((isSimpleA&&(b2.logo||b2.d))?('<img src="'+(b2.logo||('https://www.google.com/s2/favicons?domain='+b2.d+'&sz=64'))+'" alt="" loading="lazy" onerror="this.style.display=\'none\'" style="position:absolute;right:2px;top:50%;transform:translateY(-50%);height:24px;width:24px;object-fit:contain;opacity:.55;border-radius:6px;filter:drop-shadow(0 1px 3px rgba(0,0,0,.5));pointer-events:none;">'):'');
+        /* 20261008s : carte FORMULE 1 du mur → petit logo F1 au lieu du logo mémorisé (W). */
+        _idFilig=_g45IdF1(h,_idFilig);
         /* FOND TEINTE PAR LE RESULTAT (02/09, demande d'Antoine : « pari gagné
            vert, pari perdu rouge, pari en cours jaune »). Le degrade partait de
            `_idColor`, la couleur du CLUB — d'ou un fond vert sur Athletics et
@@ -39682,6 +39686,8 @@ function _g45BetRowMini(h){
   var _idFilig=_idLogo
     ?('<img src="'+_idLogo+'" alt="" loading="lazy" onerror="this.style.display=\'none\'" style="position:absolute;right:2px;top:50%;transform:translateY(-50%);height:38px;width:38px;object-fit:contain;opacity:.55;filter:drop-shadow(0 1px 3px rgba(0,0,0,.5));pointer-events:none;">')
     :((isSimple&&(b2.logo||b2.d))?('<img src="'+(b2.logo||('https://www.google.com/s2/favicons?domain='+b2.d+'&sz=64'))+'" alt="" loading="lazy" onerror="this.style.display=\'none\'" style="position:absolute;right:2px;top:50%;transform:translateY(-50%);height:28px;width:28px;object-fit:contain;opacity:.6;border-radius:6px;filter:drop-shadow(0 1px 3px rgba(0,0,0,.5));pointer-events:none;">'):'');
+  /* 20261008s : carte FORMULE 1 du mur → petit logo F1 au lieu du logo mémorisé (W). */
+  _idFilig=_g45IdF1(h,_idFilig);
   /* Le filigrane est CONFINE au bloc titre/sous-titre (position:relative sur
      ce div precis), pas sur toute la ligne. Sur une ligne compacte comme
      celle-ci, ancrer le logo par rapport a toute la largeur de la carte
@@ -71445,3 +71451,20 @@ window.g45OriHautMenu = g45OriHautMenu;
     document.addEventListener('DOMContentLoaded', g45OriHautPoser);
   } catch (e) {}
 })();
+
+/* ===================== 20261008s — PETIT LOGO F1 SUR LES LIGNES DE PARI =====================
+   Demande d'Antoine (capture du pari Verstappen / Antonelli, maquette validée « oui ») : le carré
+   de droite (filigrane `_idFilig`, logo mémorisé u.logoUrl de la carte FORMULE 1 = un « W » Winamax)
+   devient le logo F1 (images/equipes/formule1.png, bannière recadrée dans le même carré).
+   Seulement les paris rattachés à une carte F1 du mur (nom « Formule 1 » / « F1 » ou sport 🏎). */
+function _g45IdF1(h, avant) {
+  try {
+    if (!h || h.n === 'SIMPLE') return avant;
+    var u = ((typeof state !== 'undefined' && state && state.u) || []).filter(function (x) { return x && x.n === h.n; })[0];
+    var nom = String(h.n || '');
+    var f1 = /^\s*(formule\s*1|formula\s*(1|one)|f1)\s*$/i.test(nom) || !!(u && /🏎/.test(String(u.sport || '')) && !/moto/i.test(nom));
+    if (!f1) return avant;
+    return '<div style="position:absolute;right:2px;top:50%;transform:translateY(-50%);width:38px;height:38px;border-radius:7px;background:#14161f;overflow:hidden;display:flex;align-items:center;justify-content:center;opacity:.85;pointer-events:none;">'
+      + '<img src="images/equipes/formule1.png" alt="" loading="lazy" onerror="this.parentNode.style.display=\'none\'" style="width:118%;max-width:none;height:auto;flex:none;"></div>';
+  } catch (e) { return avant; }
+}

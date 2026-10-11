@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261008r, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261008s, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1203,6 +1203,9 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   Williams : fichiers `images/ecuries/{alpine,haas,williams}.svg` ou `.png`
   (pastille blanche, repli sur l'abréviation). Drapeaux GP : flagcdn w640,
   `object-fit:fill` (drapeau entier), 45 %. 20261008r (« ok 120 ») : carte du calendrier F1 min-height 84 → 120 px.
+  20261008s (maquette validée « oui ») : lignes de pari (renderArchive ×2, `_g45BetRowMini`) d'une carte FORMULE 1 du mur → carré de droite
+  = petit logo F1 (images/equipes/formule1.png recadré) au lieu de u.logoUrl (« W » Winamax) via `_g45IdF1(h, avant)` (bloc en fin d'app.js).
+  Menu Plus : « Chat IA » renommé « Assistant Paris » (un ami croyait pouvoir demander des résultats : l'IA a inventé Djokovic US Open 2026).
 - Arbitre (foot) : summary gameInfo.officials [{displayName, position.name
   "Referee", order}] SANS id ; core …/leagues/{lg}/events/{id}/competitions/{id}/officials
   → {items:[{id, displayName, position}]} ≈ 400 octets (summary ≈ 450 Ko). Pas de
