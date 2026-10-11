@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261008t, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261008u, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1208,7 +1208,11 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   Menu Plus : « Chat IA » renommé « Assistant Paris » (un ami croyait pouvoir demander des résultats : l'IA a inventé Djokovic US Open 2026).
   20261008t (captures avant / après, « c'est mieux sans lui à droite ») : PC = colonne #pc-chat-sidebar CACHÉE (feuille #g45-pc-sans-chat posée
   par app.js, style.css intact), page pleine largeur ; bouton « 💬 Assistant » (pc-only) sous Liens dans la colonne de gauche → onglet #t-chat
-  (règle body #t-chat[style*="block"] car showTab pose display en ligne). Bouton dans Bilan : proposé, pas fait.
+  (règle body #t-chat[style*="block"] car showTab pose display en ligne). 20261008u (maquette validée « très bien c'est sa place ») — ASSISTANT DANS BILAN : volet
+  #g45-bilia sous #bilan-filtres-barre (enveloppe de `_g45BilBarreFiltres` → `_g45BilIaPoser`), fermé = « 💬 Demander à l'assistant », ouvert
+  (sessionStorage g45_bilia) = messages + 3 questions + saisie ; `g45BilIaEnvoyer` : faits CALCULÉS `_g45BilIaFaits(filteredA())` (total, sport,
+  type `_g45BilIaType`, dom/ext, book, tranche de cote, équipe, compétition, mois, série, 10 derniers ; freebet : gain m×(cote−1), mise hors ROI)
+  et consigne « seulement les FAITS, sinon je n'ai pas les résultats ni l'actualité » ; même appel IA que sendChat. Contrôle smoke.js (15).
 - Arbitre (foot) : summary gameInfo.officials [{displayName, position.name
   "Referee", order}] SANS id ; core …/leagues/{lg}/events/{id}/competitions/{id}/officials
   → {items:[{id, displayName, position}]} ≈ 400 octets (summary ≈ 450 Ko). Pas de

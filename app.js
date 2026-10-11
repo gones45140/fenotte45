@@ -71483,3 +71483,149 @@ function _g45IdF1(h, avant) {
     (document.head || document.documentElement).appendChild(st);
   } catch (e) {}
 })();
+
+/* ===================== 20261008u — ASSISTANT DANS BILAN (volet déroulant) =====================
+   Maquette validée (« très bien c'est sa place ») : sous la barre « N paris · filtres » de Bilan, une
+   ligne « 💬 Demander à l'assistant » ; touchée = volet ouvert (messages, 3 questions toutes prêtes,
+   case pour écrire), « ▴ replier ». POURQUOI un assistant à part : celui du menu répondait de mémoire
+   aux questions d'actualité (un ami : « Djokovic a gagné l'US Open 2026 », inventé). Celui-ci ne parle
+   QUE des paris affichés (filteredA(), donc filtres du Bilan compris) : tous les chiffres sont
+   CALCULÉS ici (`_g45BilIaFaits`) et l'IA n'a le droit de citer que ceux-là. Même appel IA que sendChat
+   (g45IaUrl / getGeminiKey / g45GroqModele). Conversation gardée en mémoire de la page (`_g45BilIa.m`),
+   ouvert / fermé : sessionStorage g45_bilia. */
+var _g45BilIa = { m: [], enCours: false };
+function _g45BilIaEsc(t) { return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+function _g45BilIaOuvert() { try { return sessionStorage.getItem('g45_bilia') === '1'; } catch (e) { return false; } }
+function _g45BilIaGain(h) {
+  var m = +h.m || 0, c = +h.cote || 0;
+  if (h.win == null) return 0;
+  if (h.isFreebet) return h.win ? m * (c - 1) : 0;
+  return h.win ? m * c - m : -m;
+}
+function _g45BilIaType(h) {
+  if (h.isCombi) return 'combiné';
+  var t = String(h.type || '').toLowerCase();
+  if (/buteur|marque|joueur|décisif|decisif|passeur/.test(t) || h.joueur) return 'joueur';
+  if (/btts|les deux|deux équipes|2 équipes/.test(t)) return 'les deux marquent';
+  if (/over|plus de|\+ ?de/.test(t)) return 'over';
+  if (/under|moins de/.test(t)) return 'under';
+  if (/handicap|hc ?[-+]/.test(t)) return 'handicap';
+  if (/vainqueur/.test(t)) return 'vainqueur';
+  if (/nul/.test(t) && !/victoire|ou nul/.test(t)) return 'nul';
+  if (/double|ou nul|1x|x2/.test(t)) return 'double chance';
+  if (/victoire|gagne/.test(t)) return 'victoire';
+  return 'autre';
+}
+function _g45BilIaFaits(L) {
+  var f = [], fin = L.filter(function (h) { return h.win != null; });
+  var ligne = function (arr) {
+    var g = 0, mise = 0, p = 0;
+    arr.forEach(function (h) { if (h.win) g++; if (!h.isFreebet) mise += (+h.m || 0); p += _g45BilIaGain(h); });
+    return arr.length + ' paris, ' + g + ' gagnés (' + (arr.length ? Math.round(g / arr.length * 100) : 0) + ' %), profit '
+      + (p >= 0 ? '+' : '') + p.toFixed(2) + ' €, ROI ' + (mise ? Math.round(p / mise * 1000) / 10 : 0) + ' %';
+  };
+  var groupe = function (titre, cle, max) {
+    var o = {};
+    fin.forEach(function (h) { var k = cle(h); if (k == null || k === '') return; (o[k] = o[k] || []).push(h); });
+    var ks = Object.keys(o).sort(function (a, b) { return o[b].length - o[a].length; }).slice(0, max || 12);
+    if (ks.length) f.push(titre + ' :\n' + ks.map(function (k) { return '- ' + k + ' : ' + ligne(o[k]); }).join('\n'));
+  };
+  f.push('TOTAL (paris réglés) : ' + ligne(fin) + (L.length > fin.length ? ' ; ' + (L.length - fin.length) + ' en cours' : ''));
+  groupe('PAR SPORT', function (h) { try { return (typeof _g45ParisSport === 'function' ? _g45ParisSport(h) : h.sport) || '?'; } catch (e) { return h.sport || '?'; } });
+  groupe('PAR TYPE DE PARI', _g45BilIaType);
+  groupe('DOMICILE / EXTÉRIEUR', function (h) { return h.domicile === 'dom' ? 'domicile' : (h.domicile === 'ext' ? 'extérieur' : 'non précisé'); });
+  groupe('PAR BOOKMAKER', function (h) { try { return (typeof bki === 'function' ? bki(h.b).n : h.b) || h.b; } catch (e) { return h.b; } });
+  groupe('PAR TRANCHE DE COTE', function (h) { var c = +h.cote || 0; return c < 1.5 ? 'cote < 1,50' : c < 2 ? 'cote 1,50-1,99' : c < 3 ? 'cote 2,00-2,99' : 'cote ≥ 3,00'; });
+  groupe('PAR ÉQUIPE (carte du mur)', function (h) { return h.n === 'SIMPLE' ? (h.target || 'pari simple') : h.n; }, 12);
+  groupe('PAR COMPÉTITION', function (h) { return h.comp || null; }, 10);
+  groupe('PAR MOIS', function (h) { return String(h.date || '').slice(0, 7) || null; }, 8);
+  var s = 0, sw = null;
+  for (var i = 0; i < fin.length; i++) { var w = !!fin[i].win; if (sw == null) { sw = w; s = 1; } else if (w === sw) s++; else break; }
+  if (s) f.push('SÉRIE EN COURS : ' + s + ' ' + (sw ? 'gagnés' : 'perdus') + ' de suite');
+  f.push('10 DERNIERS :\n' + fin.slice(0, 10).map(function (h) {
+    var g = _g45BilIaGain(h);
+    return '- ' + (h.date || '') + ' ' + (h.n === 'SIMPLE' ? (h.target || '') : h.n) + ' — ' + (h.type || '') + ' @' + (+h.cote || 0).toFixed(2)
+      + ' — ' + (h.win ? 'gagné' : 'perdu') + ' (' + (g >= 0 ? '+' : '') + g.toFixed(2) + ' €)';
+  }).join('\n'));
+  return f.join('\n\n');
+}
+function _g45BilIaHtml() {
+  var ouv = _g45BilIaOuvert();
+  var h = '<div style="margin-top:10px;background:rgba(26,35,64,.92);border:1px solid #4d84ff;border-radius:10px;overflow:hidden;">'
+    + '<div onclick="g45BilIaBasculer()" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 14px;background:rgba(77,132,255,.18);">'
+    + '<span style="font-size:15px;font-weight:800;color:#fff;">💬 ' + (ouv ? 'Assistant Paris' : 'Demander à l\'assistant') + '</span>'
+    + '<span style="font-size:13px;font-weight:600;color:#c9d3ee;">' + (ouv ? '▴ replier' : 'sur tes paris ▾') + '</span></div>';
+  if (!ouv) return h + '</div>';
+  h += '<div id="g45-bilia-msgs" style="padding:10px 14px;display:flex;flex-direction:column;gap:8px;max-height:420px;overflow-y:auto;">';
+  if (!_g45BilIa.m.length) h += '<div style="font-size:14px;color:#dfe6f7;line-height:1.45;">Pose une question sur les paris affichés ici (les filtres du Bilan comptent). Je réponds seulement avec tes chiffres.</div>';
+  _g45BilIa.m.forEach(function (x) {
+    var u = x.role === 'user';
+    h += '<div style="align-self:' + (u ? 'flex-end' : 'flex-start') + ';max-width:85%;padding:9px 13px;border-radius:' + (u ? '14px 14px 4px 14px' : '14px 14px 14px 4px')
+      + ';background:' + (u ? '#4d84ff' : '#26304d') + ';color:#fff;font-size:14px;line-height:1.45;white-space:pre-wrap;">' + _g45BilIaEsc(x.content) + '</div>';
+  });
+  if (_g45BilIa.enCours) h += '<div style="align-self:flex-start;padding:9px 13px;border-radius:14px;background:#26304d;color:#c9d3ee;font-size:14px;">…</div>';
+  h += '</div><div style="display:flex;gap:6px;flex-wrap:wrap;padding:0 14px 10px;">'
+    + ['Mon meilleur sport ?', 'Mes pires types de paris ?', 'Domicile ou extérieur ?'].map(function (q) {
+      return '<button onclick="g45BilIaEnvoyer(this.textContent)" style="font:inherit;font-size:13px;background:#0e1424;border:1px solid #2d3756;border-radius:14px;padding:5px 11px;color:#dfe6f7;cursor:pointer;">' + q + '</button>';
+    }).join('')
+    + '</div><div style="display:flex;gap:8px;padding:0 14px 12px;">'
+    + '<input id="g45-bilia-in" class="fi" placeholder="Pose ta question…" onkeydown="if(event.key===\'Enter\')g45BilIaEnvoyer()" style="flex:1;font-size:14px;">'
+    + '<button onclick="g45BilIaEnvoyer()" style="flex:none;background:#4d84ff;border:none;border-radius:8px;color:#fff;font-size:16px;font-weight:800;padding:0 16px;cursor:pointer;">↑</button></div></div>';
+  return h;
+}
+function _g45BilIaPoser() {
+  try {
+    var b = document.getElementById('bilan-filtres-barre');
+    if (!b || !b.parentNode) return;
+    var z = document.getElementById('g45-bilia');
+    if (!z) { z = document.createElement('div'); z.id = 'g45-bilia'; }
+    if (b.nextSibling !== z) b.parentNode.insertBefore(z, b.nextSibling);
+    var garde = document.getElementById('g45-bilia-in'), val = garde ? garde.value : '';
+    z.innerHTML = _g45BilIaHtml();
+    var inp = document.getElementById('g45-bilia-in'); if (inp && val) inp.value = val;
+    var ms = document.getElementById('g45-bilia-msgs'); if (ms) ms.scrollTop = ms.scrollHeight;
+  } catch (e) {}
+}
+window.g45BilIaBasculer = function () {
+  try { sessionStorage.setItem('g45_bilia', _g45BilIaOuvert() ? '0' : '1'); } catch (e) {}
+  _g45BilIaPoser();
+  var inp = document.getElementById('g45-bilia-in'); if (inp && !('ontouchstart' in window)) inp.focus();
+};
+window.g45BilIaEnvoyer = async function (q) {
+  var inp = document.getElementById('g45-bilia-in');
+  var msg = String(q || (inp ? inp.value : '') || '').trim();
+  if (!msg || _g45BilIa.enCours) return;
+  if (inp) inp.value = '';
+  var L = []; try { L = filteredA() || []; } catch (e) {}
+  _g45BilIa.m.push({ role: 'user', content: msg });
+  if (!L.length) { _g45BilIa.m.push({ role: 'assistant', content: 'Aucun pari affiché avec ces filtres : je n\'ai rien à analyser.' }); _g45BilIaPoser(); return; }
+  if (!g45IaDispo()) { _g45BilIa.m.push({ role: 'assistant', content: 'Assistant indisponible : aucune clé et aucun Worker joignable.' }); _g45BilIaPoser(); return; }
+  _g45BilIa.enCours = true; _g45BilIaPoser();
+  var sys = 'Tu es l\'assistant de BET45. Tu analyses UNIQUEMENT les paris de l\'utilisateur, résumés dans les FAITS ci-dessous '
+    + '(déjà calculés par l\'application, filtres du Bilan appliqués). RÈGLES : 1) Réponds en français simple, 3 à 6 phrases, sans markdown, sans astérisques. '
+    + '2) Chaque chiffre que tu cites doit venir des FAITS, jamais d\'un calcul inventé. 3) Si on te demande un résultat de match, une actualité, un pronostic '
+    + 'ou quoi que ce soit qui n\'est pas dans les FAITS, réponds : « Je ne réponds qu\'à partir de tes paris, je n\'ai pas les résultats ni l\'actualité. » '
+    + '4) Peu de paris dans un groupe (moins de 5) = dis que c\'est trop peu pour conclure. 5) Pas de morale sur le jeu.\n\nFAITS (' + new Date().toLocaleDateString('fr-FR') + ') :\n' + _g45BilIaFaits(L);
+  var hist = _g45BilIa.m.slice(-7, -1).map(function (x) { return { role: x.role, content: x.content }; });
+  var rep = '';
+  try {
+    var r = await fetch(g45IaUrl(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getGeminiKey() },
+      body: JSON.stringify({ model: g45GroqModele(), messages: [{ role: 'system', content: sys }].concat(hist, [{ role: 'user', content: msg }]), temperature: 0.2, max_tokens: 2500 })
+    });
+    var d = await r.json();
+    if (d.error) throw new Error(d.error.message || 'erreur');
+    rep = String(((d.choices || [])[0] || {}).message && d.choices[0].message.content || '').replace(/\[\d+\]/g, '').replace(/\*\*/g, '').trim() || 'Pas de réponse.';
+  } catch (e) { rep = 'Erreur : ' + (e && e.message || e); }
+  _g45BilIa.enCours = false;
+  _g45BilIa.m.push({ role: 'assistant', content: rep });
+  _g45BilIaPoser();
+};
+(function () {
+  try {
+    if (typeof _g45BilBarreFiltres !== 'function') return;
+    var avant = _g45BilBarreFiltres;
+    _g45BilBarreFiltres = function () { var r = avant.apply(this, arguments); _g45BilIaPoser(); return r; };
+  } catch (e) {}
+})();
