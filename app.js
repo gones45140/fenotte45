@@ -39714,7 +39714,8 @@ function _g45BetRowMini(h){
      — les deux se superposaient. Confine au bloc texte, il reste derriere le
      titre et ne touche jamais les chiffres. */
   return '<div data-aid="'+h.id+'" onclick="try{openBetEdit(this.dataset.aid)}catch(e){}" style="position:relative;overflow:hidden;display:flex;align-items:center;padding:9px 10px;background:linear-gradient(100deg,'+_idColor+'45 0%,'+etatColor+'26 60%,var(--s1) 100%);border-radius:8px;margin-bottom:4px;border-left:4px solid '+etatColor+';gap:8px;cursor:pointer;">'
-    +'<div style="position:relative;font-size:10px;font-weight:600;color:var(--t2);min-width:50px;flex-shrink:0;text-align:center;line-height:1.3;">'+(h.date||'')+(h.heure?'<br>'+h.heure:'')+'</div>'
+    /* 20261011j (« portrait ça coupe, on pourrait rapprocher à gauche ? ») : date courte JJ/MM en portrait (feuille #g45-row-portrait). */
+    +'<div class="g45-rdate" style="position:relative;font-size:10px;font-weight:600;color:var(--t2);min-width:50px;flex-shrink:0;text-align:center;line-height:1.3;"><span class="g45-dl">'+(h.date||'')+'</span><span class="g45-dc">'+(function(d){var m=/^\d{4}-(\d{2})-(\d{2})/.exec(d||'');return m?m[2]+'/'+m[1]:(d||'');})(h.date)+'</span>'+(h.heure?'<br>'+h.heure:'')+'</div>'
     /* 20261005h : rond du sport AU-DESSUS du logo du bookmaker (maquette validée « Oui »). */
     +'<span style="position:relative;display:inline-flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;margin-right:6px;">'+_g45ParisRond(h,32)+((typeof bkFavicon==='function')?bkFavicon(h.b,22):'')+'</span>'
     +'<div style="position:relative;flex:1;min-width:0;overflow:hidden;">'
@@ -72137,4 +72138,17 @@ function _g45CourbePropre(ch, dates) {
     };
     window.renderAdvancedCharts = renderAdvancedCharts;
   }
+})();
+
+/* 20261011j — LIGNES DE PARI EN PORTRAIT (capture d'Antoine : « paysage impeccable, portrait ça coupe, on pourrait rapprocher à gauche ? ») :
+   la colonne date « 2026-10-10 » prenait ~70 px et la photo ronde du joueur (44 px, _g45IdJoueur) recouvrait la fin du texte.
+   Téléphone en portrait (< 600 px) : date courte JJ/MM (_g45BetRowMini), colonne date 40 px ; texte d'une ligne avec photo de joueur
+   gardé à 50 px du bord droit (plus rien sous la photo). Paysage / PC inchangés. */
+(function () {
+  if (document.getElementById('g45-row-portrait')) return;
+  var st = document.createElement('style'); st.id = 'g45-row-portrait';
+  st.textContent = '.g45-dc{display:none;}'
+    + '@media (max-width:599px){.g45-dl{display:none;}.g45-dc{display:inline;}.g45-rdate{min-width:40px !important;}'
+    + 'div:has(> [data-g45jph]) > div:not([data-g45jph]){padding-right:50px;}}';
+  (document.head || document.documentElement).appendChild(st);
 })();

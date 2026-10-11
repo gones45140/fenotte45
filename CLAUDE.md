@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261011i, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261011j, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1584,6 +1584,9 @@ BILAN, courbes « Évolution bankroll » (#cg, GC) et « Bankroll totale » (#ch
   20261011i (capture « 11/10 · 6 paris … +128.47€ · Betclic ») : infobulle de Bankroll totale = book de sorted[index] (N-ième PARI ≠ journée)
   → book retiré (`_g45CourbePropre`). Lignes de pari F1 avec joueurs (« Vainqueur GP » + pilotes) : l'enveloppe _g45IdF1 → _g45IdJoueur gardait
   les initiales « VP » à la place du logo F1 → carte F1 = logo F1 prioritaire.
+LIGNES DE PARI EN PORTRAIT (20261011j, « portrait ça coupe, rapprocher à gauche ? ») : `_g45BetRowMini` date en 2 versions (.g45-dl
+  complète / .g45-dc JJ/MM) ; feuille #g45-row-portrait (< 600 px) : date courte, colonne 40 px, texte à 50 px du bord droit quand il y a la
+  photo de joueur ([data-g45jph], sélecteur :has). Paysage / PC inchangés. Testé Chromium 412 px.
 RÉGLÉ OU ABANDONNÉ (ne pas reproposer) :
 - APK bet45 sans barre d'adresse : OK. Logos Lakers / hockey : OK. « Connexion » sur le
   logo, paysage gones, pression en portrait, « 1. FC », cartes KHL, compos rugby : OK
