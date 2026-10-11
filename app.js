@@ -71164,12 +71164,16 @@ function _g45AgOdHtml(C, od, sp) {
   var foot = !sp || sp === 'soccer';
   var moi = od.moiDom ? od.h : od.a, lui = od.moiDom ? od.a : od.h;
   var lignes = [], seuilV = 0, noteHk = 0;
+  var avecVqr = C.opts.some(function (L) { return L.some(function (l) { return l.k === 'vqr'; }); });
   C.opts.forEach(function (legs) {
     var parts = [], prod = 1, ok = true, nb = 0;
     legs.forEach(function (l) {
       var c = 0, lib = '';
       /* 20261008i (capture Winamax Flyers–Hurricanes : Résultat 1,88 / Vainqueur 1,54 ; ESPN 1,56) : en HOCKEY la cote ESPN est le
          VAINQUEUR (prolongation + TAB compris) ; la « victoire » d'Antoine = temps réglementaire, absente chez ESPN → affichée en Vainqueur. */
+      /* 20261008j (capture « victoire OU vainqueur » : 1,56 deux fois, « mdr ») : consigne qui cite AUSSI vainqueur → la victoire du hockey
+         n'a pas de chiffre (temps réglementaire absent chez ESPN). */
+      if (l.k === 'vic' && sp === 'hockey' && avecVqr) { parts.push('Victoire (temps régl.) <span style="color:#ffb36b;">pas de cote chez ESPN, regarde ton book</span>'); ok = false; return; }
       if (l.k === 'vic' && sp === 'hockey') { c = moi; lib = 'Vainqueur (prolong. comprise)'; noteHk = 1; if (!seuilV) seuilV = c; }
       else if (l.k === 'vic' || l.k === 'vqr') { c = moi; lib = l.k === 'vic' ? 'Victoire' : 'Vainqueur'; if (!seuilV) seuilV = c; }
       else if (l.k === 'def') { c = lui; lib = foot ? 'Défaite' : 'Défaite (adversaire gagne)'; if (!seuilV) seuilV = c; }
