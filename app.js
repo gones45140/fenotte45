@@ -71629,3 +71629,20 @@ window.g45BilIaEnvoyer = async function (q) {
     _g45BilBarreFiltres = function () { var r = avant.apply(this, arguments); _g45BilIaPoser(); return r; };
   } catch (e) {}
 })();
+
+/* ===================== 20261008w — ONGLET « TYPES » VIDE (fiche d'équipe) =====================
+   Capture d'Antoine (FORMULE 1 → Types : un petit rond, rien d'autre) ; console : le HTML est bien là.
+   CAUSE : style.css définit DEUX fois la classe .cp — l. 75 « padding » des cartes, l. 240 pastille ronde
+   24 × 24 du choix de couleur (#cprow). La 2e gagne : la carte « card cp » de Types devient un rond de
+   24 px, et .card (overflow:hidden) cache toutes les lignes. Même rond sous les autres blocs .cp
+   (Objectif bankroll, bilan de l'équipe) dont le contenu débordait sans être caché. On rend aux .cp
+   hors #cprow leur taille normale (style.css intact). */
+(function () {
+  try {
+    var st = document.createElement('style');
+    st.id = 'g45-cp-fix';
+    st.textContent = ':not(#cprow)>.cp{width:auto;height:auto;border:0;border-radius:0;cursor:auto;transform:none;}'
+      + ':not(#cprow)>.card.cp{border:1px solid var(--card-border,var(--b1));border-radius:var(--r8);}';
+    (document.head || document.documentElement).appendChild(st);
+  } catch (e) {}
+})();
