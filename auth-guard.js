@@ -570,6 +570,48 @@ window._g45Sauvegardes = async function () {
 };
 
 // ═══════════════════════════════════════════════════════════════
+// NOM DU COMPTE EN HAUT (11/10/2026, maquette B validée par Antoine)
+// ═══════════════════════════════════════════════════════════════
+// Connecté, le lien fixe « 👤 Connexion » (indexfenotte.html) restait affiché :
+// le toucher renvoyait aussitôt dans l'appli (« la page saute mais fait rien »)
+// et il cachait le logo BET45. Connecté → lien caché (logo visible) et
+// « 👤 <pseudo> » sous le Capital ; toucher = onglet Outils (bloc Mon compte).
+// Nom : pseudo de la table profils (social), sinon user_metadata.pseudo,
+// sinon le début du mail. Visiteur : rien ne change.
+async function _g45NomCompte() {
+  if (!user) return;
+  const lien = document.querySelector('a[href="./login.html"][title^="Se connecter"]');
+  if (lien) lien.style.display = 'none';
+  let nom = (user.user_metadata && user.user_metadata.pseudo) || String(user.email || '').split('@')[0];
+  const poser = () => {
+    const cap = document.querySelector('.top-cap');
+    if (!cap) return;
+    let el = document.getElementById('g45-nom-compte');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'g45-nom-compte';
+      el.title = 'Mon compte';
+      el.style.cssText = 'font-size:13px;font-weight:800;color:#c9d3ee;margin-top:2px;cursor:pointer;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:auto;';
+      el.onclick = () => {
+        try { if (typeof window.showTab === 'function') window.showTab('t-outils', document.getElementById('btn-plus-menu')); } catch (e) {}
+        setTimeout(() => {
+          _g45PoserBoutonSauvegardes();
+          const b = document.getElementById('g45-bloc-compte');
+          if (b) b.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 150);
+      };
+      cap.appendChild(el);
+    }
+    el.textContent = '👤 ' + nom;
+  };
+  poser();
+  try {
+    const { data } = await supabase.from('profils').select('pseudo').eq('id', user.id).maybeSingle();
+    if (data && data.pseudo) { nom = data.pseudo; poser(); }
+  } catch (e) { /* pas de profil social : début du mail gardé */ }
+}
+
+// ═══════════════════════════════════════════════════════════════
 // BLOC COMPTE DANS L'ONGLET OUTILS
 // ═══════════════════════════════════════════════════════════════
 function _g45PoserBoutonSauvegardes() {
@@ -648,7 +690,7 @@ window._g45ImporterEtat = (json) => { rawSet(CLE_ETAT_FEN, typeof json === 'stri
 msg('Démarrage de l\'application…');
 
 const s = document.createElement('script');
-s.src = './app.js?v=20261009f';
+s.src = './app.js?v=20261011a';
 
 s.onerror = () => {
   msg('❌ échec du chargement de app.js');
@@ -670,6 +712,7 @@ s.onload = () => {
 
   setTimeout(_g45PoserBoutonSauvegardes, 800);
   setTimeout(_g45PoserBoutonSauvegardes, 3000);
+  _g45NomCompte();
   document.addEventListener('click', () => setTimeout(_g45PoserBoutonSauvegardes, 300));
 };
 

@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261009f, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261011a, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1548,6 +1548,9 @@ INSCRIPTION bet45 (11/10, « 0 création de compte possible », ami Cédric) : l
   `lienPremiereConnexion` (supabase.js, fenotte45) = signInWithOtp shouldCreateUser + redirection reset.html (choix du mot de passe).
   Testé Chromium (Supabase simulé). Mails Supabase = SMTP Gmail badgone45000 (Brevo a suspendu le compte) ; avertissement « fournisseur
   personnel » de Supabase = normal. Cédric créé à la main (Add user, Auto Confirm). Captures impossibles = navigation privée Firefox (réglage). Lien « Mentions légales » de login.html DANS le cadre (maquette validée). login.html / reset.html renvoyaient vers index.html → SANS ?code= = vitrine accueil.html (« ça demande toujours la connexion ») → indexfenotte.html.
+NOM DU COMPTE EN HAUT (20261011a, maquette B validée) : auth-guard.js `_g45NomCompte` — connecté → lien fixe « 👤 Connexion » caché (il
+  renvoyait aussitôt dans l'appli et cachait le logo) et « 👤 <pseudo> » sous le Capital (.top-cap) ; pseudo = profils (social) sinon
+  user_metadata.pseudo sinon début du mail ; toucher = showTab('t-outils') + bloc « Mon compte ». Testé Chromium (Supabase simulé).
 RÉGLÉ OU ABANDONNÉ (ne pas reproposer) :
 - APK bet45 sans barre d'adresse : OK. Logos Lakers / hockey : OK. « Connexion » sur le
   logo, paysage gones, pression en portrait, « 1. FC », cartes KHL, compos rugby : OK
