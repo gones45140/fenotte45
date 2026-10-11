@@ -71490,7 +71490,7 @@ function _g45IdF1(h, avant) {
     var nom = String(h.n || '');
     var f1 = /^\s*(formule\s*1|formula\s*(1|one)|f1)\s*$/i.test(nom) || !!(u && /🏎/.test(String(u.sport || '')) && !/moto/i.test(nom));
     if (!f1) return avant;
-    return '<div style="position:absolute;right:2px;top:50%;transform:translateY(-50%);width:38px;height:38px;border-radius:7px;background:#14161f;overflow:hidden;display:flex;align-items:center;justify-content:center;opacity:.85;pointer-events:none;">'
+    return '<div data-g45f1="1" style="position:absolute;right:2px;top:50%;transform:translateY(-50%);width:38px;height:38px;border-radius:7px;background:#14161f;overflow:hidden;display:flex;align-items:center;justify-content:center;opacity:.85;pointer-events:none;">'
       + '<img src="images/equipes/formule1.png" alt="" loading="lazy" onerror="this.parentNode.style.display=\'none\'" style="width:118%;max-width:none;height:auto;flex:none;"></div>';
   } catch (e) { return avant; }
 }
@@ -72152,6 +72152,8 @@ function _g45CourbePropre(ch, dates) {
   st.textContent = '.g45-dc{display:none;}'
     + '@media (max-width:599px){.g45-dl{display:none;}.g45-dc{display:inline;}.g45-rdate{min-width:40px !important;}'
     + 'div:has(> [data-g45jph]) > div:not([data-g45jph]){padding-right:50px;}'
+    /* 20261011l (capture : logo F1 caché sous le bandeau des pilotes) : même place réservée pour le logo F1 (_g45IdF1, data-g45f1). */
+    + 'div:has(> [data-g45f1]) > div:not([data-g45f1]){padding-right:44px;}'
     /* 20261011k (idée d'Antoine : « date en haut, logo sport et logo site en dessous ») : une seule colonne à gauche. */
     + '.g45-rg{flex-direction:column !important;gap:5px !important;}.g45-ricones{flex-direction:row !important;margin-right:0 !important;}}';
   (document.head || document.documentElement).appendChild(st);
