@@ -71273,10 +71273,59 @@ window._g45AgCotes = function (L) {
       }
       if (oaK && (!od || od.vide || !(od.h > 1 || od.a > 1))) { var od2 = await _g45AgOaOd(oaK, m); if (od2) od = od2; }
       if (!document.body.contains(box)) return;
-      if (!od) return;
-      if (od.vide || !(od.h > 1 || od.a > 1 || od.ov > 1 || od.un > 1 || od.line != null)) { box.innerHTML = '<div style="color:#9fb0c7;font-size:13px;">💶 cotes pas encore publiées par ESPN</div>'; return; }
+      if (!od) { _g45AgFrBtn(box, x); return; }
+      if (od.vide || !(od.h > 1 || od.a > 1 || od.ov > 1 || od.un > 1 || od.line != null)) { box.innerHTML = '<div style="color:#9fb0c7;font-size:13px;">💶 cotes pas encore publiées par ESPN</div>'; _g45AgFrBtn(box, x); return; }
       box.innerHTML = _g45AgOdHtml(x.C, od, m.sp);
+      _g45AgFrBtn(box, x);
     })();
   });
 };
 window._g45AgOdHtml = _g45AgOdHtml; window._g45AgOdEv = _g45AgOdEv;
+/* 20261008l (« le problème sera le quota », bouton validé « oui mais seulement sur gones ») — FOOT : bouton « 🇫🇷 Cotes books FR » sous la ligne
+   ESPN, GONES45 SEULEMENT (`_g45SanteActive`, faux sur bet45). Un appui = The Odds API h2h région fr du championnat (1 crédit, clés
+   _G45_TR_ODDSKEY / _G45_OA_LIGUES), même cache que l'Euroleague (g45agoa1_, 6 h) : championnat déjà lu → affiché tout de suite, sans bouton.
+   Pas d'over/under (2e crédit). Médiane des books français. */
+var _g45AgFrL = {};
+function _g45AgFrCle(m) {
+  var lg = String(m.compSlug || '');
+  if ((m.sp && m.sp !== 'soccer') || !lg) return '';
+  try { return (typeof _G45_TR_ODDSKEY !== 'undefined' && _G45_TR_ODDSKEY[lg]) || (typeof _G45_OA_LIGUES !== 'undefined' && _G45_OA_LIGUES[lg]) || ''; } catch (e) { return ''; }
+}
+function _g45AgFrHtml(x, od) {
+  if (!od) return '<div style="margin-top:4px;color:#9fb0c7;font-size:13px;">🇫🇷 match pas trouvé chez les books français</div>';
+  var f = function (c) { return c > 1 ? c.toFixed(2).replace('.', ',') : '–'; };
+  var moi = od.moiDom ? od.h : od.a, lui = od.moiDom ? od.a : od.h, vus = {}, parts = [];
+  (x.C.opts || []).forEach(function (L) { L.forEach(function (l) {
+    if ((l.k === 'vic' || l.k === 'vqr') && !vus.v) { vus.v = 1; parts.push('Victoire <b style="color:#1ed760;">' + f(moi) + '</b>'); }
+    if (l.k === 'def' && !vus.d) { vus.d = 1; parts.push('Défaite <b style="color:#1ed760;">' + f(lui) + '</b>'); }
+  }); });
+  if (!parts.length) parts = ['Victoire <b style="color:#1ed760;">' + f(moi) + '</b>', 'Nul <b style="color:#1ed760;">' + f(od.d) + '</b>', 'Défaite <b style="color:#1ed760;">' + f(lui) + '</b>'];
+  return '<div style="margin-top:5px;border-top:1px solid rgba(255,255,255,.12);padding-top:4px;">🇫🇷 ' + parts.join(' · ')
+    + '<div style="font-size:12px;color:#9fb0c7;">médiane de ' + od.nb + ' book' + (od.nb > 1 ? 's' : '') + ' français (The Odds API)</div></div>';
+}
+function _g45AgFrBtn(box, x) {
+  try {
+    if (typeof _g45SanteActive !== 'function' || !_g45SanteActive()) return;
+    var k = _g45AgFrCle(x.m); if (!k) return;
+    _g45AgFrL[x.i] = x;
+    var z = document.createElement('div'); z.id = 'g45agfr-' + x.i; box.appendChild(z);
+    var c = null; try { c = JSON.parse(localStorage.getItem('g45agoa1_' + k + '_fr') || 'null'); } catch (e) {}
+    if (c && c.ok && Date.now() - c.t < 6 * 3600000) { z.innerHTML = _g45AgFrHtml(x, _g45AgOaTrouver(c.d, x.m)); return; }
+    z.innerHTML = '<button onclick="g45AgFr(' + x.i + ')" style="margin-top:6px;background:#1a2a4a;border:1px solid #4d84ff;color:#fff;font-size:14px;font-weight:800;border-radius:8px;padding:5px 12px;cursor:pointer;">🇫🇷 Cotes books FR</button>';
+  } catch (e) {}
+}
+window.g45AgFr = function (i) {
+  var x = _g45AgFrL[i], z = document.getElementById('g45agfr-' + i); if (!x || !z) return;
+  var k = _g45AgFrCle(x.m); if (!k) return;
+  z.innerHTML = '<div style="margin-top:5px;color:#9fb0c7;font-size:13px;">⏳ lecture des books français…</div>';
+  _g45AgOaLire(k, 'fr').then(function (L) {
+    var od = _g45AgOaTrouver(L, x.m); if (od) od.reg = 'fr';
+    z.innerHTML = _g45AgFrHtml(x, od);
+    /* les autres matchs du même championnat, déjà à l'écran, profitent de la lecture */
+    Object.keys(_g45AgFrL).forEach(function (j) {
+      var y = _g45AgFrL[j], zz = document.getElementById('g45agfr-' + j);
+      if (j != i && y && zz && _g45AgFrCle(y.m) === k && zz.querySelector('button')) { var o2 = _g45AgOaTrouver(L, y.m); zz.innerHTML = _g45AgFrHtml(y, o2); }
+    });
+  });
+};
+

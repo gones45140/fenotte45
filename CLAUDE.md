@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261008k, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261008l, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -384,6 +384,10 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   Top 14, Pro A, KHL). `_g45AgOaOd(clé, m)` : route /odds du worker (inchangée), h2h, région fr puis eu, cache g45agoa1_<clé>_<rég> 6 h
   (échec 30 min), médiane des books, match par noms + coup d'envoi ± 18 h (`_g45AgOaTrouver`) ; Euroleague = The Odds API seule, NRL = ESPN
   puis The Odds API ; Top 14 / Pro A / KHL → « pas de cotes gratuites pour cette compétition ». Testé Chromium (faux /odds) : 5 cas.
+  20261008l (« ça donne quasi tout le foot, le problème sera le quota », validé « oui mais seulement sur gones ») : FOOT, bouton « 🇫🇷 Cotes
+  books FR » sous la ligne ESPN (`_g45AgFrBtn`, GONES45 SEULEMENT via `_g45SanteActive`) → `g45AgFr(i)` : h2h région fr du championnat
+  (_G45_TR_ODDSKEY / _G45_OA_LIGUES, 1 crédit), cache g45agoa1_ 6 h partagé : championnat déjà lu = affiché sans bouton, autres matchs
+  du même championnat mis à jour ; `_g45AgFrHtml` (victoire / défaite de la consigne, sinon 1N2). Testé Chromium : 1 appel pour 2 matchs, 0 bouton sur bet45.
 - 🏷️ SPORT SUR CHAQUE PARI (20261005h, « il manque peut-être le sport ? », maquette validée « Oui ») : bloc en fin d'app.js —
   `_g45ParisSport(h)` = h.sport, sinon u.sport de l'équipe du mur (h.n), sinon deviné par h.comp (`_G45_PARIS_COMP`, MotoGP avant F1) ;
   rond `_g45ParisRond(h, px)` (couleurs Agenda `_G45_PARIS_COUL`) au-dessus du logo du book dans `_g45BetRowMini` (Paris filtrés) et
