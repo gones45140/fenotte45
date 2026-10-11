@@ -71343,6 +71343,9 @@ function _g45AgFrHtml(x, od) {
     var meil = B.filter(function (b) { return b[cc] === max[cc]; }).map(function (b) { return b.n; });
     h += '<div style="margin-top:4px;font-size:14px;color:#fff;">Ta consigne (' + ea(lib) + ') : meilleure cote <b style="color:#1ed760;">' + f(max[cc]) + '</b> chez <b>' + ea(meil.join(', ')) + '</b></div>';
   }
+  /* 20261008o (« Betclic et Unibet 2,15 et 2,10 mais sans garantie », note validée « oui ») : rappel fixe quand Winamax est dans le tableau
+     (la garantie n'est dans aucune donnée The Odds API). */
+  if (B.some(function (b) { return /winamax/i.test(b.n); })) h += '<div style="margin-top:3px;font-size:14px;color:#c9b8ff;">🛡️ Winamax : pense à la garantie si elle est proposée (pas comptée dans ces cotes)</div>';
   return h + '<div style="font-size:12px;color:#9fb0c7;">' + B.length + ' de tes books' + (caches ? ' · ' + caches + ' autre' + (caches > 1 ? 's' : '') + ' caché' + (caches > 1 ? 's' : '') : '') + ' · The Odds API</div></div>';
 }
 function _g45AgFrBtn(box, x) {

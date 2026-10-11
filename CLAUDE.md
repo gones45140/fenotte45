@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261008n, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261008o, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -394,6 +394,7 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   g45agoa1_ → g45agoa2_ (MORTS) avec od.books / hN / aN. Testé Chromium.
   20261008n (« NetBet, le book le plus éclaté », choix 1) : tableau limité aux books de #n-book (value + texte, 1er mot ≥ 3 lettres) ; aucun en
   commun → tous ; pied « N de tes books · M autres cachés ».
+  20261008o (« Betclic et Unibet… mais sans garantie », « oui ») : ligne fixe « 🛡️ Winamax : pense à la garantie… » si Winamax est dans le tableau.
 - 🏷️ SPORT SUR CHAQUE PARI (20261005h, « il manque peut-être le sport ? », maquette validée « Oui ») : bloc en fin d'app.js —
   `_g45ParisSport(h)` = h.sport, sinon u.sport de l'équipe du mur (h.n), sinon deviné par h.comp (`_G45_PARIS_COMP`, MotoGP avant F1) ;
   rond `_g45ParisRond(h, px)` (couleurs Agenda `_G45_PARIS_COUL`) au-dessus du logo du book dans `_g45BetRowMini` (Paris filtrés) et
