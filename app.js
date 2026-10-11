@@ -60141,7 +60141,9 @@ function _g45LigneMatch(h, titreDefaut, typeTxt, cote){
   var lieu = _g45LieuDe(h, meta);
   /* 17/09 : champ Joueur du pari, affiche devant le type. */
   var _jn = (h.joueurs && h.joueurs.length) ? h.joueurs.map(function (j) { return j.nom; }).join(h.jmode === 'et' ? ' et ' : ' ou ') : (h.joueur || '');
-  if (_jn) typeTxt = '\ud83d\udc64 ' + _g45Esc(_jn) + (typeTxt ? ' \u00b7 ' + typeTxt : '');
+  /* 20261009f (maquette validée « cool ») : joueur en BLANC 14 px gras sur bande sombre (avant : petit texte violet). */
+  if (_jn) typeTxt = '<span style="display:inline-block;margin:3px 0 1px;font-size:14px;font-weight:800;color:#fff;background:rgba(11,16,29,.55);padding:2px 8px;border-radius:6px;line-height:1.3;">' + _g45Esc(_jn)
+    + (typeTxt ? ' <span style="color:#c9d3ee;font-weight:600;">\u00b7 ' + typeTxt + '</span>' : '') + '</span>';
   if (h.garantie) { var _gl = _g45GarantieLabel(h.garantie, h.sport); if (_gl) typeTxt = (typeTxt ? typeTxt + ' \u00b7 ' : '') + '\ud83d\udee1\ufe0f ' + _g45Esc(_gl); }
   var sous = (typeTxt ? typeTxt + '<br>' : '')
     + '<span style="color:#7aa2ff;font-weight:800;font-size:11px;background:rgba(77,132,255,.16);padding:1px 7px;border-radius:5px;">' + coteTxt + '</span>'
@@ -71788,3 +71790,69 @@ function _g45CarteJoueursHtml(h, logos, coul, typeTxt) {
     }).join('') + '</div>'
     + (type ? '<div style="font-size:13px;font-weight:600;color:#c9d3ee;margin-top:8px;">' + esc(type) + '</div>' : '') + '</div>';
 }
+
+/* ===================== 20261009f — PHOTO DU JOUEUR SUR LES LIGNES DE PARI =====================
+   Maquette validée (« cool ») : pari sur un joueur → le carré de droite (filigrane `_idFilig`, logo du club / du book) devient
+   la PHOTO RONDE du 1er joueur (initiales en attendant / sans photo). Photo cherchée comme pour la carte partagée
+   (_g45ClsPhotoDe pour le foot, TheSportsDB sinon), mémoire de session `_g45JphMem`, posée sur toutes les lignes
+   [data-g45jph] à l'arrivée ; 2 recherches à la fois. Enveloppe de `_g45IdF1` (appelé par renderArchive ×2 et _g45BetRowMini). */
+var _g45JphMem = {}, _g45JphFile = [], _g45JphActifs = 0;
+function _g45JphCle(n) { return String(n || '').toLowerCase().trim(); }
+function _g45JphPoser(n) {
+  var u = _g45JphMem[_g45JphCle(n)]; if (!u) return;
+  try {
+    Array.prototype.forEach.call(document.querySelectorAll('[data-g45jph]'), function (el) {
+      if (_g45JphCle(el.getAttribute('data-g45jph')) !== _g45JphCle(n) || el.querySelector('img')) return;
+      var im = document.createElement('img'); im.src = u; im.alt = '';
+      im.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 12%;';
+      im.onerror = function () { im.remove(); };
+      el.appendChild(im);
+    });
+  } catch (e) {}
+}
+function _g45JphSuite() {
+  while (_g45JphActifs < 2 && _g45JphFile.length) {
+    var t = _g45JphFile.shift(); _g45JphActifs++;
+    (async function (t) {
+      var u = '';
+      try {
+        if (t.sp === 'soccer' && typeof _g45ClsPhotoDe === 'function') u = await _g45ClsPhotoDe(t.n, t.club, { n: 1, p: {} });
+        else if (typeof _g45JoueurVisChercher === 'function') {
+          var v = await _g45JoueurVisChercher(t.n, t.sp), r2 = (typeof _g45R2 === 'function') ? _g45R2 : function (x) { return x; };
+          if (v) u = (v.thumb && r2(v.thumb)) || (v.cut && r2(v.cut)) || '';
+        }
+      } catch (e) {}
+      _g45JphMem[_g45JphCle(t.n)] = u || '';
+      _g45JphActifs--; _g45JphPoser(t.n); _g45JphSuite();
+    })(t);
+  }
+}
+function _g45IdJoueur(h, avant) {
+  try {
+    var noms = (typeof _g45CarteJoueursNoms === 'function') ? _g45CarteJoueursNoms(h) : [];
+    if (!noms.length) return avant;
+    var n = noms[0], k = _g45JphCle(n);
+    var sp = (typeof _g45CarteVisSport === 'function') ? _g45CarteVisSport(h) : 'soccer';
+    var club = (h.n && h.n !== 'SIMPLE') ? h.n : '';
+    var col = (typeof g45CoulIdentite === 'function' && club) ? (g45CoulIdentite(club) || '#4d84ff') : '#4d84ff';
+    var m = n.split(/\s+/).filter(Boolean), ini = ((m[0] || '?').charAt(0) + (m.length > 1 ? m[m.length - 1].charAt(0) : '')).toUpperCase();
+    var esc = function (x) { return String(x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); };
+    var u = _g45JphMem[k];
+    if (u === undefined && !_g45JphFile.some(function (t) { return t.k === k; })) {
+      _g45JphMem[k] = null;   /* en cours */
+      _g45JphFile.push({ k: k, n: n, sp: sp, club: club });
+      setTimeout(_g45JphSuite, 50);
+    }
+    return '<div data-g45jph="' + esc(n) + '" style="position:absolute;right:2px;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;overflow:hidden;'
+      + 'border:3px solid ' + col + ';background:linear-gradient(145deg,' + col + ',' + col + '66);color:#fff;font-weight:900;font-size:15px;display:flex;align-items:center;justify-content:center;pointer-events:none;">'
+      + esc(ini) + (u ? '<img src="' + esc(u) + '" alt="" onerror="this.remove()" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 12%;">' : '') + '</div>';
+  } catch (e) { return avant; }
+}
+(function () {
+  try {
+    if (typeof _g45IdF1 !== 'function' || _g45IdF1._g45Jph) return;
+    var o = _g45IdF1;
+    _g45IdF1 = function (h, avant) { var r = o.apply(this, arguments); return _g45IdJoueur(h, r); };
+    _g45IdF1._g45Jph = true;
+  } catch (e) {}
+})();
