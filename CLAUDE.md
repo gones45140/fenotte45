@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261008q, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261008r, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1202,7 +1202,7 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   Red Bull, Aston Martin, Audi, Cadillac, AMG (Mercedes). Alpine, Haas,
   Williams : fichiers `images/ecuries/{alpine,haas,williams}.svg` ou `.png`
   (pastille blanche, repli sur l'abréviation). Drapeaux GP : flagcdn w640,
-  `object-fit:fill` (drapeau entier), 45 %.
+  `object-fit:fill` (drapeau entier), 45 %. 20261008r (« ok 120 ») : carte du calendrier F1 min-height 84 → 120 px.
 - Arbitre (foot) : summary gameInfo.officials [{displayName, position.name
   "Referee", order}] SANS id ; core …/leagues/{lg}/events/{id}/competitions/{id}/officials
   → {items:[{id, displayName, position}]} ≈ 400 octets (summary ≈ 450 Ko). Pas de

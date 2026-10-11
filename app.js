@@ -41156,7 +41156,8 @@ async function g45F1Open(){
     var iso=_g45F1Iso2(ad.country, ad.city), pil='background:rgba(5,7,13,.72);border-radius:8px;';
     var winTxt2=winTxt?winTxt.replace('<div style="font-size:10px;color:#f0c828;margin-top:2px;">','<div style="display:inline-block;margin-top:5px;'+pil+'padding:2px 9px;font-size:13px;font-weight:800;color:#f0c828;">'):
       (state==='pre'?'':'');
-    var row='<div onclick="g45F1Detail(\''+ea(ev.id)+'\')" style="position:relative;overflow:hidden;display:flex;align-items:center;gap:8px;padding:14px 12px;min-height:84px;box-sizing:border-box;background:#141b2e;border-radius:12px;margin-bottom:8px;cursor:pointer;">'
+    /* 20261008r (« ok 120 ») : cartes du calendrier F1 plus hautes, 84 → 120 px, pour mieux voir le drapeau (moins étiré sur PC). */
+    var row='<div onclick="g45F1Detail(\''+ea(ev.id)+'\')" style="position:relative;overflow:hidden;display:flex;align-items:center;gap:8px;padding:14px 12px;min-height:120px;box-sizing:border-box;background:#141b2e;border-radius:12px;margin-bottom:8px;cursor:pointer;">'
       /* 26/09 soir (validé par Antoine) : drapeau ENTIER étiré (« fill »).
          « cover » zoomait trop et ne gardait que la bande du milieu des
          drapeaux horizontaux (Autriche, Hongrie, Pays-Bas… tout blancs). Les
