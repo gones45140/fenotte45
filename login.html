@@ -109,7 +109,7 @@
 
     const session = await attendreSession();
     if (session) {
-      window.location.href = './index.html';
+      window.location.href = './indexfenotte.html' /* 11/10/2026 : index.html sans ?code= renvoie sur la vitrine accueil.html → l'ami connecté croyait devoir se reconnecter */;
       throw new Error('redirect');
     }
 
@@ -145,7 +145,7 @@
           + '<br><span style="color:var(--t3);">Pas encore de mot de passe ? Utilise le lien ci-dessous.</span>';
         btn.disabled = false; btn.textContent = 'Se connecter';
       } else {
-        window.location.href = './index.html';
+        window.location.href = './indexfenotte.html' /* 11/10/2026 : index.html sans ?code= renvoie sur la vitrine accueil.html → l'ami connecté croyait devoir se reconnecter */;
       }
     };
 
