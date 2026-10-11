@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261008u, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261008v, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1213,6 +1213,8 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   (sessionStorage g45_bilia) = messages + 3 questions + saisie ; `g45BilIaEnvoyer` : faits CALCULÉS `_g45BilIaFaits(filteredA())` (total, sport,
   type `_g45BilIaType`, dom/ext, book, tranche de cote, équipe, compétition, mois, série, 10 derniers ; freebet : gain m×(cote−1), mise hors ROI)
   et consigne « seulement les FAITS, sinon je n'ai pas les résultats ni l'actualité » ; même appel IA que sendChat. Contrôle smoke.js (15).
+  20261008v (« cache-le sur PC et mobile, sa place reste dans Bilan ») : bouton « 💬 Assistant » de la colonne de gauche (PC) et entrée
+  « Assistant Paris » du menu + (téléphone) RETIRÉS des deux index ; l'assistant n'existe plus que dans Bilan (#t-chat reste dans la page, sans accès).
 - Arbitre (foot) : summary gameInfo.officials [{displayName, position.name
   "Referee", order}] SANS id ; core …/leagues/{lg}/events/{id}/competitions/{id}/officials
   → {items:[{id, displayName, position}]} ≈ 400 octets (summary ≈ 450 Ko). Pas de
