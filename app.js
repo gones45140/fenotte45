@@ -71646,3 +71646,32 @@ window.g45BilIaEnvoyer = async function (q) {
     (document.head || document.documentElement).appendChild(st);
   } catch (e) {}
 })();
+
+/* ===================== 20261008x — PAS D'ONGLET « COMPO » POUR LES SPORTS INDIVIDUELS =====================
+   Antoine (fiche FORMULE 1) : « Compo, à moins qu'il fasse un match, sert à rien, oui ». Une écurie, un pilote,
+   un tennisman… n'a pas d'effectif ESPN : l'onglet affichait toujours « Effectif indisponible ». Après chaque
+   openClub (et après _g45MurJoueurUI, qui remet l'onglet à chaque ouverture), #itab-compo est caché si la carte
+   du mur est F1, MotoGP, tennis, MMA, cyclisme ou biathlon (emoji du sport ou nom de la carte). Jamais ré-affiché ici. */
+function _g45CompoInutile(nom) {
+  try {
+    var u = ((typeof state !== 'undefined' && state && state.u) || []).filter(function (x) { return x && x.n === nom; })[0];
+    var t = String((u && u.sport) || '') + ' ' + String(nom || '');
+    return /🏎|🏍|🎾|🥊|🚴|🎿/.test(t) || /formule\s*1|\bf1\b|motogp|tennis|\bmma\b|\bufc\b|cyclisme|biathlon/i.test(t);
+  } catch (e) { return false; }
+}
+(function () {
+  try {
+    if (typeof openClub !== 'function') return;
+    var o = openClub;
+    var cacher = function (nom) {
+      if (!_g45CompoInutile(nom)) return;
+      var b = document.getElementById('itab-compo'); if (b) b.style.display = 'none';
+    };
+    openClub = function (nom) {
+      var r = o.apply(this, arguments);
+      cacher(nom); setTimeout(function () { cacher(nom); }, 0); setTimeout(function () { cacher(nom); }, 400);
+      return r;
+    };
+    window.openClub = openClub;
+  } catch (e) {}
+})();

@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261008w, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261008x, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1217,7 +1217,8 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   « Assistant Paris » du menu + (téléphone) RETIRÉS des deux index ; l'assistant n'existe plus que dans Bilan (#t-chat reste dans la page, sans accès).
   20261008w (capture FORMULE 1 → Types vide, un petit rond) : style.css a DEUX .cp (l. 75 padding des cartes, l. 240 pastille 24 px du
   choix de couleur #cprow) → « card cp » de Types réduite à un rond, lignes cachées (overflow). Feuille #g45-cp-fix (app.js) : .cp hors
-  #cprow = taille normale, .card.cp = bord de carte. Compo en F1 : inutile (pas d'effectif ESPN), cacher PROPOSÉ, réponse attendue.
+  #cprow = taille normale, .card.cp = bord de carte. 20261008x (« Compo, à moins qu'il fasse un match, sert à rien, oui ») :
+  enveloppe d'openClub → #itab-compo caché si `_g45CompoInutile(nom)` (🏎 🏍 🎾 🥊 🚴 🎿 ou nom F1 / MotoGP / tennis / MMA / UFC / cyclisme / biathlon).
 - Arbitre (foot) : summary gameInfo.officials [{displayName, position.name
   "Referee", order}] SANS id ; core …/leagues/{lg}/events/{id}/competitions/{id}/officials
   → {items:[{id, displayName, position}]} ≈ 400 octets (summary ≈ 450 Ko). Pas de
