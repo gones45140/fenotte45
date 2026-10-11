@@ -1543,6 +1543,11 @@ BLOCAGE SFR (11/10, capture d'un ami d'Antoine) : « Navigation protégée » SF
   20261008q — FAIT : Antoine a publié la Release GitHub « BET45 Android » (fenotte45, tag apk-v1, asset bet45.apk, sha256 = ancien fichier) ;
   _G45_APK = https://github.com/gones45140/fenotte45/releases/latest/download/bet45.apk (pas de HEAD : CORS) ; telecharger/bet45.apk SUPPRIMÉ
   de fenotte45. Nouvelle APK = nouvelle release avec un fichier nommé exactement bet45.apk. Ensuite : demande de requalification SFR par l'ami.
+INSCRIPTION bet45 (11/10, « 0 création de compte possible », ami Cédric) : login.html « Première connexion ou mot de passe oublié » appelait
+  resetPasswordForEmail, qui n'envoie RIEN pour une adresse inconnue → aucun nouveau compte possible depuis le 27/08. Remplacé par
+  `lienPremiereConnexion` (supabase.js, fenotte45) = signInWithOtp shouldCreateUser + redirection reset.html (choix du mot de passe).
+  Testé Chromium (Supabase simulé). Mails Supabase = SMTP Gmail badgone45000 (Brevo a suspendu le compte) ; avertissement « fournisseur
+  personnel » de Supabase = normal. Cédric créé à la main (Add user, Auto Confirm). Captures d'écran impossibles sur bet45 : NON expliqué.
 RÉGLÉ OU ABANDONNÉ (ne pas reproposer) :
 - APK bet45 sans barre d'adresse : OK. Logos Lakers / hockey : OK. « Connexion » sur le
   logo, paysage gones, pression en portrait, « 1. FC », cartes KHL, compos rugby : OK

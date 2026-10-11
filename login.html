@@ -81,7 +81,7 @@
   </div>
 
   <script type="module">
-    import { supabase, connexionMotDePasse, demanderReinitialisation } from './supabase.js';
+    import { supabase, connexionMotDePasse, lienPremiereConnexion } from './supabase.js';
 
     async function attendreSession() {
       const hash = window.location.hash || '';
@@ -154,13 +154,14 @@
       }
       btnSecours.disabled = true; btnSecours.textContent = '⏳ Envoi…';
       msg.className = 'msg'; msg.textContent = '';
-      const err = await demanderReinitialisation(val);
+      // 11/10/2026 : lien qui CRÉE le compte s'il n'existe pas (voir supabase.js).
+      const err = await lienPremiereConnexion(val);
       if (err) {
         msg.className = 'msg err';
         msg.textContent = '❌ ' + (err.message || 'Erreur inconnue');
       } else {
         msg.className = 'msg ok';
-        msg.innerHTML = '✅ Regarde ta boîte mail !<br>Le lien te permet de définir ton mot de passe.';
+        msg.innerHTML = '✅ Mail envoyé à ' + val.replace(/[<>&"]/g, '') + ' !<br>Regarde ta boîte mail (et les <b>spams</b>).<br>Le lien te permet de choisir ton mot de passe.';
       }
       btnSecours.disabled = false; btnSecours.textContent = 'Première connexion ou mot de passe oublié ?';
     };

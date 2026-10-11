@@ -47,6 +47,23 @@ export async function demanderReinitialisation(email) {
   return error;
 }
 
+// 11/10/2026 — « 0 création de compte possible » (ami d'Antoine) : resetPasswordForEmail
+// n'envoie RIEN si le compte n'existe pas (Supabase répond « ok » sans mail, pour ne pas
+// révéler quelles adresses sont inscrites) → un nouveau venu ne pouvait jamais s'inscrire.
+// signInWithOtp CRÉE le compte s'il n'existe pas et envoie un lien de connexion ; ce lien
+// ouvre reset.html, où le mot de passe est choisi (updateUser marche avec cette session).
+// Compte existant : même chemin, sert de « mot de passe oublié ».
+export async function lienPremiereConnexion(email) {
+  const { error } = await supabase.auth.signInWithOtp({
+    email,
+    options: {
+      shouldCreateUser: true,
+      emailRedirectTo: window.location.origin + window.location.pathname.replace(/[^\/]*$/, '') + 'reset.html'
+    }
+  });
+  return error;
+}
+
 // Appelé depuis reset.html, une fois la session de récupération active.
 export async function definirNouveauMotDePasse(password) {
   const { error } = await supabase.auth.updateUser({ password });
