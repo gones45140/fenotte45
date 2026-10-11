@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261011g, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261011h, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1578,6 +1578,9 @@ BILAN « Répartition par type » (20261011f, maquette validée « c'est mieux o
   les DEUX copies) : rond = 8 types les plus joués (`_G45_TYPE_MAX`) + « Autres » gris ; légende Chart.js retirée ; pastilles avec nombre ;
   bouton « Voir les N autres types » (window._g45TypeTout). 20261011g (maquette validée « ok ») : renderChartTypeBen REDÉFINIE aussi :
   canvas #chart-type-ben caché, boîte #g45-typeben = 5 meilleurs / 5 pires en lignes (nom entier 14 px, barre), reste dépliable (_g45TypeBenTout).
+BILAN, courbes « Évolution bankroll » (#cg, GC) et « Bankroll totale » (#chart-bankroll, _advCharts.bk) — 20261011h (validé « ok ») : enveloppes
+  de renderGlobalChart / renderAdvancedCharts : boutons 1J · 1S · 1M · Tout (`_g45PerChips`, PARTAGÉS : setBilanPeriode / window._bilanPeriode,
+  tout le Bilan suit) ; `_g45CourbePropre` : pointRadius 0 (rond au toucher), dates AAAA-MM-JJ → JJ/MM. Testé Chromium (Chart simulé).
 RÉGLÉ OU ABANDONNÉ (ne pas reproposer) :
 - APK bet45 sans barre d'adresse : OK. Logos Lakers / hockey : OK. « Connexion » sur le
   logo, paysage gones, pression en portrait, « 1. FC », cartes KHL, compos rugby : OK

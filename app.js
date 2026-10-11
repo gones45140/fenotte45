@@ -72067,3 +72067,62 @@ function renderChartTypeBen(){
   boite.innerHTML=h;
 }
 window.renderChartTypeBen=renderChartTypeBen;
+
+/* ═══ 20261011h — COURBES « Évolution bankroll » ET « Bankroll totale » (proposition validée « ok », 11/10) ═══
+   Captures d'Antoine : courbes couvertes de ronds verts / rouges collés ; la même en 1 mois (capture 3) « c'est propre ».
+   → boutons 1J · 1S · 1M · Tout au-dessus de CHACUNE (même réglage partagé window._bilanPeriode → setBilanPeriode, qui
+   redessine tout le Bilan : filteredA filtre déjà par période) ; ronds retirés (pointRadius 0, rond seulement au toucher) ;
+   dates de l'axe AAAA-MM-JJ → JJ/MM (Bankroll totale en mode « par pari »). Enveloppes de renderGlobalChart (#cg, GC) et
+   renderAdvancedCharts (#chart-bankroll, _advCharts.bk). */
+function _g45PerChips(id) {
+  return '<div id="' + id + '" style="display:flex;gap:6px;margin:4px 0 8px;">' + [['1j', '1J'], ['1s', '1S'], ['1m', '1M'], ['all', 'Tout']].map(function (d) {
+    var on = (window._bilanPeriode || 'all') === d[0];
+    return '<button onclick="setBilanPeriode(\'' + d[0] + '\')" style="flex:1;border:none;border-radius:8px;padding:8px 4px;font-size:13px;font-weight:800;cursor:pointer;background:'
+      + (on ? '#1ed760' : 'rgba(255,255,255,.06)') + ';color:' + (on ? '#0b1a10' : '#fff') + ';">' + d[1] + '</button>';
+  }).join('') + '</div>';
+}
+function _g45CourbePropre(ch, dates) {
+  if (!ch || !ch.data || !ch.data.datasets || !ch.data.datasets[0]) return;
+  var ds = ch.data.datasets[0];
+  ds.pointRadius = 0; ds.pointHoverRadius = 7;
+  if (dates) {
+    try {
+      var tk = ch.options.scales.x.ticks, cb = tk.callback;
+      tk.callback = function () {
+        var r = cb ? cb.apply(this, arguments) : this.getLabelForValue(arguments[0]);
+        var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(r || ''));
+        return m ? m[3] + '/' + m[2] : r;
+      };
+    } catch (e) {}
+  }
+  try { ch.update('none'); } catch (e) {}
+}
+(function () {
+  if (typeof renderGlobalChart === 'function') {
+    var o1 = renderGlobalChart;
+    renderGlobalChart = function () {
+      var r = o1.apply(this, arguments);
+      try {
+        var gz = $i('global-zone'), gc = gz && gz.querySelector('.gchart');
+        if (gc && !$i('g45-per-cg')) gc.insertAdjacentHTML('beforebegin', _g45PerChips('g45-per-cg'));
+      } catch (e) {}
+      setTimeout(function () { try { if (typeof GC !== 'undefined' && GC) _g45CourbePropre(GC, false); } catch (e) {} }, 60);
+      return r;
+    };
+    window.renderGlobalChart = renderGlobalChart;
+  }
+  if (typeof renderAdvancedCharts === 'function') {
+    var o2 = renderAdvancedCharts;
+    renderAdvancedCharts = function () {
+      var r = o2.apply(this, arguments);
+      try {
+        var cv = $i('chart-bankroll'), box = cv && cv.parentNode;
+        var vieux = $i('g45-per-bk'); if (vieux) vieux.remove();
+        if (box) box.insertAdjacentHTML('beforebegin', _g45PerChips('g45-per-bk'));
+        if (typeof _advCharts !== 'undefined' && _advCharts.bk) _g45CourbePropre(_advCharts.bk, true);
+      } catch (e) {}
+      return r;
+    };
+    window.renderAdvancedCharts = renderAdvancedCharts;
+  }
+})();
