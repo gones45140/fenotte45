@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261008y, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261008z, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1007,6 +1007,8 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   VÉRIFIÉ PAR ANTOINE contre Sofascore (Tolisso, Openda) : largeur RETOURNÉE (y → 100 − y) ; chaque équipe attaque vers x = 100.
   REVÉRIFIÉ 11/10 (console, Haaland : tir 60e x 89,5, but 65e x 88,9 ; tache dans sa surface = dégagements / duels de 1re MT) :
   coordonnées DÉJÀ dans le sens de l'attaque sur les deux mi-temps. 20261008y : actions « Out » (ballon sorti, x/y > 100) retirées dans g45ChOuvrir.
+  20261008z (capture : « Foul by Erling Haaland », « Attempt missed. … », « Goal! Liverpool 0, Manchester City 1. … » en lignes à part) :
+  `_g45ChNom` retire ces préfixes du nom (g45ChOuvrir) → un joueur = une ligne (testé 10/10).
 - ⚾🇰🇷 KBO (20261001s, maquette validée « yes we can ») : tuile slug 'kbo' (Compétitions → Baseball, après MLB),
   `_g45KboBrancher` enveloppe loadCompetTab (_g45CompetSport 'baseball' + _g45CompetSel 'kbo'). koreabaseball.com ÉCARTÉ
   (robots.txt « Disallow: / » + « collecte automatique interdite sans autorisation », SONDÉ PAR ANTOINE — ne pas y revenir,

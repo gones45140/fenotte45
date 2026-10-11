@@ -32552,6 +32552,10 @@ async function g45ChOuvrir(btn, lg, eid) {
   /* 20261008y (console d'Antoine, Haaland : « Out » à x 101 / y 100,4 comptés comme ses actions) : un « Out » = ballon
      sorti, point HORS du terrain → retiré des cartes de chaleur et du nombre d'actions. */
   P = P.filter(function (a) { return a.x != null && a.nm && !/^out$/i.test(String(a.ty || '').trim()); });
+  /* 20261008z (capture d'Antoine : « Foul by Erling Haaland », « Attempt missed. Erling Haaland », « Goal! Liverpool 0, Manchester City 1.
+     Erling Haaland » en lignes séparées) : le nom vient du début du texte ESPN → préfixes retirés, le joueur est regroupé sur UNE ligne. */
+  P.forEach(function (a) { a.nm = _g45ChNom(a.nm); });
+  P = P.filter(function (a) { return a.nm; });
   if (!P.length) { z.innerHTML = '<div style="color:#ffb13d;font-size:14px;padding:6px 0;">ESPN ne publie pas le détail des actions pour ce match.</div>'; return; }
   _g45ChEtat[eid].P = P;
   _g45ChRendre(z, eid);
@@ -71677,3 +71681,15 @@ function _g45CompoInutile(nom) {
     window.openClub = openClub;
   } catch (e) {}
 })();
+
+/* 20261008z — nom propre d'un joueur dans les actions ESPN (cartes de chaleur) : « Foul by X », « Handball by X », « Attempt saved. X »,
+   « Goal! Liverpool 0, Manchester City 1. X », « Penalty missed. X », « Own Goal by X », « … conceded by X ». */
+function _g45ChNom(n) {
+  var s = String(n || '').trim();
+  s = s.replace(/^Goal!\s.*?\d+\.\s+/i, '')
+    .replace(/^(Attempt|Penalty)\s+[a-z]+\.\s+/i, '')
+    .replace(/^.*?\bconceded by\s+/i, '')
+    .replace(/^(Foul|Handball|Hand ball|Offside|Own Goal|Dangerous play)\s+by\s+/i, '')
+    .replace(/^Delay\b.*?\binjury\s+/i, '');
+  return s.trim();
+}
