@@ -19,9 +19,11 @@ Principe validé : « blason / logo derrière, bande sombre sous le texte ».
 
 1. 100 % gratuit. Jamais d'option, de plan ou de service payant (Cloudflare,
    API, hébergement…). Ne pas reproposer Supabase.
-   (11/10) Cette règle porte sur ce qu'ANTOINE paie. Un ABONNEMENT pour les utilisateurs de bet45 est PRÉVU plus tard
-   (statut « soutien » user_supporter, verrou _g45AccesPremium) : ne pas lui opposer cette règle. Verrou aujourd'hui
-   côté appli seulement → pour un vrai abonnement, vérifier côté serveur (Supabase / worker).
+   PROJET (expliqué par Antoine le 11/10) : AUJOURD'HUI tout est gratuit, pour lui comme pour les utilisateurs, et
+   il ne paie RIEN → la règle s'applique pleinement. PLUS TARD : un abonnement utilisateurs (statut « soutien »
+   user_supporter, verrou _g45AccesPremium déjà en place) apportera des rentrées ; ALORS il pourra payer des services
+   pour faire évoluer l'appli tout en gardant une marge. Tant qu'il ne l'a pas dit, on reste au gratuit.
+   Verrou premium aujourd'hui côté appli seulement → pour un vrai abonnement, vérifier côté serveur (Supabase / worker).
 2. Changement visuel = maquette AVANT livraison. Décris ou montre le rendu,
    attends le « oui » d'Antoine, puis code. Une correction de bug purement
    fonctionnelle n'en a pas besoin.
