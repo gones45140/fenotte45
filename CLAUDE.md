@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261008o, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261008p, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -299,6 +299,9 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   Réglage Orientation (app.js) : `_g45OriDispo` (lit --g45-paysage), `_g45OriAppliquer`
   (plein écran + screen.orientation.lock ; refus → retour « auto »), `g45OriPoser`
   (bloc en tête d'Outils), clé `g45_orientation`.
+  20261008p (maquette validée « oui sur mobile, PC bouge pas ») : bouton « 📱 Auto ▾ » dans header.topbar entre le logo et .top-cap
+  (`g45OriHautPoser`, TÉLÉPHONE seulement : pointer coarse + _g45OriDispo) → menu fixe `g45OriHautMenu` Auto / Portrait / Paysage →
+  `g45OriHautChoisir` → g45OriChoisir (appel synchrone dans le clic) ; refus → message orange 6 s. Bloc d'Outils GARDÉ. Testé Chromium (mobile + PC).
 - 🏠 ACCUEIL PAR SPORT (20261002l, maquette validée « oui » + « les replier serait bien aussi ») : bloc en FIN d'app.js,
   enveloppe de `render` (render existe en DEUX copies, la 2e ≈ l. 11287 gagne ; carte d'équipe NON touchée) → `_g45AccRegrouper`
   regroupe les `.g45-murcard` de #dash-units par sport (`_g45AccSport` = G45_SPORTS_PARI, emoji le plus long d'abord : 🏉🇦🇺 NRL

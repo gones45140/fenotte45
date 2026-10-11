@@ -71374,3 +71374,69 @@ window.g45AgFr = function (i) {
   });
 };
 
+
+/* ═══ 20261008p — ORIENTATION DANS LA BANDE DU HAUT (maquette validée « oui sur mobile, PC bouge pas ») ═══
+   Petit bouton « 📱 Auto ▾ » entre BET45 et le CAPITAL (header.topbar), TÉLÉPHONE seulement (pointer: coarse) et seulement si la
+   mise en page paysage existe (_g45OriDispo). Un appui déroule Auto / Portrait / Paysage (menu fixe sous le bouton), un choix le
+   referme et passe par g45OriChoisir (même réglage g45_orientation que le bloc d'Outils, gardé). Refus du téléphone → message
+   orange 6 s sous la bande (texte repris de #g45-ori-msg). Appel synchrone dans le clic : le plein écran exige le geste. */
+var _G45_ORI_LIB = { auto: ['🔄', 'Auto'], portrait: ['📱', 'Portrait'], paysage: ['↔️', 'Paysage'] };
+function _g45OriHautOk() {
+  try { return _g45OriDispo() && matchMedia('(pointer: coarse)').matches; } catch (e) { return false; }
+}
+function g45OriHautPoser() {
+  try {
+    var hd = document.querySelector('header.topbar'); if (!hd) return;
+    var b = document.getElementById('g45-ori-haut');
+    if (!_g45OriHautOk()) { if (b) b.remove(); return; }
+    if (!b) {
+      b = document.createElement('button'); b.id = 'g45-ori-haut'; b.type = 'button';
+      b.style.cssText = 'background:#1a2235;border:1px solid #4d84ff;border-radius:18px;padding:6px 12px;font-size:14px;font-weight:800;color:#fff;cursor:pointer;white-space:nowrap;flex:none;';
+      b.onclick = function (ev) { ev.stopPropagation(); g45OriHautMenu(); };
+      var cap = hd.querySelector('.top-cap');
+      if (cap) hd.insertBefore(b, cap); else hd.appendChild(b);
+    }
+    var ouvert = !!document.getElementById('g45-ori-menu');
+    b.textContent = '📱 ' + (_G45_ORI_LIB[_g45OriLire()] || _G45_ORI_LIB.auto)[1] + (ouvert ? ' ▴' : ' ▾');
+  } catch (e) {}
+}
+function g45OriHautFermer() { var m = document.getElementById('g45-ori-menu'); if (m) m.remove(); g45OriHautPoser(); }
+function g45OriHautMenu() {
+  if (document.getElementById('g45-ori-menu')) { g45OriHautFermer(); return; }
+  var b = document.getElementById('g45-ori-haut'); if (!b) return;
+  var r = b.getBoundingClientRect(), v = _g45OriLire();
+  var m = document.createElement('div'); m.id = 'g45-ori-menu';
+  var L = Math.max(8, Math.min(window.innerWidth - 208, r.left + r.width / 2 - 100));
+  m.style.cssText = 'position:fixed;top:' + Math.round(r.bottom + 8) + 'px;left:' + Math.round(L) + 'px;width:200px;z-index:1000000;background:#141b2d;border:1px solid #4d84ff;border-radius:12px;padding:8px;box-shadow:0 8px 24px rgba(0,0,0,.6);';
+  m.innerHTML = ['auto', 'portrait', 'paysage'].map(function (k) {
+    var on = k === v;
+    return '<div onclick="g45OriHautChoisir(\'' + k + '\')" style="padding:11px 12px;border-radius:8px;font-size:15px;font-weight:700;color:#fff;cursor:pointer;margin-bottom:3px;'
+      + (on ? 'background:#1e3a8a;border:1px solid #4d84ff;' : 'border:1px solid transparent;') + '">' + _G45_ORI_LIB[k][0] + ' ' + _G45_ORI_LIB[k][1] + (on ? ' ✓' : '') + '</div>';
+  }).join('') + '<div style="font-size:13px;color:#c9d3ee;padding:4px 4px 0;">Un choix referme le menu.</div>';
+  m.onclick = function (ev) { ev.stopPropagation(); };
+  document.body.appendChild(m);
+  g45OriHautPoser();
+}
+window.g45OriHautChoisir = function (k) {
+  g45OriHautFermer();
+  var p = window.g45OriChoisir ? window.g45OriChoisir(k) : null;   /* appelé DANS le clic (plein écran) */
+  Promise.resolve(p).then(function () {
+    g45OriHautPoser();
+    if (_g45OriLire() !== k) {
+      var z = document.getElementById('g45-ori-msg'), t = (z && z.textContent) || 'Le téléphone a refusé de bloquer le sens de l’écran.';
+      var s = document.createElement('div');
+      s.style.cssText = 'position:fixed;left:12px;right:12px;top:70px;z-index:1000000;background:#2a1a08;border:1px solid #ffb13d;color:#ffd08a;font-size:14px;line-height:1.4;border-radius:10px;padding:10px 12px;';
+      s.textContent = '⚠️ ' + t; document.body.appendChild(s);
+      setTimeout(function () { s.remove(); }, 6000);
+    }
+  });
+};
+window.g45OriHautMenu = g45OriHautMenu;
+(function () {
+  try {
+    document.addEventListener('click', function () { if (document.getElementById('g45-ori-menu')) g45OriHautFermer(); });
+    window.addEventListener('resize', function () { var m = document.getElementById('g45-ori-menu'); if (m) g45OriHautFermer(); else g45OriHautPoser(); });
+    setTimeout(g45OriHautPoser, 1200); setTimeout(g45OriHautPoser, 4000);
+    document.addEventListener('DOMContentLoaded', g45OriHautPoser);
+  } catch (e) {}
+})();
