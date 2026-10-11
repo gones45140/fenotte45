@@ -71877,6 +71877,18 @@ function _g45ClubSansVrai(v) {
 function _g45ClubTuiles() {
   if (!_g45ClubBet45()) return;
   var zone = document.getElementById('g45-acc-zone'); if (!zone) return;
+  /* 20261011d (capture : logo Dodgers sur fond blanc, « ça fait bizarre », fichier supprimé mais gardé en mémoire par le
+     téléphone) : sur bet45, une image presque CARRÉE (un logo, posée en petit par _g45AccRegrouper) est remplacée par le
+     dessin du sport, comme les tuiles sans club. Les photos larges (fanart, bannière) restent. */
+  [].forEach.call(zone.querySelectorAll('[data-k] > img'), function (im) {
+    var t = im.parentNode, v = t.getAttribute('data-k');
+    var logo = function () {
+      if (!im.parentNode || !(im.naturalWidth && im.naturalWidth < im.naturalHeight * 1.3)) return;
+      im.remove();
+      if (!t.querySelector(':scope > span[aria-hidden]')) t.insertAdjacentHTML('afterbegin', '<span aria-hidden="true" style="position:absolute;left:0;right:0;top:2px;text-align:center;font-size:52px;opacity:.6;pointer-events:none;">' + v + '</span>');
+    };
+    if (im.complete) logo(); else im.addEventListener('load', logo);
+  });
   [].forEach.call(zone.querySelectorAll('[data-k]'), function (t) {
     var v = t.getAttribute('data-k'), d = _g45AccDef(v);
     if (!d || !_G45_CLUB_EX[v] || !_g45ClubSansVrai(v)) return;
