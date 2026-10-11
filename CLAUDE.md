@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261008f, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261008g, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -367,7 +367,12 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   lettres : Toulousain ≈ Toulouse ; Toulon ≠ Toulouse) ; matchs suivis À LA MAIN (sans m.sp) toujours sans palier. Testé vm 6/6.
   20261008f (AS Roma « 📌 🏠 victoire+under 3.5 » : « Roma extérieur ne doit pas être dans l'agenda ») : `_agMur(m)` (recherche souple
   partagée avec `_agPalier`) + `window._g45AgLieuOk(m, u)` : consigne u.note avec 🏠 SEUL → matchs à l'extérieur RETIRÉS de l'Agenda ; ✈️ seul →
-  domicile retirés ; les deux / aucun / suivi à la main = gardé. Testé vm 8/8. COTES DANS L'AGENDA selon les consignes : maquette proposée, en attente du « oui ».
+  domicile retirés ; les deux / aucun / suivi à la main = gardé. Testé vm 8/8. 20261008g (maquette validée « JE VALIDE LA MAQUETTE ») — COTES DANS L'AGENDA : bloc en fin d'app.js ;
+  `_g45AgConsigne(note, isDom)` (partie 🏠 / ✈️ du lieu, « OU » = options, « + » = jambes vic / def (jouer contre) / vqr / ov / un X / but / ?,
+  seuil « inférieure à 1.5 », no bet) ; loadCalendrier pose « 📌 consigne » + #g45agod-<i> (liste _agOd) → `window._g45AgCotes` : scoreboard ESPN du
+  jour (puis veille) sport/compSlug, mémoire 30 min, ≤ 8 jours, match par id ou noms (`_g45AgOdEv`, _g45TrOddsEv + total.over/under) →
+  `_g45AgOdHtml` (combiné = produit ESTIMÉ, ligne over/under ≠ ESPN → « ligne non proposée », ✅/❌ seuil sur cote victoire/défaite).
+  Pas de cotes : KHL, Euroleague, Pro A. Cotes du scoreboard du JOUR en NHL / MLB / rugby NON sondées. Testé vm 15/15 + rendu Chromium.
 - 🏷️ SPORT SUR CHAQUE PARI (20261005h, « il manque peut-être le sport ? », maquette validée « Oui ») : bloc en fin d'app.js —
   `_g45ParisSport(h)` = h.sport, sinon u.sport de l'équipe du mur (h.n), sinon deviné par h.comp (`_G45_PARIS_COMP`, MotoGP avant F1) ;
   rond `_g45ParisRond(h, px)` (couleurs Agenda `_G45_PARIS_COUL`) au-dessus du logo du book dans `_g45BetRowMini` (Paris filtrés) et
