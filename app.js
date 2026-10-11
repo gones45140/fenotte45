@@ -71302,6 +71302,19 @@ function _g45AgFrHtml(x, od) {
   var f = function (c) { return c > 1 ? c.toFixed(2).replace('.', ',') : '–'; };
   var ea = function (t) { return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;'); };
   var B = (od.books || []).filter(function (b) { return b.h > 1 || b.a > 1; });
+  /* 20261008n (« NetBet, le book le plus éclaté », choix 1) : seulement TES books = options de #n-book (liste « Bookmaker » du formulaire) ;
+     aucun en commun → tous gardés. */
+  var caches = 0;
+  try {
+    var se = document.getElementById('n-book') || document.getElementById('c-book');
+    var mes = se ? [].map.call(se.options, function (o) { return (o.value + ' ' + o.text).toLowerCase().replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim(); }) : [];
+    var aMoi = function (nom) {
+      var bk = String(nom || '').toLowerCase().replace(/[^a-z0-9]/g, ''); if (bk.length < 3) return false;
+      return mes.some(function (t) { var w = t.split(' ')[0]; return t.replace(/ /g, '').indexOf(bk) >= 0 || (w.length >= 3 && bk.indexOf(w) >= 0); });
+    };
+    var Bm = B.filter(function (b) { return aMoi(b.n); });
+    if (Bm.length) { caches = B.length - Bm.length; B = Bm; }
+  } catch (e) {}
   if (!B.length) B = [{ n: 'Médiane', h: od.h, d: od.d, a: od.a }];
   var avecNul = B.some(function (b) { return b.d > 1; });
   var cols = avecNul ? ['h', 'd', 'a'] : ['h', 'a'];
@@ -71330,7 +71343,7 @@ function _g45AgFrHtml(x, od) {
     var meil = B.filter(function (b) { return b[cc] === max[cc]; }).map(function (b) { return b.n; });
     h += '<div style="margin-top:4px;font-size:14px;color:#fff;">Ta consigne (' + ea(lib) + ') : meilleure cote <b style="color:#1ed760;">' + f(max[cc]) + '</b> chez <b>' + ea(meil.join(', ')) + '</b></div>';
   }
-  return h + '<div style="font-size:12px;color:#9fb0c7;">' + B.length + ' book' + (B.length > 1 ? 's' : '') + ' français · The Odds API</div></div>';
+  return h + '<div style="font-size:12px;color:#9fb0c7;">' + B.length + ' de tes books' + (caches ? ' · ' + caches + ' autre' + (caches > 1 ? 's' : '') + ' caché' + (caches > 1 ? 's' : '') : '') + ' · The Odds API</div></div>';
 }
 function _g45AgFrBtn(box, x) {
   try {
