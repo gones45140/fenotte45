@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261008j, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261008k, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -380,6 +380,10 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   « victoire » en hockey affichée « Vainqueur (prolong. comprise) » + ⚠️ « ta victoire = temps réglementaire… ». Agenda : match ⭐ avec m.sp
   affiché « @ » / « vs » selon isDom + « · 🏠 Domicile / ✈️ Extérieur » (avant : toujours « vs »).
   20261008j (« victoire OU vainqueur » → 1,56 deux fois) : hockey + consigne citant AUSSI vainqueur → jambe victoire sans chiffre (« pas de cote chez ESPN »).
+  20261008k — SONDÉ PAR ANTOINE : ESPN Top 14 scoreboard = odds null ; liste The Odds API = rugbyleague_nrl et basketball_euroleague (PAS
+  Top 14, Pro A, KHL). `_g45AgOaOd(clé, m)` : route /odds du worker (inchangée), h2h, région fr puis eu, cache g45agoa1_<clé>_<rég> 6 h
+  (échec 30 min), médiane des books, match par noms + coup d'envoi ± 18 h (`_g45AgOaTrouver`) ; Euroleague = The Odds API seule, NRL = ESPN
+  puis The Odds API ; Top 14 / Pro A / KHL → « pas de cotes gratuites pour cette compétition ». Testé Chromium (faux /odds) : 5 cas.
 - 🏷️ SPORT SUR CHAQUE PARI (20261005h, « il manque peut-être le sport ? », maquette validée « Oui ») : bloc en fin d'app.js —
   `_g45ParisSport(h)` = h.sport, sinon u.sport de l'équipe du mur (h.n), sinon deviné par h.comp (`_G45_PARIS_COMP`, MotoGP avant F1) ;
   rond `_g45ParisRond(h, px)` (couleurs Agenda `_G45_PARIS_COUL`) au-dessus du logo du book dans `_g45BetRowMini` (Paris filtrés) et

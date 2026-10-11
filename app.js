@@ -42578,7 +42578,7 @@ window.g45F1Session=g45F1Session;
    et les données utilisateur n'étaient JAMAIS écrites — l'ajout apparaissait à l'écran puis
    disparaissait au rechargement. Ce n'était ni la synchro GitHub, ni Dropbox, ni le cache
    du navigateur. Tous ces caches sont reconstructibles : ils cèdent la place aux données. */
-var _G45_CACHE_PREFIXES=['g45reg1_',/* 08/10 : régularité buteurs NHL */'g45bb1_','g45bbst1_','g45bbld1_','g45bbf1_',/* 03/10 : Pro A be-basketball */'g45es1_',/* 01/10 : stats Euroleague */'g45kbo1_',/* 01/10 : KBO (mykbostats) */'g45t14lg1',/* 01/10 : logos Top 14 (LNR) */'g45pd2_',/* 01/10 : Pro D2 (LNR) */'g45t14sq1_',/* 01/10 : effectifs Top 14 (LNR) */'g45nrlm1_','g45nrldr1_',/* 01/10 : feuilles et calendriers NRL */'g45nrlsq1_',/* 01/10 : effectifs NRL */'g45nrlst2_',/* 01/10 : classements NRL */'g45proacid1_',/* 30/09 : numéros LNB par saison */'g45proast1_',/* 30/09 : stats Pro A */'g45proa1_',/* 30/09 : Pro A par journée */'g45el1_',/* 30/09 : Euroleague (compact) */'g45buts1_',/* 30/09 : buts en action (match fini) */'g45prad1_','g45vsj1_','g45vse1_',/* 30/09 : radars joueurs */'g45ia1_',/* 29/09 : avis IA gardés 6 h */'g45_mmeta2_','g45_mmeta1_','g45_tennis4_','g45_tennis3_',/* 16/09 : meta de match (domicile/lieu) et score tennis, reconstructibles */'g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dcf_','g45dc_',
+var _G45_CACHE_PREFIXES=['g45agoa1_',/* 11/10 : cotes Agenda (The Odds API) */'g45reg1_',/* 08/10 : régularité buteurs NHL */'g45bb1_','g45bbst1_','g45bbld1_','g45bbf1_',/* 03/10 : Pro A be-basketball */'g45es1_',/* 01/10 : stats Euroleague */'g45kbo1_',/* 01/10 : KBO (mykbostats) */'g45t14lg1',/* 01/10 : logos Top 14 (LNR) */'g45pd2_',/* 01/10 : Pro D2 (LNR) */'g45t14sq1_',/* 01/10 : effectifs Top 14 (LNR) */'g45nrlm1_','g45nrldr1_',/* 01/10 : feuilles et calendriers NRL */'g45nrlsq1_',/* 01/10 : effectifs NRL */'g45nrlst2_',/* 01/10 : classements NRL */'g45proacid1_',/* 30/09 : numéros LNB par saison */'g45proast1_',/* 30/09 : stats Pro A */'g45proa1_',/* 30/09 : Pro A par journée */'g45el1_',/* 30/09 : Euroleague (compact) */'g45buts1_',/* 30/09 : buts en action (match fini) */'g45prad1_','g45vsj1_','g45vse1_',/* 30/09 : radars joueurs */'g45ia1_',/* 29/09 : avis IA gardés 6 h */'g45_mmeta2_','g45_mmeta1_','g45_tennis4_','g45_tennis3_',/* 16/09 : meta de match (domicile/lieu) et score tennis, reconstructibles */'g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dcf_','g45dc_',
   'g45trv3_','g45trv2_','g45trOdds_','g45tr_','g45but_st_','g45butL_','g45butA_','g45but_mur_',
   '_g45clv','g45clv_snaps','g45_saisons_cache_v3_','g45_saisons_cache_v2_',
   /* Ajoutes le 20/08 : ces caches, tous reconstructibles, n'etaient PAS declares
@@ -71195,8 +71195,51 @@ function _g45AgOdHtml(C, od, sp) {
   if (C.seuil && seuilV > 1) h += '<div style="margin-top:3px;font-weight:800;color:' + (seuilV < C.seuil ? '#1ed760' : '#ff6b6b') + ';">'
     + (seuilV < C.seuil ? '✅ cote ' + f(seuilV) + ' < ' + String(C.seuil).replace('.', ',') + ' : condition remplie' : '❌ cote ' + f(seuilV) + ' ≥ ' + String(C.seuil).replace('.', ',') + ' : condition non remplie') + '</div>';
   if (noteHk) h += '<div style="font-size:13px;color:#ffb36b;margin-top:2px;">⚠️ ta victoire = temps réglementaire : ESPN ne la donne pas, sa cote sera plus haute chez ton book</div>';
-  return h + '<div style="font-size:12px;color:#9fb0c7;margin-top:2px;">Cotes ESPN (DraftKings) : indication</div>';
+  return h + '<div style="font-size:12px;color:#9fb0c7;margin-top:2px;">' + (od.src === 'oa' ? 'Cotes The Odds API : médiane de ' + od.nb + ' bookmaker' + (od.nb > 1 ? 's' : '') + (od.reg === 'fr' ? ' français' : ' européen' + (od.nb > 1 ? 's' : '')) : 'Cotes ESPN (DraftKings) : indication') + '</div>';
 }
+/* 20261008k — The Odds API (route /odds du worker, déjà en place : n'importe quelle clé de sport, cache worker 3 h) pour l'Euroleague
+   et la NRL (clés lues par Antoine sur la liste officielle : basketball_euroleague, rugbyleague_nrl). UN appel h2h par championnat
+   (1 crédit), région fr d'abord, eu si le match n'y est pas (2e crédit) ; cache appareil g45agoa1_<clé>_<région> 6 h (échec 30 min).
+   Cote = MÉDIANE des bookmakers ; match retrouvé par noms (_g45AgMemeEq) et coup d'envoi à ± 18 h. */
+var _g45AgOaMem = {};
+function _g45AgOaLire(k, reg) {
+  var ck = 'g45agoa1_' + k + '_' + reg;
+  if (_g45AgOaMem[ck]) return _g45AgOaMem[ck];
+  try { var c = JSON.parse(localStorage.getItem(ck) || 'null'); if (c && Date.now() - c.t < (c.ok ? 6 * 3600000 : 1800000)) return (_g45AgOaMem[ck] = Promise.resolve(c.d || [])); } catch (e) {}
+  if (typeof FD_PROXY === 'undefined') return Promise.resolve([]);
+  return (_g45AgOaMem[ck] = fetch(FD_PROXY + '/odds?sport=' + k + '&regions=' + reg + '&markets=h2h')
+    .then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; })
+    .then(function (j) {
+      var ok = Array.isArray(j), d = ok ? j.map(function (e) { return { h: e.home_team, a: e.away_team, t: e.commence_time,
+        b: (e.bookmakers || []).map(function (b) { var mk = (b.markets || []).filter(function (x) { return x.key === 'h2h'; })[0]; return mk ? mk.outcomes.map(function (o) { return [o.name, o.price]; }) : null; }).filter(Boolean) }; }) : [];
+      try { localStorage.setItem(ck, JSON.stringify({ t: Date.now(), ok: ok, d: d })); } catch (e) {}
+      return d;
+    }));
+}
+function _g45AgMed(a) { a = a.filter(function (x) { return x > 1; }).sort(function (x, y) { return x - y; }); if (!a.length) return 0; var n = a.length; return n % 2 ? a[(n - 1) / 2] : (a[n / 2 - 1] + a[n / 2]) / 2; }
+function _g45AgOaTrouver(L, m) {
+  var t0 = Date.parse(m.date), best = null;
+  (L || []).forEach(function (e) {
+    if (best || !e.b || !e.b.length) return;
+    if (!isNaN(t0) && Math.abs(Date.parse(e.t) - t0) > 18 * 3600000) return;
+    var moiH = _g45AgMemeEq(m.ourName, e.h), moiA = _g45AgMemeEq(m.ourName, e.a);
+    if (!moiH && !moiA) return;
+    var advOk = _g45AgMemeEq(m.adv, moiH ? e.a : e.h);
+    if (!advOk && isNaN(t0)) return;
+    var pr = function (nom) { return _g45AgMed(e.b.map(function (bk) { var o = bk.filter(function (x) { return x[0] === nom; })[0]; return o ? o[1] : 0; })); };
+    best = { h: pr(e.h), a: pr(e.a), d: pr('Draw'), line: null, ov: 0, un: 0, moiDom: moiH, src: 'oa', nb: e.b.length };
+  });
+  return best;
+}
+async function _g45AgOaOd(k, m) {
+  try {
+    var od = _g45AgOaTrouver(await _g45AgOaLire(k, 'fr'), m);
+    if (od) od.reg = 'fr';
+    else { od = _g45AgOaTrouver(await _g45AgOaLire(k, 'eu'), m); if (od) od.reg = 'eu'; }
+    return od;
+  } catch (e) { return null; }
+}
+window._g45AgOaTrouver = _g45AgOaTrouver;
 /* Appelée par loadCalendrier : L = [{i, m, C}] (placeholder #g45agod-<i>). */
 window._g45AgCotes = function (L) {
   var ymd = function (d) { return d.getUTCFullYear() + String(d.getUTCMonth() + 1).padStart(2, '0') + String(d.getUTCDate()).padStart(2, '0'); };
@@ -71205,6 +71248,20 @@ window._g45AgCotes = function (L) {
     if (x.C.nobet) { box.innerHTML = '<div style="color:#ff6b6b;font-weight:800;">⛔ pas de pari (consigne « no bet »)</div>'; return; }
     if (!x.C.opts.length) return;
     var sp = m.sp || 'soccer', lg = String(m.compSlug || '');
+    /* 20261008k : Euroleague → The Odds API (basketball_euroleague) ; NRL → ESPN puis The Odds API (rugbyleague_nrl) ; Top 14, Pro A,
+       KHL : aucune source gratuite (ESPN Top 14 = odds null, SONDÉ PAR ANTOINE ; absents de la liste The Odds API, lue par Antoine). */
+    var oaK = (sp === 'basketball' && /euroleague|euroligue/i.test(m.comp || '')) ? 'basketball_euroleague' : (sp === 'rugby-league' || lg === '3') ? 'rugbyleague_nrl' : '';
+    var sansSrc = !oaK && (lg === 'khl' || lg === '270559' || /top ?14/i.test(m.comp || '') || (sp === 'basketball' && /pro ?a|betclic|[ée]lite/i.test(m.comp || '')));
+    if (sansSrc) { box.innerHTML = '<div style="color:#9fb0c7;font-size:13px;">💶 pas de cotes gratuites pour cette compétition</div>'; return; }
+    if (oaK === 'basketball_euroleague') {
+      var dE = new Date(m.date);
+      if (isNaN(dE) || dE.getTime() - Date.now() > 8 * 86400000) { box.innerHTML = '<div style="color:#9fb0c7;font-size:13px;">💶 cotes pas encore publiées (match dans plus de 8 jours)</div>'; return; }
+      _g45AgOaOd(oaK, m).then(function (od) {
+        if (!document.body.contains(box)) return;
+        box.innerHTML = od ? _g45AgOdHtml(x.C, od, m.sp) : '<div style="color:#9fb0c7;font-size:13px;">💶 cotes pas encore publiées</div>';
+      });
+      return;
+    }
     if (!lg || /^(khl|kbo|euroleague|proa|eb)$/i.test(lg) || (sp === 'soccer' && !/^[a-z]{3}\.[a-z0-9.]+$/i.test(lg))) return;
     var d = new Date(m.date); if (isNaN(d) || d.getTime() - Date.now() > 8 * 86400000) { box.innerHTML = '<div style="color:#9fb0c7;font-size:13px;">💶 cotes pas encore publiées (match dans plus de 8 jours)</div>'; return; }
     var jours = [ymd(d), ymd(new Date(d.getTime() - 86400000))];
@@ -71214,6 +71271,7 @@ window._g45AgCotes = function (L) {
         var evs = await _g45AgSb(sp, lg, jours[k]);
         for (var n = 0; n < evs.length && !od; n++) { try { od = _g45AgOdEv(evs[n], m); } catch (e) {} }
       }
+      if (oaK && (!od || od.vide || !(od.h > 1 || od.a > 1))) { var od2 = await _g45AgOaOd(oaK, m); if (od2) od = od2; }
       if (!document.body.contains(box)) return;
       if (!od) return;
       if (od.vide || !(od.h > 1 || od.a > 1 || od.ov > 1 || od.un > 1 || od.line != null)) { box.innerHTML = '<div style="color:#9fb0c7;font-size:13px;">💶 cotes pas encore publiées par ESPN</div>'; return; }
