@@ -71146,6 +71146,16 @@ function _g45AgOdEv(e, m) {
   var pk = function (n) { return n && ((n.close && n.close.odds) || (n.open && n.open.odds) || n.odds); };
   var ov = _g45TrDec(o0.overOdds) || _g45TrDec(pk(tot.over)) || (cur.over && _g45TrDec(cur.over.decimal || cur.over.american)) || 0;
   var un = _g45TrDec(o0.underOdds) || _g45TrDec(pk(tot.under)) || (cur.under && _g45TrDec(cur.under.decimal || cur.under.american)) || 0;
+  /* 20261008h — SONDÉ PAR ANTOINE (Brewers–Dodgers, MLB) : pas de moneyline ni de moneyLine dans homeTeamOdds / awayTeamOdds,
+     seulement details « MIL -113 » = cote AMÉRICAINE du favori (abréviation) → cote décimale de CE camp ; l'autre reste vide. */
+  if (!(t.h > 1) && !(t.a > 1) && o0.details) {
+    var md = String(o0.details).match(/^\s*([A-Za-z]{2,5})\s*([+-]?\d{3,})\s*$/);
+    if (md) {
+      var cDec = _g45TrDec(md[2]), ab = md[1].toUpperCase();
+      var abH = String((H.team && H.team.abbreviation) || '').toUpperCase(), abA = String((A.team && A.team.abbreviation) || '').toUpperCase();
+      if (cDec > 1) { if (ab === abH) t.h = cDec; else if (ab === abA) t.a = cDec; }
+    }
+  }
   var line = o0.overUnder != null ? parseFloat(o0.overUnder) : (t.line != null ? parseFloat(t.line) : null);
   return { h: t.h, d: t.d, a: t.a, line: isNaN(line) ? null : line, ov: ov, un: un, moiDom: moiDom };
 }
@@ -71198,7 +71208,7 @@ window._g45AgCotes = function (L) {
       }
       if (!document.body.contains(box)) return;
       if (!od) return;
-      if (od.vide || !(od.h > 1 || od.a > 1 || od.ov > 1)) { box.innerHTML = '<div style="color:#9fb0c7;font-size:13px;">💶 cotes pas encore publiées par ESPN</div>'; return; }
+      if (od.vide || !(od.h > 1 || od.a > 1 || od.ov > 1 || od.un > 1 || od.line != null)) { box.innerHTML = '<div style="color:#9fb0c7;font-size:13px;">💶 cotes pas encore publiées par ESPN</div>'; return; }
       box.innerHTML = _g45AgOdHtml(x.C, od, m.sp);
     })();
   });
