@@ -71852,7 +71852,9 @@ function _g45IdJoueur(h, avant) {
   try {
     if (typeof _g45IdF1 !== 'function' || _g45IdF1._g45Jph) return;
     var o = _g45IdF1;
-    _g45IdF1 = function (h, avant) { var r = o.apply(this, arguments); return _g45IdJoueur(h, r); };
+    /* 20261011i (capture : pari F1 « Vainqueur GP » + pilotes en joueurs → logo F1 remplacé par des initiales « VP ») :
+       carte FORMULE 1 (logo posé par _g45IdF1, résultat ≠ avant) → le logo F1 reste, pas de photo de joueur. */
+    _g45IdF1 = function (h, avant) { var r = o.apply(this, arguments); return r !== avant ? r : _g45IdJoueur(h, r); };
     _g45IdF1._g45Jph = true;
   } catch (e) {}
 })();
@@ -72086,6 +72088,16 @@ function _g45CourbePropre(ch, dates) {
   var ds = ch.data.datasets[0];
   ds.pointRadius = 0; ds.pointHoverRadius = 7;
   if (dates) {
+    /* 20261011i (capture : « 11/10 · 6 paris · Capital … +128.47€ · Betclic ») : l'infobulle d'origine prenait le bookmaker
+       de sorted[index] = le N-ième PARI, alors qu'un point est une JOURNÉE (6 paris, plusieurs books) → book retiré. */
+    try {
+      var tt = ch.options.plugins.tooltip.callbacks, lb = tt.label;
+      tt.label = function () {
+        var r = lb ? lb.apply(this, arguments) : '';
+        if (Array.isArray(r) && r[1]) r = [r[0], String(r[1]).split(' \u00b7 ')[0]];
+        return r;
+      };
+    } catch (e) {}
     try {
       var tk = ch.options.scales.x.ticks, cb = tk.callback;
       tk.callback = function () {
