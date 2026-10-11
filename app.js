@@ -4892,7 +4892,9 @@ function _g45CarteResultatHTML(h, logos){
     +'<div style="position:relative;text-align:center;padding:0 22px;font-size:16px;font-weight:800;color:#fff;">'+titreHtml+'</div>'
     +'<div style="position:relative;text-align:center;padding:4px 22px 16px;font-size:11px;color:#8b97c4;">'+(h.comp?('<span style="display:inline-block;font-size:9px;font-weight:900;letter-spacing:.06em;color:#c9d2f0;border:1px solid rgba(255,255,255,.16);padding:3px 8px;border-radius:6px;background:rgba(255,255,255,.05);margin-right:6px;">'+h.comp.toUpperCase()+'</span>'):'')+(h.date||'')+'</div>'
     +(score?('<div style="position:relative;text-align:center;padding:0 22px 10px;"><span style="font-size:26px;font-weight:900;color:#fff;">'+score+'</span></div>'):'')
-    +'<div style="position:relative;text-align:center;padding:0 22px 18px;font-size:11px;color:#8b97c4;">'+(typeTxtC||'')+'</div>'
+    /* 20261009c (maquette validée « oui ») : pari sur un JOUEUR → photo ronde + nom (initiales sans photo), type dessous. */
+    +((typeof _g45CarteJoueursHtml==='function' && _g45CarteJoueursHtml(h, logos, coul1, typeTxtC))
+      || ('<div style="position:relative;text-align:center;padding:0 22px 18px;font-size:11px;color:#8b97c4;">'+(typeTxtC||'')+'</div>'))
     +'<div style="position:relative;display:flex;border-top:1px solid rgba(255,255,255,.08);">'
       +'<div style="flex:1;text-align:center;padding:14px 8px;border-right:1px solid rgba(255,255,255,.08);"><div style="font-size:9px;color:#5b6690;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Mise</div><div style="font-size:15px;font-weight:800;color:#fff;">'+parseFloat(h.m).toFixed(2)+'€</div></div>'
       +'<div style="flex:1;text-align:center;padding:14px 8px;border-right:1px solid rgba(255,255,255,.08);"><div style="font-size:9px;color:#5b6690;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Cote</div><div style="font-size:15px;font-weight:800;color:#fff;">'+parseFloat(h.cote).toFixed(2)+'</div></div>'
@@ -4918,6 +4920,8 @@ async function g45PartagerPari(id){
     ]);
     _lg = { a: _r[0], b: _r[1] };
   } catch (e) { _lg = {}; }
+  /* 20261009c : logo de l'adversaire absent du mur (Liverpool) → ESPN ; photos des joueurs du pari (données intégrées). */
+  try { if (typeof _g45CarteComplements === 'function') await _g45CarteComplements(h, _nm, _lg); } catch (e) {}
   var wrap=document.createElement('div');
   wrap.style.cssText='position:fixed;left:-9999px;top:0;';
   wrap.innerHTML=_g45CarteResultatHTML(h, _lg);
@@ -71703,4 +71707,84 @@ function _g45ChNom(n) {
     .replace(/^(Foul|Handball|Hand ball|Offside|Own Goal|Dangerous play)\s+by\s+/i, '')
     .replace(/^Delay\b.*?\binjury\s+/i, '');
   return s.trim();
+}
+
+/* ===================== 20261009c — CARTE PARTAGÉE : PHOTO DU JOUEUR + LOGO DE L'ADVERSAIRE =====================
+   Antoine (carte « Manchester City vs Liverpool », « Joueur décisif » sans nom, carré vert « LIV ») ; maquette validée « oui ».
+   • Joueur(s) du pari (h.joueurs / h.joueur, 3 max) : photo foot = _g45ClsPhotoDe (perso → Wikipédia → TheSportsDB → API-Sports) ;
+     autres sports = TheSportsDB (_g45JoueurVisChercher, sport du pari) ; convertie en donnée intégrée (_g45CarteLogoData) car
+     html2canvas ne doit voir aucune URL externe ; échec = initiales.
+   • Adversaire sans logo (pas au mur) : espnResolveTeam (foot) → écusson ESPN 500/<id>.png. */
+if (typeof _G45_VIS_SPORT !== 'undefined') {
+  if (!_G45_VIS_SPORT.nfl) _G45_VIS_SPORT.nfl = /american football/i;
+  if (!_G45_VIS_SPORT.basketball) _G45_VIS_SPORT.basketball = /basketball/i;
+  if (!_G45_VIS_SPORT.baseball) _G45_VIS_SPORT.baseball = /baseball/i;
+}
+function _g45CarteJoueursNoms(h) {
+  var L = (h.joueurs && h.joueurs.length) ? h.joueurs.map(function (j) { return j && j.nom; }) : (h.joueur ? [h.joueur] : []);
+  return L.filter(function (x) { return x && String(x).trim(); }).map(function (x) { return String(x).trim(); }).slice(0, 3);
+}
+function _g45CarteVisSport(h) {
+  var sp = String(h.sport || ''), t = sp + ' ' + String(h.comp || '');
+  if (/🇦🇺|nrl/i.test(t)) return 'rugby-league';
+  if (/🏉|rugby|top 14/i.test(t)) return 'rugby';
+  if (/🏒|nhl|khl|hockey/i.test(t)) return 'hockey';
+  if (/🏈|nfl/i.test(t)) return 'nfl';
+  if (/🏀|nba|euroleague/i.test(t)) return 'basketball';
+  if (/⚾|mlb/i.test(t)) return 'baseball';
+  if (/🎾/.test(sp)) return 'tennis';
+  return 'soccer';
+}
+async function _g45CarteComplements(h, nm, lg) {
+  var taches = [];
+  if (nm && nm.adv && !lg.b && typeof espnResolveTeam === 'function' && _g45CarteVisSport(h) === 'soccer') {
+    taches.push((async function () {
+      try {
+        var t = await Promise.race([espnResolveTeam(nm.adv), new Promise(function (r) { setTimeout(function () { r(null); }, 6000); })]);
+        if (t && (t.logo || t.id)) lg.b = await _g45CarteLogoData(t.logo || ('https://a.espncdn.com/i/teamlogos/soccer/500/' + t.id + '.png'));
+      } catch (e) {}
+    })());
+  }
+  var noms = _g45CarteJoueursNoms(h), sp = _g45CarteVisSport(h);
+  lg.j = {};
+  noms.forEach(function (n) {
+    taches.push((async function () {
+      var u = '';
+      try {
+        if (sp === 'soccer' && typeof _g45ClsPhotoDe === 'function') u = await _g45ClsPhotoDe(n, h.n !== 'SIMPLE' ? h.n : '', { n: 2, p: {} });
+        else if (typeof _g45JoueurVisChercher === 'function') {
+          var v = await _g45JoueurVisChercher(n, sp);
+          var r2 = (typeof _g45R2 === 'function') ? _g45R2 : function (x) { return x; };
+          if (v) u = (v.thumb && r2(v.thumb)) || (v.cut && r2(v.cut)) || '';
+        }
+      } catch (e) {}
+      if (u) { try { lg.j[n] = await _g45CarteLogoData(u); } catch (e) {} }
+    })());
+  });
+  await Promise.race([Promise.all(taches), new Promise(function (r) { setTimeout(r, 12000); })]);
+}
+function _g45CarteJoueursHtml(h, logos, coul, typeTxt) {
+  var noms = _g45CarteJoueursNoms(h);
+  if (!noms.length) return '';
+  var esc = function (x) { return String(x == null ? '' : x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); };
+  var J = (logos && logos.j) || {}, un = noms.length === 1, tx = un ? 58 : 46;
+  var ini = function (n) { var m = n.split(/\s+/).filter(Boolean); return ((m[0] || '?').charAt(0) + (m.length > 1 ? m[m.length - 1].charAt(0) : '')).toUpperCase(); };
+  var c = coul || '#4d84ff';
+  var rond = function (n) {
+    return '<div style="flex:none;width:' + tx + 'px;height:' + tx + 'px;border-radius:50%;border:3px solid ' + c + ';overflow:hidden;display:flex;align-items:center;justify-content:center;'
+      + 'background:linear-gradient(145deg,' + c + ',' + c + '66);color:#fff;font-weight:900;font-size:' + (un ? 20 : 16) + 'px;">'
+      + (J[n] ? '<img src="' + J[n] + '" style="width:100%;height:100%;object-fit:cover;object-position:50% 12%;" alt="">' : esc(ini(n))) + '</div>';
+  };
+  var type = String(typeTxt || '').replace(/^.*?·\s*/, '') || typeTxt || '';
+  if (un) {
+    return '<div style="position:relative;display:flex;align-items:center;justify-content:center;gap:12px;padding:2px 22px 18px;">' + rond(noms[0])
+      + '<div style="text-align:left;min-width:0;"><div style="font-size:16px;font-weight:800;color:#fff;">' + esc(noms[0]) + '</div>'
+      + (type ? '<div style="font-size:13px;font-weight:600;color:#c9d3ee;margin-top:2px;">' + esc(type) + '</div>' : '') + '</div></div>';
+  }
+  return '<div style="position:relative;padding:2px 16px 18px;text-align:center;">'
+    + '<div style="display:flex;justify-content:center;gap:14px;">' + noms.map(function (n) {
+      return '<div style="display:flex;flex-direction:column;align-items:center;gap:5px;max-width:96px;">' + rond(n)
+        + '<div style="font-size:13px;font-weight:800;color:#fff;line-height:1.2;">' + esc(n) + '</div></div>';
+    }).join('') + '</div>'
+    + (type ? '<div style="font-size:13px;font-weight:600;color:#c9d3ee;margin-top:8px;">' + esc(type) + '</div>' : '') + '</div>';
 }

@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261009b, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261009c, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1011,7 +1011,11 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   `_g45ChNom` retire ces préfixes du nom (g45ChOuvrir) → un joueur = une ligne (testé 10/10).
 - CARTE DE PARTAGE D'UN PARI (`g45PartagerPari` → `_g45CarteResultatHTML`, mon équipe à GAUCHE) — 20261009a (capture « Manchester City vs
   Liverpool 0-3 », match Liverpool 0-3 City) : score _g45ScoreTexte = DOMICILE-EXTÉRIEUR → retourné si mon équipe était à l'extérieur
-  (_g45MatchMeta + _g45MemeNom, sinon h.domicile ; testé Chromium 4/4). Nom du joueur (h.joueur) absent de la carte : PROPOSÉ.
+  (_g45MatchMeta + _g45MemeNom, sinon h.domicile ; testé Chromium 4/4).
+  20261009c (maquette validée « oui ») : joueurs du pari (h.joueurs / h.joueur, 3 max) = photo ronde + nom sous le score (`_g45CarteJoueursHtml`,
+  initiales sinon) ; photos + logo de l'adversaire hors mur (espnResolveTeam → ESPN 500/<id>.png, foot) chargés par `_g45CarteComplements`
+  dans g45PartagerPari (foot = _g45ClsPhotoDe, autres = TheSportsDB par sport `_g45CarteVisSport` ; _G45_VIS_SPORT + nfl/basketball/baseball),
+  convertis en données intégrées (html2canvas). Photos réelles NON vérifiées (domaines bloqués depuis le cloud).
 - Bouton ⚡ « Ouvrir le match » des lignes de pari (`g45EclairPari` / `g45EclairOuvrirCible`) — 20261009b (« le flash fonctionne pas ») :
   cherchait le pari dans state.h SEULEMENT → muet sur un pari réglé (state.a) ; cherche maintenant state.h puis state.a (testé Chromium).
 - ⚾🇰🇷 KBO (20261001s, maquette validée « yes we can ») : tuile slug 'kbo' (Compétitions → Baseball, après MLB),
