@@ -71921,7 +71921,11 @@ function g45AccClubAller(v) {
     try { if (typeof g45OutilsSection === 'function') g45OutilsSection('eq'); } catch (e) {}
     var sp = document.getElementById('u-sport'); if (sp) sp.value = v;
     var cible = document.getElementById(v === '⚽' ? 'u-search' : 'u-name');
-    if (cible) { cible.scrollIntoView({ block: 'center' }); try { cible.focus(); } catch (e) {} }
+    /* 20261011c (capture : « Utiliser le mot de passe enregistré ? » dès le bouton bleu) : PAS de focus automatique —
+       le gestionnaire de mots de passe d'Android s'ouvrait aussitôt ; case encadrée en jaune 4 s à la place. */
+    _g45SansMdp();
+    if (cible) { cible.scrollIntoView({ block: 'center' }); cible.style.outline = '3px solid #f5c542'; cible.style.outlineOffset = '2px';
+      setTimeout(function () { cible.style.outline = ''; cible.style.outlineOffset = ''; }, 4000); }
   }, 200);
 }
 window.g45AccClubAller = g45AccClubAller;
@@ -71931,3 +71935,15 @@ window.g45AccClubAller = g45AccClubAller;
   _g45AccRegrouper = function () { var r = orig.apply(this, arguments); try { _g45ClubTuiles(); } catch (e) {} return r; };
   window._g45AccRegrouper = _g45AccRegrouper;
 })();
+
+/* 20261011c — Chrome Android proposait « Utiliser le mot de passe enregistré ? » sur la case Nom d'Outils → Équipes :
+   les cases de clés d'API (type="password", gemini-key-input…) font croire à un formulaire de connexion, la case
+   texte d'avant devenant l'« identifiant ». Clés → autocomplete="new-password" (jamais de mot de passe enregistré
+   proposé) ; cases d'équipe → autocomplete="off". */
+function _g45SansMdp() {
+  try {
+    [].forEach.call(document.querySelectorAll('input[type="password"]'), function (i) { i.setAttribute('autocomplete', 'new-password'); });
+    ['u-name', 'u-search', 'u-note', 'u-link', 'u-link2'].forEach(function (id) { var e = document.getElementById(id); if (e) e.setAttribute('autocomplete', 'off'); });
+  } catch (e) {}
+}
+setTimeout(_g45SansMdp, 1500);

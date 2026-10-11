@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261011b, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261011c, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1559,6 +1559,8 @@ ACCUEIL bet45 « CHOISIS TON CLUB » (20261011b, maquette validée « Parfait »
   de la démarche ; `g45AccClubAller(v)` → Outils, g45OutilsSection('eq'), #u-sport réglé, curseur dans #u-search (foot : CLUB_DB = FOOT
   SEULEMENT) ou #u-name. Exemples `_G45_CLUB_EX`. Contrôle ajouté au test « Accueil par sport ». fenotte45 : images/equipes/rugby.png
   (logo CJF Rugby Fleury, SANS droits — Antoine) et basket.png (photo 123RF avec filigrane) SUPPRIMÉS.
+  20261011c (capture : « Utiliser le mot de passe enregistré ? » au bouton bleu) : plus de focus auto (case encadrée jaune 4 s) ;
+  `_g45SansMdp` : input[type=password] (clés d'API d'Outils) → autocomplete new-password, u-name / u-search… → off. Effet sur Chrome Android NON vérifié.
 RÉGLÉ OU ABANDONNÉ (ne pas reproposer) :
 - APK bet45 sans barre d'adresse : OK. Logos Lakers / hockey : OK. « Connexion » sur le
   logo, paysage gones, pression en portrait, « 1. FC », cartes KHL, compos rugby : OK
