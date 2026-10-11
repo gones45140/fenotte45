@@ -1499,6 +1499,14 @@ RÉGLÉ (worker, 01/10) : cron « exceededCpu » (cpuTimeMs 10) à CHAQUE passag
 - Après la trêve : ESPN écrit-il des « Preview » pour le foot ? (summary sans lang=fr,
   article.type).
 
+BLOCAGE SFR (11/10, capture d'un ami d'Antoine) : « Navigation protégée » SFR (liste EfficientIP, depuis juin 2026) classe bet45.fr
+  « malware » (vérif. red-by-sfr.fr/couverture-reseau/navigation-protegee.html) ; HTTPS → ERR_CERT_AUTHORITY_INVALID (page de blocage
+  interceptée). Google Safe Browsing : aucun contenu suspect. Cause probable : telecharger/bet45.apk hébergé sur le site. Formulaire de
+  requalification = Espace Client SFR (l'ami le fera). Contournement ami : DNS privé dns.google. Fait : fenotte45/mentions-legales.html
+  (éditeur « Antoine T. », contact@bet45.fr = redirection créée par Antoine, hébergeur GitHub, Cloudflare/Supabase, données, cookies,
+  propriété « toute copie interdite », formule officielle jeu responsable) + liens en pied d'accueil.html et bas fixe de login.html.
+  À FAIRE : Antoine publie bet45.apk en Release GitHub (tag apk-v1, fenotte45) → _G45_APK = https://github.com/gones45140/fenotte45/releases/
+  latest/download/bet45.apk et suppression de telecharger/bet45.apk.
 RÉGLÉ OU ABANDONNÉ (ne pas reproposer) :
 - APK bet45 sans barre d'adresse : OK. Logos Lakers / hockey : OK. « Connexion » sur le
   logo, paysage gones, pression en portrait, « 1. FC », cartes KHL, compos rugby : OK
