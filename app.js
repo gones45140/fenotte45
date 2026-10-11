@@ -32549,7 +32549,9 @@ async function g45ChOuvrir(btn, lg, eid) {
   var M = _g45ButsMem[eid] = _g45ButsMem[eid] || { pages: {}, n: 0, ouv: {} };
   var ok = false; try { ok = await _g45ButsLire(lg, eid, M); } catch (e) {}
   var P = []; for (var p = 1; p <= (M.n || 0); p++) P = P.concat(M.pages[p] || []);
-  P = P.filter(function (a) { return a.x != null && a.nm; });
+  /* 20261008y (console d'Antoine, Haaland : « Out » à x 101 / y 100,4 comptés comme ses actions) : un « Out » = ballon
+     sorti, point HORS du terrain → retiré des cartes de chaleur et du nombre d'actions. */
+  P = P.filter(function (a) { return a.x != null && a.nm && !/^out$/i.test(String(a.ty || '').trim()); });
   if (!P.length) { z.innerHTML = '<div style="color:#ffb13d;font-size:14px;padding:6px 0;">ESPN ne publie pas le détail des actions pour ce match.</div>'; return; }
   _g45ChEtat[eid].P = P;
   _g45ChRendre(z, eid);
