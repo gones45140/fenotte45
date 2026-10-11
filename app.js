@@ -71971,3 +71971,58 @@ setTimeout(_g45SansMdp, 1500);
     + '.chart-info-bar .cib-val{flex:1 1 220px;min-width:0;white-space:normal;overflow-wrap:anywhere;line-height:1.5;}';
   (document.head || document.documentElement).appendChild(st);
 })();
+
+/* ═══ 20261011f — RÉPARTITION PAR TYPE DE PARI raccourcie (maquette validée « c'est mieux oui », 11/10) ═══
+   Capture d'Antoine : 40+ types (libellés libres des tickets) → légende Chart.js illisible SOUS le rond + pastilles en double,
+   sur deux écrans. Remplace renderChartTypeDonut (DEUX copies plus haut, celle-ci, déclarée en dernier, l'emporte) :
+   rond = 8 types les plus joués + part grise « Autres » ; légende du rond retirée ; pastilles = les 8 + Autres avec le NOMBRE
+   de paris ; bouton « ➕ Voir les N autres types ▾ » (window._g45TypeTout) qui déplie le reste. Couleurs : même getTypeColor
+   (index d'apparition), pastille = sélecteur de couleur comme avant. « Bénéfice par type » inchangé. */
+var _G45_TYPE_MAX = 8;
+function renderChartTypeDonut(){
+  var ctx=$i('chart-type-donut');if(!ctx)return;
+  if(window._gcTypeDonut){try{window._gcTypeDonut.destroy();}catch(e){}}
+  var types={};var i=0;
+  state.a.forEach(function(h){
+    var t=_normType(h.type);
+    if(!types[t]){types[t]={n:0,idx:i++};}
+    types[t].n++;
+  });
+  var entries=Object.entries(types).sort(function(a,b){return b[1].n-a[1].n;});
+  var picker=$i('type-donut-picker');
+  if(!entries.length){ if(picker) picker.innerHTML=''; return; }
+  var tete=entries.slice(0,_G45_TYPE_MAX), reste=entries.slice(_G45_TYPE_MAX);
+  var nReste=reste.reduce(function(a,e){return a+e[1].n;},0);
+  var labels=tete.map(function(e){return e[0];}), data=tete.map(function(e){return e[1].n;});
+  var colors=tete.map(function(e){return getTypeColor(e[0],e[1].idx);});
+  if(reste.length){ labels.push('Autres ('+reste.length+' types)'); data.push(nReste); colors.push('#6b7280'); }
+  var total=data.reduce(function(a,b){return a+b;},0);
+  window._gcTypeDonut=new Chart(ctx.getContext('2d'),{
+    type:'doughnut',
+    data:{labels:labels,datasets:[{data:data,backgroundColor:colors,borderWidth:2,borderColor:'var(--bg)'}]},
+    options:{animation:false,responsive:true,maintainAspectRatio:false,cutout:'65%',
+      plugins:{legend:{display:false},
+        tooltip:{callbacks:{label:function(it){return it.label+': '+it.raw+' ('+((it.raw/total)*100).toFixed(1)+'%)';}}}}}
+  });
+  if(!picker) return;
+  var esc=function(x){return String(x==null?'':x).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});};
+  var pastille=function(e){
+    var col=getTypeColor(e[0],e[1].idx);
+    return '<div style="display:flex;align-items:center;gap:6px;padding:5px 11px;background:var(--s1);border-radius:20px;cursor:pointer;" data-type="'+esc(e[0])+'" onclick="openTypePicker(this)">'
+      +'<div style="width:12px;height:12px;border-radius:50%;background:'+col+';flex-shrink:0;"></div>'
+      +'<span style="font-size:14px;color:#fff;">'+esc(e[0])+' <b style="color:#c9d3ee;">'+e[1].n+'</b></span>'
+      +'<input type="color" id="tp-'+e[0].replace(/[^a-z0-9]/gi,'_')+'" value="'+col+'" data-type="'+esc(e[0])+'" onchange="changeTypeColor(this.dataset.type,this.value)" style="opacity:0;position:absolute;width:0;height:0;">'
+      +'</div>';
+  };
+  var h=tete.map(pastille).join('');
+  if(reste.length){
+    h+='<div style="display:flex;align-items:center;gap:6px;padding:5px 11px;background:var(--s1);border-radius:20px;">'
+      +'<div style="width:12px;height:12px;border-radius:50%;background:#6b7280;"></div>'
+      +'<span style="font-size:14px;color:#fff;">Autres <b style="color:#c9d3ee;">'+nReste+'</b></span></div>';
+    h+='<button onclick="window._g45TypeTout=!window._g45TypeTout;renderChartTypeDonut();" style="flex:1 1 100%;margin-top:2px;padding:10px;border-radius:10px;border:1px solid #3b82f6;background:transparent;color:#fff;font-size:14px;font-weight:800;cursor:pointer;">'
+      +(window._g45TypeTout?'➖ Masquer les autres types ▴':'➕ Voir les '+reste.length+' autres types ▾')+'</button>';
+    if(window._g45TypeTout) h+=reste.map(pastille).join('');
+  }
+  picker.innerHTML=h;
+}
+window.renderChartTypeDonut=renderChartTypeDonut;
