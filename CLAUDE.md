@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261012c, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261012d, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1598,6 +1598,10 @@ FICHE D'ÉQUIPE (20261012a, maquette validée « oui », captures Rams) : feuill
   (étiquettes brutes « 2026-09-22 02:20 vs … P2||-20.00€ » avant), infobulle sans « || », window._gcClub = AC.courbe (barre « Touche un point » était muette).
 CLASSEMENT DE LA FENÊTRE DE MATCH (`_g45FillStandings`, 20261012c, capture Rams–Bills « manque les pts ou % ») : NFL / NBA / MLB → J = G + N + P,
   dernière colonne « % V » (nul = ½), tri % puis Diff ; hockey → tri points puis Diff ; foot / rugby inchangés (rang ESPN). Testé vm.
+BANDEAU DE PRÉVENTION (20261012d, demande d'Antoine d'après la bande jaune d'un site de paris : « faut tout mettre ») : `_g45PrevPoser` (fin
+  d'app.js) — bet45 SEULEMENT (`_g45SanteActive` faux) : bande jaune #f7dc4a, 1re ligne pleine largeur DANS header.topbar (sticky), texte officiel
+  (dangereux… / joueurs-info-service.fr 09 74 75 13 13) + images/gouvernement.png (fenotte45, découpé de la capture d'Antoine) ; cachée en paysage
+  téléphone. Formule de Potes (social.js) et mentions légales inchangées. Compte X @Bet45_fr créé le 12/10 (bannière + logo faits par Claude).
 RÉGLÉ OU ABANDONNÉ (ne pas reproposer) :
 - APK bet45 sans barre d'adresse : OK. Logos Lakers / hockey : OK. « Connexion » sur le
   logo, paysage gones, pression en portrait, « 1. FC », cartes KHL, compos rugby : OK

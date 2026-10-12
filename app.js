@@ -72244,3 +72244,34 @@ function _g45CourbePropre(ch, dates) {
     window.openClub = openClub;
   }
 })();
+
+/* ═══ 20261012d — BANDEAU DE PRÉVENTION EN HAUT (bet45 seulement) ═══
+   Antoine (13/10, capture d'un site de paris : bande jaune fine sur toute la largeur, message officiel +
+   bloc « Gouvernement ») : « faut tout mettre, même si ça me fait chier », « gones sert qu'à moi ».
+   → bande jaune DANS header.topbar (première ligne, pleine largeur : elle reste collée en haut avec
+   l'en-tête, sticky), texte officiel + images/gouvernement.png (fenotte45 seulement). GONES45 : rien
+   (_g45SanteActive vrai). Paysage téléphone : l'en-tête est réduit (style.css) → bande non posée. */
+function _g45PrevPoser() {
+  try {
+    if (_g45SanteActive()) return;
+    if (document.getElementById('g45-prev-ban')) return;
+    var hd = document.querySelector('header.topbar'); if (!hd) return;
+    if (!document.getElementById('g45-prev-css')) {
+      var st = document.createElement('style'); st.id = 'g45-prev-css';
+      st.textContent = 'header.topbar{flex-wrap:wrap}'
+        + '#g45-prev-ban{order:-1;flex:0 0 calc(100% + 32px);margin:-12px -16px 10px;background:#f7dc4a;color:#000;display:flex;align-items:center;gap:8px;padding:5px 8px 5px 10px;box-sizing:border-box}'
+        + '#g45-prev-ban .t{flex:1;min-width:0;font-weight:800;text-transform:uppercase;line-height:1.3;letter-spacing:.2px}'
+        + '#g45-prev-ban .t b{display:block;font-size:10.5px;font-weight:900}#g45-prev-ban .t span{display:block;font-size:9.5px;margin-top:2px}'
+        + '#g45-prev-ban img{height:38px;width:auto;flex:none;border-radius:4px;background:#fff}'
+        + '@media (orientation:landscape) and (max-height:520px) and (max-width:1099px){#g45-prev-ban{display:none}}';
+      document.head.appendChild(st);
+    }
+    var b = document.createElement('div'); b.id = 'g45-prev-ban';
+    b.innerHTML = '<div class="t"><b>Les jeux d’argent et de hasard peuvent être dangereux : pertes d’argent, conflits familiaux, addiction…</b>'
+      + '<span>Retrouvez nos conseils sur joueurs-info-service.fr (09 74 75 13 13 – appel non surtaxé)</span></div>'
+      + '<img src="./images/gouvernement.png" alt="Gouvernement" onerror="this.style.display=\'none\'">';
+    hd.insertBefore(b, hd.firstChild);
+  } catch (e) {}
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', _g45PrevPoser); else _g45PrevPoser();
+setTimeout(_g45PrevPoser, 1500);
