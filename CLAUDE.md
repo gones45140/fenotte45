@@ -1412,7 +1412,9 @@ RÉGLÉ (worker, 01/10) : cron « exceededCpu » (cpuTimeMs 10) à CHAQUE passag
 À VOIR (en attente d'un retour d'Antoine) :
 - 💶 ABONNEMENT (prévu par Antoine « dès mardi » 13/10/2026) : en place = visiteur 50 paris max puis compte (auth-guard
   SEUIL_ESSAI_GRATUIT) ; compte = premium 30 j (`_g45AccesPremium`), puis bouton PayPal paypal.me/touraineantoine ; Antoine
-  coche user_supporter.soutien à la main. À FAIRE : verrou CÔTÉ SERVEUR (RLS Supabase / worker) ; rappel à Antoine :
+  coche user_supporter.soutien à la main. Moyens de paiement à comparer mardi : PayPal Business, Stripe (vérifier sa liste d'activités interdites), Whop
+  (concurrent « Astuces Paris Sportifs » : 9,99 / 14,99 / 19,99 €/mois ; Antoine trouve la page Whop « pas pro » → Whop seulement en moteur de paiement,
+  page d'abonnement DANS bet45). À FAIRE : verrou CÔTÉ SERVEUR (RLS Supabase / worker) ; rappel à Antoine :
   vente ≠ don → compte PayPal PRO + déclaration (micro-entreprise). Ne pas récupérer de clé ni de secret pour ça.
 - 🎯 BUTEURS LES PLUS RÉGULIERS (07/10, maquette « oui ») : Antoine veut un CLASSEMENT des 10 meilleurs buteurs de la LIGUE (NHL
   d'abord, autres sports ensuite si ça lui plaît) : buts, matchs joués, % de matchs avec but, PIRE SÉRIE sans marquer (matchs joués
