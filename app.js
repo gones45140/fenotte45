@@ -72158,3 +72158,43 @@ function _g45CourbePropre(ch, dates) {
     + '.g45-rg{flex-direction:column !important;gap:5px !important;}.g45-ricones{flex-direction:row !important;margin-right:0 !important;}}';
   (document.head || document.documentElement).appendChild(st);
 })();
+
+/* ═══ 20261012a — FICHE D'ÉQUIPE : réussite lisible + Archive comme le Bilan (captures Rams d'Antoine, 12/10) ═══
+   « La réussite est peu visible » : le % du rond prenait la couleur du club (bleu nuit des Rams sur fond sombre) → blanc 22 px,
+   « réussite » blanc 12 px, lignes victoires / défaites / cote / mise en 14-15 px (#ip-bilan seulement).
+   « On sait pas si c'est domicile ou extérieur, il y a mieux à faire » : l'onglet Archive (#ip-archive, DEUX copies d'openClub)
+   montrait l'adversaire seul, un regroupement « 10/04 » (mois/jour) et le gain BRUT (+28,40 € au lieu de +8,40 €) → refait avec
+   les lignes du Bilan (_g45BetRowMini : club qui reçoit à gauche, score, rond du sport, book, photo joueur), jours « Samedi 4 »
+   et gain NET par jour, plus récent en haut. Enveloppe d'openClub. */
+(function () {
+  if (!document.getElementById('g45-club-lisible')) {
+    var st = document.createElement('style'); st.id = 'g45-club-lisible';
+    st.textContent = '#ip-bilan .rcenter .rv{color:#fff !important;font-size:22px !important;}#ip-bilan .rcenter .rl{color:#fff !important;font-size:12px !important;}'
+      + '#ip-bilan .ringwrap > div:last-child > div{font-size:15px !important;}#ip-bilan .ringwrap > div:last-child > div:nth-child(n+3){font-size:14px !important;color:#c9d3ee !important;}';
+    (document.head || document.documentElement).appendChild(st);
+  }
+  function _g45ClubArchive(nom) {
+    var box = $i('ip-archive'); if (!box || typeof _g45BetRowMini !== 'function') return;
+    var paris = ((state && state.a) || []).filter(function (h) { return h && h.n === nom; });
+    if (!paris.length) return;
+    var jours = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+    var tri = paris.slice().sort(function (a, b) { var x = (a.date || '') + ' ' + (a.heure || ''), y = (b.date || '') + ' ' + (b.heure || ''); return y < x ? -1 : (y > x ? 1 : 0); });
+    var parJ = {}, ordre = [];
+    tri.forEach(function (h) { var k = h.date || 'Inconnu'; if (!parJ[k]) { parJ[k] = []; ordre.push(k); } parJ[k].push(h); });
+    box.innerHTML = ordre.map(function (k) {
+      var L = parJ[k], p = L.reduce(function (a, h) { var m = parseFloat(h.m || 0); return a + (h.win ? m * parseFloat(h.cote || 0) - m : -m); }, 0);
+      var lib = k, d = /^(\d{4})-(\d{2})-(\d{2})/.exec(k);
+      if (d) { var dt = new Date(+d[1], +d[2] - 1, +d[3]); lib = jours[dt.getDay()] + ' ' + (+d[3]) + '/' + d[2]; }
+      return '<div style="display:flex;justify-content:space-between;align-items:center;background:rgba(11,16,29,.72);border-radius:8px;padding:8px 12px;margin:10px 0 4px;font-size:14px;font-weight:800;">'
+        + '<span style="color:#fff;">' + lib + ' · ' + L.length + ' pari' + (L.length > 1 ? 's' : '') + '</span><span style="color:' + (p >= 0 ? 'var(--g)' : 'var(--r)') + ';">' + (p >= 0 ? '+' : '') + p.toFixed(2) + ' €</span></div>'
+        + L.map(_g45BetRowMini).join('');
+    }).join('');
+  }
+  window._g45ClubArchive = _g45ClubArchive;
+  if (typeof openClub === 'function' && !openClub._g45Arch) {
+    var o = openClub;
+    openClub = function (nom) { var r = o.apply(this, arguments); try { _g45ClubArchive(nom); } catch (e) {} return r; };
+    openClub._g45Arch = true;
+    window.openClub = openClub;
+  }
+})();
