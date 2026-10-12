@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261012a, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261012b, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1592,6 +1592,8 @@ LIGNES DE PARI EN PORTRAIT (20261011j, « portrait ça coupe, rapprocher à gauc
 FICHE D'ÉQUIPE (20261012a, maquette validée « oui », captures Rams) : feuille #g45-club-lisible = % de réussite du rond (#ip-bilan) en blanc 22 px
   (avant couleur du club, illisible) ; onglet Archive refait par l'enveloppe d'openClub → `_g45ClubArchive(nom)` = lignes `_g45BetRowMini`
   (club qui reçoit à gauche, score, sport, book), jours « Dimanche 4/10 » + gain NET (l'ancien affichait le gain BRUT m×cote et une clé mois/jour).
+  20261012b (capture Graphs) : `_g45ClubCourbe` (même enveloppe, 200 ms après) — AC.courbe : ligne éclaircie _g45CoulClaire(c, 0.4), axe JJ/MM à plat
+  (étiquettes brutes « 2026-09-22 02:20 vs … P2||-20.00€ » avant), infobulle sans « || », window._gcClub = AC.courbe (barre « Touche un point » était muette).
 RÉGLÉ OU ABANDONNÉ (ne pas reproposer) :
 - APK bet45 sans barre d'adresse : OK. Logos Lakers / hockey : OK. « Connexion » sur le
   logo, paysage gones, pression en portrait, « 1. FC », cartes KHL, compos rugby : OK

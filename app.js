@@ -72191,9 +72191,36 @@ function _g45CourbePropre(ch, dates) {
     }).join('');
   }
   window._g45ClubArchive = _g45ClubArchive;
+  /* 20261012b (capture Rams, onglet Graphs) : courbe « Évolution du profit » (AC.courbe, DEUX copies d'openClub) illisible —
+     ligne à la couleur du club (bleu nuit sur fond sombre), dates brutes « 2026-09-22 02:20 vs New York Giants P2||-20.00€ » en biais,
+     et « Touche un point » muet (attachTouchTooltip lit window._gcClub, jamais rempli : le graphique est rangé dans AC.courbe).
+     → ligne éclaircie (_g45CoulClaire), axe en JJ/MM à plat, infobulle « date · adversaire » + gain, barre du toucher rebranchée. */
+  function _g45ClubCourbe() {
+    var ch = (typeof AC !== 'undefined' && AC) ? AC.courbe : null;
+    if (!ch || !ch.data || !ch.data.datasets || !ch.data.datasets[0]) return;
+    var ds = ch.data.datasets[0], c = String(ds.borderColor || '#4d84ff');
+    try { if (typeof _g45CoulClaire === 'function') c = _g45CoulClaire(c, 0.4) || c; } catch (e) {}
+    ds.borderColor = c; ds.pointBackgroundColor = c; ds.borderWidth = 3;
+    var lb = ch.data.labels || [];
+    var court = function (l) {
+      var t = String(l || '').split('||')[0], m = /^(\d{4})-(\d{2})-(\d{2})/.exec(t);
+      return m ? m[3] + '/' + m[2] : t;
+    };
+    try {
+      var x = ch.options.scales.x.ticks;
+      x.maxRotation = 0; x.autoSkip = true; x.font = { size: 11 };
+      x.callback = function (v, i) { return court(lb[i]); };
+      var cb = ch.options.plugins.tooltip.callbacks;
+      cb.title = function (ii) { var t = String(lb[ii[0].dataIndex] || '').split('||')[0]; return t.replace(/^(\d{4})-(\d{2})-(\d{2})/, '$3/$2'); };
+      ch.options.plugins.tooltip.bodyColor = '#fff';
+    } catch (e) {}
+    window._gcClub = ch;
+    try { ch.update('none'); } catch (e) {}
+  }
+  window._g45ClubCourbe = _g45ClubCourbe;
   if (typeof openClub === 'function' && !openClub._g45Arch) {
     var o = openClub;
-    openClub = function (nom) { var r = o.apply(this, arguments); try { _g45ClubArchive(nom); } catch (e) {} return r; };
+    openClub = function (nom) { var r = o.apply(this, arguments); try { _g45ClubArchive(nom); } catch (e) {} setTimeout(_g45ClubCourbe, 200); return r; };
     openClub._g45Arch = true;
     window.openClub = openClub;
   }
