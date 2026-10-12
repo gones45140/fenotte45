@@ -40791,25 +40791,44 @@ function _g45FillStandings(box, sp){
           var grp=null;
           for(var k=0;k<groups.length;k++){ var ents=(groups[k].standings&&groups[k].standings.entries)||groups[k].entries||[]; if(ents.some(function(e){return _g45EntId(e)===hId||_g45EntId(e)===aId;})){ grp={name:groups[k].name||groups[k].abbreviation||'', entries:ents}; break; } }
           if(!grp){ if(groups.length===1){ grp={name:'',entries:(groups[0].standings&&groups[0].standings.entries)||groups[0].entries||[]}; } else { return; } }
-          var ents=grp.entries.slice().sort(function(a,b){ var ra=parseFloat(_g45Stat(a.stats,['rank']))||999, rb=parseFloat(_g45Stat(b.stats,['rank']))||999; return ra-rb; });
+          /* 20261012c (capture Rams–Bills : « Manque les pts ou % », J et PTS à « - », Ravens 4-0-1 +27 au-dessus des
+             Jaguars 4-0-1 +53) : ESPN NFL ne donne ni gamesPlayed ni points, et son « rank » n'est pas l'ordre du tableau.
+             NFL / NBA / MLB → J = G + N + P, dernière colonne = % de victoires (nul = ½), tri % puis Diff ;
+             hockey → tri par points puis Diff ; foot / rugby → rang ESPN comme avant. */
+          var _num=function(st,n){ var v=parseFloat(String(_g45Stat(st,n)).replace(',','.')); return isNaN(v)?null:v; };
+          var _pctMode=(sportPath==='football'||sportPath==='basketball'||sportPath==='baseball');
+          var _info=function(e){
+            var st=e.stats||[];
+            var w=_num(st,['wins','won','W']), t=_num(st,['ties','draws','drawn','tied','D'])||0, l=_num(st,['losses','lost','L']);
+            var gp=_num(st,['gamesPlayed','games','GP']);
+            if(gp==null&&w!=null&&l!=null) gp=w+t+l+(sportPath==='hockey'?(_num(st,['otLosses','overtimeLosses','OTL'])||0):0);
+            var pct=(gp&&w!=null)?(w+t/2)/gp:null;
+            return {gp:gp, pct:pct, pts:_num(st,['points','PTS']), diff:_num(st,['pointDifferential','pointsDifference','differential','pointDiff','GD'])||0, rk:_num(st,['rank'])||999};
+          };
+          var ents=grp.entries.slice().sort(function(a,b){
+            var A=_info(a), B=_info(b);
+            if(_pctMode&&A.pct!=null&&B.pct!=null) return (B.pct-A.pct)||(B.diff-A.diff);
+            if(sportPath==='hockey'&&A.pts!=null&&B.pts!=null) return (B.pts-A.pts)||(B.diff-A.diff);
+            return A.rk-B.rk;
+          });
           var rows=ents.map(function(e){
-            var st=e.stats||[]; var tid=_g45EntId(e);
+            var st=e.stats||[]; var tid=_g45EntId(e); var _I=_info(e);
             var isUs=!!tid&&(tid===hId||tid===aId);
             var nm=_g45EntName(e)||'?';
             return '<tr style="'+(isUs?'background:rgba(77,132,255,.12);':'')+'">'
               +'<td style="padding:5px 5px;font-size:12.5px;color:#ffffff;font-weight:'+(isUs?'800':'700')+';overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:120px;">'+nm+'</td>'
-              +'<td style="padding:5px 5px;font-size:12.5px;text-align:center;color:#e8ecfa;font-weight:700;font-variant-numeric:tabular-nums;">'+(_g45Stat(st,['gamesPlayed','games','GP'])||'-')+'</td>'
+              +'<td style="padding:5px 5px;font-size:12.5px;text-align:center;color:#e8ecfa;font-weight:700;font-variant-numeric:tabular-nums;">'+(_I.gp!=null?_I.gp:'-')+'</td>'
               +'<td style="padding:5px 5px;font-size:12.5px;text-align:center;color:#e8ecfa;font-weight:700;font-variant-numeric:tabular-nums;">'+(_g45Stat(st,['wins','won','W'])||'-')+'</td>'
               +'<td style="padding:5px 5px;font-size:12.5px;text-align:center;color:#e8ecfa;font-weight:700;font-variant-numeric:tabular-nums;">'+(_g45Stat(st,['ties','draws','drawn','tied','D'])||'-')+'</td>'
               +'<td style="padding:5px 5px;font-size:12.5px;text-align:center;color:#e8ecfa;font-weight:700;font-variant-numeric:tabular-nums;">'+(_g45Stat(st,['losses','lost','L'])||'-')+'</td>'
               +'<td style="padding:5px 5px;font-size:12.5px;text-align:center;color:#e8ecfa;font-weight:700;font-variant-numeric:tabular-nums;">'+(_g45Stat(st,['pointDifferential','pointsDifference','differential','pointDiff','GD'])||'-')+'</td>'
-              +'<td style="padding:5px 5px;font-size:13.5px;text-align:center;color:#ffffff;font-weight:800;font-variant-numeric:tabular-nums;">'+(_g45Stat(st,['points','PTS'])||'-')+'</td>'
+              +'<td style="padding:5px 5px;font-size:13.5px;text-align:center;color:#ffffff;font-weight:800;font-variant-numeric:tabular-nums;">'+(_pctMode?(_I.pct!=null?Math.round(_I.pct*100)+'&nbsp;%':'-'):(_g45Stat(st,['points','PTS'])||'-'))+'</td>'
               +'</tr>';
           }).join('');
           if(!rows) return;
           cont.innerHTML='<div style="font-size:11px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#9fb6ff;margin-bottom:8px;">🏆 Classement'+(grp.name?' · '+_g45NomLigueFr(grp.name):'')+'</div>'
             +'<table style="width:100%;border-collapse:collapse;"><thead><tr style="color:#9fb0c7;font-size:10.5px;font-weight:800;text-transform:uppercase;">'
-            +'<th style="text-align:left;padding:2px 4px;">Équipe</th><th style="padding:2px 4px;">J</th><th style="padding:2px 4px;">G</th><th style="padding:2px 4px;">N</th><th style="padding:2px 4px;">P</th><th style="padding:2px 4px;">Diff</th><th style="padding:2px 4px;">Pts</th>'
+            +'<th style="text-align:left;padding:2px 4px;">Équipe</th><th style="padding:2px 4px;">J</th><th style="padding:2px 4px;">G</th><th style="padding:2px 4px;">N</th><th style="padding:2px 4px;">P</th><th style="padding:2px 4px;">Diff</th><th style="padding:2px 4px;">'+(_pctMode?'%&nbsp;V':'Pts')+'</th>'
             +'</tr></thead><tbody>'+rows+'</tbody></table>';
         })
         .catch(function(){ tryS(i+1); });
