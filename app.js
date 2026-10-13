@@ -72901,10 +72901,13 @@ function _g45AideBoutonsPoser() {
   var nav = document.querySelector('nav.nav');
   if (nav && !document.getElementById('g45-aide-pc')) {
     var d = document.createElement('div'); d.id = 'g45-aide-pc'; d.className = 'pc-only';
-    d.style.cssText = 'display:flex;gap:8px;padding:10px 10px 12px;';
+    d.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;padding:10px 10px 12px;';
     var b = function (lbl, fn, bleu) { return '<button onclick="' + fn + '" style="flex:1;cursor:pointer;border-radius:12px;padding:11px 4px;font-size:14px;font-weight:800;color:#fff;'
       + 'border:1px solid ' + (bleu ? '#3b82f6' : 'rgba(255,255,255,.25)') + ';background:' + (bleu ? '#2563eb' : '#1a2235') + ';">' + lbl + '</button>'; };
-    d.innerHTML = b('▶️ Vidéo', 'g45VideoOuvrir()', true) + b('❓ Guide', 'g45GuideOuvrir(0)', false);
+    d.innerHTML = b('▶️ Vidéo', 'g45VideoOuvrir()', true) + b('❓ Guide', 'g45GuideOuvrir(0)', false)
+      /* 20261013p (« OUI ») : pourboire aussi ici, pleine largeur sous les deux boutons */
+      + '<a href="https://paypal.me/touraineantoine" target="_blank" rel="noopener" data-g45-direct="1" style="flex:1 1 100%;text-align:center;border-radius:12px;padding:10px 4px;'
+      + 'font-size:14px;font-weight:800;color:#111;background:#f5c542;text-decoration:none;">☕ Laisser un pourboire</a>';
     nav.insertBefore(d, nav.firstChild);
   }
   var pm = document.querySelector('#plus-menu > div');
@@ -72912,7 +72915,8 @@ function _g45AideBoutonsPoser() {
     var st = 'display:flex;align-items:center;gap:12px;padding:13px 16px;width:100%;background:none;border:none;border-bottom:1px solid var(--b1);color:var(--t1);font-size:15px;font-weight:700;cursor:pointer;text-align:left;';
     var m = document.createElement('div'); m.id = 'g45-aide-mob';
     m.innerHTML = '<button onclick="togglePlusMenu();g45VideoOuvrir();" style="' + st + '"><span style="font-size:17px;">▶️</span>Vidéo : BET45 en 1 minute</button>'
-      + '<button onclick="togglePlusMenu();g45GuideOuvrir(0);" style="' + st + '"><span style="font-size:17px;">❓</span>Comment ça marche</button>';
+      + '<button onclick="togglePlusMenu();g45GuideOuvrir(0);" style="' + st + '"><span style="font-size:17px;">❓</span>Comment ça marche</button>'
+      + '<a href="https://paypal.me/touraineantoine" target="_blank" rel="noopener" data-g45-direct="1" onclick="togglePlusMenu();" style="' + st + 'text-decoration:none;color:#f5c542;"><span style="font-size:17px;">☕</span>Laisser un pourboire</a>';
     pm.insertBefore(m, pm.firstChild);
   }
 }
