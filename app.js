@@ -24924,6 +24924,15 @@ function renderSaisonsChart(el, results, nom) {
     // Tooltip avec les compétitions
     html += '';
   });
+  html += '</div>';
+  /* 20261013a (demande d'Antoine, maquette validée « oui ») : Global / Domicile / Extérieur UNE fois, sous le filtre de compétition
+     (avant : répétés dans chaque saison, petits, sous la forme récente). Même variable _statFilter. */
+  html += '<div style="display:flex;gap:8px;margin-top:12px;">';
+  ['global','dom','ext'].forEach(function(f){
+    var lbl = f==='global'?'\ud83c\udf10 Global':f==='dom'?'\ud83c\udfe0 Domicile':'\ud83d\ude8c Ext\u00e9rieur';
+    var isOn = f===_statFilter;
+    html += '<button onclick="_statFilter=\''+f+'\';document.getElementById(\'ip-saisons\').scrollTop=0;loadTeamSaisons();" style="flex:1;padding:10px 4px;border-radius:8px;border:1px solid '+(isOn?'#3b82f6':'rgba(255,255,255,.18)')+';background:'+(isOn?'#2563eb':'#1a2235')+';color:'+(isOn?'#fff':'#e8ecfa')+';font-size:15px;font-weight:'+(isOn?'800':'700')+';cursor:pointer;">'+lbl+'</button>';
+  });
   html += '</div></div>';
 
   saisons.forEach(function(s) {
@@ -24971,10 +24980,12 @@ function renderSaisonsChart(el, results, nom) {
     var _fgDe = function(m){ var b = _scIx0 && _scIx0.byMatch && _scIx0.byMatch[m.espnId]; return (b && b.fg) || null; };
     try { html += _g45CursHtml(filteredMatches, _estNous, _fgDe, (typeof _currentTeam !== 'undefined' && _currentTeam) || nom); } catch(e){}
     var QUICK_STATS = _G45_PILLS_FIXES;
-    html += '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px;">';
+    html += '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;">';
     QUICK_STATS.forEach(function(qs){
       var isOn = window._quickStats.indexOf(qs)>=0;
-      html += '<button data-qs="'+qs+'" style="padding:4px 8px;border-radius:12px;border:1px solid rgba(255,255,255,'+(isOn?'.3':'.08')+');background:rgba(255,255,255,'+(isOn?'.15':'.04')+');color:'+(isOn?'var(--t1)':'var(--t3)')+';font-size:9px;font-weight:'+(isOn?'700':'400')+';cursor:pointer;" onclick="toggleQuickStat(this)">'+qs+'</button>';
+      /* 20261013a (capture d'Antoine : « BTS CS WIN LOSE 1N N2 à peine visibles », maquette validée « oui ») : 9 px gris → 14 px blanc,
+         bouton choisi en bleu avec ✓. */
+      html += '<button data-qs="'+qs+'" style="padding:7px 14px;border-radius:16px;border:1px solid '+(isOn?'#3b82f6':'rgba(255,255,255,.25)')+';background:'+(isOn?'#2563eb':'#1a2235')+';color:'+(isOn?'#fff':'#e8ecfa')+';font-size:14px;font-weight:'+(isOn?'800':'700')+';cursor:pointer;" onclick="toggleQuickStat(this)">'+(isOn?'\u2713 ':'')+qs+'</button>';
     });
     html += '</div>';
 
@@ -25006,15 +25017,7 @@ function renderSaisonsChart(el, results, nom) {
       html += '</div>';
     }
 
-    // ── Filtre Global / Dom / Ext ──
-    
-    html += '<div style="display:flex;gap:6px;margin-bottom:14px;">';
-    ['global','dom','ext'].forEach(function(f){
-      var lbl = f==='global'?'🌐 Global':f==='dom'?'🏠 Domicile':'🚌 Extérieur';
-      var isOn = f===_statFilter;
-      html += '<button onclick="_statFilter=\''+f+'\';document.getElementById(\'ip-saisons\').scrollTop=0;loadTeamSaisons();" style="flex:1;padding:7px 4px;border-radius:6px;border:1px solid rgba(255,255,255,'+(isOn?'.3':'.08')+');background:rgba(255,255,255,'+(isOn?'.12':'.04')+');color:'+(isOn?'var(--t1)':'var(--t3)')+';font-size:10px;font-weight:'+(isOn?'700':'400')+';cursor:pointer;">'+lbl+'</button>';
-    });
-    html += '</div>';
+    /* 20261013a : boutons Global / Domicile / Extérieur déplacés EN HAUT, sous « Filtrer par compétition » (une fois pour toutes les saisons). */
     // Stats filtrées
     var sf = _statFilter==='dom' ? {n:st.domN, over05:st.domOver05||0, over15:st.domOver15||0, over25:st.domOver25||0, over35:st.domOver35||0, over45:st.domOver45||0, under05:st.domUnder05||0, under15:st.domUnder15||0, under25:st.domUnder25||0, under35:st.domUnder35||0, under45:st.domUnder45||0, bts:st.domBts||0, handM15:st.domHandM15||0, handP15:st.domHandP15||0}
            : _statFilter==='ext' ? {n:st.extN, over05:st.extOver05||0, over15:st.extOver15||0, over25:st.extOver25||0, over35:st.extOver35||0, over45:st.extOver45||0, under05:st.extUnder05||0, under15:st.extUnder15||0, under25:st.extUnder25||0, under35:st.extUnder35||0, under45:st.extUnder45||0, bts:st.extBts||0, handM15:st.extHandM15||0, handP15:st.extHandP15||0}
