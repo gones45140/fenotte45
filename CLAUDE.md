@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261013h, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261013i, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1611,7 +1611,7 @@ TENDANCES (20261013c, maquettes validées « oui ») : (1) choix de la compétit
   badge « ✅ stats et bookmakers d'accord » (m.accord) ; sans cote → « ⚠️ pas de cote pour vérifier » (m.croSans) ; (3) FIABILITÉ : tendances AFFICHÉES notées
   (`_g45TrSuivNoter`, g45suivtend1, 400 max / 120 j, score exact exclu) puis jugées sur le score final (`_g45TrSuivVerifier`, scoreboard du jour, 6 lectures
   par ouverture, abandon après 10 j) → bloc #g45tr-fiab `_g45TrFiabHtml` (tranches 40/50/60/70 %, vert / jaune / rouge vs proba annoncée). Testé vm 9/9 + rendu.
-  À FAIRE ENSUITE (accord d'Antoine) : Tendances hors foot, en commençant par le hockey.
+  À FAIRE ENSUITE (accord d'Antoine) : Tendances hors foot — hockey FAIT (20261013i), autres sports plus tard (onglets prévus).
 TENDANCES (20261013d, « ESPN les propose pas les cotes ? ») : `_g45TrOddsEv` lit aussi la cote Over / Under de la ligne principale ESPN
   (total.over|under, r.ov / r.un / r.ouL) ; `_g45TrBuild` la met dans pr['o<L>'] / pr['u<L>'] (L = 1,5 / 2,5 / 3,5) si The Odds API n'a rien.
   BTS : ESPN n'a PAS de cote (seulement 1N2 + ligne de buts). Testé Chromium (Lens–Sporting simulé : fair 52 %, cote 1,83).
@@ -1631,6 +1631,15 @@ CRÉDITS THE ODDS API (20261013e, 13/10 : plafond du jour du worker atteint, « 
   20261013h (« en fond 1er et 2e match on pourrait faire quoi » → choix « LOGO COMPETITION ») : carte Tendances sans photo de club en cache
   (`_g45ImgPersoLire` / `_g45FanLire`, aucune recherche lancée) → logo de la compétition (scoreboard leagues[0].logos, rel « dark » d'abord,
   0 requête ; fixtures.lgl → deco.lgl) en grand au centre, opacité .2, contain. Photo du club : proposée, NON retenue. CONFIRMÉ « c'est bien ».
+  20261013i (maquettes validées : onglets par sport « fait une maquette », hockey « ok pour l'instant sans cote ») — 🏒 TENDANCES HOCKEY : bloc en
+  fin d'app.js. Onglets ⚽ Football / 🏒 Hockey sous le titre (`g45TrSport`, _G45_TR.sp, localStorage g45tr_sp ; résultats rangés à part resF / resH) ;
+  enveloppes de loadTendancesTab (foot = écran d'avant + onglets ; hockey = écran propre : NHL seule, Jour / Cote mini / Proba mini, fiabilité,
+  « Analyser les matchs NHL »), g45TrRun (hockey → scoreboard hockey/nhl du jour, présaison écartée, calendriers `_g45CompetEquipes` +
+  `_g45CompetMatchs` saison `_g45CompetAnneeAuto('nhl')` + précédente, cache 12 h) et _g45TrCompLbl ('nhl' → 🏒 NHL). `_g45TrHkCote(ms, id, dom, 40)`
+  (40 derniers du BON côté : w, l, ot = m.ox, o55, o65) ; `_g45TrHkBuild` : Vainqueur dom / ext (score final, prolong. + TAB, normalisé), + de 5,5,
+  - de 6,5 ; prolongation dans les faits des cartes Vainqueur (≈ 20-30 %, jamais ≥ 50 %). SANS The Odds API (0 crédit) : SONDÉ PAR ANTOINE
+  13-14/10, ESPN NHL = 0 cote sur 5 matchs ; si ESPN en publie : moneyline → fair 2 issues, total ligne 5,5 / 6,5. Fiabilité : types 1 / 2 / o55 /
+  u65, verifier lit hockey/nhl si sl === 'nhl', `_g45TrFiabHtml` filtré par onglet. Contrôle smoke.js « Tendances hockey » (16 contrôles).
 RÉGLÉ OU ABANDONNÉ (ne pas reproposer) :
 - APK bet45 sans barre d'adresse : OK. Logos Lakers / hockey : OK. « Connexion » sur le
   logo, paysage gones, pression en portrait, « 1. FC », cartes KHL, compos rugby : OK
