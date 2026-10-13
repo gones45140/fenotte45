@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261013c, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261013d, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1612,6 +1612,9 @@ TENDANCES (20261013c, maquettes validées « oui ») : (1) choix de la compétit
   (`_g45TrSuivNoter`, g45suivtend1, 400 max / 120 j, score exact exclu) puis jugées sur le score final (`_g45TrSuivVerifier`, scoreboard du jour, 6 lectures
   par ouverture, abandon après 10 j) → bloc #g45tr-fiab `_g45TrFiabHtml` (tranches 40/50/60/70 %, vert / jaune / rouge vs proba annoncée). Testé vm 9/9 + rendu.
   À FAIRE ENSUITE (accord d'Antoine) : Tendances hors foot, en commençant par le hockey.
+TENDANCES (20261013d, « ESPN les propose pas les cotes ? ») : `_g45TrOddsEv` lit aussi la cote Over / Under de la ligne principale ESPN
+  (total.over|under, r.ov / r.un / r.ouL) ; `_g45TrBuild` la met dans pr['o<L>'] / pr['u<L>'] (L = 1,5 / 2,5 / 3,5) si The Odds API n'a rien.
+  BTS : ESPN n'a PAS de cote (seulement 1N2 + ligne de buts). Testé Chromium (Lens–Sporting simulé : fair 52 %, cote 1,83).
 RÉGLÉ OU ABANDONNÉ (ne pas reproposer) :
 - APK bet45 sans barre d'adresse : OK. Logos Lakers / hockey : OK. « Connexion » sur le
   logo, paysage gones, pression en portrait, « 1. FC », cartes KHL, compos rugby : OK

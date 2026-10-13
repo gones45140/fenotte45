@@ -28925,6 +28925,18 @@ function _g45TrOddsEv(ev){
     var r={h:h, d:d, a:a,
            line:(o.overUnder!=null?o.overUnder:(o.total!=null?o.total:null)),
            prov:((o.provider&&o.provider.name)||'')};
+    /* 20261013d (capture : « ESPN les propose pas les cotes ? » sur Lens–Sporting +2,5) : ESPN donne aussi la cote Over / Under de SA ligne
+       principale (total.over|under.close|open.odds « +130 », sondé le 28/09) ; elle n'était pas lue → les marchés de buts n'avaient de cote
+       que par The Odds API. */
+    try{
+      var tt=(o.total&&typeof o.total==='object')?o.total:null;
+      if(tt){
+        var ovd=_g45TrPickOdd(tt.over), und=_g45TrPickOdd(tt.under);
+        var rl=(tt.over&&tt.over.close&&tt.over.close.line!=null)?tt.over.close.line:((tt.over&&tt.over.open&&tt.over.open.line!=null)?tt.over.open.line:o.overUnder);
+        var lv=parseFloat(String(rl==null?'':rl).replace(/^[ou]/i,''));
+        if(ovd>1&&und>1&&!isNaN(lv)){ r.ov=ovd; r.un=und; r.ouL=lv; }
+      }
+    }catch(e){}
     if(h>1&&d>1&&a>1) return r;   // triplet complet : on s'arrête là
     if(!best) best=r;             // sinon on garde le premier, sans écart calculable
   }
@@ -29311,6 +29323,10 @@ function _g45TrBuild(ev, H, A, hN, aN, cross, pr, dc){
   var faitInv=function(nom,acc,k,lbl){ var v=acc.n-acc[k]; return nom+' : '+lbl+' lors de '+v+' de ses '+acc.n+' derniers matchs ('+_g45TrPct(acc.n?v/acc.n:0)+')'; };
 
   pr=pr||{};
+  /* 20261013d : ligne Over / Under d'ESPN utilisée quand The Odds API n'a rien pour cette ligne (1,5 / 2,5 / 3,5). */
+  if(od&&od.ov>1&&od.un>1&&[1.5,2.5,3.5].indexOf(od.ouL)>=0&&!(pr['o'+od.ouL]&&pr['u'+od.ouL])){
+    pr=Object.assign({},pr); pr['o'+od.ouL]=od.ov; pr['u'+od.ouL]=od.un;
+  }
   var fBtts=(pr.bttsY&&pr.bttsN)?_g45TrFair2(pr.bttsY,pr.bttsN):null;
   var fO15 =(pr['o1.5']&&pr['u1.5'])?_g45TrFair2(pr['o1.5'],pr['u1.5']):null;
   var fO25 =(pr['o2.5']&&pr['u2.5'])?_g45TrFair2(pr['o2.5'],pr['u2.5']):null;
