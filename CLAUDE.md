@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261013u, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261013v, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -260,6 +260,10 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   palier recopié ; pierres tombales state.hOff 120 j via enveloppes deleteArchived / cancelBet) ; illisible → envoi ANNULÉ ; sha refusé → 1
   nouvel essai ; envois sérialisés. NON fusionnés : modification d'un pari présent des deux côtés, dépôts / retraits manuels. Testé : 15 cas vm +
   scénario complet Chromium avec faux GitHub (4 paris, solde juste).
+  20261013v (capture Agenda « bizarre les paliers » : Carolina P3 🏠, Colorado P2 ✈️ alors que leur dernier pari de montante, le 09/10, était GAGNÉ ;
+  console d'Antoine : lc {nhl|dom:3} / {nhl|ext:2}) : cause probable = paris remis à la main le 09/10 (restauration) sans palier. `_g45BetsFusion`
+  étape 3 (pari absent ici, ajouté DÉJÀ RÉGLÉ) ne touchait pas au palier → recopie de la clé _g45PalKey(comp, lieu) depuis l'appareil distant, sinon
+  gagné → 1. Testé Chromium (2 gagnés → P1, perdu sans info → inchangé). Données d'Antoine corrigées par commande console (pas par l'appli).
 - 📋 PARIS « EN COURS » EN CARTES (20261013u, capture « c'est pareil on pourrait mieux faire ? », maquette validée « OUI viable pour combi cockpit et
   simple ») : bloc en fin d'app.js ; #live-norm et #live-strat (rendu d'origine de render, DEUX copies, intact) REMPLACÉS par des cartes via
   MutationObserver (ligne data-g45ec) : rond du sport `_g45ParisRond` + bbadge, compétition · « mar. 13/10 » · heure · lieu, match 17 px, type + joueur(s)

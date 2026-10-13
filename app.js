@@ -70693,6 +70693,20 @@ function _g45BetsFusion(rem) {
       var cp = JSON.parse(JSON.stringify(b));
       state[loc].unshift(cp); applique(cp, loc, 1); n++;
       L[id] = { loc: loc, i: 0 };
+      /* 20261013v (capture Agenda : Carolina P3 à domicile et Colorado P2 à l'extérieur alors que leur dernier pari de montante, le
+         09/10, était GAGNÉ → P1 attendu) : un pari de montante DÉJÀ RÉGLÉ venu de l'autre appareil était ajouté sans toucher au palier.
+         On recopie le palier de SON échelle (compétition | lieu) depuis l'autre appareil ; à défaut, gagné → 1. Seule cette clé change. */
+      if (loc === 'a' && cp.isS) {
+        try {
+          var ur3 = (rem.u || []).filter(function (x) { return x && x.n === cp.n; })[0];
+          var ul3 = (state.u || []).filter(function (x) { return x && x.n === cp.n; })[0];
+          var k3 = (typeof _g45PalKey === 'function') ? _g45PalKey(cp.comp, cp.domicile) : '';
+          if (ul3 && k3) {
+            var v3 = (ur3 && ur3.lc && ur3.lc[k3] != null) ? ur3.lc[k3] : (cp.win ? 1 : null);
+            if (v3 != null) { if (!ul3.lc) ul3.lc = {}; ul3.lc[k3] = parseInt(v3, 10) || 1; }
+          }
+        } catch (e) {}
+      }
     });
   });
   return n;
