@@ -30495,11 +30495,17 @@ async function g45TrRun(){
       pg('📅 Matchs du jour… '+(i+1)+'/'+slugs.length);
       try{
         var j=await _g45TrEspn('/apis/site/v2/sports/soccer/'+slugs[i]+'/scoreboard?dates='+ymd);
+        /* 20261013h (« LOGO COMPETITION ») : logo de la compétition, déjà dans la réponse (aucune requête de plus) ; version « dark »
+           (faite pour fond sombre) si ESPN la donne. Sert de fond aux cartes sans photo de club. */
+        var _lgl='';
+        try{ var _lo=((j.leagues&&j.leagues[0]&&j.leagues[0].logos)||[]);
+          var _dk=_lo.filter(function(x){ return (x.rel||[]).indexOf('dark')>=0; })[0];
+          _lgl=((_dk||_lo[0]||{}).href)||''; }catch(e){}
         (j.events||[]).forEach(function(e){
           var c=(e.competitions&&e.competitions[0])||{};
           var st=(c.status&&c.status.type)||{};
           if(st.state==='post') return;
-          fixtures.push({ev:e, slug:slugs[i]});
+          fixtures.push({ev:e, slug:slugs[i], lgl:_lgl});
         });
       }catch(e){}
     }
@@ -30550,7 +30556,7 @@ async function g45TrRun(){
       try{ paire=g45CoulPaire(ho,aw); }catch(e){}
       var deco={ ch:paire[0], ca:paire[1],
                  lh:(ho.team&&ho.team.logo)||'', la:(aw.team&&aw.team.logo)||'',
-                 nh:(ho.team&&(ho.team.displayName||ho.team.name))||hN };
+                 nh:(ho.team&&(ho.team.displayName||ho.team.name))||hN, lgl:f.lgl||'' };
       mk.forEach(function(m){
         /* FILET DE SECURITE, independant du filtre par competition. Quand le
            modele annonce plus du DOUBLE de la probabilite du marche marge
@@ -30667,6 +30673,13 @@ function _g45TrRender(){
         +'object-fit:contain;opacity:.22;filter:saturate(1.3);pointer-events:none;">';
     };
     var filig=lg(d.lh,'left')+lg(d.la,'right');
+    /* 20261013h (« en fond 1er et 2e match on pourrait faire quoi » → « LOGO COMPETITION ») : carte sans photo de club = logo de la
+       compétition en grand au centre, à moitié transparent (contain : jamais rogné). */
+    if(!vis && d.lgl){
+      filig += '<img src="'+d.lgl+'" loading="lazy" onerror="this.style.display=\'none\'" '
+        +'style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);height:92%;max-height:170px;max-width:60%;'
+        +'object-fit:contain;opacity:.2;pointer-events:none;">';
+    }
     var s='<div style="position:relative;overflow:hidden;background:'+fondCoul+';background-size:cover;background-position:center;'
       +'background-color:rgba(12,16,28,.97);border:1px solid rgba(255,255,255,.08);border-left:3px solid '+col+';'
       +'border-radius:12px;padding:10px 62px;margin-bottom:7px;">'
