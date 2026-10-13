@@ -29022,6 +29022,18 @@ function _g45TrFindEv(list, hN, aN){
     if(found) return;
     if(eq(_g45TrNz(e.home_team),h)&&eq(_g45TrNz(e.away_team),a)) found=e;
   });
+  /* 20261013g (sonde d'Antoine : ESPN « Lens » / « Sporting CP », The Odds API « RC Lens » / « Sporting Lisbon ») : « lens » (4 lettres)
+     et « sportingcp » ≠ « sportinglisbon » échouaient → 2e passage MOT PAR MOT : un mot de 4 lettres ou plus en commun pour CHACUNE des
+     deux équipes (mots trop courants écartés : real, united, city…). */
+  if(!found){
+    var VID={real:1,united:1,city:1,club:1,athletic:1,atletico:1,sport:1,union:1,olympique:1,stade:1,racing:1,dynamo:1,borussia:1,saint:1,
+      sankt:1,royal:1,county:1,town:1,rovers:1,wanderers:1,albion:1,hotspur:1};
+    var mots=function(x){ return String(x||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').split(/[^a-z0-9]+/)
+      .filter(function(w){ return w.length>=4&&!VID[w]; }); };
+    var com=function(x,y){ var mx=mots(x), my=mots(y); return mx.some(function(w){ return my.indexOf(w)>=0; }); };
+    var cand=(list||[]).filter(function(e){ return com(e.home_team,hN)&&com(e.away_team,aN); });
+    if(cand.length===1) found=cand[0];
+  }
   return found;
 }
 /* Médiane des prix par issue, tous bookmakers confondus */

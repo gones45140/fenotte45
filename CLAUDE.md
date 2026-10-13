@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261013f, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261013g, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1625,6 +1625,9 @@ CRÉDITS THE ODDS API (20261013e, 13/10 : plafond du jour du worker atteint, « 
   20261013f — SONDÉ PAR ANTOINE (Lens–Sporting, ESPN uefa.champions) : total.over open o2.5 « -180 » → close o3.5 « +140 » (overUnder 3.5) ;
   /odds markets=…,btts → 422 INVALID_MARKET (BTS seulement par match, REFUSÉ par Antoine : « on laisse »). 13e coupait The Odds API dès
   qu'ESPN avait une cote Over/Under → plus de cote 2,5 ; maintenant The Odds API sautée seulement si la ligne ESPN = 2,5.
+  20261013g — SONDÉ PAR ANTOINE : ESPN « Lens » / « Sporting CP » vs The Odds API « RC Lens » / « Sporting Lisbon » (Over 2,5 1,59) → match
+  jamais retrouvé. `_g45TrFindEv` : 2e passage MOT PAR MOT (mot ≥ 4 lettres commun aux deux équipes, mots courants real/united/city… écartés,
+  candidat UNIQUE seulement). Testé vm 7/7.
 RÉGLÉ OU ABANDONNÉ (ne pas reproposer) :
 - APK bet45 sans barre d'adresse : OK. Logos Lakers / hockey : OK. « Connexion » sur le
   logo, paysage gones, pression en portrait, « 1. FC », cartes KHL, compos rugby : OK
