@@ -1407,8 +1407,8 @@ RÉGLÉ (worker, 01/10) : cron « exceededCpu » (cpuTimeMs 10) à CHAQUE passag
   `_evRefuse(rec, ev)` (bstart/fstart → start ; bscore/fscore/bvar/bqt → goals ; bend/fend → end ; verdicts, jambes, rappels : toujours).
   10/10 — Observability d'Antoine (12 h : 298 ok / 60 erreurs exceededCpu) : erreurs à PRESQUE CHAQUE passage de 8 h à 14 h (Paris) sans
   match = runRappelCron créait le formateur Intl (Europe/Paris) à chaque passage de 6-11 h UTC AVANT le drapeau rappel:<jour> → heure de
-  Paris calculée à la main (dernier dimanche de mars / octobre 01:00 UTC ; 6 cas comparés à Intl, identiques). worker.js complet donné, À
-  REDÉPLOYER. Erreurs du SOIR (multiplex foot) : budget `_lourd` 4 → 2 PROPOSÉ, en attente de réponse.
+  Paris calculée à la main (dernier dimanche de mars / octobre 01:00 UTC ; 6 cas comparés à Intl, identiques). worker.js complet donné,
+  REDÉPLOYÉ le 13/10 (avec /odds en crédits). Erreurs du SOIR (multiplex foot) : budget `_lourd` 4 → 2 PROPOSÉ, en attente de réponse.
 À VOIR (en attente d'un retour d'Antoine) :
 - 💶 ABONNEMENT (prévu par Antoine « dès mardi » 13/10/2026) : en place = visiteur 50 paris max puis compte (auth-guard
   SEUIL_ESSAI_GRATUIT) ; compte = premium 30 j (`_g45AccesPremium`), puis bouton PayPal paypal.me/touraineantoine ; Antoine
@@ -1621,7 +1621,8 @@ CRÉDITS THE ODDS API (20261013e, 13/10 : plafond du jour du worker atteint, « 
   (g45trOdds_ → MORTS). À FAIRE : sonde d'Antoine demain (/odds?…&markets=h2h,totals,btts : refusé ou non ?) puis décider BTS match par match (1 crédit, 3 max / analyse).
   13/10 — WORKER /odds (choix 2 d'Antoine, fichier complet donné, À REDÉPLOYER) : PLAFONDS.odds [8 / personne, 20 / jour, 400 / mois] compté en
   CRÉDITS (marchés × régions, `compter(…, poids)`) au lieu des appels ; appel venu de gones45140.github.io (`origineGones`, Origin / Referer) =
-  SANS limite par personne, plafonds communs gardés. Testé vm 5/5.
+  SANS limite par personne, plafonds communs gardés. Testé vm 5/5. REDÉPLOYÉ par Antoine le 13/10 (ce fichier contient aussi le correctif
+  du 10/10 : heure de Paris de runRappelCron sans Intl → déployé aussi).
   20261013f — SONDÉ PAR ANTOINE (Lens–Sporting, ESPN uefa.champions) : total.over open o2.5 « -180 » → close o3.5 « +140 » (overUnder 3.5) ;
   /odds markets=…,btts → 422 INVALID_MARKET (BTS seulement par match, REFUSÉ par Antoine : « on laisse »). 13e coupait The Odds API dès
   qu'ESPN avait une cote Over/Under → plus de cote 2,5 ; maintenant The Odds API sautée seulement si la ligne ESPN = 2,5.
