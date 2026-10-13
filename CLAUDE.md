@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261013d, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261013e, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1615,6 +1615,10 @@ TENDANCES (20261013c, maquettes validées « oui ») : (1) choix de la compétit
 TENDANCES (20261013d, « ESPN les propose pas les cotes ? ») : `_g45TrOddsEv` lit aussi la cote Over / Under de la ligne principale ESPN
   (total.over|under, r.ov / r.un / r.ouL) ; `_g45TrBuild` la met dans pr['o<L>'] / pr['u<L>'] (L = 1,5 / 2,5 / 3,5) si The Odds API n'a rien.
   BTS : ESPN n'a PAS de cote (seulement 1N2 + ligne de buts). Testé Chromium (Lens–Sporting simulé : fair 52 %, cote 1,83).
+CRÉDITS THE ODDS API (20261013e, 13/10 : plafond du jour du worker atteint, « 500 en rien de temps ») : `_g45TrOddsApi(slug, marches)` — Tendances
+  = 'totals' SEUL et seulement si ESPN n'a pas la cote Over/Under du match ; CLV = 'h2h,totals' (défaut) ; « btts » RETIRÉ de l'appel par compétition
+  (doc The Odds API, capture d'Antoine : marché SUPPLÉMENTAIRE, seulement via /events/{id}/odds) ; cache 3 h (avant 15 min), clé g45trOdds2_<clé>|<marchés>
+  (g45trOdds_ → MORTS). À FAIRE : sonde d'Antoine demain (/odds?…&markets=h2h,totals,btts : refusé ou non ?) puis décider BTS match par match (1 crédit, 3 max / analyse).
 RÉGLÉ OU ABANDONNÉ (ne pas reproposer) :
 - APK bet45 sans barre d'adresse : OK. Logos Lakers / hockey : OK. « Connexion » sur le
   logo, paysage gones, pression en portrait, « 1. FC », cartes KHL, compos rugby : OK

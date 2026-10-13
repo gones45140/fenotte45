@@ -28983,15 +28983,21 @@ var _G45_TR_ODDSKEY={
 };
 var _g45TrOddsCache={};
 window._g45TrQuota=null;
-async function _g45TrOddsApi(slug){
+/* 20261013e (« 500 en rien de temps », plafond du jour du worker atteint) : chaque appel coûte 1 crédit PAR MARCHÉ. Avant : h2h,totals,btts
+   pour chaque compétition, gardé 15 min. Maintenant : marchés choisis par l'appelant (Tendances = totals seul, le 1N2 vient d'ESPN ;
+   CLV = h2h,totals), « btts » RETIRÉ (marché supplémentaire, demandable seulement match par match d'après la doc The Odds API — à sonder),
+   réponse gardée 3 h, clé de cache par marchés (g45trOdds2_). */
+async function _g45TrOddsApi(slug, marches){
   var key=_G45_TR_ODDSKEY[slug];
   if(!key) return null;
-  var c=_g45TrOddsCache[key];
-  if(c&&(Date.now()-c.t)<15*60000) return c.d;
-  try{ var raw=localStorage.getItem('g45trOdds_'+key); if(raw){ var o=JSON.parse(raw);
-    if((Date.now()-o.t)<15*60000){ _g45TrOddsCache[key]={t:o.t,d:o.d}; return o.d; } } }catch(e){}
+  marches=marches||'h2h,totals';
+  var ck=key+'|'+marches, TTL=3*3600000;
+  var c=_g45TrOddsCache[ck];
+  if(c&&(Date.now()-c.t)<TTL) return c.d;
+  try{ var raw=localStorage.getItem('g45trOdds2_'+ck); if(raw){ var o=JSON.parse(raw);
+    if((Date.now()-o.t)<TTL){ _g45TrOddsCache[ck]={t:o.t,d:o.d}; return o.d; } } }catch(e){}
   var base=(typeof FD_PROXY!=='undefined'?FD_PROXY:'https://fd-proxy.touraine-antoine.workers.dev').replace(/\/+$/,'');
-  var url=base+'/odds?sport='+encodeURIComponent(key)+'&regions=eu&markets=h2h,totals,btts';
+  var url=base+'/odds?sport='+encodeURIComponent(key)+'&regions=eu&markets='+encodeURIComponent(marches);
   var d=null;
   try{
     var r=await fetch(url);
@@ -29001,8 +29007,8 @@ async function _g45TrOddsApi(slug){
     if(!d && j && j.error){ window._g45TrOddsErr=key+' → '+j.error+(j.status?(' '+j.status):''); }
   }catch(e){ window._g45TrOddsErr=key+' → '+String((e&&e.message)||e).slice(0,40); }
   if(d){
-    _g45TrOddsCache[key]={t:Date.now(), d:d};
-    try{ localStorage.setItem('g45trOdds_'+key, JSON.stringify({t:Date.now(), d:d})); }catch(e){}
+    _g45TrOddsCache[ck]={t:Date.now(), d:d};
+    try{ localStorage.setItem('g45trOdds2_'+ck, JSON.stringify({t:Date.now(), d:d})); }catch(e){}
   }
   return d;
 }
@@ -30512,7 +30518,9 @@ async function g45TrRun(){
       var cross=/^(uefa|fifa|concacaf|conmebol|caf|afc)\./i.test(f.slug) || melange;
       var pr={};
       try{
-        var oaList=await _g45TrOddsApi(f.slug);
+        /* 20261013e : The Odds API seulement si ESPN n'a pas déjà la cote Over / Under du match (1 crédit, totals seul). */
+        var odE=_g45TrOddsEv(f.ev);
+        var oaList=(odE&&odE.ov>1&&odE.un>1)?null:await _g45TrOddsApi(f.slug,'totals');
         if(oaList){ var oaEv=_g45TrFindEv(oaList,hN,aN); if(oaEv) pr=_g45TrPrices(oaEv); }
       }catch(e){}
       var dc=null;
@@ -42662,7 +42670,7 @@ window.g45F1Session=g45F1Session;
    disparaissait au rechargement. Ce n'était ni la synchro GitHub, ni Dropbox, ni le cache
    du navigateur. Tous ces caches sont reconstructibles : ils cèdent la place aux données. */
 var _G45_CACHE_PREFIXES=['g45agoa2_',/* 11/10 : cotes Agenda (The Odds API) */'g45reg1_',/* 08/10 : régularité buteurs NHL */'g45bb1_','g45bbst1_','g45bbld1_','g45bbf1_',/* 03/10 : Pro A be-basketball */'g45es1_',/* 01/10 : stats Euroleague */'g45kbo1_',/* 01/10 : KBO (mykbostats) */'g45t14lg1',/* 01/10 : logos Top 14 (LNR) */'g45pd2_',/* 01/10 : Pro D2 (LNR) */'g45t14sq1_',/* 01/10 : effectifs Top 14 (LNR) */'g45nrlm1_','g45nrldr1_',/* 01/10 : feuilles et calendriers NRL */'g45nrlsq1_',/* 01/10 : effectifs NRL */'g45nrlst2_',/* 01/10 : classements NRL */'g45proacid1_',/* 30/09 : numéros LNB par saison */'g45proast1_',/* 30/09 : stats Pro A */'g45proa1_',/* 30/09 : Pro A par journée */'g45el1_',/* 30/09 : Euroleague (compact) */'g45buts1_',/* 30/09 : buts en action (match fini) */'g45prad1_','g45vsj1_','g45vse1_',/* 30/09 : radars joueurs */'g45ia1_',/* 29/09 : avis IA gardés 6 h */'g45_mmeta2_','g45_mmeta1_','g45_tennis4_','g45_tennis3_',/* 16/09 : meta de match (domicile/lieu) et score tennis, reconstructibles */'g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dcf_','g45dc_',
-  'g45trv3_','g45trv2_','g45trOdds_','g45tr_','g45but_st_','g45butL_','g45butA_','g45but_mur_',
+  'g45trv3_','g45trv2_','g45trOdds2_',/* 13/10 : cotes The Odds API par marchés */'g45tr_','g45but_st_','g45butL_','g45butA_','g45but_mur_',
   '_g45clv','g45clv_snaps','g45_saisons_cache_v3_','g45_saisons_cache_v2_',
   /* Ajoutes le 20/08 : ces caches, tous reconstructibles, n'etaient PAS declares
      ici — donc jamais purges quand le stockage saturait. Resultat : le quota
@@ -65825,7 +65833,7 @@ window._g45ClvSelection = _g45ClvSelection; window._g45ClvPoser = _g45ClvPoser; 
       (setItem et save) puisse les vider.
    3) Au-delà de 4 millions de caractères stockés, purge préventive des
       caches (jamais g45v5, les données). */
-var _G45_CACHE_MORTS = ['g45agoa1_' /* 11/10 : → g45agoa2_ (nom des books) */, 'g45nrlcal11_' /* 06/10 : → g45nrlcal12_ (présaison US écartée) */, 'g45f1tr1_' /* 04/10 : → g45f1tr2_ (voie des stands) */, 'g45bbjc1' /* 03/10 : → g45bbjc2 (clubs par saison) */, 'g45bbph1_' /* 03/10 : → g45bbph2_ (secours Wikipédia) */, 'g45cm10_' /* 07/10 : → g45cm11_ (statut OT/SO gardé) */, 'g45_jou_v1_' /* 07/10 : → g45_jou_v2_ (présence par match) */, 'g45cm9_' /* 01/10 : → g45cm10_ (présaison NHL marquée PO) */, 'g45nrlst1_' /* 01/10 : → g45nrlst2_ */, 'g45_cfai_veille' /* 29/09 : Workers AI supprimé */, 'g45cls4_' /* 29/09 : → g45cls5_ (stats de match) */, 'g45news7_', 'g45cm_', 'g45cm2_', 'g45cm3_', 'g45cm4_', 'g45cm5_', 'g45cm6_', 'g45cm7_', 'g45cm8_',
+var _G45_CACHE_MORTS = ['g45trOdds_' /* 13/10 : → g45trOdds2_ (marchés dans la clé) */, 'g45agoa1_' /* 11/10 : → g45agoa2_ (nom des books) */, 'g45nrlcal11_' /* 06/10 : → g45nrlcal12_ (présaison US écartée) */, 'g45f1tr1_' /* 04/10 : → g45f1tr2_ (voie des stands) */, 'g45bbjc1' /* 03/10 : → g45bbjc2 (clubs par saison) */, 'g45bbph1_' /* 03/10 : → g45bbph2_ (secours Wikipédia) */, 'g45cm10_' /* 07/10 : → g45cm11_ (statut OT/SO gardé) */, 'g45_jou_v1_' /* 07/10 : → g45_jou_v2_ (présence par match) */, 'g45cm9_' /* 01/10 : → g45cm10_ (présaison NHL marquée PO) */, 'g45nrlst1_' /* 01/10 : → g45nrlst2_ */, 'g45_cfai_veille' /* 29/09 : Workers AI supprimé */, 'g45cls4_' /* 29/09 : → g45cls5_ (stats de match) */, 'g45news7_', 'g45cm_', 'g45cm2_', 'g45cm3_', 'g45cm4_', 'g45cm5_', 'g45cm6_', 'g45cm7_', 'g45cm8_',
   'g45khl_fiche_', 'g45_saisons_cache_v2_', 'g45_score_', 'g45_score2_', 'g45_score3_'];
 try {
   ['g45cm11_', 'g45xgj1_', 'g45khl_fiche2_', 'g45khl_plage_', 'g45cls3_', 'g45cls5_', 'g45photostsdb_', 'g45wk1_', 'g45jv_', 'g45art1_', 'g45clv1_', 'g45arb1_', 'g45_herologo_', 'g45cm3_']
