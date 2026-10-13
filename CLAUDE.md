@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261013a, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261013b, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1604,6 +1604,8 @@ BANDEAU DE PRÉVENTION (20261012d, demande d'Antoine d'après la bande jaune d'u
   téléphone. Formule de Potes (social.js) et mentions légales inchangées. Compte X @Bet45_fr créé le 12/10 (bannière + logo faits par Claude).
 SAISONS D'UN CLUB DE FOOT (loadTeamSaisons, 20261013a, maquette validée « oui ») : boutons Global / Domicile / Extérieur (_statFilter) posés UNE fois
   sous « Filtrer par compétition » (retirés de chaque saison) ; pastilles BTS / CS / WIN / LOSE / 1N / N2 en 14 px blanc, choisie en bleu + ✓.
+TENDANCES (20261013b, capture « Viking FK ou nul » vs Bayern 61 % / bookmaker 13 %) : tendance dont le modèle dépasse 2,2 × la proba du marché
+  (marge retirée, note « Ecart ecarte ») RETIRÉE de la liste (avant : gardée dans « Taux élevés sans écart calculable »).
 RÉGLÉ OU ABANDONNÉ (ne pas reproposer) :
 - APK bet45 sans barre d'adresse : OK. Logos Lakers / hockey : OK. « Connexion » sur le
   logo, paysage gones, pression en portrait, « 1. FC », cartes KHL, compos rugby : OK

@@ -30524,6 +30524,10 @@ async function g45TrRun(){
           m.note='Ecart ecarte : le modele donne '+_g45TrPct(m.p)+' quand le marche, marge retiree, donne '
                 +_g45TrPct(m.fair)+'. Une divergence de cet ordre revele une donnee inadaptee, pas une opportunite.';
         }
+        /* 20261013b (capture d'Antoine : « tendance Viking ou nul mdr » contre le Bayern, 61 % vs 13 % chez le bookmaker ; Sabah 65 % vs 25 %) :
+           l'anomalie restait AFFICHÉE dans « Taux élevés sans écart calculable » (stats d'un championnat faible appliquées à la LDC).
+           Le marché dit que la donnée est inadaptée → la tendance n'est plus montrée du tout. */
+        if(m && m.note && /^Ecart ecarte/.test(m.note)) return;
         /* Ecarte des la construction, pas seulement a l'affichage : c'est ce que
            veut dire « enlever totalement ». Le tri par esperance ne peut donc
            plus remonter une improbabilite bien cotee. */
