@@ -1627,7 +1627,7 @@ CRÉDITS THE ODDS API (20261013e, 13/10 : plafond du jour du worker atteint, « 
   qu'ESPN avait une cote Over/Under → plus de cote 2,5 ; maintenant The Odds API sautée seulement si la ligne ESPN = 2,5.
   20261013g — SONDÉ PAR ANTOINE : ESPN « Lens » / « Sporting CP » vs The Odds API « RC Lens » / « Sporting Lisbon » (Over 2,5 1,59) → match
   jamais retrouvé. `_g45TrFindEv` : 2e passage MOT PAR MOT (mot ≥ 4 lettres commun aux deux équipes, mots courants real/united/city… écartés,
-  candidat UNIQUE seulement). Testé vm 7/7.
+  candidat UNIQUE seulement). Testé vm 7/7. CONFIRMÉ par Antoine (Lens–Sporting + de 2,5 buts : cote 1,58 affichée).
 RÉGLÉ OU ABANDONNÉ (ne pas reproposer) :
 - APK bet45 sans barre d'adresse : OK. Logos Lakers / hockey : OK. « Connexion » sur le
   logo, paysage gones, pression en portrait, « 1. FC », cartes KHL, compos rugby : OK
