@@ -72960,3 +72960,32 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   var go = function () { try { _g45AideBoutonsPoser(); setTimeout(_g45AideBoutonsPoser, 2000); } catch (e) {} };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', go); else go();
 })();
+
+/* ═══ 20261013t — PENSE-BÊTE PC : DIRE QU'IL LIT LES TICKETS (« faudrait indiquer que ce lieu lit les paris ? », maquette validée « OUI ») ═══
+   Rien n'indiquait que coller une capture dans #pc-note remplit le pari (lecture IA 20261007m). Encadré pointillé bleu posé AU-DESSUS de
+   #pc-note (même .pc-note-area), texte 14 px blanc ; clic = curseur dans le pense-bête (Ctrl+V y arrive) ; glisser-déposer sur l'encadré =
+   window._g45TicketTraiter (même lecture que le collage). Placeholder du pense-bête → « Ou écris tes notes, cotes… ». */
+(function () {
+  function poser() {
+    document.querySelectorAll('[id="pc-note"]').forEach(function (z) {
+      var p = z.parentNode; if (!p || p.querySelector('.g45-tk-ban')) return;
+      z.setAttribute('data-placeholder', 'Ou écris tes notes, cotes…');
+      var b = document.createElement('div');
+      b.className = 'g45-tk-ban';
+      b.style.cssText = 'background:rgba(8,11,20,.85);border:1px dashed #6d9dff;border-radius:8px;padding:10px;margin-bottom:8px;text-align:center;font-size:14px;line-height:1.5;color:#fff;cursor:pointer;';
+      b.innerHTML = '📷 <b style="color:#6d9dff;">Colle ici la capture de ton ticket</b><br>(Ctrl+V ou glisser-déposer)<br>→ le pari se remplit tout seul'
+        + '<div style="font-size:12px;color:#c9d3ee;margin-top:4px;">Winamax, Betclic, Unibet, PMU, bet365, Betsson…</div>';
+      b.onclick = function () { try { z.focus(); } catch (e) {} };
+      b.addEventListener('dragover', function (e) { e.preventDefault(); });
+      b.addEventListener('drop', function (e) {
+        var dt = e.dataTransfer, f = null;
+        for (var i = 0; dt && dt.files && i < dt.files.length; i++) if (/^image\//.test(dt.files[i].type || '')) { f = dt.files[i]; break; }
+        if (!f || typeof window._g45TicketTraiter !== 'function') return;
+        e.preventDefault(); window._g45TicketTraiter(f);
+      });
+      p.insertBefore(b, z);
+    });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', poser); else poser();
+  setTimeout(poser, 2000);
+})();
