@@ -1630,7 +1630,7 @@ CRÉDITS THE ODDS API (20261013e, 13/10 : plafond du jour du worker atteint, « 
   candidat UNIQUE seulement). Testé vm 7/7. CONFIRMÉ par Antoine (Lens–Sporting + de 2,5 buts : cote 1,58 affichée).
   20261013h (« en fond 1er et 2e match on pourrait faire quoi » → choix « LOGO COMPETITION ») : carte Tendances sans photo de club en cache
   (`_g45ImgPersoLire` / `_g45FanLire`, aucune recherche lancée) → logo de la compétition (scoreboard leagues[0].logos, rel « dark » d'abord,
-  0 requête ; fixtures.lgl → deco.lgl) en grand au centre, opacité .2, contain. Photo du club : proposée, NON retenue.
+  0 requête ; fixtures.lgl → deco.lgl) en grand au centre, opacité .2, contain. Photo du club : proposée, NON retenue. CONFIRMÉ « c'est bien ».
 RÉGLÉ OU ABANDONNÉ (ne pas reproposer) :
 - APK bet45 sans barre d'adresse : OK. Logos Lakers / hockey : OK. « Connexion » sur le
   logo, paysage gones, pression en portrait, « 1. FC », cartes KHL, compos rugby : OK
