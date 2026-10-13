@@ -1431,6 +1431,9 @@ RÉGLÉ (worker, 01/10) : cron « exceededCpu » (cpuTimeMs 10) à CHAQUE passag
   Gratuit / Abonné, pourboire (Outils → Mon compte), message « 🔒 25 paris ce mois-ci » ; « oui » de codage PAS encore donné. Vidéo explicative :
   faite par Claude (enregistrement automatique + sous-titres, Antoine ne veut pas se filmer), après le guide. Retour : les collègues de sa femme
   « ne comprennent pas le site ».
+  Compétitions PROPOSÉ (réponse attendue) : libre = Équipes, Direct, Calendrier, Journées, Classement, Suivies ; abonné = Forme, Classements,
+  Séries individuelles, fiche complète. Fiche d'un club ouverte depuis Compétitions (onglet Bilan vide, « 0 paris · Palier 1 ») : Antoine
+  « c'est bon » pour les abonnés, ne rien changer ; compte GRATUIT (3 équipes) : club hors de ses 3 → fiche simple + cadenas sur le reste.
 - 🎯 BUTEURS LES PLUS RÉGULIERS (07/10, maquette « oui ») : Antoine veut un CLASSEMENT des 10 meilleurs buteurs de la LIGUE (NHL
   d'abord, autres sports ensuite si ça lui plaît) : buts, matchs joués, % de matchs avec but, PIRE SÉRIE sans marquer (matchs joués
   seulement, vert < 6 / orange 6-9 / rouge ≥ 10), série en cours ; toucher = filtre Buteur. Contrainte : « faut pas que ça bloque tout »
