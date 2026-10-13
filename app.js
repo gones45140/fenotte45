@@ -58973,7 +58973,9 @@ async function g45BandeauMaj() {
        faisait croire à des doublons dès qu'il n'y avait qu'un ou deux matchs.
        Si tout tient à l'écran, on affiche chaque match UNE fois, sans défiler. */
     var dispo = large - ((box.querySelector('.g45-band-src-wrap') || {}).offsetWidth || 0);
-    if (uneCopie > 0 && dispo > 0 && uneCopie <= dispo) {
+    /* 20261013k (capture PC d'Antoine : « MON RUBAN DEFILE PLUS », 7 matchs qui tenaient à l'écran) : l'arrêt ne vaut plus que pour
+       1 à 3 matchs (le cas des doublons du 27/09) ; à partir de 4, le ruban défile toujours. */
+    if (uneCopie > 0 && dispo > 0 && uneCopie <= dispo && trouves.length <= 3) {
       track.innerHTML = html;
       track.style.animation = 'none';
     } else if (uneCopie > 0 && large > 0) {

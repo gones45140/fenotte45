@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261013j, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261013k, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -407,7 +407,8 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   `_g45ParisSport(h)` = h.sport, sinon u.sport de l'équipe du mur (h.n), sinon deviné par h.comp (`_G45_PARIS_COMP`, MotoGP avant F1) ;
   rond `_g45ParisRond(h, px)` (couleurs Agenda `_G45_PARIS_COUL`) au-dessus du logo du book dans `_g45BetRowMini` (Paris filtrés) et
   à la place de l'ancien sportIco (archive, DEUX copies) ; pastille « 🏈 NFL » `_g45ParisCompPastille` dans `_g45LigneMatch`.
-- Bandeau de scores `g45BandeauMaj` : si tout tient à l'écran, UNE copie, sans défilement.
+- Bandeau de scores `g45BandeauMaj` : si tout tient à l'écran ET 1 à 3 matchs, UNE copie, sans défilement ; 20261013k (« MON RUBAN DEFILE
+  PLUS », PC, 7 matchs tenant à l'écran) : à partir de 4 matchs, il défile toujours.
 - Suivies « Matchs à venir / direct » (`g45DirectMesEquipes`, groupes `_g45DirEquipes`) : 29v —
   le plafond (10) porte sur les REQUÊTES réelles (`aInterroger`, tout le foot = 1 requête `all`),
   plus sur les championnats : les ligues de foot d'Antoine occupaient les 8 places et la NHL
