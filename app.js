@@ -30420,6 +30420,7 @@ function loadTendancesTab(){
     +'<div style="font-size:12px;color:var(--t2);line-height:1.5;margin-bottom:13px;max-width:640px;text-shadow:0 1px 4px rgba(0,0,0,.85);">Classées par <b style="color:var(--t1);">écart avec la cote</b>, pas par pourcentage brut : une série à 100 % ne vaut rien si le bookmaker l\'a déjà intégrée.</div>'
     +'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:6px;margin-bottom:9px;">'
     +G.map(function(g,i){ return chip(g.grp, !!_G45_TR.sel[i], "g45TrSel("+i+")"); }).join('')+'</div>'
+    +_g45TrLiguesHtml(G)   /* 20261013c : choix de la compétition dans chaque groupe */
     +'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:4px 16px;margin-bottom:11px;">'
     +seg('Jour', chip("Aujourd'hui", _G45_TR.day===0, "g45TrDay(0)")+chip('Demain', _G45_TR.day===1, "g45TrDay(1)"))
     +seg('Cote mini', chip('Toutes', !_G45_TR.min, "g45TrMin(0)")+chip('1.30', _G45_TR.min===1.3, "g45TrMin(1.3)")+chip('1.50', _G45_TR.min===1.5, "g45TrMin(1.5)"))
@@ -30433,6 +30434,7 @@ function loadTendancesTab(){
       +'<button onclick="g45ButeursView()" class="ba">Voir les buteurs ›</button>'
       +'<button onclick="g45ClvView()" class="ba">Voir le CLV ›</button>'
     +'</div>';
+  h+='<div id="g45tr-fiab">'+_g45TrFiabHtml()+'</div>';   /* 20261013c : fiabilité vérifiée */
   if(!_G45_TR.res){
     h+='<button onclick="g45TrRun()" class="btn btn-p" style="padding:11px 24px;font-size:13.5px;">Analyser les matchs</button>'
       +'<div id="g45tr-prog" style="font-size:10px;color:#8aa0ff;text-align:center;padding:9px;"></div>';
@@ -30440,6 +30442,7 @@ function loadTendancesTab(){
     h+=_g45TrRender();
   }
   el.innerHTML=h;
+  try{ _g45TrSuivVerifier(); }catch(e){}
 }
 window.loadTendancesTab=loadTendancesTab;
 
@@ -30449,7 +30452,7 @@ async function g45TrRun(){
   var pg=function(t){ var b=document.getElementById('g45tr-prog'); if(b) b.innerHTML=t; };
   try{
     var G=_g45TrGroups(), slugs=[];
-    G.forEach(function(g,i){ if(_G45_TR.sel[i]) g.leagues.forEach(function(l){ if(slugs.indexOf(l.slug)<0) slugs.push(l.slug); }); });
+    G.forEach(function(g,i){ if(_G45_TR.sel[i]) g.leagues.forEach(function(l){ if(!_g45TrLigOff(l.slug) && slugs.indexOf(l.slug)<0) slugs.push(l.slug); }); });
     if(!slugs.length){ pg('Sélectionne au moins un groupe.'); _G45_TR.run=false; return; }
     var d=new Date(); if(_G45_TR.day) d=new Date(+d+864e5);
     var ymd=_g45TrYmd(d);
@@ -30528,11 +30531,17 @@ async function g45TrRun(){
            l'anomalie restait AFFICHÉE dans « Taux élevés sans écart calculable » (stats d'un championnat faible appliquées à la LDC).
            Le marché dit que la donnée est inadaptée → la tendance n'est plus montrée du tout. */
         if(m && m.note && /^Ecart ecarte/.test(m.note)) return;
+        /* 20261013c (maquette validée « oui ») — COUPES D'EUROPE : les stats viennent de championnats de niveaux différents.
+           Avec une cote : on garde seulement si stats et bookmakers sont d'accord (≤ 12 points d'écart) ; sans cote : badge d'avertissement. */
+        if(m && m.cross){
+          if(Math.abs(m.p - m.fair) > 0.12) return;
+          m.accord = m.fair; m.note = null;
+        } else if(m && cross && m.fair == null && !m.info){ m.croSans = true; }
         /* Ecarte des la construction, pas seulement a l'affichage : c'est ce que
            veut dire « enlever totalement ». Le tri par esperance ne peut donc
            plus remonter une improbabilite bien cotee. */
         if(!m || !(m.p >= _G45_TR_PFLOOR)) return;
-        res.push({m:m, hN:hN, aN:aN, when:when, slug:f.slug, id:f.ev.id, deco:deco});
+        res.push({m:m, hN:hN, aN:aN, when:when, slug:f.slug, id:f.ev.id, deco:deco, d:f.ev.date});
       });
     }
     res.sort(function(x,z){
@@ -30582,6 +30591,7 @@ function _g45TrRender(){
     if(vuMatch[k]) return false;
     vuMatch[k]=1; return true;
   }).slice(0,18);
+  try{ _g45TrSuivNoter(avec.slice(0,25).concat(sans)); }catch(e){}   /* 20261013c : suivi de fiabilité */
   var h='<button onclick="_G45_TR.res=null;loadTendancesTab();" style="border:none;cursor:pointer;background:rgba(255,255,255,.06);border-radius:8px;color:var(--t2);padding:6px 11px;font-size:10px;font-weight:700;margin-bottom:9px;">↺ Relancer</button>';
   var card=function(x,showGap){
     var m=x.m;
@@ -30648,6 +30658,8 @@ function _g45TrRender(){
        degrade : c'est le texte qui doit s'adapter au fond, pas l'inverse. */
     if(m.fair!=null) s+='<div style="position:relative;display:inline-block;font-size:8.5px;color:rgba(255,255,255,.78);'
       +'background:rgba(8,11,20,.6);border-radius:5px;padding:2px 7px;margin-top:5px;">Bookmaker (marge retirée) : '+_g45TrPct(m.fair)+'</div>';
+    if(m.accord!=null) s+='<div style="position:relative;display:inline-block;margin-top:6px;background:rgba(30,215,96,.18);border:1px solid #1ed760;color:#fff;font-size:13px;font-weight:700;padding:4px 9px;border-radius:8px;">\u2705 Coupe d\u2019Europe : stats et bookmakers d\u2019accord (bookmakers '+_g45TrPct(m.accord)+')</div>';
+    else if(m.croSans) s+='<div style="position:relative;display:inline-block;margin-top:6px;background:rgba(8,11,20,.7);border:1px solid #ff8c42;color:#fff;font-size:13px;font-weight:700;padding:4px 9px;border-radius:8px;">\u26a0\ufe0f Coupe d\u2019Europe : pas de cote pour v\u00e9rifier</div>';
     if(m.note) s+='<div style="font-size:8px;color:#8aa0ff;margin-top:4px;line-height:1.5;">ℹ️ '+_g45CyEa(m.note)+'</div>';
     if(m.dc) s+='<div style="font-size:7.5px;color:#2ecc71;margin-top:3px;">📐 Dixon-Coles '
       +(m.dcFit?'ajusté par maximum de vraisemblance — force de l\'adversaire et pondération temporelle prises en compte'
@@ -72282,3 +72294,142 @@ function _g45PrevPoser() {
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', _g45PrevPoser); else _g45PrevPoser();
 setTimeout(_g45PrevPoser, 1500);
+
+/* ═══ 20261013c — TENDANCES : CHOIX DE LA COMPÉTITION + FIABILITÉ VÉRIFIÉE (maquettes validées « oui ») ═══
+   1. Dans chaque groupe allumé (Grands championnats, Coupes d'Europe…), une puce par compétition : toucher quand tout est
+      allumé = garder SEULEMENT celle-ci ; sinon allumer / éteindre ; « Tous » = tout le groupe. Mémoire g45tr_lsoff (slugs éteints).
+   2. Chaque tendance AFFICHÉE est notée (g45suivtend1 : id, slug, date, type de marché, proba annoncée) puis vérifiée avec le
+      score final ESPN (scoreboard du jour, 6 lectures max par ouverture de l'onglet) → tableau « annoncé / réussi en vrai ».
+      Mémoire de l'appareil (pas partagée PC / téléphone). Score exact non suivi. */
+function _g45TrLsOff() { try { return JSON.parse(localStorage.getItem('g45tr_lsoff') || '{}') || {}; } catch (e) { return {}; } }
+function _g45TrLigOff(slug) { return !!_g45TrLsOff()[slug]; }
+function g45TrLig(gi, slug) {
+  var G = _g45TrGroups(), g = G[gi]; if (!g) return;
+  var o = _g45TrLsOff();
+  if (slug === '*') { g.leagues.forEach(function (l) { delete o[l.slug]; }); }
+  else {
+    var toutes = g.leagues.every(function (l) { return !o[l.slug]; });
+    if (toutes) { g.leagues.forEach(function (l) { if (l.slug !== slug) o[l.slug] = 1; }); }
+    else if (o[slug]) delete o[slug];
+    else {
+      o[slug] = 1;
+      if (g.leagues.every(function (l) { return o[l.slug]; })) g.leagues.forEach(function (l) { delete o[l.slug]; });   /* jamais un groupe vide */
+    }
+  }
+  try { localStorage.setItem('g45tr_lsoff', JSON.stringify(o)); } catch (e) {}
+  _G45_TR.res = null; loadTendancesTab();
+}
+window.g45TrLig = g45TrLig;
+function _g45TrLiguesHtml(G) {
+  var o = _g45TrLsOff(), h = '';
+  G.forEach(function (g, gi) {
+    if (!_G45_TR.sel || !_G45_TR.sel[gi] || !g.leagues || g.leagues.length < 2) return;
+    var puce = function (lbl, on, fn) {
+      return '<button onclick="' + fn + '" style="padding:7px 12px;border-radius:16px;cursor:pointer;font-size:14px;font-weight:' + (on ? '800' : '700') + ';'
+        + 'border:1px solid ' + (on ? '#3b82f6' : 'rgba(255,255,255,.25)') + ';background:' + (on ? '#2563eb' : '#1a2235') + ';color:' + (on ? '#fff' : '#e8ecfa') + ';">'
+        + (on ? '✓ ' : '') + lbl + '</button>';
+    };
+    var toutes = g.leagues.every(function (l) { return !o[l.slug]; });
+    h += '<div style="margin:0 0 10px;"><div style="font-size:13px;color:#e8ecfa;font-weight:800;margin-bottom:6px;text-shadow:0 1px 4px rgba(0,0,0,.85);">'
+      + _g45CyEa(g.grp) + ' <span style="font-weight:600;color:#c9d3ee;">— touche pour garder / retirer</span></div>'
+      + '<div style="display:flex;gap:7px;flex-wrap:wrap;">'
+      + g.leagues.map(function (l) { return puce(_g45CyEa(l.name), !toutes && !o[l.slug], "g45TrLig(" + gi + ",'" + l.slug + "')"); }).join('')
+      + puce('Tous', toutes, "g45TrLig(" + gi + ",'*')") + '</div></div>';
+  });
+  return h;
+}
+function _g45TrSuivLire() { try { var a = JSON.parse(localStorage.getItem('g45suivtend1') || '[]'); return Array.isArray(a) ? a : []; } catch (e) { return []; } }
+function _g45TrSuivEcrire(a) {
+  var lim = Date.now() - 120 * 864e5;
+  a = a.filter(function (x) { return x && x.t > lim; }).slice(-400);
+  try { localStorage.setItem('g45suivtend1', JSON.stringify(a)); } catch (e) {}
+}
+function _g45TrSuivType(lbl, hN, aN) {
+  if (lbl === 'Les deux marquent') return 'btts';
+  if (lbl === '+ de 2,5 buts') return 'o25';
+  if (lbl === '+ de 1,5 but') return 'o15';
+  if (lbl === '- de 3,5 buts') return 'u35';
+  if (lbl === 'Match nul') return 'N';
+  if (lbl === 'Pas de nul') return '12';
+  if (lbl === 'Victoire ' + hN) return '1';
+  if (lbl === 'Victoire ' + aN) return '2';
+  if (lbl === hN + ' ou nul') return '1N';
+  if (lbl === aN + ' ou nul') return '2N';
+  return null;
+}
+function _g45TrSuivNoter(liste) {
+  var a = _g45TrSuivLire(), vu = {};
+  a.forEach(function (x) { vu[x.id + '|' + x.k] = 1; });
+  var ajout = 0;
+  (liste || []).forEach(function (x) {
+    if (!x || !x.m || !x.id || !x.d) return;
+    var k = _g45TrSuivType(x.m.m, x.hN, x.aN); if (!k) return;
+    if (vu[x.id + '|' + k]) return;
+    var t = Date.parse(x.d); if (isNaN(t)) return;
+    a.push({ id: String(x.id), sl: x.slug, t: t, k: k, p: Math.round(x.m.p * 1000) / 1000, r: null });
+    vu[x.id + '|' + k] = 1; ajout++;
+  });
+  if (ajout) _g45TrSuivEcrire(a);
+}
+function _g45TrSuivJuge(k, h, w) {
+  var t = h + w;
+  switch (k) {
+    case 'btts': return h > 0 && w > 0; case 'o25': return t > 2.5; case 'o15': return t > 1.5; case 'u35': return t < 3.5;
+    case 'N': return h === w; case '12': return h !== w; case '1': return h > w; case '2': return w > h;
+    case '1N': return h >= w; case '2N': return w >= h;
+  }
+  return null;
+}
+var _g45TrSuivEnCours = false;
+async function _g45TrSuivVerifier() {
+  if (_g45TrSuivEnCours) return; _g45TrSuivEnCours = true;
+  try {
+    var a = _g45TrSuivLire(), lim = Date.now() - 3 * 3600000, grp = {}, ordre = [];
+    a.forEach(function (x) {
+      if (x.r != null || x.t > lim) return;
+      if (Date.now() - x.t > 10 * 864e5) { x.r = -1; return; }   /* plus de 10 jours sans score : abandonné */
+      var g = x.sl + '|' + _g45TrYmd(new Date(x.t));
+      if (!grp[g]) { grp[g] = []; ordre.push(g); } grp[g].push(x);
+    });
+    var lus = 0, change = false;
+    for (var i = 0; i < ordre.length && lus < 6; i++) {
+      var pr = ordre[i].split('|'); lus++;
+      var j = null; try { j = await _g45TrEspn('/apis/site/v2/sports/soccer/' + pr[0] + '/scoreboard?dates=' + pr[1]); } catch (e) { continue; }
+      var parId = {};
+      ((j && j.events) || []).forEach(function (e) { parId[String(e.id)] = e; });
+      grp[ordre[i]].forEach(function (x) {
+        var e = parId[x.id]; if (!e) return;
+        var c = (e.competitions && e.competitions[0]) || {}, st = (c.status && c.status.type) || {};
+        if (!st.completed) { if (/postpon|cancel|abandon/i.test(st.name || st.description || '')) { x.r = -1; change = true; } return; }
+        var ho = (c.competitors || []).filter(function (q) { return q.homeAway === 'home'; })[0];
+        var aw = (c.competitors || []).filter(function (q) { return q.homeAway === 'away'; })[0];
+        var sh = parseInt(ho && ho.score, 10), sa = parseInt(aw && aw.score, 10);
+        if (isNaN(sh) || isNaN(sa)) return;
+        var v = _g45TrSuivJuge(x.k, sh, sa); if (v == null) return;
+        x.r = v ? 1 : 0; change = true;
+      });
+    }
+    _g45TrSuivEcrire(a);
+    if (change) { var b = document.getElementById('g45tr-fiab'); if (b) b.innerHTML = _g45TrFiabHtml(); }
+  } catch (e) {} finally { _g45TrSuivEnCours = false; }
+}
+function _g45TrFiabHtml() {
+  var a = _g45TrSuivLire().filter(function (x) { return x.r === 0 || x.r === 1; });
+  var att = _g45TrSuivLire().filter(function (x) { return x.r == null; }).length;
+  var T = [[0.40, 0.50, '40 – 49 %'], [0.50, 0.60, '50 – 59 %'], [0.60, 0.70, '60 – 69 %'], [0.70, 2, '70 % et +']];
+  var lig = '';
+  T.forEach(function (b) {
+    var l = a.filter(function (x) { return x.p >= b[0] && x.p < b[1]; }); if (!l.length) return;
+    var ok = l.filter(function (x) { return x.r === 1; }).length, reel = ok / l.length;
+    var ann = l.reduce(function (s, x) { return s + x.p; }, 0) / l.length;
+    var col = reel >= ann - 0.03 ? '#1ed760' : (reel >= ann - 0.08 ? '#f0c828' : '#ff6b6b');
+    lig += '<tr><td style="padding:5px 0;">' + b[2] + '</td><td><b style="color:' + col + ';">' + Math.round(reel * 100) + ' %</b></td><td>' + l.length + '</td></tr>';
+  });
+  if (!lig && !att) return '';
+  return '<div style="background:rgba(11,16,29,.86);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:12px 14px;margin-bottom:12px;color:#fff;">'
+    + '<div style="font-size:16px;font-weight:800;">📈 Fiabilité des Tendances <span style="font-size:13px;color:#c9d3ee;font-weight:600;">· ' + a.length + ' vérifiée' + (a.length > 1 ? 's' : '') + (att ? ' · ' + att + ' en attente du score' : '') + '</span></div>'
+    + (lig ? '<table style="width:100%;margin-top:8px;font-size:14px;border-collapse:collapse;"><tr style="color:#c9d3ee;font-size:12px;"><td>Annoncé</td><td>Réussi en vrai</td><td>Nombre</td></tr>' + lig + '</table>'
+           + '<div style="font-size:12px;color:#c9d3ee;margin-top:8px;">Vert = l’appli tient ses promesses · rouge = elle se surestime. Vérifié avec les scores.</div>'
+         : '<div style="font-size:13px;color:#c9d3ee;margin-top:6px;">Les tendances affichées sont vérifiées après le match : le tableau se remplit au fil des jours.</div>')
+    + '</div>';
+}

@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261013b, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261013c, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1606,6 +1606,12 @@ SAISONS D'UN CLUB DE FOOT (loadTeamSaisons, 20261013a, maquette validée « oui 
   sous « Filtrer par compétition » (retirés de chaque saison) ; pastilles BTS / CS / WIN / LOSE / 1N / N2 en 14 px blanc, choisie en bleu + ✓.
 TENDANCES (20261013b, capture « Viking FK ou nul » vs Bayern 61 % / bookmaker 13 %) : tendance dont le modèle dépasse 2,2 × la proba du marché
   (marge retirée, note « Ecart ecarte ») RETIRÉE de la liste (avant : gardée dans « Taux élevés sans écart calculable »).
+TENDANCES (20261013c, maquettes validées « oui ») : (1) choix de la compétition dans chaque groupe allumé (`_g45TrLiguesHtml`, `g45TrLig(gi, slug|'*')`,
+  slugs éteints localStorage g45tr_lsoff, filtrés dans g45TrRun) ; (2) COUPES D'EUROPE (cross) : cote présente → gardée seulement si |modèle − marché| ≤ 12 pts,
+  badge « ✅ stats et bookmakers d'accord » (m.accord) ; sans cote → « ⚠️ pas de cote pour vérifier » (m.croSans) ; (3) FIABILITÉ : tendances AFFICHÉES notées
+  (`_g45TrSuivNoter`, g45suivtend1, 400 max / 120 j, score exact exclu) puis jugées sur le score final (`_g45TrSuivVerifier`, scoreboard du jour, 6 lectures
+  par ouverture, abandon après 10 j) → bloc #g45tr-fiab `_g45TrFiabHtml` (tranches 40/50/60/70 %, vert / jaune / rouge vs proba annoncée). Testé vm 9/9 + rendu.
+  À FAIRE ENSUITE (accord d'Antoine) : Tendances hors foot, en commençant par le hockey.
 RÉGLÉ OU ABANDONNÉ (ne pas reproposer) :
 - APK bet45 sans barre d'adresse : OK. Logos Lakers / hockey : OK. « Connexion » sur le
   logo, paysage gones, pression en portrait, « 1. FC », cartes KHL, compos rugby : OK
