@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261013p, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261013q, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -247,7 +247,9 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   Équipe = carte du mur du sport (🏎 ou nom « FORMULE 1 »…) sinon « Formule 1 », Type = « Vainqueur : Verstappen, Antonelli… » (noms de famille),
   adversaire / joueur vidés, compétition sans année ni « - Course », lieu neutre (setLieu('')) ; `window._g45TkCourse` → Adversaire jaune
   « facultatif ». Testé Chromium (réponse simulée).
-  ⚠ app.js contient un jeton Dropbox en dur (localStorage.setItem('gones45_dbx_token', 'sl.…'), ≈ l. 15585 et sa copie) : SIGNALÉ à Antoine le 10/10.
+  20261013q (« dropbox je m'en sers plus ») : jeton, clé et secret Dropbox RETIRÉS d'app.js (_dbxConfig vide ×2, setItem du jeton ×2 remplacé par
+  un effacement de l'ancien jeton chez les visiteurs ; sauvegarde auto sans jeton = muette). À RÉVOQUER côté Dropbox par Antoine (il reste dans
+  l'historique git). LICENSE « Tous droits réservés » dans les deux dépôts + ligne © en tête d'app.js.
 - SYNCHRO DES PARIS (GitHub, Antoine seul, données/paris_antoine.json chiffré) — 20261007l : le 09/10, PC éteint après 3 paris (22:16-22:20),
   téléphone resté ANCIEN saisit Lens–Lyon → poussait SON état entier (23:19) → 3 paris perdus partout (restaurés par commande console depuis
   le commit adc4c09). Correctif (bloc en fin d'app.js) : `_g45PushBetsGithub` REMPLACÉE — avant chaque envoi, version GitHub plus récente que
