@@ -1419,6 +1419,16 @@ RÉGLÉ (worker, 01/10) : cron « exceededCpu » (cpuTimeMs 10) à CHAQUE passag
   (concurrent « Astuces Paris Sportifs » : 9,99 / 14,99 / 19,99 €/mois ; Antoine trouve la page Whop « pas pro » → Whop seulement en moteur de paiement,
   page d'abonnement DANS bet45). À FAIRE : verrou CÔTÉ SERVEUR (RLS Supabase / worker) ; rappel à Antoine :
   vente ≠ don → compte PayPal PRO + déclaration (micro-entreprise). Ne pas récupérer de clé ni de secret pour ça.
+  13/10 — DÉCIDÉ AVEC ANTOINE (rien de codé) : PAS de micro-entreprise ni de PayPal pro encore (il a lancé la création sur
+  formalites.entreprises.gouv.fr — GRATUIT ; site privé payant espace-autoentrepreneur.com écarté). Tant qu'il n'y a pas de SIRET : PAS de vente
+  (un « pourboire qui débloque » = une vente) → bouton « ☕ Laisser un pourboire » SANS contrepartie. PLAN : Gratuit = 25 paris / mois (après les
+  30 jours offerts ; limite codée mais ÉTEINTE jusqu'au SIRET), Bilan essentiel (gains, ROI, courbe, liste), 3 équipes au mur, scores en direct /
+  ruban / agenda, fiche d'équipe simple. Abonné = paris illimités, Bilan détaillé (sport / book / type / cotes / dom-ext), CLV, assistant IA du
+  Bilan, équipes illimitées, fiche complète (Saisons, Compo, Séries individuelles), notifications, Tendances, Analyse IA, résumés traduits.
+  Compétitions : À DÉCIDER (aujourd'hui : visiteur oui, compte > 30 j non — incohérent). Maquettes faites : guide de bienvenue 4 écrans + écran 5
+  Gratuit / Abonné, pourboire (Outils → Mon compte), message « 🔒 25 paris ce mois-ci » ; « oui » de codage PAS encore donné. Vidéo explicative :
+  faite par Claude (enregistrement automatique + sous-titres, Antoine ne veut pas se filmer), après le guide. Retour : les collègues de sa femme
+  « ne comprennent pas le site ».
 - 🎯 BUTEURS LES PLUS RÉGULIERS (07/10, maquette « oui ») : Antoine veut un CLASSEMENT des 10 meilleurs buteurs de la LIGUE (NHL
   d'abord, autres sports ensuite si ça lui plaît) : buts, matchs joués, % de matchs avec but, PIRE SÉRIE sans marquer (matchs joués
   seulement, vert < 6 / orange 6-9 / rouge ≥ 10), série en cours ; toucher = filtre Buteur. Contrainte : « faut pas que ça bloque tout »
