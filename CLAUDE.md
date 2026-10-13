@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261013t, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261013u, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -260,6 +260,13 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   palier recopié ; pierres tombales state.hOff 120 j via enveloppes deleteArchived / cancelBet) ; illisible → envoi ANNULÉ ; sha refusé → 1
   nouvel essai ; envois sérialisés. NON fusionnés : modification d'un pari présent des deux côtés, dépôts / retraits manuels. Testé : 15 cas vm +
   scénario complet Chromium avec faux GitHub (4 paris, solde juste).
+- 📋 PARIS « EN COURS » EN CARTES (20261013u, capture « c'est pareil on pourrait mieux faire ? », maquette validée « OUI viable pour combi cockpit et
+  simple ») : bloc en fin d'app.js ; #live-norm et #live-strat (rendu d'origine de render, DEUX copies, intact) REMPLACÉS par des cartes via
+  MutationObserver (ligne data-g45ec) : rond du sport `_g45ParisRond` + bbadge, compétition · « mar. 13/10 » · heure · lieu, match 17 px, type + joueur(s)
+  (h.joueurs[].nom / h.joueur, jmode), cote « @2,00 », mise, gain possible (freebet m×(cote−1), lay sans gain), ✅ Gagné / ❌ Perdu (classes sbtn sw / sl
+  gardées), 📡 Match / ✏️ / 🗑️ ; thead caché, min-width 0. `_g45AvScanner` pose son « 🤖 Valider » dans .g45ec-mid. DIRECT (pas les combinés) : coup
+  d'envoi −5 min → +3 h 30 → `_g45MatchMeta` (eid/sp/lg) + scoreboard ESPN du jour (mémoire 60 s) → « 🔴 EN DIRECT · 2-0 · 67' · ✅ gagnant si ça reste
+  comme ça / ⏳ pas encore gagnant » (`_g45AvPari`), fini → « 🏁 Terminé ». Relu chaque minute. Rendu vérifié Chromium 1280 + 400 px. Contrôle smoke.js (21).
 - COMPTABILITÉ DES PARIS : `_g45BetEffetTotal` / `_g45BetAppliquer` = seule
   source de vérité (mise retirée AU PLACEMENT ; gagné +m×cote ; freebet :
   cagnotte −m, gain m×(cote−1)). `deleteArchived` (DEUX copies) et

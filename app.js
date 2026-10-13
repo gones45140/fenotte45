@@ -65467,7 +65467,7 @@ function _g45AvScanner() {
         if (!h || !_g45AvFini(h)) return;
         var p = _g45AvProposer(h);
         if (!p) { if (typeof _g45ScoreTexte === 'function') _g45ScoreTexte(h); return; }   /* lance / relit la recherche du score */
-        var td = tr.querySelectorAll('td')[tid === 'live-strat' ? 1 : 0]; if (!td) return;
+        var td = tr.querySelector('.g45ec-mid') || tr.querySelectorAll('td')[tid === 'live-strat' ? 1 : 0]; if (!td) return;   /* 20261013u : cartes En cours */
         tr.setAttribute('data-g45av', '1');
         var col = p.v ? '#1ed760' : '#ff5a5a';
         var d = document.createElement('div');
@@ -72988,4 +72988,123 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', poser); else poser();
   setTimeout(poser, 2000);
+})();
+
+/* ═══ 20261013u — PARIS « EN COURS » EN CARTES (capture : « c'est pareil on pourrait mieux faire ? », maquette validée « OUI viable pour combi
+   cockpit et simple ») ═══
+   #live-norm (simples + combinés) et #live-strat (montante / cockpit) : le rendu d'origine (render, DEUX copies) est laissé tel quel puis
+   REMPLACÉ par des cartes (MutationObserver sur chaque tbody ; une ligne marquée data-g45ec = déjà fait). Une carte par pari, dans un
+   <td colspan> : rond du sport + logo du book, compétition · date « mar. 13/10 » · heure · lieu, match en 17 px blanc, type + JOUEUR(S),
+   cote en pastille jaune, mise, gain possible (freebet m×(cote−1), lay : pas de gain affiché), gros boutons ✅ Gagné / ❌ Perdu (classes
+   sbtn sw / sl gardées : `_g45AvScanner` pose son « 🤖 Score … Valider » dans .g45ec-mid), 📡 Match, ✏️, 🗑️ (mêmes fonctions qu'avant).
+   DIRECT : match commencé depuis < 3 h 30 → fiche `_g45MatchMeta` (eid, sp, lg) puis scoreboard ESPN du jour (mémoire 60 s) →
+   « 🔴 EN DIRECT · 1-1 · 67' » + « ✅ gagnant si ça reste comme ça / ⏳ pas encore gagnant » via `_g45AvPari` (null = rien) ; fini = « 🏁 Terminé · 2-1 ».
+   Combinés : pas de direct (plusieurs matchs). Relu chaque minute, page visible. */
+(function () {
+  var esc = function (t) { return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); };
+  var num = function (x) { var n = parseFloat(String(x).replace(',', '.')); return isNaN(n) ? 0 : n; };
+  var fr = function (n) { return (Math.round(n * 100) / 100).toFixed(2).replace('.', ',').replace(/,00$/, ''); };
+  function jour(h) {
+    var d = String(h.date || '').slice(0, 10); if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return '';
+    try { return new Date(d + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: '2-digit', month: '2-digit' }); } catch (e) { return d; }
+  }
+  function debut(h) {
+    var d = String(h.date || '').slice(0, 10); if (!/^\d{4}-\d{2}-\d{2}$/.test(d) || !h.heure) return null;
+    var t = new Date(d + 'T' + h.heure + ':00').getTime(); return isNaN(t) ? null : t;
+  }
+  function titre(h) {
+    if (h.isS) { var t = String(h.target || '').replace(/^\s*vs\s+/i, '').trim(); return h.n + (t && t !== '-' ? ' – ' + t : ''); }
+    return String(h.isCombi ? h.n : (h.target || h.n || '')).replace(/\s+vs\s+/ig, ' – ');
+  }
+  function joueurs(h) {
+    var L = Array.isArray(h.joueurs) ? h.joueurs.map(function (x) { return x && x.nom; }).filter(Boolean) : [];
+    if (!L.length && h.joueur) L = [h.joueur];
+    return L.join(h.jmode === 'et' ? ' et ' : ' ou ');
+  }
+  function carte(h) {
+    var id = esc(h.id), typ = (typeof g45TypeSansCote === 'function' ? g45TypeSansCote(h.type) : h.type) || '—';
+    var j = joueurs(h), c = num(h.cote), m = num(h.m);
+    var lieu = h.domicile === 'dom' ? ' · 🏠 Domicile' : (h.domicile === 'ext' ? ' · 🚌 Extérieur' : '');
+    var gain = h.isLay ? '' : (h.isFreebet ? m * (c - 1) : m * c);
+    var rond = (typeof _g45ParisRond === 'function') ? _g45ParisRond(h, 38) : '';
+    var book = (typeof bbadge === 'function') ? bbadge(h.b) : esc(h.b || '');
+    var bt = function (cls, st, onclick, txt, tit) { return '<button ' + (cls ? 'class="' + cls + '" ' : '') + 'data-id="' + id + '" onclick="' + onclick + '" title="' + tit + '" style="flex:1;min-width:0;cursor:pointer;border-radius:8px;padding:8px 6px;font-size:14px;font-weight:800;color:#fff;' + st + '">' + txt + '</button>'; };
+    return '<tr data-g45ec="1"><td colspan="5" style="padding:0 0 10px;border:none;">'
+      + '<div class="g45ec" style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;background:rgba(11,16,29,.9);border:1px solid #2a3350;border-left:4px solid #f5c542;border-radius:12px;padding:12px 14px;color:#fff;text-align:left;">'
+      + '<div style="display:flex;flex-direction:column;align-items:center;gap:6px;width:64px;flex:none;">' + rond + '<div style="transform:scale(1.1);">' + book + '</div></div>'
+      + '<div class="g45ec-mid" style="flex:1 1 230px;min-width:0;">'
+      + '<div style="font-size:13px;color:#c9d3ee;">' + (h.isS ? '🚀 Montante · ' : '') + (h.isCombi ? '🧩 Combiné · ' : '') + (h.comp ? '🏆 ' + esc(h.comp) + ' · ' : '') + esc(jour(h)) + (h.heure ? ' · ' + esc(h.heure) : '') + lieu + '</div>'
+      + '<div style="font-size:17px;font-weight:800;margin:3px 0;word-break:break-word;">' + esc(titre(h)) + '</div>'
+      + '<div style="font-size:14px;">' + (j ? '🎯 ' + esc(typ) + ' : <b style="background:rgba(0,0,0,.5);padding:2px 6px;border-radius:6px;">' + esc(j) + '</b>' : '<b style="background:rgba(0,0,0,.5);padding:2px 6px;border-radius:6px;">' + esc(typ) + '</b>')
+      + (h.isFreebet ? ' <span style="font-size:13px;">🎟 Freebet</span>' : '') + (h.isLay ? ' <span style="font-size:13px;">↩️ Lay</span>' : '') + '</div>'
+      + '<div class="g45ec-live" data-g45ecl="' + id + '"></div></div>'
+      + '<div class="g45ec-dr" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:flex-end;">'
+      + '<div style="text-align:right;min-width:130px;"><span style="display:inline-block;background:#f5c542;color:#000;font-weight:900;font-size:16px;border-radius:8px;padding:3px 9px;">@' + esc(c.toFixed(2).replace('.', ',')) + '</span>'
+      + '<div style="font-size:14px;margin-top:6px;">Mise <b>' + esc(fr(m)) + ' €</b></div>'
+      + (gain !== '' ? '<div style="font-size:14px;color:#1ed760;font-weight:800;">Gain possible ' + esc(fr(gain)) + ' €</div>' : '') + '</div>'
+      + '<div style="display:flex;flex-direction:column;gap:6px;min-width:190px;">'
+      + '<div style="display:flex;gap:6px;">' + bt('sbtn sw', 'background:rgba(30,215,96,.18);border:1px solid #1ed760;', 'result(this.dataset.id,true)', '✅ Gagné', 'Gagné')
+      + bt('sbtn sl', 'background:rgba(255,69,69,.18);border:1px solid #ff4545;', 'result(this.dataset.id,false)', '❌ Perdu', 'Perdu') + '</div>'
+      + '<div style="display:flex;gap:6px;">' + bt('', 'background:rgba(255,255,255,.06);border:1px solid #3a4566;font-size:13px;', 'openBetLive(this.dataset.id)', '📡 Match', 'Voir le match')
+      + bt('', 'background:rgba(255,255,255,.06);border:1px solid #3a4566;', 'editBet(this.dataset.id)', '✏️', 'Modifier')
+      + bt('', 'background:rgba(255,255,255,.06);border:1px solid #3a4566;', 'cancelBet(this.dataset.id)', '🗑️', 'Supprimer') + '</div></div>'
+      + '</div></div></td></tr>';
+  }
+  function refaire(tb, strat) {
+    if (!tb || tb.querySelector('[data-g45ec]')) return;
+    var H = ((typeof state !== 'undefined' && state && state.h) || []).filter(function (x) { return x && (!!x.isS === strat); });
+    if (!H.length) return;
+    var html = ''; H.forEach(function (h) { try { html += carte(h); } catch (e) {} });
+    if (!html) return;
+    tb.innerHTML = html;
+    var tbl = tb.closest('table'); if (tbl) { tbl.style.minWidth = '0'; var th = tbl.querySelector('thead'); if (th) th.style.display = 'none'; }
+    direct();
+  }
+  /* ── direct ── */
+  var memSb = {};
+  async function sb(sp, lg, d) {
+    var k = sp + '|' + lg + '|' + d, o = memSb[k];
+    if (o && Date.now() - o.t < 60000) return o.p;
+    var p = fetch('https://site.api.espn.com/apis/site/v2/sports/' + sp + '/' + lg + '/scoreboard?dates=' + d, { cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
+    memSb[k] = { t: Date.now(), p: p };
+    return p;
+  }
+  async function direct() {
+    var H = (typeof state !== 'undefined' && state && state.h) || [];
+    var zones = document.querySelectorAll('[data-g45ecl]');
+    for (var i = 0; i < zones.length; i++) {
+      var z = zones[i], h = H.filter(function (x) { return x && String(x.id) === z.getAttribute('data-g45ecl'); })[0];
+      if (!h || h.isCombi) continue;
+      var t0 = debut(h); if (!t0 || Date.now() < t0 - 5 * 60000 || Date.now() > t0 + 3.5 * 3600000) continue;
+      var meta = (typeof _g45MatchMeta === 'function') ? _g45MatchMeta(h) : null;
+      if (!meta || !meta.eid || !meta.sp || !meta.lg) continue;
+      var j = null; try { j = await sb(meta.sp, meta.lg, String(h.date).slice(0, 10).replace(/-/g, '')); } catch (e) {}
+      var ev = ((j && j.events) || []).filter(function (e) { return String(e.id) === String(meta.eid); })[0];
+      if (!ev) continue;
+      var cp = (ev.competitions && ev.competitions[0]) || {}, st = (cp.status && cp.status.type) || (ev.status && ev.status.type) || {};
+      if (st.state !== 'in' && st.state !== 'post') continue;
+      var cs = cp.competitors || [];
+      var ho = cs.filter(function (x) { return x.homeAway === 'home'; })[0] || cs[0] || {}, aw = cs.filter(function (x) { return x.homeAway === 'away'; })[0] || cs[1] || {};
+      var hs = parseInt(ho.score, 10), as = parseInt(aw.score, 10); if (isNaN(hs) || isNaN(as)) continue;
+      var moiDom = h.domicile === 'dom' ? true : (h.domicile === 'ext' ? false : (meta.moiDom != null ? !!meta.moiDom : null));
+      var v = null;
+      try { if (!h.isLay && typeof _g45AvPari === 'function') v = _g45AvPari((typeof g45TypeSansCote === 'function' ? g45TypeSansCote(h.type) : h.type) || '', moiDom, hs, as); } catch (e) {}
+      var enCours = st.state === 'in', clk = enCours ? String((cp.status && cp.status.displayClock) || st.shortDetail || '').replace(/\s/g, '') : '';
+      var col = enCours ? '#ff4545' : '#c9d3ee';
+      z.innerHTML = '<span style="display:inline-block;margin-top:6px;font-size:13px;font-weight:800;background:' + (enCours ? 'rgba(255,69,69,.18)' : 'rgba(255,255,255,.08)') + ';border:1px solid ' + col + ';border-radius:6px;padding:2px 8px;">'
+        + (enCours ? '🔴 EN DIRECT · ' : '🏁 Terminé · ') + hs + '-' + as + (clk ? ' · ' + esc(clk) : '')
+        + (enCours && v === true ? ' · ✅ gagnant si ça reste comme ça' : (enCours && v === false ? ' · ⏳ pas encore gagnant' : '')) + '</span>';
+    }
+  }
+  function brancher() {
+    [['live-norm', false], ['live-strat', true]].forEach(function (x) {
+      var tb = document.getElementById(x[0]); if (!tb) return;
+      if (!tb._g45ec) { tb._g45ec = 1; new MutationObserver(function () { refaire(tb, x[1]); }).observe(tb, { childList: true }); }
+      refaire(tb, x[1]);
+    });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', brancher); else setTimeout(brancher, 0);
+  setInterval(function () { if (!document.hidden) { brancher(); direct(); } }, 60000);
+  window._g45EcCarte = carte; window._g45EcDirect = direct;
 })();
