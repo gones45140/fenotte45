@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261013n, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261013o, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1445,6 +1445,10 @@ RÉGLÉ (worker, 01/10) : cron « exceededCpu » (cpuTimeMs 10) à CHAQUE passag
   `_g45GuideOutilsPoser` (toutes les 1,5 s) pose #g45-bloc-guide sous #g45-bloc-compte (auth-guard.js) : jours offerts restants
   (`_g45JoursOfferts`, created_at + 30 j), « ❓ Comment ça marche », « ☕ Laisser un pourboire » (paypal.me, sans contrepartie).
   Contrôle smoke.js « Guide de bienvenue + pourboire » (18 contrôles).
+  20261013o (maquette validée « OUI ») — ▶️ VIDÉO + ❓ GUIDE : `_g45AideBoutonsPoser` (bet45 seulement) : PC = #g45-aide-pc (pc-only) en tête de
+  <nav class="nav"> ; téléphone = #g45-aide-mob en tête de #plus-menu. `g45VideoOuvrir` / `g45VideoFermer` : fenêtre avec <video>
+  ./videos/bet45-presentation.mp4 (H.264, iPhone) puis .webm (VP9 : le Chromium de test n'a pas H.264 → erreur 4 sans lui) — fichiers
+  DANS fenotte45/videos/ (2,3 Mo + 1,3 Mo). Testé Chromium 1280 + 390 (lecture readyState 4).
 - 🎯 BUTEURS LES PLUS RÉGULIERS (07/10, maquette « oui ») : Antoine veut un CLASSEMENT des 10 meilleurs buteurs de la LIGUE (NHL
   d'abord, autres sports ensuite si ça lui plaît) : buts, matchs joués, % de matchs avec but, PIRE SÉRIE sans marquer (matchs joués
   seulement, vert < 6 / orange 6-9 / rouge ≥ 10), série en cours ; toucher = filtre Buteur. Contrainte : « faut pas que ça bloque tout »

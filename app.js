@@ -72878,3 +72878,46 @@ window._g45GuideOutilsPoser = _g45GuideOutilsPoser;
   };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', lancer); else lancer();
 })();
+
+/* ═══ ▶️ VIDÉO + ❓ GUIDE EN HAUT DE LA COLONNE (20261013o, maquette validée « OUI ») ═══
+   PC : 2 boutons en tête de <nav class="nav"> (classe pc-only, la zone vide au-dessus de « Mur ») ; téléphone : en tête du menu « + Plus »
+   (#plus-menu). BET45 SEULEMENT. Vidéo = videos/bet45-presentation.mp4 du dépôt fenotte45 (même origine : CSP default-src 'self'),
+   lue dans une fenêtre de l'appli (`g45VideoOuvrir`). Guide = g45GuideOuvrir(0) (20261013n). */
+function g45VideoOuvrir() {
+  var w = document.getElementById('g45-video');
+  if (!w) { w = document.createElement('div'); w.id = 'g45-video'; document.body.appendChild(w); }
+  w.style.cssText = 'position:fixed;inset:0;z-index:100001;background:rgba(5,8,15,.9);display:flex;align-items:center;justify-content:center;padding:12px;';
+  w.innerHTML = '<div style="width:100%;max-width:440px;max-height:100%;display:flex;flex-direction:column;background:#05070d;border:1px solid #2a3550;border-radius:16px;padding:12px;color:#fff;">'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><b style="font-size:16px;">▶️ BET45 en 1 minute</b>'
+    + '<button onclick="g45VideoFermer()" style="background:none;border:0;color:#fff;font-size:24px;cursor:pointer;padding:2px 8px;">✕</button></div>'
+    + '<video controls autoplay playsinline style="width:100%;max-height:calc(100vh - 110px);border-radius:10px;background:#000;">'
+    + '<source src="./videos/bet45-presentation.mp4" type="video/mp4"><source src="./videos/bet45-presentation.webm" type="video/webm"></video></div>';   /* mp4 (iPhone) puis webm (navigateurs sans H.264) */
+  w.onclick = function (e) { if (e.target === w) g45VideoFermer(); };
+}
+function g45VideoFermer() { var w = document.getElementById('g45-video'); if (w) { var v = w.querySelector('video'); if (v) v.pause(); w.remove(); } }
+window.g45VideoOuvrir = g45VideoOuvrir; window.g45VideoFermer = g45VideoFermer;
+function _g45AideBoutonsPoser() {
+  if (typeof _g45SanteActive === 'function' && _g45SanteActive()) return;
+  var nav = document.querySelector('nav.nav');
+  if (nav && !document.getElementById('g45-aide-pc')) {
+    var d = document.createElement('div'); d.id = 'g45-aide-pc'; d.className = 'pc-only';
+    d.style.cssText = 'display:flex;gap:8px;padding:10px 10px 12px;';
+    var b = function (lbl, fn, bleu) { return '<button onclick="' + fn + '" style="flex:1;cursor:pointer;border-radius:12px;padding:11px 4px;font-size:14px;font-weight:800;color:#fff;'
+      + 'border:1px solid ' + (bleu ? '#3b82f6' : 'rgba(255,255,255,.25)') + ';background:' + (bleu ? '#2563eb' : '#1a2235') + ';">' + lbl + '</button>'; };
+    d.innerHTML = b('▶️ Vidéo', 'g45VideoOuvrir()', true) + b('❓ Guide', 'g45GuideOuvrir(0)', false);
+    nav.insertBefore(d, nav.firstChild);
+  }
+  var pm = document.querySelector('#plus-menu > div');
+  if (pm && !document.getElementById('g45-aide-mob')) {
+    var st = 'display:flex;align-items:center;gap:12px;padding:13px 16px;width:100%;background:none;border:none;border-bottom:1px solid var(--b1);color:var(--t1);font-size:15px;font-weight:700;cursor:pointer;text-align:left;';
+    var m = document.createElement('div'); m.id = 'g45-aide-mob';
+    m.innerHTML = '<button onclick="togglePlusMenu();g45VideoOuvrir();" style="' + st + '"><span style="font-size:17px;">▶️</span>Vidéo : BET45 en 1 minute</button>'
+      + '<button onclick="togglePlusMenu();g45GuideOuvrir(0);" style="' + st + '"><span style="font-size:17px;">❓</span>Comment ça marche</button>';
+    pm.insertBefore(m, pm.firstChild);
+  }
+}
+window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
+(function () {
+  var go = function () { try { _g45AideBoutonsPoser(); setTimeout(_g45AideBoutonsPoser, 2000); } catch (e) {} };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', go); else go();
+})();
