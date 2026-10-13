@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261013l, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261013m, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -411,6 +411,8 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   PLUS », PC, 7 matchs tenant à l'écran) : à partir de 4 matchs, il défile toujours.
   20261013l (« PAS DE MATCH LDC ? ») : mode « Mes équipes » (`_g45BandMesEquipes`) ne lisait que le championnat de chaque équipe de foot
   (`_g45BandChemin` → espnLeagueOf) → scoreboards uefa.champions / uefa.europa / uefa.europa.conf ajoutés avec tous les noms de foot du mur.
+  20261013m : sélecteur « Mes équipes » (.g45-band-src-wrap, fond .55 dans style.css) rendu OPAQUE par app.js (#g45-band-sel-fond) — les tuiles qui
+  défilent passaient dessous et se lisaient à travers.
 - Suivies « Matchs à venir / direct » (`g45DirectMesEquipes`, groupes `_g45DirEquipes`) : 29v —
   le plafond (10) porte sur les REQUÊTES réelles (`aInterroger`, tout le foot = 1 requête `all`),
   plus sur les championnats : les ligues de foot d'Antoine occupaient les 8 places et la NHL

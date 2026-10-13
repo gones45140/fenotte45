@@ -72764,3 +72764,14 @@ function _g45TrFiabHtml() {
   };
   g45TrRun = runW; window.g45TrRun = runW;
 })();
+
+/* 20261013m (capture PC d'Antoine : « Viking FK / Bayern » lisible à travers « Mes équipes ») : depuis que le ruban défile de nouveau
+   (20261013k), les tuiles passent sous le sélecteur, dont le fond était transparent (.55, style.css) → fond opaque, au-dessus de la piste. */
+(function () {
+  try {
+    if (document.getElementById('g45-band-sel-fond')) return;
+    var st = document.createElement('style'); st.id = 'g45-band-sel-fond';
+    st.textContent = '.g45-band-src-wrap{background:#0b1120 !important;position:relative;z-index:3;}';
+    (document.head || document.documentElement).appendChild(st);
+  } catch (e) {}
+})();
