@@ -1450,6 +1450,9 @@ RÉGLÉ (worker, 01/10) : cron « exceededCpu » (cpuTimeMs 10) à CHAQUE passag
   ./videos/bet45-presentation.mp4 (H.264, iPhone) puis .webm (VP9 : le Chromium de test n'a pas H.264 → erreur 4 sans lui) — fichiers
   DANS fenotte45/videos/ (2,3 Mo + 1,3 Mo). Testé Chromium 1280 + 390 (lecture readyState 4).
   20261013p (« OUI ») : 3e bouton « ☕ Laisser un pourboire » (paypal.me/touraineantoine) pleine largeur sous Vidéo / Guide (PC) et 3e ligne du menu Plus.
+  13/10 soir — DÉCISION D'ANTOINE : micro-entreprise REPORTÉE (« je vais laisser venir un peu de monde »). En attendant : appli gratuite + pourboire
+  sans contrepartie ; plan d'abonnement prêt mais NON codé (sauf _G45_ABO_PLAN = false). Rappel donné : vérifier auprès de la CAF l'effet des
+  revenus sur une éventuelle aide (AAH, prime d'activité…). Page PayPal.Me : photo perso remplacée par le logo + couverture BET45 (faits par Claude).
 - 🎯 BUTEURS LES PLUS RÉGULIERS (07/10, maquette « oui ») : Antoine veut un CLASSEMENT des 10 meilleurs buteurs de la LIGUE (NHL
   d'abord, autres sports ensuite si ça lui plaît) : buts, matchs joués, % de matchs avec but, PIRE SÉRIE sans marquer (matchs joués
   seulement, vert < 6 / orange 6-9 / rouge ≥ 10), série en cours ; toucher = filtre Buteur. Contrainte : « faut pas que ça bloque tout »
