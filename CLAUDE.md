@@ -1619,6 +1619,9 @@ CRÉDITS THE ODDS API (20261013e, 13/10 : plafond du jour du worker atteint, « 
   = 'totals' SEUL et seulement si ESPN n'a pas la cote Over/Under du match ; CLV = 'h2h,totals' (défaut) ; « btts » RETIRÉ de l'appel par compétition
   (doc The Odds API, capture d'Antoine : marché SUPPLÉMENTAIRE, seulement via /events/{id}/odds) ; cache 3 h (avant 15 min), clé g45trOdds2_<clé>|<marchés>
   (g45trOdds_ → MORTS). À FAIRE : sonde d'Antoine demain (/odds?…&markets=h2h,totals,btts : refusé ou non ?) puis décider BTS match par match (1 crédit, 3 max / analyse).
+  13/10 — WORKER /odds (choix 2 d'Antoine, fichier complet donné, À REDÉPLOYER) : PLAFONDS.odds [8 / personne, 20 / jour, 400 / mois] compté en
+  CRÉDITS (marchés × régions, `compter(…, poids)`) au lieu des appels ; appel venu de gones45140.github.io (`origineGones`, Origin / Referer) =
+  SANS limite par personne, plafonds communs gardés. Testé vm 5/5.
 RÉGLÉ OU ABANDONNÉ (ne pas reproposer) :
 - APK bet45 sans barre d'adresse : OK. Logos Lakers / hockey : OK. « Connexion » sur le
   logo, paysage gones, pression en portrait, « 1. FC », cartes KHL, compos rugby : OK
