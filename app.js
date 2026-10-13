@@ -69222,8 +69222,14 @@ function _g45RegLogFoot(lg, id, anEsp) {
        /soccer/athletes/<id>/gamelog?season=2025&league=fra.1 = « 2025-26 Ligue 1 : 29 matchs ». Saison en cours : sans paramètre. */
     var _url = function (q) { return FD_PROXY + '?host=espnweb&path=' + encodeURIComponent(q ? '/apis/common/v3/sports/soccer/athletes/' + id + '/gamelog' + q : '/apis/common/v3/sports/soccer/' + lg + '/athletes/' + id + '/gamelog'); };
     var _lire = function (q) { return fetch(_url(q)).then(function (r) { return r.ok ? r.json() : null; }); };
-    _g45RegLogsF[k] = _lire('')
+    /* 20261013r (capture Ligue des champions : « Aucun match joué » en 2025-26 ET 2024-25) : le garde-fou « League Phase / Knockout = autre
+       compétition » refusait la COUPE ELLE-MÊME quand la page affichée est une coupe (uefa.champions…) → tous les joueurs sans match.
+       Coupe : lecture directe ?season=<an>&league=<slug> (forme CONFIRMÉE par Antoine pour uefa.champions, capture Bayern / Olise),
+       sans ce garde-fou. Championnats inchangés. */
+    var lgCoupe = /^(uefa|fifa|conmebol|concacaf|afc|caf)\.|cup|coupe|copa|pokal|coppa|\.fa$/i.test(lg);
+    _g45RegLogsF[k] = (lgCoupe ? _lire('?season=' + anEsp + '&league=' + lg) : _lire(''))
       .then(function (j) {
+        if (lgCoupe) return j;
         var f0 = j && (j.filters || []).filter(function (x) { return x && x.name === 'season'; })[0];
         if (j && f0 && String(f0.value) === String(anEsp)) return j;
         return _lire('?season=' + anEsp + '&league=' + lg).then(function (j2) {

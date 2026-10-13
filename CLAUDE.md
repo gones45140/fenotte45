@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261013q, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261013r, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1568,6 +1568,8 @@ RÉGLÉ (worker, 01/10) : cron « exceededCpu » (cpuTimeMs 10) à CHAQUE passag
   NHL / foot / NFL / MLB / KHL par DATE : o.jours = jours joués (journal ; NHL date locale, ligne = UTC − 6 h ; autres UTC, `_g45RegJour`),
   absents = joueurs du tableau sans ce jour, ligne ignorée si aucun joueur du tableau ce jour-là. Lignes foot (loadTeamSaisons) marquées
   data-g45sgdom / data-g45sgt. Listes g45reg1_v3_ (équipe NHL) → v4_, g45reg1_f6_ → f7_.
+  20261013r (capture LDC « Aucun match joué » 2025-26 et 2024-25) : `_g45RegLogFoot` — page d'une COUPE (uefa.*, fifa., cup, coupe…) → lecture directe
+  ?season=&league=<slug> SANS le garde-fou « League Phase = autre compétition » (il refusait la coupe elle-même). Testé vm 4/4.
   20261006w (« différencie pas domicile et extérieur », maquette Tous / 🏠 / 🚌 acceptée) : chaque entrée de journal porte h (1 domicile,
   0 extérieur) — ESPN atVs « vs » / « @ » (foot SONDÉ ; NFL / MLB supposé pareil), rugby cote 0 = reçoit, NRL F.h.id, KHL m.a = reçoit, NHL
   homeRoadFlag H/R (SONDÉ PAR ANTOINE, téléphone, game-log 8478402 2025-26 : « H » / « R » présents) ; `_g45RegCalc` ajoute R.d / R.e ; `_g45RegHtml` vue par _g45Reg.lieu.
