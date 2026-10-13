@@ -30520,7 +30520,9 @@ async function g45TrRun(){
       try{
         /* 20261013e : The Odds API seulement si ESPN n'a pas déjà la cote Over / Under du match (1 crédit, totals seul). */
         var odE=_g45TrOddsEv(f.ev);
-        var oaList=(odE&&odE.ov>1&&odE.un>1)?null:await _g45TrOddsApi(f.slug,'totals');
+        /* 20261013f (sonde d'Antoine, Lens–Sporting : ESPN / DraftKings passé de o2.5 à o3.5) : en 13e, toute cote Over/Under ESPN coupait
+           The Odds API → « + de 2,5 buts » sans cote. On ne s'en passe que si la ligne ESPN EST 2,5 (celle que les bookmakers donnent presque toujours). */
+        var oaList=(odE&&odE.ov>1&&odE.un>1&&odE.ouL===2.5)?null:await _g45TrOddsApi(f.slug,'totals');
         if(oaList){ var oaEv=_g45TrFindEv(oaList,hN,aN); if(oaEv) pr=_g45TrPrices(oaEv); }
       }catch(e){}
       var dc=null;
