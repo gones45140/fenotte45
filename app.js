@@ -72775,3 +72775,106 @@ function _g45TrFiabHtml() {
     (document.head || document.documentElement).appendChild(st);
   } catch (e) {}
 })();
+
+/* ═══ 👋 GUIDE DE BIENVENUE + ☕ POURBOIRE (20261013n, maquettes validées « oui ») ═══
+   Retour du 13/10 : les collègues de la femme d'Antoine « ne comprennent pas le site ». BET45 SEULEMENT (!_g45SanteActive()).
+   Guide = 5 écrans plein écran (à quoi ça sert / club / pari / bilan / gratuit-abonné), affiché UNE fois (localStorage g45_guide_vu),
+   « Passer » partout, dernier bouton → g45AccClubAller('⚽') (formulaire d'équipe d'Outils). Revoir : bouton « ❓ Comment ça marche »
+   posé sous le bloc « Mon compte » d'Outils (#g45-bloc-compte, créé par auth-guard.js), avec la carte pourboire (paypal.me, SANS
+   contrepartie : pas de SIRET → pas de vente, cf. CLAUDE.md « ABONNEMENT ») et les jours d'accès offerts restants.
+   L'écran 5 décrit ce qui est VERROUILLÉ AUJOURD'HUI (_g45AccesPremium : Tendances, Compétitions, Analyse IA, résumés traduits) ;
+   le plan décidé (25 paris / mois, 3 équipes, Bilan détaillé…) n'y figure qu'une fois activé (_G45_ABO_PLAN = true). */
+var _G45_ABO_PLAN = false;
+function _g45GuideEcrans() {
+  var ex = function (t) { return '<div style="margin:16px 0 0;background:rgba(8,11,20,.7);border-radius:12px;padding:12px 14px;font-size:15px;line-height:1.55;color:#fff;text-align:left;">' + t + '</div>'; };
+  var lig = function (l, g, a) { return '<tr><td style="padding:8px 4px;border-bottom:1px solid rgba(255,255,255,.08);text-align:left;">' + l + '</td>'
+    + '<td style="text-align:center;border-bottom:1px solid rgba(255,255,255,.08);font-weight:800;color:' + (g === '✓' ? '#1ed760' : (g === '—' ? '#7d8aa8' : '#ffb347')) + ';">' + g + '</td>'
+    + '<td style="text-align:center;border-bottom:1px solid rgba(255,255,255,.08);font-weight:800;color:#1ed760;">' + a + '</td></tr>'; };
+  var tab = _G45_ABO_PLAN
+    ? lig('📒 Noter ses paris', '25 / mois', 'illimité') + lig('📈 Bilan (gains, ROI, courbe)', '✓', '✓') + lig('🔬 Bilan détaillé, CLV', '—', '✓')
+      + lig('⚽ Équipes au mur', '3', 'illimité') + lig('🔴 Scores en direct, agenda', '✓', '✓') + lig('🏆 Classements, calendrier', '✓', '✓')
+      + lig('📈 Forme, stats, séries', '—', '✓') + lig('💡 Tendances', '—', '✓') + lig('🧠 Analyse IA', '—', '✓') + lig('🔔 Notifications', '—', '✓')
+    : lig('📒 Noter ses paris', '✓', '✓') + lig('📈 Bilan, stats', '✓', '✓') + lig('⚽ Mes équipes', '✓', '✓') + lig('🔴 Scores en direct, agenda', '✓', '✓')
+      + lig('🏆 Compétitions', '—', '✓') + lig('💡 Tendances', '—', '✓') + lig('🧠 Analyse IA des matchs', '—', '✓') + lig('📰 Résumés traduits', '—', '✓');
+  return [
+    { ic: '📒', t: 'BET45, ton carnet de paris', p: 'Tu paries chez Winamax, Betclic, Unibet… BET45 <b>note tes paris</b> et te dit si tu <b>gagnes ou perds vraiment</b>.',
+      x: ex('❌ BET45 ne prend pas de paris<br>❌ Pas d’argent à déposer ici<br>✅ C’est gratuit') },
+    { ic: '⭐', t: 'Choisis ton club', p: 'Ajoute les équipes que tu suis : foot, NBA, NHL, rugby, F1, tennis…',
+      x: ex('Tu verras leurs <b>matchs</b>, leurs <b>scores en direct</b>, les <b>classements</b> et les <b>stats</b>.') },
+    { ic: '🎟️', t: 'Note ton pari', p: 'Menu <b>Pari</b> : l’équipe, la cote, la mise.',
+      x: ex('📷 Encore plus simple : <b>une capture de ton ticket</b> et l’appli remplit tout.<br><br>Après le match, l’appli te propose <b>gagné / perdu</b>.') },
+    { ic: '📈', t: 'Regarde ton bilan', p: 'Menu <b>Stats</b> : ce que tu as gagné ou perdu, par sport, par bookmaker, par type de pari.',
+      x: ex('💡 <b>Tendances</b> : des idées de paris d’après les stats (pas des pronos garantis).<br>🔞 Jouer comporte des risques : 09 74 75 13 13.') },
+    { ic: '🎁', t: 'Ce qui est compris', p: '',
+      x: '<table style="width:100%;border-collapse:collapse;font-size:14.5px;color:#fff;margin-top:6px;"><tr><td></td><td style="text-align:center;font-weight:800;padding:6px;">Gratuit</td>'
+        + '<td style="text-align:center;font-weight:800;color:#f5c542;padding:6px;">⭐ Accès complet</td></tr>' + tab + '</table>'
+        + ex('🎁 <b>30 jours d’accès complet offerts</b> à la création du compte.') }
+  ];
+}
+function g45GuideOuvrir(i) {
+  i = i || 0;
+  var E = _g45GuideEcrans(), e = E[i]; if (!e) return g45GuideFermer();
+  var w = document.getElementById('g45-guide');
+  if (!w) { w = document.createElement('div'); w.id = 'g45-guide'; document.body.appendChild(w); }
+  w.style.cssText = 'position:fixed;inset:0;z-index:100000;background:rgba(5,8,15,.86);display:flex;align-items:center;justify-content:center;padding:12px;';
+  var dern = i === E.length - 1;
+  var points = E.map(function (_, k) { return '<span style="color:' + (k === i ? '#f5c542' : '#4a5878') + ';">' + (k === i ? '●' : '○') + '</span>'; }).join(' ');
+  w.innerHTML = '<div style="width:100%;max-width:420px;max-height:100%;overflow:auto;border-radius:20px;background:linear-gradient(170deg,#1b2a4d,#0d1424 60%);'
+    + 'border:1px solid rgba(255,255,255,.15);padding:16px 18px 18px;color:#fff;font-family:inherit;box-shadow:0 10px 40px rgba(0,0,0,.6);">'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;font-size:14px;color:#c9d3ee;">'
+      + '<span>' + (i === 0 ? 'Bienvenue 👋' : (i < 4 ? 'Étape ' + i + ' / 3' : 'Gratuit ou accès complet')) + '</span>'
+      + (dern ? '<span></span>' : '<button onclick="g45GuideFermer()" style="background:none;border:0;color:#c9d3ee;font-size:14px;cursor:pointer;padding:6px;">Passer ›</button>') + '</div>'
+    + '<div style="font-size:56px;text-align:center;margin:14px 0 8px;">' + e.ic + '</div>'
+    + '<div style="font-size:23px;font-weight:800;text-align:center;line-height:1.25;margin-bottom:10px;">' + e.t + '</div>'
+    + (e.p ? '<div style="font-size:16px;line-height:1.5;text-align:center;color:#e8ecfa;">' + e.p + '</div>' : '')
+    + e.x
+    + '<div style="text-align:center;font-size:20px;letter-spacing:4px;margin:18px 0 12px;">' + points + '</div>'
+    + (dern
+      ? '<button onclick="g45GuideFermer(1)" style="width:100%;border:0;border-radius:14px;padding:15px;font-size:18px;font-weight:800;cursor:pointer;background:#f5c542;color:#111;">⭐ Choisir mon club</button>'
+        + '<button onclick="g45GuideFermer()" style="width:100%;margin-top:8px;border:1px solid rgba(255,255,255,.25);border-radius:14px;padding:12px;font-size:15px;font-weight:700;cursor:pointer;background:transparent;color:#fff;">Plus tard</button>'
+      : '<button onclick="g45GuideOuvrir(' + (i + 1) + ')" style="width:100%;border:0;border-radius:14px;padding:15px;font-size:18px;font-weight:800;cursor:pointer;background:#2563eb;color:#fff;">Suivant</button>')
+    + '</div>';
+}
+function g45GuideFermer(club) {
+  try { localStorage.setItem('g45_guide_vu', '1'); } catch (e) {}
+  var w = document.getElementById('g45-guide'); if (w) w.remove();
+  if (club) { try { g45AccClubAller('⚽'); } catch (e) {} }
+}
+window.g45GuideOuvrir = g45GuideOuvrir; window.g45GuideFermer = g45GuideFermer;
+
+/* Jours d'accès complet restants (même règle que _g45AccesPremium : 30 jours après created_at). */
+function _g45JoursOfferts() {
+  var u = window._g45User; if (!u || !u.created_at) return null;
+  return Math.max(0, Math.ceil(30 - (Date.now() - new Date(u.created_at).getTime()) / 86400000));
+}
+function _g45GuideOutilsPoser() {
+  if (typeof _g45SanteActive === 'function' && _g45SanteActive()) return;   /* gones45 : rien */
+  var compte = document.getElementById('g45-bloc-compte');
+  if (!compte || document.getElementById('g45-bloc-guide')) return;
+  var j = _g45JoursOfferts(), sout = !!window._g45Soutien;
+  var b = document.createElement('div'); b.id = 'g45-bloc-guide';
+  b.style.cssText = 'margin:0 0 14px;padding:14px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(11,16,29,.86);color:#fff;';
+  b.innerHTML = (j != null && !sout ? '<div style="font-size:15px;margin-bottom:10px;">' + (j > 0 ? '🎁 Accès complet offert : encore <b>' + j + ' jour' + (j > 1 ? 's' : '') + '</b>' : '🎁 Période d’accès complet terminée') + '</div>' : '')
+    + '<button onclick="g45GuideOuvrir(0)" style="width:100%;margin-bottom:12px;padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,.25);background:#1a2235;color:#fff;font-size:15px;font-weight:800;cursor:pointer;">❓ Comment ça marche</button>'
+    + '<div style="font-size:18px;font-weight:800;margin-bottom:6px;">☕ Tu aimes BET45 ?</div>'
+    + '<div style="font-size:14.5px;line-height:1.5;color:#e8ecfa;margin-bottom:6px;">L’appli est faite par un passionné, sur son temps libre. Un pourboire aide à la faire vivre.</div>'
+    + '<div style="font-size:13.5px;color:#c9d3ee;margin-bottom:10px;">Libre et sans contrepartie : ça ne change rien à ton accès.</div>'
+    + '<a href="https://paypal.me/touraineantoine" target="_blank" rel="noopener" data-g45-direct="1" style="display:block;text-align:center;padding:13px;border-radius:12px;background:#f5c542;color:#111;font-size:16px;font-weight:800;text-decoration:none;">☕ Laisser un pourboire</a>';
+  compte.parentNode.insertBefore(b, compte.nextSibling);
+}
+window._g45GuideOutilsPoser = _g45GuideOutilsPoser;
+(function () {
+  var lancer = function () {
+    try {
+      if (typeof _g45SanteActive === 'function' && _g45SanteActive()) return;   /* gones45 : ni guide ni pourboire */
+      setInterval(_g45GuideOutilsPoser, 1500);
+      var vu = null; try { vu = localStorage.getItem('g45_guide_vu'); } catch (e) {}
+      if (!vu) setTimeout(function () {
+        var boot = document.getElementById('g45-boot');
+        if (boot && boot.offsetParent !== null && /Essai gratuit terminé/.test(boot.innerText || '')) return;
+        if (!document.getElementById('g45-guide')) g45GuideOuvrir(0);
+      }, 2500);
+    } catch (e) {}
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', lancer); else lancer();
+})();

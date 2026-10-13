@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261013m, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261013n, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1434,6 +1434,13 @@ RÉGLÉ (worker, 01/10) : cron « exceededCpu » (cpuTimeMs 10) à CHAQUE passag
   Compétitions PROPOSÉ (réponse attendue) : libre = Équipes, Direct, Calendrier, Journées, Classement, Suivies ; abonné = Forme, Classements,
   Séries individuelles, fiche complète. Fiche d'un club ouverte depuis Compétitions (onglet Bilan vide, « 0 paris · Palier 1 ») : Antoine
   « c'est bon » pour les abonnés, ne rien changer ; compte GRATUIT (3 équipes) : club hors de ses 3 → fiche simple + cadenas sur le reste.
+  Compétitions : partage VALIDÉ (« oui »), PAS encore codé (avec l'abonnement).
+  20261013n (« oui ») — 👋 GUIDE DE BIENVENUE + ☕ POURBOIRE, bloc en fin d'app.js, BET45 SEULEMENT (!_g45SanteActive) : `g45GuideOuvrir(i)` /
+  `g45GuideFermer(club)`, 5 écrans (`_g45GuideEcrans`), affiché une fois 2,5 s après l'ouverture (localStorage g45_guide_vu ; pas si « Essai
+  gratuit terminé ») ; dernier écran → g45AccClubAller('⚽'). Écran 5 = verrous ACTUELS ; plan futur derrière `_G45_ABO_PLAN` (false).
+  `_g45GuideOutilsPoser` (toutes les 1,5 s) pose #g45-bloc-guide sous #g45-bloc-compte (auth-guard.js) : jours offerts restants
+  (`_g45JoursOfferts`, created_at + 30 j), « ❓ Comment ça marche », « ☕ Laisser un pourboire » (paypal.me, sans contrepartie).
+  Contrôle smoke.js « Guide de bienvenue + pourboire » (18 contrôles).
 - 🎯 BUTEURS LES PLUS RÉGULIERS (07/10, maquette « oui ») : Antoine veut un CLASSEMENT des 10 meilleurs buteurs de la LIGUE (NHL
   d'abord, autres sports ensuite si ça lui plaît) : buts, matchs joués, % de matchs avec but, PIRE SÉRIE sans marquer (matchs joués
   seulement, vert < 6 / orange 6-9 / rouge ≥ 10), série en cours ; toucher = filtre Buteur. Contrainte : « faut pas que ça bloque tout »
