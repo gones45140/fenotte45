@@ -1639,7 +1639,7 @@ CRÉDITS THE ODDS API (20261013e, 13/10 : plafond du jour du worker atteint, « 
   (40 derniers du BON côté : w, l, ot = m.ox, o55, o65) ; `_g45TrHkBuild` : Vainqueur dom / ext (score final, prolong. + TAB, normalisé), + de 5,5,
   - de 6,5 ; prolongation dans les faits des cartes Vainqueur (≈ 20-30 %, jamais ≥ 50 %). SANS The Odds API (0 crédit) : SONDÉ PAR ANTOINE
   13-14/10, ESPN NHL = 0 cote sur 5 matchs ; si ESPN en publie : moneyline → fair 2 issues, total ligne 5,5 / 6,5. Fiabilité : types 1 / 2 / o55 /
-  u65, verifier lit hockey/nhl si sl === 'nhl', `_g45TrFiabHtml` filtré par onglet. Contrôle smoke.js « Tendances hockey » (16 contrôles).
+  u65, verifier lit hockey/nhl si sl === 'nhl', `_g45TrFiabHtml` filtré par onglet. Contrôle smoke.js « Tendances hockey » (16 contrôles). CONFIRMÉ « parfait ».
 RÉGLÉ OU ABANDONNÉ (ne pas reproposer) :
 - APK bet45 sans barre d'adresse : OK. Logos Lakers / hockey : OK. « Connexion » sur le
   logo, paysage gones, pression en portrait, « 1. FC », cartes KHL, compos rugby : OK
