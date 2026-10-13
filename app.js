@@ -59049,6 +59049,13 @@ async function _g45BandMesEquipes() {
     if (!ch) return;
     (parChemin[ch] = parChemin[ch] || []).push(u.n);
   });
+  /* 20261013k (« PAS DE MATCH LDC ? ») : une équipe de foot n'était cherchée que dans SON championnat → ses matchs de coupe
+     d'Europe n'apparaissaient jamais. Les trois coupes UEFA sont lues aussi, avec tous les noms de foot du mur. */
+  var _foot = [];
+  Object.keys(parChemin).forEach(function (ch) { if (/^soccer\//.test(ch)) _foot = _foot.concat(parChemin[ch]); });
+  if (_foot.length) ['soccer/uefa.champions', 'soccer/uefa.europa', 'soccer/uefa.europa.conf'].forEach(function (ch) {
+    parChemin[ch] = (parChemin[ch] || []).concat(_foot);
+  });
   var chemins = Object.keys(parChemin);
   if (!chemins.length) return [];
 
