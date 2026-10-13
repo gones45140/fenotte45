@@ -30578,12 +30578,15 @@ async function g45TrRun(){
         /* 20261013b (capture d'Antoine : « tendance Viking ou nul mdr » contre le Bayern, 61 % vs 13 % chez le bookmaker ; Sabah 65 % vs 25 %) :
            l'anomalie restait AFFICHÉE dans « Taux élevés sans écart calculable » (stats d'un championnat faible appliquées à la LDC).
            Le marché dit que la donnée est inadaptée → la tendance n'est plus montrée du tout. */
-        if(m && m.note && /^Ecart ecarte/.test(m.note)) return;
+        /* 20261013s (capture Winamax : Viking 2-0 Bayern à la mi-temps, « Viking ou nul » caché par 13b) : cacher = ne jamais savoir qui avait
+           raison. Maquette validée « oui fait le » → la tendance est GARDÉE, marquée m.desac, et affichée dans un bloc à part « ⚠️ Stats et
+           bookmakers en désaccord » (stats % / bookmakers % côte à côte) ; fiabilité comptée à part (d:1). Jamais dans Values / Taux élevés. */
+        if(m && m.note && /^Ecart ecarte/.test(m.note)){ m.desac=1; m.note=null; m.gap=null; m.ev=null; }
         /* 20261013c (maquette validée « oui ») — COUPES D'EUROPE : les stats viennent de championnats de niveaux différents.
            Avec une cote : on garde seulement si stats et bookmakers sont d'accord (≤ 12 points d'écart) ; sans cote : badge d'avertissement. */
-        if(m && m.cross){
-          if(Math.abs(m.p - m.fair) > 0.12) return;
-          m.accord = m.fair; m.note = null;
+        if(m && m.cross && !m.desac){
+          if(Math.abs(m.p - m.fair) > 0.12){ if(!(m.p > m.fair)) return; m.desac=1; m.note=null; m.gap=null; m.ev=null; }   /* 20261013s */
+          else { m.accord = m.fair; m.note = null; }
         } else if(m && cross && m.fair == null && !m.info){ m.croSans = true; }
         /* Ecarte des la construction, pas seulement a l'affichage : c'est ce que
            veut dire « enlever totalement ». Le tri par esperance ne peut donc
@@ -30632,14 +30635,18 @@ function _g45TrRender(){
      section sert a balayer ce qui se passe, pas a detailler un match. */
   /* Tri par taux decroissant d'abord : sans lui, « on garde le premier » ne
      garderait pas le meilleur mais celui que la boucle a produit en premier. */
-  var sansTous=R.slice().sort(function(a,b){ return b.m.p-a.m.p; }).filter(function(x){ return (x.m.gap==null||!(x.m.fair>0.02))&&x.m.p>=Math.max(0.50,pmini)&&x.m.n>=6&&jouable(x); });
+  var sansTous=R.slice().sort(function(a,b){ return b.m.p-a.m.p; }).filter(function(x){ return !x.m.desac&&(x.m.gap==null||!(x.m.fair>0.02))&&x.m.p>=Math.max(0.50,pmini)&&x.m.n>=6&&jouable(x); });
   var vuMatch={};
   var sans=sansTous.filter(function(x){
     var k=String(x.id||(x.hN+'|'+x.aN));
     if(vuMatch[k]) return false;
     vuMatch[k]=1; return true;
   }).slice(0,18);
-  try{ _g45TrSuivNoter(avec.slice(0,25).concat(sans)); }catch(e){}   /* 20261013c : suivi de fiabilité */
+  /* 20261013s — désaccords stats / bookmakers : un par match, le plus gros écart d'abord, 10 max */
+  var vuD={}, desac=R.filter(function(x){ return x.m.desac&&x.m.fair>0&&x.m.p>=pmini&&x.m.n>=6&&jouable(x); })
+    .sort(function(a,b){ return (b.m.p-b.m.fair)-(a.m.p-a.m.fair); })
+    .filter(function(x){ var k=String(x.id||(x.hN+'|'+x.aN)); if(vuD[k]) return false; vuD[k]=1; return true; }).slice(0,10);
+  try{ _g45TrSuivNoter(avec.slice(0,25).concat(sans).concat(desac)); }catch(e){}   /* 20261013c : suivi de fiabilité */
   var h='<button onclick="_G45_TR.res=null;loadTendancesTab();" style="border:none;cursor:pointer;background:rgba(255,255,255,.06);border-radius:8px;color:var(--t2);padding:6px 11px;font-size:10px;font-weight:700;margin-bottom:9px;">↺ Relancer</button>';
   var card=function(x,showGap){
     var m=x.m;
@@ -30741,6 +30748,15 @@ function _g45TrRender(){
     h+='<div style="font-size:10px;font-weight:800;color:#8aa0ff;margin:14px 0 6px;">📊 Taux élevés sans écart calculable</div>'
       +'<div style="font-size:8px;color:var(--t3);margin-bottom:6px;font-style:italic;">Soit la cote n\'est pas disponible, soit la comparaison n\'est pas fiable : rencontre inter-championnats, club dont les matchs de référence ont été joués dans une AUTRE division (promu, relégué, début de saison), ou divergence trop forte avec le marché. À vérifier chez ton bookmaker.</div>';
     sans.forEach(function(x){ h+=card(x,false); });
+  }
+  if(desac.length){
+    h+='<div style="font-size:15px;font-weight:800;letter-spacing:.5px;color:#fff;background:rgba(8,11,20,.82);border-left:4px solid #ff8c42;border-radius:8px;padding:8px 10px;margin:16px 0 6px;">\u26a0\ufe0f STATS ET BOOKMAKERS EN D\u00c9SACCORD ('+desac.length+')</div>'
+      +'<div style="font-size:13px;color:#fff;background:rgba(8,11,20,.72);border-radius:8px;padding:6px 10px;margin-bottom:8px;">Les stats voient une chose, les bookmakers en voient une autre. \u00c0 toi de juger.</div>';
+    desac.forEach(function(x){
+      var b2=function(lbl,v,c){ return '<div style="flex:1;background:rgba(0,0,0,.6);border-radius:8px;padding:6px;text-align:center;font-size:13px;color:#fff;">'+lbl+'<b style="display:block;font-size:20px;color:'+c+';">'+_g45TrPct(v)+'</b></div>'; };
+      h+='<div style="border:2px solid #ff8c42;border-radius:14px;margin-bottom:10px;background:rgba(8,11,20,.5);">'+card(x,false)
+        +'<div style="display:flex;gap:8px;padding:0 10px 10px;">'+b2('\ud83d\udcca Stats',x.m.p,'#6d9dff')+b2('\ud83c\udfe6 Bookmakers',x.m.fair,'#f5c542')+'</div></div>';
+    });
   }
   var q=(window._g45TrQuota!=null)?('<br>The Odds API : '+_g45CyEa(window._g45TrQuota)+' requêtes restantes ce mois'):'';
   var er=(window._g45TrOddsErr)?('<br><span style="color:#ff8c42;">cotes : '+_g45CyEa(window._g45TrOddsErr)+'</span>'):'';
@@ -72446,7 +72462,9 @@ function _g45TrSuivNoter(liste) {
     var k = _g45TrSuivType(x.m.m, x.hN, x.aN); if (!k) return;
     if (vu[x.id + '|' + k]) return;
     var t = Date.parse(x.d); if (isNaN(t)) return;
-    a.push({ id: String(x.id), sl: x.slug, t: t, k: k, p: Math.round(x.m.p * 1000) / 1000, r: null });
+    var o = { id: String(x.id), sl: x.slug, t: t, k: k, p: Math.round(x.m.p * 1000) / 1000, r: null };
+    if (x.m.desac) { o.d = 1; o.f = Math.round((x.m.fair || 0) * 1000) / 1000; }   /* 20261013s : désaccord stats / bookmakers, compté à part */
+    a.push(o);
     vu[x.id + '|' + k] = 1; ajout++;
   });
   if (ajout) _g45TrSuivEcrire(a);
@@ -72505,8 +72523,15 @@ function _g45TrFiabHtml() {
   /* 20261013j : NBA / NFL aussi — onglet foot = tout sauf les ligues US */
   var _US = { hockey: 'nhl', nba: 'nba', nfl: 'nfl' }, _lg = _US[_G45_TR.sp];
   var _du = function (x) { return _lg ? x.sl === _lg : !(x.sl === 'nhl' || x.sl === 'nba' || x.sl === 'nfl'); };
-  var a = _g45TrSuivLire().filter(function (x) { return _du(x) && (x.r === 0 || x.r === 1); });
+  var tout = _g45TrSuivLire().filter(function (x) { return _du(x) && (x.r === 0 || x.r === 1); });
+  var a = tout.filter(function (x) { return !x.d; }), dd = tout.filter(function (x) { return x.d; });   /* 20261013s */
   var att = _g45TrSuivLire().filter(function (x) { return _du(x) && x.r == null; }).length;
+  var ligD = '';
+  if (dd.length) {
+    var okD = dd.filter(function (x) { return x.r === 1; }).length, moy = function (k) { return Math.round(dd.reduce(function (s, x) { return s + (x[k] || 0); }, 0) / dd.length * 100); };
+    ligD = '<div style="margin-top:10px;padding:8px 10px;border:1px solid #ff8c42;border-radius:8px;font-size:14px;line-height:1.6;">\u26a0\ufe0f <b>En d\u00e9saccord</b> : <b>' + okD + ' / ' + dd.length + '</b> r\u00e9ussies (' + Math.round(okD / dd.length * 100) + ' %)'
+      + '<br><span style="font-size:13px;color:#c9d3ee;">Les stats annon\u00e7aient ' + moy('p') + ' % en moyenne, les bookmakers ' + moy('f') + ' %.</span></div>';
+  }
   var T = [[0.40, 0.50, '40 – 49 %'], [0.50, 0.60, '50 – 59 %'], [0.60, 0.70, '60 – 69 %'], [0.70, 2, '70 % et +']];
   var lig = '';
   T.forEach(function (b) {
@@ -72516,13 +72541,13 @@ function _g45TrFiabHtml() {
     var col = reel >= ann - 0.03 ? '#1ed760' : (reel >= ann - 0.08 ? '#f0c828' : '#ff6b6b');
     lig += '<tr><td style="padding:5px 0;">' + b[2] + '</td><td><b style="color:' + col + ';">' + Math.round(reel * 100) + ' %</b></td><td>' + l.length + '</td></tr>';
   });
-  if (!lig && !att) return '';
+  if (!lig && !att && !ligD) return '';
   return '<div style="background:rgba(11,16,29,.86);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:12px 14px;margin-bottom:12px;color:#fff;">'
     + '<div style="font-size:16px;font-weight:800;">📈 Fiabilité des Tendances <span style="font-size:13px;color:#c9d3ee;font-weight:600;">· ' + a.length + ' vérifiée' + (a.length > 1 ? 's' : '') + (att ? ' · ' + att + ' en attente du score' : '') + '</span></div>'
     + (lig ? '<table style="width:100%;margin-top:8px;font-size:14px;border-collapse:collapse;"><tr style="color:#c9d3ee;font-size:12px;"><td>Annoncé</td><td>Réussi en vrai</td><td>Nombre</td></tr>' + lig + '</table>'
            + '<div style="font-size:12px;color:#c9d3ee;margin-top:8px;">Vert = l’appli tient ses promesses · rouge = elle se surestime. Vérifié avec les scores.</div>'
          : '<div style="font-size:13px;color:#c9d3ee;margin-top:6px;">Les tendances affichées sont vérifiées après le match : le tableau se remplit au fil des jours.</div>')
-    + '</div>';
+    + ligD + '</div>';
 }
 
 /* ═══ 🏒 TENDANCES HOCKEY — ONGLETS PAR SPORT (20261013i, maquettes validées : onglets « fait une maquette » puis « ok pour l'instant sans cote ») ═══

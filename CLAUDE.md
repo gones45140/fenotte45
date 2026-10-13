@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261013r, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 01/10/2026 (version déployée : 20261013s, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1653,6 +1653,11 @@ TENDANCES (20261013c, maquettes validées « oui ») : (1) choix de la compétit
   (`_g45TrSuivNoter`, g45suivtend1, 400 max / 120 j, score exact exclu) puis jugées sur le score final (`_g45TrSuivVerifier`, scoreboard du jour, 6 lectures
   par ouverture, abandon après 10 j) → bloc #g45tr-fiab `_g45TrFiabHtml` (tranches 40/50/60/70 %, vert / jaune / rouge vs proba annoncée). Testé vm 9/9 + rendu.
   À FAIRE ENSUITE (accord d'Antoine) : Tendances hors foot — hockey FAIT (20261013i), NBA + NFL FAIT (20261013j), MLB en mars (reprise). RUGBY : laissé de côté le 13/10 (pas de cote ESPN / The Odds API pour le Top 14, pas de ligne, lecture mois par mois) — à reproposer seulement si une source de cotes gratuite apparaît.
+TENDANCES (20261013s, capture Winamax : Viking 2-0 Bayern à la mi-temps alors que 13b avait CACHÉ « Viking ou nul » ; maquette validée « oui fait le ») :
+  plus rien n'est caché pour désaccord — m.desac (écart > 2,2 × marché, ou coupe d'Europe avec stats > bookmakers de plus de 12 pts ; stats < bookmakers = toujours
+  retiré) → bloc à part « ⚠️ STATS ET BOOKMAKERS EN DÉSACCORD » en bas de `_g45TrRender` (cadre orange, 📊 Stats % / 🏦 Bookmakers % côte à côte, un par match,
+  plus gros écart d'abord, 10 max), jamais dans Values / Taux élevés ; suivi g45suivtend1 avec d:1 + f (proba bookmakers) → `_g45TrFiabHtml` : ligne
+  « ⚠️ En désaccord : x / n réussies » à part. Contrôle smoke.js (19).
 TENDANCES (20261013d, « ESPN les propose pas les cotes ? ») : `_g45TrOddsEv` lit aussi la cote Over / Under de la ligne principale ESPN
   (total.over|under, r.ov / r.un / r.ouL) ; `_g45TrBuild` la met dans pr['o<L>'] / pr['u<L>'] (L = 1,5 / 2,5 / 3,5) si The Odds API n'a rien.
   BTS : ESPN n'a PAS de cote (seulement 1N2 + ligne de buts). Testé Chromium (Lens–Sporting simulé : fair 52 %, cote 1,83).
