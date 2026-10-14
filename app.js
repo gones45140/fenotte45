@@ -73701,3 +73701,173 @@ window.g45FusionnerData = g45FusionnerData;
   };
   var t = setInterval(function () { if (poser() || ++essais > 30) clearInterval(t); }, 1000);
 })();
+
+/* ════════════════════════════════════════════════════════════════════════════
+   20261014v — 🧰 LIFTING DE LA RUBRIQUE OUTILS (maquette validée « OUI »)
+   Captures d'Antoine : petits textes gris (8-11 px) illisibles, boutons / curseurs étirés sur 2 000 px au PC, deux « Apparence ».
+   - Sections : 👤 Compte (🩺 Général sur GONES45) · 🎨 Apparence · 🔔 Notifications · 🚀 Montante · ➕ Équipes · 💾 Données · 🔑 Clés (admin).
+     _G45_OUTILS_SEC remplie à nouveau, classement `_g45OutilsClasser` enveloppé (orientation, Apparence + cadre « APPARENCE »,
+     notifications + diagnostic, mises par palier) ; menu en tuiles (icône + 14 px blanc).
+   - PC : contenu limité à 900 px, centré ; orientation de l'écran cachée (téléphone seulement).
+   - Textes 13-14 px, gris clair #c9d3ee au lieu de var(--t3) ; un réglage à curseur = UNE ligne (libellé à gauche, curseur à droite).
+   - Mises par palier : `renderPaliers` REDÉFINIE en tableau compact (une ligne par étoiles, P1 à P8 ; P1 modifiable comme avant).
+   - Notifications : types d'alertes en boutons (case cachée dans le bouton), équipes sur 2 colonnes, emoji du VRAI sport (avant ⚽ pour tous).
+   Rien n'est supprimé : blocs, identifiants et fonctions d'origine inchangés.
+   ════════════════════════════════════════════════════════════════════════════ */
+(function () {
+  try {
+    var bet = !(typeof _g45SanteActive === 'function' && _g45SanteActive());
+    if (typeof _G45_OUTILS_SEC !== 'undefined' && _G45_OUTILS_SEC && _G45_OUTILS_SEC.splice) {
+      _G45_OUTILS_SEC.splice(0, _G45_OUTILS_SEC.length,
+        { id: 'app', lab: bet ? '<b>👤</b>Compte' : '<b>🩺</b>Général' },
+        { id: 'look', lab: '<b>🎨</b>Apparence' },
+        { id: 'notif', lab: '<b>🔔</b>Notifications' },
+        { id: 'mont', lab: '<b>🚀</b>Montante' },
+        { id: 'eq', lab: '<b>➕</b>Équipes' },
+        { id: 'donnees', lab: '<b>💾</b>Données' },
+        { id: 'cles', lab: '<b>🔑</b>Clés' });
+    }
+    if (typeof _g45OutilsClasser === 'function' && !_g45OutilsClasser._ol) {
+      var _cl0 = _g45OutilsClasser;
+      _g45OutilsClasser = function (el, titre) {
+        var c = _cl0(el, titre);
+        if (c !== 'app') return c;
+        var t = String(titre || '').toLowerCase(), id = el && el.id || '';
+        var ids = ((el && el.innerHTML || '').match(/id="([^"]+)"/g) || []).join(' ').toLowerCase();
+        if (id === 'g45-sante' || id === 'g45-bloc-compte' || id === 'g45-bloc-guide') return 'app';
+        if (id === 'g45-ori' || /apparence/.test(t) || /bg-file|ap-off|bg-dark|scrim-range|mur-h/.test(ids)) return 'look';
+        if (/notification/.test(t) || /notif-/.test(ids) || id === 'notif-panel') return 'notif';
+        if (/palier|mise/.test(t) || /palier-/.test(ids) || id === 'palier-panel') return 'mont';
+        return 'app';
+      };
+      _g45OutilsClasser._ol = 1;
+    }
+  } catch (e) {}
+
+  var css = ''
+    + '@media(min-width:900px){#t-outils{max-width:900px;margin-left:auto!important;margin-right:auto!important}}'
+    + '@media(pointer:fine){#t-outils #g45-ori{display:none!important}}'
+    + '#g45-outils-nav{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:8px!important;margin:0 0 16px!important}'
+    + '#g45-outils-nav button{font-size:14px!important;font-weight:700!important;color:#fff!important;background:rgba(11,16,29,.85)!important;'
+    + 'border:1px solid rgba(255,255,255,.14)!important;border-radius:12px!important;padding:10px 4px!important;min-width:0!important;line-height:1.2}'
+    + '#g45-outils-nav button b{display:block;font-size:22px;margin-bottom:3px}'
+    + '#g45-outils-nav button.g45ol-on{background:rgba(77,132,255,.30)!important;border-color:#4d84ff!important}'
+    + '#t-outils .sec{font-size:17px!important;color:#fff!important}'
+    + '#t-outils .fl{font-size:14px;color:#fff}'
+    + '#t-outils [style*="font-size:8px"],#t-outils [style*="font-size:9px"],#t-outils [style*="font-size:10px"],#t-outils [style*="font-size:10.5px"],'
+    + '#t-outils [style*="font-size:11px"],#t-outils [style*="font-size:11.5px"],#t-outils [style*="font-size:12px"]{font-size:13px!important}'
+    + '#t-outils [style*="color:var(--t3)"]{color:#c9d3ee!important}'
+    + '#t-outils .g45ol-cache{display:none!important}'
+    + '#t-outils .g45ol-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:6px 0}'
+    + '#t-outils .g45ol-row label{flex:1 1 220px;margin:0!important}'
+    + '#t-outils .g45ol-row input[type=range]{flex:0 1 300px;width:auto!important;margin:0!important}'
+    + '#notif-panel .g45ol-chips{flex-direction:row!important;flex-wrap:wrap;gap:8px!important}'
+    + '#notif-panel .g45ol-chips label{position:relative;padding:8px 12px;border-radius:9px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);font-size:14px!important;font-weight:700;color:#fff!important}'
+    + '#notif-panel .g45ol-chips label input{position:absolute;opacity:0;pointer-events:none}'
+    + '#notif-panel .g45ol-chips label:has(input:checked){background:#4d84ff;border-color:#4d84ff}'
+    + '@media(min-width:700px){#notif-panel .g45ol-eqs{display:grid!important;grid-template-columns:1fr 1fr;gap:6px 14px!important}}'
+    + '#notif-panel .g45ol-eqs span{font-size:14px!important;color:#fff!important}'
+    + '.g45ol-pal{border-collapse:separate;border-spacing:4px;width:100%;min-width:560px;table-layout:fixed}'
+    + '.g45ol-pal th:first-child{width:96px}'
+    + '#t-outils button[onclick="resetPaliers()"],#t-outils button[onclick="g45TestNotif()"]{background:rgba(255,255,255,.10)!important;color:#fff!important;border:1px solid rgba(255,255,255,.2)!important;font-size:14px!important}'
+    + '.g45ol-pal th{font-size:13px;color:#c9d3ee;font-weight:700;text-align:center}'
+    + '.g45ol-pal td{background:rgba(255,255,255,.06);border-radius:7px;padding:7px 2px;text-align:center;font-size:14px;font-weight:700;color:#fff}'
+    + '.g45ol-pal td.st{background:none;text-align:left;color:#f5c542;white-space:nowrap;font-size:15px}'
+    + '.g45ol-pal td.p1{background:rgba(240,176,32,.22);border:1px solid #f0b020;padding:2px}'
+    + '.g45ol-pal td.p1 input{width:100%;box-sizing:border-box;background:none;border:none;color:#f0c828;font-size:14px;font-weight:800;text-align:center;padding:5px 0}';
+  var st = document.createElement('style'); st.id = 'g45-outils-lift'; st.textContent = css;
+  (document.head || document.documentElement).appendChild(st);
+
+  /* Retouches du DOM (rejouables sans effet de bord). */
+  window._g45OlRetouche = function () {
+    try {
+      var hote = document.getElementById('t-outils'); if (!hote) return;
+      Array.prototype.forEach.call(hote.querySelectorAll('.sec'), function (s) {
+        if ((s.textContent || '').trim() === 'APPARENCE') s.classList.add('g45ol-cache');
+      });
+      Array.prototype.forEach.call(hote.querySelectorAll('input[type=range]'), function (r) {
+        if (r.dataset.g45ol) return;
+        var lab = r.previousElementSibling;
+        while (lab && lab.tagName !== 'LABEL' && !(lab.tagName === 'DIV' && !lab.querySelector('input,button'))) lab = lab.previousElementSibling;
+        if (lab && lab.tagName === 'DIV') { var l2 = lab.previousElementSibling; if (l2 && l2.tagName === 'LABEL') lab = l2; }
+        if (!lab || lab.tagName !== 'LABEL' || !lab.classList.contains('fl')) return;
+        r.dataset.g45ol = '1';
+        var row = document.createElement('div'); row.className = 'g45ol-row';
+        lab.parentNode.insertBefore(row, lab); row.appendChild(lab); row.appendChild(r);
+      });
+      /* Notifications d'abord, diagnostic ensuite (le diagnostic était au-dessus). */
+      var np = document.getElementById('notif-panel');
+      if (np && !np.dataset.g45ol) {
+        var dg = null;
+        Array.prototype.forEach.call(hote.querySelectorAll('.sec'), function (s) { if (/diagnostic/i.test(s.textContent || '') && /notification/i.test(s.textContent || '')) dg = s; });
+        var dgc = dg && dg.nextElementSibling;
+        if (dg && dgc && dgc.querySelector('#g45-notif-diag')) {
+          var apres = np.nextSibling;
+          np.parentNode.insertBefore(dg, apres); np.parentNode.insertBefore(dgc, dg.nextSibling);
+          np.dataset.g45ol = '1';
+        }
+      }
+      var nav = document.getElementById('g45-outils-nav');
+      if (nav) Array.prototype.forEach.call(nav.children, function (b) {
+        b.classList.toggle('g45ol-on', b.getAttribute('data-sec') === (window._g45OutilsSec || _g45OutilsSec));
+      });
+    } catch (e) {}
+  };
+
+  if (typeof g45OutilsSection === 'function' && !g45OutilsSection._ol) {
+    var _os0 = g45OutilsSection;
+    g45OutilsSection = function (sec) { var r = _os0.apply(this, arguments); window._g45OlRetouche(); return r; };
+    g45OutilsSection._ol = 1; window.g45OutilsSection = g45OutilsSection;
+  }
+
+  /* Notifications : types en boutons, équipes sur 2 colonnes, bon emoji de sport. */
+  if (typeof renderNotifPanel === 'function' && !renderNotifPanel._ol) {
+    var _rn0 = renderNotifPanel;
+    renderNotifPanel = function () {
+      var r = _rn0.apply(this, arguments);
+      try {
+        var el = document.getElementById('notif-panel'); if (!el) return r;
+        Array.prototype.forEach.call(el.querySelectorAll('div'), function (d) {
+          var s = d.getAttribute('style') || '';
+          if (!/flex-direction:column/.test(s)) return;
+          if (d.querySelector('input[type=checkbox]')) d.classList.add('g45ol-chips');
+          else if (d.querySelector('button[onclick^="toggleNotifTeam"]')) d.classList.add('g45ol-eqs');
+        });
+        var sp = {};
+        ((typeof state !== 'undefined' && state.u) || []).forEach(function (u) { if (u && u.n) sp[u.n] = u.sport || '⚽'; });
+        Array.prototype.forEach.call(el.querySelectorAll('.g45ol-eqs > div > span:first-child'), function (s) {
+          var nom = (s.textContent || '').replace(/^⚽\s*/, '');
+          if (sp[nom] && sp[nom] !== '⚽') s.textContent = sp[nom] + ' ' + nom;
+        });
+      } catch (e) {}
+      return r;
+    };
+    renderNotifPanel._ol = 1; window.renderNotifPanel = renderNotifPanel;
+  }
+
+  /* Mises par palier en tableau compact. */
+  if (typeof renderPaliers === 'function' && typeof STRATS !== 'undefined') {
+    renderPaliers = function () {
+      var el = document.getElementById('palier-grids'); if (!el) return;
+      var lab = { '1': '⭐', '2': '⭐⭐', '3': '⭐⭐⭐', '4': '⭐⭐⭐⭐', '5': '⭐⭐⭐⭐⭐' };
+      var n = 0; ['1', '2', '3', '4', '5'].forEach(function (k) { if (STRATS[k]) n = Math.max(n, STRATS[k].length); });
+      var h = '<div style="overflow-x:auto;"><table class="g45ol-pal"><tr><th></th>';
+      for (var i = 0; i < n; i++) h += '<th' + (i === 0 ? ' style="color:#f0c828;"' : '') + '>P' + (i + 1) + '</th>';
+      h += '</tr>';
+      ['1', '2', '3', '4', '5'].forEach(function (k) {
+        if (!STRATS[k]) return;
+        var modif = (typeof _G45_STRATS_BASE !== 'undefined') && _G45_STRATS_BASE[k] && STRATS[k].some(function (v, j) { return v !== _G45_STRATS_BASE[k][j]; });
+        h += '<tr><td class="st">' + lab[k] + (modif ? '<div style="font-size:12px;color:#f0b020;font-weight:700;">modifiée</div>' : '') + '</td>';
+        STRATS[k].forEach(function (v, j) {
+          if (j === 0) h += '<td class="p1"><input type="number" min="0" step="1" value="' + v + '" onchange="_g45MajP1(\'' + k + '\',this.value)" aria-label="Mise de départ ' + k + ' étoiles"></td>';
+          else h += '<td>' + v + '</td>';
+        });
+        h += '</tr>';
+      });
+      h += '</table></div><div style="font-size:13px;color:#c9d3ee;margin-top:6px;">Touche la case jaune (P1, mise de départ) pour la changer : P2 à P8 suivent.</div>';
+      el.innerHTML = h;
+    };
+    window.renderPaliers = renderPaliers;
+  }
+  setTimeout(function () { try { if (document.getElementById('palier-grids')) renderPaliers(); if (document.getElementById('notif-panel')) renderNotifPanel(); } catch (e) {} }, 1500);
+})();
