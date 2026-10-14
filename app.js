@@ -74017,3 +74017,66 @@ window.g45MurPleinMsg = g45MurPleinMsg;
   };
   if (!brancher()) document.addEventListener('DOMContentLoaded', brancher);
 })();
+
+/* ═══ 20261014z2 — MUR DE DÉPART DE BET45 (« une équipe par sport au pif / célèbre, retirer du foot, que ça fasse un beau mur » ;
+   « enlève Lyon, mets Bayern, Inter, Arsenal » ; « rajoute chez Cédric une équipe par mur où c'est pas rempli ») ═══
+   PRESETS (DEUX copies, l. ~1640 / ~10390) ajoutent à chaque démarrage 12 équipes (9 de foot) — INCHANGÉS, car GONES45 en dépend.
+   Sur bet45 SEULEMENT, une fois (drapeau g45_mur2) :
+   - compte NEUF (aucun pari, mur = presets seuls) → mur remplacé par _G45_MUR2 (11 équipes, 7 sports) ; anciens presets retirés notés
+     dans g45_presets_off pour que le démarrage ne les remette pas ;
+   - compte EXISTANT → ajout de l'équipe de _G45_MUR2 pour chaque sport SANS équipe au mur (tuile vide), jamais une équipe déjà supprimée
+     par la personne (g45_presets_off), jamais au-delà de _G45_MUR_MAX (15). */
+var _G45_MUR2 = [
+  { n: 'PSG', abbr: 'PSG', color: '#c8a050', s: '4', sport: '⚽' },
+  { n: 'Real Madrid', abbr: 'RMA', color: '#94a3b8', s: '5', sport: '⚽' },
+  { n: 'Bayern Munich', abbr: 'FCB', color: '#dc2626', s: '4', sport: '⚽' },
+  { n: 'Inter Milan', abbr: 'INT', color: '#0ea5e9', s: '4', sport: '⚽' },
+  { n: 'Arsenal', abbr: 'ARS', color: '#ef0107', s: '4', sport: '⚽' },
+  { n: 'Los Angeles Lakers', abbr: 'LAL', color: '#7c3aed', s: '4', sport: '🏀' },
+  { n: 'Colorado Avalanche', abbr: 'COL', color: '#7c3aed', s: '3', sport: '🏒' },
+  { n: 'LA Dodgers', abbr: 'LAD', color: '#3b82f6', s: '3', sport: '⚾' },
+  { n: 'Kansas City Chiefs', abbr: 'KC', color: '#e31837', s: '3', sport: '🏈' },
+  { n: 'Stade Toulousain', abbr: 'ST', color: '#e2001a', s: '3', sport: '🏉' },
+  { n: 'Penrith Panthers', abbr: 'PEN', color: '#3f3f46', s: '3', sport: '🏉🇦🇺' }
+];
+/* Pur (testable) : st = état, off = noms supprimés par la personne. Renvoie {mode, ajout:[noms], retrait:[noms]} et modifie st.u. */
+function _g45Mur2Appliquer(st, off) {
+  off = off || {};
+  var U = st.u || (st.u = []), R = { mode: '', ajout: [], retrait: [] };
+  var presets = (typeof PRESETS !== 'undefined' ? PRESETS : []).map(function (p) { return p.n; });
+  var neuf = !((st.a || []).length || (st.h || []).length) && U.every(function (u) { return u && (u.preset || presets.indexOf(u.n) >= 0); });
+  var nouv = function (p) { return { n: p.n, abbr: p.abbr, color: p.color, s: p.s, l: 1, sport: p.sport, logoUrl: (typeof LOGOS !== 'undefined' && LOGOS[p.n]) || '', link: '', link2: '', note: '', type: 'club' }; };
+  if (neuf) {
+    R.mode = 'neuf';
+    var garder = _G45_MUR2.map(function (p) { return p.n; });
+    st.u = U.filter(function (u) { if (garder.indexOf(u.n) >= 0) return true; R.retrait.push(u.n); return false; });
+    _G45_MUR2.forEach(function (p) { if (off[p.n] || st.u.some(function (u) { return u.n === p.n; })) return; st.u.push(nouv(p)); R.ajout.push(p.n); });
+    return R;
+  }
+  R.mode = 'existant';
+  var spDe = function (u) { try { return typeof _g45AccSport === 'function' ? _g45AccSport(u).v : u.sport; } catch (e) { return u.sport; } };
+  var pris = {}; U.forEach(function (u) { if (u && u.n) pris[spDe(u)] = 1; });
+  var vus = {};
+  _G45_MUR2.forEach(function (p) {
+    if (p.sport === '⚽' || vus[p.sport]) return; vus[p.sport] = 1;
+    if (pris[p.sport] || off[p.n] || U.some(function (u) { return u.n === p.n; })) return;
+    if (U.filter(function (u) { return u && u.n; }).length >= (typeof _G45_MUR_MAX !== 'undefined' ? _G45_MUR_MAX : 15)) return;
+    U.push(nouv(p)); R.ajout.push(p.n);
+  });
+  return R;
+}
+window._g45Mur2Appliquer = _g45Mur2Appliquer;
+(function () {
+  try {
+    if (!window.state || typeof _g45MurLimite !== 'function' || !_g45MurLimite()) return;
+    if (localStorage.getItem('g45_mur2')) return;
+    var off = {}; try { off = JSON.parse(localStorage.getItem('g45_presets_off') || '{}'); } catch (e) {}
+    var R = _g45Mur2Appliquer(state, off);
+    if (R.retrait.length) { R.retrait.forEach(function (n) { off[n] = Date.now(); }); try { localStorage.setItem('g45_presets_off', JSON.stringify(off)); } catch (e) {} }
+    localStorage.setItem('g45_mur2', R.mode || '1');
+    if (R.ajout.length || R.retrait.length) {
+      if (typeof save === 'function') save();
+      setTimeout(function () { try { if (typeof render === 'function') render(); } catch (e) {} }, 0);
+    }
+  } catch (e) {}
+})();

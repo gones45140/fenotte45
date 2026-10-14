@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261014z, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261015a, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1718,6 +1718,13 @@ ACCUEIL bet45 « CHOISIS TON CLUB » (20261011b, maquette validée « Parfait »
   (= !_g45SanteActive : gones sans limite), toutes les entrées comptent (12 PRESETS par défaut compris → un nouveau compte n'a que 3 places,
   supprimer des presets libère) ; enveloppes window.addUnit / window.g45BbMur → `g45MurPleinMsg()` « 🧱 Ton mur est plein (N / 15) » ;
   mur déjà au-delà = gardé ; compteur #g45-mur-compte au-dessus de #ulist. Abonnement plus tard : gratuit 3 / abonné 15. Smoke (34).
+  Antoine sur bet45 : limité aussi (« puni là-bas », voulu).
+  20261015a (« une équipe par sport, célèbre, retirer du foot, beau mur » ; « enlève Lyon, mets Bayern, Inter, Arsenal » ; « rajoute chez Cédric
+  une équipe par mur où c'est pas rempli ») — MUR DE DÉPART BET45 (bloc en fin d'app.js) : PRESETS (DEUX copies) INCHANGÉS (gones) ; sur bet45, une
+  fois (drapeau g45_mur2) `_g45Mur2Appliquer(state, off)` : compte NEUF (aucun pari, mur = presets) → `_G45_MUR2` = PSG, Real Madrid, Bayern Munich,
+  Inter Milan, Arsenal, Los Angeles Lakers, Colorado Avalanche, LA Dodgers, Kansas City Chiefs, Stade Toulousain, Penrith Panthers (11, 4 places
+  libres), presets retirés notés dans g45_presets_off ; compte EXISTANT → équipe de _G45_MUR2 ajoutée pour chaque sport sans équipe (hors foot),
+  jamais une équipe supprimée (g45_presets_off), jamais au-delà de 15. Smoke (35).
 BILAN, barre d'info sous la courbe (20261011e, capture : « Global … · Winamax … · Betclic… » coupé) : style.css a .cib-val en flex-shrink:0 →
   feuille #g45-cib-ligne (app.js) : .chart-info-bar flex-wrap, .cib-val flex 1 1 220px + retour à la ligne (sous la date si longue). Testé Chromium 412 px.
 BILAN « Répartition par type » (20261011f, maquette validée « c'est mieux oui ») : renderChartTypeDonut REDÉFINIE en fin d'app.js (gagne sur
