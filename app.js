@@ -745,7 +745,7 @@ var LOGOS={
      page redeclarait le mauvais blason et annulait toute reparation. Sans
      entree ici, la resolution retombe sur le logo memorise dans le mur, qui est
      le bon depuis `g45ReparerLogo`. */
-  "LA Dodgers":   "https://media.api-sports.io/baseball/teams/19.png",
+  "LA Dodgers":   "https://a.espncdn.com/i/teamlogos/mlb/500/lad.png",
   /* AJOUTE LE 27/08 : blason perso deposee par Antoine sur GitHub (absent
      de api-sports). La cle doit correspondre EXACTEMENT au nom de l'equipe
      sur le mur (`u.n`) pour que g45LogoUrlDe() la trouve. */
@@ -6358,7 +6358,7 @@ var CLUB_DB=[
   {name:"Vegas Golden Knights",league:"NHL",logo:"https://media.api-sports.io/hockey/teams/26.png",abbr:"VGK",stars:3,color:"#f0b020"},
   {name:"Florida Panthers",league:"NHL",logo:"https://media.api-sports.io/hockey/teams/15.png",abbr:"FLA",stars:3,color:"#cc0000"},
   /* MLB */
-  {name:"LA Dodgers",league:"MLB",logo:"https://media.api-sports.io/baseball/teams/19.png",abbr:"LAD",stars:3,color:"#3b82f6"},
+  {name:"LA Dodgers",league:"MLB",logo:"https://a.espncdn.com/i/teamlogos/mlb/500/lad.png",abbr:"LAD",stars:3,color:"#3b82f6"},
   {name:"New York Yankees",league:"MLB",logo:"https://media.api-sports.io/baseball/teams/9.png",abbr:"NYY",stars:3,color:"#94a3b8"},
   {name:"Atlanta Braves",league:"MLB",logo:"https://media.api-sports.io/baseball/teams/15.png",abbr:"ATL",stars:3,color:"#cc0000"},
   /* NBA */
@@ -9581,7 +9581,7 @@ var LOGOS={
      page redeclarait le mauvais blason et annulait toute reparation. Sans
      entree ici, la resolution retombe sur le logo memorise dans le mur, qui est
      le bon depuis `g45ReparerLogo`. */
-  "LA Dodgers":   "https://media.api-sports.io/baseball/teams/19.png",
+  "LA Dodgers":   "https://a.espncdn.com/i/teamlogos/mlb/500/lad.png",
   /* AJOUTE LE 27/08 : blason perso deposee par Antoine sur GitHub (absent
      de api-sports). La cle doit correspondre EXACTEMENT au nom de l'equipe
      sur le mur (`u.n`) pour que g45LogoUrlDe() la trouve. */
@@ -14134,7 +14134,7 @@ var CLUB_DB=[
   {name:"Vegas Golden Knights",league:"NHL",logo:"https://media.api-sports.io/hockey/teams/26.png",abbr:"VGK",stars:3,color:"#f0b020"},
   {name:"Florida Panthers",league:"NHL",logo:"https://media.api-sports.io/hockey/teams/15.png",abbr:"FLA",stars:3,color:"#cc0000"},
   /* MLB */
-  {name:"LA Dodgers",league:"MLB",logo:"https://media.api-sports.io/baseball/teams/19.png",abbr:"LAD",stars:3,color:"#3b82f6"},
+  {name:"LA Dodgers",league:"MLB",logo:"https://a.espncdn.com/i/teamlogos/mlb/500/lad.png",abbr:"LAD",stars:3,color:"#3b82f6"},
   {name:"New York Yankees",league:"MLB",logo:"https://media.api-sports.io/baseball/teams/9.png",abbr:"NYY",stars:3,color:"#94a3b8"},
   {name:"Atlanta Braves",league:"MLB",logo:"https://media.api-sports.io/baseball/teams/15.png",abbr:"ATL",stars:3,color:"#cc0000"},
   /* NBA */
@@ -54603,7 +54603,9 @@ var _G45_TSDB_ALIAS = {
   atleticomadrid:'Atletico Madrid', atletico:'Atletico Madrid',
   realmadrid:'Real Madrid', barcelona:'Barcelona',
   manchestercity:'Manchester City', bayernmunich:'Bayern Munich',
-  carolinahurricanes:'Carolina Hurricanes', coloradoavalanche:'Colorado Avalanche'
+  carolinahurricanes:'Carolina Hurricanes', coloradoavalanche:'Colorado Avalanche',
+  /* 20261014y (mur de Cédric : carte LA Dodgers sans image) : TheSportsDB range le club sous « Los Angeles … » */
+  ladodgers:'Los Angeles Dodgers', laangels:'Los Angeles Angels'
 };
 
 /* VISUEL DES ENTREES DE CATEGORIE (22/08). TENNIS, RUGBY, FORMULE 1, Basket et
@@ -66620,7 +66622,7 @@ var _G45_ACC_SPORTS = [
   { v: '⚽', n: 'Football', comp: 'soccer' }, { v: '🏀', n: 'Basket', comp: 'basketball' }, { v: '🏒', n: 'Hockey', comp: 'hockey' },
   { v: '⚾', n: 'Baseball', comp: 'baseball' }, { v: '🏈', n: 'Foot US', comp: 'football' }, { v: '🏉', n: 'Rugby', comp: 'rugby' },
   { v: '🏉🇦🇺', n: 'NRL', comp: 'rugby-league' }, { v: '🎾', n: 'Tennis', go: 'g45TennisResults(0)', lib: 'Résultats' },
-  { v: '🏎', n: 'F1', go: 'g45F1Open()', lib: 'Calendrier' }, { v: '🥊', n: 'MMA', go: 'g45MmaOpen(0)', lib: 'Combats' },
+  { v: '🏎', n: 'F1', go: 'g45F1Open()', lib: 'Calendrier', img: 'images/equipes/formule1.png' }, { v: '🥊', n: 'MMA', go: 'g45MmaOpen(0)', lib: 'Combats' },
   { v: '🏍', n: 'MotoGP', go: 'g45MotoOpen()', lib: 'Calendrier' }, { v: '🚴', n: 'Cyclisme', go: "g45CyclingOpen('tdf')", lib: 'Courses' },
   { v: '🎿', n: 'Biathlon', go: 'g45BiaOpen()', lib: 'Coupe du monde', img: 'images/equipes/biathlon.png' }
 ];
@@ -73938,4 +73940,27 @@ window._G45_PAL_COUL = ['#1ed760', '#8fdc4a', '#f5c542', '#ffa53a', '#ff7a3a', '
     habiller(); return true;
   };
   if (!brancher()) document.addEventListener('DOMContentLoaded', brancher);
+})();
+
+/* ═══ 20261014y — MUR DE CÉDRIC : « F1 pas le logo F1, Dodgers pas d'image » ═══
+   (1) LOGOS / CLUB_DB donnaient à « LA Dodgers » media.api-sports.io/baseball/teams/19.png = blason des MIAMI MARLINS
+       (vu en capture) → remplacé par le logo ESPN lad.png ; ici, une seule fois, le u.logoUrl mémorisé au mur est corrigé.
+   (2) Le visuel TheSportsDB était cherché sous « LA Dodgers » : la base range le club sous « Los Angeles Dodgers »
+       (alias ajouté) → l'échec mémorisé 30 j (g45_fanart2_ladodgers) est effacé une fois pour relancer la recherche.
+   (3) Tuile F1 sans carte « FORMULE 1 » au mur : emoji seul → img: images/equipes/formule1.png dans _G45_ACC_SPORTS. */
+(function () {
+  try {
+    if (localStorage.getItem('g45_fix_lad1')) return;
+    if (!(window.state && state.u && state.u.length)) return;   /* mur pas encore chargé : on réessaiera à la prochaine ouverture */
+    var vieux = /media\.api-sports\.io\/baseball\/teams\/19\.png/, ch = false;
+    ((window.state && state.u) || []).forEach(function (u) {
+      if (u && u.logoUrl && vieux.test(u.logoUrl)) { u.logoUrl = 'https://a.espncdn.com/i/teamlogos/mlb/500/lad.png'; ch = true; }
+    });
+    ['ladodgers', 'laangels'].forEach(function (k) {
+      try { var o = JSON.parse(localStorage.getItem('g45_fanart2_' + k) || 'null'); if (o && !o.u) localStorage.removeItem('g45_fanart2_' + k); } catch (e) {}
+    });
+    if (ch && typeof save === 'function') save();
+    localStorage.setItem('g45_fix_lad1', '1');
+    if (ch) { try { if (typeof render === 'function') render(); } catch (e) {} }
+  } catch (e) {}
 })();

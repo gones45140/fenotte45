@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261014x, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261014y, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1710,6 +1710,10 @@ ACCUEIL bet45 « CHOISIS TON CLUB » (20261011b, maquette validée « Parfait »
   `_g45SansMdp` : input[type=password] (clés d'API d'Outils) → autocomplete new-password, u-name / u-search… → off. Effet sur Chrome Android NON vérifié.
   11/10 : images/equipes/ladodgers.png (logo MLB sur fond blanc, « carré » dans la tuile Baseball) SUPPRIMÉ de fenotte45 (« pareil »).
   20261011d (toujours visible : mémoire du téléphone) : `_g45ClubTuiles` remplace aussi toute image presque CARRÉE d'une tuile (logo) par l'emoji du sport (bet45 seulement).
+  20261014y (mur de Cédric : « F1 pas le logo F1, Dodgers pas d'image ») : LOGOS / CLUB_DB (DEUX copies) donnaient à « LA Dodgers »
+  api-sports baseball/teams/19.png = blason des MIAMI MARLINS → logo ESPN mlb/500/lad.png ; u.logoUrl mémorisé corrigé une fois
+  (g45_fix_lad1) ; alias _G45_TSDB_ALIAS ladodgers / laangels → « Los Angeles … » (visuel TheSportsDB) + échec g45_fanart2_ladodgers effacé ;
+  tuile F1 sans carte FORMULE 1 au mur = emoji seul → img: images/equipes/formule1.png dans _G45_ACC_SPORTS.
 BILAN, barre d'info sous la courbe (20261011e, capture : « Global … · Winamax … · Betclic… » coupé) : style.css a .cib-val en flex-shrink:0 →
   feuille #g45-cib-ligne (app.js) : .chart-info-bar flex-wrap, .cib-val flex 1 1 220px + retour à la ligne (sous la date si longue). Testé Chromium 412 px.
 BILAN « Répartition par type » (20261011f, maquette validée « c'est mieux oui ») : renderChartTypeDonut REDÉFINIE en fin d'app.js (gagne sur
