@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261014j, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261014k, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1611,6 +1611,11 @@ RÉGLÉ (worker, 01/10) : cron « exceededCpu » (cpuTimeMs 10) à CHAQUE passag
   20261014j (« rugby et NRL ») : rugby à XV et NRL (toute ligue de _g45SaisonsGen) → `chargerRg` = matchs du panneau Saisons (_g45CompetEquipes +
   _g45CompetMatchs, scoreboards mensuels), phases finales (m.po) écartées, via _g45SgCalc ; Victoire / Nul / Défaite sur le score FINAL ; points du
   match XV 30,5→70,5 / NRL 25,5→60,5, équipe / adversaire 5,5→45,5 / 40,5 ; saisons _g45SgAnAuto + _g45SgLabel, lues une par une. NON vérifié sur ESPN. Contrôle smoke (27).
+  20261014k (« rajouter les coupes d'Europe… comme la Ligue des champions », « pareil Challenge Cup », « oui les phases finales », « et les prochains
+  matchs ») : RUGBY (Top 14 / URC / Premiership) — `_g45SaisonsGen` ajoute les matchs du club en Champions Cup (271937, m.cc 1) et Challenge Cup (272073,
+  m.cc 2) (`_G45_RG_CUPS`, _g45CompetMatchs, mémoire memK|cc2) + filtre « Compétition » Toutes / Top 14 / 🏆 / 🥈 (window._g45SgRgComp, `_g45SgRgCompSet`),
+  appliqué avant tout calcul ; clic d'un match de coupe → _g45SgCtx.lg de la coupe (window._g45SgCupIds) ; `_g45ProchainsHtml` mêle les prochains matchs de
+  coupe (nom de compétition dessous). Bloc critères : phases finales GARDÉES, coupes m[5] 1/2, suit le filtre, cache g45cr3_. NON vérifié sur ESPN. Smoke (28).
 - ▶️ VIDÉO « LA MÉTHODE MONTANTE » (20261014e, maquette validée « ok ») : bouton bleu dans la barre « 🚀 C'est quoi, le Cockpit ? » (<summary> de
   #sub-strat, posé par app.js `_g45VidCockpitPoser`, GONES45 ET BET45) → `g45VideoOuvrir(fic, titre)` (paramètres ajoutés, défaut = présentation) ;
   videos/bet45-montante.mp4 + .webm dans LES DEUX dépôts. Animation à exemple FICTIF (Arsenal, P1 5 € / P2 10 € / P3 30 €, cote 1,5 mini, 1 min 23) :

@@ -42744,7 +42744,7 @@ window.g45F1Session=g45F1Session;
    et les données utilisateur n'étaient JAMAIS écrites — l'ajout apparaissait à l'écran puis
    disparaissait au rechargement. Ce n'était ni la synchro GitHub, ni Dropbox, ni le cache
    du navigateur. Tous ces caches sont reconstructibles : ils cèdent la place aux données. */
-var _G45_CACHE_PREFIXES=['g45cr1_',/* 14/10 : critères sur 4 saisons */'g45agoa2_',/* 11/10 : cotes Agenda (The Odds API) */'g45reg1_',/* 08/10 : régularité buteurs NHL */'g45bb1_','g45bbst1_','g45bbld1_','g45bbf1_',/* 03/10 : Pro A be-basketball */'g45es1_',/* 01/10 : stats Euroleague */'g45kbo1_',/* 01/10 : KBO (mykbostats) */'g45t14lg1',/* 01/10 : logos Top 14 (LNR) */'g45pd2_',/* 01/10 : Pro D2 (LNR) */'g45t14sq1_',/* 01/10 : effectifs Top 14 (LNR) */'g45nrlm1_','g45nrldr1_',/* 01/10 : feuilles et calendriers NRL */'g45nrlsq1_',/* 01/10 : effectifs NRL */'g45nrlst2_',/* 01/10 : classements NRL */'g45proacid1_',/* 30/09 : numéros LNB par saison */'g45proast1_',/* 30/09 : stats Pro A */'g45proa1_',/* 30/09 : Pro A par journée */'g45el1_',/* 30/09 : Euroleague (compact) */'g45buts1_',/* 30/09 : buts en action (match fini) */'g45prad1_','g45vsj1_','g45vse1_',/* 30/09 : radars joueurs */'g45ia1_',/* 29/09 : avis IA gardés 6 h */'g45_mmeta2_','g45_mmeta1_','g45_tennis4_','g45_tennis3_',/* 16/09 : meta de match (domicile/lieu) et score tennis, reconstructibles */'g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dcf_','g45dc_',
+var _G45_CACHE_PREFIXES=['g45cr3_','g45cr1_',/* 14/10 : critères sur 4 saisons */'g45agoa2_',/* 11/10 : cotes Agenda (The Odds API) */'g45reg1_',/* 08/10 : régularité buteurs NHL */'g45bb1_','g45bbst1_','g45bbld1_','g45bbf1_',/* 03/10 : Pro A be-basketball */'g45es1_',/* 01/10 : stats Euroleague */'g45kbo1_',/* 01/10 : KBO (mykbostats) */'g45t14lg1',/* 01/10 : logos Top 14 (LNR) */'g45pd2_',/* 01/10 : Pro D2 (LNR) */'g45t14sq1_',/* 01/10 : effectifs Top 14 (LNR) */'g45nrlm1_','g45nrldr1_',/* 01/10 : feuilles et calendriers NRL */'g45nrlsq1_',/* 01/10 : effectifs NRL */'g45nrlst2_',/* 01/10 : classements NRL */'g45proacid1_',/* 30/09 : numéros LNB par saison */'g45proast1_',/* 30/09 : stats Pro A */'g45proa1_',/* 30/09 : Pro A par journée */'g45el1_',/* 30/09 : Euroleague (compact) */'g45buts1_',/* 30/09 : buts en action (match fini) */'g45prad1_','g45vsj1_','g45vse1_',/* 30/09 : radars joueurs */'g45ia1_',/* 29/09 : avis IA gardés 6 h */'g45_mmeta2_','g45_mmeta1_','g45_tennis4_','g45_tennis3_',/* 16/09 : meta de match (domicile/lieu) et score tennis, reconstructibles */'g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dcf_','g45dc_',
   'g45trv3_','g45trv2_','g45trOdds2_',/* 13/10 : cotes The Odds API par marchés */'g45tr_','g45but_st_','g45butL_','g45butA_','g45but_mur_',
   '_g45clv','g45clv_snaps','g45_saisons_cache_v3_','g45_saisons_cache_v2_',
   /* Ajoutes le 20/08 : ces caches, tous reconstructibles, n'etaient PAS declares
@@ -46788,6 +46788,21 @@ window._g45CompetAVenir = _g45CompetAVenir;
    celui du football flottait sur la photo de fond. */
 function _g45ProchainsHtml(sp, lg, an, monId, monNom, n) {
   var av = _g45CompetAVenir[sp + '|' + lg + '|' + an] || [];
+  /* 20261014k (« et rajouter les prochains matchs ») : club de rugby européen → prochains matchs de Champions Cup / Challenge Cup ajoutés
+     (lus par _g45SaisonsGen dans _g45CompetAVenir), avec le nom de la compétition sous l'adversaire ; clic = résumé dans la bonne ligue. */
+  if (sp === 'rugby' && ['270559', '270557', '267979'].indexOf(String(lg)) >= 0 && typeof _G45_RG_CUPS !== 'undefined') {
+    var _nomL = { '270559': 'Top 14', '270557': 'URC', '267979': 'Premiership' }[String(lg)], _plus = [];
+    _G45_RG_CUPS.forEach(function (cu) {
+      (_g45CompetAVenir['rugby|' + cu[0] + '|' + an] || []).forEach(function (m) {
+        var c = {}; for (var k in m) c[k] = m[k]; c.comp = (cu[1] === 'Champions Cup' ? '🏆 ' : '🥈 ') + cu[1]; _plus.push(c);
+        window._g45SgCupIds = window._g45SgCupIds || {}; window._g45SgCupIds[String(m.id)] = cu[0];
+      });
+    });
+    if (_plus.length) {
+      av = av.map(function (m) { var c = {}; for (var k in m) c[k] = m[k]; if (!c.comp) c.comp = _nomL; return c; })
+        .concat(_plus).sort(function (x, y) { return x.t - y.t; });
+    }
+  }
   var id = String(monId || ''), nn = _g45SgNorm(monNom || '');
   var maintenant = Date.now();
   var miens = av.filter(function (m) {
@@ -50417,6 +50432,38 @@ async function _g45SaisonsGen(el, nom, perso) {
     _g45SgMem[memK] = ms;
   }
 
+  /* 20261014k (« rajouter les coupes d'Europe que jouent les clubs, Champions Cup pour Toulouse… comme la Ligue des champions ») :
+     club de rugby d'un championnat européen → matchs de CE club en Champions Cup (ESPN 271937, même lecture mensuelle) ajoutés à la
+     saison, marqués m.cc = 1 ; filtre « Compétition » (window._g45SgRgComp : 'tout' | 'L' | 'E') appliqué AVANT tout calcul, suivi aussi
+     par le bloc « Tes critères sur 4 saisons ». Club absent de la Champions Cup = rien ne change. */
+  var _rgCup = (sp === 'rugby' && ['270559', '270557', '267979'].indexOf(lg) >= 0 && perso && perso.id), _rgN = { L: (ms || []).length, E: 0 };
+  if (_rgCup) {
+    /* 20261014k (« pareil Challenge Cup ») : Champions Cup (271937, cc = 1) et Challenge Cup (272073, cc = 2). */
+    var memC = memK + '|cc2';
+    if (!_g45SgMem[memC]) {
+      var tousC = [], idC = String(perso.id), nnC = _g45SgNorm(nom);
+      for (var _ci = 0; _ci < _G45_RG_CUPS.length; _ci++) {
+        try {
+          var cu = _G45_RG_CUPS[_ci], eqC = await _g45CompetEquipes({ sp: 'rugby', s: cu[0] });
+          var msC = await _g45CompetMatchs('rugby', cu[0], an, eqC.map(function (t) { return t.id; }).filter(Boolean));
+          (msC || []).forEach(function (m) {
+            if (!(String(m.h) === idC || String(m.a) === idC || (nnC && ((m.hn && _g45SgNorm(m.hn) === nnC) || (m.an && _g45SgNorm(m.an) === nnC))))) return;
+            var c = {}; for (var k in m) c[k] = m[k]; c.cc = _ci + 1; tousC.push(c);
+          });
+        } catch (e) {}
+      }
+      _g45SgMem[memC] = tousC;
+    }
+    var cupMs = _g45SgMem[memC] || [];
+    _rgN.E = cupMs.length; _rgN.CC = cupMs.filter(function (m) { return m.cc === 1; }).length; _rgN.CH = cupMs.filter(function (m) { return m.cc === 2; }).length;
+    window._g45SgCupIds = window._g45SgCupIds || {}; cupMs.forEach(function (m) { window._g45SgCupIds[String(m.id)] = _G45_RG_CUPS[m.cc - 1][0]; });
+    if (cupMs.length) {
+      var _rgF = window._g45SgRgComp || 'tout';
+      ms = _rgF === 'L' ? (ms || []) : _rgF === 'CC' ? cupMs.filter(function (m) { return m.cc === 1; })
+        : _rgF === 'CH' ? cupMs.filter(function (m) { return m.cc === 2; }) : (ms || []).concat(cupMs);
+    }
+  }
+
   /* Le filtre phase agit AVANT le calcul, pas a l'affichage : sinon le bilan,
      les moyennes et le split domicile/exterieur continueraient d'inclure les
      matchs ecartes, et le panneau se contredirait lui-meme. */
@@ -50507,6 +50554,18 @@ async function _g45SaisonsGen(el, nom, perso) {
     + '<div style="font-size:10px;color:var(--t3);">' + st.j + ' matchs'
     + (st.po ? (' \u00b7 dont ' + st.po + ' en phase finale') : '')
     + ' \u00b7 ' + st.v + (avecNul ? '-' + st.n : '') + '-' + st.d + '</div></div>';
+
+  if (_rgCup && _rgN.E) {   /* 20261014k : filtre Compétition (rugby + Champions Cup) */
+    var _rgNomL = { '270559': 'Top 14', '270557': 'URC', '267979': 'Premiership' }[lg] || 'Championnat', _rgCur = window._g45SgRgComp || 'tout';
+    html += '<div style="font-size:13px;color:#c9d3ee;margin:2px 0 6px;">Compétition</div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">';
+    [['tout', 'Toutes (' + (_rgN.L + _rgN.E) + ')'], ['L', _rgNomL + ' (' + _rgN.L + ')']].concat(_rgN.CC ? [['CC', '🏆 Champions Cup (' + _rgN.CC + ')']] : [])
+      .concat(_rgN.CH ? [['CH', '🥈 Challenge Cup (' + _rgN.CH + ')']] : []).forEach(function (f) {
+      var on = f[0] === _rgCur;
+      html += '<button onclick="_g45SgRgCompSet(\'' + f[0] + '\')" style="padding:7px 12px;border-radius:16px;font-size:14px;cursor:pointer;color:#fff;border:1px solid '
+        + (on ? '#6d9dff' : '#2a3a63') + ';background:' + (on ? '#1e3a7a' : '#16213f') + ';font-weight:' + (on ? 700 : 400) + ';">' + (on ? '✓ ' : '') + f[1] + '</button>';
+    });
+    html += '</div>';
+  }
 
   /* ── Filtre saison reguliere / phase finale ──
      Affiche seulement si la saison en contient : inutile en football europeen,
@@ -50862,6 +50921,8 @@ window._g45SgFermerMatch = _g45SgFermerMatch;
 
 async function _g45SgMatch(eid) {
   if (!eid || !_g45SgCtx) return;
+  /* 20261014k : match de Champions Cup affiché dans la saison d'un club de Top 14 → résumé ESPN lu dans la bonne ligue. */
+  if (window._g45SgCupIds && window._g45SgCupIds[String(eid)]) _g45SgCtx = { sp: 'rugby', lg: window._g45SgCupIds[String(eid)], id: _g45SgCtx.id };
   _g45SgFermerMatch();
   var mo = document.createElement('div');
   mo.id = 'g45-sg-modal';
@@ -51332,6 +51393,9 @@ function _g45SgTROk(sp) {
 function _g45SgTRBascule() { _g45SgTR = !_g45SgTR; _g45SgRefresh(); }
 window._g45SgTRBascule = _g45SgTRBascule;
 function _g45SgPhaseSet(f) { _g45SgPhase = f; _g45SgRefresh(); }
+var _G45_RG_CUPS = [['271937', 'Champions Cup'], ['272073', 'Challenge Cup']];   /* 20261014k : coupes d'Europe de rugby (ESPN) */
+function _g45SgRgCompSet(f) { window._g45SgRgComp = f; _g45SgRefresh(); }   /* 20261014k */
+window._g45SgRgCompSet = _g45SgRgCompSet;
 window._g45SgPhaseSet = _g45SgPhaseSet;
 function _g45SgToggle(k) {
   if (!_g45SgQuick) _g45SgQuick = [];
@@ -73253,7 +73317,15 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     return k + (der ? (k > 1 ? ' réussites' : ' réussite') : (k > 1 ? ' défaites' : ' défaite')) + ' de suite';
   }
   function coul(p) { return p <= 2 ? '#1ed760' : p <= 4 ? '#ff9f43' : '#ff5a5a'; }
-  function filtrer(ms) { return ms.filter(function (m) { return S.lieu === 'tout' || (S.lieu === 'dom' ? m[1] === 1 : m[1] === 0); }); }
+  function filtrer(ms) {
+    var rc = rg() ? (window._g45SgRgComp || 'tout') : 'tout';   /* 20261014k : m[5] = 1 → Champions Cup */
+    return ms.filter(function (m) {
+      if (rc === 'L' && m[5]) return false;
+      if (rc === 'CC' && m[5] !== 1) return false;
+      if (rc === 'CH' && m[5] !== 2) return false;
+      return S.lieu === 'tout' || (S.lieu === 'dom' ? m[1] === 1 : m[1] === 0);
+    });
+  }
 
   async function chargerHk(nom) {
     var C = S.ctx, ans = annees(C.lg), out = { t: Date.now(), lg: C.lg, ligue: (US_N[C.lg] || C.lg.toUpperCase()) + ' · saison régulière', saisons: [] };
@@ -73286,17 +73358,27 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     S.data[nom] = out;
   }
   async function chargerRg(nom) {
-    var C = S.ctx, ans = annees(C.lg), out = { t: Date.now(), lg: C.lg, ligue: 'saison régulière', saisons: [] }, eq = [];
+    var C = S.ctx, ans = annees(C.lg), out = { t: Date.now(), lg: C.lg, ligue: C.sp === 'rugby' ? 'phases finales et coupes d\'Europe comprises' : 'saison régulière', saisons: [] }, eq = [];
     try { eq = await _g45CompetEquipes({ sp: C.sp, s: C.lg }); } catch (e) {}
     var ids = eq.map(function (t) { return t.id; }).filter(Boolean);
+    var cupOk = C.sp === 'rugby' && ['270559', '270557', '267979'].indexOf(String(C.lg)) >= 0, idsC = [[], []];
+    if (cupOk) { for (var ci = 0; ci < 2; ci++) { try { idsC[ci] = (await _g45CompetEquipes({ sp: 'rugby', s: _G45_RG_CUPS[ci][0] })).map(function (t) { return t.id; }).filter(Boolean); } catch (e) {} } }
     for (var i = 0; i < ans.length; i++) {   /* une saison après l'autre : jusqu'à 12 scoreboards par saison */
-      var an = ans[i], cle = 'g45cr1_' + C.sp + '_' + C.lg + '_' + C.id + '_' + an, ms = null;
+      var an = ans[i], cle = 'g45cr3_' + C.sp + '_' + C.lg + '_' + C.id + '_' + an, ms = null;
       if (i > 0) { try { ms = JSON.parse(localStorage.getItem(cle) || 'null'); } catch (e) {} }
       if (!ms) {
         var L = null; try { L = await _g45CompetMatchs(C.sp, C.lg, an, ids); } catch (e) {}
         if (!L) { out.saisons[i] = { an: an, ms: null }; continue; }
-        var st = _g45SgCalc(L.filter(function (m) { return !m.po; }), C.id, nom);
-        ms = st.liste.map(function (x) { return [new Date(x.t || 0).toISOString().slice(0, 10), x.dom ? 1 : 0, x.pour, x.contre]; })
+        /* 20261014k (« oui on peut rajouter les phases finales ») : phases finales GARDÉES ; + Champions Cup (m[5] = 1) et Challenge Cup (m[5] = 2). */
+        if (cupOk) {
+          for (var cj = 0; cj < 2; cj++) {
+            var LC = null; try { LC = await _g45CompetMatchs('rugby', _G45_RG_CUPS[cj][0], an, idsC[cj]); } catch (e) {}
+            (LC || []).forEach(function (m) { var c = {}; for (var k in m) c[k] = m[k]; c.cc = cj + 1; L.push(c); });
+          }
+        }
+        var ccIds = {}; L.forEach(function (m) { if (m.cc) ccIds[String(m.id)] = m.cc; });
+        var st = _g45SgCalc(L, C.id, nom);
+        ms = st.liste.map(function (x) { return [new Date(x.t || 0).toISOString().slice(0, 10), x.dom ? 1 : 0, x.pour, x.contre, 0, ccIds[String(x.id)] || 0]; })
           .filter(function (m) { return !isNaN(m[2]) && !isNaN(m[3]); })
           .sort(function (a, b) { return a[0] < b[0] ? -1 : 1; });
         if (i > 0 && ms.length) { try { localStorage.setItem(cle, JSON.stringify(ms)); } catch (e) {} }
