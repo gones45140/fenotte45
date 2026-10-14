@@ -73620,3 +73620,81 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   var go = function () { try { poser(); setTimeout(poser, 2000); } catch (e) {} };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', go); else go();
 })();
+
+/* ════════════════════════════════════════════════════════════════════════════
+   20261014t — 🔀 FUSIONNER UNE SAUVEGARDE (demande d'Antoine, « oui »)
+   Cédric avait 92 paris sur gones45140.github.io et 4 sur bet45.fr (deux sites = deux mémoires séparées sur le téléphone).
+   « ⬆ Importer » REMPLACE tout → on ajoute un bouton « 🔀 Fusionner » à côté : lit un fichier gones45_backup.json et AJOUTE
+   seulement les paris RÉGLÉS (state.a) absents d'ici (même id, ou même date + équipe + cote + mise = doublon saisi deux fois).
+   Le capital NE change PAS (ces résultats sont déjà dans l'argent réel des books) ; les paris EN COURS ne sont pas repris
+   (leur mise n'a pas été retirée ici) → comptés dans le message, à ressaisir. Équipes du mur, paliers, réglages : inchangés.
+   ════════════════════════════════════════════════════════════════════════════ */
+function _g45FusSig(b) {
+  return [String(b.date || '').slice(0, 10), String(b.n || b.team || '').toLowerCase().trim(),
+    Math.round((parseFloat(b.cote) || 0) * 100), Math.round((parseFloat(b.m) || 0) * 100)].join('|');
+}
+function _g45FusionnerEtat(rem) {
+  var R = { ajoutes: 0, doublons: 0, enCours: 0 };
+  if (!rem || !Array.isArray(rem.a)) return null;
+  if (!state.a) state.a = [];
+  var ids = {}, sigs = {};
+  (state.a || []).concat(state.h || []).forEach(function (b) {
+    if (!b) return;
+    if (b.id != null) ids[String(b.id)] = 1;
+    sigs[_g45FusSig(b)] = 1;
+  });
+  var nouveaux = [];
+  rem.a.forEach(function (b) {
+    if (!b || typeof b !== 'object') return;
+    var s = _g45FusSig(b);
+    if ((b.id != null && ids[String(b.id)]) || sigs[s]) { R.doublons++; return; }
+    var cp = JSON.parse(JSON.stringify(b));
+    nouveaux.push(cp); sigs[s] = 1; if (cp.id != null) ids[String(cp.id)] = 1;
+  });
+  /* plus anciens que ceux d'ici dans la grande majorité des cas → mis à la suite, ordre du fichier gardé */
+  state.a = state.a.concat(nouveaux);
+  R.ajoutes = nouveaux.length;
+  R.enCours = (rem.h || []).filter(function (b) { return b && !((b.id != null && ids[String(b.id)]) || sigs[_g45FusSig(b)]); }).length;
+  return R;
+}
+window._g45FusionnerEtat = _g45FusionnerEtat;
+function g45FusionnerData() {
+  var i = document.createElement('input');
+  i.type = 'file'; i.accept = '.json,application/json';
+  i.onchange = function (e) {
+    var f = e.target.files && e.target.files[0]; if (!f) return;
+    var r = new FileReader();
+    r.onload = function (ev) {
+      var rem = null;
+      try { rem = JSON.parse(ev.target.result); } catch (x) {}
+      if (!rem || !Array.isArray(rem.a)) { alert('Ce fichier n\'est pas une sauvegarde BET45 / GONES45 (gones45_backup.json).'); return; }
+      if (!confirm('Ajouter les paris RÉGLÉS de ce fichier (' + rem.a.length + ') à ceux d\'ici ?\n\nTes paris actuels restent. Ton capital ne change pas. Les doublons sont ignorés.')) return;
+      var R = _g45FusionnerEtat(rem);
+      try { save(); } catch (x) {}
+      try { render(); } catch (x) {}
+      alert('✅ ' + R.ajoutes + ' pari(s) ajouté(s)' + (R.doublons ? ' · ' + R.doublons + ' doublon(s) ignoré(s)' : '')
+        + (R.enCours ? '\n\n⚠️ ' + R.enCours + ' pari(s) EN COURS dans le fichier ne sont pas repris : ressaisis-les ici.' : ''));
+    };
+    r.readAsText(f);
+  };
+  i.click();
+}
+window.g45FusionnerData = g45FusionnerData;
+(function () {
+  var essais = 0;
+  var poser = function () {
+    try {
+      if (document.getElementById('g45-btn-fusion')) return true;
+      var imp = document.querySelector('button[onclick="importData()"]');
+      if (!imp) return false;
+      var b = document.createElement('button');
+      b.id = 'g45-btn-fusion'; b.className = 'btn'; b.type = 'button';
+      b.style.cssText = 'margin-top:6px;grid-column:1 / -1;background:rgba(46,204,113,.14);color:#fff;border:1px solid rgba(46,204,113,.45);font-size:14px;font-weight:700;';
+      b.textContent = '🔀 Fusionner une sauvegarde (garde tes paris)';
+      b.onclick = g45FusionnerData;
+      imp.parentNode.insertBefore(b, imp.nextSibling);
+      return true;
+    } catch (e) { return true; }
+  };
+  var t = setInterval(function () { if (poser() || ++essais > 30) clearInterval(t); }, 1000);
+})();

@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261014s, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261014t, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -702,6 +702,12 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   (magiclink puis email) = session Social. Appelé par loadSocialTab (force, 30 s mini) et _g45SocAuto (10 min). Testé vm : client 7/7, worker 5/5.
   worker.js complet donné, À REDÉPLOYER + secret À AJOUTER. NON vérifié en vrai (format de réponse generate_link de ce projet).
   Lien de récupération Supabase du projet Social = renvoie vers gones45140.github.io (Site URL) : NE PAS l'utiliser pour un pote bet45.
+  CONFIRMÉ (capture Cédric 14/10 20:15) : connexion Social automatique sur bet45 = OK (Xtazion), worker /socsso + secret en place.
+  Cédric : 92 paris sur gones45140.github.io (site d'Antoine) / 4 sur bet45.fr = deux mémoires séparées → bilan publié passé à 4 paris.
+  20261014t (« oui ») — 🔀 FUSIONNER UNE SAUVEGARDE (bloc en fin d'app.js) : bouton #g45-btn-fusion posé par JS après « ⬆ Importer »
+  (Outils → Backup & Config) → `g45FusionnerData` → `_g45FusionnerEtat(rem)` : ajoute à state.a les paris RÉGLÉS absents (id, ou signature
+  date + équipe + cote + mise `_g45FusSig`), à la suite ; capital INCHANGÉ (pas de _g45BetAppliquer) ; paris en cours NON repris (comptés).
+  Smoke (32). À faire par Cédric : Exporter sur gones45140.github.io, Déconnexion Social là-bas, Fusionner sur bet45.
   IDÉES validées pour plus tard : carte bilan à partager, notifications, récap semaine, ligues.
 - VS ÉQUIPES avec radar (30f, maquette validée) : onglet Pari → VS, `runComparateur` appelle d'abord
   `_g45VsV2(n1, n2)` (bloc dans une portée FERMÉE : helpers exposés sur window pour smoke.js) :
