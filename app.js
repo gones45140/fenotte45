@@ -50841,7 +50841,8 @@ async function _g45SaisonsGen(el, nom, perso) {
   el.innerHTML = html;
   try { if (typeof _g45RegAbsPoser === 'function') setTimeout(_g45RegAbsPoser, 0); } catch (e) {}   /* 20261006t */
   /* 20261014g : « 📊 Tes critères sur 4 saisons » aussi pour la NHL (en tête du panneau, même bloc que le foot). */
-  try { if (sp === 'hockey' && lg === 'nhl' && perso && perso.id && typeof window._g45CrHtml === 'function') el.insertAdjacentHTML('afterbegin', window._g45CrHtml(nom, { sp: sp, lg: lg, id: String(perso.id) })); } catch (e) {}
+  /* 20261014h : aussi NFL, NBA, MLB (score final, vainqueur). */
+  try { if (((sp === 'hockey' && lg === 'nhl') || (sp === 'football' && lg === 'nfl') || (sp === 'basketball' && lg === 'nba') || (sp === 'baseball' && lg === 'mlb')) && perso && perso.id && typeof window._g45CrHtml === 'function') el.insertAdjacentHTML('afterbegin', window._g45CrHtml(nom, { sp: sp, lg: lg, id: String(perso.id) })); } catch (e) {}
 }
 
 /* ── Ouverture du detail d'un match ──────────────────────────────────────────
@@ -73177,10 +73178,21 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   var S = window._g45Cr = window._g45Cr || { nom: '', lieu: 'tout', combos: [], a: 0, data: {}, enCours: {} };
   function ouvert() { try { return localStorage.getItem('g45_cr_open') === '1'; } catch (e) { return false; } }
   function esc(t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
-  function combo0() { return { res: 'vic', ou: '', L: 2.5, bts: '' }; }
+  function combo0() { var u = S.ctx && US_L[S.ctx.sp]; return { res: u ? 'vqr' : 'vic', ou: '', L: u ? u[2] : 2.5, bts: '' }; }
   /* 20261014g (« oui » pour la NHL) : S.ctx = null (foot) ou {sp:'hockey', lg:'nhl', id} posé par _g45SaisonsGen. Hockey : Victoire / Nul /
      Défaite et buts = TEMPS RÉGLEMENTAIRE (m[4] = 1 prolongation, 2 tirs au but → score TR = min-min), Vainqueur = score final. */
   function hk() { return !!(S.ctx && S.ctx.sp === 'hockey'); }
+  /* 20261014h (« ce que tu veux comme sport » → NFL, NBA, MLB) : us() = sport US hors hockey. Résultat = VAINQUEUR (score final, prolongation
+     comprise : « NBA et NFL pas besoin, mieux vaut prendre vainqueur », 20261005o) ou Défaite ; total de POINTS / RUNS sur le score final ;
+     calendrier ESPN <sp>/<lg>/teams/<id>/schedule?season=<an _g45SgAnAuto>&seasontype=2 (NFL SONDÉ 20261006p ; NBA / MLB même forme, MLB SONDÉ 20261006q). */
+  function us() { return !!(S.ctx && S.ctx.sp !== 'hockey'); }
+  function sport() { return S.ctx ? S.ctx.sp : 'soccer'; }
+  var US_L = { football: [30.5, 60.5, 44.5, 'Points du match'], basketball: [190.5, 250.5, 224.5, 'Points du match'], baseball: [4.5, 13.5, 8.5, 'Runs du match'] };
+  var US_N = { nfl: 'NFL', nba: 'NBA', mlb: 'MLB', nhl: 'NHL' };
+  function lignes() {
+    if (us()) { var u = US_L[sport()], a = []; for (var x = u[0]; x <= u[1]; x++) a.push(x); return a; }
+    return hk() ? [0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5] : [0.5, 1.5, 2.5, 3.5, 4.5, 5.5];
+  }
   function preparer(nom) {
     if (S.nom !== nom) {
       S.nom = nom; S.a = 0; S.combos = [combo0()];
@@ -73190,14 +73202,14 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     if (!S.combos.length) S.combos = [combo0()];
   }
   function annees(lg) {
-    if (hk()) { var a0 = (typeof _g45SgAnAuto === 'function') ? _g45SgAnAuto(lg) : new Date().getFullYear() + 1; return [a0, a0 - 1, a0 - 2, a0 - 3]; }
+    if (S.ctx) { var a0 = (typeof _g45SgAnAuto === 'function') ? _g45SgAnAuto(lg) : new Date().getFullYear() + 1; return [a0, a0 - 1, a0 - 2, a0 - 3]; }
     var d = new Date(), y = d.getFullYear(), y0 = CAL.indexOf(lg) >= 0 ? y : (d.getMonth() + 1 >= 8 ? y : y - 1);
     return [y0, y0 - 1, y0 - 2, y0 - 3];
   }
-  function lib(lg, an) { if (hk()) return (an - 1) + '-' + String(an).slice(2); return CAL.indexOf(lg) >= 0 ? String(an) : an + '-' + String(an + 1).slice(2); }
+  function lib(lg, an) { if (lg === 'nfl' || lg === 'mlb') return String(an); if (S.ctx) return (an - 1) + '-' + String(an).slice(2); return CAL.indexOf(lg) >= 0 ? String(an) : an + '-' + String(an + 1).slice(2); }
   function libCombo(c) {
     var p = [];
-    if (c.res === 'vic') p.push(hk() ? 'Victoire (temps régl.)' : 'Victoire'); else if (c.res === 'vqr') p.push(hk() ? 'Vainqueur (prolong. comprise)' : 'Vainqueur'); else if (c.res === 'nul') p.push('Nul'); else if (c.res === 'def') p.push('Défaite');
+    if (c.res === 'vic') p.push(hk() ? 'Victoire (temps régl.)' : 'Victoire'); else if (c.res === 'vqr') p.push(hk() || us() ? 'Vainqueur (prolong. comprise)' : 'Vainqueur'); else if (c.res === 'nul') p.push('Nul'); else if (c.res === 'def') p.push('Défaite');
     if (c.ou) p.push((c.ou === 'ov' ? 'Over ' : 'Under ') + c.L);
     if (c.bts) p.push('Les deux marquent : ' + (c.bts === 'oui' ? 'oui' : 'non'));
     return p.length ? p.join(' + ') : 'aucun critère';
@@ -73230,13 +73242,13 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   function filtrer(ms) { return ms.filter(function (m) { return S.lieu === 'tout' || (S.lieu === 'dom' ? m[1] === 1 : m[1] === 0); }); }
 
   async function chargerHk(nom) {
-    var C = S.ctx, ans = annees(C.lg), out = { t: Date.now(), lg: C.lg, ligue: 'NHL · saison régulière', saisons: [] };
+    var C = S.ctx, ans = annees(C.lg), out = { t: Date.now(), lg: C.lg, ligue: (US_N[C.lg] || C.lg.toUpperCase()) + ' · saison régulière', saisons: [] };
     await Promise.all(ans.map(async function (an, i) {
-      var cle = 'g45cr1_hockey_' + C.lg + '_' + C.id + '_' + an, ms = null;
+      var cle = 'g45cr1_' + C.sp + '_' + C.lg + '_' + C.id + '_' + an, ms = null;
       if (i > 0) { try { ms = JSON.parse(localStorage.getItem(cle) || 'null'); } catch (e) {} }
       if (!ms) {
         var j = null;
-        try { var r = await fetch('https://site.api.espn.com/apis/site/v2/sports/hockey/' + C.lg + '/teams/' + C.id + '/schedule?season=' + an + '&seasontype=2'); if (r.ok) j = await r.json(); } catch (e) {}
+        try { var r = await fetch('https://site.api.espn.com/apis/site/v2/sports/' + C.sp + '/' + C.lg + '/teams/' + C.id + '/schedule?season=' + an + '&seasontype=2'); if (r.ok) j = await r.json(); } catch (e) {}
         if (!j) { out.saisons[i] = { an: an, ms: null }; return; }
         ms = [];
         (j.events || []).forEach(function (e) {
@@ -73249,7 +73261,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
           var sv = function (x) { var v = x.score; if (v && typeof v === 'object') v = (v.value != null ? v.value : v.displayValue); return parseInt(v, 10); };
           var hg = sv(ho), ag = sv(aw); if (isNaN(hg) || isNaN(ag)) return;
           var dom = String(ho.team && ho.team.id) === String(C.id) ? 1 : 0;
-          var tx = String(st.detail || st.shortDetail || st.description || ''), ox = /\bSO\b/i.test(tx) ? 2 : (/\bOT\b/i.test(tx) ? 1 : 0);
+          var tx = String(st.detail || st.shortDetail || st.description || ''), ox = C.sp !== 'hockey' ? 0 : (/\bSO\b/i.test(tx) ? 2 : (/\bOT\b/i.test(tx) ? 1 : 0));
           ms.push([String(e.date || '').slice(0, 10), dom, dom ? hg : ag, dom ? ag : hg, ox]);
         });
         ms.sort(function (a, b) { return a[0] < b[0] ? -1 : 1; });
@@ -73262,7 +73274,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   async function charger(nom) {
     if (S.data[nom] && (S.data[nom].err || Date.now() - S.data[nom].t < 3600000)) return;
     if (S.enCours[nom]) return; S.enCours[nom] = 1;
-    if (hk()) { try { await chargerHk(nom); } catch (e) { S.data[nom] = { t: Date.now(), err: 'Lecture impossible (réseau).' }; } delete S.enCours[nom]; return; }
+    if (S.ctx) { try { await chargerHk(nom); } catch (e) { S.data[nom] = { t: Date.now(), err: 'Lecture impossible (réseau).' }; } delete S.enCours[nom]; return; }
     try {
       var r = await espnResolveTeam(nom);
       var lg = r && r.league;
@@ -73334,7 +73346,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     if (!o) return h + '</div>';
     var D = S.data[nom];
     var lieuTxt = S.lieu === 'dom' ? '🏠 à domicile' : S.lieu === 'ext' ? '✈️ à l\'extérieur' : 'domicile + extérieur';
-    h += '<div style="font-size:13px;color:#c9d3ee;margin:4px 0 8px;">' + esc(nom) + ' · ' + lieuTxt + (D && D.ligue ? ' · ' + esc(D.ligue) : '') + (hk() ? '' : ' · championnat seulement') + '</div>';
+    h += '<div style="font-size:13px;color:#c9d3ee;margin:4px 0 8px;">' + esc(nom) + ' · ' + lieuTxt + (D && D.ligue ? ' · ' + esc(D.ligue) : '') + (S.ctx ? '' : ' · championnat seulement') + '</div>';
     var u = (state.u || []).filter(function (x) { return x.n === nom; })[0];
     if (u && u.note) {
       h += '<div style="font-size:14px;color:#fff;background:#0f1730;border-radius:8px;padding:8px;margin-bottom:6px;">📌 Ta note : ' + esc(u.note) + '</div>'
@@ -73346,13 +73358,15 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       S.combos.forEach(function (c, i) { h += b(S.a === i, 'Combiné ' + (i + 1), 'g45CrChoix(' + i + ')'); });
     }
     var c = S.combos[S.a];
-    h += lab('Résultat') + b(c.res === 'vic', 'Victoire', "g45CrSet('res','vic')") + b(c.res === 'vqr', 'Vainqueur', "g45CrSet('res','vqr')")
+    if (us()) h += lab('Résultat (prolongation comprise)') + b(c.res === 'vqr', 'Vainqueur', "g45CrSet('res','vqr')") + b(c.res === 'def', 'Défaite', "g45CrSet('res','def')") + b(c.res === '', 'Aucun', "g45CrSet('res','')");
+    else h += lab('Résultat') + b(c.res === 'vic', 'Victoire', "g45CrSet('res','vic')") + b(c.res === 'vqr', 'Vainqueur', "g45CrSet('res','vqr')")
       + b(c.res === 'nul', 'Nul', "g45CrSet('res','nul')") + b(c.res === 'def', 'Défaite', "g45CrSet('res','def')") + b(c.res === '', 'Aucun', "g45CrSet('res','')");
     var sel = '<select onchange="g45CrSet(\'L\',this.value)" style="background:#16213f;color:#fff;border:1px solid #6d9dff;border-radius:8px;padding:7px 10px;font-size:14px;margin:0 6px 6px 0;">';
-    (hk() ? [0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5] : [0.5, 1.5, 2.5, 3.5, 4.5, 5.5]).forEach(function (L) { sel += '<option value="' + L + '"' + (c.L === L ? ' selected' : '') + '>' + L + '</option>'; });
+    var LL = lignes(); if (LL.indexOf(c.L) < 0) LL.push(c.L); LL.sort(function (x, y) { return x - y; });
+    LL.forEach(function (L) { sel += '<option value="' + L + '"' + (c.L === L ? ' selected' : '') + '>' + L + '</option>'; });
     sel += '</select>';
-    h += lab(hk() ? 'Buts du match (temps réglementaire)' : 'Buts du match') + b(c.ou === 'ov', 'Over', "g45CrSet('ou','ov')") + b(c.ou === 'un', 'Under', "g45CrSet('ou','un')") + b(c.ou === '', 'Aucun', "g45CrSet('ou','')") + sel;
-    if (!hk()) h += lab('Les deux marquent') + b(c.bts === 'oui', 'Oui', "g45CrSet('bts','oui')") + b(c.bts === 'non', 'Non', "g45CrSet('bts','non')") + b(c.bts === '', 'Peu importe', "g45CrSet('bts','')");
+    h += lab(us() ? US_L[sport()][3] : hk() ? 'Buts du match (temps réglementaire)' : 'Buts du match') + b(c.ou === 'ov', 'Over', "g45CrSet('ou','ov')") + b(c.ou === 'un', 'Under', "g45CrSet('ou','un')") + b(c.ou === '', 'Aucun', "g45CrSet('ou','')") + sel;
+    if (!S.ctx) h += lab('Les deux marquent') + b(c.bts === 'oui', 'Oui', "g45CrSet('bts','oui')") + b(c.bts === 'non', 'Non', "g45CrSet('bts','non')") + b(c.bts === '', 'Peu importe', "g45CrSet('bts','')");
     h += '<div style="margin:6px 0 4px;">' + (S.combos.length < 3 ? b(false, '➕ Comparer avec un autre combiné (OU)', 'g45CrAjout()') : '')
       + (S.combos.length > 1 ? b(false, '✕ Retirer le combiné ' + (S.a + 1), 'g45CrSuppr()') : '') + '</div>';
     if (!D || (!D.err && !D.saisons)) {
@@ -73392,18 +73406,18 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var R = _g45AgConsigne(u.note, lieu === 'dom');
     if (!R && S.lieu === 'tout') { R = _g45AgConsigne(u.note, false); lieu = 'ext'; }
     if (!R || !R.opts.length) { alert('Je ne trouve pas de critère dans ta note pour ce lieu.'); return; }
-    var cs = [];
+    var cs = [], L0 = combo0().L;
     R.opts.forEach(function (legs) {
-      var c = { res: '', ou: '', L: 2.5, bts: '' };
+      var c = { res: '', ou: '', L: L0, bts: '' };
       legs.forEach(function (l) {
-        if (l.k === 'vic' || l.k === 'vqr' || l.k === 'def') c.res = l.k;
+        if (l.k === 'vic' || l.k === 'vqr' || l.k === 'def') c.res = (us() && l.k === 'vic') ? 'vqr' : l.k;
         else if (l.k === 'ov' || l.k === 'un') { c.ou = l.k; c.L = l.L; }
         else if (l.k === '?' && /btts|bts|deux.*marqu/i.test(l.t || '')) c.bts = /non|no\b/i.test(l.t) ? 'non' : 'oui';
       });
       cs.push(c);
     });
     /* « si cote inférieure à 1,5 » : le résultat SEUL est joué quand la cote suffit → comparé en combiné 1. */
-    if (R.seuil && cs[0] && cs[0].res && (cs[0].ou || cs[0].bts)) cs.unshift({ res: cs[0].res, ou: '', L: 2.5, bts: '' });
+    if (R.seuil && cs[0] && cs[0].res && (cs[0].ou || cs[0].bts)) cs.unshift({ res: cs[0].res, ou: '', L: L0, bts: '' });
     S.combos = cs.slice(0, 3); S.a = 0; S.lieu = lieu;
     redessiner();
   };

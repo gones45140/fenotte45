@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261014g, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261014h, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1602,6 +1602,10 @@ RÉGLÉ (worker, 01/10) : cron « exceededCpu » (cpuTimeMs 10) à CHAQUE passag
   el.innerHTML) via `_g45CrHtml(nom, {sp, lg, id})` ; calendrier d'équipe ESPN hockey/nhl/teams/<id>/schedule?season=<an FIN>&seasontype=2 (présaison et
   séries écartées), match = [date, dom, pour, contre, ox] (ox 1 prolongation / 2 TAB lus dans status.detail) ; Victoire / Nul / Défaite / buts = TEMPS
   RÉGLEMENTAIRE (ox → min-min), Vainqueur = score final ; lignes 0,5 → 7,5 ; pas de « Les deux marquent ». Cache g45cr1_hockey_nhl_<id>_<an>. Contrôle smoke (24).
+  20261014h (« ce que tu veux comme sport ») : aussi NFL, NBA, MLB (même condition dans `_g45SaisonsGen`, ctx {sp, lg, id}) : résultat = Vainqueur (score final,
+  prolongation comprise) / Défaite seulement ; total de points (NFL 30,5 → 60,5, NBA 190,5 → 250,5) ou de runs (MLB 4,5 → 13,5) ; saison `_g45SgAnAuto`
+  (NFL / MLB affichées « 2026 ») ; `chargerHk` généralisé (<sp>/<lg>/teams/<id>/schedule, ox seulement en hockey), cache g45cr1_<sp>_<lg>_<id>_<an>.
+  Calendrier NBA NON sondé ici (même forme supposée). Contrôle smoke (25).
 - ▶️ VIDÉO « LA MÉTHODE MONTANTE » (20261014e, maquette validée « ok ») : bouton bleu dans la barre « 🚀 C'est quoi, le Cockpit ? » (<summary> de
   #sub-strat, posé par app.js `_g45VidCockpitPoser`, GONES45 ET BET45) → `g45VideoOuvrir(fic, titre)` (paramètres ajoutés, défaut = présentation) ;
   videos/bet45-montante.mp4 + .webm dans LES DEUX dépôts. Animation à exemple FICTIF (Arsenal, P1 5 € / P2 10 € / P3 30 €, cote 1,5 mini, 1 min 23) :
