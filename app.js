@@ -24938,6 +24938,8 @@ function renderSaisonsChart(el, results, nom) {
     html += '<button onclick="_statFilter=\''+f+'\';document.getElementById(\'ip-saisons\').scrollTop=0;loadTeamSaisons();" style="flex:1;padding:10px 4px;border-radius:8px;border:1px solid '+(isOn?'#3b82f6':'rgba(255,255,255,.18)')+';background:'+(isOn?'#2563eb':'#1a2235')+';color:'+(isOn?'#fff':'#e8ecfa')+';font-size:15px;font-weight:'+(isOn?'800':'700')+';cursor:pointer;">'+lbl+'</button>';
   });
   html += '</div></div>';
+  /* 20261014a (maquette validée « ok ») : bloc « 📊 Tes critères sur 4 saisons » (fin d'app.js, _g45CrHtml). */
+  try { if (typeof window._g45CrHtml === 'function') html += window._g45CrHtml(nom); } catch(e) {}
 
   saisons.forEach(function(s) {
     var matches = results[s];
@@ -42716,7 +42718,7 @@ window.g45F1Session=g45F1Session;
    et les données utilisateur n'étaient JAMAIS écrites — l'ajout apparaissait à l'écran puis
    disparaissait au rechargement. Ce n'était ni la synchro GitHub, ni Dropbox, ni le cache
    du navigateur. Tous ces caches sont reconstructibles : ils cèdent la place aux données. */
-var _G45_CACHE_PREFIXES=['g45agoa2_',/* 11/10 : cotes Agenda (The Odds API) */'g45reg1_',/* 08/10 : régularité buteurs NHL */'g45bb1_','g45bbst1_','g45bbld1_','g45bbf1_',/* 03/10 : Pro A be-basketball */'g45es1_',/* 01/10 : stats Euroleague */'g45kbo1_',/* 01/10 : KBO (mykbostats) */'g45t14lg1',/* 01/10 : logos Top 14 (LNR) */'g45pd2_',/* 01/10 : Pro D2 (LNR) */'g45t14sq1_',/* 01/10 : effectifs Top 14 (LNR) */'g45nrlm1_','g45nrldr1_',/* 01/10 : feuilles et calendriers NRL */'g45nrlsq1_',/* 01/10 : effectifs NRL */'g45nrlst2_',/* 01/10 : classements NRL */'g45proacid1_',/* 30/09 : numéros LNB par saison */'g45proast1_',/* 30/09 : stats Pro A */'g45proa1_',/* 30/09 : Pro A par journée */'g45el1_',/* 30/09 : Euroleague (compact) */'g45buts1_',/* 30/09 : buts en action (match fini) */'g45prad1_','g45vsj1_','g45vse1_',/* 30/09 : radars joueurs */'g45ia1_',/* 29/09 : avis IA gardés 6 h */'g45_mmeta2_','g45_mmeta1_','g45_tennis4_','g45_tennis3_',/* 16/09 : meta de match (domicile/lieu) et score tennis, reconstructibles */'g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dcf_','g45dc_',
+var _G45_CACHE_PREFIXES=['g45cr1_',/* 14/10 : critères sur 4 saisons */'g45agoa2_',/* 11/10 : cotes Agenda (The Odds API) */'g45reg1_',/* 08/10 : régularité buteurs NHL */'g45bb1_','g45bbst1_','g45bbld1_','g45bbf1_',/* 03/10 : Pro A be-basketball */'g45es1_',/* 01/10 : stats Euroleague */'g45kbo1_',/* 01/10 : KBO (mykbostats) */'g45t14lg1',/* 01/10 : logos Top 14 (LNR) */'g45pd2_',/* 01/10 : Pro D2 (LNR) */'g45t14sq1_',/* 01/10 : effectifs Top 14 (LNR) */'g45nrlm1_','g45nrldr1_',/* 01/10 : feuilles et calendriers NRL */'g45nrlsq1_',/* 01/10 : effectifs NRL */'g45nrlst2_',/* 01/10 : classements NRL */'g45proacid1_',/* 30/09 : numéros LNB par saison */'g45proast1_',/* 30/09 : stats Pro A */'g45proa1_',/* 30/09 : Pro A par journée */'g45el1_',/* 30/09 : Euroleague (compact) */'g45buts1_',/* 30/09 : buts en action (match fini) */'g45prad1_','g45vsj1_','g45vse1_',/* 30/09 : radars joueurs */'g45ia1_',/* 29/09 : avis IA gardés 6 h */'g45_mmeta2_','g45_mmeta1_','g45_tennis4_','g45_tennis3_',/* 16/09 : meta de match (domicile/lieu) et score tennis, reconstructibles */'g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dcf_','g45dc_',
   'g45trv3_','g45trv2_','g45trOdds2_',/* 13/10 : cotes The Odds API par marchés */'g45tr_','g45but_st_','g45butL_','g45butA_','g45but_mur_',
   '_g45clv','g45clv_snaps','g45_saisons_cache_v3_','g45_saisons_cache_v2_',
   /* Ajoutes le 20/08 : ces caches, tous reconstructibles, n'etaient PAS declares
@@ -73121,4 +73123,218 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', brancher); else setTimeout(brancher, 0);
   setInterval(function () { if (!document.hidden) { brancher(); direct(); } }, 60000);
   window._g45EcCarte = carte; window._g45EcDirect = direct;
+})();
+
+/* ════════════════════════════════════════════════════════════════════════════
+   20261014a — 📊 TES CRITÈRES SUR 4 SAISONS (Saisons d'un club de FOOT, maquette validée « ok »).
+   POURQUOI : Antoine choisit une équipe pour une MONTANTE (cote 1,5 mini au départ) et juge son combiné
+   (« victoire + under 3.5 à l'extérieur : 8/19 l'an dernier ») sur 1 ou 2 saisons. Il veut remonter sur 3 saisons
+   d'avant et voir la PIRE SÉRIE de défaites = combien de paliers il aurait fallu.
+   - Placé par renderSaisonsChart sous Global / Domicile / Extérieur (window._g45CrHtml(nom)), REPLIÉ par défaut :
+     les saisons ne sont lues qu'à l'ouverture (localStorage g45_cr_open = '1' : reste ouvert).
+   - Championnat SEUL (espnResolveTeam → league, espnClubSchedule(nom, an)) : saison en cours + 3 d'avant.
+     Saison passée compactée POUR TOUJOURS (g45cr1_<lg>_<id>_<an> = [[date, dom 1/0, buts pour, buts contre]]),
+     saison en cours en mémoire de session (1 h).
+   - Critères = boutons (lieu, résultat, buts over/under + ligne, les deux marquent) ; « 📌 Reprendre ma note »
+     lit la consigne du mur via _g45AgConsigne (partie 🏠 ou ✈️) ; « OU » = 2e combiné ; « si cote < 1,5 » →
+     le résultat seul est ajouté en combiné 1. Jusqu'à 3 combinés comparés.
+   - PAS de cote : ESPN efface les cotes des matchs joués (SONDÉ PAR ANTOINE, pickcenter [] en 2022 / 2023) ;
+     football-data.co.uk = usage privé seulement, pas de lecture automatique (CGU lues par Antoine) → NON utilisé.
+   - Sélections nationales (pas de championnat) : bloc absent.
+   ════════════════════════════════════════════════════════════════════════════ */
+(function () {
+  var CAL = ['bra.1','usa.1','arg.1','nor.1','swe.1','fin.1','irl.1','rus.1','jpn.1','kor.1'];
+  var S = window._g45Cr = window._g45Cr || { nom: '', lieu: 'tout', combos: [], a: 0, data: {}, enCours: {} };
+  function ouvert() { try { return localStorage.getItem('g45_cr_open') === '1'; } catch (e) { return false; } }
+  function esc(t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function combo0() { return { res: 'vic', ou: '', L: 2.5, bts: '' }; }
+  function preparer(nom) {
+    if (S.nom !== nom) {
+      S.nom = nom; S.a = 0; S.combos = [combo0()];
+      var f = (typeof _statFilter !== 'undefined') ? _statFilter : 'global';
+      S.lieu = f === 'dom' ? 'dom' : f === 'ext' ? 'ext' : 'tout';
+    }
+    if (!S.combos.length) S.combos = [combo0()];
+  }
+  function annees(lg) {
+    var d = new Date(), y = d.getFullYear(), y0 = CAL.indexOf(lg) >= 0 ? y : (d.getMonth() + 1 >= 8 ? y : y - 1);
+    return [y0, y0 - 1, y0 - 2, y0 - 3];
+  }
+  function lib(lg, an) { return CAL.indexOf(lg) >= 0 ? String(an) : an + '-' + String(an + 1).slice(2); }
+  function libCombo(c) {
+    var p = [];
+    if (c.res === 'vic') p.push('Victoire'); else if (c.res === 'vqr') p.push('Vainqueur'); else if (c.res === 'nul') p.push('Nul'); else if (c.res === 'def') p.push('Défaite');
+    if (c.ou) p.push((c.ou === 'ov' ? 'Over ' : 'Under ') + c.L);
+    if (c.bts) p.push('Les deux marquent : ' + (c.bts === 'oui' ? 'oui' : 'non'));
+    return p.length ? p.join(' + ') : 'aucun critère';
+  }
+  function passe(c, m) {
+    var gf = m[2], ga = m[3];
+    if ((c.res === 'vic' || c.res === 'vqr') && !(gf > ga)) return false;
+    if (c.res === 'nul' && gf !== ga) return false;
+    if (c.res === 'def' && !(gf < ga)) return false;
+    if (c.ou === 'ov' && !(gf + ga > c.L)) return false;
+    if (c.ou === 'un' && !(gf + ga < c.L)) return false;
+    if (c.bts === 'oui' && !(gf > 0 && ga > 0)) return false;
+    if (c.bts === 'non' && gf > 0 && ga > 0) return false;
+    return true;
+  }
+  function calc(c, ms) {
+    var ok = 0, pire = 0, run = 0;
+    ms.forEach(function (m) { if (passe(c, m)) { ok++; run = 0; } else { run++; if (run > pire) pire = run; } });
+    return { n: ms.length, ok: ok, pire: pire };
+  }
+  function enCours(c, ms) {
+    if (!ms.length) return '';
+    var der = passe(c, ms[ms.length - 1]), k = 0;
+    for (var i = ms.length - 1; i >= 0 && passe(c, ms[i]) === der; i--) k++;
+    return k + (der ? (k > 1 ? ' réussites' : ' réussite') : (k > 1 ? ' défaites' : ' défaite')) + ' de suite';
+  }
+  function coul(p) { return p <= 2 ? '#1ed760' : p <= 4 ? '#ff9f43' : '#ff5a5a'; }
+  function filtrer(ms) { return ms.filter(function (m) { return S.lieu === 'tout' || (S.lieu === 'dom' ? m[1] === 1 : m[1] === 0); }); }
+
+  async function charger(nom) {
+    if (S.data[nom] && (S.data[nom].err || Date.now() - S.data[nom].t < 3600000)) return;
+    if (S.enCours[nom]) return; S.enCours[nom] = 1;
+    try {
+      var r = await espnResolveTeam(nom);
+      var lg = r && r.league;
+      if (!r || !r.id || !lg || /fifa|uefa\.(nations|euro)|friendly/.test(lg)) { S.data[nom] = { t: Date.now(), err: 'Pas de championnat trouvé pour cette équipe.' }; return; }
+      var ans = annees(lg), out = { t: Date.now(), lg: lg, ligue: '', saisons: [] };
+      await Promise.all(ans.map(async function (an, i) {
+        var cle = 'g45cr1_' + lg + '_' + r.id + '_' + an, ms = null;
+        if (i > 0) { try { ms = JSON.parse(localStorage.getItem(cle) || 'null'); } catch (e) {} }
+        if (!ms) {
+          var sc = null; try { sc = await espnClubSchedule(nom, an, lg); } catch (e) {}
+          if (!sc || !sc.matches) { out.saisons[i] = { an: an, ms: null }; return; }
+          if (!out.ligue) { var f1 = sc.matches.filter(function (m) { return m.competitionName; })[0]; if (f1) out.ligue = f1.competitionName; }
+          ms = sc.matches.filter(function (m) { return m.completed && m.homeScore != null && m.awayScore != null && !isNaN(m.homeScore); })
+            .map(function (m) {
+              var dom = String(m.homeId) === String(r.id) ? 1 : 0;
+              return [String(m.date || '').slice(0, 10), dom, dom ? m.homeScore : m.awayScore, dom ? m.awayScore : m.homeScore];
+            }).sort(function (a, b) { return a[0] < b[0] ? -1 : 1; });
+          if (i > 0 && ms.length) { try { localStorage.setItem(cle, JSON.stringify(ms)); } catch (e) {} }
+        }
+        out.saisons[i] = { an: an, ms: ms };
+      }));
+      S.data[nom] = out;
+    } catch (e) { S.data[nom] = { t: Date.now(), err: 'Lecture impossible (réseau).' }; }
+    finally { delete S.enCours[nom]; }
+  }
+
+  var BT = 'border-radius:16px;padding:7px 12px;font-size:14px;cursor:pointer;color:#fff;margin:0 6px 6px 0;';
+  function b(on, txt, fn) {
+    return '<button onclick="' + fn + '" style="' + BT + 'border:1px solid ' + (on ? '#6d9dff' : '#2a3a63') + ';background:' + (on ? '#1e3a7a' : '#16213f') + ';font-weight:' + (on ? 700 : 400) + ';">' + (on ? '✓ ' : '') + txt + '</button>';
+  }
+  function lab(t) { return '<div style="font-size:13px;color:#c9d3ee;margin:8px 0 4px;">' + t + '</div>'; }
+
+  function tableau(c, D) {
+    var tous = [], h = '<table style="width:100%;border-collapse:collapse;font-size:14px;color:#fff;margin-top:6px;">'
+      + '<tr><th style="text-align:left;font-size:13px;color:#c9d3ee;padding:6px 4px;border-bottom:1px solid #2a3a63;">Saison</th>'
+      + '<th style="text-align:left;font-size:13px;color:#c9d3ee;padding:6px 4px;border-bottom:1px solid #2a3a63;">Réussite</th>'
+      + '<th style="text-align:left;font-size:13px;color:#c9d3ee;padding:6px 4px;border-bottom:1px solid #2a3a63;">Pire série<br>de défaites</th></tr>';
+    D.saisons.slice().reverse().forEach(function (s) { if (s && s.ms) tous = tous.concat(filtrer(s.ms)); });
+    D.saisons.forEach(function (s) {
+      if (!s) return;
+      var td = 'padding:8px 4px;border-bottom:1px solid #1c2747;';
+      if (!s.ms) { h += '<tr><td style="' + td + '">' + lib(D.lg, s.an) + '</td><td colspan="2" style="' + td + 'color:#c9d3ee;">indisponible</td></tr>'; return; }
+      var ms = filtrer(s.ms);
+      if (!ms.length) { h += '<tr><td style="' + td + '">' + lib(D.lg, s.an) + '</td><td colspan="2" style="' + td + 'color:#c9d3ee;">aucun match joué</td></tr>'; return; }
+      var R = calc(c, ms);
+      h += '<tr><td style="' + td + '">' + lib(D.lg, s.an) + '</td><td style="' + td + '">' + R.ok + '/' + R.n + ' · ' + Math.round(100 * R.ok / R.n) + ' %</td>'
+        + '<td style="' + td + 'font-weight:700;color:' + coul(R.pire) + ';">' + R.pire + '</td></tr>';
+    });
+    h += '</table>';
+    if (tous.length) {
+      var T = calc(c, tous);
+      h += '<div style="margin-top:10px;background:#0f1730;border-radius:10px;padding:10px;font-size:14px;line-height:1.6;color:#fff;">'
+        + '🧮 <b>Total : ' + T.ok + '/' + T.n + ' · ' + Math.round(100 * T.ok / T.n) + ' %</b><br>'
+        + '🪜 Pire série : <b style="color:' + coul(T.pire) + ';">' + T.pire + ' défaite' + (T.pire > 1 ? 's' : '') + ' de suite</b> → il fallait <b>' + (T.pire + 1) + ' palier' + (T.pire ? 's' : '') + '</b><br>'
+        + '📈 Série en cours : ' + enCours(c, tous) + '</div>';
+    }
+    return h;
+  }
+
+  function html(nom) {
+    preparer(nom);
+    var o = ouvert();
+    var h = '<div id="g45cr" style="margin:12px 0;background:rgba(20,28,48,.95);border:1px solid #2a3a63;border-radius:12px;padding:12px;color:#fff;">'
+      + '<div onclick="g45CrOuvrir()" style="cursor:pointer;font-size:16px;font-weight:700;display:flex;justify-content:space-between;align-items:center;">'
+      + '<span>📊 Tes critères sur 4 saisons</span><span style="font-size:14px;color:#c9d3ee;">' + (o ? '▾ Replier' : '▸ Ouvrir') + '</span></div>';
+    if (!o) return h + '</div>';
+    var D = S.data[nom];
+    var lieuTxt = S.lieu === 'dom' ? '🏠 à domicile' : S.lieu === 'ext' ? '✈️ à l\'extérieur' : 'domicile + extérieur';
+    h += '<div style="font-size:13px;color:#c9d3ee;margin:4px 0 8px;">' + esc(nom) + ' · ' + lieuTxt + (D && D.ligue ? ' · ' + esc(D.ligue) : '') + ' · championnat seulement</div>';
+    var u = (state.u || []).filter(function (x) { return x.n === nom; })[0];
+    if (u && u.note) {
+      h += '<div style="font-size:14px;color:#fff;background:#0f1730;border-radius:8px;padding:8px;margin-bottom:6px;">📌 Ta note : ' + esc(u.note) + '</div>'
+        + '<button onclick="g45CrNote()" style="width:100%;background:#2a4a9a;color:#fff;border:0;border-radius:10px;padding:9px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:4px;">📌 Reprendre ma note</button>';
+    }
+    h += lab('Lieu') + b(S.lieu === 'dom', '🏠 Domicile', "g45CrSet('lieu','dom')") + b(S.lieu === 'ext', '✈️ Extérieur', "g45CrSet('lieu','ext')") + b(S.lieu === 'tout', 'Les deux', "g45CrSet('lieu','tout')");
+    if (S.combos.length > 1) {
+      h += lab('Combiné modifié');
+      S.combos.forEach(function (c, i) { h += b(S.a === i, 'Combiné ' + (i + 1), 'g45CrChoix(' + i + ')'); });
+    }
+    var c = S.combos[S.a];
+    h += lab('Résultat') + b(c.res === 'vic', 'Victoire', "g45CrSet('res','vic')") + b(c.res === 'vqr', 'Vainqueur', "g45CrSet('res','vqr')")
+      + b(c.res === 'nul', 'Nul', "g45CrSet('res','nul')") + b(c.res === 'def', 'Défaite', "g45CrSet('res','def')") + b(c.res === '', 'Aucun', "g45CrSet('res','')");
+    var sel = '<select onchange="g45CrSet(\'L\',this.value)" style="background:#16213f;color:#fff;border:1px solid #6d9dff;border-radius:8px;padding:7px 10px;font-size:14px;margin:0 6px 6px 0;">';
+    [0.5, 1.5, 2.5, 3.5, 4.5, 5.5].forEach(function (L) { sel += '<option value="' + L + '"' + (c.L === L ? ' selected' : '') + '>' + L + '</option>'; });
+    sel += '</select>';
+    h += lab('Buts du match') + b(c.ou === 'ov', 'Over', "g45CrSet('ou','ov')") + b(c.ou === 'un', 'Under', "g45CrSet('ou','un')") + b(c.ou === '', 'Aucun', "g45CrSet('ou','')") + sel;
+    h += lab('Les deux marquent') + b(c.bts === 'oui', 'Oui', "g45CrSet('bts','oui')") + b(c.bts === 'non', 'Non', "g45CrSet('bts','non')") + b(c.bts === '', 'Peu importe', "g45CrSet('bts','')");
+    h += '<div style="margin:6px 0 4px;">' + (S.combos.length < 3 ? b(false, '➕ Comparer avec un autre combiné (OU)', 'g45CrAjout()') : '')
+      + (S.combos.length > 1 ? b(false, '✕ Retirer le combiné ' + (S.a + 1), 'g45CrSuppr()') : '') + '</div>';
+    if (!D || (!D.err && !D.saisons)) {
+      h += '<div style="font-size:14px;color:#c9d3ee;padding:10px 0;">⏳ Lecture des 4 saisons…</div>';
+      setTimeout(function () { charger(nom).then(function () { redessiner(); }); }, 0);
+    } else if (D.err) {
+      h += '<div style="font-size:14px;color:#ff9f43;padding:10px 0;">⚠️ ' + esc(D.err) + '</div>';
+    } else {
+      S.combos.forEach(function (cc, i) {
+        h += '<div style="margin-top:12px;font-size:15px;"><span style="color:#c9d3ee;">' + (S.combos.length > 1 ? 'Combiné ' + (i + 1) + ' : ' : 'Ton combiné : ') + '</span><b>'
+          + (S.lieu === 'dom' ? '🏠 ' : S.lieu === 'ext' ? '✈️ ' : '') + esc(libCombo(cc)) + '</b></div>' + tableau(cc, D);
+      });
+      h += '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">Pire série : 🟢 0-2 · 🟠 3-4 · 🔴 5 et plus. Pas de cote : ESPN ne garde pas celles des matchs joués.</div>';
+    }
+    return h + '</div>';
+  }
+  function redessiner() {
+    var z = document.getElementById('g45cr'); if (!z || !S.nom) return;
+    var t = document.createElement('div'); t.innerHTML = html(S.nom);
+    z.parentNode.replaceChild(t.firstChild, z);
+  }
+  window._g45CrHtml = html;
+  window._g45CrPasse = passe; window._g45CrCalc = calc;
+  window.g45CrOuvrir = function () { try { localStorage.setItem('g45_cr_open', ouvert() ? '0' : '1'); } catch (e) {} redessiner(); };
+  window.g45CrSet = function (k, v) {
+    if (k === 'lieu') S.lieu = v;
+    else { var c = S.combos[S.a]; if (k === 'L') { c.L = parseFloat(v); if (!c.ou) c.ou = 'ov'; } else c[k] = v; }
+    redessiner();
+  };
+  window.g45CrChoix = function (i) { S.a = i; redessiner(); };
+  window.g45CrAjout = function () { if (S.combos.length < 3) { S.combos.push(combo0()); S.a = S.combos.length - 1; } redessiner(); };
+  window.g45CrSuppr = function () { if (S.combos.length > 1) { S.combos.splice(S.a, 1); S.a = 0; } redessiner(); };
+  window.g45CrNote = function () {
+    var u = (state.u || []).filter(function (x) { return x.n === S.nom; })[0];
+    if (!u || !u.note || typeof _g45AgConsigne !== 'function') return;
+    var lieu = S.lieu === 'tout' ? 'dom' : S.lieu;
+    var R = _g45AgConsigne(u.note, lieu === 'dom');
+    if (!R && S.lieu === 'tout') { R = _g45AgConsigne(u.note, false); lieu = 'ext'; }
+    if (!R || !R.opts.length) { alert('Je ne trouve pas de critère dans ta note pour ce lieu.'); return; }
+    var cs = [];
+    R.opts.forEach(function (legs) {
+      var c = { res: '', ou: '', L: 2.5, bts: '' };
+      legs.forEach(function (l) {
+        if (l.k === 'vic' || l.k === 'vqr' || l.k === 'def') c.res = l.k;
+        else if (l.k === 'ov' || l.k === 'un') { c.ou = l.k; c.L = l.L; }
+        else if (l.k === '?' && /btts|bts|deux.*marqu/i.test(l.t || '')) c.bts = /non|no\b/i.test(l.t) ? 'non' : 'oui';
+      });
+      cs.push(c);
+    });
+    /* « si cote inférieure à 1,5 » : le résultat SEUL est joué quand la cote suffit → comparé en combiné 1. */
+    if (R.seuil && cs[0] && cs[0].res && (cs[0].ou || cs[0].bts)) cs.unshift({ res: cs[0].res, ou: '', L: 2.5, bts: '' });
+    S.combos = cs.slice(0, 3); S.a = 0; S.lieu = lieu;
+    redessiner();
+  };
 })();
