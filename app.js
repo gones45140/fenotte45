@@ -24544,6 +24544,18 @@ window._buildScorerBarHtml=_buildScorerBarHtml;
    calendrier du CHAMPIONNAT sur les 60 prochains jours, filtré sur l'équipe. */
 async function _g45AVenirLigue(slug, espnId, espnNom){
   if(!slug) return [];
+  /* 20261014l (capture téléphone PSG : prochains matchs = Ligue des champions SEULE, PC correct) : la ligue reçue peut être une COUPE
+     d'Europe (équipe résolue / calendrier mémorisés sur l'appareil sous uefa.champions) → championnat jamais lu. Coupe d'Europe reçue →
+     championnat du club par son nom (espnLeagueOf), les coupes d'Europe étant de toute façon ajoutées plus bas. */
+  try{
+    if(/^uefa\.(champions|europa)/.test(String(slug)) && typeof espnLeagueOf==='function'){
+      var _cupe=function(x){ return !x || /^uefa\.|^fifa\./.test(String(x)); };
+      var _lgN=espnLeagueOf(espnNom);
+      /* la table perso de l'appareil (g45TeamsPerso) peut elle-même dire uefa.champions → table câblée d'origine */
+      if(_cupe(_lgN) && typeof _g45EspnLeagueOfOrig==='function') _lgN=_g45EspnLeagueOfOrig(espnNom);
+      if(!_cupe(_lgN)) slug=_lgN;
+    }
+  }catch(e){}
   /* Le championnat ne suffit pas : Supercoupe d'UEFA, supercoupe nationale et amicaux
      vivent sous d'autres slugs (vérifié : uefa.super_cup, fra.super_cup, club.friendly
      contenaient bien les matchs d'août du PSG). Le préfixe pays se déduit du championnat,

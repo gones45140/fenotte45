@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261014k, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261014l, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1628,6 +1628,9 @@ RÉGLÉ (worker, 01/10) : cron « exceededCpu » (cpuTimeMs 10) à CHAQUE passag
   20261014c (capture : PSG = LDC SEULE après 14b) : le scoreboard 60 j du CHAMPIONNAT ne rendait rien (matchs de L1 venus jusque-là du calendrier
   d'équipe, lu seulement hors cache) → `_g45AVenirLigue` relit aussi soccer/<lg>/teams/<id>/schedule (sans saison), 60 j.
   20261014d (« toujours pas ») : ?season=<année de début> d'abord (sans saison = saison suivante vide ?), puis sans ; diag window._g45AVenirDiag.
+  20261014l (capture TÉLÉPHONE PSG : LDC seule, PC correct) : `_g45AVenirLigue` peut recevoir une COUPE d'Europe comme « championnat » (équipe résolue /
+  calendrier ou table perso g45TeamsPerso mémorisés sur l'appareil) → slug uefa.champions|europa remplacé par espnLeagueOf(nom), sinon la table câblée
+  `_g45EspnLeagueOfOrig` (fra.1 pour le PSG). Cause exacte chez Antoine NON confirmée. Contrôle smoke (29).
 - Saisons d'un club de FOOT (rendu après « Barre de filtres » dans loadTeamSaisons) — 20261005y (capture Real Madrid : seulement
   Prochains matchs, aucune case cochée) : le filtre g45_saison_filters est COMMUN à tous les clubs ; une case cochée ailleurs absente ici
   (Ligue Europa…) vidait toutes les saisons → si aucune case active n'existe chez ce club, « Toutes » pour cet affichage (sans effacer le choix).
