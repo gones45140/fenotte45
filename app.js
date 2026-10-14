@@ -24590,8 +24590,16 @@ async function _g45AVenirLigue(slug, espnId, espnNom){
      Le calendrier d'équipe du championnat (sans saison = saison en cours) est donc relu ici aussi. */
   if(!_estSel && espnId){
     try{
-      var _cal=await _g45TrEspn('/apis/site/v2/sports/soccer/'+slug+'/teams/'+espnId+'/schedule');
-      reps.push({sl:slug, j:{events:((_cal&&_cal.events)||[]).filter(function(e){ return Date.parse(e.date)<=Date.now()+60*86400000; })}});
+      /* 20261014d (« toujours pas ») : SANS saison, ESPN sert peut-être la saison SUIVANTE (vide) → saison en cours d'abord,
+         comme espnClubSchedule (année de début ; championnats sur l'année civile = année en cours), puis sans paramètre. */
+      var _d0=new Date(), _civ=['bra.1','usa.1','arg.1','nor.1','swe.1','fin.1','irl.1','rus.1','jpn.1','kor.1'].indexOf(slug)>=0;
+      var _an=_civ?_d0.getFullYear():(_d0.getMonth()+1>=8?_d0.getFullYear():_d0.getFullYear()-1);
+      var _avenir=function(c){ return ((c&&c.events)||[]).filter(function(e){ var t=Date.parse(e.date); return t>=Date.now()-3*3600000 && t<=Date.now()+60*86400000; }); };
+      var _ev=[];
+      try{ _ev=_avenir(await _g45TrEspn('/apis/site/v2/sports/soccer/'+slug+'/teams/'+espnId+'/schedule?season='+_an)); }catch(e){}
+      if(!_ev.length){ try{ _ev=_avenir(await _g45TrEspn('/apis/site/v2/sports/soccer/'+slug+'/teams/'+espnId+'/schedule')); }catch(e){} }
+      try{ window._g45AVenirDiag={slug:slug, id:espnId, an:_an, n:_ev.length}; }catch(e){}
+      reps.push({sl:slug, j:{events:_ev}});
     }catch(e){}
   }
   var nz=function(x){ return String(x||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); };
