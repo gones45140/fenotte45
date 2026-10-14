@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261014q, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261014r, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -692,6 +692,10 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   potes : « à jour il y a… », 5 derniers (`_g45SocDerniers` sur la courbe), classement 30 j
   (table paris, 10 paris min `_G45_SOC_MIN_CLS`), rafraîchi toutes les 2 min onglet ouvert ;
   tickets `_renderBetTicket` (titre `_g45SocTitre`, date sans heure, freebet) ; formule officielle de prévention (29p, 🔞, SANS logo de l’État).
+  ⚠ DEUX projets Supabase : comptes bet45 = ofcizjaynonjtiusdwgi (supabase.js, auth-guard.js) ; Social = vbsdewuvycaekfkixynh (social.js,
+  SB_URL) → compte Social SÉPARÉ du compte bet45. 20261014r (Cédric, iPhone : « Load failed » à la connexion Social) : la CSP connect-src
+  d'indexfenotte.html n'autorisait PAS vbsdew… → Social n'a JAMAIS pu se connecter sur bet45 ; ajouté (https + wss). Connexion Social
+  automatique avec le compte bet45 : PROPOSÉE (choix 1), réponse attendue.
   IDÉES validées pour plus tard : carte bilan à partager, notifications, récap semaine, ligues.
 - VS ÉQUIPES avec radar (30f, maquette validée) : onglet Pari → VS, `runComparateur` appelle d'abord
   `_g45VsV2(n1, n2)` (bloc dans une portée FERMÉE : helpers exposés sur window pour smoke.js) :
