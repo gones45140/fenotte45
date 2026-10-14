@@ -26216,11 +26216,13 @@ async function loadCalendrier() {
       var d = new Date(m.date);
       var time = d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
       var _S = _agSp(m);
+      /* 20261014p (capture : « centrer les logos et les mettre plus visibles ») : filigrane CENTRÉ dans la carte (left 58 %, le texte
+         occupe la gauche), opacité .24 → .55, hauteur max 120 px ; téléphone inchangé (à droite, .35).
       /* 20261014o (« le cache est trop noir et vide au milieu », maquette choix 2 validée) : logos des DEUX équipes face à face
          en filigrane (« VS », opacité .24) dans le vide de la carte ; bande de la consigne à la largeur du texte. Logo absent ou
          en erreur = caché ; aucun logo = carte inchangée. */
       var _agLg = function(u){ return u ? '<img src="'+String(u).replace(/"/g,'')+'" alt="" loading="lazy" onerror="this.style.display=\'none\'" style="height:100%;width:auto;max-width:42%;object-fit:contain;">' : ''; };
-      var _agFil = (m.ourLogo || m.advLogo) ? '<div class="g45ag-vs" style="position:absolute;right:110px;top:50%;transform:translateY(-50%);height:82%;max-height:140px;display:flex;align-items:center;gap:18px;opacity:.24;pointer-events:none;">'
+      var _agFil = (m.ourLogo || m.advLogo) ? '<div class="g45ag-vs" style="position:absolute;left:58%;top:50%;transform:translate(-50%,-50%);height:82%;max-height:120px;display:flex;align-items:center;gap:22px;opacity:.55;pointer-events:none;">'
         + _agLg(m.ourLogo) + ((m.ourLogo && m.advLogo) ? '<span style="font-size:30px;color:#fff;font-weight:900;">VS</span>' : '') + _agLg(m.advLogo) + '</div>' : '';
       html += '<div style="position:relative;overflow:hidden;display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--s1);border-radius:10px;margin-bottom:7px;border-left:4px solid '+_S.c+';">' + _agFil;
       html += '<div style="position:relative;flex:none;width:44px;height:44px;border-radius:50%;background:rgba(11,16,29,.9);border:2px solid '+_S.c+';display:flex;align-items:center;justify-content:center;font-size:24px;">'+_S.e+'</div>';
@@ -26256,7 +26258,7 @@ async function loadCalendrier() {
       }
     });
   });
-  el.innerHTML = '<style>@media(max-width:600px){.g45ag-vs{right:58px!important;max-height:62px!important;gap:6px!important;opacity:.3!important}.g45ag-vs span{font-size:18px!important}}</style>' + html;
+  el.innerHTML = '<style>@media(max-width:600px){.g45ag-vs{left:auto!important;right:58px!important;transform:translateY(-50%)!important;max-height:62px!important;gap:6px!important;opacity:.35!important}.g45ag-vs span{font-size:18px!important}}</style>' + html;
   try { if (window._g45AgCotes) window._g45AgCotes(_agOd); } catch(e) {}
 }
 

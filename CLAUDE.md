@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261014o, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261014p, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -401,6 +401,8 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   en filigrane « VS » (.g45ag-vs, opacité .24, à gauche de l'heure ; téléphone < 600 px : plus petits, .3) ; m.ourLogo / m.advLogo : foot = homeLogo /
   awayLogo du calendrier sinon a.espncdn.com/i/teamlogos/soccer/500/<id>.png ; ⭐ suivies = _espnLogoDe ; Euroleague = u.logoUrl / écusson + x.ol
   (ajouté aux av de _g45EbCharger) ; KHL = g45KhlLogo ; suivi à la main = rien. Bande de la consigne 📌 à la largeur du texte. Smoke (31).
+  20261014p (capture : « centrer les logos et les mettre plus visibles ») : filigrane centré (left 58 %, translate −50 %), opacité .55, 120 px max ;
+  téléphone : à droite, .35. CONFIRMÉ en capture (14o) : vrais logos ESPN affichés (PSG, City, Real, Roma, Brewers, Dodgers, Avalanche, Stars).
   20261008h — SONDÉ PAR ANTOINE (MLB Brewers–Dodgers) : odds[0] SANS moneyline, homeTeamOdds/awayTeamOdds sans cote, details « MIL -113 »
   (américaine du favori), overUnder 6 sans cotes over/under → `_g45AgOdEv` lit details (abréviation → camp) ; ligne seule = « publiées ».
   City @ Liverpool sans ligne : carte City SANS consigne 📌 (rien n'est cherché sans consigne). Rugby : NON vu.
