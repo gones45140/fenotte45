@@ -26221,12 +26221,17 @@ async function loadCalendrier() {
       /* 20261014o (« le cache est trop noir et vide au milieu », maquette choix 2 validée) : logos des DEUX équipes face à face
          en filigrane (« VS », opacité .24) dans le vide de la carte ; bande de la consigne à la largeur du texte. Logo absent ou
          en erreur = caché ; aucun logo = carte inchangée. */
-      var _agLg = function(u){ return u ? '<img src="'+String(u).replace(/"/g,'')+'" alt="" loading="lazy" onerror="this.style.display=\'none\'" style="height:100%;width:auto;max-width:42%;object-fit:contain;">' : ''; };
-      var _agFil = (m.ourLogo || m.advLogo) ? '<div class="g45ag-vs" style="position:absolute;left:58%;top:50%;transform:translate(-50%,-50%);height:82%;max-height:120px;display:flex;align-items:center;gap:22px;opacity:.55;pointer-events:none;">'
-        + _agLg(m.ourLogo) + ((m.ourLogo && m.advLogo) ? '<span style="font-size:30px;color:#fff;font-weight:900;">VS</span>' : '') + _agLg(m.advLogo) + '</div>' : '';
-      html += '<div style="position:relative;overflow:hidden;display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--s1);border-radius:10px;margin-bottom:7px;border-left:4px solid '+_S.c+';">' + _agFil;
+      /* 20261014q (« à droite on laisse l'horaire comme ça ? », maquette validée « oui ») : l'heure passe SOUS le « VS », entre les
+         logos (blanc 20 px sur bande sombre) ; l'heure de droite est cachée sur PC (.g45ag-hr), gardée sur téléphone (pas la place). */
+      var _agLg = function(u){ return u ? '<img src="'+String(u).replace(/"/g,'')+'" alt="" loading="lazy" onerror="this.style.display=\'none\'" style="height:100%;width:auto;max-width:120px;object-fit:contain;opacity:.55;">' : ''; };
+      var _agFil = (m.ourLogo || m.advLogo) ? '<div class="g45ag-vs" style="position:relative;flex:none;height:84px;display:flex;align-items:center;gap:22px;pointer-events:none;">'
+        + _agLg(m.ourLogo) + '<div style="display:flex;flex-direction:column;align-items:center;gap:6px;">'
+        + ((m.ourLogo && m.advLogo) ? '<span style="font-size:30px;color:#fff;font-weight:900;opacity:.55;">VS</span>' : '')
+        + '<div class="g45ag-ht" style="font-size:20px;font-weight:900;color:#fff;background:rgba(11,16,29,.85);border-radius:8px;padding:3px 10px;">' + time + '</div></div>'
+        + _agLg(m.advLogo) + '</div>' : '';
+      html += '<div style="position:relative;overflow:hidden;display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--s1);border-radius:10px;margin-bottom:7px;border-left:4px solid '+_S.c+';">';
       html += '<div style="position:relative;flex:none;width:44px;height:44px;border-radius:50%;background:rgba(11,16,29,.9);border:2px solid '+_S.c+';display:flex;align-items:center;justify-content:center;font-size:24px;">'+_S.e+'</div>';
-      html += '<div style="position:relative;flex:1;min-width:0;">';
+      html += '<div style="position:relative;flex:'+(_agFil?'0 1 auto':'1')+';min-width:0;">';
       html += '<div style="font-size:15px;font-weight:800;color:#fff;">'+m.ourName+' '+((m.suivi&&!m.sp)?'<span style="color:#1ed760;">vs</span>':(m.isDom?'<span style="color:#3fb950;">vs</span>':'<span style="color:#f0883e;">@</span>'))+' '+m.adv+'</div>';
       html += '<div style="font-size:13px;color:#c9d3ee;margin-top:2px;"><b style="color:'+_S.c+';">'+_S.lg+'</b>'+(m.suivi?' · ⭐ Suivi'+(m.sp?(m.isDom?' · 🏠 Domicile':' · ✈️ Extérieur'):''):(m.isDom?' · 🏠 Domicile':' · ✈️ Extérieur'))+'</div>';
       try { html += _agPalier(m); } catch(e) {}
@@ -26242,7 +26247,10 @@ async function loadCalendrier() {
       html += '</div>';
       var _stm = (typeof g45StatsForEvent==='function') ? g45StatsForEvent({sport:'⚽',teams:[m.ourName,m.adv],comp:(m.comp||m.compSlug||''),place:m.venue||''}) : [];
       var _csId = 'calstat-'+(_csn++);
-      html += '<div style="position:relative;text-align:right;display:flex;align-items:center;gap:8px;flex:none;"><div style="font-size:15px;font-weight:800;color:#8ab4ff;">'+time+'</div>';
+      /* 20261014q : filigrane DANS la ligne (entre le texte et l'heure, centré par un ressort) — en position absolue, il passait
+         sous la consigne dès que l'écran était moins large (vu en test à 1100 px). Téléphone : caché, heure à droite. */
+      if (_agFil) html += '<div class="g45ag-vs" style="flex:1 1 0;"></div>' + _agFil + '<div class="g45ag-vs" style="flex:1 1 0;"></div>';
+      html += '<div style="position:relative;text-align:right;display:flex;align-items:center;gap:8px;flex:none;"><div'+(_agFil?' class="g45ag-hr"':'')+' style="font-size:15px;font-weight:800;color:#8ab4ff;'+(_agFil?'display:none;':'')+'">'+time+'</div>';
       if(_stm.length) html += '<button onclick="g45CalTglStat(\''+_csId+'\')" title="Stats du dico" style="background:rgba(240,200,40,.14);border:1px solid rgba(240,200,40,.5);color:#f0c828;border-radius:6px;font-size:11px;font-weight:800;padding:2px 7px;cursor:pointer;flex:none;">💡 '+_stm.length+'</button>';
       if(m.suivi) html += '<button onclick="g45SuiviRemove(\''+String(m.id).replace(/'/g,'')+'\')" title="Retirer du calendrier" style="background:none;border:1px solid rgba(255,69,69,.3);color:#ff6b6b;border-radius:6px;font-size:12px;font-weight:700;padding:2px 7px;cursor:pointer;flex:none;">✕</button>';
       html += '</div>';
@@ -26258,7 +26266,7 @@ async function loadCalendrier() {
       }
     });
   });
-  el.innerHTML = '<style>@media(max-width:600px){.g45ag-vs{left:auto!important;right:58px!important;transform:translateY(-50%)!important;max-height:62px!important;gap:6px!important;opacity:.35!important}.g45ag-vs span{font-size:18px!important}}</style>' + html;
+  el.innerHTML = '<style>@media(max-width:600px){.g45ag-vs{display:none!important}.g45ag-hr{display:block!important}}</style>' + html;
   try { if (window._g45AgCotes) window._g45AgCotes(_agOd); } catch(e) {}
 }
 
