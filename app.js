@@ -24569,6 +24569,15 @@ async function _g45AVenirLigue(slug, espnId, espnNom){
   }
   var SUP={fra:'fra.super_cup', ita:'ita.super_cup', ger:'ger.super_cup', esp:'esp.super_cup', ned:'ned.supercup'};
   if(SUP[pays]) slugs.push(SUP[pays]);
+  /* 20261014b (capture d'Antoine, PSG : « On a que les match de championnat ? ») : les Prochains matchs ne venaient que du
+     championnat (+ amicaux / supercoupes) — le calendrier d'équipe ESPN d'une coupe d'Europe ne rend que les matchs JOUÉS
+     (comme soccer/all). Les coupes d'Europe et la coupe nationale sont donc lues ici, par scoreboard, pour un club. */
+  if(!_estSel){
+    slugs.push('uefa.champions','uefa.europa','uefa.europa.conf');
+    var COUPE={fra:['fra.coupe_de_france'], esp:['esp.copa_del_rey'], ger:['ger.dfb_pokal'], ita:['ita.coppa_italia'],
+               ned:['ned.cup'], eng:['eng.fa','eng.league_cup']};
+    (COUPE[pays]||[]).forEach(function(x){ slugs.push(x); });
+  }
   var f=function(d){ return d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0'); };
   var plage=f(new Date())+'-'+f(new Date(Date.now()+60*86400000));
   var reps=await Promise.all(slugs.map(function(sl){
