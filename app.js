@@ -73369,7 +73369,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
 
 /* ═══ 20261014e — ▶️ VIDÉO DE LA MÉTHODE MONTANTE DANS LE COCKPIT (« tu pourrais faire une vidéo explicative du cockpit », maquette validée « ok ») ═══
    Bouton bleu à droite de la barre « 🚀 C'est quoi, le Cockpit ? » (<summary> du <details> de #sub-strat, index.html ET indexfenotte.html),
-   GONES45 ET BET45 → g45VideoOuvrir('bet45-montante', …) ; fichiers videos/bet45-montante.mp4 + .webm dans LES DEUX dépôts (animation à exemple
+   GONES45 ET BET45 → g45VideoOuvrir('bet45-cockpit', …) ; fichiers videos/bet45-cockpit.mp4 (renommés 20261014f, « méthode cockpit plutôt ») + .webm dans LES DEUX dépôts (animation à exemple
    fictif Arsenal, 1 min 23, faite par Claude : x-bet45/video2/v.html + rec.js). Clic sur le bouton ≠ ouvrir / fermer le <details>. */
 (function () {
   function poser() {
@@ -73379,9 +73379,9 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var b = document.createElement('button');
     b.type = 'button'; b.className = 'g45-vid-cp';
     var tel = window.matchMedia && window.matchMedia('(max-width: 599px)').matches;
-    b.textContent = tel ? '▶️ Vidéo (1 min 20)' : '▶️ Vidéo : la méthode montante (1 min 20)';
+    b.textContent = tel ? '▶️ Vidéo (1 min 20)' : '▶️ Vidéo : la méthode Cockpit (1 min 20)';
     b.style.cssText = 'background:#2563eb;color:#fff;border:1px solid #3b82f6;border-radius:10px;padding:9px 14px;font-size:14px;font-weight:800;cursor:pointer;';
-    b.onclick = function (e) { e.preventDefault(); e.stopPropagation(); g45VideoOuvrir('bet45-montante', '🚀 La méthode montante'); };
+    b.onclick = function (e) { e.preventDefault(); e.stopPropagation(); g45VideoOuvrir('bet45-cockpit', '🚀 La méthode Cockpit'); };
     sm.appendChild(b);
   }
   window._g45VidCockpitPoser = poser;

@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261014e, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261014f, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1602,6 +1602,7 @@ RÉGLÉ (worker, 01/10) : cron « exceededCpu » (cpuTimeMs 10) à CHAQUE passag
   #sub-strat, posé par app.js `_g45VidCockpitPoser`, GONES45 ET BET45) → `g45VideoOuvrir(fic, titre)` (paramètres ajoutés, défaut = présentation) ;
   videos/bet45-montante.mp4 + .webm dans LES DEUX dépôts. Animation à exemple FICTIF (Arsenal, P1 5 € / P2 10 € / P3 30 €, cote 1,5 mini, 1 min 23) :
   x-bet45/video2/v.html + rec.js (Playwright) puis ffmpeg. Contrôle smoke.js (23).
+  20261014f (« méthode cockpit plutôt ») : titre « La méthode COCKPIT » (vidéo, bouton, fenêtre) ; fichiers renommés videos/bet45-cockpit.mp4 / .webm.
 - PROCHAINS MATCHS d'un club de foot (`_g45AVenirLigue`, 20261014b, capture PSG « on a que les matchs de championnat ? ») : scoreboards
   60 j du championnat + amicaux + supercoupes, AJOUTÉS : uefa.champions / uefa.europa / uefa.europa.conf + coupe nationale (fra.coupe_de_france,
   esp.copa_del_rey, ger.dfb_pokal, ita.coppa_italia, ned.cup, eng.fa / eng.league_cup). Cause supposée (NON sondée) : le calendrier d'équipe
