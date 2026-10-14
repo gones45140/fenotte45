@@ -1472,6 +1472,10 @@ RÉGLÉ (worker, 01/10) : cron « exceededCpu » (cpuTimeMs 10) à CHAQUE passag
   Paris calculée à la main (dernier dimanche de mars / octobre 01:00 UTC ; 6 cas comparés à Intl, identiques). worker.js complet donné,
   REDÉPLOYÉ le 13/10 (avec /odds en crédits). Erreurs du SOIR (multiplex foot) : budget `_lourd` 4 → 2 PROPOSÉ, en attente de réponse.
 À VOIR (en attente d'un retour d'Antoine) :
+- 📈 COTES EN DIRECT HORS FOOT (15/10) : commande console « 4 ligues » (NHL / NBA / NFL / MLB, moneyline.*.current + total.over.current)
+  donnée à Antoine ; il la lancera pendant un match : MLB jeudi 19 h, NFL ce week-end, NBA mardi 21 h, NHL peut-être ce week-end. Chiffres
+  présents → étendre _g45CdLire / cartes / fenêtre au sport (aujourd'hui meta.sp === 'soccer' et sport === 'soccer' seulement) ; ligne de
+  total = points / runs (libellé « Buts » à adapter). Ligue Europa : même vérification proposée (uefa.europa).
 - 💶 ABONNEMENT (prévu par Antoine « dès mardi » 13/10/2026) : en place = visiteur 50 paris max puis compte (auth-guard
   SEUIL_ESSAI_GRATUIT) ; compte = premium 30 j (`_g45AccesPremium`), puis bouton PayPal paypal.me/touraineantoine ; Antoine
   coche user_supporter.soutien à la main. Moyens de paiement à comparer mardi : PayPal Business, Stripe (vérifier sa liste d'activités interdites), Whop
