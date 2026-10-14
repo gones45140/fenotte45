@@ -73699,7 +73699,9 @@ window.g45FusionnerData = g45FusionnerData;
       return true;
     } catch (e) { return true; }
   };
-  var t = setInterval(function () { if (poser() || ++essais > 30) clearInterval(t); }, 1000);
+  /* 20261014x (« on le cachera après quand ça sera bon » → « c'est bon pour Cédric ») : bouton plus posé.
+     g45FusionnerData() reste disponible (console) si un autre pote a le même cas. */
+  if (false) { var t = setInterval(function () { if (poser() || ++essais > 30) clearInterval(t); }, 1000); }
 })();
 
 /* ════════════════════════════════════════════════════════════════════════════
