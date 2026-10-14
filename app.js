@@ -73178,7 +73178,12 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   var S = window._g45Cr = window._g45Cr || { nom: '', lieu: 'tout', combos: [], a: 0, data: {}, enCours: {} };
   function ouvert() { try { return localStorage.getItem('g45_cr_open') === '1'; } catch (e) { return false; } }
   function esc(t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
-  function combo0() { var u = S.ctx && US_L[S.ctx.sp]; return { res: u ? 'vqr' : 'vic', ou: '', L: u ? u[2] : 2.5, bts: '' }; }
+  function combo0() { var u = S.ctx && US_L[S.ctx.sp]; return { res: u ? 'vqr' : 'vic', ou: '', L: u ? u[2] : 2.5, bts: '', te: '', TL: lgEq()[2], ad: '', AL: lgEq()[2] }; }
+  /* 20261014i (« il manque pts par équipe… enfin buts », « oui les 2, ça peut être intéressant quand je parie contre ») : over / under des buts
+     (points, runs) de L'ÉQUIPE (te / TL) et de L'ADVERSAIRE (ad / AL), même règle que le total (hockey : temps réglementaire). */
+  var EQ_L = { soccer: [0.5, 3.5, 1.5], hockey: [0.5, 5.5, 2.5], football: [10.5, 40.5, 21.5], basketball: [95.5, 135.5, 112.5], baseball: [0.5, 8.5, 3.5] };
+  function lgEq() { return EQ_L[S.ctx ? S.ctx.sp : 'soccer'] || EQ_L.soccer; }
+  function motUnite() { var sp = S.ctx ? S.ctx.sp : 'soccer'; return sp === 'baseball' ? 'Runs' : (sp === 'football' || sp === 'basketball') ? 'Points' : 'Buts'; }
   /* 20261014g (« oui » pour la NHL) : S.ctx = null (foot) ou {sp:'hockey', lg:'nhl', id} posé par _g45SaisonsGen. Hockey : Victoire / Nul /
      Défaite et buts = TEMPS RÉGLEMENTAIRE (m[4] = 1 prolongation, 2 tirs au but → score TR = min-min), Vainqueur = score final. */
   function hk() { return !!(S.ctx && S.ctx.sp === 'hockey'); }
@@ -73212,6 +73217,8 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     if (c.res === 'vic') p.push(hk() ? 'Victoire (temps régl.)' : 'Victoire'); else if (c.res === 'vqr') p.push(hk() || us() ? 'Vainqueur (prolong. comprise)' : 'Vainqueur'); else if (c.res === 'nul') p.push('Nul'); else if (c.res === 'def') p.push('Défaite');
     if (c.ou) p.push((c.ou === 'ov' ? 'Over ' : 'Under ') + c.L);
     if (c.bts) p.push('Les deux marquent : ' + (c.bts === 'oui' ? 'oui' : 'non'));
+    if (c.te) p.push(motUnite() + ' équipe ' + (c.te === 'ov' ? 'Over ' : 'Under ') + c.TL);
+    if (c.ad) p.push(motUnite() + ' adversaire ' + (c.ad === 'ov' ? 'Over ' : 'Under ') + c.AL);
     return p.length ? p.join(' + ') : 'aucun critère';
   }
   function passe(c, m) {
@@ -73225,6 +73232,10 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     if (c.ou === 'un' && !(gf + ga < c.L)) return false;
     if (c.bts === 'oui' && !(gf > 0 && ga > 0)) return false;
     if (c.bts === 'non' && gf > 0 && ga > 0) return false;
+    if (c.te === 'ov' && !(gf > c.TL)) return false;
+    if (c.te === 'un' && !(gf < c.TL)) return false;
+    if (c.ad === 'ov' && !(ga > c.AL)) return false;
+    if (c.ad === 'un' && !(ga < c.AL)) return false;
     return true;
   }
   function calc(c, ms) {
@@ -73358,6 +73369,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       S.combos.forEach(function (c, i) { h += b(S.a === i, 'Combiné ' + (i + 1), 'g45CrChoix(' + i + ')'); });
     }
     var c = S.combos[S.a];
+    S.combos.forEach(function (x) { if (x.TL == null) x.TL = lgEq()[2]; if (x.AL == null) x.AL = lgEq()[2]; if (x.te == null) x.te = ''; if (x.ad == null) x.ad = ''; });
     if (us()) h += lab('Résultat (prolongation comprise)') + b(c.res === 'vqr', 'Vainqueur', "g45CrSet('res','vqr')") + b(c.res === 'def', 'Défaite', "g45CrSet('res','def')") + b(c.res === '', 'Aucun', "g45CrSet('res','')");
     else h += lab('Résultat') + b(c.res === 'vic', 'Victoire', "g45CrSet('res','vic')") + b(c.res === 'vqr', 'Vainqueur', "g45CrSet('res','vqr')")
       + b(c.res === 'nul', 'Nul', "g45CrSet('res','nul')") + b(c.res === 'def', 'Défaite', "g45CrSet('res','def')") + b(c.res === '', 'Aucun', "g45CrSet('res','')");
@@ -73366,6 +73378,14 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     LL.forEach(function (L) { sel += '<option value="' + L + '"' + (c.L === L ? ' selected' : '') + '>' + L + '</option>'; });
     sel += '</select>';
     h += lab(us() ? US_L[sport()][3] : hk() ? 'Buts du match (temps réglementaire)' : 'Buts du match') + b(c.ou === 'ov', 'Over', "g45CrSet('ou','ov')") + b(c.ou === 'un', 'Under', "g45CrSet('ou','un')") + b(c.ou === '', 'Aucun', "g45CrSet('ou','')") + sel;
+    var selEq = function (k, v) {
+      var t = '<select onchange="g45CrSet(\'' + k + '\',this.value)" style="background:#16213f;color:#fff;border:1px solid #6d9dff;border-radius:8px;padding:7px 10px;font-size:14px;margin:0 6px 6px 0;">', E = lgEq();
+      for (var x = E[0]; x <= E[1]; x++) t += '<option value="' + x + '"' + (v === x ? ' selected' : '') + '>' + x + '</option>';
+      return t + '</select>';
+    };
+    var hkTr = hk() ? ' (temps réglementaire)' : '';
+    h += lab(motUnite() + ' de ' + esc(nom) + hkTr) + b(c.te === 'ov', 'Over', "g45CrSet('te','ov')") + b(c.te === 'un', 'Under', "g45CrSet('te','un')") + b(!c.te, 'Aucun', "g45CrSet('te','')") + selEq('TL', c.TL);
+    h += lab(motUnite() + ' de l\'adversaire' + hkTr) + b(c.ad === 'ov', 'Over', "g45CrSet('ad','ov')") + b(c.ad === 'un', 'Under', "g45CrSet('ad','un')") + b(!c.ad, 'Aucun', "g45CrSet('ad','')") + selEq('AL', c.AL);
     if (!S.ctx) h += lab('Les deux marquent') + b(c.bts === 'oui', 'Oui', "g45CrSet('bts','oui')") + b(c.bts === 'non', 'Non', "g45CrSet('bts','non')") + b(c.bts === '', 'Peu importe', "g45CrSet('bts','')");
     h += '<div style="margin:6px 0 4px;">' + (S.combos.length < 3 ? b(false, '➕ Comparer avec un autre combiné (OU)', 'g45CrAjout()') : '')
       + (S.combos.length > 1 ? b(false, '✕ Retirer le combiné ' + (S.a + 1), 'g45CrSuppr()') : '') + '</div>';
@@ -73393,7 +73413,13 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   window.g45CrOuvrir = function () { try { localStorage.setItem('g45_cr_open', ouvert() ? '0' : '1'); } catch (e) {} redessiner(); };
   window.g45CrSet = function (k, v) {
     if (k === 'lieu') S.lieu = v;
-    else { var c = S.combos[S.a]; if (k === 'L') { c.L = parseFloat(v); if (!c.ou) c.ou = 'ov'; } else c[k] = v; }
+    else {
+      var c = S.combos[S.a];
+      if (k === 'L') { c.L = parseFloat(v); if (!c.ou) c.ou = 'ov'; }
+      else if (k === 'TL') { c.TL = parseFloat(v); if (!c.te) c.te = 'ov'; }
+      else if (k === 'AL') { c.AL = parseFloat(v); if (!c.ad) c.ad = 'ov'; }
+      else c[k] = v;
+    }
     redessiner();
   };
   window.g45CrChoix = function (i) { S.a = i; redessiner(); };
