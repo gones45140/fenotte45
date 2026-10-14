@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261014r, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261014s, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -695,7 +695,13 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   ⚠ DEUX projets Supabase : comptes bet45 = ofcizjaynonjtiusdwgi (supabase.js, auth-guard.js) ; Social = vbsdewuvycaekfkixynh (social.js,
   SB_URL) → compte Social SÉPARÉ du compte bet45. 20261014r (Cédric, iPhone : « Load failed » à la connexion Social) : la CSP connect-src
   d'indexfenotte.html n'autorisait PAS vbsdew… → Social n'a JAMAIS pu se connecter sur bet45 ; ajouté (https + wss). Connexion Social
-  automatique avec le compte bet45 : PROPOSÉE (choix 1), réponse attendue.
+  automatique avec le compte bet45 : choix A validé (« oui a ») → 20261014s : social.js `_g45SocSso(force)` (bet45 seulement : window._g45User
+  ou hôte bet45.fr ; pas si g45_sso_off posé par socialLogout) envoie le jeton BET45 (localStorage sb-ofcizjaynonjtiusdwgi-auth-token) au Worker
+  POST /socsso → vérifié par ofciz /auth/v1/user (+ pseudo profils) → secret SOCIAL_SERVICE_KEY (clé secrète du projet Social, AJOUTÉE par Antoine
+  dans le Worker) : admin/generate_link magiclink du MÊME mail (sinon admin/users création, email_confirm, pseudo BET45) → token_hash → verifyOtp
+  (magiclink puis email) = session Social. Appelé par loadSocialTab (force, 30 s mini) et _g45SocAuto (10 min). Testé vm : client 7/7, worker 5/5.
+  worker.js complet donné, À REDÉPLOYER + secret À AJOUTER. NON vérifié en vrai (format de réponse generate_link de ce projet).
+  Lien de récupération Supabase du projet Social = renvoie vers gones45140.github.io (Site URL) : NE PAS l'utiliser pour un pote bet45.
   IDÉES validées pour plus tard : carte bilan à partager, notifications, récap semaine, ligues.
 - VS ÉQUIPES avec radar (30f, maquette validée) : onglet Pari → VS, `runComparateur` appelle d'abord
   `_g45VsV2(n1, n2)` (bloc dans une portée FERMÉE : helpers exposés sur window pour smoke.js) :

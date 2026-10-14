@@ -15,6 +15,38 @@ function sbClient() {
   return _sb;
 }
 
+/* ── 20261014s — CONNEXION SOCIAL AUTOMATIQUE (bet45, choix A d'Antoine : « tout regrouper ») ──
+   Social vit dans un AUTRE projet Supabase que les comptes BET45 → les potes devaient créer / retenir un 2e compte
+   (Cédric : mot de passe oublié). Sur bet45, sans session Social : le jeton BET45 (localStorage sb-ofciz…-auth-token,
+   tenu à jour par auth-guard.js) part au Worker /socsso, qui le fait vérifier par Supabase BET45 et renvoie un lien
+   à usage unique pour le compte Social du MÊME mail (créé s'il n'existe pas, pseudo BET45) → verifyOtp = session Social.
+   Pas sur gones45 (pas de compte BET45). Déconnexion Social volontaire = plus d'essai dans la session (g45_sso_off). */
+var _g45SsoEssai = 0;
+async function _g45SocSso(force) {
+  try {
+    if (_sbUser) return true;
+    if (!(window._g45User || /(^|\.)bet45\.fr$/.test(location.hostname))) return false;
+    try { if (sessionStorage.getItem('g45_sso_off')) return false; } catch (e) {}
+    if (Date.now() - _g45SsoEssai < (force ? 30000 : 10 * 60000)) return false;
+    _g45SsoEssai = Date.now();
+    var raw = null; try { raw = localStorage.getItem('sb-ofcizjaynonjtiusdwgi-auth-token'); } catch (e) {}
+    var j = raw ? JSON.parse(raw) : null;
+    var tk = j && (j.access_token || (j.currentSession && j.currentSession.access_token));
+    if (!tk) return false;
+    var base = (typeof FD_PROXY !== 'undefined' && FD_PROXY) || 'https://fd-proxy.touraine-antoine.workers.dev';
+    var r = await fetch(base + '/socsso', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: tk }) });
+    if (!r.ok) { console.warn('Social auto :', r.status); return false; }
+    var d = await r.json();
+    if (!d || !d.token_hash) return false;
+    var sb = sbClient(); if (!sb) return false;
+    var v = await sb.auth.verifyOtp({ token_hash: d.token_hash, type: 'magiclink' });
+    if (v && v.error) v = await sb.auth.verifyOtp({ token_hash: d.token_hash, type: 'email' });
+    if (!v || v.error || !v.data || !v.data.session) { console.warn('Social auto : lien refusé', v && v.error && v.error.message); return false; }
+    _sbUser = v.data.session.user;
+    return true;
+  } catch (e) { console.warn('Social auto', e && e.message); return false; }
+}
+
 /* ── Chargement de l'onglet Social ── */
 async function loadSocialTab() {
   var el = document.getElementById('t-social');
@@ -26,6 +58,9 @@ async function loadSocialTab() {
   var { data } = await sb.auth.getSession();
   if(data && data.session) {
     _sbUser = data.session.user;
+    await loadProfil();
+    renderSocialConnected();
+  } else if (await _g45SocSso(true)) {
     await loadProfil();
     renderSocialConnected();
   } else {
@@ -141,6 +176,7 @@ async function loadProfil() {
 }
 
 async function socialLogout() {
+  try { sessionStorage.setItem('g45_sso_off', '1'); } catch (e) {}
   var sb = sbClient();
   await sb.auth.signOut();
   _sbUser = null; _sbProfil = null;
@@ -315,6 +351,7 @@ async function _g45SocAuto() {
       _g45SocSessionVue = Date.now();
       var s = await sb.auth.getSession();
       if (s && s.data && s.data.session) { _sbUser = s.data.session.user; await loadProfil(); }
+      else if (await _g45SocSso(false)) await loadProfil();
     }
     if (!_sbUser || !_sbProfil) return;
     await _g45SocInitPartage();
