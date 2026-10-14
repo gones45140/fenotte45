@@ -50840,6 +50840,8 @@ async function _g45SaisonsGen(el, nom, perso) {
   html += '</div></div>';
   el.innerHTML = html;
   try { if (typeof _g45RegAbsPoser === 'function') setTimeout(_g45RegAbsPoser, 0); } catch (e) {}   /* 20261006t */
+  /* 20261014g : « 📊 Tes critères sur 4 saisons » aussi pour la NHL (en tête du panneau, même bloc que le foot). */
+  try { if (sp === 'hockey' && lg === 'nhl' && perso && perso.id && typeof window._g45CrHtml === 'function') el.insertAdjacentHTML('afterbegin', window._g45CrHtml(nom, { sp: sp, lg: lg, id: String(perso.id) })); } catch (e) {}
 }
 
 /* ── Ouverture du detail d'un match ──────────────────────────────────────────
@@ -73176,6 +73178,9 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   function ouvert() { try { return localStorage.getItem('g45_cr_open') === '1'; } catch (e) { return false; } }
   function esc(t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function combo0() { return { res: 'vic', ou: '', L: 2.5, bts: '' }; }
+  /* 20261014g (« oui » pour la NHL) : S.ctx = null (foot) ou {sp:'hockey', lg:'nhl', id} posé par _g45SaisonsGen. Hockey : Victoire / Nul /
+     Défaite et buts = TEMPS RÉGLEMENTAIRE (m[4] = 1 prolongation, 2 tirs au but → score TR = min-min), Vainqueur = score final. */
+  function hk() { return !!(S.ctx && S.ctx.sp === 'hockey'); }
   function preparer(nom) {
     if (S.nom !== nom) {
       S.nom = nom; S.a = 0; S.combos = [combo0()];
@@ -73185,20 +73190,23 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     if (!S.combos.length) S.combos = [combo0()];
   }
   function annees(lg) {
+    if (hk()) { var a0 = (typeof _g45SgAnAuto === 'function') ? _g45SgAnAuto(lg) : new Date().getFullYear() + 1; return [a0, a0 - 1, a0 - 2, a0 - 3]; }
     var d = new Date(), y = d.getFullYear(), y0 = CAL.indexOf(lg) >= 0 ? y : (d.getMonth() + 1 >= 8 ? y : y - 1);
     return [y0, y0 - 1, y0 - 2, y0 - 3];
   }
-  function lib(lg, an) { return CAL.indexOf(lg) >= 0 ? String(an) : an + '-' + String(an + 1).slice(2); }
+  function lib(lg, an) { if (hk()) return (an - 1) + '-' + String(an).slice(2); return CAL.indexOf(lg) >= 0 ? String(an) : an + '-' + String(an + 1).slice(2); }
   function libCombo(c) {
     var p = [];
-    if (c.res === 'vic') p.push('Victoire'); else if (c.res === 'vqr') p.push('Vainqueur'); else if (c.res === 'nul') p.push('Nul'); else if (c.res === 'def') p.push('Défaite');
+    if (c.res === 'vic') p.push(hk() ? 'Victoire (temps régl.)' : 'Victoire'); else if (c.res === 'vqr') p.push(hk() ? 'Vainqueur (prolong. comprise)' : 'Vainqueur'); else if (c.res === 'nul') p.push('Nul'); else if (c.res === 'def') p.push('Défaite');
     if (c.ou) p.push((c.ou === 'ov' ? 'Over ' : 'Under ') + c.L);
     if (c.bts) p.push('Les deux marquent : ' + (c.bts === 'oui' ? 'oui' : 'non'));
     return p.length ? p.join(' + ') : 'aucun critère';
   }
   function passe(c, m) {
     var gf = m[2], ga = m[3];
-    if ((c.res === 'vic' || c.res === 'vqr') && !(gf > ga)) return false;
+    if (c.res === 'vqr' && !(gf > ga)) return false;
+    if (m[4]) { var mn = Math.min(gf, ga); gf = mn; ga = mn; }   /* hockey : prolongation / TAB → égalité au temps réglementaire */
+    if (c.res === 'vic' && !(gf > ga)) return false;
     if (c.res === 'nul' && gf !== ga) return false;
     if (c.res === 'def' && !(gf < ga)) return false;
     if (c.ou === 'ov' && !(gf + ga > c.L)) return false;
@@ -73221,9 +73229,40 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   function coul(p) { return p <= 2 ? '#1ed760' : p <= 4 ? '#ff9f43' : '#ff5a5a'; }
   function filtrer(ms) { return ms.filter(function (m) { return S.lieu === 'tout' || (S.lieu === 'dom' ? m[1] === 1 : m[1] === 0); }); }
 
+  async function chargerHk(nom) {
+    var C = S.ctx, ans = annees(C.lg), out = { t: Date.now(), lg: C.lg, ligue: 'NHL · saison régulière', saisons: [] };
+    await Promise.all(ans.map(async function (an, i) {
+      var cle = 'g45cr1_hockey_' + C.lg + '_' + C.id + '_' + an, ms = null;
+      if (i > 0) { try { ms = JSON.parse(localStorage.getItem(cle) || 'null'); } catch (e) {} }
+      if (!ms) {
+        var j = null;
+        try { var r = await fetch('https://site.api.espn.com/apis/site/v2/sports/hockey/' + C.lg + '/teams/' + C.id + '/schedule?season=' + an + '&seasontype=2'); if (r.ok) j = await r.json(); } catch (e) {}
+        if (!j) { out.saisons[i] = { an: an, ms: null }; return; }
+        ms = [];
+        (j.events || []).forEach(function (e) {
+          var stO = e.seasonType || {}, typ = (e.season && e.season.type != null) ? e.season.type : (stO.type != null ? stO.type : stO.id);
+          if (+typ === 1 || +typ === 3) return;   /* présaison et séries écartées */
+          var c2 = (e.competitions && e.competitions[0]) || {}, st = (c2.status && c2.status.type) || {};
+          if (st.completed !== true) return;
+          var cs = c2.competitors || [], ho = cs.filter(function (x) { return x.homeAway === 'home'; })[0], aw = cs.filter(function (x) { return x.homeAway === 'away'; })[0];
+          if (!ho || !aw) return;
+          var sv = function (x) { var v = x.score; if (v && typeof v === 'object') v = (v.value != null ? v.value : v.displayValue); return parseInt(v, 10); };
+          var hg = sv(ho), ag = sv(aw); if (isNaN(hg) || isNaN(ag)) return;
+          var dom = String(ho.team && ho.team.id) === String(C.id) ? 1 : 0;
+          var tx = String(st.detail || st.shortDetail || st.description || ''), ox = /\bSO\b/i.test(tx) ? 2 : (/\bOT\b/i.test(tx) ? 1 : 0);
+          ms.push([String(e.date || '').slice(0, 10), dom, dom ? hg : ag, dom ? ag : hg, ox]);
+        });
+        ms.sort(function (a, b) { return a[0] < b[0] ? -1 : 1; });
+        if (i > 0 && ms.length) { try { localStorage.setItem(cle, JSON.stringify(ms)); } catch (e) {} }
+      }
+      out.saisons[i] = { an: an, ms: ms };
+    }));
+    S.data[nom] = out;
+  }
   async function charger(nom) {
     if (S.data[nom] && (S.data[nom].err || Date.now() - S.data[nom].t < 3600000)) return;
     if (S.enCours[nom]) return; S.enCours[nom] = 1;
+    if (hk()) { try { await chargerHk(nom); } catch (e) { S.data[nom] = { t: Date.now(), err: 'Lecture impossible (réseau).' }; } delete S.enCours[nom]; return; }
     try {
       var r = await espnResolveTeam(nom);
       var lg = r && r.league;
@@ -73283,7 +73322,10 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     return h;
   }
 
-  function html(nom) {
+  function html(nom, ctx) {
+    ctx = ctx || null;
+    if (!S.ctx !== !ctx || (ctx && (S.ctx.id !== ctx.id || S.ctx.sp !== ctx.sp))) S.nom = '';
+    S.ctx = ctx;
     preparer(nom);
     var o = ouvert();
     var h = '<div id="g45cr" style="margin:12px 0;background:rgba(20,28,48,.95);border:1px solid #2a3a63;border-radius:12px;padding:12px;color:#fff;">'
@@ -73292,7 +73334,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     if (!o) return h + '</div>';
     var D = S.data[nom];
     var lieuTxt = S.lieu === 'dom' ? '🏠 à domicile' : S.lieu === 'ext' ? '✈️ à l\'extérieur' : 'domicile + extérieur';
-    h += '<div style="font-size:13px;color:#c9d3ee;margin:4px 0 8px;">' + esc(nom) + ' · ' + lieuTxt + (D && D.ligue ? ' · ' + esc(D.ligue) : '') + ' · championnat seulement</div>';
+    h += '<div style="font-size:13px;color:#c9d3ee;margin:4px 0 8px;">' + esc(nom) + ' · ' + lieuTxt + (D && D.ligue ? ' · ' + esc(D.ligue) : '') + (hk() ? '' : ' · championnat seulement') + '</div>';
     var u = (state.u || []).filter(function (x) { return x.n === nom; })[0];
     if (u && u.note) {
       h += '<div style="font-size:14px;color:#fff;background:#0f1730;border-radius:8px;padding:8px;margin-bottom:6px;">📌 Ta note : ' + esc(u.note) + '</div>'
@@ -73307,10 +73349,10 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     h += lab('Résultat') + b(c.res === 'vic', 'Victoire', "g45CrSet('res','vic')") + b(c.res === 'vqr', 'Vainqueur', "g45CrSet('res','vqr')")
       + b(c.res === 'nul', 'Nul', "g45CrSet('res','nul')") + b(c.res === 'def', 'Défaite', "g45CrSet('res','def')") + b(c.res === '', 'Aucun', "g45CrSet('res','')");
     var sel = '<select onchange="g45CrSet(\'L\',this.value)" style="background:#16213f;color:#fff;border:1px solid #6d9dff;border-radius:8px;padding:7px 10px;font-size:14px;margin:0 6px 6px 0;">';
-    [0.5, 1.5, 2.5, 3.5, 4.5, 5.5].forEach(function (L) { sel += '<option value="' + L + '"' + (c.L === L ? ' selected' : '') + '>' + L + '</option>'; });
+    (hk() ? [0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5] : [0.5, 1.5, 2.5, 3.5, 4.5, 5.5]).forEach(function (L) { sel += '<option value="' + L + '"' + (c.L === L ? ' selected' : '') + '>' + L + '</option>'; });
     sel += '</select>';
-    h += lab('Buts du match') + b(c.ou === 'ov', 'Over', "g45CrSet('ou','ov')") + b(c.ou === 'un', 'Under', "g45CrSet('ou','un')") + b(c.ou === '', 'Aucun', "g45CrSet('ou','')") + sel;
-    h += lab('Les deux marquent') + b(c.bts === 'oui', 'Oui', "g45CrSet('bts','oui')") + b(c.bts === 'non', 'Non', "g45CrSet('bts','non')") + b(c.bts === '', 'Peu importe', "g45CrSet('bts','')");
+    h += lab(hk() ? 'Buts du match (temps réglementaire)' : 'Buts du match') + b(c.ou === 'ov', 'Over', "g45CrSet('ou','ov')") + b(c.ou === 'un', 'Under', "g45CrSet('ou','un')") + b(c.ou === '', 'Aucun', "g45CrSet('ou','')") + sel;
+    if (!hk()) h += lab('Les deux marquent') + b(c.bts === 'oui', 'Oui', "g45CrSet('bts','oui')") + b(c.bts === 'non', 'Non', "g45CrSet('bts','non')") + b(c.bts === '', 'Peu importe', "g45CrSet('bts','')");
     h += '<div style="margin:6px 0 4px;">' + (S.combos.length < 3 ? b(false, '➕ Comparer avec un autre combiné (OU)', 'g45CrAjout()') : '')
       + (S.combos.length > 1 ? b(false, '✕ Retirer le combiné ' + (S.a + 1), 'g45CrSuppr()') : '') + '</div>';
     if (!D || (!D.err && !D.saisons)) {
@@ -73329,7 +73371,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   }
   function redessiner() {
     var z = document.getElementById('g45cr'); if (!z || !S.nom) return;
-    var t = document.createElement('div'); t.innerHTML = html(S.nom);
+    var t = document.createElement('div'); t.innerHTML = html(S.nom, S.ctx);
     z.parentNode.replaceChild(t.firstChild, z);
   }
   window._g45CrHtml = html;
