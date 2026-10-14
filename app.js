@@ -25970,6 +25970,9 @@ async function loadCalendrier() {
       allMatches.push({
         date: m.date, isDom: isDom, adv: adv||'?',
         ourName: u.n, color: u.color||'#4d84ff',
+        /* 20261014o : logos des deux équipes (filigrane « VS » de la carte). */
+        ourLogo: (isDom ? m.homeLogo : m.awayLogo) || ((isDom ? m.homeId : m.awayId) ? 'https://a.espncdn.com/i/teamlogos/soccer/500/' + (isDom ? m.homeId : m.awayId) + '.png' : '') || u.logoUrl || '',
+        advLogo: (isDom ? m.awayLogo : m.homeLogo) || ((isDom ? m.awayId : m.homeId) ? 'https://a.espncdn.com/i/teamlogos/soccer/500/' + (isDom ? m.awayId : m.homeId) + '.png' : ''),
         comp: m.competitionName || '',
         compSlug: m.competition || '',
         venue: m.venue || ''
@@ -26038,6 +26041,7 @@ async function loadCalendrier() {
           adv: nm(autre),
           ourName: _g.noms[String((moi.team && moi.team.id) || moi.id || '')] || nm(moi),
           color: '#f0b020',                        /* teinte des equipes suivies */
+          ourLogo: _espnLogoDe(moi.team), advLogo: _espnLogoDe(autre.team),
           comp: (_js.leagues && _js.leagues[0] && _js.leagues[0].name) || _g.lg,
           compSlug: _g.lg,
           venue: (cp.venue && cp.venue.fullName) || '',
@@ -26074,6 +26078,7 @@ async function loadCalendrier() {
           if (!tt || tt < nowTs || tt > _agFin) return;
           var dom = (x.h === 'EB');
           allMatches.push({ date: new Date(tt).toISOString(), isDom: dom, adv: (dom ? x.an : x.hn) || '?', ourName: _eu.n,
+            ourLogo: _eu.logoUrl || _R.l || '', advLogo: x.ol || '',
             color: '#ff7a2f', comp: x.comp || 'Euroleague', compSlug: '', venue: '', sp: 'basketball' });
         });
       }
@@ -26095,7 +26100,9 @@ async function loadCalendrier() {
           var tt = m.t > 1e12 ? m.t : m.t * 1000;
           if (!tt || tt < nowTs) return;
           var nf = function (id) { return (typeof g45KhlNomFr === 'function' ? g45KhlNomFr(id) : '') || String(id); };
+          var _kl = function (id) { try { return g45KhlLogo(id) || ''; } catch (e) { return ''; } };
           allMatches.push({ date: new Date(tt).toISOString(), isDom: moiA, adv: nf(moiA ? m.b : m.a), ourName: nf(moiA ? m.a : m.b),
+            ourLogo: _kl(moiA ? m.a : m.b), advLogo: _kl(moiA ? m.b : m.a),
             color: '#5ad6ff', comp: 'KHL', compSlug: 'khl', venue: m.lieu || '', sp: 'hockey' });
         });
       }
@@ -26209,9 +26216,15 @@ async function loadCalendrier() {
       var d = new Date(m.date);
       var time = d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
       var _S = _agSp(m);
-      html += '<div style="display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--s1);border-radius:10px;margin-bottom:7px;border-left:4px solid '+_S.c+';">';
-      html += '<div style="flex:none;width:44px;height:44px;border-radius:50%;background:rgba(11,16,29,.9);border:2px solid '+_S.c+';display:flex;align-items:center;justify-content:center;font-size:24px;">'+_S.e+'</div>';
-      html += '<div style="flex:1;min-width:0;">';
+      /* 20261014o (« le cache est trop noir et vide au milieu », maquette choix 2 validée) : logos des DEUX équipes face à face
+         en filigrane (« VS », opacité .24) dans le vide de la carte ; bande de la consigne à la largeur du texte. Logo absent ou
+         en erreur = caché ; aucun logo = carte inchangée. */
+      var _agLg = function(u){ return u ? '<img src="'+String(u).replace(/"/g,'')+'" alt="" loading="lazy" onerror="this.style.display=\'none\'" style="height:100%;width:auto;max-width:42%;object-fit:contain;">' : ''; };
+      var _agFil = (m.ourLogo || m.advLogo) ? '<div class="g45ag-vs" style="position:absolute;right:110px;top:50%;transform:translateY(-50%);height:82%;max-height:140px;display:flex;align-items:center;gap:18px;opacity:.24;pointer-events:none;">'
+        + _agLg(m.ourLogo) + ((m.ourLogo && m.advLogo) ? '<span style="font-size:30px;color:#fff;font-weight:900;">VS</span>' : '') + _agLg(m.advLogo) + '</div>' : '';
+      html += '<div style="position:relative;overflow:hidden;display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--s1);border-radius:10px;margin-bottom:7px;border-left:4px solid '+_S.c+';">' + _agFil;
+      html += '<div style="position:relative;flex:none;width:44px;height:44px;border-radius:50%;background:rgba(11,16,29,.9);border:2px solid '+_S.c+';display:flex;align-items:center;justify-content:center;font-size:24px;">'+_S.e+'</div>';
+      html += '<div style="position:relative;flex:1;min-width:0;">';
       html += '<div style="font-size:15px;font-weight:800;color:#fff;">'+m.ourName+' '+((m.suivi&&!m.sp)?'<span style="color:#1ed760;">vs</span>':(m.isDom?'<span style="color:#3fb950;">vs</span>':'<span style="color:#f0883e;">@</span>'))+' '+m.adv+'</div>';
       html += '<div style="font-size:13px;color:#c9d3ee;margin-top:2px;"><b style="color:'+_S.c+';">'+_S.lg+'</b>'+(m.suivi?' · ⭐ Suivi'+(m.sp?(m.isDom?' · 🏠 Domicile':' · ✈️ Extérieur'):''):(m.isDom?' · 🏠 Domicile':' · ✈️ Extérieur'))+'</div>';
       try { html += _agPalier(m); } catch(e) {}
@@ -26220,14 +26233,14 @@ async function loadCalendrier() {
         var _uC = _agMur(m), _C = (_uC && _uC.note && window._g45AgConsigne) ? window._g45AgConsigne(_uC.note, m.isDom) : null;
         if (_C) {
           var _iC = _agOd.length; _agOd.push({ i: _iC, m: m, C: _C });
-          html += '<div style="margin-top:6px;background:rgba(11,16,29,.80);border-radius:8px;padding:6px 9px;font-size:14px;color:#fff;line-height:1.45;">'
+          html += '<div style="display:inline-block;max-width:100%;box-sizing:border-box;margin-top:6px;background:rgba(11,16,29,.80);border-radius:8px;padding:6px 9px;font-size:14px;color:#fff;line-height:1.45;">'
             + '<div style="color:#8fb4ff;font-weight:700;">📌 ' + String(_C.txt).replace(/</g, '&lt;') + '</div><div id="g45agod-' + _iC + '"></div></div>';
         }
       } catch(e) {}
       html += '</div>';
       var _stm = (typeof g45StatsForEvent==='function') ? g45StatsForEvent({sport:'⚽',teams:[m.ourName,m.adv],comp:(m.comp||m.compSlug||''),place:m.venue||''}) : [];
       var _csId = 'calstat-'+(_csn++);
-      html += '<div style="text-align:right;display:flex;align-items:center;gap:8px;flex:none;"><div style="font-size:15px;font-weight:800;color:#8ab4ff;">'+time+'</div>';
+      html += '<div style="position:relative;text-align:right;display:flex;align-items:center;gap:8px;flex:none;"><div style="font-size:15px;font-weight:800;color:#8ab4ff;">'+time+'</div>';
       if(_stm.length) html += '<button onclick="g45CalTglStat(\''+_csId+'\')" title="Stats du dico" style="background:rgba(240,200,40,.14);border:1px solid rgba(240,200,40,.5);color:#f0c828;border-radius:6px;font-size:11px;font-weight:800;padding:2px 7px;cursor:pointer;flex:none;">💡 '+_stm.length+'</button>';
       if(m.suivi) html += '<button onclick="g45SuiviRemove(\''+String(m.id).replace(/'/g,'')+'\')" title="Retirer du calendrier" style="background:none;border:1px solid rgba(255,69,69,.3);color:#ff6b6b;border-radius:6px;font-size:12px;font-weight:700;padding:2px 7px;cursor:pointer;flex:none;">✕</button>';
       html += '</div>';
@@ -26243,7 +26256,7 @@ async function loadCalendrier() {
       }
     });
   });
-  el.innerHTML = html;
+  el.innerHTML = '<style>@media(max-width:600px){.g45ag-vs{right:58px!important;max-height:62px!important;gap:6px!important;opacity:.3!important}.g45ag-vs span{font-size:18px!important}}</style>' + html;
   try { if (window._g45AgCotes) window._g45AgCotes(_agOd); } catch(e) {}
 }
 
@@ -66101,7 +66114,7 @@ async function _g45EbCharger(lg, an) {
         fini.push({ id: id, h: hId, a: aId, hn: m.h === moi ? '' : m.h.n, an: m.a === moi ? '' : m.a.n, hg: +m.h.s, ag: +m.a.s, t: m.t, po: po ? 1 : 0,
           hp: m.h.q && m.h.q.length ? per(m.h) : null, ap: m.a.q && m.a.q.length ? per(m.a) : null, comp: comp });
       } else if (m.t) {
-        av.push({ id: id, t: m.t, h: hId, a: aId, hn: m.h === moi ? '' : m.h.n, an: m.a === moi ? '' : m.a.n, comp: comp });
+        av.push({ id: id, t: m.t, h: hId, a: aId, hn: m.h === moi ? '' : m.h.n, an: m.a === moi ? '' : m.a.n, comp: comp, ol: lui.l || '' });
       }
     };
     if (el) {

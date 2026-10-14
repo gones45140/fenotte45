@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261014n, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261014o, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -397,6 +397,10 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   jour (puis veille) sport/compSlug, mémoire 30 min, ≤ 8 jours, match par id ou noms (`_g45AgOdEv`, _g45TrOddsEv + total.over/under) →
   `_g45AgOdHtml` (combiné = produit ESTIMÉ, ligne over/under ≠ ESPN → « ligne non proposée », ✅/❌ seuil sur cote victoire/défaite).
   Pas de cotes : KHL, Euroleague, Pro A. Testé vm 15/15 + rendu Chromium. CONFIRMÉ par Antoine (capture) : NHL Hurricanes 1,56.
+  20261014o (« le cache est trop noir et vide au milieu », maquette en image, choix 2 validé) : carte de l'Agenda = logos des DEUX équipes face à face
+  en filigrane « VS » (.g45ag-vs, opacité .24, à gauche de l'heure ; téléphone < 600 px : plus petits, .3) ; m.ourLogo / m.advLogo : foot = homeLogo /
+  awayLogo du calendrier sinon a.espncdn.com/i/teamlogos/soccer/500/<id>.png ; ⭐ suivies = _espnLogoDe ; Euroleague = u.logoUrl / écusson + x.ol
+  (ajouté aux av de _g45EbCharger) ; KHL = g45KhlLogo ; suivi à la main = rien. Bande de la consigne 📌 à la largeur du texte. Smoke (31).
   20261008h — SONDÉ PAR ANTOINE (MLB Brewers–Dodgers) : odds[0] SANS moneyline, homeTeamOdds/awayTeamOdds sans cote, details « MIL -113 »
   (américaine du favori), overUnder 6 sans cotes over/under → `_g45AgOdEv` lit details (abréviation → camp) ; ligne seule = « publiées ».
   City @ Liverpool sans ligne : carte City SANS consigne 📌 (rien n'est cherché sans consigne). Rugby : NON vu.
