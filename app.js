@@ -24585,6 +24585,15 @@ async function _g45AVenirLigue(slug, espnId, espnNom){
       .then(function(r){ return {sl:sl, j:r}; })
       .catch(function(){ return {sl:sl, j:null}; });
   }));
+  /* 20261014c (capture : après 14b, PSG = LDC SEULE) : le scoreboard du CHAMPIONNAT sur 60 jours ne rend rien (plage refusée ou
+     plafonnée ; les matchs de Ligue 1 venaient jusqu'ici du calendrier d'équipe, lu seulement quand la fiche n'est pas en cache).
+     Le calendrier d'équipe du championnat (sans saison = saison en cours) est donc relu ici aussi. */
+  if(!_estSel && espnId){
+    try{
+      var _cal=await _g45TrEspn('/apis/site/v2/sports/soccer/'+slug+'/teams/'+espnId+'/schedule');
+      reps.push({sl:slug, j:{events:((_cal&&_cal.events)||[]).filter(function(e){ return Date.parse(e.date)<=Date.now()+60*86400000; })}});
+    }catch(e){}
+  }
   var nz=function(x){ return String(x||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); };
   var cible=nz(espnNom), out=[], vus={};
   reps.forEach(function(rep){
