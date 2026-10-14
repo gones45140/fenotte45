@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261015a, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261015b, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1494,6 +1494,9 @@ RÉGLÉ (worker, 01/10) : cron « exceededCpu » (cpuTimeMs 10) à CHAQUE passag
   ./videos/bet45-presentation.mp4 (H.264, iPhone) puis .webm (VP9 : le Chromium de test n'a pas H.264 → erreur 4 sans lui) — fichiers
   DANS fenotte45/videos/ (2,3 Mo + 1,3 Mo). Testé Chromium 1280 + 390 (lecture readyState 4).
   20261013p (« OUI ») : 3e bouton « ☕ Laisser un pourboire » (paypal.me/touraineantoine) pleine largeur sous Vidéo / Guide (PC) et 3e ligne du menu Plus.
+  20261015b (capture paysage : « elle est où la vidéo explicative sur tel ? ») : style.css (paysage) pose #plus-menu bottom:0 + max-height:100vh
+  → 1re ligne « ▶️ BET45 en 1 minute » SOUS le bouton « 📱 Auto » / la barre du haut. Bloc en fin d'app.js : menu ouvert en paysage (--g45-paysage)
+  → top = bas de header.topbar, max-height = reste de l'écran (!important, MutationObserver sur style + resize). Vérifié Chromium 915 × 412.
   13/10 soir — DÉCISION D'ANTOINE : micro-entreprise REPORTÉE (« je vais laisser venir un peu de monde »). En attendant : appli gratuite + pourboire
   sans contrepartie ; plan d'abonnement prêt mais NON codé (sauf _G45_ABO_PLAN = false). Rappel donné : vérifier auprès de la CAF l'effet des
   revenus sur une éventuelle aide (AAH, prime d'activité…). Page PayPal.Me : photo perso remplacée par le logo + couverture BET45 (faits par Claude).

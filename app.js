@@ -74080,3 +74080,29 @@ window._g45Mur2Appliquer = _g45Mur2Appliquer;
     }
   } catch (e) {}
 })();
+
+/* ═══ 20261015b — MENU « PLUS » EN PAYSAGE (capture d'Antoine 15/10 : « elle est où la vidéo explicative sur tel ? ») ═══
+   style.css (bloc MODE PAYSAGE) pose #plus-menu en bottom:0 + max-height:100vh !important → sur un téléphone en paysage le menu
+   monte jusqu'en haut de l'écran : sa 1re ligne (« ▶️ BET45 en 1 minute », _g45AideBoutonsPoser) passait SOUS le bouton « 📱 Auto »
+   et la barre du haut. Quand le menu s'ouvre en paysage (--g45-paysage), il commence SOUS header.topbar (top + max-height posés en
+   !important, menu défilant dessous). Portrait / PC : rien ne change. */
+(function () {
+  var caler = function (pm) {
+    try {
+      var pay = (getComputedStyle(document.documentElement).getPropertyValue('--g45-paysage') || '').trim() === '1';
+      if (!pay || pm.style.display === 'none') return;
+      var tb = document.querySelector('header.topbar'), h = tb ? Math.ceil(tb.getBoundingClientRect().bottom) : 0;
+      if (h <= 0 || h > innerHeight / 2) return;
+      var mh = (innerHeight - h) + 'px';
+      if (pm.style.getPropertyValue('top') !== h + 'px') pm.style.setProperty('top', h + 'px', 'important');
+      if (pm.style.getPropertyValue('max-height') !== mh) pm.style.setProperty('max-height', mh, 'important');
+    } catch (e) {}
+  };
+  var brancher = function () {
+    var pm = document.getElementById('plus-menu'); if (!pm) return false;
+    new MutationObserver(function () { caler(pm); }).observe(pm, { attributes: true, attributeFilter: ['style'] });
+    addEventListener('resize', function () { caler(pm); });
+    return true;
+  };
+  if (!brancher()) document.addEventListener('DOMContentLoaded', brancher);
+})();
