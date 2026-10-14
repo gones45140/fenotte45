@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261014m, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261014n, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1754,6 +1754,8 @@ CRÉDITS THE ODDS API (20261013e, 13/10 : plafond du jour du worker atteint, « 
 TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque pari », maquette validée « oui ») : `_g45TrRender` → card(x, showGap, sansCases) :
   pastille « Bookmaker (marge retirée) » RETIRÉE, remplacée en bas de CHAQUE carte (foot, hockey, NBA, NFL) par les cases .g45tr-cases 📊 Stats (m.p, bleu) /
   🏦 Bookmakers (m.fair sinon m.accord, jaune ; absent → « — pas de cote » gris) ; bloc « en désaccord » : card(x,false,true), ses cases d'origine gardées. Smoke (30).
+  20261014n (« cote à vérifier · 51 % estimée en haut à droite, on peut l'enlever ? », maquette « Oui ») : coin haut droit des cartes = « @x COTE MARCHÉ »
+  (+ espérance + heure) si cote, sinon l'HEURE seule en pastille 13 px ; le % reste dans la case 📊 Stats. Smoke (trCases).
   Écarts entre Antoine et Cédric (14/10) : réglages par appareil (compétitions, jour, cote / proba mini), heure d'analyse, quota The Odds API (bet45 = 8 crédits / personne / jour).
 RÉGLÉ OU ABANDONNÉ (ne pas reproposer) :
 - APK bet45 sans barre d'adresse : OK. Logos Lakers / hockey : OK. « Connexion » sur le

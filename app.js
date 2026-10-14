@@ -30745,14 +30745,17 @@ function _g45TrRender(){
           +'<span style="color:'+_g45CoulTexte(d.ca)+';">'+_g45CyEa(x.aN)+'</span></div>'
         +'<div style="font-size:11px;font-weight:700;color:'+col+';margin-top:2px;">'+_g45CyEa(m.m)+'</div>'
       +'</div>'
-      +'<div style="flex:none;text-align:right;background:rgba(8,11,20,.74);border-radius:7px;padding:6px 9px;margin:-3px -4px 0 0;">'
-        +(m.cote?('<div style="font-size:16px;font-weight:800;color:#f0c828;line-height:1;">@'+m.cote.toFixed(2)+'</div>'
-                 +'<div style="font-size:7.5px;color:rgba(255,255,255,.62);letter-spacing:.4px;">COTE MARCHÉ</div>')
-                :('<div style="font-size:12px;font-weight:800;color:rgba(255,255,255,.7);">cote à vérifier</div>'))
-        +'<div style="font-size:10px;color:var(--t1);margin-top:4px;">'+_g45TrPct(m.p)+' <span style="font-size:8px;color:rgba(255,255,255,.62);">estimée</span></div>'
-        +(showGap&&m.ev!=null&&m.cote?('<div style="font-size:10px;font-weight:800;color:'+col+';">espérance '+(m.ev>=0?'+':'')+Math.round(m.ev*1000)/10+'%</div>'):'')
-        +(x.when?('<div style="font-size:8.5px;color:rgba(255,255,255,.62);">'+_g45CyEa(x.when)+'</div>'):'')
-      +'</div></div>';
+      /* 20261014n (capture : « cote a verifier · 51 % estimee » en haut a droite, maquette validee « Oui ») :
+         le % est deja dans la case 📊 Stats du bas (14m) → retire ici. Sans cote : l'heure seule,
+         dans une petite pastille ; avec cote : @x COTE MARCHE + esperance + heure. */
+      +(m.cote?('<div style="flex:none;text-align:right;background:rgba(8,11,20,.74);border-radius:7px;padding:6px 9px;margin:-3px -4px 0 0;">'
+          +'<div style="font-size:16px;font-weight:800;color:#f0c828;line-height:1;">@'+m.cote.toFixed(2)+'</div>'
+          +'<div style="font-size:7.5px;color:rgba(255,255,255,.62);letter-spacing:.4px;">COTE MARCHÉ</div>'
+          +(showGap&&m.ev!=null?('<div style="font-size:10px;font-weight:800;color:'+col+';">espérance '+(m.ev>=0?'+':'')+Math.round(m.ev*1000)/10+'%</div>'):'')
+          +(x.when?('<div style="font-size:12px;color:#fff;margin-top:3px;">'+_g45CyEa(x.when)+'</div>'):'')
+        +'</div>')
+        :(x.when?('<div style="flex:none;align-self:flex-start;background:rgba(8,11,20,.74);border-radius:7px;padding:4px 9px;margin:-3px -4px 0 0;font-size:13px;font-weight:700;color:#fff;">'+_g45CyEa(x.when)+'</div>'):''))
+      +'</div>';
     /* Ces petits textes etaient ecrits en var(--t3), un gris bleute prevu pour un
        fond neutre uni. Sur une teinte de club ils deviennent illisibles — signale
        en production sur la carte Nottingham-Leeds. Chacun recoit donc son propre
