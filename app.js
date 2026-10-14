@@ -72960,15 +72960,17 @@ window._g45GuideOutilsPoser = _g45GuideOutilsPoser;
    PC : 2 boutons en tête de <nav class="nav"> (classe pc-only, la zone vide au-dessus de « Mur ») ; téléphone : en tête du menu « + Plus »
    (#plus-menu). BET45 SEULEMENT. Vidéo = videos/bet45-presentation.mp4 du dépôt fenotte45 (même origine : CSP default-src 'self'),
    lue dans une fenêtre de l'appli (`g45VideoOuvrir`). Guide = g45GuideOuvrir(0) (20261013n). */
-function g45VideoOuvrir() {
+function g45VideoOuvrir(fic, titre) {
+  /* 20261014e : fic / titre facultatifs (vidéo de la méthode montante depuis le Cockpit) ; sans argument = présentation. */
+  fic = fic || 'bet45-presentation'; titre = titre || '▶️ BET45 en 1 minute';
   var w = document.getElementById('g45-video');
   if (!w) { w = document.createElement('div'); w.id = 'g45-video'; document.body.appendChild(w); }
   w.style.cssText = 'position:fixed;inset:0;z-index:100001;background:rgba(5,8,15,.9);display:flex;align-items:center;justify-content:center;padding:12px;';
   w.innerHTML = '<div style="width:100%;max-width:440px;max-height:100%;display:flex;flex-direction:column;background:#05070d;border:1px solid #2a3550;border-radius:16px;padding:12px;color:#fff;">'
-    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><b style="font-size:16px;">▶️ BET45 en 1 minute</b>'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><b style="font-size:16px;">' + titre + '</b>'
     + '<button onclick="g45VideoFermer()" style="background:none;border:0;color:#fff;font-size:24px;cursor:pointer;padding:2px 8px;">✕</button></div>'
     + '<video controls autoplay playsinline style="width:100%;max-height:calc(100vh - 110px);border-radius:10px;background:#000;">'
-    + '<source src="./videos/bet45-presentation.mp4" type="video/mp4"><source src="./videos/bet45-presentation.webm" type="video/webm"></video></div>';   /* mp4 (iPhone) puis webm (navigateurs sans H.264) */
+    + '<source src="./videos/' + fic + '.mp4" type="video/mp4"><source src="./videos/' + fic + '.webm" type="video/webm"></video></div>';   /* mp4 (iPhone) puis webm (navigateurs sans H.264) */
   w.onclick = function (e) { if (e.target === w) g45VideoFermer(); };
 }
 function g45VideoFermer() { var w = document.getElementById('g45-video'); if (w) { var v = w.querySelector('video'); if (v) v.pause(); w.remove(); } }
@@ -73363,4 +73365,26 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     S.combos = cs.slice(0, 3); S.a = 0; S.lieu = lieu;
     redessiner();
   };
+})();
+
+/* ═══ 20261014e — ▶️ VIDÉO DE LA MÉTHODE MONTANTE DANS LE COCKPIT (« tu pourrais faire une vidéo explicative du cockpit », maquette validée « ok ») ═══
+   Bouton bleu à droite de la barre « 🚀 C'est quoi, le Cockpit ? » (<summary> du <details> de #sub-strat, index.html ET indexfenotte.html),
+   GONES45 ET BET45 → g45VideoOuvrir('bet45-montante', …) ; fichiers videos/bet45-montante.mp4 + .webm dans LES DEUX dépôts (animation à exemple
+   fictif Arsenal, 1 min 23, faite par Claude : x-bet45/video2/v.html + rec.js). Clic sur le bouton ≠ ouvrir / fermer le <details>. */
+(function () {
+  function poser() {
+    var sm = document.querySelector('#sub-strat > details > summary');
+    if (!sm || sm.querySelector('.g45-vid-cp')) return;
+    sm.style.display = 'flex'; sm.style.alignItems = 'center'; sm.style.justifyContent = 'space-between'; sm.style.flexWrap = 'wrap'; sm.style.gap = '8px';
+    var b = document.createElement('button');
+    b.type = 'button'; b.className = 'g45-vid-cp';
+    var tel = window.matchMedia && window.matchMedia('(max-width: 599px)').matches;
+    b.textContent = tel ? '▶️ Vidéo (1 min 20)' : '▶️ Vidéo : la méthode montante (1 min 20)';
+    b.style.cssText = 'background:#2563eb;color:#fff;border:1px solid #3b82f6;border-radius:10px;padding:9px 14px;font-size:14px;font-weight:800;cursor:pointer;';
+    b.onclick = function (e) { e.preventDefault(); e.stopPropagation(); g45VideoOuvrir('bet45-montante', '🚀 La méthode montante'); };
+    sm.appendChild(b);
+  }
+  window._g45VidCockpitPoser = poser;
+  var go = function () { try { poser(); setTimeout(poser, 2000); } catch (e) {} };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', go); else go();
 })();
