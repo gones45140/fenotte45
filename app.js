@@ -74414,3 +74414,36 @@ window.renderBooksChart = function () {
   };
   if (!brancher()) document.addEventListener('DOMContentLoaded', brancher);
 })();
+
+/* ═══ 20261015f — VRAIS LOGOS DES COMPTES (capture Bank : « avec la pastille Laura tu peux mettre le vrai logo du book, Betsson, Unibet,
+   et le logo de Boursorama ») ═══ bkFavicon (DEUX copies, la 2e gagne) ne connaît que les clés de BK : « unibet laura », « betsson laura »,
+   « pinnacle », « boursorama … » tombaient sur les initiales. Enveloppe : nom + « antoine / laura » → logo du book de base s'il est dans BK ;
+   sinon nom reconnu dans `_G45_BK_DOM` → favicon Google s2 du domaine (même chemin que les books connus). Vaut PARTOUT (Bank, lignes de pari,
+   Bilan). Domaines NON vérifiés un par un (favicon absent = initiales, comme avant, via logoErr). */
+var _G45_BK_DOM = [
+  [/boursorama|boursobank/i, 'boursobank.com'], [/pinnacle/i, 'pinnacle.com'], [/winamax/i, 'winamax.fr'], [/betclic/i, 'betclic.fr'],
+  [/unibet/i, 'unibet.fr'], [/betsson/i, 'betsson.com'], [/\bpmu\b/i, 'pmu.fr'], [/betify/i, 'betify.com'], [/bet ?365/i, 'bet365.com'],
+  [/zebet/i, 'zebet.fr'], [/netbet/i, 'netbet.fr'], [/parions ?sport|\bfdj\b/i, 'enligne.parionssport.fdj.fr'], [/vbet/i, 'vbet.fr'],
+  [/feeling ?bet/i, 'feelingbet.fr'], [/genybet/i, 'genybet.fr'], [/bwin/i, 'bwin.fr'], [/olybet/i, 'olybet.fr'], [/stake/i, 'stake.com'],
+  [/\bbnp\b/i, 'mabanque.bnpparibas'], [/cr[ée]dit agricole/i, 'credit-agricole.fr'], [/cr[ée]dit mutuel/i, 'creditmutuel.fr'],
+  [/caisse d.?[ée]pargne/i, 'caisse-epargne.fr'], [/soci[ée]t[ée] g[ée]n[ée]rale|\bsg\b/i, 'sg.fr'], [/\blcl\b/i, 'lcl.fr'],
+  [/revolut/i, 'revolut.com'], [/\bn26\b/i, 'n26.com'], [/fortuneo/i, 'fortuneo.fr'], [/hello ?bank/i, 'hellobank.fr'], [/\bcic\b/i, 'cic.fr'],
+  [/banque postale|la poste/i, 'labanquepostale.fr'], [/paypal/i, 'paypal.com'], [/lydia/i, 'lydia-app.com'], [/nickel/i, 'nickel.eu'],
+  [/qonto/i, 'qonto.com'], [/monabanq/i, 'monabanq.com'], [/trade republic/i, 'traderepublic.com'], [/wise/i, 'wise.com']
+];
+(function () {
+  var orig = window.bkFavicon; if (typeof orig !== 'function') return;
+  window.bkFavicon = function (k, sz) {
+    try {
+      var b = (typeof bki === 'function') ? bki(k) : {};
+      if (!b.logo && !b.d) {
+        var lk = String(k || '').toLowerCase().trim(), base = lk.replace(/\s+(antoine|laura)$/, '').trim();
+        if (base !== lk && typeof BK !== 'undefined' && BK[base] && (BK[base].logo || BK[base].d)) return orig(base, sz);
+        var txt = lk + ' ' + String(b.n || ''), dom = null;
+        for (var i = 0; i < _G45_BK_DOM.length && !dom; i++) if (_G45_BK_DOM[i][0].test(txt)) dom = _G45_BK_DOM[i][1];
+        if (dom) { sz = sz || 20; return '<img src="https://www.google.com/s2/favicons?domain=' + dom + '&sz=64" style="width:' + sz + 'px;height:' + sz + 'px;border-radius:4px;object-fit:contain;" onerror="logoErr(this)" loading="lazy">'; }
+      }
+    } catch (e) {}
+    return orig(k, sz);
+  };
+})();

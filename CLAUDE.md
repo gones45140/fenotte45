@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261015e, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261015f, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -277,6 +277,9 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   carte `_g45BkCarte` (bkFavicon 28 px, nom `_g45BkNom` : suffixe Antoine / Laura → étiquette, solde 26 px, barre % du capital, freebet, ligne « 🎯 Paris »
   `_g45BkParis` = paris RÉGLÉS de state.a sur ce book, règle de _betSettleEffect, ✏️ Modifier / 🎟 Freebet (pas pour une banque) / 🗑️, couleur).
   Banque = nom `_G45_BK_BANQUE` / `_g45BkEstBanque` (Boursorama, BNP, LCL, Revolut…) ; choix à la main NON fait (à la demande). Smoke (38).
+  20261015f (« avec la pastille Laura mets le vrai logo du book… et le logo de Boursorama ») : enveloppe window.bkFavicon (vaut PARTOUT) — clé hors BK
+  finissant par antoine / laura → logo du book de base (BK) ; sinon nom reconnu dans `_G45_BK_DOM` (Boursorama → boursobank.com, Pinnacle, Zebet,
+  NetBet, banques…) → favicon Google s2 du domaine. Domaines NON vérifiés un par un (échec = initiales via logoErr).
 - COMPTABILITÉ DES PARIS : `_g45BetEffetTotal` / `_g45BetAppliquer` = seule
   source de vérité (mise retirée AU PLACEMENT ; gagné +m×cote ; freebet :
   cagnotte −m, gain m×(cote−1)). `deleteArchived` (DEUX copies) et
