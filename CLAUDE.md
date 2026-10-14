@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261014v, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261014w, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1655,6 +1655,9 @@ RÉGLÉ (worker, 01/10) : cron « exceededCpu » (cpuTimeMs 10) à CHAQUE passag
   Feuille #g45-outils-lift : PC max 900 px centré, orientation cachée si pointer fine, menu en tuiles 14 px, textes 8-12 px → 13 px, var(--t3) → #c9d3ee.
   `renderPaliers` REDÉFINIE (tableau .g45ol-pal, P1 = input _g45MajP1) ; `renderNotifPanel` enveloppée (types en boutons .g45ol-chips, équipes .g45ol-eqs
   sur 2 colonnes ≥ 700 px, emoji du sport de u.sport). Smoke (33). Vérifié Chromium 1300 + 390 px.
+  20261014w (« jeu de couleur selon palier + petit fond de chaque équipe », maquette « OUI ») : `window._G45_PAL_COUL` (P1 vert #1ed760 → P8 violet)
+  sur le tableau des paliers ; #ulist (Outils → Équipes) habillé après coup par MutationObserver (`_g45UlistHabiller`) : fond = _g45ImgPersoLire →
+  u.logoUrl → _g45JoueurVisLire (cache seul, opacité .18), liseré u.color, pastille « Palier N » couleur du palier, consigne sur bande sombre.
 - PROCHAINS MATCHS d'un club de foot (`_g45AVenirLigue`, 20261014b, capture PSG « on a que les matchs de championnat ? ») : scoreboards
   60 j du championnat + amicaux + supercoupes, AJOUTÉS : uefa.champions / uefa.europa / uefa.europa.conf + coupe nationale (fra.coupe_de_france,
   esp.copa_del_rey, ger.dfb_pokal, ita.coppa_italia, ned.cup, eng.fa / eng.league_cup). Cause supposée (NON sondée) : le calendrier d'équipe

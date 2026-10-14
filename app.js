@@ -73714,6 +73714,7 @@ window.g45FusionnerData = g45FusionnerData;
    - Notifications : types d'alertes en boutons (case cachée dans le bouton), équipes sur 2 colonnes, emoji du VRAI sport (avant ⚽ pour tous).
    Rien n'est supprimé : blocs, identifiants et fonctions d'origine inchangés.
    ════════════════════════════════════════════════════════════════════════════ */
+window._G45_PAL_COUL = ['#1ed760', '#8fdc4a', '#f5c542', '#ffa53a', '#ff7a3a', '#ff4545', '#e0408a', '#9b4dff'];
 (function () {
   try {
     var bet = !(typeof _g45SanteActive === 'function' && _g45SanteActive());
@@ -73852,15 +73853,18 @@ window.g45FusionnerData = g45FusionnerData;
       var lab = { '1': '⭐', '2': '⭐⭐', '3': '⭐⭐⭐', '4': '⭐⭐⭐⭐', '5': '⭐⭐⭐⭐⭐' };
       var n = 0; ['1', '2', '3', '4', '5'].forEach(function (k) { if (STRATS[k]) n = Math.max(n, STRATS[k].length); });
       var h = '<div style="overflow-x:auto;"><table class="g45ol-pal"><tr><th></th>';
-      for (var i = 0; i < n; i++) h += '<th' + (i === 0 ? ' style="color:#f0c828;"' : '') + '>P' + (i + 1) + '</th>';
+      /* 20261014w (« un jeu de couleur selon palier », maquette « OUI ») : vert au départ → rouge / violet quand la mise devient risquée. */
+      var C = window._G45_PAL_COUL;
+      for (var i = 0; i < n; i++) h += '<th style="color:' + C[Math.min(i, C.length - 1)] + ';">P' + (i + 1) + '</th>';
       h += '</tr>';
       ['1', '2', '3', '4', '5'].forEach(function (k) {
         if (!STRATS[k]) return;
         var modif = (typeof _G45_STRATS_BASE !== 'undefined') && _G45_STRATS_BASE[k] && STRATS[k].some(function (v, j) { return v !== _G45_STRATS_BASE[k][j]; });
         h += '<tr><td class="st">' + lab[k] + (modif ? '<div style="font-size:12px;color:#f0b020;font-weight:700;">modifiée</div>' : '') + '</td>';
         STRATS[k].forEach(function (v, j) {
-          if (j === 0) h += '<td class="p1"><input type="number" min="0" step="1" value="' + v + '" onchange="_g45MajP1(\'' + k + '\',this.value)" aria-label="Mise de départ ' + k + ' étoiles"></td>';
-          else h += '<td>' + v + '</td>';
+          var cj = C[Math.min(j, C.length - 1)];
+          if (j === 0) h += '<td class="p1" style="background:' + cj + '2e;border:1px solid ' + cj + ';"><input type="number" min="0" step="1" value="' + v + '" onchange="_g45MajP1(\'' + k + '\',this.value)" aria-label="Mise de départ ' + k + ' étoiles"></td>';
+          else h += '<td style="background:' + cj + '2e;border:1px solid ' + cj + '66;">' + v + '</td>';
         });
         h += '</tr>';
       });
@@ -73870,4 +73874,66 @@ window.g45FusionnerData = g45FusionnerData;
     window.renderPaliers = renderPaliers;
   }
   setTimeout(function () { try { if (document.getElementById('palier-grids')) renderPaliers(); if (document.getElementById('notif-panel')) renderNotifPanel(); } catch (e) {} }, 1500);
+})();
+
+/* ════════════════════════════════════════════════════════════════════════════
+   20261014w — MES ÉQUIPES (Outils → Équipes, #ulist) : petit fond + palier en couleur (maquette validée « OUI »)
+   Les lignes .urow sont écrites par render (DEUX copies, intactes) ; on les habille APRÈS coup (MutationObserver sur #ulist) :
+   fond = image perso du dépôt (_g45ImgPersoLire, cache seul) → u.logoUrl → visuel joueur (_g45JoueurVisLire), en grand, à droite,
+   opacité .18 ; liseré gauche couleur de l'équipe (u.color) ; « Palier N » en pastille _G45_PAL_COUL ; consigne 📌 sur bande sombre.
+   Aucune recherche réseau : seulement ce qui est déjà en mémoire.
+   ════════════════════════════════════════════════════════════════════════════ */
+(function () {
+  var st = document.createElement('style'); st.id = 'g45-ulist-lift';
+  st.textContent = '#ulist .g45-mur-grid{gap:10px}'
+    + '#ulist .urow.g45ul{position:relative;overflow:hidden;border-radius:12px;padding:10px 12px;min-height:84px;background:rgba(20,28,48,.95);border:1px solid rgba(255,255,255,.07);border-left:4px solid var(--g45ulc,#4d84ff)}'
+    + '#ulist .urow.g45ul > *{position:relative}'
+    + '#ulist .urow.g45ul .g45ul-bg{position:absolute;right:70px;top:50%;transform:translateY(-50%);height:110%;max-width:45%;object-fit:contain;opacity:.18;pointer-events:none}'
+    + '#ulist .urow.g45ul .udot{display:none}'
+    + '#ulist .urow.g45ul .uname{font-size:15px;font-weight:800;color:#fff}'
+    + '#ulist .g45ul-pal{display:inline-block;margin-left:6px;padding:2px 9px;border-radius:7px;font-size:13px;font-weight:800;color:#0b101d;font-style:normal}'
+    + '#ulist .g45ul-note{display:inline-block;margin-top:5px;background:rgba(11,16,29,.72);border-radius:6px;padding:2px 7px;font-size:13px!important;color:#8fb4ff!important}';
+  (document.head || document.documentElement).appendChild(st);
+
+  var fond = function (u) {
+    var v = null;
+    try { var p = (typeof _g45ImgPersoLire === 'function') ? _g45ImgPersoLire(u.n) : ''; if (p) return p; } catch (e) {}
+    if (u.logoUrl) return u.logoUrl;
+    try { v = (typeof _g45JoueurVisLire === 'function') ? _g45JoueurVisLire(u.n) : null; } catch (e) {}
+    if (v && (v.cut || v.thumb)) return v.cut || v.thumb;
+    return '';
+  };
+  var habiller = function () {
+    var box = document.getElementById('ulist'); if (!box || typeof state === 'undefined' || !state.u) return;
+    var C = window._G45_PAL_COUL || ['#1ed760'];
+    Array.prototype.forEach.call(box.querySelectorAll('.urow'), function (row) {
+      if (row.classList.contains('g45ul')) return;
+      var b = row.querySelector('[data-idx]'); var u = b ? state.u[+b.getAttribute('data-idx')] : null;
+      if (!u) return;
+      row.classList.add('g45ul');
+      if (u.color) row.style.setProperty('--g45ulc', u.color);
+      var img = fond(u);
+      if (img) {
+        var im = document.createElement('img'); im.className = 'g45ul-bg'; im.alt = ''; im.loading = 'lazy'; im.src = img;
+        im.onerror = function () { im.remove(); };
+        row.insertBefore(im, row.firstChild);
+      }
+      var info = row.querySelector('.uname'); info = info && info.nextElementSibling;
+      if (info && /Palier/.test(info.textContent || '')) {
+        var p = parseInt(u.l, 10) || 1, c = C[Math.min(p - 1, C.length - 1)];
+        info.innerHTML = '<span style="color:#f5c542;font-size:15px;">' + '⭐'.repeat(Math.max(0, parseInt(u.s, 10) || 0)) + '</span>'
+          + '<span class="g45ul-pal" style="background:' + c + ';">Palier ' + p + '</span>';
+        info.style.fontSize = '13px';
+        var no = info.nextElementSibling;
+        if (no && /📌/.test(no.textContent || '')) no.classList.add('g45ul-note');
+      }
+    });
+  };
+  window._g45UlistHabiller = habiller;
+  var brancher = function () {
+    var box = document.getElementById('ulist'); if (!box) return false;
+    new MutationObserver(function () { habiller(); }).observe(box, { childList: true, subtree: false });
+    habiller(); return true;
+  };
+  if (!brancher()) document.addEventListener('DOMContentLoaded', brancher);
 })();
