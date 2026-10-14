@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261014t, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261014u, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -406,6 +406,8 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   20261014q (« à droite on laisse l'horaire ? », maquette « oui ») : heure SOUS le « VS » (blanc 20 px, bande sombre, .g45ag-ht) ; heure de droite
   cachée (.g45ag-hr) ; logos DANS la ligne (ressorts flex 1 1 0 de part et d'autre, texte flex 0 1 auto) au lieu de position absolue (passait sous la
   consigne à 1100 px) ; téléphone < 600 px : logos cachés, heure à droite.
+  20261014u (capture : « c'est pas aligné ») : boîtes de largeur FIXE (logo 110 px ×2, VS/heure 110 px), texte flex 1 1 0 + un ressort 1 1 0 après les
+  logos, colonne de droite 84 px (.g45ag-col) → VS au même endroit sur toutes les cartes. Vérifié Chromium (3 cartes, consignes de longueurs différentes).
   20261008h — SONDÉ PAR ANTOINE (MLB Brewers–Dodgers) : odds[0] SANS moneyline, homeTeamOdds/awayTeamOdds sans cote, details « MIL -113 »
   (américaine du favori), overUnder 6 sans cotes over/under → `_g45AgOdEv` lit details (abréviation → camp) ; ligne seule = « publiées ».
   City @ Liverpool sans ligne : carte City SANS consigne 📌 (rien n'est cherché sans consigne). Rugby : NON vu.
