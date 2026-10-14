@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261015c, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261015d, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1341,7 +1341,11 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   competitions[0].odds[0] (DraftKings) : moneyline.home|away.{open, close, current}.odds (américaine ; current = EN DIRECT : Real–Roma 3-1 76e « -1100 » →
   78e « -1400 », perdant +3500 → +5000) ; total.over|under.{open, close, current}{line « o4.5 », odds} (la ligne suit le match : o3.5 → o4.5) ;
   current « OFF » = marché suspendu / fermé (Fenerbahçe–Villa 5-0) ou current absent. drawOdds.moneyLine = 295 FIGÉ (avant-match) → nul en direct :
-  moneyline.draw.current NON vérifié. Côté home/away à recouper avec competitors (shortName « RMA @ ROMA »). PAS encore utilisé dans l'appli.
+  moneyline.draw.current NON vérifié. Côté home/away = competitors[].homeAway (capture Antoine : « RMA @ ROMA » = Roma reçoit, 3-1).
+  20261015d (aperçu validé « oui et dans suivi ») — 📈 UTILISÉ, FOOT SEULEMENT : `_g45CdLire` (scoreboard, mémoire 50 s), `_g45CdMarche` (victoire /
+  vainqueur / défaite / nul / + − de X ; combiné, lay, joueur, BTS, MT, double chance, handicap = rien), `_g45CdTexte` (« 1,07 en direct · tu l'as prise
+  à 3,60 ▲ bien joué » / « ta ligne n'est plus proposée » / « ⏸️ suspendue ») ; cartes Paris en cours : div .g45ec-cd ajoutée dans .g45ec-live
+  (MutationObserver) ; fenêtre du match : enveloppe window._g45EspnUsOdds → « Favori avant le match » + bloc « 📈 COTES EN DIRECT ». Smoke (37).
 - Cotes ESPN US : `details` = handicap (« LAR -1.5 », côté favori) en NFL.
 - Sofascore RapidAPI (sofascore6, via worker host=rapidapi) : match/list
   sport_slug=football OK (553 matchs) ; american-football, americanfootball,

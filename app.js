@@ -74176,3 +74176,136 @@ window._g45ClLogo = _g45ClLogo;
   };
   if (!brancher()) document.addEventListener('DOMContentLoaded', brancher);
 })();
+
+/* ═══ 20261015d — 📈 COTES EN DIRECT (aperçu en image validé « oui et dans suivi ») ═══
+   SONDÉ PAR ANTOINE (LDC 14/10, 2 lectures à 2 min) : scoreboard ESPN, match 'in' → odds[0] (DraftKings) moneyline.home|away.current.odds
+   (américaine, bouge avec le match : -1100 → -1400) ; total.over|under.current {line « o4.5 », odds} ; « OFF » = suspendu / fermé ;
+   drawOdds.moneyLine = avant-match figé (nul en direct : moneyline.draw.current lu s'il existe, NON vérifié). FOOT SEULEMENT (autres sports
+   NON sondés). Côté home / away = competitors[].homeAway (capture : « RMA @ ROMA » = Roma reçoit).
+   (1) Cartes « Paris en cours » : sous « 🔴 EN DIRECT » (zone .g45ec-live, réécrite chaque minute par direct()), ligne 📈 selon le pari
+   SIMPLE (pas combiné / lay / joueur) : victoire / vainqueur / défaite / nul / + ou − de X buts ; autres marchés = rien.
+   (2) Fenêtre du match (_renderGenericDetail, Suivies) : enveloppe de _g45EspnUsOdds → match en cours = « Favori avant le match » +
+   bloc « 📈 COTES EN DIRECT ». Scoreboard gardé 50 s en mémoire (`_g45CdLire`). */
+var _g45CdMem = {};
+function _g45CdAm(x) {
+  var s = String(x == null ? '' : x).trim();
+  if (!s) return null;
+  if (/^off$/i.test(s)) return 'off';
+  if (/^even$/i.test(s)) return 2;
+  var a = parseFloat(s); if (isNaN(a) || !a) return null;
+  return a > 0 ? 1 + a / 100 : 1 + 100 / Math.abs(a);
+}
+function _g45CdCur(o) { return (o && o.current) ? _g45CdAm(o.current.odds) : null; }
+function _g45CdLigne(o) { var m = /(\d+(?:\.\d+)?)/.exec(String(o && o.current && o.current.line || '')); return m ? parseFloat(m[1]) : null; }
+async function _g45CdLire(sp, lg, eid, ymds) {
+  for (var i = 0; i < ymds.length; i++) {
+    var k = sp + '|' + lg + '|' + ymds[i], o = _g45CdMem[k];
+    if (!o || Date.now() - o.t > 50000) {
+      o = _g45CdMem[k] = { t: Date.now(), p: fetch('https://site.api.espn.com/apis/site/v2/sports/' + sp + '/' + lg + '/scoreboard?dates=' + ymds[i] + '&_=' + Math.floor(Date.now() / 50000), { cache: 'no-store' })
+        .then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }) };
+    }
+    var j = await o.p;
+    var ev = ((j && j.events) || []).filter(function (e) { return String(e.id) === String(eid); })[0];
+    if (!ev) continue;
+    var cp = (ev.competitions && ev.competitions[0]) || {}, st = (cp.status && cp.status.type) || {};
+    var cs = cp.competitors || [];
+    var ho = cs.filter(function (x) { return x.homeAway === 'home'; })[0] || cs[0] || {}, aw = cs.filter(function (x) { return x.homeAway === 'away'; })[0] || cs[1] || {};
+    var od = (cp.odds || [])[0] || {}, ml = od.moneyline || {}, tt = od.total || {};
+    var nm = function (c) { var t = c.team || {}; return [t.displayName, t.shortDisplayName, t.name, t.location, t.abbreviation].filter(Boolean); };
+    return { state: st.state, clk: (cp.status && cp.status.displayClock) || '', hs: ho.score, as: aw.score, hN: nm(ho), aN: nm(aw),
+      h: _g45CdCur(ml.home), a: _g45CdCur(ml.away), d: _g45CdCur(ml.draw), L: _g45CdLigne(tt.over) || _g45CdLigne(tt.under),
+      ov: _g45CdCur(tt.over), un: _g45CdCur(tt.under), prov: (od.provider && od.provider.name) || 'DraftKings' };
+  }
+  return null;
+}
+window._g45CdLire = _g45CdLire;
+function _g45CdFr(n) { return n === 'off' ? '⏸️' : (n ? n.toFixed(2).replace('.', ',') : '—'); }
+/* Marché du pari → {cle:'h'|'a'|'d'|'ov'|'un', L} ; null = marché non suivi. */
+function _g45CdMarche(h, C, moiDom) {
+  if (!h || h.isCombi || h.isLay) return null;
+  if ((Array.isArray(h.joueurs) && h.joueurs.length) || h.joueur) return null;
+  var t = String((typeof g45TypeSansCote === 'function' ? g45TypeSansCote(h.type) : h.type) || '').toLowerCase();
+  if (/mi-?temps|\bmt\b|1re|2e|double|handicap|\bhc\b|bts|deux [ée]quipes|les deux|buteur|corner|carton|exact|ou nul|\+|&/.test(t.replace(/\+ de|plus de/g, ''))) return null;
+  var mo = /(?:plus de|over|\+ de)\s*(\d+(?:[.,]\d+)?)/.exec(t), mu = /(?:moins de|under|- de)\s*(\d+(?:[.,]\d+)?)/.exec(t);
+  if (mo) return { cle: 'ov', L: parseFloat(mo[1].replace(',', '.')) };
+  if (mu) return { cle: 'un', L: parseFloat(mu[1].replace(',', '.')) };
+  if (/^\s*(match )?nul\b/.test(t)) return { cle: 'd' };
+  var vic = /victoire|vainqueur|gagne/.test(t), def = /d[ée]faite|perd/.test(t);
+  if (!vic && !def) return null;
+  var norm = function (s) { return (typeof _g45SgNorm === 'function') ? _g45SgNorm(s) : String(s).toLowerCase(); };
+  var tn = norm(t), cote = null;
+  var cite = function (L) { return L.some(function (n) { var k = norm(n); return k.length >= 3 && tn.indexOf(k) >= 0; }); };
+  if (cite(C.hN) && !cite(C.aN)) cote = 'h'; else if (cite(C.aN) && !cite(C.hN)) cote = 'a';
+  else if (moiDom === true) cote = 'h'; else if (moiDom === false) cote = 'a';
+  if (!cote) return null;
+  if (def) cote = cote === 'h' ? 'a' : 'h';
+  return { cle: cote };
+}
+function _g45CdTexte(h, C, M) {
+  var prise = parseFloat(String(h.cote || '').replace(',', '.'));
+  var comp = function (v) {
+    if (v === 'off' || !v || !prise) return '';
+    return v < prise ? ' <span style="color:#1ed760">▲ bien joué</span>' : (v > prise ? ' <span style="color:#ffa53a">▼ la cote a monté</span>' : '');
+  };
+  var v;
+  if (M.cle === 'ov' || M.cle === 'un') {
+    v = C[M.cle];
+    if (v === 'off') return '<span style="color:#f5c542">⏸️ cote suspendue pour l\'instant (but, carton…)</span>';
+    if (C.L == null || !v) return '';
+    var lib = M.cle === 'ov' ? '+ de ' : '− de ';
+    if (Math.abs(C.L - M.L) > 0.01) return '<span style="color:#c9d3ee">ta ligne (' + String(M.L).replace('.', ',') + ' buts) n\'est plus proposée</span> · en direct : <b>' + lib + String(C.L).replace('.', ',') + ' buts à ' + _g45CdFr(v) + '</b>';
+  } else v = C[M.cle];
+  if (v === 'off') return '<span style="color:#f5c542">⏸️ cote suspendue pour l\'instant (but, carton…)</span>';
+  if (!v) return '';
+  return '<b style="font-size:18px;color:#1ed760">' + _g45CdFr(v) + '</b> <span style="color:#c9d3ee">en direct</span>' + (prise ? ' · tu l\'as prise à <b>' + _g45CdFr(prise) + '</b>' : '') + comp(v);
+}
+window._g45CdMarche = _g45CdMarche; window._g45CdTexte = _g45CdTexte;
+/* (1) cartes « Paris en cours » */
+(function () {
+  var traiter = async function (z) {
+    if (z._cdPend || z.querySelector('.g45ec-cd') || !/EN DIRECT/.test(z.textContent || '')) return;
+    var id = z.getAttribute('data-g45ecl'), h = ((window.state && state.h) || []).filter(function (x) { return x && String(x.id) === id; })[0];
+    var meta = (h && typeof _g45MatchMeta === 'function') ? _g45MatchMeta(h) : null;
+    if (!meta || meta.sp !== 'soccer' || !meta.eid || !meta.lg) return;
+    z._cdPend = 1;
+    try {
+      var C = await _g45CdLire(meta.sp, meta.lg, meta.eid, [String(h.date).slice(0, 10).replace(/-/g, '')]);
+      if (!C || C.state !== 'in') return;
+      var moiDom = h.domicile === 'dom' ? true : (h.domicile === 'ext' ? false : (meta.moiDom != null ? !!meta.moiDom : null));
+      var M = _g45CdMarche(h, C, moiDom); if (!M) return;
+      var tx = _g45CdTexte(h, C, M); if (!tx || z.querySelector('.g45ec-cd')) return;
+      var d = document.createElement('div'); d.className = 'g45ec-cd';
+      d.setAttribute('style', 'margin-top:6px;font-size:14px;font-weight:700;background:rgba(0,0,0,.45);border:1px solid #3a4566;border-radius:8px;padding:5px 9px;display:inline-block;color:#fff;');
+      d.innerHTML = '📈 ' + tx; z.appendChild(d);
+    } catch (e) {} finally { z._cdPend = 0; }
+  };
+  var passe = function () { [].forEach.call(document.querySelectorAll('.g45ec-live[data-g45ecl]'), function (z) { traiter(z); }); };
+  var minut = null, planif = function () { if (minut) return; minut = setTimeout(function () { minut = null; passe(); }, 300); };
+  var brancher = function () { if (!document.body) return false; new MutationObserver(planif).observe(document.body, { childList: true, subtree: true }); return true; };
+  if (!brancher()) document.addEventListener('DOMContentLoaded', brancher);
+})();
+/* (2) fenêtre du match : bloc COTES */
+(function () {
+  var o0 = window._g45EspnUsOdds; if (typeof o0 !== 'function') return;
+  window._g45EspnUsOdds = async function (sport, lg, eid, dateISO, hN, aN) {
+    var html = await o0.apply(this, arguments);
+    if (sport !== 'soccer' || !dateISO) return html;
+    try {
+      var d = new Date(dateISO); if (isNaN(d)) return html;
+      var y = function (x) { return x.getUTCFullYear() + String(x.getUTCMonth() + 1).padStart(2, '0') + String(x.getUTCDate()).padStart(2, '0'); };
+      var C = await _g45CdLire(sport, lg, eid, [y(d), y(new Date(d.getTime() - 864e5))]);
+      if (!C || C.state !== 'in') return html;
+      var lignes = [];
+      if (C.h || C.a) lignes.push([hN, C.h], ['Nul', C.d], [aN, C.a]);
+      var rows = lignes.filter(function (r) { return r[1]; }).map(function (r) {
+        return '<div style="display:flex;justify-content:space-between;font-size:14px;padding:3px 0;"><span>' + String(r[0]).replace(/</g, '&lt;') + '</span><b style="color:' + (r[1] === 'off' ? '#f5c542' : '#1ed760') + ';">' + (r[1] === 'off' ? '⏸️ suspendue' : _g45CdFr(r[1])) + '</b></div>';
+      }).join('');
+      if (C.L != null && (C.ov || C.un)) rows += '<div style="display:flex;justify-content:space-between;font-size:14px;padding:3px 0;"><span>Buts ' + String(C.L).replace('.', ',') + '</span><b>+ <span style="color:#1ed760">' + _g45CdFr(C.ov) + '</span> · − <span style="color:#ff7b54">' + _g45CdFr(C.un) + '</span></b></div>';
+      if (!rows) return html;
+      html = String(html || '').replace('🏆 Favori vainqueur', '🏆 Favori avant le match');
+      return html + '<div style="margin-top:10px;background:rgba(255,69,69,.08);border:1px solid rgba(255,69,69,.45);border-radius:10px;padding:10px 12px;color:#fff;">'
+        + '<div style="font-size:14px;font-weight:800;color:#ff8a8a;margin-bottom:6px;">📈 COTES EN DIRECT (' + String(C.prov).replace(/</g, '&lt;') + ')' + (C.clk ? ' · ' + String(C.clk).replace(/</g, '&lt;') : '') + '</div>'
+        + rows + '<div style="font-size:13px;color:#c9d3ee;margin-top:6px;">Relues toutes les 30 s environ · cotes du site américain DraftKings, pas celles de ton book.</div></div>';
+    } catch (e) { return html; }
+  };
+})();
