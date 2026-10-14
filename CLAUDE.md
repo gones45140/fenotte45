@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261014i, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261014j, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1608,6 +1608,9 @@ RÉGLÉ (worker, 01/10) : cron « exceededCpu » (cpuTimeMs 10) à CHAQUE passag
   Calendrier NBA NON sondé ici (même forme supposée). Contrôle smoke (25).
   20261014i (« il manque pts par équipe… enfin buts », « oui les 2 ») : lignes « Buts / Points / Runs de <équipe> » et « … de l'adversaire » (Over / Under + ligne :
   foot 0,5→3,5, NHL 0,5→5,5 temps régl., NFL 10,5→40,5, NBA 95,5→135,5, MLB 0,5→8,5) ; champs te / TL / ad / AL du combiné, pas lus par « Reprendre ma note ». Contrôle smoke (26).
+  20261014j (« rugby et NRL ») : rugby à XV et NRL (toute ligue de _g45SaisonsGen) → `chargerRg` = matchs du panneau Saisons (_g45CompetEquipes +
+  _g45CompetMatchs, scoreboards mensuels), phases finales (m.po) écartées, via _g45SgCalc ; Victoire / Nul / Défaite sur le score FINAL ; points du
+  match XV 30,5→70,5 / NRL 25,5→60,5, équipe / adversaire 5,5→45,5 / 40,5 ; saisons _g45SgAnAuto + _g45SgLabel, lues une par une. NON vérifié sur ESPN. Contrôle smoke (27).
 - ▶️ VIDÉO « LA MÉTHODE MONTANTE » (20261014e, maquette validée « ok ») : bouton bleu dans la barre « 🚀 C'est quoi, le Cockpit ? » (<summary> de
   #sub-strat, posé par app.js `_g45VidCockpitPoser`, GONES45 ET BET45) → `g45VideoOuvrir(fic, titre)` (paramètres ajoutés, défaut = présentation) ;
   videos/bet45-montante.mp4 + .webm dans LES DEUX dépôts. Animation à exemple FICTIF (Arsenal, P1 5 € / P2 10 € / P3 30 €, cote 1,5 mini, 1 min 23) :

@@ -50842,7 +50842,7 @@ async function _g45SaisonsGen(el, nom, perso) {
   try { if (typeof _g45RegAbsPoser === 'function') setTimeout(_g45RegAbsPoser, 0); } catch (e) {}   /* 20261006t */
   /* 20261014g : « 📊 Tes critères sur 4 saisons » aussi pour la NHL (en tête du panneau, même bloc que le foot). */
   /* 20261014h : aussi NFL, NBA, MLB (score final, vainqueur). */
-  try { if (((sp === 'hockey' && lg === 'nhl') || (sp === 'football' && lg === 'nfl') || (sp === 'basketball' && lg === 'nba') || (sp === 'baseball' && lg === 'mlb')) && perso && perso.id && typeof window._g45CrHtml === 'function') el.insertAdjacentHTML('afterbegin', window._g45CrHtml(nom, { sp: sp, lg: lg, id: String(perso.id) })); } catch (e) {}
+  try { if (((sp === 'hockey' && lg === 'nhl') || (sp === 'football' && lg === 'nfl') || (sp === 'basketball' && lg === 'nba') || (sp === 'baseball' && lg === 'mlb') || sp === 'rugby' || sp === 'rugby-league') && perso && perso.id && typeof window._g45CrHtml === 'function') el.insertAdjacentHTML('afterbegin', window._g45CrHtml(nom, { sp: sp, lg: lg, id: String(perso.id) })); } catch (e) {}
 }
 
 /* ── Ouverture du detail d'un match ──────────────────────────────────────────
@@ -73178,24 +73178,27 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   var S = window._g45Cr = window._g45Cr || { nom: '', lieu: 'tout', combos: [], a: 0, data: {}, enCours: {} };
   function ouvert() { try { return localStorage.getItem('g45_cr_open') === '1'; } catch (e) { return false; } }
   function esc(t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
-  function combo0() { var u = S.ctx && US_L[S.ctx.sp]; return { res: u ? 'vqr' : 'vic', ou: '', L: u ? u[2] : 2.5, bts: '', te: '', TL: lgEq()[2], ad: '', AL: lgEq()[2] }; }
+  function combo0() { var u = S.ctx && US_L[S.ctx.sp]; return { res: us() ? 'vqr' : 'vic', ou: '', L: u ? u[2] : 2.5, bts: '', te: '', TL: lgEq()[2], ad: '', AL: lgEq()[2] }; }
   /* 20261014i (« il manque pts par équipe… enfin buts », « oui les 2, ça peut être intéressant quand je parie contre ») : over / under des buts
      (points, runs) de L'ÉQUIPE (te / TL) et de L'ADVERSAIRE (ad / AL), même règle que le total (hockey : temps réglementaire). */
-  var EQ_L = { soccer: [0.5, 3.5, 1.5], hockey: [0.5, 5.5, 2.5], football: [10.5, 40.5, 21.5], basketball: [95.5, 135.5, 112.5], baseball: [0.5, 8.5, 3.5] };
+  var EQ_L = { rugby: [5.5, 45.5, 20.5], 'rugby-league': [5.5, 40.5, 20.5], soccer: [0.5, 3.5, 1.5], hockey: [0.5, 5.5, 2.5], football: [10.5, 40.5, 21.5], basketball: [95.5, 135.5, 112.5], baseball: [0.5, 8.5, 3.5] };
   function lgEq() { return EQ_L[S.ctx ? S.ctx.sp : 'soccer'] || EQ_L.soccer; }
-  function motUnite() { var sp = S.ctx ? S.ctx.sp : 'soccer'; return sp === 'baseball' ? 'Runs' : (sp === 'football' || sp === 'basketball') ? 'Points' : 'Buts'; }
+  function motUnite() { var sp = S.ctx ? S.ctx.sp : 'soccer'; return sp === 'baseball' ? 'Runs' : (sp === 'football' || sp === 'basketball' || sp === 'rugby' || sp === 'rugby-league') ? 'Points' : 'Buts'; }
   /* 20261014g (« oui » pour la NHL) : S.ctx = null (foot) ou {sp:'hockey', lg:'nhl', id} posé par _g45SaisonsGen. Hockey : Victoire / Nul /
      Défaite et buts = TEMPS RÉGLEMENTAIRE (m[4] = 1 prolongation, 2 tirs au but → score TR = min-min), Vainqueur = score final. */
   function hk() { return !!(S.ctx && S.ctx.sp === 'hockey'); }
   /* 20261014h (« ce que tu veux comme sport » → NFL, NBA, MLB) : us() = sport US hors hockey. Résultat = VAINQUEUR (score final, prolongation
      comprise : « NBA et NFL pas besoin, mieux vaut prendre vainqueur », 20261005o) ou Défaite ; total de POINTS / RUNS sur le score final ;
      calendrier ESPN <sp>/<lg>/teams/<id>/schedule?season=<an _g45SgAnAuto>&seasontype=2 (NFL SONDÉ 20261006p ; NBA / MLB même forme, MLB SONDÉ 20261006q). */
-  function us() { return !!(S.ctx && S.ctx.sp !== 'hockey'); }
+  function us() { return !!(S.ctx && S.ctx.sp !== 'hockey' && !rg()); }
+  /* 20261014j (« rugby et NRL ») : rg() = rugby à XV ou NRL. Matchs = ceux du panneau Saisons (_g45CompetEquipes + _g45CompetMatchs, scoreboards
+     mensuels : le calendrier d'équipe ESPN du rugby répond 500), score FINAL, Victoire / Nul / Défaite, phases finales écartées (m.po). */
+  function rg() { return !!(S.ctx && (S.ctx.sp === 'rugby' || S.ctx.sp === 'rugby-league')); }
   function sport() { return S.ctx ? S.ctx.sp : 'soccer'; }
-  var US_L = { football: [30.5, 60.5, 44.5, 'Points du match'], basketball: [190.5, 250.5, 224.5, 'Points du match'], baseball: [4.5, 13.5, 8.5, 'Runs du match'] };
+  var US_L = { rugby: [30.5, 70.5, 45.5, 'Points du match'], 'rugby-league': [25.5, 60.5, 40.5, 'Points du match'], football: [30.5, 60.5, 44.5, 'Points du match'], basketball: [190.5, 250.5, 224.5, 'Points du match'], baseball: [4.5, 13.5, 8.5, 'Runs du match'] };
   var US_N = { nfl: 'NFL', nba: 'NBA', mlb: 'MLB', nhl: 'NHL' };
   function lignes() {
-    if (us()) { var u = US_L[sport()], a = []; for (var x = u[0]; x <= u[1]; x++) a.push(x); return a; }
+    if (us() || rg()) { var u = US_L[sport()], a = []; for (var x = u[0]; x <= u[1]; x++) a.push(x); return a; }
     return hk() ? [0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5] : [0.5, 1.5, 2.5, 3.5, 4.5, 5.5];
   }
   function preparer(nom) {
@@ -73211,7 +73214,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var d = new Date(), y = d.getFullYear(), y0 = CAL.indexOf(lg) >= 0 ? y : (d.getMonth() + 1 >= 8 ? y : y - 1);
     return [y0, y0 - 1, y0 - 2, y0 - 3];
   }
-  function lib(lg, an) { if (lg === 'nfl' || lg === 'mlb') return String(an); if (S.ctx) return (an - 1) + '-' + String(an).slice(2); return CAL.indexOf(lg) >= 0 ? String(an) : an + '-' + String(an + 1).slice(2); }
+  function lib(lg, an) { if (rg() && typeof _g45SgLabel === 'function') return _g45SgLabel(lg, an); if (lg === 'nfl' || lg === 'mlb') return String(an); if (S.ctx) return (an - 1) + '-' + String(an).slice(2); return CAL.indexOf(lg) >= 0 ? String(an) : an + '-' + String(an + 1).slice(2); }
   function libCombo(c) {
     var p = [];
     if (c.res === 'vic') p.push(hk() ? 'Victoire (temps régl.)' : 'Victoire'); else if (c.res === 'vqr') p.push(hk() || us() ? 'Vainqueur (prolong. comprise)' : 'Vainqueur'); else if (c.res === 'nul') p.push('Nul'); else if (c.res === 'def') p.push('Défaite');
@@ -73282,10 +73285,30 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     }));
     S.data[nom] = out;
   }
+  async function chargerRg(nom) {
+    var C = S.ctx, ans = annees(C.lg), out = { t: Date.now(), lg: C.lg, ligue: 'saison régulière', saisons: [] }, eq = [];
+    try { eq = await _g45CompetEquipes({ sp: C.sp, s: C.lg }); } catch (e) {}
+    var ids = eq.map(function (t) { return t.id; }).filter(Boolean);
+    for (var i = 0; i < ans.length; i++) {   /* une saison après l'autre : jusqu'à 12 scoreboards par saison */
+      var an = ans[i], cle = 'g45cr1_' + C.sp + '_' + C.lg + '_' + C.id + '_' + an, ms = null;
+      if (i > 0) { try { ms = JSON.parse(localStorage.getItem(cle) || 'null'); } catch (e) {} }
+      if (!ms) {
+        var L = null; try { L = await _g45CompetMatchs(C.sp, C.lg, an, ids); } catch (e) {}
+        if (!L) { out.saisons[i] = { an: an, ms: null }; continue; }
+        var st = _g45SgCalc(L.filter(function (m) { return !m.po; }), C.id, nom);
+        ms = st.liste.map(function (x) { return [new Date(x.t || 0).toISOString().slice(0, 10), x.dom ? 1 : 0, x.pour, x.contre]; })
+          .filter(function (m) { return !isNaN(m[2]) && !isNaN(m[3]); })
+          .sort(function (a, b) { return a[0] < b[0] ? -1 : 1; });
+        if (i > 0 && ms.length) { try { localStorage.setItem(cle, JSON.stringify(ms)); } catch (e) {} }
+      }
+      out.saisons[i] = { an: an, ms: ms };
+    }
+    S.data[nom] = out;
+  }
   async function charger(nom) {
     if (S.data[nom] && (S.data[nom].err || Date.now() - S.data[nom].t < 3600000)) return;
     if (S.enCours[nom]) return; S.enCours[nom] = 1;
-    if (S.ctx) { try { await chargerHk(nom); } catch (e) { S.data[nom] = { t: Date.now(), err: 'Lecture impossible (réseau).' }; } delete S.enCours[nom]; return; }
+    if (S.ctx) { try { await (rg() ? chargerRg(nom) : chargerHk(nom)); } catch (e) { S.data[nom] = { t: Date.now(), err: 'Lecture impossible (réseau).' }; } delete S.enCours[nom]; return; }
     try {
       var r = await espnResolveTeam(nom);
       var lg = r && r.league;
@@ -73377,7 +73400,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var LL = lignes(); if (LL.indexOf(c.L) < 0) LL.push(c.L); LL.sort(function (x, y) { return x - y; });
     LL.forEach(function (L) { sel += '<option value="' + L + '"' + (c.L === L ? ' selected' : '') + '>' + L + '</option>'; });
     sel += '</select>';
-    h += lab(us() ? US_L[sport()][3] : hk() ? 'Buts du match (temps réglementaire)' : 'Buts du match') + b(c.ou === 'ov', 'Over', "g45CrSet('ou','ov')") + b(c.ou === 'un', 'Under', "g45CrSet('ou','un')") + b(c.ou === '', 'Aucun', "g45CrSet('ou','')") + sel;
+    h += lab(us() || rg() ? US_L[sport()][3] : hk() ? 'Buts du match (temps réglementaire)' : 'Buts du match') + b(c.ou === 'ov', 'Over', "g45CrSet('ou','ov')") + b(c.ou === 'un', 'Under', "g45CrSet('ou','un')") + b(c.ou === '', 'Aucun', "g45CrSet('ou','')") + sel;
     var selEq = function (k, v) {
       var t = '<select onchange="g45CrSet(\'' + k + '\',this.value)" style="background:#16213f;color:#fff;border:1px solid #6d9dff;border-radius:8px;padding:7px 10px;font-size:14px;margin:0 6px 6px 0;">', E = lgEq();
       for (var x = E[0]; x <= E[1]; x++) t += '<option value="' + x + '"' + (v === x ? ' selected' : '') + '>' + x + '</option>';
