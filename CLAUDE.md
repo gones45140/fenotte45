@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261015d, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261015e, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -271,6 +271,12 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   gardées), 📡 Match / ✏️ / 🗑️ ; thead caché, min-width 0. `_g45AvScanner` pose son « 🤖 Valider » dans .g45ec-mid. DIRECT (pas les combinés) : coup
   d'envoi −5 min → +3 h 30 → `_g45MatchMeta` (eid/sp/lg) + scoreboard ESPN du jour (mémoire 60 s) → « 🔴 EN DIRECT · 2-0 · 67' · ✅ gagnant si ça reste
   comme ça / ⏳ pas encore gagnant » (`_g45AvPari`), fini → « 🏁 Terminé ». Relu chaque minute. Rendu vérifié Chromium 1280 + 400 px. Contrôle smoke.js (21).
+- 🏦 ONGLET BANK (20261015e, aperçus en image validés « PEUT ÊTRE SÉPARER LES BANQUES ? » → « OUI ») : bloc en fin d'app.js. window.renderBooksChart
+  REDÉFINIE (rond SVG + total au centre + légende 15 px triée montant / %, dans .cwrap → #g45-bk-cw ; titre « total · 🎰 bookmakers · 🏦 banques ») ;
+  #books-grid refait après render (MutationObserver, cartes .g45bk) par `_g45BkGrille` : 🎰 Bookmakers triés par solde puis section #g45-bk-banques ;
+  carte `_g45BkCarte` (bkFavicon 28 px, nom `_g45BkNom` : suffixe Antoine / Laura → étiquette, solde 26 px, barre % du capital, freebet, ligne « 🎯 Paris »
+  `_g45BkParis` = paris RÉGLÉS de state.a sur ce book, règle de _betSettleEffect, ✏️ Modifier / 🎟 Freebet (pas pour une banque) / 🗑️, couleur).
+  Banque = nom `_G45_BK_BANQUE` / `_g45BkEstBanque` (Boursorama, BNP, LCL, Revolut…) ; choix à la main NON fait (à la demande). Smoke (38).
 - COMPTABILITÉ DES PARIS : `_g45BetEffetTotal` / `_g45BetAppliquer` = seule
   source de vérité (mise retirée AU PLACEMENT ; gagné +m×cote ; freebet :
   cagnotte −m, gain m×(cote−1)). `deleteArchived` (DEUX copies) et

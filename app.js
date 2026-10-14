@@ -74309,3 +74309,108 @@ window._g45CdMarche = _g45CdMarche; window._g45CdTexte = _g45CdTexte;
     } catch (e) { return html; }
   };
 })();
+
+/* ═══ 20261015e — 🏦 ONGLET BANK PLUS LISIBLE (capture « on pourrait améliorer ici ? », aperçus en image validés : « PEUT ÊTRE SÉPARER
+   LES BANQUES ? » → « OUI ») ═══
+   - Répartition du capital : rond SVG (total au centre) + légende 14-15 px triée (montant + %), titre « total · 🎰 bookmakers · 🏦 banques ».
+     window.renderBooksChart REDÉFINIE (les DEUX copies d'origine, Chart.js, légende 10 px) ; appelée par render comme avant.
+   - #books-grid refait après coup (MutationObserver, cartes marquées .g45bk) : 🎰 Bookmakers triés par solde puis 🏦 Banques (section
+     #g45-bk-banques) ; carte = logo bkFavicon 28 px, nom (suffixe Antoine / Laura → étiquette), solde 26 px, barre « % du capital »,
+     🎟 freebet s'il y en a, ligne « 🎯 Paris : ±X € · N % réussis (n paris) » = paris RÉGLÉS de state.a sur ce book (h.b, même règle que
+     _betSettleEffect), boutons « ✏️ Modifier » / « 🎟 Freebet » (pas pour une banque) / « 🗑️ » + pastille de couleur (changeBookColor).
+   - Banque = nom reconnu `_G45_BK_BANQUE` (Boursorama, BNP, Crédit Agricole, LCL, Revolut…). Choix à la main : pas encore (à la demande). */
+var _G45_BK_BANQUE = /boursorama|\bbnp\b|cr[ée]dit agricole|cr[ée]dit mutuel|caisse d.?[ée]pargne|soci[ée]t[ée] g[ée]n[ée]rale|\blcl\b|banque|\bbanq|revolut|\bn26\b|fortuneo|hello ?bank|\bing\b|livret|lydia|paypal|nickel|\bcic\b|\bbred\b|qonto|monabanq|shine|trade republic|wise/i;
+function _g45BkEstBanque(k) { return _G45_BK_BANQUE.test(String(k || '') + ' ' + ((typeof bki === 'function' && bki(k).n) || '')); }
+function _g45BkNom(k) {
+  var n = String((typeof bki === 'function' && bki(k).n) || k || '').trim(), m = /^(.*?)\s+(antoine|laura)$/i.exec(n);
+  var cap = function (s) { return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase(); };
+  if (!m) return { n: n, who: '' };
+  var base = m[1]; if (base === base.toUpperCase() && base.length > 3) base = base.split(/\s+/).map(cap).join(' ');
+  return { n: base, who: cap(m[2]) };
+}
+function _g45BkParis(k) {
+  var lk = String(k || '').toLowerCase(), o = { n: 0, w: 0, net: 0 };
+  ((window.state && state.a) || []).forEach(function (h) {
+    if (!h || String(h.b || '').toLowerCase() !== lk || h.win == null) return;
+    o.n++; if (h.win) o.w++;
+    var m = parseFloat(h.m) || 0, c = parseFloat(h.cote) || 0;
+    o.net += h.isFreebet ? (h.win ? m * (c - 1) : 0) : (h.win ? m * c - m : -m);
+  });
+  return o;
+}
+var _g45BkFr = function (n) { return (Math.round(n * 100) / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
+function _g45BkComptes() {
+  var L = Object.keys((window.state && state.b) || {}).map(function (k) { return { k: k, v: parseFloat(state.b[k]) || 0, c: bki(k).c, banque: _g45BkEstBanque(k) }; });
+  L.sort(function (a, b) { return b.v - a.v; });
+  return L;
+}
+function _g45BkCarte(x, total) {
+  var esc = function (t) { return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); };
+  var N = _g45BkNom(x.k), pc = total > 0 ? x.v / total * 100 : 0, fb = parseFloat(state.fb && state.fb[x.k]) || 0;
+  var P = x.banque ? null : _g45BkParis(x.k), k = esc(x.k);
+  var ligne = x.banque ? '<div style="font-size:14px;margin-top:6px;color:#c9d3ee;">💶 Argent en banque, hors paris</div>'
+    : (P.n ? '<div style="font-size:14px;margin-top:6px;">🎯 Paris : <b style="color:' + (P.net >= 0 ? '#1ed760' : '#ff6b6b') + ';">' + (P.net >= 0 ? '+' : '') + _g45BkFr(P.net) + ' €</b> · ' + Math.round(P.w / P.n * 100) + ' % réussis <span style="color:#c9d3ee;">(' + P.n + ' pari' + (P.n > 1 ? 's' : '') + ')</span></div>'
+      : '<div style="font-size:14px;margin-top:6px;color:#c9d3ee;">🎯 Aucun pari sur ce compte</div>');
+  var bt = 'font-size:14px;font-weight:800;color:#fff;background:rgba(255,255,255,.06);border:1px solid #3a4566;border-radius:8px;padding:7px 4px;cursor:pointer;';
+  return '<div class="g45bk" style="background:rgba(11,16,29,.88);border:1px solid #2a3350;border-left:5px solid ' + esc(x.c) + ';border-radius:12px;padding:12px 14px;color:#fff;min-width:0;">'
+    + '<div style="display:flex;align-items:center;gap:10px;">' + ((typeof bkFavicon === 'function') ? bkFavicon(x.k, 28) : '')
+    + '<span style="font-size:16px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(N.n) + '</span>'
+    + (N.who ? '<span style="font-size:12px;font-weight:700;background:#33406a;border-radius:6px;padding:1px 7px;">' + esc(N.who) + '</span>' : '')
+    + '<input type="color" value="' + esc(x.c) + '" title="Couleur du compte" data-bk="' + k + '" onchange="changeBookColor(this)" style="margin-left:auto;width:22px;height:22px;border-radius:50%;border:none;padding:0;cursor:pointer;background:none;flex-shrink:0;"></div>'
+    + '<div style="font-size:26px;font-weight:900;margin:8px 0 4px;font-variant-numeric:tabular-nums;">' + _g45BkFr(x.v) + ' €</div>'
+    + '<div style="height:8px;border-radius:5px;background:rgba(255,255,255,.1);overflow:hidden;"><i style="display:block;height:100%;width:' + Math.max(1.5, Math.min(100, pc)).toFixed(1) + '%;background:' + esc(x.c) + ';"></i></div>'
+    + '<div style="font-size:13px;color:#c9d3ee;margin-top:4px;">' + pc.toFixed(1).replace('.', ',') + ' % du capital' + (fb > 0 ? ' · <b style="color:#f5c542;">🎟 freebet ' + _g45BkFr(fb) + ' €</b>' : '') + '</div>'
+    + ligne
+    + '<div style="display:flex;gap:6px;margin-top:10px;">'
+    + '<button data-bk="' + k + '" onclick="editBook(this.dataset.bk)" style="flex:1;' + bt + '">✏️ Modifier</button>'
+    + (x.banque ? '' : '<button data-bk="' + k + '" onclick="editFb(this.dataset.bk)" style="flex:1;' + bt + 'border-color:#f5c542;color:#f5c542;">🎟 Freebet</button>')
+    + '<button data-bk="' + k + '" onclick="delBook(this.dataset.bk)" title="Supprimer" style="flex:0 0 46px;' + bt + '">🗑️</button></div></div>';
+}
+function _g45BkGrille() {
+  var g = document.getElementById('books-grid'); if (!g || !window.state || !state.b) return;
+  var L = _g45BkComptes(), tot = L.reduce(function (a, x) { return a + x.v; }, 0);
+  var BK = L.filter(function (x) { return !x.banque; }), BQ = L.filter(function (x) { return x.banque; });
+  var sB = BK.reduce(function (a, x) { return a + x.v; }, 0), sQ = BQ.reduce(function (a, x) { return a + x.v; }, 0);
+  var grille = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px;margin-bottom:14px;';
+  g._g45bk = 1;
+  g.setAttribute('style', grille); g.className = '';
+  g.innerHTML = BK.length ? BK.map(function (x) { return _g45BkCarte(x, tot); }).join('') : '<div class="empty">Aucun bookmaker</div>';
+  var t = document.getElementById('bank-titre');
+  if (t) { t.style.flexWrap = 'wrap'; t.style.columnGap = '12px'; }
+  if (t) t.innerHTML = '🎰 Bookmakers <small style="font-size:15px;color:#c9d3ee;font-weight:600;flex:1 1 240px;min-width:0;">' + _g45BkFr(sB) + ' € · triés du plus gros au plus petit</small>';
+  var z = document.getElementById('g45-bk-banques');
+  if (!BQ.length) { if (z) z.remove(); }
+  else {
+    if (!z) { z = document.createElement('div'); z.id = 'g45-bk-banques'; g.parentNode.insertBefore(z, g.nextSibling); }
+    z.innerHTML = '<div class="sec" style="flex-wrap:wrap;column-gap:12px;">🏦 Banques <small style="font-size:15px;color:#c9d3ee;font-weight:600;flex:1 1 240px;min-width:0;">' + _g45BkFr(sQ) + ' € · ton argent pas encore déposé chez un book</small></div>'
+      + '<div style="' + grille + '">' + BQ.map(function (x) { return _g45BkCarte(x, tot); }).join('') + '</div>';
+  }
+  g._g45bk = 0;
+}
+window._g45BkGrille = _g45BkGrille;
+window.renderBooksChart = function () {
+  var cv = document.getElementById('chart-books'), cw = document.getElementById('g45-bk-cw') || (cv && cv.closest('.cwrap'));
+  if (!cw || !window.state || !state.b) return;
+  cw.id = 'g45-bk-cw';
+  var L = _g45BkComptes().filter(function (x) { return x.v > 0; }), tot = L.reduce(function (a, x) { return a + x.v; }, 0);
+  var sQ = L.filter(function (x) { return x.banque; }).reduce(function (a, x) { return a + x.v; }, 0);
+  var sec = cw.previousElementSibling;
+  if (sec && sec.classList.contains('sec')) { sec.style.flexWrap = 'wrap'; sec.style.columnGap = '12px'; }
+  if (sec && sec.classList.contains('sec')) sec.innerHTML = 'Répartition du capital <small style="font-size:15px;color:#c9d3ee;font-weight:600;flex:1 1 240px;min-width:0;">' + _g45BkFr(tot) + ' € au total · 🎰 bookmakers <b style="color:#fff;">' + _g45BkFr(tot - sQ) + ' €</b> · 🏦 banques <b style="color:#fff;">' + _g45BkFr(sQ) + ' €</b></small>';
+  if (tot <= 0) { cw.innerHTML = '<div class="empty">Aucun solde</div>'; return; }
+  var o = 25, s = '<circle cx="21" cy="21" r="15.9" fill="none" stroke="#1d2540" stroke-width="6"/>';
+  L.forEach(function (x) { var p = x.v / tot * 100; s += '<circle cx="21" cy="21" r="15.9" fill="none" stroke="' + x.c + '" stroke-width="6" stroke-dasharray="' + p.toFixed(3) + ' ' + (100 - p).toFixed(3) + '" stroke-dashoffset="' + o.toFixed(3) + '"><title>' + _g45BkNom(x.k).n + ' : ' + _g45BkFr(x.v) + ' €</title></circle>'; o -= p; });
+  s += '<text x="21" y="20" text-anchor="middle" font-size="3.6" fill="#c9d3ee">Capital</text><text x="21" y="25" text-anchor="middle" font-size="4.4" font-weight="900" fill="#fff">' + Math.round(tot).toLocaleString('fr-FR') + ' €</text>';
+  var leg = L.map(function (x) { var N = _g45BkNom(x.k); return '<div style="display:flex;align-items:center;gap:10px;font-size:15px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.06);min-width:0;"><i style="width:14px;height:14px;border-radius:4px;flex:none;background:' + x.c + ';"></i><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (x.banque ? '🏦 ' : '') + N.n + (N.who ? ' ' + N.who : '') + '</span><b style="margin-left:auto;white-space:nowrap;">' + _g45BkFr(x.v) + ' €</b><span style="color:#c9d3ee;width:48px;text-align:right;flex:none;">' + Math.round(x.v / tot * 100) + ' %</span></div>'; }).join('');
+  cw.innerHTML = '<div style="display:flex;flex-wrap:wrap;gap:24px;align-items:center;color:#fff;"><svg viewBox="0 0 42 42" style="width:220px;height:220px;flex:none;margin:auto;">' + s + '</svg>'
+    + '<div style="flex:1 1 320px;display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:2px 26px;min-width:0;">' + leg + '</div></div>';
+};
+(function () {
+  var brancher = function () {
+    var g = document.getElementById('books-grid'); if (!g) return false;
+    new MutationObserver(function () { if (g._g45bk) return; if (g.querySelector('.btile') || !g.querySelector('.g45bk')) { try { _g45BkGrille(); } catch (e) {} } }).observe(g, { childList: true });
+    try { _g45BkGrille(); } catch (e) {}
+    return true;
+  };
+  if (!brancher()) document.addEventListener('DOMContentLoaded', brancher);
+})();
