@@ -1337,6 +1337,11 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   g45oa1_ (échec : 30 min) ; ligues `_G45_OA_LIGUES`. Plusieurs comptes/clés pour
   contourner le quota : REFUSÉ (CGU). Scraping de bookmakers /
   Oddsportal / DraftKings via VPN : REFUSÉ (CGU, géoblocage), ne pas reproposer.
+- COTES EN DIRECT ESPN (SONDÉ PAR ANTOINE le 14/10 au soir, LDC, 2 lectures à 2 min d'écart) : scoreboard soccer/<lg>/scoreboard, match state 'in' →
+  competitions[0].odds[0] (DraftKings) : moneyline.home|away.{open, close, current}.odds (américaine ; current = EN DIRECT : Real–Roma 3-1 76e « -1100 » →
+  78e « -1400 », perdant +3500 → +5000) ; total.over|under.{open, close, current}{line « o4.5 », odds} (la ligne suit le match : o3.5 → o4.5) ;
+  current « OFF » = marché suspendu / fermé (Fenerbahçe–Villa 5-0) ou current absent. drawOdds.moneyLine = 295 FIGÉ (avant-match) → nul en direct :
+  moneyline.draw.current NON vérifié. Côté home/away à recouper avec competitors (shortName « RMA @ ROMA »). PAS encore utilisé dans l'appli.
 - Cotes ESPN US : `details` = handicap (« LAR -1.5 », côté favori) en NFL.
 - Sofascore RapidAPI (sofascore6, via worker host=rapidapi) : match/list
   sport_slug=football OK (553 matchs) ; american-football, americanfootball,
