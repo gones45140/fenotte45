@@ -73964,3 +73964,56 @@ window._G45_PAL_COUL = ['#1ed760', '#8fdc4a', '#f5c542', '#ffa53a', '#ff7a3a', '
     if (ch) { try { if (typeof render === 'function') render(); } catch (e) {} }
   } catch (e) {}
 })();
+
+/* ═══ 20261014z — MUR LIMITÉ À 15 SUR BET45 (Antoine : « d'autres vont abuser », choix « 15 ») ═══
+   Chaque entrée du mur fait travailler l'Agenda, le ruban, les notifications et le Worker pour chaque visiteur. bet45 SEULEMENT
+   (_g45SanteActive faux) : GONES45 (Antoine) reste sans limite. Tout compte (équipes par défaut PRESETS comprises, cartes catégorie
+   aussi) ; un mur DÉJÀ au-delà garde tout, on bloque seulement l'AJOUT (addUnit, « ➕ Mur » Pro A g45BbMur). Compteur « N / 15 » au-dessus
+   de #ulist (Outils → Équipes). Plus tard, avec l'abonnement : gratuit 3 / abonné 15. */
+var _G45_MUR_MAX = 15;
+function _g45MurLimite() { try { return typeof _g45SanteActive === 'function' ? !_g45SanteActive() : false; } catch (e) { return false; } }
+function _g45MurNb() { return ((window.state && state.u) || []).filter(function (u) { return u && u.n; }).length; }
+function _g45MurPlein() { return _g45MurLimite() && _g45MurNb() >= _G45_MUR_MAX; }
+function g45MurPleinMsg() {
+  var old = document.getElementById('g45-mur-plein'); if (old) old.remove();
+  var d = document.createElement('div'); d.id = 'g45-mur-plein';
+  d.setAttribute('style', 'position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:16px;');
+  d.innerHTML = '<div style="max-width:360px;width:100%;background:#151c2e;border:1px solid rgba(255,255,255,.18);border-radius:14px;padding:18px;color:#fff;text-align:center;">'
+    + '<div style="font-size:17px;font-weight:800;margin-bottom:8px;">🧱 Ton mur est plein (' + _g45MurNb() + ' / ' + _G45_MUR_MAX + ')</div>'
+    + '<div style="font-size:14px;line-height:1.45;color:#fff;">Retire une équipe pour en ajouter une autre.</div>'
+    + '<button onclick="var x=document.getElementById(\'g45-mur-plein\');if(x)x.remove();" style="margin-top:14px;padding:10px 28px;border-radius:10px;border:1px solid #3b82f6;background:#2563eb;color:#fff;font-size:15px;font-weight:800;cursor:pointer;">OK</button></div>';
+  d.addEventListener('click', function (e) { if (e.target === d) d.remove(); });
+  document.body.appendChild(d);
+}
+window.g45MurPleinMsg = g45MurPleinMsg;
+(function () {
+  var a0 = window.addUnit;
+  if (typeof a0 === 'function') window.addUnit = function () {
+    var nom = ((document.getElementById('u-name') || {}).value || '').trim();
+    var deja = ((window.state && state.u) || []).some(function (u) { return u && u.n === nom; });
+    if (nom && !deja && _g45MurPlein()) { g45MurPleinMsg(); return; }
+    return a0.apply(this, arguments);
+  };
+  var b0 = window.g45BbMur;
+  if (typeof b0 === 'function') window.g45BbMur = function () {
+    if (_g45MurPlein()) { g45MurPleinMsg(); return; }
+    return b0.apply(this, arguments);
+  };
+  var compter = function () {
+    var ul = document.getElementById('ulist'); if (!ul || !_g45MurLimite()) return;
+    var c = document.getElementById('g45-mur-compte');
+    if (!c) { c = document.createElement('div'); c.id = 'g45-mur-compte'; ul.parentNode.insertBefore(c, ul); }
+    var n = _g45MurNb(), plein = n >= _G45_MUR_MAX;
+    var t = '🧱 ' + n + ' / ' + _G45_MUR_MAX + ' équipes' + (plein ? ' · mur plein' : '');
+    if (c.textContent !== t) {
+      c.textContent = t;
+      c.setAttribute('style', 'display:inline-block;margin-top:10px;padding:5px 10px;border-radius:8px;background:rgba(11,16,29,.8);font-size:14px;font-weight:800;color:' + (plein ? '#ffb4b4' : '#fff') + ';');
+    }
+  };
+  var brancher = function () {
+    var ul = document.getElementById('ulist'); if (!ul) return false;
+    new MutationObserver(compter).observe(ul, { childList: true });
+    compter(); return true;
+  };
+  if (!brancher()) document.addEventListener('DOMContentLoaded', brancher);
+})();

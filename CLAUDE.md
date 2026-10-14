@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261014y, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261014z, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1714,6 +1714,10 @@ ACCUEIL bet45 « CHOISIS TON CLUB » (20261011b, maquette validée « Parfait »
   api-sports baseball/teams/19.png = blason des MIAMI MARLINS → logo ESPN mlb/500/lad.png ; u.logoUrl mémorisé corrigé une fois
   (g45_fix_lad1) ; alias _G45_TSDB_ALIAS ladodgers / laangels → « Los Angeles … » (visuel TheSportsDB) + échec g45_fanart2_ladodgers effacé ;
   tuile F1 sans carte FORMULE 1 au mur = emoji seul → img: images/equipes/formule1.png dans _G45_ACC_SPORTS.
+  20261014z (« d'autres vont abuser », choix « 15 ») — MUR LIMITÉ À 15 SUR BET45 (bloc en fin d'app.js) : `_G45_MUR_MAX` = 15, `_g45MurLimite()`
+  (= !_g45SanteActive : gones sans limite), toutes les entrées comptent (12 PRESETS par défaut compris → un nouveau compte n'a que 3 places,
+  supprimer des presets libère) ; enveloppes window.addUnit / window.g45BbMur → `g45MurPleinMsg()` « 🧱 Ton mur est plein (N / 15) » ;
+  mur déjà au-delà = gardé ; compteur #g45-mur-compte au-dessus de #ulist. Abonnement plus tard : gratuit 3 / abonné 15. Smoke (34).
 BILAN, barre d'info sous la courbe (20261011e, capture : « Global … · Winamax … · Betclic… » coupé) : style.css a .cib-val en flex-shrink:0 →
   feuille #g45-cib-ligne (app.js) : .chart-info-bar flex-wrap, .cib-val flex 1 1 220px + retour à la ligne (sous la date si longue). Testé Chromium 412 px.
 BILAN « Répartition par type » (20261011f, maquette validée « c'est mieux oui ») : renderChartTypeDonut REDÉFINIE en fin d'app.js (gagne sur
