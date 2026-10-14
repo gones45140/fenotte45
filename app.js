@@ -30688,7 +30688,7 @@ function _g45TrRender(){
     .filter(function(x){ var k=String(x.id||(x.hN+'|'+x.aN)); if(vuD[k]) return false; vuD[k]=1; return true; }).slice(0,10);
   try{ _g45TrSuivNoter(avec.slice(0,25).concat(sans).concat(desac)); }catch(e){}   /* 20261013c : suivi de fiabilité */
   var h='<button onclick="_G45_TR.res=null;loadTendancesTab();" style="border:none;cursor:pointer;background:rgba(255,255,255,.06);border-radius:8px;color:var(--t2);padding:6px 11px;font-size:10px;font-weight:700;margin-bottom:9px;">↺ Relancer</button>';
-  var card=function(x,showGap){
+  var card=function(x,showGap,sansCases){
     var m=x.m;
     var col=(m.ev!=null&&m.ev>=0.08)?'#2ecc71':(m.ev!=null&&m.ev>=0.03)?'#f0c828':'#8aa0ff';
     /* ═══ FOND DEUX EQUIPES (22/08) ═══
@@ -30758,8 +30758,9 @@ function _g45TrRender(){
        en production sur la carte Nottingham-Leeds. Chacun recoit donc son propre
        substrat sombre et une couleur eclaircie, plutot que d'affaiblir encore le
        degrade : c'est le texte qui doit s'adapter au fond, pas l'inverse. */
-    if(m.fair!=null) s+='<div style="position:relative;display:inline-block;font-size:8.5px;color:rgba(255,255,255,.78);'
-      +'background:rgba(8,11,20,.6);border-radius:5px;padding:2px 7px;margin-top:5px;">Bookmaker (marge retirée) : '+_g45TrPct(m.fair)+'</div>';
+    /* 20261014m (« il faudrait les stats et book % comme en bas sur chaque pari », maquette validée « oui ») : la pastille « Bookmaker (marge
+       retirée) » est remplacée par les deux cases 📊 Stats / 🏦 Bookmakers du bloc « en désaccord », posées en bas de CHAQUE carte (sauf
+       dans ce bloc, qui les a déjà) ; sans cote → « — pas de cote » en gris. */
     if(m.accord!=null) s+='<div style="position:relative;display:inline-block;margin-top:6px;background:rgba(30,215,96,.18);border:1px solid #1ed760;color:#fff;font-size:13px;font-weight:700;padding:4px 9px;border-radius:8px;">\u2705 Coupe d\u2019Europe : stats et bookmakers d\u2019accord (bookmakers '+_g45TrPct(m.accord)+')</div>';
     else if(m.croSans) s+='<div style="position:relative;display:inline-block;margin-top:6px;background:rgba(8,11,20,.7);border:1px solid #ff8c42;color:#fff;font-size:13px;font-weight:700;padding:4px 9px;border-radius:8px;">\u26a0\ufe0f Coupe d\u2019Europe : pas de cote pour v\u00e9rifier</div>';
     if(m.note) s+='<div style="font-size:8px;color:#8aa0ff;margin-top:4px;line-height:1.5;">ℹ️ '+_g45CyEa(m.note)+'</div>';
@@ -30773,6 +30774,12 @@ function _g45TrRender(){
       +m.faits.slice(0,4).map(function(f){ return '<li style="font-size:9.5px;font-weight:600;color:rgba(255,255,255,.90);line-height:1.6;">'+_g45CyEa(f)+'</li>'; }).join('')+'</ul>';
     if(m.n<9) s+='<div style="font-size:8px;color:#ff6b6b;margin-top:4px;">⛔ Échantillon très réduit ('+m.n+' matchs) — statistiquement peu fiable, à titre indicatif seulement.</div>';
     else if(m.n<14) s+='<div style="font-size:8px;color:#ff8c42;margin-top:4px;">⚠️ Échantillon réduit ('+m.n+' matchs) — à prendre avec prudence.</div>';
+    if(!sansCases){
+      var _bk=(m.fair!=null)?m.fair:(m.accord!=null?m.accord:null);
+      var _cs=function(lbl,v,c){ return '<div style="flex:1;background:rgba(0,0,0,.6);border-radius:8px;padding:6px;text-align:center;font-size:13px;color:#fff;">'+lbl
+        +(v!=null?'<b style="display:block;font-size:20px;color:'+c+';">'+_g45TrPct(v)+'</b>':'<b style="display:block;font-size:14px;color:#9aa4bd;padding:4px 0;">\u2014 pas de cote</b>')+'</div>'; };
+      s+='<div class="g45tr-cases" style="position:relative;display:flex;gap:8px;margin-top:8px;">'+_cs('\ud83d\udcca Stats',m.p,'#6d9dff')+_cs('\ud83c\udfe6 Bookmakers',_bk,'#f5c542')+'</div>';
+    }
     return s+'</div>';
   };
   if(avec.length){
@@ -30794,7 +30801,7 @@ function _g45TrRender(){
       +'<div style="font-size:13px;color:#fff;background:rgba(8,11,20,.72);border-radius:8px;padding:6px 10px;margin-bottom:8px;">Les stats voient une chose, les bookmakers en voient une autre. \u00c0 toi de juger.</div>';
     desac.forEach(function(x){
       var b2=function(lbl,v,c){ return '<div style="flex:1;background:rgba(0,0,0,.6);border-radius:8px;padding:6px;text-align:center;font-size:13px;color:#fff;">'+lbl+'<b style="display:block;font-size:20px;color:'+c+';">'+_g45TrPct(v)+'</b></div>'; };
-      h+='<div style="border:2px solid #ff8c42;border-radius:14px;margin-bottom:10px;background:rgba(8,11,20,.5);">'+card(x,false)
+      h+='<div style="border:2px solid #ff8c42;border-radius:14px;margin-bottom:10px;background:rgba(8,11,20,.5);">'+card(x,false,true)
         +'<div style="display:flex;gap:8px;padding:0 10px 10px;">'+b2('\ud83d\udcca Stats',x.m.p,'#6d9dff')+b2('\ud83c\udfe6 Bookmakers',x.m.fair,'#f5c542')+'</div></div>';
     });
   }
