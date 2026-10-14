@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261015b, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261015c, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1076,6 +1076,10 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
 - LIGNES DE PARI, JOUEUR — 20261009f (maquette validée « cool ») : `_g45LigneMatch` écrit le joueur en blanc 14 px gras sur bande sombre ;
   enveloppe de `_g45IdF1` → `_g45IdJoueur` : carré de droite = photo ronde 44 px du 1er joueur (initiales sinon), recherche en file
   (`_g45JphFile`, 2 à la fois, mémoire de session `_g45JphMem`, pose `_g45JphPoser` sur [data-g45jph]) ; tous sports (TheSportsDB hors foot).
+- LOGO DE LA COMPÉTITION SUR LES LIGNES DE PARI, PC (20261015c, aperçu en image, choix « 1 ») : bloc en fin d'app.js ; div[data-aid] ouvrant
+  openBetEdit (archive ×2 + `_g45BetRowMini`) de largeur ≥ 700 px → img .g45-cl-fil (84 px, opacité .5, left 58 %, marqué data-g45cl) ; h.comp →
+  `_G45_CL_MAP` → `_g45ClLogo(comp, rendre)` : NHL / NBA / NFL / MLB / WNBA = teamlogos/leagues/500/<x>.png ; foot / Top 14 / NRL = leagues[0].logos du
+  scoreboard ESPN (dark d'abord), mémorisé g45_lglogo_<sport>_<slug> (même clé que le calendrier). Téléphone inchangé. Smoke (36).
 - Bouton ⚡ « Ouvrir le match » des lignes de pari (`g45EclairPari` / `g45EclairOuvrirCible`) — 20261009b (« le flash fonctionne pas ») :
   cherchait le pari dans state.h SEULEMENT → muet sur un pari réglé (state.a) ; cherche maintenant state.h puis state.a (testé Chromium).
 - ⚾🇰🇷 KBO (20261001s, maquette validée « yes we can ») : tuile slug 'kbo' (Compétitions → Baseball, après MLB),

@@ -74106,3 +74106,73 @@ window._g45Mur2Appliquer = _g45Mur2Appliquer;
   };
   if (!brancher()) document.addEventListener('DOMContentLoaded', brancher);
 })();
+
+/* ═══ 20261015c — LOGO DE LA COMPÉTITION SUR LES LIGNES DE PARI, PC (« SUR PC ON RAJOUTE LOGO DE LA COMPETITION ? », aperçu en image,
+   choix « 1 ») ═══ Grand logo un peu transparent (.5, 84 px) dans le vide du milieu de la ligne (left 58 %), seulement quand la ligne
+   est LARGE (≥ 700 px : PC / tablette en paysage) — téléphone inchangé. Lignes visées : div[data-aid] ouvrant openBetEdit (archive, DEUX
+   copies du rendu, et _g45BetRowMini), habillées après coup (MutationObserver), marquées data-g45cl. Compétition = h.comp (nom libre) →
+   `_G45_CL_MAP` (regex → sport ESPN + slug) ; NHL / NBA / NFL / MLB / WNBA = teamlogos/leagues/500/<x>.png (déjà utilisé l. ~48418) ; foot /
+   rugby = logo du scoreboard ESPN (leagues[0].logos, version « dark » d'abord, comme Tendances 20261013h) mémorisé dans la MÊME clé que le
+   calendrier `g45_lglogo_<sport>_<slug>` ; une lecture par compétition et par session. Nom inconnu = rien. */
+var _G45_CL_MAP = [
+  [/ligue des champions|champions league|\bLDC\b|\bC1\b/i, 'soccer', 'uefa.champions'],
+  [/conf[ée]rence|\bC4\b/i, 'soccer', 'uefa.europa.conf'],
+  [/europa|\bC3\b/i, 'soccer', 'uefa.europa'],
+  [/ligue ?1\b/i, 'soccer', 'fra.1'], [/ligue ?2\b/i, 'soccer', 'fra.2'],
+  [/coupe de france/i, 'soccer', 'fra.coupe_de_france'],
+  [/premier league/i, 'soccer', 'eng.1'], [/liga portugal|primeira/i, 'soccer', 'por.1'],
+  [/\bla ?liga\b|^liga\b/i, 'soccer', 'esp.1'], [/serie a/i, 'soccer', 'ita.1'], [/bundesliga/i, 'soccer', 'ger.1'],
+  [/eredivisie/i, 'soccer', 'ned.1'], [/\bMLS\b/i, 'soccer', 'usa.1'],
+  [/top ?14/i, 'rugby', '270559'], [/\bNRL\b/i, 'rugby-league', '3'],
+  [/\bNHL\b/i, 'L', 'nhl'], [/\bWNBA\b/i, 'L', 'wnba'], [/\bNBA\b/i, 'L', 'nba'], [/\bNFL\b/i, 'L', 'nfl'], [/\bMLB\b/i, 'L', 'mlb']
+];
+var _g45ClEnCours = {}, _g45ClRate = {};
+function _g45ClLogo(comp, rendre) {
+  var c = String(comp || ''), m = null;
+  for (var i = 0; i < _G45_CL_MAP.length && !m; i++) if (_G45_CL_MAP[i][0].test(c)) m = _G45_CL_MAP[i];
+  if (!m) return '';
+  if (m[1] === 'L') return 'https://a.espncdn.com/i/teamlogos/leagues/500/' + m[2] + '.png';
+  var cle = 'g45_lglogo_' + m[1] + '_' + m[2], u = '';
+  try { u = localStorage.getItem(cle) || ''; } catch (e) {}
+  if (u || _g45ClRate[cle] || _g45ClEnCours[cle]) return u;
+  _g45ClEnCours[cle] = 1;
+  fetch('https://site.api.espn.com/apis/site/v2/sports/' + m[1] + '/' + m[2] + '/scoreboard').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+    var lo = (j && j.leagues && j.leagues[0] && j.leagues[0].logos) || [], href = '';
+    if (Array.isArray(lo)) { var dk = lo.filter(function (x) { return (x.rel || []).indexOf('dark') >= 0; })[0]; href = ((dk || lo[0] || {}).href) || ''; }
+    else href = lo.href || '';
+    if (href) { try { localStorage.setItem(cle, href); } catch (e) {} if (rendre) rendre(); } else _g45ClRate[cle] = 1;
+  }).catch(function () { _g45ClRate[cle] = 1; }).then(function () { _g45ClEnCours[cle] = 0; });
+  return '';
+}
+window._g45ClLogo = _g45ClLogo;
+(function () {
+  var parId = function (id) {
+    var L = ((window.state && state.a) || []).concat((window.state && state.h) || []);
+    for (var i = 0; i < L.length; i++) if (L[i] && String(L[i].id) === String(id)) return L[i];
+    return null;
+  };
+  var passe = function () {
+    var els = document.querySelectorAll('div[data-aid][onclick*="openBetEdit"]:not([data-g45cl])');
+    [].forEach.call(els, function (el) {
+      if (el.offsetWidth < 700) return;                       /* étroit (téléphone) : on n'y touche pas, ni ne le marque (rotation possible) */
+      var h = parId(el.getAttribute('data-aid'));
+      var u = h ? _g45ClLogo(h.comp, planifier) : '';
+      if (!u) { if (!h || !h.comp || !_G45_CL_MAP.some(function (m) { return m[0].test(String(h.comp)); })) el.setAttribute('data-g45cl', '0'); return; }
+      el.setAttribute('data-g45cl', '1');
+      var im = document.createElement('img');
+      im.className = 'g45-cl-fil'; im.alt = ''; im.loading = 'lazy'; im.src = u;
+      im.onerror = function () { im.remove(); };
+      im.setAttribute('style', 'position:absolute;left:58%;top:50%;transform:translate(-50%,-50%);height:84px;width:84px;max-height:92%;object-fit:contain;opacity:.5;pointer-events:none;filter:drop-shadow(0 2px 6px rgba(0,0,0,.5));');
+      if (getComputedStyle(el).position === 'static') el.style.position = 'relative';
+      el.insertBefore(im, el.firstChild);
+    });
+  };
+  var minut = null;
+  var planifier = function () { if (minut) return; minut = setTimeout(function () { minut = null; try { passe(); } catch (e) {} }, 250); };
+  var brancher = function () {
+    if (!document.body) return false;
+    new MutationObserver(planifier).observe(document.body, { childList: true, subtree: true });
+    addEventListener('resize', planifier); planifier(); return true;
+  };
+  if (!brancher()) document.addEventListener('DOMContentLoaded', brancher);
+})();
