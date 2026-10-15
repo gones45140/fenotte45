@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261016a, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261016b, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -183,6 +183,9 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   20261016a (« Vancouver il connaît pas » : ÉQUIPE 🏒 du mur sans logo) : enveloppe window.g45LogoUrlDe — rien trouvé et entrée du mur de ce
   nom en 🏒 (pas joueur) reconnue par _g45RegEquipe → assets.nhle.com/logos/nhl/svg/<ABR>_dark.svg. Fond (fanart TheSportsDB) des Canucks : même
   question que Chicago (sonde demain).
+  20261016b (ticket Winamax « Passes décisives : 1 ou plus · Connor McDavid » en Cockpit → alerte « Edmonton Oilers n'est pas une équipe de ton
+  mur ») : `_g45TicketRemplirCockpit` choisit D'ABORD dans #c-unit une carte JOUEUR du mur (u.type 'joueur') dont le nom contient le nom de famille
+  du champ joueur du ticket (prénom pour départager), puis l'équipe comme avant. Smoke (48).
 - Temps réglementaire : `g45ScoreTR`, `G45_TR_PERIODES`.
   20261005j (capture : Edmonton 1-2 Colorado « Après TAB » compté en victoire, mode TR actif) : match aux TIRS AU BUT sans période > 3
   chez ESPN → le garde-fou renonçait. Hockey : 3 périodes présentes, égalité, final à 1 but d'écart = prolongation/TAB → score TR

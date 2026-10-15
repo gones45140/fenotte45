@@ -71082,7 +71082,24 @@ function _g45TicketRemplirCockpit(o) {
   var num = function (v) { var n = parseFloat(String(v == null ? '' : v).replace(',', '.').replace(/[^\d.]/g, '')); return isFinite(n) && n > 0 ? n : null; };
   /* équipe du mur : nom égal, inclus, ou un mot de ≥ 4 lettres en commun (« Inter Milan » ↔ « Inter ») */
   var un = document.getElementById('c-unit'), eq = nz(o.equipe), choisi = null;
-  if (un && eq) {
+  /* 20261016b (capture ticket Winamax « Passes décisives : 1 ou plus · Connor McDavid » → « Edmonton Oilers n'est pas une équipe de ton
+     mur ») : un pari JOUEUR va d'abord sur la carte du JOUEUR si elle est au mur (type joueur) — nom de famille (≥ 4 lettres) commun,
+     « MCDAVID CONNOR » = « Connor McDavid » ; plusieurs cartes → le prénom départage. Sinon : équipe comme avant. */
+  if (un && o.joueur) {
+    try {
+      var jz = nz(o.joueur).split(' ').filter(function (w) { return w.length >= 4; });
+      var U0 = (typeof state !== 'undefined' && state && state.u) ? state.u : [];
+      var cj = [].slice.call(un.options).filter(function (op) {
+        var u0 = U0.filter(function (x) { return x && x.n === op.value; })[0];
+        if (!u0 || u0.type !== 'joueur') return false;
+        var v = ' ' + nz(op.value) + ' ';
+        return jz.length && v.indexOf(' ' + jz[jz.length - 1] + ' ') >= 0;
+      });
+      if (cj.length > 1) { var cj2 = cj.filter(function (op) { var v = ' ' + nz(op.value) + ' '; return jz.every(function (w) { return v.indexOf(' ' + w + ' ') >= 0; }); }); if (cj2.length) cj = cj2; }
+      if (cj[0]) { choisi = cj[0]; un.value = choisi.value; ids.push('c-unit'); try { if (typeof updMise === 'function') updMise(); if (typeof renderCrash === 'function') renderCrash(); } catch (x) {} }
+    } catch (x) {}
+  }
+  if (un && eq && !choisi) {
     var ops = [].slice.call(un.options), mots = eq.split(' ').filter(function (w) { return w.length >= 4 || /^(om|ol|psg|inter|real|lyon)$/.test(w); });
     choisi = ops.filter(function (op) { return nz(op.value) === eq || nz(op.text) === eq; })[0]
       || ops.filter(function (op) { var v = nz(op.value); return v && (v.indexOf(eq) >= 0 || eq.indexOf(v) >= 0); })[0]
