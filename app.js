@@ -74756,3 +74756,183 @@ window._g45TrCoteFr = function (out) {
     window[n] = function () { return window._g45TrCoteFr(f.apply(this, arguments)); };
   });
 })();
+
+
+/* ═══ 20261015t — 🏒 FICHE D'UN JOUEUR NHL DU MUR (maquette validée « oui go ») ═══
+   Demande d'Antoine : « mettre des joueurs de NHL dans mon mur, est-ce possible qu'ils soient reconnus ? ». Une entrée de type
+   « 👤 Joueur / Buteur » ouvrait l'onglet « ⚽ Statistiques » (g45MurJoueurPanel), bâti pour le FOOT (ESPN) → « Joueur introuvable ».
+   Entrée joueur en 🏒 → onglet « 🏒 Stats » rempli par l'API NHL via le worker host=nhl, avec des chemins DÉJÀ SONDÉS :
+   club-stats/<ABR>/<saison>/2 (skaters / goalies : playerId, firstName/lastName.default, headshot, positionCode, gamesPlayed, goals,
+   assists, points), player/<id>/game-log/<saison>/2 (gameLog : gameDate, goals, assists, points, homeRoadFlag H/R),
+   club-schedule-season/<ABR>/now (games : startTimeUTC, homeTeam.abbrev / awayTeam.abbrev). NON sondés, affichés seulement s'ils
+   existent : shots, plusMinus, avgTimeOnIcePerGame (club-stats), opponentAbbrev, shots, toi (game-log), sweaterNumber.
+   Club = note de l'entrée (ou nom) reconnu par _g45RegEquipe (32 équipes) ; sans club → message. Séries = _g45RegCalc (même calcul
+   que « Séries individuelles »). Mémoire : effectif 6 h (g45nhlj1_eq_<ABR>_<saison>), journal 1 h (g45nhlj1_log_<id>_<saison>). */
+window._g45NhlJ = { cat: 'goals' };
+function _g45NhlJNz(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z]+/g, ' ').trim(); }
+function _g45NhlJSaison() { var d = new Date(); var fin = d.getMonth() >= 8 ? d.getFullYear() + 1 : d.getFullYear(); return (fin - 1) + '' + fin; }
+async function _g45NhlJGet(chemin, ck, ttl) {
+  try { var c = JSON.parse(localStorage.getItem(ck) || 'null'); if (c && Date.now() - c.t < ttl) return c.d; } catch (e) {}
+  var r = await fetch(FD_PROXY + '?key=nhl&host=nhl&path=' + encodeURIComponent(chemin));
+  if (!r.ok) throw new Error('NHL ' + r.status);
+  var d = await r.json();
+  return { _brut: d, _ck: ck };
+}
+function _g45NhlJGarder(ck, d) { try { localStorage.setItem(ck, JSON.stringify({ t: Date.now(), d: d })); } catch (e) {} }
+/* Joueur retrouvé dans l'effectif par le NOM DE FAMILLE (+ prénom si plusieurs) ; « MCDAVID CONNOR » = « Connor McDavid ». */
+function _g45NhlJTrouver(liste, nom) {
+  var z = ' ' + _g45NhlJNz(nom) + ' ', zc = z.replace(/ /g, '');
+  var c = (liste || []).filter(function (p) {
+    var l = _g45NhlJNz(p.lastName && p.lastName.default);
+    return l && (z.indexOf(' ' + l + ' ') >= 0 || (l.length >= 5 && zc.indexOf(l.replace(/ /g, '')) >= 0));
+  });
+  if (c.length > 1) {
+    var c2 = c.filter(function (p) { var f = _g45NhlJNz(p.firstName && p.firstName.default); return f && z.indexOf(' ' + f + ' ') >= 0; });
+    if (c2.length) c = c2;
+  }
+  return c[0] || null;
+}
+async function _g45NhlJCharger(u) {
+  var eq = (typeof _g45RegEquipe === 'function') ? (_g45RegEquipe(u.note || '') || _g45RegEquipe(u.n)) : null;
+  if (!eq) return { err: 'club' };
+  var abr = eq[0], s = _g45NhlJSaison();
+  var ckE = 'g45nhlj1_eq_' + abr + '_' + s, E = await _g45NhlJGet('/v1/club-stats/' + abr + '/' + s + '/2', ckE, 6 * 3600e3);
+  if (E && E._brut) { E = { sk: E._brut.skaters || [], gk: E._brut.goalies || [] }; _g45NhlJGarder(ckE, E); }
+  var p = _g45NhlJTrouver(E.sk, u.n), gard = false;
+  if (!p) { p = _g45NhlJTrouver(E.gk, u.n); gard = !!p; }
+  if (!p) return { err: 'joueur', abr: abr, eqN: eq[1] };
+  var ckL = 'g45nhlj1_log_' + p.playerId + '_' + s, L = null;
+  try {
+    L = await _g45NhlJGet('/v1/player/' + p.playerId + '/game-log/' + s + '/2', ckL, 3600e3);
+    if (L && L._brut) {
+      L = (L._brut.gameLog || []).map(function (g) {
+        return { d: String(g.gameDate || '').slice(0, 10), goals: +g.goals || 0, assists: +g.assists || 0, points: g.points != null ? +g.points : null,
+          h: g.homeRoadFlag === 'H' ? 1 : (g.homeRoadFlag === 'R' ? 0 : null), adv: g.opponentAbbrev || '', ab: g.teamAbbrev || '' };
+      });
+      _g45NhlJGarder(ckL, L);
+    }
+  } catch (e) { L = null; }
+  var pro = null;
+  try {
+    var r = await fetch(FD_PROXY + '?key=nhl&host=nhl&path=' + encodeURIComponent('/v1/club-schedule-season/' + abr + '/now'));
+    if (r.ok) {
+      var cal = await r.json(), now = Date.now();
+      (cal.games || []).forEach(function (g) {
+        var t = Date.parse(g.startTimeUTC); if (!(t > now - 3 * 3600e3)) return;
+        if (/^(FINAL|OFF)$/.test(g.gameState || '')) return;
+        if (!pro || t < pro.t) pro = { t: t, dom: ((g.homeTeam || {}).abbrev === abr), adv: ((g.homeTeam || {}).abbrev === abr ? (g.awayTeam || {}).abbrev : (g.homeTeam || {}).abbrev) || '' };
+      });
+    }
+  } catch (e) {}
+  return { p: p, gard: gard, abr: abr, eqN: eq[1], saison: s, log: L, pro: pro };
+}
+function _g45NhlJEqNom(ab) {
+  var e = (typeof _G45_REG_EQ !== 'undefined') ? _G45_REG_EQ.filter(function (x) { return x[0] === ab; })[0] : null;
+  return e ? e[1] : (ab || '?');
+}
+function _g45NhlJHtml(u, R) {
+  var esc = function (x) { return String(x == null ? '' : x).replace(/[<>"&]/g, ''); };
+  var tuile = function (v, l, c) { return '<div style="background:rgba(10,14,26,.85);border-radius:9px;padding:8px 4px;text-align:center;"><div style="font-size:22px;font-weight:800;color:' + (c || '#fff') + ';">' + v + '</div><div style="font-size:13px;color:#c9d3ee;">' + l + '</div></div>'; };
+  var p = R.p, nom = ((p.firstName && p.firstName.default) || '') + ' ' + ((p.lastName && p.lastName.default) || '');
+  var poste = ({ C: 'Centre', L: 'Ailier gauche', R: 'Ailier droit', D: 'Défenseur', G: 'Gardien' })[p.positionCode] || (R.gard ? 'Gardien' : '');
+  var an = +String(R.saison).slice(4);
+  var h = '<div style="background:linear-gradient(135deg,#0d1a36,#0b101d);border-left:5px solid #5ad6ff;border-radius:12px;padding:12px;">'
+    + '<div style="display:flex;align-items:center;gap:12px;">'
+    + (p.headshot ? '<img src="' + esc(p.headshot) + '" referrerpolicy="no-referrer" onerror="this.style.visibility=\'hidden\'" style="width:64px;height:64px;border-radius:50%;object-fit:cover;background:#33415c;flex:none;">'
+                  : '<div style="width:64px;height:64px;border-radius:50%;background:#33415c;flex:none;"></div>')
+    + '<div style="flex:1;min-width:0;"><div style="font-size:20px;font-weight:900;color:#fff;">' + esc(nom) + '</div>'
+    + '<div style="font-size:14px;color:#fff;background:rgba(0,0,0,.5);display:inline-block;padding:2px 8px;border-radius:5px;margin-top:3px;">🏒 ' + esc(R.eqN) + (poste ? ' · ' + poste : '') + (p.sweaterNumber ? ' · #' + esc(p.sweaterNumber) : '') + '</div></div></div>'
+    + '<div style="font-size:14px;color:#c9d3ee;margin:12px 0 6px;">Saison ' + (an - 1) + '-' + String(an).slice(2) + ' · ' + (+p.gamesPlayed || 0) + ' match' + ((+p.gamesPlayed || 0) > 1 ? 's' : '') + '</div>'
+    + '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">';
+  if (R.gard) {
+    h += tuile(+p.wins || 0, 'victoires', '#2ecc71')
+      + (p.savePercentage != null ? tuile((Math.round(p.savePercentage * 1000) / 10).toFixed(1).replace('.', ',') + ' %', '% arrêts') : '')
+      + (p.goalsAgainstAverage != null ? tuile((+p.goalsAgainstAverage).toFixed(2).replace('.', ','), 'buts encaissés / m') : '')
+      + (p.shutouts != null ? tuile(+p.shutouts || 0, 'blanchissages') : '');
+    return h + '</div></div>';
+  }
+  var toi = p.avgTimeOnIcePerGame != null ? (Math.floor(p.avgTimeOnIcePerGame / 60) + ':' + String(Math.round(p.avgTimeOnIcePerGame % 60)).padStart(2, '0')) : null;
+  h += tuile(+p.goals || 0, 'buts', '#f5c542') + tuile(+p.assists || 0, 'passes') + tuile(+p.points || 0, 'points', '#2ecc71')
+    + (p.shots != null ? tuile(+p.shots || 0, 'tirs') : '')
+    + (p.plusMinus != null ? tuile(((+p.plusMinus > 0) ? '+' : '') + (+p.plusMinus || 0), '+/-') : '')
+    + (toi ? tuile(toi, 'temps / match') : '') + '</div>';
+  var log = (R.log || []).filter(function (g) { return !R.abr || !g.ab || g.ab === R.abr; });
+  if (log.length) {
+    var cat = window._g45NhlJ.cat, lib = ({ goals: 'but', assists: 'passe', points: 'point' })[cat];
+    var S = (typeof _g45RegCalc === 'function') ? _g45RegCalc(log, cat, true) : null;
+    if (S) {
+      var cp = S.pire >= 10 ? '#ff6b6b' : (S.pire >= 6 ? '#ffb347' : '#2ecc71');
+      h += '<div style="font-size:15px;font-weight:800;color:#fff;margin:14px 0 6px;">🎯 Ses séries</div>'
+        + '<div style="display:flex;gap:6px;">'
+        + '<div style="flex:1;background:rgba(46,204,113,.15);border-radius:9px;padding:8px;text-align:center;"><div style="font-size:20px;font-weight:900;color:#2ecc71;">' + S.pct + ' %</div><div style="font-size:13px;color:#c9d3ee;">matchs avec ' + lib + '</div></div>'
+        + '<div style="flex:1;background:rgba(10,14,26,.85);border-radius:9px;padding:8px;text-align:center;"><div style="font-size:20px;font-weight:900;color:' + cp + ';">' + S.pire + '</div><div style="font-size:13px;color:#c9d3ee;">pire série sans ' + lib + '</div></div>'
+        + '<div style="flex:1;background:rgba(10,14,26,.85);border-radius:9px;padding:8px;text-align:center;"><div style="font-size:20px;font-weight:900;color:#f5c542;">' + S.cours + '</div><div style="font-size:13px;color:#c9d3ee;">sans ' + lib + ' en cours</div></div></div>'
+        + '<div style="display:flex;gap:6px;margin-top:8px;">' + [['goals', 'Buts'], ['assists', 'Passes'], ['points', 'Points']].map(function (b) {
+            return '<button onclick="g45NhlJCat(\'' + b[0] + '\')" style="border:none;cursor:pointer;font-size:14px;font-weight:800;border-radius:8px;padding:7px 12px;color:#fff;background:' + (b[0] === cat ? '#2b5cff' : 'rgba(10,14,26,.85)') + ';">' + b[1] + '</button>';
+          }).join('') + '</div>';
+    }
+    var dix = log.slice(0, 10);
+    h += '<div style="font-size:15px;font-weight:800;color:#fff;margin:14px 0 6px;">📋 ' + dix.length + ' dernier' + (dix.length > 1 ? 's' : '') + ' match' + (dix.length > 1 ? 's' : '') + '</div><div style="display:flex;flex-direction:column;gap:5px;">';
+    dix.forEach(function (g) {
+      var dd = g.d ? g.d.slice(8, 10) + '/' + g.d.slice(5, 7) : '';
+      var lieu = g.h === 1 ? '🏠 vs ' : (g.h === 0 ? '✈️ @ ' : '');
+      h += '<div style="display:flex;align-items:center;gap:8px;background:rgba(10,14,26,.85);border-radius:8px;padding:6px 9px;font-size:14px;color:#fff;">'
+        + '<span style="width:46px;color:#c9d3ee;">' + dd + '</span><span style="flex:1;">' + lieu + esc(g.adv ? _g45NhlJEqNom(g.adv) : '') + '</span>'
+        + '<span>' + g.goals + ' B · ' + g.assists + ' A</span>'
+        + '<span style="width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;' + (g.goals > 0 ? 'background:#2ecc71;color:#06210f;">' + g.goals : 'background:#555e75;color:#fff;">–') + '</span></div>';
+    });
+    h += '</div>';
+  } else {
+    h += '<div style="font-size:14px;color:#c9d3ee;margin-top:12px;">Aucun match joué cette saison pour l\'instant.</div>';
+  }
+  if (R.pro) {
+    var dt = new Date(R.pro.t), jr = '';
+    try { jr = dt.toLocaleDateString('fr-FR', { weekday: 'short', day: '2-digit', month: '2-digit' }) + ' · ' + dt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }); } catch (e) {}
+    h += '<div style="margin-top:12px;background:rgba(43,92,255,.18);border:1px solid #5aa9ff;border-radius:9px;padding:9px;font-size:14px;color:#fff;">📅 <b>Prochain match</b> : '
+      + esc(jr) + ' · ' + (R.pro.dom ? '🏠 vs ' : '✈️ @ ') + esc(_g45NhlJEqNom(R.pro.adv)) + '</div>';
+  }
+  return h + '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">Source : NHL officielle.</div></div>';
+}
+function _g45NhlJEntree(nomForce) {
+  var nom = nomForce || ((typeof _currentTeam !== 'undefined' && _currentTeam) ? _currentTeam : '');
+  var U = (typeof state !== 'undefined' && state && state.u) ? state.u : [];
+  var u = U.filter(function (x) { return x && x.n === nom; })[0];
+  return (u && u.type === 'joueur' && /🏒/.test(u.sport || '')) ? u : null;
+}
+async function g45NhlJoueurPanel() {
+  var el = document.getElementById('ip-joueur'), u = _g45NhlJEntree(); if (!el || !u) return;
+  el.innerHTML = '<div style="font-size:14px;color:#c9d3ee;text-align:center;padding:14px;">⏳ Recherche du joueur NHL…</div>';
+  var R = null;
+  try { R = await _g45NhlJCharger(u); } catch (e) { R = { err: 'reseau', msg: String(e && e.message || e) }; }
+  if (_g45NhlJEntree() !== u) return;
+  if (R.err) {
+    var m = R.err === 'club' ? 'Écris son club NHL dans la note de cette entrée (ex. « Edmonton Oilers »), dans Outils → Équipes.'
+      : R.err === 'joueur' ? 'Pas trouvé dans l\'effectif des ' + R.eqN + ' cette saison. Vérifie le nom (ex. « Connor McDavid ») et le club de la note.'
+      : 'Données NHL indisponibles (' + String(R.msg || '').replace(/[<>"&]/g, '') + ').';
+    el.innerHTML = '<div style="font-size:14px;color:#fff;background:rgba(10,14,26,.85);border-radius:10px;text-align:center;padding:16px;line-height:1.6;">🏒 ' + m + '</div>';
+    return;
+  }
+  window._g45NhlJ.R = R; window._g45NhlJ.u = u;
+  el.innerHTML = _g45NhlJHtml(u, R);
+}
+window.g45NhlJCat = function (c) {
+  window._g45NhlJ.cat = c;
+  var el = document.getElementById('ip-joueur'), J = window._g45NhlJ;
+  if (el && J.R && J.u && _g45NhlJEntree() === J.u) el.innerHTML = _g45NhlJHtml(J.u, J.R);
+};
+(function () {
+  var p0 = window.g45MurJoueurPanel;
+  if (typeof p0 === 'function') {
+    window.g45MurJoueurPanel = g45MurJoueurPanel = function () { return _g45NhlJEntree() ? g45NhlJoueurPanel() : p0.apply(this, arguments); };
+  }
+  var ui0 = window._g45MurJoueurUI;
+  if (typeof ui0 === 'function') {
+    window._g45MurJoueurUI = _g45MurJoueurUI = function () {
+      var r = ui0.apply(this, arguments);
+      var b = document.getElementById('itab-joueur');
+      if (b) { if (!b._g45Lib) b._g45Lib = b.textContent; b.textContent = _g45NhlJEntree(arguments[0]) ? '🏒 Stats' : b._g45Lib; }
+      return r;
+    };
+  }
+})();
+window._g45NhlJTrouver = _g45NhlJTrouver; window._g45NhlJHtml = _g45NhlJHtml; window._g45NhlJCharger = _g45NhlJCharger;

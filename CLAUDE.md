@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261015s, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261015t, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -159,6 +159,13 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   `_g45ClsRugbyMatchs`, barème `_G45_RG_PTS` ; logo en filigrane `_g45ClsFond`.
 - Panneau joueur (mur) : `_g45ButIdMur` → club AVANT sélection
   (`_g45ButEstSelection`, `_g45ButClubEspn`).
+  20261015t (« mettre des joueurs NHL dans mon mur », maquette validée « oui go ») — 🏒 JOUEUR NHL DU MUR : entrée « 👤 Joueur / Buteur »
+  avec sport 🏒 → onglet « 🏒 Stats » (enveloppes de g45MurJoueurPanel / _g45MurJoueurUI, bloc en fin d'app.js) : `g45NhlJoueurPanel` →
+  `_g45NhlJCharger` (club = note sinon nom via _g45RegEquipe ; club-stats/<ABR>/<saison>/2, joueur par nom de famille `_g45NhlJTrouver` ;
+  game-log ; club-schedule-season/<ABR>/now) → `_g45NhlJHtml` (saison : buts, passes, points + tirs / +/- / temps si présents ; séries
+  _g45RegCalc avec boutons Buts / Passes / Points `g45NhlJCat` ; 10 derniers matchs ; prochain match ; gardien = victoires / % arrêts /
+  moyenne / blanchissages). Champs NON sondés (shots, plusMinus, avgTimeOnIcePerGame, opponentAbbrev, sweaterNumber, stats gardien) :
+  affichés seulement s'ils existent. Cache g45nhlj1_eq_ 6 h, g45nhlj1_log_ 1 h. Smoke (46). Recherche « Rechercher un club » = équipes seulement.
 - Temps réglementaire : `g45ScoreTR`, `G45_TR_PERIODES`.
   20261005j (capture : Edmonton 1-2 Colorado « Après TAB » compté en victoire, mode TR actif) : match aux TIRS AU BUT sans période > 3
   chez ESPN → le garde-fou renonçait. Hockey : 3 périodes présentes, égalité, final à 1 but d'écart = prolongation/TAB → score TR
