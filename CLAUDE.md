@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261015k, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261015l, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1855,6 +1855,8 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   (mémoire 10 min). Smoke (40).
   20261015j (Cédric : « beaucoup de tendances à 1,2 même en cochant 1,5 mini ») : `jouable` de _g45TrRender ne testait que 1/p (cote déduite des stats) →
   cote du marché connue (m.cote > 1) = elle doit être ≥ cote mini ; sinon 1/p comme avant. Vaut aussi pour le robot officiel. Smoke (41).
+  20261015l (« Pas de nul » Gent–AGF, bookmakers 77 % ≈ 1,30, sans cote, affiché avec cote mini 1,50) : `jouable` — sans cote mais avec m.fair (ou
+  m.accord) → 1 / % des bookmakers comparé à la cote mini ; sinon 1/p. Passage officiel du 15/10 refait une 2e fois (aucun match commencé).
   20261015k (« une fois demandées, elles devraient rester visibles jusqu'au match ») : bloc en fin d'app.js — enveloppe de g45TrRun : liste rangée
   dans IndexedDB (_g45BgIdb, magasin kv, clé 'tr_<sport>') avec signature `_g45TrGardeSig` (jour visé, Aujourd'hui/Demain, groupes, g45tr_lsoff) ;
   enveloppe de loadTendancesTab : sans résultats → reprise si même signature, matchs commencés retirés (`_g45TrGardeFiltre`), une fois par sport

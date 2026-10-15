@@ -30690,7 +30690,11 @@ function _g45TrRender(){
   var mini=_G45_TR.min||0;
   /* 20261015j (Cédric : « beaucoup de tendances à 1,2 même en cochant 1,5 mini ») : le filtre ne regardait que la cote DÉDUITE des stats
      (1/p : 62 % → 1,61) → une tendance payée 1,20 par les bookmakers passait. Cote du marché connue = c'est ELLE qui compte. */
-  var jouable=function(x){ if(!mini) return true; if(x.m.cote>1) return x.m.cote>=mini; return x.m.p>0 && (1/x.m.p)>=mini; };
+  /* 20261015l (« Pas de nul » Gent–AGF : pas de cote, bookmakers 77 % ≈ 1,30, affiché avec cote mini 1,50) : sans cote mais avec le % des
+     bookmakers (m.fair, marge retirée), on juge sur la cote qui en découle (1 / %) — la vraie cote est même un peu plus basse (marge). */
+  var jouable=function(x){ if(!mini) return true; if(x.m.cote>1) return x.m.cote>=mini;
+    var bk=(x.m.fair>0)?x.m.fair:(x.m.accord>0?x.m.accord:null); if(bk) return (1/bk)>=mini;
+    return x.m.p>0 && (1/x.m.p)>=mini; };
   /* Une value = cote réelle disponible, au-dessus du seuil, et espérance positive. */
   var pmini=Math.max(_G45_TR_PFLOOR, _G45_TR.pmin||0);
   var avec=R.filter(function(x){ return x.m.ev!=null&&x.m.ev>=0.03&&x.m.cote>=mini&&x.m.p>=pmini&&x.m.n>=12&&x.m.cote>0; });
