@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261016e, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261016f, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -190,6 +190,8 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   20261016d (capture : champ toujours grisé « Connor McDavid ») : updMise → `_g45MajEquipeJouee` remettait u.n en lecture seule ; carte joueur →
   champ LIBRE = u.note (club), valeur déjà posée (ticket) gardée.
   20261016e : carte « En cours » (titre) = h.eq (Équipe jouée) avant h.n → « Edmonton Oilers – Utah Mammoth ».
+  20261016f (ticket « Résultat Florida Panthers » vs Vancouver, Florida hors mur ; choix d'Antoine « celle de Vancouver ») : équipe du ticket absente
+  du mur mais ADVERSAIRE au mur (club, pas joueur / compétition) → sa carte, adversaire = équipe du ticket, lieu inversé, Résultat / Victoire → « Défaite ». Smoke (49).
 - Temps réglementaire : `g45ScoreTR`, `G45_TR_PERIODES`.
   20261005j (capture : Edmonton 1-2 Colorado « Après TAB » compté en victoire, mode TR actif) : match aux TIRS AU BUT sans période > 3
   chez ESPN → le garde-fou renonçait. Hockey : 3 périodes présentes, égalité, final à 1 but d'écart = prolongation/TAB → score TR

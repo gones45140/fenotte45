@@ -71115,6 +71115,25 @@ function _g45TicketRemplirCockpit(o) {
       || ops.filter(function (op) { var v = ' ' + nz(op.value) + ' '; return mots.some(function (w) { return v.indexOf(' ' + w + ' ') >= 0; }); })[0];
     if (choisi) { un.value = choisi.value; ids.push('c-unit'); try { if (typeof updMise === 'function') updMise(); if (typeof renderCrash === 'function') renderCrash(); } catch (x) {} }
   }
+  /* 20261016f (ticket Winamax « Résultat Florida Panthers » vs Vancouver Canucks, Florida absent du mur, Vancouver présent ; choix
+     d'Antoine : « celle de Vancouver ») : équipe jouée absente du mur mais ADVERSAIRE au mur → pari CONTRE cette équipe : sa carte,
+     adversaire = l'équipe du ticket, lieu inversé, « Résultat / Victoire » → « Défaite ». */
+  var contre = false, adv0 = nz(o.adversaire);
+  if (un && !choisi && adv0 && !o.joueur) {
+    var opsA = [].slice.call(un.options), motsA = adv0.split(' ').filter(function (w) { return w.length >= 4; });
+    var U1 = (typeof state !== 'undefined' && state && state.u) ? state.u : [];
+    var okA = function (op) { var u1 = U1.filter(function (x) { return x && x.n === op.value; })[0]; return !u1 || (u1.type !== 'joueur' && u1.type !== 'competition'); };
+    var cA = opsA.filter(function (op) { return okA(op) && (nz(op.value) === adv0 || nz(op.text) === adv0); })[0]
+      || opsA.filter(function (op) { var v = nz(op.value); return okA(op) && v && (v.indexOf(adv0) >= 0 || adv0.indexOf(v) >= 0); })[0]
+      || opsA.filter(function (op) { var v = ' ' + nz(op.value) + ' '; return okA(op) && motsA.some(function (w) { return v.indexOf(' ' + w + ' ') >= 0; }); })[0];
+    if (cA) {
+      choisi = cA; contre = true; un.value = cA.value; ids.push('c-unit');
+      try { if (typeof updMise === 'function') updMise(); if (typeof renderCrash === 'function') renderCrash(); } catch (x) {}
+      o.adversaire = o.equipe;
+      if (o.domicile === true || o.domicile === false) o.domicile = !o.domicile;
+      if (/r[ée]sultat|victoire|1\s*n\s*2|gagnant/i.test(String(o.type || '')) || !o.type) o.type = 'Défaite';
+    }
+  }
   met('c-target', o.adversaire);
   met('c-joueur', o.joueur);
   /* 20261016c (« Équipe jouée Edmonton non ? ») : carte JOUEUR choisie → « Équipe jouée » (#c-equipe) = club du joueur
