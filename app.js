@@ -29491,20 +29491,26 @@ window._g45TrBuild=_g45TrBuild;
    nombre de buts attendus sur le match. On affiche λ AVEC et SANS penalties, parce que
    les penalties gonflent fortement le taux de certains joueurs (Kane : 10 buts sur 36). */
 var _G45_BUT=[
-  {n:'Harry Kane',      lg:'ger.1', team:/bayern/i,          who:/kane/i},
-  {n:'Kylian Mbappé',   lg:'esp.1', team:/real madrid/i,     who:/mbapp/i},
-  {n:'Erling Haaland',  lg:'eng.1', team:/manchester city/i, who:/haaland/i},
-  {n:'Luis Suárez',     lg:'por.1', team:/sporting/i,        who:/su[aá]rez/i},
-  {n:'Ayase Ueda',      lg:'ned.1', team:/feyenoord/i,       who:/ueda/i},
-  {n:'Paul Onuachu',    lg:'tur.1', team:/trabzon/i,         who:/onuachu/i}
+  {n:'Harry Kane',      lg:'ger.1', team:/bayern/i,          who:/kane/i,       club:'Bayern Munich'},
+  {n:'Kylian Mbappé',   lg:'esp.1', team:/real madrid/i,     who:/mbapp/i,      club:'Real Madrid'},
+  {n:'Erling Haaland',  lg:'eng.1', team:/manchester city/i, who:/haaland/i,    club:'Manchester City'},
+  {n:'Luis Suárez',     lg:'por.1', team:/sporting/i,        who:/su[aá]rez/i,  club:'Sporting CP'},
+  {n:'Ayase Ueda',      lg:'ned.1', team:/feyenoord/i,       who:/ueda/i,       club:'Feyenoord'},
+  {n:'Paul Onuachu',    lg:'tur.1', team:/trabzon/i,         who:/onuachu/i,    club:'Trabzonspor'}
 ];
 async function _g45ButId(p){
   var ck='g45but_id_'+p.lg+'_'+p.n;
   try{ var c=JSON.parse(localStorage.getItem(ck)||'null'); if(c&&c.aid) return c; }catch(e){}
-  var tj=await _g45TrEspn('/apis/site/v2/sports/soccer/'+p.lg+'/teams');
-  var lst=((((tj.sports||[])[0]||{}).leagues||[])[0]||{}).teams||[];
+  /* 20261015q — SONDÉ PAR ANTOINE (15/10) : …/soccer/<lg>/teams (liste des équipes) = 403 via le worker ET sans CORS en
+     direct ; …/teams/<id>/roster, scoreboard et core = 200. Liste refusée → équipes lues dans le classement de la ligue
+     (_espnLoadLeagueTeams, CORS OK). Avant : Kane, Mbappé, Suárez « données indisponibles » dans Marqueurs. */
+  var lst=[];
+  try{ var tj=await _g45TrEspn('/apis/site/v2/sports/soccer/'+p.lg+'/teams'); lst=((((tj.sports||[])[0]||{}).leagues||[])[0]||{}).teams||[]; }catch(e){}
   var cands=[];
   lst.forEach(function(x){ var t=x.team||x; if(t&&p.team.test(t.displayName||'')) cands.push(t); });
+  if(!cands.length){
+    try{ (await _espnLoadLeagueTeams(p.lg)||[]).forEach(function(t){ if(t&&t.id&&p.team.test((t.displayName||'')+' '+(t.name||''))) cands.push(t); }); }catch(e){}
+  }
   if(!cands.length) return null;
   var tm=null, pl=null;
   for(var ci=0; ci<cands.length && !pl; ci++){
@@ -29761,7 +29767,9 @@ async function g45ButeursView(){
     /* Le mur prime : un joueur qu'il y a ajouté remplace son homonyme de la liste figée. */
     var mur=_g45ButMur(), vus={};
     mur.forEach(function(x){ vus[_g45ClvNz(x.n)]=1; });
-    var liste=mur.concat(_G45_BUT.filter(function(x){ return !vus[_g45ClvNz(x.n)]; }));
+    /* 20261015q (capture : Mbappé deux fois) : le mur écrit « MBAPPE KYLIAN », la liste « Kylian Mbappé » → aussi écarté
+       si son motif who reconnaît un joueur du mur. */
+    var liste=mur.concat(_G45_BUT.filter(function(x){ return !vus[_g45ClvNz(x.n)] && !mur.some(function(m){ return x.who&&x.who.test(m.n); }); }));
     for(var i=0;i<liste.length;i++){
       var pp=liste[i], ii=null, dd=null, an=y;
       pg('⏳ '+(i+1)+'/'+liste.length);

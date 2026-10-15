@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261015p, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261015q, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1346,6 +1346,11 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   g45oa1_ (échec : 30 min) ; ligues `_G45_OA_LIGUES`. Plusieurs comptes/clés pour
   contourner le quota : REFUSÉ (CGU). Scraping de bookmakers /
   Oddsportal / DraftKings via VPN : REFUSÉ (CGU, géoblocage), ne pas reproposer.
+- ESPN …/soccer/<lg>/teams (LISTE des équipes d'une ligue) : SONDÉ PAR ANTOINE le 15/10 = 403 via le worker (host=espn ET espnweb) et sans
+  CORS en direct ; …/teams/<id>/roster (direct et worker), scoreboard (worker), core …/seasons/<an>/teams = 200. → passer par le classement
+  (`_espnLoadLeagueTeams` / `_espnTeamsViaClassement`). 20261015q : Tendances → ⚽ Marqueurs, `_g45ButId` (liste fixe `_G45_BUT` : Kane, Mbappé,
+  Suárez « données indisponibles pour la saison 2026 ») retombe sur le classement ; doublon mur « MBAPPE KYLIAN » / liste « Kylian Mbappé » écarté
+  par le motif who dans `g45ButeursView`. Testé vm (Kane retrouvé avec /teams refusé). Autres appels à …/<lg>/teams dans app.js : NON revus.
 - COTES EN DIRECT ESPN (SONDÉ PAR ANTOINE le 14/10 au soir, LDC, 2 lectures à 2 min d'écart) : scoreboard soccer/<lg>/scoreboard, match state 'in' →
   competitions[0].odds[0] (DraftKings) : moneyline.home|away.{open, close, current}.odds (américaine ; current = EN DIRECT : Real–Roma 3-1 76e « -1100 » →
   78e « -1400 », perdant +3500 → +5000) ; total.over|under.{open, close, current}{line « o4.5 », odds} (la ligne suit le match : o3.5 → o4.5) ;
