@@ -1858,7 +1858,7 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   20261015k (« une fois demandées, elles devraient rester visibles jusqu'au match ») : bloc en fin d'app.js — enveloppe de g45TrRun : liste rangée
   dans IndexedDB (_g45BgIdb, magasin kv, clé 'tr_<sport>') avec signature `_g45TrGardeSig` (jour visé, Aujourd'hui/Demain, groupes, g45tr_lsoff) ;
   enveloppe de loadTendancesTab : sans résultats → reprise si même signature, matchs commencés retirés (`_g45TrGardeFiltre`), une fois par sport
-  et par chargement (↺ Relancer = vraie analyse). Testé Chromium (rechargement). Smoke (43).
+  et par chargement (↺ Relancer = vraie analyse). Testé Chromium (rechargement). Smoke (42).
   Écarts entre Antoine et Cédric (14/10) : réglages par appareil (compétitions, jour, cote / proba mini), heure d'analyse, quota The Odds API (bet45 = 8 crédits / personne / jour).
 RÉGLÉ OU ABANDONNÉ (ne pas reproposer) :
 - APK bet45 sans barre d'adresse : OK. Logos Lakers / hockey : OK. « Connexion » sur le
