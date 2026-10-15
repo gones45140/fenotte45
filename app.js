@@ -59457,6 +59457,15 @@ function _g45MajEquipeJouee(u) {
   var el = document.getElementById('c-equipe');
   if (!el) return;
   var estCompet = !!(u && u.type === 'competition');
+  /* 20261016c (capture : « Équipe jouée » grisée = « Connor McDavid ») : carte JOUEUR → champ libre = CLUB du joueur
+     (note de la carte, ex. « Edmonton Oilers ») ; une valeur déjà mise (ticket, saisie) autre que le nom du joueur est gardée. */
+  if (u && u.type === 'joueur') {
+    el.readOnly = false;
+    el.style.opacity = '1';
+    el.placeholder = 'Club du joueur';
+    if (!el.value || el.value === u.n) el.value = String(u.note || '').trim();
+    return;
+  }
   if (estCompet) {
     el.readOnly = false;
     el.style.opacity = '1';
