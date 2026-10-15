@@ -175,7 +175,7 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   🏒 la photo NHL gardée dans u.logoUrl (nhle.com) en détouré centré. Chicago Blackhawks sans fond : sonde TheSportsDB demandée à Antoine.
   CONFIRMÉ (capture 15/10 23:59) : photos McDavid et Celebrini sur leurs cartes. 20261015w : rond de droite (logo du club) d'un joueur 🏒 :
   _g45JoueurClubLogo cherchait le club en FOOT (g45SdbClub(club,'⚽')) → San Jose Sharks absent ; enveloppe : club NHL reconnu
-  (_g45RegEquipe) → g45LogoUrlDe(note) sinon assets.nhle.com/logos/nhl/svg/<ABR>_light.svg, puis 20261015x (« je les vois à peine ») _dark.svg (adresse NON vérifiée). Chicago : sonde demain sur PC.
+  (_g45RegEquipe) → g45LogoUrlDe(note) sinon assets.nhle.com/logos/nhl/svg/<ABR>_light.svg, puis 20261015x (« je les vois à peine ») _dark.svg — CONFIRMÉ (capture 16/10 00:12 : Oilers, Sharks, Lightning, Bruins visibles). Lamine Yamal (foot, note « FC Barcelone ») sans photo ni logo : note à écrire « Barcelona », sinon sonde g45VisuelJoueur demain. Chicago : sonde demain sur PC.
 - Temps réglementaire : `g45ScoreTR`, `G45_TR_PERIODES`.
   20261005j (capture : Edmonton 1-2 Colorado « Après TAB » compté en victoire, mode TR actif) : match aux TIRS AU BUT sans période > 3
   chez ESPN → le garde-fou renonçait. Hockey : 3 périodes présentes, égalité, final à 1 but d'écart = prolongation/TAB → score TR
