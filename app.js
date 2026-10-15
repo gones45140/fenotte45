@@ -74456,3 +74456,99 @@ var _G45_BK_DOM = [
     return orig(k, sz);
   };
 })();
+
+/* ═══ 📒 TENDANCES OFFICIELLES (20261015i, maquette validée, « oui go solution 2 à 10 h ») ═══
+   « Si je veux publier les bilans tendances sur X il faut que tout le monde ait la même » : chaque appareil n'a que SA fiabilité
+   (g45suivtend1). Un robot GitHub (.github/workflows/tendances.yml + .github/scripts/tendances.mjs) lance chaque jour à 10 h (Paris)
+   l'analyse avec les réglages OFFICIELS (cote mini 1,50, proba mini 50 %), note les tendances AFFICHÉES avant les matchs et juge celles
+   dont le match est fini → données/tendances_officielles.json (gones45, daté par GitHub). Lu ici sur raw.githubusercontent.com (dans la
+   CSP de index.html ET indexfenotte.html), mémoire 10 min. Bloc posé sous la Fiabilité (enveloppe de _g45TrFiabHtml), le même dans
+   chaque onglet. Deux compteurs : ✅ Réussite = TOUTES les tendances jugées ; 💶 Gain à 1 € = seulement celles qui avaient une cote (on
+   n'invente jamais de cote). Filtres Toutes / D'accord / Désaccord (x.d). Entrée : {id, sl, t, h, a, m, k, p, c, f, d, r (1/0/-1/null), s}. */
+(function () {
+  var URL_OFF = 'https://raw.githubusercontent.com/gones45140/gones45/main/donn%C3%A9es/tendances_officielles.json';
+  var O = window._g45TrOff = { j: null, t: 0, enCours: false, f: 'tout', tout: false };
+  var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+  var eur = function (v) { return (v >= 0 ? '+' : '−') + Math.abs(v).toFixed(2).replace('.', ',') + ' €'; };
+  var spIco = function (sl) { return { nhl: '🏒', nba: '🏀', nfl: '🏈' }[sl] || '⚽'; };
+  var jourTxt = function (t) { try { return new Date(t).toLocaleDateString('fr-FR', { weekday: 'short', day: '2-digit', month: '2-digit' }); } catch (e) { return ''; } };
+
+  function charger() {
+    if (O.enCours || (O.j && Date.now() - O.t < 600000)) return;
+    O.enCours = true;
+    fetch(URL_OFF + '?t=' + Math.floor(Date.now() / 600000), { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) { O.j = j || { t: [] }; O.t = Date.now(); })
+      .catch(function () { O.j = O.j || { t: [], ko: 1 }; O.t = Date.now(); })
+      .then(function () { O.enCours = false; var b = document.getElementById('g45tr-off'); if (b) b.outerHTML = window._g45TrOffHtml(); });
+  }
+
+  window.g45TrOffF = function (f) { O.f = f; O.tout = false; var b = document.getElementById('g45tr-off'); if (b) b.outerHTML = window._g45TrOffHtml(); };
+  window.g45TrOffTout = function () { O.tout = !O.tout; var b = document.getElementById('g45tr-off'); if (b) b.outerHTML = window._g45TrOffHtml(); };
+
+  /* Calcul pur (testé par smoke.js) : réussite sur toutes, gain à 1 € sur celles qui ont une cote. */
+  window._g45TrOffCalc = function (liste) {
+    var jug = liste.filter(function (x) { return x.r === 0 || x.r === 1; }).sort(function (a, b) { return a.t - b.t; });
+    var ok = jug.filter(function (x) { return x.r === 1; }).length;
+    var avecC = jug.filter(function (x) { return x.c > 1; }), g = 0, courbe = [0];
+    avecC.forEach(function (x) { g += x.r === 1 ? x.c - 1 : -1; courbe.push(Math.round(g * 100) / 100); });
+    return { n: jug.length, ok: ok, nc: avecC.length, gain: Math.round(g * 100) / 100, roi: avecC.length ? g / avecC.length : 0, courbe: courbe, jug: jug };
+  };
+
+  function courbeSvg(pts) {
+    if (pts.length < 2) return '<div style="font-size:13px;color:#c9d3ee;margin:6px 0;">La courbe apparaît après le 1er pari avec cote jugé.</div>';
+    var W = 340, H = 140, mx = Math.max.apply(null, pts.concat([0.5])), mn = Math.min.apply(null, pts.concat([-0.5]));
+    var X = function (i) { return 10 + i * (W - 20) / (pts.length - 1); }, Y = function (v) { return 10 + (mx - v) * (H - 20) / (mx - mn); };
+    var d = pts.map(function (v, i) { return (i ? 'L' : 'M') + X(i).toFixed(1) + ',' + Y(v).toFixed(1); }).join(' ');
+    var col = pts[pts.length - 1] >= 0 ? '#1ed760' : '#ff6b6b';
+    return '<svg width="100%" viewBox="0 0 ' + W + ' ' + H + '" style="background:rgba(0,0,0,.3);border-radius:8px;display:block;">'
+      + '<line x1="10" x2="' + (W - 10) + '" y1="' + Y(0).toFixed(1) + '" y2="' + Y(0).toFixed(1) + '" stroke="#ffffff55" stroke-dasharray="4 4"/>'
+      + '<path d="' + d + ' L' + X(pts.length - 1).toFixed(1) + ',' + Y(0).toFixed(1) + ' L' + X(0).toFixed(1) + ',' + Y(0).toFixed(1) + ' Z" fill="' + col + '22"/>'
+      + '<path d="' + d + '" fill="none" stroke="' + col + '" stroke-width="3" stroke-linejoin="round"/>'
+      + '<text x="12" y="' + (Y(0) - 4).toFixed(1) + '" fill="#c9d3ee" font-size="11">0 €</text></svg>';
+  }
+
+  window._g45TrOffHtml = function () {
+    charger();
+    var J = O.j, box = function (h) { return '<div id="g45tr-off" style="background:rgba(11,16,29,.86);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px 14px;margin-bottom:12px;color:#fff;">' + h + '</div>'; };
+    var tete = '<span style="display:inline-block;background:#f0c828;color:#111;font-size:11px;font-weight:800;border-radius:5px;padding:2px 6px;">OFFICIEL · identique pour tous</span>'
+      + '<div style="font-size:17px;font-weight:800;margin-top:6px;">📒 Historique des Tendances</div>'
+      + '<div style="font-size:13px;color:#c9d3ee;">Notées AVANT le match, chaque jour à 10 h · cote mini 1,50 · proba mini 50 %</div>';
+    if (!J) return box(tete + '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">⏳ Chargement…</div>');
+    var tous = (J.t || []).filter(function (x) { return x.r !== -1; });
+    var L = tous.filter(function (x) { return O.f === 'acc' ? !x.d : (O.f === 'des' ? x.d : true); });
+    var C = window._g45TrOffCalc(L), att = L.filter(function (x) { return x.r == null; }).length;
+    var chip = function (k, t) { var on = O.f === k; return '<button onclick="g45TrOffF(\'' + k + '\')" style="flex:1;padding:8px 0;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;border:1px solid ' + (on ? '#3b82f6' : 'rgba(255,255,255,.18)') + ';background:' + (on ? '#2563eb' : 'transparent') + ';color:' + (on ? '#fff' : '#c9d3ee') + ';">' + t + '</button>'; };
+    var h = tete + '<div style="display:flex;gap:6px;margin:10px 0;">' + chip('tout', 'Toutes') + chip('acc', '✅ D\'accord') + chip('des', '⚠️ Désaccord') + '</div>';
+    if (!tous.length) return box(h + '<div style="font-size:14px;color:#c9d3ee;line-height:1.5;">' + (J.ko ? 'Historique indisponible pour le moment.' : 'Le robot démarre : les premières tendances seront notées à 10 h, les résultats arrivent le lendemain.') + '</div>');
+    var pct = C.n ? Math.round(C.ok / C.n * 100) : 0, cg = C.gain >= 0 ? '#1ed760' : '#ff6b6b';
+    var tuile = function (t, v, col, s) { return '<div style="flex:1;background:rgba(0,0,0,.4);border-radius:10px;padding:10px;text-align:center;"><div style="font-size:13px;font-weight:700;color:#c9d3ee;">' + t + '</div><div style="font-size:24px;font-weight:800;margin:4px 0;color:' + col + ';">' + v + '</div><div style="font-size:12px;color:#c9d3ee;">' + s + '</div></div>'; };
+    h += '<div style="display:flex;gap:8px;margin:8px 0;">'
+      + tuile('✅ Réussite', C.n ? C.ok + ' / ' + C.n : '—', '#1ed760', C.n ? pct + ' % · toutes les tendances' : 'aucune jugée')
+      + tuile('💶 Gain à 1 €', C.nc ? eur(C.gain) : '—', cg, C.nc ? C.nc + ' paris avec cote · ROI ' + (C.roi >= 0 ? '+' : '') + Math.round(C.roi * 100) + ' %' : 'aucun pari avec cote jugé')
+      + '</div>';
+    if (att) h += '<div style="font-size:13px;color:#c9d3ee;margin-bottom:6px;">⏳ ' + att + ' en attente du résultat</div>';
+    h += '<div style="font-size:13px;color:#c9d3ee;margin:8px 0 4px;">💶 Courbe du gain (paris avec cote seulement)</div>' + courbeSvg(C.courbe);
+    var liste = L.slice().sort(function (a, b) { return b.t - a.t; }), vis = O.tout ? liste : liste.slice(0, 5);
+    h += '<div style="margin-top:10px;">' + vis.map(function (x) {
+      var ok = x.r === 1, ko = x.r === 0;
+      var cote = x.c > 1 ? '<div style="width:62px;text-align:center;font-size:15px;font-weight:800;color:#f0c828;">@' + x.c.toFixed(2).replace('.', ',') + '</div>'
+        : '<div style="width:62px;text-align:center;color:#8b95ad;font-size:15px;line-height:1.1;">—<br><span style="font-size:11px;font-weight:600;">pas de cote</span></div>';
+      var g = x.r == null ? '<span style="color:#c9d3ee;">⏳</span>' : ((ok ? '✅' : '❌') + '<br><b style="color:' + (x.c > 1 ? (ok ? '#1ed760' : '#ff6b6b') : '#8b95ad') + ';">' + (x.c > 1 ? eur(ok ? x.c - 1 : -1) : '—') + '</b>');
+      return '<div style="display:flex;align-items:center;gap:8px;padding:9px 0;border-top:1px solid rgba(255,255,255,.08);">'
+        + '<div style="width:50px;font-size:12px;color:#c9d3ee;">' + esc(jourTxt(x.t)) + '</div>'
+        + '<div style="flex:1;min-width:0;"><div style="font-size:14px;font-weight:700;">' + spIco(x.sl) + ' ' + esc(x.h) + ' – ' + esc(x.a) + (x.s ? ' <span style="color:#c9d3ee;font-weight:600;">' + esc(x.s) + '</span>' : '') + '</div>'
+        + '<div style="font-size:13px;color:#9fd0ff;">' + esc(x.m) + (x.d ? ' ⚠️' : '') + '</div></div>'
+        + cote + '<div style="width:58px;text-align:right;font-size:13px;">' + g + '</div></div>';
+    }).join('') + '</div>';
+    if (liste.length > 5) h += '<div style="text-align:center;margin-top:8px;"><button onclick="g45TrOffTout()" style="padding:8px 14px;border:1px solid rgba(255,255,255,.25);border-radius:8px;font-size:13px;background:transparent;color:#fff;cursor:pointer;">' + (O.tout ? 'Réduire' : 'Voir les ' + (liste.length - 5) + ' autres ›') + '</button></div>';
+    h += '<div style="margin-top:10px;font-size:12px;color:#c9d3ee;">Statistiques, pas des pronos sûrs. 🔞 Jouer comporte des risques : 09 74 75 13 13.</div>';
+    return box(h);
+  };
+
+  var _fiab = _g45TrFiabHtml;
+  _g45TrFiabHtml = window._g45TrFiabHtml = function () {
+    var a = ''; try { a = _fiab.apply(this, arguments) || ''; } catch (e) {}
+    var b = ''; try { b = window._g45TrOffHtml(); } catch (e) {}
+    return a + b;
+  };
+})();

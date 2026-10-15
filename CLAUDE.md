@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261015h, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261015i, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1842,6 +1842,17 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   🏦 Bookmakers (m.fair sinon m.accord, jaune ; absent → « — pas de cote » gris) ; bloc « en désaccord » : card(x,false,true), ses cases d'origine gardées. Smoke (30).
   20261014n (« cote à vérifier · 51 % estimée en haut à droite, on peut l'enlever ? », maquette « Oui ») : coin haut droit des cartes = « @x COTE MARCHÉ »
   (+ espérance + heure) si cote, sinon l'HEURE seule en pastille 13 px ; le % reste dans la case 📊 Stats. Smoke (trCases).
+  20261015i (« publier les bilans tendances sur X : il faut que tout le monde ait la même », maquette validée, « oui go solution 2 à 10 h ») —
+  📒 TENDANCES OFFICIELLES : robot GitHub Actions .github/workflows/tendances.yml (crons 8 h ET 9 h UTC = 10 h Paris été / hiver ; le script ne
+  travaille qu'à partir de 10 h et une fois par jour, « Run workflow » = FORCE) → .github/scripts/tendances.mjs : ouvre le VRAI site gones dans
+  Chromium (Playwright), réglages officiels cote mini 1,50 / proba mini 50 % / aujourd'hui / groupes par défaut, onglets foot, hockey, nba, nfl ;
+  prend EXACTEMENT les tendances affichées (enveloppe de _g45TrSuivNoter), match pas encore commencé, une fois par (id, type) ; juge les matchs finis
+  (scoreboard du jour + veille, _g45TrSuivJuge de la page) ; ESPN servi par CURL (Akamai refuse un navigateur sur IP de datacenter, cf. relay.mjs) ;
+  écrit données/tendances_officielles.json {maj, dernier, reglages, t:[{id, sl, t, h, a, m, k, p, c, f, d, r, s, n}]} (données/ exclu de pages.yml).
+  Testé ici avec faux ESPN (FAUX_ESPN / FAUX_INIT / SITE / CHROMIUM : variables d'essai). ACCÈS ESPN DEPUIS GITHUB NON vérifié par un vrai passage.
+  App (bloc en fin d'app.js) : enveloppe de _g45TrFiabHtml → `_g45TrOffHtml` (OFFICIEL, filtres Toutes / D'accord / Désaccord `g45TrOffF`, ✅ Réussite
+  = toutes les jugées, 💶 Gain à 1 € = seulement avec cote (`_g45TrOffCalc`), courbe SVG, liste 5 + `g45TrOffTout`), lu sur raw.githubusercontent.com
+  (mémoire 10 min). Smoke (40).
   Écarts entre Antoine et Cédric (14/10) : réglages par appareil (compétitions, jour, cote / proba mini), heure d'analyse, quota The Odds API (bet45 = 8 crédits / personne / jour).
 RÉGLÉ OU ABANDONNÉ (ne pas reproposer) :
 - APK bet45 sans barre d'adresse : OK. Logos Lakers / hockey : OK. « Connexion » sur le
