@@ -71108,6 +71108,16 @@ function _g45TicketRemplirCockpit(o) {
   }
   met('c-target', o.adversaire);
   met('c-joueur', o.joueur);
+  /* 20261016c (« Équipe jouée Edmonton non ? ») : carte JOUEUR choisie → « Équipe jouée » (#c-equipe) = club du joueur
+     (équipe lue sur le ticket, sinon la note de la carte, ex. « Edmonton Oilers »). */
+  if (choisi && cj && cj.indexOf(choisi) >= 0) {
+    try {
+      var uJ = (state.u || []).filter(function (x) { return x && x.n === choisi.value; })[0] || {};
+      var club = String(o.equipe || '').trim() || String(uJ.note || '').trim();
+      if (nz(club) && nz(club) === nz(o.joueur)) club = String(uJ.note || '').trim();
+      met('c-equipe', club);
+    } catch (x) {}
+  }
   if (/^\d{4}-\d{2}-\d{2}$/.test(String(o.date || ''))) met('c-date', o.date);
   if (/^\d{1,2}:\d{2}$/.test(String(o.heure || ''))) met('c-heure', String(o.heure).padStart(5, '0'));
   met('c-comp', o.competition);
