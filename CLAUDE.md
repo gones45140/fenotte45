@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261015q, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261015r, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1351,6 +1351,12 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   (`_espnLoadLeagueTeams` / `_espnTeamsViaClassement`). 20261015q : Tendances → ⚽ Marqueurs, `_g45ButId` (liste fixe `_G45_BUT` : Kane, Mbappé,
   Suárez « données indisponibles pour la saison 2026 ») retombe sur le classement ; doublon mur « MBAPPE KYLIAN » / liste « Kylian Mbappé » écarté
   par le motif who dans `g45ButeursView`. Testé vm (Kane retrouvé avec /teams refusé). Autres appels à …/<lg>/teams dans app.js : NON revus.
+  20261015r (maquette validée « oui ») — LIFTING Marqueurs (cartes : nom 18 px, « chance de marquer » en grand à droite, 4 cases buts /
+  matchs / buts par match / tirs cadrés, reste sur une ligne 14 px, « Ta cote : » 15 px ; boutons 13 px blancs) et CLV (Tendances → 📏 CLV,
+  `g45ClvView` : barre verte = victoire seule / jaune = combiné, logo de l'équipe suivie (S.hl / S.al, S.moi), textes 13-17 px) +
+  CACHE du relevé `_g45ClvReleve(onStep, force)` : match relu seulement si son relevé a plus de 24 h (> 48 h avant), 6 h (6-48 h), 1 h
+  (< 6 h) (`_g45ClvIntervalle`) ; passage complet sauté < 30 min (g45clv_der) ; crédits comptés (`_g45ClvOddsFrais`, 2 par ligue relue),
+  window._g45ClvStat ; bandeau « 📦 Cotes gardées · relevé il y a … · N crédits » + « 🔄 Relever maintenant » (`g45ClvForcer`). Smoke (45).
 - COTES EN DIRECT ESPN (SONDÉ PAR ANTOINE le 14/10 au soir, LDC, 2 lectures à 2 min d'écart) : scoreboard soccer/<lg>/scoreboard, match state 'in' →
   competitions[0].odds[0] (DraftKings) : moneyline.home|away.{open, close, current}.odds (américaine ; current = EN DIRECT : Real–Roma 3-1 76e « -1100 » →
   78e « -1400 », perdant +3500 → +5000) ; total.over|under.{open, close, current}{line « o4.5 », odds} (la ligne suit le match : o3.5 → o4.5) ;

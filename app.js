@@ -29733,7 +29733,7 @@ async function g45ButeursView(){
   var UCL='uefa.champions';
   var L={}; try{ L=JSON.parse(localStorage.getItem('g45but_lg')||'null')||{}; }catch(e){}
   if(!Object.keys(L).length) L={'fra.1':1,'eng.1':1,'esp.1':1,'ita.1':1,'ger.1':1};
-  var chip=function(lbl,on,fn){ return '<button onclick="'+fn+'" style="border:none;cursor:pointer;border-radius:7px;padding:5px 10px;font-size:9.5px;font-weight:800;background:'+(on?'#f0c828':'rgba(255,255,255,.06)')+';color:'+(on?'#221b00':'var(--t2)')+';">'+lbl+'</button>'; };
+  var chip=function(lbl,on,fn){ return '<button onclick="'+fn+'" style="border:none;cursor:pointer;border-radius:7px;padding:7px 12px;font-size:13px;font-weight:800;background:'+(on?'#f0c828':'rgba(10,14,26,.85)')+';color:'+(on?'#221b00':'#fff')+';">'+lbl+'</button>'; };
   var head='<button onclick="loadTendancesTab()" style="border:none;cursor:pointer;background:rgba(255,255,255,.06);border-radius:8px;color:var(--t2);padding:7px 12px;font-size:11px;font-weight:700;margin-bottom:10px;">← Tendances</button>'
     +'<div class="sec" style="margin-top:0;">⚽ Marqueurs</div>'
     /* REGROUPEMENT (20/08) : la meme question — quelle probabilite qu'un
@@ -29813,7 +29813,7 @@ async function g45ButeursView(){
   for(var i2=0;i2<items.length;i2++){
     var p=items[i2].p, id=items[i2].id, d=items[i2].d, an=(items[i2].an||y), lgc=(items[i2].lgc||'');
     if(!id||!d){
-      h+='<div style="background:rgba(12,16,28,.96);border:1px solid rgba(255,255,255,.08);border-radius:9px;padding:10px;margin-bottom:8px;font-size:10px;color:var(--t3);">'+_g45CyEa(p.n)+((p.mur)?' — introuvable. Ajoute son club au mur, ou saisis-le dans la note de l\'entrée.':(comp==='ucl'?' — n\'a pas disputé la Ligue des Champions en '+an+'/'+(an+1)+'.':' — données indisponibles pour la saison '+an+'.'))+'</div>';
+      h+='<div style="background:rgba(12,16,28,.96);border:1px solid rgba(255,255,255,.08);border-radius:9px;padding:10px;margin-bottom:8px;font-size:14px;color:#c9d3ee;">'+_g45CyEa(p.n)+((p.mur)?' — introuvable. Ajoute son club au mur, ou saisis-le dans la note de l\'entrée.':(comp==='ucl'?' — n\'a pas disputé la Ligue des Champions en '+an+'/'+(an+1)+'.':' — données indisponibles pour la saison '+an+'.'))+'</div>';
       continue;
     }
     var gpm=d.g/d.app, npg=(d.g-d.pg)/d.app;
@@ -29822,7 +29822,9 @@ async function g45ButeursView(){
     var cote=cotes[id.aid]||'', imp=cote?(1/cote):0;
     var gap=imp?(pAnyN-imp):null;
     var col=(gap!=null&&gap>=0.05)?'#2ecc71':(gap!=null&&gap<=-0.05)?'#ff6b6b':'#8aa0ff';
-    var cell=function(v,l,c){ return '<div style="flex:1;min-width:66px;text-align:center;background:rgba(0,0,0,.45);border-radius:7px;padding:6px 4px;"><div style="font-size:13px;font-weight:800;color:'+(c||'var(--t1)')+';">'+v+'</div><div style="font-size:7.5px;color:var(--t3);margin-top:1px;">'+l+'</div></div>'; };
+    /* 20261015r — LIFTING (maquette validée « oui ») : 4 cases (au lieu de 7) en 20 px / 13 px, chance de marquer en grand
+       à droite du nom, le reste (penalty, tête, conversion, titulaire) sur une ligne blanche 14 px. */
+    var cell=function(v,l,c){ return '<div style="flex:1;min-width:120px;text-align:center;background:rgba(10,14,26,.82);border-radius:9px;padding:8px 4px;"><div style="font-size:20px;font-weight:800;color:'+(c||'#fff')+';">'+v+'</div><div style="font-size:13px;color:#c9d3ee;margin-top:1px;">'+l+'</div></div>'; };
     /* `data-tid` permet de colorer la fiche APRES coup, sans bloquer le rendu :
        la couleur du club demande une requete, mise en cache definitivement.
        Le bord gauche garde la couleur de l'ECART a la cote tant que le club
@@ -29836,34 +29838,35 @@ async function g45ButeursView(){
            se noyait. Il passe a 15px avec une ombre portee — le fond image
            l'exige — et le club devient une ligne de capitales espacees. */
         +'<div style="flex:1;min-width:0;">'
-        +'<div style="font-size:15px;font-weight:900;color:#fff;letter-spacing:-.3px;line-height:1.15;text-shadow:0 1px 3px rgba(0,0,0,.85);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+_g45CyEa(id.pname)+'</div>'
-        +'<div style="font-size:8.5px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:rgba(255,255,255,.62);text-shadow:0 1px 2px rgba(0,0,0,.7);margin-top:1px;"><span class="g45-club">'+_g45CyEa(id.tname||'')+'</span> · '+an+'/'+(an+1)+'</div></div>'
+        +'<div style="font-size:18px;font-weight:900;color:#fff;letter-spacing:-.3px;line-height:1.15;text-shadow:0 1px 3px rgba(0,0,0,.85);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+_g45CyEa(id.pname)+'</div>'
+        +'<div style="font-size:14px;font-weight:700;color:#fff;background:rgba(0,0,0,.5);display:inline-block;border-radius:5px;padding:1px 7px;margin-top:3px;"><span class="g45-club">'+_g45CyEa(id.tname||'')+'</span> · '+an+'-'+String(an+1).slice(2)+'</div></div>'
+        +'<div style="flex:none;text-align:center;background:rgba(10,14,26,.85);border:1px solid rgba(46,204,113,.35);border-radius:10px;padding:5px 12px;"><div style="font-size:26px;font-weight:900;color:#2ecc71;line-height:1.1;">'+Math.round(pAnyN*100)+' %</div><div style="font-size:13px;color:#c9d3ee;">chance de marquer</div></div>'
       +'</div>'
-      +'<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:7px;">'
-        +cell(d.g,'buts','#f0c828')+cell(d.app,'matchs')+cell(gpm.toFixed(2),'buts/match','#f0c828')
-        +cell(npg.toFixed(2),'hors penalty','#2ecc71')+cell(sotpm.toFixed(1),'tirs cadrés/m')
-        +cell(Math.round(conv*100)+'%','conversion')+cell(Math.round(stpc*100)+'%','titulaire')
+      +'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">'
+        +cell(d.g,'buts','#f5c542')+cell(d.app,'matchs')+cell(gpm.toFixed(2).replace('.',','),'buts / match','#2ecc71')
+        +cell(sotpm.toFixed(1).replace('.',','),'tirs cadrés / m')
       +'</div>'
       /* Un « avertissement » pour annoncer ZERO penalty n'avait aucun sens : on
          ne signale les penalties que s'il y en a, et le symbole d'alerte n'est
          garde que s'ils pesent lourd dans le total. */
-      +'<div style="font-size:9.5px;color:rgba(255,255,255,.68);line-height:1.7;margin-bottom:7px;text-shadow:0 1px 2px rgba(0,0,0,.6);">'
+      +'<div style="font-size:14px;color:#fff;line-height:1.6;margin-bottom:8px;background:rgba(0,0,0,.45);border-radius:7px;padding:4px 9px;">'
         +(d.pg
            ? ((100*d.pg/d.g >= 30 ? '⚠️ ' : '')+'<b>'+d.pg+'</b> but'+(d.pg>1?'s':'')+' sur penalty ('+Math.round(100*d.pg/d.g)+'%)')
            : '<b>Aucun</b> but sur penalty')
         +(d.head?(' · '+d.head+' de la tête'):'')+(d.fk?(' · '+d.fk+' sur coup franc'):'')
         +' · '+Math.round(d.min/(d.app||1))+' min par match'
+        +' · conversion '+Math.round(conv*100)+'&nbsp;% · titulaire '+Math.round(stpc*100)+'&nbsp;%'
       +'</div>'
       /* PASTILLES PAR MATCH (20/08) : une moyenne ne dit pas la meme chose qu'une
          serie. Le conteneur est vide au rendu et rempli ensuite — le journal de
          matchs demande une requete, et on ne bloque pas l'affichage de la fiche
          pour ca. */
       +'<div id="g45-past-'+id.aid+'" data-saison="'+an+'" data-lg="'+lgc+'" style="margin-bottom:7px;min-height:24px;"></div>'
-      +'<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;background:rgba(0,0,0,.18);border-radius:8px;padding:7px 9px;">'
-        +'<div style="flex:1;min-width:130px;"><div style="font-size:8px;color:var(--t3);">Probabilité de marquer (Poisson)</div>'
-        +'<div style="font-size:11px;font-weight:800;color:var(--t1);">'+Math.round(pAny*100)+'% <span style="font-size:9px;color:var(--t3);font-weight:600;">tout compris</span> · <span style="color:#2ecc71;">'+Math.round(pAnyN*100)+'%</span> <span style="font-size:9px;color:var(--t3);font-weight:600;">hors penalty</span></div></div>'
-        +'<input type="text" inputmode="decimal" value="'+_g45CyEa(cote)+'" placeholder="cote" onchange="_g45ButCote(\''+id.aid+'\',this.value)" style="flex:none;width:56px;text-align:center;background:rgba(8,10,16,.85);color:var(--t1);border:1px solid rgba(255,255,255,.14);border-radius:6px;padding:5px 3px;font-size:11px;font-weight:700;">'
-        +(cote?('<div style="flex:none;text-align:right;min-width:74px;"><div style="font-size:11px;font-weight:800;color:'+col+';">'+(gap>=0?'+':'')+Math.round(gap*100)+' pts</div><div style="font-size:7.5px;color:var(--t3);">book '+Math.round(imp*100)+'%</div></div>'):'')
+      +'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:rgba(10,14,26,.82);border-radius:9px;padding:8px 10px;">'
+        +'<div style="flex:1;min-width:150px;font-size:14px;color:#fff;">Hors penalty <b style="color:#2ecc71;">'+Math.round(pAnyN*100)+' %</b> · tout compris <b>'+Math.round(pAny*100)+' %</b></div>'
+        +'<span style="flex:none;font-size:14px;color:#fff;">Ta cote :</span>'
+        +'<input type="text" inputmode="decimal" value="'+_g45CyEa(cote)+'" placeholder="entrer" onchange="_g45ButCote(\''+id.aid+'\',this.value)" style="flex:none;width:76px;text-align:center;background:#1b2a4a;color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:8px;padding:6px 4px;font-size:15px;font-weight:700;">'
+        +(cote?('<div style="flex:none;text-align:right;min-width:90px;"><div style="font-size:16px;font-weight:800;color:'+col+';">'+(gap>=0?'+':'')+Math.round(gap*100)+' pts</div><div style="font-size:13px;color:#c9d3ee;">book '+Math.round(imp*100)+' %</div></div>'):'')
       +'</div></div>';
   }
   var bandeau = anyPrev ? ('<div style="background:rgba(138,160,255,.12);border:1px solid rgba(138,160,255,.28);border-radius:8px;padding:7px 10px;margin-bottom:9px;font-size:9px;color:#8aa0ff;line-height:1.5;">\uD83D\uDCDA Saison '+y+'/'+(y+1)+' pas encore commencée : les chiffres viennent de l\'\u00e9dition pr\u00e9c\u00e9dente.</div>') : '';
@@ -30215,8 +30218,26 @@ function _g45ClvSaveSnaps(o){ try{ localStorage.setItem('g45clv_snaps', JSON.str
 
 /* Relève les cotes des prochains matchs des équipes suivies. Appelé à l'ouverture de la
    vue : chaque passage écrase le relevé précédent tant que le match n'a pas commencé. */
-async function _g45ClvReleve(onStep){
+/* 20261015r — CACHE (maquette validée « oui ») : un match n'est relu que si son dernier relevé est plus vieux que
+   24 h (match à plus de 48 h), 6 h (entre 6 h et 48 h), 1 h (moins de 6 h) ; sinon aucun appel à The Odds API.
+   Relevé complet (scoreboards ESPN compris) sauté s'il date de moins de 30 min. force = bouton « 🔄 Relever
+   maintenant ». window._g45ClvStat = {garde, lus, credits, saut}. */
+function _g45ClvIntervalle(avant){ return avant>48*3600000 ? 24*3600000 : (avant>6*3600000 ? 6*3600000 : 3600000); }
+function _g45ClvOddsFrais(sl){
+  try{
+    var key=_G45_TR_ODDSKEY[sl]; if(!key) return true;          /* pas de clé = pas d'appel, pas de crédit */
+    var ck=key+'|h2h,totals', c=_g45TrOddsCache[ck];
+    if(c&&(Date.now()-c.t)<3*3600000) return true;
+    var o=JSON.parse(localStorage.getItem('g45trOdds2_'+ck)||'null');
+    return !!(o&&(Date.now()-o.t)<3*3600000);
+  }catch(e){ return false; }
+}
+async function _g45ClvReleve(onStep, force){
   var cfg=_g45ClvCfg(), S=_g45ClvSnaps(), now=Date.now(), n=0;
+  var ST=window._g45ClvStat={garde:0, lus:0, credits:0, saut:0};
+  var der=0; try{ der=+localStorage.getItem('g45clv_der')||0; }catch(e){}
+  if(!force&&der&&(now-der)<30*60000){ ST.saut=1; return 0; }
+  var payees={};
   var f=function(d){ return d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0'); };
   var plage=f(new Date())+'-'+f(new Date(now+21*86400000));
   for(var i=0;i<cfg.length;i++){
@@ -30241,8 +30262,12 @@ async function _g45ClvReleve(onStep){
     var an=(aw&&aw.team&&(aw.team.displayName||aw.team.shortDisplayName))||'?';
     var ko=Date.parse(e.date);
     if(isNaN(ko)||ko<now-3*3600000) continue;
+    var _pr=S['ev'+e.id];
+    if(!force&&_pr&&_pr.ts&&(now-_pr.ts)<_g45ClvIntervalle(ko-now)){ ST.garde++; continue; }
     /* cotes du marché */
     var liste=null;
+    if(!payees[c.sl]&&!_g45ClvOddsFrais(c.sl)){ ST.credits+=2; }   /* h2h + totals = 2 crédits, une fois par ligue */
+    payees[c.sl]=1;
     try{ liste=await _g45TrOddsApi(c.sl); }catch(err){}
     var oaEv=liste?_g45TrFindEv(liste, hn, an):null;
     if(!oaEv) continue;
@@ -30252,11 +30277,14 @@ async function _g45ClvReleve(onStep){
     if(!(o1>1)&&!(oT>1)) continue;
     var k='ev'+e.id;
     var prec=S[k]||{};
+    var _lg=function(x){ return (x&&x.team&&(x.team.logo||(x.team.logos&&x.team.logos[0]&&x.team.logos[0].href)))||''; };
     S[k]={id:e.id, eq:c.n, sl:c.sl, hn:hn, an:an, ko:ko, side:c.side, line:c.line,
-          o1:o1||prec.o1||0, oT:oT||prec.oT||0, ts:now, prem:(prec.prem||now)};
-    n++;
+          o1:o1||prec.o1||0, oT:oT||prec.oT||0, ts:now, prem:(prec.prem||now),
+          moi:(_g45ClvEst(hn, c)?'h':'a'), hl:_lg(ho), al:_lg(aw)};
+    n++; ST.lus++;
   }
   _g45ClvSaveSnaps(S);
+  try{ localStorage.setItem('g45clv_der', String(now)); }catch(e){}
   return n;
 }
 /* Rapproche un relevé d'un pari enregistré : même équipe, même jour */
@@ -30283,19 +30311,20 @@ async function g45ClvView(){
   var cfg=_g45ClvCfg();
   var head='<button onclick="loadTendancesTab()" style="border:none;cursor:pointer;background:rgba(255,255,255,.06);border-radius:8px;color:var(--t2);padding:7px 12px;font-size:11px;font-weight:700;margin-bottom:10px;">← Tendances</button>'
     +'<div class="sec" style="margin-top:0;">📏 CLV — cote de clôture</div>'
-    +'<div style="font-size:9px;color:var(--t3);line-height:1.6;margin-bottom:9px;">Compare la cote que tu as prise à celle du marché juste avant le coup d\'envoi. Au-dessus de 100%, tu bats la clôture. Sur peu de paris, c\'est bien plus fiable que le ROI.</div>'
+    +'<div style="font-size:14px;color:#fff;background:rgba(0,0,0,.5);border-radius:8px;padding:6px 10px;line-height:1.5;margin-bottom:9px;">Compare la cote que tu as prise à celle du marché juste avant le coup d\'envoi. Au-dessus de 100%, tu bats la clôture. Sur peu de paris, c\'est bien plus fiable que le ROI.</div>'
     +'<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:9px;">'
     +cfg.map(function(c,i){
       return '<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,.05);border-radius:8px;padding:4px 7px;">'
-        +'<span style="font-size:10px;font-weight:800;color:var(--t1);">'+_g45CyEa(c.n)+'</span>'
-        +'<button onclick="g45ClvSide('+i+')" style="border:none;cursor:pointer;border-radius:5px;padding:2px 6px;font-size:9px;font-weight:800;background:'+(c.side==='over'?'rgba(46,204,113,.18);color:#2ecc71':'rgba(138,160,255,.18);color:#8aa0ff')+';">'+(c.side==='over'?'Over':'Under')+'</button>'
-        +'<button onclick="g45ClvLine('+i+')" style="border:none;cursor:pointer;border-radius:5px;padding:2px 6px;font-size:9px;font-weight:800;background:rgba(255,255,255,.08);color:var(--t2);">'+c.line+'</button></span>';
+        +'<span style="font-size:14px;font-weight:800;color:#fff;">'+_g45CyEa(c.n)+'</span>'
+        +'<button onclick="g45ClvSide('+i+')" style="border:none;cursor:pointer;border-radius:5px;padding:4px 9px;font-size:13px;font-weight:800;background:'+(c.side==='over'?'rgba(46,204,113,.18);color:#2ecc71':'rgba(138,160,255,.18);color:#8aa0ff')+';">'+(c.side==='over'?'Over':'Under')+'</button>'
+        +'<button onclick="g45ClvLine('+i+')" style="border:none;cursor:pointer;border-radius:5px;padding:4px 9px;font-size:13px;font-weight:800;background:rgba(255,255,255,.08);color:var(--t2);">'+c.line+'</button></span>';
     }).join('')+'</div>';
   el.innerHTML=head+'<div id="g45clv-prog" style="font-size:10px;color:#8aa0ff;text-align:center;padding:10px;">⏳ Relevé des cotes…</div>';
   try{
+    var _force=!!window._g45ClvForce; window._g45ClvForce=0;
     await _g45ClvReleve(function(nom,i,n){
       var b=document.getElementById('g45clv-prog'); if(b) b.innerHTML='⏳ '+_g45CyEa(nom)+' ('+i+'/'+n+')';
-    });
+    }, _force);
   }catch(e){}
 
   var S=_g45ClvSnaps(), now=Date.now();
@@ -30305,27 +30334,44 @@ async function g45ClvView(){
 
   var h='';
   /* ── à venir ── */
-  h+='<div style="font-size:10px;font-weight:800;color:#8aa0ff;margin:6px 0;">🎯 Matchs suivis à venir</div>';
-  if(!futurs.length) h+='<div style="font-size:10px;color:var(--t3);text-align:center;padding:12px;">Aucun match à venir sur les équipes suivies dans les 3 prochaines semaines.</div>';
+  h+='<div style="font-size:16px;font-weight:800;color:#fff;margin:6px 0;">🎯 Matchs suivis à venir</div>';
+  /* 20261015r : bandeau du cache + bouton « Relever maintenant » */
+  (function(){
+    var ST=window._g45ClvStat||{}, der=0;
+    futurs.forEach(function(k){ if(S[k].ts>der) der=S[k].ts; });   /* âge des COTES (le plus récent relevé), pas du dernier passage */
+    var mn=der?Math.max(0,Math.round((now-der)/60000)):null;
+    var il=mn==null?'jamais':(mn<60?('il y a '+mn+' min'):('il y a '+Math.round(mn/60)+' h'));
+    var cr=ST.credits||0;
+    h+='<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:rgba(10,14,26,.85);border-radius:10px;padding:9px 12px;margin-bottom:10px;font-size:14px;color:#fff;">'
+      +'<span style="flex:1;min-width:200px;">📦 Cotes gardées · relevé '+il+' · <b style="color:'+(cr?'#f5c542':'#2ecc71')+';">'+(cr?(cr+' crédits utilisés'):'0 crédit utilisé')+'</b></span>'
+      +'<button onclick="g45ClvForcer()" style="flex:none;border:none;cursor:pointer;background:#2b5cff;color:#fff;border-radius:8px;padding:8px 13px;font-size:14px;font-weight:800;">🔄 Relever maintenant</button></div>';
+  })();
+  if(!futurs.length) h+='<div style="font-size:14px;color:#c9d3ee;text-align:center;padding:12px;">Aucun match à venir sur les équipes suivies dans les 3 prochaines semaines.</div>';
   futurs.forEach(function(k){
     var s=S[k], comb=(s.o1>1&&s.oT>1)?(s.o1*s.oT):0;
     var seul=(s.o1>=_G45_CLV_MIN);
     var ref=seul?s.o1:comb;
     var d=''; try{ d=new Date(s.ko).toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'})+' '+new Date(s.ko).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}); }catch(e){}
     var hAv=Math.max(0,Math.round((s.ko-s.ts)/3600000));
-    h+='<div style="background:rgba(12,16,28,.96);border:1px solid rgba(255,255,255,.08);border-radius:9px;padding:9px 11px;margin-bottom:7px;">'
-      +'<div style="display:flex;justify-content:space-between;gap:8px;">'
-        +'<div style="flex:1;min-width:0;"><div style="font-size:11px;font-weight:800;color:var(--t1);">'+_g45CyEa(s.hn)+' – '+_g45CyEa(s.an)+'</div>'
-        +'<div style="font-size:8.5px;color:var(--t3);">'+_g45CyEa(d)+'</div></div>'
-        +'<div style="flex:none;text-align:right;"><div style="font-size:13px;font-weight:800;color:'+(seul?'#2ecc71':'#f0c828')+';">'+(ref?ref.toFixed(2):'—')+'</div>'
-        +'<div style="font-size:7.5px;color:var(--t3);">'+(seul?'équipe seule':'combiné nécessaire')+'</div></div>'
+    /* 20261015r — LIFTING : barre verte (victoire seule) / jaune (combiné), logo de l'équipe suivie, 14-17 px blancs. */
+    var cc=seul?'#2ecc71':'#f5c542', fr=function(x){ return x>1?x.toFixed(2).replace('.',','):'—'; };
+    var pas=function(x){ return '<b style="background:#1b2a4a;padding:2px 8px;border-radius:6px;">'+fr(x)+'</b>'; };
+    var lgo=(s.moi==='a'?s.al:s.hl)||'';
+    var prochain=Math.max(0,Math.round((s.ts+_g45ClvIntervalle(s.ko-s.ts)-now)/3600000));
+    h+='<div style="background:rgba(12,16,28,.96);border:1px solid rgba(255,255,255,.08);border-left:5px solid '+cc+';border-radius:12px;padding:11px 13px;margin-bottom:9px;display:flex;gap:12px;align-items:center;">'
+      +'<div style="flex:none;width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,.9);display:flex;align-items:center;justify-content:center;overflow:hidden;">'
+        +(lgo?'<img src="'+lgo+'" loading="lazy" onerror="this.style.display=\'none\'" style="width:36px;height:36px;object-fit:contain;">':'<span style="font-size:13px;font-weight:800;color:#0b101d;">'+_g45CyEa(String(s.eq||'').slice(0,3).toUpperCase())+'</span>')+'</div>'
+      +'<div style="flex:1;min-width:0;">'
+        +'<div style="font-size:17px;font-weight:800;color:#fff;">'+_g45CyEa(s.hn)+' – '+_g45CyEa(s.an)+'</div>'
+        +'<div style="font-size:14px;color:#fff;background:rgba(0,0,0,.5);display:inline-block;padding:1px 7px;border-radius:5px;margin-top:2px;">'+_g45CyEa(d)+'</div>'
+        +'<div style="font-size:14px;color:'+cc+';margin-top:6px;font-weight:700;">'
+          +(seul?('✅ La victoire seule suffit (≥ '+fr(_G45_CLV_MIN)+')'):('➕ Victoire à '+fr(s.o1)+' : il faut ajouter le total'))+'</div>'
+        +'<div style="font-size:14px;color:#fff;margin-top:5px;line-height:1.8;">Victoire '+_g45CyEa(s.eq)+' '+pas(s.o1)
+          +' · '+(s.side==='over'?'+ de ':'- de ')+String(s.line).replace('.',',')+' buts '+pas(s.oT)+'</div>'
+        +'<div style="font-size:13px;color:#c9d3ee;margin-top:4px;">Relevé à '+hAv+' h du match'+(s.ko>now?(' · prochain relevé '+(prochain?('dans '+prochain+' h'):'à la prochaine ouverture')):'')+'</div>'
       +'</div>'
-      +'<div style="font-size:9px;color:'+(seul?'#2ecc71':'var(--t2)')+';margin-top:4px;font-weight:700;">'
-        +(seul?('✅ La victoire seule passe le seuil de '+_G45_CLV_MIN.toFixed(2)+' — pas besoin du total.')
-              :('➕ Victoire à '+(s.o1>1?s.o1.toFixed(2):'—')+', sous '+_G45_CLV_MIN.toFixed(2)+' : le total est nécessaire.'))+'</div>'
-      +'<div style="font-size:9px;color:var(--t2);margin-top:5px;">Victoire '+_g45CyEa(s.eq)+' : <b>'+(s.o1>1?s.o1.toFixed(2):'—')+'</b>'
-      +' · '+(s.side==='over'?'Over ':'Under ')+s.line+' : <b>'+(s.oT>1?s.oT.toFixed(2):'—')+'</b></div>'
-      +'<div style="font-size:8px;color:var(--t3);margin-top:3px;">Dernier relevé à H−'+hAv+' — rouvre cette vue le jour du match pour un relevé plus proche du coup d\'envoi.</div>'
+      +'<div style="flex:none;text-align:center;min-width:84px;"><div style="font-size:26px;font-weight:900;color:'+cc+';">'+(ref?fr(ref):'—')+'</div>'
+        +'<div style="font-size:13px;color:#c9d3ee;">'+(seul?'équipe seule':'combiné')+'</div></div>'
       +'</div>';
   });
 
@@ -30341,17 +30387,17 @@ async function g45ClvView(){
     if(!clot) return;
     mes.push({s:s, p:p, clot:clot, r:(p.cote/clot), comb:estComb});
   });
-  h+='<div style="font-size:10px;font-weight:800;color:#2ecc71;margin:14px 0 6px;">📊 CLV mesuré</div>';
+  h+='<div style="font-size:16px;font-weight:800;color:#fff;margin:16px 0 6px;">📊 CLV mesuré</div>';
   if(!mes.length){
-    h+='<div style="font-size:10px;color:var(--t3);text-align:center;padding:12px;line-height:1.6;">Aucun pari mesuré pour l\'instant.<br><span style="font-size:9px;">Un pari apparaît ici quand un relevé existe et qu\'un pari enregistré correspond (même équipe, même jour).</span></div>';
+    h+='<div style="font-size:14px;color:#fff;background:rgba(0,0,0,.5);border-radius:8px;text-align:center;padding:12px;line-height:1.6;">Aucun pari mesuré pour l\'instant.<br><span style="font-size:13px;color:#c9d3ee;">Un pari apparaît ici quand un relevé existe et qu\'un pari enregistré correspond (même équipe, même jour).</span></div>';
   } else {
     var moy=mes.reduce(function(a,x){ return a+x.r; },0)/mes.length;
     var pos=mes.filter(function(x){ return x.r>1; }).length;
     var col=moy>=1.02?'#2ecc71':(moy>=0.99?'#f0c828':'#ff6b6b');
     h+='<div style="display:flex;gap:6px;margin-bottom:8px;">'
-      +'<div style="flex:1;text-align:center;background:rgba(0,0,0,.22);border-radius:8px;padding:8px;"><div style="font-size:16px;font-weight:800;color:'+col+';">'+Math.round((moy-1)*1000)/10+'%</div><div style="font-size:7.5px;color:var(--t3);">CLV moyen</div></div>'
-      +'<div style="flex:1;text-align:center;background:rgba(0,0,0,.22);border-radius:8px;padding:8px;"><div style="font-size:16px;font-weight:800;color:var(--t1);">'+Math.round(100*pos/mes.length)+'%</div><div style="font-size:7.5px;color:var(--t3);">paris battant la clôture</div></div>'
-      +'<div style="flex:1;text-align:center;background:rgba(0,0,0,.22);border-radius:8px;padding:8px;"><div style="font-size:16px;font-weight:800;color:var(--t1);">'+mes.length+'</div><div style="font-size:7.5px;color:var(--t3);">paris mesurés</div></div>'
+      +'<div style="flex:1;text-align:center;background:rgba(0,0,0,.22);border-radius:8px;padding:8px;"><div style="font-size:16px;font-weight:800;color:'+col+';">'+Math.round((moy-1)*1000)/10+'%</div><div style="font-size:13px;color:#c9d3ee;">CLV moyen</div></div>'
+      +'<div style="flex:1;text-align:center;background:rgba(0,0,0,.22);border-radius:8px;padding:8px;"><div style="font-size:16px;font-weight:800;color:var(--t1);">'+Math.round(100*pos/mes.length)+'%</div><div style="font-size:13px;color:#c9d3ee;">paris battant la clôture</div></div>'
+      +'<div style="flex:1;text-align:center;background:rgba(0,0,0,.22);border-radius:8px;padding:8px;"><div style="font-size:16px;font-weight:800;color:var(--t1);">'+mes.length+'</div><div style="font-size:13px;color:#c9d3ee;">paris mesurés</div></div>'
       +'</div>';
     /* Ventilation par équipe : chacune a sa propre montante, donc une moyenne globale
        masquerait une équipe sur laquelle il subit systématiquement la clôture. */
@@ -30364,14 +30410,14 @@ async function g45ClvView(){
     });
     if(eqs.length>1){
       h+='<div style="background:rgba(12,16,28,.96);border:1px solid rgba(255,255,255,.08);border-radius:9px;padding:8px 10px;margin-bottom:8px;">'
-        +'<div style="font-size:9px;font-weight:800;color:var(--t2);margin-bottom:5px;">Par équipe</div>';
+        +'<div style="font-size:14px;font-weight:800;color:#fff;margin-bottom:5px;">Par équipe</div>';
       eqs.forEach(function(e){
         var L=parEq[e], m2=L.reduce(function(u,v){return u+v;},0)/L.length, p2=(m2-1)*100;
         var c3=p2>=2?'#2ecc71':(p2>=-1?'#f0c828':'#ff6b6b');
         h+='<div style="display:flex;align-items:center;gap:8px;padding:3px 0;">'
-          +'<div style="flex:1;font-size:10px;font-weight:700;color:var(--t1);">'+_g45CyEa(e)+'</div>'
-          +'<div style="flex:none;font-size:8px;color:var(--t3);">'+L.length+' pari'+(L.length>1?'s':'')+'</div>'
-          +'<div style="flex:none;width:52px;text-align:right;font-size:11px;font-weight:800;color:'+c3+';">'+(p2>=0?'+':'')+Math.round(p2*10)/10+'%</div></div>';
+          +'<div style="flex:1;font-size:14px;font-weight:700;color:#fff;">'+_g45CyEa(e)+'</div>'
+          +'<div style="flex:none;font-size:13px;color:#c9d3ee;">'+L.length+' pari'+(L.length>1?'s':'')+'</div>'
+          +'<div style="flex:none;width:62px;text-align:right;font-size:14px;font-weight:800;color:'+c3+';">'+(p2>=0?'+':'')+Math.round(p2*10)/10+'%</div></div>';
       });
       h+='</div>';
     }
@@ -30379,17 +30425,18 @@ async function g45ClvView(){
       var pc=(x.r-1)*100, c2=pc>=2?'#2ecc71':(pc>=-1?'#f0c828':'#ff6b6b');
       var d=''; try{ d=new Date(x.s.ko).toLocaleDateString('fr-FR',{day:'numeric',month:'short'}); }catch(e){}
       h+='<div style="display:flex;align-items:center;gap:8px;background:rgba(12,16,28,.96);border:1px solid rgba(255,255,255,.08);border-left:3px solid '+c2+';border-radius:8px;padding:7px 10px;margin-bottom:5px;">'
-        +'<div style="flex:none;width:52px;font-size:9px;color:var(--t3);">'+_g45CyEa(d)+'</div>'
-        +'<div style="flex:1;min-width:0;"><div style="font-size:10.5px;font-weight:700;color:var(--t1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+_g45CyEa(x.s.hn)+' – '+_g45CyEa(x.s.an)+'</div>'
-        +'<div style="font-size:8px;color:var(--t3);">'+(x.comb?'combiné':'équipe seule')+' · prise '+x.p.cote+' · clôture '+x.clot.toFixed(2)+'</div></div>'
-        +'<div style="flex:none;font-size:12px;font-weight:800;color:'+c2+';">'+(pc>=0?'+':'')+Math.round(pc*10)/10+'%</div></div>';
+        +'<div style="flex:none;width:58px;font-size:13px;color:#c9d3ee;">'+_g45CyEa(d)+'</div>'
+        +'<div style="flex:1;min-width:0;"><div style="font-size:14px;font-weight:700;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+_g45CyEa(x.s.hn)+' – '+_g45CyEa(x.s.an)+'</div>'
+        +'<div style="font-size:13px;color:#c9d3ee;">'+(x.comb?'combiné':'équipe seule')+' · prise '+x.p.cote+' · clôture '+x.clot.toFixed(2)+'</div></div>'
+        +'<div style="flex:none;font-size:15px;font-weight:800;color:'+c2+';">'+(pc>=0?'+':'')+Math.round(pc*10)/10+'%</div></div>';
     });
-    if(mes.length<20) h+='<div style="font-size:8px;color:#ff8c42;text-align:center;margin-top:6px;">⚠️ '+mes.length+' paris seulement — il en faut une trentaine avant que la moyenne signifie quelque chose.</div>';
+    if(mes.length<20) h+='<div style="font-size:13px;color:#ff8c42;text-align:center;margin-top:6px;">⚠️ '+mes.length+' paris seulement — il en faut une trentaine avant que la moyenne signifie quelque chose.</div>';
   }
   el.innerHTML=head+h
-    +'<div style="font-size:8px;color:var(--t3);text-align:center;margin-top:10px;font-style:italic;line-height:1.6;">Cotes médianes des bookmakers européens via The Odds API, relevées à chaque ouverture de cette vue. ESPN ne conservant aucune cote après un match, aucun calcul rétroactif n\'est possible : la mesure démarre aujourd\'hui.</div>';
+    +'<div style="font-size:13px;color:#c9d3ee;background:rgba(0,0,0,.5);border-radius:8px;padding:8px 10px;text-align:center;margin-top:10px;line-height:1.6;">Cotes médianes des bookmakers européens via The Odds API, gardées en mémoire (relues au plus 1 fois / jour à plus de 2 jours du match, toutes les 6 h ensuite, toutes les heures les 6 dernières heures). ESPN ne conservant aucune cote après un match, aucun calcul rétroactif n\'est possible : la mesure démarre aujourd\'hui.</div>';
 }
 window.g45ClvView=g45ClvView;
+window.g45ClvForcer=function(){ window._g45ClvForce=1; g45ClvView(); };   /* 20261015r */
 
 /* ── Onglet 🔥 Tendances : sélection, balayage, rendu ── */
 function _g45TrGroups(){
