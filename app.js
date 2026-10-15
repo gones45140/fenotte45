@@ -74971,3 +74971,29 @@ window._g45NhlJTrouver = _g45NhlJTrouver; window._g45NhlJHtml = _g45NhlJHtml; wi
   Object.keys(l0).forEach(function (k) { try { env[k] = l0[k]; } catch (e) {} });
   window._g45JoueurVisLire = _g45JoueurVisLire = env;
 })();
+
+
+/* ═══ 20261015w — LOGO DU CLUB D'UN JOUEUR NHL SUR LA CARTE DU MUR (capture : Celebrini / « San Jose Sharks » sans logo) ═══
+   _g45JoueurClubLogo cherchait le club de la note avec g45SdbClub(club, '⚽') — en FOOT : « San Jose Sharks » introuvable (échec
+   gardé 7 j) ; Edmonton passait par un autre chemin. Joueur 🏒 dont la note (ou le nom) est un club NHL (_g45RegEquipe) → logo
+   officiel NHL assets.nhle.com/logos/nhl/svg/<ABR>_light.svg (forme du champ teamLogo des leaders NHL, déjà affiché dans Séries
+   individuelles ; adresse exacte NON vérifiée pour chaque club). Logo déjà connu de l'appli pour ce club = gardé en priorité. */
+(function () {
+  var c0 = window._g45JoueurClubLogo;
+  if (typeof c0 !== 'function' || c0._g45Nhl) return;
+  var env = function (u) {
+    try {
+      if (u && u.type === 'joueur' && /🏒/.test(u.sport || '') && typeof _g45RegEquipe === 'function') {
+        var eq = _g45RegEquipe(u.note || '') || _g45RegEquipe(u.n);
+        if (eq) {
+          var club = String(u.note || '').trim();
+          var l = (club && typeof g45LogoUrlDe === 'function') ? g45LogoUrlDe(club) : '';
+          return l || ('https://assets.nhle.com/logos/nhl/svg/' + eq[0] + '_light.svg');
+        }
+      }
+    } catch (e) {}
+    return c0.apply(this, arguments);
+  };
+  env._g45Nhl = true;
+  window._g45JoueurClubLogo = _g45JoueurClubLogo = env;
+})();
