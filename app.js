@@ -73295,7 +73295,8 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var t = new Date(d + 'T' + h.heure + ':00').getTime(); return isNaN(t) ? null : t;
   }
   function titre(h) {
-    if (h.isS) { var t = String(h.target || '').replace(/^\s*vs\s+/i, '').trim(); return h.n + (t && t !== '-' ? ' – ' + t : ''); }
+    /* 20261016e (capture « Connor McDavid – Utah Mammoth ») : Équipe jouée (h.eq) d'abord — club du joueur, équipe d'une compétition */
+    if (h.isS) { var t = String(h.target || '').replace(/^\s*vs\s+/i, '').trim(); return ((h.eq && String(h.eq).trim()) || h.n) + (t && t !== '-' ? ' – ' + t : ''); }
     return String(h.isCombi ? h.n : (h.target || h.n || '')).replace(/\s+vs\s+/ig, ' – ');
   }
   function joueurs(h) {
