@@ -74988,7 +74988,7 @@ window._g45NhlJTrouver = _g45NhlJTrouver; window._g45NhlJHtml = _g45NhlJHtml; wi
         if (eq) {
           var club = String(u.note || '').trim();
           var l = (club && typeof g45LogoUrlDe === 'function') ? g45LogoUrlDe(club) : '';
-          return l || ('https://assets.nhle.com/logos/nhl/svg/' + eq[0] + '_light.svg');
+          return l || ('https://assets.nhle.com/logos/nhl/svg/' + eq[0] + '_dark.svg');   /* 20261015x (« je les vois à peine ») : version pour fond SOMBRE (NON vérifiée) */
         }
       }
     } catch (e) {}
