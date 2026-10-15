@@ -1481,6 +1481,11 @@ RÉGLÉ (worker, 01/10) : cron « exceededCpu » (cpuTimeMs 10) à CHAQUE passag
   Paris calculée à la main (dernier dimanche de mars / octobre 01:00 UTC ; 6 cas comparés à Intl, identiques). worker.js complet donné,
   REDÉPLOYÉ le 13/10 (avec /odds en crédits). Erreurs du SOIR (multiplex foot) : budget `_lourd` 4 → 2 PROPOSÉ, en attente de réponse.
 À VOIR (en attente d'un retour d'Antoine) :
+- 🎟️ QUOTA DES COTES dans Tendances (15/10, maquette validée « bien mais l'utilisateur doit voir que SON quota ») : ligne repliable sous les
+  réglages ; BET45 = « 👤 Toi aujourd'hui x / 8 » SEULEMENT ; GONES45 (Antoine) = tout le monde aujourd'hui x / 20 + ce mois x / 400 (pas de barre
+  perso : sans limite). « 🔄 Actualiser » sans crédit. À FAIRE dans la session avec l'accès Cloudflare (CLOUDFLARE_API_TOKEN + api.cloudflare.com
+  autorisé, demandés à Antoine le 15/10) : le worker doit renvoyer ces compteurs (route /odds-quota élargie : personne = même identifiant que
+  PLAFONDS.odds ; ne jamais renvoyer les compteurs des autres) ; TOUJOURS télécharger et garder le worker en ligne avant de le modifier.
 - 📈 COTES EN DIRECT HORS FOOT (15/10) : commande console « 4 ligues » (NHL / NBA / NFL / MLB, moneyline.*.current + total.over.current)
   donnée à Antoine ; il la lancera pendant un match : MLB jeudi 19 h, NFL ce week-end, NBA mardi 21 h, NHL peut-être ce week-end. Chiffres
   présents → étendre _g45CdLire / cartes / fenêtre au sport (aujourd'hui meta.sp === 'soccer' et sport === 'soccer' seulement) ; ligne de
