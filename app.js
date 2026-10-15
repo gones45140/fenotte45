@@ -74914,6 +74914,15 @@ async function g45NhlJoueurPanel() {
   }
   window._g45NhlJ.R = R; window._g45NhlJ.u = u;
   el.innerHTML = _g45NhlJHtml(u, R);
+  /* 20261015u (« oui mets sa photo » : rond de la fiche = initiales « CON ») : photo NHL (headshot) gardée comme logo de l'entrée,
+     comme _g45ButPhoto pour un joueur de foot, et posée tout de suite dans l'en-tête. */
+  try {
+    var ph = R.p && R.p.headshot;
+    if (ph) {
+      if (u.logoUrl !== ph) { u.logoUrl = ph; if (typeof save === 'function') save(); }
+      if (typeof _g45HeroPoser === 'function') _g45HeroPoser(u.n, ph, u);
+    }
+  } catch (e) {}
 }
 window.g45NhlJCat = function (c) {
   window._g45NhlJ.cat = c;

@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261015t, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261015u, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -167,7 +167,9 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   moyenne / blanchissages). Champs NON sondés (shots, plusMinus, avgTimeOnIcePerGame, opponentAbbrev, sweaterNumber, stats gardien) :
   affichés seulement s'ils existent. Cache g45nhlj1_eq_ 6 h, g45nhlj1_log_ 1 h. Smoke (46). Recherche « Rechercher un club » = équipes seulement.
   CONFIRMÉ par Antoine (capture 15/10 23:53, McDavid) : photo, 4 B / 13 A / 17 pts, tirs 14, +/- +14, temps 23:34 → shots, plusMinus,
-  avgTimeOnIcePerGame (secondes) EXISTENT dans club-stats. Rond de la carte du mur = initiales « CON » (pas de photo) : à améliorer si demandé.
+  avgTimeOnIcePerGame (secondes) EXISTENT dans club-stats.
+  20261015u (« oui mets sa photo », rond de la fiche = « CON ») : g45NhlJoueurPanel garde p.headshot dans u.logoUrl (save) et le pose
+  dans l'en-tête (_g45HeroPoser), comme _g45ButPhoto au foot. Carte du mur : rond de droite = logo du club (Oilers), inchangé.
 - Temps réglementaire : `g45ScoreTR`, `G45_TR_PERIODES`.
   20261005j (capture : Edmonton 1-2 Colorado « Après TAB » compté en victoire, mode TR actif) : match aux TIRS AU BUT sans période > 3
   chez ESPN → le garde-fou renonçait. Hockey : 3 périodes présentes, égalité, final à 1 but d'écart = prolongation/TAB → score TR
