@@ -30590,8 +30590,9 @@ function loadTendancesTab(){
        cocher. Ils sortent de la grille et prennent l'aspect de commandes
        secondaires, avec le chevron qui annonce un changement d'ecran. */
     +'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:11px;">'
-      +'<button onclick="g45ButeursView()" class="ba">Voir les buteurs ›</button>'
-      +'<button onclick="g45ClvView()" class="ba">Voir le CLV ›</button>'
+      /* 20261015s (capture : « voir les buteurs et CLV on voit à peine ») : blanc 14 px gras sur fond sombre opaque, liseré bleu. */
+      +'<button onclick="g45ButeursView()" class="ba" style="background:rgba(10,14,26,.92);color:#fff;font-size:14px;font-weight:800;padding:9px 14px;border:1px solid #5aa9ff;border-radius:9px;">⚽ Voir les buteurs ›</button>'
+      +'<button onclick="g45ClvView()" class="ba" style="background:rgba(10,14,26,.92);color:#fff;font-size:14px;font-weight:800;padding:9px 14px;border:1px solid #5aa9ff;border-radius:9px;">📏 Voir le CLV ›</button>'
     +'</div>';
   h+='<div id="g45tr-fiab">'+_g45TrFiabHtml()+'</div>';   /* 20261013c : fiabilité vérifiée */
   if(!_G45_TR.res){
