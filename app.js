@@ -30783,7 +30783,7 @@ function _g45TrRender(){
       +(m.cote?('<div style="flex:none;text-align:right;background:rgba(8,11,20,.74);border-radius:7px;padding:6px 9px;margin:-3px -4px 0 0;">'
           +(m.coteDk?('<div style="font-size:16px;font-weight:800;color:#f0c828;line-height:1;">≈ @'+m.cote.toFixed(2)+'</div>'
               +'<div style="font-size:9px;color:#fff;font-weight:700;letter-spacing:.3px;margin-top:2px;">BOOKS FR (ANJ)</div>'
-              +'<div style="font-size:11px;color:#c9d3ee;">estimée · DK '+m.coteDk.toFixed(2)+'</div>')   /* 20261015o : DraftKings − 5 % */
+              +'<div style="font-size:11px;color:#c9d3ee;">estimée · DK '+m.coteDk.toFixed(2)+'</div>')   /* 20261015o/p : DraftKings − 6 % */
             :('<div style="font-size:16px;font-weight:800;color:#f0c828;line-height:1;">@'+m.cote.toFixed(2)+'</div>'
           +'<div style="font-size:7.5px;color:rgba(255,255,255,.62);letter-spacing:.4px;">COTE MARCHÉ</div>'))
           +(showGap&&m.ev!=null?('<div style="font-size:10px;font-weight:800;color:'+col+';">espérance '+(m.ev>=0?'+':'')+Math.round(m.ev*1000)/10+'%</div>'):'')
@@ -74521,7 +74521,7 @@ var _G45_BK_DOM = [
     var J = O.j, box = function (h) { return '<div id="g45tr-off" style="background:rgba(11,16,29,.86);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px 14px;margin-bottom:12px;color:#fff;">' + h + '</div>'; };
     var tete = '<span style="display:inline-block;background:#f0c828;color:#111;font-size:11px;font-weight:800;border-radius:5px;padding:2px 6px;">OFFICIEL · identique pour tous</span>'
       + '<div style="font-size:17px;font-weight:800;margin-top:6px;">📒 Historique des Tendances</div>'
-      + '<div style="font-size:13px;color:#c9d3ee;">Notées AVANT le match, chaque jour à 10 h · cote mini 1,50 · proba mini 50 %<br>Cotes ≈ books FR (ANJ) : DraftKings − 5 %, estimées</div>';
+      + '<div style="font-size:13px;color:#c9d3ee;">Notées AVANT le match, chaque jour à 10 h · cote mini 1,50 · proba mini 50 %<br>Cotes ≈ books FR (ANJ) : DraftKings − 6 %, estimées</div>';
     if (!J) return box(tete + '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">⏳ Chargement…</div>');
     var tous = (J.t || []).filter(function (x) { return x.r !== -1; });
     var L = tous.filter(function (x) { return O.f === 'acc' ? !x.d : (O.f === 'des' ? x.d : true); });
@@ -74682,7 +74682,7 @@ var _G45_BK_DOM = [
    Enveloppes des trois fabriques (_g45TrBuild foot, _g45TrHkBuild hockey, _g45TrUsBuild NBA / NFL) → tout ce qui suit (filtres cote mini
    / jouable, tri par espérance, historique officiel, fiabilité) utilise la cote ≈ FR. Cote venue de The Odds API (médiane EU) : même
    correction (approximation). Probabilités bookmakers (m.fair, marge retirée) : inchangées. */
-window._G45_TR_FR = 0.95;
+window._G45_TR_FR = 0.94;   /* 20261015p (Antoine : DK 3,15 → Winamax 2,95 = − 6,3 % ; « faut être un poil en dessous ») : − 6 % */
 window._g45TrCoteFr = function (out) {
   (out || []).forEach(function (x) {
     if (!x || !(x.cote > 1) || x.coteDk) return;
