@@ -1351,7 +1351,7 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   (`_espnLoadLeagueTeams` / `_espnTeamsViaClassement`). 20261015q : Tendances → ⚽ Marqueurs, `_g45ButId` (liste fixe `_G45_BUT` : Kane, Mbappé,
   Suárez « données indisponibles pour la saison 2026 ») retombe sur le classement ; doublon mur « MBAPPE KYLIAN » / liste « Kylian Mbappé » écarté
   par le motif who dans `g45ButeursView`. Testé vm (Kane retrouvé avec /teams refusé). Autres appels à …/<lg>/teams dans app.js : NON revus.
-  20261015s (maquette validée « oui ») — LIFTING Marqueurs (cartes : nom 18 px, « chance de marquer » en grand à droite, 4 cases buts /
+  20261015r (maquette validée « oui ») — LIFTING Marqueurs (cartes : nom 18 px, « chance de marquer » en grand à droite, 4 cases buts /
   matchs / buts par match / tirs cadrés, reste sur une ligne 14 px, « Ta cote : » 15 px ; boutons 13 px blancs) et CLV (Tendances → 📏 CLV,
   `g45ClvView` : barre verte = victoire seule / jaune = combiné, logo de l'équipe suivie (S.hl / S.al, S.moi), textes 13-17 px) +
   CACHE du relevé `_g45ClvReleve(onStep, force)` : match relu seulement si son relevé a plus de 24 h (> 48 h avant), 6 h (6-48 h), 1 h
