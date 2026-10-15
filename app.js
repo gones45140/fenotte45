@@ -74605,3 +74605,67 @@ var _G45_BK_DOM = [
     return r;
   };
 })();
+
+/* ═══ 🎟️ QUOTA DES COTES DANS TENDANCES (20261015m, maquette validée « bien mais l'utilisateur doit voir que SON quota ») ═══
+   Ligne repliable posée au-dessus de la Fiabilité (enveloppe de _g45TrFiabHtml). Données : route /odds-quota du worker (élargie le
+   15/10, aucun crédit consommé) — BET45 : {moi:{u, max}} = SON compteur du jour (IP Cloudflare, comme le plafond) ; GONES45 (Origin
+   gones45140.github.io) : {jour, mois, remaining, used} = tout le monde. On affiche ce qui RESTE. Mémoire 2 min ; « 🔄 Actualiser » relit.
+   Outils → Clés (g45CheckOddsQuota) : réponse BET45 {moi} gérée aussi (avant : « ? requêtes restantes »). */
+(function () {
+  var Q = window._g45Qt = { d: null, t: 0, ouvert: false, enCours: false };
+  var base = function () { return (typeof FD_PROXY !== 'undefined' ? FD_PROXY : 'https://fd-proxy.touraine-antoine.workers.dev'); };
+  var redessiner = function () { var b = document.getElementById('g45tr-quota'); if (b) b.outerHTML = window._g45QtHtml(); };
+  window.g45QtLire = function (force) {
+    if (Q.enCours || (!force && Q.d && Date.now() - Q.t < 120000)) return;
+    Q.enCours = true; redessiner();
+    fetch(base() + '/odds-quota', { cache: 'no-store' }).then(function (r) { return r.json(); })
+      .then(function (d) { Q.d = d || {}; }).catch(function () { Q.d = { err: 1 }; })
+      .then(function () { Q.t = Date.now(); Q.enCours = false; redessiner(); });
+  };
+  window.g45QtOuvrir = function () { Q.ouvert = !Q.ouvert; redessiner(); };
+  var coul = function (r, m) { var f = m ? r / m : 0; return f > 0.5 ? '#1ed760' : (f > 0.2 ? '#f0c828' : '#ff6b6b'); };
+  var barre = function (lbl, c) {
+    var r = Math.max(0, c.max - c.u), col = coul(r, c.max);
+    return '<div style="display:flex;align-items:center;gap:10px;margin-top:10px;"><div style="font-size:14px;width:150px;">' + lbl + '</div>'
+      + '<div style="flex:1;height:10px;background:rgba(255,255,255,.1);border-radius:6px;overflow:hidden;"><div style="width:' + Math.round(r / c.max * 100) + '%;height:100%;background:' + col + ';"></div></div>'
+      + '<div style="font-size:15px;font-weight:800;min-width:62px;text-align:right;color:' + col + ';">' + r + ' / ' + c.max + '</div></div>';
+  };
+  /* pur, testé par smoke.js : ce que la ligne fermée annonce */
+  window._g45QtResume = function (d) {
+    if (!d) return null;
+    if (d.moi && d.moi.max) { var r = Math.max(0, d.moi.max - d.moi.u); return { r: r, max: d.moi.max, txt: 'pour toi aujourd’hui' }; }
+    if (d.jour && d.jour.max) { var r2 = Math.max(0, d.jour.max - d.jour.u); return { r: r2, max: d.jour.max, txt: 'aujourd’hui (tout le monde)' }; }
+    return null;
+  };
+  window._g45QtHtml = function () {
+    if (!Q.d && !Q.enCours) setTimeout(function () { window.g45QtLire(); }, 0);
+    var R = window._g45QtResume(Q.d), st = 'background:rgba(11,16,29,.86);border:1px solid rgba(255,255,255,.12);border-radius:12px;color:#fff;margin-bottom:12px;';
+    var ligne = R ? ('🎟️ Quota des cotes : <span style="color:' + coul(R.r, R.max) + ';">' + R.r + ' / ' + R.max + '</span> ' + R.txt)
+      : (Q.d && Q.d.err ? '🎟️ Quota des cotes : indisponible pour le moment' : '🎟️ Quota des cotes : ⏳');
+    if (!Q.ouvert) return '<div id="g45tr-quota" onclick="g45QtOuvrir()" style="' + st + 'padding:9px 12px;cursor:pointer;font-size:14px;font-weight:700;">' + ligne + ' ›</div>';
+    var d = Q.d || {}, h = '<div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="g45QtOuvrir()"><div style="font-size:16px;font-weight:800;">🎟️ Quota des cotes (The Odds API)</div><span style="font-size:14px;">▴</span></div>'
+      + '<div style="font-size:13px;color:#c9d3ee;">Gratuit, limité. ESPN ne compte pas : seules certaines cotes foot en consomment.</div>';
+    if (d.moi) h += barre('👤 Toi aujourd’hui', d.moi);
+    if (d.jour) h += barre('👥 Tout le monde aujourd’hui', d.jour);
+    if (d.mois) h += barre('📅 Ce mois', d.mois);
+    if (d.err || (!d.moi && !d.jour)) h += '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">' + (Q.enCours ? '⏳ Lecture…' : 'Quota indisponible pour le moment.') + '</div>';
+    h += '<div style="font-size:13px;color:#c9d3ee;margin-top:10px;">Remise à zéro chaque nuit (2 h en été, 1 h en hiver)' + (d.mois ? ', le mois : le 1er' : '') + '. 1 crédit ≈ 1 championnat.</div>'
+      + '<div style="text-align:right;margin-top:8px;"><button onclick="g45QtLire(true)" style="padding:9px 14px;border-radius:8px;border:none;background:#2563eb;color:#fff;font-size:14px;font-weight:700;cursor:pointer;">🔄 Actualiser</button></div>';
+    return '<div id="g45tr-quota" style="' + st + 'padding:12px 14px;">' + h + '</div>';
+  };
+  var _fiab = _g45TrFiabHtml;
+  _g45TrFiabHtml = window._g45TrFiabHtml = function () {
+    var q = ''; try { q = window._g45QtHtml(); } catch (e) {}
+    return q + _fiab.apply(this, arguments);
+  };
+  /* Outils → Clés : réponse BET45 */
+  var _chk = window.g45CheckOddsQuota;
+  if (typeof _chk === 'function') window.g45CheckOddsQuota = g45CheckOddsQuota = async function () {
+    var el = document.getElementById('odds-quota-status'); if (!el) return;
+    try {
+      var d = await (await fetch(base() + '/odds-quota', { cache: 'no-store' })).json();
+      if (d && d.moi) { var R = window._g45QtResume(d); el.style.color = 'var(--t1)'; el.innerHTML = '<b style="color:' + coul(R.r, R.max) + ';font-size:14px;">' + R.r + ' / ' + R.max + '</b> crédits restants pour toi aujourd’hui'; return; }
+    } catch (e) {}
+    return _chk.apply(this, arguments);
+  };
+})();
