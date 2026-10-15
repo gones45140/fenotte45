@@ -74089,8 +74089,17 @@ window._g45Mur2Appliquer = _g45Mur2Appliquer;
 (function () {
   var caler = function (pm) {
     try {
-      var pay = (getComputedStyle(document.documentElement).getPropertyValue('--g45-paysage') || '').trim() === '1';
-      if (!pay || pm.style.display === 'none') return;
+      /* 20261015g (« bouton + ne fonctionne plus en mode portrait ») : --g45-paysage vaut 1 TOUT LE TEMPS (il signale seulement que
+         style.css a le bloc paysage) → top / max-height étaient posés aussi en PORTRAIT ; la barre du bas (nav, backdrop-filter) sert
+         de cadre au menu fixe → menu écrasé à 17 px. On teste la VRAIE media query du bloc paysage, et on retire nos valeurs sinon. */
+      var pay = !!(window.matchMedia && matchMedia('(orientation:landscape) and (max-height:520px) and (max-width:1099px)').matches);
+      if (!pay) {
+        if (pm.style.getPropertyValue('top')) pm.style.removeProperty('top');
+        if (pm.style.getPropertyPriority('max-height') === 'important') pm.style.removeProperty('max-height');
+        if (!pm.style.getPropertyValue('max-height')) pm.style.setProperty('max-height', 'calc(100vh - 88px)');
+        return;
+      }
+      if (pm.style.display === 'none') return;
       var tb = document.querySelector('header.topbar'), h = tb ? Math.ceil(tb.getBoundingClientRect().bottom) : 0;
       if (h <= 0 || h > innerHeight / 2) return;
       var mh = (innerHeight - h) + 'px';
