@@ -74945,3 +74945,29 @@ window.g45NhlJCat = function (c) {
   }
 })();
 window._g45NhlJTrouver = _g45NhlJTrouver; window._g45NhlJHtml = _g45NhlJHtml; window._g45NhlJCharger = _g45NhlJCharger;
+
+
+/* ═══ 20261015v — PHOTO D'UN JOUEUR NHL SUR LA CARTE DU MUR (« McDavid photo du joueur ») ═══
+   Le rendu de la carte (DEUX copies, ≈ l. 3080 et 11470) lit _g45JoueurVisLire(u.n) SANS sport → clé foot (ou tennis) : un
+   joueur de hockey, rangé sous la clé hockey par la passe du mur, n'était jamais relu → carte bleue unie. Enveloppe : sans sport
+   et rien trouvé → sport de l'entrée du mur (🏒 → hockey, 🏉 → rugby) ; toujours rien et entrée joueur 🏒 dont la fiche a gardé la
+   photo NHL (u.logoUrl = headshot, 20261015u) → cette photo, posée au centre comme un détouré (cas B du rendu). */
+(function () {
+  var l0 = window._g45JoueurVisLire;
+  if (typeof l0 !== 'function' || l0._g45Nhl) return;
+  var env = function (nom, sport) {
+    var r = l0.apply(this, arguments);
+    if (sport || (r && (r.fan || r.cut || r.thumb))) return r;
+    try {
+      var u = ((typeof state !== 'undefined' && state && state.u) || []).filter(function (x) { return x && x.n === nom; })[0];
+      if (!u || u.type !== 'joueur') return r;
+      var sp = /🏒/.test(u.sport || '') ? 'hockey' : (/🏉/.test(u.sport || '') ? (/🇦🇺/.test(u.sport || '') ? 'rugby-league' : 'rugby') : '');
+      if (sp) { var r2 = l0.call(this, nom, sp); if (r2 && (r2.fan || r2.cut || r2.thumb)) return r2; }
+      if (sp === 'hockey' && /nhle\.com/.test(u.logoUrl || '')) return { t: Date.now(), fan: '', cut: '', thumb: u.logoUrl, club: '' };
+    } catch (e) {}
+    return r;
+  };
+  env._g45Nhl = true;
+  Object.keys(l0).forEach(function (k) { try { env[k] = l0[k]; } catch (e) {} });
+  window._g45JoueurVisLire = _g45JoueurVisLire = env;
+})();
