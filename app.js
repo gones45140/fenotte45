@@ -74554,3 +74554,50 @@ var _G45_BK_DOM = [
     return a + b;
   };
 })();
+
+/* ═══ 🔥 TENDANCES GARDÉES JUSQU'AU MATCH (20261015k, « une fois demandées, elles devraient rester visibles jusqu'au match à moins de
+   réappuyer sur Relancer ; là si on change de page il faut réappuyer ») ═══ _G45_TR.res ne vivait qu'en mémoire : téléphone qui recharge
+   l'appli (PWA fermée, autre appli ouverte) = analyse perdue. Après chaque analyse, la liste est rangée dans IndexedDB (base g45, magasin
+   kv de _g45BgIdb, clé 'tr_<sport>' ; pas localStorage, déjà presque plein) avec sa signature (jour visé AAAAMMJJ, Aujourd'hui / Demain,
+   groupes cochés, compétitions éteintes). À l'ouverture de Tendances sans résultats : reprise si la signature est la même, matchs DÉJÀ
+   COMMENCÉS retirés (x.d) ; une seule reprise par sport et par chargement de page → « ↺ Relancer » relance bien une vraie analyse. */
+(function () {
+  var essaye = {};
+  var cible = function () { var d = new Date(); if (_G45_TR.day) d = new Date(+d + 864e5); return _g45TrYmd(d); };
+  var sig = function () { var lo = ''; try { lo = localStorage.getItem('g45tr_lsoff') || ''; } catch (e) {} return JSON.stringify([cible(), _G45_TR.day || 0, _G45_TR.sel || null, lo]); };
+  var op = async function (mode, k, v) {
+    var db = await _g45BgIdb();
+    return new Promise(function (ok, ko) {
+      var tx = db.transaction('kv', mode === 'get' ? 'readonly' : 'readwrite'), st = tx.objectStore('kv');
+      var rq = mode === 'get' ? st.get(k) : st.put(v, k);
+      rq.onsuccess = function () { ok(rq.result); }; rq.onerror = function () { ko(rq.error); };
+    });
+  };
+  window._g45TrGardeSig = sig; window._g45TrGardeOp = op;   /* pour les essais */
+  window._g45TrGardeFiltre = function (res, now) { return (res || []).filter(function (x) { var t = Date.parse(x && x.d); return isNaN(t) || t > now; }); };
+
+  var _run = window.g45TrRun;
+  g45TrRun = window.g45TrRun = async function () {
+    var sp = _G45_TR.sp || 'foot', s = sig();
+    var r = await _run.apply(this, arguments);
+    try { if (_G45_TR.res && _G45_TR.sp === sp && _G45_TR.res.length) { essaye[sp + s] = 1; await op('put', 'tr_' + sp, { s: s, t: Date.now(), res: _G45_TR.res }); } } catch (e) {}
+    return r;
+  };
+
+  var _load = window.loadTendancesTab;
+  loadTendancesTab = window.loadTendancesTab = function () {
+    var r = _load.apply(this, arguments);
+    try {
+      var sp = _G45_TR.sp || 'foot', s = sig();
+      if (_G45_TR.res || _G45_TR.run || essaye[sp + s] || typeof indexedDB === 'undefined') return r;
+      essaye[sp + s] = 1;
+      op('get', 'tr_' + sp).then(function (o) {
+        if (!o || o.s !== s || _G45_TR.res || _G45_TR.run || (_G45_TR.sp || 'foot') !== sp) return;
+        var res = window._g45TrGardeFiltre(o.res, Date.now()); if (!res.length) return;
+        _G45_TR.res = res; _G45_TR['res_' + sp] = res;
+        var el = document.getElementById('t-tend'); if (el && el.offsetParent !== null) loadTendancesTab();
+      }).catch(function () {});
+    } catch (e) {}
+    return r;
+  };
+})();

@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261015j, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261015k, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1855,6 +1855,10 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   (mémoire 10 min). Smoke (40).
   20261015j (Cédric : « beaucoup de tendances à 1,2 même en cochant 1,5 mini ») : `jouable` de _g45TrRender ne testait que 1/p (cote déduite des stats) →
   cote du marché connue (m.cote > 1) = elle doit être ≥ cote mini ; sinon 1/p comme avant. Vaut aussi pour le robot officiel. Smoke (41).
+  20261015k (« une fois demandées, elles devraient rester visibles jusqu'au match ») : bloc en fin d'app.js — enveloppe de g45TrRun : liste rangée
+  dans IndexedDB (_g45BgIdb, magasin kv, clé 'tr_<sport>') avec signature `_g45TrGardeSig` (jour visé, Aujourd'hui/Demain, groupes, g45tr_lsoff) ;
+  enveloppe de loadTendancesTab : sans résultats → reprise si même signature, matchs commencés retirés (`_g45TrGardeFiltre`), une fois par sport
+  et par chargement (↺ Relancer = vraie analyse). Testé Chromium (rechargement). Smoke (43).
   Écarts entre Antoine et Cédric (14/10) : réglages par appareil (compétitions, jour, cote / proba mini), heure d'analyse, quota The Odds API (bet45 = 8 crédits / personne / jour).
 RÉGLÉ OU ABANDONNÉ (ne pas reproposer) :
 - APK bet45 sans barre d'adresse : OK. Logos Lakers / hockey : OK. « Connexion » sur le
