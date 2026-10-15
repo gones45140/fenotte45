@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261015y, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261016a, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -180,6 +180,9 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   CONFIRMÉ (capture 15/10 23:59) : photos McDavid et Celebrini sur leurs cartes. 20261015w : rond de droite (logo du club) d'un joueur 🏒 :
   _g45JoueurClubLogo cherchait le club en FOOT (g45SdbClub(club,'⚽')) → San Jose Sharks absent ; enveloppe : club NHL reconnu
   (_g45RegEquipe) → g45LogoUrlDe(note) sinon assets.nhle.com/logos/nhl/svg/<ABR>_light.svg, puis 20261015x (« je les vois à peine ») _dark.svg — CONFIRMÉ (capture 16/10 00:12 : Oilers, Sharks, Lightning, Bruins visibles). Lamine Yamal (foot, note « FC Barcelone ») sans photo ni logo : note à écrire « Barcelona », sinon sonde g45VisuelJoueur demain. Chicago : sonde demain sur PC.
+  20261016a (« Vancouver il connaît pas » : ÉQUIPE 🏒 du mur sans logo) : enveloppe window.g45LogoUrlDe — rien trouvé et entrée du mur de ce
+  nom en 🏒 (pas joueur) reconnue par _g45RegEquipe → assets.nhle.com/logos/nhl/svg/<ABR>_dark.svg. Fond (fanart TheSportsDB) des Canucks : même
+  question que Chicago (sonde demain).
 - Temps réglementaire : `g45ScoreTR`, `G45_TR_PERIODES`.
   20261005j (capture : Edmonton 1-2 Colorado « Après TAB » compté en victoire, mode TR actif) : match aux TIRS AU BUT sans période > 3
   chez ESPN → le garde-fou renonçait. Hockey : 3 périodes présentes, égalité, final à 1 but d'écart = prolongation/TAB → score TR

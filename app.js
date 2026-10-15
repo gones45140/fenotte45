@@ -75017,3 +75017,27 @@ window._g45NhlJTrouver = _g45NhlJTrouver; window._g45NhlJHtml = _g45NhlJHtml; wi
   env._g45Nhl = true;
   window._g45JoueurClubLogo = _g45JoueurClubLogo = env;
 })();
+
+
+/* ═══ 20261016a — LOGO D'UNE ÉQUIPE NHL DU MUR SANS LOGO (capture : « Vancouver il connaît pas ») ═══
+   g45LogoUrlDe(nom) ne trouvait rien pour « Vancouver Canucks » (ni LOGOS, ni u.logoUrl). Entrée du mur de ce nom en 🏒, pas un
+   joueur, reconnue comme club NHL (_g45RegEquipe) → logo officiel NHL _dark.svg (même adresse que les joueurs, 20261015x, CONFIRMÉE
+   pour Oilers / Sharks / Lightning / Bruins). Seulement si aucun logo n'existait : rien ne change pour les équipes qui en ont un. */
+(function () {
+  var g0 = window.g45LogoUrlDe;
+  if (typeof g0 !== 'function' || g0._g45Nhl) return;
+  var env = function (name) {
+    var l = g0.apply(this, arguments);
+    if (l) return l;
+    try {
+      var u = ((typeof state !== 'undefined' && state && state.u) || []).filter(function (x) { return x && x.n === name; })[0];
+      if (u && u.type !== 'joueur' && /🏒/.test(u.sport || '') && typeof _g45RegEquipe === 'function') {
+        var eq = _g45RegEquipe(name);
+        if (eq) return 'https://assets.nhle.com/logos/nhl/svg/' + eq[0] + '_dark.svg';
+      }
+    } catch (e) {}
+    return l;
+  };
+  env._g45Nhl = true;
+  window.g45LogoUrlDe = g45LogoUrlDe = env;
+})();
