@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261015g, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261015h, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1515,6 +1515,7 @@ RÉGLÉ (worker, 01/10) : cron « exceededCpu » (cpuTimeMs 10) à CHAQUE passag
   `_g45GuideOutilsPoser` (toutes les 1,5 s) pose #g45-bloc-guide sous #g45-bloc-compte (auth-guard.js) : jours offerts restants
   (`_g45JoursOfferts`, created_at + 30 j), « ❓ Comment ça marche », « ☕ Laisser un pourboire » (paypal.me, sans contrepartie).
   Contrôle smoke.js « Guide de bienvenue + pourboire » (18 contrôles).
+  20261015h (capture de Cédric : « Menu Stats » pour le bilan, alors que 🧠 Stats est un autre écran) : écran 3 du guide = « Onglet Pari → 📈 Bilan ».
   20261013o (maquette validée « OUI ») — ▶️ VIDÉO + ❓ GUIDE : `_g45AideBoutonsPoser` (bet45 seulement) : PC = #g45-aide-pc (pc-only) en tête de
   <nav class="nav"> ; téléphone = #g45-aide-mob en tête de #plus-menu. `g45VideoOuvrir` / `g45VideoFermer` : fenêtre avec <video>
   ./videos/bet45-presentation.mp4 (H.264, iPhone) puis .webm (VP9 : le Chromium de test n'a pas H.264 → erreur 4 sans lui) — fichiers

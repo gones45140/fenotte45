@@ -72997,7 +72997,7 @@ function _g45GuideEcrans() {
       x: ex('Tu verras leurs <b>matchs</b>, leurs <b>scores en direct</b>, les <b>classements</b> et les <b>stats</b>.') },
     { ic: '🎟️', t: 'Note ton pari', p: 'Menu <b>Pari</b> : l’équipe, la cote, la mise.',
       x: ex('📷 Encore plus simple : <b>une capture de ton ticket</b> et l’appli remplit tout.<br><br>Après le match, l’appli te propose <b>gagné / perdu</b>.') },
-    { ic: '📈', t: 'Regarde ton bilan', p: 'Menu <b>Stats</b> : ce que tu as gagné ou perdu, par sport, par bookmaker, par type de pari.',
+    { ic: '📈', t: 'Regarde ton bilan', p: 'Onglet <b>Pari → 📈 Bilan</b> : ce que tu as gagné ou perdu, par sport, par bookmaker, par type de pari.',
       x: ex('💡 <b>Tendances</b> : des idées de paris d’après les stats (pas des pronos garantis).<br>🔞 Jouer comporte des risques : 09 74 75 13 13.') },
     { ic: '🎁', t: 'Ce qui est compris', p: '',
       x: '<table style="width:100%;border-collapse:collapse;font-size:14.5px;color:#fff;margin-top:6px;"><tr><td></td><td style="text-align:center;font-weight:800;padding:6px;">Gratuit</td>'
