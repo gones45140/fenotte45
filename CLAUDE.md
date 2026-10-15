@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261015m, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261015n, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1486,6 +1486,8 @@ RÉGLÉ (worker, 01/10) : cron « exceededCpu » (cpuTimeMs 10) à CHAQUE passag
   2 min), `g45QtOuvrir` ; Outils → Clés (g45CheckOddsQuota) gère aussi la réponse bet45. WORKER (déployé par Claude via l'API Cloudflare le 15/10,
   version précédente f5729eb0 gardée en copie) : /odds-quota → hors gones = {moi:{u, max}} = compteur q:odds:ip:<IP>:<jour UTC> (même clé que
   plafondAtteint), sans appel à The Odds API ; gones = {remaining, used, jour:{u,max}, mois:{u,max}}. Smoke (43).
+  20261015n (« il manque un intitulé, j'ai eu peur au début : il te reste ») : ligne fermée « Il te reste x / 8 crédits aujourd'hui » (bet45) /
+  « Il reste x / 20 crédits aujourd'hui (tout le monde) » (gones) ; ouverte : titre « Il te reste : » / « Il reste : » au-dessus des barres.
 - 📈 COTES EN DIRECT HORS FOOT (15/10) : commande console « 4 ligues » (NHL / NBA / NFL / MLB, moneyline.*.current + total.over.current)
   donnée à Antoine ; il la lancera pendant un match : MLB jeudi 19 h, NFL ce week-end, NBA mardi 21 h, NHL peut-être ce week-end. Chiffres
   présents → étendre _g45CdLire / cartes / fenêtre au sport (aujourd'hui meta.sp === 'soccer' et sport === 'soccer' seulement) ; ligne de

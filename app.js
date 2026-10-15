@@ -74633,18 +74633,19 @@ var _G45_BK_DOM = [
   /* pur, testé par smoke.js : ce que la ligne fermée annonce */
   window._g45QtResume = function (d) {
     if (!d) return null;
-    if (d.moi && d.moi.max) { var r = Math.max(0, d.moi.max - d.moi.u); return { r: r, max: d.moi.max, txt: 'pour toi aujourd’hui' }; }
-    if (d.jour && d.jour.max) { var r2 = Math.max(0, d.jour.max - d.jour.u); return { r: r2, max: d.jour.max, txt: 'aujourd’hui (tout le monde)' }; }
+    if (d.moi && d.moi.max) { var r = Math.max(0, d.moi.max - d.moi.u); return { r: r, max: d.moi.max, txt: 'crédits aujourd’hui', qui: 'Il te reste' }; }
+    if (d.jour && d.jour.max) { var r2 = Math.max(0, d.jour.max - d.jour.u); return { r: r2, max: d.jour.max, txt: 'crédits aujourd’hui (tout le monde)', qui: 'Il reste' }; }
     return null;
   };
   window._g45QtHtml = function () {
     if (!Q.d && !Q.enCours) setTimeout(function () { window.g45QtLire(); }, 0);
     var R = window._g45QtResume(Q.d), st = 'background:rgba(11,16,29,.86);border:1px solid rgba(255,255,255,.12);border-radius:12px;color:#fff;margin-bottom:12px;';
-    var ligne = R ? ('🎟️ Quota des cotes : <span style="color:' + coul(R.r, R.max) + ';">' + R.r + ' / ' + R.max + '</span> ' + R.txt)
+    var ligne = R ? ('🎟️ Quota des cotes : ' + R.qui + ' <span style="color:' + coul(R.r, R.max) + ';">' + R.r + ' / ' + R.max + '</span> ' + R.txt)
       : (Q.d && Q.d.err ? '🎟️ Quota des cotes : indisponible pour le moment' : '🎟️ Quota des cotes : ⏳');
     if (!Q.ouvert) return '<div id="g45tr-quota" onclick="g45QtOuvrir()" style="' + st + 'padding:9px 12px;cursor:pointer;font-size:14px;font-weight:700;">' + ligne + ' ›</div>';
     var d = Q.d || {}, h = '<div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="g45QtOuvrir()"><div style="font-size:16px;font-weight:800;">🎟️ Quota des cotes (The Odds API)</div><span style="font-size:14px;">▴</span></div>'
-      + '<div style="font-size:13px;color:#c9d3ee;">Gratuit, limité. ESPN ne compte pas : seules certaines cotes foot en consomment.</div>';
+      + '<div style="font-size:13px;color:#c9d3ee;">Gratuit, limité. ESPN ne compte pas : seules certaines cotes foot en consomment.</div>'
+      + '<div style="font-size:14px;font-weight:700;margin-top:10px;">' + (d.moi ? 'Il te reste :' : 'Il reste :') + '</div>';
     if (d.moi) h += barre('👤 Toi aujourd’hui', d.moi);
     if (d.jour) h += barre('👥 Tout le monde aujourd’hui', d.jour);
     if (d.mois) h += barre('📅 Ce mois', d.mois);
