@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261015n, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261015o, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1868,6 +1868,11 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   dans IndexedDB (_g45BgIdb, magasin kv, clé 'tr_<sport>') avec signature `_g45TrGardeSig` (jour visé, Aujourd'hui/Demain, groupes, g45tr_lsoff) ;
   enveloppe de loadTendancesTab : sans résultats → reprise si même signature, matchs commencés retirés (`_g45TrGardeFiltre`), une fois par sport
   et par chargement (↺ Relancer = vraie analyse). Testé Chromium (rechargement). Smoke (42).
+  20261015o (« DraftKings paie ≈ 5 % de plus que Winamax », maquette validée « OUI » : « approximatif book ARJEL, enlever 5 %, en laissant la cote
+  DRAFT ») : bloc en fin d'app.js — enveloppes de _g45TrBuild / _g45TrHkBuild / _g45TrUsBuild → `_g45TrCoteFr` : m.coteDk = cote d'origine, m.cote =
+  × 0,95 (`_G45_TR_FR`, ≈ books FR ANJ, ESTIMÉE), espérance recalculée ; coin des cartes « ≈ @x · BOOKS FR (ANJ) · estimée · DK y ». Filtres cote mini /
+  jouable, tri, historique officiel (c = ≈ FR, cd = DK ; mention sous le titre) utilisent la cote ≈ FR (1,50 FR = 1,58 DK). Cotes The Odds API : même
+  correction (approximation). m.fair inchangé. Passage officiel du 15/10 refait une 3e fois (aucun match commencé). Smoke (44).
   Écarts entre Antoine et Cédric (14/10) : réglages par appareil (compétitions, jour, cote / proba mini), heure d'analyse, quota The Odds API (bet45 = 8 crédits / personne / jour).
 RÉGLÉ OU ABANDONNÉ (ne pas reproposer) :
 - APK bet45 sans barre d'adresse : OK. Logos Lakers / hockey : OK. « Connexion » sur le

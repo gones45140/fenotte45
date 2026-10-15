@@ -30781,8 +30781,11 @@ function _g45TrRender(){
          le % est deja dans la case 📊 Stats du bas (14m) → retire ici. Sans cote : l'heure seule,
          dans une petite pastille ; avec cote : @x COTE MARCHE + esperance + heure. */
       +(m.cote?('<div style="flex:none;text-align:right;background:rgba(8,11,20,.74);border-radius:7px;padding:6px 9px;margin:-3px -4px 0 0;">'
-          +'<div style="font-size:16px;font-weight:800;color:#f0c828;line-height:1;">@'+m.cote.toFixed(2)+'</div>'
-          +'<div style="font-size:7.5px;color:rgba(255,255,255,.62);letter-spacing:.4px;">COTE MARCHÉ</div>'
+          +(m.coteDk?('<div style="font-size:16px;font-weight:800;color:#f0c828;line-height:1;">≈ @'+m.cote.toFixed(2)+'</div>'
+              +'<div style="font-size:9px;color:#fff;font-weight:700;letter-spacing:.3px;margin-top:2px;">BOOKS FR (ANJ)</div>'
+              +'<div style="font-size:11px;color:#c9d3ee;">estimée · DK '+m.coteDk.toFixed(2)+'</div>')   /* 20261015o : DraftKings − 5 % */
+            :('<div style="font-size:16px;font-weight:800;color:#f0c828;line-height:1;">@'+m.cote.toFixed(2)+'</div>'
+          +'<div style="font-size:7.5px;color:rgba(255,255,255,.62);letter-spacing:.4px;">COTE MARCHÉ</div>'))
           +(showGap&&m.ev!=null?('<div style="font-size:10px;font-weight:800;color:'+col+';">espérance '+(m.ev>=0?'+':'')+Math.round(m.ev*1000)/10+'%</div>'):'')
           +(x.when?('<div style="font-size:12px;color:#fff;margin-top:3px;">'+_g45CyEa(x.when)+'</div>'):'')
         +'</div>')
@@ -74518,7 +74521,7 @@ var _G45_BK_DOM = [
     var J = O.j, box = function (h) { return '<div id="g45tr-off" style="background:rgba(11,16,29,.86);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px 14px;margin-bottom:12px;color:#fff;">' + h + '</div>'; };
     var tete = '<span style="display:inline-block;background:#f0c828;color:#111;font-size:11px;font-weight:800;border-radius:5px;padding:2px 6px;">OFFICIEL · identique pour tous</span>'
       + '<div style="font-size:17px;font-weight:800;margin-top:6px;">📒 Historique des Tendances</div>'
-      + '<div style="font-size:13px;color:#c9d3ee;">Notées AVANT le match, chaque jour à 10 h · cote mini 1,50 · proba mini 50 %</div>';
+      + '<div style="font-size:13px;color:#c9d3ee;">Notées AVANT le match, chaque jour à 10 h · cote mini 1,50 · proba mini 50 %<br>Cotes ≈ books FR (ANJ) : DraftKings − 5 %, estimées</div>';
     if (!J) return box(tete + '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">⏳ Chargement…</div>');
     var tous = (J.t || []).filter(function (x) { return x.r !== -1; });
     var L = tous.filter(function (x) { return O.f === 'acc' ? !x.d : (O.f === 'des' ? x.d : true); });
@@ -74669,4 +74672,31 @@ var _G45_BK_DOM = [
     } catch (e) {}
     return _chk.apply(this, arguments);
   };
+})();
+
+
+/* ═══ ≈ COTE BOOKS FR DANS TENDANCES (20261015o, maquette validée « OUI », « approximatif book ARJEL et enlever 5 % … tout en laissant la cote
+   DRAFT ») ═══ Constat d'Antoine : DraftKings (cote ESPN) paie ≈ 5 % de PLUS que Winamax → le filtre « cote mini 1,50 » laissait passer des
+   paris sous 1,50 en France et le gain de l'historique officiel était trop beau. Chaque marché qui a une cote : m.coteDk = cote d'origine
+   (gardée, affichée « DK x » sous la cote), m.cote = cote × 0,95 (≈ books FR, ANJ, ESTIMÉE, libellée comme telle), espérance recalculée.
+   Enveloppes des trois fabriques (_g45TrBuild foot, _g45TrHkBuild hockey, _g45TrUsBuild NBA / NFL) → tout ce qui suit (filtres cote mini
+   / jouable, tri par espérance, historique officiel, fiabilité) utilise la cote ≈ FR. Cote venue de The Odds API (médiane EU) : même
+   correction (approximation). Probabilités bookmakers (m.fair, marge retirée) : inchangées. */
+window._G45_TR_FR = 0.95;
+window._g45TrCoteFr = function (out) {
+  (out || []).forEach(function (x) {
+    if (!x || !(x.cote > 1) || x.coteDk) return;
+    x.coteDk = x.cote;
+    x.cote = Math.max(1.01, Math.round(x.cote * window._G45_TR_FR * 100) / 100);
+    if (x.ev != null && x.p > 0) x.ev = x.p * x.cote - 1;
+  });
+  return out;
+};
+(function () {
+  var b0 = _g45TrBuild;
+  _g45TrBuild = window._g45TrBuild = function () { return window._g45TrCoteFr(b0.apply(this, arguments)); };
+  ['_g45TrHkBuild', '_g45TrUsBuild'].forEach(function (n) {
+    var f = window[n]; if (typeof f !== 'function') return;
+    window[n] = function () { return window._g45TrCoteFr(f.apply(this, arguments)); };
+  });
 })();
