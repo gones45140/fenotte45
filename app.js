@@ -66128,7 +66128,7 @@ window._g45ClvSelection = _g45ClvSelection; window._g45ClvPoser = _g45ClvPoser; 
       (setItem et save) puisse les vider.
    3) Au-delà de 4 millions de caractères stockés, purge préventive des
       caches (jamais g45v5, les données). */
-var _G45_CACHE_MORTS = ['g45trOdds_' /* 13/10 : → g45trOdds2_ (marchés dans la clé) */, 'g45agoa1_' /* 11/10 : → g45agoa2_ (nom des books) */, 'g45nrlcal11_' /* 06/10 : → g45nrlcal12_ (présaison US écartée) */, 'g45f1tr1_' /* 04/10 : → g45f1tr2_ (voie des stands) */, 'g45bbjc1' /* 03/10 : → g45bbjc2 (clubs par saison) */, 'g45bbph1_' /* 03/10 : → g45bbph2_ (secours Wikipédia) */, 'g45cm10_' /* 07/10 : → g45cm11_ (statut OT/SO gardé) */, 'g45_jou_v1_' /* 07/10 : → g45_jou_v2_ (présence par match) */, 'g45cm9_' /* 01/10 : → g45cm10_ (présaison NHL marquée PO) */, 'g45nrlst1_' /* 01/10 : → g45nrlst2_ */, 'g45_cfai_veille' /* 29/09 : Workers AI supprimé */, 'g45cls4_' /* 29/09 : → g45cls5_ (stats de match) */, 'g45news7_', 'g45cm_', 'g45cm2_', 'g45cm3_', 'g45cm4_', 'g45cm5_', 'g45cm6_', 'g45cm7_', 'g45cm8_',
+var _G45_CACHE_MORTS = ['g45reg1_v5_', 'g45reg1_f8_' /* 16/10 : → v6_ / f9_ (valeurs par match, seuil 2+) */, 'g45trOdds_' /* 13/10 : → g45trOdds2_ (marchés dans la clé) */, 'g45agoa1_' /* 11/10 : → g45agoa2_ (nom des books) */, 'g45nrlcal11_' /* 06/10 : → g45nrlcal12_ (présaison US écartée) */, 'g45f1tr1_' /* 04/10 : → g45f1tr2_ (voie des stands) */, 'g45bbjc1' /* 03/10 : → g45bbjc2 (clubs par saison) */, 'g45bbph1_' /* 03/10 : → g45bbph2_ (secours Wikipédia) */, 'g45cm10_' /* 07/10 : → g45cm11_ (statut OT/SO gardé) */, 'g45_jou_v1_' /* 07/10 : → g45_jou_v2_ (présence par match) */, 'g45cm9_' /* 01/10 : → g45cm10_ (présaison NHL marquée PO) */, 'g45nrlst1_' /* 01/10 : → g45nrlst2_ */, 'g45_cfai_veille' /* 29/09 : Workers AI supprimé */, 'g45cls4_' /* 29/09 : → g45cls5_ (stats de match) */, 'g45news7_', 'g45cm_', 'g45cm2_', 'g45cm3_', 'g45cm4_', 'g45cm5_', 'g45cm6_', 'g45cm7_', 'g45cm8_',
   'g45khl_fiche_', 'g45_saisons_cache_v2_', 'g45_score_', 'g45_score2_', 'g45_score3_'];
 try {
   ['g45cm11_', 'g45xgj1_', 'g45khl_fiche2_', 'g45khl_plage_', 'g45cls3_', 'g45cls5_', 'g45photostsdb_', 'g45wk1_', 'g45jv_', 'g45art1_', 'g45clv1_', 'g45arb1_', 'g45_herologo_', 'g45cm3_']
@@ -69135,6 +69135,9 @@ function _g45RegCalc(log, cle, sansLieu) {
     if (v > 0) { avec++; cour = 0; bc++; if (bc > best) best = bc; } else { cour++; if (cour > pire) pire = cour; bc = 0; }
   });
   var R = { mj: n, tot: tot, pct: n ? Math.round(avec * 100 / n) : 0, pire: pire, cours: cour, best: best, bcours: bc };
+  /* 20261016g (« rajouter le 2 pts », seuil 1 / 2 / 3 ou plus comme Winamax) : valeur de chaque match gardée (ordre chronologique)
+     → `_g45RegSeuilS` recalcule %, séries pour un autre seuil sans rien relire. */
+  R.v = L.map(function (g) { return cle === 'points' ? (g.points != null ? +g.points || 0 : (+g.goals || 0) + (+g.assists || 0)) : (+g[cle] || 0); });
   /* 20261006w (« différencie pas domicile et extérieur ») : mêmes calculs sur les seuls matchs à domicile (d) / à l'extérieur (e),
      quand le journal connaît le lieu (g.h = 1 domicile, 0 extérieur). */
   if (!sansLieu && (log || []).some(function (g) { return g && (g.h === 1 || g.h === 0); })) {
@@ -69143,9 +69146,21 @@ function _g45RegCalc(log, cle, sansLieu) {
   }
   return R;
 }
+/* 20261016g : stats d'un joueur pour le seuil n (« n ou plus » par match) ; null si la liste n'a pas les valeurs par match */
+function _g45RegSeuilS(S, n) {
+  if (!S || !(n > 1)) return S;
+  if (!S.v) return null;
+  var avec = 0, pire = 0, cour = 0, best = 0, bc = 0;
+  S.v.forEach(function (v) { if (v >= n) { avec++; cour = 0; bc++; if (bc > best) best = bc; } else { cour++; if (cour > pire) pire = cour; bc = 0; } });
+  var R = Object.assign({}, S, { pct: S.v.length ? Math.round(avec * 100 / S.v.length) : 0, pire: pire, cours: cour, best: best, bcours: bc });
+  if (S.d) R.d = _g45RegSeuilS(S.d, n);
+  if (S.e) R.e = _g45RegSeuilS(S.e, n);
+  return R;
+}
+window._g45RegSeuilS = _g45RegSeuilS;
 async function _g45RegLire(saison, cat, eq) {
   if (eq) return _g45RegLireEq(saison, cat, eq);
-  var ck = 'g45reg1_v5_' + saison + '_' + cat;   /* v2 (20261006l) : + meilleure série */
+  var ck = 'g45reg1_v6_' + saison + '_' + cat;   /* v2 (20261006l) : + meilleure série ; v6 (20261016g) : + valeurs par match */
   try { var c = JSON.parse(localStorage.getItem(ck) || 'null'); if (c && Date.now() - c.t < 12 * 3600e3) return c.l; } catch (e) {}
   var P = FD_PROXY + '?key=nhl&host=nhl&path=';
   var k = cat === 'a' ? 'assists' : (cat === 'p' ? 'points' : 'goals');
@@ -69197,6 +69212,8 @@ function _g45RegHtml() {
   var b = function (on, txt, f) { return '<button onclick="' + f + '" style="flex:1;padding:8px 4px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:' + (on ? '900' : '700') + ';border:1px solid ' + (on ? '#4d84ff' : 'rgba(255,255,255,.18)') + ';background:' + (on ? '#1b2a52' : 'rgba(11,16,29,.85)') + ';color:' + (on ? '#fff' : '#c9d3ee') + ';">' + txt + '</button>'; };
   var LB = _g45RegLib(_g45Reg.cat);   /* 20261006h : libellés par sport (NHL, foot, NFL) */
   var h = '<div style="display:flex;gap:6px;margin-bottom:6px;">' + ['g', 'a', 'p'].filter(function (c) { return !!_g45RegLib(c).btn; }).map(function (c) { return b(_g45Reg.cat === c, _g45RegLib(c).btn, "g45RegSet('cat','" + c + "')"); }).join('') + '</div>'
+    /* 20261016g : seuil par match 1 / 2 / 3 ou plus (comme les paliers Winamax) */
+    + '<div style="display:flex;gap:6px;margin-bottom:6px;">' + [1, 2, 3].map(function (n) { var on = (_g45Reg.seuil || 1) === n; return '<button onclick="g45RegSet(\'seuil\',' + n + ')" style="flex:1;padding:8px 4px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:' + (on ? '900' : '700') + ';border:' + (on ? '2px solid #f5c542' : '1px solid rgba(255,255,255,.18)') + ';background:' + (on ? 'rgba(245,197,66,.16)' : 'rgba(11,16,29,.85)') + ';color:' + (on ? '#f5c542' : '#c9d3ee') + ';">' + (on ? '✓ ' : '') + n + ' ou plus</button>'; }).join('') + '</div>'
     + '<div style="display:flex;gap:6px;margin-bottom:6px;">' + b(!_g45Reg.lieu, 'Tous', "g45RegSet('lieu','')") + b(_g45Reg.lieu === 'd', '🏠 Domicile', "g45RegSet('lieu','d')") + b(_g45Reg.lieu === 'e', '🚌 Extérieur', "g45RegSet('lieu','e')") + '</div>'   /* 20261006w */
     + '<div style="display:flex;gap:6px;margin-bottom:8px;">' + b(_g45Reg.tri === 'pire', 'Pire série ▲', "g45RegSet('tri','pire')") + b(_g45Reg.tri === 'pct', '% matchs ' + LB.avec, "g45RegSet('tri','pct')")
       + b(_g45Reg.tri === 'tot', LB.col + ' ▼', "g45RegSet('tri','tot')") + b(_g45Reg.tri === 'best', 'Meilleure série ▼', "g45RegSet('tri','best')") + '</div>';   /* 20261006d ; 20261006l */
@@ -69204,7 +69221,11 @@ function _g45RegHtml() {
      vers la saison précédente (et retour), sans toucher au Saison ▾ du panneau. */
   if (!_g45Reg.mem[_g45RegK()]) return h + '<div style="font-size:14px;color:#fff;padding:10px 4px;">⏳ Lecture des joueurs… <span id="g45-reg-prog"></span></div>';
   /* 20261006w : lieu choisi → chaque joueur vu avec ses stats du lieu (o.s.d / o.s.e) */
-  var LI = _g45Reg.lieu || '';
+  var LI = _g45Reg.lieu || '', SE = _g45Reg.seuil || 1;
+  if (SE > 1) {   /* 20261016g */
+    if (L.some(function (o) { return o.s && !o.s.v; })) h += '<div style="font-size:13px;color:#ffb13d;margin-bottom:6px;">Seuil ' + SE + ' ou plus : liste gardée avant la mise à jour, certains joueurs ne sont pas recalculés.</div>';
+    var Lc = L.comps; L = L.map(function (o) { return Object.assign({}, o, { s: _g45RegSeuilS(o.s, SE) }); }); L.comps = Lc;
+  }
   var Lv = LI ? L.map(function (o) { return Object.assign({}, o, { s: o.s && o.s[LI] }); }) : L;
   var ok = Lv.filter(function (o) { return o.s && o.s.mj >= 1; });
   if (LI && !L.some(function (o) { return o.s && o.s[LI]; })) return h + '<div style="font-size:14px;color:#ffb13d;padding:8px 2px;">Lieu des matchs inconnu pour ce classement : touche « Tous ».</div>';
@@ -69227,7 +69248,7 @@ function _g45RegHtml() {
   });
   var col = function (v) { return v < 6 ? '#1ed760' : (v < 10 ? '#f0b020' : '#ff6b6b'); };
   h += '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:14px;color:#fff;white-space:nowrap;">'
-    + '<tr style="color:#c9d3ee;font-size:12px;"><th style="text-align:left;padding:6px;">Joueur</th><th style="padding:6px 6px;">' + LB.col + '</th><th style="padding:6px 6px;">MJ</th><th style="padding:6px 6px;">%</th><th style="padding:6px 6px;">Pire série</th><th style="padding:6px 6px;">Meilleure</th><th style="padding:6px 6px;">En cours</th></tr>';   /* 20261006s : titres collés (« EssaisMJ ») */
+    + '<tr style="color:#c9d3ee;font-size:12px;"><th style="text-align:left;padding:6px;">Joueur</th><th style="padding:6px 6px;">' + LB.col + '</th><th style="padding:6px 6px;">MJ</th><th style="padding:6px 6px;">%' + (SE > 1 ? ' ' + SE + '+' : '') + '</th><th style="padding:6px 6px;">Pire série</th><th style="padding:6px 6px;">Meilleure</th><th style="padding:6px 6px;">En cours</th></tr>';   /* 20261006s : titres collés (« EssaisMJ ») */
   /* 20261005u : rang de l'an dernier (top 10 de la LIGUE, même catégorie) — ligue : or 1-3 / bronze 4-10 ; équipe : or seulement */
   var PR = _g45Reg.prev[_g45RegPK()] || {};
   var labP = lab(+_g45Reg.an - 1), nOr = 0;
@@ -69253,6 +69274,7 @@ function _g45RegHtml() {
     : '<span style="color:#f5c542;font-weight:800;">Or</span> = top 3 · <span style="color:#e0915a;font-weight:800;">Bronze</span> = 4e à 10e des ' + catL + ' en ' + labP;
   if ((FT && _g45Reg.cat === 'p') || _g45Reg.lg === 'top14' || _g45Reg.lg === 'khl') h += '</table></div>';   /* foot : pas de classement « buts + passes » chez ESPN → pas de couleur */
   else h += '</table></div><div style="font-size:13px;color:#fff;margin-top:6px;">' + leg + (_g45Reg.prev[_g45RegPK()] ? '' : ' (indisponible)') + '</div>';
+  if (SE > 1) h += '<div style="font-size:13px;color:#f5c542;margin-top:6px;">Seuil ' + SE + ' ou plus : %, pire / meilleure série et en cours comptent les matchs à ' + SE + ' ' + LB.col.toLowerCase() + ' ou plus (' + LB.col + ' = total de la saison).</div>';
   if (_g45Reg.lieu) h += '<div style="font-size:13px;color:#fff;margin-top:6px;">' + (_g45Reg.lieu === 'd' ? '🏠 Matchs à domicile seulement' : '🚌 Matchs à l\'extérieur seulement') + ' (MJ, %, séries recalculés).</div>';
   return h + '<div style="font-size:12px;color:#c9d3ee;margin-top:6px;">Pire série : vert = jamais 6 matchs de suite sans ' + LB.sans + ' · orange 6 à 9 · rouge 10 et plus. <span style="color:#5aa9ff;">Meilleure</span> = plus longue série de matchs AVEC ' + LB.sans + '.</div>';
 }
@@ -69317,7 +69339,7 @@ function _g45RegEquipe(nom) {
   return null;
 }
 async function _g45RegLireEq(saison, cat, abr) {
-  var ck = 'g45reg1_v5_' + saison + '_' + cat + '_' + abr;
+  var ck = 'g45reg1_v6_' + saison + '_' + cat + '_' + abr;   /* v6 : 20261016g */
   try { var c = JSON.parse(localStorage.getItem(ck) || 'null'); if (c && Date.now() - c.t < 12 * 3600e3) return c.l; } catch (e) {}
   var P = FD_PROXY + '?key=nhl&host=nhl&path=';
   var k = cat === 'a' ? 'assists' : (cat === 'p' ? 'points' : 'goals');
@@ -69520,7 +69542,7 @@ async function _g45RegLireFoot(lg, an, cat, eq) {
   if (lg === 'top14') return _g45RegLireRug(eq);   /* 20261006k */
   if (lg === 'khl') return _g45RegLireKhl(cat, eq);   /* 20261006r */
   if (lg === 'nrl') return _g45RegLireNrl(an, cat, eq);   /* 20261006m */
-  var anEsp = _g45RegEspAn(lg, an), ck = 'g45reg1_f8_' + lg + '_' + anEsp + '_' + cat + (eq ? '_' + eq + '_' + (_g45Reg.cf || 'L') : '');
+  var anEsp = _g45RegEspAn(lg, an), ck = 'g45reg1_f9_' /* 20261016g */ + lg + '_' + anEsp + '_' + cat + (eq ? '_' + eq + '_' + (_g45Reg.cf || 'L') : '');
   try { var c = JSON.parse(localStorage.getItem(ck) || 'null'); if (c && Date.now() - c.t < 12 * 3600e3) { if (c.c) c.l.comps = c.c; return c.l; } } catch (e) {}
   var top;
   if (eq) top = (lg === 'nfl' || lg === 'mlb') ? await _g45RegCandidatsNfl(String(eq).slice(1), anEsp, cat, lg) : await _g45RegCandidatsClub(lg, String(eq).slice(1), anEsp, cat);   /* 20261006e : joueurs du club ; NFL 20261006j */

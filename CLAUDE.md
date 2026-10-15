@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261016f, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261016g, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1702,6 +1702,9 @@ RÉGLÉ (worker, 01/10) : cron « exceededCpu » (cpuTimeMs 10) à CHAQUE passag
   0 extérieur) — ESPN atVs « vs » / « @ » (foot SONDÉ ; NFL / MLB supposé pareil), rugby cote 0 = reçoit, NRL F.h.id, KHL m.a = reçoit, NHL
   homeRoadFlag H/R (SONDÉ PAR ANTOINE, téléphone, game-log 8478402 2025-26 : « H » / « R » présents) ; `_g45RegCalc` ajoute R.d / R.e ; `_g45RegHtml` vue par _g45Reg.lieu.
   Listes g45reg1_v4_/v3_ → v5_, g45reg1_f7_ → f8_.
+  20261016g (« rajouter le 2 pts » comme les paliers Winamax, maquette validée « oui ») : boutons « 1 / 2 / 3 ou plus » (_g45Reg.seuil) sous Buteurs /
+  Passeurs / Pointeurs, tous sports ; `_g45RegCalc` garde R.v (valeur par match, chronologique) → `_g45RegSeuilS(S, n)` recalcule %, pire / meilleure /
+  en cours (d / e aussi) sans requête ; colonne « % 2+ ». Listes g45reg1_v5_ → v6_, f8_ → f9_ (anciennes dans MORTS). Smoke (50).
 - 📊 TES CRITÈRES SUR 4 SAISONS (20261014a, maquette validée « ok ») — bloc en fin d'app.js, posé par renderSaisonsChart sous Global / Domicile /
   Extérieur (`window._g45CrHtml(nom)`, #g45cr), REPLIÉ par défaut (g45_cr_open). Méthode d'Antoine : il choisit une équipe pour une MONTANTE
   (cote 1,5 mini au départ : à 1,5 une victoire remet à zéro, au-dessus = bénéfice), note la consigne au mur, ajoute over / under si cote < 1,5.
