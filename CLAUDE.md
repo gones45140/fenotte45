@@ -166,6 +166,8 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   _g45RegCalc avec boutons Buts / Passes / Points `g45NhlJCat` ; 10 derniers matchs ; prochain match ; gardien = victoires / % arrêts /
   moyenne / blanchissages). Champs NON sondés (shots, plusMinus, avgTimeOnIcePerGame, opponentAbbrev, sweaterNumber, stats gardien) :
   affichés seulement s'ils existent. Cache g45nhlj1_eq_ 6 h, g45nhlj1_log_ 1 h. Smoke (46). Recherche « Rechercher un club » = équipes seulement.
+  CONFIRMÉ par Antoine (capture 15/10 23:53, McDavid) : photo, 4 B / 13 A / 17 pts, tirs 14, +/- +14, temps 23:34 → shots, plusMinus,
+  avgTimeOnIcePerGame (secondes) EXISTENT dans club-stats. Rond de la carte du mur = initiales « CON » (pas de photo) : à améliorer si demandé.
 - Temps réglementaire : `g45ScoreTR`, `G45_TR_PERIODES`.
   20261005j (capture : Edmonton 1-2 Colorado « Après TAB » compté en victoire, mode TR actif) : match aux TIRS AU BUT sans période > 3
   chez ESPN → le garde-fou renonçait. Hockey : 3 périodes présentes, égalité, final à 1 but d'écart = prolongation/TAB → score TR
