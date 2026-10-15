@@ -20737,39 +20737,59 @@ async function g45MurJoueurPanel(){
     el.innerHTML='<div style="font-size:10.5px;color:var(--t3);text-align:center;padding:16px;">Aucune statistique disponible pour '+_g45CyEa(id.pname)+'.</div>';
     return;
   }
-  var nCarte=0;
+  /* 20261015y — LIFTING (capture Mbappé « y a besoin de lifting », maquette validée « oui go ») : même style que la fiche NHL —
+     en-tête photo + nom + club sur bande sombre, UN bouton par compétition (Liga / C1 / Sélection) au lieu de trois blocs empilés,
+     chance de marquer en grand, 4 cases, le reste sur une ligne, « 📋 Voir ses matchs » (g45ButToggleMatchs inchangé).
+     Photo : visuel TheSportsDB du joueur (_g45JoueurVisLire) si connu, sinon ESPN (souvent vide) ; posée aussi dans le rond de l'en-tête. */
   var _p=_g45ButPortee(nom);
-  var carte=function(st, titre, coul, lgs){
-    var gpm=st.g/st.app, npg=(st.g-st.pg)/st.app;
-    var pA=1-Math.exp(-gpm), pN=1-Math.exp(-npg);
-    var cell=function(v,l,c){ return '<div style="flex:1;min-width:62px;text-align:center;background:rgba(0,0,0,.20);border-radius:7px;padding:6px 4px;"><div style="font-size:13px;font-weight:800;color:'+(c||'var(--t1)')+';">'+v+'</div><div style="font-size:7.5px;color:var(--t3);margin-top:1px;">'+l+'</div></div>'; };
-    var pid='g45ml'+(++nCarte);
-    var clic=lgs?(' onclick="g45ButToggleMatchs(\''+pid+'\',\''+lgs+'\','+id.aid+','+an+')" style="cursor:pointer;"'):'';
-    return '<div style="background:rgba(12,16,28,.96);border:1px solid rgba(255,255,255,.08);border-left:3px solid '+coul+';border-radius:10px;padding:10px 11px;margin-bottom:9px;">'
-      +'<div'+clic+'><div style="font-size:10px;font-weight:800;color:'+coul+';margin-bottom:7px;">'+titre+(lgs?' <span style="font-size:8px;color:var(--t3);font-weight:600;">— voir les matchs ›</span>':'')+'</div></div>'
-      +'<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:7px;">'
-        +cell(st.g,'buts','#f0c828')+cell(st.app,'matchs')+cell(gpm.toFixed(2),'buts/match','#f0c828')
-        +cell(npg.toFixed(2),'hors penalty','#2ecc71')+cell((st.sot/st.app).toFixed(1),'tirs cadrés/m')
-        +cell(Math.round((st.sh?st.g/st.sh:0)*100)+'%','conversion')+cell(Math.round((st.app?st.st/st.app:0)*100)+'%','titulaire')
-      +'</div>'
-      +'<div style="font-size:9px;color:var(--t2);line-height:1.6;">⚠️ <b>'+st.pg+'</b> de ses '+st.g+' buts sur penalty ('+Math.round(st.g?100*st.pg/st.g:0)+'%)'
-      +(st.head?(' · '+st.head+' de la tête'):'')+' · '+Math.round(st.min/(st.app||1))+' min par match</div>'
-      +'<div style="font-size:10px;font-weight:800;color:var(--t1);margin-top:6px;">Probabilité de marquer : '+Math.round(pA*100)+'% <span style="font-size:8.5px;color:var(--t3);font-weight:600;">tout compris</span> · <span style="color:#2ecc71;">'+Math.round(pN*100)+'%</span> <span style="font-size:8.5px;color:var(--t3);font-weight:600;">hors penalty</span></div>'
-      +(lgs?('<div id="'+pid+'" data-open="0" style="display:none;margin-top:8px;"></div>'):'')
-      +'</div>';
-  };
-  el.innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">'
-      +'<img src="https://a.espncdn.com/i/headshots/soccer/players/full/'+id.aid+'.png" loading="lazy" onerror="this.style.display=\'none\'" style="width:46px;height:46px;border-radius:50%;object-fit:cover;background:rgba(255,255,255,.07);flex:none;">'
-      +'<div><div style="font-size:13px;font-weight:800;color:var(--t1);">'+_g45CyEa(id.pname)+'</div>'
-      +'<div style="font-size:9px;color:var(--t2);">'+_g45CyEa(id.tname||'')+' · '+((_lgSel && _lgSel.tournoi) ? ('édition '+an) : ('saison '+an+'/'+(an+1)))
-        +(_p!=='tout'?(' · <span style="color:'+(_p==='ucl'?'#8aa0ff':(_p==='int'?'#2ecc71':'#f0c828'))+';font-weight:800;">'
-          +(_p==='ucl'?'Ligue des Champions':(_p==='int'?'Sélection':(_lgSel?_lgSel.nom:'Championnat')))+' uniquement</span>'):'')
-        +'</div></div></div>'
-    +((_p==='tout'||_p==='lg')?carte(d,(_lgSel?('🌍 '+_lgSel.nom):('🏆 '+(((_G45_BUT_LG.filter(function(x){ return x.s===id.lg; })[0])||{}).n||'Championnat'))),'#f0c828', id.lg):'')
-    +((dC&&(_p==='tout'||_p==='ucl'))?carte(dC,'⭐ Ligue des Champions','#8aa0ff','uefa.champions'):'')
-    +((dI&&(_p==='tout'||_p==='int'))?(carte(dI,'🌍 Sélection','#2ecc71', _G45_INTER.map(function(x){return x.s;}).join(','))
-        +'<div style="font-size:8px;color:var(--t3);margin:-4px 0 9px 2px;">'+_g45CyEa(dI.comps.join(' · '))+'</div>'):'')
-    +'<div style="font-size:8px;color:var(--t3);text-align:center;margin-top:6px;font-style:italic;line-height:1.6;">λ = buts par match joué ; p = 1 − e<sup>−λ</sup>. Statistiques ESPN, championnat et C1 séparés.<br>Pour comparer à une cote buteur, passe par Tendances → ⚽ Buteurs.</div>';
+  var blocs=[];
+  if(_p==='tout'||_p==='lg') blocs.push({st:d, t:(_lgSel?('🌍 '+_lgSel.nom):('🏆 '+(((_G45_BUT_LG.filter(function(x){ return x.s===id.lg; })[0])||{}).n||'Championnat'))), c:'#f5c542', lgs:id.lg});
+  if(dC&&(_p==='tout'||_p==='ucl')) blocs.push({st:dC, t:'⭐ C1', c:'#8aa0ff', lgs:'uefa.champions'});
+  if(dI&&(_p==='tout'||_p==='int')) blocs.push({st:dI, t:'🌍 Sélection', c:'#2ecc71', lgs:_G45_INTER.map(function(x){return x.s;}).join(','), comps:dI.comps});
+  var jv=null; try{ jv=(typeof _g45JoueurVisLire==='function')?_g45JoueurVisLire(nom):null; }catch(e){}
+  var ph=(jv&&(jv.thumb||jv.cut))||('https://a.espncdn.com/i/headshots/soccer/players/full/'+id.aid+'.png');
+  try{ if(jv&&(jv.thumb||jv.cut)&&typeof _g45HeroPoser==='function'){ if(u&&u.logoUrl!==ph){ u.logoUrl=ph; if(typeof save==='function') save(); } _g45HeroPoser(nom, ph, u); } }catch(e){}
+  window._g45MjD={nom:nom, id:id, an:an, blocs:blocs, ph:ph, lgSel:_lgSel};
+  if(!(window._g45MjSel>=0&&window._g45MjSel<blocs.length)) window._g45MjSel=0;
+  el.innerHTML=_g45MjHtml();
+}
+function _g45MjHtml(){
+  var D=window._g45MjD; if(!D) return '';
+  var esc=function(x){ return _g45CyEa(x); };
+  var fr=function(x,n){ return Number(x).toFixed(n).replace('.',','); };
+  var i0=window._g45MjSel||0, B=D.blocs[i0];
+  var h='<div style="background:linear-gradient(135deg,#1b2a4a,#0b101d);border-left:5px solid '+(B?B.c:'#f5c542')+';border-radius:12px;padding:12px;">'
+    +'<div style="display:flex;align-items:center;gap:12px;">'
+    +'<img src="'+esc(D.ph)+'" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.visibility=\'hidden\'" style="width:64px;height:64px;border-radius:50%;object-fit:cover;object-position:50% 10%;background:#33415c;flex:none;">'
+    +'<div style="flex:1;min-width:0;"><div style="font-size:20px;font-weight:900;color:#fff;">'+esc(D.id.pname)+'</div>'
+    +'<div style="font-size:14px;color:#fff;background:rgba(0,0,0,.5);display:inline-block;padding:2px 8px;border-radius:5px;margin-top:3px;">⚽ '+esc(D.id.tname||'')+' · '
+      +((D.lgSel&&D.lgSel.tournoi)?('édition '+D.an):(D.an+'-'+String(D.an+1).slice(2)))+'</div></div></div>';
+  if(D.blocs.length>1){
+    h+='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;">'+D.blocs.map(function(b,i){
+      return '<button onclick="g45MjOnglet('+i+')" style="border:none;cursor:pointer;font-size:14px;font-weight:800;border-radius:8px;padding:7px 11px;'
+        +(i===i0?('background:'+b.c+';color:#16110a;'):'background:rgba(10,14,26,.85);color:#fff;')+'">'+esc(b.t)+'</button>';
+    }).join('')+'</div>';
+  } else if(B){ h+='<div style="font-size:14px;font-weight:800;color:'+B.c+';margin-top:12px;">'+esc(B.t)+'</div>'; }
+  if(!B) return h+'<div style="font-size:14px;color:#c9d3ee;margin-top:10px;">Aucune statistique pour cette compétition.</div></div>';
+  var st=B.st, app=st.app||1, gpm=st.g/app, npg=(st.g-st.pg)/app;
+  var pA=Math.round((1-Math.exp(-gpm))*100), pN=Math.round((1-Math.exp(-npg))*100);
+  var tuile=function(v,l,c){ return '<div style="background:rgba(10,14,26,.85);border-radius:9px;padding:8px 2px;text-align:center;"><div style="font-size:20px;font-weight:800;color:'+(c||'#fff')+';">'+v+'</div><div style="font-size:13px;color:#c9d3ee;">'+l+'</div></div>'; };
+  h+='<div style="display:flex;align-items:center;gap:10px;margin-top:12px;background:rgba(46,204,113,.15);border:1px solid rgba(46,204,113,.4);border-radius:10px;padding:10px;">'
+    +'<div style="font-size:30px;font-weight:900;color:#2ecc71;">'+pN+' %</div>'
+    +'<div style="font-size:14px;line-height:1.4;color:#fff;">chance de marquer<br><span style="color:#c9d3ee;">hors penalty · '+pA+' % avec penalty</span></div></div>'
+    +'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px;">'
+    +tuile(st.g,'buts','#f5c542')+tuile(st.app,'matchs')+tuile(fr(gpm,2),'buts / m','#2ecc71')+tuile(fr(st.sot/app,1),'cadrés / m')+'</div>'
+    +'<div style="font-size:14px;color:#fff;margin-top:8px;background:rgba(0,0,0,.45);border-radius:7px;padding:5px 9px;line-height:1.5;">'
+    +(st.pg?(st.pg+' penalty'+(st.pg>1?'s':'')+' sur '+st.g+' but'+(st.g>1?'s':'')):'aucun penalty')
+    +(st.head?(' · '+st.head+' de la tête'):'')+' · '+Math.round(st.min/app)+' min / match · conversion '+Math.round((st.sh?st.g/st.sh:0)*100)+'&nbsp;% · titulaire '+Math.round((st.st/app)*100)+'&nbsp;%</div>'
+    +(B.comps&&B.comps.length?('<div style="font-size:13px;color:#c9d3ee;margin-top:6px;">'+esc(B.comps.join(' · '))+'</div>'):'');
+  var pid='g45ml'+i0;
+  h+='<div onclick="g45ButToggleMatchs(\''+pid+'\',\''+B.lgs+'\','+D.id.aid+','+D.an+')" style="cursor:pointer;font-size:14px;margin-top:10px;color:#5aa9ff;font-weight:800;">📋 Voir ses matchs ›</div>'
+    +'<div id="'+pid+'" data-open="0" style="display:none;margin-top:8px;"></div>'
+    +'<div style="font-size:13px;color:#c9d3ee;margin-top:10px;">Chance = 1 − e<sup>−buts par match</sup> · statistiques ESPN.</div>';
+  return h+'</div>';
+}
+window.g45MjOnglet=function(i){ window._g45MjSel=i; var el=document.getElementById('ip-joueur'); if(el) el.innerHTML=_g45MjHtml();
 }
 window.g45MurJoueurPanel=g45MurJoueurPanel;
 
