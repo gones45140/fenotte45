@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261017n, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261017o, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -2034,6 +2034,11 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   📊 x.p % (bleu) / 🏦 x.f % (jaune, « — » sans) ; robot : x.fa = faits de la carte (m.faits, 4 max, sans balises) + x.nm = m.n, gardés à partir du
   passage du 18/10 ; ligne avec fa = « ▾ pourquoi » → `g45TrOffDet(id|k)` (O.det) déplie la liste (+ « Échantillon réduit » si nm < 14). Logo de
   championnat .g45tro-wm left 46 %, z-index 0 ; téléphone : nom du pari sur sa ligne (.g45tro-pn), pastilles / cote / résultat dessous.
+  20261017o (« à quelle heure les matchs se mettent avec le résultat, voir mettre le live », maquette validée « oui ») : DIRECT dans l'historique —
+  `lvMaj` (window._g45TrOffLvMaj) : tendance non jugée commencée depuis < 5 h → scoreboard ESPN du championnat (site.api, sans date, relu chaque minute
+  tant que #g45tr-off existe, 50 s mini par ligue) → O.lv[id] {st in|post, h, a, s, c = shortDetail, HT → mi-temps}. En cours : score rouge + minute,
+  pari « ✅ gagnant si ça reste » / « ⏳ pas encore » (_g45TrSuivJuge) ; fini : score « provisoire », ✅ / ❌ provisoire. Sur l'appareil seulement :
+  réussite, gain, calendrier et stats = robot de 10 h. ESPN = pas de quota (lecture depuis chaque appareil). Smoke (trLive, 55).
   Écarts entre Antoine et Cédric (14/10) : réglages par appareil (compétitions, jour, cote / proba mini), heure d'analyse, quota The Odds API (bet45 = 8 crédits / personne / jour).
 RÉGLÉ OU ABANDONNÉ (ne pas reproposer) :
 - APK bet45 sans barre d'adresse : OK. Logos Lakers / hockey : OK. « Connexion » sur le

@@ -74805,8 +74805,38 @@ var _G45_BK_DOM = [
       + '<text x="12" y="' + (Y(0) - 4).toFixed(1) + '" fill="#c9d3ee" font-size="11">0 €</text></svg>';
   }
 
+  /* 20261017o (« à quelle heure les matchs se mettent avec le résultat, voir mettre le live », maquette validée « oui ») : DIRECT —
+     historique ouvert + tendance non jugée commencée depuis < 5 h → scoreboard ESPN du championnat (site.api, direct, sans date)
+     relu chaque minute ; O.lv[id] = {st 'in'|'post', h, a, s, c}. Verdict provisoire = _g45TrSuivJuge (mêmes règles que le robot),
+     sur l'appareil seulement : réussite / gain restent ceux du robot de 10 h. */
+  O.lv = {}; O.lvT = {};
+  var lvMaj = function () {
+    if (O.lvEnCours || !O.j || !document.getElementById('g45tr-off')) return;
+    var now = Date.now(), sls = {};
+    (O.j.t || []).forEach(function (x) { if (x.r == null && x.t <= now + 60000 && now - x.t < 5 * 3600000) sls[x.sl] = 1; });
+    var l = Object.keys(sls).filter(function (sl) { return !(now - (O.lvT[sl] || 0) < 50000); });
+    if (!l.length) return;
+    O.lvEnCours = true;
+    Promise.all(l.map(function (sl) {
+      O.lvT[sl] = now;
+      return fetch('https://site.api.espn.com/apis/site/v2/sports/' + ({ nhl: 'hockey', nba: 'basketball', nfl: 'football' }[sl] || 'soccer') + '/' + sl + '/scoreboard', { cache: 'no-store' })
+        .then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+          ((j && j.events) || []).forEach(function (e) {
+            var c = (e.competitions && e.competitions[0]) || {}, st = (c.status && c.status.type) || {};
+            var etat = st.completed ? 'post' : (st.state === 'in' ? 'in' : null); if (!etat) return;
+            var ho = (c.competitors || []).filter(function (q) { return q.homeAway === 'home'; })[0], aw = (c.competitors || []).filter(function (q) { return q.homeAway === 'away'; })[0];
+            var sh = parseInt(ho && ho.score, 10), sa = parseInt(aw && aw.score, 10); if (isNaN(sh) || isNaN(sa)) return;
+            var cl = String(st.shortDetail || (c.status && c.status.displayClock) || ''); if (/^HT$|half/i.test(cl)) cl = 'mi-temps';
+            O.lv[String(e.id)] = { st: etat, h: sh, a: sa, s: sh + '-' + sa, c: cl };
+          });
+        }).catch(function () {});
+    })).then(function () { O.lvEnCours = false; redess(); });
+  };
+  window._g45TrOffLvMaj = lvMaj;
   window._g45TrOffHtml = function () {
     charger();
+    if (!O.lvTim) O.lvTim = setInterval(function () { if (document.getElementById('g45tr-off')) lvMaj(); }, 60000);
+    setTimeout(lvMaj, 0);
     var J = O.j, box = function (h) { return '<div id="g45tr-off" style="background:rgba(11,16,29,.86);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px 14px;margin-bottom:12px;color:#fff;">' + h + '</div>'; };
     var tete = '<span style="display:inline-block;background:#f0c828;color:#111;font-size:11px;font-weight:800;border-radius:5px;padding:2px 6px;">OFFICIEL · identique pour tous</span>'
       + '<div style="font-size:17px;font-weight:800;margin-top:6px;">📒 Historique des Tendances</div>'
@@ -74965,30 +74995,33 @@ var _G45_BK_DOM = [
         ordre.forEach(function (mk) {
           var g = M[mk], x0 = g[0], sc = '';
           g.forEach(function (x) { if (x.s) sc = x.s; });
+          /* 20261017o : direct ESPN (O.lv), sur l'appareil seulement, tant que le robot n'a pas jugé */
+          var LV = sc ? null : (O.lv || {})[String(x0.id)], prov = false; if (LV && LV.st === 'post') { sc = LV.s; prov = true; }
           h += '<div class="g45tro-mc" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;margin-bottom:8px;overflow:hidden;">'
             + '<div class="g45tro-mh" style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 12px;background:rgba(0,0,0,.25);"><span style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;font-size:15px;font-weight:800;min-width:0;">'
             + clubLogo(x0, 'h', 28) + esc(x0.h) + '<span style="color:#8e9bbd;">–</span>' + clubLogo(x0, 'a', 28) + esc(x0.a) + '</span>'
-            + (sc ? '<span style="background:#fff;color:#111;border-radius:7px;padding:1px 8px;font-size:14px;font-weight:900;flex:none;">' + esc(sc) + '</span>' : '<span style="font-size:12px;color:#aab6d6;flex:none;">à venir · ' + new Date(x0.t).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) + '</span>') + '</div>';
+            + (LV && LV.st === 'in' ? '<span style="background:#ff3b3b;color:#fff;border-radius:7px;padding:1px 8px;font-size:14px;font-weight:900;flex:none;">🔴 ' + esc(LV.s) + ' · ' + esc(LV.c) + '</span>' : sc ? '<span style="background:#fff;color:#111;border-radius:7px;padding:1px 8px;font-size:14px;font-weight:900;flex:none;">' + esc(sc) + (prov ? ' <span style="font-size:11px;color:#a07000;">provisoire</span>' : '') + '</span>' : '<span style="font-size:12px;color:#aab6d6;flex:none;">à venir · ' + new Date(x0.t).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) + '</span>') + '</div>';
           /* 20261017l (dessin d'Antoine : « heure · équipe · score · équipe, un truc aligné ») : en-tête PC en colonnes fixes, caché sur téléphone */
-          var hh = new Date(x0.t).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }), etat = sc ? 'fini' : (x0.t > Date.now() ? 'à venir' : 'en cours');
+          var hh = new Date(x0.t).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }), etat = prov ? 'fini · provisoire' : sc ? 'fini' : (LV && LV.st === 'in' ? '🔴 ' + LV.c : (x0.t > Date.now() ? 'à venir' : 'en cours'));
           var nomC = function (cote, droite) { return '<span style="flex:1 1 0;min-width:0;display:flex;align-items:center;gap:8px;justify-content:' + (droite ? 'flex-end' : 'flex-start') + ';font-size:15px;font-weight:800;">' + (droite ? '' : clubLogo(x0, cote, 28)) + '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(cote === 'h' ? x0.h : x0.a) + '</span>' + (droite ? clubLogo(x0, cote, 28) : '') + '</span>'; };
           h += '<div class="g45tro-mh2" style="display:none;align-items:center;gap:10px;padding:8px 12px;background:rgba(0,0,0,.25);">'
-            + '<span style="width:64px;flex:none;text-align:center;line-height:1.15;"><b style="font-size:15px;color:#fff;">' + hh + '</b><br><span style="font-size:12px;color:' + (sc ? '#aab6d6' : '#f0c828') + ';">' + etat + '</span></span>'
+            + '<span style="width:64px;flex:none;text-align:center;line-height:1.15;"><b style="font-size:15px;color:#fff;">' + hh + '</b><br><span style="font-size:12px;color:' + (LV && LV.st === 'in' ? '#ff6b6b;font-weight:800' : prov ? '#f0c828' : sc ? '#aab6d6' : '#f0c828') + ';">' + esc(etat) + '</span></span>'
             + nomC('h', true)
-            + '<span style="width:70px;flex:none;text-align:center;">' + (sc ? '<span style="background:#fff;color:#111;border-radius:7px;padding:2px 8px;font-size:15px;font-weight:900;">' + esc(sc) + '</span>' : '<span style="font-size:15px;color:#8e9bbd;font-weight:800;">–</span>') + '</span>'
+            + '<span style="width:70px;flex:none;text-align:center;">' + (LV && LV.st === 'in' ? '<span style="background:#ff3b3b;color:#fff;border-radius:7px;padding:2px 8px;font-size:15px;font-weight:900;">' + esc(LV.s) + '</span>' : sc ? '<span style="background:#fff;color:#111;border-radius:7px;padding:2px 8px;font-size:15px;font-weight:900;">' + esc(sc) + '</span>' : '<span style="font-size:15px;color:#8e9bbd;font-weight:800;">–</span>') + '</span>'
             + nomC('a', false) + '</div><div class="g45tro-mb">'
             /* 20261017l (« un logo du championnat pour combler le vide ») : filigrane dans la zone des paris, PC seulement */
             + (lgUrl(sl) ? '<img class="g45tro-wm" src="' + esc(lgUrl(sl)) + '" alt="" onerror="this.remove()" style="display:none;">' : '');
           g.forEach(function (x) {
             var ok = x.r === 1, ko = x.r === 0;
-            var res = x.r == null ? '⏳' : (ok ? '✅' : '❌') + (x.c > 1 ? ' ' + eurC(ok ? x.c - 1 : -1) : '');
+            var vj = x.r == null && LV ? _g45TrSuivJuge(x.k, LV.h, LV.a) : null;
+            var res = vj != null ? (LV.st === 'in' ? (vj ? '<span style="color:#7dffb0;">✅ gagnant si ça reste</span>' : '<span style="color:#f0c828;">⏳ pas encore</span>') : (vj ? '<span style="color:#1ed760;">✅ provisoire</span>' : '<span style="color:#ff6b6b;">❌ provisoire</span>')) : x.r == null ? '⏳' : (ok ? '✅' : '❌') + (x.c > 1 ? ' ' + eurC(ok ? x.c - 1 : -1) : '');
             /* 20261017n (« dans les tendances on a des stats, aucune dans l'historique », maquette) : 📊 % des stats + 🏦 % des bookmakers
                sur chaque pari ; faits du jour (x.fa) dépliables d'un appui */
             var pP = x.p > 0 ? Math.round(x.p > 1 ? x.p : x.p * 100) : null, pF = x.f > 0 ? Math.round(x.f > 1 ? x.f : x.f * 100) : null;
             var dk = esc(String(x.id) + '|' + x.k), fa = x.fa && x.fa.length ? x.fa : null, ouv = fa && O.det && O.det[String(x.id) + '|' + x.k];
             var pc = '<span style="display:inline-flex;gap:5px;flex:none;">' + (pP != null ? '<span style="font-size:13px;font-weight:800;color:#fff;background:rgba(109,157,255,.25);border:1px solid #6d9dff;border-radius:7px;padding:1px 7px;">📊 ' + pP + ' %</span>' : '')
               + '<span style="font-size:13px;font-weight:800;color:' + (pF != null ? '#fff' : '#8e9bbd') + ';background:' + (pF != null ? 'rgba(245,197,66,.22)' : 'rgba(255,255,255,.06)') + ';border:1px solid ' + (pF != null ? '#f5c542' : '#4b5675') + ';border-radius:7px;padding:1px 7px;">🏦 ' + (pF != null ? pF + ' %' : '—') + '</span></span>';
-            h += '<div class="g45tro-mp"' + (fa ? ' onclick="g45TrOffDet(\'' + dk + '\')"' : '') + ' style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 12px;border-top:1px solid rgba(255,255,255,.06);' + (fa ? 'cursor:pointer;' : '') + 'border-left:5px solid ' + (ok ? '#1ed760' : ko ? '#ff5c5c' : '#4b5675') + ';">'
+            h += '<div class="g45tro-mp"' + (fa ? ' onclick="g45TrOffDet(\'' + dk + '\')"' : '') + ' style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 12px;border-top:1px solid rgba(255,255,255,.06);' + (fa ? 'cursor:pointer;' : '') + 'border-left:5px solid ' + (ok ? '#1ed760' : ko ? '#ff5c5c' : vj === true ? '#1ed76088' : vj === false && LV.st === 'post' ? '#ff5c5c88' : '#4b5675') + ';">'
               + '<span class="g45tro-pn" style="flex:1;min-width:0;font-size:14px;color:#dbe4ff;">' + esc(x.m) + (x.d ? ' <span style="font-size:11px;color:#111;background:#ffb020;border-radius:6px;padding:1px 6px;">⚠️ désaccord</span>' : '') + (fa ? ' <span style="font-size:12px;color:#aab6d6;">' + (ouv ? '▴' : '▾ pourquoi') + '</span>' : '') + '</span>' + pc
               + (x.c > 1 ? '<span style="font-size:14px;font-weight:900;color:#111;background:#f0c828;border-radius:8px;padding:2px 8px;flex:none;">@' + x.c.toFixed(2).replace('.', ',') + '</span>' : '<span style="font-size:12px;color:#8e9bbd;flex:none;">pas de cote</span>')
               + '<span style="min-width:80px;margin-left:auto;text-align:right;font-size:14px;font-weight:900;flex:none;color:' + (ok ? '#1ed760' : ko ? '#ff6b6b' : '#c9d3ee') + ';">' + res + '</span></div>'
