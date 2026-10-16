@@ -44295,7 +44295,11 @@ function _g45SdbMeilleur(liste, nom, sport) {
    C'est le meme defaut que le filtre par sport et que la liste des entrees non
    club : une regle posee d'un cote et pas de l'autre. */
 async function g45SdbClub(nom, sport) {
-  var essais = (typeof _g45FanVariantes === 'function') ? _g45FanVariantes(nom) : [nom];
+  /* 20261016m (console : « searchteams club / athletic / cd / fc harry kane ») : une carte JOUEUR du mur n'est pas un club → pas de recherche
+     de blason (le logo de son club vient de _g45JoueurClubLogo). Préfixes de foot seulement pour le foot (sport passé à _g45FanVariantes). */
+  try { var _nzS = (typeof _g45SgNorm === 'function') ? _g45SgNorm(nom) : String(nom || '').toLowerCase();
+    if ((state.u || []).some(function (x) { return x && x.type === 'joueur' && _g45SgNorm(x.n) === _nzS; })) return null; } catch (e) {}
+  var essais = (typeof _g45FanVariantes === 'function') ? _g45FanVariantes(nom, sport) : [nom];
   for (var i = 0; i < essais.length; i++) {
     try {
       var res = await g45SdbSearch(essais[i]);

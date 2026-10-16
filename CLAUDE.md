@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261016l, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261016m, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -457,6 +457,7 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   522 / CORS ; Arsenal = 200 en 19 s → serveur TheSportsDB surchargé) : `_g45FanChercher` (fond de carte) et `_g45BgChercher` (fond de fiche) ne
   cherchent plus d'ÉQUIPE pour une carte JOUEUR du mur (8 variantes par joueur) ; la recherche de JOUEUR (searchplayers, 1 requête) reste. Smoke (52).
   20261016j (console : « Deportivo Vancouver Canucks ») : `_g45FanVariantes(nom, sport)` n'ajoute les préfixes de foot (Deportivo, Real, Club…) que pour le foot ou un sport inconnu.
+  20261016m (console : « club / athletic / cd / fc harry kane ») : `g45SdbClub` (blason) aussi — joueur du mur → null, sport passé à _g45FanVariantes.
   20261014u (capture : « c'est pas aligné ») : boîtes de largeur FIXE (logo 110 px ×2, VS/heure 110 px), texte flex 1 1 0 + un ressort 1 1 0 après les
   logos, colonne de droite 84 px (.g45ag-col) → VS au même endroit sur toutes les cartes. Vérifié Chromium (3 cartes, consignes de longueurs différentes).
   20261008h — SONDÉ PAR ANTOINE (MLB Brewers–Dodgers) : odds[0] SANS moneyline, homeTeamOdds/awayTeamOdds sans cote, details « MIL -113 »
