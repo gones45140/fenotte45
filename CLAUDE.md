@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261016p, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261016q, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -465,6 +465,10 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   maj = true → g45DirectMesEquipes(true) (Suivies) se redessinait et relançait la recherche SANS FIN. Échec de panne retenu 30 min en session
   (window._g45FanPanne lu par `_g45FanLire` → '' ; window._g45BgPanne pour `_g45BgChercher`). RÈGLE : un écran qui se redessine après une
   recherche doit toujours voir un résultat « connu » ensuite. Smoke (53).
+  20261016q — gones TOUJOURS figé sur le téléphone après 16p et redémarrage (bet45 OK, gones en navigation privée OK → donnée locale) :
+  NETTOYAGE D'URGENCE en TÊTE d'app.js : adresse ?menage=1 → efface les clés de cache (copie de _G45_CACHE_PREFIXES + g45cm11_, g45cls5_,
+  g45bgclub1_, g45nhlj1_, g45jv…, g45khl_…), sessionStorage, tendances gardées (IndexedDB kv tr_*) ; JAMAIS g45v5 ni réglages / clés ;
+  stoppe app.js (throw) puis recharge sans paramètre ; alerte « 🧹 Nettoyage fait : N … » (g45_menage_fait). Testé Chromium.
   20261014u (capture : « c'est pas aligné ») : boîtes de largeur FIXE (logo 110 px ×2, VS/heure 110 px), texte flex 1 1 0 + un ressort 1 1 0 après les
   logos, colonne de droite 84 px (.g45ag-col) → VS au même endroit sur toutes les cartes. Vérifié Chromium (3 cartes, consignes de longueurs différentes).
   20261008h — SONDÉ PAR ANTOINE (MLB Brewers–Dodgers) : odds[0] SANS moneyline, homeTeamOdds/awayTeamOdds sans cote, details « MIL -113 »
