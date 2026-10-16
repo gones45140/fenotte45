@@ -25982,6 +25982,8 @@ async function loadCalendrier() {
       teams.push({ n: t.nom, sport: '⚽', _suiviEq: 1 });
     });
     /* 20261017u : plus de plafond (mur + ⭐ suivies) — lecture 6 par 6 plus bas ; la liste est gardée jusqu'au prochain match (20261017s) */
+    /* 20261017w (« bet45, la limite du mur doit correspondre ») : sur BET45, même plafond que le mur (_G45_MUR_MAX = 15), clubs du mur d'abord */
+    if (typeof _g45MurLimite === 'function' && _g45MurLimite() && typeof _G45_MUR_MAX !== 'undefined') teams = teams.slice(0, _G45_MUR_MAX);
   } catch(e) {}
 
   var _suivis = g45SuivisGet();

@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261017v, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261017w, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -473,6 +473,7 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   20261017v (« joueur compris ») : carte JOUEUR ⚽ du mur → calendrier de son CLUB (_g45UClub ; pas de club = ignorée, avant son NOM était cherché
   comme une équipe) ; pas d'exclusion « équipe déjà vue » ; m.joueur {nom, club, ph = _g45JoueurVisLire cut/thumb sinon u.logoUrl hors logo} ;
   ourName = nom du joueur (palier / consigne 📌 de SA carte). Rendu réel NON vérifié (ESPN simulé vide en test).
+  20261017w (« bet45, la limite du mur doit correspondre ») : sur bet45 (_g45MurLimite), clubs lus par l'Agenda plafonnés à _G45_MUR_MAX (15), mur d'abord puis ⭐ ; gones sans limite.
   20261016i (Santé : TheSportsDB « trop lent (12 s) » depuis 4 h ; console d'Antoine : searchteams « Club / Athletic / CD / FC Connor McDavid » en
   522 / CORS ; Arsenal = 200 en 19 s → serveur TheSportsDB surchargé) : `_g45FanChercher` (fond de carte) et `_g45BgChercher` (fond de fiche) ne
   cherchent plus d'ÉQUIPE pour une carte JOUEUR du mur (8 variantes par joueur) ; la recherche de JOUEUR (searchplayers, 1 requête) reste. Smoke (52).
