@@ -25956,7 +25956,7 @@ async function loadCalendrier() {
   try{ if(typeof g45StatsLocal==='function' && !g45StatsLocal().length && typeof g45StatsLoadPublic==='function'){ await _agMax(g45StatsLoadPublic(), 5000); } }catch(e){}
 
   // Équipes football favorites (résolution ESPN, comme l'onglet Saisons)
-  var teams = state.u.filter(function(u){ return (u.sport||'⚽')==='⚽'; }).slice(0,15);   /* 20261017t (« oui ») : 8 → 15 clubs du mur */
+  var teams = state.u.filter(function(u){ return (u.sport||'⚽')==='⚽'; });   /* 20261017u (« j'ai 35 équipes perso ») : TOUS les clubs de foot du mur (8 → 15 → sans limite), lus 6 à la fois */
 
   /* EQUIPES SUIVIES (14/08/2026) : l'Agenda ne regardait que le mur. Les equipes
      suivies a l'etoile s'y ajoutent, sans doublon.
@@ -25974,7 +25974,7 @@ async function loadCalendrier() {
       _dejaLa[k] = 1;
       teams.push({ n: t.nom, sport: '⚽', _suiviEq: 1 });
     });
-    teams = teams.slice(0, 20);   /* plafond : chaque equipe coute des requetes (20261017t : 14 → 20, mur 15 + ⭐) */
+    /* 20261017u : plus de plafond (mur + ⭐ suivies) — lecture 6 par 6 plus bas ; la liste est gardée jusqu'au prochain match (20261017s) */
   } catch(e) {}
 
   var _suivis = g45SuivisGet();
@@ -26017,7 +26017,13 @@ async function loadCalendrier() {
     }
     return sched;
   };
-  var _agFootP = Promise.all(teams.map(function (u) { return _agMax(_agFoot(u), 20000); }));
+  /* 20261017u : 6 équipes à la fois (au lieu de toutes ensemble), chacune 20 s max — ordre des résultats gardé */
+  var _agFootP = (async function () {
+    var R = new Array(teams.length), k = 0;
+    var w = async function () { while (k < teams.length) { var j = k++; R[j] = await _agMax(_agFoot(teams[j]), 20000); } };
+    var ws = []; for (var q = 0; q < Math.min(6, teams.length); q++) ws.push(w());
+    await Promise.all(ws); return R;
+  })();
   var _agSuiviP = _agMax(_agSuivis(), 15000);
   var _agEbP = _agMax(_agEb(), 25000);
   var _agKhlP = _agMax(_agKhl(), 20000);
