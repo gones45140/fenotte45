@@ -75263,6 +75263,25 @@ window._g45NhlJTrouver = _g45NhlJTrouver; window._g45NhlJHtml = _g45NhlJHtml; wi
   } catch (e) {}
 })();
 
+/* 20261016t (capture 18:37 : TheSportsDB réparé, Bayern a sa bannière mais pas le Real Madrid) : pendant la reprise, TheSportsDB répondait
+   par moments « aucune équipe » (serveur surchargé) → « pas d'image » mémorisé 30 jours. Effacés une 2e fois (drapeau g45_fan_neg2), avec
+   les visuels joueurs (g45jv…) et logos d'en-tête (g45_herologo_ko_) vides ; le worker ne garde plus une réponse vide qu'une heure. */
+(function () {
+  try {
+    if (localStorage.getItem('g45_fan_neg2')) return;
+    var del = [];
+    for (var i = 0; i < localStorage.length; i++) {
+      var k = localStorage.key(i); if (!k) continue;
+      if (k.indexOf('g45_herologo_ko_') === 0) { del.push(k); continue; }
+      if (!(k.indexOf('g45_fanart2_') === 0 || k.indexOf('g45bgclub1_') === 0 || k.indexOf('g45jv') === 0)) continue;
+      var v = localStorage.getItem(k) || '';
+      if (!/https?:|blob:|data:image/.test(v)) del.push(k);
+    }
+    del.forEach(function (k) { localStorage.removeItem(k); });
+    localStorage.setItem('g45_fan_neg2', '1');
+  } catch (e) {}
+})();
+
 /* ═══ 20261016o — MUR : BOUTON « 📋 Compact / 🖼️ Bannières » + PASTILLE DE SÉRIE LISIBLE (capture 412 px : « ça en jette mais on voit
    pas tout d'un coup » ; capture PSG : « la barre verte à peine visible » ; maquette validée « oui ») ═══
    · Bouton posé dans l'en-tête d'un sport (zone #g45-acc-zone, à côté de « ← Sports »), choix gardé : localStorage g45_mur_vue

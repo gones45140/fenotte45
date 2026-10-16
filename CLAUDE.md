@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261016s, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261016t, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -477,6 +477,10 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   injoignable / 403 / 404 → appel direct ; 5xx rendu tel quel. Le test Santé « TheSportsDB » passe donc aussi par le worker. Smoke (54).
   ?menage=1 garde maintenant les IMAGES trouvées (clés fanart / img_perso / bgclub1 / jv / tph1 / herologo / wk1 / lglogo / catimg / mqfond avec une
   adresse) : seuls les échecs de ces caches partent. Testé Chromium.
+  20261016t (capture 18:37 : TheSportsDB réparé, bannière du Bayern revenue mais pas celle du Real) : « pas d'image » mémorisés pendant la
+  reprise (TheSportsDB surchargé répondait « aucune équipe ») effacés une 2e fois (drapeau g45_fan_neg2 : fanart2 / bgclub1 / g45jv sans adresse
+  + g45_herologo_ko_) ; worker : réponse vide gardée 1 HEURE (au lieu d'un jour), clé fraîche tsdb2:<chemin> (anciennes tsdb: abandonnées).
+  Le jeton Cloudflare n'a PAS accès à D1 (7403) : contenu du cache non vérifiable d'ici.
   20261016r — DIAGNOSTIC ?diag=1 (fin d'app.js) : compte 10 s les appels de render / g45DirectMesEquipes / _g45FanCompleter…, fetch par domaine,
   mutations, minuteries, erreurs JS → alerte résumée (pas d'alerte = boucle synchrone). Rien sans le paramètre.
   20261014u (capture : « c'est pas aligné ») : boîtes de largeur FIXE (logo 110 px ×2, VS/heure 110 px), texte flex 1 1 0 + un ressort 1 1 0 après les
