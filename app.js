@@ -75213,3 +75213,66 @@ window._g45NhlJTrouver = _g45NhlJTrouver; window._g45NhlJHtml = _g45NhlJHtml; wi
     localStorage.setItem('g45_fan_neg1', '1');
   } catch (e) {}
 })();
+
+/* ═══ 20261016o — MUR : BOUTON « 📋 Compact / 🖼️ Bannières » + PASTILLE DE SÉRIE LISIBLE (capture 412 px : « ça en jette mais on voit
+   pas tout d'un coup » ; capture PSG : « la barre verte à peine visible » ; maquette validée « oui ») ═══
+   · Bouton posé dans l'en-tête d'un sport (zone #g45-acc-zone, à côté de « ← Sports »), choix gardé : localStorage g45_mur_vue
+     ('c' compact | 'b' bannières, défaut 'b' = comme avant). Classe sur <html> : g45-mur-c / g45-mur-b.
+   · Compact : cartes 80 px mini (hauteur du curseur ignorée), nom 16 px, ligne paliers 13 px, note 13 px, logo 56 px.
+   · Bannières : hauteur du curseur ; sur grand écran (≥ 700 px) nom 20 px, paliers et note 14 px.
+   · Pastille de série (🏠 / ✈️ 🔥 N, DEUX copies du rendu, enfant d'un bloc flex en colonne → étirée en longue barre à .1 d'opacité) :
+     largeur du contenu, fond .28 + bord vert / rouge, texte blanc 13 px, « de suite » ajouté. Rendu des cartes (×2) INCHANGÉ. */
+(function _g45MurVue() {
+  var cle = 'g45_mur_vue';
+  var lire = function () { try { return localStorage.getItem(cle) === 'c' ? 'c' : 'b'; } catch (e) { return 'b'; } };
+  var appliquer = function () {
+    var v = lire(), h = document.documentElement;
+    h.classList.toggle('g45-mur-c', v === 'c'); h.classList.toggle('g45-mur-b', v !== 'c');
+    [].forEach.call(document.querySelectorAll('.g45-vue-btn'), function (b) {
+      var on = b.getAttribute('data-v') === v;
+      b.style.background = on ? '#1b2a52' : 'rgba(11,16,29,.85)'; b.style.color = on ? '#fff' : '#c9d3ee'; b.style.fontWeight = on ? '900' : '700';
+      b.textContent = (b.getAttribute('data-v') === 'c' ? '📋 Compact' : '🖼️ Bannières') + (on ? ' ✓' : '');
+    });
+  };
+  window.g45MurVue = function (v) { try { localStorage.setItem(cle, v === 'c' ? 'c' : 'b'); } catch (e) {} appliquer(); };
+  var poser = function () {
+    var z = document.getElementById('g45-acc-zone'); if (!z) return;
+    var back = z.querySelector('button[onclick^="g45AccChoisir(\'\')"]'); if (!back) return;
+    var tete = back.parentNode; if (!tete || tete.querySelector('.g45-vue-grp')) return;
+    var g = document.createElement('span');
+    g.className = 'g45-vue-grp';
+    g.style.cssText = 'display:inline-flex;border:1px solid #4d84ff;border-radius:9px;overflow:hidden;flex:none;';
+    g.innerHTML = ['c', 'b'].map(function (v) { return '<button class="g45-vue-btn" data-v="' + v + '" onclick="event.stopPropagation();g45MurVue(\'' + v + '\')" style="border:none;padding:9px 11px;font-size:14px;cursor:pointer;"></button>'; }).join('');
+    var titre = back.nextElementSibling;
+    if (titre && titre.nextSibling) tete.insertBefore(g, titre.nextSibling); else tete.appendChild(g);
+    appliquer();
+  };
+  try {
+    var st = document.createElement('style'); st.id = 'g45-mur-vue';
+    st.textContent = ''
+      /* compact */
+      + 'html.g45-mur-c .g45-murcard{min-height:80px !important;}'
+      + 'html.g45-mur-c{--g45-ecut:56px !important;}'
+      + 'html.g45-mur-c .g45-murtxt>div:nth-child(1){font-size:16px !important;}'
+      + 'html.g45-mur-c .g45-murtxt>div:nth-child(2){font-size:13px !important;color:#c9d3ee !important;}'
+      + 'html.g45-mur-c .g45-murtxt>div[style*="font-style:italic"]{font-size:13px !important;}'
+      /* bannières, grand écran */
+      + '@media(min-width:700px){'
+      + 'html.g45-mur-b .g45-murtxt>div:nth-child(1){font-size:20px !important;}'
+      + 'html.g45-mur-b .g45-murtxt>div:nth-child(2){font-size:14px !important;color:#c9d3ee !important;}'
+      + 'html.g45-mur-b .g45-murtxt>div[style*="font-style:italic"]{font-size:14px !important;}'
+      + '}'
+      /* pastille de série */
+      + '.g45-murtxt span[style*="border-radius:10px"][style*="font-size:9px"]{align-self:flex-start;font-size:13px !important;color:#fff !important;padding:2px 9px !important;border-radius:8px !important;}'
+      + '.g45-murtxt span[style*="border-radius:10px"][style*="rgba(30,215,96"]{background:rgba(30,215,96,.28) !important;border:1px solid #1ed760;}'
+      + '.g45-murtxt span[style*="border-radius:10px"][style*="rgba(255,69,69"]{background:rgba(255,69,69,.28) !important;border:1px solid #ff6b6b;}'
+      + '.g45-murtxt span[style*="border-radius:10px"][style*="font-size:9px"]::after{content:" de suite";}';
+    (document.head || document.documentElement).appendChild(st);
+  } catch (e) {}
+  appliquer();
+  try {
+    var mo = new MutationObserver(function () { poser(); });
+    var go = function () { var d = document.getElementById('dash-units') || document.body; mo.observe(d, { childList: true, subtree: true }); poser(); };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', go); else go();
+  } catch (e) {}
+})();
