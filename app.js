@@ -75017,6 +75017,35 @@ var _G45_BK_DOM = [
       h += svg + '<div style="font-size:13px;color:#c9d3ee;margin-top:6px;">🟢 jour gagnant · 🔴 jour perdant · le chiffre = gain du jour · touche un point pour voir le jour</div>';
     }
     h += '</div>';
+    /* 20261017m (« on a pas de stats ? », maquette validée « oui ») : 📊 Statistiques du mois affiché (filtres compris) —
+       par championnat, par type de pari, annoncé contre réel (proba des stats vs réussite), stats / bookmakers d'accord ou non */
+    try {
+      var tyNom = function (k) {
+        k = String(k || ''); var T = { '1': 'Victoire domicile', '2': 'Victoire extérieur', '1N': 'Domicile ou nul', '2N': 'Extérieur ou nul', '12': 'Pas de nul', 'btts': 'Les deux marquent' };
+        if (T[k]) return T[k];
+        var m = k.match(/^(o|u|ov|un)(\d+(?:\.\d+)?)$/); if (m) { var v = m[2].indexOf('.') < 0 && m[2].length === 2 ? m[2][0] + ',' + m[2][1] : m[2].replace('.', ','); return (m[1][0] === 'o' ? '+ de ' : '− de ') + v + (parseFloat(m[2].length === 2 && m[2].indexOf('.') < 0 ? m[2][0] + '.' + m[2][1] : m[2]) >= 10 ? ' pts' : ' buts'); }
+        if (/^hc/.test(k)) return 'Handicap'; return k;
+      };
+      var grp = function (f) { var o = {}, ordre = []; Lm.forEach(function (x) { var c = f(x); if (c == null) return; if (!o[c]) { o[c] = []; ordre.push(c); } o[c].push(x); }); return ordre.map(function (c) { var B = calcJ(o[c]), ps = 0, np = 0; o[c].forEach(function (x) { if ((x.r === 0 || x.r === 1) && x.p > 0) { ps += x.p > 1 ? x.p : x.p * 100; np++; } }); B.cle = c; B.prevu = np ? Math.round(ps / np) : null; return B; }).filter(function (B) { return B.n > 0; }).sort(function (a, b) { return b.n - a.n; }); };
+      var srow = function (nom, B, prevu) {
+        var pc = Math.round(B.ok / B.n * 100), col = pc >= 60 ? '#1ed760' : (pc >= 45 ? '#f0c828' : '#ff6b6b');
+        return '<div class="g45tro-sr" style="display:grid;grid-template-columns:minmax(0,1.4fr) minmax(50px,1fr) 74px 74px;gap:8px;align-items:center;padding:7px 0;border-top:1px solid rgba(255,255,255,.07);">'
+          + '<span class="g45tro-sn" style="font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + nom + '</span>'
+          + '<div style="position:relative;height:16px;background:rgba(255,255,255,.08);border-radius:8px;"><div style="width:' + pc + '%;height:100%;background:' + col + ';border-radius:8px;"></div>' + (prevu != null ? '<div style="position:absolute;left:' + Math.min(99, prevu) + '%;top:-4px;bottom:-4px;width:3px;background:#fff;border-radius:2px;"></div>' : '') + '</div>'
+          + '<span style="font-size:14px;font-weight:800;text-align:right;">' + pc + '% <span style="font-size:12px;color:#aab6d6;font-weight:600;">' + B.ok + '/' + B.n + '</span></span>'
+          + '<span style="font-size:14px;font-weight:800;text-align:right;color:' + (B.nc ? (B.g >= 0 ? '#1ed760' : '#ff6b6b') : '#8e9bbd') + ';">' + (B.nc ? eurC(B.g) : '—') + '</span></div>';
+      };
+      var sbloc = function (titre, lignes, leg) { return lignes ? '<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px 14px;min-width:0;"><div style="font-size:15px;font-weight:800;margin-bottom:4px;">' + titre + '</div>' + (leg || '') + lignes + '</div>' : ''; };
+      var sCh = grp(function (x) { return x.sl; }).map(function (B) { return srow(esc(lgNom(B.cle)), B); }).join('');
+      var sTy = grp(function (x) { return x.k; }).map(function (B) { return srow(esc(tyNom(B.cle)), B); }).join('');
+      var sPr = grp(function (x) { var p = x.p > 1 ? x.p : x.p * 100; return !(p > 0) ? null : (p >= 70 ? '70 % et +' : (p >= 60 ? '60 à 69 %' : '50 à 59 %')); }).map(function (B) { return srow(B.cle, B, B.prevu); }).join('');
+      var sAv = grp(function (x) { return x.d ? '⚠️ En désaccord' : '✅ D\'accord'; }).map(function (B) { return srow(B.cle, B); }).join('');
+      if (sCh) h += '<style>#g45tr-off .g45tro-st{display:grid;grid-template-columns:1fr;gap:10px}@media(min-width:700px){#g45tr-off .g45tro-st{grid-template-columns:1fr 1fr}}@media(max-width:599px){#g45tr-off .g45tro-sr{grid-template-columns:minmax(0,1fr) 74px 74px!important;row-gap:4px!important}#g45tr-off .g45tro-sn{grid-column:1/-1;white-space:normal!important}}</style>'
+        + '<div style="margin-top:16px;font-size:16px;font-weight:800;">📊 Statistiques · <span style="text-transform:capitalize;">' + esc(nomMois(O.mois)) + '</span> <span style="font-size:13px;color:#aab6d6;font-weight:600;">· suivent les filtres</span></div>'
+        + '<div class="g45tro-st" style="margin-top:8px;">' + sbloc('🏆 Par championnat', sCh) + sbloc('🎯 Par type de pari', sTy)
+        + sbloc('📈 Annoncé contre réel', sPr, '<div style="font-size:13px;color:#c9d3ee;">Trait blanc = % annoncé par les stats · barre = % réussi</div>') + sbloc('🤝 Stats et bookmakers', sAv) + '</div>'
+        + '<div style="font-size:13px;color:#c9d3ee;margin-top:6px;">Gain = 1 € par pari avec cote · « — » = pas de cote</div>';
+    } catch (e) {}
     h += '<div style="margin-top:10px;font-size:12px;color:#c9d3ee;">Statistiques, pas des pronos sûrs. 🔞 Jouer comporte des risques : 09 74 75 13 13.</div>';
     return box(h);
   };

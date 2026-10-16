@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261017l, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261017m, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -2027,6 +2027,9 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   20261017l (dessin d'Antoine : « heure · équipe · score · équipe, un truc aligné » + « logo du championnat pour combler le vide, bien visible ») : PC = en-tête
   .g45tro-mh2 (50 %, heure + fini / à venir / en cours, équipe qui reçoit collée au score à droite, score 70 px centré, visiteur à gauche ; .g45tro-mh caché) ;
   logo du championnat .g45tro-wm (lgUrl(sl)) opaque dans la zone des paris (left 58 %, 72 px max). Téléphone inchangé.
+  20261017m (« on a pas de stats ? », maquette validée « oui ») : sous la courbe de `_g45TrOffHtml`, bloc « 📊 Statistiques · <mois> » (mois + filtres,
+  calcJ) : Par championnat, Par type de pari (k → nom, « buts » / « pts » si ligne ≥ 10), Annoncé contre réel (tranches de x.p, trait blanc = proba moyenne
+  annoncée), Stats et bookmakers (x.d) ; .g45tro-st 2 colonnes ≥ 700 px, nom sur sa ligne < 600 px. Smoke (trOff).
   Écarts entre Antoine et Cédric (14/10) : réglages par appareil (compétitions, jour, cote / proba mini), heure d'analyse, quota The Odds API (bet45 = 8 crédits / personne / jour).
 RÉGLÉ OU ABANDONNÉ (ne pas reproposer) :
 - APK bet45 sans barre d'adresse : OK. Logos Lakers / hockey : OK. « Connexion » sur le
