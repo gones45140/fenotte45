@@ -20762,7 +20762,7 @@ async function g45MurJoueurPanel(){
   var u=U.filter(function(x){ return x&&x.n===nom; })[0]||{};
   el.innerHTML='<div style="font-size:10px;color:#8aa0ff;text-align:center;padding:14px;">⏳ Recherche du joueur…</div>';
   var id=null;
-  try{ id=await _g45ButIdMur({n:nom, club:(u.note||'').trim(), mur:true}); }catch(e){}
+  try{ id=await _g45ButIdMur({n:nom, club:_g45UClub(u), mur:true}); }catch(e){}
   if(!id){
     el.innerHTML='<div style="font-size:10.5px;color:var(--t3);text-align:center;padding:16px;line-height:1.7;">Joueur introuvable chez ESPN.<br>'
       +'<span style="font-size:9.5px;">Ajoute son club au mur, ou saisis-le dans la note de cette entrée (Outils → Équipes / Unités).</span></div>';
@@ -26201,7 +26201,7 @@ async function loadCalendrier() {
       if (typeof _g45RegEquipe !== 'function') return out;
       var J = (state.u || []).filter(function (u) { return u && u.type === 'joueur' && /🏒/.test(String(u.sport || '')); });
       var parClub = {};
-      var _clubDe = function (u) { return String(u.note || '').split(/🏠|✈|🛫/)[0].trim(); };   /* 20261017p : note « Edmonton Oilers 🏠 buteur » = club AVANT le lieu, consigne après */
+      var _clubDe = function (u) { return _g45UClub(u); };   /* 20261017p : note « Edmonton Oilers 🏠 buteur » = club AVANT le lieu, consigne après */
       J.forEach(function (u) { var eq = _g45RegEquipe(_clubDe(u)) || _g45RegEquipe(u.n); if (eq) (parClub[eq[0]] = parClub[eq[0]] || { eq: eq, J: [] }).J.push(u); });
       await Promise.all(Object.keys(parClub).map(async function (abr) {
         var C = parClub[abr], cal = null;
@@ -29755,7 +29755,7 @@ window.g45ButMode=g45ButMode; window.g45ButLg=g45ButLg;
 function _g45ButMur(){
   var U=(typeof state!=='undefined'&&state&&state.u)?state.u:[];
   return U.filter(function(u){ return u&&u.type==='joueur'&&u.n; })
-          .map(function(u){ return {n:u.n, club:(u.note||'').trim(), mur:true}; });
+          .map(function(u){ return {n:u.n, club:_g45UClub(u), mur:true}; });
 }
 async function _g45ButChercheDans(nom, club){
   var tm=null;
@@ -59582,7 +59582,7 @@ function _g45MajEquipeJouee(u) {
     el.readOnly = false;
     el.style.opacity = '1';
     el.placeholder = 'Club du joueur';
-    if (!el.value || el.value === u.n) el.value = String(u.note || '').trim();
+    if (!el.value || el.value === u.n) el.value = _g45UClub(u);
     return;
   }
   if (estCompet) {
@@ -63652,7 +63652,7 @@ var _g45JclEnCours = {};
 function _g45JoueurClubLogo(u) {
   try {
     var jv = (typeof _g45JoueurVisLire === 'function') ? _g45JoueurVisLire(u.n) : null;
-    var club = String(u.note || '').trim() || (jv && jv.club) || '';
+    var club = _g45UClub(u) || (jv && jv.club) || '';
     if (!club) return '';
     var l = (typeof g45LogoUrlDe === 'function') ? g45LogoUrlDe(club) : '';
     if (l) return l;
@@ -71290,8 +71290,8 @@ function _g45TicketRemplirCockpit(o) {
   if (choisi && cj && cj.indexOf(choisi) >= 0) {
     try {
       var uJ = (state.u || []).filter(function (x) { return x && x.n === choisi.value; })[0] || {};
-      var club = String(o.equipe || '').trim() || String(uJ.note || '').trim();
-      if (nz(club) && nz(club) === nz(o.joueur)) club = String(uJ.note || '').trim();
+      var club = String(o.equipe || '').trim() || _g45UClub(uJ);
+      if (nz(club) && nz(club) === nz(o.joueur)) club = _g45UClub(uJ);
       met('c-equipe', club);
     } catch (x) {}
   }
@@ -75276,7 +75276,7 @@ function _g45NhlJTrouver(liste, nom) {
   return c[0] || null;
 }
 async function _g45NhlJCharger(u) {
-  var eq = (typeof _g45RegEquipe === 'function') ? (_g45RegEquipe(u.note || '') || _g45RegEquipe(u.n)) : null;
+  var eq = (typeof _g45RegEquipe === 'function') ? (_g45RegEquipe(_g45UClub(u)) || _g45RegEquipe(u.n)) : null;
   if (!eq) return { err: 'club' };
   var abr = eq[0], s = _g45NhlJSaison();
   var ckE = 'g45nhlj1_eq_' + abr + '_' + s, E = await _g45NhlJGet('/v1/club-stats/' + abr + '/' + s + '/2', ckE, 6 * 3600e3);
@@ -75467,9 +75467,9 @@ window._g45NhlJTrouver = _g45NhlJTrouver; window._g45NhlJHtml = _g45NhlJHtml; wi
   var env = function (u) {
     try {
       if (u && u.type === 'joueur' && /🏒/.test(u.sport || '') && typeof _g45RegEquipe === 'function') {
-        var eq = _g45RegEquipe(u.note || '') || _g45RegEquipe(u.n);
+        var eq = _g45RegEquipe(_g45UClub(u)) || _g45RegEquipe(u.n);
         if (eq) {
-          var club = String(u.note || '').trim();
+          var club = _g45UClub(u);
           var l = (club && typeof g45LogoUrlDe === 'function') ? g45LogoUrlDe(club) : '';
           return l || ('https://assets.nhle.com/logos/nhl/svg/' + eq[0] + '_dark.svg');   /* 20261015x (« je les vois à peine ») : version pour fond SOMBRE (NON vérifiée) */
         }
@@ -75740,4 +75740,172 @@ function _g45PaysLogo(nom, k) {
       try { alert(txt); } catch (e) {}
     }, 10000);
   } catch (e) {}
+})();
+
+/* ═══ 🏠 / ✈️ PARI PAR LIEU + 🏟️ CLUB DU JOUEUR (20261017q, maquettes validées « ok ») ═══
+   « On pourrait remplacer [les liens Sofascore / Flashscore] par 🏠 Type de pari / ✈️ Type de pari » + « pour les joueurs, club avec une
+   recherche comme pour équipe ». Formulaire du mur (ajout) ET fenêtre « Modifier » : les deux liens sont cachés (gardés dans 🔗 Liens),
+   cases « 🏠 Pari à domicile » / « ✈️ Pari à l'extérieur » ; joueur → « 🏟️ Club du joueur » (clubs connus, NHL, puis TheSportsDB).
+   TOUT reste rangé dans u.note (Agenda, « Reprendre ma note », mur la lisent déjà) : note = [club · ]libre [🏠 x] [✈️ y], cases égales →
+   « 🏠/✈️ x » ; joueur : u.club en plus. `_g45UClub(u)` = club d'un joueur pour TOUTE l'appli (u.club, sinon note avant 🏠 / ✈️ et « · ») :
+   cartes déjà créées inchangées, « Modifier » remplit les cases depuis la note. */
+function _g45UClub(u) {
+  if (!u) return '';
+  if (u.club) return String(u.club).trim();
+  return String(u.note || '').split(/🏠|✈|🛫/)[0].split(' · ')[0].trim();
+}
+window._g45UClub = _g45UClub;
+window._g45UfCompose = function (club, libre, dom, ext) {
+  var n = function (x) { return String(x || '').trim().toLowerCase().replace(/\s+/g, ' '); };
+  dom = String(dom || '').trim(); ext = String(ext || '').trim();
+  var t = [club, libre].map(function (x) { return String(x || '').trim(); }).filter(Boolean).join(' · ');
+  var c = (dom && ext && n(dom) === n(ext)) ? '🏠/✈️ ' + dom : [dom ? '🏠 ' + dom : '', ext ? '✈️ ' + ext : ''].filter(Boolean).join(' ');
+  return [t, c].filter(Boolean).join(' ');
+};
+window._g45UfDecoupe = function (note) {
+  var parts = String(note || '').split(/(🏠|✈️|✈|🛫)/), R = { avant: String(parts[0] || '').trim(), dom: '', ext: '' }, pend = [];
+  for (var i = 1; i < parts.length; i += 2) {
+    pend.push(parts[i] === '🏠' ? 'd' : 'e');
+    var t = String(parts[i + 1] || '').replace(/^️/, '');
+    if (/^[\s\/,]*$/.test(t) || /^\s*et\s*$/i.test(t)) continue;
+    t = t.replace(/^[\s\/,]+/, '').replace(/\s+et\s*$/i, '').trim();
+    if (pend.indexOf('d') >= 0 && !R.dom) R.dom = t;
+    if (pend.indexOf('e') >= 0 && !R.ext) R.ext = t;
+    pend = [];
+  }
+  return R;
+};
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var esc = function (x) { return String(x == null ? '' : x).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+  var champs = function (p) {
+    var e = p === 'e' ? 'edit-unit-' : 'u-';
+    return '<div id="g45uf-club-' + p + '" class="fg" style="margin-bottom:8px;display:none;"><label class="fl" style="font-size:14px;">🏟️ Club du joueur</label>'
+      + '<input id="' + e + 'club" class="fi" placeholder="Edmonton, Real Madrid…" autocomplete="off" oninput="g45UfClubTape(\'' + p + '\')"><div id="' + e + 'club-res"></div></div>'
+      + '<div class="fg" style="margin-bottom:7px;"><label class="fl" style="font-size:14px;">🏠 Pari à domicile</label><input id="' + e + 'pdom" class="fi" placeholder="Ex : victoire, buteur…" autocomplete="off"></div>'
+      + '<div class="fg" style="margin-bottom:4px;"><label class="fl" style="font-size:14px;">✈️ Pari à l\'extérieur</label><input id="' + e + 'pext" class="fi" placeholder="Ex : victoire ou nul + under 3.5" autocomplete="off"></div>'
+      + '<div style="font-size:13px;color:#c9d3ee;margin-bottom:10px;line-height:1.4;">Même pari partout ? Écris-le dans les deux cases. Une seule case remplie = l\'autre lieu est retiré de l\'Agenda.</div>';
+  };
+  var voirClub = function (p) {
+    var b = $('g45uf-club-' + p); if (!b) return;
+    var t = p === 'e' ? ($('edit-unit-type') || {}).value : ($('u-type') || {}).value;
+    b.style.display = t === 'joueur' ? '' : 'none';
+  };
+  function poser() {
+    try {
+      var l2 = $('u-link2');
+      if (l2 && !$('u-pdom')) {
+        var f1 = $('u-link') && $('u-link').closest('.fg'), f2 = l2.closest('.fg');
+        if (f1) f1.style.display = 'none';
+        if (f2) { f2.style.display = 'none'; f2.insertAdjacentHTML('afterend', champs('u')); }
+        var un = $('u-note'); if (un) un.placeholder = 'Ex : forme à domicile, gardien titulaire…';
+        voirClub('u');
+      }
+      var en = $('edit-unit-note');
+      if (en && !$('edit-unit-pdom')) {
+        var fe = en.closest('.fg'); if (fe) fe.insertAdjacentHTML('beforebegin', champs('e'));
+        en.placeholder = 'Ex : forme à domicile, gardien titulaire…';
+        var st = $('edit-unit-type'); if (st) st.addEventListener('change', function () { voirClub('e'); });
+      }
+    } catch (e) {}
+  }
+  poser(); setInterval(poser, 1500);
+
+  /* Recherche du club d'un joueur : clubs de foot connus, 32 clubs NHL, puis TheSportsDB (tous sports) */
+  var L = {}, jeton = { u: 0, e: 0 }, minu = {};
+  var nhl = function (q) {
+    if (typeof _G45_REG_EQ === 'undefined') return [];
+    var ql = q.toLowerCase();
+    return _G45_REG_EQ.map(function (e) {
+      var v = e[2] || (/^NY/.test(e[0]) ? 'new york' : '');
+      return { name: (v ? v.replace(/\b\w/g, function (c) { return c.toUpperCase(); }) + ' ' : '') + e[1], logo: 'https://assets.nhle.com/logos/nhl/svg/' + e[0] + '_light.svg', sport: '🏒', league: 'NHL' };
+    }).filter(function (r) { return r.name.toLowerCase().indexOf(ql) >= 0; });
+  };
+  var rendre = function (p) {
+    var res = $((p === 'e' ? 'edit-unit-' : 'u-') + 'club-res'); if (!res) return;
+    var l = L[p] || [];
+    res.innerHTML = !l.length ? '' : '<div style="background:#0b101d;border:1px solid #2c3550;border-radius:10px;margin:4px 0 6px;max-height:300px;overflow:auto;">' + l.map(function (r, i) {
+      return '<div onclick="g45UfClubChoisir(\'' + p + '\',' + i + ')" style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid #222b45;cursor:pointer;font-size:15px;color:#fff;">'
+        + '<span style="width:30px;height:30px;flex:none;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;">' + (r.logo ? '<img src="' + esc(r.logo) + '" alt="" style="width:24px;height:24px;object-fit:contain;" onerror="this.remove()">' : '') + '</span>'
+        + '<span style="flex:1;min-width:0;"><b>' + esc(r.name) + '</b>' + (r.league ? '<br><span style="font-size:13px;color:#c9d3ee;">' + esc(r.league) + '</span>' : '') + '</span><span style="font-size:18px;">' + esc(r.sport || '') + '</span></div>';
+    }).join('') + '</div>';
+  };
+  window.g45UfClubTape = function (p) {
+    clearTimeout(minu[p]);
+    minu[p] = setTimeout(function () {
+      var inp = $((p === 'e' ? 'edit-unit-' : 'u-') + 'club'), q = String(inp && inp.value || '').trim(), j = ++jeton[p];
+      if (q.length < 2) { L[p] = []; rendre(p); return; }
+      var loc = [];
+      try { loc = (typeof fuzzyClubSearch === 'function' ? fuzzyClubSearch(q) : []).map(function (r) { return { name: r.name, logo: r.logo, sport: r.sport || '⚽', league: r.league || '' }; }); } catch (e) {}
+      loc = nhl(q).concat(loc).slice(0, 8); L[p] = loc; rendre(p);
+      if (typeof g45SdbSearch !== 'function') return;
+      g45SdbSearch(q).then(function (sdb) {
+        if (j !== jeton[p]) return;
+        var vus = {}; L[p].forEach(function (r) { vus[r.name.toLowerCase()] = 1; });
+        L[p] = L[p].concat((sdb || []).filter(function (r) { return !vus[String(r.name).toLowerCase()]; }).slice(0, 8)); rendre(p);
+      }).catch(function () {});
+    }, 300);
+  };
+  window.g45UfClubChoisir = function (p, i) {
+    var r = (L[p] || [])[i]; if (!r) return;
+    var inp = $((p === 'e' ? 'edit-unit-' : 'u-') + 'club'); if (inp) inp.value = r.name;
+    if (p === 'u' && r.sport) { var sp = $('u-sport'); if (sp && [].some.call(sp.options, function (o) { return o.value === r.sport; })) sp.value = r.sport; }
+    L[p] = []; rendre(p);
+  };
+
+  /* Bouton Club / Joueur / Compétition du formulaire d'ajout */
+  /* setUnitType est dans une portée fermée : on écoute le clic des trois boutons (data-action) */
+  document.addEventListener('click', function (ev) {
+    var b = ev.target && ev.target.closest && ev.target.closest('#u-type-club,#u-type-joueur,#u-type-competition');
+    if (b) setTimeout(function () { poser(); voirClub('u'); }, 0);
+  }, true);
+
+  /* Ajout : note composée avant l'ajout d'origine, u.club posé après */
+  var add0 = window.addUnit;
+  if (typeof add0 === 'function') window.addUnit = function () {
+    poser();
+    var un = $('u-note'), libre = un ? un.value.trim() : '', jou = ($('u-type') || {}).value === 'joueur', club = jou ? String(($('u-club') || {}).value || '').trim() : '';
+    var n0 = (state && state.u) ? state.u.length : 0;
+    if (un) un.value = window._g45UfCompose(club, libre, ($('u-pdom') || {}).value, ($('u-pext') || {}).value);
+    var r;
+    try { r = add0.apply(this, arguments); }
+    finally {
+      if (state && state.u && state.u.length > n0) {
+        var nu = state.u[state.u.length - 1];
+        if (nu && club) { nu.club = club; try { save(); } catch (e) {} }
+        ['u-note', 'u-pdom', 'u-pext', 'u-club'].forEach(function (id) { if ($(id)) $(id).value = ''; });
+        L.u = []; rendre('u');
+      } else if (un) un.value = libre;
+    }
+    return r;
+  };
+
+  /* Modifier : cases remplies depuis la note */
+  var ed0 = window.editUnit;
+  if (typeof ed0 === 'function') window.editUnit = function (i) {
+    var r = ed0.apply(this, arguments);
+    try {
+      poser();
+      var u = state.u[parseInt(i)]; if (!u) return r;
+      var D = window._g45UfDecoupe(u.note), jou = u.type === 'joueur', libre = D.avant, club = '';
+      if (jou) { var pc = D.avant.split(' · '); club = u.club || pc[0]; libre = pc[0] === club ? pc.slice(1).join(' · ') : D.avant; }
+      $('edit-unit-note').value = libre;
+      $('edit-unit-pdom').value = D.dom; $('edit-unit-pext').value = D.ext;
+      $('edit-unit-club').value = club; L.e = []; rendre('e');
+      voirClub('e');
+    } catch (e) {}
+    return r;
+  };
+  var sv0 = window.saveEditUnit;
+  if (typeof sv0 === 'function') window.saveEditUnit = function () {
+    try {
+      var i = parseInt(($('edit-unit-idx') || {}).value), u = state.u[i], en = $('edit-unit-note');
+      if (u && en && $('edit-unit-pdom')) {
+        var jou = ($('edit-unit-type') || {}).value === 'joueur', club = jou ? String(($('edit-unit-club') || {}).value || '').trim() : '';
+        en.value = window._g45UfCompose(club, en.value, $('edit-unit-pdom').value, $('edit-unit-pext').value);
+        if (club) u.club = club; else delete u.club;
+      }
+    } catch (e) {}
+    return sv0.apply(this, arguments);
+  };
 })();

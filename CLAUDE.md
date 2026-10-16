@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261017p, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261017q, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -455,6 +455,12 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   palier comme les équipes, consigne 📌 seulement si la note a 🏠 / ✈️, pas de cotes. Smoke (51).
   20261017p (« si j'y rajoute le type de pari, l'agenda va le lire ? ») : note d'une carte JOUEUR 🏒 = « <club> 🏠 <pari> ✈️ <pari> » → club = texte AVANT
   le 1er 🏠 / ✈️ (`_clubDe` dans _agJou ; avant : note entière en ligne club), consigne 📌 = _g45AgConsigne comme les équipes ; 🏠 seul = matchs à l'extérieur retirés.
+  20261017q (« remplacer les liens Sofa / Flashscore par 🏠 type de pari / ✈️ type de pari » + « pour les joueurs, club avec une recherche », maquettes
+  validées) : bloc en fin d'app.js — formulaire du mur ET « Modifier » : liens cachés (restent dans 🔗 Liens), cases #u-pdom / #u-pext (#edit-unit-pdom / -pext),
+  joueur → #u-club / #edit-unit-club (recherche g45UfClubTape : clubs NHL _G45_REG_EQ, fuzzyClubSearch, g45SdbSearch ; choix règle #u-sport). TOUT dans u.note :
+  `_g45UfCompose` = [club · ]libre [🏠 x] [✈️ y] (cases égales → « 🏠/✈️ x »), `_g45UfDecoupe` pour « Modifier » ; u.club en plus pour un joueur. `_g45UClub(u)`
+  (u.club, sinon note avant 🏠 / ✈️ et « · ») remplace u.note partout où la note servait de CLUB (ButIdMur, MajEquipeJouee, JoueurClubLogo, ticket Cockpit,
+  NHL joueur, Agenda). setUnitType = portée fermée → clic des boutons écouté. Smoke (ufLieu, 56).
   20261016i (Santé : TheSportsDB « trop lent (12 s) » depuis 4 h ; console d'Antoine : searchteams « Club / Athletic / CD / FC Connor McDavid » en
   522 / CORS ; Arsenal = 200 en 19 s → serveur TheSportsDB surchargé) : `_g45FanChercher` (fond de carte) et `_g45BgChercher` (fond de fiche) ne
   cherchent plus d'ÉQUIPE pour une carte JOUEUR du mur (8 variantes par joueur) ; la recherche de JOUEUR (searchplayers, 1 requête) reste. Smoke (52).
