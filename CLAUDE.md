@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261017d, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261017e, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -504,6 +504,11 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   tout le monde ») : elle vaut pour gones ET bet45, tous les comptes (dans app.js, pas sur l'appareil).
   20261017d (« même pas le petit coq ») : ESPN 478.png = DRAPEAU → france = écusson Wikipédia SONDÉ PAR ANTOINE (pageimages de « Équipe de France de
   football ») thumb.wikimedia.org/…/Logo_Équipe_France_Football_2026.svg/500px-….png.
+  20261017e (« logo national pour les pays ») : `_g45PaysLogo(nom, k)` appelé par window._g45FondLogo — carte du mur au nom d'un PAYS (`_G45_PAYS` :
+  ≈ 60 pays, noms fr + en → « de / d' / du / des … ») → image de la page Wikipédia fr « Équipe <…> de football » (🏉 : « de rugby à XV »), API
+  pageimages origin=* ; cache g45pays1_<f|r>_<pays> (trouvé 30 j, rien 7 j, pas de réponse = rien gardé) ; une recherche par pays et par session puis
+  un render(). Carte joueur ignorée ; France foot = coq fixé (17d) ; France RUGBY prend aussi le coq foot (clé partagée, NON réglé). Images par pays
+  NON vérifiées (testé Chromium avec réponse simulée : 1 requête, écusson posé).
   20261016r — DIAGNOSTIC ?diag=1 (fin d'app.js) : compte 10 s les appels de render / g45DirectMesEquipes / _g45FanCompleter…, fetch par domaine,
   mutations, minuteries, erreurs JS → alerte résumée (pas d'alerte = boucle synchrone). Rien sans le paramètre.
   20261014u (capture : « c'est pas aligné ») : boîtes de largeur FIXE (logo 110 px ×2, VS/heure 110 px), texte flex 1 1 0 + un ressort 1 1 0 après les

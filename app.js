@@ -75329,8 +75329,64 @@ window._G45_FOND_LOGO = { vancouvercanucks: 1, parissaintgermain: 1, psg: 1, par
   /* 20261017c : Stade Toulousain (« et on est bon ») */
   stadetoulousain: 1, toulouse: 1 };   /* 20261017a : Atlético (« l'atm ») */   /* 20261016y : PSG (« c'est moche ») ; 20261016z : Arsenal (« trouver l'intrus » : photo de joueurs au milieu des blasons) */
 window._g45FondLogo = function (nom) {
-  try { var k = (typeof _g45SgNorm === 'function') ? _g45SgNorm(nom) : String(nom || '').toLowerCase().replace(/[^a-z0-9]/g, ''); return !!window._G45_FOND_LOGO[k]; } catch (e) { return false; }
+  try {
+    var k = (typeof _g45SgNorm === 'function') ? _g45SgNorm(nom) : String(nom || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (window._G45_FOND_LOGO[k]) return true;
+    return _g45PaysLogo(nom, k);   /* 20261017e : sélections nationales */
+  } catch (e) { return false; }
 };
+/* 20261017e (« logo national pour les pays ») — SÉLECTION NATIONALE au mur (France, Espagne, Brazil…) → écusson de la fédération au centre de la
+   carte, comme le coq (20261017d). Source = image de la page Wikipédia fr « Équipe <de/d'/du/des> <pays> de football » (ou « de rugby à XV » pour
+   une carte 🏉), même API que la sonde d'Antoine pour la France (pageimages, origin=*, fr.wikipedia.org dans la CSP). Image de CHAQUE pays NON
+   vérifiée (peut être une photo d'équipe si la page n'a pas d'écusson). Mémoire g45pays1_<sport>_<pays> : trouvé 30 j, rien 7 j ; une recherche
+   par pays et par session, puis UN render() (règle 16p : l'écran redessiné voit ensuite un résultat connu). */
+var _G45_PAYS = {
+  france: "de France", espagne: "d'Espagne", spain: "d'Espagne", allemagne: "d'Allemagne", germany: "d'Allemagne",
+  italie: "d'Italie", italy: "d'Italie", angleterre: "d'Angleterre", england: "d'Angleterre", portugal: "du Portugal",
+  bresil: "du Brésil", brazil: "du Brésil", argentine: "d'Argentine", argentina: "d'Argentine", belgique: "de Belgique",
+  belgium: "de Belgique", paysbas: "des Pays-Bas", netherlands: "des Pays-Bas", hollande: "des Pays-Bas", croatie: "de Croatie",
+  croatia: "de Croatie", maroc: "du Maroc", morocco: "du Maroc", senegal: "du Sénégal", algerie: "d'Algérie", algeria: "d'Algérie",
+  tunisie: "de Tunisie", tunisia: "de Tunisie", suisse: "de Suisse", switzerland: "de Suisse", uruguay: "de l'Uruguay",
+  colombie: "de Colombie", colombia: "de Colombie", mexique: "du Mexique", mexico: "du Mexique", etatsunis: "des États-Unis",
+  usa: "des États-Unis", unitedstates: "des États-Unis", japon: "du Japon", japan: "du Japon", cotedivoire: "de Côte d'Ivoire",
+  ivorycoast: "de Côte d'Ivoire", cameroun: "du Cameroun", cameroon: "du Cameroun", danemark: "du Danemark", denmark: "du Danemark",
+  pologne: "de Pologne", poland: "de Pologne", suede: "de Suède", sweden: "de Suède", norvege: "de Norvège", norway: "de Norvège",
+  autriche: "d'Autriche", austria: "d'Autriche", ecosse: "d'Écosse", scotland: "d'Écosse", paysdegalles: "du pays de Galles",
+  wales: "du pays de Galles", irlande: "d'Irlande", ireland: "d'Irlande", turquie: "de Turquie", turkey: "de Turquie",
+  serbie: "de Serbie", serbia: "de Serbie", ukraine: "d'Ukraine", coreedusud: "de Corée du Sud", southkorea: "de Corée du Sud",
+  australie: "d'Australie", australia: "d'Australie", nouvellezelande: "de Nouvelle-Zélande", newzealand: "de Nouvelle-Zélande",
+  afriquedusud: "d'Afrique du Sud", southafrica: "d'Afrique du Sud", egypte: "d'Égypte", egypt: "d'Égypte", nigeria: "du Nigeria",
+  ghana: "du Ghana", chili: "du Chili", chile: "du Chili", perou: "du Pérou", peru: "du Pérou", equateur: "de l'Équateur",
+  ecuador: "de l'Équateur", canada: "du Canada", grece: "de Grèce", greece: "de Grèce", republiquetcheque: "de Tchéquie",
+  tchequie: "de Tchéquie", czechia: "de Tchéquie", hongrie: "de Hongrie", hungary: "de Hongrie", roumanie: "de Roumanie",
+  romania: "de Roumanie", slovaquie: "de Slovaquie", slovenie: "de Slovénie", islande: "d'Islande", iceland: "d'Islande",
+  fidji: "des Fidji", fiji: "des Fidji", samoa: "des Samoa", tonga: "des Tonga", georgie: "de Géorgie", georgia: "de Géorgie"
+};
+window._g45PaysEnCours = {};
+function _g45PaysLogo(nom, k) {
+  var art = _G45_PAYS[k]; if (!art) return false;
+  var u = (state.u || []).filter(function (x) { return x && _g45SgNorm(x.n || '') === k; })[0];
+  if (u && u.type === 'joueur') return false;
+  var rug = !!(u && /🏉/.test(u.sport || '') && !/🇦🇺/.test(u.sport || ''));
+  if (k === 'france' && !rug) return false;   /* coq déjà fixé (20261017d) */
+  var ck = 'g45pays1_' + (rug ? 'r_' : 'f_') + k, c = null;
+  try { c = JSON.parse(localStorage.getItem(ck) || 'null'); } catch (e) {}
+  if (c && c.u && Date.now() - (c.t || 0) < 30 * 86400000) { window._G45_FOND_LOGO[k] = c.u; return true; }
+  if (c && !c.u && Date.now() - (c.t || 0) < 7 * 86400000) return false;
+  if (window._g45PaysEnCours[ck]) return false;
+  window._g45PaysEnCours[ck] = 1;
+  var titre = 'Équipe ' + art + (rug ? ' de rugby à XV' : ' de football');
+  fetch('https://fr.wikipedia.org/w/api.php?action=query&titles=' + encodeURIComponent(titre) + '&prop=pageimages&piprop=thumbnail&pithumbsize=500&redirects=1&format=json&origin=*')
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (j) {
+      if (!j) return;   /* pas de réponse : rien mémorisé, nouvel essai à la prochaine session */
+      var pg = j.query && j.query.pages, url = '';
+      if (pg) Object.keys(pg).forEach(function (id) { if (!url && pg[id].thumbnail) url = pg[id].thumbnail.source || ''; });
+      try { localStorage.setItem(ck, JSON.stringify({ u: url, t: Date.now() })); } catch (e) {}
+      if (url) { window._G45_FOND_LOGO[k] = url; setTimeout(function () { try { render(); } catch (e) {} }, 50); }
+    }).catch(function () {});
+  return false;
+}
 
 /* ═══ 20261016o — MUR : BOUTON « 📋 Compact / 🖼️ Bannières » + PASTILLE DE SÉRIE LISIBLE (capture 412 px : « ça en jette mais on voit
    pas tout d'un coup » ; capture PSG : « la barre verte à peine visible » ; maquette validée « oui ») ═══
