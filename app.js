@@ -71801,8 +71801,19 @@ function _g45AgOdHtml(C, od, sp) {
     lignes.push(s);
   });
   var h = lignes.map(function (s, i) { return '<div style="margin-top:' + (i ? 3 : 0) + 'px;">' + (i ? 'OU ' : '💶 ') + s + '</div>'; }).join('');
-  if (C.seuil && seuilV > 1) h += '<div style="margin-top:3px;font-weight:800;color:' + (seuilV < C.seuil ? '#1ed760' : '#ff6b6b') + ';">'
-    + (seuilV < C.seuil ? '✅ cote ' + f(seuilV) + ' < ' + String(C.seuil).replace('.', ',') + ' : condition remplie' : '❌ cote ' + f(seuilV) + ' ≥ ' + String(C.seuil).replace('.', ',') + ' : condition non remplie') + '</div>';
+  /* 20261017r (« condition remplie 1,41 c'est ❌ », validé « oui ») : « … si cote inférieure à 1,5 » = règle de la MONTANTE (1,5 mini) —
+     résultat seul SOUS le seuil = ❌ (pas assez) → il faut l'autre jambe ; au-dessus = ✅ le résultat seul suffit. */
+  if (C.seuil && seuilV > 1) {
+    var _l0 = C.opts[0] || [], _r = _l0.filter(function (l) { return l.k === 'vic' || l.k === 'vqr' || l.k === 'def'; })[0];
+    var _rn = !_r ? 'Résultat seul' : (_r.k === 'def' ? 'Défaite seule' : (_r.k === 'vqr' ? 'Vainqueur seul' : 'Victoire seule'));
+    var _aj = _l0.filter(function (l) { return l !== _r; }).map(function (l) {
+      return l.k === 'ov' || l.k === 'un' ? (l.k === 'ov' ? 'over ' : 'under ') + String(l.L).replace('.', ',') : (l.k === 'but' ? 'buteur' : String(l.t || '').replace(/</g, '&lt;'));
+    }).filter(Boolean).join(' + ');
+    var _sv = String(C.seuil).replace('.', ',');
+    h += '<div style="margin-top:3px;font-weight:800;color:' + (seuilV < C.seuil ? '#ff6b6b' : '#1ed760') + ';">'
+      + (seuilV < C.seuil ? '❌ ' + _rn + ' ' + f(seuilV) + ' &lt; ' + _sv + ' → ' + (_aj ? 'ajoute ' + _aj : 'trop bas')
+        : '✅ ' + _rn + ' ' + f(seuilV) + ' ≥ ' + _sv + ' → ' + (_rn === 'Défaite seule' ? 'la défaite' : (_rn === 'Vainqueur seul' ? 'le vainqueur' : 'la victoire')) + ' seule suffit') + '</div>';
+  }
   if (noteHk) h += '<div style="font-size:13px;color:#ffb36b;margin-top:2px;">⚠️ ta victoire = temps réglementaire : ESPN ne la donne pas, sa cote sera plus haute chez ton book</div>';
   return h + '<div style="font-size:12px;color:#9fb0c7;margin-top:2px;">' + (od.src === 'oa' ? 'Cotes The Odds API : médiane de ' + od.nb + ' bookmaker' + (od.nb > 1 ? 's' : '') + (od.reg === 'fr' ? ' français' : ' européen' + (od.nb > 1 ? 's' : '')) : 'Cotes ESPN (DraftKings) : indication') + '</div>';
 }
