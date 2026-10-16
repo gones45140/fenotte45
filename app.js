@@ -75305,3 +75305,30 @@ window._g45NhlJTrouver = _g45NhlJTrouver; window._g45NhlJHtml = _g45NhlJHtml; wi
 /* 20261016q : message après le nettoyage d'urgence (?menage=1). */
 (function () { try { var n = localStorage.getItem('g45_menage_fait'); if (n == null) return; localStorage.removeItem('g45_menage_fait');
   setTimeout(function () { try { alert('🧹 Nettoyage fait : ' + n + ' données de cache effacées. Tes paris et ton mur sont intacts.'); } catch (e) {} }, 1500); } catch (e) {} })();
+
+/* ═══ 20261016r — DIAGNOSTIC ?diag=1 (gones figé sur le téléphone d'Antoine : affichage OK, aucune touche ne répond ; navigation privée OK,
+   ?menage=1 sans effet) ═══ Compte pendant 10 s : appels de quelques fonctions qui redessinent, fetch par domaine, mutations du DOM,
+   minuteries, erreurs JS ; puis une alerte résume (si l'alerte n'apparaît JAMAIS = boucle bloquante synchrone). Aucun effet sans ?diag=1. */
+(function () {
+  try {
+    if (!/[?&]diag=1/.test(location.search)) return;
+    var C = {}, F = {}, E = [], mut = 0, to = 0, t0 = Date.now();
+    var plus = function (o, k) { o[k] = (o[k] || 0) + 1; };
+    ['render', 'g45DirectMesEquipes', '_g45AccRegrouper', 'loadCalendrier', 'g45BandeauMaj', 'g45MurVisuels', '_g45FanCompleter', '_g45FanChercher',
+      'renderBilanTab', 'g45SanteTester', '_g45PushBetsGithub', 'openClub', 'g45AccChoisir', 'renderNotifPanel', '_g45TrRender', 'g45TrRun'].forEach(function (n) {
+      try { var f = window[n]; if (typeof f !== 'function') return; window[n] = function () { plus(C, n); return f.apply(this, arguments); }; } catch (e) {}
+    });
+    var f0 = window.fetch; window.fetch = function (u) { try { var h = String(u && u.url || u).replace(/^https?:\/\//, '').split(/[/?]/)[0]; plus(F, h); } catch (e) {} return f0.apply(this, arguments); };
+    var st0 = window.setTimeout; window.setTimeout = function () { to++; return st0.apply(this, arguments); };
+    addEventListener('error', function (e) { if (E.length < 5) E.push(String(e.message || e).slice(0, 90)); });
+    addEventListener('unhandledrejection', function (e) { if (E.length < 5) E.push('promesse : ' + String(e.reason && e.reason.message || e.reason).slice(0, 80)); });
+    var go = function () { try { new MutationObserver(function (m) { mut += m.length; }).observe(document.documentElement, { subtree: true, childList: true, attributes: true }); } catch (e) {} };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', go); else go();
+    var tri = function (o) { return Object.keys(o).sort(function (a, b) { return o[b] - o[a]; }).slice(0, 6).map(function (k) { return k + ' ' + o[k]; }).join(', ') || '—'; };
+    st0(function () {
+      var txt = '🔎 DIAG ' + Math.round((Date.now() - t0) / 1000) + ' s\nFonctions : ' + tri(C) + '\nRéseau : ' + tri(F) + '\nMutations : ' + mut + ' · minuteries : ' + to + '\nErreurs : ' + (E.join(' | ') || 'aucune');
+      try { console.log(txt); } catch (e) {}
+      try { alert(txt); } catch (e) {}
+    }, 10000);
+  } catch (e) {}
+})();

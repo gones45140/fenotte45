@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261016q, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261016r, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -469,6 +469,9 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   NETTOYAGE D'URGENCE en TÊTE d'app.js : adresse ?menage=1 → efface les clés de cache (copie de _G45_CACHE_PREFIXES + g45cm11_, g45cls5_,
   g45bgclub1_, g45nhlj1_, g45jv…, g45khl_…), sessionStorage, tendances gardées (IndexedDB kv tr_*) ; JAMAIS g45v5 ni réglages / clés ;
   stoppe app.js (throw) puis recharge sans paramètre ; alerte « 🧹 Nettoyage fait : N … » (g45_menage_fait). Testé Chromium.
+  CONFIRMÉ par Antoine (16/10 ~10 h, « ça remarche » après ?menage=1 dans l'appli : ≈ 1 200 clés effacées). Clé coupable exacte NON identifiée.
+  20261016r — DIAGNOSTIC ?diag=1 (fin d'app.js) : compte 10 s les appels de render / g45DirectMesEquipes / _g45FanCompleter…, fetch par domaine,
+  mutations, minuteries, erreurs JS → alerte résumée (pas d'alerte = boucle synchrone). Rien sans le paramètre.
   20261014u (capture : « c'est pas aligné ») : boîtes de largeur FIXE (logo 110 px ×2, VS/heure 110 px), texte flex 1 1 0 + un ressort 1 1 0 après les
   logos, colonne de droite 84 px (.g45ag-col) → VS au même endroit sur toutes les cartes. Vérifié Chromium (3 cartes, consignes de longueurs différentes).
   20261008h — SONDÉ PAR ANTOINE (MLB Brewers–Dodgers) : odds[0] SANS moneyline, homeTeamOdds/awayTeamOdds sans cote, details « MIL -113 »
