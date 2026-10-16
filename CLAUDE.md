@@ -1618,6 +1618,9 @@ RÉGLÉ (worker, 01/10) : cron « exceededCpu » (cpuTimeMs 10) à CHAQUE passag
   Paris calculée à la main (dernier dimanche de mars / octobre 01:00 UTC ; 6 cas comparés à Intl, identiques). worker.js complet donné,
   REDÉPLOYÉ le 13/10 (avec /odds en crédits). Erreurs du SOIR (multiplex foot) : budget `_lourd` 4 → 2 PROPOSÉ, en attente de réponse.
 À VOIR (en attente d'un retour d'Antoine) :
+- ⚾ LANCEURS MLB DANS L'AGENDA (17/10, Misiorowski) : carte JOUEUR ⚾ → afficher le match SEULEMENT s'il est lanceur partant annoncé. Sonde demandée à
+  Antoine (PC) : scoreboard baseball/mlb → competitions[0].competitors[].probables[{name, athlete.displayName}] (NON vérifié). Rappel programmé le 17/10 14 h.
+  Joueurs 🏈 NFL / 🏀 NBA dans l'Agenda : proposés (calendrier du club), pas encore faits.
 - 🎟️ QUOTA DES COTES — FAIT 20261015m (maquette validée « l'utilisateur doit voir que SON quota ») : bloc en fin d'app.js, ligne repliable
   #g45tr-quota (enveloppe de _g45TrFiabHtml, au-dessus de la Fiabilité) : `_g45QtHtml`, `_g45QtResume` (ce qui RESTE), `g45QtLire(force)` (mémoire
   2 min), `g45QtOuvrir` ; Outils → Clés (g45CheckOddsQuota) gère aussi la réponse bet45. WORKER (déployé par Claude via l'API Cloudflare le 15/10,
