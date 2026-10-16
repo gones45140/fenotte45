@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261016u, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261016v, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -484,6 +484,10 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   20261016u (« même les joueurs ont sauté ») — VU dans Observability du worker (API telemetry/query, lisible avec le jeton) : TOUTES les demandes
   host=tsdb en 429 = TheSportsDB limite la clé gratuite par IP, celle du worker est partagée. App : 429 du worker → appel DIRECT (IP du téléphone),
   comme 403 / 404 ; worker : après un 429, plus d'appel à TheSportsDB pendant 60 s (secours si présent, sinon 429). Smoke (tsdbw : cas 429).
+  20261016v (« les équipes c'est bon, pas les joueurs foot », NHL OK = photos nhle.com) : Observability = Haaland / Kane / Yamal / Mbappé +
+  équipes (Real Madrid, Chicago…) redemandés en JOUEURS en boucle, tous en 429 → le téléphone aussi est limité (≈ 30 / min / IP). Enveloppe de
+  fetch : appels DIRECTS en file (2,2 s d'écart) ; 429 en direct → toute demande TheSportsDB répond 429 sur place pendant 60 s
+  (window._g45Tsdb429). `_g45JoueurVisChercher` : rien pour une ÉQUIPE du mur (type ≠ joueur, même nom) ni pour un texte de pari (« ou », buteur, remplaçant).
   20261016r — DIAGNOSTIC ?diag=1 (fin d'app.js) : compte 10 s les appels de render / g45DirectMesEquipes / _g45FanCompleter…, fetch par domaine,
   mutations, minuteries, erreurs JS → alerte résumée (pas d'alerte = boucle synchrone). Rien sans le paramètre.
   20261014u (capture : « c'est pas aligné ») : boîtes de largeur FIXE (logo 110 px ×2, VS/heure 110 px), texte flex 1 1 0 + un ressort 1 1 0 après les

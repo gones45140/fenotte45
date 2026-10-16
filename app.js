@@ -33,10 +33,24 @@
       var m = typeof u === 'string' && !(o && o.method && o.method !== 'GET') ? u.match(RX) : null;
       if (!m) return F.apply(window, arguments);
       var self = window, args = arguments, oo = {}; if (o && o.signal) oo.signal = o.signal;
+      /* 20261016v (photos des joueurs foot jamais revenues : Observability = Haaland, Kane, Yamal… redemandés en boucle, tous en 429) : le
+         TÉLÉPHONE aussi est limité par TheSportsDB (≈ 30 recherches / min / adresse). Appels DIRECTS espacés de 2,2 s ; 429 en direct →
+         plus aucune demande TheSportsDB pendant 60 s (réponse 429 immédiate, rien n'est mémorisé comme « pas d'image »). */
+      var t429 = function () { return new Response('{}', { status: 429, headers: { 'Content-Type': 'application/json' } }); };
+      if (window._g45Tsdb429 && Date.now() - window._g45Tsdb429 < 60000) return Promise.resolve(t429());
+      var direct = function () {
+        if (window._g45Tsdb429 && Date.now() - window._g45Tsdb429 < 60000) return Promise.resolve(t429());
+        var p = (window._g45TsdbFile || Promise.resolve()).then(function () {
+          if (window._g45Tsdb429 && Date.now() - window._g45Tsdb429 < 60000) return t429();
+          return F.apply(self, args).then(function (r) { if (r.status === 429) window._g45Tsdb429 = Date.now(); return r; });
+        });
+        window._g45TsdbFile = p.catch(function () {}).then(function () { return new Promise(function (ok) { setTimeout(ok, 2200); }); });
+        return p;
+      };
       return F.call(window, W + '?host=tsdb&path=' + encodeURIComponent(m[2]), oo).then(function (r) {
-        if (r.status === 403 || r.status === 404 || r.status === 429) return F.apply(self, args);   /* 20261016u : 429 = TheSportsDB limite l'IP du WORKER (partagée) → le téléphone essaie avec SA propre adresse */
+        if (r.status === 403 || r.status === 404 || r.status === 429) return direct();   /* 20261016u : 429 = TheSportsDB limite l'IP du WORKER (partagée) → le téléphone essaie avec SA propre adresse */
         return r;
-      }, function (e) { if (e && e.name === 'AbortError') throw e; return F.apply(self, args); });
+      }, function (e) { if (e && e.name === 'AbortError') throw e; return direct(); });
     };
     nf._g45Tsdb = 1; window.fetch = nf;
   } catch (e) {}
@@ -63555,6 +63569,10 @@ window._g45JoueurVisLire = _g45JoueurVisLire;
 async function _g45JoueurVisChercher(nom, sport) {
   var n = String(nom || '').trim();
   if (n.length < 4 || n.indexOf(' ') < 0) return null;   /* un prenom + un nom, au minimum */
+  /* 20261016v : pas de recherche de JOUEUR pour une ÉQUIPE du mur (Real Madrid, Chicago Blackhawks… redemandés en joueurs) ni pour un
+     texte de pari (« D. Doué ou B. Barcola buteur ») : demandes perdues qui font bloquer l'adresse par TheSportsDB. */
+  if (/\bou\b|buteur|rempla[cç]/i.test(n)) return null;
+  try { var _nn = _g45SgNorm(n); if ((state.u || []).some(function (x) { return x && x.type !== 'joueur' && _g45SgNorm(x.n || '') === _nn; })) return null; } catch (e) {}
   try {
     var r = await fetch('https://www.thesportsdb.com/api/v1/json/3/searchplayers.php?p=' + encodeURIComponent(n));
     if (!r.ok) return null;
