@@ -42,9 +42,11 @@
         if (window._g45Tsdb429 && Date.now() - window._g45Tsdb429 < 60000) return Promise.resolve(t429());
         var p = (window._g45TsdbFile || Promise.resolve()).then(function () {
           if (window._g45Tsdb429 && Date.now() - window._g45Tsdb429 < 60000) return t429();
-          return F.apply(self, args).then(function (r) { if (r.status === 429) window._g45Tsdb429 = Date.now(); return r; });
+          return F.apply(self, args).then(function (r) { if (r.status === 429) window._g45Tsdb429 = Date.now(); return r; }, function (e) {
+            /* 20261016w : le 429 de TheSportsDB arrive SANS en-tête CORS → le navigateur lève une erreur au lieu d'un statut 429 : même pause. */
+            if (!(e && e.name === 'AbortError')) window._g45Tsdb429 = Date.now(); throw e; });
         });
-        window._g45TsdbFile = p.catch(function () {}).then(function () { return new Promise(function (ok) { setTimeout(ok, 2200); }); });
+        window._g45TsdbFile = p.catch(function () {}).then(function () { return new Promise(function (ok) { setTimeout(ok, 3000); }); });
         return p;
       };
       return F.call(window, W + '?host=tsdb&path=' + encodeURIComponent(m[2]), oo).then(function (r) {
@@ -75297,6 +75299,18 @@ window._g45NhlJTrouver = _g45NhlJTrouver; window._g45NhlJHtml = _g45NhlJHtml; wi
     }
     del.forEach(function (k) { localStorage.removeItem(k); });
     localStorage.setItem('g45_fan_neg2', '1');
+  } catch (e) {}
+})();
+
+/* 20261016w : photos des JOUEURS foot toujours absentes (hockey OK = photos nhle.com) → « pas de photo » de joueur (g45jv… sans adresse)
+   effacés une 3e fois (drapeau g45_fan_neg3), au cas où TheSportsDB aurait répondu « aucun joueur » pendant la surcharge. */
+(function () {
+  try {
+    if (localStorage.getItem('g45_fan_neg3')) return;
+    var del = [];
+    for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (k && k.indexOf('g45jv') === 0 && !/https?:/.test(localStorage.getItem(k) || '')) del.push(k); }
+    del.forEach(function (k) { localStorage.removeItem(k); });
+    localStorage.setItem('g45_fan_neg3', '1');
   } catch (e) {}
 })();
 
