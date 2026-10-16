@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261016o, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261016p, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -461,6 +461,10 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   20261016n (« Chicago / Vancouver pas de bannière ? ») : `_g45FanChercher` (g45_fanart2_, négatif 30 j) et `_g45BgChercher` (g45bgclub1_) ne mémorisent
   plus « pas d'image » si TheSportsDB n'a donné AUCUNE réponse (panne 522 / CORS) ; négatifs déjà gardés effacés une fois (drapeau g45_fan_neg1).
   Bannières Chicago / Canucks : NON vérifiées (TheSportsDB en panne le 16/10 au matin).
+  ⚠ 20261016p — RÉGRESSION de 16n (gones figé, « plus aucune touche répond », bet45 OK) : sans échec mémorisé, _g45FanCompleter renvoyait
+  maj = true → g45DirectMesEquipes(true) (Suivies) se redessinait et relançait la recherche SANS FIN. Échec de panne retenu 30 min en session
+  (window._g45FanPanne lu par `_g45FanLire` → '' ; window._g45BgPanne pour `_g45BgChercher`). RÈGLE : un écran qui se redessine après une
+  recherche doit toujours voir un résultat « connu » ensuite. Smoke (53).
   20261014u (capture : « c'est pas aligné ») : boîtes de largeur FIXE (logo 110 px ×2, VS/heure 110 px), texte flex 1 1 0 + un ressort 1 1 0 après les
   logos, colonne de droite 84 px (.g45ag-col) → VS au même endroit sur toutes les cartes. Vérifié Chromium (3 cartes, consignes de longueurs différentes).
   20261008h — SONDÉ PAR ANTOINE (MLB Brewers–Dodgers) : odds[0] SANS moneyline, homeTeamOdds/awayTeamOdds sans cote, details « MIL -113 »

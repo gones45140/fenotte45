@@ -54663,6 +54663,11 @@ function _g45ImgPersoTester(nom) {
 
 function _g45FanLire(nom) {
   try {
+    /* 20261016p (gones figé : « plus aucune touche répond ») : depuis 20261016n un échec de PANNE n'est plus mémorisé → les écrans qui
+       relancent leur dessin quand une recherche « a fait quelque chose » (Suivies g45DirectMesEquipes, etc.) bouclaient sans fin. Échec de
+       panne retenu POUR LA SESSION (30 min) : « connu sans visuel » d'ici là, nouvel essai ensuite. */
+    var _ps = window._g45FanPanne && window._g45FanPanne[_g45SgNorm(nom)];
+    if (_ps && Date.now() - _ps < 30 * 60000) return '';
     var o = JSON.parse(localStorage.getItem(_G45_FANART + _g45SgNorm(nom)) || 'null');
     if (!o) return undefined;                       /* jamais demande */
     if (!o.u && (Date.now() - (o.t || 0)) > 30 * 86400000) return undefined;  /* echec perime */
@@ -55031,6 +55036,7 @@ async function _g45FanChercher(nom, sport) {
   /* 20261016n (« Chicago / Vancouver pas de bannière ? ») : panne TheSportsDB (522, CORS) = AUCUNE réponse → rien mémorisé (avant : « pas
      d'image » gardé 30 j, la bannière ne revenait jamais). */
   if (url || _rep) { try { localStorage.setItem(_G45_FANART + _g45SgNorm(nom), JSON.stringify({ u: url, t: Date.now() })); } catch (e) {} }
+  else { try { (window._g45FanPanne = window._g45FanPanne || {})[_g45SgNorm(nom)] = Date.now(); } catch (e) {} }   /* 20261016p */
   return url;
 }
 
@@ -70787,6 +70793,7 @@ async function _g45BgChercher(nom) {
   var ck = 'g45bgclub1_' + norm(nom);
   try { var c = JSON.parse(localStorage.getItem(ck) || 'null'); if (c && Date.now() - c.t < (c.u || c.l ? 30 : 7) * 864e5) return c; } catch (e) {}
   var sport = _g45BgSport(nom), out = { u: '', l: '', t: Date.now() };
+  try { var _bp = window._g45BgPanne && window._g45BgPanne[ck]; if (_bp && Date.now() - _bp < 30 * 60000) return out; } catch (e) {}   /* 20261016p */
   /* 20261016i : fiche d'un JOUEUR du mur → pas de recherche d'équipe TheSportsDB (« FC Connor McDavid »…) ; logo posé plus bas sinon rien */
   try { if ((state.u || []).some(function (x) { return x && x.type === 'joueur' && norm(x.n) === norm(nom); })) { try { localStorage.setItem(ck, JSON.stringify(out)); } catch (e) {} return out; } } catch (e) {}
   var essais = (typeof _g45FanVariantes === 'function') ? _g45FanVariantes(nom, sport) : [nom], _repB = false;
@@ -70809,6 +70816,7 @@ async function _g45BgChercher(nom) {
     } catch (e) {}
   }
   if (out.u || out.l || _repB) { try { localStorage.setItem(ck, JSON.stringify(out)); } catch (e) {} }   /* 20261016n : panne = rien mémorisé */
+  else { try { (window._g45BgPanne = window._g45BgPanne || {})[ck] = Date.now(); } catch (e) {} }   /* 20261016p : panne retenue 30 min (session) */
   return out;
 }
 function _g45BgPoser(val) {
