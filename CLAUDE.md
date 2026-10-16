@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261017f, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261017g, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -2005,6 +2005,9 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   correction (approximation). m.fair inchangé. Passage officiel du 15/10 refait une 3e fois (aucun match commencé). Smoke (44).
   20261015p (Antoine : DK 3,15 → Winamax 2,95 = − 6,3 % ; « un poil en dessous, c'est bon ») : _G45_TR_FR 0,95 → 0,94 (− 6 % ; 1,50 FR ≈ 1,60 DK) ;
   passage officiel du 15/10 refait une 4e fois (aucun match commencé).
+  20261017g (« on sait pas ce qui était les tendances passées » → « un calendrier », maquette validée « oui go ») : liste de `_g45TrOffHtml` (triée par
+  notation, ⏳ du jour d'abord) REMPLACÉE par un CALENDRIER du mois (jour de notation x.t ; 🟩 gain à 1 € +, 🟥 −, gris sans cote, ⏳ rien de jugé ;
+  « réussies / jugées » + gain) ; `g45TrOffJour(k)` = liste du jour dessous, `g45TrOffMois(±1)` ; défaut = dernier jour jugé ; filtres appliqués. Smoke (trOff).
   Écarts entre Antoine et Cédric (14/10) : réglages par appareil (compétitions, jour, cote / proba mini), heure d'analyse, quota The Odds API (bet45 = 8 crédits / personne / jour).
 RÉGLÉ OU ABANDONNÉ (ne pas reproposer) :
 - APK bet45 sans barre d'adresse : OK. Logos Lakers / hockey : OK. « Connexion » sur le

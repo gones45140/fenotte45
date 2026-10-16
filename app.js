@@ -74771,7 +74771,9 @@ var _G45_BK_DOM = [
       .then(function () { O.enCours = false; var b = document.getElementById('g45tr-off'); if (b) b.outerHTML = window._g45TrOffHtml(); });
   }
 
-  window.g45TrOffF = function (f) { O.f = f; O.tout = false; var b = document.getElementById('g45tr-off'); if (b) b.outerHTML = window._g45TrOffHtml(); };
+  window.g45TrOffF = function (f) { O.f = f; O.tout = false; O.jour = null; O.mois = null; var b = document.getElementById('g45tr-off'); if (b) b.outerHTML = window._g45TrOffHtml(); };
+  window.g45TrOffJour = function (k) { O.jour = k; var b = document.getElementById('g45tr-off'); if (b) b.outerHTML = window._g45TrOffHtml(); };
+  window.g45TrOffMois = function (n) { var p = String(O.mois || '').split('-'), d = new Date(+p[0], +p[1] - 1 + n, 1); if (isNaN(d)) return; O.mois = d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2); var b = document.getElementById('g45tr-off'); if (b) b.outerHTML = window._g45TrOffHtml(); };
   window.g45TrOffTout = function () { O.tout = !O.tout; var b = document.getElementById('g45tr-off'); if (b) b.outerHTML = window._g45TrOffHtml(); };
 
   /* Calcul pur (testé par smoke.js) : réussite sur toutes, gain à 1 € sur celles qui ont une cote. */
@@ -74816,20 +74818,46 @@ var _G45_BK_DOM = [
       + tuile('💶 Gain à 1 €', C.nc ? eur(C.gain) : '—', cg, C.nc ? C.nc + ' paris avec cote · ROI ' + (C.roi >= 0 ? '+' : '') + Math.round(C.roi * 100) + ' %' : 'aucun pari avec cote jugé')
       + '</div>';
     if (att) h += '<div style="font-size:13px;color:#c9d3ee;margin-bottom:6px;">⏳ ' + att + ' en attente du résultat</div>';
-    h += '<div style="font-size:13px;color:#c9d3ee;margin:8px 0 4px;">💶 Courbe du gain (paris avec cote seulement)</div>' + courbeSvg(C.courbe);
-    var liste = L.slice().sort(function (a, b) { return b.t - a.t; }), vis = O.tout ? liste : liste.slice(0, 5);
-    h += '<div style="margin-top:10px;">' + vis.map(function (x) {
-      var ok = x.r === 1, ko = x.r === 0;
+    /* 20261017g (« on sait pas ce qui était les tendances passées » → « un calendrier avec les tendances passées », maquette validée « oui go ») :
+       la liste triée par date de notation montrait d'abord les ⏳ du jour → CALENDRIER du mois (case = jour de notation x.t, heure locale :
+       🟩 gain à 1 € positif, 🟥 négatif, gris sans cote, ⏳ rien de jugé ; « réussies / jugées » + gain) ; toucher un jour = sa liste dessous.
+       Jour choisi par défaut = dernier jour avec une tendance jugée. Les filtres Toutes / D'accord / Désaccord s'appliquent (L). */
+    var cle = function (t) { var d = new Date(t); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); };
+    var J2 = {}; L.forEach(function (x) { var k = cle(x.t); (J2[k] = J2[k] || []).push(x); });
+    var jours = Object.keys(J2).sort(), jugJ = jours.filter(function (k) { return J2[k].some(function (x) { return x.r === 0 || x.r === 1; }); });
+    if (!O.jour || !J2[O.jour]) O.jour = jugJ.length ? jugJ[jugJ.length - 1] : jours[jours.length - 1];
+    if (!O.mois) O.mois = O.jour.slice(0, 7);
+    var bil = function (lst) { var c = window._g45TrOffCalc(lst); return { n: c.n, ok: c.ok, nc: c.nc, g: c.gain, att: lst.length - c.n }; };
+    var an = +O.mois.slice(0, 4), mo = +O.mois.slice(5, 7) - 1, d1 = new Date(an, mo, 1), nbj = new Date(an, mo + 1, 0).getDate(), dec = (d1.getDay() + 6) % 7;
+    var nomM = d1.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+    var flB = 'background:transparent;border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:8px;font-size:16px;padding:4px 14px;cursor:pointer;';
+    h += '<div style="display:flex;align-items:center;justify-content:space-between;margin:12px 0 6px;"><button onclick="g45TrOffMois(-1)" style="' + flB + '">◀</button>'
+      + '<div style="font-size:16px;font-weight:800;text-transform:capitalize;">' + esc(nomM) + '</div><button onclick="g45TrOffMois(1)" style="' + flB + '">▶</button></div>';
+    h += '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;">' + ['lun', 'mar', 'mer', 'jeu', 'ven', 'sam', 'dim'].map(function (j) { return '<div style="text-align:center;font-size:12px;color:#c9d3ee;">' + j + '</div>'; }).join('');
+    for (var i = 0; i < dec; i++) h += '<div></div>';
+    for (var dd = 1; dd <= nbj; dd++) {
+      var k = O.mois + '-' + ('0' + dd).slice(-2), lj = J2[k], st = 'min-height:52px;border-radius:7px;padding:3px 1px;text-align:center;font-size:13px;line-height:1.25;';
+      if (!lj) { h += '<div style="' + st + 'color:#6b7590;">' + dd + '</div>'; continue; }
+      var B = bil(lj), fond = !B.n ? 'rgba(255,255,255,.08)' : (!B.nc ? 'rgba(140,150,175,.35)' : (B.g >= 0 ? 'rgba(30,215,96,.35)' : 'rgba(255,90,90,.35)'));
+      var bas = !B.n ? '⏳ ' + B.att : B.ok + '/' + B.n + (B.nc ? '<br><span style="font-size:11px;">' + (B.g >= 0 ? '+' : '−') + Math.abs(B.g).toFixed(2).replace('.', ',') + '</span>' : '');
+      h += '<div onclick="g45TrOffJour(\'' + k + '\')" style="' + st + 'cursor:pointer;background:' + fond + ';border:2px solid ' + (k === O.jour ? '#fff' : 'transparent') + ';"><b>' + dd + '</b><br><span style="font-size:12px;">' + bas + '</span></div>';
+    }
+    h += '</div>';
+    var lj0 = (J2[O.jour] || []).slice().sort(function (a, b) { return (a.r == null) - (b.r == null) || a.t - b.t; }), B0 = bil(lj0);
+    var titreJ = ''; try { var p = O.jour.split('-'); titreJ = new Date(+p[0], +p[1] - 1, +p[2]).toLocaleDateString('fr-FR', { weekday: 'long', day: '2-digit', month: '2-digit' }); } catch (e) {}
+    h += '<div style="margin-top:12px;background:rgba(0,0,0,.45);border-radius:8px;padding:7px 10px;font-size:15px;font-weight:800;text-transform:capitalize;">' + esc(titreJ)
+      + ' <span style="font-weight:600;text-transform:none;font-size:13px;color:#c9d3ee;">· ' + (B0.n ? B0.ok + ' ✅ ' + (B0.n - B0.ok) + ' ❌' : '') + (B0.att ? ' ⏳ ' + B0.att : '') + (B0.nc ? ' · ' + eur(B0.g) : '') + '</span></div>';
+    h += '<div>' + lj0.map(function (x) {
+      var ok = x.r === 1;
       var cote = x.c > 1 ? '<div style="width:62px;text-align:center;font-size:15px;font-weight:800;color:#f0c828;">@' + x.c.toFixed(2).replace('.', ',') + '</div>'
         : '<div style="width:62px;text-align:center;color:#8b95ad;font-size:15px;line-height:1.1;">—<br><span style="font-size:11px;font-weight:600;">pas de cote</span></div>';
       var g = x.r == null ? '<span style="color:#c9d3ee;">⏳</span>' : ((ok ? '✅' : '❌') + '<br><b style="color:' + (x.c > 1 ? (ok ? '#1ed760' : '#ff6b6b') : '#8b95ad') + ';">' + (x.c > 1 ? eur(ok ? x.c - 1 : -1) : '—') + '</b>');
       return '<div style="display:flex;align-items:center;gap:8px;padding:9px 0;border-top:1px solid rgba(255,255,255,.08);">'
-        + '<div style="width:50px;font-size:12px;color:#c9d3ee;">' + esc(jourTxt(x.t)) + '</div>'
         + '<div style="flex:1;min-width:0;"><div style="font-size:14px;font-weight:700;">' + spIco(x.sl) + ' ' + esc(x.h) + ' – ' + esc(x.a) + (x.s ? ' <span style="color:#c9d3ee;font-weight:600;">' + esc(x.s) + '</span>' : '') + '</div>'
         + '<div style="font-size:13px;color:#9fd0ff;">' + esc(x.m) + (x.d ? ' ⚠️' : '') + '</div></div>'
         + cote + '<div style="width:58px;text-align:right;font-size:13px;">' + g + '</div></div>';
     }).join('') + '</div>';
-    if (liste.length > 5) h += '<div style="text-align:center;margin-top:8px;"><button onclick="g45TrOffTout()" style="padding:8px 14px;border:1px solid rgba(255,255,255,.25);border-radius:8px;font-size:13px;background:transparent;color:#fff;cursor:pointer;">' + (O.tout ? 'Réduire' : 'Voir les ' + (liste.length - 5) + ' autres ›') + '</button></div>';
+    h += '<div style="font-size:13px;color:#c9d3ee;margin:12px 0 4px;">💶 Courbe du gain (paris avec cote seulement)</div>' + courbeSvg(C.courbe);
     h += '<div style="margin-top:10px;font-size:12px;color:#c9d3ee;">Statistiques, pas des pronos sûrs. 🔞 Jouer comporte des risques : 09 74 75 13 13.</div>';
     return box(h);
   };
