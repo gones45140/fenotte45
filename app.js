@@ -34,7 +34,7 @@
       if (!m) return F.apply(window, arguments);
       var self = window, args = arguments, oo = {}; if (o && o.signal) oo.signal = o.signal;
       return F.call(window, W + '?host=tsdb&path=' + encodeURIComponent(m[2]), oo).then(function (r) {
-        if (r.status === 403 || r.status === 404) return F.apply(self, args);
+        if (r.status === 403 || r.status === 404 || r.status === 429) return F.apply(self, args);   /* 20261016u : 429 = TheSportsDB limite l'IP du WORKER (partagée) → le téléphone essaie avec SA propre adresse */
         return r;
       }, function (e) { if (e && e.name === 'AbortError') throw e; return F.apply(self, args); });
     };

@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261016t, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261016u, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -481,6 +481,9 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   reprise (TheSportsDB surchargé répondait « aucune équipe ») effacés une 2e fois (drapeau g45_fan_neg2 : fanart2 / bgclub1 / g45jv sans adresse
   + g45_herologo_ko_) ; worker : réponse vide gardée 1 HEURE (au lieu d'un jour), clé fraîche tsdb2:<chemin> (anciennes tsdb: abandonnées).
   Le jeton Cloudflare n'a PAS accès à D1 (7403) : contenu du cache non vérifiable d'ici.
+  20261016u (« même les joueurs ont sauté ») — VU dans Observability du worker (API telemetry/query, lisible avec le jeton) : TOUTES les demandes
+  host=tsdb en 429 = TheSportsDB limite la clé gratuite par IP, celle du worker est partagée. App : 429 du worker → appel DIRECT (IP du téléphone),
+  comme 403 / 404 ; worker : après un 429, plus d'appel à TheSportsDB pendant 60 s (secours si présent, sinon 429). Smoke (tsdbw : cas 429).
   20261016r — DIAGNOSTIC ?diag=1 (fin d'app.js) : compte 10 s les appels de render / g45DirectMesEquipes / _g45FanCompleter…, fetch par domaine,
   mutations, minuteries, erreurs JS → alerte résumée (pas d'alerte = boucle synchrone). Rien sans le paramètre.
   20261014u (capture : « c'est pas aligné ») : boîtes de largeur FIXE (logo 110 px ×2, VS/heure 110 px), texte flex 1 1 0 + un ressort 1 1 0 après les
