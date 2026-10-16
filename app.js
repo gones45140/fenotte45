@@ -74931,7 +74931,9 @@ var _G45_BK_DOM = [
       + '</div>';
     /* Calendrier du mois */
     var an = +O.mois.slice(0, 4), mo = +O.mois.slice(5, 7) - 1, nbj = new Date(an, mo + 1, 0).getDate(), dec = (new Date(an, mo, 1).getDay() + 6) % 7;
-    h += '<style>@media(max-width:600px){#g45tr-off .g45tro-lg{display:none!important}#g45tr-off .g45tro-gn{display:none}#g45tr-off .g45tro-kpis{grid-template-columns:1fr 1fr!important}#g45tr-off .g45tro-kpis .g45tro-k:last-child{grid-column:1/-1}}@media(min-width:601px){#g45tr-off .g45tro-pc{display:none}}</style>';
+    h += '<style>@media(max-width:600px){#g45tr-off .g45tro-lg{display:none!important}#g45tr-off .g45tro-gn{display:none}#g45tr-off .g45tro-kpis{grid-template-columns:1fr 1fr!important}#g45tr-off .g45tro-kpis .g45tro-k:last-child{grid-column:1/-1}}@media(min-width:601px){#g45tr-off .g45tro-pc{display:none}}'
+      /* 20261017k (« ça fait un vide noir au milieu », maquette validée « oui ») : PC = une ligne par match, équipes + score à gauche (400 px), paris à droite */
+      + '@media(min-width:700px){#g45tr-off .g45tro-mc{display:flex;align-items:stretch}#g45tr-off .g45tro-mh{width:400px;flex:none;box-sizing:border-box}#g45tr-off .g45tro-mb{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center}#g45tr-off .g45tro-mp{flex:1}#g45tr-off .g45tro-mb>.g45tro-mp:first-child{border-top:none}}</style>';
     h += '<div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;">' + ['lun', 'mar', 'mer', 'jeu', 'ven', 'sam', 'dim'].map(function (j) { return '<div style="text-align:center;font-size:12px;font-weight:700;color:#aab6d6;text-transform:uppercase;">' + j + '</div>'; }).join('');
     for (var i = 0; i < dec; i++) h += '<div></div>';
     for (var dd = 1; dd <= nbj; dd++) {
@@ -74961,19 +74963,19 @@ var _G45_BK_DOM = [
         ordre.forEach(function (mk) {
           var g = M[mk], x0 = g[0], sc = '';
           g.forEach(function (x) { if (x.s) sc = x.s; });
-          h += '<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;margin-bottom:8px;overflow:hidden;">'
-            + '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 12px;background:rgba(0,0,0,.25);"><span style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;font-size:15px;font-weight:800;min-width:0;">'
+          h += '<div class="g45tro-mc" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;margin-bottom:8px;overflow:hidden;">'
+            + '<div class="g45tro-mh" style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 12px;background:rgba(0,0,0,.25);"><span style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;font-size:15px;font-weight:800;min-width:0;">'
             + clubLogo(x0, 'h', 28) + esc(x0.h) + '<span style="color:#8e9bbd;">–</span>' + clubLogo(x0, 'a', 28) + esc(x0.a) + '</span>'
-            + (sc ? '<span style="background:#fff;color:#111;border-radius:7px;padding:1px 8px;font-size:14px;font-weight:900;flex:none;">' + esc(sc) + '</span>' : '<span style="font-size:12px;color:#aab6d6;flex:none;">à venir · ' + new Date(x0.t).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) + '</span>') + '</div>';
+            + (sc ? '<span style="background:#fff;color:#111;border-radius:7px;padding:1px 8px;font-size:14px;font-weight:900;flex:none;">' + esc(sc) + '</span>' : '<span style="font-size:12px;color:#aab6d6;flex:none;">à venir · ' + new Date(x0.t).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) + '</span>') + '</div><div class="g45tro-mb">';
           g.forEach(function (x) {
             var ok = x.r === 1, ko = x.r === 0;
             var res = x.r == null ? '⏳' : (ok ? '✅' : '❌') + (x.c > 1 ? ' ' + eurC(ok ? x.c - 1 : -1) : '');
-            h += '<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-top:1px solid rgba(255,255,255,.06);border-left:5px solid ' + (ok ? '#1ed760' : ko ? '#ff5c5c' : '#4b5675') + ';">'
+            h += '<div class="g45tro-mp" style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-top:1px solid rgba(255,255,255,.06);border-left:5px solid ' + (ok ? '#1ed760' : ko ? '#ff5c5c' : '#4b5675') + ';">'
               + '<span style="flex:1;min-width:0;font-size:14px;color:#dbe4ff;">' + esc(x.m) + (x.d ? ' <span style="font-size:11px;color:#111;background:#ffb020;border-radius:6px;padding:1px 6px;">⚠️ désaccord</span>' : '') + '</span>'
               + (x.c > 1 ? '<span style="font-size:14px;font-weight:900;color:#111;background:#f0c828;border-radius:8px;padding:2px 8px;flex:none;">@' + x.c.toFixed(2).replace('.', ',') + '</span>' : '<span style="font-size:12px;color:#8e9bbd;flex:none;">pas de cote</span>')
               + '<span style="min-width:80px;text-align:right;font-size:14px;font-weight:900;flex:none;color:' + (ok ? '#1ed760' : ko ? '#ff6b6b' : '#c9d3ee') + ';">' + res + '</span></div>';
           });
-          h += '</div>';
+          h += '</div></div>';
         });
       });
     }
