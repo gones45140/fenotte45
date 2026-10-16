@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261017g, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261017h, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -2008,6 +2008,10 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   20261017g (« on sait pas ce qui était les tendances passées » → « un calendrier », maquette validée « oui go ») : liste de `_g45TrOffHtml` (triée par
   notation, ⏳ du jour d'abord) REMPLACÉE par un CALENDRIER du mois (jour de notation x.t ; 🟩 gain à 1 € +, 🟥 −, gris sans cote, ⏳ rien de jugé ;
   « réussies / jugées » + gain) ; `g45TrOffJour(k)` = liste du jour dessous, `g45TrOffMois(±1)` ; défaut = dernier jour jugé ; filtres appliqués. Smoke (trOff).
+  20261017h (« trier par championnat » → « un truc comme dans Bilan avec les filtres », vrai visuel validé « oui go ») : barre « 🔎 Filtres » repliable
+  (O.fOuv, `g45TrOffFltOuvrir`) au-dessus des tuiles : Sport (ft / hk / bk / fb d'après sl), Championnat (sl, _g45TrCompLbl), Type (k : vic 1|2, dc 1N|2N,
+  ov, un, bts, hc, aut), Cote (sans / 1,50-1,79 / 1,80-2,19 / 2,20+), Proba stats (50-59 / 60-69 / 70+), Avis (acc / des = ancien O.f), Période (7 / 30 j) ;
+  `g45TrOffFlt(cat, v)` (re-toucher = enlever), `g45TrOffFltRaz` ; nombres par bouton calculés avec les AUTRES filtres ; gardés localStorage g45tr_off_flt. Smoke (trOff).
   Écarts entre Antoine et Cédric (14/10) : réglages par appareil (compétitions, jour, cote / proba mini), heure d'analyse, quota The Odds API (bet45 = 8 crédits / personne / jour).
 RÉGLÉ OU ABANDONNÉ (ne pas reproposer) :
 - APK bet45 sans barre d'adresse : OK. Logos Lakers / hockey : OK. « Connexion » sur le

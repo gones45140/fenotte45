@@ -74771,7 +74771,12 @@ var _G45_BK_DOM = [
       .then(function () { O.enCours = false; var b = document.getElementById('g45tr-off'); if (b) b.outerHTML = window._g45TrOffHtml(); });
   }
 
-  window.g45TrOffF = function (f) { O.f = f; O.tout = false; O.jour = null; O.mois = null; var b = document.getElementById('g45tr-off'); if (b) b.outerHTML = window._g45TrOffHtml(); };
+  window.g45TrOffF = function (f) { O.f = f; if (O.flt) O.flt.av = f === 'tout' ? '' : f; O.tout = false; O.jour = null; O.mois = null; var b = document.getElementById('g45tr-off'); if (b) b.outerHTML = window._g45TrOffHtml(); };
+  var redess = function () { var b = document.getElementById('g45tr-off'); if (b) b.outerHTML = window._g45TrOffHtml(); };
+  var garderF = function () { try { localStorage.setItem('g45tr_off_flt', JSON.stringify(O.flt || {})); } catch (e) {} };
+  window.g45TrOffFlt = function (cat, v) { var F = O.flt || (O.flt = {}); F[cat] = F[cat] === v ? '' : v; if (cat === 'sp' && v) F.sl = ''; if (cat === 'av') O.f = F.av || 'tout'; O.jour = null; O.mois = null; garderF(); redess(); };
+  window.g45TrOffFltOuvrir = function () { O.fOuv = !O.fOuv; redess(); };
+  window.g45TrOffFltRaz = function () { O.flt = {}; O.f = 'tout'; O.jour = null; O.mois = null; garderF(); redess(); };
   window.g45TrOffJour = function (k) { O.jour = k; var b = document.getElementById('g45tr-off'); if (b) b.outerHTML = window._g45TrOffHtml(); };
   window.g45TrOffMois = function (n) { var p = String(O.mois || '').split('-'), d = new Date(+p[0], +p[1] - 1 + n, 1); if (isNaN(d)) return; O.mois = d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2); var b = document.getElementById('g45tr-off'); if (b) b.outerHTML = window._g45TrOffHtml(); };
   window.g45TrOffTout = function () { O.tout = !O.tout; var b = document.getElementById('g45tr-off'); if (b) b.outerHTML = window._g45TrOffHtml(); };
@@ -74806,10 +74811,57 @@ var _G45_BK_DOM = [
       + '<div style="font-size:13px;color:#c9d3ee;">Notées AVANT le match, chaque jour à 10 h · cote mini 1,50 · proba mini 50 %<br>Cotes ≈ books FR (ANJ) : DraftKings − 6 %, estimées</div>';
     if (!J) return box(tete + '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">⏳ Chargement…</div>');
     var tous = (J.t || []).filter(function (x) { return x.r !== -1; });
-    var L = tous.filter(function (x) { return O.f === 'acc' ? !x.d : (O.f === 'des' ? x.d : true); });
+    /* 20261017h (« trier par championnat » → « un truc comme dans Bilan avec les filtres », visuel validé) : barre 🔎 Filtres repliable
+       (Sport, Championnat, Type de pari, Cote, Proba stats, Avis, Période), combinables, gardés dans localStorage g45tr_off_flt ;
+       les anciens boutons Toutes / D'accord / Désaccord = ligne « Avis » (O.f gardé pour g45TrOffF). Tout (tuiles, calendrier, courbe) suit. */
+    var F = O.flt || (O.flt = (function () { try { return JSON.parse(localStorage.getItem('g45tr_off_flt') || '{}') || {}; } catch (e) { return {}; } })());
+    F.av = O.f === 'acc' || O.f === 'des' ? O.f : (F.av === 'acc' || F.av === 'des' ? (O.f = F.av) : '');
+    var spDe = function (sl) { return { nhl: 'hk', nba: 'bk', nfl: 'fb' }[sl] || 'ft'; };
+    var tyDe = function (k) { k = String(k || ''); return /^[12]$/.test(k) ? 'vic' : (/^(1N|2N|12)$/.test(k) ? 'dc' : (/^btts/.test(k) ? 'bts' : (/^hc/.test(k) ? 'hc' : (/^o/.test(k) ? 'ov' : (/^u/.test(k) ? 'un' : 'aut'))))); };
+    var coDe = function (c) { return !(c > 1) ? 'sc' : (c < 1.8 ? 'c1' : (c < 2.2 ? 'c2' : 'c3')); };
+    var prDe = function (p) { return p >= 0.7 ? 'p3' : (p >= 0.6 ? 'p2' : 'p1'); };
+    var passe = function (x, sauf) {
+      if (sauf !== 'sp' && F.sp && spDe(x.sl) !== F.sp) return false;
+      if (sauf !== 'sl' && F.sl && x.sl !== F.sl) return false;
+      if (sauf !== 'ty' && F.ty && tyDe(x.k) !== F.ty) return false;
+      if (sauf !== 'co' && F.co && coDe(x.c) !== F.co) return false;
+      if (sauf !== 'pr' && F.pr && prDe(x.p) !== F.pr) return false;
+      if (sauf !== 'av' && F.av && (F.av === 'acc' ? x.d : !x.d)) return false;
+      if (sauf !== 'pe' && F.pe && x.t < Date.now() - F.pe * 864e5) return false;
+      return true;
+    };
+    var L = tous.filter(function (x) { return passe(x); });
     var C = window._g45TrOffCalc(L), att = L.filter(function (x) { return x.r == null; }).length;
-    var chip = function (k, t) { var on = O.f === k; return '<button onclick="g45TrOffF(\'' + k + '\')" style="flex:1;padding:8px 0;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;border:1px solid ' + (on ? '#3b82f6' : 'rgba(255,255,255,.18)') + ';background:' + (on ? '#2563eb' : 'transparent') + ';color:' + (on ? '#fff' : '#c9d3ee') + ';">' + t + '</button>'; };
-    var h = tete + '<div style="display:flex;gap:6px;margin:10px 0;">' + chip('tout', 'Toutes') + chip('acc', '✅ D\'accord') + chip('des', '⚠️ Désaccord') + '</div>';
+    var nbF = ['sp', 'sl', 'ty', 'co', 'pr', 'av', 'pe'].filter(function (k) { return F[k]; }).length;
+    var pil = function (cat, v, t, n) {
+      var on = (F[cat] || '') === v;
+      return '<button onclick="g45TrOffFlt(\'' + cat + '\',\'' + v + '\')" style="padding:6px 10px;border-radius:16px;font-size:13px;font-weight:700;cursor:pointer;margin:0 5px 5px 0;border:1px solid ' + (on ? '#3b82f6' : 'rgba(255,255,255,.2)') + ';background:' + (on ? '#2563eb' : 'rgba(0,0,0,.35)') + ';color:' + (on ? '#fff' : '#dfe6f7') + ';">' + t + (n != null ? ' <span style="opacity:.7;font-weight:600;">' + n + '</span>' : '') + '</button>';
+    };
+    var cpt = function (cat, fn) { var o = {}; tous.forEach(function (x) { if (passe(x, cat)) { var v = fn(x); o[v] = (o[v] || 0) + 1; } }); return o; };
+    var ligne = function (tit, cat, opts, fn) {
+      var n = fn ? cpt(cat, fn) : null;
+      var bt = pil(cat, '', 'Tous') + opts.filter(function (o) { return !n || n[o[0]] || F[cat] === o[0]; }).map(function (o) { return pil(cat, o[0], o[1], n ? (n[o[0]] || 0) : null); }).join('');
+      return '<div style="margin-top:8px;"><div style="font-size:13px;font-weight:800;color:#c9d3ee;margin-bottom:4px;">' + tit + '</div><div style="display:flex;flex-wrap:wrap;">' + bt + '</div></div>';
+    };
+    var slOpts = Object.keys(cpt('sl', function (x) { return x.sl; })).sort().map(function (sl) { var l = sl; try { l = _g45TrCompLbl(sl); } catch (e) {} return [sl, esc(l)]; });
+    if (F.sl && !slOpts.some(function (o) { return o[0] === F.sl; })) slOpts.push([F.sl, esc(F.sl)]);
+    var h = tete + '<div style="margin:10px 0;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.14);border-radius:10px;">'
+      + '<div onclick="g45TrOffFltOuvrir()" style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;cursor:pointer;font-size:15px;font-weight:800;">'
+      + '<span>🔎 Filtres' + (nbF ? ' <span style="background:#2563eb;border-radius:10px;padding:1px 8px;font-size:12px;margin-left:4px;">' + nbF + ' actif' + (nbF > 1 ? 's' : '') + '</span>' : '') + '</span><span>' + (O.fOuv ? '▴' : '▾') + '</span></div>';
+    if (O.fOuv) {
+      h += '<div style="padding:0 12px 10px;">'
+        + ligne('Sport', 'sp', [['ft', '⚽ Foot'], ['hk', '🏒 Hockey'], ['bk', '🏀 NBA'], ['fb', '🏈 NFL']], function (x) { return spDe(x.sl); })
+        + ligne('Championnat', 'sl', slOpts, function (x) { return x.sl; })
+        + ligne('Type de pari', 'ty', [['vic', 'Victoire'], ['dc', 'Double chance'], ['ov', 'Over'], ['un', 'Under'], ['bts', 'Les deux marquent'], ['hc', 'Handicap'], ['aut', 'Autre']], function (x) { return tyDe(x.k); })
+        + ligne('Cote', 'co', [['sc', 'Sans cote'], ['c1', '1,50-1,79'], ['c2', '1,80-2,19'], ['c3', '2,20 et +']], function (x) { return coDe(x.c); })
+        + ligne('Proba stats', 'pr', [['p1', '50-59 %'], ['p2', '60-69 %'], ['p3', '70 % et +']], function (x) { return prDe(x.p); })
+        + ligne('Avis', 'av', [['acc', '✅ D\'accord'], ['des', '⚠️ Désaccord']], function (x) { return x.d ? 'des' : 'acc'; })
+        + ligne('Période', 'pe', [['7', '7 jours'], ['30', '30 jours']])
+        + (nbF ? '<div style="text-align:center;margin-top:8px;"><button onclick="g45TrOffFltRaz()" style="padding:7px 14px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;border:1px solid #ff6b6b;background:transparent;color:#ff9b9b;">✖ Tout effacer</button></div>' : '')
+        + '</div>';
+    }
+    h += '</div>';
+    if (tous.length && !L.length) h += '<div style="font-size:14px;color:#c9d3ee;margin:6px 0;">Aucune tendance avec ces filtres.</div>';
     if (!tous.length) return box(h + '<div style="font-size:14px;color:#c9d3ee;line-height:1.5;">' + (J.ko ? 'Historique indisponible pour le moment.' : 'Le robot démarre : les premières tendances seront notées à 10 h, les résultats arrivent le lendemain.') + '</div>');
     var pct = C.n ? Math.round(C.ok / C.n * 100) : 0, cg = C.gain >= 0 ? '#1ed760' : '#ff6b6b';
     var tuile = function (t, v, col, s) { return '<div style="flex:1;background:rgba(0,0,0,.4);border-radius:10px;padding:10px;text-align:center;"><div style="font-size:13px;font-weight:700;color:#c9d3ee;">' + t + '</div><div style="font-size:24px;font-weight:800;margin:4px 0;color:' + col + ';">' + v + '</div><div style="font-size:12px;color:#c9d3ee;">' + s + '</div></div>'; };
