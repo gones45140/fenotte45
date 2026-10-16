@@ -25960,6 +25960,7 @@ async function loadCalendrier() {
   var _agSuiviP = _agMax(_agSuivis(), 15000);
   var _agEbP = _agMax(_agEb(), 25000);
   var _agKhlP = _agMax(_agKhl(), 20000);
+  var _agJouP = _agMax(_agJou(), 15000);   /* 20261016h : joueurs NHL du mur */
   var _agFootR = await _agFootP;
   for(var i=0; i<teams.length; i++) {
     var u = teams[i];
@@ -26130,7 +26131,42 @@ async function loadCalendrier() {
   } catch (e) { console.warn('agenda KHL', e && e.message); }
   return allMatches;
   }
-  [await _agSuiviP, await _agEbP, await _agKhlP].forEach(function (L) { (L || []).forEach(function (m) { allMatches.push(m); }); });
+  /* 20261016h (« dans agenda faudrait rajouter les joueurs ? », maquette validée « oui go ») : chaque carte JOUEUR 🏒 du mur (u.type 'joueur')
+     → matchs à venir de son club NHL (club = note sinon nom via _g45RegEquipe ; club-schedule-season/<ABR>/now via le worker, comme la fiche
+     🏒 Stats ; présaison gameType 1 écartée, 14 jours). m.joueur = {nom, ph, club} : titre = joueur, ligne « club vs adversaire », rond = photo. */
+  async function _agJou() {
+    var out = [];
+    try {
+      if (typeof _g45RegEquipe !== 'function') return out;
+      var J = (state.u || []).filter(function (u) { return u && u.type === 'joueur' && /🏒/.test(String(u.sport || '')); });
+      var parClub = {};
+      J.forEach(function (u) { var eq = _g45RegEquipe(u.note || '') || _g45RegEquipe(u.n); if (eq) (parClub[eq[0]] = parClub[eq[0]] || { eq: eq, J: [] }).J.push(u); });
+      await Promise.all(Object.keys(parClub).map(async function (abr) {
+        var C = parClub[abr], cal = null;
+        try { var r = await fetch(FD_PROXY + '?key=nhl&host=nhl&path=' + encodeURIComponent('/v1/club-schedule-season/' + abr + '/now')); if (r.ok) cal = await r.json(); } catch (e) {}
+        (cal && cal.games || []).forEach(function (g) {
+          var t = Date.parse(g.startTimeUTC); if (!(t >= nowTs) || t > nowTs + 14 * 86400000) return;
+          if (+g.gameType === 1 || /^(FINAL|OFF)$/.test(g.gameState || '')) return;
+          var hA = (g.homeTeam || {}).abbrev, aA = (g.awayTeam || {}).abbrev, dom = hA === abr, advA = dom ? aA : hA;
+          var _plein = function (ab, tm) {   /* nom complet : placeName + commonName du calendrier (NON sondés) sinon ville + surnom de _G45_REG_EQ */
+            var pn = tm && tm.placeName && tm.placeName.default, cn = tm && tm.commonName && tm.commonName.default;
+            if (pn && cn) return pn + ' ' + cn;
+            var e = (typeof _G45_REG_EQ !== 'undefined') ? _G45_REG_EQ.filter(function (x) { return x[0] === ab; })[0] : null;
+            return e ? (e[2] ? e[2].replace(/\b\w/g, function (c) { return c.toUpperCase(); }) + ' ' : '') + e[1] : (ab || '?');
+          };
+          var advN = _plein(advA, dom ? g.awayTeam : g.homeTeam), clubN = _plein(abr, dom ? g.homeTeam : g.awayTeam);
+          C.J.forEach(function (u) {
+            var ph = /nhle\.com/.test(String(u.logoUrl || '')) ? u.logoUrl : '';
+            out.push({ date: new Date(t).toISOString(), isDom: dom, adv: advN || '?', ourName: u.n, color: '#5ad6ff', comp: 'NHL', compSlug: 'nhl', venue: '', sp: 'hockey',
+              joueur: { nom: u.n, ph: ph, club: (_g45RegEquipe(u.note || '') && String(u.note).trim().length < 40) ? String(u.note).trim() : clubN },
+              ourLogo: 'https://assets.nhle.com/logos/nhl/svg/' + abr + '_dark.svg', advLogo: advA ? 'https://assets.nhle.com/logos/nhl/svg/' + advA + '_dark.svg' : '' });
+          });
+        });
+      }));
+    } catch (e) { console.warn('agenda joueurs', e && e.message); }
+    return out;
+  }
+  [await _agSuiviP, await _agEbP, await _agKhlP, await _agJouP].forEach(function (L) { (L || []).forEach(function (m) { allMatches.push(m); }); });
 
   // + matchs suivis manuellement (sélection dans Résultats), même hors favoris
   _suivis.forEach(function(s){
@@ -26253,18 +26289,20 @@ async function loadCalendrier() {
         + '<div class="g45ag-ht" style="font-size:20px;font-weight:900;color:#fff;background:rgba(11,16,29,.85);border-radius:8px;padding:3px 10px;">' + time + '</div></div>'
         + _agLg(m.advLogo) + '</div>' : '';
       html += '<div style="position:relative;overflow:hidden;display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--s1);border-radius:10px;margin-bottom:7px;border-left:4px solid '+_S.c+';">';
-      html += '<div style="position:relative;flex:none;width:44px;height:44px;border-radius:50%;background:rgba(11,16,29,.9);border:2px solid '+_S.c+';display:flex;align-items:center;justify-content:center;font-size:24px;">'+_S.e+'</div>';
+      if (m.joueur && m.joueur.ph) html += '<div style="position:relative;flex:none;width:52px;height:52px;"><img src="'+String(m.joueur.ph).replace(/"/g,'')+'" alt="" referrerpolicy="no-referrer" onerror="this.style.visibility=\'hidden\'" style="width:52px;height:52px;border-radius:50%;object-fit:cover;background:#33415c;border:2px solid '+_S.c+';box-sizing:border-box;"><div style="position:absolute;right:-4px;bottom:-4px;width:22px;height:22px;border-radius:50%;background:#0b101d;border:2px solid '+_S.c+';display:flex;align-items:center;justify-content:center;font-size:12px;">'+_S.e+'</div></div>';   /* 20261016h */
+      else html += '<div style="position:relative;flex:none;width:44px;height:44px;border-radius:50%;background:rgba(11,16,29,.9);border:2px solid '+_S.c+';display:flex;align-items:center;justify-content:center;font-size:24px;">'+_S.e+'</div>';
       html += '<div style="position:relative;flex:'+(_agFil?'1 1 0':'1')+';min-width:0;">';
-      html += '<div style="font-size:15px;font-weight:800;color:#fff;">'+m.ourName+' '+((m.suivi&&!m.sp)?'<span style="color:#1ed760;">vs</span>':(m.isDom?'<span style="color:#3fb950;">vs</span>':'<span style="color:#f0883e;">@</span>'))+' '+m.adv+'</div>';
+      if (m.joueur) html += '<div style="font-size:16px;font-weight:900;color:#fff;">'+String(m.joueur.nom).replace(/</g,'&lt;')+'</div><div style="font-size:14px;color:#c9d3ee;margin-top:1px;">'+String(m.joueur.club).replace(/</g,'&lt;')+' '+(m.isDom?'<span style="color:#3fb950;">vs</span>':'<span style="color:#f0883e;">@</span>')+' '+m.adv+'</div>';   /* 20261016h */
+      else html += '<div style="font-size:15px;font-weight:800;color:#fff;">'+m.ourName+' '+((m.suivi&&!m.sp)?'<span style="color:#1ed760;">vs</span>':(m.isDom?'<span style="color:#3fb950;">vs</span>':'<span style="color:#f0883e;">@</span>'))+' '+m.adv+'</div>';
       html += '<div style="font-size:13px;color:#c9d3ee;margin-top:2px;"><b style="color:'+_S.c+';">'+_S.lg+'</b>'+(m.suivi?' · ⭐ Suivi'+(m.sp?(m.isDom?' · 🏠 Domicile':' · ✈️ Extérieur'):''):(m.isDom?' · 🏠 Domicile':' · ✈️ Extérieur'))+'</div>';
       try { html += _agPalier(m); } catch(e) {}
       /* 20261008g : consigne 📌 du lieu + cotes ESPN (rempli après coup par window._g45AgCotes). */
       try {
-        var _uC = _agMur(m), _C = (_uC && _uC.note && window._g45AgConsigne) ? window._g45AgConsigne(_uC.note, m.isDom) : null;
+        var _uC = _agMur(m), _C = (_uC && _uC.note && window._g45AgConsigne && (!m.joueur || /🏠|✈|🛫/.test(_uC.note))) ? window._g45AgConsigne(_uC.note, m.isDom) : null;   /* 20261016h : joueur = consigne seulement si 🏠 / ✈️ (sinon la note = son club) */
         if (_C) {
-          var _iC = _agOd.length; _agOd.push({ i: _iC, m: m, C: _C });
+          var _iC = _agOd.length; if (!m.joueur) _agOd.push({ i: _iC, m: m, C: _C });
           html += '<div style="display:inline-block;max-width:100%;box-sizing:border-box;margin-top:6px;background:rgba(11,16,29,.80);border-radius:8px;padding:6px 9px;font-size:14px;color:#fff;line-height:1.45;">'
-            + '<div style="color:#8fb4ff;font-weight:700;">📌 ' + String(_C.txt).replace(/</g, '&lt;') + '</div><div id="g45agod-' + _iC + '"></div></div>';
+            + '<div style="color:#8fb4ff;font-weight:700;">📌 ' + String(_C.txt).replace(/</g, '&lt;') + '</div>' + (m.joueur ? '' : '<div id="g45agod-' + _iC + '"></div>') + '</div>';
         }
       } catch(e) {}
       html += '</div>';
