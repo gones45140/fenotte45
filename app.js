@@ -25957,6 +25957,13 @@ async function loadCalendrier() {
 
   // Équipes football favorites (résolution ESPN, comme l'onglet Saisons)
   var teams = state.u.filter(function(u){ return (u.sport||'⚽')==='⚽'; });   /* 20261017u (« j'ai 35 équipes perso ») : TOUS les clubs de foot du mur (8 → 15 → sans limite), lus 6 à la fois */
+  /* 20261017v (« joueur compris ») : carte JOUEUR ⚽ du mur → calendrier de SON CLUB (_g45UClub : champ club / note avant 🏠 ✈️) ;
+     sans club connu = ignorée (avant : son NOM était cherché comme une équipe). Carte affichée comme les joueurs NHL (m.joueur). */
+  teams = teams.map(function(u){
+    if (u.type !== 'joueur') return u;
+    var cl = (typeof _g45UClub === 'function') ? _g45UClub(u) : '';
+    return cl ? { n: cl, sport: '⚽', _jou: u } : null;
+  }).filter(Boolean);
 
   /* EQUIPES SUIVIES (14/08/2026) : l'Agenda ne regardait que le mur. Les equipes
      suivies a l'etoile s'y ajoutent, sans doublon.
@@ -26041,6 +26048,7 @@ async function loadCalendrier() {
        calendrier ne contient AUCUNE compétition féminine (slug « .w. ») est écarté plutôt que d'afficher les matchs des hommes. */
     try {
       window._g45CalIdsVus = (i === 0) ? {} : (window._g45CalIdsVus || {});
+      if (u._jou) throw 0;   /* 20261017v : un joueur garde le calendrier de son club même si le club est aussi au mur */
       if (ourId && window._g45CalIdsVus[ourId]) continue;
       if (/lyonnes|f[ée]minin|\bwomen\b|\bladies\b|\bf[ée]m\b|\(f\)|\bfrauen\b|femenino|femminile/i.test(u.n)
           && !sched.matches.some(function(m){ return /\.w\.|wchampions|weuro|nwsl|fifa\.wwc|women|femin|premiere-ligue|wsl|liga-f/i.test(String(m.competition || '') + ' ' + String(m.competitionName || '')); })) continue;
@@ -26057,7 +26065,8 @@ async function loadCalendrier() {
       var adv = isDom ? m.awayTeam : m.homeTeam;
       allMatches.push({
         date: m.date, isDom: isDom, adv: adv||'?',
-        ourName: u.n, color: u.color||'#4d84ff',
+        ourName: u._jou ? u._jou.n : u.n, color: (u._jou || u).color||'#4d84ff',
+        joueur: u._jou ? { nom: u._jou.n, club: u.n, ph: (function(){ try { var v = window._g45JoueurVisLire ? window._g45JoueurVisLire(u._jou.n) : null; return (v && (v.cut || v.thumb)) || (/espncdn\.com\/i\/teamlogos|thesportsdb\.com\/images\/media\/team/.test(String(u._jou.logoUrl || '')) ? '' : (u._jou.logoUrl || '')); } catch(e){ return ''; } })() } : undefined,   /* 20261017v */
         /* 20261014o : logos des deux équipes (filigrane « VS » de la carte). */
         ourLogo: (isDom ? m.homeLogo : m.awayLogo) || ((isDom ? m.homeId : m.awayId) ? 'https://a.espncdn.com/i/teamlogos/soccer/500/' + (isDom ? m.homeId : m.awayId) + '.png' : '') || u.logoUrl || '',
         advLogo: (isDom ? m.awayLogo : m.homeLogo) || ((isDom ? m.awayId : m.homeId) ? 'https://a.espncdn.com/i/teamlogos/soccer/500/' + (isDom ? m.awayId : m.homeId) + '.png' : ''),
