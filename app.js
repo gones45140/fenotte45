@@ -74863,53 +74863,147 @@ var _G45_BK_DOM = [
     h += '</div>';
     if (tous.length && !L.length) h += '<div style="font-size:14px;color:#c9d3ee;margin:6px 0;">Aucune tendance avec ces filtres.</div>';
     if (!tous.length) return box(h + '<div style="font-size:14px;color:#c9d3ee;line-height:1.5;">' + (J.ko ? 'Historique indisponible pour le moment.' : 'Le robot démarre : les premières tendances seront notées à 10 h, les résultats arrivent le lendemain.') + '</div>');
-    var pct = C.n ? Math.round(C.ok / C.n * 100) : 0, cg = C.gain >= 0 ? '#1ed760' : '#ff6b6b';
-    var tuile = function (t, v, col, s) { return '<div style="flex:1;background:rgba(0,0,0,.4);border-radius:10px;padding:10px;text-align:center;"><div style="font-size:13px;font-weight:700;color:#c9d3ee;">' + t + '</div><div style="font-size:24px;font-weight:800;margin:4px 0;color:' + col + ';">' + v + '</div><div style="font-size:12px;color:#c9d3ee;">' + s + '</div></div>'; };
-    h += '<div style="display:flex;gap:8px;margin:8px 0;">'
-      + tuile('✅ Réussite', C.n ? C.ok + ' / ' + C.n : '—', '#1ed760', C.n ? pct + ' % · toutes les tendances' : 'aucune jugée')
-      + tuile('💶 Gain à 1 €', C.nc ? eur(C.gain) : '—', cg, C.nc ? C.nc + ' paris avec cote · ROI ' + (C.roi >= 0 ? '+' : '') + Math.round(C.roi * 100) + ' %' : 'aucun pari avec cote jugé')
-      + '</div>';
-    if (att) h += '<div style="font-size:13px;color:#c9d3ee;margin-bottom:6px;">⏳ ' + att + ' en attente du résultat</div>';
-    /* 20261017g (« on sait pas ce qui était les tendances passées » → « un calendrier avec les tendances passées », maquette validée « oui go ») :
-       la liste triée par date de notation montrait d'abord les ⏳ du jour → CALENDRIER du mois (case = jour de notation x.t, heure locale :
-       🟩 gain à 1 € positif, 🟥 négatif, gris sans cote, ⏳ rien de jugé ; « réussies / jugées » + gain) ; toucher un jour = sa liste dessous.
-       Jour choisi par défaut = dernier jour avec une tendance jugée. Les filtres Toutes / D'accord / Désaccord s'appliquent (L). */
+    /* 20261017i (« ça doit être mensuel et garder au début du mois suivant le bilan du mois », « niveau lifting c'est moche »,
+       « il manque beaucoup d'info sur cette courbe », « avec des logos de club ou championnat » — vrai visuel validé « OUI ») :
+       tout se compte sur le MOIS affiché (O.mois, ◀ ▶ en haut) ; du 1er au 7 du mois en cours, carte « 🏁 Bilan de <mois d'avant> » ;
+       3 tuiles (rond de réussite, gain à 1 €, en attente) ; calendrier (logos des championnats sur PC, % seul sur téléphone) ;
+       liste du jour rangée par CHAMPIONNAT (logo + bilan), un match = une carte (logos des clubs, score) et ses paris dessous ;
+       courbe du mois par JOUR (€ sur le côté, dates, gain du jour, plus haut / plus bas / total, point = ouvre le jour).
+       Logos : x.hl / x.al et J.lg[sl] posés par le robot (ESPN), sinon g45LogoUrlDe / logo de ligue mémorisé, sinon initiales. */
     var cle = function (t) { var d = new Date(t); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); };
+    var calcJ = function (lst) { var c = window._g45TrOffCalc(lst); return { n: c.n, ok: c.ok, nc: c.nc, g: c.gain, att: lst.length - c.n, roi: c.roi }; };
+    var eurC = function (v) { return (v >= 0 ? '+' : '−') + Math.abs(v).toFixed(2).replace('.', ',') + ' €'; };
+    var auj = new Date(), moisAuj = auj.getFullYear() + '-' + ('0' + (auj.getMonth() + 1)).slice(-2);
+    if (!O.mois) O.mois = moisAuj;
     var J2 = {}; L.forEach(function (x) { var k = cle(x.t); (J2[k] = J2[k] || []).push(x); });
-    var jours = Object.keys(J2).sort(), jugJ = jours.filter(function (k) { return J2[k].some(function (x) { return x.r === 0 || x.r === 1; }); });
-    if (!O.jour || !J2[O.jour]) O.jour = jugJ.length ? jugJ[jugJ.length - 1] : jours[jours.length - 1];
-    if (!O.mois) O.mois = O.jour.slice(0, 7);
-    var bil = function (lst) { var c = window._g45TrOffCalc(lst); return { n: c.n, ok: c.ok, nc: c.nc, g: c.gain, att: lst.length - c.n }; };
-    var an = +O.mois.slice(0, 4), mo = +O.mois.slice(5, 7) - 1, d1 = new Date(an, mo, 1), nbj = new Date(an, mo + 1, 0).getDate(), dec = (d1.getDay() + 6) % 7;
-    var nomM = d1.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
-    var flB = 'background:transparent;border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:8px;font-size:16px;padding:4px 14px;cursor:pointer;';
-    h += '<div style="display:flex;align-items:center;justify-content:space-between;margin:12px 0 6px;"><button onclick="g45TrOffMois(-1)" style="' + flB + '">◀</button>'
-      + '<div style="font-size:16px;font-weight:800;text-transform:capitalize;">' + esc(nomM) + '</div><button onclick="g45TrOffMois(1)" style="' + flB + '">▶</button></div>';
-    h += '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;">' + ['lun', 'mar', 'mer', 'jeu', 'ven', 'sam', 'dim'].map(function (j) { return '<div style="text-align:center;font-size:12px;color:#c9d3ee;">' + j + '</div>'; }).join('');
+    var Lm = L.filter(function (x) { return cle(x.t).slice(0, 7) === O.mois; });
+    var joursM = Object.keys(J2).filter(function (k) { return k.slice(0, 7) === O.mois; }).sort();
+    var jugM = joursM.filter(function (k) { return J2[k].some(function (x) { return x.r === 0 || x.r === 1; }); });
+    if (!O.jour || O.jour.slice(0, 7) !== O.mois || !J2[O.jour]) O.jour = jugM.length ? jugM[jugM.length - 1] : (joursM[joursM.length - 1] || null);
+    var nomMois = function (m) { var p = m.split('-'); try { return new Date(+p[0], +p[1] - 1, 1).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }); } catch (e) { return m; } };
+    var LGN = { nhl: 'NHL', nba: 'NBA', nfl: 'NFL' };
+    var lgNom = function (sl) { if (LGN[sl]) return LGN[sl]; var l = sl; try { l = _g45TrCompLbl(sl); } catch (e) {} return String(l).replace(/^\S+\s/, function (m) { return /[a-z0-9]/i.test(m) ? m : ''; }); };
+    var lgUrl = function (sl) {
+      var u = (J.lg && J.lg[sl]) || '';
+      if (!u && LGN[sl]) u = 'https://a.espncdn.com/i/teamlogos/leagues/500/' + sl + '.png';
+      if (!u) { try { u = localStorage.getItem('g45_lglogo_soccer_' + sl) || ''; } catch (e) {} }
+      return u;
+    };
+    var ini = function (n, px, fond) { var t = String(n || '?').split(/\s+/).map(function (w) { return w.charAt(0); }).join('').slice(0, 3).toUpperCase(); return '<span style="display:inline-flex;align-items:center;justify-content:center;width:' + px + 'px;height:' + px + 'px;border-radius:50%;background:' + (fond || '#34405e') + ';font-size:' + Math.round(px * .36) + 'px;font-weight:900;color:#fff;flex:none;">' + esc(t) + '</span>'; };
+    var imgOu = function (u, n, px, rond) {
+      if (!u) return ini(n, px);
+      return '<span style="display:inline-flex;align-items:center;justify-content:center;width:' + px + 'px;height:' + px + 'px;border-radius:' + (rond ? '50%' : '8px') + ';background:rgba(255,255,255,.92);flex:none;overflow:hidden;"><img src="' + esc(u) + '" alt="" style="width:' + (px - 6) + 'px;height:' + (px - 6) + 'px;object-fit:contain;" onerror="this.parentNode.outerHTML=\'' + ini(n, px).replace(/'/g, '&#39;').replace(/"/g, '&quot;') + '\'"></span>';
+    };
+    var lgLogo = function (sl, px) { return imgOu(lgUrl(sl), lgNom(sl), px, false); };
+    var clubLogo = function (x, cote, px) {
+      var u = cote === 'h' ? x.hl : x.al, n = cote === 'h' ? x.h : x.a;
+      if (!u) { try { u = (typeof g45LogoUrlDe === 'function') ? (g45LogoUrlDe(n) || '') : ''; } catch (e) { u = ''; } }
+      return imgOu(u, n, px, true);
+    };
+    var pill = function (txt, fond, col) { return '<span style="display:inline-block;border-radius:20px;padding:3px 10px;font-size:13px;font-weight:800;background:' + fond + ';color:' + (col || '#fff') + ';margin-left:4px;">' + txt + '</span>'; };
+    h = h.replace('<div style="font-size:17px;font-weight:800;margin-top:6px;">📒 Historique des Tendances</div>', '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:6px;"><div style="font-size:19px;font-weight:800;">📒 Historique des Tendances</div>'
+      + '<div style="display:flex;align-items:center;gap:8px;background:rgba(0,0,0,.35);border-radius:12px;padding:5px 7px;"><button onclick="g45TrOffMois(-1)" style="width:36px;height:36px;border-radius:10px;border:none;background:#24304f;color:#fff;font-size:16px;cursor:pointer;">◀</button><b style="font-size:16px;min-width:130px;text-align:center;text-transform:capitalize;">' + esc(nomMois(O.mois)) + '</b><button onclick="g45TrOffMois(1)" style="width:36px;height:36px;border-radius:10px;border:none;background:#24304f;color:#fff;font-size:16px;cursor:pointer;">▶</button></div></div>');
+    /* Bilan du mois d'avant : du 1er au 7 du mois en cours, quand on regarde le mois en cours. */
+    if (O.mois === moisAuj && auj.getDate() <= 7) {
+      var pm = new Date(auj.getFullYear(), auj.getMonth() - 1, 1), pmk = pm.getFullYear() + '-' + ('0' + (pm.getMonth() + 1)).slice(-2);
+      var Lp = L.filter(function (x) { return cle(x.t).slice(0, 7) === pmk; }), Bp = calcJ(Lp);
+      if (Bp.n) {
+        var parSl = {}; Lp.forEach(function (x) { (parSl[x.sl] = parSl[x.sl] || []).push(x); });
+        var best = null; Object.keys(parSl).forEach(function (sl) { var b = calcJ(parSl[sl]); if (b.n >= 5 && (!best || b.ok / b.n > best.p)) best = { sl: sl, p: b.ok / b.n }; });
+        h += '<div style="margin:10px 0 4px;border-radius:16px;padding:12px 14px;background:linear-gradient(120deg,#1d3b2a,#14203a);border:1px solid #1ed76055;">'
+          + '<div style="font-size:13px;font-weight:800;color:#8ff0b5;">🏁 BILAN DE ' + esc(nomMois(pmk).toUpperCase()) + ' · visible jusqu\'au 7</div>'
+          + '<div style="display:flex;gap:14px;flex-wrap:wrap;align-items:baseline;margin-top:4px;"><span style="font-size:28px;font-weight:900;">' + Math.round(Bp.ok / Bp.n * 100) + ' %</span><span style="font-size:15px;">' + Bp.ok + ' / ' + Bp.n + ' réussies</span>'
+          + (Bp.nc ? '<span style="font-size:28px;font-weight:900;color:' + (Bp.g >= 0 ? '#1ed760' : '#ff6b6b') + ';">' + eurC(Bp.g) + '</span><span style="font-size:14px;">ROI ' + (Bp.roi >= 0 ? '+' : '') + Math.round(Bp.roi * 100) + ' %</span>' : '')
+          + (best ? '<span style="font-size:14px;">Meilleur : ' + esc(lgNom(best.sl)) + ' ' + Math.round(best.p * 100) + ' %</span>' : '')
+          + '<button onclick="g45TrOffMois(-1)" style="margin-left:auto;padding:7px 12px;border-radius:9px;border:1px solid #8ff0b5;background:transparent;color:#fff;font-size:13px;font-weight:700;cursor:pointer;">Voir ' + esc(nomMois(pmk).split(' ')[0]) + ' ›</button></div></div>';
+      }
+    }
+    var CM = calcJ(Lm), pctM = CM.n ? Math.round(CM.ok / CM.n * 100) : 0;
+    var ring = '<svg viewBox="0 0 36 36" style="width:64px;height:64px;display:block;margin:2px auto;"><circle cx="18" cy="18" r="15" fill="none" stroke="#ffffff22" stroke-width="4"/>'
+      + (CM.n ? '<circle cx="18" cy="18" r="15" fill="none" stroke="#1ed760" stroke-width="4" stroke-dasharray="' + (pctM * 0.942).toFixed(1) + ' 100" transform="rotate(-90 18 18)" stroke-linecap="round"/>' : '')
+      + '<text x="18" y="22" text-anchor="middle" fill="#fff" font-size="10" font-weight="800">' + (CM.n ? pctM + '%' : '—') + '</text></svg>';
+    var tuile = function (t, mil, s) { return '<div class="g45tro-k" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:10px;text-align:center;"><div style="font-size:13px;font-weight:700;color:#c9d3ee;">' + t + '</div>' + mil + '<div style="font-size:12px;color:#c9d3ee;">' + s + '</div></div>'; };
+    h += '<div class="g45tro-kpis" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0;">'
+      + tuile('✅ Réussite du mois', ring, CM.n ? CM.ok + ' / ' + CM.n + ' jugées' : 'aucune jugée')
+      + tuile('💶 Gain à 1 €', '<div style="font-size:26px;font-weight:900;margin:8px 0;color:' + (CM.g >= 0 ? '#1ed760' : '#ff6b6b') + ';">' + (CM.nc ? eurC(CM.g) : '—') + '</div>', CM.nc ? CM.nc + ' paris avec cote · ROI ' + (CM.roi >= 0 ? '+' : '') + Math.round(CM.roi * 100) + ' %' : 'aucun pari avec cote jugé')
+      + tuile('⏳ En attente', '<div style="font-size:26px;font-weight:900;margin:8px 0;">' + CM.att + '</div>', 'résultat après le match')
+      + '</div>';
+    /* Calendrier du mois */
+    var an = +O.mois.slice(0, 4), mo = +O.mois.slice(5, 7) - 1, nbj = new Date(an, mo + 1, 0).getDate(), dec = (new Date(an, mo, 1).getDay() + 6) % 7;
+    h += '<style>@media(max-width:600px){#g45tr-off .g45tro-lg{display:none!important}#g45tr-off .g45tro-gn{display:none}#g45tr-off .g45tro-kpis{grid-template-columns:1fr 1fr!important}#g45tr-off .g45tro-kpis .g45tro-k:last-child{grid-column:1/-1}}@media(min-width:601px){#g45tr-off .g45tro-pc{display:none}}</style>';
+    h += '<div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;">' + ['lun', 'mar', 'mer', 'jeu', 'ven', 'sam', 'dim'].map(function (j) { return '<div style="text-align:center;font-size:12px;font-weight:700;color:#aab6d6;text-transform:uppercase;">' + j + '</div>'; }).join('');
     for (var i = 0; i < dec; i++) h += '<div></div>';
     for (var dd = 1; dd <= nbj; dd++) {
-      var k = O.mois + '-' + ('0' + dd).slice(-2), lj = J2[k], st = 'min-height:52px;border-radius:7px;padding:3px 1px;text-align:center;font-size:13px;line-height:1.25;';
-      if (!lj) { h += '<div style="' + st + 'color:#6b7590;">' + dd + '</div>'; continue; }
-      var B = bil(lj), fond = !B.n ? 'rgba(255,255,255,.08)' : (!B.nc ? 'rgba(140,150,175,.35)' : (B.g >= 0 ? 'rgba(30,215,96,.35)' : 'rgba(255,90,90,.35)'));
-      var bas = !B.n ? '⏳ ' + B.att : B.ok + '/' + B.n + (B.nc ? '<br><span style="font-size:11px;">' + (B.g >= 0 ? '+' : '−') + Math.abs(B.g).toFixed(2).replace('.', ',') + '</span>' : '');
-      h += '<div onclick="g45TrOffJour(\'' + k + '\')" style="' + st + 'cursor:pointer;background:' + fond + ';border:2px solid ' + (k === O.jour ? '#fff' : 'transparent') + ';"><b>' + dd + '</b><br><span style="font-size:12px;">' + bas + '</span></div>';
+      var k = O.mois + '-' + ('0' + dd).slice(-2), lj = J2[k], st = 'position:relative;min-height:62px;border-radius:11px;padding:4px 5px;font-size:13px;line-height:1.2;';
+      if (!lj) { h += '<div style="' + st + 'background:rgba(255,255,255,.03);color:#5d6888;font-weight:700;">' + dd + '</div>'; continue; }
+      var B = calcJ(lj), fond = !B.n ? '#26304a' : (!B.nc ? '#3a4460' : (B.g >= 0 ? 'linear-gradient(160deg,#1f8f4e,#14532d)' : 'linear-gradient(160deg,#a33a3a,#5b1d1d)'));
+      var lgs = []; lj.forEach(function (x) { if (lgs.indexOf(x.sl) < 0) lgs.push(x.sl); });
+      var bas = !B.n ? '⏳ ' + B.att : '<span class="g45tro-gn">' + B.ok + '/' + B.n + (B.nc ? '<br>' + eurC(B.g).replace(' €', '€') : '') + '</span><span class="g45tro-pc">' + Math.round(B.ok / B.n * 100) + '%</span>';
+      h += '<div onclick="g45TrOffJour(\'' + k + '\')" style="' + st + 'cursor:pointer;color:#fff;background:' + fond + ';outline:' + (k === O.jour ? '3px solid #fff' : 'none') + ';outline-offset:-2px;"><b>' + dd + '</b>'
+        + '<div class="g45tro-lg" style="display:flex;gap:2px;margin-top:2px;flex-wrap:wrap;">' + lgs.slice(0, 3).map(function (sl) { return lgLogo(sl, 18); }).join('') + '</div>'
+        + '<div style="position:absolute;right:5px;bottom:4px;font-size:12px;font-weight:800;text-align:right;">' + bas + '</div></div>';
     }
     h += '</div>';
-    var lj0 = (J2[O.jour] || []).slice().sort(function (a, b) { return (a.r == null) - (b.r == null) || a.t - b.t; }), B0 = bil(lj0);
-    var titreJ = ''; try { var p = O.jour.split('-'); titreJ = new Date(+p[0], +p[1] - 1, +p[2]).toLocaleDateString('fr-FR', { weekday: 'long', day: '2-digit', month: '2-digit' }); } catch (e) {}
-    h += '<div style="margin-top:12px;background:rgba(0,0,0,.45);border-radius:8px;padding:7px 10px;font-size:15px;font-weight:800;text-transform:capitalize;">' + esc(titreJ)
-      + ' <span style="font-weight:600;text-transform:none;font-size:13px;color:#c9d3ee;">· ' + (B0.n ? B0.ok + ' ✅ ' + (B0.n - B0.ok) + ' ❌' : '') + (B0.att ? ' ⏳ ' + B0.att : '') + (B0.nc ? ' · ' + eur(B0.g) : '') + '</span></div>';
-    h += '<div>' + lj0.map(function (x) {
-      var ok = x.r === 1;
-      var cote = x.c > 1 ? '<div style="width:62px;text-align:center;font-size:15px;font-weight:800;color:#f0c828;">@' + x.c.toFixed(2).replace('.', ',') + '</div>'
-        : '<div style="width:62px;text-align:center;color:#8b95ad;font-size:15px;line-height:1.1;">—<br><span style="font-size:11px;font-weight:600;">pas de cote</span></div>';
-      var g = x.r == null ? '<span style="color:#c9d3ee;">⏳</span>' : ((ok ? '✅' : '❌') + '<br><b style="color:' + (x.c > 1 ? (ok ? '#1ed760' : '#ff6b6b') : '#8b95ad') + ';">' + (x.c > 1 ? eur(ok ? x.c - 1 : -1) : '—') + '</b>');
-      return '<div style="display:flex;align-items:center;gap:8px;padding:9px 0;border-top:1px solid rgba(255,255,255,.08);">'
-        + '<div style="flex:1;min-width:0;"><div style="font-size:14px;font-weight:700;">' + spIco(x.sl) + ' ' + esc(x.h) + ' – ' + esc(x.a) + (x.s ? ' <span style="color:#c9d3ee;font-weight:600;">' + esc(x.s) + '</span>' : '') + '</div>'
-        + '<div style="font-size:13px;color:#9fd0ff;">' + esc(x.m) + (x.d ? ' ⚠️' : '') + '</div></div>'
-        + cote + '<div style="width:58px;text-align:right;font-size:13px;">' + g + '</div></div>';
-    }).join('') + '</div>';
-    h += '<div style="font-size:13px;color:#c9d3ee;margin:12px 0 4px;">💶 Courbe du gain (paris avec cote seulement)</div>' + courbeSvg(C.courbe);
+    if (!Lm.length) h += '<div style="font-size:14px;color:#c9d3ee;margin:10px 0;">Aucune tendance ce mois-ci' + (nbF ? ' avec ces filtres' : '') + '.</div>';
+    /* Liste du jour, par championnat */
+    if (O.jour && J2[O.jour]) {
+      var lj0 = J2[O.jour], B0 = calcJ(lj0);
+      var titreJ = ''; try { var pj = O.jour.split('-'); titreJ = new Date(+pj[0], +pj[1] - 1, +pj[2]).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }); } catch (e) {}
+      h += '<div style="margin-top:14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;background:rgba(0,0,0,.5);border-radius:12px;padding:10px 12px;"><span style="font-size:16px;font-weight:800;text-transform:capitalize;">' + esc(titreJ) + '</span><span>'
+        + (B0.n ? pill(B0.ok + ' ✅', '#1ed76033', '#7dffb0') + pill((B0.n - B0.ok) + ' ❌', '#ff5c5c33', '#ffa0a0') : '') + (B0.att ? pill('⏳ ' + B0.att, '#ffffff1a') : '') + (B0.nc ? pill(eurC(B0.g), B0.g >= 0 ? '#1ed760' : '#ff5c5c', '#111') : '') + '</span></div>';
+      var parL = {}; lj0.forEach(function (x) { (parL[x.sl] = parL[x.sl] || []).push(x); });
+      Object.keys(parL).sort(function (a, b) { return calcJ(parL[a]).att - calcJ(parL[b]).att || lgNom(a).localeCompare(lgNom(b)); }).forEach(function (sl) {
+        var l = parL[sl], Bl = calcJ(l);
+        h += '<div style="display:flex;justify-content:space-between;align-items:center;margin:14px 0 6px;"><span style="display:flex;align-items:center;gap:8px;font-size:15px;font-weight:800;">' + lgLogo(sl, 30) + esc(lgNom(sl)) + '</span><span style="font-size:13px;font-weight:800;color:#c9d3ee;">'
+          + (Bl.n ? Bl.ok + ' ✅ ' + (Bl.n - Bl.ok) + ' ❌' : '') + (Bl.att ? ' ⏳ ' + Bl.att : '') + (Bl.nc ? ' · ' + eurC(Bl.g) : '') + '</span></div>';
+        var M = {}, ordre = []; l.slice().sort(function (a, b) { return a.t - b.t; }).forEach(function (x) { var mk = x.id || (x.h + '|' + x.a); if (!M[mk]) { M[mk] = []; ordre.push(mk); } M[mk].push(x); });
+        ordre.forEach(function (mk) {
+          var g = M[mk], x0 = g[0], sc = '';
+          g.forEach(function (x) { if (x.s) sc = x.s; });
+          h += '<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;margin-bottom:8px;overflow:hidden;">'
+            + '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 12px;background:rgba(0,0,0,.25);"><span style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;font-size:15px;font-weight:800;min-width:0;">'
+            + clubLogo(x0, 'h', 28) + esc(x0.h) + '<span style="color:#8e9bbd;">–</span>' + clubLogo(x0, 'a', 28) + esc(x0.a) + '</span>'
+            + (sc ? '<span style="background:#fff;color:#111;border-radius:7px;padding:1px 8px;font-size:14px;font-weight:900;flex:none;">' + esc(sc) + '</span>' : '<span style="font-size:12px;color:#aab6d6;flex:none;">à venir · ' + new Date(x0.t).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) + '</span>') + '</div>';
+          g.forEach(function (x) {
+            var ok = x.r === 1, ko = x.r === 0;
+            var res = x.r == null ? '⏳' : (ok ? '✅' : '❌') + (x.c > 1 ? ' ' + eurC(ok ? x.c - 1 : -1) : '');
+            h += '<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-top:1px solid rgba(255,255,255,.06);border-left:5px solid ' + (ok ? '#1ed760' : ko ? '#ff5c5c' : '#4b5675') + ';">'
+              + '<span style="flex:1;min-width:0;font-size:14px;color:#dbe4ff;">' + esc(x.m) + (x.d ? ' <span style="font-size:11px;color:#111;background:#ffb020;border-radius:6px;padding:1px 6px;">⚠️ désaccord</span>' : '') + '</span>'
+              + (x.c > 1 ? '<span style="font-size:14px;font-weight:900;color:#111;background:#f0c828;border-radius:8px;padding:2px 8px;flex:none;">@' + x.c.toFixed(2).replace('.', ',') + '</span>' : '<span style="font-size:12px;color:#8e9bbd;flex:none;">pas de cote</span>')
+              + '<span style="min-width:80px;text-align:right;font-size:14px;font-weight:900;flex:none;color:' + (ok ? '#1ed760' : ko ? '#ff6b6b' : '#c9d3ee') + ';">' + res + '</span></div>';
+          });
+          h += '</div>';
+        });
+      });
+    }
+    /* Courbe du mois, un point par jour (paris avec cote) */
+    var P = [{ l: '', v: 0 }], cum = 0;
+    joursM.forEach(function (k) { var Bk = calcJ(J2[k]); if (!Bk.nc) return; cum += Bk.g; P.push({ k: k, l: k.slice(8) + '/' + k.slice(5, 7), v: Math.round(cum * 100) / 100, d: Bk.g }); });
+    h += '<div style="margin-top:16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px;">'
+      + '<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px;"><span style="font-size:15px;font-weight:800;">💶 Courbe du gain · <span style="text-transform:capitalize;">' + esc(nomMois(O.mois)) + '</span></span><span style="font-size:13px;color:#c9d3ee;">1 € par pari avec cote · un point = un jour</span></div>';
+    if (P.length < 2) h += '<div style="font-size:14px;color:#c9d3ee;margin-top:8px;">La courbe apparaît après le 1er jour avec un pari à cote jugé.</div>';
+    else {
+      var vs = P.map(function (p) { return p.v; }), fin = vs[vs.length - 1], hi = Math.max.apply(null, vs), lo = Math.min.apply(null, vs), colF = fin >= 0 ? '#1ed760' : '#ff6b6b';
+      h += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0;">' + pill('Paris avec cote : ' + CM.nc, '#ffffff14') + pill('⬆ Plus haut : ' + eurC(hi), '#1ed76033', '#7dffb0') + pill('⬇ Plus bas : ' + eurC(lo), '#ff5c5c33', '#ffa0a0') + pill('Fin : ' + eurC(fin), colF, '#111') + '</div>';
+      var tel = (window.innerWidth || 1000) < 600, W = tel ? 380 : 900, H = 250, ml = 56, mr = 72, mt = 26, mb = 44;
+      var st2 = Math.max(1, Math.ceil((Math.max(hi, 1) - Math.min(lo, -1)) / 4)), mx = Math.ceil(Math.max(hi, 1) / st2) * st2, mn = Math.floor(Math.min(lo, -1) / st2) * st2;
+      var X = function (i) { return ml + i * (W - ml - mr) / (P.length - 1); }, Y = function (v) { return mt + (mx - v) * (H - mt - mb) / (mx - mn); };
+      var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" style="display:block;">';
+      for (var v = mn; v <= mx + 1e-9; v += st2) svg += '<line x1="' + ml + '" x2="' + (W - mr) + '" y1="' + Y(v).toFixed(1) + '" y2="' + Y(v).toFixed(1) + '" stroke="' + (v === 0 ? '#ffffff88' : '#ffffff1a') + '"' + (v === 0 ? ' stroke-dasharray="6 5"' : '') + '/><text x="' + (ml - 8) + '" y="' + (Y(v) + 5).toFixed(1) + '" text-anchor="end" fill="#c9d3ee" font-size="14" font-weight="700">' + (v > 0 ? '+' : '') + v + ' €</text>';
+      var dP = P.map(function (p, i) { return (i ? 'L' : 'M') + X(i).toFixed(1) + ',' + Y(p.v).toFixed(1); }).join(' ');
+      svg += '<path d="' + dP + ' L' + X(P.length - 1).toFixed(1) + ',' + Y(0).toFixed(1) + ' L' + X(0).toFixed(1) + ',' + Y(0).toFixed(1) + ' Z" fill="' + colF + '22"/><path d="' + dP + '" fill="none" stroke="' + colF + '" stroke-width="4" stroke-linejoin="round"/>';
+      var pas = Math.max(1, Math.ceil((P.length - 1) / (tel ? 6 : 14)));
+      P.forEach(function (p, i) {
+        if (!i) return;
+        var c = p.d >= 0 ? '#1ed760' : '#ff6b6b', voir = (i % pas === 0) || i === P.length - 1;
+        svg += '<g onclick="g45TrOffJour(\'' + p.k + '\')" style="cursor:pointer;"><circle cx="' + X(i).toFixed(1) + '" cy="' + Y(p.v).toFixed(1) + '" r="13" fill="transparent"/><circle cx="' + X(i).toFixed(1) + '" cy="' + Y(p.v).toFixed(1) + '" r="7" fill="' + c + '" stroke="#0b1020" stroke-width="3"/></g>';
+        if (voir) svg += '<text x="' + X(i).toFixed(1) + '" y="' + (H - 14) + '" text-anchor="middle" fill="#fff" font-size="14" font-weight="700">' + p.l + '</text>'
+          + '<text x="' + X(i).toFixed(1) + '" y="' + (Y(p.v) - 14).toFixed(1) + '" text-anchor="middle" fill="' + c + '" font-size="13" font-weight="800">' + (p.d >= 0 ? '+' : '−') + Math.abs(p.d).toFixed(2).replace('.', ',') + '</text>';
+      });
+      svg += '<rect x="' + (W - mr + 6) + '" y="' + (Y(fin) - 16).toFixed(1) + '" width="' + (mr - 8) + '" height="30" rx="8" fill="' + colF + '"/><text x="' + (W - mr / 2 + 2) + '" y="' + (Y(fin) + 5).toFixed(1) + '" text-anchor="middle" fill="#111" font-size="14" font-weight="900">' + (fin >= 0 ? '+' : '−') + Math.abs(fin).toFixed(2).replace('.', ',') + '</text></svg>';
+      h += svg + '<div style="font-size:13px;color:#c9d3ee;margin-top:6px;">🟢 jour gagnant · 🔴 jour perdant · le chiffre = gain du jour · touche un point pour voir le jour</div>';
+    }
+    h += '</div>';
     h += '<div style="margin-top:10px;font-size:12px;color:#c9d3ee;">Statistiques, pas des pronos sûrs. 🔞 Jouer comporte des risques : 09 74 75 13 13.</div>';
     return box(h);
   };
