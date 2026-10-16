@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261017o, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261017p, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -453,6 +453,8 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   (u.type 'joueur') → club _g45RegEquipe(note | nom) → club-schedule-season/<ABR>/now (worker host=nhl), 14 j, gameType 1 écarté ; m.joueur {nom, ph = u.logoUrl
   nhle, club} : rond = photo + 🏒, titre = joueur, ligne « club vs / @ adversaire » (placeName + commonName NON sondés, sinon ville + surnom _G45_REG_EQ),
   palier comme les équipes, consigne 📌 seulement si la note a 🏠 / ✈️, pas de cotes. Smoke (51).
+  20261017p (« si j'y rajoute le type de pari, l'agenda va le lire ? ») : note d'une carte JOUEUR 🏒 = « <club> 🏠 <pari> ✈️ <pari> » → club = texte AVANT
+  le 1er 🏠 / ✈️ (`_clubDe` dans _agJou ; avant : note entière en ligne club), consigne 📌 = _g45AgConsigne comme les équipes ; 🏠 seul = matchs à l'extérieur retirés.
   20261016i (Santé : TheSportsDB « trop lent (12 s) » depuis 4 h ; console d'Antoine : searchteams « Club / Athletic / CD / FC Connor McDavid » en
   522 / CORS ; Arsenal = 200 en 19 s → serveur TheSportsDB surchargé) : `_g45FanChercher` (fond de carte) et `_g45BgChercher` (fond de fiche) ne
   cherchent plus d'ÉQUIPE pour une carte JOUEUR du mur (8 variantes par joueur) ; la recherche de JOUEUR (searchplayers, 1 requête) reste. Smoke (52).

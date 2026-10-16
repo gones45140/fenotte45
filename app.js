@@ -26201,7 +26201,8 @@ async function loadCalendrier() {
       if (typeof _g45RegEquipe !== 'function') return out;
       var J = (state.u || []).filter(function (u) { return u && u.type === 'joueur' && /🏒/.test(String(u.sport || '')); });
       var parClub = {};
-      J.forEach(function (u) { var eq = _g45RegEquipe(u.note || '') || _g45RegEquipe(u.n); if (eq) (parClub[eq[0]] = parClub[eq[0]] || { eq: eq, J: [] }).J.push(u); });
+      var _clubDe = function (u) { return String(u.note || '').split(/🏠|✈|🛫/)[0].trim(); };   /* 20261017p : note « Edmonton Oilers 🏠 buteur » = club AVANT le lieu, consigne après */
+      J.forEach(function (u) { var eq = _g45RegEquipe(_clubDe(u)) || _g45RegEquipe(u.n); if (eq) (parClub[eq[0]] = parClub[eq[0]] || { eq: eq, J: [] }).J.push(u); });
       await Promise.all(Object.keys(parClub).map(async function (abr) {
         var C = parClub[abr], cal = null;
         try { var r = await fetch(FD_PROXY + '?key=nhl&host=nhl&path=' + encodeURIComponent('/v1/club-schedule-season/' + abr + '/now')); if (r.ok) cal = await r.json(); } catch (e) {}
@@ -26219,7 +26220,7 @@ async function loadCalendrier() {
           C.J.forEach(function (u) {
             var ph = /nhle\.com/.test(String(u.logoUrl || '')) ? u.logoUrl : '';
             out.push({ date: new Date(t).toISOString(), isDom: dom, adv: advN || '?', ourName: u.n, color: '#5ad6ff', comp: 'NHL', compSlug: 'nhl', venue: '', sp: 'hockey',
-              joueur: { nom: u.n, ph: ph, club: (_g45RegEquipe(u.note || '') && String(u.note).trim().length < 40) ? String(u.note).trim() : clubN },
+              joueur: { nom: u.n, ph: ph, club: (_g45RegEquipe(_clubDe(u)) && _clubDe(u).length < 40) ? _clubDe(u) : clubN },
               ourLogo: 'https://assets.nhle.com/logos/nhl/svg/' + abr + '_dark.svg', advLogo: advA ? 'https://assets.nhle.com/logos/nhl/svg/' + advA + '_dark.svg' : '' });
           });
         });
