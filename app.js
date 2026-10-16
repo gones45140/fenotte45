@@ -75165,3 +75165,27 @@ window._g45NhlJTrouver = _g45NhlJTrouver; window._g45NhlJHtml = _g45NhlJHtml; wi
   env._g45Nhl = true;
   window.g45LogoUrlDe = g45LogoUrlDe = env;
 })();
+
+/* ═══ 20261016l — MUR, PC : GAINS À CÔTÉ DU LOGO (capture : « le chiffre dans le logo à droite c'est tellement chiant alors qu'il pourrait
+   être à côté », maquette validée « oui ») ═══
+   Rendu des cartes (DEUX copies, .g45-murval + img .g45-ecu en filigrane) INCHANGÉ : feuille de style seulement, PC (≥ 700 px) et
+   carte AVEC logo (:has) : le logo passe à droite, net (opacité .9, sans halo), les montants à sa gauche dans une case sombre,
+   total 24 px, lignes 🏠 / ✈️ 14 px. Téléphone inchangé. */
+(function _g45MurValPc() {
+  try {
+    if (document.getElementById('g45-murval-pc')) return;
+    var st = document.createElement('style'); st.id = 'g45-murval-pc';
+    st.textContent = '@media(min-width:700px){'
+      + '.g45-murval:has(.g45-ecu:not([style*="display: none"])){padding-right:calc(var(--g45-ecut,120px) + 26px) !important;align-items:stretch !important;background:linear-gradient(270deg,rgba(8,11,20,.55) 0%,transparent 100%) !important;}'
+      + '.g45-murval:has(.g45-ecu:not([style*="display: none"])) .g45-ecu{left:auto !important;right:10px !important;transform:translateY(-50%) !important;opacity:.9 !important;}'
+      + '.g45-murval:has(.g45-ecu:not([style*="display: none"])) .g45-ecu-halo{display:none !important;}'
+      + '.g45-murval:has(.g45-ecu:not([style*="display: none"]))>div:not(.g45-ecu-halo){background:rgba(8,11,20,.85);padding:0 12px;text-align:right;}'
+      + '.g45-murval:has(.g45-ecu:not([style*="display: none"]))>div[style*="font-size:14px"]{font-size:24px !important;border-radius:10px 10px 0 0;padding-top:6px;}'
+      + '.g45-murval:has(.g45-ecu:not([style*="display: none"]))>div[style*="font-size:9px"]{font-size:14px !important;}'
+      + '.g45-murval:has(.g45-ecu:not([style*="display: none"]))>div:not(.g45-ecu-halo):last-child{border-radius:0 0 10px 10px;padding-bottom:6px;}'
+      + '.g45-murval:has(.g45-ecu:not([style*="display: none"]))>div[style*="font-size:14px"]:last-child{border-radius:10px;}'
+      + '.g45-murval:has(.g45-ecu:not([style*="display: none"]))>div[style*="opacity:.35"]{opacity:1 !important;color:#8a94b0 !important;}'
+      + '}';
+    (document.head || document.documentElement).appendChild(st);
+  } catch (e) {}
+})();

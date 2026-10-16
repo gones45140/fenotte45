@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261016k, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261016l, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -552,6 +552,9 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
 - Cotes US (`_g45EspnUsOdds`) : favori = moneyline (`_g45TrPickOdd` sur
   moneyline.home/away ou homeTeamOdds/awayTeamOdds) ; `details` (« LAR -1.5 ») =
   HANDICAP affiché à part, jamais une cote sauf |n| ≥ 100 (MLB « NYY -150 ») — 27v.
+- MUR, PC (20261016l, « le chiffre dans le logo à droite c'est chiant », maquette validée « oui » ; paysage tél. ≥ 700 px aussi, portrait inchangé) :
+  feuille #g45-murval-pc (bloc en fin d'app.js `_g45MurValPc`) — .g45-murval avec logo .g45-ecu visible (:has, pas display:none) : logo à droite
+  net (.9, sans halo), montants à sa gauche en case sombre (total 24 px, 🏠 / ✈️ 14 px, opacité .35 → gris #8a94b0). Rendu des cartes (×2) INCHANGÉ.
 - Cartes de JOUEUR du mur : rond de droite = logo du CLUB `_g45JoueurClubLogo(u)`
   (note, sinon club TheSportsDB du visuel joueur ; `g45SdbClub`, cache
   `g45_herologo_<club>`) ; photo : repli `_g45ImgRepli` + `data-alt`
