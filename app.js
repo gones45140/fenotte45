@@ -74779,6 +74779,8 @@ var _G45_BK_DOM = [
   window.g45TrOffFltRaz = function () { O.flt = {}; O.f = 'tout'; O.jour = null; O.mois = null; garderF(); redess(); };
   window.g45TrOffJour = function (k) { O.jour = k; var b = document.getElementById('g45tr-off'); if (b) b.outerHTML = window._g45TrOffHtml(); };
   window.g45TrOffMois = function (n) { var p = String(O.mois || '').split('-'), d = new Date(+p[0], +p[1] - 1 + n, 1); if (isNaN(d)) return; O.mois = d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2); var b = document.getElementById('g45tr-off'); if (b) b.outerHTML = window._g45TrOffHtml(); };
+  /* 20261017n : déplier les faits d'une tendance (x.fa, gardés par le robot depuis le 17/10) */
+  window.g45TrOffDet = function (c) { O.det = O.det || {}; O.det[c] = !O.det[c]; var b = document.getElementById('g45tr-off'); if (b) b.outerHTML = window._g45TrOffHtml(); };
   window.g45TrOffTout = function () { O.tout = !O.tout; var b = document.getElementById('g45tr-off'); if (b) b.outerHTML = window._g45TrOffHtml(); };
 
   /* Calcul pur (testé par smoke.js) : réussite sur toutes, gain à 1 € sur celles qui ont une cote. */
@@ -74931,9 +74933,9 @@ var _G45_BK_DOM = [
       + '</div>';
     /* Calendrier du mois */
     var an = +O.mois.slice(0, 4), mo = +O.mois.slice(5, 7) - 1, nbj = new Date(an, mo + 1, 0).getDate(), dec = (new Date(an, mo, 1).getDay() + 6) % 7;
-    h += '<style>@media(max-width:600px){#g45tr-off .g45tro-lg{display:none!important}#g45tr-off .g45tro-gn{display:none}#g45tr-off .g45tro-kpis{grid-template-columns:1fr 1fr!important}#g45tr-off .g45tro-kpis .g45tro-k:last-child{grid-column:1/-1}}@media(min-width:601px){#g45tr-off .g45tro-pc{display:none}}'
+    h += '<style>@media(max-width:600px){#g45tr-off .g45tro-lg{display:none!important}#g45tr-off .g45tro-gn{display:none}#g45tr-off .g45tro-kpis{grid-template-columns:1fr 1fr!important}#g45tr-off .g45tro-kpis .g45tro-k:last-child{grid-column:1/-1}}@media(min-width:601px){#g45tr-off .g45tro-pc{display:none}}@media(max-width:599px){#g45tr-off .g45tro-pn{flex-basis:100%!important}}'
       /* 20261017k (« ça fait un vide noir au milieu », maquette validée « oui ») : PC = une ligne par match, équipes + score à gauche (400 px), paris à droite */
-      + '@media(min-width:700px){#g45tr-off .g45tro-mc{display:flex;align-items:stretch}#g45tr-off .g45tro-mh{display:none!important}#g45tr-off .g45tro-mh2{display:flex!important;width:50%;flex:none;box-sizing:border-box}#g45tr-off .g45tro-mb{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;position:relative}#g45tr-off .g45tro-wm{display:block!important;position:absolute;left:58%;top:50%;transform:translate(-50%,-50%);height:calc(100% - 8px);max-height:72px;opacity:1;pointer-events:none;filter:drop-shadow(0 0 4px rgba(0,0,0,.6))}#g45tr-off .g45tro-mp{position:relative}#g45tr-off .g45tro-mp{flex:1}#g45tr-off .g45tro-mb>.g45tro-mp:first-child{border-top:none}}</style>';
+      + '@media(min-width:700px){#g45tr-off .g45tro-mc{display:flex;align-items:stretch}#g45tr-off .g45tro-mh{display:none!important}#g45tr-off .g45tro-mh2{display:flex!important;width:50%;flex:none;box-sizing:border-box}#g45tr-off .g45tro-mb{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;position:relative}#g45tr-off .g45tro-wm{display:block!important;position:absolute;z-index:0;left:46%;top:50%;transform:translate(-50%,-50%);height:calc(100% - 8px);max-height:72px;opacity:1;pointer-events:none;filter:drop-shadow(0 0 4px rgba(0,0,0,.6))}#g45tr-off .g45tro-mp{position:relative}#g45tr-off .g45tro-mp{flex:1}#g45tr-off .g45tro-mb>.g45tro-mp:first-child{border-top:none}}</style>';
     h += '<div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;">' + ['lun', 'mar', 'mer', 'jeu', 'ven', 'sam', 'dim'].map(function (j) { return '<div style="text-align:center;font-size:12px;font-weight:700;color:#aab6d6;text-transform:uppercase;">' + j + '</div>'; }).join('');
     for (var i = 0; i < dec; i++) h += '<div></div>';
     for (var dd = 1; dd <= nbj; dd++) {
@@ -74980,10 +74982,17 @@ var _G45_BK_DOM = [
           g.forEach(function (x) {
             var ok = x.r === 1, ko = x.r === 0;
             var res = x.r == null ? '⏳' : (ok ? '✅' : '❌') + (x.c > 1 ? ' ' + eurC(ok ? x.c - 1 : -1) : '');
-            h += '<div class="g45tro-mp" style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-top:1px solid rgba(255,255,255,.06);border-left:5px solid ' + (ok ? '#1ed760' : ko ? '#ff5c5c' : '#4b5675') + ';">'
-              + '<span style="flex:1;min-width:0;font-size:14px;color:#dbe4ff;">' + esc(x.m) + (x.d ? ' <span style="font-size:11px;color:#111;background:#ffb020;border-radius:6px;padding:1px 6px;">⚠️ désaccord</span>' : '') + '</span>'
+            /* 20261017n (« dans les tendances on a des stats, aucune dans l'historique », maquette) : 📊 % des stats + 🏦 % des bookmakers
+               sur chaque pari ; faits du jour (x.fa) dépliables d'un appui */
+            var pP = x.p > 0 ? Math.round(x.p > 1 ? x.p : x.p * 100) : null, pF = x.f > 0 ? Math.round(x.f > 1 ? x.f : x.f * 100) : null;
+            var dk = esc(String(x.id) + '|' + x.k), fa = x.fa && x.fa.length ? x.fa : null, ouv = fa && O.det && O.det[String(x.id) + '|' + x.k];
+            var pc = '<span style="display:inline-flex;gap:5px;flex:none;">' + (pP != null ? '<span style="font-size:13px;font-weight:800;color:#fff;background:rgba(109,157,255,.25);border:1px solid #6d9dff;border-radius:7px;padding:1px 7px;">📊 ' + pP + ' %</span>' : '')
+              + '<span style="font-size:13px;font-weight:800;color:' + (pF != null ? '#fff' : '#8e9bbd') + ';background:' + (pF != null ? 'rgba(245,197,66,.22)' : 'rgba(255,255,255,.06)') + ';border:1px solid ' + (pF != null ? '#f5c542' : '#4b5675') + ';border-radius:7px;padding:1px 7px;">🏦 ' + (pF != null ? pF + ' %' : '—') + '</span></span>';
+            h += '<div class="g45tro-mp"' + (fa ? ' onclick="g45TrOffDet(\'' + dk + '\')"' : '') + ' style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 12px;border-top:1px solid rgba(255,255,255,.06);' + (fa ? 'cursor:pointer;' : '') + 'border-left:5px solid ' + (ok ? '#1ed760' : ko ? '#ff5c5c' : '#4b5675') + ';">'
+              + '<span class="g45tro-pn" style="flex:1;min-width:0;font-size:14px;color:#dbe4ff;">' + esc(x.m) + (x.d ? ' <span style="font-size:11px;color:#111;background:#ffb020;border-radius:6px;padding:1px 6px;">⚠️ désaccord</span>' : '') + (fa ? ' <span style="font-size:12px;color:#aab6d6;">' + (ouv ? '▴' : '▾ pourquoi') + '</span>' : '') + '</span>' + pc
               + (x.c > 1 ? '<span style="font-size:14px;font-weight:900;color:#111;background:#f0c828;border-radius:8px;padding:2px 8px;flex:none;">@' + x.c.toFixed(2).replace('.', ',') + '</span>' : '<span style="font-size:12px;color:#8e9bbd;flex:none;">pas de cote</span>')
-              + '<span style="min-width:80px;text-align:right;font-size:14px;font-weight:900;flex:none;color:' + (ok ? '#1ed760' : ko ? '#ff6b6b' : '#c9d3ee') + ';">' + res + '</span></div>';
+              + '<span style="min-width:80px;margin-left:auto;text-align:right;font-size:14px;font-weight:900;flex:none;color:' + (ok ? '#1ed760' : ko ? '#ff6b6b' : '#c9d3ee') + ';">' + res + '</span></div>'
+              + (ouv ? '<ul style="position:relative;z-index:1;margin:0;padding:6px 12px 8px 34px;background:rgba(8,11,20,.94);border-left:5px solid ' + (ok ? '#1ed760' : ko ? '#ff5c5c' : '#4b5675') + ';">' + fa.map(function (f) { return '<li style="font-size:13px;color:#dbe4ff;line-height:1.55;">' + esc(f) + '</li>'; }).join('') + (x.nm && x.nm < 14 ? '<li style="font-size:13px;color:#ff8c42;list-style:none;margin-left:-18px;">⚠️ Échantillon réduit (' + x.nm + ' matchs)</li>' : '') + '</ul>' : '');
           });
           h += '</div></div>';
         });

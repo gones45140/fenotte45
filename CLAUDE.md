@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261017m, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261017n, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -2030,6 +2030,10 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   20261017m (« on a pas de stats ? », maquette validée « oui ») : sous la courbe de `_g45TrOffHtml`, bloc « 📊 Statistiques · <mois> » (mois + filtres,
   calcJ) : Par championnat, Par type de pari (k → nom, « buts » / « pts » si ligne ≥ 10), Annoncé contre réel (tranches de x.p, trait blanc = proba moyenne
   annoncée), Stats et bookmakers (x.d) ; .g45tro-st 2 colonnes ≥ 700 px, nom sur sa ligne < 600 px. Smoke (trOff).
+  20261017n (« dans les tendances on a des stats, aucune dans l'historique », maquette validée « oui ») : chaque pari de la liste du jour = pastilles
+  📊 x.p % (bleu) / 🏦 x.f % (jaune, « — » sans) ; robot : x.fa = faits de la carte (m.faits, 4 max, sans balises) + x.nm = m.n, gardés à partir du
+  passage du 18/10 ; ligne avec fa = « ▾ pourquoi » → `g45TrOffDet(id|k)` (O.det) déplie la liste (+ « Échantillon réduit » si nm < 14). Logo de
+  championnat .g45tro-wm left 46 %, z-index 0 ; téléphone : nom du pari sur sa ligne (.g45tro-pn), pastilles / cote / résultat dessous.
   Écarts entre Antoine et Cédric (14/10) : réglages par appareil (compétitions, jour, cote / proba mini), heure d'analyse, quota The Odds API (bet45 = 8 crédits / personne / jour).
 RÉGLÉ OU ABANDONNÉ (ne pas reproposer) :
 - APK bet45 sans barre d'adresse : OK. Logos Lakers / hockey : OK. « Connexion » sur le
