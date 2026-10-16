@@ -3159,6 +3159,8 @@ function render(){
           +'object-fit:contain;object-position:bottom center;pointer-events:none;'
           +'filter:drop-shadow(0 6px 14px rgba(0,0,0,.55));">';
       }
+      /* 20261016x (Canucks : bannière TheSportsDB illisible, choix 1 d'Antoine) : club listé dans window._G45_FOND_LOGO → LOGO entier au centre. */
+      var _fl=false; try{ if(window._g45FondLogo && window._g45FondLogo(u.n)){ var _flu=(typeof g45LogoUrlDe==='function')?g45LogoUrlDe(u.n):''; if(_flu){ _vis=_flu; _fl=true; } } }catch(e){}
       if(_vis){
         var _vl=(typeof _G45_FOND_NIV!=='undefined')?_G45_FOND_NIV.voileVis:0.30;
         _couche='<img src="'+_vis+'" alt="" loading="lazy" onerror="this.style.display=\'none\'" '
@@ -3168,10 +3170,10 @@ function render(){
           +'background:rgba(10,14,26,'+_vl+');"></div>';
         /* 20261002f — LOGO PERSO D'UN CLUB DE BASKET (ASVEL, Euroleague) : images/equipes/asvel.png est un logo CARRE
            blanc ; en plein cadre (cover, 150 %) on n'en voyait qu'une tranche. Pose en FILIGRANE centre, entier. */
-        if(/\ud83c\udfc0|🏀/.test(u.sport||'') && /images\/(equipes|joueurs)\//.test(_vis)){
+        if(_fl || (/\ud83c\udfc0|🏀/.test(u.sport||'') && /images\/(equipes|joueurs)\//.test(_vis))){
           _couche='<img src="'+_vis+'" alt="" loading="lazy" onerror="this.style.display=\'none\'" '
             +'style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);height:86%;width:auto;max-width:60%;'
-            +'object-fit:contain;opacity:.6;pointer-events:none;">';
+            +'object-fit:contain;opacity:'+(_fl?'.9':'.6')+';pointer-events:none;">';
         }
       }
       /* Logo nettement plus present : 86 px a 18 %. Une ligne du mur faisait
@@ -11535,6 +11537,8 @@ function render(){
           +'object-fit:contain;object-position:bottom center;pointer-events:none;'
           +'filter:drop-shadow(0 6px 14px rgba(0,0,0,.55));">';
       }
+      /* 20261016x (Canucks : bannière TheSportsDB illisible, choix 1 d'Antoine) : club listé dans window._G45_FOND_LOGO → LOGO entier au centre. */
+      var _fl=false; try{ if(window._g45FondLogo && window._g45FondLogo(u.n)){ var _flu=(typeof g45LogoUrlDe==='function')?g45LogoUrlDe(u.n):''; if(_flu){ _vis=_flu; _fl=true; } } }catch(e){}
       if(_vis){
         var _vl=(typeof _G45_FOND_NIV!=='undefined')?_G45_FOND_NIV.voileVis:0.30;
         _couche='<img src="'+_vis+'" alt="" loading="lazy" onerror="this.style.display=\'none\'" '
@@ -11544,10 +11548,10 @@ function render(){
           +'background:rgba(10,14,26,'+_vl+');"></div>';
         /* 20261002f — LOGO PERSO D'UN CLUB DE BASKET (ASVEL, Euroleague) : images/equipes/asvel.png est un logo CARRE
            blanc ; en plein cadre (cover, 150 %) on n'en voyait qu'une tranche. Pose en FILIGRANE centre, entier. */
-        if(/\ud83c\udfc0|🏀/.test(u.sport||'') && /images\/(equipes|joueurs)\//.test(_vis)){
+        if(_fl || (/\ud83c\udfc0|🏀/.test(u.sport||'') && /images\/(equipes|joueurs)\//.test(_vis))){
           _couche='<img src="'+_vis+'" alt="" loading="lazy" onerror="this.style.display=\'none\'" '
             +'style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);height:86%;width:auto;max-width:60%;'
-            +'object-fit:contain;opacity:.6;pointer-events:none;">';
+            +'object-fit:contain;opacity:'+(_fl?'.9':'.6')+';pointer-events:none;">';
         }
       }
       /* Logo nettement plus present : 86 px a 18 %. Une ligne du mur faisait
@@ -75313,6 +75317,14 @@ window._g45NhlJTrouver = _g45NhlJTrouver; window._g45NhlJHtml = _g45NhlJHtml; wi
     localStorage.setItem('g45_fan_neg3', '1');
   } catch (e) {}
 })();
+
+/* 20261016x (« Vancouver on se demande ce que c'est », choix 1 « oui go ») : la bannière TheSportsDB des Canucks est un recadrage illisible de
+   leur logo → pour les clubs de cette liste, la carte du mur (DEUX copies du rendu) pose le LOGO ENTIER au centre (g45LogoUrlDe, opacité .9)
+   au lieu de la bannière. Ajouter un club = son nom normalisé ici. */
+window._G45_FOND_LOGO = { vancouvercanucks: 1 };
+window._g45FondLogo = function (nom) {
+  try { var k = (typeof _g45SgNorm === 'function') ? _g45SgNorm(nom) : String(nom || '').toLowerCase().replace(/[^a-z0-9]/g, ''); return !!window._G45_FOND_LOGO[k]; } catch (e) { return false; }
+};
 
 /* ═══ 20261016o — MUR : BOUTON « 📋 Compact / 🖼️ Bannières » + PASTILLE DE SÉRIE LISIBLE (capture 412 px : « ça en jette mais on voit
    pas tout d'un coup » ; capture PSG : « la barre verte à peine visible » ; maquette validée « oui ») ═══

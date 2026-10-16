@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261016w, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261016x, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -492,6 +492,9 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   ne se déclenchait pas : toute erreur d'un appel direct déclenche aussi la pause ; file directe 3 s ; « pas de photo » g45jv effacés une 3e fois
   (g45_fan_neg3) ; worker : pause après 429 portée à 5 min. Observability : des recherches « D. Doué ou … buteur » / « Real Madrid » en joueur
   arrivaient encore (appareils pas encore en 16v ?).
+  20261016x (« Vancouver on se demande ce que c'est », choix 1 « oui go » ; « le reste est réparé ») : bannière TheSportsDB des Canucks = recadrage
+  illisible → window._G45_FOND_LOGO {vancouvercanucks} / window._g45FondLogo(nom) : carte du mur (DEUX copies du rendu, var _fl avant « if(_vis) »)
+  = logo g45LogoUrlDe ENTIER au centre (même pose que le logo perso ASVEL, opacité .9). Ajouter un club = son nom _g45SgNorm dans la liste.
   20261016r — DIAGNOSTIC ?diag=1 (fin d'app.js) : compte 10 s les appels de render / g45DirectMesEquipes / _g45FanCompleter…, fetch par domaine,
   mutations, minuteries, erreurs JS → alerte résumée (pas d'alerte = boucle synchrone). Rien sans le paramètre.
   20261014u (capture : « c'est pas aligné ») : boîtes de largeur FIXE (logo 110 px ×2, VS/heure 110 px), texte flex 1 1 0 + un ressort 1 1 0 après les
