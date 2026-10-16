@@ -8,6 +8,9 @@
     if (!/[?&]menage=1/.test(location.search)) return;
     var P = ["g45cr3_", "g45cr1_", "g45agoa2_", "g45reg1_", "g45bb1_", "g45bbst1_", "g45bbld1_", "g45bbf1_", "g45es1_", "g45kbo1_", "g45t14lg1", "g45pd2_", "g45t14sq1_", "g45nrlm1_", "g45nrldr1_", "g45nrlsq1_", "g45nrlst2_", "g45proacid1_", "g45proast1_", "g45proa1_", "g45el1_", "g45buts1_", "g45prad1_", "g45vsj1_", "g45vse1_", "g45ia1_", "g45_mmeta2_", "g45_mmeta1_", "g45_tennis4_", "g45_tennis3_", "g45rcP_", "g45rcD_", "g45rcY_", "g45rc_", "g45dcm_", "g45dcf_", "g45dc_", "g45trv3_", "g45trv2_", "g45trOdds2_", "g45tr_", "g45but_st_", "g45butL_", "g45butA_", "g45but_mur_", "_g45clv", "g45clv_snaps", "g45_saisons_cache_v3_", "g45_saisons_cache_v2_", "g45butA2_", "g45gl3_", "g45gl2_", "g45gl_", "g45_tirs2_", "g45_fanart2_", "g45_fanart_", "g45_img_perso_", "g45_tv_prog", "g45_mqnom_", "g45_mqteam_", "g45_mqfond_", "g45trv4_", "g45_catimg_", "g45_catfmt2_", "g45_catfmt_", "g45_scorers_v4_", "g45cm8_", "g45cm7_", "g45cm6_", "g45cm5_", "g45cm4_", "g45_domext1_", "g45_t14e_", "g45_t14bo_", "g45_gar1_", "g45_epr1_", "g45nrlcal3_", "g45nrlcal2_", "g45_score4_", "g45_score3_", "g45_score2_", "g45_score_", "g45_lglogo_", "g45compet3_", "g45compet2_", "g45compet_", "g45tmeta_", "g45histo_", "g45ld2_", "g45ld_", "g45core2_", "g45core_", "g45_fx_faits", "g45_veille_", "g45_compet_logos", "g45_groq_modele", "g45_groq_modele3", "g45_groq_vision", "g45_gemini_modeles", "g45nrlcal6_", "g45nrlcal7_", "g45nrlcal8_", "g45nrlcal9_", "g45nrlcal10_", "g45nrlcal11_", "g45nrlcal12_", "fpl_bootstrap", "g45itf_", "g45_saisons_cache_", "nba_pstat_", "g45cm_", "g45news3_", "g45trf_", "g45sofastats_", "g45cm11_", "g45cm10_", "g45cm9_", "g45cls5_", "g45cls4_", "g45bgclub1_", "g45nhlj1_", "g45jv", "g45tph1_", "g45khl_", "g45herologo_", "g45_herologo_", "g45wk1_", "g45clv1_", "g45oa1_", "g45suivtend1"], n = 0, ks = [];
     for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (k && P.some(function (p) { return k.indexOf(p) === 0; })) ks.push(k); }
+    /* 20261016s (« plus de bannière et image » après le nettoyage) : caches d'IMAGES → seules les clés SANS adresse trouvée (échecs) partent. */
+    var VIS = ["g45_fanart2_", "g45_fanart_", "g45_img_perso_", "g45bgclub1_", "g45jv", "g45tph1_", "g45herologo_", "g45_herologo_", "g45wk1_", "g45_lglogo_", "g45_catimg_", "g45_mqfond_"];
+    ks = ks.filter(function (k) { if (!VIS.some(function (p) { return k.indexOf(p) === 0; })) return true; var v = ''; try { v = localStorage.getItem(k) || ''; } catch (e) {} return !/https?:|blob:|data:image/.test(v); });
     ks.forEach(function (k) { try { localStorage.removeItem(k); n++; } catch (e) {} });
     try { sessionStorage.clear(); } catch (e) {}
     try { var rq = indexedDB.open('g45'); rq.onsuccess = function () { try { var db = rq.result; if (db.objectStoreNames.contains('kv')) { var st = db.transaction('kv', 'readwrite').objectStore('kv'); st.getAllKeys().onsuccess = function (e) { (e.target.result || []).forEach(function (k) { if (/^tr_/.test(String(k))) st.delete(k); }); }; } } catch (e) {} }; } catch (e) {}
@@ -15,6 +18,28 @@
     setTimeout(function () { location.replace(location.pathname); }, 600);
     throw new Error('menage');
   } catch (e) { if (e && e.message === 'menage') throw e; }
+})();
+/* ═══ 20261016s — TheSportsDB PAR LE WORKER (« faudrait avoir un site en cas de panne ») ═══
+   Le 16/10, TheSportsDB a répondu 522 / 12-20 s pendant des heures → plus de bannières, logos, photos. Le worker (route host=tsdb)
+   garde chaque bonne réponse 3 jours (servie sans appeler TheSportsDB) et 30 jours en SECOURS (servie si TheSportsDB tombe). Ici :
+   tout fetch d'une adresse www.thesportsdb.com/api/v1/json/3/<fichier>.php passe d'abord par le worker ; worker injoignable ou chemin
+   refusé (403) → appel direct comme avant. Worker en 5xx = TheSportsDB en panne sans copie : réponse rendue telle quelle (pas de 2e attente). */
+(function () {
+  try {
+    var F = window.fetch; if (!F || F._g45Tsdb) return;
+    var RX = /^https?:\/\/(www\.)?thesportsdb\.com(\/api\/v1\/json\/3\/(searchteams|searchplayers|lookupteam|lookupplayer|lookupleague|lookup_all_players|lookup_all_teams|search_all_teams|eventsnext|eventslast)\.php\?.+)$/;
+    var W = 'https://fd-proxy.touraine-antoine.workers.dev';
+    var nf = function (u, o) {
+      var m = typeof u === 'string' && !(o && o.method && o.method !== 'GET') ? u.match(RX) : null;
+      if (!m) return F.apply(window, arguments);
+      var self = window, args = arguments, oo = {}; if (o && o.signal) oo.signal = o.signal;
+      return F.call(window, W + '?host=tsdb&path=' + encodeURIComponent(m[2]), oo).then(function (r) {
+        if (r.status === 403 || r.status === 404) return F.apply(self, args);
+        return r;
+      }, function (e) { if (e && e.name === 'AbortError') throw e; return F.apply(self, args); });
+    };
+    nf._g45Tsdb = 1; window.fetch = nf;
+  } catch (e) {}
 })();
 /* ═══════════════════════════════════════════════════════════════
    ESPN EN DIRECT — correctif du 05/08/2026

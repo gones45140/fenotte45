@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261016r, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261016s, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -470,6 +470,13 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   g45bgclub1_, g45nhlj1_, g45jv…, g45khl_…), sessionStorage, tendances gardées (IndexedDB kv tr_*) ; JAMAIS g45v5 ni réglages / clés ;
   stoppe app.js (throw) puis recharge sans paramètre ; alerte « 🧹 Nettoyage fait : N … » (g45_menage_fait). Testé Chromium.
   CONFIRMÉ par Antoine (16/10 ~10 h, « ça remarche » après ?menage=1 dans l'appli : ≈ 1 200 clés effacées). Clé coupable exacte NON identifiée.
+  20261016s (« faudrait avoir un site en cas de panne », « oui ») — RELAIS TheSportsDB : route worker host=tsdb (DÉPLOYÉE par Claude le 16/10, copie
+  de l'ancienne version gardée ; liste blanche /api/v1/json/3/<searchteams|searchplayers|lookup…|eventsnext|eventslast>.php?…) : bonne réponse gardée
+  3 jours (D1 tsdb:<chemin>, vide = 1 jour) + SECOURS 30 jours (tsdb:s:<chemin>, réponses non vides) servi si TheSportsDB échoue (5xx, 10 s, illisible).
+  App : enveloppe de fetch en TÊTE d'app.js (après ?menage=1) → toute adresse www.thesportsdb.com/api/v1/json/3/… passe par le worker ; worker
+  injoignable / 403 / 404 → appel direct ; 5xx rendu tel quel. Le test Santé « TheSportsDB » passe donc aussi par le worker. Smoke (54).
+  ?menage=1 garde maintenant les IMAGES trouvées (clés fanart / img_perso / bgclub1 / jv / tph1 / herologo / wk1 / lglogo / catimg / mqfond avec une
+  adresse) : seuls les échecs de ces caches partent. Testé Chromium.
   20261016r — DIAGNOSTIC ?diag=1 (fin d'app.js) : compte 10 s les appels de render / g45DirectMesEquipes / _g45FanCompleter…, fetch par domaine,
   mutations, minuteries, erreurs JS → alerte résumée (pas d'alerte = boucle synchrone). Rien sans le paramètre.
   20261014u (capture : « c'est pas aligné ») : boîtes de largeur FIXE (logo 110 px ×2, VS/heure 110 px), texte flex 1 1 0 + un ressort 1 1 0 après les
