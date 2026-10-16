@@ -74933,7 +74933,7 @@ var _G45_BK_DOM = [
     var an = +O.mois.slice(0, 4), mo = +O.mois.slice(5, 7) - 1, nbj = new Date(an, mo + 1, 0).getDate(), dec = (new Date(an, mo, 1).getDay() + 6) % 7;
     h += '<style>@media(max-width:600px){#g45tr-off .g45tro-lg{display:none!important}#g45tr-off .g45tro-gn{display:none}#g45tr-off .g45tro-kpis{grid-template-columns:1fr 1fr!important}#g45tr-off .g45tro-kpis .g45tro-k:last-child{grid-column:1/-1}}@media(min-width:601px){#g45tr-off .g45tro-pc{display:none}}'
       /* 20261017k (« ça fait un vide noir au milieu », maquette validée « oui ») : PC = une ligne par match, équipes + score à gauche (400 px), paris à droite */
-      + '@media(min-width:700px){#g45tr-off .g45tro-mc{display:flex;align-items:stretch}#g45tr-off .g45tro-mh{width:400px;flex:none;box-sizing:border-box}#g45tr-off .g45tro-mb{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center}#g45tr-off .g45tro-mp{flex:1}#g45tr-off .g45tro-mb>.g45tro-mp:first-child{border-top:none}}</style>';
+      + '@media(min-width:700px){#g45tr-off .g45tro-mc{display:flex;align-items:stretch}#g45tr-off .g45tro-mh{display:none!important}#g45tr-off .g45tro-mh2{display:flex!important;width:50%;flex:none;box-sizing:border-box}#g45tr-off .g45tro-mb{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;position:relative}#g45tr-off .g45tro-wm{display:block!important;position:absolute;left:58%;top:50%;transform:translate(-50%,-50%);height:calc(100% - 8px);max-height:72px;opacity:1;pointer-events:none;filter:drop-shadow(0 0 4px rgba(0,0,0,.6))}#g45tr-off .g45tro-mp{position:relative}#g45tr-off .g45tro-mp{flex:1}#g45tr-off .g45tro-mb>.g45tro-mp:first-child{border-top:none}}</style>';
     h += '<div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;">' + ['lun', 'mar', 'mer', 'jeu', 'ven', 'sam', 'dim'].map(function (j) { return '<div style="text-align:center;font-size:12px;font-weight:700;color:#aab6d6;text-transform:uppercase;">' + j + '</div>'; }).join('');
     for (var i = 0; i < dec; i++) h += '<div></div>';
     for (var dd = 1; dd <= nbj; dd++) {
@@ -74966,7 +74966,17 @@ var _G45_BK_DOM = [
           h += '<div class="g45tro-mc" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;margin-bottom:8px;overflow:hidden;">'
             + '<div class="g45tro-mh" style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 12px;background:rgba(0,0,0,.25);"><span style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;font-size:15px;font-weight:800;min-width:0;">'
             + clubLogo(x0, 'h', 28) + esc(x0.h) + '<span style="color:#8e9bbd;">–</span>' + clubLogo(x0, 'a', 28) + esc(x0.a) + '</span>'
-            + (sc ? '<span style="background:#fff;color:#111;border-radius:7px;padding:1px 8px;font-size:14px;font-weight:900;flex:none;">' + esc(sc) + '</span>' : '<span style="font-size:12px;color:#aab6d6;flex:none;">à venir · ' + new Date(x0.t).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) + '</span>') + '</div><div class="g45tro-mb">';
+            + (sc ? '<span style="background:#fff;color:#111;border-radius:7px;padding:1px 8px;font-size:14px;font-weight:900;flex:none;">' + esc(sc) + '</span>' : '<span style="font-size:12px;color:#aab6d6;flex:none;">à venir · ' + new Date(x0.t).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) + '</span>') + '</div>';
+          /* 20261017l (dessin d'Antoine : « heure · équipe · score · équipe, un truc aligné ») : en-tête PC en colonnes fixes, caché sur téléphone */
+          var hh = new Date(x0.t).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }), etat = sc ? 'fini' : (x0.t > Date.now() ? 'à venir' : 'en cours');
+          var nomC = function (cote, droite) { return '<span style="flex:1 1 0;min-width:0;display:flex;align-items:center;gap:8px;justify-content:' + (droite ? 'flex-end' : 'flex-start') + ';font-size:15px;font-weight:800;">' + (droite ? '' : clubLogo(x0, cote, 28)) + '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(cote === 'h' ? x0.h : x0.a) + '</span>' + (droite ? clubLogo(x0, cote, 28) : '') + '</span>'; };
+          h += '<div class="g45tro-mh2" style="display:none;align-items:center;gap:10px;padding:8px 12px;background:rgba(0,0,0,.25);">'
+            + '<span style="width:64px;flex:none;text-align:center;line-height:1.15;"><b style="font-size:15px;color:#fff;">' + hh + '</b><br><span style="font-size:12px;color:' + (sc ? '#aab6d6' : '#f0c828') + ';">' + etat + '</span></span>'
+            + nomC('h', true)
+            + '<span style="width:70px;flex:none;text-align:center;">' + (sc ? '<span style="background:#fff;color:#111;border-radius:7px;padding:2px 8px;font-size:15px;font-weight:900;">' + esc(sc) + '</span>' : '<span style="font-size:15px;color:#8e9bbd;font-weight:800;">–</span>') + '</span>'
+            + nomC('a', false) + '</div><div class="g45tro-mb">'
+            /* 20261017l (« un logo du championnat pour combler le vide ») : filigrane dans la zone des paris, PC seulement */
+            + (lgUrl(sl) ? '<img class="g45tro-wm" src="' + esc(lgUrl(sl)) + '" alt="" onerror="this.remove()" style="display:none;">' : '');
           g.forEach(function (x) {
             var ok = x.r === 1, ko = x.r === 0;
             var res = x.r == null ? '⏳' : (ok ? '✅' : '❌') + (x.c > 1 ? ' ' + eurC(ok ? x.c - 1 : -1) : '');
