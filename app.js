@@ -76099,4 +76099,34 @@ window._g45AgJouUs = async function (nowTs) {
     } catch (e) {}
   }, 40000);
   window._g45EspnSecoursLire = function (k) { return op('get', k); };
+  /* 20261017z (« mets dans Outils, on sait jamais ») : ligne d'état sous la Santé des sources (gones seulement, comme la Santé) :
+     nombre de copies gardées sur l'appareil + date de la plus récente ; secours servi depuis < 15 min = ligne orange « EN SERVICE ». */
+  var info = { n: null, der: 0, lu: 0 };
+  var fdt = function (t) { try { return new Date(t).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).replace(' ', ' à '); } catch (e) { return ''; } };
+  var ligne = function () {
+    var S = window._g45EspnSecours, actif = S && Date.now() - S.t < 15 * 60e3;
+    var h = '<div id="g45-sec-ligne" style="margin-top:8px;font-size:13px;line-height:1.45;color:#fff;background:rgba(0,0,0,.35);border-radius:8px;padding:7px 10px;">';
+    if (actif) h += '<div style="color:#ffb020;font-weight:800;">🛟 Secours EN SERVICE : ESPN ne répond pas, copie du ' + fdt(S.der) + '</div>';
+    h += '🛟 Secours ESPN : ' + (info.n == null ? '…' : (info.n ? info.n + ' réponse' + (info.n > 1 ? 's' : '') + ' gardée' + (info.n > 1 ? 's' : '') + ' sur cet appareil' + (info.der ? ' (dernière copie le ' + fdt(info.der) + ')' : '') : 'aucune copie pour l\'instant')) + '</div>';
+    return h;
+  };
+  var compter = function () {
+    if (Date.now() - info.lu < 30000) return;
+    info.lu = Date.now();
+    ouvrir().then(function (db) {
+      var n = 0, der = 0, rq = db.transaction('r', 'readonly').objectStore('r').openCursor();
+      rq.onsuccess = function () {
+        var c = rq.result;
+        if (c) { n++; if (c.value && c.value.t > der) der = c.value.t; c.continue(); return; }
+        info.n = n; info.der = der;
+        var el = document.getElementById('g45-sec-ligne'); if (el) el.outerHTML = ligne();
+      };
+    }).catch(function () {});
+  };
+  var bloc0 = window._g45SanteBloc;
+  if (typeof bloc0 === 'function') window._g45SanteBloc = function () {
+    var h = ''; try { h = bloc0.apply(this, arguments) || ''; } catch (e) {}
+    try { compter(); h += ligne(); } catch (e) {}
+    return h;
+  };
 })();
