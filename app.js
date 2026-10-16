@@ -75321,7 +75321,7 @@ window._g45NhlJTrouver = _g45NhlJTrouver; window._g45NhlJHtml = _g45NhlJHtml; wi
 /* 20261016x (« Vancouver on se demande ce que c'est », choix 1 « oui go ») : la bannière TheSportsDB des Canucks est un recadrage illisible de
    leur logo → pour les clubs de cette liste, la carte du mur (DEUX copies du rendu) pose le LOGO ENTIER au centre (g45LogoUrlDe, opacité .9)
    au lieu de la bannière. Ajouter un club = son nom normalisé ici. */
-window._G45_FOND_LOGO = { vancouvercanucks: 1, parissaintgermain: 1, psg: 1, parissg: 1, arsenal: 1, arsenalfc: 1 };   /* 20261016y : PSG (« c'est moche ») ; 20261016z : Arsenal (« trouver l'intrus » : photo de joueurs au milieu des blasons) */
+window._G45_FOND_LOGO = { vancouvercanucks: 1, parissaintgermain: 1, psg: 1, parissg: 1, arsenal: 1, arsenalfc: 1, atleticomadrid: 1, atleticodemadrid: 1, clubatleticodemadrid: 1, atletico: 1 };   /* 20261017a : Atlético (« l'atm ») */   /* 20261016y : PSG (« c'est moche ») ; 20261016z : Arsenal (« trouver l'intrus » : photo de joueurs au milieu des blasons) */
 window._g45FondLogo = function (nom) {
   try { var k = (typeof _g45SgNorm === 'function') ? _g45SgNorm(nom) : String(nom || '').toLowerCase().replace(/[^a-z0-9]/g, ''); return !!window._G45_FOND_LOGO[k]; } catch (e) { return false; }
 };
