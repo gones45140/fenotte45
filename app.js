@@ -54897,7 +54897,7 @@ window.g45VisuelCategorie = g45VisuelCategorie;
 
 var _G45_NON_CLUB = /^(tennis|basket|basketball|rugby|rugby a ?xiii|au nrl|nrl|formule ?1|formula ?1|f1|football|foot|hockey|baseball|mma|boxe|cyclisme|velo|golf|nascar|moto ?gp|athletisme|handball|volley)$/i;
 
-function _g45FanVariantes(nom) {
+function _g45FanVariantes(nom, sport) {
   var brut = String(nom || '').trim();
   var sansAcc = brut.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   var court = sansAcc.replace(/^(deportivo|real|club|rcd|rc|cd|ca|ac|as|sc|cf|fc|sd|ud)\s+/i, '').trim();
@@ -54930,7 +54930,9 @@ function _g45FanVariantes(nom) {
   /* Un nom qui porte deja un de ces prefixes n'a pas besoin qu'on lui en colle
      un second. */
   var dejaPrefixe = /^(deportivo|real|club|athletic|cd|fc)\s+/i.test(brut);
-  if (!dejaPrefixe) prefixes.forEach(function (p) { ajout(p + ' ' + sansAcc); });
+  /* 20261016j (console d'Antoine : « Deportivo Vancouver Canucks ») : préfixes de clubs de FOOT seulement pour le foot (sport inconnu = comme avant). */
+  var _foot = !sport || /^(soccer|⚽)$/.test(String(sport));
+  if (!dejaPrefixe && _foot) prefixes.forEach(function (p) { ajout(p + ' ' + sansAcc); });
   return out.slice(0, 8);   /* plafond : API gratuite, mais pas de rafale inutile */
 }
 
@@ -54948,7 +54950,7 @@ async function _g45FanChercher(nom, sport) {
   }
   var attendu = _G45_TSDB_SPORT[sport || ''] || '';
   var n = _g45SgNorm(nom);
-  var essais = _g45FanVariantes(nom);
+  var essais = _g45FanVariantes(nom, sport);
 
   /* CORRECTION DU 22/08 — l'alias etait annule par le controle qui le suit.
      On interrogeait bien « Inter Milan », la base repondait « Inter Milan », et
@@ -70780,7 +70782,7 @@ async function _g45BgChercher(nom) {
   var sport = _g45BgSport(nom), out = { u: '', l: '', t: Date.now() };
   /* 20261016i : fiche d'un JOUEUR du mur → pas de recherche d'équipe TheSportsDB (« FC Connor McDavid »…) ; logo posé plus bas sinon rien */
   try { if ((state.u || []).some(function (x) { return x && x.type === 'joueur' && norm(x.n) === norm(nom); })) { try { localStorage.setItem(ck, JSON.stringify(out)); } catch (e) {} return out; } } catch (e) {}
-  var essais = (typeof _g45FanVariantes === 'function') ? _g45FanVariantes(nom) : [nom];
+  var essais = (typeof _g45FanVariantes === 'function') ? _g45FanVariantes(nom, sport) : [nom];
   var accept = {}; essais.concat([nom]).forEach(function (v) { var k = norm(v); if (k) accept[k] = 1; });
   var noms = Object.keys(accept);
   var marq = /(gloriosas|femenin|feminin|women|ladies|damen|dames|girls|youth|academy|reserve|\bu\s?1[4-9]\b|\bu\s?2[0-3]\b|\bii\b)/i;
