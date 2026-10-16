@@ -26268,6 +26268,7 @@ async function loadCalendrier() {
   allMatches = allMatches.filter(function(m){
     try { return window._g45AgLieuOk(m, _agMur(m)); } catch(e) { return true; }
   });
+  try { window._g45AgDates = allMatches.map(function(m){ return Date.parse(m.date); }).filter(function(t){ return t > 0; }); } catch(e) {}   /* 20261017s : cache de l'Agenda */
 
   if(!allMatches.length) {
     el.innerHTML = '<div class="fc" style="color:var(--t3);text-align:center;">Aucun match à venir trouvé pour tes équipes.<br><small>(saison terminée ou calendrier pas encore publié)</small></div>';
@@ -75919,4 +75920,41 @@ window._g45UfDecoupe = function (note) {
     } catch (e) {}
     return sv0.apply(this, arguments);
   };
+})();
+
+
+/* ═══ 📅 AGENDA GARDÉ JUSQU'AU PROCHAIN MATCH (20261017s, capture « Chargement du calendrier… » : « laissez en cache jusqu'au début du
+   match, dès que je change de page ça refait une recherche ») ═══
+   window.loadCalendrier (bouton Agenda de la barre) : liste déjà affichée gardée telle quelle (cotes comprises) tant que
+   — aucun match listé n'a commencé (window._g45AgDates, posé par loadCalendrier) et 6 h au plus,
+   — le mur, les paliers, le nombre de paris et les ⭐ suivies n'ont pas changé (signature).
+   « ↻ Actualiser » = vraie relecture. Une lecture déjà en cours n'est pas relancée. Mémoire de la session seulement. */
+(function () {
+  var C = null, enCours = null, orig = null;
+  var sig = function () {
+    try {
+      return JSON.stringify([(state.u || []).map(function (u) { return [u.n, u.note, u.s, u.l, u.sport, u.type, u.club]; }), state.lc || null,
+        (state.h || []).length, (state.a || []).length, (typeof g45SuivisGet === 'function' ? g45SuivisGet().map(function (m) { return m.id; }) : [])]);
+    } catch (e) { return String(Math.random()); }
+  };
+  var env = function () {
+    var el = document.getElementById('cal-content'), s = sig();
+    if (enCours) return enCours;
+    if (C && el && C.sig === s && Date.now() < C.exp && el.getAttribute('data-g45agc') === String(C.t)) return Promise.resolve();
+    window._g45AgDates = null;
+    var self = this, args = arguments;
+    enCours = Promise.resolve().then(function () { return orig.apply(self, args); }).then(function () {
+      var now = Date.now(), d = (window._g45AgDates || []).filter(function (t) { return t > now; }), exp = now + 6 * 3600e3;
+      if (d.length) exp = Math.min(exp, Math.min.apply(null, d));
+      C = { sig: s, t: now, exp: exp };
+      if (el) el.setAttribute('data-g45agc', String(C.t));
+      var b = document.getElementById('btn-refresh-cal'); if (b) b.onclick = function () { C = null; env(); };
+    }).catch(function () { C = null; }).then(function () { enCours = null; });
+    return enCours;
+  };
+  env._g45Cache = true;
+  /* window.loadCalendrier n'est exporté qu'à l'initialisation (fonction appelée après le chargement) → posé dès qu'il existe, et reposé s'il est remplacé */
+  var poser = function () { var f = window.loadCalendrier; if (typeof f === 'function' && !f._g45Cache) { orig = f; window.loadCalendrier = env; } };
+  poser(); setInterval(poser, 1000);
+  window._g45AgCacheVider = function () { C = null; };
 })();

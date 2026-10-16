@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261017r, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261017s, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -463,6 +463,11 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   NHL joueur, Agenda). setUnitType = portée fermée → clic des boutons écouté. Smoke (ufLieu, 56).
   20261017r (capture Barça « condition remplie 1,41 », « c'est ❌ », validé « oui ») : `_g45AgOdHtml` — « si cote inférieure à X » = règle de la MONTANTE :
   résultat seul < X → « ❌ Victoire seule 1,41 < 1,5 → ajoute under 3,5 » (autres jambes de la 1re option) ; ≥ X → « ✅ … → la victoire seule suffit ».
+  20261017s (capture « Chargement du calendrier… » : « laissez en cache jusqu'au début du match ») : bloc en fin d'app.js — window.loadCalendrier
+  (exporté à l'INIT, ≈ l. 28028 → enveloppe posée dès qu'il existe, setInterval 1 s) : liste affichée GARDÉE (cotes comprises, rien relu) tant
+  qu'aucun match listé n'a commencé (window._g45AgDates posé dans loadCalendrier après le filtre lieu) et 6 h max, et que la signature (mur : nom /
+  note / étoiles / palier / sport / type / club, state.lc, nb de paris h / a, ⭐ suivies) n'a pas changé ; « ↻ Actualiser » = vraie relecture ;
+  lecture en cours non relancée ; mémoire de session. Smoke (agCache, 57).
   20261016i (Santé : TheSportsDB « trop lent (12 s) » depuis 4 h ; console d'Antoine : searchteams « Club / Athletic / CD / FC Connor McDavid » en
   522 / CORS ; Arsenal = 200 en 19 s → serveur TheSportsDB surchargé) : `_g45FanChercher` (fond de carte) et `_g45BgChercher` (fond de fiche) ne
   cherchent plus d'ÉQUIPE pour une carte JOUEUR du mur (8 variantes par joueur) ; la recherche de JOUEUR (searchplayers, 1 requête) reste. Smoke (52).
