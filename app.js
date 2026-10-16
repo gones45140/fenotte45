@@ -54938,7 +54938,11 @@ async function _g45FanChercher(nom, sport) {
   var url = '';
   /* Sortie immediate, et on MEMORISE l'echec : sans ca la passe du mur
      relancerait la recherche a chaque session. */
-  if (_G45_NON_CLUB.test(String(nom || '').trim())) {
+  /* 20261016i (console d'Antoine : « searchteams.php?t=Club Connor McDavid », « Athletic … », « CD … » refusés par TheSportsDB) : une carte
+     JOUEUR du mur n'est pas une équipe → pas de recherche d'équipe (8 variantes par joueur à chaque passe = rafale, TheSportsDB nous ralentit). */
+  var _estJoueur = false;
+  try { var _nzJ = _g45SgNorm(nom); _estJoueur = (state.u || []).some(function (x) { return x && x.type === 'joueur' && _g45SgNorm(x.n) === _nzJ; }); } catch (e) {}
+  if (_estJoueur || _G45_NON_CLUB.test(String(nom || '').trim())) {
     try { localStorage.setItem(_G45_FANART + _g45SgNorm(nom), JSON.stringify({ u: '', t: Date.now() })); } catch (e) {}
     return '';
   }
@@ -70774,6 +70778,8 @@ async function _g45BgChercher(nom) {
   var ck = 'g45bgclub1_' + norm(nom);
   try { var c = JSON.parse(localStorage.getItem(ck) || 'null'); if (c && Date.now() - c.t < (c.u || c.l ? 30 : 7) * 864e5) return c; } catch (e) {}
   var sport = _g45BgSport(nom), out = { u: '', l: '', t: Date.now() };
+  /* 20261016i : fiche d'un JOUEUR du mur → pas de recherche d'équipe TheSportsDB (« FC Connor McDavid »…) ; logo posé plus bas sinon rien */
+  try { if ((state.u || []).some(function (x) { return x && x.type === 'joueur' && norm(x.n) === norm(nom); })) { try { localStorage.setItem(ck, JSON.stringify(out)); } catch (e) {} return out; } } catch (e) {}
   var essais = (typeof _g45FanVariantes === 'function') ? _g45FanVariantes(nom) : [nom];
   var accept = {}; essais.concat([nom]).forEach(function (v) { var k = norm(v); if (k) accept[k] = 1; });
   var noms = Object.keys(accept);
