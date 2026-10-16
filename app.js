@@ -25956,7 +25956,7 @@ async function loadCalendrier() {
   try{ if(typeof g45StatsLocal==='function' && !g45StatsLocal().length && typeof g45StatsLoadPublic==='function'){ await _agMax(g45StatsLoadPublic(), 5000); } }catch(e){}
 
   // Équipes football favorites (résolution ESPN, comme l'onglet Saisons)
-  var teams = state.u.filter(function(u){ return (u.sport||'⚽')==='⚽'; }).slice(0,8);
+  var teams = state.u.filter(function(u){ return (u.sport||'⚽')==='⚽'; }).slice(0,15);   /* 20261017t (« oui ») : 8 → 15 clubs du mur */
 
   /* EQUIPES SUIVIES (14/08/2026) : l'Agenda ne regardait que le mur. Les equipes
      suivies a l'etoile s'y ajoutent, sans doublon.
@@ -25974,7 +25974,7 @@ async function loadCalendrier() {
       _dejaLa[k] = 1;
       teams.push({ n: t.nom, sport: '⚽', _suiviEq: 1 });
     });
-    teams = teams.slice(0, 14);   /* plafond : chaque equipe coute des requetes */
+    teams = teams.slice(0, 20);   /* plafond : chaque equipe coute des requetes (20261017t : 14 → 20, mur 15 + ⭐) */
   } catch(e) {}
 
   var _suivis = g45SuivisGet();
