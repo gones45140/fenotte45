@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261017x, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261017y, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1265,6 +1265,11 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
 
 ## 6. Sources sondées (ne pas re-deviner)
 
+- 🛟 SECOURS ESPN (20261017y, « si ESPN tombe en rade je suis mort » → « prépare ») : enveloppe de window.fetch (fin d'app.js) — réponses OK de
+  site.api.espn.com …/(schedule|standings|scoreboard|roster|leaders|teams) copiées dans IndexedDB g45esp/r (clé = adresse, 10 min mini entre deux
+  copies, < 3 Mo) ; ESPN en erreur réseau / 5xx → copie de ≤ 30 j rendue (en-tête X-G45-Secours, window._g45EspnSecours) ; core / summary / worker
+  NON couverts ; test Santé SANS secours (enveloppe de g45SanteTester) ; ménage quotidien (g45esp_menage). Testé Chromium (ESPN coupé : copie rendue,
+  adresse jamais vue = erreur, Santé « injoignable »). AUCUN bandeau visible (à proposer en maquette si Antoine veut le voir). Smoke (espSec, 58).
 - CORS : site.api.espn.com et sports.core.api.espn.com passent depuis le
   navigateur. site.web.api.espn.com (common v3) est BLOQUÉ → passer par le
   worker : `FD_PROXY + '?host=espnweb&path=' + encodeURIComponent(chemin)`.

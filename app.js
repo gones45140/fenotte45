@@ -76026,3 +76026,77 @@ window._g45AgJouUs = async function (nowTs) {
   } catch (e) { try { console.warn('agenda joueurs NFL / NBA', e && e.message); } catch (e3) {} }
   return out;
 };
+
+/* ═══ 🛟 SECOURS ESPN (20261017y, « si ESPN tombe en rade je suis mort » → « prépare, on sait jamais ») ═══
+   Copie, SUR L'APPAREIL (IndexedDB g45esp / magasin r), des dernières bonnes réponses de site.api.espn.com pour les calendriers,
+   classements, scoreboards, effectifs et leaders (même adresse relue au plus toutes les 10 min, < 3 Mo). Si ESPN ne répond plus
+   (erreur réseau ou 5xx), la copie (30 jours max) est rendue à la place, avec l'en-tête X-G45-Secours = date de la copie ;
+   window._g45EspnSecours {t, n, der} = dernier secours servi. Gratuit, rien côté worker. Le test Santé n'utilise JAMAIS le secours
+   (il doit voir la vraie panne). Scores EN DIRECT : la copie a jusqu'à 10 min de retard, rien de mieux possible sans ESPN. */
+(function () {
+  if (typeof indexedDB === 'undefined' || !window.fetch || window.fetch._g45Esp) return;
+  var DB = null;
+  var ouvrir = function () {
+    return DB || (DB = new Promise(function (ok, ko) {
+      try { var rq = indexedDB.open('g45esp', 1); rq.onupgradeneeded = function () { try { rq.result.createObjectStore('r'); } catch (e) {} };
+        rq.onsuccess = function () { ok(rq.result); }; rq.onerror = function () { ko(rq.error); }; } catch (e) { ko(e); }
+    }));
+  };
+  var op = function (mode, k, v) {
+    return ouvrir().then(function (db) { return new Promise(function (ok, ko) {
+      var st = db.transaction('r', mode === 'get' ? 'readonly' : 'readwrite').objectStore('r');
+      var rq = mode === 'get' ? st.get(k) : st.put(v, k);
+      rq.onsuccess = function () { ok(rq.result); }; rq.onerror = function () { ko(rq.error); };
+    }); });
+  };
+  var HOTE = /^https:\/\/site\.api\.espn\.com\//, GARDE = /\/(schedule|standings|scoreboard|roster|leaders|teams)(\?|\/?$)/;
+  var der = {}, santeEnCours = 0;
+  var secours = function (k) {
+    if (santeEnCours) return Promise.resolve(null);
+    return op('get', k).then(function (v) {
+      if (!v || !v.b || Date.now() - v.t > 30 * 864e5) return null;
+      var S = window._g45EspnSecours || { n: 0 }; window._g45EspnSecours = { t: Date.now(), n: S.n + 1, der: v.t };
+      try { console.warn('🛟 ESPN ne répond pas : copie du ' + new Date(v.t).toLocaleString('fr-FR') + ' → ' + k.slice(0, 120)); } catch (e) {}
+      return new Response(v.b, { status: 200, headers: { 'Content-Type': 'application/json', 'X-G45-Secours': String(v.t) } });
+    }).catch(function () { return null; });
+  };
+  var f0 = window.fetch;
+  var env = function (input, init) {
+    var u = typeof input === 'string' ? input : ((input && input.url) || '');
+    var meth = String((init && init.method) || (input && typeof input !== 'string' && input.method) || 'GET').toUpperCase();
+    if (!HOTE.test(u) || meth !== 'GET' || !GARDE.test(u.split('#')[0])) return f0.apply(this, arguments);
+    var k = u.replace(/([?&])(_|t|cb|nocache)=\d+&?/, '$1').replace(/[?&]$/, '');
+    return f0.apply(this, arguments).then(function (r) {
+      if (r && r.ok) {
+        if (!santeEnCours && !(Date.now() - (der[k] || 0) < 10 * 60e3)) {
+          der[k] = Date.now();
+          try { r.clone().text().then(function (t) { if (t && t.length < 3e6 && /^[\[{]/.test(t)) op('put', k, { t: Date.now(), b: t }).catch(function () {}); }).catch(function () {}); } catch (e) {}
+        }
+        return r;
+      }
+      if (r && r.status >= 500) return secours(k).then(function (s) { return s || r; });
+      return r;
+    }, function (err) { return secours(k).then(function (s) { if (s) return s; throw err; }); });
+  };
+  env._g45Esp = true;
+  window.fetch = env;
+  /* Santé des sources : le secours est coupé pendant le test */
+  var st0 = window.g45SanteTester;
+  if (typeof st0 === 'function') window.g45SanteTester = async function () {
+    santeEnCours++;
+    try { return await st0.apply(this, arguments); } finally { santeEnCours--; }
+  };
+  /* Ménage : copies de plus de 30 jours effacées, une fois par jour, 40 s après l'ouverture */
+  setTimeout(function () {
+    try {
+      var j = new Date().toISOString().slice(0, 10);
+      if (localStorage.getItem('g45esp_menage') === j) return;
+      localStorage.setItem('g45esp_menage', j);
+      ouvrir().then(function (db) {
+        var st = db.transaction('r', 'readwrite').objectStore('r'), rq = st.openCursor();
+        rq.onsuccess = function () { var c = rq.result; if (!c) return; if (!c.value || Date.now() - c.value.t > 30 * 864e5) c.delete(); c.continue(); };
+      }).catch(function () {});
+    } catch (e) {}
+  }, 40000);
+  window._g45EspnSecoursLire = function (k) { return op('get', k); };
+})();
