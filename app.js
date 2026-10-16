@@ -26037,6 +26037,7 @@ async function loadCalendrier() {
   var _agEbP = _agMax(_agEb(), 25000);
   var _agKhlP = _agMax(_agKhl(), 20000);
   var _agJouP = _agMax(_agJou(), 15000);   /* 20261016h : joueurs NHL du mur */
+  var _agJouUsP = _agMax(window._g45AgJouUs ? window._g45AgJouUs(nowTs) : [], 20000);   /* 20261017x : joueurs NFL / NBA du mur */
   var _agFootR = await _agFootP;
   for(var i=0; i<teams.length; i++) {
     var u = teams[i];
@@ -26245,7 +26246,7 @@ async function loadCalendrier() {
     } catch (e) { console.warn('agenda joueurs', e && e.message); }
     return out;
   }
-  [await _agSuiviP, await _agEbP, await _agKhlP, await _agJouP].forEach(function (L) { (L || []).forEach(function (m) { allMatches.push(m); }); });
+  [await _agSuiviP, await _agEbP, await _agKhlP, await _agJouP, await _agJouUsP].forEach(function (L) { (L || []).forEach(function (m) { allMatches.push(m); }); });
 
   // + matchs suivis manuellement (sélection dans Résultats), même hors favoris
   _suivis.forEach(function(s){
@@ -75975,3 +75976,53 @@ window._g45UfDecoupe = function (note) {
   poser(); setInterval(poser, 1000);
   window._g45AgCacheVider = function () { C = null; };
 })();
+
+
+/* ═══ 🏈 / 🏀 JOUEURS NFL ET NBA DANS L'AGENDA (20261017x, « on peut faire NFL et NBA ») ═══
+   Carte JOUEUR du mur en 🏈 (NFL) ou 🏀 (NBA) → son club (_g45UClub) retrouvé dans la liste ESPN de la ligue (_g45CompetEquipes, classement)
+   → calendrier d'équipe ESPN site v2 …/teams/<id>/schedule?season=<_g45SgAnAuto>&seasontype=2 (même adresse que les critères 20261014h),
+   matchs à venir sur 14 jours, une lecture par club. Même carte que les joueurs NHL (m.joueur). Club inconnu = joueur ignoré.
+   ⚾ MLB : NON (lanceurs : seulement s'il est partant, sonde des « probables » en attente). Euroleague / Pro A : NON. */
+window._g45AgJouUs = async function (nowTs) {
+  var out = [];
+  try {
+    var nz = function (x) { return String(x || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim(); };
+    var LG = { '🏈': { sp: 'football', lg: 'nfl', c: 'NFL' }, '🏀': { sp: 'basketball', lg: 'nba', c: 'NBA' } };
+    var J = (state.u || []).filter(function (u) { return u && u.type === 'joueur' && LG[String(u.sport || '')]; });
+    if (!J.length) return out;
+    var parClub = {};
+    for (var i = 0; i < J.length; i++) {
+      var u = J[i], L = LG[u.sport], cl = nz(typeof _g45UClub === 'function' ? _g45UClub(u) : u.note);
+      if (!cl) continue;
+      var eqs = []; try { eqs = await _g45CompetEquipes({ sp: L.sp, s: L.lg }) || []; } catch (e) {}
+      var t = eqs.filter(function (t) { return nz(t.nom) === cl || nz(t.court) === cl; })[0]
+        || eqs.filter(function (t) { var n = nz(t.nom), w = n.split(' ').pop(); return (cl.length >= 4 && n.indexOf(cl) >= 0) || (w.length >= 4 && (' ' + cl + ' ').indexOf(' ' + w + ' ') >= 0); })[0];
+      if (!t || !t.id) continue;
+      var k = L.lg + '|' + t.id;
+      (parClub[k] = parClub[k] || { L: L, t: t, J: [] }).J.push(u);
+    }
+    await Promise.all(Object.keys(parClub).map(async function (k) {
+      var C = parClub[k], an = (typeof _g45SgAnAuto === 'function') ? _g45SgAnAuto(C.L.lg) : new Date().getFullYear(), j = null;
+      try { var r = await fetch('https://site.api.espn.com/apis/site/v2/sports/' + C.L.sp + '/' + C.L.lg + '/teams/' + C.t.id + '/schedule?season=' + an + '&seasontype=2'); if (r.ok) j = await r.json(); } catch (e) {}
+      ((j && j.events) || []).forEach(function (e) {
+        var tt = Date.parse(e.date); if (!(tt >= nowTs) || tt > Date.now() + 14 * 86400000) return;
+        if (e.seasonType && +e.seasonType.type === 1) return;
+        var cp = (e.competitions && e.competitions[0]) || {}, st = (cp.status && cp.status.type) || {};
+        if (st.completed) return;
+        var cs = cp.competitors || [], moi = cs.filter(function (c) { return String(c.team && c.team.id) === String(C.t.id); })[0], lui = cs.filter(function (c) { return c !== moi; })[0];
+        if (!moi || !lui) return;
+        var dom = moi.homeAway === 'home', lt = lui.team || {}, lg0 = function (tm) { return (tm.logos && tm.logos[0] && tm.logos[0].href) || tm.logo || ''; };
+        C.J.forEach(function (u) {
+          var ph = '';
+          try { var v = window._g45JoueurVisLire ? window._g45JoueurVisLire(u.n) : null; ph = (v && (v.cut || v.thumb)) || ''; } catch (e2) {}
+          if (!ph && u.logoUrl && !/teamlogos|\/team\/|\/logos?\//i.test(u.logoUrl)) ph = u.logoUrl;
+          out.push({ date: new Date(tt).toISOString(), isDom: dom, adv: lt.displayName || lt.name || '?', ourName: u.n, color: u.color || '#4d84ff',
+            comp: C.L.c, compSlug: C.L.lg, venue: '', sp: C.L.sp,
+            joueur: { nom: u.n, ph: ph, club: C.t.nom },
+            ourLogo: C.t.logo || lg0(moi.team || {}), advLogo: lg0(lt) });
+        });
+      });
+    }));
+  } catch (e) { try { console.warn('agenda joueurs NFL / NBA', e && e.message); } catch (e3) {} }
+  return out;
+};
