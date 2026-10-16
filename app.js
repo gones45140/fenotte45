@@ -3160,7 +3160,7 @@ function render(){
           +'filter:drop-shadow(0 6px 14px rgba(0,0,0,.55));">';
       }
       /* 20261016x (Canucks : bannière TheSportsDB illisible, choix 1 d'Antoine) : club listé dans window._G45_FOND_LOGO → LOGO entier au centre. */
-      var _fl=false; try{ if(window._g45FondLogo && window._g45FondLogo(u.n)){ var _flu=((typeof g45LogoUrlDe==='function')?g45LogoUrlDe(u.n):'')||u.logoUrl||''; if(_flu){ _vis=_flu; _fl=true; } } }catch(e){}
+      var _fl=false; try{ if(window._g45FondLogo && window._g45FondLogo(u.n)){ var _flv=window._G45_FOND_LOGO[_g45SgNorm(u.n)], _flu=(typeof _flv==='string'?_flv:'')||((typeof g45LogoUrlDe==='function')?g45LogoUrlDe(u.n):'')||u.logoUrl||''; if(_flu){ _vis=_flu; _fl=true; } } }catch(e){}
       if(_vis){
         var _vl=(typeof _G45_FOND_NIV!=='undefined')?_G45_FOND_NIV.voileVis:0.30;
         _couche='<img src="'+_vis+'" alt="" loading="lazy" onerror="this.style.display=\'none\'" '
@@ -11538,7 +11538,7 @@ function render(){
           +'filter:drop-shadow(0 6px 14px rgba(0,0,0,.55));">';
       }
       /* 20261016x (Canucks : bannière TheSportsDB illisible, choix 1 d'Antoine) : club listé dans window._G45_FOND_LOGO → LOGO entier au centre. */
-      var _fl=false; try{ if(window._g45FondLogo && window._g45FondLogo(u.n)){ var _flu=((typeof g45LogoUrlDe==='function')?g45LogoUrlDe(u.n):'')||u.logoUrl||''; if(_flu){ _vis=_flu; _fl=true; } } }catch(e){}
+      var _fl=false; try{ if(window._g45FondLogo && window._g45FondLogo(u.n)){ var _flv=window._G45_FOND_LOGO[_g45SgNorm(u.n)], _flu=(typeof _flv==='string'?_flv:'')||((typeof g45LogoUrlDe==='function')?g45LogoUrlDe(u.n):'')||u.logoUrl||''; if(_flu){ _vis=_flu; _fl=true; } } }catch(e){}
       if(_vis){
         var _vl=(typeof _G45_FOND_NIV!=='undefined')?_G45_FOND_NIV.voileVis:0.30;
         _couche='<img src="'+_vis+'" alt="" loading="lazy" onerror="this.style.display=\'none\'" '
@@ -75321,7 +75321,10 @@ window._g45NhlJTrouver = _g45NhlJTrouver; window._g45NhlJHtml = _g45NhlJHtml; wi
 /* 20261016x (« Vancouver on se demande ce que c'est », choix 1 « oui go ») : la bannière TheSportsDB des Canucks est un recadrage illisible de
    leur logo → pour les clubs de cette liste, la carte du mur (DEUX copies du rendu) pose le LOGO ENTIER au centre (g45LogoUrlDe, opacité .9)
    au lieu de la bannière. Ajouter un club = son nom normalisé ici. */
-window._G45_FOND_LOGO = { vancouvercanucks: 1, parissaintgermain: 1, psg: 1, parissg: 1, arsenal: 1, arsenalfc: 1, atleticomadrid: 1, atleticodemadrid: 1, clubatleticodemadrid: 1, atletico: 1 };   /* 20261017a : Atlético (« l'atm ») */   /* 20261016y : PSG (« c'est moche ») ; 20261016z : Arsenal (« trouver l'intrus » : photo de joueurs au milieu des blasons) */
+window._G45_FOND_LOGO = { vancouvercanucks: 1, parissaintgermain: 1, psg: 1, parissg: 1, arsenal: 1, arsenalfc: 1, atleticomadrid: 1, atleticodemadrid: 1, clubatleticodemadrid: 1, atletico: 1,
+  /* 20261017b (« la France j'aime mais bon Grizou ») : bannière avec Griezmann (retraité des Bleus) ; pas de logo connu pour « France » →
+     adresse donnée ici : écusson ESPN de l'équipe de France (id 478, NON vérifié depuis le cloud). */
+  france: 'https://a.espncdn.com/i/teamlogos/soccer/500/478.png' };   /* 20261017a : Atlético (« l'atm ») */   /* 20261016y : PSG (« c'est moche ») ; 20261016z : Arsenal (« trouver l'intrus » : photo de joueurs au milieu des blasons) */
 window._g45FondLogo = function (nom) {
   try { var k = (typeof _g45SgNorm === 'function') ? _g45SgNorm(nom) : String(nom || '').toLowerCase().replace(/[^a-z0-9]/g, ''); return !!window._G45_FOND_LOGO[k]; } catch (e) { return false; }
 };
