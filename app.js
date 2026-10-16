@@ -20786,7 +20786,7 @@ function _g45MjHtml(){
   var pid='g45ml'+i0;
   h+='<div onclick="g45ButToggleMatchs(\''+pid+'\',\''+B.lgs+'\','+D.id.aid+','+D.an+')" style="cursor:pointer;font-size:14px;margin-top:10px;color:#5aa9ff;font-weight:800;">📋 Voir ses matchs ›</div>'
     +'<div id="'+pid+'" data-open="0" style="display:none;margin-top:8px;"></div>'
-    +'<div style="font-size:13px;color:#c9d3ee;margin-top:10px;">Chance = 1 − e<sup>−buts par match</sup> · statistiques ESPN.</div>';
+    +'<div style="font-size:13px;color:#c9d3ee;margin-top:10px;">Calcul : d\'après ses buts par match (statistiques ESPN).</div>';   /* 20261016k (« l'expliquer simplement » : formule 1 − e^−buts/m retirée) */
   return h+'</div>';
 }
 window.g45MjOnglet=function(i){ window._g45MjSel=i; var el=document.getElementById('ip-joueur'); if(el) el.innerHTML=_g45MjHtml();

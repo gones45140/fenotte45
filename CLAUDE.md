@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261016j, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261016k, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -163,6 +163,7 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   données inchangées (d / dC / dI) rangées dans window._g45MjD ; `_g45MjHtml` = en-tête photo (visuel TheSportsDB _g45JoueurVisLire sinon
   ESPN, aussi posé dans le rond de l'en-tête via _g45HeroPoser + u.logoUrl) + boutons par compétition `g45MjOnglet(i)` (_g45MjSel) + chance de
   marquer en grand + 4 cases + ligne penalty / minutes / conversion / titulaire + « 📋 Voir ses matchs » (g45ButToggleMatchs). Smoke (47).
+  20261016k (« l'expliquer simplement ») : pied de la fiche « Chance = 1 − e^−buts par match » → « Calcul : d'après ses buts par match (statistiques ESPN). »
   20261015t (« mettre des joueurs NHL dans mon mur », maquette validée « oui go ») — 🏒 JOUEUR NHL DU MUR : entrée « 👤 Joueur / Buteur »
   avec sport 🏒 → onglet « 🏒 Stats » (enveloppes de g45MurJoueurPanel / _g45MurJoueurUI, bloc en fin d'app.js) : `g45NhlJoueurPanel` →
   `_g45NhlJCharger` (club = note sinon nom via _g45RegEquipe ; club-stats/<ABR>/<saison>/2, joueur par nom de famille `_g45NhlJTrouver` ;
