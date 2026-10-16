@@ -75324,7 +75324,9 @@ window._g45NhlJTrouver = _g45NhlJTrouver; window._g45NhlJHtml = _g45NhlJHtml; wi
 window._G45_FOND_LOGO = { vancouvercanucks: 1, parissaintgermain: 1, psg: 1, parissg: 1, arsenal: 1, arsenalfc: 1, atleticomadrid: 1, atleticodemadrid: 1, clubatleticodemadrid: 1, atletico: 1,
   /* 20261017b (« la France j'aime mais bon Grizou ») : bannière avec Griezmann (retraité des Bleus) ; pas de logo connu pour « France » →
      adresse donnée ici : écusson ESPN de l'équipe de France (id 478, NON vérifié depuis le cloud). */
-  france: 'https://a.espncdn.com/i/teamlogos/soccer/500/478.png' };   /* 20261017a : Atlético (« l'atm ») */   /* 20261016y : PSG (« c'est moche ») ; 20261016z : Arsenal (« trouver l'intrus » : photo de joueurs au milieu des blasons) */
+  france: 'https://a.espncdn.com/i/teamlogos/soccer/500/478.png',
+  /* 20261017c : Stade Toulousain (« et on est bon ») */
+  stadetoulousain: 1, toulouse: 1 };   /* 20261017a : Atlético (« l'atm ») */   /* 20261016y : PSG (« c'est moche ») ; 20261016z : Arsenal (« trouver l'intrus » : photo de joueurs au milieu des blasons) */
 window._g45FondLogo = function (nom) {
   try { var k = (typeof _g45SgNorm === 'function') ? _g45SgNorm(nom) : String(nom || '').toLowerCase().replace(/[^a-z0-9]/g, ''); return !!window._G45_FOND_LOGO[k]; } catch (e) { return false; }
 };

@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261017b, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261017c, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -500,6 +500,8 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   20261017a (« l'atm ») : Atlético Madrid ajouté à _G45_FOND_LOGO (atleticomadrid / atleticodemadrid / clubatleticodemadrid / atletico).
   20261017b (« la France j'aime mais bon Grizou ») : _G45_FOND_LOGO accepte une ADRESSE en valeur (prioritaire) → france = écusson ESPN
   a.espncdn.com/i/teamlogos/soccer/500/478.png (id 478 NON vérifié : image vide = à corriger).
+  20261017c : Stade Toulousain ajouté (stadetoulousain / toulouse). Liste _G45_FOND_LOGO CLOSE pour l'instant (« on est bon », « la même base pour
+  tout le monde ») : elle vaut pour gones ET bet45, tous les comptes (dans app.js, pas sur l'appareil).
   20261016r — DIAGNOSTIC ?diag=1 (fin d'app.js) : compte 10 s les appels de render / g45DirectMesEquipes / _g45FanCompleter…, fetch par domaine,
   mutations, minuteries, erreurs JS → alerte résumée (pas d'alerte = boucle synchrone). Rien sans le paramètre.
   20261014u (capture : « c'est pas aligné ») : boîtes de largeur FIXE (logo 110 px ×2, VS/heure 110 px), texte flex 1 1 0 + un ressort 1 1 0 après les
