@@ -74892,8 +74892,9 @@ var _G45_BK_DOM = [
     var ini = function (n, px, fond) { var t = String(n || '?').split(/\s+/).map(function (w) { return w.charAt(0); }).join('').slice(0, 3).toUpperCase(); return '<span style="display:inline-flex;align-items:center;justify-content:center;width:' + px + 'px;height:' + px + 'px;border-radius:50%;background:' + (fond || '#34405e') + ';font-size:' + Math.round(px * .36) + 'px;font-weight:900;color:#fff;flex:none;">' + esc(t) + '</span>'; };
     var imgOu = function (u, n, px, rond) {
       if (!u) return ini(n, px);
-      return '<span style="display:inline-flex;align-items:center;justify-content:center;width:' + px + 'px;height:' + px + 'px;border-radius:' + (rond ? '50%' : '8px') + ';background:rgba(255,255,255,.92);flex:none;overflow:hidden;"><img src="' + esc(u) + '" alt="" style="width:' + (px - 6) + 'px;height:' + (px - 6) + 'px;object-fit:contain;" onerror="this.parentNode.outerHTML=\'' + ini(n, px).replace(/'/g, '&#39;').replace(/"/g, '&quot;') + '\'"></span>';
+      return '<span style="display:inline-flex;align-items:center;justify-content:center;width:' + px + 'px;height:' + px + 'px;border-radius:' + (rond ? '50%' : '8px') + ';background:' + (rond ? 'rgba(255,255,255,.92)' : '#5a6788') + ';flex:none;overflow:hidden;"><img src="' + esc(u) + '" alt="" style="width:' + (px - 6) + 'px;height:' + (px - 6) + 'px;object-fit:contain;" onerror="this.parentNode.outerHTML=\'' + ini(n, px).replace(/'/g, '&#39;').replace(/"/g, '&quot;') + '\'"></span>';
     };
+    /* 20261017j (capture : logo Ligue 1 BLANC invisible sur la pastille blanche) : pastille des championnats en gris moyen #5a6788 (logos blancs, noirs et colorés lisibles). */
     var lgLogo = function (sl, px) { return imgOu(lgUrl(sl), lgNom(sl), px, false); };
     var clubLogo = function (x, cote, px) {
       var u = cote === 'h' ? x.hl : x.al, n = cote === 'h' ? x.h : x.a;
