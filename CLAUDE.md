@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261017e, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261017f, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1840,6 +1840,17 @@ RÉGLÉ (worker, 01/10) : cron « exceededCpu » (cpuTimeMs 10) à CHAQUE passag
 - Après la trêve : ESPN écrit-il des « Preview » pour le foot ? (summary sans lang=fr,
   article.type).
 
+RGPD / CGU (20261017f, remarque du beau-frère d'Antoine, maquettes validées « oui go mets les 3 en ligne ») — fenotte45 SEULEMENT :
+  données = e-mail (+ pseudo) ; paris des comptes bet45 sauvegardés chez Supabase (user_state + user_state_backup), projet comptes
+  ofciz… = West EU (IRLANDE, vu par Antoine), projet Potes vbsdew… = même région (dit par Antoine). (1) mentions-legales.html : section
+  Données personnelles corrigée (sauvegarde en ligne, Irlande, notifications / IP chez Cloudflare, suppression du compte) + lien CGU ;
+  (2) cgu.html (nouvelle : 18 ans, pas d'opérateur, indicatif, responsabilité, compte, partage, service gratuit, jeu responsable), liens
+  dans login.html / accueil.html ; (3) auth-guard.js, bloc « Mon compte » : liens + bouton « 🗑️ Supprimer mon compte et mes données » →
+  window._g45SupprimerCompteOuvrir (fenêtre, écrire SUPPRIMER) → window._g45SupprimerCompte : rpc g45_supprimer_compte (BET45) d'abord ;
+  fonction absente → message « écris à contact@bet45.fr », RIEN effacé ; puis g45SocPartager('non') + rpc du projet Potes + données de
+  l'appareil + déconnexion. SQL à installer PAR ANTOINE dans les DEUX projets : fenotte45/supprimer-compte.sql (security definer,
+  auth.uid(), efface toute ligne public.* dont une colonne uuid = uid, 2 passes, puis auth.users). Testé vm 2/2 (avec / sans SQL).
+  ABONNEMENT plus tard : CGV, rétractation 14 j, SIRET dans les mentions, « gratuit » à réécrire, suppression = résiliation.
 BLOCAGE SFR (11/10, capture d'un ami d'Antoine) : « Navigation protégée » SFR (liste EfficientIP, depuis juin 2026) classe bet45.fr
   « malware » (vérif. red-by-sfr.fr/couverture-reseau/navigation-protegee.html) ; HTTPS → ERR_CERT_AUTHORITY_INVALID (page de blocage
   interceptée). Google Safe Browsing : aucun contenu suspect. Cause probable : telecharger/bet45.apk hébergé sur le site. Formulaire de

@@ -629,11 +629,15 @@ function _g45PoserBoutonSauvegardes() {
       + '<div style="font-size:12px;color:#e6ecf5;font-weight:700;word-break:break-all;margin-bottom:10px;">' + user.email + '</div>'
       + '<button id="g45-btn-snap" style="width:100%;margin-bottom:7px;padding:11px;border-radius:10px;border:1px solid rgba(77,132,255,.35);background:rgba(77,132,255,.12);color:#4d84ff;font-size:13px;font-weight:800;cursor:pointer;">💾 Mes sauvegardes</button>'
       + '<button id="g45-btn-imp" style="width:100%;margin-bottom:7px;padding:11px;border-radius:10px;border:1px solid rgba(240,176,32,.35);background:rgba(240,176,32,.10);color:#f0b020;font-size:13px;font-weight:800;cursor:pointer;">⬇️ Importer mes paris de GONES45</button>'
-      + '<button id="g45-btn-out" style="width:100%;padding:11px;border-radius:10px;border:1px solid rgba(255,107,107,.35);background:rgba(255,107,107,.10);color:#ff8a8a;font-size:13px;font-weight:800;cursor:pointer;">🚪 Se déconnecter</button>';
+      + '<button id="g45-btn-out" style="width:100%;padding:11px;border-radius:10px;border:1px solid rgba(255,107,107,.35);background:rgba(255,107,107,.10);color:#ff8a8a;font-size:13px;font-weight:800;cursor:pointer;">🚪 Se déconnecter</button>'
+      /* 17/10/2026 (RGPD, maquette validée « oui go mets les 3 en ligne ») : liens CGU / mentions + suppression du compte. */
+      + '<div style="margin-top:12px;font-size:13px;color:#c9d3ee;">📄 <a href="./cgu.html" style="color:#c9d3ee;">Conditions d\'utilisation</a> · <a href="./mentions-legales.html" style="color:#c9d3ee;">Mentions légales</a></div>'
+      + '<button id="g45-btn-suppr" style="width:100%;margin-top:10px;padding:11px;border-radius:10px;border:2px solid #ff4545;background:transparent;color:#ff6b6b;font-size:14px;font-weight:800;cursor:pointer;">🗑️ Supprimer mon compte et mes données</button>';
     hote.insertBefore(bloc, hote.firstChild);
 
     document.getElementById('g45-btn-snap').onclick = () => window._g45Sauvegardes();
     document.getElementById('g45-btn-imp').onclick = (e) => window._g45ImporterDeProd(e.target);
+    document.getElementById('g45-btn-suppr').onclick = () => window._g45SupprimerCompteOuvrir();
     document.getElementById('g45-btn-out').onclick = async (e) => {
       if (!confirm('Se déconnecter de ' + user.email + ' ?')) return;
       e.target.textContent = '⏳ Enregistrement…';
@@ -647,6 +651,71 @@ function _g45PoserBoutonSauvegardes() {
     hote.insertBefore(bloc, hote.firstChild);
   }
 }
+
+// ═══════════════════════════════════════════════════════════════
+// SUPPRESSION DU COMPTE (RGPD, 17/10/2026, maquette validée)
+// Fenêtre rouge : écrire SUPPRIMER. Puis : partage Potes coupé (g45SocPartager('non') efface bilan + paris
+// partagés), compte Potes effacé (rpc du projet Social), compte BET45 effacé (rpc g45_supprimer_compte,
+// fichier supprimer-compte.sql à installer UNE fois par Antoine dans chaque projet), données de l'appareil
+// effacées, retour à l'accueil. Fonction absente (SQL pas installé) → message, RIEN n'est effacé.
+// ═══════════════════════════════════════════════════════════════
+window._g45SupprimerCompteOuvrir = function () {
+  if (!user) return;
+  const old = document.getElementById('g45-suppr-modal'); if (old) old.remove();
+  const m = document.createElement('div');
+  m.id = 'g45-suppr-modal';
+  m.style.cssText = 'position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;padding:16px;';
+  m.innerHTML = '<div style="max-width:420px;width:100%;background:#161b30;border:2px solid #ff4545;border-radius:14px;padding:18px;color:#f3f5fa;font-family:inherit;">'
+    + '<div style="font-size:18px;font-weight:900;color:#ff6b6b;margin-bottom:10px;">⚠️ Supprimer définitivement ?</div>'
+    + '<p style="font-size:14px;color:#c9d3ee;margin:6px 0;">Seront effacés : ton compte, tes paris sauvegardés en ligne, tes sauvegardes, ton pseudo et ce que tu partages avec tes amis.</p>'
+    + '<p style="font-size:14px;color:#c9d3ee;margin:6px 0;"><b style="color:#fff;">Impossible à annuler.</b> Pense à « ⬇ Exporter » tes paris avant (Outils → Backup) si tu veux les garder.</p>'
+    + '<p style="font-size:14px;color:#c9d3ee;margin:10px 0 6px;">Écris <b style="color:#fff;">SUPPRIMER</b> pour confirmer :</p>'
+    + '<input id="g45-suppr-txt" autocomplete="off" style="width:100%;box-sizing:border-box;padding:10px;border-radius:8px;border:1px solid #445;background:#0a0e1a;color:#fff;font-size:15px;">'
+    + '<div id="g45-suppr-msg" style="font-size:13px;color:#ff8a8a;margin-top:8px;min-height:16px;"></div>'
+    + '<div style="display:flex;gap:10px;margin-top:8px;">'
+    + '<button id="g45-suppr-non" style="flex:1;padding:12px;border-radius:10px;border:0;background:#2a3150;color:#fff;font-size:15px;font-weight:800;cursor:pointer;">Annuler</button>'
+    + '<button id="g45-suppr-oui" disabled style="flex:1;padding:12px;border-radius:10px;border:0;background:#ff4545;color:#fff;font-size:15px;font-weight:800;opacity:.5;cursor:pointer;">Supprimer</button>'
+    + '</div></div>';
+  document.body.appendChild(m);
+  const txt = document.getElementById('g45-suppr-txt'), oui = document.getElementById('g45-suppr-oui'), msg = document.getElementById('g45-suppr-msg');
+  txt.oninput = () => { const ok = txt.value.trim().toUpperCase() === 'SUPPRIMER'; oui.disabled = !ok; oui.style.opacity = ok ? '1' : '.5'; };
+  document.getElementById('g45-suppr-non').onclick = () => m.remove();
+  oui.onclick = async () => {
+    if (oui.disabled) return;
+    oui.disabled = true; oui.textContent = '⏳ Suppression…'; msg.textContent = '';
+    try {
+      const r = await window._g45SupprimerCompte();
+      if (!r.ok) { msg.textContent = r.msg; oui.textContent = 'Supprimer'; oui.disabled = false; return; }
+      alert('Ton compte et tes données ont été supprimés. Merci d\'avoir utilisé BET45.');
+      window.location.href = './accueil.html';
+    } catch (e) {
+      msg.textContent = 'Erreur : ' + (e && e.message || e) + '. Rien n\'a été effacé ; écris à contact@bet45.fr.';
+      oui.textContent = 'Supprimer'; oui.disabled = false;
+    }
+  };
+};
+window._g45SupprimerCompte = async function () {
+  if (!user) return { ok: false, msg: 'Tu n\'es pas connecté.' };
+  // 1. Vérifier que la fonction existe AVANT de toucher à quoi que ce soit : appel « à blanc » impossible,
+  //    donc on teste la présence par une erreur caractéristique après coup ; on commence par BET45.
+  const { error } = await supabase.rpc('g45_supprimer_compte');
+  if (error) {
+    const absent = /could not find|does not exist|PGRST202|404/i.test((error.message || '') + ' ' + (error.code || ''));
+    return { ok: false, msg: absent
+      ? 'La suppression automatique n\'est pas encore activée. Écris à contact@bet45.fr : ton compte sera supprimé à la main.'
+      : 'Erreur : ' + error.message + '. Écris à contact@bet45.fr.' };
+  }
+  // 2. Potes (autre projet) : partage coupé puis compte Potes effacé — échec = sans gravité (données BET45 déjà effacées).
+  try { if (typeof window.g45SocPartager === 'function') await window.g45SocPartager('non'); } catch (e) {}
+  try { if (typeof sbClient === 'function' && typeof _sbUser !== 'undefined' && _sbUser) await sbClient().rpc('g45_supprimer_compte'); } catch (e) {}
+  // 3. Appareil : état BET45, satellites, sessions.
+  try { rawDel(CLE_ETAT_FEN); } catch (e) {}
+  try { CLES_SATELLITES.forEach(k => { try { rawDel(k); } catch (e) {} }); } catch (e) {}
+  try { rawDel(CLE_DERNIER_SNAP); } catch (e) {}
+  try { await deconnexion(); } catch (e) {}
+  try { Object.keys(localStorage).filter(k => k.indexOf('sb-') === 0 || k.indexOf('g45_soc') === 0).forEach(k => { try { localStorage.removeItem(k); } catch (e) {} }); } catch (e) {}
+  return { ok: true };
+};
 
 // ═══════════════════════════════════════════════════════════════
 // REPRISE DES DONNÉES DE LA PROD
@@ -690,7 +759,7 @@ window._g45ImporterEtat = (json) => { rawSet(CLE_ETAT_FEN, typeof json === 'stri
 msg('Démarrage de l\'application…');
 
 const s = document.createElement('script');
-s.src = './app.js?v=20261017e';
+s.src = './app.js?v=20261017f';
 
 s.onerror = () => {
   msg('❌ échec du chargement de app.js');
