@@ -26264,6 +26264,8 @@ async function loadCalendrier() {
     if(seen[k]) return false; seen[k]=1; return true;
   });
   allMatches.sort(function(a,b){ return new Date(a.date)-new Date(b.date); });
+  /* 20261018i (« liste sur 1 semaine, réactualisée 1× par jour, les matchs joués s'effacent ») : 7 jours à venir seulement. */
+  try { var _ag7 = Date.now() + 7 * 86400000; allMatches = allMatches.filter(function(m){ var t = Date.parse(m.date); return !(t > _ag7); }); } catch(e) {}
 
   /* 20261008f (capture AS Roma « 📌 🏠 victoire+under 3.5 » : « je l'ai joué à domicile et non à l'extérieur, donc AS Roma extérieur ne
      doit pas être dans l'agenda ») : équipe DU MUR (même recherche souple que le palier) dont la consigne 📌 ne cite QUE 🏠 → ses
@@ -26350,7 +26352,7 @@ async function loadCalendrier() {
       + 'font-size:14px;font-weight:800;border-radius:7px;padding:2px 9px;">🚀 Palier ' + p + ' · mise ' + miT + ' €</span></div>';
   };
   Object.keys(byDate).forEach(function(dateKey){
-    html += '<div><div style="display:inline-block;background:rgba(11,16,29,.85);color:#fff;font-size:14px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;border-radius:8px;padding:5px 12px;margin:14px 0 8px;">'+dateKey+'</div></div>';
+    html += '<div data-g45agj="1"><div style="display:inline-block;background:rgba(11,16,29,.85);color:#fff;font-size:14px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;border-radius:8px;padding:5px 12px;margin:14px 0 8px;">'+dateKey+'</div></div>';
     byDate[dateKey].forEach(function(m){
       var d = new Date(m.date);
       var time = d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
@@ -26371,7 +26373,7 @@ async function loadCalendrier() {
         + ((m.ourLogo && m.advLogo) ? '<span style="font-size:30px;color:#fff;font-weight:900;opacity:.55;">VS</span>' : '')
         + '<div class="g45ag-ht" style="font-size:20px;font-weight:900;color:#fff;background:rgba(11,16,29,.85);border-radius:8px;padding:3px 10px;">' + time + '</div></div>'
         + _agLg(m.advLogo) + '</div>' : '';
-      html += '<div style="position:relative;overflow:hidden;display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--s1);border-radius:10px;margin-bottom:7px;border-left:4px solid '+_S.c+';">';
+      html += '<div data-g45agt="'+(Date.parse(m.date)||0)+'" style="position:relative;overflow:hidden;display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--s1);border-radius:10px;margin-bottom:7px;border-left:4px solid '+_S.c+';">';
       if (m.joueur && m.joueur.ph) html += '<div style="position:relative;flex:none;width:52px;height:52px;"><img src="'+String(m.joueur.ph).replace(/"/g,'')+'" alt="" referrerpolicy="no-referrer" onerror="this.style.visibility=\'hidden\'" style="width:52px;height:52px;border-radius:50%;object-fit:cover;background:#33415c;border:2px solid '+_S.c+';box-sizing:border-box;"><div style="position:absolute;right:-4px;bottom:-4px;width:22px;height:22px;border-radius:50%;background:#0b101d;border:2px solid '+_S.c+';display:flex;align-items:center;justify-content:center;font-size:12px;">'+_S.e+'</div></div>';   /* 20261016h */
       else html += '<div style="position:relative;flex:none;width:44px;height:44px;border-radius:50%;background:rgba(11,16,29,.9);border:2px solid '+_S.c+';display:flex;align-items:center;justify-content:center;font-size:24px;">'+_S.e+'</div>';
       html += '<div style="position:relative;flex:'+(_agFil?'1 1 0':'1')+';min-width:0;">';
@@ -75963,40 +75965,94 @@ window._g45UfDecoupe = function (note) {
 })();
 
 
-/* ═══ 📅 AGENDA GARDÉ JUSQU'AU PROCHAIN MATCH (20261017s, capture « Chargement du calendrier… » : « laissez en cache jusqu'au début du
-   match, dès que je change de page ça refait une recherche ») ═══
-   window.loadCalendrier (bouton Agenda de la barre) : liste déjà affichée gardée telle quelle (cotes comprises) tant que
-   — aucun match listé n'a commencé (window._g45AgDates, posé par loadCalendrier) et 6 h au plus,
+/* ═══ 📅 AGENDA GARDÉ (20261017s « laissez en cache jusqu'au début du match » → 20261018i « même mieux : liste sur 1 semaine, réactualisée
+   1× par jour, et les matchs joués s'effacent ») ═══
+   window.loadCalendrier (bouton Agenda) : la liste (cotes comprises) est GARDÉE sur l'appareil (IndexedDB g45 / kv, clé 'ag1' :
+   {sig, j = jour local, t, html}) et réaffichée tout de suite, même après fermeture de l'appli, tant que
+   — c'est le MÊME JOUR (nouvelle lecture le lendemain à la 1re ouverture),
    — le mur, les paliers, le nombre de paris et les ⭐ suivies n'ont pas changé (signature).
-   « ↻ Actualiser » = vraie relecture. Une lecture déjà en cours n'est pas relancée. Mémoire de la session seulement. */
+   Cartes de match commencées depuis plus de 3 h (data-g45agt, posé par loadCalendrier) retirées à l'affichage et chaque minute ; jour
+   vidé = son titre retiré ; plus rien = vraie relecture. Liste limitée à 7 jours (loadCalendrier). « ↻ Actualiser » = vraie relecture.
+   Copie refaite 25 s après la lecture (cotes ESPN arrivées après coup). */
 (function () {
-  var C = null, enCours = null, orig = null;
+  var C = null, enCours = null, orig = null, CLE = 'ag1';
+  var jour = function () { var d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); };
   var sig = function () {
     try {
       return JSON.stringify([(state.u || []).map(function (u) { return [u.n, u.note, u.s, u.l, u.sport, u.type, u.club]; }), state.lc || null,
         (state.h || []).length, (state.a || []).length, (typeof g45SuivisGet === 'function' ? g45SuivisGet().map(function (m) { return m.id; }) : [])]);
     } catch (e) { return String(Math.random()); }
   };
+  var op = function (mode, val) {
+    return (typeof _g45BgIdb === 'function' ? _g45BgIdb() : Promise.reject()).then(function (db) {
+      return new Promise(function (ok, ko) {
+        var tx = db.transaction('kv', mode === 'get' ? 'readonly' : 'readwrite'), st = tx.objectStore('kv');
+        var rq = mode === 'get' ? st.get(CLE) : (mode === 'put' ? st.put(val, CLE) : st.delete(CLE));
+        rq.onsuccess = function () { ok(rq.result); }; rq.onerror = function () { ko(rq.error); };
+      });
+    }).catch(function () { return null; });
+  };
+  /* Retire les matchs joués ; renvoie le nombre de cartes restantes. */
+  var purger = function (el) {
+    el = el || document.getElementById('cal-content'); if (!el) return 0;
+    var lim = Date.now() - 3 * 3600e3, n = 0;
+    [].forEach.call(el.querySelectorAll('[data-g45agt]'), function (c) {
+      var t = +c.getAttribute('data-g45agt') || 0;
+      if (t && t < lim) { var nx = c.nextElementSibling; if (nx && /^calstat-/.test(nx.id || '')) nx.remove(); c.remove(); } else n++;
+    });
+    [].forEach.call(el.querySelectorAll('[data-g45agj]'), function (h) {
+      var x = h.nextElementSibling, vide = true;
+      while (x && !x.hasAttribute('data-g45agj')) { if (x.hasAttribute('data-g45agt')) { vide = false; break; } x = x.nextElementSibling; }
+      if (vide) h.remove();
+    });
+    return n;
+  };
+  window._g45AgPurger = purger;
+  window._g45AgSig = sig; window._g45AgOp = op; window._g45AgJour = jour;
+  var copier = function (s, t) {
+    var el = document.getElementById('cal-content');
+    if (!el || !C || C.t !== t) return;
+    var n0 = el.querySelectorAll('[data-g45agt]').length;
+    if (!n0 && !/Aucun match/.test(el.textContent || '')) return;   /* erreur / chargement : rien gardé */
+    C.n0 = n0; op('put', { sig: s, j: C.j, t: t, n0: n0, html: el.innerHTML });
+  };
+  var lire = function (s, el) {
+    var self = this, args = arguments;
+    window._g45AgDates = null;
+    enCours = Promise.resolve().then(function () { return orig.apply(self, []); }).then(function () {
+      var now = Date.now();
+      C = { sig: s, t: now, j: jour() };
+      if (el) el.setAttribute('data-g45agc', String(C.t));
+      var b = document.getElementById('btn-refresh-cal'); if (b) b.onclick = function () { C = null; op('del'); env(); };
+      copier(s, now); setTimeout(function () { copier(s, now); }, 25000);
+    }).catch(function () { C = null; }).then(function () { enCours = null; });
+    return enCours;
+  };
   var env = function () {
     var el = document.getElementById('cal-content'), s = sig();
     if (enCours) return enCours;
-    if (C && el && C.sig === s && Date.now() < C.exp && el.getAttribute('data-g45agc') === String(C.t)) return Promise.resolve();
-    window._g45AgDates = null;
-    var self = this, args = arguments;
-    enCours = Promise.resolve().then(function () { return orig.apply(self, args); }).then(function () {
-      var now = Date.now(), d = (window._g45AgDates || []).filter(function (t) { return t > now; }), exp = now + 6 * 3600e3;
-      if (d.length) exp = Math.min(exp, Math.min.apply(null, d));
-      C = { sig: s, t: now, exp: exp };
-      if (el) el.setAttribute('data-g45agc', String(C.t));
-      var b = document.getElementById('btn-refresh-cal'); if (b) b.onclick = function () { C = null; env(); };
-    }).catch(function () { C = null; }).then(function () { enCours = null; });
+    if (C && el && C.sig === s && C.j === jour() && el.getAttribute('data-g45agc') === String(C.t)) { if (purger(el) || C.n0 === 0) return Promise.resolve(); }
+    /* mémoire de l'appareil (après fermeture de l'appli) */
+    enCours = op('get').then(function (o) {
+      enCours = null;
+      if (el && o && o.html && o.sig === s && o.j === jour()) {
+        el.innerHTML = o.html;
+        if (purger(el) || o.n0 === 0) {
+          C = { sig: s, t: o.t, j: o.j, n0: o.n0 }; el.setAttribute('data-g45agc', String(C.t));
+          var b = document.getElementById('btn-refresh-cal'); if (b) b.onclick = function () { C = null; op('del'); env(); };
+          return;
+        }
+      }
+      return lire(s, el);
+    });
     return enCours;
   };
   env._g45Cache = true;
   /* window.loadCalendrier n'est exporté qu'à l'initialisation (fonction appelée après le chargement) → posé dès qu'il existe, et reposé s'il est remplacé */
   var poser = function () { var f = window.loadCalendrier; if (typeof f === 'function' && !f._g45Cache) { orig = f; window.loadCalendrier = env; } };
   poser(); setInterval(poser, 1000);
-  window._g45AgCacheVider = function () { C = null; };
+  setInterval(function () { var el = document.getElementById('cal-content'); if (el && el.offsetParent && el.querySelector('[data-g45agt]')) purger(el); }, 60000);
+  window._g45AgCacheVider = function () { C = null; op('del'); };
 })();
 
 
