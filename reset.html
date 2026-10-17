@@ -54,6 +54,14 @@
       <input type="password" id="pass1" placeholder="8 caractères minimum" autocomplete="new-password" required>
       <label>Confirmer</label>
       <input type="password" id="pass2" placeholder="Retape le même" autocomplete="new-password" required>
+      <!-- 20261018h : équipe préférée (compte neuf seulement, facultatif) — lue par app.js (g45_fav_attente) -->
+      <div id="fav" style="display:none;margin:4px 0 16px;">
+        <div style="font-size:15px;font-weight:800;margin-bottom:8px;">❤️ Ton équipe préférée <span style="font-size:12px;color:var(--t3);font-weight:400;">(facultatif)</span></div>
+        <div id="fav-sp" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;"></div>
+        <input type="text" id="fav-q" placeholder="🔍 Cherche ton club (ex. Lyon)" autocomplete="off" style="margin:0;">
+        <div id="fav-res" style="margin-top:4px;"></div>
+        <div id="fav-ok" style="display:none;margin-top:8px;background:rgba(46,204,113,.12);border:1px solid var(--g);border-radius:9px;padding:9px 10px;font-size:13px;"></div>
+      </div>
       <button id="btn">Enregistrer</button>
       <div class="msg" id="msg"></div>
     </div>
@@ -113,6 +121,53 @@
     loading.style.display = 'none';
     form.classList.add('visible');
 
+    /* 20261018h — ÉQUIPE PRÉFÉRÉE : seulement pour un compte créé il y a moins de 3 jours (pas pour un simple « mot de passe oublié »).
+       Recherche TheSportsDB via le worker (relais host=tsdb), sinon en direct. Le choix est gardé dans localStorage g45_fav_attente :
+       app.js l'applique au 1er démarrage (pas de doublon si le club est déjà au mur). */
+    try {
+      const cree = Date.parse((session.user && session.user.created_at) || '') || 0;
+      if (Date.now() - cree < 3 * 86400000) {
+        const SP = [['⚽', 'Soccer', 'Foot'], ['🏒', 'Ice Hockey', 'Hockey'], ['🏀', 'Basketball', 'Basket'], ['🏈', 'American Football', 'NFL'], ['🏉', 'Rugby', 'Rugby'], ['⚾', 'Baseball', 'Baseball']];
+        let sp = SP[0], minu = null, choix = null;
+        const zone = document.getElementById('fav'), spb = document.getElementById('fav-sp'), q = document.getElementById('fav-q'), res = document.getElementById('fav-res'), ok = document.getElementById('fav-ok');
+        const esc = t => String(t || '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+        const dessinerSp = () => {
+          spb.innerHTML = SP.map((x, i) => '<span data-i="' + i + '" style="cursor:pointer;border-radius:20px;padding:5px 10px;font-size:13px;border:1px solid '
+            + (x === sp ? 'var(--g);background:rgba(46,204,113,.18)' : '#5a6788') + ';">' + x[0] + ' ' + x[2] + '</span>').join('');
+          spb.querySelectorAll('[data-i]').forEach(e => e.onclick = () => { sp = SP[+e.dataset.i]; dessinerSp(); chercher(); });
+        };
+        const lire = async (t) => {
+          const chemin = '/api/v1/json/3/searchteams.php?t=' + encodeURIComponent(t);
+          try { const r = await fetch('https://fd-proxy.touraine-antoine.workers.dev?host=tsdb&path=' + encodeURIComponent(chemin)); if (r.ok) { const j = await r.json(); if (j && 'teams' in j) return j.teams || []; } } catch (e) {}
+          try { const r = await fetch('https://www.thesportsdb.com' + chemin); if (r.ok) { const j = await r.json(); return (j && j.teams) || []; } } catch (e) {}
+          return null;
+        };
+        const chercher = () => {
+          clearTimeout(minu);
+          const t = q.value.trim(); if (t.length < 3) { res.innerHTML = ''; return; }
+          minu = setTimeout(async () => {
+            res.innerHTML = '<div style="font-size:13px;color:var(--t3);padding:6px;">⏳ Recherche…</div>';
+            const L = await lire(t);
+            if (L === null) { res.innerHTML = '<div style="font-size:13px;color:var(--r);padding:6px;">Recherche indisponible : tu pourras l\'ajouter dans l\'appli.</div>'; return; }
+            const F = L.filter(x => x.strSport === sp[1]).slice(0, 6);
+            if (!F.length) { res.innerHTML = '<div style="font-size:13px;color:var(--t3);padding:6px;">Aucun club trouvé.</div>'; return; }
+            res.innerHTML = F.map((x, i) => '<div data-i="' + i + '" style="display:flex;align-items:center;gap:10px;padding:9px 10px;cursor:pointer;background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:9px;margin-top:4px;">'
+              + (x.strBadge ? '<img src="' + esc(x.strBadge) + '/tiny" onerror="this.src=\'' + esc(x.strBadge) + '\'" style="width:28px;height:28px;object-fit:contain;">' : '')
+              + '<span style="font-size:14px;font-weight:700;">' + esc(x.strTeam) + '</span><span style="font-size:12px;color:var(--t3);">' + esc(x.strLeague || '') + '</span></div>').join('');
+            res.querySelectorAll('[data-i]').forEach(e => e.onclick = () => {
+              const x = F[+e.dataset.i];
+              choix = { n: x.strTeam, sport: sp[0], logo: x.strBadge || '', col: x.strColour1 || '' };
+              res.innerHTML = ''; q.value = x.strTeam;
+              ok.style.display = 'block'; ok.innerHTML = '✅ <b>' + esc(x.strTeam) + '</b> : en 1er sur ton mur avec ❤️ (pas ajouté deux fois s\'il y est déjà)';
+            });
+          }, 600);
+        };
+        q.addEventListener('input', () => { choix = null; ok.style.display = 'none'; chercher(); });
+        dessinerSp(); zone.style.display = 'block';
+        window._g45FavChoix = () => choix;
+      }
+    } catch (e) {}
+
     const btn = document.getElementById('btn');
     const pass1 = document.getElementById('pass1');
     const pass2 = document.getElementById('pass2');
@@ -133,6 +188,7 @@
         btn.disabled = false; btn.textContent = 'Enregistrer';
       } else {
         msg.className = 'msg ok';
+        try { const c = window._g45FavChoix && window._g45FavChoix(); if (c) localStorage.setItem('g45_fav_attente', JSON.stringify(c)); } catch (e) {}
         msg.textContent = '✅ Mot de passe enregistré. Redirection…';
         setTimeout(() => { window.location.href = './indexfenotte.html' /* 11/10/2026 : index.html sans ?code= renvoie sur la vitrine accueil.html → l'ami connecté croyait devoir se reconnecter */; }, 1200);
       }

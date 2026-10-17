@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261018g, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261018h, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -480,6 +480,12 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   20261018g (« une belle page en attendant ? » → « pense à soutenir le projet… sinon carte grise », maquette validée, « Laisser pourboire ») :
   loadCalendrier pose window._g45AgAttenteHtml() pendant la lecture (bloc en fin d'app.js) : bet45 sans window._g45Soutien → carte ☕ « Pense à soutenir
   BET45 » + « ☕ Laisser un pourboire » (paypal.me, sans contrepartie) ; soutien / gones → 3 cartes grises qui brillent (.g45ag-gris). Smoke (agAtt, 59).
+  20261018h — ❤️ ÉQUIPE PRÉFÉRÉE (idée d'Antoine, maquettes validées « tu peux coder », « attention à ne pas faire de doublon ») : fenotte45/reset.html,
+  compte créé < 3 jours : sport + recherche TheSportsDB (worker host=tsdb puis direct) → localStorage g45_fav_attente {n, sport, logo, col} ; app.js (bloc en
+  fin, après le mur de départ) `_g45FavAppliquer(st, F, plein)` : club déjà au mur (`_g45FavMeme` : nom, _G45_TSDB_ALIAS, inclus ≥ 5 lettres) → passe en 1er,
+  sinon ajouté en 1er si mur pas plein (sinon alerte) ; state.fav. ❤️ sur la carte du mur (.g45-fav-c) ; bouton 🤍/❤️ par équipe dans Outils → Équipes
+  (`g45FavChoisir(i)`, comptes existants : Cédric = Portugal à toucher lui-même). Page d'attente de l'Agenda (soutien / gones) : `_g45FavLogo` = logo
+  qui respire + anneau aux couleurs (g45CouleursDe) qui tourne. Smoke (fav, 60). reset.html : rendu réel NON vérifié (session Supabase).
   20261016i (Santé : TheSportsDB « trop lent (12 s) » depuis 4 h ; console d'Antoine : searchteams « Club / Athletic / CD / FC Connor McDavid » en
   522 / CORS ; Arsenal = 200 en 19 s → serveur TheSportsDB surchargé) : `_g45FanChercher` (fond de carte) et `_g45BgChercher` (fond de fiche) ne
   cherchent plus d'ÉQUIPE pour une carte JOUEUR du mur (8 variantes par joueur) ; la recherche de JOUEUR (searchplayers, 1 requête) reste. Smoke (52).

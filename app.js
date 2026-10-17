@@ -76182,6 +76182,113 @@ window._g45AgJouUs = async function (nowTs) {
         + '<a href="https://paypal.me/touraineantoine" target="_blank" rel="noopener" data-g45-direct="1" style="display:inline-block;margin-top:14px;background:#f0c828;color:#111;font-size:16px;font-weight:800;border-radius:12px;padding:12px 20px;text-decoration:none;">☕ Laisser un pourboire</a>'
         + '<div style="font-size:13px;color:#aab6d6;margin-top:10px;">Sans obligation · l\'appli reste gratuite</div></div>';
     }
+    /* 20261018h : équipe préférée connue → son logo « respire » au centre, anneau à ses couleurs qui tourne (au lieu des cartes grises). */
+    try { var lf = window._g45FavLogo && window._g45FavLogo(); if (lf) return h + lf; } catch (e) {}
     return h + gris();
   };
+})();
+
+
+/* ═══ ❤️ ÉQUIPE PRÉFÉRÉE (20261018h, idée d'Antoine « lors de la création de compte demander l'équipe préférée » + « quand ça cherche, le logo
+   du club animé », « attention à ne pas faire de doublon », maquettes validées « tu peux coder ») ═══
+   · reset.html (fenotte45, page « choisis ton mot de passe », compte créé depuis < 3 jours) : sport + recherche TheSportsDB → localStorage
+     g45_fav_attente {n, sport, logo, col}. Ici, au démarrage (après le mur de départ 20261015a) : club DÉJÀ au mur (même nom, alias
+     _G45_TSDB_ALIAS ou nom contenu ≥ 5 lettres) → pas de doublon, il passe en 1er ; sinon ajouté en 1er si le mur n'est pas plein
+     (bet45 : 15) ; state.fav = son nom.
+   · Comptes existants (Cédric : Portugal) : bouton ❤️ sur chaque équipe d'Outils → Équipes (re-toucher = enlever).
+   · Carte du mur : ❤️ en haut à gauche. Page d'attente de l'Agenda (soutien / gones) : _g45FavLogo. */
+(function () {
+  var norm = function (t) { try { return _g45SgNorm(t || ''); } catch (e) { return String(t || '').toLowerCase().normalize('NFD').replace(/[^a-z0-9]/g, ''); } };
+  var alias = function (k) { var a = (typeof _G45_TSDB_ALIAS !== 'undefined' && _G45_TSDB_ALIAS[k]) || []; return (Array.isArray(a) ? a : [a]).map(norm); };
+  var meme = function (a, b) {
+    var x = norm(a), y = norm(b); if (!x || !y) return false;
+    if (x === y || alias(x).indexOf(y) >= 0 || alias(y).indexOf(x) >= 0) return true;
+    var c = x.length <= y.length ? x : y, l = c === x ? y : x;
+    return c.length >= 5 && l.indexOf(c) >= 0;
+  };
+  window._g45FavMeme = meme;
+  window._g45FavU = function () {
+    var f = window.state && state.fav; if (!f) return null;
+    return (state.u || []).filter(function (u) { return u && u.n === f; })[0] || null;
+  };
+  /* Pur (testé) : applique un choix {n, sport, logo, col} à st ; renvoie 'deja' | 'ajout' | 'plein'. */
+  window._g45FavAppliquer = function (st, F, plein) {
+    var U = st.u || (st.u = []), i = -1;
+    U.forEach(function (u, j) { if (i < 0 && u && meme(u.n, F.n)) i = j; });
+    if (i >= 0) { var u = U.splice(i, 1)[0]; U.unshift(u); st.fav = u.n; return 'deja'; }
+    if (plein) return 'plein';
+    U.unshift({ n: F.n, abbr: String(F.n).replace(/[^A-Za-z]/g, '').slice(0, 3).toUpperCase(), color: F.col || '#4d84ff', s: '3', l: 1,
+      sport: F.sport || '⚽', logoUrl: F.logo || '', link: '', link2: '', note: '', type: 'club' });
+    st.fav = F.n; return 'ajout';
+  };
+  window._g45FavLogo = function () {
+    var u = window._g45FavU(); if (!u) return '';
+    var url = '';
+    try { if (window._g45FondLogo && window._g45FondLogo(u.n)) { var v = window._G45_FOND_LOGO[norm(u.n)]; if (typeof v === 'string') url = v; } } catch (e) {}
+    try { url = url || (typeof g45LogoUrlDe === 'function' ? g45LogoUrlDe(u.n) : '') || u.logoUrl || ''; } catch (e) { url = u.logoUrl || ''; }
+    if (!url) return '';
+    var c = ['#4d84ff', '#ffffff']; try { c = g45CouleursDe(u.n) || c; } catch (e) {}
+    return '<div style="text-align:center;padding:26px 0 14px;"><div style="position:relative;width:150px;height:150px;margin:0 auto;">'
+      + '<div style="position:absolute;inset:-12px;border-radius:50%;box-shadow:0 0 40px 8px ' + c[0] + '66;"></div>'
+      + '<div class="g45fav-anneau" style="position:absolute;inset:0;border-radius:50%;border:5px solid rgba(255,255,255,.12);border-top-color:' + c[0] + ';border-right-color:' + c[1] + ';"></div>'
+      + '<div class="g45fav-respire" style="position:absolute;inset:18px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;">'
+      + '<img src="' + url + '" alt="" onerror="this.style.display=\'none\'" style="width:78%;height:78%;object-fit:contain;"></div></div>'
+      + '<div style="font-size:14px;color:#c9d3ee;margin-top:16px;">❤️ ' + String(u.n).replace(/</g, '&lt;') + '</div></div>';
+  };
+  if (!document.getElementById('g45-fav-css')) {
+    var st = document.createElement('style'); st.id = 'g45-fav-css';
+    st.textContent = '@keyframes g45FavTourne{to{transform:rotate(360deg)}}@keyframes g45FavRespire{0%,100%{transform:scale(.92)}50%{transform:scale(1.04)}}'
+      + '.g45fav-anneau{animation:g45FavTourne 1.6s linear infinite}.g45fav-respire{animation:g45FavRespire 1.8s ease-in-out infinite}'
+      + '.g45-fav-c{position:absolute;top:6px;left:6px;z-index:3;font-size:18px;line-height:1;background:rgba(11,16,29,.75);border-radius:50%;padding:4px;pointer-events:none}'
+      + '.g45-fav-b{background:rgba(11,16,29,.8);border:1px solid #5a6788;border-radius:8px;font-size:16px;padding:2px 8px;cursor:pointer;color:#fff}'
+      + '.g45-fav-b.on{border-color:#ff4d6d;background:rgba(255,77,109,.2)}';
+    (document.head || document.documentElement).appendChild(st);
+  }
+  /* Choix fait à la création du compte (reset.html) */
+  try {
+    var att = localStorage.getItem('g45_fav_attente');
+    if (att && window.state && state.u) {
+      var F = JSON.parse(att);
+      if (F && F.n) {
+        var R = window._g45FavAppliquer(state, F, typeof _g45MurPlein === 'function' && _g45MurPlein());
+        if (R === 'plein') setTimeout(function () { try { alert('🧱 Ton mur est plein : enlève une équipe dans Outils → Équipes pour ajouter ' + F.n + '.'); } catch (e) {} }, 3000);
+        else { if (typeof save === 'function') save(); setTimeout(function () { try { render(); } catch (e) {} }, 0); }
+      }
+      localStorage.removeItem('g45_fav_attente');
+    }
+  } catch (e) {}
+  /* ❤️ sur la carte du mur + bouton ❤️ dans Outils → Équipes */
+  var poser = function () {
+    var f = window.state && state.fav;
+    [].forEach.call(document.querySelectorAll('.g45-murcard'), function (c) {
+      var on = !!f && c.getAttribute('data-nom') === f, b = c.querySelector(':scope > .g45-fav-c');
+      if (on && !b) { if (getComputedStyle(c).position === 'static') c.style.position = 'relative'; b = document.createElement('span'); b.className = 'g45-fav-c'; b.textContent = '❤️'; c.appendChild(b); }
+      if (!on && b) b.remove();
+    });
+    var ul = document.getElementById('ulist');
+    if (ul) [].forEach.call(ul.querySelectorAll('.urow'), function (row) {
+      var e = row.querySelector('button.ba[data-idx]'); if (!e) return;
+      var u = state.u[+e.getAttribute('data-idx')]; if (!u) return;
+      var b = row.querySelector('.g45-fav-b');
+      if (!b) { b = document.createElement('button'); b.className = 'g45-fav-b'; b.title = 'Mon équipe préférée'; e.parentNode.insertBefore(b, e);
+        b.onclick = function (ev) { ev.stopPropagation(); window.g45FavChoisir(+this.getAttribute('data-i')); }; }
+      b.setAttribute('data-i', e.getAttribute('data-idx'));
+      var on = !!f && u.n === f; b.textContent = on ? '❤️' : '🤍'; b.classList.toggle('on', on);
+    });
+  };
+  window.g45FavChoisir = function (i) {
+    var u = state.u[i]; if (!u) return;
+    if (state.fav === u.n) delete state.fav;
+    else { state.u.splice(i, 1); state.u.unshift(u); state.fav = u.n; }
+    if (typeof save === 'function') save();
+    try { render(); } catch (e) {}
+    setTimeout(poser, 50);
+  };
+  var r0 = window.render;
+  if (typeof r0 === 'function' && !r0._g45Fav) {
+    window.render = function () { var x = r0.apply(this, arguments); try { poser(); } catch (e) {} setTimeout(poser, 300); return x; };
+    window.render._g45Fav = 1;
+    try { render = window.render; } catch (e) {}
+  }
+  setTimeout(poser, 500);
 })();
