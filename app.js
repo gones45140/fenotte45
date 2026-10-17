@@ -26232,6 +26232,21 @@ async function loadCalendrier() {
       await Promise.all(Object.keys(parClub).map(async function (abr) {
         var C = parClub[abr], cal = null;
         try { var r = await fetch(FD_PROXY + '?key=nhl&host=nhl&path=' + encodeURIComponent('/v1/club-schedule-season/' + abr + '/now')); if (r.ok) cal = await r.json(); } catch (e) {}
+        /* 20261018x (capture : Kucherov / Celebrini / Pastrnak sans photo) : photo connue seulement après ouverture de la fiche 🏒 Stats
+           (u.logoUrl) → sinon headshot de l'effectif club-stats (même cache 6 h que la fiche, g45nhlj1_eq_), gardé dans u.logoUrl. */
+        try {
+          if (C.J.some(function (u) { return !/nhle\.com/.test(String(u.logoUrl || '')); }) && typeof _g45NhlJGet === 'function') {
+            var _s = _g45NhlJSaison(), _ck = 'g45nhlj1_eq_' + abr + '_' + _s, E = await _g45NhlJGet('/v1/club-stats/' + abr + '/' + _s + '/2', _ck, 6 * 3600e3);
+            if (E && E._brut) { E = { sk: E._brut.skaters || [], gk: E._brut.goalies || [] }; _g45NhlJGarder(_ck, E); }
+            var _maj = false;
+            C.J.forEach(function (u) {
+              if (/nhle\.com/.test(String(u.logoUrl || ''))) return;
+              var p = _g45NhlJTrouver(E && E.sk, u.n) || _g45NhlJTrouver(E && E.gk, u.n);
+              if (p && /nhle\.com/.test(String(p.headshot || ''))) { u.logoUrl = p.headshot; _maj = true; }
+            });
+            if (_maj && typeof save === 'function') save();
+          }
+        } catch (e) {}
         (cal && cal.games || []).forEach(function (g) {
           var t = Date.parse(g.startTimeUTC); if (!(t >= nowTs) || t > nowTs + 14 * 86400000) return;
           if (+g.gameType === 1 || /^(FINAL|OFF)$/.test(g.gameState || '')) return;
@@ -76177,7 +76192,7 @@ window._g45UfDecoupe = function (note) {
   var sig = function () {
     try {
       return JSON.stringify([(state.u || []).map(function (u) { return [u.n, u.note, u.s, u.l, u.sport, u.type, u.club]; }), state.lc || null,
-        (state.h || []).length, (state.a || []).length, (typeof g45SuivisGet === 'function' ? g45SuivisGet().map(function (m) { return m.id; }) : [])]);
+        (state.h || []).length, (state.a || []).length, (typeof g45SuivisGet === 'function' ? g45SuivisGet().map(function (m) { return m.id; }) : []), 'x' /* 20261018x : liste refaite une fois (photos NHL) */]);
     } catch (e) { return String(Math.random()); }
   };
   var op = function (mode, val) {
