@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261018q, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261018r, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -104,6 +104,8 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   CONFIRMÉ par Antoine (capture 07/10, Oilers / McDavid : 7 matchs absents fin mars-avril grisés, compteur 4/34).
   filtre joueur NBA avec ligne : `_g45NbaPFBarre` / `_g45NbaPFCoul` / `_g45NbaPFLigne`.
 - Moteur des curseurs de marchés : `_g45MarcheEval`.
+  20261018r (« il manque une sélection Écart ») : carte des curseurs foot « Handicap · écart de buts », chaque ligne expliquée (−1,5 = gagne de 2 buts ou +,
+  +1,5 = perd de 1 but max, 0 = nul remboursé). Calcul inchangé (clés H / X).
 - Onglet Compo : `loadTeamCompo` (DEUX copies) ; sports US → `_g45CompoEffectif` ;
   NBA → `_g45NbaTableau` (vues Saison / 10 / 5 / Match).
 - Fenêtre de match : `_renderGenericDetail` ; stats d'équipe US `_g45UsTeamStats`

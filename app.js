@@ -24037,14 +24037,20 @@ function _g45CursHtml(matchs, estNous, fgDe, nomEq) {
       + curseur('eq', LE, ie, function (v) { return v.toFixed(1).replace('.', ','); })) + '</div>';
 
   /* 3. Handicap */
+  /* 20261018r (« il manque une sélection Écart », Bayern trop bas en cote) : le handicap EST l'écart → titre « Handicap · écart de buts » et
+     phrase claire à côté de chaque ligne (−1,5 = gagne de 2 buts ou +, +1,5 = perd de 1 but max). */
+  var ecart = function (l) {
+    if (l === 0) return ' · nul remboursé';
+    if (l < 0) { var n = Math.ceil(-l); return ' · gagne de ' + n + ' but' + (n > 1 ? 's' : '') + ' ou +'; }
+    var k = Math.floor(l); return ' · perd de ' + k + ' but' + (k > 1 ? 's' : '') + ' max';
+  };
   var LH = _G45_CURS_L.hand, ih = e.hand.i;
   var valsH = pack(LH, function (l) { var a = fmt(compte(pre + 'H' + _g45Ligne(l))), b = fmt(compte(pre + 'X' + _g45Ligne(-l)));
-    var nr = (l === 0) ? ' · nul remboursé' : '';
-    return { la: nomC + ' ' + _g45LigneFr(l) + nr, va: a.v, pa: a.p, lb: 'Adversaire ' + _g45LigneFr(-l) + nr, vb: b.v, pb: b.p }; });
+    return { la: nomC + ' ' + _g45LigneFr(l) + ecart(l), va: a.v, pa: a.p, lb: 'Adversaire ' + _g45LigneFr(-l) + ecart(-l), vb: b.v, pb: b.p }; });
   var rhA = fmt(compte(pre + 'H' + _g45Ligne(LH[ih]))), rhB = fmt(compte(pre + 'X' + _g45Ligne(-LH[ih])));
-  h += '<div data-vals="' + valsH + '" id="g45c-hand">' + carteHc('hand', 'Handicap', HT ? '1re mi-temps' : '',
-      '<div style="display:flex;gap:8px;">' + boite('hand', 'A', nomC + ' ' + _g45LigneFr(LH[ih]) + (LH[ih] === 0 ? ' · nul remboursé' : ''), rhA, '#f472b6', e.hand.on && e.hand.s === 'A')
-      + boite('hand', 'B', 'Adversaire ' + _g45LigneFr(-LH[ih]) + (LH[ih] === 0 ? ' · nul remboursé' : ''), rhB, '#9fe7f5', e.hand.on && e.hand.s === 'B') + '</div>'
+  h += '<div data-vals="' + valsH + '" id="g45c-hand">' + carteHc('hand', 'Handicap · écart de buts', HT ? '1re mi-temps' : '',
+      '<div style="display:flex;gap:8px;">' + boite('hand', 'A', nomC + ' ' + _g45LigneFr(LH[ih]) + ecart(LH[ih]), rhA, '#f472b6', e.hand.on && e.hand.s === 'A')
+      + boite('hand', 'B', 'Adversaire ' + _g45LigneFr(-LH[ih]) + ecart(-LH[ih]), rhB, '#9fe7f5', e.hand.on && e.hand.s === 'B') + '</div>'
       + curseur('hand', LH, ih, _g45LigneFr)) + '</div>';
 
   /* 4. Premier but (pas de version mi-temps : c'est le premier but du match) */
