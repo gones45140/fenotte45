@@ -26104,13 +26104,30 @@ async function loadCalendrier() {
   var allMatches = [];
   try {
     var _grpSui = {};
-    (typeof g45SuiviEqGet === 'function' ? g45SuiviEqGet() : []).forEach(function(t){
+    /* 20261019c (capture : Kucherov dans l'Agenda mais pas la carte « Vancouver Canucks » du mur, consigne « Contre ✈️ Défaite ») : hors foot,
+       seules les équipes ⭐ suivies étaient lues → les ÉQUIPES du mur 🏒 / 🏀 / 🏈 / ⚾ (pas joueur, pas compétition) sont ajoutées, retrouvées
+       par nom dans la ligue (_g45CompetEquipes, comme les joueurs NFL / NBA) ; nom gardé = celui du mur (palier, consigne 📌, lieu). */
+    var _murUs = [];
+    try {
+      var _nzM = function (x) { return String(x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim(); };
+      var _LGM = { '🏒': { sp: 'hockey', lg: 'nhl' }, '🏀': { sp: 'basketball', lg: 'nba' }, '🏈': { sp: 'football', lg: 'nfl' }, '⚾': { sp: 'baseball', lg: 'mlb' } };
+      var _UM = (state.u || []).filter(function (u) { return u && u.type !== 'joueur' && u.type !== 'competition' && _LGM[String(u.sport || '')]; });
+      for (var _mi = 0; _mi < _UM.length; _mi++) {
+        var _um = _UM[_mi], _L = _LGM[_um.sport], _cl = _nzM(_um.n), _eqs = [];
+        try { _eqs = await _g45CompetEquipes({ sp: _L.sp, s: _L.lg }) || []; } catch (e) {}
+        var _tm = _eqs.filter(function (t) { return _nzM(t.nom) === _cl || _nzM(t.court) === _cl; })[0]
+          || _eqs.filter(function (t) { var n = _nzM(t.nom), w = n.split(' ').pop(); return (_cl.length >= 5 && n.indexOf(_cl) >= 0) || (w.length >= 4 && (' ' + _cl + ' ').indexOf(' ' + w + ' ') >= 0); })[0];
+        if (_tm && _tm.id) _murUs.push({ sport: _L.sp, league: _L.lg, id: _tm.id, nom: _um.n });
+      }
+    } catch (e) {}
+    (typeof g45SuiviEqGet === 'function' ? g45SuiviEqGet() : []).concat(_murUs).forEach(function(t){
       var sp = t.sport || 'soccer';
       if (sp === 'soccer') return;                 /* deja traite plus haut */
       var k = sp + '|' + t.league;
       (_grpSui[k] = _grpSui[k] || { sp: sp, lg: t.league, ids: {}, noms: {} });
+      if (_grpSui[k].ids[String(t.id)] && _murUs.indexOf(t) < 0) return;
       _grpSui[k].ids[String(t.id)] = 1;
-      _grpSui[k].noms[String(t.id)] = t.nom;
+      if (!_grpSui[k].noms[String(t.id)] || _murUs.indexOf(t) >= 0) _grpSui[k].noms[String(t.id)] = t.nom;   /* 20261019c : nom du mur prioritaire */
     });
 
     var _fmtJ = function(d){ return d.getFullYear() + String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0'); };
@@ -76216,7 +76233,7 @@ window._g45UfDecoupe = function (note) {
   var sig = function () {
     try {
       return JSON.stringify([(state.u || []).map(function (u) { return [u.n, u.note, u.s, u.l, u.sport, u.type, u.club]; }), state.lc || null,
-        (state.h || []).length, (state.a || []).length, (typeof g45SuivisGet === 'function' ? g45SuivisGet().map(function (m) { return m.id; }) : []), 'x' /* 20261018x : liste refaite une fois (photos NHL) */]);
+        (state.h || []).length, (state.a || []).length, (typeof g45SuivisGet === 'function' ? g45SuivisGet().map(function (m) { return m.id; }) : []), 'xc' /* 20261019c + 20261018x : liste refaite une fois (photos NHL) */]);
     } catch (e) { return String(Math.random()); }
   };
   var op = function (mode, val) {
