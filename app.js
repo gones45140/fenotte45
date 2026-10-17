@@ -76643,3 +76643,17 @@ window._g45AgJouUs = async function (nowTs) {
     try { g45MqSport = window.g45MqSport; } catch (e) {}
   }
 })();
+
+/* 20261018w (captures téléphone en PAYSAGE, Agenda : texte de la carte écrasé en une colonne de 2-3 lettres) : les logos « VS » (2 × 110 px +
+   110 px) ne sont cachés que sous 600 px de LARGEUR ; un téléphone couché fait ≈ 915 px moins la colonne de 80 px → plus de place pour le texte.
+   Téléphone en paysage (même media que style.css « MODE PAYSAGE SUR TÉLÉPHONE ») = rendu portrait : logos cachés, heure à droite.
+   Feuille posée dans <head> pour valoir aussi sur la liste gardée sur l'appareil (IndexedDB 'ag1'). */
+(function () {
+  try {
+    if (document.getElementById('g45-ag-pays')) return;
+    var st = document.createElement('style'); st.id = 'g45-ag-pays';
+    st.textContent = '@media (orientation:landscape) and (max-height:520px) and (max-width:1099px){'
+      + '#cal-content .g45ag-vs{display:none!important}#cal-content .g45ag-hr{display:block!important}#cal-content .g45ag-col{width:auto!important}}';
+    (document.head || document.documentElement).appendChild(st);
+  } catch (e) {}
+})();

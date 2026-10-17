@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261018v, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261018w, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -451,6 +451,8 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   20261014q (« à droite on laisse l'horaire ? », maquette « oui ») : heure SOUS le « VS » (blanc 20 px, bande sombre, .g45ag-ht) ; heure de droite
   cachée (.g45ag-hr) ; logos DANS la ligne (ressorts flex 1 1 0 de part et d'autre, texte flex 0 1 auto) au lieu de position absolue (passait sous la
   consigne à 1100 px) ; téléphone < 600 px : logos cachés, heure à droite.
+  20261018w (captures paysage : texte de la carte en colonne de 2 lettres) : feuille #g45-ag-pays (fin d'app.js, dans <head>) — téléphone en PAYSAGE
+  (landscape, hauteur ≤ 520, largeur ≤ 1099) = rendu portrait (logos cachés, heure à droite).
   20261016h (« dans agenda faudrait rajouter les joueurs ? », maquette validée « oui go ») : `_agJou()` dans loadCalendrier — cartes JOUEUR 🏒 du mur
   (u.type 'joueur') → club _g45RegEquipe(note | nom) → club-schedule-season/<ABR>/now (worker host=nhl), 14 j, gameType 1 écarté ; m.joueur {nom, ph = u.logoUrl
   nhle, club} : rond = photo + 🏒, titre = joueur, ligne « club vs / @ adversaire » (placeName + commonName NON sondés, sinon ville + surnom _G45_REG_EQ),
