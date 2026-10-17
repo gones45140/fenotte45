@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261018u, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261018v, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -472,7 +472,7 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   lecture en cours non relancée ; mémoire de session. Smoke (agCache, 57).
   20261018i (« même mieux : liste sur 1 semaine, réactualisée 1× par jour, les matchs joués s'effacent ») : bloc 17s REFAIT — liste gardée sur l'appareil
   (IndexedDB g45/kv clé 'ag1' {sig, j, t, n0, html}, copie refaite 25 s après pour les cotes) tant que même JOUR + même signature ; cartes data-g45agt
-  (début du match) retirées 3 h après le coup d'envoi (window._g45AgPurger, chaque minute), titre de jour data-g45agj vidé retiré ; loadCalendrier limité à 7 jours.
+  (début du match) retirées à la FIN du match (20261018v : data-g45agd = durée par sport, foot 2 h 10, NHL 3 h, NBA 2 h 50, NFL / MLB 3 h 35, rugby 2 h 20 ; avant 3 h pour tous) (window._g45AgPurger, chaque minute), titre de jour data-g45agj vidé retiré ; loadCalendrier limité à 7 jours.
   20261017t (« l'agenda fait combien de matchs ? » → « oui ») : loadCalendrier lit 15 clubs de foot du mur (avant 8) et 20 avec les ⭐ suivies (avant 14).
   20261017u (« j'ai 35 équipes perso ») : plus AUCUN plafond (tous les clubs de foot du mur + ⭐ suivies), lus 6 à la fois (_agFootP, 20 s max chacun).
   20261017v (« joueur compris ») : carte JOUEUR ⚽ du mur → calendrier de son CLUB (_g45UClub ; pas de club = ignorée, avant son NOM était cherché

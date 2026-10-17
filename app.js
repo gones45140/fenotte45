@@ -26379,7 +26379,10 @@ async function loadCalendrier() {
         + ((m.ourLogo && m.advLogo) ? '<span style="font-size:30px;color:#fff;font-weight:900;opacity:.55;">VS</span>' : '')
         + '<div class="g45ag-ht" style="font-size:20px;font-weight:900;color:#fff;background:rgba(11,16,29,.85);border-radius:8px;padding:3px 10px;">' + time + '</div></div>'
         + _agLg(m.advLogo) + '</div>' : '';
-      html += '<div data-g45agt="'+(Date.parse(m.date)||0)+'" style="position:relative;overflow:hidden;display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--s1);border-radius:10px;margin-bottom:7px;border-left:4px solid '+_S.c+';">';
+      /* 20261018v (capture 18:42 : City–Ipswich de 16:00 encore affiché) : durée du match par sport (data-g45agd, minutes) → la carte part
+         à la fin du match (foot 2 h 10) au lieu de 3 h pour tous. */
+      var _agDur = { '⚽':130, '🏉':140, '🏒':180, '🏀':170, '🏈':215, '⚾':215 }[_S.e] || 180;
+      html += '<div data-g45agt="'+(Date.parse(m.date)||0)+'" data-g45agd="'+_agDur+'" style="position:relative;overflow:hidden;display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--s1);border-radius:10px;margin-bottom:7px;border-left:4px solid '+_S.c+';">';
       if (m.joueur && m.joueur.ph) html += '<div style="position:relative;flex:none;width:52px;height:52px;"><img src="'+String(m.joueur.ph).replace(/"/g,'')+'" alt="" referrerpolicy="no-referrer" onerror="this.style.visibility=\'hidden\'" style="width:52px;height:52px;border-radius:50%;object-fit:cover;background:#33415c;border:2px solid '+_S.c+';box-sizing:border-box;"><div style="position:absolute;right:-4px;bottom:-4px;width:22px;height:22px;border-radius:50%;background:#0b101d;border:2px solid '+_S.c+';display:flex;align-items:center;justify-content:center;font-size:12px;">'+_S.e+'</div></div>';   /* 20261016h */
       else html += '<div style="position:relative;flex:none;width:44px;height:44px;border-radius:50%;background:rgba(11,16,29,.9);border:2px solid '+_S.c+';display:flex;align-items:center;justify-content:center;font-size:24px;">'+_S.e+'</div>';
       html += '<div style="position:relative;flex:'+(_agFil?'1 1 0':'1')+';min-width:0;">';
@@ -76189,10 +76192,10 @@ window._g45UfDecoupe = function (note) {
   /* Retire les matchs joués ; renvoie le nombre de cartes restantes. */
   var purger = function (el) {
     el = el || document.getElementById('cal-content'); if (!el) return 0;
-    var lim = Date.now() - 3 * 3600e3, n = 0;
+    var now = Date.now(), n = 0;
     [].forEach.call(el.querySelectorAll('[data-g45agt]'), function (c) {
-      var t = +c.getAttribute('data-g45agt') || 0;
-      if (t && t < lim) { var nx = c.nextElementSibling; if (nx && /^calstat-/.test(nx.id || '')) nx.remove(); c.remove(); } else n++;
+      var t = +c.getAttribute('data-g45agt') || 0, d = (+c.getAttribute('data-g45agd') || (/⚽/.test(c.textContent) ? 130 : 180)) * 60e3; /* 20261018v : durée par sport (liste gardée d'avant : ⚽ deviné) */
+      if (t && t + d < now) { var nx = c.nextElementSibling; if (nx && /^calstat-/.test(nx.id || '')) nx.remove(); c.remove(); } else n++;
     });
     [].forEach.call(el.querySelectorAll('[data-g45agj]'), function (h) {
       var x = h.nextElementSibling, vide = true;
