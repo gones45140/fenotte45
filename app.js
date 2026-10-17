@@ -74816,7 +74816,12 @@ var _G45_BK_DOM = [
   window.g45TrOffF = function (f) { O.f = f; if (O.flt) O.flt.av = f === 'tout' ? '' : f; O.tout = false; O.jour = null; O.mois = null; var b = document.getElementById('g45tr-off'); if (b) b.outerHTML = window._g45TrOffHtml(); };
   var redess = function () { var b = document.getElementById('g45tr-off'); if (b) b.outerHTML = window._g45TrOffHtml(); };
   var garderF = function () { try { localStorage.setItem('g45tr_off_flt', JSON.stringify(O.flt || {})); } catch (e) {} };
-  window.g45TrOffFlt = function (cat, v) { var F = O.flt || (O.flt = {}); F[cat] = F[cat] === v ? '' : v; if (cat === 'sp' && v) F.sl = ''; if (cat === 'av') O.f = F.av || 'tout'; O.jour = null; O.mois = null; garderF(); redess(); };
+  /* 20261018j (« 1,5 à 1,79… ça me gêne pas de parier sur du 1,99 mais je peux pas faire plusieurs sélections ») : Sport, Championnat, Type,
+     Cote et Proba acceptent PLUSIEURS boutons (valeurs séparées par des virgules) ; « Tous » vide la ligne ; Avis et Période restent à un choix. */
+  window.g45TrOffFlt = function (cat, v) { var F = O.flt || (O.flt = {});
+    if (/^(sp|sl|ty|co|pr)$/.test(cat) && v) { var l = String(F[cat] || '').split(',').filter(Boolean), i = l.indexOf(v); if (i >= 0) l.splice(i, 1); else l.push(v); F[cat] = l.join(','); }
+    else F[cat] = F[cat] === v ? '' : v;
+    if (cat === 'sp' && v) F.sl = ''; if (cat === 'av') O.f = F.av || 'tout'; O.jour = null; O.mois = null; garderF(); redess(); };
   window.g45TrOffFltOuvrir = function () { O.fOuv = !O.fOuv; redess(); };
   window.g45TrOffFltRaz = function () { O.flt = {}; O.f = 'tout'; O.jour = null; O.mois = null; garderF(); redess(); };
   window.g45TrOffJour = function (k) { O.jour = k; var b = document.getElementById('g45tr-off'); if (b) b.outerHTML = window._g45TrOffHtml(); };
@@ -74901,12 +74906,13 @@ var _G45_BK_DOM = [
     var tyDe = function (k) { k = String(k || ''); return /^[12]$/.test(k) ? 'vic' : (/^(1N|2N|12)$/.test(k) ? 'dc' : (/^btts/.test(k) ? 'bts' : (/^hc/.test(k) ? 'hc' : (/^o/.test(k) ? 'ov' : (/^u/.test(k) ? 'un' : 'aut'))))); };
     var coDe = function (c) { return !(c > 1) ? 'sc' : (c < 1.8 ? 'c1' : (c < 2.2 ? 'c2' : 'c3')); };
     var prDe = function (p) { return p >= 0.7 ? 'p3' : (p >= 0.6 ? 'p2' : 'p1'); };
+    var a = function (cat, v) { return (',' + (F[cat] || '') + ',').indexOf(',' + v + ',') >= 0; };   /* 20261018j : choix multiples */
     var passe = function (x, sauf) {
-      if (sauf !== 'sp' && F.sp && spDe(x.sl) !== F.sp) return false;
-      if (sauf !== 'sl' && F.sl && x.sl !== F.sl) return false;
-      if (sauf !== 'ty' && F.ty && tyDe(x.k) !== F.ty) return false;
-      if (sauf !== 'co' && F.co && coDe(x.c) !== F.co) return false;
-      if (sauf !== 'pr' && F.pr && prDe(x.p) !== F.pr) return false;
+      if (sauf !== 'sp' && F.sp && !a('sp', spDe(x.sl))) return false;
+      if (sauf !== 'sl' && F.sl && !a('sl', x.sl)) return false;
+      if (sauf !== 'ty' && F.ty && !a('ty', tyDe(x.k))) return false;
+      if (sauf !== 'co' && F.co && !a('co', coDe(x.c))) return false;
+      if (sauf !== 'pr' && F.pr && !a('pr', prDe(x.p))) return false;
       if (sauf !== 'av' && F.av && (F.av === 'acc' ? x.d : !x.d)) return false;
       if (sauf !== 'pe' && F.pe && x.t < Date.now() - F.pe * 864e5) return false;
       return true;
@@ -74915,17 +74921,17 @@ var _G45_BK_DOM = [
     var C = window._g45TrOffCalc(L), att = L.filter(function (x) { return x.r == null; }).length;
     var nbF = ['sp', 'sl', 'ty', 'co', 'pr', 'av', 'pe'].filter(function (k) { return F[k]; }).length;
     var pil = function (cat, v, t, n) {
-      var on = (F[cat] || '') === v;
+      var on = v === '' ? !F[cat] : a(cat, v);
       return '<button onclick="g45TrOffFlt(\'' + cat + '\',\'' + v + '\')" style="padding:6px 10px;border-radius:16px;font-size:13px;font-weight:700;cursor:pointer;margin:0 5px 5px 0;border:1px solid ' + (on ? '#3b82f6' : 'rgba(255,255,255,.2)') + ';background:' + (on ? '#2563eb' : 'rgba(0,0,0,.35)') + ';color:' + (on ? '#fff' : '#dfe6f7') + ';">' + t + (n != null ? ' <span style="opacity:.7;font-weight:600;">' + n + '</span>' : '') + '</button>';
     };
     var cpt = function (cat, fn) { var o = {}; tous.forEach(function (x) { if (passe(x, cat)) { var v = fn(x); o[v] = (o[v] || 0) + 1; } }); return o; };
     var ligne = function (tit, cat, opts, fn) {
       var n = fn ? cpt(cat, fn) : null;
-      var bt = pil(cat, '', 'Tous') + opts.filter(function (o) { return !n || n[o[0]] || F[cat] === o[0]; }).map(function (o) { return pil(cat, o[0], o[1], n ? (n[o[0]] || 0) : null); }).join('');
+      var bt = pil(cat, '', 'Tous') + opts.filter(function (o) { return !n || n[o[0]] || a(cat, o[0]); }).map(function (o) { return pil(cat, o[0], o[1], n ? (n[o[0]] || 0) : null); }).join('');
       return '<div style="margin-top:8px;"><div style="font-size:13px;font-weight:800;color:#c9d3ee;margin-bottom:4px;">' + tit + '</div><div style="display:flex;flex-wrap:wrap;">' + bt + '</div></div>';
     };
     var slOpts = Object.keys(cpt('sl', function (x) { return x.sl; })).sort().map(function (sl) { var l = sl; try { l = _g45TrCompLbl(sl); } catch (e) {} return [sl, esc(l)]; });
-    if (F.sl && !slOpts.some(function (o) { return o[0] === F.sl; })) slOpts.push([F.sl, esc(F.sl)]);
+    String(F.sl || '').split(',').filter(Boolean).forEach(function (v) { if (!slOpts.some(function (o) { return o[0] === v; })) slOpts.push([v, esc(v)]); });
     var h = tete + '<div style="margin:10px 0;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.14);border-radius:10px;">'
       + '<div onclick="g45TrOffFltOuvrir()" style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;cursor:pointer;font-size:15px;font-weight:800;">'
       + '<span>🔎 Filtres' + (nbF ? ' <span style="background:#2563eb;border-radius:10px;padding:1px 8px;font-size:12px;margin-left:4px;">' + nbF + ' actif' + (nbF > 1 ? 's' : '') + '</span>' : '') + '</span><span>' + (O.fOuv ? '▴' : '▾') + '</span></div>';
