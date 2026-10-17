@@ -40073,10 +40073,10 @@ function _g45BetRowMini(h){
   var _idColor=(_idU&&_idU.color)||b2.c||'#4d84ff';
   var _idLogo=isSimple?'':((typeof g45LogoUrlDe==='function')?g45LogoUrlDe(h.n):'');
   var _idFilig=_idLogo
-    ?('<img src="'+_idLogo+'" alt="" loading="lazy" onerror="this.style.display=\'none\'" style="position:absolute;right:2px;top:50%;transform:translateY(-50%);height:38px;width:38px;object-fit:contain;opacity:.55;filter:drop-shadow(0 1px 3px rgba(0,0,0,.5));pointer-events:none;">')
+    ?('<img src="'+_idLogo+'" alt="" loading="lazy" onerror="this.style.display=\'none\'" style="position:absolute;right:2px;top:50%;transform:translateY(-50%);height:38px;width:38px;object-fit:contain;opacity:1;filter:drop-shadow(0 1px 3px rgba(0,0,0,.5));pointer-events:none;">')
     /* 20261018a (« Winamax devrait ressortir autant que le logo Winamax qui est à gauche ») : logo du book = même rendu que bkFavicon (vrai logo,
-       comptes Antoine / Laura compris), 38 px, pleine opacité. */
-    :((isSimple&&typeof bkFavicon==='function')?('<span style="position:absolute;right:2px;top:50%;transform:translateY(-50%);width:38px;height:38px;display:flex;align-items:center;justify-content:center;filter:drop-shadow(0 1px 3px rgba(0,0,0,.6));pointer-events:none;">'+bkFavicon(h.b,38)+'</span>'):'');
+       comptes Antoine / Laura compris), pleine opacité ; 20261018b (« beaucoup trop gros le W ») : 28 px comme avant ; logo d'équipe opacité .55 → 1. */
+    :((isSimple&&typeof bkFavicon==='function')?('<span style="position:absolute;right:2px;top:50%;transform:translateY(-50%);width:28px;height:28px;display:flex;align-items:center;justify-content:center;filter:drop-shadow(0 1px 3px rgba(0,0,0,.6));pointer-events:none;">'+bkFavicon(h.b,28)+'</span>'):'');
   /* 20261008s : carte FORMULE 1 du mur → petit logo F1 au lieu du logo mémorisé (W). */
   _idFilig=_g45IdF1(h,_idFilig);
   /* Le filigrane est CONFINE au bloc titre/sous-titre (position:relative sur
@@ -72096,7 +72096,7 @@ function _g45IdF1(h, avant) {
     var nom = String(h.n || '');
     var f1 = /^\s*(formule\s*1|formula\s*(1|one)|f1)\s*$/i.test(nom) || !!(u && /🏎/.test(String(u.sport || '')) && !/moto/i.test(nom));
     if (!f1) return avant;
-    return '<div data-g45f1="1" style="position:absolute;right:2px;top:50%;transform:translateY(-50%);width:38px;height:38px;border-radius:7px;background:#14161f;overflow:hidden;display:flex;align-items:center;justify-content:center;opacity:.85;pointer-events:none;">'
+    return '<div data-g45f1="1" style="position:absolute;right:2px;top:50%;transform:translateY(-50%);width:38px;height:38px;border-radius:7px;background:#14161f;overflow:hidden;display:flex;align-items:center;justify-content:center;opacity:1;pointer-events:none;">'
       + '<img src="images/equipes/formule1.png" alt="" loading="lazy" onerror="this.parentNode.style.display=\'none\'" style="width:118%;max-width:none;height:auto;flex:none;"></div>';
   } catch (e) { return avant; }
 }

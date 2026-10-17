@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261018a, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261018b, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1218,6 +1218,7 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   scoreboard ESPN (dark d'abord), mémorisé g45_lglogo_<sport>_<slug> (même clé que le calendrier). Téléphone inchangé. Smoke (36).
 - LIGNES « Paris filtrés » (`_g45BetRowMini`) — 20261018a (capture : City gagné « mi vert mi rouge ») : fond = couleur du RÉSULTAT seule (vert / rouge /
   jaune ; avant : couleur du book ou de l'équipe mêlée) ; pari SIMPLE → logo du book à droite = bkFavicon(h.b, 38) pleine opacité (avant 28 px, .6).
+  20261018b (« beaucoup trop gros le W », « logos toujours trop transparents ») : book revenu à 28 px (opaque) ; logo d'équipe et logo F1 opacité 1.
 - Bouton ⚡ « Ouvrir le match » des lignes de pari (`g45EclairPari` / `g45EclairOuvrirCible`) — 20261009b (« le flash fonctionne pas ») :
   cherchait le pari dans state.h SEULEMENT → muet sur un pari réglé (state.a) ; cherche maintenant state.h puis state.a (testé Chromium).
 - ⚾🇰🇷 KBO (20261001s, maquette validée « yes we can ») : tuile slug 'kbo' (Compétitions → Baseball, après MLB),
