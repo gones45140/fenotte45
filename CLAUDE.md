@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261018z, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261019a, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -192,6 +192,8 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   20261018z (capture : « FC Barcelone » lu, « Barcelona » au mur → alerte « pas une équipe de ton mur ») : dernier essai par RACINES `window._g45TkRacines`
   (5 premières lettres des mots ≥ 5 lettres, mots génériques retirés, égalité des deux côtés : Barcelone = Barcelona, Séville = Sevilla, Manchester United ≠ City),
   pour l'équipe ET l'adversaire. Testé node 7/7.
+  20261019a (« AS Rome » lu, « AS Roma » au mur) : mots de 4 lettres gardés + table TR ville française → nom du club (rome→roma, naples→napoli, turin→torino…) ; testé node 10/10.
+  Même livraison : style #g45-opt-lisible = toutes les options de <select> sur fond sombre, texte blanc (liste « Équipe » blanc sur blanc sur PC).
   20261016c (« Équipe jouée Edmonton non ? ») : carte joueur choisie → #c-equipe = équipe du ticket, sinon note de la carte (Edmonton Oilers).
   20261016d (capture : champ toujours grisé « Connor McDavid ») : updMise → `_g45MajEquipeJouee` remettait u.n en lecture seule ; carte joueur →
   champ LIBRE = u.note (club), valeur déjà posée (ticket) gardée.

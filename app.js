@@ -71395,8 +71395,10 @@ function _g45TicketVisible(id) { var e = document.getElementById(id); return !!(
 function _g45TicketCockpit() { var ss = document.getElementById('sub-strat'), b = document.getElementById('btn-cpit'); return !!((ss && ss.style.display !== 'none' && getComputedStyle(ss).display !== 'none') && (!b || b.classList.contains('on'))); }
 /* 20261018z : racines d'un nom d'équipe (normalisé) — « fc barcelone » et « barcelona » → « barce » ; '' si aucun mot utile. */
 window._g45TkRacines = function (t) {
-  var GEN = /^(club|futbol|football|calcio|sporting?|athletic|associazione|deportivo|olympique|union|stade)$/;
-  var l = String(t || '').split(' ').filter(function (w) { return w.length >= 5 && !GEN.test(w); }).map(function (w) { return w.slice(0, 5); });
+  var GEN = /^(club|futbol|football|calcio|sporting?|athletic|associazione|deportivo|olympique|union|stade|real|city|team|town|calcio)$/;
+  /* 20261019a (capture « AS Rome » lu, « AS Roma » au mur) : villes françaises → nom du club ; mots de 4 lettres gardés (roma, lens…). */
+  var TR = { rome: 'roma', naples: 'napoli', turin: 'torino', seville: 'sevilla', lisbonne: 'lisbon', munich: 'munchen', barcelone: 'barcelona', londres: 'london', florence: 'fiorentina', genes: 'genoa', milanais: 'milan' };
+  var l = String(t || '').split(' ').map(function (w) { return TR[w] || w; }).filter(function (w) { return w.length >= 4 && !GEN.test(w); }).map(function (w) { return w.slice(0, 5); });
   return l.filter(function (w, i) { return l.indexOf(w) === i; }).sort().join(' ');
 };
 function _g45TicketRemplirCockpit(o) {
@@ -76809,4 +76811,15 @@ window._g45AgJouUs = async function (nowTs) {
     var _l = window.loadTendancesTab;
     loadTendancesTab = window.loadTendancesTab = function () { var r = _l.apply(this, arguments); try { poser(false); } catch (e) {} return r; };
   }
+})();
+
+/* 20261019a (capture PC : liste « Équipe » ouverte = texte blanc sur fond blanc, illisible) : les options des menus déroulants héritent de la
+   couleur blanche du champ, mais Windows / Chrome les peint sur fond clair → fond sombre + texte blanc pour TOUTES les options. */
+(function () {
+  try {
+    if (document.getElementById('g45-opt-lisible')) return;
+    var st = document.createElement('style'); st.id = 'g45-opt-lisible';
+    st.textContent = 'select option,select optgroup{background-color:#141b2d!important;color:#fff!important;}';
+    (document.head || document.documentElement).appendChild(st);
+  } catch (e) {}
 })();
