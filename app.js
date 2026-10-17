@@ -73780,6 +73780,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     if (c.bts) p.push('Les deux marquent : ' + (c.bts === 'oui' ? 'oui' : 'non'));
     if (c.te) p.push(motUnite() + ' équipe ' + (c.te === 'ov' ? 'Over ' : 'Under ') + c.TL);
     if (c.ad) p.push(motUnite() + ' adversaire ' + (c.ad === 'ov' ? 'Over ' : 'Under ') + c.AL);
+    if (c.jo) p.push(c.jn + ' ' + (c.jm === 'pas' ? 'passeur' : c.jm === 'dec' ? 'décisif' : 'buteur'));
     if (c.ec === 'g') p.push('Gagne de ' + c.E + ' ou +');
     if (c.ec === 'p') p.push('Perd de ' + c.E + ' max');
     return p.length ? p.join(' + ') : 'aucun critère';
@@ -73801,14 +73802,55 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     if (c.ad === 'un' && !(ga < c.AL)) return false;
     if (c.ec === 'g' && !(gf - ga >= c.E)) return false;   /* 20261018s : gagne de E ou + */
     if (c.ec === 'p' && !(ga - gf <= c.E)) return false;   /* 20261018s : ne perd pas de plus de E */
+    if (c.jo) {   /* 20261018t : joueur buteur / passeur / décisif sur CE match */
+      var v = jVal(c, m); if (!v) return false;
+      if (c.jm === 'pas' ? !(v.a > 0) : c.jm === 'dec' ? !(v.g + v.a > 0) : !(v.g > 0)) return false;
+    }
     return true;
   }
+  /* 20261018t (« on étoffe le critère : rajoute joueur buteur / passeur / décisif ») — FOOT : journal du championnat du joueur (_g45RegLogFoot,
+     même source que les Séries individuelles) pour chaque saison du bloc ; match du club retrouvé par la DATE (± 1 jour) ; match où le joueur
+     n'a pas joué = NON COMPTÉ (comme un pari joueur remboursé). Effectif = club actuel (site v2 …/teams/<id>/roster), trié buts + passes. */
+  S.jl = S.jl || {}; S.ro = S.ro || {};
+  function jVal(c, m) {
+    var J = S.jl[c.jo]; if (!J || !J.d) return null;
+    var d = m[0], t = Date.parse(d + 'T12:00:00Z');
+    if (J.d[d]) return J.d[d];
+    var a = new Date(t - 864e5).toISOString().slice(0, 10), b2 = new Date(t + 864e5).toISOString().slice(0, 10);
+    return J.d[a] || J.d[b2] || null;
+  }
+  function jFiltre(c, ms) { return c.jo ? ms.filter(function (m) { return !!jVal(c, m); }) : ms; }
+  function jCharger(pid, D) {
+    if (S.jl[pid]) return;
+    S.jl[pid] = { enCours: 1 };
+    Promise.all((D.saisons || []).map(function (sa) { return sa ? _g45RegLogFoot(D.lg, pid, sa.an).catch(function () { return null; }) : null; })).then(function (L) {
+      var d = {};
+      L.forEach(function (x) { ((x && x.gameLog) || []).forEach(function (g) { if (g.d) d[String(g.d).slice(0, 10)] = { g: g.goals || 0, a: g.assists || 0 }; }); });
+      S.jl[pid] = { d: d, n: Object.keys(d).length };
+      try { redessiner(); } catch (e) {}
+    });
+  }
+  function roCharger(nom, D) {
+    if (S.ro[nom]) return;
+    S.ro[nom] = { enCours: 1 };
+    fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/' + D.lg + '/teams/' + D.tid + '/roster').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+      var st = function (a, nm) { var v = 0; try { ((a.statistics && a.statistics.splits && a.statistics.splits.categories) || []).forEach(function (c) { (c.stats || []).forEach(function (x) { if (x.name === nm) v = +x.value || 0; }); }); } catch (e) {} return v; };
+      var l = ((j && j.athletes) || []).reduce(function (acc, x) { return acc.concat(x && x.items ? x.items : [x]); }, [])
+        .filter(function (a) { return a && a.id != null && !/^G/i.test(String((a.position && (a.position.abbreviation || a.position.name)) || '')); })
+        .map(function (a) { return { id: String(a.id), nom: a.displayName || a.fullName || '?', v: st(a, 'totalGoals') + st(a, 'goalAssists') }; })
+        .sort(function (x, y) { return y.v - x.v || x.nom.localeCompare(y.nom); });
+      S.ro[nom] = { l: l };
+      try { redessiner(); } catch (e) {}
+    }).catch(function () { S.ro[nom] = { l: [] }; });
+  }
   function calc(c, ms) {
+    ms = jFiltre(c, ms);
     var ok = 0, pire = 0, run = 0;
     ms.forEach(function (m) { if (passe(c, m)) { ok++; run = 0; } else { run++; if (run > pire) pire = run; } });
     return { n: ms.length, ok: ok, pire: pire };
   }
   function enCours(c, ms) {
+    ms = jFiltre(c, ms);
     if (!ms.length) return '';
     var der = passe(c, ms[ms.length - 1]), k = 0;
     for (var i = ms.length - 1; i >= 0 && passe(c, ms[i]) === der; i--) k++;
@@ -73893,7 +73935,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       var r = await espnResolveTeam(nom);
       var lg = r && r.league;
       if (!r || !r.id || !lg || /fifa|uefa\.(nations|euro)|friendly/.test(lg)) { S.data[nom] = { t: Date.now(), err: 'Pas de championnat trouvé pour cette équipe.' }; return; }
-      var ans = annees(lg), out = { t: Date.now(), lg: lg, ligue: '', saisons: [] };
+      var ans = annees(lg), out = { t: Date.now(), lg: lg, ligue: '', saisons: [], tid: String(r.id) };
       await Promise.all(ans.map(async function (an, i) {
         var cle = 'g45cr1_' + lg + '_' + r.id + '_' + an, ms = null;
         if (i > 0) { try { ms = JSON.parse(localStorage.getItem(cle) || 'null'); } catch (e) {} }
@@ -73997,6 +74039,17 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     _EC.forEach(function (x) { selE += '<option value="' + x + '"' + (c.E === x ? ' selected' : '') + '>' + x + '</option>'; });
     selE += '</select>';
     h += lab('Écart (' + motUnite().toLowerCase() + hkTr + ')') + b(c.ec === 'g', 'Gagne de ' + c.E + ' ou +', "g45CrSet('ec','g')") + b(c.ec === 'p', 'Perd de ' + c.E + ' max', "g45CrSet('ec','p')") + b(!c.ec, 'Aucun', "g45CrSet('ec','')") + selE;
+    if (!S.ctx && D && D.tid && D.lg) {
+      roCharger(nom, D);
+      var RO = S.ro[nom] || {};
+      if (c.jm == null) c.jm = 'but';
+      var selJ = '<select onchange="g45CrJoueur(this.value)" style="background:#16213f;color:#fff;border:1px solid #6d9dff;border-radius:8px;padding:7px 10px;font-size:14px;margin:0 6px 6px 0;max-width:100%;">'
+        + '<option value="">' + (RO.l ? 'Aucun joueur' : '⏳ Effectif…') + '</option>';
+      (RO.l || []).forEach(function (x) { selJ += '<option value="' + x.id + '"' + (c.jo === x.id ? ' selected' : '') + '>' + esc(x.nom) + (x.v ? ' (' + x.v + ')' : '') + '</option>'; });
+      selJ += '</select>';
+      h += lab('Joueur (matchs où il a joué)') + selJ + '<br>' + b(c.jm === 'but', '⚽ Buteur', "g45CrSet('jm','but')") + b(c.jm === 'pas', '🅰️ Passeur', "g45CrSet('jm','pas')") + b(c.jm === 'dec', '⭐ Décisif', "g45CrSet('jm','dec')");
+      if (c.jo) { jCharger(c.jo, D); var JJ = S.jl[c.jo] || {}; if (JJ.enCours) h += '<div style="font-size:13px;color:#c9d3ee;">⏳ Matchs de ' + esc(c.jn) + '…</div>'; else if (!JJ.n) h += '<div style="font-size:13px;color:#ff9f43;">⚠️ Aucun match trouvé pour ' + esc(c.jn) + ' dans ce championnat.</div>'; }
+    }
     if (!S.ctx) h += lab('Les deux marquent') + b(c.bts === 'oui', 'Oui', "g45CrSet('bts','oui')") + b(c.bts === 'non', 'Non', "g45CrSet('bts','non')") + b(c.bts === '', 'Peu importe', "g45CrSet('bts','')");
     h += '<div style="margin:6px 0 4px;">' + (S.combos.length < 3 ? b(false, '➕ Comparer avec un autre combiné (OU)', 'g45CrAjout()') : '')
       + (S.combos.length > 1 ? b(false, '✕ Retirer le combiné ' + (S.a + 1), 'g45CrSuppr()') : '') + '</div>';
@@ -74022,6 +74075,12 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   window._g45CrHtml = html;
   window._g45CrPasse = passe; window._g45CrCalc = calc;
   window.g45CrOuvrir = function () { try { localStorage.setItem('g45_cr_open', ouvert() ? '0' : '1'); } catch (e) {} redessiner(); };
+  window._g45CrS = S;   /* tests */
+  window.g45CrJoueur = function (id) {
+    var c = S.combos[S.a]; c.jo = id || ''; c.jn = '';
+    var RO = S.ro[S.nom] || {}; (RO.l || []).forEach(function (x) { if (x.id === id) c.jn = x.nom; });
+    try { redessiner(); } catch (e) {}
+  };
   window.g45CrSet = function (k, v) {
     if (k === 'lieu') S.lieu = v;
     else {
