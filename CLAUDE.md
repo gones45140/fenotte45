@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261018e, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261018f, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -2075,6 +2075,8 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   20261018d (capture téléphone en PAYSAGE, « à droite le bordel » : pastilles sur le nom du pari, logo NHL / NFL dessus) : 700-1199 px → nom du pari
   sur sa ligne, pastilles dessous, logo du championnat .g45tro-wm caché ; ≥ 1200 px inchangé.
   20261018e (« en mode portrait il manque l'heure du match ») : en-tête téléphone .g45tro-mh = score / direct / « à venir » + « 🕒 HH:MM » dessous.
+  20261018f (« pourquoi pas de score pour le foot » : matchs de la veille au soir « à venir » jusqu'au robot de 10 h) : lvMaj couvre les tendances
+  non jugées commencées depuis < 36 h, scoreboard ?dates= (jour = coup d'envoi − 6 h UTC), fini lu une fois ; sans info après le coup d'envoi → « résultat en attente ».
   20261017o (« à quelle heure les matchs se mettent avec le résultat, voir mettre le live », maquette validée « oui ») : DIRECT dans l'historique —
   `lvMaj` (window._g45TrOffLvMaj) : tendance non jugée commencée depuis < 5 h → scoreboard ESPN du championnat (site.api, sans date, relu chaque minute
   tant que #g45tr-off existe, 50 s mini par ligue) → O.lv[id] {st in|post, h, a, s, c = shortDetail, HT → mi-temps}. En cours : score rouge + minute,

@@ -74851,13 +74851,20 @@ var _G45_BK_DOM = [
   var lvMaj = function () {
     if (O.lvEnCours || !O.j || !document.getElementById('g45tr-off')) return;
     var now = Date.now(), sls = {};
-    (O.j.t || []).forEach(function (x) { if (x.r == null && x.t <= now + 60000 && now - x.t < 5 * 3600000) sls[x.sl] = 1; });
-    var l = Object.keys(sls).filter(function (sl) { return !(now - (O.lvT[sl] || 0) < 50000); });
+    /* 20261018f (« pourquoi pas de score pour le foot » : Frankfurt–Cologne de la veille au soir restait « à venir » jusqu'au robot de 10 h) :
+       toute tendance non jugée commencée depuis < 36 h (avant 5 h) ; scoreboard lu À SA DATE (?dates=, jour US = coup d'envoi − 6 h UTC) ;
+       un match fini n'est relu qu'une fois (O.lv post gardé). */
+    (O.j.t || []).forEach(function (x) {
+      if (x.r == null && x.t <= now + 60000 && now - x.t < 36 * 3600000 && !((O.lv || {})[String(x.id)] && O.lv[String(x.id)].st === 'post'))
+        sls[x.sl + '|' + new Date(x.t - 6 * 3600000).toISOString().slice(0, 10).replace(/-/g, '')] = 1;
+    });
+    var l = Object.keys(sls).filter(function (k) { return !(now - (O.lvT[k] || 0) < 50000); });
     if (!l.length) return;
     O.lvEnCours = true;
-    Promise.all(l.map(function (sl) {
-      O.lvT[sl] = now;
-      return fetch('https://site.api.espn.com/apis/site/v2/sports/' + ({ nhl: 'hockey', nba: 'basketball', nfl: 'football' }[sl] || 'soccer') + '/' + sl + '/scoreboard', { cache: 'no-store' })
+    Promise.all(l.map(function (k) {
+      O.lvT[k] = now;
+      var sl = k.split('|')[0], dt = k.split('|')[1];
+      return fetch('https://site.api.espn.com/apis/site/v2/sports/' + ({ nhl: 'hockey', nba: 'basketball', nfl: 'football' }[sl] || 'soccer') + '/' + sl + '/scoreboard?dates=' + dt, { cache: 'no-store' })
         .then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
           ((j && j.events) || []).forEach(function (e) {
             var c = (e.competitions && e.competitions[0]) || {}, st = (c.status && c.status.type) || {};
@@ -75043,7 +75050,7 @@ var _G45_BK_DOM = [
             + clubLogo(x0, 'h', 28) + esc(x0.h) + '<span style="color:#8e9bbd;">–</span>' + clubLogo(x0, 'a', 28) + esc(x0.a) + '</span>'
             /* 20261018e (« en mode portrait il manque l'heure du match ») : score / direct dans une colonne avec l'heure du coup d'envoi dessous. */
             + '<span style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex:none;">'
-            + (LV && LV.st === 'in' ? '<span style="background:#ff3b3b;color:#fff;border-radius:7px;padding:1px 8px;font-size:14px;font-weight:900;flex:none;">🔴 ' + esc(LV.s) + ' · ' + esc(LV.c) + '</span>' : sc ? '<span style="background:#fff;color:#111;border-radius:7px;padding:1px 8px;font-size:14px;font-weight:900;flex:none;">' + esc(sc) + (prov ? ' <span style="font-size:11px;color:#a07000;">provisoire</span>' : '') + '</span>' : '<span style="font-size:13px;color:#aab6d6;flex:none;">à venir</span>')
+            + (LV && LV.st === 'in' ? '<span style="background:#ff3b3b;color:#fff;border-radius:7px;padding:1px 8px;font-size:14px;font-weight:900;flex:none;">🔴 ' + esc(LV.s) + ' · ' + esc(LV.c) + '</span>' : sc ? '<span style="background:#fff;color:#111;border-radius:7px;padding:1px 8px;font-size:14px;font-weight:900;flex:none;">' + esc(sc) + (prov ? ' <span style="font-size:11px;color:#a07000;">provisoire</span>' : '') + '</span>' : '<span style="font-size:13px;color:#aab6d6;flex:none;">' + (x0.t < Date.now() ? 'résultat en attente' : 'à venir') + '</span>')
             + '<span style="font-size:13px;font-weight:700;color:#dbe4ff;">🕒 ' + new Date(x0.t).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) + '</span></span></div>';
           /* 20261017l (dessin d'Antoine : « heure · équipe · score · équipe, un truc aligné ») : en-tête PC en colonnes fixes, caché sur téléphone */
           var hh = new Date(x0.t).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }), etat = prov ? 'fini · provisoire' : sc ? 'fini' : (LV && LV.st === 'in' ? '🔴 ' + LV.c : (x0.t > Date.now() ? 'à venir' : 'en cours'));
