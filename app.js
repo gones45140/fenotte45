@@ -73780,6 +73780,8 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     if (c.bts) p.push('Les deux marquent : ' + (c.bts === 'oui' ? 'oui' : 'non'));
     if (c.te) p.push(motUnite() + ' équipe ' + (c.te === 'ov' ? 'Over ' : 'Under ') + c.TL);
     if (c.ad) p.push(motUnite() + ' adversaire ' + (c.ad === 'ov' ? 'Over ' : 'Under ') + c.AL);
+    if (c.ec === 'g') p.push('Gagne de ' + c.E + ' ou +');
+    if (c.ec === 'p') p.push('Perd de ' + c.E + ' max');
     return p.length ? p.join(' + ') : 'aucun critère';
   }
   function passe(c, m) {
@@ -73797,6 +73799,8 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     if (c.te === 'un' && !(gf < c.TL)) return false;
     if (c.ad === 'ov' && !(ga > c.AL)) return false;
     if (c.ad === 'un' && !(ga < c.AL)) return false;
+    if (c.ec === 'g' && !(gf - ga >= c.E)) return false;   /* 20261018s : gagne de E ou + */
+    if (c.ec === 'p' && !(ga - gf <= c.E)) return false;   /* 20261018s : ne perd pas de plus de E */
     return true;
   }
   function calc(c, ms) {
@@ -73985,6 +73989,14 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var hkTr = hk() ? ' (temps réglementaire)' : '';
     h += lab(motUnite() + ' de ' + esc(nom) + hkTr) + b(c.te === 'ov', 'Over', "g45CrSet('te','ov')") + b(c.te === 'un', 'Under', "g45CrSet('te','un')") + b(!c.te, 'Aucun', "g45CrSet('te','')") + selEq('TL', c.TL);
     h += lab(motUnite() + ' de l\'adversaire' + hkTr) + b(c.ad === 'ov', 'Over', "g45CrSet('ad','ov')") + b(c.ad === 'un', 'Under', "g45CrSet('ad','un')") + b(!c.ad, 'Aucun', "g45CrSet('ad','')") + selEq('AL', c.AL);
+    /* 20261018s (capture du bloc critères, « je vois pas » l'écart) : ÉCART — « Gagne de X ou + » (= handicap −(X−0,5)) / « Perd de X max »
+       (= handicap +(X+0,5)) ; hockey : temps réglementaire comme le reste. Échelle par sport (_EC). */
+    var _EC = { soccer: [1, 2, 3, 4], hockey: [1, 2, 3, 4], baseball: [1, 2, 3, 4, 5], rugby: [5, 8, 10, 15, 20], 'rugby-league': [5, 8, 10, 13, 20], football: [3, 4, 7, 10, 14], basketball: [3, 5, 8, 10, 15] }[sport()] || [1, 2, 3, 4];
+    if (c.E == null) c.E = _EC[1]; if (c.ec == null) c.ec = '';
+    var selE = '<select onchange="g45CrSet(\'E\',this.value)" style="background:#16213f;color:#fff;border:1px solid #6d9dff;border-radius:8px;padding:7px 10px;font-size:14px;margin:0 6px 6px 0;">';
+    _EC.forEach(function (x) { selE += '<option value="' + x + '"' + (c.E === x ? ' selected' : '') + '>' + x + '</option>'; });
+    selE += '</select>';
+    h += lab('Écart (' + motUnite().toLowerCase() + hkTr + ')') + b(c.ec === 'g', 'Gagne de ' + c.E + ' ou +', "g45CrSet('ec','g')") + b(c.ec === 'p', 'Perd de ' + c.E + ' max', "g45CrSet('ec','p')") + b(!c.ec, 'Aucun', "g45CrSet('ec','')") + selE;
     if (!S.ctx) h += lab('Les deux marquent') + b(c.bts === 'oui', 'Oui', "g45CrSet('bts','oui')") + b(c.bts === 'non', 'Non', "g45CrSet('bts','non')") + b(c.bts === '', 'Peu importe', "g45CrSet('bts','')");
     h += '<div style="margin:6px 0 4px;">' + (S.combos.length < 3 ? b(false, '➕ Comparer avec un autre combiné (OU)', 'g45CrAjout()') : '')
       + (S.combos.length > 1 ? b(false, '✕ Retirer le combiné ' + (S.a + 1), 'g45CrSuppr()') : '') + '</div>';
@@ -74017,6 +74029,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       if (k === 'L') { c.L = parseFloat(v); if (!c.ou) c.ou = 'ov'; }
       else if (k === 'TL') { c.TL = parseFloat(v); if (!c.te) c.te = 'ov'; }
       else if (k === 'AL') { c.AL = parseFloat(v); if (!c.ad) c.ad = 'ov'; }
+      else if (k === 'E') { c.E = parseFloat(v); if (!c.ec) c.ec = 'g'; }
       else c[k] = v;
     }
     redessiner();
