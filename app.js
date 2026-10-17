@@ -3750,7 +3750,7 @@ function renderArchive(){
           +bkBadge+sportIco
           +'<div data-aid="'+h.id+'" onclick="openBetEdit(this.dataset.aid)" style="position:relative;flex:1;min-width:0;overflow:hidden;cursor:pointer;">'
           +_idFilig
-          +'<div style="position:relative;font-size:12px;font-weight:700;color:var(--t1);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word;line-height:1.25;">'+_lgA.titre(_scoreA)+'</div>'
+          +'<div style="position:relative;font-size:12px;font-weight:700;color:var(--t1);overflow:hidden;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;word-break:break-word;line-height:1.25;">'+_lgA.titre(_scoreA)+'</div>'
           +(_scoreA&&!_lgA.integre?'<div style="position:relative;font-size:10px;font-weight:800;color:var(--t1);background:rgba(255,255,255,.10);display:inline-block;padding:1px 6px;border-radius:5px;margin:1px 0;max-width:100%;white-space:normal;word-break:break-word;">📊 '+_scoreA+'</div>':'')
           +((typeof _g45GarantieBandeau==='function')?_g45GarantieBandeau(h):'')
           +'<div style="position:relative;font-size:10px;color:var(--t3);overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;word-break:break-word;line-height:1.35;">'+sous+'</div>'
@@ -12117,7 +12117,7 @@ function renderArchive(){
           +bkBadge+sportIco
           +'<div data-aid="'+h.id+'" onclick="openBetEdit(this.dataset.aid)" style="position:relative;flex:1;min-width:0;overflow:hidden;cursor:pointer;">'
           +_idFilig
-          +'<div style="position:relative;font-size:12px;font-weight:700;color:var(--t1);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word;line-height:1.25;">'+_lgA.titre(_scoreA)+'</div>'
+          +'<div style="position:relative;font-size:12px;font-weight:700;color:var(--t1);overflow:hidden;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;word-break:break-word;line-height:1.25;">'+_lgA.titre(_scoreA)+'</div>'
           +(_scoreA&&!_lgA.integre?'<div style="position:relative;font-size:10px;font-weight:800;color:var(--t1);background:rgba(255,255,255,.10);display:inline-block;padding:1px 6px;border-radius:5px;margin:1px 0;max-width:100%;white-space:normal;word-break:break-word;">📊 '+_scoreA+'</div>':'')
           +((typeof _g45GarantieBandeau==='function')?_g45GarantieBandeau(h):'')
           +'<div style="position:relative;font-size:10px;color:var(--t3);overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;word-break:break-word;line-height:1.35;">'+sous+'</div>'
@@ -40096,7 +40096,7 @@ function _g45BetRowMini(h){
     +'</div>'
     +'<div style="position:relative;flex:1;min-width:0;overflow:hidden;">'
     +_idFilig
-    +'<div style="position:relative;font-size:12px;font-weight:700;color:var(--t1);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word;line-height:1.25;">'+_lgM.titre(_score)+'</div>'
+    +'<div style="position:relative;font-size:12px;font-weight:700;color:var(--t1);overflow:hidden;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;word-break:break-word;line-height:1.25;">'+_lgM.titre(_score)+'</div>'
     +(_score&&!_lgM.integre?'<div style="position:relative;font-size:11px;font-weight:800;color:var(--t1);background:rgba(255,255,255,.10);display:inline-block;padding:1px 6px;border-radius:5px;margin:2px 0;max-width:100%;white-space:normal;word-break:break-word;">📊 '+_score+'</div>':'')
     +((typeof _g45GarantieBandeau==='function')?_g45GarantieBandeau(h):'')
     /* TROIS LIGNES (04/09, retour d'Antoine : « le texte est coupé »). Le
@@ -60699,6 +60699,9 @@ function _g45LigneMatch(h, titreDefaut, typeTxt, cote){
   } catch (e) {}
   return {
     titre: function (sc) {
+      /* 20261018c (« en le mettant à la ligne : City / score / PSG », comme un nom trop long) : avec un score, une ligne par équipe et le score
+         entre les deux (« Paris » / « SG » ne se coupe plus) ; sans score, « A vs B » sur une ligne comme avant. */
+      if (sc) return (moiAGauche ? or(gauche) : blanc(gauche)) + '<br>' + badge(sc).replace(/margin:0 4px;/, 'margin:2px 0;display:inline-block;') + '<br>' + (moiAGauche ? blanc(droite) : or(droite));
       return (moiAGauche ? or(gauche) : blanc(gauche)) + badge(sc) + (moiAGauche ? blanc(droite) : or(droite));
     },
     integre: true,
