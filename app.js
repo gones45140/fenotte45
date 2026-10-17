@@ -56826,8 +56826,9 @@ async function g45MarqueursUS(quoi, secondaire) {
               ? '<img src="' + e.logo + '" loading="lazy" onerror="this.style.display=\'none\'" title="' + (e.nom || '') + '" '
                 + 'style="width:18px;height:18px;object-fit:contain;flex:none;margin-right:7px;">'
               : '<span style="width:18px;flex:none;margin-right:7px;"></span>')
-          + '<div style="flex:1;min-width:0;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + l.nom
-          + (e.abbr ? ('<span style="font-size:8.5px;font-weight:800;letter-spacing:.5px;color:var(--t3);margin-left:6px;">' + e.abbr + '</span>') : '')
+          /* 20261018m (« et les noms coupés ») : nom entier sur 2 lignes si besoin, 14 px ; club dessous. */
+          + '<div style="flex:1;min-width:0;font-weight:700;font-size:14px;line-height:1.2;white-space:normal;word-break:break-word;">' + l.nom
+          + (e.abbr ? ('<div style="font-size:12px;font-weight:800;letter-spacing:.5px;color:#aab6d6;">' + e.abbr + '</div>') : '')
           + '</div>'
           + '<div style="width:46px;text-align:right;color:var(--t3);">' + l.total + '</div>'
           + '<div style="width:52px;text-align:right;color:var(--t3);">' + l.lam.toFixed(2) + '</div>'
