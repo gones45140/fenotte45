@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261018n, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261018o, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1505,6 +1505,9 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   (`g45ButAuj`, localStorage g45but_auj) : `_g45ButJour` = scoreboards ESPN ?dates=<jour> des championnats de _G45_BUT_LG + uefa.champions / europa / conf (mémoire
   10 min, matchs pas finis) → joueur gardé si son club (tid) joue ; ligne « 🗓️ HH:MM · 🏠 vs / ✈️ @ adversaire » ; Meilleurs buteurs = 10 par ligue (au lieu de 3)
   quand le filtre est allumé. Testé Chromium (ESPN simulé). NFL / NHL : PAS encore.
+  20261018o (« j'ai que buteur, faut passeur et décisif ; choisis selon mes critères de confiance ») : marché ⚽ Buteur / 🅰️ Passeur / ⭐ Décisif (g45but_mk,
+  `_g45ButP` : Poisson sur buts hors penalty / passes D. (goalAssists) / buts + passes par match ; Meilleurs = assistsLeaders en Passeur) + « 🎯 Mes critères »
+  (g45but_crit) : proba ≥ 60 % ET cote ≥ 1,50 (ta cote saisie, clé aid_<mk> ; sinon 1 / proba → 60-67 %) ; tri par proba du marché.
   20261015r (maquette validée « oui ») — LIFTING Marqueurs (cartes : nom 18 px, « chance de marquer » en grand à droite, 4 cases buts /
   matchs / buts par match / tirs cadrés, reste sur une ligne 14 px, « Ta cote : » 15 px ; boutons 13 px blancs) et CLV (Tendances → 📏 CLV,
   `g45ClvView` : barre verte = victoire seule / jaune = combiné, logo de l'équipe suivie (S.hl / S.al, S.moi), textes 13-17 px) +

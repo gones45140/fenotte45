@@ -29704,8 +29704,8 @@ var _G45_BUT_LG=[
 ];
 /* Meilleurs buteurs d'un championnat : l'endpoint leaders donne 25 joueurs avec la
    référence de l'athlète ; on ne garde que le haut du panier pour limiter les requêtes. */
-async function _g45ButLeaders(lg, y, top){
-  var ck='g45butL_'+lg+'_'+y;
+async function _g45ButLeaders(lg, y, top, pas){
+  var ck='g45butL_'+lg+'_'+y+(pas?'_a':'');
   try{ var c=JSON.parse(localStorage.getItem(ck)||'null'); if(c&&(Date.now()-c.t)<12*3600000) return c.d; }catch(e){}
   var j=null;
   try{
@@ -29714,9 +29714,11 @@ async function _g45ButLeaders(lg, y, top){
     j=await r.json();
   }catch(e){ return []; }
   var cats=j.categories||[];
-  var cat=cats.filter(function(c){ return /goalsleaders/i.test(c.name||''); })[0]
+  var cat=pas
+    ? (cats.filter(function(c){ return /assistsleaders/i.test(c.name||''); })[0] || cats.filter(function(c){ return /^assists$/i.test(c.name||''); })[0])   /* 20261018o : passeurs (SONDÉ 29l : assistsLeaders) */
+    : (cats.filter(function(c){ return /goalsleaders/i.test(c.name||''); })[0]
        || cats.filter(function(c){ return /^goals$/i.test(c.name||''); })[0]
-       || cats.filter(function(c){ return /goal/i.test(c.name||''); })[0];
+       || cats.filter(function(c){ return /goal/i.test(c.name||''); })[0]);
   var out=[];
   (((cat&&cat.leaders)||[])).slice(0,top||3).forEach(function(L){
     var m=String((L.athlete&&L.athlete.$ref)||'').match(/athletes\/(\d+)/);
@@ -29765,6 +29767,13 @@ function g45ButComp(c){ try{ localStorage.setItem('g45but_comp', c); }catch(e){}
 /* 20261018n (« que ça sélectionne le joueur seulement s'il joue aujourd'hui ») : bouton « 🗓️ Jouent aujourd'hui » — scoreboards ESPN du
    jour (championnats de la liste + coupes d'Europe), mémoire 10 min ; joueur gardé si son club (tid) a un match pas encore fini aujourd'hui ;
    ligne « 🗓️ 21:00 · vs X (🏠) » sur la fiche. Meilleurs buteurs : 10 par championnat au lieu de 3 quand le filtre est allumé. */
+/* 20261018o (« j'ai que buteur en foot, faut passeur et décisif ; choisis selon mes critères de confiance ») : marché Buteur / Passeur / Décisif
+   (g45but_mk : but | pas | dec ; proba de Poisson sur buts hors penalty / passes / buts + passes par match) et « 🎯 Mes critères » (g45but_crit) :
+   proba ≥ 60 % ET cote ≥ 1,50 (ta cote si saisie, sinon la cote juste 1 / proba → 60 à 67 %). */
+function g45ButMk(m){ try{ localStorage.setItem('g45but_mk', m); }catch(e){} g45ButeursView(); }
+function g45ButCrit(){ try{ localStorage.setItem('g45but_crit', localStorage.getItem('g45but_crit')==='1'?'':'1'); }catch(e){} g45ButeursView(); }
+window.g45ButMk=g45ButMk; window.g45ButCrit=g45ButCrit;
+function _g45ButP(d, mk){ if(!d||!d.app) return 0; var l=mk==='pas'?(d.ast/d.app):(mk==='dec'?((d.g+d.ast)/d.app):((d.g-d.pg)/d.app)); return 1-Math.exp(-l); }
 function g45ButAuj(){ try{ localStorage.setItem('g45but_auj', localStorage.getItem('g45but_auj')==='1'?'':'1'); }catch(e){} g45ButeursView(); }
 window.g45ButAuj=g45ButAuj;
 var _g45ButJourMem=null;
@@ -29901,6 +29910,7 @@ async function g45ButeursView(){
   var mode=localStorage.getItem('g45but_mode')||'fav';
   var comp=localStorage.getItem('g45but_comp')||'lg';
   var auj=localStorage.getItem('g45but_auj')==='1';
+  var mk=localStorage.getItem('g45but_mk')||'but', crit=localStorage.getItem('g45but_crit')==='1';
   var UCL='uefa.champions';
   var L={}; try{ L=JSON.parse(localStorage.getItem('g45but_lg')||'null')||{}; }catch(e){}
   if(!Object.keys(L).length) L={'fra.1':1,'eng.1':1,'esp.1':1,'ita.1':1,'ger.1':1};
@@ -29922,6 +29932,12 @@ async function g45ButeursView(){
       +chip('⭐ Mes joueurs', mode==='fav', "g45ButMode('fav')")
       +chip('🏆 Meilleurs buteurs', mode==='top', "g45ButMode('top')")
       +chip('🗓️ Jouent aujourd\'hui', auj, "g45ButAuj()")
+    +'</div>'
+    +'<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:7px;">'
+      +chip('⚽ Buteur', mk==='but', "g45ButMk('but')")
+      +chip('🅰️ Passeur', mk==='pas', "g45ButMk('pas')")
+      +chip('⭐ Décisif', mk==='dec', "g45ButMk('dec')")
+      +chip('🎯 Mes critères', crit, "g45ButCrit()")
     +'</div>'
     +'<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:7px;">'
       +chip('Championnat', comp==='lg', "g45ButComp('lg')")
@@ -29966,9 +29982,9 @@ async function g45ButeursView(){
     for(var k=0;k<slugs.length;k++){
       pg('🏆 '+slugs[k].n+' ('+(k+1)+'/'+slugs.length+')');
       var lead=[], anL=y;
-      try{ lead=await _g45ButLeaders(slugs[k].s, y, JOUR?10:3); }catch(e){}
+      try{ lead=await _g45ButLeaders(slugs[k].s, y, (JOUR||crit)?10:3, mk==='pas'); }catch(e){}
       if(!lead.length){
-        try{ lead=await _g45ButLeaders(slugs[k].s, y-1, JOUR?10:3); }catch(e){}
+        try{ lead=await _g45ButLeaders(slugs[k].s, y-1, (JOUR||crit)?10:3, mk==='pas'); }catch(e){}
         if(lead.length){ anL=y-1; anyPrev=true; }
       }
       for(var m=0;m<lead.length;m++){
@@ -29982,7 +29998,13 @@ async function g45ButeursView(){
       }
     }
   }
-  items.sort(function(a,b){ return b.npg-a.npg; });
+  items.forEach(function(it){ it.pm=_g45ButP(it.d, mk); });
+  if(crit) items=items.filter(function(it){
+    if(!it.id||!it.d) return false;
+    var ck=cotes[it.id.aid+(mk==='but'?'':'_'+mk)];
+    return it.pm>=0.6 && (ck ? ck>=1.5 : 1/it.pm>=1.5);
+  });
+  items.sort(function(a,b){ return (b.pm||0)-(a.pm||0); });
 
   var h='';
   for(var i2=0;i2<items.length;i2++){
@@ -29994,8 +30016,9 @@ async function g45ButeursView(){
     var gpm=d.g/d.app, npg=(d.g-d.pg)/d.app;
     var pAny=1-Math.exp(-gpm), pAnyN=1-Math.exp(-npg);
     var conv=d.sh?(d.g/d.sh):0, sotpm=d.sot/d.app, stpc=d.app?(d.st/d.app):0;
-    var cote=cotes[id.aid]||'', imp=cote?(1/cote):0;
-    var gap=imp?(pAnyN-imp):null;
+    var ckey=id.aid+(mk==='but'?'':'_'+mk), pM=_g45ButP(d, mk);
+    var cote=cotes[ckey]||'', imp=cote?(1/cote):0;
+    var gap=imp?(pM-imp):null;
     var col=(gap!=null&&gap>=0.05)?'#2ecc71':(gap!=null&&gap<=-0.05)?'#ff6b6b':'#8aa0ff';
     /* 20261015r — LIFTING (maquette validée « oui ») : 4 cases (au lieu de 7) en 20 px / 13 px, chance de marquer en grand
        à droite du nom, le reste (penalty, tête, conversion, titulaire) sur une ligne blanche 14 px. */
@@ -30015,13 +30038,13 @@ async function g45ButeursView(){
         +'<div style="flex:1;min-width:0;">'
         +'<div style="font-size:18px;font-weight:900;color:#fff;letter-spacing:-.3px;line-height:1.15;text-shadow:0 1px 3px rgba(0,0,0,.85);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+_g45CyEa(id.pname)+'</div>'
         +'<div style="font-size:14px;font-weight:700;color:#fff;background:rgba(0,0,0,.5);display:inline-block;border-radius:5px;padding:1px 7px;margin-top:3px;"><span class="g45-club">'+_g45CyEa(id.tname||'')+'</span> · '+an+'-'+String(an+1).slice(2)+'</div></div>'
-        +'<div style="flex:none;text-align:center;background:rgba(10,14,26,.85);border:1px solid rgba(46,204,113,.35);border-radius:10px;padding:5px 12px;"><div style="font-size:26px;font-weight:900;color:#2ecc71;line-height:1.1;">'+Math.round(pAnyN*100)+' %</div><div style="font-size:13px;color:#c9d3ee;">chance de marquer</div></div>'
+        +'<div style="flex:none;text-align:center;background:rgba(10,14,26,.85);border:1px solid rgba(46,204,113,.35);border-radius:10px;padding:5px 12px;"><div style="font-size:26px;font-weight:900;color:#2ecc71;line-height:1.1;">'+Math.round(pM*100)+' %</div><div style="font-size:13px;color:#c9d3ee;">'+(mk==='pas'?'chance de passe D.':(mk==='dec'?'chance d\'être décisif':'chance de marquer'))+'</div></div>'
       +'</div>'
       +((JOUR&&id.tid&&JOUR[String(id.tid)])?(function(J){ return '<div style="font-size:15px;font-weight:800;color:#fff;background:rgba(37,99,235,.35);border:1px solid #3b82f6;border-radius:8px;padding:5px 10px;margin-bottom:8px;">'
         +(J.live?'🔴 En cours':'🗓️ '+J.h)+' · '+(J.dom?'🏠 vs ':'✈️ @ ')+_g45CyEa(J.adv)+'</div>'; })(JOUR[String(id.tid)]):'')
       +'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">'
         +cell(d.g,'buts','#f5c542')+cell(d.app,'matchs')+cell(gpm.toFixed(2).replace('.',','),'buts / match','#2ecc71')
-        +cell(sotpm.toFixed(1).replace('.',','),'tirs cadrés / m')
+        +(mk==='but'?cell(sotpm.toFixed(1).replace('.',','),'tirs cadrés / m'):cell(d.ast,'passes D.','#8fb4ff'))
       +'</div>'
       /* Un « avertissement » pour annoncer ZERO penalty n'avait aucun sens : on
          ne signale les penalties que s'il y en a, et le symbole d'alerte n'est
@@ -30042,12 +30065,12 @@ async function g45ButeursView(){
       +'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:rgba(10,14,26,.82);border-radius:9px;padding:8px 10px;">'
         +'<div style="flex:1;min-width:150px;font-size:14px;color:#fff;">Hors penalty <b style="color:#2ecc71;">'+Math.round(pAnyN*100)+' %</b> · tout compris <b>'+Math.round(pAny*100)+' %</b></div>'
         +'<span style="flex:none;font-size:14px;color:#fff;">Ta cote :</span>'
-        +'<input type="text" inputmode="decimal" value="'+_g45CyEa(cote)+'" placeholder="entrer" onchange="_g45ButCote(\''+id.aid+'\',this.value)" style="flex:none;width:76px;text-align:center;background:#1b2a4a;color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:8px;padding:6px 4px;font-size:15px;font-weight:700;">'
+        +'<input type="text" inputmode="decimal" value="'+_g45CyEa(cote)+'" placeholder="entrer" onchange="_g45ButCote(\''+ckey+'\',this.value)" style="flex:none;width:76px;text-align:center;background:#1b2a4a;color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:8px;padding:6px 4px;font-size:15px;font-weight:700;">'
         +(cote?('<div style="flex:none;text-align:right;min-width:90px;"><div style="font-size:16px;font-weight:800;color:'+col+';">'+(gap>=0?'+':'')+Math.round(gap*100)+' pts</div><div style="font-size:13px;color:#c9d3ee;">book '+Math.round(imp*100)+' %</div></div>'):'')
       +'</div></div>';
   }
   var bandeau = anyPrev ? ('<div style="background:rgba(138,160,255,.12);border:1px solid rgba(138,160,255,.28);border-radius:8px;padding:7px 10px;margin-bottom:9px;font-size:9px;color:#8aa0ff;line-height:1.5;">\uD83D\uDCDA Saison '+y+'/'+(y+1)+' pas encore commencée : les chiffres viennent de l\'\u00e9dition pr\u00e9c\u00e9dente.</div>') : '';
-  el.innerHTML=head+bandeau+(h||(JOUR?'<div style="font-size:15px;color:#fff;text-align:center;padding:14px;">🗓️ Aucun de ces joueurs ne joue aujourd\'hui.</div>':'<div style="font-size:10px;color:var(--t3);text-align:center;padding:14px;">Aucun buteur trouvé — sélectionne au moins un championnat.</div>'))
+  el.innerHTML=head+bandeau+(h||(crit?'<div style="font-size:15px;color:#fff;text-align:center;padding:14px;">🎯 Aucun joueur ne remplit tes critères (proba 60 % mini et cote 1,50 mini).</div>':JOUR?'<div style="font-size:15px;color:#fff;text-align:center;padding:14px;">🗓️ Aucun de ces joueurs ne joue aujourd\'hui.</div>':'<div style="font-size:10px;color:var(--t3);text-align:center;padding:14px;">Aucun buteur trouvé — sélectionne au moins un championnat.</div>'))
     +'<div style="font-size:8px;color:var(--t3);text-align:center;margin-top:8px;font-style:italic;line-height:1.6;">'+(comp==='ucl'?'Statistiques de <b>Ligue des Champions uniquement</b> — échantillon plus petit, mais face à des défenses du même niveau que celles du prochain match européen.':'Statistiques de <b>championnat uniquement</b> (hors coupes) — adversaires homogènes, ce qui convient pour parier sur les matchs de championnat.')+'<br>Classement par buts hors penalty. λ = buts par match joué ; p = 1 − e<sup>−λ</sup>.<br>La cote saisie n\'est pas dévigorisée (marché à deux issues non disponible) : l\'écart réel est donc un peu plus faible qu\'affiché.</div>';
 
   /* Pastilles remplies APRES l'affichage complet : chaque joueur demande une
