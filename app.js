@@ -71393,6 +71393,12 @@ function _g45TicketRemplir(o) {
    (renderMmRows), mise du TICKET (remplace celle du palier, c'est la mise réelle), bookmaker #c-book. */
 function _g45TicketVisible(id) { var e = document.getElementById(id); return !!(e && e.offsetParent !== null); }
 function _g45TicketCockpit() { var ss = document.getElementById('sub-strat'), b = document.getElementById('btn-cpit'); return !!((ss && ss.style.display !== 'none' && getComputedStyle(ss).display !== 'none') && (!b || b.classList.contains('on'))); }
+/* 20261018z : racines d'un nom d'équipe (normalisé) — « fc barcelone » et « barcelona » → « barce » ; '' si aucun mot utile. */
+window._g45TkRacines = function (t) {
+  var GEN = /^(club|futbol|football|calcio|sporting?|athletic|associazione|deportivo|olympique|union|stade)$/;
+  var l = String(t || '').split(' ').filter(function (w) { return w.length >= 5 && !GEN.test(w); }).map(function (w) { return w.slice(0, 5); });
+  return l.filter(function (w, i) { return l.indexOf(w) === i; }).sort().join(' ');
+};
 function _g45TicketRemplirCockpit(o) {
   var ids = [];
   var ev = function (e) { try { e.dispatchEvent(new Event('input', { bubbles: true })); e.dispatchEvent(new Event('change', { bubbles: true })); } catch (x) {} };
@@ -71422,7 +71428,11 @@ function _g45TicketRemplirCockpit(o) {
     var ops = [].slice.call(un.options), mots = eq.split(' ').filter(function (w) { return w.length >= 4 || /^(om|ol|psg|inter|real|lyon)$/.test(w); });
     choisi = ops.filter(function (op) { return nz(op.value) === eq || nz(op.text) === eq; })[0]
       || ops.filter(function (op) { var v = nz(op.value); return v && (v.indexOf(eq) >= 0 || eq.indexOf(v) >= 0); })[0]
-      || ops.filter(function (op) { var v = ' ' + nz(op.value) + ' '; return mots.some(function (w) { return v.indexOf(' ' + w + ' ') >= 0; }); })[0];
+      || ops.filter(function (op) { var v = ' ' + nz(op.value) + ' '; return mots.some(function (w) { return v.indexOf(' ' + w + ' ') >= 0; }); })[0]
+      /* 20261018z (capture : « FC Barcelone » lu sur le ticket, « Barcelona » au mur → alerte) : noms français / anglais / espagnols →
+         mêmes RACINES (5 premières lettres des mots de ≥ 5 lettres, mots génériques retirés), identiques des DEUX côtés
+         (« Manchester United » ≠ « Manchester City »). */
+      || (function () { var R = window._g45TkRacines, r0 = R(eq); return r0 ? ops.filter(function (op) { return R(nz(op.value)) === r0; })[0] : null; })();
     if (choisi) { un.value = choisi.value; ids.push('c-unit'); try { if (typeof updMise === 'function') updMise(); if (typeof renderCrash === 'function') renderCrash(); } catch (x) {} }
   }
   /* 20261016f (ticket Winamax « Résultat Florida Panthers » vs Vancouver Canucks, Florida absent du mur, Vancouver présent ; choix
@@ -71435,7 +71445,8 @@ function _g45TicketRemplirCockpit(o) {
     var okA = function (op) { var u1 = U1.filter(function (x) { return x && x.n === op.value; })[0]; return !u1 || (u1.type !== 'joueur' && u1.type !== 'competition'); };
     var cA = opsA.filter(function (op) { return okA(op) && (nz(op.value) === adv0 || nz(op.text) === adv0); })[0]
       || opsA.filter(function (op) { var v = nz(op.value); return okA(op) && v && (v.indexOf(adv0) >= 0 || adv0.indexOf(v) >= 0); })[0]
-      || opsA.filter(function (op) { var v = ' ' + nz(op.value) + ' '; return okA(op) && motsA.some(function (w) { return v.indexOf(' ' + w + ' ') >= 0; }); })[0];
+      || opsA.filter(function (op) { var v = ' ' + nz(op.value) + ' '; return okA(op) && motsA.some(function (w) { return v.indexOf(' ' + w + ' ') >= 0; }); })[0]
+      || (function () { var R = window._g45TkRacines, r0 = R(adv0); return r0 ? opsA.filter(function (op) { return okA(op) && R(nz(op.value)) === r0; })[0] : null; })();   /* 20261018z */
     if (cA) {
       choisi = cA; contre = true; un.value = cA.value; ids.push('c-unit');
       try { if (typeof updMise === 'function') updMise(); if (typeof renderCrash === 'function') renderCrash(); } catch (x) {}

@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261018y, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261018z, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -189,6 +189,9 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   20261016b (ticket Winamax « Passes décisives : 1 ou plus · Connor McDavid » en Cockpit → alerte « Edmonton Oilers n'est pas une équipe de ton
   mur ») : `_g45TicketRemplirCockpit` choisit D'ABORD dans #c-unit une carte JOUEUR du mur (u.type 'joueur') dont le nom contient le nom de famille
   du champ joueur du ticket (prénom pour départager), puis l'équipe comme avant. Smoke (48).
+  20261018z (capture : « FC Barcelone » lu, « Barcelona » au mur → alerte « pas une équipe de ton mur ») : dernier essai par RACINES `window._g45TkRacines`
+  (5 premières lettres des mots ≥ 5 lettres, mots génériques retirés, égalité des deux côtés : Barcelone = Barcelona, Séville = Sevilla, Manchester United ≠ City),
+  pour l'équipe ET l'adversaire. Testé node 7/7.
   20261016c (« Équipe jouée Edmonton non ? ») : carte joueur choisie → #c-equipe = équipe du ticket, sinon note de la carte (Edmonton Oilers).
   20261016d (capture : champ toujours grisé « Connor McDavid ») : updMise → `_g45MajEquipeJouee` remettait u.n en lecture seule ; carte joueur →
   champ LIBRE = u.note (club), valeur déjà posée (ticket) gardée.
