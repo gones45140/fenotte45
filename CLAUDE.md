@@ -2115,6 +2115,7 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   championnat .g45tro-wm left 46 %, z-index 0 ; téléphone : nom du pari sur sa ligne (.g45tro-pn), pastilles / cote / résultat dessous.
   20261018k (capture filtres Cote 1,50-2,19 + Proba 60 %+ + D'accord : « la demande de 10 h doit être celle-là ») : robot tendances.mjs REGLAGES
   {min 1.5, pmin 0.6, coteConnue, accord} → sans cote et désaccord NON notés à partir du passage du 18/10 ; historique d'avant inchangé (mention sous le titre).
+  17/10 (« au pire on met 8h ? » : passage du 17/10 lancé par GitHub à 13 h 51) : robot dès 8 h à Paris (parisH() < 8), crons 6 / 7 / 8 / 9 h UTC (rattrapage des retards).
   20261018j (« je pari du 1,5 mini, 1,99 ne me gêne pas, mais je peux pas faire plusieurs sélections ») : filtres de `_g45TrOffHtml` Sport / Championnat /
   Type / Cote / Proba à CHOIX MULTIPLES (F[cat] = « c1,c2 », helper a(cat, v)) ; « Tous » vide la ligne ; Avis et Période = un seul choix.
   20261018d (capture téléphone en PAYSAGE, « à droite le bordel » : pastilles sur le nom du pari, logo NHL / NFL dessus) : 700-1199 px → nom du pari
