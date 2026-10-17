@@ -76672,3 +76672,130 @@ window._g45AgJouUs = async function (nowTs) {
     (document.head || document.documentElement).appendChild(st);
   } catch (e) {}
 })();
+
+/* ═══ 📒 SÉLECTION DU JOUR EN HAUT DE TENDANCES (20261018y, « j'avais pas appuyé sur Analyser, ça sortait pas les matchs du jour —
+   je croyais que ça se faisait à 10 h », maquette validée « oui ») ═══ Le robot (GitHub, dès 8 h à Paris) note la sélection OFFICIELLE dans
+   données/tendances_officielles.json, mais elle n'apparaissait que dans l'historique (calendrier). Bloc #g45tr-sel posé juste sous la barre
+   des sous-onglets de #t-tend (MutationObserver : loadTendancesTab / g45TrRun refont l'écran) : tendances notées AUJOURD'HUI (x.n, date
+   locale), rangées par championnat ; carte = match, pari, cote, 📊 % stats / 🏦 % bookmakers ; DIRECT via scoreboard ESPN ?dates= (comme
+   lvMaj de l'historique, relu chaque minute, 50 s mini par ligue) → « ✅ gagnant si ça reste » / « ⏳ pas encore », fini = « provisoire »
+   tant que le robot n'a pas jugé (x.r). Aucune requête de cotes : 0 crédit. Repliable (localStorage g45tr_sel_ferme). Mêmes données
+   que window._g45TrOff (j partagé, mémoire 10 min). */
+(function () {
+  var URL_OFF = 'https://raw.githubusercontent.com/gones45140/gones45/main/donn%C3%A9es/tendances_officielles.json';
+  var S = window._g45TrSel = { lv: {}, lvT: {}, enCours: false };
+  var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+  var spIco = function (sl) { return { nhl: '🏒', nba: '🏀', nfl: '🏈' }[sl] || '⚽'; };
+  var LGN = { nhl: 'NHL', nba: 'NBA', nfl: 'NFL' };
+  var lgNom = function (sl) { if (LGN[sl]) return LGN[sl]; var l = sl; try { l = _g45TrCompLbl(sl); } catch (e) {} return String(l).replace(/^[^\wÀ-ÿ]+\s*/, ''); };
+  var hhmm = function (t) { try { return new Date(t).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }); } catch (e) { return ''; } };
+  var jourLoc = function (d) { d = new Date(d); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); };
+  var ferme = function () { try { return localStorage.getItem('g45tr_sel_ferme') === '1'; } catch (e) { return false; } };
+  var donnees = function () { var O = window._g45TrOff; return O && O.j && O.j.t ? O.j : null; };
+
+  function charger() {
+    var O = window._g45TrOff || (window._g45TrOff = {});
+    if (S.enCours || (O.j && Date.now() - (O.t || 0) < 600000)) return;
+    S.enCours = true;
+    fetch(URL_OFF + '?t=' + Math.floor(Date.now() / 600000), { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) { if (j) { O.j = j; O.t = Date.now(); } }).catch(function () {})
+      .then(function () { S.enCours = false; poser(true); });
+  }
+  var liste = function () {
+    var J = donnees(); if (!J) return null;
+    var auj = jourLoc(Date.now());
+    return (J.t || []).filter(function (x) { return x.r !== -1 && x.n && jourLoc(x.n) === auj; });
+  };
+  function lvMaj() {
+    var L = liste(); if (!L || S.lvEnCours || !document.getElementById('g45tr-sel')) return;
+    var now = Date.now(), cles = {};
+    L.forEach(function (x) { if (x.r == null && x.t <= now + 60000 && !(S.lv[String(x.id)] && S.lv[String(x.id)].st === 'post')) cles[x.sl + '|' + new Date(x.t - 6 * 3600000).toISOString().slice(0, 10).replace(/-/g, '')] = 1; });
+    var l = Object.keys(cles).filter(function (k) { return !(now - (S.lvT[k] || 0) < 50000); }); if (!l.length) return;
+    S.lvEnCours = true;
+    Promise.all(l.map(function (k) {
+      S.lvT[k] = now; var sl = k.split('|')[0], dt = k.split('|')[1];
+      return fetch('https://site.api.espn.com/apis/site/v2/sports/' + ({ nhl: 'hockey', nba: 'basketball', nfl: 'football' }[sl] || 'soccer') + '/' + sl + '/scoreboard?dates=' + dt, { cache: 'no-store' })
+        .then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+          ((j && j.events) || []).forEach(function (e) {
+            var c = (e.competitions && e.competitions[0]) || {}, st = (c.status && c.status.type) || {};
+            var etat = st.completed ? 'post' : (st.state === 'in' ? 'in' : null); if (!etat) return;
+            var ho = (c.competitors || []).filter(function (q) { return q.homeAway === 'home'; })[0], aw = (c.competitors || []).filter(function (q) { return q.homeAway === 'away'; })[0];
+            var sh = parseInt(ho && ho.score, 10), sa = parseInt(aw && aw.score, 10); if (isNaN(sh) || isNaN(sa)) return;
+            var cl = String(st.shortDetail || (c.status && c.status.displayClock) || ''); if (/^HT$|half/i.test(cl)) cl = 'mi-temps';
+            S.lv[String(e.id)] = { st: etat, h: sh, a: sa, s: sh + '-' + sa, c: cl };
+          });
+        }).catch(function () {});
+    })).then(function () { S.lvEnCours = false; poser(true); });
+  }
+  window.g45TrSelBasculer = function () { try { localStorage.setItem('g45tr_sel_ferme', ferme() ? '0' : '1'); } catch (e) {} poser(true); };
+
+  function html() {
+    charger();
+    var L = liste(), f = ferme();
+    var h = '<div id="g45tr-sel" style="border:2px solid #f5c542;border-radius:14px;background:rgba(21,28,48,.95);padding:12px;margin-bottom:12px;color:#fff;">'
+      + '<div onclick="g45TrSelBasculer()" style="display:flex;justify-content:space-between;align-items:center;gap:8px;cursor:pointer;">'
+      + '<span style="font-size:17px;font-weight:900;">📒 Sélection du jour</span><span style="display:flex;align-items:center;gap:6px;">'
+      + (L && L.length ? '<span style="font-size:13px;font-weight:800;background:#0b101d;border-radius:8px;padding:3px 8px;">' + L.length + ' pari' + (L.length > 1 ? 's' : '') + '</span>' : '')
+      + '<span style="font-size:14px;color:#c9d3ee;">' + (f ? '▸' : '▾') + '</span></span></div>';
+    if (f) return h + '</div>';
+    if (!L) return h + '<div style="font-size:14px;color:#c9d3ee;margin-top:8px;">⏳ Chargement…</div></div>';
+    if (!L.length) {
+      return h + '<div style="font-size:14px;color:#c9d3ee;margin-top:8px;">' + (new Date().getHours() < 15
+        ? '⏳ La sélection arrive vers 8 h (GitHub la lance parfois plus tard).'
+        : 'Aucun pari ne remplissait les critères aujourd\'hui.') + '</div></div>';
+    }
+    var tN = 0; L.forEach(function (x) { var t = Date.parse(x.n); if (t > tN) tN = t; });
+    var R = (donnees() || {}).reglages || {};
+    h += '<div style="font-size:13px;color:#c9d3ee;margin:4px 0 6px;">Choisie à ' + hhmm(tN) + ' · la même pour tout le monde · cote ≥ ' + String(R.min || 1.5).replace('.', ',')
+      + ' · proba ≥ ' + Math.round((R.pmin || 0.6) * 100) + ' %' + (R.accord ? ' · stats et books d\'accord' : '') + '</div>';
+    var parL = {}, ordre = [];
+    L.slice().sort(function (a, b) { return a.t - b.t; }).forEach(function (x) { if (!parL[x.sl]) { parL[x.sl] = []; ordre.push(x.sl); } parL[x.sl].push(x); });
+    ordre.forEach(function (sl) {
+      h += '<div style="font-size:13px;font-weight:800;background:#0b101d;display:inline-block;padding:2px 9px;border-radius:6px;margin:8px 0 6px;">' + spIco(sl) + ' ' + esc(lgNom(sl)) + '</div>';
+      parL[sl].forEach(function (x) {
+        var LV = S.lv[String(x.id)], vj = x.r == null && LV ? _g45TrSuivJuge(x.k, LV.h, LV.a) : null;
+        var bord = x.r === 1 || (LV && LV.st === 'post' && vj) ? '#1ed760' : (x.r === 0 || (LV && LV.st === 'post' && vj === false) ? '#ff4545' : (LV && LV.st === 'in' ? '#f0c828' : '#5a6788'));
+        var etat = LV && LV.st === 'in' ? '<span style="color:#ff6b6b;font-weight:900;">🔴 ' + esc(LV.s) + ' · ' + esc(LV.c) + '</span>'
+          : (x.s || (LV && LV.st === 'post')) ? '<span style="font-weight:800;">🏁 ' + esc(x.s || LV.s) + '</span>'
+          : '<span style="font-weight:800;color:#dbe4ff;">🕒 ' + hhmm(x.t) + '</span>';
+        var res = x.r === 1 ? '<span style="color:#1ed760;font-weight:800;">✅ Gagné</span>' : x.r === 0 ? '<span style="color:#ff6b6b;font-weight:800;">❌ Perdu</span>'
+          : vj == null ? '' : LV.st === 'in' ? (vj ? '<span style="color:#7dffb0;font-weight:800;">✅ gagnant si ça reste</span>' : '<span style="color:#f0c828;font-weight:800;">⏳ pas encore</span>')
+          : (vj ? '<span style="color:#1ed760;font-weight:800;">✅ Gagné (provisoire)</span>' : '<span style="color:#ff6b6b;font-weight:800;">❌ Perdu (provisoire)</span>');
+        var pP = x.p > 0 ? Math.round(x.p > 1 ? x.p : x.p * 100) : null, pF = x.f > 0 ? Math.round(x.f > 1 ? x.f : x.f * 100) : null;
+        h += '<div style="background:#1e2740;border-left:4px solid ' + bord + ';border-radius:10px;padding:9px 10px;margin-bottom:8px;">'
+          + '<div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;"><b style="font-size:15px;">' + esc(x.h) + ' – ' + esc(x.a) + '</b><span style="flex:none;font-size:14px;">' + etat + '</span></div>'
+          + '<div style="font-size:14px;margin-top:4px;color:#dbe4ff;">' + esc(x.m) + (x.c > 1 ? ' · <b style="color:#111;background:#f0c828;border-radius:6px;padding:0 6px;">@' + x.c.toFixed(2).replace('.', ',') + '</b>' : '') + '</div>'
+          + '<div style="font-size:13px;margin-top:5px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;">' + (pP != null ? '<span>📊 ' + pP + ' %</span>' : '') + '<span>🏦 ' + (pF != null ? pF + ' %' : '—') + '</span>' + res + '</div></div>';
+      });
+    });
+    h += '<div style="font-size:12px;color:#aab6d6;margin-top:4px;">Statistiques, pas des pronos sûrs · bilan complet dans l\'historique en bas.</div>';
+    return h + '</div>';
+  }
+  window._g45TrSelHtml = html;
+
+  var pose = false;
+  function poser(refaire) {
+    var el = document.getElementById('t-tend'); if (!el || pose) return;
+    try { if (typeof _g45AccesPremium === 'function' && _g45AccesPremium() !== true) return; } catch (e) {}   /* Tendances = comptes seulement */
+    var bar = el.querySelector('.psub-bar'), ex = document.getElementById('g45tr-sel');
+    if (ex && !refaire) return;
+    pose = true;
+    try {
+      var tmp = document.createElement('div'); tmp.innerHTML = html(); var nv = tmp.firstChild;
+      if (ex) ex.replaceWith(nv); else if (bar && bar.parentNode) bar.parentNode.insertBefore(nv, bar.nextSibling); else el.insertBefore(nv, el.firstChild);
+    } catch (e) {}
+    pose = false;
+    setTimeout(lvMaj, 0);
+  }
+  window._g45TrSelPoser = poser;
+  var brancher = function () {
+    var el = document.getElementById('t-tend'); if (!el) return setTimeout(brancher, 1000);
+    new MutationObserver(function () { if (!pose && !document.getElementById('g45tr-sel') && el.offsetParent !== null) poser(false); }).observe(el, { childList: true, subtree: true });
+    setInterval(function () { if (el.offsetParent !== null && document.getElementById('g45tr-sel')) { lvMaj(); if (Date.now() - ((window._g45TrOff || {}).t || 0) > 600000) charger(); } }, 60000);
+  };
+  brancher();
+  if (typeof loadTendancesTab === 'function') {
+    var _l = window.loadTendancesTab;
+    loadTendancesTab = window.loadTendancesTab = function () { var r = _l.apply(this, arguments); try { poser(false); } catch (e) {} return r; };
+  }
+})();
