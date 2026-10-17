@@ -73845,9 +73845,9 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   }
   function calc(c, ms) {
     ms = jFiltre(c, ms);
-    var ok = 0, pire = 0, run = 0;
-    ms.forEach(function (m) { if (passe(c, m)) { ok++; run = 0; } else { run++; if (run > pire) pire = run; } });
-    return { n: ms.length, ok: ok, pire: pire };
+    var ok = 0, pire = 0, run = 0, best = 0, rb = 0;   /* 20261018u (« faudrait meilleure série ») : best = plus longue suite de réussites */
+    ms.forEach(function (m) { if (passe(c, m)) { ok++; run = 0; rb++; if (rb > best) best = rb; } else { rb = 0; run++; if (run > pire) pire = run; } });
+    return { n: ms.length, ok: ok, pire: pire, best: best };
   }
   function enCours(c, ms) {
     ms = jFiltre(c, ms);
@@ -73967,17 +73967,19 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var tous = [], h = '<table style="width:100%;border-collapse:collapse;font-size:14px;color:#fff;margin-top:6px;">'
       + '<tr><th style="text-align:left;font-size:13px;color:#c9d3ee;padding:6px 4px;border-bottom:1px solid #2a3a63;">Saison</th>'
       + '<th style="text-align:left;font-size:13px;color:#c9d3ee;padding:6px 4px;border-bottom:1px solid #2a3a63;">Réussite</th>'
-      + '<th style="text-align:left;font-size:13px;color:#c9d3ee;padding:6px 4px;border-bottom:1px solid #2a3a63;">Pire série<br>de défaites</th></tr>';
+      + '<th style="text-align:left;font-size:13px;color:#c9d3ee;padding:6px 4px;border-bottom:1px solid #2a3a63;">Pire série<br>de défaites</th>'
+      + '<th style="text-align:left;font-size:13px;color:#c9d3ee;padding:6px 4px;border-bottom:1px solid #2a3a63;">Meilleure<br>série</th></tr>';
     D.saisons.slice().reverse().forEach(function (s) { if (s && s.ms) tous = tous.concat(filtrer(s.ms)); });
     D.saisons.forEach(function (s) {
       if (!s) return;
       var td = 'padding:8px 4px;border-bottom:1px solid #1c2747;';
-      if (!s.ms) { h += '<tr><td style="' + td + '">' + lib(D.lg, s.an) + '</td><td colspan="2" style="' + td + 'color:#c9d3ee;">indisponible</td></tr>'; return; }
+      if (!s.ms) { h += '<tr><td style="' + td + '">' + lib(D.lg, s.an) + '</td><td colspan="3" style="' + td + 'color:#c9d3ee;">indisponible</td></tr>'; return; }
       var ms = filtrer(s.ms);
-      if (!ms.length) { h += '<tr><td style="' + td + '">' + lib(D.lg, s.an) + '</td><td colspan="2" style="' + td + 'color:#c9d3ee;">aucun match joué</td></tr>'; return; }
+      if (!ms.length) { h += '<tr><td style="' + td + '">' + lib(D.lg, s.an) + '</td><td colspan="3" style="' + td + 'color:#c9d3ee;">aucun match joué</td></tr>'; return; }
       var R = calc(c, ms);
       h += '<tr><td style="' + td + '">' + lib(D.lg, s.an) + '</td><td style="' + td + '">' + R.ok + '/' + R.n + ' · ' + Math.round(100 * R.ok / R.n) + ' %</td>'
-        + '<td style="' + td + 'font-weight:700;color:' + coul(R.pire) + ';">' + R.pire + '</td></tr>';
+        + '<td style="' + td + 'font-weight:700;color:' + coul(R.pire) + ';">' + R.pire + '</td>'
+        + '<td style="' + td + 'font-weight:700;color:#5aa9ff;">' + R.best + '</td></tr>';
     });
     h += '</table>';
     if (tous.length) {
@@ -73985,6 +73987,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       h += '<div style="margin-top:10px;background:#0f1730;border-radius:10px;padding:10px;font-size:14px;line-height:1.6;color:#fff;">'
         + '🧮 <b>Total : ' + T.ok + '/' + T.n + ' · ' + Math.round(100 * T.ok / T.n) + ' %</b><br>'
         + '🪜 Pire série : <b style="color:' + coul(T.pire) + ';">' + T.pire + ' défaite' + (T.pire > 1 ? 's' : '') + ' de suite</b> → il fallait <b>' + (T.pire + 1) + ' palier' + (T.pire ? 's' : '') + '</b><br>'
+        + '🏆 Meilleure série : <b style="color:#5aa9ff;">' + T.best + ' réussite' + (T.best > 1 ? 's' : '') + ' de suite</b><br>'
         + '📈 Série en cours : ' + enCours(c, tous) + '</div>';
     }
     return h;

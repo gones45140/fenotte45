@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261018t, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261018u, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1859,6 +1859,7 @@ RÉGLÉ (worker, 01/10) : cron « exceededCpu » (cpuTimeMs 10) à CHAQUE passag
   20261018t (« on étoffe le critère : rajoute joueur buteur / passeur / décisif ») : FOOT — ligne « Joueur » (menu = effectif actuel du club, gardiens
   exclus, tri buts + passes ; c.jo / c.jn / c.jm but | pas | dec) ; journal _g45RegLogFoot par saison du bloc, match retrouvé par DATE (± 1 jour), match
   sans le joueur = NON compté (jFiltre dans calc / enCours). D.tid ajouté. window._g45CrS = état (tests). Testé Chromium (ESPN simulé, Kane 1/2, 1/2, 2/2).
+  20261018u (« faudrait meilleure série ») : calc → best (plus longue suite de réussites) ; colonne bleue « Meilleure série » + ligne 🏆 dans le total.
   20261014g (« ça fonctionne que sur le foot ? » → « oui » NHL) : même bloc en tête du panneau `_g45SaisonsGen` (hockey / nhl, insertAdjacentHTML après
   el.innerHTML) via `_g45CrHtml(nom, {sp, lg, id})` ; calendrier d'équipe ESPN hockey/nhl/teams/<id>/schedule?season=<an FIN>&seasontype=2 (présaison et
   séries écartées), match = [date, dom, pour, contre, ox] (ox 1 prolongation / 2 TAB lus dans status.detail) ; Victoire / Nul / Défaite / buts = TEMPS
