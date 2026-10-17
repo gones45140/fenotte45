@@ -30113,6 +30113,7 @@ async function g45MqSport(sp) {
     hote.innerHTML = '<div style="display:flex;gap:5px;margin-bottom:8px;">'
       + '<button onclick="g45MarqueursUS(\'nhl\')" style="flex:1;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.04);color:var(--t1);font-size:11px;font-weight:700;cursor:pointer;">Buts</button>'
       + '<button onclick="g45MarqueursUS(\'nhl\',1)" style="flex:1;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.04);color:var(--t1);font-size:11px;font-weight:700;cursor:pointer;">Points</button></div>'
+      + '<button onclick="g45MarqueursUS(\'nhl\',2)" style="flex:1;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.04);color:var(--t1);font-size:11px;font-weight:700;cursor:pointer;">Passes</button></div>'
       + '<div id="g45-mq-body" style="font-size:11.5px;color:var(--t3);"></div>';
   } else {
     hote.innerHTML = '<div id="g45-mq-body" style="font-size:11.5px;color:var(--t3);"></div>';
@@ -56651,6 +56652,7 @@ var G45_MQ = {
     sport: 'hockey', lg: 'nhl', nom: 'NHL', ico: '\ud83c\udfd2',
     cat: 'goalsLeaders', libelle: 'Buts', marche: 'Marque un but',
     cat2: 'pointsLeaders', libelle2: 'Points', marche2: 'Marque ou passe',
+    cat3: 'assistsLeaders', libelle3: 'Passes', marche3: 'Fait une passe d\u00e9cisive',   /* 20261018l : « il manque passeur » */
     debutMois: 9   /* octobre */
   }
 };
@@ -56698,11 +56700,14 @@ async function _g45MqEquipe(ref, lg) {
   var m = String(ref || '').match(/teams\/(\d+)/);
   if (!m) return null;
   var id = m[1];
-  if (_g45MqTeams[id]) return _g45MqTeams[id];
+  /* 20261018l (capture : Robertson / Johnston (Dallas Stars) avec le « G » des Packers, McDavid avec l'étoile des Cowboys) : la mémoire
+     de session était rangée par NUMÉRO seul → l'équipe NFL n°9 / n°6 lue avant servait aux équipes NHL du même numéro. Clé ligue + numéro. */
+  var mk = lg + '_' + id;
+  if (_g45MqTeams[mk]) return _g45MqTeams[mk];
   var cle = 'g45_mqteam_' + lg + '_' + id;
   try {
     var c = JSON.parse(localStorage.getItem(cle) || 'null');
-    if (c && c.nom) { _g45MqTeams[id] = c; return c; }
+    if (c && c.nom) { _g45MqTeams[mk] = c; return c; }
   } catch (e) {}
   var t = null;
   try {
@@ -56726,7 +56731,7 @@ async function _g45MqEquipe(ref, lg) {
     }
   } catch (e) {}
   if (t && t.nom) {
-    _g45MqTeams[id] = t;
+    _g45MqTeams[mk] = t;
     try { localStorage.setItem(cle, JSON.stringify(t)); } catch (e) {}
   }
   return t;
@@ -56765,6 +56770,7 @@ async function g45MarqueursUS(quoi, secondaire) {
   var categorie = secondaire && c.cat2 ? c.cat2 : c.cat;
   var libelle = secondaire && c.libelle2 ? c.libelle2 : c.libelle;
   var marche = secondaire && c.marche2 ? c.marche2 : c.marche;
+  if (secondaire === 2 && c.cat3) { categorie = c.cat3; libelle = c.libelle3; marche = c.marche3; }   /* 20261018l : Passes */
 
   body.innerHTML = '<div style="color:var(--t3);font-size:11.5px;padding:12px;">\u23f3 Lecture des classements ' + c.nom + '\u2026</div>';
   var leaders = await _g45MqLeaders(c, saison, categorie);
@@ -56846,6 +56852,7 @@ function g45MarqueursUI() {
     + '<button onclick="g45MarqueursUS(\'nfl\')" style="flex:1;min-width:90px;padding:9px;border-radius:9px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.04);color:var(--t1);font-size:11px;font-weight:700;cursor:pointer;">\ud83c\udfc8 NFL \u00b7 TD</button>'
     + '<button onclick="g45MarqueursUS(\'nhl\')" style="flex:1;min-width:90px;padding:9px;border-radius:9px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.04);color:var(--t1);font-size:11px;font-weight:700;cursor:pointer;">\ud83c\udfd2 NHL \u00b7 buts</button>'
     + '<button onclick="g45MarqueursUS(\'nhl\',1)" style="flex:1;min-width:90px;padding:9px;border-radius:9px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.04);color:var(--t1);font-size:11px;font-weight:700;cursor:pointer;">\ud83c\udfd2 NHL \u00b7 points</button>'
+    + '<button onclick="g45MarqueursUS(\'nhl\',2)" style="flex:1;min-width:90px;padding:9px;border-radius:9px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.04);color:var(--t1);font-size:11px;font-weight:700;cursor:pointer;">\ud83c\udfd2 NHL \u00b7 passes</button>'
     + '</div><div id="g45-mq-body" style="font-size:11.5px;color:var(--t3);">Choisis un march\u00e9.</div></div>';
   el.appendChild(d);
 }

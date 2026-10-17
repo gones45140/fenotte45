@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261018k, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261018l, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1518,6 +1518,9 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   vainqueur / défaite / nul / + − de X ; combiné, lay, joueur, BTS, MT, double chance, handicap = rien), `_g45CdTexte` (« 1,07 en direct · tu l'as prise
   à 3,60 ▲ bien joué » / « ta ligne n'est plus proposée » / « ⏸️ suspendue ») ; cartes Paris en cours : div .g45ec-cd ajoutée dans .g45ec-live
   (MutationObserver) ; fenêtre du match : enveloppe window._g45EspnUsOdds → « Favori avant le match » + bloc « 📈 COTES EN DIRECT ». Smoke (37).
+- Tendances → Buteurs → NHL (`g45MarqueursUS`, G45_MQ) — 20261018l (« il manque passeur » ; capture : Robertson / Johnston avec le « G » des Packers) :
+  3e bouton Passes (cat3 assistsLeaders, secondaire === 2 ; nom de catégorie ESPN NON sondé, repli par mot « assists ») ; mémoire `_g45MqTeams` rangée
+  par ligue + numéro (avant : numéro seul → équipe NFL n°9 servie aux Dallas Stars).
 - Cotes ESPN US : `details` = handicap (« LAR -1.5 », côté favori) en NFL.
 - Sofascore RapidAPI (sofascore6, via worker host=rapidapi) : match/list
   sport_slug=football OK (553 matchs) ; american-football, americanfootball,
