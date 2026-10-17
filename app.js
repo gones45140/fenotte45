@@ -74894,7 +74894,7 @@ var _G45_BK_DOM = [
     var J = O.j, box = function (h) { return '<div id="g45tr-off" style="background:rgba(11,16,29,.86);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px 14px;margin-bottom:12px;color:#fff;">' + h + '</div>'; };
     var tete = '<span style="display:inline-block;background:#f0c828;color:#111;font-size:11px;font-weight:800;border-radius:5px;padding:2px 6px;">OFFICIEL · identique pour tous</span>'
       + '<div style="font-size:17px;font-weight:800;margin-top:6px;">📒 Historique des Tendances</div>'
-      + '<div style="font-size:13px;color:#c9d3ee;">Notées AVANT le match, chaque jour à 10 h · cote mini 1,50 · proba mini 50 %<br>Cotes ≈ books FR (ANJ) : DraftKings − 6 %, estimées</div>';
+      + '<div style="font-size:13px;color:#c9d3ee;">Notées AVANT le match, chaque jour à 10 h · cote connue 1,50 mini · proba mini 60 % · stats et bookmakers d\'accord<br><span style="font-size:12px;color:#aab6d6;">(avant le 18/10 : proba 50 %, sans cote et désaccords compris)</span><br>Cotes ≈ books FR (ANJ) : DraftKings − 6 %, estimées</div>';
     if (!J) return box(tete + '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">⏳ Chargement…</div>');
     var tous = (J.t || []).filter(function (x) { return x.r !== -1; });
     /* 20261017h (« trier par championnat » → « un truc comme dans Bilan avec les filtres », visuel validé) : barre 🔎 Filtres repliable
