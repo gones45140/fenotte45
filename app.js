@@ -29762,6 +29762,33 @@ async function _g45ButAth(lg, y, aid){
   return res;
 }
 function g45ButComp(c){ try{ localStorage.setItem('g45but_comp', c); }catch(e){} g45ButeursView(); }
+/* 20261018n (« que ça sélectionne le joueur seulement s'il joue aujourd'hui ») : bouton « 🗓️ Jouent aujourd'hui » — scoreboards ESPN du
+   jour (championnats de la liste + coupes d'Europe), mémoire 10 min ; joueur gardé si son club (tid) a un match pas encore fini aujourd'hui ;
+   ligne « 🗓️ 21:00 · vs X (🏠) » sur la fiche. Meilleurs buteurs : 10 par championnat au lieu de 3 quand le filtre est allumé. */
+function g45ButAuj(){ try{ localStorage.setItem('g45but_auj', localStorage.getItem('g45but_auj')==='1'?'':'1'); }catch(e){} g45ButeursView(); }
+window.g45ButAuj=g45ButAuj;
+var _g45ButJourMem=null;
+async function _g45ButJour(){
+  if(_g45ButJourMem && Date.now()-_g45ButJourMem.t<600000) return _g45ButJourMem.d;
+  var d=new Date(), ymd=d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0');
+  var sl=_G45_BUT_LG.map(function(x){ return x.s; }).concat(['uefa.champions','uefa.europa','uefa.europa.conf']);
+  var M={};
+  await Promise.all(sl.map(function(s){
+    return fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/'+s+'/scoreboard?dates='+ymd).then(function(r){ return r.ok?r.json():null; }).then(function(j){
+      ((j&&j.events)||[]).forEach(function(e){
+        var c=(e.competitions||[])[0]||{}, st=(c.status&&c.status.type)||(e.status&&e.status.type)||{};
+        if(st.completed||st.state==='post') return;
+        var cs=c.competitors||[];
+        cs.forEach(function(t){
+          var o=cs.filter(function(x){ return x!==t; })[0]||{};
+          if(t.team&&t.team.id) M[String(t.team.id)]={h:new Date(e.date).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}), adv:(o.team&&(o.team.shortDisplayName||o.team.displayName))||'', dom:t.homeAway==='home', live:st.state==='in'};
+        });
+      });
+    }).catch(function(){});
+  }));
+  _g45ButJourMem={t:Date.now(), d:M};
+  return M;
+}
 window.g45ButComp=g45ButComp;
 function g45ButMode(m){ try{ localStorage.setItem('g45but_mode', m); }catch(e){} g45ButeursView(); }
 function g45ButLg(sl){
@@ -29873,6 +29900,7 @@ async function g45ButeursView(){
   var el=document.getElementById('t-tend'); if(!el) return;
   var mode=localStorage.getItem('g45but_mode')||'fav';
   var comp=localStorage.getItem('g45but_comp')||'lg';
+  var auj=localStorage.getItem('g45but_auj')==='1';
   var UCL='uefa.champions';
   var L={}; try{ L=JSON.parse(localStorage.getItem('g45but_lg')||'null')||{}; }catch(e){}
   if(!Object.keys(L).length) L={'fra.1':1,'eng.1':1,'esp.1':1,'ita.1':1,'ger.1':1};
@@ -29893,6 +29921,7 @@ async function g45ButeursView(){
     +'<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:7px;">'
       +chip('⭐ Mes joueurs', mode==='fav', "g45ButMode('fav')")
       +chip('🏆 Meilleurs buteurs', mode==='top', "g45ButMode('top')")
+      +chip('🗓️ Jouent aujourd\'hui', auj, "g45ButAuj()")
     +'</div>'
     +'<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:7px;">'
       +chip('Championnat', comp==='lg', "g45ButComp('lg')")
@@ -29905,7 +29934,8 @@ async function g45ButeursView(){
 
   var y=_g45TrSeason();
   var cotes={}; try{ cotes=JSON.parse(localStorage.getItem('g45but_cotes')||'{}'); }catch(e){}
-  var items=[], anyPrev=false;
+  var items=[], anyPrev=false, JOUR=null;
+  if(auj){ pg('🗓️ Matchs du jour…'); try{ JOUR=await _g45ButJour(); }catch(e){ JOUR={}; } }
   if(mode==='fav'){
     /* Le mur prime : un joueur qu'il y a ajouté remplace son homonyme de la liste figée. */
     var mur=_g45ButMur(), vus={};
@@ -29917,6 +29947,7 @@ async function g45ButeursView(){
       var pp=liste[i], ii=null, dd=null, an=y;
       pg('⏳ '+(i+1)+'/'+liste.length);
       try{ ii=pp.mur?(await _g45ButIdMur(pp)):(await _g45ButId(pp)); }catch(e){}
+      if(JOUR && !(ii && ii.tid && JOUR[String(ii.tid)])) continue;   /* 20261018n */
       var cible=(comp==='ucl')?{lg:UCL}:(pp.mur?{lg:(ii&&ii.lg)||'esp.1'}:pp);
       if(ii){
         try{ dd=await _g45ButStats(cible, ii, y); }catch(e){}
@@ -29935,14 +29966,15 @@ async function g45ButeursView(){
     for(var k=0;k<slugs.length;k++){
       pg('🏆 '+slugs[k].n+' ('+(k+1)+'/'+slugs.length+')');
       var lead=[], anL=y;
-      try{ lead=await _g45ButLeaders(slugs[k].s, y, 3); }catch(e){}
+      try{ lead=await _g45ButLeaders(slugs[k].s, y, JOUR?10:3); }catch(e){}
       if(!lead.length){
-        try{ lead=await _g45ButLeaders(slugs[k].s, y-1, 3); }catch(e){}
+        try{ lead=await _g45ButLeaders(slugs[k].s, y-1, JOUR?10:3); }catch(e){}
         if(lead.length){ anL=y-1; anyPrev=true; }
       }
       for(var m=0;m<lead.length;m++){
         var ath=null, st=null;
         try{ ath=await _g45ButAth(slugs[k].s, anL, lead[m].aid); }catch(e){}
+        if(JOUR && !(ath && ath.tid && JOUR[String(ath.tid)])) continue;   /* 20261018n */
         try{ st=await _g45ButStats({lg:slugs[k].s}, {aid:lead[m].aid}, anL); }catch(e){}
         if(!ath||!st) continue;
         ath.tname=slugs[k].n;
@@ -29985,6 +30017,8 @@ async function g45ButeursView(){
         +'<div style="font-size:14px;font-weight:700;color:#fff;background:rgba(0,0,0,.5);display:inline-block;border-radius:5px;padding:1px 7px;margin-top:3px;"><span class="g45-club">'+_g45CyEa(id.tname||'')+'</span> · '+an+'-'+String(an+1).slice(2)+'</div></div>'
         +'<div style="flex:none;text-align:center;background:rgba(10,14,26,.85);border:1px solid rgba(46,204,113,.35);border-radius:10px;padding:5px 12px;"><div style="font-size:26px;font-weight:900;color:#2ecc71;line-height:1.1;">'+Math.round(pAnyN*100)+' %</div><div style="font-size:13px;color:#c9d3ee;">chance de marquer</div></div>'
       +'</div>'
+      +((JOUR&&id.tid&&JOUR[String(id.tid)])?(function(J){ return '<div style="font-size:15px;font-weight:800;color:#fff;background:rgba(37,99,235,.35);border:1px solid #3b82f6;border-radius:8px;padding:5px 10px;margin-bottom:8px;">'
+        +(J.live?'🔴 En cours':'🗓️ '+J.h)+' · '+(J.dom?'🏠 vs ':'✈️ @ ')+_g45CyEa(J.adv)+'</div>'; })(JOUR[String(id.tid)]):'')
       +'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">'
         +cell(d.g,'buts','#f5c542')+cell(d.app,'matchs')+cell(gpm.toFixed(2).replace('.',','),'buts / match','#2ecc71')
         +cell(sotpm.toFixed(1).replace('.',','),'tirs cadrés / m')
@@ -30013,7 +30047,7 @@ async function g45ButeursView(){
       +'</div></div>';
   }
   var bandeau = anyPrev ? ('<div style="background:rgba(138,160,255,.12);border:1px solid rgba(138,160,255,.28);border-radius:8px;padding:7px 10px;margin-bottom:9px;font-size:9px;color:#8aa0ff;line-height:1.5;">\uD83D\uDCDA Saison '+y+'/'+(y+1)+' pas encore commencée : les chiffres viennent de l\'\u00e9dition pr\u00e9c\u00e9dente.</div>') : '';
-  el.innerHTML=head+bandeau+(h||'<div style="font-size:10px;color:var(--t3);text-align:center;padding:14px;">Aucun buteur trouvé — sélectionne au moins un championnat.</div>')
+  el.innerHTML=head+bandeau+(h||(JOUR?'<div style="font-size:15px;color:#fff;text-align:center;padding:14px;">🗓️ Aucun de ces joueurs ne joue aujourd\'hui.</div>':'<div style="font-size:10px;color:var(--t3);text-align:center;padding:14px;">Aucun buteur trouvé — sélectionne au moins un championnat.</div>'))
     +'<div style="font-size:8px;color:var(--t3);text-align:center;margin-top:8px;font-style:italic;line-height:1.6;">'+(comp==='ucl'?'Statistiques de <b>Ligue des Champions uniquement</b> — échantillon plus petit, mais face à des défenses du même niveau que celles du prochain match européen.':'Statistiques de <b>championnat uniquement</b> (hors coupes) — adversaires homogènes, ce qui convient pour parier sur les matchs de championnat.')+'<br>Classement par buts hors penalty. λ = buts par match joué ; p = 1 − e<sup>−λ</sup>.<br>La cote saisie n\'est pas dévigorisée (marché à deux issues non disponible) : l\'écart réel est donc un peu plus faible qu\'affiché.</div>';
 
   /* Pastilles remplies APRES l'affichage complet : chaque joueur demande une
