@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261018p, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261018q, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -1531,6 +1531,9 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   20261018p (« NFL NHL oui ») : `g45MarqueursUS` + boutons « 🗓️ Jouent aujourd'hui » (g45mq_auj, `_g45MqJour` = scoreboard ESPN de la ligue SANS date = journée /
   semaine en cours, matchs pas finis, club = teams/<id> du leader ; ligne « 🗓️ sam. 21:00 · vs X ») et « 🎯 Mes critères » (g45mq_crit : proba ≥ 60 % et cote juste
   ≥ 1,50) ; 50 leaders lus (window._g45MqTop) quand un filtre est allumé. Testé Chromium (ESPN simulé). NBA : PAS fait (autre calcul : seuils de points).
+  20261018q (« NBA aussi », maquette validée « oui ») : bloc en fin d'app.js — chip 🏀 NBA dans Marqueurs (enveloppe de g45MqSport('nba') → `g45NbaMq`) : stat Points /
+  Rebonds / Passes + ligne − / + (g45nba_mq), leaders core types/2 (catégorie par mot, NOMS NON SONDÉS), 30 joueurs, % RÉEL de matchs au-dessus de la ligne via
+  `_g45NbaGLRecuperer` (journal, worker espnweb), 5 derniers, cote juste, Jouent aujourd'hui / Mes critères (g45mq_auj / g45mq_crit). Testé Chromium (ESPN simulé).
   20261018m (« et les noms coupés ») : nom du joueur en entier (retour à la ligne, 14 px), sigle du club dessous.
 - Cotes ESPN US : `details` = handicap (« LAR -1.5 », côté favori) en NFL.
 - Sofascore RapidAPI (sofascore6, via worker host=rapidapi) : match/list
