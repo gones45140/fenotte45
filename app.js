@@ -56738,8 +56738,37 @@ async function _g45MqLeaders(c, saison, categorie) {
     var mot = categorie.replace('Leaders', '').toLowerCase();
     cat = ((j && j.categories) || []).filter(function (x) { return String(x.name || '').toLowerCase().indexOf(mot) >= 0; })[0];
   }
-  return (cat && cat.leaders) ? cat.leaders.slice(0, 15) : [];
+  return (cat && cat.leaders) ? cat.leaders.slice(0, window._g45MqTop || 15) : [];
 }
+/* 20261018p (« NFL NHL oui ») : comme le foot — « 🗓️ Jouent aujourd'hui » (scoreboard ESPN du jour de la ligue, sans date = journée / semaine
+   en cours chez ESPN ; matchs pas finis ; club = teams/<id> du classement) et « 🎯 Mes critères » (proba ≥ 60 % et cote juste ≥ 1,50).
+   localStorage g45mq_auj / g45mq_crit ; 50 leaders lus au lieu de 15 quand un filtre est allumé. */
+var _g45MqJourMem = {};
+async function _g45MqJour(c) {
+  var m = _g45MqJourMem[c.lg]; if (m && Date.now() - m.t < 600000) return m.d;
+  var M = {};
+  try {
+    var r = await fetch('https://site.api.espn.com/apis/site/v2/sports/' + c.sport + '/' + c.lg + '/scoreboard');
+    var j = r.ok ? await r.json() : null;
+    ((j && j.events) || []).forEach(function (e) {
+      var cp = (e.competitions || [])[0] || {}, st = (cp.status && cp.status.type) || {};
+      if (st.completed || st.state === 'post') return;
+      var cs = cp.competitors || [];
+      cs.forEach(function (t) {
+        var o = cs.filter(function (x) { return x !== t; })[0] || {}, d = new Date(e.date);
+        if (t.team && t.team.id) M[String(t.team.id)] = { h: d.toLocaleDateString('fr-FR', { weekday: 'short' }) + ' ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+          adv: (o.team && (o.team.shortDisplayName || o.team.displayName)) || '', dom: t.homeAway === 'home', live: st.state === 'in' };
+      });
+    });
+  } catch (e) {}
+  _g45MqJourMem[c.lg] = { t: Date.now(), d: M };
+  return M;
+}
+window.g45MqFiltre = function (k) {
+  var cle = k === 'auj' ? 'g45mq_auj' : 'g45mq_crit';
+  try { localStorage.setItem(cle, localStorage.getItem(cle) === '1' ? '' : '1'); } catch (e) {}
+  var a = window._g45MqDernier || ['nhl']; g45MarqueursUS(a[0], a[1]);
+};
 
 /* ═══ CLUB D'UN LEADER (22/08) ═══
    VERIFIE dans la reponse reelle : chaque entree de classement porte
@@ -56828,6 +56857,13 @@ async function g45MarqueursUS(quoi, secondaire) {
   var libelle = secondaire && c.libelle2 ? c.libelle2 : c.libelle;
   var marche = secondaire && c.marche2 ? c.marche2 : c.marche;
   if (secondaire === 2 && c.cat3) { categorie = c.cat3; libelle = c.libelle3; marche = c.marche3; }   /* 20261018l : Passes */
+  window._g45MqDernier = [quoi, secondaire];
+  var mqAuj = localStorage.getItem('g45mq_auj') === '1', mqCrit = localStorage.getItem('g45mq_crit') === '1';
+  window._g45MqTop = (mqAuj || mqCrit) ? 50 : 15;
+  var JOUR = mqAuj ? await _g45MqJour(c) : null;
+  var bt = function (k, on, t) { return '<button onclick="g45MqFiltre(\'' + k + '\')" style="flex:1;padding:8px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:800;border:1px solid '
+    + (on ? '#3b82f6' : 'rgba(255,255,255,.2)') + ';background:' + (on ? '#2563eb' : 'rgba(0,0,0,.35)') + ';color:#fff;">' + t + '</button>'; };
+  var filtres = '<div style="display:flex;gap:6px;margin-bottom:8px;">' + bt('auj', mqAuj, '🗓️ Jouent aujourd\'hui') + bt('crit', mqCrit, '🎯 Mes critères') + '</div>';
 
   body.innerHTML = '<div style="color:var(--t3);font-size:11.5px;padding:12px;">\u23f3 Lecture des classements ' + c.nom + '\u2026</div>';
   var leaders = await _g45MqLeaders(c, saison, categorie);
@@ -56844,6 +56880,8 @@ async function g45MarqueursUS(quoi, secondaire) {
   for (var i = 0; i < leaders.length; i++) {
     var L = leaders[i];
     var total = parseFloat(L.value) || 0;
+    var tidM = String((L.team && L.team.$ref) || '').match(/teams\/(\d+)/), tid = tidM ? tidM[1] : '';
+    if (JOUR && !JOUR[tid]) continue;   /* 20261018p : ne joue pas aujourd'hui → pas de requête */
     var who = await _g45MqNom(L.athlete && L.athlete.$ref);
     /* Nombre de matchs : ESPN le donne rarement ici. On l'approche par la saison
        complete du championnat — 17 en NFL, 82 en NHL — ce qui SOUS-ESTIME le
@@ -56854,11 +56892,13 @@ async function g45MarqueursUS(quoi, secondaire) {
     var coteMin = p > 0 ? (1 / p) : 0;
     var eq = null;
     try { eq = await _g45MqEquipe(L.team && L.team.$ref, c.lg); } catch (e) {}
-    lignes.push({ nom: who.nom, total: total, lam: lam, p: p, cote: coteMin, eq: eq });
+    if (mqCrit && !(p >= 0.6 && coteMin >= 1.5)) continue;   /* 20261018p : mes critères */
+    lignes.push({ nom: who.nom, total: total, lam: lam, p: p, cote: coteMin, eq: eq, j: JOUR ? JOUR[tid] : null });
   }
   lignes.sort(function (a, b) { return b.p - a.p; });
+  if (!lignes.length) { body.innerHTML = filtres + '<div style="font-size:15px;color:#fff;text-align:center;padding:14px;">' + (mqCrit ? '🎯 Aucun joueur ne remplit tes critères (proba 60 % mini et cote 1,50 mini).' : '🗓️ Aucun de ces joueurs ne joue aujourd\'hui.') + '</div>'; return; }
 
-  body.innerHTML = '<div style="font-size:10px;color:var(--t3);margin-bottom:8px;">'
+  body.innerHTML = filtres + '<div style="font-size:10px;color:var(--t3);margin-bottom:8px;">'
       + c.ico + ' ' + c.nom + ' \u00b7 saison ' + saison + ' \u00b7 march\u00e9 \u00ab ' + marche + ' \u00bb'
       + (saison < new Date().getFullYear() ? ' <span style="color:#ffb13d;">(saison pass\u00e9e : le championnat n\'a pas repris)</span>' : '')
       + '</div>'
@@ -56886,6 +56926,7 @@ async function g45MarqueursUS(quoi, secondaire) {
           /* 20261018m (« et les noms coupés ») : nom entier sur 2 lignes si besoin, 14 px ; club dessous. */
           + '<div style="flex:1;min-width:0;font-weight:700;font-size:14px;line-height:1.2;white-space:normal;word-break:break-word;">' + l.nom
           + (e.abbr ? ('<div style="font-size:12px;font-weight:800;letter-spacing:.5px;color:#aab6d6;">' + e.abbr + '</div>') : '')
+          + (l.j ? ('<div style="font-size:12px;font-weight:800;color:#8fb4ff;">' + (l.j.live ? '🔴 en cours' : '🗓️ ' + l.j.h) + ' · ' + (l.j.dom ? 'vs ' : '@ ') + l.j.adv + '</div>') : '')
           + '</div>'
           + '<div style="width:46px;text-align:right;color:var(--t3);">' + l.total + '</div>'
           + '<div style="width:52px;text-align:right;color:var(--t3);">' + l.lam.toFixed(2) + '</div>'
