@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action. Il remplace des semaines d'historique
-que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261018f, même app.js sur gones45 et fenotte45).
+que tu n'as pas. Mis à jour le 14/10/2026 (version déployée : 20261018g, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -477,6 +477,9 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
   20261017x (« on peut faire NFL et NBA ») : window._g45AgJouUs(nowTs) (fin d'app.js, appelé par loadCalendrier, 20 s max) — carte JOUEUR 🏈 / 🏀 → club
   (_g45UClub) dans _g45CompetEquipes({sp, s: nfl|nba}) (nom, court, dernier mot ≥ 4 lettres) → …/teams/<id>/schedule?season=_g45SgAnAuto&seasontype=2,
   14 jours, une lecture par club ; même carte que les joueurs NHL. Testé Chromium (ESPN simulé : Mahomes @ Broncos + consigne). ⚾ = attente sonde lanceurs.
+  20261018g (« une belle page en attendant ? » → « pense à soutenir le projet… sinon carte grise », maquette validée, « Laisser pourboire ») :
+  loadCalendrier pose window._g45AgAttenteHtml() pendant la lecture (bloc en fin d'app.js) : bet45 sans window._g45Soutien → carte ☕ « Pense à soutenir
+  BET45 » + « ☕ Laisser un pourboire » (paypal.me, sans contrepartie) ; soutien / gones → 3 cartes grises qui brillent (.g45ag-gris). Smoke (agAtt, 59).
   20261016i (Santé : TheSportsDB « trop lent (12 s) » depuis 4 h ; console d'Antoine : searchteams « Club / Athletic / CD / FC Connor McDavid » en
   522 / CORS ; Arsenal = 200 en 19 s → serveur TheSportsDB surchargé) : `_g45FanChercher` (fond de carte) et `_g45BgChercher` (fond de fiche) ne
   cherchent plus d'ÉQUIPE pour une carte JOUEUR du mur (8 variantes par joueur) ; la recherche de JOUEUR (searchplayers, 1 requête) reste. Smoke (52).

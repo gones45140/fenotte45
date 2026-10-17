@@ -25947,6 +25947,8 @@ async function loadCalendrier() {
   var btn = document.getElementById('btn-refresh-cal');
   if(!el) return;
   el.innerHTML = '<div style="display:flex;align-items:center;gap:8px;padding:20px;color:var(--t3);"><div style="width:14px;height:14px;border:2px solid rgba(77,132,255,.2);border-top-color:#4d84ff;border-radius:50%;animation:spin .8s linear infinite;"></div>Chargement du calendrier...</div>';
+  /* 20261018g : page d'attente (pourboire sur bet45 sans soutien, sinon cartes grises) — bloc en fin d'app.js */
+  try { if (typeof window._g45AgAttenteHtml === 'function') el.innerHTML = window._g45AgAttenteHtml(); } catch (e) {}
   if(btn) btn.onclick = loadCalendrier;
   /* 20261007j (capture d'Antoine : « met beaucoup de temps à chercher ») : TOUTES les sources étaient lues l'une APRÈS l'autre
      (jusqu'à 14 équipes de foot × 1 à 3 requêtes, puis 6 scoreboards ⭐, puis Euroleague/Pro A, puis KHL) → la plus lente
@@ -76148,5 +76150,38 @@ window._g45AgJouUs = async function (nowTs) {
     var h = ''; try { h = bloc0.apply(this, arguments) || ''; } catch (e) {}
     try { compter(); h += ligne(); } catch (e) {}
     return h;
+  };
+})();
+
+
+/* ═══ 📅 PAGE D'ATTENTE DE L'AGENDA (20261018g, « une belle page en attendant ? » → « pense à soutenir le projet… pour ceux qui ont rien
+   donné, sinon carte grise », maquette validée, bouton « Laisser un pourboire ») : bet45 sans statut soutien (window._g45Soutien) → carte
+   ☕ « Pense à soutenir BET45 » (paypal.me, SANS contrepartie) ; soutien ou gones → 3 cartes grises qui brillent. Remplacée par les matchs. ═══ */
+(function () {
+  if (!document.getElementById('g45-ag-att-css')) {
+    var st = document.createElement('style'); st.id = 'g45-ag-att-css';
+    st.textContent = '@keyframes g45AgBrille{0%{background-position:100% 0}100%{background-position:-100% 0}}'
+      + '.g45ag-gris{background:linear-gradient(90deg,#1b2338 0%,#2a3552 50%,#1b2338 100%);background-size:200% 100%;animation:g45AgBrille 1.4s linear infinite}';
+    (document.head || document.documentElement).appendChild(st);
+  }
+  var gris = function () {
+    var c = '<div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:12px;margin-bottom:8px;">'
+      + '<div class="g45ag-gris" style="width:44px;height:44px;border-radius:50%;flex:none;"></div>'
+      + '<div style="flex:1;"><div class="g45ag-gris" style="height:14px;width:70%;border-radius:6px;margin-bottom:8px;"></div><div class="g45ag-gris" style="height:12px;width:45%;border-radius:6px;"></div></div>'
+      + '<div class="g45ag-gris" style="width:52px;height:22px;border-radius:6px;flex:none;"></div></div>';
+    return c + c + c;
+  };
+  window._g45AgAttenteHtml = function () {
+    var bet = typeof _g45SanteActive === 'function' && !_g45SanteActive();
+    var h = '<div style="font-size:15px;font-weight:700;color:#c9d3ee;margin:6px 2px 10px;">⏳ Tes matchs arrivent…</div>';
+    if (bet && !window._g45Soutien) {
+      return h + '<div style="background:linear-gradient(135deg,#2a2210,#14182a);border:1px solid #f0c828;border-radius:16px;padding:18px 16px;text-align:center;color:#fff;">'
+        + '<div style="font-size:40px;">☕</div>'
+        + '<div style="font-size:19px;font-weight:800;margin:6px 0;">Pense à soutenir BET45</div>'
+        + '<div style="font-size:15px;color:#dbe4ff;line-height:1.5;">BET45 est gratuit et fait par un passionné.<br>Un petit pourboire aide à le faire vivre.</div>'
+        + '<a href="https://paypal.me/touraineantoine" target="_blank" rel="noopener" data-g45-direct="1" style="display:inline-block;margin-top:14px;background:#f0c828;color:#111;font-size:16px;font-weight:800;border-radius:12px;padding:12px 20px;text-decoration:none;">☕ Laisser un pourboire</a>'
+        + '<div style="font-size:13px;color:#aab6d6;margin-top:10px;">Sans obligation · l\'appli reste gratuite</div></div>';
+    }
+    return h + gris();
   };
 })();
