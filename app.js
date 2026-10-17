@@ -71560,6 +71560,17 @@ async function _g45TicketIa(dataUrl) {
     /* 20261007q : bookmaker gardé seulement si l'IA en est sûre (sinon le choix du formulaire reste) */
     if (o.bookmaker_sur === false && !/winamax|betclic|unibet|pmu|betify|bet365|betsson/i.test(String(o.bookmaker || ''))) o.bookmaker = null;
   } catch (x) {}
+  /* 20261019b (capture Winamax « Résultat AS Rome » → pari enregistré en type « Résultat ») : « Résultat <équipe> » = marché 1N2 →
+     « Victoire » (équipe pariée), « Nul » (match nul), « Défaite » si la sélection nomme l'adversaire. Marché combiné (buts, +, &…) : inchangé. */
+  try {
+    var _ty = String(o.type || '').trim(), _mR = /^(r[ée]sultat|1\s*n\s*2)\b\s*(?:du match|final)?\s*[:\-–]?\s*(.*)$/i.exec(_ty);
+    if (_mR && !/[+&]|\bet\b|but|over|under|plus|moins|mi-?temps|handicap|double/i.test(_mR[2])) {
+      var _sel = _mR[2], _R = window._g45TkRacines, _n = function (t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim(); };
+      if (/\bnul\b|\bdraw\b|^x$/i.test(_n(_sel))) o.type = 'Nul';
+      else if (_sel && o.adversaire && _R && _R(_n(_sel)) && _R(_n(_sel)) === _R(_n(o.adversaire)) && _R(_n(_sel)) !== _R(_n(o.equipe))) o.type = 'Défaite';
+      else o.type = 'Victoire';
+    }
+  } catch (x) {}
   /* 20261008d (capture Winamax MyMatch « Vainqueur Verstappen ou Antonelli ou … » au GP de Singapour : Équipe vide, Antonelli en
      adversaire, Verstappen seul en joueur, lieu Dom) : COURSE (F1, MotoGP, cyclisme) → Équipe = la carte du mur de ce sport (« FORMULE 1 »…)
      sinon le nom du sport, Type = « Vainqueur : Verstappen, Antonelli… » (noms de famille), pas d'adversaire ni de joueur, lieu neutre. */
