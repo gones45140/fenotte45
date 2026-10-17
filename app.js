@@ -40074,7 +40074,9 @@ function _g45BetRowMini(h){
   var _idLogo=isSimple?'':((typeof g45LogoUrlDe==='function')?g45LogoUrlDe(h.n):'');
   var _idFilig=_idLogo
     ?('<img src="'+_idLogo+'" alt="" loading="lazy" onerror="this.style.display=\'none\'" style="position:absolute;right:2px;top:50%;transform:translateY(-50%);height:38px;width:38px;object-fit:contain;opacity:.55;filter:drop-shadow(0 1px 3px rgba(0,0,0,.5));pointer-events:none;">')
-    :((isSimple&&(b2.logo||b2.d))?('<img src="'+(b2.logo||('https://www.google.com/s2/favicons?domain='+b2.d+'&sz=64'))+'" alt="" loading="lazy" onerror="this.style.display=\'none\'" style="position:absolute;right:2px;top:50%;transform:translateY(-50%);height:28px;width:28px;object-fit:contain;opacity:.6;border-radius:6px;filter:drop-shadow(0 1px 3px rgba(0,0,0,.5));pointer-events:none;">'):'');
+    /* 20261018a (« Winamax devrait ressortir autant que le logo Winamax qui est à gauche ») : logo du book = même rendu que bkFavicon (vrai logo,
+       comptes Antoine / Laura compris), 38 px, pleine opacité. */
+    :((isSimple&&typeof bkFavicon==='function')?('<span style="position:absolute;right:2px;top:50%;transform:translateY(-50%);width:38px;height:38px;display:flex;align-items:center;justify-content:center;filter:drop-shadow(0 1px 3px rgba(0,0,0,.6));pointer-events:none;">'+bkFavicon(h.b,38)+'</span>'):'');
   /* 20261008s : carte FORMULE 1 du mur → petit logo F1 au lieu du logo mémorisé (W). */
   _idFilig=_g45IdF1(h,_idFilig);
   /* Le filigrane est CONFINE au bloc titre/sous-titre (position:relative sur
@@ -40083,7 +40085,9 @@ function _g45BetRowMini(h){
      l'envoyait pile sous la colonne resultat (case ✅/❌ + montants) a droite
      — les deux se superposaient. Confine au bloc texte, il reste derriere le
      titre et ne touche jamais les chiffres. */
-  return '<div data-aid="'+h.id+'" onclick="try{openBetEdit(this.dataset.aid)}catch(e){}" style="position:relative;overflow:hidden;display:flex;align-items:center;padding:9px 10px;background:linear-gradient(100deg,'+_idColor+'45 0%,'+etatColor+'26 60%,var(--s1) 100%);border-radius:8px;margin-bottom:4px;border-left:4px solid '+etatColor+';gap:8px;cursor:pointer;">'
+  return '<div data-aid="'+h.id+'" onclick="try{openBetEdit(this.dataset.aid)}catch(e){}" style="position:relative;overflow:hidden;display:flex;align-items:center;padding:9px 10px;background:linear-gradient(100deg,'+etatColor+'40 0%,'+etatColor+'1f 60%,var(--s1) 100%);border-radius:8px;margin-bottom:4px;border-left:4px solid '+etatColor+';gap:8px;cursor:pointer;">'
+    /* 20261018a (« City est mi vert mi rouge, c'est pourtant gagné donc doit être vert ») : fond = couleur du RÉSULTAT seule (avant : couleur du
+       book / de l'équipe mêlée → Winamax rouge sur un pari gagné). Vert gagné, rouge perdu, jaune en cours. */
     /* 20261011j (« portrait ça coupe, on pourrait rapprocher à gauche ? ») : date courte JJ/MM en portrait (feuille #g45-row-portrait). */
     +'<div class="g45-rg" style="display:flex;align-items:center;gap:8px;flex-shrink:0;">'
     +'<div class="g45-rdate" style="position:relative;font-size:10px;font-weight:600;color:var(--t2);min-width:50px;flex-shrink:0;text-align:center;line-height:1.3;"><span class="g45-dl">'+(h.date||'')+'</span><span class="g45-dc">'+(function(d){var m=/^\d{4}-(\d{2})-(\d{2})/.exec(d||'');return m?m[2]+'/'+m[1]:(d||'');})(h.date)+'</span>'+(h.heure?'<br>'+h.heure:'')+'</div>'
