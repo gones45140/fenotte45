@@ -2108,6 +2108,17 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   (historique + Sélection : direct et « gagnant si ça reste »). Historique : spDe atp / wta → 'tn' (Sport « 🎾 Tennis »), LGN ATP / WTA, spIco 🎾.
   Robot tendances.mjs : appel après les 4 sports ; jugement tennis = competitor.winner d'ESPN (abandon compris), s = sets. Smoke tnRobot (64).
   Piwi (« scrapping sur piwi risqué ? ») : NON — CGU + compte joueur d'Antoine fermé en cas de robot (§ 6).
+  20261020m — 🎾 COTES TheRundown (proposé par Antoine ; compte GRATUIT créé par lui : 0 $, 20 000 points / jour, 200 000 / mois, BetMGM +
+  FanDuel + DraftKings, avant-match, 5 min de retard, 1 req / s ; les bookmakers ne se CHOISISSENT PAS en gratuit). SONDÉ par Antoine (console sur
+  therundown.io) : 36 sports (2 NFL, 3 MLB, 4 NBA, 6 NHL, 7 UFC, 10 MLS, 11 EPL, 12 FRA1, 13 GER1, 14 ESP1, 15 ITA1, 16 UEFACHAMP, 33 Europa,
+  38 ATP, 39 WTA, 41 F1…) ; /api/v2/sports/{id}/events/{AAAA-MM-JJ}?market_ids=1, en-tête X-TheRundown-Key → teams[{name, is_home}],
+  markets[market_id 1 moneyline].participants[].lines[0].prices{livre: {price AMÉRICAIN}} ; 26 matchs ATP / 27 WTA le 20/10 (petits tournois
+  compris). WORKER (déployé par Claude, copie gardée, 18 liaisons + cron */5 vérifiés) : route /rundown?sport=&date= (secret RUNDOWN_KEY mis
+  par Antoine) → { m: [{ id, t, st, h, a, ch, ca, n }] } cote européenne MOYENNE par joueur, gardée 3 h (clé D1 rd1:sport:date).
+  App : _g45TnCoteRd(lg, t, nomA, nomB) (rapprochement par nom de famille sans accents) ; _g45TnRobot prend TheRundown d'abord, The Odds API
+  (Grands Chelems) en secours ; c = cote × 0,94 (_G45_TR_FR, comme les autres sports), cd = cote d'origine, f = proba sans marge → filtres
+  cote ≥ 1,50 et d'accord. Smoke tnRobot (cote trouvée / trop basse). À FAIRE : cote + écart BET45 / marché dans l'analyse (maquette) ;
+  autres sports via TheRundown après avoir vu la consommation réelle.
   20261020c (croquis d'Antoine « Tendances = 4 boutons », maquette cliquable validée « oui, BET45 → Sélection du jour par défaut ») : ONGLET EN BOUTONS —
   bloc « TENDANCES EN BOUTONS » en fin d'app.js (enveloppe la plus externe de loadTendancesTab). Barre #g45tr-nav : 📒 Tendances BET45 · 🔍 Tendances perso ·
   ⚽ Tendances buteurs · 📏 CLV ; dans BET45 : ⭐ Sélection du jour (_g45TrSelHtml, forcée ouverte) · 📅 Historique (calendrier + liste du jour) ·

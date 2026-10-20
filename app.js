@@ -77607,8 +77607,10 @@ window._g45AgJouUs = async function (nowTs) {
         if (!V || V.conf !== 'forte' || Math.max(V.p, 1 - V.p) < R.pmin) continue;
         var G = V.qui === 'a' ? A : B, k = V.qui === 'a' ? '1' : '2', pG = Math.max(V.p, 1 - V.p);
         /* cote (Grands Chelems) : moyenne des bookmakers pour le joueur choisi, proba sans marge (Pinnacle, sinon moyenne) */
-        var cote = null, fair = null, t2 = tour.toLowerCase();
-        var base = /wimbledon/.test(t2) ? 'wimbledon' : /us open/.test(t2) ? 'us_open' : /french|roland/.test(t2) ? 'french_open' : /australian|aus open/.test(t2) ? 'aus_open_singles' : null;
+        var cote = null, fair = null, coteUs = null, t2 = tour.toLowerCase();
+        /* 20261020m : TheRundown d'abord (TOUS les tournois, worker /rundown) ; The Odds API (Grands Chelems) en secours */
+        try { var rdM = await window._g45TnCoteRd(m.lg, m.t, A.n, B.n); if (rdM) { var cG0 = V.qui === 'a' ? rdM.ca : rdM.cb, cX0 = V.qui === 'a' ? rdM.cb : rdM.ca; if (cG0 > 1 && cX0 > 1) { coteUs = cG0; fair = Math.round((1 / cG0) / (1 / cG0 + 1 / cX0) * 1000) / 1000; } } } catch (e) {}
+        var base = coteUs ? null : /wimbledon/.test(t2) ? 'wimbledon' : /us open/.test(t2) ? 'us_open' : /french|roland/.test(t2) ? 'french_open' : /australian|aus open/.test(t2) ? 'aus_open_singles' : null;
         if (base && typeof _g45OddsFindEvent === 'function') {
           var slug = 'tennis_' + m.lg + '_' + base;
           if (cotes[slug] === undefined) { try { var rq = await fetch((typeof FD_PROXY !== 'undefined' ? FD_PROXY : 'https://fd-proxy.touraine-antoine.workers.dev') + '/odds?sport=' + slug + '&regions=eu&markets=h2h'); cotes[slug] = rq.ok ? await rq.json() : null; } catch (e) { cotes[slug] = null; } }
@@ -77624,14 +77626,38 @@ window._g45AgJouUs = async function (nowTs) {
             }
           }
         }
+        if (coteUs) cote = coteUs;
+        /* même règle que les autres sports (_g45TrCoteFr) : cote d'origine × 0,94 ≈ books FR ; cd = cote d'origine */
+        var coteOr = cote; if (cote != null) cote = Math.max(1.01, Math.round(cote * (window._G45_TR_FR || 0.94) * 100) / 100);
         var desac = fair != null && fair < 0.5;
         if (cote != null && (cote < R.min || desac)) continue;   /* avec cote : mêmes filtres que les autres sports */
         var clair = ''; try { clair = window._g45TnClair({ a: A, b: B, A: CA, B: CB, ctx: ctx }, V).replace(/<[^>]*>/g, ''); } catch (e) {}
         out.push({ id: String(m.c.id), sl: m.lg, t: m.t, h: A.n, a: B.n, m: 'Victoire ' + G.n, k: k, p: Math.round(pG * 1000) / 1000,
-          c: cote, cd: null, f: fair, d: desac ? 1 : 0, r: null, fa: clair ? [clair.slice(0, 160)] : undefined, nm: Math.min(CA.n, CB.n) || undefined, tn: 1 });
+          c: cote, cd: coteOr, f: fair, d: desac ? 1 : 0, r: null, fa: clair ? [clair.slice(0, 160)] : undefined, nm: Math.min(CA.n, CB.n) || undefined, tn: 1 });
       } catch (e) {}
     }
     return out;
+  };
+  /* 20261020m — COTES TheRundown (formule gratuite d'Antoine, 3 bookmakers US, avant-match) via le worker /rundown?sport=38|39&date=
+     AAAA-MM-JJ (UTC) : réponse allégée { m: [{ id, t, h, a, ch, ca, n }] } (cote européenne MOYENNE par joueur), gardée 3 h côté worker.
+     Rapprochement par NOM DE FAMILLE (sans accents) des deux joueurs, dans n'importe quel ordre. Renvoie { ca, cb } (cotes de A et B). */
+  var rdMem = {};
+  window._g45TnRdRaz = function () { rdMem = {}; };   /* essais */
+  var nomFam = function (n) { var t = String(n || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9 ]/g, ' ').trim().split(/\s+/); return t[t.length - 1] || ''; };
+  window._g45TnCoteRd = async function (lg, t, nA, nB) {
+    var sp = lg === 'wta' ? 39 : 38, d = new Date(t).toISOString().slice(0, 10), k = sp + '|' + d;
+    if (!(k in rdMem)) {
+      rdMem[k] = fetch((typeof FD_PROXY !== 'undefined' ? FD_PROXY : 'https://fd-proxy.touraine-antoine.workers.dev') + '/rundown?sport=' + sp + '&date=' + d)
+        .then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
+    }
+    var j = await rdMem[k]; if (!j || !j.m) return null;
+    var fa = nomFam(nA), fb = nomFam(nB);
+    for (var i = 0; i < j.m.length; i++) {
+      var e = j.m[i], fh = nomFam(e.h), fw = nomFam(e.a);
+      if (fh === fa && fw === fb) return { ca: e.ch, cb: e.ca, n: e.n };
+      if (fh === fb && fw === fa) return { ca: e.ca, cb: e.ch, n: e.n };
+    }
+    return null;
   };
   /* scoreboard tennis ESPN (events = TOURNOIS, groupings[].competitions = matchs) → forme « un event par match », score = sets gagnés :
      l'historique et la Sélection du jour lisent alors le tennis comme les autres sports (en cours, fini, « gagnant si ça reste »). Pur, testé. */
