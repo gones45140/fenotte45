@@ -2157,6 +2157,18 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   (dur et salle = hElo, terre = cElo, gazon = gElo, repli Elo général) ; avis : Elo 0,35 (proba Elo 1/(1+10^((B−A)/400))), classement 0,10 au lieu
   de 0,30 quand l'Elo existe ; « En clair » : « meilleur Elo dur (2234 contre 2047) » ; Facteurs clés : section NIVEAU « 🎯 ELO DUR (Tennis Abstract) ».
   Données Sackmann = usage NON COMMERCIAL (à revoir le jour de l'abonnement). 9 essais (vm + lecteur), smoke 66.
+  20261020s (« ok mais on peut pas améliorer compétition/tennis aussi ? » + « LES PHOTOS DES JOUEURS TOUJOURS DISPO OU SI PAS DE PHOTO drapeau du
+  pays du joueur », maquette maquette-tennis-res validée « oui ») : bloc « COMPÉTITIONS → TENNIS PLUS LISIBLE » en fin d'app.js. Remplace
+  _g45RenderTennisRes (appelle lui-même _g45TenPhotos, l'ancienne enveloppe est écrasée) et _g45EspnTennisRow (aussi pour le tableau par tour) :
+  heure à gauche (direct : 🔴 + sets en rouge ; terminé : sets), photo ronde 38 px ou GRAND drapeau (_g45TenAvatar modifié : drapeau à la place des
+  initiales, petit drapeau du coin .g45-tfl seulement avec photo, _g45TenPhotos le rend visible), N° ESPN + Elo de la surface sous le nom, en-tête
+  tournoi drapeau du pays + niveau (_g45TnCat / _g45TnCatL) + surface (_g45TnSfL), doubles repliés (g45TnDblTgl) sauf filtre Doubles, filtres
+  Tous / ATP / WTA / Doubles ('dbl'), Grands Chelems seulement si un Majeur a des matchs ce jour-là. 🔮 g45TnResAvis : _g45TnAvisMatch (avisMatch
+  exposé, stats ESPN seules) au toucher, simples pre / in ; 8 nouveaux avis / jour sur BET45 (localStorage g45tn_av8), sans limite si
+  _g45SanteActive ; reprend les avis d'« Analyser les matchs » ; 2e toucher = fenêtre du match. Barre ◀ date ▶ agrandie (enveloppe g45TennisResults).
+  Smoke tnRes (67).
+  Question d'Antoine (capture « Rechercher un joueur », bloc vide) : searchTennisPlayer = recherche web Tavily + résumé IA (Groq) des stats de la
+  saison ; le résumé revient vide → proposé de le remplacer par les vraies données ESPN (_g45TnSaison / _g45TnCalc + Elo), maquette à faire.
   _g45TnPerso pose les 3 blocs de l'écran. Smoke tnRun (65) ; tests tnRobot / tnRun calés sur « maintenant + quelques minutes » (le soir UTC,
   « + 2 h » tombait le lendemain).
   20261020c (croquis d'Antoine « Tendances = 4 boutons », maquette cliquable validée « oui, BET45 → Sélection du jour par défaut ») : ONGLET EN BOUTONS —
