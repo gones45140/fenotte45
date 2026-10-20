@@ -133,6 +133,7 @@ PIÈGES À NE JAMAIS OUBLIER :
 - Cotes en direct hors foot : commande console « 4 ligues » à lancer par Antoine pendant un match.
 - Abonnement : plan prêt, NON codé (_G45_ABO_PLAN false) ; micro-entreprise reportée ; verrou serveur à faire le moment venu.
 - RGPD : SQL supprimer-compte.sql à installer par Antoine dans les 2 projets Supabase.
+- 🎾 Cotes tennis : ESPN = 0 (Bruxelles 250, Bâle / Vienne 500, sondé le 20/10) → re-sonder pendant le Masters de Paris ; robot tennis officiel en attente du choix d'Antoine (« combiné » proposé).
 - Surebet : mises « Mise 1 / Mise 2 » en blanc. Cédric : toucher 🤍 sur Portugal. Worker : budget `_lourd` 4 → 2 proposé.
 
 ## 8. Façon de travailler en session cloud

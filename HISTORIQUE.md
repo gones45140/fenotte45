@@ -2096,6 +2096,10 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   Stats annexes _g45TnAnnexes (pur : 1er set, sets secs, après 1er set gagné / perdu, jeux, +X,5 jeux / set et / match, handicap, tie-breaks,
   3 sets hors GC, set décisif ; abandons exclus ; filtre surface / 52 semaines / tout). NON FAISABLE : style, Elo, vitesse du court, stats de
   service, minutes, météo, favori / outsider. 50 essais vm, smoke 63.
+  20/10 soir — COTES TENNIS : ESPN core competitions/<id>/odds = 0 sur TOUS les matchs à venir ATP + WTA du jour (Bruxelles 250, Bâle / Vienne 500 ;
+  commande console d'Antoine). Sources gratuites autorisées : The Odds API seulement (gros tournois) ; tennis-data.co.uk = cotes PASSÉES et site
+  jumeau de football-data.co.uk (interdit) ; scraping refusé (§ 6). Proposé : robot officiel « combiné » (confiance forte + proba ≥ 60 %, « sans cote »,
+  + cote The Odds API sur les gros tournois). À re-sonder pendant le Masters de Paris.
   20261020c (croquis d'Antoine « Tendances = 4 boutons », maquette cliquable validée « oui, BET45 → Sélection du jour par défaut ») : ONGLET EN BOUTONS —
   bloc « TENDANCES EN BOUTONS » en fin d'app.js (enveloppe la plus externe de loadTendancesTab). Barre #g45tr-nav : 📒 Tendances BET45 · 🔍 Tendances perso ·
   ⚽ Tendances buteurs · 📏 CLV ; dans BET45 : ⭐ Sélection du jour (_g45TrSelHtml, forcée ouverte) · 📅 Historique (calendrier + liste du jour) ·
