@@ -71537,6 +71537,21 @@ function _g45TicketRemplirCockpit(o) {
       if (/r[ée]sultat|victoire|1\s*n\s*2|gagnant/i.test(String(o.type || '')) || !o.type) o.type = 'Défaite';
     }
   }
+  /* 20261020p (capture cockpit « j'ai trouvé le coupable » : ticket Celebrini, « Équipe jouée Montreal Canadiens » 🏠 Domicile alors que Celebrini
+     joue à San Jose → palier DOMICILE au lieu de l'extérieur) : l'IA a pris la 1re équipe du ticket au lieu du club du joueur. Carte JOUEUR choisie :
+     si le club noté sur la carte (_g45UClub) est l'ADVERSAIRE lu et pas l'équipe lue → on inverse équipe / adversaire et le lieu. */
+  if (choisi && cj && cj.indexOf(choisi) >= 0) {
+    try {
+      var uJc = (state.u || []).filter(function (x) { return x && x.n === choisi.value; })[0] || {}, clubJ = nz(_g45UClub(uJc));
+      if (clubJ) {
+        var memeClub = function (a) { a = nz(a); if (!a) return false; if (a === clubJ || a.indexOf(clubJ) >= 0 || clubJ.indexOf(a) >= 0) return true; var R = window._g45TkRacines; return !!(R && R(a) && R(a) === R(clubJ)); };
+        if (!memeClub(o.equipe) && memeClub(o.adversaire)) {
+          var tEq = o.equipe; o.equipe = o.adversaire; o.adversaire = tEq;
+          if (o.domicile === true || o.domicile === false) o.domicile = !o.domicile;
+        }
+      }
+    } catch (x) {}
+  }
   met('c-target', o.adversaire);
   met('c-joueur', o.joueur);
   /* 20261016c (« Équipe jouée Edmonton non ? ») : carte JOUEUR choisie → « Équipe jouée » (#c-equipe) = club du joueur

@@ -120,6 +120,10 @@ Il est dans les DEUX dépôts (gones45 et fenotte45), identique (cmp). Jamais de
   20261019b (capture : pari enregistré en type « Résultat ») : `_g45TicketIa` — « Résultat <équipe> » / « 1N2 » seul → « Victoire » ; « nul » → « Nul » ;
   sélection = adversaire (racines) → « Défaite » ; marché combiné (buts, +, &, mi-temps, handicap…) inchangé. Testé node 7/7.
   20261016c (« Équipe jouée Edmonton non ? ») : carte joueur choisie → #c-equipe = équipe du ticket, sinon note de la carte (Edmonton Oilers).
+  20261020p (capture cockpit « soucis palier », « j'ai trouvé le coupable », « adversaire alors que non c'est l'équipe dans laquelle il joue » :
+  ticket Celebrini lu « Montreal Canadiens » 🏠 + adversaire « San Jose Sharks » → palier DOMICILE au lieu d'extérieur) : `_g45TicketRemplirCockpit`,
+  carte JOUEUR choisie → si le club de la carte (_g45UClub : u.club ou note) correspond à l'ADVERSAIRE lu (égal / inclus / _g45TkRacines) et pas à
+  l'équipe lue → équipe ↔ adversaire inversés + lieu inversé (donc bon palier _g45PalLieu). Sans club noté sur la carte : rien ne change. Smoke tkj (65).
   20261016d (capture : champ toujours grisé « Connor McDavid ») : updMise → `_g45MajEquipeJouee` remettait u.n en lecture seule ; carte joueur →
   champ LIBRE = u.note (club), valeur déjà posée (ticket) gardée.
   20261016e : carte « En cours » (titre) = h.eq (Équipe jouée) avant h.n → « Edmonton Oilers – Utah Mammoth ».
