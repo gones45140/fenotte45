@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action (il est court exprès). Le détail de tout l'historique est dans HISTORIQUE.md
-(à chercher avec grep, jamais à lire en entier). Mis à jour le 20/10/2026 (version déployée : 20261019c, même app.js sur gones45 et fenotte45).
+(à chercher avec grep, jamais à lire en entier). Mis à jour le 20/10/2026 (version déployée : 20261020a, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -128,7 +128,6 @@ PIÈGES À NE JAMAIS OUBLIER :
 
 ## 7. Reste à faire / en attente (détail : HISTORIQUE.md § 7)
 
-- Séries individuelles : « les boutons ont du mal à réagir » (capture 19/10, NHL Pointeurs) — À CORRIGER (rien fait).
 - ⚾ Lanceurs MLB dans l'Agenda : sonde probables à faire par Antoine (ou mars).
 - Cotes en direct hors foot : commande console « 4 ligues » à lancer par Antoine pendant un match.
 - Abonnement : plan prêt, NON codé (_G45_ABO_PLAN false) ; micro-entreprise reportée ; verrou serveur à faire le moment venu.

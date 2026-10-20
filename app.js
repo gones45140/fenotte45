@@ -58343,11 +58343,14 @@ async function g45EquipesDeCompet(champComp, dlEquipe) {
       var _d = new Date();
       var _civil = /^(usa|bra|arg|mex)\.|^(mlb|nrl)$/.test(String(info.slug || ''));
       var _an = _civil ? _d.getFullYear() : (_d.getMonth() >= 6 ? _d.getFullYear() : _d.getFullYear() - 1);
-      eq = await _g45CompetEquipes({ sp: info.sport || 'soccer', s: info.slug, an: _an }) || [];
+      /* 20261020a (capture : Compétitions → Ligue 1 → Équipes = 519 équipes, Forme « recherche de 519 ») : cette liste reçoit plus bas
+         les équipes du calendrier « all » par eq.push → elle MODIFIAIT la liste mémorisée de la compétition (_g45CompetCache, même
+         tableau). Copie (.slice) : le cache ne bouge plus. */
+      eq = (await _g45CompetEquipes({ sp: info.sport || 'soccer', s: info.slug, an: _an }) || []).slice();
       /* Si la saison en cours n'a pas encore de classement publie, on retombe
          sur la precedente plutot que de ne rien proposer. */
       if (!eq.length && !_civil) {
-        eq = await _g45CompetEquipes({ sp: info.sport || 'soccer', s: info.slug, an: _an - 1 }) || [];
+        eq = (await _g45CompetEquipes({ sp: info.sport || 'soccer', s: info.slug, an: _an - 1 }) || []).slice();
       }
     }
   } catch (e) {}
@@ -76851,3 +76854,11 @@ window._g45AgJouUs = async function (nowTs) {
     (document.head || document.documentElement).appendChild(st);
   } catch (e) {}
 })();
+
+/* 20261020a (suite) : la Forme d'une ligue de foot a pu être calculée sur la liste gonflée (519 équipes) et gardée 12 h (g45cm11_soccer_…) →
+   ces copies sont effacées UNE fois (drapeau g45_cm_fix1) ; elles se refont toutes seules à la prochaine ouverture. */
+(function () { try {
+  if (localStorage.getItem('g45_cm_fix1')) return;
+  for (var i = localStorage.length - 1; i >= 0; i--) { var k = localStorage.key(i); if (k && k.indexOf('g45cm11_soccer_') === 0) localStorage.removeItem(k); }
+  localStorage.setItem('g45_cm_fix1', '1');
+} catch (e) {} })();

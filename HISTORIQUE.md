@@ -60,6 +60,10 @@ Il est dans les DEUX dépôts (gones45 et fenotte45), identique (cmp). Jamais de
   colonnes otLosses ET overtimeLosses présentes. → `_g45StPresaison(sp, slug)` lit le scoreboard (leagues[0].season.type.type 1 =
   présaison, année season.year ; type NON vu dans la sonde) : cette année-là sautée, gardée en dernier repli. Capture « Jets 16e » =
   saison 2024-25 (season=2025) : tri corrigé en w.
+- 20261020a (capture : Compétitions → Ligue 1 → Équipes = 519 équipes, Forme « recherche de 519 ») : la liste des équipes du formulaire de pari
+  (eq de _g45CompetEquipes + équipes du calendrier « all » par eq.push) était le MÊME tableau que _g45CompetCache → la liste mémorisée de la
+  ligue gonflait ; copie .slice() ; caches g45cm11_soccer_ effacés une fois (g45_cm_fix1). RÈGLE : ne jamais modifier un tableau rendu par un cache.
+  19/10 : « boutons des Séries individuelles lents » → réparé tout seul selon Antoine (20/10), rien changé.
 - Compétitions : `loadCompetTab`, vues `_g45CompetVue` ; matchs d'une ligue
   `_g45CompetMatchs` (un calendrier par équipe, cache 12 h, périodes hp/ap).
   Année auto `_g45CompetAnneeAuto` (30d) : NHL / NBA = année de FIN (dès septembre, 2026-27 =
