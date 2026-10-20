@@ -77124,12 +77124,18 @@ window._g45AgJouUs = async function (nowTs) {
     if (/australian open|roland|french open|wimbledon|us open/i.test(n)) return 'gc';
     if (/finals/i.test(n)) return 'fin';
     if (/davis cup|united cup|billie jean|laver cup|hopman/i.test(n)) return 'eq';
-    if (lg === 'wta') return /indian wells|bnp paribas open|miami|madrid|internazionali|italia|\brome\b|canad|national bank|omnium banque|cincinnati|western|qatar|doha|dubai|beijing|china open|wuhan/i.test(n) ? 'm1000' : 'w';
+    if (lg === 'wta') {
+      if (/indian wells|bnp paribas open|miami|madrid|internazionali|italia|\brome\b|canad|national bank|omnium banque|cincinnati|western|qatar|doha|dubai|beijing|china open|wuhan/i.test(n)) return 'm1000';
+      /* 20261020n : WTA 500 (liste de noms, calendrier habituel — à corriger si un tournoi est mal classé) ; le reste = WTA 250 */
+      return /brisbane|adelaide|abu dhabi|linz|charleston|stuttgart|porsche|strasbourg|berlin|queen|bad homburg|eastbourne|washington|citi|seoul|korea open|pan pacific|toray|tokyo|ningbo|merida|m[eé]rida|san diego|monterrey|guadalajara|zhengzhou/i.test(n) ? 'w5' : 'w2';
+    }
     if (/indian wells|bnp paribas open|miami|monte.?carlo|madrid|internazionali|italia|\brome\b|canad|national bank|omnium banque|cincinnati|western|shanghai|paris masters|rolex paris|bercy/i.test(n)) return 'm1000';
     if (/rotterdam|abn amro|qatar|doha|rio open|acapulco|abierto mexicano|dubai|barcelona|halle|terra wortmann|queen|cinch|hamburg|washington|citi|mubadala|tokyo|japan open|kinoshita|china open|beijing|basel|swiss indoors|vienna|erste bank|bmw open|munich|dallas/i.test(n)) return 'a500';
     return 'a250';
   };
-  var CAT = { gc: 'Grand Chelem', m1000: 'Masters / WTA 1000', a500: 'ATP 500', a250: 'ATP 250', fin: 'Finals', eq: 'par équipes', w: 'WTA 250 / 500' };
+  var CAT = { gc: 'Grand Chelem', m1000: 'Masters / WTA 1000', a500: 'ATP 500', a250: 'ATP 250', fin: 'Finals', eq: 'par équipes', w5: 'WTA 500', w2: 'WTA 250' };
+  /* 20261020n (« 250 ET MOINDRE ON LAISSE TOMBER ») : robot officiel et liste du jour = 500, 1000, Grands Chelems, Finals seulement */
+  window._g45TnGrand = function (cat) { return !/^(a250|w2|eq)$/.test(String(cat || '')); };
   var SF = { terre: { l: 'Terre', i: '🟧', c: '#f0a050' }, dur: { l: 'Dur', i: '🟦', c: '#6aa8ff' }, salle: { l: 'Salle', i: '🏠', c: '#7dd3fc' }, gazon: { l: 'Gazon', i: '🟩', c: '#7dffb0' } };
 
   /* pays (dernier morceau de « Ville, Pays » d'ESPN) → nom français, continent, drapeau */
@@ -77203,7 +77209,7 @@ window._g45AgJouUs = async function (nowTs) {
 
   /* une saison d'un joueur → liste de matchs (mémoire : passée = toujours, en cours = 6 h) */
   window._g45TnSaison = async function (lg, id, an, prog) {
-    var cur = an >= new Date().getFullYear(), cle = 'tn2_' + lg + '_' + id + '_' + an;
+    var cur = an >= new Date().getFullYear(), cle = 'tn3_' + lg + '_' + id + '_' + an;
     var o = await kv('get', cle);
     if (o && (!cur || Date.now() - o.t < 6 * 3600e3)) return o.m;
     var url = cur ? CORE + 'leagues/' + lg + '/athletes/' + id + '/eventlog?limit=200' : CORE + 'leagues/' + lg + '/seasons/' + an + '/athletes/' + id + '/eventlog?limit=200';
@@ -77542,7 +77548,7 @@ window._g45AgJouUs = async function (nowTs) {
     var ymd = (typeof _g45ymd === 'function') ? _g45ymd(new Date()) : '';
     var f = function (lg) { return fetch('https://site.api.espn.com/apis/site/v2/sports/tennis/' + lg + '/scoreboard?dates=' + ymd).then(function (r) { return r.ok ? r.json() : {}; }).then(function (j) { return (j.events || []).map(function (e) { e.__lg = lg; return e; }); }).catch(function () { return []; }); };
     var evs = (await f('atp')).concat(await f('wta'));
-    var L = [];
+    var L = [], nPetits = 0;
     evs.forEach(function (ev) {
       (ev.groupings || []).forEach(function (g) {
         var gn = (g.grouping && g.grouping.displayName) || ''; if (!/singles/i.test(gn)) return;
@@ -77550,12 +77556,14 @@ window._g45AgJouUs = async function (nowTs) {
           var st = (c.status && c.status.type && c.status.type.state) || ''; if (st === 'post') return;
           if (ymd && (typeof _g45ymd === 'function') && _g45ymd(new Date(c.date || c.startDate)) !== ymd) return;
           var cps = c.competitors || []; if (cps.length !== 2) return;
+          if (!window._g45TnGrand(window._g45TnCat(ev.name || ev.shortName || '', ev.__lg))) { nPetits++; return; }   /* 20261020n */
           L.push({ lg: ev.__lg, ev: ev, c: c, st: st, a: joueur(cps[0]), b: joueur(cps[1]) });
         });
       });
     });
     if (!document.getElementById('g45tn-jour')) return;
-    if (!L.length) { cible.innerHTML = '<div style="font-size:14px;color:#c9d3ee;">Aucun match de simple ATP / WTA à venir aujourd\'hui.</div>'; return; }
+    var noteP = nPetits ? '<div style="font-size:13px;color:#c9d3ee;margin-top:6px;">' + nPetits + ' match' + (nPetits > 1 ? 's' : '') + ' de tournois 250 et moins non affiché' + (nPetits > 1 ? 's' : '') + ' (analyse toujours possible dans Résultats → Tennis).</div>' : '';
+    if (!L.length) { cible.innerHTML = '<div style="font-size:14px;color:#c9d3ee;">Aucun match de simple ATP / WTA 500, 1000 ou Grand Chelem à venir aujourd\'hui.</div>' + noteP; return; }
     L.sort(function (x, y) { return (x.st === 'in' ? 0 : 1) - (y.st === 'in' ? 0 : 1) || Date.parse(x.c.date) - Date.parse(y.c.date); });
     var h = '', tourPrec = '';
     L.forEach(function (m, i) {
@@ -77566,7 +77574,7 @@ window._g45AgJouUs = async function (nowTs) {
         + '<div style="display:flex;justify-content:space-between;gap:8px;font-size:15px;"><b>' + esc(m.a.n) + ' – ' + esc(m.b.n) + '</b><span style="flex:none;">' + (m.st === 'in' ? '<b style="color:#ff6b6b;">🔴 en cours</b>' : '🕒 ' + hr) + '</span></div>'
         + '<div style="margin-top:7px;">' + bouton(m.lg, m.a, m.b, tn, ekDe(m.c, m.ev), 'g45tn-j-' + i, lieuDe(m.c)) + '</div></div>';
     });
-    cible.innerHTML = h;
+    cible.innerHTML = h + noteP;
   };
   /* ═══ 🤖 TENNIS OFFICIEL (20261020l, « OK combiné » : « que BET45 donne des tendances tennis si bonne confiance, même filtre que les autres
      sports ») ═══ Appelé par le robot .github/scripts/tendances.mjs. ESPN n'a AUCUNE cote tennis (sondé le 20/10 : Bruxelles 250, Bâle /
@@ -77591,6 +77599,7 @@ window._g45AgJouUs = async function (nowTs) {
         });
       });
     }
+    L = L.filter(function (x) { return window._g45TnGrand(window._g45TnCat(x.ev.name || x.ev.shortName || '', x.lg)); });   /* 20261020n */
     L.sort(function (x, y) { return x.t - y.t; }); L = L.slice(0, max);
     var cotes = {}, out = [], an = new Date().getFullYear();
     var histo = async function (lg, id) { var t = []; for (var y = an; y >= an - 1; y--) t = t.concat((await window._g45TnSaison(lg, id, y)) || []); var vu = {}; return t.filter(function (m) { if (!m.id) return true; if (vu[m.id]) return false; vu[m.id] = 1; return true; }); };

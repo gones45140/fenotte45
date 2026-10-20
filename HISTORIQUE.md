@@ -2120,6 +2120,13 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   (Grands Chelems) en secours ; c = cote × 0,94 (_G45_TR_FR, comme les autres sports), cd = cote d'origine, f = proba sans marge → filtres
   cote ≥ 1,50 et d'accord. Smoke tnRobot (cote trouvée / trop basse). À FAIRE : cote + écart BET45 / marché dans l'analyse (maquette) ;
   autres sports via TheRundown après avoir vu la consommation réelle.
+  20261020n (« 250 ET MOINDRE ON LAISSE TOMBER ») : _g45TnGrand(cat) = pas a250 / w2 (WTA 250) / eq (Coupe Davis…) ; WTA séparé en w5 (liste de
+  noms de WTA 500 : Brisbane, Adélaïde, Abu Dhabi, Linz, Charleston, Stuttgart, Strasbourg, Berlin, Queen's, Bad Homburg, Eastbourne, Washington,
+  Séoul, Tokyo Pan Pacific, Ningbo, Mérida, San Diego, Monterrey, Guadalajara, Zhengzhou — calendrier habituel, à corriger si besoin) et w2.
+  Robot _g45TnRobot et liste « 🎾 Tennis » de Tendances perso : 500, 1000, GC, Finals seulement (petits comptés, note « non affichés ») ;
+  analyse dans Résultats → Tennis : tous les matchs. Clé de saison tn2_ → tn3_ (catégorie WTA). 11 essais vm.
+  Foot sur TheRundown (« vu ce que coûte le tennis ») : PAS MAINTENANT — estimé 5 000 à 8 000 points / jour avec le tennis vs 6 600 / jour pour
+  tenir 200 000 / mois ; décider après une semaine de consommation réelle du robot tennis.
   20261020c (croquis d'Antoine « Tendances = 4 boutons », maquette cliquable validée « oui, BET45 → Sélection du jour par défaut ») : ONGLET EN BOUTONS —
   bloc « TENDANCES EN BOUTONS » en fin d'app.js (enveloppe la plus externe de loadTendancesTab). Barre #g45tr-nav : 📒 Tendances BET45 · 🔍 Tendances perso ·
   ⚽ Tendances buteurs · 📏 CLV ; dans BET45 : ⭐ Sélection du jour (_g45TrSelHtml, forcée ouverte) · 📅 Historique (calendrier + liste du jour) ·
