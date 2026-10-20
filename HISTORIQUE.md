@@ -534,6 +534,10 @@ Il est dans les DEUX dépôts (gones45 et fenotte45), identique (cmp). Jamais de
   _G45_SANS_BANNIERE {parissaintgermain, psg} → _g45FanChercher saute strTeamBanner (photo strFanart1..4) ; ancienne bannière effacée une fois
   (drapeau g45_fan_fix1). _G45_FOND_TSDB {atleticomadrid} → _g45FanCompleter cherche AUSSI la bannière malgré l'image perso, et la carte
   Suivies la prend en priorité (le mur garde l'image perso). TheSportsDB en 403 ce soir-là → rendu visible dès que TheSportsDB répond.
+  20261020h (capture : PSG = photo de match, Atlético = petit blason ; « le BLASON officiel en TRÈS GRAND […] comme Roma / City, ne plus utiliser
+  TheSportsDB » ; maquette ; « ça c'est le logo PSG » = blason du mur) : _G45_FOND_TSDB / _G45_SANS_BANNIERE RETIRÉS. Carte Suivies : club de
+  window._G45_FOND_LOGO (liste du MUR : PSG, Atlético, Arsenal, Vancouver, France, Stade Toulousain…) → même blason que le mur (adresse de la
+  liste, sinon g45LogoUrlDe, sinon m.lMoi), background-size « cover,auto 210% » (déborde haut / bas), fond = _g45CoulFond(couleur du club).
 - Suivies « Matchs à venir / direct » (`g45DirectMesEquipes`, groupes `_g45DirEquipes`) : 29v —
   le plafond (10) porte sur les REQUÊTES réelles (`aInterroger`, tout le foot = 1 requête `all`),
   plus sur les championnats : les ligues de foot d'Antoine occupaient les 8 places et la NHL

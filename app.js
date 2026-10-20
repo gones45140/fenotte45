@@ -55234,7 +55234,7 @@ async function _g45FanChercher(nom, sport) {
          etroit — le bandeau reste prioritaire, c'est le format taille pour une
          carte, et l'ecusson n'arrive qu'en dernier recours. */
       if (t) {
-        url = (_G45_SANS_BANNIERE[n] ? '' : t.strTeamBanner) || t.strFanart1 || t.strFanart2 || t.strFanart3 || t.strFanart4
+        url = t.strTeamBanner || t.strFanart1 || t.strFanart2 || t.strFanart3 || t.strFanart4
            || t.strStadiumThumb || t.strTeamJersey || t.strPoster || '';
       }
     } catch (e) {}
@@ -55247,17 +55247,8 @@ async function _g45FanChercher(nom, sport) {
 }
 
 /* Complete les visuels manquants puis redessine, sans bloquer l'affichage. */
-/* 20261020g (cartes Suivies, choix 2 d'Antoine « même rendu que les autres clubs ») :
-   _G45_FOND_TSDB = clubs dont l'image perso (images/equipes) est un petit blason carré → on va AUSSI chercher la bannière TheSportsDB,
-   utilisée en fond des cartes Suivies (g45DirectMesEquipes) ; _G45_SANS_BANNIERE = clubs dont la bannière TheSportsDB est un simple
-   mot (PSG : « PARIS ») → photo d'ambiance strFanart1..4 à la place. L'ancienne bannière gardée en mémoire est effacée UNE fois (g45_fan_fix1). */
-var _G45_FOND_TSDB = { atleticomadrid: 1 };
-var _G45_SANS_BANNIERE = { parissaintgermain: 1, psg: 1 };
-(function () { try {
-  if (localStorage.getItem('g45_fan_fix1')) return;
-  Object.keys(_G45_SANS_BANNIERE).forEach(function (k) { localStorage.removeItem(_G45_FANART + k); });
-  localStorage.setItem('g45_fan_fix1', '1');
-} catch (e) {} })();
+/* 20261020g → 20261020h : les listes _G45_FOND_TSDB / _G45_SANS_BANNIERE sont retirées (Antoine : « pour PSG et Atlético, ne plus utiliser
+   TheSportsDB ») ; les cartes Suivies prennent le blason de la liste du mur window._G45_FOND_LOGO. */
 async function _g45FanCompleter(noms) {
   if (_g45FanEnCours) return false;
   var maj = false;
@@ -55272,7 +55263,7 @@ async function _g45FanCompleter(noms) {
 
   /* 2. TheSportsDB seulement pour celles qui n'ont PAS d'image personnelle. */
   var aFaire = noms.filter(function (n) {
-    return (!_g45ImgPersoLire(n.nom || n) || _G45_FOND_TSDB[_g45SgNorm(n.nom || n)]) && _g45FanLire(n.nom || n) === undefined;   /* 20261020g */
+    return !_g45ImgPersoLire(n.nom || n) && _g45FanLire(n.nom || n) === undefined;
   }).slice(0, 2);
   for (var i = 0; i < aFaire.length; i++) {
     var it = aFaire[i];
@@ -55790,9 +55781,21 @@ async function g45DirectMesEquipes(silencieux) {
          remplace ce fanart, posé de la même façon. Autres clubs : fanart inchangé (Antoine : « j'adore l'image actuelle »).
        20261020g (« il y a une sacrée différence » avec les bannières des autres clubs → choix 2 d'Antoine) : plus de blason ESPN pour le PSG
        (photo TheSportsDB à la place de la bannière, voir _G45_SANS_BANNIERE) ; clubs de _G45_FOND_TSDB (Atlético) : la bannière TheSportsDB
-       passe AVANT l'image perso, ici seulement (le mur garde l'image perso). Sans bannière connue : image perso comme avant. */
-    if (_G45_FOND_TSDB[_g45SgNorm(cleImg)] && _g45FanLire(cleImg)) vis = _g45FanLire(cleImg);
-    var blason = /^images\/(equipes|joueurs)\//.test(vis || '');
+       passe AVANT l'image perso, ici seulement (le mur garde l'image perso). Sans bannière connue : image perso comme avant.
+       → REMPLACÉ le même jour par 20261020h :
+       20261020h (« le BLASON officiel en TRÈS GRAND, centré, qui déborde en haut et en bas, comme Roma / City », « ça c'est le logo PSG »
+       en montrant le mur ; maquette faite) : clubs de la liste du MUR window._G45_FOND_LOGO (PSG, Atlético, Arsenal, Vancouver, France,
+       Stade Toulousain…) → même blason que le mur (adresse de la liste, sinon g45LogoUrlDe, sinon logo ESPN m.lMoi), posé à 210 % de la
+       hauteur de la carte (déborde comme les bannières), fond = couleur du club ; TheSportsDB n'est plus utilisé pour eux ici. */
+    var blason = /^images\/(equipes|joueurs)\//.test(vis || ''), grand = false;
+    try {
+      var nFl = window._g45FondLogo && (window._g45FondLogo(cleImg) ? cleImg : (window._g45FondLogo(m.moi) ? m.moi : ''));
+      if (nFl) {
+        var vFl = window._G45_FOND_LOGO[_g45SgNorm(nFl)];
+        var uFl = (typeof vFl === 'string' ? vFl : '') || (typeof g45LogoUrlDe === 'function' ? g45LogoUrlDe(nFl) : '') || m.lMoi || '';
+        if (uFl) { vis = uFl; blason = true; grand = true; }
+      }
+    } catch (e) {}
     var fond = g45FondMatch(m.cMoi, m.cAdv, vis);
     var logo = function (url, cote) {
       if (!url) return '';
@@ -55809,8 +55812,8 @@ async function g45DirectMesEquipes(silencieux) {
          pour eviter le cadrage serre sur grand ecran ; le rendu laissait un pave
          au milieu de la carte et il prefere nettement le plein cadre. Le
          recadrage sur large ecran est donc assume. */
-      + 'background:' + fond + ';background-size:' + (blason ? 'cover,contain' : 'cover') + ';background-position:center;'
-      + (blason ? 'background-repeat:no-repeat;background-color:#0a0e1a;' : '')
+      + 'background:' + fond + ';background-size:' + (grand ? 'cover,auto 210%' : (blason ? 'cover,contain' : 'cover')) + ';background-position:center;'
+      + (blason ? 'background-repeat:no-repeat;background-color:' + (grand ? _g45CoulFond(m.cMoi || '#4d84ff') : '#0a0e1a') + ';' : '')
       + 'border:1px solid rgba(255,255,255,.08);'
       + (live ? 'box-shadow:0 0 0 1px rgba(255,69,69,.35),0 2px 14px rgba(255,69,69,.12);' : '') + '">'
       + logo(m.lMoi, 'left') + logo(m.lAdv, 'right')
