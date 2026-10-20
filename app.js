@@ -74861,6 +74861,17 @@ function _g45CdAm(x) {
   return a > 0 ? 1 + a / 100 : 1 + 100 / Math.abs(a);
 }
 function _g45CdCur(o) { return (o && o.current) ? _g45CdAm(o.current.odds) : null; }
+/* 20261020q : cote sous plusieurs formes (core ESPN) → décimale ; nombre entre 1 et 50 = déjà décimal, sinon américain */
+function _g45CdDec(o) {
+  if (o == null || o === '') return null;
+  if (typeof o === 'number' || typeof o === 'string') { var n = parseFloat(o); if (isNaN(n) || !n) return /^off$/i.test(String(o)) ? 'off' : null; return (n > 1 && n < 50) ? n : _g45CdAm(n); }
+  if (o.decimal != null) return parseFloat(o.decimal) || null;
+  if (o.american != null) return _g45CdAm(o.american);
+  if (o.odds != null) return _g45CdAm(o.odds);
+  if (o.value != null) return _g45CdDec(o.value);
+  return null;
+}
+window._g45CdDec = _g45CdDec;
 function _g45CdLigne(o) { var m = /(\d+(?:\.\d+)?)/.exec(String(o && o.current && o.current.line || '')); return m ? parseFloat(m[1]) : null; }
 async function _g45CdLire(sp, lg, eid, ymds) {
   for (var i = 0; i < ymds.length; i++) {
@@ -74877,9 +74888,31 @@ async function _g45CdLire(sp, lg, eid, ymds) {
     var ho = cs.filter(function (x) { return x.homeAway === 'home'; })[0] || cs[0] || {}, aw = cs.filter(function (x) { return x.homeAway === 'away'; })[0] || cs[1] || {};
     var od = (cp.odds || [])[0] || {}, ml = od.moneyline || {}, tt = od.total || {};
     var nm = function (c) { var t = c.team || {}; return [t.displayName, t.shortDisplayName, t.name, t.location, t.abbreviation].filter(Boolean); };
-    return { state: st.state, clk: (cp.status && cp.status.displayClock) || '', hs: ho.score, as: aw.score, hN: nm(ho), aN: nm(aw),
+    var R = { state: st.state, clk: (cp.status && cp.status.displayClock) || '', hs: ho.score, as: aw.score, hN: nm(ho), aN: nm(aw),
       h: _g45CdCur(ml.home), a: _g45CdCur(ml.away), d: _g45CdCur(ml.draw), L: _g45CdLigne(tt.over) || _g45CdLigne(tt.under),
-      ov: _g45CdCur(tt.over), un: _g45CdCur(tt.under), prov: (od.provider && od.provider.name) || 'DraftKings' };
+      ov: _g45CdCur(tt.over), un: _g45CdCur(tt.under), prov: (od.provider && od.provider.name) || 'DraftKings', u: 'buts' };
+    /* 20261020q — 🏀 NBA (sondé par Antoine le 20/10, BOS @ DET 4e QT) : le scoreboard n'a PAS de cote pendant le match ; le core
+       …/basketball/leagues/nba/events/<id>/competitions/<id>/odds → items[] provider id 200 « DraftKings - Live Odds » = EN DIRECT
+       (homeTeamOdds / awayTeamOdds .current.moneyLine.decimal ou .moneyLine américain ; overUnder ; current.over / under). Lu
+       seulement pendant le match, gardé 30 s. Lecture prudente (plusieurs formes acceptées) : rien de lisible = pas de ligne 📈. */
+    if (sp === 'basketball' && lg === 'nba' && R.state === 'in') {
+      try {
+        var ko = 'nbaodds|' + eid, oo = _g45CdMem[ko];
+        if (!oo || Date.now() - oo.t > 30000) oo = _g45CdMem[ko] = { t: Date.now(), p: fetch('https://sports.core.api.espn.com/v2/sports/basketball/leagues/nba/events/' + eid + '/competitions/' + eid + '/odds', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }) };
+        var jo = await oo.p, it = ((jo && jo.items) || []).filter(function (x) { return x && x.provider && String(x.provider.id) === '200'; })[0];
+        R.h = R.a = R.ov = R.un = R.L = null; R.d = null; R.u = 'points';
+        if (it) {
+          var cur = it.current || {}, hc = it.homeTeamOdds || {}, ac = it.awayTeamOdds || {};
+          R.h = _g45CdDec((hc.current || {}).moneyLine) || _g45CdDec(hc.moneyLine);
+          R.a = _g45CdDec((ac.current || {}).moneyLine) || _g45CdDec(ac.moneyLine);
+          var tot = cur.total || {}, L0 = it.overUnder != null ? parseFloat(it.overUnder) : parseFloat(tot.value != null ? tot.value : (tot.american || tot.alternateDisplayValue || ''));
+          R.L = isNaN(L0) ? null : L0;
+          R.ov = _g45CdDec(cur.over); R.un = _g45CdDec(cur.under);
+          R.prov = 'DraftKings, en direct';
+        }
+      } catch (e) {}
+    }
+    return R;
   }
   return null;
 }
@@ -74915,12 +74948,13 @@ function _g45CdTexte(h, C, M) {
   var v;
   if (M.cle === 'ov' || M.cle === 'un') {
     v = C[M.cle];
-    if (v === 'off') return '<span style="color:#f5c542">⏸️ cote suspendue pour l\'instant (but, carton…)</span>';
+    var unit = C.u || 'buts', susp = '<span style="color:#f5c542">⏸️ cote suspendue pour l\'instant (' + (unit === 'points' ? 'temps mort, lancers…' : 'but, carton…') + ')</span>';   /* 20261020q : NBA = points */
+    if (v === 'off') return susp;
     if (C.L == null || !v) return '';
     var lib = M.cle === 'ov' ? '+ de ' : '− de ';
-    if (Math.abs(C.L - M.L) > 0.01) return '<span style="color:#c9d3ee">ta ligne (' + String(M.L).replace('.', ',') + ' buts) n\'est plus proposée</span> · en direct : <b>' + lib + String(C.L).replace('.', ',') + ' buts à ' + _g45CdFr(v) + '</b>';
+    if (Math.abs(C.L - M.L) > 0.01) return '<span style="color:#c9d3ee">ta ligne (' + String(M.L).replace('.', ',') + ' ' + unit + ') n\'est plus proposée</span> · en direct : <b>' + lib + String(C.L).replace('.', ',') + ' ' + unit + ' à ' + _g45CdFr(v) + '</b>';
   } else v = C[M.cle];
-  if (v === 'off') return '<span style="color:#f5c542">⏸️ cote suspendue pour l\'instant (but, carton…)</span>';
+  if (v === 'off') return '<span style="color:#f5c542">⏸️ cote suspendue pour l\'instant (' + (C.u === 'points' ? 'temps mort, lancers…' : 'but, carton…') + ')</span>';
   if (!v) return '';
   return '<b style="font-size:18px;color:#1ed760">' + _g45CdFr(v) + '</b> <span style="color:#c9d3ee">en direct</span>' + (prise ? ' · tu l\'as prise à <b>' + _g45CdFr(prise) + '</b>' : '') + comp(v);
 }
@@ -74931,7 +74965,7 @@ window._g45CdMarche = _g45CdMarche; window._g45CdTexte = _g45CdTexte;
     if (z._cdPend || z.querySelector('.g45ec-cd') || !/EN DIRECT/.test(z.textContent || '')) return;
     var id = z.getAttribute('data-g45ecl'), h = ((window.state && state.h) || []).filter(function (x) { return x && String(x.id) === id; })[0];
     var meta = (h && typeof _g45MatchMeta === 'function') ? _g45MatchMeta(h) : null;
-    if (!meta || meta.sp !== 'soccer' || !meta.eid || !meta.lg) return;
+    if (!meta || !meta.eid || !meta.lg || !(meta.sp === 'soccer' || (meta.sp === 'basketball' && meta.lg === 'nba'))) return;   /* 20261020q : + NBA */
     z._cdPend = 1;
     try {
       var C = await _g45CdLire(meta.sp, meta.lg, meta.eid, [String(h.date).slice(0, 10).replace(/-/g, '')]);
@@ -74954,18 +74988,18 @@ window._g45CdMarche = _g45CdMarche; window._g45CdTexte = _g45CdTexte;
   var o0 = window._g45EspnUsOdds; if (typeof o0 !== 'function') return;
   window._g45EspnUsOdds = async function (sport, lg, eid, dateISO, hN, aN) {
     var html = await o0.apply(this, arguments);
-    if (sport !== 'soccer' || !dateISO) return html;
+    if (!(sport === 'soccer' || (sport === 'basketball' && lg === 'nba')) || !dateISO) return html;   /* 20261020q : + NBA */
     try {
       var d = new Date(dateISO); if (isNaN(d)) return html;
       var y = function (x) { return x.getUTCFullYear() + String(x.getUTCMonth() + 1).padStart(2, '0') + String(x.getUTCDate()).padStart(2, '0'); };
       var C = await _g45CdLire(sport, lg, eid, [y(d), y(new Date(d.getTime() - 864e5))]);
       if (!C || C.state !== 'in') return html;
       var lignes = [];
-      if (C.h || C.a) lignes.push([hN, C.h], ['Nul', C.d], [aN, C.a]);
+      if (C.h || C.a) { lignes.push([hN, C.h]); if (C.u !== 'points') lignes.push(['Nul', C.d]); lignes.push([aN, C.a]); }
       var rows = lignes.filter(function (r) { return r[1]; }).map(function (r) {
         return '<div style="display:flex;justify-content:space-between;font-size:14px;padding:3px 0;"><span>' + String(r[0]).replace(/</g, '&lt;') + '</span><b style="color:' + (r[1] === 'off' ? '#f5c542' : '#1ed760') + ';">' + (r[1] === 'off' ? '⏸️ suspendue' : _g45CdFr(r[1])) + '</b></div>';
       }).join('');
-      if (C.L != null && (C.ov || C.un)) rows += '<div style="display:flex;justify-content:space-between;font-size:14px;padding:3px 0;"><span>Buts ' + String(C.L).replace('.', ',') + '</span><b>+ <span style="color:#1ed760">' + _g45CdFr(C.ov) + '</span> · − <span style="color:#ff7b54">' + _g45CdFr(C.un) + '</span></b></div>';
+      if (C.L != null && (C.ov || C.un)) rows += '<div style="display:flex;justify-content:space-between;font-size:14px;padding:3px 0;"><span>' + (C.u === 'points' ? 'Points' : 'Buts') + ' ' + String(C.L).replace('.', ',') + '</span><b>+ <span style="color:#1ed760">' + _g45CdFr(C.ov) + '</span> · − <span style="color:#ff7b54">' + _g45CdFr(C.un) + '</span></b></div>';
       if (!rows) return html;
       html = String(html || '').replace('🏆 Favori vainqueur', '🏆 Favori avant le match');
       return html + '<div style="margin-top:10px;background:rgba(255,69,69,.08);border:1px solid rgba(255,69,69,.45);border-radius:10px;padding:10px 12px;color:#fff;">'

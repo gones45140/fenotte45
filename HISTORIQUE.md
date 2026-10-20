@@ -1637,6 +1637,11 @@ RÉGLÉ (worker, 01/10) : cron « exceededCpu » (cpuTimeMs 10) à CHAQUE passag
   TROUVÉ (sondé par Antoine, même match, 4e QT) : core sports.core.api.espn.com/v2/sports/basketball/leagues/nba/events/<id>/competitions/<id>/odds
   → items[] : provider id 100 « DraftKings » = clôture ; provider id 200 « DraftKings - Live Odds » = EN DIRECT (overUnder 224.5, details « BOS -7.5 »,
   awayTeamOdds.moneyLine -600, .current.moneyLine.decimal 1.16 / spread / pointSpread ; homeTeamOdds idem ; current.over / under / total). Rien codé.
+  20261020q — BRANCHÉ (demande d'Antoine « même rendu que le foot ») : `_g45CdLire('basketball', 'nba', …)` lit le scoreboard (état, équipes, score)
+  puis, match 'in', le core odds (mémoire 30 s) → provider id 200 : h / a = homeTeamOdds / awayTeamOdds .current.moneyLine (sinon .moneyLine),
+  L = overUnder, ov / un = current.over / under ; `_g45CdDec` accepte nombre (1-50 = décimal, sinon américain), {decimal}, {american}, {odds},
+  {value} (forme exacte de over / under NON sondée → lecture prudente). C.u = 'points' : texte « + de 224,5 points », suspendue « temps mort,
+  lancers… », pas de ligne Nul, fenêtre « Points ». Cartes Paris en cours (meta.sp basketball + lg nba) et fenêtre (_g45EspnUsOdds). Smoke cdNba (66).
 - 📈 COTES EN DIRECT HORS FOOT (15/10) : commande console « 4 ligues » (NHL / NBA / NFL / MLB, moneyline.*.current + total.over.current)
   donnée à Antoine ; il la lancera pendant un match : MLB jeudi 19 h, NFL ce week-end, NBA mardi 21 h, NHL peut-être ce week-end. Chiffres
   présents → étendre _g45CdLire / cartes / fenêtre au sport (aujourd'hui meta.sp === 'soccer' et sport === 'soccer' seulement) ; ligne de
