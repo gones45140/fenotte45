@@ -55543,9 +55543,22 @@ async function g45DirectMesEquipes(silencieux) {
       var idL = String(L.id || '');
       if (idL) lgParId[idL] = { nom: L.name || L.shortName || '', slug: L.slug || L.abbreviation || '' };
     });
+    /* 20261020e (capture Suivies : « soccer » sur Roma, Man City, PSG… en Ligue des champions) : SONDÉ par Antoine le 20/10 — la réponse
+       soccer/all ne remplit plus `leagues` (1 entrée, id / name / slug à null) et l'événement n'a ni `league` ni nom ; seul l'uid garde le
+       numéro (« s:600~l:775~e:… »). Table numéro → slug + nom français, relevée sur le scoreboard de chaque championnat (leagues[0].id) :
+       elle rend aussi le vrai slug au match (chaîne télé de la bonne compétition, fenêtre de match). Numéro inconnu = comme avant. */
+    var LG_ID = { '775': ['uefa.champions', 'Ligue des champions'], '776': ['uefa.europa', 'Ligue Europa'], '20296': ['uefa.europa.conf', 'Ligue Conférence'],
+      '710': ['fra.1', 'Ligue 1'], '3926': ['fra.2', 'Ligue 2'], '700': ['eng.1', 'Premier League'], '740': ['esp.1', 'LaLiga'], '730': ['ita.1', 'Serie A'],
+      '720': ['ger.1', 'Bundesliga'], '715': ['por.1', 'Liga Portugal'], '725': ['ned.1', 'Eredivisie'], '3901': ['bel.1', 'Pro League (Belgique)'],
+      '3952': ['fra.coupe_de_france', 'Coupe de France'], '3918': ['eng.fa', 'FA Cup'], '3920': ['eng.league_cup', 'Carabao Cup'],
+      '3951': ['esp.copa_del_rey', 'Copa del Rey'], '3956': ['ita.coppa_italia', 'Coupe d\'Italie'], '3954': ['ger.dfb_pokal', 'Coupe d\'Allemagne'],
+      '5462': ['uefa.super_cup', 'Supercoupe UEFA'], '606': ['fifa.world', 'Coupe du monde'], '2395': ['uefa.nations', 'Ligue des nations'],
+      '735': ['sco.1', 'Premiership (Écosse)'], '3946': ['tur.1', 'Süper Lig'], '770': ['usa.1', 'MLS'], '21231': ['ksa.1', 'Saudi Pro League'] };
     var lgDuUid = function (uid) {
       var m = String(uid || '').match(/~l:(\d+)/);
-      return (m && lgParId[m[1]]) || null;
+      if (m && lgParId[m[1]] && (lgParId[m[1]].nom || lgParId[m[1]].slug)) return lgParId[m[1]];
+      if (g.sp === 'soccer' && m && LG_ID[m[1]]) return { slug: LG_ID[m[1]][0], nom: LG_ID[m[1]][1] };
+      return null;
     };
 
     ((js && js.events) || []).forEach(function (e) {

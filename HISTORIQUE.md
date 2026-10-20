@@ -522,7 +522,11 @@ Il est dans les DEUX dépôts (gones45 et fenotte45), identique (cmp). Jamais de
 - Suivies — 20261020d (captures : chaîne télé presque invisible, « soccer » au lieu de la compétition ; Antoine : « j'adore l'image actuelle, juste un cache
   pour la TV ») : pastille 📺 fond sombre opaque rgba(8,11,20,.88) + liseré (vert gratuit / violet programme réel / blanc table), texte clair ;
   sans nom de compétition → nom du sport en français (SPORT_FR), plus jamais « soccer ». Images, voile, heure : INCHANGÉS (choix d'Antoine).
-  EN ATTENTE : vrai nom (Ligue des champions…) avec le slug `all` — sonde console scoreboard soccer/all demandée à Antoine (leagues / uid / league).
+  20261020e — SONDÉ par Antoine (console) : soccer/all → `leagues` = 1 entrée vide (id / name / slug null), événement sans `league`, seul l'uid
+  garde le numéro (« s:600~l:775~e:… »). Table LG_ID dans lgDuUid (g45DirectMesEquipes) : numéro → [slug, nom FR], relevée le 20/10 sur
+  leagues[0].id de 25 scoreboards (775 C1, 776 C3, 20296 C4, 710 L1, 3926 L2, 700 PL, 740 Liga, 730 Serie A, 720 Bundesliga, 715, 725, 3901,
+  3952 CdF, 3918, 3920, 3951, 3956, 3954, 5462, 606, 2395, 735, 3946, 770, 21231). Rend aussi le vrai slug (chaîne télé, fenêtre de match).
+  Nouveau championnat suivi absent de la table → « Football » : ajouter son numéro (scoreboard du championnat, leagues[0].id).
 - Suivies « Matchs à venir / direct » (`g45DirectMesEquipes`, groupes `_g45DirEquipes`) : 29v —
   le plafond (10) porte sur les REQUÊTES réelles (`aInterroger`, tout le foot = 1 requête `all`),
   plus sur les championnats : les ligues de foot d'Antoine occupaient les 8 places et la NHL
