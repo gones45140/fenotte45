@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action (il est court exprès). Le détail de tout l'historique est dans HISTORIQUE.md
-(à chercher avec grep, jamais à lire en entier). Mis à jour le 20/10/2026 (version déployée : 20261020n, même app.js sur gones45 et fenotte45).
+(à chercher avec grep, jamais à lire en entier). Mis à jour le 20/10/2026 (version déployée : 20261020o, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -135,7 +135,6 @@ PIÈGES À NE JAMAIS OUBLIER :
 - Abonnement : plan prêt, NON codé (_G45_ABO_PLAN false) ; micro-entreprise reportée ; verrou serveur à faire le moment venu.
 - RGPD : SQL supprimer-compte.sql à installer par Antoine dans les 2 projets Supabase.
 - 🎾 Cotes tennis : TheRundown (gratuit, worker /rundown, secret RUNDOWN_KEY) branché dans le robot (20261020m). À faire : cote dans l'analyse (maquette), autres sports via TheRundown selon la consommation.
-- 🎾 « Analyser les matchs » tennis (stats seules, filtres Jour / Proba / Confiance, SANS TheRundown = robot seul) : maquette montrée le 20/10, en attente du « OK maquette ».
 - Surebet : mises « Mise 1 / Mise 2 » en blanc. Cédric : toucher 🤍 sur Portugal. Worker : budget `_lourd` 4 → 2 proposé.
 
 ## 8. Façon de travailler en session cloud

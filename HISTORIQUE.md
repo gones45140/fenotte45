@@ -2132,6 +2132,15 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   analyse dans Résultats → Tennis : tous les matchs. Clé de saison tn2_ → tn3_ (catégorie WTA). 11 essais vm.
   Foot sur TheRundown (« vu ce que coûte le tennis ») : PAS MAINTENANT — estimé 5 000 à 8 000 points / jour avec le tennis vs 6 600 / jour pour
   tenir 200 000 / mois ; décider après une semaine de consommation réelle du robot tennis.
+  20261020o (maquette « Analyser les matchs » + « Robot limité à ATP 500 ; tennis analyser à partir de BET45 on peut descendre à 250 mais on
+  garde la limite de 8 pour tout le monde sauf pour moi sur gones » + « ok ») : 🎾 ANALYSER LES MATCHS dans Tendances perso → Tennis.
+  _g45TnListe(jour) : simples ATP + WTA du jour / du lendemain, 250 COMPRIS (seuls Coupe Davis / United Cup… écartés) ; g45TnLancer : tri
+  par importance (GC, Finals, 1000, 500, 250 — RANG) puis heure, 8 matchs au plus sur BET45 (sans limite si _g45SanteActive = gones), avis
+  BET45 (2 saisons, stats ESPN SEULES : TheRundown jamais appelé, réservé au robot) ; résultats filtrés à l'affichage (Proba mini 50 / 60 / 70,
+  Confiance toutes / moyenne et forte / forte ; localStorage g45tn_jour / g45tn_pmin / g45tn_conf), classés par proba, « En clair » + « 📊 Analyse
+  détaillée » ; gardés pour la journée (IndexedDB kv tnrun1). Liste « Tous les matchs du jour » dessous (250 compris). Robot : inchangé (500 et +).
+  _g45TnPerso pose les 3 blocs de l'écran. Smoke tnRun (65) ; tests tnRobot / tnRun calés sur « maintenant + quelques minutes » (le soir UTC,
+  « + 2 h » tombait le lendemain).
   20261020c (croquis d'Antoine « Tendances = 4 boutons », maquette cliquable validée « oui, BET45 → Sélection du jour par défaut ») : ONGLET EN BOUTONS —
   bloc « TENDANCES EN BOUTONS » en fin d'app.js (enveloppe la plus externe de loadTendancesTab). Barre #g45tr-nav : 📒 Tendances BET45 · 🔍 Tendances perso ·
   ⚽ Tendances buteurs · 📏 CLV ; dans BET45 : ⭐ Sélection du jour (_g45TrSelHtml, forcée ouverte) · 📅 Historique (calendrier + liste du jour) ·

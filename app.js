@@ -77542,39 +77542,131 @@ window._g45AgJouUs = async function (nowTs) {
     _g45EspnTennisDetail._g45Tn = true;
   }
 
-  /* écran Tendances → 🎾 Tennis : matchs du jour (simples ATP + WTA à venir / en cours) */
-  window._g45TnJour = async function (el) {
-    var cible = document.getElementById('g45tn-jour'); if (!cible) return;
-    var ymd = (typeof _g45ymd === 'function') ? _g45ymd(new Date()) : '';
+  /* écran Tendances → 🎾 Tennis : matchs du jour (simples ATP + WTA à venir / en cours)
+     20261020o (maquette « Analyser les matchs » + « on peut descendre à 250 mais on garde la limite de 8 pour tout le monde sauf pour moi
+     sur gones ») : la LISTE et l'ANALYSE descendent aux 250 (seuls Coupe Davis / United Cup… écartés) ; le ROBOT officiel reste à 500 et plus
+     (_g45TnRobot, inchangé). Filtres Jour / Proba mini / Confiance (localStorage g45tn_jour / g45tn_pmin / g45tn_conf). « ▶ Analyser les
+     matchs » = avis BET45 (stats ESPN SEULES, jamais TheRundown, réservé au robot) des matchs triés par importance (GC, Finals, 1000, 500,
+     250) puis par heure, 8 au plus sur BET45 (_g45MurLimite / _g45SanteActive : sans limite sur gones). Résultats gardés pour la journée
+     (IndexedDB kv 'tnrun1', même jour + même Jour). */
+  var T = window._g45TnRun = { res: null, run: false, prog: '' };
+  var lsG = function (k, d) { try { var v = localStorage.getItem(k); return v == null ? d : v; } catch (e) { return d; } };
+  var lsP = function (k, v) { try { localStorage.setItem(k, String(v)); } catch (e) {} };
+  var jourDe = function () { return lsG('g45tn_jour', '0') === '1' ? 1 : 0; };
+  var ymdJ = function (n) { var d = new Date(); d.setDate(d.getDate() + n); return (typeof _g45ymd === 'function') ? _g45ymd(d) : ''; };
+  var RANG = { gc: 0, fin: 1, m1000: 2, a500: 3, w5: 3, a250: 4, w2: 4 };
+  var gonesSansLimite = function () { try { return typeof _g45SanteActive === 'function' && _g45SanteActive(); } catch (e) { return false; } };
+  window._g45TnListe = async function (n) {
+    var ymd = ymdJ(n);
     var f = function (lg) { return fetch('https://site.api.espn.com/apis/site/v2/sports/tennis/' + lg + '/scoreboard?dates=' + ymd).then(function (r) { return r.ok ? r.json() : {}; }).then(function (j) { return (j.events || []).map(function (e) { e.__lg = lg; return e; }); }).catch(function () { return []; }); };
-    var evs = (await f('atp')).concat(await f('wta'));
-    var L = [], nPetits = 0;
+    var evs = (await f('atp')).concat(await f('wta')), L = [];
     evs.forEach(function (ev) {
+      var tn = ev.name || ev.shortName || '', cat = window._g45TnCat(tn, ev.__lg); if (cat === 'eq') return;
       (ev.groupings || []).forEach(function (g) {
-        var gn = (g.grouping && g.grouping.displayName) || ''; if (!/singles/i.test(gn)) return;
+        if (!/singles/i.test((g.grouping && g.grouping.displayName) || '')) return;
         (g.competitions || []).forEach(function (c) {
           var st = (c.status && c.status.type && c.status.type.state) || ''; if (st === 'post') return;
-          if (ymd && (typeof _g45ymd === 'function') && _g45ymd(new Date(c.date || c.startDate)) !== ymd) return;
+          if (ymd && _g45ymd(new Date(c.date || c.startDate)) !== ymd) return;
           var cps = c.competitors || []; if (cps.length !== 2) return;
-          if (!window._g45TnGrand(window._g45TnCat(ev.name || ev.shortName || '', ev.__lg))) { nPetits++; return; }   /* 20261020n */
-          L.push({ lg: ev.__lg, ev: ev, c: c, st: st, a: joueur(cps[0]), b: joueur(cps[1]) });
+          var hm = cps.filter(function (x) { return x.homeAway === 'home'; })[0] || cps[0], aw = cps.filter(function (x) { return x.homeAway === 'away'; })[0] || cps[1];
+          L.push({ lg: ev.__lg, tn: tn, cat: cat, id: String(c.id), t: Date.parse(c.date || c.startDate) || 0, st: st, a: joueur(hm), b: joueur(aw), ek: ekDe(c, ev), lieu: lieuDe(c) });
         });
       });
     });
-    if (!document.getElementById('g45tn-jour')) return;
-    var noteP = nPetits ? '<div style="font-size:13px;color:#c9d3ee;margin-top:6px;">' + nPetits + ' match' + (nPetits > 1 ? 's' : '') + ' de tournois 250 et moins non affiché' + (nPetits > 1 ? 's' : '') + ' (analyse toujours possible dans Résultats → Tennis).</div>' : '';
-    if (!L.length) { cible.innerHTML = '<div style="font-size:14px;color:#c9d3ee;">Aucun match de simple ATP / WTA 500, 1000 ou Grand Chelem à venir aujourd\'hui.</div>' + noteP; return; }
-    L.sort(function (x, y) { return (x.st === 'in' ? 0 : 1) - (y.st === 'in' ? 0 : 1) || Date.parse(x.c.date) - Date.parse(y.c.date); });
+    return L;
+  };
+  window.g45TnFiltreRun = function (k, v) { lsP(k, v); if (k === 'g45tn_jour') { T.res = null; } var el = document.getElementById('t-tend'); if (el && typeof loadTendancesTab === 'function') loadTendancesTab(); };
+  /* un match → avis BET45 (comme le robot, sans cote) */
+  var avisMatch = async function (m, prog) {
+    var an = new Date().getFullYear();
+    var histo = async function (p) { var t = []; for (var y = an; y >= an - 1; y--) { if (prog) prog(p.n + ' (' + y + ')'); t = t.concat((await window._g45TnSaison(m.lg, p.id, y)) || []); } var vu = {}; return t.filter(function (x) { if (!x.id) return true; if (vu[x.id]) return false; vu[x.id] = 1; return true; }); };
+    var ind = false, adr = m.lieu;
+    try { var e0 = await evInfo(m.lg, 'events/' + m.ek); if (e0) { ind = e0.ind; adr = adr || e0.adr; } } catch (e) {}
+    var py = window._g45TnPays(adr), ctx = { sf: window._g45TnSurf(m.tn, ind), ind: ind, cat: m.cat, ek: m.ek, py: py ? py.n : '', pf: py ? py.f : '', adr: adr };
+    var CA = window._g45TnCalc(await histo(m.a), Object.assign({}, ctx, { adv: m.b.id })), CB = window._g45TnCalc(await histo(m.b), Object.assign({}, ctx, { adv: m.a.id }));
+    var V = window._g45TnAvis(CA, CB, m.a.rk, m.b.rk); if (!V) return null;
+    var cl = ''; try { cl = window._g45TnClair({ a: m.a, b: m.b, A: CA, B: CB, ctx: ctx }, V); } catch (e) {}
+    return { m: m, sf: ctx.sf, qui: V.qui, p: Math.max(V.p, 1 - V.p), pc: V.pc, conf: V.conf, cl: cl };
+  };
+  window.g45TnLancer = async function () {
+    if (T.run) return; T.run = true; T.res = null;
+    var n = jourDe(), lim = gonesSansLimite() ? 999 : 8;
+    var maj = function (t) { T.prog = t; var p = document.getElementById('g45tn-prog'); if (p) p.textContent = '⏳ ' + t; };
+    try {
+      maj('Lecture des matchs…');
+      var L = (await window._g45TnListe(n)).filter(function (m) { return m.st === 'pre' && m.t > Date.now(); });
+      L.sort(function (x, y) { return (RANG[x.cat] == null ? 5 : RANG[x.cat]) - (RANG[y.cat] == null ? 5 : RANG[y.cat]) || x.t - y.t; });
+      var tot = L.length; L = L.slice(0, lim); var R = [];
+      for (var i = 0; i < L.length; i++) {
+        var r = null; try { r = await avisMatch(L[i], function (q) { maj((i + 1) + ' / ' + L.length + ' matchs · ' + q + '…'); }); } catch (e) {}
+        if (r) R.push(r);
+      }
+      T.res = { d: ymdJ(n), j: n, tot: tot, lim: lim, r: R, t: Date.now() };
+      try { if (typeof indexedDB !== 'undefined') kv('put', 'tnrun1', T.res); } catch (e) {}
+    } catch (e) { T.res = { d: ymdJ(n), j: n, tot: 0, lim: lim, r: [], err: 1 }; }
+    T.run = false; T.prog = '';
+    var el = document.getElementById('t-tend'); if (el && typeof loadTendancesTab === 'function') loadTendancesTab();
+  };
+  var resultatsHtml = function () {
+    var R = T.res; if (!R) return '';
+    var pmin = +lsG('g45tn_pmin', '0.6'), conf = lsG('g45tn_conf', 'mf');
+    var ok = R.r.filter(function (x) { return x.p >= pmin - 1e-9 && (conf === 'tout' || (conf === 'f' ? x.conf === 'forte' : x.conf !== 'serré')); })
+      .sort(function (a, b) { return b.p - a.p; });
+    var h = '<div style="background:rgba(11,16,29,.94);border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:12px 14px;margin-bottom:12px;color:#fff;">'
+      + '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;"><b style="font-size:16px;">Résultats · ' + ok.length + ' match' + (ok.length > 1 ? 's' : '') + ' retenu' + (ok.length > 1 ? 's' : '') + ' sur ' + R.r.length + ' analysé' + (R.r.length > 1 ? 's' : '') + '</b>'
+      + '<button onclick="g45TnLancer()" style="cursor:pointer;padding:7px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.3);background:transparent;color:#fff;font-size:13px;font-weight:800;">↺ Relancer</button></div>'
+      + (R.tot > R.r.length && R.lim < 999 ? '<div style="font-size:13px;color:#c9d3ee;margin:4px 0;">BET45 : les ' + R.lim + ' matchs les plus importants sur ' + R.tot + ' (Grand Chelem, 1000, 500, puis 250).</div>' : '');
+    if (R.err) h += '<div style="font-size:14px;color:#ff9b9b;margin-top:6px;">Données ESPN indisponibles pour le moment.</div>';
+    else if (!ok.length) h += '<div style="font-size:14px;color:#c9d3ee;margin-top:6px;">Aucun match ne passe ces filtres.</div>';
+    ok.forEach(function (x, i) {
+      var m = x.m, cc = x.conf === 'forte' ? '#1ed760' : (x.conf === 'moyenne' ? '#f0c828' : '#c9d3ee'), G = x.qui === 'a' ? m.a : m.b, s = SF[x.sf] || SF.dur;
+      var hr = ''; try { hr = new Date(m.t).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }); } catch (e) {}
+      h += '<div style="background:#1e2740;border-left:5px solid ' + cc + ';border-radius:10px;padding:10px 12px;margin-top:9px;">'
+        + '<div style="display:flex;justify-content:space-between;gap:8px;font-size:15px;"><b>' + esc(m.a.n) + ' – ' + esc(m.b.n) + '</b><span style="flex:none;">🕒 ' + hr + '</span></div>'
+        + '<div style="margin-top:4px;"><span style="font-size:12px;font-weight:800;background:#0b101d;border-radius:6px;padding:2px 8px;">' + (CAT[m.cat] || '') + ' · ' + esc(m.tn) + ' · ' + s.i + ' ' + s.l + '</span></div>'
+        + '<div style="font-size:16px;font-weight:900;margin-top:6px;">🔮 <span style="color:' + cc + ';">' + esc(G.n) + '</span> · ' + x.pc + ' % · confiance ' + (x.conf === 'serré' ? 'faible' : x.conf) + '</div>'
+        + (x.cl ? '<div style="font-size:13px;color:#dbe4ff;margin-top:4px;line-height:1.4;">💡 ' + x.cl + '</div>' : '')
+        + '<div style="margin-top:8px;">' + bouton(m.lg, m.a, m.b, m.tn, m.ek, 'g45tn-r-' + i, m.lieu).replace('📊 Analyse BET45 (forme, surface, face-à-face)', '📊 Analyse détaillée') + '</div></div>';
+    });
+    return h + '</div>';
+  };
+  window._g45TnJour = async function (el) {
+    var cible = document.getElementById('g45tn-jour'); if (!cible) return;
+    var n = jourDe();
+    if (!T.res && !T.run && typeof indexedDB !== 'undefined') {   /* résultats du jour déjà calculés (même jour, même « Jour ») */
+      try { var o = await kv('get', 'tnrun1'); if (o && o.d === ymdJ(n) && o.j === n) { T.res = o; var rz = document.getElementById('g45tn-res'); if (rz) rz.innerHTML = resultatsHtml(); } } catch (e) {}
+    }
+    var L = await window._g45TnListe(n);
+    cible = document.getElementById('g45tn-jour'); if (!cible) return;
+    if (!L.length) { cible.innerHTML = '<div style="font-size:14px;color:#c9d3ee;">Aucun match de simple ATP / WTA à venir ' + (n ? 'demain' : 'aujourd\'hui') + '.</div>'; return; }
+    L.sort(function (x, y) { return (x.st === 'in' ? 0 : 1) - (y.st === 'in' ? 0 : 1) || x.t - y.t; });
     var h = '', tourPrec = '';
     L.forEach(function (m, i) {
-      var tn = m.ev.name || m.ev.shortName || '', s = SF[window._g45TnSurf(tn, false)] || SF.dur;
-      if (tn !== tourPrec) { h += '<div style="font-size:14px;font-weight:800;background:#0b101d;display:inline-block;padding:3px 10px;border-radius:7px;margin:10px 0 6px;">' + (m.lg === 'wta' ? 'WTA' : 'ATP') + ' · ' + esc(tn) + ' · ' + s.i + ' ' + s.l + '</div>'; tourPrec = tn; }
-      var hr = ''; try { hr = new Date(m.c.date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }); } catch (e) {}
+      var s = SF[window._g45TnSurf(m.tn, false)] || SF.dur;
+      if (m.tn !== tourPrec) { h += '<div style="font-size:14px;font-weight:800;background:#0b101d;display:inline-block;padding:3px 10px;border-radius:7px;margin:10px 0 6px;">' + (m.lg === 'wta' ? 'WTA' : 'ATP') + ' · ' + esc(m.tn) + ' · ' + (CAT[m.cat] ? CAT[m.cat] + ' · ' : '') + s.i + ' ' + s.l + '</div>'; tourPrec = m.tn; }
+      var hr = ''; try { hr = new Date(m.t).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }); } catch (e) {}
       h += '<div style="background:#1e2740;border-radius:10px;padding:9px 10px;margin-bottom:8px;">'
         + '<div style="display:flex;justify-content:space-between;gap:8px;font-size:15px;"><b>' + esc(m.a.n) + ' – ' + esc(m.b.n) + '</b><span style="flex:none;">' + (m.st === 'in' ? '<b style="color:#ff6b6b;">🔴 en cours</b>' : '🕒 ' + hr) + '</span></div>'
-        + '<div style="margin-top:7px;">' + bouton(m.lg, m.a, m.b, tn, ekDe(m.c, m.ev), 'g45tn-j-' + i, lieuDe(m.c)) + '</div></div>';
+        + '<div style="margin-top:7px;">' + bouton(m.lg, m.a, m.b, m.tn, m.ek, 'g45tn-j-' + i, m.lieu) + '</div></div>';
     });
-    cible.innerHTML = h + noteP;
+    cible.innerHTML = h;
+  };
+  window._g45TnEcran = function () {
+    var n = jourDe(), pmin = lsG('g45tn_pmin', '0.6'), conf = lsG('g45tn_conf', 'mf');
+    var ch = function (lbl, on, k, v) { return '<button onclick="g45TnFiltreRun(\'' + k + '\',\'' + v + '\')" style="cursor:pointer;padding:7px 12px;border-radius:9px;font-size:13px;font-weight:800;color:#fff;margin:0 5px 5px 0;background:' + (on ? '#1a2235' : 'transparent') + ';border:' + (on ? '2px solid #f5c542' : '1px solid rgba(255,255,255,.25)') + ';">' + lbl + '</button>'; };
+    var lbl = function (t) { return '<div style="font-size:13px;font-weight:800;color:#c9d3ee;margin:8px 0 4px;">' + t + '</div>'; };
+    return '<div style="background:rgba(11,16,29,.92);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px 14px;color:#fff;margin-bottom:12px;">'
+      + '<div style="font-size:17px;font-weight:800;">🎾 Matchs ' + (n ? 'de demain' : 'du jour') + ' · ATP et WTA</div>'
+      + lbl('Jour') + ch('Aujourd\'hui', !n, 'g45tn_jour', 0) + ch('Demain', n, 'g45tn_jour', 1)
+      + lbl('Proba mini BET45') + ch('50 %', pmin === '0.5', 'g45tn_pmin', '0.5') + ch('60 %', pmin === '0.6', 'g45tn_pmin', '0.6') + ch('70 %', pmin === '0.7', 'g45tn_pmin', '0.7')
+      + lbl('Confiance') + ch('Toutes', conf === 'tout', 'g45tn_conf', 'tout') + ch('Moyenne et forte', conf === 'mf', 'g45tn_conf', 'mf') + ch('Forte seulement', conf === 'f', 'g45tn_conf', 'f')
+      + '<button onclick="g45TnLancer()" class="btn btn-p" style="width:100%;padding:14px;font-size:16px;font-weight:800;margin-top:8px;"' + (T.run ? ' disabled' : '') + '>▶ Analyser les matchs</button>'
+      + '<div id="g45tn-prog" style="font-size:14px;color:#c9d3ee;text-align:center;margin:8px 0;">' + (T.run ? '⏳ ' + esc(T.prog) : '') + '</div>'
+      + '<div style="font-size:13px;color:#c9d3ee;">Stats ESPN seulement (pas de cote) · ' + (gonesSansLimite() ? 'tous les matchs' : '8 matchs au plus, les plus importants d\'abord') + ' · premier passage 1 à 3 min, ensuite rapide.</div></div>'
+      + '<div id="g45tn-res">' + resultatsHtml() + '</div>'
+      + '<div style="background:rgba(11,16,29,.92);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px 14px;color:#fff;margin-bottom:12px;">'
+      + '<div style="font-size:16px;font-weight:800;">Tous les matchs ' + (n ? 'de demain' : 'du jour') + '</div>'
+      + '<div id="g45tn-jour"><div style="font-size:14px;color:#c9d3ee;">⏳ Chargement…</div></div></div>';
   };
   /* ═══ 🤖 TENNIS OFFICIEL (20261020l, « OK combiné » : « que BET45 donne des tendances tennis si bonne confiance, même filtre que les autres
      sports ») ═══ Appelé par le robot .github/scripts/tendances.mjs. ESPN n'a AUCUNE cote tennis (sondé le 20/10 : Bruxelles 250, Bâle /
@@ -77686,12 +77778,6 @@ window._g45AgJouUs = async function (nowTs) {
     });
     return { events: ev, leagues: j.leagues };
   };
-  window._g45TnEcran = function () {
-    return '<div style="background:rgba(11,16,29,.92);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px 14px;color:#fff;margin-bottom:12px;">'
-      + '<div style="font-size:17px;font-weight:800;">🎾 Matchs du jour · ATP et WTA</div>'
-      + '<div style="font-size:13px;color:#c9d3ee;margin:4px 0 6px;">Touche « Analyse BET45 » : avis, forme, surface, tournoi, pays, face-à-face, bilan par année, stats de jeux (ESPN). Premier chargement d\'un joueur : 10 à 20 s.</div>'
-      + '<div id="g45tn-jour"><div style="font-size:14px;color:#c9d3ee;">⏳ Chargement…</div></div></div>';
-  };
 })();
 
 /* 🎾 Place du tennis (20261020i, capture d'Antoine « la place tennis est plutôt là non ? » = à côté de Football / Hockey / NBA / NFL de
@@ -77720,7 +77806,7 @@ window._g45AgJouUs = async function (nowTs) {
     if (!on) return false;
     Array.prototype.forEach.call(ong.children, function (b) { if (b !== bt) styleBt(b, false); });
     for (var n = ong.nextSibling; n;) { var nx = n.nextSibling; el.removeChild(n); n = nx; }
-    var d = document.createElement('div'); d.innerHTML = window._g45TnEcran(); el.appendChild(d.firstChild);
+    var d = document.createElement('div'); d.innerHTML = window._g45TnEcran(); while (d.firstChild) el.appendChild(d.firstChild);   /* 20261020o : 3 blocs */
     window._g45TnJour(el);
     return true;
   };
