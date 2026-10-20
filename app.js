@@ -77064,20 +77064,23 @@ window._g45AgJouUs = async function (nowTs) {
 })();
 
 /* ═══ 🎾 ANALYSE TENNIS BET45 (20261020i, captures matchup-tennis.fr « on a pas moyen de faire pareil ou mieux », maquette cliquable
-   validée « oui Tendances, ATP + WTA et pourquoi pas le rajouter ici » = aussi dans la fenêtre d'un match de Résultats → Tennis) ═══
+   validée « oui Tendances, ATP + WTA et pourquoi pas le rajouter ici » = aussi dans la fenêtre d'un match de Résultats → Tennis ;
+   20261020k : version complète, 2e maquette validée « OK maquette » après ~20 captures du site) ═══
    SONDÉ PAR ANTOINE le 20/10 (console) :
    - Jeff Sackmann (raw.githubusercontent.com tennis_atp) : atp_matches_2024 / 2025 / 2026 = 404 → source morte, abandonnée.
    - ESPN core : leagues/<atp|wta>/athletes/<id>/eventlog?limit=200 = la saison EN COURS en une page (46 matchs, pageSize 200) ;
      seasons/<AAAA>/athletes/<id>/eventlog = une saison passée (61 en 2025 ; « ?season= » est IGNORÉ, renvoie la saison en cours).
    - chaque item → competition.$ref : competitors [{id, name, winner}] + notes [{type « Round 1 - Court 7 », text « X (ARG) bt Y (RUS) 2-6 6-2 7-5 »}]
-     → UNE requête par match suffit (adversaire, vainqueur, score, tour).
-   - event (events/315-2026) : name « Rolex Shanghai Masters », venue.indoor true/false ; PAS de surface → table nom → surface ci-dessous.
-   - statistics : seulement titres / gains (PAS d'aces, 1re balle…) → pas de stats de service ni de « style de jeu ».
-   ELO et COTE de la maquette RETIRÉS : l'Elo demande l'historique de tous les adversaires, la cote coûte des crédits The Odds API.
-   Mémoire : IndexedDB g45 / kv (_g45BgIdb) — saisons passées pour toujours (clé tn1_<lg>_<id>_<année>), saison en cours 6 h,
-   tournois pour toujours (tnev1_<lg>_<id>). Requêtes : 6 en parallèle au plus. Qualifications et forfaits (w/o) non comptés. */
+     + venue {address.summary « Shanghai, China PR », indoor} → UNE requête par match (adversaire, vainqueur, score dans le sens du
+     VAINQUEUR, tour, pays, salle). event : name ; la venue de l'event est dans competitions[0] (pas e.venue : bug de la 20261020i,
+     « salle » toujours faux). PAS de surface → table nom → surface. PAS de durée, PAS de stats de match (aces…), PAS de cotes
+     (odds count 0, sondé sur Dzumhur – Prizmic). athletes/<id> (sans ligue) : age, hand {displayValue Right/Left}, debutYear.
+   NON FAISABLE (ESPN ne le donne pas) : style de jeu, Elo, vitesse du court, stats de service, minutes, météo, favori / outsider.
+   Mémoire : IndexedDB g45 / kv (_g45BgIdb) — saisons passées pour toujours (tn2_<lg>_<id>_<année>), saison en cours 6 h,
+   tournois pour toujours (tnev2_), profil 7 j (tnpr1_). 6 requêtes en parallèle au plus. Qualifications et forfaits (w/o) non comptés ;
+   abandons comptés en victoire / défaite mais pas dans les stats de jeux. */
 (function () {
-  var CORE = 'https://sports.core.api.espn.com/v2/sports/tennis/leagues/';
+  var CORE = 'https://sports.core.api.espn.com/v2/sports/tennis/';
   var mem = {};
   var kv = function (mode, k, v) {
     if (mode === 'get' && mem[k] !== undefined) return Promise.resolve(mem[k]);
@@ -77101,6 +77104,7 @@ window._g45AgJouUs = async function (nowTs) {
     await Promise.all(w); return out;
   };
   var esc = function (x) { return String(x == null ? '' : x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); };
+  var fr = function (v, d) { return (Math.round(v * Math.pow(10, d || 0)) / Math.pow(10, d || 0)).toFixed(d || 0).replace('.', ','); };
 
   /* ── surface d'après le nom du tournoi (ESPN ne la donne pas). Gazon puis terre AVANT « en salle » : Stuttgart WTA (Porsche) est de la
      terre en salle. Tout le reste = dur (en salle si venue.indoor). ── */
@@ -77112,20 +77116,56 @@ window._g45AgJouUs = async function (nowTs) {
     if (RE_TERRE.test(n)) return 'terre';
     return indoor ? 'salle' : 'dur';
   };
-  window._g45TnCat = function (nom) {
+  /* catégorie (ESPN ne la donne pas) : gc · m1000 · a500 (ATP) · a250 (ATP, défaut) · fin (Finals) · eq (Coupe Davis…) · w (WTA hors 1000) */
+  window._g45TnCat = function (nom, lg) {
     var n = String(nom || '');
     if (/australian open|roland|french open|wimbledon|us open/i.test(n)) return 'gc';
-    if (/indian wells|bnp paribas open|miami|monte.?carlo|madrid|internazionali|italia|\brome\b|canad|national bank|omnium banque|cincinnati|western|shanghai|paris masters|rolex paris|bercy|qatar|doha|dubai|beijing|china open|wuhan/i.test(n)) return 'm1000';
-    return '';
+    if (/finals/i.test(n)) return 'fin';
+    if (/davis cup|united cup|billie jean|laver cup|hopman/i.test(n)) return 'eq';
+    if (lg === 'wta') return /indian wells|bnp paribas open|miami|madrid|internazionali|italia|\brome\b|canad|national bank|omnium banque|cincinnati|western|qatar|doha|dubai|beijing|china open|wuhan/i.test(n) ? 'm1000' : 'w';
+    if (/indian wells|bnp paribas open|miami|monte.?carlo|madrid|internazionali|italia|\brome\b|canad|national bank|omnium banque|cincinnati|western|shanghai|paris masters|rolex paris|bercy/i.test(n)) return 'm1000';
+    if (/rotterdam|abn amro|qatar|doha|rio open|acapulco|abierto mexicano|dubai|barcelona|halle|terra wortmann|queen|cinch|hamburg|washington|citi|mubadala|tokyo|japan open|kinoshita|china open|beijing|basel|swiss indoors|vienna|erste bank|bmw open|munich|dallas/i.test(n)) return 'a500';
+    return 'a250';
   };
+  var CAT = { gc: 'Grand Chelem', m1000: 'Masters / WTA 1000', a500: 'ATP 500', a250: 'ATP 250', fin: 'Finals', eq: 'par équipes', w: 'WTA 250 / 500' };
   var SF = { terre: { l: 'Terre', i: '🟧', c: '#f0a050' }, dur: { l: 'Dur', i: '🟦', c: '#6aa8ff' }, salle: { l: 'Salle', i: '🏠', c: '#7dd3fc' }, gazon: { l: 'Gazon', i: '🟩', c: '#7dffb0' } };
 
-  /* score « X (ARG) bt Y (RUS) 2-6 6-2 7-5 » → « 2-6 6-2 7-5 » ; forfait → null (match non compté) */
+  /* pays (dernier morceau de « Ville, Pays » d'ESPN) → nom français, continent, drapeau */
+  var PAYS = { 'france': ['France', 'Europe', 'FR'], 'spain': ['Espagne', 'Europe', 'ES'], 'usa': ['États-Unis', 'Amérique du Nord', 'US'], 'united states': ['États-Unis', 'Amérique du Nord', 'US'],
+    'china pr': ['Chine', 'Asie', 'CN'], 'china': ['Chine', 'Asie', 'CN'], 'italy': ['Italie', 'Europe', 'IT'], 'germany': ['Allemagne', 'Europe', 'DE'], 'great britain': ['Royaume-Uni', 'Europe', 'GB'],
+    'united kingdom': ['Royaume-Uni', 'Europe', 'GB'], 'england': ['Royaume-Uni', 'Europe', 'GB'], 'scotland': ['Royaume-Uni', 'Europe', 'GB'], 'australia': ['Australie', 'Océanie', 'AU'],
+    'new zealand': ['Nouvelle-Zélande', 'Océanie', 'NZ'], 'canada': ['Canada', 'Amérique du Nord', 'CA'], 'mexico': ['Mexique', 'Amérique du Nord', 'MX'], 'qatar': ['Qatar', 'Asie', 'QA'],
+    'uae': ['Émirats', 'Asie', 'AE'], 'united arab emirates': ['Émirats', 'Asie', 'AE'], 'saudi arabia': ['Arabie saoudite', 'Asie', 'SA'], 'netherlands': ['Pays-Bas', 'Europe', 'NL'],
+    'belgium': ['Belgique', 'Europe', 'BE'], 'switzerland': ['Suisse', 'Europe', 'CH'], 'austria': ['Autriche', 'Europe', 'AT'], 'monaco': ['Monaco', 'Europe', 'MC'], 'portugal': ['Portugal', 'Europe', 'PT'],
+    'sweden': ['Suède', 'Europe', 'SE'], 'croatia': ['Croatie', 'Europe', 'HR'], 'serbia': ['Serbie', 'Europe', 'RS'], 'hungary': ['Hongrie', 'Europe', 'HU'], 'czechia': ['Tchéquie', 'Europe', 'CZ'],
+    'czech republic': ['Tchéquie', 'Europe', 'CZ'], 'poland': ['Pologne', 'Europe', 'PL'], 'romania': ['Roumanie', 'Europe', 'RO'], 'greece': ['Grèce', 'Europe', 'GR'], 'finland': ['Finlande', 'Europe', 'FI'],
+    'denmark': ['Danemark', 'Europe', 'DK'], 'norway': ['Norvège', 'Europe', 'NO'], 'turkey': ['Turquie', 'Europe', 'TR'], 'turkiye': ['Turquie', 'Europe', 'TR'], 'slovakia': ['Slovaquie', 'Europe', 'SK'],
+    'slovenia': ['Slovénie', 'Europe', 'SI'], 'bulgaria': ['Bulgarie', 'Europe', 'BG'], 'ireland': ['Irlande', 'Europe', 'IE'], 'luxembourg': ['Luxembourg', 'Europe', 'LU'], 'estonia': ['Estonie', 'Europe', 'EE'],
+    'kazakhstan': ['Kazakhstan', 'Asie', 'KZ'], 'japan': ['Japon', 'Asie', 'JP'], 'korea': ['Corée du Sud', 'Asie', 'KR'], 'south korea': ['Corée du Sud', 'Asie', 'KR'], 'india': ['Inde', 'Asie', 'IN'],
+    'hong kong': ['Hong Kong', 'Asie', 'HK'], 'singapore': ['Singapour', 'Asie', 'SG'], 'thailand': ['Thaïlande', 'Asie', 'TH'], 'chinese taipei': ['Taïwan', 'Asie', 'TW'], 'taiwan': ['Taïwan', 'Asie', 'TW'],
+    'argentina': ['Argentine', 'Amérique du Sud', 'AR'], 'brazil': ['Brésil', 'Amérique du Sud', 'BR'], 'chile': ['Chili', 'Amérique du Sud', 'CL'], 'colombia': ['Colombie', 'Amérique du Sud', 'CO'],
+    'ecuador': ['Équateur', 'Amérique du Sud', 'EC'], 'peru': ['Pérou', 'Amérique du Sud', 'PE'], 'uruguay': ['Uruguay', 'Amérique du Sud', 'UY'], 'morocco': ['Maroc', 'Afrique', 'MA'],
+    'tunisia': ['Tunisie', 'Afrique', 'TN'], 'egypt': ['Égypte', 'Afrique', 'EG'], 'south africa': ['Afrique du Sud', 'Afrique', 'ZA'] };
+  window._g45TnPays = function (adr) {
+    var p = String(adr || '').split(',').pop().trim(); if (!p) return null;
+    var t = PAYS[p.toLowerCase()];
+    if (!t && /^[A-Z]{2}$/.test(p)) t = PAYS.usa;   /* « Indian Wells, CA » : un État américain */
+    return t ? { n: t[0], c: t[1], f: t[2] } : { n: p, c: 'Autre', f: '' };
+  };
+  var drap = function (f) { try { return f ? String.fromCodePoint.apply(null, f.split('').map(function (c) { return 127397 + c.charCodeAt(0); })) + ' ' : ''; } catch (e) { return ''; } };
+
+  /* score « X (ARG) bt Y (RUS) 2-6 6-2 7-5 » → « 2-6 6-2 7-5 » (sens du VAINQUEUR) ; forfait → null (match non compté) */
   window._g45TnScore = function (txt) {
     var t = String(txt || '');
     if (/\bw\/o\b|walkover/i.test(t)) return null;
     var m = t.match(/((?:\d+-\d+(?:\(\d+\))?\s*)+(?:ret\.?|abd\.?|def\.?)?)\s*$/i);
     return m ? m[1].trim() : '';
+  };
+  /* sets du point de vue du joueur : [{j, o, tb}] ; null si abandon / score illisible (pas dans les stats de jeux) */
+  window._g45TnSets = function (sc, w) {
+    var s = String(sc || ''); if (!s || /ret|abd|def/i.test(s)) return null;
+    var L = s.split(/\s+/).map(function (x) { var m = x.match(/^(\d+)-(\d+)/); if (!m) return null; var a = +m[1], b = +m[2]; return { j: w ? a : b, o: w ? b : a, tb: (a === 7 && b === 6) || (a === 6 && b === 7) }; });
+    return L.length && L.every(Boolean) ? L : null;
   };
 
   /* un item d'eventlog → un match (null = à ignorer) */
@@ -77139,28 +77179,32 @@ window._g45AgJouUs = async function (nowTs) {
     var cps = c.competitors || [], moi = null, adv = null;
     cps.forEach(function (x) { if (String(x.id) === String(id)) moi = x; else adv = x; });
     if (!moi || !adv || (moi.winner !== true && adv.winner !== true)) return null;
-    var nom = (ev && ev.n) || '';
-    return { id: String(c.id || ''), t: Date.parse(c.date) || 0, ek: (ev && ev.k) || '', tr: nom, sf: window._g45TnSurf(nom, ev && ev.ind), ind: !!(ev && ev.ind),
-      cat: window._g45TnCat(nom), adv: String(adv.id), an: adv.name || '?', w: moi.winner === true, sc: sc, rd: rd };
+    var nom = (ev && ev.n) || '', vn = c.venue || {}, ind = vn.indoor != null ? !!vn.indoor : !!(ev && ev.ind);
+    var py = window._g45TnPays((vn.address && vn.address.summary) || (ev && ev.adr) || '');
+    return { id: String(c.id || ''), t: Date.parse(c.date) || 0, ek: (ev && ev.k) || '', tr: nom, sf: window._g45TnSurf(nom, ind), ind: ind,
+      cat: window._g45TnCat(nom, ev && ev.lg), py: py ? py.n : '', ct: py ? py.c : '', pf: py ? py.f : '',
+      adv: String(adv.id), an: adv.name || '?', w: moi.winner === true, sc: sc, rd: rd };
   };
 
   var evInfo = async function (lg, ref) {
     var k = (String(ref).match(/events\/([^/?]+)/) || [])[1] || '';
     if (!k) return null;
-    var cle = 'tnev1_' + lg + '_' + k, o = await kv('get', cle);
+    var cle = 'tnev2_' + lg + '_' + k, o = await kv('get', cle);
     if (o) return o;
-    var e = await getJ(CORE + lg + '/events/' + k);
-    o = { k: k, n: e.name || e.shortName || '', ind: !!(e.venue && e.venue.indoor) };
-    if (!o.n) return { k: k, n: '', ind: false };
+    var e = await getJ(CORE + 'leagues/' + lg + '/events/' + k);
+    var c0 = (e.competitions && e.competitions[0]) || {}, vn = c0.venue || e.venue || {};
+    o = { k: k, lg: lg, n: e.name || e.shortName || '', ind: !!vn.indoor, adr: (vn.address && vn.address.summary) || '' };
+    if (!o.n) return { k: k, lg: lg, n: '', ind: false, adr: '' };
     kv('put', cle, o); return o;
   };
+  window._g45TnEv = evInfo;
 
   /* une saison d'un joueur → liste de matchs (mémoire : passée = toujours, en cours = 6 h) */
   window._g45TnSaison = async function (lg, id, an, prog) {
-    var cur = an >= new Date().getFullYear(), cle = 'tn1_' + lg + '_' + id + '_' + an;
+    var cur = an >= new Date().getFullYear(), cle = 'tn2_' + lg + '_' + id + '_' + an;
     var o = await kv('get', cle);
     if (o && (!cur || Date.now() - o.t < 6 * 3600e3)) return o.m;
-    var url = cur ? CORE + lg + '/athletes/' + id + '/eventlog?limit=200' : CORE + lg + '/seasons/' + an + '/athletes/' + id + '/eventlog?limit=200';
+    var url = cur ? CORE + 'leagues/' + lg + '/athletes/' + id + '/eventlog?limit=200' : CORE + 'leagues/' + lg + '/seasons/' + an + '/athletes/' + id + '/eventlog?limit=200';
     var j = await getJ(url), items = ((j && j.events && j.events.items) || []).filter(function (x) { return x && x.played && x.competition; });
     var evRefs = {}; items.forEach(function (x) { if (x.event && x.event.$ref) evRefs[x.event.$ref] = 1; });
     var evs = {}, refs = Object.keys(evRefs);
@@ -77174,8 +77218,17 @@ window._g45AgJouUs = async function (nowTs) {
     kv('put', cle, { t: Date.now(), m: ms });
     return ms;
   };
+  /* profil (âge, main, 1re saison) */
+  window._g45TnProfil = async function (id) {
+    var cle = 'tnpr1_' + id, o = await kv('get', cle);
+    if (o && Date.now() - o.t < 7 * 864e5) return o;
+    var a = await getJ(CORE + 'athletes/' + id);
+    var h = a.hand && (a.hand.displayValue || a.hand.type) || '';
+    o = { t: Date.now(), age: a.age || null, main: /left|gauch/i.test(h) ? 'gaucher' : (/right|droit/i.test(h) ? 'droitier' : ''), deb: a.debutYear || null };
+    kv('put', cle, o); return o;
+  };
 
-  /* calculs (pur, testé) : H = matchs du joueur, ctx = { sf, ind, cat, ek, adv, now } */
+  /* calculs (pur, testé) : H = matchs du joueur, ctx = { sf, ind, cat, ek, adv, py, now } */
   window._g45TnCalc = function (H, ctx) {
     var now = ctx.now || Date.now(), an12 = now - 365 * 864e5;
     var cnt = function (L) { var w = 0; L.forEach(function (m) { if (m.w) w++; }); return { w: w, l: L.length - w, n: L.length, p: L.length ? Math.round(w / L.length * 100) : null }; };
@@ -77183,21 +77236,48 @@ window._g45AgJouUs = async function (nowTs) {
     var r12 = tri.filter(function (m) { return m.t >= an12; });
     var bil = {}; tri.forEach(function (m) { var y = new Date(m.t).getFullYear(); var b = bil[y] = bil[y] || { tot: { w: 0, l: 0 } }; var s = b[m.sf] = b[m.sf] || { w: 0, l: 0 }; s[m.w ? 'w' : 'l']++; b.tot[m.w ? 'w' : 'l']++; });
     var tk = String(ctx.ek || '').split('-')[0];
+    var grp = function (cle) { var o = {}; tri.forEach(function (m) { var k = m[cle]; if (!k) return; (o[k] = o[k] || []).push(m); }); return Object.keys(o).map(function (k) { var c = cnt(o[k]); c.k = k; c.f = o[k][0].pf; return c; }).sort(function (a, b) { return b.n - a.n; }); };
+    var der = tri[0] ? tri[0].t : 0;
     return {
       sf12: cnt(r12.filter(function (m) { return m.sf === ctx.sf; })),
       tour: cnt(tri.filter(function (m) { return tk && String(m.ek).split('-')[0] === tk; })),
+      tourL: tri.filter(function (m) { return tk && String(m.ek).split('-')[0] === tk; }),
       cat: cnt(tri.filter(function (m) { return ctx.cat ? m.cat === ctx.cat : m.cat === 'm1000'; })),
       lieu: cnt(r12.filter(function (m) { return m.ind === !!ctx.ind; })),
-      forme: cnt(tri.slice(0, 10)), der: tri.slice(0, 10),
+      pays: cnt(tri.filter(function (m) { return ctx.py && m.py === ctx.py; })),
+      parPays: grp('py'), parCont: grp('ct'), tot: cnt(tri),
+      forme: cnt(tri.slice(0, 10)), der: tri.slice(0, 10), tous: tri,
+      surfL: tri.filter(function (m) { return m.sf === ctx.sf; }),
       h2h: tri.filter(function (m) { return ctx.adv && m.adv === String(ctx.adv); }),
+      repos: der ? Math.max(0, Math.floor((now - der) / 864e5)) : null,
+      n7: tri.filter(function (m) { return m.t >= now - 7 * 864e5; }).length, n30: tri.filter(function (m) { return m.t >= now - 30 * 864e5; }).length,
       bil: bil, n: tri.length
     };
   };
 
+  /* stats annexes (pur, testé) : L = matchs filtrés ; lignes choisies : sj (jeux / set), mj (jeux / match), hc (handicap) */
+  window._g45TnAnnexes = function (L, sj, mj, hc) {
+    var S = L.map(function (m) { return { m: m, s: window._g45TnSets(m.sc, m.w) }; }).filter(function (x) { return x.s; });
+    var pc = function (a, b) { return b ? Math.round(a / b * 100) : null; };
+    var n = S.length, set1 = 0, vic = 0, secs = 0, apG = [0, 0], apP = [0, 0], sets = 0, jg = 0, jt = 0, jm = 0, marge = 0, sjOk = 0, mjOk = 0, hcOk = 0, tbS = 0, tbW = 0, tbM = 0, s3 = 0, n3 = 0, dec = [0, 0];
+    S.forEach(function (x) {
+      var s = x.s, w = x.m.w, gj = 0, go = 0, tb = 0;
+      if (s[0].j > s[0].o) { set1++; apG[1]++; if (w) apG[0]++; } else { apP[1]++; if (w) apP[0]++; }
+      if (w) { vic++; if (s.every(function (z) { return z.j > z.o; })) secs++; }
+      s.forEach(function (z) { sets++; gj += z.j; go += z.o; jt += z.j + z.o; if (z.j + z.o > sj) sjOk++; if (z.tb) { tbS++; tb++; if (z.j > z.o) tbW++; } });
+      jg += gj; jm += gj + go; marge += gj - go; if (gj + go > mj) mjOk++; if (gj - go + hc > 0) hcOk++; if (tb) tbM++;
+      var bo5 = x.m.cat === 'gc' && s.length > 3; if (!bo5 && x.m.cat !== 'gc') { n3++; if (s.length >= 3) s3++; }
+      if ((s.length === 3 && !bo5) || s.length === 5) { dec[1]++; if (w) dec[0]++; }
+    });
+    return { n: n, set1: pc(set1, n), secs: pc(secs, vic), apG: { p: pc(apG[0], apG[1]), w: apG[0], l: apG[1] - apG[0] }, apP: { p: pc(apP[0], apP[1]), w: apP[0], l: apP[1] - apP[0] },
+      jgS: sets ? jg / sets : null, jtS: sets ? jt / sets : null, jM: n ? jm / n : null, marge: n ? marge / n : null,
+      sj: pc(sjOk, sets), mj: pc(mjOk, n), hc: pc(hcOk, n), tbS: pc(tbS, sets), tbW: pc(tbW, tbS), tbM: pc(tbM, n), s3: pc(s3, n3), dec: { p: pc(dec[0], dec[1]), w: dec[0], l: dec[1] - dec[0] } };
+  };
+
   /* 🔮 AVIS BET45 (20261020j, « ça dit pas qui BET45 voit gagner ? ») : moyenne pondérée de la part de chaque joueur, facteur par facteur.
      Classement ATP / WTA (1/√rang, curatedRank d'ESPN) 0,30 · surface 12 mois 0,25 · forme 0,20 · face-à-face 0,10 (lissé (g+1)/(n+2)) ·
-     catégorie / tournoi / salle-plein air 0,05 chacun. Un facteur en % ne compte que si les DEUX joueurs ont au moins 3 matchs.
-     Confiance : écart à 50 % ≥ 15 pts forte, ≥ 7 moyenne, sinon « match serré ». Indicatif, pas une cote. Pur, testé. */
+     catégorie / tournoi / salle-plein air 0,05 chacun (20261020k : + pays 0,05). Un facteur en % ne compte que si les DEUX joueurs ont au
+     moins 3 matchs. Confiance : écart à 50 % ≥ 15 pts forte, ≥ 7 moyenne, sinon « match serré ». Indicatif, pas une cote. Pur, testé. */
   window._g45TnAvis = function (A, B, rkA, rkB) {
     var som = 0, poids = 0, n = 0;
     var aj = function (w, sA) { if (sA == null || isNaN(sA)) return; som += w * sA; poids += w; n++; };
@@ -77205,10 +77285,25 @@ window._g45AgJouUs = async function (nowTs) {
     if (rkA > 0 && rkB > 0) { var wa = 1 / Math.sqrt(rkA), wb = 1 / Math.sqrt(rkB); aj(0.30, wa / (wa + wb)); }
     pct(0.25, A.sf12, B.sf12); pct(0.20, A.forme, B.forme);
     if (A.h2h && A.h2h.length) { var g = A.h2h.filter(function (m) { return m.w; }).length; aj(0.10, (g + 1) / (A.h2h.length + 2)); }
-    pct(0.05, A.cat, B.cat); pct(0.05, A.tour, B.tour); pct(0.05, A.lieu, B.lieu);
+    pct(0.05, A.cat, B.cat); pct(0.05, A.tour, B.tour); pct(0.05, A.lieu, B.lieu); pct(0.05, A.pays, B.pays);
     if (!poids) return null;
     var p = som / poids, ec = Math.abs(p - 0.5);
     return { p: p, qui: p >= 0.5 ? 'a' : 'b', pc: Math.round(Math.max(p, 1 - p) * 100), conf: ec >= 0.15 ? 'forte' : (ec >= 0.07 ? 'moyenne' : 'serré'), n: n };
+  };
+  /* « En clair » : la phrase qui explique l'avis (les 3 plus gros écarts) */
+  window._g45TnClair = function (o, V) {
+    if (!V) return '';
+    var f = V.qui === 'a' ? o.a : o.b, x = V.qui === 'a' ? o.b : o.a, F = V.qui === 'a' ? o.A : o.B, X = V.qui === 'a' ? o.B : o.A, R = [];
+    if (f.rk > 0 && x.rk > 0 && f.rk < x.rk) R.push({ e: 30, t: 'mieux classé (' + f.rk + 'e contre ' + x.rk + 'e)' });
+    var ad = function (lib, a, b, w) { if (a && b && a.n >= 3 && b.n >= 3 && a.p > b.p) R.push({ e: (a.p - b.p) * w, t: lib + ' (' + a.p + ' % contre ' + b.p + ' %)' }); };
+    ad('plus en forme sur 10 matchs', F.forme, X.forme, 1);
+    ad('meilleur ' + (o.ctx.sf === 'salle' ? 'en salle' : 'sur ' + (SF[o.ctx.sf] || SF.dur).l.toLowerCase()) + ' sur 12 mois', F.sf12, X.sf12, 1.2);
+    ad('meilleur en ' + (CAT[o.ctx.cat] || 'tournoi de ce niveau'), F.cat, X.cat, 0.5);
+    if (o.ctx.py) ad('meilleur en ' + o.ctx.py, F.pays, X.pays, 0.4);
+    R.sort(function (a, b) { return b.e - a.e; });
+    var h2 = F.h2h.length ? ' Face-à-face : ' + F.h2h.filter(function (m) { return m.w; }).length + ' – ' + F.h2h.filter(function (m) { return !m.w; }).length + '.' : '';
+    if (V.conf === 'serré') return 'Match serré : BET45 penche à peine pour <b>' + esc(f.n) + '</b>' + (R.length ? ', ' + R.slice(0, 2).map(function (r) { return r.t; }).join(' et ') : '') + '.' + h2;
+    return '<b>' + esc(f.n) + '</b> est favori' + (R.length ? ' : ' + R.slice(0, 3).map(function (r) { return r.t; }).join(', ') : '') + '.' + h2;
   };
 
   /* ── affichage ── */
@@ -77223,67 +77318,145 @@ window._g45AgJouUs = async function (nowTs) {
   var pc = function (c) { return c && c.n ? c.p + ' %' : '—'; };
   var sub = function (c) { return c && c.n ? '<div style="font-size:12px;color:#c9d3ee;font-weight:600;">' + c.w + ' / ' + c.n + '</div>' : ''; };
   var ligne = function (tit, A, B) { return barre(tit, A && A.n ? A.p : null, B && B.n ? B.p : null, pc(A) + sub(A), pc(B) + sub(B)); };
+  var titreSec = function (t) { return '<div style="color:#7dffb0;font-weight:900;font-size:13px;margin-top:16px;letter-spacing:.5px;">' + t + '</div>'; };
+  var colP = function (p) { return p == null ? '#8e9bbd' : (p >= 60 ? '#1ed760' : (p >= 45 ? '#f0c828' : '#ff6b6b')); };
+  /* ligne « valeur A · libellé · valeur B » ; mieux = 1 (plus haut = mieux), -1, 0 (neutre) */
+  var duo = function (lib, va, vb, ta, tb, mieux, sousLib) {
+    var ca = '#fff', cb = '#fff';
+    if (mieux && va != null && vb != null && va !== vb) { var aBon = mieux > 0 ? va > vb : va < vb; ca = aBon ? '#1ed760' : '#fff'; cb = aBon ? '#fff' : '#1ed760'; }
+    return '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-top:1px solid rgba(255,255,255,.08);">'
+      + '<b style="min-width:70px;font-size:17px;color:' + ca + ';">' + (va == null ? '—' : ta) + '</b><span style="text-align:center;font-size:14px;font-weight:700;color:#e8ecfa;">' + lib + (sousLib ? '<br><span style="font-size:12px;color:#c9d3ee;font-weight:600;">' + sousLib + '</span>' : '') + '</span>'
+      + '<b style="min-width:70px;text-align:right;font-size:17px;color:' + cb + ';">' + (vb == null ? '—' : tb) + '</b></div>';
+  };
+  var chipsLignes = function (bid, cle, vals, cur) { return '<div style="display:flex;gap:5px;flex-wrap:wrap;margin:6px 0;">' + vals.map(function (v) { var on = v === cur; return '<button onclick="g45TnLigne(\'' + bid + '\',\'' + cle + '\',' + v + ')" style="cursor:pointer;padding:6px 10px;border-radius:14px;font-size:13px;font-weight:800;border:1px solid ' + (on ? '#1ed760' : 'rgba(255,255,255,.2)') + ';background:' + (on ? '#1ed760' : 'transparent') + ';color:' + (on ? '#111' : '#fff') + ';">' + (v > 0 ? '+' : '') + fr(v, 1) + '</button>'; }).join('') + '</div>'; };
 
   var tabBilan = function (nom, bil) {
     var ans = Object.keys(bil).sort().reverse(); if (!ans.length) return '<div style="font-size:14px;color:#c9d3ee;">Aucun match trouvé.</div>';
     var c = function (s) { if (!s || !(s.w + s.l)) return '<td style="padding:7px 3px;text-align:center;color:#8e9bbd;">–</td>'; var col = s.w > s.l ? '#1ed760' : (s.w < s.l ? '#ff6b6b' : '#fff'); return '<td style="padding:7px 3px;text-align:center;font-weight:800;color:' + col + ';">' + s.w + '/' + s.l + '</td>'; };
     var tot = { tot: { w: 0, l: 0 } }; ans.forEach(function (y) { Object.keys(bil[y]).forEach(function (k) { var t = tot[k] = tot[k] || { w: 0, l: 0 }; t.w += bil[y][k].w; t.l += bil[y][k].l; }); });
-    var h = '<div style="font-size:15px;font-weight:800;margin:6px 0;">' + esc(nom) + '</div><div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:14px;color:#fff;">'
+    var y0 = bil[ans[0]], res = '<div style="background:#0b101d;border:1px solid rgba(255,255,255,.14);border-radius:10px;padding:8px 10px;margin:6px 0;font-size:14px;">Bilan ' + ans[0] + ' par surface<br>'
+      + ['terre', 'dur', 'salle', 'gazon'].map(function (k) { var s = y0[k]; return '<b style="color:' + SF[k].c + ';">' + SF[k].l + ' ' + (s ? s.w + '/' + s.l : '–') + '</b>'; }).join(' · ') + '</div>';
+    var h = '<div style="font-size:15px;font-weight:800;margin:10px 0 0;">' + esc(nom) + '</div>' + res + '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:14px;color:#fff;">'
       + '<tr style="color:#c9d3ee;"><th style="padding:6px 3px;text-align:left;">Année</th><th>Total</th>' + ['terre', 'dur', 'salle', 'gazon'].map(function (k) { return '<th style="color:' + SF[k].c + ';">' + SF[k].l + '</th>'; }).join('') + '</tr>';
     ans.concat(['Total']).forEach(function (y) { var b = y === 'Total' ? tot : bil[y]; h += '<tr style="border-top:1px solid rgba(255,255,255,.08);' + (y === 'Total' ? 'background:rgba(30,215,96,.08);' : '') + '"><td style="padding:7px 3px;font-weight:800;">' + y + '</td>' + c(b.tot) + ['terre', 'dur', 'salle', 'gazon'].map(function (k) { return c(b[k]); }).join('') + '</tr>'; });
     return h + '</table></div>';
   };
   var pastilles = function (L) { return L.map(function (m) { return '<span title="' + esc(m.tr) + '" style="display:inline-block;width:26px;height:26px;line-height:26px;border-radius:50%;text-align:center;font-size:12px;font-weight:900;margin:2px;background:' + (m.w ? '#14632f' : '#7a1d1d') + ';color:#fff;">' + (m.w ? 'G' : 'P') + '</span>'; }).join(''); };
-  var dateFr = function (t) { try { return new Date(t).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }); } catch (e) { return ''; } };
+  var dateFr = function (t) { try { return new Date(t).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit' }); } catch (e) { return ''; } };
+  var lignesMatch = function (L) { return L.map(function (m) { var s = SF[m.sf] || SF.dur; return '<div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;background:#1e2740;border-left:4px solid ' + (m.w ? '#1ed760' : '#ff4545') + ';border-radius:10px;padding:8px 10px;margin-bottom:6px;font-size:14px;"><span>' + (m.w ? '✅ bat ' : '❌ battu par ') + '<b>' + esc(m.an) + '</b> ' + esc(m.sc) + '</span><span style="color:#c9d3ee;">' + s.i + ' ' + s.l + ' · ' + esc(m.tr) + ' · ' + dateFr(m.t) + '</span></div>'; }).join(''); };
 
   var S = window._g45Tn = { o: {} };
   window.g45TnOnglet = function (bid, t) { var o = S.o[bid]; if (!o) return; o.tab = t; dessiner(bid); };
   window.g45TnPlus = function (bid) { var o = S.o[bid]; if (!o || o.charge) return; o.ans = o.ans + 2; charger(bid); };
+  window.g45TnCarriere = function (bid) { var o = S.o[bid]; if (!o || o.charge) return; var d = Math.min((o.pa && o.pa.deb) || 9999, (o.pb && o.pb.deb) || 9999); if (d > 3000) d = new Date().getFullYear() - 9; o.ans = Math.min(15, new Date().getFullYear() - d + 1); charger(bid); };
+  window.g45TnVoir = function (bid, cle) { var o = S.o[bid]; if (!o) return; o[cle] = (o[cle] || 5) + 5; dessiner(bid); };
+  window.g45TnLigne = function (bid, cle, v) { var o = S.o[bid]; if (!o) return; o[cle] = v; dessiner(bid); };
+  window.g45TnFiltre = function (bid, f) { var o = S.o[bid]; if (!o) return; o.fAn = f; dessiner(bid); };
 
   function dessiner(bid) {
     var o = S.o[bid], box = document.getElementById(bid); if (!o || !box) return;
     var A = o.A, B = o.B, sf = SF[o.ctx.sf] || SF.dur;
     var tb = function (k, l) { var on = o.tab === k; return '<button onclick="g45TnOnglet(\'' + bid + '\',\'' + k + '\')" style="flex:none;cursor:pointer;padding:9px 12px;border-radius:10px;font-size:14px;font-weight:800;color:#fff;background:' + (on ? '#1a2235' : '#0b101d') + ';border:' + (on ? '2px solid #f5c542' : '1px solid rgba(255,255,255,.2)') + ';">' + l + '</button>'; };
+    var prof = function (p, j) { var t = [p && p.age ? p.age + ' ans' : '', j.rk ? 'N°' + j.rk : '', p && p.main ? p.main : ''].filter(Boolean).join(' · '); return t ? '<div style="font-size:13px;color:#c9d3ee;font-weight:600;">' + t + '</div>' : ''; };
     var h = '<div style="background:rgba(11,16,29,.94);border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:12px 14px;color:#fff;margin:8px 0;">'
-      + '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:16px;font-weight:900;"><span>' + esc(o.a.n) + '</span>'
-      + '<span style="font-size:13px;color:#c9d3ee;font-weight:700;text-align:center;">' + sf.i + ' ' + sf.l + (o.ctx.cat === 'gc' ? ' · Grand Chelem' : (o.ctx.cat === 'm1000' ? ' · 1000' : '')) + '</span><span style="text-align:right;">' + esc(o.b.n) + '</span></div>'
-      + (function () {
-          if (!A || !B) return '';
-          var V = window._g45TnAvis(A, B, o.a.rk, o.b.rk); if (!V) return '';
-          var nom = V.qui === 'a' ? o.a.n : o.b.n, pA = Math.round(V.p * 100);
-          var cc = V.conf === 'forte' ? '#1ed760' : (V.conf === 'moyenne' ? '#f0c828' : '#c9d3ee');
-          return '<div style="margin:10px 0 4px;background:#0b101d;border:2px solid ' + cc + ';border-radius:12px;padding:10px 12px;">'
-            + '<div style="font-size:16px;font-weight:900;">🔮 BET45 voit gagner : <span style="color:' + cc + ';">' + esc(nom) + '</span> · ' + V.pc + ' %</div>'
-            + '<div style="display:flex;height:12px;border-radius:6px;overflow:hidden;margin:8px 0 4px;"><span style="width:' + pA + '%;background:' + (V.qui === 'a' ? cc : '#5a6788') + ';"></span><span style="flex:1;background:' + (V.qui === 'b' ? cc : '#5a6788') + ';"></span></div>'
-            + '<div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;"><span>' + esc(o.a.n) + ' ' + pA + ' %</span><span>' + (100 - pA) + ' % ' + esc(o.b.n) + '</span></div>'
-            + '<div style="font-size:13px;color:#c9d3ee;margin-top:5px;">Confiance ' + (V.conf === 'serré' ? 'faible : match serré' : V.conf) + ' · ' + V.n + ' facteur' + (V.n > 1 ? 's' : '') + ' (classement, surface, forme, face-à-face…) · indicatif, pas une cote.</div></div>';
-        })()
-      + '<div style="display:flex;gap:6px;overflow-x:auto;margin:10px 0 4px;">' + tb('cle', '⭐ Facteurs clés') + tb('bil', '📊 Bilan') + tb('h2h', '🤝 Face-à-face') + tb('for', '📈 Forme') + '</div>';
+      + '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:16px;font-weight:900;"><span>' + esc(o.a.n) + prof(o.pa, o.a) + '</span>'
+      + '<span style="font-size:13px;color:#c9d3ee;font-weight:700;text-align:center;">' + sf.i + ' ' + sf.l + (CAT[o.ctx.cat] ? ' · ' + CAT[o.ctx.cat] : '') + (o.ctx.py ? '<br>' + drap(o.ctx.pf) + esc(o.ctx.py) : '') + '</span><span style="text-align:right;">' + esc(o.b.n) + prof(o.pb, o.b) + '</span></div>';
+    var V = A && B ? window._g45TnAvis(A, B, o.a.rk, o.b.rk) : null;
+    if (V) {
+      var nom = V.qui === 'a' ? o.a.n : o.b.n, pA = Math.round(V.p * 100), cc = V.conf === 'forte' ? '#1ed760' : (V.conf === 'moyenne' ? '#f0c828' : '#c9d3ee');
+      h += '<div style="margin:10px 0 4px;background:#0b101d;border:2px solid ' + cc + ';border-radius:12px;padding:10px 12px;">'
+        + '<div style="font-size:16px;font-weight:900;">🔮 BET45 voit gagner : <span style="color:' + cc + ';">' + esc(nom) + '</span> · ' + V.pc + ' %</div>'
+        + '<div style="display:flex;height:12px;border-radius:6px;overflow:hidden;margin:8px 0 4px;"><span style="width:' + pA + '%;background:' + (V.qui === 'a' ? cc : '#5a6788') + ';"></span><span style="flex:1;background:' + (V.qui === 'b' ? cc : '#5a6788') + ';"></span></div>'
+        + '<div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;"><span>' + esc(o.a.n) + ' ' + pA + ' %</span><span>' + (100 - pA) + ' % ' + esc(o.b.n) + '</span></div>'
+        + '<div style="font-size:13px;color:#c9d3ee;margin-top:5px;">Confiance ' + (V.conf === 'serré' ? 'faible : match serré' : V.conf) + ' · ' + V.n + ' facteur' + (V.n > 1 ? 's' : '') + ' · indicatif, pas une cote.</div></div>'
+        + '<div style="background:#0f2a1c;border-left:4px solid #1ed760;border-radius:10px;padding:10px 12px;margin:8px 0;font-size:14px;line-height:1.5;">💡 <b>En clair</b><br>' + window._g45TnClair(o, V) + '</div>';
+    }
+    h += '<div style="display:flex;gap:6px;overflow-x:auto;margin:10px 0 4px;padding-bottom:4px;">' + tb('cle', '⭐ Facteurs clés') + tb('for', '📈 Forme') + tb('h2h', '🤝 Face-à-face') + tb('bil', '📊 Bilan') + tb('tou', '🌍 Tournée') + tb('ann', '📐 Stats annexes') + '</div>';
     if (o.err) h += '<div style="font-size:14px;color:#ff9b9b;margin-top:8px;">Données ESPN indisponibles pour le moment.</div>';
     else if (!A || !B) h += '<div style="font-size:14px;color:#c9d3ee;margin-top:10px;">⏳ ' + esc(o.msg || 'Chargement…') + '</div>';
     else if (o.tab === 'cle') {
-      h += '<div style="color:#7dffb0;font-weight:900;font-size:13px;margin-top:12px;letter-spacing:.5px;">FORME</div>'
-        + ligne('📈 10 DERNIERS MATCHS', A.forme, B.forme)
-        + '<div style="color:#7dffb0;font-weight:900;font-size:13px;margin-top:16px;letter-spacing:.5px;">CONDITIONS DU MATCH</div>'
+      h += titreSec('FORME') + ligne('📈 10 DERNIERS MATCHS', A.forme, B.forme)
+        + titreSec('CONDITIONS DU MATCH')
         + ligne(sf.i + ' % VICTOIRES ' + sf.l.toUpperCase() + ' (12 MOIS)', A.sf12, B.sf12)
         + (o.ctx.ek ? ligne('🏆 À CE TOURNOI', A.tour, B.tour) : '')
-        + ligne(o.ctx.cat === 'gc' ? '🏟️ EN GRAND CHELEM' : '🏟️ EN MASTERS / WTA 1000', A.cat, B.cat)
+        + ligne('🏟️ EN ' + (CAT[o.ctx.cat] || 'MASTERS / WTA 1000').toUpperCase(), A.cat, B.cat)
         + ligne(o.ctx.ind ? '🏠 EN SALLE (12 MOIS)' : '☀️ EN PLEIN AIR (12 MOIS)', A.lieu, B.lieu)
+        + (o.ctx.py ? ligne(drap(o.ctx.pf) + 'EN ' + o.ctx.py.toUpperCase(), A.pays, B.pays) : '')
+        + titreSec('FORME PHYSIQUE')
+        + barre('🛌 JOURS DE REPOS', A.repos, B.repos, A.repos == null ? '—' : A.repos + ' j', B.repos == null ? '—' : B.repos + ' j')
+        + duo('😓 Matchs joués', A.n7 + A.n30, B.n7 + B.n30, A.n7 + ' / ' + A.n30, B.n7 + ' / ' + B.n30, 0, '7 jours / 30 jours')
+        + titreSec('CONFRONTATION DIRECTE')
+        + barre('⚔️ FACE-À-FACE (' + A.h2h.length + ')', A.h2h.filter(function (m) { return m.w; }).length, B.h2h.filter(function (m) { return m.w; }).length, '' + A.h2h.filter(function (m) { return m.w; }).length, '' + B.h2h.filter(function (m) { return m.w; }).length)
         + '<div style="font-size:13px;color:#c9d3ee;margin-top:12px;">Tableau principal seulement (sans qualifications ni forfaits) · saisons ' + o.anMin + '–' + o.anMax + ' · source ESPN.</div>';
-    } else if (o.tab === 'bil') {
-      h += tabBilan(o.a.n, A.bil) + '<div style="height:12px;"></div>' + tabBilan(o.b.n, B.bil)
-        + '<div style="font-size:13px;color:#c9d3ee;margin:8px 0;">Gagnés / perdus · vert = plus de victoires, rouge = plus de défaites.</div>'
-        + (o.charge ? '' : '<button onclick="g45TnPlus(\'' + bid + '\')" style="cursor:pointer;padding:10px 14px;border-radius:9px;border:none;background:#2563eb;color:#fff;font-size:14px;font-weight:800;">➕ Charger ' + (o.anMin - 2) + ' et ' + (o.anMin - 1) + '</button>');
+    } else if (o.tab === 'for') {
+      [[o.a.n, A, 'nfA', 'nsA'], [o.b.n, B, 'nfB', 'nsB']].forEach(function (p) {
+        var nf = o[p[2]] || 5, ns = o[p[3]] || 5;
+        h += '<div style="font-size:15px;font-weight:800;margin-top:12px;">' + esc(p[0]) + ' · ' + p[1].forme.w + ' / ' + p[1].forme.n + ' sur les 10 derniers</div><div style="margin:4px 0 6px;">' + pastilles(p[1].der) + '</div>'
+          + lignesMatch(p[1].tous.slice(0, nf))
+          + (p[1].tous.length > nf ? '<button onclick="g45TnVoir(\'' + bid + '\',\'' + p[2] + '\')" style="cursor:pointer;border:none;background:none;color:#7dffb0;font-size:14px;font-weight:800;padding:4px 0;">↓ Voir 5 matchs de plus</button>' : '')
+          + '<div style="font-size:14px;font-weight:800;margin:10px 0 4px;">' + sf.i + ' Historique ' + (o.ctx.sf === 'salle' ? 'en salle' : 'sur ' + sf.l.toLowerCase()) + ' · ' + p[1].surfL.length + ' matchs</div>'
+          + lignesMatch(p[1].surfL.slice(0, ns))
+          + (p[1].surfL.length > ns ? '<button onclick="g45TnVoir(\'' + bid + '\',\'' + p[3] + '\')" style="cursor:pointer;border:none;background:none;color:#7dffb0;font-size:14px;font-weight:800;padding:4px 0;">↓ Voir 5 matchs de plus</button>' : '');
+      });
     } else if (o.tab === 'h2h') {
       var L = A.h2h, wa = L.filter(function (m) { return m.w; }).length;
       h += '<div style="text-align:center;font-size:26px;font-weight:900;margin-top:10px;">' + wa + ' – ' + (L.length - wa) + '</div>'
         + '<div style="text-align:center;font-size:13px;color:#c9d3ee;margin-bottom:8px;">' + (L.length ? (wa > L.length - wa ? esc(o.a.n) + ' mène' : (wa < L.length - wa ? esc(o.b.n) + ' mène' : 'Égalité')) : 'Aucun match entre eux') + ' · saisons ' + o.anMin + '–' + o.anMax + '</div>'
         + L.map(function (m) { var s = SF[m.sf] || SF.dur; return '<div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;background:#1e2740;border-left:4px solid ' + (m.w ? '#1ed760' : '#ff4545') + ';border-radius:10px;padding:9px 10px;margin-bottom:7px;font-size:14px;"><span>' + dateFr(m.t) + ' · ' + esc(m.tr) + ' · ' + s.i + ' ' + s.l + '</span><b>' + esc(m.w ? o.a.n : o.b.n) + ' ' + esc(m.sc) + '</b></div>'; }).join('');
+    } else if (o.tab === 'bil') {
+      h += tabBilan(o.a.n, A.bil) + '<div style="height:12px;"></div>' + tabBilan(o.b.n, B.bil)
+        + '<div style="font-size:13px;color:#c9d3ee;margin:8px 0;">Gagnés / perdus · vert = plus de victoires, rouge = plus de défaites · Salle = dur en salle.</div>'
+        + (o.charge ? '' : '<div style="display:flex;gap:8px;flex-wrap:wrap;"><button onclick="g45TnPlus(\'' + bid + '\')" style="cursor:pointer;padding:10px 14px;border-radius:9px;border:none;background:#2563eb;color:#fff;font-size:14px;font-weight:800;">➕ Charger ' + (o.anMin - 2) + ' et ' + (o.anMin - 1) + '</button>'
+          + '<button onclick="g45TnCarriere(\'' + bid + '\')" style="cursor:pointer;padding:10px 14px;border-radius:9px;border:1px solid #f5c542;background:transparent;color:#fff;font-size:14px;font-weight:800;">🗂️ Toute la carrière (plus long)</button></div>');
+    } else if (o.tab === 'tou') {
+      var tabPays = function (tit, cle, ici) {
+        var r = '<div style="font-size:15px;font-weight:800;margin:12px 0 4px;">' + tit + '</div>';
+        [[o.a.n, A], [o.b.n, B]].forEach(function (p) {
+          var L2 = p[1][cle].slice(0, 8), moy = p[1].tot.p;
+          r += '<div style="background:#0b101d;border-radius:10px;padding:8px 10px;margin-bottom:8px;"><div style="font-weight:800;font-size:14px;margin-bottom:4px;">' + esc(p[0]) + '</div>'
+            + L2.map(function (c) { var d = c.p - moy, on = c.k === ici; return '<div style="display:flex;justify-content:space-between;gap:8px;padding:5px 6px;font-size:14px;' + (on ? 'background:rgba(30,215,96,.12);border-left:3px solid #1ed760;border-radius:6px;' : '') + '"><span>' + (cle === 'parPays' ? drap(c.f) : '') + esc(c.k) + (on ? ' <b style="color:#1ed760;">◀ ICI</b>' : '') + '</span><span><b style="color:' + colP(c.p) + ';">' + c.p + ' %</b> <span style="font-size:12px;color:' + (d >= 0 ? '#7dffb0' : '#ff9b9b') + ';">' + (d >= 0 ? '+' : '') + d + ' pts</span> <span style="font-size:12px;color:#c9d3ee;">(' + c.n + ')</span></span></div>'; }).join('')
+            + '<div style="font-size:12px;color:#c9d3ee;margin-top:4px;">moyenne : ' + (moy == null ? '—' : moy + ' %') + ' sur ' + p[1].tot.n + ' matchs</div></div>';
+        });
+        return r;
+      };
+      var ctIci = ''; try { var pp = window._g45TnPays(o.ctx.adr || o.ctx.py); ctIci = pp ? pp.c : ''; } catch (e) {}
+      h += (o.ctx.py ? '<div style="font-size:14px;color:#7dffb0;font-weight:800;margin-top:8px;">Ce match se joue en ' + drap(o.ctx.pf) + esc(o.ctx.py) + (ctIci ? ' · ' + esc(ctIci) : '') + '</div>' : '')
+        + tabPays('🌍 Bilan par pays', 'parPays', o.ctx.py) + tabPays('🗺️ Bilan par continent', 'parCont', ctIci)
+        + '<div style="font-size:15px;font-weight:800;margin:12px 0 4px;">🏆 Historique à ce tournoi</div>';
+      [[o.a.n, A], [o.b.n, B]].forEach(function (p) { h += '<div style="font-size:14px;font-weight:800;margin:6px 0 4px;">' + esc(p[0]) + '</div>' + (p[1].tourL.length ? lignesMatch(p[1].tourL) : '<div style="font-size:14px;color:#c9d3ee;">Aucun match ici sur les saisons chargées.</div>'); });
     } else {
-      [[o.a.n, A], [o.b.n, B]].forEach(function (p) {
-        h += '<div style="font-size:15px;font-weight:800;margin-top:10px;">' + esc(p[0]) + ' · ' + p[1].forme.w + ' / ' + p[1].forme.n + '</div><div style="margin:4px 0 6px;">' + pastilles(p[1].der) + '</div>'
-          + p[1].der.slice(0, 5).map(function (m) { return '<div style="font-size:13px;color:#dbe4ff;padding:2px 0;">' + (m.w ? '✅ bat ' : '❌ battu par ') + esc(m.an) + ' ' + esc(m.sc) + ' · <span style="color:#c9d3ee;">' + esc(m.tr) + '</span></div>'; }).join('');
-      });
+      var f = o.fAn || 'sf', now = Date.now();
+      var filt = function (P) { return P.tous.filter(function (m) { return f === 'sf' ? m.sf === o.ctx.sf : (f === '52' ? m.t >= now - 364 * 864e5 : true); }); };
+      var sj = o.sj || 9.5, mj = o.mj || 21.5, hc = o.hc || -2.5;
+      var XA = window._g45TnAnnexes(filt(A), sj, mj, hc), XB = window._g45TnAnnexes(filt(B), sj, mj, hc);
+      var bf = function (k, l) { var on = f === k; return '<button onclick="g45TnFiltre(\'' + bid + '\',\'' + k + '\')" style="cursor:pointer;padding:7px 11px;border-radius:14px;font-size:13px;font-weight:800;border:1px solid ' + (on ? '#1ed760' : 'rgba(255,255,255,.2)') + ';background:' + (on ? '#1ed760' : 'transparent') + ';color:' + (on ? '#111' : '#fff') + ';">' + l + '</button>'; };
+      var p = function (v) { return v == null ? null : v; }, tp = function (v) { return v + ' %'; }, d1 = function (v) { return v == null ? null : fr(v, 1); };
+      h += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0;">' + bf('sf', sf.i + ' ' + sf.l) + bf('52', '52 semaines') + bf('tout', 'Toutes les saisons chargées') + '</div>'
+        + '<div style="display:flex;justify-content:space-between;font-weight:900;font-size:15px;"><span>' + esc(o.a.n) + '</span><span>' + esc(o.b.n) + '</span></div>'
+        + titreSec('SETS & MOMENTUM')
+        + duo('Gagne le 1er set', p(XA.set1), p(XB.set1), tp(XA.set1), tp(XB.set1), 1)
+        + duo('Sets secs (si victoire)', p(XA.secs), p(XB.secs), tp(XA.secs), tp(XB.secs), 1, 'sans perdre de set')
+        + duo('Après 1er set gagné', p(XA.apG.p), p(XB.apG.p), XA.apG.p + ' % <span style="font-size:12px;color:#c9d3ee;">' + XA.apG.w + 'V-' + XA.apG.l + 'D</span>', XB.apG.p + ' % <span style="font-size:12px;color:#c9d3ee;">' + XB.apG.w + 'V-' + XB.apG.l + 'D</span>', 1)
+        + duo('Après 1er set perdu', p(XA.apP.p), p(XB.apP.p), XA.apP.p + ' % <span style="font-size:12px;color:#c9d3ee;">' + XA.apP.w + 'V-' + XA.apP.l + 'D</span>', XB.apP.p + ' % <span style="font-size:12px;color:#c9d3ee;">' + XB.apP.w + 'V-' + XB.apP.l + 'D</span>', 1)
+        + titreSec('JEUX')
+        + duo('Jeux gagnés / set', XA.jgS, XB.jgS, d1(XA.jgS), d1(XB.jgS), 1)
+        + duo('Jeux total / set', XA.jtS, XB.jtS, d1(XA.jtS), d1(XB.jtS), 0)
+        + duo('Jeux / match', XA.jM, XB.jM, d1(XA.jM), d1(XB.jM), 0)
+        + duo('Marge jeux / match', XA.marge, XB.marge, (XA.marge > 0 ? '+' : '') + d1(XA.marge), (XB.marge > 0 ? '+' : '') + d1(XB.marge), 1, '(handicap)')
+        + titreSec('TOTAL JEUX / SET') + chipsLignes(bid, 'sj', [6.5, 7.5, 8.5, 9.5, 10.5, 11.5, 12.5], sj)
+        + duo('Sets avec +' + fr(sj, 1) + ' jeux', p(XA.sj), p(XB.sj), tp(XA.sj), tp(XB.sj), 0)
+        + titreSec('TOTAL JEUX / MATCH') + chipsLignes(bid, 'mj', [17.5, 18.5, 19.5, 20.5, 21.5, 22.5, 23.5, 24.5], mj)
+        + duo('Matchs avec +' + fr(mj, 1) + ' jeux', p(XA.mj), p(XB.mj), tp(XA.mj), tp(XB.mj), 0)
+        + titreSec('HANDICAP JEUX') + chipsLignes(bid, 'hc', [-5.5, -4.5, -3.5, -2.5, -1.5, 1.5, 2.5, 3.5, 4.5, 5.5], hc)
+        + duo(hc < 0 ? 'Au moins ' + Math.ceil(-hc) + ' jeux d\'avance' : 'Ne perd pas de ' + Math.ceil(hc) + ' jeux ou plus', p(XA.hc), p(XB.hc), tp(XA.hc), tp(XB.hc), 1)
+        + titreSec('TIE-BREAKS')
+        + duo('% sets au tie-break', p(XA.tbS), p(XB.tbS), tp(XA.tbS), tp(XB.tbS), 0)
+        + duo('% tie-breaks gagnés', p(XA.tbW), p(XB.tbW), tp(XA.tbW), tp(XB.tbW), 1)
+        + duo('Tie-break dans le match', p(XA.tbM), p(XB.tbM), tp(XA.tbM), tp(XB.tbM), 0, '(au moins 1)')
+        + titreSec('FORMAT')
+        + duo('Matchs en 3 sets', p(XA.s3), p(XB.s3), tp(XA.s3), tp(XB.s3), 0, '(hors Grand Chelem)')
+        + duo('Bilan au set décisif', p(XA.dec.p), p(XB.dec.p), XA.dec.p + ' % <span style="font-size:12px;color:#c9d3ee;">' + XA.dec.w + 'V-' + XA.dec.l + 'D</span>', XB.dec.p + ' % <span style="font-size:12px;color:#c9d3ee;">' + XB.dec.w + 'V-' + XB.dec.l + 'D</span>', 1)
+        + '<div style="font-size:13px;color:#c9d3ee;margin-top:10px;">Échantillon : ' + esc(o.a.n) + ' ' + XA.n + ' matchs · ' + esc(o.b.n) + ' ' + XB.n + ' matchs (abandons exclus).</div>';
     }
     box.innerHTML = h + '</div>';
   }
@@ -77294,9 +77467,11 @@ window._g45AgJouUs = async function (nowTs) {
     var an = new Date().getFullYear(), ans = []; for (var y = an - o.ans + 1; y <= an; y++) ans.push(y);
     o.anMin = ans[0]; o.anMax = an;
     try {
+      if (!o.pa) { try { o.pa = await window._g45TnProfil(o.a.id); } catch (e) { o.pa = {}; } }
+      if (!o.pb) { try { o.pb = await window._g45TnProfil(o.b.id); } catch (e) { o.pb = {}; } }
       var lire = async function (p) {
         var tout = [];
-        for (var i = 0; i < ans.length; i++) {
+        for (var i = ans.length - 1; i >= 0; i--) {
           o.msg = 'Chargement de ' + p.n + ' (' + ans[i] + ')…'; dessiner(bid);
           var ms = await window._g45TnSaison(o.lg, p.id, ans[i], function (f, n) { o.msg = 'Chargement de ' + p.n + ' (' + ans[i] + ') : ' + f + ' / ' + n; if (f % 5 === 0 || f === n) dessiner(bid); });
           tout = tout.concat(ms || []);
@@ -77311,11 +77486,12 @@ window._g45AgJouUs = async function (nowTs) {
     o.charge = false; dessiner(bid);
   }
 
-  /* ouvre l'analyse dans la boîte bid : m = { lg, a:{id,n}, b:{id,n}, tour, ek } */
+  /* ouvre l'analyse dans la boîte bid : m = { lg, a:{id,n,rk}, b:{id,n,rk}, tour, ek, lieu (« Ville, Pays ») } */
   window.g45TnAnalyser = async function (bid, m) {
-    var ind = false, ek = m.ek || '';
-    try { if (ek) { var e = await evInfo(m.lg, 'events/' + ek); if (e) ind = e.ind; } } catch (e) {}
-    S.o[bid] = { lg: m.lg, a: m.a, b: m.b, tab: 'cle', ans: 2, ctx: { sf: window._g45TnSurf(m.tour, ind), ind: ind, cat: window._g45TnCat(m.tour), ek: ek } };
+    var ind = false, ek = m.ek || '', adr = m.lieu || '';
+    try { if (ek) { var e = await evInfo(m.lg, 'events/' + ek); if (e) { ind = e.ind; adr = adr || e.adr; } } } catch (e) {}
+    var py = window._g45TnPays(adr);
+    S.o[bid] = { lg: m.lg, a: m.a, b: m.b, tab: 'cle', ans: 2, ctx: { sf: window._g45TnSurf(m.tour, ind), ind: ind, cat: window._g45TnCat(m.tour, m.lg), ek: ek, py: py ? py.n : '', pf: py ? py.f : '', adr: adr } };
     dessiner(bid); charger(bid);
   };
   window.g45TnOuvrir = function (btn) {
@@ -77324,17 +77500,18 @@ window._g45AgJouUs = async function (nowTs) {
       if (!box) return;
       if (box.innerHTML && box.getAttribute('data-ouvert') === '1') { box.innerHTML = ''; box.setAttribute('data-ouvert', '0'); return; }
       box.setAttribute('data-ouvert', '1');
-      window.g45TnAnalyser(bid, { lg: d.lg, a: { id: d.ha, n: d.hn, rk: +d.hr || 0 }, b: { id: d.aa, n: d.an, rk: +d.ar || 0 }, tour: d.tour, ek: d.ek });
+      window.g45TnAnalyser(bid, { lg: d.lg, a: { id: d.ha, n: d.hn, rk: +d.hr || 0 }, b: { id: d.aa, n: d.an, rk: +d.ar || 0 }, tour: d.tour, ek: d.ek, lieu: d.lieu });
     } catch (e) {}
   };
-  var bouton = function (lg, h, a, tour, ek, bid) {
-    return '<button onclick="g45TnOuvrir(this)" data-box="' + bid + '" data-lg="' + lg + '" data-ha="' + esc(h.id) + '" data-hn="' + esc(h.n) + '" data-hr="' + (h.rk || '') + '" data-aa="' + esc(a.id) + '" data-an="' + esc(a.n) + '" data-ar="' + (a.rk || '') + '" data-tour="' + esc(tour) + '" data-ek="' + esc(ek) + '"'
+  var bouton = function (lg, h, a, tour, ek, bid, lieu) {
+    return '<button onclick="g45TnOuvrir(this)" data-box="' + bid + '" data-lg="' + lg + '" data-ha="' + esc(h.id) + '" data-hn="' + esc(h.n) + '" data-hr="' + (h.rk || '') + '" data-aa="' + esc(a.id) + '" data-an="' + esc(a.n) + '" data-ar="' + (a.rk || '') + '" data-tour="' + esc(tour) + '" data-ek="' + esc(ek) + '" data-lieu="' + esc(lieu || '') + '"'
       + ' style="width:100%;box-sizing:border-box;cursor:pointer;font-size:14px;font-weight:800;padding:10px 12px;border-radius:9px;color:#fff;background:rgba(10,14,26,.92);border:1px solid #f5c542;">📊 Analyse BET45 (forme, surface, face-à-face)</button>'
       + '<div id="' + bid + '"></div>';
   };
   var joueur = function (x) { return { id: String((x && (x.id || (x.athlete && x.athlete.id))) || ''), n: (x && x.athlete && (x.athlete.displayName || x.athlete.shortName)) || '?',
     rk: (x && x.curatedRank && x.curatedRank.current > 0) ? x.curatedRank.current : 0 }; };   /* 20261020j : rang pour l'avis */
   var ekDe = function (c, ev) { return (ev && ev.id) || (String((c && c.uid) || '').match(/~e:([^~]+)/) || [])[1] || ''; };
+  var lieuDe = function (c) { return String((c && c.venue && c.venue.fullName) || '').replace(/\s*·.*$/, ''); };
 
   /* fenêtre d'un match de Résultats → Tennis : bouton sous l'avant-match (simples seulement) */
   if (typeof _g45EspnTennisDetail === 'function' && !_g45EspnTennisDetail._g45Tn) {
@@ -77347,7 +77524,7 @@ window._g45AgJouUs = async function (nowTs) {
           var A = joueur(hm), B = joueur(aw);
           if (A.id && B.id) {
             var lg = /women|dames|wta/i.test(c.__grp) ? 'wta' : 'atp';
-            var b = '<div style="margin:8px 0;">' + bouton(lg, A, B, c.__tour || '', ekDe(c), 'g45tn-d-' + c.id) + '</div>';
+            var b = '<div style="margin:8px 0;">' + bouton(lg, A, B, c.__tour || '', ekDe(c), 'g45tn-d-' + c.id, lieuDe(c)) + '</div>';
             var i = h.indexOf('<table'); h = i > 0 ? h.slice(0, i) + b + h.slice(i) : h + b;
           }
         }
@@ -77385,14 +77562,14 @@ window._g45AgJouUs = async function (nowTs) {
       var hr = ''; try { hr = new Date(m.c.date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }); } catch (e) {}
       h += '<div style="background:#1e2740;border-radius:10px;padding:9px 10px;margin-bottom:8px;">'
         + '<div style="display:flex;justify-content:space-between;gap:8px;font-size:15px;"><b>' + esc(m.a.n) + ' – ' + esc(m.b.n) + '</b><span style="flex:none;">' + (m.st === 'in' ? '<b style="color:#ff6b6b;">🔴 en cours</b>' : '🕒 ' + hr) + '</span></div>'
-        + '<div style="margin-top:7px;">' + bouton(m.lg, m.a, m.b, tn, ekDe(m.c, m.ev), 'g45tn-j-' + i) + '</div></div>';
+        + '<div style="margin-top:7px;">' + bouton(m.lg, m.a, m.b, tn, ekDe(m.c, m.ev), 'g45tn-j-' + i, lieuDe(m.c)) + '</div></div>';
     });
     cible.innerHTML = h;
   };
   window._g45TnEcran = function () {
     return '<div style="background:rgba(11,16,29,.92);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px 14px;color:#fff;margin-bottom:12px;">'
       + '<div style="font-size:17px;font-weight:800;">🎾 Matchs du jour · ATP et WTA</div>'
-      + '<div style="font-size:13px;color:#c9d3ee;margin:4px 0 6px;">Touche « Analyse BET45 » : forme, surface, tournoi, face-à-face, bilan par année (ESPN). Premier chargement d\'un joueur : 10 à 20 s.</div>'
+      + '<div style="font-size:13px;color:#c9d3ee;margin:4px 0 6px;">Touche « Analyse BET45 » : avis, forme, surface, tournoi, pays, face-à-face, bilan par année, stats de jeux (ESPN). Premier chargement d\'un joueur : 10 à 20 s.</div>'
       + '<div id="g45tn-jour"><div style="font-size:14px;color:#c9d3ee;">⏳ Chargement…</div></div></div>';
   };
 })();

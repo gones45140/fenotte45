@@ -2086,6 +2086,16 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   20261020j (« ça dit pas qui BET45 voit gagner ? ») : _g45TnAvis(A, B, rangA, rangB) — moyenne pondérée des parts : rang ESPN curatedRank
   (1/√rang) 0,30 · surface 12 mois 0,25 · forme 0,20 · H2H 0,10 lissé · catégorie / tournoi / salle 0,05 ; % comptés si ≥ 3 matchs des deux côtés ;
   confiance ≥ 15 pts forte, ≥ 7 moyenne, sinon « match serré ». Encadré « 🔮 BET45 voit gagner » au-dessus des onglets. 5 essais vm.
+  20261020k (~20 captures de matchup-tennis.fr, 2e maquette « OK maquette ») : VERSION COMPLÈTE. SONDES d'Antoine : competition = PAS de durée,
+  PAS de stats (competitor sans statistics), odds ESPN tennis VIDES (count 0, Dzumhur – Prizmic) ; athletes/<id> = age, hand Right/Left, debutYear
+  (pas le revers). BUG 20261020i corrigé : « salle » lu sur e.venue (n'existe pas) → venue du MATCH (competition.venue.indoor) ou
+  competitions[0].venue de l'event. Clés passées en tn2_ / tnev2_ (pays ajouté). Ajouts : profil (âge, N°, main), « En clair » (_g45TnClair :
+  3 plus gros écarts), catégories ATP 250 / 500 / 1000 / GC / WTA (_g45TnCat(nom, lg), tables de noms), pays + continent (_g45TnPays,
+  « Ville, Pays » d'ESPN, état US « CA » = USA), facteur pays (0,05 dans l'avis), repos, matchs 7 j / 30 j, Forme « voir 5 de plus » + historique
+  sur la surface, Bilan résumé de l'année + « Toute la carrière » (depuis debutYear, 15 saisons max), Tournée (pays / continent / tournoi),
+  Stats annexes _g45TnAnnexes (pur : 1er set, sets secs, après 1er set gagné / perdu, jeux, +X,5 jeux / set et / match, handicap, tie-breaks,
+  3 sets hors GC, set décisif ; abandons exclus ; filtre surface / 52 semaines / tout). NON FAISABLE : style, Elo, vitesse du court, stats de
+  service, minutes, météo, favori / outsider. 50 essais vm, smoke 63.
   20261020c (croquis d'Antoine « Tendances = 4 boutons », maquette cliquable validée « oui, BET45 → Sélection du jour par défaut ») : ONGLET EN BOUTONS —
   bloc « TENDANCES EN BOUTONS » en fin d'app.js (enveloppe la plus externe de loadTendancesTab). Barre #g45tr-nav : 📒 Tendances BET45 · 🔍 Tendances perso ·
   ⚽ Tendances buteurs · 📏 CLV ; dans BET45 : ⭐ Sélection du jour (_g45TrSelHtml, forcée ouverte) · 📅 Historique (calendrier + liste du jour) ·
