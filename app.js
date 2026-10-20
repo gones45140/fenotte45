@@ -78261,3 +78261,69 @@ window._g45AgJouUs = async function (nowTs) {
     try { if (typeof _g45TenPhotos === 'function') _g45TenPhotos(res); } catch (e) {}
   };
 })();
+
+/* ═══ 🏆 CLASSEMENT PAR SURFACE (20261020u, « un truc sympa je sais pas si ça existe mais classement par surface ? », maquette « oui ») ═══
+   Elo Tennis Abstract déjà lu (données/elo_tennis.json : [nom, elo, dur, terre, gazon]) → classement ATP / WTA, Général / Dur / Terre / Gazon,
+   30 premiers (+30 par « ➕ voir plus »), ▲▼ = places gagnées / perdues par rapport à l'Elo général. Sous « Rechercher un joueur »
+   (Compétitions → Tennis), replié au départ ; toucher un joueur = sa fiche (searchTennisPlayer). Le fichier Elo ne donne PAS le pays :
+   photo TheSportsDB (_g45TenPhotos) ou initiales. */
+(function () {
+  if (typeof loadTennisSaisons !== 'function') return;
+  var esc = function (x) { return String(x == null ? '' : x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); };
+  var K = window._g45TcEtat = { lg: 'atp', sf: 'dur', n: 30 };
+  var COL = { gen: 1, dur: 2, terre: 3, gazon: 4 };
+  /* calcul pur (testé) : [{ nom, e, rg, d }] — rg = rang général, d = places gagnées (+) / perdues (−) */
+  window._g45TcListe = function (J, lg, sf) {
+    var T = J && J[lg]; if (!T) return [];
+    var L = Object.keys(T).map(function (k) { return T[k]; }).filter(function (r) { return r && r[1] > 0; });
+    var gen = L.slice().sort(function (a, b) { return b[1] - a[1]; }), rg = {};
+    gen.forEach(function (r, i) { rg[r[0]] = i + 1; });
+    var c = COL[sf] || 1;
+    return L.filter(function (r) { return r[c] > 0; }).sort(function (a, b) { return b[c] - a[c]; })
+      .map(function (r, i) { return { nom: String(r[0]).replace(/\s+/g, ' ').trim(), e: Math.round(r[c]), rg: rg[r[0]], d: rg[r[0]] - (i + 1) }; });
+  };
+  var chip = function (on, t, js) { return '<button onclick="' + js + '" style="cursor:pointer;padding:8px 12px;border-radius:10px;font-weight:800;font-size:14px;border:1px solid ' + (on ? '#5aa9ff' : 'rgba(255,255,255,.25)') + ';margin:0 5px 6px 0;background:' + (on ? '#2563eb' : 'rgba(11,16,29,.9)') + ';color:#fff;">' + t + '</button>'; };
+  var dessiner = function () {
+    var b = document.getElementById('g45tc-corps'); if (!b) return;
+    var J = window._g45TnEloJ;
+    if (!J) { b.innerHTML = '<div style="font-size:15px;">⏳ Chargement du classement…</div>'; if (window._g45TnEloCharger) window._g45TnEloCharger().then(function (j) { if (j) dessiner(); else b.innerHTML = '<div style="font-size:15px;">Classement indisponible pour le moment.</div>'; }); return; }
+    var L = window._g45TcListe(J, K.lg, K.sf);
+    var h = chip(K.lg === 'atp', 'ATP', 'g45TcSet(\'lg\',\'atp\')') + chip(K.lg === 'wta', 'WTA', 'g45TcSet(\'lg\',\'wta\')') + '<br>'
+      + [['gen', 'Général'], ['dur', '🟦 Dur'], ['terre', '🟧 Terre'], ['gazon', '🟩 Gazon']].map(function (s) { return chip(K.sf === s[0], s[1], 'g45TcSet(\'sf\',\'' + s[0] + '\')'); }).join('')
+      + '<div style="font-size:13px;color:#c9d3ee;margin:4px 0 10px;">Elo Tennis Abstract' + (J.maj ? ' (mis à jour le ' + esc(String(J.maj).slice(0, 10).split('-').reverse().join('/')) + ')' : '') + (K.sf !== 'gen' ? ' · ▲▼ = places gagnées / perdues par rapport au classement général' : '') + ' · touche un joueur pour sa fiche.</div>';
+    if (!L.length) h += '<div style="font-size:15px;">Aucun joueur pour cette surface.</div>';
+    L.slice(0, K.n).forEach(function (x, i) {
+      var dl = K.sf === 'gen' || !x.d ? '' : ' <b style="color:' + (x.d > 0 ? '#1ed760' : '#ff6b6b') + ';">' + (x.d > 0 ? '▲' : '▼') + Math.abs(x.d) + '</b>';
+      var av = typeof _g45TenAvatar === 'function' ? _g45TenAvatar({ displayName: x.nom }, 38) : '';
+      h += '<div onclick="g45TjChoisir(\'' + esc(x.nom).replace(/'/g, '\\\'') + '\');var r=document.getElementById(\'tennis-player-result\');if(r)r.scrollIntoView({behavior:\'smooth\'})" style="cursor:pointer;display:grid;grid-template-columns:34px auto minmax(0,1fr) auto;gap:6px;align-items:center;background:#1e2740;border-radius:10px;padding:8px 10px;margin-bottom:6px;">'
+        + '<div style="font-size:18px;font-weight:900;text-align:center;">' + (i + 1) + '</div>' + av
+        + '<div style="min-width:0;"><div style="font-size:16px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(x.nom) + dl + '</div>'
+        + (K.sf !== 'gen' ? '<div style="font-size:13px;color:#c9d3ee;font-weight:700;">général ' + x.rg + (x.rg === 1 ? 'er' : 'e') + '</div>' : '') + '</div>'
+        + '<div style="font-size:17px;font-weight:900;">' + x.e + '</div></div>';
+    });
+    if (L.length > K.n) h += '<button onclick="g45TcSet(\'n\',' + (K.n + 30) + ')" style="cursor:pointer;width:100%;padding:9px;border-radius:9px;border:1px solid rgba(255,255,255,.3);background:transparent;color:#fff;font-size:14px;font-weight:800;">➕ voir plus</button>';
+    b.innerHTML = h;
+    try { if (typeof _g45TenPhotos === 'function') _g45TenPhotos(b); } catch (e) {}
+  };
+  window.g45TcSet = function (k, v) { K[k] = v; if (k !== 'n') K.n = 30; dessiner(); };
+  window.g45TcTgl = function (bt) {
+    var b = document.getElementById('g45tc-corps'); if (!b) return;
+    var o = b.style.display !== 'none'; b.style.display = o ? 'none' : 'block'; bt.querySelector('span').textContent = o ? '▶' : '▼';
+    if (!o) dessiner();
+  };
+  var ltOrig = loadTennisSaisons;
+  loadTennisSaisons = window.loadTennisSaisons = function (el) {
+    var p = ltOrig.apply(this, arguments);
+    try {
+      if (el && !el.querySelector('#g45tc-corps')) {
+        var d = document.createElement('div');
+        d.innerHTML = '<div style="background:rgba(11,16,29,.94);border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:12px 14px;margin-bottom:12px;color:#fff;">'
+          + '<button onclick="g45TcTgl(this)" style="cursor:pointer;width:100%;display:flex;justify-content:space-between;align-items:center;background:transparent;border:none;color:#fff;font-size:17px;font-weight:800;padding:0;">🏆 Classement par surface <span>▶</span></button>'
+          + '<div id="g45tc-corps" style="display:none;margin-top:10px;"></div></div>';
+        var res = el.querySelector('#tennis-player-result');
+        el.insertBefore(d.firstChild, res || null);
+      }
+    } catch (e) {}
+    return p;
+  };
+})();

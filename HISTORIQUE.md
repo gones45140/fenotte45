@@ -2175,6 +2175,10 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   le tennis : contenu avec s:850 ou « tennis » et ~a:<id>), sinon scoreboards ATP / WTA du jour. Saison _g45TnSaison, calcul pur _g45TjCalc (bilan,
   surfaces, forme 10), Elo + rang Elo, âge / main, photo ou grand drapeau, liens Tennis Abstract / fiche ESPN / Sofascore. Smoke tnJoueur (68).
   À VÉRIFIER sur PC (Antoine sur téléphone) : la recherche ESPN trouve-t-elle un joueur hors des matchs du jour (ex. « Arthur Fils ») ?
+  20261020u (« classement par surface ? », maquette maquette-tennis-surface « oui et ok ») : bloc « CLASSEMENT PAR SURFACE » en fin d'app.js,
+  enveloppe loadTennisSaisons (cadre replié « 🏆 Classement par surface » avant #tennis-player-result). Calcul pur _g45TcListe(J, lg, sf) :
+  Elo général / dur / terre / gazon, rang général, d = places gagnées. ATP / WTA, 30 + « voir plus », toucher = g45TjChoisir. Pas de pays dans le
+  fichier Elo → photo ou initiales. Smoke tnJoueur complété (68). Publié avec 20261020t (« ok »).
   _g45TnPerso pose les 3 blocs de l'écran. Smoke tnRun (65) ; tests tnRobot / tnRun calés sur « maintenant + quelques minutes » (le soir UTC,
   « + 2 h » tombait le lendemain).
   20261020c (croquis d'Antoine « Tendances = 4 boutons », maquette cliquable validée « oui, BET45 → Sélection du jour par défaut ») : ONGLET EN BOUTONS —
