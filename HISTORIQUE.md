@@ -527,6 +527,9 @@ Il est dans les DEUX dépôts (gones45 et fenotte45), identique (cmp). Jamais de
   leagues[0].id de 25 scoreboards (775 C1, 776 C3, 20296 C4, 710 L1, 3926 L2, 700 PL, 740 Liga, 730 Serie A, 720 Bundesliga, 715, 725, 3901,
   3952 CdF, 3918, 3920, 3951, 3956, 3954, 5462, 606, 2395, 735, 3946, 770, 21231). Rend aussi le vrai slug (chaîne télé, fenêtre de match).
   Nouveau championnat suivi absent de la table → « Football » : ajouter son numéro (scoreboard du championnat, leagues[0].id).
+  20261020f (capture PC : « PSG pas de logo », « Atlético trop zoomé ») : visuel PERSO (images/equipes|joueurs, blason carré) posé ENTIER
+  (background-size « cover,contain », no-repeat, fond #0a0e1a) au lieu d'être étiré ; G45_FOND_BLASON {parissaintgermain, psg} : le blason ESPN
+  (m.lMoi) remplace le fanart TheSportsDB (mot « PARIS »). Autres clubs : fanart inchangé.
 - Suivies « Matchs à venir / direct » (`g45DirectMesEquipes`, groupes `_g45DirEquipes`) : 29v —
   le plafond (10) porte sur les REQUÊTES réelles (`aInterroger`, tout le foot = 1 requête `all`),
   plus sur les championnats : les ligues de foot d'Antoine occupaient les 8 places et la NHL

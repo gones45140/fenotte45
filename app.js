@@ -55772,6 +55772,14 @@ async function g45DirectMesEquipes(silencieux) {
     var cleImg = m.moiLong || m.moi;
     var vis = _g45ImgPersoLire(cleImg) || _g45FanLire(cleImg)
            || _g45ImgPersoLire(m.moi) || _g45FanLire(m.moi);
+    /* 20261020f (capture Suivies : « PSG pas de logo », « Atlético trop zoomé ») :
+       - un visuel PERSO (images/equipes|joueurs, ex. atleticomadrid.png = blason CARRÉ 512 px) était étiré en « cover » sur une carte
+         très large → on n'en voyait qu'une bande zoomée. Il est désormais posé ENTIER (« contain ») au centre, comme le blason de Roma.
+       - le fanart TheSportsDB du PSG est le mot « PARIS » sans blason : pour les clubs listés ici, le blason ESPN du club (m.lMoi)
+         remplace ce fanart, posé de la même façon. Autres clubs : fanart inchangé (Antoine : « j'adore l'image actuelle »). */
+    var G45_FOND_BLASON = { parissaintgermain: 1, psg: 1 };
+    var blason = /^images\/(equipes|joueurs)\//.test(vis || '');
+    if (!blason && m.lMoi && (G45_FOND_BLASON[_g45SgNorm(cleImg)] || G45_FOND_BLASON[_g45SgNorm(m.moi)])) { vis = m.lMoi; blason = true; }
     var fond = g45FondMatch(m.cMoi, m.cAdv, vis);
     var logo = function (url, cote) {
       if (!url) return '';
@@ -55788,7 +55796,8 @@ async function g45DirectMesEquipes(silencieux) {
          pour eviter le cadrage serre sur grand ecran ; le rendu laissait un pave
          au milieu de la carte et il prefere nettement le plein cadre. Le
          recadrage sur large ecran est donc assume. */
-      + 'background:' + fond + ';background-size:cover;background-position:center;'
+      + 'background:' + fond + ';background-size:' + (blason ? 'cover,contain' : 'cover') + ';background-position:center;'
+      + (blason ? 'background-repeat:no-repeat;background-color:#0a0e1a;' : '')
       + 'border:1px solid rgba(255,255,255,.08);'
       + (live ? 'box-shadow:0 0 0 1px rgba(255,69,69,.35),0 2px 14px rgba(255,69,69,.12);' : '') + '">'
       + logo(m.lMoi, 'left') + logo(m.lAdv, 'right')
