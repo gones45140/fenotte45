@@ -530,6 +530,10 @@ Il est dans les DEUX dépôts (gones45 et fenotte45), identique (cmp). Jamais de
   20261020f (capture PC : « PSG pas de logo », « Atlético trop zoomé ») : visuel PERSO (images/equipes|joueurs, blason carré) posé ENTIER
   (background-size « cover,contain », no-repeat, fond #0a0e1a) au lieu d'être étiré ; G45_FOND_BLASON {parissaintgermain, psg} : le blason ESPN
   (m.lMoi) remplace le fanart TheSportsDB (mot « PARIS »). Autres clubs : fanart inchangé.
+  20261020g (« il y a une sacrée différence » avec les bannières TheSportsDB des autres clubs ; choix 2 d'Antoine) : blason ESPN du PSG retiré.
+  _G45_SANS_BANNIERE {parissaintgermain, psg} → _g45FanChercher saute strTeamBanner (photo strFanart1..4) ; ancienne bannière effacée une fois
+  (drapeau g45_fan_fix1). _G45_FOND_TSDB {atleticomadrid} → _g45FanCompleter cherche AUSSI la bannière malgré l'image perso, et la carte
+  Suivies la prend en priorité (le mur garde l'image perso). TheSportsDB en 403 ce soir-là → rendu visible dès que TheSportsDB répond.
 - Suivies « Matchs à venir / direct » (`g45DirectMesEquipes`, groupes `_g45DirEquipes`) : 29v —
   le plafond (10) porte sur les REQUÊTES réelles (`aInterroger`, tout le foot = 1 requête `all`),
   plus sur les championnats : les ligues de foot d'Antoine occupaient les 8 places et la NHL

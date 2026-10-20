@@ -55234,7 +55234,7 @@ async function _g45FanChercher(nom, sport) {
          etroit — le bandeau reste prioritaire, c'est le format taille pour une
          carte, et l'ecusson n'arrive qu'en dernier recours. */
       if (t) {
-        url = t.strTeamBanner || t.strFanart1 || t.strFanart2 || t.strFanart3 || t.strFanart4
+        url = (_G45_SANS_BANNIERE[n] ? '' : t.strTeamBanner) || t.strFanart1 || t.strFanart2 || t.strFanart3 || t.strFanart4
            || t.strStadiumThumb || t.strTeamJersey || t.strPoster || '';
       }
     } catch (e) {}
@@ -55247,6 +55247,17 @@ async function _g45FanChercher(nom, sport) {
 }
 
 /* Complete les visuels manquants puis redessine, sans bloquer l'affichage. */
+/* 20261020g (cartes Suivies, choix 2 d'Antoine « même rendu que les autres clubs ») :
+   _G45_FOND_TSDB = clubs dont l'image perso (images/equipes) est un petit blason carré → on va AUSSI chercher la bannière TheSportsDB,
+   utilisée en fond des cartes Suivies (g45DirectMesEquipes) ; _G45_SANS_BANNIERE = clubs dont la bannière TheSportsDB est un simple
+   mot (PSG : « PARIS ») → photo d'ambiance strFanart1..4 à la place. L'ancienne bannière gardée en mémoire est effacée UNE fois (g45_fan_fix1). */
+var _G45_FOND_TSDB = { atleticomadrid: 1 };
+var _G45_SANS_BANNIERE = { parissaintgermain: 1, psg: 1 };
+(function () { try {
+  if (localStorage.getItem('g45_fan_fix1')) return;
+  Object.keys(_G45_SANS_BANNIERE).forEach(function (k) { localStorage.removeItem(_G45_FANART + k); });
+  localStorage.setItem('g45_fan_fix1', '1');
+} catch (e) {} })();
 async function _g45FanCompleter(noms) {
   if (_g45FanEnCours) return false;
   var maj = false;
@@ -55261,7 +55272,7 @@ async function _g45FanCompleter(noms) {
 
   /* 2. TheSportsDB seulement pour celles qui n'ont PAS d'image personnelle. */
   var aFaire = noms.filter(function (n) {
-    return !_g45ImgPersoLire(n.nom || n) && _g45FanLire(n.nom || n) === undefined;
+    return (!_g45ImgPersoLire(n.nom || n) || _G45_FOND_TSDB[_g45SgNorm(n.nom || n)]) && _g45FanLire(n.nom || n) === undefined;   /* 20261020g */
   }).slice(0, 2);
   for (var i = 0; i < aFaire.length; i++) {
     var it = aFaire[i];
@@ -55776,10 +55787,12 @@ async function g45DirectMesEquipes(silencieux) {
        - un visuel PERSO (images/equipes|joueurs, ex. atleticomadrid.png = blason CARRÉ 512 px) était étiré en « cover » sur une carte
          très large → on n'en voyait qu'une bande zoomée. Il est désormais posé ENTIER (« contain ») au centre, comme le blason de Roma.
        - le fanart TheSportsDB du PSG est le mot « PARIS » sans blason : pour les clubs listés ici, le blason ESPN du club (m.lMoi)
-         remplace ce fanart, posé de la même façon. Autres clubs : fanart inchangé (Antoine : « j'adore l'image actuelle »). */
-    var G45_FOND_BLASON = { parissaintgermain: 1, psg: 1 };
+         remplace ce fanart, posé de la même façon. Autres clubs : fanart inchangé (Antoine : « j'adore l'image actuelle »).
+       20261020g (« il y a une sacrée différence » avec les bannières des autres clubs → choix 2 d'Antoine) : plus de blason ESPN pour le PSG
+       (photo TheSportsDB à la place de la bannière, voir _G45_SANS_BANNIERE) ; clubs de _G45_FOND_TSDB (Atlético) : la bannière TheSportsDB
+       passe AVANT l'image perso, ici seulement (le mur garde l'image perso). Sans bannière connue : image perso comme avant. */
+    if (_G45_FOND_TSDB[_g45SgNorm(cleImg)] && _g45FanLire(cleImg)) vis = _g45FanLire(cleImg);
     var blason = /^images\/(equipes|joueurs)\//.test(vis || '');
-    if (!blason && m.lMoi && (G45_FOND_BLASON[_g45SgNorm(cleImg)] || G45_FOND_BLASON[_g45SgNorm(m.moi)])) { vis = m.lMoi; blason = true; }
     var fond = g45FondMatch(m.cMoi, m.cAdv, vis);
     var logo = function (url, cote) {
       if (!url) return '';
