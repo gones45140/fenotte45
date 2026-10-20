@@ -2185,7 +2185,7 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   retirés de _g45TnSaison (enveloppe _sansBye : fiche, analyse, robot, mémoire tn3_ comprise) et de _g45TjCalc. Elo absent sur la capture :
   données/elo_tennis.json PAS ENCORE CRÉÉ (1er passage du robot le matin, 8 h) → boutons de secours (10 noms ATP / WTA sans Paire) en attendant.
   21/10 (« on a mis 8 h et les tendances n'arrivent pas avant 11 h 30 ») : runs GitHub lus — les crons '0 6/7/8/9' partaient avec 3 à 5 h de
-  retard (20/10 : 10 h 47, 12 h 32, 13 h 07, 14 h 07 UTC ; 18/10 : 11 h 56 UTC). tendances.yml : cron '13,43 6-9 * * *' (minutes décalées, essai
+  retard (20/10 : 10 h 47, 12 h 32, 13 h 07, 14 h 07 UTC ; 18/10 : 11 h 56 UTC). tendances.yml : cron '13,43 3-9 * * *' (retard ≈ 3 h d'après Antoine) (minutes décalées, essai
   toutes les 30 min). Si encore en retard : le worker (cron */5, fiable) pourrait lancer le robot par l'API GitHub (workflow_dispatch) — il
   faudrait un jeton GitHub (droit Actions) mis en SECRET du worker par Antoine.
   _g45TnPerso pose les 3 blocs de l'écran. Smoke tnRun (65) ; tests tnRobot / tnRun calés sur « maintenant + quelques minutes » (le soir UTC,
