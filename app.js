@@ -78175,10 +78175,13 @@ window._g45AgJouUs = async function (nowTs) {
   var barreHtml = function () {
     var ch = function (lg) {
       var L = topElo(lg, 10);
-      if (!L.length) return '<div style="font-size:13px;color:#c9d3ee;">⏳ chargement du classement…</div>';
+      /* 20261020v : tant que le robot n'a pas écrit elo_tennis.json (1er passage le matin), liste de secours (sans Paire) */
+      if (!L.length) L = (lg === 'wta' ? ['Aryna Sabalenka', 'Iga Swiatek', 'Coco Gauff', 'Amanda Anisimova', 'Elena Rybakina', 'Jessica Pegula', 'Mirra Andreeva', 'Madison Keys', 'Jasmine Paolini', 'Elina Svitolina']
+        : ['Jannik Sinner', 'Carlos Alcaraz', 'Alexander Zverev', 'Novak Djokovic', 'Taylor Fritz', 'Jack Draper', 'Ben Shelton', 'Lorenzo Musetti', 'Alex de Minaur', 'Arthur Fils']).map(function (n) { return [n]; });
       return L.map(function (r) { var n = nomPropre(r[0]); return chip(norm(n) === norm(J.nom), esc(n.split(' ').slice(-1)[0]), 'g45TjChoisir(\'' + esc(n).replace(/'/g, '\\\'') + '\')'); }).join('');
     };
-    return lbl('ATP · 10 meilleurs (Elo)') + ch('atp') + lbl('WTA · 10 meilleures (Elo)') + ch('wta')
+    var el = window._g45TnEloJ ? ' (Elo)' : '';
+    return lbl('ATP · 10 meilleurs' + el) + ch('atp') + lbl('WTA · 10 meilleures' + el) + ch('wta')
       + lbl('Saison') + [AN0, AN0 - 1, AN0 - 2].map(function (y) { return chip(J.an === y, y, 'g45TjAn(' + y + ')'); }).join('');
   };
   var poserBarre = function () { var b = document.getElementById('g45tj-barre'); if (b) b.innerHTML = barreHtml(); };
@@ -78201,7 +78204,7 @@ window._g45AgJouUs = async function (nowTs) {
   var dateFr = function (t) { try { return new Date(t).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }); } catch (e) { return ''; } };
   /* calcul pur (testé) : matchs d'une saison → bilan, surfaces, forme, liste triée */
   window._g45TjCalc = function (ms, an) {
-    var L = (ms || []).filter(function (m) { return m && new Date(m.t).getFullYear() === an; }).sort(function (a, b) { return b.t - a.t; });
+    var L = (ms || []).filter(function (m) { return m && !/^bye$/i.test(String(m.an || '').trim()) && new Date(m.t).getFullYear() === an; }).sort(function (a, b) { return b.t - a.t; });
     var w = L.filter(function (m) { return m.w; }).length, sf = {};
     L.forEach(function (m) { var s = sf[m.sf] = sf[m.sf] || { w: 0, l: 0 }; s[m.w ? 'w' : 'l']++; });
     return { L: L, w: w, l: L.length - w, p: L.length ? Math.round(w / L.length * 100) : null, sf: sf, forme: L.slice(0, 10).map(function (m) { return m.w ? 'V' : 'D'; }) };
@@ -78226,7 +78229,15 @@ window._g45AgJouUs = async function (nowTs) {
     var F = await fiche(P.id), pr = {};
     try { pr = await window._g45TnProfil(P.id) || {}; } catch (e) {}
     if (J.jeton !== jeton) return;
-    var nm = F.n || nom, C = window._g45TjCalc(ms, an), S = SFL();
+    J.d = { nom: nom, nm: F.n || nom, P: P, ms: ms, E: E, pr: pr, F: F, lg: lg, an: an }; J.sf = 'tout';
+    fiche_(res);
+  };
+  /* 20261020v (« on pourrait avoir un global / terre battue / dur / … ») : filtre de surface sur la fiche ; les données restent en mémoire (J.d) */
+  window.g45TjSf = function (s) { J.sf = s; var r = document.getElementById('tennis-player-result'); if (r && J.d) fiche_(r); };
+  var fiche_ = function (res) {
+    var D = J.d, nom = D.nom, P = D.P, ms = D.ms, E = D.E, pr = D.pr, F = D.F, lg = D.lg, an = D.an;
+    var nm = D.nm, S = SFL(), C0 = window._g45TjCalc(ms, an), sfF = J.sf && J.sf !== 'tout' && C0.sf[J.sf] ? J.sf : 'tout';
+    var C = sfF === 'tout' ? C0 : window._g45TjCalc(ms.filter(function (m) { return m.sf === sfF; }), an);
     var av = typeof _g45TenAvatar === 'function' ? _g45TenAvatar({ displayName: nm, flag: F.f ? { href: F.f } : null }, 64) : '';
     var sous = [];
     if (E && E.rang) sous.push('N°' + E.rang + ' Elo ' + lg.toUpperCase());
@@ -78235,12 +78246,14 @@ window._g45AgJouUs = async function (nowTs) {
     var k = function (v, t, c) { return '<div style="background:#1e2740;border-radius:10px;padding:10px 6px;text-align:center;"><b style="display:block;font-size:22px;color:' + c + ';">' + v + '</b><span style="font-size:13px;color:#c9d3ee;font-weight:700;">' + t + '</span></div>'; };
     var h = '<div style="background:rgba(11,16,29,.94);border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:12px 14px;color:#fff;">'
       + '<div style="display:flex;align-items:center;gap:8px;">' + av + '<div><div style="font-size:20px;font-weight:900;">' + esc(nm) + '</div><div style="font-size:14px;color:#c9d3ee;font-weight:700;">' + esc(sous.join(' · ')) + '</div></div></div>';
+    if (C0.L.length) h += '<div style="margin-top:10px;">' + [['tout', '🌍 Global'], ['dur', S.dur.i + ' Dur'], ['terre', S.terre.i + ' Terre battue'], ['gazon', S.gazon.i + ' Gazon'], ['salle', S.salle.i + ' Salle']]
+      .filter(function (x) { return x[0] === 'tout' || C0.sf[x[0]]; }).map(function (x) { return chip(sfF === x[0], x[1], 'g45TjSf(\'' + x[0] + '\')'); }).join('') + '</div>';
     if (!C.L.length) h += '<div style="font-size:15px;margin-top:12px;">Aucun match ESPN pour la saison ' + an + '.</div>';
     else {
       h += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px;">' + k(C.w, 'victoires', '#1ed760') + k(C.l, 'défaites', '#ff6b6b') + k(C.p + ' %', 'gagnés', '#f5c542') + '</div>'
-        + lbl('Par surface (saison ' + an + ')');
+        + (sfF === 'tout' ? lbl('Par surface (saison ' + an + ')') : '');
       ['dur', 'terre', 'gazon', 'salle'].forEach(function (s) {
-        var x = C.sf[s]; if (!x) return; var n = x.w + x.l, p = Math.round(x.w / n * 100);
+        var x = sfF === 'tout' ? C.sf[s] : null; if (!x) return; var n = x.w + x.l, p = Math.round(x.w / n * 100);
         h += '<div style="display:grid;grid-template-columns:86px 1fr 104px;gap:8px;align-items:center;margin:7px 0;font-size:15px;font-weight:800;"><span>' + S[s].i + ' ' + S[s].l + '</span>'
           + '<div style="height:12px;border-radius:6px;background:#26304a;overflow:hidden;"><i style="display:block;height:100%;width:' + p + '%;background:' + (p >= 60 ? '#1ed760' : (p >= 45 ? '#f0c828' : '#ff6b6b')) + ';"></i></div>'
           + '<span style="text-align:right;">' + p + ' % · ' + x.w + '-' + x.l + '</span></div>';
@@ -78248,10 +78261,10 @@ window._g45AgJouUs = async function (nowTs) {
       if (E) { var r = E.r, el = []; if (r[2] > 0) el.push('dur ' + Math.round(r[2])); if (r[3] > 0) el.push('terre ' + Math.round(r[3])); if (r[4] > 0) el.push('gazon ' + Math.round(r[4])); if (el.length) h += '<div style="font-size:13px;color:#c9d3ee;">Elo (Tennis Abstract) : ' + el.join(' · ') + '</div>'; }
       h += lbl('Forme · ' + C.forme.length + ' derniers matchs (le plus récent à gauche)') + '<div style="display:flex;gap:5px;flex-wrap:wrap;">'
         + C.forme.map(function (v) { return '<span style="width:30px;height:30px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;font-weight:900;font-size:15px;background:' + (v === 'V' ? '#1ed760;color:#111' : '#ff4545;color:#fff') + ';">' + v + '</span>'; }).join('') + '</div>'
-        + lbl('Derniers matchs');
-      var ligne = function (m) { var s = S[m.sf] || S.dur; return '<div style="display:flex;justify-content:space-between;gap:8px;background:#1e2740;border-radius:10px;padding:9px 10px;margin-bottom:6px;font-size:14px;"><span>' + dateFr(m.t) + ' · ' + esc(m.tr) + ' · ' + s.i + ' · <b>' + (m.w ? 'bat' : 'perd contre') + '</b> ' + esc(m.an) + '</span><b style="flex:none;color:' + (m.w ? '#1ed760' : '#ff6b6b') + ';">' + esc(m.sc) + '</b></div>'; };
+        + lbl(sfF === 'tout' ? 'Derniers matchs' : 'Derniers matchs · ' + S[sfF].l);
+      var ligne = function (m) { var s = S[m.sf] || S.dur; return '<div style="display:flex;justify-content:space-between;gap:8px;background:#1e2740;border-radius:10px;padding:9px 10px;margin-bottom:6px;font-size:14px;"><span>' + dateFr(m.t) + ' · ' + esc(m.tr) + ' · ' + s.i + ' · <b>' + (m.w ? 'bat' : 'perd contre') + '</b> ' + esc(m.an) + '</span><b style="flex:none;color:' + (m.w ? '#1ed760' : '#ff6b6b') + ';">' + esc(m.w ? m.sc : String(m.sc || '').replace(/(\d+)-(\d+)/g, '$2-$1')) + '</b></div>'; };
       h += C.L.slice(0, 5).map(ligne).join('');
-      if (C.L.length > 5) h += '<div style="display:none;">' + C.L.slice(5).map(ligne).join('') + '</div><button onclick="g45TjTous(this)" style="cursor:pointer;width:100%;padding:9px;border-radius:9px;border:1px solid rgba(255,255,255,.3);background:transparent;color:#fff;font-size:14px;font-weight:800;">➕ voir les ' + C.L.length + ' matchs de la saison</button>';
+      if (C.L.length > 5) h += '<div style="display:none;">' + C.L.slice(5).map(ligne).join('') + '</div><button onclick="g45TjTous(this)" style="cursor:pointer;width:100%;padding:9px;border-radius:9px;border:1px solid rgba(255,255,255,.3);background:transparent;color:#fff;font-size:14px;font-weight:800;">➕ voir les ' + C.L.length + ' matchs' + (sfF === 'tout' ? ' de la saison' : ' sur ' + S[sfF].l.toLowerCase()) + '</button>';
     }
     var ta = 'https://www.tennisabstract.com/cgi-bin/' + (lg === 'wta' ? 'w' : '') + 'player.cgi?p=' + encodeURIComponent(nm.replace(/\s+/g, ''));
     var lien = function (u, t) { return '<a href="' + esc(u) + '" target="_blank" rel="noopener" style="flex:1;min-width:110px;text-align:center;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.25);font-weight:800;font-size:14px;color:#fff;text-decoration:none;">' + t + '</a>'; };
@@ -78326,4 +78339,13 @@ window._g45AgJouUs = async function (nowTs) {
     } catch (e) {}
     return p;
   };
+})();
+
+/* 20261020v — « bat Bye » sur la fiche d'Arthur Fils (capture d'Antoine) : un tour sans adversaire (Bye) n'est pas un match. Retiré de toutes les
+   saisons tennis (fiche joueur, analyse BET45, robot), y compris celles déjà gardées en mémoire (tn3_). */
+(function () {
+  if (typeof window._g45TnSaison !== 'function' || window._g45TnSaison._sansBye) return;
+  var f = window._g45TnSaison;
+  window._g45TnSaison = async function () { var L = await f.apply(this, arguments); return Array.isArray(L) ? L.filter(function (m) { return !(m && /^bye$/i.test(String(m.an || '').trim())); }) : L; };
+  window._g45TnSaison._sansBye = true;
 })();

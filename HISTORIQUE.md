@@ -2179,6 +2179,11 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   enveloppe loadTennisSaisons (cadre replié « 🏆 Classement par surface » avant #tennis-player-result). Calcul pur _g45TcListe(J, lg, sf) :
   Elo général / dur / terre / gazon, rang général, d = places gagnées. ATP / WTA, 30 + « voir plus », toucher = g45TjChoisir. Pas de pays dans le
   fichier Elo → photo ou initiales. Smoke tnJoueur complété (68). Publié avec 20261020t (« ok »).
+  20261020v (capture d'Antoine : fiche Arthur Fils OK — la recherche ESPN search/v2 TROUVE bien un joueur hors des matchs du jour ; « on
+  pourrait avoir un global / terre battue / dur / … ») : boutons 🌍 Global / Dur / Terre battue / Gazon / Salle sur la fiche (g45TjSf, données
+  gardées dans _g45TjEtat.d, seules les surfaces jouées) ; score des défaites du point de vue du joueur (« 5-7 4-6 ») ; « bat Bye » : les Bye
+  retirés de _g45TnSaison (enveloppe _sansBye : fiche, analyse, robot, mémoire tn3_ comprise) et de _g45TjCalc. Elo absent sur la capture :
+  données/elo_tennis.json PAS ENCORE CRÉÉ (1er passage du robot le matin, 8 h) → boutons de secours (10 noms ATP / WTA sans Paire) en attendant.
   _g45TnPerso pose les 3 blocs de l'écran. Smoke tnRun (65) ; tests tnRobot / tnRun calés sur « maintenant + quelques minutes » (le soir UTC,
   « + 2 h » tombait le lendemain).
   20261020c (croquis d'Antoine « Tendances = 4 boutons », maquette cliquable validée « oui, BET45 → Sélection du jour par défaut ») : ONGLET EN BOUTONS —
