@@ -2100,6 +2100,14 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   commande console d'Antoine). Sources gratuites autorisées : The Odds API seulement (gros tournois) ; tennis-data.co.uk = cotes PASSÉES et site
   jumeau de football-data.co.uk (interdit) ; scraping refusé (§ 6). Proposé : robot officiel « combiné » (confiance forte + proba ≥ 60 %, « sans cote »,
   + cote The Odds API sur les gros tournois). À re-sonder pendant le Masters de Paris.
+  20261020l (« OUI on est d'accord » = combiné ; leur site s'appuie sur la cote Pinnacle « marché + style » : notre avis, lui, est INDÉPENDANT
+  des cotes) : 🤖 TENNIS OFFICIEL. app.js _g45TnRobot(R, max 24, 15 min) : simples ATP / WTA du jour à venir → avis (2 saisons) → noté si
+  confiance FORTE et proba ≥ 60 % ; cote The Odds API en Grand Chelem seulement (codes de g45TennisOdds ; moyenne des books, proba sans marge
+  Pinnacle sinon moyenne) → si cote : ≥ 1,50 et d'accord (proba ≥ 50 %) sinon pas noté ; sans cote = c null (filtre « Sans cote »). k '1' / '2' =
+  joueur home / away d'ESPN, tn: 1, fa = phrase « En clair ». _g45TnPlat(scoreboard tennis) : tournoi → un event par match, score = sets gagnés
+  (historique + Sélection : direct et « gagnant si ça reste »). Historique : spDe atp / wta → 'tn' (Sport « 🎾 Tennis »), LGN ATP / WTA, spIco 🎾.
+  Robot tendances.mjs : appel après les 4 sports ; jugement tennis = competitor.winner d'ESPN (abandon compris), s = sets. Smoke tnRobot (64).
+  Piwi (« scrapping sur piwi risqué ? ») : NON — CGU + compte joueur d'Antoine fermé en cas de robot (§ 6).
   20261020c (croquis d'Antoine « Tendances = 4 boutons », maquette cliquable validée « oui, BET45 → Sélection du jour par défaut ») : ONGLET EN BOUTONS —
   bloc « TENDANCES EN BOUTONS » en fin d'app.js (enveloppe la plus externe de loadTendancesTab). Barre #g45tr-nav : 📒 Tendances BET45 · 🔍 Tendances perso ·
   ⚽ Tendances buteurs · 📏 CLV ; dans BET45 : ⭐ Sélection du jour (_g45TrSelHtml, forcée ouverte) · 📅 Historique (calendrier + liste du jour) ·

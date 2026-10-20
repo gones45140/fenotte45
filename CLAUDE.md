@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action (il est court exprès). Le détail de tout l'historique est dans HISTORIQUE.md
-(à chercher avec grep, jamais à lire en entier). Mis à jour le 20/10/2026 (version déployée : 20261020k, même app.js sur gones45 et fenotte45).
+(à chercher avec grep, jamais à lire en entier). Mis à jour le 20/10/2026 (version déployée : 20261020l, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -133,7 +133,7 @@ PIÈGES À NE JAMAIS OUBLIER :
 - Cotes en direct hors foot : commande console « 4 ligues » à lancer par Antoine pendant un match.
 - Abonnement : plan prêt, NON codé (_G45_ABO_PLAN false) ; micro-entreprise reportée ; verrou serveur à faire le moment venu.
 - RGPD : SQL supprimer-compte.sql à installer par Antoine dans les 2 projets Supabase.
-- 🎾 Cotes tennis : ESPN = 0 (Bruxelles 250, Bâle / Vienne 500, sondé le 20/10) → re-sonder pendant le Masters de Paris ; robot tennis officiel en attente du choix d'Antoine (« combiné » proposé).
+- 🎾 Cotes tennis : ESPN = 0 (sondé le 20/10) → re-sonder pendant le Masters de Paris (+ codes The Odds API des Masters 1000) ; robot tennis officiel « combiné » en place (20261020l).
 - Surebet : mises « Mise 1 / Mise 2 » en blanc. Cédric : toucher 🤍 sur Portugal. Worker : budget `_lourd` 4 → 2 proposé.
 
 ## 8. Façon de travailler en session cloud

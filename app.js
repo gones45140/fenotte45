@@ -75111,7 +75111,7 @@ var _G45_BK_DOM = [
   var O = window._g45TrOff = { j: null, t: 0, enCours: false, f: 'tout', tout: false };
   var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
   var eur = function (v) { return (v >= 0 ? '+' : '−') + Math.abs(v).toFixed(2).replace('.', ',') + ' €'; };
-  var spIco = function (sl) { return { nhl: '🏒', nba: '🏀', nfl: '🏈' }[sl] || '⚽'; };
+  var spIco = function (sl) { return { nhl: '🏒', nba: '🏀', nfl: '🏈', atp: '🎾', wta: '🎾' }[sl] || '⚽'; };
   var jourTxt = function (t) { try { return new Date(t).toLocaleDateString('fr-FR', { weekday: 'short', day: '2-digit', month: '2-digit' }); } catch (e) { return ''; } };
 
   function charger() {
@@ -75183,8 +75183,9 @@ var _G45_BK_DOM = [
     Promise.all(l.map(function (k) {
       O.lvT[k] = now;
       var sl = k.split('|')[0], dt = k.split('|')[1];
-      return fetch('https://site.api.espn.com/apis/site/v2/sports/' + ({ nhl: 'hockey', nba: 'basketball', nfl: 'football' }[sl] || 'soccer') + '/' + sl + '/scoreboard?dates=' + dt, { cache: 'no-store' })
+      return fetch('https://site.api.espn.com/apis/site/v2/sports/' + ({ nhl: 'hockey', nba: 'basketball', nfl: 'football', atp: 'tennis', wta: 'tennis' }[sl] || 'soccer') + '/' + sl + '/scoreboard?dates=' + dt, { cache: 'no-store' })
         .then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+          if (window._g45TnPlat) j = window._g45TnPlat(j);   /* 20261020l : tennis (tournoi → matchs, score = sets) */
           ((j && j.events) || []).forEach(function (e) {
             var c = (e.competitions && e.competitions[0]) || {}, st = (c.status && c.status.type) || {};
             var etat = st.completed ? 'post' : (st.state === 'in' ? 'in' : null); if (!etat) return;
@@ -75212,7 +75213,7 @@ var _G45_BK_DOM = [
        les anciens boutons Toutes / D'accord / Désaccord = ligne « Avis » (O.f gardé pour g45TrOffF). Tout (tuiles, calendrier, courbe) suit. */
     var F = O.flt || (O.flt = (function () { try { return JSON.parse(localStorage.getItem('g45tr_off_flt') || '{}') || {}; } catch (e) { return {}; } })());
     F.av = O.f === 'acc' || O.f === 'des' ? O.f : (F.av === 'acc' || F.av === 'des' ? (O.f = F.av) : '');
-    var spDe = function (sl) { return { nhl: 'hk', nba: 'bk', nfl: 'fb' }[sl] || 'ft'; };
+    var spDe = function (sl) { return { nhl: 'hk', nba: 'bk', nfl: 'fb', atp: 'tn', wta: 'tn' }[sl] || 'ft'; };   /* 20261020l : 🎾 */
     var tyDe = function (k) { k = String(k || ''); return /^[12]$/.test(k) ? 'vic' : (/^(1N|2N|12)$/.test(k) ? 'dc' : (/^btts/.test(k) ? 'bts' : (/^hc/.test(k) ? 'hc' : (/^o/.test(k) ? 'ov' : (/^u/.test(k) ? 'un' : 'aut'))))); };
     var coDe = function (c) { return !(c > 1) ? 'sc' : (c < 1.8 ? 'c1' : (c < 2.2 ? 'c2' : 'c3')); };
     var prDe = function (p) { return p >= 0.7 ? 'p3' : (p >= 0.6 ? 'p2' : 'p1'); };
@@ -75247,7 +75248,7 @@ var _G45_BK_DOM = [
       + '<span>🔎 Filtres' + (nbF ? ' <span style="background:#2563eb;border-radius:10px;padding:1px 8px;font-size:12px;margin-left:4px;">' + nbF + ' actif' + (nbF > 1 ? 's' : '') + '</span>' : '') + '</span><span>' + (O.fOuv ? '▴' : '▾') + '</span></div>';
     if (O.fOuv) {
       h += '<div style="padding:0 12px 10px;">'
-        + ligne('Sport', 'sp', [['ft', '⚽ Foot'], ['hk', '🏒 Hockey'], ['bk', '🏀 NBA'], ['fb', '🏈 NFL']], function (x) { return spDe(x.sl); })
+        + ligne('Sport', 'sp', [['ft', '⚽ Foot'], ['hk', '🏒 Hockey'], ['tn', '🎾 Tennis'], ['bk', '🏀 NBA'], ['fb', '🏈 NFL']], function (x) { return spDe(x.sl); })
         + ligne('Championnat', 'sl', slOpts, function (x) { return x.sl; })
         + ligne('Type de pari', 'ty', [['vic', 'Victoire'], ['dc', 'Double chance'], ['ov', 'Over'], ['un', 'Under'], ['bts', 'Les deux marquent'], ['hc', 'Handicap'], ['aut', 'Autre']], function (x) { return tyDe(x.k); })
         + ligne('Cote', 'co', [['sc', 'Sans cote'], ['c1', '1,50-1,79'], ['c2', '1,80-2,19'], ['c3', '2,20 et +']], function (x) { return coDe(x.c); })
@@ -75278,7 +75279,7 @@ var _G45_BK_DOM = [
     var jugM = joursM.filter(function (k) { return J2[k].some(function (x) { return x.r === 0 || x.r === 1; }); });
     if (!O.jour || O.jour.slice(0, 7) !== O.mois || !J2[O.jour]) O.jour = jugM.length ? jugM[jugM.length - 1] : (joursM[joursM.length - 1] || null);
     var nomMois = function (m) { var p = m.split('-'); try { return new Date(+p[0], +p[1] - 1, 1).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }); } catch (e) { return m; } };
-    var LGN = { nhl: 'NHL', nba: 'NBA', nfl: 'NFL' };
+    var LGN = { nhl: 'NHL', nba: 'NBA', nfl: 'NFL', atp: 'ATP', wta: 'WTA' };
     var lgNom = function (sl) { if (LGN[sl]) return LGN[sl]; var l = sl; try { l = _g45TrCompLbl(sl); } catch (e) {} return String(l).replace(/^\S+\s/, function (m) { return /[a-z0-9]/i.test(m) ? m : ''; }); };
     var lgUrl = function (sl) {
       var u = (J.lg && J.lg[sl]) || '';
@@ -76795,8 +76796,8 @@ window._g45AgJouUs = async function (nowTs) {
   var URL_OFF = 'https://raw.githubusercontent.com/gones45140/gones45/main/donn%C3%A9es/tendances_officielles.json';
   var S = window._g45TrSel = { lv: {}, lvT: {}, enCours: false };
   var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
-  var spIco = function (sl) { return { nhl: '🏒', nba: '🏀', nfl: '🏈' }[sl] || '⚽'; };
-  var LGN = { nhl: 'NHL', nba: 'NBA', nfl: 'NFL' };
+  var spIco = function (sl) { return { nhl: '🏒', nba: '🏀', nfl: '🏈', atp: '🎾', wta: '🎾' }[sl] || '⚽'; };
+  var LGN = { nhl: 'NHL', nba: 'NBA', nfl: 'NFL', atp: 'ATP', wta: 'WTA' };
   var lgNom = function (sl) { if (LGN[sl]) return LGN[sl]; var l = sl; try { l = _g45TrCompLbl(sl); } catch (e) {} return String(l).replace(/^[^\wÀ-ÿ]+\s*/, ''); };
   var hhmm = function (t) { try { return new Date(t).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }); } catch (e) { return ''; } };
   var jourLoc = function (d) { d = new Date(d); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); };
@@ -76824,8 +76825,9 @@ window._g45AgJouUs = async function (nowTs) {
     S.lvEnCours = true;
     Promise.all(l.map(function (k) {
       S.lvT[k] = now; var sl = k.split('|')[0], dt = k.split('|')[1];
-      return fetch('https://site.api.espn.com/apis/site/v2/sports/' + ({ nhl: 'hockey', nba: 'basketball', nfl: 'football' }[sl] || 'soccer') + '/' + sl + '/scoreboard?dates=' + dt, { cache: 'no-store' })
+      return fetch('https://site.api.espn.com/apis/site/v2/sports/' + ({ nhl: 'hockey', nba: 'basketball', nfl: 'football', atp: 'tennis', wta: 'tennis' }[sl] || 'soccer') + '/' + sl + '/scoreboard?dates=' + dt, { cache: 'no-store' })
         .then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+          if (window._g45TnPlat) j = window._g45TnPlat(j);   /* 20261020l : tennis (tournoi → matchs, score = sets) */
           ((j && j.events) || []).forEach(function (e) {
             var c = (e.competitions && e.competitions[0]) || {}, st = (c.status && c.status.type) || {};
             var etat = st.completed ? 'post' : (st.state === 'in' ? 'in' : null); if (!etat) return;
@@ -77565,6 +77567,89 @@ window._g45AgJouUs = async function (nowTs) {
         + '<div style="margin-top:7px;">' + bouton(m.lg, m.a, m.b, tn, ekDe(m.c, m.ev), 'g45tn-j-' + i, lieuDe(m.c)) + '</div></div>';
     });
     cible.innerHTML = h;
+  };
+  /* ═══ 🤖 TENNIS OFFICIEL (20261020l, « OK combiné » : « que BET45 donne des tendances tennis si bonne confiance, même filtre que les autres
+     sports ») ═══ Appelé par le robot .github/scripts/tendances.mjs. ESPN n'a AUCUNE cote tennis (sondé le 20/10 : Bruxelles 250, Bâle /
+     Vienne 500) → COMBINÉ : un match est noté si l'avis BET45 est en confiance FORTE et sa proba ≥ R.pmin (60 %) ; si The Odds API a la cote
+     (Grands Chelems seulement : codes connus de g45TennisOdds ; Masters à sonder au Masters de Paris), mêmes filtres que les autres sports :
+     cote ≥ R.min (1,50) et bookmakers d'accord (proba sans marge du joueur choisi ≥ 50 %) ; sinon noté « sans cote » (c null, filtre « Sans cote »
+     de l'historique). k = '1' (joueur « home » d'ESPN) / '2' (« away »). max matchs, et arrêt après dureeMs pour tenir dans le temps du robot. */
+  window._g45TnRobot = async function (R, max, dureeMs) {
+    R = R || { min: 1.5, pmin: 0.6 }; max = max || 24; var fin = Date.now() + (dureeMs || 15 * 60000);
+    var now = Date.now(), ymd = (typeof _g45ymd === 'function') ? _g45ymd(new Date()) : '', L = [];
+    for (var li = 0; li < 2; li++) {
+      var lg = li ? 'wta' : 'atp', j = null;
+      try { j = await getJ('https://site.api.espn.com/apis/site/v2/sports/tennis/' + lg + '/scoreboard?dates=' + ymd); } catch (e) {}
+      ((j && j.events) || []).forEach(function (ev) {
+        (ev.groupings || []).forEach(function (g) {
+          if (!/singles/i.test((g.grouping && g.grouping.displayName) || '')) return;
+          (g.competitions || []).forEach(function (c) {
+            var st = (c.status && c.status.type && c.status.type.state) || '', t = Date.parse(c.date || c.startDate);
+            if (st !== 'pre' || !(t > now) || (ymd && _g45ymd(new Date(t)) !== ymd) || (c.competitors || []).length !== 2) return;
+            L.push({ lg: lg, ev: ev, c: c, t: t });
+          });
+        });
+      });
+    }
+    L.sort(function (x, y) { return x.t - y.t; }); L = L.slice(0, max);
+    var cotes = {}, out = [], an = new Date().getFullYear();
+    var histo = async function (lg, id) { var t = []; for (var y = an; y >= an - 1; y--) t = t.concat((await window._g45TnSaison(lg, id, y)) || []); var vu = {}; return t.filter(function (m) { if (!m.id) return true; if (vu[m.id]) return false; vu[m.id] = 1; return true; }); };
+    for (var i = 0; i < L.length && Date.now() < fin; i++) {
+      try {
+        var m = L[i], cps = m.c.competitors, hm = cps.filter(function (x) { return x.homeAway === 'home'; })[0] || cps[0], aw = cps.filter(function (x) { return x.homeAway === 'away'; })[0] || cps[1];
+        var A = joueur(hm), B = joueur(aw); if (!A.id || !B.id) continue;
+        var tour = m.ev.name || m.ev.shortName || '', ek = ekDe(m.c, m.ev), adr = lieuDe(m.c), ind = false;
+        try { var e0 = await evInfo(m.lg, 'events/' + ek); if (e0) { ind = e0.ind; adr = adr || e0.adr; } } catch (e) {}
+        var py = window._g45TnPays(adr), ctx = { sf: window._g45TnSurf(tour, ind), ind: ind, cat: window._g45TnCat(tour, m.lg), ek: ek, py: py ? py.n : '', pf: py ? py.f : '', adr: adr };
+        var ha = await histo(m.lg, A.id), hb = await histo(m.lg, B.id);
+        var CA = window._g45TnCalc(ha, Object.assign({}, ctx, { adv: B.id })), CB = window._g45TnCalc(hb, Object.assign({}, ctx, { adv: A.id }));
+        var V = window._g45TnAvis(CA, CB, A.rk, B.rk);
+        if (!V || V.conf !== 'forte' || Math.max(V.p, 1 - V.p) < R.pmin) continue;
+        var G = V.qui === 'a' ? A : B, k = V.qui === 'a' ? '1' : '2', pG = Math.max(V.p, 1 - V.p);
+        /* cote (Grands Chelems) : moyenne des bookmakers pour le joueur choisi, proba sans marge (Pinnacle, sinon moyenne) */
+        var cote = null, fair = null, t2 = tour.toLowerCase();
+        var base = /wimbledon/.test(t2) ? 'wimbledon' : /us open/.test(t2) ? 'us_open' : /french|roland/.test(t2) ? 'french_open' : /australian|aus open/.test(t2) ? 'aus_open_singles' : null;
+        if (base && typeof _g45OddsFindEvent === 'function') {
+          var slug = 'tennis_' + m.lg + '_' + base;
+          if (cotes[slug] === undefined) { try { var rq = await fetch((typeof FD_PROXY !== 'undefined' ? FD_PROXY : 'https://fd-proxy.touraine-antoine.workers.dev') + '/odds?sport=' + slug + '&regions=eu&markets=h2h'); cotes[slug] = rq.ok ? await rq.json() : null; } catch (e) { cotes[slug] = null; } }
+          var oe = Array.isArray(cotes[slug]) ? _g45OddsFindEvent(cotes[slug], A.n, B.n) : null;
+          if (oe) {
+            var nomG = /* nom côté The Odds API du joueur choisi */ (function () { var x = [oe.home_team, oe.away_team], sn = G.n.split(' ').pop().toLowerCase(); return x.filter(function (n) { return String(n).toLowerCase().indexOf(sn) >= 0; })[0] || null; })();
+            if (nomG) {
+              var autre = nomG === oe.home_team ? oe.away_team : oe.home_team, pr = function (b, n) { var mk = (b.markets || []).filter(function (x) { return x.key === 'h2h'; })[0]; var o = mk && (mk.outcomes || []).filter(function (x) { return x.name === n; })[0]; return o ? o.price : null; };
+              var bs = oe.bookmakers || [], s = 0, n = 0; bs.forEach(function (b) { var v = pr(b, nomG); if (v) { s += v; n++; } }); if (n) cote = Math.round(s / n * 100) / 100;
+              var pin = bs.filter(function (b) { return b.key === 'pinnacle'; })[0], ref = pin ? [pin] : bs, iG = 0, iA = 0, nn = 0;
+              ref.forEach(function (b) { var a = pr(b, nomG), c2 = pr(b, autre); if (a && c2) { iG += 1 / a; iA += 1 / c2; nn++; } });
+              if (nn) fair = Math.round(iG / (iG + iA) * 1000) / 1000;
+            }
+          }
+        }
+        var desac = fair != null && fair < 0.5;
+        if (cote != null && (cote < R.min || desac)) continue;   /* avec cote : mêmes filtres que les autres sports */
+        var clair = ''; try { clair = window._g45TnClair({ a: A, b: B, A: CA, B: CB, ctx: ctx }, V).replace(/<[^>]*>/g, ''); } catch (e) {}
+        out.push({ id: String(m.c.id), sl: m.lg, t: m.t, h: A.n, a: B.n, m: 'Victoire ' + G.n, k: k, p: Math.round(pG * 1000) / 1000,
+          c: cote, cd: null, f: fair, d: desac ? 1 : 0, r: null, fa: clair ? [clair.slice(0, 160)] : undefined, nm: Math.min(CA.n, CB.n) || undefined, tn: 1 });
+      } catch (e) {}
+    }
+    return out;
+  };
+  /* scoreboard tennis ESPN (events = TOURNOIS, groupings[].competitions = matchs) → forme « un event par match », score = sets gagnés :
+     l'historique et la Sélection du jour lisent alors le tennis comme les autres sports (en cours, fini, « gagnant si ça reste »). Pur, testé. */
+  window._g45TnPlat = function (j) {
+    if (!j || !(j.events || []).some(function (e) { return e && e.groupings; })) return j;
+    var ev = [];
+    j.events.forEach(function (e) {
+      (e.groupings || []).forEach(function (g) {
+        (g.competitions || []).forEach(function (c) {
+          var cps = c.competitors || [], sets = function (x, y) { var n = 0; (x.linescores || []).forEach(function (l, i) { var o = (y.linescores || [])[i]; if (l && o && +l.value > +o.value) n++; }); return n; };
+          if (cps.length !== 2) return;
+          var A = cps[0], B = cps[1];
+          ev.push({ id: c.id, competitions: [{ status: c.status, competitors: [
+            { homeAway: A.homeAway || 'home', score: String(sets(A, B)), winner: A.winner }, { homeAway: B.homeAway || 'away', score: String(sets(B, A)), winner: B.winner }] }] });
+        });
+      });
+    });
+    return { events: ev, leagues: j.leagues };
   };
   window._g45TnEcran = function () {
     return '<div style="background:rgba(11,16,29,.92);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px 14px;color:#fff;margin-bottom:12px;">'
