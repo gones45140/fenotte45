@@ -2051,6 +2051,15 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   re-noté chaque matin. Robot : FAMILLE = type sans le chiffre (un48.5 → un, hc1:7.5 → hc1:) ; famille déjà notée un jour précédent pour ce match = pas
   reprise ; doublons existants retirés (1er noté gardé : Jaguars–Texans un41.5, Bears–Patriots un49.5 / un50.5 enlevés à la main le 20/10). app.js inchangé.
   17/10 (« au pire on met 8h ? » : passage du 17/10 lancé par GitHub à 13 h 51) : robot dès 8 h à Paris (parisH() < 8), crons 6 / 7 / 8 / 9 h UTC (rattrapage des retards).
+  20261020c (croquis d'Antoine « Tendances = 4 boutons », maquette cliquable validée « oui, BET45 → Sélection du jour par défaut ») : ONGLET EN BOUTONS —
+  bloc « TENDANCES EN BOUTONS » en fin d'app.js (enveloppe la plus externe de loadTendancesTab). Barre #g45tr-nav : 📒 Tendances BET45 · 🔍 Tendances perso ·
+  ⚽ Tendances buteurs · 📏 CLV ; dans BET45 : ⭐ Sélection du jour (_g45TrSelHtml, forcée ouverte) · 📅 Historique (calendrier + liste du jour) ·
+  📈 Graphique / Stats (bilan du mois d'avant, tuiles, courbe, statistiques). Mémoire localStorage g45tr_vue (bet/perso/but/clv) + g45tr_sous (sel/his/gra).
+  Rien de réécrit : CSS selon #t-tend[data-g45v] (bet-sel / bet-his / bet-gra / perso / but / clv) ; repères .g45tro-his / .g45tro-gra posés dans
+  _g45TrOffHtml (enveloppé pour le titre « 📅 Historique BET45 » / « 📈 Graphique / Stats BET45 »). Perso : filtres à gauche, « Analyser » à droite
+  (.g45tr-prow, nœuds déplacés, mêmes id ; dessous sur téléphone), boutons Voir buteurs / CLV et historique cachés. Buteurs / CLV : bouton « ← Tendances »
+  caché ; MutationObserver repose la barre en tête quand ces écrans réécrivent #t-tend. Point de la courbe touché en Graphique → passe sur Historique.
+  Smoke : hockey / désaccord passent g45tr_vue = perso ; nouveau contrôle trVues (62).
   20261018y (« j'avais pas appuyé sur Analyser, ça sortait pas les matchs du jour », maquette validée « oui ») : 📒 SÉLECTION DU JOUR — bloc #g45tr-sel (fin d'app.js)
   sous la barre des sous-onglets de #t-tend (MutationObserver + enveloppe de loadTendancesTab ; comptes premium seulement) : tendances du robot notées
   AUJOURD'HUI (x.n date locale), par championnat, cote / 📊 / 🏦, direct ESPN ?dates= (window._g45TrSel.lv, 1 min) → gagnant si ça reste / provisoire ;

@@ -75265,7 +75265,7 @@ var _G45_BK_DOM = [
       if (Bp.n) {
         var parSl = {}; Lp.forEach(function (x) { (parSl[x.sl] = parSl[x.sl] || []).push(x); });
         var best = null; Object.keys(parSl).forEach(function (sl) { var b = calcJ(parSl[sl]); if (b.n >= 5 && (!best || b.ok / b.n > best.p)) best = { sl: sl, p: b.ok / b.n }; });
-        h += '<div style="margin:10px 0 4px;border-radius:16px;padding:12px 14px;background:linear-gradient(120deg,#1d3b2a,#14203a);border:1px solid #1ed76055;">'
+        h += '<div class="g45tro-gra" style="margin:10px 0 4px;border-radius:16px;padding:12px 14px;background:linear-gradient(120deg,#1d3b2a,#14203a);border:1px solid #1ed76055;">'
           + '<div style="font-size:13px;font-weight:800;color:#8ff0b5;">🏁 BILAN DE ' + esc(nomMois(pmk).toUpperCase()) + ' · visible jusqu\'au 7</div>'
           + '<div style="display:flex;gap:14px;flex-wrap:wrap;align-items:baseline;margin-top:4px;"><span style="font-size:28px;font-weight:900;">' + Math.round(Bp.ok / Bp.n * 100) + ' %</span><span style="font-size:15px;">' + Bp.ok + ' / ' + Bp.n + ' réussies</span>'
           + (Bp.nc ? '<span style="font-size:28px;font-weight:900;color:' + (Bp.g >= 0 ? '#1ed760' : '#ff6b6b') + ';">' + eurC(Bp.g) + '</span><span style="font-size:14px;">ROI ' + (Bp.roi >= 0 ? '+' : '') + Math.round(Bp.roi * 100) + ' %</span>' : '')
@@ -75278,7 +75278,7 @@ var _G45_BK_DOM = [
       + (CM.n ? '<circle cx="18" cy="18" r="15" fill="none" stroke="#1ed760" stroke-width="4" stroke-dasharray="' + (pctM * 0.942).toFixed(1) + ' 100" transform="rotate(-90 18 18)" stroke-linecap="round"/>' : '')
       + '<text x="18" y="22" text-anchor="middle" fill="#fff" font-size="10" font-weight="800">' + (CM.n ? pctM + '%' : '—') + '</text></svg>';
     var tuile = function (t, mil, s) { return '<div class="g45tro-k" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:10px;text-align:center;"><div style="font-size:13px;font-weight:700;color:#c9d3ee;">' + t + '</div>' + mil + '<div style="font-size:12px;color:#c9d3ee;">' + s + '</div></div>'; };
-    h += '<div class="g45tro-kpis" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0;">'
+    h += '<div class="g45tro-kpis g45tro-gra" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0;">'
       + tuile('✅ Réussite du mois', ring, CM.n ? CM.ok + ' / ' + CM.n + ' jugées' : 'aucune jugée')
       + tuile('💶 Gain à 1 €', '<div style="font-size:26px;font-weight:900;margin:8px 0;color:' + (CM.g >= 0 ? '#1ed760' : '#ff6b6b') + ';">' + (CM.nc ? eurC(CM.g) : '—') + '</div>', CM.nc ? CM.nc + ' paris avec cote · ROI ' + (CM.roi >= 0 ? '+' : '') + Math.round(CM.roi * 100) + ' %' : 'aucun pari avec cote jugé')
       + tuile('⏳ En attente', '<div style="font-size:26px;font-weight:900;margin:8px 0;">' + CM.att + '</div>', 'résultat après le match')
@@ -75291,6 +75291,9 @@ var _G45_BK_DOM = [
       /* 20261018d (capture téléphone en paysage, « à droite le bordel ») : zone des paris trop étroite (< 1200 px) → nom du pari sur sa ligne,
          pastilles dessous, logo du championnat retiré (il passait sur les pastilles). Grand PC inchangé. */
       + '@media(min-width:700px) and (max-width:1199px){#g45tr-off .g45tro-pn{flex-basis:100%!important}#g45tr-off .g45tro-wm{display:none!important}}</style>';
+    /* 20261020c (onglet Tendances en boutons) : calendrier + liste du jour = « 📅 Historique » (.g45tro-his), tuiles + courbe + stats =
+       « 📈 Graphique / Stats » (.g45tro-gra) ; c'est le bloc en fin d'app.js « TENDANCES EN BOUTONS » qui cache l'un ou l'autre. */
+    h += '<div class="g45tro-his">';
     h += '<div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;">' + ['lun', 'mar', 'mer', 'jeu', 'ven', 'sam', 'dim'].map(function (j) { return '<div style="text-align:center;font-size:12px;font-weight:700;color:#aab6d6;text-transform:uppercase;">' + j + '</div>'; }).join('');
     for (var i = 0; i < dec; i++) h += '<div></div>';
     for (var dd = 1; dd <= nbj; dd++) {
@@ -75359,6 +75362,8 @@ var _G45_BK_DOM = [
         });
       });
     }
+    h += '</div>';   /* fin .g45tro-his (20261020c) */
+    h += '<div class="g45tro-gra">';   /* 20261020c : courbe + statistiques */
     /* Courbe du mois, un point par jour (paris avec cote) */
     var P = [{ l: '', v: 0 }], cum = 0;
     joursM.forEach(function (k) { var Bk = calcJ(J2[k]); if (!Bk.nc) return; cum += Bk.g; P.push({ k: k, l: k.slice(8) + '/' + k.slice(5, 7), v: Math.round(cum * 100) / 100, d: Bk.g }); });
@@ -75416,6 +75421,7 @@ var _G45_BK_DOM = [
         + sbloc('📈 Annoncé contre réel', sPr, '<div style="font-size:13px;color:#c9d3ee;">Trait blanc = % annoncé par les stats · barre = % réussi</div>') + sbloc('🤝 Stats et bookmakers', sAv) + '</div>'
         + '<div style="font-size:13px;color:#c9d3ee;margin-top:6px;">Gain = 1 € par pari avec cote · « — » = pas de cote</div>';
     } catch (e) {}
+    h += '</div>';   /* fin .g45tro-gra (20261020c) */
     h += '<div style="margin-top:10px;font-size:12px;color:#c9d3ee;">Statistiques, pas des pronos sûrs. 🔞 Jouer comporte des risques : 09 74 75 13 13.</div>';
     return box(h);
   };
@@ -76829,7 +76835,7 @@ window._g45AgJouUs = async function (nowTs) {
           + '<div style="font-size:13px;margin-top:5px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;">' + (pP != null ? '<span>📊 ' + pP + ' %</span>' : '') + '<span>🏦 ' + (pF != null ? pF + ' %' : '—') + '</span>' + res + '</div></div>';
       });
     });
-    h += '<div style="font-size:12px;color:#aab6d6;margin-top:4px;">Statistiques, pas des pronos sûrs · bilan complet dans l\'historique en bas.</div>';
+    h += '<div style="font-size:12px;color:#aab6d6;margin-top:4px;">Statistiques, pas des pronos sûrs · bilan complet dans 📅 Historique.</div>';
     return h + '</div>';
   }
   window._g45TrSelHtml = html;
@@ -76879,3 +76885,137 @@ window._g45AgJouUs = async function (nowTs) {
   for (var i = localStorage.length - 1; i >= 0; i--) { var k = localStorage.key(i); if (k && k.indexOf('g45cm11_soccer_') === 0) localStorage.removeItem(k); }
   localStorage.setItem('g45_cm_fix1', '1');
 } catch (e) {} })();
+
+/* ═══ 🔥 TENDANCES EN BOUTONS (20261020c, croquis d'Antoine + maquette validée « oui, BET45 → Sélection du jour par défaut ») ═══
+   Avant : tout empilé sur une page (sélection du jour, filtres, boutons Buteurs / CLV, quota, fiabilité, historique officiel, analyse)
+   = doublons. Maintenant 4 boutons en haut : 📒 Tendances BET45 · 🔍 Tendances perso · ⚽ Tendances buteurs · 📏 CLV ; dans BET45,
+   3 sous-boutons : ⭐ Sélection du jour · 📅 Historique (calendrier + liste du jour) · 📈 Graphique / Stats (tuiles, courbe, stats).
+   RIEN N'EST RÉÉCRIT : l'écran perso reste celui de loadTendancesTab (toutes ses enveloppes), Buteurs / CLV = g45ButeursView /
+   g45ClvView, Sélection = _g45TrSelHtml, Historique et Graphique = _g45TrOffHtml (repères .g45tro-his / .g45tro-gra posés dedans).
+   On choisit l'écran, puis le CSS cache ce qui n'en fait pas partie, selon l'attribut data-g45v de #t-tend.
+   POURQUOI UN OBSERVATEUR : Buteurs / CLV et leurs sous-écrans (NHL, NBA…) réécrivent #t-tend.innerHTML eux-mêmes → la barre est
+   reposée en tête dès qu'elle manque (même principe que la Sélection du jour). La Sélection, elle, se repose toute seule partout
+   (son propre observateur) : cachée par le CSS hors de « ⭐ Sélection du jour ».
+   Mémoire : localStorage g45tr_vue (bet / perso / but / clv) et g45tr_sous (sel / his / gra) ; par défaut bet + sel. */
+(function () {
+  var VUES = { bet: 1, perso: 1, but: 1, clv: 1 }, SOUS = { sel: 1, his: 1, gra: 1 };
+  var lire = function (k, ok, def) { try { var v = localStorage.getItem(k); return ok[v] ? v : def; } catch (e) { return def; } };
+  var ecrire = function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} };
+  var vue = function () { return lire('g45tr_vue', VUES, 'bet'); };
+  var sous = function () { return lire('g45tr_sous', SOUS, 'sel'); };
+  var cle = function () { var v = vue(); return v === 'bet' ? 'bet-' + sous() : v; };
+  window._g45TrVueCle = cle;   /* pour les essais */
+
+  try {
+    if (!document.getElementById('g45tr-vue-css')) {
+      var st = document.createElement('style'); st.id = 'g45tr-vue-css';
+      st.textContent = '#t-tend[data-g45v]:not([data-g45v="bet-sel"]) #g45tr-sel{display:none!important}'
+        + '#t-tend[data-g45v="bet-his"] #g45tr-off .g45tro-gra,#t-tend[data-g45v="bet-gra"] #g45tr-off .g45tro-his{display:none!important}'
+        + '#t-tend[data-g45v="perso"] #g45tr-off,#t-tend[data-g45v="perso"] .g45tr-butclv{display:none!important}'
+        + '#t-tend[data-g45v="but"] button[onclick="loadTendancesTab()"],#t-tend[data-g45v="clv"] button[onclick="loadTendancesTab()"]{display:none!important}'
+        + '#g45tr-nav .g45tr-n1{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:2px 0 10px}'
+        + '@media(min-width:620px){#g45tr-nav .g45tr-n1{grid-template-columns:repeat(4,minmax(0,1fr))}}'
+        + '#g45tr-nav .g45tr-n2{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:0 0 12px}'
+        + '#g45tr-nav button{cursor:pointer;color:#fff;font-weight:800;line-height:1.2}'
+        + '.g45tr-prow{display:flex;flex-wrap:wrap;gap:12px;align-items:stretch}.g45tr-pfil{flex:1 1 420px;min-width:0}'
+        + '.g45tr-prun{flex:1 1 200px;display:flex;flex-direction:column;justify-content:center;margin-bottom:11px}'
+        + '.g45tr-prun>button{width:100%;font-size:16px!important;font-weight:800;padding:14px 12px!important}';
+      (document.head || document.documentElement).appendChild(st);
+    }
+  } catch (e) {}
+
+  var nav = function () {
+    var v = vue(), s = sous();
+    var b1 = function (k, lbl) {
+      var on = v === k;
+      return '<button onclick="g45TrVue(\'' + k + '\')" style="font-size:15px;padding:12px 6px;border-radius:12px;border:1px solid ' + (on ? '#5aa9ff' : 'rgba(255,255,255,.25)')
+        + ';background:' + (on ? '#2563eb' : 'rgba(26,34,53,.95)') + ';">' + lbl + '</button>';
+    };
+    var b2 = function (k, lbl) {
+      var on = s === k;
+      return '<button onclick="g45TrSous(\'' + k + '\')" style="font-size:14px;padding:10px 4px;border-radius:10px;border:' + (on ? '2px solid #f5c542' : '1px solid rgba(255,255,255,.22)')
+        + ';background:' + (on ? '#1a2235' : 'rgba(11,16,29,.92)') + ';">' + lbl + '</button>';
+    };
+    return '<div id="g45tr-nav"><div class="g45tr-n1">' + b1('bet', '📒 Tendances BET45') + b1('perso', '🔍 Tendances perso')
+      + b1('but', '⚽ Tendances buteurs') + b1('clv', '📏 CLV') + '</div>'
+      + (v === 'bet' ? '<div class="g45tr-n2">' + b2('sel', '⭐ Sélection du jour') + b2('his', '📅 Historique') + b2('gra', '📈 Graphique / Stats') + '</div>' : '')
+      + '</div>';
+  };
+
+  var place = false;
+  var poserNav = function (el) {
+    if (place || !el || !el.getAttribute('data-g45v')) return;
+    place = true;
+    try {
+      var n = document.getElementById('g45tr-nav');
+      if (!n) { var t = document.createElement('div'); t.innerHTML = nav(); n = t.firstChild; }
+      if (el.firstChild !== n) el.insertBefore(n, el.firstChild);
+    } catch (e) {}
+    place = false;
+  };
+
+  /* Écran perso : filtres à gauche, « Analyser les matchs » à droite (dessous sur téléphone). On déplace les nœuds déjà dessinés
+     (mêmes id : _g45TrLiguesHtml, g45tr-prog… continuent de les retrouver). Boutons « Voir les buteurs / le CLV » : cachés (ils sont en haut). */
+  var rangerPerso = function (el) {
+    try {
+      var bt = el.querySelector('button[onclick="g45ButeursView()"]'); if (bt && bt.parentNode) bt.parentNode.classList.add('g45tr-butclv');
+      var run = null; Array.prototype.forEach.call(el.children, function (c) { if (c.tagName === 'BUTTON' && c.getAttribute('onclick') === 'g45TrRun()') run = c; });
+      var fiab = document.getElementById('g45tr-fiab'), ong = document.getElementById('g45tr-onglets');
+      if (!run || !fiab || fiab.parentNode !== el || !ong || ong.parentNode !== el) return;
+      var row = document.createElement('div'); row.className = 'g45tr-prow';
+      var g = document.createElement('div'); g.className = 'g45tr-pfil';
+      var d = document.createElement('div'); d.className = 'g45tr-prun';
+      for (var nd = ong.nextSibling; nd && nd !== fiab;) { var nx = nd.nextSibling; if (!(nd.classList && nd.classList.contains('g45tr-butclv'))) g.appendChild(nd); nd = nx; }
+      var prog = document.getElementById('g45tr-prog');
+      d.appendChild(run); if (prog) d.appendChild(prog);
+      row.appendChild(g); row.appendChild(d); el.insertBefore(row, fiab);
+    } catch (e) {}
+  };
+
+  var _load = window.loadTendancesTab;
+  var _but = window.g45ButeursView, _clv = window.g45ClvView;
+  var dessiner = function () {
+    var el = document.getElementById('t-tend'); if (!el) return;
+    if (typeof _g45AccesPremium === 'function' && _g45AccesPremium() !== true) { el.removeAttribute('data-g45v'); return _load.apply(this, arguments); }
+    var k = cle(), r;
+    el.setAttribute('data-g45v', k);
+    if (k === 'perso') { r = _load.apply(this, arguments); rangerPerso(el); }
+    else if (k === 'but') r = _but();
+    else if (k === 'clv') r = _clv();
+    else if (k === 'bet-sel') {
+      ecrire('g45tr_sel_ferme', '0');   /* ouverte d'office ici */
+      var s = ''; try { s = window._g45TrSelHtml(); } catch (e) {}
+      el.innerHTML = nav() + s;
+    } else {
+      var o = ''; try { o = window._g45TrOffHtml(); } catch (e) {}
+      el.innerHTML = nav() + o;
+    }
+    poserNav(el);
+    return r;
+  };
+  loadTendancesTab = window.loadTendancesTab = dessiner;
+  window.g45TrVue = function (v) { if (!VUES[v]) return; ecrire('g45tr_vue', v); var n = document.getElementById('g45tr-nav'); if (n) n.remove(); loadTendancesTab(); };
+  window.g45TrSous = function (s) { if (!SOUS[s]) return; ecrire('g45tr_sous', s); ecrire('g45tr_vue', 'bet'); var n = document.getElementById('g45tr-nav'); if (n) n.remove(); loadTendancesTab(); };
+  /* Appelés d'ailleurs (anciens boutons, autres écrans) : la barre suit. */
+  g45ButeursView = window.g45ButeursView = function () { ecrire('g45tr_vue', 'but'); var el = document.getElementById('t-tend'); if (el && el.getAttribute('data-g45v')) el.setAttribute('data-g45v', 'but'); var n = document.getElementById('g45tr-nav'); if (n) n.remove(); return _but.apply(this, arguments); };
+  g45ClvView = window.g45ClvView = function () { ecrire('g45tr_vue', 'clv'); var el = document.getElementById('t-tend'); if (el && el.getAttribute('data-g45v')) el.setAttribute('data-g45v', 'clv'); var n = document.getElementById('g45tr-nav'); if (n) n.remove(); return _clv.apply(this, arguments); };
+  /* Toucher un point de la courbe (Graphique) ouvre le jour : on passe sur 📅 Historique. */
+  var _jour = window.g45TrOffJour;
+  if (typeof _jour === 'function') window.g45TrOffJour = function () {
+    if (cle() === 'bet-gra') { ecrire('g45tr_sous', 'his'); _jour.apply(this, arguments); return loadTendancesTab(); }
+    return _jour.apply(this, arguments);
+  };
+  /* Titre du bloc officiel selon l'écran. */
+  var _off = window._g45TrOffHtml;
+  if (typeof _off === 'function') window._g45TrOffHtml = function () {
+    var h = _off.apply(this, arguments), k = cle();
+    if (k === 'bet-his') return h.replace('📒 Historique des Tendances', '📅 Historique BET45');
+    if (k === 'bet-gra') return h.replace('📒 Historique des Tendances', '📈 Graphique / Stats BET45');
+    return h;
+  };
+  var brancher = function () {
+    var el = document.getElementById('t-tend'); if (!el) return setTimeout(brancher, 1000);
+    new MutationObserver(function () { if (!place && el.getAttribute('data-g45v') && el.offsetParent !== null) poserNav(el); }).observe(el, { childList: true });
+  };
+  brancher();
+})();
