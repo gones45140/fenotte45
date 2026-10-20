@@ -2169,6 +2169,12 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   Smoke tnRes (67).
   Question d'Antoine (capture « Rechercher un joueur », bloc vide) : searchTennisPlayer = recherche web Tavily + résumé IA (Groq) des stats de la
   saison ; le résumé revient vide → proposé de le remplacer par les vraies données ESPN (_g45TnSaison / _g45TnCalc + Elo), maquette à faire.
+  20261020t (maquette maquette-tennis-joueur « oui », « retire Benoît Paire il est plus bon à rien ») : bloc « RECHERCHER UN JOUEUR AVEC LES VRAIES
+  DONNÉES ESPN » en fin d'app.js : loadTennisSaisons / searchTennisPlayer remplacés (plus de Tavily ni d'IA). Boutons = 10 meilleurs Elo ATP / WTA
+  (elo_tennis.json), saisons année, -1, -2. Nom → id : g45tnid1_<nom> (localStorage, dans _G45_CACHE_PREFIXES), sinon ESPN search/v2 (NON SONDÉ pour
+  le tennis : contenu avec s:850 ou « tennis » et ~a:<id>), sinon scoreboards ATP / WTA du jour. Saison _g45TnSaison, calcul pur _g45TjCalc (bilan,
+  surfaces, forme 10), Elo + rang Elo, âge / main, photo ou grand drapeau, liens Tennis Abstract / fiche ESPN / Sofascore. Smoke tnJoueur (68).
+  À VÉRIFIER sur PC (Antoine sur téléphone) : la recherche ESPN trouve-t-elle un joueur hors des matchs du jour (ex. « Arthur Fils ») ?
   _g45TnPerso pose les 3 blocs de l'écran. Smoke tnRun (65) ; tests tnRobot / tnRun calés sur « maintenant + quelques minutes » (le soir UTC,
   « + 2 h » tombait le lendemain).
   20261020c (croquis d'Antoine « Tendances = 4 boutons », maquette cliquable validée « oui, BET45 → Sélection du jour par défaut ») : ONGLET EN BOUTONS —

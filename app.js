@@ -78093,3 +78093,171 @@ window._g45AgJouUs = async function (nowTs) {
     };
   }
 })();
+
+/* ═══ 🎾 RECHERCHER UN JOUEUR AVEC LES VRAIES DONNÉES ESPN (20261020t, maquette maquette-tennis-joueur validée « oui ») ═══
+   Capture d'Antoine : « Rechercher un joueur » → cadre vide (« pet tu me dire à quoi je m'en servais à la base car bon 0 info »).
+   L'ancien searchTennisPlayer = recherche web Tavily + résumé IA Groq, qui revenait vide. Remplacé (loadTennisSaisons + searchTennisPlayer,
+   seuls appelants : Compétitions → Tennis et la fiche Saisons d'un joueur de tennis du mur) par les données de l'analyse BET45 :
+   - boutons = 10 meilleurs Elo ATP et WTA (données/elo_tennis.json) au lieu de la liste figée (« retire Benoît Paire ») ;
+   - nom → identifiant ESPN : mémoire g45tnid1_, sinon recherche ESPN search/v2 (déjà utilisée pour le foot ; JAMAIS SONDÉE pour le tennis :
+     tout contenu dont le JSON parle de tennis ou porte un uid s:850 et ~a:<id>), sinon les matchs ATP / WTA du jour (scoreboard) ;
+   - saison : _g45TnSaison (eventlog core ESPN, mémoire IndexedDB) ; bilan, % par surface, forme sur 10, derniers matchs, Elo général et
+     par surface (rang Elo = place dans le fichier), âge / main (_g45TnProfil) ; photo ronde ou grand drapeau (_g45TenAvatar / _g45TenPhotos). */
+(function () {
+  var esc = function (x) { return String(x == null ? '' : x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); };
+  var norm = function (n) { return String(n || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z]/g, ''); };
+  var nomPropre = function (n) { return String(n || '').replace(/\s+/g, ' ').trim(); };
+  var AN0 = new Date().getFullYear();
+  var J = window._g45TjEtat = { an: AN0, nom: '' };
+  try { if (typeof _G45_CACHE_PREFIXES !== 'undefined' && _G45_CACHE_PREFIXES.indexOf('g45tnid1_') < 0) _G45_CACHE_PREFIXES.push('g45tnid1_'); } catch (e) {}
+
+  /* top Elo : [[nom, elo], …] du plus fort au moins fort */
+  var topElo = function (lg, n) {
+    var T = window._g45TnEloJ && window._g45TnEloJ[lg]; if (!T) return [];
+    return Object.keys(T).map(function (k) { return T[k]; }).filter(function (r) { return r && r[1] > 0; })
+      .sort(function (a, b) { return b[1] - a[1]; }).slice(0, n || 10);
+  };
+  var eloLigne = function (nom) {
+    var k = norm(nom), E = window._g45TnEloJ || {};
+    var r = ['atp', 'wta'];
+    for (var i = 0; i < 2; i++) { var T = E[r[i]]; if (T && T[k]) { var rang = topElo(r[i], 9999).findIndex(function (x) { return norm(x[0]) === k; }) + 1; return { lg: r[i], r: T[k], rang: rang }; } }
+    return null;
+  };
+
+  /* nom → { id, lg } */
+  var chercheId = async function (nom) {
+    var k = norm(nom), m = null;
+    try { m = JSON.parse(localStorage.getItem('g45tnid1_' + k) || 'null'); } catch (e) {}
+    if (m && m.id) return m;
+    var cands = [];
+    try {
+      var r = await fetch('https://site.web.api.espn.com/apis/search/v2?query=' + encodeURIComponent(nom) + '&limit=10&region=us&lang=en');
+      if (r.ok) {
+        var j = await r.json();
+        (j.results || []).forEach(function (g) {
+          (g.contents || []).forEach(function (c) {
+            var s = JSON.stringify(c), id = (String(c.uid || '').match(/~a:(\d+)/) || s.match(/~a:(\d+)/) || [])[1];
+            if (id && (/s:850/.test(s) || /tennis/i.test(s))) cands.push({ id: id, n: c.displayName || c.title || (c.athlete && c.athlete.displayName) || '', lg: /wta|women/i.test(s) ? 'wta' : (/atp/i.test(s) ? 'atp' : '') });
+          });
+        });
+      }
+    } catch (e) {}
+    m = cands.filter(function (c) { return norm(c.n) === k; })[0] || cands.filter(function (c) { return c.n && k.indexOf(norm(String(c.n).split(' ').slice(-1)[0])) >= 0; })[0] || null;
+    if (!m) {
+      /* repli : les joueurs des matchs du jour (ATP puis WTA) */
+      var ymd = typeof _g45ymd === 'function' ? _g45ymd(new Date()) : '';
+      for (var lg of ['atp', 'wta']) {
+        try {
+          var sb = await (await fetch('https://site.api.espn.com/apis/site/v2/sports/tennis/' + lg + '/scoreboard?dates=' + ymd)).json();
+          (sb.events || []).forEach(function (ev) { (ev.groupings || []).forEach(function (g) { (g.competitions || []).forEach(function (c) { (c.competitors || []).forEach(function (x) {
+            var a = x.athlete; if (!m && a && norm(a.displayName) === k) m = { id: String(x.id || a.id), n: a.displayName, lg: lg };
+          }); }); }); });
+        } catch (e) {}
+        if (m) break;
+      }
+    }
+    if (m) { m = { id: String(m.id), lg: m.lg || '' }; try { localStorage.setItem('g45tnid1_' + k, JSON.stringify(m)); } catch (e) {} }
+    return m;
+  };
+  /* fiche core (nom, drapeau) — mémoire de session */
+  var FICHE = {};
+  var fiche = async function (id) {
+    if (FICHE[id]) return FICHE[id];
+    try { var a = await (await fetch('https://sports.core.api.espn.com/v2/sports/tennis/athletes/' + id)).json(); FICHE[id] = { n: a.displayName || a.fullName || '', f: (a.flag && a.flag.href) || '' }; }
+    catch (e) { FICHE[id] = { n: '', f: '' }; }
+    return FICHE[id];
+  };
+
+  var SFL = function () { return window._g45TnSfL || { terre: { l: 'Terre', i: '🟧' }, dur: { l: 'Dur', i: '🟦' }, salle: { l: 'Salle', i: '🏠' }, gazon: { l: 'Gazon', i: '🟩' } }; };
+  var chip = function (on, txt, js) { return '<button onclick="' + js + '" style="cursor:pointer;padding:8px 12px;border-radius:10px;font-weight:800;font-size:14px;border:1px solid ' + (on ? '#5aa9ff' : 'rgba(255,255,255,.25)') + ';margin:0 5px 6px 0;background:' + (on ? '#2563eb' : 'rgba(11,16,29,.9)') + ';color:#fff;">' + txt + '</button>'; };
+  var lbl = function (t) { return '<div style="font-size:13px;font-weight:800;color:#c9d3ee;margin:10px 0 5px;">' + t + '</div>'; };
+
+  var barreHtml = function () {
+    var ch = function (lg) {
+      var L = topElo(lg, 10);
+      if (!L.length) return '<div style="font-size:13px;color:#c9d3ee;">⏳ chargement du classement…</div>';
+      return L.map(function (r) { var n = nomPropre(r[0]); return chip(norm(n) === norm(J.nom), esc(n.split(' ').slice(-1)[0]), 'g45TjChoisir(\'' + esc(n).replace(/'/g, '\\\'') + '\')'); }).join('');
+    };
+    return lbl('ATP · 10 meilleurs (Elo)') + ch('atp') + lbl('WTA · 10 meilleures (Elo)') + ch('wta')
+      + lbl('Saison') + [AN0, AN0 - 1, AN0 - 2].map(function (y) { return chip(J.an === y, y, 'g45TjAn(' + y + ')'); }).join('');
+  };
+  var poserBarre = function () { var b = document.getElementById('g45tj-barre'); if (b) b.innerHTML = barreHtml(); };
+
+  loadTennisSaisons = window.loadTennisSaisons = async function (el, nom) {
+    if (!el) return;
+    el.innerHTML = '<div style="background:rgba(11,16,29,.94);border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:12px 14px;margin-bottom:12px;color:#fff;">'
+      + '<div style="font-size:17px;font-weight:800;">🎾 Rechercher un joueur</div><div id="g45tj-barre">' + barreHtml() + '</div>'
+      + '<div style="display:flex;gap:8px;margin-top:6px;"><input id="tennis-search-input" placeholder="Nom complet, ex. Arthur Fils" style="flex:1;min-width:0;background:#0b101d;border:1px solid rgba(255,255,255,.25);border-radius:10px;padding:11px 12px;font-size:16px;color:#fff;" onkeydown="if(event.key===\'Enter\'){var q=this.value.trim();if(q)searchTennisPlayer(q);}">'
+      + '<button onclick="var q=document.getElementById(\'tennis-search-input\').value.trim();if(q)searchTennisPlayer(q);" style="cursor:pointer;border:none;background:#2563eb;color:#fff;border-radius:10px;padding:10px 16px;font-size:16px;">🔍</button></div>'
+      + '</div><div id="tennis-player-result"></div>';
+    try { if (window._g45TnEloCharger && !window._g45TnEloJ) window._g45TnEloCharger().then(function () { poserBarre(); }); } catch (e) {}
+    var n = nomPropre(nom);
+    if (n && !/^tennis$/i.test(n)) { var i = document.getElementById('tennis-search-input'); if (i) i.value = n; searchTennisPlayer(n); }
+  };
+  window.g45TjChoisir = function (n) { var i = document.getElementById('tennis-search-input'); if (i) i.value = n; searchTennisPlayer(n); };
+  window.g45TjAn = function (y) { J.an = +y || AN0; poserBarre(); if (J.nom) searchTennisPlayer(J.nom); };
+  window.g45TjTous = function (b) { var d = b && b.previousElementSibling; if (d) { d.style.display = 'block'; b.remove(); } };
+
+  var dateFr = function (t) { try { return new Date(t).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }); } catch (e) { return ''; } };
+  /* calcul pur (testé) : matchs d'une saison → bilan, surfaces, forme, liste triée */
+  window._g45TjCalc = function (ms, an) {
+    var L = (ms || []).filter(function (m) { return m && new Date(m.t).getFullYear() === an; }).sort(function (a, b) { return b.t - a.t; });
+    var w = L.filter(function (m) { return m.w; }).length, sf = {};
+    L.forEach(function (m) { var s = sf[m.sf] = sf[m.sf] || { w: 0, l: 0 }; s[m.w ? 'w' : 'l']++; });
+    return { L: L, w: w, l: L.length - w, p: L.length ? Math.round(w / L.length * 100) : null, sf: sf, forme: L.slice(0, 10).map(function (m) { return m.w ? 'V' : 'D'; }) };
+  };
+
+  searchTennisPlayer = window.searchTennisPlayer = async function (nom) {
+    var res = document.getElementById('tennis-player-result'); if (!res) return;
+    nom = nomPropre(nom); J.nom = nom; poserBarre();
+    var jeton = (J.jeton = (J.jeton || 0) + 1), an = J.an;
+    var msg = function (t) { if (J.jeton === jeton) res.innerHTML = '<div style="background:rgba(11,16,29,.94);border-radius:12px;padding:14px;color:#fff;font-size:15px;line-height:1.5;">' + t + '</div>'; };
+    msg('⏳ Recherche de ' + esc(nom) + '…');
+    try { if (window._g45TnEloCharger) await window._g45TnEloCharger(); } catch (e) {}
+    var E = eloLigne(nom), P = await chercheId(nom);
+    if (J.jeton !== jeton) return;
+    if (!P) { msg('Joueur introuvable chez ESPN.<br><span style="font-size:13px;color:#c9d3ee;">Tape le nom complet (ex. « Arthur Fils »), ou touche un des boutons.</span>'); return; }
+    var lg = P.lg || (E && E.lg) || 'atp', ms = [];
+    try {
+      ms = await window._g45TnSaison(lg, P.id, an, function (f, n) { msg('⏳ Saison ' + an + ' de ' + esc(nom) + ' : ' + f + ' / ' + n + ' matchs'); }) || [];
+      if (!ms.length && !P.lg && !E) { lg = 'wta'; ms = await window._g45TnSaison(lg, P.id, an) || []; }
+    } catch (e) {}
+    if (J.jeton !== jeton) return;
+    var F = await fiche(P.id), pr = {};
+    try { pr = await window._g45TnProfil(P.id) || {}; } catch (e) {}
+    if (J.jeton !== jeton) return;
+    var nm = F.n || nom, C = window._g45TjCalc(ms, an), S = SFL();
+    var av = typeof _g45TenAvatar === 'function' ? _g45TenAvatar({ displayName: nm, flag: F.f ? { href: F.f } : null }, 64) : '';
+    var sous = [];
+    if (E && E.rang) sous.push('N°' + E.rang + ' Elo ' + lg.toUpperCase());
+    if (E && E.r[1] > 0) sous.push('Elo ' + Math.round(E.r[1]));
+    if (pr.age) sous.push(pr.age + ' ans'); if (pr.main) sous.push(pr.main);
+    var k = function (v, t, c) { return '<div style="background:#1e2740;border-radius:10px;padding:10px 6px;text-align:center;"><b style="display:block;font-size:22px;color:' + c + ';">' + v + '</b><span style="font-size:13px;color:#c9d3ee;font-weight:700;">' + t + '</span></div>'; };
+    var h = '<div style="background:rgba(11,16,29,.94);border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:12px 14px;color:#fff;">'
+      + '<div style="display:flex;align-items:center;gap:8px;">' + av + '<div><div style="font-size:20px;font-weight:900;">' + esc(nm) + '</div><div style="font-size:14px;color:#c9d3ee;font-weight:700;">' + esc(sous.join(' · ')) + '</div></div></div>';
+    if (!C.L.length) h += '<div style="font-size:15px;margin-top:12px;">Aucun match ESPN pour la saison ' + an + '.</div>';
+    else {
+      h += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px;">' + k(C.w, 'victoires', '#1ed760') + k(C.l, 'défaites', '#ff6b6b') + k(C.p + ' %', 'gagnés', '#f5c542') + '</div>'
+        + lbl('Par surface (saison ' + an + ')');
+      ['dur', 'terre', 'gazon', 'salle'].forEach(function (s) {
+        var x = C.sf[s]; if (!x) return; var n = x.w + x.l, p = Math.round(x.w / n * 100);
+        h += '<div style="display:grid;grid-template-columns:86px 1fr 104px;gap:8px;align-items:center;margin:7px 0;font-size:15px;font-weight:800;"><span>' + S[s].i + ' ' + S[s].l + '</span>'
+          + '<div style="height:12px;border-radius:6px;background:#26304a;overflow:hidden;"><i style="display:block;height:100%;width:' + p + '%;background:' + (p >= 60 ? '#1ed760' : (p >= 45 ? '#f0c828' : '#ff6b6b')) + ';"></i></div>'
+          + '<span style="text-align:right;">' + p + ' % · ' + x.w + '-' + x.l + '</span></div>';
+      });
+      if (E) { var r = E.r, el = []; if (r[2] > 0) el.push('dur ' + Math.round(r[2])); if (r[3] > 0) el.push('terre ' + Math.round(r[3])); if (r[4] > 0) el.push('gazon ' + Math.round(r[4])); if (el.length) h += '<div style="font-size:13px;color:#c9d3ee;">Elo (Tennis Abstract) : ' + el.join(' · ') + '</div>'; }
+      h += lbl('Forme · ' + C.forme.length + ' derniers matchs (le plus récent à gauche)') + '<div style="display:flex;gap:5px;flex-wrap:wrap;">'
+        + C.forme.map(function (v) { return '<span style="width:30px;height:30px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;font-weight:900;font-size:15px;background:' + (v === 'V' ? '#1ed760;color:#111' : '#ff4545;color:#fff') + ';">' + v + '</span>'; }).join('') + '</div>'
+        + lbl('Derniers matchs');
+      var ligne = function (m) { var s = S[m.sf] || S.dur; return '<div style="display:flex;justify-content:space-between;gap:8px;background:#1e2740;border-radius:10px;padding:9px 10px;margin-bottom:6px;font-size:14px;"><span>' + dateFr(m.t) + ' · ' + esc(m.tr) + ' · ' + s.i + ' · <b>' + (m.w ? 'bat' : 'perd contre') + '</b> ' + esc(m.an) + '</span><b style="flex:none;color:' + (m.w ? '#1ed760' : '#ff6b6b') + ';">' + esc(m.sc) + '</b></div>'; };
+      h += C.L.slice(0, 5).map(ligne).join('');
+      if (C.L.length > 5) h += '<div style="display:none;">' + C.L.slice(5).map(ligne).join('') + '</div><button onclick="g45TjTous(this)" style="cursor:pointer;width:100%;padding:9px;border-radius:9px;border:1px solid rgba(255,255,255,.3);background:transparent;color:#fff;font-size:14px;font-weight:800;">➕ voir les ' + C.L.length + ' matchs de la saison</button>';
+    }
+    var ta = 'https://www.tennisabstract.com/cgi-bin/' + (lg === 'wta' ? 'w' : '') + 'player.cgi?p=' + encodeURIComponent(nm.replace(/\s+/g, ''));
+    var lien = function (u, t) { return '<a href="' + esc(u) + '" target="_blank" rel="noopener" style="flex:1;min-width:110px;text-align:center;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.25);font-weight:800;font-size:14px;color:#fff;text-decoration:none;">' + t + '</a>'; };
+    h += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;">' + lien(ta, '📊 Tennis Abstract') + lien('https://www.espn.com/tennis/player/_/id/' + P.id, '🎾 Fiche ESPN') + lien('https://www.sofascore.com/search#q=' + encodeURIComponent(nm), '⚡ Sofascore') + '</div>'
+      + '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">Données ESPN (matchs joués, abandons et forfaits exclus) · Elo Tennis Abstract.</div></div>';
+    res.innerHTML = h;
+    try { if (typeof _g45TenPhotos === 'function') _g45TenPhotos(res); } catch (e) {}
+  };
+})();
