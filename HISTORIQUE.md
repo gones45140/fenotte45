@@ -2047,6 +2047,9 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   championnat .g45tro-wm left 46 %, z-index 0 ; téléphone : nom du pari sur sa ligne (.g45tro-pn), pastilles / cote / résultat dessous.
   20261018k (capture filtres Cote 1,50-2,19 + Proba 60 %+ + D'accord : « la demande de 10 h doit être celle-là ») : robot tendances.mjs REGLAGES
   {min 1.5, pmin 0.6, coteConnue, accord} → sans cote et désaccord NON notés à partir du passage du 18/10 ; historique d'avant inchangé (mention sous le titre).
+  20/10 (capture Bears–Patriots : « - de 48,5 / 49,5 / 50,5 », « doublon voir triple dose ») : la ligne ESPN bougeait d'un jour à l'autre → même pari
+  re-noté chaque matin. Robot : FAMILLE = type sans le chiffre (un48.5 → un, hc1:7.5 → hc1:) ; famille déjà notée un jour précédent pour ce match = pas
+  reprise ; doublons existants retirés (1er noté gardé : Jaguars–Texans un41.5, Bears–Patriots un49.5 / un50.5 enlevés à la main le 20/10). app.js inchangé.
   17/10 (« au pire on met 8h ? » : passage du 17/10 lancé par GitHub à 13 h 51) : robot dès 8 h à Paris (parisH() < 8), crons 6 / 7 / 8 / 9 h UTC (rattrapage des retards).
   20261018y (« j'avais pas appuyé sur Analyser, ça sortait pas les matchs du jour », maquette validée « oui ») : 📒 SÉLECTION DU JOUR — bloc #g45tr-sel (fin d'app.js)
   sous la barre des sous-onglets de #t-tend (MutationObserver + enveloppe de loadTendancesTab ; comptes premium seulement) : tendances du robot notées
