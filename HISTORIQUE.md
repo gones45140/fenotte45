@@ -2114,7 +2114,8 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   38 ATP, 39 WTA, 41 F1…) ; /api/v2/sports/{id}/events/{AAAA-MM-JJ}?market_ids=1, en-tête X-TheRundown-Key → teams[{name, is_home}],
   markets[market_id 1 moneyline].participants[].lines[0].prices{livre: {price AMÉRICAIN}} ; 26 matchs ATP / 27 WTA le 20/10 (petits tournois
   compris). WORKER (déployé par Claude, copie gardée, 18 liaisons + cron */5 vérifiés) : route /rundown?sport=&date= (secret RUNDOWN_KEY mis
-  par Antoine) → { m: [{ id, t, st, h, a, ch, ca, n }] } cote européenne MOYENNE par joueur, gardée 3 h (clé D1 rd1:sport:date).
+  par Antoine) → { m: [{ id, t, st, h, a, ch, ca, n }] } cote européenne MOYENNE par joueur, gardée 12 h (« ça consomme de ouf » : sondes = 4 934 points pour 4 demandes, ~1 200 / demande ; plafond 200 000 / MOIS ≈ 6 600 / jour ;
+  le robot seul = 2 demandes / jour) (clé D1 rd1:sport:date).
   App : _g45TnCoteRd(lg, t, nomA, nomB) (rapprochement par nom de famille sans accents) ; _g45TnRobot prend TheRundown d'abord, The Odds API
   (Grands Chelems) en secours ; c = cote × 0,94 (_G45_TR_FR, comme les autres sports), cd = cote d'origine, f = proba sans marge → filtres
   cote ≥ 1,50 et d'accord. Smoke tnRobot (cote trouvée / trop basse). À FAIRE : cote + écart BET45 / marché dans l'analyse (maquette) ;
