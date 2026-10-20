@@ -2193,6 +2193,10 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   (D1 robtend:<jour>, 2 jours), POST api.github.com/…/actions/workflows/tendances.yml/dispatches { ref: main, inputs: { force: '0' } }.
   tendances.yml : entrée force (défaut '1' pour le bouton), FORCE = inputs.force. Antoine : jeton fine-grained (dépôt gones45 seul, Actions
   lecture-écriture) → secret GH_ROBOT du worker fd-proxy (tableau de bord Cloudflare, jamais dans le code ni la conversation).
+  « ok » : PUBLIÉ (tendances.yml sur main + worker déployé, 18 liaisons, cron */5 vérifiés). Le worker avait DÉJÀ un secret GITHUB_TOKEN
+  (route /github-simu, écrit données/simulations/) : jeton = GH_ROBOT sinon GITHUB_TOKEN — s'il a le droit Actions, aucune clé à créer.
+  Résultat écrit en D1 robtend:<jour> (« ok » ou « http 403 ») + console.log ; vérifier dans la liste des runs (événement workflow_dispatch
+  vers 6 h UTC). PIÈGE : « (*/5) » dans un commentaire /* */ le FERME (refus Cloudflare 10021) alors que node --check passait.
   _g45TnPerso pose les 3 blocs de l'écran. Smoke tnRun (65) ; tests tnRobot / tnRun calés sur « maintenant + quelques minutes » (le soir UTC,
   « + 2 h » tombait le lendemain).
   20261020c (croquis d'Antoine « Tendances = 4 boutons », maquette cliquable validée « oui, BET45 → Sélection du jour par défaut ») : ONGLET EN BOUTONS —
