@@ -77022,7 +77022,7 @@ window._g45AgJouUs = async function (nowTs) {
     if (typeof _g45AccesPremium === 'function' && _g45AccesPremium() !== true) { el.removeAttribute('data-g45v'); return _load.apply(this, arguments); }
     var k = cle(), r;
     el.setAttribute('data-g45v', k);
-    if (k === 'perso') { r = _load.apply(this, arguments); rangerPerso(el); }
+    if (k === 'perso') { r = _load.apply(this, arguments); if (!(window._g45TnPerso && window._g45TnPerso(el))) rangerPerso(el); }   /* 20261020i : 🎾 Tennis */
     else if (k === 'but') r = _but();
     else if (k === 'clv') r = _clv();
     else if (k === 'bet-sel') {
@@ -77061,4 +77061,341 @@ window._g45AgJouUs = async function (nowTs) {
     new MutationObserver(function () { if (!place && el.getAttribute('data-g45v') && el.offsetParent !== null) poserNav(el); }).observe(el, { childList: true });
   };
   brancher();
+})();
+
+/* ═══ 🎾 ANALYSE TENNIS BET45 (20261020i, captures matchup-tennis.fr « on a pas moyen de faire pareil ou mieux », maquette cliquable
+   validée « oui Tendances, ATP + WTA et pourquoi pas le rajouter ici » = aussi dans la fenêtre d'un match de Résultats → Tennis) ═══
+   SONDÉ PAR ANTOINE le 20/10 (console) :
+   - Jeff Sackmann (raw.githubusercontent.com tennis_atp) : atp_matches_2024 / 2025 / 2026 = 404 → source morte, abandonnée.
+   - ESPN core : leagues/<atp|wta>/athletes/<id>/eventlog?limit=200 = la saison EN COURS en une page (46 matchs, pageSize 200) ;
+     seasons/<AAAA>/athletes/<id>/eventlog = une saison passée (61 en 2025 ; « ?season= » est IGNORÉ, renvoie la saison en cours).
+   - chaque item → competition.$ref : competitors [{id, name, winner}] + notes [{type « Round 1 - Court 7 », text « X (ARG) bt Y (RUS) 2-6 6-2 7-5 »}]
+     → UNE requête par match suffit (adversaire, vainqueur, score, tour).
+   - event (events/315-2026) : name « Rolex Shanghai Masters », venue.indoor true/false ; PAS de surface → table nom → surface ci-dessous.
+   - statistics : seulement titres / gains (PAS d'aces, 1re balle…) → pas de stats de service ni de « style de jeu ».
+   ELO et COTE de la maquette RETIRÉS : l'Elo demande l'historique de tous les adversaires, la cote coûte des crédits The Odds API.
+   Mémoire : IndexedDB g45 / kv (_g45BgIdb) — saisons passées pour toujours (clé tn1_<lg>_<id>_<année>), saison en cours 6 h,
+   tournois pour toujours (tnev1_<lg>_<id>). Requêtes : 6 en parallèle au plus. Qualifications et forfaits (w/o) non comptés. */
+(function () {
+  var CORE = 'https://sports.core.api.espn.com/v2/sports/tennis/leagues/';
+  var mem = {};
+  var kv = function (mode, k, v) {
+    if (mode === 'get' && mem[k] !== undefined) return Promise.resolve(mem[k]);
+    if (mode === 'put') mem[k] = v;
+    if (typeof indexedDB === 'undefined' || typeof _g45BgIdb !== 'function') return Promise.resolve(mode === 'get' ? undefined : v);
+    return _g45BgIdb().then(function (db) {
+      return new Promise(function (ok) {
+        try {
+          var tx = db.transaction('kv', mode === 'get' ? 'readonly' : 'readwrite'), st = tx.objectStore('kv');
+          var rq = mode === 'get' ? st.get(k) : st.put(v, k);
+          rq.onsuccess = function () { if (mode === 'get') mem[k] = rq.result; ok(rq.result); }; rq.onerror = function () { ok(undefined); };
+        } catch (e) { ok(undefined); }
+      });
+    }).catch(function () { return undefined; });
+  };
+  var getJ = function (u) { return fetch(String(u).replace(/^http:/, 'https:')).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }); };
+  var pool = async function (items, n, fn) {
+    var out = new Array(items.length), i = 0;
+    var run = async function () { while (i < items.length) { var k = i++; try { out[k] = await fn(items[k], k); } catch (e) { out[k] = null; } } };
+    var w = []; for (var j = 0; j < Math.min(n, items.length); j++) w.push(run());
+    await Promise.all(w); return out;
+  };
+  var esc = function (x) { return String(x == null ? '' : x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); };
+
+  /* ── surface d'après le nom du tournoi (ESPN ne la donne pas). Gazon puis terre AVANT « en salle » : Stuttgart WTA (Porsche) est de la
+     terre en salle. Tout le reste = dur (en salle si venue.indoor). ── */
+  var RE_GAZON = /wimbledon|queen|cinch|hsbc champ|halle|terra wortmann|hertogenbosch|libema|boss open|eastbourne|nottingham|birmingham|mallorca|newport|hall of fame|berlin|bad homburg|rothesay|grass/i;
+  var RE_TERRE = /roland|french open|monte.?carlo|madrid|internazionali|italia|\brome\b|\broma\b|barcelona|bmw open|munich|hamburg|gstaad|swiss open|kitzb|generali open|umag|croatia open|b[aå]stad|nordea|estoril|geneva|gen[eè]ve|marrakech|hassan|houston|clay|bucharest|tiriac|argentina open|buenos aires|rio open|chile open|santiago|c[oó]rdoba|charleston|strasbourg|rabat|palermo|budapest|hungarian|lausanne|ia[sș]i|bogot|colsanitas|parma|portoro|porsche|prague/i;
+  window._g45TnSurf = function (nom, indoor) {
+    var n = String(nom || '');
+    if (RE_GAZON.test(n)) return 'gazon';
+    if (RE_TERRE.test(n)) return 'terre';
+    return indoor ? 'salle' : 'dur';
+  };
+  window._g45TnCat = function (nom) {
+    var n = String(nom || '');
+    if (/australian open|roland|french open|wimbledon|us open/i.test(n)) return 'gc';
+    if (/indian wells|bnp paribas open|miami|monte.?carlo|madrid|internazionali|italia|\brome\b|canad|national bank|omnium banque|cincinnati|western|shanghai|paris masters|rolex paris|bercy|qatar|doha|dubai|beijing|china open|wuhan/i.test(n)) return 'm1000';
+    return '';
+  };
+  var SF = { terre: { l: 'Terre', i: '🟧', c: '#f0a050' }, dur: { l: 'Dur', i: '🟦', c: '#6aa8ff' }, salle: { l: 'Salle', i: '🏠', c: '#7dd3fc' }, gazon: { l: 'Gazon', i: '🟩', c: '#7dffb0' } };
+
+  /* score « X (ARG) bt Y (RUS) 2-6 6-2 7-5 » → « 2-6 6-2 7-5 » ; forfait → null (match non compté) */
+  window._g45TnScore = function (txt) {
+    var t = String(txt || '');
+    if (/\bw\/o\b|walkover/i.test(t)) return null;
+    var m = t.match(/((?:\d+-\d+(?:\(\d+\))?\s*)+(?:ret\.?|abd\.?|def\.?)?)\s*$/i);
+    return m ? m[1].trim() : '';
+  };
+
+  /* un item d'eventlog → un match (null = à ignorer) */
+  window._g45TnMatch = function (c, id, ev) {
+    if (!c) return null;
+    var ty = (c.type && (c.type.type || c.type.slug)) || '';
+    if (ty && !/singles/i.test(ty)) return null;
+    var note = (c.notes && c.notes[0]) || {}, rd = String(note.type || '').replace(/\s*-\s*Court.*$/i, '');
+    if (/qualif/i.test(rd)) return null;
+    var sc = window._g45TnScore(note.text); if (sc === null) return null;
+    var cps = c.competitors || [], moi = null, adv = null;
+    cps.forEach(function (x) { if (String(x.id) === String(id)) moi = x; else adv = x; });
+    if (!moi || !adv || (moi.winner !== true && adv.winner !== true)) return null;
+    var nom = (ev && ev.n) || '';
+    return { id: String(c.id || ''), t: Date.parse(c.date) || 0, ek: (ev && ev.k) || '', tr: nom, sf: window._g45TnSurf(nom, ev && ev.ind), ind: !!(ev && ev.ind),
+      cat: window._g45TnCat(nom), adv: String(adv.id), an: adv.name || '?', w: moi.winner === true, sc: sc, rd: rd };
+  };
+
+  var evInfo = async function (lg, ref) {
+    var k = (String(ref).match(/events\/([^/?]+)/) || [])[1] || '';
+    if (!k) return null;
+    var cle = 'tnev1_' + lg + '_' + k, o = await kv('get', cle);
+    if (o) return o;
+    var e = await getJ(CORE + lg + '/events/' + k);
+    o = { k: k, n: e.name || e.shortName || '', ind: !!(e.venue && e.venue.indoor) };
+    if (!o.n) return { k: k, n: '', ind: false };
+    kv('put', cle, o); return o;
+  };
+
+  /* une saison d'un joueur → liste de matchs (mémoire : passée = toujours, en cours = 6 h) */
+  window._g45TnSaison = async function (lg, id, an, prog) {
+    var cur = an >= new Date().getFullYear(), cle = 'tn1_' + lg + '_' + id + '_' + an;
+    var o = await kv('get', cle);
+    if (o && (!cur || Date.now() - o.t < 6 * 3600e3)) return o.m;
+    var url = cur ? CORE + lg + '/athletes/' + id + '/eventlog?limit=200' : CORE + lg + '/seasons/' + an + '/athletes/' + id + '/eventlog?limit=200';
+    var j = await getJ(url), items = ((j && j.events && j.events.items) || []).filter(function (x) { return x && x.played && x.competition; });
+    var evRefs = {}; items.forEach(function (x) { if (x.event && x.event.$ref) evRefs[x.event.$ref] = 1; });
+    var evs = {}, refs = Object.keys(evRefs);
+    await pool(refs, 6, async function (r) { evs[r] = await evInfo(lg, r); });
+    var fait = 0;
+    var ms = await pool(items, 6, async function (x) {
+      var c = await getJ(x.competition.$ref); fait++; if (prog) prog(fait, items.length);
+      return window._g45TnMatch(c, id, evs[x.event && x.event.$ref]);
+    });
+    ms = ms.filter(Boolean).filter(function (m) { return new Date(m.t).getFullYear() === an || cur; });
+    kv('put', cle, { t: Date.now(), m: ms });
+    return ms;
+  };
+
+  /* calculs (pur, testé) : H = matchs du joueur, ctx = { sf, ind, cat, ek, adv, now } */
+  window._g45TnCalc = function (H, ctx) {
+    var now = ctx.now || Date.now(), an12 = now - 365 * 864e5;
+    var cnt = function (L) { var w = 0; L.forEach(function (m) { if (m.w) w++; }); return { w: w, l: L.length - w, n: L.length, p: L.length ? Math.round(w / L.length * 100) : null }; };
+    var tri = H.slice().sort(function (a, b) { return b.t - a.t; });
+    var r12 = tri.filter(function (m) { return m.t >= an12; });
+    var bil = {}; tri.forEach(function (m) { var y = new Date(m.t).getFullYear(); var b = bil[y] = bil[y] || { tot: { w: 0, l: 0 } }; var s = b[m.sf] = b[m.sf] || { w: 0, l: 0 }; s[m.w ? 'w' : 'l']++; b.tot[m.w ? 'w' : 'l']++; });
+    var tk = String(ctx.ek || '').split('-')[0];
+    return {
+      sf12: cnt(r12.filter(function (m) { return m.sf === ctx.sf; })),
+      tour: cnt(tri.filter(function (m) { return tk && String(m.ek).split('-')[0] === tk; })),
+      cat: cnt(tri.filter(function (m) { return ctx.cat ? m.cat === ctx.cat : m.cat === 'm1000'; })),
+      lieu: cnt(r12.filter(function (m) { return m.ind === !!ctx.ind; })),
+      forme: cnt(tri.slice(0, 10)), der: tri.slice(0, 10),
+      h2h: tri.filter(function (m) { return ctx.adv && m.adv === String(ctx.adv); }),
+      bil: bil, n: tri.length
+    };
+  };
+
+  /* ── affichage ── */
+  var barre = function (tit, a, b, txtA, txtB) {
+    var pa = a == null ? 0 : a, pb = b == null ? 0 : b, tot = pa + pb || 1, ga = a != null && b != null && a > b, gb = a != null && b != null && b > a;
+    return '<div style="text-align:center;font-size:14px;font-weight:800;color:#e8ecfa;margin:14px 0 5px;">' + tit + '</div>'
+      + '<div style="display:flex;align-items:center;gap:10px;"><b style="width:74px;font-size:18px;color:' + (ga ? '#1ed760' : '#fff') + ';">' + txtA + '</b>'
+      + '<div style="flex:1;display:flex;gap:3px;height:12px;"><span style="flex:' + Math.max(pa, 1) / tot + ';border-radius:6px;background:' + (ga ? '#1ed760' : '#5a6788') + ';"></span>'
+      + '<span style="flex:' + Math.max(pb, 1) / tot + ';border-radius:6px;background:' + (gb ? '#1ed760' : '#5a6788') + ';"></span></div>'
+      + '<b style="width:74px;font-size:18px;text-align:right;color:' + (gb ? '#1ed760' : '#fff') + ';">' + txtB + '</b></div>';
+  };
+  var pc = function (c) { return c && c.n ? c.p + ' %' : '—'; };
+  var sub = function (c) { return c && c.n ? '<div style="font-size:12px;color:#c9d3ee;font-weight:600;">' + c.w + ' / ' + c.n + '</div>' : ''; };
+  var ligne = function (tit, A, B) { return barre(tit, A && A.n ? A.p : null, B && B.n ? B.p : null, pc(A) + sub(A), pc(B) + sub(B)); };
+
+  var tabBilan = function (nom, bil) {
+    var ans = Object.keys(bil).sort().reverse(); if (!ans.length) return '<div style="font-size:14px;color:#c9d3ee;">Aucun match trouvé.</div>';
+    var c = function (s) { if (!s || !(s.w + s.l)) return '<td style="padding:7px 3px;text-align:center;color:#8e9bbd;">–</td>'; var col = s.w > s.l ? '#1ed760' : (s.w < s.l ? '#ff6b6b' : '#fff'); return '<td style="padding:7px 3px;text-align:center;font-weight:800;color:' + col + ';">' + s.w + '/' + s.l + '</td>'; };
+    var tot = { tot: { w: 0, l: 0 } }; ans.forEach(function (y) { Object.keys(bil[y]).forEach(function (k) { var t = tot[k] = tot[k] || { w: 0, l: 0 }; t.w += bil[y][k].w; t.l += bil[y][k].l; }); });
+    var h = '<div style="font-size:15px;font-weight:800;margin:6px 0;">' + esc(nom) + '</div><div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:14px;color:#fff;">'
+      + '<tr style="color:#c9d3ee;"><th style="padding:6px 3px;text-align:left;">Année</th><th>Total</th>' + ['terre', 'dur', 'salle', 'gazon'].map(function (k) { return '<th style="color:' + SF[k].c + ';">' + SF[k].l + '</th>'; }).join('') + '</tr>';
+    ans.concat(['Total']).forEach(function (y) { var b = y === 'Total' ? tot : bil[y]; h += '<tr style="border-top:1px solid rgba(255,255,255,.08);' + (y === 'Total' ? 'background:rgba(30,215,96,.08);' : '') + '"><td style="padding:7px 3px;font-weight:800;">' + y + '</td>' + c(b.tot) + ['terre', 'dur', 'salle', 'gazon'].map(function (k) { return c(b[k]); }).join('') + '</tr>'; });
+    return h + '</table></div>';
+  };
+  var pastilles = function (L) { return L.map(function (m) { return '<span title="' + esc(m.tr) + '" style="display:inline-block;width:26px;height:26px;line-height:26px;border-radius:50%;text-align:center;font-size:12px;font-weight:900;margin:2px;background:' + (m.w ? '#14632f' : '#7a1d1d') + ';color:#fff;">' + (m.w ? 'G' : 'P') + '</span>'; }).join(''); };
+  var dateFr = function (t) { try { return new Date(t).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }); } catch (e) { return ''; } };
+
+  var S = window._g45Tn = { o: {} };
+  window.g45TnOnglet = function (bid, t) { var o = S.o[bid]; if (!o) return; o.tab = t; dessiner(bid); };
+  window.g45TnPlus = function (bid) { var o = S.o[bid]; if (!o || o.charge) return; o.ans = o.ans + 2; charger(bid); };
+
+  function dessiner(bid) {
+    var o = S.o[bid], box = document.getElementById(bid); if (!o || !box) return;
+    var A = o.A, B = o.B, sf = SF[o.ctx.sf] || SF.dur;
+    var tb = function (k, l) { var on = o.tab === k; return '<button onclick="g45TnOnglet(\'' + bid + '\',\'' + k + '\')" style="flex:none;cursor:pointer;padding:9px 12px;border-radius:10px;font-size:14px;font-weight:800;color:#fff;background:' + (on ? '#1a2235' : '#0b101d') + ';border:' + (on ? '2px solid #f5c542' : '1px solid rgba(255,255,255,.2)') + ';">' + l + '</button>'; };
+    var h = '<div style="background:rgba(11,16,29,.94);border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:12px 14px;color:#fff;margin:8px 0;">'
+      + '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:16px;font-weight:900;"><span>' + esc(o.a.n) + '</span>'
+      + '<span style="font-size:13px;color:#c9d3ee;font-weight:700;text-align:center;">' + sf.i + ' ' + sf.l + (o.ctx.cat === 'gc' ? ' · Grand Chelem' : (o.ctx.cat === 'm1000' ? ' · 1000' : '')) + '</span><span style="text-align:right;">' + esc(o.b.n) + '</span></div>'
+      + '<div style="display:flex;gap:6px;overflow-x:auto;margin:10px 0 4px;">' + tb('cle', '⭐ Facteurs clés') + tb('bil', '📊 Bilan') + tb('h2h', '🤝 Face-à-face') + tb('for', '📈 Forme') + '</div>';
+    if (o.err) h += '<div style="font-size:14px;color:#ff9b9b;margin-top:8px;">Données ESPN indisponibles pour le moment.</div>';
+    else if (!A || !B) h += '<div style="font-size:14px;color:#c9d3ee;margin-top:10px;">⏳ ' + esc(o.msg || 'Chargement…') + '</div>';
+    else if (o.tab === 'cle') {
+      h += '<div style="color:#7dffb0;font-weight:900;font-size:13px;margin-top:12px;letter-spacing:.5px;">FORME</div>'
+        + ligne('📈 10 DERNIERS MATCHS', A.forme, B.forme)
+        + '<div style="color:#7dffb0;font-weight:900;font-size:13px;margin-top:16px;letter-spacing:.5px;">CONDITIONS DU MATCH</div>'
+        + ligne(sf.i + ' % VICTOIRES ' + sf.l.toUpperCase() + ' (12 MOIS)', A.sf12, B.sf12)
+        + (o.ctx.ek ? ligne('🏆 À CE TOURNOI', A.tour, B.tour) : '')
+        + ligne(o.ctx.cat === 'gc' ? '🏟️ EN GRAND CHELEM' : '🏟️ EN MASTERS / WTA 1000', A.cat, B.cat)
+        + ligne(o.ctx.ind ? '🏠 EN SALLE (12 MOIS)' : '☀️ EN PLEIN AIR (12 MOIS)', A.lieu, B.lieu)
+        + '<div style="font-size:13px;color:#c9d3ee;margin-top:12px;">Tableau principal seulement (sans qualifications ni forfaits) · saisons ' + o.anMin + '–' + o.anMax + ' · source ESPN.</div>';
+    } else if (o.tab === 'bil') {
+      h += tabBilan(o.a.n, A.bil) + '<div style="height:12px;"></div>' + tabBilan(o.b.n, B.bil)
+        + '<div style="font-size:13px;color:#c9d3ee;margin:8px 0;">Gagnés / perdus · vert = plus de victoires, rouge = plus de défaites.</div>'
+        + (o.charge ? '' : '<button onclick="g45TnPlus(\'' + bid + '\')" style="cursor:pointer;padding:10px 14px;border-radius:9px;border:none;background:#2563eb;color:#fff;font-size:14px;font-weight:800;">➕ Charger ' + (o.anMin - 2) + ' et ' + (o.anMin - 1) + '</button>');
+    } else if (o.tab === 'h2h') {
+      var L = A.h2h, wa = L.filter(function (m) { return m.w; }).length;
+      h += '<div style="text-align:center;font-size:26px;font-weight:900;margin-top:10px;">' + wa + ' – ' + (L.length - wa) + '</div>'
+        + '<div style="text-align:center;font-size:13px;color:#c9d3ee;margin-bottom:8px;">' + (L.length ? (wa > L.length - wa ? esc(o.a.n) + ' mène' : (wa < L.length - wa ? esc(o.b.n) + ' mène' : 'Égalité')) : 'Aucun match entre eux') + ' · saisons ' + o.anMin + '–' + o.anMax + '</div>'
+        + L.map(function (m) { var s = SF[m.sf] || SF.dur; return '<div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;background:#1e2740;border-left:4px solid ' + (m.w ? '#1ed760' : '#ff4545') + ';border-radius:10px;padding:9px 10px;margin-bottom:7px;font-size:14px;"><span>' + dateFr(m.t) + ' · ' + esc(m.tr) + ' · ' + s.i + ' ' + s.l + '</span><b>' + esc(m.w ? o.a.n : o.b.n) + ' ' + esc(m.sc) + '</b></div>'; }).join('');
+    } else {
+      [[o.a.n, A], [o.b.n, B]].forEach(function (p) {
+        h += '<div style="font-size:15px;font-weight:800;margin-top:10px;">' + esc(p[0]) + ' · ' + p[1].forme.w + ' / ' + p[1].forme.n + '</div><div style="margin:4px 0 6px;">' + pastilles(p[1].der) + '</div>'
+          + p[1].der.slice(0, 5).map(function (m) { return '<div style="font-size:13px;color:#dbe4ff;padding:2px 0;">' + (m.w ? '✅ bat ' : '❌ battu par ') + esc(m.an) + ' ' + esc(m.sc) + ' · <span style="color:#c9d3ee;">' + esc(m.tr) + '</span></div>'; }).join('');
+      });
+    }
+    box.innerHTML = h + '</div>';
+  }
+
+  async function charger(bid) {
+    var o = S.o[bid]; if (!o) return;
+    o.charge = true; o.err = false;
+    var an = new Date().getFullYear(), ans = []; for (var y = an - o.ans + 1; y <= an; y++) ans.push(y);
+    o.anMin = ans[0]; o.anMax = an;
+    try {
+      var lire = async function (p) {
+        var tout = [];
+        for (var i = 0; i < ans.length; i++) {
+          o.msg = 'Chargement de ' + p.n + ' (' + ans[i] + ')…'; dessiner(bid);
+          var ms = await window._g45TnSaison(o.lg, p.id, ans[i], function (f, n) { o.msg = 'Chargement de ' + p.n + ' (' + ans[i] + ') : ' + f + ' / ' + n; if (f % 5 === 0 || f === n) dessiner(bid); });
+          tout = tout.concat(ms || []);
+        }
+        /* une saison ESPN peut déborder sur l'année d'avant (fin décembre) : un même match ne compte qu'une fois */
+        var vu = {}; return tout.filter(function (m) { if (!m.id) return true; if (vu[m.id]) return false; vu[m.id] = 1; return true; });
+      };
+      var ha = await lire(o.a), hb = await lire(o.b);
+      o.A = window._g45TnCalc(ha, Object.assign({}, o.ctx, { adv: o.b.id }));
+      o.B = window._g45TnCalc(hb, Object.assign({}, o.ctx, { adv: o.a.id }));
+    } catch (e) { o.err = true; }
+    o.charge = false; dessiner(bid);
+  }
+
+  /* ouvre l'analyse dans la boîte bid : m = { lg, a:{id,n}, b:{id,n}, tour, ek } */
+  window.g45TnAnalyser = async function (bid, m) {
+    var ind = false, ek = m.ek || '';
+    try { if (ek) { var e = await evInfo(m.lg, 'events/' + ek); if (e) ind = e.ind; } } catch (e) {}
+    S.o[bid] = { lg: m.lg, a: m.a, b: m.b, tab: 'cle', ans: 2, ctx: { sf: window._g45TnSurf(m.tour, ind), ind: ind, cat: window._g45TnCat(m.tour), ek: ek } };
+    dessiner(bid); charger(bid);
+  };
+  window.g45TnOuvrir = function (btn) {
+    try {
+      var d = btn.dataset, bid = d.box, box = document.getElementById(bid);
+      if (!box) return;
+      if (box.innerHTML && box.getAttribute('data-ouvert') === '1') { box.innerHTML = ''; box.setAttribute('data-ouvert', '0'); return; }
+      box.setAttribute('data-ouvert', '1');
+      window.g45TnAnalyser(bid, { lg: d.lg, a: { id: d.ha, n: d.hn }, b: { id: d.aa, n: d.an }, tour: d.tour, ek: d.ek });
+    } catch (e) {}
+  };
+  var bouton = function (lg, h, a, tour, ek, bid) {
+    return '<button onclick="g45TnOuvrir(this)" data-box="' + bid + '" data-lg="' + lg + '" data-ha="' + esc(h.id) + '" data-hn="' + esc(h.n) + '" data-aa="' + esc(a.id) + '" data-an="' + esc(a.n) + '" data-tour="' + esc(tour) + '" data-ek="' + esc(ek) + '"'
+      + ' style="width:100%;box-sizing:border-box;cursor:pointer;font-size:14px;font-weight:800;padding:10px 12px;border-radius:9px;color:#fff;background:rgba(10,14,26,.92);border:1px solid #f5c542;">📊 Analyse BET45 (forme, surface, face-à-face)</button>'
+      + '<div id="' + bid + '"></div>';
+  };
+  var joueur = function (x) { return { id: String((x && (x.id || (x.athlete && x.athlete.id))) || ''), n: (x && x.athlete && (x.athlete.displayName || x.athlete.shortName)) || '?' }; };
+  var ekDe = function (c, ev) { return (ev && ev.id) || (String((c && c.uid) || '').match(/~e:([^~]+)/) || [])[1] || ''; };
+
+  /* fenêtre d'un match de Résultats → Tennis : bouton sous l'avant-match (simples seulement) */
+  if (typeof _g45EspnTennisDetail === 'function' && !_g45EspnTennisDetail._g45Tn) {
+    var det = _g45EspnTennisDetail;
+    _g45EspnTennisDetail = function (c) {
+      var h = det.apply(this, arguments);
+      try {
+        if (c && /singles/i.test(c.__grp || '') && (c.competitors || []).length === 2) {
+          var cps = c.competitors, hm = cps.filter(function (x) { return x.homeAway === 'home'; })[0] || cps[0], aw = cps.filter(function (x) { return x.homeAway === 'away'; })[0] || cps[1];
+          var A = joueur(hm), B = joueur(aw);
+          if (A.id && B.id) {
+            var lg = /women|dames|wta/i.test(c.__grp) ? 'wta' : 'atp';
+            var b = '<div style="margin:8px 0;">' + bouton(lg, A, B, c.__tour || '', ekDe(c), 'g45tn-d-' + c.id) + '</div>';
+            var i = h.indexOf('<table'); h = i > 0 ? h.slice(0, i) + b + h.slice(i) : h + b;
+          }
+        }
+      } catch (e) {}
+      return h;
+    };
+    _g45EspnTennisDetail._g45Tn = true;
+  }
+
+  /* écran Tendances → 🎾 Tennis : matchs du jour (simples ATP + WTA à venir / en cours) */
+  window._g45TnJour = async function (el) {
+    var cible = document.getElementById('g45tn-jour'); if (!cible) return;
+    var ymd = (typeof _g45ymd === 'function') ? _g45ymd(new Date()) : '';
+    var f = function (lg) { return fetch('https://site.api.espn.com/apis/site/v2/sports/tennis/' + lg + '/scoreboard?dates=' + ymd).then(function (r) { return r.ok ? r.json() : {}; }).then(function (j) { return (j.events || []).map(function (e) { e.__lg = lg; return e; }); }).catch(function () { return []; }); };
+    var evs = (await f('atp')).concat(await f('wta'));
+    var L = [];
+    evs.forEach(function (ev) {
+      (ev.groupings || []).forEach(function (g) {
+        var gn = (g.grouping && g.grouping.displayName) || ''; if (!/singles/i.test(gn)) return;
+        (g.competitions || []).forEach(function (c) {
+          var st = (c.status && c.status.type && c.status.type.state) || ''; if (st === 'post') return;
+          if (ymd && (typeof _g45ymd === 'function') && _g45ymd(new Date(c.date || c.startDate)) !== ymd) return;
+          var cps = c.competitors || []; if (cps.length !== 2) return;
+          L.push({ lg: ev.__lg, ev: ev, c: c, st: st, a: joueur(cps[0]), b: joueur(cps[1]) });
+        });
+      });
+    });
+    if (!document.getElementById('g45tn-jour')) return;
+    if (!L.length) { cible.innerHTML = '<div style="font-size:14px;color:#c9d3ee;">Aucun match de simple ATP / WTA à venir aujourd\'hui.</div>'; return; }
+    L.sort(function (x, y) { return (x.st === 'in' ? 0 : 1) - (y.st === 'in' ? 0 : 1) || Date.parse(x.c.date) - Date.parse(y.c.date); });
+    var h = '', tourPrec = '';
+    L.forEach(function (m, i) {
+      var tn = m.ev.name || m.ev.shortName || '', s = SF[window._g45TnSurf(tn, false)] || SF.dur;
+      if (tn !== tourPrec) { h += '<div style="font-size:14px;font-weight:800;background:#0b101d;display:inline-block;padding:3px 10px;border-radius:7px;margin:10px 0 6px;">' + (m.lg === 'wta' ? 'WTA' : 'ATP') + ' · ' + esc(tn) + ' · ' + s.i + ' ' + s.l + '</div>'; tourPrec = tn; }
+      var hr = ''; try { hr = new Date(m.c.date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }); } catch (e) {}
+      h += '<div style="background:#1e2740;border-radius:10px;padding:9px 10px;margin-bottom:8px;">'
+        + '<div style="display:flex;justify-content:space-between;gap:8px;font-size:15px;"><b>' + esc(m.a.n) + ' – ' + esc(m.b.n) + '</b><span style="flex:none;">' + (m.st === 'in' ? '<b style="color:#ff6b6b;">🔴 en cours</b>' : '🕒 ' + hr) + '</span></div>'
+        + '<div style="margin-top:7px;">' + bouton(m.lg, m.a, m.b, tn, ekDe(m.c, m.ev), 'g45tn-j-' + i) + '</div></div>';
+    });
+    cible.innerHTML = h;
+  };
+  window._g45TnEcran = function () {
+    return '<div style="background:rgba(11,16,29,.92);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px 14px;color:#fff;margin-bottom:12px;">'
+      + '<div style="font-size:17px;font-weight:800;">🎾 Matchs du jour · ATP et WTA</div>'
+      + '<div style="font-size:13px;color:#c9d3ee;margin:4px 0 6px;">Touche « Analyse BET45 » : forme, surface, tournoi, face-à-face, bilan par année (ESPN). Premier chargement d\'un joueur : 10 à 20 s.</div>'
+      + '<div id="g45tn-jour"><div style="font-size:14px;color:#c9d3ee;">⏳ Chargement…</div></div></div>';
+  };
+})();
+
+/* 🎾 Place du tennis (20261020i, capture d'Antoine « la place tennis est plutôt là non ? » = à côté de Football / Hockey / NBA / NFL de
+   « Tendances perso ») : bouton ajouté à #g45tr-onglets ; drapeau localStorage g45tr_tennis (pas _G45_TR.sp : le robot d'analyse, la
+   mémoire IndexedDB et le démarrage ne connaissent que foot / hockey / nba / nfl). Écran tennis = l'écran perso dessiné normalement, dont
+   on garde le titre et les onglets, le reste remplacé par les matchs du jour. Appelé par le bloc « TENDANCES EN BOUTONS ». */
+(function () {
+  var actif = function () { try { return localStorage.getItem('g45tr_tennis') === '1'; } catch (e) { return false; } };
+  var poser = function (on) { try { if (on) localStorage.setItem('g45tr_tennis', '1'); else localStorage.removeItem('g45tr_tennis'); } catch (e) {} };
+  var styleBt = function (b, on) { b.style.background = on ? '#2563eb' : 'rgba(26,34,53,.92)'; b.style.borderColor = on ? '#3b82f6' : 'rgba(255,255,255,.25)'; };
+  window.g45TrTennis = function () { if (typeof _G45_TR !== 'undefined' && _G45_TR.run) return; poser(true); loadTendancesTab(); };
+  if (typeof window.g45TrSport === 'function') {
+    var _sp = window.g45TrSport;
+    g45TrSport = window.g45TrSport = function (sp) {
+      if (actif()) { poser(false); if (typeof _G45_TR !== 'undefined' && sp === _G45_TR.sp) return loadTendancesTab(); }
+      return _sp.apply(this, arguments);
+    };
+  }
+  window._g45TnPerso = function (el) {
+    var ong = document.getElementById('g45tr-onglets'); if (!ong || ong.parentNode !== el) return false;
+    var on = actif();
+    var bt = document.createElement('button');
+    bt.setAttribute('onclick', 'g45TrTennis()'); bt.id = 'g45tr-ong-tennis';
+    bt.style.cssText = 'cursor:pointer;font-size:16px;font-weight:800;padding:11px 8px;border-radius:12px;border:1px solid;color:#fff;';
+    bt.textContent = '🎾 Tennis'; styleBt(bt, on); ong.appendChild(bt);
+    if (!on) return false;
+    Array.prototype.forEach.call(ong.children, function (b) { if (b !== bt) styleBt(b, false); });
+    for (var n = ong.nextSibling; n;) { var nx = n.nextSibling; el.removeChild(n); n = nx; }
+    var d = document.createElement('div'); d.innerHTML = window._g45TnEcran(); el.appendChild(d.firstChild);
+    window._g45TnJour(el);
+    return true;
+  };
 })();

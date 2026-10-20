@@ -2070,6 +2070,19 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   re-noté chaque matin. Robot : FAMILLE = type sans le chiffre (un48.5 → un, hc1:7.5 → hc1:) ; famille déjà notée un jour précédent pour ce match = pas
   reprise ; doublons existants retirés (1er noté gardé : Jaguars–Texans un41.5, Bears–Patriots un49.5 / un50.5 enlevés à la main le 20/10). app.js inchangé.
   17/10 (« au pire on met 8h ? » : passage du 17/10 lancé par GitHub à 13 h 51) : robot dès 8 h à Paris (parisH() < 8), crons 6 / 7 / 8 / 9 h UTC (rattrapage des retards).
+  20261020i (captures matchup-tennis.fr « on a pas moyen de faire pareil ou mieux », maquette validée « oui Tendances, ATP + WTA et pourquoi pas
+  le rajouter ici » [fenêtre d'un match Résultats → Tennis] ; « la place tennis est plutôt là » = à côté de Football / Hockey / NBA / NFL) :
+  🎾 ANALYSE TENNIS — bloc en fin d'app.js. SONDES d'Antoine : Sackmann tennis_atp 2024-2026 = 404 (source morte) ; ESPN core
+  leagues/<atp|wta>/athletes/<id>/eventlog?limit=200 = saison en cours (1 page), seasons/<AAAA>/athletes/<id>/eventlog = saison passée
+  (« ?season= » IGNORÉ) ; competition.$ref = competitors {id, name, winner} + notes {type « Round 1 - Court 7 », text « X bt Y 2-6 6-2 7-5 »} ;
+  event = name + venue.indoor, PAS de surface (table nom → surface _g45TnSurf, gazon puis terre avant « salle ») ; statistics = titres / gains
+  seulement (pas de stats de service, pas de style). Elo et cote de la maquette RETIRÉS (historique de tous les adversaires / crédits Odds API).
+  _g45TnSaison (IndexedDB kv : tn1_<lg>_<id>_<an> passé = toujours, en cours 6 h ; tnev1_ tournois), _g45TnMatch (qualifs, doubles, w/o
+  exclus), _g45TnCalc (pur : 10 derniers, surface 12 mois, tournoi = n° d'événement ESPN avant « - », GC / 1000, salle / plein air, H2H,
+  bilan année × surface), g45TnAnalyser(boîte, {lg, a, b, tour, ek}) : onglets Facteurs clés / Bilan (➕ 2 saisons de plus) / Face-à-face / Forme,
+  2 saisons par défaut, dédoublonnage par n° de match. Tendances perso : bouton #g45tr-ong-tennis (drapeau localStorage g45tr_tennis, PAS
+  _G45_TR.sp) → matchs du jour (scoreboard ATP + WTA, simples à venir / en cours) ; fenêtre de match : enveloppe _g45EspnTennisDetail
+  (simples) → bouton « 📊 Analyse BET45 ». Smoke (tennis, 63) + 26 essais vm.
   20261020c (croquis d'Antoine « Tendances = 4 boutons », maquette cliquable validée « oui, BET45 → Sélection du jour par défaut ») : ONGLET EN BOUTONS —
   bloc « TENDANCES EN BOUTONS » en fin d'app.js (enveloppe la plus externe de loadTendancesTab). Barre #g45tr-nav : 📒 Tendances BET45 · 🔍 Tendances perso ·
   ⚽ Tendances buteurs · 📏 CLV ; dans BET45 : ⭐ Sélection du jour (_g45TrSelHtml, forcée ouverte) · 📅 Historique (calendrier + liste du jour) ·
