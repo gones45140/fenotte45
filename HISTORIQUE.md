@@ -2188,6 +2188,11 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   retard (20/10 : 10 h 47, 12 h 32, 13 h 07, 14 h 07 UTC ; 18/10 : 11 h 56 UTC). tendances.yml : cron '13,43 3-9 * * *' (retard ≈ 3 h d'après Antoine) (minutes décalées, essai
   toutes les 30 min). Si encore en retard : le worker (cron */5, fiable) pourrait lancer le robot par l'API GitHub (workflow_dispatch) — il
   faudrait un jeton GitHub (droit Actions) mis en SECRET du worker par Antoine.
+  21/10 (« il reste la solution du worker… pas bête ça ») : PRÉPARÉ (déploiement sur « OK ») — worker : lancerRobotTendances(env) dans
+  scheduled (*/5) : si env.GH_ROBOT, entre 8 h 00 et 8 h 59 à Paris (parisMaintenant, sans Intl, heure d'été calculée), une fois par jour
+  (D1 robtend:<jour>, 2 jours), POST api.github.com/…/actions/workflows/tendances.yml/dispatches { ref: main, inputs: { force: '0' } }.
+  tendances.yml : entrée force (défaut '1' pour le bouton), FORCE = inputs.force. Antoine : jeton fine-grained (dépôt gones45 seul, Actions
+  lecture-écriture) → secret GH_ROBOT du worker fd-proxy (tableau de bord Cloudflare, jamais dans le code ni la conversation).
   _g45TnPerso pose les 3 blocs de l'écran. Smoke tnRun (65) ; tests tnRobot / tnRun calés sur « maintenant + quelques minutes » (le soir UTC,
   « + 2 h » tombait le lendemain).
   20261020c (croquis d'Antoine « Tendances = 4 boutons », maquette cliquable validée « oui, BET45 → Sélection du jour par défaut ») : ONGLET EN BOUTONS —
