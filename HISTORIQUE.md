@@ -2083,6 +2083,9 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   2 saisons par défaut, dédoublonnage par n° de match. Tendances perso : bouton #g45tr-ong-tennis (drapeau localStorage g45tr_tennis, PAS
   _G45_TR.sp) → matchs du jour (scoreboard ATP + WTA, simples à venir / en cours) ; fenêtre de match : enveloppe _g45EspnTennisDetail
   (simples) → bouton « 📊 Analyse BET45 ». Smoke (tennis, 63) + 26 essais vm.
+  20261020j (« ça dit pas qui BET45 voit gagner ? ») : _g45TnAvis(A, B, rangA, rangB) — moyenne pondérée des parts : rang ESPN curatedRank
+  (1/√rang) 0,30 · surface 12 mois 0,25 · forme 0,20 · H2H 0,10 lissé · catégorie / tournoi / salle 0,05 ; % comptés si ≥ 3 matchs des deux côtés ;
+  confiance ≥ 15 pts forte, ≥ 7 moyenne, sinon « match serré ». Encadré « 🔮 BET45 voit gagner » au-dessus des onglets. 5 essais vm.
   20261020c (croquis d'Antoine « Tendances = 4 boutons », maquette cliquable validée « oui, BET45 → Sélection du jour par défaut ») : ONGLET EN BOUTONS —
   bloc « TENDANCES EN BOUTONS » en fin d'app.js (enveloppe la plus externe de loadTendancesTab). Barre #g45tr-nav : 📒 Tendances BET45 · 🔍 Tendances perso ·
   ⚽ Tendances buteurs · 📏 CLV ; dans BET45 : ⭐ Sélection du jour (_g45TrSelHtml, forcée ouverte) · 📅 Historique (calendrier + liste du jour) ·
