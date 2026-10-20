@@ -55822,7 +55822,9 @@ async function g45DirectMesEquipes(silencieux) {
              Ligue des Champions : mieux vaut le sport seul qu'une competition
              fausse. */
           var comp = m.lgNom || ((m.lg && m.lg !== 'all') ? m.lg : '');
-          p.push(pastille((SPORT_ICO[m.sp] || '') + ' ' + (comp || m.sp), 'rgba(255,255,255,.80)'));
+          /* 20261020d (capture : « soccer » au lieu de « Ligue des champions ») : sans nom de compétition, plus jamais le slug anglais d'ESPN. */
+          var SPORT_FR = { soccer: 'Football', basketball: 'Basket', hockey: 'Hockey', baseball: 'Baseball', football: 'Football US', 'rugby-league': 'Rugby à XIII', rugby: 'Rugby' };
+          p.push(pastille((SPORT_ICO[m.sp] || '') + ' ' + (comp || SPORT_FR[m.sp] || m.sp), 'rgba(255,255,255,.80)'));
 
           var dd = new Date(m.date);
           if (!isNaN(dd)) {
@@ -55836,15 +55838,18 @@ async function g45DirectMesEquipes(silencieux) {
           var tv = reel || _g45TvDe(m.lgTv || m.lg);
           if (tv) {
             var gratuit = /youtube|twitch|dailymotion/i.test(reel || '');
-            var coul = gratuit ? '#1ed760' : (reel ? '#a78bfa' : '#6b7a99');
-            var fond = gratuit ? 'rgba(30,215,96,.14)' : (reel ? 'rgba(167,139,250,.14)' : 'rgba(255,255,255,.05)');
+            /* 20261020d (capture Suivies : « Canal+ Live 6 », « beIN SPORTS MAX » presque invisibles sur le drapeau Atlético / la patinoire ;
+               Antoine : « l'image actuelle est bien, juste mettre un cache pour la TV ») : fond sombre OPAQUE comme les autres pastilles,
+               texte clair ; la couleur (vert gratuit / violet programme réel) passe dans le liseré. */
+            var coul = gratuit ? '#7dffb0' : (reel ? '#e4dcff' : '#ffffff');
+            var fond = 'rgba(8,11,20,.88);border:1px solid ' + (gratuit ? '#1ed760' : (reel ? '#a78bfa' : 'rgba(255,255,255,.35)'));
             var dedans = '\ud83d\udcfa ' + tv;
             if (info && info.url) {
               var arg = "'" + String(info.url).replace(/'/g, '') + "','"
                       + String((m.moiLong || m.moi) + ' - ' + m.adv).replace(/'/g, '') + "'";
               dedans += gratuit
                 ? (' <a href="#" onclick="event.preventDefault();event.stopPropagation();g45RegarderYT(' + arg + ');" style="color:#1ed760;text-decoration:none;font-weight:800;">\u25b6</a>')
-                : (' <a href="' + info.url + '" target="_blank" rel="noopener" onclick="event.stopPropagation();" style="color:#8899aa;text-decoration:none;">\u2197</a>');
+                : (' <a href="' + info.url + '" target="_blank" rel="noopener" onclick="event.stopPropagation();" style="color:#c9d3ee;text-decoration:none;">\u2197</a>');
             }
             p.push(pastille(dedans, coul, fond));
           }

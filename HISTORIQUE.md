@@ -519,6 +519,10 @@ Il est dans les DEUX dépôts (gones45 et fenotte45), identique (cmp). Jamais de
   (`_g45BandChemin` → espnLeagueOf) → scoreboards uefa.champions / uefa.europa / uefa.europa.conf ajoutés avec tous les noms de foot du mur.
   20261013m : sélecteur « Mes équipes » (.g45-band-src-wrap, fond .55 dans style.css) rendu OPAQUE par app.js (#g45-band-sel-fond) — les tuiles qui
   défilent passaient dessous et se lisaient à travers.
+- Suivies — 20261020d (captures : chaîne télé presque invisible, « soccer » au lieu de la compétition ; Antoine : « j'adore l'image actuelle, juste un cache
+  pour la TV ») : pastille 📺 fond sombre opaque rgba(8,11,20,.88) + liseré (vert gratuit / violet programme réel / blanc table), texte clair ;
+  sans nom de compétition → nom du sport en français (SPORT_FR), plus jamais « soccer ». Images, voile, heure : INCHANGÉS (choix d'Antoine).
+  EN ATTENTE : vrai nom (Ligue des champions…) avec le slug `all` — sonde console scoreboard soccer/all demandée à Antoine (leagues / uid / league).
 - Suivies « Matchs à venir / direct » (`g45DirectMesEquipes`, groupes `_g45DirEquipes`) : 29v —
   le plafond (10) porte sur les REQUÊTES réelles (`aInterroger`, tout le foot = 1 requête `all`),
   plus sur les championnats : les ligues de foot d'Antoine occupaient les 8 places et la NHL
