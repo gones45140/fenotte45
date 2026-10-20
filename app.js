@@ -48874,7 +48874,24 @@ async function g45FormeRender(c, body) {
   }).join('');
 
   body.innerHTML = barre
-    + '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;">' + head + corps + '</table></div>'
+    + '<div class="g45fo-tab" style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;">' + head + corps + '</table></div>'
+    /* 20261020b (capture téléphone : pastilles de forme coupées, noms sur 3 lignes ; maquette validée « oui go », ligne des chiffres en gras) :
+       sur téléphone portrait (< 600 px) le tableau est remplacé par des CARTES : nom entier 16 px, ligne « MJ · V-N-D · buts · diff » 14 px
+       gras blanc, toutes les pastilles (22 px, retour à la ligne si 10 ou plus), points en gros à droite ; bande verte 5 premiers / rouge 3 derniers. */
+    + '<style>.g45fo-cartes{display:none}@media (max-width:599px){.g45fo-tab{display:none}.g45fo-cartes{display:block}}</style>'
+    + '<div class="g45fo-cartes">' + lignes.map(function (t, i) {
+        var bord = i < 5 ? '#1ed760' : (i >= lignes.length - 3 ? '#ff4d4d' : 'transparent');
+        var ch = function (r) { var col = r === 'V' ? '#1ed760' : (r === 'N' ? '#f0b020' : '#ff4545');
+          return '<span style="width:22px;height:22px;border-radius:5px;background:' + col + ';color:' + (r === 'D' ? '#fff' : '#0a0e1a') + ';font-size:12px;font-weight:900;display:inline-flex;align-items:center;justify-content:center;">' + r + '</span>'; };
+        return '<div onclick="g45CompetOuvrir(\'' + String(t.nom).replace(/'/g, "\\'") + '\',\'' + (t.id || '') + '\',\'' + c.s + '\',\'' + c.sp + '\')" style="display:flex;gap:10px;align-items:center;margin-bottom:8px;padding:10px 12px;background:rgba(20,27,45,.92);border-radius:12px;border-left:4px solid ' + bord + ';cursor:pointer;">'
+          + '<div style="width:22px;font-size:15px;color:#c9d3ee;text-align:center;flex:none;">' + (i + 1) + '</div>'
+          + (t.logo ? '<img src="' + t.logo + '" style="width:34px;height:34px;object-fit:contain;flex:none;" loading="lazy" onerror="this.style.visibility=\'hidden\'">' : '<div style="width:34px;flex:none;"></div>')
+          + '<div style="flex:1;min-width:0;"><div style="font-size:16px;font-weight:800;color:#fff;line-height:1.2;">' + t.nom + '</div>'
+          + '<div style="margin-top:4px;font-size:14px;font-weight:800;color:#fff;">' + t.mj + ' MJ \u00b7 <span style="color:#1ed760;">' + t.v + '</span>-<span style="color:#f0b020;">' + t.n + '</span>-<span style="color:#ff6b6b;">' + t.d + '</span> \u00b7 ' + t.bp + ':' + t.bc + ' \u00b7 ' + (t.diff > 0 ? '+' : '') + t.diff + '</div>'
+          + '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;">' + t.serie.map(ch).join('') + '</div></div>'
+          + '<div style="text-align:right;flex:none;"><div style="font-size:22px;font-weight:900;color:#fff;line-height:1;">' + (ptsFoot ? t.pts : t.pct + '%') + '</div><div style="font-size:11px;color:#c9d3ee;font-weight:600;">' + (ptsFoot ? 'pts' : 'victoires') + '</div></div>'
+          + '</div>';
+      }).join('') + '</div>'
     + '<div style="margin-top:9px;font-size:10px;color:var(--t3);">Calcul\u00e9 sur les '
       + _g45FormeCtx.n + ' derniers matchs '
       + (_g45FormeCtx.lieu === 'dom' ? '\u00e0 domicile' : _g45FormeCtx.lieu === 'ext' ? '\u00e0 l\'ext\u00e9rieur' : 'toutes situations')

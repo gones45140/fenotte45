@@ -60,6 +60,9 @@ Il est dans les DEUX dépôts (gones45 et fenotte45), identique (cmp). Jamais de
   colonnes otLosses ET overtimeLosses présentes. → `_g45StPresaison(sp, slug)` lit le scoreboard (leagues[0].season.type.type 1 =
   présaison, année season.year ; type NON vu dans la sonde) : cette année-là sautée, gardée en dernier repli. Capture « Jets 16e » =
   saison 2024-25 (season=2025) : tri corrigé en w.
+- 20261020b (capture téléphone Forme : pastilles coupées, noms sur 3 lignes ; maquette validée « oui go », chiffres en gras) : `g45FormeRender` —
+  < 600 px : tableau (.g45fo-tab) caché, CARTES .g45fo-cartes (nom 16 px, « MJ · V-N-D · buts · diff » 14 px gras blanc, pastilles 22 px en retour à
+  la ligne, points / % à droite, bande verte 5 premiers / rouge 3 derniers, clic = g45CompetOuvrir). PC / paysage inchangés. Rendu vérifié Chromium 412 px.
 - 20261020a (capture : Compétitions → Ligue 1 → Équipes = 519 équipes, Forme « recherche de 519 ») : la liste des équipes du formulaire de pari
   (eq de _g45CompetEquipes + équipes du calendrier « all » par eq.push) était le MÊME tableau que _g45CompetCache → la liste mémorisée de la
   ligue gonflait ; copie .slice() ; caches g45cm11_soccer_ effacés une fois (g45_cm_fix1). RÈGLE : ne jamais modifier un tableau rendu par un cache.
