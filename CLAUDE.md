@@ -130,10 +130,11 @@ PIÈGES À NE JAMAIS OUBLIER :
 ## 7. Reste à faire / en attente (détail : HISTORIQUE.md § 7)
 
 - ⚾ Lanceurs MLB dans l'Agenda : sonde probables à faire par Antoine (ou mars).
-- Cotes en direct hors foot : commande console « 4 ligues » à lancer par Antoine pendant un match.
+- Cotes en direct hors foot : NBA = AUCUNE cote ESPN pendant le match (sondé 20/10) ; NHL / NFL / MLB encore à sonder pendant un match.
 - Abonnement : plan prêt, NON codé (_G45_ABO_PLAN false) ; micro-entreprise reportée ; verrou serveur à faire le moment venu.
 - RGPD : SQL supprimer-compte.sql à installer par Antoine dans les 2 projets Supabase.
 - 🎾 Cotes tennis : TheRundown (gratuit, worker /rundown, secret RUNDOWN_KEY) branché dans le robot (20261020m). À faire : cote dans l'analyse (maquette), autres sports via TheRundown selon la consommation.
+- 🎾 « Analyser les matchs » tennis (stats seules, filtres Jour / Proba / Confiance, SANS TheRundown = robot seul) : maquette montrée le 20/10, en attente du « OK maquette ».
 - Surebet : mises « Mise 1 / Mise 2 » en blanc. Cédric : toucher 🤍 sur Portugal. Worker : budget `_lourd` 4 → 2 proposé.
 
 ## 8. Façon de travailler en session cloud

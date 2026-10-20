@@ -1628,6 +1628,8 @@ RÉGLÉ (worker, 01/10) : cron « exceededCpu » (cpuTimeMs 10) à CHAQUE passag
   plafondAtteint), sans appel à The Odds API ; gones = {remaining, used, jour:{u,max}, mois:{u,max}}. Smoke (43).
   20261015n (« il manque un intitulé, j'ai eu peur au début : il te reste ») : ligne fermée « Il te reste x / 8 crédits aujourd'hui » (bet45) /
   « Il reste x / 20 crédits aujourd'hui (tout le monde) » (gones) ; ouverte : titre « Il te reste : » / « Il reste : » au-dessus des barres.
+- 20/10 — SONDÉ PAR ANTOINE (BOS @ DET en cours, 96-99) : scoreboard basketball/nba = competitions[0].odds ABSENT pendant le match (ni moneyline,
+  ni total, ni overUnder) → pas de cotes en direct NBA chez ESPN. NHL / NFL / MLB : à sonder (même commande, autre chemin).
 - 📈 COTES EN DIRECT HORS FOOT (15/10) : commande console « 4 ligues » (NHL / NBA / NFL / MLB, moneyline.*.current + total.over.current)
   donnée à Antoine ; il la lancera pendant un match : MLB jeudi 19 h, NFL ce week-end, NBA mardi 21 h, NHL peut-être ce week-end. Chiffres
   présents → étendre _g45CdLire / cartes / fenêtre au sport (aujourd'hui meta.sp === 'soccer' et sport === 'soccer' seulement) ; ligne de
