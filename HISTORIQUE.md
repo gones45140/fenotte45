@@ -2148,6 +2148,15 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   BET45 (2 saisons, stats ESPN SEULES : TheRundown jamais appelé, réservé au robot) ; résultats filtrés à l'affichage (Proba mini 50 / 60 / 70,
   Confiance toutes / moyenne et forte / forte ; localStorage g45tn_jour / g45tn_pmin / g45tn_conf), classés par proba, « En clair » + « 📊 Analyse
   détaillée » ; gardés pour la journée (IndexedDB kv tnrun1). Liste « Tous les matchs du jour » dessous (250 compris). Robot : inchangé (500 et +).
+  20261020r (« tennisabstract.com peut pas nous aider malgré leur bordel ? » ; captures de la méthode matchup-tennis : Elo par surface) : ELO.
+  SONDÉ PAR ANTOINE (console sur tennisabstract.com/reports/atp_elo_ratings.html) : plus grand tableau 560 lignes, colonnes « Elo Rank | Player | Age |
+  Elo | | hElo Rank | hElo | cElo Rank | cElo | gElo Rank | gElo | | Peak Elo | Peak Month | | ATP Rank | Log diff » (Sinner 2296.9 / 2234.3 / 2186.8 /
+  2100.5). Robot : .github/scripts/elo.mjs (étape « Elo tennis » de tendances.yml, avant l'analyse, continue-on-error) — curl ATP + WTA (wta_elo_ratings
+  .html, forme supposée identique), colonnes repérées par l'EN-TÊTE, au plus tous les 6 jours → données/elo_tennis.json { maj, atp / wta : { nom normalisé :
+  [nom, elo, dur, terre, gazon] } } ; < 50 joueurs lus = ancien gardé. App : _g45TnEloCharger (raw, une fois par session), _g45TnEloDe(lg, nom, sf)
+  (dur et salle = hElo, terre = cElo, gazon = gElo, repli Elo général) ; avis : Elo 0,35 (proba Elo 1/(1+10^((B−A)/400))), classement 0,10 au lieu
+  de 0,30 quand l'Elo existe ; « En clair » : « meilleur Elo dur (2234 contre 2047) » ; Facteurs clés : section NIVEAU « 🎯 ELO DUR (Tennis Abstract) ».
+  Données Sackmann = usage NON COMMERCIAL (à revoir le jour de l'abonnement). 9 essais (vm + lecteur), smoke 66.
   _g45TnPerso pose les 3 blocs de l'écran. Smoke tnRun (65) ; tests tnRobot / tnRun calés sur « maintenant + quelques minutes » (le soir UTC,
   « + 2 h » tombait le lendemain).
   20261020c (croquis d'Antoine « Tendances = 4 boutons », maquette cliquable validée « oui, BET45 → Sélection du jour par défaut ») : ONGLET EN BOUTONS —

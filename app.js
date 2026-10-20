@@ -77331,6 +77331,24 @@ window._g45AgJouUs = async function (nowTs) {
       sj: pc(sjOk, sets), mj: pc(mjOk, n), hc: pc(hcOk, n), tbS: pc(tbS, sets), tbW: pc(tbW, tbS), tbM: pc(tbM, n), s3: pc(s3, n3), dec: { p: pc(dec[0], dec[1]), w: dec[0], l: dec[1] - dec[0] } };
   };
 
+  /* 🎯 ELO PAR SURFACE (20261020r, tennisabstract.com via le ROBOT : données/elo_tennis.json, lu une fois par session sur raw.githubusercontent ;
+     jamais le site lui-même). Surface : dur et salle = hElo, terre = cElo, gazon = gElo ; sans valeur de surface → Elo général.
+     Rapprochement par nom normalisé (lettres seules, sans accents : « Félix Auger-Aliassime » = « Felix Auger Aliassime »). */
+  var eloP = null;
+  window._g45TnEloCharger = function () {
+    if (!eloP) eloP = fetch('https://raw.githubusercontent.com/gones45140/gones45/main/donn%C3%A9es/elo_tennis.json', { cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }).then(function (j) { window._g45TnEloJ = j; return j; });
+    return eloP;
+  };
+  window._g45TnEloDe = function (lg, nom, sf) {
+    var J = window._g45TnEloJ, T = J && J[lg === 'wta' ? 'wta' : 'atp']; if (!T) return null;
+    var k = String(nom || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z]/g, ''), r = T[k];
+    if (!r) return null;
+    var v = sf === 'terre' ? r[3] : (sf === 'gazon' ? r[4] : r[2]);
+    return v > 0 ? v : (r[1] > 0 ? r[1] : null);
+  };
+  var poserElo = function (lg, CA, CB, nA, nB, sf) { CA.elo = window._g45TnEloDe(lg, nA, sf); CB.elo = window._g45TnEloDe(lg, nB, sf); };
+
   /* 🔮 AVIS BET45 (20261020j, « ça dit pas qui BET45 voit gagner ? ») : moyenne pondérée de la part de chaque joueur, facteur par facteur.
      Classement ATP / WTA (1/√rang, curatedRank d'ESPN) 0,30 · surface 12 mois 0,25 · forme 0,20 · face-à-face 0,10 (lissé (g+1)/(n+2)) ·
      catégorie / tournoi / salle-plein air 0,05 chacun (20261020k : + pays 0,05). Un facteur en % ne compte que si les DEUX joueurs ont au
@@ -77339,7 +77357,10 @@ window._g45AgJouUs = async function (nowTs) {
     var som = 0, poids = 0, n = 0;
     var aj = function (w, sA) { if (sA == null || isNaN(sA)) return; som += w * sA; poids += w; n++; };
     var pct = function (w, a, b) { if (a && b && a.n >= 3 && b.n >= 3) aj(w, (a.p + 1) / (a.p + b.p + 2)); };
-    if (rkA > 0 && rkB > 0) { var wa = 1 / Math.sqrt(rkA), wb = 1 / Math.sqrt(rkB); aj(0.30, wa / (wa + wb)); }
+    /* 20261020r : Elo de la surface = facteur le plus fort (0,35, probabilité Elo classique) ; le classement ne pèse plus que 0,10 */
+    var avecElo = A.elo > 0 && B.elo > 0;
+    if (avecElo) aj(0.35, 1 / (1 + Math.pow(10, (B.elo - A.elo) / 400)));
+    if (rkA > 0 && rkB > 0) { var wa = 1 / Math.sqrt(rkA), wb = 1 / Math.sqrt(rkB); aj(avecElo ? 0.10 : 0.30, wa / (wa + wb)); }
     pct(0.25, A.sf12, B.sf12); pct(0.20, A.forme, B.forme);
     if (A.h2h && A.h2h.length) { var g = A.h2h.filter(function (m) { return m.w; }).length; aj(0.10, (g + 1) / (A.h2h.length + 2)); }
     pct(0.05, A.cat, B.cat); pct(0.05, A.tour, B.tour); pct(0.05, A.lieu, B.lieu); pct(0.05, A.pays, B.pays);
@@ -77352,6 +77373,7 @@ window._g45AgJouUs = async function (nowTs) {
     if (!V) return '';
     var f = V.qui === 'a' ? o.a : o.b, x = V.qui === 'a' ? o.b : o.a, F = V.qui === 'a' ? o.A : o.B, X = V.qui === 'a' ? o.B : o.A, R = [];
     if (f.rk > 0 && x.rk > 0 && f.rk < x.rk) R.push({ e: 30, t: 'mieux classé (' + f.rk + 'e contre ' + x.rk + 'e)' });
+    if (F.elo > 0 && X.elo > 0 && F.elo > X.elo) R.push({ e: (F.elo - X.elo) / 4, t: 'meilleur Elo ' + (o.ctx.sf === 'terre' ? 'terre' : (o.ctx.sf === 'gazon' ? 'gazon' : 'dur')) + ' (' + Math.round(F.elo) + ' contre ' + Math.round(X.elo) + ')' });   /* 20261020r */
     var ad = function (lib, a, b, w) { if (a && b && a.n >= 3 && b.n >= 3 && a.p > b.p) R.push({ e: (a.p - b.p) * w, t: lib + ' (' + a.p + ' % contre ' + b.p + ' %)' }); };
     ad('plus en forme sur 10 matchs', F.forme, X.forme, 1);
     ad('meilleur ' + (o.ctx.sf === 'salle' ? 'en salle' : 'sur ' + (SF[o.ctx.sf] || SF.dur).l.toLowerCase()) + ' sur 12 mois', F.sf12, X.sf12, 1.2);
@@ -77432,6 +77454,7 @@ window._g45AgJouUs = async function (nowTs) {
     if (o.err) h += '<div style="font-size:14px;color:#ff9b9b;margin-top:8px;">Données ESPN indisponibles pour le moment.</div>';
     else if (!A || !B) h += '<div style="font-size:14px;color:#c9d3ee;margin-top:10px;">⏳ ' + esc(o.msg || 'Chargement…') + '</div>';
     else if (o.tab === 'cle') {
+      if (A.elo > 0 && B.elo > 0) { var pE = Math.round(100 / (1 + Math.pow(10, (B.elo - A.elo) / 400))); h += titreSec('NIVEAU') + barre('🎯 ELO ' + (o.ctx.sf === 'terre' ? 'TERRE' : (o.ctx.sf === 'gazon' ? 'GAZON' : 'DUR')) + ' (Tennis Abstract)', pE, 100 - pE, '' + Math.round(A.elo), '' + Math.round(B.elo)); }   /* 20261020r */
       h += titreSec('FORME') + ligne('📈 10 DERNIERS MATCHS', A.forme, B.forme)
         + titreSec('CONDITIONS DU MATCH')
         + ligne(sf.i + ' % VICTOIRES ' + sf.l.toUpperCase() + ' (12 MOIS)', A.sf12, B.sf12)
@@ -77539,6 +77562,7 @@ window._g45AgJouUs = async function (nowTs) {
       var ha = await lire(o.a), hb = await lire(o.b);
       o.A = window._g45TnCalc(ha, Object.assign({}, o.ctx, { adv: o.b.id }));
       o.B = window._g45TnCalc(hb, Object.assign({}, o.ctx, { adv: o.a.id }));
+      try { await window._g45TnEloCharger(); poserElo(o.lg, o.A, o.B, o.a.n, o.b.n, o.ctx.sf); } catch (e) {}   /* 20261020r */
     } catch (e) { o.err = true; }
     o.charge = false; dessiner(bid);
   }
@@ -77633,6 +77657,7 @@ window._g45AgJouUs = async function (nowTs) {
     try { var e0 = await evInfo(m.lg, 'events/' + m.ek); if (e0) { ind = e0.ind; adr = adr || e0.adr; } } catch (e) {}
     var py = window._g45TnPays(adr), ctx = { sf: window._g45TnSurf(m.tn, ind), ind: ind, cat: m.cat, ek: m.ek, py: py ? py.n : '', pf: py ? py.f : '', adr: adr };
     var CA = window._g45TnCalc(await histo(m.a), Object.assign({}, ctx, { adv: m.b.id })), CB = window._g45TnCalc(await histo(m.b), Object.assign({}, ctx, { adv: m.a.id }));
+    try { await window._g45TnEloCharger(); poserElo(m.lg, CA, CB, m.a.n, m.b.n, ctx.sf); } catch (e) {}   /* 20261020r */
     var V = window._g45TnAvis(CA, CB, m.a.rk, m.b.rk); if (!V) return null;
     var cl = ''; try { cl = window._g45TnClair({ a: m.a, b: m.b, A: CA, B: CB, ctx: ctx }, V); } catch (e) {}
     return { m: m, sf: ctx.sf, qui: V.qui, p: Math.max(V.p, 1 - V.p), pc: V.pc, conf: V.conf, cl: cl };
@@ -77753,6 +77778,7 @@ window._g45AgJouUs = async function (nowTs) {
         var py = window._g45TnPays(adr), ctx = { sf: window._g45TnSurf(tour, ind), ind: ind, cat: window._g45TnCat(tour, m.lg), ek: ek, py: py ? py.n : '', pf: py ? py.f : '', adr: adr };
         var ha = await histo(m.lg, A.id), hb = await histo(m.lg, B.id);
         var CA = window._g45TnCalc(ha, Object.assign({}, ctx, { adv: B.id })), CB = window._g45TnCalc(hb, Object.assign({}, ctx, { adv: A.id }));
+        try { await window._g45TnEloCharger(); poserElo(m.lg, CA, CB, A.n, B.n, ctx.sf); } catch (e) {}   /* 20261020r */
         var V = window._g45TnAvis(CA, CB, A.rk, B.rk);
         if (!V || V.conf !== 'forte' || Math.max(V.p, 1 - V.p) < R.pmin) continue;
         var G = V.qui === 'a' ? A : B, k = V.qui === 'a' ? '1' : '2', pG = Math.max(V.p, 1 - V.p);

@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action (il est court exprès). Le détail de tout l'historique est dans HISTORIQUE.md
-(à chercher avec grep, jamais à lire en entier). Mis à jour le 20/10/2026 (version déployée : 20261020q, même app.js sur gones45 et fenotte45).
+(à chercher avec grep, jamais à lire en entier). Mis à jour le 20/10/2026 (version déployée : 20261020r, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -103,7 +103,7 @@ Index des zones (fonction d'entrée → mot à chercher dans HISTORIQUE.md) :
 - Paris : comptabilité `_g45BetEffetTotal` / `_g45BetAppliquer` (seule source de vérité), cartes « en cours » (data-g45ec), synchro `_g45PushBetsGithub` / `_g45BetsFusion`
 - Mur / accueil `_g45AccRegrouper`, cartes joueur `_g45JoueurVisLire`, logos `g45LogoUrlDe`, fond `_g45FondLogo`, limite bet45 `_g45MurLimite`
 - Tendances `g45TrRun` / `_g45TrRender`, officielles `_g45TrOffHtml` (robot .github/scripts/tendances.mjs), sélection du jour `_g45TrSelHtml`
-- Tennis (analyse ESPN) `g45TnAnalyser` / `_g45TnSaison` / `_g45TnCalc` / `_g45TnSurf`, bouton Tendances perso `_g45TnPerso`
+- Tennis (analyse ESPN) `g45TnAnalyser` / `_g45TnSaison` / `_g45TnCalc` / `_g45TnSurf`, bouton Tendances perso `_g45TnPerso`, Elo `_g45TnEloDe` (robot .github/scripts/elo.mjs)
 - Marqueurs `g45ButeursView`, `g45MarqueursUS`, `g45NbaMq` · CLV `g45ClvView` · quota cotes `_g45QtHtml`
 - IA du match `_g45MultiAI` · articles `_g45ArticleBloc` · santé `g45SanteTester` (gones seulement : `_g45SanteActive`)
 - KHL `g45KhlDetailMatch`, Euroleague / Pro A `_g45ElRendre`, Top 14 / Pro D2 `g45LnrRender` / `_g45Pd2Rendre`, NRL `g45NrlStatsRender`, KBO `_g45KboRendre`, F1 `g45F1Detail` / `_g45F1Off…`
