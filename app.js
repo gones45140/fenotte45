@@ -51142,6 +51142,7 @@ async function _g45SaisonsGen(el, nom, perso) {
   var combN = 0, _nAbs = 0;
   liste.forEach(function (m) {
     if (typeof _g45JouAbsent === 'function' && _g45JouAbsent(m.id)) { _nAbs++; return; }
+    if (typeof _g45JouOk === 'function' && _g45JouOk(m.id) === false) return;   /* 20261021k : « équipe gagne ET X marque » */
     if (coches.every(function (k) {
       if (CLES.indexOf(k) >= 0) return _g45SgCompte([m], k) === 1;
       var r = _g45MarcheEval(k, _g45SgX(m, sp)); return r == null ? true : r;
@@ -51191,7 +51192,7 @@ async function _g45SaisonsGen(el, nom, perso) {
   html += '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:6px;">'
     + '<div id="g45-sg-titre-resultats" style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#4f5d88;">R\u00e9sultats (' + nF + ' matchs)</div>'
     + '<div style="font-size:11px;font-weight:800;color:' + combCol + ';background:' + combCol + '1a;border:1px solid ' + combCol + '55;border-radius:12px;padding:3px 10px;">'
-    + '\u2705 ' + combN + '/' + _nFc + ' \u2014 ' + coches.map(function (k) { return CLES.indexOf(k) >= 0 ? libelleDe(k) : _g45MarcheCourt(k); }).join(' + ') + ' \u00b7 ' + combPc + '%'
+    + '\u2705 ' + combN + '/' + _nFc + ' \u2014 ' + coches.map(function (k) { return CLES.indexOf(k) >= 0 ? libelleDe(k) : _g45MarcheCourt(k); }).concat(typeof _g45JouLib === 'function' && _g45JouLib() ? [_g45JouLib()] : []).join(' + ') + ' \u00b7 ' + combPc + '%'
     + (_nAbs ? ' <span style="color:#c9d3ee;font-weight:700;">\u00b7 ' + _nAbs + ' match' + (_nAbs > 1 ? 's' : '') + ' sans ' + ((typeof _g45JouF !== 'undefined' && _g45JouF && _g45JouF.nom) || 'le joueur') + ' retir\u00e9' + (_nAbs > 1 ? 's' : '') + '</span>' : '')
     + '</div></div>';
   liste.forEach(function (m) {
@@ -65543,13 +65544,28 @@ function _g45JouSet(role, id) {
   } else {
     var idx = _g45JouLire(cle);
     var j = idx && idx.joueurs && idx.joueurs[id];
-    _g45JouF = { cle: cle, role: role, id: String(id), nom: j ? j.nom : '' };
+    _g45JouF = { cle: cle, role: role, id: String(id), nom: j ? j.nom : '', min: (_g45JouF && _g45JouF.min) || 1 };
   }
   _g45SgRefresh();
 }
 window._g45JouSet = _g45JouSet;
 
 function _g45JouEffacer() { _g45JouF = null; _g45SgRefresh(); }
+/* 20261021k : seuil du filtre joueur + test d'un match (null = pas de filtre ou match pas analysé) + libellé pour le compteur du combiné */
+function _g45JouMin(k) { if (_g45JouF) { _g45JouF.min = k; _g45SgRefresh(); } }
+window._g45JouMin = _g45JouMin;
+function _g45JouOk(eid) {
+  var f = _g45JouF; if (!f || !eid) return null;
+  var idx = _g45JouLire(f.cle), pm = idx && (idx.parMatch || {})[String(eid)]; if (!pm) return null;
+  return (((pm[f.role] || {})[f.id]) || 0) >= (f.min || 1);
+}
+window._g45JouOk = _g45JouOk;
+function _g45JouLib() {
+  var f = _g45JouF; if (!f) return '';
+  var role = null, cfg = _g45JouCfg((window._g45JouCtx || {}).sp); if (cfg) cfg.roles.forEach(function (r) { if (r.k === f.role) role = r; });
+  return (f.nom || 'joueur') + ' ' + ((role && role.lab) || '').toLowerCase() + ((f.min || 1) > 1 ? ' ' + f.min + '+' : '');
+}
+window._g45JouLib = _g45JouLib;
 window._g45JouEffacer = _g45JouEffacer;
 
 /* Pastille posée sur la ligne du match, exactement comme en football : la
@@ -65563,7 +65579,7 @@ function _g45JouMarque(eid) {
   var pm = (idx.parMatch || {})[String(eid)];
   if (!pm) return '';
   var n = ((pm[f.role] || {})[f.id]) || 0;
-  if (!n) return '';
+  if (!n || n < (f.min || 1)) return '';   /* 20261021k : seuil 2+ / 3+ */
   var role = null, cfg = _g45JouCfg((window._g45JouCtx || {}).sp);
   if (cfg) cfg.roles.forEach(function (r) { if (r.k === f.role) role = r; });
   var ico = (role && role.lettre)
@@ -65644,7 +65660,10 @@ function _g45JouBarre(sp, lg, an, teamId, nom, liste) {
     h += '</select></label>';
   });
 
-  if (_g45JouF) {
+  if (_g45JouF) {   /* 20261021k (« manque le +1,5 pointeur et autre ») : 1 ou plus / 2 ou plus (+1,5) / 3 ou plus */
+    [1, 2, 3].forEach(function (k) { var on = (_g45JouF.min || 1) === k;
+      h += '<button onclick="_g45JouMin(' + k + ')" style="height:40px;padding:0 12px;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;'
+        + (on ? 'border:2px solid #f5c542;background:rgba(245,197,66,.18);color:#fff;' : 'border:1.5px solid rgba(255,255,255,.25);background:var(--s1);color:#e8ecfa;') + '">' + k + ' ou plus' + (k === 2 ? ' (+1,5)' : '') + '</button>'; });
     h += '<button onclick="_g45JouEffacer()" style="height:40px;padding:0 16px;border-radius:10px;'
       + 'border:1.5px solid rgba(255,69,69,.5);background:rgba(255,69,69,.1);color:#ff8a8a;'
       + 'font-size:14px;font-weight:800;cursor:pointer;">Effacer</button>';
@@ -78901,4 +78920,30 @@ window.g45ScTri = function (t, k) {
   Object.keys(orig).forEach(function (k) { env[k] = orig[k]; });   /* marqueurs des enveloppes précédentes (_g45Eb…) gardés */
   env._g45Course = true;
   loadTeamSaisons = env; window.loadTeamSaisons = env;
+})();
+
+
+/* ═══ 20261021k — 🎯 « LES PLUS RÉGULIERS » REPLIABLE (« une fois ouvert j'arrive pas à le refermer ») ═══
+   Bouton « ▴ Replier » en tête de la liste (_g45RegHtml enveloppée) ; replié = la liste n'est plus dessinée (même au redessin de Saisons :
+   _g45RegBloc voit une mémoire vide pendant l'appel) ; « Voir le classement » la rouvre (déjà en mémoire → instantané). */
+(function () {
+  if (typeof _g45RegHtml !== 'function' || _g45RegHtml._repli) return;
+  var h0 = _g45RegHtml;
+  _g45RegHtml = function () { return '<button onclick="g45RegReplier()" style="float:right;margin:0 0 6px 8px;padding:7px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.3);background:rgba(11,16,29,.9);color:#fff;font-size:14px;font-weight:800;cursor:pointer;">▴ Replier</button>' + h0.apply(this, arguments); };
+  _g45RegHtml._repli = true;
+  var o0 = g45RegOuvrir;
+  g45RegOuvrir = window.g45RegOuvrir = function () { _g45Reg.replie = false; return o0.apply(this, arguments); };
+  window.g45RegReplier = function () {
+    _g45Reg.replie = true;
+    var box = document.getElementById('g45-reg-box'); if (!box) return;
+    box.innerHTML = '<button onclick="g45RegOuvrir()" style="padding:10px 16px;border-radius:10px;border:1.5px solid rgba(245,197,66,.55);background:rgba(245,197,66,.12);color:#f5c542;font-size:14px;font-weight:800;cursor:pointer;">🎯 Voir le classement</button>';
+  };
+  if (typeof _g45RegBloc === 'function') {
+    var b0 = _g45RegBloc;
+    _g45RegBloc = window._g45RegBloc = function () {
+      if (!_g45Reg.replie) return b0.apply(this, arguments);
+      var m = _g45Reg.mem; _g45Reg.mem = {};
+      try { return b0.apply(this, arguments); } finally { _g45Reg.mem = m; }
+    };
+  }
 })();

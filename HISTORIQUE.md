@@ -2279,6 +2279,12 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   vite ») : course entre deux loadTeamSaisons asynchrones (le plus lent écrit en dernier dans #ip-saisons). Enveloppe la plus externe : à la
   fin, si _currentTeam a changé depuis le début → relance UNE fois pour l'équipe actuelle ; marqueurs des enveloppes (_g45Eb…) recopiés
   (le smoke KBO les vérifie). Smoke 73.
+  20261021k (captures NHL Carolina / Colorado : « manque le +1,5 pointeur et autre », « curseur saison on n'a pas les joueurs ? si on veut équipe
+  gagne ET X marque / passeur / décisif », « Les plus réguliers : une fois ouvert j'arrive pas à le refermer ») : filtre joueur hors foot
+  (_g45JouBarre) → boutons « 1 ou plus / 2 ou plus (+1,5) / 3 ou plus » (_g45JouF.min, _g45JouMin), pastille ×N seulement si ≥ seuil ;
+  compteur du combiné des Saisons (✅ x/n) : match compté seulement si le joueur atteint le seuil (_g45JouOk) + libellé (_g45JouLib) ;
+  Les plus réguliers : « ▴ Replier » (_g45RegHtml enveloppée, g45RegReplier, _g45Reg.replie, _g45RegBloc voit une mémoire vide quand
+  replié). Joueurs dans les CRITÈRES SUR 4 SAISONS hors foot : pas fait (foot seulement). Smoke jouMin (74).
   _g45TnPerso pose les 3 blocs de l'écran. Smoke tnRun (65) ; tests tnRobot / tnRun calés sur « maintenant + quelques minutes » (le soir UTC,
   « + 2 h » tombait le lendemain).
   20261020c (croquis d'Antoine « Tendances = 4 boutons », maquette cliquable validée « oui, BET45 → Sélection du jour par défaut ») : ONGLET EN BOUTONS —
