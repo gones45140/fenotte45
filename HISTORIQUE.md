@@ -2162,8 +2162,8 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   de 0,30 quand l'Elo existe ; « En clair » : « meilleur Elo dur (2234 contre 2047) » ; Facteurs clés : section NIVEAU « 🎯 ELO DUR (Tennis Abstract) ».
   20261021n (Bruno, groupe « Bets 4 us », maquette maquette-tennis-bruno + « oui code tout, on analysera si pas d'accord ») : _g45TnCalc → sf2
   (surface sur 61 jours, PAS de repli 12 mois : < 3 matchs = facteur non compté + phrase jaune) et prec (dernier tournoi avant celui du match,
-  m.ek ≠ ctx.ek ; tour = m.rd « Final » / « Semifinal » / « Quarterfinal » SUPPOSÉS, repli français, NON SONDÉ : commande console donnée à
-  Antoine) ; contrecoup = ≤ 10 j ET (titre, ou finale / 1/2 en gc / m1000 / fin) ; premier = aucun autre titre dans les saisons lues. Avis :
+  m.ek ≠ ctx.ek ; tour = m.rd « Final » / « Semifinal » / « Quarterfinal » SONDÉS par Antoine le 21/10 : core notes[0].type = « Round 1 -
+  Centre Court », scoreboard round.displayName = Qualifying 1st Round / Qualifying Final / Round 1 / Round 2 / Quarterfinal / Semifinal / Final) ; contrecoup = ≤ 10 j ET (titre, ou finale / 1/2 en gc / m1000 / fin) ; premier = aucun autre titre dans les saisons lues. Avis :
   surface 0,25 sur sf2, contrecoup 0,10 (0,35 / 0,65 contre celui qui le subit). En clair : « ⚠️ son adversaire sort d'un titre (…, il y a
   N j) » en jaune. Facteurs clés : ligne « (2 MOIS) », bloc 🏁 TOURNOI PRÉCÉDENT, Elo en salle « DUR (pas d'Elo salle) » (dur et salle déjà
   séparés partout ailleurs). 8 + 2 essais vm, smoke 74.
