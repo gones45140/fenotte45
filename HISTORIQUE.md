@@ -2167,6 +2167,14 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   surface 0,25 sur sf2, contrecoup 0,10 (0,35 / 0,65 contre celui qui le subit). En clair : « ⚠️ son adversaire sort d'un titre (…, il y a
   N j) » en jaune. Facteurs clés : ligne « (2 MOIS) », bloc 🏁 TOURNOI PRÉCÉDENT, Elo en salle « DUR (pas d'Elo salle) » (dur et salle déjà
   séparés partout ailleurs). 8 + 2 essais vm, smoke 74.
+  20261021o (Bruno : « coefficienter les paramètres, la forme deux fois plus que la surface », « chaque surface un réglage différent » ;
+  maquette maquette-coefs + onglets surface, « OK ET OUI ») : _g45TnAvis(A, B, rkA, rkB, W) — W = { elo, rang, surf, forme, prec, h2h, fat,
+  aut } 0-10 (poids = /20 ; aut = cat / tour / lieu / pays chacun) ; sans W = standard INCHANGÉ (robot, sélection, Compétitions 🔮) ;
+  _G45_TN_STD = { 7, 2, 5, 4, 2, 2, 0, 1 } ; fat (fatigue, matchs 7 j, le plus frais favorisé) seulement en perso. Analyse (dessiner) :
+  bouton « ⚖️ Mes coefficients » → panneau (BET45 standard / Les miens, onglets Dur / Salle / Terre / Gazon, curseurs + part en %, ↺ standard),
+  localStorage g45tn_coefs { on, dur, salle, terre, gazon } ; réglage de la surface du match appliqué, ligne jaune « avec tes coefficients ·
+  BET45 standard : X % ». À FAIRE (session à part) : 🧪 test sur la saison passée (rejouer l'avis, % de bons vainqueurs ; Elo actuel = biais).
+  5 essais vm, smoke 75 (tnCoef).
   Données Sackmann = usage NON COMMERCIAL (à revoir le jour de l'abonnement). 9 essais (vm + lecteur), smoke 66.
   20261020s (« ok mais on peut pas améliorer compétition/tennis aussi ? » + « LES PHOTOS DES JOUEURS TOUJOURS DISPO OU SI PAS DE PHOTO drapeau du
   pays du joueur », maquette maquette-tennis-res validée « oui ») : bloc « COMPÉTITIONS → TENNIS PLUS LISIBLE » en fin d'app.js. Remplace

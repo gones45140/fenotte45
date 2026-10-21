@@ -77704,20 +77704,29 @@ window._g45AgJouUs = async function (nowTs) {
      Classement ATP / WTA (1/√rang, curatedRank d'ESPN) 0,30 · surface 12 mois 0,25 · forme 0,20 · face-à-face 0,10 (lissé (g+1)/(n+2)) ·
      catégorie / tournoi / salle-plein air 0,05 chacun (20261020k : + pays 0,05). Un facteur en % ne compte que si les DEUX joueurs ont au
      moins 3 matchs. Confiance : écart à 50 % ≥ 15 pts forte, ≥ 7 moyenne, sinon « match serré ». Indicatif, pas une cote. Pur, testé. */
-  window._g45TnAvis = function (A, B, rkA, rkB) {
+  /* 20261021o (Bruno : « donner plus d'importance à certains par un pourcentage, la forme deux fois plus que la surface » ; « chaque surface
+     risque d'avoir un réglage différent » ; maquette maquette-coefs « OK ET OUI ») : 5e argument W = coefficients de l'utilisateur pour la
+     surface du match ({ elo, rang, surf, forme, prec, h2h, fat, aut } de 0 à 10, poids = valeur / 20 ; aut = niveau / tournoi / salle / pays,
+     chacun). Sans W : avis BET45 standard, INCHANGÉ (robot, sélection, Compétitions). fat = fatigue (matchs sur 7 jours, le plus frais
+     favorisé) : n'existe que dans les réglages perso (standard 0). */
+  window._G45_TN_STD = { elo: 7, rang: 2, surf: 5, forme: 4, prec: 2, h2h: 2, fat: 0, aut: 1 };
+  window._g45TnAvis = function (A, B, rkA, rkB, W) {
     var som = 0, poids = 0, n = 0;
+    var ww = function (k, std) { return W ? (Math.max(0, Math.min(10, +W[k] || 0)) / 20) : std; };
     var aj = function (w, sA) { if (sA == null || isNaN(sA)) return; som += w * sA; poids += w; n++; };
     var pct = function (w, a, b) { if (a && b && a.n >= 3 && b.n >= 3) aj(w, (a.p + 1) / (a.p + b.p + 2)); };
     /* 20261020r : Elo de la surface = facteur le plus fort (0,35, probabilité Elo classique) ; le classement ne pèse plus que 0,10 */
     var avecElo = A.elo > 0 && B.elo > 0;
-    if (avecElo) aj(0.35, 1 / (1 + Math.pow(10, (B.elo - A.elo) / 400)));
-    if (rkA > 0 && rkB > 0) { var wa = 1 / Math.sqrt(rkA), wb = 1 / Math.sqrt(rkB); aj(avecElo ? 0.10 : 0.30, wa / (wa + wb)); }
-    pct(0.25, A.sf2 || A.sf12, B.sf2 || B.sf12); pct(0.20, A.forme, B.forme);   /* 20261021n : surface 2 mois (pas de repli 12 mois) */
+    if (avecElo && ww('elo', 1)) aj(ww('elo', 0.35), 1 / (1 + Math.pow(10, (B.elo - A.elo) / 400)));
+    if (rkA > 0 && rkB > 0 && ww('rang', 1)) { var wa = 1 / Math.sqrt(rkA), wb = 1 / Math.sqrt(rkB); aj(ww('rang', avecElo ? 0.10 : 0.30), wa / (wa + wb)); }
+    if (ww('surf', 1)) pct(ww('surf', 0.25), A.sf2 || A.sf12, B.sf2 || B.sf12);
+    if (ww('forme', 1)) pct(ww('forme', 0.20), A.forme, B.forme);
+    if (W && ww('fat', 0) && A.n7 != null && B.n7 != null && (A.n7 + B.n7) > 0) aj(ww('fat', 0), (B.n7 + 1) / (A.n7 + B.n7 + 2));   /* 20261021n : surface 2 mois (pas de repli 12 mois) */
     /* 20261021n : contrecoup du tournoi précédent (titre ou gros parcours il y a ≤ 10 j) : 0,10, en défaveur de celui qui le subit */
     var cA = !!(A.prec && A.prec.contre), cB = !!(B.prec && B.prec.contre);
-    if (cA !== cB) aj(0.10, cA ? 0.35 : 0.65);
-    if (A.h2h && A.h2h.length) { var g = A.h2h.filter(function (m) { return m.w; }).length; aj(0.10, (g + 1) / (A.h2h.length + 2)); }
-    pct(0.05, A.cat, B.cat); pct(0.05, A.tour, B.tour); pct(0.05, A.lieu, B.lieu); pct(0.05, A.pays, B.pays);
+    if (cA !== cB && ww('prec', 1)) aj(ww('prec', 0.10), cA ? 0.35 : 0.65);
+    if (A.h2h && A.h2h.length && ww('h2h', 1)) { var g = A.h2h.filter(function (m) { return m.w; }).length; aj(ww('h2h', 0.10), (g + 1) / (A.h2h.length + 2)); }
+    if (ww('aut', 1)) { var wo = ww('aut', 0.05); pct(wo, A.cat, B.cat); pct(wo, A.tour, B.tour); pct(wo, A.lieu, B.lieu); pct(wo, A.pays, B.pays); }
     if (!poids) return null;
     var p = som / poids, ec = Math.abs(p - 0.5);
     return { p: p, qui: p >= 0.5 ? 'a' : 'b', pc: Math.round(Math.max(p, 1 - p) * 100), conf: ec >= 0.15 ? 'forte' : (ec >= 0.07 ? 'moyenne' : 'serré'), n: n };
@@ -77788,6 +77797,47 @@ window._g45AgJouUs = async function (nowTs) {
   window.g45TnLigne = function (bid, cle, v) { var o = S.o[bid]; if (!o) return; o[cle] = v; dessiner(bid); };
   window.g45TnFiltre = function (bid, f) { var o = S.o[bid]; if (!o) return; o.fAn = f; dessiner(bid); };
 
+  /* ── 20261021o : ⚖️ Mes coefficients ── */
+  var SFK = ['dur', 'salle', 'terre', 'gazon'];
+  var CPAR = [['forme', '🔥 Forme (10 matchs)'], ['surf', '🟦 Surface 2 mois'], ['elo', '🎯 Elo surface'], ['rang', '🏅 Classement'], ['h2h', '⚔️ Face-à-face'],
+    ['prec', '🏁 Tournoi précédent'], ['fat', '😴 Fatigue (matchs 7 j)'], ['aut', '🏟️ Niveau / tournoi / salle / pays']];
+  var coefsLire = function () {
+    var c = null; try { c = JSON.parse(localStorage.getItem('g45tn_coefs') || 'null'); } catch (e) {}
+    c = c && typeof c === 'object' ? c : {}; c.on = !!c.on;
+    SFK.forEach(function (k) { var d = {}, x = c[k] || {}; Object.keys(window._G45_TN_STD).forEach(function (p) { d[p] = x[p] != null ? +x[p] : window._G45_TN_STD[p]; }); c[k] = d; });
+    return c;
+  };
+  var coefsEcrire = function (c) { try { localStorage.setItem('g45tn_coefs', JSON.stringify(c)); } catch (e) {} };
+  var coefsHtml = function (bid, o, CO, sfk, Vs) {
+    var h = '';
+    if (Vs) h += '<div style="font-size:13px;color:#f5c542;font-weight:700;margin:2px 0 4px;">⚖️ Avis avec <b>tes coefficients</b> (' + SF[sfk].l + ') · BET45 standard : '
+      + esc(Vs.qui === 'a' ? o.a.n : o.b.n) + ' ' + Vs.pc + ' %</div>';
+    h += '<button onclick="g45TnCoefOuv(\'' + bid + '\')" style="cursor:pointer;padding:9px 14px;border-radius:10px;border:1px solid #f5c542;background:transparent;color:#fff;font-size:14px;font-weight:800;margin:4px 0;">⚖️ Mes coefficients ' + (o.coefOuv ? '▴' : '▾') + '</button>';
+    if (!o.coefOuv) return h;
+    var sf = SFK.indexOf(o.coefSf) >= 0 ? o.coefSf : sfk, W = CO[sf], tot = 0;
+    CPAR.forEach(function (p) { tot += (p[0] === 'aut' ? 4 : 1) * (W[p[0]] || 0); });
+    var chip = function (on, lib, js) { return '<button onclick="' + js + '" style="cursor:pointer;padding:8px 12px;border-radius:10px;font-size:14px;font-weight:800;color:#fff;margin:0 6px 6px 0;'
+      + (on ? 'background:#2563eb;border:1px solid #5aa9ff;' : 'background:rgba(11,16,29,.8);border:1px solid rgba(255,255,255,.25);') + '">' + lib + '</button>'; };
+    h += '<div style="background:#0b101d;border:1px solid rgba(255,255,255,.16);border-radius:12px;padding:12px;margin:4px 0 8px;">'
+      + '<div style="font-size:16px;font-weight:900;">⚖️ Mes coefficients</div>'
+      + '<div style="font-size:13px;color:#c9d3ee;margin:4px 0 8px;line-height:1.5;">Le poids de chaque paramètre, de 0 (pas compté) à 10. Le % = sa part dans l\'avis. Un réglage par surface, gardé sur ce téléphone. La sélection BET45 et le robot gardent le standard.</div>'
+      + chip(!CO.on, 'BET45 standard', 'g45TnCoefOn(\'' + bid + '\',0)') + chip(CO.on, (CO.on ? '✓ ' : '') + 'Les miens', 'g45TnCoefOn(\'' + bid + '\',1)')
+      + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 6px;">' + SFK.map(function (k) { var on = k === sf;
+        return '<button onclick="g45TnCoefSf(\'' + bid + '\',\'' + k + '\')" style="cursor:pointer;flex:1;min-width:70px;padding:8px 6px;border-radius:10px;font-size:14px;font-weight:800;color:' + (on ? '#111' : '#fff') + ';background:' + (on ? SF[k].c : 'rgba(11,16,29,.8)') + ';border:1px solid ' + SF[k].c + ';">' + SF[k].i + ' ' + SF[k].l + (k === sfk ? ' •' : '') + '</button>'; }).join('') + '</div>';
+    CPAR.forEach(function (p) {
+      var v = W[p[0]] || 0, part = tot ? Math.round((p[0] === 'aut' ? 4 : 1) * v / tot * 100) : 0;
+      h += '<div style="display:grid;grid-template-columns:minmax(120px,1.2fr) 2fr 52px;gap:8px;align-items:center;padding:6px 0;border-top:1px solid rgba(255,255,255,.08);">'
+        + '<b style="font-size:14px;">' + p[1] + '</b><input type="range" min="0" max="10" step="1" value="' + v + '" onchange="g45TnCoef(\'' + bid + '\',\'' + sf + '\',\'' + p[0] + '\',this.value)" style="width:100%;accent-color:#46dcf0;">'
+        + '<span style="text-align:right;font-size:16px;font-weight:900;color:#f5c542;">' + part + ' %</span></div>';
+    });
+    return h + '<div style="font-size:13px;color:#c9d3ee;margin-top:6px;">• = surface de ce match · <span onclick="g45TnCoefRaz(\'' + bid + '\',\'' + sf + '\')" style="cursor:pointer;color:#7dffb0;font-weight:800;">↺ Remettre ' + SF[sf].l + ' au standard</span></div></div>';
+  };
+  window.g45TnCoefOuv = function (bid) { var o = S.o[bid]; if (!o) return; o.coefOuv = !o.coefOuv; dessiner(bid); };
+  window.g45TnCoefSf = function (bid, sf) { var o = S.o[bid]; if (!o) return; o.coefSf = sf; dessiner(bid); };
+  window.g45TnCoefOn = function (bid, on) { var c = coefsLire(); c.on = !!on; coefsEcrire(c); dessiner(bid); };
+  window.g45TnCoef = function (bid, sf, k, v) { var c = coefsLire(); if (!c[sf]) return; c[sf][k] = Math.max(0, Math.min(10, +v || 0)); c.on = true; coefsEcrire(c); dessiner(bid); };
+  window.g45TnCoefRaz = function (bid, sf) { var c = coefsLire(); c[sf] = Object.assign({}, window._G45_TN_STD); coefsEcrire(c); dessiner(bid); };
+
   function dessiner(bid) {
     var o = S.o[bid], box = document.getElementById(bid); if (!o || !box) return;
     var A = o.A, B = o.B, sf = SF[o.ctx.sf] || SF.dur;
@@ -77797,6 +77847,9 @@ window._g45AgJouUs = async function (nowTs) {
       + '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:16px;font-weight:900;"><span>' + esc(o.a.n) + prof(o.pa, o.a) + '</span>'
       + '<span style="font-size:13px;color:#c9d3ee;font-weight:700;text-align:center;">' + sf.i + ' ' + sf.l + (CAT[o.ctx.cat] ? ' · ' + CAT[o.ctx.cat] : '') + (o.ctx.py ? '<br>' + drap(o.ctx.pf) + esc(o.ctx.py) : '') + '</span><span style="text-align:right;">' + esc(o.b.n) + prof(o.pb, o.b) + '</span></div>';
     var V = A && B ? window._g45TnAvis(A, B, o.a.rk, o.b.rk) : null;
+    /* 20261021o : ⚖️ Mes coefficients (localStorage g45tn_coefs = { on, dur, salle, terre, gazon }) */
+    var CO = coefsLire(), sfk = SFK.indexOf(o.ctx.sf) >= 0 ? o.ctx.sf : 'dur', Vs = V;
+    if (V && CO.on) { var Vm = window._g45TnAvis(A, B, o.a.rk, o.b.rk, CO[sfk]); if (Vm) V = Vm; }
     if (V) {
       var nom = V.qui === 'a' ? o.a.n : o.b.n, pA = Math.round(V.p * 100), cc = V.conf === 'forte' ? '#1ed760' : (V.conf === 'moyenne' ? '#f0c828' : '#c9d3ee');
       h += '<div style="margin:10px 0 4px;background:#0b101d;border:2px solid ' + cc + ';border-radius:12px;padding:10px 12px;">'
@@ -77806,6 +77859,7 @@ window._g45AgJouUs = async function (nowTs) {
         + '<div style="font-size:13px;color:#c9d3ee;margin-top:5px;">Confiance ' + (V.conf === 'serré' ? 'faible : match serré' : V.conf) + ' · ' + V.n + ' facteur' + (V.n > 1 ? 's' : '') + ' · indicatif, pas une cote.</div></div>'
         + '<div style="background:#0f2a1c;border-left:4px solid #1ed760;border-radius:10px;padding:10px 12px;margin:8px 0;font-size:14px;line-height:1.5;">💡 <b>En clair</b><br>' + window._g45TnClair(o, V) + '</div>';
     }
+    if (V) h += coefsHtml(bid, o, CO, sfk, V !== Vs ? Vs : null);
     h += '<div style="display:flex;gap:6px;overflow-x:auto;margin:10px 0 4px;padding-bottom:4px;">' + tb('cle', '⭐ Facteurs clés') + tb('for', '📈 Forme') + tb('h2h', '🤝 Face-à-face') + tb('bil', '📊 Bilan') + tb('tou', '🌍 Tournée') + tb('ann', '📐 Stats annexes') + '</div>';
     if (o.err) h += '<div style="font-size:14px;color:#ff9b9b;margin-top:8px;">Données ESPN indisponibles pour le moment.</div>';
     else if (!A || !B) h += '<div style="font-size:14px;color:#c9d3ee;margin-top:10px;">⏳ ' + esc(o.msg || 'Chargement…') + '</div>';
