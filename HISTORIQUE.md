@@ -2160,6 +2160,13 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   [nom, elo, dur, terre, gazon] } } ; < 50 joueurs lus = ancien gardé. App : _g45TnEloCharger (raw, une fois par session), _g45TnEloDe(lg, nom, sf)
   (dur et salle = hElo, terre = cElo, gazon = gElo, repli Elo général) ; avis : Elo 0,35 (proba Elo 1/(1+10^((B−A)/400))), classement 0,10 au lieu
   de 0,30 quand l'Elo existe ; « En clair » : « meilleur Elo dur (2234 contre 2047) » ; Facteurs clés : section NIVEAU « 🎯 ELO DUR (Tennis Abstract) ».
+  20261021n (Bruno, groupe « Bets 4 us », maquette maquette-tennis-bruno + « oui code tout, on analysera si pas d'accord ») : _g45TnCalc → sf2
+  (surface sur 61 jours, PAS de repli 12 mois : < 3 matchs = facteur non compté + phrase jaune) et prec (dernier tournoi avant celui du match,
+  m.ek ≠ ctx.ek ; tour = m.rd « Final » / « Semifinal » / « Quarterfinal » SUPPOSÉS, repli français, NON SONDÉ : commande console donnée à
+  Antoine) ; contrecoup = ≤ 10 j ET (titre, ou finale / 1/2 en gc / m1000 / fin) ; premier = aucun autre titre dans les saisons lues. Avis :
+  surface 0,25 sur sf2, contrecoup 0,10 (0,35 / 0,65 contre celui qui le subit). En clair : « ⚠️ son adversaire sort d'un titre (…, il y a
+  N j) » en jaune. Facteurs clés : ligne « (2 MOIS) », bloc 🏁 TOURNOI PRÉCÉDENT, Elo en salle « DUR (pas d'Elo salle) » (dur et salle déjà
+  séparés partout ailleurs). 8 + 2 essais vm, smoke 74.
   Données Sackmann = usage NON COMMERCIAL (à revoir le jour de l'abonnement). 9 essais (vm + lecteur), smoke 66.
   20261020s (« ok mais on peut pas améliorer compétition/tennis aussi ? » + « LES PHOTOS DES JOUEURS TOUJOURS DISPO OU SI PAS DE PHOTO drapeau du
   pays du joueur », maquette maquette-tennis-res validée « oui ») : bloc « COMPÉTITIONS → TENNIS PLUS LISIBLE » en fin d'app.js. Remplace

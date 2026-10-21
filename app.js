@@ -77631,7 +77631,22 @@ window._g45AgJouUs = async function (nowTs) {
     var tk = String(ctx.ek || '').split('-')[0];
     var grp = function (cle) { var o = {}; tri.forEach(function (m) { var k = m[cle]; if (!k) return; (o[k] = o[k] || []).push(m); }); return Object.keys(o).map(function (k) { var c = cnt(o[k]); c.k = k; c.f = o[k][0].pf; return c; }).sort(function (a, b) { return b.n - a.n; }); };
     var der = tri[0] ? tri[0].t : 0;
+    /* 20261021n (Bruno, groupe « Bets 4 us » : « 12 mois c'est beaucoup trop, 2 mois max, de vieilles stats polluent l'état de forme » ;
+       « si rien sur 2 mois, repasser à 12 mois inutile ») : sf2 = surface sur 61 jours ; c'est LUI que l'avis compte (sf12 gardé pour info).
+       « Une 1re victoire en tournoi, derrière c'est quasiment une défaite, pareil sur un gros parcours en Masters 1000 » : prec = dernier
+       tournoi joué AVANT celui du match (m.ek ≠ ctx.ek) ; tour du dernier match (note ESPN, m.rd : « Final », « Semifinal »… — mots
+       anglais supposés, repli français) ; contrecoup = fini il y a ≤ 10 jours ET (titre, ou finale / demie en GC / Masters 1000 / Finals). */
+    var prec = null, m0 = tri.filter(function (m) { return !ctx.ek || m.ek !== ctx.ek; })[0];
+    if (m0) {
+      var rd0 = String(m0.rd || ''), demi = /semi|demi|1\/2/i.test(rd0), fin = !demi && !/quarter|quart/i.test(rd0) && /final/i.test(rd0);
+      var titre = fin && m0.w, gros = /^(gc|m1000|fin)$/.test(m0.cat || ''), j0 = Math.max(0, Math.floor((now - m0.t) / 864e5));
+      var autres = tri.filter(function (m) { return m !== m0 && m.ek !== m0.ek && m.w && /final/i.test(m.rd || '') && !/semi|demi|quarter|quart/i.test(m.rd || ''); }).length;
+      prec = { tr: m0.tr, cat: m0.cat || '', j: j0, titre: titre, finale: fin && !m0.w, demi: demi, premier: titre && !autres,
+        res: titre ? '🏆 titre' : (fin ? 'finale' : (demi ? '1/2' : (/quarter|quart/i.test(rd0) ? '1/4' : (m0.w ? 'gagné' : 'perdu')))) };
+      prec.contre = j0 <= 10 && (titre || ((prec.finale || demi) && gros));
+    }
     return {
+      sf2: cnt(tri.filter(function (m) { return m.sf === ctx.sf && m.t >= now - 61 * 864e5; })), prec: prec,
       sf12: cnt(r12.filter(function (m) { return m.sf === ctx.sf; })),
       tour: cnt(tri.filter(function (m) { return tk && String(m.ek).split('-')[0] === tk; })),
       tourL: tri.filter(function (m) { return tk && String(m.ek).split('-')[0] === tk; }),
@@ -77697,7 +77712,10 @@ window._g45AgJouUs = async function (nowTs) {
     var avecElo = A.elo > 0 && B.elo > 0;
     if (avecElo) aj(0.35, 1 / (1 + Math.pow(10, (B.elo - A.elo) / 400)));
     if (rkA > 0 && rkB > 0) { var wa = 1 / Math.sqrt(rkA), wb = 1 / Math.sqrt(rkB); aj(avecElo ? 0.10 : 0.30, wa / (wa + wb)); }
-    pct(0.25, A.sf12, B.sf12); pct(0.20, A.forme, B.forme);
+    pct(0.25, A.sf2 || A.sf12, B.sf2 || B.sf12); pct(0.20, A.forme, B.forme);   /* 20261021n : surface 2 mois (pas de repli 12 mois) */
+    /* 20261021n : contrecoup du tournoi précédent (titre ou gros parcours il y a ≤ 10 j) : 0,10, en défaveur de celui qui le subit */
+    var cA = !!(A.prec && A.prec.contre), cB = !!(B.prec && B.prec.contre);
+    if (cA !== cB) aj(0.10, cA ? 0.35 : 0.65);
     if (A.h2h && A.h2h.length) { var g = A.h2h.filter(function (m) { return m.w; }).length; aj(0.10, (g + 1) / (A.h2h.length + 2)); }
     pct(0.05, A.cat, B.cat); pct(0.05, A.tour, B.tour); pct(0.05, A.lieu, B.lieu); pct(0.05, A.pays, B.pays);
     if (!poids) return null;
@@ -77712,7 +77730,9 @@ window._g45AgJouUs = async function (nowTs) {
     if (F.elo > 0 && X.elo > 0 && F.elo > X.elo) R.push({ e: (F.elo - X.elo) / 4, t: 'meilleur Elo ' + (o.ctx.sf === 'terre' ? 'terre' : (o.ctx.sf === 'gazon' ? 'gazon' : 'dur')) + ' (' + Math.round(F.elo) + ' contre ' + Math.round(X.elo) + ')' });   /* 20261020r */
     var ad = function (lib, a, b, w) { if (a && b && a.n >= 3 && b.n >= 3 && a.p > b.p) R.push({ e: (a.p - b.p) * w, t: lib + ' (' + a.p + ' % contre ' + b.p + ' %)' }); };
     ad('plus en forme sur 10 matchs', F.forme, X.forme, 1);
-    ad('meilleur ' + (o.ctx.sf === 'salle' ? 'en salle' : 'sur ' + (SF[o.ctx.sf] || SF.dur).l.toLowerCase()) + ' sur 12 mois', F.sf12, X.sf12, 1.2);
+    ad('meilleur ' + (o.ctx.sf === 'salle' ? 'en salle' : 'sur ' + (SF[o.ctx.sf] || SF.dur).l.toLowerCase()) + ' ces 2 derniers mois', F.sf2 || F.sf12, X.sf2 || X.sf12, 1.2);
+    /* 20261021n : contrecoup de l'adversaire (en jaune) */
+    if (X.prec && X.prec.contre && !(F.prec && F.prec.contre)) R.push({ e: 40, t: '<span style="color:#f5c542;">⚠️ son adversaire sort ' + (X.prec.titre ? (X.prec.premier ? 'de son 1er titre' : 'd\'un titre') : (X.prec.finale ? 'd\'une finale' : 'd\'une demi-finale')) + ' (' + esc(X.prec.tr) + ', il y a ' + X.prec.j + ' j)</span>' });
     ad('meilleur en ' + (CAT[o.ctx.cat] || 'tournoi de ce niveau'), F.cat, X.cat, 0.5);
     if (o.ctx.py) ad('meilleur en ' + o.ctx.py, F.pays, X.pays, 0.4);
     R.sort(function (a, b) { return b.e - a.e; });
@@ -77790,10 +77810,14 @@ window._g45AgJouUs = async function (nowTs) {
     if (o.err) h += '<div style="font-size:14px;color:#ff9b9b;margin-top:8px;">Données ESPN indisponibles pour le moment.</div>';
     else if (!A || !B) h += '<div style="font-size:14px;color:#c9d3ee;margin-top:10px;">⏳ ' + esc(o.msg || 'Chargement…') + '</div>';
     else if (o.tab === 'cle') {
-      if (A.elo > 0 && B.elo > 0) { var pE = Math.round(100 / (1 + Math.pow(10, (B.elo - A.elo) / 400))); h += titreSec('NIVEAU') + barre('🎯 ELO ' + (o.ctx.sf === 'terre' ? 'TERRE' : (o.ctx.sf === 'gazon' ? 'GAZON' : 'DUR')) + ' (Tennis Abstract)', pE, 100 - pE, '' + Math.round(A.elo), '' + Math.round(B.elo)); }   /* 20261020r */
+      if (A.elo > 0 && B.elo > 0) { var pE = Math.round(100 / (1 + Math.pow(10, (B.elo - A.elo) / 400))); h += titreSec('NIVEAU') + barre('🎯 ELO ' + (o.ctx.sf === 'terre' ? 'TERRE' : (o.ctx.sf === 'gazon' ? 'GAZON' : (o.ctx.sf === 'salle' ? 'DUR (pas d\'Elo salle)' : 'DUR'))) + ' (Tennis Abstract)', pE, 100 - pE, '' + Math.round(A.elo), '' + Math.round(B.elo)); }   /* 20261020r */
       h += titreSec('FORME') + ligne('📈 10 DERNIERS MATCHS', A.forme, B.forme)
         + titreSec('CONDITIONS DU MATCH')
-        + ligne(sf.i + ' % VICTOIRES ' + sf.l.toUpperCase() + ' (12 MOIS)', A.sf12, B.sf12)
+        + ligne(sf.i + ' % VICTOIRES ' + sf.l.toUpperCase() + ' (2 MOIS)', A.sf2, B.sf2)   /* 20261021n */
+        + (A.sf2 && B.sf2 && (A.sf2.n < 3 || B.sf2.n < 3) ? '<div style="font-size:13px;color:#f5c542;text-align:center;margin-top:3px;">Pas assez de matchs sur cette surface ces 2 mois : non compté dans l\'avis.</div>' : '')
+        + (A.prec || B.prec ? (function () { var tx = function (q) { return q ? (q.contre ? '<span style="color:#f5c542;">⚠️ ' : '') + q.res + (q.premier ? ' (1er)' : '') + ' · ' + esc(q.tr) + ' · il y a ' + q.j + ' j' + (q.contre ? '</span>' : '') : '—'; };
+            return '<div style="text-align:center;font-size:14px;font-weight:800;color:#e8ecfa;margin:14px 0 5px;">🏁 TOURNOI PRÉCÉDENT</div><div style="display:flex;justify-content:space-between;gap:10px;font-size:14px;font-weight:700;"><span>' + tx(A.prec) + '</span><span style="text-align:right;">' + tx(B.prec) + '</span></div>'
+              + '<div style="font-size:12px;color:#c9d3ee;text-align:center;margin-top:3px;">⚠️ = titre, ou finale / 1/2 en Grand Chelem / Masters 1000, il y a 10 jours ou moins : contrecoup compté dans l\'avis.</div>'; })() : '')
         + (o.ctx.ek ? ligne('🏆 À CE TOURNOI', A.tour, B.tour) : '')
         + ligne('🏟️ EN ' + (CAT[o.ctx.cat] || 'MASTERS / WTA 1000').toUpperCase(), A.cat, B.cat)
         + ligne(o.ctx.ind ? '🏠 EN SALLE (12 MOIS)' : '☀️ EN PLEIN AIR (12 MOIS)', A.lieu, B.lieu)
