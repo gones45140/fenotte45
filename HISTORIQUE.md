@@ -2214,6 +2214,8 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   par set, linescores) ; « 🔴 6-4 3-2 · 2e set » (_g45TnScoreLv) au lieu de « en cours », meneur du set en cours en gras (_g45TnNomsLv) ;
   minuteur 60 s (lvArmer) qui ne change QUE les textes [data-g45tnlv] / [data-g45tnn] (analyse ouverte conservée), « Terminé » quand le
   match quitte la liste (les matchs finis n'y sont pas), arrêt sans direct ni match dans l'heure. Smoke tnLv (70).
+  + (« mettre le drapeau du joueur et le nom WTA · BNB Ningbo Open · WTA 500 · 🟦 Dur de la couleur de la surface ») : joueur() garde f
+  (drapeau ESPN), drapeau 20×14 devant chaque nom ; en-tête du tournoi en couleur de la surface (SF.c : dur bleu, terre orange, salle ciel, gazon vert).
   _g45TnPerso pose les 3 blocs de l'écran. Smoke tnRun (65) ; tests tnRobot / tnRun calés sur « maintenant + quelques minutes » (le soir UTC,
   « + 2 h » tombait le lendemain).
   20261020c (croquis d'Antoine « Tendances = 4 boutons », maquette cliquable validée « oui, BET45 → Sélection du jour par défaut ») : ONGLET EN BOUTONS —

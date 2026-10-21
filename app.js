@@ -77598,7 +77598,8 @@ window._g45AgJouUs = async function (nowTs) {
       + '<div id="' + bid + '"></div>';
   };
   var joueur = function (x) { return { id: String((x && (x.id || (x.athlete && x.athlete.id))) || ''), n: (x && x.athlete && (x.athlete.displayName || x.athlete.shortName)) || '?',
-    rk: (x && x.curatedRank && x.curatedRank.current > 0) ? x.curatedRank.current : 0 }; };   /* 20261020j : rang pour l'avis */
+    rk: (x && x.curatedRank && x.curatedRank.current > 0) ? x.curatedRank.current : 0,   /* 20261020j : rang pour l'avis */
+    f: (x && x.athlete && x.athlete.flag && x.athlete.flag.href) || '' }; };   /* 20261021b : drapeau (liste du jour) */
   var ekDe = function (c, ev) { return (ev && ev.id) || (String((c && c.uid) || '').match(/~e:([^~]+)/) || [])[1] || ''; };
   var lieuDe = function (c) { return String((c && c.venue && c.venue.fullName) || '').replace(/\s*·.*$/, ''); };
 
@@ -77728,7 +77729,7 @@ window._g45AgJouUs = async function (nowTs) {
     var h = '', tourPrec = '';
     L.forEach(function (m, i) {
       var s = SF[window._g45TnSurf(m.tn, false)] || SF.dur;
-      if (m.tn !== tourPrec) { h += '<div style="font-size:14px;font-weight:800;background:#0b101d;display:inline-block;padding:3px 10px;border-radius:7px;margin:10px 0 6px;">' + (m.lg === 'wta' ? 'WTA' : 'ATP') + ' · ' + esc(m.tn) + ' · ' + (CAT[m.cat] ? CAT[m.cat] + ' · ' : '') + s.i + ' ' + s.l + '</div>'; tourPrec = m.tn; }
+      if (m.tn !== tourPrec) { h += '<div style="font-size:15px;font-weight:800;background:#0b101d;display:inline-block;padding:4px 10px;border-radius:7px;margin:10px 0 6px;color:' + (s.c || '#fff') + ';">'   /* 20261021b : en-tête de la couleur de la surface */ + (m.lg === 'wta' ? 'WTA' : 'ATP') + ' · ' + esc(m.tn) + ' · ' + (CAT[m.cat] ? CAT[m.cat] + ' · ' : '') + s.i + ' ' + s.l + '</div>'; tourPrec = m.tn; }
       var hr = ''; try { hr = new Date(m.t).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }); } catch (e) {}
       h += '<div style="background:#1e2740;border-radius:10px;padding:9px 10px;margin-bottom:8px;">'
         + '<div style="display:flex;justify-content:space-between;gap:8px;font-size:15px;"><span data-g45tnn="' + esc(m.id) + '">' + nomsLv(m) + '</span><span style="flex:none;" data-g45tnlv="' + esc(m.id) + '">' + (m.st === 'in' ? scoreLv(m) : '🕒 ' + hr) + '</span></div>'
@@ -77748,7 +77749,9 @@ window._g45AgJouUs = async function (nowTs) {
   };
   var nomsLv = function (m) {
     var n = Math.max((m.sa || []).length, (m.sb || []).length), x = n ? +((m.sa || [])[n - 1] || 0) : 0, y = n ? +((m.sb || [])[n - 1] || 0) : 0;
-    var A = esc(m.a.n), B = esc(m.b.n);
+    /* 20261021b (« mettre le drapeau du joueur ») : drapeau ESPN devant chaque nom */
+    var fl = function (p) { return p.f ? '<img src="' + esc(p.f) + '" alt="" style="width:20px;height:14px;object-fit:cover;border-radius:2px;vertical-align:-2px;margin-right:5px;">' : ''; };
+    var A = fl(m.a) + esc(m.a.n), B = fl(m.b) + esc(m.b.n);
     if (m.st === 'in' && x !== y) { if (x > y) A = '<b>' + A + '</b>'; else B = '<b>' + B + '</b>'; return '<span style="color:#c9d3ee;">' + A + ' – ' + B + '</span>'; }
     return '<b>' + A + ' – ' + B + '</b>';
   };
