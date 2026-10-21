@@ -2269,6 +2269,12 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   + (« petite coquille : sous la saison 2025/2026 on a le classement actuel ») : loadStandings(nom, id, matchs, saison) demande football-data
   /v4/competitions/<code>/standings?season=<année de début> (les DEUX copies de _loadStd passent la saison) ; réponse d'une autre saison
   (season.startDate) ou refus → « Non disponible ». À VÉRIFIER : l'offre gratuite de football-data accepte-t-elle ?season= pour la saison passée ?
+  20261021i (maquette maquette-classement + « on l'a déjà dans Compétitions [Forme] mais un coup de feeling est bienvenu, après on regarde
+  les sports US ») : bloc « CLASSEMENT + BUTEURS DE SAISONS RELOOKÉS » en fin d'app.js — renderStandingsTable = _g45StdRelook (résumé de ta
+  position, zones 4 / 5-6 / 3 derniers + légende, Diff = goalDifference, ≤ 900 px centré) ; renderScorersList (2 copies) = _g45ScRelook
+  (🥇🥈🥉, tri ⚽ / 🅰️ / décisif window._g45ScTri + g45ScTri, colonne décisif) ; Compétitions → Forme : tableau PC agrandi, bandes sombres,
+  bande verte / rouge, ≤ 1000 px centré (cartes téléphone inchangées). « Lyon seulement » de la maquette pas fait : la liste du club existe
+  déjà juste au-dessus. Smoke 73 ; capture cls-pc vérifiée.
   _g45TnPerso pose les 3 blocs de l'écran. Smoke tnRun (65) ; tests tnRobot / tnRun calés sur « maintenant + quelques minutes » (le soir UTC,
   « + 2 h » tombait le lendemain).
   20261020c (croquis d'Antoine « Tendances = 4 boutons », maquette cliquable validée « oui, BET45 → Sélection du jour par défaut ») : ONGLET EN BOUTONS —

@@ -48846,32 +48846,39 @@ async function g45FormeRender(c, body) {
     + '</div>';
 
   var tete = ['#', '\u00c9QUIPE', 'MJ', 'V', 'N', 'D', 'B', 'DIFF', ptsFoot ? 'PTS' : '%V', 'FORME'];
-  var head = '<tr style="color:var(--t3);font-size:9.5px;text-transform:uppercase;">'
+  /* 20261021i (« on l'a déjà dans Compétitions mais un coup de feeling est bienvenu », maquette maquette-classement « oui ») : tableau PC
+     agrandi (noms 15 px blancs, chiffres 14 px, points 17 px jaunes), lignes en bandes sombres arrondies, bande verte 5 premiers / rouge
+     3 derniers, largeur limitée à 1000 px et centrée (fond visible) ; cartes téléphone inchangées. */
+  var head = '<tr style="color:#c9d3ee;font-size:12px;text-transform:uppercase;">'
     + tete.map(function (h, i) {
-        return '<th style="padding:6px 4px;text-align:' + (i === 1 ? 'left' : (i >= 9 ? 'left' : 'center')) + ';font-weight:700;">' + h + '</th>';
+        return '<th style="padding:6px 6px;text-align:' + (i === 1 ? 'left' : (i >= 9 ? 'left' : 'center')) + ';font-weight:800;">' + h + '</th>';
       }).join('') + '</tr>';
-
+  var chipG = function (r) {
+    var col = r === 'V' ? '#1ed760' : (r === 'N' ? '#f0b020' : '#ff4545');
+    return '<span style="display:inline-block;width:21px;height:21px;line-height:21px;text-align:center;border-radius:5px;background:' + col + ';color:#0a0e1a;font-size:11px;font-weight:900;margin-right:3px;">' + r + '</span>';
+  };
   var corps = lignes.map(function (t, i) {
-    return '<tr style="border-top:1px solid rgba(255,255,255,.06);">'
-      + '<td style="padding:7px 4px;text-align:center;color:#9fb0c7;font-size:11px;">' + (i + 1) + '</td>'
-      + '<td style="padding:7px 4px;">'
-        + '<span onclick="g45CompetOuvrir(\'' + String(t.nom).replace(/'/g, "\\'") + '\',\'' + (t.id || '') + '\',\'' + c.s + '\',\'' + c.sp + '\')" style="display:flex;align-items:center;gap:6px;cursor:pointer;">'
-        + (t.logo ? '<img src="' + t.logo + '" style="width:18px;height:18px;object-fit:contain;" loading="lazy" onerror="this.style.display=\'none\'">' : '')
-        + '<span style="font-size:11.5px;font-weight:700;">' + t.nom + '</span></span></td>'
-      + '<td style="padding:7px 4px;text-align:center;font-size:11px;">' + t.mj + '</td>'
-      + '<td style="padding:7px 4px;text-align:center;font-size:11px;color:#1ed760;">' + t.v + '</td>'
-      + '<td style="padding:7px 4px;text-align:center;font-size:11px;color:#f0b020;">' + t.n + '</td>'
-      + '<td style="padding:7px 4px;text-align:center;font-size:11px;color:#ff4545;">' + t.d + '</td>'
-      + '<td style="padding:7px 4px;text-align:center;font-size:10.5px;color:#9fb0c7;">' + t.bp + ':' + t.bc + '</td>'
-      + '<td style="padding:7px 4px;text-align:center;font-size:11px;color:' + (t.diff >= 0 ? '#4ade80' : '#ff6b6b') + ';">'
-        + (t.diff > 0 ? '+' : '') + t.diff + '</td>'
-      + '<td style="padding:7px 4px;text-align:center;font-size:12px;font-weight:800;">' + (ptsFoot ? t.pts : t.pct + '%') + '</td>'
-      + '<td style="padding:7px 4px;white-space:nowrap;">' + t.serie.map(chip).join('') + '</td>'
+    var bord = i < 5 ? '#1ed760' : (i >= lignes.length - 3 ? '#ff4d4d' : 'transparent');
+    var td = 'padding:8px 6px;background:rgba(11,16,29,.72);';
+    return '<tr>'
+      + '<td style="' + td + 'border-radius:10px 0 0 10px;border-left:5px solid ' + bord + ';text-align:center;color:#fff;font-size:14px;font-weight:800;">' + (i + 1) + '</td>'
+      + '<td style="' + td + '">'
+        + '<span onclick="g45CompetOuvrir(\'' + String(t.nom).replace(/'/g, "\\'") + '\',\'' + (t.id || '') + '\',\'' + c.s + '\',\'' + c.sp + '\')" style="display:flex;align-items:center;gap:8px;cursor:pointer;">'
+        + (t.logo ? '<img src="' + t.logo + '" style="width:24px;height:24px;object-fit:contain;" loading="lazy" onerror="this.style.display=\'none\'">' : '')
+        + '<span style="font-size:15px;font-weight:700;color:#fff;">' + t.nom + '</span></span></td>'
+      + '<td style="' + td + 'text-align:center;font-size:14px;color:#dbe4ff;">' + t.mj + '</td>'
+      + '<td style="' + td + 'text-align:center;font-size:14px;font-weight:700;color:#1ed760;">' + t.v + '</td>'
+      + '<td style="' + td + 'text-align:center;font-size:14px;font-weight:700;color:#f0b020;">' + t.n + '</td>'
+      + '<td style="' + td + 'text-align:center;font-size:14px;font-weight:700;color:#ff6b6b;">' + t.d + '</td>'
+      + '<td style="' + td + 'text-align:center;font-size:13.5px;color:#dbe4ff;">' + t.bp + ':' + t.bc + '</td>'
+      + '<td style="' + td + 'text-align:center;font-size:14px;font-weight:700;color:' + (t.diff >= 0 ? '#7dffb0' : '#ff9b9b') + ';">' + (t.diff > 0 ? '+' : '') + t.diff + '</td>'
+      + '<td style="' + td + 'text-align:center;font-size:17px;font-weight:900;color:#f5c542;">' + (ptsFoot ? t.pts : t.pct + '%') + '</td>'
+      + '<td style="' + td + 'border-radius:0 10px 10px 0;white-space:nowrap;">' + t.serie.map(chipG).join('') + '</td>'
       + '</tr>';
   }).join('');
 
   body.innerHTML = barre
-    + '<div class="g45fo-tab" style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;">' + head + corps + '</table></div>'
+    + '<div class="g45fo-tab" style="overflow-x:auto;max-width:1000px;margin:0 auto;"><table style="width:100%;border-collapse:separate;border-spacing:0 5px;">' + head + corps + '</table></div>'
     /* 20261020b (capture téléphone : pastilles de forme coupées, noms sur 3 lignes ; maquette validée « oui go », ligne des chiffres en gras) :
        sur téléphone portrait (< 600 px) le tableau est remplacé par des CARTES : nom entier 16 px, ligne « MJ · V-N-D · buts · diff » 14 px
        gras blanc, toutes les pastilles (22 px, retour à la ligne si 10 ou plus), points en gros à droite ; bande verte 5 premiers / rouge 3 derniers. */
@@ -78802,3 +78809,74 @@ window.g45CursOuvrir = function (k) {
 window._g45StOuv = window._g45StOuv || {};
 window.g45StOuvrir = function (k) { window._g45StOuv[k] = !window._g45StOuv[k]; try { _g45CursReconstruire('#g45st-ouv'); } catch (e) {} };
 window.g45StTab = function (t) { try { localStorage.setItem('g45_st_tab', t); } catch (e) {} try { _g45CursReconstruire('#g45st-ouv'); } catch (e) {} };
+
+
+/* ═══ 20261021i — 🇫🇷 CLASSEMENT + 🏆 BUTEURS DE SAISONS RELOOKÉS (maquette maquette-classement « oui », « un coup de feeling ») ═══
+   renderStandingsTable / renderScorersList (renderScorersList en DEUX copies, renderStandingsTable une seule) remplacés ici (appelants par le
+   nom global) : texte blanc 14-15 px, lignes en bandes sombres, largeur ≤ 900 px centrée (fond du club visible) ; classement : résumé de TA
+   position (pts, écart avec le précédent / le suivant), zones (4 premiers vert, 5-6 bleu, 3 derniers rouge) + légende, colonne Diff
+   (goalDifference de football-data) ; buteurs : 🥇🥈🥉, tri ⚽ / 🅰️ / ⚽+🅰️ (window._g45ScTri), colonne « décisif ». */
+function _g45StdRelook(standData, teamId) {
+  if (!standData || !standData.table || !standData.table.length) return '';
+  var T = standData.table, n = T.length, esc = function (x) { return String(x == null ? '' : x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); };
+  var nous = T.filter(function (r) { return r.team && r.team.id === teamId; })[0];
+  var res = '';
+  if (nous) {
+    var p = nous.position, av = T.filter(function (r) { return r.position === p - 1; })[0], ap = T.filter(function (r) { return r.position === p + 1; })[0];
+    res = '<div style="display:inline-block;background:rgba(11,16,29,.8);border-radius:10px;padding:8px 12px;font-size:14px;margin:0 0 8px;color:#fff;">📍 <b>' + esc(nous.team.shortName || nous.team.name) + ' ' + p + (p === 1 ? 'er' : 'e') + '</b> · ' + (nous.points || 0) + ' pts'
+      + (av ? ' · <b style="color:' + (av.points - nous.points > 0 ? '#ff9b9b' : '#c9d3ee') + ';">' + (av.points - nous.points > 0 ? 'à ' + (av.points - nous.points) + ' pt' + (av.points - nous.points > 1 ? 's' : '') + ' du ' + (p - 1) + 'e' : 'à égalité avec le ' + (p - 1) + (p - 1 === 1 ? 'er' : 'e')) + '</b>' : '')
+      + (ap ? ' · <b style="color:#7dffb0;">+' + (nous.points - ap.points) + ' pt' + (nous.points - ap.points > 1 ? 's' : '') + ' sur le ' + (p + 1) + 'e</b>' : '') + '</div>';
+  }
+  var G = 'display:grid;grid-template-columns:36px 30px minmax(0,1fr) 34px 34px 34px 34px 46px 46px;gap:4px;align-items:center;';
+  var h = '<div style="max-width:900px;margin:12px auto 0;">'
+    + '<div style="font-size:16px;font-weight:800;color:#fff;margin:0 0 8px;">' + (typeof getCompIcon === 'function' ? getCompIcon(standData.compName) : '') + ' Classement ' + esc(standData.compName) + '</div>' + res
+    + '<div style="' + G + 'font-size:12px;font-weight:800;color:#c9d3ee;padding:0 8px 4px;"><span>#</span><span></span><span>Équipe</span><span style="text-align:center">J</span><span style="text-align:center">G</span><span style="text-align:center">N</span><span style="text-align:center">P</span><span style="text-align:center">Diff</span><span style="text-align:center">Pts</span></div>';
+  T.forEach(function (r) {
+    var p = r.position, our = r.team && r.team.id === teamId;
+    var z = p <= 4 ? '#1ed760' : (p <= 6 ? '#6aa8ff' : (p >= n - 2 ? '#ff4545' : 'transparent'));
+    var gd = r.goalDifference;
+    h += '<div style="' + G + 'background:' + (our ? 'rgba(37,99,235,.38)' : 'rgba(11,16,29,.72)') + ';border:' + (our ? '1px solid #5aa9ff' : '1px solid transparent') + ';border-left:5px solid ' + z + ';border-radius:10px;padding:6px 8px;margin-bottom:5px;color:#fff;">'
+      + '<span style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:14px;background:' + (z !== 'transparent' ? z + '33' : '#1e2740') + ';">' + p + '</span>'
+      + (r.team && r.team.crest ? '<img src="' + esc(r.team.crest) + '" loading="lazy" onerror="this.style.visibility=\'hidden\'" style="width:24px;height:24px;object-fit:contain;">' : '<span></span>')
+      + '<span style="font-size:15px;font-weight:' + (our ? 800 : 700) + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc((r.team && (r.team.shortName || r.team.name)) || '?') + '</span>'
+      + ['playedGames', 'won', 'draw', 'lost'].map(function (k) { return '<span style="text-align:center;font-size:14px;color:#dbe4ff;">' + (r[k] || 0) + '</span>'; }).join('')
+      + '<span style="text-align:center;font-size:14px;font-weight:700;color:' + (gd > 0 ? '#7dffb0' : gd < 0 ? '#ff9b9b' : '#c9d3ee') + ';">' + (gd == null ? '—' : (gd > 0 ? '+' : gd < 0 ? '−' : '') + Math.abs(gd)) + '</span>'
+      + '<span style="text-align:center;font-size:18px;font-weight:900;color:#f5c542;">' + (r.points || 0) + '</span></div>';
+  });
+  return h + '<div style="font-size:13px;color:#c9d3ee;margin:6px 0;"><b style="display:inline-block;width:12px;height:12px;border-radius:3px;background:#1ed760;vertical-align:-1px;margin-right:4px;"></b>4 premiers '
+    + '<b style="display:inline-block;width:12px;height:12px;border-radius:3px;background:#6aa8ff;vertical-align:-1px;margin:0 4px 0 10px;"></b>5e-6e '
+    + '<b style="display:inline-block;width:12px;height:12px;border-radius:3px;background:#ff4545;vertical-align:-1px;margin:0 4px 0 10px;"></b>3 derniers</div></div>';
+}
+renderStandingsTable = window.renderStandingsTable = _g45StdRelook;
+
+window._g45ScData = window._g45ScData || {};
+function _g45ScRelook(scorers, teamId, title, highlightTeam, cle) {
+  if (!scorers || !scorers.length) return '<div style="color:#c9d3ee;font-size:14px;text-align:center;padding:8px;">Aucune donnée</div>';
+  var k = cle || ('sc' + Object.keys(window._g45ScData).length);
+  window._g45ScData[k] = [scorers, teamId, title, highlightTeam];
+  var tri = window._g45ScTri || 'g', esc = function (x) { return String(x == null ? '' : x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); };
+  var val = function (sc) { var g = sc.goals || 0, a = sc.assists || 0; return tri === 'a' ? a * 1000 + g : tri === 'd' ? (g + a) * 1000 + g : g * 1000 + a; };
+  var L = scorers.slice().sort(function (x, y) { return val(y) - val(x); }).slice(0, 20);
+  var chip = function (t, lib) { var on = tri === t; return '<span onclick="g45ScTri(\'' + t + '\',\'' + k + '\')" style="display:inline-block;cursor:pointer;padding:7px 12px;border-radius:10px;font-weight:800;font-size:14px;margin:0 5px 8px 0;border:1px solid ' + (on ? '#5aa9ff' : 'rgba(255,255,255,.25)') + ';background:' + (on ? '#2563eb' : 'rgba(11,16,29,.9)') + ';color:#fff;">' + lib + '</span>'; };
+  var h = '<div id="g45sc-' + k + '" style="max-width:900px;margin:0 auto;">' + (title ? '<div style="font-size:16px;font-weight:800;color:#fff;margin-bottom:8px;">' + title + '</div>' : '')
+    + chip('g', '⚽ Buts') + chip('a', '🅰️ Passes') + chip('d', '⚽+🅰️ Décisif');
+  L.forEach(function (sc, i) {
+    var p = sc.player || {}, g = sc.goals || 0, a = sc.assists || 0, nat = p.nationality || '', nc = (typeof FLAG_CDN !== 'undefined' && FLAG_CDN[nat]) || null;
+    var our = sc.team && sc.team.id === teamId && (highlightTeam || true);
+    h += '<div style="display:grid;grid-template-columns:40px minmax(0,1fr) 56px 56px 64px;gap:6px;align-items:center;background:' + (our && highlightTeam ? 'rgba(37,99,235,.38)' : 'rgba(11,16,29,.72)') + ';border:1px solid ' + (our && highlightTeam ? '#5aa9ff' : 'transparent') + ';border-radius:10px;padding:8px 10px;margin-bottom:5px;color:#fff;">'
+      + '<span style="text-align:center;font-size:' + (i < 3 ? '22px' : '16px') + ';font-weight:900;">' + (i < 3 ? ['🥇', '🥈', '🥉'][i] : (i + 1)) + '</span>'
+      + '<span style="min-width:0;"><span style="display:flex;align-items:center;gap:6px;">' + (nc ? '<img src="https://flagcdn.com/w20/' + nc + '.png" loading="lazy" style="width:20px;height:14px;object-fit:cover;border-radius:2px;">' : '')
+      + '<b style="font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(p.name || '?') + '</b></span>'
+      + (sc.team ? '<span style="display:flex;align-items:center;gap:5px;font-size:13px;color:#c9d3ee;margin-top:2px;">' + (sc.team.crest ? '<img src="' + esc(sc.team.crest) + '" loading="lazy" style="width:16px;height:16px;object-fit:contain;">' : '') + esc(sc.team.shortName || sc.team.name || '') + '</span>' : '') + '</span>'
+      + '<span style="text-align:center;"><b style="display:block;font-size:20px;color:#1ed760;">' + g + '</b><span style="font-size:12px;color:#c9d3ee;">buts</span></span>'
+      + '<span style="text-align:center;"><b style="display:block;font-size:20px;color:#6aa8ff;">' + a + '</b><span style="font-size:12px;color:#c9d3ee;">passes</span></span>'
+      + '<span style="text-align:center;"><b style="display:block;font-size:17px;color:#fff;">' + (g + a) + '</b><span style="font-size:12px;color:#c9d3ee;">décisif</span></span></div>';
+  });
+  return h + '</div>';
+}
+renderScorersList = window.renderScorersList = function (scorers, teamId, title, highlightTeam) { return _g45ScRelook(scorers, teamId, title, highlightTeam); };
+window.g45ScTri = function (t, k) {
+  window._g45ScTri = t;
+  var d = window._g45ScData[k], el = document.getElementById('g45sc-' + k); if (!d || !el) return;
+  var tmp = document.createElement('div'); tmp.innerHTML = _g45ScRelook(d[0], d[1], d[2], d[3], k); el.replaceWith(tmp.firstChild);
+};
