@@ -1481,7 +1481,7 @@ async function _loadStd(el) {
   el.innerHTML = '⏳ Chargement...';
   // Récupérer les matchs depuis le cache saison
   var matches = (_saisonsCache && _saisonsCache[teamId] && _saisonsCache[teamId][saison]) || [];
-  var data = await loadStandings(nom, teamId, matches);
+  var data = await loadStandings(nom, teamId, matches, saison);   /* 20261021h : classement DE CETTE SAISON (deux copies de _loadStd) */
   if(data) {
     _standingsCache[nom+'_'+saison] = data;
     el.outerHTML = renderStandingsTable(data, teamId);
@@ -10307,7 +10307,7 @@ async function _loadStd(el) {
   el.innerHTML = '⏳ Chargement...';
   // Récupérer les matchs depuis le cache saison
   var matches = (_saisonsCache && _saisonsCache[teamId] && _saisonsCache[teamId][saison]) || [];
-  var data = await loadStandings(nom, teamId, matches);
+  var data = await loadStandings(nom, teamId, matches, saison);   /* 20261021h : classement DE CETTE SAISON (deux copies de _loadStd) */
   if(data) {
     _standingsCache[nom+'_'+saison] = data;
     el.outerHTML = renderStandingsTable(data, teamId);
@@ -24348,7 +24348,10 @@ function espnSlugToFdCode(code){
   var M={'fra.1':'FL1','eng.1':'PL','esp.1':'PD','ita.1':'SA','ger.1':'BL1','por.1':'PPL','ned.1':'DED','bra.1':'BSA','uefa.champions':'CL','uefa.europa':'EL','uefa.europa.conf':'ECL'};
   return M[code]||code;
 }
-async function loadStandings(nom, teamId, filteredMatches) {
+/* 20261021h (« petite coquille : sous la saison 2025/2026 on a le classement actuel ») : le classement était TOUJOURS celui du moment
+   (football-data /standings sans saison). On demande ?season=<année de début> ; si football-data refuse (offre gratuite) ou renvoie une
+   autre saison → « Non disponible » plutôt qu'un classement faux. */
+async function loadStandings(nom, teamId, filteredMatches, saison) {
   // Trouver le code de la ligue depuis les matchs
   var leagueCode = null;
   var LEAGUE_CODES = ['PL','PD','BL1','SA','FL1','PPL','CL','EL'];
@@ -24363,8 +24366,10 @@ async function loadStandings(nom, teamId, filteredMatches) {
   if(!leagueCode) return null;
 
   try {
-    var data = await fdFetch('/v4/competitions/'+leagueCode+'/standings');
+    var an = parseInt(saison, 10); if (!(an > 1990)) an = 0;
+    var data = await fdFetch('/v4/competitions/'+leagueCode+'/standings'+(an ? '?season='+an : ''));
     if(!data || !data.standings || !data.standings.length) return null;
+    try { var sd = data.season && data.season.startDate; if (an && sd && parseInt(String(sd).slice(0, 4), 10) !== an) return null; } catch (e) {}
     var table = data.standings[0].table || [];
     var compName = data.competition && data.competition.name || '';
     return {table: table, compName: compName, leagueCode: leagueCode};

@@ -2266,6 +2266,9 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   matchs inchangée. Smoke 73 (pas de contrôle dédié : rendu de loadTeamSaisons non simulé).
   + (« le fond est caché par les bandes de cache, c'est dommage sur PC », liste des matchs de Saisons) : ligne du match (grille domicile / score
   / extérieur) limitée à 640 px et centrée hors téléphone (g45Etroit) → fond du club visible sur les côtés.
+  + (« petite coquille : sous la saison 2025/2026 on a le classement actuel ») : loadStandings(nom, id, matchs, saison) demande football-data
+  /v4/competitions/<code>/standings?season=<année de début> (les DEUX copies de _loadStd passent la saison) ; réponse d'une autre saison
+  (season.startDate) ou refus → « Non disponible ». À VÉRIFIER : l'offre gratuite de football-data accepte-t-elle ?season= pour la saison passée ?
   _g45TnPerso pose les 3 blocs de l'écran. Smoke tnRun (65) ; tests tnRobot / tnRun calés sur « maintenant + quelques minutes » (le soir UTC,
   « + 2 h » tombait le lendemain).
   20261020c (croquis d'Antoine « Tendances = 4 boutons », maquette cliquable validée « oui, BET45 → Sélection du jour par défaut ») : ONGLET EN BOUTONS —
