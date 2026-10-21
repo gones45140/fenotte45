@@ -2175,6 +2175,11 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   localStorage g45tn_coefs { on, dur, salle, terre, gazon } ; réglage de la surface du match appliqué, ligne jaune « avec tes coefficients ·
   BET45 standard : X % ». À FAIRE (session à part) : 🧪 test sur la saison passée (rejouer l'avis, % de bons vainqueurs ; Elo actuel = biais).
   5 essais vm, smoke 75 (tnCoef).
+  20261022a (capture d'Antoine à 0 h 01 : Sélection du jour vide « arrive vers 8 h » alors que les NBA de la nuit, choisies la veille, n'étaient
+  pas jouées) : _g45TrSelHtml / liste() — sans note du jour et avant 15 h → notes de LA VEILLE (S.hier), en-tête jaune « Choisie hier à HH:MM
+  (en attendant celle de 8 h) ». Smoke 76 (selHier, vérifié aussi en TZ Asia/Tokyo pour la branche < 15 h).
+  20261021p : robot .github/workflows/backtest-tennis.yml + scripts/backtest_tennis.mjs (test de l'avis tennis sur 2025, lancé à la main,
+  écrit données/backtest_tennis.json) — 1er passage lancé le 21/10 à 23 h 36.
   Données Sackmann = usage NON COMMERCIAL (à revoir le jour de l'abonnement). 9 essais (vm + lecteur), smoke 66.
   20261020s (« ok mais on peut pas améliorer compétition/tennis aussi ? » + « LES PHOTOS DES JOUEURS TOUJOURS DISPO OU SI PAS DE PHOTO drapeau du
   pays du joueur », maquette maquette-tennis-res validée « oui ») : bloc « COMPÉTITIONS → TENNIS PLUS LISIBLE » en fin d'app.js. Remplace

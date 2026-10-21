@@ -77160,7 +77160,16 @@ window._g45AgJouUs = async function (nowTs) {
   var liste = function () {
     var J = donnees(); if (!J) return null;
     var auj = jourLoc(Date.now());
-    return (J.t || []).filter(function (x) { return x.r !== -1 && x.n && jourLoc(x.n) === auj; });
+    var L = (J.t || []).filter(function (x) { return x.r !== -1 && x.n && jourLoc(x.n) === auj; });
+    /* 20261022a (capture d'Antoine à 0 h 01 : Sélection vide « arrive vers 8 h » alors que les NBA de la nuit, choisies la veille, n'étaient
+       pas jouées) : après minuit et avant le passage du jour (< 15 h, comme le message d'attente), on garde la sélection de LA VEILLE. */
+    S.hier = false;
+    if (!L.length && new Date().getHours() < 15) {
+      var hier = jourLoc(Date.now() - 864e5);
+      L = (J.t || []).filter(function (x) { return x.r !== -1 && x.n && jourLoc(x.n) === hier; });
+      S.hier = L.length > 0;
+    }
+    return L;
   };
   function lvMaj() {
     var L = liste(); if (!L || S.lvEnCours || !document.getElementById('g45tr-sel')) return;
@@ -77203,7 +77212,7 @@ window._g45AgJouUs = async function (nowTs) {
     }
     var tN = 0; L.forEach(function (x) { var t = Date.parse(x.n); if (t > tN) tN = t; });
     var R = (donnees() || {}).reglages || {};
-    h += '<div style="font-size:13px;color:#c9d3ee;margin:4px 0 6px;">Choisie à ' + hhmm(tN) + ' · la même pour tout le monde · cote ≥ ' + String(R.min || 1.5).replace('.', ',')
+    h += '<div style="font-size:13px;color:#c9d3ee;margin:4px 0 6px;">' + (S.hier ? '<b style="color:#f5c542;">Choisie hier à ' + hhmm(tN) + ' (en attendant celle de 8 h)</b>' : 'Choisie à ' + hhmm(tN)) + ' · la même pour tout le monde · cote ≥ ' + String(R.min || 1.5).replace('.', ',')
       + ' · proba ≥ ' + Math.round((R.pmin || 0.6) * 100) + ' %' + (R.accord ? ' · stats et books d\'accord' : '') + '</div>';
     var parL = {}, ordre = [];
     L.slice().sort(function (a, b) { return a.t - b.t; }).forEach(function (x) { if (!parL[x.sl]) { parL[x.sl] = []; ordre.push(x.sl); } parL[x.sl].push(x); });
