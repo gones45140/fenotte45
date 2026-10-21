@@ -25556,7 +25556,9 @@ function renderSaisonsChart(el, results, nom) {
            700 px — la mosaique de fond dit deja de quelle equipe il s'agit —
            et le score se resserre. */
         var _etr = g45Etroit(el);
-        html += '<div style="display:grid;grid-template-columns:minmax(0,1fr) '+(_etr?'54px':'68px')+' minmax(0,1fr);gap:'+(_etr?'4px':'6px')+';align-items:center;">'
+        /* 20261021h (capture d'Antoine : « le fond est caché par les bandes, c'est dommage sur PC ») : sur grand écran, la ligne du match est
+           centrée et limitée à 640 px → le fond du club reste visible sur les côtés (téléphone inchangé). */
+        html += '<div style="display:grid;grid-template-columns:minmax(0,1fr) '+(_etr?'54px':'68px')+' minmax(0,1fr);gap:'+(_etr?'4px':'6px')+';align-items:center;'+(_etr?'':'max-width:640px;margin:0 auto;')+'">'
           +_nomCell((isOurHome?_scMark:'')+homeName, isOurHome, true, _etr?'':((m.homeTeam&&m.homeTeam.crest)||''))
           +'<div style="font-size:12px;font-weight:800;color:'+rc+';text-align:center;background:'+_vl+';border-radius:6px;padding:5px 3px;">'+hg+' - '+ag+'</div>'
           +_nomCell((!isOurHome?_scMark:'')+awayName, !isOurHome, false, _etr?'':((m.awayTeam&&m.awayTeam.crest)||''))
