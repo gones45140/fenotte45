@@ -24012,6 +24012,7 @@ function _g45CursHtml(matchs, estNous, fgDe, nomEq) {
     + (HT ? '<span style="font-size:11.5px;font-weight:700;color:' + (nHT ? '#c8d3ea' : '#f5c542') + ';">' + (nHT ? ('score à la pause connu sur ' + nHT + ' match' + (nHT > 1 ? 's' : '')) : 'aucun score à la pause pour ces matchs') + '</span>' : '')
     + '</div>';
 
+  var pB = h.length;   /* 20261021f : repères des onglets */
   /* 1. Nombre de buts */
   var LB = HT ? _G45_CURS_L.butsHT : _G45_CURS_L.butsFT, ib = Math.min(e.buts.i, LB.length - 1);
   var valsB = pack(LB, function (l) { var a = fmt(compte(pre + 'O' + l.toFixed(1))), b = fmt(compte(pre + 'U' + l.toFixed(1)));
@@ -24036,6 +24037,7 @@ function _g45CursHtml(matchs, estNous, fgDe, nomEq) {
       + boite('eq', 'B', quiLib + ' moins de ' + LE[ie].toFixed(1).replace('.', ','), reB, '#9fe7f5', e.eq.on && e.eq.s === 'B') + '</div>'
       + curseur('eq', LE, ie, function (v) { return v.toFixed(1).replace('.', ','); })) + '</div>';
 
+  var pH = h.length;
   /* 3. Handicap */
   /* 20261018r (« il manque une sélection Écart », Bayern trop bas en cote) : le handicap EST l'écart → titre « Handicap · écart de buts » et
      phrase claire à côté de chaque ligne (−1,5 = gagne de 2 buts ou +, +1,5 = perd de 1 but max). */
@@ -24053,6 +24055,7 @@ function _g45CursHtml(matchs, estNous, fgDe, nomEq) {
       + boite('hand', 'B', 'Adversaire ' + _g45LigneFr(-LH[ih]) + ecart(-LH[ih]), rhB, '#9fe7f5', e.hand.on && e.hand.s === 'B') + '</div>'
       + curseur('hand', LH, ih, _g45LigneFr)) + '</div>';
 
+  var pP = h.length;
   /* 4. Premier but (pas de version mi-temps : c'est le premier but du match) */
   var p1 = compte('P1'), p2 = compte('P2'), p0 = compte('P0');
   if (p1.n) {
@@ -24064,8 +24067,75 @@ function _g45CursHtml(matchs, estNous, fgDe, nomEq) {
   } else {
     h += carteH('Premier but', '', '<div style="font-size:12px;font-weight:700;color:#f5c542;">⏳ Lance « Analyser buteurs / passeurs » : l\'ordre des buts vient de cette analyse.</div>');
   }
-  return h;
+  /* ═══ 20261021f — ONGLETS + 🎯 TIRS + 🚩 CORNERS / CARTONS (« on commence à être envahi », « faire des onglets » ; « il faudrait rajouter
+     ce que l'on a fait plus haut » = feuille de match des critères ; maquette maquette-onglets « oui ») ═══
+     Onglets ⚽ Buts (buts + buts par équipe) · ⚖️ Handicap · 🥇 1er but · 🎯 Tirs · 🚩 Corners / cartons ; onglet gardé (e.tab, g45_curseurs).
+     Tirs / corners / cartons = feuille de match ESPN (même mémoire que les critères : g45crf1_<espnId>, _g45CrFeuille), lue une fois quand
+     l'onglet s'ouvre (m.competition.code = compétition ESPN, m.espnId) ; matchs sans feuille = non comptés ; match entier seulement ;
+     PAS de « dans le calcul » (ces marchés ne vont pas dans les pastilles / le Cockpit). */
+  var pE = h.length, TAB = e.tab || 'buts';
+  var morceaux = { buts: h.slice(pB, pH), hand: h.slice(pH, pP), p1: h.slice(pP, pE) };
+  var FL = function (m) { try { return m && m.espnId ? JSON.parse(localStorage.getItem('g45crf1_' + m.espnId) || 'null') : null; } catch (x) { return null; } };
+  var avecF = 0, sansF = [];
+  var fx = (matchs || []).map(function (m) {
+    var f = FL(m); if (!f) { if (m && m.espnId) sansF.push(m); return null; }
+    avecF++; var d = estNous ? !!estNous(m.homeTeam) : true;
+    return d ? { sh: f[0], sa: f[1], ch: f[2], ca: f[3], kh: f[7], ka: f[8], yh: f[9], ya: f[10] } : { sh: f[1], sa: f[0], ch: f[3], ca: f[2], kh: f[8], ka: f[7], yh: f[10], ya: f[9] };
+  });
+  var MOD = { M: ['Tirs du match', function (v) { return v.sh + v.sa; }, [16.5, 18.5, 20.5, 22.5, 24.5, 26.5, 28.5, 30.5]],
+    E: [nomC + ' : tirs', function (v) { return v.sh; }, [6.5, 8.5, 10.5, 12.5, 14.5, 16.5, 18.5]],
+    A: ['Adversaire : tirs', function (v) { return v.sa; }, [6.5, 8.5, 10.5, 12.5, 14.5, 16.5, 18.5]],
+    CE: [nomC + ' : tirs cadrés', function (v) { return v.ch; }, [1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5]],
+    CM: ['Tirs cadrés du match', function (v) { return v.ch + v.ca; }, [4.5, 5.5, 6.5, 7.5, 8.5, 9.5, 10.5]],
+    KE: [nomC + ' : corners', function (v) { return v.kh; }, [2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5]],
+    KM: ['Corners du match', function (v) { return v.kh + v.ka; }, [6.5, 7.5, 8.5, 9.5, 10.5, 11.5, 12.5]],
+    YE: [nomC + ' : cartons', function (v) { return v.yh; }, [0.5, 1.5, 2.5, 3.5, 4.5]],
+    YM: ['Cartons du match', function (v) { return v.yh + v.ya; }, [1.5, 2.5, 3.5, 4.5, 5.5, 6.5]] };
+  var cnt = function (fn, l, ov) { var ok = 0, n = 0; fx.forEach(function (v) { if (!v) return; n++; var x = fn(v); if (ov ? x > l : x < l) ok++; }); return { ok: ok, n: n }; };
+  var fr1 = function (v) { return v.toFixed(1).replace('.', ','); };
+  var carteF = function (carte, modes) {
+    var st = e[carte] || {}, w = modes.indexOf(st.w) >= 0 ? st.w : modes[0], M = MOD[w], L = M[2], ix = Math.min(st.i == null ? Math.floor(L.length / 2) : st.i, L.length - 1);
+    var vals = pack(L, function (l) { var a = fmt(cnt(M[1], l, true)), b = fmt(cnt(M[1], l, false)); return { la: 'Plus de ' + fr1(l), va: a.v, pa: a.p, lb: 'Moins de ' + fr1(l), vb: b.v, pb: b.p }; });
+    var bt = '<div style="display:flex;gap:6px;flex-wrap:wrap;">' + modes.map(function (k) { var on = k === w; return '<span onclick="g45CursW(\'' + carte + '\',\'' + k + '\')" style="cursor:pointer;padding:5px 12px;border-radius:12px;font-size:12px;font-weight:800;' + (on ? 'background:rgba(70,220,240,.18);color:#46dcf0;border:1px solid rgba(70,220,240,.55);' : 'color:#c8d3ea;border:1px solid rgba(255,255,255,.16);') + '">' + MOD[k][0].replace(nomC + ' : ', nomC + ' ') + '</span>'; }).join('') + '</div>';
+    return '<div data-vals="' + vals + '" id="g45c-' + carte + '">' + carteH(M[0], avecF + ' match' + (avecF > 1 ? 's' : '') + ' · match entier',
+      bt + '<div style="display:flex;gap:8px;">' + boite(carte, 'A', 'Plus de ' + fr1(L[ix]), fmt(cnt(M[1], L[ix], true)), '#f5c542', st.on && st.s === 'A')
+      + boite(carte, 'B', 'Moins de ' + fr1(L[ix]), fmt(cnt(M[1], L[ix], false)), '#9fe7f5', st.on && st.s === 'B') + '</div>' + curseur(carte, L, ix, fr1)) + '</div>';
+  };
+  if (TAB === 'ti' || TAB === 'co') {
+    var P0 = window._g45CursFeuP || {};
+    var attente = sansF.length && (P0.enCours || _g45CursFeuilles(sansF));
+    var ent = attente ? '<div id="g45c-feup" style="font-size:13px;font-weight:700;color:#f5c542;margin-bottom:8px;">⏳ Feuilles de match : ' + (P0.f || 0) + ' / ' + (P0.n || sansF.length) + ' (la 1re fois seulement)</div>' : '';
+    morceaux[TAB] = ent + (TAB === 'ti' ? carteF('ti', ['M', 'E', 'A', 'CE', 'CM']) : carteF('co', ['KE', 'KM', 'YE', 'YM']));
+  }
+  var ONG = [['buts', '⚽ Buts'], ['hand', '⚖️ Handicap'], ['p1', '🥇 1er but'], ['ti', '🎯 Tirs'], ['co', '🚩 Corners / cartons']];
+  var barre = '<div id="g45c-tabs" style="display:flex;gap:6px;flex-wrap:wrap;margin:0 0 9px;">' + ONG.map(function (o) { var on = o[0] === TAB;
+    return '<span onclick="g45CursTab(\'' + o[0] + '\')" style="flex:1;min-width:96px;text-align:center;cursor:pointer;padding:9px 6px;border-radius:10px;font-size:13.5px;font-weight:800;' + (on ? 'background:#2563eb;border:1px solid #5aa9ff;color:#fff;' : 'background:rgba(11,16,29,.72);border:1px solid rgba(255,255,255,.16);color:#e8ecfa;') + '">' + o[1] + '</span>'; }).join('') + '</div>';
+  return h.slice(0, pB) + barre + (morceaux[TAB] || morceaux.buts);
 }
+/* 20261021f : lecture des feuilles de match manquantes (4 à la fois), puis UN redessin ; chaque match n'est essayé qu'une fois par session
+   (même en échec) → le redessin voit un résultat connu, jamais de boucle. */
+var _g45CursFeuEssai = {};
+function _g45CursFeuilles(ms) {
+  var L = ms.filter(function (m) { return !_g45CursFeuEssai[m.espnId]; });
+  if (!L.length || typeof window._g45CrFeuille !== 'function') return false;
+  L.forEach(function (m) { _g45CursFeuEssai[m.espnId] = 1; });
+  var P = window._g45CursFeuP = { f: 0, n: L.length, enCours: true }, k = 0;
+  var un = async function () {
+    while (k < L.length) {
+      var m = L[k++], lg = (m.competition && m.competition.code) || '';
+      try {
+        var r = await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/' + (/^[a-z]{2,6}\.[a-z0-9.]+$/i.test(lg) ? lg : 'all') + '/summary?event=' + m.espnId);
+        if (r.ok) { var l = window._g45CrFeuille(await r.json()); if (l) try { localStorage.setItem('g45crf1_' + m.espnId, JSON.stringify(l)); } catch (x) {} }
+      } catch (x) {}
+      P.f++; var el = document.getElementById('g45c-feup'); if (el) el.textContent = '⏳ Feuilles de match : ' + P.f + ' / ' + P.n + ' (la 1re fois seulement)';
+    }
+  };
+  Promise.all([un(), un(), un(), un()]).then(function () { P.enCours = false; try { _g45CursReconstruire('#g45c-tabs'); } catch (x) {} });
+  return true;
+}
+function g45CursTab(t) { var e = _g45CursEtat(); e.tab = t; _g45CursSauver(e); _g45CursReconstruire('#g45c-tabs'); }
+function g45CursW(carte, w) { var e = _g45CursEtat(); e[carte] = e[carte] || {}; if (e[carte].w !== w) e[carte].i = null; e[carte].w = w; _g45CursSauver(e); _g45CursReconstruire('#g45c-' + carte); }
+window.g45CursTab = g45CursTab; window.g45CursW = g45CursW;
 
 /* Mise a jour instantanee pendant le glissement, sans reconstruire. */
 function g45CursInput(el) {
@@ -24114,11 +24184,13 @@ async function _g45CursReconstruire(ancreSel) {
 
 function g45CursCommit(el) {
   var carte = el.getAttribute('data-c'), e = _g45CursEtat();
+  if (!e[carte] && (carte === 'ti' || carte === 'co')) e[carte] = { s: 'A' };   /* 20261021f */
   if (e[carte]) { e[carte].i = +el.value; e[carte].on = true; }
   _g45CursSauver(e); _g45CursReconstruire('#g45c-' + carte);
 }
 function g45CursCase(carte, cote) {
-  var e = _g45CursEtat(), c = e[carte]; if (!c) return;
+  var e = _g45CursEtat(); if (!e[carte] && (carte === 'ti' || carte === 'co')) e[carte] = {};   /* 20261021f */
+  var c = e[carte]; if (!c) return;
   if (c.on && c.s === cote) c.on = false;            /* retoucher la case active la desactive */
   else { c.s = cote; c.on = true; }
   _g45CursSauver(e); _g45CursReconstruire('#g45c-' + carte);
@@ -74182,12 +74254,13 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       var ms = filtrer(sms);
       if (!ms.length) { h += '<tr><td style="' + td + '">' + lib(D.lg, s.an) + '</td><td colspan="3" style="' + td + 'color:#c9d3ee;">aucun match joué</td></tr>'; return; }
       var R = calc(c, ms);
+      if (!R.n) { h += '<tr><td style="' + td + '">' + lib(D.lg, s.an) + '</td><td colspan="3" style="' + td + 'color:#c9d3ee;">aucun match compté (critères joueur / feuille / match précédent)</td></tr>'; return; }   /* 20261021f : plus de « NaN % » */
       h += '<tr><td style="' + td + '">' + lib(D.lg, s.an) + '</td><td style="' + td + '">' + R.ok + '/' + R.n + ' · ' + Math.round(100 * R.ok / R.n) + ' %</td>'
         + '<td style="' + td + 'font-weight:700;color:' + coul(R.pire) + ';">' + R.pire + '</td>'
         + '<td style="' + td + 'font-weight:700;color:#5aa9ff;">' + R.best + '</td></tr>';
     });
     h += '</table>';
-    if (tous.length) {
+    if (tous.length && calc(c, tous).n) {   /* 20261021f : rien compté → pas de total « NaN % » */
       var T = calc(c, tous);
       h += '<div style="margin-top:10px;background:#0f1730;border-radius:10px;padding:10px;font-size:14px;line-height:1.6;color:#fff;">'
         + '🧮 <b>Total : ' + T.ok + '/' + T.n + ' · ' + Math.round(100 * T.ok / T.n) + ' %</b><br>'
@@ -74237,9 +74310,11 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     }
     var c = S.combos[S.a];
     S.combos.forEach(function (x) { if (x.TL == null) x.TL = lgEq()[2]; if (x.AL == null) x.AL = lgEq()[2]; if (x.te == null) x.te = ''; if (x.ad == null) x.ad = ''; norm(x); });
+    var q0 = h.length, q4 = null;   /* 20261021f : repères des onglets */
     if (us()) h += lab('Résultat (prolongation comprise)') + b(c.res === 'vqr', 'Vainqueur', "g45CrSet('res','vqr')") + b(c.res === 'def', 'Défaite', "g45CrSet('res','def')") + b(c.res === '', 'Aucun', "g45CrSet('res','')");
     else h += lab('Résultat') + b(c.res === 'vic', 'Victoire', "g45CrSet('res','vic')") + b(c.res === 'vqr', 'Vainqueur', "g45CrSet('res','vqr')")
       + b(c.res === 'nul', 'Nul', "g45CrSet('res','nul')") + b(c.res === 'def', 'Défaite', "g45CrSet('res','def')") + b(c.res === '', 'Aucun', "g45CrSet('res','')");
+    var q1 = h.length;
     var sel = '<select onchange="g45CrSet(\'L\',this.value)" style="background:#16213f;color:#fff;border:1px solid #6d9dff;border-radius:8px;padding:7px 10px;font-size:14px;margin:0 6px 6px 0;">';
     var LL = lignes(); if (LL.indexOf(c.L) < 0) LL.push(c.L); LL.sort(function (x, y) { return x - y; });
     LL.forEach(function (L) { sel += '<option value="' + L + '"' + (c.L === L ? ' selected' : '') + '>' + L + '</option>'; });
@@ -74253,6 +74328,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var hkTr = hk() ? ' (temps réglementaire)' : '';
     h += lab(motUnite() + ' de ' + esc(nom) + hkTr) + b(c.te === 'ov', 'Over', "g45CrSet('te','ov')") + b(c.te === 'un', 'Under', "g45CrSet('te','un')") + b(!c.te, 'Aucun', "g45CrSet('te','')") + selEq('TL', c.TL);
     h += lab(motUnite() + ' de l\'adversaire' + hkTr) + b(c.ad === 'ov', 'Over', "g45CrSet('ad','ov')") + b(c.ad === 'un', 'Under', "g45CrSet('ad','un')") + b(!c.ad, 'Aucun', "g45CrSet('ad','')") + selEq('AL', c.AL);
+    var q2 = h.length;
     /* 20261018s (capture du bloc critères, « je vois pas » l'écart) : ÉCART — « Gagne de X ou + » (= handicap −(X−0,5)) / « Perd de X max »
        (= handicap +(X+0,5)) ; hockey : temps réglementaire comme le reste. Échelle par sport (_EC). */
     var _EC = { soccer: [1, 2, 3, 4], hockey: [1, 2, 3, 4], baseball: [1, 2, 3, 4, 5], rugby: [5, 8, 10, 15, 20], 'rugby-league': [5, 8, 10, 13, 20], football: [3, 4, 7, 10, 14], basketball: [3, 5, 8, 10, 15] }[sport()] || [1, 2, 3, 4];
@@ -74261,6 +74337,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     _EC.forEach(function (x) { selE += '<option value="' + x + '"' + (c.E === x ? ' selected' : '') + '>' + x + '</option>'; });
     selE += '</select>';
     h += lab('Écart (' + motUnite().toLowerCase() + hkTr + ')') + b(c.ec === 'g', 'Gagne de ' + c.E + ' ou +', "g45CrSet('ec','g')") + b(c.ec === 'p', 'Perd de ' + c.E + ' max', "g45CrSet('ec','p')") + b(!c.ec, 'Aucun', "g45CrSet('ec','')") + selE;
+    var q3 = h.length;
     if (!S.ctx && D && D.tid && D.lg) {
       roCharger(nom, D);
       var RO = S.ro[nom] || {};
@@ -74279,6 +74356,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       if (c.jo2) h += lab('Avec ' + (c.jo3 ? '3' : '2') + ' joueurs') + b(c.jx === 'cha', 'Chacun', "g45CrSet('jx','cha')") + b(c.jx === 'un', 'Au moins un (double chance)', "g45CrSet('jx','un')")
         + b(c.jx === 'c15', 'Buts cumulés +1,5', "g45CrSet('jx','c15')") + b(c.jx === 'c25', '+2,5', "g45CrSet('jx','c25')") + b(c.jx === 'c35', '+3,5', "g45CrSet('jx','c35')");
       joueurs(c).forEach(function (x) { jCharger(x.id, D); var JJ = S.jl[x.id] || {}; if (JJ.enCours) h += '<div style="font-size:13px;color:#c9d3ee;">⏳ Matchs de ' + esc(x.n) + '…</div>'; else if (!JJ.n) h += '<div style="font-size:13px;color:#ff9f43;">⚠️ Aucun match trouvé pour ' + esc(x.n) + ' dans ce championnat.</div>'; });
+      q4 = h.length;
       /* 20261021d : feuille de match (foot) */
       var selN = function (k, a, z) { var t = '<select onchange="g45CrSet(\'' + k + '\',this.value)" style="background:#16213f;color:#fff;border:1px solid #6d9dff;border-radius:8px;padding:7px 10px;font-size:14px;margin:0 6px 6px 0;">'; for (var x = a; x <= z; x++) t += '<option value="' + x + '"' + (c[k] === x ? ' selected' : '') + '>' + x + '</option>'; return t + '</select>'; };
       var ouBt = function (k, kl, lo, hi) { return b(c[k] === 'ov', 'Over', "g45CrSet('" + k + "','ov')") + b(c[k] === 'un', 'Under', "g45CrSet('" + k + "','un')") + b(!c[k], 'Aucun', "g45CrSet('" + k + "','')") + selN(kl, lo, hi); };
@@ -74297,9 +74375,26 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
         if (FP.enCours) h += '<div style="font-size:14px;color:#f5c542;margin:4px 0;">⏳ Feuilles de match : ' + (FP.f || 0) + ' / ' + (FP.n || '…') + ' (la 1re fois seulement)</div>';
       }
     }
+    var q5 = h.length; if (q4 == null) q4 = q5;
     h += '<div style="font-size:15px;font-weight:800;margin:14px 0 2px;padding-top:8px;border-top:1px solid #2a3a63;">🔁 Match précédent</div>'
       + b(c.pm === 'v', 'Après une victoire', "g45CrSet('pm','v')") + (us() ? '' : b(c.pm === 'n', 'Après un nul', "g45CrSet('pm','n')")) + b(c.pm === 'd', 'Après une défaite', "g45CrSet('pm','d')") + b(!c.pm, 'Peu importe', "g45CrSet('pm','')");
+    var q6 = h.length;
     if (!S.ctx) h += lab('Les deux marquent') + b(c.bts === 'oui', 'Oui', "g45CrSet('bts','oui')") + b(c.bts === 'non', 'Non', "g45CrSet('bts','non')") + b(c.bts === '', 'Peu importe', "g45CrSet('bts','')");
+    /* 20261021f (« on commence à être envahi, faire des onglets », maquette maquette-onglets « oui ») : Lieu / Compétition restent en haut ;
+       critères en 5 onglets (🏁 Résultat = résultat + écart · ⚽ Buts = buts du match / équipe / adversaire + les deux marquent · 👤 Joueurs ·
+       🎯 Feuille · 🔁 Contexte = match précédent) ; pastille = nombre de critères choisis ; onglet gardé (localStorage g45_cr_tab). */
+    var q7 = h.length;
+    var PAN = { res: h.slice(q0, q1) + h.slice(q2, q3), buts: h.slice(q1, q2) + h.slice(q6, q7), jou: h.slice(q3, q4), feu: h.slice(q4, q5), ctx: h.slice(q5, q6) };
+    var NB = { res: (c.res ? 1 : 0) + (c.ec ? 1 : 0), buts: (c.ou ? 1 : 0) + (c.te ? 1 : 0) + (c.ad ? 1 : 0) + (c.bts ? 1 : 0), jou: joueurs(c).length ? 1 : 0,
+      feu: ['fs', 'ts', 'as', 'cad', 'mt', 'mp', 'bo'].filter(function (k) { return c[k]; }).length, ctx: c.pm ? 1 : 0 };
+    var ONG = [['res', '🏁 Résultat'], ['buts', '⚽ ' + motUnite()], ['jou', '👤 Joueurs'], ['feu', '🎯 Feuille'], ['ctx', '🔁 Contexte']].filter(function (o) { return PAN[o[0]]; });
+    var TB = 'res'; try { TB = localStorage.getItem('g45_cr_tab') || 'res'; } catch (e) {}
+    if (!PAN[TB]) TB = 'res';
+    h = h.slice(0, q0) + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin:12px 0 4px;">' + ONG.map(function (o) { var on = o[0] === TB;
+      return '<span onclick="g45CrTab(\'' + o[0] + '\')" style="flex:1;min-width:104px;text-align:center;cursor:pointer;padding:10px 6px;border-radius:10px;font-weight:800;font-size:14px;color:#fff;'
+        + (on ? 'background:#2563eb;border:1px solid #5aa9ff;' : 'background:#16213f;border:1px solid #2a3a63;') + '">' + o[1]
+        + (NB[o[0]] ? ' <span style="font-size:11px;background:#f5c542;color:#111;border-radius:8px;padding:0 6px;">' + NB[o[0]] + '</span>' : '') + '</span>'; }).join('') + '</div>'
+      + '<div style="background:#0f1730;border-radius:10px;padding:4px 12px 8px;margin-top:6px;">' + PAN[TB].replace(/margin:14px 0 2px;padding-top:8px;border-top:1px solid #2a3a63;/g, 'margin:8px 0 2px;') + '</div>';
     h += '<div style="margin:6px 0 4px;">' + (S.combos.length < 3 ? b(false, '➕ Comparer avec un autre combiné (OU)', 'g45CrAjout()') : '')
       + (S.combos.length > 1 ? b(false, '✕ Retirer le combiné ' + (S.a + 1), 'g45CrSuppr()') : '') + '</div>';
     if (!D || (!D.err && !D.saisons)) {
@@ -74352,6 +74447,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     redessiner();
   };
   window.g45CrChoix = function (i) { S.a = i; redessiner(); };
+  window.g45CrTab = function (t) { try { localStorage.setItem('g45_cr_tab', t); } catch (e) {} redessiner(); };   /* 20261021f */
   window.g45CrAjout = function () { if (S.combos.length < 3) { S.combos.push(combo0()); S.a = S.combos.length - 1; } redessiner(); };
   window.g45CrSuppr = function () { if (S.combos.length > 1) { S.combos.splice(S.a, 1); S.a = 0; } redessiner(); };
   window.g45CrNote = function () {

@@ -2244,6 +2244,15 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   + (captures bet45 d'Antoine, compte au-delà des 30 jours : « Tendances disparaît, devrait rester à gauche et montrer cette page comme sur
   Pari / Tendances ») : indexfenotte.html n'avait PAS de bouton Tendances dans le menu (gones45 oui) → ajouté après Agenda, même onclick ;
   le cadenas vient de loadTendancesTab. (smoke.js sur indexfenotte.html : 69 échecs AVANT et APRÈS, la garde d'accès bloque sans compte.)
+  20261021f (« on commence à être envahi, faire des onglets, pareil pour le panneau Saison » ; « il faudrait rajouter ce que l'on a fait plus
+  haut » = feuille de match ; filtre Compétition du panneau Saison DÉJÀ là, liste des matchs déjà dessous ; maquette maquette-onglets « oui ») :
+  CRITÈRES : Lieu / Compétition en haut, puis onglets 🏁 Résultat (résultat + écart) · ⚽ Buts (match / équipe / adversaire + les deux marquent)
+  · 👤 Joueurs · 🎯 Feuille · 🔁 Contexte, pastille = nb de critères ; découpage par repères q0…q7 de la chaîne h ; onglet localStorage g45_cr_tab
+  (g45CrTab) ; « aucun match compté » au lieu de « 0/0 · NaN % ». PANNEAU SAISON (_g45CursHtml) : Match entier / 1re MT puis onglets ⚽ Buts ·
+  ⚖️ Handicap · 🥇 1er but · 🎯 Tirs (match, équipe, adversaire, cadrés équipe / match) · 🚩 Corners / cartons (équipe / match) ; e.tab dans
+  g45_curseurs (g45CursTab, g45CursW) ; tirs / corners / cartons = feuille g45crf1_<espnId> (_g45CrFeuille, summary
+  soccer/<m.competition.code>), lue à l'ouverture de l'onglet (_g45CursFeuilles, 4 à la fois, essayée une fois par session, un redessin à la
+  fin) ; match entier seulement ; PAS de « dans le calcul » pour ces cartes. Smoke : tests critères recalés sur l'onglet Buts, cursTi (72).
   _g45TnPerso pose les 3 blocs de l'écran. Smoke tnRun (65) ; tests tnRobot / tnRun calés sur « maintenant + quelques minutes » (le soir UTC,
   « + 2 h » tombait le lendemain).
   20261020c (croquis d'Antoine « Tendances = 4 boutons », maquette cliquable validée « oui, BET45 → Sélection du jour par défaut ») : ONGLET EN BOUTONS —
