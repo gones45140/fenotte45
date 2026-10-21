@@ -77650,7 +77650,8 @@ window._g45AgJouUs = async function (nowTs) {
           if (ymd && _g45ymd(new Date(c.date || c.startDate)) !== ymd) return;
           var cps = c.competitors || []; if (cps.length !== 2) return;
           var hm = cps.filter(function (x) { return x.homeAway === 'home'; })[0] || cps[0], aw = cps.filter(function (x) { return x.homeAway === 'away'; })[0] || cps[1];
-          L.push({ lg: ev.__lg, tn: tn, cat: cat, id: String(c.id), t: Date.parse(c.date || c.startDate) || 0, st: st, a: joueur(hm), b: joueur(aw), ek: ekDe(c, ev), lieu: lieuDe(c) });
+          L.push({ lg: ev.__lg, tn: tn, cat: cat, id: String(c.id), t: Date.parse(c.date || c.startDate) || 0, st: st, a: joueur(hm), b: joueur(aw), ek: ekDe(c, ev), lieu: lieuDe(c),
+            sa: (hm.linescores || []).map(function (l) { return l.value; }), sb: (aw.linescores || []).map(function (l) { return l.value; }) });   /* 20261021b : sets (direct) */
         });
       });
     });
@@ -77730,10 +77731,46 @@ window._g45AgJouUs = async function (nowTs) {
       if (m.tn !== tourPrec) { h += '<div style="font-size:14px;font-weight:800;background:#0b101d;display:inline-block;padding:3px 10px;border-radius:7px;margin:10px 0 6px;">' + (m.lg === 'wta' ? 'WTA' : 'ATP') + ' · ' + esc(m.tn) + ' · ' + (CAT[m.cat] ? CAT[m.cat] + ' · ' : '') + s.i + ' ' + s.l + '</div>'; tourPrec = m.tn; }
       var hr = ''; try { hr = new Date(m.t).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }); } catch (e) {}
       h += '<div style="background:#1e2740;border-radius:10px;padding:9px 10px;margin-bottom:8px;">'
-        + '<div style="display:flex;justify-content:space-between;gap:8px;font-size:15px;"><b>' + esc(m.a.n) + ' – ' + esc(m.b.n) + '</b><span style="flex:none;">' + (m.st === 'in' ? '<b style="color:#ff6b6b;">🔴 en cours</b>' : '🕒 ' + hr) + '</span></div>'
+        + '<div style="display:flex;justify-content:space-between;gap:8px;font-size:15px;"><span data-g45tnn="' + esc(m.id) + '">' + nomsLv(m) + '</span><span style="flex:none;" data-g45tnlv="' + esc(m.id) + '">' + (m.st === 'in' ? scoreLv(m) : '🕒 ' + hr) + '</span></div>'
         + '<div style="margin-top:7px;">' + bouton(m.lg, m.a, m.b, m.tn, m.ek, 'g45tn-j-' + i, m.lieu) + '</div></div>';
     });
     cible.innerHTML = h;
+    lvArmer();
+  };
+  /* 20261021b (« pourrait mettre le score en direct », maquette « oui ») : « 🔴 6-4 3-2 · 2e set » au lieu de « en cours », joueur qui mène le
+     set en cours en gras ; mis à jour chaque minute tant qu'un match est en direct et que la liste est à l'écran (seuls les textes changent :
+     une analyse ouverte reste ouverte). */
+  var scoreLv = function (m) {
+    var n = Math.max((m.sa || []).length, (m.sb || []).length);
+    if (!n) return '<b style="color:#ff6b6b;">🔴 en cours</b>';
+    var s = []; for (var i = 0; i < n; i++) s.push(((m.sa || [])[i] != null ? m.sa[i] : 0) + '-' + ((m.sb || [])[i] != null ? m.sb[i] : 0));
+    return '<b style="color:#ff6b6b;">🔴 ' + s.join(' ') + ' · ' + n + (n === 1 ? 'er' : 'e') + ' set</b>';
+  };
+  var nomsLv = function (m) {
+    var n = Math.max((m.sa || []).length, (m.sb || []).length), x = n ? +((m.sa || [])[n - 1] || 0) : 0, y = n ? +((m.sb || [])[n - 1] || 0) : 0;
+    var A = esc(m.a.n), B = esc(m.b.n);
+    if (m.st === 'in' && x !== y) { if (x > y) A = '<b>' + A + '</b>'; else B = '<b>' + B + '</b>'; return '<span style="color:#c9d3ee;">' + A + ' – ' + B + '</span>'; }
+    return '<b>' + A + ' – ' + B + '</b>';
+  };
+  window._g45TnScoreLv = scoreLv; window._g45TnNomsLv = nomsLv;
+  var lvMinuteur = null;
+  var lvArmer = function () {
+    if (lvMinuteur) { clearInterval(lvMinuteur); lvMinuteur = null; }
+    if (!document.querySelector('[data-g45tnlv]')) return;
+    lvMinuteur = setInterval(async function () {
+      var el = document.querySelector('[data-g45tnlv]');
+      if (!el) { clearInterval(lvMinuteur); lvMinuteur = null; return; }
+      if (document.hidden) return;
+      var L = []; try { L = await window._g45TnListe(jourDe()); } catch (e) { return; }
+      var vu = {}; L.forEach(function (m) { vu[m.id] = m; });
+      var reste = false;
+      document.querySelectorAll('[data-g45tnlv]').forEach(function (sp) {
+        var m = vu[sp.getAttribute('data-g45tnlv')];
+        if (!m) { if (/en cours|set/.test(sp.textContent)) sp.innerHTML = '<b style="color:#c9d3ee;">Terminé</b>'; return; }
+        if (m.st === 'in') { reste = true; sp.innerHTML = scoreLv(m); var nn = document.querySelector('[data-g45tnn="' + m.id + '"]'); if (nn) nn.innerHTML = nomsLv(m); }
+      });
+      if (!reste && !L.some(function (m) { return m.st === 'pre' && m.t < Date.now() + 3600e3; })) { clearInterval(lvMinuteur); lvMinuteur = null; }
+    }, 60000);
   };
   window._g45TnEcran = function () {
     var n = jourDe(), pmin = lsG('g45tn_pmin', '0.6'), conf = lsG('g45tn_conf', 'mf');

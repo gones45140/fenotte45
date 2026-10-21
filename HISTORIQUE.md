@@ -2210,6 +2210,10 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   sur BET45 → Sélection, la liste perso n'est plus dessinée, _g45TrSuivNoter (appelé par le rendu perso) jamais appelé → le robot ne voit rien.
   tendances.mjs : localStorage g45tr_vue = 'perso' (addInitScript + avant la boucle). Robot relancé à la main (force 1) le 21/10 ~9 h 30.
   Elo : fichier créé au 2e passage (559 ATP, 515 WTA ; Fils 2019,7 / dur 1961,3).
+  20261021b (« pourrait mettre le score en direct », Tendances → Tennis « Tous les matchs du jour », « oui ») : _g45TnListe garde sa / sb (jeux
+  par set, linescores) ; « 🔴 6-4 3-2 · 2e set » (_g45TnScoreLv) au lieu de « en cours », meneur du set en cours en gras (_g45TnNomsLv) ;
+  minuteur 60 s (lvArmer) qui ne change QUE les textes [data-g45tnlv] / [data-g45tnn] (analyse ouverte conservée), « Terminé » quand le
+  match quitte la liste (les matchs finis n'y sont pas), arrêt sans direct ni match dans l'heure. Smoke tnLv (70).
   _g45TnPerso pose les 3 blocs de l'écran. Smoke tnRun (65) ; tests tnRobot / tnRun calés sur « maintenant + quelques minutes » (le soir UTC,
   « + 2 h » tombait le lendemain).
   20261020c (croquis d'Antoine « Tendances = 4 boutons », maquette cliquable validée « oui, BET45 → Sélection du jour par défaut ») : ONGLET EN BOUTONS —
