@@ -31019,106 +31019,7 @@ function _g45TrRender(){
     .filter(function(x){ var k=String(x.id||(x.hN+'|'+x.aN)); if(vuD[k]) return false; vuD[k]=1; return true; }).slice(0,10);
   try{ _g45TrSuivNoter(avec.slice(0,25).concat(sans).concat(desac)); }catch(e){}   /* 20261013c : suivi de fiabilité */
   var h='<button onclick="_G45_TR.res=null;loadTendancesTab();" style="border:none;cursor:pointer;background:rgba(255,255,255,.06);border-radius:8px;color:var(--t2);padding:6px 11px;font-size:10px;font-weight:700;margin-bottom:9px;">↺ Relancer</button>';
-  var card=function(x,showGap,sansCases){
-    var m=x.m;
-    var col=(m.ev!=null&&m.ev>=0.08)?'#2ecc71':(m.ev!=null&&m.ev>=0.03)?'#f0c828':'#8aa0ff';
-    /* ═══ FOND DEUX EQUIPES (22/08) ═══
-       Meme grammaire que les cartes du direct : degrade des couleurs
-       officielles, domicile a gauche, exterieur a droite, logos en filigrane
-       de chaque cote. Deux differences assumees par rapport au direct, parce
-       qu'ici la carte porte du TEXTE DENSE et pas seulement un score :
-       - le degrade s'eteint au centre (les deux teintes ne montent qu'a 22 %
-         d'opacite et laissent 40 % de fond neutre au milieu), la ou vivent le
-         libelle du marche et les faits ;
-       - les logos sont a 9 %, contre 18 % sur le direct.
-       La bordure gauche reste la couleur de l'ESPERANCE, pas celle d'un club :
-       c'est l'information qui doit primer sur la decoration. */
-    var d=x.deco||{};
-    /* ═══ MEME RECETTE QUE LES CARTES DU DIRECT (22/08, quatrieme passe) ═══
-       Les trois essais precedents inventaient leur propre dosage alors que
-       `_g45DirRender` avait deja resolu le probleme : degrade a 55 d'opacite,
-       bande neutre 42-58 %, logos DANS la carte a 52 px et 22 % avec saturation
-       renforcee, et surtout le VISUEL DU CLUB en fond. Valeurs reprises telles
-       quelles — une seule grammaire visuelle pour toute l'application, et les
-       reglages futurs se font a un seul endroit.
-       Le visuel est lu dans le cache uniquement : pas de recherche declenchee
-       ici, sinon chaque affichage de la liste partirait en rafale de requetes.
-       Il se remplit tout seul via les autres vues. */
-    var ch=(d.ch||'#4d84ff'), ca=(d.ca||'#f0b020');
-    var vis='';
-    try{ if(d.nh) vis=_g45ImgPersoLire(d.nh)||_g45FanLire(d.nh)||''; }catch(e){}
-    var fondCoul = g45FondMatch(ch, ca, vis);
-    var lg=function(url,cote){
-      if(!url) return '';
-      return '<img src="'+url+'" loading="lazy" onerror="this.style.display=\'none\'" '
-        +'style="position:absolute;'+cote+':6px;top:50%;transform:translateY(-50%);height:52px;width:52px;'
-        +'object-fit:contain;opacity:.22;filter:saturate(1.3);pointer-events:none;">';
-    };
-    var filig=lg(d.lh,'left')+lg(d.la,'right');
-    /* 20261013h (« en fond 1er et 2e match on pourrait faire quoi » → « LOGO COMPETITION ») : carte sans photo de club = logo de la
-       compétition en grand au centre, à moitié transparent (contain : jamais rogné). */
-    if(!vis && d.lgl){
-      filig += '<img src="'+d.lgl+'" loading="lazy" onerror="this.style.display=\'none\'" '
-        +'style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);height:92%;max-height:170px;max-width:60%;'
-        +'object-fit:contain;opacity:.2;pointer-events:none;">';
-    }
-    var s='<div style="position:relative;overflow:hidden;background:'+fondCoul+';background-size:cover;background-position:center;'
-      +'background-color:rgba(12,16,28,.97);border:1px solid rgba(255,255,255,.08);border-left:3px solid '+col+';'
-      +'border-radius:12px;padding:10px 62px;margin-bottom:7px;">'
-      +filig
-      +'<div style="position:relative;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">'
-      +'<div style="flex:1;min-width:0;">'
-        +'<div style="display:inline-block;font-size:8.5px;font-weight:800;color:#b9c6ff;letter-spacing:.4px;text-transform:uppercase;'
-          +'background:rgba(8,11,20,.55);border-radius:5px;padding:2px 6px;margin-bottom:3px;">'+_g45CyEa(_g45TrCompLbl(x.slug))+'</div>'
-        +'<div style="font-size:11px;font-weight:800;color:var(--t1);">'
-          +'<span style="color:'+_g45CoulTexte(d.ch)+';">'+_g45CyEa(x.hN)+'</span>'
-          +'<span style="color:var(--t3);font-weight:700;"> – </span>'
-          +'<span style="color:'+_g45CoulTexte(d.ca)+';">'+_g45CyEa(x.aN)+'</span></div>'
-        +'<div style="font-size:11px;font-weight:700;color:'+col+';margin-top:2px;">'+_g45CyEa(m.m)+'</div>'
-      +'</div>'
-      /* 20261014n (capture : « cote a verifier · 51 % estimee » en haut a droite, maquette validee « Oui ») :
-         le % est deja dans la case 📊 Stats du bas (14m) → retire ici. Sans cote : l'heure seule,
-         dans une petite pastille ; avec cote : @x COTE MARCHE + esperance + heure. */
-      +(m.cote?('<div style="flex:none;text-align:right;background:rgba(8,11,20,.74);border-radius:7px;padding:6px 9px;margin:-3px -4px 0 0;">'
-          +(m.coteDk?('<div style="font-size:16px;font-weight:800;color:#f0c828;line-height:1;">≈ @'+m.cote.toFixed(2)+'</div>'
-              +'<div style="font-size:9px;color:#fff;font-weight:700;letter-spacing:.3px;margin-top:2px;">BOOKS FR (ANJ)</div>'
-              +'<div style="font-size:11px;color:#c9d3ee;">estimée · DK '+m.coteDk.toFixed(2)+'</div>')   /* 20261015o/p : DraftKings − 6 % */
-            :('<div style="font-size:16px;font-weight:800;color:#f0c828;line-height:1;">@'+m.cote.toFixed(2)+'</div>'
-          +'<div style="font-size:7.5px;color:rgba(255,255,255,.62);letter-spacing:.4px;">COTE MARCHÉ</div>'))
-          +(showGap&&m.ev!=null?('<div style="font-size:10px;font-weight:800;color:'+col+';">espérance '+(m.ev>=0?'+':'')+Math.round(m.ev*1000)/10+'%</div>'):'')
-          +(x.when?('<div style="font-size:12px;color:#fff;margin-top:3px;">'+_g45CyEa(x.when)+'</div>'):'')
-        +'</div>')
-        :(x.when?('<div style="flex:none;align-self:flex-start;background:rgba(8,11,20,.74);border-radius:7px;padding:4px 9px;margin:-3px -4px 0 0;font-size:13px;font-weight:700;color:#fff;">'+_g45CyEa(x.when)+'</div>'):''))
-      +'</div>';
-    /* Ces petits textes etaient ecrits en var(--t3), un gris bleute prevu pour un
-       fond neutre uni. Sur une teinte de club ils deviennent illisibles — signale
-       en production sur la carte Nottingham-Leeds. Chacun recoit donc son propre
-       substrat sombre et une couleur eclaircie, plutot que d'affaiblir encore le
-       degrade : c'est le texte qui doit s'adapter au fond, pas l'inverse. */
-    /* 20261014m (« il faudrait les stats et book % comme en bas sur chaque pari », maquette validée « oui ») : la pastille « Bookmaker (marge
-       retirée) » est remplacée par les deux cases 📊 Stats / 🏦 Bookmakers du bloc « en désaccord », posées en bas de CHAQUE carte (sauf
-       dans ce bloc, qui les a déjà) ; sans cote → « — pas de cote » en gris. */
-    if(m.accord!=null) s+='<div style="position:relative;display:inline-block;margin-top:6px;background:rgba(30,215,96,.18);border:1px solid #1ed760;color:#fff;font-size:13px;font-weight:700;padding:4px 9px;border-radius:8px;">\u2705 Coupe d\u2019Europe : stats et bookmakers d\u2019accord (bookmakers '+_g45TrPct(m.accord)+')</div>';
-    else if(m.croSans) s+='<div style="position:relative;display:inline-block;margin-top:6px;background:rgba(8,11,20,.7);border:1px solid #ff8c42;color:#fff;font-size:13px;font-weight:700;padding:4px 9px;border-radius:8px;">\u26a0\ufe0f Coupe d\u2019Europe : pas de cote pour v\u00e9rifier</div>';
-    if(m.note) s+='<div style="font-size:8px;color:#8aa0ff;margin-top:4px;line-height:1.5;">ℹ️ '+_g45CyEa(m.note)+'</div>';
-    if(m.dc) s+='<div style="font-size:7.5px;color:#2ecc71;margin-top:3px;">📐 Dixon-Coles '
-      +(m.dcFit?'ajusté par maximum de vraisemblance — force de l\'adversaire et pondération temporelle prises en compte'
-               :'dérivé du classement — repli, les matchs du championnat n\'ont pas pu être récupérés')+'</div>';
-    if(m.faits&&m.faits.length) s+='<ul style="position:relative;margin:6px 0 0 0;padding:6px 9px 6px 24px;'
-      +'background:rgba(8,11,20,.58);border-radius:7px;list-style-position:outside;">'
-      /* Passage en 600 le 26/08 : sur le fond colore des cartes, un texte en
-         graisse normale a 9,5 px se lisait mal. */
-      +m.faits.slice(0,4).map(function(f){ return '<li style="font-size:9.5px;font-weight:600;color:rgba(255,255,255,.90);line-height:1.6;">'+_g45CyEa(f)+'</li>'; }).join('')+'</ul>';
-    if(m.n<9) s+='<div style="font-size:8px;color:#ff6b6b;margin-top:4px;">⛔ Échantillon très réduit ('+m.n+' matchs) — statistiquement peu fiable, à titre indicatif seulement.</div>';
-    else if(m.n<14) s+='<div style="font-size:8px;color:#ff8c42;margin-top:4px;">⚠️ Échantillon réduit ('+m.n+' matchs) — à prendre avec prudence.</div>';
-    if(!sansCases){
-      var _bk=(m.fair!=null)?m.fair:(m.accord!=null?m.accord:null);
-      var _cs=function(lbl,v,c){ return '<div style="flex:1;background:rgba(0,0,0,.6);border-radius:8px;padding:6px;text-align:center;font-size:13px;color:#fff;">'+lbl
-        +(v!=null?'<b style="display:block;font-size:20px;color:'+c+';">'+_g45TrPct(v)+'</b>':'<b style="display:block;font-size:14px;color:#9aa4bd;padding:4px 0;">\u2014 pas de cote</b>')+'</div>'; };
-      s+='<div class="g45tr-cases" style="position:relative;display:flex;gap:8px;margin-top:8px;">'+_cs('\ud83d\udcca Stats',m.p,'#6d9dff')+_cs('\ud83c\udfe6 Bookmakers',_bk,'#f5c542')+'</div>';
-    }
-    return s+'</div>';
-  };
+  var card=_g45TrCarte;   /* 20261021c : carte sortie en fonction globale (voir « CARTE DE TENDANCE, LOGO DU CENTRE LIBRE » en fin de fichier) */
   if(avec.length){
     h+='<div style="font-size:10px;font-weight:800;color:#2ecc71;margin:8px 0 6px;">💎 Values du jour ('+avec.length+')</div>'
       +'<div style="font-size:8px;color:var(--t3);margin-bottom:6px;font-style:italic;">Cote réelle ≥ '+mini.toFixed(2)
@@ -76928,16 +76829,53 @@ window._g45AgJouUs = async function (nowTs) {
           : vj == null ? '' : LV.st === 'in' ? (vj ? '<span style="color:#7dffb0;font-weight:800;">✅ gagnant si ça reste</span>' : '<span style="color:#f0c828;font-weight:800;">⏳ pas encore</span>')
           : (vj ? '<span style="color:#1ed760;font-weight:800;">✅ Gagné (provisoire)</span>' : '<span style="color:#ff6b6b;font-weight:800;">❌ Perdu (provisoire)</span>');
         var pP = x.p > 0 ? Math.round(x.p > 1 ? x.p : x.p * 100) : null, pF = x.f > 0 ? Math.round(x.f > 1 ? x.f : x.f * 100) : null;
-        h += '<div style="background:#1e2740;border-left:4px solid ' + bord + ';border-radius:10px;padding:9px 10px;margin-bottom:8px;">'
+        var ouv = !!S.ouv[String(x.id) + '|' + x.k];
+        h += '<div onclick="g45TrSelOuvrir(\'' + esc(String(x.id) + '|' + x.k) + '\')" style="cursor:pointer;background:#1e2740;border-left:4px solid ' + bord + ';border-radius:10px;padding:9px 10px;margin-bottom:' + (ouv ? 4 : 8) + 'px;">'
           + '<div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;"><b style="font-size:15px;">' + esc(x.h) + ' – ' + esc(x.a) + '</b><span style="flex:none;font-size:14px;">' + etat + '</span></div>'
           + '<div style="font-size:14px;margin-top:4px;color:#dbe4ff;">' + esc(x.m) + (x.c > 1 ? ' · <b style="color:#111;background:#f0c828;border-radius:6px;padding:0 6px;">@' + x.c.toFixed(2).replace('.', ',') + '</b>' : '') + '</div>'
-          + '<div style="font-size:13px;margin-top:5px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;">' + (pP != null ? '<span>📊 ' + pP + ' %</span>' : '') + '<span>🏦 ' + (pF != null ? pF + ' %' : '—') + '</span>' + res + '</div></div>';
+          + '<div style="font-size:13px;margin-top:5px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;">' + (pP != null ? '<span>📊 ' + pP + ' %</span>' : '') + '<span>🏦 ' + (pF != null ? pF + ' %' : '—') + '</span>' + res + '<span style="margin-left:auto;font-weight:800;color:#fff;">' + (ouv ? '▴ refermer' : '▾ détail') + '</span></div></div>'
+          + (ouv ? detail(x) : '');
       });
     });
     h += '<div style="font-size:12px;color:#aab6d6;margin-top:4px;">Statistiques, pas des pronos sûrs · bilan complet dans 📅 Historique.</div>';
     return h + '</div>';
   }
   window._g45TrSelHtml = html;
+
+  /* 20261021c (« AU TOUCHER que cela nous sorte une carte comme celle-ci », maquette « oui ») : toucher une carte de la Sélection = la grande
+     carte de Tendances perso (_g45TrCarte) avec les faits notés par le robot (x.fa), Stats / Bookmakers, cote. Blasons, couleurs et logo de
+     la compétition : scoreboard ESPN du jour (une lecture par compétition, gardée : S.deco[clé] = objet, {} si échec → jamais de boucle). */
+  S.ouv = {}; S.deco = {};
+  var cleSb = function (x) { return x.sl + '|' + new Date(x.t - 6 * 3600000).toISOString().slice(0, 10).replace(/-/g, ''); };
+  window.g45TrSelOuvrir = function (k) { S.ouv[k] = !S.ouv[k]; poser(true); };
+  function detail(x) {
+    var ks = cleSb(x), D = S.deco[ks];
+    if (D === undefined) {
+      S.deco[ks] = null;
+      var sl = x.sl, sp = { nhl: 'hockey', nba: 'basketball', nfl: 'football', atp: 'tennis', wta: 'tennis' }[sl] || 'soccer';
+      fetch('https://site.api.espn.com/apis/site/v2/sports/' + sp + '/' + sl + '/scoreboard?dates=' + ks.split('|')[1]).then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (j) {
+          var o = {}, lgl = '';
+          try { var lo = (j.leagues && j.leagues[0] && j.leagues[0].logos) || [], dk = lo.filter(function (q) { return (q.rel || []).indexOf('dark') >= 0; })[0]; lgl = ((dk || lo[0] || {}).href) || ''; } catch (e) {}
+          ((j && j.events) || []).forEach(function (e) {
+            var c = (e.competitions && e.competitions[0]) || {}, cp = c.competitors || [];
+            var ho = cp.filter(function (q) { return q.homeAway === 'home'; })[0], aw = cp.filter(function (q) { return q.homeAway === 'away'; })[0];
+            if (!ho || !aw || !ho.team) return;
+            var paire = ['#4d84ff', '#f0b020']; try { paire = g45CoulPaire(ho, aw); } catch (er) {}
+            o[String(e.id)] = { ch: paire[0], ca: paire[1], lh: ho.team.logo || '', la: (aw.team && aw.team.logo) || '', nh: ho.team.displayName || '', lgl: lgl };
+          });
+          o._lgl = lgl; S.deco[ks] = o;
+        }).catch(function () { S.deco[ks] = {}; }).then(function () { poser(true); });
+      D = null;
+    }
+    if (D === null) return '<div style="font-size:14px;color:#c9d3ee;margin:0 0 8px 8px;">⏳ Chargement de la carte…</div>';
+    var p = x.p > 1 ? x.p / 100 : x.p, f = x.f > 1 ? x.f / 100 : x.f;
+    var xx = { slug: x.sl, hN: x.h, aN: x.a, when: hhmm(x.t), nEtud: x.nm || 0,
+      deco: D[String(x.id)] || { lgl: D._lgl || '' },
+      m: { m: x.m, p: p, cote: x.c > 1 ? x.c : null, coteDk: x.cd > 1 ? x.cd : null, fair: f > 0 ? f : null, faits: x.fa || [], n: x.nm || 99,
+        ev: x.c > 1 && p ? p * x.c - 1 : null } };
+    try { return '<div style="margin:0 0 10px;">' + window._g45TrCarte(xx, true) + '</div>'; } catch (e) { return ''; }
+  }
 
   var pose = false;
   function poser(refaire) {
@@ -78392,3 +78330,88 @@ window._g45AgJouUs = async function (nowTs) {
   window._g45TnSaison = async function () { var L = await f.apply(this, arguments); return Array.isArray(L) ? L.filter(function (m) { return !(m && /^bye$/i.test(String(m.an || '').trim())); }) : L; };
   window._g45TnSaison._sansBye = true;
 })();
+
+/* ═══ CARTE DE TENDANCE, LOGO DU CENTRE LIBRE (20261021c, maquette maquette-sel-detail « oui ») ═══
+   « le cache est trop grand et cache la belle image de fond sur PC » puis « le logo au fond est centré au milieu, fais en sorte qu'on le
+   voie sans cache ». La carte de Tendances perso (avant : `var card` DANS _g45TrRender, une seule copie) devient la fonction globale
+   _g45TrCarte, pour servir AUSSI au détail de la Sélection du jour (toucher une carte). Même contenu ; seule la mise en page change :
+   - PC : colonne gauche (≈ 40 %) = compétition, match, pari, accord, faits ; colonne droite (étroite) = cote / heure + cases
+     📊 Stats / 🏦 Bookmakers l'une sous l'autre ; le MILIEU reste libre → logo de la compétition entièrement visible ;
+   - téléphone (≤ 760 px) : le logo de la compétition monte en haut au centre, le texte commence dessous ;
+   - textes agrandis (Antoine malvoyant : 13-16 px). */
+function _g45TrCarte(x,showGap,sansCases){
+  var m=x.m;
+  var col=(m.ev!=null&&m.ev>=0.08)?'#2ecc71':(m.ev!=null&&m.ev>=0.03)?'#f0c828':'#8aa0ff';
+  var d=x.deco||{};
+  var ch=(d.ch||'#4d84ff'), ca=(d.ca||'#f0b020');
+  var vis='';
+  try{ if(d.nh) vis=_g45ImgPersoLire(d.nh)||_g45FanLire(d.nh)||''; }catch(e){}
+  var fondCoul = g45FondMatch(ch, ca, vis);
+  var lg=function(url,cote){
+    if(!url) return '';
+    return '<img src="'+url+'" loading="lazy" onerror="this.style.display=\'none\'" '
+      +'style="position:absolute;'+cote+':6px;top:50%;transform:translateY(-50%);height:52px;width:52px;'
+      +'object-fit:contain;opacity:.22;filter:saturate(1.3);pointer-events:none;">';
+  };
+  var filig=lg(d.lh,'left')+lg(d.la,'right'), avLgl=false;
+  /* 20261013h : carte sans photo de club = logo de la compétition en grand au centre (contain : jamais rogné) */
+  if(!vis && d.lgl){
+    avLgl=true;
+    filig += '<img class="g45trc-lgl" src="'+d.lgl+'" loading="lazy" onerror="this.style.display=\'none\'" '
+      +'style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);height:92%;max-height:170px;max-width:30%;'
+      +'object-fit:contain;opacity:.3;pointer-events:none;">';
+  }
+  var g='<div style="display:inline-block;font-size:11px;font-weight:800;color:#dbe4ff;letter-spacing:.4px;text-transform:uppercase;'
+      +'background:rgba(8,11,20,.72);border-radius:5px;padding:2px 7px;margin-bottom:4px;">'+_g45CyEa(_g45TrCompLbl(x.slug))+'</div>'
+    +'<div style="display:table;background:rgba(8,11,20,.72);border-radius:8px;padding:5px 9px;">'
+      +'<div style="font-size:16px;font-weight:800;color:#fff;">'
+        +'<span style="color:'+_g45CoulTexte(d.ch)+';">'+_g45CyEa(x.hN)+'</span>'
+        +'<span style="color:#c9d3ee;font-weight:700;"> – </span>'
+        +'<span style="color:'+_g45CoulTexte(d.ca)+';">'+_g45CyEa(x.aN)+'</span></div>'
+      +'<div style="font-size:14px;font-weight:800;color:'+col+';margin-top:2px;">'+_g45CyEa(m.m)+'</div></div>';
+  if(m.accord!=null) g+='<div style="display:table;margin-top:6px;background:rgba(10,40,24,.85);border:1px solid #1ed760;color:#fff;font-size:13px;font-weight:700;padding:4px 9px;border-radius:8px;">✅ Coupe d’Europe : stats et bookmakers d’accord (bookmakers '+_g45TrPct(m.accord)+')</div>';
+  else if(m.croSans) g+='<div style="display:table;margin-top:6px;background:rgba(8,11,20,.8);border:1px solid #ff8c42;color:#fff;font-size:13px;font-weight:700;padding:4px 9px;border-radius:8px;">⚠️ Coupe d’Europe : pas de cote pour vérifier</div>';
+  if(m.note) g+='<div style="display:table;font-size:12px;color:#dbe4ff;background:rgba(8,11,20,.72);border-radius:6px;padding:3px 7px;margin-top:5px;line-height:1.5;">ℹ️ '+_g45CyEa(m.note)+'</div>';
+  if(m.dc) g+='<div style="display:table;font-size:12px;color:#7dffb0;background:rgba(8,11,20,.72);border-radius:6px;padding:3px 7px;margin-top:4px;">📐 Dixon-Coles '
+    +(m.dcFit?'ajusté (force de l\'adversaire et forme récente prises en compte)':'dérivé du classement (repli)')+'</div>';
+  if(m.faits&&m.faits.length) g+='<div style="display:table;margin-top:6px;padding:6px 10px;background:rgba(8,11,20,.72);border-radius:8px;">'
+    +m.faits.slice(0,4).map(function(f){ return '<div style="font-size:13.5px;font-weight:600;color:#fff;line-height:1.5;">📈 '+_g45CyEa(f)+'</div>'; }).join('')
+    +(x.nEtud?'<div style="font-size:12px;color:#c9d3ee;margin-top:2px;">sur '+x.nEtud+' matchs étudiés</div>':'')+'</div>';
+  if(m.n<9) g+='<div style="display:table;font-size:12px;color:#ff9b9b;background:rgba(8,11,20,.72);border-radius:6px;padding:3px 7px;margin-top:4px;">⛔ Échantillon très réduit ('+m.n+' matchs) — peu fiable.</div>';
+  else if(m.n<14) g+='<div style="display:table;font-size:12px;color:#ffb27a;background:rgba(8,11,20,.72);border-radius:6px;padding:3px 7px;margin-top:4px;">⚠️ Échantillon réduit ('+m.n+' matchs) — prudence.</div>';
+  var dr='';
+  if(m.cote){
+    dr+='<div class="g45trc-cote" style="text-align:right;background:rgba(8,11,20,.8);border-radius:8px;padding:6px 9px;">'
+      +(m.coteDk?('<div style="font-size:18px;font-weight:800;color:#f0c828;line-height:1;">≈ @'+m.cote.toFixed(2)+'</div>'
+          +'<div style="font-size:11px;color:#fff;font-weight:700;margin-top:2px;">BOOKS FR (ANJ)</div>'
+          +'<div style="font-size:12px;color:#c9d3ee;">estimée · DK '+m.coteDk.toFixed(2)+'</div>')
+        :('<div style="font-size:18px;font-weight:800;color:#f0c828;line-height:1;">@'+m.cote.toFixed(2)+'</div>'
+          +'<div style="font-size:11px;color:#fff;">COTE MARCHÉ</div>'))
+      +(showGap&&m.ev!=null?('<div style="font-size:12px;font-weight:800;color:'+col+';">espérance '+(m.ev>=0?'+':'')+Math.round(m.ev*1000)/10+'%</div>'):'')
+      +(x.when?('<div style="font-size:14px;color:#fff;font-weight:700;margin-top:3px;">🕒 '+_g45CyEa(x.when)+'</div>'):'')
+      +'</div>';
+  } else if(x.when) dr+='<div class="g45trc-cote" style="background:rgba(8,11,20,.8);border-radius:8px;padding:4px 10px;font-size:14px;font-weight:800;color:#fff;">🕒 '+_g45CyEa(x.when)+'</div>';
+  if(!sansCases){
+    var _bk=(m.fair!=null)?m.fair:(m.accord!=null?m.accord:null);
+    var _cs=function(lbl,v,c){ return '<div style="flex:1;background:rgba(8,11,20,.8);border-radius:8px;padding:6px 10px;text-align:center;font-size:13px;color:#fff;">'+lbl
+      +(v!=null?'<b style="display:block;font-size:20px;color:'+c+';">'+_g45TrPct(v)+'</b>':'<b style="display:block;font-size:14px;color:#c9d3ee;padding:4px 0;">— pas de cote</b>')+'</div>'; };
+    dr+='<div class="g45tr-cases" style="display:flex;gap:8px;">'+_cs('📊 Stats',m.p,'#6d9dff')+_cs('🏦 Bookmakers',_bk,'#f5c542')+'</div>';
+  }
+  _g45TrCarteCss();
+  return '<div class="g45trc'+(avLgl?' g45trc-av':'')+'" style="position:relative;overflow:hidden;background:'+fondCoul+';background-size:cover;background-position:center;'
+    +'background-color:rgba(12,16,28,.97);border:1px solid rgba(255,255,255,.08);border-left:3px solid '+col+';'
+    +'border-radius:12px;padding:10px 62px;margin-bottom:7px;color:#fff;">'
+    +filig+'<div class="g45trc-in"><div class="g45trc-g">'+g+'</div><div class="g45trc-d">'+dr+'</div></div></div>';
+}
+function _g45TrCarteCss(){
+  if(document.getElementById('g45trc-css')) return;
+  var st=document.createElement('style'); st.id='g45trc-css';
+  st.textContent='.g45trc-in{position:relative;display:flex;justify-content:space-between;align-items:flex-start;gap:14px}'
+    +'.g45trc-g{flex:0 1 40%;min-width:0}'
+    +'.g45trc-d{flex:0 0 auto;width:min(230px,26%);display:flex;flex-direction:column;align-items:stretch;gap:8px}'
+    +'.g45trc-d .g45tr-cases{flex-direction:column}'
+    +'@media (max-width:760px){.g45trc-av{padding-top:104px!important}.g45trc-av .g45trc-lgl{top:52px!important;height:84px!important;max-height:84px!important;max-width:50%!important}'
+    +'.g45trc-in{display:block}.g45trc-d{width:auto;margin-top:8px}.g45trc-d .g45tr-cases{flex-direction:row}}';
+  document.head.appendChild(st);
+}
+window._g45TrCarte=_g45TrCarte;

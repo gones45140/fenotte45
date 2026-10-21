@@ -2216,6 +2216,14 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   match quitte la liste (les matchs finis n'y sont pas), arrêt sans direct ni match dans l'heure. Smoke tnLv (70).
   + (« mettre le drapeau du joueur et le nom WTA · BNB Ningbo Open · WTA 500 · 🟦 Dur de la couleur de la surface ») : joueur() garde f
   (drapeau ESPN), drapeau 20×14 devant chaque nom ; en-tête du tournoi en couleur de la surface (SF.c : dur bleu, terre orange, salle ciel, gazon vert).
+  20261021c (« aucune précision des stats ? » sur la Sélection ; « AU TOUCHER que cela nous sorte une carte comme celle-ci » ; « le cache est trop
+  grand et cache la belle image de fond sur PC » ; « le logo au fond est centré au milieu, fais en sorte qu'on le voie sans cache » ; maquette
+  maquette-sel-detail v2 « oui ») : la carte de Tendances perso (`var card` dans _g45TrRender, 1 copie) devient la fonction globale _g45TrCarte
+  (bloc « CARTE DE TENDANCE, LOGO DU CENTRE LIBRE » en fin d'app.js ; dans le rendu : var card=_g45TrCarte). PC : colonne gauche 40 % (match,
+  pari, accord, faits 📈, échantillon), colonne droite étroite (cote / heure, cases Stats / Bookmakers empilées), milieu libre ; ≤ 760 px :
+  logo de la compétition en haut au centre (.g45trc-av), texte dessous ; textes 12-16 px. Sélection du jour : toucher = g45TrSelOuvrir(id|k)
+  (S.ouv) → detail(x) = _g45TrCarte avec x.fa / x.nm du robot ; blasons, couleurs (g45CoulPaire) et logo de la compétition (dark) lus sur le
+  scoreboard ESPN du jour, gardés par compétition (S.deco, {} si échec : pas de boucle). Smoke trSel complété (70). Captures carte-pc / carte-tel vérifiées.
   _g45TnPerso pose les 3 blocs de l'écran. Smoke tnRun (65) ; tests tnRobot / tnRun calés sur « maintenant + quelques minutes » (le soir UTC,
   « + 2 h » tombait le lendemain).
   20261020c (croquis d'Antoine « Tendances = 4 boutons », maquette cliquable validée « oui, BET45 → Sélection du jour par défaut ») : ONGLET EN BOUTONS —
