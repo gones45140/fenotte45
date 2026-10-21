@@ -2253,6 +2253,12 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   g45_curseurs (g45CursTab, g45CursW) ; tirs / corners / cartons = feuille g45crf1_<espnId> (_g45CrFeuille, summary
   soccer/<m.competition.code>), lue à l'ouverture de l'onglet (_g45CursFeuilles, 4 à la fois, essayée une fois par session, un redessin à la
   fin) ; match entier seulement ; PAS de « dans le calcul » pour ces cartes. Smoke : tests critères recalés sur l'onglet Buts, cursTi (72).
+  20261021g (« le temps d'une recherche faire comme le screen 2 [page d'attente Agenda] mais avec BET45 » → maquette maquette-chargeur « OUI »,
+  BET45 aussi sur gones45 ; « quand j'arrive dans Saison ce panneau [critères] est déjà ouvert, il devrait être fermé ; pareil pour le screen 2
+  [curseurs de la saison NHL] ») : _g45Chargeur(texte) (logo BET45 qui respire, anneau rouge / blanc) à la place des petits spinners plein
+  panneau (6 remplacés par motif + Saisons tous sports avec #sg-prog) ; critères : ouvert / fermé en mémoire par équipe (S.ov, S.ovTous pour
+  les tests) au lieu de localStorage g45_cr_open ; curseurs foot (_g45CursHtml) et autres sports (_g45SgCursHtml) enveloppés : bandeau
+  « 📈 Curseurs de la saison ▸ Ouvrir » fermé à l'arrivée (_g45CursOuv, g45CursOuvrir ; window._g45CursToujours pour les tests). Smoke ferme (73).
   _g45TnPerso pose les 3 blocs de l'écran. Smoke tnRun (65) ; tests tnRobot / tnRun calés sur « maintenant + quelques minutes » (le soir UTC,
   « + 2 h » tombait le lendemain).
   20261020c (croquis d'Antoine « Tendances = 4 boutons », maquette cliquable validée « oui, BET45 → Sélection du jour par défaut ») : ONGLET EN BOUTONS —

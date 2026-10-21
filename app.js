@@ -18556,8 +18556,7 @@ async function loadNhlSaisons(el, nom) {
     el.innerHTML = '<div style="color:var(--t3);text-align:center;padding:20px;">Équipe NHL non reconnue.</div>';
     return;
   }
-  el.innerHTML = '<div style="display:flex;align-items:center;gap:8px;padding:20px;color:var(--t3);"><div style="width:14px;height:14px;border:2px solid rgba(77,132,255,.2);border-top-color:#4d84ff;border-radius:50%;animation:spin .8s linear infinite;"></div>Chargement NHL...</div>';
-
+  el.innerHTML = _g45Chargeur('Chargement NHL...');   /* 20261021g : écran de chargement BET45 */
   try {
     var [standResp, schedResp] = await Promise.all([
       fetch('https://fd-proxy.touraine-antoine.workers.dev?key=nhl&path=/v1/standings/now&host=nhl'),
@@ -18785,8 +18784,7 @@ async function loadNhlSaisons(el, nom) {
 async function loadMlbSaisons(el, nom) {
   var teamInfo = MLB_TEAMS[nom];
   if(!teamInfo) { el.innerHTML='<div style="color:var(--t3);text-align:center;padding:20px;">Équipe MLB non reconnue.</div>'; return; }
-  el.innerHTML = '<div style="display:flex;align-items:center;gap:8px;padding:20px;color:var(--t3);"><div style="width:14px;height:14px;border:2px solid rgba(77,132,255,.2);border-top-color:#4d84ff;border-radius:50%;animation:spin .8s linear infinite;"></div>Chargement MLB...</div>';
-
+  el.innerHTML = _g45Chargeur('Chargement MLB...');   /* 20261021g : écran de chargement BET45 */
   try {
     var today = new Date().toISOString().split('T')[0];
     var past = new Date(Date.now()-120*24*3600*1000).toISOString().split('T')[0];
@@ -18989,8 +18987,7 @@ var F1_DRIVERS = {
 };
 
 async function loadF1Saisons(el, nom) {
-  el.innerHTML = '<div style="display:flex;align-items:center;gap:8px;padding:20px;color:var(--t3);"><div style="width:14px;height:14px;border:2px solid rgba(77,132,255,.2);border-top-color:#4d84ff;border-radius:50%;animation:spin .8s linear infinite;"></div>Chargement stats F1...</div>';
-
+  el.innerHTML = _g45Chargeur('Chargement stats F1...');   /* 20261021g : écran de chargement BET45 */
   var year = new Date().getFullYear();
   var driverRef = F1_DRIVERS[nom] || null;
   
@@ -19359,8 +19356,7 @@ async function loadNbaSaisons(el, nom) {
     el.innerHTML = '<div style="color:var(--t3);text-align:center;padding:20px;">Équipe NBA non reconnue.</div>';
     return;
   }
-  el.innerHTML = '<div style="display:flex;align-items:center;gap:8px;padding:20px;color:var(--t3);"><div style="width:14px;height:14px;border:2px solid rgba(77,132,255,.2);border-top-color:#4d84ff;border-radius:50%;animation:spin .8s linear infinite;"></div>Chargement NBA...</div>';
-
+  el.innerHTML = _g45Chargeur('Chargement NBA...');   /* 20261021g : écran de chargement BET45 */
   try {
     var bdlId = teamInfo.bdlId;
     // balldontlie API — résultats + prochains matchs
@@ -23346,8 +23342,7 @@ async function loadTeamSaisons() {
     }
   } catch(e){}
 
-  el.innerHTML = '<div style="display:flex;align-items:center;gap:10px;padding:20px;color:var(--t3);"><div style="width:16px;height:16px;border:2px solid rgba(77,132,255,.2);border-top-color:#4d84ff;border-radius:50%;animation:spin .8s linear infinite;"></div>Chargement des 2 dernières saisons...</div>';
-
+  el.innerHTML = _g45Chargeur('Chargement des 2 dernières saisons...');   /* 20261021g : écran de chargement BET45 */
   // Charger saison en cours + saison précédente
   // PRINCIPAL: ESPN (gratuit, sans clé, cotes incluses, accessible à tous).
   // SECONDAIRE: football-data (fallback si ESPN ne couvre pas l'équipe).
@@ -26024,7 +26019,7 @@ async function loadCalendrier() {
   var el = document.getElementById('cal-content');
   var btn = document.getElementById('btn-refresh-cal');
   if(!el) return;
-  el.innerHTML = '<div style="display:flex;align-items:center;gap:8px;padding:20px;color:var(--t3);"><div style="width:14px;height:14px;border:2px solid rgba(77,132,255,.2);border-top-color:#4d84ff;border-radius:50%;animation:spin .8s linear infinite;"></div>Chargement du calendrier...</div>';
+  el.innerHTML = _g45Chargeur('Chargement du calendrier...');   /* 20261021g : écran de chargement BET45 */
   /* 20261018g : page d'attente (pourboire sur bet45 sans soutien, sinon cartes grises) — bloc en fin d'app.js */
   try { if (typeof window._g45AgAttenteHtml === 'function') el.innerHTML = window._g45AgAttenteHtml(); } catch (e) {}
   if(btn) btn.onclick = loadCalendrier;
@@ -50768,9 +50763,7 @@ async function _g45SaisonsGen(el, nom, perso) {
 
   var ms = _g45SgMem[memK], eq = [];
   if (!ms) {
-    el.innerHTML = '<div style="display:flex;align-items:center;gap:10px;padding:20px;color:var(--t3);font-size:12px;">'
-      + '<div style="width:16px;height:16px;border:2px solid rgba(77,132,255,.2);border-top-color:#4d84ff;border-radius:50%;animation:spin .8s linear infinite;"></div>'
-      + '<span id="sg-prog">Chargement de la saison ' + an + '\u2026</span></div>';
+    el.innerHTML = _g45Chargeur('<span id="sg-prog">Chargement de la saison ' + an + '\u2026</span>');   /* 20261021g : écran de chargement BET45 */
   }
   try { eq = await _g45CompetEquipes({ sp: sp, s: lg }); } catch (e) {}
   var noms = {}, logos = {};
@@ -73849,7 +73842,9 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
 (function () {
   var CAL = ['bra.1','usa.1','arg.1','nor.1','swe.1','fin.1','irl.1','rus.1','jpn.1','kor.1'];
   var S = window._g45Cr = window._g45Cr || { nom: '', lieu: 'tout', combos: [], a: 0, data: {}, enCours: {} };
-  function ouvert() { try { return localStorage.getItem('g45_cr_open') === '1'; } catch (e) { return false; } }
+  /* 20261021g (« quand j'arrive dans Saison ce panneau est déjà ouvert, il devrait être fermé et je clique pour l'ouvrir ») : ouvert / fermé
+     gardé en MÉMOIRE seulement, par équipe (S.ov) → fermé à chaque arrivée (avant : localStorage g45_cr_open, ouvert pour toujours). */
+  function ouvert() { if (S.ovTous) return true; return !!(S.ov && S.ov[S.nom]); }
   function esc(t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function combo0() { var u = S.ctx && US_L[S.ctx.sp]; return norm({ res: us() ? 'vqr' : 'vic', ou: '', L: u ? u[2] : 2.5, bts: '', te: '', TL: lgEq()[2], ad: '', AL: lgEq()[2] }); }
   /* 20261021d (« on va rajouter des trucs » : duo / trio buteurs, double chance buteur, tirs, tirs par équipe + mi-temps, marque en premier,
@@ -74418,7 +74413,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   }
   window._g45CrHtml = html;
   window._g45CrPasse = passe; window._g45CrCalc = calc;
-  window.g45CrOuvrir = function () { try { localStorage.setItem('g45_cr_open', ouvert() ? '0' : '1'); } catch (e) {} redessiner(); };
+  window.g45CrOuvrir = function () { S.ov = S.ov || {}; S.ov[S.nom] = !ouvert(); redessiner(); };   /* 20261021g */
   window._g45CrS = S;   /* tests */
   window.g45CrJoueur = function (id, slot) {   /* 20261021d : slot 1 / 2 / 3 ; retirer un joueur fait remonter les suivants */
     var c = S.combos[S.a], k = slot === 3 ? '3' : slot === 2 ? '2' : '', nm = '';
@@ -78723,3 +78718,53 @@ function _g45TrCarteCss(){
   document.head.appendChild(st);
 }
 window._g45TrCarte=_g45TrCarte;
+
+
+/* ═══ 20261021g — ⏳ ÉCRAN DE CHARGEMENT BET45 + PANNEAUX DE CURSEURS FERMÉS À L'ARRIVÉE ═══
+   « le temps d'une recherche, faire comme le screen 2 (page d'attente de l'Agenda : logo qui respire, anneau qui tourne) mais avec BET45 »
+   (maquette maquette-chargeur « OUI », BET45 aussi sur gones45) : _g45Chargeur(texte) remplace les petits « Chargement… » des panneaux
+   (Saisons tous sports, NHL / MLB / NBA / F1, calendrier, effectif…) ; le texte garde ses id (sg-prog : compteur 32 / 32).
+   « pareil pour le screen 2 si c'est possible » : les curseurs de la saison (foot _g45CursHtml, autres sports _g45SgCursHtml) sont dans un
+   bandeau « 📈 Curseurs de la saison » FERMÉ à l'arrivée sur chaque équipe (mémoire de la page seulement, _g45CursOuv). */
+function _g45Chargeur(t) {
+  if (!document.getElementById('g45ch-css')) {
+    var st = document.createElement('style'); st.id = 'g45ch-css';
+    st.textContent = '@keyframes g45chT{to{transform:rotate(360deg)}}@keyframes g45chR{0%,100%{transform:scale(.94)}50%{transform:scale(1.04)}}'
+      + '.g45ch-an{animation:g45chT 1.6s linear infinite}.g45ch-c{animation:g45chR 1.8s ease-in-out infinite}';
+    (document.head || document.documentElement).appendChild(st);
+  }
+  return '<div style="padding:24px 0 18px;text-align:center;"><div style="position:relative;width:130px;height:130px;margin:0 auto;">'
+    + '<div style="position:absolute;inset:-10px;border-radius:50%;box-shadow:0 0 36px 6px rgba(232,69,69,.33);"></div>'
+    + '<div class="g45ch-an" style="position:absolute;inset:0;border-radius:50%;border:5px solid rgba(255,255,255,.12);border-top-color:#e84545;border-right-color:#fff;"></div>'
+    + '<div class="g45ch-c" style="position:absolute;inset:16px;border-radius:50%;background:radial-gradient(circle at 50% 40%,#1e2a4d,#0b1020);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:900;letter-spacing:1px;color:#fff;">BET<span style="color:#e84545;">45</span></div></div>'
+    + '<div style="font-size:15px;font-weight:700;color:#dbe4ff;margin-top:16px;">' + (t || 'Chargement…') + '</div></div>';
+}
+window._g45Chargeur = _g45Chargeur;
+var _g45CursOuv = {};
+function _g45CursBandeau(k, ouvert) {
+  return '<div id="g45c-ouv" onclick="g45CursOuvrir(\'' + String(k).replace(/['"\\<>]/g, '') + '\')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:11px 12px;border-radius:12px;background:rgba(11,16,29,.72);border:1px solid rgba(255,255,255,.12);margin:2px 0 9px;color:#fff;">'
+    + '<span style="font-size:15px;font-weight:800;">📈 Curseurs de la saison</span><span style="font-size:14px;color:#c9d3ee;">' + (ouvert ? '▾ Replier' : '▸ Ouvrir') + '</span></div>';
+}
+window.g45CursOuvrir = function (k) {
+  _g45CursOuv[k] = !_g45CursOuv[k];
+  if (/^f\|/.test(k)) { try { _g45CursReconstruire('#g45c-ouv'); } catch (e) {} }
+  else { try { _g45SgCursRedessiner('g45c-ouv'); } catch (e) {} }
+};
+(function () {
+  if (typeof _g45CursHtml === 'function' && !_g45CursHtml._ferme) {
+    var o1 = _g45CursHtml;
+    _g45CursHtml = window._g45CursHtml = function (matchs, estNous, fgDe, nomEq) {
+      var k = 'f|' + (nomEq || ''); if (!_g45CursOuv[k] && !window._g45CursToujours) return _g45CursBandeau(k, false);
+      return _g45CursBandeau(k, true) + o1.apply(this, arguments);
+    };
+    _g45CursHtml._ferme = true;
+  }
+  if (typeof _g45SgCursHtml === 'function' && !_g45SgCursHtml._ferme) {
+    var o2 = _g45SgCursHtml;
+    _g45SgCursHtml = window._g45SgCursHtml = function (liste, sp, nomEq) {
+      var k = 'g|' + sp + '|' + (nomEq || ''); if (!_g45CursOuv[k] && !window._g45CursToujours) return _g45CursBandeau(k, false);
+      return _g45CursBandeau(k, true) + o2.apply(this, arguments);
+    };
+    _g45SgCursHtml._ferme = true;
+  }
+})();
