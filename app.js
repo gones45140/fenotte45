@@ -43005,7 +43005,7 @@ window.g45F1Session=g45F1Session;
    et les données utilisateur n'étaient JAMAIS écrites — l'ajout apparaissait à l'écran puis
    disparaissait au rechargement. Ce n'était ni la synchro GitHub, ni Dropbox, ni le cache
    du navigateur. Tous ces caches sont reconstructibles : ils cèdent la place aux données. */
-var _G45_CACHE_PREFIXES=['g45crf1_','g45crid1_',/* 21/10 : feuilles de match des critères */'g45cr3_','g45cr1_',/* 14/10 : critères sur 4 saisons */'g45agoa2_',/* 11/10 : cotes Agenda (The Odds API) */'g45reg1_',/* 08/10 : régularité buteurs NHL */'g45bb1_','g45bbst1_','g45bbld1_','g45bbf1_',/* 03/10 : Pro A be-basketball */'g45es1_',/* 01/10 : stats Euroleague */'g45kbo1_',/* 01/10 : KBO (mykbostats) */'g45t14lg1',/* 01/10 : logos Top 14 (LNR) */'g45pd2_',/* 01/10 : Pro D2 (LNR) */'g45t14sq1_',/* 01/10 : effectifs Top 14 (LNR) */'g45nrlm1_','g45nrldr1_',/* 01/10 : feuilles et calendriers NRL */'g45nrlsq1_',/* 01/10 : effectifs NRL */'g45nrlst2_',/* 01/10 : classements NRL */'g45proacid1_',/* 30/09 : numéros LNB par saison */'g45proast1_',/* 30/09 : stats Pro A */'g45proa1_',/* 30/09 : Pro A par journée */'g45el1_',/* 30/09 : Euroleague (compact) */'g45buts1_',/* 30/09 : buts en action (match fini) */'g45prad1_','g45vsj1_','g45vse1_',/* 30/09 : radars joueurs */'g45ia1_',/* 29/09 : avis IA gardés 6 h */'g45_mmeta2_','g45_mmeta1_','g45_tennis4_','g45_tennis3_',/* 16/09 : meta de match (domicile/lieu) et score tennis, reconstructibles */'g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dcf_','g45dc_',
+var _G45_CACHE_PREFIXES=['g45cr1e_','g45crf1_','g45crid1_',/* 21/10 : feuilles de match des critères */'g45cr3_','g45cr1_',/* 14/10 : critères sur 4 saisons */'g45agoa2_',/* 11/10 : cotes Agenda (The Odds API) */'g45reg1_',/* 08/10 : régularité buteurs NHL */'g45bb1_','g45bbst1_','g45bbld1_','g45bbf1_',/* 03/10 : Pro A be-basketball */'g45es1_',/* 01/10 : stats Euroleague */'g45kbo1_',/* 01/10 : KBO (mykbostats) */'g45t14lg1',/* 01/10 : logos Top 14 (LNR) */'g45pd2_',/* 01/10 : Pro D2 (LNR) */'g45t14sq1_',/* 01/10 : effectifs Top 14 (LNR) */'g45nrlm1_','g45nrldr1_',/* 01/10 : feuilles et calendriers NRL */'g45nrlsq1_',/* 01/10 : effectifs NRL */'g45nrlst2_',/* 01/10 : classements NRL */'g45proacid1_',/* 30/09 : numéros LNB par saison */'g45proast1_',/* 30/09 : stats Pro A */'g45proa1_',/* 30/09 : Pro A par journée */'g45el1_',/* 30/09 : Euroleague (compact) */'g45buts1_',/* 30/09 : buts en action (match fini) */'g45prad1_','g45vsj1_','g45vse1_',/* 30/09 : radars joueurs */'g45ia1_',/* 29/09 : avis IA gardés 6 h */'g45_mmeta2_','g45_mmeta1_','g45_tennis4_','g45_tennis3_',/* 16/09 : meta de match (domicile/lieu) et score tennis, reconstructibles */'g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dcf_','g45dc_',
   'g45trv3_','g45trv2_','g45trOdds2_',/* 13/10 : cotes The Odds API par marchés */'g45tr_','g45but_st_','g45butL_','g45butA_','g45but_mur_',
   '_g45clv','g45clv_snaps','g45_saisons_cache_v3_','g45_saisons_cache_v2_',
   /* Ajoutes le 20/08 : ces caches, tous reconstructibles, n'etaient PAS declares
@@ -73947,8 +73947,9 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       st(ho.id, 'yellowCards') + st(ho.id, 'redCards'), st(aw.id, 'yellowCards') + st(aw.id, 'redCards')];
   };
   function fCharger(nom, D) {
-    if (S.fp[nom]) return;
-    S.fp[nom] = { f: 0, n: 0, enCours: 1 };
+    var kp = nom + '|' + (S.comp === 'L' || !S.comp ? 'L' : 'T');   /* 20261021e : Europe = feuilles en plus */
+    if (S.fp[kp]) return;
+    S.fp[kp] = S.fp[nom] = { f: 0, n: 0, enCours: 1 };
     (async function () {
       var ids = {};
       for (var i = 0; i < D.saisons.length; i++) {
@@ -73962,15 +73963,17 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
         }
         L.forEach(function (x) { ids[x[0]] = x[1]; });
       }
+      var slug = {};
+      if (S.comp && S.comp !== 'L') D.saisons.forEach(function (sa) { ((sa && sa.eu) || []).forEach(function (m) { if (m[6]) { ids[m[0]] = m[6]; slug[m[6]] = m[7]; } }); });
       S.fid[nom] = ids;
       var aLire = Object.keys(ids).map(function (d) { return ids[d]; }).filter(function (id) { return !fLire(id); });
-      S.fp[nom] = { f: 0, n: aLire.length, enCours: aLire.length > 0 };
+      S.fp[kp] = S.fp[nom] = { f: 0, n: aLire.length, enCours: aLire.length > 0 };
       var k = 0;
       async function un() {
         while (k < aLire.length) {
           var id = aLire[k++];
           try {
-            var r = await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/' + D.lg + '/summary?event=' + id);
+            var r = await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/' + (slug[id] || D.lg) + '/summary?event=' + id);
             if (r.ok) { var l = window._g45CrFeuille(await r.json()); if (l) { try { localStorage.setItem('g45crf1_' + id, JSON.stringify(l)); } catch (e) {} } }
           } catch (e) {}
           S.fp[nom].f++;
@@ -74019,6 +74022,43 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     return k + (der ? (k > 1 ? ' réussites' : ' réussite') : (k > 1 ? ' défaites' : ' défaite')) + ' de suite';
   }
   function coul(p) { return p <= 2 ? '#1ed760' : p <= 4 ? '#ff9f43' : '#ff5a5a'; }
+  /* ── 20261021e — 🌍 COUPES D'EUROPE (« actuellement on a que le championnat, la coupe d'Europe est-elle rajoutable ? », « oui ») —
+     SONDÉ PAR ANTOINE : site v2 soccer/uefa.champions/teams/160/schedule?season=2025 = 17 matchs (uefa.europa : 0 pour le PSG). Foot seulement :
+     S.comp = 'L' (championnat, défaut) / 'E' (Ligue des champions + Europa + Conférence) / 'T' (les deux, par date). Matchs d'Europe :
+     [date, dom, pour, contre, 0, 1, id ESPN, compétition], saison passée gardée pour toujours (g45cr1e_<lg>_<club>_<an>). Buts des joueurs :
+     journal du CHAMPIONNAT seulement → un match d'Europe n'a pas de joueur → non compté pour un critère joueur. ── */
+  var EU = ['uefa.champions', 'uefa.europa', 'uefa.europa.conf'];
+  function msDe(sa) {
+    if (S.ctx || !S.comp || S.comp === 'L') return sa.ms;
+    if (S.comp === 'E') return sa.eu || null;
+    if (!sa.ms && !sa.eu) return null;
+    return (sa.ms || []).concat(sa.eu || []).slice().sort(function (a, b) { return a[0] < b[0] ? -1 : 1; });
+  }
+  function euCharger(nom, D) {
+    if (D.euEtat) return;
+    D.euEtat = 1;
+    Promise.all(D.saisons.map(async function (sa, i) {
+      if (!sa) return;
+      var cle = 'g45cr1e_' + D.lg + '_' + D.tid + '_' + sa.an, ms = null;
+      if (i > 0) { try { ms = JSON.parse(localStorage.getItem(cle) || 'null'); } catch (e) {} }
+      if (!ms) {
+        ms = []; var ok = false;
+        for (var k = 0; k < EU.length; k++) {
+          var sc = null; try { sc = await espnClubSchedule(nom, sa.an, EU[k]); } catch (e) {}
+          if (sc && sc.matches) ok = true;
+          ((sc && sc.matches) || []).forEach(function (m) {
+            if (!m.completed || m.homeScore == null || m.awayScore == null || isNaN(m.homeScore)) return;
+            var dom = String(m.homeId) === String(D.tid) ? 1 : 0;
+            ms.push([String(m.date || '').slice(0, 10), dom, dom ? m.homeScore : m.awayScore, dom ? m.awayScore : m.homeScore, 0, 1, String(m.id || ''), EU[k]]);
+          });
+        }
+        ms.sort(function (a, b) { return a[0] < b[0] ? -1 : 1; });
+        if (!ok) ms = null;
+        else if (i > 0) { try { localStorage.setItem(cle, JSON.stringify(ms)); } catch (e) {} }
+      }
+      sa.eu = ms;
+    })).then(function () { D.euEtat = 2; try { redessiner(); } catch (e) {} });
+  }
   function filtrer(ms) {
     var rc = rg() ? (window._g45SgRgComp || 'tout') : 'tout';   /* 20261014k : m[5] = 1 → Champions Cup */
     /* 20261021d : m.pr = résultat du match d'AVANT dans la saison (tous lieux) — 'v' / 'n' / 'd' (score final) ; 1er match de la saison : rien */
@@ -74133,12 +74173,13 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       + '<th style="text-align:left;font-size:13px;color:#c9d3ee;padding:6px 4px;border-bottom:1px solid #2a3a63;">Réussite</th>'
       + '<th style="text-align:left;font-size:13px;color:#c9d3ee;padding:6px 4px;border-bottom:1px solid #2a3a63;">Pire série<br>de défaites</th>'
       + '<th style="text-align:left;font-size:13px;color:#c9d3ee;padding:6px 4px;border-bottom:1px solid #2a3a63;">Meilleure<br>série</th></tr>';
-    D.saisons.slice().reverse().forEach(function (s) { if (s && s.ms) tous = tous.concat(filtrer(s.ms)); });
+    D.saisons.slice().reverse().forEach(function (s) { var L0 = s && msDe(s); if (L0) tous = tous.concat(filtrer(L0)); });
     D.saisons.forEach(function (s) {
       if (!s) return;
       var td = 'padding:8px 4px;border-bottom:1px solid #1c2747;';
-      if (!s.ms) { h += '<tr><td style="' + td + '">' + lib(D.lg, s.an) + '</td><td colspan="3" style="' + td + 'color:#c9d3ee;">indisponible</td></tr>'; return; }
-      var ms = filtrer(s.ms);
+      var sms = msDe(s);
+      if (!sms) { h += '<tr><td style="' + td + '">' + lib(D.lg, s.an) + '</td><td colspan="3" style="' + td + 'color:#c9d3ee;">indisponible</td></tr>'; return; }
+      var ms = filtrer(sms);
       if (!ms.length) { h += '<tr><td style="' + td + '">' + lib(D.lg, s.an) + '</td><td colspan="3" style="' + td + 'color:#c9d3ee;">aucun match joué</td></tr>'; return; }
       var R = calc(c, ms);
       h += '<tr><td style="' + td + '">' + lib(D.lg, s.an) + '</td><td style="' + td + '">' + R.ok + '/' + R.n + ' · ' + Math.round(100 * R.ok / R.n) + ' %</td>'
@@ -74167,15 +74208,29 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       + '<div onclick="g45CrOuvrir()" style="cursor:pointer;font-size:16px;font-weight:700;display:flex;justify-content:space-between;align-items:center;">'
       + '<span>📊 Tes critères sur 4 saisons</span><span style="font-size:14px;color:#c9d3ee;">' + (o ? '▾ Replier' : '▸ Ouvrir') + '</span></div>';
     if (!o) return h + '</div>';
+    /* 20261021e (« cette sélection de critères doit passer en premium ») : même verrou que Tendances (_g45AccesPremium : compte de moins de
+       30 jours ou soutien ; gones45 sans compte = ouvert) ; rien n'est lu chez ESPN tant que c'est fermé. */
+    try {
+      if (typeof _g45AccesPremium === 'function' && _g45AccesPremium() !== true) return h + '<div style="text-align:center;padding:16px 8px;">'
+        + '<div style="font-size:28px;margin-bottom:8px;">🔒</div><div style="font-size:15px;font-weight:700;margin-bottom:6px;">Critères sur 4 saisons : réservé premium</div>'
+        + '<div style="font-size:14px;color:#c9d3ee;line-height:1.5;max-width:360px;margin:0 auto 12px;">Gratuit 30 jours après la création du compte, puis avec un petit soutien du projet.</div>'
+        + (typeof _g45BlocPremium === 'function' ? _g45BlocPremium() : '') + '</div></div>';
+    } catch (e) {}
     var D = S.data[nom];
     var lieuTxt = S.lieu === 'dom' ? '🏠 à domicile' : S.lieu === 'ext' ? '✈️ à l\'extérieur' : 'domicile + extérieur';
-    h += '<div style="font-size:13px;color:#c9d3ee;margin:4px 0 8px;">' + esc(nom) + ' · ' + lieuTxt + (D && D.ligue ? ' · ' + esc(D.ligue) : '') + (S.ctx ? '' : ' · championnat seulement') + '</div>';
+    h += '<div style="font-size:13px;color:#c9d3ee;margin:4px 0 8px;">' + esc(nom) + ' · ' + lieuTxt + (D && D.ligue ? ' · ' + esc(D.ligue) : '') + (S.ctx ? '' : (S.comp === 'E' ? ' · coupes d\'Europe' : S.comp === 'T' ? ' · championnat + coupes d\'Europe' : ' · championnat seulement')) + '</div>';
     var u = (state.u || []).filter(function (x) { return x.n === nom; })[0];
     if (u && u.note) {
       h += '<div style="font-size:14px;color:#fff;background:#0f1730;border-radius:8px;padding:8px;margin-bottom:6px;">📌 Ta note : ' + esc(u.note) + '</div>'
         + '<button onclick="g45CrNote()" style="width:100%;background:#2a4a9a;color:#fff;border:0;border-radius:10px;padding:9px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:4px;">📌 Reprendre ma note</button>';
     }
     h += lab('Lieu') + b(S.lieu === 'dom', '🏠 Domicile', "g45CrSet('lieu','dom')") + b(S.lieu === 'ext', '✈️ Extérieur', "g45CrSet('lieu','ext')") + b(S.lieu === 'tout', 'Les deux', "g45CrSet('lieu','tout')");
+    if (!S.ctx) {   /* 20261021e : coupes d'Europe */
+      var cp = S.comp || 'L';
+      h += lab('Compétition') + b(cp === 'L', '🏆 Championnat', "g45CrSet('comp','L')") + b(cp === 'E', '🌍 Coupe d\'Europe', "g45CrSet('comp','E')") + b(cp === 'T', 'Les deux', "g45CrSet('comp','T')");
+      if (cp !== 'L' && D && D.saisons) { euCharger(nom, D); if (D.euEtat !== 2) h += '<div style="font-size:14px;color:#f5c542;margin:4px 0;">⏳ Matchs de coupe d\'Europe…</div>'; }
+      if (cp !== 'L' && joueurs(S.combos[S.a] || {}).length) h += '<div style="font-size:13px;color:#ff9f43;">⚠️ Joueurs : buts lus en championnat seulement → les matchs d\'Europe ne comptent pas pour un critère joueur.</div>';
+    }
     if (S.combos.length > 1) {
       h += lab('Combiné modifié');
       S.combos.forEach(function (c, i) { h += b(S.a === i, 'Combiné ' + (i + 1), 'g45CrChoix(' + i + ')'); });
@@ -74280,6 +74335,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   };
   window.g45CrSet = function (k, v) {
     if (k === 'lieu') S.lieu = v;
+    else if (k === 'comp') S.comp = v;   /* 20261021e */
     else {
       var c = S.combos[S.a];
       if (k === 'L') { c.L = parseFloat(v); if (!c.ou) c.ou = 'ov'; }

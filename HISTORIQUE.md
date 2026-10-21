@@ -2234,7 +2234,13 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   parallèle, « ⏳ Feuilles de match f / n » ; critères tirs match / équipe / adversaire (O/U), cadrés (équipe / match), mi-temps (mène / nul /
   but en 1re MT), marque en premier, corners / cartons (équipe / match). 🔁 Match précédent (tous sports) : m.pr posé par filtrer (match
   d'avant dans la saison, score final). Matchs sans donnée = non comptés. Smoke crPlus (71). Capture crit-pc vérifiée.
-  Question d'Antoine en cours : « la coupe d'Europe est-elle rajoutable ? » → sonde du calendrier ESPN uefa.champions d'un club demandée.
+  « la coupe d'Europe est-elle rajoutable ? » — SONDÉ PAR ANTOINE : soccer/uefa.champions/teams/160/schedule?season=2025 = 17 matchs (PSG),
+  uefa.europa = 0. 20261021e (« oui ») : ligne « Compétition : 🏆 Championnat / 🌍 Coupe d'Europe / Les deux » (S.comp L / E / T, foot) ;
+  euCharger : espnClubSchedule(nom, an, uefa.champions / uefa.europa / uefa.europa.conf) → sa.eu = [date, dom, pour, contre, 0, 1, id, slug],
+  saison passée g45cr1e_<lg>_<club>_<an> ; msDe(sa) = liste selon la compétition (Les deux = triée par date) ; feuilles de match d'Europe
+  lues sur leur compétition (slug) ; joueurs = journal du championnat seulement (avertissement affiché). + « cette sélection de critères doit
+  passer en premium » : verrou _g45AccesPremium() !== true → 🔒 « réservé premium » + _g45BlocPremium (gones45 sans compte = ouvert).
+  Smoke crPlus complété (Europe 1/2, Les deux 2/3, verrou).
   _g45TnPerso pose les 3 blocs de l'écran. Smoke tnRun (65) ; tests tnRobot / tnRun calés sur « maintenant + quelques minutes » (le soir UTC,
   « + 2 h » tombait le lendemain).
   20261020c (croquis d'Antoine « Tendances = 4 boutons », maquette cliquable validée « oui, BET45 → Sélection du jour par défaut ») : ONGLET EN BOUTONS —
