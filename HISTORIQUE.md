@@ -2197,6 +2197,15 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   (route /github-simu, écrit données/simulations/) : jeton = GH_ROBOT sinon GITHUB_TOKEN — s'il a le droit Actions, aucune clé à créer.
   Résultat écrit en D1 robtend:<jour> (« ok » ou « http 403 ») + console.log ; vérifier dans la liste des runs (événement workflow_dispatch
   vers 6 h UTC). PIÈGE : « (*/5) » dans un commentaire /* */ le FERME (refus Cloudflare 10021) alors que node --check passait.
+  21/10 matin : le worker a lancé le robot à 6 h 00 UTC (8 h 00 Paris, workflow_dispatch, GITHUB_TOKEN suffit) ✅. MAIS 0 tendance
+  affichée (foot / hockey / NBA / NFL / tennis) alors que la veille à 12 h 47 : 10 / 10 / 4 / 4 — cause à confirmer (cotes pas encore
+  publiées à 8 h ?). Elo : « atp : 0 joueurs lus » en 70 ms (curl en échec).
+  20261021a (« ok pour elo ») : elo.mjs essaie www / sans www, https / http et écrit l'erreur de curl. SCORE TENNIS — SONDÉ PAR ANTOINE
+  (eventlog Arthur Fils) : « (21) Arthur Fils (FRA) bt Ignacio Buse (PER) 6-7 (4-7) 7-6 (7-3) 7-5 », « … 7-6 (7-2) 6-3 », « 4-6 6-4 7-6 (9-7) » :
+  _g45TnScore lit « (a-b) » avec espace → « 6-7(4) 7-6(3) 7-5 » (points du perdant du tie-break) ; avant : seulement « 7-5 » ou vide (jeux /
+  tie-breaks de l'analyse faussés). Mémoire tn3_ → tn4_ (toutes les saisons relues une fois). Smoke tnScore (69).
+  Vu en console d'Antoine : ESPN search/v2 ne contient PAS d'uid s:850 pour « arthur fils » (la fiche passe quand même : contenu « tennis »
+  ou repli scoreboard) ; TheSportsDB en 403 (worker host=tsdb ET direct) → photos absentes, grand drapeau affiché.
   _g45TnPerso pose les 3 blocs de l'écran. Smoke tnRun (65) ; tests tnRobot / tnRun calés sur « maintenant + quelques minutes » (le soir UTC,
   « + 2 h » tombait le lendemain).
   20261020c (croquis d'Antoine « Tendances = 4 boutons », maquette cliquable validée « oui, BET45 → Sélection du jour par défaut ») : ONGLET EN BOUTONS —

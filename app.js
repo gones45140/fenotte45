@@ -77220,8 +77220,11 @@ window._g45AgJouUs = async function (nowTs) {
   window._g45TnScore = function (txt) {
     var t = String(txt || '');
     if (/\bw\/o\b|walkover/i.test(t)) return null;
-    var m = t.match(/((?:\d+-\d+(?:\(\d+\))?\s*)+(?:ret\.?|abd\.?|def\.?)?)\s*$/i);
-    return m ? m[1].trim() : '';
+    /* 20261021a (capture Google d'Antoine : Fils–Buse 6-7 7-6 7-5, l'appli n'affichait que « 7-5 ») — SONDÉ PAR ANTOINE : ESPN écrit les
+       tie-breaks « 6-7 (4-7) 7-6 (7-3) 7-5 » (espace + points des deux joueurs) ; l'ancien motif « 6-7(4) » ne lisait que la fin (ou rien).
+       Ramené à « 6-7(4) 7-6(3) 7-5 » (points du perdant du tie-break), forme que _g45TnSets sait déjà découper. */
+    var m = t.match(/((?:\d+-\d+(?:\s*\(\d+(?:-\d+)?\))?\s*)+(?:ret\.?|abd\.?|def\.?)?)\s*$/i);
+    return m ? m[1].replace(/\s*\((\d+)(?:-(\d+))?\)/g, function (x, a, b) { return '(' + (b != null ? Math.min(+a, +b) : a) + ')'; }).replace(/\s+/g, ' ').trim() : '';
   };
   /* sets du point de vue du joueur : [{j, o, tb}] ; null si abandon / score illisible (pas dans les stats de jeux) */
   window._g45TnSets = function (sc, w) {
@@ -77263,7 +77266,7 @@ window._g45AgJouUs = async function (nowTs) {
 
   /* une saison d'un joueur → liste de matchs (mémoire : passée = toujours, en cours = 6 h) */
   window._g45TnSaison = async function (lg, id, an, prog) {
-    var cur = an >= new Date().getFullYear(), cle = 'tn3_' + lg + '_' + id + '_' + an;
+    var cur = an >= new Date().getFullYear(), cle = 'tn4_' + lg + '_' + id + '_' + an;   /* 20261021a : tn4_ (scores avec tie-breaks relus ; tn3_ = scores tronqués) */
     var o = await kv('get', cle);
     if (o && (!cur || Date.now() - o.t < 6 * 3600e3)) return o.m;
     var url = cur ? CORE + 'leagues/' + lg + '/athletes/' + id + '/eventlog?limit=200' : CORE + 'leagues/' + lg + '/seasons/' + an + '/athletes/' + id + '/eventlog?limit=200';
