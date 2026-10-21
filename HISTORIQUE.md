@@ -2224,6 +2224,17 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   logo de la compétition en haut au centre (.g45trc-av), texte dessous ; textes 12-16 px. Sélection du jour : toucher = g45TrSelOuvrir(id|k)
   (S.ouv) → detail(x) = _g45TrCarte avec x.fa / x.nm du robot ; blasons, couleurs (g45CoulPaire) et logo de la compétition (dark) lus sur le
   scoreboard ESPN du jour, gardés par compétition (S.deco, {} si échec : pas de boucle). Smoke trSel complété (70). Captures carte-pc / carte-tel vérifiées.
+  20261021d — 📊 CRITÈRES SUR 4 SAISONS, AJOUTS (« on va rajouter des trucs » : sélection proposée + duo / trio buteur, double chance buteur,
+  nombre de tirs, tirs par équipe ; maquette maquette-criteres « oui ») — tout DANS le bloc des critères (_g45CrHtml), norm(c) pour les défauts :
+  ⚽ Joueurs (foot) : jusqu'à 3 (jo / jo2 / jo3, g45CrJoueur(id, slot)), Buteur / Doublé / Triplé / Passeur / Décisif ; 2-3 joueurs : jx = cha
+  (chacun) / un (au moins un = double chance) / c15 c25 c35 (buts cumulés) ; matchs comptés = TOUS ont joué. 🎯 Feuille de match (foot) —
+  SONDÉ PAR ANTOINE (summary 401876432 PSG à Strasbourg : boxscore.teams[].statistics totalShots, shotsOnTarget, wonCorners, yellowCards,
+  redCards ; header competitors[].linescores = [1re MT, 2e MT] ; keyEvents scoringPlay + team) : _g45CrFeuille(j) → ligne compacte
+  localStorage g45crf1_<event> (pour toujours) ; ids des matchs g45crid1_<lg>_<club>_<an> (espnClubSchedule) ; fCharger : 4 lectures en
+  parallèle, « ⏳ Feuilles de match f / n » ; critères tirs match / équipe / adversaire (O/U), cadrés (équipe / match), mi-temps (mène / nul /
+  but en 1re MT), marque en premier, corners / cartons (équipe / match). 🔁 Match précédent (tous sports) : m.pr posé par filtrer (match
+  d'avant dans la saison, score final). Matchs sans donnée = non comptés. Smoke crPlus (71). Capture crit-pc vérifiée.
+  Question d'Antoine en cours : « la coupe d'Europe est-elle rajoutable ? » → sonde du calendrier ESPN uefa.champions d'un club demandée.
   _g45TnPerso pose les 3 blocs de l'écran. Smoke tnRun (65) ; tests tnRobot / tnRun calés sur « maintenant + quelques minutes » (le soir UTC,
   « + 2 h » tombait le lendemain).
   20261020c (croquis d'Antoine « Tendances = 4 boutons », maquette cliquable validée « oui, BET45 → Sélection du jour par défaut ») : ONGLET EN BOUTONS —

@@ -43005,7 +43005,7 @@ window.g45F1Session=g45F1Session;
    et les données utilisateur n'étaient JAMAIS écrites — l'ajout apparaissait à l'écran puis
    disparaissait au rechargement. Ce n'était ni la synchro GitHub, ni Dropbox, ni le cache
    du navigateur. Tous ces caches sont reconstructibles : ils cèdent la place aux données. */
-var _G45_CACHE_PREFIXES=['g45cr3_','g45cr1_',/* 14/10 : critères sur 4 saisons */'g45agoa2_',/* 11/10 : cotes Agenda (The Odds API) */'g45reg1_',/* 08/10 : régularité buteurs NHL */'g45bb1_','g45bbst1_','g45bbld1_','g45bbf1_',/* 03/10 : Pro A be-basketball */'g45es1_',/* 01/10 : stats Euroleague */'g45kbo1_',/* 01/10 : KBO (mykbostats) */'g45t14lg1',/* 01/10 : logos Top 14 (LNR) */'g45pd2_',/* 01/10 : Pro D2 (LNR) */'g45t14sq1_',/* 01/10 : effectifs Top 14 (LNR) */'g45nrlm1_','g45nrldr1_',/* 01/10 : feuilles et calendriers NRL */'g45nrlsq1_',/* 01/10 : effectifs NRL */'g45nrlst2_',/* 01/10 : classements NRL */'g45proacid1_',/* 30/09 : numéros LNB par saison */'g45proast1_',/* 30/09 : stats Pro A */'g45proa1_',/* 30/09 : Pro A par journée */'g45el1_',/* 30/09 : Euroleague (compact) */'g45buts1_',/* 30/09 : buts en action (match fini) */'g45prad1_','g45vsj1_','g45vse1_',/* 30/09 : radars joueurs */'g45ia1_',/* 29/09 : avis IA gardés 6 h */'g45_mmeta2_','g45_mmeta1_','g45_tennis4_','g45_tennis3_',/* 16/09 : meta de match (domicile/lieu) et score tennis, reconstructibles */'g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dcf_','g45dc_',
+var _G45_CACHE_PREFIXES=['g45crf1_','g45crid1_',/* 21/10 : feuilles de match des critères */'g45cr3_','g45cr1_',/* 14/10 : critères sur 4 saisons */'g45agoa2_',/* 11/10 : cotes Agenda (The Odds API) */'g45reg1_',/* 08/10 : régularité buteurs NHL */'g45bb1_','g45bbst1_','g45bbld1_','g45bbf1_',/* 03/10 : Pro A be-basketball */'g45es1_',/* 01/10 : stats Euroleague */'g45kbo1_',/* 01/10 : KBO (mykbostats) */'g45t14lg1',/* 01/10 : logos Top 14 (LNR) */'g45pd2_',/* 01/10 : Pro D2 (LNR) */'g45t14sq1_',/* 01/10 : effectifs Top 14 (LNR) */'g45nrlm1_','g45nrldr1_',/* 01/10 : feuilles et calendriers NRL */'g45nrlsq1_',/* 01/10 : effectifs NRL */'g45nrlst2_',/* 01/10 : classements NRL */'g45proacid1_',/* 30/09 : numéros LNB par saison */'g45proast1_',/* 30/09 : stats Pro A */'g45proa1_',/* 30/09 : Pro A par journée */'g45el1_',/* 30/09 : Euroleague (compact) */'g45buts1_',/* 30/09 : buts en action (match fini) */'g45prad1_','g45vsj1_','g45vse1_',/* 30/09 : radars joueurs */'g45ia1_',/* 29/09 : avis IA gardés 6 h */'g45_mmeta2_','g45_mmeta1_','g45_tennis4_','g45_tennis3_',/* 16/09 : meta de match (domicile/lieu) et score tennis, reconstructibles */'g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dcf_','g45dc_',
   'g45trv3_','g45trv2_','g45trOdds2_',/* 13/10 : cotes The Odds API par marchés */'g45tr_','g45but_st_','g45butL_','g45butA_','g45but_mur_',
   '_g45clv','g45clv_snaps','g45_saisons_cache_v3_','g45_saisons_cache_v2_',
   /* Ajoutes le 20/08 : ces caches, tous reconstructibles, n'etaient PAS declares
@@ -73779,7 +73779,14 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   var S = window._g45Cr = window._g45Cr || { nom: '', lieu: 'tout', combos: [], a: 0, data: {}, enCours: {} };
   function ouvert() { try { return localStorage.getItem('g45_cr_open') === '1'; } catch (e) { return false; } }
   function esc(t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
-  function combo0() { var u = S.ctx && US_L[S.ctx.sp]; return { res: us() ? 'vqr' : 'vic', ou: '', L: u ? u[2] : 2.5, bts: '', te: '', TL: lgEq()[2], ad: '', AL: lgEq()[2] }; }
+  function combo0() { var u = S.ctx && US_L[S.ctx.sp]; return norm({ res: us() ? 'vqr' : 'vic', ou: '', L: u ? u[2] : 2.5, bts: '', te: '', TL: lgEq()[2], ad: '', AL: lgEq()[2] }); }
+  /* 20261021d (« on va rajouter des trucs » : duo / trio buteurs, double chance buteur, tirs, tirs par équipe + mi-temps, marque en premier,
+     match précédent ; maquette maquette-criteres « oui ») : valeurs par défaut des nouveaux critères (aussi pour les combinés de « Reprendre ma note »). */
+  function norm(c) {
+    var D0 = { jx: 'cha', fs: '', FL: 24.5, ts: '', TSL: 12.5, as: '', ASL: 10.5, cad: '', CL: 4.5, mt: '', mp: '', bo: '', BL: 4.5, pm: '' };
+    for (var k in D0) if (c[k] == null) c[k] = D0[k];
+    return c;
+  }
   /* 20261014i (« il manque pts par équipe… enfin buts », « oui les 2, ça peut être intéressant quand je parie contre ») : over / under des buts
      (points, runs) de L'ÉQUIPE (te / TL) et de L'ADVERSAIRE (ad / AL), même règle que le total (hockey : temps réglementaire). */
   var EQ_L = { rugby: [5.5, 45.5, 20.5], 'rugby-league': [5.5, 40.5, 20.5], soccer: [0.5, 3.5, 1.5], hockey: [0.5, 5.5, 2.5], football: [10.5, 40.5, 21.5], basketball: [95.5, 135.5, 112.5], baseball: [0.5, 8.5, 3.5] };
@@ -73823,7 +73830,17 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     if (c.bts) p.push('Les deux marquent : ' + (c.bts === 'oui' ? 'oui' : 'non'));
     if (c.te) p.push(motUnite() + ' équipe ' + (c.te === 'ov' ? 'Over ' : 'Under ') + c.TL);
     if (c.ad) p.push(motUnite() + ' adversaire ' + (c.ad === 'ov' ? 'Over ' : 'Under ') + c.AL);
-    if (c.jo) p.push(c.jn + ' ' + (c.jm === 'pas' ? 'passeur' : c.jm === 'dec' ? 'décisif' : 'buteur'));
+    var JN = joueurs(c).map(function (x) { return x.n; }), JM = { pas: 'passeur', dec: 'décisif', dbl: 'doublé', tri: 'triplé' }[c.jm] || 'buteur';
+    if (JN.length === 1) p.push(JN[0] + ' ' + JM);
+    else if (JN.length > 1) p.push(c.jx === 'un' ? 'au moins un de (' + JN.join(', ') + ') ' + JM : /^c/.test(c.jx) ? 'buts cumulés de ' + JN.join(' + ') + ' +' + c.jx.slice(1, 2) + ',' + c.jx.slice(2) : JN.join(' et ') + ' ' + JM + 's');
+    if (c.fs) p.push('Tirs du match ' + (c.fs === 'ov' ? 'Over ' : 'Under ') + c.FL);
+    if (c.ts) p.push('Tirs équipe ' + (c.ts === 'ov' ? 'Over ' : 'Under ') + c.TSL);
+    if (c.as) p.push('Tirs adversaire ' + (c.as === 'ov' ? 'Over ' : 'Under ') + c.ASL);
+    if (c.cad) p.push('Tirs cadrés ' + (c.cad === 'eq' ? 'équipe' : 'match') + ' Over ' + c.CL);
+    if (c.mt) p.push({ mene: 'Mène à la pause', nul: 'Nul à la pause', but: 'But en 1re mi-temps' }[c.mt]);
+    if (c.mp) p.push('Marque en premier : ' + c.mp);
+    if (c.bo) p.push({ coe: 'Corners équipe', com: 'Corners match', cae: 'Cartons équipe', cam: 'Cartons match' }[c.bo] + ' Over ' + c.BL);
+    if (c.pm) p.push('Après ' + { v: 'une victoire', n: 'un nul', d: 'une défaite' }[c.pm]);
     if (c.ec === 'g') p.push('Gagne de ' + c.E + ' ou +');
     if (c.ec === 'p') p.push('Perd de ' + c.E + ' max');
     return p.length ? p.join(' + ') : 'aucun critère';
@@ -73845,9 +73862,35 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     if (c.ad === 'un' && !(ga < c.AL)) return false;
     if (c.ec === 'g' && !(gf - ga >= c.E)) return false;   /* 20261018s : gagne de E ou + */
     if (c.ec === 'p' && !(ga - gf <= c.E)) return false;   /* 20261018s : ne perd pas de plus de E */
-    if (c.jo) {   /* 20261018t : joueur buteur / passeur / décisif sur CE match */
-      var v = jVal(c, m); if (!v) return false;
-      if (c.jm === 'pas' ? !(v.a > 0) : c.jm === 'dec' ? !(v.g + v.a > 0) : !(v.g > 0)) return false;
+    var P = joueurs(c);
+    if (P.length) {   /* 20261018t : joueur buteur / passeur / décisif ; 20261021d : doublé, triplé, 2-3 joueurs (chacun / au moins un / cumul) */
+      var V = P.map(function (x) { return jValP(x.id, m); }); if (V.some(function (v) { return !v; })) return false;
+      var okJ = function (v) { return c.jm === 'pas' ? v.a > 0 : c.jm === 'dec' ? v.g + v.a > 0 : c.jm === 'dbl' ? v.g >= 2 : c.jm === 'tri' ? v.g >= 3 : v.g > 0; };
+      if (P.length === 1 || c.jx === 'cha') { if (!V.every(okJ)) return false; }
+      else if (c.jx === 'un') { if (!V.some(okJ)) return false; }
+      else { var sg = 0; V.forEach(function (v) { sg += v.g; }); if (!(sg > +c.jx.slice(1, 2) + 0.5)) return false; }
+    }
+    if (c.pm && m.pr !== c.pm) return false;   /* 20261021d : résultat du match précédent (m.pr posé par filtrer) */
+    if (fBesoin(c)) {   /* 20261021d : feuille de match ESPN (tirs, mi-temps, premier but, corners, cartons) */
+      var F = fVal(m); if (!F) return false;
+      var sh = F.sh + F.sa;
+      if (c.fs === 'ov' && !(sh > c.FL)) return false;
+      if (c.fs === 'un' && !(sh < c.FL)) return false;
+      if (c.ts === 'ov' && !(F.sh > c.TSL)) return false;
+      if (c.ts === 'un' && !(F.sh < c.TSL)) return false;
+      if (c.as === 'ov' && !(F.sa > c.ASL)) return false;
+      if (c.as === 'un' && !(F.sa < c.ASL)) return false;
+      if (c.cad === 'eq' && !(F.ch > c.CL)) return false;
+      if (c.cad === 'ma' && !(F.ch + F.ca > c.CL)) return false;
+      if (c.mt === 'mene' && !(F.hh > F.ha)) return false;
+      if (c.mt === 'nul' && F.hh !== F.ha) return false;
+      if (c.mt === 'but' && !(F.hh + F.ha > 0)) return false;
+      if (c.mp === 'oui' && F.pr !== 1) return false;
+      if (c.mp === 'non' && F.pr === 1) return false;
+      if (c.bo === 'coe' && !(F.kh > c.BL)) return false;
+      if (c.bo === 'com' && !(F.kh + F.ka > c.BL)) return false;
+      if (c.bo === 'cae' && !(F.yh > c.BL)) return false;
+      if (c.bo === 'cam' && !(F.yh + F.ya > c.BL)) return false;
     }
     return true;
   }
@@ -73862,7 +73905,83 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var a = new Date(t - 864e5).toISOString().slice(0, 10), b2 = new Date(t + 864e5).toISOString().slice(0, 10);
     return J.d[a] || J.d[b2] || null;
   }
-  function jFiltre(c, ms) { return c.jo ? ms.filter(function (m) { return !!jVal(c, m); }) : ms; }
+  function jValP(pid, m) { return jVal({ jo: pid }, m); }
+  function joueurs(c) { var r = []; [['jo', 'jn'], ['jo2', 'jn2'], ['jo3', 'jn3']].forEach(function (k) { if (c[k[0]]) r.push({ id: c[k[0]], n: c[k[1]] || '?' }); }); return r; }
+  /* 20261021d : matchs NON COMPTÉS = un joueur choisi n'a pas joué (pari remboursé), pas de match précédent connu, feuille de match absente */
+  function jFiltre(c, ms) {
+    var P = joueurs(c);
+    return ms.filter(function (m) {
+      if (P.length && P.some(function (x) { return !jValP(x.id, m); })) return false;
+      if (c.pm && !m.pr) return false;
+      if (fBesoin(c) && !fVal(m)) return false;
+      return true;
+    });
+  }
+  /* ── 20261021d — FEUILLE DE MATCH (foot) — SONDÉ PAR ANTOINE (summary ESPN, PSG à Strasbourg 401876432) : boxscore.teams[].statistics
+     totalShots / shotsOnTarget / wonCorners / yellowCards / redCards (team.id), header.competitions[0].competitors[].linescores = [1re MT, 2e MT]
+     (displayValue), keyEvents[].scoringPlay + team. Une lecture par match, gardée POUR TOUJOURS (match fini) : localStorage g45crf1_<event> =
+     [tirs dom, tirs ext, cadrés dom, cadrés ext, MT dom, MT ext, 1er but 'h'/'a'/'', corners dom, corners ext, cartons dom, cartons ext] ;
+     identifiants des matchs : g45crid1_<lg>_<club>_<an> (saison passée, pour toujours). ── */
+  S.fid = S.fid || {}; S.fp = S.fp || {};
+  function fBesoin(c) { return !S.ctx && !!(c.fs || c.ts || c.as || c.cad || c.mt || c.mp || c.bo); }
+  function fLire(id) { try { return JSON.parse(localStorage.getItem('g45crf1_' + id) || 'null'); } catch (e) { return null; } }
+  function fVal(m) {
+    var ids = S.fid[S.nom]; if (!ids) return null;
+    var id = ids[m[0]]; if (!id) return null;
+    var f = fLire(id); if (!f) return null;
+    var d = m[1] === 1, pr = f[6] === '' ? 0 : ((f[6] === 'h') === d ? 1 : -1);
+    return d ? { sh: f[0], sa: f[1], ch: f[2], ca: f[3], hh: f[4], ha: f[5], pr: pr, kh: f[7], ka: f[8], yh: f[9], ya: f[10] }
+      : { sh: f[1], sa: f[0], ch: f[3], ca: f[2], hh: f[5], ha: f[4], pr: pr, kh: f[8], ka: f[7], yh: f[10], ya: f[9] };
+  }
+  window._g45CrFeuille = function (j) {   /* summary ESPN → ligne compacte (pur, testé) */
+    var cs = (j && j.header && j.header.competitions && j.header.competitions[0] && j.header.competitions[0].competitors) || [];
+    var ho = cs.filter(function (x) { return x.homeAway === 'home'; })[0], aw = cs.filter(function (x) { return x.homeAway === 'away'; })[0];
+    if (!ho || !aw) return null;
+    var st = function (tid, nm) { var v = 0; (((j.boxscore && j.boxscore.teams) || []).filter(function (t) { return t.team && String(t.team.id) === String(tid); })[0] || { statistics: [] }).statistics.forEach(function (x) { if (x.name === nm) v = parseFloat(x.displayValue != null ? x.displayValue : x.value) || 0; }); return v; };
+    var mt = function (x) { var l = x.linescores || []; return l.length ? (parseInt(l[0].displayValue != null ? l[0].displayValue : l[0].value, 10) || 0) : null; };
+    var bt = ((j.keyEvents || []).filter(function (k) { return k.scoringPlay; })[0] || {}), pr = '';
+    if (bt.team) pr = String(bt.team.id) === String(ho.id) ? 'h' : (String(bt.team.id) === String(aw.id) ? 'a' : '');
+    var hS = st(ho.id, 'totalShots'), aS = st(aw.id, 'totalShots');
+    if (!hS && !aS) return null;   /* feuille vide (match sans stats) : pas gardée */
+    return [hS, aS, st(ho.id, 'shotsOnTarget'), st(aw.id, 'shotsOnTarget'), mt(ho), mt(aw), pr, st(ho.id, 'wonCorners'), st(aw.id, 'wonCorners'),
+      st(ho.id, 'yellowCards') + st(ho.id, 'redCards'), st(aw.id, 'yellowCards') + st(aw.id, 'redCards')];
+  };
+  function fCharger(nom, D) {
+    if (S.fp[nom]) return;
+    S.fp[nom] = { f: 0, n: 0, enCours: 1 };
+    (async function () {
+      var ids = {};
+      for (var i = 0; i < D.saisons.length; i++) {
+        var sa = D.saisons[i]; if (!sa) continue;
+        var cle = 'g45crid1_' + D.lg + '_' + D.tid + '_' + sa.an, L = null;
+        if (i > 0) { try { L = JSON.parse(localStorage.getItem(cle) || 'null'); } catch (e) {} }
+        if (!L) {
+          var sc = null; try { sc = await espnClubSchedule(nom, sa.an, D.lg); } catch (e) {}
+          L = ((sc && sc.matches) || []).filter(function (m) { return m.completed && m.id; }).map(function (m) { return [String(m.date || '').slice(0, 10), String(m.id)]; });
+          if (i > 0 && L.length) { try { localStorage.setItem(cle, JSON.stringify(L)); } catch (e) {} }
+        }
+        L.forEach(function (x) { ids[x[0]] = x[1]; });
+      }
+      S.fid[nom] = ids;
+      var aLire = Object.keys(ids).map(function (d) { return ids[d]; }).filter(function (id) { return !fLire(id); });
+      S.fp[nom] = { f: 0, n: aLire.length, enCours: aLire.length > 0 };
+      var k = 0;
+      async function un() {
+        while (k < aLire.length) {
+          var id = aLire[k++];
+          try {
+            var r = await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/' + D.lg + '/summary?event=' + id);
+            if (r.ok) { var l = window._g45CrFeuille(await r.json()); if (l) { try { localStorage.setItem('g45crf1_' + id, JSON.stringify(l)); } catch (e) {} } }
+          } catch (e) {}
+          S.fp[nom].f++;
+          if (S.fp[nom].f % 10 === 0) try { redessiner(); } catch (e) {}
+        }
+      }
+      await Promise.all([un(), un(), un(), un()]);
+      S.fp[nom].enCours = 0;
+      try { redessiner(); } catch (e) {}
+    })();
+  }
   function jCharger(pid, D) {
     if (S.jl[pid]) return;
     S.jl[pid] = { enCours: 1 };
@@ -73902,6 +74021,8 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   function coul(p) { return p <= 2 ? '#1ed760' : p <= 4 ? '#ff9f43' : '#ff5a5a'; }
   function filtrer(ms) {
     var rc = rg() ? (window._g45SgRgComp || 'tout') : 'tout';   /* 20261014k : m[5] = 1 → Champions Cup */
+    /* 20261021d : m.pr = résultat du match d'AVANT dans la saison (tous lieux) — 'v' / 'n' / 'd' (score final) ; 1er match de la saison : rien */
+    ms.forEach(function (m, i) { var q = ms[i - 1]; m.pr = q ? (q[2] > q[3] ? 'v' : q[2] < q[3] ? 'd' : 'n') : ''; });
     return ms.filter(function (m) {
       if (rc === 'L' && m[5]) return false;
       if (rc === 'CC' && m[5] !== 1) return false;
@@ -74060,7 +74181,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       S.combos.forEach(function (c, i) { h += b(S.a === i, 'Combiné ' + (i + 1), 'g45CrChoix(' + i + ')'); });
     }
     var c = S.combos[S.a];
-    S.combos.forEach(function (x) { if (x.TL == null) x.TL = lgEq()[2]; if (x.AL == null) x.AL = lgEq()[2]; if (x.te == null) x.te = ''; if (x.ad == null) x.ad = ''; });
+    S.combos.forEach(function (x) { if (x.TL == null) x.TL = lgEq()[2]; if (x.AL == null) x.AL = lgEq()[2]; if (x.te == null) x.te = ''; if (x.ad == null) x.ad = ''; norm(x); });
     if (us()) h += lab('Résultat (prolongation comprise)') + b(c.res === 'vqr', 'Vainqueur', "g45CrSet('res','vqr')") + b(c.res === 'def', 'Défaite', "g45CrSet('res','def')") + b(c.res === '', 'Aucun', "g45CrSet('res','')");
     else h += lab('Résultat') + b(c.res === 'vic', 'Victoire', "g45CrSet('res','vic')") + b(c.res === 'vqr', 'Vainqueur', "g45CrSet('res','vqr')")
       + b(c.res === 'nul', 'Nul', "g45CrSet('res','nul')") + b(c.res === 'def', 'Défaite', "g45CrSet('res','def')") + b(c.res === '', 'Aucun', "g45CrSet('res','')");
@@ -74089,13 +74210,40 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       roCharger(nom, D);
       var RO = S.ro[nom] || {};
       if (c.jm == null) c.jm = 'but';
-      var selJ = '<select onchange="g45CrJoueur(this.value)" style="background:#16213f;color:#fff;border:1px solid #6d9dff;border-radius:8px;padding:7px 10px;font-size:14px;margin:0 6px 6px 0;max-width:100%;">'
-        + '<option value="">' + (RO.l ? 'Aucun joueur' : '⏳ Effectif…') + '</option>';
-      (RO.l || []).forEach(function (x) { selJ += '<option value="' + x.id + '"' + (c.jo === x.id ? ' selected' : '') + '>' + esc(x.nom) + (x.v ? ' (' + x.v + ')' : '') + '</option>'; });
-      selJ += '</select>';
-      h += lab('Joueur (matchs où il a joué)') + selJ + '<br>' + b(c.jm === 'but', '⚽ Buteur', "g45CrSet('jm','but')") + b(c.jm === 'pas', '🅰️ Passeur', "g45CrSet('jm','pas')") + b(c.jm === 'dec', '⭐ Décisif', "g45CrSet('jm','dec')");
-      if (c.jo) { jCharger(c.jo, D); var JJ = S.jl[c.jo] || {}; if (JJ.enCours) h += '<div style="font-size:13px;color:#c9d3ee;">⏳ Matchs de ' + esc(c.jn) + '…</div>'; else if (!JJ.n) h += '<div style="font-size:13px;color:#ff9f43;">⚠️ Aucun match trouvé pour ' + esc(c.jn) + ' dans ce championnat.</div>'; }
+      /* 20261021d : jusqu'à 3 joueurs (duo / trio buteurs, double chance) ; doublé / triplé */
+      var selJ = function (slot, k) {
+        var t = '<select onchange="g45CrJoueur(this.value,' + slot + ')" style="background:#16213f;color:#fff;border:1px solid #6d9dff;border-radius:8px;padding:7px 10px;font-size:14px;margin:0 6px 6px 0;max-width:100%;">'
+          + '<option value="">' + (RO.l ? (slot === 1 ? 'Aucun joueur' : '+ joueur') : '⏳ Effectif…') + '</option>';
+        (RO.l || []).forEach(function (x) { t += '<option value="' + x.id + '"' + (c[k] === x.id ? ' selected' : '') + '>' + esc(x.nom) + (x.v ? ' (' + x.v + ')' : '') + '</option>'; });
+        return t + '</select>';
+      };
+      h += '<div style="font-size:15px;font-weight:800;margin:14px 0 2px;padding-top:8px;border-top:1px solid #2a3a63;">⚽ Joueurs</div>'
+        + lab('Joueurs (1 à 3, matchs où ils ont TOUS joué)') + selJ(1, 'jo') + (c.jo ? selJ(2, 'jo2') : '') + (c.jo2 ? selJ(3, 'jo3') : '')
+        + '<br>' + b(c.jm === 'but', '⚽ Buteur', "g45CrSet('jm','but')") + b(c.jm === 'dbl', '⚽⚽ Doublé', "g45CrSet('jm','dbl')") + b(c.jm === 'tri', '⚽⚽⚽ Triplé', "g45CrSet('jm','tri')")
+        + b(c.jm === 'pas', '🅰️ Passeur', "g45CrSet('jm','pas')") + b(c.jm === 'dec', '⭐ Décisif', "g45CrSet('jm','dec')");
+      if (c.jo2) h += lab('Avec ' + (c.jo3 ? '3' : '2') + ' joueurs') + b(c.jx === 'cha', 'Chacun', "g45CrSet('jx','cha')") + b(c.jx === 'un', 'Au moins un (double chance)', "g45CrSet('jx','un')")
+        + b(c.jx === 'c15', 'Buts cumulés +1,5', "g45CrSet('jx','c15')") + b(c.jx === 'c25', '+2,5', "g45CrSet('jx','c25')") + b(c.jx === 'c35', '+3,5', "g45CrSet('jx','c35')");
+      joueurs(c).forEach(function (x) { jCharger(x.id, D); var JJ = S.jl[x.id] || {}; if (JJ.enCours) h += '<div style="font-size:13px;color:#c9d3ee;">⏳ Matchs de ' + esc(x.n) + '…</div>'; else if (!JJ.n) h += '<div style="font-size:13px;color:#ff9f43;">⚠️ Aucun match trouvé pour ' + esc(x.n) + ' dans ce championnat.</div>'; });
+      /* 20261021d : feuille de match (foot) */
+      var selN = function (k, a, z) { var t = '<select onchange="g45CrSet(\'' + k + '\',this.value)" style="background:#16213f;color:#fff;border:1px solid #6d9dff;border-radius:8px;padding:7px 10px;font-size:14px;margin:0 6px 6px 0;">'; for (var x = a; x <= z; x++) t += '<option value="' + x + '"' + (c[k] === x ? ' selected' : '') + '>' + x + '</option>'; return t + '</select>'; };
+      var ouBt = function (k, kl, lo, hi) { return b(c[k] === 'ov', 'Over', "g45CrSet('" + k + "','ov')") + b(c[k] === 'un', 'Under', "g45CrSet('" + k + "','un')") + b(!c[k], 'Aucun', "g45CrSet('" + k + "','')") + selN(kl, lo, hi); };
+      h += '<div style="font-size:15px;font-weight:800;margin:14px 0 2px;padding-top:8px;border-top:1px solid #2a3a63;">🎯 Feuille de match</div>'
+        + '<div style="font-size:13px;color:#c9d3ee;">Lue chez ESPN match par match : la 1re fois ≈ 1 min par équipe, ensuite gardée en mémoire.</div>'
+        + lab('Tirs du match') + ouBt('fs', 'FL', 12.5, 40.5)
+        + lab('Tirs de ' + esc(nom)) + ouBt('ts', 'TSL', 4.5, 25.5)
+        + lab('Tirs de l\'adversaire') + ouBt('as', 'ASL', 4.5, 25.5)
+        + lab('Tirs cadrés (over)') + b(c.cad === 'eq', esc(nom), "g45CrSet('cad','eq')") + b(c.cad === 'ma', 'Match', "g45CrSet('cad','ma')") + b(!c.cad, 'Aucun', "g45CrSet('cad','')") + selN('CL', 0.5, 14.5)
+        + lab('Mi-temps') + b(c.mt === 'mene', 'Mène à la pause', "g45CrSet('mt','mene')") + b(c.mt === 'nul', 'Nul à la pause', "g45CrSet('mt','nul')") + b(c.mt === 'but', 'But en 1re MT (+0,5)', "g45CrSet('mt','but')") + b(!c.mt, 'Aucun', "g45CrSet('mt','')")
+        + lab('Marque en premier') + b(c.mp === 'oui', 'Oui', "g45CrSet('mp','oui')") + b(c.mp === 'non', 'Non', "g45CrSet('mp','non')") + b(!c.mp, 'Peu importe', "g45CrSet('mp','')")
+        + lab('Corners / cartons (over)') + b(c.bo === 'coe', 'Corners ' + esc(nom), "g45CrSet('bo','coe')") + b(c.bo === 'com', 'Corners match', "g45CrSet('bo','com')")
+        + b(c.bo === 'cae', 'Cartons ' + esc(nom), "g45CrSet('bo','cae')") + b(c.bo === 'cam', 'Cartons match', "g45CrSet('bo','cam')") + b(!c.bo, 'Aucun', "g45CrSet('bo','')") + selN('BL', 0.5, 14.5);
+      if (fBesoin(c) && D.saisons) {
+        fCharger(nom, D); var FP = S.fp[nom] || {};
+        if (FP.enCours) h += '<div style="font-size:14px;color:#f5c542;margin:4px 0;">⏳ Feuilles de match : ' + (FP.f || 0) + ' / ' + (FP.n || '…') + ' (la 1re fois seulement)</div>';
+      }
     }
+    h += '<div style="font-size:15px;font-weight:800;margin:14px 0 2px;padding-top:8px;border-top:1px solid #2a3a63;">🔁 Match précédent</div>'
+      + b(c.pm === 'v', 'Après une victoire', "g45CrSet('pm','v')") + (us() ? '' : b(c.pm === 'n', 'Après un nul', "g45CrSet('pm','n')")) + b(c.pm === 'd', 'Après une défaite', "g45CrSet('pm','d')") + b(!c.pm, 'Peu importe', "g45CrSet('pm','')");
     if (!S.ctx) h += lab('Les deux marquent') + b(c.bts === 'oui', 'Oui', "g45CrSet('bts','oui')") + b(c.bts === 'non', 'Non', "g45CrSet('bts','non')") + b(c.bts === '', 'Peu importe', "g45CrSet('bts','')");
     h += '<div style="margin:6px 0 4px;">' + (S.combos.length < 3 ? b(false, '➕ Comparer avec un autre combiné (OU)', 'g45CrAjout()') : '')
       + (S.combos.length > 1 ? b(false, '✕ Retirer le combiné ' + (S.a + 1), 'g45CrSuppr()') : '') + '</div>';
@@ -74122,9 +74270,12 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   window._g45CrPasse = passe; window._g45CrCalc = calc;
   window.g45CrOuvrir = function () { try { localStorage.setItem('g45_cr_open', ouvert() ? '0' : '1'); } catch (e) {} redessiner(); };
   window._g45CrS = S;   /* tests */
-  window.g45CrJoueur = function (id) {
-    var c = S.combos[S.a]; c.jo = id || ''; c.jn = '';
-    var RO = S.ro[S.nom] || {}; (RO.l || []).forEach(function (x) { if (x.id === id) c.jn = x.nom; });
+  window.g45CrJoueur = function (id, slot) {   /* 20261021d : slot 1 / 2 / 3 ; retirer un joueur fait remonter les suivants */
+    var c = S.combos[S.a], k = slot === 3 ? '3' : slot === 2 ? '2' : '', nm = '';
+    var RO = S.ro[S.nom] || {}; (RO.l || []).forEach(function (x) { if (x.id === id) nm = x.nom; });
+    c['jo' + k] = id || ''; c['jn' + k] = nm;
+    var P = joueurs(c); c.jo = c.jo2 = c.jo3 = ''; c.jn = c.jn2 = c.jn3 = '';
+    P.forEach(function (x, i) { var q = i ? String(i + 1) : ''; c['jo' + q] = x.id; c['jn' + q] = x.n; });
     try { redessiner(); } catch (e) {}
   };
   window.g45CrSet = function (k, v) {
@@ -74135,6 +74286,11 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       else if (k === 'TL') { c.TL = parseFloat(v); if (!c.te) c.te = 'ov'; }
       else if (k === 'AL') { c.AL = parseFloat(v); if (!c.ad) c.ad = 'ov'; }
       else if (k === 'E') { c.E = parseFloat(v); if (!c.ec) c.ec = 'g'; }
+      else if (k === 'FL') { c.FL = parseFloat(v); if (!c.fs) c.fs = 'ov'; }   /* 20261021d */
+      else if (k === 'TSL') { c.TSL = parseFloat(v); if (!c.ts) c.ts = 'ov'; }
+      else if (k === 'ASL') { c.ASL = parseFloat(v); if (!c.as) c.as = 'ov'; }
+      else if (k === 'CL') { c.CL = parseFloat(v); if (!c.cad) c.cad = 'eq'; }
+      else if (k === 'BL') { c.BL = parseFloat(v); if (!c.bo) c.bo = 'coe'; }
       else c[k] = v;
     }
     redessiner();
