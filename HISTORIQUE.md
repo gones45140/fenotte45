@@ -2206,6 +2206,10 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   tie-breaks de l'analyse faussés). Mémoire tn3_ → tn4_ (toutes les saisons relues une fois). Smoke tnScore (69).
   Vu en console d'Antoine : ESPN search/v2 ne contient PAS d'uid s:850 pour « arthur fils » (la fiche passe quand même : contenu « tennis »
   ou repli scoreboard) ; TheSportsDB en 403 (worker host=tsdb ET direct) → photos absentes, grand drapeau affiché.
+  21/10 — CAUSE du « 0 affichées » (Sélection du jour vide, capture d'Antoine) : RÉGRESSION 20261020c (Tendances en boutons) — l'écran s'ouvre
+  sur BET45 → Sélection, la liste perso n'est plus dessinée, _g45TrSuivNoter (appelé par le rendu perso) jamais appelé → le robot ne voit rien.
+  tendances.mjs : localStorage g45tr_vue = 'perso' (addInitScript + avant la boucle). Robot relancé à la main (force 1) le 21/10 ~9 h 30.
+  Elo : fichier créé au 2e passage (559 ATP, 515 WTA ; Fils 2019,7 / dur 1961,3).
   _g45TnPerso pose les 3 blocs de l'écran. Smoke tnRun (65) ; tests tnRobot / tnRun calés sur « maintenant + quelques minutes » (le soir UTC,
   « + 2 h » tombait le lendemain).
   20261020c (croquis d'Antoine « Tendances = 4 boutons », maquette cliquable validée « oui, BET45 → Sélection du jour par défaut ») : ONGLET EN BOUTONS —
