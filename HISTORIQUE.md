@@ -2264,6 +2264,10 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   (window._g45StOuv[nom], g45StOuvrir) + onglets 🔥 Forme · ✅ Mes stats (pastilles + stats sélectionnées) · 🏠 Dom / Ext · ⚽ Buts (buts par
   match + stats clés) · 🏆 Compétitions (localStorage g45_st_tab, g45StTab) ; redessin par _g45CursReconstruire('#g45st-ouv'). Liste des
   matchs inchangée. Smoke 73 (pas de contrôle dédié : rendu de loadTeamSaisons non simulé).
+  20261021l (« STATS SAISON pas refermable sur le sport US ») : _g45SaisonsGen (NHL, NBA, NFL, MLB, rugby…), repères _q0…_q6 → même
+  bandeau « 📊 Statistiques de la saison » fermé à l'arrivée (window._g45StOuv['g|sport|équipe'], g45StOuvrir) + onglets 🔥 Forme · ✅ Mes
+  stats (pastilles + stats sélectionnées) · 🏠 Dom / Ext · ⚽ Buts ou 🎯 Points (par match + stats clés), onglet partagé g45_st_tab. Filtres
+  Global / Dom / Ext, repos, temps réglementaire LAISSÉS visibles hors bandeau (ils changent le combiné et la liste). Smoke 74.
   + (« le fond est caché par les bandes de cache, c'est dommage sur PC », liste des matchs de Saisons) : ligne du match (grille domicile / score
   / extérieur) limitée à 640 px et centrée hors téléphone (g45Etroit) → fond du club visible sur les côtés.
   + (« petite coquille : sous la saison 2025/2026 on a le classement actuel ») : loadStandings(nom, id, matchs, saison) demande football-data

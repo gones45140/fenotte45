@@ -50971,6 +50971,7 @@ async function _g45SaisonsGen(el, nom, perso) {
      boutons O/U sont remplaces par des curseurs point par point. */
   var _cursOk = !!(typeof _G45_SG_L !== 'undefined' && _G45_SG_L[sp]);
   if (_cursOk) { try { html += _g45SgCursHtml(liste, sp, nom); } catch (e) { _cursOk = false; } }
+  var _q0 = html.length;   /* 20261021l : repères du bandeau « Statistiques de la saison » */
   html += '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px;">';
   CLES.filter(function (k) { return !_cursOk || !/^[OU]\d/.test(k); }).forEach(function (k) {
     var on = _g45SgQuick.indexOf(k) >= 0;
@@ -50981,6 +50982,7 @@ async function _g45SaisonsGen(el, nom, perso) {
   html += '</div>';
 
   /* ── Forme recente : 5 cartes ── */
+  var _q1 = html.length;
   html += '<div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#4f5d88;margin-bottom:8px;">Forme r\u00e9cente</div>';
   var cinq = st.liste.slice(0, 5);
   html += '<div style="display:grid;grid-template-columns:repeat(' + cinq.length + ',1fr)' + (st.serie > 1 ? ' auto' : '') + ';gap:4px;margin-bottom:8px;">';
@@ -51004,6 +51006,7 @@ async function _g45SaisonsGen(el, nom, perso) {
   html += '</div>';
 
   /* ── Filtre Global / Domicile / Exterieur ── */
+  var _q2 = html.length;
   html += '<div style="display:flex;gap:6px;margin-bottom:14px;">';
   [['global', '\ud83c\udf10 Global'], ['dom', '\ud83c\udfe0 Domicile'], ['ext', '\ud83d\ude8c Ext\u00e9rieur']].forEach(function (f) {
     var on = (f[0] === _g45SgFiltre);
@@ -51054,6 +51057,7 @@ async function _g45SaisonsGen(el, nom, perso) {
   }
 
   /* ── Barres des marches coches ── */
+  var _q3 = html.length;
   html += '<div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#4f5d88;margin-bottom:8px;">'
     + 'Stats s\u00e9lectionn\u00e9es <span style="color:var(--t3);font-weight:400;text-transform:none;letter-spacing:0;">\u00b7 ' + nF + ' matchs</span></div>';
   html += '<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px;">';
@@ -51082,6 +51086,7 @@ async function _g45SaisonsGen(el, nom, perso) {
   html += '</div>';
 
   /* ── Domicile vs Exterieur ── */
+  var _q4 = html.length;
   var carteDE = function (lab, b, col, fond) {
     return '<div style="background:' + fond + ';border:1px solid ' + col + '33;border-radius:8px;padding:10px;text-align:center;">'
       + '<div style="font-size:10px;color:var(--t3);margin-bottom:4px;">' + lab + ' (' + b.j + ')</div>'
@@ -51095,6 +51100,7 @@ async function _g45SaisonsGen(el, nom, perso) {
     + carteDE('\ud83d\ude8c Ext\u00e9rieur', st.ext, '#4d84ff', 'rgba(77,132,255,.08)') + '</div>';
 
   /* ── Points par match ── */
+  var _q5 = html.length;
   /* FILTRE RESPECTÉ (27/09/2026, relevé d'Antoine sur le NRL : « pourquoi ça
      compte le global alors que j'ai sélectionné Domicile ? »). Ces deux blocs
      lisaient `st`, qui contient TOUS les matchs (1/27, 0/27…), alors que
@@ -51128,6 +51134,24 @@ async function _g45SaisonsGen(el, nom, perso) {
       + '<div style="font-size:8px;color:rgba(255,255,255,.4);margin-top:2px;">' + s.l + (s.t ? ' (' + s.v + '/' + s.t + ')' : '') + '</div></div>';
   });
   html += '</div>';
+
+  /* ═══ 20261021l — « STATS SAISON pas refermable sur le sport US » : même bandeau que le foot (20261021h) ═══
+     « 📊 Statistiques de la saison » FERMÉ à l'arrivée (mémoire de la page window._g45StOuv, clé 'g|sport|équipe' pour ne pas
+     mélanger avec le foot), puis onglets 🔥 Forme · ✅ Mes stats (pastilles + stats sélectionnées) · 🏠 Dom / Ext · ⚽ Buts / 🎯 Points
+     (par match + stats clés) ; onglet partagé avec le foot (g45_st_tab, mêmes noms). Les filtres Global / Dom / Ext, repos et temps
+     réglementaire RESTENT visibles hors du bandeau : ils changent aussi le compteur de combiné et la liste des matchs. */
+  try {
+    var _q6 = html.length, _sgK = 'g|' + sp + '|' + String(nom || '').replace(/['"\\<>]/g, ''), _sgO = !!(window._g45StOuv && window._g45StOuv[_sgK]) || !!window._g45CursToujours;
+    var _sgP = { forme: html.slice(_q1, _q2), mes: html.slice(_q0, _q1) + html.slice(_q3, _q4), dom: html.slice(_q4, _q5), buts: html.slice(_q5, _q6) };
+    var _sgT = 'forme'; try { _sgT = localStorage.getItem('g45_st_tab') || 'forme'; } catch (e) {}
+    if (!_sgP[_sgT]) _sgT = 'forme';
+    var _sgB = '<div id="g45st-ouv" onclick="g45StOuvrir(\'' + _sgK + '\')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:11px 12px;border-radius:12px;background:rgba(11,16,29,.72);border:1px solid rgba(255,255,255,.12);margin:2px 0 9px;color:#fff;">'
+      + '<span style="font-size:15px;font-weight:800;">📊 Statistiques de la saison</span><span style="font-size:14px;color:#c9d3ee;">' + (_sgO ? '▾ Replier' : '▸ Ouvrir') + '</span></div>';
+    if (_sgO) _sgB += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin:0 0 10px;">' + [['forme', '🔥 Forme'], ['mes', '✅ Mes stats'], ['dom', '🏠 Dom / Ext'], ['buts', (sp === 'soccer' || sp === 'hockey') ? '⚽ Buts' : '🎯 Points']]
+      .map(function (o) { var on = o[0] === _sgT;
+        return '<span onclick="g45StTab(\'' + o[0] + '\')" style="flex:1;min-width:96px;text-align:center;cursor:pointer;padding:9px 6px;border-radius:10px;font-size:13.5px;font-weight:800;' + (on ? 'background:#2563eb;border:1px solid #5aa9ff;color:#fff;' : 'background:rgba(11,16,29,.72);border:1px solid rgba(255,255,255,.16);color:#e8ecfa;') + '">' + o[1] + '</span>'; }).join('') + '</div>' + _sgP[_sgT];
+    html = html.slice(0, _q0) + html.slice(_q2, _q3) + _sgB;
+  } catch (e) {}
 
   /* ── Compteur de COMBINE ──────────────────────────────────────────────────
      Le chiffre qui sert vraiment : combien de matchs valident TOUS les marches
