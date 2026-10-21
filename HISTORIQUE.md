@@ -2275,6 +2275,10 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   (🥇🥈🥉, tri ⚽ / 🅰️ / décisif window._g45ScTri + g45ScTri, colonne décisif) ; Compétitions → Forme : tableau PC agrandi, bandes sombres,
   bande verte / rouge, ≤ 1000 px centré (cartes téléphone inchangées). « Lyon seulement » de la maquette pas fait : la liste du club existe
   déjà juste au-dessus. Smoke 73 ; capture cls-pc vérifiée.
+  20261021j (capture : fiche Carolina Hurricanes → Saisons montrait les prochains matchs et le filtre Europa de LYON, « sûrement j'étais trop
+  vite ») : course entre deux loadTeamSaisons asynchrones (le plus lent écrit en dernier dans #ip-saisons). Enveloppe la plus externe : à la
+  fin, si _currentTeam a changé depuis le début → relance UNE fois pour l'équipe actuelle ; marqueurs des enveloppes (_g45Eb…) recopiés
+  (le smoke KBO les vérifie). Smoke 73.
   _g45TnPerso pose les 3 blocs de l'écran. Smoke tnRun (65) ; tests tnRobot / tnRun calés sur « maintenant + quelques minutes » (le soir UTC,
   « + 2 h » tombait le lendemain).
   20261020c (croquis d'Antoine « Tendances = 4 boutons », maquette cliquable validée « oui, BET45 → Sélection du jour par défaut ») : ONGLET EN BOUTONS —

@@ -78880,3 +78880,25 @@ window.g45ScTri = function (t, k) {
   var d = window._g45ScData[k], el = document.getElementById('g45sc-' + k); if (!d || !el) return;
   var tmp = document.createElement('div'); tmp.innerHTML = _g45ScRelook(d[0], d[1], d[2], d[3], k); el.replaceWith(tmp.firstChild);
 };
+
+/* ═══ 20261021j — SAISONS D'UNE AUTRE ÉQUIPE (capture d'Antoine : fiche Carolina Hurricanes → « Prochains matchs » et filtre Europa de LYON ;
+   « sûrement j'étais trop vite », bon après rechargement) ═══
+   loadTeamSaisons est asynchrone : ouvrir une équipe pendant que les Saisons de la précédente chargent → la plus LENTE écrit en dernier dans
+   #ip-saisons. Enveloppe (la plus externe) : à la fin d'un chargement, si l'équipe affichée a changé entre-temps, on relance UNE fois pour
+   l'équipe actuelle (son propre chargement ne relance rien → pas de boucle). */
+(function () {
+  if (typeof loadTeamSaisons !== 'function' || loadTeamSaisons._g45Course) return;
+  var orig = loadTeamSaisons;
+  var actuelle = function () { try { return (typeof _currentTeam !== 'undefined' ? _currentTeam : '') || (typeof _currentUnitNom !== 'undefined' ? _currentUnitNom : '') || ''; } catch (e) { return ''; } };
+  var env = async function () {
+    var n0 = actuelle(), r;
+    try { r = await orig.apply(this, arguments); } finally {
+      var n1 = actuelle();
+      if (n0 && n1 && n0 !== n1) { try { await orig.apply(this, arguments); } catch (e) {} }
+    }
+    return r;
+  };
+  Object.keys(orig).forEach(function (k) { env[k] = orig[k]; });   /* marqueurs des enveloppes précédentes (_g45Eb…) gardés */
+  env._g45Course = true;
+  loadTeamSaisons = env; window.loadTeamSaisons = env;
+})();
