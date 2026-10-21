@@ -2241,6 +2241,9 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   lues sur leur compétition (slug) ; joueurs = journal du championnat seulement (avertissement affiché). + « cette sélection de critères doit
   passer en premium » : verrou _g45AccesPremium() !== true → 🔒 « réservé premium » + _g45BlocPremium (gones45 sans compte = ouvert).
   Smoke crPlus complété (Europe 1/2, Les deux 2/3, verrou).
+  + (captures bet45 d'Antoine, compte au-delà des 30 jours : « Tendances disparaît, devrait rester à gauche et montrer cette page comme sur
+  Pari / Tendances ») : indexfenotte.html n'avait PAS de bouton Tendances dans le menu (gones45 oui) → ajouté après Agenda, même onclick ;
+  le cadenas vient de loadTendancesTab. (smoke.js sur indexfenotte.html : 69 échecs AVANT et APRÈS, la garde d'accès bloque sans compte.)
   _g45TnPerso pose les 3 blocs de l'écran. Smoke tnRun (65) ; tests tnRobot / tnRun calés sur « maintenant + quelques minutes » (le soir UTC,
   « + 2 h » tombait le lendemain).
   20261020c (croquis d'Antoine « Tendances = 4 boutons », maquette cliquable validée « oui, BET45 → Sélection du jour par défaut ») : ONGLET EN BOUTONS —
