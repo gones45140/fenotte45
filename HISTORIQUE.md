@@ -2259,6 +2259,11 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   panneau (6 remplacés par motif + Saisons tous sports avec #sg-prog) ; critères : ouvert / fermé en mémoire par équipe (S.ov, S.ovTous pour
   les tests) au lieu de localStorage g45_cr_open ; curseurs foot (_g45CursHtml) et autres sports (_g45SgCursHtml) enveloppés : bandeau
   « 📈 Curseurs de la saison ▸ Ouvrir » fermé à l'arrivée (_g45CursOuv, g45CursOuvrir ; window._g45CursToujours pour les tests). Smoke ferme (73).
+  20261021h (« pareil » sur le bloc pastilles / forme récente / stats sélectionnées / dom-ext / buts par match / stats clés / par compétition,
+  « oui » aux onglets) : loadTeamSaisons, repères _s0…_s6 de la chaîne html → bandeau « 📊 Statistiques de la saison » fermé à l'arrivée
+  (window._g45StOuv[nom], g45StOuvrir) + onglets 🔥 Forme · ✅ Mes stats (pastilles + stats sélectionnées) · 🏠 Dom / Ext · ⚽ Buts (buts par
+  match + stats clés) · 🏆 Compétitions (localStorage g45_st_tab, g45StTab) ; redessin par _g45CursReconstruire('#g45st-ouv'). Liste des
+  matchs inchangée. Smoke 73 (pas de contrôle dédié : rendu de loadTeamSaisons non simulé).
   _g45TnPerso pose les 3 blocs de l'écran. Smoke tnRun (65) ; tests tnRobot / tnRun calés sur « maintenant + quelques minutes » (le soir UTC,
   « + 2 h » tombait le lendemain).
   20261020c (croquis d'Antoine « Tendances = 4 boutons », maquette cliquable validée « oui, BET45 → Sélection du jour par défaut ») : ONGLET EN BOUTONS —

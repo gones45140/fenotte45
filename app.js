@@ -25177,6 +25177,7 @@ function renderSaisonsChart(el, results, nom) {
     var _scIx0 = null; try { _scIx0 = JSON.parse(localStorage.getItem('g45_scorers_v4_'+teamId+'_'+s)||'null'); } catch(e){}
     var _fgDe = function(m){ var b = _scIx0 && _scIx0.byMatch && _scIx0.byMatch[m.espnId]; return (b && b.fg) || null; };
     try { html += _g45CursHtml(filteredMatches, _estNous, _fgDe, (typeof _currentTeam !== 'undefined' && _currentTeam) || nom); } catch(e){}
+    var _s0 = html.length;   /* 20261021h : repères des onglets « Statistiques de la saison » */
     var QUICK_STATS = _G45_PILLS_FIXES;
     html += '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;">';
     QUICK_STATS.forEach(function(qs){
@@ -25187,6 +25188,7 @@ function renderSaisonsChart(el, results, nom) {
     });
     html += '</div>';
 
+    var _s1 = html.length;
     // ── Série + derniers matchs ──
     if(st.last5.length) {
       html += '<div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#4f5d88;margin-bottom:8px;">Forme récente</div>';
@@ -25222,6 +25224,7 @@ function renderSaisonsChart(el, results, nom) {
            : st;
     var sfN = sf.n||1;
 
+    var _s2 = html.length;
     // ── Over/Under bars avec sélecteur ──
     var ALL_STAT_ROWS = [
       {key:'O0.5',  label:'Over 0.5',  v:pct(sf.over05,sfN),         color:'#1ed760'},
@@ -25264,6 +25267,7 @@ function renderSaisonsChart(el, results, nom) {
     });
     html += '</div>';
 
+    var _s3 = html.length;
     // ── Dom vs Ext ──
     html += '<div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#4f5d88;margin-bottom:8px;">Domicile vs Extérieur</div>';
     html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">';
@@ -25281,6 +25285,7 @@ function renderSaisonsChart(el, results, nom) {
     html += '</div>';
     html += '</div>';
 
+    var _s4 = html.length;
     // ── Buts moyens ──
     html += '<div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#4f5d88;margin-bottom:8px;">Buts par match</div>';
     html += '<div style="display:flex;gap:8px;">';
@@ -25318,6 +25323,7 @@ function renderSaisonsChart(el, results, nom) {
     });
     html += '</div>';
 
+    var _s5 = html.length;
     // ── Par compétition ──
     var comps = Object.entries(st.byComp).sort(function(a,b){return b[1].n-a[1].n;});
     if(comps.length > 1) {
@@ -25337,6 +25343,22 @@ function renderSaisonsChart(el, results, nom) {
       html += '</div>';
     }
 
+    /* 20261021h (« pareil » sur ce bloc : pastilles, forme, stats sélectionnées, dom / ext, buts, stats clés, par compétition ; « oui ») :
+       bandeau « 📊 Statistiques de la saison » FERMÉ à l'arrivée sur l'équipe (mémoire de la page, _g45StOuv), puis onglets 🔥 Forme ·
+       ✅ Mes stats (pastilles + stats sélectionnées) · 🏠 Dom / Ext · ⚽ Buts (buts par match + stats clés) · 🏆 Compétitions ; onglet gardé
+       (localStorage g45_st_tab). La liste des matchs en dessous ne bouge pas. */
+    try {
+      var _s6 = html.length, _stK = String(nom || ''), _stO = !!(window._g45StOuv && window._g45StOuv[_stK]) || !!window._g45CursToujours;
+      var _stP = { forme: html.slice(_s1, _s2), mes: html.slice(_s0, _s1) + html.slice(_s2, _s3), dom: html.slice(_s3, _s4), buts: html.slice(_s4, _s5), comp: html.slice(_s5, _s6) };
+      var _stT = 'forme'; try { _stT = localStorage.getItem('g45_st_tab') || 'forme'; } catch (e) {}
+      if (!_stP[_stT]) _stT = 'forme';
+      var _stB = '<div id="g45st-ouv" onclick="g45StOuvrir(\'' + _stK.replace(/['"\\<>]/g, '') + '\')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:11px 12px;border-radius:12px;background:rgba(11,16,29,.72);border:1px solid rgba(255,255,255,.12);margin:2px 0 9px;color:#fff;">'
+        + '<span style="font-size:15px;font-weight:800;">📊 Statistiques de la saison</span><span style="font-size:14px;color:#c9d3ee;">' + (_stO ? '▾ Replier' : '▸ Ouvrir') + '</span></div>';
+      if (_stO) _stB += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin:0 0 10px;">' + [['forme', '🔥 Forme'], ['mes', '✅ Mes stats'], ['dom', '🏠 Dom / Ext'], ['buts', '⚽ Buts'], ['comp', '🏆 Compétitions']]
+        .filter(function (o) { return _stP[o[0]]; }).map(function (o) { var on = o[0] === _stT;
+          return '<span onclick="g45StTab(\'' + o[0] + '\')" style="flex:1;min-width:96px;text-align:center;cursor:pointer;padding:9px 6px;border-radius:10px;font-size:13.5px;font-weight:800;' + (on ? 'background:#2563eb;border:1px solid #5aa9ff;color:#fff;' : 'background:rgba(11,16,29,.72);border:1px solid rgba(255,255,255,.16);color:#e8ecfa;') + '">' + o[1] + '</span>'; }).join('') + '</div>' + _stP[_stT];
+      html = html.slice(0, _s0) + _stB;
+    } catch (e) {}
     // ── Résultats complets de la saison ──
     var allMatchesSorted = filteredMatches.slice().sort(function(a,b){ return new Date(b.utcDate)-new Date(a.utcDate); });
     // ── Buteur / Passeur (index keyEvents) ──
@@ -78768,3 +78790,8 @@ window.g45CursOuvrir = function (k) {
     _g45SgCursHtml._ferme = true;
   }
 })();
+
+/* 20261021h : bandeau / onglets « Statistiques de la saison » (voir loadTeamSaisons) */
+window._g45StOuv = window._g45StOuv || {};
+window.g45StOuvrir = function (k) { window._g45StOuv[k] = !window._g45StOuv[k]; try { _g45CursReconstruire('#g45st-ouv'); } catch (e) {} };
+window.g45StTab = function (t) { try { localStorage.setItem('g45_st_tab', t); } catch (e) {} try { _g45CursReconstruire('#g45st-ouv'); } catch (e) {} };
