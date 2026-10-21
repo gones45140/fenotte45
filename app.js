@@ -30791,7 +30791,14 @@ function g45TrDay(d){ _G45_TR.day=d; _G45_TR.res=null; loadTendancesTab(); }
 /* Une probabilité de 67% équivaut à une cote de 1.50 : au-delà, aucune tendance ne peut
    atteindre ce seuil, quel que soit le bookmaker. Le filtre écarte donc ce qui est
    mécaniquement injouable pour qui exige une cote minimale. */
-function g45TrMin(v){ _G45_TR.min=v; loadTendancesTab(); }
+/* 20261021m (JP / Bruno, groupe « Bets 4 us » : « pouvoir choisir que les cotes > 2 », paliers 1,05–1,50 / 1,50–2 / 2–2,5 / 2,5–3 / 3 et + ;
+   Antoine garde « 1,50 et + » : « le 1.5 mini c'est pour moi ») : g45TrMin(mini, maxi) — maxi 0 = pas de plafond ; fourchette [mini ; maxi[. */
+function g45TrMin(v, mx){ _G45_TR.min=v; _G45_TR.max=mx||0; loadTendancesTab(); }
+/* Boutons de cote (les deux copies de la barre de filtres les appellent). */
+function _g45TrCoteChips(chip){
+  var L=[['Toutes',0,0],['1,50 et +',1.5,0],['1,05 – 1,50',1.05,1.5],['1,50 – 2',1.5,2],['2 – 2,5',2,2.5],['2,5 – 3',2.5,3],['3 et +',3,0]];
+  return L.map(function(c){ return chip(c[0], (_G45_TR.min||0)===c[1] && (_G45_TR.max||0)===c[2], 'g45TrMin('+c[1]+','+c[2]+')'); }).join('');
+}
 /* SEUIL DE PROBABILITE (22/08, demande d'Antoine : « tout % estime en dessous
    de 40 % ne m'interesse pas »). Distinct du seuil de cote, et complementaire :
    exiger une cote >= 1.50 ecarte le trop probable, exiger une probabilite
@@ -30921,7 +30928,7 @@ function loadTendancesTab(){
     +_g45TrLiguesHtml(G)   /* 20261013c : choix de la compétition dans chaque groupe */
     +'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:4px 16px;margin-bottom:11px;">'
     +seg('Jour', chip("Aujourd'hui", _G45_TR.day===0, "g45TrDay(0)")+chip('Demain', _G45_TR.day===1, "g45TrDay(1)"))
-    +seg('Cote mini', chip('Toutes', !_G45_TR.min, "g45TrMin(0)")+chip('1.30', _G45_TR.min===1.3, "g45TrMin(1.3)")+chip('1.50', _G45_TR.min===1.5, "g45TrMin(1.5)"))
+    +seg('Cote', _g45TrCoteChips(chip))
     +seg('Proba mini', chip('40%', _G45_TR.pmin===0.40, "g45TrPMin(0.40)")+chip('50%', _G45_TR.pmin===0.50, "g45TrPMin(0.50)")+chip('60%', _G45_TR.pmin===0.60, "g45TrPMin(0.60)"))
     +'</div>'
     /* Buteurs et CLV ne sont PAS des filtres : ce sont deux boutons qui ouvrent
@@ -31082,17 +31089,18 @@ function _g45TrCompLbl(slug){
 }
 function _g45TrRender(){
   var R=_G45_TR.res||[];
-  var mini=_G45_TR.min||0;
+  var mini=_G45_TR.min||0, maxi=_G45_TR.max||0;
+  var dans=function(c){ return c>=mini && (!maxi || c<maxi); };   /* 20261021m : fourchette de cote */
   /* 20261015j (Cédric : « beaucoup de tendances à 1,2 même en cochant 1,5 mini ») : le filtre ne regardait que la cote DÉDUITE des stats
      (1/p : 62 % → 1,61) → une tendance payée 1,20 par les bookmakers passait. Cote du marché connue = c'est ELLE qui compte. */
   /* 20261015l (« Pas de nul » Gent–AGF : pas de cote, bookmakers 77 % ≈ 1,30, affiché avec cote mini 1,50) : sans cote mais avec le % des
      bookmakers (m.fair, marge retirée), on juge sur la cote qui en découle (1 / %) — la vraie cote est même un peu plus basse (marge). */
-  var jouable=function(x){ if(!mini) return true; if(x.m.cote>1) return x.m.cote>=mini;
-    var bk=(x.m.fair>0)?x.m.fair:(x.m.accord>0?x.m.accord:null); if(bk) return (1/bk)>=mini;
-    return x.m.p>0 && (1/x.m.p)>=mini; };
+  var jouable=function(x){ if(!mini && !maxi) return true; if(x.m.cote>1) return dans(x.m.cote);
+    var bk=(x.m.fair>0)?x.m.fair:(x.m.accord>0?x.m.accord:null); if(bk) return dans(1/bk);
+    return x.m.p>0 && dans(1/x.m.p); };
   /* Une value = cote réelle disponible, au-dessus du seuil, et espérance positive. */
   var pmini=Math.max(_G45_TR_PFLOOR, _G45_TR.pmin||0);
-  var avec=R.filter(function(x){ return x.m.ev!=null&&x.m.ev>=0.03&&x.m.cote>=mini&&x.m.p>=pmini&&x.m.n>=12&&x.m.cote>0; });
+  var avec=R.filter(function(x){ return x.m.ev!=null&&x.m.ev>=0.03&&dans(x.m.cote)&&x.m.p>=pmini&&x.m.n>=12&&x.m.cote>0; });
   avec.sort(function(a,b){ return b.m.ev-a.m.ev; });
   /* UN SEUL MARCHE PAR MATCH (22/08). Cette section produit une ligne par
      marche : Toulouse-Lyon ressortait avec « -3,5 buts » ET « +1,5 but », et
@@ -31118,12 +31126,12 @@ function _g45TrRender(){
   var card=_g45TrCarte;   /* 20261021c : carte sortie en fonction globale (voir « CARTE DE TENDANCE, LOGO DU CENTRE LIBRE » en fin de fichier) */
   if(avec.length){
     h+='<div style="font-size:10px;font-weight:800;color:#2ecc71;margin:8px 0 6px;">💎 Values du jour ('+avec.length+')</div>'
-      +'<div style="font-size:8px;color:var(--t3);margin-bottom:6px;font-style:italic;">Cote réelle ≥ '+mini.toFixed(2)
+      +'<div style="font-size:8px;color:var(--t3);margin-bottom:6px;font-style:italic;">Cote réelle '+(maxi?'de '+mini.toFixed(2)+' à '+maxi.toFixed(2):'≥ '+mini.toFixed(2))
       +(' et probabilité estimée ≥ '+Math.round(pmini*100)+'%')
       +', espérance positive. Classées par espérance : probabilité × cote − 1.</div>';
     avec.slice(0,25).forEach(function(x){ h+=card(x,true); });
   } else {
-    h+='<div style="font-size:10px;color:var(--t3);text-align:center;padding:12px;line-height:1.6;">Aucune value détectée aujourd\'hui au-dessus de '+mini.toFixed(2)+'.<br><span style="font-size:9px;">C\'est le résultat le plus fréquent, et c\'est normal : le marché est efficace la plupart du temps.<br>En juillet, seules les qualifications tournent : les équipes ont peu de matchs joués dans ces compétitions, donc peu de données exploitables.</span></div>';
+    h+='<div style="font-size:10px;color:var(--t3);text-align:center;padding:12px;line-height:1.6;">Aucune value détectée aujourd\'hui '+(maxi?'entre '+mini.toFixed(2)+' et '+maxi.toFixed(2):'au-dessus de '+mini.toFixed(2))+'.<br><span style="font-size:9px;">C\'est le résultat le plus fréquent, et c\'est normal : le marché est efficace la plupart du temps.<br>En juillet, seules les qualifications tournent : les équipes ont peu de matchs joués dans ces compétitions, donc peu de données exploitables.</span></div>';
   }
   if(sans.length){
     h+='<div style="font-size:10px;font-weight:800;color:#8aa0ff;margin:14px 0 6px;">📊 Taux élevés sans écart calculable</div>'
@@ -73401,7 +73409,7 @@ function _g45TrFiabHtml() {
       + '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:4px 16px;margin-bottom:11px;">'
       + (U.lg === 'nfl' ? seg('Jour', '<span style="font-size:13px;color:#fff;font-weight:700;padding:6px 0;">📅 Les 7 prochains jours</span>')
                         : seg('Jour', chip("Aujourd'hui", _G45_TR.day === 0, 'g45TrDay(0)') + chip('Demain', _G45_TR.day === 1, 'g45TrDay(1)')))
-      + seg('Cote mini', chip('Toutes', !_G45_TR.min, 'g45TrMin(0)') + chip('1.30', _G45_TR.min === 1.3, 'g45TrMin(1.3)') + chip('1.50', _G45_TR.min === 1.5, 'g45TrMin(1.5)'))
+      + seg('Cote', _g45TrCoteChips(chip))
       + seg('Proba mini', chip('40%', _G45_TR.pmin === 0.40, 'g45TrPMin(0.40)') + chip('50%', _G45_TR.pmin === 0.50, 'g45TrPMin(0.50)') + chip('60%', _G45_TR.pmin === 0.60, 'g45TrPMin(0.60)'))
       + '</div>';
     h += '<div id="g45tr-fiab">' + _g45TrFiabHtml() + '</div>';

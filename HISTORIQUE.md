@@ -2038,6 +2038,10 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   cote du marché connue (m.cote > 1) = elle doit être ≥ cote mini ; sinon 1/p comme avant. Vaut aussi pour le robot officiel. Smoke (41).
   20261015l (« Pas de nul » Gent–AGF, bookmakers 77 % ≈ 1,30, sans cote, affiché avec cote mini 1,50) : `jouable` — sans cote mais avec m.fair (ou
   m.accord) → 1 / % des bookmakers comparé à la cote mini ; sinon 1/p. Passage officiel du 15/10 refait une 2e fois (aucun match commencé).
+  20261021m (JP / Bruno, groupe « Bets 4 us » : « choisir que les cotes > 2 », paliers 1,05–1,50 / 1,50–2 / 2–2,5 / 2,5–3 / 3 et + ; Antoine
+  garde « 1,50 et + » « c'est pour moi ») : filtre « Cote mini » → « Cote » en fourchettes, _g45TrCoteChips (les DEUX barres de filtres),
+  g45TrMin(mini, maxi) (_G45_TR.max, 0 = sans plafond), _g45TrRender : dans(c) = c ≥ mini et c < maxi (jouable + values). Défaut inchangé
+  1,50 et + ; robot officiel inchangé (max non posé). 5 essais vm, smoke 74.
   20261015k (« une fois demandées, elles devraient rester visibles jusqu'au match ») : bloc en fin d'app.js — enveloppe de g45TrRun : liste rangée
   dans IndexedDB (_g45BgIdb, magasin kv, clé 'tr_<sport>') avec signature `_g45TrGardeSig` (jour visé, Aujourd'hui/Demain, groupes, g45tr_lsoff) ;
   enveloppe de loadTendancesTab : sans résultats → reprise si même signature, matchs commencés retirés (`_g45TrGardeFiltre`), une fois par sport
