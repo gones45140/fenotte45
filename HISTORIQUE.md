@@ -2309,6 +2309,17 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   Cotes 2025 (session) : gros tournois favori 69 % à 1,41 de médiane, −4,6 % ; outsiders −9,5 % (5 et + : −21 %).
   Styles : RallyAgg (MCP) inutilisable (Sinner « patient ») ; aces → 7 joueurs à vérifier envoyés à Antoine (Michelsen, Samsonova, Boulter notés
   gros serveurs avec peu d'aces ; Auger-Aliassime, Korda, Nakashima, Coleman Wong > 13 % d'aces non notés).
+- ⚽ 20261023l — COUPES D'EUROPE (« les stats foot qu'on sort c'est surtout en championnat, très peu en coupe d'Europe » ; octobre : C4 4/13,
+  C3 8/17, championnats 11/16 ; « Barça – Viking on rigole sur les stats » ; « prendre le coeff du club, global et 2 dernières saisons » ;
+  « trouver de combien est l'écart et en tirer une conclusion »). Robot coupes_europe.mjs (workflow coupes-europe.yml, à la main) :
+  kassiesa.net trank2023-2027 (SONDÉ par Antoine : « # | | club | pays | 5 saisons | Total | Part » ; uefa.com interdit) + ESPN jour par jour
+  (mardi-jeudi ; la plage ?dates=A-B → 400 ; réponses gzip → --compressed) → données/coupes_europe.json, 719 matchs avec les 2 coefficients.
+  Écart 2 saisons : gros club gagne 45 / 48 / 66 / 72 / 67 % (< 1,5 / 1,5-2,5 / 2,5-4 / 4-7 / 7+ fois) ; buts ≈ 3,1 partout ; − 3,5 ≈ 62 %,
+  + 2,5 ≈ 61 %, BTTS ≈ 56 % QUEL QUE SOIT L'ÉCART. tendances.mjs : match uefa.* → marché de buts (u35, o25, btts) officiel seulement si cote ×
+  taux réel des coupes d'Europe ≥ 1,05 ; résultat (1, 2, 1N, 2N) et autres (o15…) → J.ce (🧪 test) ; x.pe = taux, x.ecu = écart (si clubs
+  reconnus). App : _g45TrCeHtml, bloc testeurs dans l'Historique. Essai : Lyon (« Olympique Lyonnais ») et Bournemouth (jamais en coupe
+  d'Europe) non reconnus, Bayern – Bruges 48 % dans sa tranche → tableau trop grossier pour le vainqueur. À FAIRE : + de 1,5 / − de 2,5 dans
+  coupes_europe.mjs ; un vrai modèle de vainqueur (écart exact, Elo de club ?) avant de remettre les résultats en officiel.
   20261022m (tennis « Tous les matchs du jour » avec 70 % coché mais un 53 % affiché) : titre « (sans filtre) » ; dans l'analyse, ligne grise
   « ℹ️ Sous tes filtres de Tendances (53 % < 70 %) » quand l'avis est sous g45tn_pmin / g45tn_conf.
   20261022o (« nouveau à faire dans filtre : cote BET45 », « et on aura des matchs ») : filtre tennis « Cote BET45 » (g45tn_cote = « min-max »,

@@ -75876,6 +75876,7 @@ var _G45_BK_DOM = [
     if (!J) return box(tete + '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">⏳ Chargement…</div>');
     var tous = (J.t || []).filter(function (x) { return x.r !== -1 && (!window._g45TrEnTest || !window._g45TrEnTest(x.t) || window._g45TrTestVoit()); });   /* 20261022c : période test */
     try { if (window._g45TnTvHtml && window._g45TrTestVoit && window._g45TrTestVoit()) tete += window._g45TnTvHtml(J); } catch (e) {}   /* 20261023i : 🧪 value tennis */
+    try { if (window._g45TrCeHtml && window._g45TrTestVoit && window._g45TrTestVoit()) tete += window._g45TrCeHtml(J); } catch (e) {}   /* 20261023m : 🧪 coupes d'Europe */
     /* 20261017h (« trier par championnat » → « un truc comme dans Bilan avec les filtres », visuel validé) : barre 🔎 Filtres repliable
        (Sport, Championnat, Type de pari, Cote, Proba stats, Avis, Période), combinables, gardés dans localStorage g45tr_off_flt ;
        les anciens boutons Toutes / D'accord / Désaccord = ligne « Avis » (O.f gardé pour g45TrOffF). Tout (tuiles, calendrier, courbe) suit. */
@@ -78134,6 +78135,24 @@ window._g45AgJouUs = async function (nowTs) {
         + '<span style="white-space:nowrap;">@' + String(x.c).replace('.', ',') + ' ' + (x.r === 1 ? '✅' : (x.r === 0 ? '❌' : '⏳')) + '</span></div>';
     });
     return h + '<div style="font-size:12px;color:#c9d3ee;margin-top:4px;">💎 cote du book 1,50 – 2,50, + 5 % ou plus selon BET45 · cote FR ≈ cote US × 0,94 · hors bilan officiel.</div></div>';
+  };
+  /* 20261023m : bloc « 🧪 Coupes d'Europe — en test » (J.ce du robot : tendances de C1 / C3 / C4 écartées de la sélection officielle car
+     cote × % réel des coupes d'Europe < 1,05, ou marché de résultat) — testeurs seulement, hors bilan. */
+  window._g45TrCeHtml = function (J) {
+    var L = (J && J.ce) || []; if (!L.length) return '';
+    var ju = L.filter(function (x) { return x.r === 0 || x.r === 1; }), ok = ju.filter(function (x) { return x.r === 1; }).length;
+    var g = ju.reduce(function (s2, x) { return s2 + (x.r === 1 ? (x.c > 1 ? x.c - 1 : 0) : -1); }, 0);
+    var e = function (t) { return String(t || '').replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+    var h = '<div style="margin-top:10px;background:#2a2f3d;border:1px dashed #8e9bbd;border-radius:10px;padding:10px 12px;">'
+      + '<div style="font-size:15px;font-weight:900;">🧪 Coupes d\'Europe — en test (vous quatre seulement)</div>'
+      + '<div style="font-size:14px;margin:4px 0 6px;">' + ju.length + ' jugées · ' + ok + ' gagnées · gain à 1 € : <b style="color:' + (g >= 0 ? '#1ed760' : '#ff6b6b') + ';">' + (g >= 0 ? '+' : '') + g.toFixed(2).replace('.', ',') + ' €</b> · ' + (L.length - ju.length) + ' en attente</div>';
+    L.slice().sort(function (a, b) { return b.t - a.t; }).slice(0, 12).forEach(function (x) {
+      var d = ''; try { d = new Date(x.t).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }); } catch (er) {}
+      h += '<div style="display:flex;justify-content:space-between;gap:8px;font-size:14px;padding:4px 0;border-top:1px solid rgba(255,255,255,.08);"><span>' + d + ' · ' + e(x.h) + ' – ' + e(x.a) + ' · <b>' + e(x.m) + '</b>'
+        + (x.pe ? ' <span style="color:#c9d3ee;font-size:12px;">(coupes d\'Europe : ' + Math.round(x.pe * 100) + ' %)</span>' : '') + '</span>'
+        + '<span style="white-space:nowrap;">' + (x.c > 1 ? '@' + String(x.c).replace('.', ',') + ' ' : '') + (x.r === 1 ? '✅' : (x.r === 0 ? '❌' : '⏳')) + '</span></div>';
+    });
+    return h + '<div style="font-size:12px;color:#c9d3ee;margin-top:4px;">Gardées en officiel seulement si cote × % réel des coupes d\'Europe ≥ 1,05 (ex. « − de 3,5 buts » ≈ 62 % → cote 1,70 mini).</div></div>';
   };
   window._G45_TN_PER = ['Terre · Europe', 'Terre · Amérique du Sud', 'Terre · autres régions', 'Gazon', 'Dur · janvier-février (Australie, Golfe)', 'Dur · printemps américain', 'Dur · été américain', 'Dur · automne (salle & Asie)', 'Dur · autres'];
   window._g45TnPer = function (sf, t, ct) {
