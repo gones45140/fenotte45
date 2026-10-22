@@ -2279,6 +2279,8 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   Facteurs clés, sous la barre Elo, si |écart| ≥ 0,5 : « 📈 X : meilleur que son classement ATP » ou « 📉 classement ATP flatteur ». Smoke tnRang (90).
   Test cotes 2025 : backtest_tennis.mjs écrit données/backtest_tennis_matchs.json (avis BET45 par match, sans cote) ; fichiers tennis-data 2025
   téléchargés À LA MAIN par Antoine (usage particulier), croisés dans la session (scratchpad), JAMAIS dans le dépôt.
+  20261023h (capture mcp_leaders_tactics_men_last52, « ok ») : elo.mjs lireTactique → données/tactique_tennis.json (RallyAgg, ReturnAgg, SnV,
+  filet ; ATP men / WTA women, 52 semaines, 6 jours) pour CONTRÔLER styles_tennis.json (liste des différences envoyée à Antoine), pas dans l'avis.
   20261022m (tennis « Tous les matchs du jour » avec 70 % coché mais un 53 % affiché) : titre « (sans filtre) » ; dans l'analyse, ligne grise
   « ℹ️ Sous tes filtres de Tendances (53 % < 70 %) » quand l'avis est sous g45tn_pmin / g45tn_conf.
   20261022o (« nouveau à faire dans filtre : cote BET45 », « et on aura des matchs ») : filtre tennis « Cote BET45 » (g45tn_cote = « min-max »,
