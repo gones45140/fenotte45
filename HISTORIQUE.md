@@ -2221,7 +2221,10 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   « 🎨 Style » (vert = polyvalent face à un autre style). Smoke 82 (tnStyle) + 3 essais vm.
   20261022l (« 88 % en faire une estimation de cote ») : « cote BET45 » = 100 / pc à côté du % (encadré 🔮 de l'analyse et résultats
   « Analyser les matchs »). Comparaison d'Antoine : Medvedev 88 % (bookmaker 1,05 ≈ 95 %), Fritz 77 % (1,16 ≈ 86 %) → l'avis TASSE les gros
-  favoris (moyenne de facteurs) ; backtest_tennis.mjs : CALIBRAGE (avis X % → réel %, tranches de 5 %) pour un « % recalibré » à venir.
+  favoris (moyenne de facteurs) ; backtest_tennis.mjs : CALIBRAGE (avis X % → réel %, tranches de 5 %).
+  RÉSULTAT (22/10, 1 577 matchs) : 50-55 → 52 % ; 55-60 → 67 ; 60-65 → 71 ; 65-70 → 78 ; 70-75 → 82 ; 75-80 → 91 (32) ; 80+ → 100 (6).
+  20261022s (« oui ») : window._g45TnReel(pc) = % réel estimé (table réduite d'un tiers pour le biais Elo, plafond 97) → « ≈ X % réel · cote
+  BET45 » (= 100 / réel) dans l'analyse et les résultats ; le filtre « Cote BET45 » utilise ce % corrigé (proba mini et confiance restent sur l'avis).
   20261022m (tennis « Tous les matchs du jour » avec 70 % coché mais un 53 % affiché) : titre « (sans filtre) » ; dans l'analyse, ligne grise
   « ℹ️ Sous tes filtres de Tendances (53 % < 70 %) » quand l'avis est sous g45tn_pmin / g45tn_conf.
   20261022o (« nouveau à faire dans filtre : cote BET45 », « et on aura des matchs ») : filtre tennis « Cote BET45 » (g45tn_cote = « min-max »,
@@ -2451,4 +2454,7 @@ mise à jour des sections 5 à 7 de ce fichier si quelque chose a changé.
   g45SgCursTab) : 🏈 Points · ⚖️ Écart · ⏱️ Quart-temps / Périodes (m.lp / m.lc : 1er QT plus / moins de X (chips, e.qtL), gagne le 1er QT,
   marque au 1er QT, mène à la mi-temps, mène ET gagne, remontée, gagne la 2e mi-temps) · 🔁 Contexte (après victoire / défaite, à domicile
   après un déplacement, après bye ≥ 10 j (NFL) / ≥ 4 j, back-to-back NBA / NHL). Nouveaux onglets = stats seulement. Smoke 83 (sgQt).
-  À FAIRE : 🎯 TD / field goals / 1er à marquer (sonde summary scoringPlays demandée à Antoine), option « + saison passée ».
+  20261022s : 🎯 TD / FG (NFL) — SONDÉ PAR ANTOINE (summary 401872657 : scoringPlays[] type.abbreviation TD / FG, period.number, team.abbreviation) ;
+  _g45TdFeuille (pur) → localStorage g45nfltd1_<event> = [TD dom, TD ext, FG dom, FG ext, 1er 'h'/'a', type du 1er], _g45TdFeuilles (4 à la fois,
+  une fois par session, puis redessin) ; onglet : TD du match / de l'équipe, FG du match / de l'équipe (lignes au choix, e.tdM / tdE / fgM / fgE),
+  marque en premier, 1er score TD / FG. Smoke 84 (sgTd). À FAIRE : option « + saison passée ».

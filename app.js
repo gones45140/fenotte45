@@ -43113,7 +43113,7 @@ window.g45F1Session=g45F1Session;
    et les données utilisateur n'étaient JAMAIS écrites — l'ajout apparaissait à l'écran puis
    disparaissait au rechargement. Ce n'était ni la synchro GitHub, ni Dropbox, ni le cache
    du navigateur. Tous ces caches sont reconstructibles : ils cèdent la place aux données. */
-var _G45_CACHE_PREFIXES=['g45cr1u_','g45cr3u_',/* 22/10 : critères US avec n° de match */'g45cr1e_','g45crf1_','g45crid1_',/* 21/10 : feuilles de match des critères */'g45cr3_','g45cr1_',/* 14/10 : critères sur 4 saisons */'g45agoa2_',/* 11/10 : cotes Agenda (The Odds API) */'g45reg1_',/* 08/10 : régularité buteurs NHL */'g45bb1_','g45bbst1_','g45bbld1_','g45bbf1_',/* 03/10 : Pro A be-basketball */'g45es1_',/* 01/10 : stats Euroleague */'g45kbo1_',/* 01/10 : KBO (mykbostats) */'g45t14lg1',/* 01/10 : logos Top 14 (LNR) */'g45pd2_',/* 01/10 : Pro D2 (LNR) */'g45t14sq1_',/* 01/10 : effectifs Top 14 (LNR) */'g45nrlm1_','g45nrldr1_',/* 01/10 : feuilles et calendriers NRL */'g45nrlsq1_',/* 01/10 : effectifs NRL */'g45nrlst2_',/* 01/10 : classements NRL */'g45proacid1_',/* 30/09 : numéros LNB par saison */'g45proast1_',/* 30/09 : stats Pro A */'g45proa1_',/* 30/09 : Pro A par journée */'g45el1_',/* 30/09 : Euroleague (compact) */'g45buts1_',/* 30/09 : buts en action (match fini) */'g45prad1_','g45vsj1_','g45vse1_',/* 30/09 : radars joueurs */'g45ia1_',/* 29/09 : avis IA gardés 6 h */'g45_mmeta2_','g45_mmeta1_','g45_tennis4_','g45_tennis3_',/* 16/09 : meta de match (domicile/lieu) et score tennis, reconstructibles */'g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dcf_','g45dc_',
+var _G45_CACHE_PREFIXES=['g45nfltd1_',/* 22/10 : TD / FG NFL par match */'g45cr1u_','g45cr3u_',/* 22/10 : critères US avec n° de match */'g45cr1e_','g45crf1_','g45crid1_',/* 21/10 : feuilles de match des critères */'g45cr3_','g45cr1_',/* 14/10 : critères sur 4 saisons */'g45agoa2_',/* 11/10 : cotes Agenda (The Odds API) */'g45reg1_',/* 08/10 : régularité buteurs NHL */'g45bb1_','g45bbst1_','g45bbld1_','g45bbf1_',/* 03/10 : Pro A be-basketball */'g45es1_',/* 01/10 : stats Euroleague */'g45kbo1_',/* 01/10 : KBO (mykbostats) */'g45t14lg1',/* 01/10 : logos Top 14 (LNR) */'g45pd2_',/* 01/10 : Pro D2 (LNR) */'g45t14sq1_',/* 01/10 : effectifs Top 14 (LNR) */'g45nrlm1_','g45nrldr1_',/* 01/10 : feuilles et calendriers NRL */'g45nrlsq1_',/* 01/10 : effectifs NRL */'g45nrlst2_',/* 01/10 : classements NRL */'g45proacid1_',/* 30/09 : numéros LNB par saison */'g45proast1_',/* 30/09 : stats Pro A */'g45proa1_',/* 30/09 : Pro A par journée */'g45el1_',/* 30/09 : Euroleague (compact) */'g45buts1_',/* 30/09 : buts en action (match fini) */'g45prad1_','g45vsj1_','g45vse1_',/* 30/09 : radars joueurs */'g45ia1_',/* 29/09 : avis IA gardés 6 h */'g45_mmeta2_','g45_mmeta1_','g45_tennis4_','g45_tennis3_',/* 16/09 : meta de match (domicile/lieu) et score tennis, reconstructibles */'g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dcf_','g45dc_',
   'g45trv3_','g45trv2_','g45trOdds2_',/* 13/10 : cotes The Odds API par marchés */'g45tr_','g45but_st_','g45butL_','g45butA_','g45but_mur_',
   '_g45clv','g45clv_snaps','g45_saisons_cache_v3_','g45_saisons_cache_v2_',
   /* Ajoutes le 20/08 : ces caches, tous reconstructibles, n'etaient PAS declares
@@ -50778,12 +50778,64 @@ function _g45SgCursHtml(liste, sp, nomEq) {
       + (sp === 'basketball' || sp === 'hockey' ? ligneS('Back-to-back (joué la veille)', C.b2b[0], C.b2b[1], '#f5c542') : ''))
       + '<div style="font-size:12px;color:#9fb0c7;">Sur les matchs affichés (filtre Global / Domicile / Extérieur compris).</div>';
   }
-  var ONG = [['pts', (sp === 'football' ? '🏈 ' : sp === 'hockey' ? '🏒 ' : sp === 'basketball' ? '🏀 ' : '⚾ ') + (mot === 'buts' ? 'Buts' : 'Points')], ['ecart', '⚖️ Écart'], ['qt', '⏱️ ' + (quatre ? 'Quart-temps' : 'Périodes')], ['ctx', '🔁 Contexte']];
+  /* 20261022s — 🎯 TD / FG (NFL) — SONDÉ PAR ANTOINE (summary 401872657) : scoringPlays[] { type.abbreviation 'TD' / 'FG', period.number,
+     team.abbreviation } → mémoire PAR MATCH (fini = pour toujours) localStorage g45nfltd1_<event> = [TD dom, TD ext, FG dom, FG ext, 1er score
+     'h' / 'a' / '', 1er score 'TD' / 'FG' / '…'] ; feuilles manquantes lues 4 à la fois, chaque match essayé UNE fois par session, puis un redessin. */
+  if (TAB === 'td' && sp === 'football') {
+    var TDL = function (m) { try { return m && m.id ? JSON.parse(localStorage.getItem('g45nfltd1_' + m.id) || 'null') : null; } catch (x) { return null; } };
+    var manq = LS.filter(function (m) { return m.id && !TDL(m); });
+    var TP = window._g45TdP || {}, att = manq.length && (TP.enCours || _g45TdFeuilles(manq));
+    var Z = LS.map(function (m) { var f = TDL(m); if (!f) return null; var d = !!m.dom;
+      return { te: d ? f[0] : f[1], ta: d ? f[1] : f[0], fe: d ? f[2] : f[3], fa: d ? f[3] : f[2], p1: f[4] ? ((f[4] === 'h') === d ? 'e' : 'a') : '', p1t: f[5] || '' }; }).filter(Boolean);
+    var nz = Z.length, cz = function (fn) { return Z.filter(fn).length; };
+    var choix = function (cle, L, def) { var i = e[cle] != null ? +e[cle] : def; i = Math.min(Math.max(i, 0), L.length - 1);
+      return { i: i, l: L[i], chips: L.map(function (l, k) { return '<span onclick="g45SgTdL(\'' + cle + '\',' + k + ')" style="cursor:pointer;padding:5px 11px;border-radius:12px;font-size:12.5px;font-weight:800;margin:0 5px 5px 0;display:inline-block;' + (k === i ? 'background:rgba(70,220,240,.18);color:#46dcf0;border:1px solid rgba(70,220,240,.55);' : 'color:#c8d3ea;border:1px solid rgba(255,255,255,.16);') + '">' + fr(l) + '</span>'; }).join('') }; };
+    var a1 = choix('tdM', [3.5, 4.5, 5.5, 6.5, 7.5], 1), a2 = choix('tdE', [0.5, 1.5, 2.5, 3.5, 4.5], 2), a3 = choix('fgM', [1.5, 2.5, 3.5, 4.5, 5.5], 2), a4 = choix('fgE', [0.5, 1.5, 2.5, 3.5], 1);
+    parts.td = (att ? '<div id="g45s-tdp" style="font-size:13px;font-weight:700;color:#f5c542;margin-bottom:8px;">⏳ Feuilles de match : ' + (TP.f || 0) + ' / ' + (TP.n || manq.length) + ' (la 1re fois seulement)</div>' : '')
+      + (!nz ? '' : carteS('Touchdowns · ' + nz + ' matchs',
+          '<div style="font-size:12.5px;color:#9fb0c7;margin:2px 0;">TD du match</div><div>' + a1.chips + '</div>'
+          + ligneS('Plus de ' + fr(a1.l) + ' TD', cz(function (z) { return z.te + z.ta > a1.l; }), nz, '#f5c542') + ligneS('Moins de ' + fr(a1.l) + ' TD', cz(function (z) { return z.te + z.ta < a1.l; }), nz, '#9fe7f5')
+          + '<div style="font-size:12.5px;color:#9fb0c7;margin:8px 0 2px;">TD de ' + nomC + '</div><div>' + a2.chips + '</div>'
+          + ligneS(nomC + ' plus de ' + fr(a2.l) + ' TD', cz(function (z) { return z.te > a2.l; }), nz, '#f5c542') + ligneS(nomC + ' moins de ' + fr(a2.l) + ' TD', cz(function (z) { return z.te < a2.l; }), nz, '#9fe7f5'))
+        + carteS('Field goals',
+          '<div style="font-size:12.5px;color:#9fb0c7;margin:2px 0;">FG du match</div><div>' + a3.chips + '</div>'
+          + ligneS('Plus de ' + fr(a3.l) + ' FG', cz(function (z) { return z.fe + z.fa > a3.l; }), nz, '#f5c542') + ligneS('Moins de ' + fr(a3.l) + ' FG', cz(function (z) { return z.fe + z.fa < a3.l; }), nz, '#9fe7f5')
+          + '<div style="font-size:12.5px;color:#9fb0c7;margin:8px 0 2px;">FG de ' + nomC + '</div><div>' + a4.chips + '</div>'
+          + ligneS(nomC + ' plus de ' + fr(a4.l) + ' FG', cz(function (z) { return z.fe > a4.l; }), nz, '#f5c542') + ligneS(nomC + ' moins de ' + fr(a4.l) + ' FG', cz(function (z) { return z.fe < a4.l; }), nz, '#9fe7f5'))
+        + carteS('Premier à marquer',
+          ligneS(nomC + ' marque en premier', cz(function (z) { return z.p1 === 'e'; }), cz(function (z) { return !!z.p1; }), '#1ed760')
+          + ligneS('1er score = touchdown', cz(function (z) { return z.p1t === 'TD'; }), cz(function (z) { return !!z.p1t; }))
+          + ligneS('1er score = field goal', cz(function (z) { return z.p1t === 'FG'; }), cz(function (z) { return !!z.p1t; }))))
+      + (!nz && !att ? '<div style="font-size:14px;color:#c9d3ee;padding:8px 0;">Aucune feuille de match lue.</div>' : '');
+  }
+  var ONG = [['pts', (sp === 'football' ? '🏈 ' : sp === 'hockey' ? '🏒 ' : sp === 'basketball' ? '🏀 ' : '⚾ ') + (mot === 'buts' ? 'Buts' : 'Points')], ['ecart', '⚖️ Écart'], ['qt', '⏱️ ' + (quatre ? 'Quart-temps' : 'Périodes')]]
+    .concat(sp === 'football' ? [['td', '🎯 TD / FG']] : []).concat([['ctx', '🔁 Contexte']]);
   var barre = '<div id="g45s-tabs" style="display:flex;gap:6px;flex-wrap:wrap;margin:0 0 9px;">' + ONG.map(function (o) { var on = o[0] === TAB;
     return '<span onclick="g45SgCursTab(\'' + o[0] + '\')" style="flex:1;min-width:96px;text-align:center;cursor:pointer;padding:9px 6px;border-radius:10px;font-size:13.5px;font-weight:800;' + (on ? 'background:#2563eb;border:1px solid #5aa9ff;color:#fff;' : 'background:rgba(11,16,29,.72);border:1px solid rgba(255,255,255,.16);color:#e8ecfa;') + '">' + o[1] + '</span>'; }).join('') + '</div>';
   return h.slice(0, pT) + barre + (parts[TAB] || parts.pts);
 }
 window.g45SgCursTab = function (t) { try { localStorage.setItem('g45_sgc_tab', t); } catch (x) {} _g45SgCursRedessiner('g45s-tabs'); };   /* 20261022r */
+window.g45SgTdL = function (cle, i) { var e = _g45SgCursEtat('football'); e[cle] = i; _g45SgCursSauver('football', e); _g45SgCursRedessiner('g45s-tabs'); };   /* 20261022s */
+var _g45TdEssai = {};
+window._g45TdFeuille = function (j) {   /* summary ESPN NFL → [TD dom, TD ext, FG dom, FG ext, 1er 'h'/'a', type du 1er] (pur, testé) */
+  var cs = ((((j || {}).header || {}).competitions || [])[0] || {}).competitors || [], ab = {};
+  cs.forEach(function (c) { if (c.team) ab[String(c.team.abbreviation || '')] = c.homeAway === 'home' ? 'h' : 'a'; });
+  var o = [0, 0, 0, 0, '', ''], sp = (j && j.scoringPlays) || []; if (!sp.length) return null;
+  sp.forEach(function (p, i) { var c = ab[String((p.team && p.team.abbreviation) || '')], t = (p.type && p.type.abbreviation) || ''; if (!c) return;
+    if (t === 'TD') o[c === 'h' ? 0 : 1]++; else if (t === 'FG') o[c === 'h' ? 2 : 3]++;
+    if (!o[4]) { o[4] = c; o[5] = t === 'TD' || t === 'FG' ? t : '…'; } });
+  return o;
+};
+function _g45TdFeuilles(ms) {
+  var L = ms.filter(function (m) { return !_g45TdEssai[m.id]; }); if (!L.length) return false;
+  L.forEach(function (m) { _g45TdEssai[m.id] = 1; });
+  var P = window._g45TdP = { f: 0, n: L.length, enCours: true }, k = 0;
+  var un = async function () { while (k < L.length) { var m = L[k++];
+    try { var r = await fetch('https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=' + m.id); if (r.ok) { var f = window._g45TdFeuille(await r.json()); if (f) try { localStorage.setItem('g45nfltd1_' + m.id, JSON.stringify(f)); } catch (x) {} } } catch (x) {}
+    P.f++; var el = document.getElementById('g45s-tdp'); if (el) el.textContent = '⏳ Feuilles de match : ' + P.f + ' / ' + P.n + ' (la 1re fois seulement)'; } };
+  Promise.all([un(), un(), un(), un()]).then(function () { P.enCours = false; try { _g45SgCursRedessiner('g45s-tabs'); } catch (x) {} });
+  return true;
+}
 window.g45SgQtL = function (sp, i) { var e = _g45SgCursEtat(sp); e.qtL = i; _g45SgCursSauver(sp, e); _g45SgCursRedessiner('g45s-tabs'); };
 
 /* Cles actives, pour les barres « Stats selectionnees ». */
@@ -77943,6 +77995,14 @@ window._g45AgJouUs = async function (nowTs) {
      surface du match ({ elo, rang, surf, forme, prec, h2h, fat, aut } de 0 à 10, poids = valeur / 20 ; aut = niveau / tournoi / salle / pays,
      chacun). Sans W : avis BET45 standard, INCHANGÉ (robot, sélection, Compétitions). fat = fatigue (matchs sur 7 jours, le plus frais
      favorisé) : n'existe que dans les réglages perso (standard 0). */
+  /* 20261022t (« La cote BET45 et le filtre de cote utiliseraient ce % corrigé. oui ») : test 2025 (1 577 matchs) — avis 57 % → favori gagnant
+     67 % réel, 62 → 71, 67 → 78, 72 → 82, 77 → 91 ; correction RÉDUITE d'un tiers (biais : Elo d'aujourd'hui) ; interpolation, plafond 97 %. */
+  var CAL = [[50, 50], [52.5, 52], [57.3, 63.8], [62.4, 67.9], [67.3, 74.5], [72.1, 78.8], [77.1, 86.1]];
+  window._g45TnReel = function (pc) {
+    pc = +pc; if (!(pc >= 50)) return pc;
+    for (var i = 1; i < CAL.length; i++) if (pc <= CAL[i][0]) { var a = CAL[i - 1], b = CAL[i]; return Math.round(a[1] + (pc - a[0]) * (b[1] - a[1]) / (b[0] - a[0])); }
+    return Math.min(97, Math.round(CAL[CAL.length - 1][1] + (pc - CAL[CAL.length - 1][0])));
+  };
   window._G45_TN_STD = { elo: 7, rang: 2, surf: 5, forme: 4, prec: 0, h2h: 2, fat: 0, aut: 1, age: 3, tour: 2, sty: 3 };
   /* 20261022b (test sur 2025, robot backtest-tennis, 1 577 matchs) : un joueur qui sort d'un titre / d'une finale a GAGNÉ 67 % de son match
      suivant (122 cas) → le « contrecoup » ne compte plus dans l'avis standard (prec 0 ; réglable dans ⚖️ Mes coefficients). */
@@ -78097,7 +78157,7 @@ window._g45AgJouUs = async function (nowTs) {
     if (V) {
       var nom = V.qui === 'a' ? o.a.n : o.b.n, pA = Math.round(V.p * 100), cc = V.conf === 'forte' ? '#1ed760' : (V.conf === 'moyenne' ? '#f0c828' : '#c9d3ee');
       h += '<div style="margin:10px 0 4px;background:#0b101d;border:2px solid ' + cc + ';border-radius:12px;padding:10px 12px;">'
-        + '<div style="font-size:16px;font-weight:900;">🔮 BET45 voit gagner : <span style="color:' + cc + ';">' + esc(nom) + '</span> · ' + V.pc + ' %' + (V.pc > 0 ? ' <span style="font-size:14px;color:#f5c542;">· cote BET45 ' + (100 / V.pc).toFixed(2).replace('.', ',') + '</span>' : '') + '</div>'   /* 20261022l : cote estimée = 1 / proba */
+        + '<div style="font-size:16px;font-weight:900;">🔮 BET45 voit gagner : <span style="color:' + cc + ';">' + esc(nom) + '</span> · ' + V.pc + ' %' + (V.pc > 0 ? ' <span style="font-size:14px;color:#f5c542;">· ≈ ' + window._g45TnReel(V.pc) + ' % réel · cote BET45 ' + (100 / window._g45TnReel(V.pc)).toFixed(2).replace('.', ',') + '</span>' : '') + '</div>'   /* 20261022l : cote estimée = 1 / proba */
         + '<div style="display:flex;height:12px;border-radius:6px;overflow:hidden;margin:8px 0 4px;"><span style="width:' + pA + '%;background:' + (V.qui === 'a' ? cc : '#5a6788') + ';"></span><span style="flex:1;background:' + (V.qui === 'b' ? cc : '#5a6788') + ';"></span></div>'
         + '<div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;"><span>' + esc(o.a.n) + ' ' + pA + ' %</span><span>' + (100 - pA) + ' % ' + esc(o.b.n) + '</span></div>'
         + '<div style="font-size:13px;color:#c9d3ee;margin-top:5px;">Confiance ' + (V.conf === 'serré' ? 'faible : match serré' : V.conf) + ' · ' + V.n + ' facteur' + (V.n > 1 ? 's' : '') + ' · indicatif, pas une cote.</div></div>'
@@ -78364,7 +78424,7 @@ window._g45AgJouUs = async function (nowTs) {
     var R = T.res; if (!R) return '';
     var pmin = +lsG('g45tn_pmin', '0.6'), conf = lsG('g45tn_conf', 'mf');
     var cf = String(lsG('g45tn_cote', '0-0')).split('-'), cMi = +cf[0] || 0, cMa = +cf[1] || 0;   /* 20261022o : fourchette de cote BET45 (1 / proba) */
-    var ok = R.r.filter(function (x) { var cb = x.p > 0 ? 1 / x.p : 99; return x.p >= pmin - 1e-9 && (conf === 'tout' || (conf === 'f' ? x.conf === 'forte' : x.conf !== 'serré')) && cb >= cMi - 1e-9 && (!cMa || cb < cMa); })
+    var ok = R.r.filter(function (x) { var cb = x.p > 0 ? 100 / window._g45TnReel(x.p * 100) : 99;   /* 20261022t : % corrigé */ return x.p >= pmin - 1e-9 && (conf === 'tout' || (conf === 'f' ? x.conf === 'forte' : x.conf !== 'serré')) && cb >= cMi - 1e-9 && (!cMa || cb < cMa); })
       .sort(function (a, b) { return b.p - a.p; });
     var h = '<div style="background:rgba(11,16,29,.94);border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:12px 14px;margin-bottom:12px;color:#fff;">'
       + '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;"><b style="font-size:16px;">Résultats · ' + ok.length + ' match' + (ok.length > 1 ? 's' : '') + ' retenu' + (ok.length > 1 ? 's' : '') + ' sur ' + R.r.length + ' analysé' + (R.r.length > 1 ? 's' : '') + '</b>'
@@ -78378,7 +78438,7 @@ window._g45AgJouUs = async function (nowTs) {
       h += '<div style="background:#1e2740;border-left:5px solid ' + cc + ';border-radius:10px;padding:10px 12px;margin-top:9px;">'
         + '<div style="display:flex;justify-content:space-between;gap:8px;font-size:15px;"><b>' + esc(m.a.n) + ' – ' + esc(m.b.n) + '</b><span style="flex:none;">🕒 ' + hr + '</span></div>'
         + '<div style="margin-top:4px;"><span style="font-size:12px;font-weight:800;background:#0b101d;border-radius:6px;padding:2px 8px;">' + (CAT[m.cat] || '') + ' · ' + esc(m.tn) + ' · ' + s.i + ' ' + s.l + '</span></div>'
-        + '<div style="font-size:16px;font-weight:900;margin-top:6px;">🔮 <span style="color:' + cc + ';">' + esc(G.n) + '</span> · ' + x.pc + ' %' + (x.pc > 0 ? ' · <span style="color:#f5c542;">cote BET45 ' + (100 / x.pc).toFixed(2).replace('.', ',') + '</span>' : '') + ' · confiance ' + (x.conf === 'serré' ? 'faible' : x.conf) + '</div>'
+        + '<div style="font-size:16px;font-weight:900;margin-top:6px;">🔮 <span style="color:' + cc + ';">' + esc(G.n) + '</span> · ' + x.pc + ' %' + (x.pc > 0 ? ' · <span style="color:#f5c542;">≈ ' + window._g45TnReel(x.pc) + ' % réel · cote BET45 ' + (100 / window._g45TnReel(x.pc)).toFixed(2).replace('.', ',') + '</span>' : '') + ' · confiance ' + (x.conf === 'serré' ? 'faible' : x.conf) + '</div>'
         + (x.cl ? '<div style="font-size:13px;color:#dbe4ff;margin-top:4px;line-height:1.4;">💡 ' + x.cl + '</div>' : '')
         + '<div style="margin-top:8px;">' + bouton(m.lg, m.a, m.b, m.tn, m.ek, 'g45tn-r-' + i, m.lieu).replace('📊 Analyse BET45 (forme, surface, face-à-face)', '📊 Analyse détaillée') + '</div></div>';
     });
