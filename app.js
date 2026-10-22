@@ -78239,7 +78239,7 @@ window._g45AgJouUs = async function (nowTs) {
         + (x.sg != null ? ' <span style="color:#c9d3ee;font-size:12px;">(gros club : ' + Math.round(x.sg * 100) + ' %)</span>' : '') + '</span>'
         + '<span style="white-space:nowrap;">' + (x.c > 1 ? '@' + String(x.c).replace('.', ',') + ' ' : '') + (x.r === 1 ? '✅' : (x.r === 0 ? '❌' : '⏳')) + '</span></div>';
     });
-    return h + '<div style="font-size:12px;color:#c9d3ee;margin-top:4px;">Buts gardés en officiel (20261023q) seulement si la stat du GROS club (coefficient UEFA) est ≥ 70 % et la cote ≥ 1,55 (− de 3,5) · 1,65 (+ de 2,5) · 1,80 (les 2 marquent).</div></div>';
+    return h + '<div style="font-size:12px;color:#c9d3ee;margin-top:4px;">Buts gardés en officiel (20261023q) seulement si la stat du GROS club (coefficient UEFA) est ≥ 70 % et la cote ≥ 1,55 (− de 3,5) · 1,60 (+ de 2,5) · 1,80 (les 2 marquent).</div></div>';
   };
   window._G45_TN_PER = ['Terre · Europe', 'Terre · Amérique du Sud', 'Terre · autres régions', 'Gazon', 'Dur · janvier-février (Australie, Golfe)', 'Dur · printemps américain', 'Dur · été américain', 'Dur · automne (salle & Asie)', 'Dur · autres'];
   window._g45TnPer = function (sf, t, ct) {

@@ -2330,6 +2330,8 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   « (gros club : NN %) » dans le bloc 🧪). Correction : ceClub lit d'abord trank{saison+1} (= saison en cours : 2027 pour octobre 2026), puis
   les années d'avant (Palace, Bournemouth, Hoffenheim étaient « inconnus »). Rejeu des 22 matchs notés : 1 officiel (Hoffenheim – Lyon u35,
   Lyon 100 %, 1,57) ; 5 cas limites vm OK ; smoke 92. Reste mal lu : Lillestrøm (clé « lillestr m »), Brighton, Rennes, Trabzonspor (absents).
+  20261023r (« y en a au moins ? » → oui, gros club ≥ 70 % dans ~1 match sur 2 ; c'est la cote qui bloque ; « 1,6, voir ce que ça donne ») :
+  cote mini + de 2,5 buts 1,65 → 1,60. Rejeu des 22 : 2 officiels (+ Bournemouth – Milan o25, Milan 75 %, 1,61). À revoir au bilan J.ce.
 - 🎫 20261023m (capture ticket Pinnacle McDavid « Total Assists », « rajoute ticket Pinnacle, il ne le lit pas ») : _g45TicketIa, consigne
   PINNACLE (carte bleu-gris, « ID: … » + date-heure du PARI, pastille verte « En cours », ligne « 2026-10-22 Propositions sur le joueur – NHL » =
   date du match + compétition, cote orange « @ 1.492 », « Mise / Risque / Gain EUR » où Gain = BÉNÉFICE NET) ; pinnacle ajouté à la liste des
