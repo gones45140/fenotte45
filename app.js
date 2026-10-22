@@ -77348,6 +77348,8 @@ window._g45AgJouUs = async function (nowTs) {
     var R = (donnees() || {}).reglages || {};
     h += '<div style="font-size:13px;color:#c9d3ee;margin:4px 0 6px;">' + (S.hier ? '<b style="color:#f5c542;">Choisie hier à ' + hhmm(tN) + ' (en attendant celle de 8 h)</b>' : 'Choisie à ' + hhmm(tN)) + ' · la même pour tout le monde · cote ≥ ' + String(R.min || 1.5).replace('.', ',')
       + ' · proba ≥ ' + Math.round((R.pmin || 0.6) * 100) + ' %' + (R.accord ? ' · stats et books d\'accord' : '') + '</div>';
+    h += '<style>#g45tr-sel .g45sel-c{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 80px;gap:10px;align-items:center}#g45tr-sel .g45sel-m{display:flex;align-items:center;justify-content:center;gap:12px}#g45tr-sel .g45sel-l{text-align:right}'
+      + '@media(max-width:700px){#g45tr-sel .g45sel-c{grid-template-columns:minmax(0,1fr) 44px}#g45tr-sel .g45sel-m{grid-column:1 / -1;grid-row:1;justify-content:flex-start}#g45tr-sel .g45sel-l img{width:40px!important;height:40px!important}}</style>';   /* 20261022m */
     var parL = {}, ordre = [];
     L.slice().sort(function (a, b) { return a.t - b.t; }).forEach(function (x) { if (!parL[x.sl]) { parL[x.sl] = []; ordre.push(x.sl); } parL[x.sl].push(x); });
     ordre.forEach(function (sl) {
@@ -77363,10 +77365,19 @@ window._g45AgJouUs = async function (nowTs) {
           : (vj ? '<span style="color:#1ed760;font-weight:800;">✅ Gagné (provisoire)</span>' : '<span style="color:#ff6b6b;font-weight:800;">❌ Perdu (provisoire)</span>');
         var pP = x.p > 0 ? Math.round(x.p > 1 ? x.p : x.p * 100) : null, pF = x.f > 0 ? Math.round(x.f > 1 ? x.f : x.f * 100) : null;
         var ouv = !!S.ouv[String(x.id) + '|' + x.k];
-        h += '<div onclick="g45TrSelOuvrir(\'' + esc(String(x.id) + '|' + x.k) + '\')" style="cursor:pointer;background:#1e2740;border-left:4px solid ' + bord + ';border-radius:10px;padding:9px 10px;margin-bottom:' + (ouv ? 4 : 8) + 'px;">'
-          + '<div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;"><b style="font-size:15px;">' + esc(x.h) + ' – ' + esc(x.a) + '</b><span style="flex:none;font-size:14px;">' + etat + '</span></div>'
+        /* 20261022m (capture PC « grand vide noir au milieu » ; « le texte de droite au centre avec logo des clubs et à droite logo du championnat »,
+           maquette maquette-selection-logos « oui ») : texte à gauche · logos des 2 clubs + heure / score + détail au centre · logo du
+           championnat à droite. Logos : posés par le robot (x.hl / x.al, J.lg) sinon scoreboard ESPN du jour (decoDe, une lecture par compétition). */
+        var DD = decoDe(x) || {}, dd = DD[String(x.id)] || {}, LGO = (donnees() || {}).lg || {};
+        var lh = x.hl || dd.lh || '', la = x.al || dd.la || '', lgl = LGO[x.sl] || dd.lgl || DD._lgl || '';
+        var blason = function (u, nm) { return u ? '<img src="' + esc(u) + '" alt="" style="width:46px;height:46px;object-fit:contain;flex:none;" onerror="this.style.visibility=\'hidden\'">'
+          : '<span style="width:46px;height:46px;border-radius:50%;background:#33405e;display:inline-flex;align-items:center;justify-content:center;font-weight:900;font-size:13px;flex:none;">' + esc(String(nm || '?').replace(/[^A-Za-zÀ-ÿ]/g, '').slice(0, 3).toUpperCase()) + '</span>'; };
+        h += '<div class="g45sel-c" onclick="g45TrSelOuvrir(\'' + esc(String(x.id) + '|' + x.k) + '\')" style="cursor:pointer;background:#1e2740;border-left:4px solid ' + bord + ';border-radius:10px;padding:10px 12px;margin-bottom:' + (ouv ? 4 : 8) + 'px;">'
+          + '<div class="g45sel-g"><b style="font-size:15px;">' + esc(x.h) + ' – ' + esc(x.a) + '</b>'
           + '<div style="font-size:14px;margin-top:4px;color:#dbe4ff;">' + esc(x.m) + (x.c > 1 ? ' · <b style="color:#111;background:#f0c828;border-radius:6px;padding:0 6px;">@' + x.c.toFixed(2).replace('.', ',') + '</b>' : '') + '</div>'
-          + '<div style="font-size:13px;margin-top:5px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;">' + (pP != null ? '<span>📊 ' + pP + ' %</span>' : '') + '<span>🏦 ' + (pF != null ? pF + ' %' : '—') + '</span>' + res + '<span style="margin-left:auto;font-weight:800;color:#fff;">' + (ouv ? '▴ refermer' : '▾ détail') + '</span></div></div>'
+          + '<div style="font-size:13px;margin-top:5px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;">' + (pP != null ? '<span>📊 ' + pP + ' %</span>' : '') + '<span>🏦 ' + (pF != null ? pF + ' %' : '—') + '</span>' + res + '</div></div>'
+          + '<div class="g45sel-m">' + blason(lh, x.h) + '<div style="text-align:center;font-size:14px;line-height:1.35;">' + etat + '<div style="font-weight:800;color:#fff;margin-top:3px;">' + (ouv ? '▴ refermer' : '▾ détail') + '</div></div>' + blason(la, x.a) + '</div>'
+          + '<div class="g45sel-l">' + (lgl ? '<img src="' + esc(lgl) + '" alt="" style="width:64px;height:64px;object-fit:contain;" onerror="this.style.display=\'none\'">' : '') + '</div></div>'
           + (ouv ? detail(x) : '');
       });
     });
@@ -77381,7 +77392,14 @@ window._g45AgJouUs = async function (nowTs) {
   S.ouv = {}; S.deco = {};
   var cleSb = function (x) { return x.sl + '|' + new Date(x.t - 6 * 3600000).toISOString().slice(0, 10).replace(/-/g, ''); };
   window.g45TrSelOuvrir = function (k) { S.ouv[k] = !S.ouv[k]; poser(true); };
-  function detail(x) {
+  /* 20261022m : lecture des logos séparée de la carte détaillée (les cartes de la liste en ont besoin aussi) */
+  function decoDe(x) {
+    var ks = cleSb(x), D = S.deco[ks];
+    if (D === undefined) { detail(x, true); D = S.deco[ks]; }
+    return D || null;
+  }
+  window._g45TrSelDeco = decoDe;
+  function detail(x, juste) {
     var ks = cleSb(x), D = S.deco[ks];
     if (D === undefined) {
       S.deco[ks] = null;
@@ -77401,6 +77419,7 @@ window._g45AgJouUs = async function (nowTs) {
         }).catch(function () { S.deco[ks] = {}; }).then(function () { poser(true); });
       D = null;
     }
+    if (juste) return '';
     if (D === null) return '<div style="font-size:14px;color:#c9d3ee;margin:0 0 8px 8px;">⏳ Chargement de la carte…</div>';
     var p = x.p > 1 ? x.p / 100 : x.p, f = x.f > 1 ? x.f / 100 : x.f;
     var xx = { slug: x.sl, hN: x.h, aN: x.a, when: hhmm(x.t), nEtud: x.nm || 0,
@@ -78025,6 +78044,12 @@ window._g45AgJouUs = async function (nowTs) {
         + '<div style="font-size:13px;color:#c9d3ee;margin-top:5px;">Confiance ' + (V.conf === 'serré' ? 'faible : match serré' : V.conf) + ' · ' + V.n + ' facteur' + (V.n > 1 ? 's' : '') + ' · indicatif, pas une cote.</div></div>'
         + '<div style="background:#0f2a1c;border-left:4px solid #1ed760;border-radius:10px;padding:10px 12px;margin:8px 0;font-size:14px;line-height:1.5;">💡 <b>En clair</b><br>' + window._g45TnClair(o, V) + '</div>';
     }
+    /* 20261022m (capture : « 70 % » coché mais un match à 53 % affiché dans « Tous les matchs du jour ») : rappel quand l'avis est sous les
+       filtres de Tendances (proba mini g45tn_pmin, confiance g45tn_conf) — les filtres ne servent qu'à « ▶ Analyser les matchs ». */
+    if (V) { try { var fPm = +(localStorage.getItem('g45tn_pmin') || '0.6'), fCf = localStorage.getItem('g45tn_conf') || 'mf';
+      var sous = V.pc < Math.round(fPm * 100) || (fCf === 'f' && V.conf !== 'forte') || (fCf === 'mf' && V.conf === 'serré');
+      if (sous) h += '<div style="font-size:13px;color:#c9d3ee;background:rgba(255,255,255,.06);border-radius:8px;padding:6px 10px;margin:4px 0;">ℹ️ Sous tes filtres de Tendances (' + V.pc + ' % < ' + Math.round(fPm * 100) + ' %' + (fCf === 'f' ? ', confiance forte seulement' : '') + ') : ce match ne sortirait pas dans « ▶ Analyser les matchs ».</div>';
+    } catch (e) {} }
     if (V) h += coefsHtml(bid, o, CO, sfk, V !== Vs ? Vs : null);
     h += '<div style="display:flex;gap:6px;overflow-x:auto;margin:10px 0 4px;padding-bottom:4px;">' + tb('cle', '⭐ Facteurs clés') + tb('for', '📈 Forme') + tb('h2h', '🤝 Face-à-face') + tb('bil', '📊 Bilan') + tb('tou', '🌍 Tournée') + tb('ann', '📐 Stats annexes') + '</div>';
     if (o.err) h += '<div style="font-size:14px;color:#ff9b9b;margin-top:8px;">Données ESPN indisponibles pour le moment.</div>';
@@ -78370,7 +78395,7 @@ window._g45AgJouUs = async function (nowTs) {
       + '<div style="font-size:13px;color:#c9d3ee;">Stats ESPN seulement (pas de cote) · ' + (gonesSansLimite() ? 'tous les matchs' : '8 matchs au plus, les plus importants d\'abord') + ' · premier passage 1 à 3 min, ensuite rapide.</div></div>'
       + '<div id="g45tn-res">' + resultatsHtml() + '</div>'
       + '<div style="background:rgba(11,16,29,.92);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px 14px;color:#fff;margin-bottom:12px;">'
-      + '<div style="font-size:16px;font-weight:800;">Tous les matchs ' + (n ? 'de demain' : 'du jour') + '</div>'
+      + '<div style="font-size:16px;font-weight:800;">Tous les matchs ' + (n ? 'de demain' : 'du jour') + ' <span style="font-size:13px;color:#c9d3ee;font-weight:700;">(sans filtre)</span></div>'   /* 20261022m */
       + '<div id="g45tn-jour"><div style="font-size:14px;color:#c9d3ee;">⏳ Chargement…</div></div></div>';
   };
   /* ═══ 🤖 TENNIS OFFICIEL (20261020l, « OK combiné » : « que BET45 donne des tendances tennis si bonne confiance, même filtre que les autres

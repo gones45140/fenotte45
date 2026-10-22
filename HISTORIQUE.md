@@ -2222,6 +2222,8 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   20261022l (« 88 % en faire une estimation de cote ») : « cote BET45 » = 100 / pc à côté du % (encadré 🔮 de l'analyse et résultats
   « Analyser les matchs »). Comparaison d'Antoine : Medvedev 88 % (bookmaker 1,05 ≈ 95 %), Fritz 77 % (1,16 ≈ 86 %) → l'avis TASSE les gros
   favoris (moyenne de facteurs) ; backtest_tennis.mjs : CALIBRAGE (avis X % → réel %, tranches de 5 %) pour un « % recalibré » à venir.
+  20261022m (tennis « Tous les matchs du jour » avec 70 % coché mais un 53 % affiché) : titre « (sans filtre) » ; dans l'analyse, ligne grise
+  « ℹ️ Sous tes filtres de Tendances (53 % < 70 %) » quand l'avis est sous g45tn_pmin / g45tn_conf.
   Données Sackmann = usage NON COMMERCIAL (à revoir le jour de l'abonnement). 9 essais (vm + lecteur), smoke 66.
   20261020s (« ok mais on peut pas améliorer compétition/tennis aussi ? » + « LES PHOTOS DES JOUEURS TOUJOURS DISPO OU SI PAS DE PHOTO drapeau du
   pays du joueur », maquette maquette-tennis-res validée « oui ») : bloc « COMPÉTITIONS → TENNIS PLUS LISIBLE » en fin d'app.js. Remplace
@@ -2428,3 +2430,8 @@ mise à jour des sections 5 à 7 de ce fichier si quelque chose a changé.
   de match des 4 saisons ») ; usVal(pid, m) : m[6] = n° de match (chargerHk / chargerRg, clés g45cr1_ → g45cr1u_, g45cr3_ → g45cr3u_),
   absent de idx.pres = non compté (rugby à XV : présence inconnue → compté) ; rôles _G45_JOU_TABLE, « Combien » c.jmin 1 / 2 / 3, 2-3
   joueurs chacun / au moins un. ⚠ NFL : un joueur sans aucune stat dans le match n'apparaît pas dans pres → match non compté. Smoke 81 (crUs).
+- 20261022m (Sélection du jour sur PC : « grand vide noir au milieu » ; « le texte de droite au centre avec logo des clubs et à droite logo du
+  championnat », maquette maquette-selection-logos « oui code tout ») : _g45TrSelHtml, carte en grille (.g45sel-c) — texte à gauche ·
+  blasons des 2 clubs + heure / score + « ▾ détail » au centre (.g45sel-m) · logo du championnat à droite (.g45sel-l) ; ≤ 700 px : blasons +
+  heure au-dessus, logo du championnat 40 px à droite. Logos : x.hl / x.al / J.lg du robot, sinon decoDe (lecture du scoreboard séparée de
+  detail(x, juste)) ; pas de logo → initiales. Smoke selHier complété ; captures PC / téléphone vérifiées.
