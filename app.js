@@ -77990,6 +77990,48 @@ window._g45AgJouUs = async function (nowTs) {
   /* 20261023e (capture d'un autre site « Bilan par surface & période », « je mets ça s'il y a des trucs intéressants » → « oui ») : la saison
      découpée en 8 tournées, calculée sur l'historique déjà lu (A.tous : sf, t, ct). Mois de la date du match ; dur de septembre après le 14 =
      automne. Ligne du match surlignée « ◀ ICI ». Pur (testé dans le smoke). Pas encore dans l'avis : à tester sur 2025 d'abord. */
+  /* 20261023f (lien d'Antoine tennisabstract.com/reports/atp_surface_speed.html, sondé en console) : VITESSE DES COURTS lue par le robot
+     (elo.mjs → données/vitesse_tennis.json, 52 dernières semaines, > 1 = plus rapide que la moyenne d'après les aces). Rapprochement :
+     ville de l'adresse ESPN, sinon nom du tournoi qui CONTIENT le nom Tennis Abstract (« Masters » retiré : « Miami Masters » ↔ « Miami Open »).
+     Classes : ⚡ rapide ≥ 1,15 · ⚖️ moyen · 🐢 lent ≤ 0,90. Pas encore dans l'avis (test 2025 à faire). */
+  var vitP = null;
+  window._g45TnVitCharger = function () {
+    if (!vitP) vitP = fetch('https://raw.githubusercontent.com/gones45140/gones45/main/donn%C3%A9es/vitesse_tennis.json', { cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }).then(function (j) { window._g45TnVitJ = j; return j; });
+    return vitP;
+  };
+  var vNorm = function (x) { return String(x || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z]/g, ''); };
+  window._g45TnVitDe = function (lg, nom, adr) {
+    var J = window._g45TnVitJ, T = J && J[lg === 'wta' ? 'wta' : 'atp']; if (!T) return null;
+    var vl = vNorm(String(adr || '').split(',')[0]); if (vl && T[vl]) return T[vl][1];
+    var n = vNorm(nom); if (!n) return null;
+    if (/frenchopen/.test(n)) n += 'rolandgarros';
+    var best = null;
+    Object.keys(T).forEach(function (k) { var k2 = k.replace(/masters$/, ''); if (k2.length >= 4 && n.indexOf(k2) >= 0 && (!best || k2.length > best[0])) best = [k2.length, T[k][1]]; });
+    return best ? best[1] : null;
+  };
+  window._g45TnVitCl = function (v) { return v == null ? null : (v >= 1.15 ? '⚡ Rapide' : (v <= 0.9 ? '🐢 Lent' : '⚖️ Moyen')); };
+  window._g45TnVitHtml = function (o, A, B, esc, colP) {
+    try {
+      if (!window._g45TnVitJ) { window._g45TnVitCharger().then(function (j) { if (j && o.tab === 'tou' && o.bid && typeof window.g45TnOnglet === 'function') window.g45TnOnglet(o.bid, 'tou'); }); }
+      var v = window._g45TnVitDe(o.lg, o.tn || '', o.ctx.adr), ici = window._g45TnVitCl(v);
+      if (!window._g45TnVitJ) return '';
+      var r = '<div style="font-size:15px;font-weight:800;margin:12px 0 4px;">⚡ Vitesse du court</div>'
+        + '<div style="font-size:14px;margin-bottom:6px;">' + (v == null ? '<span style="color:#c9d3ee;">Tournoi pas trouvé dans le tableau des vitesses (Tennis Abstract).</span>' : '<b style="color:#7dffb0;">' + ici + '</b> · indice ' + v.toFixed(2).replace('.', ',') + ' <span style="color:#c9d3ee;font-size:12px;">(1 = moyenne du circuit, d\'après les aces)</span>') + '</div>';
+      [[o.a.n, A], [o.b.n, B]].forEach(function (p) {
+        var Bi = {}, moy = p[1].tot.p;
+        (p[1].tous || []).forEach(function (m) { var c = window._g45TnVitCl(window._g45TnVitDe(o.lg, m.tr, '')); if (!c) return; var x = Bi[c] = Bi[c] || { n: 0, w: 0 }; x.n++; if (m.w) x.w++; });
+        r += '<div style="background:#0b101d;border-radius:10px;padding:8px 10px;margin-bottom:8px;"><div style="font-weight:800;font-size:14px;margin-bottom:4px;">' + esc(p[0]) + '</div>';
+        ['⚡ Rapide', '⚖️ Moyen', '🐢 Lent'].forEach(function (k) {
+          var x = Bi[k], on = k === ici, pc = x ? Math.round(x.w / x.n * 100) : null, d = pc == null || moy == null ? null : pc - moy;
+          r += '<div style="display:flex;justify-content:space-between;gap:8px;padding:5px 6px;font-size:14px;' + (on ? 'background:rgba(30,215,96,.12);border-left:3px solid #1ed760;border-radius:6px;' : '') + (x ? '' : 'color:#8e9bbd;') + '"><span>Courts ' + k + (on ? ' <b style="color:#1ed760;">◀ ICI</b>' : '') + '</span>'
+            + (x ? '<span><b style="color:' + colP(pc) + ';">' + pc + ' %</b>' + (d == null ? '' : ' <span style="font-size:12px;color:' + (d >= 0 ? '#7dffb0' : '#ff9b9b') + ';">' + (d >= 0 ? '+' : '') + d + ' pts</span>') + ' <span style="font-size:12px;color:#c9d3ee;">(' + x.n + ')</span></span>' : '<span>—</span>') + '</div>';
+        });
+        r += '</div>';
+      });
+      return r;
+    } catch (e) { return ''; }
+  };
   window._G45_TN_PER = ['Terre · Europe', 'Terre · Amérique du Sud', 'Terre · autres régions', 'Gazon', 'Dur · janvier-février (Australie, Golfe)', 'Dur · printemps américain', 'Dur · été américain', 'Dur · automne (salle & Asie)', 'Dur · autres'];
   window._g45TnPer = function (sf, t, ct) {
     var P = window._G45_TN_PER;
@@ -78439,6 +78481,7 @@ window._g45AgJouUs = async function (nowTs) {
       };
       var ctIci = ''; try { var pp = window._g45TnPays(o.ctx.adr || o.ctx.py); ctIci = pp ? pp.c : ''; } catch (e) {}
       h += (o.ctx.py ? '<div style="font-size:14px;color:#7dffb0;font-weight:800;margin-top:8px;">Ce match se joue en ' + drap(o.ctx.pf) + esc(o.ctx.py) + (ctIci ? ' · ' + esc(ctIci) : '') + '</div>' : '')
+        + window._g45TnVitHtml(o, A, B, esc, colP)   /* 20261023f */
         + window._g45TnPerHtml(o, A, B, ctIci, esc, colP)   /* 20261023e */
         + tabPays('🌍 Bilan par pays', 'parPays', o.ctx.py) + tabPays('🗺️ Bilan par continent', 'parCont', ctIci)
         + '<div style="font-size:15px;font-weight:800;margin:12px 0 4px;">🏆 Historique à ce tournoi</div>';
@@ -78512,7 +78555,7 @@ window._g45AgJouUs = async function (nowTs) {
     var ind = false, ek = m.ek || '', adr = m.lieu || '';
     try { if (ek) { var e = await evInfo(m.lg, 'events/' + ek); if (e) { ind = e.ind; adr = adr || e.adr; } } } catch (e) {}
     var py = window._g45TnPays(adr);
-    S.o[bid] = { lg: m.lg, a: m.a, b: m.b, tab: 'cle', ans: 2, ctx: { sf: window._g45TnSurf(m.tour, ind), ind: ind, cat: window._g45TnCat(m.tour, m.lg), ek: ek, py: py ? py.n : '', pf: py ? py.f : '', adr: adr, rd: m.rd || '' } };
+    S.o[bid] = { bid: bid, tn: m.tour || '', lg: m.lg, a: m.a, b: m.b, tab: 'cle', ans: 2, ctx: { sf: window._g45TnSurf(m.tour, ind), ind: ind, cat: window._g45TnCat(m.tour, m.lg), ek: ek, py: py ? py.n : '', pf: py ? py.f : '', adr: adr, rd: m.rd || '' } };
     dessiner(bid); charger(bid);
     /* 20261022w : cote du book pour « 🏦 BET45 face au book » ; l'heure du match n'est pas connue ici → aujourd'hui puis demain (dates UTC,
        même réponse du worker que le robot et les résultats). Posée une seule fois (o.bk), puis on redessine. */

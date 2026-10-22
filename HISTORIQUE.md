@@ -2265,6 +2265,13 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   (mars-avril), été américain (juillet → 14 sept.), automne (salle & Asie), autres ; _g45TnPerBilan, _g45TnPerHtml ; ligne du match ◀ ICI).
   Pas dans l'avis : backtest_tennis.mjs ex.qA / qB → X.per (≥ 5 matchs de chaque côté dans la tournée). Vitesse des courts : fichier
   vitesse_tournois_a_corriger.xlsx (64 ATP / 44 WTA, ⚡ / ⚖️ / 🐢 proposés de mémoire) envoyé à Antoine pour correction. Smoke tnPer (88).
+  20261023f (lien d'Antoine tennisabstract.com/reports/atp_surface_speed.html ; SONDÉ en console : tableau 6, 63 lignes « Date ; Tournament ;
+  Surface ; Ace% ; Surface Speed », ex. Montpellier 1.49, Almaty 1.05 ; select d'années 1991 → 2023) : le fichier Excel à corriger devient
+  INUTILE. elo.mjs lireVitesse → données/vitesse_tennis.json { atp / wta : { nomNorm: [nom, vitesse, surface, date] } } (6 jours, le plus récent
+  par tournoi ; tendances.yml l'enregistre). App : _g45TnVitCharger / _g45TnVitDe(lg, nom, adr) (ville, sinon nom contenant le nom TA sans
+  « masters », alias french open → roland garros) / _g45TnVitCl (⚡ ≥ 1,15, 🐢 ≤ 0,90) / _g45TnVitHtml : onglet Tournée, « ⚡ Vitesse du court »
+  + bilan de chaque joueur sur courts rapides / moyens / lents (A.tous, m.tr). S.o garde bid et tn. Pas dans l'avis (test 2025 à faire).
+  Smoke tnVit (89).
   20261022m (tennis « Tous les matchs du jour » avec 70 % coché mais un 53 % affiché) : titre « (sans filtre) » ; dans l'analyse, ligne grise
   « ℹ️ Sous tes filtres de Tendances (53 % < 70 %) » quand l'avis est sous g45tn_pmin / g45tn_conf.
   20261022o (« nouveau à faire dans filtre : cote BET45 », « et on aura des matchs ») : filtre tennis « Cote BET45 » (g45tn_cote = « min-max »,
