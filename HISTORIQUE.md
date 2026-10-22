@@ -2335,6 +2335,12 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   20261023o : 1er essai = IA en échec → secours Tesseract a pris « 1D:3142973174 2026-10-22 » pour l'équipe (Cockpit) ; au 2e essai l'IA a lu le
   ticket Pinnacle (« c'est passé, hors adversaire, normal le ticket ne le met pas »). Garde-fou : équipe / adversaire ressemblant à « ID: », un long
   numéro ou une date → vidés.
+  20261023p (« on a le joueur, on connaît son équipe, on l'a dans l'Agenda : qu'il propose le match », ticket McDavid sans équipe) :
+  window._g45TicketMatch(o, cockpit), appelé 400 ms après le remplissage. Équipe = o.equipe, sinon carte joueur du mur (state.u type 'joueur',
+  nom de famille) → _g45UClub. Ligue : NHL / NBA / NFL / MLB selon le sport, foot = compétition du ticket (C1, C3, C4, L1, L2, PL, Liga, Serie A,
+  Bundesliga, Eredivisie, Liga Portugal, MLS) + espnLeagueOf. Scoreboard ESPN du jour du ticket et du lendemain, tous les mots-racines du ticket
+  (_g45TkRacines) dans le nom ESPN, match non terminé ; UN seul trouvé → confirm « 🔎 Match trouvé … Remplir l'adversaire, l'heure et le lieu ? »
+  → simple : n-team (si vide), n-analysis, n-date, n-heure, n-comp, lieu ; cockpit : c-target, c-date, c-heure, c-comp, c-lieu. 4 essais vm, smoke 92.
   20261022m (tennis « Tous les matchs du jour » avec 70 % coché mais un 53 % affiché) : titre « (sans filtre) » ; dans l'analyse, ligne grise
   « ℹ️ Sous tes filtres de Tendances (53 % < 70 %) » quand l'avis est sous g45tn_pmin / g45tn_conf.
   20261022o (« nouveau à faire dans filtre : cote BET45 », « et on aura des matchs ») : filtre tennis « Cote BET45 » (g45tn_cote = « min-max »,

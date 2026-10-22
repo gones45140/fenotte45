@@ -71763,6 +71763,66 @@ function _g45TicketRemplir(o) {
 function _g45TicketVisible(id) { var e = document.getElementById(id); return !!(e && e.offsetParent !== null); }
 function _g45TicketCockpit() { var ss = document.getElementById('sub-strat'), b = document.getElementById('btn-cpit'); return !!((ss && ss.style.display !== 'none' && getComputedStyle(ss).display !== 'none') && (!b || b.classList.contains('on'))); }
 /* 20261018z : racines d'un nom d'équipe (normalisé) — « fc barcelone » et « barcelona » → « barce » ; '' si aucun mot utile. */
+/* 20261023t (Antoine : « ticket : on a le joueur, on connaît son équipe ; faudrait qu'il propose si c'est tel match, on l'a dans l'agenda ;
+   ça remplirait l'heure du match et l'adversaire » → « oui ») : après la lecture, BET45 cherche le match de l'équipe le jour du ticket
+   (et le lendemain : matchs US de nuit) dans le programme ESPN de sa ligue (NHL, NBA, NFL, MLB ; foot : ligue du club via espnLeagueOf
+   ou la compétition lue). UN seul match trouvé → fenêtre « 🔎 Match trouvé … Remplir ? » → adversaire, heure, date, compétition, lieu.
+   Aucun ou plusieurs → rien (comme avant). */
+window._g45TicketMatch = async function (o, cockpit) {
+  try {
+    var nz = function (t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim(); };
+    var eq = o && (o.equipe || '');
+    /* « là, on n'a que le joueur, mais il est dans l'agenda » (ticket Pinnacle McDavid) : pas d'équipe lue → carte JOUEUR du mur au même
+       nom (nom de famille) → son club (_g45UClub, celui de l'Agenda). */
+    if (!eq && o && o.joueur) {
+      try {
+        var fam = nz(o.joueur).split(' ').pop(), uJ = ((window.state && state.u) || []).filter(function (u) { return u && u.type === 'joueur' && nz(u.n).split(' ').indexOf(fam) >= 0; })[0];
+        if (uJ && typeof _g45UClub === 'function') { eq = _g45UClub(uJ) || ''; if (!o.sport && uJ.sport) o.sport = /🏒/.test(uJ.sport) ? 'hockey' : (/🏀/.test(uJ.sport) ? 'basket' : (/🏈/.test(uJ.sport) ? 'nfl' : o.sport)); }
+      } catch (e) {}
+    }
+    if (!eq) return;
+    var R = window._g45TkRacines, rq = R(nz(eq)); if (!rq) return;
+    var sp = nz(o.sport), co = nz(o.competition), L = [];
+    if (/hockey|nhl/.test(sp + ' ' + co)) L.push(['hockey', 'nhl']);
+    if (/basket|nba/.test(sp + ' ' + co)) L.push(['basketball', 'nba']);
+    if (/^nfl$|americain|nfl/.test(sp + ' ' + co)) L.push(['football', 'nfl']);
+    if (/baseball|mlb/.test(sp + ' ' + co)) L.push(['baseball', 'mlb']);
+    if (!L.length || /foot|soccer/.test(sp)) {
+      var CM = [[/champions/, 'uefa.champions'], [/conference/, 'uefa.europa.conf'], [/europa/, 'uefa.europa'], [/ligue 1|ligue1/, 'fra.1'], [/ligue 2/, 'fra.2'], [/premier league/, 'eng.1'],
+        [/liga|laliga/, 'esp.1'], [/serie a/, 'ita.1'], [/bundesliga/, 'ger.1'], [/eredivisie/, 'ned.1'], [/liga portugal|primeira/, 'por.1'], [/mls/, 'usa.1']];
+      CM.forEach(function (c) { if (c[0].test(co)) L.push(['soccer', c[1]]); });
+      try { var lg0 = typeof espnLeagueOf === 'function' ? espnLeagueOf(eq) : null; if (lg0 && !L.some(function (x) { return x[1] === lg0; })) L.push(['soccer', lg0]); } catch (e) {}
+    }
+    if (!L.length) return;
+    var d0 = /^\d{4}-\d{2}-\d{2}$/.test(String(o.date || '')) ? new Date(o.date + 'T12:00:00') : new Date();
+    var jours = [0, 1].map(function (k) { var d = new Date(d0.getTime() + k * 864e5); return d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0'); });
+    var trouves = [], vu = {};
+    for (var i = 0; i < L.length; i++) for (var j = 0; j < jours.length; j++) {
+      var B = null; try { B = await (await fetch('https://site.api.espn.com/apis/site/v2/sports/' + L[i][0] + '/' + L[i][1] + '/scoreboard?dates=' + jours[j])).json(); } catch (e) {}
+      ((B && B.events) || []).forEach(function (ev) {
+        var c = (ev.competitions || [])[0] || {}, cps = c.competitors || [];
+        var moi = cps.filter(function (q) { var t = q.team || {}; return [t.displayName, t.shortDisplayName, t.name, t.location].some(function (n) { var r = R(nz(n)); return r && (r === rq || rq.split(' ').every(function (w) { return r.split(' ').indexOf(w) >= 0; })); }); })[0];   /* tous les mots du ticket dans le nom ESPN (« Manchester United » ≠ City) */
+        if (!moi || vu[ev.id]) return; var adv = cps.filter(function (q) { return q !== moi; })[0]; if (!adv) return;
+        if (((c.status || {}).type || {}).state === 'post') return;
+        vu[ev.id] = 1; trouves.push({ adv: (adv.team || {}).displayName || '', dom: moi.homeAway === 'home', t: new Date(ev.date), comp: ((B.leagues || [])[0] || {}).name || o.competition || '', moi: (moi.team || {}).displayName || eq });
+      });
+    }
+    if (trouves.length !== 1) return;
+    var m = trouves[0], hh = String(m.t.getHours()).padStart(2, '0') + ':' + String(m.t.getMinutes()).padStart(2, '0');
+    var dd = m.t.getFullYear() + '-' + String(m.t.getMonth() + 1).padStart(2, '0') + '-' + String(m.t.getDate()).padStart(2, '0');
+    var txt = '🔎 Match trouvé\n' + (m.dom ? m.moi + ' – ' + m.adv : m.adv + ' – ' + m.moi) + '\n📅 ' + dd.split('-').reverse().slice(0, 2).join('/') + ' · 🕐 ' + hh + (m.comp ? ' · ' + m.comp : '') + '\n\nRemplir l\'adversaire, l\'heure et le lieu ?';
+    if (!window.confirm(txt)) return;
+    var met = function (id, v) { var e = document.getElementById(id); if (!e || v == null || v === '') return; e.value = v; try { e.dispatchEvent(new Event('input', { bubbles: true })); e.dispatchEvent(new Event('change', { bubbles: true })); } catch (x) {} };
+    if (cockpit) {
+      met('c-target', m.adv); met('c-date', dd); met('c-heure', hh); if (m.comp) met('c-comp', m.comp);
+      var le = document.getElementById('c-lieu'); if (le) { le.value = m.dom ? 'dom' : 'ext'; try { if (typeof g45LieuChange === 'function') g45LieuChange(); } catch (x) {} }
+    } else {
+      var nt = document.getElementById('n-team'); if (nt && !nt.value) met('n-team', m.moi);   /* ticket joueur sans équipe */
+      met('n-analysis', m.adv); met('n-date', dd); met('n-heure', hh); if (m.comp) met('n-comp', m.comp);
+      try { if (typeof setLieu === 'function') setLieu(m.dom ? 'dom' : 'ext'); } catch (x) {}
+    }
+  } catch (e) { console.warn('ticket match', e && e.message); }
+};
 window._g45TkRacines = function (t) {
   var GEN = /^(club|futbol|football|calcio|sporting?|athletic|associazione|deportivo|olympique|union|stade|real|city|team|town|calcio)$/;
   /* 20261019a (capture « AS Rome » lu, « AS Roma » au mur) : villes françaises → nom du club ; mots de 4 lettres gardés (roma, lens…). */
@@ -72059,6 +72119,7 @@ async function _g45TicketTesseract(dataUrl) {
       /* 20261023s (capture : le secours Tesseract a pris « 1D:3142973174 2026-10-22 » — la ligne ID d'un ticket Pinnacle — pour l'équipe) */
       ['equipe', 'adversaire'].forEach(function (k) { if (o && /^\s*[1Il]D\s*:|^\s*\d{6,}|\d{4}-\d{2}-\d{2}/.test(String(o[k] || ''))) o[k] = null; });
       var _ck = _g45TicketCockpit(); var ids = _ck ? _g45TicketRemplirCockpit(o) : _g45TicketRemplir(o);
+      try { setTimeout(function () { window._g45TicketMatch(o, _ck); }, 400); } catch (e) {}   /* 20261023t : match retrouvé → adversaire, heure */
       try { _g45TicketCouleurs(_ck, ids); } catch (e) { console.warn('ticket couleurs', e && e.message); }
       av.textContent = ids.length ? ('✅ Ticket lu (' + via + ') : ' + ids.length + ' champs remplis — vérifie avant d\'enregistrer') : '⚠️ Rien trouvé sur le ticket';
       /* 20261023r (« il n'a pas su lire la mise et le site » sur un ticket Pinnacle, sur téléphone sans console) : on écrit CE QUE L'IA A LU
