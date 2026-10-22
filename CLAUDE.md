@@ -136,6 +136,7 @@ PIÈGES À NE JAMAIS OUBLIER :
 - RGPD : SQL supprimer-compte.sql à installer par Antoine dans les 2 projets Supabase.
 - 🎾 Cotes tennis : TheRundown (gratuit, worker /rundown, secret RUNDOWN_KEY) branché dans le robot (20261020m). À faire : cote dans l'analyse (maquette), autres sports via TheRundown selon la consommation.
 - 🏀 15/11 : AVANT de remettre les points NBA dans la sélection officielle (NBA_PAUSE, tendances.mjs), contrôler le % de réussite des points NBA (ligne ESPN et +3 %) — demande d'Antoine.
+- TheRundown (gratuit) : PAS de rugby ; sports dispo 1 NCAAF, 2 NFL, 3 MLB, 4 NBA, 5 NCAAB, 6 NHL, 7 UFC, 8 WNBA, 9 CFL, 10 MLS, 11 EPL, 16 C1, 33 C3, 34 Liga MX, 38 ATP, 39 WTA, 40 golf, 41 F1 → 2e source de cotes possible (direct NHL / NFL / MLB, foot, F1). Tendances rugby = stats sans cote (à faire si Antoine veut).
 - Surebet : mises « Mise 1 / Mise 2 » en blanc. Cédric : toucher 🤍 sur Portugal. Worker : budget `_lourd` 4 → 2 proposé.
 
 ## 8. Façon de travailler en session cloud
