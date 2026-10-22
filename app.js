@@ -78019,7 +78019,7 @@ window._g45AgJouUs = async function (nowTs) {
     if (V) {
       var nom = V.qui === 'a' ? o.a.n : o.b.n, pA = Math.round(V.p * 100), cc = V.conf === 'forte' ? '#1ed760' : (V.conf === 'moyenne' ? '#f0c828' : '#c9d3ee');
       h += '<div style="margin:10px 0 4px;background:#0b101d;border:2px solid ' + cc + ';border-radius:12px;padding:10px 12px;">'
-        + '<div style="font-size:16px;font-weight:900;">🔮 BET45 voit gagner : <span style="color:' + cc + ';">' + esc(nom) + '</span> · ' + V.pc + ' %</div>'
+        + '<div style="font-size:16px;font-weight:900;">🔮 BET45 voit gagner : <span style="color:' + cc + ';">' + esc(nom) + '</span> · ' + V.pc + ' %' + (V.pc > 0 ? ' <span style="font-size:14px;color:#f5c542;">· cote BET45 ' + (100 / V.pc).toFixed(2).replace('.', ',') + '</span>' : '') + '</div>'   /* 20261022l : cote estimée = 1 / proba */
         + '<div style="display:flex;height:12px;border-radius:6px;overflow:hidden;margin:8px 0 4px;"><span style="width:' + pA + '%;background:' + (V.qui === 'a' ? cc : '#5a6788') + ';"></span><span style="flex:1;background:' + (V.qui === 'b' ? cc : '#5a6788') + ';"></span></div>'
         + '<div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;"><span>' + esc(o.a.n) + ' ' + pA + ' %</span><span>' + (100 - pA) + ' % ' + esc(o.b.n) + '</span></div>'
         + '<div style="font-size:13px;color:#c9d3ee;margin-top:5px;">Confiance ' + (V.conf === 'serré' ? 'faible : match serré' : V.conf) + ' · ' + V.n + ' facteur' + (V.n > 1 ? 's' : '') + ' · indicatif, pas une cote.</div></div>'
@@ -78291,7 +78291,7 @@ window._g45AgJouUs = async function (nowTs) {
       h += '<div style="background:#1e2740;border-left:5px solid ' + cc + ';border-radius:10px;padding:10px 12px;margin-top:9px;">'
         + '<div style="display:flex;justify-content:space-between;gap:8px;font-size:15px;"><b>' + esc(m.a.n) + ' – ' + esc(m.b.n) + '</b><span style="flex:none;">🕒 ' + hr + '</span></div>'
         + '<div style="margin-top:4px;"><span style="font-size:12px;font-weight:800;background:#0b101d;border-radius:6px;padding:2px 8px;">' + (CAT[m.cat] || '') + ' · ' + esc(m.tn) + ' · ' + s.i + ' ' + s.l + '</span></div>'
-        + '<div style="font-size:16px;font-weight:900;margin-top:6px;">🔮 <span style="color:' + cc + ';">' + esc(G.n) + '</span> · ' + x.pc + ' % · confiance ' + (x.conf === 'serré' ? 'faible' : x.conf) + '</div>'
+        + '<div style="font-size:16px;font-weight:900;margin-top:6px;">🔮 <span style="color:' + cc + ';">' + esc(G.n) + '</span> · ' + x.pc + ' %' + (x.pc > 0 ? ' · <span style="color:#f5c542;">cote BET45 ' + (100 / x.pc).toFixed(2).replace('.', ',') + '</span>' : '') + ' · confiance ' + (x.conf === 'serré' ? 'faible' : x.conf) + '</div>'
         + (x.cl ? '<div style="font-size:13px;color:#dbe4ff;margin-top:4px;line-height:1.4;">💡 ' + x.cl + '</div>' : '')
         + '<div style="margin-top:8px;">' + bouton(m.lg, m.a, m.b, m.tn, m.ek, 'g45tn-r-' + i, m.lieu).replace('📊 Analyse BET45 (forme, surface, face-à-face)', '📊 Analyse détaillée') + '</div></div>';
     });

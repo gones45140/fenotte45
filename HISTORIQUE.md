@@ -2219,6 +2219,9 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   20261022k (« oui ») : _g45TnStyleCharger / _g45TnStyleDe (raw données/styles_tennis.json, une fois par session), poserElo pose aussi
   CA.style / CB.style (3 appelants) ; _g45TnAvis : bonus Polyvalent 0,15 (sty 3 dans _G45_TN_STD, curseur ⚖️) ; Facteurs clés : ligne
   « 🎨 Style » (vert = polyvalent face à un autre style). Smoke 82 (tnStyle) + 3 essais vm.
+  20261022l (« 88 % en faire une estimation de cote ») : « cote BET45 » = 100 / pc à côté du % (encadré 🔮 de l'analyse et résultats
+  « Analyser les matchs »). Comparaison d'Antoine : Medvedev 88 % (bookmaker 1,05 ≈ 95 %), Fritz 77 % (1,16 ≈ 86 %) → l'avis TASSE les gros
+  favoris (moyenne de facteurs) ; backtest_tennis.mjs : CALIBRAGE (avis X % → réel %, tranches de 5 %) pour un « % recalibré » à venir.
   Données Sackmann = usage NON COMMERCIAL (à revoir le jour de l'abonnement). 9 essais (vm + lecteur), smoke 66.
   20261020s (« ok mais on peut pas améliorer compétition/tennis aussi ? » + « LES PHOTOS DES JOUEURS TOUJOURS DISPO OU SI PAS DE PHOTO drapeau du
   pays du joueur », maquette maquette-tennis-res validée « oui ») : bloc « COMPÉTITIONS → TENNIS PLUS LISIBLE » en fin d'app.js. Remplace
