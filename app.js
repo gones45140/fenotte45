@@ -71913,7 +71913,8 @@ async function _g45TicketIa(dataUrl) {
     + 'pastille VERTE « En cours » en haut à droite, titre en gras avec une icône du sport (« Connor McDavid Total Assists » = pari JOUEUR sur McDavid), '
     + 'ligne grise « 2026-10-22 Propositions sur le joueur – NHL » (date du MATCH + compétition), sélection « Plus de +0.5 Passes décisives » et à droite '
     + 'la cote en ORANGE « @ 1.492 (Cotes décimales) », puis « Paris spéciaux », « Mise EUR 3.00 », « Risque EUR 3.00 », « Gain EUR 1.48 ». '
-    + 'ATTENTION Pinnacle : « Gain » = BÉNÉFICE NET (sans la mise) → gains = mise + Gain ; la cote est celle après « @ ». Montants en « EUR ». '
+    + 'ATTENTION Pinnacle : « Gain » = BÉNÉFICE NET (sans la mise) → gains = mise + Gain ; la cote est celle après « @ ». Montants en « EUR » : '
+    + 'mise = le nombre après « Mise » (ex. « Mise EUR 3.00 » → 3) ; bookmaker = "Pinnacle" dès que tu vois « ID: » + « Cotes décimales » + « Risque ». '
     + 'Pour un pari joueur Pinnacle, l\'adversaire n\'est souvent pas écrit : adversaire = null, equipe = le club du joueur si tu le connais. '
     + 'Si le nom ou ces signes ne sont pas visibles, '
     + 'bookmaker = null et bookmaker_sur = false : ne devine pas.\n'
@@ -71950,6 +71951,9 @@ async function _g45TicketIa(dataUrl) {
     if (o.equipe && o.joueur && _nzT(o.equipe) === _nzT(o.joueur)) o.equipe = null;
     /* 20261007q : bookmaker gardé seulement si l'IA en est sûre (sinon le choix du formulaire reste) */
     if (o.bookmaker_sur === false && !/winamax|betclic|unibet|pmu|betify|bet365|betsson|pinnacle/i.test(String(o.bookmaker || ''))) o.bookmaker = null;
+    /* 20261023r : mise non lue mais gains et cote lus → mise = gains ÷ cote ; « Cotes décimales » / « Risque » = Pinnacle */
+    if (!(parseFloat(String(o.mise || '').replace(/[^\d.,]/g, '').replace(',', '.')) > 0) && o.risque) o.mise = o.risque;
+    if (!o.bookmaker && /pinnacle/i.test(JSON.stringify(o))) o.bookmaker = 'Pinnacle';
     /* 20261023p : Pinnacle affiche le BÉNÉFICE net (« Gain EUR 1.48 » pour 3 € à 1,492) → si l'IA l'a pris tel quel (gains < mise), on rajoute la mise */
     if (/pinnacle/i.test(String(o.bookmaker || '')) && parseFloat(o.gains) > 0 && parseFloat(o.mise) > 0 && parseFloat(o.gains) < parseFloat(o.mise)) o.gains = Math.round((parseFloat(o.gains) + parseFloat(o.mise)) * 100) / 100;
   } catch (x) {}
@@ -72005,6 +72009,7 @@ async function _g45TicketIa(dataUrl) {
   } catch (x) {}
   var c = parseFloat(o.cote), m = parseFloat(o.mise), g = parseFloat(o.gains);
   if (m > 0 && g > 0 && (!(c > 0) || Math.abs(g - c) < 0.01)) o.cote = (g / m).toFixed(2);
+  if (!(m > 0) && g > 0 && c > 1) o.mise = Math.round(g / c * 100) / 100;   /* 20261023r : mise non lue → gains ÷ cote */
   return o;
 }
 async function _g45TicketTesseract(dataUrl) {
@@ -72054,7 +72059,16 @@ async function _g45TicketTesseract(dataUrl) {
       var _ck = _g45TicketCockpit(); var ids = _ck ? _g45TicketRemplirCockpit(o) : _g45TicketRemplir(o);
       try { _g45TicketCouleurs(_ck, ids); } catch (e) { console.warn('ticket couleurs', e && e.message); }
       av.textContent = ids.length ? ('✅ Ticket lu (' + via + ') : ' + ids.length + ' champs remplis — vérifie avant d\'enregistrer') : '⚠️ Rien trouvé sur le ticket';
-      setTimeout(function () { av.remove(); }, 6000);
+      /* 20261023r (« il n'a pas su lire la mise et le site » sur un ticket Pinnacle, sur téléphone sans console) : on écrit CE QUE L'IA A LU
+         pour la mise, la cote et le site, et pourquoi un champ n'a pas été rempli (site absent de MES bookmakers, mise non lue). */
+      try {
+        var _pb = [], _bkOk = ids.indexOf('n-book') >= 0 || ids.indexOf('c-book') >= 0, _mOk = ids.indexOf('n-mise') >= 0 || ids.indexOf('c-mise') >= 0;
+        _pb.push('site : ' + (o.bookmaker ? o.bookmaker + (_bkOk ? '' : ' (absent de tes bookmakers → ajoute-le dans Bank)') : 'non lu'));
+        _pb.push('mise : ' + (o.mise != null && o.mise !== '' ? o.mise + (_mOk ? '' : ' (non reprise)') : 'non lue'));
+        _pb.push('cote : ' + (o.cote != null ? o.cote : 'non lue'));
+        av.textContent += '\n' + _pb.join(' · '); av.style.whiteSpace = 'pre-line';
+      } catch (e) {}
+      setTimeout(function () { av.remove(); }, 9000);
     };
     rd.readAsDataURL(blob);
   };

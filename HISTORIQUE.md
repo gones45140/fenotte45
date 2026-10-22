@@ -2328,6 +2328,10 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   PINNACLE (carte bleu-gris, « ID: … » + date-heure du PARI, pastille verte « En cours », ligne « 2026-10-22 Propositions sur le joueur – NHL » =
   date du match + compétition, cote orange « @ 1.492 », « Mise / Risque / Gain EUR » où Gain = BÉNÉFICE NET) ; pinnacle ajouté à la liste des
   bookmakers sûrs ; garde-fou : Pinnacle et gains < mise → gains + mise. Texte de la zone de collage : « … Betsson, Pinnacle… ».
+  20261023n (« il n'a pas su lire la mise et le site », sur téléphone) : le bandeau après lecture écrit ce que l'IA a lu (site / mise / cote) et
+  pourquoi un champ manque (« absent de tes bookmakers → ajoute-le dans Bank » : n-book ne propose que state.b) ; consigne Pinnacle : mise = nombre
+  après « Mise », bookmaker = Pinnacle si « ID: » + « Cotes décimales » + « Risque » ; secours : mise = risque, ou gains ÷ cote ; « pinnacle » dans
+  la réponse → bookmaker Pinnacle.
   20261022m (tennis « Tous les matchs du jour » avec 70 % coché mais un 53 % affiché) : titre « (sans filtre) » ; dans l'analyse, ligne grise
   « ℹ️ Sous tes filtres de Tendances (53 % < 70 %) » quand l'avis est sous g45tn_pmin / g45tn_conf.
   20261022o (« nouveau à faire dans filtre : cote BET45 », « et on aura des matchs ») : filtre tennis « Cote BET45 » (g45tn_cote = « min-max »,
