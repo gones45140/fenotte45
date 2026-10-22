@@ -2241,6 +2241,9 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   fois, pas affiché) et le juge avec les tendances (TJ = J.t + J.dz ; r = 1 si le choix BET45 a gagné). Bilan prévu vers le 22/11.
   Bruno (« le lieu ; un duel de deux compatriotes ») : backtest_tennis.mjs → res.lieuCompat : local / localFav / localOut / compat /
   compatLocal = réel CONTRE prévu par l'avis (le 52 % brut du local ne tenait pas compte du niveau). ex.cp (1 compatriotes, 2 chez eux).
+  RÉSULTAT (2025, 1 577 matchs ; en moyenne le favori de l'avis gagne + 6,2 points de plus que prévu) : local 251 matchs réel 52,2 / prévu 51,8 ;
+  local favori 147 → + 6,3 (= la moyenne) ; local outsider 104 → − 8,1 (≈ la moyenne) ⇒ jouer chez soi n'apporte RIEN. Compatriotes 70 →
+  + 2,5 (≈ 4 points de surprises en plus que d'habitude, trop peu de matchs pour conclure) ; compatriotes chez eux 15 (trop peu). Rien changé dans l'avis.
   20261022m (tennis « Tous les matchs du jour » avec 70 % coché mais un 53 % affiché) : titre « (sans filtre) » ; dans l'analyse, ligne grise
   « ℹ️ Sous tes filtres de Tendances (53 % < 70 %) » quand l'avis est sous g45tn_pmin / g45tn_conf.
   20261022o (« nouveau à faire dans filtre : cote BET45 », « et on aura des matchs ») : filtre tennis « Cote BET45 » (g45tn_cote = « min-max »,
