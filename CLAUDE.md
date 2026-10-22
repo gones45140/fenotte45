@@ -135,6 +135,7 @@ PIÈGES À NE JAMAIS OUBLIER :
 - Abonnement : plan prêt, NON codé (_G45_ABO_PLAN false) ; micro-entreprise reportée ; verrou serveur à faire le moment venu.
 - RGPD : SQL supprimer-compte.sql à installer par Antoine dans les 2 projets Supabase.
 - 🎾 Cotes tennis : TheRundown (gratuit, worker /rundown, secret RUNDOWN_KEY) branché dans le robot (20261020m). À faire : cote dans l'analyse (maquette), autres sports via TheRundown selon la consommation.
+- 🏀 15/11 : AVANT de remettre les points NBA dans la sélection officielle (NBA_PAUSE, tendances.mjs), contrôler le % de réussite des points NBA (ligne ESPN et +3 %) — demande d'Antoine.
 - Surebet : mises « Mise 1 / Mise 2 » en blanc. Cédric : toucher 🤍 sur Portugal. Worker : budget `_lourd` 4 → 2 proposé.
 
 ## 8. Façon de travailler en session cloud
