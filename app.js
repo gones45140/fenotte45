@@ -78570,7 +78570,7 @@ window._g45AgJouUs = async function (nowTs) {
     var V = window._g45TnAvis(CA, CB, m.a.rk, m.b.rk); if (!V) return null;
     var cl = ''; try { cl = window._g45TnClair({ a: m.a, b: m.b, A: CA, B: CB, ctx: ctx }, V); } catch (e) {}
     var bk = null; try { var rd = await window._g45TnCoteRd(m.lg, m.t, m.a.n, m.b.n); if (rd && rd.ca > 1 && rd.cb > 1) bk = { ca: rd.ca, cb: rd.cb }; } catch (e) {}   /* 20261022w */
-    return { m: m, sf: ctx.sf, qui: V.qui, p: Math.max(V.p, 1 - V.p), pc: V.pc, conf: V.conf, cl: cl, bk: bk };
+    return { m: m, sf: ctx.sf, qui: V.qui, p: Math.max(V.p, 1 - V.p), pc: V.pc, conf: V.conf, cl: cl, bk: bk, pf: ctx.pf || '', py: ctx.py || '' };   /* 20261023b : pays du tournoi */
   };
   /* 20261020s : partagés avec Compétitions → Tennis (bouton 🔮 par match, en-tête niveau / surface / pays) */
   window._g45TnAvisMatch = avisMatch; window._g45TnJoueur = joueur; window._g45TnLieuDe = lieuDe; window._g45TnCatL = CAT; window._g45TnSfL = SF;
@@ -78612,7 +78612,7 @@ window._g45AgJouUs = async function (nowTs) {
       var hr = ''; try { hr = new Date(m.t).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }); } catch (e) {}
       h += '<div style="background:#1e2740;border-left:5px solid ' + cc + ';border-radius:10px;padding:10px 12px;margin-top:9px;">'
         + '<div style="display:flex;justify-content:space-between;gap:8px;font-size:15px;"><b>' + esc(m.a.n) + ' – ' + esc(m.b.n) + '</b><span style="flex:none;">🕒 ' + hr + '</span></div>'
-        + '<div style="margin-top:4px;"><span style="font-size:12px;font-weight:800;background:#0b101d;border-radius:6px;padding:2px 8px;">' + (CAT[m.cat] || '') + ' · ' + esc(m.tn) + ' · ' + s.i + ' ' + s.l + '</span></div>'
+        + '<div style="margin-top:4px;"><span style="font-size:12px;font-weight:800;background:#0b101d;border-radius:6px;padding:2px 8px;">' + (CAT[m.cat] || '') + ' · ' + esc(m.tn) + ' · ' + s.i + ' ' + s.l + (x.pf ? ' · ' + (function (f) { try { return String.fromCodePoint.apply(null, f.split('').map(function (c) { return 127397 + c.charCodeAt(0); })); } catch (e) { return ''; } })(x.pf) + ' ' + esc(x.py) : '') + '</span></div>'   /* 20261023b (« rajoute le drapeau du pays du lieu du tournoi ») */
         /* 20261022v (« ça se touche un peu trop ») : blocs séparés par un espace (flex + gap), cote BET45 en pastille jaune texte noir ; passe à la ligne entre blocs */
         + '<div style="font-size:16px;font-weight:900;margin-top:6px;display:flex;flex-wrap:wrap;align-items:center;column-gap:16px;row-gap:6px;"><span style="white-space:nowrap;">🔮 <span style="color:' + cc + ';">' + esc(G.n) + '</span> · ' + x.pc + ' %</span>' + (x.pc > 0 ? '<span style="color:#f5c542;white-space:nowrap;">≈ ' + window._g45TnReel(x.pc) + ' % réel</span><span style="background:#f0c828;color:#111;border-radius:7px;padding:2px 9px;white-space:nowrap;">cote BET45 ' + (100 / window._g45TnReel(x.pc)).toFixed(2).replace('.', ',') + '</span>' : '') + '<span style="white-space:nowrap;">confiance ' + (x.conf === 'serré' ? 'faible' : x.conf) + '</span></div>'
         + (x.bk === undefined ? '' : window._g45TnBkLigne(bkDe(x), G.n, (x.qui === 'a' ? m.b : m.a).n))   /* 20261022w : 🏦 cote du book (ancien résultat gardé : rien) */

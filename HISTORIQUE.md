@@ -2252,6 +2252,8 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   point haut. Légende 10 px (page déjà agrandie). Smoke rcProf (86).
   20261023a (capture PC : profil géant, « pas tout compris pourquoi la barre jaune se déplace ») : SVG max-width 760 px centré ; texte « km ·
   altitude · pente » écrit à côté du curseur (#id-v) ; ligne d'aide « Barre jaune = curseur : glisse le doigt (ou la souris)… ».
+- 🎾 20261023b (« rajoute le drapeau du pays du lieu du tournoi ») : résultats Tendances tennis, étiquette tournoi + « · 🇫🇷 France »
+  (avisMatch renvoie pf / py de _g45TnPays ; anciens résultats en mémoire : rien jusqu'au prochain ▶ Analyser).
   20261022m (tennis « Tous les matchs du jour » avec 70 % coché mais un 53 % affiché) : titre « (sans filtre) » ; dans l'analyse, ligne grise
   « ℹ️ Sous tes filtres de Tendances (53 % < 70 %) » quand l'avis est sous g45tn_pmin / g45tn_conf.
   20261022o (« nouveau à faire dans filtre : cote BET45 », « et on aura des matchs ») : filtre tennis « Cote BET45 » (g45tn_cote = « min-max »,
