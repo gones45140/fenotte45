@@ -77613,14 +77613,25 @@ window._g45AgJouUs = async function (nowTs) {
   var liste = function () {
     var J = donnees(); if (!J) return null;
     var auj = jourLoc(Date.now());
-    var L = (J.t || []).filter(function (x) { return x.r !== -1 && x.n && jourLoc(x.n) === auj; });
+    /* 20261023s (capture d'Antoine à 0 h 40 : Falcons – 49ers dans la sélection du jeudi, « la NFL c'est dimanche… ») : le robot note un
+       match dès qu'il le voit (NFL : plusieurs jours avant) et la sélection prenait tout ce qui était NOTÉ ce jour-là. Maintenant la sélection
+       du jour D = les matchs JOUÉS de D 8 h au lendemain 8 h (nuit US comprise), notés ce jour-là ou avant ; un match noté plus tôt pour
+       un autre jour apparaît le jour où il se joue. */
+    var duJour = function (D) {
+      var p = D.split('-'), d0 = new Date(+p[0], +p[1] - 1, +p[2], 8).getTime(), d1 = new Date(+p[0], +p[1] - 1, +p[2] + 1, 8).getTime();
+      return (J.t || []).filter(function (x) {
+        if (x.r === -1 || !x.n) return false; var jn = jourLoc(x.n);
+        return (jn === D && !(x.t >= d1)) || (jn < D && x.t >= d0 && x.t < d1);
+      });
+    };
+    var L = duJour(auj);
     /* 20261022a (capture d'Antoine à 0 h 01 : Sélection vide « arrive vers 8 h » alors que les NBA de la nuit, choisies la veille, n'étaient
-       pas jouées) : après minuit et avant le passage du jour (< 15 h, comme le message d'attente), on garde la sélection de LA VEILLE. */
+       pas jouées) : après minuit et avant le passage du jour (< 15 h, comme le message d'attente), on garde la sélection de LA VEILLE.
+       20261023s : « rien de noté aujourd'hui » (et non plus « liste vide ») : des matchs notés avant peuvent déjà tomber aujourd'hui. */
     S.hier = false;
-    if (!L.length && new Date().getHours() < 15) {
-      var hier = jourLoc(Date.now() - 864e5);
-      L = (J.t || []).filter(function (x) { return x.r !== -1 && x.n && jourLoc(x.n) === hier; });
-      S.hier = L.length > 0;
+    if (!(J.t || []).some(function (x) { return x.r !== -1 && x.n && jourLoc(x.n) === auj; }) && new Date().getHours() < 15) {
+      var hier = duJour(jourLoc(Date.now() - 864e5));
+      if (hier.length) { L = hier; S.hier = true; }
     }
     return L;
   };

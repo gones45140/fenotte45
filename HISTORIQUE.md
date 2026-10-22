@@ -2178,6 +2178,11 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   20261022a (capture d'Antoine à 0 h 01 : Sélection du jour vide « arrive vers 8 h » alors que les NBA de la nuit, choisies la veille, n'étaient
   pas jouées) : _g45TrSelHtml / liste() — sans note du jour et avant 15 h → notes de LA VEILLE (S.hier), en-tête jaune « Choisie hier à HH:MM
   (en attendant celle de 8 h) ». Smoke 76 (selHier, vérifié aussi en TZ Asia/Tokyo pour la branche < 15 h).
+  20261023s (capture d'Antoine à 0 h 40 : Falcons – 49ers dans la sélection du jeudi, « la NFL c'est dimanche… ») : le robot note un match dès
+  qu'il le voit (NFL plusieurs jours avant) et la sélection prenait tout ce qui était NOTÉ ce jour-là. liste() / duJour(D) : sélection du jour D =
+  matchs JOUÉS de D 8 h à D+1 8 h, notés ce jour-là ou avant (notés D : tout ce qui se joue avant D+1 8 h) → un match noté tôt apparaît le jour
+  où il se joue. Repli « veille » : quand RIEN n'est noté aujourd'hui (et non plus « liste vide »). 5 essais vm ; smoke selHier recalé (match de
+  la nuit à 3 h au lieu de « dans 1 h »), 92 OK.
   20261021p : robot .github/workflows/backtest-tennis.yml + scripts/backtest_tennis.mjs (test de l'avis tennis sur 2025, lancé à la main,
   écrit données/backtest_tennis.json) — 1er passage lancé le 21/10 à 23 h 36.
   RÉSULTATS (passage du 21/10, 7 min, 180 joueurs, 1 577 matchs 2025, appris janv-juin / vérifié juil-déc) : standard 65 % de bons
