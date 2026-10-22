@@ -78051,7 +78051,8 @@ window._g45AgJouUs = async function (nowTs) {
     return x ? { s: x, sfOk: x === o[k], c: !!o.c } : null;
   };
   /* simulation : hA / hB = proba de tenir son service ; bo = sets gagnants (2 ou 3) */
-  window._g45TnSvSim = function (hA, hB, bo) {
+  window._g45TnSvSim = function (hA, hB, bo, off) {
+    off = off || 0;   /* 20261023k : correction des jeux (la simulation en compte un peu trop) */
     var tbA = Math.max(0.2, Math.min(0.8, 0.5 + (hA - hB) / 2));
     var set = function (aSert) {   /* distribution { 'wA|jeux|tb': proba } */
       var R = {}, st = {}; st['0|0|' + (aSert ? 1 : 0)] = 1;
@@ -78074,7 +78075,7 @@ window._g45AgJouUs = async function (nowTs) {
     var S1 = set(true), S2 = set(false), res = { tb: 0, jx: 0, o20: 0, o22: 0, setB: 0, setA: 0 };
     var rec = function (wa, wb, jx, tb, p, k) {
       if (p < 1e-7) return;
-      if (wa === bo || wb === bo) { res.jx += p * jx; if (tb) res.tb += p; if (jx > 20.5) res.o20 += p; if (jx > 22.5) res.o22 += p; if (wb > 0) res.setB += p; if (wa > 0) res.setA += p; return; }
+      if (wa === bo || wb === bo) { res.jx += p * (jx - off); if (tb) res.tb += p; if (jx - off > 20.5) res.o20 += p; if (jx - off > 22.5) res.o22 += p; if (wb > 0) res.setB += p; if (wa > 0) res.setA += p; return; }
       var S = k % 2 ? S2 : S1;
       Object.keys(S).forEach(function (kk) { var q = kk.split('|'); rec(wa + (q[0] === 'A' ? 1 : 0), wb + (q[0] === 'B' ? 1 : 0), jx + (+q[1]), tb || q[2] === '1', p * S[kk], k + 1); });
     };
@@ -78099,9 +78100,14 @@ window._g45AgJouUs = async function (nowTs) {
           + '<span style="' + (ga ? 'color:#1ed760;font-weight:900;' : '') + '">' + v(a, l[2]) + '</span><span style="text-align:center;font-size:13px;color:#dbe4ff;">' + l[1] + '</span><span style="text-align:right;' + (gb ? 'color:#1ed760;font-weight:900;' : '') + '">' + v(b, l[2]) + '</span></div>';
       });
       h += '<div style="display:grid;grid-template-columns:1fr 1.5fr 1fr;padding:6px 0;border-top:1px solid rgba(255,255,255,.08);font-size:14px;"><span>' + A.s.n + ' matchs' + (A.s.n < 10 ? ' ⚠️' : '') + (A.c ? ' (Chall.)' : '') + '</span><span style="text-align:center;font-size:13px;color:#dbe4ff;">Échantillon</span><span style="text-align:right;">' + B.s.n + ' matchs' + (B.s.n < 10 ? ' ⚠️' : '') + (B.c ? ' (Chall.)' : '') + '</span></div>';
+      /* 20261023k — CALAGE (robot calibrage_service.mjs, matchs des 52 dernières semaines : ATP 2 290, WTA 1 410 ; « Collignon – Lehecka annoncé 25,6 jeux,
+         réel 6-4 6-2 ») : tenues − d et écart × k (ATP d 0,06 k 1,2 ; WTA d 0,08 k 1,5) → tie-break ATP 38 % prévu / 39 % réel, WTA 25 / 25 ;
+         jeux encore ~ 0,9 (ATP) / 0,6 (WTA) de trop → retirés (off). Avant : 27,1 jeux prévus pour 25,4 réels, tie-break 47 % pour 39 %. */
       var moyBr = o.lg === 'wta' ? 0.32 : 0.21, cl = function (x) { return Math.max(0.4, Math.min(0.97, x)); };
-      var hA = cl(A.s.tg / 100 - (B.s.br / 100 - moyBr)), hB = cl(B.s.tg / 100 - (A.s.br / 100 - moyBr));
-      var bo = o.ctx.cat === 'gc' && o.lg !== 'wta' ? 3 : 2, R = window._g45TnSvSim(hA, hB, bo);
+      var cal = o.lg === 'wta' ? { d: 0.08, k: 1.5, off: 0.6 } : { d: 0.06, k: 1.2, off: 0.9 };
+      var hA0 = A.s.tg / 100 - (B.s.br / 100 - moyBr), hB0 = B.s.tg / 100 - (A.s.br / 100 - moyBr), mo = (hA0 + hB0) / 2;
+      var hA = cl(mo + (hA0 - mo) * cal.k - cal.d), hB = cl(mo + (hB0 - mo) * cal.k - cal.d);
+      var bo = o.ctx.cat === 'gc' && o.lg !== 'wta' ? 3 : 2, R = window._g45TnSvSim(hA, hB, bo, cal.off);
       var ch = function (t) { return '<span style="display:inline-block;background:#1e2740;border-radius:8px;padding:4px 10px;font-weight:800;margin:3px 6px 3px 0;font-size:14px;">' + t + '</span>'; };
       var pc = function (x) { return Math.round(x * 100) + ' %'; };
       var fav = (o.vqui || (hA >= hB ? 'a' : 'b')), outN = fav === 'a' ? o.b.n : o.a.n, setOut = fav === 'a' ? R.setB : R.setA;

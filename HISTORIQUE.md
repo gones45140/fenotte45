@@ -2302,6 +2302,13 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   Elo r[5..7] OK (Vacherot 26e Elo / 32e ATP). Bloc Service / retour vu par Antoine (Collignon – Lehecka) : « jeux attendus » ~ 2 de trop (calage proposé).
   20261023j (capture « Vacherot 27 ans · N°3 ») : curatedRank ESPN = TÊTE DE SÉRIE, pas le classement → poserElo pose A.rkTa = rang ATP / WTA de
   Tennis Abstract ; _g45TnAvis l'utilise pour le facteur « rang » ; profil « N°32 ATP » (sinon « tête de série 3 »).
+  20261023k (Lehecka bat Collignon 6-4 6-2 alors que l'estimation disait 25,6 jeux / 53 % de tie-break) : robot calibrage_service.mjs +
+  workflow calibrage-service.yml (à la main) → données/calibrage_service.json : ATP 2 290 matchs, avant 27,1 jeux prévus / 25,4 réels, tie-break
+  47 / 39 % ; meilleur d 0,06 k 1,2 → 26,3 jeux, tie-break 38 / 39 % ; WTA 1 410 matchs, avant 23,7 / 22,3, TB 30 / 25 ; meilleur d 0,08 k 1,5 → 22,9,
+  TB 25 / 25. Appliqué dans _g45TnSvHtml (+ off 0,9 ATP / 0,6 WTA retiré aux jeux dans _g45TnSvSim). Collignon – Lehecka : 23,8 jeux, TB 41 %.
+  Cotes 2025 (session) : gros tournois favori 69 % à 1,41 de médiane, −4,6 % ; outsiders −9,5 % (5 et + : −21 %).
+  Styles : RallyAgg (MCP) inutilisable (Sinner « patient ») ; aces → 7 joueurs à vérifier envoyés à Antoine (Michelsen, Samsonova, Boulter notés
+  gros serveurs avec peu d'aces ; Auger-Aliassime, Korda, Nakashima, Coleman Wong > 13 % d'aces non notés).
   20261022m (tennis « Tous les matchs du jour » avec 70 % coché mais un 53 % affiché) : titre « (sans filtre) » ; dans l'analyse, ligne grise
   « ℹ️ Sous tes filtres de Tendances (53 % < 70 %) » quand l'avis est sous g45tn_pmin / g45tn_conf.
   20261022o (« nouveau à faire dans filtre : cote BET45 », « et on aura des matchs ») : filtre tennis « Cote BET45 » (g45tn_cote = « min-max »,
