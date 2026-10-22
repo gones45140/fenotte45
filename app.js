@@ -72056,6 +72056,8 @@ async function _g45TicketTesseract(dataUrl) {
       catch (e) { console.warn('ticket IA', e && e.message); via = 'Tesseract'; try { o = await _g45TicketTesseract(url); } catch (e2) { console.warn('ticket Tesseract', e2 && e2.message); } }
       if (!o) { av.textContent = '❌ Ticket illisible'; setTimeout(function () { av.remove(); }, 4000); return; }
       console.log('ticket lu (' + via + ')', o);
+      /* 20261023s (capture : le secours Tesseract a pris « 1D:3142973174 2026-10-22 » — la ligne ID d'un ticket Pinnacle — pour l'équipe) */
+      ['equipe', 'adversaire'].forEach(function (k) { if (o && /^\s*[1Il]D\s*:|^\s*\d{6,}|\d{4}-\d{2}-\d{2}/.test(String(o[k] || ''))) o[k] = null; });
       var _ck = _g45TicketCockpit(); var ids = _ck ? _g45TicketRemplirCockpit(o) : _g45TicketRemplir(o);
       try { _g45TicketCouleurs(_ck, ids); } catch (e) { console.warn('ticket couleurs', e && e.message); }
       av.textContent = ids.length ? ('✅ Ticket lu (' + via + ') : ' + ids.length + ' champs remplis — vérifie avant d\'enregistrer') : '⚠️ Rien trouvé sur le ticket';

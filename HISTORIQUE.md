@@ -2332,6 +2332,9 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   pourquoi un champ manque (« absent de tes bookmakers → ajoute-le dans Bank » : n-book ne propose que state.b) ; consigne Pinnacle : mise = nombre
   après « Mise », bookmaker = Pinnacle si « ID: » + « Cotes décimales » + « Risque » ; secours : mise = risque, ou gains ÷ cote ; « pinnacle » dans
   la réponse → bookmaker Pinnacle.
+  20261023o : 1er essai = IA en échec → secours Tesseract a pris « 1D:3142973174 2026-10-22 » pour l'équipe (Cockpit) ; au 2e essai l'IA a lu le
+  ticket Pinnacle (« c'est passé, hors adversaire, normal le ticket ne le met pas »). Garde-fou : équipe / adversaire ressemblant à « ID: », un long
+  numéro ou une date → vidés.
   20261022m (tennis « Tous les matchs du jour » avec 70 % coché mais un 53 % affiché) : titre « (sans filtre) » ; dans l'analyse, ligne grise
   « ℹ️ Sous tes filtres de Tendances (53 % < 70 %) » quand l'avis est sous g45tn_pmin / g45tn_conf.
   20261022o (« nouveau à faire dans filtre : cote BET45 », « et on aura des matchs ») : filtre tennis « Cote BET45 » (g45tn_cote = « min-max »,
