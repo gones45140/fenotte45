@@ -2234,6 +2234,8 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   { ca, cb } ; ligne _g45TnBkLigne sous la ligne 🔮 (anciens résultats en mémoire sans bk : rien) ; filtre « 💎 Value seulement » (g45tn_val).
   Analyse détaillée : o.bk lu en tâche de fond (aujourd'hui puis demain, l'heure n'est pas connue), tableau « 🏦 BET45 face au book ».
   Smoke tnBk (85 contrôles).
+  20261022x (capture téléphone Gojo – Altmaier : colonne « Écart » coupée) : tableau « BET45 face au book » = nom de famille seul, titres courts
+  (BET45 / Book / Sans marge / Écart), % à la ligne, marges 3 px → tient en 300 px (vérifié Chromium 360 px).
   20261022m (tennis « Tous les matchs du jour » avec 70 % coché mais un 53 % affiché) : titre « (sans filtre) » ; dans l'analyse, ligne grise
   « ℹ️ Sous tes filtres de Tendances (53 % < 70 %) » quand l'avis est sous g45tn_pmin / g45tn_conf.
   20261022o (« nouveau à faire dans filtre : cote BET45 », « et on aura des matchs ») : filtre tennis « Cote BET45 » (g45tn_cote = « min-max »,
