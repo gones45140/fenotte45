@@ -78032,6 +78032,84 @@ window._g45AgJouUs = async function (nowTs) {
       return r;
     } catch (e) { return ''; }
   };
+  /* 20261023j — SERVICE / RETOUR (maquette maquette-service-tennis « oui » ; pour Bruno et JP : jeux, tie-breaks). Robot elo.mjs → données/
+     service_tennis.json (Tennis Abstract, 52 semaines, par joueur et surface : tg jeux de service gagnés, br jeux de retour gagnés, ac, df, sp,
+     tb tie-breaks / match, jx jeux / set ; c = Challengers). Surface du match si ≥ 5 matchs, sinon toutes surfaces. Estimation : % de jeux de
+     service tenus de A = tg(A) − (br(B) − moyenne du circuit), idem B ; set rejoué jeu par jeu (tie-break à 6-6 : 50 % ± écart de tenue),
+     match en 2 sets gagnants (3 en Grand Chelem ATP). Pas dans l'avis BET45. */
+  var svP = null;
+  window._g45TnSvCharger = function () {
+    if (!svP) svP = fetch('https://raw.githubusercontent.com/gones45140/gones45/main/donn%C3%A9es/service_tennis.json', { cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }).then(function (j) { window._g45TnSvJ = j; return j; });
+    return svP;
+  };
+  window._g45TnSvDe = function (lg, nom, sf) {
+    var J = window._g45TnSvJ, T = J && J[lg === 'wta' ? 'wta' : 'atp']; if (!T) return null;
+    var o = T[String(nom || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z]/g, '')]; if (!o) return null;
+    var k = sf === 'terre' ? 'Clay' : (sf === 'gazon' ? 'Grass' : 'Hard'), x = o[k] && o[k].n >= 5 ? o[k] : o.t;
+    return x ? { s: x, sfOk: x === o[k], c: !!o.c } : null;
+  };
+  /* simulation : hA / hB = proba de tenir son service ; bo = sets gagnants (2 ou 3) */
+  window._g45TnSvSim = function (hA, hB, bo) {
+    var tbA = Math.max(0.2, Math.min(0.8, 0.5 + (hA - hB) / 2));
+    var set = function (aSert) {   /* distribution { 'wA|jeux|tb': proba } */
+      var R = {}, st = {}; st['0|0|' + (aSert ? 1 : 0)] = 1;
+      for (var g = 0; g < 13; g++) {
+        var nx = {};
+        Object.keys(st).forEach(function (k) {
+          var p = st[k], q = k.split('|'), a = +q[0], b = +q[1], sA = q[2] === '1';
+          if (a === 6 && b === 6) { var t1 = 'A|13|1', t2 = 'B|13|1'; R[t1] = (R[t1] || 0) + p * tbA; R[t2] = (R[t2] || 0) + p * (1 - tbA); return; }
+          var pa = sA ? hA : 1 - hB;
+          [[a + 1, b, pa], [a, b + 1, 1 - pa]].forEach(function (z) {
+            var A2 = z[0], B2 = z[1], pz = p * z[2], fin = (A2 >= 6 || B2 >= 6) && Math.abs(A2 - B2) >= 2 || A2 === 7 || B2 === 7;
+            if (fin) { var kk = (A2 > B2 ? 'A' : 'B') + '|' + (A2 + B2) + '|0'; R[kk] = (R[kk] || 0) + pz; }
+            else { var k2 = A2 + '|' + B2 + '|' + (sA ? 0 : 1); nx[k2] = (nx[k2] || 0) + pz; }
+          });
+        });
+        st = nx;
+      }
+      return R;
+    };
+    var S1 = set(true), S2 = set(false), res = { tb: 0, jx: 0, o20: 0, o22: 0, setB: 0, setA: 0 };
+    var rec = function (wa, wb, jx, tb, p, k) {
+      if (p < 1e-7) return;
+      if (wa === bo || wb === bo) { res.jx += p * jx; if (tb) res.tb += p; if (jx > 20.5) res.o20 += p; if (jx > 22.5) res.o22 += p; if (wb > 0) res.setB += p; if (wa > 0) res.setA += p; return; }
+      var S = k % 2 ? S2 : S1;
+      Object.keys(S).forEach(function (kk) { var q = kk.split('|'); rec(wa + (q[0] === 'A' ? 1 : 0), wb + (q[0] === 'B' ? 1 : 0), jx + (+q[1]), tb || q[2] === '1', p * S[kk], k + 1); });
+    };
+    rec(0, 0, 0, false, 1, 0);
+    return res;
+  };
+  window._g45TnSvHtml = function (o, esc) {
+    try {
+      if (!window._g45TnSvJ) { window._g45TnSvCharger().then(function (j) { if (j && o.tab === 'ann' && o.bid && typeof window.g45TnOnglet === 'function') window.g45TnOnglet(o.bid, 'ann'); }); return ''; }
+      var A = window._g45TnSvDe(o.lg, o.a.n, o.ctx.sf), B = window._g45TnSvDe(o.lg, o.b.n, o.ctx.sf);
+      var sfL = o.ctx.sf === 'terre' ? '🧱 terre' : (o.ctx.sf === 'gazon' ? '🌱 gazon' : '🟦 dur');
+      var h = '<div style="background:#0b101d;border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:10px 12px;margin:8px 0;">'
+        + '<div style="font-size:16px;font-weight:900;">🎾 Service / retour</div>'
+        + '<div style="font-size:13px;color:#c9d3ee;margin:3px 0 6px;">52 dernières semaines · ' + ((A && !A.sfOk) || (B && !B.sfOk) ? 'toutes surfaces (moins de 5 matchs sur ' + sfL + ')' : 'sur ' + sfL) + ' · Tennis Abstract</div>';
+      if (!A || !B) return h + '<div style="font-size:14px;color:#c9d3ee;">Pas de stats de service pour ' + esc(!A ? o.a.n : o.b.n) + ' (hors top 100 et Challengers suivis).</div></div>';
+      var v = function (x, u) { return x == null ? '—' : String(x).replace('.', ',') + (u || ''); };
+      var L = [['tg', 'Jeux de service gagnés', ' %', 1], ['br', 'Breaks réussis (jeux de retour)', ' %', 1], ['ac', 'Aces', ' %', 1], ['df', 'Doubles fautes', ' %', -1], ['sp', 'Points gagnés au service', ' %', 1], ['tb', 'Tie-breaks par match', '', 0], ['jx', 'Jeux par set', '', 0]];
+      h += '<div style="display:grid;grid-template-columns:1fr 1.5fr 1fr;font-size:14px;font-weight:900;color:#c9d3ee;padding:4px 0;"><span>' + esc(o.a.n) + '</span><span></span><span style="text-align:right;">' + esc(o.b.n) + '</span></div>';
+      L.forEach(function (l) {
+        var a = A.s[l[0]], b = B.s[l[0]], ga = l[3] && a != null && b != null && (l[3] > 0 ? a > b : a < b), gb = l[3] && a != null && b != null && (l[3] > 0 ? b > a : b < a);
+        h += '<div style="display:grid;grid-template-columns:1fr 1.5fr 1fr;align-items:center;padding:6px 0;border-top:1px solid rgba(255,255,255,.08);font-size:15px;">'
+          + '<span style="' + (ga ? 'color:#1ed760;font-weight:900;' : '') + '">' + v(a, l[2]) + '</span><span style="text-align:center;font-size:13px;color:#dbe4ff;">' + l[1] + '</span><span style="text-align:right;' + (gb ? 'color:#1ed760;font-weight:900;' : '') + '">' + v(b, l[2]) + '</span></div>';
+      });
+      h += '<div style="display:grid;grid-template-columns:1fr 1.5fr 1fr;padding:6px 0;border-top:1px solid rgba(255,255,255,.08);font-size:14px;"><span>' + A.s.n + ' matchs' + (A.s.n < 10 ? ' ⚠️' : '') + (A.c ? ' (Chall.)' : '') + '</span><span style="text-align:center;font-size:13px;color:#dbe4ff;">Échantillon</span><span style="text-align:right;">' + B.s.n + ' matchs' + (B.s.n < 10 ? ' ⚠️' : '') + (B.c ? ' (Chall.)' : '') + '</span></div>';
+      var moyBr = o.lg === 'wta' ? 0.32 : 0.21, cl = function (x) { return Math.max(0.4, Math.min(0.97, x)); };
+      var hA = cl(A.s.tg / 100 - (B.s.br / 100 - moyBr)), hB = cl(B.s.tg / 100 - (A.s.br / 100 - moyBr));
+      var bo = o.ctx.cat === 'gc' && o.lg !== 'wta' ? 3 : 2, R = window._g45TnSvSim(hA, hB, bo);
+      var ch = function (t) { return '<span style="display:inline-block;background:#1e2740;border-radius:8px;padding:4px 10px;font-weight:800;margin:3px 6px 3px 0;font-size:14px;">' + t + '</span>'; };
+      var pc = function (x) { return Math.round(x * 100) + ' %'; };
+      var fav = (o.vqui || (hA >= hB ? 'a' : 'b')), outN = fav === 'a' ? o.b.n : o.a.n, setOut = fav === 'a' ? R.setB : R.setA;
+      h += '<div style="background:#0f2a1c;border-left:4px solid #1ed760;border-radius:10px;padding:10px 12px;margin-top:8px;line-height:1.6;">🔮 <b>Estimation pour ce match</b> <span style="font-size:13px;color:#c9d3ee;">(service de l\'un contre retour de l\'autre, ' + (bo === 3 ? '3' : '2') + ' sets gagnants)</span><br>'
+        + ch('🎯 au moins 1 tie-break : ' + pc(R.tb)) + ch('🔢 jeux attendus : ' + R.jx.toFixed(1).replace('.', ',')) + '<br>'
+        + ch('+ de 20,5 jeux : ' + pc(R.o20)) + ch('+ de 22,5 jeux : ' + pc(R.o22)) + ch('set gagné par ' + esc(outN) + ' : ' + pc(setOut)) + '</div>';
+      return h + '</div>';
+    } catch (e) { return ''; }
+  };
   window._G45_TN_PER = ['Terre · Europe', 'Terre · Amérique du Sud', 'Terre · autres régions', 'Gazon', 'Dur · janvier-février (Australie, Golfe)', 'Dur · printemps américain', 'Dur · été américain', 'Dur · automne (salle & Asie)', 'Dur · autres'];
   window._g45TnPer = function (sf, t, ct) {
     var P = window._G45_TN_PER;
@@ -78235,7 +78313,10 @@ window._g45AgJouUs = async function (nowTs) {
     var iG = 1 / cG, iX = 1 / cX, f = iG / (iG + iX);
     return { cG: cG, cX: cX, f: f, mg: Math.round((iG + iX - 1) * 100), ec: Math.round((pR - f) * 100), vG: Math.round((cG * pR - 1) * 100), vX: Math.round((cX * (1 - pR) - 1) * 100) };
   };
-  window._g45TnBkVal = function (k) { return !!k && (k.vG >= 5 || k.vX >= 5); };
+  /* 20261023j (croisement avec les cotes 2025, 1 123 matchs : value ≥ 2,50 = −13 % ; 1,50 – 2,50 = +5 % sur ~240 paris, pas prouvé ; « oui et oui
+     et de 1,5 à + ? ») : 💎 seulement si la cote du book est entre 1,50 et 2,50, avec « à confirmer ». */
+  window._g45TnValCote = function (c) { return c >= 1.5 && c < 2.5; };
+  window._g45TnBkVal = function (k) { return !!k && ((k.vG >= 5 && window._g45TnValCote(k.cG)) || (k.vX >= 5 && window._g45TnValCote(k.cX))); };
   window._g45TnBkLigne = function (k, nG, nX, faible) {   /* 20261023d : faible = confiance faible → pas de 💎 (BET45 voit du 50 / 50) */   /* ligne de la carte (k = résultat de _g45TnBk, null = pas de cote) */
     var vc = function (c) { return c.toFixed(2).replace('.', ','); }, fam = function (n) { var t = String(n || '').trim().split(/\s+/); return t[t.length - 1] || ''; };
     var esc2 = function (t) { return String(t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
@@ -78245,8 +78326,8 @@ window._g45AgJouUs = async function (nowTs) {
       + '<span style="white-space:nowrap;">🏦 Book : <span style="background:#fff;color:#111;border-radius:7px;padding:2px 9px;">' + vc(k.cG) + '</span> (≈ ' + Math.round(k.f * 100) + ' % sans marge)</span>';
     h += Math.abs(k.ec) < 6 ? b('#1e3a7a', '#6d9dff', '✅ D\'accord') : b('#5a3a0e', '#f5a142', '⚠️ Le book y croit ' + (k.ec < 0 ? 'plus' : 'moins') + ' que BET45');
     if (faible) return h + '</div>';
-    if (k.vG >= 5) h += b('#0e5a3a', '#1ed760', '💎 Value ' + esc2(fam(nG)) + ' ' + vc(k.cG) + ' (+' + k.vG + ' %)');
-    if (k.vX >= 5) h += b('#0e5a3a', '#1ed760', '💎 Value ' + esc2(fam(nX)) + ' ' + vc(k.cX) + ' (+' + k.vX + ' %)');
+    if (k.vG >= 5 && window._g45TnValCote(k.cG)) h += b('#0e5a3a', '#1ed760', '💎 Value ' + esc2(fam(nG)) + ' ' + vc(k.cG) + ' (+' + k.vG + ' %, à confirmer)');
+    if (k.vX >= 5 && window._g45TnValCote(k.cX)) h += b('#0e5a3a', '#1ed760', '💎 Value ' + esc2(fam(nX)) + ' ' + vc(k.cX) + ' (+' + k.vX + ' %, à confirmer)');
     return h + '</div>';
   };
   window._G45_TN_STD = { elo: 7, rang: 2, surf: 5, forme: 4, prec: 0, h2h: 2, fat: 0, aut: 1, age: 3, tour: 2, sty: 3 };
@@ -78418,11 +78499,11 @@ window._g45AgJouUs = async function (nowTs) {
           if (KA && KB) {
             var vc = function (c) { return c.toFixed(2).replace('.', ','); }, td = 'padding:7px 3px;border-top:1px solid rgba(255,255,255,.1);text-align:center;';   /* 20261022x (capture téléphone : colonne « Écart » coupée) : marges réduites, % à la ligne, titres courts */
             var lig = function (n, K, pR) { return '<tr><td style="' + td + 'text-align:left;font-weight:800;">' + esc(String(n).trim().split(/\s+/).pop()) + '</td><td style="' + td + '">' + vc(1 / pR) + '<br><span style="white-space:nowrap;">' + Math.round(pR * 100) + ' %</span></td><td style="' + td + '">' + vc(K.cG) + '</td><td style="' + td + '">' + vc(1 / K.f) + '<br><span style="white-space:nowrap;">' + Math.round(K.f * 100) + ' %</span></td>'
-              + '<td style="' + td + (K.vG >= 5 && V.conf !== 'serré' ? 'color:#1ed760;font-weight:900;white-space:nowrap;">💎 +' + K.vG + ' %' : 'white-space:nowrap;">' + (K.ec > 0 ? '+' : K.ec < 0 ? '−' : '') + Math.abs(K.ec) + ' pts') + '</td></tr>'; };
+              + '<td style="' + td + (K.vG >= 5 && V.conf !== 'serré' && window._g45TnValCote(K.cG) ? 'color:#1ed760;font-weight:900;white-space:nowrap;">💎 +' + K.vG + ' %' : 'white-space:nowrap;">' + (K.ec > 0 ? '+' : K.ec < 0 ? '−' : '') + Math.abs(K.ec) + ' pts') + '</td></tr>'; };
             h += '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;margin-top:8px;font-size:14px;"><tr style="color:#c9d3ee;font-size:13px;"><th style="' + td + 'text-align:left;"></th><th style="' + td + '">Estimée</th><th style="' + td + '">Book</th><th style="' + td + '">Sans marge</th><th style="' + td + '">Écart</th></tr>'
               + lig(o.a.n, KA, pRa) + lig(o.b.n, KB, 1 - pRa) + '</table></div>'
               + '<div style="font-size:13px;color:#c9d3ee;margin-top:6px;line-height:1.5;">' + (Math.abs(KA.ec) < 6 ? '✅ BET45 et le book sont d\'accord.' : '⚠️ Le book y croit ' + ((V.qui === 'a' ? KA : KB).ec < 0 ? 'plus' : 'moins') + ' que BET45 pour ' + esc(V.qui === 'a' ? o.a.n : o.b.n) + '.')
-              + '<br>Cote book = moyenne de 3 bookmakers US (BetMGM, FanDuel, DraftKings) via TheRundown, avant-match. Marge du book : ' + KA.mg + ' %. 💎 Value = cote du book × % BET45 ≥ 1,05' + (V.conf === 'serré' ? ' (pas de value affichée : confiance faible)' : '') + '.</div>';
+              + '<br>Cote book = moyenne de 3 bookmakers US (BetMGM, FanDuel, DraftKings) via TheRundown, avant-match. Marge du book : ' + KA.mg + ' %. 💎 Value = cote du book × % BET45 ≥ 1,05, seulement entre 1,50 et 2,50 (test 2025 : au-delà, BET45 surestime les outsiders) — à confirmer' + (V.conf === 'serré' ? ' (pas de value affichée : confiance faible)' : '') + '.</div>';
           }
         }
         h += '</div>';
@@ -78504,6 +78585,7 @@ window._g45AgJouUs = async function (nowTs) {
         + '<div style="font-size:15px;font-weight:800;margin:12px 0 4px;">🏆 Historique à ce tournoi</div>';
       [[o.a.n, A], [o.b.n, B]].forEach(function (p) { h += '<div style="font-size:14px;font-weight:800;margin:6px 0 4px;">' + esc(p[0]) + '</div>' + (p[1].tourL.length ? lignesMatch(p[1].tourL) : '<div style="font-size:14px;color:#c9d3ee;">Aucun match ici sur les saisons chargées.</div>'); });
     } else {
+      h += window._g45TnSvHtml(o, esc);   /* 20261023j */
       var f = o.fAn || 'sf', now = Date.now();
       var filt = function (P) { return P.tous.filter(function (m) { return f === 'sf' ? m.sf === o.ctx.sf : (f === '52' ? m.t >= now - 364 * 864e5 : true); }); };
       var sj = o.sj || 9.5, mj = o.mj || 21.5, hc = o.hc || -2.5;

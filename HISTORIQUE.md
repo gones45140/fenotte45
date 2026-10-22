@@ -2286,6 +2286,15 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   27-35 stats du joueur, 36-44 de l'adversaire ; contrôle Zverev – Medvedev OA 2024 cohérent). elo.mjs lireService → données/service_tennis.json
   (52 semaines, par joueur et surface : tg jeux de service gagnés, br jeux de retour gagnés, ac / df %, sp / rp pts gagnés, tb tie-breaks par
   match, jx jeux par set). WTA : nom de fichier supposé, essayé (leadersource_wta.js…). Affichage : maquette à faire (Stats annexes).
+  Fichiers SONDÉS par Antoine : ATP leadersource.js (top 50), leadersource51.js, leadersource_chall.js ; WTA leadersource_wta.js, leadersource51_wta.js.
+  CROISEMENT COTES 2025 (fichiers tennis-data téléchargés à la main par Antoine, session seulement) : 1 123 matchs ; réussite BET45 66,3 % / favori
+  book 67,9 % ; Brier BET45 0,216 / book 0,200 / mélange 0,203 ; jouer le choix BET45 = −2,2 % (1,01-1,40 −2,8 ; 1,40-1,80 −5,2 ; 1,80-2,50 +2,9 ;
+  2,50+ +5,1 sur 55) ; value ≥ 2,50 = −13 % (BET45 surestime les outsiders) ; value 1,50-2,50 = +5 % (238 à 328 paris, pas prouvé). Test encore
+  flatteur (Elo d'aujourd'hui). ⇒ en tennis BET45 NE BAT PAS le book.
+  20261023h (« oui et oui et de 1,5 à + ? ») : 💎 value seulement si cote du book entre 1,50 et 2,50 (_g45TnValCote), libellé « à confirmer »
+  (ligne, tableau, filtre). Bloc « 🎾 Service / retour » en haut de 📐 Stats annexes (_g45TnSvCharger / _g45TnSvDe / _g45TnSvSim / _g45TnSvHtml :
+  tenue de A = tg(A) − (br(B) − moyenne 21 % ATP / 32 % WTA), set rejoué jeu par jeu, tie-break 50 % ± écart, 3 sets gagnants en GC ATP) →
+  au moins 1 tie-break, jeux attendus, + de 20,5 / 22,5 jeux, set gagné par l'outsider. Smoke tnSv (91), tnBk recalé.
   20261022m (tennis « Tous les matchs du jour » avec 70 % coché mais un 53 % affiché) : titre « (sans filtre) » ; dans l'analyse, ligne grise
   « ℹ️ Sous tes filtres de Tendances (53 % < 70 %) » quand l'avis est sous g45tn_pmin / g45tn_conf.
   20261022o (« nouveau à faire dans filtre : cote BET45 », « et on aura des matchs ») : filtre tennis « Cote BET45 » (g45tn_cote = « min-max »,
