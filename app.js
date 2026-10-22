@@ -78266,7 +78266,9 @@ window._g45AgJouUs = async function (nowTs) {
     });
     return L;
   };
-  window.g45TnFiltreRun = function (k, v) { lsP(k, v); if (k === 'g45tn_jour') { T.res = null; } var el = document.getElementById('t-tend'); if (el && typeof loadTendancesTab === 'function') loadTendancesTab(); };
+  /* 20261022o (« nouveau à faire dans filtre : cote BET45 » ; « et on aura des matchs ») : choisir une fourchette de cote BET45 remet proba mini
+     à 50 % et confiance à Toutes, sinon la liste serait vide (70 % = cote 1,43 au plus ; « forte » = 1,54 au plus). */
+  window.g45TnFiltreRun = function (k, v) { lsP(k, v); if (k === 'g45tn_cote' && v !== '0-0') { lsP('g45tn_pmin', '0.5'); lsP('g45tn_conf', 'tout'); } if (k === 'g45tn_jour') { T.res = null; } var el = document.getElementById('t-tend'); if (el && typeof loadTendancesTab === 'function') loadTendancesTab(); };
   /* un match → avis BET45 (comme le robot, sans cote) */
   var avisMatch = async function (m, prog) {
     var an = new Date().getFullYear();
@@ -78305,7 +78307,8 @@ window._g45AgJouUs = async function (nowTs) {
   var resultatsHtml = function () {
     var R = T.res; if (!R) return '';
     var pmin = +lsG('g45tn_pmin', '0.6'), conf = lsG('g45tn_conf', 'mf');
-    var ok = R.r.filter(function (x) { return x.p >= pmin - 1e-9 && (conf === 'tout' || (conf === 'f' ? x.conf === 'forte' : x.conf !== 'serré')); })
+    var cf = String(lsG('g45tn_cote', '0-0')).split('-'), cMi = +cf[0] || 0, cMa = +cf[1] || 0;   /* 20261022o : fourchette de cote BET45 (1 / proba) */
+    var ok = R.r.filter(function (x) { var cb = x.p > 0 ? 1 / x.p : 99; return x.p >= pmin - 1e-9 && (conf === 'tout' || (conf === 'f' ? x.conf === 'forte' : x.conf !== 'serré')) && cb >= cMi - 1e-9 && (!cMa || cb < cMa); })
       .sort(function (a, b) { return b.p - a.p; });
     var h = '<div style="background:rgba(11,16,29,.94);border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:12px 14px;margin-bottom:12px;color:#fff;">'
       + '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;"><b style="font-size:16px;">Résultats · ' + ok.length + ' match' + (ok.length > 1 ? 's' : '') + ' retenu' + (ok.length > 1 ? 's' : '') + ' sur ' + R.r.length + ' analysé' + (R.r.length > 1 ? 's' : '') + '</b>'
@@ -78392,6 +78395,8 @@ window._g45AgJouUs = async function (nowTs) {
       + '<div style="font-size:17px;font-weight:800;">🎾 Matchs ' + (n ? 'de demain' : 'du jour') + ' · ATP et WTA</div>'
       + lbl('Jour') + ch('Aujourd\'hui', !n, 'g45tn_jour', 0) + ch('Demain', n, 'g45tn_jour', 1)
       + lbl('Proba mini BET45') + ch('50 %', pmin === '0.5', 'g45tn_pmin', '0.5') + ch('60 %', pmin === '0.6', 'g45tn_pmin', '0.6') + ch('70 %', pmin === '0.7', 'g45tn_pmin', '0.7')
+      + lbl('Cote BET45') + [['Toutes', '0-0'], ['1,50 et +', '1.5-0'], ['1,05 – 1,50', '1.05-1.5'], ['1,50 – 2', '1.5-2'], ['2 – 2,5', '2-2.5'], ['2,5 – 3', '2.5-3'], ['3 et +', '3-0']]
+          .map(function (o) { return ch(o[0], lsG('g45tn_cote', '0-0') === o[1], 'g45tn_cote', o[1]); }).join('')   /* 20261022o */
       + lbl('Confiance') + ch('Toutes', conf === 'tout', 'g45tn_conf', 'tout') + ch('Moyenne et forte', conf === 'mf', 'g45tn_conf', 'mf') + ch('Forte seulement', conf === 'f', 'g45tn_conf', 'f')
       + '<button onclick="g45TnLancer()" class="btn btn-p" style="width:100%;padding:14px;font-size:16px;font-weight:800;margin-top:8px;"' + (T.run ? ' disabled' : '') + '>▶ Analyser les matchs</button>'
       + '<div id="g45tn-prog" style="font-size:14px;color:#c9d3ee;text-align:center;margin:8px 0;">' + (T.run ? '⏳ ' + esc(T.prog) : '') + '</div>'

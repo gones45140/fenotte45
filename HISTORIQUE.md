@@ -2224,6 +2224,9 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   favoris (moyenne de facteurs) ; backtest_tennis.mjs : CALIBRAGE (avis X % → réel %, tranches de 5 %) pour un « % recalibré » à venir.
   20261022m (tennis « Tous les matchs du jour » avec 70 % coché mais un 53 % affiché) : titre « (sans filtre) » ; dans l'analyse, ligne grise
   « ℹ️ Sous tes filtres de Tendances (53 % < 70 %) » quand l'avis est sous g45tn_pmin / g45tn_conf.
+  20261022o (« nouveau à faire dans filtre : cote BET45 », « et on aura des matchs ») : filtre tennis « Cote BET45 » (g45tn_cote = « min-max »,
+  Toutes / 1,50 et + / 1,05–1,50 / 1,50–2 / 2–2,5 / 2,5–3 / 3 et +) sur 1 / x.p dans resultatsHtml ; choisir une fourchette remet proba mini
+  50 % et confiance Toutes (70 % = cote ≤ 1,43 ; forte = ≤ 1,54 ; moyenne = ≤ 1,75).
   Données Sackmann = usage NON COMMERCIAL (à revoir le jour de l'abonnement). 9 essais (vm + lecteur), smoke 66.
   20261020s (« ok mais on peut pas améliorer compétition/tennis aussi ? » + « LES PHOTOS DES JOUEURS TOUJOURS DISPO OU SI PAS DE PHOTO drapeau du
   pays du joueur », maquette maquette-tennis-res validée « oui ») : bloc « COMPÉTITIONS → TENNIS PLUS LISIBLE » en fin d'app.js. Remplace
