@@ -2188,8 +2188,8 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   20261022b (« oui ») : contrecoup retiré de l'avis standard (_G45_TN_STD.prec 0, ww('prec', 0), plus dans « En clair », note du bloc 🏁
   « pour info : 67 % ») ; tournois en salle reconnus par le nom (RE_SALLE en fin d'app.js : Paris, Bâle, Vienne, Stockholm, Anvers, Metz,
   Finals, Next Gen, Rotterdam, Marseille, Montpellier, Dallas, Sofia, Linz, Ostrava, WTA Finals, Cluj, Lyon WTA « Open 6e Sens », Almaty…),
-  enveloppes _g45TnSurf / _g45TnSaison (mémoire tn4_ corrigée à la lecture) / _g45TnCalc (ctx.ind). Robot tendances.mjs : NBA en PAUSE dans la
-  sélection officielle du 1/10 au 14/11 (nuit du 21/10 : 1 gagné sur 5, saison reprise 2 jours avant). Smoke 77 (salle).
+  enveloppes _g45TnSurf / _g45TnSaison (mémoire tn4_ corrigée à la lecture) / _g45TnCalc (ctx.ind). Robot tendances.mjs (« NBA mets juste pas les pts ») : du 1/10 au
+  14/11, NBA gardée dans la sélection officielle SANS les marchés « + / - de X points » (nuit du 21/10 : 1 gagné sur 5, saison reprise 2 jours avant). Smoke 77 (salle).
   Données Sackmann = usage NON COMMERCIAL (à revoir le jour de l'abonnement). 9 essais (vm + lecteur), smoke 66.
   20261020s (« ok mais on peut pas améliorer compétition/tennis aussi ? » + « LES PHOTOS DES JOUEURS TOUJOURS DISPO OU SI PAS DE PHOTO drapeau du
   pays du joueur », maquette maquette-tennis-res validée « oui ») : bloc « COMPÉTITIONS → TENNIS PLUS LISIBLE » en fin d'app.js. Remplace
