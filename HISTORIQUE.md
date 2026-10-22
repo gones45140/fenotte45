@@ -2281,6 +2281,11 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   téléchargés À LA MAIN par Antoine (usage particulier), croisés dans la session (scratchpad), JAMAIS dans le dépôt.
   20261023h (capture mcp_leaders_tactics_men_last52, « ok ») : elo.mjs lireTactique → données/tactique_tennis.json (RallyAgg, ReturnAgg, SnV,
   filet ; ATP men / WTA women, 52 semaines, 6 jours) pour CONTRÔLER styles_tennis.json (liste des différences envoyée à Antoine), pas dans l'avis.
+  20261023i (stats de service ; « moi peu, Bruno et JP adorent » les jeux / tie-breaks) : SONDÉ par Antoine — leaders.cgi = page vide, les
+  données viennent de jsmatches/leadersource.js (2,6 Mo, var matchmx = matchs du point de vue d'un joueur, format Sackmann : 26 minutes,
+  27-35 stats du joueur, 36-44 de l'adversaire ; contrôle Zverev – Medvedev OA 2024 cohérent). elo.mjs lireService → données/service_tennis.json
+  (52 semaines, par joueur et surface : tg jeux de service gagnés, br jeux de retour gagnés, ac / df %, sp / rp pts gagnés, tb tie-breaks par
+  match, jx jeux par set). WTA : nom de fichier supposé, essayé (leadersource_wta.js…). Affichage : maquette à faire (Stats annexes).
   20261022m (tennis « Tous les matchs du jour » avec 70 % coché mais un 53 % affiché) : titre « (sans filtre) » ; dans l'analyse, ligne grise
   « ℹ️ Sous tes filtres de Tendances (53 % < 70 %) » quand l'avis est sous g45tn_pmin / g45tn_conf.
   20261022o (« nouveau à faire dans filtre : cote BET45 », « et on aura des matchs ») : filtre tennis « Cote BET45 » (g45tn_cote = « min-max »,
