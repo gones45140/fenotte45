@@ -2227,6 +2227,8 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   20261022o (« nouveau à faire dans filtre : cote BET45 », « et on aura des matchs ») : filtre tennis « Cote BET45 » (g45tn_cote = « min-max »,
   Toutes / 1,50 et + / 1,05–1,50 / 1,50–2 / 2–2,5 / 2,5–3 / 3 et +) sur 1 / x.p dans resultatsHtml ; choisir une fourchette remet proba mini
   50 % et confiance Toutes (70 % = cote ≤ 1,43 ; forte = ≤ 1,54 ; moyenne = ≤ 1,75).
+  20261022p (« faudrait séparer les 2 non ? », « OUI ») : _g45TnEcran — espace puis bandeau « 📋 Tous les matchs du jour (sans filtre) · N
+  matchs » FERMÉ au départ (window._g45TnJourOuv, g45TnJourOuvrir), #g45tn-jour rempli quand même (caché), nombre posé par _g45TnJour.
   Données Sackmann = usage NON COMMERCIAL (à revoir le jour de l'abonnement). 9 essais (vm + lecteur), smoke 66.
   20261020s (« ok mais on peut pas améliorer compétition/tennis aussi ? » + « LES PHOTOS DES JOUEURS TOUJOURS DISPO OU SI PAS DE PHOTO drapeau du
   pays du joueur », maquette maquette-tennis-res validée « oui ») : bloc « COMPÉTITIONS → TENNIS PLUS LISIBLE » en fin d'app.js. Remplace

@@ -78328,6 +78328,11 @@ window._g45AgJouUs = async function (nowTs) {
     });
     return h + '</div>';
   };
+  window.g45TnJourOuvrir = function () {   /* 20261022p */
+    window._g45TnJourOuv = !window._g45TnJourOuv;
+    var c = document.getElementById('g45tn-jour'), b = document.getElementById('g45tn-jour-b');
+    if (c) c.style.display = window._g45TnJourOuv ? '' : 'none'; if (b) b.textContent = window._g45TnJourOuv ? '▾ Replier' : '▸ Ouvrir';
+  };
   window._g45TnJour = async function (el) {
     var cible = document.getElementById('g45tn-jour'); if (!cible) return;
     var n = jourDe();
@@ -78336,6 +78341,7 @@ window._g45AgJouUs = async function (nowTs) {
     }
     var L = await window._g45TnListe(n);
     cible = document.getElementById('g45tn-jour'); if (!cible) return;
+    try { var nn = document.getElementById('g45tn-jour-n'); if (nn) nn.textContent = ' · ' + L.length + ' match' + (L.length > 1 ? 's' : ''); } catch (e) {}   /* 20261022p */
     if (!L.length) { cible.innerHTML = '<div style="font-size:14px;color:#c9d3ee;">Aucun match de simple ATP / WTA à venir ' + (n ? 'demain' : 'aujourd\'hui') + '.</div>'; return; }
     L.sort(function (x, y) { return (x.st === 'in' ? 0 : 1) - (y.st === 'in' ? 0 : 1) || x.t - y.t; });
     var h = '', tourPrec = '';
@@ -78402,9 +78408,12 @@ window._g45AgJouUs = async function (nowTs) {
       + '<div id="g45tn-prog" style="font-size:14px;color:#c9d3ee;text-align:center;margin:8px 0;">' + (T.run ? '⏳ ' + esc(T.prog) : '') + '</div>'
       + '<div style="font-size:13px;color:#c9d3ee;">Stats ESPN seulement (pas de cote) · ' + (gonesSansLimite() ? 'tous les matchs' : '8 matchs au plus, les plus importants d\'abord') + ' · premier passage 1 à 3 min, ensuite rapide.</div></div>'
       + '<div id="g45tn-res">' + resultatsHtml() + '</div>'
-      + '<div style="background:rgba(11,16,29,.92);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px 14px;color:#fff;margin-bottom:12px;">'
-      + '<div style="font-size:16px;font-weight:800;">Tous les matchs ' + (n ? 'de demain' : 'du jour') + ' <span style="font-size:13px;color:#c9d3ee;font-weight:700;">(sans filtre)</span></div>'   /* 20261022m */
-      + '<div id="g45tn-jour"><div style="font-size:14px;color:#c9d3ee;">⏳ Chargement…</div></div></div>';
+      /* 20261022p (« faudrait séparer les 2 non ? » → « OUI ») : espace net, puis la liste complète dans son bandeau FERMÉ au départ (mémoire de
+         la page window._g45TnJourOuv) ; la liste reste remplie en arrière-plan (#g45tn-jour caché), le nombre de matchs s'affiche dans le bandeau. */
+      + '<div style="height:14px;"></div><div style="background:rgba(11,16,29,.92);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px 14px;color:#fff;margin-bottom:12px;">'
+      + '<div onclick="g45TnJourOuvrir()" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;"><span style="font-size:16px;font-weight:800;">📋 Tous les matchs ' + (n ? 'de demain' : 'du jour') + ' <span style="font-size:13px;color:#c9d3ee;font-weight:700;">(sans filtre)<span id="g45tn-jour-n"></span></span></span>'
+      + '<span id="g45tn-jour-b" style="font-size:14px;color:#c9d3ee;">' + (window._g45TnJourOuv ? '▾ Replier' : '▸ Ouvrir') + '</span></div>'
+      + '<div id="g45tn-jour" style="margin-top:8px;' + (window._g45TnJourOuv ? '' : 'display:none;') + '"><div style="font-size:14px;color:#c9d3ee;">⏳ Chargement…</div></div></div>';
   };
   /* ═══ 🤖 TENNIS OFFICIEL (20261020l, « OK combiné » : « que BET45 donne des tendances tennis si bonne confiance, même filtre que les autres
      sports ») ═══ Appelé par le robot .github/scripts/tendances.mjs. ESPN n'a AUCUNE cote tennis (sondé le 20/10 : Bruxelles 250, Bâle /
