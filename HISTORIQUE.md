@@ -2227,6 +2227,13 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   BET45 » (= 100 / réel) dans l'analyse et les résultats ; le filtre « Cote BET45 » utilise ce % corrigé (proba mini et confiance restent sur l'avis).
   20261022v (« ça se touche un peu trop », « oui ») : ligne 🔮 des résultats = blocs flex séparés (gap 16 px, retour à la ligne entre blocs),
   « cote BET45 » en pastille jaune texte noir ; idem dans l’encadré de l’analyse (marge 12 px).
+  20261022w (« 0,30 en cote de diff c'est énorme » ; Nakashima book 1,43 / BET45 1,72 → maquette « BET45 face au book » → « oui ») :
+  window._g45TnBk(pR, cG, cX) → { f proba book sans marge, mg marge, ec écart en points BET45 − book, vG / vX gain espéré % } ; ✅ d'accord si
+  |ec| < 6, sinon ⚠️ « le book y croit plus / moins » ; 💎 value si cote × % réel BET45 ≥ 1,05 (sur l'un OU l'autre joueur).
+  Résultats Tendances 🎾 : avisMatch lit _g45TnCoteRd (même réponse worker /rundown que le robot, 12 h → aucun point TheRundown en plus) → x.bk
+  { ca, cb } ; ligne _g45TnBkLigne sous la ligne 🔮 (anciens résultats en mémoire sans bk : rien) ; filtre « 💎 Value seulement » (g45tn_val).
+  Analyse détaillée : o.bk lu en tâche de fond (aujourd'hui puis demain, l'heure n'est pas connue), tableau « 🏦 BET45 face au book ».
+  Smoke tnBk (85 contrôles).
   20261022m (tennis « Tous les matchs du jour » avec 70 % coché mais un 53 % affiché) : titre « (sans filtre) » ; dans l'analyse, ligne grise
   « ℹ️ Sous tes filtres de Tendances (53 % < 70 %) » quand l'avis est sous g45tn_pmin / g45tn_conf.
   20261022o (« nouveau à faire dans filtre : cote BET45 », « et on aura des matchs ») : filtre tennis « Cote BET45 » (g45tn_cote = « min-max »,
