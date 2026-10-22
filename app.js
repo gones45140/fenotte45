@@ -35518,7 +35518,7 @@ function _g45RcSVG(pts, cps){
 function _g45RcSlopeLegend(){
   var L=[['#2ecc71','descente'],['#8aa0ff','plat'],['#f0c828','2-5%'],['#ff8c42','5-8%'],['#e0202a','8%+']];
   return '<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:5px;">'
-    +L.map(function(x){ return '<span style="font-size:7.5px;color:var(--t3);display:inline-flex;align-items:center;gap:3px;"><span style="width:8px;height:3px;border-radius:2px;background:'+x[0]+';display:inline-block;"></span>'+x[1]+'</span>'; }).join('')
+    +L.map(function(x){ return '<span style="font-size:10px;font-weight:700;color:#dbe4ff;display:inline-flex;align-items:center;gap:4px;"><span style="width:12px;height:4px;border-radius:2px;background:'+x[0]+';display:inline-block;"></span>'+x[1]+'</span>'; }).join('')
     +'</div>';
 }
 async function _g45RcCheckpoints(race, y, stage){
@@ -35533,12 +35533,108 @@ async function _g45RcCheckpoints(race, y, stage){
   out.sort(function(a,b){ return a.km-b.km; });
   return out;
 }
+/* 20261022z — PROFIL D'ÉTAPE AMÉLIORÉ (capture d'Antoine, É21 Paris « ça on pourrait l'améliorer ? », maquette maquette-profil-etape « oui ») :
+   l'ancien _g45RcSVG partait de l'altitude MINI de l'étape → 100 m de bosse à Paris ressemblaient à un col. Ici : échelle d'au moins 600 m
+   (base 0 m sous 600 m), lignes d'altitude à gauche, km tous les 25 / 10 / 5 km, couleurs = pente MOYENNE sur ~500 m (moins de dents de
+   scie), doigt / souris sur le profil → km, altitude, pente (g45RcProfDoigt), textes plus grands. _g45RcProfStats : D+, point haut, type
+   d'étape. L'ancien _g45RcSVG reste en place (plus appelé). */
+window._g45RcPr = window._g45RcPr || {};
+function _g45RcAltAt(pts, km){
+  var lo=0, hi=pts.length-1;
+  if(km<=pts[0].km) return pts[0].alt; if(km>=pts[hi].km) return pts[hi].alt;
+  while(hi-lo>1){ var m=(lo+hi)>>1; if(pts[m].km<=km) lo=m; else hi=m; }
+  var a=pts[lo], b=pts[hi], t=(b.km-a.km)?(km-a.km)/(b.km-a.km):0;
+  return a.alt+(b.alt-a.alt)*t;
+}
+function _g45RcPente(pts, km){   /* pente moyenne en % sur 500 m autour du point */
+  var kmMax=pts[pts.length-1].km, a=Math.max(0,km-0.25), b=Math.min(kmMax,km+0.25);
+  if(b-a<0.05) return 0;
+  return (_g45RcAltAt(pts,b)-_g45RcAltAt(pts,a))/((b-a)*1000)*100;
+}
+function _g45RcProfStats(pts){
+  var kmMax=pts[pts.length-1].km, dp=0, hm=-1e9, prev=null;
+  for(var km=0; km<=kmMax+1e-9; km+=0.2){ var a=_g45RcAltAt(pts, Math.min(km,kmMax)); if(prev!=null && a>prev) dp+=a-prev; prev=a; }
+  pts.forEach(function(p){ if(p.alt>hm) hm=p.alt; });
+  var parKm=kmMax?dp/kmMax:0, ty;
+  if(hm>=1500 && dp>=2500) ty=['⛰️ Haute montagne','#e0202a','#fff'];
+  else if(parKm<8 && hm<600) ty=['➖ Étape plate','#8aa0ff','#111'];
+  else if(parKm<15 && hm<1000) ty=['〰️ Vallonnée','#f0c828','#111'];
+  else ty=['⛰️ Moyenne montagne','#ff8c42','#111'];
+  return { km:kmMax, dp:Math.round(dp/10)*10, hm:Math.round(hm), ty:ty };
+}
+function _g45RcSVG2(pts, cps){
+  var W=320,H=158,padL=38,padR=8,padT=22,padB=24;
+  var kmMax=pts[pts.length-1].km||1;
+  var mi=1e9, ma=-1e9; pts.forEach(function(p){ if(p.alt<mi)mi=p.alt; if(p.alt>ma)ma=p.alt; });
+  var aMin=mi<600?0:Math.floor((mi-100)/500)*500;
+  var aMax=Math.max(aMin+600, ma+(ma-aMin)*0.08);
+  var pas=[100,200,250,500,1000].filter(function(x){ return (aMax-aMin)/x<=5; })[0]||1000;
+  aMax=Math.ceil(aMax/pas)*pas; var sp=aMax-aMin;
+  var X=function(km){ return padL+(km/kmMax)*(W-padL-padR); };
+  var Y=function(a){ return padT+(1-(a-aMin)/sp)*(H-padT-padB); };
+  var n=Math.min(260, Math.max(60, Math.round(kmMax*3))), P=[];
+  for(var i=0;i<=n;i++){ var km=kmMax*i/n; P.push({km:km, alt:_g45RcAltAt(pts,km)}); }
+  var d='M'+X(0).toFixed(1)+' '+Y(P[0].alt).toFixed(1);
+  for(var j=1;j<P.length;j++) d+=' L'+X(P[j].km).toFixed(1)+' '+Y(P[j].alt).toFixed(1);
+  var base=(H-padB).toFixed(1);
+  var area=d+' L'+X(kmMax).toFixed(1)+' '+base+' L'+X(0).toFixed(1)+' '+base+' Z';
+  var grid='';
+  for(var g=aMin; g<=aMax+1e-6; g+=pas){ var yg=Y(g).toFixed(1);
+    grid+='<line x1="'+padL+'" y1="'+yg+'" x2="'+(W-padR)+'" y2="'+yg+'" stroke="rgba(255,255,255,.13)" stroke-width=".6"/>'
+      +'<text x="'+(padL-4)+'" y="'+(+yg+3.5)+'" font-size="10" font-weight="700" fill="#c9d3ee" text-anchor="end">'+g+' m</text>'; }
+  var segs='';
+  for(var k=1;k<P.length;k++){
+    segs+='<line x1="'+X(P[k-1].km).toFixed(1)+'" y1="'+Y(P[k-1].alt).toFixed(1)+'" x2="'+X(P[k].km).toFixed(1)+'" y2="'+Y(P[k].alt).toFixed(1)+'" stroke="'+_g45RcSlopeCol(_g45RcPente(pts,(P[k-1].km+P[k].km)/2))+'" stroke-width="2.4" stroke-linecap="round"/>';
+  }
+  var marks='';
+  (cps||[]).forEach(function(c){
+    if(!c.km && c.km!==0) return; if(c.km>kmMax) return;
+    var x=X(c.km), yv=Y(_g45RcAltAt(pts,c.km));
+    var isArr=c.ty.some(function(t){ return t.code==='A'; });
+    var lbl='', col='#22a45d';
+    if(c.su.length){ lbl=String(c.su[0].code||''); col='#e0202a'; }
+    else if(isArr){ lbl=''; col='#f0c828'; }
+    else { lbl='S'; col='#22a45d'; }
+    marks+='<line x1="'+x.toFixed(1)+'" y1="'+(yv-2).toFixed(1)+'" x2="'+x.toFixed(1)+'" y2="'+(padT-4).toFixed(1)+'" stroke="'+col+'" stroke-width=".9" stroke-dasharray="2 2" opacity=".75"/>';
+    if(lbl) marks+='<rect x="'+(x-7).toFixed(1)+'" y="2" width="14" height="14" rx="3" fill="'+col+'"/><text x="'+x.toFixed(1)+'" y="12.5" font-size="10" font-weight="800" fill="#fff" text-anchor="middle">'+_g45CyEa(lbl)+'</text>';
+    else marks+='<text x="'+x.toFixed(1)+'" y="14" font-size="12" text-anchor="middle">🏁</text>';
+  });
+  var tk=kmMax>=60?25:(kmMax>=25?10:5), axis='';
+  for(var t=0; t<kmMax-tk*0.8; t+=tk) axis+='<text x="'+X(t).toFixed(1)+'" y="'+(H-8)+'" font-size="10" font-weight="700" fill="#c9d3ee" text-anchor="middle">'+t+'</text>';
+  axis+='<text x="'+(W-padR)+'" y="'+(H-8)+'" font-size="10" font-weight="700" fill="#c9d3ee" text-anchor="end">'+kmMax.toFixed(0)+' km</text>';
+  var id='g45rcp'+(++_g45RcSVG2.n);
+  window._g45RcPr[id]={pts:pts, W:W, padL:padL, padR:padR, km:kmMax, X:null, aMin:aMin, sp:sp, H:H, padT:padT, padB:padB};
+  return '<svg id="'+id+'" viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto;display:block;touch-action:pan-y;cursor:crosshair;" onpointerdown="g45RcProfDoigt(event,\''+id+'\')" onpointermove="g45RcProfDoigt(event,\''+id+'\')">'
+    +grid+'<path d="'+area+'" fill="rgba(240,200,40,.13)"/>'+segs+marks+axis
+    +'<line id="'+id+'-l" x1="-10" y1="'+padT+'" x2="-10" y2="'+(H-padB)+'" stroke="#f5c542" stroke-width="1.2"/><circle id="'+id+'-c" cx="-10" cy="-10" r="4" fill="#f5c542"/></svg>'
+    +'<div id="'+id+'-t" style="background:#0b101d;border:1px solid rgba(245,197,66,.7);border-radius:8px;padding:5px 9px;font-size:11px;font-weight:800;margin-top:6px;text-align:center;color:#fff;">👆 Glisse le doigt sur le profil : km, altitude, pente</div>';
+}
+_g45RcSVG2.n=0;
+window.g45RcProfDoigt=function(ev, id){
+  try{
+    var o=window._g45RcPr[id], el=document.getElementById(id); if(!o||!el) return;
+    var r=el.getBoundingClientRect(); if(!r.width) return;
+    var cx=(ev.touches&&ev.touches[0]?ev.touches[0].clientX:ev.clientX);
+    var x=(cx-r.left)/r.width*o.W, km=Math.max(0,Math.min(o.km,(x-o.padL)/(o.W-o.padL-o.padR)*o.km));
+    var alt=_g45RcAltAt(o.pts,km), pe=_g45RcPente(o.pts,km), xs=o.padL+(km/o.km)*(o.W-o.padL-o.padR), ys=o.padT+(1-(alt-o.aMin)/o.sp)*(o.H-o.padT-o.padB);
+    var l=document.getElementById(id+'-l'), c=document.getElementById(id+'-c'), t=document.getElementById(id+'-t');
+    if(l){ l.setAttribute('x1',xs.toFixed(1)); l.setAttribute('x2',xs.toFixed(1)); }
+    if(c){ c.setAttribute('cx',xs.toFixed(1)); c.setAttribute('cy',ys.toFixed(1)); }
+    var nat=pe>=8?'très dur':pe>=5?'dur':pe>=2?'montée':pe>-2?'plat':'descente';
+    if(t) t.innerHTML='👆 km '+km.toFixed(1).replace('.',',')+' · '+Math.round(alt)+' m · '+nat+' ('+(pe>=0?'+':'−')+Math.abs(pe).toFixed(1).replace('.',',')+' %)';
+  }catch(e){}
+};
+function _g45RcProfStatsHtml(pts){
+  var S=_g45RcProfStats(pts), ch=function(t,bg,co){ return '<span style="background:'+(bg||'#1e2740')+';color:'+(co||'#fff')+';border-radius:7px;padding:3px 8px;font-size:10px;font-weight:800;white-space:nowrap;">'+t+'</span>'; };
+  return '<div style="display:flex;flex-wrap:wrap;gap:5px;margin:0 0 7px;">'+ch(S.ty[0],S.ty[1],S.ty[2])+ch('📏 '+Math.round(S.km)+' km')
+    +ch('⬆️ + '+S.dp.toLocaleString('fr-FR')+' m de D+')+ch('⛰️ point haut '+S.hm.toLocaleString('fr-FR')+' m')+'</div>';
+}
 function _g45RcProfileHTML(cps, pts){
   if((!cps||!cps.length) && !pts) return '';
   cps=cps||[];
   var h='<div style="background:rgba(12,16,28,.96);border:1px solid rgba(255,255,255,.08);border-radius:9px;padding:8px 10px;margin-bottom:9px;">'
-   +'<div style="font-size:10px;font-weight:800;color:var(--t2);margin-bottom:6px;">\uD83D\uDCC8 Profil de l\u2019\u00e9tape</div>'
-   +(pts?(_g45RcSVG(pts, cps)+_g45RcSlopeLegend()+'<div style="height:7px;"></div>'):'');
+   +'<div style="font-size:12px;font-weight:900;color:#fff;margin-bottom:6px;">\uD83D\uDCC8 Profil de l\u2019\u00e9tape</div>'
+   +(pts?(_g45RcProfStatsHtml(pts)+_g45RcSVG2(pts, cps)+_g45RcSlopeLegend()+'<div style="height:7px;"></div>'):'');   /* 20261022z */
   cps.forEach(function(c){
     var isArr=c.ty.some(function(x){ return x.code==='A'; });
     var ico='', det='', col='var(--t1)';

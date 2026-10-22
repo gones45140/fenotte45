@@ -2244,6 +2244,12 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   RÉSULTAT (2025, 1 577 matchs ; en moyenne le favori de l'avis gagne + 6,2 points de plus que prévu) : local 251 matchs réel 52,2 / prévu 51,8 ;
   local favori 147 → + 6,3 (= la moyenne) ; local outsider 104 → − 8,1 (≈ la moyenne) ⇒ jouer chez soi n'apporte RIEN. Compatriotes 70 →
   + 2,5 (≈ 4 points de surprises en plus que d'habitude, trop peu de matchs pour conclure) ; compatriotes chez eux 15 (trop peu). Rien changé dans l'avis.
+- 🚴 20261022z — PROFIL D'ÉTAPE (capture É21 Paris « ça on pourrait l'améliorer ? », maquette maquette-profil-etape « oui ») : _g45RcProfileHTML
+  appelle _g45RcSVG2 (l'ancien _g45RcSVG reste, plus appelé) : échelle ≥ 600 m (base 0 m sous 600 m ; pas 100/200/250/500/1000), lignes
+  d'altitude, km tous les 25 / 10 / 5 km, couleurs = pente moyenne sur 500 m (_g45RcPente, _g45RcAltAt interpolé), doigt / souris → km,
+  altitude, pente (g45RcProfDoigt, window._g45RcPr[id], touch-action pan-y) ; pastilles _g45RcProfStatsHtml (type d'étape : plate si D+/km < 8
+  et point haut < 600 ; vallonnée < 15 et < 1000 ; haute montagne si point haut ≥ 1500 et D+ ≥ 2500 ; sinon moyenne montagne), D+ (pas 200 m),
+  point haut. Légende 10 px (page déjà agrandie). Smoke rcProf (86).
   20261022m (tennis « Tous les matchs du jour » avec 70 % coché mais un 53 % affiché) : titre « (sans filtre) » ; dans l'analyse, ligne grise
   « ℹ️ Sous tes filtres de Tendances (53 % < 70 %) » quand l'avis est sous g45tn_pmin / g45tn_conf.
   20261022o (« nouveau à faire dans filtre : cote BET45 », « et on aura des matchs ») : filtre tennis « Cote BET45 » (g45tn_cote = « min-max »,
