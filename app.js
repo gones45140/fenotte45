@@ -73577,6 +73577,19 @@ function _g45TrFiabHtml() {
           if (!HL.length || !AL.length) return;
           var li = null; try { li = _g45TrUsLignes(e); } catch (er) {}
           mk = _g45TrUsBuild(HL, AL, hN, aN, od, li);
+          /* 20261022b (Antoine, nuit du 21/10 : « moins de 239,5 » perdus ; « un rajout de 3 % : 239,5 + 3 % = 246,68, et là ça passe sur
+             beaucoup plus de matchs » → choix A) : GONES45 SEULEMENT (_g45SanteActive), NBA : en plus de la ligne ESPN, « - de X points » avec
+             X = ligne + 3 % arrondie au ,5 inférieur (239,5 → 246,5). Pas de cote (ESPN ne donne que la ligne principale) : les filtres
+             (cote mini jugée sur 1 / proba, proba mini) s'appliquent comme d'habitude. Le robot officiel ne la note pas (cote inconnue). */
+          if (U.lg === 'nba' && li && li.tot && typeof _g45SanteActive === 'function' && _g45SanteActive()) {
+            var L3 = Math.floor(li.tot * 1.03) + 0.5; if (L3 - li.tot < 1) L3 += 1;
+            var u3 = function (l) { return l.length ? l.filter(function (m) { return m.p + m.c < L3; }).length / l.length : 0; };
+            var n3 = function (l) { return l.filter(function (m) { return m.p + m.c < L3; }).length; }, v3 = String(L3).replace('.', ',');
+            mk.push({ m: '- de ' + v3 + ' points', p: (u3(HL) + u3(AL)) / 2, fair: null, cote: 0, n: Math.min(HL.length, AL.length),
+              faits: ['Ligne ESPN ' + String(li.tot).replace('.', ',') + ' + 3 % (début de saison : ça marque plus)',
+                hN + ' : - de ' + v3 + ' points lors de ' + n3(HL) + ' de ses ' + HL.length + ' derniers matchs à domicile',
+                aN + ' : - de ' + v3 + ' points lors de ' + n3(AL) + ' de ses ' + AL.length + ' derniers matchs à l\'extérieur'] });
+          }
         }
         var when = ''; try { when = (U.lg === 'nfl' ? new Date(e.date).toLocaleDateString('fr-FR', { weekday: 'short', day: '2-digit', month: '2-digit' }) + ' ' : '')
           + new Date(e.date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }); } catch (er) {}
