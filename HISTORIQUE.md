@@ -2202,6 +2202,15 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   « 📅 Bilans par mois » replié (O.bilOuv), années (O.bilAn, g45TrOffBilAn), total de l'année (réussite, gain à 1 €, ROI, meilleur mois ≥ 10
   jugées), une ligne par mois (réussite + barre, gain, paris, « en cours »), toucher = g45TrOffAller(mois) ; filtres appliqués (L) ; octobre
   2026 = ligne grise « Période de test » pour les testeurs, jamais comptée. Smoke 79 (bilMois). Smoke 77 (salle).
+  20261022e/f (recueil de JP, 15 critères) : sondes robot — fichiers Jeff Sackmann tennis_atp / tennis_wta = 404 (retirés) ; Match Charting
+  Project encore en ligne (H ~580 matchs 2025, dernier mai 2026 ; F ~565, dernier sept. 2026) → pas de « style » automatique ; liste de
+  styles à remplir à la main par JP (fichier styles_*_a_remplir.xlsx, top 100 Elo ATP / WTA ; ATP rempli par Antoine le 22/10). Test 2025 des
+  critères de JP (backtest_tennis.mjs, ex) : joueur local 52 % (251) NON ; le plus jeune (≥ 3 ans) 55 % (964), +1 point ; < 23 ans contre
+  > 30 ans 50 % (70) ; meilleur bilan au même tour 60 % (1 273), +0,7 ; finale 58 % (41 cas, trop peu). Salle reconnue : 156 matchs, 70 %.
+  20261022g (« oui ») : _g45TnAvis + âge (A.age / B.age, ≥ 3 ans, 0,15) + bilan au tour du match (A.tourBil, ≥ 3 de chaque côté, 0,10) ;
+  _G45_TN_STD age 3 / tour 2, curseurs dans ⚖️ ; _g45TnCalc (enveloppe fin d'app.js) : R.rdCour = ctx.rd (bouton data-rd = scoreboard
+  c.round.displayName ; robot m.c.round) sinon tour d'après le dernier joué dans ce tournoi (m.ek = ctx.ek), R.tourBil ; âge = _g45TnProfil
+  (analyse, avis Compétitions, robot). Facteurs clés : « 🧱 BILAN EN QUARTS… » et « 🎂 Âge ». Smoke 80 (tnTour) + 4 essais vm.
   Données Sackmann = usage NON COMMERCIAL (à revoir le jour de l'abonnement). 9 essais (vm + lecteur), smoke 66.
   20261020s (« ok mais on peut pas améliorer compétition/tennis aussi ? » + « LES PHOTOS DES JOUEURS TOUJOURS DISPO OU SI PAS DE PHOTO drapeau du
   pays du joueur », maquette maquette-tennis-res validée « oui ») : bloc « COMPÉTITIONS → TENNIS PLUS LISIBLE » en fin d'app.js. Remplace
