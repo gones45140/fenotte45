@@ -2211,6 +2211,8 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   _G45_TN_STD age 3 / tour 2, curseurs dans ⚖️ ; _g45TnCalc (enveloppe fin d'app.js) : R.rdCour = ctx.rd (bouton data-rd = scoreboard
   c.round.displayName ; robot m.c.round) sinon tour d'après le dernier joué dans ce tournoi (m.ek = ctx.ek), R.tourBil ; âge = _g45TnProfil
   (analyse, avis Compétitions, robot). Facteurs clés : « 🧱 BILAN EN QUARTS… » et « 🎂 Âge ». Smoke 80 (tnTour) + 4 essais vm.
+  20261022h : styles de jeu tennis remplis à la main (Antoine + JP, 9 corrections confirmées par Gemini) → données/styles_tennis.json
+  { atp / wta : { nomEnLettres : [nom, style] } } ; backtest_tennis.mjs : duels de styles (réel / prévu par l'avis / écart).
   Données Sackmann = usage NON COMMERCIAL (à revoir le jour de l'abonnement). 9 essais (vm + lecteur), smoke 66.
   20261020s (« ok mais on peut pas améliorer compétition/tennis aussi ? » + « LES PHOTOS DES JOUEURS TOUJOURS DISPO OU SI PAS DE PHOTO drapeau du
   pays du joueur », maquette maquette-tennis-res validée « oui ») : bloc « COMPÉTITIONS → TENNIS PLUS LISIBLE » en fin d'app.js. Remplace
@@ -2411,3 +2413,9 @@ Avant de coder, résume à Antoine ce que tu as compris et ce que tu vas toucher
 Si une API doit être vérifiée, donne la commande console et arrête-toi.
 Fin de session : liste des fichiers modifiés, version ?v=, tests passés, et
 mise à jour des sections 5 à 7 de ce fichier si quelque chose a changé.
+- 20261022i (capture critères 4 saisons Rams « manque joueur », maquette maquette-criteres-joueurs-us « oui ») : onglet 👤 Joueurs des critères
+  pour NFL / NHL / MLB / rugby (_g45CrHtml, bloc après q3) : index _g45JouCle (g45_jou_v2_, celui de « Analyser les joueurs » de Saisons)
+  complété pour les matchs manquants (usCharger → _g45JouConstruire sur ces matchs, fusion, enregistrement ; bouton « 📥 Lire les feuilles
+  de match des 4 saisons ») ; usVal(pid, m) : m[6] = n° de match (chargerHk / chargerRg, clés g45cr1_ → g45cr1u_, g45cr3_ → g45cr3u_),
+  absent de idx.pres = non compté (rugby à XV : présence inconnue → compté) ; rôles _G45_JOU_TABLE, « Combien » c.jmin 1 / 2 / 3, 2-3
+  joueurs chacun / au moins un. ⚠ NFL : un joueur sans aucune stat dans le match n'apparaît pas dans pres → match non compté. Smoke 81 (crUs).
