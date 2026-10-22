@@ -2435,3 +2435,5 @@ mise à jour des sections 5 à 7 de ce fichier si quelque chose a changé.
   blasons des 2 clubs + heure / score + « ▾ détail » au centre (.g45sel-m) · logo du championnat à droite (.g45sel-l) ; ≤ 700 px : blasons +
   heure au-dessus, logo du championnat 40 px à droite. Logos : x.hl / x.al / J.lg du robot, sinon decoDe (lecture du scoreboard séparée de
   detail(x, juste)) ; pas de logo → initiales. Smoke selHier complété ; captures PC / téléphone vérifiées.
+  20261022n (dessin d'Antoine sur la capture : « BES » à gauche du logo, « PAL » à droite, bloc au centre) : grille minmax(0,1fr) auto
+  minmax(0,1fr) → bloc vraiment centré, nom du club à côté de son blason (.g45sel-n, 150 px, masqué sous 1000 px). Capture PC vérifiée.

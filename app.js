@@ -77348,8 +77348,10 @@ window._g45AgJouUs = async function (nowTs) {
     var R = (donnees() || {}).reglages || {};
     h += '<div style="font-size:13px;color:#c9d3ee;margin:4px 0 6px;">' + (S.hier ? '<b style="color:#f5c542;">Choisie hier à ' + hhmm(tN) + ' (en attendant celle de 8 h)</b>' : 'Choisie à ' + hhmm(tN)) + ' · la même pour tout le monde · cote ≥ ' + String(R.min || 1.5).replace('.', ',')
       + ' · proba ≥ ' + Math.round((R.pmin || 0.6) * 100) + ' %' + (R.accord ? ' · stats et books d\'accord' : '') + '</div>';
-    h += '<style>#g45tr-sel .g45sel-c{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 80px;gap:10px;align-items:center}#g45tr-sel .g45sel-m{display:flex;align-items:center;justify-content:center;gap:12px}#g45tr-sel .g45sel-l{text-align:right}'
-      + '@media(max-width:700px){#g45tr-sel .g45sel-c{grid-template-columns:minmax(0,1fr) 44px}#g45tr-sel .g45sel-m{grid-column:1 / -1;grid-row:1;justify-content:flex-start}#g45tr-sel .g45sel-l img{width:40px!important;height:40px!important}}</style>';   /* 20261022m */
+    h += '<style>#g45tr-sel .g45sel-c{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:12px;align-items:center}#g45tr-sel .g45sel-m{display:flex;align-items:center;justify-content:center;gap:12px}#g45tr-sel .g45sel-l{text-align:right}'
+      + '#g45tr-sel .g45sel-n{font-size:15px;width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}'
+      + '@media(max-width:1000px){#g45tr-sel .g45sel-n{display:none}}'
+      + '@media(max-width:700px){#g45tr-sel .g45sel-c{grid-template-columns:minmax(0,1fr) 44px}#g45tr-sel .g45sel-m{grid-column:1 / -1;grid-row:1;justify-content:flex-start}#g45tr-sel .g45sel-l img{width:40px!important;height:40px!important}}</style>';   /* 20261022m / n */
     var parL = {}, ordre = [];
     L.slice().sort(function (a, b) { return a.t - b.t; }).forEach(function (x) { if (!parL[x.sl]) { parL[x.sl] = []; ordre.push(x.sl); } parL[x.sl].push(x); });
     ordre.forEach(function (sl) {
@@ -77376,7 +77378,8 @@ window._g45AgJouUs = async function (nowTs) {
           + '<div class="g45sel-g"><b style="font-size:15px;">' + esc(x.h) + ' – ' + esc(x.a) + '</b>'
           + '<div style="font-size:14px;margin-top:4px;color:#dbe4ff;">' + esc(x.m) + (x.c > 1 ? ' · <b style="color:#111;background:#f0c828;border-radius:6px;padding:0 6px;">@' + x.c.toFixed(2).replace('.', ',') + '</b>' : '') + '</div>'
           + '<div style="font-size:13px;margin-top:5px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;">' + (pP != null ? '<span>📊 ' + pP + ' %</span>' : '') + '<span>🏦 ' + (pF != null ? pF + ' %' : '—') + '</span>' + res + '</div></div>'
-          + '<div class="g45sel-m">' + blason(lh, x.h) + '<div style="text-align:center;font-size:14px;line-height:1.35;">' + etat + '<div style="font-weight:800;color:#fff;margin-top:3px;">' + (ouv ? '▴ refermer' : '▾ détail') + '</div></div>' + blason(la, x.a) + '</div>'
+          /* 20261022n (dessin d'Antoine : « BES » à gauche du logo, « PAL » à droite, bloc au centre de la carte) : nom de chaque club à côté de son blason */
+          + '<div class="g45sel-m"><b class="g45sel-n" style="text-align:right;">' + esc(x.h) + '</b>' + blason(lh, x.h) + '<div style="text-align:center;font-size:14px;line-height:1.35;flex:none;">' + etat + '<div style="font-weight:800;color:#fff;margin-top:3px;">' + (ouv ? '▴ refermer' : '▾ détail') + '</div></div>' + blason(la, x.a) + '<b class="g45sel-n">' + esc(x.a) + '</b></div>'
           + '<div class="g45sel-l">' + (lgl ? '<img src="' + esc(lgl) + '" alt="" style="width:64px;height:64px;object-fit:contain;" onerror="this.style.display=\'none\'">' : '') + '</div></div>'
           + (ouv ? detail(x) : '');
       });
