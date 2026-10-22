@@ -2225,6 +2225,8 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   RÉSULTAT (22/10, 1 577 matchs) : 50-55 → 52 % ; 55-60 → 67 ; 60-65 → 71 ; 65-70 → 78 ; 70-75 → 82 ; 75-80 → 91 (32) ; 80+ → 100 (6).
   20261022s (« oui ») : window._g45TnReel(pc) = % réel estimé (table réduite d'un tiers pour le biais Elo, plafond 97) → « ≈ X % réel · cote
   BET45 » (= 100 / réel) dans l'analyse et les résultats ; le filtre « Cote BET45 » utilise ce % corrigé (proba mini et confiance restent sur l'avis).
+  20261022v (« ça se touche un peu trop », « oui ») : ligne 🔮 des résultats = blocs flex séparés (gap 16 px, retour à la ligne entre blocs),
+  « cote BET45 » en pastille jaune texte noir ; idem dans l’encadré de l’analyse (marge 12 px).
   20261022m (tennis « Tous les matchs du jour » avec 70 % coché mais un 53 % affiché) : titre « (sans filtre) » ; dans l'analyse, ligne grise
   « ℹ️ Sous tes filtres de Tendances (53 % < 70 %) » quand l'avis est sous g45tn_pmin / g45tn_conf.
   20261022o (« nouveau à faire dans filtre : cote BET45 », « et on aura des matchs ») : filtre tennis « Cote BET45 » (g45tn_cote = « min-max »,
