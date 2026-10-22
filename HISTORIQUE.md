@@ -2213,6 +2213,12 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   (analyse, avis Compétitions, robot). Facteurs clés : « 🧱 BILAN EN QUARTS… » et « 🎂 Âge ». Smoke 80 (tnTour) + 4 essais vm.
   20261022h : styles de jeu tennis remplis à la main (Antoine + JP, 9 corrections confirmées par Gemini) → données/styles_tennis.json
   { atp / wta : { nomEnLettres : [nom, style] } } ; backtest_tennis.mjs : duels de styles (réel / prévu par l'avis / écart).
+  RÉSULTATS (719 matchs à 2 styles) : Polyvalent > prévu contre tous (contre contreur 77 % / 59 % prévu, 47 matchs ; contre attaquant 60 / 52,
+  119 ; contre gros serveur 62 / 54, 32) ; attaquant contre contreur sur dur 60,5 / 51,6 (76). Ajout à l'avis (20261022j) : poly +0,7 à +1
+  point à la vérif ; attaquant / contreur sur dur +0,1 (non retenu). ⚠ biais possible : grands joueurs souvent classés « Polyvalent ».
+  20261022k (« oui ») : _g45TnStyleCharger / _g45TnStyleDe (raw données/styles_tennis.json, une fois par session), poserElo pose aussi
+  CA.style / CB.style (3 appelants) ; _g45TnAvis : bonus Polyvalent 0,15 (sty 3 dans _G45_TN_STD, curseur ⚖️) ; Facteurs clés : ligne
+  « 🎨 Style » (vert = polyvalent face à un autre style). Smoke 82 (tnStyle) + 3 essais vm.
   Données Sackmann = usage NON COMMERCIAL (à revoir le jour de l'abonnement). 9 essais (vm + lecteur), smoke 66.
   20261020s (« ok mais on peut pas améliorer compétition/tennis aussi ? » + « LES PHOTOS DES JOUEURS TOUJOURS DISPO OU SI PAS DE PHOTO drapeau du
   pays du joueur », maquette maquette-tennis-res validée « oui ») : bloc « COMPÉTITIONS → TENNIS PLUS LISIBLE » en fin d'app.js. Remplace

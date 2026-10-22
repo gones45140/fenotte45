@@ -77841,7 +77841,20 @@ window._g45AgJouUs = async function (nowTs) {
     var v = sf === 'terre' ? r[3] : (sf === 'gazon' ? r[4] : r[2]);
     return v > 0 ? v : (r[1] > 0 ? r[1] : null);
   };
-  var poserElo = function (lg, CA, CB, nA, nB, sf) { CA.elo = window._g45TnEloDe(lg, nA, sf); CB.elo = window._g45TnEloDe(lg, nB, sf); };
+  var poserElo = function (lg, CA, CB, nA, nB, sf) { CA.elo = window._g45TnEloDe(lg, nA, sf); CB.elo = window._g45TnEloDe(lg, nB, sf);
+    try { CA.style = window._g45TnStyleDe(lg, nA); CB.style = window._g45TnStyleDe(lg, nB); } catch (e) {} };   /* 20261022k : + style */
+  /* 20261022k : styles de jeu (fichier rempli à la main, données/styles_tennis.json, lu une fois par session comme l'Elo) */
+  var styP = null;
+  window._g45TnStyleCharger = function () {
+    if (!styP) styP = fetch('https://raw.githubusercontent.com/gones45140/gones45/main/donn%C3%A9es/styles_tennis.json', { cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }).then(function (j) { window._g45TnStyleJ = j; return j; });
+    return styP;
+  };
+  window._g45TnStyleDe = function (lg, nom) {
+    var J = window._g45TnStyleJ, T = J && J[lg === 'wta' ? 'wta' : 'atp']; if (!T) return null;
+    var k = String(nom || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z]/g, ''), r = T[k];
+    return r ? r[1] : null;
+  };
 
   /* 🔮 AVIS BET45 (20261020j, « ça dit pas qui BET45 voit gagner ? ») : moyenne pondérée de la part de chaque joueur, facteur par facteur.
      Classement ATP / WTA (1/√rang, curatedRank d'ESPN) 0,30 · surface 12 mois 0,25 · forme 0,20 · face-à-face 0,10 (lissé (g+1)/(n+2)) ·
@@ -77852,7 +77865,7 @@ window._g45AgJouUs = async function (nowTs) {
      surface du match ({ elo, rang, surf, forme, prec, h2h, fat, aut } de 0 à 10, poids = valeur / 20 ; aut = niveau / tournoi / salle / pays,
      chacun). Sans W : avis BET45 standard, INCHANGÉ (robot, sélection, Compétitions). fat = fatigue (matchs sur 7 jours, le plus frais
      favorisé) : n'existe que dans les réglages perso (standard 0). */
-  window._G45_TN_STD = { elo: 7, rang: 2, surf: 5, forme: 4, prec: 0, h2h: 2, fat: 0, aut: 1, age: 3, tour: 2 };
+  window._G45_TN_STD = { elo: 7, rang: 2, surf: 5, forme: 4, prec: 0, h2h: 2, fat: 0, aut: 1, age: 3, tour: 2, sty: 3 };
   /* 20261022b (test sur 2025, robot backtest-tennis, 1 577 matchs) : un joueur qui sort d'un titre / d'une finale a GAGNÉ 67 % de son match
      suivant (122 cas) → le « contrecoup » ne compte plus dans l'avis standard (prec 0 ; réglable dans ⚖️ Mes coefficients). */
   window._g45TnAvis = function (A, B, rkA, rkB, W) {
@@ -77876,6 +77889,9 @@ window._g45AgJouUs = async function (nowTs) {
        Joueur local (52 %) et finale (41 cas) testés et NON retenus. */
     if (A.age > 0 && B.age > 0 && Math.abs(A.age - B.age) >= 3 && ww('age', 1)) aj(ww('age', 0.15), A.age < B.age ? 0.6 : 0.4);
     if (A.tourBil && B.tourBil && A.tourBil[1] >= 3 && B.tourBil[1] >= 3 && ww('tour', 1)) { var qa = A.tourBil[0] / A.tourBil[1], qb = B.tourBil[0] / B.tourBil[1]; aj(ww('tour', 0.10), (qa + 0.01) / (qa + qb + 0.02)); }
+    /* 20261022k (styles remplis à la main par Antoine / JP, données/styles_tennis.json ; test 2025 : le « Polyvalent » gagne 64,5 % contre un
+       autre style, +0,7 à +1 point dans l'avis ; attaquant contre contreur sur dur : rien de plus → non retenu) : bonus Polyvalent 0,15. */
+    if (A.style && B.style && (A.style === 'Polyvalent') !== (B.style === 'Polyvalent') && ww('sty', 1)) aj(ww('sty', 0.15), A.style === 'Polyvalent' ? 0.6 : 0.4);
     if (ww('aut', 1)) { var wo = ww('aut', 0.05); pct(wo, A.cat, B.cat); pct(wo, A.tour, B.tour); pct(wo, A.lieu, B.lieu); pct(wo, A.pays, B.pays); }
     if (!poids) return null;
     var p = som / poids, ec = Math.abs(p - 0.5);
@@ -77950,7 +77966,7 @@ window._g45AgJouUs = async function (nowTs) {
   /* ── 20261021o : ⚖️ Mes coefficients ── */
   var SFK = ['dur', 'salle', 'terre', 'gazon'];
   var CPAR = [['forme', '🔥 Forme (10 matchs)'], ['surf', '🟦 Surface 2 mois'], ['elo', '🎯 Elo surface'], ['rang', '🏅 Classement'], ['h2h', '⚔️ Face-à-face'],
-    ['prec', '🏁 Tournoi précédent'], ['fat', '😴 Fatigue (matchs 7 j)'], ['age', '🎂 Âge (le plus jeune)'], ['tour', '🧱 Bilan à ce tour'], ['aut', '🏟️ Niveau / tournoi / salle / pays']];
+    ['prec', '🏁 Tournoi précédent'], ['fat', '😴 Fatigue (matchs 7 j)'], ['age', '🎂 Âge (le plus jeune)'], ['tour', '🧱 Bilan à ce tour'], ['sty', '🎨 Style (polyvalent)'], ['aut', '🏟️ Niveau / tournoi / salle / pays']];
   var coefsLire = function () {
     var c = null; try { c = JSON.parse(localStorage.getItem('g45tn_coefs') || 'null'); } catch (e) {}
     c = c && typeof c === 'object' ? c : {}; c.on = !!c.on;
@@ -78029,6 +78045,9 @@ window._g45AgJouUs = async function (nowTs) {
         /* 20261022g : 🧱 bilan à ce tour + 🎂 âge */
         + (A.tourBil && B.tourBil ? ligne('🧱 BILAN EN ' + ({ 'Round 1': '1ER TOUR', 'Round 2': '2E TOUR', 'Round 3': '3E TOUR', 'Round 4': '8ES', 'Quarterfinal': 'QUARTS', 'Semifinal': 'DEMIES', 'Final': 'FINALE' }[A.rdCour] || A.rdCour),
             { w: A.tourBil[0], n: A.tourBil[1], p: A.tourBil[1] ? Math.round(A.tourBil[0] / A.tourBil[1] * 100) : null }, { w: B.tourBil[0], n: B.tourBil[1], p: B.tourBil[1] ? Math.round(B.tourBil[0] / B.tourBil[1] * 100) : null }) : '')
+        + (A.style || B.style ? '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-top:1px solid rgba(255,255,255,.08);">'   /* 20261022k */
+            + '<b style="font-size:15px;color:' + (A.style === 'Polyvalent' && B.style !== 'Polyvalent' ? '#1ed760' : '#fff') + ';">' + esc(A.style || '—') + '</b><span style="text-align:center;font-size:14px;font-weight:700;color:#e8ecfa;">🎨 Style</span>'
+            + '<b style="font-size:15px;text-align:right;color:' + (B.style === 'Polyvalent' && A.style !== 'Polyvalent' ? '#1ed760' : '#fff') + ';">' + esc(B.style || '—') + '</b></div>' : '')
         + (A.age > 0 && B.age > 0 ? duo('🎂 Âge', A.age, B.age, A.age + ' ans', B.age + ' ans', -1, Math.abs(A.age - B.age) >= 3 ? 'le plus jeune gagne 55 % des matchs' : 'écart trop petit : pas compté') : '')
         + titreSec('FORME PHYSIQUE')
         + barre('🛌 JOURS DE REPOS', A.repos, B.repos, A.repos == null ? '—' : A.repos + ' j', B.repos == null ? '—' : B.repos + ' j')
@@ -78131,7 +78150,7 @@ window._g45AgJouUs = async function (nowTs) {
       o.A = window._g45TnCalc(ha, Object.assign({}, o.ctx, { adv: o.b.id }));
       o.B = window._g45TnCalc(hb, Object.assign({}, o.ctx, { adv: o.a.id }));
       o.A.age = (o.pa && o.pa.age) || null; o.B.age = (o.pb && o.pb.age) || null;   /* 20261022g */
-      try { await window._g45TnEloCharger(); poserElo(o.lg, o.A, o.B, o.a.n, o.b.n, o.ctx.sf); } catch (e) {}   /* 20261020r */
+      try { await window._g45TnEloCharger(); await window._g45TnStyleCharger(); poserElo(o.lg, o.A, o.B, o.a.n, o.b.n, o.ctx.sf); } catch (e) {}   /* 20261020r */
     } catch (e) { o.err = true; }
     o.charge = false; dessiner(bid);
   }
@@ -78228,7 +78247,7 @@ window._g45AgJouUs = async function (nowTs) {
     try { var e0 = await evInfo(m.lg, 'events/' + m.ek); if (e0) { ind = e0.ind; adr = adr || e0.adr; } } catch (e) {}
     var py = window._g45TnPays(adr), ctx = { sf: window._g45TnSurf(m.tn, ind), ind: ind, cat: m.cat, ek: m.ek, py: py ? py.n : '', pf: py ? py.f : '', adr: adr };
     var CA = window._g45TnCalc(await histo(m.a), Object.assign({}, ctx, { adv: m.b.id })), CB = window._g45TnCalc(await histo(m.b), Object.assign({}, ctx, { adv: m.a.id }));
-    try { await window._g45TnEloCharger(); poserElo(m.lg, CA, CB, m.a.n, m.b.n, ctx.sf); } catch (e) {}   /* 20261020r */
+    try { await window._g45TnEloCharger(); await window._g45TnStyleCharger(); poserElo(m.lg, CA, CB, m.a.n, m.b.n, ctx.sf); } catch (e) {}   /* 20261020r */
     try { CA.age = ((await window._g45TnProfil(m.a.id)) || {}).age || null; CB.age = ((await window._g45TnProfil(m.b.id)) || {}).age || null; } catch (e) {}   /* 20261022g */
     var V = window._g45TnAvis(CA, CB, m.a.rk, m.b.rk); if (!V) return null;
     var cl = ''; try { cl = window._g45TnClair({ a: m.a, b: m.b, A: CA, B: CB, ctx: ctx }, V); } catch (e) {}
@@ -78390,7 +78409,7 @@ window._g45AgJouUs = async function (nowTs) {
         var py = window._g45TnPays(adr), ctx = { sf: window._g45TnSurf(tour, ind), ind: ind, cat: window._g45TnCat(tour, m.lg), ek: ek, py: py ? py.n : '', pf: py ? py.f : '', adr: adr, rd: (m.c.round && m.c.round.displayName) || '' };
         var ha = await histo(m.lg, A.id), hb = await histo(m.lg, B.id);
         var CA = window._g45TnCalc(ha, Object.assign({}, ctx, { adv: B.id })), CB = window._g45TnCalc(hb, Object.assign({}, ctx, { adv: A.id }));
-        try { await window._g45TnEloCharger(); poserElo(m.lg, CA, CB, A.n, B.n, ctx.sf); } catch (e) {}   /* 20261020r */
+        try { await window._g45TnEloCharger(); await window._g45TnStyleCharger(); poserElo(m.lg, CA, CB, A.n, B.n, ctx.sf); } catch (e) {}   /* 20261020r */
         try { CA.age = ((await window._g45TnProfil(A.id)) || {}).age || null; CB.age = ((await window._g45TnProfil(B.id)) || {}).age || null; } catch (e) {}   /* 20261022g */
         var V = window._g45TnAvis(CA, CB, A.rk, B.rk);
         if (!V || V.conf !== 'forte' || Math.max(V.p, 1 - V.p) < R.pmin) continue;
