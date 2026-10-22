@@ -2442,3 +2442,8 @@ mise à jour des sections 5 à 7 de ce fichier si quelque chose a changé.
   detail(x, juste)) ; pas de logo → initiales. Smoke selHier complété ; captures PC / téléphone vérifiées.
   20261022n (dessin d'Antoine sur la capture : « BES » à gauche du logo, « PAL » à droite, bloc au centre) : grille minmax(0,1fr) auto
   minmax(0,1fr) → bloc vraiment centré, nom du club à côté de son blason (.g45sel-n, 150 px, masqué sous 1000 px). Capture PC vérifiée.
+- 20261022q (capture Saisons Lyon : « dans le calcul » décoché mais Over 0.5 / Éq O0.5 / H0 toujours affichés ; pastilles BTS · CS · WIN…
+  dans « Mes stats » « pas sûr que ça soit sa place » → « OUI » aux deux) : _g45CursCles ne renvoie plus les lignes décochées (hors) →
+  masquées partout (étiquettes, Stats sélectionnées, compteur, Cockpit), fin de la règle du 24/09 ; pastilles sorties du bandeau
+  « Statistiques de la saison » → carte « ✅ Autres paris » juste au-dessus (foot loadTeamSaisons _stPil ; sports US _g45SaisonsGen _sgPil) ;
+  « Mes stats » = Stats sélectionnées seules. Smoke 82.

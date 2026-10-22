@@ -23866,7 +23866,9 @@ function _g45Ligne(v) { v = Number(v); if (v === 0) return '0'; return (v > 0 ? 
 function _g45LigneFr(v) { v = Number(v); if (v === 0) return '0'; return (v > 0 ? '+' : '\u2212') + Math.abs(v).toFixed(1).replace('.', ','); }
 
 /* Cles produites par l'etat des curseurs. */
-function _g45CursCles(e) { return _g45CursDetail(e).map(function (x) { return x.k; }); }
+/* 20261022q (« normalement c'est décoché mais ça apparaît » → « OUI ») : « dans le calcul » DÉCOCHÉ = ligne MASQUÉE partout (étiquettes des
+   matchs, Stats sélectionnées, compteur, Cockpit) — remplace la règle du 24/09 (étiquette gardée, hors compteur). */
+function _g45CursCles(e) { return _g45CursDetail(e).filter(function (x) { return !x.hors; }).map(function (x) { return x.k; }); }
 /* « Dans le calcul » decoche (24/09/2026, demande d'Antoine) : l'etiquette
    reste sur chaque match, mais le marche ne compte plus dans le compteur
    « ✅ x/n » ni dans la couleur de la barre. */
@@ -25354,7 +25356,9 @@ function renderSaisonsChart(el, results, nom) {
        (localStorage g45_st_tab). La liste des matchs en dessous ne bouge pas. */
     try {
       var _s6 = html.length, _stK = String(nom || ''), _stO = !!(window._g45StOuv && window._g45StOuv[_stK]) || !!window._g45CursToujours;
-      var _stP = { forme: html.slice(_s1, _s2), mes: html.slice(_s0, _s1) + html.slice(_s2, _s3), dom: html.slice(_s3, _s4), buts: html.slice(_s4, _s5), comp: html.slice(_s5, _s6) };
+      var _stP = { forme: html.slice(_s1, _s2), mes: html.slice(_s2, _s3), dom: html.slice(_s3, _s4), buts: html.slice(_s4, _s5), comp: html.slice(_s5, _s6) };
+      /* 20261022q (« pas sûr que ça soit sa place ici » → « OUI ») : pastilles BTS · CS · WIN… = critères du combiné → carte « ✅ Autres paris » HORS du bandeau */
+      var _stPil = '<div style="padding:10px 12px;border-radius:12px;background:rgba(11,16,29,.72);border:1px solid rgba(255,255,255,.08);margin:0 0 9px;"><div style="font-size:14px;font-weight:800;color:#fff;margin-bottom:8px;">✅ Autres paris <span style="font-size:12px;color:#c9d3ee;font-weight:600;">(dans le combiné et les étiquettes des matchs)</span></div>' + html.slice(_s0, _s1) + '</div>';
       var _stT = 'forme'; try { _stT = localStorage.getItem('g45_st_tab') || 'forme'; } catch (e) {}
       if (!_stP[_stT]) _stT = 'forme';
       var _stB = '<div id="g45st-ouv" onclick="g45StOuvrir(\'' + _stK.replace(/['"\\<>]/g, '') + '\')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:11px 12px;border-radius:12px;background:rgba(11,16,29,.72);border:1px solid rgba(255,255,255,.12);margin:2px 0 9px;color:#fff;">'
@@ -25362,7 +25366,7 @@ function renderSaisonsChart(el, results, nom) {
       if (_stO) _stB += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin:0 0 10px;">' + [['forme', '🔥 Forme'], ['mes', '✅ Mes stats'], ['dom', '🏠 Dom / Ext'], ['buts', '⚽ Buts'], ['comp', '🏆 Compétitions']]
         .filter(function (o) { return _stP[o[0]]; }).map(function (o) { var on = o[0] === _stT;
           return '<span onclick="g45StTab(\'' + o[0] + '\')" style="flex:1;min-width:96px;text-align:center;cursor:pointer;padding:9px 6px;border-radius:10px;font-size:13.5px;font-weight:800;' + (on ? 'background:#2563eb;border:1px solid #5aa9ff;color:#fff;' : 'background:rgba(11,16,29,.72);border:1px solid rgba(255,255,255,.16);color:#e8ecfa;') + '">' + o[1] + '</span>'; }).join('') + '</div>' + _stP[_stT];
-      html = html.slice(0, _s0) + _stB;
+      html = html.slice(0, _s0) + _stPil + _stB;
     } catch (e) {}
     // ── Résultats complets de la saison ──
     var allMatchesSorted = filteredMatches.slice().sort(function(a,b){ return new Date(b.utcDate)-new Date(a.utcDate); });
@@ -51150,7 +51154,8 @@ async function _g45SaisonsGen(el, nom, perso) {
      réglementaire RESTENT visibles hors du bandeau : ils changent aussi le compteur de combiné et la liste des matchs. */
   try {
     var _q6 = html.length, _sgK = 'g|' + sp + '|' + String(nom || '').replace(/['"\\<>]/g, ''), _sgO = !!(window._g45StOuv && window._g45StOuv[_sgK]) || !!window._g45CursToujours;
-    var _sgP = { forme: html.slice(_q1, _q2), mes: html.slice(_q0, _q1) + html.slice(_q3, _q4), dom: html.slice(_q4, _q5), buts: html.slice(_q5, _q6) };
+    var _sgP = { forme: html.slice(_q1, _q2), mes: html.slice(_q3, _q4), dom: html.slice(_q4, _q5), buts: html.slice(_q5, _q6) };
+    var _sgPil = '<div style="padding:10px 12px;border-radius:12px;background:rgba(11,16,29,.72);border:1px solid rgba(255,255,255,.08);margin:0 0 9px;"><div style="font-size:14px;font-weight:800;color:#fff;margin-bottom:8px;">✅ Autres paris</div>' + html.slice(_q0, _q1) + '</div>';   /* 20261022q */
     var _sgT = 'forme'; try { _sgT = localStorage.getItem('g45_st_tab') || 'forme'; } catch (e) {}
     if (!_sgP[_sgT]) _sgT = 'forme';
     var _sgB = '<div id="g45st-ouv" onclick="g45StOuvrir(\'' + _sgK + '\')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:11px 12px;border-radius:12px;background:rgba(11,16,29,.72);border:1px solid rgba(255,255,255,.12);margin:2px 0 9px;color:#fff;">'
@@ -51158,7 +51163,7 @@ async function _g45SaisonsGen(el, nom, perso) {
     if (_sgO) _sgB += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin:0 0 10px;">' + [['forme', '🔥 Forme'], ['mes', '✅ Mes stats'], ['dom', '🏠 Dom / Ext'], ['buts', (sp === 'soccer' || sp === 'hockey') ? '⚽ Buts' : '🎯 Points']]
       .map(function (o) { var on = o[0] === _sgT;
         return '<span onclick="g45StTab(\'' + o[0] + '\')" style="flex:1;min-width:96px;text-align:center;cursor:pointer;padding:9px 6px;border-radius:10px;font-size:13.5px;font-weight:800;' + (on ? 'background:#2563eb;border:1px solid #5aa9ff;color:#fff;' : 'background:rgba(11,16,29,.72);border:1px solid rgba(255,255,255,.16);color:#e8ecfa;') + '">' + o[1] + '</span>'; }).join('') + '</div>' + _sgP[_sgT];
-    html = html.slice(0, _q0) + html.slice(_q2, _q3) + _sgB;
+    html = html.slice(0, _q0) + _sgPil + html.slice(_q2, _q3) + _sgB;
   } catch (e) {}
 
   /* ── Compteur de COMBINE ──────────────────────────────────────────────────
