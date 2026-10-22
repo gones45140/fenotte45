@@ -2320,6 +2320,10 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   reconnus). App : _g45TrCeHtml, bloc testeurs dans l'Historique. Essai : Lyon (« Olympique Lyonnais ») et Bournemouth (jamais en coupe
   d'Europe) non reconnus, Bayern – Bruges 48 % dans sa tranche → tableau trop grossier pour le vainqueur. À FAIRE : + de 1,5 / − de 2,5 dans
   coupes_europe.mjs ; un vrai modèle de vainqueur (écart exact, Elo de club ?) avant de remettre les résultats en officiel.
+  20261023n (« Barça – PSG ou Arsenal – Bayern il n'y a pas lieu d'enlever ; Bruges – Lens, Lille – Gala c'est quasi le même niveau ») :
+  tendances.mjs ceAvis → paris sur le VAINQUEUR gardés aux règles habituelles si MÊME STANDING = écart de coefficient 5 saisons < 2,5 fois
+  (coefficient = max(total, part du pays)) : Barça – PSG 1,2, Arsenal – Bayern 1,2, Lille – Galatasaray 1,3, Villa – Sporting 1,0 ; Bruges – Lens
+  4,5 (Lens 12,5 → 16,7 par la part France : peu d'Europe) → test ; club absent (Viking, Bournemouth) → test. Robot seulement (app inchangée).
   20261022m (tennis « Tous les matchs du jour » avec 70 % coché mais un 53 % affiché) : titre « (sans filtre) » ; dans l'analyse, ligne grise
   « ℹ️ Sous tes filtres de Tendances (53 % < 70 %) » quand l'avis est sous g45tn_pmin / g45tn_conf.
   20261022o (« nouveau à faire dans filtre : cote BET45 », « et on aura des matchs ») : filtre tennis « Cote BET45 » (g45tn_cote = « min-max »,
