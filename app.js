@@ -71908,6 +71908,13 @@ async function _g45TicketIa(dataUrl) {
     + 'du MATCH (Aujourd\'hui = date du jour), équipes sur deux lignes avec « - » à droite (1re = reçoit), marché « Résultat » puis la sélection en '
     + 'dessous (« Lille », « Russell, George » = Prénom après la virgule), « Cote 1.38 », pied « Cote totale | Mise | Gains potentiels » (vert si gagné). '
     + 'Si « Cote totale » vaut « - », prends la « Cote » de la sélection. '
+    /* 20261023p (capture d'Antoine : « rajoute ticket Pinnacle, il ne le lit pas ») */
+    + 'PINNACLE = carte BLEU-GRIS foncé, en haut « ID: 3142977292 » puis une date-heure « 2026-10-22 23:55 » (date et heure où le pari a été PLACÉ), '
+    + 'pastille VERTE « En cours » en haut à droite, titre en gras avec une icône du sport (« Connor McDavid Total Assists » = pari JOUEUR sur McDavid), '
+    + 'ligne grise « 2026-10-22 Propositions sur le joueur – NHL » (date du MATCH + compétition), sélection « Plus de +0.5 Passes décisives » et à droite '
+    + 'la cote en ORANGE « @ 1.492 (Cotes décimales) », puis « Paris spéciaux », « Mise EUR 3.00 », « Risque EUR 3.00 », « Gain EUR 1.48 ». '
+    + 'ATTENTION Pinnacle : « Gain » = BÉNÉFICE NET (sans la mise) → gains = mise + Gain ; la cote est celle après « @ ». Montants en « EUR ». '
+    + 'Pour un pari joueur Pinnacle, l\'adversaire n\'est souvent pas écrit : adversaire = null, equipe = le club du joueur si tu le connais. '
     + 'Si le nom ou ces signes ne sont pas visibles, '
     + 'bookmaker = null et bookmaker_sur = false : ne devine pas.\n'
     + 'La date en bas à côté de « Réf » est la date du PARI, pas du match : date = celle du match si affichée près des équipes, sinon null.\n'
@@ -71942,7 +71949,9 @@ async function _g45TicketIa(dataUrl) {
     var _nzT = function (t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z]/g, ''); };
     if (o.equipe && o.joueur && _nzT(o.equipe) === _nzT(o.joueur)) o.equipe = null;
     /* 20261007q : bookmaker gardé seulement si l'IA en est sûre (sinon le choix du formulaire reste) */
-    if (o.bookmaker_sur === false && !/winamax|betclic|unibet|pmu|betify|bet365|betsson/i.test(String(o.bookmaker || ''))) o.bookmaker = null;
+    if (o.bookmaker_sur === false && !/winamax|betclic|unibet|pmu|betify|bet365|betsson|pinnacle/i.test(String(o.bookmaker || ''))) o.bookmaker = null;
+    /* 20261023p : Pinnacle affiche le BÉNÉFICE net (« Gain EUR 1.48 » pour 3 € à 1,492) → si l'IA l'a pris tel quel (gains < mise), on rajoute la mise */
+    if (/pinnacle/i.test(String(o.bookmaker || '')) && parseFloat(o.gains) > 0 && parseFloat(o.mise) > 0 && parseFloat(o.gains) < parseFloat(o.mise)) o.gains = Math.round((parseFloat(o.gains) + parseFloat(o.mise)) * 100) / 100;
   } catch (x) {}
   /* 20261019b (capture Winamax « Résultat AS Rome » → pari enregistré en type « Résultat ») : « Résultat <équipe> » = marché 1N2 →
      « Victoire » (équipe pariée), « Nul » (match nul), « Défaite » si la sélection nomme l'adversaire. Marché combiné (buts, +, &…) : inchangé. */
@@ -74017,7 +74026,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       b.className = 'g45-tk-ban';
       b.style.cssText = 'background:rgba(8,11,20,.85);border:1px dashed #6d9dff;border-radius:8px;padding:10px;margin-bottom:8px;text-align:center;font-size:14px;line-height:1.5;color:#fff;cursor:pointer;';
       b.innerHTML = '📷 <b style="color:#6d9dff;">Colle ici la capture de ton ticket</b><br>(Ctrl+V ou glisser-déposer)<br>→ le pari se remplit tout seul'
-        + '<div style="font-size:12px;color:#c9d3ee;margin-top:4px;">Winamax, Betclic, Unibet, PMU, bet365, Betsson…</div>';
+        + '<div style="font-size:12px;color:#c9d3ee;margin-top:4px;">Winamax, Betclic, Unibet, PMU, bet365, Betsson, Pinnacle…</div>';
       b.onclick = function () { try { z.focus(); } catch (e) {} };
       b.addEventListener('dragover', function (e) { e.preventDefault(); });
       b.addEventListener('drop', function (e) {

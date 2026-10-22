@@ -2324,6 +2324,10 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   tendances.mjs ceAvis → paris sur le VAINQUEUR gardés aux règles habituelles si MÊME STANDING = écart de coefficient 5 saisons < 2,5 fois
   (coefficient = max(total, part du pays)) : Barça – PSG 1,2, Arsenal – Bayern 1,2, Lille – Galatasaray 1,3, Villa – Sporting 1,0 ; Bruges – Lens
   4,5 (Lens 12,5 → 16,7 par la part France : peu d'Europe) → test ; club absent (Viking, Bournemouth) → test. Robot seulement (app inchangée).
+- 🎫 20261023m (capture ticket Pinnacle McDavid « Total Assists », « rajoute ticket Pinnacle, il ne le lit pas ») : _g45TicketIa, consigne
+  PINNACLE (carte bleu-gris, « ID: … » + date-heure du PARI, pastille verte « En cours », ligne « 2026-10-22 Propositions sur le joueur – NHL » =
+  date du match + compétition, cote orange « @ 1.492 », « Mise / Risque / Gain EUR » où Gain = BÉNÉFICE NET) ; pinnacle ajouté à la liste des
+  bookmakers sûrs ; garde-fou : Pinnacle et gains < mise → gains + mise. Texte de la zone de collage : « … Betsson, Pinnacle… ».
   20261022m (tennis « Tous les matchs du jour » avec 70 % coché mais un 53 % affiché) : titre « (sans filtre) » ; dans l'analyse, ligne grise
   « ℹ️ Sous tes filtres de Tendances (53 % < 70 %) » quand l'avis est sous g45tn_pmin / g45tn_conf.
   20261022o (« nouveau à faire dans filtre : cote BET45 », « et on aura des matchs ») : filtre tennis « Cote BET45 » (g45tn_cote = « min-max »,
