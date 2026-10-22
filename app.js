@@ -77718,7 +77718,9 @@ window._g45AgJouUs = async function (nowTs) {
      surface du match ({ elo, rang, surf, forme, prec, h2h, fat, aut } de 0 à 10, poids = valeur / 20 ; aut = niveau / tournoi / salle / pays,
      chacun). Sans W : avis BET45 standard, INCHANGÉ (robot, sélection, Compétitions). fat = fatigue (matchs sur 7 jours, le plus frais
      favorisé) : n'existe que dans les réglages perso (standard 0). */
-  window._G45_TN_STD = { elo: 7, rang: 2, surf: 5, forme: 4, prec: 2, h2h: 2, fat: 0, aut: 1 };
+  window._G45_TN_STD = { elo: 7, rang: 2, surf: 5, forme: 4, prec: 0, h2h: 2, fat: 0, aut: 1 };
+  /* 20261022b (test sur 2025, robot backtest-tennis, 1 577 matchs) : un joueur qui sort d'un titre / d'une finale a GAGNÉ 67 % de son match
+     suivant (122 cas) → le « contrecoup » ne compte plus dans l'avis standard (prec 0 ; réglable dans ⚖️ Mes coefficients). */
   window._g45TnAvis = function (A, B, rkA, rkB, W) {
     var som = 0, poids = 0, n = 0;
     var ww = function (k, std) { return W ? (Math.max(0, Math.min(10, +W[k] || 0)) / 20) : std; };
@@ -77733,7 +77735,7 @@ window._g45AgJouUs = async function (nowTs) {
     if (W && ww('fat', 0) && A.n7 != null && B.n7 != null && (A.n7 + B.n7) > 0) aj(ww('fat', 0), (B.n7 + 1) / (A.n7 + B.n7 + 2));   /* 20261021n : surface 2 mois (pas de repli 12 mois) */
     /* 20261021n : contrecoup du tournoi précédent (titre ou gros parcours il y a ≤ 10 j) : 0,10, en défaveur de celui qui le subit */
     var cA = !!(A.prec && A.prec.contre), cB = !!(B.prec && B.prec.contre);
-    if (cA !== cB && ww('prec', 1)) aj(ww('prec', 0.10), cA ? 0.35 : 0.65);
+    if (cA !== cB && ww('prec', 0)) aj(ww('prec', 0), cA ? 0.35 : 0.65);   /* 20261022b : standard 0 (voir _G45_TN_STD) */
     if (A.h2h && A.h2h.length && ww('h2h', 1)) { var g = A.h2h.filter(function (m) { return m.w; }).length; aj(ww('h2h', 0.10), (g + 1) / (A.h2h.length + 2)); }
     if (ww('aut', 1)) { var wo = ww('aut', 0.05); pct(wo, A.cat, B.cat); pct(wo, A.tour, B.tour); pct(wo, A.lieu, B.lieu); pct(wo, A.pays, B.pays); }
     if (!poids) return null;
@@ -77750,7 +77752,7 @@ window._g45AgJouUs = async function (nowTs) {
     ad('plus en forme sur 10 matchs', F.forme, X.forme, 1);
     ad('meilleur ' + (o.ctx.sf === 'salle' ? 'en salle' : 'sur ' + (SF[o.ctx.sf] || SF.dur).l.toLowerCase()) + ' ces 2 derniers mois', F.sf2 || F.sf12, X.sf2 || X.sf12, 1.2);
     /* 20261021n : contrecoup de l'adversaire (en jaune) */
-    if (X.prec && X.prec.contre && !(F.prec && F.prec.contre)) R.push({ e: 40, t: '<span style="color:#f5c542;">⚠️ son adversaire sort ' + (X.prec.titre ? (X.prec.premier ? 'de son 1er titre' : 'd\'un titre') : (X.prec.finale ? 'd\'une finale' : 'd\'une demi-finale')) + ' (' + esc(X.prec.tr) + ', il y a ' + X.prec.j + ' j)</span>' });
+    if (false && X.prec && X.prec.contre && !(F.prec && F.prec.contre)) R.push(   /* 20261022b : plus dans l'avis standard → plus dans « En clair » */{ e: 40, t: '<span style="color:#f5c542;">⚠️ son adversaire sort ' + (X.prec.titre ? (X.prec.premier ? 'de son 1er titre' : 'd\'un titre') : (X.prec.finale ? 'd\'une finale' : 'd\'une demi-finale')) + ' (' + esc(X.prec.tr) + ', il y a ' + X.prec.j + ' j)</span>' });
     ad('meilleur en ' + (CAT[o.ctx.cat] || 'tournoi de ce niveau'), F.cat, X.cat, 0.5);
     if (o.ctx.py) ad('meilleur en ' + o.ctx.py, F.pays, X.pays, 0.4);
     R.sort(function (a, b) { return b.e - a.e; });
@@ -77880,7 +77882,7 @@ window._g45AgJouUs = async function (nowTs) {
         + (A.sf2 && B.sf2 && (A.sf2.n < 3 || B.sf2.n < 3) ? '<div style="font-size:13px;color:#f5c542;text-align:center;margin-top:3px;">Pas assez de matchs sur cette surface ces 2 mois : non compté dans l\'avis.</div>' : '')
         + (A.prec || B.prec ? (function () { var tx = function (q) { return q ? (q.contre ? '<span style="color:#f5c542;">⚠️ ' : '') + q.res + (q.premier ? ' (1er)' : '') + ' · ' + esc(q.tr) + ' · il y a ' + q.j + ' j' + (q.contre ? '</span>' : '') : '—'; };
             return '<div style="text-align:center;font-size:14px;font-weight:800;color:#e8ecfa;margin:14px 0 5px;">🏁 TOURNOI PRÉCÉDENT</div><div style="display:flex;justify-content:space-between;gap:10px;font-size:14px;font-weight:700;"><span>' + tx(A.prec) + '</span><span style="text-align:right;">' + tx(B.prec) + '</span></div>'
-              + '<div style="font-size:12px;color:#c9d3ee;text-align:center;margin-top:3px;">⚠️ = titre, ou finale / 1/2 en Grand Chelem / Masters 1000, il y a 10 jours ou moins : contrecoup compté dans l\'avis.</div>'; })() : '')
+              + '<div style="font-size:12px;color:#c9d3ee;text-align:center;margin-top:3px;">⚠️ = titre, ou finale / 1/2 en Grand Chelem / Masters 1000, il y a 10 jours ou moins. Pour info : en 2025, ces joueurs ont GAGNÉ 67 % de leur match suivant → pas compté dans l\'avis BET45 (réglable dans ⚖️ Mes coefficients).</div>'; })() : '')
         + (o.ctx.ek ? ligne('🏆 À CE TOURNOI', A.tour, B.tour) : '')
         + ligne('🏟️ EN ' + (CAT[o.ctx.cat] || 'MASTERS / WTA 1000').toUpperCase(), A.cat, B.cat)
         + ligne(o.ctx.ind ? '🏠 EN SALLE (12 MOIS)' : '☀️ EN PLEIN AIR (12 MOIS)', A.lieu, B.lieu)
@@ -79065,4 +79067,27 @@ window.g45ScTri = function (t, k) {
       try { return b0.apply(this, arguments); } finally { _g45Reg.mem = m; }
     };
   }
+})();
+
+/* ═══ 20261022b — 🏠 TOURNOIS EN SALLE RECONNUS (test sur 2025 : 0 match « en salle » sur 1 577 ; Bruno : « le dur et l'indoor, deux surfaces
+   totalement différentes ») ═══
+   ESPN ne donne pas (ou rarement) venue.indoor → tout le dur en salle passait en « dur ». Liste des tournois en salle (nom ESPN) : _g45TnSurf
+   renvoie 'salle' pour eux ; les saisons déjà gardées en mémoire (tn4_) sont corrigées à la lecture (sf + ind), et _g45TnCalc met ctx.ind
+   quand la surface du match est la salle (facteur salle / plein air). Terre / gazon d'abord (Stuttgart Porsche = terre en salle → terre). */
+(function () {
+  var RE_SALLE = /paris masters|rolex paris|swiss indoors|\bbasel\b|erste bank|vienna|\bwien\b|stockholm|european open|antwerp|moselle|\bmetz\b|atp finals|nitto|next ?gen|abn amro|rotterdam|open 13|marseille|montpellier|occitanie|dallas|sofia|davis cup final|billie jean king cup final|\blinz\b|ostrava|wta finals|transylvania|cluj|open 6e sens|almaty|st\.? ?petersburg|indoor/i;
+  var s0 = window._g45TnSurf;
+  if (typeof s0 !== 'function' || s0._salle) return;
+  window._g45TnSurf = function (nom, ind) { var r = s0.apply(this, arguments); return r === 'dur' && RE_SALLE.test(String(nom || '')) ? 'salle' : r; };
+  window._g45TnSurf._salle = true;
+  var f = window._g45TnSaison;
+  if (typeof f === 'function') {
+    window._g45TnSaison = async function () {
+      var L = await f.apply(this, arguments);
+      return Array.isArray(L) ? L.map(function (m) { return m && m.sf === 'dur' && RE_SALLE.test(String(m.tr || '')) ? Object.assign({}, m, { sf: 'salle', ind: true }) : m; }) : L;
+    };
+    Object.keys(f).forEach(function (k) { window._g45TnSaison[k] = f[k]; });
+  }
+  var c0 = window._g45TnCalc;
+  if (typeof c0 === 'function') window._g45TnCalc = function (H, ctx) { if (ctx && ctx.sf === 'salle' && !ctx.ind) ctx = Object.assign({}, ctx, { ind: true }); return c0.call(this, H, ctx); };
 })();

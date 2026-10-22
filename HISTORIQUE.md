@@ -2180,6 +2180,16 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   (en attendant celle de 8 h) ». Smoke 76 (selHier, vérifié aussi en TZ Asia/Tokyo pour la branche < 15 h).
   20261021p : robot .github/workflows/backtest-tennis.yml + scripts/backtest_tennis.mjs (test de l'avis tennis sur 2025, lancé à la main,
   écrit données/backtest_tennis.json) — 1er passage lancé le 21/10 à 23 h 36.
+  RÉSULTATS (passage du 21/10, 7 min, 180 joueurs, 1 577 matchs 2025, appris janv-juin / vérifié juil-déc) : standard 65 % de bons
+  vainqueurs (dur 63,7, terre 67,5, gazon 71,5) ; réglages « optimisés » SANS gain à la vérification (dur 62 contre 63,3) → standard gardé.
+  Seuls : Elo 67 % (Elo actuel = biais), niveau/tournoi/salle/pays 63, forme 60,5, face-à-face 60, surface 2 mois 60, classement 56, fatigue
+  51 (aucun effet), contrecoup 33 % (= le joueur qui sort d'un titre / d'une finale GAGNE 67 % du match suivant, 122 cas). Sans Elo ni
+  classement : 60,5 %. SALLE : 0 match reconnu (ESPN ne donne pas venue.indoor) → bug.
+  20261022b (« oui ») : contrecoup retiré de l'avis standard (_G45_TN_STD.prec 0, ww('prec', 0), plus dans « En clair », note du bloc 🏁
+  « pour info : 67 % ») ; tournois en salle reconnus par le nom (RE_SALLE en fin d'app.js : Paris, Bâle, Vienne, Stockholm, Anvers, Metz,
+  Finals, Next Gen, Rotterdam, Marseille, Montpellier, Dallas, Sofia, Linz, Ostrava, WTA Finals, Cluj, Lyon WTA « Open 6e Sens », Almaty…),
+  enveloppes _g45TnSurf / _g45TnSaison (mémoire tn4_ corrigée à la lecture) / _g45TnCalc (ctx.ind). Robot tendances.mjs : NBA en PAUSE dans la
+  sélection officielle du 1/10 au 14/11 (nuit du 21/10 : 1 gagné sur 5, saison reprise 2 jours avant). Smoke 77 (salle).
   Données Sackmann = usage NON COMMERCIAL (à revoir le jour de l'abonnement). 9 essais (vm + lecteur), smoke 66.
   20261020s (« ok mais on peut pas améliorer compétition/tennis aussi ? » + « LES PHOTOS DES JOUEURS TOUJOURS DISPO OU SI PAS DE PHOTO drapeau du
   pays du joueur », maquette maquette-tennis-res validée « oui ») : bloc « COMPÉTITIONS → TENNIS PLUS LISIBLE » en fin d'app.js. Remplace
