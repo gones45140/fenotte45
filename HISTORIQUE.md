@@ -2295,6 +2295,9 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   (ligne, tableau, filtre). Bloc « 🎾 Service / retour » en haut de 📐 Stats annexes (_g45TnSvCharger / _g45TnSvDe / _g45TnSvSim / _g45TnSvHtml :
   tenue de A = tg(A) − (br(B) − moyenne 21 % ATP / 32 % WTA), set rejoué jeu par jeu, tie-break 50 % ± écart, 3 sets gagnants en GC ATP) →
   au moins 1 tie-break, jeux attendus, + de 20,5 / 22,5 jeux, set gagné par l'outsider. Smoke tnSv (91), tnBk recalé.
+  20261023i (« value entre 1,5 et 2,5 en estimation du jour ? » → test « OUI ») : _g45TnRobot pousse les 💎 (≥ + 5 %, cote book 1,50-2,50, confiance
+  pas faible, un côté ou l'autre) dans window._g45TnTv → tendances.mjs J.tv (à part, jugé avec TJ). App : _g45TnTvHtml en haut de l'Historique
+  des Tendances, TESTEURS seulement (_g45TrTestVoit) : bilan à la cote FR estimée + 12 derniers ; jamais dans les totaux. Bilan le 10/11. Smoke tnTv (92).
   20261022m (tennis « Tous les matchs du jour » avec 70 % coché mais un 53 % affiché) : titre « (sans filtre) » ; dans l'analyse, ligne grise
   « ℹ️ Sous tes filtres de Tendances (53 % < 70 %) » quand l'avis est sous g45tn_pmin / g45tn_conf.
   20261022o (« nouveau à faire dans filtre : cote BET45 », « et on aura des matchs ») : filtre tennis « Cote BET45 » (g45tn_cote = « min-max »,

@@ -75875,6 +75875,7 @@ var _G45_BK_DOM = [
       + '<div style="font-size:13px;color:#c9d3ee;">Notées AVANT le match, chaque jour à 10 h · cote connue 1,50 mini · proba mini 60 % · stats et bookmakers d\'accord<br><span style="font-size:12px;color:#aab6d6;">(avant le 18/10 : proba 50 %, sans cote et désaccords compris)</span><br>Cotes ≈ books FR (ANJ) : DraftKings − 6 %, estimées</div>';
     if (!J) return box(tete + '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">⏳ Chargement…</div>');
     var tous = (J.t || []).filter(function (x) { return x.r !== -1 && (!window._g45TrEnTest || !window._g45TrEnTest(x.t) || window._g45TrTestVoit()); });   /* 20261022c : période test */
+    try { if (window._g45TnTvHtml && window._g45TrTestVoit && window._g45TrTestVoit()) tete += window._g45TnTvHtml(J); } catch (e) {}   /* 20261023i : 🧪 value tennis */
     /* 20261017h (« trier par championnat » → « un truc comme dans Bilan avec les filtres », visuel validé) : barre 🔎 Filtres repliable
        (Sport, Championnat, Type de pari, Cote, Proba stats, Avis, Période), combinables, gardés dans localStorage g45tr_off_flt ;
        les anciens boutons Toutes / D'accord / Désaccord = ligne « Avis » (O.f gardé pour g45TrOffF). Tout (tuiles, calendrier, courbe) suit. */
@@ -78110,6 +78111,24 @@ window._g45AgJouUs = async function (nowTs) {
       return h + '</div>';
     } catch (e) { return ''; }
   };
+  /* 20261023i : bloc « 🧪 Value tennis (en test) » en haut de l'Historique des Tendances officielles, TESTEURS seulement (_g45TrTestVoit) :
+     bilan à la cote FR estimée (c = book × 0,94) + 12 derniers. Jamais compté dans les totaux (liste J.tv à part). */
+  window._g45TnTvHtml = function (J) {
+    var L = (J && J.tv) || []; if (!L.length) return '';
+    var ju = L.filter(function (x) { return x.r === 0 || x.r === 1; }), ok = ju.filter(function (x) { return x.r === 1; }).length;
+    var g = ju.reduce(function (s2, x) { return s2 + (x.r === 1 ? x.c - 1 : -1); }, 0);
+    var e = function (t) { return String(t || '').replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+    var h = '<div style="margin-top:10px;background:#2a2f3d;border:1px dashed #8e9bbd;border-radius:10px;padding:10px 12px;">'
+      + '<div style="font-size:15px;font-weight:900;">🧪 Value tennis — en test (vous quatre seulement)</div>'
+      + '<div style="font-size:14px;margin:4px 0 6px;">' + ju.length + ' jugés · ' + ok + ' gagnés · gain à 1 € : <b style="color:' + (g >= 0 ? '#1ed760' : '#ff6b6b') + ';">' + (g >= 0 ? '+' : '') + g.toFixed(2).replace('.', ',') + ' €</b>'
+      + (ju.length ? ' (' + (g >= 0 ? '+' : '') + Math.round(g / ju.length * 100) + ' %)' : '') + ' · ' + (L.length - ju.length) + ' en attente · bilan le 10/11</div>';
+    L.slice().sort(function (a, b) { return b.t - a.t; }).slice(0, 12).forEach(function (x) {
+      var d = ''; try { d = new Date(x.t).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }); } catch (er) {}
+      h += '<div style="display:flex;justify-content:space-between;gap:8px;font-size:14px;padding:4px 0;border-top:1px solid rgba(255,255,255,.08);"><span>' + d + ' · ' + e(x.h) + ' – ' + e(x.a) + ' · <b>' + e(x.n) + '</b></span>'
+        + '<span style="white-space:nowrap;">@' + String(x.c).replace('.', ',') + ' ' + (x.r === 1 ? '✅' : (x.r === 0 ? '❌' : '⏳')) + '</span></div>';
+    });
+    return h + '<div style="font-size:12px;color:#c9d3ee;margin-top:4px;">💎 cote du book 1,50 – 2,50, + 5 % ou plus selon BET45 · cote FR ≈ cote US × 0,94 · hors bilan officiel.</div></div>';
+  };
   window._G45_TN_PER = ['Terre · Europe', 'Terre · Amérique du Sud', 'Terre · autres régions', 'Gazon', 'Dur · janvier-février (Australie, Golfe)', 'Dur · printemps américain', 'Dur · été américain', 'Dur · automne (salle & Asie)', 'Dur · autres'];
   window._g45TnPer = function (sf, t, ct) {
     var P = window._G45_TN_PER;
@@ -78939,6 +78958,12 @@ window._g45AgJouUs = async function (nowTs) {
         if (V && V.pc > 0) { try { var rdZ = await window._g45TnCoteRd(m.lg, m.t, A.n, B.n);
           if (rdZ && rdZ.ca > 1 && rdZ.cb > 1) { var aZ = V.qui === 'a', pZ = window._g45TnReel(V.pc) / 100, KZ = window._g45TnBk(pZ, aZ ? rdZ.ca : rdZ.cb, aZ ? rdZ.cb : rdZ.ca);
             /* 20261023c (« oui ») : TOUS les matchs avec cote (plus seulement ≥ 10 points) ; p = avis brut, pr = avis corrigé (CAL), f = book sans marge */
+            /* 20261023i (« value entre 1,5 et 2,5 en estimation du jour ? » → test, « OUI ») : 💎 value (≥ + 5 %, cote book 1,50 – 2,50, confiance
+               pas faible) → window._g45TnTv, gardé à part par le robot (J.tv, testeurs seulement, jamais dans le bilan) ; c = cote × 0,94 (≈ books FR). */
+            if (KZ && V.conf !== 'serré') [[aZ ? '1' : '2', aZ ? A.n : B.n, pZ, KZ.cG, KZ.vG], [aZ ? '2' : '1', aZ ? B.n : A.n, 1 - pZ, KZ.cX, KZ.vX]].forEach(function (S) {
+              if (S[4] >= 5 && window._g45TnValCote(S[3])) (window._g45TnTv = window._g45TnTv || []).push({ id: String(m.c.id), sl: m.lg, t: m.t, h: A.n, a: B.n, k: S[0], n: S[1],
+                p: Math.round(S[2] * 1000) / 1000, cd: S[3], c: Math.max(1.01, Math.round(S[3] * (window._G45_TR_FR || 0.94) * 100) / 100), v: S[4], hl: '', al: '' });
+            });
             if (KZ) (window._g45TnDz = window._g45TnDz || []).push({ id: String(m.c.id), sl: m.lg, t: m.t, h: A.n, a: B.n, k: aZ ? '1' : '2',
               p: Math.round(pZ * 1000) / 1000, pr: Math.round(window._g45TnReel(V.pc, true) * 10) / 1000, f: Math.round(KZ.f * 1000) / 1000, ec: KZ.ec, c: KZ.cG, cx: KZ.cX, cf: V.conf, hl: '', al: '' }); } } catch (e) {} }
         if (!V || V.conf !== 'forte' || Math.max(V.p, 1 - V.p) < R.pmin) continue;
