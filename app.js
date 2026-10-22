@@ -78121,8 +78121,12 @@ window._g45AgJouUs = async function (nowTs) {
   /* 20261022t (« La cote BET45 et le filtre de cote utiliseraient ce % corrigé. oui ») : test 2025 (1 577 matchs) — avis 57 % → favori gagnant
      67 % réel, 62 → 71, 67 → 78, 72 → 82, 77 → 91 ; correction RÉDUITE d'un tiers (biais : Elo d'aujourd'hui) ; interpolation, plafond 97 %. */
   var CAL = [[50, 50], [52.5, 52], [57.3, 63.8], [62.4, 67.9], [67.3, 74.5], [72.1, 78.8], [77.1, 86.1]];
-  window._g45TnReel = function (pc) {
-    pc = +pc; if (!(pc >= 50)) return pc;
+  /* 20261023c (« tu es sûr que le réglage tennis est bon ? je trouve tellement énormes les écarts » → « oui ») : correction « % réel » EN PAUSE
+     (mesurée avec l'Elo d'aujourd'hui, donc trop optimiste) → l'avis brut sert à la cote BET45, au filtre et à la ligne book ; le texte « ≈ X % réel »
+     est masqué. _g45TnReel(pc, true) = la correction quand même (robot : suivi BET45 brut / corrigé / book). Remettre à false après le bilan. */
+  window._G45_TN_REEL_PAUSE = true;
+  window._g45TnReel = function (pc, force) {
+    pc = +pc; if (!(pc >= 50)) return pc; if (window._G45_TN_REEL_PAUSE && !force) return pc;
     for (var i = 1; i < CAL.length; i++) if (pc <= CAL[i][0]) { var a = CAL[i - 1], b = CAL[i]; return Math.round(a[1] + (pc - a[0]) * (b[1] - a[1]) / (b[0] - a[0])); }
     return Math.min(97, Math.round(CAL[CAL.length - 1][1] + (pc - CAL[CAL.length - 1][0])));
   };
@@ -78302,7 +78306,7 @@ window._g45AgJouUs = async function (nowTs) {
     if (V) {
       var nom = V.qui === 'a' ? o.a.n : o.b.n, pA = Math.round(V.p * 100), cc = V.conf === 'forte' ? '#1ed760' : (V.conf === 'moyenne' ? '#f0c828' : '#c9d3ee');
       h += '<div style="margin:10px 0 4px;background:#0b101d;border:2px solid ' + cc + ';border-radius:12px;padding:10px 12px;">'
-        + '<div style="font-size:16px;font-weight:900;">🔮 BET45 voit gagner : <span style="color:' + cc + ';">' + esc(nom) + '</span> · ' + V.pc + ' %' + (V.pc > 0 ? ' <span style="font-size:14px;color:#f5c542;white-space:nowrap;margin-left:12px;">≈ ' + window._g45TnReel(V.pc) + ' % réel</span> <span style="font-size:14px;background:#f0c828;color:#111;border-radius:7px;padding:2px 9px;white-space:nowrap;margin-left:12px;display:inline-block;">cote BET45 ' + (100 / window._g45TnReel(V.pc)).toFixed(2).replace('.', ',') + '</span>' : '') + '</div>'   /* 20261022l : cote estimée = 1 / proba */
+        + '<div style="font-size:16px;font-weight:900;">🔮 BET45 voit gagner : <span style="color:' + cc + ';">' + esc(nom) + '</span> · ' + V.pc + ' %' + (V.pc > 0 ? (window._G45_TN_REEL_PAUSE ? '' : ' <span style="font-size:14px;color:#f5c542;white-space:nowrap;margin-left:12px;">≈ ' + window._g45TnReel(V.pc) + ' % réel</span>') + ' <span style="font-size:14px;background:#f0c828;color:#111;border-radius:7px;padding:2px 9px;white-space:nowrap;margin-left:12px;display:inline-block;">cote BET45 ' + (100 / window._g45TnReel(V.pc)).toFixed(2).replace('.', ',') + '</span>' : '') + '</div>'   /* 20261022l : cote estimée = 1 / proba */
         + '<div style="display:flex;height:12px;border-radius:6px;overflow:hidden;margin:8px 0 4px;"><span style="width:' + pA + '%;background:' + (V.qui === 'a' ? cc : '#5a6788') + ';"></span><span style="flex:1;background:' + (V.qui === 'b' ? cc : '#5a6788') + ';"></span></div>'
         + '<div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;"><span>' + esc(o.a.n) + ' ' + pA + ' %</span><span>' + (100 - pA) + ' % ' + esc(o.b.n) + '</span></div>'
         + '<div style="font-size:13px;color:#c9d3ee;margin-top:5px;">Confiance ' + (V.conf === 'serré' ? 'faible : match serré' : V.conf) + ' · ' + V.n + ' facteur' + (V.n > 1 ? 's' : '') + ' · indicatif, pas une cote.</div></div>'
@@ -78614,7 +78618,7 @@ window._g45AgJouUs = async function (nowTs) {
         + '<div style="display:flex;justify-content:space-between;gap:8px;font-size:15px;"><b>' + esc(m.a.n) + ' – ' + esc(m.b.n) + '</b><span style="flex:none;">🕒 ' + hr + '</span></div>'
         + '<div style="margin-top:4px;"><span style="font-size:12px;font-weight:800;background:#0b101d;border-radius:6px;padding:2px 8px;">' + (CAT[m.cat] || '') + ' · ' + esc(m.tn) + ' · ' + s.i + ' ' + s.l + (x.pf ? ' · ' + (function (f) { try { return String.fromCodePoint.apply(null, f.split('').map(function (c) { return 127397 + c.charCodeAt(0); })); } catch (e) { return ''; } })(x.pf) + ' ' + esc(x.py) : '') + '</span></div>'   /* 20261023b (« rajoute le drapeau du pays du lieu du tournoi ») */
         /* 20261022v (« ça se touche un peu trop ») : blocs séparés par un espace (flex + gap), cote BET45 en pastille jaune texte noir ; passe à la ligne entre blocs */
-        + '<div style="font-size:16px;font-weight:900;margin-top:6px;display:flex;flex-wrap:wrap;align-items:center;column-gap:16px;row-gap:6px;"><span style="white-space:nowrap;">🔮 <span style="color:' + cc + ';">' + esc(G.n) + '</span> · ' + x.pc + ' %</span>' + (x.pc > 0 ? '<span style="color:#f5c542;white-space:nowrap;">≈ ' + window._g45TnReel(x.pc) + ' % réel</span><span style="background:#f0c828;color:#111;border-radius:7px;padding:2px 9px;white-space:nowrap;">cote BET45 ' + (100 / window._g45TnReel(x.pc)).toFixed(2).replace('.', ',') + '</span>' : '') + '<span style="white-space:nowrap;">confiance ' + (x.conf === 'serré' ? 'faible' : x.conf) + '</span></div>'
+        + '<div style="font-size:16px;font-weight:900;margin-top:6px;display:flex;flex-wrap:wrap;align-items:center;column-gap:16px;row-gap:6px;"><span style="white-space:nowrap;">🔮 <span style="color:' + cc + ';">' + esc(G.n) + '</span> · ' + x.pc + ' %</span>' + (x.pc > 0 ? (window._G45_TN_REEL_PAUSE ? '' : '<span style="color:#f5c542;white-space:nowrap;">≈ ' + window._g45TnReel(x.pc) + ' % réel</span>') + '<span style="background:#f0c828;color:#111;border-radius:7px;padding:2px 9px;white-space:nowrap;">cote BET45 ' + (100 / window._g45TnReel(x.pc)).toFixed(2).replace('.', ',') + '</span>' : '') + '<span style="white-space:nowrap;">confiance ' + (x.conf === 'serré' ? 'faible' : x.conf) + '</span></div>'
         + (x.bk === undefined ? '' : window._g45TnBkLigne(bkDe(x), G.n, (x.qui === 'a' ? m.b : m.a).n))   /* 20261022w : 🏦 cote du book (ancien résultat gardé : rien) */
         + (x.cl ? '<div style="font-size:13px;color:#dbe4ff;margin-top:4px;line-height:1.4;">💡 ' + x.cl + '</div>' : '')
         + '<div style="margin-top:8px;">' + bouton(m.lg, m.a, m.b, m.tn, m.ek, 'g45tn-r-' + i, m.lieu).replace('📊 Analyse BET45 (forme, surface, face-à-face)', '📊 Analyse détaillée') + '</div></div>';
@@ -78752,8 +78756,9 @@ window._g45AgJouUs = async function (nowTs) {
            contre proba book sans marge), quelle que soit la confiance → window._g45TnDz, gardé par le robot (J.dz) et jugé comme les tendances. */
         if (V && V.pc > 0) { try { var rdZ = await window._g45TnCoteRd(m.lg, m.t, A.n, B.n);
           if (rdZ && rdZ.ca > 1 && rdZ.cb > 1) { var aZ = V.qui === 'a', pZ = window._g45TnReel(V.pc) / 100, KZ = window._g45TnBk(pZ, aZ ? rdZ.ca : rdZ.cb, aZ ? rdZ.cb : rdZ.ca);
-            if (KZ && Math.abs(KZ.ec) >= 10) (window._g45TnDz = window._g45TnDz || []).push({ id: String(m.c.id), sl: m.lg, t: m.t, h: A.n, a: B.n, k: aZ ? '1' : '2',
-              p: Math.round(pZ * 1000) / 1000, f: Math.round(KZ.f * 1000) / 1000, c: KZ.cG, cx: KZ.cX, cf: V.conf, hl: '', al: '' }); } } catch (e) {} }
+            /* 20261023c (« oui ») : TOUS les matchs avec cote (plus seulement ≥ 10 points) ; p = avis brut, pr = avis corrigé (CAL), f = book sans marge */
+            if (KZ) (window._g45TnDz = window._g45TnDz || []).push({ id: String(m.c.id), sl: m.lg, t: m.t, h: A.n, a: B.n, k: aZ ? '1' : '2',
+              p: Math.round(pZ * 1000) / 1000, pr: Math.round(window._g45TnReel(V.pc, true) * 10) / 1000, f: Math.round(KZ.f * 1000) / 1000, ec: KZ.ec, c: KZ.cG, cx: KZ.cX, cf: V.conf, hl: '', al: '' }); } } catch (e) {} }
         if (!V || V.conf !== 'forte' || Math.max(V.p, 1 - V.p) < R.pmin) continue;
         var G = V.qui === 'a' ? A : B, k = V.qui === 'a' ? '1' : '2', pG = Math.max(V.p, 1 - V.p);
         /* cote (Grands Chelems) : moyenne des bookmakers pour le joueur choisi, proba sans marge (Pinnacle, sinon moyenne) */
