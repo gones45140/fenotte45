@@ -50701,6 +50701,7 @@ function _g45SgCursHtml(liste, sp, nomEq) {
     + (HT ? '<span style="font-size:11.5px;font-weight:700;color:' + (nP ? '#c8d3ea' : '#f5c542') + ';">' + (nP ? ('détail connu sur ' + nP + ' match' + (nP > 1 ? 's' : '')) : 'pas de score par période pour ces matchs') + '</span>' : '')
     + '</div>';
 
+  var pT = h.length;   /* 20261022r : repères des onglets */
   /* Total */
   var vT = L.LT.map(function (l) { var a = fmt(compte(pre + 'O' + l.toFixed(1))), b = fmt(compte(pre + 'U' + l.toFixed(1)));
     return { la: 'Plus de ' + fr(l), va: a.v, pa: a.p, lb: 'Moins de ' + fr(l), vb: b.v, pb: b.p }; });
@@ -50723,6 +50724,7 @@ function _g45SgCursHtml(liste, sp, nomEq) {
     + boite('eq', 'B', e0.lb, { v: e0.vb, p: e0.pb }, '#9fe7f5', e.eq.on && e.eq.s === 'B') + '</div>'
     + curseur('eq', L.LE, e.eq.i, fr), 'g45s-eq', vE);
 
+  var pH = h.length;
   /* Ecart */
   var vH = L.LH.map(function (l) { var a = fmt(compte(pre + 'H' + _g45Ligne(l))), b = fmt(compte(pre + 'X' + _g45Ligne(-l)));
     var nr = l === 0 ? ' · nul remboursé' : '';
@@ -50732,8 +50734,57 @@ function _g45SgCursHtml(liste, sp, nomEq) {
     '<div style="display:flex;gap:8px;">' + boite('hand', 'A', h0.la, { v: h0.va, p: h0.pa }, '#f472b6', e.hand.on && e.hand.s === 'A')
     + boite('hand', 'B', h0.lb, { v: h0.vb, p: h0.pb }, '#9fe7f5', e.hand.on && e.hand.s === 'B') + '</div>'
     + curseur('hand', L.LH, e.hand.i, _g45LigneFr), 'g45s-hand', vH);
-  return h;
+  /* ═══ 20261022r — ONGLETS + ⏱️ QUART-TEMPS + 🔁 CONTEXTE (capture curseurs Rams « on rajoute quoi » → « rajoute », « tout ») ═══
+     🏈 Points (total + par équipe) · ⚖️ Écart · ⏱️ Quart-temps / périodes (scores par période déjà lus : m.lp / m.lc = [{p, v}]) · 🔁 Contexte
+     (match précédent, déplacement, repos). Les 2 nouveaux onglets sont des STATS (pas de « dans le calcul ») ; onglet gardé (g45_sgc_tab). */
+  var pE = h.length, TAB = 'pts'; try { TAB = localStorage.getItem('g45_sgc_tab') || 'pts'; } catch (x) {}
+  var parts = { pts: h.slice(pT, pH), ecart: h.slice(pH, pE) };
+  var LS = (liste || []).slice().sort(function (a, b) { return a.t - b.t; });
+  var pc = function (ok, n) { return n ? ok + '/' + n + ' · ' + Math.round(ok * 100 / n) + ' %' : '—'; };
+  var ligneS = function (lib, ok, n, coul) { return '<div style="display:flex;justify-content:space-between;gap:10px;padding:9px 4px;border-top:1px solid rgba(255,255,255,.08);font-size:14px;"><span style="color:#e8ecfa;font-weight:700;">' + lib + '</span><b style="color:' + (coul || '#fff') + ';white-space:nowrap;">' + pc(ok, n) + '</b></div>'; };
+  var carteS = function (titre, corps) { return '<div style="padding:11px 12px;border-radius:12px;background:rgba(11,16,29,.72);border:1px solid rgba(255,255,255,.08);margin-bottom:8px;"><div style="font-size:13.5px;font-weight:800;color:#fff;margin-bottom:4px;">' + titre + '</div>' + corps + '</div>'; };
+  var pv = function (ls, ps) { if (!ls || !ls.length) return null; var t = 0, n = 0; ls.forEach(function (l) { if (l && ps.indexOf(+l.p) >= 0) { t += +l.v || 0; n++; } }); return n === ps.length ? t : null; };
+  var quatre = sp === 'football' || sp === 'basketball', P1 = [1], MI = _G45_SG_PER[sp] || [1], fin = quatre ? [3, 4] : (sp === 'hockey' ? [3] : null);
+  var nomP1 = quatre ? '1er quart-temps' : (sp === 'hockey' ? '1re période' : (sp === 'baseball' ? '1re manche' : '1re mi-temps'));
+  if (TAB === 'qt') {
+    var Q = LS.map(function (m) { return { a1: pv(m.lp, P1), b1: pv(m.lc, P1), am: pv(m.lp, MI), bm: pv(m.lc, MI), af: fin ? pv(m.lp, fin) : null, bf: fin ? pv(m.lc, fin) : null, w: m.pour > m.contre }; })
+      .filter(function (q) { return q.a1 != null && q.b1 != null; });
+    var LQ = { football: [3.5, 6.5, 9.5, 10.5, 13.5, 17.5], basketball: [48.5, 52.5, 55.5, 58.5, 62.5], hockey: [0.5, 1.5, 2.5], baseball: [0.5, 1.5, 2.5] }[sp] || [7.5, 10.5, 14.5];
+    var ix = Math.min(e.qtL != null ? +e.qtL : Math.floor(LQ.length / 2), LQ.length - 1), lq = LQ[ix], nq = Q.length;
+    var c = function (f) { return Q.filter(f).length; };
+    var chips = LQ.map(function (l, i) { return '<span onclick="g45SgQtL(\'' + sp + '\',' + i + ')" style="cursor:pointer;padding:5px 11px;border-radius:12px;font-size:12.5px;font-weight:800;margin:0 5px 5px 0;display:inline-block;' + (i === ix ? 'background:rgba(70,220,240,.18);color:#46dcf0;border:1px solid rgba(70,220,240,.55);' : 'color:#c8d3ea;border:1px solid rgba(255,255,255,.16);') + '">' + fr(l) + '</span>'; }).join('');
+    parts.qt = !nq ? '<div style="font-size:14px;color:#f5c542;padding:8px 0;">Pas de score par ' + (quatre ? 'quart-temps' : 'période') + ' connu pour ces matchs.</div>'
+      : carteS(nomP1 + ' · ' + nq + ' matchs', '<div style="margin:2px 0 4px;">' + chips + '</div>'
+        + ligneS(mot.charAt(0).toUpperCase() + mot.slice(1) + ' du match : plus de ' + fr(lq), c(function (q) { return q.a1 + q.b1 > lq; }), nq, '#f5c542')
+        + ligneS(mot.charAt(0).toUpperCase() + mot.slice(1) + ' du match : moins de ' + fr(lq), c(function (q) { return q.a1 + q.b1 < lq; }), nq, '#9fe7f5')
+        + ligneS(nomC + ' gagne le ' + nomP1, c(function (q) { return q.a1 > q.b1; }), nq, '#1ed760')
+        + ligneS(nomC + ' marque au ' + nomP1, c(function (q) { return q.a1 > 0; }), nq))
+      + carteS('Mi-temps / fin de match',
+        ligneS(nomC + ' mène à la mi-temps', c(function (q) { return q.am != null && q.am > q.bm; }), c(function (q) { return q.am != null; }), '#1ed760')
+        + ligneS('Mène à la mi-temps ET gagne', c(function (q) { return q.am != null && q.am > q.bm && q.w; }), c(function (q) { return q.am != null && q.am > q.bm; }))
+        + ligneS('Mené à la mi-temps mais gagne (remontée)', c(function (q) { return q.am != null && q.am < q.bm && q.w; }), c(function (q) { return q.am != null && q.am < q.bm; }), '#f472b6')
+        + (fin ? ligneS(nomC + ' gagne ' + (quatre ? 'la 2e mi-temps' : 'la 3e période'), c(function (q) { return q.af != null && q.af > q.bf; }), c(function (q) { return q.af != null; }), '#46dcf0') : ''));
+  }
+  if (TAB === 'ctx') {
+    var C = { av: [0, 0], ad: [0, 0], dep: [0, 0], rep: [0, 0], b2b: [0, 0] }, longR = sp === 'football' ? 10 : 4;
+    LS.forEach(function (m, i) { var q = LS[i - 1]; if (!q) return; var v = m.pour > m.contre ? 1 : 0, j = (m.t - q.t) / 864e5;
+      if (q.pour > q.contre) { C.av[1]++; C.av[0] += v; } else if (q.pour < q.contre) { C.ad[1]++; C.ad[0] += v; }
+      if (m.dom && !q.dom) { C.dep[1]++; C.dep[0] += v; }
+      if (j >= longR) { C.rep[1]++; C.rep[0] += v; }
+      if (j < 1.6) { C.b2b[1]++; C.b2b[0] += v; } });
+    parts.ctx = carteS('Victoire de ' + nomC + ' selon le match d\'avant',
+      ligneS('Après une victoire', C.av[0], C.av[1], '#1ed760') + ligneS('Après une défaite', C.ad[0], C.ad[1], '#f472b6')
+      + ligneS('À domicile, après un déplacement', C.dep[0], C.dep[1]) + ligneS(sp === 'football' ? 'Après une semaine sans match (bye)' : 'Après ' + longR + ' jours de repos ou plus', C.rep[0], C.rep[1], '#46dcf0')
+      + (sp === 'basketball' || sp === 'hockey' ? ligneS('Back-to-back (joué la veille)', C.b2b[0], C.b2b[1], '#f5c542') : ''))
+      + '<div style="font-size:12px;color:#9fb0c7;">Sur les matchs affichés (filtre Global / Domicile / Extérieur compris).</div>';
+  }
+  var ONG = [['pts', (sp === 'football' ? '🏈 ' : sp === 'hockey' ? '🏒 ' : sp === 'basketball' ? '🏀 ' : '⚾ ') + (mot === 'buts' ? 'Buts' : 'Points')], ['ecart', '⚖️ Écart'], ['qt', '⏱️ ' + (quatre ? 'Quart-temps' : 'Périodes')], ['ctx', '🔁 Contexte']];
+  var barre = '<div id="g45s-tabs" style="display:flex;gap:6px;flex-wrap:wrap;margin:0 0 9px;">' + ONG.map(function (o) { var on = o[0] === TAB;
+    return '<span onclick="g45SgCursTab(\'' + o[0] + '\')" style="flex:1;min-width:96px;text-align:center;cursor:pointer;padding:9px 6px;border-radius:10px;font-size:13.5px;font-weight:800;' + (on ? 'background:#2563eb;border:1px solid #5aa9ff;color:#fff;' : 'background:rgba(11,16,29,.72);border:1px solid rgba(255,255,255,.16);color:#e8ecfa;') + '">' + o[1] + '</span>'; }).join('') + '</div>';
+  return h.slice(0, pT) + barre + (parts[TAB] || parts.pts);
 }
+window.g45SgCursTab = function (t) { try { localStorage.setItem('g45_sgc_tab', t); } catch (x) {} _g45SgCursRedessiner('g45s-tabs'); };   /* 20261022r */
+window.g45SgQtL = function (sp, i) { var e = _g45SgCursEtat(sp); e.qtL = i; _g45SgCursSauver(sp, e); _g45SgCursRedessiner('g45s-tabs'); };
 
 /* Cles actives, pour les barres « Stats selectionnees ». */
 function _g45SgCursClesActives(liste, sp) {

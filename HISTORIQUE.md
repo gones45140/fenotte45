@@ -2447,3 +2447,8 @@ mise à jour des sections 5 à 7 de ce fichier si quelque chose a changé.
   masquées partout (étiquettes, Stats sélectionnées, compteur, Cockpit), fin de la règle du 24/09 ; pastilles sorties du bandeau
   « Statistiques de la saison » → carte « ✅ Autres paris » juste au-dessus (foot loadTeamSaisons _stPil ; sports US _g45SaisonsGen _sgPil) ;
   « Mes stats » = Stats sélectionnées seules. Smoke 82.
+- 20261022r (capture curseurs Rams « on rajoute quoi » → « rajoute », « tout ») : _g45SgCursHtml en onglets (repères pT / pH, g45_sgc_tab,
+  g45SgCursTab) : 🏈 Points · ⚖️ Écart · ⏱️ Quart-temps / Périodes (m.lp / m.lc : 1er QT plus / moins de X (chips, e.qtL), gagne le 1er QT,
+  marque au 1er QT, mène à la mi-temps, mène ET gagne, remontée, gagne la 2e mi-temps) · 🔁 Contexte (après victoire / défaite, à domicile
+  après un déplacement, après bye ≥ 10 j (NFL) / ≥ 4 j, back-to-back NBA / NHL). Nouveaux onglets = stats seulement. Smoke 83 (sgQt).
+  À FAIRE : 🎯 TD / field goals / 1er à marquer (sonde summary scoringPlays demandée à Antoine), option « + saison passée ».
