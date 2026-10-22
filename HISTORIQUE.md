@@ -2197,7 +2197,11 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   doivent voir le test » → choix 2) : _G45_TR_TEST [1/10/2026 ; 1/11/2026[, _g45TrEnTest(t), _g45TrTestVoit() (gones45 ou window._g45Soutien) ;
   Historique officiel : notes d'octobre retirées de `tous` pour les non-testeurs ; bandeau gris « 🧪 Période de test » sur le mois ;
   _g45TrOffCalc enveloppé (fin d'app.js) : octobre écarté de TOUS les totaux sauf le mois de test lui-même affiché (window._g45TrTestOk posé
-  par calcJ) → pas de « Bilan d'octobre » du 1er au 7/11. Sélection du jour inchangée. Cédric : statut soutien à cocher par Antoine. Smoke 78. Smoke 77 (salle).
+  par calcJ) → pas de « Bilan d'octobre » du 1er au 7/11. Sélection du jour inchangée. Cédric : statut soutien à cocher par Antoine. Smoke 78.
+  20261022d (« 6 décembre 2027 je veux voir 1er janvier 2027 » → maquette maquette-bilans-mois « oui ») : Historique officiel, bouton
+  « 📅 Bilans par mois » replié (O.bilOuv), années (O.bilAn, g45TrOffBilAn), total de l'année (réussite, gain à 1 €, ROI, meilleur mois ≥ 10
+  jugées), une ligne par mois (réussite + barre, gain, paris, « en cours »), toucher = g45TrOffAller(mois) ; filtres appliqués (L) ; octobre
+  2026 = ligne grise « Période de test » pour les testeurs, jamais comptée. Smoke 79 (bilMois). Smoke 77 (salle).
   Données Sackmann = usage NON COMMERCIAL (à revoir le jour de l'abonnement). 9 essais (vm + lecteur), smoke 66.
   20261020s (« ok mais on peut pas améliorer compétition/tennis aussi ? » + « LES PHOTOS DES JOUEURS TOUJOURS DISPO OU SI PAS DE PHOTO drapeau du
   pays du joueur », maquette maquette-tennis-res validée « oui ») : bloc « COMPÉTITIONS → TENNIS PLUS LISIBLE » en fin d'app.js. Remplace

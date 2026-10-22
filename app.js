@@ -75496,6 +75496,10 @@ var _G45_BK_DOM = [
   window.g45TrOffMois = function (n) { var p = String(O.mois || '').split('-'), d = new Date(+p[0], +p[1] - 1 + n, 1); if (isNaN(d)) return; O.mois = d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2); var b = document.getElementById('g45tr-off'); if (b) b.outerHTML = window._g45TrOffHtml(); };
   /* 20261017n : déplier les faits d'une tendance (x.fa, gardés par le robot depuis le 17/10) */
   window.g45TrOffDet = function (c) { O.det = O.det || {}; O.det[c] = !O.det[c]; var b = document.getElementById('g45tr-off'); if (b) b.outerHTML = window._g45TrOffHtml(); };
+  /* 20261022d : Bilans par mois */
+  window.g45TrOffBilOuv = function () { O.bilOuv = !O.bilOuv; redess(); };
+  window.g45TrOffBilAn = function (y) { O.bilAn = String(y); redess(); };
+  window.g45TrOffAller = function (k) { O.mois = String(k); O.jour = null; redess(); };
   window.g45TrOffTout = function () { O.tout = !O.tout; var b = document.getElementById('g45tr-off'); if (b) b.outerHTML = window._g45TrOffHtml(); };
 
   /* Calcul pur (testé par smoke.js) : réussite sur toutes, gain à 1 € sur celles qui ont une cote. */
@@ -75660,6 +75664,45 @@ var _G45_BK_DOM = [
     var pill = function (txt, fond, col) { return '<span style="display:inline-block;border-radius:20px;padding:3px 10px;font-size:13px;font-weight:800;background:' + fond + ';color:' + (col || '#fff') + ';margin-left:4px;">' + txt + '</span>'; };
     h = h.replace('<div style="font-size:17px;font-weight:800;margin-top:6px;">📒 Historique des Tendances</div>', '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:6px;"><div style="font-size:19px;font-weight:800;">📒 Historique des Tendances</div>'
       + '<div style="display:flex;align-items:center;gap:8px;background:rgba(0,0,0,.35);border-radius:12px;padding:5px 7px;"><button onclick="g45TrOffMois(-1)" style="width:36px;height:36px;border-radius:10px;border:none;background:#24304f;color:#fff;font-size:16px;cursor:pointer;">◀</button><b style="font-size:16px;min-width:130px;text-align:center;text-transform:capitalize;">' + esc(nomMois(O.mois)) + '</b><button onclick="g45TrOffMois(1)" style="width:36px;height:36px;border-radius:10px;border:none;background:#24304f;color:#fff;font-size:16px;cursor:pointer;">▶</button></div></div>');
+    /* ═══ 20261022d — 📅 BILANS PAR MOIS + TOTAL DE L'ANNÉE (« 6 décembre 2027 je veux voir 1er janvier 2027 », maquette maquette-bilans-mois
+       « oui ») : bouton replié (O.bilOuv) ; année O.bilAn (défaut = année du mois affiché) ; une ligne par mois (réussite + barre, gain à 1 €,
+       paris), toucher = ouvre le mois ; total de l'année + meilleur mois (≥ 10 jugées) ; filtres appliqués (L) ; octobre 2026 = ligne grise
+       « Période de test » pour les testeurs seulement, jamais comptée (calcJ / _g45TrOffCalc l'écartent). ═══ */
+    (function () {
+      var ans = {}; L.forEach(function (x) { if (!(window._g45TrEnTest && window._g45TrEnTest(x.t))) ans[cle(x.t).slice(0, 4)] = 1; });
+      var testV = window._g45TrEnTest && window._g45TrTestVoit && window._g45TrTestVoit() && L.some(function (x) { return window._g45TrEnTest(x.t); });
+      if (testV) ans['2026'] = 1;
+      var LA = Object.keys(ans).sort(); if (!LA.length) return;
+      var an = O.bilAn && ans[O.bilAn] ? O.bilAn : (ans[O.mois.slice(0, 4)] ? O.mois.slice(0, 4) : LA[LA.length - 1]);
+      var bb = '<div style="margin:10px 0 4px;"><button onclick="g45TrOffBilOuv()" style="cursor:pointer;padding:9px 14px;border-radius:10px;border:1px solid #f5c542;background:rgba(11,16,29,.8);color:#fff;font-size:14px;font-weight:800;">📅 Bilans par mois ' + (O.bilOuv ? '▴' : '▾') + '</button></div>';
+      if (!O.bilOuv) { h += bb; return; }
+      var LY = L.filter(function (x) { return cle(x.t).slice(0, 4) === an; }), T = calcJ(LY), best = null, lignes = '';
+      for (var mo = 1; mo <= 12; mo++) {
+        var k = an + '-' + ('0' + mo).slice(-2), Lk = LY.filter(function (x) { return cle(x.t).slice(0, 7) === k; });
+        if (!Lk.length) continue;
+        var nomM = nomMois(k).split(' ')[0]; nomM = nomM.charAt(0).toUpperCase() + nomM.slice(1);
+        if (window._g45TrEnTest && window._g45TrEnTest(Date.parse(k + '-15'))) {
+          if (testV) lignes += '<div onclick="g45TrOffAller(\'' + k + '\')" style="cursor:pointer;display:grid;grid-template-columns:1.3fr 3fr;gap:6px;align-items:center;padding:10px 8px;border-radius:10px;margin-bottom:5px;background:#2a2f3d;border:1px dashed #8e9bbd;font-size:14px;color:#dbe4ff;"><b style="color:#fff;">🧪 ' + nomM + '</b><span style="text-align:center;">Période de test · hors bilan (testeurs seulement)</span></div>';
+          continue;
+        }
+        var B = calcJ(Lk), pc = B.n ? Math.round(B.ok / B.n * 100) : null, enC = k === moisAuj;
+        if (B.n >= 10 && (!best || B.ok / B.n > best.p)) best = { k: nomM, p: B.ok / B.n, g: B.g, nc: B.nc };
+        lignes += '<div onclick="g45TrOffAller(\'' + k + '\')" style="cursor:pointer;display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr;gap:6px;align-items:center;padding:10px 8px;border-radius:10px;margin-bottom:5px;background:' + (k === O.mois ? '#24345e' : '#1e2740') + ';font-size:15px;color:#fff;">'
+          + '<b>' + nomM + '</b><span style="text-align:center;">' + (pc == null ? '—' : pc + ' %<div style="height:6px;border-radius:3px;background:#26304a;margin-top:4px;"><i style="display:block;height:6px;border-radius:3px;width:' + pc + '%;background:' + (pc >= 55 ? '#1ed760' : (pc >= 45 ? '#f0c828' : '#ff6b6b')) + ';"></i></div>') + '</span>'
+          + '<span style="text-align:center;font-weight:900;color:' + (B.g >= 0 ? '#1ed760' : '#ff6b6b') + ';">' + (B.nc ? eurC(B.g) : '—') + '</span>'
+          + '<span style="text-align:center;">' + Lk.length + (enC ? ' <small style="color:#c9d3ee;">(en cours)</small>' : '') + '</span></div>';
+      }
+      var kpi = function (t, v, s, col) { return '<div style="background:rgba(255,255,255,.06);border-radius:12px;padding:10px;text-align:center;"><div style="font-size:13px;color:#c9d3ee;">' + t + '</div><div style="font-size:' + (v.length > 8 ? 19 : 24) + 'px;font-weight:900;margin:4px 0;color:' + (col || '#fff') + ';">' + v + '</div><div style="font-size:13px;color:#c9d3ee;">' + s + '</div></div>'; };
+      h += bb + '<div style="background:rgba(11,16,29,.9);border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:12px;margin:4px 0 10px;">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;"><span style="font-size:17px;font-weight:900;">📅 Bilans par mois</span><span style="display:flex;gap:6px;">'
+        + LA.map(function (y) { var on = y === an; return '<button onclick="g45TrOffBilAn(\'' + y + '\')" style="cursor:pointer;padding:6px 12px;border-radius:9px;font-weight:800;font-size:14px;color:#fff;' + (on ? 'background:#2563eb;border:1px solid #5aa9ff;' : 'background:transparent;border:1px solid rgba(255,255,255,.25);') + '">' + y + '</button>'; }).join('') + '</span></div>'
+        + '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0;">'
+        + kpi('✅ Réussite ' + an, T.n ? Math.round(T.ok / T.n * 100) + ' %' : '—', T.n ? T.ok + ' / ' + T.n + ' jugées' : 'aucune jugée')
+        + kpi('💶 Gain à 1 € ' + an, T.nc ? eurC(T.g) : '—', T.nc ? 'ROI ' + (T.roi >= 0 ? '+' : '') + Math.round(T.roi * 100) + ' %' : 'aucun pari avec cote', T.g >= 0 ? '#1ed760' : '#ff6b6b')
+        + kpi('🏆 Meilleur mois', best ? best.k : '—', best ? Math.round(best.p * 100) + ' %' + (best.nc ? ' · ' + eurC(best.g) : '') : '10 jugées minimum') + '</div>'
+        + '<div style="display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr;gap:6px;padding:0 8px 6px;font-size:13px;color:#c9d3ee;font-weight:800;"><span>Mois</span><span style="text-align:center;">Réussite</span><span style="text-align:center;">Gain à 1 €</span><span style="text-align:center;">Paris</span></div>'
+        + (lignes || '<div style="font-size:14px;color:#c9d3ee;">Aucun pari cette année.</div>') + '</div>';
+    })();
     /* Bilan du mois d'avant : du 1er au 7 du mois en cours, quand on regarde le mois en cours. */
     if (O.mois === moisAuj && auj.getDate() <= 7) {
       var pm = new Date(auj.getFullYear(), auj.getMonth() - 1, 1), pmk = pm.getFullYear() + '-' + ('0' + (pm.getMonth() + 1)).slice(-2);
