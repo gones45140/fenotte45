@@ -2298,6 +2298,10 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   20261023i (« value entre 1,5 et 2,5 en estimation du jour ? » → test « OUI ») : _g45TnRobot pousse les 💎 (≥ + 5 %, cote book 1,50-2,50, confiance
   pas faible, un côté ou l'autre) dans window._g45TnTv → tendances.mjs J.tv (à part, jugé avec TJ). App : _g45TnTvHtml en haut de l'Historique
   des Tendances, TESTEURS seulement (_g45TrTestVoit) : bilan à la cote FR estimée + 12 derniers ; jamais dans les totaux. Bilan le 10/11. Smoke tnTv (92).
+  ROBOT 22/10 20 h : service ATP 165 joueurs (50 + 50 + 68 Challengers), WTA 100 ; tactiques 0 (https refusé depuis GitHub → http ajouté) ;
+  Elo r[5..7] OK (Vacherot 26e Elo / 32e ATP). Bloc Service / retour vu par Antoine (Collignon – Lehecka) : « jeux attendus » ~ 2 de trop (calage proposé).
+  20261023j (capture « Vacherot 27 ans · N°3 ») : curatedRank ESPN = TÊTE DE SÉRIE, pas le classement → poserElo pose A.rkTa = rang ATP / WTA de
+  Tennis Abstract ; _g45TnAvis l'utilise pour le facteur « rang » ; profil « N°32 ATP » (sinon « tête de série 3 »).
   20261022m (tennis « Tous les matchs du jour » avec 70 % coché mais un 53 % affiché) : titre « (sans filtre) » ; dans l'analyse, ligne grise
   « ℹ️ Sous tes filtres de Tendances (53 % < 70 %) » quand l'avis est sous g45tn_pmin / g45tn_conf.
   20261022o (« nouveau à faire dans filtre : cote BET45 », « et on aura des matchs ») : filtre tennis « Cote BET45 » (g45tn_cote = « min-max »,

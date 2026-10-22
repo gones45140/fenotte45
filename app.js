@@ -78287,7 +78287,8 @@ window._g45AgJouUs = async function (nowTs) {
       + (bon ? '📈 <b>' + esc(nom) + '</b> : meilleur que son classement ' + t : '📉 <b>' + esc(nom) + '</b> : classement ' + t + ' flatteur')
       + ' <span style="color:#c9d3ee;font-size:13px;">(' + x.er + '<sup>e</sup> Elo, ' + x.tr + '<sup>e</sup> ' + t + ')</span></div>';
   };
-  var poserElo = function (lg, CA, CB, nA, nB, sf) { CA.elo = window._g45TnEloDe(lg, nA, sf); CB.elo = window._g45TnEloDe(lg, nB, sf);
+  var poserElo = function (lg, CA, CB, nA, nB, sf) {
+    try { CA.rkTa = (window._g45TnEloRang(lg, nA) || {}).tr || null; CB.rkTa = (window._g45TnEloRang(lg, nB) || {}).tr || null; } catch (e) {}   /* 20261023j */ CA.elo = window._g45TnEloDe(lg, nA, sf); CB.elo = window._g45TnEloDe(lg, nB, sf);
     try { CA.style = window._g45TnStyleDe(lg, nA); CB.style = window._g45TnStyleDe(lg, nB); } catch (e) {} };   /* 20261022k : + style */
   /* 20261022k : styles de jeu (fichier rempli à la main, données/styles_tennis.json, lu une fois par session comme l'Elo) */
   var styP = null;
@@ -78353,6 +78354,9 @@ window._g45AgJouUs = async function (nowTs) {
   /* 20261022b (test sur 2025, robot backtest-tennis, 1 577 matchs) : un joueur qui sort d'un titre / d'une finale a GAGNÉ 67 % de son match
      suivant (122 cas) → le « contrecoup » ne compte plus dans l'avis standard (prec 0 ; réglable dans ⚖️ Mes coefficients). */
   window._g45TnAvis = function (A, B, rkA, rkB, W) {
+    /* 20261023j (capture : « Vacherot 27 ans · N°3 » alors qu'il est 32e ATP) : le « rang » d'ESPN (curatedRank) est en fait la TÊTE DE SÉRIE
+       du tournoi → on prend le classement ATP / WTA de Tennis Abstract quand il est connu (poserElo : A.rkTa). */
+    if (A && A.rkTa > 0) rkA = A.rkTa; if (B && B.rkTa > 0) rkB = B.rkTa;
     var som = 0, poids = 0, n = 0;
     var ww = function (k, std) { return W ? (Math.max(0, Math.min(10, +W[k] || 0)) / 20) : std; };
     var aj = function (w, sA) { if (sA == null || isNaN(sA)) return; som += w * sA; poids += w; n++; };
@@ -78492,7 +78496,8 @@ window._g45AgJouUs = async function (nowTs) {
     var o = S.o[bid], box = document.getElementById(bid); if (!o || !box) return;
     var A = o.A, B = o.B, sf = SF[o.ctx.sf] || SF.dur;
     var tb = function (k, l) { var on = o.tab === k; return '<button onclick="g45TnOnglet(\'' + bid + '\',\'' + k + '\')" style="flex:none;cursor:pointer;padding:9px 12px;border-radius:10px;font-size:14px;font-weight:800;color:#fff;background:' + (on ? '#1a2235' : '#0b101d') + ';border:' + (on ? '2px solid #f5c542' : '1px solid rgba(255,255,255,.2)') + ';">' + l + '</button>'; };
-    var prof = function (p, j) { var t = [p && p.age ? p.age + ' ans' : '', j.rk ? 'N°' + j.rk : '', p && p.main ? p.main : ''].filter(Boolean).join(' · '); return t ? '<div style="font-size:13px;color:#c9d3ee;font-weight:600;">' + t + '</div>' : ''; };
+    var prof = function (p, j) { var rkT = (j === o.a ? A && A.rkTa : B && B.rkTa) || 0;   /* 20261023j : classement ATP / WTA (Tennis Abstract), sinon tête de série ESPN */
+      var t = [p && p.age ? p.age + ' ans' : '', rkT ? 'N°' + rkT + ' ' + (o.lg === 'wta' ? 'WTA' : 'ATP') : (j.rk ? 'tête de série ' + j.rk : ''), p && p.main ? p.main : ''].filter(Boolean).join(' · '); return t ? '<div style="font-size:13px;color:#c9d3ee;font-weight:600;">' + t + '</div>' : ''; };
     var h = '<div style="background:rgba(11,16,29,.94);border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:12px 14px;color:#fff;margin:8px 0;">'
       + '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:16px;font-weight:900;"><span>' + esc(o.a.n) + prof(o.pa, o.a) + '</span>'
       + '<span style="font-size:13px;color:#c9d3ee;font-weight:700;text-align:center;">' + sf.i + ' ' + sf.l + (CAT[o.ctx.cat] ? ' · ' + CAT[o.ctx.cat] : '') + (o.ctx.py ? '<br>' + drap(o.ctx.pf) + esc(o.ctx.py) : '') + '</span><span style="text-align:right;">' + esc(o.b.n) + prof(o.pb, o.b) + '</span></div>';
