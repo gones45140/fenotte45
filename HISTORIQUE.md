@@ -2250,6 +2250,8 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   altitude, pente (g45RcProfDoigt, window._g45RcPr[id], touch-action pan-y) ; pastilles _g45RcProfStatsHtml (type d'étape : plate si D+/km < 8
   et point haut < 600 ; vallonnée < 15 et < 1000 ; haute montagne si point haut ≥ 1500 et D+ ≥ 2500 ; sinon moyenne montagne), D+ (pas 200 m),
   point haut. Légende 10 px (page déjà agrandie). Smoke rcProf (86).
+  20261023a (capture PC : profil géant, « pas tout compris pourquoi la barre jaune se déplace ») : SVG max-width 760 px centré ; texte « km ·
+  altitude · pente » écrit à côté du curseur (#id-v) ; ligne d'aide « Barre jaune = curseur : glisse le doigt (ou la souris)… ».
   20261022m (tennis « Tous les matchs du jour » avec 70 % coché mais un 53 % affiché) : titre « (sans filtre) » ; dans l'analyse, ligne grise
   « ℹ️ Sous tes filtres de Tendances (53 % < 70 %) » quand l'avis est sous g45tn_pmin / g45tn_conf.
   20261022o (« nouveau à faire dans filtre : cote BET45 », « et on aura des matchs ») : filtre tennis « Cote BET45 » (g45tn_cote = « min-max »,

@@ -35604,10 +35604,10 @@ function _g45RcSVG2(pts, cps){
   axis+='<text x="'+(W-padR)+'" y="'+(H-8)+'" font-size="10" font-weight="700" fill="#c9d3ee" text-anchor="end">'+kmMax.toFixed(0)+' km</text>';
   var id='g45rcp'+(++_g45RcSVG2.n);
   window._g45RcPr[id]={pts:pts, W:W, padL:padL, padR:padR, km:kmMax, X:null, aMin:aMin, sp:sp, H:H, padT:padT, padB:padB};
-  return '<svg id="'+id+'" viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto;display:block;touch-action:pan-y;cursor:crosshair;" onpointerdown="g45RcProfDoigt(event,\''+id+'\')" onpointermove="g45RcProfDoigt(event,\''+id+'\')">'
+  return '<svg id="'+id+'" viewBox="0 0 '+W+' '+H+'" style="width:100%;max-width:760px;margin:0 auto;height:auto;display:block;touch-action:pan-y;cursor:crosshair;" onpointerdown="g45RcProfDoigt(event,\''+id+'\')" onpointermove="g45RcProfDoigt(event,\''+id+'\')">'
     +grid+'<path d="'+area+'" fill="rgba(240,200,40,.13)"/>'+segs+marks+axis
-    +'<line id="'+id+'-l" x1="-10" y1="'+padT+'" x2="-10" y2="'+(H-padB)+'" stroke="#f5c542" stroke-width="1.2"/><circle id="'+id+'-c" cx="-10" cy="-10" r="4" fill="#f5c542"/></svg>'
-    +'<div id="'+id+'-t" style="background:#0b101d;border:1px solid rgba(245,197,66,.7);border-radius:8px;padding:5px 9px;font-size:11px;font-weight:800;margin-top:6px;text-align:center;color:#fff;">👆 Glisse le doigt sur le profil : km, altitude, pente</div>';
+    +'<line id="'+id+'-l" x1="-10" y1="'+padT+'" x2="-10" y2="'+(H-padB)+'" stroke="#f5c542" stroke-width="1.2"/><circle id="'+id+'-c" cx="-10" cy="-10" r="4" fill="#f5c542"/><text id="'+id+'-v" x="-100" y="'+(padT+10)+'" font-size="10" font-weight="800" fill="#f5c542" stroke="#0b101d" stroke-width="3" paint-order="stroke"></text></svg>'
+    +'<div id="'+id+'-t" style="background:#0b101d;border:1px solid rgba(245,197,66,.7);border-radius:8px;padding:5px 9px;font-size:11px;font-weight:800;margin-top:6px;text-align:center;color:#fff;">👆 Barre jaune = curseur : glisse le doigt (ou la souris) sur le profil pour lire km, altitude et pente</div>';
 }
 _g45RcSVG2.n=0;
 window.g45RcProfDoigt=function(ev, id){
@@ -35621,6 +35621,8 @@ window.g45RcProfDoigt=function(ev, id){
     if(l){ l.setAttribute('x1',xs.toFixed(1)); l.setAttribute('x2',xs.toFixed(1)); }
     if(c){ c.setAttribute('cx',xs.toFixed(1)); c.setAttribute('cy',ys.toFixed(1)); }
     var nat=pe>=8?'très dur':pe>=5?'dur':pe>=2?'montée':pe>-2?'plat':'descente';
+    var v=document.getElementById(id+'-v');   /* 20261023a : km + altitude écrits À CÔTÉ du curseur (sur PC, la ligne d'infos était sous l'écran) */
+    if(v){ var dr=xs<o.W*0.7; v.setAttribute('x',(dr?xs+5:xs-5).toFixed(1)); v.setAttribute('text-anchor',dr?'start':'end'); v.textContent='km '+km.toFixed(1).replace('.',',')+' · '+Math.round(alt)+' m · '+(pe>=0?'+':'−')+Math.abs(pe).toFixed(1).replace('.',',')+' %'; }
     if(t) t.innerHTML='👆 km '+km.toFixed(1).replace('.',',')+' · '+Math.round(alt)+' m · '+nat+' ('+(pe>=0?'+':'−')+Math.abs(pe).toFixed(1).replace('.',',')+' %)';
   }catch(e){}
 };
