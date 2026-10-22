@@ -2236,6 +2236,11 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   Smoke tnBk (85 contrôles).
   20261022x (capture téléphone Gojo – Altmaier : colonne « Écart » coupée) : tableau « BET45 face au book » = nom de famille seul, titres courts
   (BET45 / Book / Sans marge / Écart), % à la ligne, marges 3 px → tient en 300 px (vérifié Chromium 360 px).
+  20261022y (Gojo – Altmaier : BET45 67 % / book 48 %, Altmaier gagne 6-3 6-4 ; « oui » au suivi) : _g45TnRobot pousse chaque désaccord
+  ≥ 10 points (% réel BET45 contre book sans marge, toute confiance) dans window._g45TnDz → tendances.mjs le garde dans J.dz (un match une
+  fois, pas affiché) et le juge avec les tendances (TJ = J.t + J.dz ; r = 1 si le choix BET45 a gagné). Bilan prévu vers le 22/11.
+  Bruno (« le lieu ; un duel de deux compatriotes ») : backtest_tennis.mjs → res.lieuCompat : local / localFav / localOut / compat /
+  compatLocal = réel CONTRE prévu par l'avis (le 52 % brut du local ne tenait pas compte du niveau). ex.cp (1 compatriotes, 2 chez eux).
   20261022m (tennis « Tous les matchs du jour » avec 70 % coché mais un 53 % affiché) : titre « (sans filtre) » ; dans l'analyse, ligne grise
   « ℹ️ Sous tes filtres de Tendances (53 % < 70 %) » quand l'avis est sous g45tn_pmin / g45tn_conf.
   20261022o (« nouveau à faire dans filtre : cote BET45 », « et on aura des matchs ») : filtre tennis « Cote BET45 » (g45tn_cote = « min-max »,

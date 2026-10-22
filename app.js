@@ -78650,6 +78650,12 @@ window._g45AgJouUs = async function (nowTs) {
         try { await window._g45TnEloCharger(); await window._g45TnStyleCharger(); poserElo(m.lg, CA, CB, A.n, B.n, ctx.sf); } catch (e) {}   /* 20261020r */
         try { CA.age = ((await window._g45TnProfil(A.id)) || {}).age || null; CB.age = ((await window._g45TnProfil(B.id)) || {}).age || null; } catch (e) {}   /* 20261022g */
         var V = window._g45TnAvis(CA, CB, A.rk, B.rk);
+        /* 20261022y (Gojo – Altmaier : BET45 67 %, book 48 % → « oui » au suivi) : chaque GROS désaccord BET45 / book (≥ 10 points, % réel BET45
+           contre proba book sans marge), quelle que soit la confiance → window._g45TnDz, gardé par le robot (J.dz) et jugé comme les tendances. */
+        if (V && V.pc > 0) { try { var rdZ = await window._g45TnCoteRd(m.lg, m.t, A.n, B.n);
+          if (rdZ && rdZ.ca > 1 && rdZ.cb > 1) { var aZ = V.qui === 'a', pZ = window._g45TnReel(V.pc) / 100, KZ = window._g45TnBk(pZ, aZ ? rdZ.ca : rdZ.cb, aZ ? rdZ.cb : rdZ.ca);
+            if (KZ && Math.abs(KZ.ec) >= 10) (window._g45TnDz = window._g45TnDz || []).push({ id: String(m.c.id), sl: m.lg, t: m.t, h: A.n, a: B.n, k: aZ ? '1' : '2',
+              p: Math.round(pZ * 1000) / 1000, f: Math.round(KZ.f * 1000) / 1000, c: KZ.cG, cx: KZ.cX, cf: V.conf, hl: '', al: '' }); } } catch (e) {} }
         if (!V || V.conf !== 'forte' || Math.max(V.p, 1 - V.p) < R.pmin) continue;
         var G = V.qui === 'a' ? A : B, k = V.qui === 'a' ? '1' : '2', pG = Math.max(V.p, 1 - V.p);
         /* cote (Grands Chelems) : moyenne des bookmakers pour le joueur choisi, proba sans marge (Pinnacle, sinon moyenne) */

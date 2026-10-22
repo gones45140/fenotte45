@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action (il est court exprès). Le détail de tout l'historique est dans HISTORIQUE.md
-(à chercher avec grep, jamais à lire en entier). Mis à jour le 22/10/2026 (version déployée : 20261022x, même app.js sur gones45 et fenotte45).
+(à chercher avec grep, jamais à lire en entier). Mis à jour le 22/10/2026 (version déployée : 20261022y, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -135,6 +135,7 @@ PIÈGES À NE JAMAIS OUBLIER :
 - Abonnement : plan prêt, NON codé (_G45_ABO_PLAN false) ; micro-entreprise reportée ; verrou serveur à faire le moment venu.
 - RGPD : SQL supprimer-compte.sql à installer par Antoine dans les 2 projets Supabase.
 - 🎾 Cotes tennis : TheRundown (gratuit, worker /rundown, secret RUNDOWN_KEY) branché dans le robot (20261020m). Cote book + 💎 value dans l'analyse et les résultats : FAIT (20261022w). À faire : autres sports via TheRundown selon la consommation.
+- 🎾 22/11 : BILAN du suivi des désaccords BET45 / book (J.dz dans tendances_officielles.json, ≥ 10 points) : qui a raison ? → ajuster la confiance.
 - 🏀 15/11 : AVANT de remettre les points NBA dans la sélection officielle (NBA_PAUSE, tendances.mjs), contrôler le % de réussite des points NBA (ligne ESPN et +3 %) — demande d'Antoine.
 - TheRundown (gratuit) : PAS de rugby ; sports dispo 1 NCAAF, 2 NFL, 3 MLB, 4 NBA, 5 NCAAB, 6 NHL, 7 UFC, 8 WNBA, 9 CFL, 10 MLS, 11 EPL, 16 C1, 33 C3, 34 Liga MX, 38 ATP, 39 WTA, 40 golf, 41 F1 → 2e source de cotes possible (direct NHL / NFL / MLB, foot, F1). Tendances rugby = stats sans cote (à faire si Antoine veut).
 - Surebet : mises « Mise 1 / Mise 2 » en blanc. Cédric : toucher 🤍 sur Portugal. Worker : budget `_lourd` 4 → 2 proposé.
