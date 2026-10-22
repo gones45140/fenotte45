@@ -75565,7 +75565,7 @@ var _G45_BK_DOM = [
       + '<div style="font-size:17px;font-weight:800;margin-top:6px;">📒 Historique des Tendances</div>'
       + '<div style="font-size:13px;color:#c9d3ee;">Notées AVANT le match, chaque jour à 10 h · cote connue 1,50 mini · proba mini 60 % · stats et bookmakers d\'accord<br><span style="font-size:12px;color:#aab6d6;">(avant le 18/10 : proba 50 %, sans cote et désaccords compris)</span><br>Cotes ≈ books FR (ANJ) : DraftKings − 6 %, estimées</div>';
     if (!J) return box(tete + '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">⏳ Chargement…</div>');
-    var tous = (J.t || []).filter(function (x) { return x.r !== -1; });
+    var tous = (J.t || []).filter(function (x) { return x.r !== -1 && (!window._g45TrEnTest || !window._g45TrEnTest(x.t) || window._g45TrTestVoit()); });   /* 20261022c : période test */
     /* 20261017h (« trier par championnat » → « un truc comme dans Bilan avec les filtres », visuel validé) : barre 🔎 Filtres repliable
        (Sport, Championnat, Type de pari, Cote, Proba stats, Avis, Période), combinables, gardés dans localStorage g45tr_off_flt ;
        les anciens boutons Toutes / D'accord / Désaccord = ligne « Avis » (O.f gardé pour g45TrOffF). Tout (tuiles, calendrier, courbe) suit. */
@@ -75627,7 +75627,7 @@ var _G45_BK_DOM = [
        courbe du mois par JOUR (€ sur le côté, dates, gain du jour, plus haut / plus bas / total, point = ouvre le jour).
        Logos : x.hl / x.al et J.lg[sl] posés par le robot (ESPN), sinon g45LogoUrlDe / logo de ligue mémorisé, sinon initiales. */
     var cle = function (t) { var d = new Date(t); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); };
-    var calcJ = function (lst) { var c = window._g45TrOffCalc(lst); return { n: c.n, ok: c.ok, nc: c.nc, g: c.gain, att: lst.length - c.n, roi: c.roi }; };
+    var calcJ = function (lst) { window._g45TrTestOk = !!(window._g45TrEnTest && O.mois && window._g45TrEnTest(Date.parse(O.mois + '-15'))); var c = window._g45TrOffCalc(lst); window._g45TrTestOk = false; return { n: c.n, ok: c.ok, nc: c.nc, g: c.gain, att: lst.length - c.n, roi: c.roi }; };
     var eurC = function (v) { return (v >= 0 ? '+' : '−') + Math.abs(v).toFixed(2).replace('.', ',') + ' €'; };
     var auj = new Date(), moisAuj = auj.getFullYear() + '-' + ('0' + (auj.getMonth() + 1)).slice(-2);
     if (!O.mois) O.mois = moisAuj;
@@ -75675,6 +75675,10 @@ var _G45_BK_DOM = [
           + '<button onclick="g45TrOffMois(-1)" style="margin-left:auto;padding:7px 12px;border-radius:9px;border:1px solid #8ff0b5;background:transparent;color:#fff;font-size:13px;font-weight:700;cursor:pointer;">Voir ' + esc(nomMois(pmk).split(' ')[0]) + ' ›</button></div></div>';
       }
     }
+    /* 20261022c : bandeau du mois de test (octobre 2026) — vu seulement par les testeurs (gones45 + comptes soutien) */
+    if (window._g45TrEnTest && window._g45TrEnTest(Date.parse(O.mois + '-15')))
+      h += '<div style="margin:10px 0 4px;border-radius:14px;padding:11px 14px;background:#2a2f3d;border:1px solid #8e9bbd;color:#fff;">'
+        + '<div style="font-size:15px;font-weight:900;">🧪 Période de test</div><div style="font-size:13px;color:#dbe4ff;margin-top:3px;line-height:1.5;">Réglages en cours de mise au point : ce mois ne compte dans aucun bilan. Visible seulement par les testeurs.</div></div>';
     var CM = calcJ(Lm), pctM = CM.n ? Math.round(CM.ok / CM.n * 100) : 0;
     var ring = '<svg viewBox="0 0 36 36" style="width:64px;height:64px;display:block;margin:2px auto;"><circle cx="18" cy="18" r="15" fill="none" stroke="#ffffff22" stroke-width="4"/>'
       + (CM.n ? '<circle cx="18" cy="18" r="15" fill="none" stroke="#1ed760" stroke-width="4" stroke-dasharray="' + (pctM * 0.942).toFixed(1) + ' 100" transform="rotate(-90 18 18)" stroke-linecap="round"/>' : '')
@@ -79103,4 +79107,23 @@ window.g45ScTri = function (t, k) {
   }
   var c0 = window._g45TnCalc;
   if (typeof c0 === 'function') window._g45TnCalc = function (H, ctx) { if (ctx && ctx.sf === 'salle' && !ctx.ind) ctx = Object.assign({}, ctx, { ind: true }); return c0.call(this, H, ctx); };
+})();
+
+/* ═══ 20261022c — 🧪 OCTOBRE 2026 = PÉRIODE DE TEST DES TENDANCES OFFICIELLES ═══
+   Antoine : « octobre ne sera pas gardé en visuel sur bet45, montrer de la pub de tendance alors qu'on règle, pas une bonne image ; ou
+   mettre période test, mais pas dans le bilan annuel » ; « moi, Bruno, JP, Cédric doivent voir le test quand même » → choix 2 : octobre visible
+   SEULEMENT par les testeurs (gones45 = Antoine ; bet45 = comptes « soutien » : Bruno, JP, Cédric à cocher dans user_supporter), avec
+   bandeau gris « Période de test » ; HORS de tous les totaux (_g45TrOffCalc l'écarte, sauf le mois de test lui-même affiché à un testeur) ;
+   pas de « Bilan d'octobre » du 1er au 7 novembre. Tout futur bilan annuel doit passer par _g45TrOffCalc (donc sans octobre). */
+window._G45_TR_TEST = [Date.parse('2026-10-01T00:00:00+02:00'), Date.parse('2026-11-01T00:00:00+01:00')];
+window._g45TrEnTest = function (t) { return t >= window._G45_TR_TEST[0] && t < window._G45_TR_TEST[1]; };
+window._g45TrTestVoit = function () { try { return (typeof _g45SanteActive === 'function' && _g45SanteActive()) || !!window._g45Soutien; } catch (e) { return false; } };
+(function () {
+  var c0 = window._g45TrOffCalc;
+  if (typeof c0 !== 'function' || c0._test) return;
+  window._g45TrOffCalc = function (liste) {
+    if (!window._g45TrTestOk) liste = (liste || []).filter(function (x) { return !(x && window._g45TrEnTest(x.t)); });
+    return c0.call(this, liste);
+  };
+  window._g45TrOffCalc._test = true;
 })();

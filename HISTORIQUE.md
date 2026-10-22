@@ -2192,7 +2192,12 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   14/11, NBA gardée dans la sélection officielle SANS les marchés « + / - de X points » (nuit du 21/10 : 1 gagné sur 5, saison reprise 2 jours avant).
   + (« un rajout de 3 % : 239,5 + 3 % = 246,68, ça passe sur beaucoup plus de matchs », choix A) : g45TrRun NBA, GONES45 seulement
   (_g45SanteActive) : marché en plus « - de X points », X = ligne ESPN × 1,03 arrondie au ,5 inférieur (≥ ligne + 1), sans cote (ESPN = ligne
-  principale seulement) → filtres habituels (cote mini jugée sur 1 / proba) ; le robot ne le note pas (cote inconnue + NBA sans points). Smoke 77 (salle).
+  principale seulement) → filtres habituels (cote mini jugée sur 1 / proba) ; le robot ne le note pas (cote inconnue + NBA sans points).
+  20261022c (« octobre ne sera pas gardé en visuel sur bet45… mettre période test, mais pas dans le bilan annuel » ; « moi, Bruno, JP, Cédric
+  doivent voir le test » → choix 2) : _G45_TR_TEST [1/10/2026 ; 1/11/2026[, _g45TrEnTest(t), _g45TrTestVoit() (gones45 ou window._g45Soutien) ;
+  Historique officiel : notes d'octobre retirées de `tous` pour les non-testeurs ; bandeau gris « 🧪 Période de test » sur le mois ;
+  _g45TrOffCalc enveloppé (fin d'app.js) : octobre écarté de TOUS les totaux sauf le mois de test lui-même affiché (window._g45TrTestOk posé
+  par calcJ) → pas de « Bilan d'octobre » du 1er au 7/11. Sélection du jour inchangée. Cédric : statut soutien à cocher par Antoine. Smoke 78. Smoke 77 (salle).
   Données Sackmann = usage NON COMMERCIAL (à revoir le jour de l'abonnement). 9 essais (vm + lecteur), smoke 66.
   20261020s (« ok mais on peut pas améliorer compétition/tennis aussi ? » + « LES PHOTOS DES JOUEURS TOUJOURS DISPO OU SI PAS DE PHOTO drapeau du
   pays du joueur », maquette maquette-tennis-res validée « oui ») : bloc « COMPÉTITIONS → TENNIS PLUS LISIBLE » en fin d'app.js. Remplace
