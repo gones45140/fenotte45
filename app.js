@@ -78174,6 +78174,22 @@ window._g45AgJouUs = async function (nowTs) {
     var v = sf === 'terre' ? r[3] : (sf === 'gazon' ? r[4] : r[2]);
     return v > 0 ? v : (r[1] > 0 ? r[1] : null);
   };
+  /* 20261023g (« c'est quoi la différence de logarithme ? » → « oui ») : rang Elo / rang ATP-WTA / Log diff de Tennis Abstract (r[5..7], robot elo.mjs).
+     Ligne dans Facteurs clés quand |écart| ≥ 0,5 : « 📈 meilleur que son classement » (< 0) ou « 📉 classement flatteur » (> 0). */
+  window._g45TnEloRang = function (lg, nom) {
+    var J = window._g45TnEloJ, T = J && J[lg === 'wta' ? 'wta' : 'atp']; if (!T) return null;
+    var r = T[String(nom || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z]/g, '')];
+    if (!r || !(r[5] > 0) || !(r[6] > 0)) return null;
+    var ld = r[7] != null ? r[7] : Math.round((Math.log(r[5]) - Math.log(r[6])) * 100) / 100;
+    return { er: r[5], tr: r[6], ld: ld };
+  };
+  window._g45TnEloRangHtml = function (lg, nom, esc) {
+    var x = window._g45TnEloRang(lg, nom); if (!x || Math.abs(x.ld) < 0.5) return '';
+    var t = lg === 'wta' ? 'WTA' : 'ATP', bon = x.ld < 0;
+    return '<div style="font-size:14px;margin:4px 0;padding:6px 10px;border-radius:8px;background:' + (bon ? 'rgba(30,215,96,.12)' : 'rgba(255,107,107,.12)') + ';">'
+      + (bon ? '📈 <b>' + esc(nom) + '</b> : meilleur que son classement ' + t : '📉 <b>' + esc(nom) + '</b> : classement ' + t + ' flatteur')
+      + ' <span style="color:#c9d3ee;font-size:13px;">(' + x.er + '<sup>e</sup> Elo, ' + x.tr + '<sup>e</sup> ' + t + ')</span></div>';
+  };
   var poserElo = function (lg, CA, CB, nA, nB, sf) { CA.elo = window._g45TnEloDe(lg, nA, sf); CB.elo = window._g45TnEloDe(lg, nB, sf);
     try { CA.style = window._g45TnStyleDe(lg, nA); CB.style = window._g45TnStyleDe(lg, nB); } catch (e) {} };   /* 20261022k : + style */
   /* 20261022k : styles de jeu (fichier rempli à la main, données/styles_tennis.json, lu une fois par session comme l'Elo) */
@@ -78423,7 +78439,8 @@ window._g45AgJouUs = async function (nowTs) {
     if (o.err) h += '<div style="font-size:14px;color:#ff9b9b;margin-top:8px;">Données ESPN indisponibles pour le moment.</div>';
     else if (!A || !B) h += '<div style="font-size:14px;color:#c9d3ee;margin-top:10px;">⏳ ' + esc(o.msg || 'Chargement…') + '</div>';
     else if (o.tab === 'cle') {
-      if (A.elo > 0 && B.elo > 0) { var pE = Math.round(100 / (1 + Math.pow(10, (B.elo - A.elo) / 400))); h += titreSec('NIVEAU') + barre('🎯 ELO ' + (o.ctx.sf === 'terre' ? 'TERRE' : (o.ctx.sf === 'gazon' ? 'GAZON' : (o.ctx.sf === 'salle' ? 'DUR (pas d\'Elo salle)' : 'DUR'))) + ' (Tennis Abstract)', pE, 100 - pE, '' + Math.round(A.elo), '' + Math.round(B.elo)); }   /* 20261020r */
+      if (A.elo > 0 && B.elo > 0) { var pE = Math.round(100 / (1 + Math.pow(10, (B.elo - A.elo) / 400))); h += titreSec('NIVEAU') + barre('🎯 ELO ' + (o.ctx.sf === 'terre' ? 'TERRE' : (o.ctx.sf === 'gazon' ? 'GAZON' : (o.ctx.sf === 'salle' ? 'DUR (pas d\'Elo salle)' : 'DUR'))) + ' (Tennis Abstract)', pE, 100 - pE, '' + Math.round(A.elo), '' + Math.round(B.elo));
+        try { h += window._g45TnEloRangHtml(o.lg, o.a.n, esc) + window._g45TnEloRangHtml(o.lg, o.b.n, esc); } catch (e) {} }   /* 20261023g */   /* 20261020r */
       h += titreSec('FORME') + ligne('📈 10 DERNIERS MATCHS', A.forme, B.forme)
         + titreSec('CONDITIONS DU MATCH')
         + ligne(sf.i + ' % VICTOIRES ' + sf.l.toUpperCase() + ' (2 MOIS)', A.sf2, B.sf2)   /* 20261021n */

@@ -2272,6 +2272,13 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   « masters », alias french open → roland garros) / _g45TnVitCl (⚡ ≥ 1,15, 🐢 ≤ 0,90) / _g45TnVitHtml : onglet Tournée, « ⚡ Vitesse du court »
   + bilan de chaque joueur sur courts rapides / moyens / lents (A.tous, m.tr). S.o garde bid et tn. Pas dans l'avis (test 2025 à faire).
   Smoke tnVit (89).
+  ROBOT 22/10 soir : vitesse ATP = 62 tournois lus ; WTA = 0 (wta_surface_speed.html n'existe pas, à trouver par Antoine).
+  Test « tournées » 2025 : seul 60,8 % (1 080) ; ajouté au standard 64,9 → 65,4 % au mieux (poids 2) = presque du bruit → AFFICHAGE SEULEMENT.
+  20261023g (capture atp_elo_ratings : « c'est quoi la différence de logarithme ? » → « oui ») : elo.mjs garde r[5] rang Elo, r[6] rang ATP / WTA,
+  r[7] Log diff (= ln rang Elo − ln rang ATP ; Djokovic 4e Elo / 12e ATP = −1,10 ; Cobolli 27e / 6e = +1,50). App _g45TnEloRang / _g45TnEloRangHtml :
+  Facteurs clés, sous la barre Elo, si |écart| ≥ 0,5 : « 📈 X : meilleur que son classement ATP » ou « 📉 classement ATP flatteur ». Smoke tnRang (90).
+  Test cotes 2025 : backtest_tennis.mjs écrit données/backtest_tennis_matchs.json (avis BET45 par match, sans cote) ; fichiers tennis-data 2025
+  téléchargés À LA MAIN par Antoine (usage particulier), croisés dans la session (scratchpad), JAMAIS dans le dépôt.
   20261022m (tennis « Tous les matchs du jour » avec 70 % coché mais un 53 % affiché) : titre « (sans filtre) » ; dans l'analyse, ligne grise
   « ℹ️ Sous tes filtres de Tendances (53 % < 70 %) » quand l'avis est sous g45tn_pmin / g45tn_conf.
   20261022o (« nouveau à faire dans filtre : cote BET45 », « et on aura des matchs ») : filtre tennis « Cote BET45 » (g45tn_cote = « min-max »,
