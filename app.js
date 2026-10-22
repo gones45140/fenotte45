@@ -77987,6 +77987,44 @@ window._g45AgJouUs = async function (nowTs) {
     kv('put', cle, o); return o;
   };
   window._g45TnEv = evInfo;
+  /* 20261023e (capture d'un autre site « Bilan par surface & période », « je mets ça s'il y a des trucs intéressants » → « oui ») : la saison
+     découpée en 8 tournées, calculée sur l'historique déjà lu (A.tous : sf, t, ct). Mois de la date du match ; dur de septembre après le 14 =
+     automne. Ligne du match surlignée « ◀ ICI ». Pur (testé dans le smoke). Pas encore dans l'avis : à tester sur 2025 d'abord. */
+  window._G45_TN_PER = ['Terre · Europe', 'Terre · Amérique du Sud', 'Terre · autres régions', 'Gazon', 'Dur · janvier-février (Australie, Golfe)', 'Dur · printemps américain', 'Dur · été américain', 'Dur · automne (salle & Asie)', 'Dur · autres'];
+  window._g45TnPer = function (sf, t, ct) {
+    var P = window._G45_TN_PER;
+    if (sf === 'terre') return ct === 'Europe' ? P[0] : (ct === 'Amérique du Sud' ? P[1] : P[2]);
+    if (sf === 'gazon') return P[3];
+    var d = new Date(t), mo = d.getMonth(), j = d.getDate();
+    if (mo <= 1) return P[4];
+    if (mo === 2 || mo === 3) return P[5];
+    if (mo === 6 || mo === 7 || (mo === 8 && j <= 14)) return P[6];
+    if (mo >= 8) return P[7];
+    return P[8];
+  };
+  window._g45TnPerBilan = function (L) {
+    var o = {}; (L || []).forEach(function (m) { var k = window._g45TnPer(m.sf, m.t, m.ct); var x = o[k] = o[k] || { n: 0, w: 0 }; x.n++; if (m.w) x.w++; });
+    return o;
+  };
+  window._g45TnPerHtml = function (o, A, B, ctIci, esc, colP) {
+    try {
+      var ici = window._g45TnPer(o.ctx.sf, Date.now(), ctIci);
+      var r = '<div style="font-size:15px;font-weight:800;margin:12px 0 4px;">📅 Bilan par surface et période</div>'
+        + '<div style="font-size:14px;color:#7dffb0;font-weight:800;margin-bottom:6px;">Ce match compte dans : ' + esc(ici) + '</div>';
+      [[o.a.n, A], [o.b.n, B]].forEach(function (p) {
+        var J = p[1], moy = J.tot.p, Bi = window._g45TnPerBilan(J.tous);
+        r += '<div style="background:#0b101d;border-radius:10px;padding:8px 10px;margin-bottom:8px;"><div style="font-weight:800;font-size:14px;margin-bottom:4px;">' + esc(p[0]) + '</div>';
+        window._G45_TN_PER.forEach(function (k) {
+          var x = Bi[k], on = k === ici; if (!x && k === 'Dur · autres') return;
+          var pc = x ? Math.round(x.w / x.n * 100) : null, d = pc == null || moy == null ? null : pc - moy;
+          r += '<div style="display:flex;justify-content:space-between;gap:8px;padding:5px 6px;font-size:14px;' + (on ? 'background:rgba(30,215,96,.12);border-left:3px solid #1ed760;border-radius:6px;' : '') + (x ? '' : 'color:#8e9bbd;') + '"><span>' + esc(k) + (on ? ' <b style="color:#1ed760;">◀ ICI</b>' : '') + '</span>'
+            + (x ? '<span><b style="color:' + colP(pc) + ';">' + pc + ' %</b>' + (d == null ? '' : ' <span style="font-size:12px;color:' + (d >= 0 ? '#7dffb0' : '#ff9b9b') + ';">' + (d >= 0 ? '+' : '') + d + ' pts</span>') + ' <span style="font-size:12px;color:#c9d3ee;">(' + x.n + ')</span></span>' : '<span>jamais joué</span>') + '</div>';
+        });
+        r += '<div style="font-size:12px;color:#c9d3ee;margin-top:4px;">moyenne : ' + (moy == null ? '—' : moy + ' %') + ' sur ' + J.tot.n + ' matchs</div></div>';
+      });
+      return r;
+    } catch (e) { return ''; }
+  };
 
   /* une saison d'un joueur → liste de matchs (mémoire : passée = toujours, en cours = 6 h) */
   window._g45TnSaison = async function (lg, id, an, prog) {
@@ -78401,6 +78439,7 @@ window._g45AgJouUs = async function (nowTs) {
       };
       var ctIci = ''; try { var pp = window._g45TnPays(o.ctx.adr || o.ctx.py); ctIci = pp ? pp.c : ''; } catch (e) {}
       h += (o.ctx.py ? '<div style="font-size:14px;color:#7dffb0;font-weight:800;margin-top:8px;">Ce match se joue en ' + drap(o.ctx.pf) + esc(o.ctx.py) + (ctIci ? ' · ' + esc(ctIci) : '') + '</div>' : '')
+        + window._g45TnPerHtml(o, A, B, ctIci, esc, colP)   /* 20261023e */
         + tabPays('🌍 Bilan par pays', 'parPays', o.ctx.py) + tabPays('🗺️ Bilan par continent', 'parCont', ctIci)
         + '<div style="font-size:15px;font-weight:800;margin:12px 0 4px;">🏆 Historique à ce tournoi</div>';
       [[o.a.n, A], [o.b.n, B]].forEach(function (p) { h += '<div style="font-size:14px;font-weight:800;margin:6px 0 4px;">' + esc(p[0]) + '</div>' + (p[1].tourL.length ? lignesMatch(p[1].tourL) : '<div style="font-size:14px;color:#c9d3ee;">Aucun match ici sur les saisons chargées.</div>'); });

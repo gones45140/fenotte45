@@ -2260,6 +2260,11 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   TOUS les matchs avec cote TheRundown (p brut, pr corrigé, f book sans marge, ec écart) → bilan (Brier / % de réussite) vers le 10/11. Smoke tnReel (87).
   20261023d (« mets confiance … % · cote estimée, ça choquerait moins » → « oui et mets en ligne ») : carte = « 🔮 X · confiance 55 % (faible) » +
   pastille « cote estimée 1,82 » ; analyse « cote estimée », tableau colonne « Estimée » ; confiance faible → pas de 💎 value (carte, tableau, filtre).
+  20261023e (capture d'un autre site « Bilan par surface & période » → « oui ») : onglet 🌍 Tournée, bloc « 📅 Bilan par surface et période »
+  au-dessus du bilan par pays (_g45TnPer(sf, t, ct) : terre Europe / Amérique du Sud / autres, gazon, dur janvier-février, printemps américain
+  (mars-avril), été américain (juillet → 14 sept.), automne (salle & Asie), autres ; _g45TnPerBilan, _g45TnPerHtml ; ligne du match ◀ ICI).
+  Pas dans l'avis : backtest_tennis.mjs ex.qA / qB → X.per (≥ 5 matchs de chaque côté dans la tournée). Vitesse des courts : fichier
+  vitesse_tournois_a_corriger.xlsx (64 ATP / 44 WTA, ⚡ / ⚖️ / 🐢 proposés de mémoire) envoyé à Antoine pour correction. Smoke tnPer (88).
   20261022m (tennis « Tous les matchs du jour » avec 70 % coché mais un 53 % affiché) : titre « (sans filtre) » ; dans l'analyse, ligne grise
   « ℹ️ Sous tes filtres de Tendances (53 % < 70 %) » quand l'avis est sous g45tn_pmin / g45tn_conf.
   20261022o (« nouveau à faire dans filtre : cote BET45 », « et on aura des matchs ») : filtre tennis « Cote BET45 » (g45tn_cote = « min-max »,
