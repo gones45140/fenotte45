@@ -2457,4 +2457,7 @@ mise à jour des sections 5 à 7 de ce fichier si quelque chose a changé.
   20261022s : 🎯 TD / FG (NFL) — SONDÉ PAR ANTOINE (summary 401872657 : scoringPlays[] type.abbreviation TD / FG, period.number, team.abbreviation) ;
   _g45TdFeuille (pur) → localStorage g45nfltd1_<event> = [TD dom, TD ext, FG dom, FG ext, 1er 'h'/'a', type du 1er], _g45TdFeuilles (4 à la fois,
   une fois par session, puis redessin) ; onglet : TD du match / de l'équipe, FG du match / de l'équipe (lignes au choix, e.tdM / tdE / fgM / fgE),
-  marque en premier, 1er score TD / FG. Smoke 84 (sgTd). À FAIRE : option « + saison passée ».
+  marque en premier, 1er score TD / FG. Smoke 84 (sgTd).
+  20261022u (« oui ») : bouton « ＋ Saison passée » des curseurs US (e.prev, g45SgPrev) : _g45SaisonsGen charge an − 1 (_g45CompetMatchs, mémoire
+  _g45SgMem, une fois, redessin), _g45SgCalc + même filtre de lieu, séries écartées si la liste n'en a pas → TOUS les onglets des curseurs
+  (« N matchs (dont M de la saison passée) ») ; Stats sélectionnées, compteur du combiné et liste des matchs restent sur la saison affichée.

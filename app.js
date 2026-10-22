@@ -50701,6 +50701,11 @@ function _g45SgCursHtml(liste, sp, nomEq) {
     + (HT ? '<span style="font-size:11.5px;font-weight:700;color:' + (nP ? '#c8d3ea' : '#f5c542') + ';">' + (nP ? ('détail connu sur ' + nP + ' match' + (nP > 1 ? 's' : '')) : 'pas de score par période pour ces matchs') + '</span>' : '')
     + '</div>';
 
+  /* 20261022u (« + saison passée » → « oui ») : bouton qui ajoute les matchs de la saison d'avant à TOUS les onglets des curseurs (début de saison :
+     6 matchs seulement). Chargement par _g45SaisonsGen (window._g45SgPrevAttente / _g45SgPrevN). */
+  h += '<div style="margin:0 0 9px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;"><span onclick="g45SgPrev(\'' + sp + '\')" style="cursor:pointer;padding:7px 13px;border-radius:10px;font-size:12.5px;font-weight:800;'
+    + (e.prev ? 'background:rgba(70,220,240,.2);color:#46dcf0;border:1.5px solid rgba(70,220,240,.6);">✓ ' : 'color:#c8d3ea;border:1.5px solid rgba(255,255,255,.2);">＋ ') + 'Saison passée</span>'
+    + (e.prev ? '<span style="font-size:12px;font-weight:700;color:' + (window._g45SgPrevAttente ? '#f5c542;">⏳ Chargement de la saison passée…' : '#c8d3ea;">' + xs.length + ' matchs (dont ' + (window._g45SgPrevN || 0) + ' de la saison passée)') + '</span>' : '') + '</div>';
   var pT = h.length;   /* 20261022r : repères des onglets */
   /* Total */
   var vT = L.LT.map(function (l) { var a = fmt(compte(pre + 'O' + l.toFixed(1))), b = fmt(compte(pre + 'U' + l.toFixed(1)));
@@ -50836,6 +50841,7 @@ function _g45TdFeuilles(ms) {
   Promise.all([un(), un(), un(), un()]).then(function () { P.enCours = false; try { _g45SgCursRedessiner('g45s-tabs'); } catch (x) {} });
   return true;
 }
+window.g45SgPrev = function (sp) { var e = _g45SgCursEtat(sp); e.prev = !e.prev; _g45SgCursSauver(sp, e); _g45SgCursRedessiner('g45s-tabs'); };   /* 20261022u */
 window.g45SgQtL = function (sp, i) { var e = _g45SgCursEtat(sp); e.qtL = i; _g45SgCursSauver(sp, e); _g45SgCursRedessiner('g45s-tabs'); };
 
 /* Cles actives, pour les barres « Stats selectionnees ». */
@@ -51085,7 +51091,26 @@ async function _g45SaisonsGen(el, nom, perso) {
   /* CURSEURS (24/09/2026) : pour les sports ayant une table de lignes, les
      boutons O/U sont remplaces par des curseurs point par point. */
   var _cursOk = !!(typeof _G45_SG_L !== 'undefined' && _G45_SG_L[sp]);
-  if (_cursOk) { try { html += _g45SgCursHtml(liste, sp, nom); } catch (e) { _cursOk = false; } }
+  /* 20261022u : option « + saison passée » des curseurs (même filtre de lieu ; séries écartées si la liste n'en a pas) */
+  var _lc = liste;
+  try {
+    var _ecu = _cursOk ? _g45SgCursEtat(sp) : null;
+    if (_ecu && _ecu.prev) {
+      var _mk2 = sp + '|' + lg + '|' + (an - 1) + (/\|tr$/.test(memK) ? '|tr' : ''), _ms2 = _g45SgMem[_mk2];
+      if (!_ms2) {
+        window._g45SgPrevAttente = true;
+        if (!window._g45SgPrevEnCours) { window._g45SgPrevEnCours = 1;
+          _g45CompetMatchs(sp, lg, an - 1, eq.map(function (t) { return t.id; }).filter(Boolean)).then(function (r) { _g45SgMem[_mk2] = r || []; }).catch(function () { _g45SgMem[_mk2] = []; })
+            .then(function () { window._g45SgPrevEnCours = 0; try { _g45SgCursRedessiner('g45s-tabs'); } catch (x) {} }); }
+      } else {
+        var _l2 = _g45SgCalc(_ms2, perso.id, nom).liste, _poOk = liste.some(function (m) { return m.po; });
+        if (!_poOk) _l2 = _l2.filter(function (m) { return !m.po; });
+        if (_g45SgFiltre === 'dom') _l2 = _l2.filter(function (m) { return m.dom; }); else if (_g45SgFiltre === 'ext') _l2 = _l2.filter(function (m) { return !m.dom; });
+        _lc = liste.concat(_l2); window._g45SgPrevAttente = false; window._g45SgPrevN = _l2.length;
+      }
+    }
+  } catch (e) {}
+  if (_cursOk) { try { html += _g45SgCursHtml(_lc, sp, nom); } catch (e) { _cursOk = false; } }
   var _q0 = html.length;   /* 20261021l : repères du bandeau « Statistiques de la saison » */
   html += '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px;">';
   CLES.filter(function (k) { return !_cursOk || !/^[OU]\d/.test(k); }).forEach(function (k) {
