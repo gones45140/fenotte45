@@ -2324,6 +2324,12 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   tendances.mjs ceAvis → paris sur le VAINQUEUR gardés aux règles habituelles si MÊME STANDING = écart de coefficient 5 saisons < 2,5 fois
   (coefficient = max(total, part du pays)) : Barça – PSG 1,2, Arsenal – Bayern 1,2, Lille – Galatasaray 1,3, Villa – Sporting 1,0 ; Bruges – Lens
   4,5 (Lens 12,5 → 16,7 par la part France : peu d'Europe) → test ; club absent (Viking, Bournemouth) → test. Robot seulement (app inchangée).
+  20261023q (« gros club contre plus petit, est-ce que la stat du gros club passe ? » → tableau 515 matchs, « oui/oui ») : ceAvis, marchés de
+  buts OFFICIELS seulement si le club au plus gros coefficient 5 saisons est reconnu, SA stat de championnat (fait « Club : … (NN%) », à domicile
+  ou à l'extérieur selon son côté) ≥ 70 % et cote ≥ 1,55 (u35) · 1,65 (o25) · 1,80 (btts) ; sinon J.ce (x.sg = stat du gros club, affichée
+  « (gros club : NN %) » dans le bloc 🧪). Correction : ceClub lit d'abord trank{saison+1} (= saison en cours : 2027 pour octobre 2026), puis
+  les années d'avant (Palace, Bournemouth, Hoffenheim étaient « inconnus »). Rejeu des 22 matchs notés : 1 officiel (Hoffenheim – Lyon u35,
+  Lyon 100 %, 1,57) ; 5 cas limites vm OK ; smoke 92. Reste mal lu : Lillestrøm (clé « lillestr m »), Brighton, Rennes, Trabzonspor (absents).
 - 🎫 20261023m (capture ticket Pinnacle McDavid « Total Assists », « rajoute ticket Pinnacle, il ne le lit pas ») : _g45TicketIa, consigne
   PINNACLE (carte bleu-gris, « ID: … » + date-heure du PARI, pastille verte « En cours », ligne « 2026-10-22 Propositions sur le joueur – NHL » =
   date du match + compétition, cote orange « @ 1.492 », « Mise / Risque / Gain EUR » où Gain = BÉNÉFICE NET) ; pinnacle ajouté à la liste des

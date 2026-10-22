@@ -78235,10 +78235,11 @@ window._g45AgJouUs = async function (nowTs) {
     L.slice().sort(function (a, b) { return b.t - a.t; }).slice(0, 12).forEach(function (x) {
       var d = ''; try { d = new Date(x.t).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }); } catch (er) {}
       h += '<div style="display:flex;justify-content:space-between;gap:8px;font-size:14px;padding:4px 0;border-top:1px solid rgba(255,255,255,.08);"><span>' + d + ' · ' + e(x.h) + ' – ' + e(x.a) + ' · <b>' + e(x.m) + '</b>'
-        + (x.pe ? ' <span style="color:#c9d3ee;font-size:12px;">(coupes d\'Europe : ' + Math.round(x.pe * 100) + ' %)</span>' : '') + '</span>'
+        + (x.pe ? ' <span style="color:#c9d3ee;font-size:12px;">(coupes d\'Europe : ' + Math.round(x.pe * 100) + ' %)</span>' : '')
+        + (x.sg != null ? ' <span style="color:#c9d3ee;font-size:12px;">(gros club : ' + Math.round(x.sg * 100) + ' %)</span>' : '') + '</span>'
         + '<span style="white-space:nowrap;">' + (x.c > 1 ? '@' + String(x.c).replace('.', ',') + ' ' : '') + (x.r === 1 ? '✅' : (x.r === 0 ? '❌' : '⏳')) + '</span></div>';
     });
-    return h + '<div style="font-size:12px;color:#c9d3ee;margin-top:4px;">Gardées en officiel seulement si cote × % réel des coupes d\'Europe ≥ 1,05 (ex. « − de 3,5 buts » ≈ 62 % → cote 1,70 mini).</div></div>';
+    return h + '<div style="font-size:12px;color:#c9d3ee;margin-top:4px;">Buts gardés en officiel (20261023q) seulement si la stat du GROS club (coefficient UEFA) est ≥ 70 % et la cote ≥ 1,55 (− de 3,5) · 1,65 (+ de 2,5) · 1,80 (les 2 marquent).</div></div>';
   };
   window._G45_TN_PER = ['Terre · Europe', 'Terre · Amérique du Sud', 'Terre · autres régions', 'Gazon', 'Dur · janvier-février (Australie, Golfe)', 'Dur · printemps américain', 'Dur · été américain', 'Dur · automne (salle & Asie)', 'Dur · autres'];
   window._g45TnPer = function (sf, t, ct) {
