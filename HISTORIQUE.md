@@ -478,6 +478,8 @@ Il est dans les DEUX dépôts (gones45 et fenotte45), identique (cmp). Jamais de
   −4,6 ; NBA 5/10 −1,0 ; NFL 2/7 −3,1 ; NHL 3/12 −6,8 dont buts 2/8 ; stats 60 % contre book 51 % sur les buts NHL. Antoine : Oilers +6,5
   buts 48/82 = 59 %, Wild 43/88 = 49 % ; « les over NHL pas top, les victoires d'équipe il y a de quoi faire ») : tendances.mjs NHL_BUTS_PAUSE
   = true → plus de « + / − de N,5 buts » NHL dans la sélection officielle ; victoires / handicaps NHL gardés. Robot seulement. À revoir le 15/11.
+  20261023x (« NFL pareil pour les over / under, bon très peu de matchs » ; NFL − de N,5 points 0/2) : NFL_PTS_PAUSE = true, même filtre
+  (« de N,5 points ») ; vainqueur / handicap NFL gardés. Robot seulement. À revoir le 15/11.
   20261016u (« même les joueurs ont sauté ») — VU dans Observability du worker (API telemetry/query, lisible avec le jeton) : TOUTES les demandes
   host=tsdb en 429 = TheSportsDB limite la clé gratuite par IP, celle du worker est partagée. App : 429 du worker → appel DIRECT (IP du téléphone),
   comme 403 / 404 ; worker : après un 429, plus d'appel à TheSportsDB pendant 60 s (secours si présent, sinon 429). Smoke (tsdbw : cas 429).
