@@ -78007,7 +78007,9 @@ window._g45AgJouUs = async function (nowTs) {
   /* Valeurs par défaut = celles du robot quand le fichier n'existe pas. */
   var DEF = function () {
     var d = new Date(), m = d.getUTCMonth() + 1;
-    return { pause: { nba_pts: m === 10 || (m === 11 && d.getUTCDate() < 15), nhl_buts: true, nfl_pts: true }, officiel: { tn_tv: false, ce_hors: false } };
+    /* 20261023z : interrupteur sur chaque ligne → toutes les lignes ont une clé de pause (false = en route) */
+    return { pause: { nba_pts: m === 10 || (m === 11 && d.getUTCDate() < 15), nhl_buts: true, nfl_pts: true, f_buts: false, f_btts: false, f_vq: false,
+      ce_buts: false, ce_vq: false, nhl_vq: false, nba_vq: false, nfl_vq: false, tn_vq: false }, officiel: { tn_tv: false, ce_hors: false } };
   };
   var reglages = function () {
     var d = DEF(), r = S.rr || {}, o = { pause: {}, officiel: {} };
@@ -78035,19 +78037,19 @@ window._g45AgJouUs = async function (nowTs) {
   var foot = function (sl) { return !/^(nhl|nba|nfl|atp|wta)$/.test(String(sl || '')); };
   var buts = function (k) { return /^(o|u)\d/i.test(String(k || '')); };
   var LIGNES = [
-    { sp: '⚽ Foot', id: 'f_buts', lbl: 'Championnats · buts (+ / −)', de: 't', f: function (x) { return foot(x.sl) && !/^uefa/.test(x.sl) && buts(x.k); } },
-    { sp: '⚽ Foot', id: 'f_btts', lbl: 'Championnats · les 2 marquent', de: 't', f: function (x) { return foot(x.sl) && !/^uefa/.test(x.sl) && x.k === 'btts'; } },
-    { sp: '⚽ Foot', id: 'f_vq', lbl: 'Championnats · vainqueur / double chance', de: 't', f: function (x) { return foot(x.sl) && !/^uefa/.test(x.sl) && !buts(x.k) && x.k !== 'btts'; } },
-    { sp: '⚽ Foot', id: 'ce_buts', lbl: 'Coupes d\'Europe · buts / 2 marquent', sub: 'règle du gros club depuis le 23/10', de: 't', f: function (x) { return /^uefa/.test(x.sl) && (buts(x.k) || x.k === 'btts'); } },
-    { sp: '⚽ Foot', id: 'ce_vq', lbl: 'Coupes d\'Europe · vainqueur', de: 't', f: function (x) { return /^uefa/.test(x.sl) && !buts(x.k) && x.k !== 'btts'; } },
+    { sp: '⚽ Foot', id: 'f_buts', lbl: 'Championnats · buts (+ / −)', de: 't', pause: 'f_buts', f: function (x) { return foot(x.sl) && !/^uefa/.test(x.sl) && buts(x.k); } },
+    { sp: '⚽ Foot', id: 'f_btts', lbl: 'Championnats · les 2 marquent', de: 't', pause: 'f_btts', f: function (x) { return foot(x.sl) && !/^uefa/.test(x.sl) && x.k === 'btts'; } },
+    { sp: '⚽ Foot', id: 'f_vq', lbl: 'Championnats · vainqueur / double chance', de: 't', pause: 'f_vq', f: function (x) { return foot(x.sl) && !/^uefa/.test(x.sl) && !buts(x.k) && x.k !== 'btts'; } },
+    { sp: '⚽ Foot', id: 'ce_buts', lbl: 'Coupes d\'Europe · buts / 2 marquent', sub: 'règle du gros club depuis le 23/10', de: 't', pause: 'ce_buts', f: function (x) { return /^uefa/.test(x.sl) && (buts(x.k) || x.k === 'btts'); } },
+    { sp: '⚽ Foot', id: 'ce_vq', lbl: 'Coupes d\'Europe · vainqueur', de: 't', pause: 'ce_vq', f: function (x) { return /^uefa/.test(x.sl) && !buts(x.k) && x.k !== 'btts'; } },
     { sp: '⚽ Foot', id: 'ce_hors', lbl: 'Coupes d\'Europe hors règle', sub: 'gros club < 70 %, cote trop basse ou club inconnu', de: 'ce', test: 'ce_hors', f: function () { return true; } },
     { sp: '🏒 NHL', id: 'nhl_buts', lbl: 'Buts (+ / − de N,5)', de: 't', pause: 'nhl_buts', f: function (x) { return x.sl === 'nhl' && buts(x.k); } },
-    { sp: '🏒 NHL', id: 'nhl_vq', lbl: 'Victoires / handicaps', de: 't', f: function (x) { return x.sl === 'nhl' && !buts(x.k); } },
+    { sp: '🏒 NHL', id: 'nhl_vq', lbl: 'Victoires / handicaps', de: 't', pause: 'nhl_vq', f: function (x) { return x.sl === 'nhl' && !buts(x.k); } },
     { sp: '🏀 NBA', id: 'nba_pts', lbl: 'Points (+ / − de N,5)', de: 't', pause: 'nba_pts', f: function (x) { return x.sl === 'nba' && /^(un|ov)/i.test(String(x.k)); } },
-    { sp: '🏀 NBA', id: 'nba_vq', lbl: 'Vainqueur / handicap', de: 't', f: function (x) { return x.sl === 'nba' && !/^(un|ov)/i.test(String(x.k)); } },
+    { sp: '🏀 NBA', id: 'nba_vq', lbl: 'Vainqueur / handicap', de: 't', pause: 'nba_vq', f: function (x) { return x.sl === 'nba' && !/^(un|ov)/i.test(String(x.k)); } },
     { sp: '🏈 NFL', id: 'nfl_pts', lbl: 'Total de points (+ / −)', de: 't', pause: 'nfl_pts', f: function (x) { return x.sl === 'nfl' && /^(un|ov)/i.test(String(x.k)); } },
-    { sp: '🏈 NFL', id: 'nfl_vq', lbl: 'Vainqueur / handicap', de: 't', f: function (x) { return x.sl === 'nfl' && !/^(un|ov)/i.test(String(x.k)); } },
-    { sp: '🎾 Tennis', id: 'tn_vq', lbl: 'Vainqueur (sélection officielle)', de: 't', f: function (x) { return x.sl === 'atp' || x.sl === 'wta'; } },
+    { sp: '🏈 NFL', id: 'nfl_vq', lbl: 'Vainqueur / handicap', de: 't', pause: 'nfl_vq', f: function (x) { return x.sl === 'nfl' && !/^(un|ov)/i.test(String(x.k)); } },
+    { sp: '🎾 Tennis', id: 'tn_vq', lbl: 'Vainqueur (sélection officielle)', de: 't', pause: 'tn_vq', f: function (x) { return x.sl === 'atp' || x.sl === 'wta'; } },
     { sp: '🎾 Tennis', id: 'tn_tv', lbl: 'Value (cote 1,50 – 2,50)', sub: 'cote book FR estimée', de: 'tv', test: 'tn_tv', f: function () { return true; } },
     { sp: '🎾 Tennis', id: 'tn_dz', lbl: 'Suivi BET45 face au book', sub: 'tous les matchs avec cote · réussite du choix BET45', de: 'dz', info: true, f: function () { return true; } }
   ];
@@ -78097,7 +78099,7 @@ window._g45AgJouUs = async function (nowTs) {
         var enP = !!R.pause[L.pause];
         var co = (J.pz || []).filter(function (x) { return x.pz === L.pause; }), bo = bilan(src);
         b = enP || co.length ? bilan(co) : bo;
-        sous = (enP ? '⏸️ en pause · suivi en coulisse' : '▶️ en route') + (bo.n ? ' · officiel avant : ' + bo.w + '/' + bo.n + (bo.nc ? ' ' + fr(bo.g) : '') : '');
+        sous = (enP ? '⏸️ en pause · suivi en coulisse' : '▶️ en route') + (bo.n && (enP || co.length) ? ' · officiel avant : ' + bo.w + '/' + bo.n + (bo.nc ? ' ' + fr(bo.g) : '') : '') + (L.sub ? ' · ' + L.sub : '');
         if (!enP) b = bilan(src.concat(co));
         mode = enP ? 'pause' : '';
         sw = inter(!enP, L.pause, 'pause', 'MARCHE', 'PAUSE');

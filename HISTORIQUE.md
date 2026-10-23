@@ -491,6 +491,10 @@ Il est dans les DEUX dépôts (gones45 et fenotte45), identique (cmp). Jamais de
   mais rangé dans J.pz (x.pz = clé), jugé avec les autres (TJ), jamais officiel ; ce_hors → coupes d'Europe hors règle en J.t ; tn_tv →
   value tennis (avec cote) en J.t. Points NBA : suivi en coulisse seulement à partir du 24/10 (avant : jetés). Smoke 93 (bil), 3 essais
   répartition robot + 2 lecture des réglages, captures PC / téléphone (scratchpad bil-pc.png, bil-tel.png).
+  20261023z (« pourquoi certains ont des boutons pause, d'autres stop, d'autres rien » → « oui ») : interrupteur MARCHE / PAUSE sur CHAQUE ligne
+  (clés f_buts, f_btts, f_vq, ce_buts, ce_vq, nhl_vq, nba_vq, nfl_vq, tn_vq, défaut en route) ; TEST / OFFICIEL inchangé (tn_tv, ce_hors) ; le
+  suivi BET45 / book reste sans interrupteur (ce n'est pas un pari). Robot : pzCle(x) range chaque tendance comme LIGNES de l'appli, ligne en
+  pause → J.pz. « officiel avant » affiché seulement pour une ligne en pause ou déjà suivie en coulisse. Smoke 93, 2 essais robot.
   20261016u (« même les joueurs ont sauté ») — VU dans Observability du worker (API telemetry/query, lisible avec le jeton) : TOUTES les demandes
   host=tsdb en 429 = TheSportsDB limite la clé gratuite par IP, celle du worker est partagée. App : 429 du worker → appel DIRECT (IP du téléphone),
   comme 403 / 404 ; worker : après un 429, plus d'appel à TheSportsDB pendant 60 s (secours si présent, sinon 429). Smoke (tsdbw : cas 429).
