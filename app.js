@@ -27058,9 +27058,13 @@ async function _espnMatchLiveData(nom){
     } catch(e){}
   }
   if(!resolved) return null;
+  /* 20261024h (onglet Live des Bucks « Pas de match en cours » en plein match ; sonde console d'Antoine :
+     sports/soccer/nba/teams/15/schedule → 400) : espnResolveTeam trouve aussi les équipes NBA / NHL / NFL / MLB,
+     mais le chemin était toujours « soccer ». Le sport ESPN suit maintenant la ligue trouvée. */
+  var SPT = ({ nba: 'basketball', wnba: 'basketball', nhl: 'hockey', nfl: 'football', mlb: 'baseball' })[resolved.league] || 'soccer';
   var now = new Date(), ev=null, lg=resolved.league;
   try {
-    var r = await fetch(FD_PROXY+'?host=espn&path='+encodeURIComponent('/apis/site/v2/sports/soccer/'+resolved.league+'/teams/'+resolved.id+'/schedule'));
+    var r = await fetch(FD_PROXY+'?host=espn&path='+encodeURIComponent('/apis/site/v2/sports/'+SPT+'/'+resolved.league+'/teams/'+resolved.id+'/schedule'));
     var d = await r.json();
     var events = (d.events||[]).map(function(e){
       var comp=(e.competitions&&e.competitions[0])||null;
@@ -27074,10 +27078,10 @@ async function _espnMatchLiveData(nom){
   if(!ev) return {resolved:resolved, event:null, summary:null};
   var summary=null;
   try {
-    var rs = await fetch(FD_PROXY+'?host=espn&path='+encodeURIComponent('/apis/site/v2/sports/soccer/'+lg+'/summary?event='+ev.id));
+    var rs = await fetch(FD_PROXY+'?host=espn&path='+encodeURIComponent('/apis/site/v2/sports/'+SPT+'/'+lg+'/summary?event='+ev.id));
     summary = await rs.json();
   } catch(e){}
-  return {resolved:resolved, event:ev, summary:summary, league:lg};
+  return {resolved:resolved, event:ev, summary:summary, league:lg, sport:SPT};
 }
 
 /* ═══ PRESSION DU MATCH (26/08, corrige le 09/09) ═══
@@ -27995,6 +27999,12 @@ async function loadEspnMatchLive(el, nom, col){
   html+='<div style="text-align:center;margin-top:10px;"><button onclick="loadTeamLive()" style="background:rgba(255,255,255,.06);border:1px solid var(--b2);color:var(--t2);font-size:11px;padding:6px 14px;border-radius:6px;cursor:pointer;">🔄 Rafraîchir</button></div>';
   html+='</div>';
   var homeId=(home.team&&home.team.id), awayId=(away.team&&away.team.id);
+  /* 20261024h : NBA / NHL / NFL / MLB → pas de pression / stats / compos de foot : la courbe de probabilité de victoire
+     ESPN (la même que dans Compétitions, _g45WpBloc, relue en direct). */
+  if (data.sport && data.sport !== 'soccer') {
+    try { var _wpT = (typeof _g45WpBloc === 'function') ? _g45WpBloc(s, data.event.id, tname(home), tname(away), data.sport, data.league) : ''; if (_wpT) html += _wpT; } catch (e) {}
+    el.innerHTML = html; return;
+  }
   try{
     var _momL = [];
     try { if (typeof _g45MomentumEspn === 'function' && data.event && data.event.id) _momL = await _g45MomentumEspn(data.league || 'eng.1', data.event.id); } catch(e2){}

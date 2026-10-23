@@ -2519,6 +2519,12 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   g45LieuChange redessine tout le formulaire (render) et ne gardait que c-unit → bookmaker = 1re option (Piwi), autres champs perdus, mise
   remise au palier. Enveloppe en FIN d'app.js : relève tous les input / select / textarea #c-… (sauf c-unit, c-lieu, fichier ; c-mise
   seulement si _g45Man) avant, les repose après, garde le nouveau lieu, renderCrash. Smoke miseCk étendu (bet365, adversaire, mise 5 gardés).
+- 📡 20261024h (onglet Live de la fiche équipe : « Milwaukee Bucks — Pas de match en cours ni récent » en plein Bucks – Bulls, « c'est le cas pour
+  toutes les équipes, foot compris ») — SONDÉ PAR ANTOINE : espnResolveTeam('Milwaukee Bucks') = league nba, puis
+  sports/soccer/nba/teams/15/schedule → 400 ; Arsenal → match récent (post) + résumé OK (le foot marche quand un match existe). Correction :
+  _espnMatchLiveData choisit le sport ESPN selon la ligue (nba / wnba basketball, nhl hockey, nfl football, mlb baseball, sinon soccer) pour
+  le calendrier et le résumé, renvoie sport ; loadEspnMatchLive : sport ≠ soccer → en-tête score + courbe _g45WpBloc (relue chaque minute),
+  sans pression / stats / compos de foot. 2 essais vm (faux ESPN), smoke 95. Courbe trop grosse sur PC (viewBox 384 étiré) : proposé max 760 px.
   Smoke crPlus complété (Europe 1/2, Les deux 2/3, verrou).
   + (captures bet45 d'Antoine, compte au-delà des 30 jours : « Tendances disparaît, devrait rester à gauche et montrer cette page comme sur
   Pari / Tendances ») : indexfenotte.html n'avait PAS de bouton Tendances dans le menu (gones45 oui) → ajouté après Agenda, même onclick ;
