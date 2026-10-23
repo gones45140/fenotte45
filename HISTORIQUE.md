@@ -2488,6 +2488,11 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   saison passée g45cr1e_<lg>_<club>_<an> ; msDe(sa) = liste selon la compétition (Les deux = triée par date) ; feuilles de match d'Europe
   lues sur leur compétition (slug) ; joueurs = journal du championnat seulement (avertissement affiché). + « cette sélection de critères doit
   passer en premium » : verrou _g45AccesPremium() !== true → 🔒 « réservé premium » + _g45BlocPremium (gones45 sans compte = ouvert).
+  20261024b (ticket Brisbane Roar – Perth Glory « Mi-temps · Nombre de buts · Plus de 1 » @1,52 : « on n'a pas le critère mi-temps ? » ; « ce
+  n'est pas 0,5, c'est 1 ») : onglet ⚽ Buts (foot), 2 lignes « Buts en 1re mi-temps (match) » / « Buts en 2e mi-temps (match) » Over / Under /
+  Aucun + ligne 0,5 → 3,5 de 0,5 en 0,5 (c.m1 / M1L, c.m2 / M2L, défaut 1). 1re MT = linescores de la feuille de match (fVal hh + ha), 2e MT =
+  score final − pause. Ligne RONDE égalée = remboursé → match écarté par jFiltre (ni gagné ni perdu), phrase d'aide affichée. fBesoin inclut
+  m1 / m2 (lecture des feuilles), compteur de l'onglet Buts, résumé « Buts 1re MT Over 1 ». Smoke crPlus + 9 essais (93).
   Smoke crPlus complété (Europe 1/2, Les deux 2/3, verrou).
   + (captures bet45 d'Antoine, compte au-delà des 30 jours : « Tendances disparaît, devrait rester à gauche et montrer cette page comme sur
   Pari / Tendances ») : indexfenotte.html n'avait PAS de bouton Tendances dans le menu (gones45 oui) → ajouté après Agenda, même onclick ;

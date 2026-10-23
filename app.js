@@ -74276,7 +74276,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   /* 20261021d (« on va rajouter des trucs » : duo / trio buteurs, double chance buteur, tirs, tirs par équipe + mi-temps, marque en premier,
      match précédent ; maquette maquette-criteres « oui ») : valeurs par défaut des nouveaux critères (aussi pour les combinés de « Reprendre ma note »). */
   function norm(c) {
-    var D0 = { jx: 'cha', fs: '', FL: 24.5, ts: '', TSL: 12.5, as: '', ASL: 10.5, cad: '', CL: 4.5, mt: '', mp: '', bo: '', BL: 4.5, pm: '' };
+    var D0 = { jx: 'cha', fs: '', FL: 24.5, ts: '', TSL: 12.5, as: '', ASL: 10.5, cad: '', CL: 4.5, mt: '', mp: '', bo: '', BL: 4.5, pm: '', m1: '', M1L: 1, m2: '', M2L: 1 };   /* 20261024b : m1 / m2 = buts 1re / 2e mi-temps */
     for (var k in D0) if (c[k] == null) c[k] = D0[k];
     return c;
   }
@@ -74332,6 +74332,8 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     if (c.as) p.push('Tirs adversaire ' + (c.as === 'ov' ? 'Over ' : 'Under ') + c.ASL);
     if (c.cad) p.push('Tirs cadrés ' + (c.cad === 'eq' ? 'équipe' : 'match') + ' Over ' + c.CL);
     if (c.mt) p.push({ mene: 'Mène à la pause', nul: 'Nul à la pause', but: 'But en 1re mi-temps' }[c.mt]);
+    if (c.m1) p.push('Buts 1re MT ' + (c.m1 === 'ov' ? 'Over ' : 'Under ') + String(c.M1L).replace('.', ','));   /* 20261024b */
+    if (c.m2) p.push('Buts 2e MT ' + (c.m2 === 'ov' ? 'Over ' : 'Under ') + String(c.M2L).replace('.', ','));
     if (c.mp) p.push('Marque en premier : ' + c.mp);
     if (c.bo) p.push({ coe: 'Corners équipe', com: 'Corners match', cae: 'Cartons équipe', cam: 'Cartons match' }[c.bo] + ' Over ' + c.BL);
     if (c.pm) p.push('Après ' + { v: 'une victoire', n: 'un nul', d: 'une défaite' }[c.pm]);
@@ -74380,6 +74382,13 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       if (c.mt === 'mene' && !(F.hh > F.ha)) return false;
       if (c.mt === 'nul' && F.hh !== F.ha) return false;
       if (c.mt === 'but' && !(F.hh + F.ha > 0)) return false;
+      if (c.m1 || c.m2) {   /* 20261024b : buts par mi-temps (remboursés déjà écartés par jFiltre) */
+        var b1 = F.hh + F.ha, b2 = m[2] + m[3] - b1;
+        if (c.m1 === 'ov' && !(b1 > c.M1L)) return false;
+        if (c.m1 === 'un' && !(b1 < c.M1L)) return false;
+        if (c.m2 === 'ov' && !(b2 > c.M2L)) return false;
+        if (c.m2 === 'un' && !(b2 < c.M2L)) return false;
+      }
       if (c.mp === 'oui' && F.pr !== 1) return false;
       if (c.mp === 'non' && F.pr === 1) return false;
       if (c.bo === 'coe' && !(F.kh > c.BL)) return false;
@@ -74455,6 +74464,14 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       if (P.length && P.some(function (x) { return !jValP(x.id, m); })) return false;
       if (c.pm && !m.pr) return false;
       if (fBesoin(c) && !fVal(m)) return false;
+      /* 20261024b (ticket Brisbane – Perth « Mi-temps, nombre de buts, plus de 1 » ; « ce n'est pas 0,5, c'est 1 ») : buts par mi-temps =
+         score à la pause de la feuille de match (linescores) ; 2e MT = score final − pause. Ligne RONDE égalée = REMBOURSÉ → match non compté. */
+      if (c.m1 || c.m2) {
+        var Fm = fVal(m); if (!Fm || Fm.hh == null || Fm.ha == null) return false;
+        var g1 = Fm.hh + Fm.ha, g2 = m[2] + m[3] - g1; if (g2 < 0) return false;
+        if (c.m1 && g1 === c.M1L) return false;
+        if (c.m2 && g2 === c.M2L) return false;
+      }
       return true;
     });
   }
@@ -74464,7 +74481,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
      [tirs dom, tirs ext, cadrés dom, cadrés ext, MT dom, MT ext, 1er but 'h'/'a'/'', corners dom, corners ext, cartons dom, cartons ext] ;
      identifiants des matchs : g45crid1_<lg>_<club>_<an> (saison passée, pour toujours). ── */
   S.fid = S.fid || {}; S.fp = S.fp || {};
-  function fBesoin(c) { return !S.ctx && !!(c.fs || c.ts || c.as || c.cad || c.mt || c.mp || c.bo); }
+  function fBesoin(c) { return !S.ctx && !!(c.fs || c.ts || c.as || c.cad || c.mt || c.mp || c.bo || c.m1 || c.m2); }
   function fLire(id) { try { return JSON.parse(localStorage.getItem('g45crf1_' + id) || 'null'); } catch (e) { return null; } }
   function fVal(m) {
     var ids = S.fid[S.nom]; if (!ids) return null;
@@ -74797,6 +74814,18 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var hkTr = hk() ? ' (temps réglementaire)' : '';
     h += lab(motUnite() + ' de ' + esc(nom) + hkTr) + b(c.te === 'ov', 'Over', "g45CrSet('te','ov')") + b(c.te === 'un', 'Under', "g45CrSet('te','un')") + b(!c.te, 'Aucun', "g45CrSet('te','')") + selEq('TL', c.TL);
     h += lab(motUnite() + ' de l\'adversaire' + hkTr) + b(c.ad === 'ov', 'Over', "g45CrSet('ad','ov')") + b(c.ad === 'un', 'Under', "g45CrSet('ad','un')") + b(!c.ad, 'Aucun', "g45CrSet('ad','')") + selEq('AL', c.AL);
+    /* 20261024b : buts par MI-TEMPS (foot) — lignes de 0,5 en 0,5 (ligne ronde : égalité = remboursé, non compté) ; lus sur la feuille de match */
+    if (!S.ctx) {
+      var selMt = function (k, v) {
+        var t = '<select onchange="g45CrSet(\'' + k + '\',this.value)" style="background:#16213f;color:#fff;border:1px solid #6d9dff;border-radius:8px;padding:7px 10px;font-size:14px;margin:0 6px 6px 0;">';
+        for (var x = 0.5; x <= 3.5; x += 0.5) t += '<option value="' + x + '"' + (v === x ? ' selected' : '') + '>' + String(x).replace('.', ',') + '</option>';
+        return t + '</select>';
+      };
+      h += lab('Buts en 1re mi-temps (match)') + b(c.m1 === 'ov', 'Over', "g45CrSet('m1','ov')") + b(c.m1 === 'un', 'Under', "g45CrSet('m1','un')") + b(!c.m1, 'Aucun', "g45CrSet('m1','')") + selMt('M1L', c.M1L);
+      h += lab('Buts en 2e mi-temps (match)') + b(c.m2 === 'ov', 'Over', "g45CrSet('m2','ov')") + b(c.m2 === 'un', 'Under', "g45CrSet('m2','un')") + b(!c.m2, 'Aucun', "g45CrSet('m2','')") + selMt('M2L', c.M2L);
+      if ((c.m1 && c.M1L % 1 === 0) || (c.m2 && c.M2L % 1 === 0)) h += '<div style="font-size:13px;color:#c9d3ee;margin:0 0 6px;">Ligne ronde : pile la ligne = remboursé, le match n\'est pas compté.</div>';
+      if ((c.m1 || c.m2) && S.fp && S.fp[nom] && S.fp[nom].enCours) h += '<div style="font-size:14px;color:#f5c542;margin:4px 0;">⏳ Feuilles de match : ' + (S.fp[nom].f || 0) + ' / ' + (S.fp[nom].n || '…') + ' (la 1re fois seulement)</div>';
+    }
     var q2 = h.length;
     /* 20261018s (capture du bloc critères, « je vois pas » l'écart) : ÉCART — « Gagne de X ou + » (= handicap −(X−0,5)) / « Perd de X max »
        (= handicap +(X+0,5)) ; hockey : temps réglementaire comme le reste. Échelle par sport (_EC). */
@@ -74880,7 +74909,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
        🎯 Feuille · 🔁 Contexte = match précédent) ; pastille = nombre de critères choisis ; onglet gardé (localStorage g45_cr_tab). */
     var q7 = h.length;
     var PAN = { res: h.slice(q0, q1) + h.slice(q2, q3), buts: h.slice(q1, q2) + h.slice(q6, q7), jou: h.slice(q3, q4), feu: h.slice(q4, q5), ctx: h.slice(q5, q6) };
-    var NB = { res: (c.res ? 1 : 0) + (c.ec ? 1 : 0), buts: (c.ou ? 1 : 0) + (c.te ? 1 : 0) + (c.ad ? 1 : 0) + (c.bts ? 1 : 0), jou: joueurs(c).length ? 1 : 0,
+    var NB = { res: (c.res ? 1 : 0) + (c.ec ? 1 : 0), buts: (c.ou ? 1 : 0) + (c.te ? 1 : 0) + (c.ad ? 1 : 0) + (c.bts ? 1 : 0) + (c.m1 ? 1 : 0) + (c.m2 ? 1 : 0), jou: joueurs(c).length ? 1 : 0,
       feu: ['fs', 'ts', 'as', 'cad', 'mt', 'mp', 'bo'].filter(function (k) { return c[k]; }).length, ctx: c.pm ? 1 : 0 };
     var ONG = [['res', '🏁 Résultat'], ['buts', '⚽ ' + motUnite()], ['jou', '👤 Joueurs'], ['feu', '🎯 Feuille'], ['ctx', '🔁 Contexte']].filter(function (o) { return PAN[o[0]]; });
     var TB = 'res'; try { TB = localStorage.getItem('g45_cr_tab') || 'res'; } catch (e) {}
@@ -74937,6 +74966,8 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       else if (k === 'ASL') { c.ASL = parseFloat(v); if (!c.as) c.as = 'ov'; }
       else if (k === 'CL') { c.CL = parseFloat(v); if (!c.cad) c.cad = 'eq'; }
       else if (k === 'BL') { c.BL = parseFloat(v); if (!c.bo) c.bo = 'coe'; }
+      else if (k === 'M1L') { c.M1L = parseFloat(v); if (!c.m1) c.m1 = 'ov'; }   /* 20261024b */
+      else if (k === 'M2L') { c.M2L = parseFloat(v); if (!c.m2) c.m2 = 'ov'; }
       else c[k] = v;
     }
     redessiner();
