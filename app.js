@@ -27943,8 +27943,7 @@ async function loadEspnMatchLive(el, nom, col){
     el.innerHTML='<div class="fc" style="--card-alpha:.9;display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 14px;">'
       +'<span style="font-size:20px;">⏸️</span>'
       +'<div style="flex:1;min-width:180px;"><div style="font-size:13px;font-weight:800;color:#ffffff;">'+nom+'</div>'
-      +'<div style="font-size:12px;font-weight:700;color:#c8d3ea;">Pas de match en cours ni récent.</div></div>'
-      +'<a href="'+sofaUrl+'" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:'+col+';color:#fff;padding:9px 16px;border-radius:var(--r8);font-size:12px;font-weight:800;text-decoration:none;">📊 Sofascore</a></div>';
+      +'<div style="font-size:12px;font-weight:700;color:#c8d3ea;">Pas de match en cours ni récent.</div></div></div>';   /* 20261024j : bouton Sofascore retiré (« oui enlève le bouton Sofa ») */
     return;
   }
   var s=data.summary;
@@ -32645,8 +32644,10 @@ function _g45WpCourbe(P, sport, noms) {
   var ligne = P.map(function (x, i) { return X(i) + ',' + Y(x.p); }).join(' L');
   var aire = 'M' + X(0) + ',' + Y(0.5) + ' L' + ligne + ' L' + X(n - 1) + ',' + Y(0.5) + ' Z';
   s += '<path d="' + aire + '" fill="rgba(109,157,255,.22)" clip-path="url(#g45wpH)"/><path d="' + aire + '" fill="rgba(245,197,66,.22)" clip-path="url(#g45wpB)"/>';
-  s += '<path d="M' + ligne + '" fill="none" stroke="#6d9dff" stroke-width="3" stroke-linejoin="round" clip-path="url(#g45wpH)"/>'
-    + '<path d="M' + ligne + '" fill="none" stroke="#f5c542" stroke-width="3" stroke-linejoin="round" clip-path="url(#g45wpB)"/>';
+  /* 20261024j (« faudrait une courbe fine comme dans Bilan ») : trait de 2 px à l'écran quelle que soit la taille (non-scaling-stroke),
+     comme « Évolution des gains » ; avant : 3 unités de viewBox, épaissies avec la largeur. */
+  s += '<path d="M' + ligne + '" fill="none" stroke="#6d9dff" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round" clip-path="url(#g45wpH)"/>'
+    + '<path d="M' + ligne + '" fill="none" stroke="#f5c542" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round" clip-path="url(#g45wpB)"/>';
   /* 20261024i (capture PC : « c'est un poil gros sur l'écran, non ? » → « OUI ») : viewBox de 384 étiré sur toute la largeur = textes ×4,5
      sur grand écran. Courbe limitée à 760 px et centrée (textes ≈ 24 px) ; téléphone inchangé. */
   return '<svg viewBox="0 0 ' + W + ' ' + (H + 16) + '" style="width:100%;max-width:760px;display:block;margin:4px auto 0;">' + s + '</svg>';

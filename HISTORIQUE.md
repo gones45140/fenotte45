@@ -2526,6 +2526,8 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   le calendrier et le résumé, renvoie sport ; loadEspnMatchLive : sport ≠ soccer → en-tête score + courbe _g45WpBloc (relue chaque minute),
   sans pression / stats / compos de foot. 2 essais vm (faux ESPN), smoke 95. Courbe trop grosse sur PC (viewBox 384 étiré) : 24i.
   20261024i (« OUI ») : _g45WpCourbe → svg max-width 760 px, centré (textes ≈ 24 px sur PC) ; téléphone inchangé. Capture scratchpad wp-pc.png, smoke 95.
+  20261024j (Live des Bucks OK après 24h ; « faudrait une courbe fine comme dans Bilan, et oui enlève le bouton Sofa ») : traits de la courbe
+  stroke-width 2 + vector-effect non-scaling-stroke (2 px à l'écran) ; loadEspnMatchLive « Pas de match en cours ni récent » sans bouton Sofascore.
   Smoke crPlus complété (Europe 1/2, Les deux 2/3, verrou).
   + (captures bet45 d'Antoine, compte au-delà des 30 jours : « Tendances disparaît, devrait rester à gauche et montrer cette page comme sur
   Pari / Tendances ») : indexfenotte.html n'avait PAS de bouton Tendances dans le menu (gones45 oui) → ajouté après Agenda, même onclick ;
