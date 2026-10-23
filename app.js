@@ -80355,3 +80355,30 @@ window._g45TrTestVoit = function () { try { return (typeof _g45SanteActive === '
     if (e.target && (e.target.id === 'c-comp' || e.target.id === 'c-lieu')) { try { recalc(); } catch (x) {} }
   }, true);
 })();
+
+/* ═══ 20261024g — CHANGER LE LIEU NE VIDE PLUS LE COCKPIT (capture d'Antoine : ticket lu « Winamax · mise 5 », puis « 🔎 Match trouvé → OK » →
+   bookmaker repassé sur Piwi) ═══ g45LieuChange redessine TOUT le formulaire (render) et ne gardait que l'équipe : bookmaker, adversaire, date,
+   heure, notes… revenaient à leur valeur de départ (Piwi = 1er bookmaker de la liste) et updMise remettait la mise du palier. Maintenant
+   tous les champs #c-… sont relevés avant et reposés après (le lieu prend sa nouvelle valeur) ; la mise n'est reposée que si elle avait été
+   tapée ou lue sur un ticket (_g45Man) — sinon elle suit le palier du nouveau lieu (20261024f). */
+(function () {
+  var _lc = g45LieuChange;
+  g45LieuChange = window.g45LieuChange = function () {
+    var garde = [], mi0 = document.getElementById('c-mise'), man = !!(mi0 && mi0._g45Man), lieu = document.getElementById('c-lieu');
+    try {
+      Array.prototype.forEach.call(document.querySelectorAll('input[id^="c-"],select[id^="c-"],textarea[id^="c-"]'), function (e) {
+        if (e.id === 'c-unit' || e.id === 'c-lieu' || (e.id === 'c-mise' && !man) || e.type === 'file') return;
+        garde.push([e.id, e.type === 'checkbox' ? e.checked : e.value, e.type === 'checkbox']);
+      });
+    } catch (e) {}
+    var lv = lieu ? lieu.value : null;
+    var r = _lc.apply(this, arguments);
+    try {
+      garde.forEach(function (g) { var e = document.getElementById(g[0]); if (!e) return; if (g[2]) e.checked = g[1]; else if (e.value !== g[1]) e.value = g[1]; });
+      var l2 = document.getElementById('c-lieu'); if (l2 && lv != null) l2.value = lv;
+      var mi = document.getElementById('c-mise'); if (mi && man) mi._g45Man = 1;
+      if (typeof renderCrash === 'function') renderCrash();
+    } catch (e) {}
+    return r;
+  };
+})();

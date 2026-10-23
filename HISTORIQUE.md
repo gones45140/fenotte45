@@ -2515,6 +2515,10 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   ailleurs, P3 = 30 €) ; renderCrash, appelé après, avait le bon palier. Bloc en FIN d'app.js : renderCrash enveloppé → _g45MiseRecalc()
   (STRATS[u.s][_g45Pal(u, c-comp, lieu) − 1]) ; aussi au change de c-comp / c-lieu. Mise tapée ou remplie par le lecteur de tickets (tout
   input / change sur #c-mise → _g45Man) = gardée jusqu'au prochain updMise (choix d'équipe). Smoke miseCk (95).
+  20261024g (capture : ticket lu « Winamax · mise 5 · cote 2,2 », puis « 🔎 Match trouvé → OK » : « dès que j'appuie OK il me met Piwi ») :
+  g45LieuChange redessine tout le formulaire (render) et ne gardait que c-unit → bookmaker = 1re option (Piwi), autres champs perdus, mise
+  remise au palier. Enveloppe en FIN d'app.js : relève tous les input / select / textarea #c-… (sauf c-unit, c-lieu, fichier ; c-mise
+  seulement si _g45Man) avant, les repose après, garde le nouveau lieu, renderCrash. Smoke miseCk étendu (bet365, adversaire, mise 5 gardés).
   Smoke crPlus complété (Europe 1/2, Les deux 2/3, verrou).
   + (captures bet45 d'Antoine, compte au-delà des 30 jours : « Tendances disparaît, devrait rester à gauche et montrer cette page comme sur
   Pari / Tendances ») : indexfenotte.html n'avait PAS de bouton Tendances dans le menu (gones45 oui) → ajouté après Agenda, même onclick ;
