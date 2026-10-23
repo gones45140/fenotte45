@@ -2530,6 +2530,10 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   stroke-width 2 + vector-effect non-scaling-stroke (2 px à l'écran) ; loadEspnMatchLive « Pas de match en cours ni récent » sans bouton Sofascore.
   20261024k (« c'est nettement plus lisible » ; « 26.6 - 3RD » → « OUI EN FR ») : _g45EtatFr(shortDetail, sport) dans l'en-tête de la courbe :
   « 2:52 · 3e QT », « 26,6 s · 3e QT », « 5:10 · 2e P » (hockey), « 5e manche (haut) », Mi-temps, Fin du 3e QT, Terminé (prol.). 10 essais node, smoke 95.
+  20261024l — 3 retours d'Antoine en direct (nuit du 23 au 24/10) : (1) « le piège à c… : 0 h 05, j'ai plus le match dans NBA direct » —
+  g45LoadLeagueMatches : avant 10 h la veille est aussi chargée ; jour ouvert = celui d'un match EN COURS, sinon aujourd'hui, sinon le 1er jour
+  à venir (2 essais Chromium, faux ESPN). (2) « tout jaune la ligne » : deux courbes dans la page (fenêtre du match + onglet Live) avec les mêmes
+  id de clipPath (g45wpH / g45wpB) → id unique par courbe (_g45WpCourbe.n). (3) « écris moins gros le nom des équipes » : « ↑ … favoris » 12,5 → 9,5.
   Smoke crPlus complété (Europe 1/2, Les deux 2/3, verrou).
   + (captures bet45 d'Antoine, compte au-delà des 30 jours : « Tendances disparaît, devrait rester à gauche et montrer cette page comme sur
   Pari / Tendances ») : indexfenotte.html n'avait PAS de bouton Tendances dans le menu (gones45 oui) → ajouté après Agenda, même onclick ;

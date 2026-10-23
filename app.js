@@ -32627,8 +32627,11 @@ function _g45WpPts(data) {
   return w.map(function (x) { return { p: +x.homeWinPercentage, t: +x.tiePercentage || 0, per: per[String(x.playId)] || null }; }).filter(function (x) { return isFinite(x.p); });
 }
 function _g45WpCourbe(P, sport, noms) {
+  /* 20261024l (capture « tout jaune la ligne » : deux courbes dans la page — fenêtre du match + onglet Live) : les clipPath avaient le MÊME
+     id (g45wpH / g45wpB) → la 2e courbe prenait le découpage de la 1re. Id unique par courbe. */
+  var ux = 'g45wp' + (_g45WpCourbe.n = (_g45WpCourbe.n || 0) + 1);
   var W = 384, H = 150, n = P.length, X = function (i) { return 34 + i / Math.max(1, n - 1) * (W - 44); }, Y = function (v) { return 10 + (1 - v) * (H - 20); };
-  var s = '<defs><clipPath id="g45wpH"><rect x="0" y="0" width="' + W + '" height="' + Y(0.5) + '"/></clipPath><clipPath id="g45wpB"><rect x="0" y="' + Y(0.5) + '" width="' + W + '" height="' + H + '"/></clipPath></defs>';
+  var s = '<defs><clipPath id="' + ux + 'H"><rect x="0" y="0" width="' + W + '" height="' + Y(0.5) + '"/></clipPath><clipPath id="' + ux + 'B"><rect x="0" y="' + Y(0.5) + '" width="' + W + '" height="' + H + '"/></clipPath></defs>';
   /* ÉCHELLE EN MIROIR (30/09, Antoine : « le 0 25 50 75 100 pas bon par rapport à
      la courbe, je pige pas ») : comme ESPN, 100 % en haut (club qui reçoit) ET en
      bas (visiteur), 50 % au milieu ; chaque moitié à la couleur de son équipe. */
@@ -32636,18 +32639,19 @@ function _g45WpCourbe(P, sport, noms) {
     var lib = v === 0.5 ? '50%' : (Math.round(Math.abs(v - 0.5) * 100 + 50) + '%'), col = v > 0.5 ? '#6d9dff' : (v < 0.5 ? '#f5c542' : '#c3cfe6');
     s += '<line x1="34" x2="' + (W - 10) + '" y1="' + Y(v) + '" y2="' + Y(v) + '" stroke="rgba(255,255,255,' + (v === 0.5 ? 0.35 : 0.08) + ')"/><text x="0" y="' + (Y(v) + 4) + '" fill="' + col + '" font-size="12" font-weight="700">' + lib + '</text>';
   });
-  if (noms) s += '<text x="40" y="24" fill="#6d9dff" font-size="12.5" font-weight="800">↑ ' + _g45Esc(noms[0]) + ' favoris</text>'
-    + '<text x="40" y="' + (H - 16) + '" fill="#f5c542" font-size="12.5" font-weight="800">↓ ' + _g45Esc(noms[1]) + ' favoris</text>';
+  /* 20261024l (« écris moins gros le nom des équipes ») : 12,5 → 9,5 (≈ 19 px sur PC, ≈ 10 px sur téléphone). */
+  if (noms) s += '<text x="40" y="22" fill="#6d9dff" font-size="9.5" font-weight="800">↑ ' + _g45Esc(noms[0]) + ' favoris</text>'
+    + '<text x="40" y="' + (H - 15) + '" fill="#f5c542" font-size="9.5" font-weight="800">↓ ' + _g45Esc(noms[1]) + ' favoris</text>';
   var suf = sport === 'baseball' ? 'e' : (sport === 'hockey' ? 'e P' : (sport === 'basketball' || sport === 'football' ? 'e QT' : 'e'));
   var vu = {};
   P.forEach(function (x, i) { if (x.per != null && !vu[x.per]) { vu[x.per] = 1; s += '<line x1="' + X(i) + '" x2="' + X(i) + '" y1="10" y2="' + (H - 10) + '" stroke="rgba(255,255,255,.07)"/><text x="' + (X(i) + 2) + '" y="' + (H + 12) + '" fill="#c3cfe6" font-size="12">' + x.per + suf + '</text>'; } });
   var ligne = P.map(function (x, i) { return X(i) + ',' + Y(x.p); }).join(' L');
   var aire = 'M' + X(0) + ',' + Y(0.5) + ' L' + ligne + ' L' + X(n - 1) + ',' + Y(0.5) + ' Z';
-  s += '<path d="' + aire + '" fill="rgba(109,157,255,.22)" clip-path="url(#g45wpH)"/><path d="' + aire + '" fill="rgba(245,197,66,.22)" clip-path="url(#g45wpB)"/>';
+  s += '<path d="' + aire + '" fill="rgba(109,157,255,.22)" clip-path="url(#' + ux + 'H)"/><path d="' + aire + '" fill="rgba(245,197,66,.22)" clip-path="url(#' + ux + 'B)"/>';
   /* 20261024j (« faudrait une courbe fine comme dans Bilan ») : trait de 2 px à l'écran quelle que soit la taille (non-scaling-stroke),
      comme « Évolution des gains » ; avant : 3 unités de viewBox, épaissies avec la largeur. */
-  s += '<path d="M' + ligne + '" fill="none" stroke="#6d9dff" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round" clip-path="url(#g45wpH)"/>'
-    + '<path d="M' + ligne + '" fill="none" stroke="#f5c542" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round" clip-path="url(#g45wpB)"/>';
+  s += '<path d="M' + ligne + '" fill="none" stroke="#6d9dff" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round" clip-path="url(#' + ux + 'H)"/>'
+    + '<path d="M' + ligne + '" fill="none" stroke="#f5c542" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round" clip-path="url(#' + ux + 'B)"/>';
   /* 20261024i (capture PC : « c'est un poil gros sur l'écran, non ? » → « OUI ») : viewBox de 384 étiré sur toute la largeur = textes ×4,5
      sur grand écran. Courbe limitée à 760 px et centrée (textes ≈ 24 px) ; téléphone inchangé. */
   return '<svg viewBox="0 0 ' + W + ' ' + (H + 16) + '" style="width:100%;max-width:760px;display:block;margin:4px auto 0;">' + s + '</svg>';
@@ -33966,6 +33970,9 @@ async function g45LoadLeagueMatches(slug, btn, dayOffset, sportPath){
   list.innerHTML='<div style="text-align:center;color:var(--t3);font-size:11px;padding:24px;">⏳ Chargement…</div>';
   try{
     var start=new Date(); start.setHours(0,0,0,0); start.setDate(start.getDate()+dayOffset);
+    /* 20261024l (« le piège à c… : 0 h 05, j'ai plus le match dans NBA direct ») : la nuit (avant 10 h), la veille est aussi chargée —
+       un match de la soirée encore en cours (ou fini à 2 h) reste trouvable. */
+    if(dayOffset===0 && new Date().getHours()<10) start.setDate(start.getDate()-1);
     var end=new Date(start); end.setDate(end.getDate()+13);
     var r=await fetch('https://site.api.espn.com/apis/site/v2/sports/'+sportPath+'/'+slug+'/scoreboard?dates='+_g45ymd(start)+'-'+_g45ymd(end));
     var data=await r.json();
@@ -33996,7 +34003,9 @@ async function g45LoadLeagueMatches(slug, btn, dayOffset, sportPath){
     });
     window._g45LiveByDay=byDay; window._g45LiveOrder=order; window._g45LiveNav=nav; window._g45LiveSlugRow=slug; window._g45LiveSportRow=sportPath;
     var todayIso=_g45iso(new Date());
-    window._g45LiveSelDay = (order.indexOf(todayIso)>=0) ? todayIso : order[0];
+    /* 20261024l : un match EN COURS → on ouvre son jour (même s'il a commencé la veille) ; sinon aujourd'hui ; sinon le 1er jour. */
+    var jourLive=order.filter(function(iso){ return (byDay[iso]||[]).some(function(e){ return ((e.status&&e.status.type&&e.status.type.state)||'')==='in'; }); })[0];
+    window._g45LiveSelDay = jourLive || ((order.indexOf(todayIso)>=0) ? todayIso : order.filter(function(iso){ return iso>=todayIso; })[0] || order[0]);
     _g45RenderLiveDay();
     _g45StartListRefresh();
   }catch(err){ list.innerHTML='<div style="text-align:center;color:#ff6b6b;font-size:11px;padding:24px;">Erreur de chargement.</div>'; }
