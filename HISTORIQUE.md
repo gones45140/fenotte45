@@ -470,6 +470,10 @@ Il est dans les DEUX dépôts (gones45 et fenotte45), identique (cmp). Jamais de
   18 liaisons et cron */5 revérifiés) : route tsdb accepte 3 et 123, copies D1 gardées sous l'ancien chemin /json/3/ (pas de cache perdu),
   appel TheSportsDB en /json/123/. 3 essais du bloc worker (faux TheSportsDB), smoke 92 (tsdbw : worker et direct doivent recevoir 123).
   reset.html (fenotte45) appelle encore /json/3/ par le worker : OK (le worker traduit).
+  20261023v (« Carolina revenu mais problème avec Chicago NHL, Spurs NBA », joueurs foot sans photo) : Observability = clé 123 en 200, puis
+  vague de 429 (tout redemandé d'un coup, ≈ 30 / min). Piège : _g45FanChercher / _g45BgChercher essaient plusieurs variantes de nom ; une
+  variante en 429 + une autre « rien » → « pas d'image » mémorisé. Maintenant une variante en erreur (!r.ok) → rien mémorisé (_err / _errB,
+  panne de session 30 min comme avant). « pas d'image » effacés une fois de plus (g45_fan_neg5). Smoke 92, 2 essais vm du nettoyage.
   20261016u (« même les joueurs ont sauté ») — VU dans Observability du worker (API telemetry/query, lisible avec le jeton) : TOUTES les demandes
   host=tsdb en 429 = TheSportsDB limite la clé gratuite par IP, celle du worker est partagée. App : 429 du worker → appel DIRECT (IP du téléphone),
   comme 403 / 404 ; worker : après un 429, plus d'appel à TheSportsDB pendant 60 s (secours si présent, sinon 429). Smoke (tsdbw : cas 429).

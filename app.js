@@ -55463,10 +55463,11 @@ async function _g45FanChercher(nom, sport) {
   };
 
   var _rep = false;   /* 20261016n : au moins une vraie réponse de TheSportsDB */
+  var _err = false;   /* 20261023v : au moins une variante en erreur (429 après le changement de clé : « Chicago, Spurs » sans image) */
   for (var v = 0; v < essais.length && !url; v++) {
     try {
       var r = await fetch('https://www.thesportsdb.com/api/v1/json/3/searchteams.php?t=' + encodeURIComponent(essais[v]));
-      if (!r.ok) continue;
+      if (!r.ok) { _err = true; continue; }   /* 20261023v : 429 / 5xx sur une variante → pas de « pas d'image » mémorisé */
       var j = await r.json(); _rep = true;
       var liste = (j && j.teams) || [];
       /* On garde d'abord les equipes du BON SPORT, puis on prefere le nom exact.
@@ -55515,7 +55516,7 @@ async function _g45FanChercher(nom, sport) {
   }
   /* 20261016n (« Chicago / Vancouver pas de bannière ? ») : panne TheSportsDB (522, CORS) = AUCUNE réponse → rien mémorisé (avant : « pas
      d'image » gardé 30 j, la bannière ne revenait jamais). */
-  if (url || _rep) { try { localStorage.setItem(_G45_FANART + _g45SgNorm(nom), JSON.stringify({ u: url, t: Date.now() })); } catch (e) {} }
+  if (url || (_rep && !_err)) { try { localStorage.setItem(_G45_FANART + _g45SgNorm(nom), JSON.stringify({ u: url, t: Date.now() })); } catch (e) {} }
   else { try { (window._g45FanPanne = window._g45FanPanne || {})[_g45SgNorm(nom)] = Date.now(); } catch (e) {} }   /* 20261016p */
   return url;
 }
@@ -71400,14 +71401,14 @@ async function _g45BgChercher(nom) {
   try { var _bp = window._g45BgPanne && window._g45BgPanne[ck]; if (_bp && Date.now() - _bp < 30 * 60000) return out; } catch (e) {}   /* 20261016p */
   /* 20261016i : fiche d'un JOUEUR du mur → pas de recherche d'équipe TheSportsDB (« FC Connor McDavid »…) ; logo posé plus bas sinon rien */
   try { if ((state.u || []).some(function (x) { return x && x.type === 'joueur' && norm(x.n) === norm(nom); })) { try { localStorage.setItem(ck, JSON.stringify(out)); } catch (e) {} return out; } } catch (e) {}
-  var essais = (typeof _g45FanVariantes === 'function') ? _g45FanVariantes(nom, sport) : [nom], _repB = false;
+  var essais = (typeof _g45FanVariantes === 'function') ? _g45FanVariantes(nom, sport) : [nom], _repB = false, _errB = false;
   var accept = {}; essais.concat([nom]).forEach(function (v) { var k = norm(v); if (k) accept[k] = 1; });
   var noms = Object.keys(accept);
   var marq = /(gloriosas|femenin|feminin|women|ladies|damen|dames|girls|youth|academy|reserve|\bu\s?1[4-9]\b|\bu\s?2[0-3]\b|\bii\b)/i;
   for (var v = 0; v < essais.length && !out.u && !out.l; v++) {
     try {
       var r = await fetch('https://www.thesportsdb.com/api/v1/json/3/searchteams.php?t=' + encodeURIComponent(essais[v]));
-      if (!r.ok) continue;
+      if (!r.ok) { _errB = true; continue; }   /* 20261023v : variante en 429 / 5xx → rien mémorisé */
       var liste = ((await r.json()) || {}).teams || []; _repB = true;
       liste = liste.filter(function (t) { return (!sport || norm(t.strSport || '') === norm(sport)) && (marq.test(nom) || !marq.test(String(t.strTeam || ''))); });
       var t = liste.filter(function (x) { return accept[norm(x.strTeam || '')]; })[0]
@@ -71419,7 +71420,7 @@ async function _g45BgChercher(nom) {
       }
     } catch (e) {}
   }
-  if (out.u || out.l || _repB) { try { localStorage.setItem(ck, JSON.stringify(out)); } catch (e) {} }   /* 20261016n : panne = rien mémorisé */
+  if (out.u || out.l || (_repB && !_errB)) { try { localStorage.setItem(ck, JSON.stringify(out)); } catch (e) {} }   /* 20261016n : panne = rien mémorisé */
   else { try { (window._g45BgPanne = window._g45BgPanne || {})[ck] = Date.now(); } catch (e) {} }   /* 20261016p : panne retenue 30 min (session) */
   return out;
 }
@@ -76763,6 +76764,25 @@ window._g45NhlJTrouver = _g45NhlJTrouver; window._g45NhlJHtml = _g45NhlJHtml; wi
     }
     del.forEach(function (k) { localStorage.removeItem(k); });
     localStorage.setItem('g45_fan_neg4', '1');
+  } catch (e) {}
+})();
+
+/* 20261023v (« Carolina revenu mais problème avec Chicago NHL, Spurs NBA » ; joueurs foot sans photo) : après la clé 123, tout a été redemandé
+   d'un coup → 429 ; une variante de nom en 429 + une autre « rien » = « pas d'image » mémorisé à tort. Corrigé dans _g45FanChercher /
+   _g45BgChercher (_err) ; les « pas d'image » de cette heure-là effacés une fois (g45_fan_neg5). */
+(function () {
+  try {
+    if (localStorage.getItem('g45_fan_neg5')) return;
+    var del = [];
+    for (var i = 0; i < localStorage.length; i++) {
+      var k = localStorage.key(i); if (!k) continue;
+      if (k.indexOf('g45_herologo_ko_') === 0) { del.push(k); continue; }
+      if (!(k.indexOf('g45_fanart2_') === 0 || k.indexOf('g45bgclub1_') === 0 || k.indexOf('g45jv') === 0)) continue;
+      var v = localStorage.getItem(k) || '';
+      if (!/https?:|blob:|data:image/.test(v)) del.push(k);
+    }
+    del.forEach(function (k) { localStorage.removeItem(k); });
+    localStorage.setItem('g45_fan_neg5', '1');
   } catch (e) {}
 })();
 
