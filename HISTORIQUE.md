@@ -2493,6 +2493,11 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   Aucun + ligne 0,5 → 3,5 de 0,5 en 0,5 (c.m1 / M1L, c.m2 / M2L, défaut 1). 1re MT = linescores de la feuille de match (fVal hh + ha), 2e MT =
   score final − pause. Ligne RONDE égalée = remboursé → match écarté par jFiltre (ni gagné ni perdu), phrase d'aide affichée. fBesoin inclut
   m1 / m2 (lecture des feuilles), compteur de l'onglet Buts, résumé « Buts 1re MT Over 1 ». Smoke crPlus + 9 essais (93).
+  20261024c (« en ligne ronde, c'est vrai qu'on a un vrai manque partout ») : TOUTES les lignes over / under des critères de 0,5 en 0,5 (lignes()
+  buts du match tous sports, selEq équipe / adversaire, selN feuille de match : tirs, cadrés, corners, cartons). okOU(dir, v, L) : pile la ligne
+  = critère REMBOURSÉ → ignoré (comme une sélection annulée dans un combiné) ; nbRemb(c, m) = [actifs, remboursés] → si tout est remboursé,
+  match non compté (jFiltre). Remplace l'exclusion par critère de 24b. Phrase d'aide dans l'onglet Buts dès qu'une ligne ronde est choisie.
+  Smoke crPlus + 6 essais (combiné Over 4 + Victoire / Défaite sur un 3-1). Lignes asiatiques ,25 / ,75 (captures Asianconnect) : à décider.
   Smoke crPlus complété (Europe 1/2, Les deux 2/3, verrou).
   + (captures bet45 d'Antoine, compte au-delà des 30 jours : « Tendances disparaît, devrait rester à gauche et montrer cette page comme sur
   Pari / Tendances ») : indexfenotte.html n'avait PAS de bouton Tendances dans le menu (gones45 oui) → ajouté après Agenda, même onclick ;
