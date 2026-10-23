@@ -80329,3 +80329,29 @@ window._g45TrTestVoit = function () { try { return (typeof _g45SanteActive === '
   };
   window._g45TrOffCalc._test = true;
 })();
+
+/* ═══ 20261024f — MISE DU COCKPIT = PALIER AFFICHÉ (capture d'Antoine : Colorado « (P1) », simulateur « P1 ◀ 5 € », mais Mise = 30 €) ═══
+   updMise calculait la mise AVANT que la compétition / le lieu du match soient posés (c-comp vide → repli sur u.l = dernier palier joué
+   ailleurs, ici P3 = 30 €) ; renderCrash, appelé APRÈS, montrait le bon palier (NHL · domicile = P1). Maintenant, à chaque renderCrash et à
+   chaque changement de compétition / lieu, la mise reprend STRATS[u.s][palier − 1] — SAUF si la mise a été tapée à la main ou remplie par le
+   lecteur de tickets (tout événement input / change sur #c-mise = mise choisie, gardée jusqu'au prochain choix d'équipe, updMise). */
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var recalc = function () {
+    var uSel = $('c-unit'), mi = $('c-mise'); if (!uSel || !mi || mi._g45Man) return;
+    var u = (state.u || []).find(function (x) { return x.n === uSel.value; }); if (!u || !STRATS[u.s]) return;
+    var v = STRATS[u.s][_g45Pal(u, ($('c-comp') && $('c-comp').value) || '', g45LieuCourant()) - 1] || 0;
+    if (String(mi.value) !== String(v)) mi.value = v;
+  };
+  window._g45MiseRecalc = recalc;
+  var _rc = renderCrash;
+  renderCrash = window.renderCrash = function () { var r = _rc.apply(this, arguments); try { recalc(); } catch (e) {} return r; };
+  var _um = updMise;
+  updMise = window.updMise = function () { try { var mi = $('c-mise'); if (mi) mi._g45Man = 0; } catch (e) {} return _um.apply(this, arguments); };
+  var marque = function (e) { if (e.target && e.target.id === 'c-mise') e.target._g45Man = 1; };
+  document.addEventListener('input', marque, true);
+  document.addEventListener('change', function (e) {
+    marque(e);
+    if (e.target && (e.target.id === 'c-comp' || e.target.id === 'c-lieu')) { try { recalc(); } catch (x) {} }
+  }, true);
+})();

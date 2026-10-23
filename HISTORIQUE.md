@@ -2510,6 +2510,11 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   préfixé (« ½✅ Moitié gagné (cote 1,83, mise 10 €) »). Argent par _g45BetAppliquer (effet « en cours » retiré, effet réglé appliqué). Réussite
   % : hw et v = gagné, hl = perdu (dit à Antoine). Montante : hw palier 1, v inchangé, hl + 1. Smoke betAr (94) : 100 → 114,15 → 124,15 →
   129,15. Capture scratchpad ar-tel.png. ✏️ Modifier le pari : inchangé (Gagné / Perdu seulement).
+- 🚀 20261024f (captures : ticket Colorado – Tampa « Mise 5 € », Cockpit ouvert par « prochain match » avec Mise 30 alors que le simulateur
+  montrait « P1 ◀ 5 € ») : updMise calculait la mise AVANT que c-comp / c-lieu soient posés (comp vide → repli u.l = dernier palier joué
+  ailleurs, P3 = 30 €) ; renderCrash, appelé après, avait le bon palier. Bloc en FIN d'app.js : renderCrash enveloppé → _g45MiseRecalc()
+  (STRATS[u.s][_g45Pal(u, c-comp, lieu) − 1]) ; aussi au change de c-comp / c-lieu. Mise tapée ou remplie par le lecteur de tickets (tout
+  input / change sur #c-mise → _g45Man) = gardée jusqu'au prochain updMise (choix d'équipe). Smoke miseCk (95).
   Smoke crPlus complété (Europe 1/2, Les deux 2/3, verrou).
   + (captures bet45 d'Antoine, compte au-delà des 30 jours : « Tendances disparaît, devrait rester à gauche et montrer cette page comme sur
   Pari / Tendances ») : indexfenotte.html n'avait PAS de bouton Tendances dans le menu (gones45 oui) → ajouté après Agenda, même onclick ;
