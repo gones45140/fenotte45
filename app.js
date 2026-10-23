@@ -37737,6 +37737,55 @@ function _g45BetAppliquer(bet, loc, sens) {
   if (e.b) state.b[bet.b] = (parseFloat(state.b[bet.b] || 0) + sens * e.b).toFixed(2);
   if (e.fb) state.fb[bet.b] = ((parseFloat(state.fb[bet.b]) || 0) + sens * e.fb).toFixed(2);
 }
+/* ═══ 20261024e — RÈGLEMENT « ½ / REMBOURSÉ » (lignes asiatiques ,25 / ,75, lignes rondes : « dans les paris, on n'a rien lol » ; « oui, code
+   et mets en ligne ») ═══ Un pari ne connaît que win true / false (plus de 200 lectures dans l'appli) : le règlement est donc ramené à un
+   pari ordinaire dont l'ARGENT est exact, au centime, partout (capital, gains, stats) :
+   - ½✅ moitié gagné : win, cote = (cote + 1) / 2   (10 € à 1,83 → +4,15 €)
+   - ↩️ remboursé     : win, cote = 1               (0 €)
+   - ½❌ moitié perdu : perdu, mise = mise / 2        (−5 €)
+   Gardés : ar ('hw' | 'v' | 'hl'), coteO, mO (valeurs d'origine) ; débrief préfixé du résultat. Réussite % : ½✅ et ↩️ = gagné, ½❌ = perdu.
+   Argent : _g45BetAppliquer (seule source de vérité) — effet « en cours » retiré, effet réglé appliqué. Montante : ½✅ = gagné (palier 1),
+   ↩️ = palier inchangé, ½❌ = perdu (palier + 1). */
+var _G45_AR = { hw: '½✅ Moitié gagné', v: '↩️ Remboursé', hl: '½❌ Moitié perdu' };
+function g45BetRegler(id, ar, debrief) {
+  if (!_G45_AR[ar]) return false;
+  var idx = (state.h || []).findIndex(function (x) { return x.id === id; }); if (idx === -1) return false;
+  var bet = state.h[idx], c = parseFloat(bet.cote) || 0, m = parseFloat(bet.m) || 0;
+  if (debrief == null) debrief = prompt('Débrief (' + _G45_AR[ar] + ') :', '') || '';
+  var nb = Object.assign({}, bet, { ar: ar, coteO: bet.cote, mO: bet.m, debrief: _G45_AR[ar] + ' (cote ' + String(bet.cote).replace('.', ',') + ', mise ' + String(bet.m).replace('.', ',') + ' €)' + (debrief ? ' · ' + debrief : '') });
+  if (ar === 'hw') { nb.win = true; nb.cote = Math.round((c + 1) / 2 * 1000) / 1000; }
+  else if (ar === 'v') { nb.win = true; nb.cote = 1; }
+  else { nb.win = false; nb.m = Math.round(m / 2 * 100) / 100; }
+  _g45BetAppliquer(bet, 'h', -1);
+  _g45BetAppliquer(nb, 'a', 1);
+  if (bet.isS) { try { var u = state.u.find(function (x) { return x.n === bet.n; });
+    if (u) { if (ar === 'hw') _g45SetPal(u, bet.comp, bet.domicile, 1); else if (ar === 'hl') { var _p = _g45Pal(u, bet.comp, bet.domicile); if (_p < 8) _g45SetPal(u, bet.comp, bet.domicile, _p + 1); } } } catch (e) {} }
+  state.a.unshift(nb); state.h.splice(idx, 1);
+  try { save(); } catch (e) {} try { updMise(); } catch (e) {}
+  return true;
+}
+window.g45BetRegler = g45BetRegler;
+window.g45BetAutre = function (id) {
+  var b = (state.h || []).filter(function (x) { return x.id === id; })[0]; if (!b) return;
+  var o = document.getElementById('g45-ar-ov'); if (o) o.remove();
+  o = document.createElement('div'); o.id = 'g45-ar-ov';
+  o.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;';
+  var c = parseFloat(b.cote) || 0, m = parseFloat(b.m) || 0, fr = function (v) { return (v >= 0 ? '+' : '−') + Math.abs(v).toFixed(2).replace('.', ',') + ' €'; };
+  var g = { hw: b.isFreebet ? m * (c - 1) / 2 : m * (c - 1) / 2, v: 0, hl: b.isFreebet ? 0 : -m / 2 };
+  var bt = function (ar, bg, bd) { return '<button onclick="g45BetAutreOk(\'' + String(id).replace(/'/g, '') + '\',\'' + ar + '\')" style="display:block;width:100%;margin-top:10px;cursor:pointer;border-radius:12px;padding:14px;font-size:17px;font-weight:900;color:#fff;background:' + bg + ';border:2px solid ' + bd + ';">'
+    + _G45_AR[ar] + '<span style="display:block;font-size:14px;font-weight:700;margin-top:3px;">' + fr(g[ar]) + '</span></button>'; };
+  o.innerHTML = '<div style="background:#141a2e;border:2px solid #f5c542;border-radius:16px;max-width:420px;width:100%;padding:16px;color:#fff;">'
+    + '<div style="font-size:17px;font-weight:900;">Régler le pari</div>'
+    + '<div style="font-size:14px;color:#c9d3ee;margin-top:4px;">Mise ' + m.toFixed(2).replace('.', ',') + ' € · cote ' + c.toFixed(2).replace('.', ',') + ' · ligne asiatique ou ronde</div>'
+    + bt('hw', 'rgba(30,215,96,.22)', '#1ed760') + bt('v', 'rgba(255,255,255,.08)', '#8e9bbd') + bt('hl', 'rgba(255,69,69,.22)', '#ff4545')
+    + '<button onclick="var o=document.getElementById(\'g45-ar-ov\');if(o)o.remove();" style="display:block;width:100%;margin-top:12px;cursor:pointer;border-radius:12px;padding:12px;font-size:16px;font-weight:800;color:#fff;background:#3a4566;border:0;">Annuler</button></div>';
+  document.body.appendChild(o);
+};
+window.g45BetAutreOk = function (id, ar) {
+  var o = document.getElementById('g45-ar-ov'); if (o) o.remove();
+  g45BetRegler(id, ar);
+  try { if (typeof render === 'function') render(); } catch (e) {}
+};
 function _betSettleEffect(bet){
   var m=parseFloat(bet.m)||0, cote=parseFloat(bet.cote)||0;
   if(bet.isFreebet) return bet.win ? m*(cote-1) : 0;
@@ -74183,7 +74232,8 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       + (gain !== '' ? '<div style="font-size:14px;color:#1ed760;font-weight:800;">Gain possible ' + esc(fr(gain)) + ' €</div>' : '') + '</div>'
       + '<div style="display:flex;flex-direction:column;gap:6px;min-width:190px;">'
       + '<div style="display:flex;gap:6px;">' + bt('sbtn sw', 'background:rgba(30,215,96,.18);border:1px solid #1ed760;', 'result(this.dataset.id,true)', '✅ Gagné', 'Gagné')
-      + bt('sbtn sl', 'background:rgba(255,69,69,.18);border:1px solid #ff4545;', 'result(this.dataset.id,false)', '❌ Perdu', 'Perdu') + '</div>'
+      + bt('sbtn sl', 'background:rgba(255,69,69,.18);border:1px solid #ff4545;', 'result(this.dataset.id,false)', '❌ Perdu', 'Perdu')
+      + (h.isLay ? '' : bt('', 'background:rgba(245,197,66,.14);border:1px solid #f5c542;flex:0 0 auto;padding:8px 10px;', 'g45BetAutre(this.dataset.id)', '½ ↩️', 'Moitié gagné / Remboursé / Moitié perdu')) + '</div>'   /* 20261024e */
       + '<div style="display:flex;gap:6px;">' + bt('', 'background:rgba(255,255,255,.06);border:1px solid #3a4566;font-size:13px;', 'openBetLive(this.dataset.id)', '📡 Match', 'Voir le match')
       + bt('', 'background:rgba(255,255,255,.06);border:1px solid #3a4566;', 'editBet(this.dataset.id)', '✏️', 'Modifier')
       + bt('', 'background:rgba(255,255,255,.06);border:1px solid #3a4566;', 'cancelBet(this.dataset.id)', '🗑️', 'Supprimer') + '</div></div>'
