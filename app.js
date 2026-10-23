@@ -74276,7 +74276,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   /* 20261021d (« on va rajouter des trucs » : duo / trio buteurs, double chance buteur, tirs, tirs par équipe + mi-temps, marque en premier,
      match précédent ; maquette maquette-criteres « oui ») : valeurs par défaut des nouveaux critères (aussi pour les combinés de « Reprendre ma note »). */
   function norm(c) {
-    var D0 = { jx: 'cha', fs: '', FL: 24.5, ts: '', TSL: 12.5, as: '', ASL: 10.5, cad: '', CL: 4.5, mt: '', mp: '', bo: '', BL: 4.5, pm: '', m1: '', M1L: 1, m2: '', M2L: 1 };   /* 20261024b : m1 / m2 = buts 1re / 2e mi-temps */
+    var D0 = { jx: 'cha', fs: '', FL: 24.5, ts: '', TSL: 12.5, as: '', ASL: 10.5, cad: '', CL: 4.5, mt: '', mp: '', bo: '', BL: 4.5, pm: '', m1: '', M1L: 1, m2: '', M2L: 1, ha: '', HAL: 0.25 };   /* 20261024b : m1 / m2 = buts 1re / 2e mi-temps */
     for (var k in D0) if (c[k] == null) c[k] = D0[k];
     return c;
   }
@@ -74300,9 +74300,9 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   var US_N = { nfl: 'NFL', nba: 'NBA', mlb: 'MLB', nhl: 'NHL' };
   function lignes() {
     /* 20261024c (« en ligne ronde, c'est vrai qu'on a un vrai manque partout ») : lignes de 0,5 en 0,5 (ronde = égalité remboursée, okOU) */
-    var dm = function (a0, z) { var a = []; for (var x = a0; x <= z; x += 0.5) a.push(x); return a; };
+    var dm = function (a0, z, st) { var a = []; for (var x = a0; x <= z + 1e-9; x += st || 0.5) a.push(Math.round(x * 100) / 100); return a; };
     if (us() || rg()) { var u = US_L[sport()]; return dm(u[0], u[1]); }
-    return hk() ? dm(0.5, 7.5) : dm(0.5, 5.5);
+    return hk() ? dm(0.5, 7.5) : dm(0.5, 5.5, 0.25);   /* 20261024d : foot = lignes asiatiques ,25 / ,75 aussi */
   }
   function preparer(nom) {
     if (S.nom !== nom) {
@@ -74339,6 +74339,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     if (c.mp) p.push('Marque en premier : ' + c.mp);
     if (c.bo) p.push({ coe: 'Corners équipe', com: 'Corners match', cae: 'Cartons équipe', cam: 'Cartons match' }[c.bo] + ' Over ' + c.BL);
     if (c.pm) p.push('Après ' + { v: 'une victoire', n: 'un nul', d: 'une défaite' }[c.pm]);
+    if (c.ha) p.push('Handicap ' + (c.HAL > 0 ? '+' : '') + String(c.HAL).replace('.', ','));   /* 20261024d */
     if (c.ec === 'g') p.push('Gagne de ' + c.E + ' ou +');
     if (c.ec === 'p') p.push('Perd de ' + c.E + ' max');
     return p.length ? p.join(' + ') : 'aucun critère';
@@ -74348,10 +74349,11 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   function okOU(dir, v, L) { if (v === L) return true; return dir === 'un' ? v < L : v > L; }
   function nbRemb(c, m) {   /* [critères actifs, critères remboursés] */
     var gf = m[2], ga = m[3]; if (m[4]) { var mn = Math.min(gf, ga); gf = mn; ga = mn; }
-    var act = ['res', 'ou', 'bts', 'te', 'ad', 'ec', 'fs', 'ts', 'as', 'cad', 'mt', 'mp', 'bo', 'pm', 'm1', 'm2'].filter(function (k) { return c[k]; }).length + (joueurs(c).length ? 1 : 0), r = 0;
+    var act = ['res', 'ou', 'bts', 'te', 'ad', 'ec', 'fs', 'ts', 'as', 'cad', 'mt', 'mp', 'bo', 'pm', 'm1', 'm2', 'ha'].filter(function (k) { return c[k]; }).length + (joueurs(c).length ? 1 : 0), r = 0;
     if (c.ou && gf + ga === c.L) r++;
     if (c.te && gf === c.TL) r++;
     if (c.ad && ga === c.AL) r++;
+    if (c.ha && gf - ga + c.HAL === 0) r++;   /* 20261024d */
     if (fBesoin(c)) {
       var F = fVal(m);
       if (F) {
@@ -74377,6 +74379,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     if (c.bts === 'non' && gf > 0 && ga > 0) return false;
     if (c.te && !okOU(c.te, gf, c.TL)) return false;
     if (c.ad && !okOU(c.ad, ga, c.AL)) return false;
+    if (c.ha && gf - ga + c.HAL < 0) return false;   /* 20261024d : handicap (asiatique) de l'équipe ; 0 = remboursé (nbRemb) */
     if (c.ec === 'g' && !(gf - ga >= c.E)) return false;   /* 20261018s : gagne de E ou + */
     if (c.ec === 'p' && !(ga - gf <= c.E)) return false;   /* 20261018s : ne perd pas de plus de E */
     var P = joueurs(c);
@@ -74483,7 +74486,6 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
         var Fm = fVal(m); if (!Fm || Fm.hh == null || Fm.ha == null) return false;
         if (m[2] + m[3] - Fm.hh - Fm.ha < 0) return false;
       }
-      var NR = nbRemb(c, m); if (NR[0] && NR[1] >= NR[0]) return false;   /* 20261024c : tout remboursé → match non compté */
       return true;
     });
   }
@@ -74578,20 +74580,43 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       try { redessiner(); } catch (e) {}
     }).catch(function () { S.ro[nom] = { l: [] }; });
   }
+  /* 20261024d (lignes asiatiques, captures Asianconnect « plus de 1,75 buts », « Belgrano +0,25 » ; « oui ajoute-les ») : une ligne en ,25 / ,75
+     = mise coupée en DEUX, moitié sur chaque ligne voisine (1,75 → 1,5 et 2 ; +0,25 → 0 et +0,5). eclater(c) donne les combos à moitié de poids ;
+     valeur(c, m) = { n: part comptée (une moitié remboursée = 0,5), ok: part gagnée } → « moitié gagné » = ½ réussite sur ½ match.
+     Un match est une réussite (séries) si ok ≥ la moitié de n. */
+  var QK = [['ou', 'L'], ['te', 'TL'], ['ad', 'AL'], ['m1', 'M1L'], ['m2', 'M2L'], ['ha', 'HAL']];
+  function eclater(c) {
+    var L = [{ c: c, w: 1 }];
+    QK.forEach(function (q) {
+      if (!c[q[0]] || Math.abs((c[q[1]] * 2) % 1) < 1e-9) return;
+      var n2 = [];
+      L.forEach(function (x) { [-0.25, 0.25].forEach(function (d) { var y = Object.assign({}, x.c); y[q[1]] = Math.round((c[q[1]] + d) * 100) / 100; n2.push({ c: y, w: x.w / 2 }); }); });
+      L = n2;
+    });
+    return L;
+  }
+  function valeur(c, m) {
+    var n = 0, ok = 0;
+    eclater(c).forEach(function (x) { var NR = nbRemb(x.c, m); if (NR[0] && NR[1] >= NR[0]) return; n += x.w; if (passe(x.c, m)) ok += x.w; });
+    return { n: n, ok: ok };
+  }
   function calc(c, ms) {
     ms = jFiltre(c, ms);
-    var ok = 0, pire = 0, run = 0, best = 0, rb = 0;   /* 20261018u (« faudrait meilleure série ») : best = plus longue suite de réussites */
-    ms.forEach(function (m) { if (passe(c, m)) { ok++; run = 0; rb++; if (rb > best) best = rb; } else { rb = 0; run++; if (run > pire) pire = run; } });
-    return { n: ms.length, ok: ok, pire: pire, best: best };
+    var N = 0, ok = 0, pire = 0, run = 0, best = 0, rb = 0;   /* 20261018u (« faudrait meilleure série ») : best = plus longue suite de réussites */
+    ms.forEach(function (m) { var v = valeur(c, m); if (!v.n) return; N += v.n; ok += v.ok;
+      if (v.ok * 2 >= v.n) { run = 0; rb++; if (rb > best) best = rb; } else { rb = 0; run++; if (run > pire) pire = run; } });
+    return { n: Math.round(N * 100) / 100, ok: Math.round(ok * 100) / 100, pire: pire, best: best };
   }
   function enCours(c, ms) {
-    ms = jFiltre(c, ms);
+    ms = jFiltre(c, ms).filter(function (m) { return valeur(c, m).n > 0; });
     if (!ms.length) return '';
-    var der = passe(c, ms[ms.length - 1]), k = 0;
-    for (var i = ms.length - 1; i >= 0 && passe(c, ms[i]) === der; i--) k++;
+    var re = function (m) { var v = valeur(c, m); return v.ok * 2 >= v.n; };
+    var der = re(ms[ms.length - 1]), k = 0;
+    for (var i = ms.length - 1; i >= 0 && re(ms[i]) === der; i--) k++;
     return k + (der ? (k > 1 ? ' réussites' : ' réussite') : (k > 1 ? ' défaites' : ' défaite')) + ' de suite';
   }
   function coul(p) { return p <= 2 ? '#1ed760' : p <= 4 ? '#ff9f43' : '#ff5a5a'; }
+  function nbV(x) { return String(x).replace('.', ','); }   /* 20261024d : 12,5 / 20 avec les moitiés */
   /* ── 20261021e — 🌍 COUPES D'EUROPE (« actuellement on a que le championnat, la coupe d'Europe est-elle rajoutable ? », « oui ») —
      SONDÉ PAR ANTOINE : site v2 soccer/uefa.champions/teams/160/schedule?season=2025 = 17 matchs (uefa.europa : 0 pour le PSG). Foot seulement :
      S.comp = 'L' (championnat, défaut) / 'E' (Ligue des champions + Europa + Conférence) / 'T' (les deux, par date). Matchs d'Europe :
@@ -74753,7 +74778,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       if (!ms.length) { h += '<tr><td style="' + td + '">' + lib(D.lg, s.an) + '</td><td colspan="3" style="' + td + 'color:#c9d3ee;">aucun match joué</td></tr>'; return; }
       var R = calc(c, ms);
       if (!R.n) { h += '<tr><td style="' + td + '">' + lib(D.lg, s.an) + '</td><td colspan="3" style="' + td + 'color:#c9d3ee;">aucun match compté (critères joueur / feuille / match précédent)</td></tr>'; return; }   /* 20261021f : plus de « NaN % » */
-      h += '<tr><td style="' + td + '">' + lib(D.lg, s.an) + '</td><td style="' + td + '">' + R.ok + '/' + R.n + ' · ' + Math.round(100 * R.ok / R.n) + ' %</td>'
+      h += '<tr><td style="' + td + '">' + lib(D.lg, s.an) + '</td><td style="' + td + '">' + nbV(R.ok) + '/' + nbV(R.n) + ' · ' + Math.round(100 * R.ok / R.n) + ' %</td>'
         + '<td style="' + td + 'font-weight:700;color:' + coul(R.pire) + ';">' + R.pire + '</td>'
         + '<td style="' + td + 'font-weight:700;color:#5aa9ff;">' + R.best + '</td></tr>';
     });
@@ -74761,7 +74786,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     if (tous.length && calc(c, tous).n) {   /* 20261021f : rien compté → pas de total « NaN % » */
       var T = calc(c, tous);
       h += '<div style="margin-top:10px;background:#0f1730;border-radius:10px;padding:10px;font-size:14px;line-height:1.6;color:#fff;">'
-        + '🧮 <b>Total : ' + T.ok + '/' + T.n + ' · ' + Math.round(100 * T.ok / T.n) + ' %</b><br>'
+        + '🧮 <b>Total : ' + nbV(T.ok) + '/' + nbV(T.n) + ' · ' + Math.round(100 * T.ok / T.n) + ' %</b><br>'
         + '🪜 Pire série : <b style="color:' + coul(T.pire) + ';">' + T.pire + ' défaite' + (T.pire > 1 ? 's' : '') + ' de suite</b> → il fallait <b>' + (T.pire + 1) + ' palier' + (T.pire ? 's' : '') + '</b><br>'
         + '🏆 Meilleure série : <b style="color:#5aa9ff;">' + T.best + ' réussite' + (T.best > 1 ? 's' : '') + ' de suite</b><br>'
         + '📈 Série en cours : ' + enCours(c, tous) + '</div>';
@@ -74820,7 +74845,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     h += lab(us() || rg() ? US_L[sport()][3] : hk() ? 'Buts du match (temps réglementaire)' : 'Buts du match') + b(c.ou === 'ov', 'Over', "g45CrSet('ou','ov')") + b(c.ou === 'un', 'Under', "g45CrSet('ou','un')") + b(c.ou === '', 'Aucun', "g45CrSet('ou','')") + sel;
     var selEq = function (k, v) {
       var t = '<select onchange="g45CrSet(\'' + k + '\',this.value)" style="background:#16213f;color:#fff;border:1px solid #6d9dff;border-radius:8px;padding:7px 10px;font-size:14px;margin:0 6px 6px 0;">', E = lgEq();
-      for (var x = E[0]; x <= E[1]; x += 0.5) t += '<option value="' + x + '"' + (v === x ? ' selected' : '') + '>' + x + '</option>';   /* 20261024c : lignes rondes */
+      for (var x = E[0], st = S.ctx ? 0.5 : 0.25; x <= E[1] + 1e-9; x = Math.round((x + st) * 100) / 100) t += '<option value="' + x + '"' + (v === x ? ' selected' : '') + '>' + x + '</option>';   /* 20261024c : lignes rondes ; 24d : quarts (foot) */
       return t + '</select>';
     };
     var hkTr = hk() ? ' (temps réglementaire)' : '';
@@ -74830,7 +74855,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     if (!S.ctx) {
       var selMt = function (k, v) {
         var t = '<select onchange="g45CrSet(\'' + k + '\',this.value)" style="background:#16213f;color:#fff;border:1px solid #6d9dff;border-radius:8px;padding:7px 10px;font-size:14px;margin:0 6px 6px 0;">';
-        for (var x = 0.5; x <= 3.5; x += 0.5) t += '<option value="' + x + '"' + (v === x ? ' selected' : '') + '>' + String(x).replace('.', ',') + '</option>';
+        for (var x = 0.5; x <= 3.5 + 1e-9; x = Math.round((x + 0.25) * 100) / 100) t += '<option value="' + x + '"' + (v === x ? ' selected' : '') + '>' + String(x).replace('.', ',') + '</option>';   /* 24d : quarts */
         return t + '</select>';
       };
       h += lab('Buts en 1re mi-temps (match)') + b(c.m1 === 'ov', 'Over', "g45CrSet('m1','ov')") + b(c.m1 === 'un', 'Under', "g45CrSet('m1','un')") + b(!c.m1, 'Aucun', "g45CrSet('m1','')") + selMt('M1L', c.M1L);
@@ -74838,8 +74863,8 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       if ((c.m1 || c.m2) && S.fp && S.fp[nom] && S.fp[nom].enCours) h += '<div style="font-size:14px;color:#f5c542;margin:4px 0;">⏳ Feuilles de match : ' + (S.fp[nom].f || 0) + ' / ' + (S.fp[nom].n || '…') + ' (la 1re fois seulement)</div>';
     }
     /* 20261024c : rappel dès qu'une ligne ronde est choisie (buts ou feuille de match) */
-    if ([['ou', 'L'], ['te', 'TL'], ['ad', 'AL'], ['m1', 'M1L'], ['m2', 'M2L'], ['fs', 'FL'], ['ts', 'TSL'], ['as', 'ASL'], ['cad', 'CL'], ['bo', 'BL']].some(function (q) { return c[q[0]] && c[q[1]] % 1 === 0; }))
-      h += '<div style="font-size:13px;color:#c9d3ee;margin:0 0 6px;">Ligne ronde : pile la ligne = remboursé (ce critère est ignoré ; si tout est remboursé, le match n\'est pas compté).</div>';
+    if ([['ou', 'L'], ['te', 'TL'], ['ad', 'AL'], ['m1', 'M1L'], ['m2', 'M2L'], ['fs', 'FL'], ['ts', 'TSL'], ['as', 'ASL'], ['cad', 'CL'], ['bo', 'BL']].some(function (q) { return c[q[0]] && Math.abs(c[q[1]] % 1 - 0.5) > 1e-9; }))
+      h += '<div style="font-size:13px;color:#c9d3ee;margin:0 0 6px;">Ligne ronde : pile la ligne = remboursé (critère ignoré ; tout remboursé = match non compté). Ligne en ,25 / ,75 : moitié de mise sur chaque ligne voisine (« moitié gagné » = ½ réussite).</div>';
     var q2 = h.length;
     /* 20261018s (capture du bloc critères, « je vois pas » l'écart) : ÉCART — « Gagne de X ou + » (= handicap −(X−0,5)) / « Perd de X max »
        (= handicap +(X+0,5)) ; hockey : temps réglementaire comme le reste. Échelle par sport (_EC). */
@@ -74849,6 +74874,13 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     _EC.forEach(function (x) { selE += '<option value="' + x + '"' + (c.E === x ? ' selected' : '') + '>' + x + '</option>'; });
     selE += '</select>';
     h += lab('Écart (' + motUnite().toLowerCase() + hkTr + ')') + b(c.ec === 'g', 'Gagne de ' + c.E + ' ou +', "g45CrSet('ec','g')") + b(c.ec === 'p', 'Perd de ' + c.E + ' max', "g45CrSet('ec','p')") + b(!c.ec, 'Aucun', "g45CrSet('ec','')") + selE;
+    /* 20261024d : HANDICAP ASIATIQUE (foot) — « Belgrano +0,25 » : −3 → +3 de 0,25 en 0,25 ; 0 / ligne ronde égalée = remboursé, ,25 / ,75 = moitié-moitié */
+    if (!S.ctx) {
+      var selH = '<select onchange="g45CrSet(\'HAL\',this.value)" style="background:#16213f;color:#fff;border:1px solid ' + (c.ha ? '#f5c542' : '#6d9dff') + ';border-radius:8px;padding:7px 10px;font-size:14px;margin:0 6px 6px 0;">'
+        + '<option value=""' + (!c.ha ? ' selected' : '') + '>Aucun</option>';
+      for (var hx = -3; hx <= 3 + 1e-9; hx = Math.round((hx + 0.25) * 100) / 100) selH += '<option value="' + hx + '"' + (c.ha && c.HAL === hx ? ' selected' : '') + '>' + (hx > 0 ? '+' : '') + String(hx).replace('.', ',') + '</option>';
+      h += lab('Handicap asiatique de ' + esc(nom)) + selH + '</select>';
+    }
     var q3 = h.length;
     if (!S.ctx && D && D.tid && D.lg) {
       roCharger(nom, D);
@@ -74923,7 +74955,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
        🎯 Feuille · 🔁 Contexte = match précédent) ; pastille = nombre de critères choisis ; onglet gardé (localStorage g45_cr_tab). */
     var q7 = h.length;
     var PAN = { res: h.slice(q0, q1) + h.slice(q2, q3), buts: h.slice(q1, q2) + h.slice(q6, q7), jou: h.slice(q3, q4), feu: h.slice(q4, q5), ctx: h.slice(q5, q6) };
-    var NB = { res: (c.res ? 1 : 0) + (c.ec ? 1 : 0), buts: (c.ou ? 1 : 0) + (c.te ? 1 : 0) + (c.ad ? 1 : 0) + (c.bts ? 1 : 0) + (c.m1 ? 1 : 0) + (c.m2 ? 1 : 0), jou: joueurs(c).length ? 1 : 0,
+    var NB = { res: (c.res ? 1 : 0) + (c.ec ? 1 : 0) + (c.ha ? 1 : 0), buts: (c.ou ? 1 : 0) + (c.te ? 1 : 0) + (c.ad ? 1 : 0) + (c.bts ? 1 : 0) + (c.m1 ? 1 : 0) + (c.m2 ? 1 : 0), jou: joueurs(c).length ? 1 : 0,
       feu: ['fs', 'ts', 'as', 'cad', 'mt', 'mp', 'bo'].filter(function (k) { return c[k]; }).length, ctx: c.pm ? 1 : 0 };
     var ONG = [['res', '🏁 Résultat'], ['buts', '⚽ ' + motUnite()], ['jou', '👤 Joueurs'], ['feu', '🎯 Feuille'], ['ctx', '🔁 Contexte']].filter(function (o) { return PAN[o[0]]; });
     var TB = 'res'; try { TB = localStorage.getItem('g45_cr_tab') || 'res'; } catch (e) {}
@@ -74981,6 +75013,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       else if (k === 'CL') { c.CL = parseFloat(v); if (!c.cad) c.cad = 'eq'; }
       else if (k === 'BL') { c.BL = parseFloat(v); if (!c.bo) c.bo = 'coe'; }
       else if (k === 'M1L') { c.M1L = parseFloat(v); if (!c.m1) c.m1 = 'ov'; }   /* 20261024b */
+      else if (k === 'HAL') { if (v === '') c.ha = ''; else { c.HAL = parseFloat(v); c.ha = 'on'; } }   /* 20261024d */
       else if (k === 'M2L') { c.M2L = parseFloat(v); if (!c.m2) c.m2 = 'ov'; }
       else c[k] = v;
     }

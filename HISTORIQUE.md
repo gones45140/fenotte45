@@ -2498,6 +2498,11 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   = critère REMBOURSÉ → ignoré (comme une sélection annulée dans un combiné) ; nbRemb(c, m) = [actifs, remboursés] → si tout est remboursé,
   match non compté (jFiltre). Remplace l'exclusion par critère de 24b. Phrase d'aide dans l'onglet Buts dès qu'une ligne ronde est choisie.
   Smoke crPlus + 6 essais (combiné Over 4 + Victoire / Défaite sur un 3-1). Lignes asiatiques ,25 / ,75 (captures Asianconnect) : à décider.
+  20261024d (« oui ajoute-les », captures Asianconnect « plus de 1,75 buts @1,83 », « Belgrano +0,25 @1,91 ») : critères FOOT — lignes ,25 / ,75
+  (buts du match, équipe, adversaire, mi-temps) + nouveau « Handicap asiatique de <club> » (onglet Résultat, −3 → +3 de 0,25, c.ha / HAL ;
+  gf − ga + H > 0 gagné, = 0 remboursé). eclater(c) coupe chaque ligne en quart en deux lignes voisines à moitié de poids ; valeur(c, m) =
+  { n, ok } (moitié remboursée → n 0,5) ; calc additionne (« 12,5/20 », nbV) ; série : réussite si ok ≥ n/2 ; enCours idem. Le test « tout
+  remboursé » passe de jFiltre à valeur. Smoke crPlus + 10 essais (3-1 et 1-1). Paris (gagné / perdu à moitié) : proposé à Antoine, à faire.
   Smoke crPlus complété (Europe 1/2, Les deux 2/3, verrou).
   + (captures bet45 d'Antoine, compte au-delà des 30 jours : « Tendances disparaît, devrait rester à gauche et montrer cette page comme sur
   Pari / Tendances ») : indexfenotte.html n'avait PAS de bouton Tendances dans le menu (gones45 oui) → ajouté après Agenda, même onclick ;
