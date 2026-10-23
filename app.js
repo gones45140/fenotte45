@@ -55142,7 +55142,9 @@ function _g45FanLire(nom) {
     if (_ps && Date.now() - _ps < 30 * 60000) return '';
     var o = JSON.parse(localStorage.getItem(_G45_FANART + _g45SgNorm(nom)) || 'null');
     if (!o) return undefined;                       /* jamais demande */
-    if (!o.u && (Date.now() - (o.t || 0)) > 30 * 86400000) return undefined;  /* echec perime */
+    /* 20261023t (« sportdb répondait plus, c'est bon mais les images reviennent pas ») : 2e panne en une semaine → un « pas d'image » n'est
+       plus gardé que 3 jours (avant 30) : après une panne, les bannières reviennent seules. */
+    if (!o.u && (Date.now() - (o.t || 0)) > 3 * 86400000) return undefined;  /* echec perime */
     return o.u || '';                               /* '' = connu sans visuel */
   } catch (e) { return undefined; }
 }
@@ -71387,7 +71389,7 @@ function _g45BgLogo(nom) {
 async function _g45BgChercher(nom) {
   var norm = function (t) { return (typeof _g45SgNorm === 'function') ? _g45SgNorm(t) : String(t || '').toLowerCase(); };
   var ck = 'g45bgclub1_' + norm(nom);
-  try { var c = JSON.parse(localStorage.getItem(ck) || 'null'); if (c && Date.now() - c.t < (c.u || c.l ? 30 : 7) * 864e5) return c; } catch (e) {}
+  try { var c = JSON.parse(localStorage.getItem(ck) || 'null'); if (c && Date.now() - c.t < (c.u || c.l ? 30 : 3) * 864e5) return c;   /* 20261023t : échec 7 → 3 jours */ } catch (e) {}
   var sport = _g45BgSport(nom), out = { u: '', l: '', t: Date.now() };
   try { var _bp = window._g45BgPanne && window._g45BgPanne[ck]; if (_bp && Date.now() - _bp < 30 * 60000) return out; } catch (e) {}   /* 20261016p */
   /* 20261016i : fiche d'un JOUEUR du mur → pas de recherche d'équipe TheSportsDB (« FC Connor McDavid »…) ; logo posé plus bas sinon rien */
@@ -76737,6 +76739,24 @@ window._g45NhlJTrouver = _g45NhlJTrouver; window._g45NhlJHtml = _g45NhlJHtml; wi
     }
     del.forEach(function (k) { localStorage.removeItem(k); });
     localStorage.setItem('g45_fan_neg2', '1');
+  } catch (e) {}
+})();
+
+/* 20261023t (capture du 23/10 : « sportdb répondait plus, c'est bon mais les images reviennent pas » — Hurricanes, mur en Bannières sans
+   fond) : même cas que 16t, les « pas d'image » mémorisés pendant la panne sont effacés une fois (drapeau g45_fan_neg4). */
+(function () {
+  try {
+    if (localStorage.getItem('g45_fan_neg4')) return;
+    var del = [];
+    for (var i = 0; i < localStorage.length; i++) {
+      var k = localStorage.key(i); if (!k) continue;
+      if (k.indexOf('g45_herologo_ko_') === 0) { del.push(k); continue; }
+      if (!(k.indexOf('g45_fanart2_') === 0 || k.indexOf('g45bgclub1_') === 0 || k.indexOf('g45jv') === 0)) continue;
+      var v = localStorage.getItem(k) || '';
+      if (!/https?:|blob:|data:image/.test(v)) del.push(k);
+    }
+    del.forEach(function (k) { localStorage.removeItem(k); });
+    localStorage.setItem('g45_fan_neg4', '1');
   } catch (e) {}
 })();
 

@@ -459,6 +459,10 @@ Il est dans les DEUX dépôts (gones45 et fenotte45), identique (cmp). Jamais de
   reprise (TheSportsDB surchargé répondait « aucune équipe ») effacés une 2e fois (drapeau g45_fan_neg2 : fanart2 / bgclub1 / g45jv sans adresse
   + g45_herologo_ko_) ; worker : réponse vide gardée 1 HEURE (au lieu d'un jour), clé fraîche tsdb2:<chemin> (anciennes tsdb: abandonnées).
   Le jeton Cloudflare n'a PAS accès à D1 (7403) : contenu du cache non vérifiable d'ici.
+  20261023t (captures du 23/10 : « sportdb répondait plus, c'est bon mais les images reviennent pas », mur en Bannières, Hurricanes sans fond) :
+  2e panne TheSportsDB → « pas d'image » mémorisés pendant la panne effacés une fois (drapeau g45_fan_neg4, même liste que neg2) ; ET un échec
+  n'est plus gardé que 3 JOURS (_g45FanLire 30 → 3 ; _g45BgChercher 7 → 3) : à la prochaine panne les bannières reviennent seules. 2 essais vm,
+  smoke 92. TheSportsDB / worker injoignables depuis la session (proxy 403) : retour des images NON vérifié d'ici.
   20261016u (« même les joueurs ont sauté ») — VU dans Observability du worker (API telemetry/query, lisible avec le jeton) : TOUTES les demandes
   host=tsdb en 429 = TheSportsDB limite la clé gratuite par IP, celle du worker est partagée. App : 429 du worker → appel DIRECT (IP du téléphone),
   comme 403 / 404 ; worker : après un 429, plus d'appel à TheSportsDB pendant 60 s (secours si présent, sinon 429). Smoke (tsdbw : cas 429).
