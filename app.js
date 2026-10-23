@@ -32647,7 +32647,9 @@ function _g45WpCourbe(P, sport, noms) {
   s += '<path d="' + aire + '" fill="rgba(109,157,255,.22)" clip-path="url(#g45wpH)"/><path d="' + aire + '" fill="rgba(245,197,66,.22)" clip-path="url(#g45wpB)"/>';
   s += '<path d="M' + ligne + '" fill="none" stroke="#6d9dff" stroke-width="3" stroke-linejoin="round" clip-path="url(#g45wpH)"/>'
     + '<path d="M' + ligne + '" fill="none" stroke="#f5c542" stroke-width="3" stroke-linejoin="round" clip-path="url(#g45wpB)"/>';
-  return '<svg viewBox="0 0 ' + W + ' ' + (H + 16) + '" style="width:100%;display:block;margin-top:4px;">' + s + '</svg>';
+  /* 20261024i (capture PC : « c'est un poil gros sur l'écran, non ? » → « OUI ») : viewBox de 384 étiré sur toute la largeur = textes ×4,5
+     sur grand écran. Courbe limitée à 760 px et centrée (textes ≈ 24 px) ; téléphone inchangé. */
+  return '<svg viewBox="0 0 ' + W + ' ' + (H + 16) + '" style="width:100%;max-width:760px;display:block;margin:4px auto 0;">' + s + '</svg>';
 }
 function _g45WpFr(v) { return (Math.round(v * 10) / 10).toFixed(1).replace('.', ',') + ' %'; }
 function _g45WpContenu(eid) {

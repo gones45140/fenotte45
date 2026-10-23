@@ -2524,7 +2524,8 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   sports/soccer/nba/teams/15/schedule → 400 ; Arsenal → match récent (post) + résumé OK (le foot marche quand un match existe). Correction :
   _espnMatchLiveData choisit le sport ESPN selon la ligue (nba / wnba basketball, nhl hockey, nfl football, mlb baseball, sinon soccer) pour
   le calendrier et le résumé, renvoie sport ; loadEspnMatchLive : sport ≠ soccer → en-tête score + courbe _g45WpBloc (relue chaque minute),
-  sans pression / stats / compos de foot. 2 essais vm (faux ESPN), smoke 95. Courbe trop grosse sur PC (viewBox 384 étiré) : proposé max 760 px.
+  sans pression / stats / compos de foot. 2 essais vm (faux ESPN), smoke 95. Courbe trop grosse sur PC (viewBox 384 étiré) : 24i.
+  20261024i (« OUI ») : _g45WpCourbe → svg max-width 760 px, centré (textes ≈ 24 px sur PC) ; téléphone inchangé. Capture scratchpad wp-pc.png, smoke 95.
   Smoke crPlus complété (Europe 1/2, Les deux 2/3, verrou).
   + (captures bet45 d'Antoine, compte au-delà des 30 jours : « Tendances disparaît, devrait rester à gauche et montrer cette page comme sur
   Pari / Tendances ») : indexfenotte.html n'avait PAS de bouton Tendances dans le menu (gones45 oui) → ajouté après Agenda, même onclick ;
