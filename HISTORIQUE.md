@@ -495,6 +495,13 @@ Il est dans les DEUX dépôts (gones45 et fenotte45), identique (cmp). Jamais de
   (clés f_buts, f_btts, f_vq, ce_buts, ce_vq, nhl_vq, nba_vq, nfl_vq, tn_vq, défaut en route) ; TEST / OFFICIEL inchangé (tn_tv, ce_hors) ; le
   suivi BET45 / book reste sans interrupteur (ce n'est pas un pari). Robot : pzCle(x) range chaque tendance comme LIGNES de l'appli, ligne en
   pause → J.pz. « officiel avant » affiché seulement pour une ligne en pause ou déjà suivie en coulisse. Smoke 93, 2 essais robot.
+  20261024a (« un bouton marche / pause et un bouton test / officiel à chaque serait pas mieux » → proposé : un seul SÉLECTEUR À 3 CASES, deux
+  boutons pouvant se contredire ; « pas besoin de maquette, tu peux coder et mettre en ligne ») : chaque ligne [✅ Officiel | 🧪 Test | ⏸️ Pause].
+  robot_reglages.json = { maj, etat: { clé: off | test | pause } } (ancienne forme pause / officiel encore lue). Robot : etat(k), DEF_ETAT
+  (points NBA jusqu'au 14/11, buts NHL, total NFL en pause ; tn_tv, ce_hors en test) ; test ou pause → J.pz avec x.st ; ce_hors / tn_tv
+  officiels → J.t avec x.src 'ce' / 'tv' (comptés dans LEUR ligne) ; ce_hors / tn_tv en pause → J.pz. Appli : bilan d'une ligne = J.t + J.pz
+  (+ J.ce / J.tv) ; window._g45TrTeHtml = bloc « 🧪 Paris en test » pour les testeurs (J.pz st 'test'), posé à côté des coupes d'Europe.
+  Smoke 93 (bil : sélecteur, mise en ligne etat, bloc testeurs), 4 essais robot (défauts, test / pause / officiel, ancienne forme).
   20261016u (« même les joueurs ont sauté ») — VU dans Observability du worker (API telemetry/query, lisible avec le jeton) : TOUTES les demandes
   host=tsdb en 429 = TheSportsDB limite la clé gratuite par IP, celle du worker est partagée. App : 429 du worker → appel DIRECT (IP du téléphone),
   comme 403 / 404 ; worker : après un 429, plus d'appel à TheSportsDB pendant 60 s (secours si présent, sinon 429). Smoke (tsdbw : cas 429).

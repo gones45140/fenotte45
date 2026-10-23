@@ -75972,6 +75972,7 @@ var _G45_BK_DOM = [
     var tous = (J.t || []).filter(function (x) { return x.r !== -1 && (!window._g45TrEnTest || !window._g45TrEnTest(x.t) || window._g45TrTestVoit()); });   /* 20261022c : période test */
     try { if (window._g45TnTvHtml && window._g45TrTestVoit && window._g45TrTestVoit()) tete += window._g45TnTvHtml(J); } catch (e) {}   /* 20261023i : 🧪 value tennis */
     try { if (window._g45TrCeHtml && window._g45TrTestVoit && window._g45TrTestVoit()) tete += window._g45TrCeHtml(J); } catch (e) {}   /* 20261023m : 🧪 coupes d'Europe */
+    try { if (window._g45TrTeHtml && window._g45TrTestVoit && window._g45TrTestVoit()) tete += window._g45TrTeHtml(J); } catch (e) {}   /* 20261024a : 🧪 paris mis en test (📊 Bilans) */
     /* 20261017h (« trier par championnat » → « un truc comme dans Bilan avec les filtres », visuel validé) : barre 🔎 Filtres repliable
        (Sport, Championnat, Type de pari, Cote, Proba stats, Avis, Période), combinables, gardés dans localStorage g45tr_off_flt ;
        les anciens boutons Toutes / D'accord / Désaccord = ligne « Avis » (O.f gardé pour g45TrOffF). Tout (tuiles, calendrier, courbe) suit. */
@@ -77996,28 +77997,31 @@ window._g45AgJouUs = async function (nowTs) {
 /* ═══ 📊 BILANS EN ATTENTE (20261023y) — gones seulement ═══
    Antoine (abonnement Claude fini avant le 15/11, date des bilans) : « si on peut faire une sélection de tel pari alors c'est le top, mais
    dispo que sur gones pour mettre en ligne » ; maquette validée : « classe par sport et leur pari et c'est parfait ».
-   Tendances BET45 → 4e sous-bouton « 📊 Bilans » (visible si _g45SanteActive). Lit données/tendances_officielles.json (J.t officiel, J.pz
-   marchés en pause suivis en coulisse par le robot, J.ce coupes d'Europe hors règle, J.tv value tennis, J.dz suivi BET45 / book) et
-   données/robot_reglages.json. Par sport, chaque pari : bilan (réussite, gains à 1 €), conseil automatique (moins de 20 paris = ⏳ ;
-   gains > 0 = ✅ ; sinon ❌) et interrupteur. « 💾 Mettre en ligne » écrit robot_reglages.json sur GitHub avec la clé de la synchro des
-   paris (gones45_github_token) ; le robot (tendances.mjs, RRp / RRo) l'applique au passage suivant. */
+   20261024a (« un bouton marche / pause et un bouton test / officiel à chaque » → SÉLECTEUR À 3 CASES sur chaque ligne, « pas besoin de
+   maquette, tu peux coder et mettre en ligne ») : ✅ Officiel (sélection + bilan) · 🧪 Test (suivi, montré aux testeurs, hors bilan) ·
+   ⏸️ Pause (suivi en coulisse, caché). Tendances BET45 → 4e sous-bouton « 📊 Bilans » (visible si _g45SanteActive). Lit
+   données/tendances_officielles.json (J.t officiel, J.pz test / pause suivis par le robot avec x.pz = clé et x.st, J.ce coupes d'Europe hors
+   règle en test, J.tv value tennis en test, J.dz suivi BET45 / book) et données/robot_reglages.json { maj, etat: { clé: off | test | pause } }.
+   Bilan d'une ligne = toutes les fois où le robot a choisi ce pari (quel que soit l'état), gains à 1 € sur les paris avec cote ; conseil
+   automatique (moins de 20 paris ⏳ ; gains > 0 ✅ ; sinon ❌ / ⚠️). « 💾 Mettre en ligne » écrit robot_reglages.json sur GitHub avec la clé de
+   la synchro des paris (gones45_github_token) ; le robot (tendances.mjs, etat()) l'applique au passage suivant. */
 (function () {
   var RAW = 'https://raw.githubusercontent.com/gones45140/gones45/main/donn%C3%A9es/';
   var S = window._g45Bil = window._g45Bil || { j: null, rr: null, t: 0, enCours: false, loc: null, msg: '' };
-  /* Valeurs par défaut = celles du robot quand le fichier n'existe pas. */
+  var ETATS = { off: 1, test: 1, pause: 1 };
+  /* Valeurs par défaut = celles du robot (DEF_ETAT) quand le fichier n'existe pas. */
   var DEF = function () {
     var d = new Date(), m = d.getUTCMonth() + 1;
-    /* 20261023z : interrupteur sur chaque ligne → toutes les lignes ont une clé de pause (false = en route) */
-    return { pause: { nba_pts: m === 10 || (m === 11 && d.getUTCDate() < 15), nhl_buts: true, nfl_pts: true, f_buts: false, f_btts: false, f_vq: false,
-      ce_buts: false, ce_vq: false, nhl_vq: false, nba_vq: false, nfl_vq: false, tn_vq: false }, officiel: { tn_tv: false, ce_hors: false } };
+    return { nba_pts: (m === 10 || (m === 11 && d.getUTCDate() < 15)) ? 'pause' : 'off', nhl_buts: 'pause', nfl_pts: 'pause', tn_tv: 'test', ce_hors: 'test' };
   };
-  var reglages = function () {
-    var d = DEF(), r = S.rr || {}, o = { pause: {}, officiel: {} };
-    Object.keys(d.pause).forEach(function (k) { o.pause[k] = (r.pause && typeof r.pause[k] === 'boolean') ? r.pause[k] : d.pause[k]; });
-    Object.keys(d.officiel).forEach(function (k) { o.officiel[k] = !!(r.officiel && r.officiel[k] === true); });
-    if (S.loc) { Object.keys(S.loc.pause).forEach(function (k) { o.pause[k] = S.loc.pause[k]; }); Object.keys(S.loc.officiel).forEach(function (k) { o.officiel[k] = S.loc.officiel[k]; }); }
-    return o;
+  var enLigne = function (k) {
+    var r = S.rr || {};
+    if (r.etat && ETATS[r.etat[k]]) return r.etat[k];
+    if (r.pause && typeof r.pause[k] === 'boolean') return r.pause[k] ? 'pause' : 'off';   /* forme du 20261023y */
+    if (r.officiel && r.officiel[k] === true) return 'off';
+    return DEF()[k] || 'off';
   };
+  var etat = function (k) { return S.loc && ETATS[S.loc[k]] ? S.loc[k] : enLigne(k); };
   var charger = function () {
     if (S.enCours || (S.j && Date.now() - S.t < 600000)) return;
     S.enCours = true;
@@ -78033,26 +78037,34 @@ window._g45AgJouUs = async function (nowTs) {
   var redessiner = function () {
     try { var el = document.getElementById('g45bil'); if (el) el.outerHTML = window._g45BilHtml(); } catch (e) {}
   };
-  /* Rangement : sport + pari. */
+  /* Rangement : sport + pari (MÊME rangement que pzCle du robot). src 'ce' / 'tv' = pari passé de test à officiel. */
   var foot = function (sl) { return !/^(nhl|nba|nfl|atp|wta)$/.test(String(sl || '')); };
   var buts = function (k) { return /^(o|u)\d/i.test(String(k || '')); };
+  var pts = function (k) { return /^(un|ov)/i.test(String(k || '')); };
   var LIGNES = [
-    { sp: '⚽ Foot', id: 'f_buts', lbl: 'Championnats · buts (+ / −)', de: 't', pause: 'f_buts', f: function (x) { return foot(x.sl) && !/^uefa/.test(x.sl) && buts(x.k); } },
-    { sp: '⚽ Foot', id: 'f_btts', lbl: 'Championnats · les 2 marquent', de: 't', pause: 'f_btts', f: function (x) { return foot(x.sl) && !/^uefa/.test(x.sl) && x.k === 'btts'; } },
-    { sp: '⚽ Foot', id: 'f_vq', lbl: 'Championnats · vainqueur / double chance', de: 't', pause: 'f_vq', f: function (x) { return foot(x.sl) && !/^uefa/.test(x.sl) && !buts(x.k) && x.k !== 'btts'; } },
-    { sp: '⚽ Foot', id: 'ce_buts', lbl: 'Coupes d\'Europe · buts / 2 marquent', sub: 'règle du gros club depuis le 23/10', de: 't', pause: 'ce_buts', f: function (x) { return /^uefa/.test(x.sl) && (buts(x.k) || x.k === 'btts'); } },
-    { sp: '⚽ Foot', id: 'ce_vq', lbl: 'Coupes d\'Europe · vainqueur', de: 't', pause: 'ce_vq', f: function (x) { return /^uefa/.test(x.sl) && !buts(x.k) && x.k !== 'btts'; } },
-    { sp: '⚽ Foot', id: 'ce_hors', lbl: 'Coupes d\'Europe hors règle', sub: 'gros club < 70 %, cote trop basse ou club inconnu', de: 'ce', test: 'ce_hors', f: function () { return true; } },
-    { sp: '🏒 NHL', id: 'nhl_buts', lbl: 'Buts (+ / − de N,5)', de: 't', pause: 'nhl_buts', f: function (x) { return x.sl === 'nhl' && buts(x.k); } },
-    { sp: '🏒 NHL', id: 'nhl_vq', lbl: 'Victoires / handicaps', de: 't', pause: 'nhl_vq', f: function (x) { return x.sl === 'nhl' && !buts(x.k); } },
-    { sp: '🏀 NBA', id: 'nba_pts', lbl: 'Points (+ / − de N,5)', de: 't', pause: 'nba_pts', f: function (x) { return x.sl === 'nba' && /^(un|ov)/i.test(String(x.k)); } },
-    { sp: '🏀 NBA', id: 'nba_vq', lbl: 'Vainqueur / handicap', de: 't', pause: 'nba_vq', f: function (x) { return x.sl === 'nba' && !/^(un|ov)/i.test(String(x.k)); } },
-    { sp: '🏈 NFL', id: 'nfl_pts', lbl: 'Total de points (+ / −)', de: 't', pause: 'nfl_pts', f: function (x) { return x.sl === 'nfl' && /^(un|ov)/i.test(String(x.k)); } },
-    { sp: '🏈 NFL', id: 'nfl_vq', lbl: 'Vainqueur / handicap', de: 't', pause: 'nfl_vq', f: function (x) { return x.sl === 'nfl' && !/^(un|ov)/i.test(String(x.k)); } },
-    { sp: '🎾 Tennis', id: 'tn_vq', lbl: 'Vainqueur (sélection officielle)', de: 't', pause: 'tn_vq', f: function (x) { return x.sl === 'atp' || x.sl === 'wta'; } },
-    { sp: '🎾 Tennis', id: 'tn_tv', lbl: 'Value (cote 1,50 – 2,50)', sub: 'cote book FR estimée', de: 'tv', test: 'tn_tv', f: function () { return true; } },
-    { sp: '🎾 Tennis', id: 'tn_dz', lbl: 'Suivi BET45 face au book', sub: 'tous les matchs avec cote · réussite du choix BET45', de: 'dz', info: true, f: function () { return true; } }
+    { sp: '⚽ Foot', cle: 'f_buts', lbl: 'Championnats · buts (+ / −)', f: function (x) { return foot(x.sl) && !/^uefa/.test(x.sl) && buts(x.k); } },
+    { sp: '⚽ Foot', cle: 'f_btts', lbl: 'Championnats · les 2 marquent', f: function (x) { return foot(x.sl) && !/^uefa/.test(x.sl) && x.k === 'btts'; } },
+    { sp: '⚽ Foot', cle: 'f_vq', lbl: 'Championnats · vainqueur / double chance', f: function (x) { return foot(x.sl) && !/^uefa/.test(x.sl) && !buts(x.k) && x.k !== 'btts'; } },
+    { sp: '⚽ Foot', cle: 'ce_buts', lbl: 'Coupes d\'Europe · buts / 2 marquent', sub: 'règle du gros club depuis le 23/10', f: function (x) { return /^uefa/.test(x.sl) && (buts(x.k) || x.k === 'btts'); } },
+    { sp: '⚽ Foot', cle: 'ce_vq', lbl: 'Coupes d\'Europe · vainqueur', f: function (x) { return /^uefa/.test(x.sl) && !buts(x.k) && x.k !== 'btts'; } },
+    { sp: '⚽ Foot', cle: 'ce_hors', lbl: 'Coupes d\'Europe hors règle', sub: 'gros club < 70 %, cote trop basse ou club inconnu', src: 'ce', liste: 'ce' },
+    { sp: '🏒 NHL', cle: 'nhl_buts', lbl: 'Buts (+ / − de N,5)', f: function (x) { return x.sl === 'nhl' && buts(x.k); } },
+    { sp: '🏒 NHL', cle: 'nhl_vq', lbl: 'Victoires / handicaps', f: function (x) { return x.sl === 'nhl' && !buts(x.k); } },
+    { sp: '🏀 NBA', cle: 'nba_pts', lbl: 'Points (+ / − de N,5)', f: function (x) { return x.sl === 'nba' && pts(x.k); } },
+    { sp: '🏀 NBA', cle: 'nba_vq', lbl: 'Vainqueur / handicap', f: function (x) { return x.sl === 'nba' && !pts(x.k); } },
+    { sp: '🏈 NFL', cle: 'nfl_pts', lbl: 'Total de points (+ / −)', f: function (x) { return x.sl === 'nfl' && pts(x.k); } },
+    { sp: '🏈 NFL', cle: 'nfl_vq', lbl: 'Vainqueur / handicap', f: function (x) { return x.sl === 'nfl' && !pts(x.k); } },
+    { sp: '🎾 Tennis', cle: 'tn_vq', lbl: 'Vainqueur (sélection officielle)', f: function (x) { return x.sl === 'atp' || x.sl === 'wta'; } },
+    { sp: '🎾 Tennis', cle: 'tn_tv', lbl: 'Value (cote 1,50 – 2,50)', sub: 'cote book FR estimée', src: 'tv', liste: 'tv' },
+    { sp: '🎾 Tennis', cle: 'tn_dz', lbl: 'Suivi BET45 face au book', sub: 'tous les matchs avec cote · réussite du choix BET45', info: true, liste: 'dz' }
   ];
+  /* Tous les paris d'une ligne : officiels (J.t), test / pause (J.pz), listes de test propres (J.ce, J.tv). */
+  var paris = function (J, L) {
+    if (L.info) return (J[L.liste] || []).slice();
+    var o = (J.t || []).filter(function (x) { return L.src ? x.src === L.src : (!x.src && L.f(x)); });
+    var c = (J.pz || []).filter(function (x) { return x.pz === L.cle; });
+    return o.concat(c, L.liste ? (J[L.liste] || []) : []);
+  };
   var bilan = function (L) {
     var n = 0, w = 0, g = 0, nc = 0;
     L.forEach(function (x) { if (x.r !== 0 && x.r !== 1) return; n++; w += x.r; if (x.c > 1) { nc++; g += x.r ? x.c - 1 : -1; } });
@@ -78065,56 +78077,44 @@ window._g45AgJouUs = async function (nowTs) {
     return '<span style="color:' + col + ';font-weight:900;">' + b.w + '/' + b.n + (info || !b.nc ? '' : ' · ' + fr(b.g)) + '</span>'
       + '<span style="display:block;font-size:13px;color:#c9d3ee;">' + pc + ' %' + (b.nc && b.nc < b.n ? ' · gains sur ' + b.nc + ' avec cote' : '') + '</span>';
   };
-  var conseil = function (b, mode) {
+  var conseil = function (b, st) {
     var c = function (cl, t) { var bg = { v: '#0e5a3a;border:1px solid #1ed760', r: '#5a1e1e;border:1px solid #ff6b6b', j: '#4a3c0e;border:1px solid #f5c542', g: '#2a3350;border:1px solid #6b7aa6' }[cl];
       return '<span style="display:inline-block;border-radius:8px;padding:4px 9px;font-size:14px;font-weight:800;background:' + bg + ';">' + t + '</span>'; };
-    if (mode === 'info') return c('g', 'ℹ️ Pour le bilan du 10/11');
+    if (st === 'info') return c('g', 'ℹ️ Pour le bilan du 10/11');
     if (b.n < 20) return c('j', '⏳ Pas assez (' + b.n + '/20)');
     var bon = b.nc ? b.g > 0 : b.w / b.n >= 0.6;
-    if (mode === 'pause') return bon ? c('v', '✅ Peut revenir') : c('r', '❌ Garder en pause');
-    if (mode === 'test') return bon ? c('v', '✅ Peut passer en officiel') : c('r', '❌ Rester en test');
-    if (mode === 'testOff') return bon ? c('v', '✅ OK') : c('r', '⚠️ Repasser en test ?');
+    if (st === 'pause') return bon ? c('v', '✅ Peut revenir') : c('r', '❌ Garder en pause');
+    if (st === 'test') return bon ? c('v', '✅ Peut passer en officiel') : c('r', '❌ Rester en test');
     return bon ? c('v', '✅ OK') : c('r', '⚠️ À surveiller');
   };
-  var inter = function (on, k, typ, lblOn, lblOff) {
-    return '<div onclick="g45BilBascule(\'' + typ + '\',\'' + k + '\')" style="cursor:pointer;text-align:center;flex:none;">'
-      + '<div style="width:58px;height:30px;border-radius:16px;position:relative;background:' + (on ? '#1ed760' : '#4a5372') + ';">'
-      + '<i style="position:absolute;top:3px;' + (on ? 'right' : 'left') + ':3px;width:24px;height:24px;border-radius:50%;background:#fff;"></i></div>'
-      + '<div style="font-size:12px;font-weight:800;margin-top:3px;">' + (on ? lblOn : lblOff) + '</div></div>';
+  /* Sélecteur à 3 cases : la case choisie s'allume (vert / jaune / gris clair), les autres restent sombres. */
+  var selecteur = function (k, st) {
+    var cs = function (v, lbl, bg, fg) {
+      var on = st === v;
+      return '<button onclick="g45BilEtat(\'' + k + '\',\'' + v + '\')" style="cursor:pointer;border:0;padding:8px 9px;font-size:14px;font-weight:900;white-space:nowrap;'
+        + 'background:' + (on ? bg : '#141a2b') + ';color:' + (on ? fg : '#aab6d6') + ';">' + lbl + '</button>';
+    };
+    return '<div style="display:inline-flex;border:1px solid rgba(255,255,255,.25);border-radius:10px;overflow:hidden;flex:none;">'
+      + cs('off', '✅ Officiel', '#1ed760', '#06240f') + cs('test', '🧪 Test', '#f5c542', '#2a1f00') + cs('pause', '⏸️ Pause', '#c9d3ee', '#141a2b') + '</div>';
   };
+  var ETQ = { off: '✅ officiel', test: '🧪 en test (suivi, testeurs, hors bilan officiel)', pause: '⏸️ en pause (suivi en coulisse)' };
   window._g45BilHtml = function () {
     var h = '<div id="g45bil" style="background:rgba(21,28,48,.96);border:2px solid #f5c542;border-radius:14px;padding:14px;color:#fff;">'
       + '<div style="font-size:18px;font-weight:900;">📊 Bilans <span style="font-size:13px;color:#c9d3ee;font-weight:700;">· gones seulement</span></div>'
-      + '<div style="font-size:13px;color:#c9d3ee;margin:4px 0 6px;line-height:1.5;">Mis à jour chaque matin par le robot (8 h). Un pari en pause est quand même suivi en coulisse '
-      + '(hors bilan officiel) pour savoir s\'il peut revenir. Gains à 1 € le pari.</div>';
+      + '<div style="font-size:13px;color:#c9d3ee;margin:4px 0 6px;line-height:1.5;">Mis à jour chaque matin par le robot (8 h). Chaque pari : ✅ Officiel (sélection + bilan) · '
+      + '🧪 Test (suivi, montré aux testeurs) · ⏸️ Pause (suivi en coulisse). Bilan = toutes les fois où le robot l\'a choisi, gains à 1 € le pari.</div>';
     if (!S.j) { charger(); return h + '<div style="font-size:14px;color:#c9d3ee;margin-top:8px;">⏳ Chargement…</div></div>'; }
     charger();
-    var J = S.j, R = reglages(), sp = '';
-    h += '<style>#g45bil .g45bil-r{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr) minmax(0,1.3fr) auto;gap:10px;align-items:center;background:#1e2740;border-radius:10px;padding:10px 12px;margin-bottom:8px}'
-      + '@media(max-width:640px){#g45bil .g45bil-r{grid-template-columns:minmax(0,1fr) auto}#g45bil .g45bil-b,#g45bil .g45bil-c{grid-column:1}}</style>';
+    var J = S.j, sp = '';
+    h += '<style>#g45bil .g45bil-r{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) minmax(0,1.2fr) auto;gap:10px;align-items:center;background:#1e2740;border-radius:10px;padding:10px 12px;margin-bottom:8px}'
+      + '@media(max-width:760px){#g45bil .g45bil-r{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}#g45bil .g45bil-n{grid-column:1 / -1}#g45bil .g45bil-s{grid-column:1 / -1}}</style>';
     LIGNES.forEach(function (L) {
       if (L.sp !== sp) { sp = L.sp; h += '<div style="font-size:15px;font-weight:900;background:#0b101d;display:inline-block;padding:4px 12px;border-radius:8px;margin:14px 0 6px;">' + sp + '</div>'; }
-      var src = (J[L.de] || []).filter(L.f), b, sous = L.sub || '', mode = '', sw = '';
-      if (L.pause) {
-        var enP = !!R.pause[L.pause];
-        var co = (J.pz || []).filter(function (x) { return x.pz === L.pause; }), bo = bilan(src);
-        b = enP || co.length ? bilan(co) : bo;
-        sous = (enP ? '⏸️ en pause · suivi en coulisse' : '▶️ en route') + (bo.n && (enP || co.length) ? ' · officiel avant : ' + bo.w + '/' + bo.n + (bo.nc ? ' ' + fr(bo.g) : '') : '') + (L.sub ? ' · ' + L.sub : '');
-        if (!enP) b = bilan(src.concat(co));
-        mode = enP ? 'pause' : '';
-        sw = inter(!enP, L.pause, 'pause', 'MARCHE', 'PAUSE');
-      } else if (L.test) {
-        var off = !!R.officiel[L.test]; b = bilan(src);
-        sous = (off ? '▶️ passé en officiel' : '🧪 en test (hors bilan officiel)') + (sous ? ' · ' + sous : '');
-        mode = off ? 'testOff' : 'test';
-        sw = inter(off, L.test, 'officiel', 'OFFICIEL', 'TEST');
-      } else {
-        b = bilan(src); mode = L.info ? 'info' : '';
-        sous = (L.info ? 'ℹ️ suivi' : '▶️ en route') + (sous ? ' · ' + sous : '');
-        sw = '<div style="width:58px;"></div>';
-      }
-      h += '<div class="g45bil-r"><div style="font-size:15px;font-weight:800;">' + L.lbl + '<span style="display:block;font-weight:600;font-size:13px;color:#c9d3ee;">' + sous + '</span></div>'
-        + '<div class="g45bil-b" style="font-size:15px;">' + bilTxt(b, L.info) + '</div><div class="g45bil-c">' + conseil(b, mode) + '</div>' + sw + '</div>';
+      var st = L.info ? 'info' : etat(L.cle), b = bilan(paris(J, L));
+      var sous = (L.info ? 'ℹ️ suivi' : ETQ[st]) + (L.sub ? ' · ' + L.sub : '');
+      h += '<div class="g45bil-r"><div class="g45bil-n" style="font-size:15px;font-weight:800;">' + L.lbl + '<span style="display:block;font-weight:600;font-size:13px;color:#c9d3ee;">' + sous + '</span></div>'
+        + '<div style="font-size:15px;">' + bilTxt(b, L.info) + '</div><div>' + conseil(b, st) + '</div>'
+        + '<div class="g45bil-s">' + (L.info ? '' : selecteur(L.cle, st)) + '</div></div>';
     });
     var chg = !!S.loc;
     h += '<button onclick="g45BilEnLigne()" style="display:block;width:100%;margin-top:12px;border:0;border-radius:10px;color:#fff;font-size:16px;font-weight:900;padding:12px;cursor:pointer;background:' + (chg ? '#2f6bff' : '#3a4566') + ';">'
@@ -78123,24 +78123,21 @@ window._g45AgJouUs = async function (nowTs) {
     if (S.rr && S.rr.maj) h += '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">Réglages en ligne du ' + new Date(S.rr.maj).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) + '.</div>';
     return h + '</div>';
   };
-  window.g45BilBascule = function (typ, k) {
-    var R = reglages();
-    S.loc = S.loc || { pause: {}, officiel: {} };
-    S.loc[typ][k] = !R[typ][k];
-    /* Revenu à l'état en ligne → plus rien à mettre en ligne. */
-    var e = (function () { var s = S.loc; S.loc = null; var r = reglages(); S.loc = s; return r; })(), diff = false;
-    ['pause', 'officiel'].forEach(function (t) { Object.keys(S.loc[t]).forEach(function (x) { if (S.loc[t][x] !== e[t][x]) diff = true; }); });
-    if (!diff) S.loc = null;
+  window.g45BilEtat = function (k, v) {
+    if (!ETATS[v]) return;
+    S.loc = S.loc || {};
+    if (v === enLigne(k)) delete S.loc[k]; else S.loc[k] = v;
+    if (!Object.keys(S.loc).length) S.loc = null;   /* revenu à l'état en ligne → rien à mettre en ligne */
     S.msg = ''; redessiner();
   };
   window.g45BilEnLigne = async function () {
     if (!S.loc) return;
     var tok = null; try { tok = localStorage.getItem('gones45_github_token'); } catch (e) {}
     if (!tok) { S.msg = '❌ Clé GitHub absente sur cet appareil (celle de la synchro des paris).'; return redessiner(); }
-    var R = reglages(), corps = { maj: new Date().toISOString(), pause: R.pause, officiel: R.officiel };
-    var lisible = []; Object.keys(R.pause).forEach(function (k) { lisible.push(k + (R.pause[k] ? ' en pause' : ' en route')); });
-    Object.keys(R.officiel).forEach(function (k) { lisible.push(k + (R.officiel[k] ? ' officiel' : ' en test')); });
-    if (!confirm('Mettre en ligne ces réglages du robot ?\n\n' + lisible.join('\n'))) return;
+    var et = {}, lisible = [];
+    LIGNES.forEach(function (L) { if (L.info) return; et[L.cle] = etat(L.cle); if (S.loc[L.cle]) lisible.push(L.sp + ' · ' + L.lbl + ' → ' + { off: 'Officiel', test: 'Test', pause: 'Pause' }[et[L.cle]]); });
+    var corps = { maj: new Date().toISOString(), etat: et };
+    if (!confirm('Mettre en ligne ces changements ?\n\n' + lisible.join('\n'))) return;
     S.msg = '⏳ Envoi…'; redessiner();
     var U = 'https://api.github.com/repos/gones45140/gones45/contents/donn%C3%A9es/robot_reglages.json', H = { 'Authorization': 'token ' + tok, 'Accept': 'application/vnd.github.v3+json' };
     try {
@@ -78446,6 +78443,23 @@ window._g45AgJouUs = async function (nowTs) {
         + '<span style="white-space:nowrap;">@' + String(x.c).replace('.', ',') + ' ' + (x.r === 1 ? '✅' : (x.r === 0 ? '❌' : '⏳')) + '</span></div>';
     });
     return h + '<div style="font-size:12px;color:#c9d3ee;margin-top:4px;">💎 cote du book 1,50 – 2,50, + 5 % ou plus selon BET45 · cote FR ≈ cote US × 0,94 · hors bilan officiel.</div></div>';
+  };
+  /* 20261024a : bloc « 🧪 Paris mis en test » — J.pz du robot avec x.st = 'test' (choix d'Antoine dans 📊 Bilans) ; testeurs seulement,
+     hors bilan. Les paris en PAUSE ne sont pas montrés (suivis en coulisse). */
+  window._g45TrTeHtml = function (J) {
+    var L = ((J && J.pz) || []).filter(function (x) { return x.st === 'test'; }); if (!L.length) return '';
+    var ju = L.filter(function (x) { return x.r === 0 || x.r === 1; }), ok = ju.filter(function (x) { return x.r === 1; }).length;
+    var g = ju.reduce(function (s2, x) { return s2 + (x.r === 1 ? (x.c > 1 ? x.c - 1 : 0) : -1); }, 0);
+    var e = function (t) { return String(t || '').replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+    var h = '<div style="margin-top:10px;background:#2a2f3d;border:1px dashed #8e9bbd;border-radius:10px;padding:10px 12px;">'
+      + '<div style="font-size:15px;font-weight:900;">🧪 Paris en test (vous quatre seulement)</div>'
+      + '<div style="font-size:14px;margin:4px 0 6px;">' + ju.length + ' jugés · ' + ok + ' gagnés · gain à 1 € : <b style="color:' + (g >= 0 ? '#1ed760' : '#ff6b6b') + ';">' + (g >= 0 ? '+' : '') + g.toFixed(2).replace('.', ',') + ' €</b> · ' + (L.length - ju.length) + ' en attente</div>';
+    L.slice().sort(function (a, b) { return b.t - a.t; }).slice(0, 12).forEach(function (x) {
+      var d = ''; try { d = new Date(x.t).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }); } catch (er) {}
+      h += '<div style="display:flex;justify-content:space-between;gap:8px;font-size:14px;padding:4px 0;border-top:1px solid rgba(255,255,255,.08);"><span>' + d + ' · ' + e(x.h) + ' – ' + e(x.a) + ' · <b>' + e(x.m || x.k) + '</b></span>'
+        + '<span style="white-space:nowrap;">' + (x.c > 1 ? '@' + String(x.c).replace('.', ',') + ' ' : '') + (x.r === 1 ? '✅' : (x.r === 0 ? '❌' : '⏳')) + '</span></div>';
+    });
+    return h + '<div style="font-size:12px;color:#c9d3ee;margin-top:4px;">Paris mis en 🧪 Test dans 📊 Bilans · hors bilan officiel.</div></div>';
   };
   /* 20261023m : bloc « 🧪 Coupes d'Europe — en test » (J.ce du robot : tendances de C1 / C3 / C4 écartées de la sélection officielle car
      cote × % réel des coupes d'Europe < 1,05, ou marché de résultat) — testeurs seulement, hors bilan. */
