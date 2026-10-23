@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action (il est court exprès). Le détail de tout l'historique est dans HISTORIQUE.md
-(à chercher avec grep, jamais à lire en entier). Mis à jour le 23/10/2026 (version déployée : 20261023v, même app.js sur gones45 et fenotte45).
+(à chercher avec grep, jamais à lire en entier). Mis à jour le 23/10/2026 (version déployée : 20261023y, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -102,7 +102,7 @@ Index des zones (fonction d'entrée → mot à chercher dans HISTORIQUE.md) :
 - Ticket `_g45TicketIa` / `_g45TicketRemplir` / `_g45TicketRemplirCockpit` / `_g45TkRacines`
 - Paris : comptabilité `_g45BetEffetTotal` / `_g45BetAppliquer` (seule source de vérité), cartes « en cours » (data-g45ec), synchro `_g45PushBetsGithub` / `_g45BetsFusion`
 - Mur / accueil `_g45AccRegrouper`, cartes joueur `_g45JoueurVisLire`, logos `g45LogoUrlDe`, fond `_g45FondLogo`, limite bet45 `_g45MurLimite`
-- Tendances `g45TrRun` / `_g45TrRender`, officielles `_g45TrOffHtml` (robot .github/scripts/tendances.mjs), sélection du jour `_g45TrSelHtml`
+- Tendances `g45TrRun` / `_g45TrRender`, officielles `_g45TrOffHtml` (robot .github/scripts/tendances.mjs), sélection du jour `_g45TrSelHtml`, 📊 Bilans `_g45BilHtml` (gones, interrupteurs → données/robot_reglages.json lu par le robot ; pauses suivies en coulisse J.pz)
 - Tennis (analyse ESPN) `g45TnAnalyser` / `_g45TnSaison` / `_g45TnCalc` / `_g45TnSurf`, bouton Tendances perso `_g45TnPerso`, Elo `_g45TnEloDe`, recherche joueur `searchTennisPlayer` / `_g45TjCalc`, classement par surface `_g45TcListe` (robot .github/scripts/elo.mjs)
 - Marqueurs `g45ButeursView`, `g45MarqueursUS`, `g45NbaMq` · CLV `g45ClvView` · quota cotes `_g45QtHtml`
 - IA du match `_g45MultiAI` · articles `_g45ArticleBloc` · santé `g45SanteTester` (gones seulement : `_g45SanteActive`)
@@ -136,7 +136,7 @@ PIÈGES À NE JAMAIS OUBLIER :
 - RGPD : SQL supprimer-compte.sql à installer par Antoine dans les 2 projets Supabase.
 - 🎾 Cotes tennis : TheRundown (gratuit, worker /rundown, secret RUNDOWN_KEY) branché dans le robot (20261020m). Cote book + 💎 value dans l'analyse et les résultats : FAIT (20261022w). À faire : autres sports via TheRundown selon la consommation.
 - 🎾 vers le 10/11 : BILAN du suivi BET45 / book (J.dz dans tendances_officielles.json, TOUS les matchs avec cote depuis 20261023c ; p brut, pr corrigé, f book) : qui est le plus juste ? → recaler / mélanger avec le book. Correction « % réel » EN PAUSE (_G45_TN_REEL_PAUSE) d'ici là. Même jour : bilan des 🧪 value tennis en test (J.tv, cote 1,50-2,50, cote FR × 0,94) → vraie sélection si positif, sinon arrêt.
-- 🏀 15/11 : AVANT de remettre les points NBA dans la sélection officielle (NBA_PAUSE, tendances.mjs), contrôler le % de réussite des points NBA (ligne ESPN et +3 %) — demande d'Antoine. Même jour : buts NHL (NHL_BUTS_PAUSE, 20261023w ; NHL 3/12 au 23/10) et total de points NFL (NFL_PTS_PAUSE, 23x) en pause → décider s'ils reviennent.
+- 🏀 15/11 : AVANT de remettre les points NBA dans la sélection officielle (NBA_PAUSE, tendances.mjs), contrôler le % de réussite des points NBA (ligne ESPN et +3 %) — demande d'Antoine. Même jour : buts NHL (NHL_BUTS_PAUSE, 20261023w ; NHL 3/12 au 23/10) et total de points NFL (NFL_PTS_PAUSE, 23x) en pause → décider s'ils reviennent. Antoine peut le faire SEUL dans Tendances → 📊 Bilans (gones), interrupteur + « Mettre en ligne » (son abonnement Claude finit avant le 15/11).
 - TheRundown (gratuit) : PAS de rugby ; sports dispo 1 NCAAF, 2 NFL, 3 MLB, 4 NBA, 5 NCAAB, 6 NHL, 7 UFC, 8 WNBA, 9 CFL, 10 MLS, 11 EPL, 16 C1, 33 C3, 34 Liga MX, 38 ATP, 39 WTA, 40 golf, 41 F1 → 2e source de cotes possible (direct NHL / NFL / MLB, foot, F1). Tendances rugby = stats sans cote (à faire si Antoine veut).
 - Surebet : mises « Mise 1 / Mise 2 » en blanc. Cédric : toucher 🤍 sur Portugal. Worker : budget `_lourd` 4 → 2 proposé.
 

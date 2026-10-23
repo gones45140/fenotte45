@@ -480,6 +480,17 @@ Il est dans les DEUX dépôts (gones45 et fenotte45), identique (cmp). Jamais de
   = true → plus de « + / − de N,5 buts » NHL dans la sélection officielle ; victoires / handicaps NHL gardés. Robot seulement. À revoir le 15/11.
   20261023x (« NFL pareil pour les over / under, bon très peu de matchs » ; NFL − de N,5 points 0/2) : NFL_PTS_PAUSE = true, même filtre
   (« de N,5 points ») ; vainqueur / handicap NFL gardés. Robot seulement. À revoir le 15/11.
+  20261023y — 📊 BILANS (abonnement Claude d'Antoine fini avant le 15/11 ; « si on peut faire une sélection de tel pari alors c'est le top, mais
+  dispo que sur gones pour mettre en ligne » ; maquette scratchpad maquette-bilans-attente.html, « classe par sport et leur pari et c'est
+  parfait ») : app.js `_g45BilHtml` (window._g45Bil), 4e sous-bouton « 📊 Bilans » de Tendances BET45 (SOUS.bil, seulement si
+  _g45SanteActive ; sinon retombe sur Sélection). Par sport (Foot : championnats buts / 2 marquent / vainqueur, coupes d'Europe buts / vainqueur /
+  hors règle 🧪 ; NHL buts / victoires ; NBA points / vainqueur ; NFL total / vainqueur ; Tennis vainqueur, value 🧪, suivi BET45-book ℹ️) :
+  bilan (réussite + gains à 1 € sur les paris avec cote), conseil (< 20 paris ⏳ ; gains > 0 ✅ ; sinon ❌ / ⚠️), interrupteur (PAUSE / MARCHE
+  pour nba_pts, nhl_buts, nfl_pts ; TEST / OFFICIEL pour tn_tv, ce_hors). « 💾 Mettre en ligne » (confirm) → PUT données/robot_reglages.json
+  { maj, pause, officiel } avec gones45_github_token. ROBOT : RR lu au départ (RRp / RRo, défauts si absent) ; marché en pause = plus jeté
+  mais rangé dans J.pz (x.pz = clé), jugé avec les autres (TJ), jamais officiel ; ce_hors → coupes d'Europe hors règle en J.t ; tn_tv →
+  value tennis (avec cote) en J.t. Points NBA : suivi en coulisse seulement à partir du 24/10 (avant : jetés). Smoke 93 (bil), 3 essais
+  répartition robot + 2 lecture des réglages, captures PC / téléphone (scratchpad bil-pc.png, bil-tel.png).
   20261016u (« même les joueurs ont sauté ») — VU dans Observability du worker (API telemetry/query, lisible avec le jeton) : TOUTES les demandes
   host=tsdb en 429 = TheSportsDB limite la clé gratuite par IP, celle du worker est partagée. App : 429 du worker → appel DIRECT (IP du téléphone),
   comme 403 / 404 ; worker : après un 429, plus d'appel à TheSportsDB pendant 60 s (secours si présent, sinon 429). Smoke (tsdbw : cas 429).
