@@ -32652,11 +32652,25 @@ function _g45WpCourbe(P, sport, noms) {
      sur grand écran. Courbe limitée à 760 px et centrée (textes ≈ 24 px) ; téléphone inchangé. */
   return '<svg viewBox="0 0 ' + W + ' ' + (H + 16) + '" style="width:100%;max-width:760px;display:block;margin:4px auto 0;">' + s + '</svg>';
 }
+/* 20261024k (« 26.6 - 3RD » sur la courbe → « OUI EN FR ») : état du match ESPN (shortDetail, en anglais) traduit pour la courbe.
+   « 2:52 - 3rd » → « 2:52 · 3e QT » ; « 26.6 - 3rd » (moins d'une minute) → « 26,6 s · 3e QT » ; hockey P, baseball manche ; mi-temps, fin… */
+function _g45EtatFr(t, sport) {
+  var x = String(t || '').trim(); if (!x) return '';
+  var per = function (n) { n = parseInt(n, 10); var o = n === 1 ? '1er' : n + 'e'; return sport === 'hockey' ? o + ' P' : (sport === 'baseball' ? o + ' manche' : (sport === 'soccer' ? o + ' MT' : o + ' QT')); };
+  var m;
+  if (/^final/i.test(x)) return 'Terminé' + (/OT/i.test(x) ? ' (prol.)' : (/SO/i.test(x) ? ' (TAB)' : ''));
+  if (/^half\s*time|^halftime|^HT$/i.test(x)) return 'Mi-temps';
+  if ((m = /^end of (?:the )?(\d+)/i.exec(x))) return 'Fin du ' + per(m[1]);
+  if ((m = /^(top|bot|bottom|mid|middle|end)\s+(\d+)/i.exec(x))) return per(m[2]) + ' (' + ({ top: 'haut', bot: 'bas', bottom: 'bas', mid: 'milieu', middle: 'milieu', end: 'fin' }[m[1].toLowerCase()]) + ')';
+  if ((m = /^([\d:.]+)\s*-\s*(\d+)(?:st|nd|rd|th)/i.exec(x))) { var c = m[1]; c = /:/.test(c) ? c : c.replace('.', ',') + ' s'; return c + ' · ' + per(m[2]); }
+  if ((m = /^([\d:.]+)\s*-\s*(OT|\d*OT)/i.exec(x))) return (/:/.test(m[1]) ? m[1] : m[1].replace('.', ',') + ' s') + ' · prolongation';
+  return x;
+}
 function _g45WpFr(v) { return (Math.round(v * 10) / 10).toFixed(1).replace('.', ',') + ' %'; }
 function _g45WpContenu(eid) {
   var E = _g45WpEtat[eid]; if (!E) return '';
   var P = E.P, der = P[P.length - 1], ph = 100 * der.p, pt = 100 * (der.t || 0), pa = 100 - ph - pt;
-  var h = '<div style="font-size:13px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#c3cfe6;">📉 Probabilité de victoire · ESPN' + (E.live ? ' · <span style="color:#ff6b6b;">🔴 ' + _g45Esc(E.etat) + '</span>' : '') + '</div>'
+  var h = '<div style="font-size:13px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#c3cfe6;">📉 Probabilité de victoire · ESPN' + (E.live ? ' · <span style="color:#ff6b6b;">🔴 ' + _g45Esc(_g45EtatFr(E.etat, E.sport)) + '</span>' : '') + '</div>'
     + '<div style="display:grid;grid-template-columns:1fr ' + (pt > 0.5 ? '1fr ' : '') + '1fr;text-align:center;margin:10px 0 4px;">'
     + '<div><div style="font-size:15px;font-weight:800;color:#f5c542;">' + _g45Esc(E.aN) + '</div><div style="font-size:30px;font-weight:900;color:#f5c542;">' + _g45WpFr(pa) + '</div></div>'
     + (pt > 0.5 ? '<div><div style="font-size:15px;font-weight:800;color:#c9d3ee;">Nul</div><div style="font-size:30px;font-weight:900;color:#c9d3ee;">' + _g45WpFr(pt) + '</div></div>' : '')
