@@ -463,6 +463,13 @@ Il est dans les DEUX dépôts (gones45 et fenotte45), identique (cmp). Jamais de
   2e panne TheSportsDB → « pas d'image » mémorisés pendant la panne effacés une fois (drapeau g45_fan_neg4, même liste que neg2) ; ET un échec
   n'est plus gardé que 3 JOURS (_g45FanLire 30 → 3 ; _g45BgChercher 7 → 3) : à la prochaine panne les bannières reviennent seules. 2 essais vm,
   smoke 92. TheSportsDB / worker injoignables depuis la session (proxy 403) : retour des images NON vérifié d'ici.
+  20261023u (console d'Antoine : worker 403 « thesportsdb indisponible » sur Carolina Hurricanes ET appel direct bloqué ; Paris Saint Germain
+  200 = copie du worker) — VRAIE CAUSE : TheSportsDB a DÉSACTIVÉ la clé gratuite « 3 » (403 définitif), nouvelle clé gratuite « 123 »
+  (documentation thesportsdb.com/documentation). App : l'enveloppe de fetch en tête d'app.js réécrit toute adresse …/api/v1/json/3/… en
+  …/json/123/… (worker et direct), RX du relais sur 123. WORKER (déployé par Claude le 23/10, copie de l'ancien source gardée en session,
+  18 liaisons et cron */5 revérifiés) : route tsdb accepte 3 et 123, copies D1 gardées sous l'ancien chemin /json/3/ (pas de cache perdu),
+  appel TheSportsDB en /json/123/. 3 essais du bloc worker (faux TheSportsDB), smoke 92 (tsdbw : worker et direct doivent recevoir 123).
+  reset.html (fenotte45) appelle encore /json/3/ par le worker : OK (le worker traduit).
   20261016u (« même les joueurs ont sauté ») — VU dans Observability du worker (API telemetry/query, lisible avec le jeton) : TOUTES les demandes
   host=tsdb en 429 = TheSportsDB limite la clé gratuite par IP, celle du worker est partagée. App : 429 du worker → appel DIRECT (IP du téléphone),
   comme 403 / 404 ; worker : après un 429, plus d'appel à TheSportsDB pendant 60 s (secours si présent, sinon 429). Smoke (tsdbw : cas 429).

@@ -27,9 +27,15 @@
 (function () {
   try {
     var F = window.fetch; if (!F || F._g45Tsdb) return;
-    var RX = /^https?:\/\/(www\.)?thesportsdb\.com(\/api\/v1\/json\/3\/(searchteams|searchplayers|lookupteam|lookupplayer|lookupleague|lookup_all_players|lookup_all_teams|search_all_teams|eventsnext|eventslast)\.php\?.+)$/;
+    var RX = /^https?:\/\/(www\.)?thesportsdb\.com(\/api\/v1\/json\/123\/(searchteams|searchplayers|lookupteam|lookupplayer|lookupleague|lookup_all_players|lookup_all_teams|search_all_teams|eventsnext|eventslast)\.php\?.+)$/;
     var W = 'https://fd-proxy.touraine-antoine.workers.dev';
     var nf = function (u, o) {
+      /* 20261023u (console d'Antoine : worker ET appel direct en 403, « thesportsdb indisponible ») : TheSportsDB a DÉSACTIVÉ la clé gratuite
+         « 3 » (403 définitif) ; la clé gratuite est maintenant « 123 » (documentation TheSportsDB). Toute adresse …/json/3/… est réécrite
+         en …/json/123/… ici, une seule fois pour les 14 appels d'app.js. Le worker accepte les deux et garde ses copies sous l'ancien chemin. */
+      if (typeof u === 'string' && /thesportsdb\.com\/api\/v1\/json\/3\//.test(u)) {
+        u = u.replace('/api/v1/json/3/', '/api/v1/json/123/'); arguments[0] = u;
+      }
       var m = typeof u === 'string' && !(o && o.method && o.method !== 'GET') ? u.match(RX) : null;
       if (!m) return F.apply(window, arguments);
       var self = window, args = arguments, oo = {}; if (o && o.signal) oo.signal = o.signal;
