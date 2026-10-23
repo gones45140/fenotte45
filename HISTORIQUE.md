@@ -474,6 +474,10 @@ Il est dans les DEUX dépôts (gones45 et fenotte45), identique (cmp). Jamais de
   vague de 429 (tout redemandé d'un coup, ≈ 30 / min). Piège : _g45FanChercher / _g45BgChercher essaient plusieurs variantes de nom ; une
   variante en 429 + une autre « rien » → « pas d'image » mémorisé. Maintenant une variante en erreur (!r.ok) → rien mémorisé (_err / _errB,
   panne de session 30 min comme avant). « pas d'image » effacés une fois de plus (g45_fan_neg5). Smoke 92, 2 essais vm du nettoyage.
+- 🏒 20261023w (nuit 0/5, « aïe aïe aïe » ; bilan officiel au 23/10 : 26/57, −12,6 u ; championnats foot 9/12 +3,0 ; coupes d'Europe 7/16
+  −4,6 ; NBA 5/10 −1,0 ; NFL 2/7 −3,1 ; NHL 3/12 −6,8 dont buts 2/8 ; stats 60 % contre book 51 % sur les buts NHL. Antoine : Oilers +6,5
+  buts 48/82 = 59 %, Wild 43/88 = 49 % ; « les over NHL pas top, les victoires d'équipe il y a de quoi faire ») : tendances.mjs NHL_BUTS_PAUSE
+  = true → plus de « + / − de N,5 buts » NHL dans la sélection officielle ; victoires / handicaps NHL gardés. Robot seulement. À revoir le 15/11.
   20261016u (« même les joueurs ont sauté ») — VU dans Observability du worker (API telemetry/query, lisible avec le jeton) : TOUTES les demandes
   host=tsdb en 429 = TheSportsDB limite la clé gratuite par IP, celle du worker est partagée. App : 429 du worker → appel DIRECT (IP du téléphone),
   comme 403 / 404 ; worker : après un 429, plus d'appel à TheSportsDB pendant 60 s (secours si présent, sinon 429). Smoke (tsdbw : cas 429).
