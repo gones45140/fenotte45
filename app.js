@@ -27976,6 +27976,8 @@ async function loadEspnMatchLive(el, nom, col){
   function tscore(c){ return (c.score!=null&&c.score!=='')?c.score:''; }
   var stType=(comp.status&&comp.status.type)||{}, stState=stType.state||'';
   var stTxt=stType.shortDetail||stType.detail||stType.description||'';
+  /* 20261024n (« EN DIRECT · 8:33 - 1st ») : temps de jeu en français hors foot (_g45EtatFr, comme la courbe). */
+  if(data.sport && data.sport!=='soccer' && typeof _g45EtatFr==='function') stTxt=_g45EtatFr(stTxt, data.sport);
   var stLabel=stState==='in'?'EN DIRECT':(stState==='post'?'TERMINÉ':'À VENIR');
   var stCol=stState==='in'?'#ff4545':'var(--t3)';
   var dot=stState==='in'?'<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ff4545;margin-right:5px;vertical-align:middle;"></span>':'';

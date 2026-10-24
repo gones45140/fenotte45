@@ -2537,6 +2537,8 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   20261024m (capture 03:29, Colorado Avalanche : onglet Live = résumés vidéo NHL « alors qu'il y a un match en direct ») : loadTeamLive (DEUX
   copies, les deux corrigées) — 🏒 / ⚾ / 🏀 : d'abord _espnMatchLiveData ; match en cours ou fini depuis < 12 h → loadEspnMatchLive (score +
   courbe) ; sinon loadVideoHighlights comme avant. 3 essais Chromium (en cours → direct, fini il y a 20 h → vidéos, rien → vidéos), smoke 95.
+  CONFIRMÉ par Antoine (03:33, Colorado – Tampa 2:0 en direct). 20261024n : en-tête « EN DIRECT · 8:33 - 1st » → _g45EtatFr (« 8:33 · 1er P »).
+  Courbe absente en début de match (moins de 2 points ESPN). Bandeau défilant du haut encore en anglais (« 8:35 - 2nd ») : non touché.
   Smoke crPlus complété (Europe 1/2, Les deux 2/3, verrou).
   + (captures bet45 d'Antoine, compte au-delà des 30 jours : « Tendances disparaît, devrait rester à gauche et montrer cette page comme sur
   Pari / Tendances ») : indexfenotte.html n'avait PAS de bouton Tendances dans le menu (gones45 oui) → ajouté après Agenda, même onclick ;
