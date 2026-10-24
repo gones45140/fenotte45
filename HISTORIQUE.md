@@ -1684,6 +1684,9 @@ RÉGLÉ (worker, 01/10) : cron « exceededCpu » (cpuTimeMs 10) à CHAQUE passag
   que la NBA : provider 100 « DraftKings » (open / close / current) + provider 200 « DraftKings - Live Odds » : details « MIL -282 », overUnder 6.5,
   homeTeamOdds.current.moneyLine.decimal 1.35 / awayTeamOdds 3.06, current.over.decimal 1.85 / under 1.90, current.total.american « 6.5 » (pas de close).
   → confirme aussi la lecture de current.over / under faite pour la NBA (20261020q). MLB pas encore branchée.
+  24/10 — SONDÉ PAR ANTOINE (NHL 401892565, COL reçoit, en cours) : hockey/leagues/nhl/…/odds = MÊME FORME : provider 200 « DraftKings - Live Odds »
+  details « COL -580 », overUnder 6.5, home .current.moneyLine.decimal 1.17 / away 4.80 (2 issues seulement, pas de nul en direct → cote VAINQUEUR,
+  prolongation comprise probablement : la jambe « victoire » temps réglementaire n'a PAS d'équivalent), current.over 1.90 / under 1.83, total « 6.5 ».
   20261020q — BRANCHÉ (demande d'Antoine « même rendu que le foot ») : `_g45CdLire('basketball', 'nba', …)` lit le scoreboard (état, équipes, score)
   puis, match 'in', le core odds (mémoire 30 s) → provider id 200 : h / a = homeTeamOdds / awayTeamOdds .current.moneyLine (sinon .moneyLine),
   L = overUnder, ov / un = current.over / under ; `_g45CdDec` accepte nombre (1-50 = décimal, sinon américain), {decimal}, {american}, {odds},
