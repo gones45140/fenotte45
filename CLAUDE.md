@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action (il est court exprès). Le détail de tout l'historique est dans HISTORIQUE.md
-(à chercher avec grep, jamais à lire en entier). Mis à jour le 24/10/2026 (version déployée : 20261024o, même app.js sur gones45 et fenotte45).
+(à chercher avec grep, jamais à lire en entier). Mis à jour le 24/10/2026 (version déployée : 20261024p, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -130,8 +130,7 @@ PIÈGES À NE JAMAIS OUBLIER :
 ## 7. Reste à faire / en attente (détail : HISTORIQUE.md § 7)
 
 - ⚾ Lanceurs MLB dans l'Agenda : sonde probables à faire par Antoine (ou mars).
-- Cotes en direct hors foot : NBA BRANCHÉE (20261020q, core odds provider 200). MLB et NHL : MÊME FORME CONFIRMÉE (sondé 24/10)
-  → à brancher comme la NBA si Antoine dit oui. NFL : à sonder pendant un match.
+- Cotes en direct hors foot : NBA (20261020q), MLB et NHL (20261024p) BRANCHÉES (core odds provider 200). NFL : à sonder pendant un match.
 - Abonnement : plan prêt, NON codé (_G45_ABO_PLAN false) ; micro-entreprise reportée ; verrou serveur à faire le moment venu.
 - RGPD : SQL supprimer-compte.sql à installer par Antoine dans les 2 projets Supabase.
 - 🎾 Cotes tennis : TheRundown (gratuit, worker /rundown, secret RUNDOWN_KEY) branché dans le robot (20261020m). Cote book + 💎 value dans l'analyse et les résultats : FAIT (20261022w). À faire : autres sports via TheRundown selon la consommation.

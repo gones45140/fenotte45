@@ -75797,12 +75797,14 @@ async function _g45CdLire(sp, lg, eid, ymds) {
        …/basketball/leagues/nba/events/<id>/competitions/<id>/odds → items[] provider id 200 « DraftKings - Live Odds » = EN DIRECT
        (homeTeamOdds / awayTeamOdds .current.moneyLine.decimal ou .moneyLine américain ; overUnder ; current.over / under). Lu
        seulement pendant le match, gardé 30 s. Lecture prudente (plusieurs formes acceptées) : rien de lisible = pas de ligne 📈. */
-    if (sp === 'basketball' && lg === 'nba' && R.state === 'in') {
+    /* 20261024p (« branche mlb et nhl », sondé par Antoine le 24/10 : même forme, provider 200) : même lecture pour ⚾ MLB (runs) et 🏒 NHL (buts ;
+       2 issues seulement = cote VAINQUEUR prolongation comprise, voir _g45CdMarche). Table _G45_CD_US = sport|ligue → unité. */
+    if (_G45_CD_US[sp + '|' + lg] && R.state === 'in') {
       try {
-        var ko = 'nbaodds|' + eid, oo = _g45CdMem[ko];
-        if (!oo || Date.now() - oo.t > 30000) oo = _g45CdMem[ko] = { t: Date.now(), p: fetch('https://sports.core.api.espn.com/v2/sports/basketball/leagues/nba/events/' + eid + '/competitions/' + eid + '/odds', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }) };
+        var ko = 'usodds|' + sp + '|' + eid, oo = _g45CdMem[ko];
+        if (!oo || Date.now() - oo.t > 30000) oo = _g45CdMem[ko] = { t: Date.now(), p: fetch('https://sports.core.api.espn.com/v2/sports/' + sp + '/leagues/' + lg + '/events/' + eid + '/competitions/' + eid + '/odds', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }) };
         var jo = await oo.p, it = ((jo && jo.items) || []).filter(function (x) { return x && x.provider && String(x.provider.id) === '200'; })[0];
-        R.h = R.a = R.ov = R.un = R.L = null; R.d = null; R.u = 'points';
+        R.h = R.a = R.ov = R.un = R.L = null; R.d = null; R.u = _G45_CD_US[sp + '|' + lg]; R.sp = sp;
         if (it) {
           var cur = it.current || {}, hc = it.homeTeamOdds || {}, ac = it.awayTeamOdds || {};
           R.h = _g45CdDec((hc.current || {}).moneyLine) || _g45CdDec(hc.moneyLine);
@@ -75819,6 +75821,9 @@ async function _g45CdLire(sp, lg, eid, ymds) {
   return null;
 }
 window._g45CdLire = _g45CdLire;
+var _G45_CD_US = { 'basketball|nba': 'points', 'baseball|mlb': 'runs', 'hockey|nhl': 'buts' };   /* 20261024p */
+window._G45_CD_US = _G45_CD_US;
+function _g45CdSusp(u) { return u === 'points' ? 'temps mort, lancers…' : (u === 'runs' ? 'action en cours…' : 'but, pénalité…'); }
 function _g45CdFr(n) { return n === 'off' ? '⏸️' : (n ? n.toFixed(2).replace('.', ',') : '—'); }
 /* Marché du pari → {cle:'h'|'a'|'d'|'ov'|'un', L} ; null = marché non suivi. */
 function _g45CdMarche(h, C, moiDom) {
@@ -75832,6 +75837,9 @@ function _g45CdMarche(h, C, moiDom) {
   if (/^\s*(match )?nul\b/.test(t)) return { cle: 'd' };
   var vic = /victoire|vainqueur|gagne/.test(t), def = /d[ée]faite|perd/.test(t);
   if (!vic && !def) return null;
+  /* 20261024p : 🏒 la cote en direct NHL n'a que 2 issues (vainqueur, prolongation comprise) → pas comparable à une « Victoire » / « Défaite »
+     en temps réglementaire : seul un pari « Vainqueur » reçoit la ligne 📈. */
+  if (C && C.sp === 'hockey' && !/vainqueur/.test(t)) return null;
   var norm = function (s) { return (typeof _g45SgNorm === 'function') ? _g45SgNorm(s) : String(s).toLowerCase(); };
   var tn = norm(t), cote = null;
   var cite = function (L) { return L.some(function (n) { var k = norm(n); return k.length >= 3 && tn.indexOf(k) >= 0; }); };
@@ -75850,13 +75858,13 @@ function _g45CdTexte(h, C, M) {
   var v;
   if (M.cle === 'ov' || M.cle === 'un') {
     v = C[M.cle];
-    var unit = C.u || 'buts', susp = '<span style="color:#f5c542">⏸️ cote suspendue pour l\'instant (' + (unit === 'points' ? 'temps mort, lancers…' : 'but, carton…') + ')</span>';   /* 20261020q : NBA = points */
+    var unit = C.u || 'buts', susp = '<span style="color:#f5c542">⏸️ cote suspendue pour l\'instant (' + (C.sp ? _g45CdSusp(unit) : 'but, carton…') + ')</span>';   /* 20261020q : NBA = points */
     if (v === 'off') return susp;
     if (C.L == null || !v) return '';
     var lib = M.cle === 'ov' ? '+ de ' : '− de ';
     if (Math.abs(C.L - M.L) > 0.01) return '<span style="color:#c9d3ee">ta ligne (' + String(M.L).replace('.', ',') + ' ' + unit + ') n\'est plus proposée</span> · en direct : <b>' + lib + String(C.L).replace('.', ',') + ' ' + unit + ' à ' + _g45CdFr(v) + '</b>';
   } else v = C[M.cle];
-  if (v === 'off') return '<span style="color:#f5c542">⏸️ cote suspendue pour l\'instant (' + (C.u === 'points' ? 'temps mort, lancers…' : 'but, carton…') + ')</span>';
+  if (v === 'off') return '<span style="color:#f5c542">⏸️ cote suspendue pour l\'instant (' + (C.sp ? _g45CdSusp(C.u) : 'but, carton…') + ')</span>';
   if (!v) return '';
   return '<b style="font-size:18px;color:#1ed760">' + _g45CdFr(v) + '</b> <span style="color:#c9d3ee">en direct</span>' + (prise ? ' · tu l\'as prise à <b>' + _g45CdFr(prise) + '</b>' : '') + comp(v);
 }
@@ -75867,7 +75875,7 @@ window._g45CdMarche = _g45CdMarche; window._g45CdTexte = _g45CdTexte;
     if (z._cdPend || z.querySelector('.g45ec-cd') || !/EN DIRECT/.test(z.textContent || '')) return;
     var id = z.getAttribute('data-g45ecl'), h = ((window.state && state.h) || []).filter(function (x) { return x && String(x.id) === id; })[0];
     var meta = (h && typeof _g45MatchMeta === 'function') ? _g45MatchMeta(h) : null;
-    if (!meta || !meta.eid || !meta.lg || !(meta.sp === 'soccer' || (meta.sp === 'basketball' && meta.lg === 'nba'))) return;   /* 20261020q : + NBA */
+    if (!meta || !meta.eid || !meta.lg || !(meta.sp === 'soccer' || _G45_CD_US[meta.sp + '|' + meta.lg])) return;   /* 20261020q : + NBA · 20261024p : + MLB, NHL */
     z._cdPend = 1;
     try {
       var C = await _g45CdLire(meta.sp, meta.lg, meta.eid, [String(h.date).slice(0, 10).replace(/-/g, '')]);
@@ -75890,18 +75898,18 @@ window._g45CdMarche = _g45CdMarche; window._g45CdTexte = _g45CdTexte;
   var o0 = window._g45EspnUsOdds; if (typeof o0 !== 'function') return;
   window._g45EspnUsOdds = async function (sport, lg, eid, dateISO, hN, aN) {
     var html = await o0.apply(this, arguments);
-    if (!(sport === 'soccer' || (sport === 'basketball' && lg === 'nba')) || !dateISO) return html;   /* 20261020q : + NBA */
+    if (!(sport === 'soccer' || _G45_CD_US[sport + '|' + lg]) || !dateISO) return html;   /* 20261020q : + NBA · 20261024p : + MLB, NHL */
     try {
       var d = new Date(dateISO); if (isNaN(d)) return html;
       var y = function (x) { return x.getUTCFullYear() + String(x.getUTCMonth() + 1).padStart(2, '0') + String(x.getUTCDate()).padStart(2, '0'); };
       var C = await _g45CdLire(sport, lg, eid, [y(d), y(new Date(d.getTime() - 864e5))]);
       if (!C || C.state !== 'in') return html;
       var lignes = [];
-      if (C.h || C.a) { lignes.push([hN, C.h]); if (C.u !== 'points') lignes.push(['Nul', C.d]); lignes.push([aN, C.a]); }
+      if (C.h || C.a) { var _vq = C.sp === 'hockey' ? ' (vainqueur, prolong. comprise)' : ''; lignes.push([hN + _vq, C.h]); if (!C.sp) lignes.push(['Nul', C.d]); lignes.push([aN + _vq, C.a]); }   /* 20261024p */
       var rows = lignes.filter(function (r) { return r[1]; }).map(function (r) {
         return '<div style="display:flex;justify-content:space-between;font-size:14px;padding:3px 0;"><span>' + String(r[0]).replace(/</g, '&lt;') + '</span><b style="color:' + (r[1] === 'off' ? '#f5c542' : '#1ed760') + ';">' + (r[1] === 'off' ? '⏸️ suspendue' : _g45CdFr(r[1])) + '</b></div>';
       }).join('');
-      if (C.L != null && (C.ov || C.un)) rows += '<div style="display:flex;justify-content:space-between;font-size:14px;padding:3px 0;"><span>' + (C.u === 'points' ? 'Points' : 'Buts') + ' ' + String(C.L).replace('.', ',') + '</span><b>+ <span style="color:#1ed760">' + _g45CdFr(C.ov) + '</span> · − <span style="color:#ff7b54">' + _g45CdFr(C.un) + '</span></b></div>';
+      if (C.L != null && (C.ov || C.un)) rows += '<div style="display:flex;justify-content:space-between;font-size:14px;padding:3px 0;"><span>' + (C.u === 'points' ? 'Points' : (C.u === 'runs' ? 'Runs' : 'Buts')) + ' ' + String(C.L).replace('.', ',') + '</span><b>+ <span style="color:#1ed760">' + _g45CdFr(C.ov) + '</span> · − <span style="color:#ff7b54">' + _g45CdFr(C.un) + '</span></b></div>';
       if (!rows) return html;
       html = String(html || '').replace('🏆 Favori vainqueur', '🏆 Favori avant le match');
       return html + '<div style="margin-top:10px;background:rgba(255,69,69,.08);border:1px solid rgba(255,69,69,.45);border-radius:10px;padding:10px 12px;color:#fff;">'
@@ -76165,7 +76173,7 @@ var _G45_BK_DOM = [
     var tous = (J.t || []).filter(function (x) { return x.r !== -1 && (!window._g45TrEnTest || !window._g45TrEnTest(x.t) || window._g45TrTestVoit()); });   /* 20261022c : période test */
     try { if (window._g45TnTvHtml && window._g45TrTestVoit && window._g45TrTestVoit()) tete += window._g45TnTvHtml(J); } catch (e) {}   /* 20261023i : 🧪 value tennis */
     try { if (window._g45TrCeHtml && window._g45TrTestVoit && window._g45TrTestVoit()) tete += window._g45TrCeHtml(J); } catch (e) {}   /* 20261023m : 🧪 coupes d'Europe */
-    try { if (window._g45TrTeHtml && window._g45TrTestVoit && window._g45TrTestVoit()) tete += window._g45TrTeHtml(J); } catch (e) {}   /* 20261024a : 🧪 paris mis en test (📊 Bilans) */
+    try { if (window._g45TrTeHtml && window._g45TrTestVoit && window._g45TrTestVoit()) tete += window._g45TrTeHtml(J); } catch (e) {}   /* 20261024p : 🧪 paris mis en test (📊 Bilans) */
     /* 20261017h (« trier par championnat » → « un truc comme dans Bilan avec les filtres », visuel validé) : barre 🔎 Filtres repliable
        (Sport, Championnat, Type de pari, Cote, Proba stats, Avis, Période), combinables, gardés dans localStorage g45tr_off_flt ;
        les anciens boutons Toutes / D'accord / Désaccord = ligne « Avis » (O.f gardé pour g45TrOffF). Tout (tuiles, calendrier, courbe) suit. */
@@ -78190,7 +78198,7 @@ window._g45AgJouUs = async function (nowTs) {
 /* ═══ 📊 BILANS EN ATTENTE (20261023y) — gones seulement ═══
    Antoine (abonnement Claude fini avant le 15/11, date des bilans) : « si on peut faire une sélection de tel pari alors c'est le top, mais
    dispo que sur gones pour mettre en ligne » ; maquette validée : « classe par sport et leur pari et c'est parfait ».
-   20261024a (« un bouton marche / pause et un bouton test / officiel à chaque » → SÉLECTEUR À 3 CASES sur chaque ligne, « pas besoin de
+   20261024p (« un bouton marche / pause et un bouton test / officiel à chaque » → SÉLECTEUR À 3 CASES sur chaque ligne, « pas besoin de
    maquette, tu peux coder et mettre en ligne ») : ✅ Officiel (sélection + bilan) · 🧪 Test (suivi, montré aux testeurs, hors bilan) ·
    ⏸️ Pause (suivi en coulisse, caché). Tendances BET45 → 4e sous-bouton « 📊 Bilans » (visible si _g45SanteActive). Lit
    données/tendances_officielles.json (J.t officiel, J.pz test / pause suivis par le robot avec x.pz = clé et x.st, J.ce coupes d'Europe hors
@@ -78637,7 +78645,7 @@ window._g45AgJouUs = async function (nowTs) {
     });
     return h + '<div style="font-size:12px;color:#c9d3ee;margin-top:4px;">💎 cote du book 1,50 – 2,50, + 5 % ou plus selon BET45 · cote FR ≈ cote US × 0,94 · hors bilan officiel.</div></div>';
   };
-  /* 20261024a : bloc « 🧪 Paris mis en test » — J.pz du robot avec x.st = 'test' (choix d'Antoine dans 📊 Bilans) ; testeurs seulement,
+  /* 20261024p : bloc « 🧪 Paris mis en test » — J.pz du robot avec x.st = 'test' (choix d'Antoine dans 📊 Bilans) ; testeurs seulement,
      hors bilan. Les paris en PAUSE ne sont pas montrés (suivis en coulisse). */
   window._g45TrTeHtml = function (J) {
     var L = ((J && J.pz) || []).filter(function (x) { return x.st === 'test'; }); if (!L.length) return '';
