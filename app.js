@@ -78953,7 +78953,14 @@ window._g45AgJouUs = async function (nowTs) {
     if (F.elo > 0 && X.elo > 0 && F.elo > X.elo) R.push({ e: (F.elo - X.elo) / 4, t: 'meilleur Elo ' + (o.ctx.sf === 'terre' ? 'terre' : (o.ctx.sf === 'gazon' ? 'gazon' : 'dur')) + ' (' + Math.round(F.elo) + ' contre ' + Math.round(X.elo) + ')' });   /* 20261020r */
     var ad = function (lib, a, b, w) { if (a && b && a.n >= 3 && b.n >= 3 && a.p > b.p) R.push({ e: (a.p - b.p) * w, t: lib + ' (' + a.p + ' % contre ' + b.p + ' %)' }); };
     ad('plus en forme sur 10 matchs', F.forme, X.forme, 1);
-    ad('meilleur ' + (o.ctx.sf === 'salle' ? 'en salle' : 'sur ' + (SF[o.ctx.sf] || SF.dur).l.toLowerCase()) + ' ces 2 derniers mois', F.sf2 || F.sf12, X.sf2 || X.sf12, 1.2);
+    /* 20261024r (Hontama « 0 % sur dur » alors que Flashscore montre 2 victoires fin septembre — des QUALIFS, absentes d'ESPN ; « rajoute
+       surtout qu'on ne tient pas compte des petits tournois ou qualifs ») : nombre de matchs + mention des tableaux principaux seulement. */
+    (function () {
+      var a = F.sf2 || F.sf12, b = X.sf2 || X.sf12; if (!(a && b && a.n >= 3 && b.n >= 3 && a.p > b.p)) return;
+      var g = function (z) { return Math.round(z.p * z.n / 100) + ' sur ' + z.n; };
+      R.push({ e: (a.p - b.p) * 1.2, t: 'meilleur ' + (o.ctx.sf === 'salle' ? 'en salle' : 'sur ' + (SF[o.ctx.sf] || SF.dur).l.toLowerCase()) + ' ces 2 derniers mois ('
+        + g(a) + ' contre ' + g(b) + ' · tableaux principaux seulement, sans qualifs ni petits tournois)' });
+    })();
     /* 20261021n : contrecoup de l'adversaire (en jaune) */
     if (false && X.prec && X.prec.contre && !(F.prec && F.prec.contre)) R.push(   /* 20261022b : plus dans l'avis standard → plus dans « En clair » */{ e: 40, t: '<span style="color:#f5c542;">⚠️ son adversaire sort ' + (X.prec.titre ? (X.prec.premier ? 'de son 1er titre' : 'd\'un titre') : (X.prec.finale ? 'd\'une finale' : 'd\'une demi-finale')) + ' (' + esc(X.prec.tr) + ', il y a ' + X.prec.j + ' j)</span>' });
     ad('meilleur en ' + (CAT[o.ctx.cat] || 'tournoi de ce niveau'), F.cat, X.cat, 0.5);

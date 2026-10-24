@@ -2553,6 +2553,10 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   .g45-live-det data-open="1" (sinon l'actualisation s'arrête), sport, ligue, match) = même fenêtre que Compétitions ; repli : courbe seule. Smoke 95.
   20261024q (bandeau défilant « 8:35 - 2nd » → « oui ») : _g45BandTuile → _g45BandEtatFr(ev, shortDetail) : sport lu dans ev.uid (s:40 / 70 / 20 / 1,
   sinon foot) puis _g45EtatFr (« 8:35 · 2e P », « 26,6 s · 3e QT », HT → Mi-temps, minutes du foot inchangées). 5 essais node, smoke 96.
+- 🎾 20261024r (Oliynykova – Hontama : « meilleur sur dur ces 2 derniers mois (33 % contre 0 %) » ; Flashscore montre 2 victoires de Hontama
+  les 28-29/09 = QUALIFS, absentes d'ESPN qui n'a que les tableaux principaux ; « rajoute surtout qu'on ne tient pas compte des petits
+  tournois ou qualifs ») : _g45TnClair, phrase surface 2 mois → « (1 sur 3 contre 0 sur 3 · tableaux principaux seulement, sans qualifs ni
+  petits tournois) ». Calcul de l'avis inchangé. 1 essai Chromium, smoke 96.
   Smoke crPlus complété (Europe 1/2, Les deux 2/3, verrou).
   + (captures bet45 d'Antoine, compte au-delà des 30 jours : « Tendances disparaît, devrait rester à gauche et montrer cette page comme sur
   Pari / Tendances ») : indexfenotte.html n'avait PAS de bouton Tendances dans le menu (gones45 oui) → ajouté après Agenda, même onclick ;
