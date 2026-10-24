@@ -2557,6 +2557,10 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   les 28-29/09 = QUALIFS, absentes d'ESPN qui n'a que les tableaux principaux ; « rajoute surtout qu'on ne tient pas compte des petits
   tournois ou qualifs ») : _g45TnClair, phrase surface 2 mois → « (1 sur 3 contre 0 sur 3 · tableaux principaux seulement, sans qualifs ni
   petits tournois) ». Calcul de l'avis inchangé. 1 essai Chromium, smoke 96.
+- 🎫 20261024s (ticket Winamax « Perdu » San Antonio – Houston du 24/10 → « Match trouvé : Dallas – Spurs 25/10 » ; « ça ne va chercher que le futur
+  match, pourtant la couleur rouge ou verte indique gagné ou perdu ») : consigne IA + champ "etat" (en_cours / gagne / perdu / rembourse) ;
+  _g45TicketMatch : ticket terminé (etat) OU date du ticket passée → jours = veille + jour du ticket, matchs FINIS (post / in) ; sinon comme
+  avant (jour + lendemain, pas les finis). 4 essais vm (tm2.js : à venir, perdu hier soir, date passée, en cours), smoke 96.
   Smoke crPlus complété (Europe 1/2, Les deux 2/3, verrou).
   + (captures bet45 d'Antoine, compte au-delà des 30 jours : « Tendances disparaît, devrait rester à gauche et montrer cette page comme sur
   Pari / Tendances ») : indexfenotte.html n'avait PAS de bouton Tendances dans le menu (gones45 oui) → ajouté après Agenda, même onclick ;

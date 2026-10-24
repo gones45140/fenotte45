@@ -71926,7 +71926,11 @@ window._g45TicketMatch = async function (o, cockpit) {
     }
     if (!L.length) return;
     var d0 = /^\d{4}-\d{2}-\d{2}$/.test(String(o.date || '')) ? new Date(o.date + 'T12:00:00') : new Date();
-    var jours = [0, 1].map(function (k) { var d = new Date(d0.getTime() + k * 864e5); return d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0'); });
+    /* 20261024s (ticket Winamax « Perdu » Spurs – Rockets du 24/10 → « Match trouvé : Dallas – Spurs 25/10 ») : ticket TERMINÉ (o.etat gagne / perdu /
+       rembourse lu par l'IA) ou date déjà passée → on cherche le match FINI du jour du ticket et de la veille (nuit US), plus le prochain. */
+    var auj0 = new Date(); auj0.setHours(0, 0, 0, 0);
+    var termine = /gagn|perd|rembours/i.test(String(o.etat || '')) || (d0.getTime() < auj0.getTime());
+    var jours = (termine ? [-1, 0] : [0, 1]).map(function (k) { var d = new Date(d0.getTime() + k * 864e5); return d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0'); });
     var trouves = [], vu = {};
     for (var i = 0; i < L.length; i++) for (var j = 0; j < jours.length; j++) {
       var B = null; try { B = await (await fetch('https://site.api.espn.com/apis/site/v2/sports/' + L[i][0] + '/' + L[i][1] + '/scoreboard?dates=' + jours[j])).json(); } catch (e) {}
@@ -71934,7 +71938,7 @@ window._g45TicketMatch = async function (o, cockpit) {
         var c = (ev.competitions || [])[0] || {}, cps = c.competitors || [];
         var moi = cps.filter(function (q) { var t = q.team || {}; return [t.displayName, t.shortDisplayName, t.name, t.location].some(function (n) { var r = R(nz(n)); return r && (r === rq || rq.split(' ').every(function (w) { return r.split(' ').indexOf(w) >= 0; })); }); })[0];   /* tous les mots du ticket dans le nom ESPN (« Manchester United » ≠ City) */
         if (!moi || vu[ev.id]) return; var adv = cps.filter(function (q) { return q !== moi; })[0]; if (!adv) return;
-        if (((c.status || {}).type || {}).state === 'post') return;
+        var stM = ((c.status || {}).type || {}).state; if (termine ? stM === 'pre' : stM === 'post') return;   /* 20261024s */
         vu[ev.id] = 1; trouves.push({ adv: (adv.team || {}).displayName || '', dom: moi.homeAway === 'home', t: new Date(ev.date), comp: ((B.leagues || [])[0] || {}).name || o.competition || '', moi: (moi.team || {}).displayName || eq });
       });
     }
@@ -72075,7 +72079,7 @@ async function _g45TicketIa(dataUrl) {
     + '"date":"AAAA-MM-JJ ou null","heure":"HH:MM ou null","competition":"ou null","sport":"football, hockey, basket, tennis, rugby, nfl, baseball, mma, f1, cyclisme…",'
     + '"type":"le ou les marchés en français court, joints par \' + \' (ex : Victoire Inter + Moins de 4,5 buts)",'
     + '"selections":["TOUS les pilotes / coureurs choisis, pour une COURSE (F1, MotoGP, cyclisme)"] ou null,'
-    + '"cote":cote TOTALE du ticket (PAS les gains potentiels),"mise":montant misé en euros,"gains":gains potentiels en euros ou null,"bookmaker":"nom du site","bookmaker_sur":true ou false}\n'
+    + '"cote":cote TOTALE du ticket (PAS les gains potentiels),"mise":montant misé en euros,"gains":gains potentiels en euros ou null,"bookmaker":"nom du site","bookmaker_sur":true ou false,"etat":"en_cours, gagne, perdu, rembourse ou null (étiquette d\'état du ticket : En cours / Gagné / Perdu)"}\n'
     + 'BOOKMAKER : WINAMAX = carte bleu nuit, étiquette d\'état en haut à gauche (« En cours » jaune avec chrono, « Gagné » vert, « Perdu » rouge), '
     + 'cote dans une pastille BLANCHE en chiffres rouges, lignes « Mise » / « Gains potentiels » (gains en jaune), bouton « COMPLÉTER », bas de ticket '
     + '« Réf : 6J… » + « 8h14 - 10 octobre 2026 », mots Squad Game / MyMatch. '
