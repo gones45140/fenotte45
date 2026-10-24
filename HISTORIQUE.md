@@ -1680,6 +1680,10 @@ RÉGLÉ (worker, 01/10) : cron « exceededCpu » (cpuTimeMs 10) à CHAQUE passag
   TROUVÉ (sondé par Antoine, même match, 4e QT) : core sports.core.api.espn.com/v2/sports/basketball/leagues/nba/events/<id>/competitions/<id>/odds
   → items[] : provider id 100 « DraftKings » = clôture ; provider id 200 « DraftKings - Live Odds » = EN DIRECT (overUnder 224.5, details « BOS -7.5 »,
   awayTeamOdds.moneyLine -600, .current.moneyLine.decimal 1.16 / spread / pointSpread ; homeTeamOdds idem ; current.over / under / total). Rien codé.
+  24/10 — SONDÉ PAR ANTOINE (téléphone, MLB 401908042, MIL reçoit, en cours) : core baseball/leagues/mlb/events/<id>/competitions/<id>/odds = MÊME FORME
+  que la NBA : provider 100 « DraftKings » (open / close / current) + provider 200 « DraftKings - Live Odds » : details « MIL -282 », overUnder 6.5,
+  homeTeamOdds.current.moneyLine.decimal 1.35 / awayTeamOdds 3.06, current.over.decimal 1.85 / under 1.90, current.total.american « 6.5 » (pas de close).
+  → confirme aussi la lecture de current.over / under faite pour la NBA (20261020q). MLB pas encore branchée.
   20261020q — BRANCHÉ (demande d'Antoine « même rendu que le foot ») : `_g45CdLire('basketball', 'nba', …)` lit le scoreboard (état, équipes, score)
   puis, match 'in', le core odds (mémoire 30 s) → provider id 200 : h / a = homeTeamOdds / awayTeamOdds .current.moneyLine (sinon .moneyLine),
   L = overUnder, ov / un = current.over / under ; `_g45CdDec` accepte nombre (1-50 = décimal, sinon américain), {decimal}, {american}, {odds},
