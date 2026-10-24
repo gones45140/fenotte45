@@ -28023,6 +28023,13 @@ async function loadEspnMatchLive(el, nom, col){
   /* 20261024h : NBA / NHL / NFL / MLB → pas de pression / stats / compos de foot : la courbe de probabilité de victoire
      ESPN (la même que dans Compétitions, _g45WpBloc, relue en direct). */
   if (data.sport && data.sport !== 'soccer') {
+    /* 20261024o (« et on n'a pas le détail et tout le reste comme en NHL ») : sous le score, la MÊME fenêtre de match que Compétitions
+       (_renderGenericDetail : cotes en direct, courbe, stats, IA, articles…) au lieu de la courbe seule. Repli : la courbe. */
+    if (typeof _renderGenericDetail === 'function' && data.event && data.event.id) {
+      el.innerHTML = html + '<div class="g45-live-det" data-open="1" style="margin-top:10px;"><div style="padding:12px;text-align:center;color:var(--t3);font-size:13px;">⏳ Détail du match…</div></div>';
+      var _det = el.querySelector('.g45-live-det');
+      try { await _renderGenericDetail(_det, data.sport, data.league, data.event.id); return; } catch (e) {}
+    }
     try { var _wpT = (typeof _g45WpBloc === 'function') ? _g45WpBloc(s, data.event.id, tname(home), tname(away), data.sport, data.league) : ''; if (_wpT) html += _wpT; } catch (e) {}
     el.innerHTML = html; return;
   }
