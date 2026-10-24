@@ -72078,6 +72078,8 @@ async function _g45TicketIa(dataUrl) {
     + '"domicile":true si l\'équipe pariée est la 1re affichée (celle qui reçoit), false sinon, null si inconnu,'
     + '"date":"AAAA-MM-JJ ou null","heure":"HH:MM ou null","competition":"ou null","sport":"football, hockey, basket, tennis, rugby, nfl, baseball, mma, f1, cyclisme…",'
     + '"type":"le ou les marchés en français court, joints par \' + \' (ex : Victoire Inter + Moins de 4,5 buts)",'
+    /* 20261024u (capture Winamax MyMatch « Résultat Atl. Madrid / Nombre de buts Moins de 3,5 » lue « Résultat + Moins de 3,5 buts » : l'équipe était perdue) */
+    + '"type" : un marché « Résultat » / « 1N2 » s\'écrit TOUJOURS avec sa sélection : « Victoire <équipe> », « Nul » ou « Victoire <adversaire> », jamais « Résultat » seul. '
     + '"selections":["TOUS les pilotes / coureurs choisis, pour une COURSE (F1, MotoGP, cyclisme)"] ou null,'
     + '"cote":cote TOTALE du ticket (PAS les gains potentiels),"mise":montant misé en euros,"gains":gains potentiels en euros ou null,"bookmaker":"nom du site","bookmaker_sur":true ou false,"etat":"en_cours, gagne, perdu, rembourse ou null (étiquette d\'état du ticket : En cours / Gagné / Perdu)"}\n'
     + 'BOOKMAKER : WINAMAX = carte bleu nuit, étiquette d\'état en haut à gauche (« En cours » jaune avec chrono, « Gagné » vert, « Perdu » rouge), '
@@ -72161,6 +72163,23 @@ async function _g45TicketIa(dataUrl) {
       if (/\bnul\b|\bdraw\b|^x$/i.test(_n(_sel))) o.type = 'Nul';
       else if (_sel && o.adversaire && _R && _R(_n(_sel)) && _R(_n(_sel)) === _R(_n(o.adversaire)) && _R(_n(_sel)) !== _R(_n(o.equipe))) o.type = 'Défaite';
       else o.type = 'Victoire';
+    }
+  } catch (x) {}
+  /* 20261024u (Winamax MyMatch « Résultat Atl. Madrid + Nombre de buts Moins de 3,5 » rendu « Résultat + Moins de 3,5 buts ») : dans un COMBINÉ,
+     chaque morceau « Résultat [sélection] » devient « Victoire » (équipe pariée), « Nul », ou « Défaite » si la sélection nomme l'adversaire.
+     Sans sélection lue, on garde la règle de la consigne : « equipe » = l'équipe sur laquelle porte le pari → Victoire. */
+  try {
+    var _tyC = String(o.type || '');
+    if (/\s\+\s/.test(_tyC) && /(^|\+)\s*(r[ée]sultat|1\s*n\s*2)\b/i.test(_tyC)) {
+      var _RC = window._g45TkRacines, _nC = function (t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim(); };
+      o.type = _tyC.split(/\s\+\s/).map(function (m) {
+        var mr = /^\s*(r[ée]sultat|1\s*n\s*2)\b\s*(?:du match|final|- 90 mins)?\s*[:\-–]?\s*(.*)$/i.exec(m);
+        if (!mr) return m.trim();
+        var se = mr[2];
+        if (/\bnul\b|\bdraw\b|^x$/i.test(_nC(se))) return 'Nul';
+        if (se && o.adversaire && _RC && _RC(_nC(se)) && _RC(_nC(se)) === _RC(_nC(o.adversaire)) && _RC(_nC(se)) !== _RC(_nC(o.equipe))) return 'Défaite';
+        return 'Victoire';
+      }).join(' + ');
     }
   } catch (x) {}
   /* 20261008d (capture Winamax MyMatch « Vainqueur Verstappen ou Antonelli ou … » au GP de Singapour : Équipe vide, Antonelli en

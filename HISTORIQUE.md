@@ -129,6 +129,7 @@ Il est dans les DEUX dépôts (gones45 et fenotte45), identique (cmp). Jamais de
   20261016e : carte « En cours » (titre) = h.eq (Équipe jouée) avant h.n → « Edmonton Oilers – Utah Mammoth ».
   20261016f (ticket « Résultat Florida Panthers » vs Vancouver, Florida hors mur ; choix d'Antoine « celle de Vancouver ») : équipe du ticket absente
   du mur mais ADVERSAIRE au mur (club, pas joueur / compétition) → sa carte, adversaire = équipe du ticket, lieu inversé, Résultat / Victoire → « Défaite ». Smoke (49).
+  20261024u (capture Winamax MyMatch « Résultat Atl. Madrid / Nombre de buts Moins de 3,5 » lue « Résultat + Moins de 3,5 buts ») : consigne IA → « Résultat » toujours avec sa sélection ; garde-fou COMBINÉ : chaque morceau « Résultat [sél.] » → Victoire / Nul / Défaite (sans sélection = Victoire, l'équipe pariée). 6/6 tests.
 - Temps réglementaire : `g45ScoreTR`, `G45_TR_PERIODES`.
   20261005j (capture : Edmonton 1-2 Colorado « Après TAB » compté en victoire, mode TR actif) : match aux TIRS AU BUT sans période > 3
   chez ESPN → le garde-fou renonçait. Hockey : 3 périodes présentes, égalité, final à 1 but d'écart = prolongation/TAB → score TR
