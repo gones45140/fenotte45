@@ -27091,6 +27091,26 @@ async function _espnMatchLiveData(nom){
       var st=(comp&&comp.status&&comp.status.type)?comp.status.type:{};
       return {id:e.id, t:new Date(e.date).getTime(), state:st.state||'', leagueSlug:(e.season&&e.season.slug)||resolved.league};
     }).filter(function(x){return x.id;});
+    /* 20261024x (capture 14:17 : Manchester City, onglet Live = « Terminé 3-2 Ipswich » alors qu'il jouait Aston Villa) : le calendrier
+       d'équipe ESPN (foot) ne liste que les matchs JOUÉS → le match en cours n'y est pas et on prenait le plus proche, l'ancien.
+       On ajoute le programme du JOUR (scoreboard) de la ligue de l'équipe — et, au foot, des 3 coupes d'Europe — : un match de
+       l'équipe en cours (ou du jour) y est trouvé par son id ESPN. */
+    try {
+      var sbL = [resolved.league];
+      if (SPT === 'soccer') ['uefa.champions', 'uefa.europa', 'uefa.europa.conf'].forEach(function (x) { if (sbL.indexOf(x) < 0) sbL.push(x); });
+      var sbR = await Promise.all(sbL.map(function (l) {
+        return fetch(FD_PROXY+'?host=espn&path='+encodeURIComponent('/apis/site/v2/sports/'+SPT+'/'+l+'/scoreboard')).then(function (x) { return x.json(); }).then(function (j) { return [l, j]; }).catch(function () { return [l, null]; });
+      }));
+      sbR.forEach(function (p) {
+        ((p[1] && p[1].events) || []).forEach(function (e) {
+          var comp = (e.competitions && e.competitions[0]) || {};
+          var moi = (comp.competitors || []).some(function (c) { return String(c.id || (c.team && c.team.id)) === String(resolved.id); });
+          if (!moi || events.some(function (x) { return String(x.id) === String(e.id); })) return;
+          var st = (comp.status && comp.status.type) ? comp.status.type : {};
+          events.push({ id: e.id, t: new Date(e.date).getTime(), state: st.state || '', leagueSlug: p[0] });
+        });
+      });
+    } catch (e) {}
     ev = events.find(function(x){return x.state==='in';});
     if(!ev && events.length){ var nt=now.getTime(); events.sort(function(a,b){return Math.abs(a.t-nt)-Math.abs(b.t-nt);}); ev=events[0]; }
     if(ev) lg = ev.leagueSlug || resolved.league;
