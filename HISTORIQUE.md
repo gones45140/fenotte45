@@ -2563,6 +2563,7 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   _g45TicketMatch : ticket terminé (etat) OU date du ticket passée → jours = veille + jour du ticket, matchs FINIS (post / in) ; sinon comme
   avant (jour + lendemain, pas les finis). 4 essais vm (tm2.js : à venir, perdu hier soir, date passée, en cours), smoke 96.
 - 🎫 20261024v (ticket Haaland « Aston Villa – Manchester City » : compétition vide, date « à vérifier ») : `_g45TicketMatch` — racine « manch » couvrait aussi Manchester United (même journée PL → 2 matchs → rien proposé). Plusieurs matchs → on garde celui dont la racine est EXACTEMENT celle du ticket. Test node 4/4.
+- 🎫 20261024w (« si on remplit le ticket buteur et après un autre ticket, le nom du buteur reste ») : `_g45TicketRemplir` et `_g45TicketRemplirCockpit` vident d'abord n-/c-joueur, n-/c-joueur-match et les joueurs ajoutés (-joueurs-extra). Smoke tkJ (97 contrôles).
 - 🚀 20261024t (ticket Spurs 5 € recollé alors que la montante est passée au P2 = 10 € : « on devrait être averti, seulement pour le Cockpit, que
   la mise ne correspond pas au palier ») : bloc 24f, avert() → bandeau jaune #g45-mise-av sous #c-mise « ⚠️ Mise 5 € ≠ palier P2 de ta montante
   (10 €) » (STRATS[u.s][palier − 1], compétition + lieu) ; mis à jour à chaque renderCrash, saisie de la mise, changement d'équipe / compétition /

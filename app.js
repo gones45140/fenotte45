@@ -71864,6 +71864,10 @@ function _g45TicketRemplir(o) {
   };
   var num = function (v) { var n = parseFloat(String(v == null ? '' : v).replace(',', '.').replace(/[^\d.]/g, '')); return isFinite(n) && n > 0 ? n : null; };
   met('n-team', o.equipe); met('n-analysis', o.adversaire);
+  /* 20261024w (Antoine : « si on remplit le ticket buteur et après un autre ticket, le nom du buteur reste ») : nouveau ticket →
+     champs joueur vidés d'abord (joueur, « Match, si différent », joueurs ajoutés), puis remplis si le ticket en a un. */
+  try { ['n-joueur', 'n-joueur-match'].forEach(function (id) { var e = document.getElementById(id); if (e && e.value) { e.value = ''; try { e.dispatchEvent(new Event('input', { bubbles: true })); } catch (x) {} } });
+    var bx = document.getElementById('n-joueurs-extra'); if (bx && bx.children.length) { bx.innerHTML = ''; if (typeof g45JMajMode === 'function') g45JMajMode('n'); } } catch (x) {}
   met('n-joueur', o.joueur);
   if (/^\d{4}-\d{2}-\d{2}$/.test(String(o.date || ''))) met('n-date', o.date);
   if (/^\d{1,2}:\d{2}$/.test(String(o.heure || ''))) met('n-heure', String(o.heure).padStart(5, '0'));
@@ -72041,6 +72045,10 @@ function _g45TicketRemplirCockpit(o) {
     } catch (x) {}
   }
   met('c-target', o.adversaire);
+  /* 20261024w (Antoine : « si on remplit le ticket buteur et après un autre ticket, le nom du buteur reste ») : nouveau ticket →
+     champs joueur vidés d'abord (joueur, « Match, si différent », joueurs ajoutés), puis remplis si le ticket en a un. */
+  try { ['c-joueur', 'c-joueur-match'].forEach(function (id) { var e = document.getElementById(id); if (e && e.value) { e.value = ''; try { e.dispatchEvent(new Event('input', { bubbles: true })); } catch (x) {} } });
+    var bx = document.getElementById('c-joueurs-extra'); if (bx && bx.children.length) { bx.innerHTML = ''; if (typeof g45JMajMode === 'function') g45JMajMode('c'); } } catch (x) {}
   met('c-joueur', o.joueur);
   /* 20261016c (« Équipe jouée Edmonton non ? ») : carte JOUEUR choisie → « Équipe jouée » (#c-equipe) = club du joueur
      (équipe lue sur le ticket, sinon la note de la carte, ex. « Edmonton Oilers »). */
