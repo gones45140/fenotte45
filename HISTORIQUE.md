@@ -2561,6 +2561,10 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   match, pourtant la couleur rouge ou verte indique gagné ou perdu ») : consigne IA + champ "etat" (en_cours / gagne / perdu / rembourse) ;
   _g45TicketMatch : ticket terminé (etat) OU date du ticket passée → jours = veille + jour du ticket, matchs FINIS (post / in) ; sinon comme
   avant (jour + lendemain, pas les finis). 4 essais vm (tm2.js : à venir, perdu hier soir, date passée, en cours), smoke 96.
+- 🚀 20261024t (ticket Spurs 5 € recollé alors que la montante est passée au P2 = 10 € : « on devrait être averti, seulement pour le Cockpit, que
+  la mise ne correspond pas au palier ») : bloc 24f, avert() → bandeau jaune #g45-mise-av sous #c-mise « ⚠️ Mise 5 € ≠ palier P2 de ta montante
+  (10 €) » (STRATS[u.s][palier − 1], compétition + lieu) ; mis à jour à chaque renderCrash, saisie de la mise, changement d'équipe / compétition /
+  lieu ; retiré quand la mise = palier. Pari Simple non concerné. Smoke miseCk étendu (96).
   Smoke crPlus complété (Europe 1/2, Les deux 2/3, verrou).
   + (captures bet45 d'Antoine, compte au-delà des 30 jours : « Tendances disparaît, devrait rester à gauche et montrer cette page comme sur
   Pari / Tendances ») : indexfenotte.html n'avait PAS de bouton Tendances dans le menu (gones45 oui) → ajouté après Agenda, même onclick ;

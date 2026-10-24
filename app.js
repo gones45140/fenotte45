@@ -80436,15 +80436,27 @@ window._g45TrTestVoit = function () { try { return (typeof _g45SanteActive === '
     if (String(mi.value) !== String(v)) mi.value = v;
   };
   window._g45MiseRecalc = recalc;
+  /* 20261024t (Spurs : ticket 5 € alors que la montante est passée au P2 = 10 € ; « on devrait être averti, seulement pour le Cockpit, que la
+     mise ne correspond pas au palier ») : bandeau jaune sous #c-mise quand la mise diffère de STRATS[u.s][palier − 1] ; retiré sinon. */
+  var avert = function () {
+    var uSel = $('c-unit'), mi = $('c-mise'); if (!mi) return;
+    var b = $('g45-mise-av'), u = uSel && (state.u || []).find(function (x) { return x.n === uSel.value; });
+    var pal = u && STRATS[u.s] ? _g45Pal(u, ($('c-comp') && $('c-comp').value) || '', g45LieuCourant()) : 0, v = pal ? (STRATS[u.s][pal - 1] || 0) : 0;
+    var m = parseFloat(String(mi.value || '').replace(',', '.'));
+    if (!v || !(m > 0) || Math.abs(m - v) < 0.005) { if (b) b.remove(); return; }
+    if (!b) { b = document.createElement('div'); b.id = 'g45-mise-av'; b.style.cssText = 'margin-top:6px;background:#3a2f08;border:1px solid #f5c542;color:#fff;border-radius:8px;padding:6px 10px;font-size:14px;font-weight:700;'; mi.insertAdjacentElement('afterend', b); }
+    b.textContent = '⚠️ Mise ' + String(m).replace('.', ',') + ' € ≠ palier P' + pal + ' de ta montante (' + String(v).replace('.', ',') + ' €)';
+  };
+  window._g45MiseAvert = avert;
   var _rc = renderCrash;
-  renderCrash = window.renderCrash = function () { var r = _rc.apply(this, arguments); try { recalc(); } catch (e) {} return r; };
+  renderCrash = window.renderCrash = function () { var r = _rc.apply(this, arguments); try { recalc(); } catch (e) {} try { avert(); } catch (e) {} return r; };
   var _um = updMise;
   updMise = window.updMise = function () { try { var mi = $('c-mise'); if (mi) mi._g45Man = 0; } catch (e) {} return _um.apply(this, arguments); };
-  var marque = function (e) { if (e.target && e.target.id === 'c-mise') e.target._g45Man = 1; };
+  var marque = function (e) { if (e.target && e.target.id === 'c-mise') { e.target._g45Man = 1; try { avert(); } catch (x) {} } };
   document.addEventListener('input', marque, true);
   document.addEventListener('change', function (e) {
     marque(e);
-    if (e.target && (e.target.id === 'c-comp' || e.target.id === 'c-lieu')) { try { recalc(); } catch (x) {} }
+    if (e.target && (e.target.id === 'c-comp' || e.target.id === 'c-lieu' || e.target.id === 'c-unit')) { try { recalc(); } catch (x) {} try { avert(); } catch (x) {} }
   }, true);
 })();
 
