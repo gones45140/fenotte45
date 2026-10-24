@@ -28061,6 +28061,9 @@ async function loadEspnMatchLive(el, nom, col){
   html+=_renderEspnMatchStats(s, homeId, awayId, col);
   var _compo=_renderEspnMatchPitch(s, col); html+=_compo||_renderEspnMatchLineups(s, col);
   el.innerHTML=html;
+  /* 20261024y (« il donne pas le graphique avec les cotes ? » → maquette « avec courbe ») : foot EN DIRECT → bloc 📈 cotes DraftKings
+     + courbe des chances, sous le score (window._g45CdlLancer, défini près de _g45CdLire). */
+  try { if (stState === 'in' && typeof window._g45CdlLancer === 'function') window._g45CdlLancer(el, data, tname(home), tname(away), String((data.resolved || {}).id) === String(homeId)); } catch (e) {}
 }
 window.loadEspnMatchLive=loadEspnMatchLive; window._renderEspnMatchLineups=_renderEspnMatchLineups; window._renderEspnMatchStats=_renderEspnMatchStats; window._espnMatchLiveData=_espnMatchLiveData; window._renderEspnMatchPitch=_renderEspnMatchPitch;
 
@@ -75884,6 +75887,67 @@ async function _g45CdLire(sp, lg, eid, ymds) {
   return null;
 }
 window._g45CdLire = _g45CdLire;
+/* ═══ 20261024y — 📈 COTES EN DIRECT + COURBE dans l'onglet Live (foot) ═══
+   Antoine : « il donne pas le graphique avec les cotes ? » → maquette (bloc DraftKings 1 / N / 2 + buts, puis courbe) → « avec courbe ».
+   Les cotes viennent du scoreboard ESPN (_g45CdLire, sondé le 14/10). Pas d'historique chez ESPN : la courbe se remplit TANT QUE
+   l'écran est ouvert (relue toutes les 45 s) ; points gardés pour la séance (sessionStorage g45_cdh_<id>) → rouvrir l'onglet les retrouve.
+   Chances = cotes inversées puis ramenées à 100 % (marge du book retirée). Trait plein = équipe de la fiche, pointillé gris = nul.
+   Cote suspendue (« OFF ») : pas de point, ligne « ⏸️ suspendue ». La boucle s'arrête dès que le bloc quitte l'écran. */
+window._g45CdlLancer = function (el, data, hN, aN, moiDom) {
+  var ev = data && data.event; if (!el || !ev || !ev.id) return;
+  var fc = el.querySelector('.fc'); if (!fc) return;
+  var vieux = el.querySelector('.g45-cdl'); if (vieux) vieux.remove();
+  var box = document.createElement('div'); box.className = 'g45-cdl';
+  box.setAttribute('style', 'margin-top:10px;background:rgba(21,28,48,.92);border:1px solid rgba(255,69,69,.5);border-radius:12px;padding:12px 14px;color:#fff;');
+  box.innerHTML = '<div style="font-size:14px;color:#c9d3ee;">⏳ Cotes en direct…</div>';
+  fc.parentNode.insertBefore(box, fc.nextSibling);
+  var lg = /^(uefa\.|[a-z]{3}\.\d)/.test(String(data.league || '')) ? data.league : ((data.resolved || {}).league || data.league);
+  var cle = 'g45_cdh_' + ev.id, H = [];
+  try { H = JSON.parse(sessionStorage.getItem(cle) || '[]') || []; } catch (e) { H = []; }
+  var esc = function (t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+  var fr = function (x) { return (x === 'off') ? '⏸️' : (x ? (+x).toFixed(2).replace('.', ',') : '–'); };
+  var minute = function (clk) { var m = /(\d+)'?\s*(?:\+\s*(\d+))?/.exec(String(clk || '')); return m ? Math.min(130, +m[1] + (m[2] ? +m[2] : 0)) : null; };
+  var courbe = function () {
+    var P = H.filter(function (p) { return p.m != null; }); if (P.length < 2) return '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">📉 La courbe se dessine au fil du match (un point toutes les 45 s, tant que l\'écran est ouvert).</div>';
+    var W = Math.max(320, Math.min(760, Math.round(box.clientWidth - 28) || 760)), Hh = 150, x = function (m) { return 30 + (Math.min(m, 95) / 95) * (W - 40); }, y = function (v) { return 10 + (1 - v) * (Hh - 30); };
+    var ligne = function (k) { return P.map(function (p, i) { return (i ? 'L' : 'M') + x(p.m).toFixed(1) + ' ' + y(p[k]).toFixed(1); }).join(' '); };
+    var der = P[P.length - 1];
+    return '<svg viewBox="0 0 ' + W + ' ' + Hh + '" style="width:100%;max-width:760px;display:block;margin-top:8px;">'
+      + '<line x1="30" x2="' + (W - 10) + '" y1="' + y(.5) + '" y2="' + y(.5) + '" stroke="#4a5372" stroke-dasharray="4 4"/>'
+      + '<text x="0" y="' + (y(1) + 5) + '" fill="#c9d3ee" font-size="13">100</text><text x="6" y="' + (y(.5) + 5) + '" fill="#c9d3ee" font-size="13">50</text><text x="12" y="' + (y(0) + 4) + '" fill="#c9d3ee" font-size="13">0</text>'
+      + '<text x="30" y="' + (Hh - 2) + '" fill="#c9d3ee" font-size="13">0\'</text><text x="' + (x(45) - 8) + '" y="' + (Hh - 2) + '" fill="#c9d3ee" font-size="13">45\'</text><text x="' + (x(90) - 8) + '" y="' + (Hh - 2) + '" fill="#c9d3ee" font-size="13">90\'</text>'
+      + '<path d="' + ligne('pn') + '" fill="none" stroke="#9aa6c4" stroke-width="2" stroke-dasharray="5 4" vector-effect="non-scaling-stroke"/>'
+      + '<path d="' + ligne('pm') + '" fill="none" stroke="#1ed760" stroke-width="2.5" vector-effect="non-scaling-stroke"/>'
+      + '<circle cx="' + x(der.m).toFixed(1) + '" cy="' + y(der.pm).toFixed(1) + '" r="4" fill="#1ed760"/></svg>'
+      + '<div style="font-size:14px;margin-top:4px;"><b style="color:#1ed760;">━ ' + esc(moiDom ? hN : aN) + ' ' + Math.round(der.pm * 100) + ' %</b> &nbsp; <span style="color:#c9d3ee;">┅ Nul ' + Math.round(der.pn * 100) + ' %</span></div>';
+  };
+  var tour = async function () {
+    if (!box.isConnected) return;
+    var y = function (d) { return d.getUTCFullYear() + String(d.getUTCMonth() + 1).padStart(2, '0') + String(d.getUTCDate()).padStart(2, '0'); };
+    var d0 = new Date(ev.t || Date.now()), C = null;
+    try { C = await _g45CdLire('soccer', lg, ev.id, [y(d0), y(new Date(d0.getTime() - 864e5)), y(new Date())]); } catch (e) {}
+    if (!box.isConnected) return;
+    if (!C || C.state !== 'in' || !(C.h || C.a)) {
+      box.innerHTML = '<div style="font-size:14px;font-weight:800;color:#ff8a8a;">📈 COTES EN DIRECT</div><div style="font-size:14px;color:#c9d3ee;margin-top:4px;">' + (C && C.state === 'post' ? 'Match terminé.' : 'Pas de cote en direct pour ce match pour l\'instant.') + '</div>' + (H.length ? courbe() : '');
+      if (!C || C.state !== 'post') setTimeout(tour, 45000);
+      return;
+    }
+    if (C.h && C.h !== 'off' && C.a && C.a !== 'off' && C.d && C.d !== 'off') {
+      var ih = 1 / C.h, ia = 1 / C.a, id = 1 / C.d, t = ih + ia + id;
+      H.push({ m: minute(C.clk), pm: (moiDom ? ih : ia) / t, pn: id / t });
+      if (H.length > 200) H = H.slice(-200);
+      try { sessionStorage.setItem(cle, JSON.stringify(H)); } catch (e) {}
+    }
+    var row = function (n, v) { return '<div style="display:flex;justify-content:space-between;font-size:14px;padding:3px 0;"><span>' + esc(n) + '</span><b style="color:' + (v === 'off' ? '#f5c542' : '#1ed760') + ';">' + (v === 'off' ? '⏸️ suspendue' : fr(v)) + '</b></div>'; };
+    var html = '<div style="font-size:14px;font-weight:800;color:#ff8a8a;margin-bottom:6px;">📈 COTES EN DIRECT (' + esc(C.prov) + ')' + (C.clk ? ' · ' + esc(C.clk) : '') + '</div>'
+      + row(hN, C.h) + row('Nul', C.d) + row(aN, C.a);
+    if (C.L != null && (C.ov || C.un)) html += '<div style="display:flex;justify-content:space-between;font-size:14px;padding:3px 0;"><span>Buts ' + String(C.L).replace('.', ',') + '</span><b style="color:#1ed760;">+ ' + fr(C.ov) + ' / − ' + fr(C.un) + '</b></div>';
+    html += courbe() + '<div style="font-size:13px;color:#c9d3ee;margin-top:6px;">Relues toutes les 45 s · cotes du site américain DraftKings, pas celles de ton book.</div>';
+    box.innerHTML = html;
+    setTimeout(tour, 45000);
+  };
+  tour();
+};
 var _G45_CD_US = { 'basketball|nba': 'points', 'baseball|mlb': 'runs', 'hockey|nhl': 'buts' };   /* 20261024p */
 window._G45_CD_US = _G45_CD_US;
 function _g45CdSusp(u) { return u === 'points' ? 'temps mort, lancers…' : (u === 'runs' ? 'action en cours…' : 'but, pénalité…'); }
