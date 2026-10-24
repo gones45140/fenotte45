@@ -59791,6 +59791,14 @@ async function _g45BandScores(chemin, jour) {
   } catch (e) { return []; }
 }
 
+/* 20261024q (bandeau « 8:35 - 2nd » → « oui » en français) : sport lu dans ev.uid (s:40 basket, s:70 hockey, s:20 football US,
+   s:1 baseball, sinon foot) puis _g45EtatFr (« 8:35 · 2e P »). */
+function _g45BandEtatFr(ev, t) {
+  try {
+    var m = /s:(\d+)/.exec(String(ev && ev.uid || '')), sp = ({ '40': 'basketball', '70': 'hockey', '20': 'football', '1': 'baseball' })[m && m[1]] || 'soccer';
+    return typeof _g45EtatFr === 'function' ? _g45EtatFr(t, sp) : t;
+  } catch (e) { return t; }
+}
 function _g45BandTuile(ev, monNom, estMoi) {
   var comp = (ev.competitions && ev.competitions[0]) || {};
   var cs = comp.competitors || [];
@@ -59799,7 +59807,7 @@ function _g45BandTuile(ev, monNom, estMoi) {
   var live = st.state === 'in', fin = st.state === 'post', pre = st.state === 'pre';
 
   var etat = live
-    ? '<span class="g45-mt-st live"><span class="g45-mt-pt"></span>' + (st.shortDetail || 'En direct') + '</span>'
+    ? '<span class="g45-mt-st live"><span class="g45-mt-pt"></span>' + (_g45BandEtatFr(ev, st.shortDetail) || 'En direct') + '</span>'
     : (fin ? '<span class="g45-mt-st">Terminé</span>'
            : '<span class="g45-mt-st soon">' + _g45BandQuand(ev.date) + '</span>');
 
