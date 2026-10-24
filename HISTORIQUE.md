@@ -1420,6 +1420,7 @@ Il est dans les DEUX dépôts (gones45 et fenotte45), identique (cmp). Jamais de
   DÉDUITS de deux instantanés (`_g45F1OffEvenements`), donc seulement depuis
   l'ouverture de la page. Carte des voitures et
   temps aux stands : réservés à F1 TV en direct depuis 2025.
+  20261024z (Q3 Austin : « il manque clairement les meilleurs temps par secteur » ; « la carte s'arrête net… même 10 [min] ») : WORKER /f1live redéployé (TOPICS + TimingStats ; p.bs = BestSectors [temps, rang], lecture prudente ; copie avant/après gardée en session, 18 liaisons et cron */5 revérifiés). Un 1er essai avait été retiré par prudence (502 vus = /f1arch pendant la séance, pas lié). app.js : cases S1/S2/S3 = meilleur secteur du pilote EN GROS (violet rang 1, vert 2-3, blanc), secteur en cours en petit ; `_g45F1OffActif` : séance VUE active reste active 10 min après Finished (`window._g45F1Grace`), bandeau « 🏁 Séance terminée · carte encore N min » (`_g45F1OffGrace`). Format BestSectors NON sondé en direct : commande console donnée à Antoine pour la course. Smoke f1bs (98).
 - MOTOGP et CGU (09/10) : CGU motogp.com point 3 (lues par Antoine) = usage PERSONNEL seulement, « not permitted to provide, copy…
   or transmit any Content… whether for profit or free of charge » (api.motogp.pulselive.com : pas de robots.txt ; TimingPass = direct PAYANT).
   20261007h retirait tout le MotoGP de bet45 → Antoine : « ON A PLUS RIEN » → 20261007i : existant REMIS sur bet45 (choix A) ; seul reste

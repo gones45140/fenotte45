@@ -42217,7 +42217,23 @@ function _g45F1OffEnDirect(j) { return /^(Started|Aborted|Suspended)$/i.test(Str
    Malaisie, le statut n'était ni Started ni Aborted ni Suspended (bandeau « Dernier état connu ») → aucun tableau sans l'aperçu, et l'aperçu
    ne se rafraîchissait pas. Séance ACTIVE = toute séance de ce GP pas encore finie (Finished / Finalised / Ends) : tableau posé et relu toutes
    les 5 s. Le bandeau garde « 🔴 En direct » pour Started / Aborted / Suspended seulement. */
-function _g45F1OffActif(j) { return _g45F1OffEnDirect(j) || !/^(Finished|Finalised|Ends)$/i.test(String((j.sess || {}).statut || '')); }
+function _g45F1OffActif(j) {
+  var base = _g45F1OffEnDirect(j) || !/^(Finished|Finalised|Ends)$/i.test(String((j.sess || {}).statut || ''));
+  /* 20261024z (fin de Q3 Austin : « la carte s'arrête net… ça aurait pu attendre un peu » → « oui, même 10 ») : une séance VUE active
+     sur cette page reste « active » 10 min après sa fin (tour de décélération) : tableau et carte continuent, bandeau « 🏁 Séance terminée ».
+     Séance jamais vue en cours (page ouverte après la fin) : pas de délai, comme avant. */
+  var k = ((j.sess || {}).debut || '') + '|' + ((j.sess || {}).libelle || ''), G = window._g45F1Grace || (window._g45F1Grace = {});
+  if (base) { G[k] = { vu: 1 }; return true; }
+  var g = G[k]; if (!g) return false;
+  if (!g.fin) g.fin = Date.now();
+  return Date.now() - g.fin < 10 * 60e3;
+}
+/* 20261024z : minutes restantes de carte après la fin (0 = pas dans le délai) */
+function _g45F1OffGrace(j) {
+  var k = ((j.sess || {}).debut || '') + '|' + ((j.sess || {}).libelle || ''), g = (window._g45F1Grace || {})[k];
+  if (!g || !g.fin || _g45F1OffEnDirect(j) || !/^(Finished|Finalised|Ends)$/i.test(String((j.sess || {}).statut || ''))) return 0;
+  return Math.max(0, Math.ceil((10 * 60e3 - (Date.now() - g.fin)) / 60e3));
+}
 function _g45F1OffCourse(j) { return /race|sprint$/i.test(String(j.sess.type || j.sess.libelle || '')) && !/qualif|shootout/i.test(String(j.sess.libelle || '')); }
 var _G45_F1_PISTE = { '1': ['🟢 Piste libre', '#1ed760', '#0f5a2c'], '2': ['🟨 Drapeau jaune', '#f0b020', '#5a4a12'], '4': ['🚗 Safety Car', '#f0b020', '#5a4a12'],
   '5': ['🟥 Drapeau rouge', '#ff4545', '#5a1616'], '6': ['🚗 VSC', '#f0b020', '#5a4a12'], '7': ['🚗 Fin de VSC', '#f0b020', '#5a4a12'] };
@@ -42326,7 +42342,7 @@ function _g45F1OffHtml(j, apercu) {
   /* Bandeau */
   h += '<div style="background:linear-gradient(' + (ps ? ps[2] : '#26324f') + ',#141b2e);border-radius:8px;padding:10px;text-align:center;margin-bottom:8px;">'
     + '<div style="font-size:14px;font-weight:900;letter-spacing:2px;">' + (ps ? ps[0].toUpperCase() : '') + ' · ' + e(_g45F1SessFr(j.sess.libelle || j.sess.type).toUpperCase()) + (qPart ? ' · ' + qNom(qPart) : '') + '</div>'
-    + '<div style="font-size:13px;color:#c9d3ee;margin-top:2px;">' + (direct ? '🔴 En direct' : '⏺ Dernier état connu') + ' · ' + e(j.sess.lieu)
+    + '<div style="font-size:13px;color:#c9d3ee;margin-top:2px;">' + (direct ? '🔴 En direct' : (_g45F1OffGrace(j) ? '<b style="color:#fff;">🏁 Séance terminée · carte encore ' + _g45F1OffGrace(j) + ' min</b>' : '⏺ Dernier état connu')) + ' · ' + e(j.sess.lieu)
     + (j.tour.tot ? ' · <b style="color:#f0b020;">Tour ' + j.tour.cur + ' / ' + j.tour.tot + '</b>' : (j.sess.horloge ? ' · ⏱️ ' + e(j.sess.horloge) : ''))
     + ' · il y a ' + age + ' s</div>'
     + '<div style="font-size:12px;color:#c9d3ee;margin-top:2px;">🌡️ Air ' + e(j.meteo.air) + ' °C · piste ' + e(j.meteo.piste) + ' °C · ' + (j.meteo.pluie ? '🌧️ pluie' : (typeof _g45F1PluieRc === 'function' && _g45F1PluieRc(j)) || '💧 pas de pluie') + '</div></div>';   /* 20261004o */
@@ -42379,8 +42395,15 @@ function _g45F1OffHtml(j, apercu) {
       + '<td style="' + cel + 'text-align:right;font-weight:800;color:' + (p.dernierB ? '#b57bff' : (p.dernierP ? '#1ed760' : '#fff')) + ';">' + e(p.dernier || '—') + '</td>';
     for (var k = 0; k < 3; k++) {
       var x = (p.s || [])[k] || ['', 0, []], sg = x[2] || [];
+      /* 20261024z (Q3 Austin : « il manque clairement les meilleurs temps par secteur » → maquette « oui ») : worker /f1live p.bs =
+         meilleur S1/S2/S3 du pilote [temps, rang] (TimingStats). En GROS : violet = meilleur de la séance, vert = 2e-3e, blanc sinon ;
+         secteur du tour en cours en petit à côté. Pas de p.bs (ancien worker) : affichage d'avant. */
+      var bsk = (p.bs || [])[k] || null;
       h += '<td style="' + cel + '">' + (sg.length ? '<div style="display:flex;gap:2px;margin-bottom:3px;">' + sg.map(function (c) { return '<i style="display:block;width:7px;height:4px;border-radius:2px;background:' + _G45_F1_SEG[c] + ';"></i>'; }).join('') + '</div>' : '')
-        + '<span style="font-weight:700;color:' + cs(x) + ';">' + e(x[0] || '—') + '</span></td>';
+        + (bsk && bsk[0]
+          ? '<span style="font-weight:900;font-size:15px;color:' + (bsk[1] === 1 ? '#b57bff' : (bsk[1] >= 2 && bsk[1] <= 3 ? '#1ed760' : '#fff')) + ';">' + e(bsk[0]) + '</span>'
+            + (x[0] ? ' <span style="font-size:12px;font-weight:700;color:' + cs(x) + ';">' + e(x[0]) + '</span>' : '')
+          : '<span style="font-weight:700;color:' + cs(x) + ';">' + e(x[0] || '—') + '</span>') + '</td>';
     }
     h += '</tr>';
     if (qPart && qPart < 3 && qE[qPart] && p.pos === qE[qPart])
@@ -42410,7 +42433,7 @@ function _g45F1OffHtml(j, apercu) {
       + '<div style="font-size:14px;color:#fff;line-height:1.4;">' + x.html + '</div></div>';
   });
   h += '<div style="font-size:12px;color:#c9d3ee;margin-top:8px;">' + (direct ? 'Mise à jour toutes les 5 s · ' : (apercu ? 'Aperçu hors séance · ' : 'Séance terminée · '))
-    + 'violet = meilleur de la séance · vert = record perso · carte et temps aux stands : réservés à F1 TV en direct</div></div>';
+    + 'violet = meilleur de la séance · vert = record perso (secteurs en gros = meilleur du pilote, vert = 2e-3e) · carte et temps aux stands : réservés à F1 TV en direct</div></div>';
   return h;
 }
 /* Nouvel instantané : événements, flèches, puis affichage. */
