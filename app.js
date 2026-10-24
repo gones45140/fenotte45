@@ -71939,9 +71939,13 @@ window._g45TicketMatch = async function (o, cockpit) {
         var moi = cps.filter(function (q) { var t = q.team || {}; return [t.displayName, t.shortDisplayName, t.name, t.location].some(function (n) { var r = R(nz(n)); return r && (r === rq || rq.split(' ').every(function (w) { return r.split(' ').indexOf(w) >= 0; })); }); })[0];   /* tous les mots du ticket dans le nom ESPN (« Manchester United » ≠ City) */
         if (!moi || vu[ev.id]) return; var adv = cps.filter(function (q) { return q !== moi; })[0]; if (!adv) return;
         var stM = ((c.status || {}).type || {}).state; if (termine ? stM === 'pre' : stM === 'post') return;   /* 20261024s */
-        vu[ev.id] = 1; trouves.push({ adv: (adv.team || {}).displayName || '', dom: moi.homeAway === 'home', t: new Date(ev.date), comp: ((B.leagues || [])[0] || {}).name || o.competition || '', moi: (moi.team || {}).displayName || eq });
+        vu[ev.id] = 1; var tm = moi.team || {}; trouves.push({ ex: [tm.displayName, tm.shortDisplayName, tm.name, tm.location].some(function (n) { return R(nz(n)) === rq; }), adv: (adv.team || {}).displayName || '', dom: moi.homeAway === 'home', t: new Date(ev.date), comp: ((B.leagues || [])[0] || {}).name || o.competition || '', moi: (moi.team || {}).displayName || eq });
       });
     }
+    /* 20261024v (ticket Haaland « Aston Villa – Manchester City » : compétition vide, date « à vérifier ») : « Manchester City » → racine « manch »,
+       qui couvre AUSSI « Manchester United » (manch unite) → 2 matchs Premier League le même jour → rien proposé. Plusieurs matchs →
+       on garde ceux dont la racine est EXACTEMENT celle du ticket ; s'il en reste un seul, c'est lui. */
+    if (trouves.length > 1) { var tEx = trouves.filter(function (x) { return x.ex; }); if (tEx.length === 1) trouves = tEx; }
     if (trouves.length !== 1) return;
     var m = trouves[0], hh = String(m.t.getHours()).padStart(2, '0') + ':' + String(m.t.getMinutes()).padStart(2, '0');
     var dd = m.t.getFullYear() + '-' + String(m.t.getMonth() + 1).padStart(2, '0') + '-' + String(m.t.getDate()).padStart(2, '0');
