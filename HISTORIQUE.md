@@ -2534,6 +2534,9 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   g45LoadLeagueMatches : avant 10 h la veille est aussi chargée ; jour ouvert = celui d'un match EN COURS, sinon aujourd'hui, sinon le 1er jour
   à venir (2 essais Chromium, faux ESPN). (2) « tout jaune la ligne » : deux courbes dans la page (fenêtre du match + onglet Live) avec les mêmes
   id de clipPath (g45wpH / g45wpB) → id unique par courbe (_g45WpCourbe.n). (3) « écris moins gros le nom des équipes » : « ↑ … favoris » 12,5 → 9,5.
+  20261024m (capture 03:29, Colorado Avalanche : onglet Live = résumés vidéo NHL « alors qu'il y a un match en direct ») : loadTeamLive (DEUX
+  copies, les deux corrigées) — 🏒 / ⚾ / 🏀 : d'abord _espnMatchLiveData ; match en cours ou fini depuis < 12 h → loadEspnMatchLive (score +
+  courbe) ; sinon loadVideoHighlights comme avant. 3 essais Chromium (en cours → direct, fini il y a 20 h → vidéos, rien → vidéos), smoke 95.
   Smoke crPlus complété (Europe 1/2, Les deux 2/3, verrou).
   + (captures bet45 d'Antoine, compte au-delà des 30 jours : « Tendances disparaît, devrait rester à gauche et montrer cette page comme sur
   Pari / Tendances ») : indexfenotte.html n'avait PAS de bouton Tendances dans le menu (gones45 oui) → ajouté après Agenda, même onclick ;

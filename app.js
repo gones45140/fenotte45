@@ -7033,9 +7033,19 @@ function loadTeamLive(){
   var sport=uObj.sport||'⚽';
   if(sport==='🏉🇦🇺'||sport==='🏉'){loadTeamLiveTSDB(el,nom,sport);return;}
   // Sports avec résumés vidéo dédiés
-  if(sport==='🏒'||sport==='🏒🇺🇸') { loadVideoHighlights(el,nom,col,'nhl'); return; }
-  if(sport==='⚾'||sport==='⚾🇺🇸') { loadVideoHighlights(el,nom,col,'mlb'); return; }
-  if(sport==='🏀'||sport==='🏀🇺🇸') { loadVideoHighlights(el,nom,col,'nba'); return; }
+  /* 20261024m (capture 03:29 : Colorado Avalanche, onglet Live = résumés vidéo « alors qu'il y a un match en direct ») : NHL / MLB / NBA →
+     d'abord le DIRECT ESPN (loadEspnMatchLive, sport suivi depuis 20261024h : score + courbe de probabilité) si un match est en cours
+     ou fini depuis moins de 12 h ; sinon les résumés vidéo comme avant. (Copie en double de loadTeamLive : corrigée aux deux endroits.) */
+  var _usLg = (sport==='🏒'||sport==='🏒🇺🇸') ? 'nhl' : ((sport==='⚾'||sport==='⚾🇺🇸') ? 'mlb' : ((sport==='🏀'||sport==='🏀🇺🇸') ? 'nba' : ''));
+  if(_usLg){
+    el.innerHTML='<div class="fc" style="text-align:center;padding:24px;color:var(--t2);font-size:14px;">⏳ Recherche du match en direct…</div>';
+    (async function(){
+      var d=null; try{ d = (typeof _espnMatchLiveData==='function') ? await _espnMatchLiveData(nom) : null; }catch(e){}
+      var ev=d&&d.event, ok=!!(d&&d.summary&&d.sport&&d.sport!=='soccer'&&ev&&(ev.state==='in'||(ev.state==='post'&&Date.now()-ev.t<12*3600e3)));
+      if(ok) loadEspnMatchLive(el, nom, col); else loadVideoHighlights(el,nom,col,_usLg);
+    })();
+    return;
+  }
   if(sport==='🏎️'||sport==='🏎') { loadVideoHighlights(el,nom,col,'f1'); return; }
 
   // ⚽ Football : match en direct (compos + stats) via ESPN, sans clé
@@ -14811,9 +14821,19 @@ function loadTeamLive(){
   var sport=uObj.sport||'⚽';
   if(sport==='🏉🇦🇺'||sport==='🏉'){loadTeamLiveTSDB(el,nom,sport);return;}
   // Sports avec résumés vidéo dédiés
-  if(sport==='🏒'||sport==='🏒🇺🇸') { loadVideoHighlights(el,nom,col,'nhl'); return; }
-  if(sport==='⚾'||sport==='⚾🇺🇸') { loadVideoHighlights(el,nom,col,'mlb'); return; }
-  if(sport==='🏀'||sport==='🏀🇺🇸') { loadVideoHighlights(el,nom,col,'nba'); return; }
+  /* 20261024m (capture 03:29 : Colorado Avalanche, onglet Live = résumés vidéo « alors qu'il y a un match en direct ») : NHL / MLB / NBA →
+     d'abord le DIRECT ESPN (loadEspnMatchLive, sport suivi depuis 20261024h : score + courbe de probabilité) si un match est en cours
+     ou fini depuis moins de 12 h ; sinon les résumés vidéo comme avant. (Copie en double de loadTeamLive : corrigée aux deux endroits.) */
+  var _usLg = (sport==='🏒'||sport==='🏒🇺🇸') ? 'nhl' : ((sport==='⚾'||sport==='⚾🇺🇸') ? 'mlb' : ((sport==='🏀'||sport==='🏀🇺🇸') ? 'nba' : ''));
+  if(_usLg){
+    el.innerHTML='<div class="fc" style="text-align:center;padding:24px;color:var(--t2);font-size:14px;">⏳ Recherche du match en direct…</div>';
+    (async function(){
+      var d=null; try{ d = (typeof _espnMatchLiveData==='function') ? await _espnMatchLiveData(nom) : null; }catch(e){}
+      var ev=d&&d.event, ok=!!(d&&d.summary&&d.sport&&d.sport!=='soccer'&&ev&&(ev.state==='in'||(ev.state==='post'&&Date.now()-ev.t<12*3600e3)));
+      if(ok) loadEspnMatchLive(el, nom, col); else loadVideoHighlights(el,nom,col,_usLg);
+    })();
+    return;
+  }
   if(sport==='🏎️'||sport==='🏎') { loadVideoHighlights(el,nom,col,'f1'); return; }
 
   // ⚽ Football : match en direct (compos + stats) via ESPN, sans clé
