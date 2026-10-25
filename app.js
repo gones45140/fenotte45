@@ -80877,37 +80877,68 @@ window._g45TrTestVoit = function () { try { return (typeof _g45SanteActive === '
   var TYPES = { 'Pass Reception': 'passe complétée', 'Pass Incompletion': 'passe incomplète', 'Rush': 'course', 'Sack': 'sack', 'Interception': 'interception',
     'Punt': 'punt', 'Field Goal Good': 'field goal réussi', 'Field Goal Missed': 'field goal manqué', 'Passing Touchdown': 'touchdown (passe)', 'Rushing Touchdown': 'touchdown (course)',
     'Penalty': 'pénalité', 'Kickoff': 'coup d\'envoi', 'Fumble Recovery (Opponent)': 'fumble perdu', 'Timeout': 'temps mort', 'Extra Point Good': 'transformation réussie' };
-  window._g45NflDriveHtml = function (cp) {
-    var s = cp && cp.situation; if (!s || s.yardLine == null || !s.possession) return '';
+  /* 20261025q (« fais une animation ») : ballon qui GLISSE de sa position d'avant à la nouvelle (nouvelle action seulement), bandeau
+     TOUCHDOWN / FIELD GOAL qui pulse 3 fois avec un halo. anim = false → même dessin sans animation (copie remise par l'observateur). */
+  if (!document.getElementById('g45-nfl-anim')) {
+    var stA = document.createElement('style'); stA.id = 'g45-nfl-anim';
+    stA.textContent = '@keyframes g45nflBall{from{left:var(--de)}to{left:var(--a)}}@keyframes g45nflPulse{0%,100%{transform:scale(1);box-shadow:0 0 0 rgba(255,255,255,0)}50%{transform:scale(1.06);box-shadow:0 0 22px var(--hal)}}'
+      /* 20261025q (« TD un truc qui clignote, un truc sympa ») : bandeau vert ↔ jaune, en-but qui clignote, 🎉 qui tombent */
+      + '@keyframes g45nflFlash{0%,100%{background:#1e5a2e;color:#fff}50%{background:#ffd400;color:#0b101d}}'
+      + '@keyframes g45nflEz{0%,100%{filter:none}50%{filter:brightness(2.2) saturate(1.6)}}'
+      + '@keyframes g45nflConf{0%{transform:translateY(-30px) rotate(0);opacity:1}100%{transform:translateY(110px) rotate(320deg);opacity:0}}';
+    (document.head || document.documentElement).appendChild(stA);
+  }
+  window._g45NflDriveHtml = function (cp, anim) {
+    /* 20261025q (« rien ne s'affiche chez BET » après un field goal ; « affiche un TD ou un field goal ») : après un score / avant le coup d'envoi,
+       ESPN ne donne plus la position (possession / possessionText vides) → terrain SANS ballon + dernière action ; score (lastPlay.scoreValue > 0
+       ou touchdown / field goal / safety) → grand bandeau « TOUCHDOWN » / « FIELD GOAL » au logo de l'équipe qui marque. */
+    var s = cp && cp.situation; if (!s || !(s.lastPlay || s.possession)) return '';
     var cs = cp.competitors || [], aw = cs.filter(function (x) { return x.homeAway === 'away'; })[0] || cs[1] || {}, ho = cs.filter(function (x) { return x.homeAway === 'home'; })[0] || cs[0] || {};
     var ta = aw.team || {}, th = ho.team || {}, abA = String(ta.abbreviation || ''), abH = String(th.abbreviation || '');
     /* position absolue depuis l'en-but de l'équipe à l'extérieur */
     var m = /^\s*([A-Z]{2,4})\s+(\d{1,2})\s*$/.exec(String(s.possessionText || '')), abs = null;
     if (m) abs = m[1] === abA ? +m[2] : (m[1] === abH ? 100 - +m[2] : null);
     else if (+s.yardLine === 50) abs = 50;
-    if (abs == null) return '';
+    var sansPos = abs == null || s.yardLine == null || !s.possession;
+    if (sansPos) abs = 50;
     var y = +s.yardLine, sens = (100 - y === abs) ? -1 : 1, base = (100 - y === abs) ? 100 : 0;   /* abs = base + sens × yardLine */
     var conv = function (yl) { return yl == null || isNaN(+yl) ? null : base + sens * (+yl); };
-    var att = String(s.possession) === String(ta.id) ? ta : th, dir = att === ta ? 1 : -1;
-    var lp = s.lastPlay || {}, x0 = conv(lp.start && lp.start.yardLine), x1 = conv(lp.end && lp.end.yardLine);
-    var fd = s.distance > 0 ? Math.max(0, Math.min(100, abs + dir * s.distance)) : null;
+    var lp = s.lastPlay || {}, lpT = lp.team && lp.team.id ? (String(lp.team.id) === String(ta.id) ? ta : (String(lp.team.id) === String(th.id) ? th : null)) : null;
+    var att = sansPos ? (lpT || ta) : (String(s.possession) === String(ta.id) ? ta : th), dir = att === ta ? 1 : -1;
+    var x0 = sansPos ? null : conv(lp.start && lp.start.yardLine), x1 = sansPos ? null : conv(lp.end && lp.end.yardLine);
+    var tt = String((lp.type && lp.type.text) || ''), marque = '';
+    if (/touchdown/i.test(tt) || (+lp.scoreValue >= 6)) marque = 'TOUCHDOWN';
+    else if (/field goal good/i.test(tt) || +lp.scoreValue === 3) marque = 'FIELD GOAL';
+    else if (/safety/i.test(tt)) marque = 'SAFETY';
+    var td = marque === 'TOUCHDOWN' && anim;
+    var bandeau = marque ? '<div style="' + (anim ? '--hal:' + (marque === 'TOUCHDOWN' ? '#1ed760' : '#f0b020') + ';animation:g45nflPulse .9s ease-in-out 3' + (td ? ',g45nflFlash .45s steps(1) 12' : '') + ';' : '') + 'display:flex;align-items:center;justify-content:center;gap:10px;background:' + (marque === 'TOUCHDOWN' ? '#1e5a2e' : '#4a3c0e') + ';border:2px solid ' + (marque === 'TOUCHDOWN' ? '#1ed760' : '#f0b020') + ';border-radius:10px;padding:8px 12px;margin-bottom:8px;">'
+      + (lpT && lpT.logo ? '<img src="' + esc(lpT.logo) + '" alt="" onerror="this.remove()" style="width:34px;height:34px;object-fit:contain;background:#fff;border-radius:50%;padding:2px;">' : '')
+      + '<span style="font-size:22px;font-weight:900;letter-spacing:1px;">' + (marque === 'TOUCHDOWN' ? '🏈 ' : (marque === 'FIELD GOAL' ? '🥅 ' : '')) + marque + '</span>'
+      + (lpT ? '<span style="font-size:15px;font-weight:800;">' + esc(lpT.shortDisplayName || lpT.abbreviation || '') + (+lp.scoreValue > 0 ? ' +' + lp.scoreValue : '') + '</span>' : '') + '</div>' : '';
+    var fd = !sansPos && s.distance > 0 ? Math.max(0, Math.min(100, abs + dir * s.distance)) : null;
     var pc = function (v) { return (8 + Math.max(0, Math.min(100, v)) * 0.84).toFixed(2) + '%'; };   /* 8 % d'en-but de chaque côté */
     var col = function (t, d) { return t.color ? '#' + t.color : d; };
     var lignes = ''; for (var k = 10; k <= 90; k += 10) lignes += '<div style="position:absolute;top:0;bottom:0;left:' + pc(k) + ';width:1px;background:rgba(255,255,255,.45);"></div><span style="position:absolute;bottom:3px;left:' + pc(k) + ';transform:translateX(-50%);font-size:12px;color:#fff;">' + (k <= 50 ? k : 100 - k) + '</span>';
     var fleche = (x0 != null && x1 != null && x0 !== x1) ? '<div style="position:absolute;top:44px;height:4px;border-radius:2px;background:#fff;left:' + pc(Math.min(x0, x1)) + ';width:' + (Math.abs(x1 - x0) * 0.84).toFixed(2) + '%;"></div>' : '';
-    var ez = function (t, cote) { return '<div style="position:absolute;top:0;bottom:0;' + cote + ':0;width:8%;background:' + col(t, '#333') + ';display:flex;align-items:center;justify-content:center;"><span style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:12px;font-weight:900;color:' + (t.alternateColor ? '#' + t.alternateColor : '#fff') + ';">' + esc(t.shortDisplayName || t.abbreviation || '') + '</span></div>'; };
+    /* en-but où le touchdown est marqué = celui de l'ADVERSAIRE de l'équipe qui marque */
+    var ezTd = td && lpT ? (lpT === ta ? th : ta) : null;
+    var ez = function (t, cote) { return '<div style="position:absolute;top:0;bottom:0;' + cote + ':0;width:8%;' + (ezTd === t ? 'animation:g45nflEz .5s ease-in-out 8;' : '') + 'background:' + col(t, '#333') + ';display:flex;align-items:center;justify-content:center;"><span style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:12px;font-weight:900;color:' + (t.alternateColor ? '#' + t.alternateColor : '#fff') + ';">' + esc(t.shortDisplayName || t.abbreviation || '') + '</span></div>'; };
     var down = (DOWN[s.down] || '') + (s.down ? ' & ' + (s.distance || '') : '');
     var typ = (lp.type && TYPES[lp.type.text]) || (lp.type && lp.type.text) || '';
     var gain = lp.statYardage != null && lp.statYardage !== 0 ? (lp.statYardage > 0 ? '+' : '') + lp.statYardage + ' yard' + (Math.abs(lp.statYardage) > 1 ? 's' : '') : '';
+    if (gain && /field goal|punt|kickoff/i.test(tt)) gain = 'de ' + Math.abs(lp.statYardage) + ' yards';   /* 20261025q : distance du coup de pied, pas un gain */
     return '<div class="g45-nfl-drive" style="background:rgba(21,28,48,.96);border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:12px 14px;margin:10px 0;color:#fff;">'
-      + '<div style="font-size:15px;font-weight:900;margin-bottom:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">🏈 DRIVE EN COURS · ' + (att.logo ? '<img src="' + esc(att.logo) + '" alt="" style="width:24px;height:24px;object-fit:contain;" onerror="this.remove()">' : '') + esc(att.shortDisplayName || att.displayName || att.abbreviation || '') + (s.isRedZone ? ' · <span style="color:#ff6b6b;">zone rouge</span>' : '') + '</div>'
+      + bandeau
+      + (sansPos ? '<div style="font-size:15px;font-weight:900;margin-bottom:8px;">🏈 EN ATTENTE DU COUP D\'ENVOI</div>' : '')
+      + '<div style="font-size:15px;font-weight:900;margin-bottom:8px;display:' + (sansPos ? 'none' : 'flex') + ';align-items:center;gap:6px;flex-wrap:wrap;">🏈 DRIVE EN COURS · ' + (att.logo ? '<img src="' + esc(att.logo) + '" alt="" style="width:24px;height:24px;object-fit:contain;" onerror="this.remove()">' : '') + esc(att.shortDisplayName || att.displayName || att.abbreviation || '') + (s.isRedZone ? ' · <span style="color:#ff6b6b;">zone rouge</span>' : '') + '</div>'
       + '<div style="position:relative;height:96px;border-radius:8px;overflow:hidden;background:repeating-linear-gradient(90deg,#2e7d32 0 8.4%,#33873a 8.4% 16.8%);">'
       + ez(ta, 'left') + ez(th, 'right') + lignes + fleche
+      + (td ? [8, 22, 36, 50, 64, 78, 92].map(function (x, i) { return '<span style="position:absolute;top:0;left:' + x + '%;font-size:20px;opacity:0;animation:g45nflConf 1.6s ease-in ' + (i * 0.15).toFixed(2) + 's 3;">' + (i % 2 ? '🏈' : '🎉') + '</span>'; }).join('') : '')
       + (fd != null ? '<div style="position:absolute;top:0;bottom:0;width:3px;background:#ffd400;left:' + pc(fd) + ';"></div>' : '')
       /* 20261025o (« mets un petit logo visuel pour voir qui a le ballon ») : logo de l'équipe en possession, rond blanc, au-dessus du ballon */
-      + (att.logo ? '<img src="' + esc(att.logo) + '" alt="" onerror="this.remove()" style="position:absolute;top:4px;left:' + pc(abs) + ';transform:translateX(-50%);width:26px;height:26px;object-fit:contain;background:#fff;border-radius:50%;padding:2px;box-shadow:0 1px 4px rgba(0,0,0,.5);">' : '')
-      + '<span style="position:absolute;top:34px;font-size:22px;transform:translateX(-50%);left:' + pc(abs) + ';">🏈</span></div>'
-      + '<div style="font-size:14px;margin-top:8px;"><b>' + esc(down) + (s.possessionText ? ' à ' + esc(s.possessionText) : '') + '</b>' + (typ ? ' · dernière action : ' + esc(typ) + (gain ? ', ' + gain : '') : '') + '</div>'
+      + (att.logo && !sansPos ? '<img src="' + esc(att.logo) + '" alt="" onerror="this.remove()" style="position:absolute;top:4px;left:' + pc(abs) + ';transform:translateX(-50%);width:26px;height:26px;object-fit:contain;background:#fff;border-radius:50%;padding:2px;box-shadow:0 1px 4px rgba(0,0,0,.5);">' : '')
+      + (sansPos ? '' : '<span style="position:absolute;top:34px;font-size:22px;transform:translateX(-50%);left:' + pc(abs) + ';' + (anim && x0 != null && x0 !== abs ? '--de:' + pc(x0) + ';--a:' + pc(abs) + ';animation:g45nflBall 1.2s ease-out;' : '') + '">🏈</span>') + '</div>'
+      + '<div style="font-size:14px;margin-top:8px;"><b>' + (sansPos ? '' : esc(down) + (s.possessionText ? ' à ' + esc(s.possessionText) : '')) + '</b>' + (typ ? (sansPos ? '' : ' · ') + 'dernière action : ' + esc(typ) + (gain ? ', ' + gain : '') : '') + '</div>'
       + '<div style="font-size:13px;color:#c9d3ee;margin-top:3px;">Ligne jaune = 1er down · flèche = dernière action · relu toutes les 30 s</div></div>';
   };
   window._renderGenericDetail = async function (el, sport, lg, eid) {
@@ -80933,8 +80964,9 @@ window._g45TrTestVoit = function () { try { return (typeof _g45SanteActive === '
         var st = cp && cp.status && cp.status.type && cp.status.type.state;
         var vieux = el.querySelector('.g45-nfl-drive');
         if (st !== 'in') { el._g45Dr = ''; el._g45DrBoucle = 0; if (vieux) vieux.remove(); return; }
-        var h = window._g45NflDriveHtml(cp);
-        if (h) el._g45Dr = h;
+        var lpId = String(((cp.situation || {}).lastPlay || {}).id || ''), neuf = lpId && lpId !== el._g45DrLp; if (lpId) el._g45DrLp = lpId;
+        var h = window._g45NflDriveHtml(cp, neuf);   /* 20261025q : animé seulement pour une NOUVELLE action */
+        if (h) el._g45Dr = window._g45NflDriveHtml(cp, false);
         if (h) { var d = document.createElement('div'); d.innerHTML = h; var n = d.firstChild; if (vieux) vieux.replaceWith(n); else el.insertBefore(n, el.firstChild); }
         setTimeout(tour, 30000);
       };
