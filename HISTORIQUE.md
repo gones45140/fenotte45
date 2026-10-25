@@ -2305,6 +2305,7 @@ TENDANCES (20261014m, « il faudrait les stats et book % comme en bas sur chaque
   RÉSULTAT (2025, 1 577 matchs ; en moyenne le favori de l'avis gagne + 6,2 points de plus que prévu) : local 251 matchs réel 52,2 / prévu 51,8 ;
   local favori 147 → + 6,3 (= la moyenne) ; local outsider 104 → − 8,1 (≈ la moyenne) ⇒ jouer chez soi n'apporte RIEN. Compatriotes 70 →
   + 2,5 (≈ 4 points de surprises en plus que d'habitude, trop peu de matchs pour conclure) ; compatriotes chez eux 15 (trop peu). Rien changé dans l'avis.
+- 🎾 20261025d (sonde d'Antoine : Río Ladies Open, Queretaro, Curitiba, Valle d'Aosta = « WTA 250 » ; « Grand Prix Auvergne-Rhône-Alpes » = « ATP 250 » ; Oliynykova – Hontama pas pariable en France ; choix B « grisés + bandeau, Pinnacle les propose peut-être ») : `_g45TnCat` — WTA 250 et ATP 250 = LISTES de noms ; tournoi inconnu = 'w1' (WTA 125 / ITF) ou 'ch' (Challenger). `_g45TnPetit`, `_G45_TN_PETIT_TXT` ; liste du jour : bandeau sous l'en-tête du tournoi + cartes grisées ; résultats d'analyse : bandeau + carte grisée. Robot (`_g45TnGrand`) : w1 / ch exclus comme les 250. Test node 15/15 sur la sonde, smoke 100.
 - 🚴 20261022z — PROFIL D'ÉTAPE (capture É21 Paris « ça on pourrait l'améliorer ? », maquette maquette-profil-etape « oui ») : _g45RcProfileHTML
   appelle _g45RcSVG2 (l'ancien _g45RcSVG reste, plus appelé) : échelle ≥ 600 m (base 0 m sous 600 m ; pas 100/200/250/500/1000), lignes
   d'altitude, km tous les 25 / 10 / 5 km, couleurs = pente moyenne sur 500 m (_g45RcPente, _g45RcAltAt interpolé), doigt / souris → km,

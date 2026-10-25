@@ -78621,15 +78621,22 @@ window._g45AgJouUs = async function (nowTs) {
     if (lg === 'wta') {
       if (/indian wells|bnp paribas open|miami|madrid|internazionali|italia|\brome\b|canad|national bank|omnium banque|cincinnati|western|qatar|doha|dubai|beijing|china open|wuhan/i.test(n)) return 'm1000';
       /* 20261020n : WTA 500 (liste de noms, calendrier habituel — à corriger si un tournoi est mal classé) ; le reste = WTA 250 */
-      return /brisbane|adelaide|abu dhabi|linz|charleston|stuttgart|porsche|strasbourg|berlin|queen|bad homburg|eastbourne|washington|citi|seoul|korea open|pan pacific|toray|tokyo|ningbo|merida|m[eé]rida|san diego|monterrey|guadalajara|zhengzhou/i.test(n) ? 'w5' : 'w2';
+      return /brisbane|adelaide|abu dhabi|linz|charleston|stuttgart|porsche|strasbourg|berlin|queen|bad homburg|eastbourne|washington|citi|seoul|korea open|pan pacific|toray|tokyo|ningbo|merida|m[eé]rida|san diego|monterrey|guadalajara|zhengzhou/i.test(n) ? 'w5'
+        /* 20261025d (sonde d'Antoine : Río Ladies Open, Queretaro, Curitiba, Valle d'Aosta classés « WTA 250 » ; Oliynykova – Hontama « pas
+           possible de parier en France ») : WTA 250 = liste de noms ; un tournoi WTA INCONNU = petit tournoi (WTA 125 / ITF) → 'w1'. */
+        : (/asb classic|auckland|hobart|hua hin|singapore|transylvania|cluj|austin|atx open|bogot|colsanitas|rouen|rabat|morocco|lalla meryem|libema|hertogenbosch|rosmalen|nottingham|birmingham|ia[sș]i|hamburg|palermo|prague|praha|budapest|cleveland|s[aã]o paulo|sp open|hong kong|jiujiang|jiangxi|osaka|japan open|kinoshita|guangzhou|chennai|monastir|jasmin|lausanne|mallorca|ostrava|tallinn|portoro|granby|parma|bad gastein|nanchang|tianjin|kuala lumpur|lyon|merida/i.test(n) ? 'w2' : 'w1');
     }
     if (/indian wells|bnp paribas open|miami|monte.?carlo|madrid|internazionali|italia|\brome\b|canad|national bank|omnium banque|cincinnati|western|shanghai|paris masters|rolex paris|bercy/i.test(n)) return 'm1000';
     if (/rotterdam|abn amro|qatar|doha|rio open|acapulco|abierto mexicano|dubai|barcelona|halle|terra wortmann|queen|cinch|hamburg|washington|citi|mubadala|tokyo|japan open|kinoshita|china open|beijing|basel|swiss indoors|vienna|erste bank|bmw open|munich|dallas/i.test(n)) return 'a500';
-    return 'a250';
+    /* 20261025d : ATP 250 = liste de noms ; un tournoi ATP INCONNU (« Grand Prix Auvergne-Rhône-Alpes ») = Challenger → 'ch'. */
+    return /brisbane|hong kong|adelaide|auckland|asb classic|montpellier|occitanie|c[oó]rdoba|buenos aires|argentina open|delray|marseille|13 open|santiago|chile open|los cabos|houston|clay court|marrakech|hassan|bucharest|tiriac|estoril|geneva|gen[eè]ve|open parc|lyon|stuttgart|boss open|hertogenbosch|libema|mallorca|eastbourne|b[aå]stad|nordea|gstaad|umag|plava laguna|kitzb|generali|atlanta|winston|chengdu|hangzhou|zhuhai|antwerp|european open|almaty|stockholm|nordic|metz|moselle|belgrade|athens|hellenic|newport|hall of fame|banja luka|srpska|astana|sofia|pune|maharashtra|doha|qatar|rio de janeiro|newport|winston-salem/i.test(n) ? 'a250' : 'ch';
   };
-  var CAT = { gc: 'Grand Chelem', m1000: 'Masters / WTA 1000', a500: 'ATP 500', a250: 'ATP 250', fin: 'Finals', eq: 'par équipes', w5: 'WTA 500', w2: 'WTA 250' };
+  var CAT = { gc: 'Grand Chelem', m1000: 'Masters / WTA 1000', a500: 'ATP 500', a250: 'ATP 250', fin: 'Finals', eq: 'par équipes', w5: 'WTA 500', w2: 'WTA 250', w1: 'WTA 125 / ITF', ch: 'Challenger' };
+  /* 20261025d (choix B d'Antoine : « les laisser grisés avec un bandeau… Pinnacle les propose peut-être ») : petit tournoi → grisé + bandeau */
+  window._g45TnPetit = function (cat) { return /^(w1|ch)$/.test(String(cat || '')); };
+  window._G45_TN_PETIT_TXT = '🚫 Petit tournoi : souvent pas pariable sur les books français (Pinnacle le propose peut-être)';
   /* 20261020n (« 250 ET MOINDRE ON LAISSE TOMBER ») : robot officiel et liste du jour = 500, 1000, Grands Chelems, Finals seulement */
-  window._g45TnGrand = function (cat) { return !/^(a250|w2|eq)$/.test(String(cat || '')); };
+  window._g45TnGrand = function (cat) { return !/^(a250|w2|eq|w1|ch)$/.test(String(cat || '')); };   /* 20261025d : + w1, ch */
   var SF = { terre: { l: 'Terre', i: '🟧', c: '#f0a050' }, dur: { l: 'Dur', i: '🟦', c: '#6aa8ff' }, salle: { l: 'Salle', i: '🏠', c: '#7dd3fc' }, gazon: { l: 'Gazon', i: '🟩', c: '#7dffb0' } };
 
   /* pays (dernier morceau de « Ville, Pays » d'ESPN) → nom français, continent, drapeau */
@@ -79506,7 +79513,7 @@ window._g45AgJouUs = async function (nowTs) {
   var lsP = function (k, v) { try { localStorage.setItem(k, String(v)); } catch (e) {} };
   var jourDe = function () { return lsG('g45tn_jour', '0') === '1' ? 1 : 0; };
   var ymdJ = function (n) { var d = new Date(); d.setDate(d.getDate() + n); return (typeof _g45ymd === 'function') ? _g45ymd(d) : ''; };
-  var RANG = { gc: 0, fin: 1, m1000: 2, a500: 3, w5: 3, a250: 4, w2: 4 };
+  var RANG = { gc: 0, fin: 1, m1000: 2, a500: 3, w5: 3, a250: 4, w2: 4, w1: 5, ch: 5 };   /* 20261025d */
   var gonesSansLimite = function () { try { return typeof _g45SanteActive === 'function' && _g45SanteActive(); } catch (e) { return false; } };
   window._g45TnListe = async function (n) {
     var ymd = ymdJ(n);
@@ -79584,7 +79591,8 @@ window._g45AgJouUs = async function (nowTs) {
     ok.forEach(function (x, i) {
       var m = x.m, cc = x.conf === 'forte' ? '#1ed760' : (x.conf === 'moyenne' ? '#f0c828' : '#c9d3ee'), G = x.qui === 'a' ? m.a : m.b, s = SF[x.sf] || SF.dur;
       var hr = ''; try { hr = new Date(m.t).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }); } catch (e) {}
-      h += '<div style="background:#1e2740;border-left:5px solid ' + cc + ';border-radius:10px;padding:10px 12px;margin-top:9px;">'
+      h += '<div style="background:#1e2740;border-left:5px solid ' + cc + ';border-radius:10px;padding:10px 12px;margin-top:9px;' + (window._g45TnPetit(m.cat) ? 'opacity:.8;' : '') + '">'   /* 20261025d */
+        + (window._g45TnPetit(m.cat) ? '<div style="font-size:14px;font-weight:800;color:#fff;background:#3a2a12;border:1px solid #f0b020;border-radius:8px;padding:5px 9px;margin-bottom:6px;">' + window._G45_TN_PETIT_TXT + '</div>' : '')
         + '<div style="display:flex;justify-content:space-between;gap:8px;font-size:15px;"><b>' + esc(m.a.n) + ' – ' + esc(m.b.n) + '</b><span style="flex:none;">🕒 ' + hr + '</span></div>'
         + '<div style="margin-top:4px;"><span style="font-size:12px;font-weight:800;background:#0b101d;border-radius:6px;padding:2px 8px;">' + (CAT[m.cat] || '') + ' · ' + esc(m.tn) + ' · ' + s.i + ' ' + s.l + (x.pf ? ' · ' + (function (f) { try { return String.fromCodePoint.apply(null, f.split('').map(function (c) { return 127397 + c.charCodeAt(0); })); } catch (e) { return ''; } })(x.pf) + ' ' + esc(x.py) : '') + '</span></div>'   /* 20261023b (« rajoute le drapeau du pays du lieu du tournoi ») */
         /* 20261022v (« ça se touche un peu trop ») : blocs séparés par un espace (flex + gap), cote BET45 en pastille jaune texte noir ; passe à la ligne entre blocs */
@@ -79614,9 +79622,11 @@ window._g45AgJouUs = async function (nowTs) {
     var h = '', tourPrec = '';
     L.forEach(function (m, i) {
       var s = SF[window._g45TnSurf(m.tn, false)] || SF.dur;
-      if (m.tn !== tourPrec) { h += '<div style="font-size:15px;font-weight:800;background:#0b101d;display:inline-block;padding:4px 10px;border-radius:7px;margin:10px 0 6px;color:' + (s.c || '#fff') + ';">'   /* 20261021b : en-tête de la couleur de la surface */ + (m.lg === 'wta' ? 'WTA' : 'ATP') + ' · ' + esc(m.tn) + ' · ' + (CAT[m.cat] ? CAT[m.cat] + ' · ' : '') + s.i + ' ' + s.l + '</div>'; tourPrec = m.tn; }
+      if (m.tn !== tourPrec) { h += '<div style="font-size:15px;font-weight:800;background:#0b101d;display:inline-block;padding:4px 10px;border-radius:7px;margin:10px 0 6px;color:' + (s.c || '#fff') + ';">'   /* 20261021b : en-tête de la couleur de la surface */ + (m.lg === 'wta' ? 'WTA' : 'ATP') + ' · ' + esc(m.tn) + ' · ' + (CAT[m.cat] ? CAT[m.cat] + ' · ' : '') + s.i + ' ' + s.l + '</div>'
+        + (window._g45TnPetit(m.cat) ? '<div style="font-size:14px;font-weight:800;color:#fff;background:#3a2a12;border:1px solid #f0b020;border-radius:8px;padding:6px 10px;margin:0 0 6px;">' + window._G45_TN_PETIT_TXT + '</div>' : '');   /* 20261025d */
+      tourPrec = m.tn; }
       var hr = ''; try { hr = new Date(m.t).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }); } catch (e) {}
-      h += '<div style="background:#1e2740;border-radius:10px;padding:9px 10px;margin-bottom:8px;">'
+      h += '<div style="background:#1e2740;border-radius:10px;padding:9px 10px;margin-bottom:8px;' + (window._g45TnPetit(m.cat) ? 'opacity:.72;' : '') + '">'   /* 20261025d : petit tournoi grisé */
         + '<div style="display:flex;justify-content:space-between;gap:8px;font-size:15px;"><span data-g45tnn="' + esc(m.id) + '">' + nomsLv(m) + '</span><span style="flex:none;" data-g45tnlv="' + esc(m.id) + '">' + (m.st === 'in' ? scoreLv(m) : '🕒 ' + hr) + '</span></div>'
         + '<div style="margin-top:7px;">' + bouton(m.lg, m.a, m.b, m.tn, m.ek, 'g45tn-j-' + i, m.lieu) + '</div></div>';
     });
