@@ -1692,6 +1692,7 @@ RÉGLÉ (worker, 01/10) : cron « exceededCpu » (cpuTimeMs 10) à CHAQUE passag
   details « COL -580 », overUnder 6.5, home .current.moneyLine.decimal 1.17 / away 4.80 (2 issues seulement, pas de nul en direct → cote VAINQUEUR,
   prolongation comprise probablement : la jambe « victoire » temps réglementaire n'a PAS d'équivalent), current.over 1.90 / under 1.83, total « 6.5 ».
   20261024p (« branche mlb et nhl ») : table _G45_CD_US (basketball|nba points, baseball|mlb runs, hockey|nhl buts) dans _g45CdLire, cartes Paris en cours
+  20261025l (SONDE d'Antoine pendant Steelers @ Saints : core …/football/leagues/nfl/events/<id>/competitions/<id>/odds → items provider 100 « DraftKings » (avant-match) + provider 200 « DraftKings - Live Odds » : overUnder 44.5, homeTeamOdds.current.moneyLine {decimal 2.03, american +103}, awayTeamOdds 1.73) : NFL BRANCHÉE (_G45_CD_US 'football|nfl' = points ; suspension « action en cours, temps mort… »). Test vm (2,03 / 1,73 / 44,5), smoke 103.
   et fenêtre du match ; NHL : lignes « (vainqueur, prolong. comprise) », pari « Victoire / Défaite » hockey SANS ligne 📈 (seul « Vainqueur ») ;
   textes « suspendue » par sport (_g45CdSusp). Smoke (cdUs, 96 contrôles). Rendu réel NON vu (ESPN bloqué depuis le cloud).
   20261020q — BRANCHÉ (demande d'Antoine « même rendu que le foot ») : `_g45CdLire('basketball', 'nba', …)` lit le scoreboard (état, équipes, score)

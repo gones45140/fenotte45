@@ -76045,9 +76045,9 @@ window._g45CdlLancer = function (el, data, hN, aN, moiDom) {
   };
   tour();
 };
-var _G45_CD_US = { 'basketball|nba': 'points', 'baseball|mlb': 'runs', 'hockey|nhl': 'buts' };   /* 20261024p */
+var _G45_CD_US = { 'basketball|nba': 'points', 'baseball|mlb': 'runs', 'hockey|nhl': 'buts', 'football|nfl': 'points' };   /* 20261024p · 20261025l : + NFL (sondé par Antoine pendant Steelers – Saints : provider 200 « DraftKings - Live Odds », moneyLine.decimal, overUnder 44.5 — même forme que NBA) */
 window._G45_CD_US = _G45_CD_US;
-function _g45CdSusp(u) { return u === 'points' ? 'temps mort, lancers…' : (u === 'runs' ? 'action en cours…' : 'but, pénalité…'); }
+function _g45CdSusp(u, sp) { if (sp === 'football') return 'action en cours, temps mort…'; return u === 'points' ? 'temps mort, lancers…' : (u === 'runs' ? 'action en cours…' : 'but, pénalité…'); }
 function _g45CdFr(n) { return n === 'off' ? '⏸️' : (n ? n.toFixed(2).replace('.', ',') : '—'); }
 /* Marché du pari → {cle:'h'|'a'|'d'|'ov'|'un', L} ; null = marché non suivi. */
 function _g45CdMarche(h, C, moiDom) {
@@ -76082,13 +76082,13 @@ function _g45CdTexte(h, C, M) {
   var v;
   if (M.cle === 'ov' || M.cle === 'un') {
     v = C[M.cle];
-    var unit = C.u || 'buts', susp = '<span style="color:#f5c542">⏸️ cote suspendue pour l\'instant (' + (C.sp ? _g45CdSusp(unit) : 'but, carton…') + ')</span>';   /* 20261020q : NBA = points */
+    var unit = C.u || 'buts', susp = '<span style="color:#f5c542">⏸️ cote suspendue pour l\'instant (' + (C.sp ? _g45CdSusp(unit, C.sp) : 'but, carton…') + ')</span>';   /* 20261020q : NBA = points */
     if (v === 'off') return susp;
     if (C.L == null || !v) return '';
     var lib = M.cle === 'ov' ? '+ de ' : '− de ';
     if (Math.abs(C.L - M.L) > 0.01) return '<span style="color:#c9d3ee">ta ligne (' + String(M.L).replace('.', ',') + ' ' + unit + ') n\'est plus proposée</span> · en direct : <b>' + lib + String(C.L).replace('.', ',') + ' ' + unit + ' à ' + _g45CdFr(v) + '</b>';
   } else v = C[M.cle];
-  if (v === 'off') return '<span style="color:#f5c542">⏸️ cote suspendue pour l\'instant (' + (C.sp ? _g45CdSusp(C.u) : 'but, carton…') + ')</span>';
+  if (v === 'off') return '<span style="color:#f5c542">⏸️ cote suspendue pour l\'instant (' + (C.sp ? _g45CdSusp(C.u, C.sp) : 'but, carton…') + ')</span>';
   if (!v) return '';
   return '<b style="font-size:18px;color:#1ed760">' + _g45CdFr(v) + '</b> <span style="color:#c9d3ee">en direct</span>' + (prise ? ' · tu l\'as prise à <b>' + _g45CdFr(prise) + '</b>' : '') + comp(v);
 }
