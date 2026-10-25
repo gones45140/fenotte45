@@ -80900,11 +80900,13 @@ window._g45TrTestVoit = function () { try { return (typeof _g45SanteActive === '
     var typ = (lp.type && TYPES[lp.type.text]) || (lp.type && lp.type.text) || '';
     var gain = lp.statYardage != null && lp.statYardage !== 0 ? (lp.statYardage > 0 ? '+' : '') + lp.statYardage + ' yard' + (Math.abs(lp.statYardage) > 1 ? 's' : '') : '';
     return '<div class="g45-nfl-drive" style="background:rgba(21,28,48,.96);border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:12px 14px;margin:10px 0;color:#fff;">'
-      + '<div style="font-size:15px;font-weight:900;margin-bottom:8px;">🏈 DRIVE EN COURS · ' + esc(att.shortDisplayName || att.displayName || att.abbreviation || '') + (s.isRedZone ? ' · <span style="color:#ff6b6b;">zone rouge</span>' : '') + '</div>'
+      + '<div style="font-size:15px;font-weight:900;margin-bottom:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">🏈 DRIVE EN COURS · ' + (att.logo ? '<img src="' + esc(att.logo) + '" alt="" style="width:24px;height:24px;object-fit:contain;" onerror="this.remove()">' : '') + esc(att.shortDisplayName || att.displayName || att.abbreviation || '') + (s.isRedZone ? ' · <span style="color:#ff6b6b;">zone rouge</span>' : '') + '</div>'
       + '<div style="position:relative;height:96px;border-radius:8px;overflow:hidden;background:repeating-linear-gradient(90deg,#2e7d32 0 8.4%,#33873a 8.4% 16.8%);">'
       + ez(ta, 'left') + ez(th, 'right') + lignes + fleche
       + (fd != null ? '<div style="position:absolute;top:0;bottom:0;width:3px;background:#ffd400;left:' + pc(fd) + ';"></div>' : '')
-      + '<span style="position:absolute;top:30px;font-size:22px;transform:translateX(-50%);left:' + pc(abs) + ';">🏈</span></div>'
+      /* 20261025o (« mets un petit logo visuel pour voir qui a le ballon ») : logo de l'équipe en possession, rond blanc, au-dessus du ballon */
+      + (att.logo ? '<img src="' + esc(att.logo) + '" alt="" onerror="this.remove()" style="position:absolute;top:4px;left:' + pc(abs) + ';transform:translateX(-50%);width:26px;height:26px;object-fit:contain;background:#fff;border-radius:50%;padding:2px;box-shadow:0 1px 4px rgba(0,0,0,.5);">' : '')
+      + '<span style="position:absolute;top:34px;font-size:22px;transform:translateX(-50%);left:' + pc(abs) + ';">🏈</span></div>'
       + '<div style="font-size:14px;margin-top:8px;"><b>' + esc(down) + (s.possessionText ? ' à ' + esc(s.possessionText) : '') + '</b>' + (typ ? ' · dernière action : ' + esc(typ) + (gain ? ', ' + gain : '') : '') + '</div>'
       + '<div style="font-size:13px;color:#c9d3ee;margin-top:3px;">Ligne jaune = 1er down · flèche = dernière action · relu toutes les 30 s</div></div>';
   };
