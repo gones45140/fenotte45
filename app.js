@@ -2057,7 +2057,7 @@ function buildSbRows(light){
     sbRows.forEach(function(r,i){
       var on=(r.d!==false);
       var g=gains.length?gains[i]:profit;
-      misesHtml+='<div class="cres-row"><span class="cres-l">Mise '+(i+1)+' (@'+(r.c||1)+((r.k>0)?(' → '+sbCote(r).toFixed(3)):'')+')'+((gorr&&i===0)?' 🎁':'')+((!toutesCibles&&on)?' 🎯':'')+'</span><span class="cres-v" style="color:var(--a)">'+mises[i].toFixed(2)+'€'
+      misesHtml+='<div class="cres-row"><span class="cres-l">Mise '+(i+1)+' (@'+(r.c||1)+((r.k>0)?(' → '+sbCote(r).toFixed(3)):'')+')'+((gorr&&i===0)?' 🎁':'')+((!toutesCibles&&on)?' 🎯':'')+'</span><span class="cres-v" style="color:#fff;font-weight:900;">'/* 20261025e : mise en BLANC (bleu foncé illisible, capture 13/10) */+mises[i].toFixed(2)+'€'
         +(toutesCibles?'':' <span style="color:'+(g>0.005?'var(--g)':'var(--t3)')+';">('+(g>0.005?'+':'')+g.toFixed(2)+'€)</span>')
         +'</span></div>';
     });
@@ -10810,7 +10810,7 @@ function buildSbRows(light){
     sbRows.forEach(function(r,i){
       var on=(r.d!==false);
       var g=gains.length?gains[i]:profit;
-      misesHtml+='<div class="cres-row"><span class="cres-l">Mise '+(i+1)+' (@'+(r.c||1)+((r.k>0)?(' → '+sbCote(r).toFixed(3)):'')+')'+((gorr&&i===0)?' 🎁':'')+((!toutesCibles&&on)?' 🎯':'')+'</span><span class="cres-v" style="color:var(--a)">'+mises[i].toFixed(2)+'€'
+      misesHtml+='<div class="cres-row"><span class="cres-l">Mise '+(i+1)+' (@'+(r.c||1)+((r.k>0)?(' → '+sbCote(r).toFixed(3)):'')+')'+((gorr&&i===0)?' 🎁':'')+((!toutesCibles&&on)?' 🎯':'')+'</span><span class="cres-v" style="color:#fff;font-weight:900;">'/* 20261025e : mise en BLANC (bleu foncé illisible, capture 13/10) */+mises[i].toFixed(2)+'€'
         +(toutesCibles?'':' <span style="color:'+(g>0.005?'var(--g)':'var(--t3)')+';">('+(g>0.005?'+':'')+g.toFixed(2)+'€)</span>')
         +'</span></div>';
     });

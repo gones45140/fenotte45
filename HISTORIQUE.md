@@ -1724,6 +1724,7 @@ RÉGLÉ (worker, 01/10) : cron « exceededCpu » (cpuTimeMs 10) à CHAQUE passag
   Compétitions : partage VALIDÉ (« oui »), PAS encore codé (avec l'abonnement).
   Calculatrice (onglet Pari) : ABONNÉ (13/10, « calculatrice bloquer non abonné »). À REVOIR : mises « Mise 1 / Mise 2 » du Surebet en bleu
   foncé sur fond sombre (capture 13/10), à passer en blanc.
+  → FAIT 20261025e (« fait le surbet ») : montants des mises en blanc gras (cres-v, les DEUX copies du calcul Surebet).
   VIDÉO de présentation (13/10, « oui ») : animation HTML enregistrée par Playwright (ESPN / bet45 bloqués depuis le cloud → exemples
   inventés, pas la vraie appli), 720 × 1280, 58 s, sans son : x-bet45/video/v.html + rec.js → bet45-presentation.mp4 (non déposée dans un dépôt).
   20261013n (« oui ») — 👋 GUIDE DE BIENVENUE + ☕ POURBOIRE, bloc en fin d'app.js, BET45 SEULEMENT (!_g45SanteActive) : `g45GuideOuvrir(i)` /
