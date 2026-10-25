@@ -402,6 +402,7 @@ Il est dans les DEUX dépôts (gones45 et fenotte45), identique (cmp). Jamais de
   `_g45UfCompose` = [club · ]libre [🏠 x] [✈️ y] (cases égales → « 🏠/✈️ x »), `_g45UfDecoupe` pour « Modifier » ; u.club en plus pour un joueur. `_g45UClub(u)`
   (u.club, sinon note avant 🏠 / ✈️ et « · ») remplace u.note partout où la note servait de CLUB (ButIdMur, MajEquipeJouee, JoueurClubLogo, ticket Cockpit,
   NHL joueur, Agenda). setUnitType = portée fermée → clic des boutons écouté. Smoke (ufLieu, 56).
+  20261025b (« on n'a pas global si on veut jouer domicile + extérieur » → maquette « oui ») : formulaire du mur (ajout + Modifier) : bouton « 🌍 Même pari partout » OUI / NON (id u-ptout / edit-unit-ptout) → une case « 🌍 Pari (domicile + extérieur) » (…ppart) recopiée à chaque frappe dans 🏠 et ✈️ (cachées) ; note composée inchangée (« 🏠/✈️ x »). Modifier : OUI tout seul si les deux lieux ont le même texte. Remis à NON après un ajout. Smoke ufTout (99).
   20261017r (capture Barça « condition remplie 1,41 », « c'est ❌ », validé « oui ») : `_g45AgOdHtml` — « si cote inférieure à X » = règle de la MONTANTE :
   résultat seul < X → « ❌ Victoire seule 1,41 < 1,5 → ajoute under 3,5 » (autres jambes de la 1re option) ; ≥ X → « ✅ … → la victoire seule suffit ».
   20261017s (capture « Chargement du calendrier… » : « laissez en cache jusqu'au début du match ») : bloc en fin d'app.js — window.loadCalendrier

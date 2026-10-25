@@ -77369,10 +77369,32 @@ window._g45UfDecoupe = function (note) {
     var e = p === 'e' ? 'edit-unit-' : 'u-';
     return '<div id="g45uf-club-' + p + '" class="fg" style="margin-bottom:8px;display:none;"><label class="fl" style="font-size:14px;">🏟️ Club du joueur</label>'
       + '<input id="' + e + 'club" class="fi" placeholder="Edmonton, Real Madrid…" autocomplete="off" oninput="g45UfClubTape(\'' + p + '\')"><div id="' + e + 'club-res"></div></div>'
+      /* 20261025b (« on n'a pas global si on veut jouer domicile + extérieur » → maquette « oui ») : interrupteur 🌍 Même pari partout →
+         UNE case « 🌍 Pari (domicile + extérieur) » recopiée à chaque frappe dans les cases 🏠 et ✈️ (cachées) : la note composée
+         (_g45UfCompose, « 🏠/✈️ x ») et l'Agenda ne changent pas. */
+      + '<button type="button" id="' + e + 'ptout" data-on="0" onclick="g45UfPartout(\'' + p + '\')" style="display:flex;align-items:center;justify-content:space-between;width:100%;gap:10px;margin:0 0 8px;padding:9px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.18);background:#1a2235;color:#fff;font-size:14px;font-weight:800;cursor:pointer;">'
+      + '<span>🌍 Même pari partout</span><span class="g45uf-sw" style="min-width:54px;padding:4px 10px;border-radius:14px;background:#4a5372;color:#fff;font-size:13px;font-weight:900;">NON</span></button>'
+      + '<div id="g45uf-tout-' + p + '" class="fg" style="margin-bottom:7px;display:none;"><label class="fl" style="font-size:14px;">🌍 Pari (domicile + extérieur)</label><input id="' + e + 'ppart" class="fi" placeholder="Ex : victoire + plus de 2,5 buts" autocomplete="off" oninput="g45UfPartoutTape(\'' + p + '\')"></div>'
+      + '<div id="g45uf-lieux-' + p + '">'
       + '<div class="fg" style="margin-bottom:7px;"><label class="fl" style="font-size:14px;">🏠 Pari à domicile</label><input id="' + e + 'pdom" class="fi" placeholder="Ex : victoire, buteur…" autocomplete="off"></div>'
       + '<div class="fg" style="margin-bottom:4px;"><label class="fl" style="font-size:14px;">✈️ Pari à l\'extérieur</label><input id="' + e + 'pext" class="fi" placeholder="Ex : victoire ou nul + under 3.5" autocomplete="off"></div>'
-      + '<div style="font-size:13px;color:#c9d3ee;margin-bottom:10px;line-height:1.4;">Même pari partout ? Écris-le dans les deux cases. Une seule case remplie = l\'autre lieu est retiré de l\'Agenda.</div>';
+      + '<div style="font-size:13px;color:#c9d3ee;margin-bottom:10px;line-height:1.4;">Une seule case remplie = l\'autre lieu est retiré de l\'Agenda.</div></div>';
   };
+  /* 20261025b : interrupteur 🌍 (on = une case recopiée dans 🏠 et ✈️) */
+  var partout = function (p, on) {
+    var e = p === 'e' ? 'edit-unit-' : 'u-', bt = $(e + 'ptout'), tout = $('g45uf-tout-' + p), lx = $('g45uf-lieux-' + p);
+    if (!bt || !tout || !lx) return;
+    bt.setAttribute('data-on', on ? '1' : '0');
+    var sw = bt.querySelector('.g45uf-sw'); if (sw) { sw.textContent = on ? 'OUI' : 'NON'; sw.style.background = on ? '#1ed760' : '#4a5372'; sw.style.color = on ? '#0b101d' : '#fff'; }
+    tout.style.display = on ? '' : 'none'; lx.style.display = on ? 'none' : '';
+    if (on) { var v = ($(e + 'pdom') || {}).value || ($(e + 'pext') || {}).value || ''; $(e + 'ppart').value = v; window.g45UfPartoutTape(p); }
+  };
+  window.g45UfPartout = function (p) { var bt = $((p === 'e' ? 'edit-unit-' : 'u-') + 'ptout'); partout(p, !(bt && bt.getAttribute('data-on') === '1')); };
+  window.g45UfPartoutTape = function (p) {
+    var e = p === 'e' ? 'edit-unit-' : 'u-', v = ($(e + 'ppart') || {}).value || '';
+    if ($(e + 'pdom')) $(e + 'pdom').value = v; if ($(e + 'pext')) $(e + 'pext').value = v;
+  };
+  window._g45UfPartoutPoser = partout;
   var voirClub = function (p) {
     var b = $('g45uf-club-' + p); if (!b) return;
     var t = p === 'e' ? ($('edit-unit-type') || {}).value : ($('u-type') || {}).value;
@@ -77460,7 +77482,8 @@ window._g45UfDecoupe = function (note) {
       if (state && state.u && state.u.length > n0) {
         var nu = state.u[state.u.length - 1];
         if (nu && club) { nu.club = club; try { save(); } catch (e) {} }
-        ['u-note', 'u-pdom', 'u-pext', 'u-club'].forEach(function (id) { if ($(id)) $(id).value = ''; });
+        ['u-note', 'u-pdom', 'u-pext', 'u-club', 'u-ppart'].forEach(function (id) { if ($(id)) $(id).value = ''; });
+        partout('u', false);   /* 20261025b */
         L.u = []; rendre('u');
       } else if (un) un.value = libre;
     }
@@ -77478,6 +77501,8 @@ window._g45UfDecoupe = function (note) {
       if (jou) { var pc = D.avant.split(' · '); club = u.club || pc[0]; libre = pc[0] === club ? pc.slice(1).join(' · ') : D.avant; }
       $('edit-unit-note').value = libre;
       $('edit-unit-pdom').value = D.dom; $('edit-unit-pext').value = D.ext;
+      var _nz = function (x) { return String(x || '').trim().toLowerCase().replace(/\s+/g, ' '); };
+      partout('e', !!(D.dom && D.ext && _nz(D.dom) === _nz(D.ext)));   /* 20261025b : même pari des deux côtés → 🌍 OUI */
       $('edit-unit-club').value = club; L.e = []; rendre('e');
       voirClub('e');
     } catch (e) {}
