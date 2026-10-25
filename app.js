@@ -80914,14 +80914,27 @@ window._g45TrTestVoit = function () { try { return (typeof _g45SanteActive === '
     var r = await r0.apply(this, arguments);
     try {
       if (sport !== 'football' || lg !== 'nfl' || !el || !eid) return r;
+      /* 20261025p (« quand cela a relu, ça a sauté… réapparu ») : la fenêtre se redessine elle-même (score en direct) et effaçait le terrain
+         jusqu'à la lecture suivante (30 s) → dernier terrain gardé (el._g45Dr) et remis AUSSITÔT qu'il disparaît (MutationObserver) ;
+         une seule boucle de lecture par fenêtre (el._g45DrBoucle). */
+      if (!el._g45DrObs && typeof MutationObserver === 'function') {
+        el._g45DrObs = new MutationObserver(function () {
+          if (!el._g45Dr || el.querySelector('.g45-nfl-drive')) return;
+          var d0 = document.createElement('div'); d0.innerHTML = el._g45Dr; el.insertBefore(d0.firstChild, el.firstChild);
+        });
+        el._g45DrObs.observe(el, { childList: true });
+      }
+      if (el._g45DrBoucle) { if (el._g45Dr && !el.querySelector('.g45-nfl-drive')) { var d1 = document.createElement('div'); d1.innerHTML = el._g45Dr; el.insertBefore(d1.firstChild, el.firstChild); } return r; }
+      el._g45DrBoucle = 1;
       var tour = async function () {
-        if (!el.isConnected) return;
+        if (!el.isConnected) { el._g45DrBoucle = 0; if (el._g45DrObs) { el._g45DrObs.disconnect(); el._g45DrObs = null; } return; }
         var j = null; try { j = await (await fetch('https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?_=' + Math.floor(Date.now() / 30000), { cache: 'no-store' })).json(); } catch (e) {}
         var ev = ((j && j.events) || []).filter(function (e) { return String(e.id) === String(eid); })[0], cp = ev && (ev.competitions || [])[0];
         var st = cp && cp.status && cp.status.type && cp.status.type.state;
         var vieux = el.querySelector('.g45-nfl-drive');
-        if (st !== 'in') { if (vieux) vieux.remove(); return; }
+        if (st !== 'in') { el._g45Dr = ''; el._g45DrBoucle = 0; if (vieux) vieux.remove(); return; }
         var h = window._g45NflDriveHtml(cp);
+        if (h) el._g45Dr = h;
         if (h) { var d = document.createElement('div'); d.innerHTML = h; var n = d.firstChild; if (vieux) vieux.replaceWith(n); else el.insertBefore(n, el.firstChild); }
         setTimeout(tour, 30000);
       };
