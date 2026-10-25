@@ -80862,3 +80862,69 @@ window._g45TrTestVoit = function () { try { return (typeof _g45SanteActive === '
   if (typeof r0 === 'function') window.render = function () { var r = r0.apply(this, arguments); try { window._g45MurRanger(); } catch (e) {} return r; };
   try { window._g45MurRanger(); } catch (e) {}
 })();
+
+/* ═══ 20261025n — 🏈 DRIVE EN COURS (NFL) dans la fenêtre du match (capture ESPN « Current drive » entourée par Antoine, maquette image) ═══
+   SONDÉ par Antoine pendant Steelers @ Saints (401873011) : scoreboard nfl → competitions[0].situation = {down, distance, yardLine, possession (id),
+   possessionText « PIT 47 », shortDownDistanceText « 3rd & 4 », isRedZone, lastPlay {text, type.text, statYardage, start.yardLine, end.yardLine}}.
+   yardLine n'a pas de sens fixe connu → recalé à chaque lecture sur possessionText (« PIT 47 » = 47 yards de l'en-but PIT) : position absolue
+   comptée depuis l'en-but de l'équipe à l'EXTÉRIEUR (dessinée à gauche, elle attaque vers la droite). Terrain : en-buts aux couleurs ESPN,
+   🏈 = ballon, flèche = dernière action, ligne jaune = 1er down. Relu toutes les 30 s tant que la fenêtre est ouverte et le match en cours.
+   _renderGenericDetail est enveloppé (même nom global). */
+(function () {
+  var r0 = window._renderGenericDetail; if (typeof r0 !== 'function') return;
+  var esc = function (t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+  var DOWN = { 1: '1er', 2: '2e', 3: '3e', 4: '4e' };
+  var TYPES = { 'Pass Reception': 'passe complétée', 'Pass Incompletion': 'passe incomplète', 'Rush': 'course', 'Sack': 'sack', 'Interception': 'interception',
+    'Punt': 'punt', 'Field Goal Good': 'field goal réussi', 'Field Goal Missed': 'field goal manqué', 'Passing Touchdown': 'touchdown (passe)', 'Rushing Touchdown': 'touchdown (course)',
+    'Penalty': 'pénalité', 'Kickoff': 'coup d\'envoi', 'Fumble Recovery (Opponent)': 'fumble perdu', 'Timeout': 'temps mort', 'Extra Point Good': 'transformation réussie' };
+  window._g45NflDriveHtml = function (cp) {
+    var s = cp && cp.situation; if (!s || s.yardLine == null || !s.possession) return '';
+    var cs = cp.competitors || [], aw = cs.filter(function (x) { return x.homeAway === 'away'; })[0] || cs[1] || {}, ho = cs.filter(function (x) { return x.homeAway === 'home'; })[0] || cs[0] || {};
+    var ta = aw.team || {}, th = ho.team || {}, abA = String(ta.abbreviation || ''), abH = String(th.abbreviation || '');
+    /* position absolue depuis l'en-but de l'équipe à l'extérieur */
+    var m = /^\s*([A-Z]{2,4})\s+(\d{1,2})\s*$/.exec(String(s.possessionText || '')), abs = null;
+    if (m) abs = m[1] === abA ? +m[2] : (m[1] === abH ? 100 - +m[2] : null);
+    else if (+s.yardLine === 50) abs = 50;
+    if (abs == null) return '';
+    var y = +s.yardLine, sens = (100 - y === abs) ? -1 : 1, base = (100 - y === abs) ? 100 : 0;   /* abs = base + sens × yardLine */
+    var conv = function (yl) { return yl == null || isNaN(+yl) ? null : base + sens * (+yl); };
+    var att = String(s.possession) === String(ta.id) ? ta : th, dir = att === ta ? 1 : -1;
+    var lp = s.lastPlay || {}, x0 = conv(lp.start && lp.start.yardLine), x1 = conv(lp.end && lp.end.yardLine);
+    var fd = s.distance > 0 ? Math.max(0, Math.min(100, abs + dir * s.distance)) : null;
+    var pc = function (v) { return (8 + Math.max(0, Math.min(100, v)) * 0.84).toFixed(2) + '%'; };   /* 8 % d'en-but de chaque côté */
+    var col = function (t, d) { return t.color ? '#' + t.color : d; };
+    var lignes = ''; for (var k = 10; k <= 90; k += 10) lignes += '<div style="position:absolute;top:0;bottom:0;left:' + pc(k) + ';width:1px;background:rgba(255,255,255,.45);"></div><span style="position:absolute;bottom:3px;left:' + pc(k) + ';transform:translateX(-50%);font-size:12px;color:#fff;">' + (k <= 50 ? k : 100 - k) + '</span>';
+    var fleche = (x0 != null && x1 != null && x0 !== x1) ? '<div style="position:absolute;top:44px;height:4px;border-radius:2px;background:#fff;left:' + pc(Math.min(x0, x1)) + ';width:' + (Math.abs(x1 - x0) * 0.84).toFixed(2) + '%;"></div>' : '';
+    var ez = function (t, cote) { return '<div style="position:absolute;top:0;bottom:0;' + cote + ':0;width:8%;background:' + col(t, '#333') + ';display:flex;align-items:center;justify-content:center;"><span style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:12px;font-weight:900;color:' + (t.alternateColor ? '#' + t.alternateColor : '#fff') + ';">' + esc(t.shortDisplayName || t.abbreviation || '') + '</span></div>'; };
+    var down = (DOWN[s.down] || '') + (s.down ? ' & ' + (s.distance || '') : '');
+    var typ = (lp.type && TYPES[lp.type.text]) || (lp.type && lp.type.text) || '';
+    var gain = lp.statYardage != null && lp.statYardage !== 0 ? (lp.statYardage > 0 ? '+' : '') + lp.statYardage + ' yard' + (Math.abs(lp.statYardage) > 1 ? 's' : '') : '';
+    return '<div class="g45-nfl-drive" style="background:rgba(21,28,48,.96);border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:12px 14px;margin:10px 0;color:#fff;">'
+      + '<div style="font-size:15px;font-weight:900;margin-bottom:8px;">🏈 DRIVE EN COURS · ' + esc(att.shortDisplayName || att.displayName || att.abbreviation || '') + (s.isRedZone ? ' · <span style="color:#ff6b6b;">zone rouge</span>' : '') + '</div>'
+      + '<div style="position:relative;height:96px;border-radius:8px;overflow:hidden;background:repeating-linear-gradient(90deg,#2e7d32 0 8.4%,#33873a 8.4% 16.8%);">'
+      + ez(ta, 'left') + ez(th, 'right') + lignes + fleche
+      + (fd != null ? '<div style="position:absolute;top:0;bottom:0;width:3px;background:#ffd400;left:' + pc(fd) + ';"></div>' : '')
+      + '<span style="position:absolute;top:30px;font-size:22px;transform:translateX(-50%);left:' + pc(abs) + ';">🏈</span></div>'
+      + '<div style="font-size:14px;margin-top:8px;"><b>' + esc(down) + (s.possessionText ? ' à ' + esc(s.possessionText) : '') + '</b>' + (typ ? ' · dernière action : ' + esc(typ) + (gain ? ', ' + gain : '') : '') + '</div>'
+      + '<div style="font-size:13px;color:#c9d3ee;margin-top:3px;">Ligne jaune = 1er down · flèche = dernière action · relu toutes les 30 s</div></div>';
+  };
+  window._renderGenericDetail = async function (el, sport, lg, eid) {
+    var r = await r0.apply(this, arguments);
+    try {
+      if (sport !== 'football' || lg !== 'nfl' || !el || !eid) return r;
+      var tour = async function () {
+        if (!el.isConnected) return;
+        var j = null; try { j = await (await fetch('https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?_=' + Math.floor(Date.now() / 30000), { cache: 'no-store' })).json(); } catch (e) {}
+        var ev = ((j && j.events) || []).filter(function (e) { return String(e.id) === String(eid); })[0], cp = ev && (ev.competitions || [])[0];
+        var st = cp && cp.status && cp.status.type && cp.status.type.state;
+        var vieux = el.querySelector('.g45-nfl-drive');
+        if (st !== 'in') { if (vieux) vieux.remove(); return; }
+        var h = window._g45NflDriveHtml(cp);
+        if (h) { var d = document.createElement('div'); d.innerHTML = h; var n = d.firstChild; if (vieux) vieux.replaceWith(n); else el.insertBefore(n, el.firstChild); }
+        setTimeout(tour, 30000);
+      };
+      tour();
+    } catch (e) {}
+    return r;
+  };
+})();
