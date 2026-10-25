@@ -1922,6 +1922,7 @@ RÉGLÉ (worker, 01/10) : cron « exceededCpu » (cpuTimeMs 10) à CHAQUE passag
   20261014w (« jeu de couleur selon palier + petit fond de chaque équipe », maquette « OUI ») : `window._G45_PAL_COUL` (P1 vert #1ed760 → P8 violet)
   sur le tableau des paliers ; #ulist (Outils → Équipes) habillé après coup par MutationObserver (`_g45UlistHabiller`) : fond = _g45ImgPersoLire →
   u.logoUrl → _g45JoueurVisLire (cache seul, opacité .18), liseré u.color, pastille « Palier N » couleur du palier, consigne sur bande sombre.
+- 🧱 20261025j (« on peut ranger par sport ? » → maquette image « OUI ») : Outils → Équipes (#ulist) — après render (enveloppé en fin d'app.js), `_g45MurRanger` répartit les .urow en bandes par sport (`_g45MurSportDe` : foot, hockey, basket, baseball, NFL, rugby/NRL, F1, tennis, autres ; joueur = son u.sport) + une .g45-mur-grid par sport ; bande repliable `g45MurPlier(k)` (localStorage g45_mur_plie). data-idx inchangés, habillages (fond, palier, ❤️) intacts. Capture 1100 vérifiée, smoke murSp (103).
 - PROCHAINS MATCHS d'un club de foot (`_g45AVenirLigue`, 20261014b, capture PSG « on a que les matchs de championnat ? ») : scoreboards
   60 j du championnat + amicaux + supercoupes, AJOUTÉS : uefa.champions / uefa.europa / uefa.europa.conf + coupe nationale (fra.coupe_de_france,
   esp.copa_del_rey, ger.dfb_pokal, ita.coppa_italia, ned.cup, eng.fa / eng.league_cup). Cause supposée (NON sondée) : le calendrier d'équipe

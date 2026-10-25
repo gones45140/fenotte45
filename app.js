@@ -80791,3 +80791,54 @@ window._g45TrTestVoit = function () { try { return (typeof _g45SanteActive === '
     if (typeof render === 'function') render();
   } catch (e) {}
 })();
+
+/* ═══ 20261025j — MES ÉQUIPES RANGÉES PAR SPORT (Outils → Équipes, #ulist ; « on peut ranger par sport ? », maquette image « OUI ») ═══
+   render (DEUX copies, intactes) écrit toutes les cartes .urow dans UNE grille .g45-mur-grid ; juste après, on les répartit en bandes
+   « ⚽ Football · 15 équipes » (ordre fixe ci-dessous, sport du joueur = u.sport) suivies d'une grille .g45-mur-grid par sport (même CSS,
+   les habillages — fond, palier, ❤️ — cherchent les .urow dans tout #ulist et marchent toujours). Bande repliable (▾ / ▸), mémorisée
+   dans localStorage g45_mur_plie. Les data-idx des cartes ne bougent pas (Modifier / ✕ inchangés). */
+(function () {
+  var ORDRE = [['foot', '⚽', 'Football', /^⚽/], ['hockey', '🏒', 'Hockey', /^🏒/], ['basket', '🏀', 'Basket', /^🏀/], ['baseball', '⚾', 'Baseball', /^⚾/],
+    ['nfl', '🏈', 'Foot US', /^🏈/], ['rugby', '🏉', 'Rugby / NRL', /^🏉/], ['f1', '🏎️', 'Formule 1', /^🏎/], ['tennis', '🎾', 'Tennis', /^🎾/]];
+  var plies = function () { try { return JSON.parse(localStorage.getItem('g45_mur_plie') || '[]') || []; } catch (e) { return []; } };
+  window._g45MurSportDe = function (sp) { sp = String(sp || ''); for (var i = 0; i < ORDRE.length; i++) if (ORDRE[i][3].test(sp)) return ORDRE[i]; return ['autre', '🏅', 'Autres sports', null]; };
+  window.g45MurPlier = function (k) {
+    var P = plies(), i = P.indexOf(k); if (i >= 0) P.splice(i, 1); else P.push(k);
+    try { localStorage.setItem('g45_mur_plie', JSON.stringify(P)); } catch (e) {}
+    window._g45MurRanger(true);
+  };
+  window._g45MurRanger = function (seulPli) {
+    var ul = document.getElementById('ulist'); if (!ul || typeof state === 'undefined' || !state.u) return;
+    var P = plies();
+    if (seulPli) {
+      [].forEach.call(ul.querySelectorAll('.g45-mur-sp'), function (h) {
+        var k = h.getAttribute('data-k'), g = h.nextElementSibling, f = P.indexOf(k) >= 0;
+        if (g) g.style.display = f ? 'none' : ''; var t = h.querySelector('.g45-mur-spf'); if (t) t.textContent = f ? '▸ ouvrir' : '▾ replier';
+      });
+      return;
+    }
+    var grilles = ul.querySelectorAll(':scope > .g45-mur-grid'); if (grilles.length !== 1 || ul.querySelector('.g45-mur-sp')) return;
+    var rows = [].slice.call(grilles[0].children), G = {};
+    rows.forEach(function (row) {
+      var b = row.querySelector('[data-idx]'), u = b ? state.u[+b.getAttribute('data-idx')] : null;
+      var S = window._g45MurSportDe(u && u.sport); (G[S[0]] = G[S[0]] || { S: S, l: [] }).l.push(row);
+    });
+    var cles = ORDRE.map(function (o) { return o[0]; }).concat(['autre']), frag = document.createDocumentFragment();
+    cles.forEach(function (k) {
+      var g = G[k]; if (!g) return;
+      var f = P.indexOf(k) >= 0, n = g.l.length;
+      var h = document.createElement('button'); h.type = 'button'; h.className = 'g45-mur-sp'; h.setAttribute('data-k', k);
+      h.setAttribute('onclick', "g45MurPlier('" + k + "')");
+      h.setAttribute('style', 'display:flex;align-items:center;gap:10px;width:100%;background:#0b101d;border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:9px 14px;margin:14px 0 8px;color:#fff;font-size:17px;font-weight:900;cursor:pointer;text-align:left;');
+      h.innerHTML = '<span>' + g.S[1] + ' ' + g.S[2] + '</span><span style="font-size:14px;color:#c9d3ee;font-weight:700;">· ' + n + ' ' + (k === 'f1' || k === 'tennis' ? 'carte' : 'équipe') + (n > 1 ? 's' : '') + '</span>'
+        + '<span class="g45-mur-spf" style="margin-left:auto;font-size:14px;color:#c9d3ee;font-weight:700;">' + (f ? '▸ ouvrir' : '▾ replier') + '</span>';
+      var gr = document.createElement('div'); gr.className = 'g45-mur-grid'; if (f) gr.style.display = 'none';
+      g.l.forEach(function (r) { gr.appendChild(r); });
+      frag.appendChild(h); frag.appendChild(gr);
+    });
+    grilles[0].replaceWith(frag);
+  };
+  var r0 = window.render;
+  if (typeof r0 === 'function') window.render = function () { var r = r0.apply(this, arguments); try { window._g45MurRanger(); } catch (e) {} return r; };
+  try { window._g45MurRanger(); } catch (e) {}
+})();
