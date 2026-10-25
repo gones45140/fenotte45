@@ -39770,6 +39770,20 @@ function _g45ScoreTache(fn) { _g45ScoreQ.push(fn); _g45ScorePompe(); }
 window._g45ScoreTache = _g45ScoreTache;
 
 var _g45MdTente = {}, _g45MdAncien = {};
+/* 20261025a (capture : pari Celebrini « Sharks de San José vs Bruins de Boston », gagné, SANS score) : la NHL n'était trouvée que si le nom
+   était EXACTEMENT celui de NHL_TEAMS (« San Jose Sharks »). Noms en français (ticket lu par l'IA, « Bruins de Boston ») ou carte JOUEUR →
+   rien. On reconnaît maintenant le SURNOM du club (dernier mot : sharks, bruins, leafs, wings…) n'importe où dans le nom ; Utah = mammoth. */
+function _g45NhlInfoDe(nom) {
+  if (typeof NHL_TEAMS === 'undefined' || !nom) return null;
+  if (NHL_TEAMS[nom]) return NHL_TEAMS[nom];
+  var z = ' ' + String(nom).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim() + ' ';
+  if (/ (mammoth|utah) /.test(z)) return NHL_TEAMS['Utah Hockey Club'] || null;
+  for (var k in NHL_TEAMS) {
+    var w = k.toLowerCase().split(' ').pop();
+    if (w !== 'club' && z.indexOf(' ' + w + ' ') >= 0) return NHL_TEAMS[k];
+  }
+  return null;
+}
 function _g45ScoreTexte(h) {
   /* ELARGI AU PARI SIMPLE (28/08). Une montante a son equipe dans `h.n` ; un
      pari simple (h.n==='SIMPLE') l'a dans `h.target`, sous la forme "Equipe
@@ -39840,7 +39854,7 @@ function _g45ScoreTexte(h) {
       var c = JSON.parse(raw);
       /* 20261003q : score NHL mémorisé SANS « md » (mon équipe à domicile ?) → relu UNE fois par session pour le savoir. */
       if (c && c.hs != null && c.as != null && h.sport === '\ud83c\udfd2' && c.md === undefined && !_g45MdTente[ck]
-          && typeof NHL_TEAMS !== 'undefined' && (NHL_TEAMS[nomEquipe] || NHL_TEAMS[nomAdverse])) { _g45MdTente[ck] = 1; _g45MdAncien[ck] = c; }
+          && typeof NHL_TEAMS !== 'undefined' && (_g45NhlInfoDe(nomEquipe) || _g45NhlInfoDe(nomAdverse))) { _g45MdTente[ck] = 1; _g45MdAncien[ck] = c; }
       else if (c && c.hs != null && c.as != null) return c.hs + '-' + c.as;
       if (c && c.txt) return c.txt;   // tennis : score de sets, deja formate en texte
       /* 20261006v (capture d'Antoine : Jets–Avalanche du 09/10 01:30 sans score) : un « pas trouvé » noté PENDANT ou juste après le
@@ -40094,7 +40108,7 @@ function _g45ScoreTexte(h) {
     _g45ScoreTache(async function() {
       var hs = null, as = null; var mdNhl = null;
       try {
-        var info = (typeof NHL_TEAMS !== 'undefined') ? (NHL_TEAMS[nomEquipe] || NHL_TEAMS[nomAdverse]) : null;
+        var info = (typeof NHL_TEAMS !== 'undefined') ? (_g45NhlInfoDe(nomEquipe) || _g45NhlInfoDe(nomAdverse)) : null;   /* 20261025a */
         if (info) {
           var chemin = '/v1/club-schedule-season/' + info.abbr + '/now';
           var r = await fetch(FD_PROXY + '?key=nhl&path=' + encodeURIComponent(chemin) + '&host=nhl');
@@ -40109,7 +40123,7 @@ function _g45ScoreTexte(h) {
           if (jeu && jeu.gameState && /OFF|FINAL/i.test(jeu.gameState) && jeu.homeTeam && jeu.awayTeam) {
             hs = jeu.homeTeam.score; as = jeu.awayTeam.score;
             /* 20261003q : qui recevait, selon la NHL elle-même (sert à ranger les noms autour du score). */
-            var _infoMoi = NHL_TEAMS[nomEquipe], _hab = String(jeu.homeTeam.abbrev || '');
+            var _infoMoi = _g45NhlInfoDe(nomEquipe), _hab = String(jeu.homeTeam.abbrev || '');
             if (_hab) mdNhl = _infoMoi ? (_hab === _infoMoi.abbr) : (_hab !== info.abbr);
           }
         }
