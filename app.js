@@ -72649,7 +72649,10 @@ function _g45AgConsigne(note, isDom) {
       if (!l) return;
       if (/jouer contre|d[ée]faite/i.test(l)) legs.push({ k: 'def' });
       else if (/victoire/i.test(l)) legs.push({ k: 'vic' });
-      else if (/vainqueur/i.test(l)) legs.push({ k: 'vqr' });
+      else if (/vainqueur/i.test(l) && !/buts?\s+(?:de|du|des|d['’])/i.test(l)) legs.push({ k: 'vqr' });
+      /* 20261025k (ticket MyMatch « Vainqueur Dallas Stars + Nombre de buts de Dallas Stars Plus de 2,5 ») : buts d'UNE équipe (« buts de Dallas
+         plus de 2,5 ») ≠ total du match : jambe 'teq' (ESPN n'a pas de cote de total d'équipe → « regarde ton book »). */
+      else if ((t2 = l.match(/buts?\s+(?:de|du|des|d['’])\s*(.+?)\s+(over|under|plus de|moins de)\s*(\d+(?:[.,]\d)?)/i))) legs.push({ k: 'teq', s: /over|plus/i.test(t2[2]) ? 'ov' : 'un', L: parseFloat(t2[3].replace(',', '.')), eq: t2[1].replace(/^(l['’]|la |le |les )/i, '').trim() });
       else if ((t2 = l.match(/(over|under|plus de|moins de)\s*(\d+(?:[.,]\d)?)/i))) legs.push({ k: /over|plus/i.test(t2[1]) ? 'ov' : 'un', L: parseFloat(t2[2].replace(',', '.')) });
       else if (/buteur|marqueur|essai/i.test(l)) legs.push({ k: 'but' });
       else legs.push({ k: '?', t: l });
@@ -72729,6 +72732,7 @@ function _g45AgOdHtml(C, od, sp) {
         c = l.k === 'ov' ? od.ov : od.un;
       }
       else if (l.k === 'but') { parts.push('<span style="color:#c9d3ee;">buteur : pas de cote</span>'); ok = false; return; }
+      else if (l.k === 'teq') { parts.push('🎯 ' + String(l.eq).replace(/</g, '&lt;') + ' ' + (l.s === 'ov' ? 'plus de ' : 'moins de ') + String(l.L).replace('.', ',') + ' buts <span style="color:#ffb36b;">pas de cote chez ESPN, regarde ton book</span>'); ok = false; return; }   /* 20261025k */
       else { parts.push('<span style="color:#c9d3ee;">« ' + String(l.t).replace(/</g, '&lt;') + ' » : pas de cote</span>'); ok = false; return; }
       if (!(c > 1)) { parts.push(lib + ' –'); ok = false; return; }
       parts.push(lib + ' <b style="color:#1ed760;">' + f(c) + '</b>'); prod *= c; nb++;

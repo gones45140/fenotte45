@@ -377,6 +377,7 @@ Il est dans les DEUX dépôts (gones45 et fenotte45), identique (cmp). Jamais de
   jour (puis veille) sport/compSlug, mémoire 30 min, ≤ 8 jours, match par id ou noms (`_g45AgOdEv`, _g45TrOddsEv + total.over/under) →
   `_g45AgOdHtml` (combiné = produit ESTIMÉ, ligne over/under ≠ ESPN → « ligne non proposée », ✅/❌ seuil sur cote victoire/défaite).
   Pas de cotes : KHL, Euroleague, Pro A. Testé vm 15/15 + rendu Chromium. CONFIRMÉ par Antoine (capture) : NHL Hurricanes 1,56.
+  20261025k (« l'agenda va comprendre ? » : consigne « Dallas Stars Nombre de buts de Dallas Stars Plus de 2,5 », ticket MyMatch Vainqueur Dallas + buts de Dallas +2,5) : « Plus de 2,5 » était pris pour le TOTAL du match → `_g45AgConsigne` : jambe 'teq' (« buts de / du / des / d' <équipe> plus / moins de N ») ; « vainqueur » ignoré si la jambe parle de buts d'une équipe ; `_g45AgOdHtml` : « 🎯 <équipe> plus de N buts · pas de cote chez ESPN, regarde ton book ». Test vm 4/4, smoke 103.
   20261014o (« le cache est trop noir et vide au milieu », maquette en image, choix 2 validé) : carte de l'Agenda = logos des DEUX équipes face à face
   en filigrane « VS » (.g45ag-vs, opacité .24, à gauche de l'heure ; téléphone < 600 px : plus petits, .3) ; m.ourLogo / m.advLogo : foot = homeLogo /
   awayLogo du calendrier sinon a.espncdn.com/i/teamlogos/soccer/500/<id>.png ; ⭐ suivies = _espnLogoDe ; Euroleague = u.logoUrl / écusson + x.ol
