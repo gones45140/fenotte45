@@ -65687,7 +65687,11 @@ var _G45_JOU_TABLE = {
   ]},
   baseball: { cats: ['batting'], roles: [
     { k: 'hr', lab: 'Home run',    col: '#1ed760', ico: '\u26BE',       cols: [['HR']], mode: 'first' },
-    { k: 'r',  lab: 'Run inscrit', col: '#4d84ff', lettre: 'R',           cols: [['R']],  mode: 'first' }
+    { k: 'r',  lab: 'Run inscrit', col: '#4d84ff', lettre: 'R',           cols: [['R']],  mode: 'first' },
+    /* 20261025m (« je voulais voir quand Misio était lanceur », maquette « OUI » ; SONDÉ par Antoine sur Rays @ Brewers : boxscore.players[].statistics
+       contient 'pitching', athletes[].starter = true pour le lanceur PARTANT) : rôle « Lanceur partant » = 1 match compté par départ. Avec ce rôle,
+       seuls les matchs où il a été lanceur partant sont comptés (jFiltre). */
+    { k: 'lp', lab: 'Lanceur partant', col: '#f0b020', ico: '\u26BE', starter: true, cats: ['pitching'], cols: [], mode: 'first' }
   ]},
   /* RUGBY / NRL : structure TOTALEMENT differente, sondee le 19/09 sur un
      match des Roosters. Pas de tableau `stats` aligne sur des `labels`, mais
@@ -65727,7 +65731,7 @@ window._g45JouCtx = null;     /* contexte du panneau en cours d'affichage */
 
 function _g45JouCfg(sp) { return _G45_JOU_TABLE[String(sp || '')] || null; }
 /* 20261005p : v1 → v2 — l'index garde aussi QUI A JOUÉ chaque match (idx.pres) pour repérer un joueur absent. */
-function _g45JouCle(sp, lg, an, teamId) { return 'g45_jou_v2_' + sp + '_' + lg + '_' + (teamId || '?') + '_' + an; }
+function _g45JouCle(sp, lg, an, teamId) { return 'g45_jou_v' + (sp === 'baseball' ? '3' : '2') + '_' + sp + '_' + lg + '_' + (teamId || '?') + '_' + an; }
 
 function _g45JouLire(cle) {
   try { return JSON.parse(localStorage.getItem(cle) || 'null'); } catch (e) { return null; }
@@ -65843,6 +65847,15 @@ function _g45JouLireMatch(cfg, sum, teamId, nomNorm, idx) {
   cfg.roles.forEach(function (role) {
     var cats = _g45JouCats(mien, role.cats || cfg.cats);
     var parJ = {}, vus = {};
+    if (role.starter) {   /* 20261025m : lanceur partant (athletes[].starter de la catégorie pitching) */
+      cats.forEach(function (c) { (c.athletes || []).forEach(function (a) {
+        var ath = a.athlete || {}, aid = String(ath.id || ath.displayName || ''); if (!aid) return;
+        if (!idx.joueurs[aid]) idx.joueurs[aid] = { nom: ath.displayName || ath.shortName || ath.fullName || '?', tot: {} };
+        if (a.starter === true && !parJ[aid]) { parJ[aid] = 1; idx.joueurs[aid].tot[role.k] = (idx.joueurs[aid].tot[role.k] || 0) + 1; }
+      }); });
+      if (Object.keys(parJ).length) res[role.k] = parJ;
+      return;
+    }
     cats.forEach(function (c) {
       var idxs = role.cols.map(function (cands) { return _g45JouColIdx(c, cands); });
       if (!idxs.some(function (x) { return x >= 0; })) return;   /* colonne absente ici */
@@ -67007,7 +67020,7 @@ window._g45ClvSelection = _g45ClvSelection; window._g45ClvPoser = _g45ClvPoser; 
       (setItem et save) puisse les vider.
    3) Au-delà de 4 millions de caractères stockés, purge préventive des
       caches (jamais g45v5, les données). */
-var _G45_CACHE_MORTS = ['g45reg1_v5_', 'g45reg1_f8_' /* 16/10 : → v6_ / f9_ (valeurs par match, seuil 2+) */, 'g45trOdds_' /* 13/10 : → g45trOdds2_ (marchés dans la clé) */, 'g45agoa1_' /* 11/10 : → g45agoa2_ (nom des books) */, 'g45nrlcal11_' /* 06/10 : → g45nrlcal12_ (présaison US écartée) */, 'g45f1tr1_' /* 04/10 : → g45f1tr2_ (voie des stands) */, 'g45bbjc1' /* 03/10 : → g45bbjc2 (clubs par saison) */, 'g45bbph1_' /* 03/10 : → g45bbph2_ (secours Wikipédia) */, 'g45cm10_' /* 07/10 : → g45cm11_ (statut OT/SO gardé) */, 'g45_jou_v1_' /* 07/10 : → g45_jou_v2_ (présence par match) */, 'g45cm9_' /* 01/10 : → g45cm10_ (présaison NHL marquée PO) */, 'g45nrlst1_' /* 01/10 : → g45nrlst2_ */, 'g45_cfai_veille' /* 29/09 : Workers AI supprimé */, 'g45cls4_' /* 29/09 : → g45cls5_ (stats de match) */, 'g45news7_', 'g45cm_', 'g45cm2_', 'g45cm3_', 'g45cm4_', 'g45cm5_', 'g45cm6_', 'g45cm7_', 'g45cm8_',
+var _G45_CACHE_MORTS = ['g45_jou_v2_baseball_' /* 25/10 : → v3 (lanceur partant) */, 'g45reg1_v5_', 'g45reg1_f8_' /* 16/10 : → v6_ / f9_ (valeurs par match, seuil 2+) */, 'g45trOdds_' /* 13/10 : → g45trOdds2_ (marchés dans la clé) */, 'g45agoa1_' /* 11/10 : → g45agoa2_ (nom des books) */, 'g45nrlcal11_' /* 06/10 : → g45nrlcal12_ (présaison US écartée) */, 'g45f1tr1_' /* 04/10 : → g45f1tr2_ (voie des stands) */, 'g45bbjc1' /* 03/10 : → g45bbjc2 (clubs par saison) */, 'g45bbph1_' /* 03/10 : → g45bbph2_ (secours Wikipédia) */, 'g45cm10_' /* 07/10 : → g45cm11_ (statut OT/SO gardé) */, 'g45_jou_v1_' /* 07/10 : → g45_jou_v2_ (présence par match) */, 'g45cm9_' /* 01/10 : → g45cm10_ (présaison NHL marquée PO) */, 'g45nrlst1_' /* 01/10 : → g45nrlst2_ */, 'g45_cfai_veille' /* 29/09 : Workers AI supprimé */, 'g45cls4_' /* 29/09 : → g45cls5_ (stats de match) */, 'g45news7_', 'g45cm_', 'g45cm2_', 'g45cm3_', 'g45cm4_', 'g45cm5_', 'g45cm6_', 'g45cm7_', 'g45cm8_',
   'g45khl_fiche_', 'g45_saisons_cache_v2_', 'g45_score_', 'g45_score2_', 'g45_score3_'];
 try {
   ['g45cm11_', 'g45xgj1_', 'g45khl_fiche2_', 'g45khl_plage_', 'g45cls3_', 'g45cls5_', 'g45photostsdb_', 'g45wk1_', 'g45jv_', 'g45art1_', 'g45clv1_', 'g45arb1_', 'g45_herologo_', 'g45cm3_']
@@ -74756,6 +74769,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var P = joueurs(c);
     return ms.filter(function (m) {
       if (P.length && P.some(function (x) { return !jValP(x.id, m); })) return false;
+      if (S.ctx && c.jm === 'lp' && P.some(function (x) { var v = jValP(x.id, m); return !v || !v.lp; })) return false;   /* 20261025m : seulement ses départs */
       if (c.pm && !m.pr) return false;
       if (fBesoin(c) && !fVal(m)) return false;
       /* 20261024b (ticket Brisbane – Perth « Mi-temps, nombre de buts, plus de 1 » ; « ce n'est pas 0,5, c'est 1 ») : buts par mi-temps =
@@ -75205,11 +75219,13 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       var UU = S.ui[nom] || {}, man = usManque(D), TOT = {};
       S.uiI.forEach(function (ix) { if (!ix || !ix.joueurs) return; Object.keys(ix.joueurs).forEach(function (a) { var o = TOT[a] || (TOT[a] = { id: a, nom: ix.joueurs[a].nom || '?', v: 0 }); o.v += (ix.joueurs[a].tot || {})[c.jm] || 0; }); });
       var LJ = Object.keys(TOT).map(function (a) { return TOT[a]; }).sort(function (x, y) { return y.v - x.v || String(x.nom).localeCompare(String(y.nom)); });
+      if (c.jm === 'lp') LJ = LJ.filter(function (x) { return x.v > 0; });   /* 20261025m : lanceurs partants seulement */
+      if (c.jm === 'lp') [['jo', 'jn'], ['jo2', 'jn2'], ['jo3', 'jn3']].forEach(function (k) { if (c[k[0]] && !LJ.some(function (x) { return x.id === c[k[0]]; })) { delete c[k[0]]; delete c[k[1]]; } });   /* frappeur choisi avant : retiré */
       S.ro[nom] = { l: LJ };
       var selU = function (slot, k) {
         var t = '<select onchange="g45CrJoueur(this.value,' + slot + ')" style="background:#16213f;color:#fff;border:1px solid #6d9dff;border-radius:8px;padding:7px 10px;font-size:14px;margin:0 6px 6px 0;max-width:100%;">'
           + '<option value="">' + (slot === 1 ? 'Aucun joueur' : '+ joueur') + '</option>';
-        LJ.forEach(function (x) { t += '<option value="' + x.id + '"' + (c[k] === x.id ? ' selected' : '') + '>' + esc(x.nom) + (x.v ? ' (' + x.v + ')' : '') + '</option>'; });
+        LJ.forEach(function (x) { t += '<option value="' + x.id + '"' + (c[k] === x.id ? ' selected' : '') + '>' + esc(x.nom) + (x.v ? (c.jm === 'lp' ? ' · lanceur (' + x.v + ' départ' + (x.v > 1 ? 's' : '') + ')' : ' (' + x.v + ')') : '') + '</option>'; });
         return t + '</select>';
       };
       h += '<div style="font-size:15px;font-weight:800;margin:14px 0 2px;padding-top:8px;border-top:1px solid #2a3a63;">👤 Joueurs</div>';
@@ -75218,7 +75234,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       if (LJ.length) {
         h += lab('Joueurs (1 à 3, matchs où ils ont TOUS joué)') + selU(1, 'jo') + (c.jo ? selU(2, 'jo2') : '') + (c.jo2 ? selU(3, 'jo3') : '')
           + lab('Ce qu\'il doit faire') + RL.map(function (r) { return b(c.jm === r.k, (r.ico || '') + ' ' + r.lab, "g45CrSet('jm','" + r.k + "')"); }).join('')
-          + lab('Combien') + ['1', '2', '3'].map(function (n) { return b(String(c.jmin) === n, n + ' ou +', "g45CrSet('jmin','" + n + "')"); }).join('');
+          + (c.jm === 'lp' ? '<div style="font-size:14px;color:#fff;margin:6px 0;">⚾ Seuls les matchs où il a été lanceur partant sont comptés.</div>' : lab('Combien') + ['1', '2', '3'].map(function (n) { return b(String(c.jmin) === n, n + ' ou +', "g45CrSet('jmin','" + n + "')"); }).join(''));   /* 20261025m */
         if (c.jo2) h += lab('Avec ' + (c.jo3 ? '3' : '2') + ' joueurs') + b(c.jx !== 'un', 'Chacun', "g45CrSet('jx','cha')") + b(c.jx === 'un', 'Au moins un (double chance)', "g45CrSet('jx','un')");
       } else if (!UU.enCours) h += '<div style="font-size:13px;color:#c9d3ee;margin:4px 0;">Lis d\'abord les feuilles de match : la liste des joueurs vient de là.</div>';
       q4 = h.length;

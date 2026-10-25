@@ -1669,6 +1669,7 @@ RÉGLÉ (worker, 01/10) : cron « exceededCpu » (cpuTimeMs 10) à CHAQUE passag
   Paris calculée à la main (dernier dimanche de mars / octobre 01:00 UTC ; 6 cas comparés à Intl, identiques). worker.js complet donné,
   REDÉPLOYÉ le 13/10 (avec /odds en crédits). Erreurs du SOIR (multiplex foot) : budget `_lourd` 4 → 2 PROPOSÉ, en attente de réponse.
 À VOIR (en attente d'un retour d'Antoine) :
+- ⚾ 20261025m — LANCEUR PARTANT dans Critères → 👤 Joueurs (« je voulais voir quand Misio était lanceur », maquette « OUI ») : SONDÉ par Antoine (Rays @ Brewers) : boxscore.players[].statistics = batting + pitching (labels IP H R ER BB K HR PC-ST ERA PC), athletes[].starter true = partant. Rôle baseball 'lp' (_G45_JOU_TABLE, starter:true, cats pitching) lu dans `_g45JouLireMatch` ; clé baseball g45_jou_v3_ (v2 baseball dans _G45_CACHE_MORTS → relire les feuilles 1 fois) ; liste = lanceurs partants « · lanceur (N départs) », frappeur choisi avant retiré, pas de « Combien » ; jFiltre : seuls ses départs comptés. Test vm (Misiorowski lp, Romero relève non), smoke 103.
 - ⚾ LANCEURS MLB DANS L'AGENDA (17/10, Misiorowski) : carte JOUEUR ⚾ → afficher le match SEULEMENT s'il est lanceur partant annoncé. Sonde demandée à
   Antoine (PC) : scoreboard baseball/mlb → competitions[0].competitors[].probables[{name, athlete.displayName}] (NON vérifié). Rappel programmé le 17/10 14 h.
   Joueurs 🏈 NFL / 🏀 NBA dans l'Agenda : FAIT (20261017x).
