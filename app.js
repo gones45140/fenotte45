@@ -755,9 +755,8 @@ var BK={
   "pmu":        {n:"PMU",        c:"#3a6fd8", d:"pmu.fr"},
   /* Piwi247 n'a pas de favicon exploitable : logo depose dans le depot (16/09). */
   "piwi":       {n:"Piwi",       c:"#a855f7", d:"", logo:"images/books/piwi.png"},
-  /* 20261025g (compte Piwi fermé : « Piwi devient OrbitX », logo envoyé par Antoine — un X : flèche verte vers la gauche + deux bouts blancs (20261025h) —, redessiné en SVG intégré → marche sur gones ET fenotte,
-     sans fichier image). Compte d'Antoine seulement (_G45_BK_PERSO) ; mis en 1er choix des listes (fin d'app.js). */
-  "orbitx":     {n:"OrbitX",     c:"#8dc63f", d:"", logo:"data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='50' fill='%233d3d3d'/><path d='M14 24h22l18 24H32z' fill='%23fff'/><path d='M14 76l18-24h22L36 76z' fill='%23fff'/><path d='M86 24H64L42 50h22z' fill='%238dc63f'/><path d='M42 50h22l22 26H64z' fill='%235f9e22'/></svg>"},
+  /* 20261025g (compte Piwi fermé : « Piwi devient OrbitX », 20261025i : VRAI logo déposé par Antoine dans images/books/orbitx.png, recadré en rond 128 px ; copié aussi dans fenotte45). Compte d'Antoine seulement (_G45_BK_PERSO) ; mis en 1er choix des listes (fin d'app.js). */
+  "orbitx":     {n:"OrbitX",     c:"#8dc63f", d:"", logo:"images/books/orbitx.png"},
   "betsson":    {n:"Betsson",    c:"#f0b020", d:"betsson.com"},
   "betify":     {n:"Betify",     c:"#22d3ee", d:"betify.com"},
   "bet365":     {n:"Bet365",     c:"#d4b006", d:"bet365.com"}
