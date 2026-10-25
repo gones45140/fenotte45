@@ -72069,6 +72069,22 @@ function _g45TicketRemplirCockpit(o) {
       || (function () { var R = window._g45TkRacines, r0 = R(eq); return r0 ? ops.filter(function (op) { return R(nz(op.value)) === r0; })[0] : null; })();
     if (choisi) { un.value = choisi.value; ids.push('c-unit'); try { if (typeof updMise === 'function') updMise(); if (typeof renderCrash === 'function') renderCrash(); } catch (x) {} }
   }
+  /* 20261025c (capture : ticket Winamax MyMatch Edmonton – Toronto → « Edmonton Oilers n'est pas une équipe de ton mur », alors que la carte
+     JOUEUR Ryan Nugent-Hopkins, club Edmonton Oilers, y est) : équipe absente du mur → carte JOUEUR dont le CLUB (_g45UClub) est cette équipe.
+     Plusieurs joueurs de ce club → celui dont le nom de famille est dans le ticket (type / joueur) ; sinon aucun (alerte comme avant). */
+  if (un && eq && !choisi) {
+    try {
+      var UJ = (typeof state !== 'undefined' && state && state.u) ? state.u : [], RJ = window._g45TkRacines, rq0 = RJ ? RJ(eq) : '';
+      var memeC = function (c) { c = nz(c); return !!c && (c === eq || c.indexOf(eq) >= 0 || eq.indexOf(c) >= 0 || (!!rq0 && RJ(c) === rq0)); };
+      var cJ = [].slice.call(un.options).filter(function (op) { var u2 = UJ.filter(function (x) { return x && x.n === op.value; })[0]; return u2 && u2.type === 'joueur' && memeC(_g45UClub(u2)); });
+      if (cJ.length > 1) { var txtT = ' ' + nz(String(o.type || '') + ' ' + String(o.joueur || '')) + ' '; cJ = cJ.filter(function (op) { var w = nz(op.value).split(' ').filter(function (x) { return x.length >= 3; }); return w.length && txtT.indexOf(' ' + w[w.length - 1] + ' ') >= 0; }); }
+      if (cJ.length === 1) {
+        choisi = cJ[0]; cj = [choisi]; un.value = choisi.value; ids.push('c-unit');
+        if (!o.joueur) o.joueur = choisi.value;
+        try { if (typeof updMise === 'function') updMise(); if (typeof renderCrash === 'function') renderCrash(); } catch (x) {}
+      }
+    } catch (x) {}
+  }
   /* 20261016f (ticket Winamax « Résultat Florida Panthers » vs Vancouver Canucks, Florida absent du mur, Vancouver présent ; choix
      d'Antoine : « celle de Vancouver ») : équipe jouée absente du mur mais ADVERSAIRE au mur → pari CONTRE cette équipe : sa carte,
      adversaire = l'équipe du ticket, lieu inversé, « Résultat / Victoire » → « Défaite ». */
