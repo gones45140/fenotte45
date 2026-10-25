@@ -75870,6 +75870,8 @@ var _G45_CL_MAP = [
   [/\bla ?liga\b|^liga\b/i, 'soccer', 'esp.1'], [/serie a/i, 'soccer', 'ita.1'], [/bundesliga/i, 'soccer', 'ger.1'],
   [/eredivisie/i, 'soccer', 'ned.1'], [/\bMLS\b/i, 'soccer', 'usa.1'],
   [/top ?14/i, 'rugby', '270559'], [/\bNRL\b/i, 'rugby-league', '3'],
+  /* 20261025r (cartes NHL sans logo : compétition lue sur le ticket = « National Hockey League ») : noms longs des ligues US */
+  [/national hockey league/i, 'L', 'nhl'], [/national basketball association/i, 'L', 'nba'], [/national football league/i, 'L', 'nfl'], [/major league baseball/i, 'L', 'mlb'],
   [/\bNHL\b/i, 'L', 'nhl'], [/\bWNBA\b/i, 'L', 'wnba'], [/\bNBA\b/i, 'L', 'nba'], [/\bNFL\b/i, 'L', 'nfl'], [/\bMLB\b/i, 'L', 'mlb']
 ];
 var _g45ClEnCours = {}, _g45ClRate = {};

@@ -1235,6 +1235,7 @@ Il est dans les DEUX dépôts (gones45 et fenotte45), identique (cmp). Jamais de
   openBetEdit (archive ×2 + `_g45BetRowMini`) de largeur ≥ 700 px → img .g45-cl-fil (84 px, opacité .5, left 58 %, marqué data-g45cl) ; h.comp →
   `_G45_CL_MAP` → `_g45ClLogo(comp, rendre)` : NHL / NBA / NFL / MLB / WNBA = teamlogos/leagues/500/<x>.png ; foot / Top 14 / NRL = leagues[0].logos du
   scoreboard ESPN (dark d'abord), mémorisé g45_lglogo_<sport>_<slug> (même clé que le calendrier). Téléphone inchangé. Smoke (36).
+  20261025r (cartes de paris NHL sans le logo de la ligue : compétition lue sur le ticket = « National Hockey League ») : _G45_CL_MAP reconnaît aussi les noms longs National Hockey League / National Basketball Association / National Football League / Major League Baseball. Test 6/6, smoke 104.
 - LIGNES « Paris filtrés » (`_g45BetRowMini`) — 20261018a (capture : City gagné « mi vert mi rouge ») : fond = couleur du RÉSULTAT seule (vert / rouge /
   jaune ; avant : couleur du book ou de l'équipe mêlée) ; pari SIMPLE → logo du book à droite = bkFavicon(h.b, 38) pleine opacité (avant 28 px, .6).
   20261018b (« beaucoup trop gros le W », « logos toujours trop transparents ») : book revenu à 28 px (opaque) ; logo d'équipe et logo F1 opacité 1.
