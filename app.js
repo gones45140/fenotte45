@@ -8310,7 +8310,7 @@ async function g45GeminiModeles(force) {
 }
 window.g45GeminiModeles = g45GeminiModeles;
 
-var _G45_GROQ_EXCLUS = /whisper|tts|guard|embed|orpheus|safeguard|moderation|prompt-guard/i;
+var _G45_GROQ_EXCLUS = /whisper|tts|guard|embed|orpheus|safeguard|moderation|prompt-guard|allam/i;   /* 20261025s : + allam (ALLaM 2 7B : « il fabule », 🎯 répétés à l'infini) */
 
 function _g45GroqCache(cle) {
   try {
@@ -32285,6 +32285,7 @@ async function _g45MultiAI(box, boxId, sys, facts, title){
     var c=d&&d.choices&&d.choices[0];
     var t=_g45IaNettoyer(((c&&c.message&&c.message.content)||'').replace(/<think>[\s\S]*?<\/think>/g,'').replace(/<think>[\s\S]*$/,''));
     if(t && c && c.finish_reason==='length') t+='\n⚠️ Réponse coupée (limite de longueur atteinte) : relance si besoin.';
+    if(t && window._g45IaCharabia && window._g45IaCharabia(t)) return '';   /* 20261025s : charabia → réponse jetée (le 3e avis passe au modèle suivant) */
     return t;
   };
   var groq=(async function(){
@@ -32382,6 +32383,15 @@ async function _g45MultiAI(box, boxId, sys, facts, title){
    (2) ses probabilités ne font pas ~100 %, (3) sa proba du favori s'écarte de
    plus de 20 points de celle des cotes (sans marge) fournies, (4) ses points
    clés citent plus d'un chiffre absent des FAITS. Rend la raison, ou ''. */
+/* 20261025s (capture « il fabule » : ALLaM 2 7B a rendu ~200 « 🎯 » à la suite) : réponse sans texte réel (moins de 60 lettres) ou faite d'un
+   même morceau répété (un mot / emoji = plus de la moitié des morceaux, 15 fois au moins) → inutilisable. */
+window._g45IaCharabia = function (t) {
+  t = String(t || '');
+  if ((t.match(/[A-Za-zÀ-ÿ]/g) || []).length < 60) return true;
+  var m = t.split(/\s+/).filter(Boolean), c = {}, mx = 0;
+  m.forEach(function (w) { c[w] = (c[w] || 0) + 1; if (c[w] > mx) mx = c[w]; });
+  return mx >= 15 && mx > m.length / 2;
+};
 function _g45IaIncoherent(txt, facts, sys){
   var t=_g45IaNettoyer(txt), F=(facts||[]).join('\n').replace(/,(\d)/g,'.$1');
   /* 29/09 (F1, capture d'Antoine) : F1 / cyclisme / MotoGP demandent « FAVORI » et pas

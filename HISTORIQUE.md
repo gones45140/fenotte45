@@ -747,6 +747,7 @@ Il est dans les DEUX dépôts (gones45 et fenotte45), identique (cmp). Jamais de
   (capture d'Antoine : note Autriche, « rÃ©ussit », sur le GP de Singapour) → filtrés et réparés (texte + place + contexte).
   29k — tirs / cadrés / corners / possession du bon côté ajoutés aux faits IA (depuis
   `_g45ClsMatchs`, voir Classements ci-dessous).
+  20261025s (capture « il fabule » : 3e avis ALLaM 2 7B (Groq) = ~200 « 🎯 ») : _G45_GROQ_EXCLUS + allam ; `window._g45IaCharabia(t)` (moins de 60 lettres, ou un même morceau ≥ 15 fois et > moitié du texte) appliqué dans lireOAI de `_g45MultiAI` → réponse jetée, le 3e avis passe au modèle suivant. Test 3/3, smoke 104.
 - Photos plus hautes que larges (Wikipédia en pied) : `_g45Cadrer(img)` au onload →
   object-position 50 % 6 % (terrain `g45PitchPhotosAppliquer` + rendu direct,
   Compo `_g45CompoWiki`, effectif `_g45SquadPhotos`) — 28b.
