@@ -1996,6 +1996,7 @@ ACCUEIL bet45 « CHOISIS TON CLUB » (20261011b, maquette validée « Parfait »
   Inter Milan, Arsenal, Los Angeles Lakers, Colorado Avalanche, LA Dodgers, Kansas City Chiefs, Stade Toulousain, Penrith Panthers (11, 4 places
   libres), presets retirés notés dans g45_presets_off ; compte EXISTANT → équipe de _G45_MUR2 ajoutée pour chaque sport sans équipe (hors foot),
   jamais une équipe supprimée (g45_presets_off), jamais au-delà de 15. Smoke (35).
+- 📅 20261025f (« on pourrait rajouter bénéf mois en cours en haut ? » → maquette « OUI » ; « d'ailleurs sous bénéf mettre la date du 1er pari ») : Mur, 3e case après Bankroll / Bénéfice (#g45-mois-kpi, `_g45MoisKpi`, calcul `_g45MoisCalc(A, d)`) = nom du mois, bénéfice des paris réglés du mois (h.date, hors isPending, même formule que render), « N paris · X % ✅ » ; grille auto-fit 150 px, écran étroit → 3e case pleine largeur. Sous Bénéfice : « depuis le JJ/MM/AAAA » (#g45-ben-dep, `_g45PremierPari`, plus ancienne date de state.a + state.h). render enveloppé en fin d'app.js. Captures 412 / 1100 vérifiées, smoke mois (101).
 BILAN, barre d'info sous la courbe (20261011e, capture : « Global … · Winamax … · Betclic… » coupé) : style.css a .cib-val en flex-shrink:0 →
   feuille #g45-cib-ligne (app.js) : .chart-info-bar flex-wrap, .cib-val flex 1 1 220px + retour à la ligne (sous la date si longue). Testé Chromium 412 px.
 BILAN « Répartition par type » (20261011f, maquette validée « c'est mieux oui ») : renderChartTypeDonut REDÉFINIE en fin d'app.js (gagne sur

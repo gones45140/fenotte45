@@ -80689,3 +80689,53 @@ window._g45TrTestVoit = function () { try { return (typeof _g45SanteActive === '
     return r;
   };
 })();
+
+/* ═══ 20261025f — 📅 BÉNÉFICE DU MOIS EN COURS (Mur, à côté de Bankroll / Bénéfice ; « on pourrait rajouter bénéf mois en cours en haut ? »,
+   maquette « OUI ») ═══ 3e case « OCTOBRE » (nom du mois, change seul le 1er) : bénéfice des paris RÉGLÉS (state.a, hors « en attente »)
+   dont la date (h.date, jour du match) est dans le mois en cours — même calcul que « Bénéfice » de render (gagné : m × cote − m, perdu : −m ;
+   ½ / remboursé déjà ramenés à une cote / mise effective). Ligne dessous : nombre de paris · % de réussite. Grille 3 cases, la 3e passe
+   dessous sur un écran étroit (auto-fit, 150 px mini). render enveloppé (les deux copies passent par le même nom global). */
+(function () {
+  var MOIS = ['JANVIER', 'FÉVRIER', 'MARS', 'AVRIL', 'MAI', 'JUIN', 'JUILLET', 'AOÛT', 'SEPTEMBRE', 'OCTOBRE', 'NOVEMBRE', 'DÉCEMBRE'];
+  window._g45MoisCalc = function (A, d) {
+    d = d || new Date();
+    var cle = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'), ben = 0, n = 0, g = 0;
+    (A || []).forEach(function (h) {
+      if (!h || h.isPending || String(h.date || '').slice(0, 7) !== cle) return;
+      var m = parseFloat(h.m) || 0, c = parseFloat(h.cote) || 0;
+      ben += h.win ? (m * c - m) : -m; n++; if (h.win) g++;
+    });
+    return { mois: MOIS[d.getMonth()], ben: Math.round(ben * 100) / 100, n: n, pc: n ? Math.round(g / n * 100) : 0 };
+  };
+  window._g45MoisKpi = function () {
+    var be = document.getElementById('d-ben'); if (!be) return;
+    var grille = be.closest('.kpi2'); if (!grille) return;
+    var box = document.getElementById('g45-mois-kpi');
+    if (!box) {
+      grille.style.gridTemplateColumns = 'repeat(auto-fit,minmax(150px,1fr))';
+      box = document.createElement('div'); box.id = 'g45-mois-kpi'; box.className = 'kpibox'; box.style.setProperty('--ac', '#f0b020');
+      grille.appendChild(box);
+    }
+    var R = window._g45MoisCalc((typeof state !== 'undefined' && state) ? state.a : []);
+    var txt = (R.ben >= 0 ? '+' : '') + R.ben.toFixed(2) + ' €';
+    var html = '<div class="kpi-l">' + R.mois + '</div><div class="kpi-v" style="color:' + (R.ben >= 0 ? 'var(--g)' : 'var(--r)') + ';">' + txt + '</div>'
+      + '<div style="font-size:14px;font-weight:700;color:#fff;margin-top:6px;">' + R.n + ' pari' + (R.n > 1 ? 's' : '') + (R.n ? ' · ' + R.pc + ' % ✅' : '') + '</div>';
+    if (box.innerHTML !== html) box.innerHTML = html;
+    box.style.gridColumn = grille.clientWidth && grille.clientWidth < 3 * 150 + 16 ? '1 / -1' : '';   /* écran étroit : 3e case dessous, pleine largeur */
+    /* 20261025f (« d'ailleurs sous bénéf mettre la date du 1er pari ») : « depuis le JJ/MM/AAAA » = plus ancienne date de pari (réglés + en cours) */
+    var dep = document.getElementById('g45-ben-dep');
+    if (!dep) { dep = document.createElement('div'); dep.id = 'g45-ben-dep'; dep.style.cssText = 'font-size:14px;font-weight:700;color:#fff;margin-top:6px;'; be.parentNode.appendChild(dep); }
+    var d0 = window._g45PremierPari();
+    var t2 = d0 ? 'depuis le ' + d0.split('-').reverse().join('/') : '';
+    if (dep.textContent !== t2) dep.textContent = t2;
+  };
+  window._g45PremierPari = function () {
+    var L = ((typeof state !== 'undefined' && state && state.a) || []).concat((typeof state !== 'undefined' && state && state.h) || []), min = '';
+    L.forEach(function (h) { var x = String((h && h.date) || '').slice(0, 10); if (/^\d{4}-\d{2}-\d{2}$/.test(x) && (!min || x < min)) min = x; });
+    return min;
+  };
+  var r0 = window.render;
+  if (typeof r0 === 'function') window.render = function () { var r = r0.apply(this, arguments); try { window._g45MoisKpi(); } catch (e) {} return r; };
+  try { window._g45MoisKpi(); } catch (e) {}
+  addEventListener('resize', function () { try { window._g45MoisKpi(); } catch (e) {} });
+})();
