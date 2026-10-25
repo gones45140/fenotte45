@@ -755,6 +755,9 @@ var BK={
   "pmu":        {n:"PMU",        c:"#3a6fd8", d:"pmu.fr"},
   /* Piwi247 n'a pas de favicon exploitable : logo depose dans le depot (16/09). */
   "piwi":       {n:"Piwi",       c:"#a855f7", d:"", logo:"images/books/piwi.png"},
+  /* 20261025g (compte Piwi fermé : « Piwi devient OrbitX », logo envoyé par Antoine — flèche verte vers la gauche + deux bouts blancs —, redessiné en SVG intégré → marche sur gones ET fenotte,
+     sans fichier image). Compte d'Antoine seulement (_G45_BK_PERSO) ; mis en 1er choix des listes (fin d'app.js). */
+  "orbitx":     {n:"OrbitX",     c:"#8dc63f", d:"", logo:"data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='50' fill='%233d3d3d'/><path d='M16 27h20l12 17H28z' fill='%23fff'/><path d='M16 73l12-17h18L36 73z' fill='%23fff'/><path d='M86 27H65L43 51h21z' fill='%238dc63f'/><path d='M43 51h21l22 24H65z' fill='%235f9e22'/></svg>"},
   "betsson":    {n:"Betsson",    c:"#f0b020", d:"betsson.com"},
   "betify":     {n:"Betify",     c:"#22d3ee", d:"betify.com"},
   "bet365":     {n:"Bet365",     c:"#d4b006", d:"bet365.com"}
@@ -779,7 +782,7 @@ function bkFavicon(k,sz){
    comptes PERSONNELS d'Antoine et de sa femme. Sur bet45.fr (window._g45User
    defini par auth-guard.js, meme a null pour un visiteur) on propose donc un
    « PMU » generique ; sur gones45 (perso, _g45User indefini) rien ne change. */
-var _G45_BK_PERSO=['pmu antoine','pmu laura'];
+var _G45_BK_PERSO=['pmu antoine','pmu laura','orbitx'];   /* 20261025g : + orbitx */
 var DEF_BK=Object.keys(BK).filter(function(k){
   var surBet45=(typeof window!=='undefined' && typeof window._g45User!=='undefined');
   return surBet45 ? _G45_BK_PERSO.indexOf(k)<0 : k!=='pmu';
@@ -1923,6 +1926,11 @@ var sbRows=[{c:2.10,d:true,k:0},{c:2.05,d:true,k:0}];
    n'est plus qu'un affichage. */
 function sbCote(r){
   var c=(r&&r.c)||1, k=(r&&parseFloat(r.k))||0;
+  /* 20261025g (« devant cote 1 / cote 2 un sélecteur + ou − : + cote normale, − cote lay ; la cote lay aura à côté sa valeur normale »,
+     maquette envoyée) : ligne LAY (OrbitX / Betfair). Parier CONTRE à L revient à parier POUR « l'autre issue » en risquant
+     (L − 1) × mise lay pour gagner la mise lay, moins la commission → cote normale 1 + (1 − k/100) / (L − 1). La « mise » du calcul
+     est alors le RISQUE ; la mise lay à taper = risque / (L − 1) (affichée dans les résultats). */
+  if(r&&r.lay){ if(!(c>1)) return 1; if(k>=100) k=99; return 1+(1-(k>0?k:0)/100)/(c-1); }
   if(!(k>0)) return c;
   if(k>=100) k=99;
   var e=1+(c-1)*(1-k/100);
@@ -1940,6 +1948,7 @@ function sbSetCom(i,v){
   try{ localStorage.setItem('g45_sb_com_v1', JSON.stringify(sbRows.map(function(x){ return x.k||0; }))); }catch(e){}
   buildSbRows(true);
 }
+function sbSetLay(i,v){ var r=sbRows[i]; if(!r) return; r.lay=!!v; buildSbRows(); }   /* 20261025g */
 function toggleSbD(i){
   var r=sbRows[i]; if(!r) return;
   r.d = (r.d===false);
@@ -1964,7 +1973,12 @@ function buildSbRows(light){
        distinguer, alors que le resultat plus bas parle de « Mise 1 (@2.1) ». */
     return '<div class="dutch-row">'
       +'<span class="dutch-lbl">Cote '+(i+1)+'</span>'
-      +'<input type="text" inputmode="decimal" class="fi" value="'+r.c+'" placeholder="Cote '+(i+1)+'" data-idx="'+i+'" oninput="sbRows[this.dataset.idx].c=parseFloat(this.value.replace(\',\',\'.\'))||1;buildSbRows(true);">'
+      /* 20261025g : sélecteur + (cote normale) / − (cote LAY) */
+      +'<span style="display:inline-flex;flex:none;border:1px solid rgba(255,255,255,.22);border-radius:9px;overflow:hidden;">'
+      +'<button type="button" data-idx="'+i+'" onclick="sbSetLay(this.dataset.idx,false)" title="Cote normale" style="border:0;padding:7px 11px;font-size:17px;font-weight:900;cursor:pointer;background:'+(r.lay?'transparent':'#1ed760')+';color:'+(r.lay?'#c9d3ee':'#0b101d')+';">+</button>'
+      +'<button type="button" data-idx="'+i+'" onclick="sbSetLay(this.dataset.idx,true)" title="Cote LAY (OrbitX / Betfair)" style="border:0;padding:7px 11px;font-size:17px;font-weight:900;cursor:pointer;background:'+(r.lay?'#ff6b9a':'transparent')+';color:'+(r.lay?'#0b101d':'#c9d3ee')+';">−</button></span>'
+      +'<input type="text" inputmode="decimal" class="fi" value="'+r.c+'" placeholder="Cote '+(i+1)+(r.lay?' LAY':'')+'" data-idx="'+i+'" oninput="sbRows[this.dataset.idx].c=parseFloat(this.value.replace(\',\',\'.\'))||1;buildSbRows(true);">'
+      +(r.lay?'<span id="sb-eq-'+i+'" style="flex:none;font-size:14px;font-weight:800;color:#1ed760;background:#0e3a26;border-radius:6px;padding:4px 8px;white-space:nowrap;">= '+sbCote(r).toFixed(2).replace('.',',')+'</span>':'')
       +'<input type="text" inputmode="decimal" class="fi" value="'+(r.k||0)+'" title="Commission du bookmaker, en % du gain net" data-idx="'+i+'" style="width:52px;flex:none;text-align:center;color:'+((r.k>0)?'var(--gold)':'var(--t3)')+';" oninput="sbSetCom(this.dataset.idx,this.value)">'
       +'<span style="font-size:11px;color:var(--t3);">%</span>'
       +(cibles?('<button data-idx="'+i+'" onclick="toggleSbD(this.dataset.idx)" title="Concentrer le profit sur cette cote" style="border:1px solid '+(on?'rgba(30,215,96,.55)':'rgba(255,255,255,.12)')+';background:'+(on?'rgba(30,215,96,.16)':'transparent')+';color:'+(on?'var(--g)':'var(--t3)')+';border-radius:8px;padding:7px 9px;font-size:11px;white-space:nowrap;cursor:pointer;">🎯</button>'):'')
@@ -1972,8 +1986,11 @@ function buildSbRows(light){
       +'</div>'
       /* La ligne d'explication n'apparait qu'a partir d'une commission saisie :
          a 0 %, elle n'apprendrait rien et alourdirait l'ecran du telephone. */
-      +((r.k>0)?('<div style="font-size:10px;color:var(--gold);margin:-2px 0 6px 52px;">commission '+r.k+' % → cote effective '+sbCote(r).toFixed(3)+'</div>'):'');
+      +((r.k>0&&!r.lay)?('<div style="font-size:10px;color:var(--gold);margin:-2px 0 6px 52px;">commission '+r.k+' % → cote effective '+sbCote(r).toFixed(3)+'</div>'):'');
   }).join('');
+  if(light) sbRows.forEach(function(r,i){ var q=$i('sb-eq-'+i); if(q) q.textContent='= '+sbCote(r).toFixed(2).replace('.',','); });   /* 20261025g : cote normale du Lay à jour en tapant */
+  if(sbRows.some(function(r){ return r.lay; })) { var _lg=$i('sb-lay-leg'); if(!_lg){ dr.insertAdjacentHTML('afterend','<div id="sb-lay-leg" style="font-size:14px;color:#fff;margin:4px 0 8px;"><b style="color:#1ed760">+</b> cote normale · <b style="color:#ff6b9a">−</b> cote LAY (OrbitX / Betfair) : sa cote normale s\'affiche à côté et sert au calcul ; la case % = commission de l\'exchange.</div>'); } }
+  else { var _lg2=$i('sb-lay-leg'); if(_lg2) _lg2.remove(); }
   var isSure=impl<1;
   var marge=((1-impl)*100).toFixed(2);
   var pe=$i('sb-marge');
@@ -2057,6 +2074,11 @@ function buildSbRows(light){
     sbRows.forEach(function(r,i){
       var on=(r.d!==false);
       var g=gains.length?gains[i]:profit;
+      if(r.lay){   /* 20261025g : ligne LAY → mise lay à taper chez l'exchange + risque (= mise du calcul) */
+        misesHtml+='<div class="cres-row"><span class="cres-l">Mise '+(i+1)+' LAY (@'+(r.c||1)+')'+((!toutesCibles&&on)?' 🎯':'')+'</span><span class="cres-v" style="color:#fff;font-weight:900;">'+(mises[i]/((r.c||2)-1)).toFixed(2)+'€ <span style="font-weight:700;color:#c9d3ee;font-size:13px;">(risque '+mises[i].toFixed(2)+'€)</span>'
+          +(toutesCibles?'':' <span style="color:'+(g>0.005?'var(--g)':'var(--t3)')+';">('+(g>0.005?'+':'')+g.toFixed(2)+'€)</span>')+'</span></div>';
+        return;
+      }
       misesHtml+='<div class="cres-row"><span class="cres-l">Mise '+(i+1)+' (@'+(r.c||1)+((r.k>0)?(' → '+sbCote(r).toFixed(3)):'')+')'+((gorr&&i===0)?' 🎁':'')+((!toutesCibles&&on)?' 🎯':'')+'</span><span class="cres-v" style="color:#fff;font-weight:900;">'/* 20261025e : mise en BLANC (bleu foncé illisible, capture 13/10) */+mises[i].toFixed(2)+'€'
         +(toutesCibles?'':' <span style="color:'+(g>0.005?'var(--g)':'var(--t3)')+';">('+(g>0.005?'+':'')+g.toFixed(2)+'€)</span>')
         +'</span></div>';
@@ -9627,7 +9649,7 @@ function bkFavicon(k,sz){
    comptes PERSONNELS d'Antoine et de sa femme. Sur bet45.fr (window._g45User
    defini par auth-guard.js, meme a null pour un visiteur) on propose donc un
    « PMU » generique ; sur gones45 (perso, _g45User indefini) rien ne change. */
-var _G45_BK_PERSO=['pmu antoine','pmu laura'];
+var _G45_BK_PERSO=['pmu antoine','pmu laura','orbitx'];   /* 20261025g : + orbitx */
 var DEF_BK=Object.keys(BK).filter(function(k){
   var surBet45=(typeof window!=='undefined' && typeof window._g45User!=='undefined');
   return surBet45 ? _G45_BK_PERSO.indexOf(k)<0 : k!=='pmu';
@@ -10676,6 +10698,11 @@ var sbRows=[{c:2.10,d:true,k:0},{c:2.05,d:true,k:0}];
    n'est plus qu'un affichage. */
 function sbCote(r){
   var c=(r&&r.c)||1, k=(r&&parseFloat(r.k))||0;
+  /* 20261025g (« devant cote 1 / cote 2 un sélecteur + ou − : + cote normale, − cote lay ; la cote lay aura à côté sa valeur normale »,
+     maquette envoyée) : ligne LAY (OrbitX / Betfair). Parier CONTRE à L revient à parier POUR « l'autre issue » en risquant
+     (L − 1) × mise lay pour gagner la mise lay, moins la commission → cote normale 1 + (1 − k/100) / (L − 1). La « mise » du calcul
+     est alors le RISQUE ; la mise lay à taper = risque / (L − 1) (affichée dans les résultats). */
+  if(r&&r.lay){ if(!(c>1)) return 1; if(k>=100) k=99; return 1+(1-(k>0?k:0)/100)/(c-1); }
   if(!(k>0)) return c;
   if(k>=100) k=99;
   var e=1+(c-1)*(1-k/100);
@@ -10693,6 +10720,7 @@ function sbSetCom(i,v){
   try{ localStorage.setItem('g45_sb_com_v1', JSON.stringify(sbRows.map(function(x){ return x.k||0; }))); }catch(e){}
   buildSbRows(true);
 }
+function sbSetLay(i,v){ var r=sbRows[i]; if(!r) return; r.lay=!!v; buildSbRows(); }   /* 20261025g */
 function toggleSbD(i){
   var r=sbRows[i]; if(!r) return;
   r.d = (r.d===false);
@@ -10717,7 +10745,12 @@ function buildSbRows(light){
        distinguer, alors que le resultat plus bas parle de « Mise 1 (@2.1) ». */
     return '<div class="dutch-row">'
       +'<span class="dutch-lbl">Cote '+(i+1)+'</span>'
-      +'<input type="text" inputmode="decimal" class="fi" value="'+r.c+'" placeholder="Cote '+(i+1)+'" data-idx="'+i+'" oninput="sbRows[this.dataset.idx].c=parseFloat(this.value.replace(\',\',\'.\'))||1;buildSbRows(true);">'
+      /* 20261025g : sélecteur + (cote normale) / − (cote LAY) */
+      +'<span style="display:inline-flex;flex:none;border:1px solid rgba(255,255,255,.22);border-radius:9px;overflow:hidden;">'
+      +'<button type="button" data-idx="'+i+'" onclick="sbSetLay(this.dataset.idx,false)" title="Cote normale" style="border:0;padding:7px 11px;font-size:17px;font-weight:900;cursor:pointer;background:'+(r.lay?'transparent':'#1ed760')+';color:'+(r.lay?'#c9d3ee':'#0b101d')+';">+</button>'
+      +'<button type="button" data-idx="'+i+'" onclick="sbSetLay(this.dataset.idx,true)" title="Cote LAY (OrbitX / Betfair)" style="border:0;padding:7px 11px;font-size:17px;font-weight:900;cursor:pointer;background:'+(r.lay?'#ff6b9a':'transparent')+';color:'+(r.lay?'#0b101d':'#c9d3ee')+';">−</button></span>'
+      +'<input type="text" inputmode="decimal" class="fi" value="'+r.c+'" placeholder="Cote '+(i+1)+(r.lay?' LAY':'')+'" data-idx="'+i+'" oninput="sbRows[this.dataset.idx].c=parseFloat(this.value.replace(\',\',\'.\'))||1;buildSbRows(true);">'
+      +(r.lay?'<span id="sb-eq-'+i+'" style="flex:none;font-size:14px;font-weight:800;color:#1ed760;background:#0e3a26;border-radius:6px;padding:4px 8px;white-space:nowrap;">= '+sbCote(r).toFixed(2).replace('.',',')+'</span>':'')
       +'<input type="text" inputmode="decimal" class="fi" value="'+(r.k||0)+'" title="Commission du bookmaker, en % du gain net" data-idx="'+i+'" style="width:52px;flex:none;text-align:center;color:'+((r.k>0)?'var(--gold)':'var(--t3)')+';" oninput="sbSetCom(this.dataset.idx,this.value)">'
       +'<span style="font-size:11px;color:var(--t3);">%</span>'
       +(cibles?('<button data-idx="'+i+'" onclick="toggleSbD(this.dataset.idx)" title="Concentrer le profit sur cette cote" style="border:1px solid '+(on?'rgba(30,215,96,.55)':'rgba(255,255,255,.12)')+';background:'+(on?'rgba(30,215,96,.16)':'transparent')+';color:'+(on?'var(--g)':'var(--t3)')+';border-radius:8px;padding:7px 9px;font-size:11px;white-space:nowrap;cursor:pointer;">🎯</button>'):'')
@@ -10725,8 +10758,11 @@ function buildSbRows(light){
       +'</div>'
       /* La ligne d'explication n'apparait qu'a partir d'une commission saisie :
          a 0 %, elle n'apprendrait rien et alourdirait l'ecran du telephone. */
-      +((r.k>0)?('<div style="font-size:10px;color:var(--gold);margin:-2px 0 6px 52px;">commission '+r.k+' % → cote effective '+sbCote(r).toFixed(3)+'</div>'):'');
+      +((r.k>0&&!r.lay)?('<div style="font-size:10px;color:var(--gold);margin:-2px 0 6px 52px;">commission '+r.k+' % → cote effective '+sbCote(r).toFixed(3)+'</div>'):'');
   }).join('');
+  if(light) sbRows.forEach(function(r,i){ var q=$i('sb-eq-'+i); if(q) q.textContent='= '+sbCote(r).toFixed(2).replace('.',','); });   /* 20261025g : cote normale du Lay à jour en tapant */
+  if(sbRows.some(function(r){ return r.lay; })) { var _lg=$i('sb-lay-leg'); if(!_lg){ dr.insertAdjacentHTML('afterend','<div id="sb-lay-leg" style="font-size:14px;color:#fff;margin:4px 0 8px;"><b style="color:#1ed760">+</b> cote normale · <b style="color:#ff6b9a">−</b> cote LAY (OrbitX / Betfair) : sa cote normale s\'affiche à côté et sert au calcul ; la case % = commission de l\'exchange.</div>'); } }
+  else { var _lg2=$i('sb-lay-leg'); if(_lg2) _lg2.remove(); }
   var isSure=impl<1;
   var marge=((1-impl)*100).toFixed(2);
   var pe=$i('sb-marge');
@@ -10810,6 +10846,11 @@ function buildSbRows(light){
     sbRows.forEach(function(r,i){
       var on=(r.d!==false);
       var g=gains.length?gains[i]:profit;
+      if(r.lay){   /* 20261025g : ligne LAY → mise lay à taper chez l'exchange + risque (= mise du calcul) */
+        misesHtml+='<div class="cres-row"><span class="cres-l">Mise '+(i+1)+' LAY (@'+(r.c||1)+')'+((!toutesCibles&&on)?' 🎯':'')+'</span><span class="cres-v" style="color:#fff;font-weight:900;">'+(mises[i]/((r.c||2)-1)).toFixed(2)+'€ <span style="font-weight:700;color:#c9d3ee;font-size:13px;">(risque '+mises[i].toFixed(2)+'€)</span>'
+          +(toutesCibles?'':' <span style="color:'+(g>0.005?'var(--g)':'var(--t3)')+';">('+(g>0.005?'+':'')+g.toFixed(2)+'€)</span>')+'</span></div>';
+        return;
+      }
       misesHtml+='<div class="cres-row"><span class="cres-l">Mise '+(i+1)+' (@'+(r.c||1)+((r.k>0)?(' → '+sbCote(r).toFixed(3)):'')+')'+((gorr&&i===0)?' 🎁':'')+((!toutesCibles&&on)?' 🎯':'')+'</span><span class="cres-v" style="color:#fff;font-weight:900;">'/* 20261025e : mise en BLANC (bleu foncé illisible, capture 13/10) */+mises[i].toFixed(2)+'€'
         +(toutesCibles?'':' <span style="color:'+(g>0.005?'var(--g)':'var(--t3)')+';">('+(g>0.005?'+':'')+g.toFixed(2)+'€)</span>')
         +'</span></div>';
@@ -80738,4 +80779,16 @@ window._g45TrTestVoit = function () { try { return (typeof _g45SanteActive === '
   if (typeof r0 === 'function') window.render = function () { var r = r0.apply(this, arguments); try { window._g45MoisKpi(); } catch (e) {} return r; };
   try { window._g45MoisKpi(); } catch (e) {}
   addEventListener('resize', function () { try { window._g45MoisKpi(); } catch (e) {} });
+})();
+
+/* ═══ 20261025g — OrbitX EN 1er CHOIX (« Piwi devient OrbitX ») ═══ Les listes de bookmakers suivent l'ordre de state.b : OrbitX est remis
+   en tête (une fois au chargement). Piwi reste (anciens paris, solde) ; rien n'est supprimé. */
+(function () {
+  try {
+    if (typeof state === 'undefined' || !state || !state.b || !('orbitx' in state.b) || Object.keys(state.b)[0] === 'orbitx') return;
+    var nb = { orbitx: state.b.orbitx };
+    Object.keys(state.b).forEach(function (k) { if (k !== 'orbitx') nb[k] = state.b[k]; });
+    state.b = nb;
+    if (typeof render === 'function') render();
+  } catch (e) {}
 })();
