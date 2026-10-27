@@ -46793,7 +46793,7 @@ async function loadCompetTab() {
               ['classement','\ud83d\udcca Classement'], ['forme','\ud83d\udcc8 Forme'],
               /* Classements par catégorie (25/09/2026) : football seulement. */
               ].concat((c.sp === 'soccer' || (typeof _g45ClsUsOk === 'function' && _g45ClsUsOk(c)) || c.sp === 'rugby' || c.sp === 'rugby-league') ? [['categories','\ud83c\udfc5 Classements']] : []).concat([
-              ['buteurs', c.sp === 'soccer' ? '\ud83c\udfaf S\u00e9ries individuelles' /* 20261005x */ : ((c.s === 'nhl' || c.s === 'nfl' || c.s === 'mlb' || c.s === '270559' || c.s === '3') ? '\ud83c\udfaf S\u00e9ries individuelles' /* 20261005w (demande d'Antoine) ; NFL 20261006h */ : '\ud83c\udfc5 Individuel')],
+              ['buteurs', c.sp === 'soccer' ? '\ud83c\udfaf S\u00e9ries individuelles' /* 20261005x */ : ((c.s === 'nhl' || c.s === 'nfl' || c.s === 'mlb' || c.s === '270559' || c.s === '3' || c.s === 'nba' /* 20261027o */) ? '\ud83c\udfaf S\u00e9ries individuelles' /* 20261005w (demande d'Antoine) ; NFL 20261006h */ : '\ud83c\udfc5 Individuel')],
               ['transferts','\ud83d\udd04 Transferts'],
               /* Liste personnelle, sans rapport avec le mur : voir g45SuiviEqRender. */
               ['suivies','\u2b50 Suivies']]);
@@ -46858,6 +46858,12 @@ async function loadCompetTab() {
     if (c.sp === 'hockey' && c.s === 'nhl' && typeof _g45RegBloc === 'function') {
       body.innerHTML = _g45RegBloc('hockey', 'nhl', _g45CompetAnnee(c.s), '');
       g45RegOuvrir(); return;
+    }
+    /* 20261027o (capture NHL « Séries individuelles » entourée → « oui » pour la NBA) : même écran que Tendances → Marqueurs → NBA
+       (ligne points / rebonds / passes, 4 saisons, pépites, pire série datée → paliers), posé dans l'onglet. */
+    if (c.s === 'nba' && typeof window.g45NbaMq === 'function') {
+      body.innerHTML = '<div style="font-size:14px;font-weight:800;letter-spacing:1px;color:#c9d3ee;margin-bottom:8px;">🎯 LES PLUS RÉGULIERS DE LA NBA</div><div id="g45-nba-sr" style="position:relative;"></div>';
+      window._g45NbaMqHote = 'g45-nba-sr'; window.g45NbaMq(); return;
     }
     /* Top 14 : la LNR publie ses classements individuels tout faits, la ou
        ESPN n'en a aucun et ou la reconstruction couterait ~200 requetes. */
@@ -78214,7 +78220,7 @@ window._g45AgJouUs = async function (nowTs) {
   window.g45NbaMqF = function (k) { var c = k === 'auj' ? 'g45mq_auj' : 'g45mq_crit'; try { localStorage.setItem(c, localStorage.getItem(c) === '1' ? '' : '1'); } catch (e) {} window.g45NbaMq(); };
   var jeton = 0;
   window.g45NbaMq = async function () {
-    var hote = document.getElementById('g45-mq-hote'); if (!hote) return;
+    var hote = document.getElementById(window._g45NbaMqHote || 'g45-mq-hote') || document.getElementById('g45-mq-hote'); if (!hote) return;   /* 20261027o : hôte Tendances OU Compétitions */
     var o = etat(), S = ST[o.st], L = o.l[o.st] || S.l, mon = ++jeton;
     var auj = localStorage.getItem('g45mq_auj') === '1', crit = localStorage.getItem('g45mq_crit') === '1';
     var bt = function (on, t, fn, gros) { return '<button onclick="' + fn + '" style="padding:' + (gros ? '6px 14px' : '8px 11px') + ';margin:0 6px 6px 0;border-radius:8px;cursor:pointer;font-size:' + (gros ? '18px' : '14px') + ';font-weight:800;border:1px solid '
@@ -78286,6 +78292,7 @@ window._g45AgJouUs = async function (nowTs) {
       var el = document.getElementById('t-tend'); if (!el) return;
       el.innerHTML = '<button onclick="g45ButeursView()" style="border:none;cursor:pointer;background:rgba(255,255,255,.06);border-radius:8px;color:var(--t2);padding:6px 10px;font-size:13px;font-weight:700;margin-bottom:8px;">← Buteurs football</button>'
         + '<div class="sec" style="margin-top:0;">🏀 NBA</div><div class="fc" style="--card-alpha:.92;position:relative;overflow:hidden;"><div id="g45-mq-hote" style="position:relative;"></div></div>';
+      window._g45NbaMqHote = 'g45-mq-hote';   /* 20261027o */
       window.g45NbaMq();
     };
     window.g45MqSport._g45Nba = 1;
