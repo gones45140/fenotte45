@@ -1437,6 +1437,7 @@ Il est dans les DEUX dépôts (gones45 et fenotte45), identique (cmp). Jamais de
   `_g45MotoActive()` (= `_g45SanteActive`, faux sur bet45). DEMANDE d'Antoine : sur GONES45, direct poussé « comme la F1 » (chronos en live +
   circuit) → tout ajout de ce genre derrière `_g45MotoActive()`. Sonde livetiming-lite demandée (pendant ou juste après une séance).
 - 🏍 25/10/2026 — « MotoGP indisponible » (diag seasons HTTP 403) : SONDE d'Antoine → worker ?host=motogp&path=/motogp/v1/results/seasons = 403 avec page HTML 4.01 (refus du CDN de MotoGP, pas du worker) ; appel direct impossible depuis l'appli (CSP connect-src). Bloqué par MotoGP → pas de contournement (CGU). Piste proposée : TheSportsDB ligue 4407 (eventsseason, clé 123) — à revoir mardi.
+- 🏍 27/10/2026 — SONDES d'Antoine TheSportsDB 4407 (clé 123) : eventsseason.php?id=4407&s=2026 → 15 événements, tous du 28/02 (Thaïlande : sprint, Q1, Q2, FP2), strResult VIDE ; eventspastleague.php?id=4407 → 1 événement « 2026-10-25 Australia GP », strResult VIDE. → Piste ABANDONNÉE (clé gratuite tronquée, pas de résultats). MotoGP reste EN PAUSE.
 - MotoGP (style officiel, 26/09) : API motogp.com via le worker (host=motogp).
   `/riders` → cs.pictures.profile.main (photo), team.color / text_color /
   constructor.name ; `_g45MotoColors` (carte pilote→{col,photo,team,moto}),
