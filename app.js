@@ -46800,8 +46800,10 @@ async function loadCompetTab() {
   /* 20261001f (Antoine : « enlève transfert ou sinon faut chercher la source ailleurs ») : ESPN ne publie plus
      les transferts de FOOT depuis le 08/09/2025 → onglet retiré pour le foot (gardé pour NBA, NHL…). */
   /* 20261027p (« transfert sert dans aucun sport d'ailleurs ») : onglet retiré PARTOUT (avant : foot seulement). */
-  vues = vues.filter(function (v) { return v[0] !== 'transferts'; });
-  if (_g45CompetVue === 'transferts') _g45CompetVue = 'equipes';
+  /* 20261027q (« Retirer l'onglet Suivies de Compétitions, ET GARDER l'étoile dans l'onglet Équipes et c'est bon ») : même liste dans toutes
+     les compétitions, doublon du menu ⭐ Suivies → onglet retiré ; l'étoile ☆ de l'onglet Équipes reste. */
+  vues = vues.filter(function (v) { return v[0] !== 'transferts' && v[0] !== 'suivies'; });
+  if (_g45CompetVue === 'transferts' || _g45CompetVue === 'suivies') _g45CompetVue = 'equipes';
   var onglets = vues.map(function (v) {
     var on = (v[0] === _g45CompetVue);
     return '<button onclick="g45CompetVue(\'' + v[0] + '\')" style="flex:1;min-width:96px;padding:10px;font-size:11.5px;font-weight:800;cursor:pointer;border-radius:9px;'
