@@ -46863,7 +46863,7 @@ async function loadCompetTab() {
       + '<div id="g45-seq-box"></div>';
     var S0 = window._g45CrS; if (S0) { S0.ov = S0.ov || {}; S0.ov[tS.nom] = 1; }
     var ctxS = c.sp === 'soccer' ? null : { sp: c.sp, lg: c.s, id: String(tS.id) };
-    var bxS = document.getElementById('g45-seq-box'); if (bxS) bxS.innerHTML = window._g45CrHtml(tS.nom, ctxS);
+    var bxS = document.getElementById('g45-seq-box'); if (bxS) bxS.innerHTML = window._g45CrHtml(tS.nom, ctxS, c.sp === 'soccer' ? c.s : null);
     return;
   }
   if (_g45CompetVue === 'buteurs') {
@@ -75217,7 +75217,9 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     if (S.ctx) { try { await (rg() ? chargerRg(nom) : chargerHk(nom)); } catch (e) { S.data[nom] = { t: Date.now(), err: 'Lecture impossible (réseau).' }; } delete S.enCours[nom]; return; }
     try {
       var r = await espnResolveTeam(nom);
-      var lg = r && r.league;
+      /* 20261027y (capture « Séries équipes » Ligue 1 : Aston Villa, Liverpool, Bayern… dans le classement) : pour le PSG, espnResolveTeam renvoyait
+         la Ligue des champions → championnat imposé par la page (S.lgForce, onglet Compétitions → 🏁 Séries équipes). */
+      var lg = S.lgForce || (r && r.league);
       if (!r || !r.id || !lg || /fifa|uefa\.(nations|euro)|friendly/.test(lg)) { S.data[nom] = { t: Date.now(), err: 'Pas de championnat trouvé pour cette équipe.' }; return; }
       var ans = annees(lg), out = { t: Date.now(), lg: lg, ligue: '', saisons: [], tid: String(r.id) };
       await Promise.all(ans.map(async function (an, i) {
@@ -75576,7 +75578,11 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var t = document.createElement('div'); t.innerHTML = html(S.nom, S.ctx);
     z.parentNode.replaceChild(t.firstChild, z);
   }
-  window._g45CrHtml = html;
+  window._g45CrHtml = function (nom, ctx, lgF) {   /* 20261027y : lgF = championnat imposé (Séries équipes) ; absent = comme avant */
+    S.lgForce = lgF || null;
+    if (S.lgForce && S.data[nom] && S.data[nom].lg && S.data[nom].lg !== S.lgForce) delete S.data[nom];
+    return html(nom, ctx);
+  };
   window._g45CrPasse = passe; window._g45CrCalc = calc;
   window.g45CrOuvrir = function () { S.ov = S.ov || {}; S.ov[S.nom] = !ouvert(); redessiner(); };   /* 20261021g */
   window._g45CrS = S;   /* tests */
