@@ -86,8 +86,8 @@ pousser, `git fetch origin main && git rebase origin/main`, sinon le push est re
 5. Vérifier les fichiers livrés octet par octet (cmp). Le 22/09, un ancien
    app.js était parti à côté d'un index.html neuf.
 6. Commit clair en français : `20260928d — filtre X : …`.
-7. Rappeler à Antoine : Ctrl+Maj+R, puis contrôle console :
-   `console.log([...document.scripts].map(s=>s.src).filter(s=>/app\.js|auth-guard/.test(s)))`
+7. Rappeler à Antoine : Ctrl+Maj+R (seulement). NE PLUS donner la commande console de contrôle des scripts (27/10 :
+   « à chaque fois tu demandes mais je le vois direct » — la version app.js?v=… s'affiche dans les liens de sa console).
 
 ## 5. Où trouver les choses (le détail est dans HISTORIQUE.md)
 
