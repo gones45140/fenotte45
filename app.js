@@ -46968,9 +46968,7 @@ async function loadCompetTab() {
               return '<div onclick="g45CompetOuvrir(\'' + String(t.nom).replace(/'/g, "\\'") + '\',\''
                 + t.id + '\',\'' + c.s + '\',\'' + c.sp + '\')" '
                 + 'style="position:relative;overflow:hidden;display:flex;align-items:center;gap:9px;padding:9px 10px;background:' + _tf + ';border-radius:10px;cursor:pointer;border:1px solid rgba(255,255,255,.1);">'
-                + (t.logo ? ('<img src="' + t.logo + '" alt="" loading="lazy" onerror="this.style.display=\'none\'" '
-                    + 'style="position:absolute;right:-8px;top:50%;transform:translateY(-50%);width:46px;height:46px;'
-                    + 'object-fit:contain;opacity:.16;pointer-events:none;">') : '')
+                /* 20261027t (« le logo derrière l'étoile on le voit à peine, puis sert à rien, on a déjà le logo ») : filigrane de droite retiré. */
                 + (t.logo ? '<img src="' + t.logo + '" style="position:relative;width:30px;height:30px;object-fit:contain;flex:none;" loading="lazy" onerror="this.style.visibility=\'hidden\'">' : '<span style="width:30px;flex:none;"></span>')
                 + '<div style="position:relative;min-width:0;flex:1;"><div style="font-size:14px;font-weight:800;color:#fff;line-height:1.2;">' + t.nom + '</div>'
                 + (t.j ? '<div style="font-size:13px;color:#c9d3ee;">' + (rgFr(t.rang) ? rgFr(t.rang) + ' \u00b7 ' : '') + t.pts + ' pts \u00b7 ' + t.j + ' j</div>'
