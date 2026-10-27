@@ -49344,8 +49344,20 @@ function _g45LdValFr(v) {
     .replace(/\bStrikeouts\b/gi, 'Retraits');
 }
 
+/* 20261027r (capture Compétitions → NBA, catégories en anglais ; « oui traduis ») : traduction par le LIBELLÉ ESPN (les noms internes des
+   catégories NBA ne sont pas sondés un par un) ; minuscules, espaces simples. */
+var _G45_LD_FR_LIB = {
+  'points per game': 'Points par match', 'assists per game': 'Passes par match', 'rebounds per game': 'Rebonds par match',
+  'steals per game': 'Interceptions par match', 'blocks per game': 'Contres par match', 'turnovers per game': 'Balles perdues par match',
+  'minutes per game': 'Minutes par match', 'personal fouls per game': 'Fautes par match', 'field goal percentage': '% aux tirs',
+  'free throws percentage': '% aux lancers francs', 'free throw percentage': '% aux lancers francs', '3 points field goal percentage': '% à 3 points',
+  'three point field goal percentage': '% à 3 points', 'average 3-point field goals made': 'Paniers à 3 points par match',
+  'player efficiency rating': 'Évaluation (PER)', 'double double': 'Doubles-doubles', 'triple double': 'Triples-doubles',
+  'points': 'Points', 'rating': 'Note', 'assists': 'Passes décisives', 'rebounds': 'Rebonds', 'steals': 'Interceptions', 'blocks': 'Contres'
+};
 function _g45LdLibelle(cat) {
-  return G45_LD_FR[cat.name] || G45_LD_FR[cat.abbreviation] || cat.displayName || cat.name;
+  var lib = String(cat.displayName || '').toLowerCase().replace(/\s+/g, ' ').trim();
+  return G45_LD_FR[cat.name] || G45_LD_FR[cat.abbreviation] || _G45_LD_FR_LIB[lib] || cat.displayName || cat.name;
 }
 
 function g45LdCat(slug, nom) { _g45LdCat[slug] = nom; loadCompetTab(); }
@@ -49450,7 +49462,7 @@ async function g45LeadersGen(c, box, an) {
 
   box.innerHTML = '<div style="margin-bottom:10px;">' + chips + '</div>'
     + '<div style="font-size:10px;color:var(--t3);margin-bottom:8px;">'
-      + _g45LdLibelle(cat) + ' \u00b7 saison ' + an + '</div>'
+      + _g45LdLibelle(cat) + ' \u00b7 saison ' + ((typeof _g45SgLabel === 'function') ? _g45SgLabel(c.s, an) : an) + '</div>'   /* 20261027r : « 2026-27 » et pas « 2027 » */
     + lignes.map(function (t) {
         return '<div style="display:flex;align-items:center;gap:9px;padding:8px 9px;margin-bottom:5px;background:rgba(255,255,255,.04);border-radius:8px;">'
           + '<span style="color:#9fb0c7;font-size:11px;min-width:20px;text-align:right;">' + t.rang + '</span>'
