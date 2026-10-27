@@ -41973,6 +41973,8 @@ async function g45F1Open(){
     +'<div class="sec" style="margin-top:0;">🏎️ Formule 1 — Saison '+year+' ('+evs.length+' GP)</div>'
     +((typeof _g45F1AnSelect==='function')?_g45F1AnSelect(year):'');   /* 20261004j */
   html+='<button onclick="g45F1Standings(\'d\')" style="border:none;cursor:pointer;font-size:11px;font-weight:700;padding:8px 12px;border-radius:8px;background:rgba(240,200,40,.12);border:1px solid rgba(240,200,40,.4);color:#f0c828;margin-bottom:10px;">🏆 Classements du championnat</button>';
+  /* 20261027d : critères F1 sur 4 saisons + « Jouable en Cockpit ? » (bloc en fin de fichier). */
+  html+='<button onclick="g45F1Cr()" style="border:none;cursor:pointer;font-size:13px;font-weight:700;padding:8px 12px;border-radius:8px;background:rgba(47,107,255,.14);border:1px solid rgba(47,107,255,.5);color:#fff;margin:0 0 10px 6px;">📊 Critères 4 saisons · Cockpit</button>';
   var _fsn=0;
   html+=evs.map(function(ev){
     var st=(ev.status&&ev.status.type)||{}; var state=st.state||'pre';
@@ -43453,7 +43455,7 @@ window.g45F1Session=g45F1Session;
    et les données utilisateur n'étaient JAMAIS écrites — l'ajout apparaissait à l'écran puis
    disparaissait au rechargement. Ce n'était ni la synchro GitHub, ni Dropbox, ni le cache
    du navigateur. Tous ces caches sont reconstructibles : ils cèdent la place aux données. */
-var _G45_CACHE_PREFIXES=['g45nfltd1_',/* 22/10 : TD / FG NFL par match */'g45cr1u_','g45cr3u_',/* 22/10 : critères US avec n° de match */'g45cr1e_','g45crf1_','g45crid1_',/* 21/10 : feuilles de match des critères */'g45cr3_','g45cr1_',/* 14/10 : critères sur 4 saisons */'g45agoa2_',/* 11/10 : cotes Agenda (The Odds API) */'g45reg1_',/* 08/10 : régularité buteurs NHL */'g45bb1_','g45bbst1_','g45bbld1_','g45bbf1_',/* 03/10 : Pro A be-basketball */'g45es1_',/* 01/10 : stats Euroleague */'g45kbo1_',/* 01/10 : KBO (mykbostats) */'g45t14lg1',/* 01/10 : logos Top 14 (LNR) */'g45pd2_',/* 01/10 : Pro D2 (LNR) */'g45t14sq1_',/* 01/10 : effectifs Top 14 (LNR) */'g45nrlm1_','g45nrldr1_',/* 01/10 : feuilles et calendriers NRL */'g45nrlsq1_',/* 01/10 : effectifs NRL */'g45nrlst2_',/* 01/10 : classements NRL */'g45proacid1_',/* 30/09 : numéros LNB par saison */'g45proast1_',/* 30/09 : stats Pro A */'g45proa1_',/* 30/09 : Pro A par journée */'g45el1_',/* 30/09 : Euroleague (compact) */'g45buts1_',/* 30/09 : buts en action (match fini) */'g45prad1_','g45vsj1_','g45vse1_',/* 30/09 : radars joueurs */'g45ia1_',/* 29/09 : avis IA gardés 6 h */'g45_mmeta2_','g45_mmeta1_','g45_tennis4_','g45_tennis3_',/* 16/09 : meta de match (domicile/lieu) et score tennis, reconstructibles */'g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dcf_','g45dc_',
+var _G45_CACHE_PREFIXES=['g45f1cr1_',/* 27/10 : résultats F1 Jolpica (critères 4 saisons) */'g45nfltd1_',/* 22/10 : TD / FG NFL par match */'g45cr1u_','g45cr3u_',/* 22/10 : critères US avec n° de match */'g45cr1e_','g45crf1_','g45crid1_',/* 21/10 : feuilles de match des critères */'g45cr3_','g45cr1_',/* 14/10 : critères sur 4 saisons */'g45agoa2_',/* 11/10 : cotes Agenda (The Odds API) */'g45reg1_',/* 08/10 : régularité buteurs NHL */'g45bb1_','g45bbst1_','g45bbld1_','g45bbf1_',/* 03/10 : Pro A be-basketball */'g45es1_',/* 01/10 : stats Euroleague */'g45kbo1_',/* 01/10 : KBO (mykbostats) */'g45t14lg1',/* 01/10 : logos Top 14 (LNR) */'g45pd2_',/* 01/10 : Pro D2 (LNR) */'g45t14sq1_',/* 01/10 : effectifs Top 14 (LNR) */'g45nrlm1_','g45nrldr1_',/* 01/10 : feuilles et calendriers NRL */'g45nrlsq1_',/* 01/10 : effectifs NRL */'g45nrlst2_',/* 01/10 : classements NRL */'g45proacid1_',/* 30/09 : numéros LNB par saison */'g45proast1_',/* 30/09 : stats Pro A */'g45proa1_',/* 30/09 : Pro A par journée */'g45el1_',/* 30/09 : Euroleague (compact) */'g45buts1_',/* 30/09 : buts en action (match fini) */'g45prad1_','g45vsj1_','g45vse1_',/* 30/09 : radars joueurs */'g45ia1_',/* 29/09 : avis IA gardés 6 h */'g45_mmeta2_','g45_mmeta1_','g45_tennis4_','g45_tennis3_',/* 16/09 : meta de match (domicile/lieu) et score tennis, reconstructibles */'g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dcf_','g45dc_',
   'g45trv3_','g45trv2_','g45trOdds2_',/* 13/10 : cotes The Odds API par marchés */'g45tr_','g45but_st_','g45butL_','g45butA_','g45but_mur_',
   '_g45clv','g45clv_snaps','g45_saisons_cache_v3_','g45_saisons_cache_v2_',
   /* Ajoutes le 20/08 : ces caches, tous reconstructibles, n'etaient PAS declares
@@ -81249,4 +81251,188 @@ window._g45TrTestVoit = function () { try { return (typeof _g45SanteActive === '
   var r0 = window.render;
   if (typeof r0 === 'function') window.render = function () { try { window._g45LcCanon(); } catch (e) {} return r0.apply(this, arguments); };
   try { if (window._g45LcCanon()) { try { render(); } catch (e) {} } } catch (e) {}
+})();
+
+/* ════════════════════════════════════════════════════════════════════════════
+   20261027d — F1 : « 🏎️ Tes critères sur 4 saisons » + « 🏁 Jouable en Cockpit ? » (maquette validée « oui on code »)
+   POURQUOI : Antoine veut savoir si un pari F1 (podium, top 6, devant son coéquipier…) se joue en Cockpit, c.-à-d. en
+   montante : la PIRE SÉRIE DE RATÉS dit combien de paliers il aurait fallu (ratés + 1) et la mise du dernier palier
+   (STRATS['1'], ses mises 1 étoile, modifiables dans Outils). Le 2e bloc classe tout le plateau par la plus petite pire série.
+   Données : Jolpica (ergast/f1/<an>/results.json et sprint.json, 100 lignes par page → pages suivies par offset),
+   seule source gratuite des résultats F1 complets. « Pole » = parti 1er (grid 1) : la grille Jolpica suffit (pas de
+   page qualifying en plus ; une pénalité de grille peut décaler, rare). « Devant son coéquipier » : position d'arrivée
+   (Jolpica classe aussi les abandons, par tours faits). Cache g45f1cr1_<an> : saisons finies gardées, saison en cours 6 h.
+   ════════════════════════════════════════════════════════════════════════════ */
+(function () {
+  var J = 'https://api.jolpi.ca/ergast/f1/';
+  var CR = { d: '', k: 'po', sp: 0, ci: 0, t3: 0, ap: 0 };
+  try { var s0 = JSON.parse(localStorage.getItem('g45_f1cr_sel') || 'null'); if (s0) for (var q in s0) CR[q] = s0[q]; } catch (e) {}
+  var DATA = null;   /* { ans:[{y, gp:[…], sp:[…]}], dn:{id:nom}, next:{c, n} } */
+  var CRIT = [['v', '🏆 Vainqueur'], ['po', '🥉 Podium'], ['t6', 'Top 6'], ['t10', 'Top 10'], ['pl', '⏱️ Pole'], ['cq', '🆚 Devant son coéquipier'], ['fi', '✅ Finit']];
+  function ea(x) { return String(x == null ? '' : x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
+  function pause(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+
+  /* Toutes les pages d'une liste Jolpica ; une course coupée entre deux pages est recollée par son numéro (round). */
+  async function pages(url, champ) {
+    var races = {}, off = 0, total = 1, tours = 0;
+    while (off < total && tours < 10) {
+      var r = await fetch(url + (url.indexOf('?') < 0 ? '?' : '&') + 'limit=100&offset=' + off);
+      if (!r.ok) throw new Error('Jolpica ' + r.status);
+      var j = await r.json(), m = j.MRData || {};
+      total = +m.total || 0;
+      ((m.RaceTable || {}).Races || []).forEach(function (ra) {
+        var k = +ra.round;
+        if (!races[k]) races[k] = { r: k, c: (ra.Circuit || {}).circuitId || '', cn: (ra.Circuit || {}).circuitName || '', x: [] };
+        (ra[champ] || []).forEach(function (x) {
+          var d = x.Driver || {};
+          races[k].x.push([d.driverId || '', (x.Constructor || {}).constructorId || '', +x.position || 99, /^\d+$/.test(x.positionText || '') ? 1 : 0, +x.grid || 0, +x.points || 0, ((d.givenName || '') + ' ' + (d.familyName || '')).trim()]);
+        });
+      });
+      off += 100; tours++;
+      if (off < total) await pause(300);   /* Jolpica : 4 appels / s maxi */
+    }
+    return Object.keys(races).map(function (k) { return races[k]; }).sort(function (a, b) { return a.r - b.r; });
+  }
+  async function saison(y, cours) {
+    var cle = 'g45f1cr1_' + y, c = null;
+    try { c = JSON.parse(localStorage.getItem(cle) || 'null'); } catch (e) {}
+    if (c && (!cours || Date.now() - c.t < 6 * 3600e3)) return c;
+    try {
+      var gp = await pages(J + y + '/results.json', 'Results');
+      await pause(300);
+      var sp = await pages(J + y + '/sprint.json', 'SprintResults');
+      c = { t: Date.now(), y: y, gp: gp, sp: sp };
+      try { localStorage.setItem(cle, JSON.stringify(c)); } catch (e) {}
+      return c;
+    } catch (e) { if (c) return c; throw e; }
+  }
+  async function prochain(y) {
+    try {
+      var r = await fetch(J + y + '.json?limit=100'); if (!r.ok) return null;
+      var j = await r.json(), auj = new Date().toISOString().slice(0, 10);
+      var ra = ((((j.MRData || {}).RaceTable || {}).Races) || []).filter(function (x) { return (x.date || '') >= auj; })[0];
+      return ra ? { c: (ra.Circuit || {}).circuitId || '', n: (ra.Circuit || {}).circuitName || ra.raceName || '' } : null;
+    } catch (e) { return null; }
+  }
+  async function charger() {
+    var y = new Date().getFullYear(), ans = [];
+    var cur = await saison(y, true);
+    var dep = (cur.gp && cur.gp.length) ? y - 3 : y - 4;
+    for (var a = dep; a <= dep + 3; a++) ans.push(a === y ? cur : await saison(a, a === y));
+    var dn = {};
+    ans.forEach(function (s) { (s.gp || []).concat(s.sp || []).forEach(function (ra) { ra.x.forEach(function (x) { if (x[6]) dn[x[0]] = x[6]; }); }); });
+    return { ans: ans, dn: dn, next: await prochain(y) };
+  }
+
+  /* Suite chronologique des courses d'un pilote pour un critère et des filtres : [{y, ok}]. Fonction pure (testée). */
+  window._g45F1CrSeq = function (data, did, sel) {
+    var out = [], podPrec = false;
+    (data.ans || []).forEach(function (s) {
+      (sel.sp ? s.sp : s.gp || []).forEach(function (ra) {
+        var me = null; ra.x.forEach(function (x) { if (x[0] === did) me = x; });
+        if (!me) return;
+        var avant = podPrec; podPrec = !!(me[3] && me[2] <= 3);
+        if (sel.ci && !(data.next && ra.c === data.next.c)) return;
+        if (sel.t3 && !(me[4] >= 1 && me[4] <= 3)) return;
+        if (sel.ap && !avant) return;
+        var ok, k = sel.k, cl = me[3] === 1, p = me[2];
+        if (k === 'v') ok = cl && p === 1;
+        else if (k === 'po') ok = cl && p <= 3;
+        else if (k === 't6') ok = cl && p <= 6;
+        else if (k === 't10') ok = cl && p <= 10;
+        else if (k === 'pl') ok = me[4] === 1;
+        else if (k === 'fi') ok = cl;
+        else if (k === 'cq') {
+          var mates = ra.x.filter(function (x) { return x[1] === me[1] && x[0] !== did; });
+          if (!mates.length) return;
+          ok = mates.every(function (x) { return p < x[2]; });
+        }
+        out.push({ y: s.y, ok: !!ok });
+      });
+    });
+    return out;
+  };
+  /* Réussite, pire série de ratés, meilleure série de réussites, série en cours. */
+  window._g45F1CrStats = function (seq) {
+    var n = seq.length, ok = 0, rat = 0, pire = 0, bon = 0, meil = 0;
+    seq.forEach(function (e) {
+      if (e.ok) { ok++; bon++; rat = 0; if (bon > meil) meil = bon; }
+      else { rat++; bon = 0; if (rat > pire) pire = rat; }
+    });
+    var cours = 0, sens = n ? seq[n - 1].ok : false;
+    for (var i = n - 1; i >= 0 && seq[i].ok === sens; i--) cours++;
+    return { n: n, ok: ok, pct: n ? Math.round(ok * 100 / n) : 0, pire: pire, meil: meil, cours: cours, coursOk: sens };
+  };
+  /* Paliers nécessaires = pire série + 1 ; mise = palier correspondant de l'échelle 1 étoile. */
+  window._g45F1CrPal = function (pire) {
+    var S = (typeof STRATS !== 'undefined' && STRATS['1']) || [1, 2, 6, 18, 54, 162, 486, 1458];
+    var p = pire + 1;
+    return { p: p, mise: p <= S.length ? S[p - 1] : null, max: S.length, ico: p <= 5 ? '✅' : (p <= S.length ? '⚠️' : '❌') };
+  };
+
+  function couleurPire(w) { return w <= 2 ? '#3fb950' : (w <= 4 ? '#f0a020' : '#ff6b6b'); }
+  function chip(f, v, lbl, on) {
+    return '<button onclick="g45F1CrSet(\'' + f + '\',\'' + v + '\')" style="cursor:pointer;font-size:14px;font-weight:700;padding:7px 12px;border-radius:18px;margin:0 6px 6px 0;'
+      + (on ? 'background:#2f6bff;border:1px solid #2f6bff;color:#fff;' : 'background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.22);color:#fff;') + '">' + (on ? '✔ ' : '') + lbl + '</button>';
+  }
+  function dessiner() {
+    var box = document.getElementById('g45-f1cr'); if (!box || !DATA) return;
+    var der = DATA.ans[DATA.ans.length - 1], pts = {};
+    (der.gp || []).concat(der.sp || []).forEach(function (ra) { ra.x.forEach(function (x) { pts[x[0]] = (pts[x[0]] || 0) + x[5]; }); });
+    var plateau = Object.keys(pts).sort(function (a, b) { return pts[b] - pts[a]; });
+    if (!CR.d || !DATA.dn[CR.d]) CR.d = plateau[0] || '';
+    var nomC = (CRIT.filter(function (c) { return c[0] === CR.k; })[0] || CRIT[1])[1];
+    var h = '<div style="font-size:14px;color:#c9d3ee;margin-bottom:8px;">' + (CR.sp ? 'Sprints' : 'Grands Prix') + ' ' + DATA.ans[0].y + ' → ' + der.y + ' · données Jolpica</div>';
+    h += '<select onchange="g45F1CrSet(\'d\',this.value)" style="font-size:15px;font-weight:700;padding:8px 10px;border-radius:10px;background:#141c33;color:#fff;border:1px solid rgba(255,255,255,.25);margin-bottom:10px;max-width:100%;">'
+      + plateau.map(function (d) { return '<option value="' + ea(d) + '"' + (d === CR.d ? ' selected' : '') + '>' + ea(DATA.dn[d] || d) + '</option>'; }).join('') + '</select>';
+    h += '<div style="font-size:14px;color:#c9d3ee;margin:2px 0 6px;">Ce qu\'il doit faire</div><div>' + CRIT.map(function (c) { return chip('k', c[0], c[1], CR.k === c[0]); }).join('') + '</div>';
+    h += '<div style="font-size:14px;color:#c9d3ee;margin:6px 0 6px;">Filtres</div><div>' + chip('sp', '0', 'Grand Prix', !CR.sp) + chip('sp', '1', 'Sprint', !!CR.sp)
+      + (DATA.next ? chip('ci', CR.ci ? '0' : '1', '📍 Ce circuit (' + ea(DATA.next.n) + ')', !!CR.ci) : '')
+      + chip('t3', CR.t3 ? '0' : '1', '🚦 Parti du top 3', !!CR.t3) + chip('ap', CR.ap ? '0' : '1', '🔁 Après un podium', !!CR.ap) + '</div>';
+    var seq = window._g45F1CrSeq(DATA, CR.d, CR), tot = window._g45F1CrStats(seq);
+    var ligne = 'display:grid;grid-template-columns:1fr 1.6fr 1.3fr 1.2fr;gap:6px;padding:8px 4px;border-bottom:1px solid rgba(255,255,255,.08);font-size:15px;color:#fff;';
+    h += '<div style="margin-top:8px;"><div style="' + ligne + 'font-size:13px;font-weight:700;color:#c9d3ee;"><span>Saison</span><span>Réussite</span><span>Pire série de ratés</span><span>Meilleure série</span></div>';
+    DATA.ans.slice().reverse().forEach(function (s) {
+      var st = window._g45F1CrStats(seq.filter(function (e) { return e.y === s.y; }));
+      h += '<div style="' + ligne + '"><span>' + s.y + '</span>' + (st.n ? '<span>' + st.ok + '/' + st.n + ' · ' + st.pct + ' %</span><span style="font-weight:800;color:' + couleurPire(st.pire) + ';">' + st.pire + '</span><span style="font-weight:800;color:#6aa8ff;">' + st.meil + '</span>' : '<span style="color:#c9d3ee;">aucune course</span><span></span><span></span>') + '</div>';
+    });
+    h += '</div>';
+    if (tot.n) {
+      var pa = window._g45F1CrPal(tot.pire);
+      h += '<div style="background:rgba(0,0,0,.45);border-radius:12px;padding:12px;margin-top:10px;font-size:15px;color:#fff;line-height:1.7;">'
+        + '📊 <b>Total : ' + tot.ok + '/' + tot.n + ' · ' + tot.pct + ' %</b><br>'
+        + '🪜 Pire série : <b style="color:' + couleurPire(tot.pire) + ';">' + tot.pire + ' raté' + (tot.pire > 1 ? 's' : '') + ' de suite</b> → <b>il fallait ' + pa.p + ' palier' + (pa.p > 1 ? 's' : '') + '</b> '
+        + (pa.mise != null ? '· mise max <b>' + pa.mise.toLocaleString('fr-FR') + ' €</b> (base 1 ⭐) ' + pa.ico : '❌ au-delà de tes ' + pa.max + ' paliers') + '<br>'
+        + '📈 Série en cours : ' + tot.cours + ' ' + (tot.coursOk ? 'réussi' : 'raté') + (tot.cours > 1 ? 's' : '') + ' de suite</div>';
+    } else h += '<div style="font-size:15px;color:#fff;padding:12px 4px;">Aucune course avec ces filtres.</div>';
+    /* Bloc 2 : tout le plateau (pilotes de la dernière saison), plus petite pire série d'abord. */
+    var rk = plateau.map(function (d) { var st = window._g45F1CrStats(window._g45F1CrSeq(DATA, d, CR)); st.d = d; return st; })
+      .filter(function (st) { return st.n >= 5; })
+      .sort(function (a, b) { return a.pire - b.pire || b.pct - a.pct; });
+    var l2 = 'display:grid;grid-template-columns:1.8fr 1fr 1fr 1.4fr;gap:6px;padding:8px 4px;border-bottom:1px solid rgba(255,255,255,.08);font-size:15px;color:#fff;cursor:pointer;';
+    h += '<div style="margin-top:16px;padding-top:12px;border-top:1px solid rgba(255,255,255,.15);"><div style="font-size:17px;font-weight:800;color:#fff;">🏁 Jouable en Cockpit ? — classement du plateau</div>'
+      + '<div style="font-size:14px;color:#c9d3ee;margin:2px 0 6px;">Critère « ' + ea(nomC) + ' » · 4 saisons · mêmes filtres · trié par la plus petite pire série (5 courses mini)</div>'
+      + '<div style="' + l2 + 'font-size:13px;font-weight:700;color:#c9d3ee;cursor:default;"><span>Pilote</span><span>Réussite</span><span>Pire série</span><span>Paliers</span></div>';
+    h += rk.length ? rk.map(function (st) {
+      var pa = window._g45F1CrPal(st.pire), moi = st.d === CR.d;
+      return '<div onclick="g45F1CrSet(\'d\',\'' + ea(st.d) + '\')" style="' + l2 + (moi ? 'background:rgba(47,107,255,.18);border-radius:8px;' : '') + '"><span style="font-weight:' + (moi ? 800 : 600) + ';">' + ea(DATA.dn[st.d] || st.d) + '</span><span>' + st.pct + ' %</span><span style="font-weight:800;color:' + couleurPire(st.pire) + ';">' + st.pire + '</span><span><b>' + pa.p + ' paliers</b> ' + pa.ico + '</span></div>';
+    }).join('') : '<div style="font-size:15px;color:#fff;padding:10px 4px;">Pas assez de courses avec ces filtres.</div>';
+    h += '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">✅ 5 paliers ou moins · ⚠️ jusqu\'à ta dernière mise · ❌ au-delà de tes paliers. Touche un pilote pour le voir en haut.</div></div>';
+    box.innerHTML = h;
+  }
+  window.g45F1CrSet = function (f, v) {
+    CR[f] = (f === 'd' || f === 'k') ? v : +v;
+    try { localStorage.setItem('g45_f1cr_sel', JSON.stringify(CR)); } catch (e) {}
+    dessiner();
+  };
+  window.g45F1Cr = async function () {
+    try { if (typeof _g45F1LiveStop === 'function') _g45F1LiveStop(); } catch (e) {}
+    var el = document.getElementById('t-resultats'); if (!el) return;
+    el.innerHTML = '<button onclick="g45F1Open()" style="border:none;background:rgba(255,255,255,.06);color:var(--t2);border-radius:8px;padding:6px 12px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:10px;">← Saison F1</button>'
+      + '<div class="sec" style="margin-top:0;">🏎️ Tes critères sur 4 saisons</div>'
+      + '<div id="g45-f1cr" style="background:#10172b;border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:12px;"><div style="font-size:15px;color:#fff;padding:12px;">Chargement des résultats (4 saisons, une seule fois)…</div></div>';
+    try { if (!DATA) DATA = await charger(); dessiner(); }
+    catch (e) { var b = document.getElementById('g45-f1cr'); if (b) b.innerHTML = '<div style="font-size:15px;color:#fff;padding:12px;">Résultats F1 indisponibles (' + ea(e.message) + '). Réessaie plus tard.</div>'; }
+  };
+  window._g45F1CrData = function (d) { DATA = d; };   /* pour le test */
 })();

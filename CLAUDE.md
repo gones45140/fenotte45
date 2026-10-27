@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action (il est court exprès). Le détail de tout l'historique est dans HISTORIQUE.md
-(à chercher avec grep, jamais à lire en entier). Mis à jour le 27/10/2026 (version déployée : 20261027c, même app.js sur gones45 et fenotte45).
+(à chercher avec grep, jamais à lire en entier). Mis à jour le 27/10/2026 (version déployée : 20261027d, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -139,6 +139,7 @@ PIÈGES À NE JAMAIS OUBLIER :
 - TheRundown (gratuit) : PAS de rugby ; sports dispo 1 NCAAF, 2 NFL, 3 MLB, 4 NBA, 5 NCAAB, 6 NHL, 7 UFC, 8 WNBA, 9 CFL, 10 MLS, 11 EPL, 16 C1, 33 C3, 34 Liga MX, 38 ATP, 39 WTA, 40 golf, 41 F1 → 2e source de cotes possible (direct NHL / NFL / MLB, foot, F1). Tendances rugby = stats sans cote (à faire si Antoine veut).
 - 📅 1 AN DU 1er PARI (date affichée sous Bénéfice, 20261025f) : Antoine veut un BILAN PDF de l'année gardé, puis bénéfice / pertes repartis de 0 en gardant la bankroll (idée : date de départ du bénéfice, paris NON supprimés).
 - 🏍 MotoGP INDISPONIBLE (25/10) : api.motogp.pulselive.com renvoie 403 (page HTML « Access Denied ») au worker host=motogp → bloqué par MotoGP, NE PAS contourner (CGU). Piste : TheSportsDB ligue 4407 (sonde eventsseason donnée à Antoine) — « on verra mardi ».
+- 🏁 « Jouable en Cockpit ? » (classement par pire série → paliers) fait pour la F1 (20261027d) : Antoine le veut pour chaque équipe de chaque sport (critères 4 saisons) → maquette à faire.
 - Cédric : toucher 🤍 sur Portugal. Worker : budget `_lourd` 4 → 2 proposé.
 
 ## 8. Façon de travailler en session cloud
