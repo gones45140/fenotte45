@@ -4333,7 +4333,19 @@ window._g45Pal=_g45Pal;
    déduit les chips, et le filtre s'applique en amont de tous les onglets qui dérivent
    de la liste des paris. Mémorisé par unité pour survivre à un aller-retour. */
 var _g45CompF={};
-function _g45CompNz(x){ return String(x||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,''); }
+/* 20261027c (Real Madrid « domicile devrait être P1 » : u.lc = {laliga|dom:2, liga|dom:1…} ; liste des compétitions = LaLiga, Liga, La Liga,
+   Spanish LALIGA…) : chaque écriture d'un même championnat créait SA montante. Les variantes connues sont ramenées à un seul nom
+   (_G45_COMP_ALIAS) ; les doublons déjà enregistrés sont fusionnés par _g45LcCanon (fin d'app.js). */
+var _G45_COMP_ALIAS = [[/^(spanish)?(la)?liga(easports|ea)?(spain)?$|^primeradivision$|^laligaeasports$/, 'liga'],
+  [/^(french)?ligue1(mcdonalds|ubereats|mcdonald)?(france)?$/, 'ligue1'], [/^(english)?premierleague$|^epl$/, 'premierleague'],
+  [/^(italian)?seriea(enilive|tim)?$/, 'seriea'], [/^(german)?bundesliga$/, 'bundesliga'],
+  [/^(uefa)?championsleague$|^liguedeschampions$|^ldc$|^c1$/, 'liguedeschampions'], [/^(uefa)?europaleague$|^liguedeurope$|^ligueeuropa$|^c3$/, 'ligueeuropa'],
+  [/^nationalhockeyleague$/, 'nhl'], [/^nationalbasketballassociation$/, 'nba'], [/^nationalfootballleague$/, 'nfl'], [/^majorleaguebaseball$/, 'mlb']];
+function _g45CompNz(x){
+  var k=String(x||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');
+  for(var i=0;i<_G45_COMP_ALIAS.length;i++){ if(_G45_COMP_ALIAS[i][0].test(k)) return _G45_COMP_ALIAS[i][1]; }
+  return k;
+}
 function _g45CompFiltre(liste, nom){
   var f=_g45CompF[nom]||'';
   if(!f) return liste;
@@ -44581,6 +44593,8 @@ async function g45MajListesPari(quelForm) {
       if (res) comps = comps.concat(Object.keys(res.comps));
     }
   }
+  /* 20261027c : une seule écriture par championnat (LaLiga / Liga / La Liga / Spanish LALIGA → la 1re vue, celle de la liste de base) */
+  var _vuC = {}; comps = comps.filter(function (c) { var k = _g45CompNz(c); if (!k || _vuC[k]) return false; _vuC[k] = 1; return true; });
   _g45MajDatalist(idListe, _g45Dedoublonne(comps));
 }
 window.g45MajListesPari = g45MajListesPari;
@@ -81194,4 +81208,45 @@ window._g45TrTestVoit = function () { try { return (typeof _g45SanteActive === '
   var r0 = window.render;
   if (typeof r0 === 'function') window.render = function () { var r = r0.apply(this, arguments); try { window._g45MvtRender(); } catch (e) {} return r; };
   try { window._g45MvtRender(); } catch (e) {}
+})();
+
+/* ═══ 20261027c — FUSION DES MONTANTES EN DOUBLE (même championnat écrit de plusieurs façons) ═══
+   u.lc garde ses clés « <compétition normalisée>|<lieu> ». Avec les alias de _g45CompNz, « laliga|dom » et « liga|dom » sont la même
+   montante : on garde le palier de la clé qui correspond au pari le PLUS RÉCENT de cette équipe dans ce championnat et ce lieu (c'est
+   l'échelle qui a bougé en dernier), sinon la valeur déjà sous le nom canonique. Idempotent ; refait après chaque render (une synchro
+   peut ramener d'anciennes clés). */
+(function () {
+  var brut = function (x) { return String(x || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, ''); };
+  window._g45LcCanon = function () {
+    if (typeof state === 'undefined' || !state || !state.u) return 0;
+    var paris = (state.a || []).concat(state.h || []), n = 0;
+    state.u.forEach(function (u) {
+      if (!u || !u.lc) return;
+      var groupes = {};
+      Object.keys(u.lc).forEach(function (k) {
+        var p = k.split('|'), c = p[0], l = p.length > 1 ? p[1] : null;
+        var ck = (c ? _g45CompNz(c) : '') + (l != null ? '|' + l : '');
+        (groupes[ck] = groupes[ck] || []).push(k);
+      });
+      Object.keys(groupes).forEach(function (ck) {
+        var ks = groupes[ck]; if (ks.length === 1 && ks[0] === ck) return;
+        var l = ck.indexOf('|') >= 0 ? ck.split('|')[1] : null, cc = ck.split('|')[0], meilleur = null, dt = '';
+        paris.forEach(function (h) {
+          if (!h || h.n !== u.n || !h.comp || _g45CompNz(h.comp) !== cc) return;
+          if (l && String(h.domicile || '') !== l) return;
+          var d = String(h.date || '') + ' ' + String(h.heure || '');
+          var kb = brut(h.comp) + (l ? '|' + l : '');
+          if (d >= dt && ks.indexOf(kb) >= 0) { dt = d; meilleur = kb; }
+        });
+        var v = meilleur ? u.lc[meilleur] : (u.lc[ck] != null ? u.lc[ck] : u.lc[ks[0]]);
+        ks.forEach(function (k) { delete u.lc[k]; });
+        u.lc[ck] = v; n++;
+      });
+    });
+    if (n) { try { save(); } catch (e) {} }
+    return n;
+  };
+  var r0 = window.render;
+  if (typeof r0 === 'function') window.render = function () { try { window._g45LcCanon(); } catch (e) {} return r0.apply(this, arguments); };
+  try { if (window._g45LcCanon()) { try { render(); } catch (e) {} } } catch (e) {}
 })();
