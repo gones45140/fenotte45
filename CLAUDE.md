@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action (il est court exprès). Le détail de tout l'historique est dans HISTORIQUE.md
-(à chercher avec grep, jamais à lire en entier). Mis à jour le 27/10/2026 (version déployée : 20261027h, même app.js sur gones45 et fenotte45).
+(à chercher avec grep, jamais à lire en entier). Mis à jour le 27/10/2026 (version déployée : 20261027i, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -138,7 +138,7 @@ PIÈGES À NE JAMAIS OUBLIER :
 - 🏀 15/11 : AVANT de remettre les points NBA dans la sélection officielle (NBA_PAUSE, tendances.mjs), contrôler le % de réussite des points NBA (ligne ESPN et +3 %) — demande d'Antoine. Même jour : buts NHL (NHL_BUTS_PAUSE, 20261023w ; NHL 3/12 au 23/10) et total de points NFL (NFL_PTS_PAUSE, 23x) en pause → décider s'ils reviennent. Antoine peut le faire SEUL dans Tendances → 📊 Bilans (gones), sélecteur + « Mettre en ligne » (son abonnement Claude finit avant le 15/11).
 - TheRundown (gratuit) : PAS de rugby ; sports dispo 1 NCAAF, 2 NFL, 3 MLB, 4 NBA, 5 NCAAB, 6 NHL, 7 UFC, 8 WNBA, 9 CFL, 10 MLS, 11 EPL, 16 C1, 33 C3, 34 Liga MX, 38 ATP, 39 WTA, 40 golf, 41 F1 → 2e source de cotes possible (direct NHL / NFL / MLB, foot, F1). Tendances rugby = stats sans cote (à faire si Antoine veut).
 - 📅 1 AN DU 1er PARI (date affichée sous Bénéfice, 20261025f) : Antoine veut un BILAN PDF de l'année gardé, puis bénéfice / pertes repartis de 0 en gardant la bankroll (idée : date de départ du bénéfice, paris NON supprimés).
-- 🏍 MotoGP EN PAUSE (25/10, confirmé 27/10) : api.motogp.pulselive.com = 403 (bloqué par MotoGP, NE PAS contourner, CGU) ; TheSportsDB 4407 clé gratuite = inutilisable (eventsseason : 15 séances du 1er GP seulement ; eventspastleague : 1 GP sans résultat). Ne pas reproposer sans nouvelle source gratuite et autorisée.
+- 🏍 MotoGP EN PAUSE (25/10, confirmé 27/10) : api.motogp.pulselive.com = 403 (bloqué par MotoGP, NE PAS contourner, CGU) ; TheSportsDB 4407 clé gratuite = inutilisable (eventsseason : 15 séances du 1er GP seulement ; eventspastleague : 1 GP sans résultat). Ne pas reproposer sans nouvelle source gratuite et autorisée. ÉCRANS RETIRÉS le 27/10 (20261027i, demande d'Antoine) ; saisie de paris 🏍 gardée.
 - 🏁 « Jouable en Cockpit ? » : F1 (20261027d), équipes foot / NHL / NFL / NBA / MLB (20261027h, à confirmer par Antoine sur de vraies données), pépites NHL (20261027g).
 - Cédric : toucher 🤍 sur Portugal. Worker : budget `_lourd` 4 → 2 proposé.
 

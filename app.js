@@ -37133,7 +37133,7 @@ function loadResultatsTab(){
     +'<button onclick="g45TennisResults(0)" style="border:none;cursor:pointer;background:rgba(255,255,255,.05);border-radius:12px;padding:16px 8px;display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--t1);"><span style="font-size:26px;">🎾</span><span style="font-size:11px;font-weight:700;">Tennis</span></button>'
     +'<button onclick="g45F1Open()" style="border:none;cursor:pointer;background:rgba(255,255,255,.05);border-radius:12px;padding:16px 8px;display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--t1);"><span style="font-size:26px;">🏎️</span><span style="font-size:11px;font-weight:700;">F1</span></button>'
     +'<button onclick="g45MmaOpen(0)" style="border:none;cursor:pointer;background:rgba(255,255,255,.05);border-radius:12px;padding:16px 8px;display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--t1);"><span style="font-size:26px;">🥊</span><span style="font-size:11px;font-weight:700;">MMA / UFC</span></button>'
-    +'<button onclick="g45MotoOpen()" style="border:none;cursor:pointer;background:rgba(255,255,255,.05);border-radius:12px;padding:16px 8px;display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--t1);"><span style="font-size:26px;">🏍️</span><span style="font-size:11px;font-weight:700;">MotoGP</span></button>'
+    /* 20261027i : tuile MotoGP retirée (« ENLÈVE MOTOGP » : API MotoGP bloquée en 403 depuis le 25/10, pas d'autre source gratuite). */
     +'<button onclick="g45CyclingOpen(\'tdf\')" style="border:none;cursor:pointer;background:rgba(255,255,255,.05);border-radius:12px;padding:16px 8px;display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--t1);"><span style="font-size:26px;">🚴</span><span style="font-size:11px;font-weight:700;">Cyclisme</span></button>'
     +'</div>';
 }
@@ -43401,6 +43401,7 @@ async function g45GoF1(eid){
 }
 /* Carte « session MotoGP en direct » dans l'onglet Direct */
 async function _g45MotoLiveCard(){
+  return;   /* 20261027i : MotoGP retiré (« ENLÈVE MOTOGP ») — l'API répond 403, plus aucun appel. */
   try{
     var host=document.getElementById('t-live'); if(!host) return;
     var old=document.getElementById('g45-motolivecard'); if(old) old.remove();
@@ -46646,7 +46647,7 @@ async function loadCompetTab() {
       ['g45TennisResults(0)', '\ud83c\udfbe', 'Tennis'],
       ['g45F1Open()', '\ud83c\udfce', 'F1'],
       ['g45MmaOpen(0)', '\ud83e\udd4a', 'MMA / UFC'],
-      ['g45MotoOpen()', '\ud83c\udfcd', 'MotoGP'],
+      /* 20261027i : MotoGP retiré (API bloquée, 403). */
       ["g45CyclingOpen('tdf')", '\ud83d\udeb4', 'Cyclisme'],
       ['g45BiaOpen()', '\ud83c\udfbf', 'Biathlon']
     ].map(function (x) {
@@ -61358,6 +61359,7 @@ function _g45EpreuveBouton(h) {
     else if (ep) { lbl = ep.lbl; act = ep.act; }        /* trouve : on vise le GP */
     /* null = cherche sans succes : on garde l'ouverture de la discipline */
   } else if (sp.indexOf('\ud83c\udfcd') >= 0) {                            /* 🏍 moto */
+    return '';   /* 20261027i : MotoGP retiré (API bloquée) → plus de bouton vers l'écran MotoGP ni de recherche du GP */
     lbl = '\ud83c\udfcd\ufe0f MotoGP'; act = 'g45MotoOpen()';
     var em = _g45EprLire(h);
     if (em === undefined) _g45EprCherche(h);
@@ -67638,7 +67640,7 @@ var _G45_ACC_SPORTS = [
   { v: '⚾', n: 'Baseball', comp: 'baseball' }, { v: '🏈', n: 'Foot US', comp: 'football' }, { v: '🏉', n: 'Rugby', comp: 'rugby' },
   { v: '🏉🇦🇺', n: 'NRL', comp: 'rugby-league' }, { v: '🎾', n: 'Tennis', go: 'g45TennisResults(0)', lib: 'Résultats' },
   { v: '🏎', n: 'F1', go: 'g45F1Open()', lib: 'Calendrier', img: 'images/equipes/formule1.png' }, { v: '🥊', n: 'MMA', go: 'g45MmaOpen(0)', lib: 'Combats' },
-  { v: '🏍', n: 'MotoGP', go: 'g45MotoOpen()', lib: 'Calendrier' }, { v: '🚴', n: 'Cyclisme', go: "g45CyclingOpen('tdf')", lib: 'Courses' },
+  /* 20261027i : MotoGP retiré (API bloquée) */ { v: '🚴', n: 'Cyclisme', go: "g45CyclingOpen('tdf')", lib: 'Courses' },
   { v: '🎿', n: 'Biathlon', go: 'g45BiaOpen()', lib: 'Coupe du monde', img: 'images/equipes/biathlon.png' }
 ];
 /* 20261002p : couleur de fond par sport (tuile sans bannière : MMA, MotoGP, cyclisme, biathlon…). */
