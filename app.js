@@ -46672,7 +46672,7 @@ async function loadCompetTab() {
     }).join('');
 
     el.innerHTML = '<div class="sec" style="margin-top:0;">\ud83c\udfc6 Comp\u00e9titions</div>'
-      + '<div style="font-size:11px;color:var(--t3);margin-bottom:12px;">Choisis un sport, puis une comp\u00e9tition : \u00e9quipes, journ\u00e9es, classement, forme, statistiques individuelles et transferts.</div>'
+      + '<div style="font-size:13px;color:#c9d3ee;margin-bottom:12px;">Choisis un sport, puis une comp\u00e9tition : \u00e9quipes, journ\u00e9es, classement, forme, séries individuelles et séries équipes.</div>'
       + '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:10px;">' + cartes + perso + '</div>';
     return;
   }
@@ -46809,6 +46809,9 @@ async function loadCompetTab() {
               /* Classements par catégorie (25/09/2026) : football seulement. */
               ].concat((c.sp === 'soccer' || (typeof _g45ClsUsOk === 'function' && _g45ClsUsOk(c)) || c.sp === 'rugby' || c.sp === 'rugby-league') ? [['categories','\ud83c\udfc5 Classements']] : []).concat([
               ['buteurs', c.sp === 'soccer' ? '\ud83c\udfaf S\u00e9ries individuelles' /* 20261005x */ : ((c.s === 'nhl' || c.s === 'nfl' || c.s === 'mlb' || c.s === '270559' || c.s === '3' || c.s === 'nba' /* 20261027o */) ? '\ud83c\udfaf S\u00e9ries individuelles' /* 20261005w (demande d'Antoine) ; NFL 20261006h */ : '\ud83c\udfc5 Individuel')],
+              /* 20261027x (« série individuelle on n'a que les joueurs, on n'a pas les équipes ? » → « oui ») : 🏁 Séries équipes = bloc critères
+                 4 saisons + « Jouable en Cockpit ? » du championnat (foot, NHL, NFL, NBA, MLB). */
+              ]).concat((c.sp === 'soccer' || ['nhl', 'nfl', 'nba', 'mlb'].indexOf(c.s) >= 0) ? [['seq', '\ud83c\udfc1 S\u00e9ries \u00e9quipes']] : []).concat([
               ['transferts','\ud83d\udd04 Transferts'],
               /* Liste personnelle, sans rapport avec le mur : voir g45SuiviEqRender. */
               ['suivies','\u2b50 Suivies']]);
@@ -46843,6 +46846,24 @@ async function loadCompetTab() {
        reponse de classement, deja mise en cache 6 h. */
     _g45CompetEquipes(c).catch(function () {});
     await g45LoadStandings(c.s, c.sp, body);
+    return;
+  }
+  if (_g45CompetVue === 'seq' && typeof window._g45CrHtml === 'function') {
+    /* 20261027x : équipe de référence (tableau par saison) au choix, leader par défaut ; le classement de TOUT le championnat
+       se lance en bas du bloc (« ▶ Lancer le classement », même combiné). */
+    var eqS = (await _g45CompetEquipes(c)).slice().sort(function (a, b) { return (+a.rang || 99) - (+b.rang || 99); });
+    if (!eqS.length) { body.innerHTML = '<div style="color:#ffb13d;font-size:14px;">Aucune \u00e9quipe trouv\u00e9e pour cette comp\u00e9tition.</div>'; return; }
+    window._g45SeqEq = window._g45SeqEq || {};
+    var tS = eqS.filter(function (t) { return String(t.id) === String(window._g45SeqEq[c.s]); })[0] || eqS[0];
+    body.innerHTML = '<div style="font-size:14px;font-weight:800;color:#fff;margin-bottom:4px;">\ud83c\udfc1 S\u00e9ries \u00e9quipes \u2014 4 saisons</div>'
+      + '<div style="font-size:13px;color:#c9d3ee;margin-bottom:8px;">1. Choisis ton crit\u00e8re (lieu, r\u00e9sultat, buts\u2026) \u00b7 2. en bas, <b style="color:#fff;">\u25b6 Lancer le classement</b> : tout le championnat, du plus s\u00fbr au moins s\u00fbr.</div>'
+      + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;"><span style="font-size:13px;color:#c9d3ee;">\u00c9quipe d\u00e9taill\u00e9e :</span>'
+      + '<select onchange="g45SeqEq(\'' + c.s + '\',this.value)" style="font-size:15px;font-weight:700;padding:8px 10px;border-radius:10px;background:#141c33;color:#fff;border:1px solid rgba(255,255,255,.25);max-width:100%;">'
+      + eqS.map(function (t) { return '<option value="' + t.id + '"' + (t === tS ? ' selected' : '') + '>' + String(t.nom).replace(/</g, '') + '</option>'; }).join('') + '</select></div>'
+      + '<div id="g45-seq-box"></div>';
+    var S0 = window._g45CrS; if (S0) { S0.ov = S0.ov || {}; S0.ov[tS.nom] = 1; }
+    var ctxS = c.sp === 'soccer' ? null : { sp: c.sp, lg: c.s, id: String(tS.id) };
+    var bxS = document.getElementById('g45-seq-box'); if (bxS) bxS.innerHTML = window._g45CrHtml(tS.nom, ctxS);
     return;
   }
   if (_g45CompetVue === 'buteurs') {
@@ -46999,6 +47020,7 @@ async function loadCompetTab() {
       }).join('');
 }
 window.loadCompetTab = loadCompetTab;
+window.g45SeqEq = function (lg, id) { window._g45SeqEq = window._g45SeqEq || {}; window._g45SeqEq[lg] = id; loadCompetTab(); };   /* 20261027x */
 
 /* ═══════════════════════════════════════════════════════════════════════════
    SOUS-ONGLETS DE « PARI »
