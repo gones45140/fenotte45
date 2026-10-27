@@ -70086,11 +70086,12 @@ function _g45RegSeuilS(S, n) {
 window._g45RegSeuilS = _g45RegSeuilS;
 async function _g45RegLire(saison, cat, eq) {
   if (eq) return _g45RegLireEq(saison, cat, eq);
-  var ck = 'g45reg1_v6_' + saison + '_' + cat;   /* v2 (20261006l) : + meilleure série ; v6 (20261016g) : + valeurs par match */
+  var PEP = _g45RegPep(), NB = PEP ? 50 : 10;   /* 20261027g : pépites = 50 joueurs */
+  var ck = 'g45reg1_v6_' + saison + '_' + cat + (PEP ? '_pep' : '');   /* v2 (20261006l) : + meilleure série ; v6 (20261016g) : + valeurs par match */
   try { var c = JSON.parse(localStorage.getItem(ck) || 'null'); if (c && Date.now() - c.t < 12 * 3600e3) return c.l; } catch (e) {}
   var P = FD_PROXY + '?key=nhl&host=nhl&path=';
   var k = cat === 'a' ? 'assists' : (cat === 'p' ? 'points' : 'goals');
-  var r = await fetch(P + encodeURIComponent('/v1/skater-stats-leaders/' + saison + '/2?categories=' + k + '&limit=10'));
+  var r = await fetch(P + encodeURIComponent('/v1/skater-stats-leaders/' + saison + '/2?categories=' + k + '&limit=' + NB));
   if (!r.ok) throw new Error('classement NHL ' + r.status);
   var j = await r.json();
   var top = (j && j[k]) || [];
@@ -70098,9 +70099,10 @@ async function _g45RegLire(saison, cat, eq) {
   var out = [], i = 0;
   async function w() {
     while (i < top.length) {
-      var p = top[i++];
+      var rgT = i, p = top[i++];
       var o = { id: p.id, nom: ((p.firstName && p.firstName.default) || '') + ' ' + ((p.lastName && p.lastName.default) || ''),
         ph: p.headshot || '', eq: p.teamAbbrev || '', logo: p.teamLogo || '', val: p.value };
+      if (PEP && rgT < 10) o.t10 = 1;   /* 20261027g : déjà dans le top 10 → grisé en mode pépites */
       try {
         var jg = await _g45RegLog(p.id, saison);
         o.s = _g45RegCalc((jg && jg.gameLog) || [], k); o.der = (((jg && jg.gameLog) || [])[0] || {}).gameDate || ''; o.ab = p.teamAbbrev || '';
@@ -70143,6 +70145,10 @@ function _g45RegHtml() {
     + '<div style="display:flex;gap:6px;margin-bottom:6px;">' + b(!_g45Reg.lieu, 'Tous', "g45RegSet('lieu','')") + b(_g45Reg.lieu === 'd', '🏠 Domicile', "g45RegSet('lieu','d')") + b(_g45Reg.lieu === 'e', '🚌 Extérieur', "g45RegSet('lieu','e')") + '</div>'   /* 20261006w */
     + '<div style="display:flex;gap:6px;margin-bottom:8px;">' + b(_g45Reg.tri === 'pire', 'Pire série ▲', "g45RegSet('tri','pire')") + b(_g45Reg.tri === 'pct', '% matchs ' + LB.avec, "g45RegSet('tri','pct')")
       + b(_g45Reg.tri === 'tot', LB.col + ' ▼', "g45RegSet('tri','tot')") + b(_g45Reg.tri === 'best', 'Meilleure série ▼', "g45RegSet('tri','best')") + '</div>';   /* 20261006d ; 20261006l */
+  /* 20261027g : 🔍 Pépites (ligue NHL) — 50 joueurs, top 10 grisé, colonne Paliers (pire série + 1, comme le Cockpit) */
+  var PEP = _g45RegPep();
+  if (!_g45Reg.eq && !_g45Reg.lg) h += '<div style="display:flex;gap:6px;margin-bottom:8px;">' + b(!PEP, '🎯 Top 10', "g45RegSet('pep',0)") + b(PEP, '🔍 Pépites (50 joueurs)', "g45RegSet('pep',1)") + '</div>'
+    + (PEP ? '<div style="font-size:13px;color:#fff;margin:-2px 0 8px;">50 meilleurs ' + LB.pl + ' de la saison (≈ 30 s la 1re fois, gardé 12 h) · <span style="opacity:.55;">grisé = déjà dans le top 10</span> · 💎 = pépite</div>' : '');
   /* 20261005t (« c'est chiant cette limite à 10 ») : plus de minimum de 10 matchs ; début de saison = avertissement + bouton
      vers la saison précédente (et retour), sans toucher au Saison ▾ du panneau. */
   if (!_g45Reg.mem[_g45RegK()]) return h + '<div style="font-size:14px;color:#fff;padding:10px 4px;">⏳ Lecture des joueurs… <span id="g45-reg-prog"></span></div>';
@@ -70174,7 +70180,7 @@ function _g45RegHtml() {
   });
   var col = function (v) { return v < 6 ? '#1ed760' : (v < 10 ? '#f0b020' : '#ff6b6b'); };
   h += '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:14px;color:#fff;white-space:nowrap;">'
-    + '<tr style="color:#c9d3ee;font-size:12px;"><th style="text-align:left;padding:6px;">Joueur</th><th style="padding:6px 6px;">' + LB.col + '</th><th style="padding:6px 6px;">MJ</th><th style="padding:6px 6px;">%' + (SE > 1 ? ' ' + SE + '+' : '') + '</th><th style="padding:6px 6px;">Pire série</th><th style="padding:6px 6px;">Meilleure</th><th style="padding:6px 6px;">En cours</th></tr>';   /* 20261006s : titres collés (« EssaisMJ ») */
+    + '<tr style="color:#c9d3ee;font-size:12px;"><th style="text-align:left;padding:6px;">Joueur</th><th style="padding:6px 6px;">' + LB.col + '</th><th style="padding:6px 6px;">MJ</th><th style="padding:6px 6px;">%' + (SE > 1 ? ' ' + SE + '+' : '') + '</th><th style="padding:6px 6px;">Pire série</th>' + (PEP ? '<th style="padding:6px 6px;">Paliers</th>' : '') + '<th style="padding:6px 6px;">Meilleure</th><th style="padding:6px 6px;">En cours</th></tr>';   /* 20261006s : titres collés (« EssaisMJ ») */
   /* 20261005u : rang de l'an dernier (top 10 de la LIGUE, même catégorie) — ligue : or 1-3 / bronze 4-10 ; équipe : or seulement */
   var PR = _g45Reg.prev[_g45RegPK()] || {};
   var labP = lab(+_g45Reg.an - 1), nOr = 0;
@@ -70182,16 +70188,17 @@ function _g45RegHtml() {
     var rg = PR[o.id] || 0;
     var cc = rg ? ((_g45Reg.eq || rg <= 3) ? '#f5c542' : '#e0915a') : '';
     if (rg) nOr++;
-    h += '<tr style="border-top:1px solid rgba(255,255,255,.1);"><td style="padding:6px;"><span style="display:inline-flex;align-items:center;gap:7px;">'
+    h += '<tr style="border-top:1px solid rgba(255,255,255,.1);' + (PEP && o.t10 ? 'opacity:.55;' : '') + '"><td style="padding:6px;"><span style="display:inline-flex;align-items:center;gap:7px;">'
       + (o.ft && !o.ph ? '<span style="display:inline-block;border-radius:50%;flex:none;' + (cc ? 'box-shadow:0 0 0 2px ' + cc + ';' : '') + '">' + _g45ClsAvatar(o.nom, o.club || '', o.logo || '') + '</span>'
         : (o.ph ? '<img src="' + esc(o.ph) + '" alt="" style="width:30px;height:30px;border-radius:50%;object-fit:cover;background:#2a3350;' + (cc ? 'box-shadow:0 0 0 2px ' + cc + ';' : '') + '" onerror="this.style.display=\'none\'">' : ''))
-      + '<span><b style="font-size:14px;' + (cc ? 'color:' + cc + ';' : '') + '">' + esc(o.nom) + '</b><br><span style="font-size:12px;color:#c9d3ee;">' + esc(o.eq)
+      + '<span><b style="font-size:14px;' + (cc ? 'color:' + cc + ';' : '') + '">' + (PEP && !o.t10 ? '💎 ' : '') + esc(o.nom) + '</b><br><span style="font-size:12px;color:#c9d3ee;">' + esc(o.eq)
       + (rg ? ' · <span style="color:' + cc + ';">n°' + rg + ' en ' + labP + '</span>' : '')
       + (o.nv ? ' · <span style="color:#5aa9ff;font-weight:800;">🆕 nouveau</span>' : '')
       + (o.abs ? ' · <span style="color:#ff9f43;font-weight:800;">🚫 absent ' + (o.abs > 1 ? 'aux ' + o.abs + ' derniers matchs' : 'au dernier match') + (o.absD ? ' (' + esc(o.absD) + ')' : '') + '</span>' : '')   /* 20261006n */
       + '</span></span></span></td>'
       + '<td align="center"><b>' + o.s.tot + '</b></td><td align="center">' + o.s.mj + '</td><td align="center">' + o.s.pct + ' %</td>'
       + '<td align="center"><b style="color:' + col(o.s.pire) + ';">' + o.s.pire + '</b></td>'
+      + (PEP ? (function () { var pa = (typeof _g45F1CrPal === 'function') ? _g45F1CrPal(o.s.pire) : { p: o.s.pire + 1, ico: '' }; return '<td align="center"><b>' + pa.p + '</b> ' + pa.ico + (pa.mise != null ? '<br><span style="font-size:12px;color:#c9d3ee;">' + pa.mise + ' €</span>' : ''); })() + '</td>' : '')
       + '<td align="center"><b style="color:#5aa9ff;">' + (o.s.best != null ? o.s.best : '–') + '</b></td>'
       + '<td align="center"><b style="color:' + (o.s.cours >= 6 ? '#ff6b6b' : '#fff') + ';">' + o.s.cours + '</b></td></tr>';
   });
@@ -70359,7 +70366,11 @@ function _g45RegLab(a) {
   if (_g45Reg.lg && _g45RegCivil(_g45Reg.lg)) return String(a);
   return (a - 1) + '-' + String(a).slice(2);
 }
-function _g45RegK() { return _g45RegSaison(_g45Reg.an) + _g45Reg.cat + (_g45Reg.eq || '') + (_g45Reg.lg ? '@' + _g45Reg.lg : '') + (_g45Reg.eq && _g45Reg.lg ? '#' + (_g45Reg.cf || 'L') : ''); }
+function _g45RegK() { return _g45RegSaison(_g45Reg.an) + _g45Reg.cat + (_g45Reg.eq || '') + (_g45Reg.lg ? '@' + _g45Reg.lg : '') + (_g45Reg.eq && _g45Reg.lg ? '#' + (_g45Reg.cf || 'L') : '') + (_g45RegPep() ? '+pep' : ''); }
+/* 20261027g — 🔍 PÉPITES (« si je veux découvrir des petites pépites comme Adam Fox en passes ») : classement de la LIGUE NHL seulement
+   (ni fiche d'équipe, ni foot / NFL…) ; 50 meilleurs de la catégorie au lieu de 10. SONDÉ PAR ANTOINE le 27/10 : skater-stats-leaders
+   …?categories=assists&limit=50 → 50 joueurs (McDavid 26, Fox 16…). */
+function _g45RegPep() { return !!(_g45Reg.pep && !_g45Reg.eq && !_g45Reg.lg); }
 function _g45RegPK() { return _g45RegSaison(_g45Reg.an) + _g45Reg.cat + (_g45Reg.lg ? '@' + _g45Reg.lg : ''); }
 function _g45RegEspAn(lg, an) { return _g45RegCivil(lg) ? +an : +an - 1; }
 function _g45RegBlocFoot(lg, anCompet, nomLigue) {
