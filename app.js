@@ -19095,7 +19095,10 @@ async function loadF1Saisons(el, nom) {
   });
   
   html += '</div></div>';
+  /* 20261027e : critères 4 saisons + « Jouable en Cockpit ? » en tête de l'onglet Saisons (bloc 20261027d en fin de fichier). */
+  html = '<div class="sec" style="margin-top:0;">🏎️ Tes critères sur 4 saisons</div><div class="g45-f1cr-box" style="background:#10172b;border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:12px;margin-bottom:12px;"></div>' + html;
   el.innerHTML = html;
+  try { if (typeof _g45F1CrMonter === 'function') _g45F1CrMonter(el.querySelector('.g45-f1cr-box')); } catch (e) {}
 }
 
 
@@ -81267,6 +81270,7 @@ window._g45TrTestVoit = function () { try { return (typeof _g45SanteActive === '
   var J = 'https://api.jolpi.ca/ergast/f1/';
   var CR = { d: '', k: 'po', sp: 0, ci: 0, t3: 0, ap: 0 };
   try { var s0 = JSON.parse(localStorage.getItem('g45_f1cr_sel') || 'null'); if (s0) for (var q in s0) CR[q] = s0[q]; } catch (e) {}
+  var BOX = null;    /* 20261027e : boîte affichée (page F1 OU onglet Saisons de la carte F1) */
   var DATA = null;   /* { ans:[{y, gp:[…], sp:[…]}], dn:{id:nom}, next:{c, n} } */
   var CRIT = [['v', '🏆 Vainqueur'], ['po', '🥉 Podium'], ['t6', 'Top 6'], ['t10', 'Top 10'], ['pl', '⏱️ Pole'], ['cq', '🆚 Devant son coéquipier'], ['fi', '✅ Finit']];
   function ea(x) { return String(x == null ? '' : x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
@@ -81376,7 +81380,7 @@ window._g45TrTestVoit = function () { try { return (typeof _g45SanteActive === '
       + (on ? 'background:#2f6bff;border:1px solid #2f6bff;color:#fff;' : 'background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.22);color:#fff;') + '">' + (on ? '✔ ' : '') + lbl + '</button>';
   }
   function dessiner() {
-    var box = document.getElementById('g45-f1cr'); if (!box || !DATA) return;
+    var box = (BOX && BOX.isConnected) ? BOX : document.getElementById('g45-f1cr'); if (!box || !DATA) return;
     var der = DATA.ans[DATA.ans.length - 1], pts = {};
     (der.gp || []).concat(der.sp || []).forEach(function (ra) { ra.x.forEach(function (x) { pts[x[0]] = (pts[x[0]] || 0) + x[5]; }); });
     var plateau = Object.keys(pts).sort(function (a, b) { return pts[b] - pts[a]; });
@@ -81431,8 +81435,17 @@ window._g45TrTestVoit = function () { try { return (typeof _g45SanteActive === '
     el.innerHTML = '<button onclick="g45F1Open()" style="border:none;background:rgba(255,255,255,.06);color:var(--t2);border-radius:8px;padding:6px 12px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:10px;">← Saison F1</button>'
       + '<div class="sec" style="margin-top:0;">🏎️ Tes critères sur 4 saisons</div>'
       + '<div id="g45-f1cr" style="background:#10172b;border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:12px;"><div style="font-size:15px;color:#fff;padding:12px;">Chargement des résultats (4 saisons, une seule fois)…</div></div>';
+    BOX = document.getElementById('g45-f1cr');
     try { if (!DATA) DATA = await charger(); dessiner(); }
     catch (e) { var b = document.getElementById('g45-f1cr'); if (b) b.innerHTML = '<div style="font-size:15px;color:#fff;padding:12px;">Résultats F1 indisponibles (' + ea(e.message) + '). Réessaie plus tard.</div>'; }
   };
   window._g45F1CrData = function (d) { DATA = d; };   /* pour le test */
+  /* 20261027e (capture d'Antoine : il cherchait le bloc dans la carte FORMULE 1 → onglet 📊 Saisons) : même bloc monté
+     dans une boîte donnée, en tête de loadF1Saisons. */
+  window._g45F1CrMonter = async function (box) {
+    if (!box) return; BOX = box;
+    box.innerHTML = '<div style="font-size:15px;color:#fff;padding:12px;">Chargement des résultats (4 saisons, une seule fois)…</div>';
+    try { if (!DATA) DATA = await charger(); dessiner(); }
+    catch (e) { box.innerHTML = '<div style="font-size:15px;color:#fff;padding:12px;">Résultats F1 indisponibles (' + ea(e.message) + '). Réessaie plus tard.</div>'; }
+  };
 })();
