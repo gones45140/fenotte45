@@ -251,6 +251,7 @@ Il est dans les DEUX dépôts (gones45 et fenotte45), identique (cmp). Jamais de
   20261015f (« avec la pastille Laura mets le vrai logo du book… et le logo de Boursorama ») : enveloppe window.bkFavicon (vaut PARTOUT) — clé hors BK
   finissant par antoine / laura → logo du book de base (BK) ; sinon nom reconnu dans `_G45_BK_DOM` (Boursorama → boursobank.com, Pinnacle, Zebet,
   NetBet, banques…) → favicon Google s2 du domaine. Domaines NON vérifiés un par un (échec = initiales via logoErr).
+- 💳 20261027a — ABONNEMENTS dans Bank (« j'ai souscrit Windscribe 3 €/mois ; section abonnement qui déduit par mois sur une banque choisie, avec un historique », maquette image « OUI, le 27 et premier aujourd'hui ») : bloc fin d'app.js, #g45-abo sous Banques. state.abo [{id,n,m,j,b,on,cree}], state.aboH [{id: abo|AAAA-MM, a,n,m,b,d}] ; `_g45AboTraiter(auj)` prélève chaque échéance (jour j ou dernier jour du mois) depuis la création, une fois par mois (id), au chargement + toutes les heures ; formulaire (nom, montant, jour, compte : banques d'abord), Modifier / ⏸️ / ✕ (aboOff, historique gardé) ; `_g45BetsFusion` enveloppé : abonnements + lignes d'historique de l'autre appareil (appliquées une fois). Bankroll baisse, bénéfice des paris non. Smoke abo (105), capture vérifiée.
 - COMPTABILITÉ DES PARIS : `_g45BetEffetTotal` / `_g45BetAppliquer` = seule
   source de vérité (mise retirée AU PLACEMENT ; gagné +m×cote ; freebet :
   cagnotte −m, gain m×(cote−1)). `deleteArchived` (DEUX copies) et

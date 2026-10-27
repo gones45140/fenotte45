@@ -80987,3 +80987,134 @@ window._g45TrTestVoit = function () { try { return (typeof _g45SanteActive === '
     return r;
   };
 })();
+
+/* ═══ 20261025t — 💳 ABONNEMENTS dans Bank (Antoine : « j'ai souscrit un abonnement Windscribe 3 €/mois ; dans Bank rajouter une section
+   abonnement qui déduit par mois sur une banque choisie, avec un historique », maquette image « OUI, le 27 et premier aujourd'hui ») ═══
+   state.abo = [{id, n, m (€), j (jour 1-31), b (compte state.b), on, cree 'AAAA-MM-JJ'}] ; state.aboH = [{id: abo.id|AAAA-MM, a, n, m, b, d}].
+   Prélèvement : pour chaque mois depuis la création, échéance = jour j (ou dernier jour du mois) ; échue et pas encore dans l'historique →
+   state.b[b] −= m + ligne d'historique. Identifiant abo|mois = jamais deux fois le même mois (même si téléphone et PC prélèvent chacun) :
+   à la synchro (_g45BetsFusion enveloppé), une ligne d'historique venue de l'autre appareil et absente ici est appliquée UNE fois.
+   La bankroll baisse (solde du compte), le BÉNÉFICE des paris non (calculé sur les paris). Section #g45-abo sous Banques. */
+(function () {
+  var esc = function (t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+  var fr = function (x) { return (Math.round(x * 100) / 100).toFixed(2).replace('.', ','); };
+  var ymd = function (d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+  var nomBk = function (k) { try { if (typeof _g45BkNom === 'function') { var o = _g45BkNom(k); return o.n + (o.who ? ' ' + o.who : ''); } return bki(k).n || k; } catch (e) { return k; } };
+  var ech = function (y, mo, j) { var der = new Date(y, mo + 1, 0).getDate(); return ymd(new Date(y, mo, Math.min(j, der))); };
+  var init = function () { if (!state.abo) state.abo = []; if (!state.aboH) state.aboH = []; };
+  var debiter = function (a, mois, d) {
+    var id = a.id + '|' + mois;
+    if (state.aboH.some(function (h) { return h.id === id; })) return false;
+    state.b[a.b] = ((parseFloat(state.b[a.b]) || 0) - a.m).toFixed(2);
+    state.aboH.unshift({ id: id, a: a.id, n: a.n, m: a.m, b: a.b, d: d });
+    return true;
+  };
+  window._g45AboTraiter = function (auj) {
+    if (typeof state === 'undefined' || !state || !state.b) return 0;
+    init(); var t = auj || ymd(new Date()), n = 0;
+    state.abo.forEach(function (a) {
+      if (!a || !a.on || !(a.m > 0) || !a.b || !a.cree) return;
+      var y = +a.cree.slice(0, 4), mo = +a.cree.slice(5, 7) - 1;
+      for (var k = 0; k < 36; k++) {
+        var d = ech(y, mo, a.j), mois = d.slice(0, 7);
+        if (d > t) break;
+        if (d >= a.cree && debiter(a, mois, d)) n++;
+        mo++; if (mo > 11) { mo = 0; y++; }
+      }
+    });
+    if (n) { try { save(); } catch (e) {} try { if (typeof _g45PushBetsGithub === 'function') _g45PushBetsGithub(true); } catch (e) {} }
+    return n;
+  };
+  var prochain = function (a) {
+    var t = ymd(new Date()), d = new Date(), y = d.getFullYear(), mo = d.getMonth();
+    for (var k = 0; k < 3; k++) { var e = ech(y, mo, a.j); if (e > t || (e === t && !state.aboH.some(function (h) { return h.id === a.id + '|' + e.slice(0, 7); }))) return e; mo++; if (mo > 11) { mo = 0; y++; } }
+    return '';
+  };
+  var F = { id: null };
+  window._g45AboRender = function () {
+    var g = document.getElementById('books-grid'); if (!g || typeof state === 'undefined' || !state || !state.b) return;
+    init();
+    var box = document.getElementById('g45-abo');
+    if (!box) { box = document.createElement('div'); box.id = 'g45-abo'; var ap = document.getElementById('g45-bk-banques') || g; ap.parentNode.insertBefore(box, ap.nextSibling); }
+    else { var ap2 = document.getElementById('g45-bk-banques') || g; if (box.previousElementSibling !== ap2) ap2.parentNode.insertBefore(box, ap2.nextSibling); }
+    var tot = state.abo.filter(function (a) { return a.on; }).reduce(function (s, a) { return s + (+a.m || 0); }, 0);
+    var bt = 'border:1px solid rgba(255,255,255,.25);border-radius:8px;padding:6px 10px;font-size:13px;color:#fff;background:transparent;cursor:pointer;';
+    var ligne = function (a) {
+      var p = a.on ? prochain(a) : '';
+      return '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#1e2740;border-radius:10px;padding:10px 12px;margin-top:10px;' + (a.on ? '' : 'opacity:.6;') + '">'
+        + '<div style="flex:1;min-width:180px;"><b style="font-size:15px;">' + esc(a.n) + '</b>' + (a.on ? '' : ' <span style="font-size:13px;color:#f5c542;">⏸️ en pause</span>')
+        + '<div style="font-size:13px;color:#c9d3ee;margin-top:2px;">le ' + a.j + ' de chaque mois · prélevé sur ' + esc(nomBk(a.b)) + (p ? ' · prochain : ' + p.split('-').reverse().slice(0, 2).join('/') : '') + '</div></div>'
+        + '<b style="font-size:16px;color:#ff8a8a;">−' + fr(a.m) + ' €</b>'
+        + '<button style="' + bt + '" onclick="g45AboEditer(\'' + a.id + '\')">Modifier</button>'
+        + '<button style="' + bt + '" title="Pause / reprise" onclick="g45AboPause(\'' + a.id + '\')">' + (a.on ? '⏸️' : '▶️') + '</button>'
+        + '<button style="' + bt + '" title="Supprimer (l\'historique reste)" onclick="g45AboSuppr(\'' + a.id + '\')">✕</button></div>';
+    };
+    var cpt = (typeof _g45BkComptes === 'function' ? _g45BkComptes() : Object.keys(state.b).map(function (k) { return { k: k, banque: false }; }));
+    cpt.sort(function (x, y) { return (y.banque ? 1 : 0) - (x.banque ? 1 : 0); });
+    var e0 = F.id ? state.abo.filter(function (a) { return a.id === F.id; })[0] : null;
+    var inp = 'background:#0d1322;border:1px solid #2c3550;border-radius:8px;color:#fff;font-size:15px;padding:9px 10px;';
+    var form = F.ouvert ? '<div style="background:#0b101d;border:1px solid #4d84ff;border-radius:10px;padding:12px;margin-top:10px;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;align-items:end;">'
+      + '<label style="font-size:13px;color:#c9d3ee;">Nom<input id="g45-abo-n" style="' + inp + 'width:100%;box-sizing:border-box;" value="' + esc(e0 ? e0.n : '') + '" placeholder="Windscribe"></label>'
+      + '<label style="font-size:13px;color:#c9d3ee;">Montant (€ / mois)<input id="g45-abo-m" inputmode="decimal" style="' + inp + 'width:100%;box-sizing:border-box;" value="' + (e0 ? String(e0.m).replace('.', ',') : '') + '" placeholder="3,00"></label>'
+      + '<label style="font-size:13px;color:#c9d3ee;">Jour du mois<input id="g45-abo-j" type="number" min="1" max="31" style="' + inp + 'width:100%;box-sizing:border-box;" value="' + (e0 ? e0.j : new Date().getDate()) + '"></label>'
+      + '<label style="font-size:13px;color:#c9d3ee;">Prélevé sur<select id="g45-abo-b" style="' + inp + 'width:100%;box-sizing:border-box;">' + cpt.map(function (x) { return '<option value="' + esc(x.k) + '"' + (e0 && e0.b === x.k ? ' selected' : '') + '>' + (x.banque ? '🏦 ' : '🎰 ') + esc(nomBk(x.k)) + '</option>'; }).join('') + '</select></label>'
+      + '<div style="display:flex;gap:8px;"><button onclick="g45AboValider()" style="flex:1;background:#2f6bff;border:0;border-radius:8px;color:#fff;font-weight:900;font-size:15px;padding:10px;cursor:pointer;">💾 ' + (e0 ? 'Enregistrer' : 'Ajouter') + '</button>'
+      + '<button onclick="g45AboForm(false)" style="' + bt + '">Annuler</button></div>'
+      + (e0 ? '' : '<div style="grid-column:1/-1;font-size:13px;color:#c9d3ee;">Si le jour choisi est aujourd\'hui, le 1er prélèvement se fait tout de suite.</div>') + '</div>' : '';
+    var H = state.aboH.slice(0, 24);
+    box.innerHTML = '<div class="sec" style="display:flex;align-items:center;flex-wrap:wrap;column-gap:12px;">💳 Abonnements'
+      + (tot ? '<small style="margin-left:auto;font-size:15px;color:#ff8a8a;font-weight:800;">−' + fr(tot) + ' € / mois</small>' : '') + '</div>'
+      + '<div style="background:rgba(21,28,48,.96);border:1px solid rgba(77,132,255,.35);border-radius:12px;padding:12px 14px;color:#fff;margin-bottom:14px;">'
+      + (state.abo.length ? state.abo.map(ligne).join('') : '<div style="font-size:14px;color:#c9d3ee;">Aucun abonnement.</div>')
+      + form
+      + (F.ouvert ? '' : '<button onclick="g45AboForm(true)" style="width:100%;margin-top:10px;border:1px dashed #4d84ff;border-radius:10px;padding:10px;background:transparent;color:#9fc3ff;font-weight:800;font-size:14px;cursor:pointer;">➕ Ajouter un abonnement</button>')
+      + (H.length ? '<div style="margin-top:14px;font-size:14px;font-weight:900;">📜 Historique des prélèvements</div>'
+        + H.map(function (h) { return '<div style="display:flex;justify-content:space-between;gap:10px;font-size:14px;padding:6px 2px;border-bottom:1px solid rgba(255,255,255,.08);"><span>' + h.d.split('-').reverse().join('/') + ' · ' + esc(h.n) + ' · ' + esc(nomBk(h.b)) + '</span><b style="color:#ff8a8a;">−' + fr(h.m) + ' €</b></div>'; }).join('') : '')
+      + '<div style="font-size:13px;color:#c9d3ee;margin-top:10px;line-height:1.5;">Prélevé tout seul le jour prévu (ou à la 1re ouverture de l\'appli après). Baisse le solde du compte choisi, donc la bankroll — PAS ton bénéfice des paris.</div></div>';
+  };
+  var maj = function () { try { save(); } catch (e) {} try { if (typeof _g45PushBetsGithub === 'function') _g45PushBetsGithub(true); } catch (e) {} try { render(); } catch (e) { try { window._g45AboRender(); } catch (e2) {} } };
+  window.g45AboForm = function (o, id) { F.ouvert = !!o; F.id = id || null; window._g45AboRender(); };
+  window.g45AboEditer = function (id) { window.g45AboForm(true, id); };
+  window.g45AboValider = function () {
+    init();
+    var n = String((document.getElementById('g45-abo-n') || {}).value || '').trim(), m = parseFloat(String((document.getElementById('g45-abo-m') || {}).value || '').replace(',', '.'));
+    var j = parseInt((document.getElementById('g45-abo-j') || {}).value, 10), b = (document.getElementById('g45-abo-b') || {}).value;
+    if (!n || !(m > 0) || !(j >= 1 && j <= 31) || !b) { alert('Remplis le nom, le montant, le jour (1 à 31) et le compte.'); return; }
+    m = Math.round(m * 100) / 100;
+    var a = F.id ? state.abo.filter(function (x) { return x.id === F.id; })[0] : null;
+    if (a) { a.n = n; a.m = m; a.j = j; a.b = b; }
+    else state.abo.push({ id: 'ab' + Date.now().toString(36), n: n, m: m, j: j, b: b, on: true, cree: ymd(new Date()) });
+    F.ouvert = false; F.id = null;
+    window._g45AboTraiter(); maj();
+  };
+  window.g45AboPause = function (id) { init(); var a = state.abo.filter(function (x) { return x.id === id; })[0]; if (!a) return; a.on = !a.on; if (a.on) a.cree = ymd(new Date()) > a.cree ? ymd(new Date()) : a.cree; maj(); };
+  window.g45AboSuppr = function (id) {
+    init(); var a = state.abo.filter(function (x) { return x.id === id; })[0]; if (!a || !confirm('Supprimer l\'abonnement ' + a.n + ' ? (l\'historique des prélèvements reste)')) return;
+    state.abo = state.abo.filter(function (x) { return x.id !== id; }); state.aboOff = state.aboOff || {}; state.aboOff[id] = Date.now(); maj();
+  };
+  /* synchro : abonnements et historique de l'autre appareil */
+  var f0 = window._g45BetsFusion;
+  if (typeof f0 === 'function') window._g45BetsFusion = function (rem) {
+    var n = f0.apply(this, arguments);
+    try {
+      if (rem && state) {
+        init();
+        var off = Object.assign({}, rem.aboOff || {}, state.aboOff || {}); state.aboOff = off;
+        state.abo = state.abo.filter(function (a) { return !off[a.id]; });
+        (rem.abo || []).forEach(function (a) { if (a && a.id && !off[a.id] && !state.abo.some(function (x) { return x.id === a.id; })) state.abo.push(JSON.parse(JSON.stringify(a))); });
+        (rem.aboH || []).forEach(function (h) {
+          if (!h || !h.id || state.aboH.some(function (x) { return x.id === h.id; })) return;
+          state.b[h.b] = ((parseFloat(state.b[h.b]) || 0) - (+h.m || 0)).toFixed(2);
+          state.aboH.push(JSON.parse(JSON.stringify(h))); n++;
+        });
+        state.aboH.sort(function (x, y) { return x.d < y.d ? 1 : (x.d > y.d ? -1 : 0); });
+      }
+    } catch (e) {}
+    return n;
+  };
+  var r0 = window.render;
+  if (typeof r0 === 'function') window.render = function () { var r = r0.apply(this, arguments); try { window._g45AboRender(); } catch (e) {} return r; };
+  try { if (window._g45AboTraiter()) { try { render(); } catch (e) {} } } catch (e) {}
+  setInterval(function () { try { if (window._g45AboTraiter()) render(); } catch (e) {} }, 3600000);   /* appli ouverte au passage de minuit */
+  try { window._g45AboRender(); } catch (e) {}
+})();
