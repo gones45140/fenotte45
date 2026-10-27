@@ -81268,7 +81268,7 @@ window._g45TrTestVoit = function () { try { return (typeof _g45SanteActive === '
    ════════════════════════════════════════════════════════════════════════════ */
 (function () {
   var J = 'https://api.jolpi.ca/ergast/f1/';
-  var CR = { d: '', k: 'po', sp: 0, ci: 0, t3: 0, ap: 0 };
+  var CR = { d: '', k: 'po', sp: 0, ci: 0, t3: 0, ap: 0, an: 0, cir: '' };   /* 20261027f : an = une saison (0 = les 4), cir = circuitId ('' = tous) */
   try { var s0 = JSON.parse(localStorage.getItem('g45_f1cr_sel') || 'null'); if (s0) for (var q in s0) CR[q] = s0[q]; } catch (e) {}
   var BOX = null;    /* 20261027e : boîte affichée (page F1 OU onglet Saisons de la carte F1) */
   var DATA = null;   /* { ans:[{y, gp:[…], sp:[…]}], dn:{id:nom}, next:{c, n} } */
@@ -81336,6 +81336,8 @@ window._g45TrTestVoit = function () { try { return (typeof _g45SanteActive === '
         var me = null; ra.x.forEach(function (x) { if (x[0] === did) me = x; });
         if (!me) return;
         var avant = podPrec; podPrec = !!(me[3] && me[2] <= 3);
+        if (sel.an && s.y !== +sel.an) return;   /* 20261027f : après le calcul de podPrec (le GP d'avant compte même s'il est d'une autre saison) */
+        if (sel.cir && ra.c !== sel.cir) return;
         if (sel.ci && !(data.next && ra.c === data.next.c)) return;
         if (sel.t3 && !(me[4] >= 1 && me[4] <= 3)) return;
         if (sel.ap && !avant) return;
@@ -81386,17 +81388,30 @@ window._g45TrTestVoit = function () { try { return (typeof _g45SanteActive === '
     var plateau = Object.keys(pts).sort(function (a, b) { return pts[b] - pts[a]; });
     if (!CR.d || !DATA.dn[CR.d]) CR.d = plateau[0] || '';
     var nomC = (CRIT.filter(function (c) { return c[0] === CR.k; })[0] || CRIT[1])[1];
-    var h = '<div style="font-size:14px;color:#c9d3ee;margin-bottom:8px;">' + (CR.sp ? 'Sprints' : 'Grands Prix') + ' ' + DATA.ans[0].y + ' → ' + der.y + ' · données Jolpica</div>';
+    /* 20261027f (« où choisit-on le circuit et l'année », maquette « oui on code ») : l'ancien bouton « Ce circuit » (ci) devient la liste. */
+    if (CR.ci) { CR.ci = 0; if (DATA.next && !CR.cir) CR.cir = DATA.next.c; }
+    if (CR.an && !DATA.ans.some(function (s) { return s.y === +CR.an; })) CR.an = 0;
+    var cirs = {};
+    DATA.ans.forEach(function (s) { (s.gp || []).concat(s.sp || []).forEach(function (ra) { if (ra.c) cirs[ra.c] = ra.cn || ra.c; }); });
+    if (DATA.next && DATA.next.c && !cirs[DATA.next.c]) cirs[DATA.next.c] = DATA.next.n;
+    var h = '<div style="font-size:14px;color:#c9d3ee;margin-bottom:8px;">' + (CR.sp ? 'Sprints' : 'Grands Prix') + ' ' + (CR.an ? CR.an : DATA.ans[0].y + ' → ' + der.y) + (CR.cir ? ' · ' + ea(cirs[CR.cir] || CR.cir) : '') + ' · données Jolpica</div>';
     h += '<select onchange="g45F1CrSet(\'d\',this.value)" style="font-size:15px;font-weight:700;padding:8px 10px;border-radius:10px;background:#141c33;color:#fff;border:1px solid rgba(255,255,255,.25);margin-bottom:10px;max-width:100%;">'
       + plateau.map(function (d) { return '<option value="' + ea(d) + '"' + (d === CR.d ? ' selected' : '') + '>' + ea(DATA.dn[d] || d) + '</option>'; }).join('') + '</select>';
+    h += '<div style="font-size:14px;color:#c9d3ee;margin:2px 0 6px;">📅 Saisons</div><div>' + chip('an', '0', '4 saisons', !CR.an)
+      + DATA.ans.slice().reverse().map(function (s) { return chip('an', String(s.y), String(s.y), +CR.an === s.y); }).join('') + '</div>';
+    var selSt = 'font-size:15px;font-weight:700;padding:8px 10px;border-radius:10px;background:#141c33;color:#fff;border:' + (CR.cir ? '2px solid #2f6bff' : '1px solid rgba(255,255,255,.25)') + ';margin-bottom:10px;max-width:100%;';
+    h += '<div style="font-size:14px;color:#c9d3ee;margin:6px 0 6px;">📍 Circuit</div><select onchange="g45F1CrSet(\'cir\',this.value)" style="' + selSt + '"><option value="">Tous les circuits</option>'
+      + (DATA.next && DATA.next.c ? '<option value="' + ea(DATA.next.c) + '"' + (CR.cir === DATA.next.c ? ' selected' : '') + '>⭐ ' + ea(cirs[DATA.next.c]) + ' (prochain GP)</option>' : '')
+      + Object.keys(cirs).filter(function (c) { return !(DATA.next && c === DATA.next.c); }).sort(function (a, b) { return String(cirs[a]).localeCompare(String(cirs[b]), 'fr'); })
+        .map(function (c) { return '<option value="' + ea(c) + '"' + (CR.cir === c ? ' selected' : '') + '>' + ea(cirs[c]) + '</option>'; }).join('') + '</select>';
     h += '<div style="font-size:14px;color:#c9d3ee;margin:2px 0 6px;">Ce qu\'il doit faire</div><div>' + CRIT.map(function (c) { return chip('k', c[0], c[1], CR.k === c[0]); }).join('') + '</div>';
     h += '<div style="font-size:14px;color:#c9d3ee;margin:6px 0 6px;">Filtres</div><div>' + chip('sp', '0', 'Grand Prix', !CR.sp) + chip('sp', '1', 'Sprint', !!CR.sp)
-      + (DATA.next ? chip('ci', CR.ci ? '0' : '1', '📍 Ce circuit (' + ea(DATA.next.n) + ')', !!CR.ci) : '')
       + chip('t3', CR.t3 ? '0' : '1', '🚦 Parti du top 3', !!CR.t3) + chip('ap', CR.ap ? '0' : '1', '🔁 Après un podium', !!CR.ap) + '</div>';
     var seq = window._g45F1CrSeq(DATA, CR.d, CR), tot = window._g45F1CrStats(seq);
     var ligne = 'display:grid;grid-template-columns:1fr 1.6fr 1.3fr 1.2fr;gap:6px;padding:8px 4px;border-bottom:1px solid rgba(255,255,255,.08);font-size:15px;color:#fff;';
     h += '<div style="margin-top:8px;"><div style="' + ligne + 'font-size:13px;font-weight:700;color:#c9d3ee;"><span>Saison</span><span>Réussite</span><span>Pire série de ratés</span><span>Meilleure série</span></div>';
     DATA.ans.slice().reverse().forEach(function (s) {
+      if (CR.an && s.y !== +CR.an) return;
       var st = window._g45F1CrStats(seq.filter(function (e) { return e.y === s.y; }));
       h += '<div style="' + ligne + '"><span>' + s.y + '</span>' + (st.n ? '<span>' + st.ok + '/' + st.n + ' · ' + st.pct + ' %</span><span style="font-weight:800;color:' + couleurPire(st.pire) + ';">' + st.pire + '</span><span style="font-weight:800;color:#6aa8ff;">' + st.meil + '</span>' : '<span style="color:#c9d3ee;">aucune course</span><span></span><span></span>') + '</div>';
     });
@@ -81415,7 +81430,7 @@ window._g45TrTestVoit = function () { try { return (typeof _g45SanteActive === '
       .sort(function (a, b) { return a.pire - b.pire || b.pct - a.pct; });
     var l2 = 'display:grid;grid-template-columns:1.8fr 1fr 1fr 1.4fr;gap:6px;padding:8px 4px;border-bottom:1px solid rgba(255,255,255,.08);font-size:15px;color:#fff;cursor:pointer;';
     h += '<div style="margin-top:16px;padding-top:12px;border-top:1px solid rgba(255,255,255,.15);"><div style="font-size:17px;font-weight:800;color:#fff;">🏁 Jouable en Cockpit ? — classement du plateau</div>'
-      + '<div style="font-size:14px;color:#c9d3ee;margin:2px 0 6px;">Critère « ' + ea(nomC) + ' » · 4 saisons · mêmes filtres · trié par la plus petite pire série (5 courses mini)</div>'
+      + '<div style="font-size:14px;color:#c9d3ee;margin:2px 0 6px;">Critère « ' + ea(nomC) + ' » · ' + (CR.an ? 'saison ' + CR.an : '4 saisons') + (CR.cir ? ' · ' + ea(cirs[CR.cir] || CR.cir) : '') + ' · mêmes filtres · trié par la plus petite pire série (5 courses mini)</div>'
       + '<div style="' + l2 + 'font-size:13px;font-weight:700;color:#c9d3ee;cursor:default;"><span>Pilote</span><span>Réussite</span><span>Pire série</span><span>Paliers</span></div>';
     h += rk.length ? rk.map(function (st) {
       var pa = window._g45F1CrPal(st.pire), moi = st.d === CR.d;
@@ -81425,7 +81440,7 @@ window._g45TrTestVoit = function () { try { return (typeof _g45SanteActive === '
     box.innerHTML = h;
   }
   window.g45F1CrSet = function (f, v) {
-    CR[f] = (f === 'd' || f === 'k') ? v : +v;
+    CR[f] = (f === 'd' || f === 'k' || f === 'cir') ? v : +v;
     try { localStorage.setItem('g45_f1cr_sel', JSON.stringify(CR)); } catch (e) {}
     dessiner();
   };
