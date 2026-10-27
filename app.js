@@ -74998,8 +74998,8 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     });
   }
 
-  async function chargerHk(nom) {
-    var C = S.ctx, ans = annees(C.lg), out = { t: Date.now(), lg: C.lg, ligue: (US_N[C.lg] || C.lg.toUpperCase()) + ' · saison régulière', saisons: [] };
+  async function chargerHk(nom, C0) {   /* 20261027h : C0 = autre équipe de la ligue (classement Cockpit) → rendu, pas rangé dans S.data */
+    var C = C0 || S.ctx, ans = annees(C.lg), out = { t: Date.now(), lg: C.lg, ligue: (US_N[C.lg] || C.lg.toUpperCase()) + ' · saison régulière', saisons: [] };
     await Promise.all(ans.map(async function (an, i) {
       var cle = 'g45cr1u_' + C.sp + '_' + C.lg + '_' + C.id + '_' + an, ms = null;   /* 20261022i : g45cr1_ → g45cr1u_ (n° de match ESPN en m[6]) */
       if (i > 0) { try { ms = JSON.parse(localStorage.getItem(cle) || 'null'); } catch (e) {} }
@@ -75026,6 +75026,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       }
       out.saisons[i] = { an: an, ms: ms };
     }));
+    if (C0) return out;
     S.data[nom] = out;
   }
   async function chargerRg(nom) {
@@ -75312,8 +75313,111 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
           + (S.lieu === 'dom' ? '🏠 ' : S.lieu === 'ext' ? '✈️ ' : '') + esc(libCombo(cc)) + '</b></div>' + tableau(cc, D);
       });
       h += '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">Pire série : 🟢 0-2 · 🟠 3-4 · 🔴 5 et plus. Pas de cote : ESPN ne garde pas celles des matchs joués.</div>';
+      try { h += clsHtml(); } catch (e) {}   /* 20261027h : 🏁 Jouable en Cockpit ? */
     }
     return h + '</div>';
+  }
+  /* ═══ 20261027h — 🏁 JOUABLE EN COCKPIT ? — CLASSEMENT DU CHAMPIONNAT (idée d'Antoine après la F1, maquette maquette-crck « oui » :
+     « et tu pourras coder jouable en cockpit » ; « si je mets victoire et under 4.5 ça me met les meilleurs ? » → oui, même combiné).
+     Toutes les équipes du championnat (_g45CompetEquipes = classement ESPN), 4 saisons chacune, LE COMBINÉ ACTIF et le lieu choisis,
+     triées par la plus petite PIRE SÉRIE (puis le %). Paliers = pire + 1, mise = échelle 1 ⭐ (_g45F1CrPal, bloc F1 20261027d).
+     Critères ignorés ici (une seule équipe ou une feuille par match) : joueur, tirs / mi-temps / corners / cartons / premier but.
+     Foot : championnat seul. Sports : foot, NHL, NFL, NBA, MLB (pas le rugby : scoreboards trop lourds). Rien ne part sans le bouton ;
+     3 équipes à la fois ; saisons passées dans les MÊMES caches que le bloc (g45cr1_<lg>_<id>_<an>, g45cr1u_…) → déjà lues = gratuites. ═══ */
+  S.cls = S.cls || {};
+  var CLS_SANS = ['jo', 'jn', 'jo2', 'jn2', 'jo3', 'jn3', 'fs', 'ts', 'as', 'cad', 'mt', 'mp', 'bo', 'm1', 'm2'];
+  function clsCtx() {
+    var D = S.data[S.nom];
+    if (S.ctx) { var okUs = { 'hockey|nhl': 1, 'football|nfl': 1, 'basketball|nba': 1, 'baseball|mlb': 1 }[S.ctx.sp + '|' + S.ctx.lg]; return okUs ? { sp: S.ctx.sp, lg: S.ctx.lg, id: String(S.ctx.id) } : null; }
+    return (D && D.lg && D.tid) ? { sp: 'soccer', lg: D.lg, id: String(D.tid) } : null;
+  }
+  async function chargerFt(lg, id) {   /* même lecture que charger() (foot), par numéro d'équipe ESPN */
+    var ans = annees(lg), out = { t: Date.now(), lg: lg, saisons: [], tid: String(id) };
+    await Promise.all(ans.map(async function (an, i) {
+      var cle = 'g45cr1_' + lg + '_' + id + '_' + an, ms = null;
+      if (i > 0) { try { ms = JSON.parse(localStorage.getItem(cle) || 'null'); } catch (e) {} }
+      if (!ms) {
+        var d = null;
+        try { var r = await fetch(FD_PROXY + '?host=espn&path=' + encodeURIComponent('/apis/site/v2/sports/soccer/' + lg + '/teams/' + id + '/schedule?season=' + an)); if (r.ok) d = await r.json(); } catch (e) {}
+        if (!d) { out.saisons[i] = { an: an, ms: null }; return; }
+        ms = [];
+        (d.events || []).forEach(function (e) {
+          var c2 = (e.competitions && e.competitions[0]) || null; if (!c2) return;
+          var st = (c2.status && c2.status.type) || {}; if (!st.completed) return;
+          var cs = c2.competitors || [], ho = cs.filter(function (x) { return x.homeAway === 'home'; })[0], aw = cs.filter(function (x) { return x.homeAway === 'away'; })[0];
+          if (!ho || !aw) return;
+          var sv = function (x) { var v = x.score; if (v && typeof v === 'object') v = (v.value != null ? v.value : v.displayValue); return parseInt(v, 10); };
+          var hg = sv(ho), ag = sv(aw); if (isNaN(hg) || isNaN(ag)) return;
+          var dom = String(ho.team && ho.team.id) === String(id) ? 1 : 0;
+          ms.push([String(e.date || '').slice(0, 10), dom, dom ? hg : ag, dom ? ag : hg]);
+        });
+        ms.sort(function (a, b) { return a[0] < b[0] ? -1 : 1; });
+        if (i > 0 && ms.length) { try { localStorage.setItem(cle, JSON.stringify(ms)); } catch (e) {} }
+      }
+      out.saisons[i] = { an: an, ms: ms };
+    }));
+    return out;
+  }
+  function clsCombo(c) { var x = {}; for (var k in c) x[k] = c[k]; CLS_SANS.forEach(function (k) { x[k] = ''; }); return x; }
+  function clsStat(D, c) {   /* pire série sur les 4 saisons à la suite, comme le total du tableau */
+    var tous = [];
+    (D.saisons || []).slice().reverse().forEach(function (s) { if (s && s.ms) tous = tous.concat(filtrer(s.ms)); });
+    return tous.length ? calc(c, tous) : { n: 0, ok: 0, pire: 0, best: 0 };
+  }
+  window._g45CrClsStat = function (D, c) { return clsStat(D, clsCombo(norm(c))); };   /* tests */
+  window.g45CrClsLancer = function () {
+    var X = clsCtx(); if (!X) return;
+    var k = X.sp + '|' + X.lg, Q = S.cls[k] = S.cls[k] || { D: {} };
+    if (Q.etat === 1) return;
+    Q.etat = 1; Q.f = 0; Q.err = '';
+    redessiner();
+    (async function () {
+      var eq = [];
+      try { eq = await _g45CompetEquipes({ sp: X.sp, s: X.lg }); } catch (e) {}
+      var vu = {}; eq = (eq || []).filter(function (t) { if (!t.id || vu[t.id]) return false; vu[t.id] = 1; return true; });
+      if (!eq.length) { Q.etat = 0; Q.err = 'Liste des équipes indisponible.'; redessiner(); return; }
+      Q.eq = eq; Q.n = eq.length;
+      var i = 0;
+      async function w() {
+        while (i < eq.length) {
+          var t = eq[i++];
+          if (!Q.D[t.id] || Date.now() - Q.D[t.id].t > 3600000) {
+            try { Q.D[t.id] = X.sp === 'soccer' ? await chargerFt(X.lg, t.id) : await chargerHk(t.nom, { sp: X.sp, lg: X.lg, id: t.id }); } catch (e) {}
+          }
+          Q.f++;
+          var e1 = document.getElementById('g45cr-cls-prog'); if (e1) e1.textContent = Q.f + ' / ' + Q.n;
+        }
+      }
+      await Promise.all([w(), w(), w()]);
+      Q.etat = 2; redessiner();
+    })();
+  };
+  function clsHtml() {
+    var X = clsCtx(); if (!X) return '';
+    var Q = S.cls[X.sp + '|' + X.lg] || {}, c0 = S.combos[S.a]; if (!c0) return '';
+    var c = clsCombo(c0), nomLg = (S.data[S.nom] && S.data[S.nom].ligue) || US_N[X.lg] || 'championnat';
+    var ign = CLS_SANS.some(function (q) { return c0[q]; });
+    var h = '<div style="margin-top:16px;padding-top:12px;border-top:1px solid #2a3a63;">'
+      + '<div style="font-size:16px;font-weight:800;color:#fff;">🏁 Jouable en Cockpit ? — classement ' + (X.sp === 'soccer' ? 'du championnat' : 'de la ' + esc(US_N[X.lg] || X.lg)) + '</div>'
+      + '<div style="font-size:13px;color:#c9d3ee;margin:3px 0 8px;">Même critère (' + (S.lieu === 'dom' ? '🏠 ' : S.lieu === 'ext' ? '✈️ ' : '') + esc(libCombo(c)) + ') · 4 saisons · toutes les équipes · trié par la plus petite pire série'
+      + (ign ? '<br><span style="color:#ffb13d;">Ignoré ici : joueur et critères de feuille de match (tirs, mi-temps, corners…).</span>' : '') + '</div>';
+    if (Q.etat === 1) return h + '<div style="font-size:14px;color:#fff;">⏳ Lecture des équipes… <span id="g45cr-cls-prog">' + (Q.f || 0) + ' / ' + (Q.n || '?') + '</span> (la 1re fois seulement)</div></div>';
+    if (Q.etat !== 2) return h + (Q.err ? '<div style="font-size:14px;color:#ff9f43;margin-bottom:6px;">⚠️ ' + esc(Q.err) + '</div>' : '')
+      + '<button onclick="g45CrClsLancer()" style="border:none;border-radius:10px;padding:9px 14px;font-size:14px;font-weight:700;color:#fff;background:#2f6bff;cursor:pointer;">▶ Lancer le classement (≈ 1 min la 1re fois, ensuite gardé)</button></div>';
+    var L = (Q.eq || []).map(function (t) { var D = Q.D[t.id]; var R = D ? clsStat(D, c) : null; return { t: t, R: R }; })
+      .filter(function (x) { return x.R && x.R.n >= 5; })
+      .sort(function (a, b) { return (a.R.pire - b.R.pire) || (b.R.ok / b.R.n - a.R.ok / a.R.n); });
+    if (!L.length) return h + '<div style="font-size:14px;color:#fff;">Pas assez de matchs avec ce critère.</div></div>';
+    var ln = 'display:grid;grid-template-columns:1.8fr 1fr 1fr 1.3fr;gap:6px;padding:8px 4px;border-bottom:1px solid #1c2747;font-size:14px;color:#fff;';
+    h += '<div style="' + ln + 'font-size:13px;color:#c9d3ee;"><span>Équipe</span><span>Réussite</span><span>Pire série</span><span>Paliers</span></div>';
+    L.forEach(function (x) {
+      var moi = String(x.t.id) === X.id, pa = (typeof _g45F1CrPal === 'function') ? _g45F1CrPal(x.R.pire) : { p: x.R.pire + 1, ico: '' };
+      var js = "g45CompetOuvrir('" + String(x.t.nom).replace(/[\\'"<>]/g, '') + "','" + esc(x.t.id) + "','" + esc(X.lg) + "','" + esc(X.sp) + "',true)";
+      h += '<div onclick="' + js + '" style="' + ln + 'cursor:pointer;' + (moi ? 'background:rgba(47,107,255,.2);border-radius:8px;' : '') + '"><span style="font-weight:' + (moi ? 800 : 600) + ';">' + esc(x.t.nom) + '</span>'
+        + '<span>' + Math.round(100 * x.R.ok / x.R.n) + ' %</span><span style="font-weight:800;color:' + coul(x.R.pire) + ';">' + x.R.pire + '</span>'
+        + '<span><b>' + pa.p + ' palier' + (pa.p > 1 ? 's' : '') + '</b> ' + pa.ico + (pa.mise != null ? ' <span style="font-size:12px;color:#c9d3ee;">' + pa.mise + ' €</span>' : '') + '</span></div>';
+    });
+    return h + '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">✅ 5 paliers ou moins · ⚠️ jusqu\'à ta dernière mise · ❌ au-delà de tes paliers (mises 1 ⭐). Touche une équipe pour ouvrir sa carte. 5 matchs comptés au minimum.</div></div>';
   }
   function redessiner() {
     var z = document.getElementById('g45cr'); if (!z || !S.nom) return;
