@@ -70236,7 +70236,10 @@ function _g45RegHtml() {
       || (y.s.tot - x.s.tot) || (x.s.cours - y.s.cours) || String(x.nom).localeCompare(String(y.nom));
   });
   var col = function (v) { return v < 6 ? '#1ed760' : (v < 10 ? '#f0b020' : '#ff6b6b'); };
-  h += '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:14px;color:#fff;white-space:nowrap;">'
+  /* 20261027w : téléphone (< 640 px) → cartes empilées, plus de tableau à faire glisser ; 4 saisons → moins de 20 matchs en bas. */
+  var NAR = (window.innerWidth || 1000) < 640;
+  if (S4) ok = ok.filter(function (o) { return o.s.mj >= 20; }).concat(ok.filter(function (o) { return o.s.mj < 20; }));
+  if (NAR) h += '<div>'; else h += '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:14px;color:#fff;white-space:nowrap;">'
     + '<tr style="color:#c9d3ee;font-size:12px;"><th style="text-align:left;padding:6px;">Joueur</th><th style="padding:6px 6px;">' + LB.col + '</th><th style="padding:6px 6px;">MJ</th><th style="padding:6px 6px;">%' + (SE > 1 ? ' ' + SE + '+' : '') + '</th><th style="padding:6px 6px;">Pire série</th>' + (PEP || S4 ? '<th style="padding:6px 6px;">Paliers</th>' : '') + '<th style="padding:6px 6px;">Meilleure</th><th style="padding:6px 6px;">En cours</th></tr>';   /* 20261006s : titres collés (« EssaisMJ ») */
   /* 20261005u : rang de l'an dernier (top 10 de la LIGUE, même catégorie) — ligue : or 1-3 / bronze 4-10 ; équipe : or seulement */
   var PR = _g45Reg.prev[_g45RegPK()] || {};
@@ -70245,25 +70248,43 @@ function _g45RegHtml() {
     var rg = PR[o.id] || 0;
     var cc = rg ? ((_g45Reg.eq || rg <= 3) ? '#f5c542' : '#e0915a') : '';
     if (rg) nOr++;
-    h += '<tr style="border-top:1px solid rgba(255,255,255,.1);' + (PEP && o.t10 ? 'opacity:.55;' : '') + '"><td style="padding:6px;"><span style="display:inline-flex;align-items:center;gap:7px;">'
-      + (o.ft && !o.ph ? '<span style="display:inline-block;border-radius:50%;flex:none;' + (cc ? 'box-shadow:0 0 0 2px ' + cc + ';' : '') + '">' + _g45ClsAvatar(o.nom, o.club || '', o.logo || '') + '</span>'
-        : (o.ph ? '<img src="' + esc(o.ph) + '" alt="" style="width:30px;height:30px;border-radius:50%;object-fit:cover;background:#2a3350;' + (cc ? 'box-shadow:0 0 0 2px ' + cc + ';' : '') + '" onerror="this.style.display=\'none\'">' : ''))
-      + '<span><b style="font-size:14px;' + (cc ? 'color:' + cc + ';' : '') + '">' + (PEP && !o.t10 ? '💎 ' : '') + esc(o.nom) + '</b><br><span style="font-size:12px;color:#c9d3ee;">' + esc(o.eq)
+    /* 20261027w : morceaux communs au TABLEAU (PC) et aux CARTES (téléphone < 640 px, « obligé de déplacer le curseur, tableau trop grand ») ;
+       4 saisons : moins de 20 matchs = grisé + « 📉 peu de matchs » (rangés en bas plus haut). */
+    var peu = S4 && o.s.mj < 20;
+    var av = (o.ft && !o.ph ? '<span style="display:inline-block;border-radius:50%;flex:none;' + (cc ? 'box-shadow:0 0 0 2px ' + cc + ';' : '') + '">' + _g45ClsAvatar(o.nom, o.club || '', o.logo || '') + '</span>'
+        : (o.ph ? '<img src="' + esc(o.ph) + '" alt="" style="width:30px;height:30px;border-radius:50%;object-fit:cover;background:#2a3350;flex:none;' + (cc ? 'box-shadow:0 0 0 2px ' + cc + ';' : '') + '" onerror="this.style.display=\'none\'">' : ''));
+    var nomB = '<span style="min-width:0;"><b style="font-size:14px;' + (cc ? 'color:' + cc + ';' : '') + '">' + (PEP && !o.t10 ? '💎 ' : '') + esc(o.nom) + '</b><br><span style="font-size:12px;color:#c9d3ee;white-space:normal;">' + esc(o.eq)
       + (rg ? ' · <span style="color:' + cc + ';">n°' + rg + ' en ' + labP + '</span>' : '')
       + (o.nv ? ' · <span style="color:#5aa9ff;font-weight:800;">🆕 nouveau</span>' : '')
+      + (peu ? ' · <span style="color:#ffb13d;font-weight:800;">📉 peu de matchs</span>' : '')
       + (o.abs ? ' · <span style="color:#ff9f43;font-weight:800;">🚫 absent ' + (o.abs > 1 ? 'aux ' + o.abs + ' derniers matchs' : 'au dernier match') + (o.absD ? ' (' + esc(o.absD) + ')' : '') + '</span>' : '')   /* 20261006n */
-      + '</span></span></span></td>'
+      + '</span></span>';
+    var dts = (o.s.pd && o.s.pire) ? o.s.pd.map(function (d) { return d.slice(4, 6) + '/' + d.slice(2, 4) + '/' + d.slice(0, 2); }).join(' → ') : '';
+    var pa = (PEP || S4) ? ((typeof _g45F1CrPal === 'function') ? _g45F1CrPal(o.s.pire) : { p: o.s.pire + 1, ico: '' }) : null;
+    var gris = (PEP && o.t10) || peu;
+    if (NAR) {
+      h += '<div style="border-top:1px solid rgba(255,255,255,.12);padding:9px 2px;' + (gris ? 'opacity:.55;' : '') + '">'
+        + '<div style="display:flex;align-items:center;gap:8px;">' + av + nomB + '</div>'
+        + '<div style="font-size:14px;color:#fff;margin-top:5px;"><b>' + o.s.tot + '</b> ' + LB.col.toLowerCase() + ' · ' + o.s.mj + ' MJ · <b>' + o.s.pct + ' %</b>' + (SE > 1 ? ' (' + SE + '+)' : '') + '</div>'
+        + '<div style="font-size:14px;color:#fff;margin-top:2px;">🪜 Pire série <b style="color:' + col(o.s.pire) + ';">' + o.s.pire + '</b>'
+          + (pa ? ' → <b>' + pa.p + ' palier' + (pa.p > 1 ? 's' : '') + '</b> ' + pa.ico + (pa.mise != null ? ' ' + pa.mise + ' €' : '') : '') + '</div>'
+        + (dts ? '<div style="font-size:13px;color:#c9d3ee;">' + dts + '</div>' : '')
+        + '<div style="font-size:13px;color:#c9d3ee;margin-top:2px;">Meilleure <b style="color:#5aa9ff;">' + (o.s.best != null ? o.s.best : '–') + '</b> · En cours <b style="color:' + (o.s.cours >= 6 ? '#ff6b6b' : '#fff') + ';">' + o.s.cours + '</b></div></div>';
+      return;
+    }
+    h += '<tr style="border-top:1px solid rgba(255,255,255,.1);' + (gris ? 'opacity:.55;' : '') + '"><td style="padding:6px;"><span style="display:inline-flex;align-items:center;gap:7px;">'
+      + av + nomB + '</span></td>'
       + '<td align="center"><b>' + o.s.tot + '</b></td><td align="center">' + o.s.mj + '</td><td align="center">' + o.s.pct + ' %</td>'
-      + '<td align="center"><b style="color:' + col(o.s.pire) + ';">' + o.s.pire + '</b>' + (o.s.pd && o.s.pire ? '<br><span style="font-size:12px;color:#c9d3ee;white-space:nowrap;">' + o.s.pd.map(function (d) { return d.slice(4, 6) + '/' + d.slice(2, 4) + '/' + d.slice(0, 2); }).join(' → ') + '</span>' : '') + '</td>'   /* 20261027m */
-      + (PEP || S4 ? (function () { var pa = (typeof _g45F1CrPal === 'function') ? _g45F1CrPal(o.s.pire) : { p: o.s.pire + 1, ico: '' }; return '<td align="center"><b>' + pa.p + '</b> ' + pa.ico + (pa.mise != null ? '<br><span style="font-size:12px;color:#c9d3ee;">' + pa.mise + ' €</span>' : ''); })() + '</td>' : '')
+      + '<td align="center"><b style="color:' + col(o.s.pire) + ';">' + o.s.pire + '</b>' + (dts ? '<br><span style="font-size:12px;color:#c9d3ee;white-space:nowrap;">' + dts + '</span>' : '') + '</td>'   /* 20261027m */
+      + (pa ? '<td align="center"><b>' + pa.p + '</b> ' + pa.ico + (pa.mise != null ? '<br><span style="font-size:12px;color:#c9d3ee;">' + pa.mise + ' €</span>' : '') + '</td>' : '')
       + '<td align="center"><b style="color:#5aa9ff;">' + (o.s.best != null ? o.s.best : '–') + '</b></td>'
       + '<td align="center"><b style="color:' + (o.s.cours >= 6 ? '#ff6b6b' : '#fff') + ';">' + o.s.cours + '</b></td></tr>';
   });
   var catL = LB.pl;
   var leg = _g45Reg.eq ? '<span style="color:#f5c542;font-weight:800;">Or</span> = dans le top 10 des ' + catL + ' de la ' + (_g45Reg.ligue || 'NHL') + ' en ' + labP
     : '<span style="color:#f5c542;font-weight:800;">Or</span> = top 3 · <span style="color:#e0915a;font-weight:800;">Bronze</span> = 4e à 10e des ' + catL + ' en ' + labP;
-  if ((FT && _g45Reg.cat === 'p') || _g45Reg.lg === 'top14' || _g45Reg.lg === 'khl') h += '</table></div>';   /* foot : pas de classement « buts + passes » chez ESPN → pas de couleur */
-  else h += '</table></div><div style="font-size:13px;color:#fff;margin-top:6px;">' + leg + (_g45Reg.prev[_g45RegPK()] ? '' : ' (indisponible)') + '</div>';
+  if ((FT && _g45Reg.cat === 'p') || _g45Reg.lg === 'top14' || _g45Reg.lg === 'khl') h += (NAR ? '</div>' : '</table></div>');   /* foot : pas de classement « buts + passes » chez ESPN → pas de couleur */
+  else h += (NAR ? '</div>' : '</table></div>') + '<div style="font-size:13px;color:#fff;margin-top:6px;">' + leg + (_g45Reg.prev[_g45RegPK()] ? '' : ' (indisponible)') + '</div>';
   if (SE > 1) h += '<div style="font-size:13px;color:#f5c542;margin-top:6px;">Seuil ' + SE + ' ou plus : %, pire / meilleure série et en cours comptent les matchs à ' + SE + ' ' + LB.col.toLowerCase() + ' ou plus (' + LB.col + ' = total de la saison).</div>';
   if (_g45Reg.lieu) h += '<div style="font-size:13px;color:#fff;margin-top:6px;">' + (_g45Reg.lieu === 'd' ? '🏠 Matchs à domicile seulement' : '🚌 Matchs à l\'extérieur seulement') + ' (MJ, %, séries recalculés).</div>';
   return h + '<div style="font-size:12px;color:#c9d3ee;margin-top:6px;">Pire série : vert = jamais 6 matchs de suite sans ' + LB.sans + ' · orange 6 à 9 · rouge 10 et plus. <span style="color:#5aa9ff;">Meilleure</span> = plus longue série de matchs AVEC ' + LB.sans + '.</div>';
