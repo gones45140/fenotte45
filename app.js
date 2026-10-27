@@ -70057,12 +70057,18 @@ function _g45RegSaison(an) { an = +an || new Date().getFullYear(); return (an - 
 function _g45RegCalc(log, cle, sansLieu) {
   var L = (log || []).slice().reverse();               /* chronologique */
   var n = L.length, avec = 0, tot = 0, pire = 0, cour = 0, best = 0, bc = 0;   /* best = meilleure série AVEC (20261006l) */
-  L.forEach(function (g) {
+  /* 20261027m (« faudrait avoir la date de la série » → « oui oui ») : dates du 1er et du dernier match de la PIRE série (pd, AAMMJJ) ;
+     dt = date de chaque match (AAMMJJ, même ordre que v) pour la recalculer aux seuils 2 / 3 ou plus. */
+  var dt = L.map(function (g) { var d = String((g && (g.gameDate || g.d || g.date)) || '').slice(0, 10); return /^\d{4}-\d\d-\d\d$/.test(d) ? d.slice(2, 4) + d.slice(5, 7) + d.slice(8, 10) : ''; });
+  var pd = null, deb = 0;
+  L.forEach(function (g, i) {
     /* 20261005s : points = champ points du game-log, sinon buts + passes */
     var v = cle === 'points' ? (g.points != null ? +g.points || 0 : (+g.goals || 0) + (+g.assists || 0)) : (+g[cle] || 0); tot += v;
-    if (v > 0) { avec++; cour = 0; bc++; if (bc > best) best = bc; } else { cour++; if (cour > pire) pire = cour; bc = 0; }
+    if (v > 0) { avec++; cour = 0; bc++; if (bc > best) best = bc; } else { if (!cour) deb = i; cour++; if (cour > pire) { pire = cour; pd = [dt[deb], dt[i]]; } bc = 0; }
   });
   var R = { mj: n, tot: tot, pct: n ? Math.round(avec * 100 / n) : 0, pire: pire, cours: cour, best: best, bcours: bc };
+  if (pd && pd[0] && pd[1]) R.pd = pd;
+  if (dt.some(Boolean)) R.dt = dt;
   /* 20261016g (« rajouter le 2 pts », seuil 1 / 2 / 3 ou plus comme Winamax) : valeur de chaque match gardée (ordre chronologique)
      → `_g45RegSeuilS` recalcule %, séries pour un autre seuil sans rien relire. */
   R.v = L.map(function (g) { return cle === 'points' ? (g.points != null ? +g.points || 0 : (+g.goals || 0) + (+g.assists || 0)) : (+g[cle] || 0); });
@@ -70078,9 +70084,9 @@ function _g45RegCalc(log, cle, sansLieu) {
 function _g45RegSeuilS(S, n) {
   if (!S || !(n > 1)) return S;
   if (!S.v) return null;
-  var avec = 0, pire = 0, cour = 0, best = 0, bc = 0;
-  S.v.forEach(function (v) { if (v >= n) { avec++; cour = 0; bc++; if (bc > best) best = bc; } else { cour++; if (cour > pire) pire = cour; bc = 0; } });
-  var R = Object.assign({}, S, { pct: S.v.length ? Math.round(avec * 100 / S.v.length) : 0, pire: pire, cours: cour, best: best, bcours: bc });
+  var avec = 0, pire = 0, cour = 0, best = 0, bc = 0, pd = null, deb = 0, D = S.dt || [];   /* 20261027m : dates de la pire série */
+  S.v.forEach(function (v, i) { if (v >= n) { avec++; cour = 0; bc++; if (bc > best) best = bc; } else { if (!cour) deb = i; cour++; if (cour > pire) { pire = cour; pd = [D[deb], D[i]]; } bc = 0; } });
+  var R = Object.assign({}, S, { pct: S.v.length ? Math.round(avec * 100 / S.v.length) : 0, pire: pire, cours: cour, best: best, bcours: bc, pd: (pd && pd[0] && pd[1]) ? pd : null });
   if (S.d) R.d = _g45RegSeuilS(S.d, n);
   if (S.e) R.e = _g45RegSeuilS(S.e, n);
   return R;
@@ -70089,7 +70095,7 @@ window._g45RegSeuilS = _g45RegSeuilS;
 async function _g45RegLire(saison, cat, eq) {
   if (eq) return _g45RegLireEq(saison, cat, eq);
   var PEP = _g45RegPep(), NB = PEP ? 50 : 10, S4 = _g45RegS4();   /* 20261027g : pépites = 50 joueurs ; 20261027k : 4 saisons */
-  var ck = 'g45reg1_v6_' + saison + '_' + cat + (PEP ? '_pep' : '') + (S4 ? '_s4' : '');   /* v2 (20261006l) : + meilleure série ; v6 (20261016g) : + valeurs par match */
+  var ck = 'g45reg1_v7_' /* 20261027m : + dates de la pire série */ + saison + '_' + cat + (PEP ? '_pep' : '') + (S4 ? '_s4' : '');   /* v2 (20261006l) : + meilleure série ; v6 (20261016g) : + valeurs par match */
   try { var c = JSON.parse(localStorage.getItem(ck) || 'null'); if (c && Date.now() - c.t < 12 * 3600e3) return c.l; } catch (e) {}
   var P = FD_PROXY + '?key=nhl&host=nhl&path=';
   var k = cat === 'a' ? 'assists' : (cat === 'p' ? 'points' : 'goals');
@@ -70210,7 +70216,7 @@ function _g45RegHtml() {
       + (o.abs ? ' · <span style="color:#ff9f43;font-weight:800;">🚫 absent ' + (o.abs > 1 ? 'aux ' + o.abs + ' derniers matchs' : 'au dernier match') + (o.absD ? ' (' + esc(o.absD) + ')' : '') + '</span>' : '')   /* 20261006n */
       + '</span></span></span></td>'
       + '<td align="center"><b>' + o.s.tot + '</b></td><td align="center">' + o.s.mj + '</td><td align="center">' + o.s.pct + ' %</td>'
-      + '<td align="center"><b style="color:' + col(o.s.pire) + ';">' + o.s.pire + '</b></td>'
+      + '<td align="center"><b style="color:' + col(o.s.pire) + ';">' + o.s.pire + '</b>' + (o.s.pd && o.s.pire ? '<br><span style="font-size:12px;color:#c9d3ee;white-space:nowrap;">' + o.s.pd.map(function (d) { return d.slice(4, 6) + '/' + d.slice(2, 4) + '/' + d.slice(0, 2); }).join(' → ') + '</span>' : '') + '</td>'   /* 20261027m */
       + (PEP || S4 ? (function () { var pa = (typeof _g45F1CrPal === 'function') ? _g45F1CrPal(o.s.pire) : { p: o.s.pire + 1, ico: '' }; return '<td align="center"><b>' + pa.p + '</b> ' + pa.ico + (pa.mise != null ? '<br><span style="font-size:12px;color:#c9d3ee;">' + pa.mise + ' €</span>' : ''); })() + '</td>' : '')
       + '<td align="center"><b style="color:#5aa9ff;">' + (o.s.best != null ? o.s.best : '–') + '</b></td>'
       + '<td align="center"><b style="color:' + (o.s.cours >= 6 ? '#ff6b6b' : '#fff') + ';">' + o.s.cours + '</b></td></tr>';
@@ -70286,7 +70292,7 @@ function _g45RegEquipe(nom) {
 }
 async function _g45RegLireEq(saison, cat, abr) {
   var S4 = _g45RegS4();   /* 20261027k */
-  var ck = 'g45reg1_v6_' + saison + '_' + cat + '_' + abr + (S4 ? '_s4' : '');   /* v6 : 20261016g */
+  var ck = 'g45reg1_v7_' + saison + '_' + cat + '_' + abr + (S4 ? '_s4' : '');   /* v6 : 20261016g */
   try { var c = JSON.parse(localStorage.getItem(ck) || 'null'); if (c && Date.now() - c.t < 12 * 3600e3) return c.l; } catch (e) {}
   var P = FD_PROXY + '?key=nhl&host=nhl&path=';
   var k = cat === 'a' ? 'assists' : (cat === 'p' ? 'points' : 'goals');
@@ -70526,7 +70532,7 @@ async function _g45RegLireFoot(lg, an, cat, eq) {
   if (lg === 'khl') return _g45RegLireKhl(cat, eq);   /* 20261006r */
   if (lg === 'nrl') return _g45RegLireNrl(an, cat, eq);   /* 20261006m */
   var PEP = lg === 'nfl' && !eq && _g45RegPep(), S4 = lg === 'nfl' && _g45RegS4();   /* 20261027j ; 20261027l */
-  var anEsp = _g45RegEspAn(lg, an), ck = 'g45reg1_f9_' /* 20261016g */ + lg + '_' + anEsp + '_' + cat + (eq ? '_' + eq + '_' + (_g45Reg.cf || 'L') : '') + (PEP ? '_pep' : '') + (S4 ? '_s4' : '');
+  var anEsp = _g45RegEspAn(lg, an), ck = 'g45reg1_fa_' /* 20261016g */ + lg + '_' + anEsp + '_' + cat + (eq ? '_' + eq + '_' + (_g45Reg.cf || 'L') : '') + (PEP ? '_pep' : '') + (S4 ? '_s4' : '');
   try { var c = JSON.parse(localStorage.getItem(ck) || 'null'); if (c && Date.now() - c.t < 12 * 3600e3) { if (c.c) c.l.comps = c.c; return c.l; } } catch (e) {}
   var top;
   if (eq) top = (lg === 'nfl' || lg === 'mlb') ? await _g45RegCandidatsNfl(String(eq).slice(1), anEsp, cat, lg) : await _g45RegCandidatsClub(lg, String(eq).slice(1), anEsp, cat);   /* 20261006e : joueurs du club ; NFL 20261006j */
