@@ -81068,7 +81068,7 @@ window._g45TrTestVoit = function () { try { return (typeof _g45SanteActive === '
       + (state.abo.length ? state.abo.map(ligne).join('') : '<div style="font-size:14px;color:#c9d3ee;">Aucun abonnement.</div>')
       + form
       + (F.ouvert ? '' : '<button onclick="g45AboForm(true)" style="width:100%;margin-top:10px;border:1px dashed #4d84ff;border-radius:10px;padding:10px;background:transparent;color:#9fc3ff;font-weight:800;font-size:14px;cursor:pointer;">➕ Ajouter un abonnement</button>')
-      + (H.length ? '<div style="margin-top:14px;font-size:14px;font-weight:900;">📜 Historique des prélèvements</div>'
+      + (H.length && !window._g45MvtRender ? '<div style="margin-top:14px;font-size:14px;font-weight:900;">📜 Historique des prélèvements</div>'
         + H.map(function (h) { return '<div style="display:flex;justify-content:space-between;gap:10px;font-size:14px;padding:6px 2px;border-bottom:1px solid rgba(255,255,255,.08);"><span>' + h.d.split('-').reverse().join('/') + ' · ' + esc(h.n) + ' · ' + esc(nomBk(h.b)) + '</span><b style="color:#ff8a8a;">−' + fr(h.m) + ' €</b></div>'; }).join('') : '')
       + '<div style="font-size:13px;color:#c9d3ee;margin-top:10px;line-height:1.5;">Prélevé tout seul le jour prévu (ou à la 1re ouverture de l\'appli après). Baisse le solde du compte choisi, donc la bankroll — PAS ton bénéfice des paris.</div></div>';
   };
@@ -81117,4 +81117,81 @@ window._g45TrTestVoit = function () { try { return (typeof _g45SanteActive === '
   try { if (window._g45AboTraiter()) { try { render(); } catch (e) {} } } catch (e) {}
   setInterval(function () { try { if (window._g45AboTraiter()) render(); } catch (e) {} }, 3600000);   /* appli ouverte au passage de minuit */
   try { window._g45AboRender(); } catch (e) {}
+})();
+
+/* ═══ 20261027b — 📜 HISTORIQUE DES MOUVEMENTS (Bank) (« d'ailleurs l'historique pourrait écrire les dépôts et retraits », maquette image
+   « Oui ») ═══ Dépôt / retrait = changement du solde d'un compte par « ✏️ Modifier » (editBook, DEUX copies, enveloppé ici par son nom
+   global) : state.mvt [{id, d, k, v (+/−), av, ap}] ; + prélèvements des abonnements (state.aboH). Filtres Tout / Dépôts / Retraits /
+   Abonnements (localStorage g45_mvt_f), total du mois en cours. Les paris n'y figurent pas. Synchro : lignes de l'autre appareil ajoutées
+   (sans effet sur les soldes). Section #g45-mvt sous les abonnements. Historique à partir du 27/10/2026 (rien n'était noté avant). */
+(function () {
+  var esc = function (t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+  var fr = function (x) { return (Math.round(Math.abs(x) * 100) / 100).toFixed(2).replace('.', ','); };
+  var ymd = function (d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+  var nomBk = function (k) { try { if (typeof _g45BkNom === 'function') { var o = _g45BkNom(k); return o.n + (o.who ? ' ' + o.who : ''); } return bki(k).n || k; } catch (e) { return k; } };
+  var ico = function (k) { try { return (typeof _g45BkEstBanque === 'function' && _g45BkEstBanque(k)) ? '🏦' : '🎰'; } catch (e) { return ''; } };
+  var e0 = window.editBook;
+  if (typeof e0 === 'function') window.editBook = function (k) {
+    var av = parseFloat((window.state && state.b && state.b[k]) || 0) || 0;
+    var r = e0.apply(this, arguments);
+    try {
+      var ap = parseFloat(state.b[k]) || 0, v = Math.round((ap - av) * 100) / 100;
+      if (v) {
+        if (!state.mvt) state.mvt = [];
+        state.mvt.unshift({ id: 'mv' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), d: ymd(new Date()), k: k, v: v, av: av, ap: ap });
+        if (state.mvt.length > 500) state.mvt.length = 500;
+        try { save(); } catch (e) {} try { if (typeof _g45PushBetsGithub === 'function') _g45PushBetsGithub(true); } catch (e) {}
+        try { render(); } catch (e) { window._g45MvtRender(); }
+      }
+    } catch (e) {}
+    return r;
+  };
+  var filtre = function () { try { return localStorage.getItem('g45_mvt_f') || 'tout'; } catch (e) { return 'tout'; } };
+  window.g45MvtFiltre = function (f) { try { localStorage.setItem('g45_mvt_f', f); } catch (e) {} window._g45MvtRender(); };
+  window._g45MvtLignes = function () {
+    var L = [];
+    ((window.state && state.mvt) || []).forEach(function (m) { L.push({ t: m.v > 0 ? 'dep' : 'ret', d: m.d, k: m.k, v: m.v, txt: (m.v > 0 ? '⬆️ Dépôt' : '⬇️ Retrait'), sous: ico(m.k) + ' ' + nomBk(m.k) + ' · solde ' + fr(m.av) + ' → ' + fr(m.ap) + ' €' }); });
+    ((window.state && state.aboH) || []).forEach(function (h) { L.push({ t: 'abo', d: h.d, k: h.b, v: -h.m, txt: '💳 ' + h.n, sous: ico(h.b) + ' ' + nomBk(h.b) }); });
+    L.sort(function (a, b) { return a.d < b.d ? 1 : (a.d > b.d ? -1 : 0); });
+    return L;
+  };
+  window._g45MvtRender = function () {
+    if (typeof state === 'undefined' || !state || !state.b) return;
+    var g = document.getElementById('books-grid'); if (!g) return;
+    var box = document.getElementById('g45-mvt'), ap = document.getElementById('g45-abo') || document.getElementById('g45-bk-banques') || g;
+    if (!box) { box = document.createElement('div'); box.id = 'g45-mvt'; }
+    if (box.previousElementSibling !== ap) ap.parentNode.insertBefore(box, ap.nextSibling);
+    var f = filtre(), L = window._g45MvtLignes(), mois = ymd(new Date()).slice(0, 7);
+    var dep = 0, ret = 0; L.forEach(function (x) { if (x.d.slice(0, 7) !== mois) return; if (x.v > 0) dep += x.v; else ret += x.v; });
+    var V = L.filter(function (x) { return f === 'tout' || x.t === f; }).slice(0, 40);
+    var MOIS = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+    var bt = function (k, lib) { var on = f === k; return '<button onclick="g45MvtFiltre(\'' + k + '\')" style="border:1px solid ' + (on ? '#2f6bff' : 'rgba(255,255,255,.25)') + ';background:' + (on ? '#2f6bff' : 'transparent') + ';border-radius:8px;padding:6px 11px;font-size:13px;font-weight:' + (on ? 900 : 700) + ';color:#fff;cursor:pointer;">' + lib + '</button>'; };
+    box.innerHTML = '<div class="sec">📜 Historique des mouvements</div>'
+      + '<div style="background:rgba(21,28,48,.96);border:1px solid rgba(77,132,255,.35);border-radius:12px;padding:12px 14px;color:#fff;margin-bottom:14px;">'
+      + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">' + bt('tout', 'Tout') + bt('dep', '⬆️ Dépôts') + bt('ret', '⬇️ Retraits') + bt('abo', '💳 Abonnements') + '</div>'
+      + (V.length ? V.map(function (x) {
+          return '<div style="display:flex;align-items:center;gap:10px;font-size:14px;padding:8px 4px;border-bottom:1px solid rgba(255,255,255,.08);">'
+            + '<span style="color:#c9d3ee;min-width:86px;">' + x.d.split('-').reverse().join('/') + '</span>'
+            + '<span style="flex:1;min-width:0;">' + esc(x.txt) + '<span style="display:block;font-size:13px;color:#c9d3ee;">' + esc(x.sous) + '</span></span>'
+            + '<b style="font-size:15px;color:' + (x.v > 0 ? '#1ed760' : '#ff8a8a') + ';">' + (x.v > 0 ? '+' : '−') + fr(x.v) + ' €</b></div>';
+        }).join('') : '<div style="font-size:14px;color:#c9d3ee;">Rien pour l\'instant : les dépôts et retraits sont notés à partir de maintenant, quand tu changes un solde avec « ✏️ Modifier ».</div>')
+      + '<div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:10px;font-size:14px;">' + MOIS[new Date().getMonth()] + ' : <span><b style="color:#1ed760;">+' + fr(dep) + ' €</b> déposés</span><span><b style="color:#ff8a8a;">−' + fr(ret) + ' €</b> retirés / prélevés</span></div>'
+      + '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">Dépôt / retrait = quand tu changes le solde d\'un compte avec « ✏️ Modifier ». Les paris ne s\'y mettent pas.</div></div>';
+  };
+  /* synchro : lignes de l'autre appareil (sans toucher aux soldes) */
+  var f0 = window._g45BetsFusion;
+  if (typeof f0 === 'function') window._g45BetsFusion = function (rem) {
+    var n = f0.apply(this, arguments);
+    try {
+      if (rem && rem.mvt && state) {
+        if (!state.mvt) state.mvt = [];
+        rem.mvt.forEach(function (m) { if (m && m.id && !state.mvt.some(function (x) { return x.id === m.id; })) state.mvt.push(JSON.parse(JSON.stringify(m))); });
+        state.mvt.sort(function (a, b) { return a.d < b.d ? 1 : (a.d > b.d ? -1 : 0); });
+      }
+    } catch (e) {}
+    return n;
+  };
+  var r0 = window.render;
+  if (typeof r0 === 'function') window.render = function () { var r = r0.apply(this, arguments); try { window._g45MvtRender(); } catch (e) {} return r; };
+  try { window._g45MvtRender(); } catch (e) {}
 })();
