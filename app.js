@@ -43459,7 +43459,7 @@ window.g45F1Session=g45F1Session;
    et les données utilisateur n'étaient JAMAIS écrites — l'ajout apparaissait à l'écran puis
    disparaissait au rechargement. Ce n'était ni la synchro GitHub, ni Dropbox, ni le cache
    du navigateur. Tous ces caches sont reconstructibles : ils cèdent la place aux données. */
-var _G45_CACHE_PREFIXES=['g45reg4n_',/* 27/10 : journaux NFL des saisons finies */'g45reg4_',/* 27/10 : journaux NHL des saisons finies (4 saisons) */'g45nflyd1_',/* 27/10 : journaux yards NFL */'g45f1cr1_',/* 27/10 : résultats F1 Jolpica (critères 4 saisons) */'g45nfltd1_',/* 22/10 : TD / FG NFL par match */'g45cr1u_','g45cr3u_',/* 22/10 : critères US avec n° de match */'g45cr1e_','g45crf1_','g45crid1_',/* 21/10 : feuilles de match des critères */'g45cr3_','g45cr1_',/* 14/10 : critères sur 4 saisons */'g45agoa2_',/* 11/10 : cotes Agenda (The Odds API) */'g45reg1_',/* 08/10 : régularité buteurs NHL */'g45bb1_','g45bbst1_','g45bbld1_','g45bbf1_',/* 03/10 : Pro A be-basketball */'g45es1_',/* 01/10 : stats Euroleague */'g45kbo1_',/* 01/10 : KBO (mykbostats) */'g45t14lg1',/* 01/10 : logos Top 14 (LNR) */'g45pd2_',/* 01/10 : Pro D2 (LNR) */'g45t14sq1_',/* 01/10 : effectifs Top 14 (LNR) */'g45nrlm1_','g45nrldr1_',/* 01/10 : feuilles et calendriers NRL */'g45nrlsq1_',/* 01/10 : effectifs NRL */'g45nrlst2_',/* 01/10 : classements NRL */'g45proacid1_',/* 30/09 : numéros LNB par saison */'g45proast1_',/* 30/09 : stats Pro A */'g45proa1_',/* 30/09 : Pro A par journée */'g45el1_',/* 30/09 : Euroleague (compact) */'g45buts1_',/* 30/09 : buts en action (match fini) */'g45prad1_','g45vsj1_','g45vse1_',/* 30/09 : radars joueurs */'g45ia1_',/* 29/09 : avis IA gardés 6 h */'g45_mmeta2_','g45_mmeta1_','g45_tennis4_','g45_tennis3_',/* 16/09 : meta de match (domicile/lieu) et score tennis, reconstructibles */'g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dcf_','g45dc_',
+var _G45_CACHE_PREFIXES=['g45mlbk1_',/* 27/10 : journaux strikeouts MLB */'g45reg4n_',/* 27/10 : journaux NFL des saisons finies */'g45reg4_',/* 27/10 : journaux NHL des saisons finies (4 saisons) */'g45nflyd1_',/* 27/10 : journaux yards NFL */'g45f1cr1_',/* 27/10 : résultats F1 Jolpica (critères 4 saisons) */'g45nfltd1_',/* 22/10 : TD / FG NFL par match */'g45cr1u_','g45cr3u_',/* 22/10 : critères US avec n° de match */'g45cr1e_','g45crf1_','g45crid1_',/* 21/10 : feuilles de match des critères */'g45cr3_','g45cr1_',/* 14/10 : critères sur 4 saisons */'g45agoa2_',/* 11/10 : cotes Agenda (The Odds API) */'g45reg1_',/* 08/10 : régularité buteurs NHL */'g45bb1_','g45bbst1_','g45bbld1_','g45bbf1_',/* 03/10 : Pro A be-basketball */'g45es1_',/* 01/10 : stats Euroleague */'g45kbo1_',/* 01/10 : KBO (mykbostats) */'g45t14lg1',/* 01/10 : logos Top 14 (LNR) */'g45pd2_',/* 01/10 : Pro D2 (LNR) */'g45t14sq1_',/* 01/10 : effectifs Top 14 (LNR) */'g45nrlm1_','g45nrldr1_',/* 01/10 : feuilles et calendriers NRL */'g45nrlsq1_',/* 01/10 : effectifs NRL */'g45nrlst2_',/* 01/10 : classements NRL */'g45proacid1_',/* 30/09 : numéros LNB par saison */'g45proast1_',/* 30/09 : stats Pro A */'g45proa1_',/* 30/09 : Pro A par journée */'g45el1_',/* 30/09 : Euroleague (compact) */'g45buts1_',/* 30/09 : buts en action (match fini) */'g45prad1_','g45vsj1_','g45vse1_',/* 30/09 : radars joueurs */'g45ia1_',/* 29/09 : avis IA gardés 6 h */'g45_mmeta2_','g45_mmeta1_','g45_tennis4_','g45_tennis3_',/* 16/09 : meta de match (domicile/lieu) et score tennis, reconstructibles */'g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dcf_','g45dc_',
   'g45trv3_','g45trv2_','g45trOdds2_',/* 13/10 : cotes The Odds API par marchés */'g45tr_','g45but_st_','g45butL_','g45butA_','g45but_mur_',
   '_g45clv','g45clv_snaps','g45_saisons_cache_v3_','g45_saisons_cache_v2_',
   /* Ajoutes le 20/08 : ces caches, tous reconstructibles, n'etaient PAS declares
@@ -78208,6 +78208,7 @@ window._g45AgJouUs = async function (nowTs) {
     } catch (e) { return []; }
   };
   window.g45NbaMqP = function (v) { var o = etat(); o.pep = v ? 1 : 0; garder(o); window.g45NbaMq(); };   /* 20261027j */
+  window.g45NbaMqS4 = function (v) { var o = etat(); o.s4 = v ? 1 : 0; garder(o); window.g45NbaMq(); };   /* 20261027n */
   window.g45NbaMqSt = function (k) { var o = etat(); o.st = k; garder(o); window.g45NbaMq(); };
   window.g45NbaMqL = function (d) { var o = etat(); var k = o.st; o.l[k] = Math.max(0.5, (o.l[k] || ST[k].l) + d); garder(o); window.g45NbaMq(); };
   window.g45NbaMqF = function (k) { var c = k === 'auj' ? 'g45mq_auj' : 'g45mq_crit'; try { localStorage.setItem(c, localStorage.getItem(c) === '1' ? '' : '1'); } catch (e) {} window.g45NbaMq(); };
@@ -78223,6 +78224,7 @@ window._g45AgJouUs = async function (nowTs) {
       + '<div style="font-size:13px;color:#c9d3ee;margin:4px 0;">Plus de…</div><div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">'
       + bt(false, '−', 'g45NbaMqL(-1)', 1) + '<span style="font-size:22px;font-weight:900;margin-bottom:6px;">' + fr(L) + ' ' + S.u + '</span>' + bt(false, '+', 'g45NbaMqL(1)', 1) + '</div>'
       + '<div>' + bt(auj, '🗓️ Jouent aujourd\'hui', "g45NbaMqF('auj')") + bt(crit, '🎯 Mes critères', "g45NbaMqF('crit')") + '</div>'
+      + '<div>' + bt(!o.s4, '📅 Saison en cours', 'g45NbaMqS4(0)') + bt(!!o.s4, '📅 4 saisons', 'g45NbaMqS4(1)') + '</div>'   /* 20261027n */
       + '<div>' + bt(!o.pep, 'Top 25', 'g45NbaMqP(0)') + bt(!!o.pep, '🔍 Pépites (50)', 'g45NbaMqP(1)') + '</div>'   /* 20261027j */
       + '<div style="font-size:13px;color:#aab6d6;margin:2px 0 10px;">% = matchs de la saison où il a dépassé la ligne · 5 derniers en pastilles · pire série = matchs de suite en dessous' + (o.pep ? ' · grisé = top 10' : '') + '</div>';
     var corps = function (t) { hote.innerHTML = tete + t; };
@@ -78238,10 +78240,15 @@ window._g45AgJouUs = async function (nowTs) {
     }).filter(function (c) { return c.aid && (!JOUR || JOUR[c.tid]); });
     var res = [], fait = 0;
     var un = async function (c) {
-      var ok = await _g45NbaGLRecuperer(c.aid, an); fait++;
+      /* 20261027n (« nba » : 4 saisons comme la NHL) : journaux de an, an-1, an-2, an-3 fusionnés (n° de match uniques, triés par date). */
+      var ans = o.s4 ? [an, an - 1, an - 2, an - 3] : [an], gl = {}, meta = {}, ok = false;
+      for (var q = 0; q < ans.length; q++) {
+        if (!(await _g45NbaGLRecuperer(c.aid, ans[q]))) continue;
+        ok = true; Object.assign(gl, _g45NbaGLCache(c.aid, ans[q]) || {}); Object.assign(meta, _g45NbaGLMeta(c.aid, ans[q]) || {});
+      }
+      fait++;
       if (mon === jeton) corps('<div style="font-size:14px;color:#c9d3ee;padding:10px;">⏳ Matchs des joueurs : ' + fait + ' / ' + cand.length + '</div>');
       if (!ok) return;
-      var gl = _g45NbaGLCache(c.aid, an) || {}, meta = _g45NbaGLMeta(c.aid, an) || {};
       var ev = Object.keys(gl).filter(function (e) { var v = gl[e]; return v && v[S.i] != null && !(v[0] === 0); })
         .sort(function (a, b) { return ((meta[b] || [])[0] || 0) - ((meta[a] || [])[0] || 0); });
       if (!ev.length) return;
@@ -78251,6 +78258,7 @@ window._g45AgJouUs = async function (nowTs) {
       if (crit && !(pct >= 0.6 && pct > 0 && 1 / pct >= 1.5)) return;
       var nm = await _g45MqNom(c.ref), eq = null; try { eq = await _g45MqEquipe(c.tref, 'nba'); } catch (e) {}
       res.push({ c: c, nom: nm.nom, eq: eq || {}, pct: pct, n: ok2, m: ev.length, moy: tot / ev.length, der: ev.slice(0, 5).map(function (e) { return gl[e][S.i] > L; }), j: JOUR ? JOUR[c.tid] : null,
+        pd: window._g45MqPireD(ev.slice().reverse().map(function (e) { return { ok: gl[e][S.i] > L, t: (meta[e] || [])[0] || 0 }; })),   /* 20261027n : dates */
         pire: window._g45MqPire(ev.slice().reverse().map(function (e) { return gl[e][S.i] > L; })) });   /* 20261027j */
     };
     for (var i = 0; i < cand.length; i += 4) { await Promise.all(cand.slice(i, i + 4).map(un)); if (mon !== jeton) return; }
@@ -78265,11 +78273,11 @@ window._g45AgJouUs = async function (nowTs) {
         + '<div style="flex:1;min-width:0;"><div style="font-size:16px;font-weight:800;color:#fff;line-height:1.2;">' + (o.pep && !r.c.t10 ? '💎 ' : '') + esc(r.nom) + '</div>'
         + '<div style="font-size:12px;color:#aab6d6;">' + esc(r.eq.nom || '') + '</div>'
         + (r.j ? '<div style="font-size:13px;color:#8fb4ff;font-weight:700;">' + (r.j.live ? '🔴 en cours' : '🗓️ ' + r.j.h) + ' · ' + (r.j.dom ? 'vs ' : '@ ') + esc(r.j.adv) + '</div>' : '')
-        + '<div style="font-size:13px;color:#c9d3ee;margin-top:2px;">moy. ' + fr(Math.round(r.moy * 10) / 10) + ' ' + S.u + ' · ' + dots + '</div>' + window._g45MqPalHtml(r.pire) + '</div>'
+        + '<div style="font-size:13px;color:#c9d3ee;margin-top:2px;">moy. ' + fr(Math.round(r.moy * 10) / 10) + ' ' + S.u + ' · ' + dots + '</div>' + window._g45MqPalHtml(r.pire, r.pd) + '</div>'
         + '<div style="text-align:center;flex:none;"><div style="font-size:24px;font-weight:900;color:' + col + ';">' + p + ' %</div>'
         + '<div style="font-size:12px;color:#aab6d6;">' + r.n + ' / ' + r.m + ' matchs</div>'
         + (r.pct > 0 ? '<div style="font-size:12px;color:#aab6d6;">cote juste ' + fr((1 / r.pct).toFixed(2)) + '</div>' : '') + '</div></div>';
-    }).join('') + '<div style="font-size:12px;color:#aab6d6;text-align:center;margin-top:6px;">Saison ' + (an - 1) + '-' + String(an).slice(2) + ' · matchs joués seulement</div>');
+    }).join('') + '<div style="font-size:12px;color:#aab6d6;text-align:center;margin-top:6px;">' + (o.s4 ? '4 saisons ' + (an - 4) + '-' + String(an - 3).slice(2) + ' → ' : 'Saison ') + (an - 1) + '-' + String(an).slice(2) + ' · matchs joués seulement</div>');
   };
   var o0 = window.g45MqSport;
   if (typeof o0 === 'function' && !o0._g45Nba) {
@@ -81660,13 +81668,21 @@ window._g45TrTestVoit = function () { try { return (typeof _g45SanteActive === '
    Cache du journal g45nflyd1_<an>_<id> 6 h. Saison NFL = année du début (septembre).
    ════════════════════════════════════════════════════════════════════════════ */
 /* Pire série = plus longue suite de « false » dans une liste chronologique de réussites (pur, testé). */
+/* 20261027n : dates (JJ/MM/AA) du 1er et du dernier match de la pire série ; L = [{ok, t (ms ou 'AAAA-MM-JJ…')}] chronologique (pur, testé). */
+window._g45MqPireD = function (L) {
+  var p = 0, r = 0, deb = 0, pd = null;
+  var f = function (t) { var d = typeof t === 'number' ? (t ? new Date(t) : null) : (t ? new Date(String(t).slice(0, 10) + 'T12:00:00Z') : null); if (!d || isNaN(d)) return ''; return ('0' + d.getUTCDate()).slice(-2) + '/' + ('0' + (d.getUTCMonth() + 1)).slice(-2) + '/' + String(d.getUTCFullYear()).slice(2); };
+  (L || []).forEach(function (x, i) { if (x.ok) r = 0; else { if (!r) deb = i; r++; if (r > p) { p = r; pd = [L[deb].t, x.t]; } } });
+  return pd ? [f(pd[0]), f(pd[1])] : null;
+};
 window._g45MqPire = function (L) { var p = 0, r = 0; (L || []).forEach(function (b) { if (b) r = 0; else { r++; if (r > p) p = r; } }); return p; };
 /* Ligne Cockpit « 🪜 pire série N → P paliers ✅ mise » (échelle 1 ⭐ via _g45F1CrPal, bloc F1 20261027d). */
-window._g45MqPalHtml = function (pire) {
+window._g45MqPalHtml = function (pire, pd) {
   if (pire == null) return '';
+  var dts = (pd && pd[0] && pd[1] && pire) ? ' <span style="font-size:12px;color:#aab6d6;white-space:nowrap;">(' + pd[0] + ' → ' + pd[1] + ')</span>' : '';   /* 20261027n */
   var pa = (typeof _g45F1CrPal === 'function') ? _g45F1CrPal(pire) : { p: pire + 1, ico: '', mise: null };
   var col = pire <= 2 ? '#1ed760' : (pire <= 4 ? '#f0a020' : '#ff6b6b');
-  return '<div style="font-size:13px;color:#c9d3ee;margin-top:2px;">🪜 pire série <b style="color:' + col + ';">' + pire + '</b> → <b style="color:#fff;">' + pa.p + ' palier' + (pa.p > 1 ? 's' : '') + '</b> ' + pa.ico + (pa.mise != null ? ' ' + pa.mise + ' €' : '') + '</div>';
+  return '<div style="font-size:13px;color:#c9d3ee;margin-top:2px;">🪜 pire série <b style="color:' + col + ';">' + pire + '</b> → <b style="color:#fff;">' + pa.p + ' palier' + (pa.p > 1 ? 's' : '') + '</b> ' + pa.ico + (pa.mise != null ? ' ' + pa.mise + ' €' : '') + dts + '</div>';
 };
 (function () {
   var ST = { py: { lib: 'Passe', e: '🎯', cat: 'passingYards', l: 224.5 }, ry: { lib: 'Course', e: '🏃', cat: 'rushingYards', l: 49.5 }, wy: { lib: 'Réception', e: '🙌', cat: 'receivingYards', l: 49.5 } };
@@ -81755,7 +81771,8 @@ window._g45MqPalHtml = function (pire) {
       if (crit && !(pct >= 0.6 && 1 / pct >= 1.5)) return;
       var nm = await _g45MqNom(c.ref), eq = null; try { eq = await _g45MqEquipe(c.tref, 'nfl'); } catch (e) {}
       res.push({ c: c, nom: nm.nom, eq: eq || {}, pct: pct, n: ok, m: G.length, moy: tot / G.length, der: G.slice(0, 5).map(function (g) { return g[ix] > L; }), j: JOUR ? JOUR[c.tid] : null,
-        pire: window._g45MqPire(G.slice().reverse().map(function (g) { return g[ix] > L; })) });
+        pire: window._g45MqPire(G.slice().reverse().map(function (g) { return g[ix] > L; })),
+        pd: window._g45MqPireD(G.slice().reverse().map(function (g) { return { ok: g[ix] > L, t: g[0] }; })) });   /* 20261027n */
     };
     for (var i = 0; i < cand.length; i += 4) { await Promise.all(cand.slice(i, i + 4).map(un)); if (mon !== jeton) return; }
     res.sort(function (a, b) { return b.pct - a.pct || a.pire - b.pire || b.moy - a.moy; });
@@ -81768,7 +81785,7 @@ window._g45MqPalHtml = function (pire) {
         + '<div style="flex:1;min-width:0;"><div style="font-size:16px;font-weight:800;color:#fff;line-height:1.2;">' + (o.pep && !r.c.t10 ? '💎 ' : '') + esc(r.nom) + '</div>'
         + '<div style="font-size:12px;color:#aab6d6;">' + esc(r.eq.nom || '') + '</div>'
         + (r.j ? '<div style="font-size:13px;color:#8fb4ff;font-weight:700;">' + (r.j.live ? '🔴 en cours' : '🗓️ ' + r.j.h) + ' · ' + (r.j.dom ? 'vs ' : '@ ') + esc(r.j.adv) + '</div>' : '')
-        + '<div style="font-size:13px;color:#c9d3ee;margin-top:2px;">moy. ' + fr(Math.round(r.moy * 10) / 10) + ' · ' + dots + '</div>' + window._g45MqPalHtml(r.pire) + '</div>'
+        + '<div style="font-size:13px;color:#c9d3ee;margin-top:2px;">moy. ' + fr(Math.round(r.moy * 10) / 10) + ' · ' + dots + '</div>' + window._g45MqPalHtml(r.pire, r.pd) + '</div>'
         + '<div style="text-align:center;flex:none;"><div style="font-size:24px;font-weight:900;color:' + col + ';">' + p + ' %</div>'
         + '<div style="font-size:12px;color:#aab6d6;">' + r.n + ' / ' + r.m + ' matchs</div>'
         + (r.pct > 0 ? '<div style="font-size:12px;color:#aab6d6;">cote juste ' + fr((1 / r.pct).toFixed(2)) + '</div>' : '') + '</div></div>';
@@ -81789,6 +81806,153 @@ window._g45MqPalHtml = function (pire) {
       return r;
     };
     window.g45MqSport._g45Yd = 1; window.g45MqSport._g45Nba = o0._g45Nba;
+    try { g45MqSport = window.g45MqSport; } catch (e) {}
+  }
+})();
+
+/* ════════════════════════════════════════════════════════════════════════════
+   20261027n — ⚾ MARQUEURS MLB → 🔥 STRIKEOUTS DU LANCEUR (« mlb lanceur » ; maquette texte → « oui ») — même écran que 📏 Yards NFL :
+   ligne − / + (pas de 1), % de matchs au-dessus, moyenne, 5 derniers, cote juste, 🪜 pire série AVEC dates → paliers, 📅 Saison en cours | 4 saisons,
+   Top 25 | 🔍 Pépites (50). Le simulateur de lanceurs (calc-lc, emprunté au Calculateur) reste : barre « 🧮 Simulateur | 🔥 Strikeouts ».
+   SONDÉ PAR ANTOINE le 27/10 : leaders core …/baseball/leagues/mlb/seasons/2026/types/2/leaders?limit=50 → ERA 50 | wins 50 | strikeouts 50 ;
+   journal common v3 (worker espnweb) /apis/common/v3/sports/baseball/mlb/athletes/<id>/gamelog (lanceur 5080761) → names innings, hits, runs,
+   earnedRuns, homeRuns, walks, strikeouts, …, saison 2026. Toutes les apparitions de la saison régulière comptent (les 50 meilleurs en K sont
+   des partants). Saisons finies gardées pour toujours (g45mlbk1_<an>_<id>), saison en cours 6 h. Saison MLB = année civile (avant avril : an − 1).
+   ════════════════════════════════════════════════════════════════════════════ */
+(function () {
+  var etat = function () { var o = {}; try { o = JSON.parse(localStorage.getItem('g45mlb_k') || '{}') || {}; } catch (e) {} o.l = o.l || 5.5; return o; };
+  var garder = function (o) { try { localStorage.setItem('g45mlb_k', JSON.stringify(o)); } catch (e) {} };
+  var fr = function (x) { return String(x).replace('.', ','); };
+  var esc = function (t) { return String(t || '').replace(/[<>"&]/g, ''); };
+  var saison = function () { var d = new Date(); return d.getMonth() >= 3 ? d.getFullYear() : d.getFullYear() - 1; };
+  var leaders = async function (an, pep) {
+    try {
+      var r = await fetch('https://sports.core.api.espn.com/v2/sports/baseball/leagues/mlb/seasons/' + an + '/types/2/leaders' + (pep ? '?limit=50' : ''));
+      if (!r.ok) return [];
+      var j = await r.json(), c = ((j && j.categories) || []).filter(function (x) { return x.name === 'strikeouts'; })[0];
+      return ((c && c.leaders) || []).slice(0, pep ? 50 : 25);
+    } catch (e) { return []; }
+  };
+  /* Journal → [[date, strikeouts], …] du plus récent au plus ancien ; null si la saison renvoyée n'est pas la bonne (pur, testé). */
+  window._g45MlbKLire = function (j, an) {
+    if (!j) return null;
+    var f = (j.filters || []).filter(function (x) { return x && x.name === 'season'; })[0];
+    if (f && f.value != null && String(f.value) !== String(an)) return null;
+    var nm = j.names || [], ik = nm.indexOf('strikeouts'); if (ik < 0) return [];
+    var vus = {}, L = [];
+    (j.seasonTypes || []).forEach(function (st) {
+      if (!/regular/i.test(st.displayName || '')) return;
+      (st.categories || []).forEach(function (c) { (c.events || []).forEach(function (e) {
+        if (!e || vus[e.eventId] || !e.stats) return; vus[e.eventId] = 1;
+        var ev = (j.events || {})[e.eventId] || {}, k = parseFloat(e.stats[ik]);
+        if (!isNaN(k)) L.push([String(ev.gameDate || ''), k]);
+      }); });
+    });
+    L.sort(function (x, y) { return y[0].localeCompare(x[0]); });
+    return L;
+  };
+  var LOGS = {};
+  var journal = function (id, an, fini) {
+    var k = an + '_' + id, ck = 'g45mlbk1_' + k;
+    if (!LOGS[k]) {
+      try { var c = JSON.parse(localStorage.getItem(ck) || 'null'); if (c && (fini || Date.now() - c.t < 6 * 3600e3)) { LOGS[k] = Promise.resolve(c.l); return LOGS[k]; } } catch (e) {}
+      var lire = function (q) { return fetch(FD_PROXY + '?host=espnweb&path=' + encodeURIComponent('/apis/common/v3/sports/baseball/mlb/athletes/' + id + '/gamelog' + q)).then(function (r) { return r.ok ? r.json() : null; }); };
+      LOGS[k] = lire('?season=' + an).then(function (j) { var L = window._g45MlbKLire(j, an); return L ? L : lire('').then(function (j2) { return window._g45MlbKLire(j2, an); }); })
+        .then(function (L) { if (L && L.length) { try { localStorage.setItem(ck, JSON.stringify({ t: Date.now(), l: L })); } catch (e) {} } else delete LOGS[k]; return L; })
+        .catch(function () { delete LOGS[k]; return null; });
+    }
+    return LOGS[k];
+  };
+  window.g45MlbKL = function (d) { var o = etat(); o.l = Math.max(0.5, o.l + d); garder(o); window.g45MlbK(); };
+  window.g45MlbKSet = function (q, v) { var o = etat(); o[q] = v ? 1 : 0; garder(o); window.g45MlbK(); };
+  window.g45MlbKF = function (k) { var c = k === 'auj' ? 'g45mq_auj' : 'g45mq_crit'; try { localStorage.setItem(c, localStorage.getItem(c) === '1' ? '' : '1'); } catch (e) {} window.g45MlbK(); };
+  var onglet = function (k) {
+    try { var bb = document.querySelectorAll('[data-g45mlbonglet]'); for (var q = 0; q < bb.length; q++) { var on = bb[q].getAttribute('data-g45mlbonglet') === k; bb[q].style.background = on ? '#2563eb' : 'rgba(0,0,0,.35)'; bb[q].style.borderColor = on ? '#3b82f6' : '#5a6788'; } } catch (e) {}
+  };
+  var jeton = 0;
+  /* Retour au simulateur SANS redessiner l'écran : g45MqSport('mlb') détruirait le bloc calc-lc emprunté au Calculateur. */
+  window.g45MlbSim = function () {
+    jeton++;
+    var box = document.getElementById('g45-mlbk-box'); if (box) box.style.display = 'none';
+    var lc = document.getElementById('calc-lc'); if (lc) lc.style.display = 'block';
+    onglet('sim');
+  };
+  window.g45MlbK = async function () {
+    var hote = document.getElementById('g45-mq-hote'); if (!hote) return;
+    var lc = document.getElementById('calc-lc'); if (lc && hote.contains(lc)) lc.style.display = 'none';   /* le simulateur est gardé, seulement caché */
+    var box = document.getElementById('g45-mlbk-box');
+    if (!box) { box = document.createElement('div'); box.id = 'g45-mlbk-box'; hote.appendChild(box); }
+    box.style.display = '';
+    onglet('k');
+    var o = etat(), L = o.l, mon = ++jeton;
+    var auj = localStorage.getItem('g45mq_auj') === '1', crit = localStorage.getItem('g45mq_crit') === '1';
+    var bt = function (on, t, fn, gros) { return '<button onclick="' + fn + '" style="padding:' + (gros ? '6px 14px' : '8px 11px') + ';margin:0 6px 6px 0;border-radius:8px;cursor:pointer;font-size:' + (gros ? '18px' : '14px') + ';font-weight:800;border:1px solid '
+      + (on ? '#3b82f6' : '#5a6788') + ';background:' + (on ? '#2563eb' : 'rgba(0,0,0,.35)') + ';color:#fff;">' + t + '</button>'; };
+    var tete = '<div style="font-size:13px;color:#c9d3ee;margin:4px 0;">Strikeouts du lanceur — plus de…</div><div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">'
+      + bt(false, '−', 'g45MlbKL(-1)', 1) + '<span style="font-size:22px;font-weight:900;margin-bottom:6px;color:#fff;">' + fr(L) + ' K</span>' + bt(false, '+', 'g45MlbKL(1)', 1) + '</div>'
+      + '<div>' + bt(auj, '🗓️ Jouent aujourd\'hui', "g45MlbKF('auj')") + bt(crit, '🎯 Mes critères', "g45MlbKF('crit')") + '</div>'
+      + '<div>' + bt(!o.s4, '📅 Saison en cours', "g45MlbKSet('s4',0)") + bt(!!o.s4, '📅 4 saisons', "g45MlbKSet('s4',1)") + '</div>'
+      + '<div>' + bt(!o.pep, 'Top 25', "g45MlbKSet('pep',0)") + bt(!!o.pep, '🔍 Pépites (50)', "g45MlbKSet('pep',1)") + '</div>'
+      + '<div style="font-size:13px;color:#aab6d6;margin:2px 0 10px;">% = matchs au-dessus de la ligne · pire série = matchs de suite en dessous' + (o.pep ? ' · grisé = top 10' : '') + '</div>';
+    var corps = function (t) { box.innerHTML = tete + t; };
+    corps('<div style="font-size:14px;color:#c9d3ee;padding:10px;">⏳ Lecture des meilleurs lanceurs MLB…</div>');
+    var an = saison(), lead = await leaders(an, o.pep);
+    if (!lead.length) { an--; lead = await leaders(an, o.pep); }
+    if (mon !== jeton) return;
+    if (!lead.length) { corps('<div style="font-size:14px;color:#ffb13d;padding:10px;">Aucun classement MLB disponible.</div>'); return; }
+    var JOUR = auj ? await _g45MqJour({ sport: 'baseball', lg: 'mlb' }) : null;
+    var cand = lead.map(function (x, rg) {
+      var a = String((x.athlete && x.athlete.$ref) || '').match(/athletes\/(\d+)/), t = String((x.team && x.team.$ref) || '').match(/teams\/(\d+)/);
+      return { aid: a ? a[1] : '', tid: t ? t[1] : '', ref: x.athlete && x.athlete.$ref, tref: x.team && x.team.$ref, t10: o.pep && rg < 10 };
+    }).filter(function (c) { return c.aid && (!JOUR || JOUR[c.tid]); });
+    var res = [], fait = 0, ans = o.s4 ? [an, an - 1, an - 2, an - 3] : [an];
+    var un = async function (c) {
+      var G = [];
+      for (var q = 0; q < ans.length; q++) { var g = await journal(c.aid, ans[q], ans[q] < saison()); if (g) G = G.concat(g); }
+      fait++;
+      if (mon === jeton) corps('<div style="font-size:14px;color:#c9d3ee;padding:10px;">⏳ Matchs des lanceurs : ' + fait + ' / ' + cand.length + '</div>');
+      if (!G.length) return;
+      var ok = G.filter(function (g) { return g[1] > L; }).length, tot = 0;
+      G.forEach(function (g) { tot += g[1]; });
+      var pct = ok / G.length;
+      if (crit && !(pct >= 0.6 && 1 / pct >= 1.5)) return;
+      var nm = await _g45MqNom(c.ref), eq = null; try { eq = await _g45MqEquipe(c.tref, 'mlb'); } catch (e) {}
+      var ch = G.slice().reverse();
+      res.push({ c: c, nom: nm.nom, eq: eq || {}, pct: pct, n: ok, m: G.length, moy: tot / G.length, der: G.slice(0, 5).map(function (g) { return g[1] > L; }), j: JOUR ? JOUR[c.tid] : null,
+        pire: window._g45MqPire(ch.map(function (g) { return g[1] > L; })), pd: window._g45MqPireD(ch.map(function (g) { return { ok: g[1] > L, t: g[0] }; })) });
+    };
+    for (var i = 0; i < cand.length; i += 4) { await Promise.all(cand.slice(i, i + 4).map(un)); if (mon !== jeton) return; }
+    res.sort(function (a, b) { return b.pct - a.pct || a.pire - b.pire || b.moy - a.moy; });
+    if (!res.length) { corps('<div style="font-size:15px;color:#fff;text-align:center;padding:14px;">' + (crit ? '🎯 Aucun lanceur ne remplit tes critères (60 % mini et cote 1,50 mini).' : (auj ? '🗓️ Aucun de ces lanceurs ne joue aujourd\'hui.' : 'Aucun match trouvé.')) + '</div>'); return; }
+    corps(res.map(function (r) {
+      var p = Math.round(r.pct * 100), col = p >= 70 ? '#1ed760' : (p >= 60 ? '#f5c542' : '#c9d3ee');
+      var dots = r.der.map(function (b) { return '<span style="display:inline-block;width:13px;height:13px;border-radius:50%;margin-right:3px;vertical-align:middle;background:' + (b ? '#1ed760' : '#ff4545') + ';"></span>'; }).join('');
+      return '<div style="display:flex;gap:10px;align-items:center;padding:10px;background:rgba(12,16,28,.95);border:1px solid rgba(255,255,255,.08);border-left:4px solid ' + (r.eq.coul || '#5a6788') + ';border-radius:10px;margin-bottom:8px;' + (r.c.t10 ? 'opacity:.55;' : '') + '">'
+        + '<img src="https://a.espncdn.com/i/headshots/mlb/players/full/' + r.c.aid + '.png" alt="" loading="lazy" onerror="this.style.visibility=\'hidden\'" style="width:46px;height:46px;border-radius:50%;object-fit:cover;background:#2a3552;flex:none;">'
+        + '<div style="flex:1;min-width:0;"><div style="font-size:16px;font-weight:800;color:#fff;line-height:1.2;">' + (o.pep && !r.c.t10 ? '💎 ' : '') + esc(r.nom) + '</div>'
+        + '<div style="font-size:12px;color:#aab6d6;">' + esc(r.eq.nom || '') + '</div>'
+        + (r.j ? '<div style="font-size:13px;color:#8fb4ff;font-weight:700;">' + (r.j.live ? '🔴 en cours' : '🗓️ ' + r.j.h) + ' · ' + (r.j.dom ? 'vs ' : '@ ') + esc(r.j.adv) + '</div>' : '')
+        + '<div style="font-size:13px;color:#c9d3ee;margin-top:2px;">moy. ' + fr(Math.round(r.moy * 10) / 10) + ' K · ' + dots + '</div>' + window._g45MqPalHtml(r.pire, r.pd) + '</div>'
+        + '<div style="text-align:center;flex:none;"><div style="font-size:24px;font-weight:900;color:' + col + ';">' + p + ' %</div>'
+        + '<div style="font-size:12px;color:#aab6d6;">' + r.n + ' / ' + r.m + ' matchs</div>'
+        + (r.pct > 0 ? '<div style="font-size:12px;color:#aab6d6;">cote juste ' + fr((1 / r.pct).toFixed(2)) + '</div>' : '') + '</div></div>';
+    }).join('') + '<div style="font-size:12px;color:#aab6d6;text-align:center;margin-top:6px;">' + (o.s4 ? '4 saisons ' + (an - 3) + ' → ' + an : 'Saison ' + an) + ' · saison régulière · matchs joués seulement</div>');
+  };
+  /* Barre « 🧮 Simulateur | 🔥 Strikeouts » au-dessus du simulateur de lanceurs. */
+  var o0 = window.g45MqSport;
+  if (typeof o0 === 'function' && !o0._g45MlbK) {
+    window.g45MqSport = function (sp) {
+      var r = o0.apply(this, arguments);
+      if (sp === 'mlb') {
+        var hote = document.getElementById('g45-mq-hote');
+        if (hote && !document.getElementById('g45-mlb-onglets')) {
+          var b = function (k, t, fn) { return '<button data-g45mlbonglet="' + k + '" onclick="' + fn + '" style="flex:1;padding:9px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:800;color:#fff;border:1px solid ' + (k === 'sim' ? '#3b82f6' : '#5a6788') + ';background:' + (k === 'sim' ? '#2563eb' : 'rgba(0,0,0,.35)') + ';">' + t + '</button>'; };
+          hote.insertAdjacentHTML('afterbegin', '<div id="g45-mlb-onglets" style="display:flex;gap:6px;margin-bottom:10px;">' + b('sim', '🧮 Simulateur', 'g45MlbSim()') + b('k', '🔥 Strikeouts', 'g45MlbK()') + '</div>');
+        }
+      }
+      return r;
+    };
+    window.g45MqSport._g45MlbK = 1; window.g45MqSport._g45Yd = o0._g45Yd; window.g45MqSport._g45Nba = o0._g45Nba;
     try { g45MqSport = window.g45MqSport; } catch (e) {}
   }
 })();
