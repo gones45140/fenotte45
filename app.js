@@ -43459,7 +43459,7 @@ window.g45F1Session=g45F1Session;
    et les données utilisateur n'étaient JAMAIS écrites — l'ajout apparaissait à l'écran puis
    disparaissait au rechargement. Ce n'était ni la synchro GitHub, ni Dropbox, ni le cache
    du navigateur. Tous ces caches sont reconstructibles : ils cèdent la place aux données. */
-var _G45_CACHE_PREFIXES=['g45f1cr1_',/* 27/10 : résultats F1 Jolpica (critères 4 saisons) */'g45nfltd1_',/* 22/10 : TD / FG NFL par match */'g45cr1u_','g45cr3u_',/* 22/10 : critères US avec n° de match */'g45cr1e_','g45crf1_','g45crid1_',/* 21/10 : feuilles de match des critères */'g45cr3_','g45cr1_',/* 14/10 : critères sur 4 saisons */'g45agoa2_',/* 11/10 : cotes Agenda (The Odds API) */'g45reg1_',/* 08/10 : régularité buteurs NHL */'g45bb1_','g45bbst1_','g45bbld1_','g45bbf1_',/* 03/10 : Pro A be-basketball */'g45es1_',/* 01/10 : stats Euroleague */'g45kbo1_',/* 01/10 : KBO (mykbostats) */'g45t14lg1',/* 01/10 : logos Top 14 (LNR) */'g45pd2_',/* 01/10 : Pro D2 (LNR) */'g45t14sq1_',/* 01/10 : effectifs Top 14 (LNR) */'g45nrlm1_','g45nrldr1_',/* 01/10 : feuilles et calendriers NRL */'g45nrlsq1_',/* 01/10 : effectifs NRL */'g45nrlst2_',/* 01/10 : classements NRL */'g45proacid1_',/* 30/09 : numéros LNB par saison */'g45proast1_',/* 30/09 : stats Pro A */'g45proa1_',/* 30/09 : Pro A par journée */'g45el1_',/* 30/09 : Euroleague (compact) */'g45buts1_',/* 30/09 : buts en action (match fini) */'g45prad1_','g45vsj1_','g45vse1_',/* 30/09 : radars joueurs */'g45ia1_',/* 29/09 : avis IA gardés 6 h */'g45_mmeta2_','g45_mmeta1_','g45_tennis4_','g45_tennis3_',/* 16/09 : meta de match (domicile/lieu) et score tennis, reconstructibles */'g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dcf_','g45dc_',
+var _G45_CACHE_PREFIXES=['g45nflyd1_',/* 27/10 : journaux yards NFL */'g45f1cr1_',/* 27/10 : résultats F1 Jolpica (critères 4 saisons) */'g45nfltd1_',/* 22/10 : TD / FG NFL par match */'g45cr1u_','g45cr3u_',/* 22/10 : critères US avec n° de match */'g45cr1e_','g45crf1_','g45crid1_',/* 21/10 : feuilles de match des critères */'g45cr3_','g45cr1_',/* 14/10 : critères sur 4 saisons */'g45agoa2_',/* 11/10 : cotes Agenda (The Odds API) */'g45reg1_',/* 08/10 : régularité buteurs NHL */'g45bb1_','g45bbst1_','g45bbld1_','g45bbf1_',/* 03/10 : Pro A be-basketball */'g45es1_',/* 01/10 : stats Euroleague */'g45kbo1_',/* 01/10 : KBO (mykbostats) */'g45t14lg1',/* 01/10 : logos Top 14 (LNR) */'g45pd2_',/* 01/10 : Pro D2 (LNR) */'g45t14sq1_',/* 01/10 : effectifs Top 14 (LNR) */'g45nrlm1_','g45nrldr1_',/* 01/10 : feuilles et calendriers NRL */'g45nrlsq1_',/* 01/10 : effectifs NRL */'g45nrlst2_',/* 01/10 : classements NRL */'g45proacid1_',/* 30/09 : numéros LNB par saison */'g45proast1_',/* 30/09 : stats Pro A */'g45proa1_',/* 30/09 : Pro A par journée */'g45el1_',/* 30/09 : Euroleague (compact) */'g45buts1_',/* 30/09 : buts en action (match fini) */'g45prad1_','g45vsj1_','g45vse1_',/* 30/09 : radars joueurs */'g45ia1_',/* 29/09 : avis IA gardés 6 h */'g45_mmeta2_','g45_mmeta1_','g45_tennis4_','g45_tennis3_',/* 16/09 : meta de match (domicile/lieu) et score tennis, reconstructibles */'g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dcf_','g45dc_',
   'g45trv3_','g45trv2_','g45trOdds2_',/* 13/10 : cotes The Odds API par marchés */'g45tr_','g45but_st_','g45butL_','g45butA_','g45but_mur_',
   '_g45clv','g45clv_snaps','g45_saisons_cache_v3_','g45_saisons_cache_v2_',
   /* Ajoutes le 20/08 : ces caches, tous reconstructibles, n'etaient PAS declares
@@ -70149,7 +70149,7 @@ function _g45RegHtml() {
       + b(_g45Reg.tri === 'tot', LB.col + ' ▼', "g45RegSet('tri','tot')") + b(_g45Reg.tri === 'best', 'Meilleure série ▼', "g45RegSet('tri','best')") + '</div>';   /* 20261006d ; 20261006l */
   /* 20261027g : 🔍 Pépites (ligue NHL) — 50 joueurs, top 10 grisé, colonne Paliers (pire série + 1, comme le Cockpit) */
   var PEP = _g45RegPep();
-  if (!_g45Reg.eq && !_g45Reg.lg) h += '<div style="display:flex;gap:6px;margin-bottom:8px;">' + b(!PEP, '🎯 Top 10', "g45RegSet('pep',0)") + b(PEP, '🔍 Pépites (50 joueurs)', "g45RegSet('pep',1)") + '</div>'
+  if (!_g45Reg.eq && (!_g45Reg.lg || _g45Reg.lg === 'nfl')) h += '<div style="display:flex;gap:6px;margin-bottom:8px;">' + b(!PEP, '🎯 Top 10', "g45RegSet('pep',0)") + b(PEP, '🔍 Pépites (50 joueurs)', "g45RegSet('pep',1)") + '</div>'
     + (PEP ? '<div style="font-size:13px;color:#fff;margin:-2px 0 8px;">50 meilleurs ' + LB.pl + ' de la saison (≈ 30 s la 1re fois, gardé 12 h) · <span style="opacity:.55;">grisé = déjà dans le top 10</span> · 💎 = pépite</div>' : '');
   /* 20261005t (« c'est chiant cette limite à 10 ») : plus de minimum de 10 matchs ; début de saison = avertissement + bouton
      vers la saison précédente (et retour), sans toucher au Saison ▾ du panneau. */
@@ -70372,7 +70372,7 @@ function _g45RegK() { return _g45RegSaison(_g45Reg.an) + _g45Reg.cat + (_g45Reg.
 /* 20261027g — 🔍 PÉPITES (« si je veux découvrir des petites pépites comme Adam Fox en passes ») : classement de la LIGUE NHL seulement
    (ni fiche d'équipe, ni foot / NFL…) ; 50 meilleurs de la catégorie au lieu de 10. SONDÉ PAR ANTOINE le 27/10 : skater-stats-leaders
    …?categories=assists&limit=50 → 50 joueurs (McDavid 26, Fox 16…). */
-function _g45RegPep() { return !!(_g45Reg.pep && !_g45Reg.eq && !_g45Reg.lg); }
+function _g45RegPep() { return !!(_g45Reg.pep && !_g45Reg.eq && (!_g45Reg.lg || _g45Reg.lg === 'nfl')); }   /* 20261027j : + NFL (leaders ?limit=50 SONDÉ : 50 TD, 43 passes de TD) */
 function _g45RegPK() { return _g45RegSaison(_g45Reg.an) + _g45Reg.cat + (_g45Reg.lg ? '@' + _g45Reg.lg : ''); }
 function _g45RegEspAn(lg, an) { return _g45RegCivil(lg) ? +an : +an - 1; }
 function _g45RegBlocFoot(lg, anCompet, nomLigue) {
@@ -70481,12 +70481,13 @@ async function _g45RegLireFoot(lg, an, cat, eq) {
   if (lg === 'top14') return _g45RegLireRug(eq);   /* 20261006k */
   if (lg === 'khl') return _g45RegLireKhl(cat, eq);   /* 20261006r */
   if (lg === 'nrl') return _g45RegLireNrl(an, cat, eq);   /* 20261006m */
-  var anEsp = _g45RegEspAn(lg, an), ck = 'g45reg1_f9_' /* 20261016g */ + lg + '_' + anEsp + '_' + cat + (eq ? '_' + eq + '_' + (_g45Reg.cf || 'L') : '');
+  var PEP = lg === 'nfl' && !eq && _g45RegPep();   /* 20261027j */
+  var anEsp = _g45RegEspAn(lg, an), ck = 'g45reg1_f9_' /* 20261016g */ + lg + '_' + anEsp + '_' + cat + (eq ? '_' + eq + '_' + (_g45Reg.cf || 'L') : '') + (PEP ? '_pep' : '');
   try { var c = JSON.parse(localStorage.getItem(ck) || 'null'); if (c && Date.now() - c.t < 12 * 3600e3) { if (c.c) c.l.comps = c.c; return c.l; } } catch (e) {}
   var top;
   if (eq) top = (lg === 'nfl' || lg === 'mlb') ? await _g45RegCandidatsNfl(String(eq).slice(1), anEsp, cat, lg) : await _g45RegCandidatsClub(lg, String(eq).slice(1), anEsp, cat);   /* 20261006e : joueurs du club ; NFL 20261006j */
   else {
-    var d = lg === 'nfl' ? await _g45RegLeadersNfl(anEsp) : (lg === 'mlb' ? await _g45RegLeadersMlb(anEsp) : await _g45RegLeadersFoot(lg, anEsp));
+    var d = lg === 'nfl' ? await _g45RegLeadersNfl(anEsp, PEP) : (lg === 'mlb' ? await _g45RegLeadersMlb(anEsp) : await _g45RegLeadersFoot(lg, anEsp));
     if (!d) throw new Error('aucun classement ESPN pour cette saison');
     top = cat === 'a' ? (d.a || []) : (cat === 'g' ? (d.g || []) : (d.g || []).concat(d.a || []));
   }
@@ -70496,8 +70497,9 @@ async function _g45RegLireFoot(lg, an, cat, eq) {
   var out = [], i = 0, used = {};
   async function w() {
     while (i < top.length) {
-      var x = top[i++];
+      var rgT = i, x = top[i++];
       var o = { id: x.id, ft: 1, nom: '', eq: '', club: '', logo: '', tid: x.tid };
+      if (PEP && rgT < 10) o.t10 = 1;   /* 20261027j : top 10 grisé en mode pépites */
       if (lg === 'nfl' || lg === 'mlb') o.ph = 'https://a.espncdn.com/i/headshots/' + lg + '/players/full/' + x.id + '.png';
       if (x.nom) { o.nom = x.nom; o.eq = x.ab || ''; o.club = x.club || ''; o.logo = x.logo || ''; }
       else { try { var m = await _g45RegFtNom(x); o.nom = m.n || '?'; o.eq = m.ab || ''; o.club = m.club || ''; o.logo = m.logo || ''; } catch (e) {} }
@@ -70720,16 +70722,16 @@ function _g45RegLib(c) {
     : { btn: '⭐ Pointeurs', col: 'Points', avec: 'avec point', sans: 'point', pl: 'pointeurs' };
   return { btn: '🥅 Buteurs', col: 'Buts', avec: 'avec but', sans: 'but', pl: 'buteurs' };
 }
-async function _g45RegLeadersNfl(an) {
-  var ck = 'g45reg1_nl_' + an;
+async function _g45RegLeadersNfl(an, pep) {   /* 20261027j : pep = 50 joueurs (🔍 Pépites) */
+  var ck = 'g45reg1_nl_' + an + (pep ? '_pep' : '');
   try { var c = JSON.parse(localStorage.getItem(ck) || 'null'); if (c && Date.now() - c.t < 6 * 3600e3) return c.d; } catch (e) {}
-  var r = await fetch('https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/' + an + '/types/2/leaders');
+  var r = await fetch('https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/' + an + '/types/2/leaders' + (pep ? '?limit=50' : ''));
   if (!r.ok) return null;
   var j = await r.json(), d = {};
   (j.categories || []).forEach(function (c) {
     var k = c.name === 'totalTouchdowns' ? 'g' : (c.name === 'passingTouchdowns' ? 'a' : '');
     if (!k) return;
-    d[k] = (c.leaders || []).slice(0, 10).map(function (L) {
+    d[k] = (c.leaders || []).slice(0, pep ? 50 : 10).map(function (L) {
       var id = ((L.athlete && L.athlete.$ref) || '').match(/athletes\/(\d+)/), tm = ((L.team && L.team.$ref) || '').match(/teams\/(\d+)/);
       return { id: id ? id[1] : '', v: L.value, ar: L.athlete && L.athlete.$ref, tr: L.team && L.team.$ref, tid: tm ? tm[1] : '' };
     }).filter(function (x) { return x.id; });
@@ -78144,16 +78146,18 @@ window._g45AgJouUs = async function (nowTs) {
   var etat = function () { var o = {}; try { o = JSON.parse(localStorage.getItem('g45nba_mq') || '{}') || {}; } catch (e) {} o.st = ST[o.st] ? o.st : 'pts'; o.l = o.l || {}; return o; };
   var garder = function (o) { try { localStorage.setItem('g45nba_mq', JSON.stringify(o)); } catch (e) {} };
   var fr = function (x) { return String(x).replace('.', ','); };
-  var leaders = async function (an, mot) {
+  var leaders = async function (an, mot, pep) {
     try {
-      var r = await fetch('https://sports.core.api.espn.com/v2/sports/basketball/leagues/nba/seasons/' + an + '/types/2/leaders');
+      /* 20261027j : ?limit=50 SONDÉ par Antoine (50 par catégorie ; sans paramètre : 25) → 🔍 Pépites */
+      var r = await fetch('https://sports.core.api.espn.com/v2/sports/basketball/leagues/nba/seasons/' + an + '/types/2/leaders' + (pep ? '?limit=50' : ''));
       if (!r.ok) return [];
       var j = await r.json(), cats = (j && j.categories) || [];
       var c = cats.filter(function (x) { return new RegExp('^' + mot + 'pergame$', 'i').test(x.name || ''); })[0]
         || cats.filter(function (x) { return new RegExp(mot, 'i').test(x.name || ''); })[0];
-      return ((c && c.leaders) || []).slice(0, 30);
+      return ((c && c.leaders) || []).slice(0, pep ? 50 : 30);
     } catch (e) { return []; }
   };
+  window.g45NbaMqP = function (v) { var o = etat(); o.pep = v ? 1 : 0; garder(o); window.g45NbaMq(); };   /* 20261027j */
   window.g45NbaMqSt = function (k) { var o = etat(); o.st = k; garder(o); window.g45NbaMq(); };
   window.g45NbaMqL = function (d) { var o = etat(); var k = o.st; o.l[k] = Math.max(0.5, (o.l[k] || ST[k].l) + d); garder(o); window.g45NbaMq(); };
   window.g45NbaMqF = function (k) { var c = k === 'auj' ? 'g45mq_auj' : 'g45mq_crit'; try { localStorage.setItem(c, localStorage.getItem(c) === '1' ? '' : '1'); } catch (e) {} window.g45NbaMq(); };
@@ -78169,17 +78173,18 @@ window._g45AgJouUs = async function (nowTs) {
       + '<div style="font-size:13px;color:#c9d3ee;margin:4px 0;">Plus de…</div><div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">'
       + bt(false, '−', 'g45NbaMqL(-1)', 1) + '<span style="font-size:22px;font-weight:900;margin-bottom:6px;">' + fr(L) + ' ' + S.u + '</span>' + bt(false, '+', 'g45NbaMqL(1)', 1) + '</div>'
       + '<div>' + bt(auj, '🗓️ Jouent aujourd\'hui', "g45NbaMqF('auj')") + bt(crit, '🎯 Mes critères', "g45NbaMqF('crit')") + '</div>'
-      + '<div style="font-size:13px;color:#aab6d6;margin:2px 0 10px;">% = matchs de la saison où il a dépassé la ligne · 5 derniers en pastilles</div>';
+      + '<div>' + bt(!o.pep, 'Top 25', 'g45NbaMqP(0)') + bt(!!o.pep, '🔍 Pépites (50)', 'g45NbaMqP(1)') + '</div>'   /* 20261027j */
+      + '<div style="font-size:13px;color:#aab6d6;margin:2px 0 10px;">% = matchs de la saison où il a dépassé la ligne · 5 derniers en pastilles · pire série = matchs de suite en dessous' + (o.pep ? ' · grisé = top 10' : '') + '</div>';
     var corps = function (t) { hote.innerHTML = tete + t; };
     corps('<div style="font-size:14px;color:#c9d3ee;padding:10px;">⏳ Lecture des meilleurs joueurs NBA…</div>');
     var an = typeof _g45SgAnAuto === 'function' ? _g45SgAnAuto('nba') : new Date().getFullYear() + 1;
-    var lead = await leaders(an, S.mot); if (!lead.length) { an--; lead = await leaders(an, S.mot); }
+    var lead = await leaders(an, S.mot, o.pep); if (!lead.length) { an--; lead = await leaders(an, S.mot, o.pep); }
     if (mon !== jeton) return;
     if (!lead.length) { corps('<div style="font-size:14px;color:#ffb13d;padding:10px;">Aucun classement NBA disponible.</div>'); return; }
     var JOUR = auj ? await _g45MqJour({ sport: 'basketball', lg: 'nba' }) : null;
-    var cand = lead.map(function (x) {
+    var cand = lead.map(function (x, rg) {
       var a = String((x.athlete && x.athlete.$ref) || '').match(/athletes\/(\d+)/), t = String((x.team && x.team.$ref) || '').match(/teams\/(\d+)/);
-      return { aid: a ? a[1] : '', tid: t ? t[1] : '', ref: x.athlete && x.athlete.$ref, tref: x.team && x.team.$ref };
+      return { aid: a ? a[1] : '', tid: t ? t[1] : '', ref: x.athlete && x.athlete.$ref, tref: x.team && x.team.$ref, t10: o.pep && rg < 10 };
     }).filter(function (c) { return c.aid && (!JOUR || JOUR[c.tid]); });
     var res = [], fait = 0;
     var un = async function (c) {
@@ -78195,7 +78200,8 @@ window._g45AgJouUs = async function (nowTs) {
       var pct = ok2 / ev.length;
       if (crit && !(pct >= 0.6 && pct > 0 && 1 / pct >= 1.5)) return;
       var nm = await _g45MqNom(c.ref), eq = null; try { eq = await _g45MqEquipe(c.tref, 'nba'); } catch (e) {}
-      res.push({ c: c, nom: nm.nom, eq: eq || {}, pct: pct, n: ok2, m: ev.length, moy: tot / ev.length, der: ev.slice(0, 5).map(function (e) { return gl[e][S.i] > L; }), j: JOUR ? JOUR[c.tid] : null });
+      res.push({ c: c, nom: nm.nom, eq: eq || {}, pct: pct, n: ok2, m: ev.length, moy: tot / ev.length, der: ev.slice(0, 5).map(function (e) { return gl[e][S.i] > L; }), j: JOUR ? JOUR[c.tid] : null,
+        pire: window._g45MqPire(ev.slice().reverse().map(function (e) { return gl[e][S.i] > L; })) });   /* 20261027j */
     };
     for (var i = 0; i < cand.length; i += 4) { await Promise.all(cand.slice(i, i + 4).map(un)); if (mon !== jeton) return; }
     res.sort(function (a, b) { return b.pct - a.pct || b.moy - a.moy; });
@@ -78204,12 +78210,12 @@ window._g45AgJouUs = async function (nowTs) {
     corps(res.map(function (r) {
       var p = Math.round(r.pct * 100), col = p >= 70 ? '#1ed760' : (p >= 60 ? '#f5c542' : '#c9d3ee');
       var dots = r.der.map(function (b) { return '<span style="display:inline-block;width:13px;height:13px;border-radius:50%;margin-right:3px;background:' + (b ? '#1ed760' : '#ff4545') + ';"></span>'; }).join('');
-      return '<div style="display:flex;gap:10px;align-items:center;padding:10px;background:rgba(12,16,28,.95);border:1px solid rgba(255,255,255,.08);border-left:4px solid ' + (r.eq.coul || '#5a6788') + ';border-radius:10px;margin-bottom:8px;">'
+      return '<div style="display:flex;gap:10px;align-items:center;padding:10px;background:rgba(12,16,28,.95);border:1px solid rgba(255,255,255,.08);border-left:4px solid ' + (r.eq.coul || '#5a6788') + ';border-radius:10px;margin-bottom:8px;' + (r.c.t10 ? 'opacity:.55;' : '') + '">'
         + '<img src="https://a.espncdn.com/i/headshots/nba/players/full/' + r.c.aid + '.png" alt="" loading="lazy" onerror="this.style.visibility=\'hidden\'" style="width:46px;height:46px;border-radius:50%;object-fit:cover;background:#2a3552;flex:none;">'
-        + '<div style="flex:1;min-width:0;"><div style="font-size:16px;font-weight:800;color:#fff;line-height:1.2;">' + esc(r.nom) + '</div>'
+        + '<div style="flex:1;min-width:0;"><div style="font-size:16px;font-weight:800;color:#fff;line-height:1.2;">' + (o.pep && !r.c.t10 ? '💎 ' : '') + esc(r.nom) + '</div>'
         + '<div style="font-size:12px;color:#aab6d6;">' + esc(r.eq.nom || '') + '</div>'
         + (r.j ? '<div style="font-size:13px;color:#8fb4ff;font-weight:700;">' + (r.j.live ? '🔴 en cours' : '🗓️ ' + r.j.h) + ' · ' + (r.j.dom ? 'vs ' : '@ ') + esc(r.j.adv) + '</div>' : '')
-        + '<div style="font-size:13px;color:#c9d3ee;margin-top:2px;">moy. ' + fr(Math.round(r.moy * 10) / 10) + ' ' + S.u + ' · ' + dots + '</div></div>'
+        + '<div style="font-size:13px;color:#c9d3ee;margin-top:2px;">moy. ' + fr(Math.round(r.moy * 10) / 10) + ' ' + S.u + ' · ' + dots + '</div>' + window._g45MqPalHtml(r.pire) + '</div>'
         + '<div style="text-align:center;flex:none;"><div style="font-size:24px;font-weight:900;color:' + col + ';">' + p + ' %</div>'
         + '<div style="font-size:12px;color:#aab6d6;">' + r.n + ' / ' + r.m + ' matchs</div>'
         + (r.pct > 0 ? '<div style="font-size:12px;color:#aab6d6;">cote juste ' + fr((1 / r.pct).toFixed(2)) + '</div>' : '') + '</div></div>';
@@ -81580,4 +81586,151 @@ window._g45TrTestVoit = function () { try { return (typeof _g45SanteActive === '
     try { if (!DATA) DATA = await charger(); dessiner(); }
     catch (e) { box.innerHTML = '<div style="font-size:15px;color:#fff;padding:12px;">Résultats F1 indisponibles (' + ea(e.message) + '). Réessaie plus tard.</div>'; }
   };
+})();
+
+/* ════════════════════════════════════════════════════════════════════════════
+   20261027j — 🏈 MARQUEURS NFL → 📏 YARDS (passe / course / réception) + outils COCKPIT partagés (pire série → paliers)
+   POURQUOI : captures Winamax d'Antoine (27/10) : « Nombre de yards à la passe / course / réception », en plus / moins et en
+   paliers (244+, 39+…) → les yards se parient en France ; « oui les 3 » (maquette maquette-yards : écran façon Marqueurs NBA,
+   % de matchs au-dessus de la ligne, 5 derniers, pire série → paliers, Top 25 / 🔍 Pépites 50).
+   SONDÉ PAR ANTOINE le 27/10 :
+   - leaders core …/football/leagues/nfl/seasons/<an>/types/2/leaders : 25 par catégorie, ?limit=50 → 50 (catégories passingYards,
+     rushingYards, receivingYards connues depuis le 08/10) ;
+   - journal common v3 (worker espnweb) /apis/common/v3/sports/football/nfl/athletes/<id>/gamelog → names : QB (Allen) passingYards
+     + rushingYards, RB (Barkley) rushingYards + receivingYards, WR (Jefferson) receivingYards + rushingYards ; filtre saison 2026.
+   Colonne absente pour un poste = 0 (un RB n'a pas de yards à la passe). Saison régulière seulement, matchs JOUÉS (comme les TD).
+   Cache du journal g45nflyd1_<an>_<id> 6 h. Saison NFL = année du début (septembre).
+   ════════════════════════════════════════════════════════════════════════════ */
+/* Pire série = plus longue suite de « false » dans une liste chronologique de réussites (pur, testé). */
+window._g45MqPire = function (L) { var p = 0, r = 0; (L || []).forEach(function (b) { if (b) r = 0; else { r++; if (r > p) p = r; } }); return p; };
+/* Ligne Cockpit « 🪜 pire série N → P paliers ✅ mise » (échelle 1 ⭐ via _g45F1CrPal, bloc F1 20261027d). */
+window._g45MqPalHtml = function (pire) {
+  if (pire == null) return '';
+  var pa = (typeof _g45F1CrPal === 'function') ? _g45F1CrPal(pire) : { p: pire + 1, ico: '', mise: null };
+  var col = pire <= 2 ? '#1ed760' : (pire <= 4 ? '#f0a020' : '#ff6b6b');
+  return '<div style="font-size:13px;color:#c9d3ee;margin-top:2px;">🪜 pire série <b style="color:' + col + ';">' + pire + '</b> → <b style="color:#fff;">' + pa.p + ' palier' + (pa.p > 1 ? 's' : '') + '</b> ' + pa.ico + (pa.mise != null ? ' ' + pa.mise + ' €' : '') + '</div>';
+};
+(function () {
+  var ST = { py: { lib: 'Passe', e: '🎯', cat: 'passingYards', l: 224.5 }, ry: { lib: 'Course', e: '🏃', cat: 'rushingYards', l: 49.5 }, wy: { lib: 'Réception', e: '🙌', cat: 'receivingYards', l: 49.5 } };
+  var etat = function () { var o = {}; try { o = JSON.parse(localStorage.getItem('g45nfl_yd') || '{}') || {}; } catch (e) {} o.st = ST[o.st] ? o.st : 'py'; o.l = o.l || {}; return o; };
+  var garder = function (o) { try { localStorage.setItem('g45nfl_yd', JSON.stringify(o)); } catch (e) {} };
+  var fr = function (x) { return String(x).replace('.', ','); };
+  var esc = function (t) { return String(t || '').replace(/[<>"&]/g, ''); };
+  var saisonNfl = function () { var d = new Date(); return d.getMonth() >= 8 ? d.getFullYear() : d.getFullYear() - 1; };
+  var leaders = async function (an, cat, pep) {
+    try {
+      var r = await fetch('https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/' + an + '/types/2/leaders' + (pep ? '?limit=50' : ''));
+      if (!r.ok) return [];
+      var j = await r.json(), c = ((j && j.categories) || []).filter(function (x) { return x.name === cat; })[0];
+      return ((c && c.leaders) || []).slice(0, pep ? 50 : 25);
+    } catch (e) { return []; }
+  };
+  /* Journal d'un joueur → [[date, yards passe, yards course, yards réception], …] du plus récent au plus ancien (pur à partir du JSON : testé). */
+  window._g45NflYdLire = function (j, an) {
+    if (!j) return null;
+    var f = (j.filters || []).filter(function (x) { return x && x.name === 'season'; })[0];
+    if (f && f.value != null && String(f.value) !== String(an)) return null;
+    var nm = j.names || [], ip = nm.indexOf('passingYards'), ir = nm.indexOf('rushingYards'), iw = nm.indexOf('receivingYards');
+    var v = function (st, i) { return i >= 0 ? (parseFloat(String(st[i]).replace(/,/g, '')) || 0) : 0; };
+    var vus = {}, L = [];
+    (j.seasonTypes || []).forEach(function (st) {
+      if (!/regular/i.test(st.displayName || '')) return;
+      (st.categories || []).forEach(function (c) { (c.events || []).forEach(function (e) {
+        if (!e || vus[e.eventId]) return; vus[e.eventId] = 1;
+        var ev = (j.events || {})[e.eventId] || {};
+        L.push([String(ev.gameDate || ''), v(e.stats || [], ip), v(e.stats || [], ir), v(e.stats || [], iw)]);
+      }); });
+    });
+    L.sort(function (x, y) { return y[0].localeCompare(x[0]); });
+    return L;
+  };
+  var LOGS = {};
+  var journal = function (id, an) {
+    var k = an + '_' + id, ck = 'g45nflyd1_' + k;
+    if (!LOGS[k]) {
+      try { var c = JSON.parse(localStorage.getItem(ck) || 'null'); if (c && Date.now() - c.t < 6 * 3600e3) { LOGS[k] = Promise.resolve(c.l); return LOGS[k]; } } catch (e) {}
+      var lire = function (q) { return fetch(FD_PROXY + '?host=espnweb&path=' + encodeURIComponent('/apis/common/v3/sports/football/nfl/athletes/' + id + '/gamelog' + q)).then(function (r) { return r.ok ? r.json() : null; }); };
+      LOGS[k] = lire('').then(function (j) { var L = window._g45NflYdLire(j, an); return L ? L : lire('?season=' + an).then(function (j2) { return window._g45NflYdLire(j2, an); }); })
+        .then(function (L) { if (L && L.length) { try { localStorage.setItem(ck, JSON.stringify({ t: Date.now(), l: L })); } catch (e) {} } else delete LOGS[k]; return L; })
+        .catch(function () { delete LOGS[k]; return null; });
+    }
+    return LOGS[k];
+  };
+  window.g45NflYdSt = function (k) { var o = etat(); o.st = k; garder(o); window.g45NflYd(); };
+  window.g45NflYdL = function (d) { var o = etat(), k = o.st; o.l[k] = Math.max(0.5, (o.l[k] || ST[k].l) + d); garder(o); window.g45NflYd(); };
+  window.g45NflYdP = function (v) { var o = etat(); o.pep = v ? 1 : 0; garder(o); window.g45NflYd(); };
+  window.g45NflYdF = function (k) { var c = k === 'auj' ? 'g45mq_auj' : 'g45mq_crit'; try { localStorage.setItem(c, localStorage.getItem(c) === '1' ? '' : '1'); } catch (e) {} window.g45NflYd(); };
+  var jeton = 0;
+  window.g45NflYd = async function () {
+    var hote = document.getElementById('g45-mq-body'); if (!hote) return;
+    try { var bb = document.querySelectorAll('[data-g45nflonglet]'); for (var q = 0; q < bb.length; q++) { var on = bb[q].getAttribute('data-g45nflonglet') === 'yd'; bb[q].style.background = on ? '#2563eb' : 'rgba(0,0,0,.35)'; bb[q].style.borderColor = on ? '#3b82f6' : '#5a6788'; } } catch (e) {}
+    var o = etat(), S = ST[o.st], ix = { py: 1, ry: 2, wy: 3 }[o.st], L = o.l[o.st] || S.l, mon = ++jeton;
+    var auj = localStorage.getItem('g45mq_auj') === '1', crit = localStorage.getItem('g45mq_crit') === '1';
+    var bt = function (on, t, fn, gros) { return '<button onclick="' + fn + '" style="padding:' + (gros ? '6px 14px' : '8px 11px') + ';margin:0 6px 6px 0;border-radius:8px;cursor:pointer;font-size:' + (gros ? '18px' : '14px') + ';font-weight:800;border:1px solid '
+      + (on ? '#3b82f6' : '#5a6788') + ';background:' + (on ? '#2563eb' : 'rgba(0,0,0,.35)') + ';color:#fff;">' + t + '</button>'; };
+    var tete = '<div style="font-size:13px;color:#c9d3ee;margin-bottom:4px;">Stat</div><div>'
+      + Object.keys(ST).map(function (k) { return bt(o.st === k, ST[k].e + ' ' + ST[k].lib, "g45NflYdSt('" + k + "')"); }).join('') + '</div>'
+      + '<div style="font-size:13px;color:#c9d3ee;margin:4px 0;">Plus de…</div><div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">'
+      + bt(false, '−', 'g45NflYdL(-5)', 1) + '<span style="font-size:22px;font-weight:900;margin-bottom:6px;color:#fff;">' + fr(L) + ' yards</span>' + bt(false, '+', 'g45NflYdL(5)', 1) + '</div>'
+      + '<div>' + bt(auj, '🗓️ Jouent aujourd\'hui', "g45NflYdF('auj')") + bt(crit, '🎯 Mes critères', "g45NflYdF('crit')") + '</div>'
+      + '<div>' + bt(!o.pep, 'Top 25', 'g45NflYdP(0)') + bt(!!o.pep, '🔍 Pépites (50)', 'g45NflYdP(1)') + '</div>'
+      + '<div style="font-size:13px;color:#aab6d6;margin:2px 0 10px;">% = matchs au-dessus de la ligne · pire série = matchs de suite en dessous' + (o.pep ? ' · grisé = top 10' : '') + '</div>';
+    var corps = function (t) { hote.innerHTML = tete + t; };
+    corps('<div style="font-size:14px;color:#c9d3ee;padding:10px;">⏳ Lecture des meilleurs joueurs NFL…</div>');
+    var an = saisonNfl(), lead = await leaders(an, S.cat, o.pep);
+    if (!lead.length) { an--; lead = await leaders(an, S.cat, o.pep); }
+    if (mon !== jeton) return;
+    if (!lead.length) { corps('<div style="font-size:14px;color:#ffb13d;padding:10px;">Aucun classement NFL disponible.</div>'); return; }
+    var JOUR = auj ? await _g45MqJour({ sport: 'football', lg: 'nfl' }) : null;
+    var cand = lead.map(function (x, rg) {
+      var a = String((x.athlete && x.athlete.$ref) || '').match(/athletes\/(\d+)/), t = String((x.team && x.team.$ref) || '').match(/teams\/(\d+)/);
+      return { aid: a ? a[1] : '', tid: t ? t[1] : '', ref: x.athlete && x.athlete.$ref, tref: x.team && x.team.$ref, t10: o.pep && rg < 10 };
+    }).filter(function (c) { return c.aid && (!JOUR || JOUR[c.tid]); });
+    var res = [], fait = 0;
+    var un = async function (c) {
+      var G = await journal(c.aid, an); fait++;
+      if (mon === jeton) corps('<div style="font-size:14px;color:#c9d3ee;padding:10px;">⏳ Matchs des joueurs : ' + fait + ' / ' + cand.length + '</div>');
+      if (!G || !G.length) return;
+      var ok = G.filter(function (g) { return g[ix] > L; }).length, tot = 0;
+      G.forEach(function (g) { tot += g[ix]; });
+      var pct = ok / G.length;
+      if (crit && !(pct >= 0.6 && 1 / pct >= 1.5)) return;
+      var nm = await _g45MqNom(c.ref), eq = null; try { eq = await _g45MqEquipe(c.tref, 'nfl'); } catch (e) {}
+      res.push({ c: c, nom: nm.nom, eq: eq || {}, pct: pct, n: ok, m: G.length, moy: tot / G.length, der: G.slice(0, 5).map(function (g) { return g[ix] > L; }), j: JOUR ? JOUR[c.tid] : null,
+        pire: window._g45MqPire(G.slice().reverse().map(function (g) { return g[ix] > L; })) });
+    };
+    for (var i = 0; i < cand.length; i += 4) { await Promise.all(cand.slice(i, i + 4).map(un)); if (mon !== jeton) return; }
+    res.sort(function (a, b) { return b.pct - a.pct || a.pire - b.pire || b.moy - a.moy; });
+    if (!res.length) { corps('<div style="font-size:15px;color:#fff;text-align:center;padding:14px;">' + (crit ? '🎯 Aucun joueur ne remplit tes critères (60 % mini et cote 1,50 mini).' : (auj ? '🗓️ Aucun de ces joueurs ne joue aujourd\'hui.' : 'Aucun match trouvé.')) + '</div>'); return; }
+    corps(res.map(function (r) {
+      var p = Math.round(r.pct * 100), col = p >= 70 ? '#1ed760' : (p >= 60 ? '#f5c542' : '#c9d3ee');
+      var dots = r.der.map(function (b) { return '<span style="display:inline-block;width:13px;height:13px;border-radius:50%;margin-right:3px;vertical-align:middle;background:' + (b ? '#1ed760' : '#ff4545') + ';"></span>'; }).join('');
+      return '<div style="display:flex;gap:10px;align-items:center;padding:10px;background:rgba(12,16,28,.95);border:1px solid rgba(255,255,255,.08);border-left:4px solid ' + (r.eq.coul || '#5a6788') + ';border-radius:10px;margin-bottom:8px;' + (r.c.t10 ? 'opacity:.55;' : '') + '">'
+        + '<img src="https://a.espncdn.com/i/headshots/nfl/players/full/' + r.c.aid + '.png" alt="" loading="lazy" onerror="this.style.visibility=\'hidden\'" style="width:46px;height:46px;border-radius:50%;object-fit:cover;background:#2a3552;flex:none;">'
+        + '<div style="flex:1;min-width:0;"><div style="font-size:16px;font-weight:800;color:#fff;line-height:1.2;">' + (o.pep && !r.c.t10 ? '💎 ' : '') + esc(r.nom) + '</div>'
+        + '<div style="font-size:12px;color:#aab6d6;">' + esc(r.eq.nom || '') + '</div>'
+        + (r.j ? '<div style="font-size:13px;color:#8fb4ff;font-weight:700;">' + (r.j.live ? '🔴 en cours' : '🗓️ ' + r.j.h) + ' · ' + (r.j.dom ? 'vs ' : '@ ') + esc(r.j.adv) + '</div>' : '')
+        + '<div style="font-size:13px;color:#c9d3ee;margin-top:2px;">moy. ' + fr(Math.round(r.moy * 10) / 10) + ' · ' + dots + '</div>' + window._g45MqPalHtml(r.pire) + '</div>'
+        + '<div style="text-align:center;flex:none;"><div style="font-size:24px;font-weight:900;color:' + col + ';">' + p + ' %</div>'
+        + '<div style="font-size:12px;color:#aab6d6;">' + r.n + ' / ' + r.m + ' matchs</div>'
+        + (r.pct > 0 ? '<div style="font-size:12px;color:#aab6d6;">cote juste ' + fr((1 / r.pct).toFixed(2)) + '</div>' : '') + '</div></div>';
+    }).join('') + '<div style="font-size:12px;color:#aab6d6;text-align:center;margin-top:6px;">Saison ' + an + ' · saison régulière · matchs joués seulement</div>');
+  };
+  /* Écran Marqueurs NFL : barre « 🏈 Touchdowns | 📏 Yards » au-dessus du tableau existant (g45MarqueursUS intact). */
+  var o0 = window.g45MqSport;
+  if (typeof o0 === 'function' && !o0._g45Yd) {
+    window.g45MqSport = function (sp) {
+      var r = o0.apply(this, arguments);
+      if (sp === 'nfl') {
+        var hote = document.getElementById('g45-mq-hote');
+        if (hote && !document.getElementById('g45-nfl-onglets')) {
+          var b = function (k, t, fn) { return '<button data-g45nflonglet="' + k + '" onclick="' + fn + '" style="flex:1;padding:9px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:800;color:#fff;border:1px solid ' + (k === 'td' ? '#3b82f6' : '#5a6788') + ';background:' + (k === 'td' ? '#2563eb' : 'rgba(0,0,0,.35)') + ';">' + t + '</button>'; };
+          hote.insertAdjacentHTML('afterbegin', '<div id="g45-nfl-onglets" style="display:flex;gap:6px;margin-bottom:10px;">' + b('td', '🏈 Touchdowns', "g45MqSport('nfl')") + b('yd', '📏 Yards', 'g45NflYd()') + '</div>');
+        }
+      }
+      return r;
+    };
+    window.g45MqSport._g45Yd = 1; window.g45MqSport._g45Nba = o0._g45Nba;
+    try { g45MqSport = window.g45MqSport; } catch (e) {}
+  }
 })();
