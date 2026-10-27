@@ -46251,72 +46251,69 @@ function g45NrlRender() {
     _ordre = _passees.concat(_venir);
   }
   _ordre = _ordre.concat(_sansJr);
-  var _btnSens = '<button onclick="window._g45JrSens=(window._g45JrSens===\'asc\'?\'cours\':\'asc\');g45NrlRender();" '
-    + 'style="border:none;cursor:pointer;background:rgba(255,255,255,.06);color:var(--t2);border-radius:8px;padding:6px 11px;font-size:10.5px;font-weight:700;margin-bottom:10px;">'
-    + (_sens === 'asc' ? '\u2191 Calendrier, 1re journ\u00e9e en haut'
-                       : '\u25c9 Journ\u00e9e en cours en haut' + (_jrCourante ? (' (J' + _jrCourante + ')') : '')) + '</button>';
-
-  el.innerHTML = _btnSens + _ordre.map(function (jr) {
-    var lst = parJr[jr];
-    var nJoues = lst.filter(function (m) { return m.joue; }).length;
-    return '<div style="margin-bottom:16px;">'
-      + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;">'
-        + '<div style="font-weight:800;font-size:11.5px;color:var(--a);">' + (Number(jr) ? ('Journ\u00e9e ' + jr) : 'Journ\u00e9e non pr\u00e9cis\u00e9e')
-        + ' <span style="color:#9fb0c7;font-weight:600;">\u00b7 ' + lst.length + ' matchs \u00b7 '
-        + nJoues + ' jou\u00e9' + (nJoues > 1 ? 's' : '') + '</span></div>'
-      + '</div>'
-      + lst.map(function (m) {
-          var d = (m.date || '').slice(8, 10) + '/' + (m.date || '').slice(5, 7);
-          var cD = m.cD || '#4d84ff', cE = m.cE || '#f0b020';
-          var fond = (typeof g45FondMatch === 'function') ? g45FondMatch(cD, cE, '')
-                   : ('linear-gradient(100deg,' + cD + '55 0%,rgba(12,17,29,.94) 42%,rgba(12,17,29,.94) 58%,' + cE + '55 100%)');
-          /* IMAGE PERSO PRIORITAIRE (20/09/2026) ────────────────────────────
-             Les cartes de journee affichaient le logo d'ESPN sans jamais
-             consulter le depot d'Antoine — d'ou le drapeau du VANUATU sur
-             Vannes et celui des ETATS-UNIS sur Perpignan, qui resistaient a un
-             fichier pourtant depose.
-             `_g45ImgPersoLire` est synchrone et ne lit que le cache : si le nom
-             n'a pas encore ete teste on garde le logo d'ESPN pour ce tour, et
-             `_g45ImgPersoTester` le cherche en tache de fond pour le tour
-             suivant. Aucune requete bloquante, aucun rendu retarde. */
-          var perso = function (nom, url) {
-            if (typeof _g45ImgPersoLire !== 'function') return url;
-            var p = _g45ImgPersoLire(nom);
-            if (p) return p;
-            if (p === undefined && typeof _g45ImgPersoTester === 'function') {
-              try { _g45ImgPersoTester(nom); } catch (e) {}
-            }
-            return url;
-          };
-          var lg2 = function (url, cote) {
-            if (!url) return '';
-            return '<img src="' + url + '" loading="lazy" onerror="this.style.display=\'none\'" '
-              + 'style="position:absolute;' + cote + ':8px;top:50%;transform:translateY(-50%);height:40px;width:40px;'
-              + 'object-fit:contain;opacity:.9;pointer-events:none;">';
-          };
-          var score = m.joue
-            ? ('<span style="font-size:15px;font-weight:800;color:var(--t1);">' + m.sDom + ' - ' + m.sExt + '</span>')
-            : ('<span style="font-size:11px;color:#9fb0c7;">\u00e0 venir</span>');
-          /* Le nom de chaque equipe prend la couleur de son club, ECLAIRCIE :
-             sans ca, un club en bleu marine disparait sur le fond sombre. */
-          var ct = function (c) { return (typeof _g45CoulTexte === 'function') ? _g45CoulTexte(c) : 'var(--t1)'; };
-          return '<div onclick="g45OuvrirMatchJournee(\'' + m.id + '\',\'' + sp + '\',\'' + lg + '\')" '
-            + 'title="Voir le compte rendu" '
-            + 'style="position:relative;overflow:hidden;cursor:pointer;border-radius:11px;margin-bottom:6px;'
-            + 'border:1px solid rgba(255,255,255,.08);background:' + fond + ';padding:10px 56px;min-height:58px;'
-            + 'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;'
-            + (m.joue ? '' : 'opacity:.72;') + '">'
-            + lg2(perso(m.dom, m.lD), 'left') + lg2(perso(m.ext, m.lE), 'right')
-            + '<div style="position:relative;font-size:9px;color:rgba(255,255,255,.62);font-weight:700;">' + d + '</div>'
-            + '<div style="position:relative;font-size:11.5px;font-weight:800;text-align:center;">'
-              + '<span style="color:' + ct(cD) + ';">' + m.dom + '</span>'
-              + '<span style="color:var(--t3);"> \u2013 </span>'
-              + '<span style="color:' + ct(cE) + ';">' + m.ext + '</span></div>'
-            + '<div style="position:relative;">' + score + '</div>'
-            + '</div>';
-        }).join('')
+  /* ═══ 20261027s — LIFTING DES JOURNÉES (« coup de lifting ici », maquette maquette-journees → « oui, pour tout classement, pas que la
+     Ligue 1 / foot, tout est concerné ») : UNE journée à la fois, flèches ◀ ▶ (window._g45JrSel, retenue tant que la page est ouverte),
+     dates de la journée en tête ; cartes compactes en grille (2 colonnes sur PC, 1 sur téléphone) : blason + nom de chaque côté, gagnant
+     en blanc gras, perdant grisé, score en gros (vert gagnant / rouge perdant), jour (et heure à venir) au-dessus. Bandeau « ⏳ … » caché
+     une fois chargé. Ancien ordre « journée en cours en haut » remplacé : on arrive sur la journée en cours. */
+  var _liste = _jrCles.slice().sort(function (a, b) { return a - b; }).concat(_sansJr);
+  if (window._g45JrSelCle !== sp + '|' + lg) { window._g45JrSelCle = sp + '|' + lg; window._g45JrSel = null; }
+  var _cur = window._g45JrSel;
+  if (_cur == null || _liste.indexOf(_cur) < 0) {
+    _cur = _jrCourante || (_liste.filter(function (x) { return x > 0; })[0]) || _liste[0];
+    /* journée en cours finie et la suivante déjà commencée ou toute proche : on reste sur la dernière jouée (résultats d'abord) */
+  }
+  window._g45JrSel = _cur;
+  var _pos = _liste.indexOf(_cur);
+  var lst = parJr[_cur] || [];
+  var nJoues = lst.filter(function (m) { return m.joue; }).length;
+  var jours = ['dim.', 'lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.'];
+  var dObj = function (m) { var t = Date.parse(m.date || ''); return isNaN(t) ? null : new Date(t); };
+  var dts = lst.map(dObj).filter(Boolean).sort(function (a, b) { return a - b; });
+  var jm = function (d) { return ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2); };
+  var plage = dts.length ? (jm(dts[0]) + (jm(dts[dts.length - 1]) !== jm(dts[0]) ? ' → ' + jm(dts[dts.length - 1]) : '')) : '';
+  var nav = function (dir) {
+    var ok = dir < 0 ? _pos > 0 : _pos < _liste.length - 1;
+    var cible = ok ? _liste[_pos + dir] : null;
+    return '<button ' + (ok ? 'onclick="window._g45JrSel=' + JSON.stringify(cible).replace(/"/g, '&quot;') + ';g45NrlRender();" ' : 'disabled ')
+      + 'style="padding:9px 16px;border-radius:9px;border:1px solid #5a6788;background:rgba(0,0,0,.35);color:#fff;font-size:18px;font-weight:900;cursor:' + (ok ? 'pointer' : 'default') + ';opacity:' + (ok ? 1 : .35) + ';">' + (dir < 0 ? '◀' : '▶') + '</button>';
+  };
+  var perso = function (nom, url) {
+    if (typeof _g45ImgPersoLire !== 'function') return url;
+    var p = _g45ImgPersoLire(nom);
+    if (p) return p;
+    if (p === undefined && typeof _g45ImgPersoTester === 'function') { try { _g45ImgPersoTester(nom); } catch (e) {} }
+    return url;
+  };
+  var blason = function (url) {
+    return url ? '<img src="' + url + '" loading="lazy" onerror="this.style.visibility=\'hidden\'" style="width:30px;height:30px;object-fit:contain;flex:none;">'
+      : '<span style="width:30px;flex:none;"></span>';
+  };
+  var carte = function (m) {
+    var d = dObj(m), jour = d ? (jours[d.getDay()] + ' ' + jm(d)) : ((m.date || '').slice(8, 10) + '/' + (m.date || '').slice(5, 7));
+    var heure = (d && /T\d\d:\d\d/.test(m.date || '')) ? (('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2)) : '';
+    var a = +m.sDom, b = +m.sExt, fini = m.joue && !isNaN(a) && !isNaN(b);
+    var gD = fini && a > b, gE = fini && b > a;
+    var nomSt = function (g, p) { return 'font-size:15px;line-height:1.2;' + (g ? 'color:#fff;font-weight:900;' : (p ? 'color:#aab6d6;font-weight:700;' : 'color:#fff;font-weight:700;')); };
+    var chiffre = function (v, g, p) { return '<span style="color:' + (g ? '#1ed760' : (p ? '#ff6b6b' : '#fff')) + ';">' + v + '</span>'; };
+    var milieu = fini
+      ? '<div style="font-size:22px;font-weight:900;color:#fff;">' + chiffre(m.sDom, gD, gE) + ' – ' + chiffre(m.sExt, gE, gD) + '</div>'
+      : '<div style="font-size:16px;font-weight:800;color:#8fb4ff;">' + (heure || 'à venir') + '</div>';
+    return '<div onclick="g45OuvrirMatchJournee(\'' + m.id + '\',\'' + sp + '\',\'' + lg + '\')" title="Voir le compte rendu" '
+      + 'style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(12,16,28,.95);border:1px solid rgba(255,255,255,.1);border-radius:12px;cursor:pointer;">'
+      + '<div style="flex:1;min-width:0;display:flex;align-items:center;gap:8px;">' + blason(perso(m.dom, m.lD)) + '<span style="' + nomSt(gD, gE) + '">' + m.dom + '</span></div>'
+      + '<div style="text-align:center;min-width:92px;flex:none;"><div style="font-size:12px;color:#c9d3ee;">' + jour + (heure && fini ? '' : (heure ? ' · ' + heure : '')) + '</div>' + milieu + '</div>'
+      + '<div style="flex:1;min-width:0;display:flex;align-items:center;justify-content:flex-end;gap:8px;text-align:right;"><span style="' + nomSt(gE, gD) + '">' + m.ext + '</span>' + blason(perso(m.ext, m.lE)) + '</div>'
       + '</div>';
-  }).join('');
+  };
+  lst = lst.slice().sort(function (x, y) { return String(x.date || '').localeCompare(String(y.date || '')); });
+  try { var _msg = document.getElementById('g45-nrl-msg'); if (_msg && /^[\s⏳…\.]*$/.test(_msg.textContent || '')) _msg.style.display = 'none'; } catch (e) {}
+  el.innerHTML = '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">' + nav(-1)
+      + '<div style="flex:1;text-align:center;"><div style="font-size:18px;font-weight:900;color:#fff;">' + (Number(_cur) ? 'Journée ' + _cur : 'Journée non précisée') + '</div>'
+      + '<div style="font-size:13px;color:#c9d3ee;">' + (plage ? plage + ' · ' : '') + lst.length + ' match' + (lst.length > 1 ? 's' : '') + ' · ' + nJoues + ' joué' + (nJoues > 1 ? 's' : '') + '</div></div>'
+      + nav(1) + '</div>'
+    + '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(330px,100%),1fr));gap:8px;">' + lst.map(carte).join('') + '</div>'
+    + '<div style="font-size:13px;color:#c9d3ee;margin-top:10px;">Touche un match pour son compte rendu complet.</div>';
 }
 window.g45NrlRender = g45NrlRender;
 
@@ -46948,11 +46945,15 @@ async function loadCompetTab() {
   var grp = {};
   eq.forEach(function (t) { (grp[t.grp || ''] = grp[t.grp || ''] || []).push(t); });
 
-  body.innerHTML = '<div style="font-size:10px;color:var(--t3);margin-bottom:10px;">'
-      + eq.length + ' \u00e9quipes \u00b7 clique pour ouvrir la fiche compl\u00e8te</div>'
+  /* 20261027s — LIFTING (maquette maquette-journees, « oui, tout est concerné ») : noms EN ENTIER en 14 px blancs, ligne « 1er · 17 pts · 8 j »
+     + bilan V / N / D en 13 px, blason 30 px ; filigrane et couleur du club gardés (principe « blason derrière »). Pas de pastilles de forme :
+     le classement ESPN ne les donne pas (il faudrait une requête par équipe). */
+  var rgFr = function (r) { r = +r || 0; return r ? (r === 1 ? '1er' : r + 'e') : ''; };
+  body.innerHTML = '<div style="font-size:13px;color:#c9d3ee;margin-bottom:10px;">'
+      + eq.length + ' \u00e9quipes \u00b7 touche une \u00e9quipe pour ouvrir sa fiche compl\u00e8te \u00b7 \u2606 = la suivre</div>'
     + Object.keys(grp).map(function (g) {
-        return (g ? '<div style="font-size:11px;font-weight:800;color:var(--a);margin:10px 0 6px;">' + g + '</div>' : '')
-          + '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:7px;">'
+        return (g ? '<div style="font-size:14px;font-weight:800;color:#fff;margin:12px 0 6px;">' + g + '</div>' : '')
+          + '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(210px,100%),1fr));gap:8px;">'
           + grp[g].map(function (t) {
               /* BLASON EN FILIGRANE (25/08). La vignette etait un aplat gris
                  uniforme d'un club a l'autre. Le classement fournit deja le
@@ -46966,13 +46967,14 @@ async function loadCompetTab() {
                 : 'rgba(255,255,255,.04)';
               return '<div onclick="g45CompetOuvrir(\'' + String(t.nom).replace(/'/g, "\\'") + '\',\''
                 + t.id + '\',\'' + c.s + '\',\'' + c.sp + '\')" '
-                + 'style="position:relative;overflow:hidden;display:flex;align-items:center;gap:8px;padding:8px 9px;background:' + _tf + ';border-radius:9px;cursor:pointer;border:1px solid rgba(255,255,255,.06);">'
+                + 'style="position:relative;overflow:hidden;display:flex;align-items:center;gap:9px;padding:9px 10px;background:' + _tf + ';border-radius:10px;cursor:pointer;border:1px solid rgba(255,255,255,.1);">'
                 + (t.logo ? ('<img src="' + t.logo + '" alt="" loading="lazy" onerror="this.style.display=\'none\'" '
                     + 'style="position:absolute;right:-8px;top:50%;transform:translateY(-50%);width:46px;height:46px;'
                     + 'object-fit:contain;opacity:.16;pointer-events:none;">') : '')
-                + (t.logo ? '<img src="' + t.logo + '" style="position:relative;width:22px;height:22px;object-fit:contain;flex:none;" loading="lazy" onerror="this.style.visibility=\'hidden\'">' : '<span style="width:22px;flex:none;"></span>')
-                + '<div style="position:relative;min-width:0;"><div style="font-size:11.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + t.nom + '</div>'
-                + (t.j ? '<div style="font-size:9.5px;color:#9fb0c7;">' + t.j + 'j \u00b7 ' + t.pts + ' pts</div>' : '')
+                + (t.logo ? '<img src="' + t.logo + '" style="position:relative;width:30px;height:30px;object-fit:contain;flex:none;" loading="lazy" onerror="this.style.visibility=\'hidden\'">' : '<span style="width:30px;flex:none;"></span>')
+                + '<div style="position:relative;min-width:0;flex:1;"><div style="font-size:14px;font-weight:800;color:#fff;line-height:1.2;">' + t.nom + '</div>'
+                + (t.j ? '<div style="font-size:13px;color:#c9d3ee;">' + (rgFr(t.rang) ? rgFr(t.rang) + ' \u00b7 ' : '') + t.pts + ' pts \u00b7 ' + t.j + ' j</div>'
+                    + '<div style="font-size:12px;color:#c9d3ee;"><span style="color:#1ed760;font-weight:800;">' + (t.v || 0) + 'V</span> \u00b7 ' + (t.n ? t.n + 'N \u00b7 ' : '') + '<span style="color:#ff6b6b;font-weight:800;">' + (t.p || 0) + 'D</span></div>' : '')
                 + '</div>'
                 + (typeof g45SuiviEqEtoile === 'function' ? g45SuiviEqEtoile(t, c) : '')
                 + '</div>';
