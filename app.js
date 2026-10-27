@@ -45854,7 +45854,7 @@ async function g45NrlCharger(annee) {
              reponse, les cartes de journee n'exigent donc aucune requete. */
           cD: (dom.team && dom.team.color) ? ('#' + String(dom.team.color).replace('#','')) : '',
           cE: (ext.team && ext.team.color) ? ('#' + String(ext.team.color).replace('#','')) : '',
-          lD: (dom.team && dom.team.logo) || '', lE: (ext.team && ext.team.logo) || ''
+          lD: (dom.team && (dom.team.logo || ((dom.team.logos || [])[0] || {}).href)) || '', lE: (ext.team && (ext.team.logo || ((ext.team.logos || [])[0] || {}).href)) || ''   /* 20261027u : + logos[] */
         });
       });
     } catch (e) {}
@@ -46278,7 +46278,25 @@ function g45NrlRender() {
     return '<button ' + (ok ? 'onclick="window._g45JrSel=' + JSON.stringify(cible).replace(/"/g, '&quot;') + ';g45NrlRender();" ' : 'disabled ')
       + 'style="padding:9px 16px;border-radius:9px;border:1px solid #5a6788;background:rgba(0,0,0,.35);color:#fff;font-size:18px;font-weight:900;cursor:' + (ok ? 'pointer' : 'default') + ';opacity:' + (ok ? 1 : .35) + ';">' + (dir < 0 ? '◀' : '▶') + '</button>';
   };
+  /* 20261027u (capture Ligue 1 : « là il manque les logos ») : le calendrier ESPN ne porte pas toujours team.logo → repli par le NOM sur la
+     liste des équipes de la compétition (_g45CompetEquipes, cache 6 h, logos[] du classement), puis LOGOS du mur (g45LogoUrlDe). Liste pas
+     encore lue → lecture une fois puis nouveau rendu. */
+  var nk = function (x) { return String(x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, ''); };
+  var LG = {};
+  try { Object.keys(_g45CompetCache || {}).forEach(function (k) { if (k.indexOf('g45compet3_' + sp + '_' + lg + '_') === 0) (_g45CompetCache[k] || []).forEach(function (t) { if (t.logo) { LG[nk(t.nom)] = t.logo; if (t.court) LG[nk(t.court)] = LG[nk(t.court)] || t.logo; } }); }); } catch (e) {}
+  if (!Object.keys(LG).length && sp && lg && typeof _g45CompetEquipes === 'function' && window._g45JrLogoCle !== sp + '|' + lg) {
+    window._g45JrLogoCle = sp + '|' + lg;
+    _g45CompetEquipes({ sp: sp, s: lg }).then(function (eq) { if (eq && eq.length) { try { g45NrlRender(); } catch (e) {} } }).catch(function () {});
+  }
+  var logoDe = function (nom, url) {
+    if (url) return url;
+    var k = nk(nom); if (LG[k]) return LG[k];
+    var t = Object.keys(LG).filter(function (x) { return x.length > 3 && (x.indexOf(k) >= 0 || k.indexOf(x) >= 0); })[0];
+    if (t) return LG[t];
+    try { return (typeof g45LogoUrlDe === 'function' && g45LogoUrlDe(nom)) || ''; } catch (e) { return ''; }
+  };
   var perso = function (nom, url) {
+    url = logoDe(nom, url);
     if (typeof _g45ImgPersoLire !== 'function') return url;
     var p = _g45ImgPersoLire(nom);
     if (p) return p;
