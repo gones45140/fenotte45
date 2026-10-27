@@ -72841,6 +72841,10 @@ function _g45AgConsigne(note, isDom) {
     }
   }
   var s = segs.filter(function (x) { return isDom ? x.d : x.e; })[0];
+  /* 20261027z : pari 🌍 global (« 🌍 x » avant 🏠 / ✈️) = consigne du lieu quand ce lieu n'a pas la sienne */
+  var gmA = String(avant || (segs.length === 1 && !/🏠|✈/.test(nt) ? '' : '')).match(/🌍\s*(.*)$/);
+  if (!s && gmA && gmA[1].trim()) s = { d: 1, e: 1, t: gmA[1].trim() };
+  if (s && segs.length === 1 && !/🏠|✈/.test(nt)) s = { d: 1, e: 1, t: String(s.t).replace(/^.*?🌍\s*/, '') };
   if (!s) return null;
   var txt = s.t.replace(/^[\s\/,]+/, '').replace(/\b(domicile|ext[ée]rieur)\b/gi, '').replace(/\s+/g, ' ').trim();
   var R = { txt: (isDom ? '🏠 ' : '✈️ ') + txt, opts: [], seuil: 0, nobet: /no ?bet/i.test(txt) };
@@ -75963,16 +75967,41 @@ window._G45_PAL_COUL = ['#1ed760', '#8fdc4a', '#f5c542', '#ffa53a', '#ff7a3a', '
       }
       var info = row.querySelector('.uname'); info = info && info.nextElementSibling;
       if (info && /Palier/.test(info.textContent || '')) {
-        var p = parseInt(u.l, 10) || 1, c = C[Math.min(p - 1, C.length - 1)];
         info.innerHTML = '<span style="color:#f5c542;font-size:15px;">' + '⭐'.repeat(Math.max(0, parseInt(u.s, 10) || 0)) + '</span>'
-          + '<span class="g45ul-pal" style="background:' + c + ';">Palier ' + p + '</span>';
+          + '<span style="display:inline-flex;flex-wrap:wrap;gap:4px;vertical-align:middle;">' + window._g45UlPaliers(u, C) + '</span>';
         info.style.fontSize = '13px';
         var no = info.nextElementSibling;
-        if (no && /📌/.test(no.textContent || '')) no.classList.add('g45ul-note');
+        if (no && /📌/.test(no.textContent || '')) {
+          no.classList.add('g45ul-note');
+          /* 20261027z : une ligne par pari (🌍 / 🏠 / ✈️) */
+          try {
+            var D = window._g45UfDecoupe(u.note), lg = [];
+            if (D.avant) lg.push(D.avant);
+            if (D.glob) lg.push('🌍 ' + D.glob);
+            var nz = function (x) { return String(x || '').trim().toLowerCase(); };
+            if (D.dom && D.ext && nz(D.dom) === nz(D.ext)) lg.push('🏠/✈️ ' + D.dom); else { if (D.dom) lg.push('🏠 ' + D.dom); if (D.ext) lg.push('✈️ ' + D.ext); }
+            if (lg.length > 1) no.innerHTML = lg.map(function (x) { return '<div>📌 ' + String(x).replace(/[<>&]/g, '') + '</div>'; }).join('');
+          } catch (e) {}
+        }
       }
     });
   };
   window._g45UlistHabiller = habiller;
+  /* 20261027z (« dans Outils → Équipe il devrait y avoir plusieurs paliers pour certaines équipes ») : une pastille par montante de u.lc
+     (clé « compétition » = 🌍 global, « …|dom » = 🏠, « …|ext » = ✈️) ; compétition affichée s'il y en a plusieurs ; aucune → « Palier u.l ». */
+  window._g45UlPaliers = function (u, C) {
+    C = C || window._G45_PAL_COUL || ['#1ed760'];
+    var L = [], comps = {};
+    Object.keys(u.lc || {}).forEach(function (k) { var m = String(k).split('|'); comps[m[0]] = 1; L.push({ c: m[0], l: m[1] || '', p: parseInt(u.lc[k], 10) || 1 }); });
+    if (!L.length) L.push({ c: '', l: '', p: parseInt(u.l, 10) || 1, seul: 1 });
+    var plusieurs = Object.keys(comps).filter(Boolean).length > 1, ord = { '': 0, dom: 1, ext: 2 };
+    L.sort(function (a, b) { return a.c.localeCompare(b.c) || ord[a.l] - ord[b.l]; });
+    return L.map(function (x) {
+      var col = C[Math.min(x.p - 1, C.length - 1)], ico = x.seul ? '' : ({ '': '🌍 ', dom: '🏠 ', ext: '✈️ ' }[x.l] || '');
+      var cn = plusieurs && x.c ? x.c.charAt(0).toUpperCase() + x.c.slice(1) + ' ' : '';
+      return '<span class="g45ul-pal" style="background:' + col + ';margin-left:0;">' + cn + ico + 'Palier ' + x.p + '</span>';
+    }).join('');
+  };
   var brancher = function () {
     var box = document.getElementById('ulist'); if (!box) return false;
     new MutationObserver(function () { habiller(); }).observe(box, { childList: true, subtree: false });
@@ -77722,15 +77751,17 @@ function _g45UClub(u) {
   return String(u.note || '').split(/🏠|✈|🛫/)[0].split(' · ')[0].trim();
 }
 window._g45UClub = _g45UClub;
-window._g45UfCompose = function (club, libre, dom, ext) {
+window._g45UfCompose = function (club, libre, dom, ext, glob) {   /* 20261027z : + glob → « 🌍 x » avant 🏠 / ✈️ */
   var n = function (x) { return String(x || '').trim().toLowerCase().replace(/\s+/g, ' '); };
-  dom = String(dom || '').trim(); ext = String(ext || '').trim();
+  dom = String(dom || '').trim(); ext = String(ext || '').trim(); glob = String(glob || '').trim();
   var t = [club, libre].map(function (x) { return String(x || '').trim(); }).filter(Boolean).join(' · ');
   var c = (dom && ext && n(dom) === n(ext)) ? '🏠/✈️ ' + dom : [dom ? '🏠 ' + dom : '', ext ? '✈️ ' + ext : ''].filter(Boolean).join(' ');
-  return [t, c].filter(Boolean).join(' ');
+  return [t, glob ? '🌍 ' + glob : '', c].filter(Boolean).join(' ');
 };
 window._g45UfDecoupe = function (note) {
-  var parts = String(note || '').split(/(🏠|✈️|✈|🛫)/), R = { avant: String(parts[0] || '').trim(), dom: '', ext: '' }, pend = [];
+  var parts = String(note || '').split(/(🏠|✈️|✈|🛫)/), R = { avant: String(parts[0] || '').trim(), dom: '', ext: '', glob: '' }, pend = [];
+  /* 20261027z : « 🌍 x » (pari global) est dans la partie avant 🏠 / ✈️ */
+  var gm = R.avant.match(/🌍\s*(.*)$/); if (gm) { R.glob = gm[1].trim(); R.avant = R.avant.slice(0, gm.index).trim(); }
   for (var i = 1; i < parts.length; i += 2) {
     pend.push(parts[i] === '🏠' ? 'd' : 'e');
     var t = String(parts[i + 1] || '').replace(/^️/, '');
@@ -77752,16 +77783,19 @@ window._g45UfDecoupe = function (note) {
       /* 20261025b (« on n'a pas global si on veut jouer domicile + extérieur » → maquette « oui ») : interrupteur 🌍 Même pari partout →
          UNE case « 🌍 Pari (domicile + extérieur) » recopiée à chaque frappe dans les cases 🏠 et ✈️ (cachées) : la note composée
          (_g45UfCompose, « 🏠/✈️ x ») et l'Agenda ne changent pas. */
-      + '<button type="button" id="' + e + 'ptout" data-on="0" onclick="g45UfPartout(\'' + p + '\')" style="display:flex;align-items:center;justify-content:space-between;width:100%;gap:10px;margin:0 0 8px;padding:9px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.18);background:#1a2235;color:#fff;font-size:14px;font-weight:800;cursor:pointer;">'
+      /* 20261027z (« global je suis pas trop d'accord : il peut y avoir les 2, l'extérieur et le domicile en séparé » → maquette « oui on code ») :
+         interrupteur caché ; 🌍 global, 🏠 et ✈️ = TROIS paris indépendants (chacun sa montante : Cockpit Lieu 🌍 / 🏠 / ✈️). */
+      + '<button type="button" id="' + e + 'ptout" data-on="0" onclick="g45UfPartout(\'' + p + '\')" style="display:none !important;align-items:center;justify-content:space-between;width:100%;gap:10px;margin:0 0 8px;padding:9px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.18);background:#1a2235;color:#fff;font-size:14px;font-weight:800;cursor:pointer;">'
       + '<span>🌍 Même pari partout</span><span class="g45uf-sw" style="min-width:54px;padding:4px 10px;border-radius:14px;background:#4a5372;color:#fff;font-size:13px;font-weight:900;">NON</span></button>'
-      + '<div id="g45uf-tout-' + p + '" class="fg" style="margin-bottom:7px;display:none;"><label class="fl" style="font-size:14px;">🌍 Pari (domicile + extérieur)</label><input id="' + e + 'ppart" class="fi" placeholder="Ex : victoire + plus de 2,5 buts" autocomplete="off" oninput="g45UfPartoutTape(\'' + p + '\')"></div>'
+      + '<div id="g45uf-tout-' + p + '" class="fg" style="margin-bottom:7px;"><label class="fl" style="font-size:14px;">🌍 Pari global (tous les matchs)</label><input id="' + e + 'ppart" class="fi" placeholder="Ex : victoire (domicile ET extérieur)" autocomplete="off"></div>'
       + '<div id="g45uf-lieux-' + p + '">'
       + '<div class="fg" style="margin-bottom:7px;"><label class="fl" style="font-size:14px;">🏠 Pari à domicile</label><input id="' + e + 'pdom" class="fi" placeholder="Ex : victoire, buteur…" autocomplete="off"></div>'
       + '<div class="fg" style="margin-bottom:4px;"><label class="fl" style="font-size:14px;">✈️ Pari à l\'extérieur</label><input id="' + e + 'pext" class="fi" placeholder="Ex : victoire ou nul + under 3.5" autocomplete="off"></div>'
-      + '<div style="font-size:13px;color:#c9d3ee;margin-bottom:10px;line-height:1.4;">Une seule case remplie = l\'autre lieu est retiré de l\'Agenda.</div></div>';
+      + '<div style="font-size:13px;color:#c9d3ee;margin-bottom:10px;line-height:1.4;">Laisse vide ce que tu ne joues pas. Chaque pari a son propre palier (Cockpit : Lieu 🌍 / 🏠 / ✈️).</div></div>';
   };
   /* 20261025b : interrupteur 🌍 (on = une case recopiée dans 🏠 et ✈️) */
   var partout = function (p, on) {
+    return;   /* 20261027z : plus d'interrupteur, les 3 cases restent visibles et indépendantes */
     var e = p === 'e' ? 'edit-unit-' : 'u-', bt = $(e + 'ptout'), tout = $('g45uf-tout-' + p), lx = $('g45uf-lieux-' + p);
     if (!bt || !tout || !lx) return;
     bt.setAttribute('data-on', on ? '1' : '0');
@@ -77855,7 +77889,7 @@ window._g45UfDecoupe = function (note) {
     poser();
     var un = $('u-note'), libre = un ? un.value.trim() : '', jou = ($('u-type') || {}).value === 'joueur', club = jou ? String(($('u-club') || {}).value || '').trim() : '';
     var n0 = (state && state.u) ? state.u.length : 0;
-    if (un) un.value = window._g45UfCompose(club, libre, ($('u-pdom') || {}).value, ($('u-pext') || {}).value);
+    if (un) un.value = window._g45UfCompose(club, libre, ($('u-pdom') || {}).value, ($('u-pext') || {}).value, ($('u-ppart') || {}).value);   /* 20261027z : + 🌍 */
     var r;
     try { r = add0.apply(this, arguments); }
     finally {
@@ -77880,7 +77914,7 @@ window._g45UfDecoupe = function (note) {
       var D = window._g45UfDecoupe(u.note), jou = u.type === 'joueur', libre = D.avant, club = '';
       if (jou) { var pc = D.avant.split(' · '); club = u.club || pc[0]; libre = pc[0] === club ? pc.slice(1).join(' · ') : D.avant; }
       $('edit-unit-note').value = libre;
-      $('edit-unit-pdom').value = D.dom; $('edit-unit-pext').value = D.ext;
+      $('edit-unit-pdom').value = D.dom; $('edit-unit-pext').value = D.ext; if ($('edit-unit-ppart')) $('edit-unit-ppart').value = D.glob || '';   /* 20261027z */
       var _nz = function (x) { return String(x || '').trim().toLowerCase().replace(/\s+/g, ' '); };
       partout('e', !!(D.dom && D.ext && _nz(D.dom) === _nz(D.ext)));   /* 20261025b : même pari des deux côtés → 🌍 OUI */
       $('edit-unit-club').value = club; L.e = []; rendre('e');
@@ -77894,7 +77928,7 @@ window._g45UfDecoupe = function (note) {
       var i = parseInt(($('edit-unit-idx') || {}).value), u = state.u[i], en = $('edit-unit-note');
       if (u && en && $('edit-unit-pdom')) {
         var jou = ($('edit-unit-type') || {}).value === 'joueur', club = jou ? String(($('edit-unit-club') || {}).value || '').trim() : '';
-        en.value = window._g45UfCompose(club, en.value, $('edit-unit-pdom').value, $('edit-unit-pext').value);
+        en.value = window._g45UfCompose(club, en.value, $('edit-unit-pdom').value, $('edit-unit-pext').value, ($('edit-unit-ppart') || {}).value);   /* 20261027z */
         if (club) u.club = club; else delete u.club;
       }
     } catch (e) {}
