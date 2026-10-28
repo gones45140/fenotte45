@@ -70284,6 +70284,11 @@ function _g45RegHtml() {
     var dts = (o.s.pd && o.s.pire) ? o.s.pd.map(function (d) { return d.slice(4, 6) + '/' + d.slice(2, 4) + '/' + d.slice(0, 2); }).join(' → ') : '';
     var pa = (PEP || S4) ? ((typeof _g45F1CrPal === 'function') ? _g45F1CrPal(o.s.pire) : { p: o.s.pire + 1, ico: '' }) : null;
     var gris = (PEP && o.t10) || peu;
+    /* 20261028g (« 📌 sur la ligne des joueurs de mon mur », « oui ») : bouton qui garde la série sur la carte du mur (u.ps, comme les critères) */
+    var uMur = window._g45RegMur(o.nom), sigG = uMur ? window._g45RegSig(LB, SE, LI) : '', okG = uMur && uMur.ps && uMur.ps.sig === sigG;
+    if (uMur) { window._g45RegRows = window._g45RegRows || {}; window._g45RegRows[o.id] = { nom: o.nom, s: o.s, lb: LB, se: SE, li: LI }; }
+    var btG = uMur ? ' <button onclick="event.stopPropagation();g45RegGarder(\'' + String(o.id).replace(/'/g, '') + '\')" title="Garder sur la carte" style="margin-left:4px;padding:3px 8px;border-radius:7px;border:1px solid #6d9dff;background:' + (okG ? '#1e5a2e' : '#2f6bff') + ';color:#fff;font-size:13px;font-weight:800;cursor:pointer;">' + (okG ? '✅ 📌' : '📌') + '</button>' : '';
+    nomB = nomB.replace(/<\/b>/, '</b>' + btG);
     if (NAR) {
       h += '<div style="border-top:1px solid rgba(255,255,255,.12);padding:9px 2px;' + (gris ? 'opacity:.55;' : '') + '">'
         + '<div style="display:flex;align-items:center;gap:8px;">' + av + nomB + '</div>'
@@ -70311,6 +70316,36 @@ function _g45RegHtml() {
   if (_g45Reg.lieu) h += '<div style="font-size:13px;color:#fff;margin-top:6px;">' + (_g45Reg.lieu === 'd' ? '🏠 Matchs à domicile seulement' : '🚌 Matchs à l\'extérieur seulement') + ' (MJ, %, séries recalculés).</div>';
   return h + '<div style="font-size:12px;color:#c9d3ee;margin-top:6px;">Pire série : vert = jamais 6 matchs de suite sans ' + LB.sans + ' · orange 6 à 9 · rouge 10 et plus. <span style="color:#5aa9ff;">Meilleure</span> = plus longue série de matchs AVEC ' + LB.sans + '.</div>';
 }
+/* 20261028g — 📌 GARDER SUR LA CARTE depuis les Séries individuelles : joueur du mur retrouvé par son nom ; pire série PAR SAISON
+   recalculée à partir des valeurs par match (S.v) et des dates (S.dt, AAMMJJ) ; saison = année civile (MLB, NRL, foot civil) sinon
+   août → juillet. Même u.ps que le bouton des critères (_g45UlPsHtml sur la carte). */
+window._g45RegMur = function (nom) {
+  var nz = function (x) { return String(x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z]/g, ''); };
+  var k = nz(nom); if (!k || typeof state === 'undefined' || !state.u) return null;
+  return state.u.filter(function (x) { return x.type === 'joueur' && nz(x.n) === k; })[0] || null;
+};
+window._g45RegSig = function (LB, SE, LI) { return 'reg|' + (LB && LB.btn || '') + '|' + (SE || 1) + '|' + (LI || ''); };
+window._g45RegSaisons = function (S, lg) {   /* {ans, p} la plus récente d'abord (pur, testé) */
+  var civ = !!(lg && (lg === 'mlb' || lg === 'nrl' || (typeof G45_LIGUES_CIVILES !== 'undefined' && G45_LIGUES_CIVILES.indexOf(lg) >= 0)));
+  var G = {}, ord = [], seuil = S.seuil || 1;
+  (S.dt || []).forEach(function (d, i) {
+    if (!d) return; var Y = 2000 + (+d.slice(0, 2)), M = +d.slice(2, 4), a = civ ? Y : (M >= 8 ? Y : Y - 1);
+    if (!G[a]) { G[a] = { r: 0, p: 0 }; ord.push(a); }
+    var g = G[a]; if ((S.v[i] || 0) >= seuil) g.r = 0; else { g.r++; if (g.r > g.p) g.p = g.r; }
+  });
+  ord.sort(function (x, y) { return y - x; });
+  return { ans: ord.map(function (a) { return civ ? String(a) : a + '-' + String(a + 1).slice(2); }), p: ord.map(function (a) { return G[a].p; }) };
+};
+window.g45RegGarder = function (id) {
+  var R = (window._g45RegRows || {})[id]; if (!R || !R.s) return;
+  var u = window._g45RegMur(R.nom); if (!u) return;
+  var S = Object.assign({}, R.s, { seuil: R.se || 1 }), Z = window._g45RegSaisons(S, _g45Reg.lg);
+  var met = String((R.lb && R.lb.btn) || '').replace(/^[^A-Za-zÀ-ÿ]+/, '').replace(/s$/, '').trim();   /* « 🎯 Passeurs » → « Passeur » */
+  u.ps = { sig: window._g45RegSig(R.lb, R.se, R.li), lib: met + ((R.se || 1) > 1 ? ' (' + R.se + ' ou +)' : ''), k: R.li === 'd' ? 'dom' : (R.li === 'e' ? 'ext' : ''),
+    ans: Z.ans, p: Z.p, tot: R.s.pire, at: Date.now() };
+  try { save(); } catch (e) {}
+  try { g45RegOuvrir(); } catch (e) {}
+};
 async function g45RegOuvrir() {
   var box = document.getElementById('g45-reg-box'); if (!box) return;
   var sa = _g45RegSaison(_g45Reg.an), k = _g45RegK(), pk = _g45RegPK(), lg = _g45Reg.lg, an = _g45Reg.an;
