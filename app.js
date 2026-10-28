@@ -75285,9 +75285,48 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
         + '<br>'
         + '🏆 Meilleure série : <b style="color:#5aa9ff;">' + T.best + ' réussite' + (T.best > 1 ? 's' : '') + ' de suite</b><br>'
         + '📈 Série en cours : ' + enCours(c, tous) + '</div>';
+      h += garderHtml(c, D, T);   /* 20261028e */
     }
     return h;
   }
+  /* ═══ 20261028e — 📌 GARDER SUR LA CARTE (« à moins que l'on fasse un truc pour les dernières saisons » : Antoine recopiait « 3/4/3 » à la
+     main ; maquette maquette-garde → « après, 2023-24 à 2025-26, pas besoin de le recalculer à chaque fois ») : u.ps = { sig (lieu|combiné),
+     lib, k (lieu), ans [libellés], p [pire série par saison, la plus récente d'abord], tot (pire sur 4 saisons), at }. Saisons FINIES figées ;
+     la saison en cours (et le total) se mettent à jour TOUTES SEULES à chaque ouverture des critères avec le même combiné et le même lieu. ═══ */
+  function garderCalc(c, D) {
+    var ans = [], p = [];
+    (D.saisons || []).forEach(function (sa) {
+      if (!sa) return; var sms = msDe(sa); if (!sms) return;
+      var ms = filtrer(sms); if (!ms.length) return; var R = calc(c, ms); if (!R.n) return;
+      ans.push(lib(D.lg, sa.an)); p.push(R.pire);
+    });
+    return { ans: ans, p: p };
+  }
+  function murDe(nom) { return ((typeof state !== 'undefined' && state.u) || []).filter(function (x) { return x.n === nom; })[0] || null; }
+  function garderHtml(c, D, T) {
+    var u = murDe(S.nom); if (!u) return '';
+    var sig = S.lieu + '|' + libCombo(c), deja = u.ps && u.ps.sig === sig;
+    if (deja) {   /* mise à jour automatique : saison en cours + total ; saisons finies figées */
+      try {
+        var G = garderCalc(c, D), ch = false;
+        if (G.ans.length && G.ans[0] === u.ps.ans[0] && G.p[0] !== u.ps.p[0]) { u.ps.p[0] = G.p[0]; ch = true; }
+        if (G.ans.length && G.ans[0] !== u.ps.ans[0]) { u.ps.ans = G.ans; u.ps.p = G.p; ch = true; }   /* nouvelle saison commencée */
+        if (u.ps.tot !== T.pire) { u.ps.tot = T.pire; ch = true; }
+        if (ch) { u.ps.at = Date.now(); setTimeout(function () { try { save(); } catch (e) {} }, 0); }
+      } catch (e) {}
+    }
+    return '<div style="margin-top:8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;"><button onclick="g45CrGarder(' + S.combos.indexOf(c) + ')" style="padding:10px 14px;border-radius:10px;border:1px solid #6d9dff;background:#2f6bff;color:#fff;font-size:15px;font-weight:800;cursor:pointer;">📌 ' + (deja ? 'Remettre' : 'Garder') + ' sur la carte</button>'
+      + (deja ? '<span style="font-size:13px;color:#1ed760;font-weight:700;">✅ Sur la carte de ' + esc(u.n) + ' (saison en cours mise à jour toute seule)</span>' : '') + '</div>';
+  }
+  window.g45CrGarder = function (i) {
+    var c = S.combos[i], D = S.data[S.nom], u = murDe(S.nom); if (!c || !D || !u) return;
+    var tous = []; D.saisons.slice().reverse().forEach(function (s) { var L0 = s && msDe(s); if (L0) tous = tous.concat(filtrer(L0)); });
+    var G = garderCalc(c, D), T = calc(c, tous);
+    u.ps = { sig: S.lieu + '|' + libCombo(c), lib: libCombo(c), k: S.lieu, ans: G.ans, p: G.p, tot: T.pire, at: Date.now() };
+    try { save(); } catch (e) {}
+    try { redessiner(); } catch (e) {}
+  };
+  window._g45CrGarderCalc = garderCalc;   /* tests */
 
   function html(nom, ctx) {
     ctx = ctx || null;
@@ -75975,6 +76014,7 @@ window._G45_PAL_COUL = ['#1ed760', '#8fdc4a', '#f5c542', '#ffa53a', '#ff7a3a', '
           + '<span style="display:inline-flex;flex-wrap:wrap;gap:4px;vertical-align:middle;">' + window._g45UlPaliers(u, C) + '</span>';
         info.style.fontSize = '13px';
         var no = info.nextElementSibling;
+        try { if (u.ps) { var psH = window._g45UlPsHtml(u); if (psH) (no && /📌/.test(no.textContent || '') ? no : info).insertAdjacentHTML('afterend', psH); } } catch (e) {}   /* 20261028e */
         if (no && /📌/.test(no.textContent || '')) {
           no.classList.add('g45ul-note');
           /* 20261027z : une ligne par pari (🌍 / 🏠 / ✈️) */
@@ -75993,6 +76033,19 @@ window._G45_PAL_COUL = ['#1ed760', '#8fdc4a', '#f5c542', '#ffa53a', '#ff7a3a', '
     });
   };
   window._g45UlistHabiller = habiller;
+  /* 20261028e : ligne « 📊 » de u.ps (📌 Garder sur la carte, critères 4 saisons) */
+  window._g45UlPsHtml = function (u) {
+    var P = u && u.ps; if (!P || !P.p || !P.p.length) return '';
+    var col = function (v) { return v <= 2 ? '#1ed760' : (v <= 4 ? '#ff9f43' : '#ff5a5a'); };
+    var ico = P.k === 'dom' ? '🏠 ' : (P.k === 'ext' ? '✈️ ' : '🌍 ');
+    var pa = (typeof _g45F1CrPal === 'function') ? _g45F1CrPal(P.tot) : { p: P.tot + 1, ico: '', mise: null };
+    var d = new Date(P.at || Date.now()), dt = ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2);
+    var e = function (x) { return String(x == null ? '' : x).replace(/[<>&]/g, ''); };
+    return '<div class="g45ul-ps" style="margin-top:4px;background:rgba(47,107,255,.25);border-radius:6px;padding:4px 7px;font-size:14px;color:#fff;font-weight:700;font-style:normal;line-height:1.45;">📊 ' + ico + e(P.lib)
+      + ' — pire série ' + P.p.map(function (v) { return '<span style="color:' + col(v) + ';">' + v + '</span>'; }).join(' · ')
+      + '<br><span style="font-weight:400;font-size:13px;color:#c9d3ee;">' + e(P.ans[0]) + (P.ans.length > 1 ? ' → ' + e(P.ans[P.ans.length - 1]) : '') + ' · <b style="color:#fff;">' + pa.p + ' paliers ' + pa.ico + '</b>'
+      + (pa.mise != null ? ' · ' + pa.mise + ' €' : '') + ' · mis à jour le ' + dt + '</span></div>';
+  };
   /* 20261027z (« dans Outils → Équipe il devrait y avoir plusieurs paliers pour certaines équipes ») : une pastille par montante de u.lc
      (clé « compétition » = 🌍 global, « …|dom » = 🏠, « …|ext » = ✈️) ; compétition affichée s'il y en a plusieurs ; aucune → « Palier u.l ». */
   window._g45UlPaliers = function (u, C) {
