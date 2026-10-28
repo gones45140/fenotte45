@@ -75302,9 +75302,16 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     });
     return { ans: ans, p: p };
   }
-  function murDe(nom) { return ((typeof state !== 'undefined' && state.u) || []).filter(function (x) { return x.n === nom; })[0] || null; }
+  /* 20261028f (« je vois pas les séries ») : pour un JOUEUR, les critères tournent sur la fiche de son CLUB (S.nom = « Vegas Golden Knights ») →
+     on retrouve la carte joueur du mur dont le nom est dans le combiné (« Jack Eichel passeur »). */
+  function murDe(nom, c) {
+    var U = (typeof state !== 'undefined' && state.u) || [];
+    var lb = c ? String(libCombo(c)).toLowerCase() : '';
+    if (lb) { var j = U.filter(function (x) { return x.type === 'joueur' && x.n && lb.indexOf(String(x.n).toLowerCase()) >= 0; })[0]; if (j) return j; }
+    return U.filter(function (x) { return x.n === nom; })[0] || null;
+  }
   function garderHtml(c, D, T) {
-    var u = murDe(S.nom); if (!u) return '';
+    var u = murDe(S.nom, c); if (!u) return '';
     var sig = S.lieu + '|' + libCombo(c), deja = u.ps && u.ps.sig === sig;
     if (deja) {   /* mise à jour automatique : saison en cours + total ; saisons finies figées */
       try {
@@ -75319,7 +75326,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       + (deja ? '<span style="font-size:13px;color:#1ed760;font-weight:700;">✅ Sur la carte de ' + esc(u.n) + ' (saison en cours mise à jour toute seule)</span>' : '') + '</div>';
   }
   window.g45CrGarder = function (i) {
-    var c = S.combos[i], D = S.data[S.nom], u = murDe(S.nom); if (!c || !D || !u) return;
+    var c = S.combos[i], D = S.data[S.nom], u = murDe(S.nom, c); if (!c || !D || !u) return;
     var tous = []; D.saisons.slice().reverse().forEach(function (s) { var L0 = s && msDe(s); if (L0) tous = tous.concat(filtrer(L0)); });
     var G = garderCalc(c, D), T = calc(c, tous);
     u.ps = { sig: S.lieu + '|' + libCombo(c), lib: libCombo(c), k: S.lieu, ans: G.ans, p: G.p, tot: T.pire, at: Date.now() };
