@@ -77839,7 +77839,9 @@ window._g45UfDecoupe = function (note) {
       }
     } catch (e) {}
   }
-  poser(); setInterval(poser, 1500);
+  /* 20261028d : libellé « 📝 Note perso » reposé à chaque passage (avant : seulement à la 1re pose des cases) */
+  var etiq = function () { ['u-note', 'edit-unit-note'].forEach(function (id) { var n = $(id), fg = n && n.closest('.fg'), lb = fg && fg.querySelector('.fl'); if (lb && !/Note perso/.test(lb.textContent)) lb.textContent = '📝 Note perso (jamais lue par l\'appli)'; }); };
+  poser(); etiq(); setInterval(function () { poser(); etiq(); }, 1500);
 
   /* Recherche du club d'un joueur : clubs de foot connus, 32 clubs NHL, puis TheSportsDB (tous sports) */
   var L = {}, jeton = { u: 0, e: 0 }, minu = {};
@@ -77920,7 +77922,9 @@ window._g45UfDecoupe = function (note) {
     try {
       poser();
       var u = state.u[parseInt(i)]; if (!u) return r;
-      var D = window._g45UfDecoupe(u.note), jou = u.type === 'joueur', libre = D.avant, club = '';
+      var D = window._g45UfDecoupe(u.note), jou = u.type === 'joueur', club = '';
+      D.avant = String(D.avant || '').replace(/\s*·\s*$/, '').trim();   /* 20261028d : « Club · » (note libre vide) → le club n'est plus recopié dans la note perso */
+      var libre = D.avant;
       if (jou) { var pc = D.avant.split(' · '); club = u.club || pc[0]; libre = pc[0] === club ? pc.slice(1).join(' · ') : D.avant; }
       $('edit-unit-note').value = (u.np != null) ? u.np : libre;   /* 20261028c : note perso séparée (anciennes notes : partie libre) */
       $('edit-unit-pdom').value = D.dom; $('edit-unit-pext').value = D.ext; if ($('edit-unit-ppart')) $('edit-unit-ppart').value = D.glob || '';   /* 20261027z */
