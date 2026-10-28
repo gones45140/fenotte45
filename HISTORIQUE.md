@@ -118,6 +118,7 @@ Il est dans les DEUX dépôts (gones45 et fenotte45), identique (cmp). Jamais de
   20261019a (« AS Rome » lu, « AS Roma » au mur) : mots de 4 lettres gardés + table TR ville française → nom du club (rome→roma, naples→napoli, turin→torino…) ; testé node 10/10.
   Même livraison : style #g45-opt-lisible = toutes les options de <select> sur fond sombre, texte blanc (liste « Équipe » blanc sur blanc sur PC).
   20261019b (capture : pari enregistré en type « Résultat ») : `_g45TicketIa` — « Résultat <équipe> » / « 1N2 » seul → « Victoire » ; « nul » → « Nul » ;
+  20261028a (console d'Antoine : 429 « Request too large for model qwen/qwen3.8-27b … output tokens per minute (OTPM): Limit 1000, Requested 1281 » → ticket lu par Tesseract) : le modèle vision découvert chez Groq (g45GroqModeleVision) plafonne la SORTIE à 1000 tokens / minute → `_g45TicketIa` max_tokens 1500 → 900 ; import de captures fbref 8000 → 950.
   sélection = adversaire (racines) → « Défaite » ; marché combiné (buts, +, &, mi-temps, handicap…) inchangé. Testé node 7/7.
   20261016c (« Équipe jouée Edmonton non ? ») : carte joueur choisie → #c-equipe = équipe du ticket, sinon note de la carte (Edmonton Oilers).
   20261020p (capture cockpit « soucis palier », « j'ai trouvé le coupable », « adversaire alors que non c'est l'équipe dans laquelle il joue » :

@@ -17175,7 +17175,7 @@ async function runFbrefGroq(uid, nom, b64, groqKey, mode, comp) {
            par Groq le 17/07/2026 — l'import de captures ne pouvait plus marcher.
            On passe par le modele multimodal decouvert dans le catalogue. */
         model: (typeof g45GroqModeleVision === 'function') ? g45GroqModeleVision() : 'qwen/qwen3.6-27b',
-        max_tokens: 8000,
+        max_tokens: 950,   /* 20261028a : modèle vision Groq plafonné à 1000 tokens de sortie / minute (429 sinon) */
         messages: [{
           role: 'user',
           content: [
@@ -72462,7 +72462,9 @@ async function _g45TicketIa(dataUrl) {
     method: 'POST', headers: h,
     body: JSON.stringify({
       model: (typeof g45GroqModeleVision === 'function') ? g45GroqModeleVision() : 'qwen/qwen3.6-27b',
-      max_tokens: 1500, temperature: 0,
+      /* 20261028a (console d'Antoine : 429 « Request too large for model qwen/qwen3.8-27b … output tokens per minute (OTPM): Limit 1000,
+         Requested 1281 ») : le nouveau modèle vision de Groq plafonne la SORTIE à 1000 tokens / minute → 900 (le JSON d'un ticket en fait ~300). */
+      max_tokens: 900, temperature: 0,
       messages: [{ role: 'user', content: [{ type: 'image_url', image_url: { url: dataUrl } }, { type: 'text', text: consigne }] }]
     })
   });
