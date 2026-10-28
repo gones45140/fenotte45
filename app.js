@@ -75815,14 +75815,44 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       D = await pr;
     } catch (e) {}
     if (!D || !(D.saisons || []).some(function (s) { return s && s.ms; })) { P.forEach(function (q) { out[q.k] = { t: q.t, err: 'matchs illisibles (réseau)' }; }); u.psL = out; return true; }
+    var JQ = [];
     P.forEach(function (q) {
       avec(C, q.k === 'glob' ? 'tout' : q.k, function () {
         var c = serCombo(q.t, u.n);
-        if (!c) { out[q.k] = { t: q.t, err: 'pari pas calculable (buteur, texte…)' }; return; }
+        if (!c) { JQ.push(q); out[q.k] = { t: q.t, err: 'pari pas calculable (texte…)' }; return; }
         var R = serStat(D, c); R.t = q.t; R.at = now; out[q.k] = R;
       });
     });
+    /* 20261028m (carte Bayern « 🏠 Victoire + Over 2.5 + Harry Kane buteur » → « pas calculable ») : un JOUEUR nommé dans un pari d'équipe →
+       journal du joueur (même lecture que les cartes joueurs) croisé par date avec les matchs du club ; matchs où il n'a pas joué : non comptés
+       (comme « Joueurs : matchs où ils ont TOUS joué » des critères). NHL et foot. */
+    var hock = X.sp === 'hockey', ms = [];
+    (D.saisons || []).forEach(function (s) { if (s && s.ms) ms = ms.concat(s.ms); });
+    for (var i = 0; i < JQ.length; i++) {
+      var q = JQ[i], cj = serLegsJ(q.t, u.n), nj = serNomJ(q.t);
+      if (!cj || !cj.pj || !nj || (!hock && X.sp !== 'soccer')) continue;
+      var LJ = null; try { LJ = await serLogJ(nj, u.n, X); } catch (e) {}
+      if (!LJ || LJ.err) { out[q.k] = { t: q.t, err: (LJ && LJ.err) || 'matchs du joueur illisibles (réseau)' }; continue; }
+      var RJ = serStatJ(cj, LJ.log, ms, q.k, hock, LJ.civil); RJ.lib = serLibJ(cj, hock).replace(/(Buteur|Passeur|1 point ou plus)$/, nj + ' $1'); RJ.t = q.t; RJ.at = now;
+      out[q.k] = RJ.p.length ? RJ : { t: q.t, err: 'aucun match compté' };
+    }
     u.psL = out; return true;
+  }
+  function serNomJ(t) {   /* « Victoire + Over 2.5 + Harry Kane buteur » → « Harry Kane » */
+    var x = String(t || '').replace(/🌍|🏠|✈️?|🛫/g, ' ').split(/\s+ou\s+/i)[0].split('+').filter(function (p) { return /buteur|marqueur|passeur|passe d|point/i.test(p); })[0];
+    return x ? x.replace(/\b(buteur|marqueur|passeur|passe d[ée]cisive|1|un|points?|ou plus|et plus)\b/gi, ' ').replace(/\s+/g, ' ').trim() : '';
+  }
+  async function serLogJ(nj, club, X) {   /* { log, civil } ou { err } */
+    if (X.sp === 'hockey') {
+      var ab = (typeof _g45RegEquipe === 'function') ? _g45RegEquipe(club) : null; if (!ab) return { err: 'club NHL introuvable' };
+      var id = await serIdNhl(nj, ab[0]); if (!id) return { err: nj + ' introuvable dans l\'effectif' };
+      var d0 = new Date(), a0 = d0.getMonth() + 1 >= 8 ? d0.getFullYear() : d0.getFullYear() - 1;
+      return { log: ((await _g45RegLog4(id, a0 + '' + (a0 + 1))) || {}).gameLog, civil: false };
+    }
+    var civil = (typeof _g45RegCivil === 'function') && _g45RegCivil(X.lg);
+    var idF = await serIdFoot(nj); if (!idF) return { err: nj + ' introuvable chez ESPN' };
+    var d1 = new Date(), aF = civil ? d1.getFullYear() : (d1.getMonth() + 1 >= 8 ? d1.getFullYear() : d1.getFullYear() - 1);
+    return { log: ((await _g45RegLog4Foot(X.lg, idF, aF)) || {}).gameLog, civil: civil };
   }
   /* ═══ 20261028k — 🔄 CALCULER MES SÉRIES : JOUEURS (« et pour les joueurs ? » ; captures des cartes : « 🏠/✈️ Passeur », « Buteur »,
      « Victoire + buteur », « Victoire + Over 2.5 + buteur », « Victoire Edmonton + Nugent-Hopkins 1 point ou plus ») — NHL et foot.
@@ -75966,7 +75996,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     });
     u.psL = out; return true;
   }
-  window._g45SerStatJ = serStatJ; window._g45SerLegsJ = serLegsJ; window._g45SerJoueur = serJoueur;   /* tests */
+  window._g45SerNomJ = serNomJ; window._g45SerStatJ = serStatJ; window._g45SerLegsJ = serLegsJ; window._g45SerJoueur = serJoueur;   /* tests */
   S.ser = S.ser || { etat: 0, f: 0, n: 0 };
   window.g45SerLancer = function () {
     var Q = S.ser; if (Q.etat === 1) return;
