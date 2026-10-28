@@ -75761,7 +75761,14 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     if (!L.length && D.avant && u.type !== 'joueur') L.push({ k: 'glob', t: D.avant });   /* joueur : avant = 🏟️ club (20261028k) */
     return L;
   }
-  function serCombo(t) {   /* même conversion que g45CrNote ; null = pari pas calculable (buteur, buts d'une équipe, texte inconnu, no bet) */
+  /* 20261028l (carte Dallas « 🏠 vainqueur + buts de Dallas plus de 2,5 » → « pari pas calculable ») : jambe 'teq' (buts D'UNE équipe) =
+     te / TL (buts de l'équipe de la carte, mêmes règles que les critères, hockey temps réglementaire) si un mot du nom écrit est dans le nom
+     du club (« Dallas » ⊂ « Dallas Stars »), sinon ad / AL (buts de l'adversaire). */
+  function serTeq(l, nom) {
+    var e = serNz(l.eq), n = ' ' + serNz(nom) + ' ';
+    return e && e.split(' ').some(function (w) { return w.length > 2 && n.indexOf(' ' + w + ' ') >= 0; }) ? 'te' : 'ad';
+  }
+  function serCombo(t, nom) {   /* même conversion que g45CrNote ; null = pari pas calculable (buteur, texte inconnu, no bet) */
     var R = _g45AgConsigne(String(t || '').replace(/🌍|🏠|✈️?|🛫/g, ' '), true);
     if (!R || R.nobet || !R.opts.length) return null;
     var c = combo0(); c.res = ''; var ok = true;
@@ -75769,9 +75776,10 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       if (l.k === 'vic' || l.k === 'vqr' || l.k === 'def') c.res = (us() && l.k === 'vic') ? 'vqr' : l.k;
       else if (l.k === 'ov' || l.k === 'un') { c.ou = l.k; c.L = l.L; }
       else if (l.k === '?' && /btts|bts|deux.*marqu/i.test(l.t || '')) c.bts = /non|no\b/i.test(l.t) ? 'non' : 'oui';
+      else if (l.k === 'teq' && nom) { if (serTeq(l, nom) === 'te') { c.te = l.s; c.TL = l.L; } else { c.ad = l.s; c.AL = l.L; } }   /* 20261028l */
       else ok = false;
     });
-    return ok && (c.res || c.ou || c.bts) ? norm(c) : null;
+    return ok && (c.res || c.ou || c.bts || c.te || c.ad) ? norm(c) : null;
   }
   function serStat(D, c) {   /* { lib, ans, p, tot } sur S.ctx / S.lieu déjà posés */
     var ans = [], p = [], tous = [];
@@ -75809,7 +75817,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     if (!D || !(D.saisons || []).some(function (s) { return s && s.ms; })) { P.forEach(function (q) { out[q.k] = { t: q.t, err: 'matchs illisibles (réseau)' }; }); u.psL = out; return true; }
     P.forEach(function (q) {
       avec(C, q.k === 'glob' ? 'tout' : q.k, function () {
-        var c = serCombo(q.t);
+        var c = serCombo(q.t, u.n);
         if (!c) { out[q.k] = { t: q.t, err: 'pari pas calculable (buteur, texte…)' }; return; }
         var R = serStat(D, c); R.t = q.t; R.at = now; out[q.k] = R;
       });
@@ -75826,10 +75834,10 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
      compté (comme Séries individuelles). Hockey « Victoire » = temps réglementaire, comme les critères. Seuil 1 (« 1 point ou plus »). ═══ */
   function serNz(t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z]+/g, ' ').trim(); }
   function serClub(u) { var D = (typeof _g45UfDecoupe === 'function') ? _g45UfDecoupe(u.note) : { avant: '' }; return String(D.avant || '').replace(/🏟️?/g, '').replace(/[\s·,]+$/, '').replace(/^[\s·,]+/, '').trim(); }
-  function serLegsJ(t) {   /* { res, ou, L, bts, pj: 'g'|'a'|'p'|'' } ou null */
+  function serLegsJ(t, club) {   /* { res, ou, L, bts, te, TL, ad, AL, pj: 'g'|'a'|'p'|'' } ou null */
     var R = _g45AgConsigne(String(t || '').replace(/🌍|🏠|✈️?|🛫/g, ' '), true);
     if (!R || R.nobet || !R.opts.length) return null;
-    var c = { res: '', ou: '', L: 2.5, bts: '', pj: '' }, ok = true;
+    var c = { res: '', ou: '', L: 2.5, bts: '', te: '', TL: 2.5, ad: '', AL: 2.5, pj: '' }, ok = true;
     R.opts[0].forEach(function (l) {
       if (l.k === 'vic' || l.k === 'vqr' || l.k === 'def') c.res = l.k;
       else if (l.k === 'ov' || l.k === 'un') { c.ou = l.k; c.L = l.L; }
@@ -75837,23 +75845,26 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       else if (l.k === '?' && /btts|bts|deux.*marqu/i.test(l.t || '')) c.bts = /non|no\b/i.test(l.t) ? 'non' : 'oui';
       else if (l.k === '?' && /passe/i.test(l.t || '')) c.pj = 'a';
       else if (l.k === '?' && /point/i.test(l.t || '')) c.pj = 'p';
+      else if (l.k === 'teq' && club) { if (serTeq(l, club) === 'te') { c.te = l.s; c.TL = l.L; } else { c.ad = l.s; c.AL = l.L; } }   /* 20261028l */
       else ok = false;
     });
-    return ok && (c.res || c.ou || c.bts || c.pj) ? c : null;
+    return ok && (c.res || c.ou || c.bts || c.te || c.ad || c.pj) ? c : null;
   }
   function serLibJ(c, hock) {
     var p = [];
     if (c.res) p.push(c.res === 'vic' ? (hock ? 'Victoire (temps régl.)' : 'Victoire') : c.res === 'vqr' ? 'Vainqueur' : 'Défaite');
     if (c.ou) p.push((c.ou === 'ov' ? 'Over ' : 'Under ') + c.L);
     if (c.bts) p.push('Les deux marquent : ' + c.bts);
+    if (c.te) p.push('Buts équipe ' + (c.te === 'ov' ? 'Over ' : 'Under ') + c.TL);
+    if (c.ad) p.push('Buts adversaire ' + (c.ad === 'ov' ? 'Over ' : 'Under ') + c.AL);
     if (c.pj) p.push({ g: 'Buteur', a: 'Passeur', p: '1 point ou plus' }[c.pj]);
     return p.join(' + ');
   }
   /* un match du joueur : true / false / null (non compté) ; m = match du club [date, dom, pour, contre, ox] ou null */
   function serPasseJ(c, g, m, hock) {
-    if ((c.res || c.ou || c.bts) && !m) return null;   /* jambe d'équipe sans le match du club : non compté (même si le joueur a raté) */
+    if ((c.res || c.ou || c.bts || c.te || c.ad) && !m) return null;   /* jambe d'équipe sans le match du club : non compté (même si le joueur a raté) */
     if (c.pj) { var v = c.pj === 'g' ? +g.goals || 0 : c.pj === 'a' ? +g.assists || 0 : (g.points != null ? +g.points || 0 : (+g.goals || 0) + (+g.assists || 0)); if (!(v >= 1)) return false; }
-    if (c.res || c.ou || c.bts) {
+    if (c.res || c.ou || c.bts || c.te || c.ad) {
       if (!m) return null;
       var p = +m[2], q = +m[3], ox = hock && m[4];
       if (c.res === 'vic' && !(p > q && !ox)) return false;
@@ -75861,6 +75872,9 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       if (c.res === 'def' && !(p < q)) return false;
       if (c.ou) { var T = ox ? 2 * Math.min(p, q) : p + q; if (T === c.L) return null; if (c.ou === 'ov' ? !(T > c.L) : !(T < c.L)) return false; }
       if (c.bts) { var b2 = p > 0 && q > 0; if ((c.bts === 'oui') !== b2) return false; }
+      var pT = ox ? Math.min(p, q) : p, qT = ox ? Math.min(p, q) : q;   /* 20261028l : buts d'une équipe, hockey temps réglementaire */
+      if (c.te) { if (pT === c.TL) return null; if (c.te === 'ov' ? !(pT > c.TL) : !(pT < c.TL)) return false; }
+      if (c.ad) { if (qT === c.AL) return null; if (c.ad === 'ov' ? !(qT > c.AL) : !(qT < c.AL)) return false; }
     }
     return true;
   }
@@ -75922,7 +75936,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var hock = String(u.sport || '').indexOf('🏒') >= 0, foot = !hock && (!u.sport || String(u.sport).indexOf('⚽') >= 0);
     if (!hock && !foot) return fin('sport pas encore calculé (NHL et foot)');
     var club = serClub(u); if (!club) return fin('club manquant (Modifier → 🏟️ Club du joueur)');
-    var CS = P.map(function (q) { return serLegsJ(q.t); }), equipe = CS.some(function (c) { return c && (c.res || c.ou || c.bts); });
+    var CS = P.map(function (q) { return serLegsJ(q.t, club); }), equipe = CS.some(function (c) { return c && (c.res || c.ou || c.bts || c.te || c.ad); });
     var X = null, log = null, civil = false, ms = [];
     if (!hock || equipe) { X = await serCtx(club, foot); if (X.err) return fin(X.err + ' (' + club + ')'); }   /* NHL sans jambe d'équipe : l'abréviation suffit */
     if (hock) {
@@ -75946,7 +75960,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     P.forEach(function (q, i) {
       var c = CS[i];
       if (!c) { out[q.k] = { t: q.t, err: 'pari pas calculable (texte…)' }; return; }
-      if ((c.res || c.ou || c.bts) && !ms.length) { out[q.k] = { t: q.t, err: 'matchs du club illisibles (réseau)' }; return; }
+      if ((c.res || c.ou || c.bts || c.te || c.ad) && !ms.length) { out[q.k] = { t: q.t, err: 'matchs du club illisibles (réseau)' }; return; }
       var R = serStatJ(c, log, ms, q.k, hock, civil); R.t = q.t; R.at = now;
       out[q.k] = R.p.length ? R : { t: q.t, err: 'aucun match compté' };
     });
@@ -75984,7 +75998,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   }
   window._g45SerBarre = serBarre;
   window._g45SerParis = serParis; window._g45SerEquipe = serEquipe;   /* tests */
-  window._g45SerCombo = function (t, ctx) { return avec(ctx || null, 'tout', function () { var c = serCombo(t); return c ? libCombo(c) : null; }); };
+  window._g45SerCombo = function (t, ctx, nom) { return avec(ctx || null, 'tout', function () { var c = serCombo(t, nom); return c ? libCombo(c) : null; }); };
   (function () {
     var go = function () { var ul = document.getElementById('ulist'); if (!ul) return false; new MutationObserver(function () { try { serBarre(); } catch (e) {} }).observe(ul, { childList: true }); serBarre(); return true; };
     if (!go()) document.addEventListener('DOMContentLoaded', go);
