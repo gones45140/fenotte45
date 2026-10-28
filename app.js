@@ -70346,8 +70346,18 @@ window.g45RegGarder = function (id) {
   try { save(); } catch (e) {}
   try { g45RegOuvrir(); } catch (e) {}
 };
+/* 20261028j (capture Séries individuelles NHL : « par moment pas touchoir, la sélection se fige, je suis obligé de changer de page et de revenir,
+   et la sélection a été prise en compte ») : la zone #g45-reg-box existe dans PLUSIEURS écrans (Saisons d'une fiche d'équipe, Compétitions → Séries
+   individuelles…). Une fiche déjà ouverte restait dans la page, cachée → getElementById rendait SA zone : le choix était bien retenu mais
+   redessiné dans l'écran caché. On prend la zone VISIBLE (sinon la dernière posée). */
+function _g45RegBoxVis() {
+  var L = document.querySelectorAll('[id="g45-reg-box"]'); if (!L.length) return null;
+  for (var i = L.length - 1; i >= 0; i--) { if (L[i].getClientRects().length) return L[i]; }
+  return L[L.length - 1];
+}
+window._g45RegBoxVis = _g45RegBoxVis;
 async function g45RegOuvrir() {
-  var box = document.getElementById('g45-reg-box'); if (!box) return;
+  var box = _g45RegBoxVis(); if (!box) return;
   var sa = _g45RegSaison(_g45Reg.an), k = _g45RegK(), pk = _g45RegPK(), lg = _g45Reg.lg, an = _g45Reg.an;
   /* 20261005v (« les boutons ont du mal à réagir ») : les boutons restent affichés pendant la lecture, le bouton touché
      s'allume tout de suite, et seul le DERNIER choix s'affiche (un clic pendant une lecture ne mélange plus les listes). */
@@ -70369,11 +70379,11 @@ async function g45RegOuvrir() {
     catch (e) {
       delete _g45Reg.enCours[k];
       if (_g45Reg.cle !== k) return;
-      box = document.getElementById('g45-reg-box'); if (!box) return;
+      box = _g45RegBoxVis(); if (!box) return;
       box.innerHTML = _g45RegHtml() + '<div style="font-size:13px;color:#ff9aa8;">Classement indisponible (' + String(e.message || e).replace(/</g, '') + ').</div>'; return; }
     delete _g45Reg.enCours[k];
     if (_g45Reg.cle !== k) return;
-    box = document.getElementById('g45-reg-box'); if (!box) return;
+    box = _g45RegBoxVis(); if (!box) return;
   }
   box.innerHTML = _g45RegHtml();
   if (_g45Reg.lg) _g45RegPhotos(box);
@@ -70987,7 +70997,7 @@ async function _g45RegPhotos(racine) {
       try { u = await _g45RegPhP[cle]; } catch (e) {}
       _g45RegPh[cle] = u || '';
       if (u && el.isConnected) _g45RegPhPoser(el, u);
-      else if (u) { try { var el2 = document.querySelector('#g45-reg-box [data-g45clsph="' + String(el.getAttribute('data-g45clsph')).replace(/"/g, '') + '"]'); _g45RegPhPoser(el2, u); } catch (e) {} }
+      else if (u) { try { var el2 = _g45RegBoxVis().querySelector('[data-g45clsph="' + String(el.getAttribute('data-g45clsph')).replace(/"/g, '') + '"]'); _g45RegPhPoser(el2, u); } catch (e) {} }
     }
   };
   await Promise.all([travail(), travail()]);
@@ -71078,7 +71088,7 @@ async function _g45RegRugMatch(u) {
   return S;
 }
 async function _g45RegLireRug(eq) {
-  var prog = function (t) { var e = document.getElementById('g45-reg-prog'); if (e) e.textContent = t; };
+  var prog = function (t) { var bx = _g45RegBoxVis(), e = bx && bx.querySelector('[id="g45-reg-prog"]'); if (e) e.textContent = t; };
   var idx = _g45Pd2Doc(await _g45RegRugTexte('/calendrier-et-resultats'));
   var cw = _g45Pd2Attr(idx, ':current-week'), cs = _g45Pd2Attr(idx, ':current-season');
   if (!cw || !cs || !cs.name) throw new Error('calendrier LNR illisible');
@@ -71189,7 +71199,7 @@ async function _g45RegNrlEquipe(id, an, prog, cpt) {
   return res.map(function (x) { return x.F; });   /* ordre du calendrier = chronologique */
 }
 async function _g45RegLireNrl(an, cat, eq) {
-  var prog = function (t) { var e = document.getElementById('g45-reg-prog'); if (e) e.textContent = t; };
+  var prog = function (t) { var bx = _g45RegBoxVis(), e = bx && bx.querySelector('[id="g45-reg-prog"]'); if (e) e.textContent = t; };
   var cpt = { n: 0 }, idEq = eq ? String(eq).slice(1) : '', equipes = [], top = null;
   if (idEq) equipes = [idEq];
   else {
@@ -71408,7 +71418,7 @@ function _g45RegBlocKhlEq(an, nom, eqId) {
       '<button onclick="g45RegOuvrir()" style="padding:10px 16px;border-radius:10px;border:1.5px solid rgba(245,197,66,.55);background:rgba(245,197,66,.12);color:#f5c542;font-size:14px;font-weight:800;cursor:pointer;">🎯 Voir le classement (' + _g45RegLab(an) + ')</button>') + '</div></div>';
 }
 async function _g45RegLireKhl(cat, eq) {
-  var prog = function (t) { var e = document.getElementById('g45-reg-prog'); if (e) e.textContent = t; };
+  var prog = function (t) { var bx = _g45RegBoxVis(), e = bx && bx.querySelector('[id="g45-reg-prog"]'); if (e) e.textContent = t; };
   var id = String(eq || '').slice(1);
   if (!id) throw new Error('classement de la ligue indisponible en KHL');
   var eff = await _g45KhlJoueursEquipe(id);
@@ -81206,7 +81216,7 @@ window.g45ScTri = function (t, k) {
   g45RegOuvrir = window.g45RegOuvrir = function () { _g45Reg.replie = false; return o0.apply(this, arguments); };
   window.g45RegReplier = function () {
     _g45Reg.replie = true;
-    var box = document.getElementById('g45-reg-box'); if (!box) return;
+    var box = _g45RegBoxVis(); if (!box) return;
     box.innerHTML = '<button onclick="g45RegOuvrir()" style="padding:10px 16px;border-radius:10px;border:1.5px solid rgba(245,197,66,.55);background:rgba(245,197,66,.12);color:#f5c542;font-size:14px;font-weight:800;cursor:pointer;">🎯 Voir le classement</button>';
   };
   if (typeof _g45RegBloc === 'function') {
@@ -81958,7 +81968,7 @@ window._g45TrTestVoit = function () { try { return (typeof _g45SanteActive === '
   window._g45PalEt = function () { var v = '1'; try { v = localStorage.getItem('g45_pal_et') || '1'; } catch (e) {} return /^[1-5]$/.test(v) ? v : '1'; };
   window.g45PalEtChoix = function (k) {
     try { localStorage.setItem('g45_pal_et', String(k)); } catch (e) {}
-    try { if (document.getElementById('g45-reg-box') && typeof g45RegOuvrir === 'function') g45RegOuvrir(); } catch (e) {}
+    try { if (_g45RegBoxVis() && typeof g45RegOuvrir === 'function') g45RegOuvrir(); } catch (e) {}
     try { dessiner(); } catch (e) {}
   };
 
