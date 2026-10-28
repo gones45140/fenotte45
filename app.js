@@ -76048,9 +76048,9 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
         if (mi != null) pal = '<div style="margin-top:6px;"><span style="display:inline-block;background:rgba(240,176,32,.22);border:1px solid #f0b020;color:#fff;font-size:15px;font-weight:800;border-radius:7px;padding:3px 10px;">🚀 Palier ' + p + ' · mise ' + (Math.round(mi * 100) / 100).toLocaleString('fr-FR') + ' € <span style="color:#f5c542;">' + new Array((parseInt(u.s, 10) || 0) + 1).join('⭐') + '</span></span></div>'; } } catch (x) {}
       var R = q && u.psL && u.psL[q.k], ps = '';
       if (R && !R.err && R.p && R.p.length) {
-        var pa = (typeof _g45F1CrPal === 'function') ? _g45F1CrPal(R.tot) : { p: R.tot + 1, ico: '' };
+        var pa = window._g45PalCarte(R.tot, u);
         ps = '<div style="font-size:15px;font-weight:700;margin-top:6px;background:rgba(47,107,255,.25);border-radius:8px;padding:5px 8px;">📊 ' + ({ glob: '🌍', dom: '🏠', ext: '✈️' }[q.k]) + ' pire série '
-          + R.p.map(function (v) { return '<span style="color:' + col(v) + ';">' + v + '</span>'; }).join(' · ') + ' → <b>' + pa.p + ' palier' + (pa.p > 1 ? 's' : '') + ' ' + pa.ico + '</b> <span style="font-weight:400;color:#c9d3ee;">· 4 saisons</span></div>';
+          + R.p.map(function (v) { return '<span style="color:' + col(v) + ';">' + v + '</span>'; }).join(' · ') + ' → <b>' + pa.p + ' palier' + (pa.p > 1 ? 's' : '') + ' ' + pa.ico + '</b>' + (pa.mise != null ? ' · ' + (Math.round(pa.mise * 100) / 100).toLocaleString('fr-FR') + ' €' : '') + ' <span style="font-weight:400;color:#c9d3ee;">· 4 saisons</span></div>';
       } else if (q && !ckAJour(u, q)) ps = '<div style="font-size:13px;color:#c9d3ee;margin-top:6px;">⏳ Calcul de la série sur 4 saisons…</div>';
       h += '<div style="background:rgba(20,28,48,.95);border:1px solid #2a3a63;border-left:4px solid ' + e(u.color || '#5ad6ff') + ';border-radius:12px;padding:10px 12px;margin-bottom:10px;color:#fff;">'
         + '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><div style="font-size:16px;font-weight:800;">' + (SP[m.sp] || '') + ' ' + e(u.n) + ' ' + ico + ' <span style="font-weight:400;color:#c9d3ee;">vs ' + e(m.adv) + '</span></div>'
@@ -76475,12 +76475,21 @@ window._G45_PAL_COUL = ['#1ed760', '#8fdc4a', '#f5c542', '#ffa53a', '#ff7a3a', '
     });
   };
   window._g45UlistHabiller = habiller;
+  /* 20261028q (« mets les mêmes mises que moi » + capture Outils → Mises par palier : « actuellement 5 étoiles équipe, 4 étoiles joueur ») : la mise
+     affichée après une pire série d'une CARTE suit les ⭐ de la carte (STRATS[u.s], grille modifiée comprise), plus l'échelle ⭐ choisie dans les
+     critères (g45_pal_et, gardée pour les écrans sans carte). ✅ = 5 paliers ou moins, ⚠️ = jusqu'à la dernière case, ❌ = au-delà. */
+  window._g45PalCarte = function (pire, u) {
+    var S = (u && u.s != null && typeof STRATS !== 'undefined') ? STRATS[u.s] : null;
+    if (!S || !S.length) return (typeof _g45F1CrPal === 'function') ? _g45F1CrPal(pire) : { p: pire + 1, ico: '', mise: null };
+    var p = pire + 1;
+    return { p: p, mise: p <= S.length ? S[p - 1] : null, max: S.length, et: String(u.s), ico: p <= 5 ? '✅' : (p <= S.length ? '⚠️' : '❌') };
+  };
   /* 20261028e : ligne « 📊 » de u.ps (📌 Garder sur la carte, critères 4 saisons) */
   window._g45UlPsHtml = function (u) {
     var P = u && u.ps; if (!P || !P.p || !P.p.length) return '';
     var col = function (v) { return v <= 2 ? '#1ed760' : (v <= 4 ? '#ff9f43' : '#ff5a5a'); };
     var ico = P.k === 'dom' ? '🏠 ' : (P.k === 'ext' ? '✈️ ' : '🌍 ');
-    var pa = (typeof _g45F1CrPal === 'function') ? _g45F1CrPal(P.tot) : { p: P.tot + 1, ico: '', mise: null };
+    var pa = window._g45PalCarte(P.tot, u);
     var d = new Date(P.at || Date.now()), dt = ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2);
     var e = function (x) { return String(x == null ? '' : x).replace(/[<>&]/g, ''); };
     return '<div class="g45ul-ps" style="margin-top:4px;background:rgba(47,107,255,.25);border-radius:6px;padding:4px 7px;font-size:14px;color:#fff;font-weight:700;font-style:normal;line-height:1.45;">📊 ' + ico + e(P.lib)
@@ -76498,7 +76507,7 @@ window._G45_PAL_COUL = ['#1ed760', '#8fdc4a', '#f5c542', '#ffa53a', '#ff7a3a', '
       var R = P[k[0]]; if (!R) return;
       if (R.err || !R.p || !R.p.length) { h += '<div style="font-size:13px;color:#c9d3ee;font-weight:400;">📊 ' + k[1] + ' ' + e(R.err || 'aucun match compté') + '</div>'; return; }
       at = Math.max(at, R.at || 0);
-      var pa = (typeof _g45F1CrPal === 'function') ? _g45F1CrPal(R.tot) : { p: R.tot + 1, ico: '', mise: null };
+      var pa = window._g45PalCarte(R.tot, u);
       h += '<div>📊 ' + k[1] + ' pire série ' + R.p.map(function (v) { return '<span style="color:' + col(v) + ';">' + v + '</span>'; }).join(' · ')
         + ' → <b>' + pa.p + ' palier' + (pa.p > 1 ? 's' : '') + ' ' + pa.ico + '</b>' + (pa.mise != null ? ' <span style="font-weight:400;color:#c9d3ee;">· ' + pa.mise + ' €</span>' : '') + '</div>';
     });
