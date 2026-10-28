@@ -75758,7 +75758,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     if (D.glob) L.push({ k: 'glob', t: D.glob });
     if (D.dom) L.push({ k: 'dom', t: D.dom });
     if (D.ext) L.push({ k: 'ext', t: D.ext });
-    if (!L.length && D.avant && u.type !== 'joueur') L.push({ k: 'glob', t: D.avant });   /* joueur : avant = 🏟️ club (20261028k) */
+    if (!L.length && D.avant && u.type !== 'joueur' && /victoire|vainqueur|d[ée]faite|\bnul\b|over|under|plus de|moins de|buteur|passeur|point|marqu|btts/i.test(D.avant)) L.push({ k: 'glob', t: D.avant });   /* 20261028o : note sans 🏠 / ✈️ = pari seulement si elle en a l'air (« Barcelona » seul ≠ pari) */   /* joueur : avant = 🏟️ club (20261028k) */
     return L;
   }
   /* 20261028l (carte Dallas « 🏠 vainqueur + buts de Dallas plus de 2,5 » → « pari pas calculable ») : jambe 'teq' (buts D'UNE équipe) =
@@ -76030,7 +76030,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   /* 20261028n (« si je veux recalculer une seule équipe et non toutes ») : 🔄 Recalculer dans le cadre 📊 de la carte → cette carte seule */
   window.g45SerUne = async function (nom, btn) {
     if (typeof _g45SanteActive === 'function' && !_g45SanteActive()) return;
-    var u = ((typeof state !== 'undefined' && state.u) || []).filter(function (x) { return x && x.n === nom; })[0]; if (!u) return;
+    var u = ((typeof state !== 'undefined' && state.u) || []).filter(function (x) { return x && (x.n === nom || String(x.n).replace(/[\\'"<>&]/g, '') === nom); })[0]; if (!u) return;
     if (btn) { btn.disabled = true; btn.textContent = '⏳ Calcul…'; }
     try { await (u.type === 'joueur' ? serJoueur(u) : serEquipe(u)); } catch (e) {}
     try { save(); } catch (e) {}
@@ -76370,6 +76370,11 @@ window._G45_PAL_COUL = ['#1ed760', '#8fdc4a', '#f5c542', '#ffa53a', '#ff7a3a', '
         var no = info.nextElementSibling;
         try { if (u.ps) { var psH = window._g45UlPsHtml(u); if (psH) (no && /📌/.test(no.textContent || '') ? no : info).insertAdjacentHTML('afterend', psH); } } catch (e) {}   /* 20261028e */
         try { if (u.psL) { var plH = window._g45UlPsLHtml(u); if (plH) (no && /📌/.test(no.textContent || '') ? no : info).insertAdjacentHTML('afterend', plH); } } catch (e) {}   /* 20261028h */
+        /* 20261028o (capture Yamal : note 🏠 ajoutée après le grand calcul → « le bouton recalculer n'apparaît pas ») : pari écrit, pas encore de 📊 → 🔄 Calculer (gones) */
+        try {
+          if (!u.psL && u.note && typeof window._g45SerParis === 'function' && window._g45SerParis(u).length && (typeof _g45SanteActive !== 'function' || _g45SanteActive()))
+            (no && /📌/.test(no.textContent || '') ? no : info).insertAdjacentHTML('afterend', '<div class="g45ul-psl" style="margin-top:4px;"><button onclick="event.stopPropagation();g45SerUne(\'' + String(u.n).replace(/[\\'"<>&]/g, '') + '\',this)" style="padding:6px 12px;border-radius:8px;border:1px solid #6d9dff;background:#2f6bff;color:#fff;font-size:14px;font-weight:800;cursor:pointer;">🔄 Calculer mes séries</button></div>');
+        } catch (e) {}
         if (no && /📌/.test(no.textContent || '')) {
           no.classList.add('g45ul-note');
           /* 20261027z : une ligne par pari (🌍 / 🏠 / ✈️) */
