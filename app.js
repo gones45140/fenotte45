@@ -75809,6 +75809,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   S.ser = S.ser || { etat: 0, f: 0, n: 0 };
   window.g45SerLancer = function () {
     var Q = S.ser; if (Q.etat === 1) return;
+    if (typeof _g45SanteActive === 'function' && !_g45SanteActive()) return;   /* 20261028i : GONES45 seulement */
     var U = ((typeof state !== 'undefined' && state.u) || []).filter(function (u) { return u && u.type !== 'joueur' && u.type !== 'competition' && u.note && serParis(u).length; });
     if (!U.length) { alert('Aucune équipe avec un pari écrit dans sa note (🌍 / 🏠 / ✈️).'); return; }
     Q.etat = 1; Q.f = 0; Q.n = U.length; serBarre();
@@ -75824,6 +75825,8 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   };
   function serBarre() {
     var ul = document.getElementById('ulist'); if (!ul || !ul.parentNode) return;
+    /* 20261028i (« juste pour gones fais-moi le recalcul par équipe, on laisse comme ça pour bet45 ») : bouton sur GONES45 seulement */
+    if (typeof _g45SanteActive === 'function' && !_g45SanteActive()) { var z0 = document.getElementById('g45-ser-bar'); if (z0) z0.remove(); return; }
     var z = document.getElementById('g45-ser-bar');
     if (!z) { z = document.createElement('div'); z.id = 'g45-ser-bar'; z.style.cssText = 'margin:10px 0 4px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;'; ul.parentNode.insertBefore(z, ul); }
     var Q = S.ser, h = '<button onclick="g45SerLancer()" style="padding:10px 14px;border-radius:10px;border:1px solid #6d9dff;background:#2f6bff;color:#fff;font-size:15px;font-weight:800;cursor:pointer;"' + (Q.etat === 1 ? ' disabled' : '') + '>🔄 Calculer mes séries</button>';
