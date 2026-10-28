@@ -76027,6 +76027,15 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     if (z.innerHTML !== h) z.innerHTML = h;
   }
   window._g45SerBarre = serBarre;
+  /* 20261028n (« si je veux recalculer une seule équipe et non toutes ») : 🔄 Recalculer dans le cadre 📊 de la carte → cette carte seule */
+  window.g45SerUne = async function (nom, btn) {
+    if (typeof _g45SanteActive === 'function' && !_g45SanteActive()) return;
+    var u = ((typeof state !== 'undefined' && state.u) || []).filter(function (x) { return x && x.n === nom; })[0]; if (!u) return;
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Calcul…'; }
+    try { await (u.type === 'joueur' ? serJoueur(u) : serEquipe(u)); } catch (e) {}
+    try { save(); } catch (e) {}
+    try { if (typeof render === 'function') render(); } catch (e) {}
+  };
   window._g45SerParis = serParis; window._g45SerEquipe = serEquipe;   /* tests */
   window._g45SerCombo = function (t, ctx, nom) { return avec(ctx || null, 'tout', function () { var c = serCombo(t, nom); return c ? libCombo(c) : null; }); };
   (function () {
@@ -76409,7 +76418,9 @@ window._G45_PAL_COUL = ['#1ed760', '#8fdc4a', '#f5c542', '#ffa53a', '#ff7a3a', '
     if (!h) return '';
     var d = new Date(at || Date.now()), dt = ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2);
     return '<div class="g45ul-psl" style="margin-top:4px;background:rgba(11,16,29,.8);border-radius:6px;padding:4px 7px;font-size:14px;color:#fff;font-weight:700;font-style:normal;line-height:1.5;">' + h
-      + '<div style="font-size:13px;font-weight:400;color:#c9d3ee;">4 saisons · championnat · calculé le ' + dt + '</div></div>';
+      + '<div style="font-size:13px;font-weight:400;color:#c9d3ee;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">4 saisons · championnat · calculé le ' + dt
+      + ((typeof _g45SanteActive !== 'function' || _g45SanteActive()) ? '<button onclick="event.stopPropagation();g45SerUne(\'' + String(u.n).replace(/[\\'"<>&]/g, '') + '\',this)" style="padding:5px 10px;border-radius:8px;border:1px solid #6d9dff;background:#2f6bff;color:#fff;font-size:13px;font-weight:800;cursor:pointer;">🔄 Recalculer</button>' : '')   /* 20261028n */
+      + '</div></div>';
   };
   /* 20261027z (« dans Outils → Équipe il devrait y avoir plusieurs paliers pour certaines équipes ») : une pastille par montante de u.lc
      (clé « compétition » = 🌍 global, « …|dom » = 🏠, « …|ext » = ✈️) ; compétition affichée s'il y en a plusieurs ; aucune → « Palier u.l ». */
