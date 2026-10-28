@@ -131,7 +131,7 @@ PIÈGES À NE JAMAIS OUBLIER :
 
 - ⚾ Lanceurs MLB dans l'Agenda : sonde probables à faire par Antoine (ou mars).
 - Cotes en direct hors foot : NBA (20261020q), MLB et NHL (20261024p), NFL (20261025l) BRANCHÉES (core odds provider 200).
-- Abonnement : plan prêt, NON codé (_G45_ABO_PLAN false) ; micro-entreprise reportée ; verrou serveur à faire le moment venu.
+- Abonnement : plan prêt, NON codé (_G45_ABO_PLAN false) ; micro-entreprise reportée ; verrou serveur à faire le moment venu. PAS AVANT JANVIER 2027 (Antoine, 28/10). AVANT le lancement : (1) Groq passé en payant (Dev Tier) — aujourd'hui UNE clé gratuite partagée par tous (limites 429, ex. vision 1000 tokens de sortie / min) ; (2) audit des CGU « usage commercial » de chaque source (ESPN = API interne non officielle, risque n°1 ; TheSportsDB clé 123 ; Jolpica ; API NHL ; Groq gratuit ; logos / photos / cotes) → remplacer ou payer.
 - RGPD : SQL supprimer-compte.sql à installer par Antoine dans les 2 projets Supabase.
 - 🎾 Cotes tennis : TheRundown (gratuit, worker /rundown, secret RUNDOWN_KEY) branché dans le robot (20261020m). Cote book + 💎 value dans l'analyse et les résultats : FAIT (20261022w). À faire : autres sports via TheRundown selon la consommation.
 - 🎾 vers le 10/11 : BILAN du suivi BET45 / book (J.dz dans tendances_officielles.json, TOUS les matchs avec cote depuis 20261023c ; p brut, pr corrigé, f book) : qui est le plus juste ? → recaler / mélanger avec le book. Correction « % réel » EN PAUSE (_G45_TN_REEL_PAUSE) d'ici là. Même jour : bilan des 🧪 value tennis en test (J.tv, cote 1,50-2,50, cote FR × 0,94) → vraie sélection si positif, sinon arrêt.
