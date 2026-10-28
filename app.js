@@ -75280,7 +75280,9 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       var T = calc(c, tous);
       h += '<div style="margin-top:10px;background:#0f1730;border-radius:10px;padding:10px;font-size:14px;line-height:1.6;color:#fff;">'
         + '🧮 <b>Total : ' + nbV(T.ok) + '/' + nbV(T.n) + ' · ' + Math.round(100 * T.ok / T.n) + ' %</b><br>'
-        + '🪜 Pire série : <b style="color:' + coul(T.pire) + ';">' + T.pire + ' défaite' + (T.pire > 1 ? 's' : '') + ' de suite</b> → il fallait <b>' + (T.pire + 1) + ' palier' + (T.pire ? 's' : '') + '</b><br>'
+        + '🪜 Pire série : <b style="color:' + coul(T.pire) + ';">' + T.pire + ' défaite' + (T.pire > 1 ? 's' : '') + ' de suite</b> → il fallait <b>' + (T.pire + 1) + ' palier' + (T.pire ? 's' : '') + '</b>'
+        + (function () { try { var pa = _g45F1CrPal(T.pire); return ' ' + pa.ico + (pa.mise != null ? ' · mise max <b>' + pa.mise + ' €</b> (' + new Array(+(pa.et || 1) + 1).join('⭐') + ')' : ' au-delà de tes ' + pa.max + ' paliers'); } catch (e) { return ''; } })()   /* 20261028c : mise max promise par la maquette 20261027h */
+        + '<br>'
         + '🏆 Meilleure série : <b style="color:#5aa9ff;">' + T.best + ' réussite' + (T.best > 1 ? 's' : '') + ' de suite</b><br>'
         + '📈 Série en cours : ' + enCours(c, tous) + '</div>';
     }
@@ -75978,11 +75980,13 @@ window._G45_PAL_COUL = ['#1ed760', '#8fdc4a', '#f5c542', '#ffa53a', '#ff7a3a', '
           /* 20261027z : une ligne par pari (🌍 / 🏠 / ✈️) */
           try {
             var D = window._g45UfDecoupe(u.note), lg = [];
-            if (D.avant) lg.push(D.avant);
+            if (D.avant) lg.push((u.type === 'joueur' ? '🏟️ ' : '') + D.avant.replace(/\s*·\s*$/, ''));   /* 20261028c : club du joueur */
             if (D.glob) lg.push('🌍 ' + D.glob);
             var nz = function (x) { return String(x || '').trim().toLowerCase(); };
             if (D.dom && D.ext && nz(D.dom) === nz(D.ext)) lg.push('🏠/✈️ ' + D.dom); else { if (D.dom) lg.push('🏠 ' + D.dom); if (D.ext) lg.push('✈️ ' + D.ext); }
-            if (lg.length > 1) no.innerHTML = lg.map(function (x) { return '<div>📌 ' + String(x).replace(/[<>&]/g, '') + '</div>'; }).join('');
+            var ht = lg.map(function (x) { return '<div>' + (/^🏟️/.test(x) ? '' : '📌 ') + String(x).replace(/[<>&]/g, '') + '</div>'; });
+            if (u.np) ht.push('<div style="color:#c9d3ee;">📝 ' + String(u.np).replace(/[<>&]/g, '') + '</div>');   /* 20261028c : note perso, affichée seulement */
+            if (lg.length > 1 || u.np || /^🏟️/.test(lg[0] || '')) no.innerHTML = ht.join('');
           } catch (e) {}
         }
       }
@@ -77823,13 +77827,14 @@ window._g45UfDecoupe = function (note) {
         var f1 = $('u-link') && $('u-link').closest('.fg'), f2 = l2.closest('.fg');
         if (f1) f1.style.display = 'none';
         if (f2) { f2.style.display = 'none'; f2.insertAdjacentHTML('afterend', champs('u')); }
-        var un = $('u-note'); if (un) un.placeholder = 'Ex : forme à domicile, gardien titulaire…';
+        var un = $('u-note'); if (un) { un.placeholder = 'Ex : forme à domicile, gardien titulaire…'; var lb = un.closest('.fg') && un.closest('.fg').querySelector('.fl'); if (lb) lb.textContent = '📝 Note perso (jamais lue par l\'appli)'; }   /* 20261028c */
         voirClub('u');
       }
       var en = $('edit-unit-note');
       if (en && !$('edit-unit-pdom')) {
         var fe = en.closest('.fg'); if (fe) fe.insertAdjacentHTML('beforebegin', champs('e'));
         en.placeholder = 'Ex : forme à domicile, gardien titulaire…';
+        var lbE = fe && fe.querySelector('.fl'); if (lbE) lbE.textContent = '📝 Note perso (jamais lue par l\'appli)';   /* 20261028c */
         var st = $('edit-unit-type'); if (st) st.addEventListener('change', function () { voirClub('e'); });
       }
     } catch (e) {}
@@ -77891,13 +77896,15 @@ window._g45UfDecoupe = function (note) {
     poser();
     var un = $('u-note'), libre = un ? un.value.trim() : '', jou = ($('u-type') || {}).value === 'joueur', club = jou ? String(($('u-club') || {}).value || '').trim() : '';
     var n0 = (state && state.u) ? state.u.length : 0;
-    if (un) un.value = window._g45UfCompose(club, libre, ($('u-pdom') || {}).value, ($('u-pext') || {}).value, ($('u-ppart') || {}).value);   /* 20261027z : + 🌍 */
+    /* 20261028c (« la note est pour moi perso, je veux pas qu'elle soit lue par l'IA ») : la note libre n'entre PLUS dans u.note (lue par
+       _g45AgConsigne → Agenda, Cockpit, « Reprendre ma note ») → u.np, affichée seulement. */
+    if (un) un.value = window._g45UfCompose(club, '', ($('u-pdom') || {}).value, ($('u-pext') || {}).value, ($('u-ppart') || {}).value);   /* 20261027z : + 🌍 */
     var r;
     try { r = add0.apply(this, arguments); }
     finally {
       if (state && state.u && state.u.length > n0) {
         var nu = state.u[state.u.length - 1];
-        if (nu && club) { nu.club = club; try { save(); } catch (e) {} }
+        if (nu && (club || libre)) { if (club) nu.club = club; if (libre) nu.np = libre; try { save(); } catch (e) {} }   /* 20261028c : + u.np */
         ['u-note', 'u-pdom', 'u-pext', 'u-club', 'u-ppart'].forEach(function (id) { if ($(id)) $(id).value = ''; });
         partout('u', false);   /* 20261025b */
         L.u = []; rendre('u');
@@ -77915,7 +77922,7 @@ window._g45UfDecoupe = function (note) {
       var u = state.u[parseInt(i)]; if (!u) return r;
       var D = window._g45UfDecoupe(u.note), jou = u.type === 'joueur', libre = D.avant, club = '';
       if (jou) { var pc = D.avant.split(' · '); club = u.club || pc[0]; libre = pc[0] === club ? pc.slice(1).join(' · ') : D.avant; }
-      $('edit-unit-note').value = libre;
+      $('edit-unit-note').value = (u.np != null) ? u.np : libre;   /* 20261028c : note perso séparée (anciennes notes : partie libre) */
       $('edit-unit-pdom').value = D.dom; $('edit-unit-pext').value = D.ext; if ($('edit-unit-ppart')) $('edit-unit-ppart').value = D.glob || '';   /* 20261027z */
       var _nz = function (x) { return String(x || '').trim().toLowerCase().replace(/\s+/g, ' '); };
       partout('e', !!(D.dom && D.ext && _nz(D.dom) === _nz(D.ext)));   /* 20261025b : même pari des deux côtés → 🌍 OUI */
@@ -77930,7 +77937,8 @@ window._g45UfDecoupe = function (note) {
       var i = parseInt(($('edit-unit-idx') || {}).value), u = state.u[i], en = $('edit-unit-note');
       if (u && en && $('edit-unit-pdom')) {
         var jou = ($('edit-unit-type') || {}).value === 'joueur', club = jou ? String(($('edit-unit-club') || {}).value || '').trim() : '';
-        en.value = window._g45UfCompose(club, en.value, $('edit-unit-pdom').value, $('edit-unit-pext').value, ($('edit-unit-ppart') || {}).value);   /* 20261027z */
+        var np = String(en.value || '').trim(); if (np) u.np = np; else delete u.np;   /* 20261028c : note perso hors de u.note */
+        en.value = window._g45UfCompose(club, '', $('edit-unit-pdom').value, $('edit-unit-pext').value, ($('edit-unit-ppart') || {}).value);   /* 20261027z */
         if (club) u.club = club; else delete u.club;
       }
     } catch (e) {}
