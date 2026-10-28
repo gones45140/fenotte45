@@ -74987,7 +74987,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
         var L = sa.ms.filter(function (m) { return m[6] && !(old.parMatch && old.parMatch[m[6]]); }).map(function (m) { return { id: m[6] }; });
         if (!L.length) continue;
         var f0 = U.f, nw = null;
-        try { nw = await _g45JouConstruire(C.sp, C.lg, sa.an, C.id, nom, L, function (d) { U.f = f0 + d; var e = document.getElementById('g45cr-up'); if (e) e.textContent = '⏳ Feuilles de match : ' + U.f + ' / ' + U.n + ' (la 1re fois seulement)'; }); } catch (e) {}
+        try { nw = await _g45JouConstruire(C.sp, C.lg, sa.an, C.id, nom, L, function (d) { U.f = f0 + d; var e = (function (L) { for (var i = L.length - 1; i >= 0; i--) if (L[i].getClientRects().length) return L[i]; return L[L.length - 1] || null; })(document.querySelectorAll('[id="g45cr-up"]')); if (e) e.textContent = '⏳ Feuilles de match : ' + U.f + ' / ' + U.n + ' (la 1re fois seulement)'; }); } catch (e) {}
         U.f = f0 + L.length;
         if (nw) {
           old.parMatch = Object.assign(old.parMatch || {}, nw.parMatch); old.pres = Object.assign(old.pres || {}, nw.pres); old.joueurs = old.joueurs || {};
@@ -75650,7 +75650,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
             try { Q.D[t.id] = X.sp === 'soccer' ? await chargerFt(X.lg, t.id) : await chargerHk(t.nom, { sp: X.sp, lg: X.lg, id: t.id }); } catch (e) {}
           }
           Q.f++;
-          var e1 = document.getElementById('g45cr-cls-prog'); if (e1) e1.textContent = Q.f + ' / ' + Q.n;
+          var e1 = (function (L) { for (var i = L.length - 1; i >= 0; i--) if (L[i].getClientRects().length) return L[i]; return L[L.length - 1] || null; })(document.querySelectorAll('[id="g45cr-cls-prog"]')); if (e1) e1.textContent = Q.f + ' / ' + Q.n;
         }
       }
       await Promise.all([w(), w(), w()]);
@@ -75685,7 +75685,12 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     return h + '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">✅ 5 paliers ou moins · ⚠️ jusqu\'à ta dernière mise · ❌ au-delà de tes paliers (mises 1 ⭐). Touche une équipe pour ouvrir sa carte. 5 matchs comptés au minimum.</div></div>';
   }
   function redessiner() {
-    var z = document.getElementById('g45cr'); if (!z || !S.nom) return;
+    /* 20261029a (capture Compétitions → Séries équipes, Timberwolves : « les sélecteurs réagissent pas ») : #g45cr existe aussi dans une fiche
+       d'équipe restée cachée (Saisons) → getElementById redessinait la CACHÉE. Zone visible d'abord (même piège que _g45RegBoxVis, 20261028j). */
+    var zL = document.querySelectorAll('[id="g45cr"]'), z = null;
+    for (var zi = zL.length - 1; zi >= 0 && !z; zi--) if (zL[zi].getClientRects().length) z = zL[zi];
+    z = z || zL[zL.length - 1];
+    if (!z || !S.nom) return;
     var t = document.createElement('div'); t.innerHTML = html(S.nom, S.ctx);
     z.parentNode.replaceChild(t.firstChild, z);
   }
