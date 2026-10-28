@@ -81205,8 +81205,25 @@ window._g45TrTestVoit = function () { try { return (typeof _g45SanteActive === '
       h.setAttribute('style', 'display:flex;align-items:center;gap:10px;width:100%;background:#0b101d;border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:9px 14px;margin:14px 0 8px;color:#fff;font-size:17px;font-weight:900;cursor:pointer;text-align:left;');
       h.innerHTML = '<span>' + g.S[1] + ' ' + g.S[2] + '</span><span style="font-size:14px;color:#c9d3ee;font-weight:700;">· ' + n + ' ' + (k === 'f1' || k === 'tennis' ? 'carte' : 'équipe') + (n > 1 ? 's' : '') + '</span>'
         + '<span class="g45-mur-spf" style="margin-left:auto;font-size:14px;color:#c9d3ee;font-weight:700;">' + (f ? '▸ ouvrir' : '▾ replier') + '</span>';
-      var gr = document.createElement('div'); gr.className = 'g45-mur-grid'; if (f) gr.style.display = 'none';
-      g.l.forEach(function (r) { gr.appendChild(r); });
+      /* 20261028b (« que l'on ait équipe / joueur / compétition dans mes choix », maquette texte « oui ») : dans un sport qui mélange les types,
+         sous-titres 👥 Équipes / 👤 Joueurs / 🏆 Compétitions (u.type), chacun avec sa grille ; un seul type → une grille comme avant.
+         Le tout dans un conteneur (nextElementSibling du titre) pour que « replier » cache tout. */
+      var T = { club: [], joueur: [], competition: [] };
+      g.l.forEach(function (r) { var b = r.querySelector('[data-idx]'), u = b ? state.u[+b.getAttribute('data-idx')] : null; var t = u && (u.type === 'joueur' || u.type === 'competition') ? u.type : 'club'; T[t].push(r); });
+      var nT = ['club', 'joueur', 'competition'].filter(function (t) { return T[t].length; }).length;
+      var gr;
+      if (nT < 2) { gr = document.createElement('div'); gr.className = 'g45-mur-grid'; g.l.forEach(function (r) { gr.appendChild(r); }); }
+      else {
+        gr = document.createElement('div'); gr.className = 'g45-mur-spw';
+        [['club', '👥 Équipes'], ['joueur', '👤 Joueurs'], ['competition', '🏆 Compétitions']].forEach(function (x) {
+          if (!T[x[0]].length) return;
+          var st = document.createElement('div'); st.setAttribute('style', 'font-size:14px;font-weight:800;color:#fff;margin:10px 2px 6px;');
+          st.textContent = x[1] + ' (' + T[x[0]].length + ')';
+          var g2 = document.createElement('div'); g2.className = 'g45-mur-grid'; T[x[0]].forEach(function (r) { g2.appendChild(r); });
+          gr.appendChild(st); gr.appendChild(g2);
+        });
+      }
+      if (f) gr.style.display = 'none';
       frag.appendChild(h); frag.appendChild(gr);
     });
     grilles[0].replaceWith(frag);
