@@ -26510,6 +26510,18 @@ async function loadCalendrier() {
     try { return window._g45AgLieuOk(m, _agMur(m)); } catch(e) { return true; }
   });
   try { window._g45AgDates = allMatches.map(function(m){ return Date.parse(m.date); }).filter(function(t){ return t > 0; }); } catch(e) {}   /* 20261017s : cache de l'Agenda */
+  /* 20261028p — 🏁 COCKPIT BET45 (Tendances) : liste des matchs des cartes DU MUR (lieu déjà filtré par _g45AgLieuOk), gardée pour le jour
+     (localStorage g45ck_ag {j, L [{t, n (carte), d (1 = domicile), adv, sp}]}) : l'Agenda gardé sur l'appareil (IndexedDB 'ag1') ne relit rien. */
+  try {
+    var _ckV = {}, _ckL = [];
+    allMatches.forEach(function(m){
+      var u = m.joueur ? ((state.u || []).filter(function(x){ return x && x.type === 'joueur' && x.n === m.joueur.nom; })[0] || _agMur(m)) : _agMur(m);
+      var t = Date.parse(m.date) || 0; if (!u || !t || _ckV[u.n + '|' + t]) return; _ckV[u.n + '|' + t] = 1;
+      _ckL.push({ t: t, n: u.n, d: m.isDom ? 1 : 0, adv: String(m.adv || ''), sp: m.sp || 'soccer' });
+    });
+    var _ckD = new Date(); window._g45CkAg = { j: _ckD.getFullYear() + '-' + (_ckD.getMonth() + 1) + '-' + _ckD.getDate(), L: _ckL };
+    localStorage.setItem('g45ck_ag', JSON.stringify(window._g45CkAg));
+  } catch(e) {}
 
   if(!allMatches.length) {
     el.innerHTML = '<div class="fc" style="color:var(--t3);text-align:center;">Aucun match à venir trouvé pour tes équipes.<br><small>(saison terminée ou calendrier pas encore publié)</small></div>';
@@ -75996,6 +76008,76 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     });
     u.psL = out; return true;
   }
+  /* ═══ 20261028p — 🏁 COCKPIT BET45 (Tendances, 5e bouton ; « ça reprend certaines équipes / joueurs de mon mur et leurs critères que j'ai
+     codés, rien de plus » ; maquette maq-cockpit2 → « aujourd'hui et cette nuit, sans 📊, oui ») ═══
+     Matchs = liste de l'Agenda (g45ck_ag, posée par loadCalendrier ; absente pour le jour → _g45AgRelire). Fenêtre : match pas fini (début
+     il y a moins de 3 h) jusqu'à demain 8 h. Par carte : 📌 pari du lieu (_g45AgConsigne, comme l'Agenda), 🚀 palier du lieu + mise
+     (_g45PalLieu, STRATS[u.s]), 📊 u.psL[dom|ext] sinon [glob]. Série absente, d'un autre jour ou d'un autre texte de pari → recalculée
+     toute seule (serEquipe / serJoueur, une carte à la fois), POUR TOUT LE MONDE (bet45 compris). Pari pas calculable / erreur : pas de 📊. ═══ */
+  S.ck = S.ck || { fait: {}, enCours: 0 };
+  function ckJour() { var d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
+  function ckListe() {
+    var A = window._g45CkAg; if (!A || A.j !== ckJour()) { try { A = JSON.parse(localStorage.getItem('g45ck_ag') || 'null'); } catch (e) { A = null; } }
+    if (!A || A.j !== ckJour()) return null;
+    var now = Date.now(), fin = new Date(); fin.setDate(fin.getDate() + 1); fin.setHours(8, 0, 0, 0);
+    return (A.L || []).filter(function (m) { return m.t > now - 3 * 3600e3 && m.t < fin.getTime(); }).sort(function (a, b) { return a.t - b.t; });
+  }
+  function ckU(n) { return ((typeof state !== 'undefined' && state.u) || []).filter(function (x) { return x && x.n === n; })[0] || null; }
+  function ckPari(u, dom) {   /* { k, t } du lieu, ou null */
+    var P = serParis(u), k = dom ? 'dom' : 'ext';
+    return P.filter(function (q) { return q.k === k; })[0] || P.filter(function (q) { return q.k === 'glob'; })[0] || null;
+  }
+  function ckAJour(u, q) { var R = u.psL && u.psL[q.k]; if (!R || R.t !== q.t) return false; var d = new Date(R.at || 0); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate() === ckJour() || !!R.err; }
+  function ckHtml() {
+    var L = ckListe(), e = function (x) { return String(x == null ? '' : x).replace(/[<>&"]/g, ''); };
+    var h = '<div id="g45ck"><div style="margin-top:4px;background:rgba(20,28,48,.95);border:1px solid #2a3a63;border-radius:12px;padding:12px;color:#fff;">'
+      + '<div style="font-size:18px;font-weight:800;">🏁 Cockpit BET45 — tes cartes qui jouent</div>'
+      + '<div style="font-size:14px;color:#c9d3ee;margin-top:4px;line-height:1.5;">Les équipes et joueurs de ton mur qui jouent aujourd\'hui et cette nuit, avec <b style="color:#fff;">ton pari</b>, ton <b style="color:#fff;">palier et ta mise</b>, et la <b style="color:#fff;">pire série sur 4 saisons</b> de ce pari.</div></div>';
+    if (!L) return h + '<div style="font-size:15px;color:#fff;padding:14px 4px;">⏳ Lecture des matchs de ton mur…</div></div>';
+    if (!L.length) return h + '<div style="font-size:15px;color:#fff;padding:14px 4px;">Aucune carte de ton mur ne joue aujourd\'hui ni cette nuit.</div></div>';
+    var col = function (v) { return v <= 2 ? '#1ed760' : v <= 4 ? '#ff9f43' : '#ff5a5a'; }, jr = '', auj = new Date().toDateString();
+    var SP = { soccer: '⚽', hockey: '🏒', basketball: '🏀', football: '🏈', baseball: '⚾', rugby: '🏉', 'rugby-league': '🏉' };
+    L.forEach(function (m) {
+      var u = ckU(m.n); if (!u) return;
+      var d = new Date(m.t), j = d.toDateString() === auj ? 'Aujourd\'hui · ' + d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }) : 'Cette nuit · ' + d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+      if (j !== jr) { jr = j; h += '<div style="display:inline-block;background:rgba(11,16,29,.85);color:#fff;font-size:14px;font-weight:800;text-transform:uppercase;border-radius:8px;padding:5px 12px;margin:14px 0 8px;">' + e(j) + '</div>'; }
+      var ico = m.d ? '🏠' : '✈️', q = ckPari(u, m.d), C = null;
+      try { if (u.note && (u.type !== 'joueur' || /🏠|✈|🛫/.test(u.note))) C = _g45AgConsigne(u.note, !!m.d); } catch (x) {}
+      var pal = '';
+      try { if (u.s != null && typeof STRATS !== 'undefined' && STRATS[u.s]) { var p = (typeof _g45PalLieu === 'function') ? _g45PalLieu(u, m.d ? 'dom' : 'ext') : (parseInt(u.l, 10) || 1), mi = STRATS[u.s][p - 1];
+        if (mi != null) pal = '<div style="margin-top:6px;"><span style="display:inline-block;background:rgba(240,176,32,.22);border:1px solid #f0b020;color:#fff;font-size:15px;font-weight:800;border-radius:7px;padding:3px 10px;">🚀 Palier ' + p + ' · mise ' + (Math.round(mi * 100) / 100).toLocaleString('fr-FR') + ' € <span style="color:#f5c542;">' + new Array((parseInt(u.s, 10) || 0) + 1).join('⭐') + '</span></span></div>'; } } catch (x) {}
+      var R = q && u.psL && u.psL[q.k], ps = '';
+      if (R && !R.err && R.p && R.p.length) {
+        var pa = (typeof _g45F1CrPal === 'function') ? _g45F1CrPal(R.tot) : { p: R.tot + 1, ico: '' };
+        ps = '<div style="font-size:15px;font-weight:700;margin-top:6px;background:rgba(47,107,255,.25);border-radius:8px;padding:5px 8px;">📊 ' + ({ glob: '🌍', dom: '🏠', ext: '✈️' }[q.k]) + ' pire série '
+          + R.p.map(function (v) { return '<span style="color:' + col(v) + ';">' + v + '</span>'; }).join(' · ') + ' → <b>' + pa.p + ' palier' + (pa.p > 1 ? 's' : '') + ' ' + pa.ico + '</b> <span style="font-weight:400;color:#c9d3ee;">· 4 saisons</span></div>';
+      } else if (q && !ckAJour(u, q)) ps = '<div style="font-size:13px;color:#c9d3ee;margin-top:6px;">⏳ Calcul de la série sur 4 saisons…</div>';
+      h += '<div style="background:rgba(20,28,48,.95);border:1px solid #2a3a63;border-left:4px solid ' + e(u.color || '#5ad6ff') + ';border-radius:12px;padding:10px 12px;margin-bottom:10px;color:#fff;">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><div style="font-size:16px;font-weight:800;">' + (SP[m.sp] || '') + ' ' + e(u.n) + ' ' + ico + ' <span style="font-weight:400;color:#c9d3ee;">vs ' + e(m.adv) + '</span></div>'
+        + '<div style="flex:none;font-size:18px;font-weight:900;background:rgba(11,16,29,.85);border-radius:8px;padding:2px 9px;">' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) + '</div></div>'
+        + (C && C.txt ? '<div style="font-size:15px;background:rgba(11,16,29,.8);border-radius:8px;padding:6px 8px;margin-top:6px;color:#8fb4ff;">📌 ' + e(C.txt) + '</div>' : '')
+        + pal + ps + '</div>';
+    });
+    return h + '</div>';
+  }
+  function ckRedessiner() { var z = document.getElementById('g45ck'); if (!z) return; var t = document.createElement('div'); t.innerHTML = ckHtml(); z.parentNode.replaceChild(t.firstChild, z); }
+  async function ckLancer() {
+    var Q = S.ck; if (Q.enCours) return; Q.enCours = 1;
+    try {
+      if (!ckListe() && Q.relu !== ckJour() && typeof window._g45AgRelire === 'function') { Q.relu = ckJour(); try { await window._g45AgRelire(); } catch (e) {} ckRedessiner(); }
+      var L = ckListe() || [], vu = {}, ch = false;
+      for (var i = 0; i < L.length; i++) {
+        var u = ckU(L[i].n); if (!u || vu[u.n]) continue; vu[u.n] = 1;
+        var q = ckPari(u, L[i].d); if (!q || ckAJour(u, q) || Q.fait[u.n + '|' + ckJour()]) continue;
+        Q.fait[u.n + '|' + ckJour()] = 1;   /* une tentative par carte et par jour (pas de boucle si ESPN ne répond pas) */
+        try { await (u.type === 'joueur' ? serJoueur(u) : serEquipe(u)); ch = true; } catch (e) {}
+        ckRedessiner();
+      }
+      if (ch) { try { save(); } catch (e) {} }
+    } finally { Q.enCours = 0; ckRedessiner(); }
+  }
+  window._g45CkHtml = function () { setTimeout(function () { ckLancer(); }, 0); return ckHtml(); };
+  window._g45CkListe = ckListe;   /* tests */
   window._g45SerNomJ = serNomJ; window._g45SerStatJ = serStatJ; window._g45SerLegsJ = serLegsJ; window._g45SerJoueur = serJoueur;   /* tests */
   S.ser = S.ser || { etat: 0, f: 0, n: 0 };
   window.g45SerLancer = function () {
@@ -78429,6 +78511,7 @@ window._g45UfDecoupe = function (note) {
   };
   window._g45AgPurger = purger;
   window._g45AgSig = sig; window._g45AgOp = op; window._g45AgJour = jour;
+  window._g45AgRelire = function () { C = null; return op('del').then(function () { return env(); }); };   /* 20261028p : Cockpit BET45 sans liste du jour */
   var copier = function (s, t) {
     var el = document.getElementById('cal-content');
     if (!el || !C || C.t !== t) return;
@@ -79132,7 +79215,7 @@ window._g45AgJouUs = async function (nowTs) {
    (son propre observateur) : cachée par le CSS hors de « ⭐ Sélection du jour ».
    Mémoire : localStorage g45tr_vue (bet / perso / but / clv) et g45tr_sous (sel / his / gra) ; par défaut bet + sel. */
 (function () {
-  var VUES = { bet: 1, perso: 1, but: 1, clv: 1 }, SOUS = { sel: 1, his: 1, gra: 1, bil: 1 };   /* 20261023y : bil = 📊 Bilans (gones) */
+  var VUES = { bet: 1, perso: 1, but: 1, clv: 1, ck: 1 }, SOUS = { sel: 1, his: 1, gra: 1, bil: 1 };   /* 20261023y : bil = 📊 Bilans (gones) */
   var lire = function (k, ok, def) { try { var v = localStorage.getItem(k); return ok[v] ? v : def; } catch (e) { return def; } };
   var ecrire = function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} };
   var vue = function () { return lire('g45tr_vue', VUES, 'bet'); };
@@ -79149,7 +79232,7 @@ window._g45AgJouUs = async function (nowTs) {
         + '#t-tend[data-g45v="perso"] #g45tr-off,#t-tend[data-g45v="perso"] .g45tr-butclv{display:none!important}'
         + '#t-tend[data-g45v="but"] button[onclick="loadTendancesTab()"],#t-tend[data-g45v="clv"] button[onclick="loadTendancesTab()"]{display:none!important}'
         + '#g45tr-nav .g45tr-n1{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:2px 0 10px}'
-        + '@media(min-width:620px){#g45tr-nav .g45tr-n1{grid-template-columns:repeat(4,minmax(0,1fr))}}'
+        + '@media(min-width:620px){#g45tr-nav .g45tr-n1{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(min-width:900px){#g45tr-nav .g45tr-n1{grid-template-columns:repeat(5,minmax(0,1fr))}}'   /* 20261028p : 5 boutons */
         + '#g45tr-nav .g45tr-n2{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:0 0 12px}'
         + '#g45tr-nav .g45tr-n2b{grid-template-columns:repeat(2,minmax(0,1fr))}@media(min-width:620px){#g45tr-nav .g45tr-n2b{grid-template-columns:repeat(4,minmax(0,1fr))}}'   /* 20261023y */
         + '#g45tr-nav button{cursor:pointer;color:#fff;font-weight:800;line-height:1.2}'
@@ -79173,7 +79256,7 @@ window._g45AgJouUs = async function (nowTs) {
         + ';background:' + (on ? '#1a2235' : 'rgba(11,16,29,.92)') + ';">' + lbl + '</button>';
     };
     return '<div id="g45tr-nav"><div class="g45tr-n1">' + b1('bet', '📒 Tendances BET45') + b1('perso', '🔍 Tendances perso')
-      + b1('but', '⚽ Tendances buteurs') + b1('clv', '📏 CLV') + '</div>'
+      + b1('but', '⚽ Tendances buteurs') + b1('clv', '📏 CLV') + b1('ck', '🏁 Cockpit BET45') + '</div>'   /* 20261028p */
       + (v === 'bet' ? '<div class="g45tr-n2' + (bilOk() ? ' g45tr-n2b' : '') + '">' + b2('sel', '⭐ Sélection du jour') + b2('his', '📅 Historique') + b2('gra', '📈 Graphique / Stats') + (bilOk() ? b2('bil', '📊 Bilans') : '') + '</div>' : '')
       + '</div>';
   };
@@ -79218,6 +79301,7 @@ window._g45AgJouUs = async function (nowTs) {
     if (k === 'perso') { r = _load.apply(this, arguments); if (!(window._g45TnPerso && window._g45TnPerso(el))) rangerPerso(el); }   /* 20261020i : 🎾 Tennis */
     else if (k === 'but') r = _but();
     else if (k === 'clv') r = _clv();
+    else if (k === 'ck') { var ch = ''; try { ch = window._g45CkHtml(); } catch (e) {} el.innerHTML = nav() + ch; }   /* 20261028p : 🏁 Cockpit BET45 */
     else if (k === 'bet-sel') {
       ecrire('g45tr_sel_ferme', '0');   /* ouverte d'office ici */
       var s = ''; try { s = window._g45TrSelHtml(); } catch (e) {}

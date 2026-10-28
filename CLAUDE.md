@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action (il est court exprès). Le détail de tout l'historique est dans HISTORIQUE.md
-(à chercher avec grep, jamais à lire en entier). Mis à jour le 28/10/2026 (version déployée : 20261028o, même app.js sur gones45 et fenotte45).
+(à chercher avec grep, jamais à lire en entier). Mis à jour le 28/10/2026 (version déployée : 20261028p, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -102,7 +102,7 @@ Index des zones (fonction d'entrée → mot à chercher dans HISTORIQUE.md) :
 - Ticket `_g45TicketIa` / `_g45TicketRemplir` / `_g45TicketRemplirCockpit` / `_g45TkRacines`
 - Paris : comptabilité `_g45BetEffetTotal` / `_g45BetAppliquer` (seule source de vérité), cartes « en cours » (data-g45ec), synchro `_g45PushBetsGithub` / `_g45BetsFusion`
 - Mur / accueil `_g45AccRegrouper`, cartes joueur `_g45JoueurVisLire`, logos `g45LogoUrlDe`, fond `_g45FondLogo`, limite bet45 `_g45MurLimite`
-- Tendances `g45TrRun` / `_g45TrRender`, officielles `_g45TrOffHtml` (robot .github/scripts/tendances.mjs), sélection du jour `_g45TrSelHtml`, 📊 Bilans `_g45BilHtml` (gones, sélecteur Officiel / Test / Pause par pari → données/robot_reglages.json { etat } lu par le robot ; test / pause suivis dans J.pz)
+- Tendances `g45TrRun` / `_g45TrRender`, officielles `_g45TrOffHtml` (robot .github/scripts/tendances.mjs), sélection du jour `_g45TrSelHtml`, 🏁 Cockpit BET45 `_g45CkHtml` (cartes du mur qui jouent, séries u.psL de « 🔄 Calculer mes séries » `g45SerLancer`, Outils → Équipes), 📊 Bilans `_g45BilHtml` (gones, sélecteur Officiel / Test / Pause par pari → données/robot_reglages.json { etat } lu par le robot ; test / pause suivis dans J.pz)
 - Tennis (analyse ESPN) `g45TnAnalyser` / `_g45TnSaison` / `_g45TnCalc` / `_g45TnSurf`, bouton Tendances perso `_g45TnPerso`, Elo `_g45TnEloDe`, recherche joueur `searchTennisPlayer` / `_g45TjCalc`, classement par surface `_g45TcListe` (robot .github/scripts/elo.mjs)
 - Marqueurs `g45ButeursView`, `g45MarqueursUS`, `g45NbaMq` · CLV `g45ClvView` · quota cotes `_g45QtHtml`
 - IA du match `_g45MultiAI` · articles `_g45ArticleBloc` · santé `g45SanteTester` (gones seulement : `_g45SanteActive`)
