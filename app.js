@@ -43575,7 +43575,9 @@ var _G45_CACHE_MAX=60*1024;
         if(k!=='g45v5' && _G45_CACHE_PREFIXES.some(function(p){ return k.indexOf(p)===0; })){
           var taille=String(v||'').length;
           /* 20261030f : index joueurs NBA d'une saison ≈ 60 Ko (82 matchs × 4 stats × 12 joueurs, même allégé) → plafond à part 150 Ko */
-          if(taille>(k.indexOf('g45_jou_v2_basketball_')===0 ? 150*1024 : _G45_CACHE_MAX)){
+          /* 20261030g (console : « cache non persisté (trop volumineux : 119 Ko) — g45cm11_basketball_nba_2027 » ; mémoire à ≈ 45 % chez Antoine, « lève si
+             ça ne gêne en rien ») : matchs NBA d'une saison (≈ 120 Ko, 2 saisons au plus) → 200 Ko, seulement la NBA (pas toutes les ligues). */
+          if(taille>(k.indexOf('g45_jou_v2_basketball_')===0 ? 150*1024 : (k.indexOf('g45cm11_basketball_nba_')===0 ? 200*1024 : _G45_CACHE_MAX))){
             if(!prevenu[k]){ prevenu[k]=1; console.info('↩️ cache non persisté (trop volumineux : '+Math.round(taille/1024)+' Ko) — '+k); }
             return;
           }
