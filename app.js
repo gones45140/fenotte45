@@ -76893,7 +76893,7 @@ window._G45_PAL_COUL = ['#1ed760', '#8fdc4a', '#f5c542', '#ffa53a', '#ff7a3a', '
     return '<div class="g45ul-ps" style="margin-top:4px;background:rgba(47,107,255,.25);border-radius:6px;padding:4px 7px;font-size:14px;color:#fff;font-weight:700;font-style:normal;line-height:1.45;">📊 ' + ico + e(P.lib)
       + ' — pire série ' + P.p.map(function (v) { return '<span style="color:' + col(v) + ';">' + v + '</span>'; }).join(' · ')
       + '<br><span style="font-weight:400;font-size:13px;color:#c9d3ee;">' + e(P.ans[0]) + (P.ans.length > 1 ? ' → ' + e(P.ans[P.ans.length - 1]) : '') + ' · <b style="color:#fff;">' + pa.p + ' paliers ' + pa.ico + '</b>'
-      + (pa.mise != null ? ' · ' + pa.mise + ' €' : '') + ' · mis à jour le ' + dt + '</span></div>';
+      + (pa.mise != null ? ' · ' + pa.mise + ' €' : '') + (pa.cum != null ? ' <span style="color:#ffb3b3;">(total misé ' + (Math.round(pa.cum * 100) / 100).toLocaleString('fr-FR') + ' €)</span>' : '') + ' · mis à jour le '   /* 20261030d : total misé aussi sur les cartes */ + dt + '</span></div>';
   };
   /* 20261028h — 🔄 Calculer mes séries (g45SerLancer, module des critères) : une ligne par pari écrit, 🌍 puis 🏠 puis ✈️ ;
      « 📊 🏠 pire série 2 · 3 · 1 · 4 → 5 paliers ✅ · 1 € » (saison la plus récente d'abord, paliers = pire des 4 saisons à la suite + 1). */
@@ -76907,7 +76907,7 @@ window._G45_PAL_COUL = ['#1ed760', '#8fdc4a', '#f5c542', '#ffa53a', '#ff7a3a', '
       at = Math.max(at, R.at || 0);
       var pa = window._g45PalCarte(R.tot, u);
       h += '<div>📊 ' + k[1] + ' pire série ' + R.p.map(function (v) { return '<span style="color:' + col(v) + ';">' + v + '</span>'; }).join(' · ')
-        + ' → <b>' + pa.p + ' palier' + (pa.p > 1 ? 's' : '') + ' ' + pa.ico + '</b>' + (pa.mise != null ? ' <span style="font-weight:400;color:#c9d3ee;">· ' + pa.mise + ' €</span>' : '') + '</div>';
+        + ' → <b>' + pa.p + ' palier' + (pa.p > 1 ? 's' : '') + ' ' + pa.ico + '</b>' + (pa.mise != null ? ' <span style="font-weight:400;color:#c9d3ee;">· ' + pa.mise + ' €</span>' : '') + (pa.cum != null ? ' <span style="color:#ffb3b3;">(total misé ' + (Math.round(pa.cum * 100) / 100).toLocaleString('fr-FR') + ' €)</span>' : '') + '</div>';   /* 20261030d (« rajoute ici aussi le total », Outils → Équipes) */
     });
     if (!h) return '';
     var d = new Date(at || Date.now()), dt = ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2);
