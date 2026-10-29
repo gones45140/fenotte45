@@ -76266,16 +76266,24 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var C = {};
     P.forEach(function (x) {
       var c = C[x.b.n] = C[x.b.n] || { c: x.b.n, ok: 0, t: 0, g: 0, L: {} }, lk = x.b.domicile === 'dom' ? 'dom' : x.b.domicile === 'ext' ? 'ext' : 'glob';
-      var l = c.L[lk] = c.L[lk] || { ok: 0, t: 0, g: 0 };
+      var l = c.L[lk] = c.L[lk] || { ok: 0, t: 0, g: 0, ty: {} };
+      var ty = (typeof _g45TypeMots === 'function' ? _g45TypeMots(x.b.type, x.b.n, x.b.target) : x.b.type) || ''; if (ty && ty !== '-') l.ty[ty] = (l.ty[ty] || 0) + 1;   /* 20261029p */
       c.t++; l.t++; if (x.r) { c.ok++; l.ok++; } c.g += x.g; l.g += x.g;
     });
     var gC = function (v) { return v >= 0 ? '#1ed760' : '#ff5a5a'; };
     h += ckBox('<div style="font-size:16px;font-weight:800;margin-bottom:4px;">Par carte (détail 🏠 / ✈️ dessous)</div>' + Object.keys(C).map(function (k) { return C[k]; }).sort(function (a, b) { return b.g - a.g; }).map(function (c) {
       var ix = ckDist() ? (S.ck.D && S.ck.D.u && S.ck.D.u[c.c] ? 1 : -1) : ((typeof state !== 'undefined' && state.u) || []).findIndex(function (u) { return u && u.n === c.c; });   /* 20261029f : ligne → fiche de la carte (Bilan / Graphs / Archive / Types) */
       var det = [['dom', '🏠'], ['ext', '✈️'], ['glob', '🌍']].filter(function (q) { return c.L[q[0]]; }).map(function (q) { var l = c.L[q[0]]; return q[1] + ' ' + l.ok + '/' + l.t + ' <b style="color:' + gC(l.g) + ';">' + ckEur(l.g) + '</b>'; });
-      return '<div ' + (ix >= 0 ? (ckDist() ? 'data-n="' + e(c.c) + '" onclick="g45CkFicheDist(this.dataset.n)" ' : 'onclick="g45CkFiche(' + ix + ')" ') : '') + 'style="padding:7px 0;border-bottom:1px solid #1c2747;' + (ix >= 0 ? 'cursor:pointer;' : '') + '">'
-        + '<div style="display:flex;justify-content:space-between;gap:8px;font-size:15px;"><b>' + e(c.c) + (ix >= 0 ? ' <span style="color:#8fb4ff;">›</span>' : '') + '</b><span>' + c.ok + '/' + c.t + ' · <b style="color:' + gC(c.g) + ';">' + ckEur(c.g) + '</b></span></div>'
-        + (det.length > 1 || (det.length === 1 && !c.L.glob) ? '<div style="font-size:13px;color:#c9d3ee;margin-top:2px;">' + det.join(' · ') + '</div>' : '') + '</div>';
+      /* 20261029p (capture « Par carte » sur PC : « ici on a de la place au centre, donc on peut écrire le type de pari ») : au centre, les
+         types joués par lieu (mots d'Antoine, _g45TypeMots), « ×n » si plusieurs fois ; sur téléphone, ils passent sous le nom. */
+      var tys = [['dom', '🏠'], ['ext', '✈️'], ['glob', '🌍']].filter(function (q) { return c.L[q[0]] && Object.keys(c.L[q[0]].ty || {}).length; }).map(function (q) {
+        var T = c.L[q[0]].ty; return '<div>' + q[1] + ' ' + Object.keys(T).sort(function (a, b) { return T[b] - T[a]; }).map(function (k) { return e(k) + (T[k] > 1 ? ' <span style="color:#8fb4ff;">×' + T[k] + '</span>' : ''); }).join(' · ') + '</div>';
+      }).join('');
+      return '<div ' + (ix >= 0 ? (ckDist() ? 'data-n="' + e(c.c) + '" onclick="g45CkFicheDist(this.dataset.n)" ' : 'onclick="g45CkFiche(' + ix + ')" ') : '') + 'style="display:flex;flex-wrap:wrap;align-items:flex-start;gap:4px 12px;padding:7px 0;border-bottom:1px solid #1c2747;' + (ix >= 0 ? 'cursor:pointer;' : '') + '">'
+        + '<div style="flex:1 1 170px;min-width:0;"><b style="font-size:15px;">' + e(c.c) + (ix >= 0 ? ' <span style="color:#8fb4ff;">›</span>' : '') + '</b>'
+        + (det.length > 1 || (det.length === 1 && !c.L.glob) ? '<div style="font-size:13px;color:#c9d3ee;margin-top:2px;">' + det.join(' · ') + '</div>' : '') + '</div>'
+        + (tys ? '<div class="g45ck-ty" style="flex:2 1 260px;min-width:0;font-size:14px;color:#fff;line-height:1.45;">' + tys + '</div>' : '')
+        + '<div style="flex:0 0 auto;margin-left:auto;font-size:15px;white-space:nowrap;">' + c.ok + '/' + c.t + ' · <b style="color:' + gC(c.g) + ';">' + ckEur(c.g) + '</b></div></div>';
     }).join(''));
     return h;
   }
