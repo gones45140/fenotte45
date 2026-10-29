@@ -83687,6 +83687,7 @@ window._g45MqPalHtml = function (pire, pd) {
   };
   window.g45DkChoix = function (m) {   /* 20261030u : sélecteur, puis blocs ouverts redessinés */
     try { localStorage.setItem('g45dk_aff', m === 'fr' ? 'fr' : 'dk'); } catch (e) {}
+    try { localStorage.setItem('g45ce_ouvert', localStorage.getItem('g45ce_ouvert') === '1' ? '' : '1'); window.g45CeOuvrir(); } catch (e) {}   /* 20261030x : bloc équipes redessiné (ouvert / fermé inchangé) */
     document.querySelectorAll('[data-g45cj]').forEach(function (b) { var k = String(b.getAttribute('data-g45cj')), i = k.lastIndexOf('_'); window.g45CjTab(k.slice(0, i), k.slice(i + 1), b.getAttribute('data-tab') || ''); });
   };
   var poser = async function (el, lg, eid) {
@@ -83699,11 +83700,87 @@ window._g45MqPalHtml = function (pire, pd) {
     var b = document.createElement('div'); b.setAttribute('data-g45cj', lg + '_' + eid); b.innerHTML = html(lg, eid, D, cf(lg).t[0][0], 0);
     el.appendChild(b); el._g45Cj = b.outerHTML;
   };
+  /* ═══ 20261030x — ⚽ COTES MATCH / ÉQUIPES (maquette fe « oui » + « tu parlais aussi d'handicap » → « oui ») ═══ Sous les cotes joueurs :
+     Résultat (1N2), Handicap, Total du match = cotes principales core …/odds (fournisseur 100 DraftKings ; chaque cote RATTACHÉE à son équipe
+     (homeTeamOdds / awayTeamOdds) ou à over / under → aucune devinette) ; Les deux marquent (foot, 152 par l'ORDRE comme la page ESPN) ;
+     Buts de chaque équipe (foot 253, NHL 151 hors prolongation ; plus / moins séparés par _g45AgTeqSep). Champs des cotes principales lus
+     sous plusieurs formes (moneyLine / spreadOdds / overOdds, sinon current.*) : une ligne absente n'est pas affichée. Repliable (g45ce_ouvert). */
+  var MEQ = {};
+  var dec = function (v) { if (v && typeof v === 'object') v = v.decimal != null ? v.decimal : (v.american != null ? v.american : (v.value != null ? v.value : v.odds)); return typeof _g45TrDec === 'function' ? _g45TrDec(v) : parseFloat(v); };
+  async function chargerEq(lg, eid) {
+    var K = lg + '_' + eid; if (MEQ[K] && Date.now() - MEQ[K].t < 600000) return MEQ[K].E;
+    var C = cf(lg), E = { h: {}, a: {} };
+    try {
+      var sb = await (await fetch('https://site.api.espn.com/apis/site/v2/sports/' + C.sp + '/' + lg + '/summary?event=' + eid)).json();
+      ((((sb || {}).header || {}).competitions || [])[0] || {}).competitors.forEach(function (c) { var t = c.team || {}; E[c.homeAway === 'home' ? 'h' : 'a'] = { id: String(t.id || ''), nom: t.shortDisplayName || t.displayName || t.name || '', c: t.color ? '#' + String(t.color).replace('#', '') : '#5a6788' }; });
+    } catch (e) {}
+    try {
+      var j = await (await fetch('https://sports.core.api.espn.com/v2/sports/' + C.sp + '/leagues/' + lg + '/events/' + eid + '/competitions/' + eid + '/odds')).json();
+      var o = ((j && j.items) || []).filter(function (x) { return String((x.provider || {}).id) === '100'; })[0] || ((j && j.items) || [])[0];
+      if (o) {
+        var H = o.homeTeamOdds || {}, A = o.awayTeamOdds || {}, cu = function (T, k) { return (T.current || {})[k] || (T.close || {})[k] || (T.open || {})[k]; };
+        E.ml = { h: dec(H.moneyLine) || dec(cu(H, 'moneyLine')), a: dec(A.moneyLine) || dec(cu(A, 'moneyLine')), d: dec((o.drawOdds || {}).moneyLine) || dec(cu(o.drawOdds || {}, 'moneyLine')) };
+        var sp = parseFloat(o.spread); if (isNaN(sp)) { var md = String(o.details || '').match(/([+-]?\d+(?:\.\d+)?)\s*$/); if (md && !/^[+-]?\d{3,}$/.test(md[1])) sp = parseFloat(md[1]) * (String(o.details).indexOf(String((H.team && H.team.abbreviation) || '§')) === 0 ? 1 : 1); }
+        E.sp = { L: isNaN(sp) ? null : sp, h: dec(H.spreadOdds) || dec(cu(H, 'pointSpread')) || dec(cu(H, 'spread')), a: dec(A.spreadOdds) || dec(cu(A, 'pointSpread')) || dec(cu(A, 'spread')) };
+        var ou = parseFloat(o.overUnder); E.tot = { L: isNaN(ou) ? null : ou, o: dec(o.overOdds) || dec((o.current || {}).over), u: dec(o.underOdds) || dec((o.current || {}).under) };
+      }
+    } catch (e) {}
+    try {
+      var pb = await (await fetch('https://sports.core.api.espn.com/v2/sports/' + C.sp + '/leagues/' + lg + '/events/' + eid + '/competitions/' + eid + '/odds/100/propBets?limit=500')).json(), it = (pb && pb.items) || [];
+      if (C.sp === 'soccer') E.bts = typeof _g45AgBtsLire === 'function' ? _g45AgBtsLire(it) : null;
+      var ty = C.sp === 'hockey' ? '151' : (C.sp === 'soccer' ? '253' : '');
+      if (ty) ['h', 'a'].forEach(function (k) {
+        var L = []; it.forEach(function (x) { if (String((x.type || {}).id) !== ty || !E[k].id || !String((x.team || {}).$ref || '').match(new RegExp('teams/' + E[k].id + '(\\D|$)'))) return;
+          var t = parseFloat(((x.current || {}).target || {}).value), d = _g45NhlDkCote(x); if (!isNaN(t) && d > 1) L.push([t, d]); });
+        if (L.length && typeof _g45AgTeqSep === 'function') E[k].teq = _g45AgTeqSep(L);
+      });
+    } catch (e) {}
+    MEQ[K] = { t: Date.now(), E: E }; return E;
+  }
+  function htmlEq(lg, eid, E) {
+    var OUV = false; try { OUV = localStorage.getItem('g45ce_ouvert') === '1'; } catch (e) {}
+    var EST = window._g45DkMode() === 'fr', FR = window._G45_TR_FR || 0.94, v = function (d) { return d > 1 ? (EST ? '≈ ' + f(Math.max(1.01, Math.round(d * FR * 100) / 100)) : f(d)) : '–'; };
+    var cel = function (lib, d) { return '<div style="flex:1;min-width:0;text-align:center;background:rgba(11,16,29,.6);border-radius:8px;padding:6px 4px;"><div style="font-size:13px;color:#c9d3ee;">' + lib + '</div><div style="font-size:17px;font-weight:900;color:#1ed760;">' + v(d) + '</div></div>'; };
+    var tit = function (t, c) { return '<div style="font-size:14px;font-weight:800;margin:12px 0 4px;' + (c ? 'border-left:4px solid ' + esc(c) + ';padding-left:6px;' : '') + '">' + t + '</div>'; };
+    var vir = function (x) { return String(x).replace('.', ','); }, sg = function (x) { return (x > 0 ? '+' : (x < 0 ? '−' : '')) + vir(Math.abs(x)); };
+    var h = '<div class="g45-ce" style="background:rgba(17,22,38,.95);border-radius:12px;padding:12px;margin:12px 0;color:#fff;">'
+      + '<div onclick="g45CeOuvrir()" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:15px;font-weight:800;letter-spacing:1px;"><span>' + (CFG[lg] ? { hockey: '🏒', football: '🏈', basketball: '🏀' }[CFG[lg].sp] : '⚽') + ' COTES MATCH / ÉQUIPES <span style="font-size:13px;color:#9fb0c7;font-weight:600;letter-spacing:0;">(' + (EST ? 'estimée France' : 'DraftKings') + ')</span></span>'
+      + '<span style="font-size:14px;color:#8fb4ff;letter-spacing:0;white-space:nowrap;">' + (OUV ? '▾ Replier' : '▸ Ouvrir') + '</span></div>';
+    if (!OUV) return h + '</div>';
+    var nH = esc(E.h.nom || 'Domicile'), nA = esc(E.a.nom || 'Extérieur'), r = '';
+    if (E.ml && (E.ml.h > 1 || E.ml.a > 1)) r += tit('🏁 Résultat') + '<div style="display:flex;gap:6px;">' + cel(nH, E.ml.h) + (E.ml.d > 1 ? cel('Nul', E.ml.d) : '') + cel(nA, E.ml.a) + '</div>';
+    if (E.sp && E.sp.L != null && (E.sp.h > 1 || E.sp.a > 1)) r += tit('⚖️ Handicap') + '<div style="display:flex;gap:6px;">' + cel(nH + ' ' + sg(E.sp.L), E.sp.h) + cel(nA + ' ' + sg(-E.sp.L), E.sp.a) + '</div>';
+    if (E.tot && E.tot.L != null && (E.tot.o > 1 || E.tot.u > 1)) r += tit('🔢 Total du match') + '<div style="display:flex;gap:6px;">' + cel('Plus de ' + vir(E.tot.L), E.tot.o) + cel('Moins de ' + vir(E.tot.L), E.tot.u) + '</div>';
+    if (E.bts && (E.bts.o > 1 || E.bts.n > 1)) r += tit('🤝 Les deux équipes marquent') + '<div style="display:flex;gap:6px;">' + cel('Oui', E.bts.o) + cel('Non', E.bts.n) + '</div>';
+    ['h', 'a'].forEach(function (k) {
+      var T = E[k].teq; if (!T) return; var Ls = Object.keys(T).map(Number).sort(function (a, b) { return a - b; }).filter(function (x) { return x <= 3.5; }); if (!Ls.length) return;
+      r += tit('Buts de ' + esc(E[k].nom) + (CFG[lg] && CFG[lg].sp === 'hockey' ? ' <span style="font-size:12px;color:#c9d3ee;font-weight:600;">(hors prolongation)</span>' : ''), E[k].c);
+      Ls.forEach(function (L) { r += '<div style="display:flex;gap:6px;margin-top:4px;align-items:center;"><div style="width:44px;font-size:15px;font-weight:800;text-align:center;">' + vir(L) + '</div>' + cel('plus de', T[L].ov) + cel('moins de', T[L].un) + '</div>'; });
+    });
+    if (!r) r = '<div style="font-size:14px;color:#c9d3ee;padding:6px 2px;">Pas encore de cotes pour ce match.</div>';
+    return h + '<div style="margin-top:4px;">' + r + '</div></div>';
+  }
+  window._g45CeHtml = htmlEq;   /* tests */
+  window.g45CeOuvrir = function () {
+    try { localStorage.setItem('g45ce_ouvert', localStorage.getItem('g45ce_ouvert') === '1' ? '' : '1'); } catch (e) {}
+    document.querySelectorAll('[data-g45ce]').forEach(function (b) { var k = String(b.getAttribute('data-g45ce')), i = k.lastIndexOf('_'), E = (MEQ[k] || {}).E; if (!E) return; b.innerHTML = htmlEq(k.slice(0, i), k.slice(i + 1), E); var el = b.parentNode; if (el) el._g45Ce = b.outerHTML; });
+  };
+  var poserEq = async function (el, lg, eid) {
+    if (!el._g45CeObs && typeof MutationObserver === 'function') {
+      el._g45CeObs = new MutationObserver(function () { if (!el._g45Ce || el.querySelector('[data-g45ce]')) return; var d0 = document.createElement('div'); d0.innerHTML = el._g45Ce; el.appendChild(d0.firstChild); });
+      el._g45CeObs.observe(el, { childList: true });
+    }
+    if (el.querySelector('[data-g45ce]')) return;
+    var E = await chargerEq(lg, eid); if (!E || !el.isConnected) return;
+    if (!E.ml && !E.bts && !E.h.teq && !E.a.teq) return;
+    var b = document.createElement('div'); b.setAttribute('data-g45ce', lg + '_' + eid); b.innerHTML = htmlEq(lg, eid, E);
+    el.appendChild(b); el._g45Ce = b.outerHTML;
+  };
   var s0 = window._renderSaisonDetail;
   if (typeof s0 === 'function' && !s0._g45Cj) {
     window._renderSaisonDetail = async function (el, eventId, league) {
       var r = await s0.apply(this, arguments);
-      try { var lgF = String(league || '').toLowerCase(); if (el && eventId && cf(lgF) === FOOT) await poser(el, lgF, String(eventId)); } catch (e) {}
+      try { var lgF = String(league || '').toLowerCase(); if (el && eventId && cf(lgF) === FOOT) { await poser(el, lgF, String(eventId)); await poserEq(el, lgF, String(eventId)); } } catch (e) {}
       return r;
     };
     window._renderSaisonDetail._g45Cj = 1;
@@ -83718,9 +83795,9 @@ window._g45MqPalHtml = function (pire, pd) {
         el._g45CjObs.observe(el, { childList: true });
       }
       if (el.querySelector('[data-g45cj]')) return r;
-      var D = await charger(lg, eid); if (!D || !D.length || !el.isConnected) return r;
-      var b = document.createElement('div'); b.setAttribute('data-g45cj', lg + '_' + eid); b.innerHTML = html(lg, eid, D, CFG[lg].t[0][0], 0);
-      el.appendChild(b); el._g45Cj = b.outerHTML;
+      var D = await charger(lg, eid);
+      if (D && D.length && el.isConnected) { var b = document.createElement('div'); b.setAttribute('data-g45cj', lg + '_' + eid); b.innerHTML = html(lg, eid, D, CFG[lg].t[0][0], 0); el.appendChild(b); el._g45Cj = b.outerHTML; }
+      await poserEq(el, lg, String(eid));   /* 20261030x */
     } catch (e) {}
     return r;
   };
