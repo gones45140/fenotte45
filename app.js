@@ -73119,7 +73119,7 @@ function _g45AgConsigne(note, isDom) {
          plus de 2,5 ») ≠ total du match : jambe 'teq' (ESPN n'a pas de cote de total d'équipe → « regarde ton book »). */
       else if ((t2 = l.match(/buts?\s+(?:de|du|des|d['’])\s*(.+?)\s+(over|under|plus de|moins de)\s*(\d+(?:[.,]\d)?)/i))) legs.push({ k: 'teq', s: /over|plus/i.test(t2[2]) ? 'ov' : 'un', L: parseFloat(t2[3].replace(',', '.')), eq: t2[1].replace(/^(l['’]|la |le |les )/i, '').trim() });
       else if ((t2 = l.match(/(over|under|plus de|moins de)\s*(\d+(?:[.,]\d)?)/i))) legs.push({ k: /over|plus/i.test(t2[1]) ? 'ov' : 'un', L: parseFloat(t2[2].replace(',', '.')) });
-      else if (/buteur|marqueur|essai/i.test(l)) legs.push({ k: 'but' });
+      else if (/buteur|marqueur|essai/i.test(l)) legs.push({ k: 'but', t: l });   /* 20261030q : + texte (nom du buteur → cote DraftKings) */
       else legs.push({ k: '?', t: l });
     });
     if (legs.length) R.opts.push(legs);
@@ -73196,7 +73196,9 @@ function _g45AgOdHtml(C, od, sp) {
         if (od.line == null || Math.abs(od.line - l.L) > 0.01) { parts.push(lib + ' <span style="color:#ffb36b;">ligne non proposée' + (od.line != null ? ' (ESPN : ' + String(od.line).replace('.', ',') + ')' : '') + '</span>'); ok = false; return; }
         c = l.k === 'ov' ? od.ov : od.un;
       }
-      else if (l.k === 'but') { parts.push('<span style="color:#c9d3ee;">buteur : pas de cote</span>'); ok = false; return; }
+      else if (l.k === 'but') {   /* 20261030q : nom écrit → cote DraftKings remplie après coup (_g45AgButRemplir) */
+        var nB = String(l.t || '').replace(/buteur|marqueur|[àa] tout moment|anytime/gi, '').replace(/[<>"&]/g, '').trim();
+        parts.push(nB.length >= 3 ? '<span class="g45agbut" data-n="' + nB + '">⚽ ' + nB + ' buteur <span style="color:#c9d3ee;">…</span></span>' : '<span style="color:#c9d3ee;">buteur : pas de cote</span>'); ok = false; return; }
       else if (l.k === 'teq') { parts.push('🎯 ' + String(l.eq).replace(/</g, '&lt;') + ' ' + (l.s === 'ov' ? 'plus de ' : 'moins de ') + String(l.L).replace('.', ',') + ' buts <span style="color:#ffb36b;">pas de cote chez ESPN, regarde ton book</span>'); ok = false; return; }   /* 20261025k */
       else { parts.push('<span style="color:#c9d3ee;">« ' + String(l.t).replace(/</g, '&lt;') + ' » : pas de cote</span>'); ok = false; return; }
       if (!(c > 1)) { parts.push(lib + ' –'); ok = false; return; }
@@ -73304,6 +73306,7 @@ window._g45AgCotes = function (L) {
       if (!od) { _g45AgFrBtn(box, x); return; }
       if (od.vide || !(od.h > 1 || od.a > 1 || od.ov > 1 || od.un > 1 || od.line != null)) { box.innerHTML = '<div style="color:#9fb0c7;font-size:13px;">💶 cotes pas encore publiées par ESPN</div>'; _g45AgFrBtn(box, x); return; }
       box.innerHTML = _g45AgOdHtml(x.C, od, m.sp);
+      try { _g45AgButRemplir(box, sp, lg); } catch (e) {}   /* 20261030q */
       _g45AgFrBtn(box, x);
     })();
   });
@@ -73401,6 +73404,28 @@ window._g45AgJouCotes = function (L) {
   });
 };
 window._g45AgDkPari = _g45AgDkPari; window._g45AgDkCote = _g45AgDkCote;   /* tests */
+/* 20261030q (captures espn.com Nice – Rennes « Goalscorer Props » ; SONDE d'Antoine : foot 230 Anytime Goalscorer, 39 2+, 40 3+, 264 carton =
+   une cote par joueur ; 152 « les deux marquent » et 253 buts d'équipe = paires SANS étiquette → pas utilisés) : jambe « X buteur » d'un pari
+   d'ÉQUIPE de l'Agenda → cote « buteur à tout moment » du joueur (nom écrit = fin du nom ESPN suffit : « Kane » → « Harry Kane »). */
+function _g45AgDkTrouve(M, n) {
+  var k = String(n || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z]/g, ''); if (!k || !M) return null;
+  if (M[k]) return M[k];
+  var c = Object.keys(M).filter(function (x) { return x.length > k.length && x.slice(-k.length) === k; });
+  return c.length === 1 ? M[c[0]] : null;
+}
+function _g45AgButRemplir(box, sp, lg) {
+  var L = box.querySelectorAll('.g45agbut'); if (!L.length || !lg) return;
+  var ty = sp === 'football' ? '31' : '230';
+  _g45AgDkCharger(sp || 'soccer', lg).then(function (M) {
+    [].forEach.call(L, function (s) {
+      var o = _g45AgDkTrouve(M, s.getAttribute('data-n')), l = o && o[ty], f = function (x) { return x.toFixed(2).replace('.', ','); };
+      var q = s.lastChild; if (!q) return;
+      if (l && l[0]) { var d = l[0][1]; q.outerHTML = '<b style="color:#1ed760;">' + f(d) + '</b> <span style="color:#c9d3ee;">(≈ ' + f(Math.max(1.01, Math.round(d * (window._G45_TR_FR || 0.94) * 100) / 100)) + ' en France)</span>'; }
+      else q.outerHTML = '<span style="color:#ffb36b;">pas de cote chez ESPN, regarde ton book</span>';
+    });
+  });
+}
+window._g45AgDkTrouve = _g45AgDkTrouve;
 /* 20261008l (« le problème sera le quota », bouton validé « oui mais seulement sur gones ») — FOOT : bouton « 🇫🇷 Cotes books FR » sous la ligne
    ESPN, GONES45 SEULEMENT (`_g45SanteActive`, faux sur bet45). Un appui = The Odds API h2h région fr du championnat (1 crédit, clés
    _G45_TR_ODDSKEY / _G45_OA_LIGUES), même cache que l'Euroleague (g45agoa1_, 6 h) : championnat déjà lu → affiché tout de suite, sans bouton.
@@ -83494,13 +83519,16 @@ window._g45MqPalHtml = function (pire, pd) {
     nfl: { sp: 'football', t: [['td', '🏈 TD à tout moment', '31', null], ['td2', '2 TD ou +', '32', null]] },
     nba: { sp: 'basketball', t: [['pts', '🏀 Points', '218', 'm'], ['reb', '🔁 Rebonds', '220', 'm'], ['ast', '🎯 Passes', '219', 'm'], ['pra', '➕ Pts + reb + passes', '225', 'm']] }
   };
+  /* 20261030q : foot (toute ligue « xxx.n ») — Buteur 230 / 2 buts ou + 39 / Carton 264 ; fenêtre foot = _renderSaisonDetail(el, eventId, league) */
+  var FOOT = { sp: 'soccer', t: [['g', '⚽ Buteur', '230', null], ['g2', '2 buts ou +', '39', null], ['ca', '🟨 Carton', '264', null]] };
+  var cf = function (lg) { return CFG[lg] || (/^[a-z]{3}\.[a-z0-9.]+$/.test(lg) ? FOOT : null); };
   var MEM = {};
   var esc = function (t) { return String(t == null ? '' : t).replace(/[<>&"]/g, ''); };
   var f = function (x) { return x.toFixed(2).replace('.', ','); };
   var cote = function (x) { return typeof _g45NhlDkCote === 'function' ? _g45NhlDkCote(x) : parseFloat(((x.odds || {}).decimal || {}).value); };
   async function charger(lg, eid) {
     var K = lg + '_' + eid; if (MEM[K] && Date.now() - MEM[K].t < 600000) return MEM[K].D;
-    var C = CFG[lg], J = {};
+    var C = cf(lg), J = {};
     try {
       var r = await fetch('https://sports.core.api.espn.com/v2/sports/' + C.sp + '/leagues/' + lg + '/events/' + eid + '/competitions/' + eid + '/odds/100/propBets?limit=500');
       if (!r.ok) return null;
@@ -83526,7 +83554,7 @@ window._g45MqPalHtml = function (pire, pd) {
     MEM[K] = { t: Date.now(), D: D }; return D;
   }
   function html(lg, eid, D, tab, tout) {
-    var C = CFG[lg], T = C.t.filter(function (x) { return x[0] === tab; })[0] || C.t[0];
+    var C = cf(lg), T = C.t.filter(function (x) { return x[0] === tab; })[0] || C.t[0];
     var bt = function (on, t, fn) { return '<button onclick="' + fn + '" style="padding:7px 12px;margin:0 6px 6px 0;border-radius:8px;cursor:pointer;font-size:14px;font-weight:800;color:#fff;border:1px solid ' + (on ? '#3b82f6' : '#5a6788') + ';background:' + (on ? '#2563eb' : 'rgba(0,0,0,.35)') + ';">' + t + '</button>'; };
     var L = D.map(function (j) {
       var l = (j.o[T[2]] || []).slice().sort(function (a, b) { return (a[0] || 0) - (b[0] || 0); }); if (!l.length) return null;
@@ -83554,6 +83582,26 @@ window._g45MqPalHtml = function (pire, pd) {
     var D = (MEM[lg + '_' + eid] || {}).D; if (!D) return;
     document.querySelectorAll('[data-g45cj="' + lg + '_' + eid + '"]').forEach(function (b) { b.innerHTML = html(lg, eid, D, tab, tout); var el = b.parentNode; if (el) el._g45Cj = b.outerHTML; });
   };
+  var poser = async function (el, lg, eid) {
+    if (!el._g45CjObs && typeof MutationObserver === 'function') {
+      el._g45CjObs = new MutationObserver(function () { if (!el._g45Cj || el.querySelector('[data-g45cj]')) return; var d0 = document.createElement('div'); d0.innerHTML = el._g45Cj; el.appendChild(d0.firstChild); });
+      el._g45CjObs.observe(el, { childList: true });
+    }
+    if (el.querySelector('[data-g45cj]')) return;
+    var D = await charger(lg, eid); if (!D || !D.length || !el.isConnected) return;
+    var b = document.createElement('div'); b.setAttribute('data-g45cj', lg + '_' + eid); b.innerHTML = html(lg, eid, D, cf(lg).t[0][0], 0);
+    el.appendChild(b); el._g45Cj = b.outerHTML;
+  };
+  var s0 = window._renderSaisonDetail;
+  if (typeof s0 === 'function' && !s0._g45Cj) {
+    window._renderSaisonDetail = async function (el, eventId, league) {
+      var r = await s0.apply(this, arguments);
+      try { var lgF = String(league || '').toLowerCase(); if (el && eventId && cf(lgF) === FOOT) await poser(el, lgF, String(eventId)); } catch (e) {}
+      return r;
+    };
+    window._renderSaisonDetail._g45Cj = 1;
+    try { _renderSaisonDetail = window._renderSaisonDetail; } catch (e) {}
+  }
   window._renderGenericDetail = async function (el, sport, lg, eid) {
     var r = await r0.apply(this, arguments);
     try {
