@@ -76067,6 +76067,29 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var now = Date.now(), fin = new Date(); fin.setDate(fin.getDate() + 1); fin.setHours(8, 0, 0, 0);
     return (A.L || []).filter(function (m) { return m.t > now - 3 * 3600e3 && m.t < fin.getTime(); }).sort(function (a, b) { return a.t - b.t; });
   }
+  /* 20261029v (« genre Cédric : la mise de départ du Cockpit, c'est injouable pour lui » → B) : bet45, « 💶 Ta mise de départ » (localStorage
+     g45ck_p1, sur l'appareil du visiteur) → facteur = sa mise ÷ mise de départ (P1) de la grille d'Antoine aux ⭐ de la carte (D.st, D.sc) ;
+     appliqué à TOUT : mises, gains (calendrier, courbe, bénéfice, par carte), palier du jour, mise de la série. Vide / 0 = facteur 1. */
+  function ckF(n) {
+    if (!ckDist()) return 1;
+    var v = 0; try { v = parseFloat(String(localStorage.getItem('g45ck_p1') || '').replace(',', '.')) || 0; } catch (e) {}
+    var D = S.ck.D; if (!(v > 0) || !D) return 1;
+    var sv = (D.sc && D.sc[n]) || (D.u && D.u[n] && D.u[n].s), g = D.st && (D.st[String(sv)] || D.st['5']), b = g && parseFloat(g[0]);
+    return b > 0 ? v / b : 1;
+  }
+  /* 20261029v (suite, « mais qui montre les dangers du palier ») : montée des mises P1 → P8 à l'échelle du visiteur (grille 5 ⭐ d'Antoine × facteur),
+     couleurs vert → rouge, total engagé si tout perdu jusqu'à P8, et le plus haut palier atteint dans le Cockpit BET45 (mise + engagé jusque-là). */
+  function ckDanger(p1) {
+    var D = S.ck.D; if (!D || !D.st) return '';
+    var g = (D.st['5'] || D.st['4'] || []).map(Number); if (!g.length || !(g[0] > 0)) return '';
+    var v = parseFloat(String(p1 || '').replace(',', '.')), f = v > 0 ? v / g[0] : 1, eu = function (x) { return (Math.round(x * 100) / 100).toLocaleString('fr-FR') + ' €'; };
+    var C = ['#1ed760', '#7ddc3c', '#f5c542', '#ff9f43', '#ff7a45', '#ff5a5a', '#e0457b', '#b04ad8'], cum = 0, tot = [];
+    var lig = g.map(function (x, i) { cum += x * f; tot.push(cum); return '<span style="display:inline-block;margin:2px 4px 2px 0;padding:2px 7px;border-radius:7px;background:' + C[Math.min(i, 7)] + '33;border:1px solid ' + C[Math.min(i, 7)] + ';font-weight:700;">P' + (i + 1) + ' ' + eu(x * f) + '</span>'; }).join('');
+    var hp = 0, hn = ''; ((D.P) || []).forEach(function (x) { var l = parseInt(x.b && x.b.l, 10) || 1; if (l > hp) { hp = l; hn = x.b.n + (x.b.domicile === 'dom' ? ' 🏠' : x.b.domicile === 'ext' ? ' ✈️' : ''); } });
+    return '<div style="flex-basis:100%;margin-top:6px;font-size:13px;line-height:1.5;"><b style="color:#ff9f43;">⚠️ Les dangers du palier</b> (si tout perd à la suite) :<div>' + lig + '</div>'
+      + '<div>Perdre jusqu\'à P8 = <b style="color:#ff5a5a;">' + eu(tot[tot.length - 1]) + ' engagés</b>' + (hp > 1 && tot[hp - 1] ? ' · plus haut palier du Cockpit : <b>P' + hp + '</b> (' + String(hn).replace(/[<>&]/g, '') + ') → mise <b>' + eu(g[hp - 1] * f) + '</b>, <b>' + eu(tot[hp - 1]) + '</b> engagés' : '') + '</div></div>';
+  }
+  window.g45CkP1 = function (v) { v = String(v || '').replace(',', '.').replace(/[^0-9.]/g, ''); try { if (parseFloat(v) > 0) localStorage.setItem('g45ck_p1', v); else localStorage.removeItem('g45ck_p1'); } catch (e) {} ckRedessiner(); };
   function ckFond(n) {   /* 20261029r : { c couleur, img } d'une carte (image perso du dépôt, logo du mur, logo connu, visuel joueur) */
     var u = ((typeof state !== 'undefined' && state.u) || []).filter(function (x) { return x && x.n === n; })[0] || {}, img = '';
     try { img = (typeof _g45ImgPersoLire === 'function' && _g45ImgPersoLire(n)) || ''; } catch (e) {}
@@ -76086,7 +76109,11 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     if (dist && (!S.ck.D || Date.now() - (S.ck.Dt || 0) > 180000)) setTimeout(ckCharger, 0);
     if (dist && !S.ck.D) return '<div id="g45ck">' + ckNav() + '<div style="font-size:15px;color:#fff;padding:14px 4px;">' + (S.ck.Derr ? '⚠️ Cockpit BET45 indisponible pour le moment (' + S.ck.Derr + ').' : '⏳ Lecture du Cockpit BET45…') + '</div></div>';
     var maj = dist && S.ck.D.maj ? '<div style="font-size:13px;color:#c9d3ee;margin:-4px 0 8px;">Cockpit BET45 mis à jour le ' + new Date(S.ck.D.maj).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) + '</div>' : '';
-    return '<div id="g45ck">' + ckNav() + maj + (k === 'c' ? ckCal() : k === 'g' ? ckGra() : ckAuj()) + '</div>';
+    var p1 = ''; if (dist) { try { p1 = localStorage.getItem('g45ck_p1') || ''; } catch (e) {} }
+    var mz = dist ? '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:rgba(11,16,29,.8);border:1px solid #2a3a63;border-radius:10px;padding:8px 10px;margin:0 0 10px;font-size:14px;color:#fff;">'
+      + '💶 <b>Ta mise de départ</b> <input type="text" inputmode="decimal" value="' + String(p1).replace(/[^0-9.,]/g, '') + '" placeholder="ex. 1" onchange="g45CkP1(this.value)" style="width:72px;padding:6px 8px;border-radius:8px;border:1px solid #6d9dff;background:#16213f;color:#fff;font-size:15px;font-weight:800;"> €'
+      + '<span style="font-size:13px;color:#c9d3ee;">' + (parseFloat(String(p1).replace(',', '.')) > 0 ? 'mises, gains et courbe à ton échelle' : 'vide = mises du Cockpit BET45') + '</span>' + ckDanger(p1) + '</div>' : '';
+    return '<div id="g45ck">' + ckNav() + maj + mz + (k === 'c' ? ckCal() : k === 'g' ? ckGra() : ckAuj()) + '</div>';
   }
   /* 20261029d : carte d'un match (écran 🎯 et jours à venir du 📅 Calendrier) ; fut = pas de « ⏳ Calcul » (ckLancer ne regarde que aujourd'hui / cette nuit) */
   function ckCarte(m, u, d, fut) {
@@ -76096,11 +76123,11 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       var ico = m.d ? '🏠' : '✈️', q = ckPari(u, m.d), C = null;
       try { if (u.note && (u.type !== 'joueur' || /🏠|✈|🛫/.test(u.note))) C = _g45AgConsigne(u.note, !!m.d); } catch (x) {}
       var pal = '';
-      try { var pP = u._pub ? (u.pm && u.pm[m.d ? 'dom' : 'ext']) : null; if (u._pub ? !!pP : (u.s != null && typeof STRATS !== 'undefined' && STRATS[u.s])) { var p = pP ? pP.p : (typeof _g45PalLieu === 'function') ? _g45PalLieu(u, m.d ? 'dom' : 'ext') : (parseInt(u.l, 10) || 1), mi = pP ? pP.mi : STRATS[u.s][p - 1];   /* 20261029g : u._pub = carte publiée (palier + mise de gones) */
+      try { var pP = u._pub ? (u.pm && u.pm[m.d ? 'dom' : 'ext']) : null; if (u._pub ? !!pP : (u.s != null && typeof STRATS !== 'undefined' && STRATS[u.s])) { var p = pP ? pP.p : (typeof _g45PalLieu === 'function') ? _g45PalLieu(u, m.d ? 'dom' : 'ext') : (parseInt(u.l, 10) || 1), mi = pP ? (pP.mi == null ? null : Math.round(pP.mi * ckF(u.n) * 100) / 100) : STRATS[u.s][p - 1];   /* 20261029g : u._pub = carte publiée (palier + mise de gones) */
         if (mi != null) pal = '<div style="margin-top:6px;"><span style="display:inline-block;background:rgba(240,176,32,.22);border:1px solid #f0b020;color:#fff;font-size:15px;font-weight:800;border-radius:7px;padding:3px 10px;">🚀 Palier ' + p + ' · mise ' + (Math.round(mi * 100) / 100).toLocaleString('fr-FR') + ' € <span style="color:#f5c542;">' + new Array((parseInt(u.s, 10) || 0) + 1).join('⭐') + '</span></span></div>'; } } catch (x) {}
       var R = q && u.psL && u.psL[q.k], ps = '';
       if (R && !R.err && R.p && R.p.length) {
-        var pa = R.pa || window._g45PalCarte(R.tot, u);
+        var pa = R.pa ? Object.assign({}, R.pa, { mise: R.pa.mise == null ? null : Math.round(R.pa.mise * ckF(u.n) * 100) / 100 }) : window._g45PalCarte(R.tot, u);
         ps = '<div style="font-size:15px;font-weight:700;margin-top:6px;background:rgba(47,107,255,.25);border-radius:8px;padding:5px 8px;">📊 ' + ({ glob: '🌍', dom: '🏠', ext: '✈️' }[q.k]) + ' pire série '
           + R.p.map(function (v) { return '<span style="color:' + col(v) + ';">' + v + '</span>'; }).join(' · ') + ' → <b>' + pa.p + ' palier' + (pa.p > 1 ? 's' : '') + ' ' + pa.ico + '</b>' + (pa.mise != null ? ' · ' + (Math.round(pa.mise * 100) / 100).toLocaleString('fr-FR') + ' €' : '') + ' <span style="font-weight:400;color:#c9d3ee;">· 4 saisons</span></div>';
       } else if (!fut && !u._pub && q && !ckAJour(u, q)) ps = '<div style="font-size:13px;color:#c9d3ee;margin-top:6px;">⏳ Calcul de la série sur 4 saisons…</div>';
@@ -76141,7 +76168,10 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   function ckSous() { var v = 'a'; try { v = localStorage.getItem('g45ck_sous') || 'a'; } catch (e) {} return /^[acg]$/.test(v) ? v : 'a'; }
   function ckYmd(d) { return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
   function ckParis() {   /* [{ j, b (bet), r (true / false / null en cours), g (gain €) }] */
-    if (ckDist()) return ((S.ck.D && S.ck.D.P) || []).slice();
+    if (ckDist()) return ((S.ck.D && S.ck.D.P) || []).map(function (x) {   /* 20261029v : à l'échelle de « Ta mise de départ » */
+      var f = ckF(x.b && x.b.n); if (f === 1) return x;
+      return { j: x.j, r: x.r, g: Math.round(x.g * f * 100) / 100, b: Object.assign({}, x.b, { m: Math.round((parseFloat(x.b.m) || 0) * f * 100) / 100 }) };
+    });
     var L = [], jr = function (b) { if (/^\d{4}-\d\d-\d\d$/.test(String(b.date || ''))) return b.date; var t = +b.id; return t > 1e12 ? ckYmd(new Date(t)) : ''; };
     ((typeof state !== 'undefined' && state.a) || []).forEach(function (b) {
       if (!b || !b.isS || b.isPending || (b.win !== true && b.win !== false)) return;
@@ -76353,7 +76383,9 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var P = ckParis().map(function (y) { var b = y.b; return { j: y.j, r: y.r, g: y.g, b: { n: b.n, domicile: b.domicile || '', type: b.type || '', target: b.target || '', l: b.l || 1, m: b.m, cote: b.cote, comp: b.comp || '', t: b.t || '', heure: b.heure || '', date: b.date || '', id: b.id || '', isCashout: b.isCashout ? 1 : 0, isFreebet: b.isFreebet ? 1 : 0, sport: b.sport || '' } }; });   /* 20261029l : + champs de la fiche (bet45) */
     var NT = {}; P.forEach(function (y) { var n = y.b.n; if (NT[n] == null) { var uu = ckU(n); NT[n] = (uu && uu.note) || ''; } });
     var LG = {}; Object.keys(NT).forEach(function (n) { LG[n] = ckFond(n); });   /* 20261029r : couleur + logo de chaque carte (bet45) */   /* 20261029q : pari choisi (Outils) de chaque carte, pas u.np */
-    return { v: 1, j: A.j, ag: A.L || [], u: U, P: P, nt: NT, lg: LG };
+    var SC = {}; Object.keys(NT).concat(Object.keys(U)).forEach(function (n) { var uu = ckU(n); if (uu && uu.s != null) SC[n] = uu.s; });   /* 20261029v : ⭐ de chaque carte + grille d'Antoine (mise de départ des abonnés) */
+    var ST = {}; try { ['1', '2', '3', '4', '5'].forEach(function (k) { if (typeof STRATS !== 'undefined' && STRATS[k]) ST[k] = STRATS[k].slice(); }); } catch (e) {}
+    return { v: 1, j: A.j, ag: A.L || [], u: U, P: P, nt: NT, lg: LG, sc: SC, st: ST };
   }
   async function ckPublier() {
     if (ckDist() || typeof _g45SanteActive !== 'function' || !_g45SanteActive() || S.ck.pub) return;
