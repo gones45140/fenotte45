@@ -70448,7 +70448,7 @@ function _g45NflDkLire(items, M) {
   (items || []).forEach(function (x) {
     var ty = String((x.type || {}).id || ''); if (ty !== '31' && ty !== '32' && ty !== '33') return;
     if (!window._g45NflDkEx) try { window._g45NflDkEx = JSON.stringify({ a: (x.athlete || {}).$ref, o: x.odds }).slice(0, 300); } catch (e) {}   /* diagnostic console */
-    var a = String((x.athlete || {}).$ref || '').match(/athletes\/(\d+)/), d = parseFloat(((x.odds || {}).decimal || {}).value);
+    var a = String((x.athlete || {}).$ref || '').match(/athletes\/(\d+)/), d = typeof _g45NhlDkCote === 'function' ? (_g45NhlDkCote(x) || NaN) : parseFloat(((x.odds || {}).decimal || {}).value);   /* 20261030r : + current.over (format foot / NFL ?) */
     /* 20261030m (« 14 / 14 matchs lus, 0 joueurs ») : cote décimale absente sur ces paris → cote américaine (+150 = 2,50 ; −120 = 1,83) */
     if (!(d > 1)) { var am = parseFloat(String((((x.odds || {}).american || {}).value) || '').replace('+', '')); if (am >= 100) d = 1 + am / 100; else if (am <= -100) d = 1 + 100 / -am; d = Math.round(d * 100) / 100; }
     if (!a || !(d > 1)) return; (M[a[1]] = M[a[1]] || {})[ty] = d;
@@ -70501,6 +70501,10 @@ var _g45NhlDk = { M: null, t: 0, enCours: false };
 function _g45NhlDkNom(n) { return String(n || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z]/g, ''); }
 function _g45NhlDkCote(x) {   /* cote décimale, sinon américaine convertie */
   var d = parseFloat(((x.odds || {}).decimal || {}).value);
+  /* 20261030r (foot Nice – Rennes : bloc absent, 27 buteurs pourtant retrouvés) : en FOOT la cote est dans current.over {decimal, american}, pas dans odds */
+  var ov = (x.current || {}).over || {};
+  if (!(d > 1)) d = parseFloat(ov.decimal != null ? ov.decimal : ov.value);
+  if (!(d > 1) && ov.american != null && !(x.odds && x.odds.american)) x = { odds: { american: { value: ov.american } } };
   if (!(d > 1)) { var am = parseFloat(String((((x.odds || {}).american || {}).value) || '').replace('+', '')); if (am >= 100) d = 1 + am / 100; else if (am <= -100) d = 1 + 100 / -am; d = Math.round(d * 100) / 100; }
   return d > 1 ? d : null;
 }
