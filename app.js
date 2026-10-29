@@ -76219,10 +76219,23 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     if (!P.length) return ckBox(tete + '<div style="font-size:15px;padding:10px 0;">Aucun pari Cockpit réglé sur cette période.</div>' + pied);
     var jours = [], cum = 0, parJ = {}; P.forEach(function (x) { parJ[x.j] = (parJ[x.j] || 0) + x.g; });
     var pts = [0]; Object.keys(parJ).sort().forEach(function (j) { cum += parJ[j]; pts.push(Math.round(cum * 100) / 100); jours.push(j); });
-    var W = 360, H = 150, mx = Math.max.apply(null, pts), mn = Math.min.apply(null, pts); if (mx === mn) { mx += 1; mn -= 1; }
-    var X = function (i) { return 10 + i * (W - 20) / Math.max(1, pts.length - 1); }, Y = function (v) { return 10 + (mx - v) * (H - 20) / (mx - mn); };
-    var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto;max-height:260px;"><line x1="10" x2="' + (W - 10) + '" y1="' + Y(0) + '" y2="' + Y(0) + '" stroke="#3a4a73" stroke-dasharray="4 4"/>'
-      + '<polyline fill="none" stroke="' + (cum >= 0 ? '#1ed760' : '#ff5a5a') + '" stroke-width="3" points="' + pts.map(function (v, i) { return X(i) + ',' + Y(v); }).join(' ') + '"/></svg>';
+    /* 20261029n (capture de la courbe : « ça manque d'info ») : € à gauche (plus haut / 0 / plus bas), dates en bas (début / milieu / fin),
+       bénéfice de la période dans le titre, meilleur et pire jour dessous ; pleine largeur (étirée, trait non déformé). */
+    var W = 1000, H = 220, mx = Math.max.apply(null, pts), mn = Math.min.apply(null, pts); if (mx === mn) { mx += 1; mn -= 1; }
+    var X = function (i) { return 6 + i * (W - 12) / Math.max(1, pts.length - 1); }, Y = function (v) { return 8 + (mx - v) * (H - 16) / (mx - mn); };
+    var coul = cum >= 0 ? '#1ed760' : '#ff5a5a', eu = function (v) { return (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(Math.round(v)).toLocaleString('fr-FR') + ' €'; };
+    var dCourt = function (j) { var d = new Date(j + 'T12:00:00'); return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }); };
+    var yLab = function (v, cls) { return '<div style="position:absolute;right:0;top:' + (Y(v) / H * 100) + '%;transform:translateY(-50%);font-size:13px;color:' + cls + ';white-space:nowrap;">' + eu(v) + '</div>'; };
+    var svg = '<div style="font-size:15px;margin:-4px 0 8px;">Bénéfice de la période : <b style="color:' + coul + ';">' + ckEur(cum) + '</b></div>'
+      + '<div style="display:flex;gap:6px;align-items:stretch;"><div style="position:relative;flex:none;width:62px;height:' + H + 'px;">' + yLab(mx, '#fff') + (mn < 0 && mx > 0 ? yLab(0, '#c9d3ee') : '') + yLab(mn, '#fff') + '</div>'
+      + '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" style="flex:1;min-width:0;height:' + H + 'px;">'
+      + (mn < 0 && mx > 0 ? '<line x1="0" x2="' + W + '" y1="' + Y(0) + '" y2="' + Y(0) + '" stroke="#3a4a73" stroke-dasharray="6 6" vector-effect="non-scaling-stroke"/>' : '')
+      + '<polyline fill="none" stroke="' + coul + '" stroke-width="3" vector-effect="non-scaling-stroke" stroke-linejoin="round" points="' + pts.map(function (v, i) { return X(i) + ',' + Y(v); }).join(' ') + '"/></svg></div>'
+      + (jours.length ? '<div style="display:flex;justify-content:space-between;margin:4px 0 0 68px;font-size:13px;color:#c9d3ee;"><span>' + dCourt(jours[0]) + '</span>' + (jours.length > 2 ? '<span>' + dCourt(jours[Math.floor(jours.length / 2)]) + '</span>' : '') + '<span>' + dCourt(jours[jours.length - 1]) + '</span></div>' : '');
+    var jB = null, jP = null; Object.keys(parJ).forEach(function (j) { if (!jB || parJ[j] > parJ[jB]) jB = j; if (!jP || parJ[j] < parJ[jP]) jP = j; });
+    if (jB) svg += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;font-size:14px;"><span style="background:rgba(30,215,96,.15);border-radius:8px;padding:4px 8px;">🏆 Meilleur jour : ' + dCourt(jB) + ' <b style="color:#1ed760;">' + ckEur(parJ[jB]) + '</b></span>'
+      + (parJ[jP] < 0 ? '<span style="background:rgba(255,90,90,.15);border-radius:8px;padding:4px 8px;">📉 Pire jour : ' + dCourt(jP) + ' <b style="color:#ff5a5a;">' + ckEur(parJ[jP]) + '</b></span>' : '')
+      + '<span style="background:rgba(11,16,29,.8);border-radius:8px;padding:4px 8px;">📅 ' + jours.length + ' jour' + (jours.length > 1 ? 's' : '') + ' joués</span></div>';
     var ok = P.filter(function (x) { return x.r; }).length, hp = null;
     var lieuI = function (b) { return b.domicile === 'dom' ? ' 🏠' : b.domicile === 'ext' ? ' ✈️' : ''; };   /* 20261029e (« là j'ai que Real ») : une ligne par montante = carte + lieu */
     P.forEach(function (x) { var l = parseInt(x.b.l, 10) || 1; if (!hp || l > hp.l) hp = { l: l, n: x.b.n + lieuI(x.b) }; });
