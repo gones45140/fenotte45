@@ -73175,7 +73175,8 @@ function _g45AgOdEv(e, m) {
     }
   }
   var line = o0.overUnder != null ? parseFloat(o0.overUnder) : (t.line != null ? parseFloat(t.line) : null);
-  return { h: t.h, d: t.d, a: t.a, line: isNaN(line) ? null : line, ov: ov, un: un, moiDom: moiDom };
+  return { h: t.h, d: t.d, a: t.a, line: isNaN(line) ? null : line, ov: ov, un: un, moiDom: moiDom,
+    eid: String(e.id || ''), hid: String((H.team && H.team.id) || ''), aid: String((A.team && A.team.id) || ''), hn: nH, an: nA };   /* 20261030t : buts d'équipe DraftKings */
 }
 function _g45AgOdHtml(C, od, sp) {
   var f = function (x) { return x > 1 ? x.toFixed(2).replace('.', ',') : '–'; };
@@ -73203,7 +73204,11 @@ function _g45AgOdHtml(C, od, sp) {
       else if (l.k === 'but') {   /* 20261030q : nom écrit → cote DraftKings remplie après coup (_g45AgButRemplir) */
         var nB = String(l.t || '').replace(/buteur|marqueur|[àa] tout moment|anytime/gi, '').replace(/[<>"&]/g, '').trim();
         parts.push(nB.length >= 3 ? '<span class="g45agbut" data-n="' + nB + '">⚽ ' + nB + ' buteur <span style="color:#c9d3ee;">…</span></span>' : '<span style="color:#c9d3ee;">buteur : pas de cote</span>'); ok = false; return; }
-      else if (l.k === 'teq') { parts.push('🎯 ' + String(l.eq).replace(/</g, '&lt;') + ' ' + (l.s === 'ov' ? 'plus de ' : 'moins de ') + String(l.L).replace('.', ',') + ' buts <span style="color:#ffb36b;">pas de cote chez ESPN, regarde ton book</span>'); ok = false; return; }   /* 20261025k */
+      else if (l.k === 'teq') {   /* 20261025k ; 20261030t : cote DraftKings remplie après coup (_g45AgTeqRemplir) si le match ESPN est connu */
+        var tq = '🎯 ' + String(l.eq).replace(/</g, '&lt;') + ' ' + (l.s === 'ov' ? 'plus de ' : 'moins de ') + String(l.L).replace('.', ',') + ' buts';
+        var tid = od.eid ? ((_g45AgMemeEq(l.eq, String(od.hn || '').split(' | ')[0]) || String(od.hn || '').split(' | ').some(function (n) { return _g45AgMemeEq(l.eq, n); })) ? od.hid : (String(od.an || '').split(' | ').some(function (n) { return _g45AgMemeEq(l.eq, n); }) ? od.aid : '')) : '';
+        parts.push(tid ? '<span class="g45agteq" data-e="' + od.eid + '" data-t="' + tid + '" data-s="' + l.s + '" data-l="' + l.L + '">' + tq + ' <span style="color:#c9d3ee;">…</span></span>'
+          : tq + ' <span style="color:#ffb36b;">pas de cote chez ESPN, regarde ton book</span>'); ok = false; return; }
       else { parts.push('<span style="color:#c9d3ee;">« ' + String(l.t).replace(/</g, '&lt;') + ' » : pas de cote</span>'); ok = false; return; }
       if (!(c > 1)) { parts.push(lib + ' –'); ok = false; return; }
       parts.push(lib + ' <b style="color:#1ed760;">' + f(c) + '</b>'); prod *= c; nb++;
@@ -73311,6 +73316,7 @@ window._g45AgCotes = function (L) {
       if (od.vide || !(od.h > 1 || od.a > 1 || od.ov > 1 || od.un > 1 || od.line != null)) { box.innerHTML = '<div style="color:#9fb0c7;font-size:13px;">💶 cotes pas encore publiées par ESPN</div>'; _g45AgFrBtn(box, x); return; }
       box.innerHTML = _g45AgOdHtml(x.C, od, m.sp);
       try { _g45AgButRemplir(box, sp, lg); } catch (e) {}   /* 20261030q */
+      try { _g45AgTeqRemplir(box, sp, lg); } catch (e) {}   /* 20261030t */
       _g45AgFrBtn(box, x);
     })();
   });
@@ -73430,6 +73436,52 @@ function _g45AgButRemplir(box, sp, lg) {
   });
 }
 window._g45AgDkTrouve = _g45AgDkTrouve;
+/* 20261030t (SONDE d'Antoine Nice – Rennes, type 253 « Team Total Goals » : 6 items de Rennes TOUS sous current.over, cible 0,5 / 1,5 / 2,5 / 3,5 en
+   double : 2,5 → 3,83 et 1,24 = plus / moins, la page ESPN affichait o2.5 +282 / u2.5 −406) : PLUS et MOINS mélangés sans étiquette → séparés
+   par la logique : la cote « plus de » MONTE avec la ligne, la cote « moins de » DESCEND. Paire d'une même ligne : affectation qui respecte
+   le mieux les deux sens (essai des 2^n). Foot 253, hockey 151 (« Excl OT » : hors prolongation). Mémoire 10 min par match. */
+var _g45AgTeqM = {};
+function _g45AgTeqSep(L) {   /* L = [[cible, cote]…] d'UNE équipe → {cible: {ov, un}} */
+  var g = {}; L.forEach(function (q) { (g[q[0]] = g[q[0]] || []).push(q[1]); });
+  var T = Object.keys(g).map(Number).sort(function (a, b) { return a - b; }), paires = T.filter(function (t) { return g[t].length >= 2; });
+  var best = null, bestC = 1e9;
+  for (var m = 0; m < (1 << paires.length); m++) {
+    var ov = [], un = [];
+    T.forEach(function (t) {
+      var v = g[t], k = paires.indexOf(t);
+      if (v.length < 2) return;
+      var a = v[0], b = v[1]; if ((m >> k) & 1) { var z = a; a = b; b = z; }
+      ov.push([t, a]); un.push([t, b]);
+    });
+    var c = 0;
+    for (var i = 1; i < ov.length; i++) { if (ov[i][1] < ov[i - 1][1]) c++; if (un[i][1] > un[i - 1][1]) c++; }
+    for (var j = 0; j < ov.length; j++) if (ov[j][0] >= 2.5 && ov[j][1] < un[j][1]) c += 0.5; else if (ov[j][0] <= 0.5 && ov[j][1] > un[j][1]) c += 0.5;   /* à égalité : 0,5 = plus probable, 2,5 = moins probable */
+    if (c < bestC) { bestC = c; best = { ov: ov, un: un }; }
+  }
+  var R = {}; if (!best) return R;
+  best.ov.forEach(function (q, i) { R[q[0]] = { ov: q[1], un: best.un[i][1] }; });
+  return R;
+}
+function _g45AgTeqRemplir(box, sp, lg) {
+  var L = box.querySelectorAll('.g45agteq'); if (!L.length || !lg) return;
+  var ty = sp === 'hockey' ? '151' : '253', f = function (x) { return x.toFixed(2).replace('.', ','); };
+  [].forEach.call(L, function (s) {
+    var eid = s.getAttribute('data-e'), K = sp + '/' + lg + '/' + eid, E = _g45AgTeqM[K];
+    if (!E || Date.now() - E.t > 600000) E = _g45AgTeqM[K] = { t: Date.now(), P: fetch('https://sports.core.api.espn.com/v2/sports/' + (sp || 'soccer') + '/leagues/' + lg + '/events/' + eid + '/competitions/' + eid + '/odds/100/propBets?limit=500').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }) };
+    E.P.then(function (j) {
+      var tid = s.getAttribute('data-t'), Lq = [];
+      (((j || {}).items) || []).forEach(function (x) {
+        if (String((x.type || {}).id) !== ty || !String((x.team || {}).$ref || '').match(new RegExp('teams/' + tid + '(\\D|$)'))) return;
+        var t = parseFloat((((x.current || {}).target) || {}).value), d = typeof _g45NhlDkCote === 'function' ? _g45NhlDkCote(x) : null; if (!isNaN(t) && d > 1) Lq.push([t, d]);
+      });
+      var R = _g45AgTeqSep(Lq)[parseFloat(s.getAttribute('data-l'))], q = s.lastChild; if (!q) return;
+      var c = R && (s.getAttribute('data-s') === 'ov' ? R.ov : R.un);
+      if (c > 1) q.outerHTML = '<b style="color:#1ed760;">' + f(c) + '</b> <span style="color:#c9d3ee;">(≈ ' + f(Math.max(1.01, Math.round(c * (window._G45_TR_FR || 0.94) * 100) / 100)) + ' en France' + (sp === 'hockey' ? ', hors prolongation' : '') + ')</span>';
+      else q.outerHTML = '<span style="color:#ffb36b;">pas de cote chez ESPN, regarde ton book</span>';
+    });
+  });
+}
+window._g45AgTeqSep = _g45AgTeqSep;
 /* 20261008l (« le problème sera le quota », bouton validé « oui mais seulement sur gones ») — FOOT : bouton « 🇫🇷 Cotes books FR » sous la ligne
    ESPN, GONES45 SEULEMENT (`_g45SanteActive`, faux sur bet45). Un appui = The Odds API h2h région fr du championnat (1 crédit, clés
    _G45_TR_ODDSKEY / _G45_OA_LIGUES), même cache que l'Euroleague (g45agoa1_, 6 h) : championnat déjà lu → affiché tout de suite, sans bouton.
@@ -83524,7 +83576,7 @@ window._g45MqPalHtml = function (pire, pd) {
     nba: { sp: 'basketball', t: [['pts', '🏀 Points', '218', 'm'], ['reb', '🔁 Rebonds', '220', 'm'], ['ast', '🎯 Passes', '219', 'm'], ['pra', '➕ Pts + reb + passes', '225', 'm']] }
   };
   /* 20261030q : foot (toute ligue « xxx.n ») — Buteur 230 / 2 buts ou + 39 / Carton 264 ; fenêtre foot = _renderSaisonDetail(el, eventId, league) */
-  var FOOT = { sp: 'soccer', t: [['g', '⚽ Buteur', '230', null], ['pa', '🎯 Passeur', '219', 1], ['g2', '2 buts ou +', '39', null], ['ca', '🟨 Carton', '264', null]] };   /* 20261030s : + Passeur (219, palier 1 ; capture Winamax Buteur / Passeur / Décisif) */
+  var FOOT = { sp: 'soccer', t: [['g', '⚽ Buteur', '230', null], ['pa', '🎯 Passeur', '219', 1], ['dec', '⚡ Décisif (estimé)', '230', 'dec'], ['g2', '2 buts ou +', '39', null], ['ca', '🟨 Carton', '264', null]] };   /* 20261030s : + Passeur (219, palier 1 ; capture Winamax Buteur / Passeur / Décisif) */
   var cf = function (lg) { return CFG[lg] || (/^[a-z]{3}\.[a-z0-9.]+$/.test(lg) ? FOOT : null); };
   var MEM = {};
   var esc = function (t) { return String(t == null ? '' : t).replace(/[<>&"]/g, ''); };
@@ -83562,6 +83614,10 @@ window._g45MqPalHtml = function (pire, pd) {
     var bt = function (on, t, fn) { return '<button onclick="' + fn + '" style="padding:7px 12px;margin:0 6px 6px 0;border-radius:8px;cursor:pointer;font-size:14px;font-weight:800;color:#fff;border:1px solid ' + (on ? '#3b82f6' : '#5a6788') + ';background:' + (on ? '#2563eb' : 'rgba(0,0,0,.35)') + ';">' + t + '</button>'; };
     var L = D.map(function (j) {
       var l = (j.o[T[2]] || []).slice().sort(function (a, b) { return (a[0] || 0) - (b[0] || 0); }); if (!l.length) return null;
+      if (T[3] === 'dec') {   /* 20261030t (« et décisif du coup ») : pas chez DK → estimé : 1 / (1 − (1 − 1/buteur)(1 − 1/passeur)) ; Wahi 2,85 / 7,75 → 2,30 (Winamax 2,20) */
+        var pa0 = (j.o['219'] || []).filter(function (q) { return q[0] === 1; })[0]; if (!pa0) return null;
+        var de = 1 / (1 - (1 - 1 / l[0][1]) * (1 - 1 / pa0[1])); de = Math.round(de * 100) / 100; return { j: j, d: de, cle: de };
+      }
       if (T[3] === 'm') { var v = l.filter(function (q) { return q[1] >= 1.15; }).slice(0, 3); if (!v.length) v = l.slice(-1); return { j: j, d: v[0][1], m: v, cle: -(v[v.length - 1][0] || 0) }; }
       var q = T[3] == null ? l[0] : l.filter(function (q) { return q[0] === T[3]; })[0]; if (!q) return null;
       return { j: j, d: q[1], cle: q[1] };
@@ -83571,6 +83627,7 @@ window._g45MqPalHtml = function (pire, pd) {
       + '<div style="font-size:15px;font-weight:800;letter-spacing:1px;margin-bottom:8px;">🏦 COTES JOUEURS <span style="font-size:13px;color:#9fb0c7;font-weight:600;letter-spacing:0;">(DraftKings, indication)</span></div>'
       + '<div>' + C.t.map(function (x) { return bt(x[0] === T[0], x[1], "g45CjTab('" + lg + "','" + eid + "','" + x[0] + "')"); }).join('') + '</div>';
     if (!L.length) return h + '<div style="font-size:14px;color:#c9d3ee;padding:6px 2px;">Pas de cote pour ce pari sur ce match.</div></div>';
+    if (T[3] === 'dec') h += '<div style="font-size:13px;color:#ffb36b;margin:0 0 4px;">⚡ Décisif = but OU passe : DraftKings ne le propose pas, cote ESTIMÉE à partir de buteur + passeur.</div>';
     L.slice(0, N).forEach(function (x) {
       var dr = T[3] === 'm' ? x.m.map(function (q) { return '<span style="white-space:nowrap;">' + q[0] + '+ <b style="color:#1ed760;">' + f(q[1]) + '</b></span>'; }).join(' · ')
         : '<div style="font-size:17px;font-weight:900;color:#1ed760;">' + f(x.d) + '</div><div style="font-size:12px;color:#c9d3ee;">≈ ' + f(Math.max(1.01, Math.round(x.d * FR * 100) / 100)) + ' en France</div>';
