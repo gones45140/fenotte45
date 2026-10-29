@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action (il est court exprès). Le détail de tout l'historique est dans HISTORIQUE.md
-(à chercher avec grep, jamais à lire en entier). Mis à jour le 31/10/2026 (version déployée : 20261031n, même app.js sur gones45 et fenotte45).
+(à chercher avec grep, jamais à lire en entier). Mis à jour le 31/10/2026 (version déployée : 20261031o, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -54,7 +54,7 @@ les demander à Antoine.
 | indexfenotte.html | fenotte45 | variante, charge `auth-guard.js?v=…` |
 | auth-guard.js | fenotte45 | garde d'accès, crée le script `./app.js?v=…` (s.src) |
 | app.js | les deux | toute l'application |
-| worker.js | Cloudflare Worker fd-proxy.touraine-antoine.workers.dev (proxy CORS, cron, push) — DÉPLOYABLE PAR CLAUDE depuis le 15/10 : secret réseau CLOUDFLARE_API_TOKEN (Bearer, api.cloudflare.com/client/v4/, droits : Scripts Workers Modifier, reste Lu), compte 484f39cfd0f071e821782d569d5ed76d. TOUJOURS : télécharger le script (content/v2) + settings, garder une copie, PUT multipart avec les liaisons NON secrètes réécrites (ai AI, d1 DB, kv PUSH_KV, VAPID_PUBLIC / VAPID_SUBJECT) + keep_bindings [secret_text] + observability, puis revérifier liaisons et cron (*/5). |
+| worker.js | Cloudflare Worker fd-proxy.touraine-antoine.workers.dev (proxy CORS, cron, push) — DÉPLOYABLE PAR CLAUDE depuis le 15/10 (logs / observability COUPÉS le 29/10 : Cloudflare les fait payer au volume dès le 01/12 — ne pas les rallumer) : secret réseau CLOUDFLARE_API_TOKEN (Bearer, api.cloudflare.com/client/v4/, droits : Scripts Workers Modifier, reste Lu), compte 484f39cfd0f071e821782d569d5ed76d. TOUJOURS : télécharger le script (content/v2) + settings, garder une copie, PUT multipart avec les liaisons NON secrètes réécrites (ai AI, d1 DB, kv PUSH_KV, VAPID_PUBLIC / VAPID_SUBJECT) + keep_bindings [secret_text] + observability, puis revérifier liaisons et cron (*/5). |
 | style.css | les deux (identiques) | `?v=20260927i` dans index.html et indexfenotte.html |
 
 À CHAQUE livraison, monter la version aux 3 endroits (format AAAAMMJJ + lettre) :

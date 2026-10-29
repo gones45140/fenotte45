@@ -70845,8 +70845,35 @@ async function _g45RegFtNom(x) {
   return o;
 }
 var _g45RegLogsF = {};
-function _g45RegLogFoot(lg, id, anEsp) {
+/* ═══ 20261031o — 📦 SÉRIES INDIVIDUELLES FOOT sur les archives GitHub (« prochain écran : Séries individuelles » → « oui »). Le journal d'un joueur
+   (une saison, un championnat) vient de gones45-archives cotes/foot/<lg>/<saison>/joueurs/<id>.json : m = [[t, mois, idMatch, idClub, stats {G, A,
+   TIT, REM…}, cotes, côté h|a]] (côté ajouté le 31/10, etat.iv 2) → même forme que le gamelog ESPN { gameLog: [{ goals, assists, points, d, e, h }] },
+   plus récent d'abord. Seulement si la saison est complète (etat v2 = n, iv ≥ 2) ; sinon / réseau / ligue non archivée → ESPN comme avant. ═══ */
+var _g45ArchMemo = {};
+function _g45ArchLire(ch) {   /* JSON, 0 = absent (404), null = raté ; mémoire 10 min */
+  var k = ch + '|' + Math.floor(Date.now() / 600000);
+  if (!_g45ArchMemo[k]) _g45ArchMemo[k] = fetch('https://raw.githubusercontent.com/gones45140/gones45-archives/main/cotes/' + ch + '?t=' + k.split('|')[1])
+    .then(function (r) { return r.ok ? r.json() : (r.status === 404 ? 0 : null); }).catch(function () { return null; })
+    .then(function (x) { if (x === null) delete _g45ArchMemo[k]; return x; });
+  return _g45ArchMemo[k];
+}
+var _G45_ARCH_CIVIL = ['bra.1', 'arg.1', 'usa.1', 'fifa.friendly', 'uefa.nations', 'fifa.worldq.uefa', 'fifa.world', 'uefa.euro'];
+async function _g45ArchLogFoot(lg, id, anEsp) {
+  if ((window._G45_ARCH_LG || []).indexOf(lg) < 0) return null;
+  var sa = _G45_ARCH_CIVIL.indexOf(lg) >= 0 ? String(anEsp) : anEsp + '-' + String(+anEsp + 1).slice(2), B = 'foot/' + lg + '/' + sa;
+  var et = await _g45ArchLire(B + '/etat.json'); if (!et || !(et.n > 0) || et.v2 < et.n || !(et.iv >= 2)) return null;
+  var q = await _g45ArchLire(B + '/joueurs/' + id + '.json'); if (q === null) return null;
+  var L = ((q && q.m) || []).filter(function (m) { return m[4]; }).map(function (m) { var g = +m[4].G || 0, a = +m[4].A || 0; return { goals: g, assists: a, points: g + a, d: new Date(m[0]).toISOString(), e: String(m[2]), h: m[6] === 'h' ? 1 : (m[6] === 'a' ? 0 : null) }; });
+  L.sort(function (x, y) { return String(y.d).localeCompare(String(x.d)); });
+  return { gameLog: L, opts: [lg], arch: 1 };
+}
+window._g45ArchLogFoot = _g45ArchLogFoot;   /* tests */
+function _g45RegLogFoot(lg, id, anEsp, sansArch) {
   var k = lg + '_' + anEsp + '_' + id;
+  if (!_g45RegLogsF[k] && !sansArch) {   /* 20261031o : archives d'abord */
+    _g45RegLogsF[k] = _g45ArchLogFoot(lg, id, anEsp).catch(function () { return null; }).then(function (a) { if (a) return a; delete _g45RegLogsF[k]; return _g45RegLogFoot(lg, id, anEsp, 1); });
+    return _g45RegLogsF[k];
+  }
   if (!_g45RegLogsF[k]) {
     /* 20261005z — SONDÉ PAR ANTOINE (Torres 265869) : SANS paramètre = la saison en cours DU championnat (5 matchs de Ligue 1) ;
        avec ?season=2026, ESPN renvoie UNE AUTRE COMPÉTITION (« League Phase » = Ligue des champions, 1 match, 3 buts) alors que
