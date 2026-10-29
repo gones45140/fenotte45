@@ -75453,7 +75453,8 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
      identifiants des matchs : g45crid1_<lg>_<club>_<an> (saison passée, pour toujours). ── */
   S.fid = S.fid || {}; S.fp = S.fp || {};
   function fBesoin(c) { return !S.ctx && !!(c.fs || c.ts || c.as || c.cad || c.mt || c.mp || c.bo || c.m1 || c.m2); }
-  function fLire(id) { try { return JSON.parse(localStorage.getItem('g45crf1_' + id) || 'null'); } catch (e) { return null; } }
+  S.fa = S.fa || {};   /* 20261031k : feuilles d'équipe lues dans les archives (fiche.cf), mémoire seulement */
+  function fLire(id) { if (S.fa[id]) return S.fa[id]; try { return JSON.parse(localStorage.getItem('g45crf1_' + id) || 'null'); } catch (e) { return null; } }
   function fVal(m) {
     var ids = S.fid[S.nom]; if (!ids) return null;
     var id = ids[m[0]]; if (!id) return null;
@@ -75485,6 +75486,11 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
         var sa = D.saisons[i]; if (!sa) continue;
         var cle = 'g45crid1_' + D.lg + '_' + D.tid + '_' + sa.an, L = null;
         if (i > 0) { try { L = JSON.parse(localStorage.getItem(cle) || 'null'); } catch (e) {} }
+        if (!L) {   /* 20261031k : identifiants + feuilles d'équipe des archives d'abord */
+          var AF = null; try { AF = await aEquipe(D.lg, D.tid, sa.an); } catch (e) {}
+          if (AF) L = AF.map(function (m) { return [m.d, m.id]; });
+        }
+        try { await aFeuilles(D.lg, D.tid, sa.an); } catch (e) {}
         if (!L) {
           var sc = null; try { sc = await espnClubSchedule(nom, sa.an, D.lg); } catch (e) {}
           L = ((sc && sc.matches) || []).filter(function (m) { return m.completed && m.id; }).map(function (m) { return [String(m.date || '').slice(0, 10), String(m.id)]; });
@@ -75494,8 +75500,9 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       }
       var slug = {};
       if (S.comp && S.comp !== 'L') D.saisons.forEach(function (sa) { ((sa && sa.eu) || []).forEach(function (m) { if (m[6]) { ids[m[0]] = m[6]; slug[m[6]] = m[7]; } }); });
+      if (S.comp && S.comp !== 'L') { for (var ie = 0; ie < D.saisons.length; ie++) { var se = D.saisons[ie]; if (!se) continue; for (var ke = 0; ke < EU.length; ke++) { try { await aFeuilles(EU[ke], D.tid, se.an); } catch (e) {} } } }   /* 20261031k */
       S.fid[nom] = ids;
-      var aLire = Object.keys(ids).map(function (d) { return ids[d]; }).filter(function (id) { return !fLire(id); });
+      var aLire = Object.keys(ids).map(function (d) { return ids[d]; }).filter(function (id) { return !fLire(id) && S.fa[id] !== 0; });   /* S.fa 0 = archive : pas de stats d'équipe chez ESPN */
       S.fp[kp] = S.fp[nom] = { f: 0, n: aLire.length, enCours: aLire.length > 0 };
       var k = 0;
       async function un() {
@@ -75518,7 +75525,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     if (S.jl[pid]) return;
     S.jl[pid] = { enCours: 1 };
     var SA = D.saisons || [];
-    Promise.all(SA.map(function (sa) { return sa ? _g45RegLogFoot(D.lg, pid, sa.an).catch(function () { return null; }) : null; })).then(async function (L) {
+    Promise.all(SA.map(function (sa) { return sa ? aJoueur(D.lg, pid, sa.an).catch(function () { return null; }).then(function (a) { return a || _g45RegLogFoot(D.lg, pid, sa.an); }).catch(function () { return null; }) : null; })).then(async function (L) {   /* 20261031k : archives d'abord */
       var d = {}, vides = [];
       L.forEach(function (x, i) {
         var n = 0; ((x && x.gameLog) || []).forEach(function (g) { if (g.d) { d[String(g.d).slice(0, 10)] = { g: g.goals || 0, a: g.assists || 0 }; n++; } });
@@ -75550,7 +75557,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       });
       var ms = [], clubs = [];
       for (var lg2 in V) {
-        var lo = null; try { lo = await _g45RegLogFoot(lg2, pid, +an); } catch (e) {}
+        var lo = null; try { lo = await aJoueur(lg2, pid, +an); } catch (e) {} if (!lo) { try { lo = await _g45RegLogFoot(lg2, pid, +an); } catch (e) {} }   /* 20261031k */
         ((lo && lo.gameLog) || []).forEach(function (g) {
           if (!g.d) return; var m = [String(g.d).slice(0, 10), g.h == null ? -1 : g.h, 0, 0]; m.jv = {}; m.jv[pid] = { g: g.goals || 0, a: g.assists || 0 }; ms.push(m);
         });
@@ -75648,6 +75655,8 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       if (!ms) {
         ms = []; var ok = false;
         for (var k = 0; k < EU.length; k++) {
+          var AE = null; try { AE = await aEquipe(EU[k], D.tid, sa.an); } catch (e) {}   /* 20261031k : archives d'abord */
+          if (AE) { ok = true; AE.forEach(function (m) { ms.push([m.d, m.dom, m.p, m.c, 0, 1, m.id, EU[k]]); }); continue; }
           var sc = null; try { sc = await espnClubSchedule(nom, sa.an, EU[k]); } catch (e) {}
           if (sc && sc.matches) ok = true;
           ((sc && sc.matches) || []).forEach(function (m) {
@@ -75736,6 +75745,43 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     }
     S.data[nom] = out;
   }
+  /* ═══ 20261031k — 📦 ARCHIVES GITHUB D'ABORD (CAP d'Antoine : « ne plus aller chercher les archives dans ESPN mais sur GitHub » ; « on n'aura
+     plus besoin des archives ESPN ? » → critères 4 saisons du foot en premier → « ok go, fais en sorte »). Dépôt public gones45140/gones45-archives
+     (raw) : cotes/foot/<lg>/<saison>/equipes/<idClub>.json { m: [[t, mois, idMatch, h|a, [score dom, score ext]]] }, matchs/<mois>.json (fiche.cf =
+     feuille d'équipe au format de _g45CrFeuille), joueurs/<id>.json { m: [[t, mois, idMatch, idClub, stats {G, A, TIT, REM…}]] }, etat.json { n, v2 }.
+     COMPARÉ AVANT BASCULE (robot sonde, 29/10) : Lyon, PSG, Arsenal, Real, Bayern × 5 saisons = 25 saisons, 0 match / score différent d'ESPN ;
+     joueurs : Mbappé 2025-26 ESPN 32 matchs / archive 30 (2 entrées sans stat) → robot : remplaçants entrés (REM) + feuille relue, et l'appli ne lit
+     les joueurs d'une saison qu'une fois TOUTE la saison relue (etat.v2 = etat.n). Saison / ligue absente, réseau → ESPN comme avant. ═══ */
+  var ARW = 'https://raw.githubusercontent.com/gones45140/gones45-archives/main/cotes/foot/', AMEM = {};
+  function aOk(lg) { return (window._G45_ARCH_LG || []).indexOf(lg) >= 0; }
+  function aSa(lg, an) { return CAL.indexOf(lg) >= 0 || ['fifa.friendly', 'uefa.nations', 'fifa.worldq.uefa', 'fifa.world', 'uefa.euro'].indexOf(lg) >= 0 ? String(an) : an + '-' + String(an + 1).slice(2); }
+  function aLire(ch) {   /* JSON, 0 = absent (404), null = lecture ratée */
+    var k = ch + '|' + Math.floor(Date.now() / 600000);   /* 10 min : la saison en cours bouge (robot toutes les 2 h) */
+    if (!AMEM[k]) AMEM[k] = fetch(ARW + ch + '?t=' + k.split('|')[1]).then(function (r) { return r.ok ? r.json() : (r.status === 404 ? 0 : null); }).catch(function () { return null; })
+      .then(function (x) { if (x === null) delete AMEM[k]; return x; });
+    return AMEM[k];
+  }
+  function aIso(t) { return new Date(t).toISOString().slice(0, 10); }
+  async function aEquipe(lg, tid, an) {   /* [{ d, dom, p, c, id, mo }] ; null = pas archivé (→ ESPN) */
+    if (!aOk(lg)) return null;
+    var sa = aSa(lg, an), ix = await aLire(lg + '/' + sa + '/equipes.json'); if (!ix) return null;
+    var q = await aLire(lg + '/' + sa + '/equipes/' + tid + '.json'); if (q === null) return null;
+    return ((q && q.m) || []).filter(function (m) { return m[4] && m[4][0] != null; }).map(function (m) { var h = m[3] === 'h'; return { d: aIso(m[0]), dom: h ? 1 : 0, p: h ? m[4][0] : m[4][1], c: h ? m[4][1] : m[4][0], id: String(m[2]), mo: m[1] }; })
+      .sort(function (a, b) { return a.d < b.d ? -1 : 1; });
+  }
+  async function aJoueur(lg, pid, an) {   /* même forme que _g45RegLogFoot { gameLog: [{ d, goals, assists, h }] } ; null = pas sûr (→ ESPN) */
+    if (!aOk(lg)) return null;
+    var sa = aSa(lg, an), et = await aLire(lg + '/' + sa + '/etat.json'); if (!et || !(et.n > 0) || et.v2 < et.n) return null;
+    var q = await aLire(lg + '/' + sa + '/joueurs/' + pid + '.json'); if (q === null) return null;
+    return { gameLog: ((q && q.m) || []).filter(function (m) { return m[4]; }).map(function (m) { return { d: aIso(m[0]), goals: m[4].G || 0, assists: m[4].A || 0, h: null }; }), arch: 1 };
+  }
+  async function aFeuilles(lg, tid, an) {   /* fiche.cf des mois joués par le club → S.fa[idMatch] (0 = relue, ESPN sans stats d'équipe) */
+    var A = await aEquipe(lg, tid, an); if (!A) return;
+    var sa = aSa(lg, an), M = {}; A.forEach(function (m) { M[m.mo] = 1; });
+    var F = await Promise.all(Object.keys(M).map(function (mo) { return aLire(lg + '/' + sa + '/matchs/' + mo + '.json'); }));
+    F.forEach(function (D) { A.forEach(function (m) { var fi = D && D[m.id]; if (!fi) return; if (fi.cf) S.fa[m.id] = fi.cf; else if (fi.v2 && S.fa[m.id] == null) S.fa[m.id] = 0; }); });
+  }
+  window._g45CrArch = { aEquipe: aEquipe, aJoueur: aJoueur, aSa: aSa, aFeuilles: aFeuilles, mem: AMEM };   /* tests */
   async function charger(nom) {
     if (S.data[nom] && (S.data[nom].err || Date.now() - S.data[nom].t < 3600000)) return;
     if (S.enCours[nom]) return; S.enCours[nom] = 1;
@@ -75750,6 +75796,10 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       await Promise.all(ans.map(async function (an, i) {
         var cle = 'g45cr1_' + lg + '_' + r.id + '_' + an, ms = null;
         if (i > 0) { try { ms = JSON.parse(localStorage.getItem(cle) || 'null'); } catch (e) {} }
+        if (!ms) {   /* 20261031k : archives GitHub d'abord */
+          var A = null; try { A = await aEquipe(lg, r.id, an); } catch (e) {}
+          if (A) { out.arch = (out.arch || 0) + 1; ms = A.map(function (m) { return [m.d, m.dom, m.p, m.c]; }); if (i > 0 && ms.length) { try { localStorage.setItem(cle, JSON.stringify(ms)); } catch (e) {} } }
+        }
         if (!ms) {
           var sc = null; try { sc = await espnClubSchedule(nom, an, lg); } catch (e) {}
           if (!sc || !sc.matches) { out.saisons[i] = { an: an, ms: null }; return; }
