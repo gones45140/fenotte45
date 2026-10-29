@@ -76219,9 +76219,9 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     });
     var gC = function (v) { return v >= 0 ? '#1ed760' : '#ff5a5a'; };
     h += ckBox('<div style="font-size:16px;font-weight:800;margin-bottom:4px;">Par carte (détail 🏠 / ✈️ dessous)</div>' + Object.keys(C).map(function (k) { return C[k]; }).sort(function (a, b) { return b.g - a.g; }).map(function (c) {
-      var ix = ckDist() ? -1 : ((typeof state !== 'undefined' && state.u) || []).findIndex(function (u) { return u && u.n === c.c; });   /* 20261029f : ligne → fiche de la carte (Bilan / Graphs / Archive / Types) */
+      var ix = ckDist() ? (S.ck.D && S.ck.D.u && S.ck.D.u[c.c] ? 1 : -1) : ((typeof state !== 'undefined' && state.u) || []).findIndex(function (u) { return u && u.n === c.c; });   /* 20261029f : ligne → fiche de la carte (Bilan / Graphs / Archive / Types) */
       var det = [['dom', '🏠'], ['ext', '✈️'], ['glob', '🌍']].filter(function (q) { return c.L[q[0]]; }).map(function (q) { var l = c.L[q[0]]; return q[1] + ' ' + l.ok + '/' + l.t + ' <b style="color:' + gC(l.g) + ';">' + ckEur(l.g) + '</b>'; });
-      return '<div ' + (ix >= 0 ? 'onclick="g45CkFiche(' + ix + ')" ' : '') + 'style="padding:7px 0;border-bottom:1px solid #1c2747;' + (ix >= 0 ? 'cursor:pointer;' : '') + '">'
+      return '<div ' + (ix >= 0 ? (ckDist() ? 'data-n="' + e(c.c) + '" onclick="g45CkFicheDist(this.dataset.n)" ' : 'onclick="g45CkFiche(' + ix + ')" ') : '') + 'style="padding:7px 0;border-bottom:1px solid #1c2747;' + (ix >= 0 ? 'cursor:pointer;' : '') + '">'
         + '<div style="display:flex;justify-content:space-between;gap:8px;font-size:15px;"><b>' + e(c.c) + (ix >= 0 ? ' <span style="color:#8fb4ff;">›</span>' : '') + '</b><span>' + c.ok + '/' + c.t + ' · <b style="color:' + gC(c.g) + ';">' + ckEur(c.g) + '</b></span></div>'
         + (det.length > 1 || (det.length === 1 && !c.L.glob) ? '<div style="font-size:13px;color:#c9d3ee;margin-top:2px;">' + det.join(' · ') + '</div>' : '') + '</div>';
     }).join(''));
@@ -76231,7 +76231,17 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   window.g45CkMois = function (d) { S.ck.mois = (S.ck.mois || 0) + d; S.ck.jour = ''; ckRedessiner(); };
   window.g45CkJour = function (j) { S.ck.jour = S.ck.jour === j ? '' : j; ckRedessiner(); };
   window.g45CkPer = function (p) { S.ck.per = p; ckRedessiner(); };
-  window.g45CkFiche = function (ix) { var u = ((typeof state !== 'undefined' && state.u) || [])[ix]; if (u && typeof openClub === 'function') openClub(u.n, ix); };
+  window.g45CkFiche = function (ix) { var u = ((typeof state !== 'undefined' && state.u) || [])[ix]; if (u && typeof openClub === 'function') { window._g45CkFicheMode(null); openClub(u.n, ix); } };
+  /* 20261029l (capture fiche Carolina entourée : « sur bet45 c'est pas cliquable, et il faut que ça affiche seulement ce que je viens de te mettre »
+     = filtre Lieu + Bilan / Graphs / Archive / Types ; Live, Compo, Saisons, Liens, News barrés) : bet45 ouvre la VRAIE fiche (openClub) avec
+     les paris publiés d'Antoine pour cette carte (S.ck.D.P), posés le temps du rendu (enveloppe d'openClub en fin de fichier). */
+  window.g45CkFicheDist = function (nom) {
+    var D = S.ck.D; if (!D || !nom) return;
+    var c = (D.u && D.u[nom]) || { n: nom };
+    var A = (D.P || []).filter(function (x) { return x.r !== null && x.b && x.b.n === nom; }).map(function (x) { return Object.assign({ isS: true }, x.b, { win: !!x.r, isCashout: !!x.b.isCashout, isFreebet: !!x.b.isFreebet, b: 'BET45' }); });
+    window._g45CkFicheMode({ nom: nom, a: A, u: { n: nom, color: c.color || '', s: c.s || 1, l: 1, sport: c.sport || '', type: c.type || '' } });
+    if (typeof openClub === 'function') openClub(nom);
+  };
   window._g45CkParis = ckParis;   /* tests */
   /* ═══ 20261029g — 🏁 COCKPIT BET45 POUR TOUT LE MONDE (« le Cockpit dans Tendances doit être visible pour tout le monde, sinon ça sert à
      rien » → « auto, avec mise + palier + cote, et on montre le graphique ») ═══
@@ -76265,7 +76275,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       if (u.psL) { x.psL = {}; Object.keys(u.psL).forEach(function (k) { var R = Object.assign({}, u.psL[k]); if (!R.err && R.p) { try { R.pa = window._g45PalCarte(R.tot, u); } catch (e) {} } x.psL[k] = R; }); }
       U[u.n] = x;
     });
-    var P = ckParis().map(function (y) { var b = y.b; return { j: y.j, r: y.r, g: y.g, b: { n: b.n, domicile: b.domicile || '', type: b.type || '', target: b.target || '', l: b.l || 1, m: b.m, cote: b.cote } }; });
+    var P = ckParis().map(function (y) { var b = y.b; return { j: y.j, r: y.r, g: y.g, b: { n: b.n, domicile: b.domicile || '', type: b.type || '', target: b.target || '', l: b.l || 1, m: b.m, cote: b.cote, comp: b.comp || '', t: b.t || '', heure: b.heure || '', date: b.date || '', id: b.id || '', isCashout: b.isCashout ? 1 : 0, isFreebet: b.isFreebet ? 1 : 0, sport: b.sport || '' } }; });   /* 20261029l : + champs de la fiche (bet45) */
     return { v: 1, j: A.j, ag: A.L || [], u: U, P: P };
   }
   async function ckPublier() {
@@ -82941,4 +82951,43 @@ window._g45MqPalHtml = function (pire, pd) {
   window._g45TypesPeindre = peindre;
   var go = function () { var z = document.getElementById('ip-types'); if (!z) return false; new MutationObserver(peindre).observe(z, { childList: true, subtree: true }); peindre(); return true; };
   if (!go()) document.addEventListener('DOMContentLoaded', go);
+})();
+
+/* ═══ 20261029l — FICHE OUVERTE DEPUIS LE 🏁 COCKPIT BET45 ═══
+   (1) Tendances cachée pendant la fiche, « ← Retour » revient sur Tendances (avant : fiche par-dessus Tendances, retour sur le Mur).
+   (2) bet45 (F.a) : openClub lit state.a / state.u → remplacés par les paris PUBLIÉS d'Antoine et sa carte LE TEMPS DU RENDU (synchrone,
+       remis dans finally ; les courbes utilisent des valeurs déjà calculées) ; filtres Lieu / compétition (qui rappellent openClub) idem.
+       Onglets Live, Compo, Saisons, Statistiques, Liens, Mondial cachés (body.g45-fiche-dist). */
+(function () {
+  var st = document.createElement('style'); st.id = 'g45-fiche-dist-css';
+  st.textContent = 'body.g45-fiche-dist #detail .itab:not([onclick*="bilan"]):not([onclick*="graphiques"]):not([onclick*="archive"]):not([onclick*="types"]){display:none!important}';
+  (document.head || document.documentElement).appendChild(st);
+  window._g45CkFicheMode = function (F) {
+    window._g45CkFicheDist = F || null;
+    document.body.classList.add('g45-fiche-ck'); document.body.classList.toggle('g45-fiche-dist', !!F);
+    var tt = document.getElementById('t-tend'); if (tt) tt.style.display = 'none';
+  };
+  if (typeof openClub === 'function' && !openClub._g45Ck) {
+    var o = openClub;
+    openClub = window.openClub = function (nom) {
+      var F = window._g45CkFicheDist;
+      if (!F || nom !== F.nom || typeof state === 'undefined') return o.apply(this, arguments);
+      var sa = state.a, su = state.u;
+      state.a = F.a; state.u = [F.u].concat((su || []).filter(function (x) { return x && x.n !== nom; }));
+      try { return o.apply(this, [nom]); } finally { state.a = sa; state.u = su; }
+    };
+    openClub._g45Ck = true; openClub._g45Bg = true;
+  }
+  if (typeof closeClub === 'function' && !closeClub._g45Ck) {
+    var c0 = closeClub;
+    closeClub = window.closeClub = function () {
+      var ck = document.body.classList.contains('g45-fiche-ck'), r = c0.apply(this, arguments);
+      if (ck) {
+        document.body.classList.remove('g45-fiche-ck', 'g45-fiche-dist'); window._g45CkFicheDist = null;
+        try { var bt = document.querySelector('button.ni[onclick*="t-tend"]'); if (typeof showTab === 'function') showTab('t-tend', bt); if (typeof loadTendancesTab === 'function') loadTendancesTab(); } catch (e) {}
+      }
+      return r;
+    };
+    closeClub._g45Ck = true;
+  }
 })();
