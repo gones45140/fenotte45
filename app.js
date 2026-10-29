@@ -76080,6 +76080,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
         + '🏆 Meilleure série : <b style="color:#5aa9ff;">' + T.best + ' réussite' + (T.best > 1 ? 's' : '') + ' de suite</b><br>'
         + '📈 Série en cours : ' + enCours(c, tous) + '</div>';
       h += garderHtml(c, D, T);   /* 20261028e */
+      h += ajoutHtml(c);   /* 20261101c */
     }
     return h;
   }
@@ -76106,6 +76107,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   }
   function garderHtml(c, D, T) {
     var u = murDe(S.nom, c); if (!u) return '';
+    if (joueurs(c).length && u.type !== 'joueur') return '';   /* 20261101c : pari JOUEUR sans sa carte → pas sur la carte du club (➕ Ajouter au mur à la place) */
     var sig = S.lieu + '|' + libCombo(c), deja = u.ps && u.ps.sig === sig;
     if (deja) {   /* mise à jour automatique : saison en cours + total ; saisons finies figées */
       try {
@@ -76119,6 +76121,30 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     return '<div style="margin-top:8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;"><button onclick="g45CrGarder(' + S.combos.indexOf(c) + ')" style="padding:10px 14px;border-radius:10px;border:1px solid #6d9dff;background:#2f6bff;color:#fff;font-size:15px;font-weight:800;cursor:pointer;">📌 ' + (deja ? 'Remettre' : 'Garder') + ' sur la carte</button>'
       + (deja ? '<span style="font-size:13px;color:#1ed760;font-weight:700;">✅ Sur la carte de ' + esc(u.n) + ' (saison en cours mise à jour toute seule)</span>' : '') + '</div>';
   }
+  /* ═══ 20261101c — ➕ AJOUTER LE JOUEUR AU MUR depuis les critères (capture « Seth Jarvis pointeur » : « ce joueur me plaît, je voudrais le
+     mettre directement dans mon mur, plus rapide que le formulaire d'Outils ? » ; maquette « [📌 Garder] [➕ Ajouter Seth Jarvis au mur] » → « oui »).
+     Carte JOUEUR (comme addUnit) : sport de la page, club = l'équipe de la page (u.club + note), pari = combiné sans le nom, rangé 🏠 / ✈️ / 🌍
+     selon le lieu choisi (_g45UfCompose) ; puis séries gardées sur la carte (g45CrGarder, même calcul que 📌). Déjà au mur → « ✅ Déjà au mur » ;
+     mur plein (bet45, _g45MurPlein) → message. ═══ */
+  function ajoutHtml(c) {
+    var P = joueurs(c); if (!P.length || P[0].n === '?') return '';
+    var U = (typeof state !== 'undefined' && state.u) || [], deja = U.some(function (x) { return x && x.n === P[0].n; });
+    return '<div style="margin-top:6px;">' + (deja ? '<span style="font-size:14px;color:#1ed760;font-weight:700;">✅ ' + esc(P[0].n) + ' est déjà au mur</span>'
+      : '<button onclick="g45CrAjoutMur(' + S.combos.indexOf(c) + ')" style="padding:10px 14px;border-radius:10px;border:1px solid #1ed760;background:#14532d;color:#fff;font-size:15px;font-weight:800;cursor:pointer;">➕ Ajouter ' + esc(P[0].n) + ' au mur</button>') + '</div>';
+  }
+  window.g45CrAjoutMur = function (i) {
+    var c = S.combos[i]; if (!c || typeof state === 'undefined') return;
+    var P = joueurs(c); if (!P.length) return;
+    var nom = P[0].n; if ((state.u || []).some(function (x) { return x && x.n === nom; })) { redessiner(); return; }
+    if (typeof _g45MurPlein === 'function' && _g45MurPlein()) { alert('🧱 Ton mur est plein : enlève une carte dans Outils → Équipes pour ajouter ' + nom + '.'); return; }
+    var SPE = { hockey: '🏒', football: '🏈', basketball: '🏀', baseball: '⚾', rugby: '🏉', 'rugby-league': '🏉' }, sp = S.ctx ? (SPE[S.ctx.sp] || '⚽') : '⚽';
+    var club = String(S.nom || '').trim(), pari = String(libCombo(c) || '').replace(nom, '').replace(/\s+/g, ' ').replace(/^[\s+·]+|[\s+·]+$/g, '').trim();
+    var note = typeof window._g45UfCompose === 'function' ? window._g45UfCompose(club, '', S.lieu === 'dom' ? pari : '', S.lieu === 'ext' ? pari : '', (!S.lieu || S.lieu === 'tout') ? pari : '') : club;
+    state.u.push({ n: nom, abbr: nom.split(' ').pop().slice(0, 3).toUpperCase(), color: '#1d4ed8', s: '3', l: 1, sport: sp, logoUrl: '', link: '', link2: '', note: note, type: 'joueur', club: club });
+    try { save(); } catch (e) {}
+    try { if (typeof _g45PushBetsGithub === 'function') _g45PushBetsGithub(true); } catch (e) {}
+    try { window.g45CrGarder(i); } catch (e) { try { redessiner(); } catch (x) {} }   /* séries gardées sur la nouvelle carte */
+  };
   window.g45CrGarder = function (i) {
     var c = S.combos[i], D = S.data[S.nom], u = murDe(S.nom, c); if (!c || !D || !u) return;
     var tous = []; D.saisons.slice().reverse().forEach(function (s) { var L0 = s && msS(c, s); if (L0) tous = tous.concat(filtrer(L0)); });   /* 20261031g */
