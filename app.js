@@ -79315,6 +79315,44 @@ window._g45AgJouUs = async function (nowTs) {
     pa: { s: [1, 3], lib: 'Pts + passes', u: 'pts+pas', mot: 'points', l: 30.5, e: '➕' },
     ra: { s: [2, 3], lib: 'Reb + passes', u: 'reb+pas', mot: 'rebounds', l: 13.5, e: '➕' },
     tp: { i: 4, lib: '3 pts réussis', u: '3 pts', mot: 'points', l: 2.5, e: '👌' } };
+  /* 20261030j (« oui » à la maquette dk : cote DraftKings du joueur) — SONDES d'Antoine (Heat @ Hawks) : core …/events/<id>/competitions/<id>/odds
+     → fournisseur 100 DraftKings ; …/odds/100/propBets?limit=500 → 434 paris, item {athlete.$ref …/athletes/<id>, type {id, name}, odds.decimal.value,
+     current.target.value}. Les lignes « Total Points » arrivent en DOUBLE (1,75 et 2,03 sur 8,5) SANS dire plus / moins → pas utilisées. Les
+     « Milestones » (10+, 15+…) ont UNE cote, sans ambiguïté : X+ = plus de X − 0,5. Types : 218 points, 219 passes, 220 rebonds, 221 3 pts,
+     225 pts + passes + reb, 226 pts + passes, 227 pts + reb, 327 reb + passes. Cote FR = DK × _G45_TR_FR (− 6 %). */
+  var DKT = { pts: '218', ast: '219', reb: '220', tp: '221', pra: '225', pa: '226', pr: '227', ra: '327' };
+  var dkLire = function (items, M) {   /* items propBets → M[aid][typeId] = [[cible, cote décimale]…] */
+    M = M || {};
+    (items || []).forEach(function (x) {
+      var ty = String((x.type || {}).id || ''), a = String((x.athlete || {}).$ref || '').match(/athletes\/(\d+)/), d = parseFloat(((x.odds || {}).decimal || {}).value), t = parseFloat(((x.current || {}).target || {}).value);
+      if (!a || !(d > 1) || isNaN(t)) return; var o = M[a[1]] || (M[a[1]] = {}); (o[ty] = o[ty] || []).push([t, d]);
+    });
+    return M;
+  };
+  var dkChoix = function (M, aid, k, L) {   /* palier X+ le plus proche de la ligne (X = L + 0,5 d'abord) → {t, d} ou null */
+    var l = M && M[aid] && M[aid][DKT[k]]; if (!l || !l.length) return null;
+    var vis = L + 0.5, best = null; l.forEach(function (q) { if (!best || Math.abs(q[0] - vis) < Math.abs(best[0] - vis)) best = q; });
+    return { t: best[0], d: best[1] };
+  };
+  window._g45NbaDk = { lire: dkLire, choix: dkChoix };   /* tests */
+  var dkM = null, dkT = 0, dkP = null;
+  var dkCharger = function () {   /* matchs du jour (scoreboard) → propBets de chacun ; mémoire 10 min ; une erreur = pas de cote, rien d'autre */
+    if (dkM && Date.now() - dkT < 600000) return Promise.resolve(dkM);
+    if (dkP) return dkP;
+    dkP = (async function () {
+      var M = {};
+      try {
+        var sb = await (await fetch('https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard')).json();
+        var evs = ((sb && sb.events) || []).filter(function (e) { var st = ((e.status || {}).type || {}); return !st.completed; });
+        await Promise.all(evs.map(async function (e) {
+          try { var r = await fetch('https://sports.core.api.espn.com/v2/sports/basketball/leagues/nba/events/' + e.id + '/competitions/' + e.id + '/odds/100/propBets?limit=500');
+            if (r.ok) dkLire(((await r.json()) || {}).items, M); } catch (x) {}
+        }));
+      } catch (x) {}
+      dkM = M; dkT = Date.now(); dkP = null; return M;
+    })();
+    return dkP;
+  };
   var val = function (S, v) {   /* 20261030i : valeur d'une ligne du journal pour la stat (somme pour les combinaisons), null si absente */
     if (!v) return null; if (!S.s) return v[S.i] == null ? null : v[S.i];
     var t = 0; for (var q = 0; q < S.s.length; q++) { if (v[S.s[q]] == null) return null; t += v[S.s[q]]; } return t;
@@ -79361,6 +79399,7 @@ window._g45AgJouUs = async function (nowTs) {
     if (mon !== jeton) return;
     if (!lead.length) { corps('<div style="font-size:14px;color:#ffb13d;padding:10px;">Aucun classement NBA disponible.</div>'); return; }
     var JOUR = auj ? await _g45MqJour({ sport: 'basketball', lg: 'nba' }) : null;
+    var DKp = dkCharger();   /* 20261030j : en parallèle des journaux */
     var cand = lead.map(function (x, rg) {
       var a = String((x.athlete && x.athlete.$ref) || '').match(/athletes\/(\d+)/), t = String((x.team && x.team.$ref) || '').match(/teams\/(\d+)/);
       return { aid: a ? a[1] : '', tid: t ? t[1] : '', ref: x.athlete && x.athlete.$ref, tref: x.team && x.team.$ref, t10: o.pep && rg < 10 };
@@ -79386,10 +79425,17 @@ window._g45AgJouUs = async function (nowTs) {
       var nm = await _g45MqNom(c.ref), eq = null; try { eq = await _g45MqEquipe(c.tref, 'nba'); } catch (e) {}
       res.push({ c: c, nom: nm.nom, eq: eq || {}, pct: pct, n: ok2, m: ev.length, moy: tot / ev.length, der: ev.slice(0, 5).map(function (e) { return val(S, gl[e]) > L; }), j: JOUR ? JOUR[c.tid] : null,
         pd: window._g45MqPireD(ev.slice().reverse().map(function (e) { return { ok: val(S, gl[e]) > L, t: (meta[e] || [])[0] || 0 }; })),   /* 20261027n : dates */
-        pire: window._g45MqPire(ev.slice().reverse().map(function (e) { return val(S, gl[e]) > L; })) });   /* 20261027j */
+        pire: window._g45MqPire(ev.slice().reverse().map(function (e) { return val(S, gl[e]) > L; })),   /* 20261027j */
+        vs: ev.map(function (e) { return val(S, gl[e]); }) });   /* 20261030j : valeurs, pour la cote juste du palier DraftKings */
     };
     for (var i = 0; i < cand.length; i += 4) { await Promise.all(cand.slice(i, i + 4).map(un)); if (mon !== jeton) return; }
     res.sort(function (a, b) { return b.pct - a.pct || b.moy - a.moy; });
+    var DK = {}; try { DK = await DKp; } catch (e) {} if (mon !== jeton) return;
+    res.forEach(function (r) {   /* 20261030j : palier DraftKings + cote FR + 💎 si au-dessus de la cote juste DE CE PALIER (journal) */
+      var c = dkChoix(DK, r.c.aid, o.st, L); if (!c) return;
+      var nOk = r.vs.filter(function (v) { return v >= c.t; }).length, pj = r.vs.length ? nOk / r.vs.length : 0;
+      r.dk = { t: c.t, d: c.d, fr: Math.max(1.01, Math.round(c.d * (window._G45_TR_FR || 0.94) * 100) / 100), cj: pj > 0 ? 1 / pj : null };
+    });
     if (!res.length) { corps('<div style="font-size:15px;color:#fff;text-align:center;padding:14px;">' + (crit ? '🎯 Aucun joueur ne remplit tes critères (60 % mini et cote 1,50 mini).' : (auj ? '🗓️ Aucun de ces joueurs ne joue aujourd\'hui.' : 'Aucun joueur trouvé.')) + '</div>'); return; }
     var esc = function (t) { return String(t || '').replace(/[<>"&]/g, ''); };
     corps(res.map(function (r) {
@@ -79400,7 +79446,9 @@ window._g45AgJouUs = async function (nowTs) {
         + '<div style="flex:1;min-width:0;"><div style="font-size:16px;font-weight:800;color:#fff;line-height:1.2;">' + (o.pep && !r.c.t10 ? '💎 ' : '') + esc(r.nom) + '</div>'
         + '<div style="font-size:12px;color:#aab6d6;">' + esc(r.eq.nom || '') + '</div>'
         + (r.j ? '<div style="font-size:13px;color:#8fb4ff;font-weight:700;">' + (r.j.live ? '🔴 en cours' : '🗓️ ' + r.j.h) + ' · ' + (r.j.dom ? 'vs ' : '@ ') + esc(r.j.adv) + '</div>' : '')
-        + '<div style="font-size:13px;color:#c9d3ee;margin-top:2px;">moy. ' + fr(Math.round(r.moy * 10) / 10) + ' ' + S.u + ' · ' + dots + '</div>' + window._g45MqPalHtml(r.pire, r.pd) + '</div>'
+        + '<div style="font-size:13px;color:#c9d3ee;margin-top:2px;">moy. ' + fr(Math.round(r.moy * 10) / 10) + ' ' + S.u + ' · ' + dots + '</div>' + window._g45MqPalHtml(r.pire, r.pd)
+        + (r.dk ? '<div style="margin-top:5px;font-size:14px;color:#fff;background:rgba(47,107,255,.22);border-radius:8px;padding:4px 8px;display:inline-block;">🏦 DraftKings <b>' + r.dk.t + '+ ' + S.u + ' → cote ' + fr(r.dk.d.toFixed(2)) + '</b> · ≈ ' + fr(r.dk.fr.toFixed(2)) + ' en France'
+          + (r.dk.cj && r.dk.fr > r.dk.cj ? ' <b style="color:#5ee6a0;">💎 value</b>' : '') + '</div>' : '') + '</div>'
         + '<div style="text-align:center;flex:none;"><div style="font-size:24px;font-weight:900;color:' + col + ';">' + p + ' %</div>'
         + '<div style="font-size:12px;color:#aab6d6;">' + r.n + ' / ' + r.m + ' matchs</div>'
         + (r.pct > 0 ? '<div style="font-size:12px;color:#aab6d6;">cote juste ' + fr((1 / r.pct).toFixed(2)) + '</div>' : '') + '</div></div>';
