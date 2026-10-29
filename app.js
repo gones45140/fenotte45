@@ -83524,7 +83524,7 @@ window._g45MqPalHtml = function (pire, pd) {
     nba: { sp: 'basketball', t: [['pts', '🏀 Points', '218', 'm'], ['reb', '🔁 Rebonds', '220', 'm'], ['ast', '🎯 Passes', '219', 'm'], ['pra', '➕ Pts + reb + passes', '225', 'm']] }
   };
   /* 20261030q : foot (toute ligue « xxx.n ») — Buteur 230 / 2 buts ou + 39 / Carton 264 ; fenêtre foot = _renderSaisonDetail(el, eventId, league) */
-  var FOOT = { sp: 'soccer', t: [['g', '⚽ Buteur', '230', null], ['g2', '2 buts ou +', '39', null], ['ca', '🟨 Carton', '264', null]] };
+  var FOOT = { sp: 'soccer', t: [['g', '⚽ Buteur', '230', null], ['pa', '🎯 Passeur', '219', 1], ['g2', '2 buts ou +', '39', null], ['ca', '🟨 Carton', '264', null]] };   /* 20261030s : + Passeur (219, palier 1 ; capture Winamax Buteur / Passeur / Décisif) */
   var cf = function (lg) { return CFG[lg] || (/^[a-z]{3}\.[a-z0-9.]+$/.test(lg) ? FOOT : null); };
   var MEM = {};
   var esc = function (t) { return String(t == null ? '' : t).replace(/[<>&"]/g, ''); };
