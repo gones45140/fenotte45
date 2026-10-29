@@ -83893,6 +83893,17 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
     var d = null; try { var r = await fetch('https://raw.githubusercontent.com/gones45140/gones45-archives/main/cotes/' + (SPN[ST.sp] || 'foot') + '/' + lg + '/' + SAISON(mo) + '/matchs/' + mo + '.json?t=' + Math.floor(Date.now() / 600000), { cache: 'no-store' }); if (r.ok) d = await r.json(); } catch (e) {}
     MEM[K] = { t: Date.now(), d: d || {} }; return MEM[K].d;
   }
+  /* 20261031j (PDF Lyon = Ligue 1 seulement → « il va falloir la Ligue des champions / Europa / Conférence » ; proposition « équipe choisie =
+     championnat + ses matchs d'Europe, mêlés par date, badge 🏆 C1 / 🥈 C3 / 🥉 C4 » → « oui, voir dans le dossier archive LDC / Europa… ») :
+     même n° d'équipe ESPN dans toutes les compétitions (Lyon 167) → lecture des 3 dossiers uefa.* du même mois, matchs de l'équipe ajoutés. */
+  var EUR = { 'uefa.champions': '🏆 C1', 'uefa.europa': '🥈 C3', 'uefa.europa.conf': '🥉 C4' }, DOM_EU = ['fra.1', 'fra.2', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'ned.1', 'por.1'];
+  async function avecEurope(D, lg, mo, eq) {
+    if (!eq || DOM_EU.indexOf(lg) < 0) return D;
+    var X = {}; Object.keys(D).forEach(function (i) { X[i] = D[i]; });
+    var L = await Promise.all(Object.keys(EUR).map(function (c) { return lire(c, mo); }));
+    L.forEach(function (E, k) { Object.keys(E || {}).forEach(function (i) { var fi = E[i]; if (fi && fi.h && fi.a && (String(fi.h.id) === eq || String(fi.a.id) === eq)) { if (!fi.lg) fi.lg = Object.keys(EUR)[k]; X[i] = fi; } }); });
+    return X;
+  }
   var JTY = { soccer: ['230', 'buteur'], hockey: ['230', 'buteur'], football: ['31', 'TD'], basketball: ['218', 'points'] };
   /* 20261030z (« ajoute les buteurs et passeurs, pointeurs, TD… un max d'info ») : feuille de match gardée par le robot (f.st stats par joueur,
      f.bu buts / scoring plays) → ✅ le joueur a réussi le pari affiché (but foot / NHL, TD NFL, 20+ points NBA) ; ❌ joué sans réussir ; rien = pas de feuille. */
@@ -83926,7 +83937,7 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
   function carte(fi, id, eq) {
     var moiH = eq && String(fi.h.id) === String(eq), moiA = eq && String(fi.a.id) === String(eq);
     var d = new Date(fi.t), dt = ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2);
-    var tit = moiH ? 'vs ' + esc(fi.a.nom) : (moiA ? '@ ' + esc(fi.h.nom) : esc(fi.h.nom) + ' – ' + esc(fi.a.nom));
+    var tit = (EUR[fi.lg] && fi.lg !== ST.lg ? EUR[fi.lg] + ' · ' : '') + (moiH ? 'vs ' + esc(fi.a.nom) : (moiA ? '@ ' + esc(fi.h.nom) : esc(fi.h.nom) + ' – ' + esc(fi.a.nom)));   /* 20261031j : badge coupe d'Europe */
     var sc = '', col = '#c9d3ee';
     if (fi.f) { sc = fi.f.h + '-' + fi.f.a; if (moiH || moiA) { var m = moiH ? fi.f.h : fi.f.a, l = moiH ? fi.f.a : fi.f.h; col = m > l ? '#1ed760' : (m < l ? '#ff5a5a' : '#f5c542'); } }
     else if (fi.t < Date.now()) sc = '…';
@@ -83969,12 +83980,13 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
     'fifa.friendly': 'Matchs amicaux', 'uefa.nations': 'Ligue des nations', 'fifa.worldq.uefa': 'Qualifs Coupe du monde', 'fifa.world': 'Coupe du monde', 'uefa.euro': 'Euro' };
   function pdfHtml(L, eq, eqNom, titre) {
     var e2 = function (t) { return esc(t).replace(/'/g, '&#39;'); }, vir = function (x) { return String(x).replace('.', ','); }, sg = function (x) { return (x > 0 ? '+' : (x < 0 ? '−' : '')) + vir(Math.abs(x)); };
-    var V = 0, N = 0, Dd = 0, bp = 0, bc = 0, h = '';
+    var B = {}, h = '', lg0 = ST.lg;   /* 20261031j : bilan par compétition */
     L.forEach(function (fi) {
       var d = new Date(fi.t), dt = ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2) + '/' + d.getFullYear();
       var moi = eq ? (String(fi.h.id) === eq ? 'h' : 'a') : '', res = '';
-      if (fi.f && moi) { var m = moi === 'h' ? fi.f.h : fi.f.a, l = moi === 'h' ? fi.f.a : fi.f.h; bp += m; bc += l; if (m > l) { V++; res = ' ✅ V'; } else if (m < l) { Dd++; res = ' ❌ D'; } else { N++; res = ' 🟰 N'; } }
-      h += '<div class="m"><div class="t"><b>' + dt + '</b> · ' + e2(fi.h.nom) + ' <b>' + (fi.f ? fi.f.h + ' - ' + fi.f.a : 'vs') + '</b> ' + e2(fi.a.nom) + res + (fi.r && (fi.ml || fi.hc || fi.tot) ? ' <span class="g">(cotes de clôture)</span>' : '') + '</div>';
+      var ce = EUR[fi.lg] && fi.lg !== lg0 ? 'E' : 'L', b = B[ce] || (B[ce] = { V: 0, N: 0, D: 0, p: 0, c: 0, x: {} }); if (ce === 'E') b.x[EUR[fi.lg]] = 1;
+      if (fi.f && moi) { var m = moi === 'h' ? fi.f.h : fi.f.a, l = moi === 'h' ? fi.f.a : fi.f.h; b.p += m; b.c += l; if (m > l) { b.V++; res = ' ✅ V'; } else if (m < l) { b.D++; res = ' ❌ D'; } else { b.N++; res = ' 🟰 N'; } }
+      h += '<div class="m"><div class="t"><b>' + dt + '</b> · ' + (ce === 'E' ? '<b>' + EUR[fi.lg] + '</b> · ' : '') + e2(fi.h.nom) + ' <b>' + (fi.f ? fi.f.h + ' - ' + fi.f.a : 'vs') + '</b> ' + e2(fi.a.nom) + res + (fi.r && (fi.ml || fi.hc || fi.tot) ? ' <span class="g">(cotes de clôture)</span>' : '') + '</div>';
       var c = [];
       if (fi.ml) c.push('1 ' + v(fi.ml.h) + (fi.ml.d > 1 ? ' · N ' + v(fi.ml.d) : '') + ' · 2 ' + v(fi.ml.a));
       if (fi.hc && fi.hc.L != null) c.push('Handicap ' + e2(fi.h.nom) + ' ' + sg(fi.hc.L) + ' ' + v(fi.hc.h) + ' / ' + sg(-fi.hc.L) + ' ' + v(fi.hc.a));
@@ -83987,7 +83999,7 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
       if (fe) h += '<div>📋 ' + fe + '</div>';
       h += '</div>';
     });
-    var bil = eq && (V + N + Dd) ? '<div class="b">Bilan ' + e2(eqNom) + ' : ' + V + ' V · ' + N + ' N · ' + Dd + ' D — ' + bp + ' marqués, ' + bc + ' encaissés</div>' : '';
+    var bil = ''; if (eq) ['L', 'E'].forEach(function (k) { var b = B[k]; if (!b || !(b.V + b.N + b.D)) return; bil += '<div class="b">Bilan ' + e2(eqNom) + (B.E ? (k === 'L' ? ' — ' + e2(NOMS_LG[lg0] || lg0) : ' — Europe (' + Object.keys(b.x).join(', ') + ')') : '') + ' : ' + b.V + ' V · ' + b.N + ' N · ' + b.D + ' D — ' + b.p + ' marqués, ' + b.c + ' encaissés</div>'; });
     return '<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' + e2(titre) + '</title><style>'
       + 'body{background:#fff;color:#000;font:14px/1.45 Arial,sans-serif;margin:16px;}h1{font-size:20px;margin:0 0 4px;}.s{font-size:13px;color:#333;margin-bottom:10px;}'
       + '.b{font-size:15px;font-weight:700;border:2px solid #000;padding:6px 8px;margin:8px 0 12px;}.m{border-top:1px solid #999;padding:6px 0;break-inside:avoid;page-break-inside:avoid;}'
@@ -84001,11 +84013,11 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
     var lg = ST.lg, ML = moisListe(), mo = ST.mois[lg] && ML.indexOf(ST.mois[lg]) >= 0 ? ST.mois[lg] : ML[0], sa = SAISON(mo), eq = ST.eq[lg] || '';
     var w = null; try { w = window.open('', '_blank'); if (w) w.document.write('<p style="font:18px Arial;margin:20px;">⏳ Préparation du PDF ' + esc(sa) + '…</p>'); } catch (e) { w = null; }
     var MS = ML.filter(function (m) { return SAISON(m) === sa; }), all = {};
-    var DS = await Promise.all(MS.map(function (m) { return lire(lg, m); }));
+    var DS = await Promise.all(MS.map(function (m) { return lire(lg, m).then(function (D) { return avecEurope(D, lg, m, eq); }); }));   /* 20261031j : + Europe */
     DS.forEach(function (D) { Object.keys(D || {}).forEach(function (i) { all[i] = D[i]; }); });
     var L = Object.keys(all).map(function (i) { return all[i]; }).filter(function (fi) { return fi && fi.h && fi.a && (!eq || String(fi.h.id) === eq || String(fi.a.id) === eq); }).sort(function (a, b) { return a.t - b.t; });
     var eqNom = ''; if (eq) L.some(function (fi) { eqNom = String(fi.h.id) === eq ? fi.h.nom : (String(fi.a.id) === eq ? fi.a.nom : ''); return !!eqNom; });
-    var titre = 'BET45 — ' + (eqNom ? eqNom + ' — ' : '') + (NOMS_LG[lg] || lg) + ' ' + sa, html = pdfHtml(L, eq, eqNom, titre);
+    var titre = 'BET45 — ' + (eqNom ? eqNom + ' — ' : '') + (NOMS_LG[lg] || lg) + (eq && L.some(function (fi) { return EUR[fi.lg] && fi.lg !== lg; }) ? ' + Europe' : '') + ' ' + sa, html = pdfHtml(L, eq, eqNom, titre);
     if (w && !w.closed) { w.document.open(); w.document.write(html); w.document.close(); setTimeout(function () { try { w.focus(); w.print(); } catch (e) {} }, 600); return; }
     var f = document.getElementById('g45-arch-pdf'); if (f) f.remove();   /* secours (fenêtre bloquée, appli installée) : iframe invisible imprimée */
     f = document.createElement('iframe'); f.id = 'g45-arch-pdf'; f.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;'; document.body.appendChild(f);
@@ -84018,6 +84030,7 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
     var ids = Object.keys(D).sort(function (a, b) { return D[b].t - D[a].t; }), eqs = {}, nR = ids.filter(function (i) { return D[i].r; }).length;
     ids.forEach(function (i) { ['h', 'a'].forEach(function (k) { var t = D[i][k]; if (t && t.id) eqs[t.id] = t.nom; }); });
     var eq = ST.eq[lg] && eqs[ST.eq[lg]] ? ST.eq[lg] : '';
+    if (eq && DOM_EU.indexOf(lg) >= 0) { D = await avecEurope(D, lg, mo, eq); if (ST.lg !== lg) return; ids = Object.keys(D).sort(function (a, b) { return D[b].t - D[a].t; }); }   /* 20261031j */
     var sel = 'background:#16213f;color:#fff;border:1px solid #6d9dff;border-radius:8px;padding:8px 10px;font-size:15px;font-weight:700;margin:0 8px 8px 0;max-width:100%;';
     var h = '<div style="font-size:16px;font-weight:900;letter-spacing:1px;color:#fff;margin-bottom:8px;">📦 COTES GARDÉES <span style="font-size:13px;color:#9fb0c7;font-weight:600;letter-spacing:0;">(avant-match, ' + ((typeof _g45DkMode === 'function' && _g45DkMode() === 'fr') ? 'estimée France' : 'DraftKings') + ')</span></div>'
       + '<select onchange="g45ArchEq(this.value)" style="' + sel + '"><option value="">Toutes les équipes</option>' + Object.keys(eqs).sort(function (a, b) { return String(eqs[a]).localeCompare(String(eqs[b])); }).map(function (k) { return '<option value="' + k + '"' + (k === eq ? ' selected' : '') + '>' + esc(eqs[k]) + '</option>'; }).join('') + '</select>'
