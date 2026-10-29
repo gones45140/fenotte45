@@ -20107,9 +20107,42 @@ function _g45NbaGLLireCache(aid, an) {
 }
 function _g45NbaGLCache(aid, an) { var c = _g45NbaGLLireCache(aid, an); return c ? c.m : null; }
 function _g45NbaGLMeta(aid, an) { var c = _g45NbaGLLireCache(aid, an); return c ? (c.e || {}) : null; }
+/* ═══ 20261031q — 📦 JOURNAL NBA sur les archives (Séries individuelles NBA, fiche joueur, Compo : « je continue ? » → « oui »). Même forme que
+   _g45NbaGLLire / _g45NbaGLMetaLire : m = {eid: [min, pts, reb, ast, 3pts, stl, blk, to]}, e = {eid: [t, domId, extId, monClub, adv, atVs, score,
+   res]}. Source : cotes/basket/nba/<an-1>-<an>/joueurs/<id>.json (stats MIN PTS REB AST 3PT INT CTR BP, J = a joué) + equipes/<club>.json
+   (m[5] type : présaison exclue comme le journal ESPN, m[7] adversaire, etat.iv 3) + equipes.json (abréviations). Sinon ESPN. ═══ */
+async function _g45ArchNbaGL(aid, an) {
+  if ((window._G45_ARCH_LG || []).indexOf('nba') < 0 || typeof _g45ArchLire !== 'function') return null;
+  var B = 'basket/nba/' + (an - 1) + '-' + String(an).slice(2), et = await _g45ArchLire(B + '/etat.json');
+  if (!et || !(et.n > 0) || et.v2 < et.n || !(et.iv >= 3)) return null;
+  var q = await _g45ArchLire(B + '/joueurs/' + aid + '.json'); if (q === null) return null;
+  var ix = await _g45ArchLire(B + '/equipes.json'); if (!ix) return null;
+  var M = ((q && q.m) || []).filter(function (m) { return m[4]; }), clubs = {}, EQ = {};
+  M.forEach(function (m) { clubs[m[3]] = 1; });
+  var E = await Promise.all(Object.keys(clubs).map(function (c) { return _g45ArchLire(B + '/equipes/' + c + '.json'); }));
+  if (E.some(function (x) { return !x; })) return null;
+  Object.keys(clubs).forEach(function (c, i) { (E[i].m || []).forEach(function (m) { EQ[c + '|' + m[2]] = m; }); });
+  var out = { m: {}, e: {} };
+  M.forEach(function (m) {
+    var em = EQ[m[3] + '|' + m[2]]; if (!em || em[5] === 1 || !em[4]) return;   /* présaison exclue */
+    var s = m[4], n = function (k) { return +s[k] || 0; }, h = em[3] === 'h', adv = String(em[7] || ''), sc = em[4], p = h ? sc[0] : sc[1], c = h ? sc[1] : sc[0];
+    out.m[String(m[2])] = [n('MIN'), n('PTS'), n('REB'), n('AST'), n('3PT'), n('INT'), n('CTR'), n('BP')];
+    out.e[String(m[2])] = [m[0], h ? String(m[3]) : adv, h ? adv : String(m[3]), String(m[3]), String((ix[adv] || [])[1] || ''), h ? 'vs' : '@', p + '-' + c, p > c ? 'W' : 'L'];
+  });
+  return Object.keys(out.m).length ? out : (M.length ? null : out);
+}
+window._g45ArchNbaGL = _g45ArchNbaGL;   /* tests */
 /* true si le journal est disponible (cache ou téléchargé), false sinon. */
 async function _g45NbaGLRecuperer(aid, an) {
   if (_g45NbaGLLireCache(aid, an)) return true;
+  try {   /* 20261031q : archives d'abord */
+    var A = await _g45ArchNbaGL(aid, an);
+    if (A) {
+      var ca = { x: Date.now() + ((an >= _g45SgAnAuto('nba')) ? 6 * 3600e3 : 7 * 86400e3), m: A.m, e: A.e, arch: 1 };
+      try { localStorage.setItem(_g45NbaGLCle(aid, an), JSON.stringify(ca)); } catch (e) {}
+      _g45NbaGLMem[aid + '_' + an] = ca; return true;
+    }
+  } catch (e) {}
   try {
     var path = '/apis/common/v3/sports/basketball/nba/athletes/' + aid + '/gamelog?season=' + an;
     var r = await fetch(FD_PROXY + '?host=espnweb&path=' + encodeURIComponent(path));
