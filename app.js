@@ -75420,6 +75420,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   window.g45CrUsLire = function () { var D = S.data[S.nom]; if (D) usCharger(S.nom, D); redessiner(); };
   function jVal(c, m) {
     if (S.ctx) return usVal(c.jo, m);   /* 20261022i */
+    if (m.jv) return m.jv[c.jo] || null;   /* 20261031g : match de l'ANCIEN club (transfert, joueur seul) */
     var J = S.jl[c.jo]; if (!J || !J.d) return null;
     var d = m[0], t = Date.parse(d + 'T12:00:00Z');
     if (J.d[d]) return J.d[d];
@@ -75516,12 +75517,64 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   function jCharger(pid, D) {
     if (S.jl[pid]) return;
     S.jl[pid] = { enCours: 1 };
-    Promise.all((D.saisons || []).map(function (sa) { return sa ? _g45RegLogFoot(D.lg, pid, sa.an).catch(function () { return null; }) : null; })).then(function (L) {
-      var d = {};
-      L.forEach(function (x) { ((x && x.gameLog) || []).forEach(function (g) { if (g.d) d[String(g.d).slice(0, 10)] = { g: g.goals || 0, a: g.assists || 0 }; }); });
-      S.jl[pid] = { d: d, n: Object.keys(d).length };
+    var SA = D.saisons || [];
+    Promise.all(SA.map(function (sa) { return sa ? _g45RegLogFoot(D.lg, pid, sa.an).catch(function () { return null; }) : null; })).then(async function (L) {
+      var d = {}, vides = [];
+      L.forEach(function (x, i) {
+        var n = 0; ((x && x.gameLog) || []).forEach(function (g) { if (g.d) { d[String(g.d).slice(0, 10)] = { g: g.goals || 0, a: g.assists || 0 }; n++; } });
+        if (x && !n && SA[i]) vides.push(SA[i].an);   /* 20261031g : saison lue, AUCUN match dans ce championnat (lecture ratée = rien) */
+      });
+      var ai = {}; if (vides.length) { try { ai = await jAilleurs(pid, D.lg, vides); } catch (e) {} }
+      S.jl[pid] = { d: d, n: Object.keys(d).length, ai: ai };
       try { redessiner(); } catch (e) {}
     });
+  }
+  /* ═══ 20261031g — ↪️ TRANSFERT (capture « Victoire + Kylian Mbappé buteur » : 2023-24 « aucun match compté » alors qu'il était au PSG ;
+     proposition « A pour les combinés avec victoire, B pour le joueur seul » → « oui »). SONDÉ (robot sonde de gones45-archives, 29/10) :
+     core …/soccer/athletes/<id>/statisticslog = TOUTE la carrière en une réponse (entries[] { season.$ref …/leagues/<lg>/seasons/<an>,
+     statistics[0].team.$ref …/teams/<id> }, Mbappé : fra.1 2023 → 160) ; gamelog ?season=2023&league=fra.1 = 31 matchs ;
+     core …/leagues/fra.1/seasons/2023/teams/160 → shortDisplayName « PSG ». Seuls les championnats nationaux (xxx.N) comptent.
+       A (combiné avec résultat / buts / feuille…, ou 2-3 joueurs) : ligne « ↪️ Mbappé n'était pas à Real Madrid (PSG) », rien compté ;
+       B (le joueur SEUL, championnat) : ses matchs de l'ancien club comptés (m.jv), saison notée « ↪️ PSG ». Mémoire seulement. ═══ */
+  var _ailSl = {};
+  async function jAilleurs(pid, lg, ans) {
+    var sl = _ailSl[pid] || (_ailSl[pid] = fetch('https://sports.core.api.espn.com/v2/sports/soccer/athletes/' + pid + '/statisticslog')
+      .then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }));
+    var j = await sl, out = {}; if (!j) { delete _ailSl[pid]; return out; }
+    for (var k = 0; k < ans.length; k++) {
+      var an = String(ans[k]), V = {};
+      (j.entries || []).forEach(function (e) {
+        var m = String((e.season || {}).$ref || '').match(/leagues\/([^/]+)\/seasons\/(\d+)/);
+        if (!m || m[2] !== an || m[1] === lg || !/^[a-z]{3}\.\d$/.test(m[1])) return;
+        var t = String(((((e.statistics || [])[0]) || {}).team || {}).$ref || '').match(/teams\/(\d+)/); V[m[1]] = t ? t[1] : '';
+      });
+      var ms = [], clubs = [];
+      for (var lg2 in V) {
+        var lo = null; try { lo = await _g45RegLogFoot(lg2, pid, +an); } catch (e) {}
+        ((lo && lo.gameLog) || []).forEach(function (g) {
+          if (!g.d) return; var m = [String(g.d).slice(0, 10), g.h == null ? -1 : g.h, 0, 0]; m.jv = {}; m.jv[pid] = { g: g.goals || 0, a: g.assists || 0 }; ms.push(m);
+        });
+        if (V[lg2]) { try { var r = await fetch('https://sports.core.api.espn.com/v2/sports/soccer/leagues/' + lg2 + '/seasons/' + an + '/teams/' + V[lg2]); if (r.ok) { var tj = await r.json(); if (tj.shortDisplayName || tj.displayName) clubs.push(tj.shortDisplayName || tj.displayName); } } catch (e) {} }
+      }
+      if (!Object.keys(V).length) continue;
+      ms.sort(function (a, b) { return a[0] < b[0] ? -1 : 1; });
+      out[an] = { club: clubs.join(' / '), ms: ms };
+    }
+    return out;
+  }
+  function seul(c) {
+    return !S.ctx && joueurs(c).length === 1 && (!S.comp || S.comp === 'L')
+      && ['res', 'ou', 'bts', 'te', 'ad', 'ec', 'fs', 'ts', 'as', 'cad', 'mt', 'mp', 'bo', 'pm', 'm1', 'm2', 'ha'].every(function (k) { return !c[k]; });
+  }
+  function jAil(c, sa) {   /* { j: joueur, a: { club, ms } } : un joueur choisi n'a joué AUCUN match de cette saison avec ce club */
+    if (S.ctx || !sa) return null;
+    var P = joueurs(c);
+    for (var i = 0; i < P.length; i++) { var J = S.jl[P[i].id], A = J && J.ai && J.ai[String(sa.an)]; if (A) return { j: P[i], a: A }; }
+    return null;
+  }
+  function msS(c, sa) {   /* matchs d'une saison : ceux du club, ou (B) ceux de l'ancien club du joueur seul */
+    var L = msDe(sa); if (!L || !seul(c)) return L;
+    var X = jAil(c, sa); return X && X.a.ms.length ? X.a.ms : L;
   }
   function roCharger(nom, D) {
     if (S.ro[nom]) return;
@@ -75727,17 +75780,19 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       + '<th style="text-align:left;font-size:13px;color:#c9d3ee;padding:6px 4px;border-bottom:1px solid #2a3a63;">Réussite</th>'
       + '<th style="text-align:left;font-size:13px;color:#c9d3ee;padding:6px 4px;border-bottom:1px solid #2a3a63;">Pire série<br>de défaites</th>'
       + '<th style="text-align:left;font-size:13px;color:#c9d3ee;padding:6px 4px;border-bottom:1px solid #2a3a63;">Meilleure<br>série</th></tr>';
-    D.saisons.slice().reverse().forEach(function (s) { var L0 = s && msDe(s); if (L0) tous = tous.concat(filtrer(L0)); });
+    D.saisons.slice().reverse().forEach(function (s) { var L0 = s && msS(c, s); if (L0) tous = tous.concat(filtrer(L0)); });
     D.saisons.forEach(function (s) {
       if (!s) return;
       var td = 'padding:8px 4px;border-bottom:1px solid #1c2747;';
-      var sms = msDe(s);
-      if (!sms) { h += '<tr><td style="' + td + '">' + lib(D.lg, s.an) + '</td><td colspan="3" style="' + td + 'color:#c9d3ee;">indisponible</td></tr>'; return; }
+      var sms = msS(c, s), XA = jAil(c, s), viaA = XA && sms === XA.a.ms;   /* 20261031g */
+      var libS = lib(D.lg, s.an) + (viaA ? '<br><span style="font-size:13px;color:#f5c542;font-weight:700;">↪️ ' + esc(XA.a.club || 'autre club') + '</span>' : '');
+      if (!sms) { h += '<tr><td style="' + td + '">' + libS + '</td><td colspan="3" style="' + td + 'color:#c9d3ee;">indisponible</td></tr>'; return; }
       var ms = filtrer(sms);
-      if (!ms.length) { h += '<tr><td style="' + td + '">' + lib(D.lg, s.an) + '</td><td colspan="3" style="' + td + 'color:#c9d3ee;">aucun match joué</td></tr>'; return; }
+      if (!ms.length) { h += '<tr><td style="' + td + '">' + libS + '</td><td colspan="3" style="' + td + 'color:#c9d3ee;">aucun match joué</td></tr>'; return; }
       var R = calc(c, ms);
-      if (!R.n) { h += '<tr><td style="' + td + '">' + lib(D.lg, s.an) + '</td><td colspan="3" style="' + td + 'color:#c9d3ee;">aucun match compté (critères joueur / feuille / match précédent)</td></tr>'; return; }   /* 20261021f : plus de « NaN % » */
-      h += '<tr><td style="' + td + '">' + lib(D.lg, s.an) + '</td><td style="' + td + '">' + nbV(R.ok) + '/' + nbV(R.n) + ' · ' + Math.round(100 * R.ok / R.n) + ' %</td>'
+      if (!R.n && XA && !viaA) { h += '<tr><td style="' + td + '">' + libS + '</td><td colspan="3" style="' + td + 'color:#f5c542;">↪️ ' + esc(XA.j.n) + ' n\'était pas à ' + esc(S.nom) + (XA.a.club ? ' (' + esc(XA.a.club) + ')' : '') + '</td></tr>'; return; }   /* 20261031g : transfert */
+      if (!R.n) { h += '<tr><td style="' + td + '">' + libS + '</td><td colspan="3" style="' + td + 'color:#c9d3ee;">aucun match compté (critères joueur / feuille / match précédent)</td></tr>'; return; }   /* 20261021f : plus de « NaN % » */
+      h += '<tr><td style="' + td + '">' + libS + '</td><td style="' + td + '">' + nbV(R.ok) + '/' + nbV(R.n) + ' · ' + Math.round(100 * R.ok / R.n) + ' %</td>'
         + '<td style="' + td + 'font-weight:700;color:' + coul(R.pire) + ';">' + R.pire + '</td>'
         + '<td style="' + td + 'font-weight:700;color:#5aa9ff;">' + R.best + '</td></tr>';
     });
@@ -75762,7 +75817,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   function garderCalc(c, D) {
     var ans = [], p = [];
     (D.saisons || []).forEach(function (sa) {
-      if (!sa) return; var sms = msDe(sa); if (!sms) return;
+      if (!sa) return; var sms = msS(c, sa); if (!sms) return;   /* 20261031g */
       var ms = filtrer(sms); if (!ms.length) return; var R = calc(c, ms); if (!R.n) return;
       ans.push(lib(D.lg, sa.an)); p.push(R.pire);
     });
@@ -75793,7 +75848,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   }
   window.g45CrGarder = function (i) {
     var c = S.combos[i], D = S.data[S.nom], u = murDe(S.nom, c); if (!c || !D || !u) return;
-    var tous = []; D.saisons.slice().reverse().forEach(function (s) { var L0 = s && msDe(s); if (L0) tous = tous.concat(filtrer(L0)); });
+    var tous = []; D.saisons.slice().reverse().forEach(function (s) { var L0 = s && msS(c, s); if (L0) tous = tous.concat(filtrer(L0)); });   /* 20261031g */
     var G = garderCalc(c, D), T = calc(c, tous);
     u.ps = { sig: S.lieu + '|' + libCombo(c), lib: libCombo(c), k: S.lieu, ans: G.ans, p: G.p, tot: T.pire, at: Date.now() };
     try { save(); } catch (e) {}
