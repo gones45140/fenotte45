@@ -76037,6 +76037,33 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var k = ckSous();
     return '<div id="g45ck">' + ckNav() + (k === 'c' ? ckCal() : k === 'g' ? ckGra() : ckAuj()) + '</div>';
   }
+  /* 20261029d : carte d'un match (écran 🎯 et jours à venir du 📅 Calendrier) ; fut = pas de « ⏳ Calcul » (ckLancer ne regarde que aujourd'hui / cette nuit) */
+  function ckCarte(m, u, d, fut) {
+    var e = function (x) { return String(x == null ? '' : x).replace(/[<>&"]/g, ''); }, h = '';
+    var col = function (v) { return v <= 2 ? '#1ed760' : v <= 4 ? '#ff9f43' : '#ff5a5a'; };
+    var SP = { soccer: '⚽', hockey: '🏒', basketball: '🏀', football: '🏈', baseball: '⚾', rugby: '🏉', 'rugby-league': '🏉' };
+      var ico = m.d ? '🏠' : '✈️', q = ckPari(u, m.d), C = null;
+      try { if (u.note && (u.type !== 'joueur' || /🏠|✈|🛫/.test(u.note))) C = _g45AgConsigne(u.note, !!m.d); } catch (x) {}
+      var pal = '';
+      try { if (u.s != null && typeof STRATS !== 'undefined' && STRATS[u.s]) { var p = (typeof _g45PalLieu === 'function') ? _g45PalLieu(u, m.d ? 'dom' : 'ext') : (parseInt(u.l, 10) || 1), mi = STRATS[u.s][p - 1];
+        if (mi != null) pal = '<div style="margin-top:6px;"><span style="display:inline-block;background:rgba(240,176,32,.22);border:1px solid #f0b020;color:#fff;font-size:15px;font-weight:800;border-radius:7px;padding:3px 10px;">🚀 Palier ' + p + ' · mise ' + (Math.round(mi * 100) / 100).toLocaleString('fr-FR') + ' € <span style="color:#f5c542;">' + new Array((parseInt(u.s, 10) || 0) + 1).join('⭐') + '</span></span></div>'; } } catch (x) {}
+      var R = q && u.psL && u.psL[q.k], ps = '';
+      if (R && !R.err && R.p && R.p.length) {
+        var pa = window._g45PalCarte(R.tot, u);
+        ps = '<div style="font-size:15px;font-weight:700;margin-top:6px;background:rgba(47,107,255,.25);border-radius:8px;padding:5px 8px;">📊 ' + ({ glob: '🌍', dom: '🏠', ext: '✈️' }[q.k]) + ' pire série '
+          + R.p.map(function (v) { return '<span style="color:' + col(v) + ';">' + v + '</span>'; }).join(' · ') + ' → <b>' + pa.p + ' palier' + (pa.p > 1 ? 's' : '') + ' ' + pa.ico + '</b>' + (pa.mise != null ? ' · ' + (Math.round(pa.mise * 100) / 100).toLocaleString('fr-FR') + ' €' : '') + ' <span style="font-weight:400;color:#c9d3ee;">· 4 saisons</span></div>';
+      } else if (!fut && q && !ckAJour(u, q)) ps = '<div style="font-size:13px;color:#c9d3ee;margin-top:6px;">⏳ Calcul de la série sur 4 saisons…</div>';
+      h += '<div style="background:rgba(20,28,48,.95);border:1px solid #2a3a63;border-left:4px solid ' + e(u.color || '#5ad6ff') + ';border-radius:12px;padding:10px 12px;margin-bottom:10px;color:#fff;">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><div style="font-size:16px;font-weight:800;">' + (SP[m.sp] || '') + ' ' + e(u.n) + ' ' + ico + ' <span style="font-weight:400;color:#c9d3ee;">vs ' + e(m.adv) + '</span></div>'
+        + '<div style="flex:none;font-size:18px;font-weight:900;background:rgba(11,16,29,.85);border-radius:8px;padding:2px 9px;">' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) + '</div></div>'
+        + (C && C.txt ? '<div style="font-size:15px;background:rgba(11,16,29,.8);border-radius:8px;padding:6px 8px;margin-top:6px;color:#8fb4ff;">📌 ' + e(C.txt) + '</div>' : '')
+        + pal + ps + '</div>';
+    return h;
+  }
+  function ckAgTout() {   /* liste complète de l'Agenda du jour (7 jours), ou [] */
+    var A = window._g45CkAg; if (!A || A.j !== ckJour()) { try { A = JSON.parse(localStorage.getItem('g45ck_ag') || 'null'); } catch (e) { A = null; } }
+    return (A && A.j === ckJour() && A.L) || [];
+  }
   function ckAuj() {
     var L = ckListe(), e = function (x) { return String(x == null ? '' : x).replace(/[<>&"]/g, ''); };
     var h = '<div><div style="margin-top:4px;background:rgba(20,28,48,.95);border:1px solid #2a3a63;border-radius:12px;padding:12px;color:#fff;">'
@@ -76050,22 +76077,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       var u = ckU(m.n); if (!u) return;
       var d = new Date(m.t), j = d.toDateString() === auj ? 'Aujourd\'hui · ' + d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }) : 'Cette nuit · ' + d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
       if (j !== jr) { jr = j; h += '<div style="display:inline-block;background:rgba(11,16,29,.85);color:#fff;font-size:14px;font-weight:800;text-transform:uppercase;border-radius:8px;padding:5px 12px;margin:14px 0 8px;">' + e(j) + '</div>'; }
-      var ico = m.d ? '🏠' : '✈️', q = ckPari(u, m.d), C = null;
-      try { if (u.note && (u.type !== 'joueur' || /🏠|✈|🛫/.test(u.note))) C = _g45AgConsigne(u.note, !!m.d); } catch (x) {}
-      var pal = '';
-      try { if (u.s != null && typeof STRATS !== 'undefined' && STRATS[u.s]) { var p = (typeof _g45PalLieu === 'function') ? _g45PalLieu(u, m.d ? 'dom' : 'ext') : (parseInt(u.l, 10) || 1), mi = STRATS[u.s][p - 1];
-        if (mi != null) pal = '<div style="margin-top:6px;"><span style="display:inline-block;background:rgba(240,176,32,.22);border:1px solid #f0b020;color:#fff;font-size:15px;font-weight:800;border-radius:7px;padding:3px 10px;">🚀 Palier ' + p + ' · mise ' + (Math.round(mi * 100) / 100).toLocaleString('fr-FR') + ' € <span style="color:#f5c542;">' + new Array((parseInt(u.s, 10) || 0) + 1).join('⭐') + '</span></span></div>'; } } catch (x) {}
-      var R = q && u.psL && u.psL[q.k], ps = '';
-      if (R && !R.err && R.p && R.p.length) {
-        var pa = window._g45PalCarte(R.tot, u);
-        ps = '<div style="font-size:15px;font-weight:700;margin-top:6px;background:rgba(47,107,255,.25);border-radius:8px;padding:5px 8px;">📊 ' + ({ glob: '🌍', dom: '🏠', ext: '✈️' }[q.k]) + ' pire série '
-          + R.p.map(function (v) { return '<span style="color:' + col(v) + ';">' + v + '</span>'; }).join(' · ') + ' → <b>' + pa.p + ' palier' + (pa.p > 1 ? 's' : '') + ' ' + pa.ico + '</b>' + (pa.mise != null ? ' · ' + (Math.round(pa.mise * 100) / 100).toLocaleString('fr-FR') + ' €' : '') + ' <span style="font-weight:400;color:#c9d3ee;">· 4 saisons</span></div>';
-      } else if (q && !ckAJour(u, q)) ps = '<div style="font-size:13px;color:#c9d3ee;margin-top:6px;">⏳ Calcul de la série sur 4 saisons…</div>';
-      h += '<div style="background:rgba(20,28,48,.95);border:1px solid #2a3a63;border-left:4px solid ' + e(u.color || '#5ad6ff') + ';border-radius:12px;padding:10px 12px;margin-bottom:10px;color:#fff;">'
-        + '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><div style="font-size:16px;font-weight:800;">' + (SP[m.sp] || '') + ' ' + e(u.n) + ' ' + ico + ' <span style="font-weight:400;color:#c9d3ee;">vs ' + e(m.adv) + '</span></div>'
-        + '<div style="flex:none;font-size:18px;font-weight:900;background:rgba(11,16,29,.85);border-radius:8px;padding:2px 9px;">' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) + '</div></div>'
-        + (C && C.txt ? '<div style="font-size:15px;background:rgba(11,16,29,.8);border-radius:8px;padding:6px 8px;margin-top:6px;color:#8fb4ff;">📌 ' + e(C.txt) + '</div>' : '')
-        + pal + ps + '</div>';
+      h += ckCarte(m, u, d);
     });
     return h + '</div>';
   }
@@ -76096,6 +76108,8 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   function ckCal() {
     var e = function (x) { return String(x == null ? '' : x).replace(/[<>&"]/g, ''); };
     var P = ckParis(), parJ = {}; P.forEach(function (x) { (parJ[x.j] = parJ[x.j] || []).push(x); });
+    /* 20261029d (« le 30 on l'a, si tu veux, dans l'Agenda ») : jours à venir = matchs des cartes du mur connus de l'Agenda (7 jours) */
+    var auj = ckYmd(new Date()), agJ = {}; ckAgTout().forEach(function (m) { var j = ckYmd(new Date(m.t)); if (j >= auj && ckU(m.n)) (agJ[j] = agJ[j] || []).push(m); });
     var d0 = new Date(); d0.setDate(1); d0.setMonth(d0.getMonth() + (S.ck.mois || 0));
     var an = d0.getFullYear(), mo = d0.getMonth(), nbJ = new Date(an, mo + 1, 0).getDate(), dec = (new Date(an, mo, 1).getDay() + 6) % 7;
     var titre = d0.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }), fl = 'font-size:18px;background:#16213f;color:#fff;border:1px solid #2a3a63;border-radius:8px;padding:4px 14px;cursor:pointer;';
@@ -76105,11 +76119,12 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var sel = S.ck.jour || '';
     for (var d = 1; d <= nbJ; d++) {
       var j = an + '-' + ('0' + (mo + 1)).slice(-2) + '-' + ('0' + d).slice(-2), L = parJ[j] || [], fin = L.filter(function (x) { return x.r !== null; });
-      var tot = fin.reduce(function (s2, x) { return s2 + x.g; }, 0), bg = !L.length ? 'rgba(11,16,29,.6)' : !fin.length ? 'rgba(245,197,66,.18)' : tot > 0 ? 'rgba(30,215,96,.28)' : tot < 0 ? 'rgba(255,90,90,.3)' : 'rgba(201,211,238,.15)';
+      var nA = (agJ[j] || []).length;
+      var tot = fin.reduce(function (s2, x) { return s2 + x.g; }, 0), bg = !L.length ? (nA ? 'rgba(47,107,255,.25)' : 'rgba(11,16,29,.6)') : !fin.length ? 'rgba(245,197,66,.18)' : tot > 0 ? 'rgba(30,215,96,.28)' : tot < 0 ? 'rgba(255,90,90,.3)' : 'rgba(201,211,238,.15)';
       g += '<div onclick="g45CkJour(\'' + j + '\')" style="cursor:pointer;background:' + bg + ';border:' + (j === sel ? '2px solid #f5c542' : '1px solid #2a3a63') + ';border-radius:8px;padding:4px 0;min-height:44px;"><div style="color:#fff;font-weight:800;font-size:14px;">' + d + '</div>'
-        + (fin.length ? '<div style="font-size:12px;color:#fff;">' + (tot > 0 ? '+' : tot < 0 ? '−' : '') + Math.abs(Math.round(tot * 10) / 10).toLocaleString('fr-FR') + '</div>' : (L.length ? '<div style="font-size:12px;">⏳</div>' : '')) + '</div>';
+        + (fin.length ? '<div style="font-size:12px;color:#fff;">' + (tot > 0 ? '+' : tot < 0 ? '−' : '') + Math.abs(Math.round(tot * 10) / 10).toLocaleString('fr-FR') + '</div>' : (L.length ? '<div style="font-size:12px;">⏳</div>' : (nA ? '<div style="font-size:12px;color:#fff;">📅 ' + nA + '</div>' : ''))) + '</div>';
     }
-    g += '</div><div style="font-size:13px;color:#c9d3ee;margin-top:8px;">Vert = journée gagnante · rouge = perdante · ⏳ = en cours · touche un jour pour le détail.</div>';
+    g += '</div><div style="font-size:13px;color:#c9d3ee;margin-top:8px;">Vert = journée gagnante · rouge = perdante · ⏳ = en cours · 📅 bleu = matchs prévus (Agenda) · touche un jour pour le détail.</div>';
     var h = ckBox(g);
     if (sel && parJ[sel]) {
       var LJ = parJ[sel], tj = LJ.reduce(function (s2, x) { return s2 + x.g; }, 0), dj = new Date(sel + 'T12:00:00');
@@ -76120,7 +76135,12 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
             + '<div style="font-size:13px;color:#c9d3ee;">' + (pari ? e(pari) + ' · ' : '') + 'palier ' + e(b.l || 1) + ' · ' + e(String(b.m).replace('.', ',')) + ' € @ ' + e(String(b.cote).replace('.', ',')) + '</div></div>'
             + '<div style="font-weight:800;white-space:nowrap;color:' + (x.r === null ? '#f5c542' : x.g >= 0 ? '#1ed760' : '#ff5a5a') + ';">' + (x.r === null ? 'en cours' : ckEur(x.g)) + '</div></div>';
         }).join(''));
-    } else if (sel) h += ckBox('<div style="font-size:15px;">Aucun pari Cockpit ce jour-là.</div>');
+    } else if (sel && !agJ[sel]) h += ckBox('<div style="font-size:15px;">Aucun pari Cockpit ce jour-là.</div>');
+    if (sel && agJ[sel]) {
+      var dA = new Date(sel + 'T12:00:00');
+      h += '<div style="display:inline-block;background:rgba(11,16,29,.85);color:#fff;font-size:14px;font-weight:800;text-transform:uppercase;border-radius:8px;padding:5px 12px;margin:4px 0 8px;">📅 Prévu · ' + e(dA.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })) + '</div>'
+        + agJ[sel].sort(function (a, b) { return a.t - b.t; }).map(function (m) { return ckCarte(m, ckU(m.n), new Date(m.t), true); }).join('');
+    }
     return h;
   }
   function ckGra() {
