@@ -83960,6 +83960,57 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
   /* 20261031e (capture de la liste des 52 mois : « peut faire un clic ouvrable par saison ? ») : liste Saison + liste des mois de CETTE saison */
   window.g45ArchSaison = function (sa) { var ML = moisListe().filter(function (m) { return SAISON(m) === sa; }); if (ML.length) ST.mois[ST.lg] = ML[0]; if (ST.el) window.g45CotesArch(ST.el, ST.lg, ST.sp); };
   window._g45ArchCarte = carte;   /* tests */
+  /* ═══ 20261031i — 📄 PDF DE LA SAISON (« et si je veux le dossier en PDF par année, Ligue 1, ou Lyon, ou les Rams NFL ? » → bouton dans
+     l'onglet + robot de fin de saison plus tard ; « tél bien, et sur PC ? » → « oui ») : tous les mois de la SAISON choisie (équipe choisie
+     ou tout le championnat), page blanche texte noir 14 px (encre, lisible), puis impression du navigateur → « Enregistrer en PDF »
+     (PC : Ctrl+P ; téléphone : Partager / Imprimer). Fenêtre ouverte AU CLIC (sinon bloquée), remplie après lecture ; secours : iframe. ═══ */
+  var NOMS_LG = { 'fra.1': 'Ligue 1', 'fra.2': 'Ligue 2', 'eng.1': 'Premier League', 'esp.1': 'Liga', 'ita.1': 'Serie A', 'ger.1': 'Bundesliga', 'ned.1': 'Eredivisie', 'por.1': 'Liga Portugal',
+    'bra.1': 'Brasileirão', 'arg.1': 'Argentine', 'uefa.champions': 'Ligue des champions', 'uefa.europa': 'Ligue Europa', 'uefa.europa.conf': 'Ligue Conférence', nhl: 'NHL', nba: 'NBA', nfl: 'NFL', mlb: 'MLB',
+    'fifa.friendly': 'Matchs amicaux', 'uefa.nations': 'Ligue des nations', 'fifa.worldq.uefa': 'Qualifs Coupe du monde', 'fifa.world': 'Coupe du monde', 'uefa.euro': 'Euro' };
+  function pdfHtml(L, eq, eqNom, titre) {
+    var e2 = function (t) { return esc(t).replace(/'/g, '&#39;'); }, vir = function (x) { return String(x).replace('.', ','); }, sg = function (x) { return (x > 0 ? '+' : (x < 0 ? '−' : '')) + vir(Math.abs(x)); };
+    var V = 0, N = 0, Dd = 0, bp = 0, bc = 0, h = '';
+    L.forEach(function (fi) {
+      var d = new Date(fi.t), dt = ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2) + '/' + d.getFullYear();
+      var moi = eq ? (String(fi.h.id) === eq ? 'h' : 'a') : '', res = '';
+      if (fi.f && moi) { var m = moi === 'h' ? fi.f.h : fi.f.a, l = moi === 'h' ? fi.f.a : fi.f.h; bp += m; bc += l; if (m > l) { V++; res = ' ✅ V'; } else if (m < l) { Dd++; res = ' ❌ D'; } else { N++; res = ' 🟰 N'; } }
+      h += '<div class="m"><div class="t"><b>' + dt + '</b> · ' + e2(fi.h.nom) + ' <b>' + (fi.f ? fi.f.h + ' - ' + fi.f.a : 'vs') + '</b> ' + e2(fi.a.nom) + res + (fi.r && (fi.ml || fi.hc || fi.tot) ? ' <span class="g">(cotes de clôture)</span>' : '') + '</div>';
+      var c = [];
+      if (fi.ml) c.push('1 ' + v(fi.ml.h) + (fi.ml.d > 1 ? ' · N ' + v(fi.ml.d) : '') + ' · 2 ' + v(fi.ml.a));
+      if (fi.hc && fi.hc.L != null) c.push('Handicap ' + e2(fi.h.nom) + ' ' + sg(fi.hc.L) + ' ' + v(fi.hc.h) + ' / ' + sg(-fi.hc.L) + ' ' + v(fi.hc.a));
+      if (fi.tot && fi.tot.L != null) c.push('Total ' + vir(fi.tot.L) + ' : + ' + v(fi.tot.o) + ' / − ' + v(fi.tot.u));
+      if (fi.bts) c.push('Les deux marquent : oui ' + v(fi.bts.o) + ' / non ' + v(fi.bts.n));
+      if (c.length) h += '<div>' + c.join(' &nbsp;|&nbsp; ') + '</div>';
+      var J = joueurs(fi, eq ? 12 : 5);
+      if (J.length) h += '<div>' + (fi.s === 'basketball' ? '🏀 20+ points' : (fi.s === 'football' ? '🏈 TD' : '⚽ Buteur')) + ' : ' + J.map(function (x) { return e2(x.n) + ' ' + v(x.d) + (x.ok === true ? ' ✅' : (x.ok === false && fi.f ? ' ❌' : '')); }).join(' · ') + '</div>';
+      var fe = feuilleHtml(fi).replace(/<div style="font-size:14px;font-weight:800[^>]*>📋 Feuille de match<\/div>/, '').replace(/ style="[^"]*"/g, '').replace(/<div>/g, '<span class="f">').replace(/<\/div>/g, '</span>');
+      if (fe) h += '<div>📋 ' + fe + '</div>';
+      h += '</div>';
+    });
+    var bil = eq && (V + N + Dd) ? '<div class="b">Bilan ' + e2(eqNom) + ' : ' + V + ' V · ' + N + ' N · ' + Dd + ' D — ' + bp + ' marqués, ' + bc + ' encaissés</div>' : '';
+    return '<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' + e2(titre) + '</title><style>'
+      + 'body{background:#fff;color:#000;font:14px/1.45 Arial,sans-serif;margin:16px;}h1{font-size:20px;margin:0 0 4px;}.s{font-size:13px;color:#333;margin-bottom:10px;}'
+      + '.b{font-size:15px;font-weight:700;border:2px solid #000;padding:6px 8px;margin:8px 0 12px;}.m{border-top:1px solid #999;padding:6px 0;break-inside:avoid;page-break-inside:avoid;}'
+      + '.t{font-size:15px;}.g{color:#555;font-size:13px;}.f{margin-right:10px;}#p{font-size:16px;font-weight:700;padding:10px 14px;border:2px solid #000;background:#ffd84d;border-radius:8px;margin:6px 0 10px;cursor:pointer;}'
+      + '@media print{#p{display:none;}}</style></head><body><button id="p" onclick="window.print()">🖨️ Enregistrer en PDF</button><h1>' + e2(titre) + '</h1>'
+      + '<div class="s">' + L.length + ' match' + (L.length > 1 ? 's' : '') + ' · cotes d\'avant-match ' + ((typeof _g45DkMode === 'function' && _g45DkMode() === 'fr') ? 'estimées France' : 'DraftKings (via ESPN)') + ' · BET45, archive du ' + new Date().toLocaleDateString('fr-FR') + '</div>'
+      + bil + (h || '<div>Aucun match gardé pour cette saison.</div>') + '</body></html>';
+  }
+  window._g45ArchPdfHtml = pdfHtml;   /* tests */
+  window.g45ArchPdf = async function () {
+    var lg = ST.lg, ML = moisListe(), mo = ST.mois[lg] && ML.indexOf(ST.mois[lg]) >= 0 ? ST.mois[lg] : ML[0], sa = SAISON(mo), eq = ST.eq[lg] || '';
+    var w = null; try { w = window.open('', '_blank'); if (w) w.document.write('<p style="font:18px Arial;margin:20px;">⏳ Préparation du PDF ' + esc(sa) + '…</p>'); } catch (e) { w = null; }
+    var MS = ML.filter(function (m) { return SAISON(m) === sa; }), all = {};
+    var DS = await Promise.all(MS.map(function (m) { return lire(lg, m); }));
+    DS.forEach(function (D) { Object.keys(D || {}).forEach(function (i) { all[i] = D[i]; }); });
+    var L = Object.keys(all).map(function (i) { return all[i]; }).filter(function (fi) { return fi && fi.h && fi.a && (!eq || String(fi.h.id) === eq || String(fi.a.id) === eq); }).sort(function (a, b) { return a.t - b.t; });
+    var eqNom = ''; if (eq) L.some(function (fi) { eqNom = String(fi.h.id) === eq ? fi.h.nom : (String(fi.a.id) === eq ? fi.a.nom : ''); return !!eqNom; });
+    var titre = 'BET45 — ' + (eqNom ? eqNom + ' — ' : '') + (NOMS_LG[lg] || lg) + ' ' + sa, html = pdfHtml(L, eq, eqNom, titre);
+    if (w && !w.closed) { w.document.open(); w.document.write(html); w.document.close(); setTimeout(function () { try { w.focus(); w.print(); } catch (e) {} }, 600); return; }
+    var f = document.getElementById('g45-arch-pdf'); if (f) f.remove();   /* secours (fenêtre bloquée, appli installée) : iframe invisible imprimée */
+    f = document.createElement('iframe'); f.id = 'g45-arch-pdf'; f.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;'; document.body.appendChild(f);
+    f.contentDocument.open(); f.contentDocument.write(html); f.contentDocument.close(); setTimeout(function () { try { f.contentWindow.focus(); f.contentWindow.print(); } catch (e) {} }, 600);
+  };
   window.g45CotesArch = async function (el, lg, sp) {
     ST.el = el; ST.lg = lg; ST.sp = sp;
     var ML = moisListe(), mo = ST.mois[lg] && ML.indexOf(ST.mois[lg]) >= 0 ? ST.mois[lg] : ML[0];
@@ -83972,7 +84023,8 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
       + '<select onchange="g45ArchEq(this.value)" style="' + sel + '"><option value="">Toutes les équipes</option>' + Object.keys(eqs).sort(function (a, b) { return String(eqs[a]).localeCompare(String(eqs[b])); }).map(function (k) { return '<option value="' + k + '"' + (k === eq ? ' selected' : '') + '>' + esc(eqs[k]) + '</option>'; }).join('') + '</select>'
       + (function () { var SA = [], saC = SAISON(mo); ML.forEach(function (m) { var g = SAISON(m); if (SA.indexOf(g) < 0) SA.push(g); });
           return '<select onchange="g45ArchSaison(this.value)" style="' + sel + '">' + SA.map(function (g) { return '<option value="' + g + '"' + (g === saC ? ' selected' : '') + '>Saison ' + g + '</option>'; }).join('') + '</select>'
-            + '<select onchange="g45ArchMois(this.value)" style="' + sel + '">' + ML.filter(function (m) { return SAISON(m) === saC; }).map(function (m) { var p = m.split('-'); return '<option value="' + m + '"' + (m === mo ? ' selected' : '') + '>' + ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'][+p[1] - 1] + ' ' + p[0] + '</option>'; }).join('') + '</select>'; })();
+            + '<select onchange="g45ArchMois(this.value)" style="' + sel + '">' + ML.filter(function (m) { return SAISON(m) === saC; }).map(function (m) { var p = m.split('-'); return '<option value="' + m + '"' + (m === mo ? ' selected' : '') + '>' + ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'][+p[1] - 1] + ' ' + p[0] + '</option>'; }).join('') + '</select>'
+            + '<button onclick="g45ArchPdf()" style="background:#2f6bff;color:#fff;border:1px solid #6d9dff;border-radius:8px;padding:8px 12px;font-size:15px;font-weight:800;margin:0 8px 8px 0;cursor:pointer;">📄 PDF saison ' + esc(saC) + (eq ? ' · ' + esc(eqs[eq]) : '') + '</button>'; })();   /* 20261031i */
     var L = ids.filter(function (i) { return !eq || String(D[i].h.id) === eq || String(D[i].a.id) === eq; });
     if (nR) h += '<div style="font-size:13px;color:#ffb36b;margin:2px 0 4px;">Matchs rattrapés (avant le 29/10/2026) : cotes de CLÔTURE seulement (1N2, handicap, total), pas de cotes joueurs.</div>';
     h += L.length ? L.map(function (i) { return carte(D[i], i, eq); }).join('') : '<div style="font-size:14px;color:#c9d3ee;padding:8px 2px;">Aucun match gardé pour ce mois (pas de match, ou rattrapage pas encore passé).</div>';
