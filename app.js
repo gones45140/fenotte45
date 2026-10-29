@@ -65863,6 +65863,10 @@ _G45_JOU_TABLE.basketball = { sansBarre: true, lignes: true, roles: [
   { k: 'ast', lab: 'Passes',        col: '#a78bfa', ico: '\uD83C\uDFAF', cols: [['AST']], mode: 'first', seuils: _g45BkLignes(1, 12), def: '4.5' },   /* « pareil pour les passes » */
   /* 20261030e (capture bookmaker « Total du joueur (points + rebonds + passes) (paliers) ») : somme des 3 colonnes, mêmes paliers que le book */
   { k: 'pra', lab: 'Pts + reb + passes', col: '#f5c542', ico: '\u2795', cols: [['PTS'], ['REB'], ['AST']], mode: 'first', seuils: _g45BkLignes(9, 55), def: '29.5', deduit: ['pts', 'reb', 'ast'] },   /* 20261030f : pas gardé, recalculé (place) */
+  /* 20261030h (« manque pts + rebonds / pts + passes / rebonds + passes ») : déduits aussi (rien de plus en mémoire) */
+  { k: 'pr', lab: 'Pts + reb',     col: '#f5c542', ico: '\u2795', cols: [], mode: 'first', seuils: _g45BkLignes(5, 50), def: '24.5', deduit: ['pts', 'reb'] },
+  { k: 'pa', lab: 'Pts + passes',  col: '#f5c542', ico: '\u2795', cols: [], mode: 'first', seuils: _g45BkLignes(5, 50), def: '24.5', deduit: ['pts', 'ast'] },
+  { k: 'ra', lab: 'Reb + passes',  col: '#f5c542', ico: '\u2795', cols: [], mode: 'first', seuils: _g45BkLignes(2, 25), def: '9.5', deduit: ['reb', 'ast'] },
   { k: 'tp',  lab: '3 pts réussis', col: '#22d3ee', ico: '\uD83D\uDC4C', cols: [['3PT']], mode: 'first', made: true, seuils: _g45BkLignes(0, 6), def: '1.5' }
 ]};
 
@@ -75594,7 +75598,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       if (SEU.indexOf(String(c.jmin)) < 0) c.jmin = RJS.def || SEU[0];
       S.uiI = usIdxs(D);
       var UU = S.ui[nom] || {}, man = usManque(D), TOT = {};
-      S.uiI.forEach(function (ix) { if (!ix || !ix.joueurs) return; Object.keys(ix.joueurs).forEach(function (a) { var o = TOT[a] || (TOT[a] = { id: a, nom: ix.joueurs[a].nom || '?', v: 0 }); o.v += (ix.joueurs[a].tot || {})[c.jm] || 0; }); });
+      S.uiI.forEach(function (ix) { if (!ix || !ix.joueurs) return; Object.keys(ix.joueurs).forEach(function (a) { var o = TOT[a] || (TOT[a] = { id: a, nom: ix.joueurs[a].nom || '?', v: 0 }); var tt = ix.joueurs[a].tot || {}; o.v += RJS.deduit ? RJS.deduit.reduce(function (t, k) { return t + (tt[k] || 0); }, 0) : (tt[c.jm] || 0); }); });   /* 20261030h : total d'un rôle déduit = somme (anciens index sans tot) */
       var LJ = Object.keys(TOT).map(function (a) { return TOT[a]; }).sort(function (x, y) { return y.v - x.v || String(x.nom).localeCompare(String(y.nom)); });
       if (c.jm === 'lp') LJ = LJ.filter(function (x) { return x.v > 0; });   /* 20261025m : lanceurs partants seulement */
       if (c.jm === 'lp') [['jo', 'jn'], ['jo2', 'jn2'], ['jo3', 'jn3']].forEach(function (k) { if (c[k[0]] && !LJ.some(function (x) { return x.id === c[k[0]]; })) { delete c[k[0]]; delete c[k[1]]; } });   /* frappeur choisi avant : retiré */
