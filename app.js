@@ -76142,8 +76142,29 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       L.push({ j: j, b: b, r: b.win, g: Math.round(g * 100) / 100 });
     });
     ((typeof state !== 'undefined' && state.h) || []).forEach(function (b) { if (b && b.isS) { var j = jr(b); if (j) L.push({ j: j, b: b, r: null, g: 0 }); } });
-    return L;
+    return ckDepart(L);
   }
+  /* 20261029m (« seuls mes paris Cockpit doivent y être, la Formule 1 n'y est pas » → C « à partir d'une date » = 1er novembre ; « le problème
+     c'est qu'on aura des paliers niveau 2 » → B ; « ça repart de 0 seulement sur Cockpit BET45 et ça touche pas mon vrai Cockpit ») :
+     à partir du CK_DEBUT, le Cockpit BET45 (calendrier, graphique, publication) ne garde que les paris du CK_DEBUT et après, PLUS, pour une
+     montante (carte + lieu) en cours ce jour-là, ses paris d'avant depuis sa dernière réussite (pertes de la montante comprises). Rien
+     d'autre n'est touché (paliers, capital, fiches, stats). Avant le CK_DEBUT : tout reste affiché (aperçu). ckDepart(L, aujourdhui) */
+  var CK_DEBUT = '2026-11-01';
+  function ckDepart(L, auj) {
+    auj = auj || ckYmd(new Date()); if (auj < CK_DEBUT) return L;
+    var G = {}, ord = function (x) { return x.j + '|' + String(x.b.id || ''); };
+    L.forEach(function (x) { var k = x.b.n + '|' + (x.b.domicile || ''); (G[k] = G[k] || []).push(x); });
+    var out = [];
+    Object.keys(G).forEach(function (k) {
+      var A = G[k].sort(function (a, b) { return ord(a) < ord(b) ? -1 : ord(a) > ord(b) ? 1 : 0; });
+      var i0 = -1; for (var i = 0; i < A.length; i++) if (A[i].j >= CK_DEBUT) { i0 = i; break; }
+      if (i0 < 0) return;
+      var d = i0; while (d > 0 && A[d - 1].r === false) d--;   /* montante en cours au départ : ses pertes depuis la dernière réussite */
+      out = out.concat(A.slice(d));
+    });
+    return out;
+  }
+  window._g45CkDepart = ckDepart;   /* tests */
   function ckEur(v) { return (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(Math.round(v * 100) / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €'; }
   function ckBox(x) { return '<div style="background:rgba(20,28,48,.95);border:1px solid #2a3a63;border-radius:12px;padding:12px;color:#fff;margin-bottom:10px;">' + x + '</div>'; }
   function ckNav() {
