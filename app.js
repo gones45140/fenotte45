@@ -65847,6 +65847,21 @@ var _G45_JOU_TABLE = {
   ]}
 };
 _G45_JOU_TABLE['rugby-league'] = _G45_JOU_TABLE.rugby;
+/* 20261030e (« NBA équipe, Saisons, 📊 Tes critères sur 4 saisons : on n'a pas Joueur ») : onglet 👤 Joueurs des critères pour la NBA.
+   SONDÉ par Antoine (summary NBA, boxscore.players[].statistics) : UNE seule catégorie SANS nom, labels MIN PTS FG 3PT FT REB AST TO STL BLK
+   OREB DREB PF +/- ; « 3PT » = « réussis-tentés » (« 0-2 ») → made : on lit le 1er nombre. En basket « a marqué » ne veut rien dire →
+   seuils (« Combien » = 10 / 15 / 20… ou +). sansBarre : la barre « Analyser les joueurs » de Saisons reste absente en basket (voulu). */
+/* 20261030e (suite, capture Winamax « Plus de 4,5 / Moins de 4,5 » : « c'est X,5 de base ») : lignes X,5 de 1 en 1 ; sens Plus de / Moins de
+   (c.jsens 'ov' | 'un') → plus de 4,5 = 5 ou +, moins de 4,5 = 4 ou moins. */
+function _g45BkLignes(a, b) { var o = []; for (var i = a; i <= b; i++) o.push(i + '.5'); return o; }
+_G45_JOU_TABLE.basketball = { sansBarre: true, lignes: true, roles: [
+  { k: 'pts', lab: 'Points',        col: '#f97316', ico: '\uD83C\uDFC0', cols: [['PTS']], mode: 'first', seuils: _g45BkLignes(4, 39), def: '19.5' },
+  { k: 'reb', lab: 'Rebonds',       col: '#1ed760', ico: '\uD83D\uDD04', cols: [['REB']], mode: 'first', seuils: _g45BkLignes(1, 15), def: '4.5' },   /* « d'un joueur à l'autre le nombre de rebonds change de 1 » */
+  { k: 'ast', lab: 'Passes',        col: '#a78bfa', ico: '\uD83C\uDFAF', cols: [['AST']], mode: 'first', seuils: _g45BkLignes(1, 12), def: '4.5' },   /* « pareil pour les passes » */
+  /* 20261030e (capture bookmaker « Total du joueur (points + rebonds + passes) (paliers) ») : somme des 3 colonnes, mêmes paliers que le book */
+  { k: 'pra', lab: 'Pts + reb + passes', col: '#f5c542', ico: '\u2795', cols: [['PTS'], ['REB'], ['AST']], mode: 'first', seuils: _g45BkLignes(9, 55), def: '29.5' },
+  { k: 'tp',  lab: '3 pts réussis', col: '#22d3ee', ico: '\uD83D\uDC4C', cols: [['3PT']], mode: 'first', made: true, seuils: _g45BkLignes(0, 6), def: '1.5' }
+]};
 
 /* UNE BALLE AVEC UNE LETTRE (19/09/2026, demande d'Antoine pour le run).
    Unicode n'a pas ce caractere : la batte de baseball n'existe pas seule
@@ -66008,7 +66023,7 @@ function _g45JouLireMatch(cfg, sum, teamId, nomNorm, idx) {
         var v = 0, trouve = false;
         idxs.forEach(function (ci) {
           if (ci < 0) return;
-          var x = _g45JouNum((a.stats || [])[ci]);
+          var sv = (a.stats || [])[ci], x = role.made ? (/^\d+-\d+$/.test(String(sv == null ? '' : sv).trim()) ? parseInt(sv, 10) : null) : _g45JouNum(sv);   /* 20261030e : « 3-7 » → 3 */
           if (x != null) { v += x; trouve = true; }
         });
         if (!trouve) return;
@@ -66244,7 +66259,7 @@ window._g45JouMarque = _g45JouMarque;
    petits caractères gris le fatiguent. */
 function _g45JouBarre(sp, lg, an, teamId, nom, liste) {
   var cfg = _g45JouCfg(sp);
-  if (!cfg) return '';                       /* basket : pas de barre, c'est voulu */
+  if (!cfg || cfg.sansBarre) return '';      /* basket : pas de barre, c'est voulu (20261030e : basket dans la table pour les critères) */
   var fin = (liste || []).filter(function (m) { return m && m.id; });
   if (!fin.length) return '';
 
@@ -74911,7 +74926,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     if (c.te) p.push(motUnite() + ' équipe ' + (c.te === 'ov' ? 'Over ' : 'Under ') + c.TL);
     if (c.ad) p.push(motUnite() + ' adversaire ' + (c.ad === 'ov' ? 'Over ' : 'Under ') + c.AL);
     var JN = joueurs(c).map(function (x) { return x.n; }), JM = { pas: 'passeur', dec: 'décisif', dbl: 'doublé', tri: 'triplé' }[c.jm] || 'buteur';
-    if (S.ctx && typeof _g45JouCfg === 'function' && _g45JouCfg(S.ctx.sp)) { var RJ = _g45JouCfg(S.ctx.sp).roles.filter(function (r) { return r.k === c.jm; })[0]; JM = (RJ ? RJ.lab.toLowerCase() : '') + ((+c.jmin || 1) > 1 ? ' (' + c.jmin + ' ou +)' : ''); }   /* 20261022i */
+    if (S.ctx && typeof _g45JouCfg === 'function' && _g45JouCfg(S.ctx.sp)) { var RJ = _g45JouCfg(S.ctx.sp).roles.filter(function (r) { return r.k === c.jm; })[0]; JM = (RJ ? RJ.lab.toLowerCase() : '') + (RJ && RJ.seuils ? ' ' + (c.jsens === 'un' ? 'moins' : 'plus') + ' de ' + String(jMinDe(c)).replace('.', ',') : (jMinDe(c) > 1 ? ' (' + jMinDe(c) + ' ou +)' : '')); }   /* 20261022i */
     if (JN.length === 1) p.push(JN[0] + ' ' + JM);
     else if (JN.length > 1) p.push(c.jx === 'un' ? 'au moins un de (' + JN.join(', ') + ') ' + JM : /^c/.test(c.jx) ? 'buts cumulés de ' + JN.join(' + ') + ' +' + c.jx.slice(1, 2) + ',' + c.jx.slice(2) : JN.join(' et ') + ' ' + JM + 's');
     if (c.fs) p.push('Tirs du match ' + (c.fs === 'ov' ? 'Over ' : 'Under ') + c.FL);
@@ -74971,7 +74986,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     if (P.length) {   /* 20261018t : joueur buteur / passeur / décisif ; 20261021d : doublé, triplé, 2-3 joueurs (chacun / au moins un / cumul) */
       var V = P.map(function (x) { return jValP(x.id, m); }); if (V.some(function (v) { return !v; })) return false;
       var okJ = function (v) { return c.jm === 'pas' ? v.a > 0 : c.jm === 'dec' ? v.g + v.a > 0 : c.jm === 'dbl' ? v.g >= 2 : c.jm === 'tri' ? v.g >= 3 : v.g > 0; };
-      if (S.ctx) { var jmi = +c.jmin || 1; okJ = function (v) { return (v[c.jm] || 0) >= jmi; }; }   /* 20261022i : sports US / rugby */
+      if (S.ctx) { var jmi = jMinDe(c), jLg = jmi % 1 !== 0; okJ = function (v) { var x = v[c.jm] || 0; return jLg ? (c.jsens === 'un' ? x < jmi : x > jmi) : x >= jmi; }; }   /* 20261030e : ligne X,5 (NBA) plus de / moins de */   /* 20261022i : sports US / rugby */
       if (P.length === 1 || c.jx === 'cha') { if (!V.every(okJ)) return false; }
       else if (c.jx === 'un') { if (!V.some(okJ)) return false; }
       else { var sg = 0; V.forEach(function (v) { sg += v.g; }); if (!(sg > +c.jx.slice(1, 2) + 0.5)) return false; }
@@ -75009,6 +75024,10 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
      de TD, NHL buteur / passeur / pointeur, MLB home run / run, rugby marqueur) ; « combien » = 1 / 2 / 3 ou + (c.jmin). Joueur absent de la
      feuille (idx.pres) ou match sans feuille = NON COMPTÉ (comme au foot). */
   S.ui = S.ui || {};
+  function jMinDe(c) {   /* 20261030e : « Combien » ramené aux seuils du rôle (NBA 10 / 15 / 20…) même avant le 1er dessin de l'onglet */
+    var CF = S.ctx && typeof _g45JouCfg === 'function' ? _g45JouCfg(S.ctx.sp) : null, R = CF ? (CF.roles.filter(function (r) { return r.k === c.jm; })[0] || CF.roles[0]) : null;
+    var SE = R && R.seuils; if (SE && SE.indexOf(String(c.jmin)) < 0) return +(R.def || SE[0]); return +c.jmin || 1;
+  }
   function usIdxs(D) { var C = S.ctx; return (D.saisons || []).map(function (sa) { return sa ? _g45JouLire(_g45JouCle(C.sp, C.lg, sa.an, C.id)) : null; }); }
   function usManque(D) {
     var n = 0, I = usIdxs(D);
@@ -75560,6 +75579,8 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       var CF = _g45JouCfg(S.ctx.sp), RL = CF.roles;
       if (!RL.some(function (r) { return r.k === c.jm; })) c.jm = RL[0].k;
       if (!c.jmin) c.jmin = '1';
+      var RJS = RL.filter(function (r) { return r.k === c.jm; })[0] || {}, SEU = RJS.seuils || ['1', '2', '3'];   /* 20261030e : seuils NBA */
+      if (SEU.indexOf(String(c.jmin)) < 0) c.jmin = RJS.def || SEU[0];
       S.uiI = usIdxs(D);
       var UU = S.ui[nom] || {}, man = usManque(D), TOT = {};
       S.uiI.forEach(function (ix) { if (!ix || !ix.joueurs) return; Object.keys(ix.joueurs).forEach(function (a) { var o = TOT[a] || (TOT[a] = { id: a, nom: ix.joueurs[a].nom || '?', v: 0 }); o.v += (ix.joueurs[a].tot || {})[c.jm] || 0; }); });
@@ -75579,7 +75600,10 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       if (LJ.length) {
         h += lab('Joueurs (1 à 3, matchs où ils ont TOUS joué)') + selU(1, 'jo') + (c.jo ? selU(2, 'jo2') : '') + (c.jo2 ? selU(3, 'jo3') : '')
           + lab('Ce qu\'il doit faire') + RL.map(function (r) { return b(c.jm === r.k, (r.ico || '') + ' ' + r.lab, "g45CrSet('jm','" + r.k + "')"); }).join('')
-          + (c.jm === 'lp' ? '<div style="font-size:14px;color:#fff;margin:6px 0;">⚾ Seuls les matchs où il a été lanceur partant sont comptés.</div>' : lab('Combien') + ['1', '2', '3'].map(function (n) { return b(String(c.jmin) === n, n + ' ou +', "g45CrSet('jmin','" + n + "')"); }).join(''));   /* 20261025m */
+          + (c.jm === 'lp' ? '<div style="font-size:14px;color:#fff;margin:6px 0;">⚾ Seuls les matchs où il a été lanceur partant sont comptés.</div>' : (RJS.seuils ? lab('Ligne') + b(c.jsens !== 'un', 'Plus de', "g45CrSet('jsens','ov')") + b(c.jsens === 'un', 'Moins de', "g45CrSet('jsens','un')")   /* 20261030e : ligne X,5 comme le book */
+            + '<select onchange="g45CrSet(\'jmin\',this.value)" style="background:#16213f;color:#fff;border:1px solid #6d9dff;border-radius:8px;padding:7px 10px;font-size:15px;font-weight:700;margin:0 6px 6px 0;">' + SEU.map(function (n) { return '<option value="' + n + '"' + (String(c.jmin) === n ? ' selected' : '') + '>' + n.replace('.', ',') + '</option>'; }).join('') + '</select>'
+            : lab('Combien') + SEU.map(function (n) { return b(String(c.jmin) === n, n + ' ou +', "g45CrSet('jmin','" + n + "')"); }).join(''))
+            );   /* 20261025m */
         if (c.jo2) h += lab('Avec ' + (c.jo3 ? '3' : '2') + ' joueurs') + b(c.jx !== 'un', 'Chacun', "g45CrSet('jx','cha')") + b(c.jx === 'un', 'Au moins un (double chance)', "g45CrSet('jx','un')");
       } else if (!UU.enCours) h += '<div style="font-size:13px;color:#c9d3ee;margin:4px 0;">Lis d\'abord les feuilles de match : la liste des joueurs vient de là.</div>';
       q4 = h.length;
