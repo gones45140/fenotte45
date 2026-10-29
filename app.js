@@ -70459,12 +70459,23 @@ function _g45NflDkCharger() {
     try {
       var sb = await (await fetch('https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard')).json();
       var evs = ((sb && sb.events) || []).filter(function (e) { return !(((e.status || {}).type || {}).completed); });
-      await Promise.all(evs.map(async function (e) {
-        try { var r = await fetch('https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/' + e.id + '/competitions/' + e.id + '/odds/100/propBets?limit=500');
-          if (r.ok) _g45NflDkLire(((await r.json()) || {}).items, M); } catch (x) {}
-      }));
-    } catch (x) {}
-    _g45NflDk.M = M; _g45NflDk.t = Date.now(); _g45NflDk.enCours = false;
+      /* 20261030l (chez Antoine : 0 joueur alors que sa console, match par match, en trouve ~30 par match) : 14 lectures EN MÊME TEMPS →
+         2 à la fois, 2e essai après 0,8 s ; compte rendu dans la console (matchs lus / erreurs / joueurs). */
+      var nOk = 0, err = [], q = evs.slice();
+      var un = async function () {
+        while (q.length) {
+          var e = q.shift(), ok = false;
+          for (var essai = 0; essai < 2 && !ok; essai++) {
+            try { var r = await fetch('https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/' + e.id + '/competitions/' + e.id + '/odds/100/propBets?limit=500');
+              if (r.ok) { _g45NflDkLire(((await r.json()) || {}).items, M); ok = true; nOk++; } else if (essai) err.push(r.status); } catch (x) { if (essai) err.push(String(x && x.message || x).slice(0, 40)); }
+            if (!ok && !essai) await new Promise(function (z) { setTimeout(z, 800); });
+          }
+        }
+      };
+      await Promise.all([un(), un()]);
+      try { console.info('🏦 NFL DraftKings : ' + nOk + ' / ' + evs.length + ' matchs lus, ' + Object.keys(M).length + ' joueurs' + (err.length ? ', erreurs ' + err.slice(0, 4).join(' ') : '')); } catch (x) {}
+    } catch (x) { try { console.info('🏦 NFL DraftKings : échec ' + String(x && x.message || x).slice(0, 60)); } catch (y) {} }
+    _g45NflDk.M = M; _g45NflDk.t = Object.keys(M).length ? Date.now() : Date.now() - 540000; _g45NflDk.enCours = false;   /* vide → nouvel essai dans 1 min */
     try { if (Object.keys(M).length && _g45Reg.lg === 'nfl') { var bx = _g45RegBoxVis(); if (bx && _g45Reg.mem[_g45RegK()]) bx.innerHTML = _g45RegHtml(); } } catch (x) {}   /* une seule fois : M gardé 10 min */
   })();
 }
@@ -79385,12 +79396,22 @@ window._g45AgJouUs = async function (nowTs) {
       try {
         var sb = await (await fetch('https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard')).json();
         var evs = ((sb && sb.events) || []).filter(function (e) { var st = ((e.status || {}).type || {}); return !st.completed; });
-        await Promise.all(evs.map(async function (e) {
-          try { var r = await fetch('https://sports.core.api.espn.com/v2/sports/basketball/leagues/nba/events/' + e.id + '/competitions/' + e.id + '/odds/100/propBets?limit=500');
-            if (r.ok) dkLire(((await r.json()) || {}).items, M); } catch (x) {}
-        }));
-      } catch (x) {}
-      dkM = M; dkT = Date.now(); dkP = null; return M;
+        /* 20261030l : comme la NFL (0 joueur chez Antoine, lectures toutes en même temps) → 2 à la fois, 2e essai, compte rendu console */
+        var nOk = 0, err = [], q = evs.slice();
+        var un = async function () {
+          while (q.length) {
+            var e = q.shift(), ok = false;
+            for (var essai = 0; essai < 2 && !ok; essai++) {
+              try { var r = await fetch('https://sports.core.api.espn.com/v2/sports/basketball/leagues/nba/events/' + e.id + '/competitions/' + e.id + '/odds/100/propBets?limit=500');
+                if (r.ok) { dkLire(((await r.json()) || {}).items, M); ok = true; nOk++; } else if (essai) err.push(r.status); } catch (x) { if (essai) err.push(String(x && x.message || x).slice(0, 40)); }
+              if (!ok && !essai) await new Promise(function (z) { setTimeout(z, 800); });
+            }
+          }
+        };
+        await Promise.all([un(), un()]);
+        try { console.info('🏦 NBA DraftKings : ' + nOk + ' / ' + evs.length + ' matchs lus, ' + Object.keys(M).length + ' joueurs' + (err.length ? ', erreurs ' + err.slice(0, 4).join(' ') : '')); } catch (x) {}
+      } catch (x) { try { console.info('🏦 NBA DraftKings : échec ' + String(x && x.message || x).slice(0, 60)); } catch (y) {} }
+      dkM = M; dkT = Object.keys(M).length ? Date.now() : Date.now() - 540000; dkP = null; return M;   /* vide → nouvel essai dans 1 min */
     })();
     return dkP;
   };
