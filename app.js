@@ -76115,7 +76115,10 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     try { img = (typeof _g45ImgPersoLire === 'function' && _g45ImgPersoLire(n)) || ''; } catch (e) {}
     if (!img && u.logoUrl) img = u.logoUrl;
     try { if (!img && typeof g45LogoUrlDe === 'function') img = g45LogoUrlDe(n) || ''; } catch (e) {}
-    try { if (!img && typeof _g45JoueurVisLire === 'function') { var v = _g45JoueurVisLire(n); if (v) img = v.cut || v.thumb || ''; } } catch (e) {}
+    try { if (!img && typeof _g45JoueurVisLire === 'function') {   /* 20261029y (« manque des photos » : McDavid, Mbappé, Yamal, Haaland) : clé du SPORT (hockey_…), fanart en dernier, logo du club ensuite */
+      var spV = ''; try { spV = (typeof g45SportDe === 'function' ? g45SportDe(u) : '') || ''; } catch (e) {}
+      var v = (spV && spV !== 'soccer' ? _g45JoueurVisLire(n, spV) : null) || _g45JoueurVisLire(n); if (v) img = v.cut || v.thumb || v.fan || ''; } } catch (e) {}
+    try { if (!img && u.type === 'joueur' && typeof _g45JoueurClubLogo === 'function') img = _g45JoueurClubLogo(u) || ''; } catch (e) {}
     return { c: u.color || '', img: /^https?:|^images\//.test(img) ? img : '' };
   }
   function ckU(n) { if (ckDist()) return (S.ck.D && S.ck.D.u && S.ck.D.u[n]) || null; return ((typeof state !== 'undefined' && state.u) || []).filter(function (x) { return x && x.n === n; })[0] || null; }
