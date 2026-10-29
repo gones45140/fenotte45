@@ -73219,6 +73219,8 @@ function _g45AgOdHtml(C, od, sp) {
         var tid = od.eid ? ((_g45AgMemeEq(l.eq, String(od.hn || '').split(' | ')[0]) || String(od.hn || '').split(' | ').some(function (n) { return _g45AgMemeEq(l.eq, n); })) ? od.hid : (String(od.an || '').split(' | ').some(function (n) { return _g45AgMemeEq(l.eq, n); }) ? od.aid : '')) : '';
         parts.push(tid ? '<span class="g45agteq" data-e="' + od.eid + '" data-t="' + tid + '" data-s="' + l.s + '" data-l="' + l.L + '">' + tq + ' <span style="color:#c9d3ee;">…</span></span>'
           : tq + ' <span style="color:#ffb36b;">pas de cote chez ESPN, regarde ton book</span>'); ok = false; return; }
+      else if (l.k === '?' && od.eid && (!sp || sp === 'soccer') && /btts|\bbts\b|deux.*marqu|both teams/i.test(l.t || '')) {   /* 20261030w : « les deux marquent » DraftKings (_g45AgBtsRemplir) */
+        var bN = /\bnon\b|\bno\b/i.test(l.t); parts.push('<span class="g45agbts" data-e="' + od.eid + '" data-v="' + (bN ? 'n' : 'o') + '">Les deux marquent : ' + (bN ? 'non' : 'oui') + ' <span style="color:#c9d3ee;">…</span></span>'); ok = false; return; }
       else { parts.push('<span style="color:#c9d3ee;">« ' + String(l.t).replace(/</g, '&lt;') + ' » : pas de cote</span>'); ok = false; return; }
       if (!(c > 1)) { parts.push(lib + ' –'); ok = false; return; }
       parts.push(lib + ' <b style="color:#1ed760;">' + f(c) + '</b>'); prod *= c; nb++;
@@ -73327,6 +73329,7 @@ window._g45AgCotes = function (L) {
       box.innerHTML = _g45AgOdHtml(x.C, od, m.sp);
       try { _g45AgButRemplir(box, sp, lg); } catch (e) {}   /* 20261030q */
       try { _g45AgTeqRemplir(box, sp, lg); } catch (e) {}   /* 20261030t */
+      try { _g45AgBtsRemplir(box, sp, lg); } catch (e) {}   /* 20261030w */
       _g45AgFrBtn(box, x);
     })();
   });
@@ -73492,6 +73495,24 @@ function _g45AgTeqRemplir(box, sp, lg) {
   });
 }
 window._g45AgTeqSep = _g45AgTeqSep;
+/* 20261030w (capture espn.com Nice – Rennes « Both Teams To Score YES −220 / NO +175 » : « bizarre ») : les 2 items 152 n'ont pas d'étiquette, mais
+   la page d'ESPN elle-même les affiche dans l'ORDRE reçu (1er = OUI, 2e = NON ; sonde : 1,45 = −220 puis 2,75 = +175) → même règle ici. */
+function _g45AgBtsLire(items) {
+  var L = (items || []).filter(function (x) { return String((x.type || {}).id) === '152'; }), c = function (x) { return typeof _g45NhlDkCote === 'function' ? _g45NhlDkCote(x) : null; };
+  return L.length >= 2 ? { o: c(L[0]), n: c(L[1]) } : null;
+}
+function _g45AgBtsRemplir(box, sp, lg) {
+  var L = box.querySelectorAll('.g45agbts'); if (!L.length || !lg) return;
+  [].forEach.call(L, function (s) {
+    var eid = s.getAttribute('data-e'), K = (sp || 'soccer') + '/' + lg + '/' + eid, E = _g45AgTeqM[K];
+    if (!E || Date.now() - E.t > 600000) E = _g45AgTeqM[K] = { t: Date.now(), P: fetch('https://sports.core.api.espn.com/v2/sports/' + (sp || 'soccer') + '/leagues/' + lg + '/events/' + eid + '/competitions/' + eid + '/odds/100/propBets?limit=500').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }) };
+    E.P.then(function (j) {
+      var B = _g45AgBtsLire((j || {}).items), c = B && (s.getAttribute('data-v') === 'n' ? B.n : B.o), q = s.lastChild; if (!q) return;
+      q.outerHTML = c > 1 ? _g45DkTxt(c) : '<span style="color:#ffb36b;">pas de cote chez ESPN, regarde ton book</span>';
+    });
+  });
+}
+window._g45AgBtsLire = _g45AgBtsLire;
 /* 20261008l (« le problème sera le quota », bouton validé « oui mais seulement sur gones ») — FOOT : bouton « 🇫🇷 Cotes books FR » sous la ligne
    ESPN, GONES45 SEULEMENT (`_g45SanteActive`, faux sur bet45). Un appui = The Odds API h2h région fr du championnat (1 crédit, clés
    _G45_TR_ODDSKEY / _G45_OA_LIGUES), même cache que l'Euroleague (g45agoa1_, 6 h) : championnat déjà lu → affiché tout de suite, sans bouton.
