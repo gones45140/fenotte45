@@ -83815,7 +83815,9 @@ window._g45MqPalHtml = function (pire, pd) {
    carte = date, match, score final (f, ajouté par le robot ; vert / jaune / rouge du point de vue de l'équipe choisie), 1N2, 3 joueurs les
    mieux cotés (buteur foot / NHL, TD NFL) ; « ▸ toutes les cotes » = handicap, total, les deux marquent, buts d'équipe, 10 joueurs.
    Cotes affichées selon le sélecteur DraftKings / estimée France (_g45DkMode). */
-window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champions', 'uefa.europa', 'uefa.europa.conf', 'nhl', 'nba', 'nfl'];
+window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champions', 'uefa.europa', 'uefa.europa.conf', 'nhl', 'nba', 'nfl',
+  /* 20261031d : + ligues ESPN du mur (saisons CIVILES « 2026 » pour MLB, Brésil, Argentine, sélections) */
+  'mlb', 'ned.1', 'por.1', 'fra.2', 'bra.1', 'arg.1', 'fifa.friendly', 'uefa.nations', 'fifa.worldq.uefa', 'fifa.world', 'uefa.euro'];
 (function () {
   var MEM = {}, ST = window._g45ArchS = window._g45ArchS || { eq: {}, mois: {}, ouv: {} };
   var esc = function (t) { return String(t == null ? '' : t).replace(/[<>&"]/g, ''); };
@@ -83827,9 +83829,10 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
   var moisListe = function () { var L = [], d = new Date(), y = d.getFullYear(), m = d.getMonth() + 1; while (y > A0 || (y === A0 && m >= 7)) { L.push(y + '-' + ('0' + m).slice(-2)); m--; if (!m) { m = 12; y--; } } return L; };
   /* 20261031b (« classer par sport, championnat, équipe / joueur », « un truc organisé pour retrouver facilement ») : archive rangée
      cotes/<sport>/<ligue>/matchs/AAAA-MM.json (+ index equipes / joueurs) dans gones45-archives. */
-  var SPN = { soccer: 'foot', hockey: 'hockey', basketball: 'basket', football: 'football-us' };
+  var SPN = { soccer: 'foot', hockey: 'hockey', basketball: 'basket', football: 'football-us', baseball: 'baseball' };
+  var CIVIL = ['mlb', 'bra.1', 'arg.1', 'fifa.friendly', 'uefa.nations', 'fifa.worldq.uefa', 'fifa.world', 'uefa.euro'];
   /* 20261031c (« ça sera classé par saison ? ») : …/<ligue>/<saison>/matchs/AAAA-MM.json, saison = juillet → juin (2026-27) ; mois groupés par saison */
-  var SAISON = function (mo) { var y = +mo.slice(0, 4), m = +mo.slice(5, 7); return m >= 7 ? y + '-' + String(y + 1).slice(2) : (y - 1) + '-' + String(y).slice(2); };
+  var SAISON = function (mo) { if (CIVIL.indexOf(ST.lg) >= 0) return mo.slice(0, 4); var y = +mo.slice(0, 4), m = +mo.slice(5, 7); return m >= 7 ? y + '-' + String(y + 1).slice(2) : (y - 1) + '-' + String(y).slice(2); };
   async function lire(lg, mo) {
     var K = lg + '/' + mo; if (MEM[K] && Date.now() - MEM[K].t < 600000) return MEM[K].d;
     var d = null; try { var r = await fetch('https://raw.githubusercontent.com/gones45140/gones45-archives/main/cotes/' + (SPN[ST.sp] || 'foot') + '/' + lg + '/' + SAISON(mo) + '/matchs/' + mo + '.json?t=' + Math.floor(Date.now() / 600000), { cache: 'no-store' }); if (r.ok) d = await r.json(); } catch (e) {}
