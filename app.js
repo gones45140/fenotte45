@@ -70442,6 +70442,16 @@ window._g45RegBoxVis = _g45RegBoxVis;
    33 « 3 or more » = UNE cote par joueur, sans ambiguïté ; les yards (passe / course / réception) arrivent en DOUBLE sans plus / moins → ignorés) :
    Séries individuelles NFL, 🏈 Touchdowns : ligne « 🏦 DraftKings TD à tout moment → cote · ≈ cote France » (seuil 1 / 2 / 3 → 31 / 32 / 33),
    💎 si cote FR (× _G45_TR_FR) > cote juste (1 / % du joueur). Matchs de la semaine non finis (scoreboard), mémoire 10 min. */
+/* 20261030u (« un sélecteur cote estimée / ESPN » → « oui, enfin je veux séparé des cotes réelles ») : UNE seule cote affichée, au choix,
+   jamais les deux mélangées — 'dk' = vraie cote DraftKings (ESPN), 'fr' = ESTIMATION France (× _G45_TR_FR, marquée « estimée »).
+   Choix gardé (localStorage g45dk_aff), valable partout (fenêtre de match, Agenda, Séries individuelles). */
+function _g45DkMode() { try { return localStorage.getItem('g45dk_aff') === 'fr' ? 'fr' : 'dk'; } catch (e) { return 'dk'; } }
+function _g45DkTxt(d) {
+  var f = function (x) { return x.toFixed(2).replace('.', ','); };
+  if (_g45DkMode() === 'fr') return '<b style="color:#1ed760;">≈ ' + f(Math.max(1.01, Math.round(d * (window._G45_TR_FR || 0.94) * 100) / 100)) + '</b> <span style="color:#ffb36b;">estimée France</span>';
+  return '<b style="color:#1ed760;">' + f(d) + '</b> <span style="color:#c9d3ee;">DraftKings</span>';
+}
+window._g45DkMode = _g45DkMode; window._g45DkTxt = _g45DkTxt;
 var _g45NflDk = { M: null, t: 0, enCours: false };
 function _g45NflDkLire(items, M) {
   M = M || {};
@@ -70489,7 +70499,7 @@ function _g45NflDkHtml(o, SE) {
   var d = (_g45NflDk.M[String(o.id)] || {})[{ 1: '31', 2: '32', 3: '33' }[SE || 1] || '31']; if (!d) return '';
   var fr = Math.max(1.01, Math.round(d * (window._G45_TR_FR || 0.94) * 100) / 100), pj = (o.s && o.s.pct) ? o.s.pct / 100 : 0, f = function (x) { return x.toFixed(2).replace('.', ','); };
   return '<br><span style="display:inline-block;margin-top:3px;font-size:13px;color:#fff;background:rgba(47,107,255,.22);border-radius:7px;padding:2px 7px;white-space:normal;">🏦 DraftKings <b>'
-    + ({ 1: 'TD à tout moment', 2: '2 TD ou +', 3: '3 TD ou +' }[SE || 1]) + ' → cote ' + f(d) + '</b> · ≈ ' + f(fr) + ' en France' + (pj > 0 && fr > 1 / pj ? ' <b style="color:#5ee6a0;">💎 value</b>' : '') + '</span>';
+    + ({ 1: 'TD à tout moment', 2: '2 TD ou +', 3: '3 TD ou +' }[SE || 1]) + ' →</b> ' + _g45DkTxt(d) + (pj > 0 && fr > 1 / pj ? ' <b style="color:#5ee6a0;">💎 value</b>' : '') + '</span>';
 }
 window._g45NflDkLire = _g45NflDkLire; window._g45NflDkHtml = _g45NflDkHtml; window._g45NflDk = _g45NflDk;   /* tests */
 /* 20261030n (captures ESPN NHL « Goalscorer Props / Player Props » ; SONDE d'Antoine CBJ @ CAR : propBets 230 Anytime Goalscorer, 39 2+ buts,
@@ -70566,7 +70576,7 @@ function _g45NhlDkHtml(o, SE) {
   var c = _g45NhlDkChoix(_g45NhlDk.M[_g45NhlDkNom(o.nom)], _g45Reg.cat, SE); if (!c) return '';
   var fr = Math.max(1.01, Math.round(c.d * (window._G45_TR_FR || 0.94) * 100) / 100), pj = (o.s && o.s.pct) ? o.s.pct / 100 : 0, f = function (x) { return x.toFixed(2).replace('.', ','); };
   return '<br><span style="display:inline-block;margin-top:3px;font-size:13px;color:#fff;background:rgba(47,107,255,.22);border-radius:7px;padding:2px 7px;white-space:normal;">🏦 DraftKings <b>'
-    + c.lib + ' → cote ' + f(c.d) + '</b> · ≈ ' + f(fr) + ' en France' + (pj > 0 && fr > 1 / pj ? ' <b style="color:#5ee6a0;">💎 value</b>' : '') + '</span>';
+    + c.lib + ' →</b> ' + _g45DkTxt(c.d) + (pj > 0 && fr > 1 / pj ? ' <b style="color:#5ee6a0;">💎 value</b>' : '') + '</span>';
 }
 window._g45NhlDkLire = _g45NhlDkLire; window._g45NhlDkChoix = _g45NhlDkChoix; window._g45NhlDkNom = _g45NhlDkNom;   /* tests */
 async function g45RegOuvrir() {
@@ -73408,7 +73418,7 @@ window._g45AgJouCotes = function (L) {
         var c = _g45AgDkCote(o, p);
         if (!c) return '<div>📊 ' + p.lib + ' <span style="color:#ffb36b;">pas de cote chez ESPN, regarde ton book</span></div>';
         var fr = Math.max(1.01, Math.round(c * (window._G45_TR_FR || 0.94) * 100) / 100);
-        return '<div>📊 ' + p.lib + ' <b style="color:#1ed760;">' + f(c) + '</b> · ≈ ' + f(fr) + ' en France</div>';
+        return '<div>📊 ' + p.lib + ' ' + _g45DkTxt(c) + '</div>';   /* 20261030u */
       }).join('') + '<div style="font-size:12px;color:#9fb0c7;margin-top:2px;">Cotes ESPN (DraftKings) : indication</div>';
     });
   });
@@ -73430,7 +73440,7 @@ function _g45AgButRemplir(box, sp, lg) {
     [].forEach.call(L, function (s) {
       var o = _g45AgDkTrouve(M, s.getAttribute('data-n')), l = o && o[ty], f = function (x) { return x.toFixed(2).replace('.', ','); };
       var q = s.lastChild; if (!q) return;
-      if (l && l[0]) { var d = l[0][1]; q.outerHTML = '<b style="color:#1ed760;">' + f(d) + '</b> <span style="color:#c9d3ee;">(≈ ' + f(Math.max(1.01, Math.round(d * (window._G45_TR_FR || 0.94) * 100) / 100)) + ' en France)</span>'; }
+      if (l && l[0]) { var d = l[0][1]; q.outerHTML = _g45DkTxt(d); }   /* 20261030u */
       else q.outerHTML = '<span style="color:#ffb36b;">pas de cote chez ESPN, regarde ton book</span>';
     });
   });
@@ -73476,7 +73486,7 @@ function _g45AgTeqRemplir(box, sp, lg) {
       });
       var R = _g45AgTeqSep(Lq)[parseFloat(s.getAttribute('data-l'))], q = s.lastChild; if (!q) return;
       var c = R && (s.getAttribute('data-s') === 'ov' ? R.ov : R.un);
-      if (c > 1) q.outerHTML = '<b style="color:#1ed760;">' + f(c) + '</b> <span style="color:#c9d3ee;">(≈ ' + f(Math.max(1.01, Math.round(c * (window._G45_TR_FR || 0.94) * 100) / 100)) + ' en France' + (sp === 'hockey' ? ', hors prolongation' : '') + ')</span>';
+      if (c > 1) q.outerHTML = _g45DkTxt(c) + (sp === 'hockey' ? ' <span style="color:#c9d3ee;">(hors prolongation)</span>' : '');   /* 20261030u */
       else q.outerHTML = '<span style="color:#ffb36b;">pas de cote chez ESPN, regarde ton book</span>';
     });
   });
@@ -79759,7 +79769,7 @@ window._g45AgJouUs = async function (nowTs) {
         + '<div style="font-size:12px;color:#aab6d6;">' + esc(r.eq.nom || '') + '</div>'
         + (r.j ? '<div style="font-size:13px;color:#8fb4ff;font-weight:700;">' + (r.j.live ? '🔴 en cours' : '🗓️ ' + r.j.h) + ' · ' + (r.j.dom ? 'vs ' : '@ ') + esc(r.j.adv) + '</div>' : '')
         + '<div style="font-size:13px;color:#c9d3ee;margin-top:2px;">moy. ' + fr(Math.round(r.moy * 10) / 10) + ' ' + S.u + ' · ' + dots + '</div>' + window._g45MqPalHtml(r.pire, r.pd)
-        + (r.dk ? '<div style="margin-top:5px;font-size:14px;color:#fff;background:rgba(47,107,255,.22);border-radius:8px;padding:4px 8px;display:inline-block;">🏦 DraftKings <b>' + r.dk.t + '+ ' + S.u + ' → cote ' + fr(r.dk.d.toFixed(2)) + '</b> · ≈ ' + fr(r.dk.fr.toFixed(2)) + ' en France'
+        + (r.dk ? '<div style="margin-top:5px;font-size:14px;color:#fff;background:rgba(47,107,255,.22);border-radius:8px;padding:4px 8px;display:inline-block;">🏦 DraftKings <b>' + r.dk.t + '+ ' + S.u + ' →</b> ' + window._g45DkTxt(r.dk.d)
           + (r.dk.cj && r.dk.fr > r.dk.cj ? ' <b style="color:#5ee6a0;">💎 value</b>' : '') + '</div>' : '') + '</div>'
         + '<div style="text-align:center;flex:none;"><div style="font-size:24px;font-weight:900;color:' + col + ';">' + p + ' %</div>'
         + '<div style="font-size:12px;color:#aab6d6;">' + r.n + ' / ' + r.m + ' matchs</div>'
@@ -83625,12 +83635,14 @@ window._g45MqPalHtml = function (pire, pd) {
     var FR = window._G45_TR_FR || 0.94, N = tout ? L.length : Math.min(6, L.length);
     var h = '<div class="g45-cj" style="background:rgba(17,22,38,.95);border-radius:12px;padding:12px;margin:12px 0;color:#fff;">'
       + '<div style="font-size:15px;font-weight:800;letter-spacing:1px;margin-bottom:8px;">🏦 COTES JOUEURS <span style="font-size:13px;color:#9fb0c7;font-weight:600;letter-spacing:0;">(DraftKings, indication)</span></div>'
+      + '<div style="font-size:13px;color:#c9d3ee;margin-bottom:3px;">Cote affichée :</div><div>' + bt(window._g45DkMode() === 'fr', '🇫🇷 Estimée France', "g45DkChoix('fr')") + bt(window._g45DkMode() !== 'fr', '🏦 DraftKings (ESPN)', "g45DkChoix('dk')") + '</div>'   /* 20261030u */
       + '<div>' + C.t.map(function (x) { return bt(x[0] === T[0], x[1], "g45CjTab('" + lg + "','" + eid + "','" + x[0] + "')"); }).join('') + '</div>';
     if (!L.length) return h + '<div style="font-size:14px;color:#c9d3ee;padding:6px 2px;">Pas de cote pour ce pari sur ce match.</div></div>';
     if (T[3] === 'dec') h += '<div style="font-size:13px;color:#ffb36b;margin:0 0 4px;">⚡ Décisif = but OU passe : DraftKings ne le propose pas, cote ESTIMÉE à partir de buteur + passeur.</div>';
     L.slice(0, N).forEach(function (x) {
-      var dr = T[3] === 'm' ? x.m.map(function (q) { return '<span style="white-space:nowrap;">' + q[0] + '+ <b style="color:#1ed760;">' + f(q[1]) + '</b></span>'; }).join(' · ')
-        : '<div style="font-size:17px;font-weight:900;color:#1ed760;">' + f(x.d) + '</div><div style="font-size:12px;color:#c9d3ee;">≈ ' + f(Math.max(1.01, Math.round(x.d * FR * 100) / 100)) + ' en France</div>';
+      var EST = window._g45DkMode() === 'fr', vv = function (d) { return EST ? '≈ ' + f(Math.max(1.01, Math.round(d * FR * 100) / 100)) : f(d); };   /* 20261030u : une seule cote */
+      var dr = T[3] === 'm' ? x.m.map(function (q) { return '<span style="white-space:nowrap;">' + q[0] + '+ <b style="color:#1ed760;">' + vv(q[1]) + '</b></span>'; }).join(' · ')
+        : '<div style="font-size:17px;font-weight:900;color:#1ed760;">' + vv(x.d) + '</div><div style="font-size:12px;color:' + (EST ? '#ffb36b' : '#c9d3ee') + ';">' + (EST ? 'estimée France' : 'DraftKings') + '</div>';
       h += '<div style="display:flex;align-items:center;gap:10px;padding:7px 8px;border-left:4px solid ' + esc(x.j.c) + ';margin-top:4px;background:rgba(11,16,29,.6);border-radius:8px;">'
         + '<div style="flex:1;min-width:0;"><div style="font-size:15px;font-weight:800;">' + esc(x.j.n) + '</div><div style="font-size:13px;color:#c9d3ee;">' + esc(x.j.eq) + '</div></div>'
         + '<div style="text-align:right;font-size:14px;">' + dr + '</div></div>';
@@ -83641,7 +83653,11 @@ window._g45MqPalHtml = function (pire, pd) {
   window._g45CjHtml = html;   /* tests */
   window.g45CjTab = function (lg, eid, tab, tout) {
     var D = (MEM[lg + '_' + eid] || {}).D; if (!D) return;
-    document.querySelectorAll('[data-g45cj="' + lg + '_' + eid + '"]').forEach(function (b) { b.innerHTML = html(lg, eid, D, tab, tout); var el = b.parentNode; if (el) el._g45Cj = b.outerHTML; });
+    document.querySelectorAll('[data-g45cj="' + lg + '_' + eid + '"]').forEach(function (b) { b.setAttribute('data-tab', tab); b.innerHTML = html(lg, eid, D, tab, tout); var el = b.parentNode; if (el) el._g45Cj = b.outerHTML; });
+  };
+  window.g45DkChoix = function (m) {   /* 20261030u : sélecteur, puis blocs ouverts redessinés */
+    try { localStorage.setItem('g45dk_aff', m === 'fr' ? 'fr' : 'dk'); } catch (e) {}
+    document.querySelectorAll('[data-g45cj]').forEach(function (b) { var k = String(b.getAttribute('data-g45cj')), i = k.lastIndexOf('_'); window.g45CjTab(k.slice(0, i), k.slice(i + 1), b.getAttribute('data-tab') || ''); });
   };
   var poser = async function (el, lg, eid) {
     if (!el._g45CjObs && typeof MutationObserver === 'function') {
