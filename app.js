@@ -4566,7 +4566,7 @@ function openClub(nom,idx){
   }
 
   /* types */
-  var tm={};paris.forEach(function(h){var t=_normType(h.type);if(!tm[t])tm[t]={n:0,wins:0,profit:0};tm[t].n++;if(h.win)tm[t].wins++;tm[t].profit+=(h.win?(h.m*h.cote)-h.m:-h.m);});
+  var tm={};paris.forEach(function(h){var t=_normType(window._g45TypeSansEquipe?_g45TypeSansEquipe(h.type,nom):h.type);if(!tm[t])tm[t]={n:0,wins:0,profit:0};tm[t].n++;if(h.win)tm[t].wins++;tm[t].profit+=(h.win?(h.m*h.cote)-h.m:-h.m);});
   var ts=Object.entries(tm).sort(function(a,b){return b[1].n-a[1].n;});var maxN=ts.length?ts[0][1].n:1;
   $i('ip-types').innerHTML=ts.length
     ?'<div class="card cp">'+ts.map(function(e){
@@ -12801,7 +12801,7 @@ function openClub(nom,idx){
   }
 
   /* types */
-  var tm={};paris.forEach(function(h){var t=_normType(h.type);if(!tm[t])tm[t]={n:0,wins:0,profit:0};tm[t].n++;if(h.win)tm[t].wins++;tm[t].profit+=(h.win?(h.m*h.cote)-h.m:-h.m);});
+  var tm={};paris.forEach(function(h){var t=_normType(window._g45TypeSansEquipe?_g45TypeSansEquipe(h.type,nom):h.type);if(!tm[t])tm[t]={n:0,wins:0,profit:0};tm[t].n++;if(h.win)tm[t].wins++;tm[t].profit+=(h.win?(h.m*h.cote)-h.m:-h.m);});
   var ts=Object.entries(tm).sort(function(a,b){return b[1].n-a[1].n;});var maxN=ts.length?ts[0][1].n:1;
   $i('ip-types').innerHTML=ts.length
     ?'<div class="card cp">'+ts.map(function(e){
@@ -38172,6 +38172,16 @@ function _normType(t){
   return raw.charAt(0).toUpperCase()+raw.slice(1);
 }
 window._normType=_normType;
+/* 20261029f (captures Types de Colorado : « Victoire » 7 / « Victoire Color… » 2 → fiche du pari : type « Victoire Colorado Avalanche » =
+   le même pari que « Victoire ») : onglet Types de la fiche (openClub, DEUX copies) → nom de l'équipe retiré du type avant regroupement.
+   « Vainqueur » (prolongation comprise) reste à part. Type réduit à rien → type d'origine. */
+function _g45TypeSansEquipe(t, nom){
+  var raw=(t==null?'':(''+t)), n=(''+(nom||'')).trim(); if(!raw||n.length<3) return raw;
+  var esc=n.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  var x=raw.replace(new RegExp('\\s*'+esc+'\\s*','ig'),' ').replace(/\s+/g,' ').replace(/^[\s+·,-]+|[\s+·,-]+$/g,'').trim();
+  return x||raw;
+}
+window._g45TypeSansEquipe=_g45TypeSansEquipe;
 /* ───────── BILAN : filtre par type de pari ───────── */
 function _bilanSrc(){
   return (typeof filteredA==='function') ? filteredA() : (state.a||[]);
@@ -76164,9 +76174,10 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var h = ckBox(tete + svg + pied)
       + ckBox('<div style="display:flex;flex-wrap:wrap;gap:8px;">' + tu('Bénéfice', ckEur(cum), cum >= 0 ? '#1ed760' : '#ff5a5a') + tu('Réussite', Math.round(100 * ok / P.length) + ' % · ' + ok + '/' + P.length)
         + tu('Montantes bouclées', ok + ' ✅') + tu('Plus haut palier', hp ? 'P' + hp.l + ' (' + e(hp.n) + ')' : '—', hp && hp.l >= 4 ? '#ff9f43' : '#fff') + '</div>');
-    var C = {}; P.forEach(function (x) { var k = x.b.n + lieuI(x.b), c = C[k] = C[k] || { n: k, ok: 0, t: 0, g: 0 }; c.t++; if (x.r) c.ok++; c.g += x.g; });
+    var C = {}; P.forEach(function (x) { var k = x.b.n + lieuI(x.b), c = C[k] = C[k] || { n: k, c: x.b.n, ok: 0, t: 0, g: 0 }; c.t++; if (x.r) c.ok++; c.g += x.g; });
     h += ckBox('<div style="font-size:16px;font-weight:800;margin-bottom:4px;">Par montante (carte + lieu)</div>' + Object.keys(C).map(function (k) { return C[k]; }).sort(function (a, b) { return b.g - a.g; }).map(function (c) {
-      return '<div style="display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-bottom:1px solid #1c2747;font-size:15px;"><b>' + e(c.n) + '</b><span>' + c.ok + '/' + c.t + ' · <b style="color:' + (c.g >= 0 ? '#1ed760' : '#ff5a5a') + ';">' + ckEur(c.g) + '</b></span></div>';
+      var ix = ((typeof state !== 'undefined' && state.u) || []).findIndex(function (u) { return u && u.n === c.c; });   /* 20261029f : ligne → fiche de la carte (Bilan / Graphs / Archive / Types) */
+      return '<div ' + (ix >= 0 ? 'onclick="g45CkFiche(' + ix + ')" ' : '') + 'style="display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-bottom:1px solid #1c2747;font-size:15px;' + (ix >= 0 ? 'cursor:pointer;' : '') + '"><b>' + e(c.n) + (ix >= 0 ? ' <span style="color:#8fb4ff;">›</span>' : '') + '</b><span>' + c.ok + '/' + c.t + ' · <b style="color:' + (c.g >= 0 ? '#1ed760' : '#ff5a5a') + ';">' + ckEur(c.g) + '</b></span></div>';
     }).join(''));
     return h;
   }
@@ -76174,6 +76185,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   window.g45CkMois = function (d) { S.ck.mois = (S.ck.mois || 0) + d; S.ck.jour = ''; ckRedessiner(); };
   window.g45CkJour = function (j) { S.ck.jour = S.ck.jour === j ? '' : j; ckRedessiner(); };
   window.g45CkPer = function (p) { S.ck.per = p; ckRedessiner(); };
+  window.g45CkFiche = function (ix) { var u = ((typeof state !== 'undefined' && state.u) || [])[ix]; if (u && typeof openClub === 'function') openClub(u.n, ix); };
   window._g45CkParis = ckParis;   /* tests */
   function ckRedessiner() { var z = document.getElementById('g45ck'); if (!z) return; var t = document.createElement('div'); t.innerHTML = ckHtml(); z.parentNode.replaceChild(t.firstChild, z); }
   async function ckLancer() {
