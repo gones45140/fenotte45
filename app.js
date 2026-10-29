@@ -75689,6 +75689,10 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     await Promise.all(ans.map(async function (an, i) {
       var cle = 'g45cr1u_' + C.sp + '_' + C.lg + '_' + C.id + '_' + an, ms = null;   /* 20261022i : g45cr1_ → g45cr1u_ (n° de match ESPN en m[6]) */
       if (i > 0) { try { ms = JSON.parse(localStorage.getItem(cle) || 'null'); } catch (e) {} }
+      if (!ms) {   /* 20261031l : archives GitHub d'abord */
+        try { ms = await aEquipeUS(C.sp, C.lg, C.id, an); } catch (e) { ms = null; }
+        if (ms) { out.arch = (out.arch || 0) + 1; if (i > 0 && ms.length) { try { localStorage.setItem(cle, JSON.stringify(ms)); } catch (e) {} } }
+      }
       if (!ms) {
         var j = null;
         try { var r = await fetch('https://site.api.espn.com/apis/site/v2/sports/' + C.sp + '/' + C.lg + '/teams/' + C.id + '/schedule?season=' + an + '&seasontype=2'); if (r.ok) j = await r.json(); } catch (e) {}
@@ -75752,7 +75756,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
      COMPARÉ AVANT BASCULE (robot sonde, 29/10) : Lyon, PSG, Arsenal, Real, Bayern × 5 saisons = 25 saisons, 0 match / score différent d'ESPN ;
      joueurs : Mbappé 2025-26 ESPN 32 matchs / archive 30 (2 entrées sans stat) → robot : remplaçants entrés (REM) + feuille relue, et l'appli ne lit
      les joueurs d'une saison qu'une fois TOUTE la saison relue (etat.v2 = etat.n). Saison / ligue absente, réseau → ESPN comme avant. ═══ */
-  var ARW = 'https://raw.githubusercontent.com/gones45140/gones45-archives/main/cotes/foot/', AMEM = {};
+  var ARW = 'https://raw.githubusercontent.com/gones45140/gones45-archives/main/cotes/', AMEM = {};   /* chemins : foot/…, hockey/… */
   function aOk(lg) { return (window._G45_ARCH_LG || []).indexOf(lg) >= 0; }
   function aSa(lg, an) { return CAL.indexOf(lg) >= 0 || ['fifa.friendly', 'uefa.nations', 'fifa.worldq.uefa', 'fifa.world', 'uefa.euro'].indexOf(lg) >= 0 ? String(an) : an + '-' + String(an + 1).slice(2); }
   function aLire(ch) {   /* JSON, 0 = absent (404), null = lecture ratée */
@@ -75764,24 +75768,38 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   function aIso(t) { return new Date(t).toISOString().slice(0, 10); }
   async function aEquipe(lg, tid, an) {   /* [{ d, dom, p, c, id, mo }] ; null = pas archivé (→ ESPN) */
     if (!aOk(lg)) return null;
-    var sa = aSa(lg, an), ix = await aLire(lg + '/' + sa + '/equipes.json'); if (!ix) return null;
-    var q = await aLire(lg + '/' + sa + '/equipes/' + tid + '.json'); if (q === null) return null;
+    var sa = aSa(lg, an), ix = await aLire('foot/' + lg + '/' + sa + '/equipes.json'); if (!ix) return null;
+    var q = await aLire('foot/' + lg + '/' + sa + '/equipes/' + tid + '.json'); if (q === null) return null;
     return ((q && q.m) || []).filter(function (m) { return m[4] && m[4][0] != null; }).map(function (m) { var h = m[3] === 'h'; return { d: aIso(m[0]), dom: h ? 1 : 0, p: h ? m[4][0] : m[4][1], c: h ? m[4][1] : m[4][0], id: String(m[2]), mo: m[1] }; })
       .sort(function (a, b) { return a.d < b.d ? -1 : 1; });
   }
   async function aJoueur(lg, pid, an) {   /* même forme que _g45RegLogFoot { gameLog: [{ d, goals, assists, h }] } ; null = pas sûr (→ ESPN) */
     if (!aOk(lg)) return null;
-    var sa = aSa(lg, an), et = await aLire(lg + '/' + sa + '/etat.json'); if (!et || !(et.n > 0) || et.v2 < et.n) return null;
-    var q = await aLire(lg + '/' + sa + '/joueurs/' + pid + '.json'); if (q === null) return null;
+    var sa = aSa(lg, an), et = await aLire('foot/' + lg + '/' + sa + '/etat.json'); if (!et || !(et.n > 0) || et.v2 < et.n) return null;
+    var q = await aLire('foot/' + lg + '/' + sa + '/joueurs/' + pid + '.json'); if (q === null) return null;
     return { gameLog: ((q && q.m) || []).filter(function (m) { return m[4]; }).map(function (m) { return { d: aIso(m[0]), goals: m[4].G || 0, assists: m[4].A || 0, h: null }; }), arch: 1 };
   }
   async function aFeuilles(lg, tid, an) {   /* fiche.cf des mois joués par le club → S.fa[idMatch] (0 = relue, ESPN sans stats d'équipe) */
     var A = await aEquipe(lg, tid, an); if (!A) return;
     var sa = aSa(lg, an), M = {}; A.forEach(function (m) { M[m.mo] = 1; });
-    var F = await Promise.all(Object.keys(M).map(function (mo) { return aLire(lg + '/' + sa + '/matchs/' + mo + '.json'); }));
+    var F = await Promise.all(Object.keys(M).map(function (mo) { return aLire('foot/' + lg + '/' + sa + '/matchs/' + mo + '.json'); }));
     F.forEach(function (D) { A.forEach(function (m) { var fi = D && D[m.id]; if (!fi) return; if (fi.cf) S.fa[m.id] = fi.cf; else if (fi.v2 && S.fa[m.id] == null) S.fa[m.id] = 0; }); });
   }
-  window._g45CrArch = { aEquipe: aEquipe, aJoueur: aJoueur, aSa: aSa, aFeuilles: aFeuilles, mem: AMEM };   /* tests */
+  /* ═══ 20261031l — 📦 critères NHL / NBA / NFL / MLB sur les archives (« il reste quoi à faire ? » → 3 → « oui »). SONDÉ (robot sonde, 29/10) :
+     scoreboard events[].season.type 1 présaison / 2 saison régulière / 3 séries, status.type.detail « Final/OT », « Final/SO » → robot fiche.ty / .ot,
+     index equipes m[5] = type (-1 inconnu), m[6] = prolongation (SO 2, OT 1, même règle que ci-dessous). Saison ESPN (année de fin NHL / NBA,
+     année de début NFL, civile MLB) → dossier saison des archives. Une seule fiche sans type → archive pas prête → ESPN. ═══ */
+  var ASP = { hockey: 'hockey', basketball: 'basket', football: 'football-us', baseball: 'baseball' };
+  function aSaUS(lg, an) { return lg === 'mlb' ? String(an) : (lg === 'nfl' ? an + '-' + String(an + 1).slice(2) : (an - 1) + '-' + String(an).slice(2)); }
+  async function aEquipeUS(sp, lg, tid, an) {   /* [date, dom, pour, contre, prolongation, 0, idMatch] saison régulière ; null → ESPN */
+    if (!ASP[sp] || !aOk(lg)) return null;
+    var B = ASP[sp] + '/' + lg + '/' + aSaUS(lg, an), ix = await aLire(B + '/equipes.json'); if (!ix) return null;
+    var q = await aLire(B + '/equipes/' + tid + '.json'); if (q === null) return null;
+    var M = (q && q.m) || []; if (M.some(function (m) { return m[4] && !(m[5] >= 0); })) return null;
+    return M.filter(function (m) { return m[4] && m[5] === 2; }).map(function (m) { var h = m[3] === 'h'; return [aIso(m[0]), h ? 1 : 0, h ? m[4][0] : m[4][1], h ? m[4][1] : m[4][0], sp === 'hockey' ? (m[6] || 0) : 0, 0, String(m[2])]; })
+      .sort(function (a, b) { return a[0] < b[0] ? -1 : 1; });
+  }
+  window._g45CrArch = { aEquipeUS: aEquipeUS, aEquipe: aEquipe, aJoueur: aJoueur, aSa: aSa, aFeuilles: aFeuilles, mem: AMEM };   /* tests */
   async function charger(nom) {
     if (S.data[nom] && (S.data[nom].err || Date.now() - S.data[nom].t < 3600000)) return;
     if (S.enCours[nom]) return; S.enCours[nom] = 1;
