@@ -76033,9 +76033,13 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     return P.filter(function (q) { return q.k === k; })[0] || P.filter(function (q) { return q.k === 'glob'; })[0] || null;
   }
   function ckAJour(u, q) { var R = u.psL && u.psL[q.k]; if (!R || R.t !== q.t) return false; var d = new Date(R.at || 0); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate() === ckJour() || !!R.err; }
-  function ckHtml() {
+  function ckHtml() {   /* 20261029b : sous-boutons ; 🎯 = ckAuj (écran 20261028p) */
+    var k = ckSous();
+    return '<div id="g45ck">' + ckNav() + (k === 'c' ? ckCal() : k === 'g' ? ckGra() : ckAuj()) + '</div>';
+  }
+  function ckAuj() {
     var L = ckListe(), e = function (x) { return String(x == null ? '' : x).replace(/[<>&"]/g, ''); };
-    var h = '<div id="g45ck"><div style="margin-top:4px;background:rgba(20,28,48,.95);border:1px solid #2a3a63;border-radius:12px;padding:12px;color:#fff;">'
+    var h = '<div><div style="margin-top:4px;background:rgba(20,28,48,.95);border:1px solid #2a3a63;border-radius:12px;padding:12px;color:#fff;">'
       + '<div style="font-size:18px;font-weight:800;">🏁 Cockpit BET45 — tes cartes qui jouent</div>'
       + '<div style="font-size:14px;color:#c9d3ee;margin-top:4px;line-height:1.5;">Les équipes et joueurs de ton mur qui jouent aujourd\'hui et cette nuit, avec <b style="color:#fff;">ton pari</b>, ton <b style="color:#fff;">palier et ta mise</b>, et la <b style="color:#fff;">pire série sur 4 saisons</b> de ce pari.</div></div>';
     if (!L) return h + '<div style="font-size:15px;color:#fff;padding:14px 4px;">⏳ Lecture des matchs de ton mur…</div></div>';
@@ -76065,6 +76069,91 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     });
     return h + '</div>';
   }
+  /* ═══ 20261029b — 🏁 COCKPIT BET45 : 📅 CALENDRIER et 📈 GRAPHIQUE (« Cockpit BET45 on a ni calendrier ni graphique » → choix 2 ; maquettes
+     maq-ck-cal / maq-ck-gra → « oui ») ═══ Sous-boutons 🎯 Aujourd'hui (écran 20261028p) · 📅 Calendrier · 📈 Graphique (localStorage g45ck_sous).
+     Données = paris COCKPIT déjà enregistrés (isS) : réglés state.a (win), en cours state.h (⏳, sans argent). Argent = _g45BetEffetTotal(bet,'a').b
+     (seule source de vérité, ½ / remboursé compris). Jour = bet.date (AAAA-MM-JJ) sinon l'heure de création (id = Date.now()). Palier = bet.l,
+     carte = bet.n, lieu = bet.domicile. Rien de nouveau n'est enregistré : tout le passé apparaît. Chacun voit ses propres paris (bet45 compris). */
+  function ckSous() { var v = 'a'; try { v = localStorage.getItem('g45ck_sous') || 'a'; } catch (e) {} return /^[acg]$/.test(v) ? v : 'a'; }
+  function ckYmd(d) { return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  function ckParis() {   /* [{ j, b (bet), r (true / false / null en cours), g (gain €) }] */
+    var L = [], jr = function (b) { if (/^\d{4}-\d\d-\d\d$/.test(String(b.date || ''))) return b.date; var t = +b.id; return t > 1e12 ? ckYmd(new Date(t)) : ''; };
+    ((typeof state !== 'undefined' && state.a) || []).forEach(function (b) {
+      if (!b || !b.isS || b.isPending || (b.win !== true && b.win !== false)) return;
+      var j = jr(b); if (!j) return;
+      var g = 0; try { g = _g45BetEffetTotal(b, 'a').b; } catch (e) { g = b.win ? (parseFloat(b.m) || 0) * ((parseFloat(b.cote) || 0) - 1) : -(parseFloat(b.m) || 0); }
+      L.push({ j: j, b: b, r: b.win, g: Math.round(g * 100) / 100 });
+    });
+    ((typeof state !== 'undefined' && state.h) || []).forEach(function (b) { if (b && b.isS) { var j = jr(b); if (j) L.push({ j: j, b: b, r: null, g: 0 }); } });
+    return L;
+  }
+  function ckEur(v) { return (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(Math.round(v * 100) / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €'; }
+  function ckBox(x) { return '<div style="background:rgba(20,28,48,.95);border:1px solid #2a3a63;border-radius:12px;padding:12px;color:#fff;margin-bottom:10px;">' + x + '</div>'; }
+  function ckNav() {
+    var s = ckSous(), b = function (k, t) { var on = s === k; return '<button onclick="g45CkSous(\'' + k + '\')" style="flex:1;font-size:14px;padding:10px 4px;border-radius:10px;color:#fff;font-weight:800;cursor:pointer;border:' + (on ? '2px solid #f5c542' : '1px solid rgba(255,255,255,.22)') + ';background:' + (on ? '#1a2235' : 'rgba(11,16,29,.92)') + ';">' + t + '</button>'; };
+    return '<div style="display:flex;gap:6px;margin:4px 0 10px;">' + b('a', '🎯 Aujourd\'hui') + b('c', '📅 Calendrier') + b('g', '📈 Graphique') + '</div>';
+  }
+  function ckCal() {
+    var e = function (x) { return String(x == null ? '' : x).replace(/[<>&"]/g, ''); };
+    var P = ckParis(), parJ = {}; P.forEach(function (x) { (parJ[x.j] = parJ[x.j] || []).push(x); });
+    var d0 = new Date(); d0.setDate(1); d0.setMonth(d0.getMonth() + (S.ck.mois || 0));
+    var an = d0.getFullYear(), mo = d0.getMonth(), nbJ = new Date(an, mo + 1, 0).getDate(), dec = (new Date(an, mo, 1).getDay() + 6) % 7;
+    var titre = d0.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }), fl = 'font-size:18px;background:#16213f;color:#fff;border:1px solid #2a3a63;border-radius:8px;padding:4px 14px;cursor:pointer;';
+    var g = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><button onclick="g45CkMois(-1)" style="' + fl + '">◀</button><b style="font-size:17px;text-transform:capitalize;">' + e(titre) + '</b><button onclick="g45CkMois(1)" style="' + fl + '">▶</button></div>'
+      + '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;font-size:13px;text-align:center;color:#c9d3ee;">' + ['L', 'M', 'M', 'J', 'V', 'S', 'D'].map(function (x) { return '<div>' + x + '</div>'; }).join('');
+    for (var k = 0; k < dec; k++) g += '<div></div>';
+    var sel = S.ck.jour || '';
+    for (var d = 1; d <= nbJ; d++) {
+      var j = an + '-' + ('0' + (mo + 1)).slice(-2) + '-' + ('0' + d).slice(-2), L = parJ[j] || [], fin = L.filter(function (x) { return x.r !== null; });
+      var tot = fin.reduce(function (s2, x) { return s2 + x.g; }, 0), bg = !L.length ? 'rgba(11,16,29,.6)' : !fin.length ? 'rgba(245,197,66,.18)' : tot > 0 ? 'rgba(30,215,96,.28)' : tot < 0 ? 'rgba(255,90,90,.3)' : 'rgba(201,211,238,.15)';
+      g += '<div onclick="g45CkJour(\'' + j + '\')" style="cursor:pointer;background:' + bg + ';border:' + (j === sel ? '2px solid #f5c542' : '1px solid #2a3a63') + ';border-radius:8px;padding:4px 0;min-height:44px;"><div style="color:#fff;font-weight:800;font-size:14px;">' + d + '</div>'
+        + (fin.length ? '<div style="font-size:12px;color:#fff;">' + (tot > 0 ? '+' : tot < 0 ? '−' : '') + Math.abs(Math.round(tot * 10) / 10).toLocaleString('fr-FR') + '</div>' : (L.length ? '<div style="font-size:12px;">⏳</div>' : '')) + '</div>';
+    }
+    g += '</div><div style="font-size:13px;color:#c9d3ee;margin-top:8px;">Vert = journée gagnante · rouge = perdante · ⏳ = en cours · touche un jour pour le détail.</div>';
+    var h = ckBox(g);
+    if (sel && parJ[sel]) {
+      var LJ = parJ[sel], tj = LJ.reduce(function (s2, x) { return s2 + x.g; }, 0), dj = new Date(sel + 'T12:00:00');
+      h += ckBox('<div style="font-size:16px;font-weight:800;margin-bottom:4px;"><span style="text-transform:capitalize;">' + e(dj.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })) + '</span> · <span style="color:' + (tj >= 0 ? '#1ed760' : '#ff5a5a') + ';">' + ckEur(tj) + '</span></div>'
+        + LJ.map(function (x) {
+          var b = x.b, ico = b.domicile === 'dom' ? ' 🏠' : b.domicile === 'ext' ? ' ✈️' : '', pari = b.target && b.target !== b.n ? b.target : (b.notes || '');
+          return '<div style="display:flex;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid #1c2747;font-size:15px;"><div>' + (x.r === null ? '⏳' : x.r ? '✅' : '❌') + ' <b>' + e(b.n) + '</b>' + ico
+            + '<div style="font-size:13px;color:#c9d3ee;">' + (pari ? e(pari) + ' · ' : '') + 'palier ' + e(b.l || 1) + ' · ' + e(String(b.m).replace('.', ',')) + ' € @ ' + e(String(b.cote).replace('.', ',')) + '</div></div>'
+            + '<div style="font-weight:800;white-space:nowrap;color:' + (x.r === null ? '#f5c542' : x.g >= 0 ? '#1ed760' : '#ff5a5a') + ';">' + (x.r === null ? 'en cours' : ckEur(x.g)) + '</div></div>';
+        }).join(''));
+    } else if (sel) h += ckBox('<div style="font-size:15px;">Aucun pari Cockpit ce jour-là.</div>');
+    return h;
+  }
+  function ckGra() {
+    var e = function (x) { return String(x == null ? '' : x).replace(/[<>&"]/g, ''); };
+    var per = S.ck.per || '30', lim = per === 'tout' ? '' : ckYmd(new Date(Date.now() - (+per - 1) * 864e5));
+    var P = ckParis().filter(function (x) { return x.r !== null && (!lim || x.j >= lim); }).sort(function (a, b) { return a.j < b.j ? -1 : a.j > b.j ? 1 : 0; });
+    var bt = function (k, t) { var on = per === k; return '<button onclick="g45CkPer(\'' + k + '\')" style="flex:1;padding:8px;border-radius:8px;color:#fff;cursor:pointer;font-size:14px;font-weight:' + (on ? 800 : 400) + ';border:1px solid ' + (on ? '#6d9dff' : '#2a3a63') + ';background:' + (on ? '#1e3a7a' : '#16213f') + ';">' + t + '</button>'; };
+    var tete = '<div style="font-size:16px;font-weight:800;margin-bottom:8px;">📈 Bénéfice Cockpit · ' + (per === 'tout' ? 'depuis le début' : per + ' derniers jours') + '</div>';
+    var pied = '<div style="display:flex;gap:6px;margin-top:6px;">' + bt('7', '7 j') + bt('30', '30 j') + bt('tout', 'Tout') + '</div>';
+    if (!P.length) return ckBox(tete + '<div style="font-size:15px;padding:10px 0;">Aucun pari Cockpit réglé sur cette période.</div>' + pied);
+    var jours = [], cum = 0, parJ = {}; P.forEach(function (x) { parJ[x.j] = (parJ[x.j] || 0) + x.g; });
+    var pts = [0]; Object.keys(parJ).sort().forEach(function (j) { cum += parJ[j]; pts.push(Math.round(cum * 100) / 100); jours.push(j); });
+    var W = 360, H = 150, mx = Math.max.apply(null, pts), mn = Math.min.apply(null, pts); if (mx === mn) { mx += 1; mn -= 1; }
+    var X = function (i) { return 10 + i * (W - 20) / Math.max(1, pts.length - 1); }, Y = function (v) { return 10 + (mx - v) * (H - 20) / (mx - mn); };
+    var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto;max-height:260px;"><line x1="10" x2="' + (W - 10) + '" y1="' + Y(0) + '" y2="' + Y(0) + '" stroke="#3a4a73" stroke-dasharray="4 4"/>'
+      + '<polyline fill="none" stroke="' + (cum >= 0 ? '#1ed760' : '#ff5a5a') + '" stroke-width="3" points="' + pts.map(function (v, i) { return X(i) + ',' + Y(v); }).join(' ') + '"/></svg>';
+    var ok = P.filter(function (x) { return x.r; }).length, hp = null;
+    P.forEach(function (x) { var l = parseInt(x.b.l, 10) || 1; if (!hp || l > hp.l) hp = { l: l, n: x.b.n }; });
+    var tu = function (t, v, c) { return '<div style="flex:1 1 45%;background:rgba(11,16,29,.8);border-radius:10px;padding:8px;"><div style="font-size:13px;color:#c9d3ee;">' + t + '</div><div style="font-size:19px;font-weight:900;color:' + (c || '#fff') + ';">' + v + '</div></div>'; };
+    var h = ckBox(tete + svg + pied)
+      + ckBox('<div style="display:flex;flex-wrap:wrap;gap:8px;">' + tu('Bénéfice', ckEur(cum), cum >= 0 ? '#1ed760' : '#ff5a5a') + tu('Réussite', Math.round(100 * ok / P.length) + ' % · ' + ok + '/' + P.length)
+        + tu('Montantes bouclées', ok + ' ✅') + tu('Plus haut palier', hp ? 'P' + hp.l + ' (' + e(hp.n) + ')' : '—', hp && hp.l >= 4 ? '#ff9f43' : '#fff') + '</div>');
+    var C = {}; P.forEach(function (x) { var c = C[x.b.n] = C[x.b.n] || { n: x.b.n, ok: 0, t: 0, g: 0 }; c.t++; if (x.r) c.ok++; c.g += x.g; });
+    h += ckBox('<div style="font-size:16px;font-weight:800;margin-bottom:4px;">Par carte</div>' + Object.keys(C).map(function (k) { return C[k]; }).sort(function (a, b) { return b.g - a.g; }).map(function (c) {
+      return '<div style="display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-bottom:1px solid #1c2747;font-size:15px;"><b>' + e(c.n) + '</b><span>' + c.ok + '/' + c.t + ' · <b style="color:' + (c.g >= 0 ? '#1ed760' : '#ff5a5a') + ';">' + ckEur(c.g) + '</b></span></div>';
+    }).join(''));
+    return h;
+  }
+  window.g45CkSous = function (k) { try { localStorage.setItem('g45ck_sous', k); } catch (e) {} ckRedessiner(); if (k === 'a') ckLancer(); };
+  window.g45CkMois = function (d) { S.ck.mois = (S.ck.mois || 0) + d; S.ck.jour = ''; ckRedessiner(); };
+  window.g45CkJour = function (j) { S.ck.jour = S.ck.jour === j ? '' : j; ckRedessiner(); };
+  window.g45CkPer = function (p) { S.ck.per = p; ckRedessiner(); };
+  window._g45CkParis = ckParis;   /* tests */
   function ckRedessiner() { var z = document.getElementById('g45ck'); if (!z) return; var t = document.createElement('div'); t.innerHTML = ckHtml(); z.parentNode.replaceChild(t.firstChild, z); }
   async function ckLancer() {
     var Q = S.ck; if (Q.enCours) return; Q.enCours = 1;
@@ -76081,7 +76170,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       if (ch) { try { save(); } catch (e) {} }
     } finally { Q.enCours = 0; ckRedessiner(); }
   }
-  window._g45CkHtml = function () { setTimeout(function () { ckLancer(); }, 0); return ckHtml(); };
+  window._g45CkHtml = function () { if (ckSous() === 'a') setTimeout(function () { ckLancer(); }, 0); return ckHtml(); };
   window._g45CkListe = ckListe;   /* tests */
   window._g45SerNomJ = serNomJ; window._g45SerStatJ = serStatJ; window._g45SerLegsJ = serLegsJ; window._g45SerJoueur = serJoueur;   /* tests */
   S.ser = S.ser || { etat: 0, f: 0, n: 0 };
