@@ -76067,6 +76067,14 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var now = Date.now(), fin = new Date(); fin.setDate(fin.getDate() + 1); fin.setHours(8, 0, 0, 0);
     return (A.L || []).filter(function (m) { return m.t > now - 3 * 3600e3 && m.t < fin.getTime(); }).sort(function (a, b) { return a.t - b.t; });
   }
+  function ckFond(n) {   /* 20261029r : { c couleur, img } d'une carte (image perso du dépôt, logo du mur, logo connu, visuel joueur) */
+    var u = ((typeof state !== 'undefined' && state.u) || []).filter(function (x) { return x && x.n === n; })[0] || {}, img = '';
+    try { img = (typeof _g45ImgPersoLire === 'function' && _g45ImgPersoLire(n)) || ''; } catch (e) {}
+    if (!img && u.logoUrl) img = u.logoUrl;
+    try { if (!img && typeof g45LogoUrlDe === 'function') img = g45LogoUrlDe(n) || ''; } catch (e) {}
+    try { if (!img && typeof _g45JoueurVisLire === 'function') { var v = _g45JoueurVisLire(n); if (v) img = v.cut || v.thumb || ''; } } catch (e) {}
+    return { c: u.color || '', img: /^https?:|^images\//.test(img) ? img : '' };
+  }
   function ckU(n) { if (ckDist()) return (S.ck.D && S.ck.D.u && S.ck.D.u[n]) || null; return ((typeof state !== 'undefined' && state.u) || []).filter(function (x) { return x && x.n === n; })[0] || null; }
   function ckPari(u, dom) {   /* { k, t } du lieu, ou null */
     var P = serParis(u), k = dom ? 'dom' : 'ext';
@@ -76283,7 +76291,10 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
         if (!Lt.length && Dn.avant && !(ckU(c.c) || (S.ck.D && S.ck.D.u && S.ck.D.u[c.c]) || {}).type) Lt.push(Dn.avant);
         tys = Lt.map(function (x) { return '<div>📌 ' + e(x) + '</div>'; }).join('');
       }
-      return '<div ' + (ix >= 0 ? (ckDist() ? 'data-n="' + e(c.c) + '" onclick="g45CkFicheDist(this.dataset.n)" ' : 'onclick="g45CkFiche(' + ix + ')" ') : '') + 'style="display:flex;flex-wrap:wrap;align-items:flex-start;gap:4px 12px;padding:7px 0;border-bottom:1px solid #1c2747;' + (ix >= 0 ? 'cursor:pointer;' : '') + '">'
+      /* 20261029r (« un petit fond pour chaque équipe pour les différencier ») : liseré + dégradé à la couleur de la carte, logo en filigrane (ckFond) */
+      var Fd = ckDist() ? ((S.ck.D && S.ck.D.lg && S.ck.D.lg[c.c]) || {}) : ckFond(c.c), cc = /^#[0-9a-f]{6}$/i.test(Fd.c || '') ? Fd.c : '#4d84ff';
+      return '<div ' + (ix >= 0 ? (ckDist() ? 'data-n="' + e(c.c) + '" onclick="g45CkFicheDist(this.dataset.n)" ' : 'onclick="g45CkFiche(' + ix + ')" ') : '') + 'style="position:relative;overflow:hidden;display:flex;flex-wrap:wrap;align-items:flex-start;gap:4px 12px;padding:9px 10px;margin-bottom:6px;border-radius:10px;border-left:4px solid ' + cc + ';background:linear-gradient(90deg,' + cc + '38 0%,' + cc + '10 45%,rgba(11,16,29,.55) 100%);' + (ix >= 0 ? 'cursor:pointer;' : '') + '">'
+        + (Fd.img ? '<img src="' + e(Fd.img) + '" alt="" loading="lazy" onerror="this.remove()" style="position:absolute;right:22%;top:50%;transform:translateY(-50%);height:150%;max-width:30%;object-fit:contain;opacity:.16;pointer-events:none;">' : '')
         + '<div style="flex:1 1 170px;min-width:0;"><b style="font-size:15px;">' + e(c.c) + (ix >= 0 ? ' <span style="color:#8fb4ff;">›</span>' : '') + '</b>'
         + (det.length > 1 || (det.length === 1 && !c.L.glob) ? '<div style="font-size:13px;color:#c9d3ee;margin-top:2px;">' + det.join(' · ') + '</div>' : '') + '</div>'
         + (tys ? '<div class="g45ck-ty" style="flex:2 1 260px;min-width:0;font-size:14px;color:#fff;line-height:1.45;">' + tys + '</div>' : '')
@@ -76340,8 +76351,9 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       U[u.n] = x;
     });
     var P = ckParis().map(function (y) { var b = y.b; return { j: y.j, r: y.r, g: y.g, b: { n: b.n, domicile: b.domicile || '', type: b.type || '', target: b.target || '', l: b.l || 1, m: b.m, cote: b.cote, comp: b.comp || '', t: b.t || '', heure: b.heure || '', date: b.date || '', id: b.id || '', isCashout: b.isCashout ? 1 : 0, isFreebet: b.isFreebet ? 1 : 0, sport: b.sport || '' } }; });   /* 20261029l : + champs de la fiche (bet45) */
-    var NT = {}; P.forEach(function (y) { var n = y.b.n; if (NT[n] == null) { var uu = ckU(n); NT[n] = (uu && uu.note) || ''; } });   /* 20261029q : pari choisi (Outils) de chaque carte, pas u.np */
-    return { v: 1, j: A.j, ag: A.L || [], u: U, P: P, nt: NT };
+    var NT = {}; P.forEach(function (y) { var n = y.b.n; if (NT[n] == null) { var uu = ckU(n); NT[n] = (uu && uu.note) || ''; } });
+    var LG = {}; Object.keys(NT).forEach(function (n) { LG[n] = ckFond(n); });   /* 20261029r : couleur + logo de chaque carte (bet45) */   /* 20261029q : pari choisi (Outils) de chaque carte, pas u.np */
+    return { v: 1, j: A.j, ag: A.L || [], u: U, P: P, nt: NT, lg: LG };
   }
   async function ckPublier() {
     if (ckDist() || typeof _g45SanteActive !== 'function' || !_g45SanteActive() || S.ck.pub) return;
