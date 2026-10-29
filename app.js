@@ -76115,7 +76115,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       var LJ = parJ[sel], tj = LJ.reduce(function (s2, x) { return s2 + x.g; }, 0), dj = new Date(sel + 'T12:00:00');
       h += ckBox('<div style="font-size:16px;font-weight:800;margin-bottom:4px;"><span style="text-transform:capitalize;">' + e(dj.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })) + '</span> · <span style="color:' + (tj >= 0 ? '#1ed760' : '#ff5a5a') + ';">' + ckEur(tj) + '</span></div>'
         + LJ.map(function (x) {
-          var b = x.b, ico = b.domicile === 'dom' ? ' 🏠' : b.domicile === 'ext' ? ' ✈️' : '', pari = b.target && b.target !== b.n ? b.target : (b.notes || '');
+          var b = x.b, ico = b.domicile === 'dom' ? ' 🏠' : b.domicile === 'ext' ? ' ✈️' : '', pari = [b.target && b.target !== '-' && b.target !== b.n ? 'vs ' + b.target : '', b.type && b.type !== '-' ? b.type : ''].filter(Boolean).join(' · ');   /* 20261029c (« Inter, sauf que c'est Inter + under 3.5 ») : marché joué = b.type (getMmLabel), target = adversaire */
           return '<div style="display:flex;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid #1c2747;font-size:15px;"><div>' + (x.r === null ? '⏳' : x.r ? '✅' : '❌') + ' <b>' + e(b.n) + '</b>' + ico
             + '<div style="font-size:13px;color:#c9d3ee;">' + (pari ? e(pari) + ' · ' : '') + 'palier ' + e(b.l || 1) + ' · ' + e(String(b.m).replace('.', ',')) + ' € @ ' + e(String(b.cote).replace('.', ',')) + '</div></div>'
             + '<div style="font-weight:800;white-space:nowrap;color:' + (x.r === null ? '#f5c542' : x.g >= 0 ? '#1ed760' : '#ff5a5a') + ';">' + (x.r === null ? 'en cours' : ckEur(x.g)) + '</div></div>';
