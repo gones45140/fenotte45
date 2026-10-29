@@ -84278,4 +84278,70 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
     h += L.length ? L.map(function (i) { return carte(D[i], i, eq); }).join('') : '<div style="font-size:14px;color:#c9d3ee;padding:8px 2px;">Aucun match gardé pour ce mois (pas de match, ou rattrapage pas encore passé).</div>';
     el.innerHTML = h;
   };
+  /* ═══ 20261031u — 📦 COTES GARDÉES DANS LA FENÊTRE D'UN MATCH FINI (« reste à faire » n° 1, maquette « 📦 Cotes d'avant-match … Buteur :
+     Pastrnak 2,60 ✅ » → « reste à faire comme tu veux ») : en bas de _renderGenericDetail (NHL / NBA / NFL / MLB) et _renderSaisonDetail (foot),
+     match FINI seulement : fiche de l'archive (date du match = summary ESPN, déjà en cache du navigateur) → 1N2, handicap, total, les deux
+     marquent, cotes joueurs par type avec ✅ / ❌ d'après la feuille (st) gardée par le robot. Rien d'archivé → rien d'affiché. ═══ */
+  var TYP = {
+    soccer: [['230', '⚽ Buteur', function (s) { return s.G || 0; }], ['219', '🎯 Passeur', function (s) { return s.A || 0; }]]   /* type 39 « 2 buts » foot écarté : cotes 2,01 identiques pour des défenseurs sur Lecce @ Frosinone → sens pas sûr */,
+    hockey: [['230', '🏒 Buteur', function (s) { return s.G || 0; }], ['219', '🎯 Passes', function (s) { return s.A || 0; }], ['218', '⭐ Points', function (s) { return (s.G || 0) + (s.A || 0); }]],
+    football: [['31', '🏈 TD', function (s) { return (s.rTD || 0) + (s.reTD || 0); }]],
+    basketball: [['218', '🏀 Points', function (s) { return s.PTS || 0; }], ['220', '🔁 Rebonds', function (s) { return s.REB || 0; }], ['219', '🎯 Passes', function (s) { return s.AST || 0; }]]
+  };
+  function ficheDe(sp, lg, eid, t) {
+    var mo = new Date(t).toISOString().slice(0, 7), civ = CIVIL.indexOf(lg) >= 0, y = +mo.slice(0, 4), m = +mo.slice(5, 7);
+    var sa = civ ? String(y) : (m >= 7 ? y + '-' + String(y + 1).slice(2) : (y - 1) + '-' + String(y).slice(2));
+    return fetch('https://raw.githubusercontent.com/gones45140/gones45-archives/main/cotes/' + (SPN[sp] || 'foot') + '/' + lg + '/' + sa + '/matchs/' + mo + '.json?t=' + Math.floor(Date.now() / 600000))
+      .then(function (r) { return r.ok ? r.json() : null; }).then(function (D) { return (D && D[eid]) || null; }).catch(function () { return null; });
+  }
+  function matchHtml(fi) {
+    var vir = function (x) { return String(x).replace('.', ','); }, sg = function (x) { return (x > 0 ? '+' : (x < 0 ? '−' : '')) + vir(Math.abs(x)); };
+    var L = [];
+    if (fi.ml) L.push('1 ' + esc(fi.h.nom) + ' <b>' + v(fi.ml.h) + '</b>' + (fi.ml.d > 1 ? ' · N <b>' + v(fi.ml.d) + '</b>' : '') + ' · 2 ' + esc(fi.a.nom) + ' <b>' + v(fi.ml.a) + '</b>');
+    if (fi.hc && fi.hc.L != null) L.push('Handicap ' + esc(fi.h.nom) + ' ' + sg(fi.hc.L) + ' <b>' + v(fi.hc.h) + '</b> · ' + esc(fi.a.nom) + ' ' + sg(-fi.hc.L) + ' <b>' + v(fi.hc.a) + '</b>');
+    if (fi.tot && fi.tot.L != null) L.push('Total ' + vir(fi.tot.L) + ' : plus <b>' + v(fi.tot.o) + '</b> · moins <b>' + v(fi.tot.u) + '</b>');
+    if (fi.bts) L.push('Les deux marquent : oui <b>' + v(fi.bts.o) + '</b> · non <b>' + v(fi.bts.n) + '</b>');
+    (TYP[fi.s] || []).forEach(function (T) {
+      var P = [];
+      Object.keys(fi.j || {}).forEach(function (pid) {
+        var j = fi.j[pid], l = (j.o || {})[T[0]] || []; if (!l.length) return;
+        var st = fi.st && fi.st[pid], val = st ? T[2](st.s || {}) : null;
+        l.forEach(function (q) { var cible = q[0] == null ? 1 : q[0]; if (fi.s === 'basketball' && cible < 10 && T[0] === '218') return;
+          P.push({ n: j.n, d: q[1], lib: q[0] == null || q[0] === 1 ? '' : ' ' + vir(q[0]) + '+', ok: !fi.st ? null : (val == null ? 'abs' : val >= cible) }); });
+      });
+      if (!P.length) return;
+      P.sort(function (a, b) { return a.d - b.d; });
+      L.push(T[1] + ' : ' + P.slice(0, 6).map(function (x) { return esc(x.n) + esc(x.lib) + ' <b>' + v(x.d) + '</b>' + (x.ok === true ? ' ✅' : (x.ok === false ? ' ❌' : (x.ok === 'abs' ? ' <span style="color:#9fb0c7;">(absent)</span>' : ''))); }).join(' · '));
+    });
+    if (!L.length) return '';
+    return '<div style="margin-top:12px;background:rgba(11,16,29,.88);border:1px solid rgba(245,197,66,.4);border-radius:12px;padding:10px 12px;color:#fff;">'
+      + '<div style="font-size:15px;font-weight:900;margin-bottom:6px;">📦 Cotes d\'avant-match <span style="font-size:13px;font-weight:600;color:#c9d3ee;">(' + (fi.r ? 'clôture' : 'gardées le ' + new Date(fi.at).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).replace(' ', ' à ')) + ', ' + ((typeof _g45DkMode === 'function' && _g45DkMode() === 'fr') ? 'estimée France' : 'DraftKings') + ')</span></div>'
+      + L.map(function (x) { return '<div style="font-size:14px;line-height:1.5;padding:3px 0;border-top:1px solid rgba(255,255,255,.07);">' + x + '</div>'; }).join('') + '</div>';
+  }
+  window._g45ArchMatchHtml = matchHtml;   /* tests */
+  async function poserArch(el, sp, lg, eid) {
+    if (!el || !eid || (window._G45_ARCH_LG || []).indexOf(lg) < 0 || el.querySelector('[data-g45ca]')) return;
+    var sm = null; try { var r = await fetch('https://site.api.espn.com/apis/site/v2/sports/' + sp + '/' + lg + '/summary?event=' + eid); if (r.ok) sm = await r.json(); } catch (e) {}
+    var cp = ((((sm || {}).header || {}).competitions) || [])[0] || {}, st = ((cp.status || {}).type || {});
+    if (!st.completed || !cp.date) return;
+    var fi = await ficheDe(sp, lg, String(eid), Date.parse(cp.date)); if (!fi || !el.isConnected || el.querySelector('[data-g45ca]')) return;
+    var h = matchHtml(fi); if (!h) return;
+    var b = document.createElement('div'); b.setAttribute('data-g45ca', lg + '_' + eid); b.innerHTML = h; el.appendChild(b); el._g45Ca = b.outerHTML;
+    if (!el._g45CaObs && typeof MutationObserver === 'function') {
+      el._g45CaObs = new MutationObserver(function () { if (!el._g45Ca || el.querySelector('[data-g45ca]')) return; var d0 = document.createElement('div'); d0.innerHTML = el._g45Ca; el.appendChild(d0.firstChild); });
+      el._g45CaObs.observe(el, { childList: true });
+    }
+  }
+  var rg0 = window._renderGenericDetail;
+  if (typeof rg0 === 'function' && !rg0._g45Ca) {
+    window._renderGenericDetail = async function (el, sport, lg, eid) { var r = await rg0.apply(this, arguments); try { await poserArch(el, String(sport || ''), String(lg || '').toLowerCase(), String(eid || '')); } catch (e) {} return r; };
+    window._renderGenericDetail._g45Ca = 1; window._renderGenericDetail._g45Cj = 1;
+    try { _renderGenericDetail = window._renderGenericDetail; } catch (e) {}
+  }
+  var rs0 = window._renderSaisonDetail;
+  if (typeof rs0 === 'function' && !rs0._g45Ca) {
+    window._renderSaisonDetail = async function (el, eventId, league) { var r = await rs0.apply(this, arguments); try { await poserArch(el, 'soccer', String(league || '').toLowerCase(), String(eventId || '')); } catch (e) {} return r; };
+    window._renderSaisonDetail._g45Ca = 1; window._renderSaisonDetail._g45Cj = 1;
+    try { _renderSaisonDetail = window._renderSaisonDetail; } catch (e) {}
+  }
 })();
