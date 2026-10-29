@@ -76061,7 +76061,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   S.ck = S.ck || { fait: {}, enCours: 0 };
   function ckJour() { var d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
   function ckListe() {
-    var A = ckDist() ? (S.ck.D ? { j: ckJour(), L: S.ck.D.ag || [] } : null) : window._g45CkAg;   /* 20261029g : bet45 = Cockpit publié par gones */
+    var A = ckDist() ? (S.ck.D ? { j: ckJour(), L: (S.ck.D.ag || []).filter(function (m) { return ckOk(m.n); }) } : null) : window._g45CkAg;   /* 20261029g : bet45 = Cockpit publié par gones */
     if (!ckDist() && (!A || A.j !== ckJour())) { try { A = JSON.parse(localStorage.getItem('g45ck_ag') || 'null'); } catch (e) { A = null; } }
     if (!A || A.j !== ckJour()) return null;
     var now = Date.now(), fin = new Date(); fin.setDate(fin.getDate() + 1); fin.setHours(8, 0, 0, 0);
@@ -76070,6 +76070,26 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   /* 20261029v (« genre Cédric : la mise de départ du Cockpit, c'est injouable pour lui » → B) : bet45, « 💶 Ta mise de départ » (localStorage
      g45ck_p1, sur l'appareil du visiteur) → facteur = sa mise ÷ mise de départ (P1) de la grille d'Antoine aux ⭐ de la carte (D.st, D.sc) ;
      appliqué à TOUT : mises, gains (calendrier, courbe, bénéfice, par carte), palier du jour, mise de la série. Vide / 0 = facteur 1. */
+  /* 20261029x (« lui, s'il veut suivre que quelques équipes mais pas toutes pour commencer, comment fait-il ? » ; maquette « Mes cartes suivies » →
+     « oui ») : bet45 — ☆ / ★ sur chaque carte (Aujourd'hui, Par carte) ; « Toutes les cartes » / « ★ Mes cartes suivies (n) » ; en mode suivi, tout
+     (cartes du jour, calendrier, courbe, bénéfice, par carte, dangers) ne compte que ces cartes. localStorage g45ck_suiv [noms], g45ck_mode. */
+  function ckSuiv() { try { var a = JSON.parse(localStorage.getItem('g45ck_suiv') || '[]'); return Array.isArray(a) ? a : []; } catch (e) { return []; } }
+  function ckMode() { try { return localStorage.getItem('g45ck_mode') === 'suiv' ? 'suiv' : 'tout'; } catch (e) { return 'tout'; } }
+  function ckOk(n) { if (!ckDist() || ckMode() !== 'suiv') return true; var L = ckSuiv(); return !L.length || L.indexOf(n) >= 0; }
+  function ckEtoile(n) {
+    if (!ckDist()) return '';
+    var on = ckSuiv().indexOf(n) >= 0;
+    return '<span data-n="' + String(n).replace(/[<>&"]/g, '') + '" onclick="event.stopPropagation();g45CkSuivre(this.dataset.n)" title="' + (on ? 'Ne plus suivre' : 'Suivre') + '" style="display:inline-block;margin-right:6px;padding:1px 7px;border-radius:7px;font-size:14px;cursor:pointer;'
+      + (on ? 'background:#f5c542;color:#0b101d;">★' : 'border:1px solid #f5c542;color:#f5c542;">☆') + '</span>';
+  }
+  function ckSuivBarre() {
+    var n = ckSuiv().length, m = ckMode();
+    var b = function (k, t) { var on = m === k; return '<button onclick="g45CkMode(\'' + k + '\')" style="flex:1;padding:10px;border-radius:10px;color:#fff;font-size:15px;font-weight:800;cursor:pointer;border:' + (on ? '2px solid #f5c542' : '1px solid rgba(255,255,255,.22)') + ';background:' + (on ? '#1a2235' : 'rgba(11,16,29,.92)') + ';">' + t + '</button>'; };
+    return '<div style="display:flex;gap:6px;margin:0 0 6px;">' + b('tout', 'Toutes les cartes') + b('suiv', '★ Mes cartes suivies (' + n + ')') + '</div>'
+      + '<div style="font-size:13px;color:#c9d3ee;margin:0 0 10px;">' + (m === 'suiv' && !n ? 'Tu ne suis encore aucune carte : touche ☆ sur une carte (Aujourd\'hui ou Graphique → Par carte). En attendant, tout est affiché.' : m === 'suiv' ? 'Calendrier, courbe, bénéfice et dangers ne comptent que tes cartes suivies.' : 'Touche ☆ sur une carte pour la suivre.') + '</div>';
+  }
+  window.g45CkSuivre = function (n) { var L = ckSuiv(), i = L.indexOf(n); if (i >= 0) L.splice(i, 1); else L.push(n); try { localStorage.setItem('g45ck_suiv', JSON.stringify(L)); } catch (e) {} ckRedessiner(); };
+  window.g45CkMode = function (m) { try { localStorage.setItem('g45ck_mode', m === 'suiv' ? 'suiv' : 'tout'); } catch (e) {} ckRedessiner(); };
   function ckF(n) {
     if (!ckDist()) return 1;
     var v = 0; try { v = parseFloat(String(localStorage.getItem('g45ck_p1') || '').replace(',', '.')) || 0; } catch (e) {}
@@ -76085,7 +76105,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var v = parseFloat(String(p1 || '').replace(',', '.')), f = v > 0 ? v / g[0] : 1, eu = function (x) { return (Math.round(x * 100) / 100).toLocaleString('fr-FR') + ' €'; };
     var C = ['#1ed760', '#7ddc3c', '#f5c542', '#ff9f43', '#ff7a45', '#ff5a5a', '#e0457b', '#b04ad8'], cum = 0, tot = [];
     var lig = g.map(function (x, i) { cum += x * f; tot.push(cum); return '<span style="display:inline-block;margin:2px 4px 2px 0;padding:2px 7px;border-radius:7px;background:' + C[Math.min(i, 7)] + '33;border:1px solid ' + C[Math.min(i, 7)] + ';font-weight:700;">P' + (i + 1) + ' ' + eu(x * f) + '</span>'; }).join('');
-    var hp = 0, hn = ''; ((D.P) || []).forEach(function (x) { var l = parseInt(x.b && x.b.l, 10) || 1; if (l > hp) { hp = l; hn = x.b.n + (x.b.domicile === 'dom' ? ' 🏠' : x.b.domicile === 'ext' ? ' ✈️' : ''); } });
+    var hp = 0, hn = ''; ckParis().forEach(function (x) { var l = parseInt(x.b && x.b.l, 10) || 1; if (l > hp) { hp = l; hn = x.b.n + (x.b.domicile === 'dom' ? ' 🏠' : x.b.domicile === 'ext' ? ' ✈️' : ''); } });
     return '<div style="flex-basis:100%;margin-top:6px;font-size:13px;line-height:1.5;"><b style="color:#ff9f43;">⚠️ Les dangers du palier</b> (si tout perd à la suite) :<div>' + lig + '</div>'
       + '<div>Perdre jusqu\'à P8 = <b style="color:#ff5a5a;">' + eu(tot[tot.length - 1]) + ' engagés</b>' + (hp > 1 && tot[hp - 1] ? ' · plus haut palier du Cockpit : <b>P' + hp + '</b> (' + String(hn).replace(/[<>&]/g, '') + ') → mise <b>' + eu(g[hp - 1] * f) + '</b>, <b>' + eu(tot[hp - 1]) + '</b> engagés' : '') + '</div></div>';
   }
@@ -76112,7 +76132,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var p1 = ''; if (dist) { try { p1 = localStorage.getItem('g45ck_p1') || ''; } catch (e) {} }
     var mz = dist ? '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:rgba(11,16,29,.8);border:1px solid #2a3a63;border-radius:10px;padding:8px 10px;margin:0 0 10px;font-size:14px;color:#fff;">'
       + '💶 <b>Ta mise de départ</b> <input type="text" inputmode="decimal" value="' + String(p1).replace(/[^0-9.,]/g, '') + '" placeholder="ex. 1" onchange="g45CkP1(this.value)" style="width:72px;padding:6px 8px;border-radius:8px;border:1px solid #6d9dff;background:#16213f;color:#fff;font-size:15px;font-weight:800;"> €'
-      + '<span style="font-size:13px;color:#c9d3ee;">' + (parseFloat(String(p1).replace(',', '.')) > 0 ? 'mises, gains et courbe à ton échelle' : 'vide = mises du Cockpit BET45') + '</span>' + ckDanger(p1) + '</div>' : '';
+      + '<span style="font-size:13px;color:#c9d3ee;">' + (parseFloat(String(p1).replace(',', '.')) > 0 ? 'mises, gains et courbe à ton échelle' : 'vide = mises du Cockpit BET45') + '</span>' + ckDanger(p1) + '</div>' + ckSuivBarre() : '';
     return '<div id="g45ck">' + ckNav() + maj + mz + (k === 'c' ? ckCal() : k === 'g' ? ckGra() : ckAuj()) + '</div>';
   }
   /* 20261029d : carte d'un match (écran 🎯 et jours à venir du 📅 Calendrier) ; fut = pas de « ⏳ Calcul » (ckLancer ne regarde que aujourd'hui / cette nuit) */
@@ -76132,14 +76152,14 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
           + R.p.map(function (v) { return '<span style="color:' + col(v) + ';">' + v + '</span>'; }).join(' · ') + ' → <b>' + pa.p + ' palier' + (pa.p > 1 ? 's' : '') + ' ' + pa.ico + '</b>' + (pa.mise != null ? ' · ' + (Math.round(pa.mise * 100) / 100).toLocaleString('fr-FR') + ' €' : '') + ' <span style="font-weight:400;color:#c9d3ee;">· 4 saisons</span></div>';
       } else if (!fut && !u._pub && q && !ckAJour(u, q)) ps = '<div style="font-size:13px;color:#c9d3ee;margin-top:6px;">⏳ Calcul de la série sur 4 saisons…</div>';
       h += '<div style="background:rgba(20,28,48,.95);border:1px solid #2a3a63;border-left:4px solid ' + e(u.color || '#5ad6ff') + ';border-radius:12px;padding:10px 12px;margin-bottom:10px;color:#fff;">'
-        + '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><div style="font-size:16px;font-weight:800;">' + (SP[m.sp] || '') + ' ' + e(u.n) + ' ' + ico + ' <span style="font-weight:400;color:#c9d3ee;">vs ' + e(m.adv) + '</span></div>'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><div style="font-size:16px;font-weight:800;">' + ckEtoile(u.n) + (SP[m.sp] || '') + ' ' + e(u.n) + ' ' + ico + ' <span style="font-weight:400;color:#c9d3ee;">vs ' + e(m.adv) + '</span></div>'
         + '<div style="flex:none;font-size:18px;font-weight:900;background:rgba(11,16,29,.85);border-radius:8px;padding:2px 9px;">' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) + '</div></div>'
         + (C && C.txt ? '<div style="font-size:15px;background:rgba(11,16,29,.8);border-radius:8px;padding:6px 8px;margin-top:6px;color:#8fb4ff;">📌 ' + e(C.txt) + '</div>' : '')
         + pal + ps + '</div>';
     return h;
   }
   function ckAgTout() {   /* liste complète de l'Agenda du jour (7 jours), ou [] */
-    if (ckDist()) return (S.ck.D && S.ck.D.ag) || [];
+    if (ckDist()) return ((S.ck.D && S.ck.D.ag) || []).filter(function (m) { return ckOk(m.n); });
     var A = window._g45CkAg; if (!A || A.j !== ckJour()) { try { A = JSON.parse(localStorage.getItem('g45ck_ag') || 'null'); } catch (e) { A = null; } }
     return (A && A.j === ckJour() && A.L) || [];
   }
@@ -76168,7 +76188,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   function ckSous() { var v = 'a'; try { v = localStorage.getItem('g45ck_sous') || 'a'; } catch (e) {} return /^[acg]$/.test(v) ? v : 'a'; }
   function ckYmd(d) { return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
   function ckParis() {   /* [{ j, b (bet), r (true / false / null en cours), g (gain €) }] */
-    if (ckDist()) return ((S.ck.D && S.ck.D.P) || []).map(function (x) {   /* 20261029v : à l'échelle de « Ta mise de départ » */
+    if (ckDist()) return ((S.ck.D && S.ck.D.P) || []).filter(function (x) { return ckOk(x.b && x.b.n); }).map(function (x) {   /* 20261029v : à l'échelle de « Ta mise de départ » */
       var f = ckF(x.b && x.b.n); if (f === 1) return x;
       return { j: x.j, r: x.r, g: Math.round(x.g * f * 100) / 100, b: Object.assign({}, x.b, { m: Math.round((parseFloat(x.b.m) || 0) * f * 100) / 100 }) };
     });
@@ -76325,7 +76345,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       var Fd = ckDist() ? ((S.ck.D && S.ck.D.lg && S.ck.D.lg[c.c]) || {}) : ckFond(c.c), cc = /^#[0-9a-f]{6}$/i.test(Fd.c || '') ? Fd.c : '#4d84ff';
       return '<div ' + (ix >= 0 ? (ckDist() ? 'data-n="' + e(c.c) + '" onclick="g45CkFicheDist(this.dataset.n)" ' : 'onclick="g45CkFiche(' + ix + ')" ') : '') + 'class="g45ck-row" style="position:relative;overflow:hidden;display:flex;flex-wrap:wrap;align-items:flex-start;gap:4px 12px;padding:9px 10px;margin-bottom:6px;border-radius:10px;border-left:4px solid ' + cc + ';background:linear-gradient(90deg,' + cc + '8c 0%,' + cc + '55 50%,' + cc + '30 100%);text-shadow:0 1px 3px rgba(0,0,0,.85);' + (ix >= 0 ? 'cursor:pointer;' : '') + '">'
         + (Fd.img ? '<img src="' + e(Fd.img) + '" alt="" loading="lazy" onerror="this.remove()" style="position:absolute;right:22%;top:50%;transform:translateY(-50%);height:150%;max-width:30%;object-fit:contain;opacity:.38;pointer-events:none;">' : '')
-        + '<div style="flex:0 1 auto;min-width:0;position:relative;background:rgba(11,16,29,.62);border-radius:8px;padding:3px 8px;"><b style="font-size:15px;">' + e(c.c) + (ix >= 0 ? ' <span style="color:#8fb4ff;">›</span>' : '') + '</b>'
+        + '<div style="flex:0 1 auto;min-width:0;position:relative;background:rgba(11,16,29,.62);border-radius:8px;padding:3px 8px;"><b style="font-size:15px;">' + ckEtoile(c.c) + e(c.c) + (ix >= 0 ? ' <span style="color:#8fb4ff;">›</span>' : '') + '</b>'
         + (det.length > 1 || (det.length === 1 && !c.L.glob) ? '<div style="font-size:13px;color:#c9d3ee;margin-top:2px;">' + det.join(' · ') + '</div>' : '') + '</div>'
         + (tys ? '<div class="g45ck-tyw"><div class="g45ck-ty" style="min-width:0;position:relative;font-size:14px;color:#fff;line-height:1.45;background:rgba(11,16,29,.62);border-radius:8px;padding:3px 8px;">' + tys + '</div></div>' : '')   /* 20261029t : centré entre l'équipe et le logo (PC) */
         + '<div style="flex:0 0 auto;margin-left:auto;position:relative;font-size:15px;white-space:nowrap;background:rgba(11,16,29,.62);border-radius:8px;padding:3px 8px;">' + c.ok + '/' + c.t + ' · <b style="color:' + gC(c.g) + ';">' + ckEur(c.g) + '</b></div></div>';
