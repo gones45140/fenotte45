@@ -76300,6 +76300,10 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     await Promise.all(ans.map(async function (an, i) {
       var cle = 'g45cr1_' + lg + '_' + id + '_' + an, ms = null;
       if (i > 0) { try { ms = JSON.parse(localStorage.getItem(cle) || 'null'); } catch (e) {} }
+      if (!ms) {   /* 20261031s : 🏁 Séries équipes / Cockpit foot → archives GitHub d'abord (comme charger) */
+        var A = null; try { A = await aEquipe(lg, id, an); } catch (e) {}
+        if (A) { ms = A.map(function (m) { return [m.d, m.dom, m.p, m.c]; }); if (i > 0 && ms.length) { try { localStorage.setItem(cle, JSON.stringify(ms)); } catch (e) {} } }
+      }
       if (!ms) {
         var d = null;
         try { var r = await fetch(FD_PROXY + '?host=espn&path=' + encodeURIComponent('/apis/site/v2/sports/soccer/' + lg + '/teams/' + id + '/schedule?season=' + an)); if (r.ok) d = await r.json(); } catch (e) {}
