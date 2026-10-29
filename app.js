@@ -76032,20 +76032,24 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   S.ck = S.ck || { fait: {}, enCours: 0 };
   function ckJour() { var d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
   function ckListe() {
-    var A = window._g45CkAg; if (!A || A.j !== ckJour()) { try { A = JSON.parse(localStorage.getItem('g45ck_ag') || 'null'); } catch (e) { A = null; } }
+    var A = ckDist() ? (S.ck.D ? { j: ckJour(), L: S.ck.D.ag || [] } : null) : window._g45CkAg;   /* 20261029g : bet45 = Cockpit publié par gones */
+    if (!ckDist() && (!A || A.j !== ckJour())) { try { A = JSON.parse(localStorage.getItem('g45ck_ag') || 'null'); } catch (e) { A = null; } }
     if (!A || A.j !== ckJour()) return null;
     var now = Date.now(), fin = new Date(); fin.setDate(fin.getDate() + 1); fin.setHours(8, 0, 0, 0);
     return (A.L || []).filter(function (m) { return m.t > now - 3 * 3600e3 && m.t < fin.getTime(); }).sort(function (a, b) { return a.t - b.t; });
   }
-  function ckU(n) { return ((typeof state !== 'undefined' && state.u) || []).filter(function (x) { return x && x.n === n; })[0] || null; }
+  function ckU(n) { if (ckDist()) return (S.ck.D && S.ck.D.u && S.ck.D.u[n]) || null; return ((typeof state !== 'undefined' && state.u) || []).filter(function (x) { return x && x.n === n; })[0] || null; }
   function ckPari(u, dom) {   /* { k, t } du lieu, ou null */
     var P = serParis(u), k = dom ? 'dom' : 'ext';
     return P.filter(function (q) { return q.k === k; })[0] || P.filter(function (q) { return q.k === 'glob'; })[0] || null;
   }
   function ckAJour(u, q) { var R = u.psL && u.psL[q.k]; if (!R || R.t !== q.t) return false; var d = new Date(R.at || 0); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate() === ckJour() || !!R.err; }
   function ckHtml() {   /* 20261029b : sous-boutons ; 🎯 = ckAuj (écran 20261028p) */
-    var k = ckSous();
-    return '<div id="g45ck">' + ckNav() + (k === 'c' ? ckCal() : k === 'g' ? ckGra() : ckAuj()) + '</div>';
+    var k = ckSous(), dist = ckDist();
+    if (dist && (!S.ck.D || Date.now() - (S.ck.Dt || 0) > 180000)) setTimeout(ckCharger, 0);
+    if (dist && !S.ck.D) return '<div id="g45ck">' + ckNav() + '<div style="font-size:15px;color:#fff;padding:14px 4px;">' + (S.ck.Derr ? '⚠️ Cockpit BET45 indisponible pour le moment (' + S.ck.Derr + ').' : '⏳ Lecture du Cockpit BET45…') + '</div></div>';
+    var maj = dist && S.ck.D.maj ? '<div style="font-size:13px;color:#c9d3ee;margin:-4px 0 8px;">Cockpit BET45 mis à jour le ' + new Date(S.ck.D.maj).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) + '</div>' : '';
+    return '<div id="g45ck">' + ckNav() + maj + (k === 'c' ? ckCal() : k === 'g' ? ckGra() : ckAuj()) + '</div>';
   }
   /* 20261029d : carte d'un match (écran 🎯 et jours à venir du 📅 Calendrier) ; fut = pas de « ⏳ Calcul » (ckLancer ne regarde que aujourd'hui / cette nuit) */
   function ckCarte(m, u, d, fut) {
@@ -76055,14 +76059,14 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       var ico = m.d ? '🏠' : '✈️', q = ckPari(u, m.d), C = null;
       try { if (u.note && (u.type !== 'joueur' || /🏠|✈|🛫/.test(u.note))) C = _g45AgConsigne(u.note, !!m.d); } catch (x) {}
       var pal = '';
-      try { if (u.s != null && typeof STRATS !== 'undefined' && STRATS[u.s]) { var p = (typeof _g45PalLieu === 'function') ? _g45PalLieu(u, m.d ? 'dom' : 'ext') : (parseInt(u.l, 10) || 1), mi = STRATS[u.s][p - 1];
+      try { var pP = u._pub ? (u.pm && u.pm[m.d ? 'dom' : 'ext']) : null; if (u._pub ? !!pP : (u.s != null && typeof STRATS !== 'undefined' && STRATS[u.s])) { var p = pP ? pP.p : (typeof _g45PalLieu === 'function') ? _g45PalLieu(u, m.d ? 'dom' : 'ext') : (parseInt(u.l, 10) || 1), mi = pP ? pP.mi : STRATS[u.s][p - 1];   /* 20261029g : u._pub = carte publiée (palier + mise de gones) */
         if (mi != null) pal = '<div style="margin-top:6px;"><span style="display:inline-block;background:rgba(240,176,32,.22);border:1px solid #f0b020;color:#fff;font-size:15px;font-weight:800;border-radius:7px;padding:3px 10px;">🚀 Palier ' + p + ' · mise ' + (Math.round(mi * 100) / 100).toLocaleString('fr-FR') + ' € <span style="color:#f5c542;">' + new Array((parseInt(u.s, 10) || 0) + 1).join('⭐') + '</span></span></div>'; } } catch (x) {}
       var R = q && u.psL && u.psL[q.k], ps = '';
       if (R && !R.err && R.p && R.p.length) {
-        var pa = window._g45PalCarte(R.tot, u);
+        var pa = R.pa || window._g45PalCarte(R.tot, u);
         ps = '<div style="font-size:15px;font-weight:700;margin-top:6px;background:rgba(47,107,255,.25);border-radius:8px;padding:5px 8px;">📊 ' + ({ glob: '🌍', dom: '🏠', ext: '✈️' }[q.k]) + ' pire série '
           + R.p.map(function (v) { return '<span style="color:' + col(v) + ';">' + v + '</span>'; }).join(' · ') + ' → <b>' + pa.p + ' palier' + (pa.p > 1 ? 's' : '') + ' ' + pa.ico + '</b>' + (pa.mise != null ? ' · ' + (Math.round(pa.mise * 100) / 100).toLocaleString('fr-FR') + ' €' : '') + ' <span style="font-weight:400;color:#c9d3ee;">· 4 saisons</span></div>';
-      } else if (!fut && q && !ckAJour(u, q)) ps = '<div style="font-size:13px;color:#c9d3ee;margin-top:6px;">⏳ Calcul de la série sur 4 saisons…</div>';
+      } else if (!fut && !u._pub && q && !ckAJour(u, q)) ps = '<div style="font-size:13px;color:#c9d3ee;margin-top:6px;">⏳ Calcul de la série sur 4 saisons…</div>';
       h += '<div style="background:rgba(20,28,48,.95);border:1px solid #2a3a63;border-left:4px solid ' + e(u.color || '#5ad6ff') + ';border-radius:12px;padding:10px 12px;margin-bottom:10px;color:#fff;">'
         + '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><div style="font-size:16px;font-weight:800;">' + (SP[m.sp] || '') + ' ' + e(u.n) + ' ' + ico + ' <span style="font-weight:400;color:#c9d3ee;">vs ' + e(m.adv) + '</span></div>'
         + '<div style="flex:none;font-size:18px;font-weight:900;background:rgba(11,16,29,.85);border-radius:8px;padding:2px 9px;">' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) + '</div></div>'
@@ -76071,14 +76075,15 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     return h;
   }
   function ckAgTout() {   /* liste complète de l'Agenda du jour (7 jours), ou [] */
+    if (ckDist()) return (S.ck.D && S.ck.D.ag) || [];
     var A = window._g45CkAg; if (!A || A.j !== ckJour()) { try { A = JSON.parse(localStorage.getItem('g45ck_ag') || 'null'); } catch (e) { A = null; } }
     return (A && A.j === ckJour() && A.L) || [];
   }
   function ckAuj() {
     var L = ckListe(), e = function (x) { return String(x == null ? '' : x).replace(/[<>&"]/g, ''); };
     var h = '<div><div style="margin-top:4px;background:rgba(20,28,48,.95);border:1px solid #2a3a63;border-radius:12px;padding:12px;color:#fff;">'
-      + '<div style="font-size:18px;font-weight:800;">🏁 Cockpit BET45 — tes cartes qui jouent</div>'
-      + '<div style="font-size:14px;color:#c9d3ee;margin-top:4px;line-height:1.5;">Les équipes et joueurs de ton mur qui jouent aujourd\'hui et cette nuit, avec <b style="color:#fff;">ton pari</b>, ton <b style="color:#fff;">palier et ta mise</b>, et la <b style="color:#fff;">pire série sur 4 saisons</b> de ce pari.</div></div>';
+      + '<div style="font-size:18px;font-weight:800;">🏁 Cockpit BET45 — ' + (ckDist() ? 'les cartes qui jouent' : 'tes cartes qui jouent') + '</div>'
+      + (ckDist() ? '<div style="font-size:14px;color:#c9d3ee;margin-top:4px;line-height:1.5;">Les équipes et joueurs du Cockpit BET45 qui jouent aujourd\'hui et cette nuit, avec <b style="color:#fff;">le pari</b>, <b style="color:#fff;">le palier, la mise</b> et la <b style="color:#fff;">pire série sur 4 saisons</b> de ce pari.</div></div>' : '<div style="font-size:14px;color:#c9d3ee;margin-top:4px;line-height:1.5;">Les équipes et joueurs de ton mur qui jouent aujourd\'hui et cette nuit, avec <b style="color:#fff;">ton pari</b>, ton <b style="color:#fff;">palier et ta mise</b>, et la <b style="color:#fff;">pire série sur 4 saisons</b> de ce pari.</div></div>');
     if (!L) return h + '<div style="font-size:15px;color:#fff;padding:14px 4px;">⏳ Lecture des matchs de ton mur…</div></div>';
     if (!L.length) return h + '<div style="font-size:15px;color:#fff;padding:14px 4px;">Aucune carte de ton mur ne joue aujourd\'hui ni cette nuit.</div></div>';
     var col = function (v) { return v <= 2 ? '#1ed760' : v <= 4 ? '#ff9f43' : '#ff5a5a'; }, jr = '', auj = new Date().toDateString();
@@ -76099,6 +76104,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   function ckSous() { var v = 'a'; try { v = localStorage.getItem('g45ck_sous') || 'a'; } catch (e) {} return /^[acg]$/.test(v) ? v : 'a'; }
   function ckYmd(d) { return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
   function ckParis() {   /* [{ j, b (bet), r (true / false / null en cours), g (gain €) }] */
+    if (ckDist()) return ((S.ck.D && S.ck.D.P) || []).slice();
     var L = [], jr = function (b) { if (/^\d{4}-\d\d-\d\d$/.test(String(b.date || ''))) return b.date; var t = +b.id; return t > 1e12 ? ckYmd(new Date(t)) : ''; };
     ((typeof state !== 'undefined' && state.a) || []).forEach(function (b) {
       if (!b || !b.isS || b.isPending || (b.win !== true && b.win !== false)) return;
@@ -76176,7 +76182,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
         + tu('Montantes bouclées', ok + ' ✅') + tu('Plus haut palier', hp ? 'P' + hp.l + ' (' + e(hp.n) + ')' : '—', hp && hp.l >= 4 ? '#ff9f43' : '#fff') + '</div>');
     var C = {}; P.forEach(function (x) { var k = x.b.n + lieuI(x.b), c = C[k] = C[k] || { n: k, c: x.b.n, ok: 0, t: 0, g: 0 }; c.t++; if (x.r) c.ok++; c.g += x.g; });
     h += ckBox('<div style="font-size:16px;font-weight:800;margin-bottom:4px;">Par montante (carte + lieu)</div>' + Object.keys(C).map(function (k) { return C[k]; }).sort(function (a, b) { return b.g - a.g; }).map(function (c) {
-      var ix = ((typeof state !== 'undefined' && state.u) || []).findIndex(function (u) { return u && u.n === c.c; });   /* 20261029f : ligne → fiche de la carte (Bilan / Graphs / Archive / Types) */
+      var ix = ckDist() ? -1 : ((typeof state !== 'undefined' && state.u) || []).findIndex(function (u) { return u && u.n === c.c; });   /* 20261029f : ligne → fiche de la carte (Bilan / Graphs / Archive / Types) */
       return '<div ' + (ix >= 0 ? 'onclick="g45CkFiche(' + ix + ')" ' : '') + 'style="display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-bottom:1px solid #1c2747;font-size:15px;' + (ix >= 0 ? 'cursor:pointer;' : '') + '"><b>' + e(c.n) + (ix >= 0 ? ' <span style="color:#8fb4ff;">›</span>' : '') + '</b><span>' + c.ok + '/' + c.t + ' · <b style="color:' + (c.g >= 0 ? '#1ed760' : '#ff5a5a') + ';">' + ckEur(c.g) + '</b></span></div>';
     }).join(''));
     return h;
@@ -76187,9 +76193,64 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   window.g45CkPer = function (p) { S.ck.per = p; ckRedessiner(); };
   window.g45CkFiche = function (ix) { var u = ((typeof state !== 'undefined' && state.u) || [])[ix]; if (u && typeof openClub === 'function') openClub(u.n, ix); };
   window._g45CkParis = ckParis;   /* tests */
+  /* ═══ 20261029g — 🏁 COCKPIT BET45 POUR TOUT LE MONDE (« le Cockpit dans Tendances doit être visible pour tout le monde, sinon ça sert à
+     rien » → « auto, avec mise + palier + cote, et on montre le graphique ») ═══
+     gones (_g45SanteActive, appareil d'Antoine, clé GitHub de la synchro des paris) PUBLIE son Cockpit dans données/cockpit_bet45.json (non
+     chiffré) : toutes les 5 min si quelque chose a changé (empreinte g45ck_pub_h). Contenu : ag (matchs des cartes du mur, liste de l'Agenda,
+     7 jours), u (ces cartes : note / pari, couleur, ⭐, u.psL avec pa = paliers + mise déjà calculés, pm = palier + mise du jour par lieu ;
+     PAS la note perso u.np), P (paris Cockpit : jour, résultat, gain, carte, lieu, type, adversaire, palier, mise, cote). bet45 (ckDist) LIT ce
+     fichier (raw.githubusercontent, relu toutes les 3 min) : tout le monde voit le Cockpit d'Antoine ; rien n'est calculé chez eux. */
+  function ckDist() { if (window._g45CkForceDist != null) return !!window._g45CkForceDist; try { return typeof _g45SanteActive === 'function' && !_g45SanteActive(); } catch (e) { return false; } }
+  var CK_RAW = 'https://raw.githubusercontent.com/gones45140/gones45/main/donn%C3%A9es/cockpit_bet45.json';
+  var CK_API = 'https://api.github.com/repos/gones45140/gones45/contents/donn%C3%A9es/cockpit_bet45.json';
+  async function ckCharger() {
+    if (S.ck.charge) return; S.ck.charge = 1;
+    try {
+      var r = await fetch(CK_RAW + '?t=' + Date.now(), { cache: 'no-store' });
+      if (!r.ok) throw new Error(r.status === 404 ? 'pas encore publié' : 'réseau ' + r.status);
+      var J = await r.json(); if (!J || !J.u) throw new Error('fichier vide');
+      Object.keys(J.u).forEach(function (n) { J.u[n]._pub = 1; });
+      S.ck.D = J; S.ck.Dt = Date.now(); S.ck.Derr = '';
+    } catch (e) { S.ck.Dt = Date.now(); S.ck.Derr = (e && e.message) || 'réseau'; }
+    S.ck.charge = 0; ckRedessiner();
+  }
+  function ckPubData() {
+    var A = window._g45CkAg; if (!A || A.j !== ckJour()) { try { A = JSON.parse(localStorage.getItem('g45ck_ag') || 'null'); } catch (e) { A = null; } }
+    if (!A || A.j !== ckJour()) return null;
+    var U = {};
+    (A.L || []).forEach(function (m) {
+      var u = ckU(m.n); if (!u || U[u.n]) return;
+      var x = { n: u.n, color: u.color || '', s: u.s, type: u.type || '', sport: u.sport || '', note: u.note || '', pm: {}, psL: null };
+      ['dom', 'ext'].forEach(function (l) { try { if (u.s != null && typeof STRATS !== 'undefined' && STRATS[u.s]) { var p = (typeof _g45PalLieu === 'function') ? _g45PalLieu(u, l) : (parseInt(u.l, 10) || 1); x.pm[l] = { p: p, mi: STRATS[u.s][p - 1] }; } } catch (e) {} });
+      if (u.psL) { x.psL = {}; Object.keys(u.psL).forEach(function (k) { var R = Object.assign({}, u.psL[k]); if (!R.err && R.p) { try { R.pa = window._g45PalCarte(R.tot, u); } catch (e) {} } x.psL[k] = R; }); }
+      U[u.n] = x;
+    });
+    var P = ckParis().map(function (y) { var b = y.b; return { j: y.j, r: y.r, g: y.g, b: { n: b.n, domicile: b.domicile || '', type: b.type || '', target: b.target || '', l: b.l || 1, m: b.m, cote: b.cote } }; });
+    return { v: 1, j: A.j, ag: A.L || [], u: U, P: P };
+  }
+  async function ckPublier() {
+    if (ckDist() || typeof _g45SanteActive !== 'function' || !_g45SanteActive() || S.ck.pub) return;
+    var tok = null; try { tok = localStorage.getItem('gones45_github_token'); } catch (e) {} if (!tok) return;
+    S.ck.pub = 1;
+    try {
+      try { await ckLancer(); } catch (e) {}   /* liste du jour (Agenda) + séries 📊 à jour avant d'écrire */
+      var D = ckPubData(); if (!D) return;
+      var h = JSON.stringify(D), h0 = null; try { h0 = localStorage.getItem('g45ck_pub_h'); } catch (e) {}
+      var em = String(h.length) + ':' + h.split('').reduce(function (a, c) { return (a * 31 + c.charCodeAt(0)) | 0; }, 7);
+      if (em === h0) return;
+      D.maj = new Date().toISOString();
+      var H = { 'Authorization': 'token ' + tok, 'Accept': 'application/vnd.github.v3+json' }, sha = null;
+      var g = await fetch(CK_API + '?t=' + Date.now(), { headers: H, cache: 'no-store' }); if (g.ok) sha = (await g.json()).sha; else if (g.status !== 404) return;
+      var body = { message: 'Cockpit BET45 ' + D.maj, content: btoa(unescape(encodeURIComponent(JSON.stringify(D)))) }; if (sha) body.sha = sha;
+      var w = await fetch(CK_API, { method: 'PUT', headers: Object.assign({ 'Content-Type': 'application/json' }, H), body: JSON.stringify(body) });
+      if (w.ok) { try { localStorage.setItem('g45ck_pub_h', em); } catch (e) {} }
+    } catch (e) {} finally { S.ck.pub = 0; }
+  }
+  window._g45CkPubData = ckPubData; window._g45CkPublier = ckPublier; window._g45CkCharger = ckCharger;   /* tests */
+  setTimeout(function () { ckPublier(); setInterval(ckPublier, 300000); }, 45000);
   function ckRedessiner() { var z = document.getElementById('g45ck'); if (!z) return; var t = document.createElement('div'); t.innerHTML = ckHtml(); z.parentNode.replaceChild(t.firstChild, z); }
   async function ckLancer() {
-    var Q = S.ck; if (Q.enCours) return; Q.enCours = 1;
+    var Q = S.ck; if (Q.enCours || ckDist()) return; Q.enCours = 1;
     try {
       if (!ckListe() && Q.relu !== ckJour() && typeof window._g45AgRelire === 'function') { Q.relu = ckJour(); try { await window._g45AgRelire(); } catch (e) {} ckRedessiner(); }
       var L = ckListe() || [], vu = {}, ch = false;
