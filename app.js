@@ -73335,7 +73335,9 @@ function _g45Nhl1N2(cH, cA, cPro) {
      Florida ≈ 1,63 / 3,86 / 3,46, Vegas ≈ 2,19 / 3,76 / 2,29. */
   var iH = 1 / cH, iA = 1 / cA, m = iH + iA, pH = iH / m, pA = iA / m, pN = Math.min(0.45, (1 / cPro) / 1.12), qH = 0.5 + (pH - 0.5) * 0.5;
   var h60 = pH - pN * qH, a60 = pA - pN * (1 - qH); if (!(h60 > 0.02 && a60 > 0.02)) return null;
-  var c = function (p) { return Math.round(100 / (p * 1.16)) / 100; };
+  /* 20261031y (captures Winamax Carolina 1,64 / 4,30 / 3,90 et Tampa 1,72 / 4,20 / 3,55 : marge ≈ 10 %, alors que Florida / Vegas ≈ 16 %) :
+     la marge Winamax VARIE d'un match à l'autre → 13 % (milieu), écart ≈ ± 0,05 sur le favori. Probabilités justes (Carolina 55,8 % / Winamax 55,5 %). */
+  var c = function (p) { return Math.round(100 / (p * 1.13)) / 100; };
   return { h: c(h60), n: c(pN), a: c(a60) };
 }
 window._g45Nhl1N2 = _g45Nhl1N2;
