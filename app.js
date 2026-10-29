@@ -76293,7 +76293,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       }
       /* 20261029r (« un petit fond pour chaque équipe pour les différencier ») : liseré + dégradé à la couleur de la carte, logo en filigrane (ckFond) */
       var Fd = ckDist() ? ((S.ck.D && S.ck.D.lg && S.ck.D.lg[c.c]) || {}) : ckFond(c.c), cc = /^#[0-9a-f]{6}$/i.test(Fd.c || '') ? Fd.c : '#4d84ff';
-      return '<div ' + (ix >= 0 ? (ckDist() ? 'data-n="' + e(c.c) + '" onclick="g45CkFicheDist(this.dataset.n)" ' : 'onclick="g45CkFiche(' + ix + ')" ') : '') + 'style="position:relative;overflow:hidden;display:flex;flex-wrap:wrap;align-items:flex-start;gap:4px 12px;padding:9px 10px;margin-bottom:6px;border-radius:10px;border-left:4px solid ' + cc + ';background:linear-gradient(90deg,' + cc + '8c 0%,' + cc + '55 50%,' + cc + '30 100%);text-shadow:0 1px 3px rgba(0,0,0,.85);' + (ix >= 0 ? 'cursor:pointer;' : '') + '">'
+      return '<div ' + (ix >= 0 ? (ckDist() ? 'data-n="' + e(c.c) + '" onclick="g45CkFicheDist(this.dataset.n)" ' : 'onclick="g45CkFiche(' + ix + ')" ') : '') + 'class="g45ck-row" style="position:relative;overflow:hidden;display:flex;flex-wrap:wrap;align-items:flex-start;gap:4px 12px;padding:9px 10px;margin-bottom:6px;border-radius:10px;border-left:4px solid ' + cc + ';background:linear-gradient(90deg,' + cc + '8c 0%,' + cc + '55 50%,' + cc + '30 100%);text-shadow:0 1px 3px rgba(0,0,0,.85);' + (ix >= 0 ? 'cursor:pointer;' : '') + '">'
         + (Fd.img ? '<img src="' + e(Fd.img) + '" alt="" loading="lazy" onerror="this.remove()" style="position:absolute;right:22%;top:50%;transform:translateY(-50%);height:150%;max-width:30%;object-fit:contain;opacity:.38;pointer-events:none;">' : '')
         + '<div style="flex:0 1 auto;min-width:0;position:relative;background:rgba(11,16,29,.62);border-radius:8px;padding:3px 8px;"><b style="font-size:15px;">' + e(c.c) + (ix >= 0 ? ' <span style="color:#8fb4ff;">›</span>' : '') + '</b>'
         + (det.length > 1 || (det.length === 1 && !c.L.glob) ? '<div style="font-size:13px;color:#c9d3ee;margin-top:2px;">' + det.join(' · ') + '</div>' : '') + '</div>'
@@ -76396,7 +76396,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   /* 20261029t (capture « Par carte » annotée : « recentralise le type entre l'équipe et le logo ») : bloc du pari centré dans l'espace entre le nom
      et le logo (logo à right:22 %, donc marge droite 30 %) à partir de 700 px ; téléphone : sous le nom, à gauche. */
   try { if (!document.getElementById('g45ck-ty-css')) { var stT = document.createElement('style'); stT.id = 'g45ck-ty-css';
-    stT.textContent = '.g45ck-tyw{flex:1 1 260px;min-width:0;display:flex}@media(min-width:700px){.g45ck-tyw{justify-content:center;margin-right:30%}}';
+    stT.textContent = '.g45ck-tyw{flex:1 1 260px;min-width:0;display:flex}@media(min-width:700px){.g45ck-row{display:grid!important;grid-template-columns:minmax(240px,330px) minmax(0,1fr) auto;align-items:start}.g45ck-row>div{justify-self:start}.g45ck-tyw{justify-content:flex-start}}';   /* 20261029u : colonne alignée (« re-montrer le décalage ») */
     (document.head || document.documentElement).appendChild(stT); } } catch (e) {}
   window._g45SerNomJ = serNomJ; window._g45SerStatJ = serStatJ; window._g45SerLegsJ = serLegsJ; window._g45SerJoueur = serJoueur;   /* tests */
   S.ser = S.ser || { etat: 0, f: 0, n: 0 };
