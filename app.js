@@ -83902,6 +83902,8 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
   window.g45ArchOuv = function (id) { ST.ouv[id] = !ST.ouv[id]; if (ST.el) window.g45CotesArch(ST.el, ST.lg, ST.sp); };
   window.g45ArchEq = function (x) { ST.eq[ST.lg] = x; if (ST.el) window.g45CotesArch(ST.el, ST.lg, ST.sp); };
   window.g45ArchMois = function (x) { ST.mois[ST.lg] = x; if (ST.el) window.g45CotesArch(ST.el, ST.lg, ST.sp); };
+  /* 20261031e (capture de la liste des 52 mois : « peut faire un clic ouvrable par saison ? ») : liste Saison + liste des mois de CETTE saison */
+  window.g45ArchSaison = function (sa) { var ML = moisListe().filter(function (m) { return SAISON(m) === sa; }); if (ML.length) ST.mois[ST.lg] = ML[0]; if (ST.el) window.g45CotesArch(ST.el, ST.lg, ST.sp); };
   window._g45ArchCarte = carte;   /* tests */
   window.g45CotesArch = async function (el, lg, sp) {
     ST.el = el; ST.lg = lg; ST.sp = sp;
@@ -83913,8 +83915,9 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
     var sel = 'background:#16213f;color:#fff;border:1px solid #6d9dff;border-radius:8px;padding:8px 10px;font-size:15px;font-weight:700;margin:0 8px 8px 0;max-width:100%;';
     var h = '<div style="font-size:16px;font-weight:900;letter-spacing:1px;color:#fff;margin-bottom:8px;">📦 COTES GARDÉES <span style="font-size:13px;color:#9fb0c7;font-weight:600;letter-spacing:0;">(avant-match, ' + ((typeof _g45DkMode === 'function' && _g45DkMode() === 'fr') ? 'estimée France' : 'DraftKings') + ')</span></div>'
       + '<select onchange="g45ArchEq(this.value)" style="' + sel + '"><option value="">Toutes les équipes</option>' + Object.keys(eqs).sort(function (a, b) { return String(eqs[a]).localeCompare(String(eqs[b])); }).map(function (k) { return '<option value="' + k + '"' + (k === eq ? ' selected' : '') + '>' + esc(eqs[k]) + '</option>'; }).join('') + '</select>'
-      + '<select onchange="g45ArchMois(this.value)" style="' + sel + '">' + ML.map(function (m, i) { var p = m.split('-'), g = SAISON(m), g0 = i ? SAISON(ML[i - 1]) : '';
-          return (g !== g0 ? (i ? '</optgroup>' : '') + '<optgroup label="Saison ' + g + '">' : '') + '<option value="' + m + '"' + (m === mo ? ' selected' : '') + '>' + ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'][+p[1] - 1] + ' ' + p[0] + '</option>'; }).join('') + '</optgroup></select>';
+      + (function () { var SA = [], saC = SAISON(mo); ML.forEach(function (m) { var g = SAISON(m); if (SA.indexOf(g) < 0) SA.push(g); });
+          return '<select onchange="g45ArchSaison(this.value)" style="' + sel + '">' + SA.map(function (g) { return '<option value="' + g + '"' + (g === saC ? ' selected' : '') + '>Saison ' + g + '</option>'; }).join('') + '</select>'
+            + '<select onchange="g45ArchMois(this.value)" style="' + sel + '">' + ML.filter(function (m) { return SAISON(m) === saC; }).map(function (m) { var p = m.split('-'); return '<option value="' + m + '"' + (m === mo ? ' selected' : '') + '>' + ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'][+p[1] - 1] + ' ' + p[0] + '</option>'; }).join('') + '</select>'; })();
     var L = ids.filter(function (i) { return !eq || String(D[i].h.id) === eq || String(D[i].a.id) === eq; });
     if (nR) h += '<div style="font-size:13px;color:#ffb36b;margin:2px 0 4px;">Matchs rattrapés (avant le 29/10/2026) : cotes de CLÔTURE seulement (1N2, handicap, total), pas de cotes joueurs.</div>';
     h += L.length ? L.map(function (i) { return carte(D[i], i, eq); }).join('') : '<div style="font-size:14px;color:#c9d3ee;padding:8px 2px;">Aucun match gardé pour ce mois (pas de match, ou rattrapage pas encore passé).</div>';
