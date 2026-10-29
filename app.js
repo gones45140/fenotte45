@@ -83633,8 +83633,13 @@ window._g45MqPalHtml = function (pire, pd) {
       return { j: j, d: q[1], cle: q[1] };
     }).filter(Boolean).sort(function (a, b) { return a.cle - b.cle || a.d - b.d; });
     var FR = window._G45_TR_FR || 0.94, N = tout ? L.length : Math.min(6, L.length);
+    /* 20261030v (« ce bloc doit devenir ouvrable et fermable ») : titre cliquable ▸ Ouvrir / ▾ Replier, fermé par défaut, choix gardé (g45cj_ouvert) */
+    var OUV = false; try { OUV = localStorage.getItem('g45cj_ouvert') === '1'; } catch (e) {}
     var h = '<div class="g45-cj" style="background:rgba(17,22,38,.95);border-radius:12px;padding:12px;margin:12px 0;color:#fff;">'
-      + '<div style="font-size:15px;font-weight:800;letter-spacing:1px;margin-bottom:8px;">🏦 COTES JOUEURS <span style="font-size:13px;color:#9fb0c7;font-weight:600;letter-spacing:0;">(DraftKings, indication)</span></div>'
+      + '<div onclick="g45CjOuvrir()" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:15px;font-weight:800;letter-spacing:1px;' + (OUV ? 'margin-bottom:8px;' : '') + '"><span>🏦 COTES JOUEURS <span style="font-size:13px;color:#9fb0c7;font-weight:600;letter-spacing:0;">(DraftKings, indication)</span></span>'
+      + '<span style="font-size:14px;color:#8fb4ff;letter-spacing:0;white-space:nowrap;">' + (OUV ? '▾ Replier' : '▸ Ouvrir') + '</span></div>';
+    if (!OUV) return h + '</div>';
+    h += ''
       + '<div style="font-size:13px;color:#c9d3ee;margin-bottom:3px;">Cote affichée :</div><div>' + bt(window._g45DkMode() === 'fr', '🇫🇷 Estimée France', "g45DkChoix('fr')") + bt(window._g45DkMode() !== 'fr', '🏦 DraftKings (ESPN)', "g45DkChoix('dk')") + '</div>'   /* 20261030u */
       + '<div>' + C.t.map(function (x) { return bt(x[0] === T[0], x[1], "g45CjTab('" + lg + "','" + eid + "','" + x[0] + "')"); }).join('') + '</div>';
     if (!L.length) return h + '<div style="font-size:14px;color:#c9d3ee;padding:6px 2px;">Pas de cote pour ce pari sur ce match.</div></div>';
@@ -83654,6 +83659,10 @@ window._g45MqPalHtml = function (pire, pd) {
   window.g45CjTab = function (lg, eid, tab, tout) {
     var D = (MEM[lg + '_' + eid] || {}).D; if (!D) return;
     document.querySelectorAll('[data-g45cj="' + lg + '_' + eid + '"]').forEach(function (b) { b.setAttribute('data-tab', tab); b.innerHTML = html(lg, eid, D, tab, tout); var el = b.parentNode; if (el) el._g45Cj = b.outerHTML; });
+  };
+  window.g45CjOuvrir = function () {   /* 20261030v */
+    try { localStorage.setItem('g45cj_ouvert', localStorage.getItem('g45cj_ouvert') === '1' ? '' : '1'); } catch (e) {}
+    document.querySelectorAll('[data-g45cj]').forEach(function (b) { var k = String(b.getAttribute('data-g45cj')), i = k.lastIndexOf('_'); window.g45CjTab(k.slice(0, i), k.slice(i + 1), b.getAttribute('data-tab') || ''); });
   };
   window.g45DkChoix = function (m) {   /* 20261030u : sélecteur, puis blocs ouverts redessinés */
     try { localStorage.setItem('g45dk_aff', m === 'fr' ? 'fr' : 'dk'); } catch (e) {}
