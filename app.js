@@ -75270,7 +75270,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   function lib(lg, an) { if (rg() && typeof _g45SgLabel === 'function') return _g45SgLabel(lg, an); if (lg === 'nfl' || lg === 'mlb') return String(an); if (S.ctx) return (an - 1) + '-' + String(an).slice(2); return CAL.indexOf(lg) >= 0 ? String(an) : an + '-' + String(an + 1).slice(2); }
   function libCombo(c) {
     var p = [];
-    if (c.res === 'vic') p.push(hk() ? 'Victoire (temps régl.)' : 'Victoire'); else if (c.res === 'vqr') p.push(hk() || us() ? 'Vainqueur (prolong. comprise)' : 'Vainqueur'); else if (c.res === 'nul') p.push('Nul'); else if (c.res === 'def') p.push('Défaite');
+    if (c.res === 'vic') p.push(hk() ? 'Victoire (temps régl.)' : 'Victoire'); else if (c.res === 'vqr') p.push(hk() || us() ? 'Vainqueur (prolong. comprise)' : 'Vainqueur'); else if (c.res === 'nul') p.push('Nul'); else if (c.res === 'def') p.push(hk() ? 'Défaite (temps régl.)' : 'Défaite'); else if (c.res === 'per') p.push('Perdant (prolong. comprise)');   /* 20261031m */
     if (c.ou) p.push((c.ou === 'ov' ? 'Over ' : 'Under ') + c.L);
     if (c.bts) p.push('Les deux marquent : ' + (c.bts === 'oui' ? 'oui' : 'non'));
     if (c.te) p.push(motUnite() + ' équipe ' + (c.te === 'ov' ? 'Over ' : 'Under ') + c.TL);
@@ -75320,6 +75320,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   function passe(c, m) {
     var gf = m[2], ga = m[3];
     if (c.res === 'vqr' && !(gf > ga)) return false;
+    if (c.res === 'per' && !(gf < ga)) return false;   /* 20261031m : perd le match, prolongation / TAB compris (contraire de Vainqueur) */
     if (m[4]) { var mn = Math.min(gf, ga); gf = mn; ga = mn; }   /* hockey : prolongation / TAB → égalité au temps réglementaire */
     if (c.res === 'vic' && !(gf > ga)) return false;
     if (c.res === 'nul' && gf !== ga) return false;
@@ -75966,7 +75967,9 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var q0 = h.length, q4 = null;   /* 20261021f : repères des onglets */
     if (us()) h += lab('Résultat (prolongation comprise)') + b(c.res === 'vqr', 'Vainqueur', "g45CrSet('res','vqr')") + b(c.res === 'def', 'Défaite', "g45CrSet('res','def')") + b(c.res === '', 'Aucun', "g45CrSet('res','')");
     else h += lab('Résultat') + b(c.res === 'vic', 'Victoire', "g45CrSet('res','vic')") + b(c.res === 'vqr', 'Vainqueur', "g45CrSet('res','vqr')")
-      + b(c.res === 'nul', 'Nul', "g45CrSet('res','nul')") + b(c.res === 'def', 'Défaite', "g45CrSet('res','def')") + b(c.res === '', 'Aucun', "g45CrSet('res','')");
+      + b(c.res === 'nul', 'Nul', "g45CrSet('res','nul')") + b(c.res === 'def', 'Défaite', "g45CrSet('res','def')")
+      /* 20261031m (« Défaite compté comment ? prolongation incluse ? » → temps réglementaire, nul = perdu, comme Winamax ; « ok ajoute ») : hockey */
+      + (hk() ? b(c.res === 'per', 'Perdant', "g45CrSet('res','per')") : '') + b(c.res === '', 'Aucun', "g45CrSet('res','')");
     var q1 = h.length;
     var sel = '<select onchange="g45CrSet(\'L\',this.value)" style="background:#16213f;color:#fff;border:1px solid #6d9dff;border-radius:8px;padding:7px 10px;font-size:14px;margin:0 6px 6px 0;">';
     var LL = lignes(); if (LL.indexOf(c.L) < 0) LL.push(c.L); LL.sort(function (x, y) { return x - y; });
@@ -76453,7 +76456,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       var p = +m[2], q = +m[3], ox = hock && m[4];
       if (c.res === 'vic' && !(p > q && !ox)) return false;
       if (c.res === 'vqr' && !(p > q)) return false;
-      if (c.res === 'def' && !(p < q)) return false;
+      if (c.res === 'def' && !(p < q && !ox)) return false;   /* 20261031m : hockey = défaite au temps réglementaire (nul → perdu), comme les critères et Winamax */
       if (c.ou) { var T = ox ? 2 * Math.min(p, q) : p + q; if (T === c.L) return null; if (c.ou === 'ov' ? !(T > c.L) : !(T < c.L)) return false; }
       if (c.bts) { var b2 = p > 0 && q > 0; if ((c.bts === 'oui') !== b2) return false; }
       var pT = ox ? Math.min(p, q) : p, qT = ox ? Math.min(p, q) : q;   /* 20261028l : buts d'une équipe, hockey temps réglementaire */
