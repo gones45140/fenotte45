@@ -73338,7 +73338,9 @@ function _g45Nhl1N2(cH, cA, cPro) {
   /* 20261031y (captures Winamax Carolina 1,64 / 4,30 / 3,90 et Tampa 1,72 / 4,20 / 3,55 : marge ≈ 10 %, alors que Florida / Vegas ≈ 16 %) :
      la marge Winamax VARIE d'un match à l'autre → 13 % (milieu), écart ≈ ± 0,05 sur le favori. Probabilités justes (Carolina 55,8 % / Winamax 55,5 %). */
   /* 20261031z (3 captures de plus : St. Louis / Boston, Dallas / Montréal, Nashville / Washington ≈ 10-11 %) : 5 matchs sur 7 ≈ 10 % → 11 %. */
-  var c = function (p) { return Math.round(100 / (p * 1.11)) / 100; };
+  /* 20261101a (captures Pittsburgh 2,65 / 4,10 / 2,10, Detroit 1,98 / 4,00 / 2,90, Minnesota 1,82 / 4,10 / 3,30 : marge 9,6-10 %) → 10 %.
+     Contrôle Detroit (DK 1,62 / 2,36, prolongation ≈ 3,90) : ≈ 1,94 / 3,97 / 3,00 contre Winamax 1,98 / 4,00 / 2,90. */
+  var c = function (p) { return Math.round(100 / (p * 1.10)) / 100; };
   return { h: c(h60), n: c(pN), a: c(a60) };
 }
 window._g45Nhl1N2 = _g45Nhl1N2;
