@@ -83481,3 +83481,94 @@ window._g45MqPalHtml = function (pire, pd) {
     closeClub._g45Ck = true;
   }
 })();
+
+/* ═══ 20261030p — 🏦 COTES JOUEURS dans la fenêtre de match (Antoine, capture fenêtre Hurricanes – Blue Jackets : « et ici pour l'ensemble
+   des joueurs », maquette fm-tel « oui ») ═══ NHL / NFL / NBA, match pas fini : propBets DraftKings du match (SONDÉS 20261030j / k / n) +
+   effectifs ESPN des 2 équipes (noms, sigle, couleur). Boutons : NHL Buteur (230) / Passeur (219, 1+) / Pointeur (218, 1+) / 2 buts ou +
+   (39) ; NFL TD (31) / 2 TD ou + (32) ; NBA Points / Rebonds / Passes / Pts + reb + passes (Milestones 218 / 220 / 219 / 225 : paliers du
+   joueur, « 20+ 1,45 · 25+ 2,30 »). 6 joueurs puis « ▾ voir les autres ». Bloc gardé (el._g45Cj) et remis si la fenêtre se redessine. */
+(function () {
+  var r0 = window._renderGenericDetail; if (typeof r0 !== 'function' || r0._g45Cj) return;
+  var CFG = {
+    nhl: { sp: 'hockey', t: [['g', '🥅 Buteur', '230', null], ['a', '🎯 Passeur', '219', 1], ['p', '⭐ Pointeur', '218', 1], ['g2', '2 buts ou +', '39', null]] },
+    nfl: { sp: 'football', t: [['td', '🏈 TD à tout moment', '31', null], ['td2', '2 TD ou +', '32', null]] },
+    nba: { sp: 'basketball', t: [['pts', '🏀 Points', '218', 'm'], ['reb', '🔁 Rebonds', '220', 'm'], ['ast', '🎯 Passes', '219', 'm'], ['pra', '➕ Pts + reb + passes', '225', 'm']] }
+  };
+  var MEM = {};
+  var esc = function (t) { return String(t == null ? '' : t).replace(/[<>&"]/g, ''); };
+  var f = function (x) { return x.toFixed(2).replace('.', ','); };
+  var cote = function (x) { return typeof _g45NhlDkCote === 'function' ? _g45NhlDkCote(x) : parseFloat(((x.odds || {}).decimal || {}).value); };
+  async function charger(lg, eid) {
+    var K = lg + '_' + eid; if (MEM[K] && Date.now() - MEM[K].t < 600000) return MEM[K].D;
+    var C = CFG[lg], J = {};
+    try {
+      var r = await fetch('https://sports.core.api.espn.com/v2/sports/' + C.sp + '/leagues/' + lg + '/events/' + eid + '/competitions/' + eid + '/odds/100/propBets?limit=500');
+      if (!r.ok) return null;
+      var it = (((await r.json()) || {}).items) || [], ty = {}; C.t.forEach(function (x) { ty[x[2]] = 1; });
+      it = it.filter(function (x) { return ty[String((x.type || {}).id || '')]; }); if (!it.length) return null;
+      var sb = null; try { sb = await (await fetch('https://site.api.espn.com/apis/site/v2/sports/' + C.sp + '/' + lg + '/summary?event=' + eid)).json(); } catch (e) {}
+      var eqs = ((((sb || {}).header || {}).competitions || [])[0] || {}).competitors || [];
+      for (var i = 0; i < eqs.length; i++) {
+        var tm = eqs[i].team || {}; if (!tm.id) continue;
+        try {
+          var dd = await (await fetch('https://site.api.espn.com/apis/site/v2/sports/' + C.sp + '/' + lg + '/teams/' + tm.id + '/roster')).json(), ath = dd.athletes || [], L = [];
+          if (ath.length && ath[0] && ath[0].items) ath.forEach(function (g) { (g.items || []).forEach(function (p) { L.push(p); }); }); else L = ath;
+          L.forEach(function (p) { if (p && p.id) J[String(p.id)] = { n: p.displayName || p.fullName || '?', eq: tm.abbreviation || '', c: tm.color ? '#' + String(tm.color).replace('#', '') : '#5a6788', o: {} }; });
+        } catch (e) {}
+      }
+      it.forEach(function (x) {
+        var a = String((x.athlete || {}).$ref || '').match(/athletes\/(\d+)/), d = cote(x); if (!a || !(d > 1)) return;
+        var j = J[a[1]] || (J[a[1]] = { n: '', eq: '', c: '#5a6788', o: {} }), t = parseFloat(((x.current || {}).target || {}).value), k = String(x.type.id);
+        (j.o[k] = j.o[k] || []).push([isNaN(t) ? null : t, d]);
+      });
+    } catch (e) { return null; }
+    var D = Object.keys(J).map(function (k) { return J[k]; }).filter(function (j) { return j.n && Object.keys(j.o).length; });
+    MEM[K] = { t: Date.now(), D: D }; return D;
+  }
+  function html(lg, eid, D, tab, tout) {
+    var C = CFG[lg], T = C.t.filter(function (x) { return x[0] === tab; })[0] || C.t[0];
+    var bt = function (on, t, fn) { return '<button onclick="' + fn + '" style="padding:7px 12px;margin:0 6px 6px 0;border-radius:8px;cursor:pointer;font-size:14px;font-weight:800;color:#fff;border:1px solid ' + (on ? '#3b82f6' : '#5a6788') + ';background:' + (on ? '#2563eb' : 'rgba(0,0,0,.35)') + ';">' + t + '</button>'; };
+    var L = D.map(function (j) {
+      var l = (j.o[T[2]] || []).slice().sort(function (a, b) { return (a[0] || 0) - (b[0] || 0); }); if (!l.length) return null;
+      if (T[3] === 'm') { var v = l.filter(function (q) { return q[1] >= 1.15; }).slice(0, 3); if (!v.length) v = l.slice(-1); return { j: j, d: v[0][1], m: v, cle: -(v[v.length - 1][0] || 0) }; }
+      var q = T[3] == null ? l[0] : l.filter(function (q) { return q[0] === T[3]; })[0]; if (!q) return null;
+      return { j: j, d: q[1], cle: q[1] };
+    }).filter(Boolean).sort(function (a, b) { return a.cle - b.cle || a.d - b.d; });
+    var FR = window._G45_TR_FR || 0.94, N = tout ? L.length : Math.min(6, L.length);
+    var h = '<div class="g45-cj" style="background:rgba(17,22,38,.95);border-radius:12px;padding:12px;margin:12px 0;color:#fff;">'
+      + '<div style="font-size:15px;font-weight:800;letter-spacing:1px;margin-bottom:8px;">🏦 COTES JOUEURS <span style="font-size:13px;color:#9fb0c7;font-weight:600;letter-spacing:0;">(DraftKings, indication)</span></div>'
+      + '<div>' + C.t.map(function (x) { return bt(x[0] === T[0], x[1], "g45CjTab('" + lg + "','" + eid + "','" + x[0] + "')"); }).join('') + '</div>';
+    if (!L.length) return h + '<div style="font-size:14px;color:#c9d3ee;padding:6px 2px;">Pas de cote pour ce pari sur ce match.</div></div>';
+    L.slice(0, N).forEach(function (x) {
+      var dr = T[3] === 'm' ? x.m.map(function (q) { return '<span style="white-space:nowrap;">' + q[0] + '+ <b style="color:#1ed760;">' + f(q[1]) + '</b></span>'; }).join(' · ')
+        : '<div style="font-size:17px;font-weight:900;color:#1ed760;">' + f(x.d) + '</div><div style="font-size:12px;color:#c9d3ee;">≈ ' + f(Math.max(1.01, Math.round(x.d * FR * 100) / 100)) + ' en France</div>';
+      h += '<div style="display:flex;align-items:center;gap:10px;padding:7px 8px;border-left:4px solid ' + esc(x.j.c) + ';margin-top:4px;background:rgba(11,16,29,.6);border-radius:8px;">'
+        + '<div style="flex:1;min-width:0;"><div style="font-size:15px;font-weight:800;">' + esc(x.j.n) + '</div><div style="font-size:13px;color:#c9d3ee;">' + esc(x.j.eq) + '</div></div>'
+        + '<div style="text-align:right;font-size:14px;">' + dr + '</div></div>';
+    });
+    if (L.length > N) h += '<div onclick="g45CjTab(\'' + lg + '\',\'' + eid + '\',\'' + T[0] + '\',1)" style="cursor:pointer;font-size:14px;color:#8fb4ff;text-align:center;margin-top:8px;font-weight:700;">▾ voir les ' + (L.length - N) + ' autres joueurs</div>';
+    return h + '</div>';
+  }
+  window._g45CjHtml = html;   /* tests */
+  window.g45CjTab = function (lg, eid, tab, tout) {
+    var D = (MEM[lg + '_' + eid] || {}).D; if (!D) return;
+    document.querySelectorAll('[data-g45cj="' + lg + '_' + eid + '"]').forEach(function (b) { b.innerHTML = html(lg, eid, D, tab, tout); var el = b.parentNode; if (el) el._g45Cj = b.outerHTML; });
+  };
+  window._renderGenericDetail = async function (el, sport, lg, eid) {
+    var r = await r0.apply(this, arguments);
+    try {
+      lg = String(lg || '').toLowerCase(); if (!CFG[lg] || CFG[lg].sp !== sport || !el || !eid) return r;
+      if (!el._g45CjObs && typeof MutationObserver === 'function') {
+        el._g45CjObs = new MutationObserver(function () { if (!el._g45Cj || el.querySelector('[data-g45cj]')) return; var d0 = document.createElement('div'); d0.innerHTML = el._g45Cj; el.appendChild(d0.firstChild); });
+        el._g45CjObs.observe(el, { childList: true });
+      }
+      if (el.querySelector('[data-g45cj]')) return r;
+      var D = await charger(lg, eid); if (!D || !D.length || !el.isConnected) return r;
+      var b = document.createElement('div'); b.setAttribute('data-g45cj', lg + '_' + eid); b.innerHTML = html(lg, eid, D, CFG[lg].t[0][0], 0);
+      el.appendChild(b); el._g45Cj = b.outerHTML;
+    } catch (e) {}
+    return r;
+  };
+  window._renderGenericDetail._g45Cj = 1;
+  try { _renderGenericDetail = window._renderGenericDetail; } catch (e) {}
+})();
