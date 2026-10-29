@@ -70275,8 +70275,12 @@ async function _g45RegLire(saison, cat, eq) {
   try { var c = JSON.parse(localStorage.getItem(ck) || 'null'); if (c && Date.now() - c.t < 12 * 3600e3) return c.l; } catch (e) {}
   var P = FD_PROXY + '?key=nhl&host=nhl&path=';
   var k = cat === 'a' ? 'assists' : (cat === 'p' ? 'points' : 'goals');
-  var r = await fetch(P + encodeURIComponent('/v1/skater-stats-leaders/' + saison + '/2?categories=' + k + '&limit=' + NB));
-  if (!r.ok) throw new Error('classement NHL ' + r.status);
+  var r = null; try { r = await fetch(P + encodeURIComponent('/v1/skater-stats-leaders/' + saison + '/2?categories=' + k + '&limit=' + NB)); } catch (e) {}
+  if (!r || !r.ok) {   /* 20261031r : site NHL muet → secours archives */
+    var SEC = null; try { SEC = await _g45RegNhlSecours(saison, k, NB, S4, PEP); } catch (e) {}
+    if (SEC && SEC.length) return SEC;
+    throw new Error('classement NHL ' + (r ? r.status : 'réseau'));
+  }
   var j = await r.json();
   var top = (j && j[k]) || [];
   if (!top.length) throw new Error('aucun joueur pour cette saison');
@@ -70299,6 +70303,39 @@ async function _g45RegLire(saison, cat, eq) {
   if (out.some(function (o) { return o.s && o.s.mj; })) { try { localStorage.setItem(ck, JSON.stringify({ t: Date.now(), l: out })); } catch (e) {} }
   return out;
 }
+/* ═══ 20261031r — 🛟 SECOURS NHL (« NHL, il y a aucun risque que ça vienne de là-bas ? » → nhle.com n'est pas une API publique officielle, elle
+   peut changer / bloquer comme MotoGP → « ajoute ») : si le classement nhle.com ne répond pas, Séries individuelles NHL (ligue) refaites depuis
+   gones45-archives : classement = totaux de joueurs.json (lj[id][3] = {G, A}, etat.iv 4), journal = joueurs/<id>.json (G, A, côté), saison
+   régulière seulement (equipes/<club>.json m[5] = 2). Numéros ESPN (≠ NHL) → photo ESPN. Pas de « absences » (_g45RegNhlAbs = nhle.com). ═══ */
+async function _g45ArchLogNhl(id, sa) {   /* sa = '2025-26' */
+  var B = 'hockey/nhl/' + sa, q = await _g45ArchLire(B + '/joueurs/' + id + '.json'); if (!q) return null;
+  var M = (q.m || []).filter(function (m) { return m[4]; }), clubs = {}; M.forEach(function (m) { clubs[m[3]] = 1; });
+  var TY = {}, E = await Promise.all(Object.keys(clubs).map(function (c) { return _g45ArchLire(B + '/equipes/' + c + '.json'); }));
+  if (E.some(function (x) { return !x; })) return null;
+  E.forEach(function (x) { (x.m || []).forEach(function (m) { TY[String(m[2])] = m[5]; }); });
+  var L = M.filter(function (m) { return TY[String(m[2])] === 2; }).map(function (m) { var g = +m[4].G || 0, a = +m[4].A || 0; return { goals: g, assists: a, points: g + a, gameDate: new Date(m[0]).toISOString().slice(0, 10), h: m[6] === 'h' ? 1 : (m[6] === 'a' ? 0 : null) }; });
+  L.sort(function (x, y) { return String(y.gameDate).localeCompare(String(x.gameDate)); });
+  return { gameLog: L };
+}
+async function _g45RegNhlSecours(saison, k, NB, S4, PEP) {
+  if (typeof _g45ArchLire !== 'function') return null;
+  var y = +String(saison).slice(0, 4), sa = function (a) { return a + '-' + String(a + 1).slice(2); }, B = 'hockey/nhl/' + sa(y);
+  var et = await _g45ArchLire(B + '/etat.json'); if (!et || !(et.iv >= 4) || et.v2 < et.n) return null;
+  var J = await _g45ArchLire(B + '/joueurs.json'), EQ = await _g45ArchLire(B + '/equipes.json'); if (!J || !EQ) return null;
+  var tot = function (x) { var t = (x && x[3]) || {}; return k === 'goals' ? (t.G || 0) : (k === 'assists' ? (t.A || 0) : (t.G || 0) + (t.A || 0)); };
+  var ids = Object.keys(J).filter(function (id) { return tot(J[id]) > 0; }).sort(function (a, b) { return tot(J[b]) - tot(J[a]); }).slice(0, NB), out = [];
+  await Promise.all(ids.map(async function (id, rg) {
+    var gl = [];
+    for (var q = 0; q < (S4 ? 4 : 1); q++) { var lq = null; try { lq = await _g45ArchLogNhl(id, sa(y - q)); } catch (e) {} if (lq) gl = gl.concat(lq.gameLog); }
+    var x = J[id], ab = (EQ[x[1]] || [])[1] || '';
+    var o = { id: id, nom: x[0] || '?', ph: 'https://a.espncdn.com/i/headshots/nhl/players/full/' + id + '.png', eq: ab, logo: '', val: tot(x), ab: ab, sec: 1 };
+    if (PEP && rg < 10) o.t10 = 1;
+    o.s = _g45RegCalc(gl, k); o.der = (gl[0] || {}).gameDate || '';
+    out[rg] = o;
+  }));
+  return out.filter(Boolean);
+}
+window._g45RegNhlSecours = _g45RegNhlSecours;   /* tests */
 function _g45RegBloc(sp, lg, an, nom, eqId) {
   if (sp === 'football' && String(lg) === 'nfl' && eqId && typeof _g45RegBlocNflEq === 'function') return _g45RegBlocNflEq(an, nom, eqId);   /* 20261006j */
   if (sp === 'baseball' && String(lg) === 'mlb' && eqId && typeof _g45RegBlocNflEq === 'function') return _g45RegBlocNflEq(an, nom, eqId, 'mlb');   /* 20261006q */
