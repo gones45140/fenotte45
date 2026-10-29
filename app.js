@@ -76293,12 +76293,12 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       }
       /* 20261029r (« un petit fond pour chaque équipe pour les différencier ») : liseré + dégradé à la couleur de la carte, logo en filigrane (ckFond) */
       var Fd = ckDist() ? ((S.ck.D && S.ck.D.lg && S.ck.D.lg[c.c]) || {}) : ckFond(c.c), cc = /^#[0-9a-f]{6}$/i.test(Fd.c || '') ? Fd.c : '#4d84ff';
-      return '<div ' + (ix >= 0 ? (ckDist() ? 'data-n="' + e(c.c) + '" onclick="g45CkFicheDist(this.dataset.n)" ' : 'onclick="g45CkFiche(' + ix + ')" ') : '') + 'style="position:relative;overflow:hidden;display:flex;flex-wrap:wrap;align-items:flex-start;gap:4px 12px;padding:9px 10px;margin-bottom:6px;border-radius:10px;border-left:4px solid ' + cc + ';background:linear-gradient(90deg,' + cc + '38 0%,' + cc + '10 45%,rgba(11,16,29,.55) 100%);' + (ix >= 0 ? 'cursor:pointer;' : '') + '">'
-        + (Fd.img ? '<img src="' + e(Fd.img) + '" alt="" loading="lazy" onerror="this.remove()" style="position:absolute;right:22%;top:50%;transform:translateY(-50%);height:150%;max-width:30%;object-fit:contain;opacity:.16;pointer-events:none;">' : '')
-        + '<div style="flex:1 1 170px;min-width:0;"><b style="font-size:15px;">' + e(c.c) + (ix >= 0 ? ' <span style="color:#8fb4ff;">›</span>' : '') + '</b>'
+      return '<div ' + (ix >= 0 ? (ckDist() ? 'data-n="' + e(c.c) + '" onclick="g45CkFicheDist(this.dataset.n)" ' : 'onclick="g45CkFiche(' + ix + ')" ') : '') + 'style="position:relative;overflow:hidden;display:flex;flex-wrap:wrap;align-items:flex-start;gap:4px 12px;padding:9px 10px;margin-bottom:6px;border-radius:10px;border-left:4px solid ' + cc + ';background:linear-gradient(90deg,' + cc + '8c 0%,' + cc + '55 50%,' + cc + '30 100%);text-shadow:0 1px 3px rgba(0,0,0,.85);' + (ix >= 0 ? 'cursor:pointer;' : '') + '">'
+        + (Fd.img ? '<img src="' + e(Fd.img) + '" alt="" loading="lazy" onerror="this.remove()" style="position:absolute;right:22%;top:50%;transform:translateY(-50%);height:150%;max-width:30%;object-fit:contain;opacity:.38;pointer-events:none;">' : '')
+        + '<div style="flex:0 1 auto;min-width:0;position:relative;background:rgba(11,16,29,.62);border-radius:8px;padding:3px 8px;"><b style="font-size:15px;">' + e(c.c) + (ix >= 0 ? ' <span style="color:#8fb4ff;">›</span>' : '') + '</b>'
         + (det.length > 1 || (det.length === 1 && !c.L.glob) ? '<div style="font-size:13px;color:#c9d3ee;margin-top:2px;">' + det.join(' · ') + '</div>' : '') + '</div>'
-        + (tys ? '<div class="g45ck-ty" style="flex:2 1 260px;min-width:0;font-size:14px;color:#fff;line-height:1.45;">' + tys + '</div>' : '')
-        + '<div style="flex:0 0 auto;margin-left:auto;font-size:15px;white-space:nowrap;">' + c.ok + '/' + c.t + ' · <b style="color:' + gC(c.g) + ';">' + ckEur(c.g) + '</b></div></div>';
+        + (tys ? '<div class="g45ck-ty" style="flex:0 1 auto;min-width:0;position:relative;font-size:14px;color:#fff;line-height:1.45;background:rgba(11,16,29,.62);border-radius:8px;padding:3px 8px;">' + tys + '</div>' : '')
+        + '<div style="flex:0 0 auto;margin-left:auto;position:relative;font-size:15px;white-space:nowrap;background:rgba(11,16,29,.62);border-radius:8px;padding:3px 8px;">' + c.ok + '/' + c.t + ' · <b style="color:' + gC(c.g) + ';">' + ckEur(c.g) + '</b></div></div>';
     }).join(''));
     return h;
   }
