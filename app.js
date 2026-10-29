@@ -46866,7 +46866,9 @@ async function loadCompetTab() {
               ['buteurs', c.sp === 'soccer' ? '\ud83c\udfaf S\u00e9ries individuelles' /* 20261005x */ : ((c.s === 'nhl' || c.s === 'nfl' || c.s === 'mlb' || c.s === '270559' || c.s === '3' || c.s === 'nba' /* 20261027o */) ? '\ud83c\udfaf S\u00e9ries individuelles' /* 20261005w (demande d'Antoine) ; NFL 20261006h */ : '\ud83c\udfc5 Individuel')],
               /* 20261027x (« série individuelle on n'a que les joueurs, on n'a pas les équipes ? » → « oui ») : 🏁 Séries équipes = bloc critères
                  4 saisons + « Jouable en Cockpit ? » du championnat (foot, NHL, NFL, NBA, MLB). */
-              ]).concat((c.sp === 'soccer' || ['nhl', 'nfl', 'nba', 'mlb'].indexOf(c.s) >= 0) ? [['seq', '\ud83c\udfc1 S\u00e9ries \u00e9quipes']] : []).concat([
+              ]).concat((c.sp === 'soccer' || ['nhl', 'nfl', 'nba', 'mlb'].indexOf(c.s) >= 0) ? [['seq', '\ud83c\udfc1 S\u00e9ries \u00e9quipes']] : [])
+              .concat((window._G45_ARCH_LG || []).indexOf(c.s) >= 0 ? [['cotes', '\ud83d\udce6 Cotes gard\u00e9es']] : [])   /* 20261030z : archive des cotes */
+              .concat([
               ['transferts','\ud83d\udd04 Transferts'],
               /* Liste personnelle, sans rapport avec le mur : voir g45SuiviEqRender. */
               ['suivies','\u2b50 Suivies']]);
@@ -46903,6 +46905,7 @@ async function loadCompetTab() {
     await g45LoadStandings(c.s, c.sp, body);
     return;
   }
+  if (_g45CompetVue === 'cotes' && typeof window.g45CotesArch === 'function') { window.g45CotesArch(body, c.s, c.sp); return; }   /* 20261030z */
   if (_g45CompetVue === 'seq' && typeof window._g45CrHtml === 'function') {
     /* 20261027x : équipe de référence (tableau par saison) au choix, leader par défaut ; le classement de TOUT le championnat
        se lance en bas du bloc (« ▶ Lancer le classement », même combiné). */
@@ -83803,4 +83806,80 @@ window._g45MqPalHtml = function (pire, pd) {
   };
   window._renderGenericDetail._g45Cj = 1;
   try { _renderGenericDetail = window._renderGenericDetail; } catch (e) {}
+})();
+
+
+/* ═══ 20261030z — 📦 COTES GARDÉES (Compétitions → championnat → onglet ; maquette ar-tel ; Antoine : « un dossier qui classe par championnat /
+   équipes et les matchs cotés », emplacement « Compétitions → le championnat → onglet 📦 Cotes gardées ok ») ═══ Lit l'archive du robot
+   cotes-archive (données/cotes/<ligue>/AAAA-MM.json, raw GitHub, mémoire 10 min) ; listes Équipe (toutes / une) et Mois (depuis 10/2026) ;
+   carte = date, match, score final (f, ajouté par le robot ; vert / jaune / rouge du point de vue de l'équipe choisie), 1N2, 3 joueurs les
+   mieux cotés (buteur foot / NHL, TD NFL) ; « ▸ toutes les cotes » = handicap, total, les deux marquent, buts d'équipe, 10 joueurs.
+   Cotes affichées selon le sélecteur DraftKings / estimée France (_g45DkMode). */
+window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champions', 'uefa.europa', 'uefa.europa.conf', 'nhl', 'nba', 'nfl'];
+(function () {
+  var MEM = {}, ST = window._g45ArchS = window._g45ArchS || { eq: {}, mois: {}, ouv: {} };
+  var esc = function (t) { return String(t == null ? '' : t).replace(/[<>&"]/g, ''); };
+  var f2 = function (x) { return x.toFixed(2).replace('.', ','); };
+  var v = function (d) { if (!(d > 1)) return '–'; return (typeof _g45DkMode === 'function' && _g45DkMode() === 'fr') ? '≈ ' + f2(Math.max(1.01, Math.round(d * (window._G45_TR_FR || 0.94) * 100) / 100)) : f2(d); };
+  var moisListe = function () { var L = [], d = new Date(), y = d.getFullYear(), m = d.getMonth() + 1; while (y > 2026 || (y === 2026 && m >= 10)) { L.push(y + '-' + ('0' + m).slice(-2)); m--; if (!m) { m = 12; y--; } } return L; };
+  async function lire(lg, mo) {
+    var K = lg + '/' + mo; if (MEM[K] && Date.now() - MEM[K].t < 600000) return MEM[K].d;
+    var d = null; try { var r = await fetch('https://raw.githubusercontent.com/gones45140/gones45/main/donn%C3%A9es/cotes/' + lg + '/' + mo + '.json?t=' + Math.floor(Date.now() / 600000), { cache: 'no-store' }); if (r.ok) d = await r.json(); } catch (e) {}
+    MEM[K] = { t: Date.now(), d: d || {} }; return MEM[K].d;
+  }
+  var JTY = { soccer: ['230', 'buteur'], hockey: ['230', 'buteur'], football: ['31', 'TD'], basketball: ['218', 'points'] };
+  function joueurs(fi, n) {
+    var ty = (JTY[fi.s] || [])[0]; if (!ty || !fi.j) return [];
+    return Object.keys(fi.j).map(function (k) { var j = fi.j[k], l = (j.o || {})[ty] || []; if (!l.length) return null; var q = fi.s === 'basketball' ? (l.filter(function (x) { return x[0] === 20; })[0] || null) : l[0]; return q ? { n: j.n, d: q[1] } : null; })
+      .filter(Boolean).sort(function (a, b) { return a.d - b.d; }).slice(0, n);
+  }
+  function carte(fi, id, eq) {
+    var moiH = eq && String(fi.h.id) === String(eq), moiA = eq && String(fi.a.id) === String(eq);
+    var d = new Date(fi.t), dt = ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2);
+    var tit = moiH ? 'vs ' + esc(fi.a.nom) : (moiA ? '@ ' + esc(fi.h.nom) : esc(fi.h.nom) + ' – ' + esc(fi.a.nom));
+    var sc = '', col = '#c9d3ee';
+    if (fi.f) { sc = fi.f.h + '-' + fi.f.a; if (moiH || moiA) { var m = moiH ? fi.f.h : fi.f.a, l = moiH ? fi.f.a : fi.f.h; col = m > l ? '#1ed760' : (m < l ? '#ff5a5a' : '#f5c542'); } }
+    else if (fi.t < Date.now()) sc = '…';
+    var cel = function (lib, x) { return '<div style="flex:1;min-width:0;text-align:center;background:rgba(11,16,29,.6);border-radius:8px;padding:5px 3px;"><div style="font-size:13px;color:#c9d3ee;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + lib + '</div><div style="font-size:16px;font-weight:900;color:#1ed760;">' + v(x) + '</div></div>'; };
+    var bc = moiH ? fi.h.c : (moiA ? fi.a.c : fi.h.c);
+    var h = '<div style="background:rgba(11,16,29,.75);border-left:4px solid ' + esc(bc || '#5a6788') + ';border-radius:10px;padding:9px 10px;margin-top:8px;color:#fff;">'
+      + '<div style="display:flex;justify-content:space-between;gap:8px;font-size:15px;font-weight:800;"><span>' + dt + ' · ' + tit + '</span><span style="color:' + col + ';">' + sc + '</span></div>';
+    if (fi.ml) h += '<div style="display:flex;gap:5px;margin-top:6px;">' + cel(esc(fi.h.nom), fi.ml.h) + (fi.ml.d > 1 ? cel('Nul', fi.ml.d) : '') + cel(esc(fi.a.nom), fi.ml.a) + '</div>';
+    var J = joueurs(fi, 3), lb = (JTY[fi.s] || [])[1];
+    if (J.length) h += '<div style="font-size:14px;color:#c9d3ee;margin-top:5px;">' + (fi.s === 'basketball' ? '🏀 20+ points' : (fi.s === 'football' ? '🏈 TD' : '⚽ Buteurs')) + ' : ' + J.map(function (x) { return esc(x.n) + ' <b style="color:#fff;">' + v(x.d) + '</b>'; }).join(' · ') + '</div>';
+    var o = ST.ouv[id];
+    h += '<div onclick="g45ArchOuv(\'' + id + '\')" style="cursor:pointer;font-size:14px;color:#8fb4ff;margin-top:5px;font-weight:700;">' + (o ? '▾ moins' : '▸ toutes les cotes (handicap, total, joueurs…)') + '</div>';
+    if (o) {
+      var vir = function (x) { return String(x).replace('.', ','); }, sg = function (x) { return (x > 0 ? '+' : (x < 0 ? '−' : '')) + vir(Math.abs(x)); }, t2 = function (t) { return '<div style="font-size:14px;font-weight:800;margin:9px 0 3px;">' + t + '</div>'; };
+      if (fi.hc && fi.hc.L != null) h += t2('⚖️ Handicap') + '<div style="display:flex;gap:5px;">' + cel(esc(fi.h.nom) + ' ' + sg(fi.hc.L), fi.hc.h) + cel(esc(fi.a.nom) + ' ' + sg(-fi.hc.L), fi.hc.a) + '</div>';
+      if (fi.tot && fi.tot.L != null) h += t2('🔢 Total du match') + '<div style="display:flex;gap:5px;">' + cel('Plus de ' + vir(fi.tot.L), fi.tot.o) + cel('Moins de ' + vir(fi.tot.L), fi.tot.u) + '</div>';
+      if (fi.bts) h += t2('🤝 Les deux marquent') + '<div style="display:flex;gap:5px;">' + cel('Oui', fi.bts.o) + cel('Non', fi.bts.n) + '</div>';
+      ['h', 'a'].forEach(function (k) {
+        var L = fi.teq && fi.teq[k]; if (!L || !L.length || typeof _g45AgTeqSep !== 'function') return; var T = _g45AgTeqSep(L), Ls = Object.keys(T).map(Number).sort(function (a, b) { return a - b; }).filter(function (x) { return x <= 3.5; }); if (!Ls.length) return;
+        h += t2('Buts de ' + esc(fi[k].nom)); Ls.forEach(function (Lx) { h += '<div style="display:flex;gap:5px;margin-top:4px;align-items:center;"><div style="width:40px;text-align:center;font-weight:800;">' + vir(Lx) + '</div>' + cel('plus de', T[Lx].ov) + cel('moins de', T[Lx].un) + '</div>'; });
+      });
+      var J2 = joueurs(fi, 10); if (J2.length) h += t2((fi.s === 'basketball' ? '🏀 20+ points' : (fi.s === 'football' ? '🏈 TD à tout moment' : '⚽ Buteur à tout moment')) + ' (10 premiers)') + J2.map(function (x) { return '<div style="display:flex;justify-content:space-between;font-size:14px;padding:3px 2px;border-top:1px solid rgba(255,255,255,.07);"><span>' + esc(x.n) + '</span><b style="color:#1ed760;">' + v(x.d) + '</b></div>'; }).join('');
+      h += '<div style="font-size:12px;color:#9fb0c7;margin-top:6px;">Gardées le ' + new Date(fi.at).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) + ' (avant-match, DraftKings)</div>';
+    }
+    return h + '</div>';
+  }
+  window.g45ArchOuv = function (id) { ST.ouv[id] = !ST.ouv[id]; if (ST.el) window.g45CotesArch(ST.el, ST.lg, ST.sp); };
+  window.g45ArchEq = function (x) { ST.eq[ST.lg] = x; if (ST.el) window.g45CotesArch(ST.el, ST.lg, ST.sp); };
+  window.g45ArchMois = function (x) { ST.mois[ST.lg] = x; if (ST.el) window.g45CotesArch(ST.el, ST.lg, ST.sp); };
+  window._g45ArchCarte = carte;   /* tests */
+  window.g45CotesArch = async function (el, lg, sp) {
+    ST.el = el; ST.lg = lg; ST.sp = sp;
+    var ML = moisListe(), mo = ST.mois[lg] && ML.indexOf(ST.mois[lg]) >= 0 ? ST.mois[lg] : ML[0];
+    var D = await lire(lg, mo); if (ST.lg !== lg) return;
+    var ids = Object.keys(D).sort(function (a, b) { return D[b].t - D[a].t; }), eqs = {};
+    ids.forEach(function (i) { ['h', 'a'].forEach(function (k) { var t = D[i][k]; if (t && t.id) eqs[t.id] = t.nom; }); });
+    var eq = ST.eq[lg] && eqs[ST.eq[lg]] ? ST.eq[lg] : '';
+    var sel = 'background:#16213f;color:#fff;border:1px solid #6d9dff;border-radius:8px;padding:8px 10px;font-size:15px;font-weight:700;margin:0 8px 8px 0;max-width:100%;';
+    var h = '<div style="font-size:16px;font-weight:900;letter-spacing:1px;color:#fff;margin-bottom:8px;">📦 COTES GARDÉES <span style="font-size:13px;color:#9fb0c7;font-weight:600;letter-spacing:0;">(avant-match, ' + ((typeof _g45DkMode === 'function' && _g45DkMode() === 'fr') ? 'estimée France' : 'DraftKings') + ')</span></div>'
+      + '<select onchange="g45ArchEq(this.value)" style="' + sel + '"><option value="">Toutes les équipes</option>' + Object.keys(eqs).sort(function (a, b) { return String(eqs[a]).localeCompare(String(eqs[b])); }).map(function (k) { return '<option value="' + k + '"' + (k === eq ? ' selected' : '') + '>' + esc(eqs[k]) + '</option>'; }).join('') + '</select>'
+      + '<select onchange="g45ArchMois(this.value)" style="' + sel + '">' + ML.map(function (m) { var p = m.split('-'); return '<option value="' + m + '"' + (m === mo ? ' selected' : '') + '>' + ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'][+p[1] - 1] + ' ' + p[0] + '</option>'; }).join('') + '</select>';
+    var L = ids.filter(function (i) { return !eq || String(D[i].h.id) === eq || String(D[i].a.id) === eq; });
+    h += L.length ? L.map(function (i) { return carte(D[i], i, eq); }).join('') : '<div style="font-size:14px;color:#c9d3ee;padding:8px 2px;">Aucun match gardé pour ce mois. Le robot garde les cotes des matchs qui commencent dans les 4 h (toutes les 2 h), depuis le 29/10/2026.</div>';
+    el.innerHTML = h;
+  };
 })();
