@@ -76266,19 +76266,23 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var C = {};
     P.forEach(function (x) {
       var c = C[x.b.n] = C[x.b.n] || { c: x.b.n, ok: 0, t: 0, g: 0, L: {} }, lk = x.b.domicile === 'dom' ? 'dom' : x.b.domicile === 'ext' ? 'ext' : 'glob';
-      var l = c.L[lk] = c.L[lk] || { ok: 0, t: 0, g: 0, ty: {} };
-      var ty = (typeof _g45TypeMots === 'function' ? _g45TypeMots(x.b.type, x.b.n, x.b.target) : x.b.type) || ''; if (ty && ty !== '-') l.ty[ty] = (l.ty[ty] || 0) + 1;   /* 20261029p */
+      var l = c.L[lk] = c.L[lk] || { ok: 0, t: 0, g: 0 };
       c.t++; l.t++; if (x.r) { c.ok++; l.ok++; } c.g += x.g; l.g += x.g;
     });
     var gC = function (v) { return v >= 0 ? '#1ed760' : '#ff5a5a'; };
     h += ckBox('<div style="font-size:16px;font-weight:800;margin-bottom:4px;">Par carte (détail 🏠 / ✈️ dessous)</div>' + Object.keys(C).map(function (k) { return C[k]; }).sort(function (a, b) { return b.g - a.g; }).map(function (c) {
       var ix = ckDist() ? (S.ck.D && S.ck.D.u && S.ck.D.u[c.c] ? 1 : -1) : ((typeof state !== 'undefined' && state.u) || []).findIndex(function (u) { return u && u.n === c.c; });   /* 20261029f : ligne → fiche de la carte (Bilan / Graphs / Archive / Types) */
       var det = [['dom', '🏠'], ['ext', '✈️'], ['glob', '🌍']].filter(function (q) { return c.L[q[0]]; }).map(function (q) { var l = c.L[q[0]]; return q[1] + ' ' + l.ok + '/' + l.t + ' <b style="color:' + gC(l.g) + ';">' + ckEur(l.g) + '</b>'; });
-      /* 20261029p (capture « Par carte » sur PC : « ici on a de la place au centre, donc on peut écrire le type de pari ») : au centre, les
-         types joués par lieu (mots d'Antoine, _g45TypeMots), « ×n » si plusieurs fois ; sur téléphone, ils passent sous le nom. */
-      var tys = [['dom', '🏠'], ['ext', '✈️'], ['glob', '🌍']].filter(function (q) { return c.L[q[0]] && Object.keys(c.L[q[0]].ty || {}).length; }).map(function (q) {
-        var T = c.L[q[0]].ty; return '<div>' + q[1] + ' ' + Object.keys(T).sort(function (a, b) { return T[b] - T[a]; }).map(function (k) { return e(k) + (T[k] > 1 ? ' <span style="color:#8fb4ff;">×' + T[k] + '</span>' : ''); }).join(' · ') + '</div>';
-      }).join('');
+      /* 20261029p → 20261029q (« le type de pari vient de mes choix faits dans Outils ») : au CENTRE, le pari écrit sur la carte (Outils → Équipes,
+         note 🌍 / 🏠 / ✈️ via _g45UfDecoupe ; joueur : la partie avant 🏠 / ✈️ = club, ignorée) ; bet45 : notes publiées (D.nt). */
+      var nt = ckDist() ? ((S.ck.D && S.ck.D.nt && S.ck.D.nt[c.c]) || (S.ck.D && S.ck.D.u && S.ck.D.u[c.c] && S.ck.D.u[c.c].note) || '') : ((ckU(c.c) || {}).note || ''), tys = '';
+      if (nt && typeof _g45UfDecoupe === 'function') {
+        var Dn = _g45UfDecoupe(nt), nz2 = function (x) { return String(x || '').trim().toLowerCase(); }, Lt = [];
+        if (Dn.glob) Lt.push('🌍 ' + Dn.glob);
+        if (Dn.dom && Dn.ext && nz2(Dn.dom) === nz2(Dn.ext)) Lt.push('🏠/✈️ ' + Dn.dom); else { if (Dn.dom) Lt.push('🏠 ' + Dn.dom); if (Dn.ext) Lt.push('✈️ ' + Dn.ext); }
+        if (!Lt.length && Dn.avant && !(ckU(c.c) || (S.ck.D && S.ck.D.u && S.ck.D.u[c.c]) || {}).type) Lt.push(Dn.avant);
+        tys = Lt.map(function (x) { return '<div>📌 ' + e(x) + '</div>'; }).join('');
+      }
       return '<div ' + (ix >= 0 ? (ckDist() ? 'data-n="' + e(c.c) + '" onclick="g45CkFicheDist(this.dataset.n)" ' : 'onclick="g45CkFiche(' + ix + ')" ') : '') + 'style="display:flex;flex-wrap:wrap;align-items:flex-start;gap:4px 12px;padding:7px 0;border-bottom:1px solid #1c2747;' + (ix >= 0 ? 'cursor:pointer;' : '') + '">'
         + '<div style="flex:1 1 170px;min-width:0;"><b style="font-size:15px;">' + e(c.c) + (ix >= 0 ? ' <span style="color:#8fb4ff;">›</span>' : '') + '</b>'
         + (det.length > 1 || (det.length === 1 && !c.L.glob) ? '<div style="font-size:13px;color:#c9d3ee;margin-top:2px;">' + det.join(' · ') + '</div>' : '') + '</div>'
@@ -76336,7 +76340,8 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       U[u.n] = x;
     });
     var P = ckParis().map(function (y) { var b = y.b; return { j: y.j, r: y.r, g: y.g, b: { n: b.n, domicile: b.domicile || '', type: b.type || '', target: b.target || '', l: b.l || 1, m: b.m, cote: b.cote, comp: b.comp || '', t: b.t || '', heure: b.heure || '', date: b.date || '', id: b.id || '', isCashout: b.isCashout ? 1 : 0, isFreebet: b.isFreebet ? 1 : 0, sport: b.sport || '' } }; });   /* 20261029l : + champs de la fiche (bet45) */
-    return { v: 1, j: A.j, ag: A.L || [], u: U, P: P };
+    var NT = {}; P.forEach(function (y) { var n = y.b.n; if (NT[n] == null) { var uu = ckU(n); NT[n] = (uu && uu.note) || ''; } });   /* 20261029q : pari choisi (Outils) de chaque carte, pas u.np */
+    return { v: 1, j: A.j, ag: A.L || [], u: U, P: P, nt: NT };
   }
   async function ckPublier() {
     if (ckDist() || typeof _g45SanteActive !== 'function' || !_g45SanteActive() || S.ck.pub) return;
