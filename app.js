@@ -83825,9 +83825,12 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
      passées (robot « rattrapage » : score, feuille de match, cotes de clôture) → mois depuis juillet de l'année − 4. */
   var A0 = new Date().getFullYear() - 4;
   var moisListe = function () { var L = [], d = new Date(), y = d.getFullYear(), m = d.getMonth() + 1; while (y > A0 || (y === A0 && m >= 7)) { L.push(y + '-' + ('0' + m).slice(-2)); m--; if (!m) { m = 12; y--; } } return L; };
+  /* 20261031b (« classer par sport, championnat, équipe / joueur », « un truc organisé pour retrouver facilement ») : archive rangée
+     cotes/<sport>/<ligue>/matchs/AAAA-MM.json (+ index equipes / joueurs) dans gones45-archives. */
+  var SPN = { soccer: 'foot', hockey: 'hockey', basketball: 'basket', football: 'football-us' };
   async function lire(lg, mo) {
     var K = lg + '/' + mo; if (MEM[K] && Date.now() - MEM[K].t < 600000) return MEM[K].d;
-    var d = null; try { var r = await fetch('https://raw.githubusercontent.com/gones45140/gones45-archives/main/cotes/' + lg + '/' + mo + '.json?t=' + Math.floor(Date.now() / 600000), { cache: 'no-store' }); if (r.ok) d = await r.json(); } catch (e) {}
+    var d = null; try { var r = await fetch('https://raw.githubusercontent.com/gones45140/gones45-archives/main/cotes/' + (SPN[ST.sp] || 'foot') + '/' + lg + '/matchs/' + mo + '.json?t=' + Math.floor(Date.now() / 600000), { cache: 'no-store' }); if (r.ok) d = await r.json(); } catch (e) {}
     MEM[K] = { t: Date.now(), d: d || {} }; return MEM[K].d;
   }
   var JTY = { soccer: ['230', 'buteur'], hockey: ['230', 'buteur'], football: ['31', 'TD'], basketball: ['218', 'points'] };
