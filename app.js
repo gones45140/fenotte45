@@ -70360,6 +70360,7 @@ function _g45RegHtml() {
       + (o.nv ? ' · <span style="color:#5aa9ff;font-weight:800;">🆕 nouveau</span>' : '')
       + (peu ? ' · <span style="color:#ffb13d;font-weight:800;">📉 peu de matchs</span>' : '')
       + (o.abs ? ' · <span style="color:#ff9f43;font-weight:800;">🚫 absent ' + (o.abs > 1 ? 'aux ' + o.abs + ' derniers matchs' : 'au dernier match') + (o.absD ? ' (' + esc(o.absD) + ')' : '') + '</span>' : '')   /* 20261006n */
+      + _g45NflDkHtml(o, SE)   /* 20261030k : cote DraftKings du TD (NFL) */
       + '</span></span>';
     var dts = (o.s.pd && o.s.pire) ? o.s.pd.map(function (d) { return d.slice(4, 6) + '/' + d.slice(2, 4) + '/' + d.slice(0, 2); }).join(' → ') : '';
     var pa = (PEP || S4) ? ((typeof _g45F1CrPal === 'function') ? _g45F1CrPal(o.s.pire) : { p: o.s.pire + 1, ico: '' }) : null;
@@ -70436,6 +70437,46 @@ function _g45RegBoxVis() {
   return L[L.length - 1];
 }
 window._g45RegBoxVis = _g45RegBoxVis;
+/* 20261030k (« nfl ok » ; SONDES d'Antoine, Panthers @ Packers : core …/odds/100/propBets?limit=500 → 31 « Anytime Touchdown Scorer », 32 « 2 or more »,
+   33 « 3 or more » = UNE cote par joueur, sans ambiguïté ; les yards (passe / course / réception) arrivent en DOUBLE sans plus / moins → ignorés) :
+   Séries individuelles NFL, 🏈 Touchdowns : ligne « 🏦 DraftKings TD à tout moment → cote · ≈ cote France » (seuil 1 / 2 / 3 → 31 / 32 / 33),
+   💎 si cote FR (× _G45_TR_FR) > cote juste (1 / % du joueur). Matchs de la semaine non finis (scoreboard), mémoire 10 min. */
+var _g45NflDk = { M: null, t: 0, enCours: false };
+function _g45NflDkLire(items, M) {
+  M = M || {};
+  (items || []).forEach(function (x) {
+    var ty = String((x.type || {}).id || ''); if (ty !== '31' && ty !== '32' && ty !== '33') return;
+    var a = String((x.athlete || {}).$ref || '').match(/athletes\/(\d+)/), d = parseFloat(((x.odds || {}).decimal || {}).value);
+    if (!a || !(d > 1)) return; (M[a[1]] = M[a[1]] || {})[ty] = d;
+  });
+  return M;
+}
+function _g45NflDkCharger() {
+  if (_g45NflDk.enCours || (_g45NflDk.M && Date.now() - _g45NflDk.t < 600000)) return;
+  _g45NflDk.enCours = true;
+  (async function () {
+    var M = {};
+    try {
+      var sb = await (await fetch('https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard')).json();
+      var evs = ((sb && sb.events) || []).filter(function (e) { return !(((e.status || {}).type || {}).completed); });
+      await Promise.all(evs.map(async function (e) {
+        try { var r = await fetch('https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/' + e.id + '/competitions/' + e.id + '/odds/100/propBets?limit=500');
+          if (r.ok) _g45NflDkLire(((await r.json()) || {}).items, M); } catch (x) {}
+      }));
+    } catch (x) {}
+    _g45NflDk.M = M; _g45NflDk.t = Date.now(); _g45NflDk.enCours = false;
+    try { if (Object.keys(M).length && _g45Reg.lg === 'nfl') { var bx = _g45RegBoxVis(); if (bx && _g45Reg.mem[_g45RegK()]) bx.innerHTML = _g45RegHtml(); } } catch (x) {}   /* une seule fois : M gardé 10 min */
+  })();
+}
+function _g45NflDkHtml(o, SE) {
+  if (_g45Reg.lg !== 'nfl' || _g45Reg.cat !== 'g') return '';
+  if (!_g45NflDk.M || Date.now() - _g45NflDk.t > 600000) { _g45NflDkCharger(); if (!_g45NflDk.M) return ''; }
+  var d = (_g45NflDk.M[String(o.id)] || {})[{ 1: '31', 2: '32', 3: '33' }[SE || 1] || '31']; if (!d) return '';
+  var fr = Math.max(1.01, Math.round(d * (window._G45_TR_FR || 0.94) * 100) / 100), pj = (o.s && o.s.pct) ? o.s.pct / 100 : 0, f = function (x) { return x.toFixed(2).replace('.', ','); };
+  return '<br><span style="display:inline-block;margin-top:3px;font-size:13px;color:#fff;background:rgba(47,107,255,.22);border-radius:7px;padding:2px 7px;white-space:normal;">🏦 DraftKings <b>'
+    + ({ 1: 'TD à tout moment', 2: '2 TD ou +', 3: '3 TD ou +' }[SE || 1]) + ' → cote ' + f(d) + '</b> · ≈ ' + f(fr) + ' en France' + (pj > 0 && fr > 1 / pj ? ' <b style="color:#5ee6a0;">💎 value</b>' : '') + '</span>';
+}
+window._g45NflDkLire = _g45NflDkLire; window._g45NflDkHtml = _g45NflDkHtml; window._g45NflDk = _g45NflDk;   /* tests */
 async function g45RegOuvrir() {
   var box = _g45RegBoxVis(); if (!box) return;
   var sa = _g45RegSaison(_g45Reg.an), k = _g45RegK(), pk = _g45RegPK(), lg = _g45Reg.lg, an = _g45Reg.an;

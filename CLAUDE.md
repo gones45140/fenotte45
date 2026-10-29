@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action (il est court exprès). Le détail de tout l'historique est dans HISTORIQUE.md
-(à chercher avec grep, jamais à lire en entier). Mis à jour le 30/10/2026 (version déployée : 20261030j, même app.js sur gones45 et fenotte45).
+(à chercher avec grep, jamais à lire en entier). Mis à jour le 30/10/2026 (version déployée : 20261030k, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -140,6 +140,7 @@ PIÈGES À NE JAMAIS OUBLIER :
 - 📅 1 AN DU 1er PARI (date affichée sous Bénéfice, 20261025f) : Antoine veut un BILAN PDF de l'année gardé, puis bénéfice / pertes repartis de 0 en gardant la bankroll (idée : date de départ du bénéfice, paris NON supprimés).
 - 🏍 MotoGP EN PAUSE (25/10, confirmé 27/10) : api.motogp.pulselive.com = 403 (bloqué par MotoGP, NE PAS contourner, CGU) ; TheSportsDB 4407 clé gratuite = inutilisable (eventsseason : 15 séances du 1er GP seulement ; eventspastleague : 1 GP sans résultat). Ne pas reproposer sans nouvelle source gratuite et autorisée. ÉCRANS RETIRÉS le 27/10 (20261027i, demande d'Antoine) ; saisie de paris 🏍 gardée.
 - 🏁 « Jouable en Cockpit ? » : F1 (20261027d), équipes foot / NHL / NFL / NBA / MLB (20261027h, à confirmer par Antoine sur de vraies données), pépites NHL (20261027g), pépites NBA / NFL + 📏 Yards NFL (20261027j), Séries NHL / NFL / foot 4 saisons + dates (k–m, v), 🔥 Strikeouts MLB + NBA 4 saisons (n) — à confirmer sur vraies données.
+- 🏦 Cotes joueurs DraftKings (propBets ESPN, 20261030j-k) : NBA (Milestones) et NFL (TD) FAITES. NHL : sonde à refaire un soir de match (buteur / passeur / pointeur) — commande à redonner à Antoine. MLB : en mars (saison finie).
 - Cédric : toucher 🤍 sur Portugal. Worker : budget `_lourd` 4 → 2 proposé.
 
 ## 8. Façon de travailler en session cloud
