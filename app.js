@@ -71187,8 +71187,31 @@ async function _g45RegLeadersNfl(an, pep) {   /* 20261027j : pep = 50 joueurs (�
   return d;
 }
 var _g45RegLogsN = {};
-function _g45RegLogNfl(id, an) {
+/* ═══ 20261031p — 📦 SÉRIES INDIVIDUELLES NFL sur les archives (« Séries individuelles → NHL ? » → « oui » ; la NHL lit déjà le site officiel
+   nhle.com, pas ESPN → rien à basculer ; NFL = ESPN → archives). joueurs/<id>.json de cotes/football-us/nfl/<an>-<an+1> : stats rTD + reTD = TD
+   (goals), pTD = passes de TD (assists), côté h|a ; saison RÉGULIÈRE seulement (type de match lu dans equipes/<club>.json m[5] = 2). Saison
+   complète seulement (etat v2 = n, iv ≥ 2) ; sinon ESPN. ═══ */
+async function _g45ArchLogNfl(id, an) {
+  if ((window._G45_ARCH_LG || []).indexOf('nfl') < 0) return null;
+  var B = 'football-us/nfl/' + an + '-' + String(+an + 1).slice(2), et = await _g45ArchLire(B + '/etat.json');
+  if (!et || !(et.n > 0) || et.v2 < et.n || !(et.iv >= 2)) return null;
+  var q = await _g45ArchLire(B + '/joueurs/' + id + '.json'); if (q === null) return null;
+  var M = ((q && q.m) || []).filter(function (m) { return m[4]; }), clubs = {};
+  M.forEach(function (m) { clubs[m[3]] = 1; });
+  var TY = {}, E = await Promise.all(Object.keys(clubs).map(function (c) { return _g45ArchLire(B + '/equipes/' + c + '.json'); }));
+  if (E.some(function (x) { return !x; })) return null;
+  E.forEach(function (x) { (x.m || []).forEach(function (m) { TY[String(m[2])] = m[5]; }); });
+  var L = M.filter(function (m) { return TY[String(m[2])] === 2; }).map(function (m) { var s = m[4], g = (+s.rTD || 0) + (+s.reTD || 0), a = +s.pTD || 0; return { goals: g, assists: a, points: g + a, d: new Date(m[0]).toISOString(), e: String(m[2]), h: m[6] === 'h' ? 1 : (m[6] === 'a' ? 0 : null) }; });
+  L.sort(function (x, y) { return String(y.d).localeCompare(String(x.d)); });
+  return { gameLog: L, arch: 1 };
+}
+window._g45ArchLogNfl = _g45ArchLogNfl;   /* tests */
+function _g45RegLogNfl(id, an, sansArch) {
   var k = an + '_' + id;
+  if (!_g45RegLogsN[k] && !sansArch) {   /* 20261031p : archives d'abord */
+    _g45RegLogsN[k] = _g45ArchLogNfl(id, an).catch(function () { return null; }).then(function (a) { if (a) return a; delete _g45RegLogsN[k]; return _g45RegLogNfl(id, an, 1); });
+    return _g45RegLogsN[k];
+  }
   if (!_g45RegLogsN[k]) {
     /* comme le foot : SANS paramètre d'abord (forme sondée), ?season= seulement si la saison renvoyée n'est pas la bonne */
     var _l = function (q) { return fetch(FD_PROXY + '?host=espnweb&path=' + encodeURIComponent('/apis/common/v3/sports/football/nfl/athletes/' + id + '/gamelog' + q)).then(function (r) { return r.ok ? r.json() : null; }); };
