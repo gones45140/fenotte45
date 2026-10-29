@@ -4566,7 +4566,7 @@ function openClub(nom,idx){
   }
 
   /* types */
-  var tm={};paris.forEach(function(h){var t=_normType(window._g45TypeSansEquipe?_g45TypeSansEquipe(h.type,nom):h.type);if(!tm[t])tm[t]={n:0,wins:0,profit:0};tm[t].n++;if(h.win)tm[t].wins++;tm[t].profit+=(h.win?(h.m*h.cote)-h.m:-h.m);});
+  var tm={};paris.forEach(function(h){var t=_normType(window._g45TypeMots?_g45TypeMots(h.type,nom,h.target):h.type);if(!tm[t])tm[t]={n:0,wins:0,profit:0};tm[t].n++;if(h.win)tm[t].wins++;tm[t].profit+=(h.win?(h.m*h.cote)-h.m:-h.m);});
   var ts=Object.entries(tm).sort(function(a,b){return b[1].n-a[1].n;});var maxN=ts.length?ts[0][1].n:1;
   $i('ip-types').innerHTML=ts.length
     ?'<div class="card cp">'+ts.map(function(e){
@@ -12801,7 +12801,7 @@ function openClub(nom,idx){
   }
 
   /* types */
-  var tm={};paris.forEach(function(h){var t=_normType(window._g45TypeSansEquipe?_g45TypeSansEquipe(h.type,nom):h.type);if(!tm[t])tm[t]={n:0,wins:0,profit:0};tm[t].n++;if(h.win)tm[t].wins++;tm[t].profit+=(h.win?(h.m*h.cote)-h.m:-h.m);});
+  var tm={};paris.forEach(function(h){var t=_normType(window._g45TypeMots?_g45TypeMots(h.type,nom,h.target):h.type);if(!tm[t])tm[t]={n:0,wins:0,profit:0};tm[t].n++;if(h.win)tm[t].wins++;tm[t].profit+=(h.win?(h.m*h.cote)-h.m:-h.m);});
   var ts=Object.entries(tm).sort(function(a,b){return b[1].n-a[1].n;});var maxN=ts.length?ts[0][1].n:1;
   $i('ip-types').innerHTML=ts.length
     ?'<div class="card cp">'+ts.map(function(e){
@@ -38182,6 +38182,35 @@ function _g45TypeSansEquipe(t, nom){
   return x||raw;
 }
 window._g45TypeSansEquipe=_g45TypeSansEquipe;
+/* 20261029k (« ça a dû être fait depuis la lecture des paris qui se remplit seule » → « oui ») : libellé de ticket → mots d'Antoine (liste
+   MM_TYPES) ; noms d'équipes retirés. Winamax hockey : « Résultat » = temps réglementaire = Victoire ; « Vainqueur du match » = prolongation
+   = Vainqueur. Jambes séparées par « + », chacune traduite ; buteur / passeur / point / « buts de X » laissés tels quels (lus par les séries).
+   Utilisé : lecture d'un ticket (Simple n-type, Cockpit mmRows) et regroupement de l'onglet Types (anciens paris). */
+function _g45TypeMots(t, eq, adv){
+  var raw=(t==null?'':(''+t)).trim(); if(!raw) return raw;
+  if(typeof g45TypeSansCote==='function') raw=g45TypeSansCote(raw);
+  var nz=function(x){return String(x||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,' ').trim();};
+  var num=function(x){return String(x).replace(',','.');};
+  var legs=raw.split(/\s*\+\s*/).filter(Boolean).map(function(l){
+    if(/ou nul|double chance/.test(nz(l))) return l.trim();   /* double chance : le nom de l'équipe dit laquelle */
+    [eq,adv].forEach(function(n){ if(n&&String(n).trim().length>=3) l=_g45TypeSansEquipe(l,n); });
+    var z=nz(l.replace(/[:()\[\]]/g,' ')), m;
+    if(/buteur|marqueur|passeur|passe d|point|essai|tir/.test(z)) return l.trim();
+    if(/buts?\s+(de|du|des|d')\s/.test(z)) return l.trim();
+    if(/(les deux|deux equipes).*marqu|btts|\bbts\b/.test(z)) return /\bnon\b|\bno\b/.test(z)?'BTS Non':'BTS Oui';
+    if((m=z.match(/(?:plus de|over)\s*(\d+(?:[.,]\d+)?)/))) return 'Over '+num(m[1]);
+    if((m=z.match(/(?:moins de|under)\s*(\d+(?:[.,]\d+)?)/))) return 'Under '+num(m[1]);
+    if(/ou nul|double chance/.test(z)) return l.trim();
+    if(/^(match )?nul$|^draw$/.test(z)) return 'Nul';
+    if(/vainqueur|gagnant|prolong/.test(z)) return 'Vainqueur';
+    if(/defaite|perd/.test(z)) return 'Défaite';
+    if(/^(gagne( le match)?|victoire|resultat( du match)?( \(?1n2\)?)?|1n2|1x2)$/.test(z)) return 'Victoire';
+    return l.trim();
+  });
+  var r=legs.join(' + ');
+  return r ? r.charAt(0).toUpperCase()+r.slice(1) : raw;
+}
+window._g45TypeMots=_g45TypeMots;
 /* ───────── BILAN : filtre par type de pari ───────── */
 function _bilanSrc(){
   return (typeof filteredA==='function') ? filteredA() : (state.a||[]);
@@ -72243,7 +72272,7 @@ function _g45TicketRemplir(o) {
   met('n-joueur', o.joueur);
   if (/^\d{4}-\d{2}-\d{2}$/.test(String(o.date || ''))) met('n-date', o.date);
   if (/^\d{1,2}:\d{2}$/.test(String(o.heure || ''))) met('n-heure', String(o.heure).padStart(5, '0'));
-  met('n-comp', o.competition); met('n-type', o.type);
+  met('n-comp', o.competition); met('n-type', (typeof _g45TypeMots === 'function' && o.type) ? _g45TypeMots(o.type, o.equipe, o.adversaire) : o.type);   /* 20261029k */
   var c = num(o.cote); if (c && c < 1000) met('n-cote', c.toFixed(2));
   var m = num(o.mise); if (m) met('n-mise', m);
   var SP = { football: '⚽', soccer: '⚽', basket: '🏀', basketball: '🏀', tennis: '🎾', nfl: '🏈', 'football americain': '🏈',
@@ -72457,7 +72486,7 @@ function _g45TicketRemplirCockpit(o) {
   if (o.domicile === true || o.domicile === false) { var le = document.getElementById('c-lieu'); if (le) { le.value = o.domicile ? 'dom' : 'ext'; ids.push('c-lieu'); try { if (typeof g45LieuChange === 'function') g45LieuChange(); } catch (x) {} if (choisi && un) un.value = choisi.value; } }
   var c = num(o.cote);
   if (c && c < 1000 && typeof mmRows !== 'undefined') {
-    try { mmRows.length = 0; mmRows.push({ type: String(o.type || 'Pari'), cote: +c.toFixed(2) }); var man = document.getElementById('mm-cote-manuelle'); if (man) man.value = ''; if (typeof renderMmRows === 'function') renderMmRows(); ids.push('mm-sel'); } catch (x) {}
+    try { mmRows.length = 0; mmRows.push({ type: String(((typeof _g45TypeMots === 'function' && o.type) ? _g45TypeMots(o.type, o.equipe, o.adversaire) : o.type) || 'Pari'), cote: +c.toFixed(2) });   /* 20261029k */ var man = document.getElementById('mm-cote-manuelle'); if (man) man.value = ''; if (typeof renderMmRows === 'function') renderMmRows(); ids.push('mm-sel'); } catch (x) {}
   }
   var m = num(o.mise); if (m) met('c-mise', m);
   if (o.bookmaker) {
