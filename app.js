@@ -76331,9 +76331,11 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       c.t++; l.t++; if (x.r) { c.ok++; l.ok++; } c.g += x.g; l.g += x.g;
     });
     var gC = function (v) { return v >= 0 ? '#1ed760' : '#ff5a5a'; };
+    /* 20261029z (« il manque peut-être un point : le % de réussite par équipe avec mes bets ; attention ça commence le 1er novembre ») : % vert ≥ 60 / orange 40–59 / rouge < 40 (mêmes paris que tout le Cockpit : ckDepart) */
+    var pcH = function (ok, t) { if (!t) return ''; var v = Math.round(100 * ok / t); return '<b style="color:' + (v >= 60 ? '#1ed760' : v >= 40 ? '#ff9f43' : '#ff5a5a') + ';">' + v + ' %</b>'; };
     h += ckBox('<div style="font-size:16px;font-weight:800;margin-bottom:4px;">Par carte (détail 🏠 / ✈️ dessous)</div>' + Object.keys(C).map(function (k) { return C[k]; }).sort(function (a, b) { return b.g - a.g; }).map(function (c) {
       var ix = ckDist() ? (S.ck.D && S.ck.D.u && S.ck.D.u[c.c] ? 1 : -1) : ((typeof state !== 'undefined' && state.u) || []).findIndex(function (u) { return u && u.n === c.c; });   /* 20261029f : ligne → fiche de la carte (Bilan / Graphs / Archive / Types) */
-      var det = [['dom', '🏠'], ['ext', '✈️'], ['glob', '🌍']].filter(function (q) { return c.L[q[0]]; }).map(function (q) { var l = c.L[q[0]]; return q[1] + ' ' + l.ok + '/' + l.t + ' <b style="color:' + gC(l.g) + ';">' + ckEur(l.g) + '</b>'; });
+      var det = [['dom', '🏠'], ['ext', '✈️'], ['glob', '🌍']].filter(function (q) { return c.L[q[0]]; }).map(function (q) { var l = c.L[q[0]]; return q[1] + ' ' + l.ok + '/' + l.t + ' ' + pcH(l.ok, l.t) + ' <b style="color:' + gC(l.g) + ';">' + ckEur(l.g) + '</b>'; });
       /* 20261029p → 20261029q (« le type de pari vient de mes choix faits dans Outils ») : au CENTRE, le pari écrit sur la carte (Outils → Équipes,
          note 🌍 / 🏠 / ✈️ via _g45UfDecoupe ; joueur : la partie avant 🏠 / ✈️ = club, ignorée) ; bet45 : notes publiées (D.nt). */
       var nt = ckDist() ? ((S.ck.D && S.ck.D.nt && S.ck.D.nt[c.c]) || (S.ck.D && S.ck.D.u && S.ck.D.u[c.c] && S.ck.D.u[c.c].note) || '') : ((ckU(c.c) || {}).note || ''), tys = '';
@@ -76351,7 +76353,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
         + '<div style="flex:0 1 auto;min-width:0;position:relative;background:rgba(11,16,29,.62);border-radius:8px;padding:3px 8px;"><b style="font-size:15px;">' + ckEtoile(c.c) + e(c.c) + (ix >= 0 ? ' <span style="color:#8fb4ff;">›</span>' : '') + '</b>'
         + (det.length > 1 || (det.length === 1 && !c.L.glob) ? '<div style="font-size:13px;color:#c9d3ee;margin-top:2px;">' + det.join(' · ') + '</div>' : '') + '</div>'
         + (tys ? '<div class="g45ck-tyw"><div class="g45ck-ty" style="min-width:0;position:relative;font-size:14px;color:#fff;line-height:1.45;background:rgba(11,16,29,.62);border-radius:8px;padding:3px 8px;">' + tys + '</div></div>' : '')   /* 20261029t : centré entre l'équipe et le logo (PC) */
-        + '<div style="flex:0 0 auto;margin-left:auto;position:relative;font-size:15px;white-space:nowrap;background:rgba(11,16,29,.62);border-radius:8px;padding:3px 8px;">' + c.ok + '/' + c.t + ' · <b style="color:' + gC(c.g) + ';">' + ckEur(c.g) + '</b></div></div>';
+        + '<div style="flex:0 0 auto;margin-left:auto;position:relative;font-size:15px;white-space:nowrap;background:rgba(11,16,29,.62);border-radius:8px;padding:3px 8px;">' + c.ok + '/' + c.t + ' ' + pcH(c.ok, c.t) + ' · <b style="color:' + gC(c.g) + ';">' + ckEur(c.g) + '</b></div></div>';
     }).join(''));
     return h;
   }
