@@ -26519,7 +26519,7 @@ async function loadCalendrier() {
       var t = Date.parse(m.date) || 0; if (!u || !t || _ckV[u.n + '|' + t]) return; _ckV[u.n + '|' + t] = 1;
       _ckL.push({ t: t, n: u.n, d: m.isDom ? 1 : 0, adv: String(m.adv || ''), sp: m.sp || 'soccer' });
     });
-    var _ckD = new Date(); window._g45CkAg = { j: _ckD.getFullYear() + '-' + (_ckD.getMonth() + 1) + '-' + _ckD.getDate(), L: _ckL };
+    var _ckD = new Date(); window._g45CkAg = { j: _ckD.getFullYear() + '-' + (_ckD.getMonth() + 1) + '-' + _ckD.getDate(), L: _ckL, mur: (window._g45CkMurSig ? window._g45CkMurSig() : '') };   /* 20261029z2 : mur au moment de la lecture */
     localStorage.setItem('g45ck_ag', JSON.stringify(window._g45CkAg));
   } catch(e) {}
 
@@ -76110,6 +76110,8 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       + '<div>Perdre jusqu\'à P8 = <b style="color:#ff5a5a;">' + eu(tot[tot.length - 1]) + ' engagés</b>' + (hp > 1 && tot[hp - 1] ? ' · plus haut palier du Cockpit : <b>P' + hp + '</b> (' + String(hn).replace(/[<>&]/g, '') + ') → mise <b>' + eu(g[hp - 1] * f) + '</b>, <b>' + eu(tot[hp - 1]) + '</b> engagés' : '') + '</div></div>';
   }
   window.g45CkP1 = function (v) { v = String(v || '').replace(',', '.').replace(/[^0-9.]/g, ''); try { if (parseFloat(v) > 0) localStorage.setItem('g45ck_p1', v); else localStorage.removeItem('g45ck_p1'); } catch (e) {} ckRedessiner(); };
+  function ckMurSig() { try { return ((typeof state !== 'undefined' && state.u) || []).map(function (u) { return u && u.n; }).filter(Boolean).sort().join('|'); } catch (e) { return ''; } }
+  window._g45CkMurSig = ckMurSig;
   function ckFond(n) {   /* 20261029r : { c couleur, img } d'une carte (image perso du dépôt, logo du mur, logo connu, visuel joueur) */
     var u = ((typeof state !== 'undefined' && state.u) || []).filter(function (x) { return x && x.n === n; })[0] || {}, img = '';
     try { img = (typeof _g45ImgPersoLire === 'function' && _g45ImgPersoLire(n)) || ''; } catch (e) {}
@@ -76436,6 +76438,11 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   async function ckLancer() {
     var Q = S.ck; if (Q.enCours || ckDist()) return; Q.enCours = 1;
     try {
+      /* 20261029z2 (« si j'ajoute une équipe au mur, elle s'ajoute dans Cockpit BET45 ? ») : liste de l'Agenda lue avec un AUTRE mur → relue une fois
+         (sinon la nouvelle carte n'arrivait qu'à l'ouverture de l'Agenda ou le lendemain). */
+      var Ag0 = window._g45CkAg; if (!Ag0) { try { Ag0 = JSON.parse(localStorage.getItem('g45ck_ag') || 'null'); } catch (e) {} }
+      var ms = ckMurSig();
+      if (ckListe() && Ag0 && Ag0.mur != null && Ag0.mur !== ms && Q.reluMur !== ms && typeof window._g45AgRelire === 'function') { Q.reluMur = ms; try { await window._g45AgRelire(); } catch (e) {} ckRedessiner(); }
       if (!ckListe() && Q.relu !== ckJour() && typeof window._g45AgRelire === 'function') { Q.relu = ckJour(); try { await window._g45AgRelire(); } catch (e) {} ckRedessiner(); }
       var L = ckListe() || [], vu = {}, ch = false;
       for (var i = 0; i < L.length; i++) {
