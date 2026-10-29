@@ -70360,7 +70360,7 @@ function _g45RegHtml() {
       + (o.nv ? ' · <span style="color:#5aa9ff;font-weight:800;">🆕 nouveau</span>' : '')
       + (peu ? ' · <span style="color:#ffb13d;font-weight:800;">📉 peu de matchs</span>' : '')
       + (o.abs ? ' · <span style="color:#ff9f43;font-weight:800;">🚫 absent ' + (o.abs > 1 ? 'aux ' + o.abs + ' derniers matchs' : 'au dernier match') + (o.absD ? ' (' + esc(o.absD) + ')' : '') + '</span>' : '')   /* 20261006n */
-      + _g45NflDkHtml(o, SE)   /* 20261030k : cote DraftKings du TD (NFL) */
+      + _g45NflDkHtml(o, SE) + _g45NhlDkHtml(o, SE)   /* 20261030k : cote DraftKings du TD (NFL) ; 20261030n : NHL */
       + '</span></span>';
     var dts = (o.s.pd && o.s.pire) ? o.s.pd.map(function (d) { return d.slice(4, 6) + '/' + d.slice(2, 4) + '/' + d.slice(0, 2); }).join(' → ') : '';
     var pa = (PEP || S4) ? ((typeof _g45F1CrPal === 'function') ? _g45F1CrPal(o.s.pire) : { p: o.s.pire + 1, ico: '' }) : null;
@@ -70491,6 +70491,79 @@ function _g45NflDkHtml(o, SE) {
     + ({ 1: 'TD à tout moment', 2: '2 TD ou +', 3: '3 TD ou +' }[SE || 1]) + ' → cote ' + f(d) + '</b> · ≈ ' + f(fr) + ' en France' + (pj > 0 && fr > 1 / pj ? ' <b style="color:#5ee6a0;">💎 value</b>' : '') + '</span>';
 }
 window._g45NflDkLire = _g45NflDkLire; window._g45NflDkHtml = _g45NflDkHtml; window._g45NflDk = _g45NflDk;   /* tests */
+/* 20261030n (captures ESPN NHL « Goalscorer Props / Player Props » ; SONDE d'Antoine CBJ @ CAR : propBets 230 Anytime Goalscorer, 39 2+ buts,
+   40 3+ buts, 218 Points Milestones, 219 Assists Milestones, 232 Goals Milestones (une cote, odds.decimal présent), athlete = id ESPN) :
+   Séries individuelles NHL (_g45Reg.lg '' = NHL, ids de la LNH, pas d'ESPN) → joueurs retrouvés PAR LE NOM via l'effectif ESPN des
+   2 équipes de chaque match (site.api …/hockey/nhl/teams/<id>/roster). Buteurs : seuil 1 = 230 (sinon 232 cible 1), 2 = 39, 3 = 40 ;
+   Passeurs 219 cible seuil ; Pointeurs 218 cible seuil. 2 matchs à la fois, mémoire 10 min, compte rendu console. */
+var _g45NhlDk = { M: null, t: 0, enCours: false };
+function _g45NhlDkNom(n) { return String(n || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z]/g, ''); }
+function _g45NhlDkCote(x) {   /* cote décimale, sinon américaine convertie */
+  var d = parseFloat(((x.odds || {}).decimal || {}).value);
+  if (!(d > 1)) { var am = parseFloat(String((((x.odds || {}).american || {}).value) || '').replace('+', '')); if (am >= 100) d = 1 + am / 100; else if (am <= -100) d = 1 + 100 / -am; d = Math.round(d * 100) / 100; }
+  return d > 1 ? d : null;
+}
+function _g45NhlDkLire(items, noms, M) {   /* M[nom normalisé][type] = [[cible, cote]…] ; noms = {idEspn: nom} */
+  M = M || {};
+  (items || []).forEach(function (x) {
+    var ty = String((x.type || {}).id || ''); if (['230', '39', '40', '218', '219', '232'].indexOf(ty) < 0) return;
+    var a = String((x.athlete || {}).$ref || '').match(/athletes\/(\d+)/), d = _g45NhlDkCote(x); if (!a || !d || !noms[a[1]]) return;
+    var t = parseFloat(((x.current || {}).target || {}).value); if (isNaN(t)) t = ty === '39' ? 2 : (ty === '40' ? 3 : 1);
+    var k = _g45NhlDkNom(noms[a[1]]), o = M[k] || (M[k] = {}); (o[ty] = o[ty] || []).push([t, d]);
+  });
+  return M;
+}
+function _g45NhlDkCharger() {
+  if (_g45NhlDk.enCours || (_g45NhlDk.M && Date.now() - _g45NhlDk.t < 600000)) return;
+  _g45NhlDk.enCours = true;
+  (async function () {
+    var M = {}, nOk = 0, err = [], evs = [];
+    try {
+      var sb = await (await fetch('https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard')).json();
+      evs = ((sb && sb.events) || []).filter(function (e) { return !(((e.status || {}).type || {}).completed); });
+      var q = evs.slice();
+      var un = async function () {
+        while (q.length) {
+          var e = q.shift(), noms = {};
+          try {
+            var eqs = (((e.competitions || [])[0] || {}).competitors || []).map(function (c) { return (c.team || {}).id; }).filter(Boolean);
+            for (var i = 0; i < eqs.length; i++) {
+              var rr = await fetch('https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/teams/' + eqs[i] + '/roster'); if (!rr.ok) continue;
+              var dd = await rr.json(), ath = dd.athletes || [], L = [];
+              if (ath.length && ath[0] && ath[0].items) ath.forEach(function (g) { (g.items || []).forEach(function (p) { L.push(p); }); }); else L = ath;
+              L.forEach(function (p) { if (p && p.id) noms[String(p.id)] = p.displayName || p.fullName || ((p.firstName || '') + ' ' + (p.lastName || '')); });
+            }
+            var r = await fetch('https://sports.core.api.espn.com/v2/sports/hockey/leagues/nhl/events/' + e.id + '/competitions/' + e.id + '/odds/100/propBets?limit=500');
+            if (r.ok) { _g45NhlDkLire(((await r.json()) || {}).items, noms, M); nOk++; } else err.push(r.status);
+          } catch (x) { err.push(String(x && x.message || x).slice(0, 40)); }
+        }
+      };
+      await Promise.all([un(), un()]);
+    } catch (x) { err.push(String(x && x.message || x).slice(0, 40)); }
+    try { console.info('🏦 NHL DraftKings : ' + nOk + ' / ' + evs.length + ' matchs lus, ' + Object.keys(M).length + ' joueurs' + (err.length ? ', erreurs ' + err.slice(0, 4).join(' ') : '')); } catch (x) {}
+    _g45NhlDk.M = M; _g45NhlDk.t = Object.keys(M).length ? Date.now() : Date.now() - 540000; _g45NhlDk.enCours = false;
+    try { if (Object.keys(M).length && !_g45Reg.lg) { var bx = _g45RegBoxVis(); if (bx && _g45Reg.mem[_g45RegK()]) bx.innerHTML = _g45RegHtml(); } } catch (x) {}
+  })();
+}
+function _g45NhlDkChoix(o, cat, SE) {   /* {d, lib} ou null */
+  if (!o) return null; SE = SE || 1;
+  var pick = function (ty) { var l = o[ty] || []; for (var i = 0; i < l.length; i++) if (l[i][0] === SE) return l[i][1]; return null; };
+  var d = null;
+  if (cat === 'g') d = (SE === 1 ? (o['230'] && o['230'][0] && o['230'][0][1]) : null) || (SE === 2 ? (o['39'] && o['39'][0] && o['39'][0][1]) : null) || (SE === 3 ? (o['40'] && o['40'][0] && o['40'][0][1]) : null) || pick('232');
+  else if (cat === 'a') d = pick('219'); else if (cat === 'p') d = pick('218');
+  if (!d) return null;
+  var lib = cat === 'g' ? (SE === 1 ? 'buteur à tout moment' : SE + ' buts ou +') : (cat === 'a' ? (SE === 1 ? 'passeur' : SE + ' passes ou +') : (SE === 1 ? 'pointeur' : SE + ' points ou +'));
+  return { d: d, lib: lib };
+}
+function _g45NhlDkHtml(o, SE) {
+  if (_g45Reg.lg) return '';   /* '' = NHL */
+  if (!_g45NhlDk.M || Date.now() - _g45NhlDk.t > 600000) { _g45NhlDkCharger(); if (!_g45NhlDk.M) return ''; }
+  var c = _g45NhlDkChoix(_g45NhlDk.M[_g45NhlDkNom(o.nom)], _g45Reg.cat, SE); if (!c) return '';
+  var fr = Math.max(1.01, Math.round(c.d * (window._G45_TR_FR || 0.94) * 100) / 100), pj = (o.s && o.s.pct) ? o.s.pct / 100 : 0, f = function (x) { return x.toFixed(2).replace('.', ','); };
+  return '<br><span style="display:inline-block;margin-top:3px;font-size:13px;color:#fff;background:rgba(47,107,255,.22);border-radius:7px;padding:2px 7px;white-space:normal;">🏦 DraftKings <b>'
+    + c.lib + ' → cote ' + f(c.d) + '</b> · ≈ ' + f(fr) + ' en France' + (pj > 0 && fr > 1 / pj ? ' <b style="color:#5ee6a0;">💎 value</b>' : '') + '</span>';
+}
+window._g45NhlDkLire = _g45NhlDkLire; window._g45NhlDkChoix = _g45NhlDkChoix; window._g45NhlDkNom = _g45NhlDkNom;   /* tests */
 async function g45RegOuvrir() {
   var box = _g45RegBoxVis(); if (!box) return;
   var sa = _g45RegSaison(_g45Reg.an), k = _g45RegK(), pk = _g45RegPK(), lg = _g45Reg.lg, an = _g45Reg.an;
