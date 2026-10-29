@@ -76132,6 +76132,18 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     return '<div style="margin-top:6px;">' + (deja ? '<span style="font-size:14px;color:#1ed760;font-weight:700;">✅ ' + esc(P[0].n) + ' est déjà au mur</span>'
       : '<button onclick="g45CrAjoutMur(' + S.combos.indexOf(c) + ')" style="padding:10px 14px;border-radius:10px;border:1px solid #1ed760;background:#14532d;color:#fff;font-size:15px;font-weight:800;cursor:pointer;">➕ Ajouter ' + esc(P[0].n) + ' au mur</button>') + '</div>';
   }
+  /* 20261101d (capture carte Carolina : bloc « 📊 🏠 Seth Jarvis pointeur » rangé par l'ancien 📌 Garder, avant 20261101c) : au démarrage, une
+     carte d'ÉQUIPE dont les séries gardées (u.ps) sont celles d'un pari JOUEUR (buteur, passeur, pointeur, décisif, doublé, triplé, TD,
+     lanceur, home run) les perd ; les séries « Calculer mes séries » (u.psL) ne sont pas touchées. Une fois par appareil suffit, sans risque. */
+  setTimeout(function () {
+    try {
+      var ch = 0; ((typeof state !== 'undefined' && state.u) || []).forEach(function (u) {
+        if (!u || u.type === 'joueur' || !u.ps || !u.ps.lib) return;
+        if (/\b(buteur|passeur|pointeur|d[ée]cisif|doubl[ée]|tripl[ée]|touchdown|td|lanceur|home run)\b/i.test(String(u.ps.lib))) { delete u.ps; ch++; }
+      });
+      if (ch) { try { save(); } catch (e) {} try { if (typeof _g45PushBetsGithub === 'function') _g45PushBetsGithub(true); } catch (e) {} }   /* pas de render() : la carte se redessine au prochain affichage (un render à 4 s casserait l'écran ouvert) */
+    } catch (e) {}
+  }, 4000);
   window.g45CrAjoutMur = function (i) {
     var c = S.combos[i]; if (!c || typeof state === 'undefined') return;
     var P = joueurs(c); if (!P.length) return;
