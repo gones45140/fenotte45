@@ -83828,9 +83828,11 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
   /* 20261031b (« classer par sport, championnat, équipe / joueur », « un truc organisé pour retrouver facilement ») : archive rangée
      cotes/<sport>/<ligue>/matchs/AAAA-MM.json (+ index equipes / joueurs) dans gones45-archives. */
   var SPN = { soccer: 'foot', hockey: 'hockey', basketball: 'basket', football: 'football-us' };
+  /* 20261031c (« ça sera classé par saison ? ») : …/<ligue>/<saison>/matchs/AAAA-MM.json, saison = juillet → juin (2026-27) ; mois groupés par saison */
+  var SAISON = function (mo) { var y = +mo.slice(0, 4), m = +mo.slice(5, 7); return m >= 7 ? y + '-' + String(y + 1).slice(2) : (y - 1) + '-' + String(y).slice(2); };
   async function lire(lg, mo) {
     var K = lg + '/' + mo; if (MEM[K] && Date.now() - MEM[K].t < 600000) return MEM[K].d;
-    var d = null; try { var r = await fetch('https://raw.githubusercontent.com/gones45140/gones45-archives/main/cotes/' + (SPN[ST.sp] || 'foot') + '/' + lg + '/matchs/' + mo + '.json?t=' + Math.floor(Date.now() / 600000), { cache: 'no-store' }); if (r.ok) d = await r.json(); } catch (e) {}
+    var d = null; try { var r = await fetch('https://raw.githubusercontent.com/gones45140/gones45-archives/main/cotes/' + (SPN[ST.sp] || 'foot') + '/' + lg + '/' + SAISON(mo) + '/matchs/' + mo + '.json?t=' + Math.floor(Date.now() / 600000), { cache: 'no-store' }); if (r.ok) d = await r.json(); } catch (e) {}
     MEM[K] = { t: Date.now(), d: d || {} }; return MEM[K].d;
   }
   var JTY = { soccer: ['230', 'buteur'], hockey: ['230', 'buteur'], football: ['31', 'TD'], basketball: ['218', 'points'] };
@@ -83908,7 +83910,8 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
     var sel = 'background:#16213f;color:#fff;border:1px solid #6d9dff;border-radius:8px;padding:8px 10px;font-size:15px;font-weight:700;margin:0 8px 8px 0;max-width:100%;';
     var h = '<div style="font-size:16px;font-weight:900;letter-spacing:1px;color:#fff;margin-bottom:8px;">📦 COTES GARDÉES <span style="font-size:13px;color:#9fb0c7;font-weight:600;letter-spacing:0;">(avant-match, ' + ((typeof _g45DkMode === 'function' && _g45DkMode() === 'fr') ? 'estimée France' : 'DraftKings') + ')</span></div>'
       + '<select onchange="g45ArchEq(this.value)" style="' + sel + '"><option value="">Toutes les équipes</option>' + Object.keys(eqs).sort(function (a, b) { return String(eqs[a]).localeCompare(String(eqs[b])); }).map(function (k) { return '<option value="' + k + '"' + (k === eq ? ' selected' : '') + '>' + esc(eqs[k]) + '</option>'; }).join('') + '</select>'
-      + '<select onchange="g45ArchMois(this.value)" style="' + sel + '">' + ML.map(function (m) { var p = m.split('-'); return '<option value="' + m + '"' + (m === mo ? ' selected' : '') + '>' + ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'][+p[1] - 1] + ' ' + p[0] + '</option>'; }).join('') + '</select>';
+      + '<select onchange="g45ArchMois(this.value)" style="' + sel + '">' + ML.map(function (m, i) { var p = m.split('-'), g = SAISON(m), g0 = i ? SAISON(ML[i - 1]) : '';
+          return (g !== g0 ? (i ? '</optgroup>' : '') + '<optgroup label="Saison ' + g + '">' : '') + '<option value="' + m + '"' + (m === mo ? ' selected' : '') + '>' + ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'][+p[1] - 1] + ' ' + p[0] + '</option>'; }).join('') + '</optgroup></select>';
     var L = ids.filter(function (i) { return !eq || String(D[i].h.id) === eq || String(D[i].a.id) === eq; });
     if (nR) h += '<div style="font-size:13px;color:#ffb36b;margin:2px 0 4px;">Matchs rattrapés (avant le 29/10/2026) : cotes de CLÔTURE seulement (1N2, handicap, total), pas de cotes joueurs.</div>';
     h += L.length ? L.map(function (i) { return carte(D[i], i, eq); }).join('') : '<div style="font-size:14px;color:#c9d3ee;padding:8px 2px;">Aucun match gardé pour ce mois (pas de match, ou rattrapage pas encore passé).</div>';
