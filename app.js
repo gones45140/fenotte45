@@ -43574,7 +43574,8 @@ var _G45_CACHE_MAX=60*1024;
       try{
         if(k!=='g45v5' && _G45_CACHE_PREFIXES.some(function(p){ return k.indexOf(p)===0; })){
           var taille=String(v||'').length;
-          if(taille>_G45_CACHE_MAX){
+          /* 20261030f : index joueurs NBA d'une saison ≈ 60 Ko (82 matchs × 4 stats × 12 joueurs, même allégé) → plafond à part 150 Ko */
+          if(taille>(k.indexOf('g45_jou_v2_basketball_')===0 ? 150*1024 : _G45_CACHE_MAX)){
             if(!prevenu[k]){ prevenu[k]=1; console.info('↩️ cache non persisté (trop volumineux : '+Math.round(taille/1024)+' Ko) — '+k); }
             return;
           }
@@ -65859,7 +65860,7 @@ _G45_JOU_TABLE.basketball = { sansBarre: true, lignes: true, roles: [
   { k: 'reb', lab: 'Rebonds',       col: '#1ed760', ico: '\uD83D\uDD04', cols: [['REB']], mode: 'first', seuils: _g45BkLignes(1, 15), def: '4.5' },   /* « d'un joueur à l'autre le nombre de rebonds change de 1 » */
   { k: 'ast', lab: 'Passes',        col: '#a78bfa', ico: '\uD83C\uDFAF', cols: [['AST']], mode: 'first', seuils: _g45BkLignes(1, 12), def: '4.5' },   /* « pareil pour les passes » */
   /* 20261030e (capture bookmaker « Total du joueur (points + rebonds + passes) (paliers) ») : somme des 3 colonnes, mêmes paliers que le book */
-  { k: 'pra', lab: 'Pts + reb + passes', col: '#f5c542', ico: '\u2795', cols: [['PTS'], ['REB'], ['AST']], mode: 'first', seuils: _g45BkLignes(9, 55), def: '29.5' },
+  { k: 'pra', lab: 'Pts + reb + passes', col: '#f5c542', ico: '\u2795', cols: [['PTS'], ['REB'], ['AST']], mode: 'first', seuils: _g45BkLignes(9, 55), def: '29.5', deduit: ['pts', 'reb', 'ast'] },   /* 20261030f : pas gardé, recalculé (place) */
   { k: 'tp',  lab: '3 pts réussis', col: '#22d3ee', ico: '\uD83D\uDC4C', cols: [['3PT']], mode: 'first', made: true, seuils: _g45BkLignes(0, 6), def: '1.5' }
 ]};
 
@@ -66001,6 +66002,9 @@ function _g45JouLireMatch(cfg, sum, teamId, nomNorm, idx) {
   if (cfg.parStat) return _g45JouLireMatchStats(cfg, mien, idx);
   var res = {};
   cfg.roles.forEach(function (role) {
+    /* 20261030f (Wembanyama : 2025-26 et 2023-24 « pas de stat » — console : « cache non persisté (trop volumineux : 60 Ko) », plafond
+       _G45_CACHE_MAX) : un rôle « deduit » (NBA pts + reb + passes) n'est PAS rangé par match (somme refaite à la lecture, usVal) → −25 %. */
+    if (role.deduit) return;
     var cats = _g45JouCats(mien, role.cats || cfg.cats);
     var parJ = {}, vus = {};
     if (role.starter) {   /* 20261025m : lanceur partant (athletes[].starter de la catégorie pitching) */
@@ -66036,6 +66040,10 @@ function _g45JouLireMatch(cfg, sum, teamId, nomNorm, idx) {
       });
     });
     if (Object.keys(parJ).length) res[role.k] = parJ;
+  });
+  cfg.roles.forEach(function (role) {   /* 20261030f : total du rôle déduit pour la liste des joueurs (tot), pas par match */
+    if (!role.deduit) return;
+    Object.keys(idx.joueurs).forEach(function (aid) { var t = 0; role.deduit.forEach(function (k) { t += ((res[k] || {})[aid]) || 0; }); if (t > 0) idx.joueurs[aid].tot[role.k] = (idx.joueurs[aid].tot[role.k] || 0) + t; });
   });
   return res;
 }
@@ -75064,6 +75072,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var pr = (ix.pres || {})[eid];
     if (pr ? !pr.some(function (q) { return String(q) === String(pid); }) : !/rugby/.test(S.ctx.sp)) return null;   /* rugby à XV : feuille muette, essais lus dans les actions → présence inconnue */
     var o = {}, pm = ix.parMatch[eid] || {}; Object.keys(pm).forEach(function (k) { o[k] = (pm[k] || {})[pid] || 0; });
+    try { (_g45JouCfg(S.ctx.sp).roles || []).forEach(function (r) { if (r.deduit) o[r.k] = r.deduit.reduce(function (t, k) { return t + (o[k] || 0); }, 0); }); } catch (e) {}   /* 20261030f */
     return o;
   }
   window.g45CrUsLire = function () { var D = S.data[S.nom]; if (D) usCharger(S.nom, D); redessiner(); };
