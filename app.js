@@ -83821,10 +83821,13 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
   var esc = function (t) { return String(t == null ? '' : t).replace(/[<>&"]/g, ''); };
   var f2 = function (x) { return x.toFixed(2).replace('.', ','); };
   var v = function (d) { if (!(d > 1)) return '–'; return (typeof _g45DkMode === 'function' && _g45DkMode() === 'fr') ? '≈ ' + f2(Math.max(1.01, Math.round(d * (window._G45_TR_FR || 0.94) * 100) / 100)) : f2(d); };
-  var moisListe = function () { var L = [], d = new Date(), y = d.getFullYear(), m = d.getMonth() + 1; while (y > 2026 || (y === 2026 && m >= 10)) { L.push(y + '-' + ('0' + m).slice(-2)); m--; if (!m) { m = 12; y--; } } return L; };
+  /* 20261031a : archive DÉMÉNAGÉE dans le dépôt public gones45140/gones45-archives (cotes/<ligue>/AAAA-MM.json) + rattrapage des 4 saisons
+     passées (robot « rattrapage » : score, feuille de match, cotes de clôture) → mois depuis juillet de l'année − 4. */
+  var A0 = new Date().getFullYear() - 4;
+  var moisListe = function () { var L = [], d = new Date(), y = d.getFullYear(), m = d.getMonth() + 1; while (y > A0 || (y === A0 && m >= 7)) { L.push(y + '-' + ('0' + m).slice(-2)); m--; if (!m) { m = 12; y--; } } return L; };
   async function lire(lg, mo) {
     var K = lg + '/' + mo; if (MEM[K] && Date.now() - MEM[K].t < 600000) return MEM[K].d;
-    var d = null; try { var r = await fetch('https://raw.githubusercontent.com/gones45140/gones45/main/donn%C3%A9es/cotes/' + lg + '/' + mo + '.json?t=' + Math.floor(Date.now() / 600000), { cache: 'no-store' }); if (r.ok) d = await r.json(); } catch (e) {}
+    var d = null; try { var r = await fetch('https://raw.githubusercontent.com/gones45140/gones45-archives/main/cotes/' + lg + '/' + mo + '.json?t=' + Math.floor(Date.now() / 600000), { cache: 'no-store' }); if (r.ok) d = await r.json(); } catch (e) {}
     MEM[K] = { t: Date.now(), d: d || {} }; return MEM[K].d;
   }
   var JTY = { soccer: ['230', 'buteur'], hockey: ['230', 'buteur'], football: ['31', 'TD'], basketball: ['218', 'points'] };
@@ -83896,7 +83899,7 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
     ST.el = el; ST.lg = lg; ST.sp = sp;
     var ML = moisListe(), mo = ST.mois[lg] && ML.indexOf(ST.mois[lg]) >= 0 ? ST.mois[lg] : ML[0];
     var D = await lire(lg, mo); if (ST.lg !== lg) return;
-    var ids = Object.keys(D).sort(function (a, b) { return D[b].t - D[a].t; }), eqs = {};
+    var ids = Object.keys(D).sort(function (a, b) { return D[b].t - D[a].t; }), eqs = {}, nR = ids.filter(function (i) { return D[i].r; }).length;
     ids.forEach(function (i) { ['h', 'a'].forEach(function (k) { var t = D[i][k]; if (t && t.id) eqs[t.id] = t.nom; }); });
     var eq = ST.eq[lg] && eqs[ST.eq[lg]] ? ST.eq[lg] : '';
     var sel = 'background:#16213f;color:#fff;border:1px solid #6d9dff;border-radius:8px;padding:8px 10px;font-size:15px;font-weight:700;margin:0 8px 8px 0;max-width:100%;';
@@ -83904,7 +83907,8 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
       + '<select onchange="g45ArchEq(this.value)" style="' + sel + '"><option value="">Toutes les équipes</option>' + Object.keys(eqs).sort(function (a, b) { return String(eqs[a]).localeCompare(String(eqs[b])); }).map(function (k) { return '<option value="' + k + '"' + (k === eq ? ' selected' : '') + '>' + esc(eqs[k]) + '</option>'; }).join('') + '</select>'
       + '<select onchange="g45ArchMois(this.value)" style="' + sel + '">' + ML.map(function (m) { var p = m.split('-'); return '<option value="' + m + '"' + (m === mo ? ' selected' : '') + '>' + ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'][+p[1] - 1] + ' ' + p[0] + '</option>'; }).join('') + '</select>';
     var L = ids.filter(function (i) { return !eq || String(D[i].h.id) === eq || String(D[i].a.id) === eq; });
-    h += L.length ? L.map(function (i) { return carte(D[i], i, eq); }).join('') : '<div style="font-size:14px;color:#c9d3ee;padding:8px 2px;">Aucun match gardé pour ce mois. Le robot garde les cotes des matchs qui commencent dans les 4 h (toutes les 2 h), depuis le 29/10/2026.</div>';
+    if (nR) h += '<div style="font-size:13px;color:#ffb36b;margin:2px 0 4px;">Matchs rattrapés (avant le 29/10/2026) : cotes de CLÔTURE seulement (1N2, handicap, total), pas de cotes joueurs.</div>';
+    h += L.length ? L.map(function (i) { return carte(D[i], i, eq); }).join('') : '<div style="font-size:14px;color:#c9d3ee;padding:8px 2px;">Aucun match gardé pour ce mois (pas de match, ou rattrapage pas encore passé).</div>';
     el.innerHTML = h;
   };
 })();

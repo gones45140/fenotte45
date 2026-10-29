@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action (il est court exprès). Le détail de tout l'historique est dans HISTORIQUE.md
-(à chercher avec grep, jamais à lire en entier). Mis à jour le 30/10/2026 (version déployée : 20261030z, même app.js sur gones45 et fenotte45).
+(à chercher avec grep, jamais à lire en entier). Mis à jour le 31/10/2026 (version déployée : 20261031a, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -43,6 +43,7 @@ Principe validé : « blason / logo derrière, bande sombre sous le texte ».
 
 DEUX DÉPÔTS GITHUB : gones45140/gones45 et gones45140/fenotte45 (un AUTRE dépôt).
 (GONE45140/GONES45 et gones45140/manifest.json existent aussi : ne pas y toucher.)
+3e dépôt PUBLIC gones45140/gones45-archives (créé par Antoine le 30/10) : archive des cotes + feuilles de match, ses PROPRES robots (cotes-archive toutes les 2 h, rattrapage à la main) ; lu par l'appli en raw.
 app.js est déposé dans les deux ; indexfenotte.html et auth-guard.js
 n'existent QUE dans fenotte45 — une session cloud sur gones45 ne les voit pas :
 les demander à Antoine.
@@ -141,7 +142,7 @@ PIÈGES À NE JAMAIS OUBLIER :
 - 🏍 MotoGP EN PAUSE (25/10, confirmé 27/10) : api.motogp.pulselive.com = 403 (bloqué par MotoGP, NE PAS contourner, CGU) ; TheSportsDB 4407 clé gratuite = inutilisable (eventsseason : 15 séances du 1er GP seulement ; eventspastleague : 1 GP sans résultat). Ne pas reproposer sans nouvelle source gratuite et autorisée. ÉCRANS RETIRÉS le 27/10 (20261027i, demande d'Antoine) ; saisie de paris 🏍 gardée.
 - 🏁 « Jouable en Cockpit ? » : F1 (20261027d), équipes foot / NHL / NFL / NBA / MLB (20261027h, à confirmer par Antoine sur de vraies données), pépites NHL (20261027g), pépites NBA / NFL + 📏 Yards NFL (20261027j), Séries NHL / NFL / foot 4 saisons + dates (k–m, v), 🔥 Strikeouts MLB + NBA 4 saisons (n) — à confirmer sur vraies données.
 - 🏦 Cotes joueurs DraftKings (propBets ESPN, 20261030j-k) : NBA (Milestones), NFL (TD), NHL (buteur / passeur / pointeur, joueur retrouvé par le nom, 20261030n), Agenda joueurs (o), fenêtre de match (p) et FOOT (buteur / 2 buts / carton, q) FAITES ; foot « les deux marquent » (152) dans l'Agenda par l'ORDRE (1er = oui, comme la page ESPN, w) ; buts d'équipe foot 253 / NHL 151 dans l'Agenda (plus / moins séparés par la logique, t) ; ⚡ Décisif foot ESTIMÉ (buteur + passeur, t) — NFL et NHL à confirmer à l'écran par Antoine. MLB : en mars (saison finie).
-- 📦 Archive des cotes d'avant-match (robot cotes-archive.yml / .github/scripts/cotes_archive.mjs, toutes les 2 h, données/cotes/<ligue>/AAAA-MM.json, 20261030y) : onglet Compétitions → championnat → « 📦 Cotes gardées » (g45CotesArch, 20261030y ; équipe / mois, score final + FEUILLE DE MATCH ajoutés par le robot après le match (f, bu, st : buteurs / passeurs / stats joueurs, 20261030z) → ✅ / ❌ et 📋 dans l'onglet). PDF par CHAMPIONNAT et par SAISON (Antoine : « fin d'année en PDF, nouveau PDF l'année d'après » → « année footballistique » → « ou NHL, par saison en fait ») : données/cotes/pdf/<ligue>/<saison>.pdf généré par le robot à la FIN de la saison de chaque ligue (foot mai-juin, NHL / NBA juin, NFL février ; Playwright) — à préparer avant février 2027 (NFL en premier). Vérifier aussi « les deux marquent » (1,38 / 3,00 identiques sur 2 matchs au 1er passage).
+- 📦 Archive des cotes d'avant-match (DÉPÔT gones45140/gones45-archives depuis 20261031a : robot cotes-archive.yml / .github/scripts/cotes_archive.mjs toutes les 2 h, cotes/<ligue>/AAAA-MM.json ; robot rattrapage.yml = 4 saisons passées, score + feuille + cotes de clôture, fiches r: 1) : onglet Compétitions → championnat → « 📦 Cotes gardées » (g45CotesArch, 20261030y ; équipe / mois, score final + FEUILLE DE MATCH ajoutés par le robot après le match (f, bu, st : buteurs / passeurs / stats joueurs, 20261030z) → ✅ / ❌ et 📋 dans l'onglet). PDF par CHAMPIONNAT et par SAISON (Antoine : « fin d'année en PDF, nouveau PDF l'année d'après » → « année footballistique » → « ou NHL, par saison en fait ») : données/cotes/pdf/<ligue>/<saison>.pdf généré par le robot à la FIN de la saison de chaque ligue (foot mai-juin, NHL / NBA juin, NFL février ; Playwright) — à préparer avant février 2027 (NFL en premier). Vérifier aussi « les deux marquent » (1,38 / 3,00 identiques sur 2 matchs au 1er passage).
 - Cédric : toucher 🤍 sur Portugal. Worker : budget `_lourd` 4 → 2 proposé.
 
 ## 8. Façon de travailler en session cloud
