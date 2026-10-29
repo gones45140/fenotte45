@@ -73129,7 +73129,8 @@ function _g45AgConsigne(note, isDom) {
     o.split('+').forEach(function (l) {
       l = l.trim(); var t2;
       if (!l) return;
-      if (/jouer contre|d[ée]faite/i.test(l)) legs.push({ k: 'def' });
+      if (/perdant/i.test(l)) legs.push({ k: 'per' });   /* 20261031n : « Perdant » (hockey, prolongation comprise) */
+      else if (/jouer contre|d[ée]faite/i.test(l)) legs.push({ k: 'def' });
       else if (/victoire/i.test(l)) legs.push({ k: 'vic' });
       else if (/vainqueur/i.test(l) && !/buts?\s+(?:de|du|des|d['’])/i.test(l)) legs.push({ k: 'vqr' });
       /* 20261025k (ticket MyMatch « Vainqueur Dallas Stars + Nombre de buts de Dallas Stars Plus de 2,5 ») : buts d'UNE équipe (« buts de Dallas
@@ -73209,6 +73210,7 @@ function _g45AgOdHtml(C, od, sp) {
       if (l.k === 'vic' && sp === 'hockey') { c = moi; lib = 'Vainqueur (prolong. comprise)'; noteHk = 1; if (!seuilV) seuilV = c; }
       else if (l.k === 'vic' || l.k === 'vqr') { c = moi; lib = l.k === 'vic' ? 'Victoire' : 'Vainqueur'; if (!seuilV) seuilV = c; }
       else if (l.k === 'def') { c = lui; lib = foot ? 'Défaite' : 'Défaite (adversaire gagne)'; if (!seuilV) seuilV = c; }
+      else if (l.k === 'per') { c = lui; lib = 'Perdant (adversaire vainqueur, prolong. comprise)'; if (!seuilV) seuilV = c; }
       else if (l.k === 'ov' || l.k === 'un') {
         lib = (l.k === 'ov' ? 'Over ' : 'Under ') + String(l.L).replace('.', ',');
         if (od.line == null || Math.abs(od.line - l.L) > 0.01) { parts.push(lib + ' <span style="color:#ffb36b;">ligne non proposée' + (od.line != null ? ' (ESPN : ' + String(od.line).replace('.', ',') + ')' : '') + '</span>'); ok = false; return; }
@@ -73236,8 +73238,8 @@ function _g45AgOdHtml(C, od, sp) {
   /* 20261017r (« condition remplie 1,41 c'est ❌ », validé « oui ») : « … si cote inférieure à 1,5 » = règle de la MONTANTE (1,5 mini) —
      résultat seul SOUS le seuil = ❌ (pas assez) → il faut l'autre jambe ; au-dessus = ✅ le résultat seul suffit. */
   if (C.seuil && seuilV > 1) {
-    var _l0 = C.opts[0] || [], _r = _l0.filter(function (l) { return l.k === 'vic' || l.k === 'vqr' || l.k === 'def'; })[0];
-    var _rn = !_r ? 'Résultat seul' : (_r.k === 'def' ? 'Défaite seule' : (_r.k === 'vqr' ? 'Vainqueur seul' : 'Victoire seule'));
+    var _l0 = C.opts[0] || [], _r = _l0.filter(function (l) { return l.k === 'vic' || l.k === 'vqr' || l.k === 'def' || l.k === 'per'; })[0];
+    var _rn = !_r ? 'Résultat seul' : (_r.k === 'def' || _r.k === 'per' ? 'Défaite seule' : (_r.k === 'vqr' ? 'Vainqueur seul' : 'Victoire seule'));
     var _aj = _l0.filter(function (l) { return l !== _r; }).map(function (l) {
       return l.k === 'ov' || l.k === 'un' ? (l.k === 'ov' ? 'over ' : 'under ') + String(l.L).replace('.', ',') : (l.k === 'but' ? 'buteur' : String(l.t || '').replace(/</g, '&lt;'));
     }).filter(Boolean).join(' + ');
@@ -73557,7 +73559,7 @@ function _g45AgFrHtml(x, od) {
   (x.C.opts || []).forEach(function (L) { L.forEach(function (l) {
     if (cc) return;
     if (l.k === 'vic' || l.k === 'vqr') { cc = od.moiDom ? 'h' : 'a'; lib = l.k === 'vic' ? 'victoire' : 'vainqueur'; }
-    else if (l.k === 'def') { cc = od.moiDom ? 'a' : 'h'; lib = 'défaite'; }
+    else if (l.k === 'def' || l.k === 'per') { cc = od.moiDom ? 'a' : 'h'; lib = l.k === 'per' ? 'perdant' : 'défaite'; }
   }); });
   var tit = { h: od.hN || '1', d: 'Nul', a: od.aN || '2' };
   var th = 'padding:3px 6px;font-size:13px;color:#c9d3ee;font-weight:700;text-align:center;';
@@ -75393,6 +75395,10 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       for (var i = 0; i < (D.saisons || []).length; i++) {
         var sa = D.saisons[i]; if (!sa || !sa.ms) continue;
         var cle = _g45JouCle(C.sp, C.lg, sa.an, C.id), old = _g45JouLire(cle) || { joueurs: {}, parMatch: {}, pres: {}, n: 0 };
+        if (sa.ms.some(function (m) { return m[6] && !(old.parMatch && old.parMatch[m[6]]); })) {   /* 20261031n : archives GitHub d'abord (index complet de la saison) */
+          var AX = null; try { AX = await aJouUS(C.sp, C.lg, C.id, sa.an); } catch (e) {}
+          if (AX && sa.ms.every(function (m) { return !m[6] || AX.parMatch[m[6]]; })) { old = AX; old.total = Object.keys(AX.parMatch).length; try { localStorage.setItem(cle, JSON.stringify(old)); } catch (e) {} U.f += sa.ms.length; }
+        }
         var L = sa.ms.filter(function (m) { return m[6] && !(old.parMatch && old.parMatch[m[6]]); }).map(function (m) { return { id: m[6] }; });
         if (!L.length) continue;
         var f0 = U.f, nw = null;
@@ -75800,7 +75806,40 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     return M.filter(function (m) { return m[4] && m[5] === 2; }).map(function (m) { var h = m[3] === 'h'; return [aIso(m[0]), h ? 1 : 0, h ? m[4][0] : m[4][1], h ? m[4][1] : m[4][0], sp === 'hockey' ? (m[6] || 0) : 0, 0, String(m[2])]; })
       .sort(function (a, b) { return a[0] < b[0] ? -1 : 1; });
   }
-  window._g45CrArch = { aEquipeUS: aEquipeUS, aEquipe: aEquipe, aJoueur: aJoueur, aSa: aSa, aFeuilles: aFeuilles, mem: AMEM };   /* tests */
+  /* ═══ 20261031n — 👤 JOUEURS NHL / NBA / NFL des critères sur les archives (« ok ajoute et passe aux joueurs sport US »). Le robot garde par
+     match fiche.st = { idJoueur: { n, k: h|a, s: { G, A, PTS, REB, AST, 3PT, rTD, reTD, pTD…, J: 1 = a joué } } } (J ajouté le 31/10, comme
+     _g45JouPresents : tout joueur de la feuille sauf didNotPlay). On refait ici l'index de _g45JouConstruire (parMatch / pres / joueurs, même
+     forme, même clé localStorage) à partir des fichiers du mois → plus aucun summary ESPN. Seulement si la saison est complète (etat v2 = n).
+     MLB : pas encore (lanceur partant non gardé). ═══ */
+  var AJR = {
+    hockey: { g: ['G'], a: ['A'], p: ['G', 'A'] },
+    basketball: { pts: ['PTS'], reb: ['REB'], ast: ['AST'], tp: ['3PT'] },
+    football: { td: ['rTD', 'reTD'], ptd: ['pTD'] }
+  };
+  async function aJouUS(sp, lg, tid, an) {   /* index { joueurs, parMatch, pres } de la saison, null → ESPN */
+    var R0 = AJR[sp]; if (!R0 || !aOk(lg)) return null;
+    var B = ASP[sp] + '/' + lg + '/' + aSaUS(lg, an), et = await aLire(B + '/etat.json'); if (!et || !(et.n > 0) || et.v2 < et.n) return null;
+    var q = await aLire(B + '/equipes/' + tid + '.json'); if (!q) return null;
+    var M = {}; (q.m || []).forEach(function (m) { if (m[4] && m[5] === 2) M[m[1]] = 1; });
+    var F = await Promise.all(Object.keys(M).map(function (mo) { return aLire(B + '/matchs/' + mo + '.json'); }));
+    if (F.some(function (D) { return !D; })) return null;
+    var ix = { builtAt: Date.now(), n: 0, joueurs: {}, parMatch: {}, pres: {}, arch: 1 };
+    F.forEach(function (D) { Object.keys(D).forEach(function (eid) {
+      var fi = D[eid]; if (!fi || !fi.f || fi.ty !== 2 || !fi.v2) return;
+      var k = String((fi.h || {}).id) === String(tid) ? 'h' : (String((fi.a || {}).id) === String(tid) ? 'a' : ''); if (!k) return;
+      var res = {}, pr = [];
+      Object.keys(fi.st || {}).forEach(function (pid) {
+        var o = fi.st[pid]; if (!o || o.k !== k) return; var st = o.s || {};
+        if (st.J) pr.push(pid);
+        var J = ix.joueurs[pid] || (ix.joueurs[pid] = { nom: o.n || '?', tot: {} });
+        Object.keys(R0).forEach(function (rk) { var v = 0; R0[rk].forEach(function (c) { v += +st[c] || 0; }); if (v > 0) { (res[rk] = res[rk] || {})[pid] = v; J.tot[rk] = (J.tot[rk] || 0) + v; } });
+      });
+      if (sp === 'basketball') Object.keys(ix.joueurs).forEach(function (pid) { var J = ix.joueurs[pid]; ['pra', 'pr', 'pa', 'ra'].forEach(function (dk) { var L = { pra: ['pts', 'reb', 'ast'], pr: ['pts', 'reb'], pa: ['pts', 'ast'], ra: ['reb', 'ast'] }[dk], t = 0; L.forEach(function (x) { t += ((res[x] || {})[pid]) || 0; }); if (t > 0) J.tot[dk] = (J.tot[dk] || 0) + t; }); });
+      ix.parMatch[eid] = res; if (pr.length) ix.pres[eid] = pr; ix.n++;
+    }); });
+    return ix.n ? ix : null;
+  }
+  window._g45CrArch = { aJouUS: aJouUS, aEquipeUS: aEquipeUS, aEquipe: aEquipe, aJoueur: aJoueur, aSa: aSa, aFeuilles: aFeuilles, mem: AMEM };   /* tests */
   async function charger(nom) {
     if (S.data[nom] && (S.data[nom].err || Date.now() - S.data[nom].t < 3600000)) return;
     if (S.enCours[nom]) return; S.enCours[nom] = 1;
@@ -76286,7 +76325,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     R.opts.forEach(function (legs) {
       var c = { res: '', ou: '', L: L0, bts: '' };
       legs.forEach(function (l) {
-        if (l.k === 'vic' || l.k === 'vqr' || l.k === 'def') c.res = (us() && l.k === 'vic') ? 'vqr' : l.k;
+        if (l.k === 'vic' || l.k === 'vqr' || l.k === 'def' || l.k === 'per') c.res = (us() && l.k === 'vic') ? 'vqr' : (us() && l.k === 'per' ? 'def' : l.k);
         else if (l.k === 'ov' || l.k === 'un') { c.ou = l.k; c.L = l.L; }
         else if (l.k === '?' && /btts|bts|deux.*marqu/i.test(l.t || '')) c.bts = /non|no\b/i.test(l.t) ? 'non' : 'oui';
       });
@@ -76330,7 +76369,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     if (!R || R.nobet || !R.opts.length) return null;
     var c = combo0(); c.res = ''; var ok = true;
     R.opts[0].forEach(function (l) {
-      if (l.k === 'vic' || l.k === 'vqr' || l.k === 'def') c.res = (us() && l.k === 'vic') ? 'vqr' : l.k;
+      if (l.k === 'vic' || l.k === 'vqr' || l.k === 'def' || l.k === 'per') c.res = (us() && l.k === 'vic') ? 'vqr' : (us() && l.k === 'per' ? 'def' : l.k);
       else if (l.k === 'ov' || l.k === 'un') { c.ou = l.k; c.L = l.L; }
       else if (l.k === '?' && /btts|bts|deux.*marqu/i.test(l.t || '')) c.bts = /non|no\b/i.test(l.t) ? 'non' : 'oui';
       else if (l.k === 'teq' && nom) { if (serTeq(l, nom) === 'te') { c.te = l.s; c.TL = l.L; } else { c.ad = l.s; c.AL = l.L; } }   /* 20261028l */
@@ -76426,7 +76465,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     if (!R || R.nobet || !R.opts.length) return null;
     var c = { res: '', ou: '', L: 2.5, bts: '', te: '', TL: 2.5, ad: '', AL: 2.5, pj: '' }, ok = true;
     R.opts[0].forEach(function (l) {
-      if (l.k === 'vic' || l.k === 'vqr' || l.k === 'def') c.res = l.k;
+      if (l.k === 'vic' || l.k === 'vqr' || l.k === 'def' || l.k === 'per') c.res = l.k;
       else if (l.k === 'ov' || l.k === 'un') { c.ou = l.k; c.L = l.L; }
       else if (l.k === 'but') c.pj = 'g';
       else if (l.k === '?' && /btts|bts|deux.*marqu/i.test(l.t || '')) c.bts = /non|no\b/i.test(l.t) ? 'non' : 'oui';
@@ -76439,7 +76478,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   }
   function serLibJ(c, hock) {
     var p = [];
-    if (c.res) p.push(c.res === 'vic' ? (hock ? 'Victoire (temps régl.)' : 'Victoire') : c.res === 'vqr' ? 'Vainqueur' : 'Défaite');
+    if (c.res) p.push(c.res === 'vic' ? (hock ? 'Victoire (temps régl.)' : 'Victoire') : c.res === 'vqr' ? 'Vainqueur' : c.res === 'per' ? 'Perdant (prolong. comprise)' : (hock ? 'Défaite (temps régl.)' : 'Défaite'));
     if (c.ou) p.push((c.ou === 'ov' ? 'Over ' : 'Under ') + c.L);
     if (c.bts) p.push('Les deux marquent : ' + c.bts);
     if (c.te) p.push('Buts équipe ' + (c.te === 'ov' ? 'Over ' : 'Under ') + c.TL);
@@ -76456,7 +76495,8 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       var p = +m[2], q = +m[3], ox = hock && m[4];
       if (c.res === 'vic' && !(p > q && !ox)) return false;
       if (c.res === 'vqr' && !(p > q)) return false;
-      if (c.res === 'def' && !(p < q && !ox)) return false;   /* 20261031m : hockey = défaite au temps réglementaire (nul → perdu), comme les critères et Winamax */
+      if (c.res === 'def' && !(p < q && !ox)) return false;
+      if (c.res === 'per' && !(p < q)) return false;   /* 20261031n : Perdant = défaite prolongation / TAB compris */   /* 20261031m : hockey = défaite au temps réglementaire (nul → perdu), comme les critères et Winamax */
       if (c.ou) { var T = ox ? 2 * Math.min(p, q) : p + q; if (T === c.L) return null; if (c.ou === 'ov' ? !(T > c.L) : !(T < c.L)) return false; }
       if (c.bts) { var b2 = p > 0 && q > 0; if ((c.bts === 'oui') !== b2) return false; }
       var pT = ox ? Math.min(p, q) : p, qT = ox ? Math.min(p, q) : q;   /* 20261028l : buts d'une équipe, hockey temps réglementaire */
