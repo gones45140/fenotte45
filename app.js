@@ -70307,9 +70307,9 @@ async function _g45RegLire(saison, cat, eq) {
    peut changer / bloquer comme MotoGP → « ajoute ») : si le classement nhle.com ne répond pas, Séries individuelles NHL (ligue) refaites depuis
    gones45-archives : classement = totaux de joueurs.json (lj[id][3] = {G, A}, etat.iv 4), journal = joueurs/<id>.json (G, A, côté), saison
    régulière seulement (equipes/<club>.json m[5] = 2). Numéros ESPN (≠ NHL) → photo ESPN. Pas de « absences » (_g45RegNhlAbs = nhle.com). ═══ */
-async function _g45ArchLogNhl(id, sa) {   /* sa = '2025-26' */
+async function _g45ArchLogNhl(id, sa, club) {   /* sa = '2025-26' ; club = seulement les matchs avec ce club (fiche d'équipe, échange en cours de saison) */
   var B = 'hockey/nhl/' + sa, q = await _g45ArchLire(B + '/joueurs/' + id + '.json'); if (!q) return null;
-  var M = (q.m || []).filter(function (m) { return m[4]; }), clubs = {}; M.forEach(function (m) { clubs[m[3]] = 1; });
+  var M = (q.m || []).filter(function (m) { return m[4] && (!club || String(m[3]) === String(club)); }), clubs = {}; M.forEach(function (m) { clubs[m[3]] = 1; });
   var TY = {}, E = await Promise.all(Object.keys(clubs).map(function (c) { return _g45ArchLire(B + '/equipes/' + c + '.json'); }));
   if (E.some(function (x) { return !x; })) return null;
   E.forEach(function (x) { (x.m || []).forEach(function (m) { TY[String(m[2])] = m[5]; }); });
@@ -70317,18 +70317,25 @@ async function _g45ArchLogNhl(id, sa) {   /* sa = '2025-26' */
   L.sort(function (x, y) { return String(y.gameDate).localeCompare(String(x.gameDate)); });
   return { gameLog: L };
 }
-async function _g45RegNhlSecours(saison, k, NB, S4, PEP) {
+async function _g45RegNhlSecours(saison, k, NB, S4, PEP, abr) {   /* abr (20261031v) = fiche d'équipe : joueurs de CE club */
   if (typeof _g45ArchLire !== 'function') return null;
   var y = +String(saison).slice(0, 4), sa = function (a) { return a + '-' + String(a + 1).slice(2); }, B = 'hockey/nhl/' + sa(y);
   var et = await _g45ArchLire(B + '/etat.json'); if (!et || !(et.iv >= 4) || et.v2 < et.n) return null;
   var J = await _g45ArchLire(B + '/joueurs.json'), EQ = await _g45ArchLire(B + '/equipes.json'); if (!J || !EQ) return null;
   var tot = function (x) { var t = (x && x[3]) || {}; return k === 'goals' ? (t.G || 0) : (k === 'assists' ? (t.A || 0) : (t.G || 0) + (t.A || 0)); };
-  var ids = Object.keys(J).filter(function (id) { return tot(J[id]) > 0; }).sort(function (a, b) { return tot(J[b]) - tot(J[a]); }).slice(0, NB), out = [];
+  var club = '';
+  if (abr) {   /* abréviations NHL → ESPN (différentes pour 5 clubs) */
+    var ab2 = ({ TBL: 'TB', LAK: 'LA', NJD: 'NJ', SJS: 'SJ', UTA: 'UTAH' })[abr] || abr;
+    Object.keys(EQ).forEach(function (c) { var a = String((EQ[c] || [])[1] || '').toUpperCase(); if (a === abr || a === ab2) club = c; });
+    if (!club) return null;
+  }
+  var ids = Object.keys(J).filter(function (id) { return tot(J[id]) > 0 && (!club || String(J[id][1]) === club); }).sort(function (a, b) { return tot(J[b]) - tot(J[a]); }).slice(0, NB), out = [];
   await Promise.all(ids.map(async function (id, rg) {
     var gl = [];
-    for (var q = 0; q < (S4 ? 4 : 1); q++) { var lq = null; try { lq = await _g45ArchLogNhl(id, sa(y - q)); } catch (e) {} if (lq) gl = gl.concat(lq.gameLog); }
+    for (var q = 0; q < (S4 ? 4 : 1); q++) { var lq = null; try { lq = await _g45ArchLogNhl(id, sa(y - q), club && !S4 ? club : ''); } catch (e) {} if (lq) gl = gl.concat(lq.gameLog); }
     var x = J[id], ab = (EQ[x[1]] || [])[1] || '';
-    var o = { id: id, nom: x[0] || '?', ph: 'https://a.espncdn.com/i/headshots/nhl/players/full/' + id + '.png', eq: ab, logo: '', val: tot(x), ab: ab, sec: 1 };
+    var o = { id: id, nom: x[0] || '?', ph: 'https://a.espncdn.com/i/headshots/nhl/players/full/' + id + '.png', eq: club ? '' : ab, logo: '', val: tot(x), ab: club ? abr : ab, sec: 1 };
+    if (club) o.jours = gl.map(function (g) { return String(g.gameDate || '').slice(0, 10); }).filter(Boolean);
     if (PEP && rg < 10) o.t10 = 1;
     o.s = _g45RegCalc(gl, k); o.der = (gl[0] || {}).gameDate || '';
     out[rg] = o;
@@ -70718,8 +70725,12 @@ async function _g45RegLireEq(saison, cat, abr) {
   try { var c = JSON.parse(localStorage.getItem(ck) || 'null'); if (c && Date.now() - c.t < 12 * 3600e3) return c.l; } catch (e) {}
   var P = FD_PROXY + '?key=nhl&host=nhl&path=';
   var k = cat === 'a' ? 'assists' : (cat === 'p' ? 'points' : 'goals');
-  var r = await fetch(P + encodeURIComponent('/v1/club-stats/' + abr + '/' + saison + '/2'));
-  if (!r.ok) throw new Error('effectif NHL ' + r.status);
+  var r = null; try { r = await fetch(P + encodeURIComponent('/v1/club-stats/' + abr + '/' + saison + '/2')); } catch (e) {}
+  if (!r || !r.ok) {   /* 20261031v : site NHL muet → secours archives (joueurs du club) */
+    var SEC = null; try { SEC = await _g45RegNhlSecours(saison, k, 10, S4, false, abr); } catch (e) {}
+    if (SEC && SEC.length) return SEC;
+    throw new Error('effectif NHL ' + (r ? r.status : 'réseau'));
+  }
   var j = await r.json();
   var top = ((j && j.skaters) || []).filter(function (p) { return (+p[k] || 0) > 0; })
     .sort(function (a, b) { return (+b[k] || 0) - (+a[k] || 0); }).slice(0, 10);
