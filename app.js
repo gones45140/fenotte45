@@ -76297,7 +76297,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
         + (Fd.img ? '<img src="' + e(Fd.img) + '" alt="" loading="lazy" onerror="this.remove()" style="position:absolute;right:22%;top:50%;transform:translateY(-50%);height:150%;max-width:30%;object-fit:contain;opacity:.38;pointer-events:none;">' : '')
         + '<div style="flex:0 1 auto;min-width:0;position:relative;background:rgba(11,16,29,.62);border-radius:8px;padding:3px 8px;"><b style="font-size:15px;">' + e(c.c) + (ix >= 0 ? ' <span style="color:#8fb4ff;">›</span>' : '') + '</b>'
         + (det.length > 1 || (det.length === 1 && !c.L.glob) ? '<div style="font-size:13px;color:#c9d3ee;margin-top:2px;">' + det.join(' · ') + '</div>' : '') + '</div>'
-        + (tys ? '<div class="g45ck-ty" style="flex:0 1 auto;min-width:0;position:relative;font-size:14px;color:#fff;line-height:1.45;background:rgba(11,16,29,.62);border-radius:8px;padding:3px 8px;">' + tys + '</div>' : '')
+        + (tys ? '<div class="g45ck-tyw"><div class="g45ck-ty" style="min-width:0;position:relative;font-size:14px;color:#fff;line-height:1.45;background:rgba(11,16,29,.62);border-radius:8px;padding:3px 8px;">' + tys + '</div></div>' : '')   /* 20261029t : centré entre l'équipe et le logo (PC) */
         + '<div style="flex:0 0 auto;margin-left:auto;position:relative;font-size:15px;white-space:nowrap;background:rgba(11,16,29,.62);border-radius:8px;padding:3px 8px;">' + c.ok + '/' + c.t + ' · <b style="color:' + gC(c.g) + ';">' + ckEur(c.g) + '</b></div></div>';
     }).join(''));
     return h;
@@ -76393,6 +76393,11 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   }
   window._g45CkHtml = function () { if (ckSous() === 'a') setTimeout(function () { ckLancer(); }, 0); return ckHtml(); };
   window._g45CkListe = ckListe;   /* tests */
+  /* 20261029t (capture « Par carte » annotée : « recentralise le type entre l'équipe et le logo ») : bloc du pari centré dans l'espace entre le nom
+     et le logo (logo à right:22 %, donc marge droite 30 %) à partir de 700 px ; téléphone : sous le nom, à gauche. */
+  try { if (!document.getElementById('g45ck-ty-css')) { var stT = document.createElement('style'); stT.id = 'g45ck-ty-css';
+    stT.textContent = '.g45ck-tyw{flex:1 1 260px;min-width:0;display:flex}@media(min-width:700px){.g45ck-tyw{justify-content:center;margin-right:30%}}';
+    (document.head || document.documentElement).appendChild(stT); } } catch (e) {}
   window._g45SerNomJ = serNomJ; window._g45SerStatJ = serStatJ; window._g45SerLegsJ = serLegsJ; window._g45SerJoueur = serJoueur;   /* tests */
   S.ser = S.ser || { etat: 0, f: 0, n: 0 };
   window.g45SerLancer = function () {
