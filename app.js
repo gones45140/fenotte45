@@ -76215,23 +76215,41 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var P = ckParis().filter(function (x) { return x.r !== null && (!lim || x.j >= lim); }).sort(function (a, b) { return a.j < b.j ? -1 : a.j > b.j ? 1 : 0; });
     var bt = function (k, t) { var on = per === k; return '<button onclick="g45CkPer(\'' + k + '\')" style="flex:1;padding:8px;border-radius:8px;color:#fff;cursor:pointer;font-size:14px;font-weight:' + (on ? 800 : 400) + ';border:1px solid ' + (on ? '#6d9dff' : '#2a3a63') + ';background:' + (on ? '#1e3a7a' : '#16213f') + ';">' + t + '</button>'; };
     var tete = '<div style="font-size:16px;font-weight:800;margin-bottom:8px;">📈 Bénéfice Cockpit · ' + (per === 'tout' ? 'depuis le début' : per + ' derniers jours') + '</div>';
-    var pied = '<div style="display:flex;gap:6px;margin-top:6px;">' + bt('7', '7 j') + bt('30', '30 j') + bt('tout', 'Tout') + '</div>';
+    var pied = '<div style="display:flex;gap:6px;margin-top:6px;">' + bt('7', '7 j') + bt('15', '15 j') + bt('30', '30 j') + bt('tout', 'Tout') + '</div>';
     if (!P.length) return ckBox(tete + '<div style="font-size:15px;padding:10px 0;">Aucun pari Cockpit réglé sur cette période.</div>' + pied);
     var jours = [], cum = 0, parJ = {}; P.forEach(function (x) { parJ[x.j] = (parJ[x.j] || 0) + x.g; });
-    var pts = [0]; Object.keys(parJ).sort().forEach(function (j) { cum += parJ[j]; pts.push(Math.round(cum * 100) / 100); jours.push(j); });
-    /* 20261029n (capture de la courbe : « ça manque d'info ») : € à gauche (plus haut / 0 / plus bas), dates en bas (début / milieu / fin),
-       bénéfice de la période dans le titre, meilleur et pire jour dessous ; pleine largeur (étirée, trait non déformé). */
-    var W = 1000, H = 220, mx = Math.max.apply(null, pts), mn = Math.min.apply(null, pts); if (mx === mn) { mx += 1; mn -= 1; }
-    var X = function (i) { return 6 + i * (W - 12) / Math.max(1, pts.length - 1); }, Y = function (v) { return 8 + (mx - v) * (H - 16) / (mx - mn); };
+    Object.keys(parJ).sort().forEach(function (j) { cum += parJ[j]; jours.push(j); });
+    /* 20261029o (capture de la courbe 7 j annotée : « au-dessus des dates, faire un point avec le montant à ce jour ; 7 jours un point tous les
+       jours, 15 jours tous les 2 jours, mensuel tous les 5 jours ») : courbe sur le CALENDRIER (jour sans pari = montant de la veille), du début de
+       la période (ou du 1er pari pour « Tout ») à aujourd'hui ; points + montant cumulé + date tous les 1 / 2 / 5 jours (Tout : un par mois, fin de mois),
+       le dernier jour toujours marqué ; « 0 € » à gauche seulement s'il ne chevauche pas le plus haut / le plus bas. Étiquettes en HTML (14 px). */
+    var auj = ckYmd(new Date()), d0 = lim || jours[0], D = [], V = [], c2 = 0;
+    for (var t = new Date(d0 + 'T12:00:00'); ckYmd(t) <= auj && D.length < 2000; t.setDate(t.getDate() + 1)) { var k2 = ckYmd(t); c2 += parJ[k2] || 0; D.push(k2); V.push(Math.round(c2 * 100) / 100); }
+    if (!D.length) { D = jours.slice(); V = []; c2 = 0; D.forEach(function (k2) { c2 += parJ[k2]; V.push(c2); }); }
+    var n = D.length, pas = per === '7' ? 1 : per === '15' ? 2 : per === '30' ? 5 : Math.max(1, Math.ceil(n / 8)), M = {};
+    if (per === 'tout') { for (var q = 0; q < n; q++) if (q === n - 1 || D[q + 1].slice(0, 7) !== D[q].slice(0, 7)) M[q] = 1; }   /* « et pour Tout, un par mois » : fin de chaque mois + aujourd'hui */
+    else for (var q = n - 1; q >= 0; q -= pas) M[q] = 1;
+    var mx = Math.max.apply(null, V.concat([0])), mn = Math.min.apply(null, V.concat([0])); if (mx === mn) { mx += 1; mn -= 1; }
+    var H = 230, xP = function (i) { return n > 1 ? 6 + i * 88 / (n - 1) : 50; }, yP = function (v) { return 14 + (mx - v) * 78 / (mx - mn); };
     var coul = cum >= 0 ? '#1ed760' : '#ff5a5a', eu = function (v) { return (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(Math.round(v)).toLocaleString('fr-FR') + ' €'; };
     var dCourt = function (j) { var d = new Date(j + 'T12:00:00'); return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }); };
-    var yLab = function (v, cls) { return '<div style="position:absolute;right:0;top:' + (Y(v) / H * 100) + '%;transform:translateY(-50%);font-size:13px;color:' + cls + ';white-space:nowrap;">' + eu(v) + '</div>'; };
+    var yLab = function (v, c) { return '<div style="position:absolute;right:0;top:' + yP(v) + '%;transform:translateY(-50%);font-size:13px;color:' + c + ';white-space:nowrap;">' + eu(v) + '</div>'; };
+    var zOk = mn < 0 && mx > 0 && Math.abs(yP(0) - yP(mn)) > 10 && Math.abs(yP(0) - yP(mx)) > 10;
+    var tx = function () { return '-50%'; };
+    var pts = '', dts = '';
+    Object.keys(M).forEach(function (k) {
+      var i = +k, v = V[i];
+      pts += '<div style="position:absolute;left:' + xP(i) + '%;top:' + yP(v) + '%;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;background:' + (v >= 0 ? '#1ed760' : '#ff5a5a') + ';border:2px solid #0b101d;"></div>'
+        + '<div style="position:absolute;left:' + xP(i) + '%;top:' + yP(v) + '%;transform:translate(' + tx(i) + ',-150%);font-size:13px;font-weight:700;color:#fff;background:rgba(11,16,29,.85);border-radius:6px;padding:1px 5px;white-space:nowrap;">' + eu(v) + '</div>';
+      dts += '<div style="position:absolute;left:' + xP(i) + '%;transform:translateX(' + tx(i) + ');font-size:13px;color:#c9d3ee;white-space:nowrap;">' + D[i].slice(8, 10) + '/' + D[i].slice(5, 7) + '</div>';   /* JJ/MM : 7 dates tiennent sur un téléphone */
+    });
     var svg = '<div style="font-size:15px;margin:-4px 0 8px;">Bénéfice de la période : <b style="color:' + coul + ';">' + ckEur(cum) + '</b></div>'
-      + '<div style="display:flex;gap:6px;align-items:stretch;"><div style="position:relative;flex:none;width:62px;height:' + H + 'px;">' + yLab(mx, '#fff') + (mn < 0 && mx > 0 ? yLab(0, '#c9d3ee') : '') + yLab(mn, '#fff') + '</div>'
-      + '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" style="flex:1;min-width:0;height:' + H + 'px;">'
-      + (mn < 0 && mx > 0 ? '<line x1="0" x2="' + W + '" y1="' + Y(0) + '" y2="' + Y(0) + '" stroke="#3a4a73" stroke-dasharray="6 6" vector-effect="non-scaling-stroke"/>' : '')
-      + '<polyline fill="none" stroke="' + coul + '" stroke-width="3" vector-effect="non-scaling-stroke" stroke-linejoin="round" points="' + pts.map(function (v, i) { return X(i) + ',' + Y(v); }).join(' ') + '"/></svg></div>'
-      + (jours.length ? '<div style="display:flex;justify-content:space-between;margin:4px 0 0 68px;font-size:13px;color:#c9d3ee;"><span>' + dCourt(jours[0]) + '</span>' + (jours.length > 2 ? '<span>' + dCourt(jours[Math.floor(jours.length / 2)]) + '</span>' : '') + '<span>' + dCourt(jours[jours.length - 1]) + '</span></div>' : '');
+      + '<div style="display:flex;gap:6px;"><div style="position:relative;flex:none;width:58px;height:' + H + 'px;">' + yLab(mx, '#fff') + (zOk ? yLab(0, '#c9d3ee') : '') + (mn < 0 ? yLab(mn, '#fff') : (zOk ? '' : yLab(0, '#c9d3ee'))) + '</div>'
+      + '<div style="flex:1;min-width:0;"><div style="position:relative;height:' + H + 'px;">'
+      + '<svg viewBox="0 0 100 100" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%;">'
+      + '<line x1="0" x2="100" y1="' + yP(0) + '" y2="' + yP(0) + '" stroke="#3a4a73" stroke-dasharray="2 2" vector-effect="non-scaling-stroke"/>'
+      + '<polyline fill="none" stroke="' + coul + '" stroke-width="3" vector-effect="non-scaling-stroke" stroke-linejoin="round" points="' + V.map(function (v, i) { return xP(i) + ',' + yP(v); }).join(' ') + '"/></svg>'
+      + pts + '</div><div style="position:relative;height:20px;margin-top:4px;">' + dts + '</div></div></div>';
     var jB = null, jP = null; Object.keys(parJ).forEach(function (j) { if (!jB || parJ[j] > parJ[jB]) jB = j; if (!jP || parJ[j] < parJ[jP]) jP = j; });
     if (jB) svg += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;font-size:14px;"><span style="background:rgba(30,215,96,.15);border-radius:8px;padding:4px 8px;">🏆 Meilleur jour : ' + dCourt(jB) + ' <b style="color:#1ed760;">' + ckEur(parJ[jB]) + '</b></span>'
       + (parJ[jP] < 0 ? '<span style="background:rgba(255,90,90,.15);border-radius:8px;padding:4px 8px;">📉 Pire jour : ' + dCourt(jP) + ' <b style="color:#ff5a5a;">' + ckEur(parJ[jP]) + '</b></span>' : '')
