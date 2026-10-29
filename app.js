@@ -79307,7 +79307,18 @@ window._g45AgJouUs = async function (nowTs) {
    5 derniers matchs en pastilles ; « 🗓️ Jouent aujourd'hui » (_g45MqJour, g45mq_auj) et « 🎯 Mes critères » (g45mq_crit : ≥ 60 % et
    cote juste ≥ 1,50) partagés avec NFL / NHL. Photo ESPN headshots nba. Aucun quota. */
 (function () {
-  var ST = { pts: { i: 1, lib: 'Points', u: 'pts', mot: 'points', l: 24.5, e: '🏀' }, reb: { i: 2, lib: 'Rebonds', u: 'reb', mot: 'rebounds', l: 8.5, e: '🔁' }, ast: { i: 3, lib: 'Passes', u: 'passes', mot: 'assists', l: 6.5, e: '🅰️' } };
+  var ST = { pts: { i: 1, lib: 'Points', u: 'pts', mot: 'points', l: 24.5, e: '🏀' }, reb: { i: 2, lib: 'Rebonds', u: 'reb', mot: 'rebounds', l: 8.5, e: '🔁' }, ast: { i: 3, lib: 'Passes', u: 'passes', mot: 'assists', l: 6.5, e: '🅰️' },
+    /* 20261030i (Séries individuelles NBA, « tu peux faire A » = les mêmes paris que les critères) : sommes lues dans le MÊME journal
+       [min, pts, reb, ast, 3pts réussis…] (_g45NbaGLLire) — aucune requête de plus ; joueurs = leaders points (rebonds pour reb + passes). */
+    pra: { s: [1, 2, 3], lib: 'Pts + reb + passes', u: 'pts+reb+pas', mot: 'points', l: 34.5, e: '➕' },
+    pr: { s: [1, 2], lib: 'Pts + reb', u: 'pts+reb', mot: 'points', l: 29.5, e: '➕' },
+    pa: { s: [1, 3], lib: 'Pts + passes', u: 'pts+pas', mot: 'points', l: 30.5, e: '➕' },
+    ra: { s: [2, 3], lib: 'Reb + passes', u: 'reb+pas', mot: 'rebounds', l: 13.5, e: '➕' },
+    tp: { i: 4, lib: '3 pts réussis', u: '3 pts', mot: 'points', l: 2.5, e: '👌' } };
+  var val = function (S, v) {   /* 20261030i : valeur d'une ligne du journal pour la stat (somme pour les combinaisons), null si absente */
+    if (!v) return null; if (!S.s) return v[S.i] == null ? null : v[S.i];
+    var t = 0; for (var q = 0; q < S.s.length; q++) { if (v[S.s[q]] == null) return null; t += v[S.s[q]]; } return t;
+  };
   var etat = function () { var o = {}; try { o = JSON.parse(localStorage.getItem('g45nba_mq') || '{}') || {}; } catch (e) {} o.st = ST[o.st] ? o.st : 'pts'; o.l = o.l || {}; return o; };
   var garder = function (o) { try { localStorage.setItem('g45nba_mq', JSON.stringify(o)); } catch (e) {} };
   var fr = function (x) { return String(x).replace('.', ','); };
@@ -79324,6 +79335,7 @@ window._g45AgJouUs = async function (nowTs) {
   };
   window.g45NbaMqP = function (v) { var o = etat(); o.pep = v ? 1 : 0; garder(o); window.g45NbaMq(); };   /* 20261027j */
   window.g45NbaMqS4 = function (v) { var o = etat(); o.s4 = v ? 1 : 0; garder(o); window.g45NbaMq(); };   /* 20261027n */
+  window._g45NbaMqVal = function (k, v) { return val(ST[k], v); };   /* tests */
   window.g45NbaMqSt = function (k) { var o = etat(); o.st = k; garder(o); window.g45NbaMq(); };
   window.g45NbaMqL = function (d) { var o = etat(); var k = o.st; o.l[k] = Math.max(0.5, (o.l[k] || ST[k].l) + d); garder(o); window.g45NbaMq(); };
   window.g45NbaMqF = function (k) { var c = k === 'auj' ? 'g45mq_auj' : 'g45mq_crit'; try { localStorage.setItem(c, localStorage.getItem(c) === '1' ? '' : '1'); } catch (e) {} window.g45NbaMq(); };
@@ -79364,17 +79376,17 @@ window._g45AgJouUs = async function (nowTs) {
       fait++;
       if (mon === jeton) corps('<div style="font-size:14px;color:#c9d3ee;padding:10px;">⏳ Matchs des joueurs : ' + fait + ' / ' + cand.length + '</div>');
       if (!ok) return;
-      var ev = Object.keys(gl).filter(function (e) { var v = gl[e]; return v && v[S.i] != null && !(v[0] === 0); })
+      var ev = Object.keys(gl).filter(function (e) { var v = gl[e]; return v && val(S, v) != null && !(v[0] === 0); })
         .sort(function (a, b) { return ((meta[b] || [])[0] || 0) - ((meta[a] || [])[0] || 0); });
       if (!ev.length) return;
-      var ok2 = ev.filter(function (e) { return gl[e][S.i] > L; }).length, tot = 0;
-      ev.forEach(function (e) { tot += gl[e][S.i]; });
+      var ok2 = ev.filter(function (e) { return val(S, gl[e]) > L; }).length, tot = 0;
+      ev.forEach(function (e) { tot += val(S, gl[e]); });
       var pct = ok2 / ev.length;
       if (crit && !(pct >= 0.6 && pct > 0 && 1 / pct >= 1.5)) return;
       var nm = await _g45MqNom(c.ref), eq = null; try { eq = await _g45MqEquipe(c.tref, 'nba'); } catch (e) {}
-      res.push({ c: c, nom: nm.nom, eq: eq || {}, pct: pct, n: ok2, m: ev.length, moy: tot / ev.length, der: ev.slice(0, 5).map(function (e) { return gl[e][S.i] > L; }), j: JOUR ? JOUR[c.tid] : null,
-        pd: window._g45MqPireD(ev.slice().reverse().map(function (e) { return { ok: gl[e][S.i] > L, t: (meta[e] || [])[0] || 0 }; })),   /* 20261027n : dates */
-        pire: window._g45MqPire(ev.slice().reverse().map(function (e) { return gl[e][S.i] > L; })) });   /* 20261027j */
+      res.push({ c: c, nom: nm.nom, eq: eq || {}, pct: pct, n: ok2, m: ev.length, moy: tot / ev.length, der: ev.slice(0, 5).map(function (e) { return val(S, gl[e]) > L; }), j: JOUR ? JOUR[c.tid] : null,
+        pd: window._g45MqPireD(ev.slice().reverse().map(function (e) { return { ok: val(S, gl[e]) > L, t: (meta[e] || [])[0] || 0 }; })),   /* 20261027n : dates */
+        pire: window._g45MqPire(ev.slice().reverse().map(function (e) { return val(S, gl[e]) > L; })) });   /* 20261027j */
     };
     for (var i = 0; i < cand.length; i += 4) { await Promise.all(cand.slice(i, i + 4).map(un)); if (mon !== jeton) return; }
     res.sort(function (a, b) { return b.pct - a.pct || b.moy - a.moy; });
