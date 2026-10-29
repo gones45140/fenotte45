@@ -73323,6 +73323,30 @@ function _g45AgOdEv(e, m) {
   return { h: t.h, d: t.d, a: t.a, line: isNaN(line) ? null : line, ov: ov, un: un, moiDom: moiDom,
     eid: String(e.id || ''), hid: String((H.team && H.team.id) || ''), aid: String((A.team && A.team.id) || ''), hn: nH, an: nA };   /* 20261030t : buts d'équipe DraftKings */
 }
+/* ═══ 20261031x — 🏒 1N2 NHL « 60 minutes » ESTIMÉ (« victoire 1N2 NHL, les cotes on pourrait les prendre où ? » → option A « oui ») :
+   DraftKings (ESPN) n'a PAS de 1N2 hockey, seulement le vainqueur prolongation comprise (moneyLine) et « Will There Be Overtime? » (propBet
+   153, SONDÉ le 29/10 : UNE seule cote = OUI, ex. 3,90 / 4,00 / 3,75). Nul à 60 min = prolongation ; p(prolong.) = 1 / cote ÷ 1,05 (marge
+   estimée, pas de cote « non ») ; la prolongation se partage 50/50 corrigé vers le favori (½ de l'écart) ; marge du vainqueur remise sur les 3
+   issues. Ex. Winnipeg 2,80 @ Florida 1,46, prolongation 4,00 → ≈ 3,95 / 4,05 / 1,85. Affiché « ≈ estimé ». ═══ */
+function _g45Nhl1N2(cH, cA, cPro) {
+  if (!(cH > 1 && cA > 1 && cPro > 1)) return null;
+  /* 20261031x (capture Winamax du 29/10 : Florida 1,62 / 4,10 / Winnipeg 3,25 ; Vegas 2,15 / 3,90 / New Jersey 2,25) : probabilités justes
+     mais marge Winamax 1N2 hockey ≈ 16 % (DraftKings 4 %) → cotes affichées avec 16 % (« type Winamax ») ; prolongation ÷ 1,12. Recalé :
+     Florida ≈ 1,63 / 3,86 / 3,46, Vegas ≈ 2,19 / 3,76 / 2,29. */
+  var iH = 1 / cH, iA = 1 / cA, m = iH + iA, pH = iH / m, pA = iA / m, pN = Math.min(0.45, (1 / cPro) / 1.12), qH = 0.5 + (pH - 0.5) * 0.5;
+  var h60 = pH - pN * qH, a60 = pA - pN * (1 - qH); if (!(h60 > 0.02 && a60 > 0.02)) return null;
+  var c = function (p) { return Math.round(100 / (p * 1.16)) / 100; };
+  return { h: c(h60), n: c(pN), a: c(a60) };
+}
+window._g45Nhl1N2 = _g45Nhl1N2;
+var _g45NhlProM = {};
+function _g45NhlPro(eid) {   /* cote « prolongation : oui » (propBet 153), mémoire 10 min */
+  var E = _g45NhlProM[eid]; if (E && Date.now() - E.t < 600000) return E.p;
+  var P = fetch('https://sports.core.api.espn.com/v2/sports/hockey/leagues/nhl/events/' + eid + '/competitions/' + eid + '/odds/100/propBets?limit=1000')
+    .then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { var x = ((j && j.items) || []).filter(function (x) { return String((x.type || {}).id) === '153'; })[0]; return x ? (typeof _g45NhlDkCote === 'function' ? _g45NhlDkCote(x) : parseFloat(((x.odds || {}).decimal || {}).value)) : 0; })
+    .catch(function () { return 0; });
+  _g45NhlProM[eid] = { t: Date.now(), p: P }; return P;
+}
 function _g45AgOdHtml(C, od, sp) {
   var f = function (x) { return x > 1 ? x.toFixed(2).replace('.', ',') : '–'; };
   var foot = !sp || sp === 'soccer';
@@ -73337,6 +73361,8 @@ function _g45AgOdHtml(C, od, sp) {
          VAINQUEUR (prolongation + TAB compris) ; la « victoire » d'Antoine = temps réglementaire, absente chez ESPN → affichée en Vainqueur. */
       /* 20261008j (capture « victoire OU vainqueur » : 1,56 deux fois, « mdr ») : consigne qui cite AUSSI vainqueur → la victoire du hockey
          n'a pas de chiffre (temps réglementaire absent chez ESPN). */
+      var e60 = sp === 'hockey' && od.pro > 1 ? _g45Nhl1N2(od.h, od.a, od.pro) : null;   /* 20261031x */
+      if (e60 && (l.k === 'vic' || l.k === 'def')) { var moiV = l.k === 'vic' ? od.moiDom : !od.moiDom; c = moiV ? e60.h : e60.a; lib = (l.k === 'vic' ? 'Victoire' : 'Défaite') + ' 60 min <span style="color:#ffb36b;">≈ estimée type Winamax</span>'; if (!seuilV) seuilV = c; parts.push(lib + ' <b>' + f(c) + '</b>'); prod *= c; nb++; return; }
       if (l.k === 'vic' && sp === 'hockey' && avecVqr) { parts.push('Victoire (temps régl.) <span style="color:#ffb36b;">pas de cote chez ESPN, regarde ton book</span>'); ok = false; return; }
       if (l.k === 'vic' && sp === 'hockey') { c = moi; lib = 'Vainqueur (prolong. comprise)'; noteHk = 1; if (!seuilV) seuilV = c; }
       else if (l.k === 'vic' || l.k === 'vqr') { c = moi; lib = l.k === 'vic' ? 'Victoire' : 'Vainqueur'; if (!seuilV) seuilV = c; }
@@ -73462,6 +73488,7 @@ window._g45AgCotes = function (L) {
       if (!document.body.contains(box)) return;
       if (!od) { _g45AgFrBtn(box, x); return; }
       if (od.vide || !(od.h > 1 || od.a > 1 || od.ov > 1 || od.un > 1 || od.line != null)) { box.innerHTML = '<div style="color:#9fb0c7;font-size:13px;">💶 cotes pas encore publiées par ESPN</div>'; _g45AgFrBtn(box, x); return; }
+      if (sp === 'hockey' && lg === 'nhl' && od.eid && x.C.opts.some(function (L) { return L.some(function (l) { return l.k === 'vic' || l.k === 'def'; }); })) { try { od.pro = await _g45NhlPro(od.eid); } catch (e) {} if (!document.body.contains(box)) return; }   /* 20261031x */
       box.innerHTML = _g45AgOdHtml(x.C, od, m.sp);
       try { _g45AgButRemplir(box, sp, lg); } catch (e) {}   /* 20261030q */
       try { _g45AgTeqRemplir(box, sp, lg); } catch (e) {}   /* 20261030t */
@@ -84032,6 +84059,7 @@ window._g45MqPalHtml = function (pire, pd) {
     try {
       var pb = await (await fetch('https://sports.core.api.espn.com/v2/sports/' + C.sp + '/leagues/' + lg + '/events/' + eid + '/competitions/' + eid + '/odds/100/propBets?limit=500')).json(), it = (pb && pb.items) || [];
       if (C.sp === 'soccer') E.bts = typeof _g45AgBtsLire === 'function' ? _g45AgBtsLire(it) : null;
+      if (C.sp === 'hockey') it.forEach(function (x) { if (String((x.type || {}).id) === '153') E.pro = _g45NhlDkCote(x); });   /* 20261031x : prolongation oui */
       var ty = C.sp === 'hockey' ? '151' : (C.sp === 'soccer' ? '253' : '');
       if (ty) ['h', 'a'].forEach(function (k) {
         var L = []; it.forEach(function (x) { if (String((x.type || {}).id) !== ty || !E[k].id || !String((x.team || {}).$ref || '').match(new RegExp('teams/' + E[k].id + '(\\D|$)'))) return;
@@ -84052,7 +84080,10 @@ window._g45MqPalHtml = function (pire, pd) {
       + '<span style="font-size:14px;color:#8fb4ff;letter-spacing:0;white-space:nowrap;">' + (OUV ? '▾ Replier' : '▸ Ouvrir') + '</span></div>';
     if (!OUV) return h + '</div>';
     var nH = esc(E.h.nom || 'Domicile'), nA = esc(E.a.nom || 'Extérieur'), r = '';
-    if (E.ml && (E.ml.h > 1 || E.ml.a > 1)) r += tit('🏁 Résultat') + '<div style="display:flex;gap:6px;">' + cel(nH, E.ml.h) + (E.ml.d > 1 ? cel('Nul', E.ml.d) : '') + cel(nA, E.ml.a) + '</div>';
+    var HK = CFG[lg] && CFG[lg].sp === 'hockey', e60 = HK && E.ml && E.pro > 1 && typeof _g45Nhl1N2 === 'function' ? _g45Nhl1N2(E.ml.h, E.ml.a, E.pro) : null;
+    if (E.ml && (E.ml.h > 1 || E.ml.a > 1)) r += tit(HK ? '🏁 Vainqueur (prolongation comprise)' : '🏁 Résultat') + '<div style="display:flex;gap:6px;">' + cel(nH, E.ml.h) + (E.ml.d > 1 ? cel('Nul', E.ml.d) : '') + cel(nA, E.ml.a) + '</div>';
+    if (e60) { var dF = EST ? FR : 1;   /* déjà « type Winamax » : pas de second × 0,94 en mode estimée France */
+      r += tit('🏁 1N2 60 minutes <span style="font-size:12px;color:#ffb36b;font-weight:600;">≈ estimé type Winamax (vainqueur + prolongation ' + f(E.pro) + ')</span>') + '<div style="display:flex;gap:6px;">' + cel(nH, e60.h / dF) + cel('Nul', e60.n / dF) + cel(nA, e60.a / dF) + '</div>'; }   /* 20261031x */
     if (E.sp && E.sp.L != null && (E.sp.h > 1 || E.sp.a > 1)) r += tit('⚖️ Handicap') + '<div style="display:flex;gap:6px;">' + cel(nH + ' ' + sg(E.sp.L), E.sp.h) + cel(nA + ' ' + sg(-E.sp.L), E.sp.a) + '</div>';
     if (E.tot && E.tot.L != null && (E.tot.o > 1 || E.tot.u > 1)) r += tit('🔢 Total du match') + '<div style="display:flex;gap:6px;">' + cel('Plus de ' + vir(E.tot.L), E.tot.o) + cel('Moins de ' + vir(E.tot.L), E.tot.u) + '</div>';
     if (E.bts && (E.bts.o > 1 || E.bts.n > 1)) r += tit('🤝 Les deux équipes marquent') + '<div style="display:flex;gap:6px;">' + cel('Oui', E.bts.o) + cel('Non', E.bts.n) + '</div>';
@@ -84312,6 +84343,7 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
     if (fi.hc && fi.hc.L != null) L.push('Handicap ' + esc(fi.h.nom) + ' ' + sg(fi.hc.L) + ' <b>' + v(fi.hc.h) + '</b> · ' + esc(fi.a.nom) + ' ' + sg(-fi.hc.L) + ' <b>' + v(fi.hc.a) + '</b>');
     if (fi.tot && fi.tot.L != null) L.push('Total ' + vir(fi.tot.L) + ' : plus <b>' + v(fi.tot.o) + '</b> · moins <b>' + v(fi.tot.u) + '</b>');
     if (fi.bts) L.push('Les deux marquent : oui <b>' + v(fi.bts.o) + '</b> · non <b>' + v(fi.bts.n) + '</b>');
+    if (fi.s === 'hockey' && fi.ml && fi.pro > 1 && typeof _g45Nhl1N2 === 'function') { var e6 = _g45Nhl1N2(fi.ml.h, fi.ml.a, fi.pro); if (e6) L.push('1N2 60 min <span style="color:#ffb36b;">≈ estimé type Winamax</span> : 1 <b>' + f2(e6.h) + '</b> · N <b>' + f2(e6.n) + '</b> · 2 <b>' + f2(e6.a) + '</b>' + (fi.f ? (function () { var ot = fi.ot > 0, r = ot ? 'N' : (fi.f.h > fi.f.a ? '1' : '2'); return ' → <b>' + r + '</b>' + (ot ? ' (prolongation)' : ''); })() : '')); }   /* 20261031x */
     (TYP[fi.s] || []).forEach(function (T) {
       var P = [];
       Object.keys(fi.j || {}).forEach(function (pid) {

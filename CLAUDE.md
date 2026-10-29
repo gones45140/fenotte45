@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action (il est court exprès). Le détail de tout l'historique est dans HISTORIQUE.md
-(à chercher avec grep, jamais à lire en entier). Mis à jour le 31/10/2026 (version déployée : 20261031v, même app.js sur gones45 et fenotte45).
+(à chercher avec grep, jamais à lire en entier). Mis à jour le 31/10/2026 (version déployée : 20261031x, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -131,6 +131,7 @@ PIÈGES À NE JAMAIS OUBLIER :
 ## 7. Reste à faire / en attente (détail : HISTORIQUE.md § 7)
 
 - ⚾ Lanceurs MLB dans l'Agenda : sonde probables à faire par Antoine (ou mars).
+- 🏒 1N2 NHL 60 min = ESTIMÉ (_g45Nhl1N2, 20261031x, vainqueur DraftKings + propBet 153 prolongation, marge type Winamax) ; vraie source 3-way à chercher : TheRundown (sonde à faire, quota).
 - Cotes en direct hors foot : NBA (20261020q), MLB et NHL (20261024p), NFL (20261025l) BRANCHÉES (core odds provider 200).
 - Abonnement : plan prêt, NON codé (_G45_ABO_PLAN false) ; micro-entreprise reportée ; verrou serveur à faire le moment venu. PAS AVANT JANVIER 2027 (Antoine, 28/10). AVANT le lancement : (1) Groq passé en payant (Dev Tier) — aujourd'hui UNE clé gratuite partagée par tous (limites 429, ex. vision 1000 tokens de sortie / min) ; (2) audit des CGU « usage commercial » de chaque source (ESPN = API interne non officielle, risque n°1 ; TheSportsDB clé 123 ; Jolpica ; API NHL ; Groq gratuit ; logos / photos / cotes) → remplacer ou payer.
 - RGPD : SQL supprimer-compte.sql à installer par Antoine dans les 2 projets Supabase.
