@@ -76158,13 +76158,14 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto;max-height:260px;"><line x1="10" x2="' + (W - 10) + '" y1="' + Y(0) + '" y2="' + Y(0) + '" stroke="#3a4a73" stroke-dasharray="4 4"/>'
       + '<polyline fill="none" stroke="' + (cum >= 0 ? '#1ed760' : '#ff5a5a') + '" stroke-width="3" points="' + pts.map(function (v, i) { return X(i) + ',' + Y(v); }).join(' ') + '"/></svg>';
     var ok = P.filter(function (x) { return x.r; }).length, hp = null;
-    P.forEach(function (x) { var l = parseInt(x.b.l, 10) || 1; if (!hp || l > hp.l) hp = { l: l, n: x.b.n }; });
+    var lieuI = function (b) { return b.domicile === 'dom' ? ' 🏠' : b.domicile === 'ext' ? ' ✈️' : ''; };   /* 20261029e (« là j'ai que Real ») : une ligne par montante = carte + lieu */
+    P.forEach(function (x) { var l = parseInt(x.b.l, 10) || 1; if (!hp || l > hp.l) hp = { l: l, n: x.b.n + lieuI(x.b) }; });
     var tu = function (t, v, c) { return '<div style="flex:1 1 45%;background:rgba(11,16,29,.8);border-radius:10px;padding:8px;"><div style="font-size:13px;color:#c9d3ee;">' + t + '</div><div style="font-size:19px;font-weight:900;color:' + (c || '#fff') + ';">' + v + '</div></div>'; };
     var h = ckBox(tete + svg + pied)
       + ckBox('<div style="display:flex;flex-wrap:wrap;gap:8px;">' + tu('Bénéfice', ckEur(cum), cum >= 0 ? '#1ed760' : '#ff5a5a') + tu('Réussite', Math.round(100 * ok / P.length) + ' % · ' + ok + '/' + P.length)
         + tu('Montantes bouclées', ok + ' ✅') + tu('Plus haut palier', hp ? 'P' + hp.l + ' (' + e(hp.n) + ')' : '—', hp && hp.l >= 4 ? '#ff9f43' : '#fff') + '</div>');
-    var C = {}; P.forEach(function (x) { var c = C[x.b.n] = C[x.b.n] || { n: x.b.n, ok: 0, t: 0, g: 0 }; c.t++; if (x.r) c.ok++; c.g += x.g; });
-    h += ckBox('<div style="font-size:16px;font-weight:800;margin-bottom:4px;">Par carte</div>' + Object.keys(C).map(function (k) { return C[k]; }).sort(function (a, b) { return b.g - a.g; }).map(function (c) {
+    var C = {}; P.forEach(function (x) { var k = x.b.n + lieuI(x.b), c = C[k] = C[k] || { n: k, ok: 0, t: 0, g: 0 }; c.t++; if (x.r) c.ok++; c.g += x.g; });
+    h += ckBox('<div style="font-size:16px;font-weight:800;margin-bottom:4px;">Par montante (carte + lieu)</div>' + Object.keys(C).map(function (k) { return C[k]; }).sort(function (a, b) { return b.g - a.g; }).map(function (c) {
       return '<div style="display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-bottom:1px solid #1c2747;font-size:15px;"><b>' + e(c.n) + '</b><span>' + c.ok + '/' + c.t + ' · <b style="color:' + (c.g >= 0 ? '#1ed760' : '#ff5a5a') + ';">' + ckEur(c.g) + '</b></span></div>';
     }).join(''));
     return h;
