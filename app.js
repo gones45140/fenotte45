@@ -70446,7 +70446,10 @@ function _g45NflDkLire(items, M) {
   M = M || {};
   (items || []).forEach(function (x) {
     var ty = String((x.type || {}).id || ''); if (ty !== '31' && ty !== '32' && ty !== '33') return;
+    if (!window._g45NflDkEx) try { window._g45NflDkEx = JSON.stringify({ a: (x.athlete || {}).$ref, o: x.odds }).slice(0, 300); } catch (e) {}   /* diagnostic console */
     var a = String((x.athlete || {}).$ref || '').match(/athletes\/(\d+)/), d = parseFloat(((x.odds || {}).decimal || {}).value);
+    /* 20261030m (« 14 / 14 matchs lus, 0 joueurs ») : cote décimale absente sur ces paris → cote américaine (+150 = 2,50 ; −120 = 1,83) */
+    if (!(d > 1)) { var am = parseFloat(String((((x.odds || {}).american || {}).value) || '').replace('+', '')); if (am >= 100) d = 1 + am / 100; else if (am <= -100) d = 1 + 100 / -am; d = Math.round(d * 100) / 100; }
     if (!a || !(d > 1)) return; (M[a[1]] = M[a[1]] || {})[ty] = d;
   });
   return M;
@@ -70473,7 +70476,7 @@ function _g45NflDkCharger() {
         }
       };
       await Promise.all([un(), un()]);
-      try { console.info('🏦 NFL DraftKings : ' + nOk + ' / ' + evs.length + ' matchs lus, ' + Object.keys(M).length + ' joueurs' + (err.length ? ', erreurs ' + err.slice(0, 4).join(' ') : '')); } catch (x) {}
+      try { console.info('🏦 NFL DraftKings : ' + nOk + ' / ' + evs.length + ' matchs lus, ' + Object.keys(M).length + ' joueurs' + (err.length ? ', erreurs ' + err.slice(0, 4).join(' ') : '') + (!Object.keys(M).length && window._g45NflDkEx ? ' · ex ' + window._g45NflDkEx : '')); } catch (x) {}
     } catch (x) { try { console.info('🏦 NFL DraftKings : échec ' + String(x && x.message || x).slice(0, 60)); } catch (y) {} }
     _g45NflDk.M = M; _g45NflDk.t = Object.keys(M).length ? Date.now() : Date.now() - 540000; _g45NflDk.enCours = false;   /* vide → nouvel essai dans 1 min */
     try { if (Object.keys(M).length && _g45Reg.lg === 'nfl') { var bx = _g45RegBoxVis(); if (bx && _g45Reg.mem[_g45RegK()]) bx.innerHTML = _g45RegHtml(); } } catch (x) {}   /* une seule fois : M gardé 10 min */
