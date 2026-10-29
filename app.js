@@ -72747,7 +72747,9 @@ function _g45TicketRemplirCockpit(o) {
     if (cA) {
       choisi = cA; contre = true; un.value = cA.value; ids.push('c-unit');
       try { if (typeof updMise === 'function') updMise(); if (typeof renderCrash === 'function') renderCrash(); } catch (x) {}
-      o.adversaire = o.equipe;
+      var eqLue = o.equipe; o.adversaire = eqLue; o.equipe = cA.value;   /* 20261101b (capture Cockpit Chicago « Adversaire Chicago Blackhawks · Domicile » sur le
+         ticket « Résultat Detroit ») : o.equipe restait Detroit → « 🔎 Match trouvé » (_g45TicketMatch, juste après) cherchait le match DE DETROIT et
+         réécrivait adversaire = Chicago, lieu = domicile. Équipe = la carte du mur (pari contre), adversaire = l'équipe du ticket. */
       if (o.domicile === true || o.domicile === false) o.domicile = !o.domicile;
       if (/r[ée]sultat|victoire|1\s*n\s*2|gagnant/i.test(String(o.type || '')) || !o.type) o.type = 'Défaite';
     }
