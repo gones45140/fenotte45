@@ -84469,6 +84469,17 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
       if (B.getAttribute('data-g45pl') === '1') { var T1 = titre(B); if (T1 && B.firstElementChild === T1.n) T1.n.style.display = 'none'; return; }   /* contenu remplacé : titre en double caché */
       if (B.getAttribute('data-g45plr') || B.getAttribute('data-g45pl')) return;
       if (B.tagName !== 'DIV' || !B.children.length) return;
+      /* 20261101m (« tu as des gros blocs et des petits, les anciens : mets tout en gros blocs ») : les anciens boutons (IA, YouTube,
+         Confrontations, Domicile / Extérieur, Classement, Stats avancées…) prennent le format des bandes : 15 px, texte blanc à gauche,
+         fond sombre teinté et bord gauche épais de LEUR couleur (lue sur leur bordure). « Suivre ce match » n'est pas touché. */
+      var Bt = B.firstElementChild;
+      if (Bt && Bt.tagName === 'BUTTON' && !Bt.getAttribute('data-g45plb') && !/g45SuiviBtn/.test(Bt.getAttribute('onclick') || '')) {
+        Bt.setAttribute('data-g45plb', '1');
+        var m = String(getComputedStyle(Bt).borderTopColor || getComputedStyle(Bt).color || '').match(/(\d+)\D+(\d+)\D+(\d+)/), cb = m ? m[1] + ',' + m[2] + ',' + m[3] : '140,160,200';
+        Bt.style.cssText += ';display:block;width:100%;box-sizing:border-box;text-align:left;margin:0;padding:11px 12px;border-radius:10px;font-size:15px;font-weight:800;color:#fff;line-height:1.3;'
+          + 'background:linear-gradient(rgba(' + cb + ',.16),rgba(' + cb + ',.16)),rgba(11,16,29,.94);border:1.5px solid rgba(' + cb + ',.55);border-left:5px solid rgb(' + cb + ');';
+        return;
+      }
       var T = titre(B);
       if (!T) {   /* bloc-enveloppe sans titre (cotes DraftKings, 📦…) : on descend d'un cran s'il n'a qu'un enfant */
         if (B.children.length === 1 && B.firstElementChild.tagName === 'DIV') { var T2 = titre(B.firstElementChild); if (T2) T = T2; }
