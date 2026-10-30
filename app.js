@@ -84438,3 +84438,78 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
     try { _renderSaisonDetail = window._renderSaisonDetail; } catch (e) {}
   }
 })();
+
+/* ═══ 20261101f — 📂 FENÊTRE DE MATCH FOOT : BLOCS FERMÉS À L'ARRIVÉE (Antoine, capture Le Havre – PSG : « je voudrais arriver et avoir
+   les onglets fermés, ça me ferait une liste d'onglets à choisir » ; maquette « oui » : une bande sombre par bloc, texte blanc 15 px,
+   ▸ / ▾, plusieurs ouverts possibles, blocs du direct non pliés). POURQUOI générique : la fenêtre est faite de dizaines de blocs posés
+   par _renderSaisonDetail ET par des enveloppes (cotes DraftKings, 📦 archives, arbitre, classement remplis plus tard) → on plie le DOM
+   après coup : chaque bloc dont on trouve le titre (div de texte court, en tête du bloc) reçoit une bande au-dessus et se cache ; un
+   bloc qui contient lui-même plusieurs blocs titrés (📊 Avant-match) reste ouvert et on plie ses sous-blocs. Un observateur replie les
+   blocs arrivés en retard. Ouverts gardés par match (_g45PlOuv) pour le redessin du direct (30 s) ; remis à zéro à chaque ouverture. ═══ */
+(function () {
+  var OUV = window._g45PlOuv = window._g45PlOuv || {};
+  var EMO = /^[←-⯿☀-➿\uD83C-\uDBFF]/;
+  function texteSeul(n) { return n && n.nodeType === 1 && n.tagName === 'DIV' && !n.querySelector('button,a,table,img,svg,canvas,input,select') && n.textContent.trim(); }
+  function titre(B) {
+    var c = B.children;
+    for (var i = 0; i < Math.min(c.length, 3); i++) {
+      var x = c[i];
+      if (texteSeul(x) && !x.children.length) { var t = x.textContent.trim(); if (t.length >= 3 && t.length <= 45 && (EMO.test(t) || /^forme$/i.test(t))) return { n: x, t: t };   /* emoji en tête (ou « Forme ») : sinon un nom d'équipe passerait pour un titre */ }
+    }
+    return null;
+  }
+  function libelle(t) { t = t.replace(/\s+/g, ' '); return EMO.test(t) ? t : (/^forme/i.test(t) ? '🔥 ' + t : '▪ ' + t); }
+  function plier(box, eid) {
+    var O = OUV[eid] || (OUV[eid] = {});
+    Array.prototype.slice.call(box.children).forEach(function (B) {
+      if (B.getAttribute('data-g45plr') || B.getAttribute('data-g45pl')) return;
+      if (B.tagName !== 'DIV' || !B.children.length) return;
+      var T = titre(B);
+      if (!T) {   /* bloc-enveloppe sans titre (cotes DraftKings, 📦…) : on descend d'un cran s'il n'a qu'un enfant */
+        if (B.children.length === 1 && B.firstElementChild.tagName === 'DIV') { var T2 = titre(B.firstElementChild); if (T2) T = T2; }
+        if (!T) return;
+      }
+      if (/direct|live|en cours|\bBUT\b/i.test(T.t)) return;
+      var sous = Array.prototype.filter.call(B.children, function (x) { return x !== T.n && x.tagName === 'DIV' && titre(x); });
+      if (sous.length >= 2) { B.setAttribute('data-g45pl', 'g'); plier(B, eid); return; }
+      if (B.children.length < 2 && T.n.parentNode === B) return;   /* un titre seul, rien à ouvrir */
+      var lab = libelle(T.t), ouv = !!O[lab];
+      B.setAttribute('data-g45pl', '1');
+      if (T.n.parentNode === B && B.firstElementChild === T.n) T.n.style.display = 'none';
+      B.style.display = ouv ? '' : 'none';
+      var R = document.createElement('div');
+      R.setAttribute('data-g45plr', '1');
+      R.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px;margin:6px 0;padding:11px 12px;border-radius:10px;background:rgba(11,16,29,.92);border:1px solid rgba(255,255,255,.12);color:#fff;font-size:15px;font-weight:800;cursor:pointer;';
+      R.innerHTML = '<span></span><span style="font-size:15px;">' + (ouv ? '▾' : '▸') + '</span>';
+      R.firstChild.textContent = lab;
+      R.onclick = function () { var o = B.style.display === 'none'; B.style.display = o ? '' : 'none'; R.lastChild.textContent = o ? '▾' : '▸'; if (o) O[lab] = 1; else delete O[lab]; };
+      box.insertBefore(R, B);
+    });
+  }
+  function passe(el, eid) {
+    var sv = el.querySelector('button[onclick^="g45SuiviBtn"]');
+    var box = sv && sv.parentNode && sv.parentNode.parentNode;
+    if (box && el.contains(box)) plier(box, eid);
+  }
+  window._g45PlPasse = passe;
+  var rs0 = window._renderSaisonDetail;
+  if (typeof rs0 === 'function' && !rs0._g45Pl) {
+    window._renderSaisonDetail = async function (el, eventId, league) {
+      var eid = String(eventId || '');
+      if (el && el.isConnected) OUV[eid] = {};   /* nouvelle ouverture (le redessin du direct passe par une div détachée) */
+      var r = await rs0.apply(this, arguments);
+      try {
+        passe(el, eid);
+        if (!el._g45PlObs && typeof MutationObserver === 'function') {
+          var tm = 0;
+          el._g45PlObs = new MutationObserver(function () { if (tm) return; tm = setTimeout(function () { tm = 0; try { passe(el, eid); } catch (e) {} }, 60); });
+          el._g45PlObs.observe(el, { childList: true, subtree: true });
+        }
+      } catch (e) {}
+      return r;
+    };
+    ['_g45Ca', '_g45Cj'].forEach(function (k) { if (rs0[k]) window._renderSaisonDetail[k] = rs0[k]; });
+    window._renderSaisonDetail._g45Pl = 1;
+    try { _renderSaisonDetail = window._renderSaisonDetail; } catch (e) {}
+  }
+})();
