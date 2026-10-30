@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action (il est court exprès). Le détail de tout l'historique est dans HISTORIQUE.md
-(à chercher avec grep, jamais à lire en entier). Mis à jour le 31/10/2026 (version déployée : 20261101v, même app.js sur gones45 et fenotte45).
+(à chercher avec grep, jamais à lire en entier). Mis à jour le 31/10/2026 (version déployée : 20261101w, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -109,7 +109,7 @@ Index des zones (fonction d'entrée → mot à chercher dans HISTORIQUE.md) :
 - IA du match `_g45MultiAI` · articles `_g45ArticleBloc` · santé `g45SanteTester` (gones seulement : `_g45SanteActive`)
 - KHL `g45KhlDetailMatch`, Euroleague / Pro A `_g45ElRendre`, Top 14 / Pro D2 `g45LnrRender` / `_g45Pd2Rendre`, NRL `g45NrlStatsRender`, KBO `_g45KboRendre`, F1 `g45F1Detail` / `_g45F1Off…`
 - Stockage `_G45_CACHE_PREFIXES` / `_G45_CACHE_MORTS` (nouvelle version de clé = ancienne dans MORTS), nettoyage ?menage=1, diagnostic ?diag=1
-- Secours ESPN : 2e adresse site.web (20261101s) puis 🪞 miroir GitHub gones45-archives/miroir (robot miroir.mjs, 20261101v) puis copie IndexedDB g45esp ; relais TheSportsDB (worker host=tsdb), Social (social.js, 2 projets Supabase)
+- Secours ESPN : 2e adresse site.web (20261101s) puis 🪞 miroir GitHub gones45-archives/miroir (robot miroir.mjs, 20261101u) puis copie IndexedDB g45esp ; relais TheSportsDB (worker host=tsdb), Social (social.js, 2 projets Supabase)
 
 PIÈGES À NE JAMAIS OUBLIER :
 - Fonctions en DEUX copies (render, loadTeamCompo, openClub, deleteArchived, pari, rendu des cartes du mur…) : `grep -c`, corriger les deux.

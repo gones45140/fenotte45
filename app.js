@@ -77,7 +77,7 @@
     var pref = function () { try { var v = JSON.parse(localStorage.getItem('g45_espn_hote') || 'null'); if (v && Date.now() - v.t < 6 * 3600e3) return v.h; } catch (e) {} return 'a'; };
     var garder = function (h) { try { if (pref() !== h) localStorage.setItem('g45_espn_hote', JSON.stringify({ h: h, t: Date.now() })); } catch (e) {} };
     var nf = function (u, o) {
-      if (typeof u !== 'string' || u.indexOf(A) !== 0) return _f.apply(this, arguments);
+      if (typeof u !== 'string' || u.indexOf(A) !== 0 || window._g45SanteBrut > 0) return _f.apply(this, arguments);   /* 20261101w : la Santé teste site.api TEL QUEL (capture 20 h 15 : ✅ alors que la bascule pouvait masquer un refus) */
       var self = this, p = u.slice(A.length), w = pref() === 'w';
       var u1 = w ? W + p : u, u2 = w ? u : W + p, h2 = w ? 'a' : 'w';
       return _f.call(self, u1, o).then(function (r) {
@@ -79901,8 +79901,8 @@ window._g45AgJouUs = async function (nowTs) {
   /* Santé des sources : le secours est coupé pendant le test */
   var st0 = window.g45SanteTester;
   if (typeof st0 === 'function') window.g45SanteTester = async function () {
-    santeEnCours++;
-    try { return await st0.apply(this, arguments); } finally { santeEnCours--; }
+    santeEnCours++; window._g45SanteBrut = (window._g45SanteBrut || 0) + 1;   /* 20261101w : ni 2e adresse ESPN ni miroir pendant le test */
+    try { return await st0.apply(this, arguments); } finally { santeEnCours--; window._g45SanteBrut--; }
   };
   /* Ménage : copies de plus de 30 jours effacées, une fois par jour, 40 s après l'ouverture */
   setTimeout(function () {
