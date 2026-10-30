@@ -76616,13 +76616,17 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     if (Q.etat === 1) return; Q.etat = 1; Q.f = 0; Q.err = ''; redessiner();
     (async function () {
       try {
-        var ANS = annees(X.lg).slice().reverse(), tot = {}, noms = {}, eqs = {}, IX = {};
+        var ANS = annees(X.lg).slice().reverse(), tot = {}, noms = {}, eqs = {}, IX = {}, ACT = null;
         for (var i = 0; i < ANS.length; i++) {
           var sa = aSa(X.lg, ANS[i]), lj = await aLire('foot/' + X.lg + '/' + sa + '/joueurs.json'), ix = await aLire('foot/' + X.lg + '/' + sa + '/equipes.json');
           if (ix) for (var t in ix) IX[t] = ix[t][0];
+          if (i === ANS.length - 1) ACT = (lj && Object.keys(lj).length) ? lj : null;
           if (lj) for (var id in lj) { var v = lj[id], tt = v[3] || {}; tot[id] = (tot[id] || 0) + (jm === 'pas' ? (+tt.A || 0) : jm === 'dec' ? (+tt.G || 0) + (+tt.A || 0) : (+tt.G || 0)); noms[id] = v[0]; eqs[id] = v[1]; }
         }
-        var ids = Object.keys(tot).sort(function (a, b) { return tot[b] - tot[a]; }).slice(0, 40);
+        /* 20261102e (Antoine, capture Mbappé « (PSG) » / David « (Lille) » : « les joueurs qui ont quitté le championnat servent à rien ? ») :
+           candidats = joueurs présents dans joueurs.json de la saison EN COURS (dernière lue) ; leurs 4 saisons comptent toujours.
+           Si la saison en cours est illisible ou vide → pas de filtre (comme avant). Le joueur choisi reste toujours. */
+        var ids = Object.keys(tot).filter(function (id) { return !ACT || ACT[id]; }).sort(function (a, b) { return tot[b] - tot[a]; }).slice(0, 40);
         if (ids.indexOf(String(c0.jo)) < 0) ids.push(String(c0.jo));
         if (!Object.keys(tot).length) { Q.etat = 0; Q.err = 'Archives de ce championnat indisponibles.'; redessiner(); return; }
         Q.n = ids.length; var R = [], j = 0;
@@ -76662,7 +76666,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
         + '<span>' + Math.round(100 * x.ok / x.n) + ' % <span style="font-size:12px;color:#c9d3ee;">' + x.ok + '/' + x.n + '</span></span><span style="font-weight:800;color:' + coul(x.pire) + ';">' + x.pire + '</span>'
         + '<span><b>' + pa.p + ' palier' + (pa.p > 1 ? 's' : '') + '</b> ' + pa.ico + (pa.mise != null ? ' <span style="font-size:12px;color:#c9d3ee;">' + pa.mise + ' €</span>' : '') + '</span></div>';
     });
-    return h + '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">✅ 5 paliers ou moins · ⚠️ jusqu\'à ta dernière mise · ❌ au-delà de tes paliers (mises 1 ⭐). Candidats : les 40 meilleurs ' + (jm === 'pas' ? 'passeurs' : jm === 'dec' ? 'buteurs + passeurs' : 'buteurs') + ' des 4 saisons + ton joueur. 5 matchs comptés au minimum.</div></div>';
+    return h + '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">✅ 5 paliers ou moins · ⚠️ jusqu\'à ta dernière mise · ❌ au-delà de tes paliers (mises 1 ⭐). Candidats : les 40 meilleurs ' + (jm === 'pas' ? 'passeurs' : jm === 'dec' ? 'buteurs + passeurs' : 'buteurs') + ' des 4 saisons encore dans le championnat cette saison + ton joueur. 5 matchs comptés au minimum.</div></div>';
   }
   function clsHtml() {
     var X = clsCtx(); if (!X) return '';
