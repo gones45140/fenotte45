@@ -139,6 +139,10 @@
             return un ? rep({ leagues: lg || [], events: ev, _miroir: 1 }) : null;
           });
         }
+        /* 20261101z (« les compos, important non ? » → « oui ») : résumé d'un match (compos, absents, en-tête) gardé par le robot
+           pour les matchs qui commencent dans les 2 h → miroir/<sp>/<lg>/resumes/<eid>.json */
+        var m3 = ch.match(/^apis\/site\/v2\/sports\/([a-z-]+)\/([a-z0-9.]+)\/summary\/?$/), ev3 = q.get('event');
+        if (m3 && /^\d+$/.test(ev3 || '')) return jsonDe(m3[1] + '/' + m3[2] + '/resumes/' + ev3 + '.json').then(function (x) { return x ? rep(x) : null; });
         var m2 = ch.match(/^apis\/v2\/sports\/([a-z-]+)\/([a-z0-9.]+)\/standings\/?$/);
         if (m2) return jsonDe(m2[1] + '/' + m2[2] + '/standings.json').then(function (x) { return x ? rep(x) : null; });
       } catch (e) {}
