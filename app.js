@@ -84488,8 +84488,11 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
       B.style.display = ouv ? '' : 'none';
       var R = document.createElement('div');
       R.setAttribute('data-g45plr', '1');
-      R.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px;margin:6px 0;padding:11px 12px;border-radius:10px;background:rgba(11,16,29,.92);border:1px solid rgba(255,255,255,.12);color:#fff;font-size:15px;font-weight:800;cursor:pointer;';
-      R.innerHTML = '<span></span><span style="font-size:15px;">' + (ouv ? '▾' : '▸') + '</span>';
+      /* 20261101l (« on n'y met des couleurs ? », maquette « oui ») : une couleur par type, fond sombre teinté, bord gauche épais, texte blanc */
+      var cl = /stat|joueur/i.test(lab) ? '77,132,255' : /face/i.test(lab) ? '167,139,250' : /forme/i.test(lab) ? '255,140,60' : /classement/i.test(lab) ? '240,190,40'
+        : /cote/i.test(lab) ? '46,204,113' : /avant le match|compo/i.test(lab) ? '34,211,238' : '140,160,200';
+      R.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px;margin:6px 0;padding:11px 12px;border-radius:10px;background:linear-gradient(rgba(' + cl + ',.16),rgba(' + cl + ',.16)),rgba(11,16,29,.94);border:1.5px solid rgba(' + cl + ',.55);border-left:5px solid rgb(' + cl + ');color:#fff;font-size:15px;font-weight:800;cursor:pointer;';
+      R.innerHTML = '<span></span><span style="font-size:15px;color:rgb(' + cl + ');">' + (ouv ? '▾' : '▸') + '</span>';
       R.firstChild.textContent = lab;
       R.onclick = function () { var o = B.style.display === 'none'; B.style.display = o ? '' : 'none'; R.lastChild.textContent = o ? '▾' : '▸'; if (o) O[lab] = 1; else delete O[lab]; };
       box.insertBefore(R, B);
