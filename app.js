@@ -52243,7 +52243,11 @@ function _g45AmCalc(tirs, sum) {
     ['Fautes', paire('foulsCommitted', null, null)],
     ['Cartons jaunes', paire('yellowCards', null, null)]
   ].filter(function (r) { return r[1][0] != null && r[1][1] != null; });
-  var fin = D.fini ? 95 : Math.max(_g45AmMin(D.horloge), 1);
+  /* 20261101t (capture Le Havre – PSG à la mi-temps : traits xG qui repartent en haut vers la gauche) : horloge « HT » sans minute → fin = 1'
+     → le dernier palier était tiré en arrière jusqu'à la 1re minute. Fin = au moins la minute du dernier tir (45 à la mi-temps). */
+  var dern = 0; ['h', 'a'].forEach(function (c) { D.courbe[c].forEach(function (p) { if (p[0] > dern) dern = p[0]; }); });
+  if (/^(HT|MT|Mi-temps|Halftime)/i.test(String(D.etat || D.horloge || ''))) dern = Math.max(dern, 45);
+  var fin = D.fini ? 95 : Math.max(_g45AmMin(D.horloge), dern, 1);
   D.courbe.h.push([fin, D.xh]); D.courbe.a.push([fin, D.xa]); D.finMin = fin;
   return D;
 }
