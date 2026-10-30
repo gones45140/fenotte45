@@ -24994,8 +24994,11 @@ async function _g45AVenirLigue(slug, espnId, espnNom){
     var hid=String((ho.team&&ho.team.id)||''), aid=String((aw.team&&aw.team.id)||'');
     var hn=(ho.team&&(ho.team.displayName||ho.team.shortDisplayName))||'?';
     var an=(aw.team&&(aw.team.displayName||aw.team.shortDisplayName))||'?';
-    var moi=(espnId&&(hid===String(espnId)||aid===String(espnId)))
-         || (cible&&(nz(hn).indexOf(cible)>=0||cible.indexOf(nz(hn))>=0||nz(an).indexOf(cible)>=0||cible.indexOf(nz(an))>=0));
+    /* 20261102g (capture d'Antoine, Lille : « Viktoria Plzen 🏠 Europa » et « Lyon ✈️ Europa » = matchs de LILLESTRØM, « lillestrom » contient
+       « lille ») : avec l'identifiant ESPN (le même dans toutes les compétitions, sondé dans le miroir : Lille 166 en LDC), on ne compare plus
+       les noms ; le nom ne sert plus que quand l'identifiant manque. */
+    var moi=espnId ? (hid===String(espnId)||aid===String(espnId))
+         : (cible&&(nz(hn).indexOf(cible)>=0||cible.indexOf(nz(hn))>=0||nz(an).indexOf(cible)>=0||cible.indexOf(nz(an))>=0));
     if(!moi) return;
     vus[e.id]=1;
     out.push({id:e.id, date:e.date, completed:false, homeTeam:hn, awayTeam:an,
