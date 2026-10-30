@@ -84462,6 +84462,8 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
   function plier(box, eid) {
     var O = OUV[eid] || (OUV[eid] = {});
     Array.prototype.slice.call(box.children).forEach(function (B) {
+      if (B.getAttribute('data-g45pl') === 'g') { plier(B, eid); return; }   /* 20261101h : groupe (Avant-match) → revoir ses sous-blocs (classement rempli en retard, Premier League) */
+      if (B.getAttribute('data-g45pl') === '1') { var T1 = titre(B); if (T1 && B.firstElementChild === T1.n) T1.n.style.display = 'none'; return; }   /* contenu remplacé : titre en double caché */
       if (B.getAttribute('data-g45plr') || B.getAttribute('data-g45pl')) return;
       if (B.tagName !== 'DIV' || !B.children.length) return;
       var T = titre(B);
