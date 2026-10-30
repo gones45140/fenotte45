@@ -85,9 +85,48 @@
         throw new Error('espn ' + r.status);
       }).catch(function (e) {
         if (e && e.name === 'AbortError') throw e;
-        return _f.call(self, u2, o).then(function (r) { if (r.ok) garder(h2); return r; });
+        return _f.call(self, u2, o).then(function (r) {
+          if (r.ok) { garder(h2); return r; }
+          if (r.status === 404 || r.status === 400) return r;
+          return miroir(p).then(function (m) { return m || r; });
+        }, function (e2) {
+          if (e2 && e2.name === 'AbortError') throw e2;
+          return miroir(p).then(function (m) { if (m) return m; throw e2; });
+        });
       });
     };
+    /* 20261101u — 🪞 3e recours : le MIROIR GITHUB (gones45-archives/miroir, robot miroir.mjs toutes les heures ; Antoine « oui » au
+       « et si ça bloque on va chercher les résultats où »). Seulement si les DEUX adresses ESPN échouent, et seulement pour les
+       calendriers / résultats (scoreboard ?dates= jour, plage AAAAMMJJ-AAAAMMJJ ≤ 62 jours, mois AAAAMM, sans date = aujourd'hui UTC)
+       et les classements (standings, saison en cours). Réponse au format ESPN { leagues, events } fusionnée jour par jour ; en-tête
+       X-G45-Miroir. Les jours absents du miroir (hors J-45 → J+14) sont simplement vides. */
+    var RAW = 'https://raw.githubusercontent.com/gones45140/gones45-archives/main/miroir/';
+    var jsonDe = function (ch) { return _f.call(window, RAW + ch + '?t=' + Math.floor(Date.now() / 600000), { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }, function () { return null; }); };
+    var rep = function (o) { return new Response(JSON.stringify(o), { status: 200, headers: { 'Content-Type': 'application/json', 'X-G45-Miroir': '1' } }); };
+    var miroir = function (p) {
+      try {
+        var ch = p.split('?')[0], q = new URLSearchParams(p.split('?')[1] || '');
+        var m = ch.match(/^apis\/site\/v2\/sports\/([a-z-]+)\/([a-z0-9.]+)\/scoreboard\/?$/);
+        if (m) {
+          var dt = q.get('dates') || '', J = [], jour = function (d) { return d.toISOString().slice(0, 10).replace(/-/g, ''); };
+          var de = function (s) { return new Date(Date.UTC(+s.slice(0, 4), +s.slice(4, 6) - 1, +s.slice(6, 8))); };
+          if (/^\d{8}$/.test(dt)) J = [dt];
+          else if (/^\d{8}-\d{8}$/.test(dt)) { for (var t = de(dt.slice(0, 8)), fin = de(dt.slice(9)); t <= fin && J.length < 62; t = new Date(t.getTime() + 864e5)) J.push(jour(t)); }
+          else if (/^\d{6}$/.test(dt)) { for (var t2 = de(dt + '01'); jour(t2).slice(0, 6) === dt; t2 = new Date(t2.getTime() + 864e5)) J.push(jour(t2)); }
+          else if (!dt) J = [jour(new Date())];
+          else return Promise.resolve(null);
+          return Promise.all(J.map(function (d) { return jsonDe(m[1] + '/' + m[2] + '/jours/' + d + '.json'); })).then(function (L) {
+            var vus = {}, ev = [], lg = null, un = false;
+            L.forEach(function (x) { if (!x) return; un = true; if (!lg && x.leagues) lg = x.leagues; (x.events || []).forEach(function (e) { if (e && !vus[e.id]) { vus[e.id] = 1; ev.push(e); } }); });
+            return un ? rep({ leagues: lg || [], events: ev, _miroir: 1 }) : null;
+          });
+        }
+        var m2 = ch.match(/^apis\/v2\/sports\/([a-z-]+)\/([a-z0-9.]+)\/standings\/?$/);
+        if (m2) return jsonDe(m2[1] + '/' + m2[2] + '/standings.json').then(function (x) { return x ? rep(x) : null; });
+      } catch (e) {}
+      return Promise.resolve(null);
+    };
+    window._g45EspnMiroir = miroir;
     nf._g45EspnDeux = 1; window.fetch = nf;
   } catch (e) {}
 })();
