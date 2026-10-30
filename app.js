@@ -63,6 +63,34 @@
     nf._g45Tsdb = 1; window.fetch = nf;
   } catch (e) {}
 })();
+/* ═══ 20261101s — 🔀 ESPN : 2e ADRESSE QUAND LA 1re REFUSE (30/10 au soir, console d'Antoine : « ESPN ne répond pas : copie du 30/10 19:37 »
+   partout + CORS bloqué sur site.api.espn.com → calendrier Ligue 1 vide, courbe des cotes en direct figée à 37'). SONDÉ PAR ANTOINE le même
+   soir : site.WEB.api.espn.com (même chemin /apis/site/v2/…) répond 200 depuis le navigateur — scoreboard du jour (3 matchs), plage du mois
+   (31 matchs), résumé, effectif. Le worker l'utilise déjà depuis le 16/09 (Akamai bloquait site.api). Ici, au plus bas de la pile des fetch
+   (sous le correctif du 05/08, le découpage des plages et le 🛟 secours) : un appel site.api qui échoue (réseau / CORS, ou 403 / 5xx) est
+   refait sur site.web ; l'adresse qui marche est retenue 6 h (g45_espn_hote) pour ne pas payer deux appels à chaque fois. 404 / 400 = vraie
+   réponse, pas de bascule. ═══ */
+(function () {
+  try {
+    var _f = window.fetch; if (!_f || _f._g45EspnDeux) return;
+    var A = 'https://site.api.espn.com/', W = 'https://site.web.api.espn.com/';
+    var pref = function () { try { var v = JSON.parse(localStorage.getItem('g45_espn_hote') || 'null'); if (v && Date.now() - v.t < 6 * 3600e3) return v.h; } catch (e) {} return 'a'; };
+    var garder = function (h) { try { if (pref() !== h) localStorage.setItem('g45_espn_hote', JSON.stringify({ h: h, t: Date.now() })); } catch (e) {} };
+    var nf = function (u, o) {
+      if (typeof u !== 'string' || u.indexOf(A) !== 0) return _f.apply(this, arguments);
+      var self = this, p = u.slice(A.length), w = pref() === 'w';
+      var u1 = w ? W + p : u, u2 = w ? u : W + p, h2 = w ? 'a' : 'w';
+      return _f.call(self, u1, o).then(function (r) {
+        if (r.ok || r.status === 404 || r.status === 400) return r;
+        throw new Error('espn ' + r.status);
+      }).catch(function (e) {
+        if (e && e.name === 'AbortError') throw e;
+        return _f.call(self, u2, o).then(function (r) { if (r.ok) garder(h2); return r; });
+      });
+    };
+    nf._g45EspnDeux = 1; window.fetch = nf;
+  } catch (e) {}
+})();
 /* ═══════════════════════════════════════════════════════════════
    ESPN EN DIRECT — correctif du 05/08/2026
    Akamai (le CDN d'ESPN) renvoie 403 aux IP de sortie des Workers
