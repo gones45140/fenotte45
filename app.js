@@ -84465,6 +84465,7 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
   function plier(box, eid, top) {
     var O = OUV[eid] || (OUV[eid] = {});
     Array.prototype.slice.call(box.children).forEach(function (B) {
+      if (B.hasAttribute('data-g45grp') && B.getAttribute('data-g45pl') !== 'g') return;   /* 20261101q : groupe Cotes / Analyse (déjà rangé) */
       if (B.getAttribute('data-g45pl') === 'g') { plier(B, eid, top || box); return; }   /* 20261101h : groupe (Avant-match) → revoir ses sous-blocs (classement rempli en retard, Premier League) */
       if (B.getAttribute('data-g45pl') === '1') { var T1 = titre(B); if (T1 && B.firstElementChild === T1.n) T1.n.style.display = 'none'; return; }   /* contenu remplacé : titre en double caché */
       if (B.getAttribute('data-g45plr') || B.getAttribute('data-g45pl')) return;
@@ -84525,6 +84526,91 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
       x.setAttribute('data-g45plb', '1');
       var cb = x.hasAttribute('data-g45ca') ? '140,160,200' : '46,204,113';
       x.style.cssText += ';margin:6px 0;border-radius:10px;overflow:hidden;background:linear-gradient(rgba(' + cb + ',.16),rgba(' + cb + ',.16)),rgba(11,16,29,.94);border:1.5px solid rgba(' + cb + ',.55);border-left:5px solid rgb(' + cb + ');';
+    });
+    if (box && el.contains(box)) { try { ranger(el, box); } catch (e) {} }
+  }
+  /* ═══ 20261101q — 🗂 RANGEMENT EN 3 GROUPES (Antoine : « bon sinon c'est un peu le désordre ? » ; maquette « oui ») :
+     📊 AVANT-MATCH (probabilité, stats, face-à-face, forme, classement, compos / meilleurs joueurs… ; 🏠 Domicile / 🚌 Extérieur en bas,
+     un cran plus petit), 💰 COTES (DraftKings, match / équipes, joueurs, cotes FR, plus de marchés, tendance du public), 🔎 ANALYSE
+     (carte du match / des tirs — remontées du haut de la fenêtre —, stats avancées, IA, avant-match ESPN, résumé vidéo, 📦). On déplace
+     des « unités » (bande + son bloc, bouton, bloc de cotes) du haut de la liste vers leur groupe ; en-tête (score, stade, Suivre,
+     direct) inchangé. Idempotent : une unité déjà dans un groupe n'est plus touchée (l'observateur relance la passe). ═══ */
+  var GR = [
+    ['co', '💰 Cotes', [/cotes \(draftkings|cotes? \(dk/i, /match \/ [ée]quipes/i, /cotes joueurs/i, /cotes r[ée]elles/i, /march[ée]s/i, /tendance du public/i, /cote/i]],
+    ['an', '🔎 Analyse', [/carte du match|carte des tirs/i, /stats avanc/i, /analyse ia/i, /espn/i, /r[ée]sum[ée]|vid[ée]o|youtube/i, /📦|archiv/i, /./]]
+  ];
+  function catDe(t) {
+    if (/cote|march[ée]s|tendance du public|draftkings/i.test(t)) return 'co';
+    if (/carte du match|carte des tirs|stats avanc|analyse ia|espn|r[ée]sum[ée]|vid[ée]o|youtube|📦|archiv|compte rendu/i.test(t)) return 'an';
+    return 'am';
+  }
+  function rang(c, t) { var g = GR.filter(function (x) { return x[0] === c; })[0]; if (!g) return 0; for (var i = 0; i < g[2].length; i++) if (g[2][i].test(t)) return i; return 99; }
+  function groupe(box, c, titre) {
+    var g = box.querySelector(':scope > [data-g45grp="' + c + '"]');
+    if (g) return g;
+    g = document.createElement('div'); g.setAttribute('data-g45grp', c);
+    g.style.cssText = 'margin:10px 0;padding:10px;border-radius:12px;background:rgba(11,16,29,.55);';
+    g.innerHTML = '<div style="font-size:14px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#9fb6ff;margin:2px 2px 4px;"></div>';
+    g.firstChild.textContent = titre;
+    return g;
+  }
+  function ranger(el, box) {
+    var U = [], kids = Array.prototype.slice.call(box.children);
+    kids.forEach(function (x, i) {
+      if (x.hasAttribute('data-g45grp')) return;
+      if (x.getAttribute('data-g45plr')) { var B = x.nextElementSibling; U.push({ n: [x, B].filter(Boolean), t: x.firstChild.textContent }); return; }
+      if (x.previousElementSibling && x.previousElementSibling.getAttribute('data-g45plr')) return;   /* bloc déjà pris avec sa bande */
+      if (x.matches('[data-g45cj],[data-g45ce],[data-g45ca]')) { U.push({ n: [x], t: x.hasAttribute('data-g45ca') ? '📦' : 'cote ' + x.textContent.slice(0, 60) }); return; }
+      if (x.getAttribute('data-g45pl') === 'g') { U.push({ n: [x], t: '', am0: 1 }); return; }
+      var b = x.firstElementChild; if (b && b.tagName === 'BUTTON' && b.getAttribute('data-g45plb')) U.push({ n: [x], t: b.textContent });
+    });
+    /* carte du match / des tirs : posée en haut de la fenêtre, hors liste ; EN DIRECT elle reste en haut (gardée par le redessin des 30 s) */
+    Array.prototype.slice.call(el.children).forEach(function (x) { if (x !== box && !box.contains(x) && /^g45-tirs-/.test(x.id || '') && !/en direct/i.test(x.textContent)) U.push({ n: [x], t: 'carte du match' }); });
+    var ct = box.querySelector('[id^="g45-tirs-"]') || el.querySelector(':scope > [id^="g45-tirs-"]');
+    if (ct) {   /* boutons de la carte au format des bandes (bloc sans fond propre) */
+      ct.style.background = 'transparent'; ct.style.padding = '0'; ct.style.margin = '0';
+      Array.prototype.forEach.call(ct.querySelectorAll(':scope > button, :scope > div > button'), function (Bt) {
+        if (Bt.getAttribute('data-g45plb')) return; Bt.setAttribute('data-g45plb', '1');
+        var m = String(getComputedStyle(Bt).borderTopColor || '').match(/(\d+)\D+(\d+)\D+(\d+)/), cb = m ? m[1] + ',' + m[2] + ',' + m[3] : '140,160,200';
+        Bt.style.cssText += ';display:block;width:100%;box-sizing:border-box;text-align:left;margin:6px 0;padding:11px 12px;border-radius:10px;font-size:15px;font-weight:800;color:#fff;line-height:1.3;'
+          + 'background:linear-gradient(rgba(' + cb + ',.16),rgba(' + cb + ',.16)),rgba(11,16,29,.94);border:1.5px solid rgba(' + cb + ',.55);border-left:5px solid rgb(' + cb + ');';
+      });
+      Array.prototype.forEach.call(ct.querySelectorAll(':scope > div'), function (d) { if (d.querySelector(':scope > button')) { d.style.background = 'transparent'; d.style.padding = '0'; d.style.margin = '0'; } });
+    }
+    if (!U.length) return;
+    var G = { am: null, co: null, an: null };
+    U.forEach(function (u) { if (u.am0) { G.am = u.n[0]; u.n[0].setAttribute('data-g45grp', 'am'); } });
+    var par = { am: [], co: [], an: [] };
+    U.forEach(function (u) { if (!u.am0) par[catDe(u.t)].push(u); });
+    ['am', 'co', 'an'].forEach(function (c) {
+      if (!par[c].length) return;
+      if (!G[c]) { G[c] = groupe(box, c, c === 'am' ? '📊 Le match' : (c === 'co' ? '💰 Cotes' : '🔎 Analyse')); }
+      par[c].sort(function (a, b) { return rang(c, a.t) - rang(c, b.t); });
+      par[c].forEach(function (u) { u.n.forEach(function (n) { G[c].appendChild(n); }); });
+    });
+    ['am', 'co', 'an'].forEach(function (c) { if (G[c] && G[c].parentNode !== box) box.appendChild(G[c]); });
+    /* tri complet des groupes Cotes / Analyse (une unité arrivée en retard, ex. carte des tirs, prend sa place) */
+    ['co', 'an'].forEach(function (c) {
+      var g = box.querySelector(':scope > [data-g45grp="' + c + '"]'); if (!g) return;
+      var V = [], ch = Array.prototype.slice.call(g.children).slice(1);
+      for (var i = 0; i < ch.length; i++) {
+        var x = ch[i];
+        if (x.getAttribute('data-g45plr')) { V.push({ n: [x, ch[i + 1]].filter(Boolean), t: x.firstChild.textContent }); i++; continue; }
+        V.push({ n: [x], t: /^g45-tirs-/.test(x.id || '') ? 'carte du match' : (x.hasAttribute('data-g45ca') ? '📦' : (x.matches('[data-g45cj],[data-g45ce]') ? 'cote ' : '') + x.textContent.slice(0, 60)) });
+      }
+      var W = V.map(function (v, k) { return { v: v, k: k, r: rang(c, v.t) }; }).sort(function (a, b) { return a.r - b.r || a.k - b.k; });
+      if (W.some(function (w, k) { return w.k !== k; })) W.forEach(function (w) { w.v.n.forEach(function (n) { g.appendChild(n); }); });
+    });
+    /* ordre des groupes : AVANT-MATCH, COTES, ANALYSE (en fin de liste) */
+    ['am', 'co', 'an'].forEach(function (c) { var g = box.querySelector(':scope > [data-g45grp="' + c + '"]'); if (g && g !== box.lastElementChild) box.appendChild(g); });
+    /* 🏠 Domicile / 🚌 Extérieur : en bas du groupe Avant-match, un cran plus petit */
+    var am = box.querySelector(':scope > [data-g45grp="am"]');
+    if (am) Array.prototype.slice.call(am.children).forEach(function (x) {
+      var b = x.firstElementChild;
+      if (b && b.tagName === 'BUTTON' && /domicile/i.test(b.textContent) && /ext[ée]rieur/i.test(b.textContent)) {
+        if (!b.getAttribute('data-g45dx')) { b.setAttribute('data-g45dx', '1'); b.style.fontSize = '13.5px'; b.style.padding = '9px 12px'; }
+        if (x !== am.lastElementChild) am.appendChild(x);
+      }
     });
   }
   window._g45PlPasse = passe;
