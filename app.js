@@ -84496,7 +84496,12 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
   if (typeof rs0 === 'function' && !rs0._g45Pl) {
     window._renderSaisonDetail = async function (el, eventId, league) {
       var eid = String(eventId || '');
-      if (el && el.isConnected) OUV[eid] = {};   /* nouvelle ouverture (le redessin du direct passe par une div détachée) */
+      if (el && el.isConnected) {   /* nouvelle ouverture (le redessin du direct passe par une div détachée) */
+        OUV[eid] = {};
+        /* 20261101g (« Cote match / équipe reste ouvert à l'ouverture ») : les blocs cotes équipes / joueurs ont leur propre ▸ Ouvrir
+           gardé en mémoire (g45ce_ouvert / g45cj_ouvert, 20261030v-x) → remis fermé à chaque ouverture de la fenêtre. */
+        try { localStorage.removeItem('g45ce_ouvert'); localStorage.removeItem('g45cj_ouvert'); } catch (e) {}
+      }
       var r = await rs0.apply(this, arguments);
       try {
         passe(el, eid);
