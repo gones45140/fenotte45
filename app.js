@@ -84496,7 +84496,8 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
       if (Array.prototype.some.call(racine.querySelectorAll('[data-g45plr]'), function (r) { return nl(r.firstChild.textContent) === k; })) { B.setAttribute('data-g45pl', '1'); B.style.display = 'none'; return; }
       B.setAttribute('data-g45pl', '1');
       if (T.n.parentNode === B && B.firstElementChild === T.n) T.n.style.display = 'none';
-      B.style.display = ouv ? '' : 'none';
+      var d0 = B.style.display === 'none' ? '' : B.style.display;   /* 20261101n : garder « grid » / « flex » d'origine (Forme hors foot s'affichait en vrac) */
+      B.style.display = ouv ? d0 : 'none';
       var R = document.createElement('div');
       R.setAttribute('data-g45plr', '1');
       /* 20261101l (« on n'y met des couleurs ? », maquette « oui ») : une couleur par type, fond sombre teinté, bord gauche épais, texte blanc */
@@ -84505,7 +84506,7 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
       R.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px;margin:6px 0;padding:11px 12px;border-radius:10px;background:linear-gradient(rgba(' + cl + ',.16),rgba(' + cl + ',.16)),rgba(11,16,29,.94);border:1.5px solid rgba(' + cl + ',.55);border-left:5px solid rgb(' + cl + ');color:#fff;font-size:15px;font-weight:800;cursor:pointer;';
       R.innerHTML = '<span></span><span style="font-size:15px;color:rgb(' + cl + ');">' + (ouv ? '▾' : '▸') + '</span>';
       R.firstChild.textContent = lab;
-      R.onclick = function () { var o = B.style.display === 'none'; B.style.display = o ? '' : 'none'; R.lastChild.textContent = o ? '▾' : '▸'; if (o) O[lab] = 1; else delete O[lab]; };
+      R.onclick = function () { var o = B.style.display === 'none'; B.style.display = o ? d0 : 'none'; R.lastChild.textContent = o ? '▾' : '▸'; if (o) O[lab] = 1; else delete O[lab]; };
       box.insertBefore(R, B);
     });
   }
@@ -84513,6 +84514,18 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
     var sv = el.querySelector('button[onclick^="g45SuiviBtn"]');
     var box = sv && sv.parentNode && sv.parentNode.parentNode;
     if (box && el.contains(box)) plier(box, eid);
+    /* 20261101n (capture Vegas : « 🏦 COTES JOUEURS » et « COTES MATCH / ÉQUIPES » restaient en bas, hors de la liste, à l'ancien format) :
+       ces blocs (et 📦 archives) sont posés sur la fenêtre elle-même (data-g45cj / ce / ca) → rangés dans la liste, au format des bandes
+       (leur ▸ Ouvrir reste le leur). Leurs observateurs les cherchent dans toute la fenêtre : déplacés, ils restent trouvés. */
+    if (!document.getElementById('g45pl-css')) { var st = document.createElement('style'); st.id = 'g45pl-css'; st.textContent = '[data-g45plb][data-g45cj]>div,[data-g45plb][data-g45ce]>div,[data-g45plb][data-g45ca]>div{background:transparent!important;margin:0!important;border:0!important;box-shadow:none!important}'; document.head.appendChild(st); }
+    if (box && el.contains(box)) Array.prototype.slice.call(el.children).forEach(function (x) {
+      if (!x.matches || !x.matches('[data-g45cj],[data-g45ce],[data-g45ca]')) return;
+      box.appendChild(x);
+      if (x.getAttribute('data-g45plb')) return;
+      x.setAttribute('data-g45plb', '1');
+      var cb = x.hasAttribute('data-g45ca') ? '140,160,200' : '46,204,113';
+      x.style.cssText += ';margin:6px 0;border-radius:10px;overflow:hidden;background:linear-gradient(rgba(' + cb + ',.16),rgba(' + cb + ',.16)),rgba(11,16,29,.94);border:1.5px solid rgba(' + cb + ',.55);border-left:5px solid rgb(' + cb + ');';
+    });
   }
   window._g45PlPasse = passe;
   /* 20261101i (« sport US rien n'est fait ») : même pliage pour la fenêtre hors foot (_renderGenericDetail(el, sport, lg, eid)). */
