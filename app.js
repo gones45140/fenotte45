@@ -72,7 +72,25 @@
    réponse, pas de bascule. ═══ */
 (function () {
   try {
-    var _f = window.fetch; if (!_f || _f._g45EspnDeux) return;
+    var _f0 = window.fetch; if (!_f0 || _f0._g45EspnDeux) return;
+    /* 20261101x — 🚦 PAS DE RAFALE VERS ESPN (Antoine « oui » à « réduire les rafales ») : le 30/10, site.api a refusé une PARTIE des demandes
+       (limiteur de débit) pendant que le bandeau, l'Agenda, les calendriers et le direct partaient tous en même temps. Au plus 4 demandes
+       ESPN (site.api / site.web) en vol à la fois, les autres attendent leur tour (aucune n'est perdue). Rien ne change à l'écran. */
+    var ENV = 0, FILE = [], MAXV = 4, ESPN_RX = /^https:\/\/site\.(web\.)?api\.espn\.com\//;
+    var suivant = function () { if (ENV >= MAXV || !FILE.length) return; ENV++; var t = FILE.shift(); t(); };
+    var _f = function (u, o) {
+      if (typeof u !== 'string' || !ESPN_RX.test(u)) return _f0.apply(this, arguments);
+      var self = this, args = arguments;
+      return new Promise(function (ok, ko) {
+        FILE.push(function () {
+          var fin = function () { ENV--; suivant(); };
+          var p; try { p = _f0.apply(self, args); } catch (e) { fin(); ko(e); return; }
+          p.then(function (r) { fin(); ok(r); }, function (e) { fin(); ko(e); });
+        });
+        suivant();
+      });
+    };
+    window._g45EspnFile = function () { return { enVol: ENV, attente: FILE.length }; };
     var A = 'https://site.api.espn.com/', W = 'https://site.web.api.espn.com/';
     var pref = function () { try { var v = JSON.parse(localStorage.getItem('g45_espn_hote') || 'null'); if (v && Date.now() - v.t < 6 * 3600e3) return v.h; } catch (e) {} return 'a'; };
     var garder = function (h) { try { if (pref() !== h) localStorage.setItem('g45_espn_hote', JSON.stringify({ h: h, t: Date.now() })); } catch (e) {} };
