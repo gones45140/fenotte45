@@ -55514,6 +55514,7 @@ var _g45DirTimer = null;
    recherche (u:'') pour trente jours. Les relire annulerait la recherche a
    plusieurs ecritures ci-dessus. Changer la cle plutot que migrer. */
 var _G45_FANART = 'g45_fanart2_';
+try { var _fl = JSON.parse(localStorage.getItem('g45_fanart2_lille') || 'null'); if (_fl && !_fl.u) localStorage.removeItem('g45_fanart2_lille'); } catch (e) {}   /* 20261101v : « pas d'image » mémorisé avant l'alias */
 var _g45FanEnCours = 0;
 
 /* ═══ VISUELS PERSONNELS ═══
@@ -55678,6 +55679,8 @@ var _G45_TSDB_ALIAS = {
      rapprochement approximatif, donc un alias faux est pire que pas d'alias.
      On essaie plusieurs ecritures, la plus complete d'abord. */
   psg:['Paris Saint-Germain','Paris Saint Germain','PSG'],
+  /* 20261101v (capture carte Lille sans bannière ; sonde 30/10 clé 123 : « Lille » → Lille de HOCKEY SUR GAZON seul résultat, « Lille OSC » → Lille foot 133711 avec fanart + bannière) */
+  lille:'Lille OSC', losc:'Lille OSC', lilleosc:'Lille OSC',
   'parissaintgermain':['Paris Saint-Germain','Paris Saint Germain'],
   asroma:'Roma', roma:'Roma',
   atleticomadrid:'Atletico Madrid', atletico:'Atletico Madrid',
