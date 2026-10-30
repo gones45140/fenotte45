@@ -70551,7 +70551,8 @@ function _g45RegHtml() {
       + (rg ? ' · <span style="color:' + cc + ';">n°' + rg + ' en ' + labP + '</span>' : '')
       + (o.nv ? ' · <span style="color:#5aa9ff;font-weight:800;">🆕 nouveau</span>' : '')
       + (peu ? ' · <span style="color:#ffb13d;font-weight:800;">📉 peu de matchs</span>' : '')
-      + (o.abs ? ' · <span style="color:#ff9f43;font-weight:800;">🚫 absent ' + (o.abs > 1 ? 'aux ' + o.abs + ' derniers matchs' : 'au dernier match') + (o.absD ? ' (' + esc(o.absD) + ')' : '') + '</span>' : '')   /* 20261006n */
+      + (o.absT ? ' · <span style="color:' + (o.absT === 'B' ? '#9fb6ff' : (o.absT.charAt(0) === 'A' ? '#ff8a8a' : '#f5c542')) + ';font-weight:800;">' + _g45AbsTagLib(o.absT) + ' (' + esc(o.absTD || '') + ')</span>'   /* 20261102a */
+        : (o.abs ? ' · <span style="color:#ff9f43;font-weight:800;">🚫 absent ' + (o.abs > 1 ? 'aux ' + o.abs + ' derniers matchs' : 'au dernier match') + (o.absD ? ' (' + esc(o.absD) + ')' : '') + '</span>' : ''))   /* 20261006n */
       + _g45NflDkHtml(o, SE) + _g45NhlDkHtml(o, SE)   /* 20261030k : cote DraftKings du TD (NFL) ; 20261030n : NHL */
       + '</span></span>';
     var dts = (o.s.pd && o.s.pire) ? o.s.pd.map(function (d) { return d.slice(4, 6) + '/' + d.slice(2, 4) + '/' + d.slice(0, 2); }).join(' → ') : '';
@@ -71050,6 +71051,21 @@ function _g45ArchLire(ch) {   /* JSON, 0 = absent (404), null = raté ; mémoire
   return _g45ArchMemo[k];
 }
 var _G45_ARCH_CIVIL = ['bra.1', 'arg.1', 'usa.1', 'fifa.friendly', 'uefa.nations', 'fifa.worldq.uefa', 'fifa.world', 'uefa.euro'];
+var _G45_ABS_FR = { knee: 'genou', ankle: 'cheville', hamstring: 'ischios', calf: 'mollet', foot: 'pied', hip: 'hanche', back: 'dos', shoulder: 'épaule', groin: 'aine',
+      illness: 'malade', concussion: 'commotion', surgery: 'opéré', strain: 'élongation', sprain: 'entorse', personal: 'raisons perso', rest: 'repos', hand: 'main', wrist: 'poignet',
+      thigh: 'cuisse', quadriceps: 'quadriceps', achilles: 'tendon d\'Achille', toe: 'orteil', elbow: 'coude', neck: 'cou', ribs: 'côtes', abdomen: 'abdomen', 'not with team': 'absent du groupe',
+      "coach's decision": 'choix du coach', 'coach decision': 'choix du coach', 'inactive': 'inactif', 'suspension': 'suspendu', 'upper body': 'haut du corps', 'lower body': 'bas du corps' };
+function _g45AbsFr(t) { var z = String(t || '').toLowerCase().replace(/^dnp[-\s]*/, '').trim(); return _G45_ABS_FR[z] || z.split(/\s+/).map(function (w) { return _G45_ABS_FR[w] || w; }).join(' '); }
+window._g45AbsFr = _g45AbsFr;
+/* 20261102a : libellé d'une étiquette d'archive (m[7]) : 'B' banc, 'A:<statut> <motif>' absent annoncé, 'D:<raison>' n'a pas joué */
+function _g45AbsTagLib(t) {
+  t = String(t || ''); var fr = _g45AbsFr;
+  if (t === 'B') return '🪑 sur le banc, pas entré';
+  if (t.charAt(0) === 'A') { var r = t.slice(2).split(' '), st = { O: 'out', DD: 'incertain', Q: 'incertain', D: 'incertain', P: 'probable', IR: 'longue durée' }[r[0]]; return '🚑 absent' + (st || r.length > 1 ? ' – ' + [st || r[0], fr(r.slice(1).join(' '))].filter(Boolean).join(', ') : ''); }
+  if (t.charAt(0) === 'D') return '⛔ n\'a pas joué' + (t.length > 2 ? ' – ' + fr(t.slice(2)) : '');
+  return '';
+}
+window._g45AbsTagLib = _g45AbsTagLib;
 async function _g45ArchLogFoot(lg, id, anEsp) {
   if ((window._G45_ARCH_LG || []).indexOf(lg) < 0) return null;
   var sa = _G45_ARCH_CIVIL.indexOf(lg) >= 0 ? String(anEsp) : anEsp + '-' + String(+anEsp + 1).slice(2), B = 'foot/' + lg + '/' + sa;
@@ -71057,7 +71073,8 @@ async function _g45ArchLogFoot(lg, id, anEsp) {
   var q = await _g45ArchLire(B + '/joueurs/' + id + '.json'); if (q === null) return null;
   var L = ((q && q.m) || []).filter(function (m) { return m[4]; }).map(function (m) { var g = +m[4].G || 0, a = +m[4].A || 0; return { goals: g, assists: a, points: g + a, d: new Date(m[0]).toISOString(), e: String(m[2]), h: m[6] === 'h' ? 1 : (m[6] === 'a' ? 0 : null) }; });
   L.sort(function (x, y) { return String(y.d).localeCompare(String(x.d)); });
-  return { gameLog: L, opts: [lg], arch: 1 };
+  var TG = ((q && q.m) || []).filter(function (m) { return !m[4] && m[7]; }).map(function (m) { return { d: new Date(m[0]).toISOString().slice(0, 10), t: String(m[7]) }; });   /* 20261102a : banc / absent / n'a pas joué */
+  return { gameLog: L, opts: [lg], arch: 1, tags: TG };
 }
 window._g45ArchLogFoot = _g45ArchLogFoot;   /* tests */
 function _g45RegLogFoot(lg, id, anEsp, sansArch) {
@@ -71148,6 +71165,9 @@ async function _g45RegLireFoot(lg, an, cat, eq) {
         if (lg === 'nfl' || lg === 'mlb' || !eq || !_g45Reg.cf || _g45Reg.cf === 'L' || _g45Reg.cf === 'T') {
           var jb = (lg === 'nfl' || lg === 'mlb' || !(eq && _g45Reg.cf && _g45Reg.cf !== 'L')) ? jg : await _g45RegLogFoot(lg, x.id, anEsp);
           o.der = String((((jb && jb.gameLog) || [])[0] || {}).d || '').slice(0, 10);
+          /* 20261102a (maquette « oui les 2 ») : pourquoi il n'a pas joué depuis (archives : 🪑 banc / 🚑 absent / ⛔ n'a pas joué) */
+          var tg = ((jb && jb.tags) || []).filter(function (t) { return t.d > o.der; }).sort(function (a, b) { return a.d < b.d ? 1 : -1; })[0];
+          if (tg) { o.absT = tg.t; var zz = tg.d.split('-'); o.absTD = zz[2] + '/' + zz[1]; }
         }
         if (eq && jg && jg.gameLog) o.jours = jg.gameLog.map(function (x) { return String(x.d || '').slice(0, 10); }).filter(Boolean);   /* 20261006u */
       } catch (e) { o.s = null; }
@@ -71395,7 +71415,8 @@ async function _g45ArchLogNfl(id, an) {
   E.forEach(function (x) { (x.m || []).forEach(function (m) { TY[String(m[2])] = m[5]; }); });
   var L = M.filter(function (m) { return TY[String(m[2])] === 2; }).map(function (m) { var s = m[4], g = (+s.rTD || 0) + (+s.reTD || 0), a = +s.pTD || 0; return { goals: g, assists: a, points: g + a, d: new Date(m[0]).toISOString(), e: String(m[2]), h: m[6] === 'h' ? 1 : (m[6] === 'a' ? 0 : null) }; });
   L.sort(function (x, y) { return String(y.d).localeCompare(String(x.d)); });
-  return { gameLog: L, arch: 1 };
+  var TG = ((q && q.m) || []).filter(function (m) { return !m[4] && m[7]; }).map(function (m) { return { d: new Date(m[0]).toISOString().slice(0, 10), t: String(m[7]) }; });   /* 20261102a */
+  return { gameLog: L, arch: 1, tags: TG };
 }
 window._g45ArchLogNfl = _g45ArchLogNfl;   /* tests */
 function _g45RegLogNfl(id, an, sansArch) {
@@ -84536,7 +84557,15 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
       P.sort(function (a, b) { return a.d - b.d; });
       L.push(T[1] + ' : ' + P.slice(0, 6).map(function (x) { return esc(x.n) + esc(x.lib) + ' <b>' + v(x.d) + '</b>' + (x.ok === true ? ' ✅' : (x.ok === false ? ' ❌' : (x.ok === 'abs' ? ' <span style="color:#9fb0c7;">(absent)</span>' : ''))); }).join(' · '));
     });
-    if (!L.length) return '';
+    /* 20261102a (maquette « oui les 2 ») : 🪑 banc / 🚑 absents / ⛔ n'ont pas joué, gardés par le robot depuis le 30/10 (fi.banc, fi.abs, fi.dnp) */
+    var E = [], fr = _g45AbsFr;
+    var stF = { O: 'out', DD: 'incertain', Q: 'incertain', D: 'incertain', P: 'probable', IR: 'longue durée', SUSP: 'suspendu' };
+    var parCote = function (lst, f) { return ['h', 'a'].map(function (k) { var x = (lst || []).filter(function (b) { return b[2] === k; }); return x.length ? '<b>' + esc((fi[k] || {}).nom || '') + '</b> : ' + x.map(f).join(' · ') : ''; }).filter(Boolean).join('<br>'); };
+    if ((fi.banc || []).length) E.push('<span style="color:#9fb6ff;font-weight:800;">🪑 SUR LE BANC (pas entrés)</span><br>' + parCote(fi.banc, function (b) { return esc(b[1]); }));
+    if ((fi.abs || []).length) E.push('<span style="color:#ff8a8a;font-weight:800;">🚑 ABSENTS</span><br>' + parCote(fi.abs, function (b) { var m = [stF[b[3]] || '', fr(b[4])].filter(Boolean).join(', '); return esc(b[1]) + (m ? ' – ' + esc(m) : ''); }));
+    if ((fi.dnp || []).length) E.push('<span style="color:#f5c542;font-weight:800;">⛔ N\'ONT PAS JOUÉ</span><br>' + parCote(fi.dnp, function (b) { return esc(b[1]) + (b[3] ? ' – ' + esc(fr(b[3])) : ''); }));
+    if (!L.length && !E.length) return '';
+    L = L.concat(E);
     return '<div style="margin-top:12px;background:rgba(11,16,29,.88);border:1px solid rgba(245,197,66,.4);border-radius:12px;padding:10px 12px;color:#fff;">'
       + '<div style="font-size:15px;font-weight:900;margin-bottom:6px;">📦 Cotes d\'avant-match <span style="font-size:13px;font-weight:600;color:#c9d3ee;">(' + (fi.r ? 'clôture' : 'gardées le ' + new Date(fi.at).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).replace(' ', ' à ')) + ', ' + ((typeof _g45DkMode === 'function' && _g45DkMode() === 'fr') ? 'estimée France' : 'DraftKings') + ')</span></div>'
       + L.map(function (x) { return '<div style="font-size:14px;line-height:1.5;padding:3px 0;border-top:1px solid rgba(255,255,255,.07);">' + x + '</div>'; }).join('') + '</div>';
