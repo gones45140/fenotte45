@@ -41539,7 +41539,10 @@ _g45PreMatchBlock=function(data){
     var lg=_g45Leg1League(data);
     var evId=String((data.header&&data.header.id)||comp.id||'');
     var evDate=(comp.date||(data.header&&data.header.date)||'');
-    if(hId&&aId&&lg&&evId){
+    /* 20261101k (capture Colorado – Calgary NHL avec « 🔁 Match aller Rosario Central 1-0 Argentinos ») : _g45PreMatchBlock sert aussi
+       la fenêtre hors foot ; le calendrier cherché est celui du FOOT → avec les numéros NHL, soccer/all/teams/<id> renvoyait un club de foot
+       au même numéro. Match aller = foot seulement (ligue « xxx.n » ou numéro, jamais nhl / nba / nfl / mlb…). */
+    if(hId&&aId&&lg&&evId&&/\.|^\d+$/.test(lg)){
       var slot='g45leg1-'+evId;
       _g45Leg1Fill(slot, lg, hId, aId, evId, evDate);
       return '<div id="'+slot+'"></div>'+h;
