@@ -28250,6 +28250,18 @@ async function loadEspnMatchLive(el, nom, col){
   /* 20261024y (« il donne pas le graphique avec les cotes ? » → maquette « avec courbe ») : foot EN DIRECT → bloc 📈 cotes DraftKings
      + courbe des chances, sous le score (window._g45CdlLancer, défini près de _g45CdLire). */
   try { if (stState === 'in' && typeof window._g45CdlLancer === 'function') window._g45CdlLancer(el, data, tname(home), tname(away), String((data.resolved || {}).id) === String(homeId)); } catch (e) {}
+  /* 20261101y (Antoine : « sur le match extérieur Le Havre j'ai toutes les données, sur le live j'ai pas tout » → « c'était oui ») : foot EN DIRECT →
+     sous 📈 Cotes en direct, les mêmes blocs que la fenêtre de match : 📊 Carte du match en direct, 🎯 Carte des tirs & xG, ⚽ Les buts en
+     action (_g45SgCarteTirs, résumé déjà chargé). Le Live se redessine : la zone est recréée, les cartes ouvertes se rouvrent (_g45AmOuvert). */
+  try {
+    if (stState === 'in' && data.sport === 'soccer' && typeof _g45SgCarteTirs === 'function' && data.event && data.event.id) {
+      var _zl = document.createElement('div'); _zl.className = 'g45-live-cartes'; _zl.style.marginTop = '10px';
+      var _ap = el.querySelector('.g45-cdl') || el.querySelector('.fc');
+      if (_ap && _ap.parentNode) _ap.parentNode.insertBefore(_zl, _ap.nextSibling); else el.appendChild(_zl);
+      var _old = document.getElementById('g45-tirs-' + data.event.id); if (_old && !document.body.contains(_old)) _old = null;
+      if (!_old) _g45SgCarteTirs(_zl, data.league, String(data.event.id), s);
+    }
+  } catch (e) {}
 }
 window.loadEspnMatchLive=loadEspnMatchLive; window._renderEspnMatchLineups=_renderEspnMatchLineups; window._renderEspnMatchStats=_renderEspnMatchStats; window._espnMatchLiveData=_espnMatchLiveData; window._renderEspnMatchPitch=_renderEspnMatchPitch;
 
