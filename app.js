@@ -84454,11 +84454,11 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
     var c = B.children;
     for (var i = 0; i < Math.min(c.length, 3); i++) {
       var x = c[i];
-      if (texteSeul(x) && !x.children.length) { var t = x.textContent.trim(); if (t.length >= 3 && t.length <= 45 && (EMO.test(t) || /^forme$/i.test(t))) return { n: x, t: t };   /* emoji en tête (ou « Forme ») : sinon un nom d'équipe passerait pour un titre */ }
+      if (texteSeul(x) && !x.children.length) { var t = x.textContent.trim(); if (t.length >= 3 && t.length <= 45 && (EMO.test(t) || /^forme$/i.test(t) || x.style.textTransform === 'uppercase')) return { n: x, t: t };   /* emoji en tête, « Forme » ou titre en MAJUSCULES (hors foot, 20261101i) : sinon un nom d'équipe passerait pour un titre */ }
     }
     return null;
   }
-  function libelle(t) { t = t.replace(/\s+/g, ' '); return EMO.test(t) ? t : (/^forme/i.test(t) ? '🔥 ' + t : '▪ ' + t); }
+  function libelle(t) { t = t.replace(/\s+/g, ' '); return EMO.test(t) ? t : (/^forme/i.test(t) ? '🔥 ' + t : '📊 ' + t); }
   function plier(box, eid) {
     var O = OUV[eid] || (OUV[eid] = {});
     Array.prototype.slice.call(box.children).forEach(function (B) {
@@ -84494,10 +84494,12 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
     if (box && el.contains(box)) plier(box, eid);
   }
   window._g45PlPasse = passe;
-  var rs0 = window._renderSaisonDetail;
-  if (typeof rs0 === 'function' && !rs0._g45Pl) {
-    window._renderSaisonDetail = async function (el, eventId, league) {
-      var eid = String(eventId || '');
+  /* 20261101i (« sport US rien n'est fait ») : même pliage pour la fenêtre hors foot (_renderGenericDetail(el, sport, lg, eid)). */
+  function envelopper(nom, iEid) {
+    var rs0 = window[nom];
+    if (typeof rs0 !== 'function' || rs0._g45Pl) return;
+    var f = async function (el) {
+      var eid = String(arguments[iEid] || '');
       if (el && el.isConnected) {   /* nouvelle ouverture (le redessin du direct passe par une div détachée) */
         OUV[eid] = {};
         /* 20261101g (« Cote match / équipe reste ouvert à l'ouverture ») : les blocs cotes équipes / joueurs ont leur propre ▸ Ouvrir
@@ -84509,14 +84511,18 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
         passe(el, eid);
         if (!el._g45PlObs && typeof MutationObserver === 'function') {
           var tm = 0;
-          el._g45PlObs = new MutationObserver(function () { if (tm) return; tm = setTimeout(function () { tm = 0; try { passe(el, eid); } catch (e) {} }, 60); });
+          el._g45PlObs = new MutationObserver(function () { if (tm) return; tm = setTimeout(function () { tm = 0; try { passe(el, el._g45PlEid || eid); } catch (e) {} }, 60); });
           el._g45PlObs.observe(el, { childList: true, subtree: true });
         }
+        el._g45PlEid = eid;
       } catch (e) {}
       return r;
     };
-    ['_g45Ca', '_g45Cj'].forEach(function (k) { if (rs0[k]) window._renderSaisonDetail[k] = rs0[k]; });
-    window._renderSaisonDetail._g45Pl = 1;
-    try { _renderSaisonDetail = window._renderSaisonDetail; } catch (e) {}
+    Object.keys(rs0).forEach(function (k) { f[k] = rs0[k]; });
+    f._g45Pl = 1;
+    window[nom] = f;
   }
+  envelopper('_renderSaisonDetail', 2);
+  envelopper('_renderGenericDetail', 3);
+  try { _renderSaisonDetail = window._renderSaisonDetail; _renderGenericDetail = window._renderGenericDetail; } catch (e) {}
 })();
