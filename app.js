@@ -76163,6 +76163,15 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       /* 20261027y (capture « Séries équipes » Ligue 1 : Aston Villa, Liverpool, Bayern… dans le classement) : pour le PSG, espnResolveTeam renvoyait
          la Ligue des champions → championnat imposé par la page (S.lgForce, onglet Compétitions → 🏁 Séries équipes). */
       var lg = S.lgForce || (r && r.league);
+      /* 20261102c (capture « 🏠 Désiré Doué buteur » : 2026-27 = 1/1 alors qu'il a joué 3 matchs à domicile en Ligue 1) : espnResolveTeam
+         rend parfois la COUPE D'EUROPE du club (PSG → uefa.champions) → critères comptés sur la LDC. Coupe d'Europe → championnat
+         national retrouvé dans les archives (equipes.json de la saison en cours qui contient le club). */
+      if (!S.lgForce && r && r.id && /^uefa\.(champions|europa)/.test(lg || '')) {
+        var DOM = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'ned.1', 'por.1', 'fra.2'];
+        for (var di = 0; di < DOM.length; di++) {
+          try { var ixd = await aLire('foot/' + DOM[di] + '/' + aSa(DOM[di], annees(DOM[di])[0]) + '/equipes.json'); if (ixd && ixd[String(r.id)]) { lg = DOM[di]; break; } } catch (e) {}
+        }
+      }
       if (!r || !r.id || !lg || /fifa|uefa\.(nations|euro)|friendly/.test(lg)) { S.data[nom] = { t: Date.now(), err: 'Pas de championnat trouvé pour cette équipe.' }; return; }
       var ans = annees(lg), out = { t: Date.now(), lg: lg, ligue: '', saisons: [], tid: String(r.id) };
       await Promise.all(ans.map(async function (an, i) {
