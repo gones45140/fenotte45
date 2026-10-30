@@ -84556,51 +84556,68 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
     f._g45Pl = 1;
     window[nom] = f;
   }
-  envelopper('_renderSaisonDetail', 2);
+  envelopper('_renderSaisonDetail', 1);   /* (el, eventId, league) */
   envelopper('_renderGenericDetail', 3);
   try { _renderSaisonDetail = window._renderSaisonDetail; _renderGenericDetail = window._renderGenericDetail; } catch (e) {}
 })();
 
-
-/* ═══ 20261101o — 📌 LA FENÊTRE DE MATCH NE SE REFERME PLUS TOUTE SEULE DANS SUIVIES (Antoine : « sur tél la page a tendance à se
-   refermer, c'est pas nouveau » → « juste la fenêtre se ferme, sans que je touche ») : loadTeamSaisons est relancée par beaucoup de
-   chemins (rafraîchissements, filtres, sync…) et reconstruit #ip-saisons → le panneau .smd-panel ouvert disparaît. Enveloppe la plus
-   externe : on note le match ouvert (data-eid de la ligne) et sa position, et après le redessin on le rouvre (toggleSaisonMatchDetail)
-   au même endroit, avec les blocs dépliés gardés (_g45PlGarde). Les réouvertures déjà faites ailleurs (data-open = 1) ne sont pas
-   doublées. ═══ */
+/* ═══ 20261101o/p — 📌 LA FENÊTRE DE MATCH NE SE REFERME PLUS TOUTE SEULE DANS SUIVIES (Antoine : « sur tél la page a tendance à se
+   refermer, c'est pas nouveau » → « juste la fenêtre se ferme, sans que je touche » ; capture : Saisons PSG, retour à la liste). 1er essai
+   (o, enveloppe de loadTeamSaisons) insuffisant : « je retombe sur ça » → le redessin a lieu PENDANT un même chargement (cache affiché
+   d'abord, données fraîches ensuite, blocs posés en arrière-plan). Donc : on retient le match ouvert À LA MAIN (enveloppe de
+   toggleSaisonMatchDetail : ouverture = noté, fermeture par Antoine = oublié) et un observateur sur #ip-saisons le rouvre (même place,
+   blocs dépliés gardés via _g45PlGarde) quand la page est reconstruite et que sa ligne existe encore. Oublié en quittant l'équipe. ═══ */
 (function () {
-  var l0 = window.loadTeamSaisons;
-  if (typeof l0 !== 'function' || l0._g45Garde) return;
-  var f = async function () {
-    var eid = '', haut0 = null;
-    try {
-      var ip = document.getElementById('ip-saisons'), ouv = ip && ip.querySelector('.smd-panel[data-open="1"]'), lg = ouv && ouv.previousElementSibling;
-      if (lg && lg.getAttribute('data-eid')) { eid = lg.getAttribute('data-eid'); haut0 = lg.getBoundingClientRect().top; }
-    } catch (e) {}
-    var r = await l0.apply(this, arguments);
-    if (!eid) return r;
-    try {
-      var n = document.querySelector('#ip-saisons [data-eid="' + eid + '"]');
-      if (n && typeof toggleSaisonMatchDetail === 'function') {
-        var p = n.nextElementSibling;
-        if (p && p.className === 'smd-panel' && p.getAttribute('data-open') !== '1') {
-          window._g45PlGarde = eid;
-          try { await toggleSaisonMatchDetail(n); } finally { window._g45PlGarde = null; }
+  var MEM = null, obs = null, tm = 0;
+  var t0 = window.toggleSaisonMatchDetail;
+  if (typeof t0 !== 'function' || t0._g45Garde) return;
+  function rouvrir() {
+    tm = 0;
+    var ip = document.getElementById('ip-saisons'); if (!MEM || !ip || !ip.isConnected) return;
+    if (ip.querySelector('.smd-panel[data-open="1"]')) return;
+    var n = ip.querySelector('[data-eid="' + MEM.eid + '"]'), p = n && n.nextElementSibling;
+    if (!p || p.className !== 'smd-panel') return;
+    var haut0 = MEM.haut;
+    window._g45PlGarde = MEM.eid;
+    Promise.resolve(t0.call(window, n)).then(function () {
+      window._g45PlGarde = null;
+      try {
+        var d = n.getBoundingClientRect().top - haut0;
+        if (Math.abs(d) > 1) {
+          var c = null;
+          for (var q = n.parentElement; q; q = q.parentElement) { var oy = getComputedStyle(q).overflowY; if ((oy === 'auto' || oy === 'scroll') && q.scrollHeight > q.clientHeight) { c = q; break; } }
+          if (c) c.scrollTop += d; else window.scrollBy(0, d);
         }
-        if (haut0 != null) {
-          var d = n.getBoundingClientRect().top - haut0;
-          if (Math.abs(d) > 1) {
-            var c = null;
-            for (var q = n.parentElement; q; q = q.parentElement) { var oy = getComputedStyle(q).overflowY; if ((oy === 'auto' || oy === 'scroll') && q.scrollHeight > q.clientHeight) { c = q; break; } }
-            if (c) c.scrollTop += d; else window.scrollBy(0, d);
-          }
-        }
+      } catch (e) {}
+    }, function () { window._g45PlGarde = null; });
+  }
+  var f = async function (row) {
+    var p = row && row.nextElementSibling, ouvert = p && p.getAttribute('data-open') === '1';
+    var ip = document.getElementById('ip-saisons');
+    if (ip && ip.contains(row)) {
+      if (ouvert) MEM = null;
+      else MEM = { eid: row.getAttribute('data-eid') || '', haut: row.getBoundingClientRect().top };
+      if (!obs && typeof MutationObserver === 'function') {
+        obs = new MutationObserver(function () {
+          if (!tm) tm = setTimeout(rouvrir, 150);
+        });
+        obs.observe(ip, { childList: true, subtree: true });
+        /* position de la ligne tenue à jour pendant le défilement → après réouverture, Antoine reste là où il lisait */
+        document.addEventListener('scroll', function () {
+          if (!MEM) return; var lg = ip.querySelector('[data-eid="' + MEM.eid + '"]'), pn = lg && lg.nextElementSibling;
+          if (pn && pn.getAttribute('data-open') === '1') MEM.haut = lg.getBoundingClientRect().top;
+        }, { capture: true, passive: true });
       }
-    } catch (e) {}
-    return r;
+    }
+    return t0.apply(this, arguments);
   };
-  Object.keys(l0).forEach(function (k) { f[k] = l0[k]; });
   f._g45Garde = 1;
-  window.loadTeamSaisons = f;
-  try { loadTeamSaisons = f; } catch (e) {}
+  window.toggleSaisonMatchDetail = f;
+  try { toggleSaisonMatchDetail = f; } catch (e) {}
+  var c0 = window.closeClub;
+  if (typeof c0 === 'function') {
+    var fc = function () { MEM = null; return c0.apply(this, arguments); };
+    Object.keys(c0).forEach(function (k) { fc[k] = c0[k]; });
+    window.closeClub = fc; try { closeClub = fc; } catch (e) {}
+  }
 })();
