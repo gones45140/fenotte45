@@ -75952,6 +75952,22 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     for (var i = ms.length - 1; i >= 0 && re(ms[i]) === der; i--) k++;
     return k + (der ? (k > 1 ? ' réussites' : ' réussite') : (k > 1 ? ' défaites' : ' défaite')) + ' de suite';
   }
+  /* 20261102f — 🛑 APRÈS 2 RÉUSSITES DE SUITE (idée de Bruno, groupe « Bets 4 us » : « meilleure série 2 ou 3, logiquement après 2 victoires
+     en under 3,5 tu fais pas le bet » ; Antoine : « oui, après ça marche qu'avec certaines équipes » ; maquette « oui ») : sur les 4 saisons
+     à la suite (même liste que le Total), résultat du match qui suit 2 réussites de suite (ou plus). ✋ si ce % est au moins 10 points
+     sous le % total et qu'il y a 5 cas ou plus ; 👍 sinon ; moins de 5 cas → « trop peu de cas ». Rien si aucun cas. */
+  function apres2(c, ms) {
+    ms = jFiltre(c, ms).filter(function (m) { return valeur(c, m).n > 0; });
+    var re = function (m) { var v = valeur(c, m); return v.ok * 2 >= v.n; }, rb = 0, n = 0, ok = 0;
+    ms.forEach(function (m) { var r = re(m); if (rb >= 2) { n++; if (r) ok++; } rb = r ? rb + 1 : 0; });
+    return { n: n, ok: ok };
+  }
+  function apres2Html(A, T) {
+    if (!A.n) return '';
+    var p = Math.round(100 * A.ok / A.n), pt = T.n ? Math.round(100 * T.ok / T.n) : 0;
+    return '<br>🛑 Après 2 réussites de suite → le match d\'après : <b>' + A.ok + '/' + A.n + ' (' + p + ' %)</b> '
+      + (A.n < 5 ? '<span style="color:#c9d3ee;">· trop peu de cas</span>' : p <= pt - 10 ? '→ <b style="color:#ff9f43;">✋ mieux vaut attendre</b>' : '→ <b style="color:#1ed760;">👍 pas de différence</b>');
+  }
   function coul(p) { return p <= 2 ? '#1ed760' : p <= 4 ? '#ff9f43' : '#ff5a5a'; }
   function nbV(x) { return String(x).replace('.', ','); }   /* 20261024d : 12,5 / 20 avec les moitiés */
   /* ── 20261021e — 🌍 COUPES D'EUROPE (« actuellement on a que le championnat, la coupe d'Europe est-elle rajoutable ? », « oui ») —
@@ -76235,7 +76251,8 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
         + '🪜 Pire série : <b style="color:' + coul(T.pire) + ';">' + T.pire + ' défaite' + (T.pire > 1 ? 's' : '') + ' de suite</b> → il fallait <b>' + (T.pire + 1) + ' palier' + (T.pire ? 's' : '') + '</b>'
         + (function () { try { var pa = _g45F1CrPal(T.pire); return ' ' + pa.ico + (pa.mise != null ? ' · mise max <b>' + pa.mise + ' €</b> (' + new Array(+(pa.et || 1) + 1).join('⭐') + ')' : ' au-delà de tes ' + pa.max + ' paliers'); } catch (e) { return ''; } })()   /* 20261028c : mise max promise par la maquette 20261027h */
         + '<br>'
-        + '🏆 Meilleure série : <b style="color:#5aa9ff;">' + T.best + ' réussite' + (T.best > 1 ? 's' : '') + ' de suite</b><br>'
+        + '🏆 Meilleure série : <b style="color:#5aa9ff;">' + T.best + ' réussite' + (T.best > 1 ? 's' : '') + ' de suite</b>'
+        + apres2Html(apres2(c, tous), T) + '<br>'   /* 20261102f */
         + '📈 Série en cours : ' + enCours(c, tous) + '</div>';
       h += garderHtml(c, D, T);   /* 20261028e */
       h += ajoutHtml(c);   /* 20261101c */
