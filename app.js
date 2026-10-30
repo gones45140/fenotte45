@@ -84007,6 +84007,16 @@ window._g45MqPalHtml = function (pire, pd) {
       it = it.filter(function (x) { return ty[String((x.type || {}).id || '')]; }); if (!it.length) return null;
       var sb = null; try { sb = await (await fetch('https://site.api.espn.com/apis/site/v2/sports/' + C.sp + '/' + lg + '/summary?event=' + eid)).json(); } catch (e) {}
       var eqs = ((((sb || {}).header || {}).competitions || [])[0] || {}).competitors || [];
+      /* 20261101r (capture Devils – Vegas : « 🏦 Cotes joueurs » absent alors qu'ESPN a 135 cotes joueurs, toutes rattachées à un joueur
+         des effectifs — sonde GitHub du 30/10) : le bloc dépend du résumé site.api (numéros des équipes) puis des effectifs site.api ;
+         un refus de site.api (403 vu depuis un navigateur de test) suffit à le faire disparaître sans bruit. Secours : équipes lues sur
+         l'API core (qui répond, cotes équipes affichées), puis noms manquants lus fiche par fiche sur l'API core (60 joueurs max). */
+      if (!eqs.length) {
+        try {
+          var cc = await (await fetch('https://sports.core.api.espn.com/v2/sports/' + C.sp + '/leagues/' + lg + '/events/' + eid + '/competitions/' + eid)).json();
+          eqs = ((cc && cc.competitors) || []).map(function (x) { return { team: { id: String(x.id || ((((x.team || {}).$ref || '').match(/teams\/(\d+)/) || [])[1]) || '') } }; });
+        } catch (e) {}
+      }
       for (var i = 0; i < eqs.length; i++) {
         var tm = eqs[i].team || {}; if (!tm.id) continue;
         try {
@@ -84014,6 +84024,15 @@ window._g45MqPalHtml = function (pire, pd) {
           if (ath.length && ath[0] && ath[0].items) ath.forEach(function (g) { (g.items || []).forEach(function (p) { L.push(p); }); }); else L = ath;
           L.forEach(function (p) { if (p && p.id) J[String(p.id)] = { n: p.displayName || p.fullName || '?', eq: tm.abbreviation || '', c: tm.color ? '#' + String(tm.color).replace('#', '') : '#5a6788', o: {} }; });
         } catch (e) {}
+      }
+      var manq = {}; it.forEach(function (x) { var a = String((x.athlete || {}).$ref || '').match(/athletes\/(\d+)/); if (a && !(J[a[1]] && J[a[1]].n)) manq[a[1]] = 1; });
+      var lm = Object.keys(manq).slice(0, 60);
+      for (var q = 0; q < lm.length; q += 6) {   /* 20261101r : noms par l'API core si l'effectif n'a pas répondu */
+        await Promise.all(lm.slice(q, q + 6).map(function (id) {
+          return fetch('https://sports.core.api.espn.com/v2/sports/' + C.sp + '/leagues/' + lg + '/athletes/' + id).then(function (r) { return r.ok ? r.json() : null; }).then(function (a) {
+            if (a && (a.displayName || a.fullName)) J[id] = J[id] || { n: '', eq: '', c: '#5a6788', o: {} }, J[id].n = a.displayName || a.fullName;
+          }, function () {});
+        }));
       }
       it.forEach(function (x) {
         var a = String((x.athlete || {}).$ref || '').match(/athletes\/(\d+)/), d = cote(x); if (!a || !(d > 1)) return;
