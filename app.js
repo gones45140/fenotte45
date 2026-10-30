@@ -76601,9 +76601,73 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       Q.etat = 2; redessiner();
     })();
   };
+  /* ═══ 20261102d — 🏁 JOUABLE EN COCKPIT ? → JOUEURS DU CHAMPIONNAT (Antoine : « on aurait dû rajouter les joueurs du championnat, je pensais
+     que c'était fait » ; maquette « oui ») : critère = UN joueur seul (buteur / doublé / triplé / passeur / décisif) sans critère d'équipe →
+     classement des JOUEURS de la ligue au lieu des équipes. Archives seulement (foot) : candidats = 40 meilleurs (buts, passes ou buts + passes)
+     des joueurs.json des 4 saisons + le joueur choisi ; journal joueurs/<id>.json de chaque saison, matchs JOUÉS (m[4]), lieu = m[6] (h|a) ;
+     pire série = plus longue suite de matchs ratés, 4 saisons à la suite. 5 matchs au minimum. ═══ */
+  S.clsJ = S.clsJ || {};
+  function clsJModeDe(c0) { return !S.ctx && c0 && c0.jo && !c0.jo2 && /aucun crit/.test(libCombo(clsCombo(c0))); }
+  window._g45CrClsJT = function () { return { ok: clsJOk, mode: clsJModeDe }; };   /* tests */
+  function clsJOk(jm, s) { var g = +s.G || 0, a = +s.A || 0; return jm === 'dbl' ? g >= 2 : jm === 'tri' ? g >= 3 : jm === 'pas' ? a >= 1 : jm === 'dec' ? g + a >= 1 : g >= 1; }
+  window.g45CrClsJLancer = function () {
+    var X = clsCtx(), c0 = S.combos[S.a]; if (!X || !c0) return;
+    var jm = c0.jm || 'but', k = X.lg + '|' + jm + '|' + (S.lieu || ''), Q = S.clsJ[k] = S.clsJ[k] || {};
+    if (Q.etat === 1) return; Q.etat = 1; Q.f = 0; Q.err = ''; redessiner();
+    (async function () {
+      try {
+        var ANS = annees(X.lg).slice().reverse(), tot = {}, noms = {}, eqs = {}, IX = {};
+        for (var i = 0; i < ANS.length; i++) {
+          var sa = aSa(X.lg, ANS[i]), lj = await aLire('foot/' + X.lg + '/' + sa + '/joueurs.json'), ix = await aLire('foot/' + X.lg + '/' + sa + '/equipes.json');
+          if (ix) for (var t in ix) IX[t] = ix[t][0];
+          if (lj) for (var id in lj) { var v = lj[id], tt = v[3] || {}; tot[id] = (tot[id] || 0) + (jm === 'pas' ? (+tt.A || 0) : jm === 'dec' ? (+tt.G || 0) + (+tt.A || 0) : (+tt.G || 0)); noms[id] = v[0]; eqs[id] = v[1]; }
+        }
+        var ids = Object.keys(tot).sort(function (a, b) { return tot[b] - tot[a]; }).slice(0, 40);
+        if (ids.indexOf(String(c0.jo)) < 0) ids.push(String(c0.jo));
+        if (!Object.keys(tot).length) { Q.etat = 0; Q.err = 'Archives de ce championnat indisponibles.'; redessiner(); return; }
+        Q.n = ids.length; var R = [], j = 0;
+        async function w() {
+          while (j < ids.length) {
+            var pid = ids[j++], L = [];
+            for (var s2 = 0; s2 < ANS.length; s2++) { var q = await aLire('foot/' + X.lg + '/' + aSa(X.lg, ANS[s2]) + '/joueurs/' + pid + '.json'); ((q && q.m) || []).forEach(function (m) { if (m[4] && (S.lieu !== 'dom' && S.lieu !== 'ext' || (S.lieu === 'dom' ? m[6] === 'h' : m[6] === 'a'))) L.push([m[0], clsJOk(jm, m[4])]); }); }
+            L.sort(function (a, b) { return a[0] - b[0]; });
+            var ok = 0, pire = 0, cur = 0; L.forEach(function (x) { if (x[1]) { ok++; cur = 0; } else { cur++; if (cur > pire) pire = cur; } });
+            R.push({ id: pid, nom: noms[pid] || (pid === String(c0.jo) ? c0.jn : '?'), eq: IX[eqs[pid]] || '', n: L.length, ok: ok, pire: pire });
+            Q.f++; var e1 = document.getElementById('g45cr-clsj-prog'); if (e1) e1.textContent = Q.f + ' / ' + Q.n;
+          }
+        }
+        await Promise.all([w(), w(), w(), w()]);
+        Q.R = R; Q.etat = 2;
+      } catch (e) { Q.etat = 0; Q.err = 'Lecture impossible.'; }
+      redessiner();
+    })();
+  };
+  function clsJHtml(X, c0) {
+    var jm = c0.jm || 'but', Q = S.clsJ[X.lg + '|' + jm + '|' + (S.lieu || '')] || {}, JM = { pas: 'passeur', dec: 'décisif', dbl: 'doublé', tri: 'triplé' }[jm] || 'buteur';
+    var h = '<div style="margin-top:16px;padding-top:12px;border-top:1px solid #2a3a63;">'
+      + '<div style="font-size:16px;font-weight:800;color:#fff;">🏁 Jouable en Cockpit ? — joueurs du championnat</div>'
+      + '<div style="font-size:13px;color:#c9d3ee;margin:3px 0 8px;">Même critère (' + (S.lieu === 'dom' ? '🏠 ' : S.lieu === 'ext' ? '✈️ ' : '') + JM + ') · 4 saisons · ' + esc((S.data[S.nom] && S.data[S.nom].ligue) || 'championnat') + ' · matchs joués · trié par la plus petite pire série</div>';
+    if (Q.etat === 1) return h + '<div style="font-size:14px;color:#fff;">⏳ Lecture des joueurs… <span id="g45cr-clsj-prog">' + (Q.f || 0) + ' / ' + (Q.n || '?') + '</span></div></div>';
+    if (Q.etat !== 2) return h + (Q.err ? '<div style="font-size:14px;color:#ff9f43;margin-bottom:6px;">⚠️ ' + esc(Q.err) + '</div>' : '')
+      + '<button onclick="g45CrClsJLancer()" style="border:none;border-radius:10px;padding:9px 14px;font-size:14px;font-weight:700;color:#fff;background:#2f6bff;cursor:pointer;">▶ Lancer le classement des joueurs (archives, ≈ 20 s)</button></div>';
+    var L = (Q.R || []).filter(function (x) { return x.n >= 5; }).sort(function (a, b) { return (a.pire - b.pire) || (b.ok / b.n - a.ok / a.n); });
+    if (!L.length) return h + '<div style="font-size:14px;color:#fff;">Pas assez de matchs avec ce critère.</div></div>';
+    var top = L.slice(0, 20), moi = L.filter(function (x) { return x.id === String(c0.jo); })[0];
+    if (moi && top.indexOf(moi) < 0) top.push(moi);
+    var ln = 'display:grid;grid-template-columns:1.8fr 1fr 1fr 1.3fr;gap:6px;padding:8px 4px;border-bottom:1px solid #1c2747;font-size:14px;color:#fff;';
+    h += '<div style="' + ln + 'font-size:13px;color:#c9d3ee;"><span>Joueur</span><span>Réussite</span><span>Pire série</span><span>Paliers</span></div>';
+    top.forEach(function (x) {
+      var me = x.id === String(c0.jo), pa = (typeof _g45F1CrPal === 'function') ? _g45F1CrPal(x.pire) : { p: x.pire + 1, ico: '' };
+      h += '<div style="' + ln + (me ? 'background:rgba(47,107,255,.2);border-radius:8px;' : '') + '"><span style="font-weight:' + (me ? 800 : 600) + ';">' + esc(x.nom) + (x.eq ? ' <span style="font-size:12px;color:#c9d3ee;font-weight:400;">(' + esc(x.eq) + ')</span>' : '') + '</span>'
+        + '<span>' + Math.round(100 * x.ok / x.n) + ' % <span style="font-size:12px;color:#c9d3ee;">' + x.ok + '/' + x.n + '</span></span><span style="font-weight:800;color:' + coul(x.pire) + ';">' + x.pire + '</span>'
+        + '<span><b>' + pa.p + ' palier' + (pa.p > 1 ? 's' : '') + '</b> ' + pa.ico + (pa.mise != null ? ' <span style="font-size:12px;color:#c9d3ee;">' + pa.mise + ' €</span>' : '') + '</span></div>';
+    });
+    return h + '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">✅ 5 paliers ou moins · ⚠️ jusqu\'à ta dernière mise · ❌ au-delà de tes paliers (mises 1 ⭐). Candidats : les 40 meilleurs ' + (jm === 'pas' ? 'passeurs' : jm === 'dec' ? 'buteurs + passeurs' : 'buteurs') + ' des 4 saisons + ton joueur. 5 matchs comptés au minimum.</div></div>';
+  }
   function clsHtml() {
     var X = clsCtx(); if (!X) return '';
     var Q = S.cls[X.sp + '|' + X.lg] || {}, c0 = S.combos[S.a]; if (!c0) return '';
+    if (X.sp === 'soccer' && clsJModeDe(c0)) return clsJHtml(X, c0);   /* 20261102d */
     var c = clsCombo(c0), nomLg = (S.data[S.nom] && S.data[S.nom].ligue) || US_N[X.lg] || 'championnat';
     var ign = CLS_SANS.some(function (q) { return c0[q]; });
     var h = '<div style="margin-top:16px;padding-top:12px;border-top:1px solid #2a3a63;">'
