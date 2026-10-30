@@ -67988,6 +67988,7 @@ function g45AccChoisir(v) {
   try { var d = document.getElementById('dash-units'); if (d && d.getBoundingClientRect().top < 0) d.scrollIntoView({ block: 'start' }); } catch (e) {}
 }
 window.g45AccChoisir = g45AccChoisir;
+window.g45MurEJ = function (k, v) { try { localStorage.setItem('g45_mur_ej_' + k, v === 'j' ? 'j' : 'e'); } catch (e) {} _g45AccRegrouper(); };   /* 20261102b */
 function _g45AccRegrouper() {
   var dash = document.getElementById('dash-units');
   if (!dash) return;
@@ -68055,7 +68056,18 @@ function _g45AccRegrouper() {
     /* 20261005g (captures d'Antoine : « screen 2 il depasse largement ») — '' EFFACAIT le display:flex
        posé en ligne sur la carte → carte en bloc, bande sombre du texte et pastille du gain sur TOUTE la
        largeur, gain repoussé dessous. On remet 'flex', la mise en page d'origine du mur. */
-    cartes.forEach(function (c) { c.style.display = g.c.indexOf(c) >= 0 ? 'flex' : 'none'; });
+    /* 20261102b (Antoine : « fais un sélecteur équipe et un autre joueur, chacun de son côté, pour tous les sports » ; vraie maquette « oui ») :
+       🛡️ Équipes (n) | 👤 Joueurs (n) sous l'en-tête du sport, seulement si le sport a les DEUX ; choix gardé par sport (g45_mur_ej_<sport>,
+       'e' par défaut). Carte joueur = u.type === 'joueur'. Le total du sport reste celui de toutes ses cartes. */
+    var estJ = function (c) { var u = U[c.getAttribute('data-nom')]; return !!(u && u.type === 'joueur'); };
+    var nJ = g.c.filter(estJ).length, nE = g.c.length - nJ, ej = 'e';
+    try { ej = localStorage.getItem('g45_mur_ej_' + _g45AccSel) === 'j' ? 'j' : 'e'; } catch (e) {}
+    if (!nJ) ej = 'e'; else if (!nE) ej = 'j';
+    if (nJ && nE) {
+      var bt = function (v, lib, n) { var on = ej === v; return '<button data-k="' + _g45AccEsc(_g45AccSel) + '" onclick="g45MurEJ(this.dataset.k,\'' + v + '\')" style="flex:1;padding:12px 8px;border-radius:12px;cursor:pointer;font-size:16px;font-weight:' + (on ? '900' : '700') + ';color:#fff;border:1.5px solid ' + (on ? '#6d9dff' : '#3b4a75') + ';background:' + (on ? '#2f5bea' : '#111830') + ';">' + lib + ' (' + n + ')' + (on ? ' ✓' : '') + '</button>'; };
+      zone.innerHTML += '<div class="g45-ej" style="display:flex;gap:8px;margin:0 0 10px;">' + bt('e', '🛡️ Équipes', nE) + bt('j', '👤 Joueurs', nJ) + '</div>';
+    }
+    cartes.forEach(function (c) { c.style.display = (g.c.indexOf(c) >= 0 && (estJ(c) ? 'j' : 'e') === ej) ? 'flex' : 'none'; });
   }
   dash.insertBefore(zone, dash.firstChild);
 }
