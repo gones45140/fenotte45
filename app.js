@@ -71637,9 +71637,14 @@ async function _g45RegNhlAbs(out, saison) {
   out.forEach(function (o) { if (o.ab && o.der) eqs[o.ab] = 1; });
   var cal = {};
   await Promise.all(Object.keys(eqs).map(function (ab) { return _g45RegNhlCal(ab, saison).then(function (d) { cal[ab] = d; }, function () {}); }));
+  /* 20261101e — « Pourquoi absent » (Kaprizov, 29/10, il avait joué) : nhle.com passe le match en FINAL tout de suite, mais le journal
+     du joueur n'est mis à jour que quelques heures après → faux « absent ». Un match de moins de 36 h ne compte comme absence que si
+     un coéquipier de la liste l'a déjà dans son journal (journal à jour). */
+  var lim = new Date(Date.now() - 36 * 3600e3).toISOString().slice(0, 10), derEq = {};
+  out.forEach(function (o) { if (o.ab && o.der) { var x = String(o.der).slice(0, 10); if (!derEq[o.ab] || x > derEq[o.ab]) derEq[o.ab] = x; } });
   out.forEach(function (o) {
     var d = cal[o.ab]; if (!d || !o.der) return;
-    var der = String(o.der).slice(0, 10), apres = d.filter(function (x) { return x > der; });
+    var der = String(o.der).slice(0, 10), apres = d.filter(function (x) { return x > der && (x <= lim || x <= derEq[o.ab]); });
     o.abs = apres.length;
     if (apres.length) { var z = apres[apres.length - 1].split('-'); o.absD = z[2] + '/' + z[1]; }
   });
