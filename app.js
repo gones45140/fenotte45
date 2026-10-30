@@ -84459,10 +84459,10 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
     return null;
   }
   function libelle(t) { t = t.replace(/\s+/g, ' '); return EMO.test(t) ? t : (/^forme/i.test(t) ? '🔥 ' + t : '📊 ' + t); }
-  function plier(box, eid) {
+  function plier(box, eid, top) {
     var O = OUV[eid] || (OUV[eid] = {});
     Array.prototype.slice.call(box.children).forEach(function (B) {
-      if (B.getAttribute('data-g45pl') === 'g') { plier(B, eid); return; }   /* 20261101h : groupe (Avant-match) → revoir ses sous-blocs (classement rempli en retard, Premier League) */
+      if (B.getAttribute('data-g45pl') === 'g') { plier(B, eid, top || box); return; }   /* 20261101h : groupe (Avant-match) → revoir ses sous-blocs (classement rempli en retard, Premier League) */
       if (B.getAttribute('data-g45pl') === '1') { var T1 = titre(B); if (T1 && B.firstElementChild === T1.n) T1.n.style.display = 'none'; return; }   /* contenu remplacé : titre en double caché */
       if (B.getAttribute('data-g45plr') || B.getAttribute('data-g45pl')) return;
       if (B.tagName !== 'DIV' || !B.children.length) return;
@@ -84473,9 +84473,13 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
       }
       if (/direct|live|en cours|\bBUT\b/i.test(T.t)) return;
       var sous = Array.prototype.filter.call(B.children, function (x) { return x !== T.n && x.tagName === 'DIV' && titre(x); });
-      if (sous.length >= 2) { B.setAttribute('data-g45pl', 'g'); plier(B, eid); return; }
+      if (sous.length >= 2) { B.setAttribute('data-g45pl', 'g'); plier(B, eid, top || box); return; }
       if (B.children.length < 2 && T.n.parentNode === B) return;   /* un titre seul, rien à ouvrir */
       var lab = libelle(T.t), ouv = !!O[lab];
+      /* 20261101j (capture Carolina : « 2 statistiques d'équipe ») : avant-match, ESPN donne les MÊMES chiffres (boxscore.teams) au bloc
+         Avant-match et au bloc stats du match → un bloc dont le titre existe déjà dans la fenêtre est caché, sans bande. */
+      var nl = function (x) { return String(x).replace(/[^a-zà-ÿ]/gi, '').toLowerCase(); }, k = nl(lab), racine = top || box;
+      if (Array.prototype.some.call(racine.querySelectorAll('[data-g45plr]'), function (r) { return nl(r.firstChild.textContent) === k; })) { B.setAttribute('data-g45pl', '1'); B.style.display = 'none'; return; }
       B.setAttribute('data-g45pl', '1');
       if (T.n.parentNode === B && B.firstElementChild === T.n) T.n.style.display = 'none';
       B.style.display = ouv ? '' : 'none';
