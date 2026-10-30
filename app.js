@@ -84534,7 +84534,7 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
     if (typeof rs0 !== 'function' || rs0._g45Pl) return;
     var f = async function (el) {
       var eid = String(arguments[iEid] || '');
-      if (el && el.isConnected) {   /* nouvelle ouverture (le redessin du direct passe par une div détachée) */
+      if (el && el.isConnected && window._g45PlGarde !== eid) {   /* nouvelle ouverture (le redessin du direct passe par une div détachée ; 20261101o : réouverture après redessin de Suivies = blocs gardés) */
         OUV[eid] = {};
         /* 20261101g (« Cote match / équipe reste ouvert à l'ouverture ») : les blocs cotes équipes / joueurs ont leur propre ▸ Ouvrir
            gardé en mémoire (g45ce_ouvert / g45cj_ouvert, 20261030v-x) → remis fermé à chaque ouverture de la fenêtre. */
@@ -84559,4 +84559,48 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
   envelopper('_renderSaisonDetail', 2);
   envelopper('_renderGenericDetail', 3);
   try { _renderSaisonDetail = window._renderSaisonDetail; _renderGenericDetail = window._renderGenericDetail; } catch (e) {}
+})();
+
+
+/* ═══ 20261101o — 📌 LA FENÊTRE DE MATCH NE SE REFERME PLUS TOUTE SEULE DANS SUIVIES (Antoine : « sur tél la page a tendance à se
+   refermer, c'est pas nouveau » → « juste la fenêtre se ferme, sans que je touche ») : loadTeamSaisons est relancée par beaucoup de
+   chemins (rafraîchissements, filtres, sync…) et reconstruit #ip-saisons → le panneau .smd-panel ouvert disparaît. Enveloppe la plus
+   externe : on note le match ouvert (data-eid de la ligne) et sa position, et après le redessin on le rouvre (toggleSaisonMatchDetail)
+   au même endroit, avec les blocs dépliés gardés (_g45PlGarde). Les réouvertures déjà faites ailleurs (data-open = 1) ne sont pas
+   doublées. ═══ */
+(function () {
+  var l0 = window.loadTeamSaisons;
+  if (typeof l0 !== 'function' || l0._g45Garde) return;
+  var f = async function () {
+    var eid = '', haut0 = null;
+    try {
+      var ip = document.getElementById('ip-saisons'), ouv = ip && ip.querySelector('.smd-panel[data-open="1"]'), lg = ouv && ouv.previousElementSibling;
+      if (lg && lg.getAttribute('data-eid')) { eid = lg.getAttribute('data-eid'); haut0 = lg.getBoundingClientRect().top; }
+    } catch (e) {}
+    var r = await l0.apply(this, arguments);
+    if (!eid) return r;
+    try {
+      var n = document.querySelector('#ip-saisons [data-eid="' + eid + '"]');
+      if (n && typeof toggleSaisonMatchDetail === 'function') {
+        var p = n.nextElementSibling;
+        if (p && p.className === 'smd-panel' && p.getAttribute('data-open') !== '1') {
+          window._g45PlGarde = eid;
+          try { await toggleSaisonMatchDetail(n); } finally { window._g45PlGarde = null; }
+        }
+        if (haut0 != null) {
+          var d = n.getBoundingClientRect().top - haut0;
+          if (Math.abs(d) > 1) {
+            var c = null;
+            for (var q = n.parentElement; q; q = q.parentElement) { var oy = getComputedStyle(q).overflowY; if ((oy === 'auto' || oy === 'scroll') && q.scrollHeight > q.clientHeight) { c = q; break; } }
+            if (c) c.scrollTop += d; else window.scrollBy(0, d);
+          }
+        }
+      }
+    } catch (e) {}
+    return r;
+  };
+  Object.keys(l0).forEach(function (k) { f[k] = l0[k]; });
+  f._g45Garde = 1;
+  window.loadTeamSaisons = f;
+  try { loadTeamSaisons = f; } catch (e) {}
 })();
