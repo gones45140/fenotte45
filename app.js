@@ -76142,7 +76142,9 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     if (!aOk(lg)) return null;
     var sa = aSa(lg, an), et = await aLire('foot/' + lg + '/' + sa + '/etat.json'); if (!et || !(et.n > 0) || et.v2 < et.n) return null;
     var q = await aLire('foot/' + lg + '/' + sa + '/joueurs/' + pid + '.json'); if (q === null) return null;
-    return { gameLog: ((q && q.m) || []).filter(function (m) { return m[4]; }).map(function (m) { return { d: aIso(m[0]), goals: m[4].G || 0, assists: m[4].A || 0, h: null }; }), arch: 1 };
+    /* 20261102j (capture « 🏠 Kylian Mbappé buteur » : 2022-23 / 2023-24 « ↪️ PSG · aucun match joué ») : h était laissé à null → l'ancien club
+       (jAilleurs, m[1] = -1) ne passait jamais le filtre 🏠 / ✈️. m[6] du journal = 'h' | 'a' (le même que « Jouable en Cockpit » joueurs). */
+    return { gameLog: ((q && q.m) || []).filter(function (m) { return m[4]; }).map(function (m) { return { d: aIso(m[0]), goals: m[4].G || 0, assists: m[4].A || 0, h: m[6] === 'h' ? 1 : m[6] === 'a' ? 0 : null }; }), arch: 1 };
   }
   async function aFeuilles(lg, tid, an) {   /* fiche.cf des mois joués par le club → S.fa[idMatch] (0 = relue, ESPN sans stats d'équipe) */
     var A = await aEquipe(lg, tid, an); if (!A) return;
