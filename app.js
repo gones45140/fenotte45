@@ -75596,7 +75596,10 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   function annees(lg) {
     if (S.ctx) { var a0 = (typeof _g45SgAnAuto === 'function') ? _g45SgAnAuto(lg) : new Date().getFullYear() + 1; return [a0, a0 - 1, a0 - 2, a0 - 3]; }
     var d = new Date(), y = d.getFullYear(), y0 = CAL.indexOf(lg) >= 0 ? y : (d.getMonth() + 1 >= 8 ? y : y - 1);
-    return [y0, y0 - 1, y0 - 2, y0 - 3];
+    /* 20261102i (groupe Bets 4 us, Jp33 : « tu ne peux pas remonter sur 6 ou 7 saisons ? » → Antoine : « rajoute une saison supplémentaire mais
+       seulement au foot ») : foot = 5 saisons (archives : rattrapage RAT_ANS=5 ; sondé : 2021-22 = résultats + feuilles, pas de cotes).
+       Sports US / rugby passent par S.ctx (ligne du dessus) : 4 saisons, inchangé. */
+    return [y0, y0 - 1, y0 - 2, y0 - 3, y0 - 4];
   }
   function lib(lg, an) { if (rg() && typeof _g45SgLabel === 'function') return _g45SgLabel(lg, an); if (lg === 'nfl' || lg === 'mlb') return String(an); if (S.ctx) return (an - 1) + '-' + String(an).slice(2); return CAL.indexOf(lg) >= 0 ? String(an) : an + '-' + String(an + 1).slice(2); }
   function libCombo(c) {
@@ -76377,13 +76380,13 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var o = ouvert();
     var h = '<div id="g45cr" style="margin:12px 0;background:rgba(20,28,48,.95);border:1px solid #2a3a63;border-radius:12px;padding:12px;color:#fff;">'
       + '<div onclick="g45CrOuvrir()" style="cursor:pointer;font-size:16px;font-weight:700;display:flex;justify-content:space-between;align-items:center;">'
-      + '<span>📊 Tes critères sur 4 saisons</span><span style="font-size:14px;color:#c9d3ee;">' + (o ? '▾ Replier' : '▸ Ouvrir') + '</span></div>';
+      + '<span>📊 Tes critères sur ' + (S.ctx ? 4 : 5) + ' saisons</span><span style="font-size:14px;color:#c9d3ee;">' + (o ? '▾ Replier' : '▸ Ouvrir') + '</span></div>';
     if (!o) return h + '</div>';
     /* 20261021e (« cette sélection de critères doit passer en premium ») : même verrou que Tendances (_g45AccesPremium : compte de moins de
        30 jours ou soutien ; gones45 sans compte = ouvert) ; rien n'est lu chez ESPN tant que c'est fermé. */
     try {
       if (typeof _g45AccesPremium === 'function' && _g45AccesPremium() !== true) return h + '<div style="text-align:center;padding:16px 8px;">'
-        + '<div style="font-size:28px;margin-bottom:8px;">🔒</div><div style="font-size:15px;font-weight:700;margin-bottom:6px;">Critères sur 4 saisons : réservé premium</div>'
+        + '<div style="font-size:28px;margin-bottom:8px;">🔒</div><div style="font-size:15px;font-weight:700;margin-bottom:6px;">Critères sur ' + (S.ctx ? 4 : 5) + ' saisons : réservé premium</div>'
         + '<div style="font-size:14px;color:#c9d3ee;line-height:1.5;max-width:360px;margin:0 auto 12px;">Gratuit 30 jours après la création du compte, puis avec un petit soutien du projet.</div>'
         + (typeof _g45BlocPremium === 'function' ? _g45BlocPremium() : '') + '</div></div>';
     } catch (e) {}
@@ -76694,7 +76697,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var jm = c0.jm || 'but', Q = S.clsJ[X.lg + '|' + jm + '|' + (S.lieu || '')] || {}, JM = { pas: 'passeur', dec: 'décisif', dbl: 'doublé', tri: 'triplé' }[jm] || 'buteur';
     var h = '<div style="margin-top:16px;padding-top:12px;border-top:1px solid #2a3a63;">'
       + '<div style="font-size:16px;font-weight:800;color:#fff;">🏁 Jouable en Cockpit ? — joueurs du championnat</div>'
-      + '<div style="font-size:13px;color:#c9d3ee;margin:3px 0 8px;">Même critère (' + (S.lieu === 'dom' ? '🏠 ' : S.lieu === 'ext' ? '✈️ ' : '') + JM + ') · 4 saisons · ' + esc((S.data[S.nom] && S.data[S.nom].ligue) || 'championnat') + ' · matchs joués · trié par la plus petite pire série</div>';
+      + '<div style="font-size:13px;color:#c9d3ee;margin:3px 0 8px;">Même critère (' + (S.lieu === 'dom' ? '🏠 ' : S.lieu === 'ext' ? '✈️ ' : '') + JM + ') · 5 saisons · ' + esc((S.data[S.nom] && S.data[S.nom].ligue) || 'championnat') + ' · matchs joués · trié par la plus petite pire série</div>';
     if (Q.etat === 1) return h + '<div style="font-size:14px;color:#fff;">⏳ Lecture des joueurs… <span id="g45cr-clsj-prog">' + (Q.f || 0) + ' / ' + (Q.n || '?') + '</span></div></div>';
     if (Q.etat !== 2) return h + (Q.err ? '<div style="font-size:14px;color:#ff9f43;margin-bottom:6px;">⚠️ ' + esc(Q.err) + '</div>' : '')
       + '<button onclick="g45CrClsJLancer()" style="border:none;border-radius:10px;padding:9px 14px;font-size:14px;font-weight:700;color:#fff;background:#2f6bff;cursor:pointer;">▶ Lancer le classement des joueurs (archives, ≈ 20 s)</button></div>';
@@ -76710,7 +76713,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
         + '<span>' + Math.round(100 * x.ok / x.n) + ' % <span style="font-size:12px;color:#c9d3ee;">' + x.ok + '/' + x.n + '</span></span><span style="font-weight:800;color:' + coul(x.pire) + ';">' + x.pire + '</span>'
         + '<span><b>' + pa.p + ' palier' + (pa.p > 1 ? 's' : '') + '</b> ' + pa.ico + (pa.mise != null ? ' <span style="font-size:12px;color:#c9d3ee;">' + pa.mise + ' €</span>' : '') + '</span></div>';
     });
-    return h + '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">✅ 5 paliers ou moins · ⚠️ jusqu\'à ta dernière mise · ❌ au-delà de tes paliers (mises 1 ⭐). Candidats : les 40 meilleurs ' + (jm === 'pas' ? 'passeurs' : jm === 'dec' ? 'buteurs + passeurs' : 'buteurs') + ' des 4 saisons encore dans le championnat cette saison + ton joueur. 5 matchs comptés au minimum.</div></div>';
+    return h + '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">✅ 5 paliers ou moins · ⚠️ jusqu\'à ta dernière mise · ❌ au-delà de tes paliers (mises 1 ⭐). Candidats : les 40 meilleurs ' + (jm === 'pas' ? 'passeurs' : jm === 'dec' ? 'buteurs + passeurs' : 'buteurs') + ' des 5 saisons encore dans le championnat cette saison + ton joueur. 5 matchs comptés au minimum.</div></div>';
   }
   function clsHtml() {
     var X = clsCtx(); if (!X) return '';
@@ -76720,7 +76723,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var ign = CLS_SANS.some(function (q) { return c0[q]; });
     var h = '<div style="margin-top:16px;padding-top:12px;border-top:1px solid #2a3a63;">'
       + '<div style="font-size:16px;font-weight:800;color:#fff;">🏁 Jouable en Cockpit ? — classement ' + (X.sp === 'soccer' ? 'du championnat' : 'de la ' + esc(US_N[X.lg] || X.lg)) + '</div>'
-      + '<div style="font-size:13px;color:#c9d3ee;margin:3px 0 8px;">Même critère (' + (S.lieu === 'dom' ? '🏠 ' : S.lieu === 'ext' ? '✈️ ' : '') + esc(libCombo(c)) + ') · 4 saisons · toutes les équipes · trié par la plus petite pire série'
+      + '<div style="font-size:13px;color:#c9d3ee;margin:3px 0 8px;">Même critère (' + (S.lieu === 'dom' ? '🏠 ' : S.lieu === 'ext' ? '✈️ ' : '') + esc(libCombo(c)) + ') · ' + (S.ctx ? 4 : 5) + ' saisons · toutes les équipes · trié par la plus petite pire série'
       + (ign ? '<br><span style="color:#ffb13d;">Ignoré ici : joueur et critères de feuille de match (tirs, mi-temps, corners…).</span>' : '') + '</div>';
     if (Q.etat === 1) return h + '<div style="font-size:14px;color:#fff;">⏳ Lecture des équipes… <span id="g45cr-cls-prog">' + (Q.f || 0) + ' / ' + (Q.n || '?') + '</span> (la 1re fois seulement)</div></div>';
     if (Q.etat !== 2) return h + (Q.err ? '<div style="font-size:14px;color:#ff9f43;margin-bottom:6px;">⚠️ ' + esc(Q.err) + '</div>' : '')
