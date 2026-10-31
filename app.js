@@ -26684,6 +26684,17 @@ async function loadCalendrier() {
      championnat ») : pastille « 🚀 Palier N · mise X € » sous la compétition, pour une équipe DU MUR (pas les ⭐) et un match de
      CHAMPIONNAT seulement (slug ESPN « fra.1 », « eng.1 »… ; coupes / Europe / sélections écartés). Palier = échelle du LIEU
      (`_g45PalLieu`, domicile ou extérieur comme le Cockpit), mise = STRATS de la stratégie de l'équipe (u.s). */
+  /* 20261102h — 🛑 Bruno time (voir brunoEtat, critères) : critère 📌 de l'équipe à 2 réussites de suite ou plus, lieu du critère = lieu du match. */
+  window._g45AgBruno = function(u, m){
+    var ps = u && u.ps, b = ps && ps.b;
+    if (!b || !(b.cr >= 2) || !m) return '';
+    if ((ps.k === 'dom' && !m.isDom) || (ps.k === 'ext' && m.isDom)) return '';
+    var p = b.n ? Math.round(100 * b.ok / b.n) : 0, att = b.n >= 5 && p <= b.pt - 10;
+    var v = !b.n ? '' : ' · après 2 : ' + b.ok + '/' + b.n + ' (' + p + ' %) → ' + (b.n < 5 ? 'trop peu de cas' : att ? '✋ attendre' : '👍 pas de différence');
+    var dt = /^\d{4}-\d{2}-\d{2}$/.test(b.d || '') ? ' <span style="font-weight:400;">(au ' + b.d.slice(8, 10) + '/' + b.d.slice(5, 7) + ')</span>' : '';
+    return '<div style="margin-top:5px;"><span style="display:inline-block;background:' + (att ? 'rgba(255,159,67,.25)' : 'rgba(150,160,190,.2)') + ';border:1px solid ' + (att ? '#ff9f43' : '#8a96b8') + ';color:#fff;'
+      + 'font-size:14px;font-weight:800;border-radius:7px;padding:2px 9px;">🛑 Bruno time · ' + b.cr + ' réussites de suite' + v + dt + '</span></div>';
+  };
   var _agOd = [], _agJd = [];   /* 20261030o : _agJd = cartes joueur (cote DraftKings) */
   var _agPalier = function(m){
     /* 20261008c (capture Agenda : « on a que les paliers foot ») : tous les sports — hors foot, tout match d'une équipe du mur avec
@@ -26740,6 +26751,7 @@ async function loadCalendrier() {
       else html += '<div style="font-size:15px;font-weight:800;color:#fff;">'+m.ourName+' '+((m.suivi&&!m.sp)?'<span style="color:#1ed760;">vs</span>':(m.isDom?'<span style="color:#3fb950;">vs</span>':'<span style="color:#f0883e;">@</span>'))+' '+m.adv+'</div>';
       html += '<div style="font-size:13px;color:#c9d3ee;margin-top:2px;"><b style="color:'+_S.c+';">'+_S.lg+'</b>'+(m.suivi?' · ⭐ Suivi'+(m.sp?(m.isDom?' · 🏠 Domicile':' · ✈️ Extérieur'):''):(m.isDom?' · 🏠 Domicile':' · ✈️ Extérieur'))+'</div>';
       try { html += _agPalier(m); } catch(e) {}
+      try { html += window._g45AgBruno(_agMur(m), m); } catch(e) {}   /* 20261102h */
       /* 20261008g : consigne 📌 du lieu + cotes ESPN (rempli après coup par window._g45AgCotes). */
       try {
         var _uC = _agMur(m), _C = (_uC && _uC.note && window._g45AgConsigne && (!m.joueur || /🏠|✈|🛫/.test(_uC.note))) ? window._g45AgConsigne(_uC.note, m.isDom) : null;   /* 20261016h : joueur = consigne seulement si 🏠 / ✈️ (sinon la note = son club) */
@@ -75971,6 +75983,16 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     return '<br>🛑 Après 2 réussites de suite → le match d\'après : <b>' + A.ok + '/' + A.n + ' (' + p + ' %)</b> '
       + (A.n < 5 ? '<span style="color:#c9d3ee;">· trop peu de cas</span>' : p <= pt - 10 ? '→ <b style="color:#ff9f43;">✋ mieux vaut attendre</b>' : '→ <b style="color:#1ed760;">👍 pas de différence</b>');
   }
+  /* 20261102h — 🛑 « BRUNO TIME » DANS L'AGENDA (Antoine : « faudrait mettre le Bruno time dans l'Agenda » ; maquette « oui ») : gardé avec
+     le critère 📌 (u.ps.b) : cr = réussites de suite en cours, n / ok = après 2 réussites (apres2), pt = % total, d = date du dernier match
+     compté (l'Agenda l'affiche : u.ps n'est recalculé qu'à l'ouverture des critères). */
+  function brunoEtat(c, ms) {
+    var L = jFiltre(c, ms).filter(function (m) { return valeur(c, m).n > 0; }), cr = 0;
+    for (var i = L.length - 1; i >= 0; i--) { var v = valeur(c, L[i]); if (v.ok * 2 >= v.n) cr++; else break; }
+    var A = apres2(c, ms), T = calc(c, ms), dl = L.length ? L[L.length - 1][0] : '';
+    return { cr: cr, n: A.n, ok: A.ok, pt: T.n ? Math.round(100 * T.ok / T.n) : 0, d: typeof dl === 'string' ? dl.slice(0, 10) : '' };
+  }
+  function tousDe(c, D) { var tous = []; D.saisons.slice().reverse().forEach(function (s) { var L0 = s && msS(c, s); if (L0) tous = tous.concat(filtrer(L0)); }); return tous; }
   function coul(p) { return p <= 2 ? '#1ed760' : p <= 4 ? '#ff9f43' : '#ff5a5a'; }
   function nbV(x) { return String(x).replace('.', ','); }   /* 20261024d : 12,5 / 20 avec les moitiés */
   /* ── 20261021e — 🌍 COUPES D'EUROPE (« actuellement on a que le championnat, la coupe d'Europe est-elle rajoutable ? », « oui ») —
@@ -76293,6 +76315,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
         if (G.ans.length && G.ans[0] === u.ps.ans[0] && G.p[0] !== u.ps.p[0]) { u.ps.p[0] = G.p[0]; ch = true; }
         if (G.ans.length && G.ans[0] !== u.ps.ans[0]) { u.ps.ans = G.ans; u.ps.p = G.p; ch = true; }   /* nouvelle saison commencée */
         if (u.ps.tot !== T.pire) { u.ps.tot = T.pire; ch = true; }
+        var B = brunoEtat(c, tousDe(c, D)); if (JSON.stringify(B) !== JSON.stringify(u.ps.b || null)) { u.ps.b = B; ch = true; }   /* 20261102h */
         if (ch) { u.ps.at = Date.now(); setTimeout(function () { try { save(); } catch (e) {} }, 0); }
       } catch (e) {}
     }
@@ -76340,6 +76363,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var tous = []; D.saisons.slice().reverse().forEach(function (s) { var L0 = s && msS(c, s); if (L0) tous = tous.concat(filtrer(L0)); });   /* 20261031g */
     var G = garderCalc(c, D), T = calc(c, tous);
     u.ps = { sig: S.lieu + '|' + libCombo(c), lib: libCombo(c), k: S.lieu, ans: G.ans, p: G.p, tot: T.pire, at: Date.now() };
+    try { u.ps.b = brunoEtat(c, tous); } catch (e) {}   /* 20261102h */
     try { save(); } catch (e) {}
     try { redessiner(); } catch (e) {}
   };
