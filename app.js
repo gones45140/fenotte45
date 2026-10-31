@@ -26690,7 +26690,7 @@ async function loadCalendrier() {
     if (!b || !(b.cr >= 2) || !m) return '';
     if ((ps.k === 'dom' && !m.isDom) || (ps.k === 'ext' && m.isDom)) return '';
     var p = b.n ? Math.round(100 * b.ok / b.n) : 0, att = b.n >= 5 && p <= b.pt - 10;
-    var v = !b.n ? '' : ' · après 2 : ' + b.ok + '/' + b.n + ' (' + p + ' %) → ' + (b.n < 5 ? 'trop peu de cas' : att ? '✋ attendre' : '👍 pas de différence');
+    var v = !b.n ? '' : ' · après ' + (b.k || 2) + ' : ' + b.ok + '/' + b.n + ' (' + p + ' %) → ' + (b.n < 5 ? 'trop peu de cas' : att ? '✋ attendre' : '👍 pas de différence');
     var dt = /^\d{4}-\d{2}-\d{2}$/.test(b.d || '') ? ' <span style="font-weight:400;">(au ' + b.d.slice(8, 10) + '/' + b.d.slice(5, 7) + ')</span>' : '';
     return '<div style="margin-top:5px;"><span style="display:inline-block;background:' + (att ? 'rgba(255,159,67,.25)' : 'rgba(150,160,190,.2)') + ';border:1px solid ' + (att ? '#ff9f43' : '#8a96b8') + ';color:#fff;'
       + 'font-size:14px;font-weight:800;border-radius:7px;padding:2px 9px;">🛑 Bruno time · ' + b.cr + ' réussites de suite' + v + dt + '</span></div>';
@@ -75974,17 +75974,26 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
      en under 3,5 tu fais pas le bet » ; Antoine : « oui, après ça marche qu'avec certaines équipes » ; maquette « oui ») : sur les 4 saisons
      à la suite (même liste que le Total), résultat du match qui suit 2 réussites de suite (ou plus). ✋ si ce % est au moins 10 points
      sous le % total et qu'il y a 5 cas ou plus ; 👍 sinon ; moins de 5 cas → « trop peu de cas ». Rien si aucun cas. */
-  function apres2(c, ms) {
+  /* 20261102k (Antoine : « pourquoi 2 ? » → A « suit la série en cours » ET B « tu choisis [2] [3] [4] [5] ») : N réussites de suite ; S.a2n = choix
+     (0 = Auto = max(2, série en cours)). */
+  function apres2(c, ms, N) {
+    N = N || 2;
     ms = jFiltre(c, ms).filter(function (m) { return valeur(c, m).n > 0; });
     var re = function (m) { var v = valeur(c, m); return v.ok * 2 >= v.n; }, rb = 0, n = 0, ok = 0;
-    ms.forEach(function (m) { var r = re(m); if (rb >= 2) { n++; if (r) ok++; } rb = r ? rb + 1 : 0; });
+    ms.forEach(function (m) { var r = re(m); if (rb >= N) { n++; if (r) ok++; } rb = r ? rb + 1 : 0; });
     return { n: n, ok: ok };
   }
-  function apres2Html(A, T) {
-    if (!A.n) return '';
+  window.g45CrA2 = function (n) { S.a2n = +n || 0; try { redessiner(); } catch (e) {} };
+  function apres2Choix(N, cr) {
+    var bt = function (v, txt) { var on = (S.a2n || 0) === v; return '<button onclick="g45CrA2(' + v + ')" style="border-radius:14px;padding:4px 10px;font-size:14px;cursor:pointer;color:#fff;margin:4px 6px 0 0;border:1px solid ' + (on ? '#6d9dff' : '#2a3a63') + ';background:' + (on ? '#1e3a7a' : '#16213f') + ';font-weight:' + (on ? 700 : 400) + ';">' + (on ? '✓ ' : '') + txt + '</button>'; };
+    return '<div>' + bt(0, 'Auto (' + Math.max(2, cr || 0) + ')') + bt(2, '2') + bt(3, '3') + bt(4, '4') + bt(5, '5') + '</div>';
+  }
+  function apres2Html(A, T, N, choix) {
+    N = N || 2; choix = choix || '';
+    if (!A.n) return '<br>🛑 Après ' + N + ' réussites de suite : <span style="color:#c9d3ee;">jamais arrivé</span>' + choix;
     var p = Math.round(100 * A.ok / A.n), pt = T.n ? Math.round(100 * T.ok / T.n) : 0;
-    return '<br>🛑 Après 2 réussites de suite → le match d\'après : <b>' + A.ok + '/' + A.n + ' (' + p + ' %)</b> '
-      + (A.n < 5 ? '<span style="color:#c9d3ee;">· trop peu de cas</span>' : p <= pt - 10 ? '→ <b style="color:#ff9f43;">✋ mieux vaut attendre</b>' : '→ <b style="color:#1ed760;">👍 pas de différence</b>');
+    return '<br>🛑 Après ' + N + ' réussites de suite → le match d\'après : <b>' + A.ok + '/' + A.n + ' (' + p + ' %)</b> '
+      + (A.n < 5 ? '<span style="color:#c9d3ee;">· trop peu de cas</span>' : p <= pt - 10 ? '→ <b style="color:#ff9f43;">✋ mieux vaut attendre</b>' : '→ <b style="color:#1ed760;">👍 pas de différence</b>') + choix;
   }
   /* 20261102h — 🛑 « BRUNO TIME » DANS L'AGENDA (Antoine : « faudrait mettre le Bruno time dans l'Agenda » ; maquette « oui ») : gardé avec
      le critère 📌 (u.ps.b) : cr = réussites de suite en cours, n / ok = après 2 réussites (apres2), pt = % total, d = date du dernier match
@@ -75992,8 +76001,8 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   function brunoEtat(c, ms) {
     var L = jFiltre(c, ms).filter(function (m) { return valeur(c, m).n > 0; }), cr = 0;
     for (var i = L.length - 1; i >= 0; i--) { var v = valeur(c, L[i]); if (v.ok * 2 >= v.n) cr++; else break; }
-    var A = apres2(c, ms), T = calc(c, ms), dl = L.length ? L[L.length - 1][0] : '';
-    return { cr: cr, n: A.n, ok: A.ok, pt: T.n ? Math.round(100 * T.ok / T.n) : 0, d: typeof dl === 'string' ? dl.slice(0, 10) : '' };
+    var k = Math.max(2, cr), A = apres2(c, ms, k), T = calc(c, ms), dl = L.length ? L[L.length - 1][0] : '';   /* 20261102k : N = série en cours (Agenda = Auto) */
+    return { cr: cr, k: k, n: A.n, ok: A.ok, pt: T.n ? Math.round(100 * T.ok / T.n) : 0, d: typeof dl === 'string' ? dl.slice(0, 10) : '' };
   }
   function tousDe(c, D) { var tous = []; D.saisons.slice().reverse().forEach(function (s) { var L0 = s && msS(c, s); if (L0) tous = tous.concat(filtrer(L0)); }); return tous; }
   function coul(p) { return p <= 2 ? '#1ed760' : p <= 4 ? '#ff9f43' : '#ff5a5a'; }
@@ -76282,7 +76291,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
         + (function () { try { var pa = _g45F1CrPal(T.pire); return ' ' + pa.ico + (pa.mise != null ? ' · mise max <b>' + pa.mise + ' €</b> (' + new Array(+(pa.et || 1) + 1).join('⭐') + ')' : ' au-delà de tes ' + pa.max + ' paliers'); } catch (e) { return ''; } })()   /* 20261028c : mise max promise par la maquette 20261027h */
         + '<br>'
         + '🏆 Meilleure série : <b style="color:#5aa9ff;">' + T.best + ' réussite' + (T.best > 1 ? 's' : '') + ' de suite</b>'
-        + apres2Html(apres2(c, tous), T) + '<br>'   /* 20261102f */
+        + (function () { var B0 = brunoEtat(c, tous), N = S.a2n || B0.k; return apres2Html(apres2(c, tous, N), T, N, apres2Choix(N, B0.cr)); })()   /* 20261102f / k (les boutons sont un bloc : pas de <br>) */
         + '📈 Série en cours : ' + enCours(c, tous) + '</div>';
       h += garderHtml(c, D, T);   /* 20261028e */
       h += ajoutHtml(c);   /* 20261101c */
