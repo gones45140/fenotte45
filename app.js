@@ -76029,6 +76029,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   var CK_COTES = (function () { var L = [], v; for (v = 105; v <= 200; v += 5) L.push(v / 100); for (v = 210; v <= 300; v += 10) L.push(v / 100); return L; })();
   function ckCote() { var v = 1.7; try { v = parseFloat(localStorage.getItem('g45_ck_cote')) || 1.7; } catch (e) {} return v > 1 ? v : 1.7; }
   window.g45CrCkCote = function (v) {
+    if (typeof v === 'string' && v !== 'autre') { var z = parseFloat(v.replace(',', '.')); if (!(z > 1 && z < 100)) { try { redessiner(); } catch (e) {} return; } v = Math.round(z * 100) / 100; }   /* 20261102o : case à taper */
     if (v === 'autre') { var t = prompt('Cote (ex. 1,56)', String(ckCote()).replace('.', ',')); v = parseFloat(String(t || '').replace(',', '.')); if (!(v > 1 && v < 100)) { try { redessiner(); } catch (e) {} return; } v = Math.round(v * 100) / 100; }
     try { localStorage.setItem('g45_ck_cote', String(v)); } catch (e) {} try { redessiner(); } catch (e) {}
   };
@@ -76059,9 +76060,8 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var h = '<div style="margin-top:10px;background:#0f1730;border-radius:10px;padding:10px;font-size:14px;color:#fff;line-height:1.5;">'
       + '<div style="font-size:15px;font-weight:800;">💶 Si tu l\'avais joué en Cockpit · ' + new Array(+et + 1).join('⭐') + '</div>'
       + '<div style="font-size:13px;color:#c9d3ee;margin:2px 0 6px;">Paliers ' + mises.join(' · ') + ' €</div>'
-      + '<div>Cote utilisée : <select onchange="g45CrCkCote(this.value)" style="font-size:15px;font-weight:700;padding:5px 8px;border-radius:8px;background:#16213f;color:#fff;border:1px solid #6d9dff;">'
-      + CK_COTES.map(function (v) { return '<option value="' + v + '"' + (Math.abs(v - cote) < 1e-9 ? ' selected' : '') + '>' + v.toFixed(2).replace('.', ',') + '</option>'; }).join('')
-      + (CK_COTES.indexOf(cote) < 0 ? '<option value="' + cote + '" selected>' + cote.toFixed(2).replace('.', ',') + '</option>' : '') + '<option value="autre">✏️ Autre…</option></select></div>'
+      /* 20261102o (Antoine : « faudrait pouvoir mettre soi-même la cote, + facile non ? ») : case à taper (clavier chiffres) au lieu de la liste. */
+      + '<div>Cote utilisée : <input type="text" inputmode="decimal" value="' + cote.toFixed(2).replace('.', ',') + '" onchange="g45CrCkCote(this.value)" onfocus="this.select()" style="width:90px;font-size:17px;font-weight:800;padding:6px 8px;border-radius:8px;background:#16213f;color:#fff;border:1px solid #6d9dff;text-align:center;"> <span style="font-size:13px;color:#c9d3ee;">tape ta cote (ex. 1,56)</span></div>'
       + '<table style="width:100%;border-collapse:collapse;font-size:14px;color:#fff;margin-top:6px;"><tr><th style="' + th + '">Saison</th><th style="' + th + '">Gagnés</th><th style="' + th + '">💥</th><th style="' + th + '">Bilan</th></tr>';
     libs.forEach(function (lb) {
       var P = R.par[lb]; if (!P) return;
