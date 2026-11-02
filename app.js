@@ -76044,6 +76044,17 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     return { par: par, tot: tot, bo: bo, max: max };
   }
   window._g45CrSimT = simCalc;   /* tests */
+  /* 20261102p (capture carte MacKinnon « 📊 pire série … → 5 paliers » : « peut-être le rajouter ici, ça évite de recalculer à chaque fois ») :
+     bilan 💶 gardé AVEC la série (u.psL par « 🔄 Calculer mes séries », u.ps par 📌) → { e: € arrondi, bo: 💥, c: cote }. Mises = ⭐ de la
+     CARTE (STRATS[u.s], comme « mise max » de la carte), sinon l'échelle des critères ; cote = celle tapée dans les critères (g45_ck_cote). */
+  function simDe(sq, u) {
+    if (!sq || !sq.length) return null;
+    var M = (u && u.s != null && typeof STRATS !== 'undefined' && STRATS[u.s]) || (typeof STRATS !== 'undefined' && (STRATS[(typeof _g45PalEt === 'function') ? _g45PalEt() : '1'] || STRATS['1'])) || [1, 2, 6, 18, 54, 162, 486, 1458];
+    var c = ckCote(), R = simCalc(sq.map(function (ok) { return { s: '', ok: !!ok }; }), M, c);
+    return { e: Math.round(R.tot), bo: R.bo, c: c };
+  }
+  function sqDe(c, ms) { return jFiltre(c, ms).filter(function (m) { return valeur(c, m).n > 0; }).map(function (m) { var v = valeur(c, m); return v.ok * 2 >= v.n; }); }
+  function psSim(out, u) { Object.keys(out).forEach(function (k) { var R = out[k]; if (R && R.sq) { try { R.sim = simDe(R.sq, u); } catch (e) {} delete R.sq; } }); }
   function simHtml(c, D) {
     var seq = [], libs = [];
     D.saisons.slice().reverse().forEach(function (sa) {
@@ -76396,6 +76407,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
         if (G.ans.length && G.ans[0] !== u.ps.ans[0]) { u.ps.ans = G.ans; u.ps.p = G.p; ch = true; }   /* nouvelle saison commencée */
         if (u.ps.tot !== T.pire) { u.ps.tot = T.pire; ch = true; }
         var B = brunoEtat(c, tousDe(c, D)); if (JSON.stringify(B) !== JSON.stringify(u.ps.b || null)) { u.ps.b = B; ch = true; }   /* 20261102h */
+        var SM = simDe(sqDe(c, tousDe(c, D)), u); if (JSON.stringify(SM) !== JSON.stringify(u.ps.sim || null)) { u.ps.sim = SM; ch = true; }   /* 20261102p */
         if (ch) { u.ps.at = Date.now(); setTimeout(function () { try { save(); } catch (e) {} }, 0); }
       } catch (e) {}
     }
@@ -76444,6 +76456,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var G = garderCalc(c, D), T = calc(c, tous);
     u.ps = { sig: S.lieu + '|' + libCombo(c), lib: libCombo(c), k: S.lieu, ans: G.ans, p: G.p, tot: T.pire, at: Date.now() };
     try { u.ps.b = brunoEtat(c, tous); } catch (e) {}   /* 20261102h */
+    try { u.ps.sim = simDe(sqDe(c, tous), u); } catch (e) {}   /* 20261102p */
     try { save(); } catch (e) {}
     try { redessiner(); } catch (e) {}
   };
@@ -76941,7 +76954,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       var R = calc(c, ms); if (!R.n) return; ans.push(lib(D.lg, sa.an)); p.push(R.pire);
     });
     (D.saisons || []).slice().reverse().forEach(function (sa) { if (sa && sa.ms) tous = tous.concat(filtrer(sa.ms)); });
-    return { lib: libCombo(c), ans: ans, p: p, tot: tous.length ? calc(c, tous).pire : 0 };
+    return { lib: libCombo(c), ans: ans, p: p, tot: tous.length ? calc(c, tous).pire : 0, sq: sqDe(c, tous) };   /* 20261102p : sq → 💶 */
   }
   async function serCtx(nom, ft) {   /* { sp, lg, id } ou { err } ; ft = carte ⚽ (sinon espnResolveTeam pourrait trouver un club de foot homonyme) */
     var x = null; try { x = await _g45CompoCtx(nom, ft); } catch (e) {}
@@ -76989,6 +77002,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       var RJ = serStatJ(cj, LJ.log, ms, q.k, hock, LJ.civil); RJ.lib = serLibJ(cj, hock).replace(/(Buteur|Passeur|1 point ou plus)$/, nj + ' $1'); RJ.t = q.t; RJ.at = now;
       out[q.k] = RJ.p.length ? RJ : { t: q.t, err: 'aucun match compté' };
     }
+    psSim(out, u);   /* 20261102p */
     u.psL = out; return true;
   }
   function serNomJ(t) {   /* « Victoire + Over 2.5 + Harry Kane buteur » → « Harry Kane » */
@@ -77080,7 +77094,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     });
     var pire = function (R) { var pr = 0, cr = 0; R.forEach(function (v) { if (v) cr = 0; else { cr++; if (cr > pr) pr = cr; } }); return pr; };
     var ans = Object.keys(parAn).map(Number).sort(function (a, b) { return b - a; }).slice(0, 4);
-    return { lib: serLibJ(c, hock), ans: ans.map(function (a) { return serLabAn(a, civil); }), p: ans.map(function (a) { return pire(parAn[a]); }), tot: pire(tous) };
+    return { lib: serLibJ(c, hock), ans: ans.map(function (a) { return serLabAn(a, civil); }), p: ans.map(function (a) { return pire(parAn[a]); }), tot: pire(tous), sq: tous };   /* 20261102p : sq → 💶 */
   }
   async function serIdNhl(nom, abr) {
     var ck = 'g45ser_ro_' + abr, R = null;
@@ -77148,6 +77162,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       var R = serStatJ(c, log, ms, q.k, hock, civil); R.t = q.t; R.at = now;
       out[q.k] = R.p.length ? R : { t: q.t, err: 'aucun match compté' };
     });
+    psSim(out, u);   /* 20261102p */
     u.psL = out; return true;
   }
   /* ═══ 20261028p — 🏁 COCKPIT BET45 (Tendances, 5e bouton ; « ça reprend certaines équipes / joueurs de mon mur et leurs critères que j'ai
@@ -77980,6 +77995,12 @@ window._G45_PAL_COUL = ['#1ed760', '#8fdc4a', '#f5c542', '#ffa53a', '#ff7a3a', '
     var cum = null; if (p <= S.length) { cum = 0; for (var i = 0; i < p; i++) cum += Number(S[i]) || 0; }
     return { p: p, mise: p <= S.length ? S[p - 1] : null, cum: cum, max: S.length, et: String(u.s), ico: p <= 5 ? '✅' : (p <= S.length ? '⚠️' : '❌') };
   };
+  /* 20261102p : « 💶 +312 € à 1,70 · 💥 1 » (bilan Cockpit gardé avec la série, simDe des critères) */
+  window._g45SimTxt = function (S) {
+    if (!S || S.e == null) return '';
+    var e = S.e, col = e > 0 ? '#1ed760' : e < 0 ? '#ff5a5a' : '#fff';
+    return ' <span style="color:' + col + ';font-weight:800;">· 💶 ' + (e > 0 ? '+' : e < 0 ? '−' : '') + Math.abs(e).toLocaleString('fr-FR') + ' €</span><span style="font-weight:400;color:#c9d3ee;"> à ' + Number(S.c).toFixed(2).replace('.', ',') + '</span>' + (S.bo ? ' <span style="color:#ff5a5a;">· 💥 ' + S.bo + '</span>' : '');
+  };
   /* 20261028e : ligne « 📊 » de u.ps (📌 Garder sur la carte, critères 4 saisons) */
   window._g45UlPsHtml = function (u) {
     var P = u && u.ps; if (!P || !P.p || !P.p.length) return '';
@@ -77991,7 +78012,7 @@ window._G45_PAL_COUL = ['#1ed760', '#8fdc4a', '#f5c542', '#ffa53a', '#ff7a3a', '
     return '<div class="g45ul-ps" style="margin-top:4px;background:rgba(47,107,255,.25);border-radius:6px;padding:4px 7px;font-size:14px;color:#fff;font-weight:700;font-style:normal;line-height:1.45;">📊 ' + ico + e(P.lib)
       + ' — pire série ' + P.p.map(function (v) { return '<span style="color:' + col(v) + ';">' + v + '</span>'; }).join(' · ')
       + '<br><span style="font-weight:400;font-size:13px;color:#c9d3ee;">' + e(P.ans[0]) + (P.ans.length > 1 ? ' → ' + e(P.ans[P.ans.length - 1]) : '') + ' · <b style="color:#fff;">' + pa.p + ' paliers ' + pa.ico + '</b>'
-      + (pa.mise != null ? ' · ' + pa.mise + ' €' : '') + (pa.cum != null ? ' <span style="color:#ffb3b3;">(total misé ' + (Math.round(pa.cum * 100) / 100).toLocaleString('fr-FR') + ' €)</span>' : '') + ' · mis à jour le '   /* 20261030d : total misé aussi sur les cartes */ + dt + '</span></div>';
+      + (pa.mise != null ? ' · ' + pa.mise + ' €' : '') + (pa.cum != null ? ' <span style="color:#ffb3b3;">(total misé ' + (Math.round(pa.cum * 100) / 100).toLocaleString('fr-FR') + ' €)</span>' : '') + window._g45SimTxt(P.sim) + ' · mis à jour le '   /* 20261030d : total misé aussi sur les cartes */ + dt + '</span></div>';
   };
   /* 20261028h — 🔄 Calculer mes séries (g45SerLancer, module des critères) : une ligne par pari écrit, 🌍 puis 🏠 puis ✈️ ;
      « 📊 🏠 pire série 2 · 3 · 1 · 4 → 5 paliers ✅ · 1 € » (saison la plus récente d'abord, paliers = pire des 4 saisons à la suite + 1). */
@@ -78005,7 +78026,7 @@ window._G45_PAL_COUL = ['#1ed760', '#8fdc4a', '#f5c542', '#ffa53a', '#ff7a3a', '
       at = Math.max(at, R.at || 0);
       var pa = window._g45PalCarte(R.tot, u);
       h += '<div>📊 ' + k[1] + ' pire série ' + R.p.map(function (v) { return '<span style="color:' + col(v) + ';">' + v + '</span>'; }).join(' · ')
-        + ' → <b>' + pa.p + ' palier' + (pa.p > 1 ? 's' : '') + ' ' + pa.ico + '</b>' + (pa.mise != null ? ' <span style="font-weight:400;color:#c9d3ee;">· ' + pa.mise + ' €</span>' : '') + (pa.cum != null ? ' <span style="color:#ffb3b3;">(total misé ' + (Math.round(pa.cum * 100) / 100).toLocaleString('fr-FR') + ' €)</span>' : '') + '</div>';   /* 20261030d (« rajoute ici aussi le total », Outils → Équipes) */
+        + ' → <b>' + pa.p + ' palier' + (pa.p > 1 ? 's' : '') + ' ' + pa.ico + '</b>' + (pa.mise != null ? ' <span style="font-weight:400;color:#c9d3ee;">· ' + pa.mise + ' €</span>' : '') + (pa.cum != null ? ' <span style="color:#ffb3b3;">(total misé ' + (Math.round(pa.cum * 100) / 100).toLocaleString('fr-FR') + ' €)</span>' : '') + window._g45SimTxt(R.sim) + '</div>';   /* 20261030d (« rajoute ici aussi le total », Outils → Équipes) */
     });
     if (!h) return '';
     var d = new Date(at || Date.now()), dt = ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2);
