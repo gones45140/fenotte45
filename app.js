@@ -77145,11 +77145,67 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     }
     return null;
   }
+  /* ═══ 20261102s — 🏀 « Calculer mes séries » pour les JOUEURS NBA (capture carte Wembanyama « 🏠 reb + passes plus de 14,5 » → « sport pas encore
+     calculé (NHL et foot) » ; « je peux ajouter la NBA ? » → « oui »). Archives gones45-archives basket/nba/<saison>/joueurs/<id>.json (m = [t, mois,
+     match, équipe, { PTS, REB, AST, 3PT… }, …, 'h'|'a'], vérifié 25-26 LeBron) ; joueur retrouvé par le nom dans joueurs.json (saison en cours puis
+     d'avant). Texte du pari lu ici (serNbaPari) : points / pts, rebonds / reb, passes / ast, 3 points ; « + » = somme ; plus de / moins de L ;
+     « 25 points ou plus » = plus de 24,5. Jambe d'équipe (victoire…) → pas encore calculée. Même ligne que NHL / foot (lib, ans, p, tot, sq → 💶). ═══ */
+  function serNbaPari(t) {
+    var x = String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/(\d),(\d)/g, '$1.$2').replace(/[^a-z0-9.+ ]/g, ' ').replace(/\s+/g, ' ');   /* serNz enlève les chiffres */
+    if (/victoire|vainqueur|defaite|gagne|over \d|under \d|equipe/.test(x)) return null;
+    var k = [];
+    if (/\b3 ?(pts|points?)\b|paniers? a 3|trois points|\b3pt/.test(x)) { k.push('3PT'); x = x.replace(/\b3 ?(pts|points?)\b|paniers? a 3|trois points|\b3pt/g, ' '); }
+    if (/\bpoints?\b|\bpts\b/.test(x)) k.push('PTS');
+    if (/\breb/.test(x)) k.push('REB');
+    if (/\bpasses?\b|\bast\b|\bpas\b/.test(x)) k.push('AST');
+    if (!k.length) return null;
+    var m = x.match(/(plus|moins) de (\d+(?:\.\d+)?)/), L = null, sens = 'ov';
+    if (m) { L = +m[2]; sens = m[1] === 'moins' ? 'un' : 'ov'; }
+    else { var m2 = x.match(/(\d+(?:\.\d+)?)\s*(?:\+|ou plus)/) || x.match(/(\d+(?:\.\d+)?)/); if (m2) L = +m2[1] - (Math.round(+m2[1]) === +m2[1] ? 0.5 : 0); }
+    if (L == null || isNaN(L)) return null;
+    return { k: k, L: L, s: sens, lib: k.map(function (z) { return { PTS: 'Points', REB: 'Rebonds', AST: 'Passes', '3PT': '3 points' }[z]; }).join(' + ') + (sens === 'un' ? ' moins de ' : ' plus de ') + String(L).replace('.', ',') };
+  }
+  window._g45SerNbaPariT = serNbaPari;   /* tests */
+  async function serJoueurNba(u, P, out, now, fin) {
+    var d0 = new Date(), a0 = d0.getMonth() + 1 >= 8 ? d0.getFullYear() + 1 : d0.getFullYear(), ANS = [a0, a0 - 1, a0 - 2, a0 - 3], id = null, n = serNz(u.n);
+    for (var i = 0; i < 2 && !id; i++) {
+      var J = await aLire('basket/nba/' + aSaUS('nba', ANS[i]) + '/joueurs.json'); if (!J) continue;
+      id = serTrouve(Object.keys(J).map(function (z) { return [z, serNz((J[z] || [])[0] || '')]; }), u.n);
+    }
+    if (!id) return fin('joueur introuvable dans les archives NBA');
+    var M = [];
+    for (var j = ANS.length - 1; j >= 0; j--) {
+      var B0 = 'basket/nba/' + aSaUS('nba', ANS[j]), q0 = await aLire(B0 + '/joueurs/' + id + '.json'), L0 = ((q0 && q0.m) || []).filter(function (m) { return m[4]; });
+      /* saison RÉGULIÈRE seulement (comme les critères, aEquipeUS) : type du match = m[5] de l'index de son équipe (1 présaison, 2 régulière, 3 playoffs) ;
+         vérifié 25-26 Wembanyama : 94 matchs = 5 présaison + 67 réguliers + 22 playoffs. Index illisible → matchs de cette équipe gardés. */
+      var EQ = {}; L0.forEach(function (m) { EQ[m[3]] = 1; });
+      for (var e in EQ) { var qe = await aLire(B0 + '/equipes/' + e + '.json'); if (qe && qe.m) { EQ[e] = {}; qe.m.forEach(function (x) { EQ[e][String(x[2])] = x[5]; }); } else EQ[e] = null; }
+      L0.forEach(function (m) { var T = EQ[m[3]]; if (T && T[String(m[2])] !== 2) return; M.push({ t: m[0], h: m[6] === 'h' ? 1 : m[6] === 'a' ? 0 : null, st: m[4], sa: aSaUS('nba', ANS[j]) }); });
+    }
+    if (!M.length) return fin('matchs du joueur illisibles (archives)');
+    M.sort(function (a, b) { return a.t - b.t; });
+    P.forEach(function (q) {
+      var c = serNbaPari(q.t);
+      if (!c) { out[q.k] = { t: q.t, err: 'pari pas calculable (points / rebonds / passes seulement)' }; return; }
+      var parS = {}, tous = [];
+      M.forEach(function (m) {
+        if (q.k === 'dom' && m.h !== 1) return; if (q.k === 'ext' && m.h !== 0) return;
+        var v = 0; c.k.forEach(function (z) { v += +m.st[z] || 0; });
+        var r = c.s === 'un' ? v < c.L : v > c.L; (parS[m.sa] = parS[m.sa] || []).push(r); tous.push(r);
+      });
+      var pire = function (R) { var pr = 0, cr = 0; R.forEach(function (v) { if (v) cr = 0; else { cr++; if (cr > pr) pr = cr; } }); return pr; };
+      var ans = Object.keys(parS).sort().reverse();
+      out[q.k] = ans.length ? { lib: u.n + ' ' + c.lib, ans: ans, p: ans.map(function (a) { return pire(parS[a]); }), tot: pire(tous), sq: tous, t: q.t, at: now } : { t: q.t, err: 'aucun match compté' };
+    });
+    psSim(out, u);
+    u.psL = out; return true;
+  }
   async function serJoueur(u) {
     var P = serParis(u); if (!P.length) return false;
     var out = {}, now = Date.now(), fin = function (err) { P.forEach(function (q) { out[q.k] = { t: q.t, err: err }; }); u.psL = out; return true; };
+    if (String(u.sport || '').indexOf('🏀') >= 0) return await serJoueurNba(u, P, out, now, fin);   /* 20261102s */
     var hock = String(u.sport || '').indexOf('🏒') >= 0, foot = !hock && (!u.sport || String(u.sport).indexOf('⚽') >= 0);
-    if (!hock && !foot) return fin('sport pas encore calculé (NHL et foot)');
+    if (!hock && !foot) return fin('sport pas encore calculé (NHL, NBA et foot)');
     var club = serClub(u); if (!club) return fin('club manquant (Modifier → 🏟️ Club du joueur)');
     var CS = P.map(function (q) { return serLegsJ(q.t, club); }), equipe = CS.some(function (c) { return c && (c.res || c.ou || c.bts || c.te || c.ad); });
     var X = null, log = null, civil = false, ms = [];
