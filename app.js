@@ -78078,6 +78078,10 @@ window._G45_PAL_COUL = ['#1ed760', '#8fdc4a', '#f5c542', '#ffa53a', '#ff7a3a', '
   /* 20261028e : ligne « 📊 » de u.ps (📌 Garder sur la carte, critères 4 saisons) */
   window._g45UlPsHtml = function (u) {
     var P = u && u.ps; if (!P || !P.p || !P.p.length) return '';
+    /* 20261102t (capture Wembanyama : deux lignes, « pourquoi un calcul en haut et en bas du bouton ? » → « oui ») : la ligne 📌 est cachée quand
+       « Calculer mes séries » (u.psL) a déjà une série calculée pour le même lieu (dom / ext, 🌍 = glob) — une seule ligne, celle qu'on peut recalculer. */
+    var kL = P.k === 'dom' ? 'dom' : P.k === 'ext' ? 'ext' : 'glob', RL = u.psL && u.psL[kL];
+    if (RL && !RL.err && RL.p && RL.p.length) return '';
     var col = function (v) { return v <= 2 ? '#1ed760' : (v <= 4 ? '#ff9f43' : '#ff5a5a'); };
     var ico = P.k === 'dom' ? '🏠 ' : (P.k === 'ext' ? '✈️ ' : '🌍 ');
     var pa = window._g45PalCarte(P.tot, u);
