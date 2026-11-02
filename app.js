@@ -76028,6 +76028,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
      cotes de 1,05 à 2,00 de 0,05 en 0,05, puis 2,10 → 3,00, et « ✏️ Autre… » pour taper la cote exacte (1,56). */
   var CK_COTES = (function () { var L = [], v; for (v = 105; v <= 200; v += 5) L.push(v / 100); for (v = 210; v <= 300; v += 10) L.push(v / 100); return L; })();
   function ckCote() { var v = 1.7; try { v = parseFloat(localStorage.getItem('g45_ck_cote')) || 1.7; } catch (e) {} return v > 1 ? v : 1.7; }
+  window.g45CrCkEt = function (k) { try { localStorage.setItem('g45_pal_et', String(k)); } catch (e) {} try { redessiner(); } catch (e) {} };
   window.g45CrCkCote = function (v) {
     if (typeof v === 'string' && v !== 'autre') { var z = parseFloat(v.replace(',', '.')); if (!(z > 1 && z < 100)) { try { redessiner(); } catch (e) {} return; } v = Math.round(z * 100) / 100; }   /* 20261102o : case à taper */
     if (v === 'autre') { var t = prompt('Cote (ex. 1,56)', String(ckCote()).replace('.', ',')); v = parseFloat(String(t || '').replace(',', '.')); if (!(v > 1 && v < 100)) { try { redessiner(); } catch (e) {} return; } v = Math.round(v * 100) / 100; }
@@ -76082,7 +76083,10 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var cl = function (x) { return x > 0.5 ? '#1ed760' : x < -0.5 ? '#ff5a5a' : '#fff'; };
     var td = 'padding:7px 4px;border-bottom:1px solid #1c2747;', th = 'text-align:left;font-size:13px;color:#c9d3ee;padding:6px 4px;border-bottom:1px solid #2a3a63;';
     var h = '<div style="margin-top:10px;background:#0f1730;border-radius:10px;padding:10px;font-size:14px;color:#fff;line-height:1.5;">'
-      + '<div style="font-size:15px;font-weight:800;">💶 Si tu l\'avais joué en Cockpit · ' + new Array(+et + 1).join('⭐') + '</div>'
+      + '<div style="font-size:15px;font-weight:800;">💶 Si tu l\'avais joué en Cockpit</div>'
+      /* 20261102r (capture : « il y a juste un truc, on peut pas choisir son nombre d'étoiles ») : boutons ⭐ 1 → 5 = même échelle que « mise max »
+         (g45_pal_et, _g45PalEt) → le Total et le 💶 changent ensemble. */
+      + '<div style="margin:4px 0 2px;">' + ['1', '2', '3', '4', '5'].map(function (k) { var on = k === et; return '<button onclick="g45CrCkEt(\'' + k + '\')" style="border-radius:14px;padding:5px 10px;font-size:14px;cursor:pointer;color:#fff;margin:4px 6px 0 0;border:1px solid ' + (on ? '#f5c542' : '#2a3a63') + ';background:' + (on ? '#5a4a12' : '#16213f') + ';font-weight:' + (on ? 800 : 400) + ';">' + k + ' ⭐</button>'; }).join('') + '</div>'
       + '<div style="font-size:13px;color:#c9d3ee;margin:2px 0 6px;">Paliers ' + mises.join(' · ') + ' €</div>'
       /* 20261102o (Antoine : « faudrait pouvoir mettre soi-même la cote, + facile non ? ») : case à taper (clavier chiffres) au lieu de la liste. */
       + '<div>Cote utilisée : <input type="text" inputmode="decimal" value="' + cote.toFixed(2).replace('.', ',') + '" onchange="g45CrCkCote(this.value)" onfocus="this.select()" style="width:90px;font-size:17px;font-weight:800;padding:6px 8px;border-radius:8px;background:#16213f;color:#fff;border:1px solid #6d9dff;text-align:center;"> <span style="font-size:13px;color:#c9d3ee;">tape ta cote (ex. 1,56)</span></div>'
