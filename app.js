@@ -76024,9 +76024,14 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
      l'échelle ⭐ choisie (_g45PalEt, comme « mise max »). Réussite au palier p : + mise × (cote − 1), retour palier 1 ; échec : − mise,
      palier suivant ; plus de palier = 💥 (tout perdu), retour palier 1. A = UNE cote choisie (localStorage g45_ck_cote, 1,70 par défaut) ;
      B (plus tard) = vraie cote archivée quand elle existe. Gain / perte rangé dans la saison du match. ═══ */
-  var CK_COTES = [1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2, 2.2, 2.5, 3];
+  /* 20261102n (captures : liste 1,30 → 3,00 à côté de Winamax « Wembanyama plus de 24,5 : 1,56 », « Keyonte George plus de 14,5 : 1,10 ») :
+     cotes de 1,05 à 2,00 de 0,05 en 0,05, puis 2,10 → 3,00, et « ✏️ Autre… » pour taper la cote exacte (1,56). */
+  var CK_COTES = (function () { var L = [], v; for (v = 105; v <= 200; v += 5) L.push(v / 100); for (v = 210; v <= 300; v += 10) L.push(v / 100); return L; })();
   function ckCote() { var v = 1.7; try { v = parseFloat(localStorage.getItem('g45_ck_cote')) || 1.7; } catch (e) {} return v > 1 ? v : 1.7; }
-  window.g45CrCkCote = function (v) { try { localStorage.setItem('g45_ck_cote', String(v)); } catch (e) {} try { redessiner(); } catch (e) {} };
+  window.g45CrCkCote = function (v) {
+    if (v === 'autre') { var t = prompt('Cote (ex. 1,56)', String(ckCote()).replace('.', ',')); v = parseFloat(String(t || '').replace(',', '.')); if (!(v > 1 && v < 100)) { try { redessiner(); } catch (e) {} return; } v = Math.round(v * 100) / 100; }
+    try { localStorage.setItem('g45_ck_cote', String(v)); } catch (e) {} try { redessiner(); } catch (e) {}
+  };
   function simCalc(seq, mises, cote) {   /* seq = [{ s: libellé saison, ok }] dans l'ordre → { par: { s: { ok, bo, e } }, tot, bo, max } */
     var i = 0, par = {}, tot = 0, bo = 0, max = 0;
     seq.forEach(function (x) {
@@ -76056,7 +76061,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       + '<div style="font-size:13px;color:#c9d3ee;margin:2px 0 6px;">Paliers ' + mises.join(' · ') + ' €</div>'
       + '<div>Cote utilisée : <select onchange="g45CrCkCote(this.value)" style="font-size:15px;font-weight:700;padding:5px 8px;border-radius:8px;background:#16213f;color:#fff;border:1px solid #6d9dff;">'
       + CK_COTES.map(function (v) { return '<option value="' + v + '"' + (Math.abs(v - cote) < 1e-9 ? ' selected' : '') + '>' + v.toFixed(2).replace('.', ',') + '</option>'; }).join('')
-      + (CK_COTES.indexOf(cote) < 0 ? '<option value="' + cote + '" selected>' + cote.toFixed(2).replace('.', ',') + '</option>' : '') + '</select></div>'
+      + (CK_COTES.indexOf(cote) < 0 ? '<option value="' + cote + '" selected>' + cote.toFixed(2).replace('.', ',') + '</option>' : '') + '<option value="autre">✏️ Autre…</option></select></div>'
       + '<table style="width:100%;border-collapse:collapse;font-size:14px;color:#fff;margin-top:6px;"><tr><th style="' + th + '">Saison</th><th style="' + th + '">Gagnés</th><th style="' + th + '">💥</th><th style="' + th + '">Bilan</th></tr>';
     libs.forEach(function (lb) {
       var P = R.par[lb]; if (!P) return;
