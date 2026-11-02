@@ -6549,10 +6549,10 @@ var CLUB_DB=[
   {name:"New York Yankees",league:"MLB",logo:"https://media.api-sports.io/baseball/teams/9.png",abbr:"NYY",stars:3,color:"#94a3b8"},
   {name:"Atlanta Braves",league:"MLB",logo:"https://media.api-sports.io/baseball/teams/15.png",abbr:"ATL",stars:3,color:"#cc0000"},
   /* NBA */
-  {name:"Golden State Warriors",league:"NBA",logo:"https://media.api-sports.io/basketball/teams/11.png",abbr:"GSW",stars:4,color:"#f0b020"},
-  {name:"Los Angeles Lakers",league:"NBA",logo:"https://media.api-sports.io/basketball/teams/17.png",abbr:"LAL",stars:4,color:"#7c3aed"},
-  {name:"Boston Celtics",league:"NBA",logo:"https://media.api-sports.io/basketball/teams/2.png",abbr:"BOS",stars:4,color:"#22c55e"},
-  {name:"Miami Heat",league:"NBA",logo:"https://media.api-sports.io/basketball/teams/20.png",abbr:"MIA",stars:3,color:"#cc0000"}
+  {name:"Golden State Warriors",league:"NBA",logo:"https://a.espncdn.com/i/teamlogos/nba/500/gs.png",abbr:"GSW",stars:4,color:"#f0b020"},
+  {name:"Los Angeles Lakers",league:"NBA",logo:"https://a.espncdn.com/i/teamlogos/nba/500/lal.png",abbr:"LAL",stars:4,color:"#7c3aed"},
+  {name:"Boston Celtics",league:"NBA",logo:"https://a.espncdn.com/i/teamlogos/nba/500/bos.png",abbr:"BOS",stars:4,color:"#22c55e"},
+  {name:"Miami Heat",league:"NBA",logo:"https://a.espncdn.com/i/teamlogos/nba/500/mia.png",abbr:"MIA",stars:3,color:"#cc0000"}
 ];
 
 function fuzzyClubSearch(q){
@@ -6595,7 +6595,7 @@ var SOFASCORE_LINKS={
   "LA Dodgers":"https://www.sofascore.com/team/baseball/los-angeles-dodgers/3952"
 };
 var ADV_DB={
-  "⚽":["PSG","Lyon","Marseille","Monaco","Lille","Nice","Rennes","Lens","Strasbourg","Nantes","Montpellier","Reims","Toulouse","Brest","Lorient","Saint-Etienne","Arsenal","Chelsea","Liverpool","Manchester City","Manchester United","Tottenham","Newcastle","Aston Villa","Brighton","West Ham","Crystal Palace","Fulham","Real Madrid","FC Barcelone","Atletico Madrid","Villarreal","Athletic Bilbao","Bayern Munich","Borussia Dortmund","RB Leipzig","Bayer Leverkusen","Inter Milan","AC Milan","Juventus","Napoli","AS Roma","Lazio","Atalanta","Porto","Benfica","Ajax","PSV","Boca Juniors","River Plate","Flamengo","Palmeiras","France","Espagne","Angleterre","Allemagne","Italie","Portugal","Brésil","Argentine"],
+  "⚽":["PSG","Lyon","Marseille","Monaco","Lille","Nice","Rennes","Lens","Strasbourg","Nantes","Montpellier","Reims","Toulouse","Brest","Lorient","Saint-Etienne","Angers","Le Havre","Auxerre","Paris FC","Metz","Arsenal","Chelsea","Liverpool","Manchester City","Manchester United","Tottenham","Newcastle","Aston Villa","Brighton","West Ham","Crystal Palace","Fulham","Real Madrid","FC Barcelone","Atletico Madrid","Villarreal","Athletic Bilbao","Bayern Munich","Borussia Dortmund","RB Leipzig","Bayer Leverkusen","Inter Milan","AC Milan","Juventus","Napoli","AS Roma","Lazio","Atalanta","Porto","Benfica","Ajax","PSV","Boca Juniors","River Plate","Flamengo","Palmeiras","France","Espagne","Angleterre","Allemagne","Italie","Portugal","Brésil","Argentine"],
   "🏀":["Lakers","Celtics","Warriors","Heat","Bulls","Knicks","Bucks","Suns","Clippers","76ers","Raptors","Nuggets","Mavericks","Nets"],
   "🎾":["Novak Djokovic","Carlos Alcaraz","Jannik Sinner","Daniil Medvedev","Alexander Zverev","Andrey Rublev","Iga Swiatek","Aryna Sabalenka","Coco Gauff","Elena Rybakina"],
   "🏒":["Carolina Hurricanes","Colorado Avalanche","Tampa Bay Lightning","Vegas Golden Knights","Florida Panthers","Boston Bruins","Toronto Maple Leafs","Edmonton Oilers","New York Rangers","Dallas Stars"],
@@ -6646,7 +6646,12 @@ function searchAdv(q,targetId,resId){
     seen[k]=1; return true;
   });
   var ql=q.toLowerCase();
-  var filtered=uniq.filter(function(v){return v.toLowerCase().includes(ql);}).slice(0,8);
+  /* 20261102l (capture : « Angers » tapé → « New York Rangers », « Rangers Texas ») : d'abord les noms où la saisie commence un MOT ;
+     le « contient » (r-ANGERS) ne sert plus que s'il n'y a rien d'autre. */
+  var _qd=ql.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'), _deb=new RegExp('(^|[\\s\\-\'(.])'+_qd);
+  var filtered=uniq.filter(function(v){return _deb.test(v.toLowerCase());});
+  if(!filtered.length) filtered=uniq.filter(function(v){return v.toLowerCase().includes(ql);});
+  filtered=filtered.slice(0,8);
   if(!filtered.length){res.style.display='none';return;}
   res.style.display='block';
   res.innerHTML=filtered.map(function(v){
@@ -14356,10 +14361,10 @@ var CLUB_DB=[
   {name:"New York Yankees",league:"MLB",logo:"https://media.api-sports.io/baseball/teams/9.png",abbr:"NYY",stars:3,color:"#94a3b8"},
   {name:"Atlanta Braves",league:"MLB",logo:"https://media.api-sports.io/baseball/teams/15.png",abbr:"ATL",stars:3,color:"#cc0000"},
   /* NBA */
-  {name:"Golden State Warriors",league:"NBA",logo:"https://media.api-sports.io/basketball/teams/11.png",abbr:"GSW",stars:4,color:"#f0b020"},
-  {name:"Los Angeles Lakers",league:"NBA",logo:"https://media.api-sports.io/basketball/teams/17.png",abbr:"LAL",stars:4,color:"#7c3aed"},
-  {name:"Boston Celtics",league:"NBA",logo:"https://media.api-sports.io/basketball/teams/2.png",abbr:"BOS",stars:4,color:"#22c55e"},
-  {name:"Miami Heat",league:"NBA",logo:"https://media.api-sports.io/basketball/teams/20.png",abbr:"MIA",stars:3,color:"#cc0000"}
+  {name:"Golden State Warriors",league:"NBA",logo:"https://a.espncdn.com/i/teamlogos/nba/500/gs.png",abbr:"GSW",stars:4,color:"#f0b020"},
+  {name:"Los Angeles Lakers",league:"NBA",logo:"https://a.espncdn.com/i/teamlogos/nba/500/lal.png",abbr:"LAL",stars:4,color:"#7c3aed"},
+  {name:"Boston Celtics",league:"NBA",logo:"https://a.espncdn.com/i/teamlogos/nba/500/bos.png",abbr:"BOS",stars:4,color:"#22c55e"},
+  {name:"Miami Heat",league:"NBA",logo:"https://a.espncdn.com/i/teamlogos/nba/500/mia.png",abbr:"MIA",stars:3,color:"#cc0000"}
 ];
 
 function fuzzyClubSearch(q){
@@ -14402,7 +14407,7 @@ var SOFASCORE_LINKS={
   "LA Dodgers":"https://www.sofascore.com/team/baseball/los-angeles-dodgers/3952"
 };
 var ADV_DB={
-  "⚽":["PSG","Lyon","Marseille","Monaco","Lille","Nice","Rennes","Lens","Strasbourg","Nantes","Montpellier","Reims","Toulouse","Brest","Lorient","Saint-Etienne","Arsenal","Chelsea","Liverpool","Manchester City","Manchester United","Tottenham","Newcastle","Aston Villa","Brighton","West Ham","Crystal Palace","Fulham","Real Madrid","FC Barcelone","Atletico Madrid","Villarreal","Athletic Bilbao","Bayern Munich","Borussia Dortmund","RB Leipzig","Bayer Leverkusen","Inter Milan","AC Milan","Juventus","Napoli","AS Roma","Lazio","Atalanta","Porto","Benfica","Ajax","PSV","Boca Juniors","River Plate","Flamengo","Palmeiras","France","Espagne","Angleterre","Allemagne","Italie","Portugal","Brésil","Argentine"],
+  "⚽":["PSG","Lyon","Marseille","Monaco","Lille","Nice","Rennes","Lens","Strasbourg","Nantes","Montpellier","Reims","Toulouse","Brest","Lorient","Saint-Etienne","Angers","Le Havre","Auxerre","Paris FC","Metz","Arsenal","Chelsea","Liverpool","Manchester City","Manchester United","Tottenham","Newcastle","Aston Villa","Brighton","West Ham","Crystal Palace","Fulham","Real Madrid","FC Barcelone","Atletico Madrid","Villarreal","Athletic Bilbao","Bayern Munich","Borussia Dortmund","RB Leipzig","Bayer Leverkusen","Inter Milan","AC Milan","Juventus","Napoli","AS Roma","Lazio","Atalanta","Porto","Benfica","Ajax","PSV","Boca Juniors","River Plate","Flamengo","Palmeiras","France","Espagne","Angleterre","Allemagne","Italie","Portugal","Brésil","Argentine"],
   "🏀":["Lakers","Celtics","Warriors","Heat","Bulls","Knicks","Bucks","Suns","Clippers","76ers","Raptors","Nuggets","Mavericks","Nets"],
   "🎾":["Novak Djokovic","Carlos Alcaraz","Jannik Sinner","Daniil Medvedev","Alexander Zverev","Andrey Rublev","Iga Swiatek","Aryna Sabalenka","Coco Gauff","Elena Rybakina"],
   "🏒":["Carolina Hurricanes","Colorado Avalanche","Tampa Bay Lightning","Vegas Golden Knights","Florida Panthers","Boston Bruins","Toronto Maple Leafs","Edmonton Oilers","New York Rangers","Dallas Stars"],
@@ -14453,7 +14458,12 @@ function searchAdv(q,targetId,resId){
     seen[k]=1; return true;
   });
   var ql=q.toLowerCase();
-  var filtered=uniq.filter(function(v){return v.toLowerCase().includes(ql);}).slice(0,8);
+  /* 20261102l (capture : « Angers » tapé → « New York Rangers », « Rangers Texas ») : d'abord les noms où la saisie commence un MOT ;
+     le « contient » (r-ANGERS) ne sert plus que s'il n'y a rien d'autre. */
+  var _qd=ql.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'), _deb=new RegExp('(^|[\\s\\-\'(.])'+_qd);
+  var filtered=uniq.filter(function(v){return _deb.test(v.toLowerCase());});
+  if(!filtered.length) filtered=uniq.filter(function(v){return v.toLowerCase().includes(ql);});
+  filtered=filtered.slice(0,8);
   if(!filtered.length){res.style.display='none';return;}
   res.style.display='block';
   res.innerHTML=filtered.map(function(v){
@@ -26438,7 +26448,10 @@ async function loadCalendrier() {
 
     var _fmtJ = function(d){ return d.getFullYear() + String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0'); };
     var _d1 = new Date(Date.now() - 2*3600000), _d2 = new Date(Date.now() + 21*86400000);
-    var _cles = Object.keys(_grpSui).slice(0, 6);   /* plafond : 6 requetes maximum */
+    /* 20261102l (capture : Lakers au mur, absents de l'Agenda) : plafond de 6 ligues, rangées ⭐ suivies D'ABORD → avec beaucoup de ligues
+       suivies, la ligue d'une équipe du MUR sautait. Ligues des équipes du mur en premier, plafond 6 → 8 (file ESPN de 4 à la fois, 20261101x). */
+    var _lgMur = {}; _murUs.forEach(function (t) { _lgMur[t.sport + '|' + t.league] = 1; });
+    var _cles = Object.keys(_grpSui).sort(function (a, b) { return (_lgMur[b] ? 1 : 0) - (_lgMur[a] ? 1 : 0); }).slice(0, 8);   /* plafond : 8 requetes maximum */
 
     /* 20261007j : les scoreboards ⭐ sont demandés EN MÊME TEMPS (avant : un par un). */
     var _jsTous = await Promise.all(_cles.map(function (k) {
@@ -85009,4 +85022,28 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
     Object.keys(c0).forEach(function (k) { fc[k] = c0[k]; });
     window.closeClub = fc; try { closeClub = fc; } catch (e) {}
   }
+})();
+
+/* ═══ 20261102l — 🏀 LOGO NBA FAUX (capture : carte « Los Angeles Lakers » avec le blason de Gravelines-Dunkerque, BCM) ═══
+   Les 4 équipes NBA d'exemple (Warriors, Lakers, Celtics, Heat) avaient un logo media.api-sports.io/basketball/teams/<n>.png : ces
+   numéros désignent aujourd'hui d'autres clubs (17 = BCM). Liste corrigée (logos ESPN a.espncdn.com/i/teamlogos/nba/500/<abr>.png,
+   la même forme que les blasons ESPN déjà affichés) ; les cartes DÉJÀ au mur gardaient l'ancienne adresse (u.logoUrl) → remplacée au
+   démarrage pour toute équipe NBA reconnue (resolveNbaTeam), en mémoire et sauvegardée. Abréviations ESPN ≠ NBA : GSW gs, NYK ny,
+   SAS sa, NOP no, UTA utah, WAS wsh. */
+(function () {
+  var EX = { GSW: 'gs', NYK: 'ny', SAS: 'sa', NOP: 'no', UTA: 'utah', WAS: 'wsh' };
+  var n = 0, go = function () {
+    try {
+      if (typeof state === 'undefined' || !state || !state.u) { if (++n < 40) setTimeout(go, 500); return; }
+      var ch = false;
+      state.u.forEach(function (u) {
+        if (!u || !/media\.api-sports\.io\/basketball\/teams\//.test(String(u.logoUrl || ''))) return;
+        var k = typeof resolveNbaTeam === 'function' ? resolveNbaTeam(u.n) : null, t = k && typeof NBA_TEAMS !== 'undefined' ? NBA_TEAMS[k] : null;
+        if (!t || !t.abbr) return;
+        u.logoUrl = 'https://a.espncdn.com/i/teamlogos/nba/500/' + (EX[t.abbr] || t.abbr.toLowerCase()) + '.png'; ch = true;
+      });
+      if (ch) { try { save(); } catch (e) {} try { if (typeof render === 'function') render(); } catch (e) {} }
+    } catch (e) {}
+  };
+  setTimeout(go, 800);
 })();
