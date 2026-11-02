@@ -76048,13 +76048,26 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
      bilan 💶 gardé AVEC la série (u.psL par « 🔄 Calculer mes séries », u.ps par 📌) → { e: € arrondi, bo: 💥, c: cote }. Mises = ⭐ de la
      CARTE (STRATS[u.s], comme « mise max » de la carte), sinon l'échelle des critères ; cote = celle tapée dans les critères (g45_ck_cote). */
   function simDe(sq, u) {
+    if (typeof sq === 'string') sq = sq.split('').map(function (x) { return x === '1'; });   /* 20261102q : série gardée en texte « 1101… » */
     if (!sq || !sq.length) return null;
     var M = (u && u.s != null && typeof STRATS !== 'undefined' && STRATS[u.s]) || (typeof STRATS !== 'undefined' && (STRATS[(typeof _g45PalEt === 'function') ? _g45PalEt() : '1'] || STRATS['1'])) || [1, 2, 6, 18, 54, 162, 486, 1458];
-    var c = ckCote(), R = simCalc(sq.map(function (ok) { return { s: '', ok: !!ok }; }), M, c);
+    var c = (u && u.ck > 1) ? u.ck : ckCote(), R = simCalc(sq.map(function (ok) { return { s: '', ok: !!ok }; }), M, c);
     return { e: Math.round(R.tot), bo: R.bo, c: c };
   }
   function sqDe(c, ms) { return jFiltre(c, ms).filter(function (m) { return valeur(c, m).n > 0; }).map(function (m) { var v = valeur(c, m); return v.ok * 2 >= v.n; }); }
-  function psSim(out, u) { Object.keys(out).forEach(function (k) { var R = out[k]; if (R && R.sq) { try { R.sim = simDe(R.sq, u); } catch (e) {} delete R.sq; } }); }
+  function sqTxt(sq) { return (sq || []).map(function (x) { return x ? '1' : '0'; }).join(''); }
+  function psSim(out, u) { Object.keys(out).forEach(function (k) { var R = out[k]; if (R && R.sq) { R.sq = sqTxt(R.sq); try { R.sim = simDe(R.sq, u); } catch (e) {} } }); }
+  /* 20261102q (capture : « mince, ça met 1,56 à chaque 😅 ») : COTE PAR CARTE (u.ck), touchée sur la carte (« à 1,56 ✏️ ») ; la série gardée (sq « 1101… »,
+     dans u.psL[k] et u.ps) permet de refaire le 💶 tout de suite, sans relire ESPN. Sans u.ck : cote des critères (g45_ck_cote). */
+  window.g45CarteCote = function (i) {
+    var U = (typeof state !== 'undefined' && state.u) || [], u = U[+i]; if (!u) return;
+    var t = prompt('Cote pour ' + u.n + ' (ex. 1,56)', String(u.ck || ckCote()).replace('.', ',')); if (t == null) return;
+    var v = parseFloat(String(t).replace(',', '.')); if (!(v > 1 && v < 100)) return;
+    u.ck = Math.round(v * 100) / 100;
+    Object.keys(u.psL || {}).forEach(function (k) { var R = u.psL[k]; if (R && R.sq) { try { R.sim = simDe(R.sq, u); } catch (e) {} } });
+    if (u.ps && u.ps.sq) { try { u.ps.sim = simDe(u.ps.sq, u); } catch (e) {} }
+    try { save(); } catch (e) {} try { render(); } catch (e) {}
+  };
   function simHtml(c, D) {
     var seq = [], libs = [];
     D.saisons.slice().reverse().forEach(function (sa) {
@@ -76407,7 +76420,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
         if (G.ans.length && G.ans[0] !== u.ps.ans[0]) { u.ps.ans = G.ans; u.ps.p = G.p; ch = true; }   /* nouvelle saison commencée */
         if (u.ps.tot !== T.pire) { u.ps.tot = T.pire; ch = true; }
         var B = brunoEtat(c, tousDe(c, D)); if (JSON.stringify(B) !== JSON.stringify(u.ps.b || null)) { u.ps.b = B; ch = true; }   /* 20261102h */
-        var SM = simDe(sqDe(c, tousDe(c, D)), u); if (JSON.stringify(SM) !== JSON.stringify(u.ps.sim || null)) { u.ps.sim = SM; ch = true; }   /* 20261102p */
+        var SQ = sqTxt(sqDe(c, tousDe(c, D))), SM = simDe(SQ, u); if (SQ !== u.ps.sq || JSON.stringify(SM) !== JSON.stringify(u.ps.sim || null)) { u.ps.sq = SQ; u.ps.sim = SM; ch = true; }   /* 20261102p / q */
         if (ch) { u.ps.at = Date.now(); setTimeout(function () { try { save(); } catch (e) {} }, 0); }
       } catch (e) {}
     }
@@ -76456,7 +76469,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var G = garderCalc(c, D), T = calc(c, tous);
     u.ps = { sig: S.lieu + '|' + libCombo(c), lib: libCombo(c), k: S.lieu, ans: G.ans, p: G.p, tot: T.pire, at: Date.now() };
     try { u.ps.b = brunoEtat(c, tous); } catch (e) {}   /* 20261102h */
-    try { u.ps.sim = simDe(sqDe(c, tous), u); } catch (e) {}   /* 20261102p */
+    try { u.ps.sq = sqTxt(sqDe(c, tous)); u.ps.sim = simDe(u.ps.sq, u); } catch (e) {}   /* 20261102p / q */
     try { save(); } catch (e) {}
     try { redessiner(); } catch (e) {}
   };
@@ -77529,7 +77542,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       var u = ckU(m.n); if (!u || U[u.n]) return;
       var x = { n: u.n, color: u.color || '', s: u.s, type: u.type || '', sport: u.sport || '', note: u.note || '', pm: {}, psL: null };
       ['dom', 'ext'].forEach(function (l) { try { if (u.s != null && typeof STRATS !== 'undefined' && STRATS[u.s]) { var p = (typeof _g45PalLieu === 'function') ? _g45PalLieu(u, l) : (parseInt(u.l, 10) || 1); x.pm[l] = { p: p, mi: STRATS[u.s][p - 1] }; } } catch (e) {} });
-      if (u.psL) { x.psL = {}; Object.keys(u.psL).forEach(function (k) { var R = Object.assign({}, u.psL[k]); if (!R.err && R.p) { try { R.pa = window._g45PalCarte(R.tot, u); } catch (e) {} } x.psL[k] = R; }); }
+      if (u.psL) { x.psL = {}; Object.keys(u.psL).forEach(function (k) { var R = Object.assign({}, u.psL[k]); delete R.sq;   /* 20261102q : série brute pas publiée */ if (!R.err && R.p) { try { R.pa = window._g45PalCarte(R.tot, u); } catch (e) {} } x.psL[k] = R; }); }
       U[u.n] = x;
     });
     var P = ckParis().map(function (y) { var b = y.b; return { j: y.j, r: y.r, g: y.g, b: { n: b.n, domicile: b.domicile || '', type: b.type || '', target: b.target || '', l: b.l || 1, m: b.m, cote: b.cote, comp: b.comp || '', t: b.t || '', heure: b.heure || '', date: b.date || '', id: b.id || '', isCashout: b.isCashout ? 1 : 0, isFreebet: b.isFreebet ? 1 : 0, sport: b.sport || '' } }; });   /* 20261029l : + champs de la fiche (bet45) */
@@ -77996,10 +78009,11 @@ window._G45_PAL_COUL = ['#1ed760', '#8fdc4a', '#f5c542', '#ffa53a', '#ff7a3a', '
     return { p: p, mise: p <= S.length ? S[p - 1] : null, cum: cum, max: S.length, et: String(u.s), ico: p <= 5 ? '✅' : (p <= S.length ? '⚠️' : '❌') };
   };
   /* 20261102p : « 💶 +312 € à 1,70 · 💥 1 » (bilan Cockpit gardé avec la série, simDe des critères) */
-  window._g45SimTxt = function (S) {
+  window._g45SimTxt = function (S, u) {
     if (!S || S.e == null) return '';
+    var i = (u && typeof state !== 'undefined' && state.u) ? state.u.indexOf(u) : -1;   /* 20261102q : cote de la carte, touchée ici */
     var e = S.e, col = e > 0 ? '#1ed760' : e < 0 ? '#ff5a5a' : '#fff';
-    return ' <span style="color:' + col + ';font-weight:800;">· 💶 ' + (e > 0 ? '+' : e < 0 ? '−' : '') + Math.abs(e).toLocaleString('fr-FR') + ' €</span><span style="font-weight:400;color:#c9d3ee;"> à ' + Number(S.c).toFixed(2).replace('.', ',') + '</span>' + (S.bo ? ' <span style="color:#ff5a5a;">· 💥 ' + S.bo + '</span>' : '');
+    return ' <span style="color:' + col + ';font-weight:800;">· 💶 ' + (e > 0 ? '+' : e < 0 ? '−' : '') + Math.abs(e).toLocaleString('fr-FR') + ' €</span>' + (i >= 0 ? '<span onclick="event.stopPropagation();g45CarteCote(' + i + ')" style="font-weight:700;color:#fff;cursor:pointer;text-decoration:underline;"> à ' + Number(S.c).toFixed(2).replace('.', ',') + ' ✏️</span>' : '<span style="font-weight:400;color:#c9d3ee;"> à ' + Number(S.c).toFixed(2).replace('.', ',') + '</span>') + (S.bo ? ' <span style="color:#ff5a5a;">· 💥 ' + S.bo + '</span>' : '');
   };
   /* 20261028e : ligne « 📊 » de u.ps (📌 Garder sur la carte, critères 4 saisons) */
   window._g45UlPsHtml = function (u) {
@@ -78012,7 +78026,7 @@ window._G45_PAL_COUL = ['#1ed760', '#8fdc4a', '#f5c542', '#ffa53a', '#ff7a3a', '
     return '<div class="g45ul-ps" style="margin-top:4px;background:rgba(47,107,255,.25);border-radius:6px;padding:4px 7px;font-size:14px;color:#fff;font-weight:700;font-style:normal;line-height:1.45;">📊 ' + ico + e(P.lib)
       + ' — pire série ' + P.p.map(function (v) { return '<span style="color:' + col(v) + ';">' + v + '</span>'; }).join(' · ')
       + '<br><span style="font-weight:400;font-size:13px;color:#c9d3ee;">' + e(P.ans[0]) + (P.ans.length > 1 ? ' → ' + e(P.ans[P.ans.length - 1]) : '') + ' · <b style="color:#fff;">' + pa.p + ' paliers ' + pa.ico + '</b>'
-      + (pa.mise != null ? ' · ' + pa.mise + ' €' : '') + (pa.cum != null ? ' <span style="color:#ffb3b3;">(total misé ' + (Math.round(pa.cum * 100) / 100).toLocaleString('fr-FR') + ' €)</span>' : '') + window._g45SimTxt(P.sim) + ' · mis à jour le '   /* 20261030d : total misé aussi sur les cartes */ + dt + '</span></div>';
+      + (pa.mise != null ? ' · ' + pa.mise + ' €' : '') + (pa.cum != null ? ' <span style="color:#ffb3b3;">(total misé ' + (Math.round(pa.cum * 100) / 100).toLocaleString('fr-FR') + ' €)</span>' : '') + window._g45SimTxt(P.sim, u) + ' · mis à jour le '   /* 20261030d : total misé aussi sur les cartes */ + dt + '</span></div>';
   };
   /* 20261028h — 🔄 Calculer mes séries (g45SerLancer, module des critères) : une ligne par pari écrit, 🌍 puis 🏠 puis ✈️ ;
      « 📊 🏠 pire série 2 · 3 · 1 · 4 → 5 paliers ✅ · 1 € » (saison la plus récente d'abord, paliers = pire des 4 saisons à la suite + 1). */
@@ -78026,7 +78040,7 @@ window._G45_PAL_COUL = ['#1ed760', '#8fdc4a', '#f5c542', '#ffa53a', '#ff7a3a', '
       at = Math.max(at, R.at || 0);
       var pa = window._g45PalCarte(R.tot, u);
       h += '<div>📊 ' + k[1] + ' pire série ' + R.p.map(function (v) { return '<span style="color:' + col(v) + ';">' + v + '</span>'; }).join(' · ')
-        + ' → <b>' + pa.p + ' palier' + (pa.p > 1 ? 's' : '') + ' ' + pa.ico + '</b>' + (pa.mise != null ? ' <span style="font-weight:400;color:#c9d3ee;">· ' + pa.mise + ' €</span>' : '') + (pa.cum != null ? ' <span style="color:#ffb3b3;">(total misé ' + (Math.round(pa.cum * 100) / 100).toLocaleString('fr-FR') + ' €)</span>' : '') + window._g45SimTxt(R.sim) + '</div>';   /* 20261030d (« rajoute ici aussi le total », Outils → Équipes) */
+        + ' → <b>' + pa.p + ' palier' + (pa.p > 1 ? 's' : '') + ' ' + pa.ico + '</b>' + (pa.mise != null ? ' <span style="font-weight:400;color:#c9d3ee;">· ' + pa.mise + ' €</span>' : '') + (pa.cum != null ? ' <span style="color:#ffb3b3;">(total misé ' + (Math.round(pa.cum * 100) / 100).toLocaleString('fr-FR') + ' €)</span>' : '') + window._g45SimTxt(R.sim, u) + '</div>';   /* 20261030d (« rajoute ici aussi le total », Outils → Équipes) */
     });
     if (!h) return '';
     var d = new Date(at || Date.now()), dt = ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2);
