@@ -76018,6 +76018,53 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     return { cr: cr, k: k, n: A.n, ok: A.ok, pt: T.n ? Math.round(100 * T.ok / T.n) : 0, d: typeof dl === 'string' ? dl.slice(0, 10) : '' };
   }
   function tousDe(c, D) { var tous = []; D.saisons.slice().reverse().forEach(function (s) { var L0 = s && msS(c, s); if (L0) tous = tous.concat(filtrer(L0)); }); return tous; }
+  /* ═══ 20261102m — 💶 « SI TU L'AVAIS JOUÉ EN COCKPIT » (Antoine, capture Seth Jarvis pointeur : « on sait pas ce qu'il aurait rapporté en €
+     en mode cockpit » ; maquette « oui, A, plus tard B ») : montante rejouée match par match sur les saisons du tableau, dans l'ordre (même
+     liste que le Total : saisons de la plus ancienne à la plus récente, jFiltre + valeur ; réussite = v.ok*2 >= v.n). Mises = STRATS de
+     l'échelle ⭐ choisie (_g45PalEt, comme « mise max »). Réussite au palier p : + mise × (cote − 1), retour palier 1 ; échec : − mise,
+     palier suivant ; plus de palier = 💥 (tout perdu), retour palier 1. A = UNE cote choisie (localStorage g45_ck_cote, 1,70 par défaut) ;
+     B (plus tard) = vraie cote archivée quand elle existe. Gain / perte rangé dans la saison du match. ═══ */
+  var CK_COTES = [1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2, 2.2, 2.5, 3];
+  function ckCote() { var v = 1.7; try { v = parseFloat(localStorage.getItem('g45_ck_cote')) || 1.7; } catch (e) {} return v > 1 ? v : 1.7; }
+  window.g45CrCkCote = function (v) { try { localStorage.setItem('g45_ck_cote', String(v)); } catch (e) {} try { redessiner(); } catch (e) {} };
+  function simCalc(seq, mises, cote) {   /* seq = [{ s: libellé saison, ok }] dans l'ordre → { par: { s: { ok, bo, e } }, tot, bo, max } */
+    var i = 0, par = {}, tot = 0, bo = 0, max = 0;
+    seq.forEach(function (x) {
+      var P = par[x.s] = par[x.s] || { ok: 0, bo: 0, e: 0 }, m = mises[i];
+      if (m > max) max = m;
+      if (x.ok) { var g = m * (cote - 1); P.ok++; P.bo += g; tot += g; i = 0; }
+      else { P.bo -= m; tot -= m; i++; if (i >= mises.length) { P.e++; bo++; i = 0; } }
+    });
+    return { par: par, tot: tot, bo: bo, max: max };
+  }
+  window._g45CrSimT = simCalc;   /* tests */
+  function simHtml(c, D) {
+    var seq = [], libs = [];
+    D.saisons.slice().reverse().forEach(function (sa) {
+      if (!sa) return; var L0 = msS(c, sa); if (!L0) return;
+      var lb = lib(D.lg, sa.an); libs.unshift(lb);
+      jFiltre(c, filtrer(L0)).forEach(function (m) { var v = valeur(c, m); if (v.n > 0) seq.push({ s: lb, ok: v.ok * 2 >= v.n }); });
+    });
+    if (!seq.length) return '';
+    var et = (typeof _g45PalEt === 'function') ? _g45PalEt() : '1', mises = (typeof STRATS !== 'undefined' && (STRATS[et] || STRATS['1'])) || [1, 2, 6, 18, 54, 162, 486, 1458];
+    var cote = ckCote(), R = simCalc(seq, mises, cote);
+    var eu = function (x) { var r = Math.round(x); return (r > 0 ? '+' : r < 0 ? '−' : '') + Math.abs(r).toLocaleString('fr-FR') + ' €'; };
+    var cl = function (x) { return x > 0.5 ? '#1ed760' : x < -0.5 ? '#ff5a5a' : '#fff'; };
+    var td = 'padding:7px 4px;border-bottom:1px solid #1c2747;', th = 'text-align:left;font-size:13px;color:#c9d3ee;padding:6px 4px;border-bottom:1px solid #2a3a63;';
+    var h = '<div style="margin-top:10px;background:#0f1730;border-radius:10px;padding:10px;font-size:14px;color:#fff;line-height:1.5;">'
+      + '<div style="font-size:15px;font-weight:800;">💶 Si tu l\'avais joué en Cockpit · ' + new Array(+et + 1).join('⭐') + '</div>'
+      + '<div style="font-size:13px;color:#c9d3ee;margin:2px 0 6px;">Paliers ' + mises.join(' · ') + ' €</div>'
+      + '<div>Cote utilisée : <select onchange="g45CrCkCote(this.value)" style="font-size:15px;font-weight:700;padding:5px 8px;border-radius:8px;background:#16213f;color:#fff;border:1px solid #6d9dff;">'
+      + CK_COTES.map(function (v) { return '<option value="' + v + '"' + (Math.abs(v - cote) < 1e-9 ? ' selected' : '') + '>' + v.toFixed(2).replace('.', ',') + '</option>'; }).join('')
+      + (CK_COTES.indexOf(cote) < 0 ? '<option value="' + cote + '" selected>' + cote.toFixed(2).replace('.', ',') + '</option>' : '') + '</select></div>'
+      + '<table style="width:100%;border-collapse:collapse;font-size:14px;color:#fff;margin-top:6px;"><tr><th style="' + th + '">Saison</th><th style="' + th + '">Gagnés</th><th style="' + th + '">💥</th><th style="' + th + '">Bilan</th></tr>';
+    libs.forEach(function (lb) {
+      var P = R.par[lb]; if (!P) return;
+      h += '<tr><td style="' + td + '">' + lb + '</td><td style="' + td + '">' + P.ok + '</td><td style="' + td + (P.e ? 'color:#ff5a5a;font-weight:800;' : '') + '">' + P.e + '</td><td style="' + td + 'font-weight:800;color:' + cl(P.bo) + ';">' + eu(P.bo) + '</td></tr>';
+    });
+    return h + '</table><div style="margin-top:8px;">🧮 <b>Total : <span style="color:' + cl(R.tot) + ';">' + eu(R.tot) + '</span></b> · plus grosse mise engagée <b>' + R.max.toLocaleString('fr-FR') + ' €</b></div>'
+      + '<div style="font-size:13px;color:#c9d3ee;margin-top:4px;">💥 = série plus longue que tes paliers : tout est perdu, retour au palier 1. Même cote pour tous les matchs (pas de cotes gardées pour les anciennes saisons).</div></div>';
+  }
   function coul(p) { return p <= 2 ? '#1ed760' : p <= 4 ? '#ff9f43' : '#ff5a5a'; }
   function nbV(x) { return String(x).replace('.', ','); }   /* 20261024d : 12,5 / 20 avec les moitiés */
   /* ── 20261021e — 🌍 COUPES D'EUROPE (« actuellement on a que le championnat, la coupe d'Europe est-elle rajoutable ? », « oui ») —
@@ -76306,6 +76353,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
         + '🏆 Meilleure série : <b style="color:#5aa9ff;">' + T.best + ' réussite' + (T.best > 1 ? 's' : '') + ' de suite</b>'
         + (function () { var B0 = brunoEtat(c, tous), N = S.a2n || B0.k; return apres2Html(apres2(c, tous, N), T, N, apres2Choix(N, B0.cr)); })()   /* 20261102f / k (les boutons sont un bloc : pas de <br>) */
         + '📈 Série en cours : ' + enCours(c, tous) + '</div>';
+      try { h += simHtml(c, D); } catch (e) {}   /* 20261102m */
       h += garderHtml(c, D, T);   /* 20261028e */
       h += ajoutHtml(c);   /* 20261101c */
     }
