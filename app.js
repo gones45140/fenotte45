@@ -85221,3 +85221,64 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
   };
   setTimeout(go, 800);
 })();
+
+
+/* ═══ 20261103g — 💾 TAILLE DU DÉPÔT D'ARCHIVES dans Outils (Antoine : « va pas être trop chargé le GitHub ? » → « rajouter dans Outils pour moi
+   perso le volume pour la capacité avec un avertissement en cas de quota presque atteint » ; maquette « oui »). GONES45 SEULEMENT (_g45SanteActive).
+   api.github.com/repos/gones45140/gones45-archives → size (Ko, dépôt compressé ; 231 410 Ko le 03/11), lu au plus toutes les 6 h (g45_arch_taille),
+   sans clé (60 lectures / h). Repère = 1 Go CONSEILLÉ par GitHub (limite dure 5 Go). Vert < 70 %, orange ≥ 70 %, rouge ≥ 90 % + bandeau une fois
+   par jour (g45_arch_alerte_jour). Remède : effacer l'historique du dépôt (fichiers gardés) — à demander à Claude. ═══ */
+(function () {
+  var CLE = 'g45_arch_taille', MAX = 1024;   /* Mo */
+  function lireCache() { try { return JSON.parse(localStorage.getItem(CLE) || 'null'); } catch (e) { return null; } }
+  async function charger(force) {
+    var c = lireCache(); if (c && !force && Date.now() - c.t < 6 * 3600e3) return c;
+    try { var r = await fetch('https://api.github.com/repos/gones45140/gones45-archives'); if (r.ok) { var j = await r.json(); if (j && j.size > 0) { c = { t: Date.now(), ko: j.size }; try { localStorage.setItem(CLE, JSON.stringify(c)); } catch (e) {} } } } catch (e) {}
+    return c;
+  }
+  function etat(c) { var mo = c.ko / 1024, p = Math.round(100 * mo / MAX); return { mo: mo, p: p, n: p >= 90 ? 2 : p >= 70 ? 1 : 0 }; }
+  function bloc(c) {
+    if (!c) return '<div style="font-size:14px;font-weight:800;color:#fff;">💾 Archives GitHub</div><div style="font-size:13px;color:var(--t2);margin-top:4px;">⏳ lecture de la taille…</div>';
+    var E = etat(c), col = ['#1ed760', '#ff9f43', '#ff5a5a'][E.n], w = Math.min(100, E.p);
+    var msg = ['✅ Tout va bien', '⚠️ Bientôt plein : penser à effacer l\'historique (demande à Claude)', '❌ Presque plein ! Effacer l\'historique maintenant (demande à Claude)'][E.n];
+    var mo = E.mo >= 1000 ? (E.mo / 1024).toFixed(2).replace('.', ',') + ' Go' : Math.round(E.mo) + ' Mo';
+    var h = new Date(c.t).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    return '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><div style="font-size:14px;font-weight:800;color:#fff;">💾 Archives GitHub (gones45-archives)</div>'
+      + '<button onclick="g45ArchTailleMaj(this)" style="font-size:13px;font-weight:800;padding:6px 10px;border-radius:9px;cursor:pointer;border:1.5px solid rgba(77,132,255,.55);background:rgba(77,132,255,.15);color:#fff;">🔄</button></div>'
+      + '<div style="margin:8px 0 6px;height:14px;border-radius:7px;background:rgba(255,255,255,.10);overflow:hidden;"><div style="height:100%;width:' + w + '%;background:' + col + ';"></div></div>'
+      + '<div style="font-size:14px;color:#fff;font-weight:800;">' + mo + ' / 1 Go conseillé <span style="color:' + col + ';">(' + E.p + ' %)</span></div>'
+      + '<div style="font-size:13px;color:' + (E.n ? col : '#c9d3ee') + ';font-weight:700;margin-top:3px;">' + msg + ' · mis à jour à ' + h + '</div>';
+  }
+  function poser(c) {
+    try {
+      if (typeof _g45SanteActive !== 'function' || !_g45SanteActive()) { var v = document.getElementById('g45-arch-taille'); if (v) v.remove(); return; }
+      var hote = document.getElementById('t-outils'); if (!hote) return;
+      var el = document.getElementById('g45-arch-taille');
+      if (!el) {
+        el = document.createElement('div'); el.id = 'g45-arch-taille';
+        el.style.cssText = 'margin:10px 0 14px;padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,.10);background:rgba(11,16,29,.88);';
+        var s = document.getElementById('g45-sante'); if (s && s.parentNode === hote) hote.insertBefore(el, s.nextSibling); else hote.insertBefore(el, hote.firstChild);
+      }
+      el.innerHTML = bloc(c);
+      if (c && etat(c).n === 2) {   /* bandeau rouge, une fois par jour */
+        var j = new Date().toISOString().slice(0, 10), vu = ''; try { vu = localStorage.getItem('g45_arch_alerte_jour') || ''; } catch (e) {}
+        if (vu !== j && !document.getElementById('g45-arch-ban')) {
+          var b = document.createElement('div'); b.id = 'g45-arch-ban'; b.setAttribute('role', 'alert');
+          b.style.cssText = 'position:fixed;left:10px;right:10px;top:calc(env(safe-area-inset-top,0px) + 10px);z-index:100000;max-width:560px;margin:0 auto;background:#2a0d12;border:2px solid #ff4545;border-radius:12px;padding:12px 14px;box-shadow:0 8px 30px rgba(0,0,0,.6);color:#fff;';
+          b.innerHTML = '<div style="display:flex;justify-content:space-between;gap:8px;"><div style="font-size:15px;font-weight:800;">💾 Archives GitHub presque pleines (' + etat(c).p + ' %)</div>'
+            + '<button onclick="document.getElementById(\'g45-arch-ban\').remove()" aria-label="Fermer" style="background:none;border:none;color:#fff;font-size:20px;cursor:pointer;">✕</button></div>'
+            + '<div style="font-size:14px;margin-top:6px;line-height:1.45;">Demande à Claude d\'effacer l\'historique du dépôt gones45-archives (les fichiers sont gardés).</div>';
+          document.body.appendChild(b); try { localStorage.setItem('g45_arch_alerte_jour', j); } catch (e) {}
+        }
+      }
+    } catch (e) {}
+  }
+  window._g45ArchTailleT = { etat: etat, bloc: bloc };   /* tests */
+  window.g45ArchTailleMaj = async function (btn) { if (btn) { btn.disabled = true; btn.textContent = '⏳'; } poser(await charger(true)); };
+  var s0 = window._g45SanteAfficher;
+  if (typeof s0 === 'function' && !s0._g45Arch) {
+    var env = function () { var r = s0.apply(this, arguments); try { poser(lireCache()); } catch (e) {} return r; };
+    env._g45Arch = true; window._g45SanteAfficher = _g45SanteAfficher = env;
+  }
+  setTimeout(async function () { if (typeof _g45SanteActive === 'function' && _g45SanteActive()) poser(await charger(false)); }, 4000);
+})();
