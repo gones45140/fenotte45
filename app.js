@@ -43676,7 +43676,7 @@ window.g45F1Session=g45F1Session;
    et les données utilisateur n'étaient JAMAIS écrites — l'ajout apparaissait à l'écran puis
    disparaissait au rechargement. Ce n'était ni la synchro GitHub, ni Dropbox, ni le cache
    du navigateur. Tous ces caches sont reconstructibles : ils cèdent la place aux données. */
-var _G45_CACHE_PREFIXES=['g45reg4f_',/* 27/10 : journaux foot des saisons finies */'g45mlbk1_',/* 27/10 : journaux strikeouts MLB */'g45reg4n_',/* 27/10 : journaux NFL des saisons finies */'g45reg4_',/* 27/10 : journaux NHL des saisons finies (4 saisons) */'g45nflyd1_',/* 27/10 : journaux yards NFL */'g45f1cr1_',/* 27/10 : résultats F1 Jolpica (critères 4 saisons) */'g45nfltd1_',/* 22/10 : TD / FG NFL par match */'g45cr1u_','g45cr3u_',/* 22/10 : critères US avec n° de match */'g45cr1e_','g45crf1_','g45crid1_',/* 21/10 : feuilles de match des critères */'g45cr3_','g45cr1_',/* 14/10 : critères sur 4 saisons */'g45agoa2_',/* 11/10 : cotes Agenda (The Odds API) */'g45reg1_',/* 08/10 : régularité buteurs NHL */'g45bb1_','g45bbst1_','g45bbld1_','g45bbf1_',/* 03/10 : Pro A be-basketball */'g45es1_',/* 01/10 : stats Euroleague */'g45kbo1_',/* 01/10 : KBO (mykbostats) */'g45t14lg1',/* 01/10 : logos Top 14 (LNR) */'g45pd2_',/* 01/10 : Pro D2 (LNR) */'g45t14sq1_',/* 01/10 : effectifs Top 14 (LNR) */'g45nrlm1_','g45nrldr1_',/* 01/10 : feuilles et calendriers NRL */'g45nrlsq1_',/* 01/10 : effectifs NRL */'g45nrlst2_',/* 01/10 : classements NRL */'g45proacid1_',/* 30/09 : numéros LNB par saison */'g45proast1_',/* 30/09 : stats Pro A */'g45proa1_',/* 30/09 : Pro A par journée */'g45el1_',/* 30/09 : Euroleague (compact) */'g45buts1_',/* 30/09 : buts en action (match fini) */'g45prad1_','g45vsj1_','g45vse1_',/* 30/09 : radars joueurs */'g45ia1_',/* 29/09 : avis IA gardés 6 h */'g45_mmeta2_','g45_mmeta1_','g45_tennis4_','g45_tennis3_',/* 16/09 : meta de match (domicile/lieu) et score tennis, reconstructibles */'g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dcf_','g45dc_',
+var _G45_CACHE_PREFIXES=['g45reg4f_',/* 27/10 : journaux foot des saisons finies */'g45mlbk1_',/* 27/10 : journaux strikeouts MLB */'g45reg4n_',/* 27/10 : journaux NFL des saisons finies */'g45reg4_',/* 27/10 : journaux NHL des saisons finies (4 saisons) */'g45nflyd1_',/* 27/10 : journaux yards NFL */'g45f1cr1_',/* 27/10 : résultats F1 Jolpica (critères 4 saisons) */'g45nfltd1_',/* 22/10 : TD / FG NFL par match */'g45cr1u_','g45cr3v_',/* 03/11 : g45cr3u_ → v (phase finale rugby) ; 22/10 : critères US avec n° de match */'g45cr1e_','g45crf1_','g45crid1_',/* 21/10 : feuilles de match des critères */'g45cr3_','g45cr1_',/* 14/10 : critères sur 4 saisons */'g45agoa2_',/* 11/10 : cotes Agenda (The Odds API) */'g45reg1_',/* 08/10 : régularité buteurs NHL */'g45bb1_','g45bbst1_','g45bbld1_','g45bbf1_',/* 03/10 : Pro A be-basketball */'g45es1_',/* 01/10 : stats Euroleague */'g45kbo1_',/* 01/10 : KBO (mykbostats) */'g45t14lg1',/* 01/10 : logos Top 14 (LNR) */'g45pd2_',/* 01/10 : Pro D2 (LNR) */'g45t14sq1_',/* 01/10 : effectifs Top 14 (LNR) */'g45nrlm1_','g45nrldr1_',/* 01/10 : feuilles et calendriers NRL */'g45nrlsq1_',/* 01/10 : effectifs NRL */'g45nrlst2_',/* 01/10 : classements NRL */'g45proacid1_',/* 30/09 : numéros LNB par saison */'g45proast1_',/* 30/09 : stats Pro A */'g45proa1_',/* 30/09 : Pro A par journée */'g45el1_',/* 30/09 : Euroleague (compact) */'g45buts1_',/* 30/09 : buts en action (match fini) */'g45prad1_','g45vsj1_','g45vse1_',/* 30/09 : radars joueurs */'g45ia1_',/* 29/09 : avis IA gardés 6 h */'g45_mmeta2_','g45_mmeta1_','g45_tennis4_','g45_tennis3_',/* 16/09 : meta de match (domicile/lieu) et score tennis, reconstructibles */'g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dcf_','g45dc_',
   'g45trv3_','g45trv2_','g45trOdds2_',/* 13/10 : cotes The Odds API par marchés */'g45tr_','g45but_st_','g45butL_','g45butA_','g45but_mur_',
   '_g45clv','g45clv_snaps','g45_saisons_cache_v3_','g45_saisons_cache_v2_',
   /* Ajoutes le 20/08 : ces caches, tous reconstructibles, n'etaient PAS declares
@@ -67385,7 +67385,7 @@ window._g45ClvSelection = _g45ClvSelection; window._g45ClvPoser = _g45ClvPoser; 
       (setItem et save) puisse les vider.
    3) Au-delà de 4 millions de caractères stockés, purge préventive des
       caches (jamais g45v5, les données). */
-var _G45_CACHE_MORTS = ['g45cr1w_' /* 03/11 : → g45cr1x_ (cotes 1N2) */, 'g45cr1v_' /* 03/11 : → g45cr1w_ (total) */, 'g45cr1u_' /* 03/11 : → g45cr1v_ (handicap) */, 'g45_jou_v2_baseball_' /* 25/10 : → v3 (lanceur partant) */, 'g45reg1_v5_', 'g45reg1_f8_' /* 16/10 : → v6_ / f9_ (valeurs par match, seuil 2+) */, 'g45trOdds_' /* 13/10 : → g45trOdds2_ (marchés dans la clé) */, 'g45agoa1_' /* 11/10 : → g45agoa2_ (nom des books) */, 'g45nrlcal11_' /* 06/10 : → g45nrlcal12_ (présaison US écartée) */, 'g45f1tr1_' /* 04/10 : → g45f1tr2_ (voie des stands) */, 'g45bbjc1' /* 03/10 : → g45bbjc2 (clubs par saison) */, 'g45bbph1_' /* 03/10 : → g45bbph2_ (secours Wikipédia) */, 'g45cm10_' /* 07/10 : → g45cm11_ (statut OT/SO gardé) */, 'g45_jou_v1_' /* 07/10 : → g45_jou_v2_ (présence par match) */, 'g45cm9_' /* 01/10 : → g45cm10_ (présaison NHL marquée PO) */, 'g45nrlst1_' /* 01/10 : → g45nrlst2_ */, 'g45_cfai_veille' /* 29/09 : Workers AI supprimé */, 'g45cls4_' /* 29/09 : → g45cls5_ (stats de match) */, 'g45news7_', 'g45cm_', 'g45cm2_', 'g45cm3_', 'g45cm4_', 'g45cm5_', 'g45cm6_', 'g45cm7_', 'g45cm8_',
+var _G45_CACHE_MORTS = ['g45cr3u_' /* 03/11 : → g45cr3v_ (phase finale rugby m[7]) */, 'g45cr1w_' /* 03/11 : → g45cr1x_ (cotes 1N2) */, 'g45cr1v_' /* 03/11 : → g45cr1w_ (total) */, 'g45cr1u_' /* 03/11 : → g45cr1v_ (handicap) */, 'g45_jou_v2_baseball_' /* 25/10 : → v3 (lanceur partant) */, 'g45reg1_v5_', 'g45reg1_f8_' /* 16/10 : → v6_ / f9_ (valeurs par match, seuil 2+) */, 'g45trOdds_' /* 13/10 : → g45trOdds2_ (marchés dans la clé) */, 'g45agoa1_' /* 11/10 : → g45agoa2_ (nom des books) */, 'g45nrlcal11_' /* 06/10 : → g45nrlcal12_ (présaison US écartée) */, 'g45f1tr1_' /* 04/10 : → g45f1tr2_ (voie des stands) */, 'g45bbjc1' /* 03/10 : → g45bbjc2 (clubs par saison) */, 'g45bbph1_' /* 03/10 : → g45bbph2_ (secours Wikipédia) */, 'g45cm10_' /* 07/10 : → g45cm11_ (statut OT/SO gardé) */, 'g45_jou_v1_' /* 07/10 : → g45_jou_v2_ (présence par match) */, 'g45cm9_' /* 01/10 : → g45cm10_ (présaison NHL marquée PO) */, 'g45nrlst1_' /* 01/10 : → g45nrlst2_ */, 'g45_cfai_veille' /* 29/09 : Workers AI supprimé */, 'g45cls4_' /* 29/09 : → g45cls5_ (stats de match) */, 'g45news7_', 'g45cm_', 'g45cm2_', 'g45cm3_', 'g45cm4_', 'g45cm5_', 'g45cm6_', 'g45cm7_', 'g45cm8_',
   'g45khl_fiche_', 'g45_saisons_cache_v2_', 'g45_score_', 'g45_score2_', 'g45_score3_'];
 try {
   ['g45cm11_', 'g45xgj1_', 'g45khl_fiche2_', 'g45khl_plage_', 'g45cls3_', 'g45cls5_', 'g45photostsdb_', 'g45wk1_', 'g45jv_', 'g45art1_', 'g45clv1_', 'g45arb1_', 'g45_herologo_', 'g45cm3_']
@@ -76312,10 +76312,15 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   }
   function filtrer(ms) {
     var rc = rg() ? (window._g45SgRgComp || 'tout') : 'tout';   /* 20261014k : m[5] = 1 → Champions Cup */
+    var rq = rg() ? (S.rgc || 'T') : 'T';   /* 20261103n : boutons Compétition du bloc (remplacent le filtre de Saisons ici) */
+    if (rg()) rc = 'tout';
     /* 20261021d : m.pr = résultat du match d'AVANT dans la saison (tous lieux) — 'v' / 'n' / 'd' (score final) ; 1er match de la saison : rien */
     ms.forEach(function (m, i) { var q = ms[i - 1]; m.pr = q ? (q[2] > q[3] ? 'v' : q[2] < q[3] ? 'd' : 'n') : ''; });
     return ms.filter(function (m) {
       if (rc === 'L' && m[5]) return false;
+      if (rq === 'L' && (m[5] || m[7])) return false;
+      if (rq === 'LP' && m[5]) return false;
+      if (rq === 'E' && !m[5]) return false;
       if (rc === 'CC' && m[5] !== 1) return false;
       if (rc === 'CH' && m[5] !== 2) return false;
       return S.lieu === 'tout' || (S.lieu === 'dom' ? m[1] === 1 : m[1] === 0);
@@ -76357,6 +76362,32 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     if (C0) return out;
     S.data[nom] = out;
   }
+  /* ═══ 20261103n — 🏉 COMPÉTITION DANS LES CRITÈRES RUGBY (Antoine : « on peut pas faire seulement championnat / championnat + playoff /
+     coupe d'Europe / tout » → maquette → « OUI ») : S.rgc = 'L' championnat seul, 'LP' championnat + phases finales, 'E' coupes d'Europe,
+     'T' tout (défaut). m[5] = coupe (1 Champions Cup, 2 Challenge Cup), m[7] = 1 phase finale.
+     SONDÉ le 03/11 (gones45-archives, sonde.yml) : ESPN NE MARQUE PAS les phases finales du rugby (finale Top 14 2025 599792 = seasonType 1,
+     comme une journée normale ; calendrier par équipe 500). Règle : saison FINIE (dernier match il y a plus de 10 jours) → les matchs APRÈS
+     la dernière journée complète sont les phases finales (Top 14 : barrages, demies, finale = 5 ; NRL : 9). Saison en cours : aucune. ═══ */
+  function rgPo(L) {   /* L = [[idMatch, idDom, idExt, t]] d'UNE ligue sur UNE saison → { idMatch: 1 } */
+    /* Règle (archives à trous : 1 match manquant en Top 14 2021-22, équipes à 3 matchs en NRL → pas de comptage) : DERNIÈRE JOURNÉE COMPLÈTE =
+       fenêtre de 4 jours où au moins 75 % des équipes (≥ 10 matchs dans la saison) ont joué ; tout ce qui suit = phases finales. */
+    var P = {}, N = {}, tMax = 0, M = L.slice().sort(function (x, y) { return +x[3] - +y[3]; });
+    M.forEach(function (x) { [x[1], x[2]].forEach(function (t) { t = String(t); N[t] = (N[t] || 0) + 1; }); if (+x[3] > tMax) tMax = +x[3]; });
+    var nE = Object.keys(N).filter(function (t) { return N[t] >= 10; }).length;
+    if (nE < 4 || !(tMax < Date.now() - 10 * 86400000)) return P;
+    var fin = -1, J = 4 * 86400000;
+    for (var i = 0; i < M.length; i++) {
+      var vu = {}, last = 0;
+      for (var j = i; j < M.length && +M[j][3] <= +M[i][3] + J; j++) { vu[String(M[j][1])] = 1; vu[String(M[j][2])] = 1; last = +M[j][3]; }
+      if (Object.keys(vu).length >= 0.75 * nE) fin = last;
+    }
+    if (fin < 0) return P;
+    var po = M.filter(function (x) { return +x[3] > fin; });
+    if (po.length <= 20) po.forEach(function (x) { P[String(x[0])] = 1; });
+    return P;
+  }
+  window._g45CrRgPo = rgPo;   /* tests */
+  function rgcLib() { return rg() ? ({ L: ' · championnat seul', LP: ' · championnat + phases finales', E: ' · coupes d\'Europe' }[S.rgc] || '') : ''; }   /* carte gardée */
   async function chargerRg(nom) {
     var C = S.ctx, ans = annees(C.lg), out = { t: Date.now(), lg: C.lg, ligue: C.sp === 'rugby' ? 'phases finales et coupes d\'Europe comprises' : 'saison régulière', saisons: [] }, eq = [];
     try { eq = await _g45CompetEquipes({ sp: C.sp, s: C.lg }); } catch (e) {}
@@ -76364,11 +76395,12 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var cupOk = C.sp === 'rugby' && ['270559', '270557', '267979'].indexOf(String(C.lg)) >= 0, idsC = [[], []];
     if (cupOk) { for (var ci = 2; ci < 2; ci++) { try { idsC[ci] = (await _g45CompetEquipes({ sp: 'rugby', s: _G45_RG_CUPS[ci][0] })).map(function (t) { return t.id; }).filter(Boolean); } catch (e) {} } }
     for (var i = 0; i < ans.length; i++) {   /* une saison après l'autre : jusqu'à 12 scoreboards par saison */
-      var an = ans[i], cle = 'g45cr3u_' + C.sp + '_' + C.lg + '_' + C.id + '_' + an, ms = null;   /* 20261022i : + n° de match */
+      var an = ans[i], cle = 'g45cr3v_' + C.sp + '_' + C.lg + '_' + C.id + '_' + an, ms = null;   /* 20261022i : + n° de match ; 20261103n : g45cr3u_ → g45cr3v_ (phase finale en m[7]) */
       if (i > 0) { try { ms = JSON.parse(localStorage.getItem(cle) || 'null'); } catch (e) {} }
       if (!ms) {
         var L = null; try { L = await _g45CompetMatchs(C.sp, C.lg, an, ids); } catch (e) {}
         if (!L) { out.saisons[i] = { an: an, ms: null }; continue; }
+        var poIds = rgPo(L.map(function (m) { return [m.id, m.h, m.a, m.t]; }));   /* 20261103n : ligue seule, avant les coupes */
         /* 20261014k (« oui on peut rajouter les phases finales ») : phases finales GARDÉES ; + Champions Cup (m[5] = 1) et Challenge Cup (m[5] = 2). */
         if (cupOk) {
           for (var cj = 0; cj < 2; cj++) {
@@ -76378,7 +76410,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
         }
         var ccIds = {}; L.forEach(function (m) { if (m.cc) ccIds[String(m.id)] = m.cc; });
         var st = _g45SgCalc(L, C.id, nom);
-        ms = st.liste.map(function (x) { return [new Date(x.t || 0).toISOString().slice(0, 10), x.dom ? 1 : 0, x.pour, x.contre, 0, ccIds[String(x.id)] || 0, String(x.id || '')]; })
+        ms = st.liste.map(function (x) { return [new Date(x.t || 0).toISOString().slice(0, 10), x.dom ? 1 : 0, x.pour, x.contre, 0, ccIds[String(x.id)] || 0, String(x.id || ''), (!ccIds[String(x.id)] && poIds[String(x.id)]) ? 1 : 0]; })
           .filter(function (m) { return !isNaN(m[2]) && !isNaN(m[3]); })
           .sort(function (a, b) { return a[0] < b[0] ? -1 : 1; });
         if (i > 0 && ms.length) { try { localStorage.setItem(cle, JSON.stringify(ms)); } catch (e) {} }
@@ -76588,7 +76620,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   function garderHtml(c, D, T) {
     var u = murDe(S.nom, c); if (!u) return '';
     if (joueurs(c).length && u.type !== 'joueur') return '';   /* 20261101c : pari JOUEUR sans sa carte → pas sur la carte du club (➕ Ajouter au mur à la place) */
-    var sig = S.lieu + '|' + libCombo(c), deja = u.ps && u.ps.sig === sig;
+    var sig = S.lieu + '|' + libCombo(c) + rgcLib(), deja = u.ps && u.ps.sig === sig;   /* 20261103n : + compétition rugby */
     if (deja) {   /* mise à jour automatique : saison en cours + total ; saisons finies figées */
       try {
         var G = garderCalc(c, D), ch = false;
@@ -76643,7 +76675,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var c = S.combos[i], D = S.data[S.nom], u = murDe(S.nom, c); if (!c || !D || !u) return;
     var tous = []; D.saisons.slice().reverse().forEach(function (s) { var L0 = s && msS(c, s); if (L0) tous = tous.concat(filtrer(L0)); });   /* 20261031g */
     var G = garderCalc(c, D), T = calc(c, tous);
-    u.ps = { sig: S.lieu + '|' + libCombo(c), lib: libCombo(c), k: S.lieu, ans: G.ans, p: G.p, tot: T.pire, at: Date.now() };
+    u.ps = { sig: S.lieu + '|' + libCombo(c) + rgcLib(), lib: libCombo(c) + rgcLib(), k: S.lieu, ans: G.ans, p: G.p, tot: T.pire, at: Date.now() };
     try { u.ps.b = brunoEtat(c, tous); } catch (e) {}   /* 20261102h */
     try { u.ps.sq = sqTxt(sqDe(c, tous)); u.ps.sim = simDe(u.ps.sq, u); } catch (e) {}   /* 20261102p / q */
     try { save(); } catch (e) {}
@@ -76671,13 +76703,19 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     } catch (e) {}
     var D = S.data[nom];
     var lieuTxt = S.lieu === 'dom' ? '🏠 à domicile' : S.lieu === 'ext' ? '✈️ à l\'extérieur' : 'domicile + extérieur';
-    h += '<div style="font-size:13px;color:#c9d3ee;margin:4px 0 8px;">' + esc(nom) + ' · ' + lieuTxt + (D && D.ligue ? ' · ' + esc(D.ligue) : '') + (S.ctx ? '' : (S.comp === 'E' ? ' · coupes d\'Europe' : S.comp === 'T' ? ' · championnat + coupes d\'Europe' : ' · championnat seulement')) + '</div>';
+    h += '<div style="font-size:13px;color:#c9d3ee;margin:4px 0 8px;">' + esc(nom) + ' · ' + lieuTxt + (rg() ? ' · ' + ({ L: 'championnat seul', LP: 'championnat + phases finales', E: 'coupes d\'Europe' }[S.rgc] || (S.ctx.sp === 'rugby' && ['270559', '270557', '267979'].indexOf(String(S.ctx.lg)) >= 0 ? 'phases finales et coupes d\'Europe comprises' : 'phases finales comprises')) : (D && D.ligue ? ' · ' + esc(D.ligue) : '')) + (S.ctx ? '' : (S.comp === 'E' ? ' · coupes d\'Europe' : S.comp === 'T' ? ' · championnat + coupes d\'Europe' : ' · championnat seulement')) + '</div>';
     var u = (state.u || []).filter(function (x) { return x.n === nom; })[0];
     if (u && u.note) {
       h += '<div style="font-size:14px;color:#fff;background:#0f1730;border-radius:8px;padding:8px;margin-bottom:6px;">📌 Ta note : ' + esc(u.note) + '</div>'
         + '<button onclick="g45CrNote()" style="width:100%;background:#2a4a9a;color:#fff;border:0;border-radius:10px;padding:9px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:4px;">📌 Reprendre ma note</button>';
     }
     h += lab('Lieu') + b(S.lieu === 'dom', '🏠 Domicile', "g45CrSet('lieu','dom')") + b(S.lieu === 'ext', '✈️ Extérieur', "g45CrSet('lieu','ext')") + b(S.lieu === 'tout', 'Les deux', "g45CrSet('lieu','tout')");
+    if (rg()) {   /* 20261103n : 🏉 compétition */
+      var rq0 = S.rgc || 'T', cupB = S.ctx.sp === 'rugby' && ['270559', '270557', '267979'].indexOf(String(S.ctx.lg)) >= 0;
+      if (!cupB && rq0 === 'E') rq0 = S.rgc = 'T';
+      h += lab('Compétition') + b(rq0 === 'L', '🏉 Championnat', "g45CrSet('rgc','L')") + b(rq0 === 'LP', '🏉 + 🏅 Phases finales', "g45CrSet('rgc','LP')")
+        + (cupB ? b(rq0 === 'E', '🏆 Coupe d\'Europe', "g45CrSet('rgc','E')") : '') + b(rq0 === 'T', 'Tout', "g45CrSet('rgc','T')");
+    }
     if (!S.ctx) {   /* 20261021e : coupes d'Europe */
       var cp = S.comp || 'L';
       h += lab('Compétition') + b(cp === 'L', '🏆 Championnat', "g45CrSet('comp','L')") + b(cp === 'E', '🌍 Coupe d\'Europe', "g45CrSet('comp','E')") + b(cp === 'T', 'Les deux', "g45CrSet('comp','T')");
@@ -76934,13 +76972,14 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       var ms = [];
       F.forEach(function (M) { Object.keys(M || {}).forEach(function (eid) { var fi = M[eid]; if (fi && fi.f && fi.h && fi.a) ms.push([eid, fi]); }); });
       ms.sort(function (a, b) { return (a[1].t || 0) - (b[1].t || 0); });
+      var poL = rgPo(ms.map(function (x) { return [x[0], x[1].h.id, x[1].a.id, x[1].t || 0]; }));   /* 20261103n */
       ms.forEach(function (x) {
         var eid = x[0], fi = x[1], R = rgFiche(fi), d = new Date(fi.t || 0).toISOString().slice(0, 10); nf++;
         ['h', 'a'].forEach(function (k) {
           var tid = String(fi[k].id), o = k === 'h' ? 'a' : 'h', pf = +fi.f[k], pc = +fi.f[o]; if (isNaN(pf) || isNaN(pc)) return;
           if (!eqs[tid]) eqs[tid] = fi[k].nom || tid;
           var Dt = D[tid] || (D[tid] = { t: Date.now(), lg: X.lg, saisons: ANS.map(function (a) { return { an: a, ms: [] }; }) });
-          var r = [d, k === 'h' ? 1 : 0, pf, pc, 0, 0, eid]; r[13] = (R && R.es) ? (k === 'h' ? R.es : [R.es[1], R.es[0]]) : 0;
+          var r = [d, k === 'h' ? 1 : 0, pf, pc, 0, 0, eid, poL[eid] ? 1 : 0]; r[13] = (R && R.es) ? (k === 'h' ? R.es : [R.es[1], R.es[0]]) : 0;
           Dt.saisons[i].ms.push(r);
         });
         if (R) R.j.forEach(function (j) {
@@ -77142,6 +77181,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   window.g45CrSet = function (k, v) {
     if (k === 'lieu') S.lieu = v;
     else if (k === 'comp') S.comp = v;   /* 20261021e */
+    else if (k === 'rgc') S.rgc = v;   /* 20261103n */
     else {
       var c = S.combos[S.a];
       if (k === 'L') { c.L = parseFloat(v); if (!c.ou) c.ou = 'ov'; }
