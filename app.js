@@ -51579,8 +51579,7 @@ async function _g45SaisonsGen(el, nom, perso) {
       for (var _ci = 0; _ci < _G45_RG_CUPS.length; _ci++) {
         try {
           var cu = _G45_RG_CUPS[_ci], msC;
-          if (cu[0] === '271937') msC = await _g45RgCupArch(an, idC);   /* 20261103l : archives (ESPN = 500) */
-          else { var eqC = await _g45CompetEquipes({ sp: 'rugby', s: cu[0] }); msC = await _g45CompetMatchs('rugby', cu[0], an, eqC.map(function (t) { return t.id; }).filter(Boolean)); }
+          msC = await _g45RgCupArch(an, idC, cu[0]);   /* 20261103l-m : archives (ESPN = 500 sur les deux coupes) */
           (msC || []).forEach(function (m) {
             if (!(String(m.h) === idC || String(m.a) === idC || (nnC && ((m.hn && _g45SgNorm(m.hn) === nnC) || (m.an && _g45SgNorm(m.an) === nnC))))) return;
             var c = {}; for (var k in m) c[k] = m[k]; c.cc = _ci + 1; tousC.push(c);
@@ -52584,9 +52583,10 @@ var _G45_RG_CUPS = [['271937', 'Champions Cup'], ['272073', 'Challenge Cup']];  
    [t, mois, n° match, 'h'|'a', [score dom, score ext], …, adversaire en [7]]) → UNE lecture par club et par saison, même forme que
    _g45CompetMatchs. [] = pas de fichier (club absent de la coupe), null = lecture ratée. Challenge Cup : pas archivée, inchangée. */
 var _g45RgCupMem = {};
-function _g45RgCupArch(an, tid) {
-  var sa = an + '-' + String(an + 1).slice(2), k = sa + '|' + tid;
-  if (!_g45RgCupMem[k]) _g45RgCupMem[k] = fetch('https://raw.githubusercontent.com/gones45140/gones45-archives/main/cotes/rugby/271937/' + sa + '/equipes/' + tid + '.json?t=' + Math.floor(Date.now() / 3600000))
+function _g45RgCupArch(an, tid, lg) {   /* 20261103m : + lg (Challenge Cup 272073 aussi : ESPN = 500 pareil ; archives vides → [] tant qu'elle n'est pas archivée) */
+  lg = String(lg || '271937');
+  var sa = an + '-' + String(an + 1).slice(2), k = lg + '|' + sa + '|' + tid;
+  if (!_g45RgCupMem[k]) _g45RgCupMem[k] = fetch('https://raw.githubusercontent.com/gones45140/gones45-archives/main/cotes/rugby/' + lg + '/' + sa + '/equipes/' + tid + '.json?t=' + Math.floor(Date.now() / 3600000))
     .then(function (r) { if (r.status === 404) return []; if (!r.ok) return null; return r.json().then(function (q) {
       return ((q && q.m) || []).filter(function (m) { return m && m[2] && m[7] && m[4] && m[4][0] != null && m[4][1] != null && !isNaN(+m[4][0]) && !isNaN(+m[4][1]); })
         .map(function (m) { var dom = m[3] === 'h', moi = String(tid), adv = String(m[7]);
@@ -76362,7 +76362,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     try { eq = await _g45CompetEquipes({ sp: C.sp, s: C.lg }); } catch (e) {}
     var ids = eq.map(function (t) { return t.id; }).filter(Boolean);
     var cupOk = C.sp === 'rugby' && ['270559', '270557', '267979'].indexOf(String(C.lg)) >= 0, idsC = [[], []];
-    if (cupOk) { for (var ci = 1; ci < 2; ci++) { try { idsC[ci] = (await _g45CompetEquipes({ sp: 'rugby', s: _G45_RG_CUPS[ci][0] })).map(function (t) { return t.id; }).filter(Boolean); } catch (e) {} } }
+    if (cupOk) { for (var ci = 2; ci < 2; ci++) { try { idsC[ci] = (await _g45CompetEquipes({ sp: 'rugby', s: _G45_RG_CUPS[ci][0] })).map(function (t) { return t.id; }).filter(Boolean); } catch (e) {} } }
     for (var i = 0; i < ans.length; i++) {   /* une saison après l'autre : jusqu'à 12 scoreboards par saison */
       var an = ans[i], cle = 'g45cr3u_' + C.sp + '_' + C.lg + '_' + C.id + '_' + an, ms = null;   /* 20261022i : + n° de match */
       if (i > 0) { try { ms = JSON.parse(localStorage.getItem(cle) || 'null'); } catch (e) {} }
@@ -76372,7 +76372,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
         /* 20261014k (« oui on peut rajouter les phases finales ») : phases finales GARDÉES ; + Champions Cup (m[5] = 1) et Challenge Cup (m[5] = 2). */
         if (cupOk) {
           for (var cj = 0; cj < 2; cj++) {
-            var LC = null; try { LC = cj === 0 ? await _g45RgCupArch(an, C.id) : await _g45CompetMatchs('rugby', _G45_RG_CUPS[cj][0], an, idsC[cj]); } catch (e) {}   /* 20261103l : Champions Cup = archives (ESPN = 500) */
+            var LC = null; try { LC = await _g45RgCupArch(an, C.id, _G45_RG_CUPS[cj][0]); } catch (e) {}   /* 20261103l-m : coupes = archives (ESPN = 500) */
             (LC || []).forEach(function (m) { var c = {}; for (var k in m) c[k] = m[k]; c.cc = cj + 1; L.push(c); });
           }
         }
