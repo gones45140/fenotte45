@@ -75606,8 +75606,11 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     }
     if (!S.combos.length) S.combos = [combo0()];
   }
+  function nbS() { return S.ctx && S.ctx.lg !== 'nba' ? 4 : 5; }   /* 20261103a : nombre de saisons affiché */
   function annees(lg) {
-    if (S.ctx) { var a0 = (typeof _g45SgAnAuto === 'function') ? _g45SgAnAuto(lg) : new Date().getFullYear() + 1; return [a0, a0 - 1, a0 - 2, a0 - 3]; }
+    /* 20261103a (capture Winamax Spurs −18,5 → −12,5 : « savoir si une équipe passe le cut » ; « 5 saisons oui ») : NBA = 5 saisons comme le foot
+       (archives basket/nba 2022-23 → 2026-27, saison régulière ; handicap de clôture gardé 22-23 / 25-26 / 26-27). Autres sports US / rugby : 4. */
+    if (S.ctx) { var a0 = (typeof _g45SgAnAuto === 'function') ? _g45SgAnAuto(lg) : new Date().getFullYear() + 1; return lg === 'nba' ? [a0, a0 - 1, a0 - 2, a0 - 3, a0 - 4] : [a0, a0 - 1, a0 - 2, a0 - 3]; }
     var d = new Date(), y = d.getFullYear(), y0 = CAL.indexOf(lg) >= 0 ? y : (d.getMonth() + 1 >= 8 ? y : y - 1);
     /* 20261102i (groupe Bets 4 us, Jp33 : « tu ne peux pas remonter sur 6 ou 7 saisons ? » → Antoine : « rajoute une saison supplémentaire mais
        seulement au foot ») : foot = 5 saisons (archives : rattrapage RAT_ANS=5 ; sondé : 2021-22 = résultats + feuilles, pas de cotes).
@@ -76487,13 +76490,13 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var o = ouvert();
     var h = '<div id="g45cr" style="margin:12px 0;background:rgba(20,28,48,.95);border:1px solid #2a3a63;border-radius:12px;padding:12px;color:#fff;">'
       + '<div onclick="g45CrOuvrir()" style="cursor:pointer;font-size:16px;font-weight:700;display:flex;justify-content:space-between;align-items:center;">'
-      + '<span>📊 Tes critères sur ' + (S.ctx ? 4 : 5) + ' saisons</span><span style="font-size:14px;color:#c9d3ee;">' + (o ? '▾ Replier' : '▸ Ouvrir') + '</span></div>';
+      + '<span>📊 Tes critères sur ' + nbS() + ' saisons</span><span style="font-size:14px;color:#c9d3ee;">' + (o ? '▾ Replier' : '▸ Ouvrir') + '</span></div>';
     if (!o) return h + '</div>';
     /* 20261021e (« cette sélection de critères doit passer en premium ») : même verrou que Tendances (_g45AccesPremium : compte de moins de
        30 jours ou soutien ; gones45 sans compte = ouvert) ; rien n'est lu chez ESPN tant que c'est fermé. */
     try {
       if (typeof _g45AccesPremium === 'function' && _g45AccesPremium() !== true) return h + '<div style="text-align:center;padding:16px 8px;">'
-        + '<div style="font-size:28px;margin-bottom:8px;">🔒</div><div style="font-size:15px;font-weight:700;margin-bottom:6px;">Critères sur ' + (S.ctx ? 4 : 5) + ' saisons : réservé premium</div>'
+        + '<div style="font-size:28px;margin-bottom:8px;">🔒</div><div style="font-size:15px;font-weight:700;margin-bottom:6px;">Critères sur ' + nbS() + ' saisons : réservé premium</div>'
         + '<div style="font-size:14px;color:#c9d3ee;line-height:1.5;max-width:360px;margin:0 auto 12px;">Gratuit 30 jours après la création du compte, puis avec un petit soutien du projet.</div>'
         + (typeof _g45BlocPremium === 'function' ? _g45BlocPremium() : '') + '</div></div>';
     } catch (e) {}
@@ -76627,7 +76630,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       };
       h += '<div style="font-size:15px;font-weight:800;margin:14px 0 2px;padding-top:8px;border-top:1px solid #2a3a63;">👤 Joueurs</div>';
       if (UU.enCours) h += '<div id="g45cr-up" style="font-size:14px;color:#f5c542;margin:4px 0;">⏳ Feuilles de match : ' + (UU.f || 0) + ' / ' + (UU.n || '…') + ' (la 1re fois seulement)</div>';
-      else if (man) h += b(false, '📥 Lire les feuilles de match des 4 saisons (' + man + ' matchs, la 1re fois seulement)', 'g45CrUsLire()');
+      else if (man) h += b(false, '📥 Lire les feuilles de match des ' + nbS() + ' saisons (' + man + ' matchs, la 1re fois seulement)', 'g45CrUsLire()');
       if (LJ.length) {
         h += lab('Joueurs (1 à 3, matchs où ils ont TOUS joué)') + selU(1, 'jo') + (c.jo ? selU(2, 'jo2') : '') + (c.jo2 ? selU(3, 'jo3') : '')
           + lab('Ce qu\'il doit faire') + RL.map(function (r) { return b(c.jm === r.k, (r.ico || '') + ' ' + r.lab, "g45CrSet('jm','" + r.k + "')"); }).join('')
@@ -76662,7 +76665,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     h += '<div style="margin:6px 0 4px;">' + (S.combos.length < 3 ? b(false, '➕ Comparer avec un autre combiné (OU)', 'g45CrAjout()') : '')
       + (S.combos.length > 1 ? b(false, '✕ Retirer le combiné ' + (S.a + 1), 'g45CrSuppr()') : '') + '</div>';
     if (!D || (!D.err && !D.saisons)) {
-      h += '<div style="font-size:14px;color:#c9d3ee;padding:10px 0;">⏳ Lecture des 4 saisons…</div>';
+      h += '<div style="font-size:14px;color:#c9d3ee;padding:10px 0;">⏳ Lecture des ' + nbS() + ' saisons…</div>';
       setTimeout(function () { charger(nom).then(function () { redessiner(); }); }, 0);
     } else if (D.err) {
       h += '<div style="font-size:14px;color:#ff9f43;padding:10px 0;">⚠️ ' + esc(D.err) + '</div>';
@@ -76830,7 +76833,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var ign = CLS_SANS.some(function (q) { return c0[q]; });
     var h = '<div style="margin-top:16px;padding-top:12px;border-top:1px solid #2a3a63;">'
       + '<div style="font-size:16px;font-weight:800;color:#fff;">🏁 Jouable en Cockpit ? — classement ' + (X.sp === 'soccer' ? 'du championnat' : 'de la ' + esc(US_N[X.lg] || X.lg)) + '</div>'
-      + '<div style="font-size:13px;color:#c9d3ee;margin:3px 0 8px;">Même critère (' + (S.lieu === 'dom' ? '🏠 ' : S.lieu === 'ext' ? '✈️ ' : '') + esc(libCombo(c)) + ') · ' + (S.ctx ? 4 : 5) + ' saisons · toutes les équipes · trié par la plus petite pire série'
+      + '<div style="font-size:13px;color:#c9d3ee;margin:3px 0 8px;">Même critère (' + (S.lieu === 'dom' ? '🏠 ' : S.lieu === 'ext' ? '✈️ ' : '') + esc(libCombo(c)) + ') · ' + nbS() + ' saisons · toutes les équipes · trié par la plus petite pire série'
       + (ign ? '<br><span style="color:#ffb13d;">Ignoré ici : joueur et critères de feuille de match (tirs, mi-temps, corners…).</span>' : '') + '</div>';
     if (Q.etat === 1) return h + '<div style="font-size:14px;color:#fff;">⏳ Lecture des équipes… <span id="g45cr-cls-prog">' + (Q.f || 0) + ' / ' + (Q.n || '?') + '</span> (la 1re fois seulement)</div></div>';
     if (Q.etat !== 2) return h + (Q.err ? '<div style="font-size:14px;color:#ff9f43;margin-bottom:6px;">⚠️ ' + esc(Q.err) + '</div>' : '')
