@@ -124,6 +124,7 @@ PIÈGES À NE JAMAIS OUBLIER :
 - Respecter les CGU : NE PAS lire lnh.fr, fis-ski.com, koreabaseball.com, npb.jp, football-data.co.uk, Transfermarkt, FotMob, Flashscore,
   motogp.com au-delà de l'existant ; pas de jeton lnb.fr ; pas de scraping de bookmakers / Oddsportal / DraftKings ; pas de multi-comptes
   pour contourner un quota ; Polymarket (ANJ) et Kalshi abandonnés ; jamais les photos de be-basketball.
+  LNR (lnr.fr) : CGU = usage personnel et strictement privé seulement → pas d'archivage LNR dans gones45-archives (public) sans autorisation (03/11).
 - Abandonné / refusé (ne pas reproposer) : NPB, handball, Workers AI (IA), BTS The Odds API par match, stats live Pro A Sofascore,
   mi-temps Pro D2, papier peint clair, panneaux pub autour du terrain, tuile « ➕ Ajouter ».
 - Antoine parie sur la FIN des séries : ne pas lui refaire la leçon sur le « biais du parieur ».
