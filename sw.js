@@ -6,7 +6,9 @@
    3) 20261103q : 🖼️ ARCHIVE DE LOGOS DANS L'APPAREIL (Antoine : « faudra limite faire une archive de logos » → dans l'appareil, pas dans le
       dépôt public (logos = clubs / ESPN) → « oui ») : logos d'équipes ESPN servis depuis le cache « g45-logos » (téléchargés UNE fois),
       réseau seulement s'ils manquent ; 1500 logos max (les plus anciens retirés).
-   Version : 2026-11-03q  (changer ce commentaire force la mise à jour du SW) */
+   4) 20261103r : 🖼️ + IMAGES TheSportsDB (fonds des cartes du Mur / Cockpit : fanart, bannière ; Antoine « oui, je suis capable de rajouter
+      d'autres équipes plus tard ») : cache « g45-images », 200 max (≈ 60 Mo), une nouvelle équipe est gardée dès son 1er affichage.
+   Version : 2026-11-03r  (changer ce commentaire force la mise à jour du SW) */
 
 const G45_PUSH_BASE = 'https://fd-proxy.touraine-antoine.workers.dev';
 
@@ -26,14 +28,16 @@ self.addEventListener('fetch', function(event){
        toute correction apportee a ces deux fichiers restait donc invisible, servie
        depuis le cache HTTP, alors qu'app.js se mettait bien a jour. Piege parfait
        pour croire qu'un correctif ne fonctionne pas. */
-    if (/^https:\/\/a\.espncdn\.com\/(i\/teamlogos\/|combiner\/i\?img=\/i\/teamlogos\/)/.test(req.url)) {   /* 20261103q : logos */
-      event.respondWith(caches.open('g45-logos').then(function (c) {
+    var _lg = /^https:\/\/a\.espncdn\.com\/(i\/teamlogos\/|combiner\/i\?img=\/i\/teamlogos\/)/.test(req.url), _ts = /^https:\/\/(r2|www)\.thesportsdb\.com\/images\//.test(req.url);
+    if (_lg || _ts) {   /* 20261103q : logos ESPN ; 20261103r : + images TheSportsDB */
+      var _cn = _lg ? 'g45-logos' : 'g45-images', _max = _lg ? 1500 : 200;
+      event.respondWith(caches.open(_cn).then(function (c) {
         return c.match(req.url).then(function (hit) {
           if (hit) return hit;
           return fetch(req).then(function (r) {
             if (r && (r.ok || r.type === 'opaque')) {
               var cp = r.clone();
-              c.put(req.url, cp).then(function () { return c.keys(); }).then(function (k) { if (k.length > 1500) for (var i = 0; i < k.length - 1500; i++) c.delete(k[i]); }).catch(function () {});
+              c.put(req.url, cp).then(function () { return c.keys(); }).then(function (k) { if (k.length > _max) for (var i = 0; i < k.length - _max; i++) c.delete(k[i]); }).catch(function () {});
             }
             return r;
           });
