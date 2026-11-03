@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action (il est court exprès). Le détail de tout l'historique est dans HISTORIQUE.md
-(à chercher avec grep, jamais à lire en entier). Mis à jour le 31/10/2026 (version déployée : 20261103b, même app.js sur gones45 et fenotte45).
+(à chercher avec grep, jamais à lire en entier). Mis à jour le 31/10/2026 (version déployée : 20261103c, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -146,6 +146,7 @@ PIÈGES À NE JAMAIS OUBLIER :
 - 📦 Archive des cotes d'avant-match (DÉPÔT gones45140/gones45-archives depuis 20261031a : robot cotes-archive.yml / .github/scripts/cotes_archive.mjs lancé TOUTES LES HEURES par le worker (GitHub seul le retardait, 30/10), rangé cotes/<sport foot|hockey|basket|football-us>/<ligue>/<saison juillet→juin, ex. 2026-27>/matchs/AAAA-MM.json + index PAR SAISON equipes.json, equipes/<id>.json, joueurs.json, joueurs/<idEspn>.json (20261031b-c) + carrière par sport cotes/<sport>/joueurs/<idEspn>.json (transferts, 20261031h) ; robot rattrapage.yml = 4 saisons passées, score + feuille + cotes de clôture, fiches r: 1 ; FAIT le 29/10 pour 11 ligues ≈ 23 000 matchs, 252 Mo ; + MLB, ned.1, por.1, fra.2, bra.1, arg.1, sélections (saisons civiles « 2026 ») le 31/10) : fenêtre d'un match FINI → bloc 📦 (_g45ArchMatchHtml, 20261031u) ; onglet Compétitions → championnat → « 📦 Cotes gardées » (g45CotesArch, 20261030y ; équipe / mois, score final + FEUILLE DE MATCH ajoutés par le robot après le match (f, bu, st : buteurs / passeurs / stats joueurs, 20261030z) → ✅ / ❌ et 📋 dans l'onglet). PDF par CHAMPIONNAT et par SAISON (Antoine : « fin d'année en PDF, nouveau PDF l'année d'après » → « année footballistique » → « ou NHL, par saison en fait ») : FAIT 20261031w : robot pdf-saison (gones45-archives, le 3 du mois) → pdf/<sport>/<ligue>/<saison>/<Championnat>.pdf + equipes/<Club>.pdf pour chaque saison terminée à partir de 2026-27 (bouton ligue + saison pour une ancienne) ; + bouton 📄 dans l'onglet (20261031i). Vérifier aussi « les deux marquent » (1,38 / 3,00 identiques sur 2 matchs au 1er passage).
 - 🎯 CAP (Antoine, 31/10) : « le but est de ne plus aller chercher les archives dans ESPN mais sur GitHub ; ESPN servira toujours pour le direct et autres ; on continuera de remplir petit à petit » → une fois le rattrapage 4 saisons fini, brancher les écrans d'HISTORIQUE (séries 4 saisons, critères, Séries individuelles, Cockpit…) sur gones45-archives, écran par écran, en comparant les chiffres avec ESPN avant de basculer. FAIT le 29/10 (20261031k → s) : critères 4 saisons (foot, NHL, NBA, NFL, MLB équipes), Séries individuelles foot / NFL / NBA (NHL = nhle.com + secours archives), Séries équipes / Cockpit, chaque fois COMPARÉ à ESPN avant bascule (notes HISTORIQUE). ESPN reste en secours.
 - 💶 Simulation Cockpit des critères (20261102q) : étape B à faire = vraie cote archivée quand elle existe (sinon la cote choisie).
+- 🎯 « A passé la ligne du book » pour les JOUEURS NBA (critères) : quand assez de matchs archivés (échelles DraftKings fiche.j depuis le 30/10 ; ligne = palier à cote ≈ 1,85). Équipes : FAIT (20261103b, handicap de clôture).
 - Cédric : toucher 🤍 sur Portugal. Worker : budget `_lourd` 4 → 2 proposé.
 
 ## 8. Façon de travailler en session cloud

@@ -75641,8 +75641,8 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     if (c.pm) p.push('Après ' + { v: 'une victoire', n: 'un nul', d: 'une défaite' }[c.pm]);
     if (c.ha) p.push('Handicap ' + (c.HAL > 0 ? '+' : '') + String(c.HAL).replace('.', ','));   /* 20261024d */
     if (c.hb) p.push(c.hb === 'c' ? 'Couvre le handicap du book' : 'Ne couvre pas le handicap du book');   /* 20261103b */
-    if (c.ec === 'g') p.push('Gagne de ' + c.E + ' ou +');
-    if (c.ec === 'p') p.push('Perd de ' + c.E + ' max');
+    if (c.ec === 'g') p.push('Gagne de ' + String(c.E).replace('.', ',') + ' ou +');
+    if (c.ec === 'p') p.push('Perd de ' + String(c.E).replace('.', ',') + ' max');
     return p.length ? p.join(' + ') : 'aucun critère';
   }
   /* 20261024c — LIGNES RONDES : pile la ligne = critère REMBOURSÉ → ignoré (comme une sélection annulée dans un combiné) ; si TOUS les critères
@@ -76566,10 +76566,9 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
        (= handicap +(X+0,5)) ; hockey : temps réglementaire comme le reste. Échelle par sport (_EC). */
     var _EC = { soccer: [1, 2, 3, 4], hockey: [1, 2, 3, 4], baseball: [1, 2, 3, 4, 5], rugby: [5, 8, 10, 15, 20], 'rugby-league': [5, 8, 10, 13, 20], football: [3, 4, 7, 10, 14], basketball: [3, 5, 8, 10, 15] }[sport()] || [1, 2, 3, 4];
     if (c.E == null) c.E = _EC[1]; if (c.ec == null) c.ec = '';
-    var selE = '<select onchange="g45CrSet(\'E\',this.value)" style="background:#16213f;color:#fff;border:1px solid #6d9dff;border-radius:8px;padding:7px 10px;font-size:14px;margin:0 6px 6px 0;">';
-    _EC.forEach(function (x) { selE += '<option value="' + x + '"' + (c.E === x ? ' selected' : '') + '>' + x + '</option>'; });
-    selE += '</select>';
-    h += lab('Écart (' + motUnite().toLowerCase() + hkTr + ')') + b(c.ec === 'g', 'Gagne de ' + c.E + ' ou +', "g45CrSet('ec','g')") + b(c.ec === 'p', 'Perd de ' + c.E + ' max', "g45CrSet('ec','p')") + b(!c.ec, 'Aucun', "g45CrSet('ec','')") + selE;
+    /* 20261103c (Antoine : « on n'a pas le A libre » → « oui ») : écart TAPÉ (12,5, 16…) au lieu de la liste 3 / 5 / 8 / 10 / 15 ; virgule acceptée. */
+    var selE = '<input type="text" inputmode="decimal" value="' + String(c.E).replace('.', ',') + '" onchange="g45CrSet(\'E\',this.value)" onfocus="this.select()" style="width:80px;background:#16213f;color:#fff;border:1px solid #6d9dff;border-radius:8px;padding:7px 10px;font-size:15px;font-weight:700;text-align:center;margin:0 6px 6px 0;">';
+    h += lab('Écart (' + motUnite().toLowerCase() + hkTr + ')') + b(c.ec === 'g', 'Gagne de ' + String(c.E).replace('.', ',') + ' ou +', "g45CrSet('ec','g')") + b(c.ec === 'p', 'Perd de ' + String(c.E).replace('.', ',') + ' max', "g45CrSet('ec','p')") + b(!c.ec, 'Aucun', "g45CrSet('ec','')") + selE;
     if (S.ctx && !rg()) h += lab('🎯 Handicap du bookmaker (ligne de chaque match, archives)') + b(c.hb === 'c', 'Couvre', "g45CrSet('hb','c')") + b(c.hb === 'n', 'Ne couvre pas', "g45CrSet('hb','n')") + b(!c.hb, 'Aucun', "g45CrSet('hb','')");   /* 20261103b */
     /* 20261024d : HANDICAP ASIATIQUE (foot) — « Belgrano +0,25 » : −3 → +3 de 0,25 en 0,25 ; 0 / ligne ronde égalée = remboursé, ,25 / ,75 = moitié-moitié */
     if (!S.ctx) {
@@ -76894,7 +76893,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       if (k === 'L') { c.L = parseFloat(v); if (!c.ou) c.ou = 'ov'; }
       else if (k === 'TL') { c.TL = parseFloat(v); if (!c.te) c.te = 'ov'; }
       else if (k === 'AL') { c.AL = parseFloat(v); if (!c.ad) c.ad = 'ov'; }
-      else if (k === 'E') { c.E = parseFloat(v); if (!c.ec) c.ec = 'g'; }
+      else if (k === 'E') { var e0 = parseFloat(String(v).replace(',', '.')); if (!(e0 >= 0 && e0 < 200)) { try { redessiner(); } catch (e) {} return; } c.E = Math.round(e0 * 100) / 100; if (!c.ec) c.ec = 'g'; }   /* 20261103c : virgule */
       else if (k === 'FL') { c.FL = parseFloat(v); if (!c.fs) c.fs = 'ov'; }   /* 20261021d */
       else if (k === 'TSL') { c.TSL = parseFloat(v); if (!c.ts) c.ts = 'ov'; }
       else if (k === 'ASL') { c.ASL = parseFloat(v); if (!c.as) c.as = 'ov'; }
