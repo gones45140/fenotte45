@@ -51578,8 +51578,9 @@ async function _g45SaisonsGen(el, nom, perso) {
       var tousC = [], idC = String(perso.id), nnC = _g45SgNorm(nom);
       for (var _ci = 0; _ci < _G45_RG_CUPS.length; _ci++) {
         try {
-          var cu = _G45_RG_CUPS[_ci], eqC = await _g45CompetEquipes({ sp: 'rugby', s: cu[0] });
-          var msC = await _g45CompetMatchs('rugby', cu[0], an, eqC.map(function (t) { return t.id; }).filter(Boolean));
+          var cu = _G45_RG_CUPS[_ci], msC;
+          if (cu[0] === '271937') msC = await _g45RgCupArch(an, idC);   /* 20261103l : archives (ESPN = 500) */
+          else { var eqC = await _g45CompetEquipes({ sp: 'rugby', s: cu[0] }); msC = await _g45CompetMatchs('rugby', cu[0], an, eqC.map(function (t) { return t.id; }).filter(Boolean)); }
           (msC || []).forEach(function (m) {
             if (!(String(m.h) === idC || String(m.a) === idC || (nnC && ((m.hn && _g45SgNorm(m.hn) === nnC) || (m.an && _g45SgNorm(m.an) === nnC))))) return;
             var c = {}; for (var k in m) c[k] = m[k]; c.cc = _ci + 1; tousC.push(c);
@@ -52577,6 +52578,24 @@ function _g45SgTRBascule() { _g45SgTR = !_g45SgTR; _g45SgRefresh(); }
 window._g45SgTRBascule = _g45SgTRBascule;
 function _g45SgPhaseSet(f) { _g45SgPhase = f; _g45SgRefresh(); }
 var _G45_RG_CUPS = [['271937', 'Champions Cup'], ['272073', 'Challenge Cup']];   /* 20261014k : coupes d'Europe de rugby (ESPN) */
+/* 20261103l (console d'Antoine sur une équipe du Top 14 : des dizaines de « 500 » sur site.api.espn.com/…/rugby/271937/teams/<id>/schedule,
+   1 par club de Champions Cup × 2 adresses × 4 saisons) : le calendrier par équipe du rugby renvoie TOUJOURS 500 (déjà noté en sept.), la
+   Champions Cup n'arrivait donc jamais. Elle est archivée dans gones45-archives (cotes/rugby/271937/<an>-<aa>/equipes/<club>.json, ligne
+   [t, mois, n° match, 'h'|'a', [score dom, score ext], …, adversaire en [7]]) → UNE lecture par club et par saison, même forme que
+   _g45CompetMatchs. [] = pas de fichier (club absent de la coupe), null = lecture ratée. Challenge Cup : pas archivée, inchangée. */
+var _g45RgCupMem = {};
+function _g45RgCupArch(an, tid) {
+  var sa = an + '-' + String(an + 1).slice(2), k = sa + '|' + tid;
+  if (!_g45RgCupMem[k]) _g45RgCupMem[k] = fetch('https://raw.githubusercontent.com/gones45140/gones45-archives/main/cotes/rugby/271937/' + sa + '/equipes/' + tid + '.json?t=' + Math.floor(Date.now() / 3600000))
+    .then(function (r) { if (r.status === 404) return []; if (!r.ok) return null; return r.json().then(function (q) {
+      return ((q && q.m) || []).filter(function (m) { return m && m[2] && m[7] && m[4] && m[4][0] != null && m[4][1] != null && !isNaN(+m[4][0]) && !isNaN(+m[4][1]); })
+        .map(function (m) { var dom = m[3] === 'h', moi = String(tid), adv = String(m[7]);
+          return { id: String(m[2]), h: dom ? moi : adv, a: dom ? adv : moi, hg: +m[4][0], ag: +m[4][1], t: +m[0], hp: null, ap: null, ox: 0 }; });
+    }); })
+    .catch(function () { return null; })
+    .then(function (L) { if (L === null) delete _g45RgCupMem[k]; return L; });
+  return _g45RgCupMem[k];
+}
 function _g45SgRgCompSet(f) { window._g45SgRgComp = f; _g45SgRefresh(); }   /* 20261014k */
 window._g45SgRgCompSet = _g45SgRgCompSet;
 window._g45SgPhaseSet = _g45SgPhaseSet;
@@ -76343,7 +76362,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     try { eq = await _g45CompetEquipes({ sp: C.sp, s: C.lg }); } catch (e) {}
     var ids = eq.map(function (t) { return t.id; }).filter(Boolean);
     var cupOk = C.sp === 'rugby' && ['270559', '270557', '267979'].indexOf(String(C.lg)) >= 0, idsC = [[], []];
-    if (cupOk) { for (var ci = 0; ci < 2; ci++) { try { idsC[ci] = (await _g45CompetEquipes({ sp: 'rugby', s: _G45_RG_CUPS[ci][0] })).map(function (t) { return t.id; }).filter(Boolean); } catch (e) {} } }
+    if (cupOk) { for (var ci = 1; ci < 2; ci++) { try { idsC[ci] = (await _g45CompetEquipes({ sp: 'rugby', s: _G45_RG_CUPS[ci][0] })).map(function (t) { return t.id; }).filter(Boolean); } catch (e) {} } }
     for (var i = 0; i < ans.length; i++) {   /* une saison après l'autre : jusqu'à 12 scoreboards par saison */
       var an = ans[i], cle = 'g45cr3u_' + C.sp + '_' + C.lg + '_' + C.id + '_' + an, ms = null;   /* 20261022i : + n° de match */
       if (i > 0) { try { ms = JSON.parse(localStorage.getItem(cle) || 'null'); } catch (e) {} }
@@ -76353,7 +76372,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
         /* 20261014k (« oui on peut rajouter les phases finales ») : phases finales GARDÉES ; + Champions Cup (m[5] = 1) et Challenge Cup (m[5] = 2). */
         if (cupOk) {
           for (var cj = 0; cj < 2; cj++) {
-            var LC = null; try { LC = await _g45CompetMatchs('rugby', _G45_RG_CUPS[cj][0], an, idsC[cj]); } catch (e) {}
+            var LC = null; try { LC = cj === 0 ? await _g45RgCupArch(an, C.id) : await _g45CompetMatchs('rugby', _G45_RG_CUPS[cj][0], an, idsC[cj]); } catch (e) {}   /* 20261103l : Champions Cup = archives (ESPN = 500) */
             (LC || []).forEach(function (m) { var c = {}; for (var k in m) c[k] = m[k]; c.cc = cj + 1; L.push(c); });
           }
         }
