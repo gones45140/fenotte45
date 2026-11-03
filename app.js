@@ -29205,6 +29205,84 @@ async function _g45RedessinDoux(el, eventId, league, rendre) {
   } catch (e) {} finally { el._g45Doux = 0; }
 }
 window._g45RedessinDoux = _g45RedessinDoux;
+/* ═══ 20261103s — 🎯 COTE BET45 (Antoine : « avec les stats, on sait estimer une cote sans regarder celle d'un book ? » → « faut regarder
+   l'adversaire aussi et le passif des vs » → VÉRIFIÉ sur ≈ 6 900 matchs (L1, PL, Liga, Serie A, Bundesliga, archives 5 saisons, cotes de clôture) :
+   Poisson (attaque de l'un × défense de l'autre, 38 derniers matchs à domicile / à l'extérieur, rapprochés de la moyenne de la ligue) = notre
+   meilleure méthode (Brier 0,596 ; book 0,576) et BIEN CALIBRÉE (annoncé 16 / 25 / 45 / 65 / 74 % → réel 16 / 25 / 45 / 64 / 75 %) ; face-à-face
+   = gain minime ; « values » contre le book = PERDANTES (−7 à −21 %) → AUCUN 💎 ici, comparaison seulement. Antoine : « 1,85 contre 1,75 ça
+   m'ennuie » → cote affichée AVEC la marge moyenne des books de la ligue (archives : L1 5,9 %, PL 5,5 %, Serie A 7,4 %…), cote juste en petit.
+   Maquette → « oui ». Données : gones45-archives (equipes.json + equipes/<club>.json, saison en cours + précédente), mémoire 6 h g45cb1_<lg>. ═══ */
+var _g45CbMem = {};
+async function _g45CbDonnees(lg) {
+  var k = 'g45cb1_' + lg;
+  if (_g45CbMem[k] && Date.now() - _g45CbMem[k].t < 6 * 3600000) return _g45CbMem[k];
+  try { var c = JSON.parse(localStorage.getItem(k) || 'null'); if (c && Date.now() - c.t < 6 * 3600000 && c.L && c.L.length) { _g45CbMem[k] = c; return c; } } catch (e) {}
+  var d = new Date(), y0 = d.getMonth() + 1 >= 7 ? d.getFullYear() : d.getFullYear() - 1, RAW = 'https://raw.githubusercontent.com/gones45140/gones45-archives/main/cotes/foot/' + lg + '/';
+  var lit = function (ch) { return fetch(RAW + ch + '?t=' + Math.floor(Date.now() / 3600000)).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }); };
+  var M = {};
+  for (var an = y0 - 1; an <= y0; an++) {
+    var sa = an + '-' + String(an + 1).slice(2), ix = await lit(sa + '/equipes.json'); if (!ix) continue;
+    var F = await Promise.all(Object.keys(ix).map(function (t) { return lit(sa + '/equipes/' + t + '.json').then(function (q) { return [t, q]; }); }));
+    F.forEach(function (x) { ((x[1] && x[1].m) || []).forEach(function (m) {
+      if (m[3] !== 'h' || !m[4] || m[4][0] == null || m[4][1] == null) return;
+      var co = m[11] && m[11].length === 3 && m[11].every(function (v) { return +v > 1; }) ? m[11].map(Number) : null;
+      M[m[2]] = [+m[0], String(x[0]), String(m[7]), +m[4][0], +m[4][1], co];
+    }); });
+  }
+  var L = Object.keys(M).map(function (e) { return M[e]; }).sort(function (a, b) { return a[0] - b[0]; });
+  if (!L.length) return null;
+  var o = { t: Date.now(), L: L }; _g45CbMem[k] = o; try { localStorage.setItem(k, JSON.stringify(o)); } catch (e) {}
+  return o;
+}
+function _g45CbCalc(L, h, a) {   /* → { p: [1, N, 2], marg, nh, na } ou null ; même calcul que la vérification */
+  L = L.slice(-760); var rec = L.slice(-380); if (rec.length < 100) return null;
+  var lh = 0, la = 0, mg = 0, nm = 0; rec.forEach(function (m) { lh += m[3]; la += m[4]; if (m[5]) { mg += 1 / m[5][0] + 1 / m[5][1] + 1 / m[5][2] - 1; nm++; } });
+  lh /= rec.length; la /= rec.length;
+  var Hh = L.filter(function (m) { return m[1] === String(h); }).slice(-38), Aa = L.filter(function (m) { return m[2] === String(a); }).slice(-38);
+  if (Hh.length < 8 || Aa.length < 8) return { peu: 1, nh: Hh.length, na: Aa.length };
+  var fo = function (l, f, avg) { var s = 0; l.forEach(function (m) { s += f(m); }); return (s + 6 * avg) / (l.length + 6) / avg; };
+  var mh = lh * fo(Hh, function (m) { return m[3]; }, lh) * fo(Aa, function (m) { return m[3]; }, lh);
+  var ma = la * fo(Aa, function (m) { return m[4]; }, la) * fo(Hh, function (m) { return m[4]; }, la);
+  var po = function (l, k) { var f = 1; for (var i = 2; i <= k; i++) f *= i; return Math.exp(-l) * Math.pow(l, k) / f; };
+  var P = [0, 0, 0]; for (var i = 0; i <= 10; i++) for (var j = 0; j <= 10; j++) { var q = po(mh, i) * po(ma, j); P[i > j ? 0 : i === j ? 1 : 2] += q; }
+  var S = P[0] + P[1] + P[2]; P = P.map(function (x) { return x / S; });
+  return { p: P, marg: nm ? mg / nm : 0.06, nh: Hh.length, na: Aa.length };
+}
+window._g45CbCalcT = _g45CbCalc;   /* tests */
+async function _g45CbPoser(id, data, lg, eid) {
+  try {
+    if ((window._G45_ARCH_LG || []).indexOf(lg) < 0) { var e0 = document.getElementById(id); if (e0) e0.remove(); return; }
+    var cp = (data && data.header && data.header.competitions && data.header.competitions[0]) || {}, cs = cp.competitors || [];
+    var ho = cs.filter(function (c) { return c.homeAway === 'home'; })[0], aw = cs.filter(function (c) { return c.homeAway === 'away'; })[0];
+    if (!ho || !aw) return;
+    var hN = (ho.team && (ho.team.shortDisplayName || ho.team.displayName)) || '1', aN = (aw.team && (aw.team.shortDisplayName || aw.team.displayName)) || '2';
+    var D = await _g45CbDonnees(lg), R = D && _g45CbCalc(D.L, ho.team && ho.team.id, aw.team && aw.team.id);
+    var dec = function (x) { var v = parseFloat(typeof _espnAmDec === 'function' ? _espnAmDec(x) : NaN); return v > 1 ? v : null; };
+    var pk = (data.pickcenter || data.odds || [])[0] || null, bk = null;
+    if (pk) { var b1 = dec(pk.homeTeamOdds && pk.homeTeamOdds.moneyLine), bx = dec(pk.drawOdds && pk.drawOdds.moneyLine), b2 = dec(pk.awayTeamOdds && pk.awayTeamOdds.moneyLine); if (b1 && bx && b2) bk = [b1, bx, b2]; }
+    if (!bk && cp.date) {   /* résumé sans cote (sondé 29e) → scoreboard du jour */
+      try { var sb = await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/' + lg + '/scoreboard?dates=' + new Date(cp.date).toISOString().slice(0, 10).replace(/-/g, '')).then(function (r) { return r.ok ? r.json() : null; });
+        var ev = ((sb && sb.events) || []).filter(function (e) { return String(e.id) === String(eid); })[0], o2 = ev && ev.competitions && ev.competitions[0] && (ev.competitions[0].odds || [])[0], ml = (o2 && o2.moneyline) || {};
+        var cl = function (o) { return o && ((o.close && o.close.odds) || (o.open && o.open.odds)); };
+        var c1 = dec(cl(ml.home)), cx = dec(cl(ml.draw)), c2 = dec(cl(ml.away)); if (c1 && cx && c2) bk = [c1, cx, c2]; } catch (e) {}
+    }
+    var el = null; for (var w = 0; w < 20 && !(el = document.getElementById(id)); w++) await new Promise(function (r) { setTimeout(r, 150); });
+    if (!el) return;
+    if (!R) { el.remove(); return; }
+    var box = 'margin-top:8px;background:rgba(10,14,24,.93);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:10px;color:#fff;font-size:14px;line-height:1.5;';
+    if (R.peu) { el.outerHTML = '<div style="' + box + '"><b>🎯 Cote BET45</b><br><span style="color:#c9d3ee;">Pas assez de matchs dans les archives (' + R.nh + ' à domicile, ' + R.na + ' à l\'extérieur, il en faut 8) — équipe promue ?</span></div>'; return; }
+    var cb = R.p.map(function (p) { return 1 / (p * (1 + R.marg)); }), cj = R.p.map(function (p) { return 1 / p; });
+    var f2 = function (v) { return v.toFixed(2).replace('.', ','); }, es = function (t) { return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;'); };
+    var td = 'padding:6px 4px;text-align:center;border-bottom:1px solid #1c2747;', th = 'padding:6px 4px;text-align:center;font-size:13px;';
+    var h = '<div style="' + box + '"><div style="font-weight:800;font-size:15px;">🎯 Cote BET45 <span style="font-weight:600;font-size:13px;color:#c9d3ee;">(estimée sur les archives, marge des books comprise)</span></div>'
+      + '<table style="width:100%;border-collapse:collapse;margin-top:6px;font-size:14px;color:#fff;"><tr><th style="' + th + '"></th><th style="' + th + 'color:#6d9dff;">1 ' + es(hN) + '</th><th style="' + th + 'color:#c9d3ee;">N</th><th style="' + th + 'color:#f5c542;">2 ' + es(aN) + '</th></tr>'
+      + '<tr><td style="' + td + 'text-align:left;font-weight:800;">BET45</td>' + cb.map(function (v) { return '<td style="' + td + 'font-weight:800;font-size:16px;">' + f2(v) + '</td>'; }).join('') + '</tr>'
+      + (bk ? '<tr><td style="' + td + 'text-align:left;">Book</td>' + bk.map(function (v) { return '<td style="' + td + '">' + f2(v) + '</td>'; }).join('') + '</tr>' : '')
+      + '</table><div style="font-size:13px;color:#c9d3ee;margin-top:6px;">Cote juste (sans marge) : ' + cj.map(f2).join(' · ') + ' · probabilités ' + R.p.map(function (p) { return Math.round(100 * p) + ' %'; }).join(' · ')
+      + '<br>Estimation à comparer, pas une value : sur 6 900 matchs testés, le book reste plus précis (il connaît blessés et compos).' + (bk ? '' : ' Pas de cote du book pour ce match.') + '</div></div>';
+    el.outerHTML = h;
+  } catch (e) { var e1 = document.getElementById(id); if (e1) e1.remove(); }
+}
 async function _renderSaisonDetail(el, eventId, league){
   window._g45DernierLigue = String(league || '');   /* lu par le bouton domicile/exterieur */
   try{
@@ -29289,6 +29367,7 @@ async function _renderSaisonDetail(el, eventId, league){
     // ── AVANT-MATCH (forme, bilan, probabilité) — uniquement pour les matchs à venir ──
     var _mstate=(comp.status&&comp.status.type&&comp.status.type.state)||'';
     if(_mstate==='pre' && !isLive){ try{ var _pm=_g45PreMatchBlock(data); if(_pm){ h+=_pm; added=true; } }catch(e){} }
+    if(_mstate==='pre' && !isLive){ try{ var _cbId='g45cb_'+(eventId||Math.random().toString(36).slice(2)); h+='<div id="'+_cbId+'" style="font-size:13px;color:#c9d3ee;padding:6px;">🎯 Cote BET45…</div>'; _g45CbPoser(_cbId, data, league, eventId); }catch(e){} }   /* 20261103s */
     if(typeof _renderEspnMatchStats==='function'){ try{ var st=_renderEspnMatchStats(data, homeId, awayId, '#4d84ff'); if(st){ h+=st; added=true; } }catch(e){} }
     /* ═══ PRESSION DU MATCH, ENFIN ICI (09/09) ═══
        Elle etait branchee sur le direct d'une equipe et sur le detail generique
