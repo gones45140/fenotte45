@@ -29078,6 +29078,9 @@ window.g45DisableNotifs=g45DisableNotifs;
 window.g45SyncNotifs=g45SyncNotifs;
 window.toggleNotifEvent=toggleNotifEvent;
 window.toggleNotifTeam=toggleNotifTeam;
+/* 20261103q — 🖼️ ARCHIVE DE LOGOS DANS L'APPAREIL (sw.js, cache « g45-logos ») : le service worker n'était enregistré sur gones que si les
+   notifications étaient actives (bet45 : toujours, indexfenotte.html) → enregistré à chaque démarrage en https (pas dans les tests locaux). */
+(function(){ try { if (location.protocol === 'https:' && 'serviceWorker' in navigator) window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); }); } catch(e){} })();
 window.g45TestNotif=g45TestNotif;
 
 (function(){
@@ -76299,9 +76302,10 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   }
   function mpmLogo(a, b) {
     if (!a || !a[2]) return '';
-    if (/^foot\//.test(b)) return 'https://a.espncdn.com/i/teamlogos/soccer/500/' + a[2] + '.png';
+    var pt = function (x) { return 'https://a.espncdn.com/combiner/i?img=/i/teamlogos/' + x + '&h=88&w=88'; };   /* 20261103q : petit format (≈ 5 Ko), gardé dans l'appareil */
+    if (/^foot\//.test(b)) return pt('soccer/500/' + a[2] + '.png');
     if (/^rugby/.test(b)) return '';
-    var lg = (S.ctx && S.ctx.lg) || ''; return a[1] && ['nba', 'nhl', 'nfl', 'mlb'].indexOf(lg) >= 0 ? 'https://a.espncdn.com/i/teamlogos/' + lg + '/500/' + String(a[1]).toLowerCase() + '.png' : '';
+    var lg = (S.ctx && S.ctx.lg) || ''; return a[1] && ['nba', 'nhl', 'nfl', 'mlb'].indexOf(lg) >= 0 ? pt(lg + '/500/' + String(a[1]).toLowerCase() + '.png') : '';
   }
   function mpmStat(c, m) {   /* stat du joueur seul (sinon rien) */
     var P = joueurs(c); if (P.length !== 1) return '';

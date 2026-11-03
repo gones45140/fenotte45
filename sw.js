@@ -3,7 +3,10 @@
    1) Notifications de match (push) — inchangé.
    2) NOUVEAU : "network-first" sur app.js / social.js / style.css / la page,
       pour que tes mises à jour s'appliquent TOUJOURS direct (fini le cache figé).
-   Version : 2026-09-12a  (changer ce commentaire force la mise à jour du SW) */
+   3) 20261103q : 🖼️ ARCHIVE DE LOGOS DANS L'APPAREIL (Antoine : « faudra limite faire une archive de logos » → dans l'appareil, pas dans le
+      dépôt public (logos = clubs / ESPN) → « oui ») : logos d'équipes ESPN servis depuis le cache « g45-logos » (téléchargés UNE fois),
+      réseau seulement s'ils manquent ; 1500 logos max (les plus anciens retirés).
+   Version : 2026-11-03q  (changer ce commentaire force la mise à jour du SW) */
 
 const G45_PUSH_BASE = 'https://fd-proxy.touraine-antoine.workers.dev';
 
@@ -23,6 +26,21 @@ self.addEventListener('fetch', function(event){
        toute correction apportee a ces deux fichiers restait donc invisible, servie
        depuis le cache HTTP, alors qu'app.js se mettait bien a jour. Piege parfait
        pour croire qu'un correctif ne fonctionne pas. */
+    if (/^https:\/\/a\.espncdn\.com\/(i\/teamlogos\/|combiner\/i\?img=\/i\/teamlogos\/)/.test(req.url)) {   /* 20261103q : logos */
+      event.respondWith(caches.open('g45-logos').then(function (c) {
+        return c.match(req.url).then(function (hit) {
+          if (hit) return hit;
+          return fetch(req).then(function (r) {
+            if (r && (r.ok || r.type === 'opaque')) {
+              var cp = r.clone();
+              c.put(req.url, cp).then(function () { return c.keys(); }).then(function (k) { if (k.length > 1500) for (var i = 0; i < k.length - 1500; i++) c.delete(k[i]); }).catch(function () {});
+            }
+            return r;
+          });
+        });
+      }).catch(function () { return fetch(req); }));
+      return;
+    }
     var freshAsset = /\/(app\.js|social\.js|style\.css|auth-guard\.js|supabase\.js)(\?|$)/.test(req.url);
     var isNav = (req.mode === 'navigate');
     if (freshAsset || isNav) {
