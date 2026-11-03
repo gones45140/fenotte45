@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action (il est court exprès). Le détail de tout l'historique est dans HISTORIQUE.md
-(à chercher avec grep, jamais à lire en entier). Mis à jour le 31/10/2026 (version déployée : 20261103i, même app.js sur gones45 et fenotte45).
+(à chercher avec grep, jamais à lire en entier). Mis à jour le 31/10/2026 (version déployée : 20261103k, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -148,7 +148,7 @@ PIÈGES À NE JAMAIS OUBLIER :
 - 🎯 CAP (Antoine, 31/10) : « le but est de ne plus aller chercher les archives dans ESPN mais sur GitHub ; ESPN servira toujours pour le direct et autres ; on continuera de remplir petit à petit » → une fois le rattrapage 4 saisons fini, brancher les écrans d'HISTORIQUE (séries 4 saisons, critères, Séries individuelles, Cockpit…) sur gones45-archives, écran par écran, en comparant les chiffres avec ESPN avant de basculer. FAIT le 29/10 (20261031k → s) : critères 4 saisons (foot, NHL, NBA, NFL, MLB équipes), Séries individuelles foot / NFL / NBA (NHL = nhle.com + secours archives), Séries équipes / Cockpit, chaque fois COMPARÉ à ESPN avant bascule (notes HISTORIQUE). ESPN reste en secours.
 - 💶 Simulation Cockpit des critères : étape B FAITE (20261103i) pour les paris de résultat seuls (vraie cote de fermeture m[12]) ; foot 5 saisons remplies par le robot handicaps.yml « foot » (lancé le 03/11, vérifier qu'il a fini : ml / hc / tot avant 2025-26).
 - 🎯 « A passé la ligne du book » pour les JOUEURS NBA (critères) : VRAIES lignes over / under gardées (fiche.j[id].o types 1 pts, 2 passes, 3 rebonds, 4 3pts, 87-90 combinés ; toute la saison 2026-27 relue le 03/11, 20261103f) → FAIT (20261103h, bouton « 🎯 Ligne du book »). Équipes : handicap (b), total match (d), total équipe (f) FAITS.
-- 🏉 PROCHAINE ÉTAPE (Antoine, 03/11) : critères rugby dans l'appli (« marque un essai », « 2 essais ou + »… séries, paliers, 💶) sur les archives (cotes/rugby/270559 Top 14, 271937 Champions Cup, 180659 Six Nations, cotes/rugby-xiii/3 NRL ; st : E essais, PE, PTS, TR, PEN, DROP, J, R, M, PL, FR) — MAQUETTE d'abord.
+- 🏉 Critères rugby sur les archives FAITS (20261103k : onglet Essais, joueurs essai / points buteur / titulaire, Jouable en Cockpit équipes + joueurs 20 matchs mini) — à confirmer par Antoine à l'écran (Top 14, NRL).
 - Cédric : toucher 🤍 sur Portugal. Worker : budget `_lourd` 4 → 2 proposé.
 
 ## 8. Façon de travailler en session cloud

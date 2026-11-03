@@ -75562,6 +75562,81 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
 (function () {
   var CAL = ['bra.1','usa.1','arg.1','nor.1','swe.1','fin.1','irl.1','rus.1','jpn.1','kor.1'];
   var S = window._g45Cr = window._g45Cr || { nom: '', lieu: 'tout', combos: [], a: 0, data: {}, enCours: {} };
+  /* ═══ 20261103k — 🏉 CRITÈRES RUGBY SUR LES ARCHIVES (Antoine, 03/11 : « critères rugby, maquette » → maquette-criteres-rugby « oui A, garde les
+     points buteur, 20 matchs mini, B ok, C les 2 ») : feuilles de match de gones45-archives (cotes/rugby/<lg>/<saison>/matchs/AAAA-MM.json,
+     st { idJoueur: { n, k h|a, s { E essais, PTS points, TIT, REMP… } } } ; NRL = cotes/rugby-xiii/3). SONDÉ 03/11 : somme des PTS des joueurs
+     = score du match (Toulouse 2024-25 : 27 / 27 ; écarts rares = essai de pénalité sans joueur). Ligues archivées : Top 14 270559, Champions Cup
+     271937, Six Nations 180659 (dossier = année civile du tournoi), NRL 3 (année civile). Ailleurs (Premiership, URC, Challenge Cup) : rien → les
+     critères d'essais et de points de joueur ne comptent pas ces matchs (comme une feuille absente).
+     Dans le bloc : onglet 🏉 Essais (essais de l'équipe 1 à 5 ou +, essais du match over / under, les deux équipes marquent un essai) ;
+     👤 Joueurs : « Marque un essai » (1 / 2 / 3 ou +) + « Points (buteur) » plus de / moins de X,5 + « Titulaire seulement » ;
+     🏁 Jouable en Cockpit ? : équipes ET joueurs (20 matchs mini) lus d'un coup dans les archives de la ligue.
+     Rôles PROPRES aux critères (_g45JouCfg local) : la table partagée _G45_JOU_TABLE (Analyser les joueurs de Saisons) n'est pas touchée.
+     Index joueurs du rugby : clé _g45JouCle + '_r2' (l'ancien index ESPN n'avait ni points ni titulaires). ═══ */
+  var RG_ARCH = { rugby: ['270559', '271937', '180659'], 'rugby-league': ['3'] };
+  var RG_CFG = { parStat: true, roles: [
+    { k: 't', lab: 'Marque un essai', col: '#1ed760', ico: '\uD83C\uDFC9', stats: ['tries'] },
+    { k: 'pts', lab: 'Points (buteur)', col: '#f5c542', ico: '\uD83C\uDFAF', stats: ['points'], seuils: _g45BkLignes(0, 30), def: '9.5' }
+  ] };
+  var _g45JouCfg = function (sp) { return /^rugby/.test(String(sp || '')) ? RG_CFG : window._g45JouCfg(sp); };
+  function rgArchOk(sp, lg) { return (RG_ARCH[sp] || []).indexOf(String(lg)) >= 0; }
+  function aSaRg(lg, an) { return lg === '3' ? String(an) : lg === '180659' ? String(an + 1) : an + '-' + String(an + 1).slice(2); }
+  function rgBase(sp, lg, an) { return (sp === 'rugby-league' ? 'rugby-xiii/' : 'rugby/') + lg + '/' + aSaRg(lg, an); }
+  function rgMois(lg, an) {   /* mois possibles du dossier de la saison */
+    var sa = aSaRg(lg, an), L = [];
+    if (/^\d{4}$/.test(sa)) { for (var i = 1; i <= 12; i++) L.push(sa + '-' + (i < 10 ? '0' : '') + i); }
+    else { for (var j = 7; j <= 18; j++) { var y = an + (j > 12 ? 1 : 0), mo = j > 12 ? j - 12 : j; L.push(y + '-' + (mo < 10 ? '0' : '') + mo); } }
+    return L;
+  }
+  /* Une fiche → { es: [essais h, essais a] | null, j: [[pid, nom, k, E, PTS, TIT, présent]] }. es = null quand la feuille n'a pas de points
+     (stats absentes) alors que le score n'est pas 0-0 : on ne sait pas, plutôt que « 0 essai ». */
+  function rgFiche(fi) {
+    if (!fi || !fi.f || fi.f.h == null || fi.f.a == null || !fi.st) return null;
+    var E = { h: 0, a: 0 }, PT = 0, J = [];
+    Object.keys(fi.st).forEach(function (pid) {
+      var o = fi.st[pid]; if (!o || (o.k !== 'h' && o.k !== 'a')) return; var st = o.s || {};
+      var e = +st.E || 0, p = +st.PTS || 0; E[o.k] += e; PT += p;
+      J.push([pid, o.n || '?', o.k, e, p, st.TIT ? 1 : 0, (st.TIT || st.REMP || e || p) ? 1 : 0]);
+    });
+    return { es: (PT > 0 || (+fi.f.h + +fi.f.a === 0)) ? [E.h, E.a] : null, j: J };
+  }
+  function rgTot(ix) {   /* totaux recalculés depuis parMatch (archives + ESPN mélangés sans double compte) */
+    Object.keys(ix.joueurs || {}).forEach(function (a) { ix.joueurs[a].tot = {}; });
+    Object.keys(ix.parMatch || {}).forEach(function (eid) { var pm = ix.parMatch[eid] || {}; ['t', 'pts'].forEach(function (rk) { Object.keys(pm[rk] || {}).forEach(function (pid) {
+      var J = ix.joueurs[pid] || (ix.joueurs[pid] = { nom: '?', tot: {} }); J.tot = J.tot || {}; J.tot[rk] = (J.tot[rk] || 0) + (+pm[rk][pid] || 0); }); }); });
+  }
+  async function aJouRg(sp, lg, tid, an) {   /* index { joueurs, parMatch, pres, es } d'une équipe pour une saison d'UNE ligue ; null = pas archivé */
+    if (!rgArchOk(sp, lg)) return null;
+    var B = rgBase(sp, lg, an), q = await aLire(B + '/equipes/' + tid + '.json'); if (!q || !q.m) return null;
+    var M = {}; q.m.forEach(function (m) { if (m[1]) M[m[1]] = 1; });
+    var MO = Object.keys(M), F = await Promise.all(MO.map(function (mo) { return aLire(B + '/matchs/' + mo + '.json'); }));
+    if (F.some(function (x) { return x === null; })) return null;   /* lecture ratée : on réessaiera */
+    var ix = { builtAt: Date.now(), n: 0, joueurs: {}, parMatch: {}, pres: {}, es: {}, ar: 1 };
+    F.forEach(function (D) { Object.keys(D || {}).forEach(function (eid) {
+      var fi = D[eid], k = String(((fi || {}).h || {}).id) === String(tid) ? 'h' : (String(((fi || {}).a || {}).id) === String(tid) ? 'a' : ''); if (!k) return;
+      var R = rgFiche(fi); if (!R) return;
+      if (R.es) ix.es[eid] = k === 'h' ? R.es : [R.es[1], R.es[0]];
+      var res = { t: {}, pts: {}, tit: {}, ar: {} }, pr = [];
+      R.j.forEach(function (x) {
+        if (x[2] !== k || !x[6]) return; var pid = x[0]; pr.push(pid);
+        if (!ix.joueurs[pid]) ix.joueurs[pid] = { nom: x[1], tot: {} };
+        res.ar[pid] = 1; if (x[3] > 0) res.t[pid] = x[3]; if (x[4] > 0 && R.es) res.pts[pid] = x[4]; if (x[5]) res.tit[pid] = 1;
+      });
+      if (!R.es) res.ar = {};   /* feuille muette : présence connue mais pas les points → pas « 0 point » */
+      ix.parMatch[eid] = res; if (pr.length) ix.pres[eid] = pr; ix.n++;
+    }); });
+    rgTot(ix);
+    return ix.n ? ix : null;
+  }
+  function rgLgs(C) { var L = [String(C.lg)]; if (C.sp === 'rugby' && ['270559', '270557', '267979'].indexOf(String(C.lg)) >= 0) L.push('271937'); return L.filter(function (x, i) { return L.indexOf(x) === i; }); }
+  function jCle(sp, lg, an, id) { return _g45JouCle(sp, lg, an, id) + (/^rugby/.test(String(sp)) ? '_r2' : ''); }
+  function esBesoin(c) { return rg() && !!(c.ess || c.esm || c.esb); }
+  function esDe(m) {   /* [essais de l'équipe, essais de l'adversaire] ou null */
+    if (m.length > 13) return m[13] || null;   /* lignes du classement (archives de la ligue) : rien ailleurs */
+    var eid = m[6]; if (!eid || !S.uiI) return null;
+    for (var i = 0; i < S.uiI.length; i++) { var x = S.uiI[i]; if (x && x.es && x.es[eid]) return x.es[eid]; }
+    return null;
+  }
   /* 20261021g (« quand j'arrive dans Saison ce panneau est déjà ouvert, il devrait être fermé et je clique pour l'ouvrir ») : ouvert / fermé
      gardé en MÉMOIRE seulement, par équipe (S.ov) → fermé à chaque arrivée (avant : localStorage g45_cr_open, ouvert pour toujours). */
   function ouvert() { if (S.ovTous) return true; return !!(S.ov && S.ov[S.nom]); }
@@ -75570,7 +75645,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   /* 20261021d (« on va rajouter des trucs » : duo / trio buteurs, double chance buteur, tirs, tirs par équipe + mi-temps, marque en premier,
      match précédent ; maquette maquette-criteres « oui ») : valeurs par défaut des nouveaux critères (aussi pour les combinés de « Reprendre ma note »). */
   function norm(c) {
-    var D0 = { jx: 'cha', fs: '', FL: 24.5, ts: '', TSL: 12.5, as: '', ASL: 10.5, cad: '', CL: 4.5, mt: '', mp: '', bo: '', BL: 4.5, pm: '', m1: '', M1L: 1, m2: '', M2L: 1, ha: '', HAL: 0.25 };   /* 20261024b : m1 / m2 = buts 1re / 2e mi-temps */
+    var D0 = { jx: 'cha', fs: '', FL: 24.5, ts: '', TSL: 12.5, as: '', ASL: 10.5, cad: '', CL: 4.5, mt: '', mp: '', bo: '', BL: 4.5, pm: '', m1: '', M1L: 1, m2: '', M2L: 1, ha: '', HAL: 0.25, ess: '', esm: '', ESL: 5.5, esb: '', jtit: '' };   /* 20261103k : essais rugby */   /* 20261024b : m1 / m2 = buts 1re / 2e mi-temps */
     for (var k in D0) if (c[k] == null) c[k] = D0[k];
     return c;
   }
@@ -75625,10 +75700,14 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     if (c.bts) p.push('Les deux marquent : ' + (c.bts === 'oui' ? 'oui' : 'non'));
     if (c.te) p.push(motUnite() + ' équipe ' + (c.te === 'ov' ? 'Over ' : 'Under ') + c.TL);
     if (c.ad) p.push(motUnite() + ' adversaire ' + (c.ad === 'ov' ? 'Over ' : 'Under ') + c.AL);
+    if (rg() && c.ess) p.push('Essais équipe ' + c.ess + ' ou +' + (c.ess === '4' ? ' (bonus offensif)' : ''));   /* 20261103k */
+    if (rg() && c.esm) p.push('Essais du match ' + (c.esm === 'ov' ? 'Over ' : 'Under ') + String(c.ESL).replace('.', ','));
+    if (rg() && c.esb) p.push('Les deux équipes marquent un essai : ' + c.esb);
     var JN = joueurs(c).map(function (x) { return x.n; }), JM = { pas: 'passeur', dec: 'décisif', dbl: 'doublé', tri: 'triplé' }[c.jm] || 'buteur';
     if (S.ctx && typeof _g45JouCfg === 'function' && _g45JouCfg(S.ctx.sp)) { var RJ = _g45JouCfg(S.ctx.sp).roles.filter(function (r) { return r.k === c.jm; })[0]; JM = (RJ ? RJ.lab.toLowerCase() : '') + (RJ && RJ.seuils ? ' ' + (c.jsens === 'un' ? 'moins' : 'plus') + ' de ' + (c.jbk && bkOk() ? 'la ligne du book' : String(jMinDe(c)).replace('.', ',')) : (jMinDe(c) > 1 ? ' (' + jMinDe(c) + ' ou +)' : '')); }   /* 20261022i ; 20261103h : ligne du book */
     if (JN.length === 1) p.push(JN[0] + ' ' + JM);
     else if (JN.length > 1) p.push(c.jx === 'un' ? 'au moins un de (' + JN.join(', ') + ') ' + JM : /^c/.test(c.jx) ? 'buts cumulés de ' + JN.join(' + ') + ' +' + c.jx.slice(1, 2) + ',' + c.jx.slice(2) : JN.join(' et ') + ' ' + JM + 's');
+    if (JN.length && rg() && c.jtit) p.push('titulaire seulement');   /* 20261103k */
     if (c.fs) p.push('Tirs du match ' + (c.fs === 'ov' ? 'Over ' : 'Under ') + c.FL);
     if (c.ts) p.push('Tirs équipe ' + (c.ts === 'ov' ? 'Over ' : 'Under ') + c.TSL);
     if (c.as) p.push('Tirs adversaire ' + (c.as === 'ov' ? 'Over ' : 'Under ') + c.ASL);
@@ -75652,7 +75731,8 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   function okOU(dir, v, L) { if (v === L) return true; return dir === 'un' ? v < L : v > L; }
   function nbRemb(c, m) {   /* [critères actifs, critères remboursés] */
     var gf = m[2], ga = m[3]; if (m[4]) { var mn = Math.min(gf, ga); gf = mn; ga = mn; }
-    var act = ['res', 'ou', 'bts', 'te', 'ad', 'ec', 'fs', 'ts', 'as', 'cad', 'mt', 'mp', 'bo', 'pm', 'm1', 'm2', 'ha', 'hb', 'tb', 'qb'].filter(function (k) { return c[k]; }).length + (joueurs(c).length ? 1 : 0), r = 0;
+    var act = ['res', 'ou', 'bts', 'te', 'ad', 'ec', 'fs', 'ts', 'as', 'cad', 'mt', 'mp', 'bo', 'pm', 'm1', 'm2', 'ha', 'hb', 'tb', 'qb', 'ess', 'esm', 'esb'].filter(function (k) { return c[k]; }).length + (joueurs(c).length ? 1 : 0), r = 0;
+    if (esBesoin(c) && c.esm) { var E0 = esDe(m); if (E0 && E0[0] + E0[1] === c.ESL) r++; }   /* 20261103k */
     if (c.ou && gf + ga === c.L) r++;
     if (c.te && gf === c.TL) r++;
     if (c.ad && ga === c.AL) r++;
@@ -75696,6 +75776,13 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     if (c.ha && gf - ga + c.HAL < 0) return false;   /* 20261024d : handicap (asiatique) de l'équipe ; 0 = remboursé (nbRemb) */
     if (c.ec === 'g' && !(gf - ga >= c.E)) return false;   /* 20261018s : gagne de E ou + */
     if (c.ec === 'p' && !(ga - gf <= c.E)) return false;   /* 20261018s : ne perd pas de plus de E */
+    if (esBesoin(c)) {   /* 20261103k : 🏉 essais (feuille archivée) */
+      var ES = esDe(m); if (!ES) return false;
+      if (c.ess && !(ES[0] >= +c.ess)) return false;
+      if (c.esm && !okOU(c.esm, ES[0] + ES[1], c.ESL)) return false;
+      if (c.esb === 'oui' && !(ES[0] > 0 && ES[1] > 0)) return false;
+      if (c.esb === 'non' && ES[0] > 0 && ES[1] > 0) return false;
+    }
     var P = joueurs(c);
     if (P.length) {   /* 20261018t : joueur buteur / passeur / décisif ; 20261021d : doublé, triplé, 2-3 joueurs (chacun / au moins un / cumul) */
       var V = P.map(function (x) { return jValP(x.id, m); }); if (V.some(function (v) { return !v; })) return false;
@@ -75743,20 +75830,32 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var CF = S.ctx && typeof _g45JouCfg === 'function' ? _g45JouCfg(S.ctx.sp) : null, R = CF ? (CF.roles.filter(function (r) { return r.k === c.jm; })[0] || CF.roles[0]) : null;
     var SE = R && R.seuils; if (SE && SE.indexOf(String(c.jmin)) < 0) return +(R.def || SE[0]); return +c.jmin || 1;
   }
-  function usIdxs(D) { var C = S.ctx; return (D.saisons || []).map(function (sa) { return sa ? _g45JouLire(_g45JouCle(C.sp, C.lg, sa.an, C.id)) : null; }); }
+  function usIdxs(D) { var C = S.ctx; return (D.saisons || []).map(function (sa) { return sa ? _g45JouLire(jCle(C.sp, C.lg, sa.an, C.id)) : null; }); }
   function usManque(D) {
     var n = 0, I = usIdxs(D);
     (D.saisons || []).forEach(function (sa, i) { if (!sa || !sa.ms) return; sa.ms.forEach(function (m) { if (m[6] && !(I[i] && I[i].parMatch && I[i].parMatch[m[6]])) n++; }); });
     return n;
   }
-  function usCharger(nom, D) {
+  function usCharger(nom, D, seul) {   /* 20261103k : seul = archives seulement (rugby, lancé tout seul) */
     var U = S.ui[nom] = S.ui[nom] || {}; if (U.enCours) return;
+    if (seul) U.ar = 1;
     U.enCours = true; U.f = 0; U.n = usManque(D);
     var C = S.ctx;
     (async function () {
       for (var i = 0; i < (D.saisons || []).length; i++) {
         var sa = D.saisons[i]; if (!sa || !sa.ms) continue;
-        var cle = _g45JouCle(C.sp, C.lg, sa.an, C.id), old = _g45JouLire(cle) || { joueurs: {}, parMatch: {}, pres: {}, n: 0 };
+        var cle = jCle(C.sp, C.lg, sa.an, C.id), old = _g45JouLire(cle) || { joueurs: {}, parMatch: {}, pres: {}, n: 0 };
+        if (rg() && (!old.ar || (i === 0 && Date.now() - (old.builtAt || 0) > 7200000))) {   /* 20261103k : 🏉 archives (ligue + Champions Cup) */
+          var lgs = rgLgs(C), lu = 0;
+          for (var li = 0; li < lgs.length; li++) {
+            var AR = null; try { AR = await aJouRg(C.sp, lgs[li], C.id, sa.an); } catch (e) {}
+            if (!AR) continue; lu++;
+            old.parMatch = Object.assign(old.parMatch || {}, AR.parMatch); old.pres = Object.assign(old.pres || {}, AR.pres); old.es = Object.assign(old.es || {}, AR.es);
+            old.joueurs = old.joueurs || {}; Object.keys(AR.joueurs).forEach(function (a) { if (!old.joueurs[a] || old.joueurs[a].nom === '?') old.joueurs[a] = { nom: AR.joueurs[a].nom, tot: {} }; });
+          }
+          if (lu) { old.ar = 1; old.builtAt = Date.now(); old.total = Object.keys(old.parMatch).length; rgTot(old); if (Object.keys(old.joueurs).length) { try { localStorage.setItem(cle, JSON.stringify(old)); } catch (e) {} } }
+        }
+        if (seul) continue;
         if (sa.ms.some(function (m) { return m[6] && !(old.parMatch && old.parMatch[m[6]]); })) {   /* 20261031n : archives GitHub d'abord (index complet de la saison) */
           var AX = null; try { AX = await aJouUS(C.sp, C.lg, C.id, sa.an); } catch (e) {}
           if (AX && sa.ms.every(function (m) { return !m[6] || AX.parMatch[m[6]]; })) { old = AX; old.total = Object.keys(AX.parMatch).length; try { localStorage.setItem(cle, JSON.stringify(old)); } catch (e) {} U.f += sa.ms.length; }
@@ -75770,6 +75869,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
           old.parMatch = Object.assign(old.parMatch || {}, nw.parMatch); old.pres = Object.assign(old.pres || {}, nw.pres); old.joueurs = old.joueurs || {};
           Object.keys(nw.joueurs || {}).forEach(function (a) { var o = old.joueurs[a] || (old.joueurs[a] = { nom: nw.joueurs[a].nom, tot: {} }); Object.keys(nw.joueurs[a].tot || {}).forEach(function (k) { o.tot[k] = (o.tot[k] || 0) + nw.joueurs[a].tot[k]; }); });
           old.n = (old.n || 0) + (nw.n || 0); old.builtAt = Date.now(); old.total = Object.keys(old.parMatch).length;
+          if (rg()) rgTot(old);   /* 20261103k */
           if (Object.keys(old.joueurs).length) { try { localStorage.setItem(cle, JSON.stringify(old)); } catch (e) {} }
         }
       }
@@ -75823,6 +75923,8 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       if (P.length && P.some(function (x) { return !jValP(x.id, m); })) return false;
       if (S.ctx && c.jm === 'lp' && P.some(function (x) { var v = jValP(x.id, m); return !v || !v.lp; })) return false;   /* 20261025m : seulement ses départs */
       if (c.pm && !m.pr) return false;
+      if (esBesoin(c) && !esDe(m)) return false;   /* 20261103k : pas de feuille archivée → non compté */
+      if (rg() && P.length && (c.jm === 'pts' || c.jtit) && P.some(function (x) { var v = jValP(x.id, m); return !v || !v.ar || (c.jtit && !v.tit); })) return false;   /* points / titulaire : archives seulement */
       if (c.hb && (m[7] == null || isNaN(+m[7]))) return false;   /* 20261103b : pas de handicap gardé pour ce match → non compté */
       if (c.tb && (m[8] == null || isNaN(+m[8]))) return false;   /* 20261103d : pas de total gardé → non compté */
       if (c.qb && (m[9] == null || isNaN(+m[9]))) return false;   /* 20261103f */
@@ -76690,7 +76792,9 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
             : lab('Combien') + SEU.map(function (n) { return b(String(c.jmin) === n, n + ' ou +', "g45CrSet('jmin','" + n + "')"); }).join(''))
             );   /* 20261025m */
         if (c.jo2) h += lab('Avec ' + (c.jo3 ? '3' : '2') + ' joueurs') + b(c.jx !== 'un', 'Chacun', "g45CrSet('jx','cha')") + b(c.jx === 'un', 'Au moins un (double chance)', "g45CrSet('jx','un')");
-      } else if (!UU.enCours) h += '<div style="font-size:13px;color:#c9d3ee;margin:4px 0;">Lis d\'abord les feuilles de match : la liste des joueurs vient de là.</div>';
+        if (rg()) h += lab('Compter') + b(!c.jtit, 'Tous ses matchs', "g45CrSet('jtit','')") + b(!!c.jtit, 'Titulaire seulement', "g45CrSet('jtit','1')")
+          + ((c.jm === 'pts' || c.jtit) ? '<div style="font-size:13px;color:#c9d3ee;margin:2px 0 4px;">Points et titulaires : feuilles archivées seulement (Top 14, Champions Cup, Six Nations, NRL).</div>' : '');   /* 20261103k */
+      } else if (!UU.enCours) h += '<div style="font-size:13px;color:#c9d3ee;margin:4px 0;">' + (rg() && !UU.ar ? '⏳ Feuilles de match archivées…' : 'Lis d\'abord les feuilles de match : la liste des joueurs vient de là.') + '</div>';
       q4 = h.length;
     }
     var q5 = h.length; if (q4 == null) q4 = q5;
@@ -76698,14 +76802,24 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       + b(c.pm === 'v', 'Après une victoire', "g45CrSet('pm','v')") + (us() ? '' : b(c.pm === 'n', 'Après un nul', "g45CrSet('pm','n')")) + b(c.pm === 'd', 'Après une défaite', "g45CrSet('pm','d')") + b(!c.pm, 'Peu importe', "g45CrSet('pm','')");
     var q6 = h.length;
     if (!S.ctx) h += lab('Les deux marquent') + b(c.bts === 'oui', 'Oui', "g45CrSet('bts','oui')") + b(c.bts === 'non', 'Non', "g45CrSet('bts','non')") + b(c.bts === '', 'Peu importe', "g45CrSet('bts','')");
+    var q6b = h.length;
+    if (rg()) {   /* 20261103k — 🏉 onglet Essais (maquette-criteres-rugby « oui ») */
+      var selEs = '<select onchange="g45CrSet(\'ESL\',this.value)" style="background:#16213f;color:#fff;border:1px solid #6d9dff;border-radius:8px;padding:7px 10px;font-size:14px;margin:0 6px 6px 0;">';
+      for (var ex = 0.5; ex <= 14.5 + 1e-9; ex += 0.5) selEs += '<option value="' + ex + '"' + (c.ESL === ex ? ' selected' : '') + '>' + String(ex).replace('.', ',') + '</option>';
+      selEs += '</select>';
+      h += lab('Essais de ' + esc(nom)) + ['1', '2', '3', '4', '5'].map(function (n) { return b(c.ess === n, n + ' ou +' + (n === '4' ? ' (bonus offensif)' : ''), "g45CrSet('ess','" + n + "')"); }).join('') + b(!c.ess, 'Aucun', "g45CrSet('ess','')")
+        + lab('Essais du match (les 2 équipes)') + b(c.esm === 'ov', 'Over', "g45CrSet('esm','ov')") + b(c.esm === 'un', 'Under', "g45CrSet('esm','un')") + b(!c.esm, 'Aucun', "g45CrSet('esm','')") + selEs
+        + lab('Les deux équipes marquent un essai') + b(c.esb === 'oui', 'Oui', "g45CrSet('esb','oui')") + b(c.esb === 'non', 'Non', "g45CrSet('esb','non')") + b(!c.esb, 'Aucun', "g45CrSet('esb','')")
+        + '<div style="font-size:13px;color:#c9d3ee;margin:4px 0;">' + ((S.ui[nom] || {}).enCours ? '⏳ Feuilles de match archivées… ' : '') + 'Essais lus dans les feuilles de match archivées (Top 14, Champions Cup, Six Nations, NRL). Match sans feuille = non compté.</div>';
+    }
     /* 20261021f (« on commence à être envahi, faire des onglets », maquette maquette-onglets « oui ») : Lieu / Compétition restent en haut ;
        critères en 5 onglets (🏁 Résultat = résultat + écart · ⚽ Buts = buts du match / équipe / adversaire + les deux marquent · 👤 Joueurs ·
        🎯 Feuille · 🔁 Contexte = match précédent) ; pastille = nombre de critères choisis ; onglet gardé (localStorage g45_cr_tab). */
     var q7 = h.length;
-    var PAN = { res: h.slice(q0, q1) + h.slice(q2, q3), buts: h.slice(q1, q2) + h.slice(q6, q7), jou: h.slice(q3, q4), feu: h.slice(q4, q5), ctx: h.slice(q5, q6) };
+    var PAN = { res: h.slice(q0, q1) + h.slice(q2, q3), buts: h.slice(q1, q2) + h.slice(q6, q6b), ess: h.slice(q6b, q7), jou: h.slice(q3, q4), feu: h.slice(q4, q5), ctx: h.slice(q5, q6) };   /* 20261103k : ess */
     var NB = { res: (c.res ? 1 : 0) + (c.ec ? 1 : 0) + (c.ha ? 1 : 0) + (c.hb ? 1 : 0), buts: (c.ou ? 1 : 0) + (c.tb ? 1 : 0) + (c.qb ? 1 : 0) + (c.te ? 1 : 0) + (c.ad ? 1 : 0) + (c.bts ? 1 : 0) + (c.m1 ? 1 : 0) + (c.m2 ? 1 : 0), jou: joueurs(c).length ? 1 : 0,
-      feu: ['fs', 'ts', 'as', 'cad', 'mt', 'mp', 'bo'].filter(function (k) { return c[k]; }).length, ctx: c.pm ? 1 : 0 };
-    var ONG = [['res', '🏁 Résultat'], ['buts', '⚽ ' + motUnite()], ['jou', '👤 Joueurs'], ['feu', '🎯 Feuille'], ['ctx', '🔁 Contexte']].filter(function (o) { return PAN[o[0]]; });
+      feu: ['fs', 'ts', 'as', 'cad', 'mt', 'mp', 'bo'].filter(function (k) { return c[k]; }).length, ctx: c.pm ? 1 : 0, ess: rg() ? ['ess', 'esm', 'esb'].filter(function (k) { return c[k]; }).length : 0 };
+    var ONG = [['res', '🏁 Résultat'], ['buts', '⚽ ' + motUnite()], ['ess', '🏉 Essais'], ['jou', '👤 Joueurs'], ['feu', '🎯 Feuille'], ['ctx', '🔁 Contexte']].filter(function (o) { return PAN[o[0]]; });
     var TB = 'res'; try { TB = localStorage.getItem('g45_cr_tab') || 'res'; } catch (e) {}
     if (!PAN[TB]) TB = 'res';
     h = h.slice(0, q0) + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin:12px 0 4px;">' + ONG.map(function (o) { var on = o[0] === TB;
@@ -76721,6 +76835,10 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     } else if (D.err) {
       h += '<div style="font-size:14px;color:#ff9f43;padding:10px 0;">⚠️ ' + esc(D.err) + '</div>';
     } else {
+      if (rg() && D.saisons) {   /* 20261103k : feuilles archivées lues toutes seules (essais, points, titulaires) */
+        if (!(S.ui[nom] && (S.ui[nom].enCours || S.ui[nom].ar))) usCharger(nom, D, true);
+        S.uiI = usIdxs(D);
+      }
       S.combos.forEach(function (cc, i) {
         h += '<div style="margin-top:12px;font-size:15px;"><span style="color:#c9d3ee;">' + (S.combos.length > 1 ? 'Combiné ' + (i + 1) + ' : ' : 'Ton combiné : ') + '</span><b>'
           + (S.lieu === 'dom' ? '🏠 ' : S.lieu === 'ext' ? '✈️ ' : '') + esc(libCombo(cc)) + '</b></div>' + tableau(cc, D);
@@ -76741,6 +76859,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   var CLS_SANS = ['jo', 'jn', 'jo2', 'jn2', 'jo3', 'jn3', 'fs', 'ts', 'as', 'cad', 'mt', 'mp', 'bo', 'm1', 'm2'];
   function clsCtx() {
     var D = S.data[S.nom];
+    if (S.ctx && rgArchOk(S.ctx.sp, S.ctx.lg)) return { sp: S.ctx.sp, lg: String(S.ctx.lg), id: String(S.ctx.id) };   /* 20261103k : 🏉 archives */
     if (S.ctx) { var okUs = { 'hockey|nhl': 1, 'football|nfl': 1, 'basketball|nba': 1, 'baseball|mlb': 1 }[S.ctx.sp + '|' + S.ctx.lg]; return okUs ? { sp: S.ctx.sp, lg: S.ctx.lg, id: String(S.ctx.id) } : null; }
     return (D && D.lg && D.tid) ? { sp: 'soccer', lg: D.lg, id: String(D.tid) } : null;
   }
@@ -76782,12 +76901,52 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     return tous.length ? calc(c, tous) : { n: 0, ok: 0, pire: 0, best: 0 };
   }
   window._g45CrClsStat = function (D, c) { return clsStat(D, clsCombo(norm(c))); };   /* tests */
+  /* ═══ 20261103k — 🏉 CLASSEMENT RUGBY d'un coup dans les archives de la LIGUE (pas une lecture par équipe) : 4 saisons × 12 mois de fiches.
+     Q.D[idÉquipe] = { saisons: [{ an, ms }] } (lignes [date, dom, pour, contre, 0, 0, idMatch] + m[13] = [essais équipe, essais adversaire]) ;
+     Q.P[idJoueur] = { nom, eq, L: [[t, dom, E, PTS, TIT, aPoints]] } pour le classement des JOUEURS (20 matchs au minimum, Antoine 03/11) ;
+     équipes / joueurs candidats = ceux de la saison EN COURS. Phases finales comprises (comme le bloc), coupes NON (ligue seule). ═══ */
+  async function rgLigue(X, Q) {
+    var a0 = (typeof _g45SgAnAuto === 'function') ? _g45SgAnAuto(X.lg) : new Date().getFullYear(), ANS = [a0, a0 - 1, a0 - 2, a0 - 3], eqs = {}, P = {}, D = {}, act = {}, nf = 0;   /* 4 saisons comme annees() avec S.ctx */
+    Q.n = ANS.length * 12; Q.f = 0;
+    for (var i = 0; i < ANS.length; i++) {
+      var an = ANS[i], B = rgBase(X.sp, X.lg, an), ix = await aLire(B + '/equipes.json');
+      if (ix) Object.keys(ix).forEach(function (t) { if (!eqs[t]) eqs[t] = ix[t][0]; if (i === 0) act['e' + t] = 1; });
+      var MO = rgMois(X.lg, an), F = await Promise.all(MO.map(function (mo) { return aLire(B + '/matchs/' + mo + '.json').then(function (x) { Q.f++; var e1 = (function (L) { for (var k = L.length - 1; k >= 0; k--) if (L[k].getClientRects().length) return L[k]; return L[L.length - 1] || null; })(document.querySelectorAll('[id="g45cr-cls-prog"]')); if (e1) e1.textContent = Q.f + ' / ' + Q.n; return x; }); }));
+      var ms = [];
+      F.forEach(function (M) { Object.keys(M || {}).forEach(function (eid) { var fi = M[eid]; if (fi && fi.f && fi.h && fi.a) ms.push([eid, fi]); }); });
+      ms.sort(function (a, b) { return (a[1].t || 0) - (b[1].t || 0); });
+      ms.forEach(function (x) {
+        var eid = x[0], fi = x[1], R = rgFiche(fi), d = new Date(fi.t || 0).toISOString().slice(0, 10); nf++;
+        ['h', 'a'].forEach(function (k) {
+          var tid = String(fi[k].id), o = k === 'h' ? 'a' : 'h', pf = +fi.f[k], pc = +fi.f[o]; if (isNaN(pf) || isNaN(pc)) return;
+          if (!eqs[tid]) eqs[tid] = fi[k].nom || tid;
+          var Dt = D[tid] || (D[tid] = { t: Date.now(), lg: X.lg, saisons: ANS.map(function (a) { return { an: a, ms: [] }; }) });
+          var r = [d, k === 'h' ? 1 : 0, pf, pc, 0, 0, eid]; r[13] = (R && R.es) ? (k === 'h' ? R.es : [R.es[1], R.es[0]]) : 0;
+          Dt.saisons[i].ms.push(r);
+        });
+        if (R) R.j.forEach(function (j) {
+          if (!j[6]) return; var pid = j[0], Pj = P[pid] || (P[pid] = { id: pid, nom: j[1], eq: '', L: [] });
+          Pj.eq = String(fi[j[2]].id); Pj.L.push([fi.t || 0, j[2] === 'h' ? 1 : 0, j[3], j[4], j[5], R.es ? 1 : 0]);
+          if (i === 0) act[pid] = 1;
+        });
+      });
+    }
+    if (!nf) return false;
+    Q.D = D; Q.P = P; Q.act = act;
+    Q.eq = Object.keys(D).filter(function (t) { return act['e' + t] || !Object.keys(act).some(function (q) { return q[0] === 'e'; }); }).map(function (t) { return { id: t, nom: eqs[t] || t }; });
+    Object.keys(P).forEach(function (pid) { P[pid].eqN = eqs[P[pid].eq] || ''; });
+    return true;
+  }
   window.g45CrClsLancer = function () {
     var X = clsCtx(); if (!X) return;
     var k = X.sp + '|' + X.lg, Q = S.cls[k] = S.cls[k] || { D: {} };
     if (Q.etat === 1) return;
     Q.etat = 1; Q.f = 0; Q.err = '';
     redessiner();
+    if (rgArchOk(X.sp, X.lg)) {   /* 20261103k */
+      (async function () { var ok = false; try { ok = await rgLigue(X, Q); } catch (e) {} Q.etat = ok ? 2 : 0; if (!ok) Q.err = 'Archives de ce championnat indisponibles.'; redessiner(); })();
+      return;
+    }
     (async function () {
       var eq = [];
       try { eq = await _g45CompetEquipes({ sp: X.sp, s: X.lg }); } catch (e) {}
@@ -76876,19 +77035,50 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     });
     return h + '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">✅ 5 paliers ou moins · ⚠️ jusqu\'à ta dernière mise · ❌ au-delà de tes paliers (mises 1 ⭐). Candidats : les 40 meilleurs ' + (jm === 'pas' ? 'passeurs' : jm === 'dec' ? 'buteurs + passeurs' : 'buteurs') + ' des 5 saisons encore dans le championnat cette saison + ton joueur. 5 matchs comptés au minimum.</div></div>';
   }
+  /* 20261103k — 🏉 classement des JOUEURS de la ligue (un joueur seul, aucun critère d'équipe) : « Marque un essai » (N ou +) ou « Points
+     (buteur) » plus / moins de X,5 ; titulaire seulement si choisi ; lieu ; 4 saisons à la suite ; 20 matchs au minimum ; joueurs de la saison en cours. */
+  function rgJOk(c0, x) { if (c0.jm === 'pts') { var L = jMinDe(c0); return c0.jsens === 'un' ? x[3] < L : x[3] > L; } return x[2] >= jMinDe(c0); }
+  function rgClsJHtml(X, c0, Q) {
+    var JM = libCombo(c0).replace(String(c0.jn || ''), '').replace(/^[\s+]+/, '');
+    var h = '<div style="margin-top:16px;padding-top:12px;border-top:1px solid #2a3a63;">'
+      + '<div style="font-size:16px;font-weight:800;color:#fff;">🏁 Jouable en Cockpit ? — joueurs du championnat</div>'
+      + '<div style="font-size:13px;color:#c9d3ee;margin:3px 0 8px;">Même critère (' + (S.lieu === 'dom' ? '🏠 ' : S.lieu === 'ext' ? '✈️ ' : '') + esc(JM) + ') · ' + nbS() + ' saisons · matchs sur la feuille · 20 matchs au minimum · trié par la plus petite pire série</div>';
+    if (Q.etat === 1) return h + '<div style="font-size:14px;color:#fff;">⏳ Lecture des archives… <span id="g45cr-cls-prog">' + (Q.f || 0) + ' / ' + (Q.n || '?') + '</span></div></div>';
+    if (Q.etat !== 2 || !Q.P) return h + (Q.err ? '<div style="font-size:14px;color:#ff9f43;margin-bottom:6px;">⚠️ ' + esc(Q.err) + '</div>' : '')
+      + '<button onclick="g45CrClsLancer()" style="border:none;border-radius:10px;padding:9px 14px;font-size:14px;font-weight:700;color:#fff;background:#2f6bff;cursor:pointer;">▶ Lancer le classement des joueurs (archives, ≈ 20 s)</button></div>';
+    var R = Object.keys(Q.P).filter(function (pid) { return Q.act[pid] || pid === String(c0.jo); }).map(function (pid) {
+      var Pj = Q.P[pid], L = Pj.L.filter(function (x) { return (c0.jm !== 'pts' || x[5]) && (!c0.jtit || x[4]) && (S.lieu !== 'dom' && S.lieu !== 'ext' || (S.lieu === 'dom' ? x[1] === 1 : x[1] === 0)); }).sort(function (a, b) { return a[0] - b[0]; });
+      var ok = 0, pire = 0, cur = 0; L.forEach(function (x) { if (rgJOk(c0, x)) { ok++; cur = 0; } else { cur++; if (cur > pire) pire = cur; } });
+      return { id: pid, nom: Pj.nom, eq: Pj.eqN, n: L.length, ok: ok, pire: pire };
+    }).filter(function (x) { return x.n >= 20 && x.ok > 0; }).sort(function (a, b) { return (a.pire - b.pire) || (b.ok / b.n - a.ok / a.n); });
+    if (!R.length) return h + '<div style="font-size:14px;color:#fff;">Pas assez de matchs avec ce critère.</div></div>';
+    var top = R.slice(0, 20), moi = R.filter(function (x) { return x.id === String(c0.jo); })[0];
+    if (moi && top.indexOf(moi) < 0) top.push(moi);
+    var ln = 'display:grid;grid-template-columns:1.8fr 1fr 1fr 1.3fr;gap:6px;padding:8px 4px;border-bottom:1px solid #1c2747;font-size:14px;color:#fff;';
+    h += '<div style="' + ln + 'font-size:13px;color:#c9d3ee;"><span>Joueur</span><span>Réussite</span><span>Pire série</span><span>Paliers</span></div>';
+    top.forEach(function (x) {
+      var me = x.id === String(c0.jo), pa = (typeof _g45F1CrPal === 'function') ? _g45F1CrPal(x.pire) : { p: x.pire + 1, ico: '' };
+      h += '<div style="' + ln + (me ? 'background:rgba(47,107,255,.2);border-radius:8px;' : '') + '"><span style="font-weight:' + (me ? 800 : 600) + ';">' + esc(x.nom) + (x.eq ? ' <span style="font-size:12px;color:#c9d3ee;font-weight:400;">(' + esc(x.eq) + ')</span>' : '') + '</span>'
+        + '<span>' + Math.round(100 * x.ok / x.n) + ' % <span style="font-size:12px;color:#c9d3ee;">' + x.ok + '/' + x.n + '</span></span><span style="font-weight:800;color:' + coul(x.pire) + ';">' + x.pire + '</span>'
+        + '<span><b>' + pa.p + ' palier' + (pa.p > 1 ? 's' : '') + '</b> ' + (pa.ico || '') + (pa.mise != null ? ' <span style="font-size:12px;color:#c9d3ee;">' + pa.mise + ' €</span>' : '') + '</span></div>';
+    });
+    return h + '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">✅ 5 paliers ou moins · ⚠️ jusqu\'à ta dernière mise · ❌ au-delà de tes paliers (mises 1 ⭐). Joueurs de la saison en cours, toutes leurs saisons dans ce championnat.</div></div>';
+  }
+  window._g45CrRgT = { rgFiche: rgFiche, aJouRg: aJouRg, aSaRg: aSaRg, rgMois: rgMois, rgLigue: rgLigue, rgJOk: rgJOk };   /* tests */
   function clsHtml() {
     var X = clsCtx(); if (!X) return '';
     var Q = S.cls[X.sp + '|' + X.lg] || {}, c0 = S.combos[S.a]; if (!c0) return '';
     if (X.sp === 'soccer' && clsJModeDe(c0)) return clsJHtml(X, c0);   /* 20261102d */
+    if (rgArchOk(X.sp, X.lg) && c0.jo && !c0.jo2 && /aucun crit/.test(libCombo(clsCombo(c0)))) return rgClsJHtml(X, c0, Q);   /* 20261103k */
     var c = clsCombo(c0), nomLg = (S.data[S.nom] && S.data[S.nom].ligue) || US_N[X.lg] || 'championnat';
     var ign = CLS_SANS.some(function (q) { return c0[q]; });
     var h = '<div style="margin-top:16px;padding-top:12px;border-top:1px solid #2a3a63;">'
-      + '<div style="font-size:16px;font-weight:800;color:#fff;">🏁 Jouable en Cockpit ? — classement ' + (X.sp === 'soccer' ? 'du championnat' : 'de la ' + esc(US_N[X.lg] || X.lg)) + '</div>'
+      + '<div style="font-size:16px;font-weight:800;color:#fff;">🏁 Jouable en Cockpit ? — classement ' + (X.sp === 'soccer' || /^rugby/.test(X.sp) ? 'du championnat' : 'de la ' + esc(US_N[X.lg] || X.lg)) + '</div>'
       + '<div style="font-size:13px;color:#c9d3ee;margin:3px 0 8px;">Même critère (' + (S.lieu === 'dom' ? '🏠 ' : S.lieu === 'ext' ? '✈️ ' : '') + esc(libCombo(c)) + ') · ' + nbS() + ' saisons · toutes les équipes · trié par la plus petite pire série'
       + (ign ? '<br><span style="color:#ffb13d;">Ignoré ici : joueur et critères de feuille de match (tirs, mi-temps, corners…).</span>' : '') + '</div>';
     if (Q.etat === 1) return h + '<div style="font-size:14px;color:#fff;">⏳ Lecture des équipes… <span id="g45cr-cls-prog">' + (Q.f || 0) + ' / ' + (Q.n || '?') + '</span> (la 1re fois seulement)</div></div>';
     if (Q.etat !== 2) return h + (Q.err ? '<div style="font-size:14px;color:#ff9f43;margin-bottom:6px;">⚠️ ' + esc(Q.err) + '</div>' : '')
-      + '<button onclick="g45CrClsLancer()" style="border:none;border-radius:10px;padding:9px 14px;font-size:14px;font-weight:700;color:#fff;background:#2f6bff;cursor:pointer;">▶ Lancer le classement (≈ 1 min la 1re fois, ensuite gardé)</button></div>';
+      + '<button onclick="g45CrClsLancer()" style="border:none;border-radius:10px;padding:9px 14px;font-size:14px;font-weight:700;color:#fff;background:#2f6bff;cursor:pointer;">▶ Lancer le classement (' + (/^rugby/.test(X.sp) ? 'archives, ≈ 20 s' : '≈ 1 min la 1re fois, ensuite gardé') + ')</button></div>';
     var L = (Q.eq || []).map(function (t) { var D = Q.D[t.id]; var R = D ? clsStat(D, c) : null; return { t: t, R: R }; })
       .filter(function (x) { return x.R && x.R.n >= 5; })
       .sort(function (a, b) { return (a.R.pire - b.R.pire) || (b.R.ok / b.R.n - a.R.ok / a.R.n); });
@@ -76947,6 +77137,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       else if (k === 'M1L') { c.M1L = parseFloat(v); if (!c.m1) c.m1 = 'ov'; }   /* 20261024b */
       else if (k === 'HAL') { if (v === '') c.ha = ''; else { c.HAL = parseFloat(v); c.ha = 'on'; } }   /* 20261024d */
       else if (k === 'M2L') { c.M2L = parseFloat(v); if (!c.m2) c.m2 = 'ov'; }
+      else if (k === 'ESL') { c.ESL = parseFloat(v); if (!c.esm) c.esm = 'ov'; }   /* 20261103k */
       else c[k] = v;
     }
     redessiner();
