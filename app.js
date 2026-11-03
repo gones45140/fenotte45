@@ -75642,6 +75642,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     if (c.ha) p.push('Handicap ' + (c.HAL > 0 ? '+' : '') + String(c.HAL).replace('.', ','));   /* 20261024d */
     if (c.hb) p.push(c.hb === 'c' ? 'Couvre le handicap du book' : 'Ne couvre pas le handicap du book');   /* 20261103b */
     if (c.tb) p.push(c.tb === 'ov' ? 'Over du total du book' : 'Under du total du book');   /* 20261103d */
+    if (c.qb) p.push(c.qb === 'ov' ? 'Over du total équipe du book' : 'Under du total équipe du book');   /* 20261103f */
     if (c.ec === 'g') p.push('Gagne de ' + String(c.E).replace('.', ',') + ' ou +');
     if (c.ec === 'p') p.push('Perd de ' + String(c.E).replace('.', ',') + ' max');
     return p.length ? p.join(' + ') : 'aucun critère';
@@ -75651,13 +75652,14 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   function okOU(dir, v, L) { if (v === L) return true; return dir === 'un' ? v < L : v > L; }
   function nbRemb(c, m) {   /* [critères actifs, critères remboursés] */
     var gf = m[2], ga = m[3]; if (m[4]) { var mn = Math.min(gf, ga); gf = mn; ga = mn; }
-    var act = ['res', 'ou', 'bts', 'te', 'ad', 'ec', 'fs', 'ts', 'as', 'cad', 'mt', 'mp', 'bo', 'pm', 'm1', 'm2', 'ha', 'hb', 'tb'].filter(function (k) { return c[k]; }).length + (joueurs(c).length ? 1 : 0), r = 0;
+    var act = ['res', 'ou', 'bts', 'te', 'ad', 'ec', 'fs', 'ts', 'as', 'cad', 'mt', 'mp', 'bo', 'pm', 'm1', 'm2', 'ha', 'hb', 'tb', 'qb'].filter(function (k) { return c[k]; }).length + (joueurs(c).length ? 1 : 0), r = 0;
     if (c.ou && gf + ga === c.L) r++;
     if (c.te && gf === c.TL) r++;
     if (c.ad && ga === c.AL) r++;
     if (c.ha && gf - ga + c.HAL === 0) r++;   /* 20261024d */
     if (c.hb && m[2] - m[3] + (+m[7]) === 0) r++;   /* 20261103b */
     if (c.tb && m[2] + m[3] === +m[8]) r++;   /* 20261103d */
+    if (c.qb && m[2] === +m[9]) r++;   /* 20261103f */
     if (fBesoin(c)) {
       var F = fVal(m);
       if (F) {
@@ -75678,6 +75680,8 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     if (c.hb) { var hv = gf - ga + (+m[7]); if (c.hb === 'c' ? !(hv > 0) : !(hv < 0)) return false; }
     /* 20261103d (Antoine : « les cuts pts, c'est sympa aussi ») : TOTAL du book du match (m[8]) — points marqués des deux équipes, prolongation comprise. */
     if (c.tb) { var tv = gf + ga - (+m[8]); if (c.tb === 'ov' ? !(tv > 0) : !(tv < 0)) return false; }
+    /* 20261103f (« total pts équipe il propose un cut ? » → « oui ») : total de points de L'ÉQUIPE fixé par le book (m[9], gardé depuis le 03/11). */
+    if (c.qb) { var qv = gf - (+m[9]); if (c.qb === 'ov' ? !(qv > 0) : !(qv < 0)) return false; }
     if (c.res === 'vqr' && !(gf > ga)) return false;
     if (c.res === 'per' && !(gf < ga)) return false;   /* 20261031m : perd le match, prolongation / TAB compris (contraire de Vainqueur) */
     if (m[4]) { var mn = Math.min(gf, ga); gf = mn; ga = mn; }   /* hockey : prolongation / TAB → égalité au temps réglementaire */
@@ -75802,6 +75806,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       if (c.pm && !m.pr) return false;
       if (c.hb && (m[7] == null || isNaN(+m[7]))) return false;   /* 20261103b : pas de handicap gardé pour ce match → non compté */
       if (c.tb && (m[8] == null || isNaN(+m[8]))) return false;   /* 20261103d : pas de total gardé → non compté */
+      if (c.qb && (m[9] == null || isNaN(+m[9]))) return false;   /* 20261103f */
       if (fBesoin(c) && !fVal(m)) return false;
       /* 20261024b (ticket Brisbane – Perth « Mi-temps, nombre de buts, plus de 1 » ; « ce n'est pas 0,5, c'est 1 ») : buts par mi-temps =
          score à la pause de la feuille de match (linescores) ; 2e MT = score final − pause. Ligne RONDE égalée = REMBOURSÉ → match non compté. */
@@ -76279,7 +76284,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var B = ASP[sp] + '/' + lg + '/' + aSaUS(lg, an), ix = await aLire(B + '/equipes.json'); if (!ix) return null;
     var q = await aLire(B + '/equipes/' + tid + '.json'); if (q === null) return null;
     var M = (q && q.m) || []; if (M.some(function (m) { return m[4] && !(m[5] >= 0); })) return null;
-    return M.filter(function (m) { return m[4] && m[5] === 2; }).map(function (m) { var h = m[3] === 'h'; return [aIso(m[0]), h ? 1 : 0, h ? m[4][0] : m[4][1], h ? m[4][1] : m[4][0], sp === 'hockey' ? (m[6] || 0) : 0, 0, String(m[2]), m[8] == null ? null : +m[8], m[9] == null ? null : +m[9]]; })   /* 20261103b : m[7] = handicap de l'équipe (index iv 6) ; 20261103d : m[8] = total du book (iv 7) */
+    return M.filter(function (m) { return m[4] && m[5] === 2; }).map(function (m) { var h = m[3] === 'h'; return [aIso(m[0]), h ? 1 : 0, h ? m[4][0] : m[4][1], h ? m[4][1] : m[4][0], sp === 'hockey' ? (m[6] || 0) : 0, 0, String(m[2]), m[8] == null ? null : +m[8], m[9] == null ? null : +m[9], m[10] == null ? null : +m[10]]; })   /* 20261103f : m[9] = total de l'ÉQUIPE (ligne du book, saison en cours) */   /* 20261103b : m[7] = handicap de l'équipe (index iv 6) ; 20261103d : m[8] = total du book (iv 7) */
       .sort(function (a, b) { return a[0] < b[0] ? -1 : 1; });
   }
   /* ═══ 20261031n — 👤 JOUEURS NHL / NBA / NFL des critères sur les archives (« ok ajoute et passe aux joueurs sport US »). Le robot garde par
@@ -76546,6 +76551,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     h += lab(us() || rg() ? US_L[sport()][3] : hk() ? 'Buts du match (temps réglementaire)' : 'Buts du match') + b(c.ou === 'ov', 'Over', "g45CrSet('ou','ov')") + b(c.ou === 'un', 'Under', "g45CrSet('ou','un')") + b(c.ou === '', 'Aucun', "g45CrSet('ou','')") + sel;
     /* 20261103e (capture : « Total du book doit passer dans Points ? » → oui) : ligne déplacée de Résultat vers l'onglet Points, sous le total fixe. */
     if (S.ctx && !rg()) h += lab('🎯 Total du bookmaker (ligne de chaque match)') + b(c.tb === 'ov', 'Over', "g45CrSet('tb','ov')") + b(c.tb === 'un', 'Under', "g45CrSet('tb','un')") + b(!c.tb, 'Aucun', "g45CrSet('tb','')");   /* 20261103d */
+    if (S.ctx && S.ctx.lg === 'nba') h += lab('🎯 Total de points de l\'équipe du bookmaker (gardé depuis le 03/11)') + b(c.qb === 'ov', 'Over', "g45CrSet('qb','ov')") + b(c.qb === 'un', 'Under', "g45CrSet('qb','un')") + b(!c.qb, 'Aucun', "g45CrSet('qb','')");   /* 20261103f */
     var selEq = function (k, v) {
       var t = '<select onchange="g45CrSet(\'' + k + '\',this.value)" style="background:#16213f;color:#fff;border:1px solid #6d9dff;border-radius:8px;padding:7px 10px;font-size:14px;margin:0 6px 6px 0;">', E = lgEq();
       for (var x = E[0], st = S.ctx ? 0.5 : 0.25; x <= E[1] + 1e-9; x = Math.round((x + st) * 100) / 100) t += '<option value="' + x + '"' + (v === x ? ' selected' : '') + '>' + x + '</option>';   /* 20261024c : lignes rondes ; 24d : quarts (foot) */
@@ -76665,7 +76671,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
        🎯 Feuille · 🔁 Contexte = match précédent) ; pastille = nombre de critères choisis ; onglet gardé (localStorage g45_cr_tab). */
     var q7 = h.length;
     var PAN = { res: h.slice(q0, q1) + h.slice(q2, q3), buts: h.slice(q1, q2) + h.slice(q6, q7), jou: h.slice(q3, q4), feu: h.slice(q4, q5), ctx: h.slice(q5, q6) };
-    var NB = { res: (c.res ? 1 : 0) + (c.ec ? 1 : 0) + (c.ha ? 1 : 0) + (c.hb ? 1 : 0), buts: (c.ou ? 1 : 0) + (c.tb ? 1 : 0) + (c.te ? 1 : 0) + (c.ad ? 1 : 0) + (c.bts ? 1 : 0) + (c.m1 ? 1 : 0) + (c.m2 ? 1 : 0), jou: joueurs(c).length ? 1 : 0,
+    var NB = { res: (c.res ? 1 : 0) + (c.ec ? 1 : 0) + (c.ha ? 1 : 0) + (c.hb ? 1 : 0), buts: (c.ou ? 1 : 0) + (c.tb ? 1 : 0) + (c.qb ? 1 : 0) + (c.te ? 1 : 0) + (c.ad ? 1 : 0) + (c.bts ? 1 : 0) + (c.m1 ? 1 : 0) + (c.m2 ? 1 : 0), jou: joueurs(c).length ? 1 : 0,
       feu: ['fs', 'ts', 'as', 'cad', 'mt', 'mp', 'bo'].filter(function (k) { return c[k]; }).length, ctx: c.pm ? 1 : 0 };
     var ONG = [['res', '🏁 Résultat'], ['buts', '⚽ ' + motUnite()], ['jou', '👤 Joueurs'], ['feu', '🎯 Feuille'], ['ctx', '🔁 Contexte']].filter(function (o) { return PAN[o[0]]; });
     var TB = 'res'; try { TB = localStorage.getItem('g45_cr_tab') || 'res'; } catch (e) {}
