@@ -76324,8 +76324,8 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       var dt = String(m[0] || '').slice(0, 10).split('-'), dte = dt.length === 3 ? dt[2] + '/' + dt[1] : '';
       var ic = d.b ? '💥' : o.x.ok ? '✅' : '❌', st = mpmStat(c, m);
       h += '<div style="position:relative;overflow:hidden;border-radius:10px;margin:6px 0;background:#0b1226;border:1px solid #1c2747;">'
-        + (lo ? '<img src="' + lo + '" alt="" onerror="this.remove()" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);height:54px;opacity:.22;pointer-events:none;">' : '')
-        + '<div style="position:relative;background:rgba(5,10,25,.55);padding:7px 9px;line-height:1.45;">'
+        + (lo ? '<img src="' + lo + '" alt="" onerror="this.remove()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);height:44px;width:44px;object-fit:contain;z-index:2;pointer-events:none;filter:drop-shadow(0 1px 3px rgba(0,0,0,.6));">' : '')   /* 20261103p (capture : « fais-le ressortir comme le screen 2 », logos nets à droite des paris) : logo net, devant */
+        + '<div style="position:relative;background:rgba(5,10,25,.55);padding:7px ' + (lo ? '64px' : '9px') + ' 7px 9px;line-height:1.45;">'
         + '<div style="font-size:14px;"><b>' + dte + '</b> ' + (m[1] ? '🏠' : '✈️') + ' ' + (a ? esc(a[0]) : (A && A._ === 1 ? '…' : '—')) + ' · ' + ic + ' <b>' + m[2] + '-' + m[3] + '</b>' + (st ? ' · ' + st : '') + '</div>'
         + '<div style="font-size:14px;">P' + d.p + ' · mise ' + d.m.toLocaleString('fr-FR') + ' € · cote ' + d.c.toFixed(2).replace('.', ',') + (o.x.c > 1 ? ' ✅' : '')
         + ' → <b style="color:' + cl(d.g) + ';">' + (d.g > 0 ? '+' : d.g < 0 ? '−' : '') + Math.abs(d.g).toFixed(2).replace('.', ',') + ' €</b>' + (d.b ? ' <span style="color:#ff5a5a;font-weight:800;">tout perdu</span>' : '') + '</div></div></div>';
