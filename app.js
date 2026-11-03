@@ -76205,14 +76205,15 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var v = k == null ? 0 : +co[k]; return v > 1 ? v : null;
   }
   function simCalc(seq, mises, cote) {   /* seq = [{ s: libellé saison, ok }] dans l'ordre → { par: { s: { ok, bo, e } }, tot, bo, max } */
-    var i = 0, par = {}, tot = 0, bo = 0, max = 0;
+    var i = 0, par = {}, tot = 0, bo = 0, max = 0, det = [];   /* 20261103o : det = détail de chaque match (📋 Match par match) */
     seq.forEach(function (x) {
-      var P = par[x.s] = par[x.s] || { ok: 0, bo: 0, e: 0 }, m = mises[i];
+      var P = par[x.s] = par[x.s] || { ok: 0, bo: 0, e: 0 }, m = mises[i], d = { p: i + 1, m: m, c: x.c > 1 ? x.c : cote, g: 0, b: 0 };
       if (m > max) max = m;
-      if (x.ok) { var g = m * ((x.c > 1 ? x.c : cote) - 1); P.ok++; P.bo += g; tot += g; i = 0; }   /* 20261103i : vraie cote du match si connue */
-      else { P.bo -= m; tot -= m; i++; if (i >= mises.length) { P.e++; bo++; i = 0; } }
+      if (x.ok) { var g = m * ((x.c > 1 ? x.c : cote) - 1); P.ok++; P.bo += g; tot += g; i = 0; d.g = g; }   /* 20261103i : vraie cote du match si connue */
+      else { P.bo -= m; tot -= m; i++; d.g = -m; if (i >= mises.length) { P.e++; bo++; i = 0; d.b = 1; } }
+      d.t = tot; det.push(d);
     });
-    return { par: par, tot: tot, bo: bo, max: max };
+    return { par: par, tot: tot, bo: bo, max: max, det: det };
   }
   window._g45CrSimT = simCalc;   /* tests */
   /* 20261102p (capture carte MacKinnon « 📊 pire série … → 5 paliers » : « peut-être le rajouter ici, ça évite de recalculer à chaque fois ») :
@@ -76244,7 +76245,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     D.saisons.slice().reverse().forEach(function (sa) {
       if (!sa) return; var L0 = msS(c, sa); if (!L0) return;
       var lb = lib(D.lg, sa.an); libs.unshift(lb);
-      jFiltre(c, filtrer(L0)).forEach(function (m) { var v = valeur(c, m); if (v.n > 0) seq.push({ s: lb, ok: v.ok * 2 >= v.n, c: coteM(c, m) }); });
+      jFiltre(c, filtrer(L0)).forEach(function (m) { var v = valeur(c, m); if (v.n > 0) seq.push({ s: lb, ok: v.ok * 2 >= v.n, c: coteM(c, m), m: m, an: sa.an }); });   /* 20261103o : + m, an (📋) */
     });
     if (!seq.length) return '';
     var et = (typeof _g45PalEt === 'function') ? _g45PalEt() : '1', mises = (typeof STRATS !== 'undefined' && (STRATS[et] || STRATS['1'])) || [1, 2, 6, 18, 54, 162, 486, 1458];
@@ -76267,7 +76268,69 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       h += '<tr><td style="' + td + '">' + lb + '</td><td style="' + td + '">' + P.ok + '</td><td style="' + td + (P.e ? 'color:#ff5a5a;font-weight:800;' : '') + '">' + P.e + '</td><td style="' + td + 'font-weight:800;color:' + cl(P.bo) + ';">' + eu(P.bo) + '</td></tr>';
     });
     return h + '</table><div style="margin-top:8px;">🧮 <b>Total : <span style="color:' + cl(R.tot) + ';">' + eu(R.tot) + '</span></b> · plus grosse mise engagée <b>' + R.max.toLocaleString('fr-FR') + ' €</b></div>'
-      + '<div style="font-size:13px;color:#c9d3ee;margin-top:4px;">💥 = série plus longue que tes paliers : tout est perdu, retour au palier 1. Même cote pour tous les matchs (pas de cotes gardées pour les anciennes saisons).</div></div>';
+      + '<div style="font-size:13px;color:#c9d3ee;margin-top:4px;">💥 = série plus longue que tes paliers : tout est perdu, retour au palier 1. Même cote pour tous les matchs (pas de cotes gardées pour les anciennes saisons).</div>'
+      + mpmHtml(c, D, seq, R, libs, eu, cl) + '</div>';
+  }
+  /* ═══ 20261103o — 📋 MATCH PAR MATCH (Antoine, capture d'une appli « Matchs » de Pastrnak : « c'est possible d'avoir ce genre de détail par match
+     d'un joueur, même avec les cotes choisies, sur une saison, avec gain et perte avec Cockpit ? » → maquette → « oui ») : sous le 💶, une saison
+     au choix (S.mpm = libellé) → chaque match du 💶 (même liste, même ordre, simCalc.det) du plus récent au plus ancien : date, 🏠 / ✈️, adversaire
+     (logo en fond, bande sombre), score, stat du joueur (1 joueur), ✅ / ❌ / 💥, palier, mise, cote (✅ vraie cote de fermeture), gain / perte.
+     Adversaire : archives gones45-archives (equipes/<club>.json, adversaire en [7] ; noms dans equipes.json) lues à l'ouverture (S.adv) ; pas
+     archivé (ESPN, ancien club d'un joueur) → « — ». ═══ */
+  var JLAB = { g: 'but', a: 'passe', pts: 'pts', reb: 'reb', ast: 'passes', tp: '3 pts', pa: 'pts+passes', pr: 'pts+reb', ra: 'reb+passes', pra: 'pts+reb+passes', t: 'essai', TD: 'TD' };
+  window.g45CrMpm = function (lb) { S.mpm = S.mpm === lb ? '' : lb; try { redessiner(); } catch (e) {} };
+  function mpmBases(m, an) {   /* dossiers d'archives possibles pour la ligne m */
+    var C = S.ctx;
+    if (!C) { var D0 = S.data && S.data[S.nom]; return [(m[5] === 1 && typeof m[7] === 'string') ? 'foot/' + m[7] + '/' + aSa(m[7], an) : 'foot/' + (D0 ? D0.lg : '') + '/' + aSa(D0 ? D0.lg : '', an)]; }
+    if (rg()) { if (m[5]) return ['rugby/' + (m[5] === 2 ? '272073' : '271937') + '/' + an + '-' + String(an + 1).slice(2)]; return [rgBase(C.sp, C.lg, an)]; }
+    return [ASP[C.sp] + '/' + C.lg + '/' + aSaUS(C.lg, an)];
+  }
+  function mpmAdv(seqS, tid) {   /* → S.adv[base] = { idMatch: [nom, abrév, idAdversaire] } ; redessine quand c'est lu */
+    S.adv = S.adv || {};
+    var B = {}; seqS.forEach(function (x) { mpmBases(x.m, x.an).forEach(function (b) { B[b] = 1; }); });
+    Object.keys(B).forEach(function (b) {
+      if (S.adv[b]) return; S.adv[b] = { _: 1 };
+      Promise.all([aLire(b + '/equipes.json'), aLire(b + '/equipes/' + tid + '.json')]).then(function (r) {
+        var ix = r[0] || {}, q = r[1] || {}, M = { _: 2 };
+        (q.m || []).forEach(function (x) { var o = String(x[7] || ''); if (x[2] && o) { var e = [(ix[o] && ix[o][0]) || o, (ix[o] && ix[o][1]) || '', o]; M[String(x[2])] = e; if (x[0]) M['d' + aIso(x[0])] = e; } });   /* foot : lignes sans n° de match → par la date */
+        S.adv[b] = M; try { redessiner(); } catch (e) {}
+      });
+    });
+  }
+  function mpmLogo(a, b) {
+    if (!a || !a[2]) return '';
+    if (/^foot\//.test(b)) return 'https://a.espncdn.com/i/teamlogos/soccer/500/' + a[2] + '.png';
+    if (/^rugby/.test(b)) return '';
+    var lg = (S.ctx && S.ctx.lg) || ''; return a[1] && ['nba', 'nhl', 'nfl', 'mlb'].indexOf(lg) >= 0 ? 'https://a.espncdn.com/i/teamlogos/' + lg + '/500/' + String(a[1]).toLowerCase() + '.png' : '';
+  }
+  function mpmStat(c, m) {   /* stat du joueur seul (sinon rien) */
+    var P = joueurs(c); if (P.length !== 1) return '';
+    var v = null; try { v = jValP(P[0].id, m); } catch (e) {} if (!v) return '<span style="color:#c9d3ee;">pas joué</span>';
+    if (!S.ctx) return '⚽ ' + (v.g || 0) + (v.a ? ' · 🅰️ ' + v.a : '');
+    var x = v[c.jm] || 0, L = (c.jbk && bkOk()) ? bkL(P[0].id, m, c.jm) : null;
+    return '<b>' + nbV(x) + '</b> ' + (JLAB[c.jm] || c.jm || '') + (L != null ? ' <span style="color:#c9d3ee;">(ligne ' + nbV(L) + ')</span>' : '');
+  }
+  function mpmHtml(c, D, seq, R, libs, eu, cl) {
+    var h = '<div style="margin-top:10px;font-size:14px;font-weight:800;">📋 Match par match</div><div>'
+      + libs.map(function (lb) { var on = S.mpm === lb; return '<button onclick="g45CrMpm(\'' + lb + '\')" style="border-radius:14px;padding:5px 12px;font-size:14px;cursor:pointer;color:#fff;margin:4px 6px 0 0;border:1px solid ' + (on ? '#6d9dff' : '#2a3a63') + ';background:' + (on ? '#2a4a9a' : '#0b1226') + ';font-weight:' + (on ? 800 : 600) + ';">' + lb + '</button>'; }).join('') + '</div>';
+    if (!S.mpm) return h;
+    var L = []; seq.forEach(function (x, i) { if (x.s === S.mpm) L.push({ x: x, d: R.det[i] }); });
+    if (!L.length) return h + '<div style="color:#c9d3ee;margin-top:6px;">Aucun match compté cette saison.</div>';
+    var tid = S.ctx ? S.ctx.id : (D.tid || ''); if (tid) mpmAdv(L.map(function (o) { return o.x; }), tid);
+    var bil = 0, mx = 0; L.forEach(function (o) { bil += o.d.g; if (o.d.m > mx) mx = o.d.m; });
+    h += '<div style="margin-top:6px;">';
+    L.slice().reverse().forEach(function (o) {
+      var m = o.x.m, d = o.d, b = mpmBases(m, o.x.an)[0], A = S.adv && S.adv[b], a = A && (A[String(m[6] || '')] || A['d' + String(m[0] || '').slice(0, 10)]), lo = mpmLogo(a, b);
+      var dt = String(m[0] || '').slice(0, 10).split('-'), dte = dt.length === 3 ? dt[2] + '/' + dt[1] : '';
+      var ic = d.b ? '💥' : o.x.ok ? '✅' : '❌', st = mpmStat(c, m);
+      h += '<div style="position:relative;overflow:hidden;border-radius:10px;margin:6px 0;background:#0b1226;border:1px solid #1c2747;">'
+        + (lo ? '<img src="' + lo + '" alt="" onerror="this.remove()" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);height:54px;opacity:.22;pointer-events:none;">' : '')
+        + '<div style="position:relative;background:rgba(5,10,25,.55);padding:7px 9px;line-height:1.45;">'
+        + '<div style="font-size:14px;"><b>' + dte + '</b> ' + (m[1] ? '🏠' : '✈️') + ' ' + (a ? esc(a[0]) : (A && A._ === 1 ? '…' : '—')) + ' · ' + ic + ' <b>' + m[2] + '-' + m[3] + '</b>' + (st ? ' · ' + st : '') + '</div>'
+        + '<div style="font-size:14px;">P' + d.p + ' · mise ' + d.m.toLocaleString('fr-FR') + ' € · cote ' + d.c.toFixed(2).replace('.', ',') + (o.x.c > 1 ? ' ✅' : '')
+        + ' → <b style="color:' + cl(d.g) + ';">' + (d.g > 0 ? '+' : d.g < 0 ? '−' : '') + Math.abs(d.g).toFixed(2).replace('.', ',') + ' €</b>' + (d.b ? ' <span style="color:#ff5a5a;font-weight:800;">tout perdu</span>' : '') + '</div></div></div>';
+    });
+    return h + '</div><div style="margin-top:4px;">Bilan de la saison : <b style="color:' + cl(bil) + ';">' + eu(bil) + '</b> · plus grosse mise ' + mx.toLocaleString('fr-FR') + ' €</div>';
   }
   function coul(p) { return p <= 2 ? '#1ed760' : p <= 4 ? '#ff9f43' : '#ff5a5a'; }
   function nbV(x) { return String(x).replace('.', ','); }   /* 20261024d : 12,5 / 20 avec les moitiés */
