@@ -76544,6 +76544,8 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     LL.forEach(function (L) { sel += '<option value="' + L + '"' + (c.L === L ? ' selected' : '') + '>' + L + '</option>'; });
     sel += '</select>';
     h += lab(us() || rg() ? US_L[sport()][3] : hk() ? 'Buts du match (temps réglementaire)' : 'Buts du match') + b(c.ou === 'ov', 'Over', "g45CrSet('ou','ov')") + b(c.ou === 'un', 'Under', "g45CrSet('ou','un')") + b(c.ou === '', 'Aucun', "g45CrSet('ou','')") + sel;
+    /* 20261103e (capture : « Total du book doit passer dans Points ? » → oui) : ligne déplacée de Résultat vers l'onglet Points, sous le total fixe. */
+    if (S.ctx && !rg()) h += lab('🎯 Total du bookmaker (ligne de chaque match)') + b(c.tb === 'ov', 'Over', "g45CrSet('tb','ov')") + b(c.tb === 'un', 'Under', "g45CrSet('tb','un')") + b(!c.tb, 'Aucun', "g45CrSet('tb','')");   /* 20261103d */
     var selEq = function (k, v) {
       var t = '<select onchange="g45CrSet(\'' + k + '\',this.value)" style="background:#16213f;color:#fff;border:1px solid #6d9dff;border-radius:8px;padding:7px 10px;font-size:14px;margin:0 6px 6px 0;">', E = lgEq();
       for (var x = E[0], st = S.ctx ? 0.5 : 0.25; x <= E[1] + 1e-9; x = Math.round((x + st) * 100) / 100) t += '<option value="' + x + '"' + (v === x ? ' selected' : '') + '>' + x + '</option>';   /* 20261024c : lignes rondes ; 24d : quarts (foot) */
@@ -76575,7 +76577,6 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var selE = '<input type="text" inputmode="decimal" value="' + String(c.E).replace('.', ',') + '" onchange="g45CrSet(\'E\',this.value)" onfocus="this.select()" style="width:80px;background:#16213f;color:#fff;border:1px solid #6d9dff;border-radius:8px;padding:7px 10px;font-size:15px;font-weight:700;text-align:center;margin:0 6px 6px 0;">';
     h += lab('Écart (' + motUnite().toLowerCase() + hkTr + ')') + b(c.ec === 'g', 'Gagne de ' + String(c.E).replace('.', ',') + ' ou +', "g45CrSet('ec','g')") + b(c.ec === 'p', 'Perd de ' + String(c.E).replace('.', ',') + ' max', "g45CrSet('ec','p')") + b(!c.ec, 'Aucun', "g45CrSet('ec','')") + selE;
     if (S.ctx && !rg()) h += lab('🎯 Handicap du bookmaker (ligne de chaque match, archives)') + b(c.hb === 'c', 'Couvre', "g45CrSet('hb','c')") + b(c.hb === 'n', 'Ne couvre pas', "g45CrSet('hb','n')") + b(!c.hb, 'Aucun', "g45CrSet('hb','')");   /* 20261103b */
-    if (S.ctx && !rg()) h += lab('🎯 Total du bookmaker (points du match, ligne de chaque match)') + b(c.tb === 'ov', 'Over', "g45CrSet('tb','ov')") + b(c.tb === 'un', 'Under', "g45CrSet('tb','un')") + b(!c.tb, 'Aucun', "g45CrSet('tb','')");   /* 20261103d */
     /* 20261024d : HANDICAP ASIATIQUE (foot) — « Belgrano +0,25 » : −3 → +3 de 0,25 en 0,25 ; 0 / ligne ronde égalée = remboursé, ,25 / ,75 = moitié-moitié */
     if (!S.ctx) {
       var selH = '<select onchange="g45CrSet(\'HAL\',this.value)" style="background:#16213f;color:#fff;border:1px solid ' + (c.ha ? '#f5c542' : '#6d9dff') + ';border-radius:8px;padding:7px 10px;font-size:14px;margin:0 6px 6px 0;">'
