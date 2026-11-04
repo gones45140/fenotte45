@@ -86091,7 +86091,9 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
       /* squelette() (déplacements) appelé EN FIN de poser : la case de l'interrupteur doit exister avant (20261104l) */
       var btc = $('btab-cockpit'); if (btc) btc.style.display = 'none';   /* 20261104j : le Bilan Cockpit vit dans le monde du Cockpit */
       if (!$('g45-ck-css')) { var cs = document.createElement('style'); cs.id = 'g45-ck-css'; cs.textContent = '#ck-bil .psub-bar,#ck-bil .gtabs{display:none!important}#t-outils .g45ul-ps,#t-outils .g45ul-psl,#t-outils #g45-ser-bar,#t-outils .g45ul-pal{display:none!important}';   /* 20261104p : séries seulement dans 🃏 Mes cartes ; 20261104q : badges Palier aussi (« palier dans Outils ne sert plus, mais sert dans Cockpit ») */ document.head.appendChild(cs); }
-      var bcp = $('btn-cpit'); if (bcp) { bcp.style.display = 'none'; var tp = $('t-paris'); if (bcp.classList.contains('on') && !(tp && tp.style.display !== 'none' && $('ck-eng') && $('ck-eng').contains($('sub-strat')) && TAB === 'eng')) { try { swBet('simple'); } catch (e) {} } }
+      var bcp = $('btn-cpit'); if (bcp) { bcp.style.display = 'none'; var tp = $('t-paris'); var tck = $('t-cockpit'), engVu = TAB === 'eng' && tck && tck.style.display !== 'none';   /* 20261104t (« ça saute ») : NE PAS repasser en Simple quand l'onglet 🚀 Engager est affiché */
+        if (bcp.classList.contains('on') && !engVu && tp && tp.style.display !== 'none') { try { swBet('simple'); } catch (e) {} }
+        if (engVu) { var ss2 = $('sub-strat'); if (ss2 && ss2.style.display === 'none') { try { swBet('strat'); } catch (e) {} ss2.style.display = 'block'; } } }
       var nav = document.querySelector('nav.nav'), bp = nav && nav.querySelector('button.ni[onclick*="t-paris"]'), b = $('g45-ni-ck');
       if (nav && bp && !b) { b = document.createElement('button'); b.id = 'g45-ni-ck'; b.className = 'ni'; b.setAttribute('onclick', 'g45CkOuvrir(this)'); b.innerHTML = '<span>🏁</span>Cockpit'; bp.insertAdjacentElement('afterend', b); }
       if (b) b.style.display = actif() ? '' : 'none';
