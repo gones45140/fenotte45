@@ -76288,16 +76288,25 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var k = !S.ctx ? { vic: 0, nul: 1, def: 2 }[c.res] : ({ vqr: 0, def: hk() ? null : 2, per: 2 })[c.res];
     var v = k == null ? 0 : +co[k]; return v > 1 ? v : null;
   }
-  function simCalc(seq, mises, cote) {   /* seq = [{ s: libellé saison, ok }] dans l'ordre → { par: { s: { ok, bo, e } }, tot, bo, max } */
-    var i = 0, par = {}, tot = 0, bo = 0, max = 0, det = [];   /* 20261103o : det = détail de chaque match (📋 Match par match) */
+  /* 20261104b (captures Draisaitl 4 ⭐ / 5 ⭐ : « screen 2 dead, pourquoi ? ma BK pas assez grande ? » → « oui fais-le ») : cap = CAPITAL
+     (somme des comptes, state.b, comme en haut de l'écran). Une série ne peut pas engager plus : si (déjà perdu dans la série + mise du palier)
+     dépasse le capital, c'est 💥 (série perdue, d.b = 2 « bankroll »), retour au palier 1 et le match se joue au palier 1. */
+  function capT() { try { return Object.keys(state.b || {}).reduce(function (a, k) { var n = parseFloat(state.b[k]); return a + (isNaN(n) ? 0 : n); }, 0); } catch (e) { return 0; } }
+  function capMan(mises, cap) {   /* premier palier que le capital ne couvre pas (1, 2…) ou 0 ; besoin = total à avoir */
+    var e = 0; for (var i = 0; i < mises.length; i++) { e += mises[i]; if (cap > 0 && e > cap + 1e-9) return { p: i + 1, besoin: e }; } return { p: 0, besoin: e };
+  }
+  function simCalc(seq, mises, cote, cap) {   /* seq = [{ s: libellé saison, ok }] dans l'ordre → { par: { s: { ok, bo, e } }, tot, bo, max } ; cap = capital (0 = sans limite) */
+    var i = 0, par = {}, tot = 0, bo = 0, max = 0, det = [], eng = 0, bk = 0;   /* 20261103o : det = détail de chaque match (📋 Match par match) ; 20261104b : eng = déjà perdu dans la série */
     seq.forEach(function (x) {
-      var P = par[x.s] = par[x.s] || { ok: 0, bo: 0, e: 0 }, m = mises[i], d = { p: i + 1, m: m, c: x.c > 1 ? x.c : cote, g: 0, b: 0 };
+      var P = par[x.s] = par[x.s] || { ok: 0, bo: 0, e: 0 };
+      if (cap > 0 && i > 0 && eng + mises[i] > cap + 1e-9) { P.e++; bo++; bk++; i = 0; eng = 0; if (det.length) det[det.length - 1].b = 2; }   /* 20261104b : capital dépassé */
+      var m = mises[i], d = { p: i + 1, m: m, c: x.c > 1 ? x.c : cote, g: 0, b: 0 };
       if (m > max) max = m;
-      if (x.ok) { var g = m * ((x.c > 1 ? x.c : cote) - 1); P.ok++; P.bo += g; tot += g; i = 0; d.g = g; }   /* 20261103i : vraie cote du match si connue */
-      else { P.bo -= m; tot -= m; i++; d.g = -m; if (i >= mises.length) { P.e++; bo++; i = 0; d.b = 1; } }
+      if (x.ok) { var g = m * ((x.c > 1 ? x.c : cote) - 1); P.ok++; P.bo += g; tot += g; i = 0; eng = 0; d.g = g; }   /* 20261103i : vraie cote du match si connue */
+      else { P.bo -= m; tot -= m; eng += m; i++; d.g = -m; if (i >= mises.length) { P.e++; bo++; i = 0; eng = 0; d.b = 1; } }
       d.t = tot; det.push(d);
     });
-    return { par: par, tot: tot, bo: bo, max: max, det: det };
+    return { par: par, tot: tot, bo: bo, max: max, det: det, bk: bk };
   }
   window._g45CrSimT = simCalc;   /* tests */
   /* 20261102p (capture carte MacKinnon « 📊 pire série … → 5 paliers » : « peut-être le rajouter ici, ça évite de recalculer à chaque fois ») :
@@ -76307,7 +76316,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     if (typeof sq === 'string') sq = sq.split('').map(function (x) { return x === '1'; });   /* 20261102q : série gardée en texte « 1101… » */
     if (!sq || !sq.length) return null;
     var M = (u && u.s != null && typeof STRATS !== 'undefined' && STRATS[u.s]) || (typeof STRATS !== 'undefined' && (STRATS[(typeof _g45PalEt === 'function') ? _g45PalEt() : '1'] || STRATS['1'])) || [1, 2, 6, 18, 54, 162, 486, 1458];
-    var c = (u && u.ck > 1) ? u.ck : ckCote(), R = simCalc(sq.map(function (ok) { return { s: '', ok: !!ok }; }), M, c);
+    var c = (u && u.ck > 1) ? u.ck : ckCote(), R = simCalc(sq.map(function (ok) { return { s: '', ok: !!ok }; }), M, c, capT());   /* 20261104b : + capital */
     return { e: Math.round(R.tot), bo: R.bo, c: c };
   }
   function sqDe(c, ms) { return jFiltre(c, ms).filter(function (m) { return valeur(c, m).n > 0; }).map(function (m) { var v = valeur(c, m); return v.ok * 2 >= v.n; }); }
@@ -76333,7 +76342,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     });
     if (!seq.length) return '';
     var et = (typeof _g45PalEt === 'function') ? _g45PalEt() : '1', mises = (typeof STRATS !== 'undefined' && (STRATS[et] || STRATS['1'])) || [1, 2, 6, 18, 54, 162, 486, 1458];
-    var cote = ckCote(), R = simCalc(seq, mises, cote), nV = seq.filter(function (x) { return x.c > 1; }), moyV = nV.length ? nV.reduce(function (t, x) { return t + x.c; }, 0) / nV.length : 0;   /* 20261103i */
+    var cap = capT(), CM = capMan(mises, cap), cote = ckCote(), R = simCalc(seq, mises, cote, cap), nV = seq.filter(function (x) { return x.c > 1; }), moyV = nV.length ? nV.reduce(function (t, x) { return t + x.c; }, 0) / nV.length : 0;   /* 20261103i */
     var eu = function (x) { var r = Math.round(x); return (r > 0 ? '+' : r < 0 ? '−' : '') + Math.abs(r).toLocaleString('fr-FR') + ' €'; };
     var cl = function (x) { return x > 0.5 ? '#1ed760' : x < -0.5 ? '#ff5a5a' : '#fff'; };
     var td = 'padding:7px 4px;border-bottom:1px solid #1c2747;', th = 'text-align:left;font-size:13px;color:#c9d3ee;padding:6px 4px;border-bottom:1px solid #2a3a63;';
@@ -76343,6 +76352,8 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
          (g45_pal_et, _g45PalEt) → le Total et le 💶 changent ensemble. */
       + '<div style="margin:4px 0 2px;">' + ['1', '2', '3', '4', '5'].map(function (k) { var on = k === et; return '<button onclick="g45CrCkEt(\'' + k + '\')" style="border-radius:14px;padding:5px 10px;font-size:14px;cursor:pointer;color:#fff;margin:4px 6px 0 0;border:1px solid ' + (on ? '#f5c542' : '#2a3a63') + ';background:' + (on ? '#5a4a12' : '#16213f') + ';font-weight:' + (on ? 800 : 400) + ';">' + k + ' ⭐</button>'; }).join('') + '</div>'
       + '<div style="font-size:13px;color:#c9d3ee;margin:2px 0 6px;">Paliers ' + mises.join(' · ') + ' €</div>'
+      + (CM.p ? '<div style="font-size:14px;color:#ff9f43;font-weight:700;margin:2px 0 6px;line-height:1.45;">⚠️ Ta bankroll (' + Math.round(cap).toLocaleString('fr-FR') + ' €) ne couvre pas P' + CM.p + ' : il faudrait ' + Math.round(CM.besoin).toLocaleString('fr-FR') + ' € (tout perdu jusqu\'à P' + (CM.p - 1) + ' + la mise de P' + CM.p + '). Au-delà de P' + (CM.p - 1) + ', la série est comptée 💥 perdue.</div>'
+        : (cap > 0 ? '<div style="font-size:13px;color:#1ed760;margin:2px 0 6px;">✅ Ta bankroll (' + Math.round(cap).toLocaleString('fr-FR') + ' €) couvre les ' + mises.length + ' paliers (' + Math.round(CM.besoin).toLocaleString('fr-FR') + ' € au total).</div>' : ''))   /* 20261104b */
       /* 20261102o (Antoine : « faudrait pouvoir mettre soi-même la cote, + facile non ? ») : case à taper (clavier chiffres) au lieu de la liste. */
       + (nV.length ? '<div style="font-size:14px;color:#1ed760;font-weight:700;margin:2px 0;">✅ Vraies cotes de fermeture : ' + nV.length + ' matchs sur ' + seq.length + ' (moyenne ' + moyV.toFixed(2).replace('.', ',') + ')' + (nV.length < seq.length ? ' · cote tapée pour les autres' : '') + '</div>' : '')
       + '<div>' + (nV.length === seq.length ? 'Cote de secours : ' : 'Cote utilisée : ') + '<input type="text" inputmode="decimal" value="' + cote.toFixed(2).replace('.', ',') + '" onchange="g45CrCkCote(this.value)" onfocus="this.select()" style="width:90px;font-size:17px;font-weight:800;padding:6px 8px;border-radius:8px;background:#16213f;color:#fff;border:1px solid #6d9dff;text-align:center;"> <span style="font-size:13px;color:#c9d3ee;">tape ta cote (ex. 1,56)</span></div>'
@@ -76352,7 +76363,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       h += '<tr><td style="' + td + '">' + lb + '</td><td style="' + td + '">' + P.ok + '</td><td style="' + td + (P.e ? 'color:#ff5a5a;font-weight:800;' : '') + '">' + P.e + '</td><td style="' + td + 'font-weight:800;color:' + cl(P.bo) + ';">' + eu(P.bo) + '</td></tr>';
     });
     return h + '</table><div style="margin-top:8px;">🧮 <b>Total : <span style="color:' + cl(R.tot) + ';">' + eu(R.tot) + '</span></b> · plus grosse mise engagée <b>' + R.max.toLocaleString('fr-FR') + ' €</b></div>'
-      + '<div style="font-size:13px;color:#c9d3ee;margin-top:4px;">💥 = série plus longue que tes paliers : tout est perdu, retour au palier 1. Même cote pour tous les matchs (pas de cotes gardées pour les anciennes saisons).</div>'
+      + '<div style="font-size:13px;color:#c9d3ee;margin-top:4px;">💥 = série plus longue que tes paliers ou que ta bankroll : tout est perdu, retour au palier 1. Même cote pour tous les matchs (pas de cotes gardées pour les anciennes saisons).</div>'
       + mpmHtml(c, D, seq, R, libs, eu, cl) + '</div>';
   }
   /* ═══ 20261103o — 📋 MATCH PAR MATCH (Antoine, capture d'une appli « Matchs » de Pastrnak : « c'est possible d'avoir ce genre de détail par match
@@ -76407,13 +76418,13 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     L.slice().reverse().forEach(function (o) {
       var m = o.x.m, d = o.d, b = mpmBases(m, o.x.an)[0], A = S.adv && S.adv[b], a = A && (A[String(m[6] || '')] || A['d' + String(m[0] || '').slice(0, 10)]), lo = mpmLogo(a, b);
       var dt = String(m[0] || '').slice(0, 10).split('-'), dte = dt.length === 3 ? dt[2] + '/' + dt[1] : '';
-      var ic = d.b ? '💥' : o.x.ok ? '✅' : '❌', st = mpmStat(c, m);
+      var ic = d.b ? '💥' : o.x.ok ? '✅' : '❌', st = mpmStat(c, m);   /* d.b 1 = plus de palier, 2 = bankroll (20261104b) */
       h += '<div style="position:relative;overflow:hidden;border-radius:10px;margin:6px 0;background:#0b1226;border:1px solid #1c2747;">'
         + (lo ? '<img src="' + lo + '" alt="" onerror="this.remove()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);height:44px;width:44px;object-fit:contain;z-index:2;pointer-events:none;filter:drop-shadow(0 1px 3px rgba(0,0,0,.6));">' : '')   /* 20261103p (capture : « fais-le ressortir comme le screen 2 », logos nets à droite des paris) : logo net, devant */
         + '<div style="position:relative;background:rgba(5,10,25,.55);padding:7px ' + (lo ? '64px' : '9px') + ' 7px 9px;line-height:1.45;">'
         + '<div style="font-size:14px;"><b>' + dte + '</b> ' + (m[1] ? '🏠' : '✈️') + ' ' + (a ? esc(a[0]) : (A && A._ === 1 ? '…' : '—')) + ' · ' + ic + ' <b>' + m[2] + '-' + m[3] + '</b>' + (st ? ' · ' + st : '') + '</div>'
         + '<div style="font-size:14px;">P' + d.p + ' · mise ' + d.m.toLocaleString('fr-FR') + ' € · cote ' + d.c.toFixed(2).replace('.', ',') + (o.x.c > 1 ? ' ✅' : '')
-        + ' → <b style="color:' + cl(d.g) + ';">' + (d.g > 0 ? '+' : d.g < 0 ? '−' : '') + Math.abs(d.g).toFixed(2).replace('.', ',') + ' €</b>' + (d.b ? ' <span style="color:#ff5a5a;font-weight:800;">tout perdu</span>' : '') + '</div></div></div>';
+        + ' → <b style="color:' + cl(d.g) + ';">' + (d.g > 0 ? '+' : d.g < 0 ? '−' : '') + Math.abs(d.g).toFixed(2).replace('.', ',') + ' €</b>' + (d.b === 2 ? ' <span style="color:#ff5a5a;font-weight:800;">💥 bankroll trop petite pour le palier suivant</span>' : d.b ? ' <span style="color:#ff5a5a;font-weight:800;">tout perdu</span>' : '') + '</div></div></div>';
     });
     return h + '</div><div style="margin-top:4px;">Bilan de la saison : <b style="color:' + cl(bil) + ';">' + eu(bil) + '</b> · plus grosse mise ' + mx.toLocaleString('fr-FR') + ' €</div>';
   }
