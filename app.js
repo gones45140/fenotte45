@@ -73015,12 +73015,15 @@ function _g45TicketRemplirCockpit(o) {
   /* 20261025c (capture : ticket Winamax MyMatch Edmonton – Toronto → « Edmonton Oilers n'est pas une équipe de ton mur », alors que la carte
      JOUEUR Ryan Nugent-Hopkins, club Edmonton Oilers, y est) : équipe absente du mur → carte JOUEUR dont le CLUB (_g45UClub) est cette équipe.
      Plusieurs joueurs de ce club → celui dont le nom de famille est dans le ticket (type / joueur) ; sinon aucun (alerte comme avant). */
+  /* 20261104z (capture ticket Winamax « Résultat Florida Panthers 1,60 » → carte JOUEUR Matthew Tkachuk choisie et « Joueurs » rempli) : le joueur
+     du club n'est pris que si son NOM est sur le ticket (type / joueur), même s'il est seul (avant : seul → pris d'office). Pari d'équipe sans nom
+     de joueur → règle suivante (adversaire au mur → pari contre), sinon alerte. MyMatch « Victoire Edmonton + Nugent-Hopkins 1 point » : inchangé. */
   if (un && eq && !choisi) {
     try {
       var UJ = (typeof state !== 'undefined' && state && state.u) ? state.u : [], RJ = window._g45TkRacines, rq0 = RJ ? RJ(eq) : '';
       var memeC = function (c) { c = nz(c); return !!c && (c === eq || c.indexOf(eq) >= 0 || eq.indexOf(c) >= 0 || (!!rq0 && RJ(c) === rq0)); };
       var cJ = [].slice.call(un.options).filter(function (op) { var u2 = UJ.filter(function (x) { return x && x.n === op.value; })[0]; return u2 && u2.type === 'joueur' && memeC(_g45UClub(u2)); });
-      if (cJ.length > 1) { var txtT = ' ' + nz(String(o.type || '') + ' ' + String(o.joueur || '')) + ' '; cJ = cJ.filter(function (op) { var w = nz(op.value).split(' ').filter(function (x) { return x.length >= 3; }); return w.length && txtT.indexOf(' ' + w[w.length - 1] + ' ') >= 0; }); }
+      if (cJ.length >= 1) { var txtT = ' ' + nz(String(o.type || '') + ' ' + String(o.joueur || '')) + ' '; cJ = cJ.filter(function (op) { var w = nz(op.value).split(' ').filter(function (x) { return x.length >= 3; }); return w.length && txtT.indexOf(' ' + w[w.length - 1] + ' ') >= 0; }); }
       if (cJ.length === 1) {
         choisi = cJ[0]; cj = [choisi]; un.value = choisi.value; ids.push('c-unit');
         if (!o.joueur) o.joueur = choisi.value;
