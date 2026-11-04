@@ -60769,7 +60769,29 @@ function _g45MajEquipeJouee(u) {
     el.readOnly = false;
     el.style.opacity = '1';
     el.placeholder = 'Club du joueur';
-    if (!el.value || el.value === u.n) el.value = _g45UClub(u);
+    /* 20261105e (capture Engager : Matthew Tkachuk choisi à la main → « Équipe jouée » Lyon, « Compétition » Ligue 1 = restes de la carte
+       d'avant) : une valeur remplie AUTOMATIQUEMENT (nom d'une autre carte, ou club déjà mis par nous) est remplacée ; une saisie à la main
+       ou un club lu sur le ticket reste gardé. Compétition : ligue du club (CLUB_DB) sinon ligue du sport (NHL, NBA…), sinon vidée si elle
+       venait d'une autre carte. */
+    var autre = el.value && el.value !== u.n && ((el.dataset.g45Auto && el.value === el.dataset.g45Auto)
+      || (state.u || []).some(function (x) { return x && x !== u && x.n === el.value; }));
+    if (!el.value || el.value === u.n || autre) { el.value = _g45UClub(u); el.dataset.g45Auto = el.value; }
+    try {
+      var cc = document.getElementById('c-comp'), club = _g45UClub(u);
+      if (cc) {
+        var db = (typeof CLUB_DB !== 'undefined' && club) ? CLUB_DB.filter(function (c) { return c.name === club; })[0] : null;
+        var lgS = ({ '🏒': 'NHL', '🏀': 'NBA', '🏈': 'NFL', '⚾': 'MLB' })[String(u.sport || '').trim()] || '';
+        var lgJ = (db && db.league) || lgS;
+        var ccAuto = !cc.value || (cc.dataset.g45Auto && cc.value === cc.dataset.g45Auto)
+          || (typeof CLUB_DB !== 'undefined' && CLUB_DB.some(function (c) { return c.league === cc.value; }));
+        if (ccAuto && cc.value !== lgJ) {
+          cc.value = lgJ; cc.dataset.g45Auto = lgJ;
+          /* la mise dépend du palier de la compétition : on la recalcule avec la bonne */
+          var mi = document.getElementById('c-mise');
+          if (mi && typeof _g45Grille === 'function' && typeof _g45Pal === 'function') mi.value = _g45Grille(u)[_g45Pal(u, lgJ, typeof g45LieuCourant === 'function' ? g45LieuCourant() : '') - 1] || mi.value;
+        }
+      }
+    } catch (e) {}
     return;
   }
   if (estCompet) {
