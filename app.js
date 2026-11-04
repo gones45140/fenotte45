@@ -78538,7 +78538,12 @@ window._G45_PAL_COUL = ['#1ed760', '#8fdc4a', '#f5c542', '#ffa53a', '#ff7a3a', '
     + '#ulist .urow.g45ul .udot{display:none}'
     + '#ulist .urow.g45ul .uname{font-size:15px;font-weight:800;color:#fff}'
     + '#ulist .g45ul-pal{display:inline-block;margin-left:6px;padding:2px 9px;border-radius:7px;font-size:13px;font-weight:800;color:#0b101d;font-style:normal}'
-    + '#ulist .g45ul-note{display:inline-block;margin-top:5px;background:rgba(11,16,29,.72);border-radius:6px;padding:2px 7px;font-size:13px!important;color:#8fb4ff!important}';
+    + '#ulist .g45ul-note{display:inline-block;margin-top:5px;background:rgba(11,16,29,.72);border-radius:6px;padding:2px 7px;font-size:13px!important;color:#8fb4ff!important}'
+    /* 20261105l : vignette nette en haut à droite + boutons en bas */
+    + '#ulist .urow.g45ul{flex-wrap:wrap;align-items:flex-start}'
+    + '#ulist .urow.g45ul .g45ul-ph{float:right;width:72px;height:72px;margin:0 0 6px 8px;object-fit:contain;border-radius:50%;background:rgba(11,16,29,.7);border:2px solid var(--g45ulc,#4d84ff);padding:3px;box-sizing:border-box}'
+    + '#ulist .urow.g45ul .g45ul-ps,#ulist .urow.g45ul .g45ul-psl{clear:both}'
+    + '#ulist .urow.g45ul .g45ul-bt{flex:1 0 100%;justify-content:flex-end;align-items:center;margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.08)}';
   (document.head || document.documentElement).appendChild(st);
 
   var fond = function (u) {
@@ -78558,11 +78563,16 @@ window._G45_PAL_COUL = ['#1ed760', '#8fdc4a', '#f5c542', '#ffa53a', '#ff7a3a', '
       if (!u) return;
       row.classList.add('g45ul');
       if (u.color) row.style.setProperty('--g45ulc', u.color);
+      try { var bt0 = b.parentNode; if (bt0 && bt0 !== row) bt0.classList.add('g45ul-bt'); } catch (e) {}   /* 20261105l */
       var img = fond(u);
       if (img) {
-        var im = document.createElement('img'); im.className = 'g45ul-bg'; im.alt = ''; im.loading = 'lazy'; im.src = img;
+        /* 20261105l (capture téléphone : « baisser le bouton Modifier et mettre la photo ou le logo au-dessus, bien apparent » → maquette → « oui ») :
+           la photo / le logo n'est plus un fond pâle (18 %) mais une vignette nette en haut à droite de la carte (.g45ul-ph, dans le bloc texte) ;
+           ❤ / ✏ Modifier / ✕ passent en bas, sur toute la largeur (.g45ul-bt). */
+        var im = document.createElement('img'); im.className = 'g45ul-ph'; im.alt = ''; im.loading = 'lazy'; im.src = img;
         im.onerror = function () { im.remove(); };
-        row.insertBefore(im, row.firstChild);
+        var nm0 = row.querySelector('.uname'), bloc = nm0 && nm0.parentNode;
+        if (bloc && bloc !== row) bloc.insertBefore(im, bloc.firstChild); else { im.className = 'g45ul-bg'; row.insertBefore(im, row.firstChild); }
       }
       var info = row.querySelector('.uname'); info = info && info.nextElementSibling;
       if (info && /Palier/.test(info.textContent || '')) {
