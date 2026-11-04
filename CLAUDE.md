@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action (il est court exprès). Le détail de tout l'historique est dans HISTORIQUE.md
-(à chercher avec grep, jamais à lire en entier). Mis à jour le 31/10/2026 (version déployée : 20261104l, même app.js sur gones45 et fenotte45).
+(à chercher avec grep, jamais à lire en entier). Mis à jour le 31/10/2026 (version déployée : 20261104m, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -99,7 +99,7 @@ Index des zones (fonction d'entrée → mot à chercher dans HISTORIQUE.md) :
 - Séries individuelles `_g45RegBloc` / `g45RegOuvrir` / `_g45RegCalc` / `_g45RegHtml` / `_g45RegPhotos`
 - Compétitions `loadCompetTab`, `_g45CompetMatchs`, `_g45CompetEquipes`, classements `g45ClsRender` / `_g45ClsRenderUS`
 - Fenêtre de match `_renderGenericDetail` (hors foot), `_renderSaisonDetail` (foot), NHL avant match `_g45NhlAvPoser`
-- Agenda `loadCalendrier` (`_agSuivis`, `_agJou`, `_agPalier`, cache 'ag1'), cotes `_g45AgCotes`
+- Agenda (dans le monde du Cockpit depuis 20261104m, #ck-ag) `loadCalendrier` (`_agSuivis`, `_agJou`, `_agPalier`, cache 'ag1'), cotes `_g45AgCotes`
 - Ticket `_g45TicketIa` / `_g45TicketRemplir` / `_g45TicketRemplirCockpit` / `_g45TkRacines`
 - Paris : comptabilité `_g45BetEffetTotal` / `_g45BetAppliquer` (seule source de vérité), cartes « en cours » (data-g45ec), synchro `_g45PushBetsGithub` / `_g45BetsFusion`
 - Mur / accueil `_g45AccRegrouper`, cartes joueur `_g45JoueurVisLire`, logos `g45LogoUrlDe`, fond `_g45FondLogo`, limite bet45 `_g45MurLimite`
@@ -150,7 +150,7 @@ PIÈGES À NE JAMAIS OUBLIER :
 - 💶 Simulation Cockpit des critères : étape B FAITE (20261103i) pour les paris de résultat seuls (vraie cote de fermeture m[12]) ; foot 5 saisons remplies par le robot handicaps.yml « foot » (lancé le 03/11, vérifier qu'il a fini : ml / hc / tot avant 2025-26).
 - 🎯 « A passé la ligne du book » pour les JOUEURS NBA (critères) : VRAIES lignes over / under gardées (fiche.j[id].o types 1 pts, 2 passes, 3 rebonds, 4 3pts, 87-90 combinés ; toute la saison 2026-27 relue le 03/11, 20261103f) → FAIT (20261103h, bouton « 🎯 Ligne du book »). Équipes : handicap (b), total match (d), total équipe (f) FAITS.
 - 🏉 Critères rugby sur les archives FAITS (20261103k : onglet Essais, joueurs essai / points buteur / titulaire, Jouable en Cockpit équipes + joueurs 20 matchs mini) — à confirmer par Antoine à l'écran (Top 14, NRL).
-- 🏁 Monde du Cockpit : ÉTAPE 1 FAITE (20261104h : interrupteur, désactivé par défaut sauf si déjà des paris de montante ; Tableau de bord) ; 20261104i : formulaire de montante (#sub-strat), Bilan Cockpit et Archive Cockpit DÉPLACÉS dans le monde (onglets 🚀 Engager / 📈 Bilan / 🕒 Archive) ; 20261104k : Cockpit BET45 aussi (onglet 📊 ; Tendances le garde en « 🏁 Cockpit d'Antoine » pour qui n'a PAS le Cockpit = vitrine, futur coin abonnement) ; 20261104l : Mises par palier → onglet 🪜 Mes grilles (la case « Je joue en montante » reste dans Outils) ; critères : 💶, 📋 et « Jouable en Cockpit ? » (aussi F1) cachés si le Cockpit est coupé. Étapes suivantes (maquette d'abord) : onglets Aujourd'hui / Mes grilles / Trouver / Bilans dans le monde, puis RANGER ici les morceaux de Cockpit des autres écrans (paliers Agenda, 💶 critères, P1 auto, Cockpit BET45…) et les cacher quand l'interrupteur est coupé.
+- 🏁 Monde du Cockpit : ÉTAPE 1 FAITE (20261104h : interrupteur, désactivé par défaut sauf si déjà des paris de montante ; Tableau de bord) ; 20261104i : formulaire de montante (#sub-strat), Bilan Cockpit et Archive Cockpit DÉPLACÉS dans le monde (onglets 🚀 Engager / 📈 Bilan / 🕒 Archive) ; 20261104k : Cockpit BET45 aussi (onglet 📊 ; Tendances le garde en « 🏁 Cockpit d'Antoine » pour qui n'a PAS le Cockpit = vitrine, futur coin abonnement) ; 20261104l : Mises par palier → onglet 🪜 Mes grilles (la case « Je joue en montante » reste dans Outils) ; critères : 💶, 📋 et « Jouable en Cockpit ? » (aussi F1) cachés si le Cockpit est coupé ; 20261104m : AGENDA (#t-cal) déplacé dans le monde (onglet 📅), bouton Agenda de la barre caché pour tous (Cockpit coupé → showTab('t-cal') ouvre ⭐ Suivies). Étapes suivantes (maquette d'abord) : onglets Aujourd'hui / Mes grilles / Trouver / Bilans dans le monde, puis RANGER ici les morceaux de Cockpit des autres écrans (paliers Agenda, 💶 critères, P1 auto, Cockpit BET45…) et les cacher quand l'interrupteur est coupé.
 - Cédric : toucher 🤍 sur Portugal. Worker : budget `_lourd` 4 → 2 proposé.
 
 ## 8. Façon de travailler en session cloud

@@ -85984,7 +85984,7 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
     var ag = null; try { ag = window._g45CkAg || JSON.parse(localStorage.getItem('g45ck_ag') || 'null'); } catch (e) {}
     var now = Date.now(), M = ((ag && ag.L) || []).filter(function (m) { return m.t > now - 3 * 3600000 && m.t < now + 24 * 3600000; }).sort(function (a, b) { return a.t - b.t; });
     h += '<div style="' + CARTE + '"><div style="font-size:16px;font-weight:800;margin-bottom:6px;">📅 Prochaines 24 h</div>';
-    if (!ag) h += '<div style="color:#c9d3ee;">Ouvre l\'Agenda une fois : les matchs de tes équipes apparaîtront ici.</div>';
+    if (!ag) h += '<div style="color:#c9d3ee;">Ouvre l\'onglet 📅 Agenda une fois : les matchs de tes équipes apparaîtront ici. <button onclick="g45CkOnglet(\'ag\')" style="' + BTN + '">📅 Ouvrir l\'Agenda</button></div>';
     else if (!M.length) h += '<div style="color:#c9d3ee;">Aucun match de tes équipes dans les prochaines 24 h.</div>';
     M.slice(0, 12).forEach(function (m) {
       var u = (state.u || []).filter(function (x) { return x.n === m.n; })[0], G = u && _g45Grille(u), p = u ? ((typeof _g45PalLieu === 'function') ? _g45PalLieu(u, m.d ? 'dom' : 'ext') : (parseInt(u.l, 10) || 1)) : 1;
@@ -86018,7 +86018,7 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
     return '<div style="background:rgba(5,10,25,.82);border-radius:12px;padding:10px 12px;margin:6px 0 10px;"><div style="font-size:22px;font-weight:800;">🏁 Le monde du Cockpit</div><div style="font-size:14px;color:#c9d3ee;">Tout ce qui sert à ta montante, au même endroit</div></div>'
       + '<div style="display:flex;overflow-x:auto;margin-bottom:10px;">'
       + bt('tdb', '🏠 Tableau de bord', "g45CkOnglet('tdb')") + bt('eng', '🚀 Engager', "g45CkOnglet('eng')") + bt('bil', '📈 Bilan', "g45CkOnglet('bil')") + bt('arc', '🕒 Archive', "g45CkOnglet('arc')")
-      + bt('ag', '📅 Agenda', "var b=document.querySelector('button.ni[onclick*=t-cal]');showTab('t-cal',b);loadCalendrier()")
+      + bt('ag', '📅 Agenda', "g45CkOnglet('ag')")
       + bt('gr', '🪜 Mes grilles', "g45CkOnglet('gr')")
       + bt('cb', '📊 Cockpit BET45', "g45CkOnglet('cb')") + '</div>';
   }
@@ -86027,6 +86027,11 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
     if (!$('ck-tabs')) p.innerHTML = '<div id="ck-tabs"></div><div id="ck-tdb"></div><div id="ck-eng" style="display:none;"></div><div id="ck-bil" style="display:none;"></div><div id="ck-cb" style="display:none;"></div>';
     if (!$('ck-cb')) { var cbd = document.createElement('div'); cbd.id = 'ck-cb'; cbd.style.display = 'none'; p.appendChild(cbd); }
     if (!$('ck-gr')) { var grd = document.createElement('div'); grd.id = 'ck-gr'; grd.style.display = 'none'; p.appendChild(grd); }
+    /* 20261104m (« même, limite l'Agenda tu peux le basculer entièrement, on a Suivies pour les autres ») : section #t-cal DÉPLACÉE dans #ck-ag
+       (classe .tab retirée : c'est l'onglet du monde qui l'affiche) ; bouton Agenda de la barre caché pour tous ; showTab('t-cal') → onglet 📅 du
+       monde si le Cockpit est activé, sinon ⭐ Suivies. */
+    if (!$('ck-ag')) { var agd = document.createElement('div'); agd.id = 'ck-ag'; agd.style.display = 'none'; p.appendChild(agd); }
+    var tc = $('t-cal'), ca = $('ck-ag'); if (tc && ca && tc.parentNode !== ca) { ca.appendChild(tc); tc.classList.remove('tab'); tc.style.display = 'block'; }
     /* 20261104l (« oui » : Outils → Montante dans 🪜 Mes grilles) : titre « 💰 Mises par palier » + #palier-panel DÉPLACÉS dans #ck-gr ; la case
        « 🏁 Je joue en montante » reste dans Outils (#g45-ck-on posée AVANT le titre), sinon on ne pourrait plus activer le Cockpit. */
     var pp = $('palier-panel'), cg = $('ck-gr');
@@ -86047,8 +86052,9 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
   function bilPrendre() { var tb = $('t-bilan'), cb = $('ck-bil'); if (!tb || !cb) return null; if (!repBil) { repBil = document.createComment('t-bilan'); tb.parentNode.insertBefore(repBil, tb); } if (tb.parentNode !== cb) cb.appendChild(tb); tb.style.display = 'block'; return tb; }
   window._g45CkBilRendre = bilRendre;
   window.g45CkOnglet = function (k) {
-    TAB = ['eng', 'bil', 'arc', 'cb', 'gr'].indexOf(k) >= 0 ? k : 'tdb'; squelette();
-    var t = $('ck-tdb'), e = $('ck-eng'), cb = $('ck-bil'), kb = $('ck-cb'), kg = $('ck-gr');
+    TAB = ['eng', 'bil', 'arc', 'cb', 'gr', 'ag'].indexOf(k) >= 0 ? k : 'tdb'; squelette();
+    var t = $('ck-tdb'), e = $('ck-eng'), cb = $('ck-bil'), kb = $('ck-cb'), kg = $('ck-gr'), ka = $('ck-ag');
+    if (ka) { ka.style.display = TAB === 'ag' ? '' : 'none'; if (TAB === 'ag') { var tc2 = $('t-cal'); if (tc2) tc2.style.display = 'block'; try { if (typeof loadCalendrier === 'function') loadCalendrier(); } catch (x) {} } }
     if (kg) { kg.style.display = TAB === 'gr' ? '' : 'none'; if (TAB === 'gr') { try { renderPaliers(); } catch (x) {} } }
     /* 20261104k (« Cockpit dans Tendances, on le bascule entièrement dans Cockpit ? » → B : basculé ; ami sans le Cockpit → « 🏁 Cockpit d'Antoine »
        reste dans Tendances, la vitrine) : même rendu (_g45CkHtml → #g45ck, redessiné sur place par ckRedessiner). */
@@ -86077,6 +86083,7 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
       var nav = document.querySelector('nav.nav'), bp = nav && nav.querySelector('button.ni[onclick*="t-paris"]'), b = $('g45-ni-ck');
       if (nav && bp && !b) { b = document.createElement('button'); b.id = 'g45-ni-ck'; b.className = 'ni'; b.setAttribute('onclick', 'g45CkOuvrir(this)'); b.innerHTML = '<span>🏁</span>Cockpit'; bp.insertAdjacentElement('afterend', b); }
       if (b) b.style.display = actif() ? '' : 'none';
+      Array.prototype.forEach.call(document.querySelectorAll('button.ni[onclick*="t-cal"]'), function (x) { x.style.display = 'none'; });   /* 20261104m : Agenda dans le monde du Cockpit */
       if (!actif()) { var p = $('t-cockpit'); if (p && p.style.display !== 'none') { var bm = document.querySelector('button.ni[onclick*="t-dash"]'); if (typeof showTab === 'function') showTab('t-dash', bm); } }
       var pp = $('palier-panel'), t = $('g45-ck-on');
       if (pp && !t && !($('ck-gr') && $('ck-gr').contains(pp))) { t = document.createElement('div'); t.id = 'g45-ck-on'; t.style.cssText = 'margin:0 0 12px;padding:10px 12px;border-radius:10px;background:rgba(77,132,255,.12);border:1px solid #4d84ff;font-size:14px;color:#fff;'; pp.insertAdjacentElement('afterbegin', t); }
@@ -86088,7 +86095,9 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
   /* 20261104i : #sub-strat vit dans #t-cockpit → « cockpit visible » = vraiment affiché (offsetParent), pas seulement display du bloc */
   try { var _tc0 = _g45TicketCockpit; _g45TicketCockpit = window._g45TicketCockpit = function () { var ss = $('sub-strat'); return !!(_tc0() && ss && ss.offsetParent !== null); }; } catch (e) {}
   /* page Pari ouverte avec le Cockpit encore « on » (ancien état) → Simple */
-  try { var _st0 = showTab; showTab = window.showTab = function (id, btn) { try { if (id !== 't-cockpit') bilRendre(); } catch (e) {} var r = _st0.apply(this, arguments); try { if (id === 't-paris') { var bc = $('btn-cpit'); if (bc && bc.classList.contains('on') && typeof swBet === 'function') swBet('simple'); } } catch (e) {} return r; }; } catch (e) {}
+  try { var _st0 = showTab; showTab = window.showTab = function (id, btn) {
+    if (id === 't-cal') { try { if (actif()) { window.g45CkOuvrir(null, 'ag'); return; } var bs = document.querySelector('button.ni[onclick*="t-suivies"]'); id = 't-suivies'; btn = bs; arguments[0] = id; arguments[1] = btn; if (typeof loadSuiviesTab === 'function') setTimeout(function () { try { loadSuiviesTab(); } catch (e) {} }, 0); } catch (e) {} }   /* 20261104m */
+    try { if (id !== 't-cockpit') bilRendre(); } catch (e) {} var r = _st0.apply(this, arguments); try { if (id === 't-paris') { var bc = $('btn-cpit'); if (bc && bc.classList.contains('on') && typeof swBet === 'function') swBet('simple'); } } catch (e) {} return r; }; } catch (e) {}
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { setTimeout(poser, 300); }); else setTimeout(poser, 300);
   setInterval(function () { try { poser(); dessiner(); } catch (e) {} }, 15000);
 })();
