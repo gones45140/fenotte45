@@ -85881,7 +85881,7 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
   var pctLu = function () { var v = 0; try { v = parseFloat(localStorage.getItem('g45_pct_mise')) || 0; } catch (e) {} return v; };
   /* 20261105m (capture mise 7,69 € : « prend pas les centimes et arrondi au supérieur ? ») : P1 auto = euro ENTIER, arrondi au-dessus (7,69 → 8 ;
      sous 1 € on garde les centimes, arrondis au-dessus). Le bloc 💰 dit si la grille dépasse un peu la bankroll (ex. 9 paliers). */
-  window._g45PctT = { p1: function (c, n) { var r = c / Math.pow(3, n - 1); if (!(r > 0)) return 0; return r >= 1 ? Math.ceil(r - 1e-9) : Math.ceil(r * 100 - 1e-9) / 100; }, coulJ: coulJ, coulM: coulM };   /* tests */
+  window._g45PctT = { p1: function (c, n) { return Math.floor(c / Math.pow(3, n - 1) * 100) / 100; },   /* 20261105n : arrondi du 20261105m ANNULÉ (malentendu : Antoine demandait pourquoi le Tableau de bord affichait 8 € au lieu de 7,69 €) */ coulJ: coulJ, coulM: coulM };   /* tests */
   /* ═══ 20261104e — GRILLE EN ATTENTE (Antoine : « 5 ⭐ en P6, 3 ⭐ en P9… oui et que ça soit modifiable ; après le problème va être si je veux
      modifier et que j'ai des paliers en cours ») : changer une grille au milieu d'une série casse le remboursement (pertes faites avec l'ancienne
      mise, victoire payée avec la nouvelle). Donc : aucune équipe de ces ⭐ au-delà de P1 → appliquée tout de suite ; sinon gardée ⏳ (g45_strats_att)
@@ -86088,6 +86088,7 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
   var $ = function (id) { return document.getElementById(id); };
   var esc = function (t) { return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;'); };
   var eu = function (x) { var r = Math.round(x); return (r < 0 ? '−' : '') + Math.abs(r).toLocaleString('fr-FR') + ' €'; };
+  var euC = function (x) { var r = Math.round((+x || 0) * 100) / 100; return r.toLocaleString('fr-FR', { maximumFractionDigits: 2 }) + ' €'; };   /* 20261105n (capture : Wembanyama « P1 sur 8 · mise 8 € » alors que la vraie mise est 7,69 €) : les MISES gardent leurs centimes */
   var cap = function () { try { return Object.keys(state.b || {}).reduce(function (a, k) { var n = parseFloat(state.b[k]); return a + (isNaN(n) ? 0 : n); }, 0); } catch (e) { return 0; } };
   function actif() {
     if (typeof state === 'undefined') return false;
@@ -86194,7 +86195,7 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
       var ic = '<span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:' + col + ';vertical-align:-2px;box-shadow:0 0 6px ' + col + ';"></span>';
       var abB = '<button onclick="g45CkAbandon(' + esc(JSON.stringify(x.u.n)).replace(/"/g, '&quot;') + ',' + esc(JSON.stringify(x.k || '')).replace(/"/g, '&quot;') + ')" style="margin-right:8px;border-radius:8px;padding:2px 8px;font-size:13px;font-weight:800;color:#fff;cursor:pointer;border:1px solid #ff9f43;background:#3a2408;vertical-align:1px;" title="Abandonner cette série">🏳️</button>';   /* 20261105c : collé AVANT le nom (sur PC, à droite, on ne savait plus quel drapeau = quelle série) */   /* 20261104y ; 20261105b : petit drapeau, seulement en mode abandon */
       if (!window._g45CkAbMode) abB = '';
-      h += '<div style="margin-top:4px;">' + abB + ic + ' <b>' + esc(x.u.n) + '</b> ' + x.lieu + ' · P' + x.p + ' sur ' + x.N + ' · mise <b>' + eu(x.mise) + '</b>' + (r <= 3 ? ' · <span style="color:' + wc + ';font-weight:800;">' + (r === 0 ? 'dernier palier' : 'plus que ' + r + ' palier' + (r > 1 ? 's' : '')) + '</span>' : '') + '</div>'
+      h += '<div style="margin-top:4px;">' + abB + ic + ' <b>' + esc(x.u.n) + '</b> ' + x.lieu + ' · P' + x.p + ' sur ' + x.N + ' · mise <b>' + euC(x.mise) + '</b>' + (r <= 3 ? ' · <span style="color:' + wc + ';font-weight:800;">' + (r === 0 ? 'dernier palier' : 'plus que ' + r + ' palier' + (r > 1 ? 's' : '')) + '</span>' : '') + '</div>'
         + '<div style="height:8px;border-radius:6px;background:#1c2747;overflow:hidden;margin:3px 0;"><div style="height:8px;width:' + Math.round(100 * x.p / x.N) + '%;background:' + col + ';"></div></div>';
     });
     if (p1.length) h += '<div style="margin-top:6px;"><span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:' + ((window._G45_PAL_COUL || ['#1ed760'])[0]) + ';vertical-align:-2px;"></span> ' + p1.slice(0, 12).map(function (x) { return '<b>' + esc(x.u.n) + '</b>'; }).join(', ') + (p1.length > 12 ? ' et ' + (p1.length - 12) + ' autres' : '') + ' · P1</div>';
@@ -86217,7 +86218,7 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
         + ((F.logo || (!F.vis && !F.cut && F.img)) ? '<img src="' + esc(F.logo || F.img) + '" alt="" loading="lazy" onerror="this.remove()" style="position:absolute;right:16px;top:50%;transform:translateY(-50%);height:76%;max-width:22%;object-fit:contain;pointer-events:none;filter:drop-shadow(0 4px 10px rgba(0,0,0,.6));">' : '')
         + '<div style="position:relative;padding:9px 10px;display:flex;flex-direction:column;align-items:flex-start;gap:5px;">'
         + '<div style="' + bd + 'font-size:15px;"><b>' + hr + ' · ' + esc(m.n) + '</b> ' + (m.d ? '🏠' : '✈️') + (m.adv ? ' contre ' + esc(m.adv) : '') + '</div>'
-        + '<div style="' + bd + 'font-size:14px;">' + (G ? 'P' + p + ' sur ' + G.length + ' · mise <b>' + eu(mi) + '</b>' : '<span style="color:#c9d3ee;">pas de grille</span>') + '</div>'
+        + '<div style="' + bd + 'font-size:14px;">' + (G ? 'P' + p + ' sur ' + G.length + ' · mise <b>' + euC(mi) + '</b>' : '<span style="color:#c9d3ee;">pas de grille</span>') + '</div>'
         + '<button onclick="g45CkEngager(' + esc(JSON.stringify(m.n)).replace(/"/g, '&quot;') + ',' + (m.d ? 1 : 0) + ',' + esc(JSON.stringify(m.adv || '')).replace(/"/g, '&quot;') + ',' + m.t + ')" style="background:#4d7cff;border:0;border-radius:9px;padding:7px 12px;font-weight:800;font-size:14px;color:#fff;cursor:pointer;">✅ Engager</button></div></div>';
     });
     h += '</div>';
