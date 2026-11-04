@@ -85918,7 +85918,9 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
       if (!L.length && u && u.ps && u.ps.p && u.ps.p.length && (!lieu || !u.ps.k || u.ps.k === lieu || u.ps.k === 'glob')) L.push({ k: u.ps.k || 'glob', p: u.ps.p, tot: +u.ps.tot || 0 });
       if (!L.length) return null;
       var R = L.reduce(function (a, x) { return x.tot > a.tot ? x : a; }), n = R.tot + 1;
-      return { k: R.k, p: R.p, n: n, ne: n > 9 ? null : Math.max(6, n) };
+      /* 20261105h (« 6 paliers car pire série 5 : on a un palier de sécurité » ; Adam Fox 🏠 → 6 paliers proposait 6 = « pas bon ») :
+         conseillé = paliers nécessaires + 1 de SÉCURITÉ (entre 6 et 9) ; si seule la sécurité dépasse 9 → 9 sans sécurité (sec false). */
+      return { k: R.k, p: R.p, n: n, ne: n > 9 ? null : Math.min(9, Math.max(6, n + 1)), sec: n + 1 <= 9 };
     } catch (e) { return null; }
   };
   window.g45P1AutoEq = function (nom, n) {
@@ -85974,7 +85976,7 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
           h += perso ? '<div style="margin-top:6px;">🎯 <b>Grille perso de ' + esc(u.n) + '</b> : P' + u.g.length + ' max · P1 ' + String(u.g[0]).replace('.', ',') + ' € ' + chip(false, '↩️ revenir aux étoiles ' + '⭐'.repeat(+u.s || 1), "g45GrilleEqRetour('" + esc(u.n).replace(/'/g, "\\'") + "')") + '</div>' : '';
           var CS = window._g45PsConseil(u, typeof g45LieuCourant === 'function' ? g45LieuCourant() : '');   /* 20261105g (B) */
           if (CS) h += '<div style="margin-top:6px;">📊 Pire série 4 saisons ' + ({ glob: '🌍', dom: '🏠', ext: '✈️' }[CS.k] || '') + ' : <b>' + CS.p.join('·') + '</b> → '
-            + (CS.ne ? 'il faut <b style="color:#1ed760;">' + CS.n + ' palier' + (CS.n > 1 ? 's' : '') + '</b>' + (CS.n < 6 ? ' (6 = la plus petite grille)' : '') + ' (conseillé ⭐)' : '<b style="color:#ff5a5a;">' + CS.n + ' paliers ❌ au-delà de 9</b>') + '</div>';
+            + (CS.ne ? 'il faut ' + CS.n + ' palier' + (CS.n > 1 ? 's' : '') + (CS.sec ? ' + 1 de sécurité' : ' (pas de place pour la sécurité)') + ' → <b style="color:#1ed760;">' + CS.ne + ' paliers</b>' + (CS.n + 1 < 6 ? ' (6 = la plus petite grille)' : '') + ' (conseillé ⭐)' : '<b style="color:#ff5a5a;">' + CS.n + ' paliers ❌ au-delà de 9</b>') + '</div>';
           h += '<div style="margin-top:6px;">🪜 <b>P1 auto</b> : ma bankroll couvre ' + lst.map(function (n) { var on = G.length === n && Math.abs(G[0] - window._g45PctT.p1(c, n)) < 0.011; return chip(on, String(n) + (CS && CS.ne === n ? ' ⭐' : ''), 'g45P1Auto(' + n + ')'); }).join('') + ' paliers</div>'
             + '<div style="margin-top:4px;">→ ' + lst.map(function (n) { return n + ' paliers : P1 = <b>' + window._g45PctT.p1(c, n).toFixed(2).replace('.', ',') + ' €</b>'; }).join(' · ') + '</div>'
             + '<div style="font-size:13px;color:#c9d3ee;">🎯 « P1 auto » crée une grille perso pour ' + esc(u.n) + ' seulement (confirmation demandée) : tes autres équipes ne changent pas.</div>'
