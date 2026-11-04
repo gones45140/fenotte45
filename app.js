@@ -60309,7 +60309,19 @@ function _g45BandMeme(a, b) {
   try {
     var x = _g45SgNorm(a || ''), y = _g45SgNorm(b || '');
     if (!x || !y) return false;
-    return x === y || (x.length > 3 && y.indexOf(x) >= 0) || (y.length > 3 && x.indexOf(y) >= 0);
+    if (x === y) return true;
+    /* 20261105d (bandeau « Mes équipes » : Lillestrøm – Viktoria Plzeň affiché alors qu'Antoine suit LILLE) : « lille » était trouvé au début
+       de « lillestrom ». Le nom court doit maintenant FINIR en fin de mot du nom long (Bayern → Bayern Munich, Gladbach → Mönchengladbach OK ;
+       Lille → Lillestrøm refusé). */
+    var finMot = function (court, longTxt) {
+      if (court.length <= 3) return false;
+      var L = _g45SgNorm(longTxt), fins = {}, cum = 0;
+      String(longTxt || '').replace(/[øØåÅæÆœŒßđĐłŁ]/g, function (c) { return _G45_TRANSLIT[c] || c; }).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .split(/[^a-z0-9]+/).forEach(function (w) { if (w) { cum += w.length; fins[cum] = 1; } });
+      for (var i = L.indexOf(court); i >= 0; i = L.indexOf(court, i + 1)) if (fins[i + court.length]) return true;
+      return false;
+    };
+    return finMot(x, b) || finMot(y, a);
   } catch (e) { return false; }
 }
 
