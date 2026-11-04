@@ -85729,3 +85729,84 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
   }
   setTimeout(async function () { if (typeof _g45SanteActive === 'function' && _g45SanteActive()) poser(await charger(false)); }, 4000);
 })();
+
+/* ═══ 20261104d — 💰 MISE EN % DE LA BANKROLL (Antoine, capture de la page Pari : « le % de mise par rapport à sa bankroll » → « montre une
+   vraie maquette » → « en fait faudrait mettre 1 % et que ça te calcule ta mise » → piège de la montante expliqué (P1 = 1 % → P9 = 367 000 €)
+   → « oui bonne idée » → maquette-mise-auto → « oui code-le ») :
+   ① PARI SIMPLE (n-mise) et COMBINÉ (combi-mise) : boutons 0,5 / 1 / 2 / 5 % → la mise = % × bankroll (choix gardé : g45_pct_mise) ;
+   ② MONTANTE (c-mise) : % de la mise du jour + ce que la montante engage si tout est perdu jusqu'au dernier palier ; « 🪜 P1 auto : ma bankroll
+      couvre [7] [8] [9] paliers » → P1 = bankroll ÷ 3^(N−1) (règle 2 × somme : perdre N paliers = P1 × 3^(N−1)), arrondi au centime INFÉRIEUR,
+      grille des ⭐ de l'équipe refaite par _g45MajP1 APRÈS confirmation (la grille est PAR ÉTOILES : toutes les équipes de ce nombre d'étoiles).
+   Bankroll = somme des comptes (state.b, la personne connectée ; chacun la sienne sur bet45). Couleurs mise du jour : ≤ 2 % vert, ≤ 5 % orange,
+   au-delà rouge ; montante entière : < 20 % vert, ≤ 50 % orange, au-delà rouge. Boîte posée sous la ligne Mise / Bookmaker, redessinée quand
+   la mise, l'équipe ou la bankroll changent (contrôle toutes les secondes, rien n'est envoyé ailleurs). ═══ */
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var cap = function () { try { return Object.keys(state.b || {}).reduce(function (a, k) { var n = parseFloat(state.b[k]); return a + (isNaN(n) ? 0 : n); }, 0); } catch (e) { return 0; } };
+  var eu = function (x, d) { return (Math.round(x * 100) / 100).toLocaleString('fr-FR', { minimumFractionDigits: d ? 2 : 0, maximumFractionDigits: 2 }) + ' €'; };
+  var pc = function (x) { return (x < 0.1 ? x.toFixed(2) : x < 10 ? x.toFixed(1).replace(/\.0$/, '') : String(Math.round(x))).replace('.', ',') + ' %'; };
+  var coulJ = function (p) { return p <= 2 ? ['#1ed760', '🟢 prudent'] : p <= 5 ? ['#ff9f43', '🟠 normal'] : ['#ff5a5a', '🔴 risqué']; };
+  var coulM = function (p) { return p < 20 ? ['#1ed760', '🟢'] : p <= 50 ? ['#ff9f43', '🟠'] : ['#ff5a5a', '🔴']; };
+  var barre = function (p, c) { return '<div style="height:8px;border-radius:6px;background:#1c2747;margin:6px 0 2px;overflow:hidden;"><div style="height:8px;width:' + Math.max(2, Math.min(100, p)) + '%;background:' + c + ';"></div></div>'; };
+  var chip = function (on, txt, js) { return '<button type="button" onclick="' + js + '" style="border-radius:14px;padding:6px 12px;margin:6px 6px 0 0;cursor:pointer;color:#fff;font-size:14px;border:1px solid ' + (on ? '#6d9dff' : '#2a3a63') + ';background:' + (on ? '#2a4a9a' : '#0b1226') + ';font-weight:' + (on ? 800 : 600) + ';">' + (on ? '✓ ' : '') + txt + '</button>'; };
+  var BOITE = 'margin-top:8px;border-radius:10px;padding:10px 12px;font-size:14px;line-height:1.5;color:#fff;background:rgba(5,10,25,.75);border:1px solid #1c2747;';
+  var PCTS = [0.5, 1, 2, 5];
+  var pctLu = function () { var v = 0; try { v = parseFloat(localStorage.getItem('g45_pct_mise')) || 0; } catch (e) {} return v; };
+  window._g45PctT = { p1: function (c, n) { return Math.floor(c / Math.pow(3, n - 1) * 100) / 100; }, coulJ: coulJ, coulM: coulM };   /* tests */
+  window.g45PctMise = function (id, p) {
+    var mi = $(id), c = cap(); if (!mi || !(c > 0)) return;
+    try { localStorage.setItem('g45_pct_mise', String(p)); } catch (e) {}
+    mi.value = (Math.round(c * p) / 100).toFixed(2);
+    try { mi.dispatchEvent(new Event('input', { bubbles: true })); mi.dispatchEvent(new Event('change', { bubbles: true })); } catch (e) {}
+    dessiner(true);
+  };
+  window.g45P1Auto = function (n) {
+    var uSel = $('c-unit'), u = uSel && (state.u || []).find(function (x) { return x.n === uSel.value; }), c = cap();
+    if (!u || !STRATS[u.s] || !(c > 0)) return;
+    var p1 = window._g45PctT.p1(c, n), et = '⭐'.repeat(+u.s || 1), old = STRATS[u.s][0];
+    if (!(p1 > 0)) { alert('Bankroll trop petite pour couvrir ' + n + ' paliers.'); return; }
+    if (!confirm('Changer la grille ' + et + ' : P1 ' + String(old).replace('.', ',') + ' € → ' + String(p1).replace('.', ',') + ' € ?\n\nTa bankroll (' + eu(c) + ') couvrira ' + n + ' paliers.\n⚠️ Ça change la grille de TOUTES tes équipes ' + (+u.s || 1) + ' étoile' + (+u.s > 1 ? 's' : '') + '.')) return;
+    try { localStorage.setItem('g45_p1_auto', String(n)); } catch (e) {}
+    if (typeof _g45MajP1 === 'function') _g45MajP1(u.s, p1);
+    try { (window.updMise || updMise)(); } catch (e) {}
+    dessiner(true);
+  };
+  function boite(mi) {
+    var g = mi.closest('.g2') || mi.parentNode, id = 'g45pct-' + mi.id, b = $(id);
+    if (!b) { b = document.createElement('div'); b.id = id; b.style.cssText = BOITE; g.insertAdjacentElement('afterend', b); }
+    return b;
+  }
+  var vu = {};
+  function dessiner(force) {
+    var c = cap();
+    ['n-mise', 'combi-mise', 'c-mise'].forEach(function (id) {
+      var mi = $(id); if (!mi) return;
+      var m = parseFloat(String(mi.value || '').replace(',', '.')) || 0, uSel = $('c-unit'), u = id === 'c-mise' && uSel && (state.u || []).find(function (x) { return x.n === uSel.value; });
+      var G = u && STRATS[u.s], sig = [m, Math.round(c * 100), u ? u.n + '|' + u.s : '', G ? G.join(',') : '', pctLu(), (function () { try { return localStorage.getItem('g45_p1_auto') || ''; } catch (e) { return ''; } })()].join('|');
+      if (!force && vu[id] === sig) return; vu[id] = sig;
+      if (!(c > 0)) { var b0 = $('g45pct-' + id); if (b0) b0.remove(); return; }
+      var b = boite(mi), p = 100 * m / c, cj = coulJ(p), h = '';
+      if (id !== 'c-mise') {
+        var pl = pctLu();
+        h += '💰 % de ta bankroll : ' + PCTS.map(function (x) { return chip(pl === x && Math.abs(m - Math.round(c * x) / 100) < 0.01, String(x).replace('.', ',') + ' %', "g45PctMise('" + id + "'," + x + ")"); }).join('')
+          + '<div style="margin-top:6px;">' + (m > 0 ? '<b>' + pc(p) + '</b> de ta bankroll (' + eu(c) + ') = <b>' + eu(m, 1) + '</b> <b style="color:' + cj[0] + ';">' + cj[1] + '</b>' : 'Bankroll : ' + eu(c)) + '</div>'
+          + (m > 0 ? barre(p * 10, cj[0]) : '')
+          + '<div style="font-size:13px;color:#c9d3ee;">Touche un % : la mise se remplit toute seule. Tu peux toujours la changer à la main.</div>';
+      } else {
+        var tot = G ? G.reduce(function (a, x) { return a + (+x || 0); }, 0) : 0, pm = 100 * tot / c, cm = coulM(pm), na = 0; try { na = parseInt(localStorage.getItem('g45_p1_auto'), 10) || 0; } catch (e) {}
+        h += (m > 0 ? '💰 <b>' + pc(p) + '</b> de ta bankroll <b style="color:' + cj[0] + ';">' + cj[1].split(' ')[0] + '</b>' : '💰 Bankroll : ' + eu(c))
+          + (G ? ' · 🪜 perdre jusqu\'à P' + G.length + ' : <b>' + eu(tot) + '</b> = <b style="color:' + cm[0] + ';">' + pc(pm) + ' ' + cm[1] + (pm > 100 ? ' plus que ta bankroll' : '') + '</b>' + (pm <= 100 ? ' <b style="color:#1ed760;">✅ couverte</b>' : '') + barre(pm, cm[0]) : '');
+        if (G) {
+          var lst = [7, 8, 9].filter(function (n) { return n <= G.length; });
+          h += '<div style="margin-top:6px;">🪜 <b>P1 auto</b> : ma bankroll couvre ' + lst.map(function (n) { var on = na === n && Math.abs(G[0] - window._g45PctT.p1(c, n)) < 0.011; return chip(on, String(n), 'g45P1Auto(' + n + ')'); }).join('') + ' paliers</div>'
+            + '<div style="margin-top:4px;">→ ' + lst.map(function (n) { return n + ' paliers : P1 = <b>' + window._g45PctT.p1(c, n).toFixed(2).replace('.', ',') + ' €</b>'; }).join(' · ') + '</div>'
+            + '<div style="font-size:13px;color:#c9d3ee;">⚠️ La grille dépend des étoiles : la changer change TOUTES tes équipes ' + '⭐'.repeat(+u.s || 1) + ' (confirmation demandée).</div>';
+        }
+      }
+      b.innerHTML = h;
+    });
+  }
+  window._g45PctDessiner = dessiner;
+  setInterval(function () { try { dessiner(false); } catch (e) {} }, 1000);
+  document.addEventListener('input', function (e) { if (e.target && /^(n-mise|combi-mise|c-mise)$/.test(e.target.id)) { try { dessiner(false); } catch (x) {} } }, true);
+})();
