@@ -86017,7 +86017,7 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
     var bt = function (k, txt, js) { var on = TAB === k; return '<button onclick="' + js + '" style="' + BTN + (on ? 'background:#2a4a9a;border-color:#6d9dff;' : '') + '">' + txt + '</button>'; };
     return '<div style="background:rgba(5,10,25,.82);border-radius:12px;padding:10px 12px;margin:6px 0 10px;"><div style="font-size:22px;font-weight:800;">🏁 Le monde du Cockpit</div><div style="font-size:14px;color:#c9d3ee;">Tout ce qui sert à ta montante, au même endroit</div></div>'
       + '<div style="display:flex;overflow-x:auto;margin-bottom:10px;">'
-      + bt('tdb', '🏠 Tableau de bord', "g45CkOnglet('tdb')") + bt('eng', '🚀 Engager', "g45CkOnglet('eng')") + bt('bil', '📈 Bilan', "g45CkOnglet('bil')") + bt('arc', '🕒 Archive', "g45CkOnglet('arc')")
+      + bt('tdb', '🏠 Tableau de bord', "g45CkOnglet('tdb')") + bt('eng', '🚀 Engager', "g45CkOnglet('eng')") + bt('mc', '🃏 Mes cartes', "g45CkOnglet('mc')") + bt('bil', '📈 Bilan', "g45CkOnglet('bil')") + bt('arc', '🕒 Archive', "g45CkOnglet('arc')")
       + bt('ag', '📅 Agenda', "g45CkOnglet('ag')")
       + bt('gr', '🪜 Mes grilles', "g45CkOnglet('gr')")
       + bt('cb', '📊 Cockpit BET45', "g45CkOnglet('cb')") + '</div>';
@@ -86031,6 +86031,7 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
        (classe .tab retirée : c'est l'onglet du monde qui l'affiche) ; bouton Agenda de la barre caché pour tous ; showTab('t-cal') → onglet 📅 du
        monde si le Cockpit est activé, sinon ⭐ Suivies. */
     if (!$('ck-ag')) { var agd = document.createElement('div'); agd.id = 'ck-ag'; agd.style.display = 'none'; p.appendChild(agd); }
+    if (!$('ck-mc')) { var mcd = document.createElement('div'); mcd.id = 'ck-mc'; mcd.style.display = 'none'; p.appendChild(mcd); }
     var tc = $('t-cal'), ca = $('ck-ag'); if (tc && ca && tc.parentNode !== ca) { ca.appendChild(tc); tc.classList.remove('tab'); tc.style.display = 'block'; }
     /* 20261104l (« oui » : Outils → Montante dans 🪜 Mes grilles) : titre « 💰 Mises par palier » + #palier-panel DÉPLACÉS dans #ck-gr ; la case
        « 🏁 Je joue en montante » reste dans Outils (#g45-ck-on posée AVANT le titre), sinon on ne pourrait plus activer le Cockpit. */
@@ -86051,8 +86052,19 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
   function bilRendre() { var tb = $('t-bilan'); if (tb && repBil && tb.parentNode && tb.parentNode.id === 'ck-bil') { repBil.parentNode.insertBefore(tb, repBil); tb.style.display = 'none'; } window._g45ArchCk = false; }
   function bilPrendre() { var tb = $('t-bilan'), cb = $('ck-bil'); if (!tb || !cb) return null; if (!repBil) { repBil = document.createComment('t-bilan'); tb.parentNode.insertBefore(repBil, tb); } if (tb.parentNode !== cb) cb.appendChild(tb); tb.style.display = 'block'; return tb; }
   window._g45CkBilRendre = bilRendre;
+  /* ═══ 20261104p (capture des cartes Hockey d'Outils → Équipes : « ça c'est important dans Cockpit, mes équipes… ou mes cartes vu qu'il y a les
+     joueurs, avec le / les boutons Calculer mes séries ; ici faudrait mes équipes sans les séries ») : onglet 🃏 Mes cartes = la liste #ulist
+     (équipes ET joueurs, rendu d'origine, décorations séries / 💶 / Recalculer) + la barre « 🔄 Calculer mes séries » (#g45-ser-bar),
+     DÉPLACÉES dans #ck-mc le temps de l'onglet puis remises dans Outils (repère). Dans Outils → Équipes, les séries sont cachées par CSS
+     (#t-outils .g45ul-ps / .g45ul-psl / #g45-ser-bar). ═══ */
+  var repUl = null;
+  function ulRendre() { var ul = $('ulist'), bar = $('g45-ser-bar'); if (ul && repUl && ul.parentNode && ul.parentNode.id === 'ck-mc') { repUl.parentNode.insertBefore(ul, repUl); if (bar && bar.parentNode && bar.parentNode.id === 'ck-mc') repUl.parentNode.insertBefore(bar, ul); } }
+  function ulPrendre() { var ul = $('ulist'), cm = $('ck-mc'); if (!ul || !cm) return; if (!repUl) { repUl = document.createComment('ulist'); ul.parentNode.insertBefore(repUl, ul); } var bar = $('g45-ser-bar'); if (bar && bar.parentNode !== cm) cm.appendChild(bar); if (ul.parentNode !== cm) cm.appendChild(ul);
+    try { if (typeof render === 'function') render(); } catch (e) {} try { if (typeof window._g45SerBarre === 'function') window._g45SerBarre(); } catch (e) {} }
+  window._g45CkUlRendre = ulRendre;
   window.g45CkOnglet = function (k) {
-    TAB = ['eng', 'bil', 'arc', 'cb', 'gr', 'ag'].indexOf(k) >= 0 ? k : 'tdb'; squelette();
+    TAB = ['eng', 'bil', 'arc', 'cb', 'gr', 'ag', 'mc'].indexOf(k) >= 0 ? k : 'tdb'; squelette();
+    var km = $('ck-mc'); if (km) { km.style.display = TAB === 'mc' ? '' : 'none'; if (TAB === 'mc') ulPrendre(); else ulRendre(); }
     var t = $('ck-tdb'), e = $('ck-eng'), cb = $('ck-bil'), kb = $('ck-cb'), kg = $('ck-gr'), ka = $('ck-ag');
     if (ka) { ka.style.display = TAB === 'ag' ? '' : 'none'; if (TAB === 'ag') { var tc2 = $('t-cal'); if (tc2) tc2.style.display = 'block'; try { if (typeof loadCalendrier === 'function') loadCalendrier(); } catch (x) {} } }
     if (kg) { kg.style.display = TAB === 'gr' ? '' : 'none'; if (TAB === 'gr') { try { renderPaliers(); } catch (x) {} } }
@@ -86078,7 +86090,7 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
       if (!$('t-cockpit') && main) { var d = document.createElement('div'); d.id = 't-cockpit'; d.className = 'tab'; d.style.display = 'none'; main.appendChild(d); }
       /* squelette() (déplacements) appelé EN FIN de poser : la case de l'interrupteur doit exister avant (20261104l) */
       var btc = $('btab-cockpit'); if (btc) btc.style.display = 'none';   /* 20261104j : le Bilan Cockpit vit dans le monde du Cockpit */
-      if (!$('g45-ck-css')) { var cs = document.createElement('style'); cs.id = 'g45-ck-css'; cs.textContent = '#ck-bil .psub-bar,#ck-bil .gtabs{display:none!important}'; document.head.appendChild(cs); }
+      if (!$('g45-ck-css')) { var cs = document.createElement('style'); cs.id = 'g45-ck-css'; cs.textContent = '#ck-bil .psub-bar,#ck-bil .gtabs{display:none!important}#t-outils .g45ul-ps,#t-outils .g45ul-psl,#t-outils #g45-ser-bar{display:none!important}';   /* 20261104p : séries seulement dans 🃏 Mes cartes */ document.head.appendChild(cs); }
       var bcp = $('btn-cpit'); if (bcp) { bcp.style.display = 'none'; var tp = $('t-paris'); if (bcp.classList.contains('on') && !(tp && tp.style.display !== 'none' && $('ck-eng') && $('ck-eng').contains($('sub-strat')) && TAB === 'eng')) { try { swBet('simple'); } catch (e) {} } }
       var nav = document.querySelector('nav.nav'), bp = nav && nav.querySelector('button.ni[onclick*="t-paris"]'), b = $('g45-ni-ck');
       if (nav && bp && !b) { b = document.createElement('button'); b.id = 'g45-ni-ck'; b.className = 'ni'; b.setAttribute('onclick', 'g45CkOuvrir(this)'); b.innerHTML = '<span>🏁</span>Cockpit'; bp.insertAdjacentElement('afterend', b); }
@@ -86105,7 +86117,7 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
   /* page Pari ouverte avec le Cockpit encore « on » (ancien état) → Simple */
   try { var _st0 = showTab; showTab = window.showTab = function (id, btn) {
     if (id === 't-cal') { try { if (actif()) { window.g45CkOuvrir(null, 'ag'); return; } var bs = document.querySelector('button.ni[onclick*="t-suivies"]'); id = 't-suivies'; btn = bs; arguments[0] = id; arguments[1] = btn; if (typeof loadSuiviesTab === 'function') setTimeout(function () { try { loadSuiviesTab(); } catch (e) {} }, 0); } catch (e) {} }   /* 20261104m */
-    try { if (id !== 't-cockpit') bilRendre(); } catch (e) {} var r = _st0.apply(this, arguments); try { if (id === 't-paris') { var bc = $('btn-cpit'); if (bc && bc.classList.contains('on') && typeof swBet === 'function') swBet('simple'); } } catch (e) {} return r; }; } catch (e) {}
+    try { if (id !== 't-cockpit') { bilRendre(); ulRendre(); } } catch (e) {} var r = _st0.apply(this, arguments); try { if (id === 't-paris') { var bc = $('btn-cpit'); if (bc && bc.classList.contains('on') && typeof swBet === 'function') swBet('simple'); } } catch (e) {} return r; }; } catch (e) {}
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { setTimeout(poser, 300); }); else setTimeout(poser, 300);
   setInterval(function () { try { poser(); dessiner(); } catch (e) {} }, 15000);
 })();
