@@ -85991,7 +85991,10 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
       var R = L.reduce(function (a, x) { return x.tot > a.tot ? x : a; }), n = R.tot + 1;
       /* 20261105h (« 6 paliers car pire série 5 : on a un palier de sécurité » ; Adam Fox 🏠 → 6 paliers proposait 6 = « pas bon ») :
          conseillé = paliers nécessaires + 1 de SÉCURITÉ (entre 6 et 9) ; si seule la sécurité dépasse 9 → 9 sans sécurité (sec false). */
-      return { k: R.k, p: R.p, n: n, ne: n > 9 ? null : Math.min(9, Math.max(6, n + 1)), sec: n + 1 <= 9 };
+      /* 20261105o (« on va jouer encore plus sécurité : actuellement 1 palier de sécurité, monte à 2 ») : + 2 de sécurité (sk = combien il en reste
+         la place sous 9 : 2, 1 ou 0) */
+      var sk = Math.max(0, Math.min(2, 9 - n));
+      return { k: R.k, p: R.p, n: n, ne: n > 9 ? null : Math.min(9, Math.max(6, n + 2)), sec: sk === 2, sk: sk };
     } catch (e) { return null; }
   };
   window.g45P1AutoEq = function (nom, n, L) {
@@ -86054,7 +86057,7 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
           h += perso ? '<div style="margin-top:6px;">🎯 <b>Grille perso de ' + esc(u.n) + '</b> : P' + u.g.length + ' max · P1 ' + String(u.g[0]).replace('.', ',') + ' € ' + chip(false, '↩️ revenir aux étoiles ' + '⭐'.repeat(+u.s || 1), "g45GrilleEqRetour('" + esc(u.n).replace(/'/g, "\\'") + "')") + '</div>' : '';
           var CS = window._g45PsConseil(u, typeof g45LieuCourant === 'function' ? g45LieuCourant() : '');   /* 20261105g (B) */
           if (CS) h += '<div style="margin-top:6px;">📊 Pire série 4 saisons ' + ({ glob: '🌍', dom: '🏠', ext: '✈️' }[CS.k] || '') + ' : <b>' + CS.p.join('·') + '</b> → '
-            + (CS.ne ? 'il faut ' + CS.n + ' palier' + (CS.n > 1 ? 's' : '') + (CS.sec ? ' + 1 de sécurité' : ' (pas de place pour la sécurité)') + ' → <b style="color:#1ed760;">' + CS.ne + ' paliers</b>' + (CS.n + 1 < 6 ? ' (6 = la plus petite grille)' : '') + ' (conseillé ⭐)' : '<b style="color:#ff5a5a;">' + CS.n + ' paliers ❌ au-delà de 9</b>') + '</div>';
+            + (CS.ne ? 'il faut ' + CS.n + ' palier' + (CS.n > 1 ? 's' : '') + (CS.sk === 2 ? ' + 2 de sécurité' : CS.sk === 1 ? ' + 1 de sécurité (pas de place pour la 2e)' : ' (pas de place pour la sécurité)') + ' → <b style="color:#1ed760;">' + CS.ne + ' paliers</b>' + (CS.n + 2 < 6 ? ' (6 = la plus petite grille)' : '') + ' (conseillé ⭐)' : '<b style="color:#ff5a5a;">' + CS.n + ' paliers ❌ au-delà de 9</b>') + '</div>';
           var cK = capCk();   /* 20261105k : P1 sur la part Cockpit */
           h += '<div style="margin-top:6px;">🪜 <b>P1 auto</b> : ' + (partLu() < 100 ? 'ta part Cockpit (' + String(partLu()).replace('.', ',') + ' % = ' + eu(cK) + ')' : 'ma bankroll') + ' couvre ' + lst.map(function (n) { var on = G.length === n && Math.abs(G[0] - window._g45PctT.p1(cK, n)) < 0.011; return chip(on, String(n) + (CS && CS.ne === n ? ' ⭐' : ''), 'g45P1Auto(' + n + ')'); }).join('') + ' paliers</div>'
             + '<div style="margin-top:4px;">→ ' + lst.map(function (n) { var v1 = window._g45PctT.p1(cK, n); return n + ' paliers : P1 = <b>' + (v1 % 1 === 0 ? String(v1) : v1.toFixed(2).replace('.', ',')) + ' €</b>'; }).join(' · ') + '</div>'
