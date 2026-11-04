@@ -76349,6 +76349,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     try { save(); } catch (e) {} try { render(); } catch (e) {}
   };
   function simHtml(c, D) {
+    if (typeof window._g45CkActif === 'function' && !window._g45CkActif()) return '';   /* 20261104l : 💶 + 📋 seulement avec le Cockpit activé */
     var seq = [], libs = [];
     D.saisons.slice().reverse().forEach(function (sa) {
       if (!sa) return; var L0 = msS(c, sa); if (!L0) return;
@@ -77077,7 +77078,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
           + (S.lieu === 'dom' ? '🏠 ' : S.lieu === 'ext' ? '✈️ ' : '') + esc(libCombo(cc)) + '</b></div>' + tableau(cc, D);
       });
       h += '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">Pire série : 🟢 0-2 · 🟠 3-4 · 🔴 5 et plus. Pas de cote : ESPN ne garde pas celles des matchs joués.</div>';
-      try { h += clsHtml(); } catch (e) {}   /* 20261027h : 🏁 Jouable en Cockpit ? */
+      try { if (!(typeof window._g45CkActif === 'function' && !window._g45CkActif())) h += clsHtml(); } catch (e) {}   /* 20261027h : 🏁 Jouable en Cockpit ? ; 20261104l : seulement avec le Cockpit activé */
     }
     return h + '</div>';
   }
@@ -84459,6 +84460,7 @@ window._g45TrTestVoit = function () { try { return (typeof _g45SanteActive === '
         + (pa.mise != null ? '· mise max <b>' + pa.mise.toLocaleString('fr-FR') + ' €</b> (base ' + new Array(+(pa.et || 1) + 1).join('⭐') + ') ' + pa.ico : '❌ au-delà de tes ' + pa.max + ' paliers') + '<br>'
         + '📈 Série en cours : ' + tot.cours + ' ' + (tot.coursOk ? 'réussi' : 'raté') + (tot.cours > 1 ? 's' : '') + ' de suite</div>';
     } else h += '<div style="font-size:15px;color:#fff;padding:12px 4px;">Aucune course avec ces filtres.</div>';
+    var _ckL = h.length;   /* 20261104l : bloc « Jouable en Cockpit ? » F1 retiré si le Cockpit est coupé */
     /* Bloc 2 : tout le plateau (pilotes de la dernière saison), plus petite pire série d'abord. */
     var rk = plateau.map(function (d) { var st = window._g45F1CrStats(window._g45F1CrSeq(DATA, d, CR)); st.d = d; return st; })
       .filter(function (st) { return st.n >= 5; })
@@ -84472,6 +84474,7 @@ window._g45TrTestVoit = function () { try { return (typeof _g45SanteActive === '
       return '<div onclick="g45F1CrSet(\'d\',\'' + ea(st.d) + '\')" style="' + l2 + (moi ? 'background:rgba(47,107,255,.18);border-radius:8px;' : '') + '"><span style="font-weight:' + (moi ? 800 : 600) + ';">' + ea(DATA.dn[st.d] || st.d) + '</span><span>' + st.pct + ' %</span><span style="font-weight:800;color:' + couleurPire(st.pire) + ';">' + st.pire + '</span><span><b>' + pa.p + ' paliers</b> ' + pa.ico + '</span></div>';
     }).join('') : '<div style="font-size:15px;color:#fff;padding:10px 4px;">Pas assez de courses avec ces filtres.</div>';
     h += '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">✅ 5 paliers ou moins · ⚠️ jusqu\'à ta dernière mise · ❌ au-delà de tes paliers. Touche un pilote pour le voir en haut.</div></div>';
+    if (typeof window._g45CkActif === 'function' && !window._g45CkActif()) h = h.slice(0, _ckL);
     box.innerHTML = h;
   }
   window.g45F1CrSet = function (f, v) {
@@ -86016,13 +86019,22 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
       + '<div style="display:flex;overflow-x:auto;margin-bottom:10px;">'
       + bt('tdb', '🏠 Tableau de bord', "g45CkOnglet('tdb')") + bt('eng', '🚀 Engager', "g45CkOnglet('eng')") + bt('bil', '📈 Bilan', "g45CkOnglet('bil')") + bt('arc', '🕒 Archive', "g45CkOnglet('arc')")
       + bt('ag', '📅 Agenda', "var b=document.querySelector('button.ni[onclick*=t-cal]');showTab('t-cal',b);loadCalendrier()")
-      + bt('gr', '🪜 Mes grilles', "var b=document.querySelector('.ni[onclick*=t-outils]');showTab('t-outils',b||document.getElementById('btn-plus-menu'))")
+      + bt('gr', '🪜 Mes grilles', "g45CkOnglet('gr')")
       + bt('cb', '📊 Cockpit BET45', "g45CkOnglet('cb')") + '</div>';
   }
   function squelette() {
     var p = $('t-cockpit'); if (!p) return null;
     if (!$('ck-tabs')) p.innerHTML = '<div id="ck-tabs"></div><div id="ck-tdb"></div><div id="ck-eng" style="display:none;"></div><div id="ck-bil" style="display:none;"></div><div id="ck-cb" style="display:none;"></div>';
     if (!$('ck-cb')) { var cbd = document.createElement('div'); cbd.id = 'ck-cb'; cbd.style.display = 'none'; p.appendChild(cbd); }
+    if (!$('ck-gr')) { var grd = document.createElement('div'); grd.id = 'ck-gr'; grd.style.display = 'none'; p.appendChild(grd); }
+    /* 20261104l (« oui » : Outils → Montante dans 🪜 Mes grilles) : titre « 💰 Mises par palier » + #palier-panel DÉPLACÉS dans #ck-gr ; la case
+       « 🏁 Je joue en montante » reste dans Outils (#g45-ck-on posée AVANT le titre), sinon on ne pourrait plus activer le Cockpit. */
+    var pp = $('palier-panel'), cg = $('ck-gr');
+    if (pp && cg && pp.parentNode !== cg) {
+      var tit = pp.previousElementSibling; if (tit && tit.classList && tit.classList.contains('sec') && /palier/i.test(tit.textContent || '')) { var tg = $('g45-ck-on'); if (tg && tg.parentNode === pp) tit.parentNode.insertBefore(tg, tit); cg.appendChild(tit); }
+      var tg2 = $('g45-ck-on'); if (tg2 && tg2.parentNode === pp) pp.parentNode.insertBefore(tg2, pp);
+      cg.appendChild(pp); try { if (typeof renderPaliers === 'function') renderPaliers(); } catch (e) {}
+    }
     var ss = $('sub-strat'), ce = $('ck-eng'); if (ss && ce && ss.parentNode !== ce) ce.appendChild(ss);
     return p;
   }
@@ -86035,8 +86047,9 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
   function bilPrendre() { var tb = $('t-bilan'), cb = $('ck-bil'); if (!tb || !cb) return null; if (!repBil) { repBil = document.createComment('t-bilan'); tb.parentNode.insertBefore(repBil, tb); } if (tb.parentNode !== cb) cb.appendChild(tb); tb.style.display = 'block'; return tb; }
   window._g45CkBilRendre = bilRendre;
   window.g45CkOnglet = function (k) {
-    TAB = ['eng', 'bil', 'arc', 'cb'].indexOf(k) >= 0 ? k : 'tdb'; squelette();
-    var t = $('ck-tdb'), e = $('ck-eng'), cb = $('ck-bil'), kb = $('ck-cb');
+    TAB = ['eng', 'bil', 'arc', 'cb', 'gr'].indexOf(k) >= 0 ? k : 'tdb'; squelette();
+    var t = $('ck-tdb'), e = $('ck-eng'), cb = $('ck-bil'), kb = $('ck-cb'), kg = $('ck-gr');
+    if (kg) { kg.style.display = TAB === 'gr' ? '' : 'none'; if (TAB === 'gr') { try { renderPaliers(); } catch (x) {} } }
     /* 20261104k (« Cockpit dans Tendances, on le bascule entièrement dans Cockpit ? » → B : basculé ; ami sans le Cockpit → « 🏁 Cockpit d'Antoine »
        reste dans Tendances, la vitrine) : même rendu (_g45CkHtml → #g45ck, redessiné sur place par ckRedessiner). */
     if (kb) { kb.style.display = TAB === 'cb' ? '' : 'none'; if (TAB === 'cb') { var tr = $('t-tend'), z0 = tr && tr.querySelector('#g45ck'); if (z0) z0.remove();
@@ -86057,7 +86070,7 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
     try {
       var main = document.querySelector('main') || document.body;
       if (!$('t-cockpit') && main) { var d = document.createElement('div'); d.id = 't-cockpit'; d.className = 'tab'; d.style.display = 'none'; main.appendChild(d); }
-      squelette();   /* 20261104i : #sub-strat déplacé dans #ck-eng */
+      /* squelette() (déplacements) appelé EN FIN de poser : la case de l'interrupteur doit exister avant (20261104l) */
       var btc = $('btab-cockpit'); if (btc) btc.style.display = 'none';   /* 20261104j : le Bilan Cockpit vit dans le monde du Cockpit */
       if (!$('g45-ck-css')) { var cs = document.createElement('style'); cs.id = 'g45-ck-css'; cs.textContent = '#ck-bil .psub-bar,#ck-bil .gtabs{display:none!important}'; document.head.appendChild(cs); }
       var bcp = $('btn-cpit'); if (bcp) { bcp.style.display = 'none'; var tp = $('t-paris'); if (bcp.classList.contains('on') && !(tp && tp.style.display !== 'none' && $('ck-eng') && $('ck-eng').contains($('sub-strat')) && TAB === 'eng')) { try { swBet('simple'); } catch (e) {} } }
@@ -86066,7 +86079,8 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
       if (b) b.style.display = actif() ? '' : 'none';
       if (!actif()) { var p = $('t-cockpit'); if (p && p.style.display !== 'none') { var bm = document.querySelector('button.ni[onclick*="t-dash"]'); if (typeof showTab === 'function') showTab('t-dash', bm); } }
       var pp = $('palier-panel'), t = $('g45-ck-on');
-      if (pp && !t) { t = document.createElement('div'); t.id = 'g45-ck-on'; t.style.cssText = 'margin:0 0 12px;padding:10px 12px;border-radius:10px;background:rgba(77,132,255,.12);border:1px solid #4d84ff;font-size:14px;color:#fff;'; pp.insertAdjacentElement('afterbegin', t); }
+      if (pp && !t && !($('ck-gr') && $('ck-gr').contains(pp))) { t = document.createElement('div'); t.id = 'g45-ck-on'; t.style.cssText = 'margin:0 0 12px;padding:10px 12px;border-radius:10px;background:rgba(77,132,255,.12);border:1px solid #4d84ff;font-size:14px;color:#fff;'; pp.insertAdjacentElement('afterbegin', t); }
+      try { squelette(); } catch (e) {}   /* 20261104i-l : #sub-strat → #ck-eng, Mises par palier → #ck-gr */
       if (t) { var on = actif(); t.innerHTML = '<label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:800;font-size:15px;"><input type="checkbox" ' + (on ? 'checked' : '') + ' onchange="g45CkOnSet(this.checked)" style="width:22px;height:22px;accent-color:#4d84ff;"> 🏁 Je joue en montante (Cockpit)</label><div style="font-size:13px;color:#c9d3ee;margin-top:4px;">' + (on ? 'Le bouton « 🏁 Cockpit » est dans la barre du bas.' : 'Coche pour afficher « 🏁 Le monde du Cockpit » dans la barre du bas.') + '</div>'; }
     } catch (e) {}
   }
