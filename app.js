@@ -43933,7 +43933,12 @@ function _g45PaliersDepuisP1(p1, n){
 function _g45MajP1(etoiles, val, n){
   if(!STRATS[etoiles]) return;
   /* 20261104e : n = nombre de paliers (sinon celui de la grille) ; passe par _g45GrilleDemande (⏳ attente si une équipe est en série) */
-  var g = _g45PaliersDepuisP1(val, n || STRATS[etoiles].length);
+  /* 20261105p (« je ne peux pas changer le palier max et la mise en même temps ») : si une grille de ces ⭐ est déjà EN ATTENTE (équipe en série),
+     le 2e changement partait de l'ANCIENNE grille et écrasait le 1er → on part de la grille en attente ; val null = garder le P1. */
+  var att = null; try { att = (typeof window._g45GrilleAtt === 'function' ? window._g45GrilleAtt() : {})[etoiles]; } catch(e) {}
+  var base = (Array.isArray(att) && att.length) ? att : STRATS[etoiles];
+  if(val == null || val === '') val = base[0];
+  var g = _g45PaliersDepuisP1(val, n || base.length);
   if(typeof window._g45GrilleDemande === 'function'){ window._g45GrilleDemande(etoiles, g); return; }
   STRATS[etoiles] = g;
   _g45SaveStrats();
@@ -78504,7 +78509,7 @@ window._G45_PAL_COUL = ['#1ed760', '#8fdc4a', '#f5c542', '#ffa53a', '#ff7a3a', '
         var modif = (typeof _G45_STRATS_BASE !== 'undefined') && _G45_STRATS_BASE[k] && STRATS[k].some(function (v, j) { return v !== _G45_STRATS_BASE[k][j]; });
         var _nb = STRATS[k].length, _att = (typeof window._g45GrilleAtt === 'function') ? window._g45GrilleAtt()[k] : null;   /* 20261104e */
         h += '<tr><td class="st">' + lab[k] + (modif ? '<div style="font-size:12px;color:#f0b020;font-weight:700;">modifiée</div>' : '')
-          + '<div style="margin-top:4px;"><select onchange="_g45MajP1(\'' + k + '\',' + STRATS[k][0] + ',this.value)" aria-label="Nombre de paliers ' + lab[k] + '" style="font-size:14px;font-weight:800;background:#0b1226;color:#fff;border:1px solid #2a3a63;border-radius:6px;padding:3px 4px;">' + [6, 7, 8, 9].map(function (q) { return '<option value="' + q + '"' + (q === _nb ? ' selected' : '') + '>P' + q + ' max</option>'; }).join('') + '</select></div>'
+          + '<div style="margin-top:4px;"><select onchange="_g45MajP1(\'' + k + '\',null,this.value)" aria-label="Nombre de paliers ' + lab[k] + '" style="font-size:14px;font-weight:800;background:#0b1226;color:#fff;border:1px solid #2a3a63;border-radius:6px;padding:3px 4px;">' + [6, 7, 8, 9].map(function (q) { return '<option value="' + q + '"' + (q === _nb ? ' selected' : '') + '>P' + q + ' max</option>'; }).join('') + '</select></div>'
           + (_att ? '<div style="font-size:13px;color:#f5c542;font-weight:700;margin-top:3px;">⏳ nouvelle grille en attente (P1 ' + String(_att[0]).replace('.', ',') + ', P' + _att.length + ' max)</div><button onclick="g45GrilleForcer(\'' + k + '\')" style="font-size:13px;margin:3px 4px 0 0;padding:3px 8px;border-radius:6px;border:1px solid #2a3a63;background:#0b1226;color:#fff;cursor:pointer;">✅ Appliquer</button><button onclick="g45GrilleAnnuler(\'' + k + '\')" style="font-size:13px;margin-top:3px;padding:3px 8px;border-radius:6px;border:1px solid #2a3a63;background:#0b1226;color:#fff;cursor:pointer;">✖ Annuler</button>' : '') + '</td>';
         STRATS[k].forEach(function (v, j) {
           var cj = C[Math.min(j, C.length - 1)];
