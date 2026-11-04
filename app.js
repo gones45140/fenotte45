@@ -78642,7 +78642,7 @@ window._G45_PAL_COUL = ['#1ed760', '#8fdc4a', '#f5c542', '#ffa53a', '#ff7a3a', '
       at = Math.max(at, R.at || 0);
       var pa = window._g45PalCarte(R.tot, u, k[0]);
       h += '<div>📊 ' + k[1] + ' pire série ' + R.p.map(function (v) { return '<span style="color:' + col(v) + ';">' + v + '</span>'; }).join(' · ')
-        + ' → <b>' + pa.p + ' palier' + (pa.p > 1 ? 's' : '') + ' ' + pa.ico + '</b>' + (pa.mise != null ? ' <span style="font-weight:400;color:#c9d3ee;">· ' + pa.mise + ' €</span>' : '') + (pa.cum != null ? ' <span style="color:#ffb3b3;">(total misé ' + (Math.round(pa.cum * 100) / 100).toLocaleString('fr-FR') + ' €)</span>' : '') + window._g45SimTxt(R.sim, u) + '</div>';   /* 20261030d (« rajoute ici aussi le total », Outils → Équipes) */
+        + ' → <b>' + pa.p + ' palier' + (pa.p > 1 ? 's' : '') + ' ' + pa.ico + '</b>' + (pa.mise != null ? ' <span style="font-weight:400;color:#c9d3ee;">· ' + pa.mise + ' €</span>' : '') + (pa.cum != null ? ' <span style="color:#ffb3b3;">(total misé ' + (Math.round(pa.cum * 100) / 100).toLocaleString('fr-FR') + ' €)</span>' : '') + window._g45SimTxt(R.sim, u) + '</div><!--g45BT:' + k[0] + '-->';   /* 20261105j : place du bouton 🎯 de ce lieu */   /* 20261030d (« rajoute ici aussi le total », Outils → Équipes) */
     });
     if (!h) return '';
     /* 20261105g (A) : « 🎯 Régler ma mise sur N paliers → P1 = X € » (pire des séries de la carte + 1, entre 6 et 9) */
@@ -78655,9 +78655,10 @@ window._G45_PAL_COUL = ['#1ed760', '#8fdc4a', '#f5c542', '#ffa53a', '#ff7a3a', '
         var CS = window._g45PsConseil(u, L); if (!CS || !CS.ne) return;
         var ic = L === 'dom' ? '🏠 ' : L === 'ext' ? '✈️ ' : '';
         var p1 = window._g45PctT.p1(cT, CS.ne), G0 = _g45Grille(u, L) || [], deja = G0.length === CS.ne && Math.abs((+G0[0] || 0) - p1) < 0.011;
-        if (p1 > 0) h += deja
+        /* 20261105j (capture Adam Fox, flèche : « le bouton 🏠 sous la ligne 🏠 ») : chaque bouton juste SOUS la série de son lieu */
+        if (p1 > 0) h = h.replace('<!--g45BT:' + (L || 'glob') + '-->', deja
           ? '<div style="font-size:13px;font-weight:700;color:#1ed760;margin-top:4px;">🎯 ' + ic + 'Mise réglée sur ' + CS.ne + ' paliers (P1 ' + String(p1).replace('.', ',') + ' €) ✅</div>'
-          : '<div style="margin-top:4px;"><button onclick="event.stopPropagation();g45P1AutoEq(\'' + String(u.n).replace(/[\\'"<>&]/g, '') + '\',' + CS.ne + ',\'' + L + '\')" style="padding:5px 10px;border-radius:8px;border:1px solid #1ed760;background:#0c2a18;color:#fff;font-size:14px;font-weight:800;cursor:pointer;">🎯 ' + ic + 'Régler ma mise sur ' + CS.ne + ' paliers → P1 = ' + p1.toFixed(2).replace('.', ',') + ' €</button></div>';
+          : '<div style="margin-top:4px;"><button onclick="event.stopPropagation();g45P1AutoEq(\'' + String(u.n).replace(/[\\'"<>&]/g, '') + '\',' + CS.ne + ',\'' + L + '\')" style="padding:5px 10px;border-radius:8px;border:1px solid #1ed760;background:#0c2a18;color:#fff;font-size:14px;font-weight:800;cursor:pointer;">🎯 ' + ic + 'Régler ma mise sur ' + CS.ne + ' paliers → P1 = ' + p1.toFixed(2).replace('.', ',') + ' €</button></div>');
       });
     } catch (e) {}
     var d = new Date(at || Date.now()), dt = ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2);
