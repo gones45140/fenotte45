@@ -85294,6 +85294,7 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
   }
   window._g45ArchPdfHtml = pdfHtml;   /* tests */
   window.g45ArchPdf = async function () {
+    if (typeof _g45SanteActive === 'function' && !_g45SanteActive()) return;   /* 20261104x : PDF réservé à GONES45 */
     var lg = ST.lg, ML = moisListe(), mo = ST.mois[lg] && ML.indexOf(ST.mois[lg]) >= 0 ? ST.mois[lg] : ML[0], sa = SAISON(mo), eq = ST.eq[lg] || '';
     var w = null; try { w = window.open('', '_blank'); if (w) w.document.write('<p style="font:18px Arial;margin:20px;">⏳ Préparation du PDF ' + esc(sa) + '…</p>'); } catch (e) { w = null; }
     var MS = ML.filter(function (m) { return SAISON(m) === sa; }), all = {};
@@ -85321,7 +85322,8 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
       + (function () { var SA = [], saC = SAISON(mo); ML.forEach(function (m) { var g = SAISON(m); if (SA.indexOf(g) < 0) SA.push(g); });
           return '<select onchange="g45ArchSaison(this.value)" style="' + sel + '">' + SA.map(function (g) { return '<option value="' + g + '"' + (g === saC ? ' selected' : '') + '>Saison ' + g + '</option>'; }).join('') + '</select>'
             + '<select onchange="g45ArchMois(this.value)" style="' + sel + '">' + ML.filter(function (m) { return SAISON(m) === saC; }).map(function (m) { var p = m.split('-'); return '<option value="' + m + '"' + (m === mo ? ' selected' : '') + '>' + ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'][+p[1] - 1] + ' ' + p[0] + '</option>'; }).join('') + '</select>'
-            + '<button onclick="g45ArchPdf()" style="background:#2f6bff;color:#fff;border:1px solid #6d9dff;border-radius:8px;padding:8px 12px;font-size:15px;font-weight:800;margin:0 8px 8px 0;cursor:pointer;">📄 PDF saison ' + esc(saC) + (eq ? ' · ' + esc(eqs[eq]) : '') + '</button>'; })();   /* 20261031i */
+            /* 20261104x (« c'est du travail fait par moi et toi, ça m'embêterait qu'on me le pique ; si mes amis me demandent, je donnerai directement le PDF ») : bouton 📄 PDF sur GONES45 seulement */
+            + ((typeof _g45SanteActive === 'function' && _g45SanteActive()) ? '<button onclick="g45ArchPdf()" style="background:#2f6bff;color:#fff;border:1px solid #6d9dff;border-radius:8px;padding:8px 12px;font-size:15px;font-weight:800;margin:0 8px 8px 0;cursor:pointer;">📄 PDF saison ' + esc(saC) + (eq ? ' · ' + esc(eqs[eq]) : '') + '</button>' : ''); })();   /* 20261031i */
     var L = ids.filter(function (i) { return !eq || String(D[i].h.id) === eq || String(D[i].a.id) === eq; });
     if (nR) h += '<div style="font-size:13px;color:#ffb36b;margin:2px 0 4px;">Matchs rattrapés (avant le 29/10/2026) : cotes de CLÔTURE seulement (1N2, handicap, total), pas de cotes joueurs.</div>';
     h += L.length ? L.map(function (i) { return carte(D[i], i, eq); }).join('') : '<div style="font-size:14px;color:#c9d3ee;padding:8px 2px;">Aucun match gardé pour ce mois (pas de match, ou rattrapage pas encore passé).</div>';
