@@ -43884,37 +43884,43 @@ var _G45_STRATS_BASE = JSON.parse(JSON.stringify(STRATS));
     var over = JSON.parse(localStorage.getItem('g45_strats')||'null');
     if(over){
       Object.keys(over).forEach(function(k){
-        if(STRATS[k] && Array.isArray(over[k]) && (over[k].length===STRATS[k].length || over[k].length===8)){
+        /* 20261104e : nombre de paliers PAR GRILLE (6 à 9, « 5 ⭐ en P6, 3 ⭐ en P9… et que ça soit modifiable ») ; format _v 2. */
+        var _okL = over._v===2 ? (Array.isArray(over[k]) && over[k].length>=6 && over[k].length<=9) : (Array.isArray(over[k]) && (over[k].length===8 || over[k].length===9));
+        if(STRATS[k] && _okL){
           STRATS[k] = over[k].map(function(v){ return parseFloat(v)||0; });
-          /* 20261104a : grille perso gardée à 8 paliers → P9 ajouté (2 × somme des précédents) */
-          while(STRATS[k].length < 9){ var _sm=0; STRATS[k].forEach(function(x){ _sm+=x; }); STRATS[k].push(Math.round(_sm*2*100)/100); }
+          /* 20261104a : grille perso gardée à 8 paliers (avant le palier 9) → P9 ajouté (2 × somme des précédents) */
+          if(over._v!==2) while(STRATS[k].length < 9){ var _sm=0; STRATS[k].forEach(function(x){ _sm+=x; }); STRATS[k].push(Math.round(_sm*2*100)/100); }
         }
       });
     }
   }catch(e){}
 })();
 function _g45SaveStrats(){
-  try{ localStorage.setItem('g45_strats', JSON.stringify(STRATS)); }catch(e){}
+  try{ var _o = JSON.parse(JSON.stringify(STRATS)); _o._v = 2; localStorage.setItem('g45_strats', JSON.stringify(_o)); }catch(e){}   /* 20261104e : _v 2 = longueurs choisies */
   try{ if(typeof _g45PushBetsGithub==='function') _g45PushBetsGithub(true); }catch(e){}
 }
 /* Progression à récupération d'Antoine : P1 est libre, chaque palier suivant vaut 2×
    la SOMME des paliers précédents (P2 = P1×2, P3 = (P1+P2)×2, etc.). À cote 2.0, ça
    couvre exactement les pertes cumulées et laisse P1 de gain net. Vérifié sur les 5
    grilles préréglées : elles correspondent toutes à cette suite depuis P1 = 1/2/2/5/10. */
-function _g45PaliersDepuisP1(p1){
+function _g45PaliersDepuisP1(p1, n){
   var v = parseFloat(String(p1).replace(',','.'));
   if(isNaN(v)||v<0) v = 0;
+  n = Math.max(6, Math.min(9, parseInt(n,10)||9));   /* 20261104e : 6 à 9 paliers */
   var arr = [v];
-  for(var i=1;i<9;i++){   /* 20261104a : 9 paliers */
+  for(var i=1;i<n;i++){   /* 20261104a : 9 paliers */
     var somme = 0;
     for(var j=0;j<arr.length;j++) somme += arr[j];
     arr.push(somme * 2);
   }
   return arr.map(function(x){ return Math.round(x * 100) / 100; });
 }
-function _g45MajP1(etoiles, val){
+function _g45MajP1(etoiles, val, n){
   if(!STRATS[etoiles]) return;
-  STRATS[etoiles] = _g45PaliersDepuisP1(val);
+  /* 20261104e : n = nombre de paliers (sinon celui de la grille) ; passe par _g45GrilleDemande (⏳ attente si une équipe est en série) */
+  var g = _g45PaliersDepuisP1(val, n || STRATS[etoiles].length);
+  if(typeof window._g45GrilleDemande === 'function'){ window._g45GrilleDemande(etoiles, g); return; }
+  STRATS[etoiles] = g;
   _g45SaveStrats();
   renderPaliers();
 }
@@ -43922,7 +43928,7 @@ window._g45MajP1 = _g45MajP1;
 function resetPaliers(){
   if(!confirm('Restaurer les grilles de mises par défaut ?')) return;
   STRATS = JSON.parse(JSON.stringify(_G45_STRATS_BASE));
-  try{ localStorage.removeItem('g45_strats'); }catch(e){}
+  try{ localStorage.removeItem('g45_strats'); localStorage.removeItem('g45_strats_att'); }catch(e){}
   try{ if(typeof _g45PushBetsGithub==='function') _g45PushBetsGithub(true); }catch(e){}
   renderPaliers();
 }
@@ -78437,7 +78443,10 @@ window._G45_PAL_COUL = ['#1ed760', '#8fdc4a', '#f5c542', '#ffa53a', '#ff7a3a', '
       ['1', '2', '3', '4', '5'].forEach(function (k) {
         if (!STRATS[k]) return;
         var modif = (typeof _G45_STRATS_BASE !== 'undefined') && _G45_STRATS_BASE[k] && STRATS[k].some(function (v, j) { return v !== _G45_STRATS_BASE[k][j]; });
-        h += '<tr><td class="st">' + lab[k] + (modif ? '<div style="font-size:12px;color:#f0b020;font-weight:700;">modifiée</div>' : '') + '</td>';
+        var _nb = STRATS[k].length, _att = (typeof window._g45GrilleAtt === 'function') ? window._g45GrilleAtt()[k] : null;   /* 20261104e */
+        h += '<tr><td class="st">' + lab[k] + (modif ? '<div style="font-size:12px;color:#f0b020;font-weight:700;">modifiée</div>' : '')
+          + '<div style="margin-top:4px;"><select onchange="_g45MajP1(\'' + k + '\',' + STRATS[k][0] + ',this.value)" aria-label="Nombre de paliers ' + lab[k] + '" style="font-size:14px;font-weight:800;background:#0b1226;color:#fff;border:1px solid #2a3a63;border-radius:6px;padding:3px 4px;">' + [6, 7, 8, 9].map(function (q) { return '<option value="' + q + '"' + (q === _nb ? ' selected' : '') + '>P' + q + ' max</option>'; }).join('') + '</select></div>'
+          + (_att ? '<div style="font-size:13px;color:#f5c542;font-weight:700;margin-top:3px;">⏳ nouvelle grille en attente (P1 ' + String(_att[0]).replace('.', ',') + ', P' + _att.length + ' max)</div><button onclick="g45GrilleForcer(\'' + k + '\')" style="font-size:13px;margin:3px 4px 0 0;padding:3px 8px;border-radius:6px;border:1px solid #2a3a63;background:#0b1226;color:#fff;cursor:pointer;">✅ Appliquer</button><button onclick="g45GrilleAnnuler(\'' + k + '\')" style="font-size:13px;margin-top:3px;padding:3px 8px;border-radius:6px;border:1px solid #2a3a63;background:#0b1226;color:#fff;cursor:pointer;">✖ Annuler</button>' : '') + '</td>';
         STRATS[k].forEach(function (v, j) {
           var cj = C[Math.min(j, C.length - 1)];
           if (j === 0) h += '<td class="p1" style="background:' + cj + '2e;border:1px solid ' + cj + ';"><input type="number" min="0" step="1" value="' + v + '" onchange="_g45MajP1(\'' + k + '\',this.value)" aria-label="Mise de départ ' + k + ' étoiles"></td>';
@@ -78445,7 +78454,7 @@ window._G45_PAL_COUL = ['#1ed760', '#8fdc4a', '#f5c542', '#ffa53a', '#ff7a3a', '
         });
         h += '</tr>';
       });
-      h += '</table></div><div style="font-size:13px;color:#c9d3ee;margin-top:6px;">Touche la case jaune (P1, mise de départ) pour la changer : P2 à P9 suivent.</div>';
+      h += '</table></div><div style="font-size:13px;color:#c9d3ee;margin-top:6px;">Touche la case jaune (P1, mise de départ) pour la changer : les paliers suivants suivent. « P… max » = nombre de paliers de la grille (6 à 9).</div>';
       el.innerHTML = h;
     };
     window.renderPaliers = renderPaliers;
@@ -85749,10 +85758,49 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
   var coulM = function (p) { return p < 20 ? ['#1ed760', '🟢'] : p <= 50 ? ['#ff9f43', '🟠'] : ['#ff5a5a', '🔴']; };
   var barre = function (p, c) { return '<div style="height:8px;border-radius:6px;background:#1c2747;margin:6px 0 2px;overflow:hidden;"><div style="height:8px;width:' + Math.max(2, Math.min(100, p)) + '%;background:' + c + ';"></div></div>'; };
   var chip = function (on, txt, js) { return '<button type="button" onclick="' + js + '" style="border-radius:14px;padding:6px 12px;margin:6px 6px 0 0;cursor:pointer;color:#fff;font-size:14px;border:1px solid ' + (on ? '#6d9dff' : '#2a3a63') + ';background:' + (on ? '#2a4a9a' : '#0b1226') + ';font-weight:' + (on ? 800 : 600) + ';">' + (on ? '✓ ' : '') + txt + '</button>'; };
+  var esc = function (t) { return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;'); };
   var BOITE = 'margin-top:8px;border-radius:10px;padding:10px 12px;font-size:14px;line-height:1.5;color:#fff;background:rgba(5,10,25,.75);border:1px solid #1c2747;';
   var PCTS = [0.5, 1, 2, 5];
   var pctLu = function () { var v = 0; try { v = parseFloat(localStorage.getItem('g45_pct_mise')) || 0; } catch (e) {} return v; };
   window._g45PctT = { p1: function (c, n) { return Math.floor(c / Math.pow(3, n - 1) * 100) / 100; }, coulJ: coulJ, coulM: coulM };   /* tests */
+  /* ═══ 20261104e — GRILLE EN ATTENTE (Antoine : « 5 ⭐ en P6, 3 ⭐ en P9… oui et que ça soit modifiable ; après le problème va être si je veux
+     modifier et que j'ai des paliers en cours ») : changer une grille au milieu d'une série casse le remboursement (pertes faites avec l'ancienne
+     mise, victoire payée avec la nouvelle). Donc : aucune équipe de ces ⭐ au-delà de P1 → appliquée tout de suite ; sinon gardée ⏳ (g45_strats_att)
+     et appliquée TOUTE SEULE dès que ces équipes sont revenues à P1 (contrôle toutes les 5 s) ; « Appliquer maintenant » (paliers au-delà du
+     nouveau maximum ramenés au dernier palier) ou « Annuler ». Palier d'une équipe = le plus haut de ses échelles (u.lc), sinon u.l. ═══ */
+  var KA = 'g45_strats_att';
+  var attLire = function () { try { return JSON.parse(localStorage.getItem(KA) || '{}') || {}; } catch (e) { return {}; } };
+  var attEcrire = function (o) { try { if (Object.keys(o).length) localStorage.setItem(KA, JSON.stringify(o)); else localStorage.removeItem(KA); } catch (e) {} };
+  window._g45GrilleAtt = attLire;
+  var palMax = function (u) { var ks = Object.keys(u.lc || {}); if (!ks.length) return parseInt(u.l, 10) || 1; var mx = 1; ks.forEach(function (q) { var v = parseInt(u.lc[q], 10) || 1; if (v > mx) mx = v; }); return mx; };
+  var enSerie = function (k) { return ((typeof state !== 'undefined' && state.u) || []).filter(function (u) { return u && String(u.s) === String(k); }).map(function (u) { return { n: u.n, p: palMax(u) }; }).filter(function (x) { return x.p > 1; }); };
+  var etoiles = function (k) { return '⭐'.repeat(+k || 1); };
+  function appliquer(k, g) {
+    STRATS[k] = g.slice(); var N = g.length;
+    ((typeof state !== 'undefined' && state.u) || []).forEach(function (u) { if (!u || String(u.s) !== String(k)) return;
+      Object.keys(u.lc || {}).forEach(function (q) { if ((parseInt(u.lc[q], 10) || 1) > N) u.lc[q] = N; }); if ((parseInt(u.l, 10) || 1) > N) u.l = N; });
+    var o = attLire(); delete o[k]; attEcrire(o);
+    try { if (typeof save === 'function') save(); } catch (e) {}
+    try { if (typeof _g45SaveStrats === 'function') _g45SaveStrats(); } catch (e) {}
+    try { if (typeof renderPaliers === 'function') renderPaliers(); } catch (e) {}
+    try { (window.updMise || updMise)(); } catch (e) {}
+    try { dessiner(true); } catch (e) {}
+  }
+  window._g45GrilleDemande = function (k, g) {
+    var L = enSerie(k);
+    if (!L.length) { appliquer(k, g); return 'ok'; }
+    var o = attLire(); o[k] = g; attEcrire(o);
+    try { alert('⏳ Nouvelle grille ' + etoiles(k) + ' (P1 ' + String(g[0]).replace('.', ',') + ' €, ' + g.length + ' paliers) EN ATTENTE.\n\nElle s\'appliquera toute seule quand ' + L.map(function (x) { return x.n + ' (P' + x.p + ')'; }).join(', ') + ' ' + (L.length > 1 ? 'seront revenues' : 'sera revenue') + ' à P1.'); } catch (e) {}
+    try { if (typeof renderPaliers === 'function') renderPaliers(); } catch (e) {}
+    try { dessiner(true); } catch (e) {}
+    return 'att';
+  };
+  window.g45GrilleForcer = function (k) { var g = attLire()[k]; if (!g) return; if (!confirm('Appliquer tout de suite la nouvelle grille ' + etoiles(k) + ' ?\nLes séries en cours continuent avec les NOUVELLES mises (les pertes déjà faites ne seront peut-être pas remboursées).')) return; appliquer(k, g); };
+  window.g45GrilleAnnuler = function (k) { var o = attLire(); delete o[k]; attEcrire(o); try { if (typeof renderPaliers === 'function') renderPaliers(); } catch (e) {} try { dessiner(true); } catch (e) {} };
+  window._g45GrilleT = { enSerie: enSerie, appliquer: appliquer, palMax: palMax };   /* tests */
+  var verif = function () { try { var o = attLire(); Object.keys(o).forEach(function (k) { if (!enSerie(k).length && Array.isArray(o[k])) appliquer(k, o[k]); }); } catch (e) {} };
+  window._g45GrilleVerif = verif;
+  setInterval(verif, 5000);
   window.g45PctMise = function (id, p) {
     var mi = $(id), c = cap(); if (!mi || !(c > 0)) return;
     try { localStorage.setItem('g45_pct_mise', String(p)); } catch (e) {}
@@ -85765,9 +85813,9 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
     if (!u || !STRATS[u.s] || !(c > 0)) return;
     var p1 = window._g45PctT.p1(c, n), et = '⭐'.repeat(+u.s || 1), old = STRATS[u.s][0];
     if (!(p1 > 0)) { alert('Bankroll trop petite pour couvrir ' + n + ' paliers.'); return; }
-    if (!confirm('Changer la grille ' + et + ' : P1 ' + String(old).replace('.', ',') + ' € → ' + String(p1).replace('.', ',') + ' € ?\n\nTa bankroll (' + eu(c) + ') couvrira ' + n + ' paliers.\n⚠️ Ça change la grille de TOUTES tes équipes ' + (+u.s || 1) + ' étoile' + (+u.s > 1 ? 's' : '') + '.')) return;
+    if (!confirm('Changer la grille ' + et + ' : P1 ' + String(old).replace('.', ',') + ' € → ' + String(p1).replace('.', ',') + ' €, ' + n + ' paliers (P' + n + ' max) ?\n\nTa bankroll (' + eu(c) + ') couvrira les ' + n + ' paliers.\n⚠️ Ça change la grille de TOUTES tes équipes ' + (+u.s || 1) + ' étoile' + (+u.s > 1 ? 's' : '') + '.')) return;
     try { localStorage.setItem('g45_p1_auto', String(n)); } catch (e) {}
-    if (typeof _g45MajP1 === 'function') _g45MajP1(u.s, p1);
+    if (typeof _g45MajP1 === 'function') _g45MajP1(u.s, p1, n);   /* 20261104e : + nombre de paliers */
     try { (window.updMise || updMise)(); } catch (e) {}
     dessiner(true);
   };
@@ -85782,7 +85830,7 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
     ['n-mise', 'combi-mise', 'c-mise'].forEach(function (id) {
       var mi = $(id); if (!mi) return;
       var m = parseFloat(String(mi.value || '').replace(',', '.')) || 0, uSel = $('c-unit'), u = id === 'c-mise' && uSel && (state.u || []).find(function (x) { return x.n === uSel.value; });
-      var G = u && STRATS[u.s], sig = [m, Math.round(c * 100), u ? u.n + '|' + u.s : '', G ? G.join(',') : '', pctLu(), (function () { try { return localStorage.getItem('g45_p1_auto') || ''; } catch (e) { return ''; } })()].join('|');
+      var G = u && STRATS[u.s], sig = [m, Math.round(c * 100), u ? u.n + '|' + u.s + '|' + (function () { try { return localStorage.getItem('g45_strats_att') || ''; } catch (e) { return ''; } })() : '', G ? G.join(',') : '', pctLu(), (function () { try { return localStorage.getItem('g45_p1_auto') || ''; } catch (e) { return ''; } })()].join('|');
       if (!force && vu[id] === sig) return; vu[id] = sig;
       if (!(c > 0)) { var b0 = $('g45pct-' + id); if (b0) b0.remove(); return; }
       var b = boite(mi), p = 100 * m / c, cj = coulJ(p), h = '';
@@ -85797,10 +85845,12 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
         h += (m > 0 ? '💰 <b>' + pc(p) + '</b> de ta bankroll <b style="color:' + cj[0] + ';">' + cj[1].split(' ')[0] + '</b>' : '💰 Bankroll : ' + eu(c))
           + (G ? ' · 🪜 perdre jusqu\'à P' + G.length + ' : <b>' + eu(tot) + '</b> = <b style="color:' + cm[0] + ';">' + pc(pm) + ' ' + cm[1] + (pm > 100 ? ' plus que ta bankroll' : '') + '</b>' + (pm <= 100 ? ' <b style="color:#1ed760;">✅ couverte</b>' : '') + barre(pm, cm[0]) : '');
         if (G) {
-          var lst = [7, 8, 9].filter(function (n) { return n <= G.length; });
-          h += '<div style="margin-top:6px;">🪜 <b>P1 auto</b> : ma bankroll couvre ' + lst.map(function (n) { var on = na === n && Math.abs(G[0] - window._g45PctT.p1(c, n)) < 0.011; return chip(on, String(n), 'g45P1Auto(' + n + ')'); }).join('') + ' paliers</div>'
+          var lst = [6, 7, 8, 9], AT = attLire()[u.s];   /* 20261104e : 6 à 9 paliers, grille ⏳ en attente */
+          h += '<div style="margin-top:6px;">🪜 <b>P1 auto</b> : ma bankroll couvre ' + lst.map(function (n) { var on = G.length === n && Math.abs(G[0] - window._g45PctT.p1(c, n)) < 0.011; return chip(on, String(n), 'g45P1Auto(' + n + ')'); }).join('') + ' paliers</div>'
             + '<div style="margin-top:4px;">→ ' + lst.map(function (n) { return n + ' paliers : P1 = <b>' + window._g45PctT.p1(c, n).toFixed(2).replace('.', ',') + ' €</b>'; }).join(' · ') + '</div>'
-            + '<div style="font-size:13px;color:#c9d3ee;">⚠️ La grille dépend des étoiles : la changer change TOUTES tes équipes ' + '⭐'.repeat(+u.s || 1) + ' (confirmation demandée).</div>';
+            + '<div style="font-size:13px;color:#c9d3ee;">⚠️ La grille dépend des étoiles : la changer change TOUTES tes équipes ' + '⭐'.repeat(+u.s || 1) + ' (confirmation demandée).</div>'
+            + (AT ? '<div style="margin-top:6px;background:#3a2f08;border:1px solid #f5c542;border-radius:8px;padding:6px 9px;font-size:14px;">⏳ <b>Nouvelle grille en attente</b> : P1 ' + String(AT[0]).replace('.', ',') + ' €, ' + AT.length + ' paliers — appliquée quand ' + enSerie(u.s).map(function (x) { return esc(x.n) + ' (P' + x.p + ')'; }).join(', ') + ' ' + (enSerie(u.s).length > 1 ? 'seront revenues' : 'sera revenue') + ' à P1.<br>'
+              + chip(false, '✅ Appliquer maintenant', "g45GrilleForcer('" + u.s + "')") + chip(false, '✖ Annuler', "g45GrilleAnnuler('" + u.s + "')") + '</div>' : '');
         }
       }
       b.innerHTML = h;
