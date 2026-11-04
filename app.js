@@ -3137,10 +3137,12 @@ function render(){
      choisi juste a cote. On lit donc l'echelle reellement en vigueur. */
   if(uSel){
     var _lu=(typeof g45LieuCourant==='function')?g45LieuCourant():'';
+    var _gUs=uSel.value;   /* 20261105f (« Tkachuk choisi → P1 auto → ça me remet Lyon, Ligue 1 ») : render() refaisait la liste et revenait à la 1re carte ; on garde le choix */
     uSel.innerHTML=state.u.map(function(u){
       var _p=(typeof _g45PalLieu==='function')?_g45PalLieu(u,_lu):(u.l||1);
       return '<option value="'+u.n+'">'+(u.sport||'')+' '+u.n+' (P'+_p+')</option>';
     }).join('');
+    if(_gUs&&state.u.some(function(u){return u.n===_gUs;}))uSel.value=_gUs;
   }
 
   /* live cockpit */
@@ -11562,10 +11564,12 @@ function render(){
      choisi juste a cote. On lit donc l'echelle reellement en vigueur. */
   if(uSel){
     var _lu=(typeof g45LieuCourant==='function')?g45LieuCourant():'';
+    var _gUs=uSel.value;   /* 20261105f (« Tkachuk choisi → P1 auto → ça me remet Lyon, Ligue 1 ») : render() refaisait la liste et revenait à la 1re carte ; on garde le choix */
     uSel.innerHTML=state.u.map(function(u){
       var _p=(typeof _g45PalLieu==='function')?_g45PalLieu(u,_lu):(u.l||1);
       return '<option value="'+u.n+'">'+(u.sport||'')+' '+u.n+' (P'+_p+')</option>';
     }).join('');
+    if(_gUs&&state.u.some(function(u){return u.n===_gUs;}))uSel.value=_gUs;
   }
 
   /* live cockpit */
