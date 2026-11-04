@@ -1840,7 +1840,7 @@ PRESETS.forEach(function(pt){
     state.u.push({n:pt.n,abbr:pt.abbr,color:pt.color,s:pt.s,l:1,sport:pt.sport,preset:true});
 });
 
-var STRATS={"1":[1,2,6,18,54,162,486,1458],"2":[2,4,12,36,108,324,972,2916],"3":[2,4,12,36,108,324,972,2916],"4":[5,10,30,90,270,810,2430,7290],"5":[10,20,60,180,540,1620,4860,14580]};
+var STRATS={"1":[1,2,6,18,54,162,486,1458,4374],"2":[2,4,12,36,108,324,972,2916,8748],"3":[2,4,12,36,108,324,972,2916,8748],"4":[5,10,30,90,270,810,2430,7290,21870],"5":[10,20,60,180,540,1620,4860,14580,43740]};   /* 20261104a (« possible de rajouter un palier 9 ? ») : + P9 = 2 × somme des précédents */
 var PCOLS=["#4d84ff","#1ed760","#f59e0b","#a855f7","#22d3ee","#f97316","#ef4444","#ec4899","#14b8a6","#6366f1","#84cc16","#e879f9"];
 /* Palette étendue pour courbes - couleurs vraiment distinctes */
 var CURVE_COLS=["#4d84ff","#1ed760","#f59e0b","#a855f7","#ef4444","#22d3ee","#f97316","#ec4899","#14b8a6","#84cc16","#e879f9","#6366f1","#fbbf24","#34d399","#fb7185","#60a5fa"];
@@ -4344,7 +4344,7 @@ function _g45Pal(u, comp, lieu){
 }
 function _g45SetPal(u, comp, lieu, v){
   if(!u) return;
-  v=Math.max(1, Math.min(8, parseInt(v,10)||1));
+  v=Math.max(1, Math.min(9, parseInt(v,10)||1));   /* 20261104a : 9 paliers */
   var k=_g45PalKey(comp, lieu);
   if(k){ if(!u.lc) u.lc={}; u.lc[k]=v; }
   u.l=v;                      // conserve l'affichage historique et le repli
@@ -4892,7 +4892,7 @@ function result(id,win){
   var bet=state.h[idx];
   var debrief=prompt('Débrief ('+(win?'WIN ✅':'LOSS ❌')+') :','')||'';
   if(win){var _g=bet.isFreebet?(bet.m*(bet.cote-1)):(bet.m*bet.cote);state.b[bet.b]=(parseFloat(state.b[bet.b])+_g).toFixed(2);if(bet.isS){var u=state.u.find(function(x){return x.n===bet.n;});if(u)_g45SetPal(u,bet.comp,bet.domicile,1);}}
-  else if(bet.isS){var u2=state.u.find(function(x){return x.n===bet.n;});if(u2){var _p=_g45Pal(u2,bet.comp,bet.domicile);if(_p<8)_g45SetPal(u2,bet.comp,bet.domicile,_p+1);}}
+  else if(bet.isS){var u2=state.u.find(function(x){return x.n===bet.n;});if(u2){var _p=_g45Pal(u2,bet.comp,bet.domicile);if(_p<(STRATS[u2.s]||STRATS['1']).length)_g45SetPal(u2,bet.comp,bet.domicile,_p+1);}}
   var archived=Object.assign({},bet,{win:win,debrief:debrief});
   state.a.unshift(archived);state.h.splice(idx,1);save();updMise();
 }
@@ -10629,7 +10629,7 @@ PRESETS.forEach(function(pt){
     state.u.push({n:pt.n,abbr:pt.abbr,color:pt.color,s:pt.s,l:1,sport:pt.sport,preset:true});
 });
 
-var STRATS={"1":[1,2,6,18,54,162,486,1458],"2":[2,4,12,36,108,324,972,2916],"3":[2,4,12,36,108,324,972,2916],"4":[5,10,30,90,270,810,2430,7290],"5":[10,20,60,180,540,1620,4860,14580]};
+var STRATS={"1":[1,2,6,18,54,162,486,1458,4374],"2":[2,4,12,36,108,324,972,2916,8748],"3":[2,4,12,36,108,324,972,2916,8748],"4":[5,10,30,90,270,810,2430,7290,21870],"5":[10,20,60,180,540,1620,4860,14580,43740]};   /* 20261104a (« possible de rajouter un palier 9 ? ») : + P9 = 2 × somme des précédents */
 var PCOLS=["#4d84ff","#1ed760","#f59e0b","#a855f7","#22d3ee","#f97316","#ef4444","#ec4899","#14b8a6","#6366f1","#84cc16","#e879f9"];
 /* Palette étendue pour courbes - couleurs vraiment distinctes */
 var CURVE_COLS=["#4d84ff","#1ed760","#f59e0b","#a855f7","#ef4444","#22d3ee","#f97316","#ec4899","#14b8a6","#84cc16","#e879f9","#6366f1","#fbbf24","#34d399","#fb7185","#60a5fa"];
@@ -13018,7 +13018,7 @@ function result(id,win){
   var bet=state.h[idx];
   var debrief=prompt('Débrief ('+(win?'WIN ✅':'LOSS ❌')+') :','')||'';
   if(win){var _g=bet.isFreebet?(bet.m*(bet.cote-1)):(bet.m*bet.cote);state.b[bet.b]=(parseFloat(state.b[bet.b])+_g).toFixed(2);if(bet.isS){var u=state.u.find(function(x){return x.n===bet.n;});if(u)_g45SetPal(u,bet.comp,bet.domicile,1);}}
-  else if(bet.isS){var u2=state.u.find(function(x){return x.n===bet.n;});if(u2){var _p=_g45Pal(u2,bet.comp,bet.domicile);if(_p<8)_g45SetPal(u2,bet.comp,bet.domicile,_p+1);}}
+  else if(bet.isS){var u2=state.u.find(function(x){return x.n===bet.n;});if(u2){var _p=_g45Pal(u2,bet.comp,bet.domicile);if(_p<(STRATS[u2.s]||STRATS['1']).length)_g45SetPal(u2,bet.comp,bet.domicile,_p+1);}}
   var archived=Object.assign({},bet,{win:win,debrief:debrief});
   state.a.unshift(archived);state.h.splice(idx,1);save();updMise();
 }
@@ -38169,7 +38169,7 @@ function g45BetRegler(id, ar, debrief) {
   _g45BetAppliquer(bet, 'h', -1);
   _g45BetAppliquer(nb, 'a', 1);
   if (bet.isS) { try { var u = state.u.find(function (x) { return x.n === bet.n; });
-    if (u) { if (ar === 'hw') _g45SetPal(u, bet.comp, bet.domicile, 1); else if (ar === 'hl') { var _p = _g45Pal(u, bet.comp, bet.domicile); if (_p < 8) _g45SetPal(u, bet.comp, bet.domicile, _p + 1); } } } catch (e) {} }
+    if (u) { if (ar === 'hw') _g45SetPal(u, bet.comp, bet.domicile, 1); else if (ar === 'hl') { var _p = _g45Pal(u, bet.comp, bet.domicile); if (_p < (STRATS[u.s] || STRATS['1']).length) _g45SetPal(u, bet.comp, bet.domicile, _p + 1); } } } catch (e) {} }
   state.a.unshift(nb); state.h.splice(idx, 1);
   try { save(); } catch (e) {} try { updMise(); } catch (e) {}
   return true;
@@ -43884,8 +43884,10 @@ var _G45_STRATS_BASE = JSON.parse(JSON.stringify(STRATS));
     var over = JSON.parse(localStorage.getItem('g45_strats')||'null');
     if(over){
       Object.keys(over).forEach(function(k){
-        if(STRATS[k] && Array.isArray(over[k]) && over[k].length===STRATS[k].length){
+        if(STRATS[k] && Array.isArray(over[k]) && (over[k].length===STRATS[k].length || over[k].length===8)){
           STRATS[k] = over[k].map(function(v){ return parseFloat(v)||0; });
+          /* 20261104a : grille perso gardée à 8 paliers → P9 ajouté (2 × somme des précédents) */
+          while(STRATS[k].length < 9){ var _sm=0; STRATS[k].forEach(function(x){ _sm+=x; }); STRATS[k].push(Math.round(_sm*2*100)/100); }
         }
       });
     }
@@ -43903,7 +43905,7 @@ function _g45PaliersDepuisP1(p1){
   var v = parseFloat(String(p1).replace(',','.'));
   if(isNaN(v)||v<0) v = 0;
   var arr = [v];
-  for(var i=1;i<8;i++){
+  for(var i=1;i<9;i++){   /* 20261104a : 9 paliers */
     var somme = 0;
     for(var j=0;j<arr.length;j++) somme += arr[j];
     arr.push(somme * 2);
@@ -77744,7 +77746,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       return '<span style="display:inline-flex;align-items:center;margin:3px 8px 3px 0;border-radius:7px;border:1px solid ' + k + ';overflow:hidden;background:' + k + '22;"><b style="background:' + k + ';color:#0b101d;padding:2px 6px;text-shadow:none;">P' + (i + 1) + '</b><b style="padding:2px 8px;">' + eu(x * f) + '</b></span>'; }).join('');
     var hp = 0, hn = ''; ckParis().forEach(function (x) { var l = parseInt(x.b && x.b.l, 10) || 1; if (l > hp) { hp = l; hn = x.b.n + (x.b.domicile === 'dom' ? ' 🏠' : x.b.domicile === 'ext' ? ' ✈️' : ''); } });
     return '<div style="flex-basis:100%;margin-top:6px;font-size:13px;line-height:1.5;"><b style="color:#ff9f43;">⚠️ Les dangers du palier</b> (si tout perd à la suite) :<div>' + lig + '</div>'
-      + '<div>Perdre jusqu\'à P8 = <b style="color:#ff5a5a;">' + eu(tot[tot.length - 1]) + ' engagés</b>' + (hp > 1 && tot[hp - 1] ? ' · plus haut palier du Cockpit : <b>P' + hp + '</b> (' + String(hn).replace(/[<>&]/g, '') + ') → mise <b>' + eu(g[hp - 1] * f) + '</b>, <b>' + eu(tot[hp - 1]) + '</b> engagés' : '') + '</div></div>';
+      + '<div>Perdre jusqu\'à P' + tot.length + ' = <b style="color:#ff5a5a;">' + eu(tot[tot.length - 1]) + ' engagés</b>' + (hp > 1 && tot[hp - 1] ? ' · plus haut palier du Cockpit : <b>P' + hp + '</b> (' + String(hn).replace(/[<>&]/g, '') + ') → mise <b>' + eu(g[hp - 1] * f) + '</b>, <b>' + eu(tot[hp - 1]) + '</b> engagés' : '') + '</div></div>';
   }
   window.g45CkP1 = function (v) { v = String(v || '').replace(',', '.').replace(/[^0-9.]/g, ''); try { if (parseFloat(v) > 0) localStorage.setItem('g45ck_p1', v); else localStorage.removeItem('g45ck_p1'); } catch (e) {} ckRedessiner(); };
   function ckMurSig() { try { return ((typeof state !== 'undefined' && state.u) || []).map(function (u) { return u && u.n; }).filter(Boolean).sort().join('|'); } catch (e) { return ''; } }
@@ -78272,7 +78274,7 @@ window.g45FusionnerData = g45FusionnerData;
    - Notifications : types d'alertes en boutons (case cachée dans le bouton), équipes sur 2 colonnes, emoji du VRAI sport (avant ⚽ pour tous).
    Rien n'est supprimé : blocs, identifiants et fonctions d'origine inchangés.
    ════════════════════════════════════════════════════════════════════════════ */
-window._G45_PAL_COUL = ['#1ed760', '#8fdc4a', '#f5c542', '#ffa53a', '#ff7a3a', '#ff4545', '#e0408a', '#9b4dff'];
+window._G45_PAL_COUL = ['#1ed760', '#8fdc4a', '#f5c542', '#ffa53a', '#ff7a3a', '#ff4545', '#e0408a', '#9b4dff', '#6d4dff'];   /* 20261104a : + P9 */
 (function () {
   try {
     var bet = !(typeof _g45SanteActive === 'function' && _g45SanteActive());
@@ -78426,7 +78428,7 @@ window._G45_PAL_COUL = ['#1ed760', '#8fdc4a', '#f5c542', '#ffa53a', '#ff7a3a', '
         });
         h += '</tr>';
       });
-      h += '</table></div><div style="font-size:13px;color:#c9d3ee;margin-top:6px;">Touche la case jaune (P1, mise de départ) pour la changer : P2 à P8 suivent.</div>';
+      h += '</table></div><div style="font-size:13px;color:#c9d3ee;margin-top:6px;">Touche la case jaune (P1, mise de départ) pour la changer : P2 à P9 suivent.</div>';
       el.innerHTML = h;
     };
     window.renderPaliers = renderPaliers;
