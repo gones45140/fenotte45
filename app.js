@@ -76296,17 +76296,21 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var e = 0; for (var i = 0; i < mises.length; i++) { e += mises[i]; if (cap > 0 && e > cap + 1e-9) return { p: i + 1, besoin: e }; } return { p: 0, besoin: e };
   }
   function simCalc(seq, mises, cote, cap) {   /* seq = [{ s: libellé saison, ok }] dans l'ordre → { par: { s: { ok, bo, e } }, tot, bo, max } ; cap = capital (0 = sans limite) */
-    var i = 0, par = {}, tot = 0, bo = 0, max = 0, det = [], eng = 0, bk = 0;   /* 20261103o : det = détail de chaque match (📋 Match par match) ; 20261104b : eng = déjà perdu dans la série */
+    var i = 0, par = {}, tot = 0, bo = 0, max = 0, det = [], eng = 0, bk = 0, ruine = null;   /* 20261103o : det = détail de chaque match (📋 Match par match) ; 20261104b : eng = déjà perdu dans la série */
     seq.forEach(function (x) {
       var P = par[x.s] = par[x.s] || { ok: 0, bo: 0, e: 0 };
-      if (cap > 0 && i > 0 && eng + mises[i] > cap + 1e-9) { P.e++; bo++; bk++; i = 0; eng = 0; if (det.length) det[det.length - 1].b = 2; }   /* 20261104b : capital dépassé */
+      /* 20261104c (« attention ma BK est évolutive… et sur bet45 ils n'ont pas tous la même ») : bankroll qui VIT pendant la simulation = capital
+         de départ (celui de la personne connectée) + gains − pertes ; la mise doit tenir dans l'argent disponible à ce moment-là. */
+      if (ruine) return;
+      if (cap > 0 && i > 0 && mises[i] > cap + tot + 1e-9) { P.e++; bo++; bk++; i = 0; eng = 0; if (det.length) det[det.length - 1].b = 2; }   /* 20261104b : capital dépassé */
+      if (cap > 0 && mises[0] > cap + tot + 1e-9) { ruine = { s: x.s, n: det.length }; return; }   /* 20261104c : plus de quoi miser P1 */
       var m = mises[i], d = { p: i + 1, m: m, c: x.c > 1 ? x.c : cote, g: 0, b: 0 };
       if (m > max) max = m;
       if (x.ok) { var g = m * ((x.c > 1 ? x.c : cote) - 1); P.ok++; P.bo += g; tot += g; i = 0; eng = 0; d.g = g; }   /* 20261103i : vraie cote du match si connue */
       else { P.bo -= m; tot -= m; eng += m; i++; d.g = -m; if (i >= mises.length) { P.e++; bo++; i = 0; eng = 0; d.b = 1; } }
       d.t = tot; det.push(d);
     });
-    return { par: par, tot: tot, bo: bo, max: max, det: det, bk: bk };
+    return { par: par, tot: tot, bo: bo, max: max, det: det, bk: bk, ruine: ruine, fin: cap > 0 ? cap + tot : null };
   }
   window._g45CrSimT = simCalc;   /* tests */
   /* 20261102p (capture carte MacKinnon « 📊 pire série … → 5 paliers » : « peut-être le rajouter ici, ça évite de recalculer à chaque fois ») :
@@ -76352,7 +76356,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
          (g45_pal_et, _g45PalEt) → le Total et le 💶 changent ensemble. */
       + '<div style="margin:4px 0 2px;">' + ['1', '2', '3', '4', '5'].map(function (k) { var on = k === et; return '<button onclick="g45CrCkEt(\'' + k + '\')" style="border-radius:14px;padding:5px 10px;font-size:14px;cursor:pointer;color:#fff;margin:4px 6px 0 0;border:1px solid ' + (on ? '#f5c542' : '#2a3a63') + ';background:' + (on ? '#5a4a12' : '#16213f') + ';font-weight:' + (on ? 800 : 400) + ';">' + k + ' ⭐</button>'; }).join('') + '</div>'
       + '<div style="font-size:13px;color:#c9d3ee;margin:2px 0 6px;">Paliers ' + mises.join(' · ') + ' €</div>'
-      + (CM.p ? '<div style="font-size:14px;color:#ff9f43;font-weight:700;margin:2px 0 6px;line-height:1.45;">⚠️ Ta bankroll (' + Math.round(cap).toLocaleString('fr-FR') + ' €) ne couvre pas P' + CM.p + ' : il faudrait ' + Math.round(CM.besoin).toLocaleString('fr-FR') + ' € (tout perdu jusqu\'à P' + (CM.p - 1) + ' + la mise de P' + CM.p + '). Au-delà de P' + (CM.p - 1) + ', la série est comptée 💥 perdue.</div>'
+      + (CM.p ? '<div style="font-size:14px;color:#ff9f43;font-weight:700;margin:2px 0 6px;line-height:1.45;">⚠️ Ta bankroll (' + Math.round(cap).toLocaleString('fr-FR') + ' €) ne couvre pas P' + CM.p + ' aujourd\'hui : il faudrait ' + Math.round(CM.besoin).toLocaleString('fr-FR') + ' € (tout perdu jusqu\'à P' + (CM.p - 1) + ' + la mise de P' + CM.p + '). Dans la simulation, ta bankroll évolue avec tes gains et tes pertes : une mise qu\'elle ne couvre pas = série 💥 perdue.</div>'
         : (cap > 0 ? '<div style="font-size:13px;color:#1ed760;margin:2px 0 6px;">✅ Ta bankroll (' + Math.round(cap).toLocaleString('fr-FR') + ' €) couvre les ' + mises.length + ' paliers (' + Math.round(CM.besoin).toLocaleString('fr-FR') + ' € au total).</div>' : ''))   /* 20261104b */
       /* 20261102o (Antoine : « faudrait pouvoir mettre soi-même la cote, + facile non ? ») : case à taper (clavier chiffres) au lieu de la liste. */
       + (nV.length ? '<div style="font-size:14px;color:#1ed760;font-weight:700;margin:2px 0;">✅ Vraies cotes de fermeture : ' + nV.length + ' matchs sur ' + seq.length + ' (moyenne ' + moyV.toFixed(2).replace('.', ',') + ')' + (nV.length < seq.length ? ' · cote tapée pour les autres' : '') + '</div>' : '')
@@ -76363,6 +76367,8 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       h += '<tr><td style="' + td + '">' + lb + '</td><td style="' + td + '">' + P.ok + '</td><td style="' + td + (P.e ? 'color:#ff5a5a;font-weight:800;' : '') + '">' + P.e + '</td><td style="' + td + 'font-weight:800;color:' + cl(P.bo) + ';">' + eu(P.bo) + '</td></tr>';
     });
     return h + '</table><div style="margin-top:8px;">🧮 <b>Total : <span style="color:' + cl(R.tot) + ';">' + eu(R.tot) + '</span></b> · plus grosse mise engagée <b>' + R.max.toLocaleString('fr-FR') + ' €</b></div>'
+      + (R.fin != null ? '<div style="margin-top:2px;">🏦 Bankroll : ' + Math.round(cap).toLocaleString('fr-FR') + ' € au départ → <b style="color:' + cl(R.tot) + ';">' + Math.round(R.fin).toLocaleString('fr-FR') + ' €</b> à la fin' + (R.bk ? ' · <span style="color:#ff5a5a;">' + R.bk + ' série' + (R.bk > 1 ? 's' : '') + ' 💥 faute de bankroll</span>' : '') + '</div>' : '')
+      + (R.ruine ? '<div style="margin-top:2px;color:#ff5a5a;font-weight:800;">💀 Ruiné en ' + R.ruine.s + ' : plus de quoi miser le palier 1, la simulation s\'arrête là.</div>' : '')   /* 20261104c */
       + '<div style="font-size:13px;color:#c9d3ee;margin-top:4px;">💥 = série plus longue que tes paliers ou que ta bankroll : tout est perdu, retour au palier 1. Même cote pour tous les matchs (pas de cotes gardées pour les anciennes saisons).</div>'
       + mpmHtml(c, D, seq, R, libs, eu, cl) + '</div>';
   }
@@ -76410,7 +76416,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var h = '<div style="margin-top:10px;font-size:14px;font-weight:800;">📋 Match par match</div><div>'
       + libs.map(function (lb) { var on = S.mpm === lb; return '<button onclick="g45CrMpm(\'' + lb + '\')" style="border-radius:14px;padding:5px 12px;font-size:14px;cursor:pointer;color:#fff;margin:4px 6px 0 0;border:1px solid ' + (on ? '#6d9dff' : '#2a3a63') + ';background:' + (on ? '#2a4a9a' : '#0b1226') + ';font-weight:' + (on ? 800 : 600) + ';">' + lb + '</button>'; }).join('') + '</div>';
     if (!S.mpm) return h;
-    var L = []; seq.forEach(function (x, i) { if (x.s === S.mpm) L.push({ x: x, d: R.det[i] }); });
+    var L = []; seq.forEach(function (x, i) { if (x.s === S.mpm && R.det[i]) L.push({ x: x, d: R.det[i] }); });   /* 20261104c : après une ruine, plus de détail */
     if (!L.length) return h + '<div style="color:#c9d3ee;margin-top:6px;">Aucun match compté cette saison.</div>';
     var tid = S.ctx ? S.ctx.id : (D.tid || ''); if (tid) mpmAdv(L.map(function (o) { return o.x; }), tid);
     var bil = 0, mx = 0; L.forEach(function (o) { bil += o.d.g; if (o.d.m > mx) mx = o.d.m; });
