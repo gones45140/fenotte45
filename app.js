@@ -1841,6 +1841,9 @@ PRESETS.forEach(function(pt){
 });
 
 var STRATS={"1":[1,2,6,18,54,162,486,1458,4374],"2":[2,4,12,36,108,324,972,2916,8748],"3":[2,4,12,36,108,324,972,2916,8748],"4":[5,10,30,90,270,810,2430,7290,21870],"5":[10,20,60,180,540,1620,4860,14580,43740]};   /* 20261104a (« possible de rajouter un palier 9 ? ») : + P9 = 2 × somme des précédents */
+/* 20261104f (« ou la sélection se fait à la base de l'équipe ? » → grille PAR ÉQUIPE → « oui ») : grille de l'équipe = u.g (6 à 9 paliers, créée par
+   « 🪜 P1 auto » de la page Pari) si elle existe, sinon la grille de ses étoiles STRATS[u.s]. TOUTES les lectures de mise passent par ici. */
+function _g45Grille(u){ if(!u) return undefined; if(Array.isArray(u.g) && u.g.length>=6 && u.g.length<=9) return u.g; return (typeof STRATS!=='undefined') ? STRATS[u.s] : undefined; }
 var PCOLS=["#4d84ff","#1ed760","#f59e0b","#a855f7","#22d3ee","#f97316","#ef4444","#ec4899","#14b8a6","#6366f1","#84cc16","#e879f9"];
 /* Palette étendue pour courbes - couleurs vraiment distinctes */
 var CURVE_COLS=["#4d84ff","#1ed760","#f59e0b","#a855f7","#ef4444","#22d3ee","#f97316","#ec4899","#14b8a6","#84cc16","#e879f9","#6366f1","#fbbf24","#34d399","#fb7185","#60a5fa"];
@@ -4892,7 +4895,7 @@ function result(id,win){
   var bet=state.h[idx];
   var debrief=prompt('Débrief ('+(win?'WIN ✅':'LOSS ❌')+') :','')||'';
   if(win){var _g=bet.isFreebet?(bet.m*(bet.cote-1)):(bet.m*bet.cote);state.b[bet.b]=(parseFloat(state.b[bet.b])+_g).toFixed(2);if(bet.isS){var u=state.u.find(function(x){return x.n===bet.n;});if(u)_g45SetPal(u,bet.comp,bet.domicile,1);}}
-  else if(bet.isS){var u2=state.u.find(function(x){return x.n===bet.n;});if(u2){var _p=_g45Pal(u2,bet.comp,bet.domicile);if(_p<(STRATS[u2.s]||STRATS['1']).length)_g45SetPal(u2,bet.comp,bet.domicile,_p+1);}}
+  else if(bet.isS){var u2=state.u.find(function(x){return x.n===bet.n;});if(u2){var _p=_g45Pal(u2,bet.comp,bet.domicile);if(_p<(_g45Grille(u2)||STRATS['1']).length)_g45SetPal(u2,bet.comp,bet.domicile,_p+1);}}
   var archived=Object.assign({},bet,{win:win,debrief:debrief});
   state.a.unshift(archived);state.h.splice(idx,1);save();updMise();
 }
@@ -5184,7 +5187,7 @@ function editArchived(id){
 function updMise(){
   var u=state.u.find(function(x){return x.n===$i('c-unit').value;});
   if(!u)return;
-  if($i('c-mise'))$i('c-mise').value=STRATS[u.s][_g45Pal(u,($i('c-comp')&&$i('c-comp').value)||'',g45LieuCourant())-1]||0;
+  if($i('c-mise'))$i('c-mise').value=_g45Grille(u)[_g45Pal(u,($i('c-comp')&&$i('c-comp').value)||'',g45LieuCourant())-1]||0;
   /* Auto-fill sport */
   if(u.sport&&$i('c-sport'))$i('c-sport').value=u.sport;
   /* Auto-fill competition from CLUB_DB */
@@ -13018,7 +13021,7 @@ function result(id,win){
   var bet=state.h[idx];
   var debrief=prompt('Débrief ('+(win?'WIN ✅':'LOSS ❌')+') :','')||'';
   if(win){var _g=bet.isFreebet?(bet.m*(bet.cote-1)):(bet.m*bet.cote);state.b[bet.b]=(parseFloat(state.b[bet.b])+_g).toFixed(2);if(bet.isS){var u=state.u.find(function(x){return x.n===bet.n;});if(u)_g45SetPal(u,bet.comp,bet.domicile,1);}}
-  else if(bet.isS){var u2=state.u.find(function(x){return x.n===bet.n;});if(u2){var _p=_g45Pal(u2,bet.comp,bet.domicile);if(_p<(STRATS[u2.s]||STRATS['1']).length)_g45SetPal(u2,bet.comp,bet.domicile,_p+1);}}
+  else if(bet.isS){var u2=state.u.find(function(x){return x.n===bet.n;});if(u2){var _p=_g45Pal(u2,bet.comp,bet.domicile);if(_p<(_g45Grille(u2)||STRATS['1']).length)_g45SetPal(u2,bet.comp,bet.domicile,_p+1);}}
   var archived=Object.assign({},bet,{win:win,debrief:debrief});
   state.a.unshift(archived);state.h.splice(idx,1);save();updMise();
 }
@@ -13069,7 +13072,7 @@ function editArchived(id){
 function updMise(){
   var u=state.u.find(function(x){return x.n===$i('c-unit').value;});
   if(!u)return;
-  if($i('c-mise'))$i('c-mise').value=STRATS[u.s][_g45Pal(u,($i('c-comp')&&$i('c-comp').value)||'',g45LieuCourant())-1]||0;
+  if($i('c-mise'))$i('c-mise').value=_g45Grille(u)[_g45Pal(u,($i('c-comp')&&$i('c-comp').value)||'',g45LieuCourant())-1]||0;
   /* Auto-fill sport */
   if(u.sport&&$i('c-sport'))$i('c-sport').value=u.sport;
   /* Auto-fill competition from CLUB_DB */
@@ -26717,7 +26720,7 @@ async function loadCalendrier() {
        isDom toujours vrai) restent sans palier. */
     if (!m || (m.suivi && !m.sp)) return '';
     var u = _agMur(m);
-    if (!u || u.s == null || typeof STRATS === 'undefined' || !STRATS[u.s]) return '';
+    if (!u || u.s == null || typeof STRATS === 'undefined' || !_g45Grille(u)) return '';
     var sl = String(m.compSlug || '').toLowerCase(), nm = String(m.comp || '').toLowerCase();
     var foot = !m.sp || m.sp === 'soccer';
     var champ = foot ? /^[a-z]{3}\.(w\.)?\d$/.test(sl) : !/euroleague|eurocup|euroligue|coupe|cup|champions|super|friendl|amical|all.?star|pr[ée]saison|preseason/.test(sl + ' ' + nm);
@@ -26725,7 +26728,7 @@ async function loadCalendrier() {
       champ = /ligue|liga|bundesliga|serie|premier|eredivisie|primeira|championship|mls|super lig|jupiler|pro league/.test(sl + ' ' + nm);
     if (!champ) return '';
     var p = (typeof _g45PalLieu === 'function') ? _g45PalLieu(u, m.isDom ? 'dom' : 'ext') : (parseInt(u.l, 10) || 1);
-    var mi = STRATS[u.s][p - 1];
+    var mi = _g45Grille(u)[p - 1];
     if (mi == null) return '';
     var miT = (Math.round(mi * 100) / 100).toLocaleString('fr-FR');
     return '<div style="margin-top:5px;"><span style="display:inline-block;background:rgba(240,176,32,.22);border:1px solid #f0b020;color:#fff;'
@@ -38169,7 +38172,7 @@ function g45BetRegler(id, ar, debrief) {
   _g45BetAppliquer(bet, 'h', -1);
   _g45BetAppliquer(nb, 'a', 1);
   if (bet.isS) { try { var u = state.u.find(function (x) { return x.n === bet.n; });
-    if (u) { if (ar === 'hw') _g45SetPal(u, bet.comp, bet.domicile, 1); else if (ar === 'hl') { var _p = _g45Pal(u, bet.comp, bet.domicile); if (_p < (STRATS[u.s] || STRATS['1']).length) _g45SetPal(u, bet.comp, bet.domicile, _p + 1); } } } catch (e) {} }
+    if (u) { if (ar === 'hw') _g45SetPal(u, bet.comp, bet.domicile, 1); else if (ar === 'hl') { var _p = _g45Pal(u, bet.comp, bet.domicile); if (_p < (_g45Grille(u) || STRATS['1']).length) _g45SetPal(u, bet.comp, bet.domicile, _p + 1); } } } catch (e) {} }
   state.a.unshift(nb); state.h.splice(idx, 1);
   try { save(); } catch (e) {} try { updMise(); } catch (e) {}
   return true;
@@ -76321,11 +76324,11 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   window._g45CrSimT = simCalc;   /* tests */
   /* 20261102p (capture carte MacKinnon « 📊 pire série … → 5 paliers » : « peut-être le rajouter ici, ça évite de recalculer à chaque fois ») :
      bilan 💶 gardé AVEC la série (u.psL par « 🔄 Calculer mes séries », u.ps par 📌) → { e: € arrondi, bo: 💥, c: cote }. Mises = ⭐ de la
-     CARTE (STRATS[u.s], comme « mise max » de la carte), sinon l'échelle des critères ; cote = celle tapée dans les critères (g45_ck_cote). */
+     CARTE (_g45Grille(u), comme « mise max » de la carte), sinon l'échelle des critères ; cote = celle tapée dans les critères (g45_ck_cote). */
   function simDe(sq, u) {
     if (typeof sq === 'string') sq = sq.split('').map(function (x) { return x === '1'; });   /* 20261102q : série gardée en texte « 1101… » */
     if (!sq || !sq.length) return null;
-    var M = (u && u.s != null && typeof STRATS !== 'undefined' && STRATS[u.s]) || (typeof STRATS !== 'undefined' && (STRATS[(typeof _g45PalEt === 'function') ? _g45PalEt() : '1'] || STRATS['1'])) || [1, 2, 6, 18, 54, 162, 486, 1458];
+    var M = (u && u.s != null && typeof STRATS !== 'undefined' && _g45Grille(u)) || (typeof STRATS !== 'undefined' && (STRATS[(typeof _g45PalEt === 'function') ? _g45PalEt() : '1'] || STRATS['1'])) || [1, 2, 6, 18, 54, 162, 486, 1458];
     var c = (u && u.ck > 1) ? u.ck : ckCote(), R = simCalc(sq.map(function (ok) { return { s: '', ok: !!ok }; }), M, c, capT());   /* 20261104b : + capital */
     return { e: Math.round(R.tot), bo: R.bo, c: c };
   }
@@ -77717,7 +77720,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
      codés, rien de plus » ; maquette maq-cockpit2 → « aujourd'hui et cette nuit, sans 📊, oui ») ═══
      Matchs = liste de l'Agenda (g45ck_ag, posée par loadCalendrier ; absente pour le jour → _g45AgRelire). Fenêtre : match pas fini (début
      il y a moins de 3 h) jusqu'à demain 8 h. Par carte : 📌 pari du lieu (_g45AgConsigne, comme l'Agenda), 🚀 palier du lieu + mise
-     (_g45PalLieu, STRATS[u.s]), 📊 u.psL[dom|ext] sinon [glob]. Série absente, d'un autre jour ou d'un autre texte de pari → recalculée
+     (_g45PalLieu, _g45Grille(u)), 📊 u.psL[dom|ext] sinon [glob]. Série absente, d'un autre jour ou d'un autre texte de pari → recalculée
      toute seule (serEquipe / serJoueur, une carte à la fois), POUR TOUT LE MONDE (bet45 compris). Pari pas calculable / erreur : pas de 📊. ═══ */
   S.ck = S.ck || { fait: {}, enCours: 0 };
   function ckJour() { var d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
@@ -77819,7 +77822,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       var ico = m.d ? '🏠' : '✈️', q = ckPari(u, m.d), C = null;
       try { if (u.note && (u.type !== 'joueur' || /🏠|✈|🛫/.test(u.note))) C = _g45AgConsigne(u.note, !!m.d); } catch (x) {}
       var pal = '';
-      try { var pP = u._pub ? (u.pm && u.pm[m.d ? 'dom' : 'ext']) : null; if (u._pub ? !!pP : (u.s != null && typeof STRATS !== 'undefined' && STRATS[u.s])) { var p = pP ? pP.p : (typeof _g45PalLieu === 'function') ? _g45PalLieu(u, m.d ? 'dom' : 'ext') : (parseInt(u.l, 10) || 1), mi = pP ? (pP.mi == null ? null : Math.round(pP.mi * ckF(u.n) * 100) / 100) : STRATS[u.s][p - 1];   /* 20261029g : u._pub = carte publiée (palier + mise de gones) */
+      try { var pP = u._pub ? (u.pm && u.pm[m.d ? 'dom' : 'ext']) : null; if (u._pub ? !!pP : (u.s != null && typeof STRATS !== 'undefined' && _g45Grille(u))) { var p = pP ? pP.p : (typeof _g45PalLieu === 'function') ? _g45PalLieu(u, m.d ? 'dom' : 'ext') : (parseInt(u.l, 10) || 1), mi = pP ? (pP.mi == null ? null : Math.round(pP.mi * ckF(u.n) * 100) / 100) : _g45Grille(u)[p - 1];   /* 20261029g : u._pub = carte publiée (palier + mise de gones) */
         if (mi != null) pal = '<div style="margin-top:6px;"><span style="display:inline-block;background:rgba(240,176,32,.22);border:1px solid #f0b020;color:#fff;font-size:15px;font-weight:800;border-radius:7px;padding:3px 10px;">🚀 Palier ' + p + ' · mise ' + (Math.round(mi * 100) / 100).toLocaleString('fr-FR') + ' € <span style="color:#f5c542;">' + new Array((parseInt(u.s, 10) || 0) + 1).join('⭐') + '</span></span></div>'; } } catch (x) {}
       var R = q && u.psL && u.psL[q.k], ps = '';
       if (R && !R.err && R.p && R.p.length) {
@@ -78076,7 +78079,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     (A.L || []).forEach(function (m) {
       var u = ckU(m.n); if (!u || U[u.n]) return;
       var x = { n: u.n, color: u.color || '', s: u.s, type: u.type || '', sport: u.sport || '', note: u.note || '', pm: {}, psL: null };
-      ['dom', 'ext'].forEach(function (l) { try { if (u.s != null && typeof STRATS !== 'undefined' && STRATS[u.s]) { var p = (typeof _g45PalLieu === 'function') ? _g45PalLieu(u, l) : (parseInt(u.l, 10) || 1); x.pm[l] = { p: p, mi: STRATS[u.s][p - 1] }; } } catch (e) {} });
+      ['dom', 'ext'].forEach(function (l) { try { if (u.s != null && typeof STRATS !== 'undefined' && _g45Grille(u)) { var p = (typeof _g45PalLieu === 'function') ? _g45PalLieu(u, l) : (parseInt(u.l, 10) || 1); x.pm[l] = { p: p, mi: _g45Grille(u)[p - 1] }; } } catch (e) {} });
       if (u.psL) { x.psL = {}; Object.keys(u.psL).forEach(function (k) { var R = Object.assign({}, u.psL[k]); delete R.sq;   /* 20261102q : série brute pas publiée */ if (!R.err && R.p) { try { R.pa = window._g45PalCarte(R.tot, u); } catch (e) {} } x.psL[k] = R; }); }
       U[u.n] = x;
     });
@@ -78536,10 +78539,10 @@ window._G45_PAL_COUL = ['#1ed760', '#8fdc4a', '#f5c542', '#ffa53a', '#ff7a3a', '
   };
   window._g45UlistHabiller = habiller;
   /* 20261028q (« mets les mêmes mises que moi » + capture Outils → Mises par palier : « actuellement 5 étoiles équipe, 4 étoiles joueur ») : la mise
-     affichée après une pire série d'une CARTE suit les ⭐ de la carte (STRATS[u.s], grille modifiée comprise), plus l'échelle ⭐ choisie dans les
+     affichée après une pire série d'une CARTE suit les ⭐ de la carte (_g45Grille(u), grille modifiée comprise), plus l'échelle ⭐ choisie dans les
      critères (g45_pal_et, gardée pour les écrans sans carte). ✅ = 5 paliers ou moins, ⚠️ = jusqu'à la dernière case, ❌ = au-delà. */
   window._g45PalCarte = function (pire, u) {
-    var S = (u && u.s != null && typeof STRATS !== 'undefined') ? STRATS[u.s] : null;
+    var S = (u && u.s != null && typeof STRATS !== 'undefined') ? _g45Grille(u) : null;
     if (!S || !S.length) return (typeof _g45F1CrPal === 'function') ? _g45F1CrPal(pire) : { p: pire + 1, ico: '', mise: null };
     var p = pire + 1;
     /* 20261030c : cum = total misé du P1 jusqu'à ce palier (« Carolina 5 paliers · 270 € → rajoute la mise totale 5+10+30+90+270 = 405 ») */
@@ -83723,23 +83726,23 @@ window._g45TrTestVoit = function () { try { return (typeof _g45SanteActive === '
 /* ═══ 20261024f — MISE DU COCKPIT = PALIER AFFICHÉ (capture d'Antoine : Colorado « (P1) », simulateur « P1 ◀ 5 € », mais Mise = 30 €) ═══
    updMise calculait la mise AVANT que la compétition / le lieu du match soient posés (c-comp vide → repli sur u.l = dernier palier joué
    ailleurs, ici P3 = 30 €) ; renderCrash, appelé APRÈS, montrait le bon palier (NHL · domicile = P1). Maintenant, à chaque renderCrash et à
-   chaque changement de compétition / lieu, la mise reprend STRATS[u.s][palier − 1] — SAUF si la mise a été tapée à la main ou remplie par le
+   chaque changement de compétition / lieu, la mise reprend _g45Grille(u)[palier − 1] — SAUF si la mise a été tapée à la main ou remplie par le
    lecteur de tickets (tout événement input / change sur #c-mise = mise choisie, gardée jusqu'au prochain choix d'équipe, updMise). */
 (function () {
   var $ = function (id) { return document.getElementById(id); };
   var recalc = function () {
     var uSel = $('c-unit'), mi = $('c-mise'); if (!uSel || !mi || mi._g45Man) return;
-    var u = (state.u || []).find(function (x) { return x.n === uSel.value; }); if (!u || !STRATS[u.s]) return;
-    var v = STRATS[u.s][_g45Pal(u, ($('c-comp') && $('c-comp').value) || '', g45LieuCourant()) - 1] || 0;
+    var u = (state.u || []).find(function (x) { return x.n === uSel.value; }); if (!u || !_g45Grille(u)) return;
+    var v = _g45Grille(u)[_g45Pal(u, ($('c-comp') && $('c-comp').value) || '', g45LieuCourant()) - 1] || 0;
     if (String(mi.value) !== String(v)) mi.value = v;
   };
   window._g45MiseRecalc = recalc;
   /* 20261024t (Spurs : ticket 5 € alors que la montante est passée au P2 = 10 € ; « on devrait être averti, seulement pour le Cockpit, que la
-     mise ne correspond pas au palier ») : bandeau jaune sous #c-mise quand la mise diffère de STRATS[u.s][palier − 1] ; retiré sinon. */
+     mise ne correspond pas au palier ») : bandeau jaune sous #c-mise quand la mise diffère de _g45Grille(u)[palier − 1] ; retiré sinon. */
   var avert = function () {
     var uSel = $('c-unit'), mi = $('c-mise'); if (!mi) return;
     var b = $('g45-mise-av'), u = uSel && (state.u || []).find(function (x) { return x.n === uSel.value; });
-    var pal = u && STRATS[u.s] ? _g45Pal(u, ($('c-comp') && $('c-comp').value) || '', g45LieuCourant()) : 0, v = pal ? (STRATS[u.s][pal - 1] || 0) : 0;
+    var pal = u && _g45Grille(u) ? _g45Pal(u, ($('c-comp') && $('c-comp').value) || '', g45LieuCourant()) : 0, v = pal ? (_g45Grille(u)[pal - 1] || 0) : 0;
     var m = parseFloat(String(mi.value || '').replace(',', '.'));
     if (!v || !(m > 0) || Math.abs(m - v) < 0.005) { if (b) b.remove(); return; }
     if (!b) { b = document.createElement('div'); b.id = 'g45-mise-av'; b.style.cssText = 'margin-top:6px;background:#3a2f08;border:1px solid #f5c542;color:#fff;border-radius:8px;padding:6px 10px;font-size:14px;font-weight:700;'; mi.insertAdjacentElement('afterend', b); }
@@ -85773,11 +85776,11 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
   var attEcrire = function (o) { try { if (Object.keys(o).length) localStorage.setItem(KA, JSON.stringify(o)); else localStorage.removeItem(KA); } catch (e) {} };
   window._g45GrilleAtt = attLire;
   var palMax = function (u) { var ks = Object.keys(u.lc || {}); if (!ks.length) return parseInt(u.l, 10) || 1; var mx = 1; ks.forEach(function (q) { var v = parseInt(u.lc[q], 10) || 1; if (v > mx) mx = v; }); return mx; };
-  var enSerie = function (k) { return ((typeof state !== 'undefined' && state.u) || []).filter(function (u) { return u && String(u.s) === String(k); }).map(function (u) { return { n: u.n, p: palMax(u) }; }).filter(function (x) { return x.p > 1; }); };
+  var enSerie = function (k) { return ((typeof state !== 'undefined' && state.u) || []).filter(function (u) { return u && String(u.s) === String(k) && !(Array.isArray(u.g) && u.g.length >= 6); }).map(function (u) { return { n: u.n, p: palMax(u) }; }).filter(function (x) { return x.p > 1; }); };
   var etoiles = function (k) { return '⭐'.repeat(+k || 1); };
   function appliquer(k, g) {
     STRATS[k] = g.slice(); var N = g.length;
-    ((typeof state !== 'undefined' && state.u) || []).forEach(function (u) { if (!u || String(u.s) !== String(k)) return;
+    ((typeof state !== 'undefined' && state.u) || []).forEach(function (u) { if (!u || String(u.s) !== String(k) || (Array.isArray(u.g) && u.g.length >= 6)) return;
       Object.keys(u.lc || {}).forEach(function (q) { if ((parseInt(u.lc[q], 10) || 1) > N) u.lc[q] = N; }); if ((parseInt(u.l, 10) || 1) > N) u.l = N; });
     var o = attLire(); delete o[k]; attEcrire(o);
     try { if (typeof save === 'function') save(); } catch (e) {}
@@ -85798,7 +85801,29 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
   window.g45GrilleForcer = function (k) { var g = attLire()[k]; if (!g) return; if (!confirm('Appliquer tout de suite la nouvelle grille ' + etoiles(k) + ' ?\nLes séries en cours continuent avec les NOUVELLES mises (les pertes déjà faites ne seront peut-être pas remboursées).')) return; appliquer(k, g); };
   window.g45GrilleAnnuler = function (k) { var o = attLire(); delete o[k]; attEcrire(o); try { if (typeof renderPaliers === 'function') renderPaliers(); } catch (e) {} try { dessiner(true); } catch (e) {} };
   window._g45GrilleT = { enSerie: enSerie, appliquer: appliquer, palMax: palMax };   /* tests */
-  var verif = function () { try { var o = attLire(); Object.keys(o).forEach(function (k) { if (!enSerie(k).length && Array.isArray(o[k])) appliquer(k, o[k]); }); } catch (e) {} };
+  /* 20261104f — GRILLE PAR ÉQUIPE : u.g = grille perso (P1 auto), u.ga = grille perso EN ATTENTE (ou 'E' = retour aux étoiles en attente) tant que
+     CETTE équipe est en série ; gardées dans state.u → sauvées et synchronisées comme le reste de l'équipe. */
+  function eqAppliquer(u, g) {
+    if (g === 'E') delete u.g; else u.g = g.slice();
+    delete u.ga; var N = (_g45Grille(u) || []).length || 9;
+    Object.keys(u.lc || {}).forEach(function (q) { if ((parseInt(u.lc[q], 10) || 1) > N) u.lc[q] = N; }); if ((parseInt(u.l, 10) || 1) > N) u.l = N;
+    try { if (typeof save === 'function') save(); } catch (e) {}
+    try { (window.updMise || updMise)(); } catch (e) {}
+    try { dessiner(true); } catch (e) {}
+  }
+  function eqDemande(u, g) {
+    if (palMax(u) <= 1) { eqAppliquer(u, g); return 'ok'; }
+    u.ga = g === 'E' ? 'E' : g.slice(); try { if (typeof save === 'function') save(); } catch (e) {}
+    try { alert('⏳ ' + (g === 'E' ? 'Retour aux étoiles' : 'Nouvelle grille') + ' de ' + u.n + ' EN ATTENTE : ' + u.n + ' est en série (P' + palMax(u) + ').\nElle s\'appliquera toute seule quand ' + u.n + ' sera revenue à P1.'); } catch (e) {}
+    try { dessiner(true); } catch (e) {}
+    return 'att';
+  }
+  window.g45GrilleEqForcer = function (n) { var u = (state.u || []).filter(function (x) { return x.n === n; })[0]; if (!u || !u.ga) return; if (!confirm('Appliquer tout de suite pour ' + n + ' ?\nLa série en cours continue avec les NOUVELLES mises (les pertes déjà faites ne seront peut-être pas remboursées).')) return; eqAppliquer(u, u.ga); };
+  window.g45GrilleEqAnnuler = function (n) { var u = (state.u || []).filter(function (x) { return x.n === n; })[0]; if (!u) return; delete u.ga; try { save(); } catch (e) {} try { dessiner(true); } catch (e) {} };
+  window.g45GrilleEqRetour = function (n) { var u = (state.u || []).filter(function (x) { return x.n === n; })[0]; if (!u || !u.g) return; if (!confirm(n + ' : revenir à la grille de ses étoiles (' + '⭐'.repeat(+u.s || 1) + ') ?')) return; eqDemande(u, 'E'); };
+  window._g45GrilleEqT = { appliquer: eqAppliquer, demande: eqDemande };   /* tests */
+  var verif = function () { try { var o = attLire(); Object.keys(o).forEach(function (k) { if (!enSerie(k).length && Array.isArray(o[k])) appliquer(k, o[k]); });
+    ((typeof state !== 'undefined' && state.u) || []).forEach(function (u) { if (u && u.ga && palMax(u) <= 1) eqAppliquer(u, u.ga); }); } catch (e) {} };
   window._g45GrilleVerif = verif;
   setInterval(verif, 5000);
   window.g45PctMise = function (id, p) {
@@ -85810,12 +85835,13 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
   };
   window.g45P1Auto = function (n) {
     var uSel = $('c-unit'), u = uSel && (state.u || []).find(function (x) { return x.n === uSel.value; }), c = cap();
-    if (!u || !STRATS[u.s] || !(c > 0)) return;
-    var p1 = window._g45PctT.p1(c, n), et = '⭐'.repeat(+u.s || 1), old = STRATS[u.s][0];
+    if (!u || !(c > 0)) return;
+    var p1 = window._g45PctT.p1(c, n), old = (_g45Grille(u) || [0])[0];
     if (!(p1 > 0)) { alert('Bankroll trop petite pour couvrir ' + n + ' paliers.'); return; }
-    if (!confirm('Changer la grille ' + et + ' : P1 ' + String(old).replace('.', ',') + ' € → ' + String(p1).replace('.', ',') + ' €, ' + n + ' paliers (P' + n + ' max) ?\n\nTa bankroll (' + eu(c) + ') couvrira les ' + n + ' paliers.\n⚠️ Ça change la grille de TOUTES tes équipes ' + (+u.s || 1) + ' étoile' + (+u.s > 1 ? 's' : '') + '.')) return;
+    /* 20261104f : grille PERSO de l'équipe (u.g) — les autres équipes ne bougent pas */
+    if (!confirm('Grille perso de ' + u.n + ' : P1 ' + String(old).replace('.', ',') + ' € → ' + String(p1).replace('.', ',') + ' €, ' + n + ' paliers (P' + n + ' max) ?\n\nTa bankroll (' + eu(c) + ') couvrira les ' + n + ' paliers.\nSeulement ' + u.n + ' : tes autres équipes ne changent pas.')) return;
     try { localStorage.setItem('g45_p1_auto', String(n)); } catch (e) {}
-    if (typeof _g45MajP1 === 'function') _g45MajP1(u.s, p1, n);   /* 20261104e : + nombre de paliers */
+    eqDemande(u, _g45PaliersDepuisP1(p1, n));
     try { (window.updMise || updMise)(); } catch (e) {}
     dessiner(true);
   };
@@ -85830,7 +85856,7 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
     ['n-mise', 'combi-mise', 'c-mise'].forEach(function (id) {
       var mi = $(id); if (!mi) return;
       var m = parseFloat(String(mi.value || '').replace(',', '.')) || 0, uSel = $('c-unit'), u = id === 'c-mise' && uSel && (state.u || []).find(function (x) { return x.n === uSel.value; });
-      var G = u && STRATS[u.s], sig = [m, Math.round(c * 100), u ? u.n + '|' + u.s + '|' + (function () { try { return localStorage.getItem('g45_strats_att') || ''; } catch (e) { return ''; } })() : '', G ? G.join(',') : '', pctLu(), (function () { try { return localStorage.getItem('g45_p1_auto') || ''; } catch (e) { return ''; } })()].join('|');
+      var G = u && _g45Grille(u), sig = [m, Math.round(c * 100), u ? u.n + '|' + u.s + '|' + JSON.stringify([u.g || 0, u.ga || 0, u.l || 0, u.lc || 0]) + '|' + (function () { try { return localStorage.getItem('g45_strats_att') || ''; } catch (e) { return ''; } })() : '', G ? G.join(',') : '', pctLu(), (function () { try { return localStorage.getItem('g45_p1_auto') || ''; } catch (e) { return ''; } })()].join('|');
       if (!force && vu[id] === sig) return; vu[id] = sig;
       if (!(c > 0)) { var b0 = $('g45pct-' + id); if (b0) b0.remove(); return; }
       var b = boite(mi), p = 100 * m / c, cj = coulJ(p), h = '';
@@ -85845,12 +85871,15 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
         h += (m > 0 ? '💰 <b>' + pc(p) + '</b> de ta bankroll <b style="color:' + cj[0] + ';">' + cj[1].split(' ')[0] + '</b>' : '💰 Bankroll : ' + eu(c))
           + (G ? ' · 🪜 perdre jusqu\'à P' + G.length + ' : <b>' + eu(tot) + '</b> = <b style="color:' + cm[0] + ';">' + pc(pm) + ' ' + cm[1] + (pm > 100 ? ' plus que ta bankroll' : '') + '</b>' + (pm <= 100 ? ' <b style="color:#1ed760;">✅ couverte</b>' : '') + barre(pm, cm[0]) : '');
         if (G) {
-          var lst = [6, 7, 8, 9], AT = attLire()[u.s];   /* 20261104e : 6 à 9 paliers, grille ⏳ en attente */
+          var lst = [6, 7, 8, 9], AT = u.ga || (u.g ? null : attLire()[u.s]), perso = Array.isArray(u.g) && u.g.length >= 6;   /* 20261104e-f : 6 à 9 paliers, ⏳ attente, grille perso */
+          h += perso ? '<div style="margin-top:6px;">🎯 <b>Grille perso de ' + esc(u.n) + '</b> : P' + u.g.length + ' max · P1 ' + String(u.g[0]).replace('.', ',') + ' € ' + chip(false, '↩️ revenir aux étoiles ' + '⭐'.repeat(+u.s || 1), "g45GrilleEqRetour('" + esc(u.n).replace(/'/g, "\\'") + "')") + '</div>' : '';
           h += '<div style="margin-top:6px;">🪜 <b>P1 auto</b> : ma bankroll couvre ' + lst.map(function (n) { var on = G.length === n && Math.abs(G[0] - window._g45PctT.p1(c, n)) < 0.011; return chip(on, String(n), 'g45P1Auto(' + n + ')'); }).join('') + ' paliers</div>'
             + '<div style="margin-top:4px;">→ ' + lst.map(function (n) { return n + ' paliers : P1 = <b>' + window._g45PctT.p1(c, n).toFixed(2).replace('.', ',') + ' €</b>'; }).join(' · ') + '</div>'
-            + '<div style="font-size:13px;color:#c9d3ee;">⚠️ La grille dépend des étoiles : la changer change TOUTES tes équipes ' + '⭐'.repeat(+u.s || 1) + ' (confirmation demandée).</div>'
-            + (AT ? '<div style="margin-top:6px;background:#3a2f08;border:1px solid #f5c542;border-radius:8px;padding:6px 9px;font-size:14px;">⏳ <b>Nouvelle grille en attente</b> : P1 ' + String(AT[0]).replace('.', ',') + ' €, ' + AT.length + ' paliers — appliquée quand ' + enSerie(u.s).map(function (x) { return esc(x.n) + ' (P' + x.p + ')'; }).join(', ') + ' ' + (enSerie(u.s).length > 1 ? 'seront revenues' : 'sera revenue') + ' à P1.<br>'
-              + chip(false, '✅ Appliquer maintenant', "g45GrilleForcer('" + u.s + "')") + chip(false, '✖ Annuler', "g45GrilleAnnuler('" + u.s + "')") + '</div>' : '');
+            + '<div style="font-size:13px;color:#c9d3ee;">🎯 « P1 auto » crée une grille perso pour ' + esc(u.n) + ' seulement (confirmation demandée) : tes autres équipes ne changent pas.</div>'
+            + (u.ga ? '<div style="margin-top:6px;background:#3a2f08;border:1px solid #f5c542;border-radius:8px;padding:6px 9px;font-size:14px;">⏳ <b>' + (u.ga === 'E' ? 'Retour aux étoiles' : 'Nouvelle grille (P1 ' + String(u.ga[0]).replace('.', ',') + ' €, ' + u.ga.length + ' paliers)') + ' en attente</b> — appliqué quand ' + esc(u.n) + ' (P' + palMax(u) + ') sera revenue à P1.<br>'
+              + chip(false, '✅ Appliquer maintenant', "g45GrilleEqForcer('" + esc(u.n).replace(/'/g, "\\'") + "')") + chip(false, '✖ Annuler', "g45GrilleEqAnnuler('" + esc(u.n).replace(/'/g, "\\'") + "')") + '</div>'
+            : (AT ? '<div style="margin-top:6px;background:#3a2f08;border:1px solid #f5c542;border-radius:8px;padding:6px 9px;font-size:14px;">⏳ <b>Nouvelle grille ' + '⭐'.repeat(+u.s || 1) + ' en attente</b> (Outils) : P1 ' + String(AT[0]).replace('.', ',') + ' €, ' + AT.length + ' paliers.<br>'
+              + chip(false, '✅ Appliquer maintenant', "g45GrilleForcer('" + u.s + "')") + chip(false, '✖ Annuler', "g45GrilleAnnuler('" + u.s + "')") + '</div>' : ''));
         }
       }
       b.innerHTML = h;
