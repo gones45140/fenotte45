@@ -78641,6 +78641,16 @@ window._G45_PAL_COUL = ['#1ed760', '#8fdc4a', '#f5c542', '#ffa53a', '#ff7a3a', '
         + ' → <b>' + pa.p + ' palier' + (pa.p > 1 ? 's' : '') + ' ' + pa.ico + '</b>' + (pa.mise != null ? ' <span style="font-weight:400;color:#c9d3ee;">· ' + pa.mise + ' €</span>' : '') + (pa.cum != null ? ' <span style="color:#ffb3b3;">(total misé ' + (Math.round(pa.cum * 100) / 100).toLocaleString('fr-FR') + ' €)</span>' : '') + window._g45SimTxt(R.sim, u) + '</div>';   /* 20261030d (« rajoute ici aussi le total », Outils → Équipes) */
     });
     if (!h) return '';
+    /* 20261105g (A) : « 🎯 Régler ma mise sur N paliers → P1 = X € » (pire des séries de la carte + 1, entre 6 et 9) */
+    try {
+      var CS = window._g45PsConseil && window._g45PsConseil(u, ''), cT = Object.keys(state.b || {}).reduce(function (a, k) { var n = parseFloat(state.b[k]); return a + (isNaN(n) ? 0 : n); }, 0);
+      if (CS && CS.ne && cT > 0 && !(typeof _g45CkCoupe === 'function' && _g45CkCoupe()) && window._g45PctT) {
+        var p1 = window._g45PctT.p1(cT, CS.ne), G0 = _g45Grille(u) || [], deja = G0.length === CS.ne && Math.abs((+G0[0] || 0) - p1) < 0.011;
+        if (p1 > 0) h += deja
+          ? '<div style="font-size:13px;font-weight:700;color:#1ed760;margin-top:4px;">🎯 Mise réglée sur ' + CS.ne + ' paliers (P1 ' + String(p1).replace('.', ',') + ' €) ✅</div>'
+          : '<div style="margin-top:4px;"><button onclick="event.stopPropagation();g45P1AutoEq(\'' + String(u.n).replace(/[\\'"<>&]/g, '') + '\',' + CS.ne + ')" style="padding:5px 10px;border-radius:8px;border:1px solid #1ed760;background:#0c2a18;color:#fff;font-size:14px;font-weight:800;cursor:pointer;">🎯 Régler ma mise sur ' + CS.ne + ' paliers → P1 = ' + p1.toFixed(2).replace('.', ',') + ' €</button></div>';
+      }
+    } catch (e) {}
     var d = new Date(at || Date.now()), dt = ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2);
     return '<div class="g45ul-psl" style="margin-top:4px;background:rgba(11,16,29,.8);border-radius:6px;padding:4px 7px;font-size:14px;color:#fff;font-weight:700;font-style:normal;line-height:1.5;">' + h
       + '<div style="font-size:13px;font-weight:400;color:#c9d3ee;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">4 saisons · championnat · calculé le ' + dt
@@ -85896,6 +85906,30 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
     if (!(p > 0 && p <= 100)) { dessiner(true); return; }
     window.g45PctMise(id, Math.round(p * 100) / 100);
   };
+  /* ═══ 20261105g (capture 🃏 Mes cartes : « je pensais même pouvoir définir sa mise ici, c'est le seul endroit où l'on voit les paliers sur
+     5 ans, à moins de rajouter l'indice dans Pari » → maquette A + B → « oui les 2 ») : la pire série 4 saisons (u.psL de « Calculer mes
+     séries », sinon u.ps 📌) donne le nombre de paliers CONSEILLÉ = pire + 1, ramené entre 6 et 9 (grilles possibles) ; au-delà de 9 → rien
+     à conseiller. A = bouton « 🎯 Régler ma mise » sur la carte (g45P1AutoEq) ; B = ligne 📊 + ⭐ sur le bon bouton dans le bloc 💰 d'Engager. */
+  window._g45PsConseil = function (u, lieu) {
+    try {
+      var L = [], P = (u && u.psL) || {};
+      var pr = function (R, k) { if (R && !R.err && R.p && R.p.length && R.tot != null) L.push({ k: k, p: R.p, tot: +R.tot || 0 }); };
+      if (lieu) { pr(P[lieu], lieu); if (!L.length) pr(P.glob, 'glob'); } else ['glob', 'dom', 'ext'].forEach(function (k) { pr(P[k], k); });
+      if (!L.length && u && u.ps && u.ps.p && u.ps.p.length && (!lieu || !u.ps.k || u.ps.k === lieu || u.ps.k === 'glob')) L.push({ k: u.ps.k || 'glob', p: u.ps.p, tot: +u.ps.tot || 0 });
+      if (!L.length) return null;
+      var R = L.reduce(function (a, x) { return x.tot > a.tot ? x : a; }), n = R.tot + 1;
+      return { k: R.k, p: R.p, n: n, ne: n > 9 ? null : Math.max(6, n) };
+    } catch (e) { return null; }
+  };
+  window.g45P1AutoEq = function (nom, n) {
+    var u = (state.u || []).filter(function (x) { return x.n === nom; })[0], c = cap();
+    if (!u || !(c > 0) || !(n >= 6 && n <= 9)) return;
+    var p1 = window._g45PctT.p1(c, n), old = (_g45Grille(u) || [0])[0];
+    if (!(p1 > 0)) { alert('Bankroll trop petite pour couvrir ' + n + ' paliers.'); return; }
+    if (!confirm('🎯 ' + u.n + ' : grille perso de ' + n + ' paliers (P' + n + ' max).\nP1 ' + String(old).replace('.', ',') + ' € → ' + String(p1).replace('.', ',') + ' €.\n\nTa bankroll (' + eu(c) + ') couvrira les ' + n + ' paliers.\nSeulement ' + u.n + ' : tes autres équipes ne changent pas.')) return;
+    eqDemande(u, _g45PaliersDepuisP1(p1, n));
+    try { if (typeof render === 'function') render(); } catch (e) {}
+  };
   window.g45P1Auto = function (n) {
     var uSel = $('c-unit'), u = uSel && (state.u || []).find(function (x) { return x.n === uSel.value; }), c = cap();
     if (!u || !(c > 0)) return;
@@ -85919,7 +85953,7 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
     ['n-mise', 'combi-mise', 'c-mise'].forEach(function (id) {
       var mi = $(id); if (!mi) return;
       var m = parseFloat(String(mi.value || '').replace(',', '.')) || 0, uSel = $('c-unit'), u = id === 'c-mise' && uSel && (state.u || []).find(function (x) { return x.n === uSel.value; });
-      var G = u && _g45Grille(u), sig = [m, Math.round(c * 100), u ? u.n + '|' + u.s + '|' + JSON.stringify([u.g || 0, u.ga || 0, u.l || 0, u.lc || 0]) + '|' + (function () { try { return localStorage.getItem('g45_strats_att') || ''; } catch (e) { return ''; } })() : '', G ? G.join(',') : '', pctLu(), (function () { try { return localStorage.getItem('g45_p1_auto') || ''; } catch (e) { return ''; } })()].join('|');
+      var G = u && _g45Grille(u), sig = [m, Math.round(c * 100), u ? u.n + '|' + u.s + '|' + (typeof g45LieuCourant === 'function' ? g45LieuCourant() : '') + '|' + JSON.stringify(window._g45PsConseil(u, typeof g45LieuCourant === 'function' ? g45LieuCourant() : '')) + '|' + JSON.stringify([u.g || 0, u.ga || 0, u.l || 0, u.lc || 0]) + '|' + (function () { try { return localStorage.getItem('g45_strats_att') || ''; } catch (e) { return ''; } })() : '', G ? G.join(',') : '', pctLu(), (function () { try { return localStorage.getItem('g45_p1_auto') || ''; } catch (e) { return ''; } })()].join('|');
       if (!force && vu[id] === sig) return; vu[id] = sig;
       if (!(c > 0)) { var b0 = $('g45pct-' + id); if (b0) b0.remove(); return; }
       var b = boite(mi), p = 100 * m / c, cj = coulJ(p), h = '';
@@ -85938,7 +85972,10 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
         if (G) {
           var lst = [6, 7, 8, 9], AT = u.ga || (u.g ? null : attLire()[u.s]), perso = Array.isArray(u.g) && u.g.length >= 6;   /* 20261104e-f : 6 à 9 paliers, ⏳ attente, grille perso */
           h += perso ? '<div style="margin-top:6px;">🎯 <b>Grille perso de ' + esc(u.n) + '</b> : P' + u.g.length + ' max · P1 ' + String(u.g[0]).replace('.', ',') + ' € ' + chip(false, '↩️ revenir aux étoiles ' + '⭐'.repeat(+u.s || 1), "g45GrilleEqRetour('" + esc(u.n).replace(/'/g, "\\'") + "')") + '</div>' : '';
-          h += '<div style="margin-top:6px;">🪜 <b>P1 auto</b> : ma bankroll couvre ' + lst.map(function (n) { var on = G.length === n && Math.abs(G[0] - window._g45PctT.p1(c, n)) < 0.011; return chip(on, String(n), 'g45P1Auto(' + n + ')'); }).join('') + ' paliers</div>'
+          var CS = window._g45PsConseil(u, typeof g45LieuCourant === 'function' ? g45LieuCourant() : '');   /* 20261105g (B) */
+          if (CS) h += '<div style="margin-top:6px;">📊 Pire série 4 saisons ' + ({ glob: '🌍', dom: '🏠', ext: '✈️' }[CS.k] || '') + ' : <b>' + CS.p.join('·') + '</b> → '
+            + (CS.ne ? 'il faut <b style="color:#1ed760;">' + CS.n + ' palier' + (CS.n > 1 ? 's' : '') + '</b>' + (CS.n < 6 ? ' (6 = la plus petite grille)' : '') + ' (conseillé ⭐)' : '<b style="color:#ff5a5a;">' + CS.n + ' paliers ❌ au-delà de 9</b>') + '</div>';
+          h += '<div style="margin-top:6px;">🪜 <b>P1 auto</b> : ma bankroll couvre ' + lst.map(function (n) { var on = G.length === n && Math.abs(G[0] - window._g45PctT.p1(c, n)) < 0.011; return chip(on, String(n) + (CS && CS.ne === n ? ' ⭐' : ''), 'g45P1Auto(' + n + ')'); }).join('') + ' paliers</div>'
             + '<div style="margin-top:4px;">→ ' + lst.map(function (n) { return n + ' paliers : P1 = <b>' + window._g45PctT.p1(c, n).toFixed(2).replace('.', ',') + ' €</b>'; }).join(' · ') + '</div>'
             + '<div style="font-size:13px;color:#c9d3ee;">🎯 « P1 auto » crée une grille perso pour ' + esc(u.n) + ' seulement (confirmation demandée) : tes autres équipes ne changent pas.</div>'
             + (u.ga ? '<div style="margin-top:6px;background:#3a2f08;border:1px solid #f5c542;border-radius:8px;padding:6px 9px;font-size:14px;">⏳ <b>' + (u.ga === 'E' ? 'Retour aux étoiles' : 'Nouvelle grille (P1 ' + String(u.ga[0]).replace('.', ',') + ' €, ' + u.ga.length + ' paliers)') + ' en attente</b> — appliqué quand ' + esc(u.n) + ' (P' + palMax(u) + ') sera revenue à P1.<br>'
