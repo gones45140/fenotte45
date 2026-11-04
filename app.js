@@ -85946,11 +85946,45 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
       var mx = { k: '', p: 1 }; echelles(u).forEach(function (e) { if (e.p > mx.p) mx = e; });
       var perdu = 0; echelles(u).forEach(function (e) { for (var i = 0; i < Math.min(e.p - 1, G.length); i++) perdu += +G[i] || 0; });
       var reste = 0; for (var j = mx.p - 1; j < G.length; j++) reste += +G[j] || 0;
-      L.push({ u: u, p: mx.p, N: G.length, mise: +G[Math.min(mx.p, G.length) - 1] || 0, perdu: perdu, reste: reste, lieu: /\|dom$/.test(mx.k) ? '🏠' : /\|ext$/.test(mx.k) ? '✈️' : '' });
+      L.push({ k: mx.k, u: u, p: mx.p, N: G.length, mise: +G[Math.min(mx.p, G.length) - 1] || 0, perdu: perdu, reste: reste, lieu: /\|dom$/.test(mx.k) ? '🏠' : /\|ext$/.test(mx.k) ? '✈️' : '' });
     });
     return L;
   }
   window._g45CkSeries = series;   /* tests */
+  /* ═══ 20261104y (« Colorado, perte assumée : je voudrais repartir en P1 et changer sa mise de départ, tout en gardant l'avertissement de la mise
+     perdue » → maquette texte → « oui ») : 🏳️ Abandonner sur chaque série en cours → confirmation (pertes de la série = paliers déjà perdus de sa
+     grille), nouvelle mise de départ P1 (proposée : la P1 actuelle) → échelle remise à P1 (u.lc[clé] / u.l), P1 changé = grille PERSO de l'équipe
+     (_g45GrilleEqT.demande : ⏳ si une AUTRE échelle de l'équipe est en série), avertissement gardé dans u.abd [{ d, p, perdu, l }] (Tableau de bord
+     → ⚠️ Alertes et 🃏 Mes cartes) jusqu'au ✕. Paris, bilan et bankroll intouchés (les pertes y sont déjà). ═══ */
+  window.g45CkAbandon = function (nom, k) {
+    var u = (state.u || []).filter(function (x) { return x.n === nom; })[0]; if (!u) return;
+    var G = _g45Grille(u) || [], p = k ? (parseInt((u.lc || {})[k], 10) || 1) : (parseInt(u.l, 10) || 1); if (p <= 1) return;
+    var perdu = 0; for (var i = 0; i < Math.min(p - 1, G.length); i++) perdu += +G[i] || 0;
+    var l = /\|dom$/.test(k) ? 'dom' : /\|ext$/.test(k) ? 'ext' : '', lt = l === 'dom' ? ' (🏠 domicile)' : l === 'ext' ? ' (✈️ extérieur)' : '';
+    if (!confirm('🏳️ Abandonner la série de ' + nom + lt + ' ?\n\nTu en es à P' + p + ' : tu as perdu ' + eu(perdu) + ' (P1 à P' + (p - 1) + ').\nL\'équipe repart à P1. Tes paris et ta bankroll ne changent pas.')) return;
+    var t = prompt('Nouvelle mise de départ (P1) pour ' + nom + ' en € (laisse tel quel pour garder la même) :', String(G[0] || '').replace('.', ','));
+    if (t === null) return;
+    var p1 = parseFloat(String(t).replace(',', '.'));
+    if (k && u.lc) u.lc[k] = 1; u.l = 1;
+    var d = new Date(); (u.abd = u.abd || []).push({ d: String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0'), p: p, perdu: Math.round(perdu * 100) / 100, l: l });
+    try { if (typeof save === 'function') save(); } catch (e) {}
+    if (p1 > 0 && Math.abs(p1 - (+G[0] || 0)) > 0.001 && window._g45GrilleEqT) { try { window._g45GrilleEqT.demande(u, _g45PaliersDepuisP1(p1, G.length || 9)); } catch (e) {} }
+    try { (window.updMise || updMise)(); } catch (e) {} try { dessiner(); } catch (e) {} try { if (typeof render === 'function') render(); } catch (e) {}
+  };
+  window.g45CkAbFermer = function (nom, i) { var u = (state.u || []).filter(function (x) { return x.n === nom; })[0]; if (!u || !u.abd) return; u.abd.splice(i, 1); if (!u.abd.length) delete u.abd; try { save(); } catch (e) {} try { dessiner(); } catch (e) {} try { abDeco(); } catch (e) {} };
+  /* Avertissement sur la carte (🃏 Mes cartes ; caché dans Outils par #g45-ck-css) */
+  function abDeco() {
+    var ul = $('ulist'); if (!ul) return;
+    Array.prototype.forEach.call(ul.querySelectorAll('.urow'), function (row) {
+      var b = row.querySelector('[data-idx]'), u = b ? state.u[+b.getAttribute('data-idx')] : null, z = row.querySelector('.g45ul-ab');
+      if (!u || !u.abd || !u.abd.length) { if (z) z.remove(); return; }
+      var h = u.abd.map(function (a, i) { return '⚠️ Série abandonnée le ' + esc(a.d) + (a.l === 'dom' ? ' 🏠' : a.l === 'ext' ? ' ✈️' : '') + ' à P' + a.p + ' : <b style="color:#ff5a5a;">−' + eu(a.perdu) + '</b> perdus <button onclick="event.stopPropagation();g45CkAbFermer(' + esc(JSON.stringify(u.n)).replace(/"/g, '&quot;') + ',' + i + ')" style="border:0;background:none;color:#c9d3ee;font-size:15px;cursor:pointer;">✕</button>'; }).join('<br>');
+      if (!z) { z = document.createElement('div'); z.className = 'g45ul-ab'; z.style.cssText = 'position:relative;margin-top:4px;background:#3a2408;border:1px solid #ff9f43;border-radius:8px;padding:4px 8px;font-size:14px;color:#fff;'; var nm = row.querySelector('.uname'); (nm && nm.parentNode ? nm.parentNode : row).appendChild(z); }
+      if (z.innerHTML !== h) z.innerHTML = h;
+    });
+  }
+  window._g45CkAbDeco = abDeco;
+  try { var _rAb = render; render = window.render = function () { var r = _rAb.apply(this, arguments); try { abDeco(); } catch (e) {} return r; }; } catch (e) {}
   function bilanMois() {
     var d = new Date(), m0 = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'), s = 0, n = 0;
     ((typeof state !== 'undefined' && state.a) || []).forEach(function (h) {
@@ -85988,7 +86022,8 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
          grille des mises) ; l'alerte « plus que N paliers » garde son rouge / orange. */
       var r = x.N - x.p, PC = window._G45_PAL_COUL || ['#1ed760'], col = PC[Math.min(x.p - 1, PC.length - 1)], wc = r <= 1 ? '#ff5a5a' : '#ff9f43';
       var ic = '<span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:' + col + ';vertical-align:-2px;box-shadow:0 0 6px ' + col + ';"></span>';
-      h += '<div style="margin-top:4px;">' + ic + ' <b>' + esc(x.u.n) + '</b> ' + x.lieu + ' · P' + x.p + ' sur ' + x.N + ' · mise <b>' + eu(x.mise) + '</b>' + (r <= 3 ? ' · <span style="color:' + wc + ';font-weight:800;">' + (r === 0 ? 'dernier palier' : 'plus que ' + r + ' palier' + (r > 1 ? 's' : '')) + '</span>' : '') + '</div>'
+      var abB = '<button onclick="g45CkAbandon(' + esc(JSON.stringify(x.u.n)).replace(/"/g, '&quot;') + ',' + esc(JSON.stringify(x.k || '')).replace(/"/g, '&quot;') + ')" style="float:right;margin-left:8px;border-radius:8px;padding:3px 9px;font-size:13px;font-weight:800;color:#fff;cursor:pointer;border:1px solid #ff9f43;background:#3a2408;">🏳️ Abandonner</button>';   /* 20261104y */
+      h += '<div style="margin-top:4px;">' + abB + ic + ' <b>' + esc(x.u.n) + '</b> ' + x.lieu + ' · P' + x.p + ' sur ' + x.N + ' · mise <b>' + eu(x.mise) + '</b>' + (r <= 3 ? ' · <span style="color:' + wc + ';font-weight:800;">' + (r === 0 ? 'dernier palier' : 'plus que ' + r + ' palier' + (r > 1 ? 's' : '')) + '</span>' : '') + '</div>'
         + '<div style="height:8px;border-radius:6px;background:#1c2747;overflow:hidden;margin:3px 0;"><div style="height:8px;width:' + Math.round(100 * x.p / x.N) + '%;background:' + col + ';"></div></div>';
     });
     if (p1.length) h += '<div style="margin-top:6px;"><span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:' + ((window._G45_PAL_COUL || ['#1ed760'])[0]) + ';vertical-align:-2px;"></span> ' + p1.slice(0, 12).map(function (x) { return '<b>' + esc(x.u.n) + '</b>'; }).join(', ') + (p1.length > 12 ? ' et ' + (p1.length - 12) + ' autres' : '') + ' · P1</div>';
@@ -86018,6 +86053,7 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
     var A = [];
     en.forEach(function (x) { if (c > 0 && x.reste > c) A.push('🔴 <b>' + esc(x.u.n) + '</b> : ta bankroll (' + eu(c) + ') ne couvre pas la fin de la série (' + eu(x.reste) + ' jusqu\'à P' + x.N + ').'); });
     S.forEach(function (x) { var b = x.u.ps && x.u.ps.b; if (b && b.cr >= 2 && b.n >= 5 && 100 * b.ok / b.n <= b.pt - 10) A.push('🛑 Bruno time : <b>' + esc(x.u.n) + '</b> a réussi ' + b.cr + ' fois de suite → après ' + b.k + ' réussites, ' + Math.round(100 * b.ok / b.n) + ' % seulement (' + b.pt + ' % d\'habitude).'); });
+    S.forEach(function (x) { (x.u.abd || []).forEach(function (a, i) { A.push('⚠️ <b>' + esc(x.u.n) + '</b> ' + (a.l === 'dom' ? '🏠' : a.l === 'ext' ? '✈️' : '') + ' : série abandonnée le ' + esc(a.d) + ' à P' + a.p + ' : <b style="color:#ff5a5a;">−' + eu(a.perdu) + '</b> perdus <button onclick="g45CkAbFermer(' + esc(JSON.stringify(x.u.n)).replace(/"/g, '&quot;') + ',' + i + ')" title="Fermer" style="border:0;background:none;color:#c9d3ee;font-size:16px;cursor:pointer;">✕</button>'); }); });   /* 20261104y */
     S.forEach(function (x) { if (x.u.ga) A.push('⏳ <b>' + esc(x.u.n) + '</b> : nouvelle grille en attente (P' + x.p + ').'); });
     try { var at = (typeof window._g45GrilleAtt === 'function') ? window._g45GrilleAtt() : {}; Object.keys(at).forEach(function (k) { A.push('⏳ Grille ' + '⭐'.repeat(+k || 1) + ' en attente (Outils).'); }); } catch (e) {}
     h += '<div style="' + CARTE + '"><div style="font-size:16px;font-weight:800;margin-bottom:6px;">⚠️ Alertes</div>' + (A.length ? A.map(function (a) { return '<div style="margin-top:3px;">' + a + '</div>'; }).join('') : '<div style="color:#1ed760;">✅ Rien à signaler.</div>') + '</div>';
@@ -86114,7 +86150,7 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
       if (!$('t-cockpit') && main) { var d = document.createElement('div'); d.id = 't-cockpit'; d.className = 'tab'; d.style.display = 'none'; main.appendChild(d); }
       /* squelette() (déplacements) appelé EN FIN de poser : la case de l'interrupteur doit exister avant (20261104l) */
       var btc = $('btab-cockpit'); if (btc) btc.style.display = 'none';   /* 20261104j : le Bilan Cockpit vit dans le monde du Cockpit */
-      if (!$('g45-ck-css')) { var cs = document.createElement('style'); cs.id = 'g45-ck-css'; cs.textContent = '#ck-bil .psub-bar,#ck-bil .gtabs{display:none!important}#t-outils .g45ul-ps,#t-outils .g45ul-psl,#t-outils #g45-ser-bar,#t-outils .g45ul-pal{display:none!important}';   /* 20261104p : séries seulement dans 🃏 Mes cartes ; 20261104q : badges Palier aussi (« palier dans Outils ne sert plus, mais sert dans Cockpit ») */ document.head.appendChild(cs); }
+      if (!$('g45-ck-css')) { var cs = document.createElement('style'); cs.id = 'g45-ck-css'; cs.textContent = '#ck-bil .psub-bar,#ck-bil .gtabs{display:none!important}#t-outils .g45ul-ps,#t-outils .g45ul-psl,#t-outils #g45-ser-bar,#t-outils .g45ul-pal,#t-outils .g45ul-ab{display:none!important}';   /* 20261104p : séries seulement dans 🃏 Mes cartes ; 20261104q : badges Palier aussi (« palier dans Outils ne sert plus, mais sert dans Cockpit ») */ document.head.appendChild(cs); }
       var bcp = $('btn-cpit'); if (bcp) { bcp.style.display = 'none'; var tp = $('t-paris'); var tck = $('t-cockpit'), engVu = TAB === 'eng' && tck && tck.style.display !== 'none';   /* 20261104t (« ça saute ») : NE PAS repasser en Simple quand l'onglet 🚀 Engager est affiché */
         if (bcp.classList.contains('on') && !engVu && tp && tp.style.display !== 'none') { try { swBet('simple'); } catch (e) {} }
         if (engVu) { var ss2 = $('sub-strat'); if (ss2 && ss2.style.display === 'none') { try { swBet('strat'); } catch (e) {} ss2.style.display = 'block'; } } }
