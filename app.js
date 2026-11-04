@@ -86017,10 +86017,10 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
     var bt = function (k, txt, js) { var on = TAB === k; return '<button onclick="' + js + '" style="' + BTN + (on ? 'background:#2a4a9a;border-color:#6d9dff;' : '') + '">' + txt + '</button>'; };
     return '<div style="background:rgba(5,10,25,.82);border-radius:12px;padding:10px 12px;margin:6px 0 10px;"><div style="font-size:22px;font-weight:800;">🏁 Le monde du Cockpit</div><div style="font-size:14px;color:#c9d3ee;">Tout ce qui sert à ta montante, au même endroit</div></div>'
       + '<div style="display:flex;overflow-x:auto;margin-bottom:10px;">'
-      + bt('tdb', '🏠 Tableau de bord', "g45CkOnglet('tdb')") + bt('eng', '🚀 Engager', "g45CkOnglet('eng')") + bt('mc', '🃏 Mes cartes', "g45CkOnglet('mc')") + bt('bil', '📈 Bilan', "g45CkOnglet('bil')") + bt('arc', '🕒 Archive', "g45CkOnglet('arc')")
-      + bt('ag', '📅 Agenda', "g45CkOnglet('ag')")
-      + bt('gr', '🪜 Mes grilles', "g45CkOnglet('gr')")
-      + bt('cb', '📊 Cockpit BET45', "g45CkOnglet('cb')") + '</div>';
+      /* 20261104r (capture annotée d'Antoine : 1 Tableau de bord, 2 Mes cartes, 3 Mes grilles, 4 Engager, 5 Bilan, 6 Archive, 7 Agenda, 8 Cockpit BET45) */
+      + bt('tdb', '🏠 Tableau de bord', "g45CkOnglet('tdb')") + bt('mc', '🃏 Mes cartes', "g45CkOnglet('mc')") + bt('gr', '🪜 Mes grilles', "g45CkOnglet('gr')")
+      + bt('eng', '🚀 Engager', "g45CkOnglet('eng')") + bt('bil', '📈 Bilan', "g45CkOnglet('bil')") + bt('arc', '🕒 Archive', "g45CkOnglet('arc')")
+      + bt('ag', '📅 Agenda', "g45CkOnglet('ag')") + bt('cb', '📊 Cockpit BET45', "g45CkOnglet('cb')") + '</div>';
   }
   function squelette() {
     var p = $('t-cockpit'); if (!p) return null;
