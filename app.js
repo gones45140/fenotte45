@@ -85833,6 +85833,11 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
     try { mi.dispatchEvent(new Event('input', { bubbles: true })); mi.dispatchEvent(new Event('change', { bubbles: true })); } catch (e) {}
     dessiner(true);
   };
+  window.g45PctMiseTxt = function (id, t) {   /* 20261104g (« pari simple, mise % manuel ») : % tapé (1,5 ; 3…) */
+    var p = parseFloat(String(t || '').replace(',', '.').replace('%', ''));
+    if (!(p > 0 && p <= 100)) { dessiner(true); return; }
+    window.g45PctMise(id, Math.round(p * 100) / 100);
+  };
   window.g45P1Auto = function (n) {
     var uSel = $('c-unit'), u = uSel && (state.u || []).find(function (x) { return x.n === uSel.value; }), c = cap();
     if (!u || !(c > 0)) return;
@@ -85862,10 +85867,12 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
       var b = boite(mi), p = 100 * m / c, cj = coulJ(p), h = '';
       if (id !== 'c-mise') {
         var pl = pctLu();
+        var perso = pl > 0 && PCTS.indexOf(pl) < 0, persoOn = perso && Math.abs(m - Math.round(c * pl) / 100) < 0.01;   /* 20261104g : % tapé à la main */
         h += '💰 % de ta bankroll : ' + PCTS.map(function (x) { return chip(pl === x && Math.abs(m - Math.round(c * x) / 100) < 0.01, String(x).replace('.', ',') + ' %', "g45PctMise('" + id + "'," + x + ")"); }).join('')
+          + '<span style="display:inline-flex;align-items:center;margin:6px 6px 0 0;">✏️ <input type="text" inputmode="decimal" aria-label="Ton pourcentage" placeholder="autre" value="' + (perso ? String(pl).replace('.', ',') : '') + '" onchange="g45PctMiseTxt(\'' + id + '\',this.value)" onfocus="this.select()" style="width:70px;margin:0 4px;font-size:15px;font-weight:800;padding:5px 6px;border-radius:8px;text-align:center;color:#fff;background:' + (persoOn ? '#2a4a9a' : '#0b1226') + ';border:1px solid ' + (persoOn ? '#6d9dff' : '#2a3a63') + ';"> %</span>'
           + '<div style="margin-top:6px;">' + (m > 0 ? '<b>' + pc(p) + '</b> de ta bankroll (' + eu(c) + ') = <b>' + eu(m, 1) + '</b> <b style="color:' + cj[0] + ';">' + cj[1] + '</b>' : 'Bankroll : ' + eu(c)) + '</div>'
           + (m > 0 ? barre(p * 10, cj[0]) : '')
-          + '<div style="font-size:13px;color:#c9d3ee;">Touche un % : la mise se remplit toute seule. Tu peux toujours la changer à la main.</div>';
+          + '<div style="font-size:13px;color:#c9d3ee;">Touche un % ou tape le tien dans ✏️ : la mise se remplit toute seule. Tu peux toujours la changer à la main.</div>';
       } else {
         var tot = G ? G.reduce(function (a, x) { return a + (+x || 0); }, 0) : 0, pm = 100 * tot / c, cm = coulM(pm), na = 0; try { na = parseInt(localStorage.getItem('g45_p1_auto'), 10) || 0; } catch (e) {}
         h += (m > 0 ? '💰 <b>' + pc(p) + '</b> de ta bankroll <b style="color:' + cj[0] + ';">' + cj[1].split(' ')[0] + '</b>' : '💰 Bankroll : ' + eu(c))
