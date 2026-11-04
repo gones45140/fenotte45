@@ -1845,7 +1845,11 @@ PRESETS.forEach(function(pt){
 var STRATS={"1":[1,2,6,18,54,162,486,1458,4374],"2":[2,4,12,36,108,324,972,2916,8748],"3":[2,4,12,36,108,324,972,2916,8748],"4":[5,10,30,90,270,810,2430,7290,21870],"5":[10,20,60,180,540,1620,4860,14580,43740]};   /* 20261104a (« possible de rajouter un palier 9 ? ») : + P9 = 2 × somme des précédents */
 /* 20261104f (« ou la sélection se fait à la base de l'équipe ? » → grille PAR ÉQUIPE → « oui ») : grille de l'équipe = u.g (6 à 9 paliers, créée par
    « 🪜 P1 auto » de la page Pari) si elle existe, sinon la grille de ses étoiles STRATS[u.s]. TOUTES les lectures de mise passent par ici. */
-function _g45Grille(u){ if(!u) return undefined; if(Array.isArray(u.g) && u.g.length>=6 && u.g.length<=9) return u.g; return (typeof STRATS!=='undefined') ? STRATS[u.s] : undefined; }
+/* 20261105i (Adam Fox : « domicile et extérieur, 2 mises différentes : domicile pire série 6 donc 7 paliers, extérieur 5 donc 6 ») : grille PAR LIEU
+   u.gl = { dom: [...], ext: [...] } prioritaire quand le lieu est connu (2e argument : 'dom' / 'ext' / true / false) ; sinon u.g, sinon les ⭐. */
+function _g45GlOk(g){ return Array.isArray(g) && g.length>=6 && g.length<=9; }
+function _g45GlLieu(l){ if(l===true) return 'dom'; if(l===false) return 'ext'; l=String(l||'').toLowerCase(); return (l==='dom'||l==='ext')?l:(/\|dom$/.test(l)?'dom':(/\|ext$/.test(l)?'ext':'')); }
+function _g45Grille(u, lieu){ if(!u) return undefined; var L=_g45GlLieu(lieu); if(L && u.gl && _g45GlOk(u.gl[L])) return u.gl[L]; if(_g45GlOk(u.g)) return u.g; return (typeof STRATS!=='undefined') ? STRATS[u.s] : undefined; }
 var PCOLS=["#4d84ff","#1ed760","#f59e0b","#a855f7","#22d3ee","#f97316","#ef4444","#ec4899","#14b8a6","#6366f1","#84cc16","#e879f9"];
 /* Palette étendue pour courbes - couleurs vraiment distinctes */
 var CURVE_COLS=["#4d84ff","#1ed760","#f59e0b","#a855f7","#ef4444","#22d3ee","#f97316","#ec4899","#14b8a6","#84cc16","#e879f9","#6366f1","#fbbf24","#34d399","#fb7185","#60a5fa"];
@@ -4900,7 +4904,7 @@ function result(id,win){
   var bet=state.h[idx];
   var debrief=prompt('Débrief ('+(win?'WIN ✅':'LOSS ❌')+') :','')||'';
   if(win){var _g=bet.isFreebet?(bet.m*(bet.cote-1)):(bet.m*bet.cote);state.b[bet.b]=(parseFloat(state.b[bet.b])+_g).toFixed(2);if(bet.isS){var u=state.u.find(function(x){return x.n===bet.n;});if(u)_g45SetPal(u,bet.comp,bet.domicile,1);}}
-  else if(bet.isS){var u2=state.u.find(function(x){return x.n===bet.n;});if(u2){var _p=_g45Pal(u2,bet.comp,bet.domicile);if(_p<(_g45Grille(u2)||STRATS['1']).length)_g45SetPal(u2,bet.comp,bet.domicile,_p+1);}}
+  else if(bet.isS){var u2=state.u.find(function(x){return x.n===bet.n;});if(u2){var _p=_g45Pal(u2,bet.comp,bet.domicile);if(_p<(_g45Grille(u2,bet.domicile)||STRATS['1']).length)_g45SetPal(u2,bet.comp,bet.domicile,_p+1);}}
   var archived=Object.assign({},bet,{win:win,debrief:debrief});
   state.a.unshift(archived);state.h.splice(idx,1);save();updMise();
 }
@@ -5192,7 +5196,7 @@ function editArchived(id){
 function updMise(){
   var u=state.u.find(function(x){return x.n===$i('c-unit').value;});
   if(!u)return;
-  if($i('c-mise'))$i('c-mise').value=_g45Grille(u)[_g45Pal(u,($i('c-comp')&&$i('c-comp').value)||'',g45LieuCourant())-1]||0;
+  if($i('c-mise'))$i('c-mise').value=_g45Grille(u,g45LieuCourant())[_g45Pal(u,($i('c-comp')&&$i('c-comp').value)||'',g45LieuCourant())-1]||0;
   /* Auto-fill sport */
   if(u.sport&&$i('c-sport'))$i('c-sport').value=u.sport;
   /* Auto-fill competition from CLUB_DB */
@@ -13029,7 +13033,7 @@ function result(id,win){
   var bet=state.h[idx];
   var debrief=prompt('Débrief ('+(win?'WIN ✅':'LOSS ❌')+') :','')||'';
   if(win){var _g=bet.isFreebet?(bet.m*(bet.cote-1)):(bet.m*bet.cote);state.b[bet.b]=(parseFloat(state.b[bet.b])+_g).toFixed(2);if(bet.isS){var u=state.u.find(function(x){return x.n===bet.n;});if(u)_g45SetPal(u,bet.comp,bet.domicile,1);}}
-  else if(bet.isS){var u2=state.u.find(function(x){return x.n===bet.n;});if(u2){var _p=_g45Pal(u2,bet.comp,bet.domicile);if(_p<(_g45Grille(u2)||STRATS['1']).length)_g45SetPal(u2,bet.comp,bet.domicile,_p+1);}}
+  else if(bet.isS){var u2=state.u.find(function(x){return x.n===bet.n;});if(u2){var _p=_g45Pal(u2,bet.comp,bet.domicile);if(_p<(_g45Grille(u2,bet.domicile)||STRATS['1']).length)_g45SetPal(u2,bet.comp,bet.domicile,_p+1);}}
   var archived=Object.assign({},bet,{win:win,debrief:debrief});
   state.a.unshift(archived);state.h.splice(idx,1);save();updMise();
 }
@@ -13080,7 +13084,7 @@ function editArchived(id){
 function updMise(){
   var u=state.u.find(function(x){return x.n===$i('c-unit').value;});
   if(!u)return;
-  if($i('c-mise'))$i('c-mise').value=_g45Grille(u)[_g45Pal(u,($i('c-comp')&&$i('c-comp').value)||'',g45LieuCourant())-1]||0;
+  if($i('c-mise'))$i('c-mise').value=_g45Grille(u,g45LieuCourant())[_g45Pal(u,($i('c-comp')&&$i('c-comp').value)||'',g45LieuCourant())-1]||0;
   /* Auto-fill sport */
   if(u.sport&&$i('c-sport'))$i('c-sport').value=u.sport;
   /* Auto-fill competition from CLUB_DB */
@@ -26736,7 +26740,7 @@ async function loadCalendrier() {
       champ = /ligue|liga|bundesliga|serie|premier|eredivisie|primeira|championship|mls|super lig|jupiler|pro league/.test(sl + ' ' + nm);
     if (!champ) return '';
     var p = (typeof _g45PalLieu === 'function') ? _g45PalLieu(u, m.isDom ? 'dom' : 'ext') : (parseInt(u.l, 10) || 1);
-    var mi = _g45Grille(u)[p - 1];
+    var mi = _g45Grille(u, m.isDom ? 'dom' : 'ext')[p - 1];
     if (mi == null) return '';
     var miT = (Math.round(mi * 100) / 100).toLocaleString('fr-FR');
     return '<div style="margin-top:5px;"><span style="display:inline-block;background:rgba(240,176,32,.22);border:1px solid #f0b020;color:#fff;'
@@ -38180,7 +38184,7 @@ function g45BetRegler(id, ar, debrief) {
   _g45BetAppliquer(bet, 'h', -1);
   _g45BetAppliquer(nb, 'a', 1);
   if (bet.isS) { try { var u = state.u.find(function (x) { return x.n === bet.n; });
-    if (u) { if (ar === 'hw') _g45SetPal(u, bet.comp, bet.domicile, 1); else if (ar === 'hl') { var _p = _g45Pal(u, bet.comp, bet.domicile); if (_p < (_g45Grille(u) || STRATS['1']).length) _g45SetPal(u, bet.comp, bet.domicile, _p + 1); } } } catch (e) {} }
+    if (u) { if (ar === 'hw') _g45SetPal(u, bet.comp, bet.domicile, 1); else if (ar === 'hl') { var _p = _g45Pal(u, bet.comp, bet.domicile); if (_p < (_g45Grille(u, bet.domicile) || STRATS['1']).length) _g45SetPal(u, bet.comp, bet.domicile, _p + 1); } } } catch (e) {} }
   state.a.unshift(nb); state.h.splice(idx, 1);
   try { save(); } catch (e) {} try { updMise(); } catch (e) {}
   return true;
@@ -60792,7 +60796,7 @@ function _g45MajEquipeJouee(u) {
           cc.value = lgJ; cc.dataset.g45Auto = lgJ;
           /* la mise dépend du palier de la compétition : on la recalcule avec la bonne */
           var mi = document.getElementById('c-mise');
-          if (mi && typeof _g45Grille === 'function' && typeof _g45Pal === 'function') mi.value = _g45Grille(u)[_g45Pal(u, lgJ, typeof g45LieuCourant === 'function' ? g45LieuCourant() : '') - 1] || mi.value;
+          if (mi && typeof _g45Grille === 'function' && typeof _g45Pal === 'function') mi.value = _g45Grille(u, typeof g45LieuCourant === 'function' ? g45LieuCourant() : '')[_g45Pal(u, lgJ, typeof g45LieuCourant === 'function' ? g45LieuCourant() : '') - 1] || mi.value;
         }
       }
     } catch (e) {}
@@ -77874,11 +77878,11 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       var ico = m.d ? '🏠' : '✈️', q = ckPari(u, m.d), C = null;
       try { if (u.note && (u.type !== 'joueur' || /🏠|✈|🛫/.test(u.note))) C = _g45AgConsigne(u.note, !!m.d); } catch (x) {}
       var pal = '';
-      try { var pP = u._pub ? (u.pm && u.pm[m.d ? 'dom' : 'ext']) : null; if (u._pub ? !!pP : (u.s != null && typeof STRATS !== 'undefined' && _g45Grille(u))) { var p = pP ? pP.p : (typeof _g45PalLieu === 'function') ? _g45PalLieu(u, m.d ? 'dom' : 'ext') : (parseInt(u.l, 10) || 1), mi = pP ? (pP.mi == null ? null : Math.round(pP.mi * ckF(u.n) * 100) / 100) : _g45Grille(u)[p - 1];   /* 20261029g : u._pub = carte publiée (palier + mise de gones) */
+      try { var pP = u._pub ? (u.pm && u.pm[m.d ? 'dom' : 'ext']) : null; if (u._pub ? !!pP : (u.s != null && typeof STRATS !== 'undefined' && _g45Grille(u))) { var p = pP ? pP.p : (typeof _g45PalLieu === 'function') ? _g45PalLieu(u, m.d ? 'dom' : 'ext') : (parseInt(u.l, 10) || 1), mi = pP ? (pP.mi == null ? null : Math.round(pP.mi * ckF(u.n) * 100) / 100) : _g45Grille(u, m.d ? 'dom' : 'ext')[p - 1];   /* 20261029g : u._pub = carte publiée (palier + mise de gones) */
         if (mi != null) pal = '<div style="margin-top:6px;"><span style="display:inline-block;background:rgba(240,176,32,.22);border:1px solid #f0b020;color:#fff;font-size:15px;font-weight:800;border-radius:7px;padding:3px 10px;">🚀 Palier ' + p + ' · mise ' + (Math.round(mi * 100) / 100).toLocaleString('fr-FR') + ' € <span style="color:#f5c542;">' + new Array((parseInt(u.s, 10) || 0) + 1).join('⭐') + '</span></span></div>'; } } catch (x) {}
       var R = q && u.psL && u.psL[q.k], ps = '';
       if (R && !R.err && R.p && R.p.length) {
-        var pa = R.pa ? Object.assign({}, R.pa, { mise: R.pa.mise == null ? null : Math.round(R.pa.mise * ckF(u.n) * 100) / 100, cum: R.pa.cum == null ? null : Math.round(R.pa.cum * ckF(u.n) * 100) / 100 }) : window._g45PalCarte(R.tot, u);
+        var pa = R.pa ? Object.assign({}, R.pa, { mise: R.pa.mise == null ? null : Math.round(R.pa.mise * ckF(u.n) * 100) / 100, cum: R.pa.cum == null ? null : Math.round(R.pa.cum * ckF(u.n) * 100) / 100 }) : window._g45PalCarte(R.tot, u, q.k);
         ps = '<div style="font-size:15px;font-weight:700;margin-top:6px;background:rgba(47,107,255,.25);border-radius:8px;padding:5px 8px;">📊 ' + ({ glob: '🌍', dom: '🏠', ext: '✈️' }[q.k]) + ' pire série '
           + R.p.map(function (v) { return '<span style="color:' + col(v) + ';">' + v + '</span>'; }).join(' · ') + ' → <b>' + pa.p + ' palier' + (pa.p > 1 ? 's' : '') + ' ' + pa.ico + '</b>' + (pa.mise != null ? ' · ' + (Math.round(pa.mise * 100) / 100).toLocaleString('fr-FR') + ' €' : '') + (pa.cum != null ? ' <span style="color:#ffb3b3;">(total misé ' + (Math.round(pa.cum * 100) / 100).toLocaleString('fr-FR') + ' €)</span>' : '') + ' <span style="font-weight:400;color:#c9d3ee;">· 4 saisons</span></div>';
       } else if (!fut && !u._pub && q && !ckAJour(u, q)) ps = '<div style="font-size:13px;color:#c9d3ee;margin-top:6px;">⏳ Calcul de la série sur 4 saisons…</div>';
@@ -78131,7 +78135,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     (A.L || []).forEach(function (m) {
       var u = ckU(m.n); if (!u || U[u.n]) return;
       var x = { n: u.n, color: u.color || '', s: u.s, type: u.type || '', sport: u.sport || '', note: u.note || '', pm: {}, psL: null };
-      ['dom', 'ext'].forEach(function (l) { try { if (u.s != null && typeof STRATS !== 'undefined' && _g45Grille(u)) { var p = (typeof _g45PalLieu === 'function') ? _g45PalLieu(u, l) : (parseInt(u.l, 10) || 1); x.pm[l] = { p: p, mi: _g45Grille(u)[p - 1] }; } } catch (e) {} });
+      ['dom', 'ext'].forEach(function (l) { try { if (u.s != null && typeof STRATS !== 'undefined' && _g45Grille(u)) { var p = (typeof _g45PalLieu === 'function') ? _g45PalLieu(u, l) : (parseInt(u.l, 10) || 1); x.pm[l] = { p: p, mi: _g45Grille(u, l)[p - 1] }; } } catch (e) {} });
       if (u.psL) { x.psL = {}; Object.keys(u.psL).forEach(function (k) { var R = Object.assign({}, u.psL[k]); delete R.sq;   /* 20261102q : série brute pas publiée */ if (!R.err && R.p) { try { R.pa = window._g45PalCarte(R.tot, u); } catch (e) {} } x.psL[k] = R; }); }
       U[u.n] = x;
     });
@@ -78594,8 +78598,8 @@ window._G45_PAL_COUL = ['#1ed760', '#8fdc4a', '#f5c542', '#ffa53a', '#ff7a3a', '
   /* 20261028q (« mets les mêmes mises que moi » + capture Outils → Mises par palier : « actuellement 5 étoiles équipe, 4 étoiles joueur ») : la mise
      affichée après une pire série d'une CARTE suit les ⭐ de la carte (_g45Grille(u), grille modifiée comprise), plus l'échelle ⭐ choisie dans les
      critères (g45_pal_et, gardée pour les écrans sans carte). ✅ = 5 paliers ou moins, ⚠️ = jusqu'à la dernière case, ❌ = au-delà. */
-  window._g45PalCarte = function (pire, u) {
-    var S = (u && u.s != null && typeof STRATS !== 'undefined') ? _g45Grille(u) : null;
+  window._g45PalCarte = function (pire, u, lieu) {
+    var S = (u && u.s != null && typeof STRATS !== 'undefined') ? _g45Grille(u, lieu) : null;
     if (!S || !S.length) return (typeof _g45F1CrPal === 'function') ? _g45F1CrPal(pire) : { p: pire + 1, ico: '', mise: null };
     var p = pire + 1;
     /* 20261030c : cum = total misé du P1 jusqu'à ce palier (« Carolina 5 paliers · 270 € → rajoute la mise totale 5+10+30+90+270 = 405 ») */
@@ -78618,7 +78622,7 @@ window._G45_PAL_COUL = ['#1ed760', '#8fdc4a', '#f5c542', '#ffa53a', '#ff7a3a', '
     if (RL && !RL.err && RL.p && RL.p.length) return '';
     var col = function (v) { return v <= 2 ? '#1ed760' : (v <= 4 ? '#ff9f43' : '#ff5a5a'); };
     var ico = P.k === 'dom' ? '🏠 ' : (P.k === 'ext' ? '✈️ ' : '🌍 ');
-    var pa = window._g45PalCarte(P.tot, u);
+    var pa = window._g45PalCarte(P.tot, u, P.k);
     var d = new Date(P.at || Date.now()), dt = ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2);
     var e = function (x) { return String(x == null ? '' : x).replace(/[<>&]/g, ''); };
     return '<div class="g45ul-ps" style="margin-top:4px;background:rgba(47,107,255,.25);border-radius:6px;padding:4px 7px;font-size:14px;color:#fff;font-weight:700;font-style:normal;line-height:1.45;">📊 ' + ico + e(P.lib)
@@ -78636,20 +78640,25 @@ window._G45_PAL_COUL = ['#1ed760', '#8fdc4a', '#f5c542', '#ffa53a', '#ff7a3a', '
       var R = P[k[0]]; if (!R) return;
       if (R.err || !R.p || !R.p.length) { h += '<div style="font-size:13px;color:#c9d3ee;font-weight:400;">📊 ' + k[1] + ' ' + e(R.err || 'aucun match compté') + '</div>'; return; }
       at = Math.max(at, R.at || 0);
-      var pa = window._g45PalCarte(R.tot, u);
+      var pa = window._g45PalCarte(R.tot, u, k[0]);
       h += '<div>📊 ' + k[1] + ' pire série ' + R.p.map(function (v) { return '<span style="color:' + col(v) + ';">' + v + '</span>'; }).join(' · ')
         + ' → <b>' + pa.p + ' palier' + (pa.p > 1 ? 's' : '') + ' ' + pa.ico + '</b>' + (pa.mise != null ? ' <span style="font-weight:400;color:#c9d3ee;">· ' + pa.mise + ' €</span>' : '') + (pa.cum != null ? ' <span style="color:#ffb3b3;">(total misé ' + (Math.round(pa.cum * 100) / 100).toLocaleString('fr-FR') + ' €)</span>' : '') + window._g45SimTxt(R.sim, u) + '</div>';   /* 20261030d (« rajoute ici aussi le total », Outils → Équipes) */
     });
     if (!h) return '';
     /* 20261105g (A) : « 🎯 Régler ma mise sur N paliers → P1 = X € » (pire des séries de la carte + 1, entre 6 et 9) */
     try {
-      var CS = window._g45PsConseil && window._g45PsConseil(u, ''), cT = Object.keys(state.b || {}).reduce(function (a, k) { var n = parseFloat(state.b[k]); return a + (isNaN(n) ? 0 : n); }, 0);
-      if (CS && CS.ne && cT > 0 && !(typeof _g45CkCoupe === 'function' && _g45CkCoupe()) && window._g45PctT) {
-        var p1 = window._g45PctT.p1(cT, CS.ne), G0 = _g45Grille(u) || [], deja = G0.length === CS.ne && Math.abs((+G0[0] || 0) - p1) < 0.011;
+      var cT = Object.keys(state.b || {}).reduce(function (a, k) { var n = parseFloat(state.b[k]); return a + (isNaN(n) ? 0 : n); }, 0);
+      /* 20261105i : un bouton PAR LIEU (🏠 / ✈️) quand la carte a des séries par lieu ; sinon un seul pour toute la carte (🌍) */
+      var okL = function (k) { var R = P[k]; return R && !R.err && R.p && R.p.length; }, LS = ['dom', 'ext'].filter(okL);
+      if (!LS.length && okL('glob')) LS = [''];
+      if (cT > 0 && !(typeof _g45CkCoupe === 'function' && _g45CkCoupe()) && window._g45PctT && window._g45PsConseil) LS.forEach(function (L) {
+        var CS = window._g45PsConseil(u, L); if (!CS || !CS.ne) return;
+        var ic = L === 'dom' ? '🏠 ' : L === 'ext' ? '✈️ ' : '';
+        var p1 = window._g45PctT.p1(cT, CS.ne), G0 = _g45Grille(u, L) || [], deja = G0.length === CS.ne && Math.abs((+G0[0] || 0) - p1) < 0.011;
         if (p1 > 0) h += deja
-          ? '<div style="font-size:13px;font-weight:700;color:#1ed760;margin-top:4px;">🎯 Mise réglée sur ' + CS.ne + ' paliers (P1 ' + String(p1).replace('.', ',') + ' €) ✅</div>'
-          : '<div style="margin-top:4px;"><button onclick="event.stopPropagation();g45P1AutoEq(\'' + String(u.n).replace(/[\\'"<>&]/g, '') + '\',' + CS.ne + ')" style="padding:5px 10px;border-radius:8px;border:1px solid #1ed760;background:#0c2a18;color:#fff;font-size:14px;font-weight:800;cursor:pointer;">🎯 Régler ma mise sur ' + CS.ne + ' paliers → P1 = ' + p1.toFixed(2).replace('.', ',') + ' €</button></div>';
-      }
+          ? '<div style="font-size:13px;font-weight:700;color:#1ed760;margin-top:4px;">🎯 ' + ic + 'Mise réglée sur ' + CS.ne + ' paliers (P1 ' + String(p1).replace('.', ',') + ' €) ✅</div>'
+          : '<div style="margin-top:4px;"><button onclick="event.stopPropagation();g45P1AutoEq(\'' + String(u.n).replace(/[\\'"<>&]/g, '') + '\',' + CS.ne + ',\'' + L + '\')" style="padding:5px 10px;border-radius:8px;border:1px solid #1ed760;background:#0c2a18;color:#fff;font-size:14px;font-weight:800;cursor:pointer;">🎯 ' + ic + 'Régler ma mise sur ' + CS.ne + ' paliers → P1 = ' + p1.toFixed(2).replace('.', ',') + ' €</button></div>';
+      });
     } catch (e) {}
     var d = new Date(at || Date.now()), dt = ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2);
     return '<div class="g45ul-psl" style="margin-top:4px;background:rgba(11,16,29,.8);border-radius:6px;padding:4px 7px;font-size:14px;color:#fff;font-weight:700;font-style:normal;line-height:1.5;">' + h
@@ -83797,7 +83806,7 @@ window._g45TrTestVoit = function () { try { return (typeof _g45SanteActive === '
   var recalc = function () {
     var uSel = $('c-unit'), mi = $('c-mise'); if (!uSel || !mi || mi._g45Man) return;
     var u = (state.u || []).find(function (x) { return x.n === uSel.value; }); if (!u || !_g45Grille(u)) return;
-    var v = _g45Grille(u)[_g45Pal(u, ($('c-comp') && $('c-comp').value) || '', g45LieuCourant()) - 1] || 0;
+    var v = _g45Grille(u, g45LieuCourant())[_g45Pal(u, ($('c-comp') && $('c-comp').value) || '', g45LieuCourant()) - 1] || 0;
     if (String(mi.value) !== String(v)) mi.value = v;
   };
   window._g45MiseRecalc = recalc;
@@ -83806,7 +83815,7 @@ window._g45TrTestVoit = function () { try { return (typeof _g45SanteActive === '
   var avert = function () {
     var uSel = $('c-unit'), mi = $('c-mise'); if (!mi) return;
     var b = $('g45-mise-av'), u = uSel && (state.u || []).find(function (x) { return x.n === uSel.value; });
-    var pal = u && _g45Grille(u) ? _g45Pal(u, ($('c-comp') && $('c-comp').value) || '', g45LieuCourant()) : 0, v = pal ? (_g45Grille(u)[pal - 1] || 0) : 0;
+    var pal = u && _g45Grille(u) ? _g45Pal(u, ($('c-comp') && $('c-comp').value) || '', g45LieuCourant()) : 0, v = pal ? (_g45Grille(u, g45LieuCourant())[pal - 1] || 0) : 0;
     var m = parseFloat(String(mi.value || '').replace(',', '.'));
     if (!v || !(m > 0) || Math.abs(m - v) < 0.005) { if (b) b.remove(); return; }
     if (!b) { b = document.createElement('div'); b.id = 'g45-mise-av'; b.style.cssText = 'margin-top:6px;background:#3a2f08;border:1px solid #f5c542;color:#fff;border-radius:8px;padding:6px 10px;font-size:14px;font-weight:700;'; mi.insertAdjacentElement('afterend', b); }
@@ -85889,9 +85898,32 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
   window.g45GrilleEqForcer = function (n) { var u = (state.u || []).filter(function (x) { return x.n === n; })[0]; if (!u || !u.ga) return; if (!confirm('Appliquer tout de suite pour ' + n + ' ?\nLa série en cours continue avec les NOUVELLES mises (les pertes déjà faites ne seront peut-être pas remboursées).')) return; eqAppliquer(u, u.ga); };
   window.g45GrilleEqAnnuler = function (n) { var u = (state.u || []).filter(function (x) { return x.n === n; })[0]; if (!u) return; delete u.ga; try { save(); } catch (e) {} try { dessiner(true); } catch (e) {} };
   window.g45GrilleEqRetour = function (n) { var u = (state.u || []).filter(function (x) { return x.n === n; })[0]; if (!u || !u.g) return; if (!confirm(n + ' : revenir à la grille de ses étoiles (' + '⭐'.repeat(+u.s || 1) + ') ?')) return; eqDemande(u, 'E'); };
-  window._g45GrilleEqT = { appliquer: eqAppliquer, demande: eqDemande };   /* tests */
+  window.g45GrilleGlRetour = function (n, L) { var u = (state.u || []).filter(function (x) { return x.n === n; })[0]; if (!u || !u.gl || !u.gl[L]) return; if (!confirm(n + ' ' + (L === 'dom' ? '🏠' : '✈️') + ' : enlever la grille de ce lieu ?')) return; glDemande(u, 'E', L); };   /* 20261105i */
+  /* 20261105i — GRILLE PAR LIEU : u.gl[L] (L = 'dom' / 'ext'), u.gla[L] = en attente (ou 'E' = retour) tant que CE lieu est en série
+     (_g45PalLieu(u, L) > 1). Le reste (u.g, ⭐) sert de grille aux lieux sans grille propre. */
+  function glAppliquer(u, g, L) {
+    u.gl = u.gl || {}; if (g === 'E') delete u.gl[L]; else u.gl[L] = g.slice(); if (!Object.keys(u.gl).length) delete u.gl;
+    if (u.gla) { delete u.gla[L]; if (!Object.keys(u.gla).length) delete u.gla; }
+    var N = (_g45Grille(u, L) || []).length || 9, suf = '|' + L;
+    Object.keys(u.lc || {}).forEach(function (q) { if (q.slice(-suf.length) === suf && (parseInt(u.lc[q], 10) || 1) > N) u.lc[q] = N; });
+    try { if (typeof save === 'function') save(); } catch (e) {}
+    try { (window.updMise || updMise)(); } catch (e) {}
+    try { dessiner(true); } catch (e) {}
+  }
+  function glDemande(u, g, L) {
+    var p = (typeof _g45PalLieu === 'function') ? _g45PalLieu(u, L) : palMax(u), lt = L === 'dom' ? '🏠 domicile' : '✈️ extérieur';
+    if (p <= 1) { glAppliquer(u, g, L); return 'ok'; }
+    u.gla = u.gla || {}; u.gla[L] = g === 'E' ? 'E' : g.slice(); try { if (typeof save === 'function') save(); } catch (e) {}
+    try { alert('⏳ Nouvelle grille ' + lt + ' de ' + u.n + ' EN ATTENTE : ' + u.n + ' est en série ' + lt + ' (P' + p + ').\nElle s\'appliquera toute seule quand ' + u.n + ' sera revenue à P1 ' + lt + '.'); } catch (e) {}
+    try { dessiner(true); } catch (e) {}
+    return 'att';
+  }
+  window.g45GrilleGlForcer = function (n, L) { var u = (state.u || []).filter(function (x) { return x.n === n; })[0]; if (!u || !u.gla || !u.gla[L]) return; if (!confirm('Appliquer tout de suite pour ' + n + ' (' + (L === 'dom' ? '🏠' : '✈️') + ') ?\nLa série en cours continue avec les NOUVELLES mises.')) return; glAppliquer(u, u.gla[L], L); };
+  window.g45GrilleGlAnnuler = function (n, L) { var u = (state.u || []).filter(function (x) { return x.n === n; })[0]; if (!u || !u.gla) return; delete u.gla[L]; if (!Object.keys(u.gla).length) delete u.gla; try { save(); } catch (e) {} try { dessiner(true); } catch (e) {} };
+  window._g45GrilleEqT = { appliquer: eqAppliquer, demande: eqDemande, glAppliquer: glAppliquer, glDemande: glDemande };   /* tests */
   var verif = function () { try { var o = attLire(); Object.keys(o).forEach(function (k) { if (!enSerie(k).length && Array.isArray(o[k])) appliquer(k, o[k]); });
-    ((typeof state !== 'undefined' && state.u) || []).forEach(function (u) { if (u && u.ga && palMax(u) <= 1) eqAppliquer(u, u.ga); }); } catch (e) {} };
+    ((typeof state !== 'undefined' && state.u) || []).forEach(function (u) { if (u && u.ga && palMax(u) <= 1) eqAppliquer(u, u.ga);
+      if (u && u.gla) Object.keys(u.gla).forEach(function (L) { if (((typeof _g45PalLieu === 'function') ? _g45PalLieu(u, L) : palMax(u)) <= 1) glAppliquer(u, u.gla[L], L); }); }); } catch (e) {} };
   window._g45GrilleVerif = verif;
   setInterval(verif, 5000);
   window.g45PctMise = function (id, p) {
@@ -85923,18 +85955,20 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
       return { k: R.k, p: R.p, n: n, ne: n > 9 ? null : Math.min(9, Math.max(6, n + 1)), sec: n + 1 <= 9 };
     } catch (e) { return null; }
   };
-  window.g45P1AutoEq = function (nom, n) {
-    var u = (state.u || []).filter(function (x) { return x.n === nom; })[0], c = cap();
+  window.g45P1AutoEq = function (nom, n, L) {
+    var u = (state.u || []).filter(function (x) { return x.n === nom; })[0], c = cap(); L = _g45GlLieu(L);
     if (!u || !(c > 0) || !(n >= 6 && n <= 9)) return;
-    var p1 = window._g45PctT.p1(c, n), old = (_g45Grille(u) || [0])[0];
+    var p1 = window._g45PctT.p1(c, n), old = (_g45Grille(u, L) || [0])[0], lt = L === 'dom' ? ' 🏠 domicile' : L === 'ext' ? ' ✈️ extérieur' : '';
     if (!(p1 > 0)) { alert('Bankroll trop petite pour couvrir ' + n + ' paliers.'); return; }
-    if (!confirm('🎯 ' + u.n + ' : grille perso de ' + n + ' paliers (P' + n + ' max).\nP1 ' + String(old).replace('.', ',') + ' € → ' + String(p1).replace('.', ',') + ' €.\n\nTa bankroll (' + eu(c) + ') couvrira les ' + n + ' paliers.\nSeulement ' + u.n + ' : tes autres équipes ne changent pas.')) return;
-    eqDemande(u, _g45PaliersDepuisP1(p1, n));
+    if (!confirm('🎯 ' + u.n + lt + ' : grille perso de ' + n + ' paliers (P' + n + ' max).\nP1 ' + String(old).replace('.', ',') + ' € → ' + String(p1).replace('.', ',') + ' €.\n\nTa bankroll (' + eu(c) + ') couvrira les ' + n + ' paliers.\nSeulement ' + u.n + lt + ' : le reste ne change pas.')) return;
+    if (L) glDemande(u, _g45PaliersDepuisP1(p1, n), L); else eqDemande(u, _g45PaliersDepuisP1(p1, n));
     try { if (typeof render === 'function') render(); } catch (e) {}
   };
   window.g45P1Auto = function (n) {
     var uSel = $('c-unit'), u = uSel && (state.u || []).find(function (x) { return x.n === uSel.value; }), c = cap();
     if (!u || !(c > 0)) return;
+    var LC = typeof g45LieuCourant === 'function' ? g45LieuCourant() : '';
+    if (LC) { try { localStorage.setItem('g45_p1_auto', String(n)); } catch (e) {} window.g45P1AutoEq(u.n, n, LC); dessiner(true); return; }   /* 20261105i : lieu choisi → grille de CE lieu */
     var p1 = window._g45PctT.p1(c, n), old = (_g45Grille(u) || [0])[0];
     if (!(p1 > 0)) { alert('Bankroll trop petite pour couvrir ' + n + ' paliers.'); return; }
     /* 20261104f : grille PERSO de l'équipe (u.g) — les autres équipes ne bougent pas */
@@ -85955,7 +85989,7 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
     ['n-mise', 'combi-mise', 'c-mise'].forEach(function (id) {
       var mi = $(id); if (!mi) return;
       var m = parseFloat(String(mi.value || '').replace(',', '.')) || 0, uSel = $('c-unit'), u = id === 'c-mise' && uSel && (state.u || []).find(function (x) { return x.n === uSel.value; });
-      var G = u && _g45Grille(u), sig = [m, Math.round(c * 100), u ? u.n + '|' + u.s + '|' + (typeof g45LieuCourant === 'function' ? g45LieuCourant() : '') + '|' + JSON.stringify(window._g45PsConseil(u, typeof g45LieuCourant === 'function' ? g45LieuCourant() : '')) + '|' + JSON.stringify([u.g || 0, u.ga || 0, u.l || 0, u.lc || 0]) + '|' + (function () { try { return localStorage.getItem('g45_strats_att') || ''; } catch (e) { return ''; } })() : '', G ? G.join(',') : '', pctLu(), (function () { try { return localStorage.getItem('g45_p1_auto') || ''; } catch (e) { return ''; } })()].join('|');
+      var LC = typeof g45LieuCourant === 'function' ? g45LieuCourant() : '', G = u && _g45Grille(u, LC), sig = [m, Math.round(c * 100), u ? u.n + '|' + u.s + '|' + (typeof g45LieuCourant === 'function' ? g45LieuCourant() : '') + '|' + JSON.stringify(window._g45PsConseil(u, typeof g45LieuCourant === 'function' ? g45LieuCourant() : '')) + '|' + JSON.stringify([u.g || 0, u.ga || 0, u.l || 0, u.lc || 0, u.gl || 0, u.gla || 0]) + '|' + (function () { try { return localStorage.getItem('g45_strats_att') || ''; } catch (e) { return ''; } })() : '', G ? G.join(',') : '', pctLu(), (function () { try { return localStorage.getItem('g45_p1_auto') || ''; } catch (e) { return ''; } })()].join('|');
       if (!force && vu[id] === sig) return; vu[id] = sig;
       if (!(c > 0)) { var b0 = $('g45pct-' + id); if (b0) b0.remove(); return; }
       var b = boite(mi), p = 100 * m / c, cj = coulJ(p), h = '';
@@ -85973,13 +86007,18 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
           + (G ? ' · 🪜 perdre jusqu\'à P' + G.length + ' : <b>' + eu(tot) + '</b> = <b style="color:' + cm[0] + ';">' + pc(pm) + ' ' + cm[1] + (pm > 100 ? ' plus que ta bankroll' : '') + '</b>' + (pm <= 100 ? ' <b style="color:#1ed760;">✅ couverte</b>' : '') + barre(pm, cm[0]) : '');
         if (G) {
           var lst = [6, 7, 8, 9], AT = u.ga || (u.g ? null : attLire()[u.s]), perso = Array.isArray(u.g) && u.g.length >= 6;   /* 20261104e-f : 6 à 9 paliers, ⏳ attente, grille perso */
+          var glL = LC && u.gl && _g45GlOk(u.gl[LC]), glA = LC && u.gla && u.gla[LC], ltx = LC === 'dom' ? '🏠 domicile' : '✈️ extérieur', nE = esc(u.n).replace(/'/g, "\\'");   /* 20261105i */
+          if (glL) h += '<div style="margin-top:6px;">🎯 <b>Grille ' + ltx + ' de ' + esc(u.n) + '</b> : P' + u.gl[LC].length + ' max · P1 ' + String(u.gl[LC][0]).replace('.', ',') + ' € ' + chip(false, '↩️ enlever', "g45GrilleGlRetour('" + nE + "','" + LC + "')") + '</div>';
+          if (glA) h += '<div style="margin-top:6px;background:#3a2f08;border:1px solid #f5c542;border-radius:8px;padding:6px 9px;font-size:14px;">⏳ <b>' + (glA === 'E' ? 'Retrait de la grille ' + ltx : 'Nouvelle grille ' + ltx + ' (P1 ' + String(glA[0]).replace('.', ',') + ' €, ' + glA.length + ' paliers)') + ' en attente</b> — appliquée au retour à P1.<br>'
+            + chip(false, '✅ Appliquer maintenant', "g45GrilleGlForcer('" + nE + "','" + LC + "')") + chip(false, '✖ Annuler', "g45GrilleGlAnnuler('" + nE + "','" + LC + "')") + '</div>';
+          if (glL) perso = false;
           h += perso ? '<div style="margin-top:6px;">🎯 <b>Grille perso de ' + esc(u.n) + '</b> : P' + u.g.length + ' max · P1 ' + String(u.g[0]).replace('.', ',') + ' € ' + chip(false, '↩️ revenir aux étoiles ' + '⭐'.repeat(+u.s || 1), "g45GrilleEqRetour('" + esc(u.n).replace(/'/g, "\\'") + "')") + '</div>' : '';
           var CS = window._g45PsConseil(u, typeof g45LieuCourant === 'function' ? g45LieuCourant() : '');   /* 20261105g (B) */
           if (CS) h += '<div style="margin-top:6px;">📊 Pire série 4 saisons ' + ({ glob: '🌍', dom: '🏠', ext: '✈️' }[CS.k] || '') + ' : <b>' + CS.p.join('·') + '</b> → '
             + (CS.ne ? 'il faut ' + CS.n + ' palier' + (CS.n > 1 ? 's' : '') + (CS.sec ? ' + 1 de sécurité' : ' (pas de place pour la sécurité)') + ' → <b style="color:#1ed760;">' + CS.ne + ' paliers</b>' + (CS.n + 1 < 6 ? ' (6 = la plus petite grille)' : '') + ' (conseillé ⭐)' : '<b style="color:#ff5a5a;">' + CS.n + ' paliers ❌ au-delà de 9</b>') + '</div>';
           h += '<div style="margin-top:6px;">🪜 <b>P1 auto</b> : ma bankroll couvre ' + lst.map(function (n) { var on = G.length === n && Math.abs(G[0] - window._g45PctT.p1(c, n)) < 0.011; return chip(on, String(n) + (CS && CS.ne === n ? ' ⭐' : ''), 'g45P1Auto(' + n + ')'); }).join('') + ' paliers</div>'
             + '<div style="margin-top:4px;">→ ' + lst.map(function (n) { return n + ' paliers : P1 = <b>' + window._g45PctT.p1(c, n).toFixed(2).replace('.', ',') + ' €</b>'; }).join(' · ') + '</div>'
-            + '<div style="font-size:13px;color:#c9d3ee;">🎯 « P1 auto » crée une grille perso pour ' + esc(u.n) + ' seulement (confirmation demandée) : tes autres équipes ne changent pas.</div>'
+            + '<div style="font-size:13px;color:#c9d3ee;">🎯 « P1 auto » crée une grille perso pour ' + esc(u.n) + (LC ? ' ' + ltx + ' seulement' : ' seulement') + ' (confirmation demandée) : le reste ne change pas.</div>'
             + (u.ga ? '<div style="margin-top:6px;background:#3a2f08;border:1px solid #f5c542;border-radius:8px;padding:6px 9px;font-size:14px;">⏳ <b>' + (u.ga === 'E' ? 'Retour aux étoiles' : 'Nouvelle grille (P1 ' + String(u.ga[0]).replace('.', ',') + ' €, ' + u.ga.length + ' paliers)') + ' en attente</b> — appliqué quand ' + esc(u.n) + ' (P' + palMax(u) + ') sera revenue à P1.<br>'
               + chip(false, '✅ Appliquer maintenant', "g45GrilleEqForcer('" + esc(u.n).replace(/'/g, "\\'") + "')") + chip(false, '✖ Annuler', "g45GrilleEqAnnuler('" + esc(u.n).replace(/'/g, "\\'") + "')") + '</div>'
             : (AT ? '<div style="margin-top:6px;background:#3a2f08;border:1px solid #f5c542;border-radius:8px;padding:6px 9px;font-size:14px;">⏳ <b>Nouvelle grille ' + '⭐'.repeat(+u.s || 1) + ' en attente</b> (Outils) : P1 ' + String(AT[0]).replace('.', ',') + ' €, ' + AT.length + ' paliers.<br>'
@@ -86026,7 +86065,8 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
     ((typeof state !== 'undefined' && state.u) || []).forEach(function (u) {
       if (!u || !u.n) return; var G = (typeof _g45Grille === 'function') ? _g45Grille(u) : null; if (!G || !G.length) return;
       var mx = { k: '', p: 1 }; echelles(u).forEach(function (e) { if (e.p > mx.p) mx = e; });
-      var perdu = 0; echelles(u).forEach(function (e) { for (var i = 0; i < Math.min(e.p - 1, G.length); i++) perdu += +G[i] || 0; });
+      var perdu = 0; echelles(u).forEach(function (e) { var Ge = _g45Grille(u, e.k) || G; for (var i = 0; i < Math.min(e.p - 1, Ge.length); i++) perdu += +Ge[i] || 0; });
+      G = _g45Grille(u, mx.k) || G;   /* 20261105i : grille du lieu de la série */
       var reste = 0; for (var j = mx.p - 1; j < G.length; j++) reste += +G[j] || 0;
       L.push({ k: mx.k, u: u, p: mx.p, N: G.length, mise: +G[Math.min(mx.p, G.length) - 1] || 0, perdu: perdu, reste: reste, lieu: /\|dom$/.test(mx.k) ? '🏠' : /\|ext$/.test(mx.k) ? '✈️' : '' });
     });
@@ -86040,7 +86080,7 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
      → ⚠️ Alertes et 🃏 Mes cartes) jusqu'au ✕. Paris, bilan et bankroll intouchés (les pertes y sont déjà). ═══ */
   window.g45CkAbandon = function (nom, k) {
     var u = (state.u || []).filter(function (x) { return x.n === nom; })[0]; if (!u) return;
-    var G = _g45Grille(u) || [], p = k ? (parseInt((u.lc || {})[k], 10) || 1) : (parseInt(u.l, 10) || 1); if (p <= 1) return;
+    var G = _g45Grille(u, k) || [], p = k ? (parseInt((u.lc || {})[k], 10) || 1) : (parseInt(u.l, 10) || 1); if (p <= 1) return;
     var perdu = 0; for (var i = 0; i < Math.min(p - 1, G.length); i++) perdu += +G[i] || 0;
     var l = /\|dom$/.test(k) ? 'dom' : /\|ext$/.test(k) ? 'ext' : '', lt = l === 'dom' ? ' (🏠 domicile)' : l === 'ext' ? ' (✈️ extérieur)' : '';
     if (!confirm('🏳️ Abandonner la série de ' + nom + lt + ' ?\n\nTu en es à P' + p + ' : tu as perdu ' + eu(perdu) + ' (P1 à P' + (p - 1) + ').\nL\'équipe repart à P1. Tes paris et ta bankroll ne changent pas.')) return;
@@ -86125,7 +86165,7 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
     if (!ag) h += '<div style="color:#c9d3ee;">Ouvre l\'onglet 📅 Agenda une fois : les matchs de tes équipes apparaîtront ici. <button onclick="g45CkOnglet(\'ag\')" style="' + BTN + '">📅 Ouvrir l\'Agenda</button></div>';
     else if (!M.length) h += '<div style="color:#c9d3ee;">Aucun match de tes équipes dans les prochaines 24 h.</div>';
     M.slice(0, 12).forEach(function (m) {
-      var u = (state.u || []).filter(function (x) { return x.n === m.n; })[0], G = u && _g45Grille(u), p = u ? ((typeof _g45PalLieu === 'function') ? _g45PalLieu(u, m.d ? 'dom' : 'ext') : (parseInt(u.l, 10) || 1)) : 1;
+      var u = (state.u || []).filter(function (x) { return x.n === m.n; })[0], G = u && _g45Grille(u, m.d ? 'dom' : 'ext'), p = u ? ((typeof _g45PalLieu === 'function') ? _g45PalLieu(u, m.d ? 'dom' : 'ext') : (parseInt(u.l, 10) || 1)) : 1;
       var mi = G ? (+G[Math.min(p, G.length) - 1] || 0) : 0, dt = new Date(m.t), hr = String(dt.getHours()).padStart(2, '0') + ':' + String(dt.getMinutes()).padStart(2, '0');
       /* 20261104u (captures « Par carte » du Cockpit BET45 → « mettre le fond (bannière) du screen 1 sur le screen 2 ») : même fond que les lignes
          Par carte (window._g45CkFond : bannière vis, photo détourée cut, logo net à droite, liseré couleur de l'équipe), textes sur bande sombre. */
