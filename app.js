@@ -1,5 +1,7 @@
 /* © 2026 Antoine T. — BET45 / GONES45 (bet45.fr). Tous droits réservés.
    Copie, reproduction ou réutilisation de tout ou partie de ce code interdites sans autorisation écrite. Voir LICENSE. */
+/* 20261105a : vrai si le monde du Cockpit est COUPÉ (critères : on cache paliers / mise max / ⭐). */
+function _g45CkCoupe() { try { return typeof window._g45CkActif === 'function' && !window._g45CkActif(); } catch (e) { return false; } }
 /* ═══ 20261016q — NETTOYAGE D'URGENCE ?menage=1 (gones figé sur le téléphone d'Antoine, navigation privée OK = donnée locale en cause) ═══
    Exécuté AVANT tout le reste : efface les clés de CACHE reconstructibles (_G45_CACHE_PREFIXES recopiée + quelques caches récents) et le
    magasin IndexedDB des tendances gardées ; JAMAIS g45v5 (paris, mur), réglages, clés d'API ni jetons. Puis recharge sans le paramètre. */
@@ -76769,8 +76771,8 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       var T = calc(c, tous);
       h += '<div style="margin-top:10px;background:#0f1730;border-radius:10px;padding:10px;font-size:14px;line-height:1.6;color:#fff;">'
         + '🧮 <b>Total : ' + nbV(T.ok) + '/' + nbV(T.n) + ' · ' + Math.round(100 * T.ok / T.n) + ' %</b><br>'
-        + '🪜 Pire série : <b style="color:' + coul(T.pire) + ';">' + T.pire + ' défaite' + (T.pire > 1 ? 's' : '') + ' de suite</b> → il fallait <b>' + (T.pire + 1) + ' palier' + (T.pire ? 's' : '') + '</b>'
-        + (function () { try { var pa = _g45F1CrPal(T.pire); return ' ' + pa.ico + (pa.mise != null ? ' · mise max <b>' + pa.mise + ' €</b> (' + new Array(+(pa.et || 1) + 1).join('⭐') + ')' : ' au-delà de tes ' + pa.max + ' paliers'); } catch (e) { return ''; } })()   /* 20261028c : mise max promise par la maquette 20261027h */
+        + '🪜 Pire série : <b style="color:' + coul(T.pire) + ';">' + T.pire + ' défaite' + (T.pire > 1 ? 's' : '') + ' de suite</b>' + (_g45CkCoupe() ? '' : ' → il fallait <b>' + (T.pire + 1) + ' palier' + (T.pire ? 's' : '') + '</b>')   /* 20261105a : paliers / mise max = Cockpit → cachés s'il est coupé */
+        + (_g45CkCoupe() ? '' : (function () { try { var pa = _g45F1CrPal(T.pire); return ' ' + pa.ico + (pa.mise != null ? ' · mise max <b>' + pa.mise + ' €</b> (' + new Array(+(pa.et || 1) + 1).join('⭐') + ')' : ' au-delà de tes ' + pa.max + ' paliers'); } catch (e) { return ''; } })())   /* 20261028c : mise max promise par la maquette 20261027h */
         + '<br>'
         + '🏆 Meilleure série : <b style="color:#5aa9ff;">' + T.best + ' réussite' + (T.best > 1 ? 's' : '') + ' de suite</b>'
         + (function () { var B0 = brunoEtat(c, tous), N = S.a2n || B0.k; return apres2Html(apres2(c, tous, N), T, N, apres2Choix(N, B0.cr)); })()   /* 20261102f / k (les boutons sont un bloc : pas de <br>) */
@@ -84466,8 +84468,8 @@ window._g45TrTestVoit = function () { try { return (typeof _g45SanteActive === '
       var pa = window._g45F1CrPal(tot.pire);
       h += '<div style="background:rgba(0,0,0,.45);border-radius:12px;padding:12px;margin-top:10px;font-size:15px;color:#fff;line-height:1.7;">'
         + '📊 <b>Total : ' + tot.ok + '/' + tot.n + ' · ' + tot.pct + ' %</b><br>'
-        + '🪜 Pire série : <b style="color:' + couleurPire(tot.pire) + ';">' + tot.pire + ' raté' + (tot.pire > 1 ? 's' : '') + ' de suite</b> → <b>il fallait ' + pa.p + ' palier' + (pa.p > 1 ? 's' : '') + '</b> '
-        + (pa.mise != null ? '· mise max <b>' + pa.mise.toLocaleString('fr-FR') + ' €</b> (base ' + new Array(+(pa.et || 1) + 1).join('⭐') + ') ' + pa.ico : '❌ au-delà de tes ' + pa.max + ' paliers') + '<br>'
+        + '🪜 Pire série : <b style="color:' + couleurPire(tot.pire) + ';">' + tot.pire + ' raté' + (tot.pire > 1 ? 's' : '') + ' de suite</b>' + (_g45CkCoupe() ? '' : ' → <b>il fallait ' + pa.p + ' palier' + (pa.p > 1 ? 's' : '') + '</b> '
+        + (pa.mise != null ? '· mise max <b>' + pa.mise.toLocaleString('fr-FR') + ' €</b> (base ' + new Array(+(pa.et || 1) + 1).join('⭐') + ') ' + pa.ico : '❌ au-delà de tes ' + pa.max + ' paliers')) + '<br>'   /* 20261105a */
         + '📈 Série en cours : ' + tot.cours + ' ' + (tot.coursOk ? 'réussi' : 'raté') + (tot.cours > 1 ? 's' : '') + ' de suite</div>';
     } else h += '<div style="font-size:15px;color:#fff;padding:12px 4px;">Aucune course avec ces filtres.</div>';
     var _ckL = h.length;   /* 20261104l : bloc « Jouable en Cockpit ? » F1 retiré si le Cockpit est coupé */
