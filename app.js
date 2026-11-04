@@ -81375,7 +81375,8 @@ window._g45AgJouUs = async function (nowTs) {
   var VUES = { bet: 1, perso: 1, but: 1, clv: 1, ck: 1 }, SOUS = { sel: 1, his: 1, gra: 1, bil: 1 };   /* 20261023y : bil = 📊 Bilans (gones) */
   var lire = function (k, ok, def) { try { var v = localStorage.getItem(k); return ok[v] ? v : def; } catch (e) { return def; } };
   var ecrire = function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} };
-  var vue = function () { return lire('g45tr_vue', VUES, 'bet'); };
+  var ckIci = function () { try { return !(typeof window._g45CkActif === 'function' && window._g45CkActif()); } catch (e) { return true; } };   /* 20261104k : Cockpit BET45 dans le monde du Cockpit quand il est activé */
+  var vue = function () { var v = lire('g45tr_vue', VUES, 'bet'); return v === 'ck' && !ckIci() ? 'bet' : v; };
   var bilOk = function () { try { return typeof _g45SanteActive === 'function' && _g45SanteActive(); } catch (e) { return false; } };
   var sous = function () { var x = lire('g45tr_sous', SOUS, 'sel'); return x === 'bil' && !bilOk() ? 'sel' : x; };
   var cle = function () { var v = vue(); return v === 'bet' ? 'bet-' + sous() : v; };
@@ -81413,7 +81414,7 @@ window._g45AgJouUs = async function (nowTs) {
         + ';background:' + (on ? '#1a2235' : 'rgba(11,16,29,.92)') + ';">' + lbl + '</button>';
     };
     return '<div id="g45tr-nav"><div class="g45tr-n1">' + b1('bet', '📒 Tendances BET45') + b1('perso', '🔍 Tendances perso')
-      + b1('but', '⚽ Tendances buteurs') + b1('clv', '📏 CLV') + b1('ck', '🏁 Cockpit BET45') + '</div>'   /* 20261028p */
+      + b1('but', '⚽ Tendances buteurs') + b1('clv', '📏 CLV') + (ckIci() ? b1('ck', '🏁 Cockpit d\'Antoine') : '') + '</div>'   /* 20261028p */
       + (v === 'bet' ? '<div class="g45tr-n2' + (bilOk() ? ' g45tr-n2b' : '') + '">' + b2('sel', '⭐ Sélection du jour') + b2('his', '📅 Historique') + b2('gra', '📈 Graphique / Stats') + (bilOk() ? b2('bil', '📊 Bilans') : '') + '</div>' : '')
       + '</div>';
   };
@@ -86016,11 +86017,12 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
       + bt('tdb', '🏠 Tableau de bord', "g45CkOnglet('tdb')") + bt('eng', '🚀 Engager', "g45CkOnglet('eng')") + bt('bil', '📈 Bilan', "g45CkOnglet('bil')") + bt('arc', '🕒 Archive', "g45CkOnglet('arc')")
       + bt('ag', '📅 Agenda', "var b=document.querySelector('button.ni[onclick*=t-cal]');showTab('t-cal',b);loadCalendrier()")
       + bt('gr', '🪜 Mes grilles', "var b=document.querySelector('.ni[onclick*=t-outils]');showTab('t-outils',b||document.getElementById('btn-plus-menu'))")
-      + bt('ck', '📊 Cockpit BET45', "var b=document.querySelector('button.ni[onclick*=t-tend]');showTab('t-tend',b);loadTendancesTab()") + '</div>';
+      + bt('cb', '📊 Cockpit BET45', "g45CkOnglet('cb')") + '</div>';
   }
   function squelette() {
     var p = $('t-cockpit'); if (!p) return null;
-    if (!$('ck-tabs')) p.innerHTML = '<div id="ck-tabs"></div><div id="ck-tdb"></div><div id="ck-eng" style="display:none;"></div><div id="ck-bil" style="display:none;"></div>';
+    if (!$('ck-tabs')) p.innerHTML = '<div id="ck-tabs"></div><div id="ck-tdb"></div><div id="ck-eng" style="display:none;"></div><div id="ck-bil" style="display:none;"></div><div id="ck-cb" style="display:none;"></div>';
+    if (!$('ck-cb')) { var cbd = document.createElement('div'); cbd.id = 'ck-cb'; cbd.style.display = 'none'; p.appendChild(cbd); }
     var ss = $('sub-strat'), ce = $('ck-eng'); if (ss && ce && ss.parentNode !== ce) ce.appendChild(ss);
     return p;
   }
@@ -86033,8 +86035,12 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
   function bilPrendre() { var tb = $('t-bilan'), cb = $('ck-bil'); if (!tb || !cb) return null; if (!repBil) { repBil = document.createComment('t-bilan'); tb.parentNode.insertBefore(repBil, tb); } if (tb.parentNode !== cb) cb.appendChild(tb); tb.style.display = 'block'; return tb; }
   window._g45CkBilRendre = bilRendre;
   window.g45CkOnglet = function (k) {
-    TAB = ['eng', 'bil', 'arc'].indexOf(k) >= 0 ? k : 'tdb'; squelette();
-    var t = $('ck-tdb'), e = $('ck-eng'), cb = $('ck-bil');
+    TAB = ['eng', 'bil', 'arc', 'cb'].indexOf(k) >= 0 ? k : 'tdb'; squelette();
+    var t = $('ck-tdb'), e = $('ck-eng'), cb = $('ck-bil'), kb = $('ck-cb');
+    /* 20261104k (« Cockpit dans Tendances, on le bascule entièrement dans Cockpit ? » → B : basculé ; ami sans le Cockpit → « 🏁 Cockpit d'Antoine »
+       reste dans Tendances, la vitrine) : même rendu (_g45CkHtml → #g45ck, redessiné sur place par ckRedessiner). */
+    if (kb) { kb.style.display = TAB === 'cb' ? '' : 'none'; if (TAB === 'cb') { var tr = $('t-tend'), z0 = tr && tr.querySelector('#g45ck'); if (z0) z0.remove();
+      try { kb.innerHTML = (typeof _g45AccesPremium === 'function' && _g45AccesPremium() !== true) ? '<div style="' + CARTE + '">🔒 Cockpit BET45 : réservé premium.</div>' : window._g45CkHtml(); } catch (x) { kb.innerHTML = ''; } } else kb.innerHTML = ''; }
     if (t) t.style.display = TAB === 'tdb' ? '' : 'none'; if (e) e.style.display = TAB === 'eng' ? '' : 'none'; if (cb) cb.style.display = (TAB === 'bil' || TAB === 'arc') ? '' : 'none';
     if (TAB === 'bil' || TAB === 'arc') {
       if (bilPrendre()) { window._g45ArchCk = TAB === 'arc';
