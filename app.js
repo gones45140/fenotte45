@@ -78647,7 +78647,8 @@ window._G45_PAL_COUL = ['#1ed760', '#8fdc4a', '#f5c542', '#ffa53a', '#ff7a3a', '
     if (!h) return '';
     /* 20261105g (A) : « 🎯 Régler ma mise sur N paliers → P1 = X € » (pire des séries de la carte + 1, entre 6 et 9) */
     try {
-      var cT = Object.keys(state.b || {}).reduce(function (a, k) { var n = parseFloat(state.b[k]); return a + (isNaN(n) ? 0 : n); }, 0);
+      var cT = window._g45CapCk ? window._g45CapCk() : Object.keys(state.b || {}).reduce(function (a, k) { var n = parseFloat(state.b[k]); return a + (isNaN(n) ? 0 : n); }, 0);   /* 20261105k : part Cockpit */
+      var ptN = window._g45CkPart ? window._g45CkPart() : 100;
       /* 20261105i : un bouton PAR LIEU (🏠 / ✈️) quand la carte a des séries par lieu ; sinon un seul pour toute la carte (🌍) */
       var okL = function (k) { var R = P[k]; return R && !R.err && R.p && R.p.length; }, LS = ['dom', 'ext'].filter(okL);
       if (!LS.length && okL('glob')) LS = [''];
@@ -78658,7 +78659,7 @@ window._G45_PAL_COUL = ['#1ed760', '#8fdc4a', '#f5c542', '#ffa53a', '#ff7a3a', '
         /* 20261105j (capture Adam Fox, flèche : « le bouton 🏠 sous la ligne 🏠 ») : chaque bouton juste SOUS la série de son lieu */
         if (p1 > 0) h = h.replace('<!--g45BT:' + (L || 'glob') + '-->', deja
           ? '<div style="font-size:13px;font-weight:700;color:#1ed760;margin-top:4px;">🎯 ' + ic + 'Mise réglée sur ' + CS.ne + ' paliers (P1 ' + String(p1).replace('.', ',') + ' €) ✅</div>'
-          : '<div style="margin-top:4px;"><button onclick="event.stopPropagation();g45P1AutoEq(\'' + String(u.n).replace(/[\\'"<>&]/g, '') + '\',' + CS.ne + ',\'' + L + '\')" style="padding:5px 10px;border-radius:8px;border:1px solid #1ed760;background:#0c2a18;color:#fff;font-size:14px;font-weight:800;cursor:pointer;">🎯 ' + ic + 'Régler ma mise sur ' + CS.ne + ' paliers → P1 = ' + p1.toFixed(2).replace('.', ',') + ' €</button></div>');
+          : '<div style="margin-top:4px;"><button onclick="event.stopPropagation();g45P1AutoEq(\'' + String(u.n).replace(/[\\'"<>&]/g, '') + '\',' + CS.ne + ',\'' + L + '\')" style="padding:5px 10px;border-radius:8px;border:1px solid #1ed760;background:#0c2a18;color:#fff;font-size:14px;font-weight:800;cursor:pointer;">🎯 ' + ic + 'Régler ma mise sur ' + CS.ne + ' paliers → P1 = ' + p1.toFixed(2).replace('.', ',') + ' €</button>' + (ptN < 100 ? '<div style="font-size:13px;font-weight:400;color:#c9d3ee;">sur ' + String(ptN).replace('.', ',') + ' % de ta bankroll (' + Math.round(cT).toLocaleString('fr-FR') + ' €)</div>' : '') + '</div>');
       });
     } catch (e) {}
     var d = new Date(at || Date.now()), dt = ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2);
@@ -85842,6 +85843,30 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
   var esc = function (t) { return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;'); };
   var BOITE = 'margin-top:8px;border-radius:10px;padding:10px 12px;font-size:14px;line-height:1.5;color:#fff;background:rgba(5,10,25,.75);border:1px solid #1c2747;';
   var PCTS = [0.5, 1, 2, 5];
+  /* ═══ 20261105k (« c'est juste moi, miser autant je ne suis pas prêt mentalement, ça peut aller très vite, 6 matchs » → maquette-part → « oui ») :
+     PART DE LA BANKROLL POUR LE COCKPIT (state.ckPart, %, 100 par défaut = comme avant ; gardée avec le reste → synchronisée). Les boutons
+     🎯 Régler ma mise (Mes cartes) et 🪜 P1 auto (Engager) calculent le P1 sur cette part : part ÷ 3^(N−1). Réglage dans 🪜 Mes grilles. */
+  var partLu = function () { var v = (typeof state !== 'undefined' && state) ? +state.ckPart : 0; return v > 0 && v <= 100 ? v : 100; };
+  var capCk = function () { return Math.floor(cap() * partLu()) / 100; };
+  var ptx = function (c) { return partLu() < 100 ? 'Ta part Cockpit (' + String(partLu()).replace('.', ',') + ' % = ' + eu(c) + ')' : 'Ta bankroll (' + eu(c) + ')'; };
+  window._g45CkPart = partLu; window._g45CapCk = capCk;
+  window.g45CkPartSet = function (v) {
+    var x = parseFloat(String(v == null ? '' : v).replace(',', '.').replace('%', ''));
+    if (!(x > 0 && x <= 100)) { window._g45CkPartDessiner(); return; }
+    state.ckPart = Math.round(x * 10) / 10; if (state.ckPart === 100) delete state.ckPart;
+    try { if (typeof save === 'function') save(); } catch (e) {}
+    window._g45CkPartDessiner(); try { dessiner(true); } catch (e) {} try { if (typeof render === 'function') render(); } catch (e) {}
+  };
+  window._g45CkPartDessiner = function () {
+    var b = $('g45-ck-part'); if (!b) return;
+    var p = partLu(), c = cap(), P = [10, 20, 30, 50, 100], perso = P.indexOf(p) < 0;
+    b.innerHTML = '<div style="font-size:16px;font-weight:800;">🏦 Part de ma bankroll pour le Cockpit</div>'
+      + P.map(function (x) { return chip(p === x, x + ' %', 'g45CkPartSet(' + x + ')'); }).join('')
+      + '<span style="display:inline-flex;align-items:center;margin:6px 6px 0 0;">✏️ <input type="text" inputmode="decimal" aria-label="Ta part en %" placeholder="autre" value="' + (perso ? String(p).replace('.', ',') : '') + '" onchange="g45CkPartSet(this.value)" onfocus="this.select()" style="width:70px;margin-left:4px;padding:6px 8px;border-radius:10px;border:1px solid #2a3a63;background:#0b1226;color:#fff;font-size:14px;"></span>'
+      + '<div style="margin-top:6px;">= <b>' + eu(capCk()) + '</b> sur ' + eu(c) + (p < 100 ? ' · le reste (' + eu(c - capCk()) + ') n\'est jamais compté pour les paliers' : '') + '</div>'
+      + '<div style="font-size:13px;color:#c9d3ee;">Sert aux boutons 🎯 Régler ma mise et 🪜 P1 auto. Pour chaque carte, c\'est cette part qui doit couvrir ses paliers.</div>';
+  };
+  setInterval(function () { try { var b = $('g45-ck-part'); if (b && b.offsetParent && !b.contains(document.activeElement)) { var k = partLu() + '|' + Math.round(cap()); if (b._k !== k) { b._k = k; window._g45CkPartDessiner(); } } } catch (e) {} }, 2000);
   var pctLu = function () { var v = 0; try { v = parseFloat(localStorage.getItem('g45_pct_mise')) || 0; } catch (e) {} return v; };
   window._g45PctT = { p1: function (c, n) { return Math.floor(c / Math.pow(3, n - 1) * 100) / 100; }, coulJ: coulJ, coulM: coulM };   /* tests */
   /* ═══ 20261104e — GRILLE EN ATTENTE (Antoine : « 5 ⭐ en P6, 3 ⭐ en P9… oui et que ça soit modifiable ; après le problème va être si je veux
@@ -85957,23 +85982,23 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
     } catch (e) { return null; }
   };
   window.g45P1AutoEq = function (nom, n, L) {
-    var u = (state.u || []).filter(function (x) { return x.n === nom; })[0], c = cap(); L = _g45GlLieu(L);
+    var u = (state.u || []).filter(function (x) { return x.n === nom; })[0], c = capCk(); L = _g45GlLieu(L);   /* 20261105k : part Cockpit */
     if (!u || !(c > 0) || !(n >= 6 && n <= 9)) return;
     var p1 = window._g45PctT.p1(c, n), old = (_g45Grille(u, L) || [0])[0], lt = L === 'dom' ? ' 🏠 domicile' : L === 'ext' ? ' ✈️ extérieur' : '';
     if (!(p1 > 0)) { alert('Bankroll trop petite pour couvrir ' + n + ' paliers.'); return; }
-    if (!confirm('🎯 ' + u.n + lt + ' : grille perso de ' + n + ' paliers (P' + n + ' max).\nP1 ' + String(old).replace('.', ',') + ' € → ' + String(p1).replace('.', ',') + ' €.\n\nTa bankroll (' + eu(c) + ') couvrira les ' + n + ' paliers.\nSeulement ' + u.n + lt + ' : le reste ne change pas.')) return;
+    if (!confirm('🎯 ' + u.n + lt + ' : grille perso de ' + n + ' paliers (P' + n + ' max).\nP1 ' + String(old).replace('.', ',') + ' € → ' + String(p1).replace('.', ',') + ' €.\n\n' + ptx(c) + ' couvrira les ' + n + ' paliers.\nSeulement ' + u.n + lt + ' : le reste ne change pas.')) return;
     if (L) glDemande(u, _g45PaliersDepuisP1(p1, n), L); else eqDemande(u, _g45PaliersDepuisP1(p1, n));
     try { if (typeof render === 'function') render(); } catch (e) {}
   };
   window.g45P1Auto = function (n) {
-    var uSel = $('c-unit'), u = uSel && (state.u || []).find(function (x) { return x.n === uSel.value; }), c = cap();
+    var uSel = $('c-unit'), u = uSel && (state.u || []).find(function (x) { return x.n === uSel.value; }), c = capCk();   /* 20261105k */
     if (!u || !(c > 0)) return;
     var LC = typeof g45LieuCourant === 'function' ? g45LieuCourant() : '';
     if (LC) { try { localStorage.setItem('g45_p1_auto', String(n)); } catch (e) {} window.g45P1AutoEq(u.n, n, LC); dessiner(true); return; }   /* 20261105i : lieu choisi → grille de CE lieu */
     var p1 = window._g45PctT.p1(c, n), old = (_g45Grille(u) || [0])[0];
     if (!(p1 > 0)) { alert('Bankroll trop petite pour couvrir ' + n + ' paliers.'); return; }
     /* 20261104f : grille PERSO de l'équipe (u.g) — les autres équipes ne bougent pas */
-    if (!confirm('Grille perso de ' + u.n + ' : P1 ' + String(old).replace('.', ',') + ' € → ' + String(p1).replace('.', ',') + ' €, ' + n + ' paliers (P' + n + ' max) ?\n\nTa bankroll (' + eu(c) + ') couvrira les ' + n + ' paliers.\nSeulement ' + u.n + ' : tes autres équipes ne changent pas.')) return;
+    if (!confirm('Grille perso de ' + u.n + ' : P1 ' + String(old).replace('.', ',') + ' € → ' + String(p1).replace('.', ',') + ' €, ' + n + ' paliers (P' + n + ' max) ?\n\n' + ptx(c) + ' couvrira les ' + n + ' paliers.\nSeulement ' + u.n + ' : tes autres équipes ne changent pas.')) return;
     try { localStorage.setItem('g45_p1_auto', String(n)); } catch (e) {}
     eqDemande(u, _g45PaliersDepuisP1(p1, n));
     try { (window.updMise || updMise)(); } catch (e) {}
@@ -85990,7 +86015,7 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
     ['n-mise', 'combi-mise', 'c-mise'].forEach(function (id) {
       var mi = $(id); if (!mi) return;
       var m = parseFloat(String(mi.value || '').replace(',', '.')) || 0, uSel = $('c-unit'), u = id === 'c-mise' && uSel && (state.u || []).find(function (x) { return x.n === uSel.value; });
-      var LC = typeof g45LieuCourant === 'function' ? g45LieuCourant() : '', G = u && _g45Grille(u, LC), sig = [m, Math.round(c * 100), u ? u.n + '|' + u.s + '|' + (typeof g45LieuCourant === 'function' ? g45LieuCourant() : '') + '|' + JSON.stringify(window._g45PsConseil(u, typeof g45LieuCourant === 'function' ? g45LieuCourant() : '')) + '|' + JSON.stringify([u.g || 0, u.ga || 0, u.l || 0, u.lc || 0, u.gl || 0, u.gla || 0]) + '|' + (function () { try { return localStorage.getItem('g45_strats_att') || ''; } catch (e) { return ''; } })() : '', G ? G.join(',') : '', pctLu(), (function () { try { return localStorage.getItem('g45_p1_auto') || ''; } catch (e) { return ''; } })()].join('|');
+      var LC = typeof g45LieuCourant === 'function' ? g45LieuCourant() : '', G = u && _g45Grille(u, LC), sig = [m, Math.round(c * 100), partLu(), u ? u.n + '|' + u.s + '|' + (typeof g45LieuCourant === 'function' ? g45LieuCourant() : '') + '|' + JSON.stringify(window._g45PsConseil(u, typeof g45LieuCourant === 'function' ? g45LieuCourant() : '')) + '|' + JSON.stringify([u.g || 0, u.ga || 0, u.l || 0, u.lc || 0, u.gl || 0, u.gla || 0]) + '|' + (function () { try { return localStorage.getItem('g45_strats_att') || ''; } catch (e) { return ''; } })() : '', G ? G.join(',') : '', pctLu(), (function () { try { return localStorage.getItem('g45_p1_auto') || ''; } catch (e) { return ''; } })()].join('|');
       if (!force && vu[id] === sig) return; vu[id] = sig;
       if (!(c > 0)) { var b0 = $('g45pct-' + id); if (b0) b0.remove(); return; }
       var b = boite(mi), p = 100 * m / c, cj = coulJ(p), h = '';
@@ -86017,8 +86042,9 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
           var CS = window._g45PsConseil(u, typeof g45LieuCourant === 'function' ? g45LieuCourant() : '');   /* 20261105g (B) */
           if (CS) h += '<div style="margin-top:6px;">📊 Pire série 4 saisons ' + ({ glob: '🌍', dom: '🏠', ext: '✈️' }[CS.k] || '') + ' : <b>' + CS.p.join('·') + '</b> → '
             + (CS.ne ? 'il faut ' + CS.n + ' palier' + (CS.n > 1 ? 's' : '') + (CS.sec ? ' + 1 de sécurité' : ' (pas de place pour la sécurité)') + ' → <b style="color:#1ed760;">' + CS.ne + ' paliers</b>' + (CS.n + 1 < 6 ? ' (6 = la plus petite grille)' : '') + ' (conseillé ⭐)' : '<b style="color:#ff5a5a;">' + CS.n + ' paliers ❌ au-delà de 9</b>') + '</div>';
-          h += '<div style="margin-top:6px;">🪜 <b>P1 auto</b> : ma bankroll couvre ' + lst.map(function (n) { var on = G.length === n && Math.abs(G[0] - window._g45PctT.p1(c, n)) < 0.011; return chip(on, String(n) + (CS && CS.ne === n ? ' ⭐' : ''), 'g45P1Auto(' + n + ')'); }).join('') + ' paliers</div>'
-            + '<div style="margin-top:4px;">→ ' + lst.map(function (n) { return n + ' paliers : P1 = <b>' + window._g45PctT.p1(c, n).toFixed(2).replace('.', ',') + ' €</b>'; }).join(' · ') + '</div>'
+          var cK = capCk();   /* 20261105k : P1 sur la part Cockpit */
+          h += '<div style="margin-top:6px;">🪜 <b>P1 auto</b> : ' + (partLu() < 100 ? 'ta part Cockpit (' + String(partLu()).replace('.', ',') + ' % = ' + eu(cK) + ')' : 'ma bankroll') + ' couvre ' + lst.map(function (n) { var on = G.length === n && Math.abs(G[0] - window._g45PctT.p1(cK, n)) < 0.011; return chip(on, String(n) + (CS && CS.ne === n ? ' ⭐' : ''), 'g45P1Auto(' + n + ')'); }).join('') + ' paliers</div>'
+            + '<div style="margin-top:4px;">→ ' + lst.map(function (n) { return n + ' paliers : P1 = <b>' + window._g45PctT.p1(cK, n).toFixed(2).replace('.', ',') + ' €</b>'; }).join(' · ') + '</div>'
             + '<div style="font-size:13px;color:#c9d3ee;">🎯 « P1 auto » crée une grille perso pour ' + esc(u.n) + (LC ? ' ' + ltx + ' seulement' : ' seulement') + ' (confirmation demandée) : le reste ne change pas.</div>'
             + (u.ga ? '<div style="margin-top:6px;background:#3a2f08;border:1px solid #f5c542;border-radius:8px;padding:6px 9px;font-size:14px;">⏳ <b>' + (u.ga === 'E' ? 'Retour aux étoiles' : 'Nouvelle grille (P1 ' + String(u.ga[0]).replace('.', ',') + ' €, ' + u.ga.length + ' paliers)') + ' en attente</b> — appliqué quand ' + esc(u.n) + ' (P' + palMax(u) + ') sera revenue à P1.<br>'
               + chip(false, '✅ Appliquer maintenant', "g45GrilleEqForcer('" + esc(u.n).replace(/'/g, "\\'") + "')") + chip(false, '✖ Annuler', "g45GrilleEqAnnuler('" + esc(u.n).replace(/'/g, "\\'") + "')") + '</div>'
@@ -86226,6 +86252,7 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
       var tg2 = $('g45-ck-on'); if (tg2 && tg2.parentNode === pp) pp.parentNode.insertBefore(tg2, pp);
       cg.appendChild(pp); try { if (typeof renderPaliers === 'function') renderPaliers(); } catch (e) {}
     }
+    if (cg && !$('g45-ck-part')) { var bp = document.createElement('div'); bp.id = 'g45-ck-part'; bp.style.cssText = 'margin:0 0 12px;padding:10px 12px;border-radius:12px;background:rgba(10,14,24,.93);border:1px solid #1c2747;font-size:14px;line-height:1.5;color:#fff;'; cg.insertBefore(bp, cg.firstChild); try { window._g45CkPartDessiner && window._g45CkPartDessiner(); } catch (e) {} }   /* 20261105k */
     var ss = $('sub-strat'), ce = $('ck-eng'); if (ss && ce && ss.parentNode !== ce) ce.appendChild(ss);
     return p;
   }
