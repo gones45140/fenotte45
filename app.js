@@ -3679,6 +3679,7 @@ window.setArchSport = setArchSport;
 function renderArchive(){
   // Source = archives (réglés) + paris EN COURS (state.h) injectés comme isPending
   var _arSrc = (state.a||[]).concat((state.h||[]).map(function(_h){ return Object.assign({}, _h, {isPending:true}); }));
+  if (window._g45ArchCk) _arSrc = _arSrc.filter(function(_x){ return _x && _x.isS; });   /* 20261104j : 🕒 Archive du monde du Cockpit = paris de montante seulement */
   /* ═══ FILTRE PAR SPORT (10/09) ═══
      Le conteneur `arch-sport-filter` existait dans la page depuis le debut mais
      AUCUN code ne le remplissait : l'archive n'avait donc que les filtres par
@@ -12092,6 +12093,7 @@ var _archFilter = 'all';
 function renderArchive(){
   // Source = archives (réglés) + paris EN COURS (state.h) injectés comme isPending
   var _arSrc = (state.a||[]).concat((state.h||[]).map(function(_h){ return Object.assign({}, _h, {isPending:true}); }));
+  if (window._g45ArchCk) _arSrc = _arSrc.filter(function(_x){ return _x && _x.isS; });   /* 20261104j : 🕒 Archive du monde du Cockpit = paris de montante seulement */
   /* ═══ FILTRE PAR SPORT (10/09) ═══
      Le conteneur `arch-sport-filter` existait dans la page depuis le debut mais
      AUCUN code ne le remplissait : l'archive n'avait donc que les filtres par
@@ -85946,7 +85948,7 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
   }
   window.g45CkEngager = function (nom, d, adv, t) {
     try {
-      var b = document.querySelector('button.ni[onclick*="t-paris"]'); if (typeof showTab === 'function') showTab('t-paris', b);
+      window.g45CkOuvrir(null, 'eng');   /* 20261104i : le formulaire de montante est dans le monde du Cockpit */
       var sel = $('c-unit'); if (sel) { sel.value = nom; }
       var li = $('c-lieu'); if (li) li.value = d ? 'dom' : 'ext';
       var tg = $('c-target'); if (tg && adv) tg.value = adv;
@@ -85960,12 +85962,7 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
   var BTN = 'border-radius:14px;padding:8px 12px;margin:0 6px 6px 0;cursor:pointer;color:#fff;font-size:14px;font-weight:700;border:1px solid #2a3a63;background:#0b1226;white-space:nowrap;';
   function tableau() {
     var c = cap(), S = series(), B = bilanMois(), eng = S.reduce(function (a, x) { return a + x.perdu; }, 0), pe = c > 0 ? 100 * eng / c : 0;
-    var h = '<div style="background:rgba(5,10,25,.82);border-radius:12px;padding:10px 12px;margin:6px 0 10px;"><div style="font-size:22px;font-weight:800;">🏁 Le monde du Cockpit</div><div style="font-size:14px;color:#c9d3ee;">Tout ce qui sert à ta montante, au même endroit</div></div>';   /* bande sombre sous le texte */
-    h += '<div style="display:flex;overflow-x:auto;margin-bottom:10px;">'
-      + '<button style="' + BTN + 'background:#2a4a9a;border-color:#6d9dff;">🏠 Tableau de bord</button>'
-      + '<button style="' + BTN + '" onclick="var b=document.querySelector(\'button.ni[onclick*=t-cal]\');showTab(\'t-cal\',b);loadCalendrier()">📅 Aujourd\'hui</button>'
-      + '<button style="' + BTN + '" onclick="var b=document.querySelector(\'.ni[onclick*=t-outils]\');showTab(\'t-outils\',b||document.getElementById(\'btn-plus-menu\'))">🪜 Mes grilles</button>'
-      + '<button style="' + BTN + '" onclick="var b=document.querySelector(\'button.ni[onclick*=t-tend]\');showTab(\'t-tend\',b);loadTendancesTab()">📊 Cockpit BET45</button></div>';
+    var h = '';   /* 20261104i : titre + onglets dans entete() (l'onglet 🚀 Engager garde le formulaire de montante déplacé, jamais redessiné) */
     var kp = function (v, l, col) { return '<div style="background:#0f1730;border-radius:10px;padding:8px;text-align:center;"><b style="display:block;font-size:19px;color:' + (col || '#fff') + ';">' + v + '</b><span style="font-size:13px;color:#c9d3ee;">' + l + '</span></div>'; };
     h += '<div style="' + CARTE + '"><div style="font-size:16px;font-weight:800;margin-bottom:6px;">🏦 Ma bankroll</div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">'
       + kp(eu(c), 'bankroll') + kp((B.s > 0 ? '+' : '') + eu(B.s), 'montante ce mois (' + B.n + ')', B.s > 0.5 ? '#1ed760' : B.s < -0.5 ? '#ff5a5a' : '#fff')
@@ -86006,12 +86003,58 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
     return h;
   }
   window._g45CkTableau = tableau;   /* tests */
-  window.g45CkOuvrir = function (btn) { if (typeof showTab === 'function') showTab('t-cockpit', btn || $('g45-ni-ck')); dessiner(); };
-  function dessiner() { var p = $('t-cockpit'); if (p && p.style.display !== 'none') { try { p.innerHTML = tableau(); } catch (e) { p.innerHTML = '<div style="color:#ff5a5a;">Erreur du tableau de bord.</div>'; } } }
+  /* ═══ 20261104i — 🚀 ENGAGER DANS LE MONDE DU COCKPIT (capture PC de la page Pari → « on le déplace ou pas » → « OUI ON DÉPLACE ») : le bloc
+     #sub-strat (formulaire de montante, « C'est quoi le Cockpit ? », vidéo, simulateur crash, lecture de ticket) est DÉPLACÉ (le même élément,
+     mêmes ids c-…, rien n'est recopié) dans #ck-eng de #t-cockpit ; bouton « 🚀 Cockpit » de la page Pari caché → Pari = Simple + Combiné.
+     Onglet 🚀 Engager → swBet('strat') (bouton btn-cpit « on », lu par _g45TicketCockpit) ; page Pari → swBet('simple') si le Cockpit était actif.
+     Interrupteur coupé : le formulaire reste dans le monde du Cockpit, caché avec lui. ═══ */
+  var TAB = 'tdb';
+  function entete() {
+    var bt = function (k, txt, js) { var on = TAB === k; return '<button onclick="' + js + '" style="' + BTN + (on ? 'background:#2a4a9a;border-color:#6d9dff;' : '') + '">' + txt + '</button>'; };
+    return '<div style="background:rgba(5,10,25,.82);border-radius:12px;padding:10px 12px;margin:6px 0 10px;"><div style="font-size:22px;font-weight:800;">🏁 Le monde du Cockpit</div><div style="font-size:14px;color:#c9d3ee;">Tout ce qui sert à ta montante, au même endroit</div></div>'
+      + '<div style="display:flex;overflow-x:auto;margin-bottom:10px;">'
+      + bt('tdb', '🏠 Tableau de bord', "g45CkOnglet('tdb')") + bt('eng', '🚀 Engager', "g45CkOnglet('eng')") + bt('bil', '📈 Bilan', "g45CkOnglet('bil')") + bt('arc', '🕒 Archive', "g45CkOnglet('arc')")
+      + bt('ag', '📅 Agenda', "var b=document.querySelector('button.ni[onclick*=t-cal]');showTab('t-cal',b);loadCalendrier()")
+      + bt('gr', '🪜 Mes grilles', "var b=document.querySelector('.ni[onclick*=t-outils]');showTab('t-outils',b||document.getElementById('btn-plus-menu'))")
+      + bt('ck', '📊 Cockpit BET45', "var b=document.querySelector('button.ni[onclick*=t-tend]');showTab('t-tend',b);loadTendancesTab()") + '</div>';
+  }
+  function squelette() {
+    var p = $('t-cockpit'); if (!p) return null;
+    if (!$('ck-tabs')) p.innerHTML = '<div id="ck-tabs"></div><div id="ck-tdb"></div><div id="ck-eng" style="display:none;"></div><div id="ck-bil" style="display:none;"></div>';
+    var ss = $('sub-strat'), ce = $('ck-eng'); if (ss && ce && ss.parentNode !== ce) ce.appendChild(ss);
+    return p;
+  }
+  /* ═══ 20261104j (« PAREIL BILAN, ARCHIVE COCKPIT ») : 📈 Bilan (vue « 🚀 Cockpit » du Bilan) et 🕒 Archive (paris de montante seulement,
+     window._g45ArchCk) dans le monde du Cockpit. La section #t-bilan entière est DÉPLACÉE dans #ck-bil le temps de l'onglet (mêmes ids, rendu
+     inchangé, barres Pari / Bilan / … et onglets du Bilan cachés), puis REMISE à sa place (repère) dès qu'on change d'onglet ou de page.
+     Page Bilan normale : onglet « 🚀 Cockpit » caché (il vit ici). ═══ */
+  var repBil = null;
+  function bilRendre() { var tb = $('t-bilan'); if (tb && repBil && tb.parentNode && tb.parentNode.id === 'ck-bil') { repBil.parentNode.insertBefore(tb, repBil); tb.style.display = 'none'; } window._g45ArchCk = false; }
+  function bilPrendre() { var tb = $('t-bilan'), cb = $('ck-bil'); if (!tb || !cb) return null; if (!repBil) { repBil = document.createComment('t-bilan'); tb.parentNode.insertBefore(repBil, tb); } if (tb.parentNode !== cb) cb.appendChild(tb); tb.style.display = 'block'; return tb; }
+  window._g45CkBilRendre = bilRendre;
+  window.g45CkOnglet = function (k) {
+    TAB = ['eng', 'bil', 'arc'].indexOf(k) >= 0 ? k : 'tdb'; squelette();
+    var t = $('ck-tdb'), e = $('ck-eng'), cb = $('ck-bil');
+    if (t) t.style.display = TAB === 'tdb' ? '' : 'none'; if (e) e.style.display = TAB === 'eng' ? '' : 'none'; if (cb) cb.style.display = (TAB === 'bil' || TAB === 'arc') ? '' : 'none';
+    if (TAB === 'bil' || TAB === 'arc') {
+      if (bilPrendre()) { window._g45ArchCk = TAB === 'arc';
+        try { if (TAB === 'arc') showBilanTab('arch', $('btab-arch')); else showBilanTab('cockpit', $('btab-cockpit')); } catch (x) {}
+        try { if (TAB === 'bil' && typeof renderGlobalCharts === 'function') setTimeout(function () { try { renderGlobalCharts(); } catch (y) {} }, 50); } catch (x) {} }
+    } else bilRendre();
+    if (TAB === 'eng') { try { if (typeof swBet === 'function') swBet('strat'); } catch (x) {} var ss = $('sub-strat'); if (ss) ss.style.display = 'block'; }
+    if (TAB === 'tdb' && t) { try { t.innerHTML = tableau(); } catch (x) {} }
+    var ht = $('ck-tabs'); if (ht) ht.innerHTML = entete();
+  };
+  window.g45CkOuvrir = function (btn, k) { squelette(); if (typeof showTab === 'function') showTab('t-cockpit', btn || $('g45-ni-ck')); window.g45CkOnglet(k || TAB); };
+  function dessiner() { var p = $('t-cockpit'); if (p && p.style.display !== 'none' && TAB === 'tdb') { squelette(); var t = $('ck-tdb'); try { if (t) t.innerHTML = tableau(); var ht = $('ck-tabs'); if (ht && !ht.innerHTML) ht.innerHTML = entete(); } catch (e) { if (t) t.innerHTML = '<div style="color:#ff5a5a;">Erreur du tableau de bord.</div>'; } } }
   function poser() {
     try {
       var main = document.querySelector('main') || document.body;
       if (!$('t-cockpit') && main) { var d = document.createElement('div'); d.id = 't-cockpit'; d.className = 'tab'; d.style.display = 'none'; main.appendChild(d); }
+      squelette();   /* 20261104i : #sub-strat déplacé dans #ck-eng */
+      var btc = $('btab-cockpit'); if (btc) btc.style.display = 'none';   /* 20261104j : le Bilan Cockpit vit dans le monde du Cockpit */
+      if (!$('g45-ck-css')) { var cs = document.createElement('style'); cs.id = 'g45-ck-css'; cs.textContent = '#ck-bil .psub-bar,#ck-bil .gtabs{display:none!important}'; document.head.appendChild(cs); }
+      var bcp = $('btn-cpit'); if (bcp) { bcp.style.display = 'none'; var tp = $('t-paris'); if (bcp.classList.contains('on') && !(tp && tp.style.display !== 'none' && $('ck-eng') && $('ck-eng').contains($('sub-strat')) && TAB === 'eng')) { try { swBet('simple'); } catch (e) {} } }
       var nav = document.querySelector('nav.nav'), bp = nav && nav.querySelector('button.ni[onclick*="t-paris"]'), b = $('g45-ni-ck');
       if (nav && bp && !b) { b = document.createElement('button'); b.id = 'g45-ni-ck'; b.className = 'ni'; b.setAttribute('onclick', 'g45CkOuvrir(this)'); b.innerHTML = '<span>🏁</span>Cockpit'; bp.insertAdjacentElement('afterend', b); }
       if (b) b.style.display = actif() ? '' : 'none';
@@ -86022,6 +86065,10 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
     } catch (e) {}
   }
   window._g45CkPoser = poser;
+  /* 20261104i : #sub-strat vit dans #t-cockpit → « cockpit visible » = vraiment affiché (offsetParent), pas seulement display du bloc */
+  try { var _tc0 = _g45TicketCockpit; _g45TicketCockpit = window._g45TicketCockpit = function () { var ss = $('sub-strat'); return !!(_tc0() && ss && ss.offsetParent !== null); }; } catch (e) {}
+  /* page Pari ouverte avec le Cockpit encore « on » (ancien état) → Simple */
+  try { var _st0 = showTab; showTab = window.showTab = function (id, btn) { try { if (id !== 't-cockpit') bilRendre(); } catch (e) {} var r = _st0.apply(this, arguments); try { if (id === 't-paris') { var bc = $('btn-cpit'); if (bc && bc.classList.contains('on') && typeof swBet === 'function') swBet('simple'); } } catch (e) {} return r; }; } catch (e) {}
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { setTimeout(poser, 300); }); else setTimeout(poser, 300);
   setInterval(function () { try { poser(); dessiner(); } catch (e) {} }, 15000);
 })();
