@@ -85971,11 +85971,13 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
     if (t === null) return;
     var p1 = parseFloat(String(t).replace(',', '.'));
     if (k && u.lc) u.lc[k] = 1; u.l = 1;
+    window._g45CkAbMode = false;   /* 20261105b : série abandonnée → les petits drapeaux se retirent */
     var d = new Date(); (u.abd = u.abd || []).push({ d: String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0'), p: p, perdu: Math.round(perdu * 100) / 100, l: l });
     try { if (typeof save === 'function') save(); } catch (e) {}
     if (p1 > 0 && Math.abs(p1 - (+G[0] || 0)) > 0.001 && window._g45GrilleEqT) { try { window._g45GrilleEqT.demande(u, _g45PaliersDepuisP1(p1, G.length || 9)); } catch (e) {} }
     try { (window.updMise || updMise)(); } catch (e) {} try { dessiner(); } catch (e) {} try { if (typeof render === 'function') render(); } catch (e) {}
   };
+  window.g45CkAbMode = function (on) { window._g45CkAbMode = !!on; try { dessiner(); } catch (e) {} };   /* 20261105b */
   window.g45CkAbFermer = function (nom, i) { var u = (state.u || []).filter(function (x) { return x.n === nom; })[0]; if (!u || !u.abd) return; u.abd.splice(i, 1); if (!u.abd.length) delete u.abd; try { save(); } catch (e) {} try { dessiner(); } catch (e) {} try { abDeco(); } catch (e) {} };
   /* Avertissement sur la carte (🃏 Mes cartes ; caché dans Outils par #g45-ck-css) */
   function abDeco() {
@@ -86020,14 +86022,21 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
       + kp(eu(c), 'bankroll') + kp((B.s > 0 ? '+' : '') + eu(B.s), 'montante ce mois (' + B.n + ')', B.s > 0.5 ? '#1ed760' : B.s < -0.5 ? '#ff5a5a' : '#fff')
       + kp((pe < 10 ? pe.toFixed(1).replace('.', ',') : Math.round(pe)) + ' %', 'engagé en séries', pe < 20 ? '#1ed760' : pe <= 50 ? '#ff9f43' : '#ff5a5a') + '</div></div>';
     var en = S.filter(function (x) { return x.p > 1; }).sort(function (a, b) { return (a.N - a.p) - (b.N - b.p) || b.p - a.p; }), p1 = S.filter(function (x) { return x.p <= 1; });
-    h += '<div style="' + CARTE + '"><div style="font-size:16px;font-weight:800;margin-bottom:6px;">🪜 Mes séries en cours</div>';
+    /* 20261105b (capture « Mes séries en cours », « il y a un peu trop d'Abandonner non » → maquette → « oui ») : UN seul bouton en haut ;
+       en l'appuyant (abMode), un petit 🏳️ apparaît sur chaque ligne (même confirmation g45CkAbandon) ; « ✖ Fermer » les retire. */
+    var abT = en.length ? (window._g45CkAbMode
+      ? '<button onclick="g45CkAbMode(0)" style="float:right;margin-left:8px;border-radius:8px;padding:3px 9px;font-size:13px;font-weight:800;color:#fff;cursor:pointer;border:1px solid #8fa3d6;background:#1c2747;">✖ Fermer</button>'
+      : '<button onclick="g45CkAbMode(1)" style="float:right;margin-left:8px;border-radius:8px;padding:3px 9px;font-size:13px;font-weight:800;color:#fff;cursor:pointer;border:1px solid #ff9f43;background:#3a2408;">🏳️ Abandonner une série</button>') : '';
+    h += '<div style="' + CARTE + '"><div style="font-size:16px;font-weight:800;margin-bottom:6px;overflow:hidden;">' + abT + '🪜 Mes séries en cours</div>'
+      + (en.length && window._g45CkAbMode ? '<div style="color:#ffd34d;font-size:14px;margin-bottom:4px;">Touche 🏳️ sur la série à abandonner.</div>' : '');
     if (!en.length) h += '<div style="color:#1ed760;">✅ Aucune série en cours : toutes tes équipes sont à P1.</div>';
     en.forEach(function (x) {
       /* 20261104v (« le jeu de couleur de la grille doit s'appliquer aux séries ») : pastille + barre = couleur du PALIER (_G45_PAL_COUL, comme la
          grille des mises) ; l'alerte « plus que N paliers » garde son rouge / orange. */
       var r = x.N - x.p, PC = window._G45_PAL_COUL || ['#1ed760'], col = PC[Math.min(x.p - 1, PC.length - 1)], wc = r <= 1 ? '#ff5a5a' : '#ff9f43';
       var ic = '<span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:' + col + ';vertical-align:-2px;box-shadow:0 0 6px ' + col + ';"></span>';
-      var abB = '<button onclick="g45CkAbandon(' + esc(JSON.stringify(x.u.n)).replace(/"/g, '&quot;') + ',' + esc(JSON.stringify(x.k || '')).replace(/"/g, '&quot;') + ')" style="float:right;margin-left:8px;border-radius:8px;padding:3px 9px;font-size:13px;font-weight:800;color:#fff;cursor:pointer;border:1px solid #ff9f43;background:#3a2408;">🏳️ Abandonner</button>';   /* 20261104y */
+      var abB = '<button onclick="g45CkAbandon(' + esc(JSON.stringify(x.u.n)).replace(/"/g, '&quot;') + ',' + esc(JSON.stringify(x.k || '')).replace(/"/g, '&quot;') + ')" style="float:right;margin-left:8px;border-radius:8px;padding:3px 9px;font-size:13px;font-weight:800;color:#fff;cursor:pointer;border:1px solid #ff9f43;background:#3a2408;" title="Abandonner cette série">🏳️</button>';   /* 20261104y ; 20261105b : petit drapeau, seulement en mode abandon */
+      if (!window._g45CkAbMode) abB = '';
       h += '<div style="margin-top:4px;">' + abB + ic + ' <b>' + esc(x.u.n) + '</b> ' + x.lieu + ' · P' + x.p + ' sur ' + x.N + ' · mise <b>' + eu(x.mise) + '</b>' + (r <= 3 ? ' · <span style="color:' + wc + ';font-weight:800;">' + (r === 0 ? 'dernier palier' : 'plus que ' + r + ' palier' + (r > 1 ? 's' : '')) + '</span>' : '') + '</div>'
         + '<div style="height:8px;border-radius:6px;background:#1c2747;overflow:hidden;margin:3px 0;"><div style="height:8px;width:' + Math.round(100 * x.p / x.N) + '%;background:' + col + ';"></div></div>';
     });
