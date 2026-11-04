@@ -85896,3 +85896,132 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
   setInterval(function () { try { dessiner(false); } catch (e) {} }, 1000);
   document.addEventListener('input', function (e) { if (e.target && /^(n-mise|combi-mise|c-mise)$/.test(e.target.id)) { try { dessiner(false); } catch (x) {} } }, true);
 })();
+
+/* ═══ 20261104h — 🏁 LE MONDE DU COCKPIT, ÉTAPE 1 (Antoine : « et si on faisait carrément un mode le cockpit » → « sur le site, "le monde du
+   Cockpit" regrouperait tout ce qui nous sert pour le Cockpit » → maquette-monde-cockpit → « la personne pas intéressée, ça la rebuterait ? » →
+   interrupteur → « DÉSACTIVÉ » par défaut pour un nouveau) :
+   • state.ckOn : true / false choisi dans Outils → 🚀 Montante (« 🏁 Je joue en montante (Cockpit) ») ; non choisi = AUTO : activé si l'utilisateur
+     a déjà un pari de montante (state.a / state.h, isS), sinon désactivé. Gardé dans state → synchronisé comme le reste.
+   • Activé : bouton « 🏁 Cockpit » dans la barre du bas (après Pari) → onglet #t-cockpit, Tableau de bord : 🏦 bankroll (bilan montante du mois,
+     % engagé = pertes déjà faites dans les séries en cours ÷ bankroll), 🪜 séries en cours (plus risquée d'abord : paliers restants ≤ 1 rouge,
+     ≤ 3 orange), 📅 matchs des prochaines 24 h des cartes du mur (liste g45ck_ag posée par l'Agenda) avec palier / mise + « ✅ Engager »
+     (formulaire montante pré-rempli), ⚠️ alertes (bankroll qui ne couvre pas la fin d'une série, 🛑 Bruno time u.ps.b, grille ⏳ en attente).
+     Autres onglets (Aujourd'hui, Mes grilles, Trouver, Bilans) = raccourcis vers les écrans existants en attendant les étapes suivantes.
+   • Désactivé : pas de bouton. (Les morceaux de Cockpit des autres écrans seront rangés ici petit à petit.) ═══ */
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var esc = function (t) { return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;'); };
+  var eu = function (x) { var r = Math.round(x); return (r < 0 ? '−' : '') + Math.abs(r).toLocaleString('fr-FR') + ' €'; };
+  var cap = function () { try { return Object.keys(state.b || {}).reduce(function (a, k) { var n = parseFloat(state.b[k]); return a + (isNaN(n) ? 0 : n); }, 0); } catch (e) { return 0; } };
+  function actif() {
+    if (typeof state === 'undefined') return false;
+    if (state.ckOn === true || state.ckOn === false) return state.ckOn;
+    return (state.a || []).some(function (h) { return h && h.isS; }) || (state.h || []).some(function (h) { return h && h.isS; });
+  }
+  window._g45CkActif = actif;
+  window.g45CkOnSet = function (v) { try { state.ckOn = !!v; if (typeof save === 'function') save(); } catch (e) {} poser(); };
+  function echelles(u) {   /* [{ k: clé, p: palier }] des échelles de l'équipe (u.lc), sinon u.l */
+    var ks = Object.keys(u.lc || {}); if (!ks.length) return [{ k: '', p: parseInt(u.l, 10) || 1 }];
+    return ks.map(function (k) { return { k: k, p: parseInt(u.lc[k], 10) || 1 }; });
+  }
+  function series() {
+    var L = [];
+    ((typeof state !== 'undefined' && state.u) || []).forEach(function (u) {
+      if (!u || !u.n) return; var G = (typeof _g45Grille === 'function') ? _g45Grille(u) : null; if (!G || !G.length) return;
+      var mx = { k: '', p: 1 }; echelles(u).forEach(function (e) { if (e.p > mx.p) mx = e; });
+      var perdu = 0; echelles(u).forEach(function (e) { for (var i = 0; i < Math.min(e.p - 1, G.length); i++) perdu += +G[i] || 0; });
+      var reste = 0; for (var j = mx.p - 1; j < G.length; j++) reste += +G[j] || 0;
+      L.push({ u: u, p: mx.p, N: G.length, mise: +G[Math.min(mx.p, G.length) - 1] || 0, perdu: perdu, reste: reste, lieu: /\|dom$/.test(mx.k) ? '🏠' : /\|ext$/.test(mx.k) ? '✈️' : '' });
+    });
+    return L;
+  }
+  window._g45CkSeries = series;   /* tests */
+  function bilanMois() {
+    var d = new Date(), m0 = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'), s = 0, n = 0;
+    ((typeof state !== 'undefined' && state.a) || []).forEach(function (h) {
+      if (!h || !h.isS || String(h.date || '').slice(0, 7) !== m0) return; n++;
+      var m = +h.m || 0, c = +h.cote || 0; s += h.isFreebet ? (h.win ? m * (c - 1) : 0) : (h.win ? m * c - m : -m);
+    });
+    return { s: s, n: n };
+  }
+  window.g45CkEngager = function (nom, d, adv, t) {
+    try {
+      var b = document.querySelector('button.ni[onclick*="t-paris"]'); if (typeof showTab === 'function') showTab('t-paris', b);
+      var sel = $('c-unit'); if (sel) { sel.value = nom; }
+      var li = $('c-lieu'); if (li) li.value = d ? 'dom' : 'ext';
+      var tg = $('c-target'); if (tg && adv) tg.value = adv;
+      if (t) { var dt = new Date(+t), dd = $('c-date'), hh = $('c-heure'); if (dd) dd.value = dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0') + '-' + String(dt.getDate()).padStart(2, '0'); if (hh) hh.value = String(dt.getHours()).padStart(2, '0') + ':' + String(dt.getMinutes()).padStart(2, '0'); }
+      try { if (typeof g45LieuChange === 'function') g45LieuChange(); } catch (e) {}
+      try { (window.updMise || updMise)(); } catch (e) {}
+      var mi = $('c-mise'); if (mi) setTimeout(function () { try { mi.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) {} }, 200);
+    } catch (e) {}
+  };
+  var CARTE = 'background:rgba(10,14,24,.93);border:1px solid #1c2747;border-radius:12px;padding:12px;margin-bottom:10px;font-size:14px;line-height:1.5;color:#fff;';
+  var BTN = 'border-radius:14px;padding:8px 12px;margin:0 6px 6px 0;cursor:pointer;color:#fff;font-size:14px;font-weight:700;border:1px solid #2a3a63;background:#0b1226;white-space:nowrap;';
+  function tableau() {
+    var c = cap(), S = series(), B = bilanMois(), eng = S.reduce(function (a, x) { return a + x.perdu; }, 0), pe = c > 0 ? 100 * eng / c : 0;
+    var h = '<div style="background:rgba(5,10,25,.82);border-radius:12px;padding:10px 12px;margin:6px 0 10px;"><div style="font-size:22px;font-weight:800;">🏁 Le monde du Cockpit</div><div style="font-size:14px;color:#c9d3ee;">Tout ce qui sert à ta montante, au même endroit</div></div>';   /* bande sombre sous le texte */
+    h += '<div style="display:flex;overflow-x:auto;margin-bottom:10px;">'
+      + '<button style="' + BTN + 'background:#2a4a9a;border-color:#6d9dff;">🏠 Tableau de bord</button>'
+      + '<button style="' + BTN + '" onclick="var b=document.querySelector(\'button.ni[onclick*=t-cal]\');showTab(\'t-cal\',b);loadCalendrier()">📅 Aujourd\'hui</button>'
+      + '<button style="' + BTN + '" onclick="var b=document.querySelector(\'.ni[onclick*=t-outils]\');showTab(\'t-outils\',b||document.getElementById(\'btn-plus-menu\'))">🪜 Mes grilles</button>'
+      + '<button style="' + BTN + '" onclick="var b=document.querySelector(\'button.ni[onclick*=t-tend]\');showTab(\'t-tend\',b);loadTendancesTab()">📊 Cockpit BET45</button></div>';
+    var kp = function (v, l, col) { return '<div style="background:#0f1730;border-radius:10px;padding:8px;text-align:center;"><b style="display:block;font-size:19px;color:' + (col || '#fff') + ';">' + v + '</b><span style="font-size:13px;color:#c9d3ee;">' + l + '</span></div>'; };
+    h += '<div style="' + CARTE + '"><div style="font-size:16px;font-weight:800;margin-bottom:6px;">🏦 Ma bankroll</div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">'
+      + kp(eu(c), 'bankroll') + kp((B.s > 0 ? '+' : '') + eu(B.s), 'montante ce mois (' + B.n + ')', B.s > 0.5 ? '#1ed760' : B.s < -0.5 ? '#ff5a5a' : '#fff')
+      + kp((pe < 10 ? pe.toFixed(1).replace('.', ',') : Math.round(pe)) + ' %', 'engagé en séries', pe < 20 ? '#1ed760' : pe <= 50 ? '#ff9f43' : '#ff5a5a') + '</div></div>';
+    var en = S.filter(function (x) { return x.p > 1; }).sort(function (a, b) { return (a.N - a.p) - (b.N - b.p) || b.p - a.p; }), p1 = S.filter(function (x) { return x.p <= 1; });
+    h += '<div style="' + CARTE + '"><div style="font-size:16px;font-weight:800;margin-bottom:6px;">🪜 Mes séries en cours</div>';
+    if (!en.length) h += '<div style="color:#1ed760;">✅ Aucune série en cours : toutes tes équipes sont à P1.</div>';
+    en.forEach(function (x) {
+      var r = x.N - x.p, col = r <= 1 ? '#ff5a5a' : r <= 3 ? '#ff9f43' : '#8fdc4a', ic = r <= 1 ? '🔴' : r <= 3 ? '🟠' : '🟡';
+      h += '<div style="margin-top:4px;">' + ic + ' <b>' + esc(x.u.n) + '</b> ' + x.lieu + ' · P' + x.p + ' sur ' + x.N + ' · mise <b>' + eu(x.mise) + '</b>' + (r <= 3 ? ' · <span style="color:' + col + ';font-weight:800;">' + (r === 0 ? 'dernier palier' : 'plus que ' + r + ' palier' + (r > 1 ? 's' : '')) + '</span>' : '') + '</div>'
+        + '<div style="height:8px;border-radius:6px;background:#1c2747;overflow:hidden;margin:3px 0;"><div style="height:8px;width:' + Math.round(100 * x.p / x.N) + '%;background:' + col + ';"></div></div>';
+    });
+    if (p1.length) h += '<div style="margin-top:6px;">🟢 ' + p1.slice(0, 12).map(function (x) { return '<b>' + esc(x.u.n) + '</b>'; }).join(', ') + (p1.length > 12 ? ' et ' + (p1.length - 12) + ' autres' : '') + ' · P1</div>';
+    h += '</div>';
+    var ag = null; try { ag = window._g45CkAg || JSON.parse(localStorage.getItem('g45ck_ag') || 'null'); } catch (e) {}
+    var now = Date.now(), M = ((ag && ag.L) || []).filter(function (m) { return m.t > now - 3 * 3600000 && m.t < now + 24 * 3600000; }).sort(function (a, b) { return a.t - b.t; });
+    h += '<div style="' + CARTE + '"><div style="font-size:16px;font-weight:800;margin-bottom:6px;">📅 Prochaines 24 h</div>';
+    if (!ag) h += '<div style="color:#c9d3ee;">Ouvre l\'Agenda une fois : les matchs de tes équipes apparaîtront ici.</div>';
+    else if (!M.length) h += '<div style="color:#c9d3ee;">Aucun match de tes équipes dans les prochaines 24 h.</div>';
+    M.slice(0, 12).forEach(function (m) {
+      var u = (state.u || []).filter(function (x) { return x.n === m.n; })[0], G = u && _g45Grille(u), p = u ? ((typeof _g45PalLieu === 'function') ? _g45PalLieu(u, m.d ? 'dom' : 'ext') : (parseInt(u.l, 10) || 1)) : 1;
+      var mi = G ? (+G[Math.min(p, G.length) - 1] || 0) : 0, dt = new Date(m.t), hr = String(dt.getHours()).padStart(2, '0') + ':' + String(dt.getMinutes()).padStart(2, '0');
+      var lo = ''; try { lo = (typeof g45LogoUrlDe === 'function' && u) ? (u.logoUrl || g45LogoUrlDe(u.n) || '') : ''; } catch (e) {}
+      h += '<div style="position:relative;overflow:hidden;border-radius:10px;margin:6px 0;background:#0b1226;border:1px solid #1c2747;">'
+        + (lo ? '<img src="' + esc(lo) + '" alt="" onerror="this.remove()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);height:44px;width:44px;object-fit:contain;z-index:2;pointer-events:none;filter:drop-shadow(0 1px 3px rgba(0,0,0,.6));">' : '')
+        + '<div style="position:relative;background:rgba(5,10,25,.55);padding:8px ' + (lo ? '64px' : '10px') + ' 8px 10px;">'
+        + '<b>' + hr + ' · ' + esc(m.n) + '</b> ' + (m.d ? '🏠' : '✈️') + (m.adv ? ' contre ' + esc(m.adv) : '') + '<br>'
+        + (G ? 'P' + p + ' sur ' + G.length + ' · mise <b>' + eu(mi) + '</b>' : '<span style="color:#c9d3ee;">pas de grille</span>')
+        + '<br><button onclick="g45CkEngager(' + esc(JSON.stringify(m.n)).replace(/"/g, '&quot;') + ',' + (m.d ? 1 : 0) + ',' + esc(JSON.stringify(m.adv || '')).replace(/"/g, '&quot;') + ',' + m.t + ')" style="margin-top:6px;background:#4d7cff;border:0;border-radius:9px;padding:7px 12px;font-weight:800;font-size:14px;color:#fff;cursor:pointer;">✅ Engager</button></div></div>';
+    });
+    h += '</div>';
+    var A = [];
+    en.forEach(function (x) { if (c > 0 && x.reste > c) A.push('🔴 <b>' + esc(x.u.n) + '</b> : ta bankroll (' + eu(c) + ') ne couvre pas la fin de la série (' + eu(x.reste) + ' jusqu\'à P' + x.N + ').'); });
+    S.forEach(function (x) { var b = x.u.ps && x.u.ps.b; if (b && b.cr >= 2 && b.n >= 5 && 100 * b.ok / b.n <= b.pt - 10) A.push('🛑 Bruno time : <b>' + esc(x.u.n) + '</b> a réussi ' + b.cr + ' fois de suite → après ' + b.k + ' réussites, ' + Math.round(100 * b.ok / b.n) + ' % seulement (' + b.pt + ' % d\'habitude).'); });
+    S.forEach(function (x) { if (x.u.ga) A.push('⏳ <b>' + esc(x.u.n) + '</b> : nouvelle grille en attente (P' + x.p + ').'); });
+    try { var at = (typeof window._g45GrilleAtt === 'function') ? window._g45GrilleAtt() : {}; Object.keys(at).forEach(function (k) { A.push('⏳ Grille ' + '⭐'.repeat(+k || 1) + ' en attente (Outils).'); }); } catch (e) {}
+    h += '<div style="' + CARTE + '"><div style="font-size:16px;font-weight:800;margin-bottom:6px;">⚠️ Alertes</div>' + (A.length ? A.map(function (a) { return '<div style="margin-top:3px;">' + a + '</div>'; }).join('') : '<div style="color:#1ed760;">✅ Rien à signaler.</div>') + '</div>';
+    return h;
+  }
+  window._g45CkTableau = tableau;   /* tests */
+  window.g45CkOuvrir = function (btn) { if (typeof showTab === 'function') showTab('t-cockpit', btn || $('g45-ni-ck')); dessiner(); };
+  function dessiner() { var p = $('t-cockpit'); if (p && p.style.display !== 'none') { try { p.innerHTML = tableau(); } catch (e) { p.innerHTML = '<div style="color:#ff5a5a;">Erreur du tableau de bord.</div>'; } } }
+  function poser() {
+    try {
+      var main = document.querySelector('main') || document.body;
+      if (!$('t-cockpit') && main) { var d = document.createElement('div'); d.id = 't-cockpit'; d.className = 'tab'; d.style.display = 'none'; main.appendChild(d); }
+      var nav = document.querySelector('nav.nav'), bp = nav && nav.querySelector('button.ni[onclick*="t-paris"]'), b = $('g45-ni-ck');
+      if (nav && bp && !b) { b = document.createElement('button'); b.id = 'g45-ni-ck'; b.className = 'ni'; b.setAttribute('onclick', 'g45CkOuvrir(this)'); b.innerHTML = '<span>🏁</span>Cockpit'; bp.insertAdjacentElement('afterend', b); }
+      if (b) b.style.display = actif() ? '' : 'none';
+      if (!actif()) { var p = $('t-cockpit'); if (p && p.style.display !== 'none') { var bm = document.querySelector('button.ni[onclick*="t-dash"]'); if (typeof showTab === 'function') showTab('t-dash', bm); } }
+      var pp = $('palier-panel'), t = $('g45-ck-on');
+      if (pp && !t) { t = document.createElement('div'); t.id = 'g45-ck-on'; t.style.cssText = 'margin:0 0 12px;padding:10px 12px;border-radius:10px;background:rgba(77,132,255,.12);border:1px solid #4d84ff;font-size:14px;color:#fff;'; pp.insertAdjacentElement('afterbegin', t); }
+      if (t) { var on = actif(); t.innerHTML = '<label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:800;font-size:15px;"><input type="checkbox" ' + (on ? 'checked' : '') + ' onchange="g45CkOnSet(this.checked)" style="width:22px;height:22px;accent-color:#4d84ff;"> 🏁 Je joue en montante (Cockpit)</label><div style="font-size:13px;color:#c9d3ee;margin-top:4px;">' + (on ? 'Le bouton « 🏁 Cockpit » est dans la barre du bas.' : 'Coche pour afficher « 🏁 Le monde du Cockpit » dans la barre du bas.') + '</div>'; }
+    } catch (e) {}
+  }
+  window._g45CkPoser = poser;
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { setTimeout(poser, 300); }); else setTimeout(poser, 300);
+  setInterval(function () { try { poser(); dessiner(); } catch (e) {} }, 15000);
+})();

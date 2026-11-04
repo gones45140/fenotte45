@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action (il est court exprès). Le détail de tout l'historique est dans HISTORIQUE.md
-(à chercher avec grep, jamais à lire en entier). Mis à jour le 31/10/2026 (version déployée : 20261104g, même app.js sur gones45 et fenotte45).
+(à chercher avec grep, jamais à lire en entier). Mis à jour le 31/10/2026 (version déployée : 20261104h, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -109,6 +109,7 @@ Index des zones (fonction d'entrée → mot à chercher dans HISTORIQUE.md) :
 - IA du match `_g45MultiAI` · articles `_g45ArticleBloc` · santé `g45SanteTester` (gones seulement : `_g45SanteActive`)
 - KHL `g45KhlDetailMatch`, Euroleague / Pro A `_g45ElRendre`, Top 14 / Pro D2 `g45LnrRender` / `_g45Pd2Rendre`, NRL `g45NrlStatsRender`, KBO `_g45KboRendre`, F1 `g45F1Detail` / `_g45F1Off…`
 - Stockage `_G45_CACHE_PREFIXES` / `_G45_CACHE_MORTS` (nouvelle version de clé = ancienne dans MORTS), nettoyage ?menage=1, diagnostic ?diag=1
+- 🏁 Monde du Cockpit (onglet #t-cockpit, bouton barre du bas, interrupteur state.ckOn dans Outils → Montante) `_g45CkTableau` / `g45CkOuvrir` / `_g45CkPoser` ; grilles `_g45Grille(u)` (u.g perso / STRATS), `_g45GrilleDemande`, mise % `_g45PctDessiner`
 - Secours ESPN : 2e adresse site.web (20261101s) puis 🪞 miroir GitHub gones45-archives/miroir (robot miroir.mjs, 20261101u) puis copie IndexedDB g45esp ; relais TheSportsDB (worker host=tsdb), Social (social.js, 2 projets Supabase)
 
 PIÈGES À NE JAMAIS OUBLIER :
@@ -149,6 +150,7 @@ PIÈGES À NE JAMAIS OUBLIER :
 - 💶 Simulation Cockpit des critères : étape B FAITE (20261103i) pour les paris de résultat seuls (vraie cote de fermeture m[12]) ; foot 5 saisons remplies par le robot handicaps.yml « foot » (lancé le 03/11, vérifier qu'il a fini : ml / hc / tot avant 2025-26).
 - 🎯 « A passé la ligne du book » pour les JOUEURS NBA (critères) : VRAIES lignes over / under gardées (fiche.j[id].o types 1 pts, 2 passes, 3 rebonds, 4 3pts, 87-90 combinés ; toute la saison 2026-27 relue le 03/11, 20261103f) → FAIT (20261103h, bouton « 🎯 Ligne du book »). Équipes : handicap (b), total match (d), total équipe (f) FAITS.
 - 🏉 Critères rugby sur les archives FAITS (20261103k : onglet Essais, joueurs essai / points buteur / titulaire, Jouable en Cockpit équipes + joueurs 20 matchs mini) — à confirmer par Antoine à l'écran (Top 14, NRL).
+- 🏁 Monde du Cockpit : ÉTAPE 1 FAITE (20261104h : interrupteur, désactivé par défaut sauf si déjà des paris de montante ; Tableau de bord). Étapes suivantes (maquette d'abord) : onglets Aujourd'hui / Mes grilles / Trouver / Bilans dans le monde, puis RANGER ici les morceaux de Cockpit des autres écrans (paliers Agenda, 💶 critères, P1 auto, Cockpit BET45…) et les cacher quand l'interrupteur est coupé.
 - Cédric : toucher 🤍 sur Portugal. Worker : budget `_lourd` 4 → 2 proposé.
 
 ## 8. Façon de travailler en session cloud
