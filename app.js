@@ -78456,8 +78456,9 @@ window._G45_PAL_COUL = ['#1ed760', '#8fdc4a', '#f5c542', '#ffa53a', '#ff7a3a', '
           + (_att ? '<div style="font-size:13px;color:#f5c542;font-weight:700;margin-top:3px;">⏳ nouvelle grille en attente (P1 ' + String(_att[0]).replace('.', ',') + ', P' + _att.length + ' max)</div><button onclick="g45GrilleForcer(\'' + k + '\')" style="font-size:13px;margin:3px 4px 0 0;padding:3px 8px;border-radius:6px;border:1px solid #2a3a63;background:#0b1226;color:#fff;cursor:pointer;">✅ Appliquer</button><button onclick="g45GrilleAnnuler(\'' + k + '\')" style="font-size:13px;margin-top:3px;padding:3px 8px;border-radius:6px;border:1px solid #2a3a63;background:#0b1226;color:#fff;cursor:pointer;">✖ Annuler</button>' : '') + '</td>';
         STRATS[k].forEach(function (v, j) {
           var cj = C[Math.min(j, C.length - 1)];
-          if (j === 0) h += '<td class="p1" style="background:' + cj + '2e;border:1px solid ' + cj + ';"><input type="number" min="0" step="1" value="' + v + '" onchange="_g45MajP1(\'' + k + '\',this.value)" aria-label="Mise de départ ' + k + ' étoiles"></td>';
-          else h += '<td style="background:' + cj + '2e;border:1px solid ' + cj + '66;">' + v + '</td>';
+          /* 20261104v (« faire ressortir un peu plus les couleurs ») : fond 2e → 5c, bordure pleine */
+          if (j === 0) h += '<td class="p1" style="background:' + cj + '6b;border:2px solid ' + cj + ';"><input type="number" min="0" step="1" value="' + v + '" onchange="_g45MajP1(\'' + k + '\',this.value)" aria-label="Mise de départ ' + k + ' étoiles"></td>';
+          else h += '<td style="background:' + cj + '5c;border:1px solid ' + cj + ';font-weight:800;text-shadow:0 1px 3px rgba(0,0,0,.8);">' + v + '</td>';
         });
         h += '</tr>';
       });
@@ -85976,11 +85977,14 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
     h += '<div style="' + CARTE + '"><div style="font-size:16px;font-weight:800;margin-bottom:6px;">🪜 Mes séries en cours</div>';
     if (!en.length) h += '<div style="color:#1ed760;">✅ Aucune série en cours : toutes tes équipes sont à P1.</div>';
     en.forEach(function (x) {
-      var r = x.N - x.p, col = r <= 1 ? '#ff5a5a' : r <= 3 ? '#ff9f43' : '#8fdc4a', ic = r <= 1 ? '🔴' : r <= 3 ? '🟠' : '🟡';
-      h += '<div style="margin-top:4px;">' + ic + ' <b>' + esc(x.u.n) + '</b> ' + x.lieu + ' · P' + x.p + ' sur ' + x.N + ' · mise <b>' + eu(x.mise) + '</b>' + (r <= 3 ? ' · <span style="color:' + col + ';font-weight:800;">' + (r === 0 ? 'dernier palier' : 'plus que ' + r + ' palier' + (r > 1 ? 's' : '')) + '</span>' : '') + '</div>'
+      /* 20261104v (« le jeu de couleur de la grille doit s'appliquer aux séries ») : pastille + barre = couleur du PALIER (_G45_PAL_COUL, comme la
+         grille des mises) ; l'alerte « plus que N paliers » garde son rouge / orange. */
+      var r = x.N - x.p, PC = window._G45_PAL_COUL || ['#1ed760'], col = PC[Math.min(x.p - 1, PC.length - 1)], wc = r <= 1 ? '#ff5a5a' : '#ff9f43';
+      var ic = '<span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:' + col + ';vertical-align:-2px;box-shadow:0 0 6px ' + col + ';"></span>';
+      h += '<div style="margin-top:4px;">' + ic + ' <b>' + esc(x.u.n) + '</b> ' + x.lieu + ' · P' + x.p + ' sur ' + x.N + ' · mise <b>' + eu(x.mise) + '</b>' + (r <= 3 ? ' · <span style="color:' + wc + ';font-weight:800;">' + (r === 0 ? 'dernier palier' : 'plus que ' + r + ' palier' + (r > 1 ? 's' : '')) + '</span>' : '') + '</div>'
         + '<div style="height:8px;border-radius:6px;background:#1c2747;overflow:hidden;margin:3px 0;"><div style="height:8px;width:' + Math.round(100 * x.p / x.N) + '%;background:' + col + ';"></div></div>';
     });
-    if (p1.length) h += '<div style="margin-top:6px;">🟢 ' + p1.slice(0, 12).map(function (x) { return '<b>' + esc(x.u.n) + '</b>'; }).join(', ') + (p1.length > 12 ? ' et ' + (p1.length - 12) + ' autres' : '') + ' · P1</div>';
+    if (p1.length) h += '<div style="margin-top:6px;"><span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:' + ((window._G45_PAL_COUL || ['#1ed760'])[0]) + ';vertical-align:-2px;"></span> ' + p1.slice(0, 12).map(function (x) { return '<b>' + esc(x.u.n) + '</b>'; }).join(', ') + (p1.length > 12 ? ' et ' + (p1.length - 12) + ' autres' : '') + ' · P1</div>';
     h += '</div>';
     var ag = null; try { ag = window._g45CkAg || JSON.parse(localStorage.getItem('g45ck_ag') || 'null'); } catch (e) {}
     var now = Date.now(), M = ((ag && ag.L) || []).filter(function (m) { return m.t > now - 3 * 3600000 && m.t < now + 24 * 3600000; }).sort(function (a, b) { return a.t - b.t; });
