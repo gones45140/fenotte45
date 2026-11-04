@@ -86109,6 +86109,9 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
     } catch (e) {}
   }
   window._g45CkPoser = poser;
+  /* 20261104s (« Montante apparaît au départ et disparaît 10 secondes après ») : l'onglet était caché par poser() (toutes les 15 s) → règle CSS
+     posée DÈS le chargement : onglet 🚀 Montante d'Outils jamais affiché. */
+  try { if (!document.getElementById('g45-ck-css0')) { var c0 = document.createElement('style'); c0.id = 'g45-ck-css0'; c0.textContent = '#g45-outils-nav [data-sec="mont"]{display:none!important}'; (document.head || document.documentElement).appendChild(c0); } } catch (e) {}
   /* 20261104n (capture : Outils → Montante VIDE) : Outils range chaque bloc d'après le titre .sec du dessus ; le titre « Mises par palier » parti dans
      🪜 Mes grilles, la case #g45-ck-on tombait dans la section d'avant → classée de force dans 🚀 Montante, puis section redessinée. */
   try { if (typeof _g45OutilsClasser === 'function' && !_g45OutilsClasser._ck) { var _oc0 = _g45OutilsClasser; _g45OutilsClasser = window._g45OutilsClasser = function (el, t) { if (el && el.id === 'g45-ck-on') return 'eq'; return _oc0.apply(this, arguments); };   /* 20261104o : dans ➕ Équipes (« peut-être le mettre à la création des équipes ») */ _g45OutilsClasser._ck = 1; } } catch (e) {}
