@@ -78605,6 +78605,12 @@ window._G45_PAL_COUL = ['#1ed760', '#8fdc4a', '#f5c542', '#ffa53a', '#ff7a3a', '
       row.classList.add('g45ul');
       if (u.color) row.style.setProperty('--g45ulc', u.color);
       try { var bt0 = b.parentNode; if (bt0 && bt0 !== row) bt0.classList.add('g45ul-bt'); } catch (e) {}   /* 20261105l */
+      /* 20261106i : « 📊 Critères » de la carte (Cockpit → 📊 Loi des séries → 🔎 Critères), équipes seulement, Cockpit allumé */
+      try { var bt1 = b.parentNode; if (bt1 && bt1 !== row && u.type !== 'joueur' && u.type !== 'competition' && typeof window.g45LoiCrCarte === 'function' && !(typeof _g45CkCoupe === 'function' && _g45CkCoupe())) {
+        var cb1 = document.createElement('button'); cb1.type = 'button'; cb1.className = 'g45ul-cr'; cb1.textContent = '📊 Critères';
+        cb1.style.cssText = 'padding:6px 10px;border-radius:8px;border:1px solid #6d9dff;background:#2a4a9a;color:#fff;font-size:14px;font-weight:700;cursor:pointer;margin-right:auto;';
+        cb1.onclick = function (ev) { ev.stopPropagation(); window.g45LoiCrCarte(u.n); };
+        bt1.insertBefore(cb1, bt1.firstChild); } } catch (e) {}
       var img = fond(u);
       if (img) {
         /* 20261105l (capture téléphone : « baisser le bouton Modifier et mettre la photo ou le logo au-dessus, bien apparent » → maquette → « oui ») :
@@ -86412,7 +86418,7 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
   var LOI = { d: null, t: 0, f: 'tous', enCours: false, v: 'pep' };   /* v (20261105t) : 'pep' pépites du jour · 'ind' Séries individuelles · 'eq' Séries équipes */
   function loiSous() {
     var b = function (v, txt) { var on = LOI.v === v; return '<button onclick="g45LoiVue(\'' + v + '\')" style="' + BTN + 'font-size:15px;' + (on ? 'background:#2a4a9a;border-color:#6d9dff;' : '') + '">' + txt + '</button>'; };
-    return '<div style="display:flex;flex-wrap:wrap;margin-bottom:6px;">' + b('pep', '🔥 Pépites du jour') + b('ind', '🎯 Séries individuelles') + b('eq', '🏁 Séries équipes') + '</div>';
+    return '<div style="display:flex;flex-wrap:wrap;margin-bottom:6px;">' + b('pep', '🔥 Pépites du jour') + b('ind', '🎯 Séries individuelles') + b('eq', '🏁 Séries équipes') + b('cr', '🔎 Critères') + '</div>';   /* 20261106i : + 🔎 Critères */
   }
   var LOI_COUL = { 'fra.1': '#1b3d8f', 'fra.2': '#e4572e', 'eng.1': '#5b2a86', 'esp.1': '#e8392b', 'ita.1': '#0a7cc2', 'ger.1': '#d20515', 'ned.1': '#ef7d00', 'por.1': '#00a19a',
     'bra.1': '#1f9d48', 'arg.1': '#4d9bd6', 'uefa.champions': '#16307a', 'uefa.europa': '#f07d00', 'uefa.europa.conf': '#1fa34a',
@@ -86428,8 +86434,8 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
     LOI.enCours = true;
     fetch('https://raw.githubusercontent.com/gones45140/gones45-archives/main/loi/loi_series.json?h=' + Math.floor(Date.now() / 18e5), { cache: 'no-store' })
       .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (j) { LOI.enCours = false; if (j && j.L) { LOI.d = j; LOI.t = Date.now(); try { localStorage.setItem('g45loi1', JSON.stringify(j)); } catch (e) {} } else LOI.t = Date.now(); if (TAB === 'loi') loiDessiner(); })
-      .catch(function () { LOI.enCours = false; LOI.t = Date.now(); if (TAB === 'loi') loiDessiner(); });
+      .then(function (j) { LOI.enCours = false; if (j && j.L) { LOI.d = j; LOI.t = Date.now(); try { localStorage.setItem('g45loi1', JSON.stringify(j)); } catch (e) {} } else LOI.t = Date.now(); if (TAB === 'loi' && LOI.v !== 'cr') loiDessiner(); })
+      .catch(function () { LOI.enCours = false; LOI.t = Date.now(); if (TAB === 'loi' && LOI.v !== 'cr') loiDessiner(); });
   }
   function loiHtml() {
     var D = LOI.d, h = '<div style="' + CARTE + '"><div style="font-size:17px;font-weight:800;">📊 Loi des séries</div>'
@@ -86478,10 +86484,10 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
     h += '</div>';
     return h + '<div style="font-size:13px;color:#c9d3ee;padding:0 4px 10px;">Paris regardés : ⚽ victoire, victoire ou nul, +1,5 / +2,5 / −3,5 buts, les deux marquent, l\'équipe marque · 🏒 vainqueur, victoire 60 min, +5,5 / −6,5 buts · 🏀🏈⚾🏉 vainqueur. Saison régulière (sports US). Pire série de 3 à 7.</div>';
   }
-  function loiDessiner() { var z = $('ck-loi'); if (z && TAB === 'loi') z.innerHTML = loiSous() + (LOI.v === 'pep' ? loiHtml() : ''); }
+  function loiDessiner() { var z = $('ck-loi'); if (z && TAB === 'loi') { z.innerHTML = loiSous() + (LOI.v === 'pep' ? loiHtml() : LOI.v === 'cr' ? loiCrHtml() : ''); if (LOI.v === 'cr') { loiCrListe(); loiCrBox(); } } }
   /* 20261105t (« Loi des séries et Trouver en 1, possible ou pas » → « oui ») : un seul onglet, 3 boutons ; Séries individuelles / équipes =
      l'ancien 🔍 Trouver (#t-compet déplacé dans #ck-tr, sous les boutons). */
-  window.g45LoiVue = function (v) { LOI.v = (v === 'ind' || v === 'eq') ? v : 'pep'; if (LOI.v !== 'pep') { try { _g45CompetVue = LOI.v === 'eq' ? 'seq' : 'buteurs'; } catch (e) {} } window.g45CkOnglet('loi'); };
+  window.g45LoiVue = function (v) { LOI.v = (v === 'ind' || v === 'eq' || v === 'cr') ? v : 'pep'; if (LOI.v === 'ind' || LOI.v === 'eq') { try { _g45CompetVue = LOI.v === 'eq' ? 'seq' : 'buteurs'; } catch (e) {} } window.g45CkOnglet('loi'); };
   window.g45LoiFiltre = function (f) { LOI.f = f || 'tous'; loiDessiner(); };
   window.g45LoiCreer = function (eid, id, k, lieu) {
     var x = ((LOI.d && LOI.d.L) || []).filter(function (y) { return y.eid === eid && y.id === id && y.k === k && y.lieu === lieu; })[0]; if (!x || typeof state === 'undefined') return;
@@ -86494,12 +86500,78 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
     try { save(); } catch (e) {} try { if (typeof _g45PushBetsGithub === 'function') _g45PushBetsGithub(true); } catch (e) {} try { if (typeof render === 'function') render(); } catch (e) {}
     loiDessiner();
   };
+  /* ═══ 20261106i — 🔎 CRITÈRES DANS LE COCKPIT (capture des critères d'Edmonton : « ça a clairement sa place dans le Cockpit ; par contre si je
+     veux Edmonton pour regarder ce que ça donne je suis obligé d'aller dans Compétitions / sport / équipe… parce que pas dans mon mur » → « oui ») :
+     4e bouton de 📊 Loi des séries. Recherche dans TOUTES les équipes des championnats archivés (index loi/equipes.json écrit chaque matin par le
+     robot loi-series : [sp, lg, ligue, id, nom ESPN complet, logo]) ; sans recherche = tes cartes d'abord. Choix → le même bloc « 📊 Tes critères »
+     (_g45CrHtml : foot = nom + championnat imposé, autres sports = { sp, lg, id }). Bouton « 📊 Critères » aussi sur chaque carte de 🃏 Mes cartes. ═══ */
+  LOI.ix = null; LOI.ixT = 0; LOI.q = ''; LOI.cr = null;
+  var loiNz = function (t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, ''); };
+  function loiIxCharger() {
+    if (LOI.ixEnCours || (LOI.ix && Date.now() - LOI.ixT < 12 * 3600e3)) return;
+    if (!LOI.ix) { try { var c0 = JSON.parse(localStorage.getItem('g45loiEq1') || 'null'); if (c0 && c0.L) { LOI.ix = c0.L; LOI.ixT = c0.t || 0; if (Date.now() - LOI.ixT < 12 * 3600e3) return; } } catch (e) {} }
+    LOI.ixEnCours = true;
+    fetch('https://raw.githubusercontent.com/gones45140/gones45-archives/main/loi/equipes.json?h=' + Math.floor(Date.now() / 36e5), { cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) { LOI.ixEnCours = false; if (j && j.L) { LOI.ix = j.L; LOI.ixT = Date.now(); try { localStorage.setItem('g45loiEq1', JSON.stringify({ t: LOI.ixT, L: j.L })); } catch (e) {} } if (TAB === 'loi' && LOI.v === 'cr') loiCrListe(); })
+      .catch(function () { LOI.ixEnCours = false; if (TAB === 'loi' && LOI.v === 'cr') loiCrListe(); });
+  }
+  /* carte du mur → ligne de l'index (même nom, ou nom court contenu : « PSG » / « Paris Saint-Germain » reste à part, on garde le nom de la carte) */
+  function loiIxDe(nom) {
+    var n = loiNz(nom); if (!n || !LOI.ix) return null;
+    return LOI.ix.filter(function (x) { return loiNz(x[4]) === n; })[0] || LOI.ix.filter(function (x) { return typeof _g45BandMeme === 'function' && _g45BandMeme(nom, x[4]); })[0] || null;
+  }
+  function loiCrHtml() {
+    loiIxCharger();
+    return '<div style="' + CARTE + '"><div style="font-size:17px;font-weight:800;">🔎 Critères d\'une équipe</div>'
+      + '<div style="font-size:13px;color:#c9d3ee;">Toutes les équipes des championnats gardés, même hors de ton mur. Tape un nom, puis touche l\'équipe.</div>'
+      + '<input id="g45-loi-q" type="search" autocomplete="off" placeholder="ex. Edmonton, Lyon, Celtics…" value="' + esc(LOI.q) + '" oninput="g45LoiCrQ(this.value)" style="margin-top:8px;width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid #2a3a63;background:#0b1226;color:#fff;font-size:16px;">'
+      + '<div id="g45-loi-crl" style="margin-top:8px;"></div></div><div id="g45-loi-crbox"></div>';
+  }
+  function loiCrBtn(nom, sp, lg, ligue, id, logo, i) {
+    return '<button onclick="g45LoiCrChoix(' + i + ')" style="' + BTN + 'margin-top:6px;display:inline-flex;align-items:center;gap:6px;">'
+      + (/^https:\/\//.test(logo || '') ? '<img src="' + esc(logo) + '" alt="" loading="lazy" onerror="this.remove()" style="height:22px;width:22px;object-fit:contain;">' : '')
+      + (LOI_SP[sp] || '🃏') + ' ' + esc(nom) + (ligue ? ' <span style="font-size:13px;color:#c9d3ee;">· ' + esc(ligue) + '</span>' : '') + '</button>';
+  }
+  function loiCrListe() {
+    var z = $('g45-loi-crl'); if (!z) return;
+    var q = loiNz(LOI.q), R = [];
+    if (!q) {
+      ((typeof state !== 'undefined' && state.u) || []).forEach(function (u) { if (u && u.n && u.type !== 'joueur' && u.type !== 'competition') { var x = loiIxDe(u.n); R.push({ nom: u.n, x: x }); } });
+      LOI.res = R;
+      z.innerHTML = R.length ? '<div style="font-size:14px;color:#ffd34d;">🃏 Tes cartes</div>' + R.map(function (r, i) { var x = r.x || []; return loiCrBtn(r.nom, x[0], x[1], x[2], x[3], x[5], i); }).join('')
+        : '<div style="font-size:14px;color:#c9d3ee;">Tape le nom d\'une équipe.</div>';
+      if (!LOI.ix) z.insertAdjacentHTML('beforeend', '<div style="font-size:13px;color:#c9d3ee;margin-top:6px;">' + (LOI.ixEnCours ? '⏳ Lecture de la liste des équipes…' : '') + '</div>');
+      return;
+    }
+    if (!LOI.ix) { z.innerHTML = '<div style="font-size:14px;">' + (LOI.ixEnCours ? '⏳ Lecture de la liste des équipes…' : '⚠️ Liste des équipes indisponible pour l\'instant.') + '</div>'; return; }
+    LOI.ix.forEach(function (x) { var n = loiNz(x[4]); if (n.indexOf(q) >= 0) R.push({ nom: x[4], x: x, d: n.indexOf(q) === 0 ? 0 : 1 }); });
+    R.sort(function (a, b) { return a.d - b.d; }); R = R.slice(0, 15); LOI.res = R;
+    z.innerHTML = R.length ? R.map(function (r, i) { var x = r.x; return loiCrBtn(r.nom, x[0], x[1], x[2], x[3], x[5], i); }).join('') : '<div style="font-size:14px;">Aucune équipe trouvée.</div>';
+  }
+  function loiCrBox() {
+    var z = $('g45-loi-crbox'); if (!z) return;
+    var C = LOI.cr; if (!C || typeof window._g45CrHtml !== 'function') { z.innerHTML = ''; return; }
+    var S0 = window._g45CrS; if (S0) { S0.ov = S0.ov || {}; S0.ov[C.nom] = 1; }
+    try { z.innerHTML = window._g45CrHtml(C.nom, C.ctx, C.lgF); } catch (e) { z.innerHTML = ''; }
+  }
+  function loiCrPoser(nom, x) {
+    /* foot : critères retrouvés par le NOM (espnResolveTeam) dans le championnat imposé ; autres sports : par l'identifiant ESPN */
+    if (x && x[0] !== 'soccer') LOI.cr = { nom: nom, ctx: { sp: x[0], lg: x[1], id: String(x[3]) }, lgF: null };
+    else LOI.cr = { nom: (x && x[4]) || nom, ctx: null, lgF: (x && x[1]) || null };
+  }
+  window.g45LoiCrQ = function (v) { LOI.q = String(v || '').slice(0, 40); loiCrListe(); };
+  window.g45LoiCrChoix = function (i) { var r = (LOI.res || [])[i]; if (!r) return; loiCrPoser(r.nom, r.x); loiCrBox(); try { var b = $('g45-loi-crbox'); if (b && b.scrollIntoView) b.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e) {} };
+  window.g45LoiCrCarte = function (nom) {   /* bouton « 📊 Critères » d'une carte de 🃏 Mes cartes */
+    loiIxCharger(); loiCrPoser(nom, loiIxDe(nom)); LOI.q = ''; LOI.v = 'cr'; window.g45CkOnglet('loi');
+  };
+  window._g45LoiCr = { liste: loiCrListe, ixDe: loiIxDe, poser: loiCrPoser };   /* tests */
   window._g45LoiT = { html: loiHtml, LOI: LOI, carte: loiCarte };   /* tests */
   window.g45CkOnglet = function (k) {
-    if (k === 'tr') { k = 'loi'; if (LOI.v === 'pep') { LOI.v = 'ind'; try { _g45CompetVue = 'buteurs'; } catch (e) {} } }   /* 20261105t : 🔍 Trouver → Loi des séries */
+    if (k === 'tr') { k = 'loi'; if (LOI.v === 'pep' || LOI.v === 'cr') { LOI.v = 'ind'; try { _g45CompetVue = 'buteurs'; } catch (e) {} } }   /* 20261105t : 🔍 Trouver → Loi des séries */
     TAB = ['eng', 'bil', 'arc', 'cb', 'gr', 'ag', 'mc', 'loi'].indexOf(k) >= 0 ? k : 'tdb'; squelette();
     var kl = $('ck-loi'); if (kl) { kl.style.display = TAB === 'loi' ? '' : 'none'; if (TAB === 'loi') { loiDessiner(); loiCharger(false); } }   /* 20261105r */
-    var kt = $('ck-tr'), cpO = TAB === 'loi' && LOI.v !== 'pep'; if (kt) { kt.style.display = cpO ? '' : 'none'; if (cpO) cpPrendre(); else cpRendre(); }   /* 20261105s-t */
+    var kt = $('ck-tr'), cpO = TAB === 'loi' && (LOI.v === 'ind' || LOI.v === 'eq');   /* 20261106i : 'cr' n'utilise pas #t-compet */ if (kt) { kt.style.display = cpO ? '' : 'none'; if (cpO) cpPrendre(); else cpRendre(); }   /* 20261105s-t */
     var km = $('ck-mc'); if (km) { km.style.display = TAB === 'mc' ? '' : 'none'; if (TAB === 'mc') ulPrendre(); else ulRendre(); }
     var t = $('ck-tdb'), e = $('ck-eng'), cb = $('ck-bil'), kb = $('ck-cb'), kg = $('ck-gr'), ka = $('ck-ag');
     if (ka) { ka.style.display = TAB === 'ag' ? '' : 'none'; if (TAB === 'ag') { var tc2 = $('t-cal'); if (tc2) tc2.style.display = 'block'; try { if (typeof loadCalendrier === 'function') loadCalendrier(); } catch (x) {} } }
