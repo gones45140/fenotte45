@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action (il est court exprès). Le détail de tout l'historique est dans HISTORIQUE.md
-(à chercher avec grep, jamais à lire en entier). Mis à jour le 31/10/2026 (version déployée : 20261106g, même app.js sur gones45 et fenotte45).
+(à chercher avec grep, jamais à lire en entier). Mis à jour le 31/10/2026 (version déployée : 20261106h, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -152,7 +152,7 @@ PIÈGES À NE JAMAIS OUBLIER :
 - 🎯 « A passé la ligne du book » pour les JOUEURS NBA (critères) : VRAIES lignes over / under gardées (fiche.j[id].o types 1 pts, 2 passes, 3 rebonds, 4 3pts, 87-90 combinés ; toute la saison 2026-27 relue le 03/11, 20261103f) → FAIT (20261103h, bouton « 🎯 Ligne du book »). Équipes : handicap (b), total match (d), total équipe (f) FAITS.
 - 🏉 Critères rugby sur les archives FAITS (20261103k : onglet Essais, joueurs essai / points buteur / titulaire, Jouable en Cockpit équipes + joueurs 20 matchs mini) — à confirmer par Antoine à l'écran (Top 14, NRL).
 - 🏁 Monde du Cockpit : ÉTAPE 1 FAITE (20261104h : interrupteur, désactivé par défaut sauf si déjà des paris de montante ; Tableau de bord) ; 20261104i : formulaire de montante (#sub-strat), Bilan Cockpit et Archive Cockpit DÉPLACÉS dans le monde (onglets 🚀 Engager / 📈 Bilan / 🕒 Archive) ; 20261104k : Cockpit BET45 aussi (onglet 📊 ; Tendances le garde en « 🏁 Cockpit d'Antoine » pour qui n'a PAS le Cockpit = vitrine, futur coin abonnement) ; 20261104l : Mises par palier → onglet 🪜 Mes grilles (la case « Je joue en montante » reste dans Outils) ; critères : 💶, 📋 et « Jouable en Cockpit ? » (aussi F1) cachés si le Cockpit est coupé ; 20261104m : AGENDA (#t-cal) déplacé dans le monde (onglet 📅), bouton Agenda de la barre caché pour tous (Cockpit coupé → showTab('t-cal') ouvre ⭐ Suivies) ; 20261104p : onglet 🃏 Mes cartes (#ulist + « Calculer mes séries » déplacés le temps de l'onglet ; séries cachées dans Outils → Équipes). FAIT au 04/11 (20261104q → z) : onglets dans l'ordre d'Antoine (Tableau de bord, Mes cartes, Mes grilles, Engager, Bilan, Archive, Agenda, Cockpit BET45, 🔍 Trouver), 🏳️ Abandonner une série, Séries individuelles / Séries équipes réservées au Cockpit, PDF des cotes gardées réservé à gones. Compte test « ami » d'Antoine : badgone36 (bet45, Cockpit coupé). RESTE à vérifier : cartes du MUR (paliers / pire série visibles sans Cockpit ?). CLV, critères, % de bankroll, Bilan global : laissés hors du Cockpit (servent à tous).
-- ⚖️ Méthodes (06/11) : simulation des critères en 🚀 / 🐚 Fibonacci / 🪜 D'Alembert / 📏 fixe FAITE (20261106f) ; Engager par méthode FAIT (20261106g : onglets, paliers u.lm à part, paris méthode = paris simples isS faux) ; RESTE : filtre par méthode dans Bilan / Archive.
+- ⚖️ Méthodes (06/11) : simulation des critères en 🚀 / 🐚 Fibonacci / 🪜 D'Alembert / 📏 fixe FAITE (20261106f) ; Engager par méthode FAIT (20261106g : onglets, paliers u.lm à part, paris méthode = paris simples isS faux) ; filtre Bilan / Archive FAIT (20261106h).
 - Cédric : toucher 🤍 sur Portugal. Worker : budget `_lourd` 4 → 2 proposé.
 
 ## 8. Façon de travailler en session cloud

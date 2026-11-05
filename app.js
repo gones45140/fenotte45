@@ -1,5 +1,8 @@
 /* © 2026 Antoine T. — BET45 / GONES45 (bet45.fr). Tous droits réservés.
    Copie, reproduction ou réutilisation de tout ou partie de ce code interdites sans autorisation écrite. Voir LICENSE. */
+/* 20261106h (« fais le filtre Bilan / Archive ») : un pari compte dans le Bilan / l'Archive du Cockpit selon la méthode choisie (window._g45BilMeth) :
+   'mont' (défaut) = montante Cockpit (isS) · 'fib' / 'dal' = paris Fibonacci / D'Alembert (h.meth) · 'tout' = les trois. */
+function _g45EstCk(h){ if(!h) return false; var m=(typeof window!=='undefined'&&window._g45BilMeth)||'mont'; if(m==='tout') return !!h.isS||!!h.meth; if(m==='mont') return !!h.isS; return h.meth===m; }
 /* 20261105a : vrai si le monde du Cockpit est COUPÉ (critères : on cache paliers / mise max / ⭐). */
 function _g45CkCoupe() { try { return typeof window._g45CkActif === 'function' && !window._g45CkActif(); } catch (e) { return false; } }
 /* ═══ 20261016q — NETTOYAGE D'URGENCE ?menage=1 (gones figé sur le téléphone d'Antoine, navigation privée OK = donnée locale en cause) ═══
@@ -2439,8 +2442,8 @@ function _hMonthKey(h){
 }
 function filteredA(){
   var base=state.a;
-  if(bilanMode==='cockpit')base=base.filter(function(h){return h.isS;});
-  else if(bilanMode==='simple')base=base.filter(function(h){return !h.isS&&!h.isFlash&&!h.isCombi;});
+  if(bilanMode==='cockpit')base=base.filter(function(h){return _g45EstCk(h);});   /* 20261106h : filtre par méthode */
+  else if(bilanMode==='simple')base=base.filter(function(h){return !h.isS&&!h.isFlash&&!h.isCombi&&!h.meth;});
   else if(bilanMode==='combi')base=base.filter(function(h){return h.isCombi;});
   else if(bilanMode==='flash')base=base.filter(function(h){return h.isFlash;});
   var filtered = bilanSport==='ALL'?base:base.filter(function(h){return h.sport===bilanSport;});
@@ -3608,8 +3611,8 @@ function renderBilanMois(){
   if(lbl)lbl.textContent=_bilanMoisYear;
   var paris=state.a.filter(function(h){
     var mode=typeof bilanMode!=='undefined'?bilanMode:'global';
-    if(mode==='cockpit')return h.isS;
-    if(mode==='simple')return !h.isS&&!h.isFlash;
+    if(mode==='cockpit')return _g45EstCk(h);
+    if(mode==='simple')return !h.isS&&!h.isFlash&&!h.meth;
     if(mode==='flash')return h.isFlash;
     return true;
   });
@@ -3687,7 +3690,7 @@ window.setArchSport = setArchSport;
 function renderArchive(){
   // Source = archives (réglés) + paris EN COURS (state.h) injectés comme isPending
   var _arSrc = (state.a||[]).concat((state.h||[]).map(function(_h){ return Object.assign({}, _h, {isPending:true}); }));
-  if (window._g45ArchCk) _arSrc = _arSrc.filter(function(_x){ return _x && _x.isS; });   /* 20261104j : 🕒 Archive du monde du Cockpit = paris de montante seulement */
+  if (window._g45ArchCk) _arSrc = _arSrc.filter(function(_x){ return _x && _g45EstCk(_x); });   /* 20261104j : 🕒 Archive du monde du Cockpit = paris de montante seulement */
   /* ═══ FILTRE PAR SPORT (10/09) ═══
      Le conteneur `arch-sport-filter` existait dans la page depuis le debut mais
      AUCUN code ne le remplissait : l'archive n'avait donc que les filtres par
@@ -11215,8 +11218,8 @@ function _hMonthKey(h){
 }
 function filteredA(){
   var base=state.a;
-  if(bilanMode==='cockpit')base=base.filter(function(h){return h.isS;});
-  else if(bilanMode==='simple')base=base.filter(function(h){return !h.isS&&!h.isFlash&&!h.isCombi;});
+  if(bilanMode==='cockpit')base=base.filter(function(h){return _g45EstCk(h);});   /* 20261106h : filtre par méthode */
+  else if(bilanMode==='simple')base=base.filter(function(h){return !h.isS&&!h.isFlash&&!h.isCombi&&!h.meth;});
   else if(bilanMode==='combi')base=base.filter(function(h){return h.isCombi;});
   else if(bilanMode==='flash')base=base.filter(function(h){return h.isFlash;});
   var filtered = bilanSport==='ALL'?base:base.filter(function(h){return h.sport===bilanSport;});
@@ -12035,8 +12038,8 @@ function renderBilanMois(){
   if(lbl)lbl.textContent=_bilanMoisYear;
   var paris=state.a.filter(function(h){
     var mode=typeof bilanMode!=='undefined'?bilanMode:'global';
-    if(mode==='cockpit')return h.isS;
-    if(mode==='simple')return !h.isS&&!h.isFlash;
+    if(mode==='cockpit')return _g45EstCk(h);
+    if(mode==='simple')return !h.isS&&!h.isFlash&&!h.meth;
     if(mode==='flash')return h.isFlash;
     return true;
   });
@@ -12103,7 +12106,7 @@ var _archFilter = 'all';
 function renderArchive(){
   // Source = archives (réglés) + paris EN COURS (state.h) injectés comme isPending
   var _arSrc = (state.a||[]).concat((state.h||[]).map(function(_h){ return Object.assign({}, _h, {isPending:true}); }));
-  if (window._g45ArchCk) _arSrc = _arSrc.filter(function(_x){ return _x && _x.isS; });   /* 20261104j : 🕒 Archive du monde du Cockpit = paris de montante seulement */
+  if (window._g45ArchCk) _arSrc = _arSrc.filter(function(_x){ return _x && _g45EstCk(_x); });   /* 20261104j : 🕒 Archive du monde du Cockpit = paris de montante seulement */
   /* ═══ FILTRE PAR SPORT (10/09) ═══
      Le conteneur `arch-sport-filter` existait dans la page depuis le debut mais
      AUCUN code ne le remplissait : l'archive n'avait donc que les filtres par
@@ -86507,6 +86510,8 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
       try { kb.innerHTML = (typeof _g45AccesPremium === 'function' && _g45AccesPremium() !== true) ? '<div style="' + CARTE + '">🔒 Cockpit BET45 : réservé premium.</div>' : window._g45CkHtml(); } catch (x) { kb.innerHTML = ''; } } else kb.innerHTML = ''; }
     if (t) t.style.display = TAB === 'tdb' ? '' : 'none'; if (e) e.style.display = TAB === 'eng' ? '' : 'none'; if (cb) cb.style.display = (TAB === 'bil' || TAB === 'arc') ? '' : 'none';
     if (TAB === 'bil' || TAB === 'arc') {
+      try { var cbz = $('ck-bil'), bmz = $('g45-bil-meth'); if (cbz && !bmz) { bmz = document.createElement('div'); bmz.id = 'g45-bil-meth'; bmz.style.cssText = 'margin:0 0 8px;display:flex;flex-wrap:wrap;gap:6px;'; cbz.insertBefore(bmz, cbz.firstChild); }
+        if (bmz) { var mB = window._g45BilMeth || 'mont'; bmz.innerHTML = [['mont', '🚀 Cockpit'], ['fib', '🐚 Fibonacci'], ['dal', '🪜 D\'Alembert'], ['tout', 'Toutes']].map(function (x) { var on = x[0] === mB; return '<button onclick="g45BilMeth(\'' + x[0] + '\')" style="' + BTN + (on ? 'background:#2a4a9a;border-color:#6d9dff;' : '') + '">' + x[1] + '</button>'; }).join(''); } } catch (x) {}   /* 20261106h : filtre par méthode */
       if (bilPrendre()) { window._g45ArchCk = TAB === 'arc';
         try { if (TAB === 'arc') showBilanTab('arch', $('btab-arch')); else showBilanTab('cockpit', $('btab-cockpit')); } catch (x) {}
         try { if (TAB === 'bil' && typeof renderGlobalCharts === 'function') setTimeout(function () { try { renderGlobalCharts(); } catch (y) {} }, 50); } catch (x) {} }
@@ -86541,6 +86546,7 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
       + '<div style="font-size:14px;color:#c9d3ee;text-align:center;padding-bottom:10px;">Si tu ne joues pas en montante, rien ne change pour toi.</div>';
   }
   window.g45CkActiver = function () { try { window.g45CkOnSet(true); } catch (e) {} window.g45CkOuvrir(null, 'tdb'); };
+  window.g45BilMeth = function (k) { window._g45BilMeth = ({ mont: 1, fib: 1, dal: 1, tout: 1 })[k] ? k : 'mont'; window.g45CkOnglet(TAB); };   /* 20261106h */
   window.g45CkOuvrir = function (btn, k) { squelette(); if (typeof showTab === 'function') showTab('t-cockpit', btn || $('g45-ni-ck')); if (!actif()) { vitrine(); return; } var v = $('ck-vit'); if (v) v.style.display = 'none'; var ht0 = $('ck-tabs'); if (ht0) ht0.style.display = ''; window.g45CkOnglet(k || TAB); };
   function dessiner() { var p = $('t-cockpit'); if (p && p.style.display !== 'none' && TAB === 'tdb') { squelette(); var t = $('ck-tdb'); try { if (t) t.innerHTML = tableau(); var ht = $('ck-tabs'); if (ht && !ht.innerHTML) ht.innerHTML = entete(); } catch (e) { if (t) t.innerHTML = '<div style="color:#ff5a5a;">Erreur du tableau de bord.</div>'; } } }
   function poser() {
