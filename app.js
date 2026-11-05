@@ -64487,19 +64487,27 @@ async function _g45KhlVueIndividuel(body) {
   if (!tous.length) { body.innerHTML = '<div style="color:#ff6b6b;font-size:11.5px;">\u274c Statistiques joueurs KHL indisponibles pour le moment.</div>'; return; }
   var cat = G45_KHL_IND_CATS.filter(function (c) { return c[0] === _g45KhlIndCat; })[0] || G45_KHL_IND_CATS[0];
   var estGardien = cat[2] === 'g';
-  var tuiles = function (grp) {
-    return '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:6px;margin:6px 0 12px;">'
-      + G45_KHL_IND_CATS.filter(function (c) { return c[2] === grp; }).map(function (c) {
-        var on = c[0] === cat[0];
-        return '<button onclick="g45KhlInd(\'' + c[0] + '\',null)" style="padding:8px;border-radius:8px;cursor:pointer;font-size:11.5px;font-weight:700;'
-          + (on ? 'background:#2563eb;border:1px solid #3b82f6;color:#fff;' : 'background:#1a2235;border:1px solid rgba(255,255,255,.12);color:#9fb0c7;') + '">' + c[1] + '</button>';
-      }).join('') + '</div>';
-  };
-  var zones = [['all', 'Toute la KHL'], ['Ouest', 'Ouest'], ['Est', 'Est'], ['mes', 'Mes \u00e9quipes']];
+  /* ═══ 20261106o — 🏅 RELOOKING KHL → INDIVIDUEL (capture d'Antoine : « il y a du travail niveau lifting » → maquette khlind « oui maquette »
+     → « j'aime pas trop ce genre d'écriture, ça fait brut » → v2 pastilles « c'est mieux ») : 2 rangées de boutons (🏒 Attaquants : 5 principaux
+     + « Plus… » ; 🧤 Gardiens), zone en menu, PODIUM des 3 premiers (photo, logo du club derrière, or / argent / bronze), puis une ligne par joueur :
+     chiffres en PASTILLES nommées (matchs, buts, passes, +/−) et total dans une case dorée. Texte 14 px et plus (Antoine malvoyant). ═══ */
+  var PRINC = ['pts', 'g', 'a', 'pm', 'dpts'], enPlus = cat[2] === 'j' && PRINC.indexOf(cat[0]) < 0;
+  var plusOuv = window._g45KhlIndPlusOuv || enPlus;
+  var bt = function (c) { var on = c[0] === cat[0];
+    return '<button onclick="g45KhlInd(\'' + c[0] + '\',null)" style="padding:9px 14px;border-radius:18px;cursor:pointer;font-size:15px;font-weight:700;color:#fff;margin:0 6px 6px 0;'
+      + (on ? 'background:#2f6bff;border:1px solid #6d9dff;' : 'background:#141c33;border:1px solid #2a3a63;') + '">' + (on ? '✓ ' : '') + c[1] + '</button>'; };
+  var lab = function (t) { return '<span style="display:inline-block;min-width:110px;font-size:15px;font-weight:700;color:#c9d3ee;margin:0 6px 6px 0;">' + t + '</span>'; };
+  var zones = [['all', 'Toute la KHL'], ['Ouest', 'Ouest'], ['Est', 'Est'], ['mes', 'Mes équipes']];
   var mesIds = _g45KhlMesEquipesIds();
-  var h = '<div style="font-size:10.5px;color:#8a93ad;">Attaquants et d\u00e9fenseurs</div>' + tuiles('j')
-    + '<div style="font-size:10.5px;color:#8a93ad;">Gardiens</div>' + tuiles('g')
-    + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">' + zones.map(function (z) { return _g45KhlChip(z[1], _g45KhlIndZone === z[0], "g45KhlInd(null,'" + z[0] + "')"); }).join('') + '</div>';
+  var selZ = '<select onchange="g45KhlInd(null,this.value)" style="margin-left:auto;padding:9px 12px;border-radius:10px;border:1px solid #6d9dff;background:#141c33;color:#fff;font-size:15px;font-weight:700;">'
+    + zones.map(function (z) { return '<option value="' + z[0] + '"' + (_g45KhlIndZone === z[0] ? ' selected' : '') + '>' + z[1] + '</option>'; }).join('') + '</select>';
+  var J = G45_KHL_IND_CATS.filter(function (c) { return c[2] === 'j'; });
+  var h = '<style>.g45ki-pod{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;align-items:end;margin:14px 0}.g45ki-pod>.o1{order:2}.g45ki-pod>.o2{order:1}.g45ki-pod>.o3{order:3}'
+    + '@media(max-width:700px){.g45ki-pod{grid-template-columns:1fr}.g45ki-pod>.o1{order:1}.g45ki-pod>.o2{order:2}}</style>'
+    + '<div style="display:flex;flex-wrap:wrap;align-items:center;">' + lab('🏒 Attaquants') + J.filter(function (c) { return PRINC.indexOf(c[0]) >= 0; }).map(bt).join('')
+    + '<button onclick="g45KhlIndPlusCat()" style="padding:9px 14px;border-radius:18px;cursor:pointer;font-size:15px;font-weight:700;color:#fff;margin:0 6px 6px 0;background:' + (enPlus ? '#2f6bff' : '#141c33') + ';border:1px solid ' + (enPlus ? '#6d9dff' : '#2a3a63') + ';">Plus… ' + (plusOuv ? '▴' : '▾') + '</button>' + selZ + '</div>'
+    + (plusOuv ? '<div style="display:flex;flex-wrap:wrap;margin-left:116px;">' + J.filter(function (c) { return PRINC.indexOf(c[0]) < 0; }).map(bt).join('') + '</div>' : '')
+    + '<div style="display:flex;flex-wrap:wrap;align-items:center;">' + lab('🧤 Gardiens') + G45_KHL_IND_CATS.filter(function (c) { return c[2] === 'g'; }).map(bt).join('') + '</div>';
 
   var liste = tous.filter(function (p) {
     var e = g45KhlEquipe(p.eq);
@@ -64521,37 +64529,55 @@ async function _g45KhlVueIndividuel(body) {
   }
   liste.sort(function (x, y) { return cat[4] * ((x.st[cat[3]] || 0) - (y.st[cat[3]] || 0)) || ((y.st.gp || 0) - (x.st.gp || 0)); });
   if (_g45KhlIndZone === 'mes' && !Object.keys(mesIds).length) {
-    body.innerHTML = h + '<div style="color:#9fb0c7;font-size:11.5px;">Aucune \u00e9quipe KHL dans ton mur ou tes \u00e9quipes suivies.</div>'; return;
+    body.innerHTML = h + '<div style="color:#c9d3ee;font-size:15px;">Aucune \u00e9quipe KHL dans ton mur ou tes \u00e9quipes suivies.</div>'; return;
   }
-  var cols = estGardien ? [['gp', 'MJ'], ['w', 'V'], ['sv', 'Arr.'], ['ga', 'BC']] : [['gp', 'MJ'], ['g', 'B'], ['a', 'A'], ['pm', '+/-', 'pm']];
-  h += '<div style="overflow-x:auto;"><div style="min-width:420px;">'
-    + '<div style="display:flex;gap:8px;padding:6px 4px;font-size:11px;color:#8a93ad;"><span style="width:20px;">#</span><span style="flex:1;">Joueur</span>'
-    + cols.map(function (c) { return '<span style="width:40px;text-align:center;">' + c[1] + '</span>'; }).join('')
-    + '<span style="width:56px;text-align:right;">' + _g45KhlEsc(cat[1].length > 10 ? cat[1].split(' ')[0] : cat[1]) + '</span></div>';
-  var rang = 0, prec = null;
-  liste.slice(0, _g45KhlIndN).forEach(function (p, i) {
-    var v = p.st[cat[3]];
-    if (v !== prec) { rang = i + 1; prec = v; }
-    var e = g45KhlEquipe(p.eq);
-    var poste = p.r === 'goaltender' ? 'gardien' : (/^def/.test(String(p.r || '')) ? 'd\u00e9fenseur' : 'attaquant');
-    h += '<div style="display:flex;align-items:center;gap:8px;padding:7px 4px;border-bottom:1px solid rgba(255,255,255,.06);font-size:12px;">'
-      + '<span style="width:20px;font-weight:800;color:' + (rang === 1 ? '#f0b020' : '#8a93ad') + ';">' + rang + '</span>'
-      + '<span style="width:34px;height:34px;border-radius:50%;overflow:hidden;background:#26324d;flex:none;display:inline-flex;align-items:center;justify-content:center;color:#8a93ad;font-size:14px;">'
-      + (p.img ? '<img src="' + _g45KhlEsc(p.img) + '" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;" onerror="this.remove()">' : '') + '</span>'
-      + '<div style="flex:1;min-width:0;"><div style="font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + _g45KhlEsc(p.n) + '</div>'
-      + '<div style="font-size:10.5px;color:#8a93ad;display:flex;align-items:center;gap:4px;">' + _g45KhlLogoHtml(p.eq, '', 16) + _g45KhlEsc(e ? e.fr : '') + ' \u00b7 ' + poste + '</div></div>'
-      + cols.map(function (c) {
-          var val = p.st[c[0]], coul = (c[2] === 'pm' && val) ? (val > 0 ? '#1ed760' : '#ff4545') : '#aab3cc';
-          return '<span style="width:40px;text-align:center;font-size:11.5px;color:' + coul + ';">' + _g45KhlFmt(val, c[2]) + '</span>';
-        }).join('')
-      + '<span style="width:56px;text-align:right;font-size:15px;font-weight:800;color:' + (rang === 1 ? '#1ed760' : '#e8ecfa') + ';">' + _g45KhlFmt(v, cat[5] || (cat[0] === 'pm' ? 'pm' : '')) + '</span></div>';
+  var TOT = { pts: 'POINTS', g: 'BUTS', a: 'PASSES', pm: '+/−', dpts: 'POINTS', toi: 'TEMPS / MATCH', fow: 'MISES EN JEU', pim: 'MIN. PÉNALITÉ', vit: 'KM/H', dist: 'KM', sds: 'TAB DÉCISIFS', svp: '% ARRÊTS', gaa: 'MOYENNE', so: 'BLANCHIS.' };
+  var cols = estGardien ? [['gp', 'matchs'], ['w', 'victoires'], ['sv', 'arrêts'], ['ga', 'buts pris']] : [['gp', 'matchs'], ['g', 'buts'], ['a', 'passes'], ['pm', '+/−', 'pm']];
+  var fv = function (p) { return _g45KhlFmt(p.st[cat[3]], cat[5] || (cat[0] === 'pm' ? 'pm' : '')); };
+  var poste = function (p) { return p.r === 'goaltender' ? 'gardien' : (/^def/.test(String(p.r || '')) ? 'défenseur' : 'attaquant'); };
+  var rangs = [], rang = 0, prec = null;
+  liste.forEach(function (p, i) { var v = p.st[cat[3]]; if (v !== prec) { rang = i + 1; prec = v; } rangs.push(rang); });
+  var photo = function (p, t, bord) { return '<span style="width:' + t + 'px;height:' + t + 'px;border-radius:50%;overflow:hidden;background:#25335c;flex:none;display:inline-flex;align-items:center;justify-content:center;border:3px solid ' + bord + ';' + (t > 60 ? 'margin:0 auto;' : '') + '">'
+    + (p.img ? '<img src="' + _g45KhlEsc(p.img) + '" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;" onerror="this.remove()">' : '') + '</span>'; };
+  /* podium */
+  var POD = [['#ffd34d', '🥇'], ['#c0c7d6', '🥈'], ['#cd7f32', '🥉']];
+  var nPod = Math.min(3, liste.length);
+  if (nPod) {
+    h += '<div class="g45ki-pod">';
+    for (var q = 0; q < nPod; q++) {
+      var pp = liste[q], ee = g45KhlEquipe(pp.eq), lo = (typeof g45KhlLogo === 'function') ? g45KhlLogo(pp.eq) : '', CC = POD[Math.min(2, rangs[q] - 1)] || POD[2];
+      var det = estGardien ? (pp.st.gp || 0) + ' matchs' : (pp.st.g || 0) + ' buts · ' + (pp.st.a || 0) + ' passes · ' + (pp.st.gp || 0) + ' matchs';
+      h += '<div class="o' + (q + 1) + '" style="position:relative;overflow:hidden;border-radius:14px;padding:' + (q === 0 ? '20px' : '14px') + ' 12px 14px;text-align:center;color:#fff;text-shadow:0 1px 3px #000;border:2px solid ' + CC[0] + ';background:linear-gradient(160deg,' + CC[0] + '99,#1c2747);">'
+        + (lo ? '<img src="' + _g45KhlEsc(lo) + '" alt="" loading="lazy" onerror="this.remove()" style="position:absolute;right:-14px;top:-14px;width:120px;height:120px;object-fit:contain;opacity:.35;pointer-events:none;">' : '')
+        + '<div style="position:relative;font-size:24px;font-weight:900;margin-bottom:6px;">' + CC[1] + ' ' + rangs[q] + '</div>'
+        + '<div style="position:relative;">' + photo(pp, q === 0 ? 104 : 86, CC[0]) + '</div>'
+        + '<div style="position:relative;font-size:' + (q === 0 ? 19 : 17) + 'px;font-weight:800;margin-top:8px;">' + _g45KhlEsc(pp.n) + '</div>'
+        + '<div style="position:relative;display:inline-block;background:rgba(11,16,29,.7);border-radius:8px;padding:3px 9px;margin-top:4px;font-size:14px;">' + _g45KhlEsc(ee ? ee.fr : '') + ' · ' + poste(pp) + '</div>'
+        + '<div style="position:relative;font-size:' + (q === 0 ? 40 : 34) + 'px;font-weight:900;color:#ffd34d;">' + fv(pp) + '</div>'
+        + '<div style="position:relative;font-size:14px;">' + det + '</div></div>';
+    }
+    h += '</div>';
+  }
+  /* liste */
+  liste.slice(nPod, _g45KhlIndN).forEach(function (p, i0) {
+    var i = i0 + nPod, e = g45KhlEquipe(p.eq);
+    h += '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:10px 4px;border-top:1px solid #1c2747;color:#fff;">'
+      + '<div style="display:flex;align-items:center;gap:10px;flex:1 1 260px;min-width:0;">'
+      + '<b style="width:30px;font-size:18px;color:#ffd34d;flex:none;">' + rangs[i] + '</b>' + photo(p, 50, '#4d84ff')
+      + '<div style="min-width:0;"><div style="font-size:16px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + _g45KhlEsc(p.n) + '</div>'
+      + '<div style="font-size:14px;color:#dfe6f7;display:flex;align-items:center;gap:6px;">' + _g45KhlLogoHtml(p.eq, '', 22) + _g45KhlEsc(e ? e.fr : '') + ' · ' + poste(p) + '</div></div></div>'
+      + '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">'
+      + cols.map(function (c) { var val = p.st[c[0]], coul = (c[2] === 'pm' && val) ? (val > 0 ? '#1ed760' : '#ff6b6b') : '#fff';
+          return '<span style="background:#1b2850;border:1px solid #2f4377;border-radius:10px;padding:4px 9px;text-align:center;min-width:52px;"><b style="display:block;font-size:17px;color:' + coul + ';">' + _g45KhlFmt(val, c[2]) + '</b><span style="font-size:13px;color:#c9d3ee;">' + c[1] + '</span></span>'; }).join('')
+      + '<span style="background:linear-gradient(135deg,#ffd34d,#f5a623);color:#111;border-radius:12px;text-align:center;padding:5px 10px;min-width:70px;font-weight:900;font-size:22px;">' + fv(p) + '<span style="display:block;font-size:11px;font-weight:800;">' + (TOT[cat[0]] || '') + '</span></span>'
+      + '</div></div>';
   });
-  h += '</div></div>';
-  if (liste.length > _g45KhlIndN) h += '<button onclick="g45KhlIndPlus()" style="margin-top:10px;width:100%;padding:9px;border-radius:9px;cursor:pointer;background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#9fb0c7;font-weight:700;font-size:11.5px;">Voir plus (' + (liste.length - _g45KhlIndN) + ')</button>';
-  if (!liste.length) h += '<div style="color:#9fb0c7;font-size:11.5px;margin-top:8px;">Aucun joueur pour ce filtre.</div>';
-  h += '<div style="font-size:10.5px;color:#8a93ad;margin-top:8px;">' + (seuilNote ? seuilNote + ' ' : '') + 'Stats de saison KHL \u00b7 photos officielles khl.ru.</div>';
+  if (liste.length > _g45KhlIndN) h += '<button onclick="g45KhlIndPlus()" style="margin-top:10px;width:100%;padding:11px;border-radius:10px;cursor:pointer;background:#141c33;border:1px solid #2a3a63;color:#fff;font-weight:700;font-size:15px;">Voir plus (' + (liste.length - _g45KhlIndN) + ')</button>';
+  if (!liste.length) h += '<div style="color:#c9d3ee;font-size:15px;margin-top:8px;">Aucun joueur pour ce filtre.</div>';
+  h += '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">' + (seuilNote ? seuilNote + ' ' : '') + 'Stats de saison KHL · photos officielles khl.ru.</div>';
   body.innerHTML = h;
 }
+window.g45KhlIndPlusCat = function () { window._g45KhlIndPlusOuv = !window._g45KhlIndPlusOuv; loadCompetTab(); };   /* 20261106o */
 function g45KhlInd(cat, zone) { if (cat) { _g45KhlIndCat = cat; _g45KhlIndN = 25; } if (zone) { _g45KhlIndZone = zone; _g45KhlIndN = 25; } loadCompetTab(); }
 function g45KhlIndPlus() { _g45KhlIndN += 25; loadCompetTab(); }
 window.g45KhlInd = g45KhlInd; window.g45KhlIndPlus = g45KhlIndPlus;
