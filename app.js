@@ -77496,7 +77496,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
      stats = joués, m[6] = h|a pour le lieu) ; réussite = même règle que le critère (seuil « Combien », ligne X,5 plus / moins) ; pire série =
      suite de ratés, saisons à la suite ; 20 matchs au minimum. ═══ */
   S.clsJU = S.clsJU || {};
-  var USJTRI = { pire: 1, dal: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], fib: [1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144] };   /* 20261107f */
+  var USJTRI = { pire: 1, fix: [1], dal: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], fib: [1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144] };   /* 20261107f */
   window.g45CrUsJTri = function (k) { S.usJTri = USJTRI[k] ? k : 'pire'; try { redessiner(); } catch (e) {} };
   var USJ = { hockey: { g: ['G'], a: ['A'], p: ['G', 'A'] }, basketball: { pts: ['PTS'], reb: ['REB'], ast: ['AST'], tp: ['3PT'], pra: ['PTS', 'REB', 'AST'], pr: ['PTS', 'REB'], pa: ['PTS', 'AST'], ra: ['REB', 'AST'] }, football: { td: ['rTD', 'reTD'], ptd: ['pTD'] } };
   function usJModeDe(c0) { return !!(S.ctx && USJ[S.ctx.sp] && aOk(S.ctx.lg) && c0 && c0.jo && !c0.jo2 && USJ[S.ctx.sp][c0.jm || ''] && /aucun crit/.test(libCombo(clsCombo(c0)))); }
@@ -77559,12 +77559,13 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var top = R.slice(0, 20), moi = R.filter(function (x) { return x.id === String(c0.jo); })[0];
     if (moi && top.indexOf(moi) < 0) top.push(moi);
     var bTri = function (k, t) { var on = k === tri; return '<button onclick="g45CrUsJTri(\'' + k + '\')" style="border-radius:12px;padding:8px 12px;font-size:15px;font-weight:800;cursor:pointer;color:#fff;border:1px solid ' + (on ? '#6d9dff' : '#2a3a63') + ';background:' + (on ? '#2a4a9a' : '#0b1226') + ';">' + t + '</button>'; };
-    h += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;">' + bTri('pire', '🏁 Pire série') + bTri('dal', '🪜 D\'Alembert') + bTri('fib', '🐚 Fibonacci') + '</div>';
+    h += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;">' + bTri('pire', '🏁 Pire série') + bTri('dal', '🪜 D\'Alembert') + bTri('fib', '🐚 Fibonacci') + bTri('fix', '📏 Mise fixe') + '</div>';   /* 20261107j : « Mise fixe » */
     var fr2 = function (v) { return String(Math.round(v * 100) / 100).replace('.', ','); };
-    if (tri !== 'pire') h += '<div style="font-size:14px;color:#ffd34d;margin:6px 0 8px;">Trié par le gain simulé · P1 = ' + fr2(u1) + ' € · cote ' + fr2(coteM) + ' (celle des critères).<br>En mise fixe, il faudrait plus de ' + Math.ceil(100 / coteM) + ' % ; en ' + (tri === 'dal' ? '🪜' : '🐚') + ' on peut gagner en dessous, mais la mise monte haut.</div>';   /* 20261107h (capture : « il faut plus de 37 % » mais Aho gagne à 33 %) */
+    if (tri === 'fix') h += '<div style="font-size:14px;color:#ffd34d;margin:6px 0 8px;">Trié par le gain à mise fixe · ' + fr2(u1) + ' € à chaque match · cote ' + fr2(coteM) + ' (celle des critères) → il faut plus de ' + Math.ceil(100 / coteM) + ' % de réussite pour gagner.</div>';
+    else if (tri !== 'pire') h += '<div style="font-size:14px;color:#ffd34d;margin:6px 0 8px;">Trié par le gain simulé · P1 = ' + fr2(u1) + ' € · cote ' + fr2(coteM) + ' (celle des critères).<br>En mise fixe, il faudrait plus de ' + Math.ceil(100 / coteM) + ' % ; en ' + (tri === 'dal' ? '🪜' : '🐚') + ' on peut gagner en dessous, mais la mise monte haut.</div>';   /* 20261107h (capture : « il faut plus de 37 % » mais Aho gagne à 33 %) */
     var ln = tri !== 'pire' ? 'display:grid;grid-template-columns:2fr 1fr 1fr .9fr;gap:6px;padding:8px 4px;border-bottom:1px solid #1c2747;font-size:14px;color:#fff;'
       : 'display:grid;grid-template-columns:1.8fr 1fr .8fr .8fr 1.2fr;gap:6px;padding:8px 4px;border-bottom:1px solid #1c2747;font-size:14px;color:#fff;';
-    if (tri === 'pire') h += '<div style="' + ln + 'font-size:13px;color:#c9d3ee;"><span>Joueur</span><span>Réussite</span>' + (tri !== 'pire' ? '<span>Gain ' + (tri === 'dal' ? '🪜' : '🐚') + '</span><span>Mise max</span>' : '<span>Pire</span><span>En cours</span><span>Paliers</span>') + '</div>';
+    if (false) h += '<div style="' + ln + 'font-size:13px;color:#c9d3ee;"><span>Joueur</span><span>Réussite</span>' + (tri !== 'pire' ? '<span>Gain ' + (tri === 'dal' ? '🪜' : '🐚') + '</span><span>Mise max</span>' : '<span>Pire</span><span>En cours</span><span>Paliers</span>') + '</div>';
     top.forEach(function (x) {
       var me = x.id === String(c0.jo), pa = (typeof _g45F1CrPal === 'function') ? _g45F1CrPal(x.pire) : { p: x.pire + 1, ico: '' };
       var feu = x.pire >= 3 && x.pire <= 7 && x.cours >= 1 && x.pire - x.cours <= 1;
@@ -77572,18 +77573,21 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       var clN = (Q.EQ && Q.EQ[x.eq] && Q.EQ[x.eq][0]) || '', clL = clN && typeof window._g45LogoIndex === 'function' ? window._g45LogoIndex(clN) : '';
       /* 20261107h (captures téléphone : nom, club et réussite qui se chevauchent ; « Mise max 288 € » partout) → maquette meth_cls2.png « oui » :
          en 🪜 / 🐚, une carte par joueur (photo, nom, club) + pastilles ✅ % · Pire · Gain · Mise max (⚠️ plafond = dernier palier atteint). */
-      if (tri !== 'pire') {
-        var pil = function (t, b) { return '<span style="background:#0b1226;border:1px solid ' + (b || '#2a3a63') + ';border-radius:8px;padding:3px 8px;">' + t + '</span>'; }, pla = x.mmax >= MI[MI.length - 1] - 1e-9;
+      /* 20261107j (capture téléphone : en 🏁 Pire série aussi, nom / club / réussite se chevauchent) : même carte pour tous les tris */
+      if (true) {
+        var pil = function (t, b) { return '<span style="background:#0b1226;border:1px solid ' + (b || '#2a3a63') + ';border-radius:8px;padding:3px 8px;">' + t + '</span>'; }, pla = tri !== 'pire' && tri !== 'fix' && x.mmax >= MI[MI.length - 1] - 1e-9;
         h += '<div style="display:flex;gap:10px;padding:10px 6px;border-bottom:1px solid #1c2747;color:#fff;' + (me ? 'background:rgba(47,107,255,.2);border-radius:10px;' : '') + '">'
           + '<img src="https://a.espncdn.com/i/headshots/' + esc(X.lg) + '/players/full/' + esc(x.id) + '.png" alt="" loading="lazy" onerror="this.style.visibility=\'hidden\'" style="width:52px;height:52px;border-radius:50%;object-fit:cover;object-position:top;background:#25335c;border:2px solid ' + (me ? '#6d9dff' : '#2a3a63') + ';flex:none;">'
           + '<div style="flex:1;min-width:0;"><div style="font-size:16px;font-weight:800;">' + esc(x.nom) + '</div>'
           + (clN ? '<div style="display:flex;align-items:center;gap:5px;font-size:13px;color:#c9d3ee;">' + (/^https:\/\//.test(clL) ? '<img src="' + esc(clL) + '" alt="" loading="lazy" onerror="this.remove()" style="width:18px;height:18px;object-fit:contain;">' : '') + esc(clN) + '</div>' : '')
           + '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;font-size:14px;">'
-          + pil('✅ ' + Math.round(100 * x.ok / x.n) + ' % <span style="color:#c9d3ee;font-size:12px;">' + x.ok + '/' + x.n + '</span>') + pil('Pire <b>' + x.pire + '</b>')
-          + '<span style="background:' + (x.gain >= 0 ? 'rgba(30,215,96,.15)' : 'rgba(255,90,90,.15)') + ';border:1px solid ' + (x.gain >= 0 ? '#1ed760' : '#ff5a5a') + ';border-radius:8px;padding:3px 8px;font-weight:900;color:' + (x.gain >= 0 ? '#1ed760' : '#ff5a5a') + ';">' + (x.gain < 0 ? '🔴 −' : '+') + Math.abs(Math.round(x.gain)).toLocaleString('fr-FR') + ' €</span>'
-          + pil('Mise max <b>' + fr2(x.mmax) + ' €</b>' + (pla ? ' ⚠️ plafond' : ''), pla ? '#ff9f43' : '')
+          + pil('✅ ' + Math.round(100 * x.ok / x.n) + ' % <span style="color:#c9d3ee;font-size:12px;">' + x.ok + '/' + x.n + '</span>') + pil('Pire <b style="color:' + coul(x.pire) + ';">' + x.pire + '</b>')
+          + (tri === 'pire' ? pil('En cours <b style="color:' + (feu ? '#ff5a5a' : x.cours ? '#ff9f43' : '#c9d3ee') + ';">' + (x.cours ? (feu ? '🔥 ' : '') + x.cours : '—') + '</b>')
+            + pil('<b>' + pa.p + ' palier' + (pa.p > 1 ? 's' : '') + '</b> ' + (pa.ico || '') + (pa.mise != null ? ' <span style="font-size:12px;color:#c9d3ee;">' + pa.mise + ' €</span>' : '')) + '</div></div></div>' : '')
+          + (tri === 'pire' ? '' : '<span style="background:' + (x.gain >= 0 ? 'rgba(30,215,96,.15)' : 'rgba(255,90,90,.15)') + ';border:1px solid ' + (x.gain >= 0 ? '#1ed760' : '#ff5a5a') + ';border-radius:8px;padding:3px 8px;font-weight:900;color:' + (x.gain >= 0 ? '#1ed760' : '#ff5a5a') + ';">' + (x.gain < 0 ? '🔴 −' : '+') + Math.abs(Math.round(x.gain)).toLocaleString('fr-FR') + ' €</span>'
+          + (tri === 'fix' ? '</div></div></div>' : pil('Mise max <b>' + fr2(x.mmax) + ' €</b>' + (pla ? ' ⚠️ plafond' : ''), pla ? '#ff9f43' : '')
           /* 20261107i (Antoine : « est-ce fiable le fibo ? » → « oui ») : gain des mêmes matchs en 📏 mise fixe (P1) : positif = le joueur rapporte même sans méthode */
-          + '<span style="background:#0b1226;border:1px solid ' + (x.fixe >= 0 ? '#1ed760' : '#ff5a5a') + ';border-radius:8px;padding:3px 8px;font-weight:800;color:' + (x.fixe >= 0 ? '#1ed760' : '#ff9a9a') + ';">📏 fixe ' + (x.fixe < 0 ? '−' : '+') + Math.abs(Math.round(x.fixe)).toLocaleString('fr-FR') + ' €</span>' + '</div></div></div>';
+          + '<span style="background:#0b1226;border:1px solid ' + (x.fixe >= 0 ? '#1ed760' : '#ff5a5a') + ';border-radius:8px;padding:3px 8px;font-weight:800;color:' + (x.fixe >= 0 ? '#1ed760' : '#ff9a9a') + ';">📏 fixe ' + (x.fixe < 0 ? '−' : '+') + Math.abs(Math.round(x.fixe)).toLocaleString('fr-FR') + ' €</span>' + '</div></div></div>'));
         return;
       }
       h += '<div style="' + ln + 'align-items:center;' + (me ? 'background:rgba(47,107,255,.2);border-radius:8px;' : '') + '"><span style="display:flex;align-items:center;gap:10px;min-width:0;">'
@@ -77596,6 +77600,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
         + '<span style="font-weight:800;color:' + (feu ? '#ff5a5a' : x.cours ? '#ff9f43' : '#c9d3ee') + ';">' + (x.cours ? (feu ? '🔥 ' : '') + x.cours : '—') + '</span>'
         + '<span><b>' + pa.p + ' palier' + (pa.p > 1 ? 's' : '') + '</b> ' + (pa.ico || '') + (pa.mise != null ? ' <span style="font-size:12px;color:#c9d3ee;">' + pa.mise + ' €</span>' : '') + '</span></div>');
     });
+    if (tri === 'fix') return h + '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">Gain = toutes ses saisons à ' + fr2(u1) + ' € par match, à cette cote · 🔴 = il aurait perdu de l\'argent. Candidats : les 40 meilleurs de la saison en cours pour ce critère + ton joueur.</div></div>';
     if (tri !== 'pire') return h + '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">Gain = toutes ses saisons jouées en ' + (tri === 'dal' ? '🪜 D\'Alembert' : '🐚 Fibonacci') + ' à cette cote · Mise max = la plus grosse mise qu\'il aurait fallu poser (⚠️ plafond = dernier palier, ' + (tri === 'dal' ? 'D' : 'F') + '12) · 🔴 = la méthode aurait perdu de l\'argent · 📏 fixe = les mêmes matchs à mise fixe (P1) : en vert, le joueur rapporte même sans méthode ; en rouge, le gain ne vient que de la méthode. Candidats : les 40 meilleurs de la saison en cours pour ce critère + ton joueur.</div></div>';
     return h + '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">✅ 5 paliers ou moins · ⚠️ jusqu\'à ta dernière mise · ❌ au-delà de tes paliers (mises 1 ⭐). Candidats : les 40 meilleurs de la saison en cours pour ce critère + ton joueur ; toutes leurs saisons dans la ligue.</div></div>';
   }
