@@ -86749,7 +86749,10 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   var $ = function (id) { return document.getElementById(id); };
   var SEQ = { fib: [1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144], dal: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] };
   var NOM = { mont: '🚀 Cockpit', fib: '🐚 Fibonacci', dal: '🪜 D\'Alembert' }, LET = { fib: 'F', dal: 'D' };
-  var meth = function () { var m = window._g45EngMeth; if (!m) { try { m = localStorage.getItem('g45_eng_meth') || 'mont'; } catch (e) { m = 'mont'; } } return SEQ[m] ? m : 'mont'; };
+  /* 20261106w (capture d'Antoine : pari Cockpit placé avec 🪜 D'Alembert encore actif → enregistré en pari simple) : méthode PAS gardée d'une
+     visite à l'autre (plus de localStorage) → Engager s'ouvre toujours sur 🚀 Cockpit ; confirmation avant un pari Fibonacci / D'Alembert. */
+  var meth = function () { var m = window._g45EngMeth || 'mont'; return SEQ[m] ? m : 'mont'; };
+  try { localStorage.removeItem('g45_eng_meth'); } catch (e) {}
   var carte = function () { var s = $('c-unit'); return s && (state.u || []).filter(function (x) { return x.n === s.value; })[0]; };
   var lieu = function () { return typeof g45LieuCourant === 'function' ? g45LieuCourant() : ''; };
   var cle = function () { var c = ($('c-comp') && $('c-comp').value) || ''; return typeof _g45PalKey === 'function' ? (_g45PalKey(c, lieu()) || '|' + lieu()) : '|' + lieu(); };
@@ -86774,7 +86777,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     var cg = $('crash-grid'), box = cg && (cg.closest('.card') || cg.parentNode); if (box && box !== ce) box.style.display = m === 'mont' ? '' : 'none';
   }
   window._g45EngMethDessiner = dessiner;
-  window.g45EngMeth = function (k) { window._g45EngMeth = SEQ[k] ? k : 'mont'; try { localStorage.setItem('g45_eng_meth', window._g45EngMeth); } catch (e) {} try { (window.updMise || updMise)(); } catch (e) {} dessiner(); };
+  window.g45EngMeth = function (k) { window._g45EngMeth = SEQ[k] ? k : 'mont'; try { (window.updMise || updMise)(); } catch (e) {} dessiner(); };
   /* mise proposée : celle de la méthode (après le calcul normal de la montante) */
   var um0 = window.updMise;
   if (typeof um0 === 'function') window.updMise = updMise = function () {
@@ -86788,6 +86791,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     var m = meth(), u = isS ? carte() : null;
     if (!isS || m === 'mont' || !u) return pa0.apply(this, arguments);
     var k = cle(), p = palM(u, m, k), n0 = (state.h || []).length, top = state.h && state.h[0];
+    if (!window._g45MethSansConfirm && !confirm('Ce pari part en ' + NOM[m] + ' (' + LET[m] + p + '), HORS montante Cockpit. OK ?\n\nAnnuler → reviens sur 🚀 Cockpit.')) { window.g45EngMeth('mont'); return; }
     var r = pa0.apply(this, arguments);
     var b = state.h && state.h[0];
     if (b && b !== top && state.h.length > n0) {
