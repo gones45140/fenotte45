@@ -3153,7 +3153,7 @@ function render(){
   }
 
   /* live cockpit */
-  $i('live-strat').innerHTML=state.h.filter(function(x){return x.isS;}).map(function(h){
+  $i('live-strat').innerHTML=state.h.filter(function(x){return x.isS||x.meth;/* 20261106w : paris Fibonacci / D'Alembert = Cockpit */}).map(function(h){
     return '<tr>'
       +'<td><b>'+h.n+'</b><div style="font-size:9px;color:var(--t3);">'+(h.sport||'')+' '+(h.comp||'')+'</div></td>'
       +'<td><div>'+h.target+'</div>'+(h.date||h.heure?'<div style="font-size:9px;color:var(--t2);">'+(h.date?'📅 '+h.date:'')+' '+(h.heure?'⏰ '+h.heure:'')+'</div>':'')+'</td>'
@@ -3166,7 +3166,7 @@ function render(){
      ouvre l'appli pour la premiere fois : autant qu'il dise quoi faire. */
   }).join('')||'<tr><td colspan="5" class="empty">Aucun pari en cours.<br><span style="color:var(--t3);font-size:12px;">Renseigne un match ci-dessus pour lancer ta première montante.</span></td></tr>';
 
-  $i('live-norm').innerHTML=state.h.filter(function(x){return !x.isS;}).map(function(h){
+  $i('live-norm').innerHTML=state.h.filter(function(x){return !x.isS&&!x.meth;}).map(function(h){
     return '<tr>'
       +'<td><div style="font-size:10px;color:var(--t3);">'+(h.sport||'')+' '+(h.comp||'')+' '+(h.date?'📅 '+h.date:'')+' '+(h.heure?'⏰ '+h.heure:'')+'</div>'
       +'<div style="font-weight:600;">'+(h.domicile==='dom'?'🏠 ':h.domicile==='ext'?'🚌 ':'')+(h.isCombi?h.n:h.target)+'</div>'
@@ -11580,7 +11580,7 @@ function render(){
   }
 
   /* live cockpit */
-  $i('live-strat').innerHTML=state.h.filter(function(x){return x.isS;}).map(function(h){
+  $i('live-strat').innerHTML=state.h.filter(function(x){return x.isS||x.meth;/* 20261106w : paris Fibonacci / D'Alembert = Cockpit */}).map(function(h){
     return '<tr>'
       +'<td><b>'+h.n+'</b><div style="font-size:9px;color:var(--t3);">'+(h.sport||'')+' '+(h.comp||'')+'</div></td>'
       +'<td><div>'+h.target+'</div>'+(h.date||h.heure?'<div style="font-size:9px;color:var(--t2);">'+(h.date?'📅 '+h.date:'')+' '+(h.heure?'⏰ '+h.heure:'')+'</div>':'')+'</td>'
@@ -11593,7 +11593,7 @@ function render(){
      ouvre l'appli pour la premiere fois : autant qu'il dise quoi faire. */
   }).join('')||'<tr><td colspan="5" class="empty">Aucun pari en cours.<br><span style="color:var(--t3);font-size:12px;">Renseigne un match ci-dessus pour lancer ta première montante.</span></td></tr>';
 
-  $i('live-norm').innerHTML=state.h.filter(function(x){return !x.isS;}).map(function(h){
+  $i('live-norm').innerHTML=state.h.filter(function(x){return !x.isS&&!x.meth;}).map(function(h){
     return '<tr>'
       +'<td><div style="font-size:10px;color:var(--t3);">'+(h.sport||'')+' '+(h.comp||'')+' '+(h.date?'📅 '+h.date:'')+' '+(h.heure?'⏰ '+h.heure:'')+'</div>'
       +'<div style="font-weight:600;">'+(h.domicile==='dom'?'🏠 ':h.domicile==='ext'?'🚌 ':'')+(h.isCombi?h.n:h.target)+'</div>'
@@ -75676,7 +75676,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       + '<div class="g45ec" style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;background:rgba(11,16,29,.9);border:1px solid #2a3350;border-left:4px solid #f5c542;border-radius:12px;padding:12px 14px;color:#fff;text-align:left;">'
       + '<div style="display:flex;flex-direction:column;align-items:center;gap:6px;width:64px;flex:none;">' + rond + '<div style="transform:scale(1.1);">' + book + '</div></div>'
       + '<div class="g45ec-mid" style="flex:1 1 230px;min-width:0;">'
-      + '<div style="font-size:13px;color:#c9d3ee;">' + (h.isS ? '🚀 Montante · ' : '') + (h.isCombi ? '🧩 Combiné · ' : '') + (h.comp ? '🏆 ' + esc(h.comp) + ' · ' : '') + esc(jour(h)) + (h.heure ? ' · ' + esc(h.heure) : '') + lieu + '</div>'
+      + '<div style="font-size:13px;color:#c9d3ee;">' + (h.isS ? '🚀 Montante · ' : '') + (h.meth === 'fib' ? '🐚 Fibonacci · ' : h.meth === 'dal' ? '🪜 D\'Alembert · ' : '') + (h.isCombi ? '🧩 Combiné · ' : '') + (h.comp ? '🏆 ' + esc(h.comp) + ' · ' : '') + esc(jour(h)) + (h.heure ? ' · ' + esc(h.heure) : '') + lieu + '</div>'
       + '<div style="font-size:17px;font-weight:800;margin:3px 0;word-break:break-word;">' + esc(titre(h)) + '</div>'
       + '<div style="font-size:14px;">' + (j ? '🎯 ' + esc(typ) + ' : <b style="background:rgba(0,0,0,.5);padding:2px 6px;border-radius:6px;">' + esc(j) + '</b>' : '<b style="background:rgba(0,0,0,.5);padding:2px 6px;border-radius:6px;">' + esc(typ) + '</b>')
       + (h.isFreebet ? ' <span style="font-size:13px;">🎟 Freebet</span>' : '') + (h.isLay ? ' <span style="font-size:13px;">↩️ Lay</span>' : '') + '</div>'
@@ -75696,7 +75696,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   }
   function refaire(tb, strat) {
     if (!tb || tb.querySelector('[data-g45ec]')) return;
-    var H = ((typeof state !== 'undefined' && state && state.h) || []).filter(function (x) { return x && (!!x.isS === strat); });
+    var H = ((typeof state !== 'undefined' && state && state.h) || []).filter(function (x) { return x && (!!(x.isS || x.meth) === strat); });   /* 20261106w : paris méthode dans « En cours » du Cockpit */
     if (!H.length) return;
     var html = ''; H.forEach(function (h) { try { html += carte(h); } catch (e) {} });
     if (!html) return;
