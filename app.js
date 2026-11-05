@@ -75664,6 +75664,27 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     if (!L.length && h.joueur) L = [h.joueur];
     return L.join(h.jmode === 'et' ? ' et ' : ' ou ');
   }
+  /* 20261106y : logos face à face (domicile à gauche) + VS + heure ; photo du joueur (vignette déjà en mémoire) */
+  function logoRond(nom) {
+    var u = ''; try { u = (typeof g45LogoUrlDe === 'function' && g45LogoUrlDe(nom)) || ''; } catch (e) {}
+    var ini = esc(String(nom || '?').replace(/[^A-Za-zÀ-ÿ ]/g, '').split(' ').filter(Boolean).map(function (w) { return w[0]; }).join('').slice(0, 3).toUpperCase());
+    return '<span style="width:72px;height:72px;border-radius:50%;flex:none;display:inline-flex;align-items:center;justify-content:center;background:rgba(255,255,255,.06);border:2px solid #2a3a63;font-weight:900;font-size:20px;overflow:hidden;">'
+      + (/^https?:\/\//.test(u) ? '<img src="' + esc(u) + '" alt="" loading="lazy" style="width:84%;height:84%;object-fit:contain;" onerror="this.parentNode.textContent=\'' + ini + '\'">' : ini) + '</span>';
+  }
+  function vsHtml(h) {
+    if (h.isCombi) return '';
+    var P = titre(h).split(' – ').map(function (x) { return x.trim(); }).filter(Boolean); if (P.length !== 2) return '';
+    if (h.domicile === 'ext') P.reverse();
+    return '<div class="g45ec-vs" style="display:flex;align-items:center;justify-content:center;gap:16px;flex:0 1 300px;">' + logoRond(P[0])
+      + '<div style="text-align:center;"><b style="display:block;font-size:26px;color:#c9d3ee;">VS</b>' + (h.heure ? '<span style="background:#0b1226;border-radius:8px;padding:3px 9px;font-weight:800;font-size:17px;">' + esc(h.heure) + '</span>' : '') + '</div>'
+      + logoRond(P[1]) + '</div>';
+  }
+  function photoJ(j, h) {
+    if (!j || /\b(ou|et)\b/.test(j)) return '';
+    var v = null; try { v = typeof _g45JoueurVisLire === 'function' ? _g45JoueurVisLire(j, h.sport) : null; } catch (e) {}
+    var u = v && (v.cut || v.thumb); if (!u) return '';
+    return '<img src="' + esc(u) + '" alt="" loading="lazy" onerror="this.remove()" style="width:46px;height:46px;border-radius:50%;object-fit:cover;object-position:top;border:2px solid #f5c542;background:#25335c;">';
+  }
   function carte(h) {
     var id = esc(h.id), typ = (typeof g45TypeSansCote === 'function' ? g45TypeSansCote(h.type) : h.type) || '—';
     var j = joueurs(h), c = num(h.cote), m = num(h.m);
@@ -75674,13 +75695,15 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var bt = function (cls, st, onclick, txt, tit) { return '<button ' + (cls ? 'class="' + cls + '" ' : '') + 'data-id="' + id + '" onclick="' + onclick + '" title="' + tit + '" style="flex:1;min-width:0;cursor:pointer;border-radius:8px;padding:8px 6px;font-size:14px;font-weight:800;color:#fff;' + st + '">' + txt + '</button>'; };
     return '<tr data-g45ec="1"><td colspan="5" style="padding:0 0 10px;border:none;">'
       + '<div class="g45ec" style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;background:rgba(11,16,29,.9);border:1px solid #2a3350;border-left:4px solid #f5c542;border-radius:12px;padding:12px 14px;color:#fff;text-align:left;">'
-      + '<div style="display:flex;flex-direction:column;align-items:center;gap:6px;width:64px;flex:none;">' + rond + '<div style="transform:scale(1.1);">' + book + '</div></div>'
+      /* 20261106y (« logo / photo ou pas » → maquette ec.png « OUI ») : bookmaker en grand à gauche (le rond du sport part), logos VS heure au milieu, photo du joueur */
+      + '<div style="display:flex;flex-direction:column;align-items:center;gap:6px;width:96px;flex:none;"><div style="transform:scale(1.45);transform-origin:center;">' + book + '</div></div>'
       + '<div class="g45ec-mid" style="flex:1 1 230px;min-width:0;">'
       + '<div style="font-size:13px;color:#c9d3ee;">' + (h.isS ? '🚀 Montante · ' : '') + (h.meth === 'fib' ? '🐚 Fibonacci · ' : h.meth === 'dal' ? '🪜 D\'Alembert · ' : '') + (h.isCombi ? '🧩 Combiné · ' : '') + (h.comp ? '🏆 ' + esc(h.comp) + ' · ' : '') + esc(jour(h)) + (h.heure ? ' · ' + esc(h.heure) : '') + lieu + '</div>'
       + '<div style="font-size:17px;font-weight:800;margin:3px 0;word-break:break-word;">' + esc(titre(h)) + '</div>'
-      + '<div style="font-size:14px;">' + (j ? '🎯 ' + esc(typ) + ' : <b style="background:rgba(0,0,0,.5);padding:2px 6px;border-radius:6px;">' + esc(j) + '</b>' : '<b style="background:rgba(0,0,0,.5);padding:2px 6px;border-radius:6px;">' + esc(typ) + '</b>')
+      + '<div style="font-size:14px;display:flex;align-items:center;flex-wrap:wrap;gap:6px;">' + photoJ(j, h) + (j ? '🎯 ' + esc(typ) + ' : <b style="background:rgba(0,0,0,.5);padding:2px 6px;border-radius:6px;">' + esc(j) + '</b>' : '<b style="background:rgba(0,0,0,.5);padding:2px 6px;border-radius:6px;">' + esc(typ) + '</b>')
       + (h.isFreebet ? ' <span style="font-size:13px;">🎟 Freebet</span>' : '') + (h.isLay ? ' <span style="font-size:13px;">↩️ Lay</span>' : '') + '</div>'
       + '<div class="g45ec-live" data-g45ecl="' + id + '"></div></div>'
+      + vsHtml(h)
       + '<div class="g45ec-dr" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:flex-end;">'
       + '<div style="text-align:right;min-width:130px;"><span style="display:inline-block;background:#f5c542;color:#000;font-weight:900;font-size:16px;border-radius:8px;padding:3px 9px;">@' + esc(c.toFixed(2).replace('.', ',')) + '</span>'
       + '<div style="font-size:14px;margin-top:6px;">Mise <b>' + esc(fr(m)) + ' €</b></div>'
