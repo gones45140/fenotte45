@@ -77561,15 +77561,29 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var bTri = function (k, t) { var on = k === tri; return '<button onclick="g45CrUsJTri(\'' + k + '\')" style="border-radius:12px;padding:8px 12px;font-size:15px;font-weight:800;cursor:pointer;color:#fff;border:1px solid ' + (on ? '#6d9dff' : '#2a3a63') + ';background:' + (on ? '#2a4a9a' : '#0b1226') + ';">' + t + '</button>'; };
     h += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;">' + bTri('pire', '🏁 Pire série') + bTri('dal', '🪜 D\'Alembert') + bTri('fib', '🐚 Fibonacci') + '</div>';
     var fr2 = function (v) { return String(Math.round(v * 100) / 100).replace('.', ','); };
-    if (tri !== 'pire') h += '<div style="font-size:14px;color:#ffd34d;margin:6px 0 8px;">Trié par le gain simulé · P1 = ' + fr2(u1) + ' € · cote ' + fr2(coteM) + ' (celle des critères) → il faut plus de ' + Math.ceil(100 / coteM) + ' % de réussite</div>';
+    if (tri !== 'pire') h += '<div style="font-size:14px;color:#ffd34d;margin:6px 0 8px;">Trié par le gain simulé · P1 = ' + fr2(u1) + ' € · cote ' + fr2(coteM) + ' (celle des critères).<br>En mise fixe, il faudrait plus de ' + Math.ceil(100 / coteM) + ' % ; en ' + (tri === 'dal' ? '🪜' : '🐚') + ' on peut gagner en dessous, mais la mise monte haut.</div>';   /* 20261107h (capture : « il faut plus de 37 % » mais Aho gagne à 33 %) */
     var ln = tri !== 'pire' ? 'display:grid;grid-template-columns:2fr 1fr 1fr .9fr;gap:6px;padding:8px 4px;border-bottom:1px solid #1c2747;font-size:14px;color:#fff;'
       : 'display:grid;grid-template-columns:1.8fr 1fr .8fr .8fr 1.2fr;gap:6px;padding:8px 4px;border-bottom:1px solid #1c2747;font-size:14px;color:#fff;';
-    h += '<div style="' + ln + 'font-size:13px;color:#c9d3ee;"><span>Joueur</span><span>Réussite</span>' + (tri !== 'pire' ? '<span>Gain ' + (tri === 'dal' ? '🪜' : '🐚') + '</span><span>Mise max</span>' : '<span>Pire</span><span>En cours</span><span>Paliers</span>') + '</div>';
+    if (tri === 'pire') h += '<div style="' + ln + 'font-size:13px;color:#c9d3ee;"><span>Joueur</span><span>Réussite</span>' + (tri !== 'pire' ? '<span>Gain ' + (tri === 'dal' ? '🪜' : '🐚') + '</span><span>Mise max</span>' : '<span>Pire</span><span>En cours</span><span>Paliers</span>') + '</div>';
     top.forEach(function (x) {
       var me = x.id === String(c0.jo), pa = (typeof _g45F1CrPal === 'function') ? _g45F1CrPal(x.pire) : { p: x.pire + 1, ico: '' };
       var feu = x.pire >= 3 && x.pire <= 7 && x.cours >= 1 && x.pire - x.cours <= 1;
       /* 20261107c (« manque photo + club ») : photo ESPN (headshots/<ligue>/players/full/<id>.png) + logo et nom du club (equipes.json de la saison) */
       var clN = (Q.EQ && Q.EQ[x.eq] && Q.EQ[x.eq][0]) || '', clL = clN && typeof window._g45LogoIndex === 'function' ? window._g45LogoIndex(clN) : '';
+      /* 20261107h (captures téléphone : nom, club et réussite qui se chevauchent ; « Mise max 288 € » partout) → maquette meth_cls2.png « oui » :
+         en 🪜 / 🐚, une carte par joueur (photo, nom, club) + pastilles ✅ % · Pire · Gain · Mise max (⚠️ plafond = dernier palier atteint). */
+      if (tri !== 'pire') {
+        var pil = function (t, b) { return '<span style="background:#0b1226;border:1px solid ' + (b || '#2a3a63') + ';border-radius:8px;padding:3px 8px;">' + t + '</span>'; }, pla = x.mmax >= MI[MI.length - 1] - 1e-9;
+        h += '<div style="display:flex;gap:10px;padding:10px 6px;border-bottom:1px solid #1c2747;color:#fff;' + (me ? 'background:rgba(47,107,255,.2);border-radius:10px;' : '') + '">'
+          + '<img src="https://a.espncdn.com/i/headshots/' + esc(X.lg) + '/players/full/' + esc(x.id) + '.png" alt="" loading="lazy" onerror="this.style.visibility=\'hidden\'" style="width:52px;height:52px;border-radius:50%;object-fit:cover;object-position:top;background:#25335c;border:2px solid ' + (me ? '#6d9dff' : '#2a3a63') + ';flex:none;">'
+          + '<div style="flex:1;min-width:0;"><div style="font-size:16px;font-weight:800;">' + esc(x.nom) + '</div>'
+          + (clN ? '<div style="display:flex;align-items:center;gap:5px;font-size:13px;color:#c9d3ee;">' + (/^https:\/\//.test(clL) ? '<img src="' + esc(clL) + '" alt="" loading="lazy" onerror="this.remove()" style="width:18px;height:18px;object-fit:contain;">' : '') + esc(clN) + '</div>' : '')
+          + '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;font-size:14px;">'
+          + pil('✅ ' + Math.round(100 * x.ok / x.n) + ' % <span style="color:#c9d3ee;font-size:12px;">' + x.ok + '/' + x.n + '</span>') + pil('Pire <b>' + x.pire + '</b>')
+          + '<span style="background:' + (x.gain >= 0 ? 'rgba(30,215,96,.15)' : 'rgba(255,90,90,.15)') + ';border:1px solid ' + (x.gain >= 0 ? '#1ed760' : '#ff5a5a') + ';border-radius:8px;padding:3px 8px;font-weight:900;color:' + (x.gain >= 0 ? '#1ed760' : '#ff5a5a') + ';">' + (x.gain < 0 ? '🔴 −' : '+') + Math.abs(Math.round(x.gain)).toLocaleString('fr-FR') + ' €</span>'
+          + pil('Mise max <b>' + fr2(x.mmax) + ' €</b>' + (pla ? ' ⚠️ plafond' : ''), pla ? '#ff9f43' : '') + '</div></div></div>';
+        return;
+      }
       h += '<div style="' + ln + 'align-items:center;' + (me ? 'background:rgba(47,107,255,.2);border-radius:8px;' : '') + '"><span style="display:flex;align-items:center;gap:10px;min-width:0;">'
         + '<img src="https://a.espncdn.com/i/headshots/' + esc(X.lg) + '/players/full/' + esc(x.id) + '.png" alt="" loading="lazy" onerror="this.style.visibility=\'hidden\'" style="width:46px;height:46px;border-radius:50%;object-fit:cover;object-position:top;background:#25335c;border:2px solid ' + (me ? '#6d9dff' : '#2a3a63') + ';flex:none;">'
         + '<span style="min-width:0;"><span style="display:block;font-weight:' + (me ? 800 : 600) + ';">' + esc(x.nom) + '</span>'
@@ -77580,7 +77594,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
         + '<span style="font-weight:800;color:' + (feu ? '#ff5a5a' : x.cours ? '#ff9f43' : '#c9d3ee') + ';">' + (x.cours ? (feu ? '🔥 ' : '') + x.cours : '—') + '</span>'
         + '<span><b>' + pa.p + ' palier' + (pa.p > 1 ? 's' : '') + '</b> ' + (pa.ico || '') + (pa.mise != null ? ' <span style="font-size:12px;color:#c9d3ee;">' + pa.mise + ' €</span>' : '') + '</span></div>');
     });
-    if (tri !== 'pire') return h + '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">Gain = toutes ses saisons jouées en ' + (tri === 'dal' ? '🪜 D\'Alembert' : '🐚 Fibonacci') + ' à cette cote · Mise max = la plus grosse mise qu\'il aurait fallu poser · 🔴 = la méthode aurait perdu de l\'argent. Candidats : les 40 meilleurs de la saison en cours pour ce critère + ton joueur.</div></div>';
+    if (tri !== 'pire') return h + '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">Gain = toutes ses saisons jouées en ' + (tri === 'dal' ? '🪜 D\'Alembert' : '🐚 Fibonacci') + ' à cette cote · Mise max = la plus grosse mise qu\'il aurait fallu poser (⚠️ plafond = dernier palier, ' + (tri === 'dal' ? 'D' : 'F') + '12) · 🔴 = la méthode aurait perdu de l\'argent. Candidats : les 40 meilleurs de la saison en cours pour ce critère + ton joueur.</div></div>';
     return h + '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">✅ 5 paliers ou moins · ⚠️ jusqu\'à ta dernière mise · ❌ au-delà de tes paliers (mises 1 ⭐). Candidats : les 40 meilleurs de la saison en cours pour ce critère + ton joueur ; toutes leurs saisons dans la ligue.</div></div>';
   }
   window._g45CrUsJT = { mode: usJModeDe, val: usJVal, ok: usJOk, html: function (X, c0) { return usClsJHtml(X, c0); } };   /* tests */
