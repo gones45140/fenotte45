@@ -86264,7 +86264,7 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
     return '<div style="background:rgba(5,10,25,.82);border-radius:12px;padding:10px 12px;margin:6px 0 10px;"><div style="font-size:22px;font-weight:800;">🏁 Le monde du Cockpit</div><div style="font-size:14px;color:#c9d3ee;">Tout ce qui sert à ta montante, au même endroit</div></div>'
       + '<div style="display:flex;overflow-x:auto;margin-bottom:10px;">'
       /* 20261104r (capture annotée d'Antoine : 1 Tableau de bord, 2 Mes cartes, 3 Mes grilles, 4 Engager, 5 Bilan, 6 Archive, 7 Agenda, 8 Cockpit BET45) */
-      + bt('tdb', '🏠 Tableau de bord', "g45CkOnglet('tdb')") + bt('mc', '🃏 Mes cartes', "g45CkOnglet('mc')") + bt('gr', '🪜 Mes grilles', "g45CkOnglet('gr')")
+      + bt('tdb', '🏠 Tableau de bord', "g45CkOnglet('tdb')") + bt('loi', '📊 Loi des séries', "g45CkOnglet('loi')") + bt('mc', '🃏 Mes cartes', "g45CkOnglet('mc')")   /* 20261105r : onglet après le Tableau de bord */ + bt('gr', '🪜 Mes grilles', "g45CkOnglet('gr')")
       + bt('eng', '🚀 Engager', "g45CkOnglet('eng')") + bt('bil', '📈 Bilan', "g45CkOnglet('bil')") + bt('arc', '🕒 Archive', "g45CkOnglet('arc')")
       + bt('ag', '📅 Agenda', "g45CkOnglet('ag')") + bt('cb', '📊 Cockpit BET45', "g45CkOnglet('cb')") + bt('tr', '🔍 Trouver', "g45CkOnglet('tr')") + '</div>';
   }
@@ -86278,6 +86278,7 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
        monde si le Cockpit est activé, sinon ⭐ Suivies. */
     if (!$('ck-ag')) { var agd = document.createElement('div'); agd.id = 'ck-ag'; agd.style.display = 'none'; p.appendChild(agd); }
     if (!$('ck-mc')) { var mcd = document.createElement('div'); mcd.id = 'ck-mc'; mcd.style.display = 'none'; p.appendChild(mcd); }
+    if (!$('ck-loi')) { var lod = document.createElement('div'); lod.id = 'ck-loi'; lod.style.display = 'none'; p.appendChild(lod); }   /* 20261105r */
     var tc = $('t-cal'), ca = $('ck-ag'); if (tc && ca && tc.parentNode !== ca) { ca.appendChild(tc); tc.classList.remove('tab'); tc.style.display = 'block'; }
     /* 20261104l (« oui » : Outils → Montante dans 🪜 Mes grilles) : titre « 💰 Mises par palier » + #palier-panel DÉPLACÉS dans #ck-gr ; la case
        « 🏁 Je joue en montante » reste dans Outils (#g45-ck-on posée AVANT le titre), sinon on ne pourrait plus activer le Cockpit. */
@@ -86309,8 +86310,68 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
   function ulPrendre() { var ul = $('ulist'), cm = $('ck-mc'); if (!ul || !cm) return; if (!repUl) { repUl = document.createComment('ulist'); ul.parentNode.insertBefore(repUl, ul); } var bar = $('g45-ser-bar'); if (bar && bar.parentNode !== cm) cm.appendChild(bar); if (ul.parentNode !== cm) cm.appendChild(ul);
     try { if (typeof render === 'function') render(); } catch (e) {} try { if (typeof window._g45SerBarre === 'function') window._g45SerBarre(); } catch (e) {} }
   window._g45CkUlRendre = ulRendre;
+  /* ═══ 20261105r — 📊 LOI DES SÉRIES (Antoine : « un tableau qui m'aurait permis de voir que Minnesota arrivait à 2 matchs perdus et qu'il allait
+     bientôt gagner d'après les séries » → « sans mes paris, par rapport au résultat ; toute sorte de pari et tout sport ; chaque matin ; 24 h ;
+     5 dernières saisons ; nouvel onglet "Loi des séries" » → maquette → « oui code-le ») : le robot loi-series (gones45-archives, chaque matin)
+     écrit loi/loi_series.json = équipes qui jouent dans les 24 h et sont à 1 raté (ou moins) de leur pire série (pire ≤ 7, ≥ 20 matchs) ;
+     ici : lecture (30 min de cache), filtre sport, une carte par pépite, « ✅ Engager » si la carte existe, sinon « ➕ Créer la carte ». ═══ */
+  var LOI = { d: null, t: 0, f: 'tous', enCours: false };
+  var LOI_SP = { soccer: '⚽', hockey: '🏒', basketball: '🏀', football: '🏈', baseball: '⚾', rugby: '🏉', 'rugby-league': '🏉' };
+  function loiCarte(x) {
+    var nz = function (t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, ''); };
+    return ((typeof state !== 'undefined' && state.u) || []).filter(function (u) { return u && u.type !== 'joueur' && u.type !== 'competition' && (nz(u.n) === nz(x.eq) || (typeof _g45BandMeme === 'function' && _g45BandMeme(u.n, x.eq))); })[0] || null;
+  }
+  function loiCharger(force) {
+    if (LOI.enCours || (!force && LOI.d && Date.now() - LOI.t < 30 * 60e3)) return;
+    if (!LOI.d) { try { var c0 = JSON.parse(localStorage.getItem('g45loi1') || 'null'); if (c0 && c0.L) LOI.d = c0; } catch (e) {} }
+    LOI.enCours = true;
+    fetch('https://raw.githubusercontent.com/gones45140/gones45-archives/main/loi/loi_series.json?h=' + Math.floor(Date.now() / 18e5), { cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) { LOI.enCours = false; if (j && j.L) { LOI.d = j; LOI.t = Date.now(); try { localStorage.setItem('g45loi1', JSON.stringify(j)); } catch (e) {} } else LOI.t = Date.now(); if (TAB === 'loi') loiDessiner(); })
+      .catch(function () { LOI.enCours = false; LOI.t = Date.now(); if (TAB === 'loi') loiDessiner(); });
+  }
+  function loiHtml() {
+    var D = LOI.d, h = '<div style="' + CARTE + '"><div style="font-size:17px;font-weight:800;">📊 Loi des séries</div>'
+      + '<div style="font-size:13px;color:#c9d3ee;">Équipes qui jouent dans les 24 h et qui sont à 1 raté (ou moins) de leur pire série sur ' + ((D && D.s) || 5) + ' saisons. '
+      + (D && D.at ? 'Calculé le ' + new Date(D.at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) + ' à ' + new Date(D.at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : 'Calcul chaque matin') + ', sur les résultats des matchs (pas tes paris).</div>';
+    var F = [['tous', 'Tous'], ['soccer', '⚽'], ['hockey', '🏒'], ['basketball', '🏀'], ['football', '🏈'], ['baseball', '⚾'], ['rugby', '🏉']];
+    h += '<div>' + F.map(function (f) { var on = LOI.f === f[0]; return '<button onclick="g45LoiFiltre(\'' + f[0] + '\')" style="' + BTN + 'margin-top:6px;' + (on ? 'background:#2a4a9a;border-color:#6d9dff;' : '') + '">' + f[1] + '</button>'; }).join('') + '</div></div>';
+    if (!D) return h + '<div style="' + CARTE + '">' + (LOI.enCours ? '⏳ Lecture de la liste du matin…' : '⚠️ Liste du matin pas encore disponible.') + '</div>';
+    var now = Date.now(), L = (D.L || []).filter(function (x) { return x.t > now - 15 * 60e3 && (LOI.f === 'tous' || x.sp === LOI.f || (LOI.f === 'rugby' && x.sp === 'rugby-league')); })
+      .sort(function (a, b) { return (a.pire - a.cours) - (b.pire - b.cours) || a.t - b.t; });
+    if (!L.length) return h + '<div style="' + CARTE + '">Aucune pépite pour l\'instant' + (LOI.f !== 'tous' ? ' dans ce sport' : '') + '.</div>';
+    L.forEach(function (x) {
+      var u = loiCarte(x), dt = new Date(x.t), auj = dt.toDateString() === new Date().toDateString();
+      var hr = (auj ? 'aujourd\'hui ' : dt.toLocaleDateString('fr-FR', { weekday: 'short', day: '2-digit', month: '2-digit' }) + ' ') + dt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+      var pal = Math.min(9, x.pire + 3), sec = pal - (x.pire + 1), nE = String(x.eq).replace(/[\\'"<>&]/g, ''), nA = String(x.adv || '').replace(/[\\'"<>&]/g, '');
+      var bt = u ? '<button onclick="g45CkEngager(\'' + String(u.n).replace(/[\\'"<>&]/g, '') + '\',' + (x.d ? 1 : 0) + ',\'' + nA + '\',' + x.t + ')" style="' + BTN + 'margin-top:8px;background:#2f6bff;border-color:#6d9dff;">✅ Engager</button>'
+        : '<button onclick="g45LoiCreer(\'' + x.eid + '\',\'' + x.id + '\',\'' + x.k + '\',\'' + x.lieu + '\')" style="' + BTN + 'margin-top:8px;background:#2f6bff;border-color:#6d9dff;">➕ Créer la carte</button>';
+      h += '<div style="background:rgba(20,28,48,.95);border:1px solid #2a3a63;border-left:4px solid ' + (x.cours >= x.pire ? '#ff5a5a' : '#ff9f43') + ';border-radius:12px;padding:10px 12px;margin-bottom:10px;color:#fff;font-size:15px;line-height:1.5;">'
+        + '<span style="float:right;font-weight:900;font-size:16px;border-radius:8px;padding:2px 9px;background:#3a0f0f;border:1px solid #ff5a5a;">🔥 ' + x.cours + ' / ' + x.pire + '</span>'
+        + '<b>' + (LOI_SP[x.sp] || '') + ' ' + esc(x.eq) + ' ' + (x.d ? '🏠' : '✈️') + '</b><br><span style="font-size:13px;color:#c9d3ee;">' + (x.d ? 'vs ' : 'à ') + esc(x.adv) + ' · ' + hr + ' · ' + esc(x.ligue || '') + '</span><br>'
+        + '<b>' + esc(x.lib) + '</b> <span style="font-size:13px;color:#c9d3ee;">(' + (x.lieu === 'tout' ? 'tous lieux' : x.d ? 'à domicile' : 'à l\'extérieur') + ')</span> : ' + x.cours + ' raté' + (x.cours > 1 ? 's' : '') + ' de suite · pire série ' + x.pire
+        + (x.p && x.p.length ? ' <span style="font-size:13px;color:#c9d3ee;">(' + x.p.join('·') + ')</span>' : '') + '<br>'
+        + '<span style="font-size:13px;color:#c9d3ee;">→ ' + (x.pire + 1) + ' paliers' + (sec ? ' + ' + sec + ' de sécurité = ' + pal + ' paliers' : '') + ' · ' + x.ok + '/' + x.n + ' réussis</span><br>' + bt + '</div>';
+    });
+    return h + '<div style="font-size:13px;color:#c9d3ee;padding:0 4px 10px;">Paris regardés : ⚽ victoire, victoire ou nul, +1,5 / +2,5 / −3,5 buts, les deux marquent, l\'équipe marque · 🏒 vainqueur, victoire 60 min, +5,5 / −6,5 buts · 🏀🏈⚾🏉 vainqueur. Saison régulière (sports US). Pire série de 7 au plus.</div>';
+  }
+  function loiDessiner() { var z = $('ck-loi'); if (z && TAB === 'loi') z.innerHTML = loiHtml(); }
+  window.g45LoiFiltre = function (f) { LOI.f = f || 'tous'; loiDessiner(); };
+  window.g45LoiCreer = function (eid, id, k, lieu) {
+    var x = ((LOI.d && LOI.d.L) || []).filter(function (y) { return y.eid === eid && y.id === id && y.k === k && y.lieu === lieu; })[0]; if (!x || typeof state === 'undefined') return;
+    if (loiCarte(x)) { loiDessiner(); return; }
+    if (typeof _g45MurPlein === 'function' && _g45MurPlein()) { alert('🧱 Ton mur est plein : enlève une carte dans Outils → Équipes pour ajouter ' + x.eq + '.'); return; }
+    var pari = String(x.lib).replace(/\s*\(prolongation comprise\)/, '').toLowerCase();
+    if (!confirm('➕ Créer la carte ' + x.eq + ' (' + (LOI_SP[x.sp] || '') + ') avec le pari « ' + pari + ' »' + (x.lieu === 'tout' ? '' : x.d ? ' à domicile' : ' à l\'extérieur') + ' ?')) return;
+    var note = typeof window._g45UfCompose === 'function' ? window._g45UfCompose('', '', x.lieu === 'dom' ? pari : '', x.lieu === 'ext' ? pari : '', x.lieu === 'tout' ? pari : '') : pari;
+    state.u.push({ n: x.eq, abbr: String(x.eq).replace(/[^A-Za-z]/g, '').slice(0, 3).toUpperCase(), color: '#4d84ff', s: '3', l: 1, sport: LOI_SP[x.sp] || '⚽', logoUrl: '', link: '', link2: '', note: note, type: 'club' });
+    try { save(); } catch (e) {} try { if (typeof _g45PushBetsGithub === 'function') _g45PushBetsGithub(true); } catch (e) {} try { if (typeof render === 'function') render(); } catch (e) {}
+    loiDessiner();
+  };
+  window._g45LoiT = { html: loiHtml, LOI: LOI, carte: loiCarte };   /* tests */
   window.g45CkOnglet = function (k) {
-    TAB = ['eng', 'bil', 'arc', 'cb', 'gr', 'ag', 'mc', 'tr'].indexOf(k) >= 0 ? k : 'tdb'; squelette();
+    TAB = ['eng', 'bil', 'arc', 'cb', 'gr', 'ag', 'mc', 'tr', 'loi'].indexOf(k) >= 0 ? k : 'tdb'; squelette();
+    var kl = $('ck-loi'); if (kl) { kl.style.display = TAB === 'loi' ? '' : 'none'; if (TAB === 'loi') { loiDessiner(); loiCharger(false); } }   /* 20261105r */
     var km = $('ck-mc'); if (km) { km.style.display = TAB === 'mc' ? '' : 'none'; if (TAB === 'mc') ulPrendre(); else ulRendre(); }
     var t = $('ck-tdb'), e = $('ck-eng'), cb = $('ck-bil'), kb = $('ck-cb'), kg = $('ck-gr'), ka = $('ck-ag');
     if (ka) { ka.style.display = TAB === 'ag' ? '' : 'none'; if (TAB === 'ag') { var tc2 = $('t-cal'); if (tc2) tc2.style.display = 'block'; try { if (typeof loadCalendrier === 'function') loadCalendrier(); } catch (x) {} } }
@@ -86332,6 +86393,8 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
     if (TAB === 'tr' && t) { t.style.display = ''; t.innerHTML = '<div style="' + CARTE + '"><div style="font-size:16px;font-weight:800;margin-bottom:6px;">🔍 Trouver tes équipes et joueurs à jouer</div>'
       + '<div>Dans <b>🏆 Compétitions</b>, choisis un championnat, puis :</div><div style="margin-top:4px;">🎯 <b>Séries individuelles</b> : les buteurs / passeurs les plus réguliers (pire série sans marquer).</div>'
       + '<div style="margin-top:2px;">🏁 <b>Séries équipes</b> : tes critères sur 5 saisons + 💶 Cockpit + 🏁 Jouable en Cockpit ? (tout le championnat, du plus sûr au moins sûr).</div>'
+      + '<div style="margin-top:2px;">🔥 Tout en bas de <b>Séries équipes</b>, « 🏁 Jouable en Cockpit ? » → ▶ Lancer le classement → bouton <b>« 🔥 Proches de leur record »</b> (colonne « En cours »).</div>'
+      + '<div style="margin-top:2px;">📊 Les pépites du jour de tous les championnats : onglet <b>📊 Loi des séries</b>.</div>'   /* 20261105r */
       + '<button onclick="var b=document.querySelector(\'button.ni[onclick*=t-compet]\');showTab(\'t-compet\',b);loadCompetTab();" style="margin-top:10px;background:#4d7cff;border:0;border-radius:9px;padding:9px 14px;font-weight:800;font-size:15px;color:#fff;cursor:pointer;">🏆 Ouvrir Compétitions</button>'
       + '<div style="font-size:13px;color:#c9d3ee;margin-top:6px;">Ces deux onglets n\'apparaissent que pour ceux qui ont le Cockpit.</div></div>'; }
     var ht = $('ck-tabs'); if (ht) ht.innerHTML = entete();
