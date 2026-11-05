@@ -86299,6 +86299,7 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
       cg.appendChild(pp); try { if (typeof renderPaliers === 'function') renderPaliers(); } catch (e) {}
     }
     if (cg && !$('g45-ck-part')) { var bp = document.createElement('div'); bp.id = 'g45-ck-part'; bp.style.cssText = 'margin:0 0 12px;padding:10px 12px;border-radius:12px;background:rgba(10,14,24,.93);border:1px solid #1c2747;font-size:14px;line-height:1.5;color:#fff;'; cg.insertBefore(bp, cg.firstChild); try { window._g45CkPartDessiner && window._g45CkPartDessiner(); } catch (e) {} }   /* 20261105k */
+    if (cg && !$('g45-ck-meth')) { var bm2 = document.createElement('div'); bm2.id = 'g45-ck-meth'; bm2.style.cssText = 'margin:12px 0;padding:12px;border-radius:12px;background:rgba(10,14,24,.93);border:1px solid #1c2747;font-size:15px;line-height:1.5;color:#fff;'; cg.appendChild(bm2); }   /* 20261106b : ⚖️ en bas de Mes grilles */
     var ss = $('sub-strat'), ce = $('ck-eng'); if (ss && ce && ss.parentNode !== ce) ce.appendChild(ss);
     return p;
   }
@@ -86325,6 +86326,56 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
   function cpRendre() { var tc = $('t-compet'); window._g45CompetCk = false; if (tc && repCp && tc.parentNode && tc.parentNode.id === 'ck-tr') { repCp.parentNode.insertBefore(tc, repCp); tc.style.display = 'none'; } }
   function cpPrendre() { var tc = $('t-compet'), ct = $('ck-tr'); if (!tc || !ct) return; if (!repCp) { repCp = document.createComment('t-compet'); tc.parentNode.insertBefore(repCp, tc); } if (tc.parentNode !== ct) ct.appendChild(tc); tc.style.display = 'block'; window._g45CompetCk = true; try { if (typeof loadCompetTab === 'function') loadCompetTab(); } catch (e) {} }
   window._g45CkCpRendre = cpRendre;
+  /* ═══ 20261106b — ⚖️ « ET SI J'AVAIS JOUÉ AUTREMENT ? » (« il existe d'autres méthodes ? » → tableau Martingale / Fibonacci… → maquette-meth →
+     « oui ») dans 🪜 Mes grilles : on rejoue la suite réussi / raté gardée par « Calculer mes séries » (u.psL[k].sq, 4 saisons, même pari) avec
+     4 façons de miser, même P1 (celui de la grille de la carte) et même cote (u.ck, sinon 1,70, modifiable) : 🚀 montante de la carte (grille
+     _g45Grille(u, lieu) ; dernier palier perdu → retour P1, compté « série perdue au bout »), 🐚 Fibonacci (1-1-2-3-5-8… ; victoire = 2 cases en
+     arrière), 🪜 D'Alembert (+1 unité / −1 unité), 📏 mise fixe. Résultats : bénéfice, pire creux (plus bas atteint), mise max. ═══ */
+  var METH = { sel: '', cote: 0 };
+  function methListe() {
+    var L = [];
+    ((typeof state !== 'undefined' && state.u) || []).forEach(function (u) { var P = (u && u.psL) || {}; ['dom', 'ext', 'glob'].forEach(function (k) { var R = P[k]; if (R && typeof R.sq === 'string' && R.sq.length >= 10) L.push({ u: u, k: k, sq: R.sq }); }); });
+    return L;
+  }
+  function methJouer(sq, cote, G, une) {
+    var F = [1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144], O = {};
+    var run = function (mise, maj) { var bk = 0, mn = 0, mx = 0, bout = 0; for (var i = 0; i < sq.length; i++) { var w = sq.charAt(i) === '1', m = mise(); if (m > mx) mx = m; bk += w ? m * (cote - 1) : -m; if (bk < mn) mn = bk; bout += maj(w) || 0; } return { b: bk, mn: mn, mx: mx, bout: bout }; };
+    var p = 0; O.mont = run(function () { return +G[p] || 0; }, function (w) { if (w) { p = 0; return 0; } if (p >= G.length - 1) { p = 0; return 1; } p++; return 0; });
+    var fi = 0; O.fib = run(function () { return une * F[fi]; }, function (w) { fi = w ? Math.max(0, fi - 2) : Math.min(F.length - 1, fi + 1); });
+    var da = 1; O.dal = run(function () { return une * da; }, function (w) { da = w ? Math.max(1, da - 1) : da + 1; });
+    O.fix = run(function () { return une; }, function () {});
+    return O;
+  }
+  window._g45MethT = { jouer: methJouer, liste: methListe };   /* tests */
+  function methDessiner() {
+    var z = $('g45-ck-meth'); if (!z) return;
+    var L = methListe(), h = '<div style="font-size:17px;font-weight:800;">⚖️ Et si j\'avais joué autrement ?</div>';
+    if (!L.length) { z.innerHTML = h + '<div style="font-size:14px;color:#c9d3ee;">Il faut d\'abord les séries de tes cartes : 🃏 Mes cartes → « 🔄 Calculer mes séries ».</div>'; return; }
+    var cur = L.filter(function (x) { return x.u.n + '|' + x.k === METH.sel; })[0] || L[0]; METH.sel = cur.u.n + '|' + cur.k;
+    var G = (typeof _g45Grille === 'function' ? _g45Grille(cur.u, cur.k === 'glob' ? '' : cur.k) : null) || [1, 2, 6, 18, 54, 162, 486, 1458, 4374], une = +G[0] || 1;
+    var cote = METH.cote > 1 ? METH.cote : (+cur.u.ck > 1 ? +cur.u.ck : 1.7), O = methJouer(cur.sq, cote, G, une);
+    var ic = { dom: '🏠', ext: '✈️', glob: '🌍' }, nE = function (t) { return String(t).replace(/[\\'"<>&]/g, ''); };
+    h += '<div style="font-size:14px;color:#c9d3ee;">On rejoue les vrais matchs de la carte (' + cur.sq.length + ' matchs, 4 saisons, même pari) avec 4 façons de miser. P1 = ' + euC(une) + '.</div>'
+      + '<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;"><select onchange="g45MethSel(this.value)" style="font-size:15px;font-weight:700;padding:7px 9px;border-radius:10px;background:#141c33;color:#fff;border:1px solid #2a3a63;max-width:100%;">'
+      + L.map(function (x) { var v = x.u.n + '|' + x.k; return '<option value="' + esc(v) + '"' + (v === METH.sel ? ' selected' : '') + '>🃏 ' + esc(x.u.n) + ' ' + ic[x.k] + '</option>'; }).join('') + '</select>'
+      + '<span style="font-size:14px;">cote <input type="text" inputmode="decimal" value="' + String(cote).replace('.', ',') + '" onchange="g45MethCote(this.value)" style="width:64px;padding:6px 8px;border-radius:10px;border:1px solid #2a3a63;background:#0b1226;color:#fff;font-size:15px;"> ✏️</span></div>';
+    var coul = function (v) { return v > 0.5 ? '#1ed760' : v < -0.5 ? '#ff9f43' : '#fff'; };
+    var lig = function (t, ex, R, rouge) {
+      var c3 = function (v, l, col) { return '<div style="background:#0f1730;border-radius:8px;padding:5px;text-align:center;"><b style="display:block;font-size:16px;color:' + col + ';">' + v + '</b><span style="font-size:13px;color:#c9d3ee;">' + l + '</span></div>'; };
+      return '<div style="border-top:1px solid #1c2747;padding:9px 0;"><b>' + t + '</b><br><span style="font-size:13px;color:#c9d3ee;">' + ex + '</span>'
+        + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:4px;">' + c3((R.b > 0 ? '+' : R.b < 0 ? '−' : '') + euC(Math.abs(R.b)), 'bénéfice', coul(R.b)) + c3('−' + euC(Math.abs(R.mn)), 'pire creux', rouge ? '#ff5a5a' : '#ff9f43') + c3(euC(R.mx), 'mise max', rouge ? '#ff5a5a' : '#fff') + '</div>'
+        + (R.bout ? '<div style="font-size:13px;color:#ff5a5a;margin-top:3px;">⚠️ ' + R.bout + ' série' + (R.bout > 1 ? 's' : '') + ' perdue' + (R.bout > 1 ? 's' : '') + ' jusqu\'au dernier palier (P' + G.length + ')</div>' : '') + '</div>';
+    };
+    h += lig('🚀 Ta montante (Cockpit)', 'après une défaite : 2 × tout ce qui est perdu (ta grille, ' + G.length + ' paliers). Une victoire rattrape tout.', O.mont, O.mont.mx > 50 * une)
+      + lig('🐚 Fibonacci', 'après une défaite, la mise suit 1-1-2-3-5-8… × P1. Après une victoire : 2 cases en arrière.', O.fib)
+      + lig('🪜 D\'Alembert', '+' + euC(une) + ' après une défaite, −' + euC(une) + ' après une victoire.', O.dal)
+      + lig('📏 Mise fixe', 'toujours ' + euC(une) + ', quoi qu\'il arrive.', O.fix)
+      + '<div style="font-size:13px;color:#c9d3ee;margin-top:4px;">« Pire creux » = le plus bas où ta bankroll serait descendue en cours de route. Même cote pour tous les matchs (cote de la carte si tu l\'as notée).</div>';
+    z.innerHTML = h;
+  }
+  window._g45MethDessiner = methDessiner;
+  window.g45MethSel = function (v) { METH.sel = String(v || ''); methDessiner(); };
+  window.g45MethCote = function (v) { var c = parseFloat(String(v || '').replace(',', '.')); METH.cote = c > 1 && c < 20 ? c : 0; methDessiner(); };
   /* ═══ 20261105r — 📊 LOI DES SÉRIES (Antoine : « un tableau qui m'aurait permis de voir que Minnesota arrivait à 2 matchs perdus et qu'il allait
      bientôt gagner d'après les séries » → « sans mes paris, par rapport au résultat ; toute sorte de pari et tout sport ; chaque matin ; 24 h ;
      5 dernières saisons ; nouvel onglet "Loi des séries" » → maquette → « oui code-le ») : le robot loi-series (gones45-archives, chaque matin)
@@ -86424,7 +86475,7 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
     var km = $('ck-mc'); if (km) { km.style.display = TAB === 'mc' ? '' : 'none'; if (TAB === 'mc') ulPrendre(); else ulRendre(); }
     var t = $('ck-tdb'), e = $('ck-eng'), cb = $('ck-bil'), kb = $('ck-cb'), kg = $('ck-gr'), ka = $('ck-ag');
     if (ka) { ka.style.display = TAB === 'ag' ? '' : 'none'; if (TAB === 'ag') { var tc2 = $('t-cal'); if (tc2) tc2.style.display = 'block'; try { if (typeof loadCalendrier === 'function') loadCalendrier(); } catch (x) {} } }
-    if (kg) { kg.style.display = TAB === 'gr' ? '' : 'none'; if (TAB === 'gr') { try { renderPaliers(); } catch (x) {} } }
+    if (kg) { kg.style.display = TAB === 'gr' ? '' : 'none'; if (TAB === 'gr') { try { renderPaliers(); } catch (x) {} try { methDessiner(); } catch (x) {} } }   /* 20261106b : + ⚖️ */
     /* 20261104k (« Cockpit dans Tendances, on le bascule entièrement dans Cockpit ? » → B : basculé ; ami sans le Cockpit → « 🏁 Cockpit d'Antoine »
        reste dans Tendances, la vitrine) : même rendu (_g45CkHtml → #g45ck, redessiné sur place par ckRedessiner). */
     if (kb) { kb.style.display = TAB === 'cb' ? '' : 'none'; if (TAB === 'cb') { var tr = $('t-tend'), z0 = tr && tr.querySelector('#g45ck'); if (z0) z0.remove();
