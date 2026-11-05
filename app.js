@@ -77388,7 +77388,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     if (Q.etat === 1) return h + '<div style="font-size:14px;color:#fff;">⏳ Lecture des équipes… <span id="g45cr-cls-prog">' + (Q.f || 0) + ' / ' + (Q.n || '?') + '</span> (la 1re fois seulement)</div></div>';
     if (Q.etat !== 2) return h + (Q.err ? '<div style="font-size:14px;color:#ff9f43;margin-bottom:6px;">⚠️ ' + esc(Q.err) + '</div>' : '')
       + '<button onclick="g45CrClsLancer()" style="border:none;border-radius:10px;padding:9px 14px;font-size:14px;font-weight:700;color:#fff;background:#2f6bff;cursor:pointer;">▶ Lancer le classement (' + (/^rugby/.test(X.sp) ? 'archives, ≈ 20 s' : '≈ 1 min la 1re fois, ensuite gardé') + ')</button></div>';
-    var feu = function (R) { return R.pire >= 3 && R.pire <= 7 && R.cours >= 1 && R.pire - R.cours <= 1; }   /* 20261105t : « série 3 matchs mini, 1 et 2 c'est tellement courant », triF = S.clsTri === 'feu';   /* 20261105q : 🔥 = à 1 défaite (ou moins) du record, pire ≤ 7 (9 paliers − 2 de sécurité) */
+    var feu = function (R) { return R.pire >= 3 && R.pire <= 7 && R.cours >= 1 && R.pire - R.cours <= 1; }, triF = S.clsTri === 'feu';   /* 20261105t : pire ≥ 3 (« série 3 matchs mini, 1 et 2 c'est tellement courant ») ; 20261105q : 🔥 = à 1 défaite (ou moins) du record, pire ≤ 7 (9 paliers − 2 de sécurité) */
     var L = (Q.eq || []).map(function (t) { var D = Q.D[t.id]; var R = D ? clsStat(D, c) : null; return { t: t, R: R }; })
       .filter(function (x) { return x.R && x.R.n >= 5; })
       .sort(triF ? function (a, b) { var fa = feu(a.R) ? 0 : (a.R.pire <= 7 ? 1 : 2), fb = feu(b.R) ? 0 : (b.R.pire <= 7 ? 1 : 2); return (fa - fb) || ((a.R.pire - a.R.cours) - (b.R.pire - b.R.cours)) || (b.R.cours - a.R.cours) || (a.R.pire - b.R.pire); }
