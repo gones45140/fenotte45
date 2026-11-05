@@ -86448,7 +86448,24 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
       + '<div style="font-size:13px;color:#c9d3ee;margin-top:6px;">Ces deux onglets n\'apparaissent que pour ceux qui ont le Cockpit.</div></div>'; }
     var ht = $('ck-tabs'); if (ht) ht.innerHTML = entete();
   };
-  window.g45CkOuvrir = function (btn, k) { squelette(); if (typeof showTab === 'function') showTab('t-cockpit', btn || $('g45-ni-ck')); window.g45CkOnglet(k || TAB); };
+  /* ═══ 20261105aa → 20261106a (capture d'Outils : « Cockpit invisible en onglet, donc faut le mettre, mais faire une page de présentation avec
+     l'onglet, si ça intéresse ou pas ; actuellement dispo pour tout le monde, mais deviendra plus tard comme Tendances réservé » → maquette-vitrine
+     → « OUI ») : bouton 🏁 Cockpit TOUJOURS dans la barre ; Cockpit coupé → page de présentation (#ck-vit) + « ✅ Activer le Cockpit ». ═══ */
+  function vitrine() {
+    var p = squelette(); if (!p) return;
+    var v = $('ck-vit'); if (!v) { v = document.createElement('div'); v.id = 'ck-vit'; p.insertBefore(v, p.firstChild); }
+    Array.prototype.forEach.call(p.children, function (el) { if (el !== v) el.style.display = 'none'; }); v.style.display = '';
+    try { bilRendre(); ulRendre(); cpRendre(); } catch (e) {}
+    var L = [['📊', 'Loi des séries', 'chaque matin, les équipes proches de leur pire série'], ['🃏', 'Mes cartes', 'la pire série de tes équipes sur 4 à 5 saisons'],
+      ['🪜', 'Mes grilles', 'tes mises par palier, la part de ta bankroll'], ['🚀', 'Engager · Bilan · Archive', 'tes paris de montante, à part'], ['📅', 'Agenda', 'les matchs de tes équipes avec ta mise du jour']];
+    v.innerHTML = '<div style="' + CARTE + '"><div style="font-size:22px;font-weight:800;">🏁 Le monde du Cockpit</div><div style="font-size:15px;color:#c9d3ee;">Pour ceux qui jouent en <b style="color:#fff;">montante</b> : on remise après une défaite, palier par palier, jusqu\'à la victoire.</div></div>'
+      + '<div style="' + CARTE + '">' + L.map(function (x, i) { return '<div style="display:flex;gap:10px;align-items:flex-start;padding:8px 0;' + (i ? 'border-top:1px solid #1c2747;' : '') + '"><span style="font-size:24px;">' + x[0] + '</span><div style="font-size:15px;"><b>' + x[1] + '</b><br><span style="color:#c9d3ee;">' + x[2] + '</span></div></div>'; }).join('')
+      + '<button onclick="g45CkActiver()" style="display:block;width:100%;margin-top:12px;border:0;border-radius:12px;padding:13px;font-weight:900;font-size:18px;background:#1ed760;color:#0b101d;cursor:pointer;">✅ Activer le Cockpit</button>'
+      + '<div style="font-size:14px;color:#c9d3ee;margin-top:8px;text-align:center;">Gratuit pour l\'instant. Plus tard, réservé aux soutiens (comme Tendances).<br>Tu peux le couper quand tu veux dans Outils → ➕ Équipes.</div></div>'
+      + '<div style="font-size:14px;color:#c9d3ee;text-align:center;padding-bottom:10px;">Si tu ne joues pas en montante, rien ne change pour toi.</div>';
+  }
+  window.g45CkActiver = function () { try { window.g45CkOnSet(true); } catch (e) {} window.g45CkOuvrir(null, 'tdb'); };
+  window.g45CkOuvrir = function (btn, k) { squelette(); if (typeof showTab === 'function') showTab('t-cockpit', btn || $('g45-ni-ck')); if (!actif()) { vitrine(); return; } var v = $('ck-vit'); if (v) v.style.display = 'none'; var ht0 = $('ck-tabs'); if (ht0) ht0.style.display = ''; window.g45CkOnglet(k || TAB); };
   function dessiner() { var p = $('t-cockpit'); if (p && p.style.display !== 'none' && TAB === 'tdb') { squelette(); var t = $('ck-tdb'); try { if (t) t.innerHTML = tableau(); var ht = $('ck-tabs'); if (ht && !ht.innerHTML) ht.innerHTML = entete(); } catch (e) { if (t) t.innerHTML = '<div style="color:#ff5a5a;">Erreur du tableau de bord.</div>'; } } }
   function poser() {
     try {
@@ -86462,9 +86479,9 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
         if (engVu) { var ss2 = $('sub-strat'); if (ss2 && ss2.style.display === 'none') { try { swBet('strat'); } catch (e) {} ss2.style.display = 'block'; } } }
       var nav = document.querySelector('nav.nav'), bp = nav && nav.querySelector('button.ni[onclick*="t-paris"]'), b = $('g45-ni-ck');
       if (nav && bp && !b) { b = document.createElement('button'); b.id = 'g45-ni-ck'; b.className = 'ni'; b.setAttribute('onclick', 'g45CkOuvrir(this)'); b.innerHTML = '<span>🏁</span>Cockpit'; bp.insertAdjacentElement('afterend', b); }
-      if (b) b.style.display = actif() ? '' : 'none';
+      if (b) b.style.display = '';   /* 20261106a : toujours là (vitrine si coupé) */
       Array.prototype.forEach.call(document.querySelectorAll('button.ni[onclick*="t-cal"]'), function (x) { x.style.display = 'none'; });   /* 20261104m : Agenda dans le monde du Cockpit */
-      if (!actif()) { var p = $('t-cockpit'); if (p && p.style.display !== 'none') { var bm = document.querySelector('button.ni[onclick*="t-dash"]'); if (typeof showTab === 'function') showTab('t-dash', bm); } }
+      if (!actif()) { var p = $('t-cockpit'); if (p && p.style.display !== 'none' && !($('ck-vit') && $('ck-vit').style.display === '')) vitrine(); }   /* 20261106a : coupé pendant qu'on y est → page de présentation */
       var pp = $('palier-panel'), t = $('g45-ck-on');
       if (pp && !t && !($('ck-gr') && $('ck-gr').contains(pp))) { t = document.createElement('div'); t.id = 'g45-ck-on'; t.style.cssText = 'margin:0 0 12px;padding:10px 12px;border-radius:10px;background:rgba(77,132,255,.12);border:1px solid #4d84ff;font-size:14px;color:#fff;'; pp.insertAdjacentElement('afterbegin', t); }
       try { squelette(); } catch (e) {}   /* 20261104i-l : #sub-strat → #ck-eng, Mises par palier → #ck-gr */
