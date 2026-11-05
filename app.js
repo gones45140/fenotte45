@@ -47001,8 +47001,12 @@ async function loadCompetTab() {
         + '<span style="font-size:11.5px;font-weight:700;">' + x[2] + '</span></button>';
     }).join('');
 
-    el.innerHTML = '<div class="sec" style="margin-top:0;">\ud83c\udfc6 Comp\u00e9titions</div>'
-      + '<div style="font-size:13px;color:#c9d3ee;margin-bottom:12px;">Choisis un sport, puis une comp\u00e9tition : \u00e9quipes, journ\u00e9es, classement, forme, séries individuelles et séries équipes.</div>'
+    /* 20261105s : dans le Cockpit (🔍 Trouver), seulement les sports qui ont les séries (pas de Tennis / F1 / MMA…) */
+    if (window._g45CompetCk) { perso = ''; cartes = G45_SPORTS.filter(function (sp) { return ['soccer', 'hockey', 'basketball', 'football', 'baseball', 'rugby'].indexOf(sp.key) >= 0; }).map(function (sp) {
+      return '<button onclick="g45CompetSport(\'' + sp.key + '\')" style="border:none;cursor:pointer;background:rgba(255,255,255,.05);border-radius:12px;padding:16px 8px;display:flex;flex-direction:column;align-items:center;gap:7px;color:#fff;"><span style="font-size:26px;">' + sp.ico + '</span><span style="font-size:13px;font-weight:700;">' + sp.name + '</span></button>'; }).join(''); }
+    el.innerHTML = (window._g45CompetCk ? '<div class="sec" style="margin-top:0;">\ud83d\udd0d Trouver \u2014 s\u00e9ries des championnats</div><div style="font-size:14px;color:#c9d3ee;margin-bottom:12px;">Choisis un sport, puis un championnat : \ud83c\udfaf S\u00e9ries individuelles et \ud83c\udfc1 S\u00e9ries \u00e9quipes.</div>'
+      : '<div class="sec" style="margin-top:0;">\ud83c\udfc6 Comp\u00e9titions</div>'
+      + '<div style="font-size:13px;color:#c9d3ee;margin-bottom:12px;">Choisis un sport, puis une comp\u00e9tition : \u00e9quipes, journ\u00e9es, classement, forme.</div>')
       + '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:10px;">' + cartes + perso + '</div>';
     return;
   }
@@ -47157,8 +47161,13 @@ async function loadCompetTab() {
      ouvert → ils RESTENT ici (rien à recréer, rien ne casse) mais ne s'affichent QUE si le Cockpit est activé ; le monde du Cockpit y mène
      par son onglet 🔍 Trouver. Cockpit coupé : onglets retirés, vue ramenée sur Équipes. */
   var _ckOff = (typeof window._g45CkActif === 'function' && !window._g45CkActif());
-  if (_ckOff) vues = vues.filter(function (v) { return v[0] !== 'buteurs' && v[0] !== 'seq'; });
-  if (_g45CompetVue === 'transferts' || _g45CompetVue === 'suivies' || (_ckOff && (_g45CompetVue === 'buteurs' || _g45CompetVue === 'seq'))) _g45CompetVue = 'equipes';
+  /* 20261105s (capture Compétitions → Ligue 1, les deux onglets entourés : « les 2 blocs séries doivent aller dans Cockpit ») : #t-compet est
+     DÉPLACÉ dans le Cockpit (onglet 🔍 Trouver, window._g45CompetCk) → là, SEULEMENT 🎯 Séries individuelles / 🏁 Séries équipes ;
+     dans Compétitions, ces deux onglets ne sont plus jamais montrés. */
+  var _ckIci = !!window._g45CompetCk && !_ckOff;
+  vues = vues.filter(function (v) { var ser = v[0] === 'buteurs' || v[0] === 'seq'; return _ckIci ? ser : !ser; });
+  if (_ckIci) { if (_g45CompetVue !== 'buteurs' && _g45CompetVue !== 'seq') _g45CompetVue = 'buteurs'; if (!vues.length) { el.innerHTML = '<button onclick="g45CompetSel(null)" style="border:none;background:rgba(255,255,255,.06);color:#fff;border-radius:8px;padding:8px 12px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:10px;">\u2190 ' + sp.name + '</button><div style="font-size:15px;color:#fff;">Pas de s\u00e9ries pour cette comp\u00e9tition.</div>'; return; } }
+  else if (_g45CompetVue === 'transferts' || _g45CompetVue === 'suivies' || _g45CompetVue === 'buteurs' || _g45CompetVue === 'seq') _g45CompetVue = 'equipes';
   var onglets = vues.map(function (v) {
     var on = (v[0] === _g45CompetVue);
     return '<button onclick="g45CompetVue(\'' + v[0] + '\')" style="flex:1;min-width:96px;padding:10px;font-size:11.5px;font-weight:800;cursor:pointer;border-radius:9px;'
@@ -86279,6 +86288,7 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
     if (!$('ck-ag')) { var agd = document.createElement('div'); agd.id = 'ck-ag'; agd.style.display = 'none'; p.appendChild(agd); }
     if (!$('ck-mc')) { var mcd = document.createElement('div'); mcd.id = 'ck-mc'; mcd.style.display = 'none'; p.appendChild(mcd); }
     if (!$('ck-loi')) { var lod = document.createElement('div'); lod.id = 'ck-loi'; lod.style.display = 'none'; p.appendChild(lod); }   /* 20261105r */
+    if (!$('ck-tr')) { var trd = document.createElement('div'); trd.id = 'ck-tr'; trd.style.display = 'none'; p.appendChild(trd); }   /* 20261105s */
     var tc = $('t-cal'), ca = $('ck-ag'); if (tc && ca && tc.parentNode !== ca) { ca.appendChild(tc); tc.classList.remove('tab'); tc.style.display = 'block'; }
     /* 20261104l (« oui » : Outils → Montante dans 🪜 Mes grilles) : titre « 💰 Mises par palier » + #palier-panel DÉPLACÉS dans #ck-gr ; la case
        « 🏁 Je joue en montante » reste dans Outils (#g45-ck-on posée AVANT le titre), sinon on ne pourrait plus activer le Cockpit. */
@@ -86310,6 +86320,11 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
   function ulPrendre() { var ul = $('ulist'), cm = $('ck-mc'); if (!ul || !cm) return; if (!repUl) { repUl = document.createComment('ulist'); ul.parentNode.insertBefore(repUl, ul); } var bar = $('g45-ser-bar'); if (bar && bar.parentNode !== cm) cm.appendChild(bar); if (ul.parentNode !== cm) cm.appendChild(ul);
     try { if (typeof render === 'function') render(); } catch (e) {} try { if (typeof window._g45SerBarre === 'function') window._g45SerBarre(); } catch (e) {} }
   window._g45CkUlRendre = ulRendre;
+  /* 20261105s : #t-compet DÉPLACÉ dans #ck-tr le temps de l'onglet 🔍 Trouver (séries seulement), remis dans la page Compétitions ensuite (repère). */
+  var repCp = null;
+  function cpRendre() { var tc = $('t-compet'); window._g45CompetCk = false; if (tc && repCp && tc.parentNode && tc.parentNode.id === 'ck-tr') { repCp.parentNode.insertBefore(tc, repCp); tc.style.display = 'none'; } }
+  function cpPrendre() { var tc = $('t-compet'), ct = $('ck-tr'); if (!tc || !ct) return; if (!repCp) { repCp = document.createComment('t-compet'); tc.parentNode.insertBefore(repCp, tc); } if (tc.parentNode !== ct) ct.appendChild(tc); tc.style.display = 'block'; window._g45CompetCk = true; try { if (typeof loadCompetTab === 'function') loadCompetTab(); } catch (e) {} }
+  window._g45CkCpRendre = cpRendre;
   /* ═══ 20261105r — 📊 LOI DES SÉRIES (Antoine : « un tableau qui m'aurait permis de voir que Minnesota arrivait à 2 matchs perdus et qu'il allait
      bientôt gagner d'après les séries » → « sans mes paris, par rapport au résultat ; toute sorte de pari et tout sport ; chaque matin ; 24 h ;
      5 dernières saisons ; nouvel onglet "Loi des séries" » → maquette → « oui code-le ») : le robot loi-series (gones45-archives, chaque matin)
@@ -86372,6 +86387,7 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
   window.g45CkOnglet = function (k) {
     TAB = ['eng', 'bil', 'arc', 'cb', 'gr', 'ag', 'mc', 'tr', 'loi'].indexOf(k) >= 0 ? k : 'tdb'; squelette();
     var kl = $('ck-loi'); if (kl) { kl.style.display = TAB === 'loi' ? '' : 'none'; if (TAB === 'loi') { loiDessiner(); loiCharger(false); } }   /* 20261105r */
+    var kt = $('ck-tr'); if (kt) { kt.style.display = TAB === 'tr' ? '' : 'none'; if (TAB === 'tr') cpPrendre(); else cpRendre(); }   /* 20261105s */
     var km = $('ck-mc'); if (km) { km.style.display = TAB === 'mc' ? '' : 'none'; if (TAB === 'mc') ulPrendre(); else ulRendre(); }
     var t = $('ck-tdb'), e = $('ck-eng'), cb = $('ck-bil'), kb = $('ck-cb'), kg = $('ck-gr'), ka = $('ck-ag');
     if (ka) { ka.style.display = TAB === 'ag' ? '' : 'none'; if (TAB === 'ag') { var tc2 = $('t-cal'); if (tc2) tc2.style.display = 'block'; try { if (typeof loadCalendrier === 'function') loadCalendrier(); } catch (x) {} } }
@@ -86380,7 +86396,7 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
        reste dans Tendances, la vitrine) : même rendu (_g45CkHtml → #g45ck, redessiné sur place par ckRedessiner). */
     if (kb) { kb.style.display = TAB === 'cb' ? '' : 'none'; if (TAB === 'cb') { var tr = $('t-tend'), z0 = tr && tr.querySelector('#g45ck'); if (z0) z0.remove();
       try { kb.innerHTML = (typeof _g45AccesPremium === 'function' && _g45AccesPremium() !== true) ? '<div style="' + CARTE + '">🔒 Cockpit BET45 : réservé premium.</div>' : window._g45CkHtml(); } catch (x) { kb.innerHTML = ''; } } else kb.innerHTML = ''; }
-    if (t) t.style.display = (TAB === 'tdb' || TAB === 'tr') ? '' : 'none'; if (e) e.style.display = TAB === 'eng' ? '' : 'none'; if (cb) cb.style.display = (TAB === 'bil' || TAB === 'arc') ? '' : 'none';
+    if (t) t.style.display = TAB === 'tdb' ? '' : 'none'; if (e) e.style.display = TAB === 'eng' ? '' : 'none'; if (cb) cb.style.display = (TAB === 'bil' || TAB === 'arc') ? '' : 'none';
     if (TAB === 'bil' || TAB === 'arc') {
       if (bilPrendre()) { window._g45ArchCk = TAB === 'arc';
         try { if (TAB === 'arc') showBilanTab('arch', $('btab-arch')); else showBilanTab('cockpit', $('btab-cockpit')); } catch (x) {}
@@ -86390,7 +86406,7 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
     if (TAB === 'tdb' && t) { try { t.innerHTML = tableau(); } catch (x) {} }
     /* 20261104w : 🔍 Trouver = les classements du championnat (Séries individuelles / Séries équipes / Jouable en Cockpit ?) restent dans
        Compétitions, où on choisit le championnat ; cet onglet explique et y mène. */
-    if (TAB === 'tr' && t) { t.style.display = ''; t.innerHTML = '<div style="' + CARTE + '"><div style="font-size:16px;font-weight:800;margin-bottom:6px;">🔍 Trouver tes équipes et joueurs à jouer</div>'
+    if (false && TAB === 'tr' && t) { t.style.display = ''; t.innerHTML = '<div style="' + CARTE + '"><div style="font-size:16px;font-weight:800;margin-bottom:6px;">🔍 Trouver tes équipes et joueurs à jouer</div>'
       + '<div>Dans <b>🏆 Compétitions</b>, choisis un championnat, puis :</div><div style="margin-top:4px;">🎯 <b>Séries individuelles</b> : les buteurs / passeurs les plus réguliers (pire série sans marquer).</div>'
       + '<div style="margin-top:2px;">🏁 <b>Séries équipes</b> : tes critères sur 5 saisons + 💶 Cockpit + 🏁 Jouable en Cockpit ? (tout le championnat, du plus sûr au moins sûr).</div>'
       + '<div style="margin-top:2px;">🔥 Tout en bas de <b>Séries équipes</b>, « 🏁 Jouable en Cockpit ? » → ▶ Lancer le classement → bouton <b>« 🔥 Proches de leur record »</b> (colonne « En cours »).</div>'
@@ -86439,7 +86455,7 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
   /* page Pari ouverte avec le Cockpit encore « on » (ancien état) → Simple */
   try { var _st0 = showTab; showTab = window.showTab = function (id, btn) {
     if (id === 't-cal') { try { if (actif()) { window.g45CkOuvrir(null, 'ag'); return; } var bs = document.querySelector('button.ni[onclick*="t-suivies"]'); id = 't-suivies'; btn = bs; arguments[0] = id; arguments[1] = btn; if (typeof loadSuiviesTab === 'function') setTimeout(function () { try { loadSuiviesTab(); } catch (e) {} }, 0); } catch (e) {} }   /* 20261104m */
-    try { if (id !== 't-cockpit') { bilRendre(); ulRendre(); } } catch (e) {} var r = _st0.apply(this, arguments); try { if (id === 't-paris') { var bc = $('btn-cpit'); if (bc && bc.classList.contains('on') && typeof swBet === 'function') swBet('simple'); } } catch (e) {} return r; }; } catch (e) {}
+    try { if (id !== 't-cockpit') { bilRendre(); ulRendre(); cpRendre(); } } catch (e) {} var r = _st0.apply(this, arguments); try { if (id === 't-paris') { var bc = $('btn-cpit'); if (bc && bc.classList.contains('on') && typeof swBet === 'function') swBet('simple'); } } catch (e) {} return r; }; } catch (e) {}
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { setTimeout(poser, 300); }); else setTimeout(poser, 300);
   setInterval(function () { try { poser(); dessiner(); } catch (e) {} }, 15000);
 })();
