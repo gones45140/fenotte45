@@ -77501,8 +77501,13 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
         if (cand.indexOf(String(c0.jo)) < 0) cand.push(String(c0.jo));
         var P = {}, todo = []; cand.forEach(function (id) { P[id] = { nom: (cur[id] && cur[id][0]) || '', eq: (cur[id] && cur[id][1]) || '', L: [] }; ANS.forEach(function (an) { todo.push([id, an]); }); });
         Q.n = todo.length; var i = 0;
-        async function w() { while (i < todo.length) { var t = todo[i++]; var j = null; try { j = await aLire(B0 + aSaUS(X.lg, t[1]) + '/joueurs/' + t[0] + '.json'); } catch (e) {}
-          ((j && j.m) || []).forEach(function (m) { if (m && m[4] && typeof m[4] === 'object') P[t[0]].L.push([+m[0] || 0, m[6] === 'h' ? 1 : m[6] === 'a' ? 0 : -1, usJVal(X.sp, c0.jm, m[4])]); });
+        /* 20261107d (capture Draisaitl buteur 🏠 : 149 matchs / pire 7 ici, 114 / pire 5 dans ses critères) : SAISON RÉGULIÈRE seulement, comme les
+           critères (aEquipeUS : m[5] === 2) → matchs du journal gardés s'ils sont « saison régulière » dans le fichier de l'équipe (equipes/<id>.json). */
+        var REG = {}, regDe = async function (sa, tid) { var k = sa + '|' + tid; if (!REG[k]) REG[k] = aLire(B0 + sa + '/equipes/' + tid + '.json').then(function (q) { var o = {}; ((q && q.m) || []).forEach(function (m) { if (m[5] === 2) o[String(m[2])] = 1; }); return o; }).catch(function () { return {}; }); return REG[k]; };
+        async function w() { while (i < todo.length) { var t = todo[i++]; var j = null, sa = aSaUS(X.lg, t[1]); try { j = await aLire(B0 + sa + '/joueurs/' + t[0] + '.json'); } catch (e) {}
+          var M = ((j && j.m) || []).filter(function (m) { return m && m[4] && typeof m[4] === 'object'; }), T = {}; M.forEach(function (m) { T[String(m[3])] = 1; });
+          var OK = {}; for (var tid in T) { var o = await regDe(sa, tid); for (var e2 in o) OK[e2] = 1; }
+          M.forEach(function (m) { if (OK[String(m[2])]) P[t[0]].L.push([+m[0] || 0, m[6] === 'h' ? 1 : m[6] === 'a' ? 0 : -1, usJVal(X.sp, c0.jm, m[4])]); });
           if (j && j.n && !P[t[0]].nom) P[t[0]].nom = j.n; Q.f++;
           var e1 = document.querySelector('[id="g45cr-cls-prog"]'); if (e1) e1.textContent = Q.f + ' / ' + Q.n; } }
         await Promise.all([w(), w(), w(), w(), w(), w()]);
@@ -77515,7 +77520,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var Q = S.clsJU[usJCle(X, c0)] || {}, JM = libCombo(c0).replace(String(c0.jn || ''), '').replace(/^[\s+]+/, '');
     var h = '<div style="margin-top:16px;padding-top:12px;border-top:1px solid #2a3a63;">'
       + '<div style="font-size:16px;font-weight:800;color:#fff;">🏁 Jouable en Cockpit ? — joueurs de la ' + esc(US_N[X.lg] || X.lg) + '</div>'
-      + '<div style="font-size:13px;color:#c9d3ee;margin:3px 0 8px;">Même critère (' + (S.lieu === 'dom' ? '🏠 ' : S.lieu === 'ext' ? '✈️ ' : '') + esc(JM) + ') · ' + nbS() + ' saisons · matchs joués · 20 matchs au minimum · trié par la plus petite pire série</div>';
+      + '<div style="font-size:13px;color:#c9d3ee;margin:3px 0 8px;">Même critère (' + (S.lieu === 'dom' ? '🏠 ' : S.lieu === 'ext' ? '✈️ ' : '') + esc(JM) + ') · ' + nbS() + ' saisons · saison régulière · matchs joués · 20 matchs au minimum · trié par la plus petite pire série</div>';
     if (Q.etat === 1) return h + '<div style="font-size:14px;color:#fff;">⏳ Lecture des archives… <span id="g45cr-cls-prog">' + (Q.f || 0) + ' / ' + (Q.n || '?') + '</span></div></div>';
     if (Q.etat !== 2 || !Q.P) return h + (Q.err ? '<div style="font-size:14px;color:#ff9f43;margin-bottom:6px;">⚠️ ' + esc(Q.err) + '</div>' : '')
       + '<button onclick="g45CrClsJULancer()" style="border:none;border-radius:10px;padding:9px 14px;font-size:14px;font-weight:700;color:#fff;background:#2f6bff;cursor:pointer;">▶ Lancer le classement des joueurs (archives, ≈ 20 s)</button></div>';
