@@ -77189,7 +77189,14 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   function clsStat(D, c) {   /* pire série sur les 4 saisons à la suite, comme le total du tableau */
     var tous = [];
     (D.saisons || []).slice().reverse().forEach(function (s) { if (s && s.ms) tous = tous.concat(filtrer(s.ms)); });
-    return tous.length ? calc(c, tous) : { n: 0, ok: 0, pire: 0, best: 0 };
+    if (!tous.length) return { n: 0, ok: 0, pire: 0, best: 0, cours: 0 };
+    var r = calc(c, tous);
+    /* 20261105q (B, « Minnesota était à 2 défaites d'affilée… un tableau qui m'aurait permis de voir qu'il allait bientôt gagner d'après les séries ») :
+       défaites de suite au DERNIER match lu (0 = le dernier est une réussite) → colonne « En cours » + tri 🔥 « Proches de leur record ». */
+    try { var mz = jFiltre(c, tous).filter(function (m) { return valeur(c, m).n > 0; }), k = 0;
+      for (var i = mz.length - 1; i >= 0; i--) { var v = valeur(c, mz[i]); if (v.ok * 2 >= v.n) break; k++; }
+      r.cours = k; } catch (e) { r.cours = 0; }
+    return r;
   }
   window._g45CrClsStat = function (D, c) { return clsStat(D, clsCombo(norm(c))); };   /* tests */
   /* ═══ 20261103k — 🏉 CLASSEMENT RUGBY d'un coup dans les archives de la LIGUE (pas une lecture par équipe) : 4 saisons × 12 mois de fiches.
@@ -77229,6 +77236,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     Object.keys(P).forEach(function (pid) { P[pid].eqN = eqs[P[pid].eq] || ''; });
     return true;
   }
+  window.g45CrClsTri = function (v) { S.clsTri = v === 'feu' ? 'feu' : 'pire'; try { redessiner(); } catch (e) {} };   /* 20261105q */
   window.g45CrClsLancer = function () {
     var X = clsCtx(); if (!X) return;
     var k = X.sp + '|' + X.lg, Q = S.cls[k] = S.cls[k] || { D: {} };
@@ -77371,20 +77379,25 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     if (Q.etat === 1) return h + '<div style="font-size:14px;color:#fff;">⏳ Lecture des équipes… <span id="g45cr-cls-prog">' + (Q.f || 0) + ' / ' + (Q.n || '?') + '</span> (la 1re fois seulement)</div></div>';
     if (Q.etat !== 2) return h + (Q.err ? '<div style="font-size:14px;color:#ff9f43;margin-bottom:6px;">⚠️ ' + esc(Q.err) + '</div>' : '')
       + '<button onclick="g45CrClsLancer()" style="border:none;border-radius:10px;padding:9px 14px;font-size:14px;font-weight:700;color:#fff;background:#2f6bff;cursor:pointer;">▶ Lancer le classement (' + (/^rugby/.test(X.sp) ? 'archives, ≈ 20 s' : '≈ 1 min la 1re fois, ensuite gardé') + ')</button></div>';
+    var feu = function (R) { return R.pire <= 7 && R.cours >= 1 && R.pire - R.cours <= 1; }, triF = S.clsTri === 'feu';   /* 20261105q : 🔥 = à 1 défaite (ou moins) du record, pire ≤ 7 (9 paliers − 2 de sécurité) */
     var L = (Q.eq || []).map(function (t) { var D = Q.D[t.id]; var R = D ? clsStat(D, c) : null; return { t: t, R: R }; })
       .filter(function (x) { return x.R && x.R.n >= 5; })
-      .sort(function (a, b) { return (a.R.pire - b.R.pire) || (b.R.ok / b.R.n - a.R.ok / a.R.n); });
+      .sort(triF ? function (a, b) { var fa = feu(a.R) ? 0 : (a.R.pire <= 7 ? 1 : 2), fb = feu(b.R) ? 0 : (b.R.pire <= 7 ? 1 : 2); return (fa - fb) || ((a.R.pire - a.R.cours) - (b.R.pire - b.R.cours)) || (b.R.cours - a.R.cours) || (a.R.pire - b.R.pire); }
+        : function (a, b) { return (a.R.pire - b.R.pire) || (b.R.ok / b.R.n - a.R.ok / a.R.n); });
     if (!L.length) return h + '<div style="font-size:14px;color:#fff;">Pas assez de matchs avec ce critère.</div></div>';
-    var ln = 'display:grid;grid-template-columns:1.8fr 1fr 1fr 1.3fr;gap:6px;padding:8px 4px;border-bottom:1px solid #1c2747;font-size:14px;color:#fff;';
-    h += '<div style="' + ln + 'font-size:13px;color:#c9d3ee;"><span>Équipe</span><span>Réussite</span><span>Pire série</span><span>Paliers</span></div>';
+    var ln = 'display:grid;grid-template-columns:1.7fr .9fr .8fr .8fr 1.2fr;gap:6px;padding:8px 4px;border-bottom:1px solid #1c2747;font-size:14px;color:#fff;';
+    var bT = function (on, txt, v) { return '<button onclick="g45CrClsTri(\'' + v + '\')" style="border-radius:14px;padding:6px 12px;margin:0 6px 6px 0;cursor:pointer;color:#fff;font-size:14px;font-weight:700;border:1px solid ' + (on ? '#6d9dff' : '#2a3a63') + ';background:' + (on ? '#2a4a9a' : '#0b1226') + ';">' + txt + '</button>'; };
+    h += '<div>' + bT(!triF, 'Trier : plus petite pire série', 'pire') + bT(triF, '🔥 Proches de leur record', 'feu') + '</div>';
+    h += '<div style="' + ln + 'font-size:13px;color:#c9d3ee;"><span>Équipe</span><span>Réussite</span><span>Pire</span><span>En cours</span><span>Paliers</span></div>';
     L.forEach(function (x) {
       var moi = String(x.t.id) === X.id, pa = (typeof _g45F1CrPal === 'function') ? _g45F1CrPal(x.R.pire) : { p: x.R.pire + 1, ico: '' };
       var js = "g45CompetOuvrir('" + String(x.t.nom).replace(/[\\'"<>]/g, '') + "','" + esc(x.t.id) + "','" + esc(X.lg) + "','" + esc(X.sp) + "',true)";
       h += '<div onclick="' + js + '" style="' + ln + 'cursor:pointer;' + (moi ? 'background:rgba(47,107,255,.2);border-radius:8px;' : '') + '"><span style="font-weight:' + (moi ? 800 : 600) + ';">' + esc(x.t.nom) + '</span>'
         + '<span>' + Math.round(100 * x.R.ok / x.R.n) + ' %</span><span style="font-weight:800;color:' + coul(x.R.pire) + ';">' + x.R.pire + '</span>'
+        + '<span style="font-weight:800;color:' + (feu(x.R) ? '#ff5a5a' : x.R.cours ? '#ff9f43' : '#c9d3ee') + ';">' + (x.R.cours ? (feu(x.R) ? '🔥 ' : '') + x.R.cours : '—') + '</span>'
         + '<span><b>' + pa.p + ' palier' + (pa.p > 1 ? 's' : '') + '</b> ' + pa.ico + (pa.mise != null ? ' <span style="font-size:12px;color:#c9d3ee;">' + pa.mise + ' €</span>' : '') + '</span></div>';
     });
-    return h + '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">✅ 5 paliers ou moins · ⚠️ jusqu\'à ta dernière mise · ❌ au-delà de tes paliers (mises 1 ⭐). Touche une équipe pour ouvrir sa carte. 5 matchs comptés au minimum.</div></div>';
+    return h + '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">« En cours » = ratés de suite au dernier match lu (— = réussi). 🔥 = à 1 raté ou moins de sa pire série, pire série de 7 au plus (place pour 2 paliers de sécurité). ✅ 5 paliers ou moins · ⚠️ jusqu\'à ta dernière mise · ❌ au-delà de tes paliers (mises 1 ⭐). Touche une équipe pour ouvrir sa carte. 5 matchs comptés au minimum.</div></div>';
   }
   function redessiner() {
     /* 20261029a (capture Compétitions → Séries équipes, Timberwolves : « les sélecteurs réagissent pas ») : #g45cr existe aussi dans une fiche
