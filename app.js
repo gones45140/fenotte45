@@ -86365,12 +86365,22 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
       var pal = Math.min(9, x.pire + 3), sec = pal - (x.pire + 1), nE = String(x.eq).replace(/[\\'"<>&]/g, ''), nA = String(x.adv || '').replace(/[\\'"<>&]/g, '');
       var bt = u ? '<button onclick="g45CkEngager(\'' + String(u.n).replace(/[\\'"<>&]/g, '') + '\',' + (x.d ? 1 : 0) + ',\'' + nA + '\',' + x.t + ')" style="' + BTN + 'margin-top:8px;background:#2f6bff;border-color:#6d9dff;">✅ Engager</button>'
         : '<button onclick="g45LoiCreer(\'' + x.eid + '\',\'' + x.id + '\',\'' + x.k + '\',\'' + x.lieu + '\')" style="' + BTN + 'margin-top:8px;background:#2f6bff;border-color:#6d9dff;">➕ Créer la carte</button>';
-      h += '<div style="background:rgba(20,28,48,.95);border:1px solid #2a3a63;border-left:4px solid ' + (x.cours >= x.pire ? '#ff5a5a' : '#ff9f43') + ';border-radius:12px;padding:10px 12px;margin-bottom:10px;color:#fff;font-size:15px;line-height:1.5;">'
-        + '<span style="float:right;font-weight:900;font-size:16px;border-radius:8px;padding:2px 9px;background:#3a0f0f;border:1px solid #ff5a5a;">🔥 ' + x.cours + ' / ' + x.pire + '</span>'
-        + '<b>' + (LOI_SP[x.sp] || '') + ' ' + esc(x.eq) + ' ' + (x.d ? '🏠' : '✈️') + '</b><br><span style="font-size:13px;color:#c9d3ee;">' + (x.d ? 'vs ' : 'à ') + esc(x.adv) + ' · ' + hr + ' · ' + esc(x.ligue || '') + '</span><br>'
-        + '<b>' + esc(x.lib) + '</b> <span style="font-size:13px;color:#c9d3ee;">(' + (x.lieu === 'tout' ? 'tous lieux' : x.d ? 'à domicile' : 'à l\'extérieur') + ')</span> : ' + x.cours + ' raté' + (x.cours > 1 ? 's' : '') + ' de suite · pire série ' + x.pire
-        + (x.p && x.p.length ? ' <span style="font-size:13px;color:#c9d3ee;">(' + x.p.join('·') + ')</span>' : '') + '<br>'
-        + '<span style="font-size:13px;color:#c9d3ee;">→ ' + (x.pire + 1) + ' paliers' + (sec ? ' + ' + sec + ' de sécurité = ' + pal + ' paliers' : '') + ' · ' + x.ok + '/' + x.n + ' réussis</span><br>' + bt + '</div>';
+      /* 20261105v (« on habille la carte ») : même habillage que les lignes « Prochaines 24 h » du Tableau de bord (20261104u) : dégradé de la
+         couleur de l'équipe, bannière / photo si la carte est sur le mur (_g45CkFond), logo net à droite (logo ESPN du robot), textes sur bandes sombres. */
+      var F = {}; try { if (u && typeof window._g45CkFond === 'function') F = window._g45CkFond(u.n) || {}; } catch (e) {}
+      var cc = /^[0-9a-f]{6}$/i.test(x.c || '') ? '#' + x.c : (/^#[0-9a-f]{6}$/i.test(F.c || '') ? F.c : '#4d84ff');
+      if (/^#(0{6}|1{6}|ffffff)$/i.test(cc)) cc = '#4d84ff';
+      var lg = /^https:\/\//.test(x.logo || '') ? x.logo : (F.logo || F.img || ''), al = /^https:\/\//.test(x.alogo || '') ? x.alogo : '';
+      var bd = 'display:inline-block;background:rgba(11,16,29,.66);border-radius:8px;padding:3px 8px;';
+      h += '<div style="position:relative;overflow:hidden;border-radius:12px;margin-bottom:10px;min-height:120px;border-left:4px solid ' + cc + ';background:linear-gradient(90deg,' + cc + '8c 0%,' + cc + '55 50%,' + cc + '30 100%);color:#fff;font-size:15px;line-height:1.5;text-shadow:0 1px 3px rgba(0,0,0,.85);">'
+        + (F.vis ? '<img src="' + esc(F.vis) + '" alt="" loading="lazy" onerror="this.remove()" style="position:absolute;left:0;top:-25%;width:100%;height:150%;object-fit:cover;opacity:.7;pointer-events:none;"><div style="position:absolute;inset:0;background:linear-gradient(90deg,rgba(10,14,26,.55),rgba(10,14,26,.15) 60%,rgba(10,14,26,.45));pointer-events:none;"></div>' : '')
+        + (lg ? '<img src="' + esc(lg) + '" alt="" loading="lazy" onerror="this.remove()" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);height:70%;max-width:24%;object-fit:contain;pointer-events:none;filter:drop-shadow(0 4px 10px rgba(0,0,0,.6));">' : '')
+        + '<div style="position:relative;padding:10px 12px;display:flex;flex-direction:column;align-items:flex-start;gap:5px;max-width:76%;">'
+        + '<div style="' + bd + 'font-size:16px;"><span style="font-weight:900;border-radius:7px;padding:0 7px;margin-right:6px;background:#3a0f0f;border:1px solid #ff5a5a;">🔥 ' + x.cours + ' / ' + x.pire + '</span><b>' + (LOI_SP[x.sp] || '') + ' ' + esc(x.eq) + ' ' + (x.d ? '🏠' : '✈️') + '</b></div>'
+        + '<div style="' + bd + 'font-size:14px;">' + (x.d ? 'vs ' : 'à ') + (al ? '<img src="' + esc(al) + '" alt="" loading="lazy" onerror="this.remove()" style="height:18px;width:18px;object-fit:contain;vertical-align:-4px;margin-right:4px;">' : '') + esc(x.adv) + ' · ' + hr + ' · ' + esc(x.ligue || '') + '</div>'
+        + '<div style="' + bd + '"><b>' + esc(x.lib) + '</b> <span style="font-size:13px;color:#dfe6f7;">(' + (x.lieu === 'tout' ? 'tous lieux' : x.d ? 'à domicile' : 'à l\'extérieur') + ')</span> : ' + x.cours + ' raté' + (x.cours > 1 ? 's' : '') + ' de suite · pire série ' + x.pire
+        + (x.p && x.p.length ? ' <span style="font-size:13px;color:#dfe6f7;">(' + x.p.join('·') + ')</span>' : '') + '</div>'
+        + '<div style="' + bd + 'font-size:14px;">→ ' + (x.pire + 1) + ' paliers' + (sec ? ' + ' + sec + ' de sécurité = ' + pal + ' paliers' : '') + ' · ' + x.ok + '/' + x.n + ' réussis</div>' + bt + '</div></div>';
     });
     return h + '<div style="font-size:13px;color:#c9d3ee;padding:0 4px 10px;">Paris regardés : ⚽ victoire, victoire ou nul, +1,5 / +2,5 / −3,5 buts, les deux marquent, l\'équipe marque · 🏒 vainqueur, victoire 60 min, +5,5 / −6,5 buts · 🏀🏈⚾🏉 vainqueur. Saison régulière (sports US). Pire série de 3 à 7.</div>';
   }
