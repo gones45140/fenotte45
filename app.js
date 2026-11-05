@@ -67574,7 +67574,7 @@ window._g45ClvSelection = _g45ClvSelection; window._g45ClvPoser = _g45ClvPoser; 
       (setItem et save) puisse les vider.
    3) Au-delà de 4 millions de caractères stockés, purge préventive des
       caches (jamais g45v5, les données). */
-var _G45_CACHE_MORTS = ['g45cr1x_' /* 06/11 : → g45cr1y_ (tiers-temps ms[13]) */, 'g45cr3u_' /* 03/11 : → g45cr3v_ (phase finale rugby m[7]) */, 'g45cr1w_' /* 03/11 : → g45cr1x_ (cotes 1N2) */, 'g45cr1v_' /* 03/11 : → g45cr1w_ (total) */, 'g45cr1u_' /* 03/11 : → g45cr1v_ (handicap) */, 'g45_jou_v2_baseball_' /* 25/10 : → v3 (lanceur partant) */, 'g45reg1_v5_', 'g45reg1_f8_' /* 16/10 : → v6_ / f9_ (valeurs par match, seuil 2+) */, 'g45trOdds_' /* 13/10 : → g45trOdds2_ (marchés dans la clé) */, 'g45agoa1_' /* 11/10 : → g45agoa2_ (nom des books) */, 'g45nrlcal11_' /* 06/10 : → g45nrlcal12_ (présaison US écartée) */, 'g45f1tr1_' /* 04/10 : → g45f1tr2_ (voie des stands) */, 'g45bbjc1' /* 03/10 : → g45bbjc2 (clubs par saison) */, 'g45bbph1_' /* 03/10 : → g45bbph2_ (secours Wikipédia) */, 'g45cm10_' /* 07/10 : → g45cm11_ (statut OT/SO gardé) */, 'g45_jou_v1_' /* 07/10 : → g45_jou_v2_ (présence par match) */, 'g45cm9_' /* 01/10 : → g45cm10_ (présaison NHL marquée PO) */, 'g45nrlst1_' /* 01/10 : → g45nrlst2_ */, 'g45_cfai_veille' /* 29/09 : Workers AI supprimé */, 'g45cls4_' /* 29/09 : → g45cls5_ (stats de match) */, 'g45news7_', 'g45cm_', 'g45cm2_', 'g45cm3_', 'g45cm4_', 'g45cm5_', 'g45cm6_', 'g45cm7_', 'g45cm8_',
+var _G45_CACHE_MORTS = ['g45cr1y_' /* 06/11 : → g45cr1z_ (1er but des tiers ms[14]) */, 'g45cr1x_' /* 06/11 : → g45cr1y_ (tiers-temps ms[13]) */, 'g45cr3u_' /* 03/11 : → g45cr3v_ (phase finale rugby m[7]) */, 'g45cr1w_' /* 03/11 : → g45cr1x_ (cotes 1N2) */, 'g45cr1v_' /* 03/11 : → g45cr1w_ (total) */, 'g45cr1u_' /* 03/11 : → g45cr1v_ (handicap) */, 'g45_jou_v2_baseball_' /* 25/10 : → v3 (lanceur partant) */, 'g45reg1_v5_', 'g45reg1_f8_' /* 16/10 : → v6_ / f9_ (valeurs par match, seuil 2+) */, 'g45trOdds_' /* 13/10 : → g45trOdds2_ (marchés dans la clé) */, 'g45agoa1_' /* 11/10 : → g45agoa2_ (nom des books) */, 'g45nrlcal11_' /* 06/10 : → g45nrlcal12_ (présaison US écartée) */, 'g45f1tr1_' /* 04/10 : → g45f1tr2_ (voie des stands) */, 'g45bbjc1' /* 03/10 : → g45bbjc2 (clubs par saison) */, 'g45bbph1_' /* 03/10 : → g45bbph2_ (secours Wikipédia) */, 'g45cm10_' /* 07/10 : → g45cm11_ (statut OT/SO gardé) */, 'g45_jou_v1_' /* 07/10 : → g45_jou_v2_ (présence par match) */, 'g45cm9_' /* 01/10 : → g45cm10_ (présaison NHL marquée PO) */, 'g45nrlst1_' /* 01/10 : → g45nrlst2_ */, 'g45_cfai_veille' /* 29/09 : Workers AI supprimé */, 'g45cls4_' /* 29/09 : → g45cls5_ (stats de match) */, 'g45news7_', 'g45cm_', 'g45cm2_', 'g45cm3_', 'g45cm4_', 'g45cm5_', 'g45cm6_', 'g45cm7_', 'g45cm8_',
   'g45khl_fiche_', 'g45_saisons_cache_v2_', 'g45_score_', 'g45_score2_', 'g45_score3_'];
 try {
   ['g45cm11_', 'g45xgj1_', 'g45khl_fiche2_', 'g45khl_plage_', 'g45cls3_', 'g45cls5_', 'g45photostsdb_', 'g45wk1_', 'g45jv_', 'g45art1_', 'g45clv1_', 'g45arb1_', 'g45_herologo_', 'g45cm3_']
@@ -75856,7 +75856,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   /* 20261021d (« on va rajouter des trucs » : duo / trio buteurs, double chance buteur, tirs, tirs par équipe + mi-temps, marque en premier,
      match précédent ; maquette maquette-criteres « oui ») : valeurs par défaut des nouveaux critères (aussi pour les combinés de « Reprendre ma note »). */
   function norm(c) {
-    var D0 = { tq: '1', tqr: '', tqo: '', TQL: 1.5, tqb: '', tqm: '', jx: 'cha', fs: '', FL: 24.5, ts: '', TSL: 12.5, as: '', ASL: 10.5, cad: '', CL: 4.5, mt: '', mp: '', bo: '', BL: 4.5, pm: '', m1: '', M1L: 1, m2: '', M2L: 1, ha: '', HAL: 0.25, ess: '', esm: '', ESL: 5.5, esb: '', jtit: '' };   /* 20261103k : essais rugby */   /* 20261024b : m1 / m2 = buts 1re / 2e mi-temps */
+    var D0 = { tq: '1', tqr: '', tqp: '', tqo: '', TQL: 1.5, tqb: '', tqm: '', jx: 'cha', fs: '', FL: 24.5, ts: '', TSL: 12.5, as: '', ASL: 10.5, cad: '', CL: 4.5, mt: '', mp: '', bo: '', BL: 4.5, pm: '', m1: '', M1L: 1, m2: '', M2L: 1, ha: '', HAL: 0.25, ess: '', esm: '', ESL: 5.5, esb: '', jtit: '' };   /* 20261103k : essais rugby */   /* 20261024b : m1 / m2 = buts 1re / 2e mi-temps */
     for (var k in D0) if (c[k] == null) c[k] = D0[k];
     return c;
   }
@@ -75915,6 +75915,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       if (c.tqr) p.push({ e: 'Gagne le ' + tN + ' tiers', n: 'Nul au ' + tN + ' tiers', a: 'Perd le ' + tN + ' tiers', en: 'Ne perd pas le ' + tN + ' tiers', an: 'Ne gagne pas le ' + tN + ' tiers', pn: 'Pas de nul au ' + tN + ' tiers' }[c.tqr]);
       if (c.tqo) p.push((c.tqo === 'ov' ? 'Plus de ' : 'Moins de ') + String(c.TQL).replace('.', ',') + ' buts dans le ' + tN + ' tiers');
       if (c.tqb) p.push('Les deux marquent dans le ' + tN + ' tiers : ' + c.tqb);
+      if (c.tqp) p.push(c.tqp === 'x' ? 'Aucun but au ' + tN + ' tiers' : (c.tqp === 'e' ? 'Marque le 1er but du ' : 'L\'adversaire marque le 1er but du ') + tN + ' tiers');   /* 20261106v */
       if (c.tqm) p.push(c.tqm === 'p' ? 'Plusieurs tiers à égalité de buts' : 'Le ' + ({ '1': '1er', '2': '2e', '3': '3e' }[c.tqm]) + ' tiers a le plus de buts'); }
     if (rg() && c.ess) p.push('Essais équipe ' + c.ess + ' ou +' + (c.ess === '4' ? ' (bonus offensif)' : ''));   /* 20261103k */
     if (rg() && c.esm) p.push('Essais du match ' + (c.esm === 'ov' ? 'Over ' : 'Under ') + String(c.ESL).replace('.', ','));
@@ -75989,6 +75990,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       if (c.tqr === 'en' && !(qa >= qb)) return false; if (c.tqr === 'an' && !(qa <= qb)) return false; if (c.tqr === 'pn' && qa === qb) return false;
       if (c.tqo && !okOU(c.tqo, qa + qb, c.TQL)) return false;
       if (c.tqb === 'oui' && !(qa > 0 && qb > 0)) return false; if (c.tqb === 'non' && qa > 0 && qb > 0) return false;
+      if (c.tqp) { var Q1 = tqPrem(m, +c.tq || 1); if (Q1 !== c.tqp) return false; }   /* 20261106v : 1er but du tiers */
       if (c.tqm) { var T3 = [0, 1, 2].map(function (i) { return PE[i][0] + PE[i][1]; }), mx = Math.max.apply(null, T3), nm = T3.filter(function (x) { return x === mx; }).length;
         if (c.tqm === 'p' ? nm < 2 : (nm > 1 || T3[+c.tqm - 1] !== mx)) return false; }
     }
@@ -76334,10 +76336,12 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     });
     return L;
   }
-  function tqBesoin(c) { return !!(c && (c.tqr || c.tqo || c.tqb || c.tqm)); }   /* 20261106m */
+  function tqBesoin(c) { return !!(c && (c.tqr || c.tqo || c.tqb || c.tqm || c.tqp)); }   /* 20261106m */
+  /* 20261106v : qui marque le 1er but du tiers t — archives ms[14], sinon déduit du score du tiers quand c'est sûr ; null = inconnu (non compté) */
+  function tqPrem(m, t) { var B = m[14]; if (B && B[t - 1] != null) return B[t - 1]; var P = m[13] && m[13][t - 1]; if (!P) return null; return P[0] && P[1] ? null : (P[0] ? 'e' : P[1] ? 'a' : 'x'); }
   function valeur(c, m) {
     var n = 0, ok = 0;
-    if (tqBesoin(c) && !(m[13] && m[13][2])) return { n: 0, ok: 0 };   /* 20261106m : match sans tiers gardés = non compté */
+    if (tqBesoin(c) && (!(m[13] && m[13][2]) || (c.tqp && tqPrem(m, +c.tq || 1) == null))) return { n: 0, ok: 0 };   /* 20261106v : 1er but inconnu = non compté */   /* 20261106m : match sans tiers gardés = non compté */
     eclater(c).forEach(function (x) { var NR = nbRemb(x.c, m); if (NR[0] && NR[1] >= NR[0]) return; n += x.w; if (passe(x.c, m)) ok += x.w; });
     return { n: n, ok: ok };
   }
@@ -76636,7 +76640,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   async function chargerHk(nom, C0) {   /* 20261027h : C0 = autre équipe de la ligue (classement Cockpit) → rendu, pas rangé dans S.data */
     var C = C0 || S.ctx, ans = annees(C.lg), out = { t: Date.now(), lg: C.lg, ligue: (US_N[C.lg] || C.lg.toUpperCase()) + ' · saison régulière', saisons: [] };
     await Promise.all(ans.map(async function (an, i) {
-      var cle = 'g45cr1y_' + C.sp + '_' + C.lg + '_' + C.id + '_' + an, ms = null;   /* 20261022i : g45cr1_ → g45cr1u_ (n° de match ESPN en m[6]) ; 20261103b : → g45cr1v_ (handicap en m[7]) ; 20261103d : → g45cr1w_ (total en m[8]) */
+      var cle = 'g45cr1z_' + C.sp + '_' + C.lg + '_' + C.id + '_' + an, ms = null;   /* 20261022i : g45cr1_ → g45cr1u_ (n° de match ESPN en m[6]) ; 20261103b : → g45cr1v_ (handicap en m[7]) ; 20261103d : → g45cr1w_ (total en m[8]) */
       if (i > 0) { try { ms = JSON.parse(localStorage.getItem(cle) || 'null'); } catch (e) {} }
       if (!ms) {   /* 20261031l : archives GitHub d'abord */
         try { ms = await aEquipeUS(C.sp, C.lg, C.id, an); } catch (e) { ms = null; }
@@ -76774,7 +76778,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var B = ASP[sp] + '/' + lg + '/' + aSaUS(lg, an), ix = await aLire(B + '/equipes.json'); if (!ix) return null;
     var q = await aLire(B + '/equipes/' + tid + '.json'); if (q === null) return null;
     var M = (q && q.m) || []; if (M.some(function (m) { return m[4] && !(m[5] >= 0); })) return null;
-    return M.filter(function (m) { return m[4] && m[5] === 2; }).map(function (m) { var h = m[3] === 'h'; return [aIso(m[0]), h ? 1 : 0, h ? m[4][0] : m[4][1], h ? m[4][1] : m[4][0], sp === 'hockey' ? (m[6] || 0) : 0, 0, String(m[2]), m[8] == null ? null : +m[8], m[9] == null ? null : +m[9], m[10] == null ? null : +m[10], null, null, m[11] || null, (sp === 'hockey' && Array.isArray(m[12]) && m[12].length >= 3) ? m[12].map(function (x) { return h ? [+x[0], +x[1]] : [+x[1], +x[0]]; }) : null]; })   /* 20261106m : ms[13] = tiers [[pour, contre] ×3 (+ prolongation)] (archives m[12]) */   /* 20261103i : m[12] = cotes [V, N, D] */   /* 20261103f : m[9] = total de l'ÉQUIPE (ligne du book, saison en cours) */   /* 20261103b : m[7] = handicap de l'équipe (index iv 6) ; 20261103d : m[8] = total du book (iv 7) */
+    return M.filter(function (m) { return m[4] && m[5] === 2; }).map(function (m) { var h = m[3] === 'h'; return [aIso(m[0]), h ? 1 : 0, h ? m[4][0] : m[4][1], h ? m[4][1] : m[4][0], sp === 'hockey' ? (m[6] || 0) : 0, 0, String(m[2]), m[8] == null ? null : +m[8], m[9] == null ? null : +m[9], m[10] == null ? null : +m[10], null, null, m[11] || null, (sp === 'hockey' && Array.isArray(m[12]) && m[12].length >= 3) ? m[12].map(function (x) { return h ? [+x[0], +x[1]] : [+x[1], +x[0]]; }) : null, (sp === 'hockey' && Array.isArray(m[14])) ? m[14].map(function (x) { return x === '' ? 'x' : ((x === 'h') === h ? 'e' : 'a'); }) : null]; })   /* 20261106v : ms[14] = 1er but de chaque tiers, côté équipe ('e' équipe, 'a' adversaire, 'x' aucun) */   /* 20261106m : ms[13] = tiers [[pour, contre] ×3 (+ prolongation)] (archives m[12]) */   /* 20261103i : m[12] = cotes [V, N, D] */   /* 20261103f : m[9] = total de l'ÉQUIPE (ligne du book, saison en cours) */   /* 20261103b : m[7] = handicap de l'équipe (index iv 6) ; 20261103d : m[8] = total du book (iv 7) */
       .sort(function (a, b) { return a[0] < b[0] ? -1 : 1; });
   }
   /* ═══ 20261031n — 👤 JOUEURS NHL / NBA / NFL des critères sur les archives (« ok ajoute et passe aux joueurs sport US »). Le robot garde par
@@ -77187,13 +77191,14 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
         + b(c.tqr === 'en', nE + ' ou nul', "g45CrSet('tqr','en')") + b(c.tqr === 'an', 'Adv. ou nul', "g45CrSet('tqr','an')") + b(c.tqr === 'pn', 'Pas de nul', "g45CrSet('tqr','pn')") + b(!c.tqr, 'Aucun', "g45CrSet('tqr','')")
         + lab('Buts dans le tiers') + b(c.tqo === 'ov', 'Over', "g45CrSet('tqo','ov')") + b(c.tqo === 'un', 'Under', "g45CrSet('tqo','un')") + b(!c.tqo, 'Aucun', "g45CrSet('tqo','')") + selTq
         + lab('Les deux équipes marquent dans le tiers') + b(c.tqb === 'oui', 'Oui', "g45CrSet('tqb','oui')") + b(c.tqb === 'non', 'Non', "g45CrSet('tqb','non')") + b(!c.tqb, 'Aucun', "g45CrSet('tqb','')")
+        + lab('Qui marque le 1er but du tiers') + b(c.tqp === 'e', nE, "g45CrSet('tqp','e')") + b(c.tqp === 'a', 'Adversaire', "g45CrSet('tqp','a')") + b(c.tqp === 'x', 'Aucun but', "g45CrSet('tqp','x')") + b(!c.tqp, 'Peu importe', "g45CrSet('tqp','')")   /* 20261106v */
         + lab('Tiers avec le plus de buts (du match)') + ['1', '2', '3'].map(function (t) { return b(c.tqm === t, t === '1' ? '1er' : t + 'e', "g45CrSet('tqm','" + t + "')"); }).join('') + b(c.tqm === 'p', 'Plusieurs', "g45CrSet('tqm','p')") + b(!c.tqm, 'Peu importe', "g45CrSet('tqm','')")
         + '<div style="font-size:13px;color:#c9d3ee;margin:6px 0;">Scores de chaque tiers gardés dans les archives (NHL et KHL, 5 saisons). « Remboursé si nul » / handicap +0,5 = « ' + nE + ' ou nul ». Match sans tiers gardés = non compté.</div>';
     }
     var q8 = h.length;
     var PAN = { tiers: h.slice(q7, q8), res: h.slice(q0, q1) + h.slice(q2, q3), buts: h.slice(q1, q2) + h.slice(q6, q6b), ess: h.slice(q6b, q7), jou: h.slice(q3, q4), feu: h.slice(q4, q5), ctx: h.slice(q5, q6) };   /* 20261103k : ess */
     var NB = { res: (c.res ? 1 : 0) + (c.ec ? 1 : 0) + (c.ha ? 1 : 0) + (c.hb ? 1 : 0), buts: (c.ou ? 1 : 0) + (c.tb ? 1 : 0) + (c.qb ? 1 : 0) + (c.te ? 1 : 0) + (c.ad ? 1 : 0) + (c.bts ? 1 : 0) + (c.m1 ? 1 : 0) + (c.m2 ? 1 : 0), jou: joueurs(c).length ? 1 : 0,
-      feu: ['fs', 'ts', 'as', 'cad', 'mt', 'mp', 'bo'].filter(function (k) { return c[k]; }).length, ctx: c.pm ? 1 : 0, ess: rg() ? ['ess', 'esm', 'esb'].filter(function (k) { return c[k]; }).length : 0, tiers: hk() ? ['tqr', 'tqo', 'tqb', 'tqm'].filter(function (k) { return c[k]; }).length : 0 };
+      feu: ['fs', 'ts', 'as', 'cad', 'mt', 'mp', 'bo'].filter(function (k) { return c[k]; }).length, ctx: c.pm ? 1 : 0, ess: rg() ? ['ess', 'esm', 'esb'].filter(function (k) { return c[k]; }).length : 0, tiers: hk() ? ['tqr', 'tqo', 'tqb', 'tqm', 'tqp'].filter(function (k) { return c[k]; }).length : 0 };
     var ONG = [['res', '🏁 Résultat'], ['buts', '⚽ ' + motUnite()], ['ess', '🏉 Essais'], ['tiers', '⏱️ Tiers-temps'], ['jou', '👤 Joueurs'], ['feu', '🎯 Feuille'], ['ctx', '🔁 Contexte']].filter(function (o) { return PAN[o[0]]; });
     var TB = 'res'; try { TB = localStorage.getItem('g45_cr_tab') || 'res'; } catch (e) {}
     if (!PAN[TB]) TB = 'res';
