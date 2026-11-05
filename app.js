@@ -67546,7 +67546,7 @@ window._g45ClvSelection = _g45ClvSelection; window._g45ClvPoser = _g45ClvPoser; 
       (setItem et save) puisse les vider.
    3) Au-delà de 4 millions de caractères stockés, purge préventive des
       caches (jamais g45v5, les données). */
-var _G45_CACHE_MORTS = ['g45cr3u_' /* 03/11 : → g45cr3v_ (phase finale rugby m[7]) */, 'g45cr1w_' /* 03/11 : → g45cr1x_ (cotes 1N2) */, 'g45cr1v_' /* 03/11 : → g45cr1w_ (total) */, 'g45cr1u_' /* 03/11 : → g45cr1v_ (handicap) */, 'g45_jou_v2_baseball_' /* 25/10 : → v3 (lanceur partant) */, 'g45reg1_v5_', 'g45reg1_f8_' /* 16/10 : → v6_ / f9_ (valeurs par match, seuil 2+) */, 'g45trOdds_' /* 13/10 : → g45trOdds2_ (marchés dans la clé) */, 'g45agoa1_' /* 11/10 : → g45agoa2_ (nom des books) */, 'g45nrlcal11_' /* 06/10 : → g45nrlcal12_ (présaison US écartée) */, 'g45f1tr1_' /* 04/10 : → g45f1tr2_ (voie des stands) */, 'g45bbjc1' /* 03/10 : → g45bbjc2 (clubs par saison) */, 'g45bbph1_' /* 03/10 : → g45bbph2_ (secours Wikipédia) */, 'g45cm10_' /* 07/10 : → g45cm11_ (statut OT/SO gardé) */, 'g45_jou_v1_' /* 07/10 : → g45_jou_v2_ (présence par match) */, 'g45cm9_' /* 01/10 : → g45cm10_ (présaison NHL marquée PO) */, 'g45nrlst1_' /* 01/10 : → g45nrlst2_ */, 'g45_cfai_veille' /* 29/09 : Workers AI supprimé */, 'g45cls4_' /* 29/09 : → g45cls5_ (stats de match) */, 'g45news7_', 'g45cm_', 'g45cm2_', 'g45cm3_', 'g45cm4_', 'g45cm5_', 'g45cm6_', 'g45cm7_', 'g45cm8_',
+var _G45_CACHE_MORTS = ['g45cr1x_' /* 06/11 : → g45cr1y_ (tiers-temps ms[13]) */, 'g45cr3u_' /* 03/11 : → g45cr3v_ (phase finale rugby m[7]) */, 'g45cr1w_' /* 03/11 : → g45cr1x_ (cotes 1N2) */, 'g45cr1v_' /* 03/11 : → g45cr1w_ (total) */, 'g45cr1u_' /* 03/11 : → g45cr1v_ (handicap) */, 'g45_jou_v2_baseball_' /* 25/10 : → v3 (lanceur partant) */, 'g45reg1_v5_', 'g45reg1_f8_' /* 16/10 : → v6_ / f9_ (valeurs par match, seuil 2+) */, 'g45trOdds_' /* 13/10 : → g45trOdds2_ (marchés dans la clé) */, 'g45agoa1_' /* 11/10 : → g45agoa2_ (nom des books) */, 'g45nrlcal11_' /* 06/10 : → g45nrlcal12_ (présaison US écartée) */, 'g45f1tr1_' /* 04/10 : → g45f1tr2_ (voie des stands) */, 'g45bbjc1' /* 03/10 : → g45bbjc2 (clubs par saison) */, 'g45bbph1_' /* 03/10 : → g45bbph2_ (secours Wikipédia) */, 'g45cm10_' /* 07/10 : → g45cm11_ (statut OT/SO gardé) */, 'g45_jou_v1_' /* 07/10 : → g45_jou_v2_ (présence par match) */, 'g45cm9_' /* 01/10 : → g45cm10_ (présaison NHL marquée PO) */, 'g45nrlst1_' /* 01/10 : → g45nrlst2_ */, 'g45_cfai_veille' /* 29/09 : Workers AI supprimé */, 'g45cls4_' /* 29/09 : → g45cls5_ (stats de match) */, 'g45news7_', 'g45cm_', 'g45cm2_', 'g45cm3_', 'g45cm4_', 'g45cm5_', 'g45cm6_', 'g45cm7_', 'g45cm8_',
   'g45khl_fiche_', 'g45_saisons_cache_v2_', 'g45_score_', 'g45_score2_', 'g45_score3_'];
 try {
   ['g45cm11_', 'g45xgj1_', 'g45khl_fiche2_', 'g45khl_plage_', 'g45cls3_', 'g45cls5_', 'g45photostsdb_', 'g45wk1_', 'g45jv_', 'g45art1_', 'g45clv1_', 'g45arb1_', 'g45_herologo_', 'g45cm3_']
@@ -75828,7 +75828,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   /* 20261021d (« on va rajouter des trucs » : duo / trio buteurs, double chance buteur, tirs, tirs par équipe + mi-temps, marque en premier,
      match précédent ; maquette maquette-criteres « oui ») : valeurs par défaut des nouveaux critères (aussi pour les combinés de « Reprendre ma note »). */
   function norm(c) {
-    var D0 = { jx: 'cha', fs: '', FL: 24.5, ts: '', TSL: 12.5, as: '', ASL: 10.5, cad: '', CL: 4.5, mt: '', mp: '', bo: '', BL: 4.5, pm: '', m1: '', M1L: 1, m2: '', M2L: 1, ha: '', HAL: 0.25, ess: '', esm: '', ESL: 5.5, esb: '', jtit: '' };   /* 20261103k : essais rugby */   /* 20261024b : m1 / m2 = buts 1re / 2e mi-temps */
+    var D0 = { tq: '1', tqr: '', tqo: '', TQL: 1.5, tqb: '', tqm: '', jx: 'cha', fs: '', FL: 24.5, ts: '', TSL: 12.5, as: '', ASL: 10.5, cad: '', CL: 4.5, mt: '', mp: '', bo: '', BL: 4.5, pm: '', m1: '', M1L: 1, m2: '', M2L: 1, ha: '', HAL: 0.25, ess: '', esm: '', ESL: 5.5, esb: '', jtit: '' };   /* 20261103k : essais rugby */   /* 20261024b : m1 / m2 = buts 1re / 2e mi-temps */
     for (var k in D0) if (c[k] == null) c[k] = D0[k];
     return c;
   }
@@ -75849,7 +75849,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   function rg() { return !!(S.ctx && (S.ctx.sp === 'rugby' || S.ctx.sp === 'rugby-league')); }
   function sport() { return S.ctx ? S.ctx.sp : 'soccer'; }
   var US_L = { rugby: [30.5, 70.5, 45.5, 'Points du match'], 'rugby-league': [25.5, 60.5, 40.5, 'Points du match'], football: [30.5, 60.5, 44.5, 'Points du match'], basketball: [190.5, 250.5, 224.5, 'Points du match'], baseball: [4.5, 13.5, 8.5, 'Runs du match'] };
-  var US_N = { nfl: 'NFL', nba: 'NBA', mlb: 'MLB', nhl: 'NHL' };
+  var US_N = { nfl: 'NFL', nba: 'NBA', mlb: 'MLB', nhl: 'NHL', khl: 'KHL' };
   function lignes() {
     /* 20261024c (« en ligne ronde, c'est vrai qu'on a un vrai manque partout ») : lignes de 0,5 en 0,5 (ronde = égalité remboursée, okOU) */
     var dm = function (a0, z, st) { var a = []; for (var x = a0; x <= z + 1e-9; x += st || 0.5) a.push(Math.round(x * 100) / 100); return a; };
@@ -75883,6 +75883,11 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     if (c.bts) p.push('Les deux marquent : ' + (c.bts === 'oui' ? 'oui' : 'non'));
     if (c.te) p.push(motUnite() + ' équipe ' + (c.te === 'ov' ? 'Over ' : 'Under ') + c.TL);
     if (c.ad) p.push(motUnite() + ' adversaire ' + (c.ad === 'ov' ? 'Over ' : 'Under ') + c.AL);
+    if (tqBesoin(c)) { var tN = { '1': '1er', '2': '2e', '3': '3e' }[c.tq] || '1er';   /* 20261106m */
+      if (c.tqr) p.push({ e: 'Gagne le ' + tN + ' tiers', n: 'Nul au ' + tN + ' tiers', a: 'Perd le ' + tN + ' tiers', en: 'Ne perd pas le ' + tN + ' tiers', an: 'Ne gagne pas le ' + tN + ' tiers', pn: 'Pas de nul au ' + tN + ' tiers' }[c.tqr]);
+      if (c.tqo) p.push((c.tqo === 'ov' ? 'Plus de ' : 'Moins de ') + String(c.TQL).replace('.', ',') + ' buts dans le ' + tN + ' tiers');
+      if (c.tqb) p.push('Les deux marquent dans le ' + tN + ' tiers : ' + c.tqb);
+      if (c.tqm) p.push(c.tqm === 'p' ? 'Plusieurs tiers à égalité de buts' : 'Le ' + ({ '1': '1er', '2': '2e', '3': '3e' }[c.tqm]) + ' tiers a le plus de buts'); }
     if (rg() && c.ess) p.push('Essais équipe ' + c.ess + ' ou +' + (c.ess === '4' ? ' (bonus offensif)' : ''));   /* 20261103k */
     if (rg() && c.esm) p.push('Essais du match ' + (c.esm === 'ov' ? 'Over ' : 'Under ') + String(c.ESL).replace('.', ','));
     if (rg() && c.esb) p.push('Les deux équipes marquent un essai : ' + c.esb);
@@ -75945,6 +75950,20 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     if (c.tb) { var tv = gf + ga - (+m[8]); if (c.tb === 'ov' ? !(tv > 0) : !(tv < 0)) return false; }
     /* 20261103f (« total pts équipe il propose un cut ? » → « oui ») : total de points de L'ÉQUIPE fixé par le book (m[9], gardé depuis le 03/11). */
     if (c.qb) { var qv = gf - (+m[9]); if (c.qb === 'ov' ? !(qv > 0) : !(qv < 0)) return false; }
+    /* ═══ 20261106m — ⏱️ TIERS-TEMPS (Antoine : « buts par tiers-temps à faire aussi, KHL et NHL » + captures des paris par tiers du book ;
+       maquette « oui ») : m[13] = [[pour, contre] du 1er, 2e, 3e tiers (+ prolongation)] (archives NHL ESPN linescores / KHL khl.ru).
+       tq = tiers (1-3) ; tqr = résultat du tiers (e équipe, n nul, a adversaire, en / an double chance = handicap +0,5, pn pas de nul) ;
+       tqo / TQL = buts du tiers over / under ; tqb = les deux marquent dans le tiers ; tqm = tiers avec le plus de buts (1 / 2 / 3, p = plusieurs à égalité). */
+    if (tqBesoin(c)) {
+      var PE = m[13]; if (!PE || !PE[2]) return false;
+      var TQ = PE[(+c.tq || 1) - 1] || [0, 0], qa = TQ[0], qb = TQ[1];
+      if (c.tqr === 'e' && !(qa > qb)) return false; if (c.tqr === 'n' && qa !== qb) return false; if (c.tqr === 'a' && !(qa < qb)) return false;
+      if (c.tqr === 'en' && !(qa >= qb)) return false; if (c.tqr === 'an' && !(qa <= qb)) return false; if (c.tqr === 'pn' && qa === qb) return false;
+      if (c.tqo && !okOU(c.tqo, qa + qb, c.TQL)) return false;
+      if (c.tqb === 'oui' && !(qa > 0 && qb > 0)) return false; if (c.tqb === 'non' && qa > 0 && qb > 0) return false;
+      if (c.tqm) { var T3 = [0, 1, 2].map(function (i) { return PE[i][0] + PE[i][1]; }), mx = Math.max.apply(null, T3), nm = T3.filter(function (x) { return x === mx; }).length;
+        if (c.tqm === 'p' ? nm < 2 : (nm > 1 || T3[+c.tqm - 1] !== mx)) return false; }
+    }
     if (c.res === 'vqr' && !(gf > ga)) return false;
     if (c.res === 'per' && !(gf < ga)) return false;   /* 20261031m : perd le match, prolongation / TAB compris (contraire de Vainqueur) */
     if (m[4]) { var mn = Math.min(gf, ga); gf = mn; ga = mn; }   /* hockey : prolongation / TAB → égalité au temps réglementaire */
@@ -76287,8 +76306,10 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     });
     return L;
   }
+  function tqBesoin(c) { return !!(c && (c.tqr || c.tqo || c.tqb || c.tqm)); }   /* 20261106m */
   function valeur(c, m) {
     var n = 0, ok = 0;
+    if (tqBesoin(c) && !(m[13] && m[13][2])) return { n: 0, ok: 0 };   /* 20261106m : match sans tiers gardés = non compté */
     eclater(c).forEach(function (x) { var NR = nbRemb(x.c, m); if (NR[0] && NR[1] >= NR[0]) return; n += x.w; if (passe(x.c, m)) ok += x.w; });
     return { n: n, ok: ok };
   }
@@ -76587,7 +76608,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   async function chargerHk(nom, C0) {   /* 20261027h : C0 = autre équipe de la ligue (classement Cockpit) → rendu, pas rangé dans S.data */
     var C = C0 || S.ctx, ans = annees(C.lg), out = { t: Date.now(), lg: C.lg, ligue: (US_N[C.lg] || C.lg.toUpperCase()) + ' · saison régulière', saisons: [] };
     await Promise.all(ans.map(async function (an, i) {
-      var cle = 'g45cr1x_' + C.sp + '_' + C.lg + '_' + C.id + '_' + an, ms = null;   /* 20261022i : g45cr1_ → g45cr1u_ (n° de match ESPN en m[6]) ; 20261103b : → g45cr1v_ (handicap en m[7]) ; 20261103d : → g45cr1w_ (total en m[8]) */
+      var cle = 'g45cr1y_' + C.sp + '_' + C.lg + '_' + C.id + '_' + an, ms = null;   /* 20261022i : g45cr1_ → g45cr1u_ (n° de match ESPN en m[6]) ; 20261103b : → g45cr1v_ (handicap en m[7]) ; 20261103d : → g45cr1w_ (total en m[8]) */
       if (i > 0) { try { ms = JSON.parse(localStorage.getItem(cle) || 'null'); } catch (e) {} }
       if (!ms) {   /* 20261031l : archives GitHub d'abord */
         try { ms = await aEquipeUS(C.sp, C.lg, C.id, an); } catch (e) { ms = null; }
@@ -76725,7 +76746,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var B = ASP[sp] + '/' + lg + '/' + aSaUS(lg, an), ix = await aLire(B + '/equipes.json'); if (!ix) return null;
     var q = await aLire(B + '/equipes/' + tid + '.json'); if (q === null) return null;
     var M = (q && q.m) || []; if (M.some(function (m) { return m[4] && !(m[5] >= 0); })) return null;
-    return M.filter(function (m) { return m[4] && m[5] === 2; }).map(function (m) { var h = m[3] === 'h'; return [aIso(m[0]), h ? 1 : 0, h ? m[4][0] : m[4][1], h ? m[4][1] : m[4][0], sp === 'hockey' ? (m[6] || 0) : 0, 0, String(m[2]), m[8] == null ? null : +m[8], m[9] == null ? null : +m[9], m[10] == null ? null : +m[10], null, null, m[11] || null]; })   /* 20261103i : m[12] = cotes [V, N, D] */   /* 20261103f : m[9] = total de l'ÉQUIPE (ligne du book, saison en cours) */   /* 20261103b : m[7] = handicap de l'équipe (index iv 6) ; 20261103d : m[8] = total du book (iv 7) */
+    return M.filter(function (m) { return m[4] && m[5] === 2; }).map(function (m) { var h = m[3] === 'h'; return [aIso(m[0]), h ? 1 : 0, h ? m[4][0] : m[4][1], h ? m[4][1] : m[4][0], sp === 'hockey' ? (m[6] || 0) : 0, 0, String(m[2]), m[8] == null ? null : +m[8], m[9] == null ? null : +m[9], m[10] == null ? null : +m[10], null, null, m[11] || null, (sp === 'hockey' && Array.isArray(m[12]) && m[12].length >= 3) ? m[12].map(function (x) { return h ? [+x[0], +x[1]] : [+x[1], +x[0]]; }) : null]; })   /* 20261106m : ms[13] = tiers [[pour, contre] ×3 (+ prolongation)] (archives m[12]) */   /* 20261103i : m[12] = cotes [V, N, D] */   /* 20261103f : m[9] = total de l'ÉQUIPE (ligne du book, saison en cours) */   /* 20261103b : m[7] = handicap de l'équipe (index iv 6) ; 20261103d : m[8] = total du book (iv 7) */
       .sort(function (a, b) { return a[0] < b[0] ? -1 : 1; });
   }
   /* ═══ 20261031n — 👤 JOUEURS NHL / NBA / NFL des critères sur les archives (« ok ajoute et passe aux joueurs sport US »). Le robot garde par
@@ -77130,10 +77151,22 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
        critères en 5 onglets (🏁 Résultat = résultat + écart · ⚽ Buts = buts du match / équipe / adversaire + les deux marquent · 👤 Joueurs ·
        🎯 Feuille · 🔁 Contexte = match précédent) ; pastille = nombre de critères choisis ; onglet gardé (localStorage g45_cr_tab). */
     var q7 = h.length;
-    var PAN = { res: h.slice(q0, q1) + h.slice(q2, q3), buts: h.slice(q1, q2) + h.slice(q6, q6b), ess: h.slice(q6b, q7), jou: h.slice(q3, q4), feu: h.slice(q4, q5), ctx: h.slice(q5, q6) };   /* 20261103k : ess */
+    if (hk()) {   /* 20261106m — ⏱️ onglet Tiers-temps (maquette « oui ») */
+      var nE = esc(String(nom).split(' ').slice(-1)[0] || nom), selTq = '<select onchange="g45CrSet(\'TQL\',this.value)" style="background:#16213f;color:#fff;border:1px solid #6d9dff;border-radius:8px;padding:7px 10px;font-size:14px;margin:0 6px 6px 0;">';
+      [0.5, 1.5, 2.5, 3.5].forEach(function (x) { selTq += '<option value="' + x + '"' + (c.TQL === x ? ' selected' : '') + '>' + String(x).replace('.', ',') + '</option>'; }); selTq += '</select>';
+      h += lab('Tiers') + ['1', '2', '3'].map(function (t) { return b(c.tq === t, t === '1' ? '1er' : t + 'e', "g45CrSet('tq','" + t + "')"); }).join('')
+        + lab('Résultat du tiers') + b(c.tqr === 'e', nE, "g45CrSet('tqr','e')") + b(c.tqr === 'n', 'Nul', "g45CrSet('tqr','n')") + b(c.tqr === 'a', 'Adversaire', "g45CrSet('tqr','a')")
+        + b(c.tqr === 'en', nE + ' ou nul', "g45CrSet('tqr','en')") + b(c.tqr === 'an', 'Adv. ou nul', "g45CrSet('tqr','an')") + b(c.tqr === 'pn', 'Pas de nul', "g45CrSet('tqr','pn')") + b(!c.tqr, 'Aucun', "g45CrSet('tqr','')")
+        + lab('Buts dans le tiers') + b(c.tqo === 'ov', 'Over', "g45CrSet('tqo','ov')") + b(c.tqo === 'un', 'Under', "g45CrSet('tqo','un')") + b(!c.tqo, 'Aucun', "g45CrSet('tqo','')") + selTq
+        + lab('Les deux équipes marquent dans le tiers') + b(c.tqb === 'oui', 'Oui', "g45CrSet('tqb','oui')") + b(c.tqb === 'non', 'Non', "g45CrSet('tqb','non')") + b(!c.tqb, 'Aucun', "g45CrSet('tqb','')")
+        + lab('Tiers avec le plus de buts (du match)') + ['1', '2', '3'].map(function (t) { return b(c.tqm === t, t === '1' ? '1er' : t + 'e', "g45CrSet('tqm','" + t + "')"); }).join('') + b(c.tqm === 'p', 'Plusieurs', "g45CrSet('tqm','p')") + b(!c.tqm, 'Peu importe', "g45CrSet('tqm','')")
+        + '<div style="font-size:13px;color:#c9d3ee;margin:6px 0;">Scores de chaque tiers gardés dans les archives (NHL et KHL, 5 saisons). « Remboursé si nul » / handicap +0,5 = « ' + nE + ' ou nul ». Match sans tiers gardés = non compté.</div>';
+    }
+    var q8 = h.length;
+    var PAN = { tiers: h.slice(q7, q8), res: h.slice(q0, q1) + h.slice(q2, q3), buts: h.slice(q1, q2) + h.slice(q6, q6b), ess: h.slice(q6b, q7), jou: h.slice(q3, q4), feu: h.slice(q4, q5), ctx: h.slice(q5, q6) };   /* 20261103k : ess */
     var NB = { res: (c.res ? 1 : 0) + (c.ec ? 1 : 0) + (c.ha ? 1 : 0) + (c.hb ? 1 : 0), buts: (c.ou ? 1 : 0) + (c.tb ? 1 : 0) + (c.qb ? 1 : 0) + (c.te ? 1 : 0) + (c.ad ? 1 : 0) + (c.bts ? 1 : 0) + (c.m1 ? 1 : 0) + (c.m2 ? 1 : 0), jou: joueurs(c).length ? 1 : 0,
-      feu: ['fs', 'ts', 'as', 'cad', 'mt', 'mp', 'bo'].filter(function (k) { return c[k]; }).length, ctx: c.pm ? 1 : 0, ess: rg() ? ['ess', 'esm', 'esb'].filter(function (k) { return c[k]; }).length : 0 };
-    var ONG = [['res', '🏁 Résultat'], ['buts', '⚽ ' + motUnite()], ['ess', '🏉 Essais'], ['jou', '👤 Joueurs'], ['feu', '🎯 Feuille'], ['ctx', '🔁 Contexte']].filter(function (o) { return PAN[o[0]]; });
+      feu: ['fs', 'ts', 'as', 'cad', 'mt', 'mp', 'bo'].filter(function (k) { return c[k]; }).length, ctx: c.pm ? 1 : 0, ess: rg() ? ['ess', 'esm', 'esb'].filter(function (k) { return c[k]; }).length : 0, tiers: hk() ? ['tqr', 'tqo', 'tqb', 'tqm'].filter(function (k) { return c[k]; }).length : 0 };
+    var ONG = [['res', '🏁 Résultat'], ['buts', '⚽ ' + motUnite()], ['ess', '🏉 Essais'], ['tiers', '⏱️ Tiers-temps'], ['jou', '👤 Joueurs'], ['feu', '🎯 Feuille'], ['ctx', '🔁 Contexte']].filter(function (o) { return PAN[o[0]]; });
     var TB = 'res'; try { TB = localStorage.getItem('g45_cr_tab') || 'res'; } catch (e) {}
     if (!PAN[TB]) TB = 'res';
     h = h.slice(0, q0) + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin:12px 0 4px;">' + ONG.map(function (o) { var on = o[0] === TB;
@@ -77466,6 +77499,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       else if (k === 'M1L') { c.M1L = parseFloat(v); if (!c.m1) c.m1 = 'ov'; }   /* 20261024b */
       else if (k === 'HAL') { if (v === '') c.ha = ''; else { c.HAL = parseFloat(v); c.ha = 'on'; } }   /* 20261024d */
       else if (k === 'M2L') { c.M2L = parseFloat(v); if (!c.m2) c.m2 = 'ov'; }
+      else if (k === 'TQL') { c.TQL = parseFloat(v); if (!c.tqo) c.tqo = 'ov'; }   /* 20261106m */
       else if (k === 'ESL') { c.ESL = parseFloat(v); if (!c.esm) c.esm = 'ov'; }   /* 20261103k */
       else c[k] = v;
     }
@@ -85276,7 +85310,7 @@ window._g45MqPalHtml = function (pire, pd) {
    carte = date, match, score final (f, ajouté par le robot ; vert / jaune / rouge du point de vue de l'équipe choisie), 1N2, 3 joueurs les
    mieux cotés (buteur foot / NHL, TD NFL) ; « ▸ toutes les cotes » = handicap, total, les deux marquent, buts d'équipe, 10 joueurs.
    Cotes affichées selon le sélecteur DraftKings / estimée France (_g45DkMode). */
-window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champions', 'uefa.europa', 'uefa.europa.conf', 'nhl', 'nba', 'nfl',
+window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champions', 'uefa.europa', 'uefa.europa.conf', 'nhl', 'nba', 'nfl',
   /* 20261031d : + ligues ESPN du mur (saisons CIVILES « 2026 » pour MLB, Brésil, Argentine, sélections) */
   'mlb', 'ned.1', 'por.1', 'fra.2', 'bra.1', 'arg.1', 'fifa.friendly', 'uefa.nations', 'fifa.worldq.uefa', 'fifa.world', 'uefa.euro'];
 (function () {
