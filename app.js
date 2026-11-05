@@ -86469,6 +86469,8 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
         var pal = Math.min(9, y.pire + 3), sec = pal - (y.pire + 1);
         return '<div style="' + bd + 'font-size:15px;"><span style="font-weight:900;border-radius:7px;padding:0 6px;margin-right:6px;background:#3a0f0f;border:1px solid #ff5a5a;">🔥 ' + y.cours + ' / ' + y.pire + '</span><b style="color:#ffd34d;">' + esc(y.lib) + '</b> <span style="font-size:13px;color:#dfe6f7;">(' + (y.lieu === 'tout' ? 'tous lieux' : y.d ? 'à domicile' : 'à l\'extérieur') + ')</span>'
           + '<br><span style="font-size:14px;">' + y.cours + ' raté' + (y.cours > 1 ? 's' : '') + ' de suite · pire série ' + y.pire + (y.p && y.p.length ? ' <span style="font-size:13px;color:#dfe6f7;">(' + y.p.join('·') + ')</span>' : '') + '</span>'
+          /* 20261106l (Plzeň, « A + ») : séries sur la phase principale ; réussite en QUALIFICATION pendant la série = mention, non comptée */
+          + (y.qv ? '<br><span style="font-size:14px;color:#ffd34d;">⚠️ pari réussi en qualification le ' + new Date(y.qv).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) + ' (non compté)</span>' : '')
           + '<br><span style="font-size:13px;color:#dfe6f7;">→ ' + (y.pire + 1) + ' paliers' + (sec ? ' + ' + sec + ' de sécurité = ' + pal + ' paliers' : '') + ' · ' + y.ok + '/' + y.n + ' réussis</span></div>';
       }).join('');
       h += '<div style="position:relative;overflow:hidden;border-radius:12px;min-height:180px;border-left:4px solid ' + cc + ';background:linear-gradient(90deg,' + cc + '8c 0%,' + cc + '55 55%,' + cc + '30 100%);color:#fff;font-size:15px;line-height:1.45;text-shadow:0 1px 3px rgba(0,0,0,.85);">'
