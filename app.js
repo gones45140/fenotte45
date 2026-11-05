@@ -77477,6 +77477,68 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     });
     return h + '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">✅ 5 paliers ou moins · ⚠️ jusqu\'à ta dernière mise · ❌ au-delà de tes paliers (mises 1 ⭐). Joueurs de la saison en cours, toutes leurs saisons dans ce championnat.</div></div>';
   }
+  /* ═══ 20261107b — 🏁 JOUABLE EN COCKPIT ? → JOUEURS NHL / NBA / NFL (capture Pavel Zacha pointeur : classement d'équipes à 100 % ;
+     « fais-le pour sport US »). Même principe que le foot (20261102d) : critère = UN joueur seul sans critère d'équipe → candidats = 40 meilleurs
+     de la saison en cours (joueurs.json : totaux du rôle) + le joueur choisi ; journaux joueurs/<id>.json de chaque saison archivée (matchs avec
+     stats = joués, m[6] = h|a pour le lieu) ; réussite = même règle que le critère (seuil « Combien », ligne X,5 plus / moins) ; pire série =
+     suite de ratés, saisons à la suite ; 20 matchs au minimum. ═══ */
+  S.clsJU = S.clsJU || {};
+  var USJ = { hockey: { g: ['G'], a: ['A'], p: ['G', 'A'] }, basketball: { pts: ['PTS'], reb: ['REB'], ast: ['AST'], tp: ['3PT'], pra: ['PTS', 'REB', 'AST'], pr: ['PTS', 'REB'], pa: ['PTS', 'AST'], ra: ['REB', 'AST'] }, football: { td: ['rTD', 'reTD'], ptd: ['pTD'] } };
+  function usJModeDe(c0) { return !!(S.ctx && USJ[S.ctx.sp] && aOk(S.ctx.lg) && c0 && c0.jo && !c0.jo2 && USJ[S.ctx.sp][c0.jm || ''] && /aucun crit/.test(libCombo(clsCombo(c0)))); }
+  function usJVal(sp, jm, st) { var v = 0; ((USJ[sp] || {})[jm] || []).forEach(function (k) { var x = st[k]; if (k === '3PT' && typeof x === 'string') x = parseInt(x, 10); v += +x || 0; }); return v; }
+  function usJOk(c0, v) { var L = jMinDe(c0); return L % 1 !== 0 ? (c0.jsens === 'un' ? v < L : v > L) : v >= L; }
+  function usJCle(X, c0) { return X.lg + '|' + c0.jm + '|' + String(c0.jo); }
+  window.g45CrClsJULancer = function () {
+    var X = clsCtx(), c0 = S.combos[S.a]; if (!X || !c0 || !usJModeDe(c0)) return;
+    var k = usJCle(X, c0), Q = S.clsJU[k] = S.clsJU[k] || {}; if (Q.etat === 1) return; Q.etat = 1; Q.f = 0; Q.err = ''; redessiner();
+    (async function () {
+      try {
+        var B0 = ASP[X.sp] + '/' + X.lg + '/', ANS = annees(X.lg), cur = await aLire(B0 + aSaUS(X.lg, ANS[0]) + '/joueurs.json');
+        if (!cur) { Q.etat = 0; Q.err = 'Archives des joueurs indisponibles.'; redessiner(); return; }
+        var keys = USJ[X.sp][c0.jm], cand = Object.keys(cur).map(function (id) { var t = cur[id][3] || {}, v = 0; keys.forEach(function (q) { v += +t[q] || 0; }); return [id, v]; })
+          .sort(function (a, b) { return b[1] - a[1]; }).slice(0, 40).map(function (x) { return x[0]; });
+        if (cand.indexOf(String(c0.jo)) < 0) cand.push(String(c0.jo));
+        var P = {}, todo = []; cand.forEach(function (id) { P[id] = { nom: (cur[id] && cur[id][0]) || '', eq: (cur[id] && cur[id][1]) || '', L: [] }; ANS.forEach(function (an) { todo.push([id, an]); }); });
+        Q.n = todo.length; var i = 0;
+        async function w() { while (i < todo.length) { var t = todo[i++]; var j = null; try { j = await aLire(B0 + aSaUS(X.lg, t[1]) + '/joueurs/' + t[0] + '.json'); } catch (e) {}
+          ((j && j.m) || []).forEach(function (m) { if (m && m[4] && typeof m[4] === 'object') P[t[0]].L.push([+m[0] || 0, m[6] === 'h' ? 1 : m[6] === 'a' ? 0 : -1, usJVal(X.sp, c0.jm, m[4])]); });
+          if (j && j.n && !P[t[0]].nom) P[t[0]].nom = j.n; Q.f++;
+          var e1 = document.querySelector('[id="g45cr-cls-prog"]'); if (e1) e1.textContent = Q.f + ' / ' + Q.n; } }
+        await Promise.all([w(), w(), w(), w(), w(), w()]);
+        Q.P = P; Q.etat = 2;
+      } catch (e) { Q.etat = 0; Q.err = 'Lecture impossible.'; }
+      redessiner();
+    })();
+  };
+  function usClsJHtml(X, c0) {
+    var Q = S.clsJU[usJCle(X, c0)] || {}, JM = libCombo(c0).replace(String(c0.jn || ''), '').replace(/^[\s+]+/, '');
+    var h = '<div style="margin-top:16px;padding-top:12px;border-top:1px solid #2a3a63;">'
+      + '<div style="font-size:16px;font-weight:800;color:#fff;">🏁 Jouable en Cockpit ? — joueurs de la ' + esc(US_N[X.lg] || X.lg) + '</div>'
+      + '<div style="font-size:13px;color:#c9d3ee;margin:3px 0 8px;">Même critère (' + (S.lieu === 'dom' ? '🏠 ' : S.lieu === 'ext' ? '✈️ ' : '') + esc(JM) + ') · ' + nbS() + ' saisons · matchs joués · 20 matchs au minimum · trié par la plus petite pire série</div>';
+    if (Q.etat === 1) return h + '<div style="font-size:14px;color:#fff;">⏳ Lecture des archives… <span id="g45cr-cls-prog">' + (Q.f || 0) + ' / ' + (Q.n || '?') + '</span></div></div>';
+    if (Q.etat !== 2 || !Q.P) return h + (Q.err ? '<div style="font-size:14px;color:#ff9f43;margin-bottom:6px;">⚠️ ' + esc(Q.err) + '</div>' : '')
+      + '<button onclick="g45CrClsJULancer()" style="border:none;border-radius:10px;padding:9px 14px;font-size:14px;font-weight:700;color:#fff;background:#2f6bff;cursor:pointer;">▶ Lancer le classement des joueurs (archives, ≈ 20 s)</button></div>';
+    var R = Object.keys(Q.P).map(function (pid) {
+      var Pj = Q.P[pid], L = Pj.L.filter(function (x) { return S.lieu !== 'dom' && S.lieu !== 'ext' || (S.lieu === 'dom' ? x[1] === 1 : x[1] === 0); }).sort(function (a, b) { return a[0] - b[0]; });
+      var ok = 0, pire = 0, cur = 0; L.forEach(function (x) { if (usJOk(c0, x[2])) { ok++; cur = 0; } else { cur++; if (cur > pire) pire = cur; } });
+      return { id: pid, nom: Pj.nom, n: L.length, ok: ok, pire: pire, cours: cur };
+    }).filter(function (x) { return x.n >= 20 && x.ok > 0; }).sort(function (a, b) { return (a.pire - b.pire) || (b.ok / b.n - a.ok / a.n); });
+    if (!R.length) return h + '<div style="font-size:14px;color:#fff;">Pas assez de matchs avec ce critère.</div></div>';
+    var top = R.slice(0, 20), moi = R.filter(function (x) { return x.id === String(c0.jo); })[0];
+    if (moi && top.indexOf(moi) < 0) top.push(moi);
+    var ln = 'display:grid;grid-template-columns:1.8fr 1fr .8fr .8fr 1.2fr;gap:6px;padding:8px 4px;border-bottom:1px solid #1c2747;font-size:14px;color:#fff;';
+    h += '<div style="' + ln + 'font-size:13px;color:#c9d3ee;"><span>Joueur</span><span>Réussite</span><span>Pire</span><span>En cours</span><span>Paliers</span></div>';
+    top.forEach(function (x) {
+      var me = x.id === String(c0.jo), pa = (typeof _g45F1CrPal === 'function') ? _g45F1CrPal(x.pire) : { p: x.pire + 1, ico: '' };
+      var feu = x.pire >= 3 && x.pire <= 7 && x.cours >= 1 && x.pire - x.cours <= 1;
+      h += '<div style="' + ln + (me ? 'background:rgba(47,107,255,.2);border-radius:8px;' : '') + '"><span style="font-weight:' + (me ? 800 : 600) + ';">' + esc(x.nom) + '</span>'
+        + '<span>' + Math.round(100 * x.ok / x.n) + ' % <span style="font-size:12px;color:#c9d3ee;">' + x.ok + '/' + x.n + '</span></span><span style="font-weight:800;color:' + coul(x.pire) + ';">' + x.pire + '</span>'
+        + '<span style="font-weight:800;color:' + (feu ? '#ff5a5a' : x.cours ? '#ff9f43' : '#c9d3ee') + ';">' + (x.cours ? (feu ? '🔥 ' : '') + x.cours : '—') + '</span>'
+        + '<span><b>' + pa.p + ' palier' + (pa.p > 1 ? 's' : '') + '</b> ' + (pa.ico || '') + (pa.mise != null ? ' <span style="font-size:12px;color:#c9d3ee;">' + pa.mise + ' €</span>' : '') + '</span></div>';
+    });
+    return h + '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">✅ 5 paliers ou moins · ⚠️ jusqu\'à ta dernière mise · ❌ au-delà de tes paliers (mises 1 ⭐). Candidats : les 40 meilleurs de la saison en cours pour ce critère + ton joueur ; toutes leurs saisons dans la ligue.</div></div>';
+  }
+  window._g45CrUsJT = { mode: usJModeDe, val: usJVal, ok: usJOk };   /* tests */
   window._g45CrRgT = { rgFiche: rgFiche, aJouRg: aJouRg, aSaRg: aSaRg, rgMois: rgMois, rgLigue: rgLigue, rgJOk: rgJOk };   /* tests */
   function clsHtml() {
     var X = clsCtx(); if (!X) return '';
@@ -77486,9 +77548,10 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var c = clsCombo(c0), nomLg = (S.data[S.nom] && S.data[S.nom].ligue) || US_N[X.lg] || 'championnat';
     /* 20261106z2 (capture Pavel Zacha pointeur : « Jouable en Cockpit ? » NHL = toutes les équipes à 100 %, « Même critère (aucun critère) ») : un critère
        JOUEUR seul n'a pas de classement d'équipes (les joueurs ne sont classés qu'en foot / rugby) → message au lieu d'une liste qui ne veut rien dire. */
+    if (usJModeDe(c0)) return usClsJHtml(X, c0);   /* 20261107b */
     if (/aucun crit/.test(libCombo(c))) return '<div style="margin-top:16px;padding-top:12px;border-top:1px solid #2a3a63;"><div style="font-size:16px;font-weight:800;color:#fff;">🏁 Jouable en Cockpit ?</div>'
       + '<div style="font-size:14px;color:#ffd34d;margin-top:4px;">Ce classement compare les ÉQUIPES : ajoute un critère d\'équipe (résultat, buts, tiers…) pour le voir. '
-      + (c0.jo ? 'Le classement des joueurs de la ' + esc(US_N[X.lg] || X.lg) + ' n\'existe pas encore (seulement foot et rugby).' : '') + '</div></div>';
+      + (c0.jo ? 'Ce critère joueur n\'a pas encore de classement des joueurs pour cette ligue.' : '') + '</div></div>';
     var ign = CLS_SANS.some(function (q) { return c0[q]; });
     var h = '<div style="margin-top:16px;padding-top:12px;border-top:1px solid #2a3a63;">'
       + '<div style="font-size:16px;font-weight:800;color:#fff;">🏁 Jouable en Cockpit ? — classement ' + (X.sp === 'soccer' || /^rugby/.test(X.sp) ? 'du championnat' : 'de la ' + esc(US_N[X.lg] || X.lg)) + '</div>'
