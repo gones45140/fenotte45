@@ -64558,11 +64558,12 @@ async function _g45KhlVueIndividuel(body) {
     }
     h += '</div>';
   }
-  /* liste */
+  /* liste — 20261106p (« sur PC ça fait un gros vide au milieu ») : grille de cartes, 2 par rangée sur grand écran, 1 sur téléphone */
+  h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,640px),1fr));column-gap:18px;">';
   liste.slice(nPod, _g45KhlIndN).forEach(function (p, i0) {
     var i = i0 + nPod, e = g45KhlEquipe(p.eq);
     h += '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:10px 4px;border-top:1px solid #1c2747;color:#fff;">'
-      + '<div style="display:flex;align-items:center;gap:10px;flex:1 1 260px;min-width:0;">'
+      + '<div style="display:flex;align-items:center;gap:10px;flex:1 1 230px;min-width:0;">'
       + '<b style="width:30px;font-size:18px;color:#ffd34d;flex:none;">' + rangs[i] + '</b>' + photo(p, 50, '#4d84ff')
       + '<div style="min-width:0;"><div style="font-size:16px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + _g45KhlEsc(p.n) + '</div>'
       + '<div style="font-size:14px;color:#dfe6f7;display:flex;align-items:center;gap:6px;">' + _g45KhlLogoHtml(p.eq, '', 22) + _g45KhlEsc(e ? e.fr : '') + ' · ' + poste(p) + '</div></div></div>'
@@ -64572,6 +64573,7 @@ async function _g45KhlVueIndividuel(body) {
       + '<span style="background:linear-gradient(135deg,#ffd34d,#f5a623);color:#111;border-radius:12px;text-align:center;padding:5px 10px;min-width:70px;font-weight:900;font-size:22px;">' + fv(p) + '<span style="display:block;font-size:11px;font-weight:800;">' + (TOT[cat[0]] || '') + '</span></span>'
       + '</div></div>';
   });
+  h += '</div>';
   if (liste.length > _g45KhlIndN) h += '<button onclick="g45KhlIndPlus()" style="margin-top:10px;width:100%;padding:11px;border-radius:10px;cursor:pointer;background:#141c33;border:1px solid #2a3a63;color:#fff;font-weight:700;font-size:15px;">Voir plus (' + (liste.length - _g45KhlIndN) + ')</button>';
   if (!liste.length) h += '<div style="color:#c9d3ee;font-size:15px;margin-top:8px;">Aucun joueur pour ce filtre.</div>';
   h += '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">' + (seuilNote ? seuilNote + ' ' : '') + 'Stats de saison KHL · photos officielles khl.ru.</div>';
