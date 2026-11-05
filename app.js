@@ -86824,7 +86824,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
    maquette age.png « OUI », + ⏳ 33 ans et plus). SONDÉ le 06/11 (console d'Antoine) : ESPN <sp>/<lg>/teams/<id>/roster → athletes[] (NHL / NBA :
    items[]) { age, dateOfBirth, birthPlace { country « CAN » }, foot : citizenship « Mali » + flag.href }. Le numéro ESPN du joueur et son club
    viennent des archives (cotes/<sport>/joueurs.json { id: [nom, club, ligue, n] } puis joueurs/<id>.json c[] [ligue, saison, idClub, …]).
-   Gardé 30 jours (localStorage g45age1|nom) ; rien affiché si introuvable. ═══ */
+   Gardé 30 jours (localStorage g45age1|nom) ; rien affiché si introuvable. 20261106s : 🌱 → 👶 (≤ 23 ans), ⏳ → 👴 (≥ 33 ans). ═══ */
 (function () {
   var RAW = 'https://raw.githubusercontent.com/gones45140/gones45-archives/main/cotes/';
   var SP = { '🏒': ['hockey', 'hockey'], '🏀': ['basket', 'basketball'], '🏈': ['football-us', 'football'], '⚾': ['baseball', 'baseball'], '⚽': ['foot', 'soccer'] };
@@ -86868,7 +86868,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     var e = function (t) { return String(t).replace(/[<>&"]/g, ''); };
     return '<div class="g45ul-id" style="display:inline-flex;align-items:center;gap:7px;margin:4px 0 2px;background:rgba(11,16,29,.7);border-radius:8px;padding:3px 10px;font-size:15px;font-weight:700;color:#fff;">'
       + (/^https:\/\//.test(o.f || '') ? '<img src="' + e(o.f) + '" alt="" loading="lazy" onerror="this.remove()" style="height:16px;width:24px;object-fit:cover;border-radius:2px;">' : '')
-      + e(o.p || '') + (o.p && ag ? ' · ' : '') + (ag ? ag + ' ans' : '') + (ag && ag <= 23 ? ' 🌱' : ag && ag >= 33 ? ' ⏳' : '') + '</div>';
+      + e(o.p || '') + (o.p && ag ? ' · ' : '') + (ag ? ag + ' ans' : '') + (ag && ag <= 23 ? ' 👶' : ag && ag >= 33 ? ' 👴' : '')   /* 20261106s : « mets un bébé et un papy » */ + '</div>';
   }
   window._g45AgePoser = function (u, apres) {
     var cle = 'g45age1|' + u.n, c = null;
