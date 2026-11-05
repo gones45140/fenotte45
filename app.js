@@ -75667,6 +75667,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   /* 20261106y : logos face à face (domicile à gauche) + VS + heure ; photo du joueur (vignette déjà en mémoire) */
   function logoRond(nom) {
     var u = ''; try { u = (typeof g45LogoUrlDe === 'function' && g45LogoUrlDe(nom)) || ''; } catch (e) {}
+    if (!/^https?:\/\//.test(u)) { try { u = (typeof window._g45LogoIndex === 'function' && window._g45LogoIndex(nom)) || u; } catch (e) {} }   /* 20261106z */
     var ini = esc(String(nom || '?').replace(/[^A-Za-zÀ-ÿ ]/g, '').split(' ').filter(Boolean).map(function (w) { return w[0]; }).join('').slice(0, 3).toUpperCase());
     return '<span style="width:72px;height:72px;border-radius:50%;flex:none;display:inline-flex;align-items:center;justify-content:center;background:rgba(255,255,255,.06);border:2px solid #2a3a63;font-weight:900;font-size:20px;overflow:hidden;">'
       + (/^https?:\/\//.test(u) ? '<img src="' + esc(u) + '" alt="" loading="lazy" style="width:84%;height:84%;object-fit:contain;" onerror="this.parentNode.textContent=\'' + ini + '\'">' : ini) + '</span>';
@@ -86608,7 +86609,8 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     LOI.ixEnCours = true;
     fetch('https://raw.githubusercontent.com/gones45140/gones45-archives/main/loi/equipes.json?h=' + Math.floor(Date.now() / 36e5), { cache: 'no-store' })
       .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (j) { LOI.ixEnCours = false; if (j && j.L) { LOI.ix = j.L; LOI.ixT = Date.now(); try { localStorage.setItem('g45loiEq1', JSON.stringify({ t: LOI.ixT, L: j.L })); } catch (e) {} } if (TAB === 'loi' && LOI.v === 'cr') loiCrListe(); })
+      .then(function (j) { LOI.ixEnCours = false; if (j && j.L) { LOI.ix = j.L; LOI.ixT = Date.now(); try { localStorage.setItem('g45loiEq1', JSON.stringify({ t: LOI.ixT, L: j.L })); } catch (e) {} } if (TAB === 'loi' && LOI.v === 'cr') loiCrListe();
+        try { if (j && j.L && document.querySelector('.g45ec-vs') && typeof render === 'function') render(); } catch (e) {} })   /* 20261106z : logos des cartes En cours */
       .catch(function () { LOI.ixEnCours = false; if (TAB === 'loi' && LOI.v === 'cr') loiCrListe(); });
   }
   /* carte du mur → ligne de l'index (même nom, ou nom court contenu : « PSG » / « Paris Saint-Germain » reste à part, on garde le nom de la carte) */
@@ -86661,6 +86663,8 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     loiIxCharger(); loiCrPoser(nom, loiIxDe(nom)); LOI.q = ''; LOI.v = 'cr'; window.g45CkOnglet('loi');
   };
   window._g45LoiCr = { liste: loiCrListe, ixDe: loiIxDe, poser: loiCrPoser };   /* tests */
+  /* 20261106z (capture En cours : seul Colorado, sur le mur, avait son logo) : logo d'une équipe par son NOM dans l'index des archives (424 équipes) */
+  window._g45LogoIndex = function (nom) { loiIxCharger(); var x = LOI.ix ? loiIxDe(nom) : null; return (x && /^https:\/\//.test(x[5] || '')) ? x[5] : ''; };
   window._g45LoiT = { html: loiHtml, LOI: LOI, carte: loiCarte };   /* tests */
   window.g45CkOnglet = function (k) {
     if (k === 'tr') { k = 'loi'; if (LOI.v === 'pep' || LOI.v === 'cr') { LOI.v = 'ind'; try { _g45CompetVue = 'buteurs'; } catch (e) {} } }   /* 20261105t : 🔍 Trouver → Loi des séries */
