@@ -77552,7 +77552,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     if (tri !== 'pire') {
       try { var et = (typeof _g45PalEt === 'function') ? _g45PalEt() : '1'; u1 = +((typeof STRATS !== 'undefined' && (STRATS[et] || STRATS['1'])) || [1])[0] || 1; } catch (e) {}
       var MI = USJTRI[tri].map(function (k) { return Math.round(k * u1 * 100) / 100; });
-      R.forEach(function (x) { var r = simCalc(x.sq, MI, coteM, 0, tri); x.gain = r.tot; x.mmax = r.max; });
+      R.forEach(function (x) { var r = simCalc(x.sq, MI, coteM, 0, tri); x.gain = r.tot; x.mmax = r.max; x.fixe = simCalc(x.sq, [u1], coteM, 0, 'fix').tot; });   /* 20261107i : + 📏 mise fixe (« est-ce fiable le fibo ? ») */
       R.sort(function (a, b) { return (b.gain - a.gain) || (a.mmax - b.mmax); });
     }
     if (!R.length) return h + '<div style="font-size:14px;color:#fff;">Pas assez de matchs avec ce critère.</div></div>';
@@ -77581,7 +77581,9 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
           + '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;font-size:14px;">'
           + pil('✅ ' + Math.round(100 * x.ok / x.n) + ' % <span style="color:#c9d3ee;font-size:12px;">' + x.ok + '/' + x.n + '</span>') + pil('Pire <b>' + x.pire + '</b>')
           + '<span style="background:' + (x.gain >= 0 ? 'rgba(30,215,96,.15)' : 'rgba(255,90,90,.15)') + ';border:1px solid ' + (x.gain >= 0 ? '#1ed760' : '#ff5a5a') + ';border-radius:8px;padding:3px 8px;font-weight:900;color:' + (x.gain >= 0 ? '#1ed760' : '#ff5a5a') + ';">' + (x.gain < 0 ? '🔴 −' : '+') + Math.abs(Math.round(x.gain)).toLocaleString('fr-FR') + ' €</span>'
-          + pil('Mise max <b>' + fr2(x.mmax) + ' €</b>' + (pla ? ' ⚠️ plafond' : ''), pla ? '#ff9f43' : '') + '</div></div></div>';
+          + pil('Mise max <b>' + fr2(x.mmax) + ' €</b>' + (pla ? ' ⚠️ plafond' : ''), pla ? '#ff9f43' : '')
+          /* 20261107i (Antoine : « est-ce fiable le fibo ? » → « oui ») : gain des mêmes matchs en 📏 mise fixe (P1) : positif = le joueur rapporte même sans méthode */
+          + '<span style="background:#0b1226;border:1px solid ' + (x.fixe >= 0 ? '#1ed760' : '#ff5a5a') + ';border-radius:8px;padding:3px 8px;font-weight:800;color:' + (x.fixe >= 0 ? '#1ed760' : '#ff9a9a') + ';">📏 fixe ' + (x.fixe < 0 ? '−' : '+') + Math.abs(Math.round(x.fixe)).toLocaleString('fr-FR') + ' €</span>' + '</div></div></div>';
         return;
       }
       h += '<div style="' + ln + 'align-items:center;' + (me ? 'background:rgba(47,107,255,.2);border-radius:8px;' : '') + '"><span style="display:flex;align-items:center;gap:10px;min-width:0;">'
@@ -77594,7 +77596,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
         + '<span style="font-weight:800;color:' + (feu ? '#ff5a5a' : x.cours ? '#ff9f43' : '#c9d3ee') + ';">' + (x.cours ? (feu ? '🔥 ' : '') + x.cours : '—') + '</span>'
         + '<span><b>' + pa.p + ' palier' + (pa.p > 1 ? 's' : '') + '</b> ' + (pa.ico || '') + (pa.mise != null ? ' <span style="font-size:12px;color:#c9d3ee;">' + pa.mise + ' €</span>' : '') + '</span></div>');
     });
-    if (tri !== 'pire') return h + '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">Gain = toutes ses saisons jouées en ' + (tri === 'dal' ? '🪜 D\'Alembert' : '🐚 Fibonacci') + ' à cette cote · Mise max = la plus grosse mise qu\'il aurait fallu poser (⚠️ plafond = dernier palier, ' + (tri === 'dal' ? 'D' : 'F') + '12) · 🔴 = la méthode aurait perdu de l\'argent. Candidats : les 40 meilleurs de la saison en cours pour ce critère + ton joueur.</div></div>';
+    if (tri !== 'pire') return h + '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">Gain = toutes ses saisons jouées en ' + (tri === 'dal' ? '🪜 D\'Alembert' : '🐚 Fibonacci') + ' à cette cote · Mise max = la plus grosse mise qu\'il aurait fallu poser (⚠️ plafond = dernier palier, ' + (tri === 'dal' ? 'D' : 'F') + '12) · 🔴 = la méthode aurait perdu de l\'argent · 📏 fixe = les mêmes matchs à mise fixe (P1) : en vert, le joueur rapporte même sans méthode ; en rouge, le gain ne vient que de la méthode. Candidats : les 40 meilleurs de la saison en cours pour ce critère + ton joueur.</div></div>';
     return h + '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">✅ 5 paliers ou moins · ⚠️ jusqu\'à ta dernière mise · ❌ au-delà de tes paliers (mises 1 ⭐). Candidats : les 40 meilleurs de la saison en cours pour ce critère + ton joueur ; toutes leurs saisons dans la ligue.</div></div>';
   }
   window._g45CrUsJT = { mode: usJModeDe, val: usJVal, ok: usJOk, html: function (X, c0) { return usClsJHtml(X, c0); } };   /* tests */
