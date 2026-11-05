@@ -86873,7 +86873,8 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   window._g45AgePoser = function (u, apres) {
     var cle = 'g45age1|' + u.n, c = null;
     try { c = JSON.parse(localStorage.getItem(cle) || 'null'); } catch (e) {}
-    var poser = function (o) { var h = html(o); if (!h || !apres || !apres.parentNode) return; var x = apres.parentNode.querySelector('.g45ul-id'); if (x) x.remove(); apres.insertAdjacentHTML('afterend', h); };
+    /* 20261106r (capture flèches d'Antoine : la bande tombait sous le bloc 📊) : posée DANS la ligne étoiles / paliers (après son redessin) */
+    var poser = function (o) { setTimeout(function () { var h = html(o); if (!h || !apres || !apres.isConnected) return; var x = apres.querySelector('.g45ul-id'); if (x) x.parentNode.remove(); apres.insertAdjacentHTML('beforeend', '<div>' + h + '</div>'); }, 0); };
     if (c && Date.now() - c.t < 30 * 864e5) { if (!c.vide) poser(c); return; }
     if (EN[u.n]) return; EN[u.n] = 1;
     chercher(u).then(function (o) { delete EN[u.n]; if (!o) return; o.t = Date.now(); try { localStorage.setItem(cle, JSON.stringify(o)); } catch (e) {} if (!o.vide) poser(o); }).catch(function () { delete EN[u.n]; });
