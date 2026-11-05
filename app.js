@@ -75716,8 +75716,21 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       + '<div style="display:flex;gap:6px;">' + bt('', 'background:rgba(255,255,255,.06);border:1px solid #3a4566;font-size:13px;', 'openBetLive(this.dataset.id)', '📡 Match', 'Voir le match')
       + bt('', 'background:rgba(255,255,255,.06);border:1px solid #3a4566;', 'editBet(this.dataset.id)', '✏️', 'Modifier')
       + bt('', 'background:rgba(255,255,255,.06);border:1px solid #3a4566;', 'cancelBet(this.dataset.id)', '🗑️', 'Supprimer') + '</div></div>'
-      + '</div></div></td></tr>';
+      + '</div>' + proch(h, m) + '</div></td></tr>';
   }
+  /* 20261107e — PROCHAIN PARI des paris 🐚 Fibonacci / 🪜 D'Alembert (Antoine : « je suis au rang 8 d'Alembert soit 24 €, je gagne, je parie
+     combien ? » → maquette prochain.png « oui ») : bande « ✅ si gagné → D7 · 21 € / ❌ si perdu → D9 · 27 € ». P1 = la VRAIE mise ÷ le
+     multiplicateur du palier joué (24 € ÷ 8 = 3 €) → juste même si la grille a changé depuis. Mêmes règles que avance() du bloc 20261106g :
+     gagné Fibonacci −2 crans, D'Alembert −1 (1 au plus bas), perdu +1 (12 au plus). */
+  function proch(h, m) {
+    var T = window._g45MethEngT, S = T && T.SEQ && T.SEQ[h.meth], p = parseInt(h.mp, 10) || 1; if (!S || !m) return '';
+    var P1 = m / (S[Math.min(p, S.length) - 1] || 1), L = h.meth === 'fib' ? 'F' : 'D';
+    var g = Math.max(1, p - (h.meth === 'fib' ? 2 : 1)), q = Math.min(p + 1, S.length), mi = function (k) { return fr(P1 * S[k - 1]); };
+    return '<div class="g45ec-proch" style="flex:1 1 100%;background:#0b1226;border:1px solid #2a3a63;border-radius:10px;padding:8px 12px;font-size:15px;font-weight:700;display:flex;gap:16px;flex-wrap:wrap;">'
+      + '<span>Prochain pari :</span><span style="color:#1ed760;">✅ si gagné → ' + L + g + ' · <b>' + mi(g) + ' €</b></span>'
+      + '<span style="color:#ff6b6b;">❌ si perdu → ' + L + q + ' · <b>' + mi(q) + ' €</b></span></div>';
+  }
+  window._g45EcProch = proch;   /* tests */
   function refaire(tb, strat) {
     if (!tb || tb.querySelector('[data-g45ec]')) return;
     var H = ((typeof state !== 'undefined' && state && state.h) || []).filter(function (x) { return x && (!!(x.isS || x.meth) === strat); });   /* 20261106w : paris méthode dans « En cours » du Cockpit */
@@ -86876,7 +86889,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
       var k = cle(), p = palM(u, m, k), P1 = p1De(u);
       h += '<div style="margin-top:8px;background:rgba(10,14,24,.93);border:1px solid #1c2747;border-radius:12px;padding:10px 12px;color:#fff;font-size:15px;line-height:1.5;">'
         + '<b>' + NOM[m] + ' — ' + String(u.n).replace(/</g, '') + '</b> · ' + LET[m] + p + ' · mise <b>' + String(miseDe(u, m, p)).replace('.', ',') + ' €</b>'
-        + '<div style="font-size:13px;color:#c9d3ee;">P1 = ' + String(P1).replace('.', ',') + ' € (grille de la carte). Gagné → ' + LET[m] + Math.max(1, p - (m === 'fib' ? 2 : 1)) + ' · perdu → ' + LET[m] + Math.min(p + 1, 12) + '. Paliers à part : ta montante Cockpit ne bouge pas.</div>'
+        + '<div style="font-size:13px;color:#c9d3ee;">P1 = ' + String(P1).replace('.', ',') + ' € (grille de la carte). Gagné → <b style="color:#1ed760;">' + LET[m] + Math.max(1, p - (m === 'fib' ? 2 : 1)) + ' · ' + String(miseDe(u, m, Math.max(1, p - (m === 'fib' ? 2 : 1)))).replace('.', ',') + ' €</b> · perdu → <b style="color:#ff6b6b;">' + LET[m] + Math.min(p + 1, 12) + ' · ' + String(miseDe(u, m, Math.min(p + 1, 12))).replace('.', ',') + ' €</b>' /* 20261107e : mises en € */ + '. Paliers à part : ta montante Cockpit ne bouge pas.</div>'
         + '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:5px;margin-top:6px;">' + SEQ[m].map(function (x, i) { var on = i + 1 === p; return '<div style="text-align:center;border-radius:8px;padding:5px 2px;font-weight:800;font-size:14px;background:' + (on ? '#1d4ed8' : '#12301f') + ';border:1px solid ' + (on ? '#6d9dff' : '#1f6b45') + ';">' + LET[m] + (i + 1) + '<br>' + String(Math.round(P1 * x * 100) / 100).replace('.', ',') + ' €</div>'; }).join('') + '</div></div>';
     }
     if (z.innerHTML !== h) z.innerHTML = h;
