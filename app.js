@@ -77494,6 +77494,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     (async function () {
       try {
         var B0 = ASP[X.sp] + '/' + X.lg + '/', ANS = annees(X.lg), cur = await aLire(B0 + aSaUS(X.lg, ANS[0]) + '/joueurs.json');
+        try { Q.EQ = (await aLire(B0 + aSaUS(X.lg, ANS[0]) + '/equipes.json')) || {}; } catch (e) { Q.EQ = {}; }   /* 20261107c : nom du club */
         if (!cur) { Q.etat = 0; Q.err = 'Archives des joueurs indisponibles.'; redessiner(); return; }
         var keys = USJ[X.sp][c0.jm], cand = Object.keys(cur).map(function (id) { var t = cur[id][3] || {}, v = 0; keys.forEach(function (q) { v += +t[q] || 0; }); return [id, v]; })
           .sort(function (a, b) { return b[1] - a[1]; }).slice(0, 40).map(function (x) { return x[0]; });
@@ -77521,7 +77522,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var R = Object.keys(Q.P).map(function (pid) {
       var Pj = Q.P[pid], L = Pj.L.filter(function (x) { return S.lieu !== 'dom' && S.lieu !== 'ext' || (S.lieu === 'dom' ? x[1] === 1 : x[1] === 0); }).sort(function (a, b) { return a[0] - b[0]; });
       var ok = 0, pire = 0, cur = 0; L.forEach(function (x) { if (usJOk(c0, x[2])) { ok++; cur = 0; } else { cur++; if (cur > pire) pire = cur; } });
-      return { id: pid, nom: Pj.nom, n: L.length, ok: ok, pire: pire, cours: cur };
+      return { id: pid, nom: Pj.nom, eq: Pj.eq, n: L.length, ok: ok, pire: pire, cours: cur };
     }).filter(function (x) { return x.n >= 20 && x.ok > 0; }).sort(function (a, b) { return (a.pire - b.pire) || (b.ok / b.n - a.ok / a.n); });
     if (!R.length) return h + '<div style="font-size:14px;color:#fff;">Pas assez de matchs avec ce critère.</div></div>';
     var top = R.slice(0, 20), moi = R.filter(function (x) { return x.id === String(c0.jo); })[0];
@@ -77531,7 +77532,12 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     top.forEach(function (x) {
       var me = x.id === String(c0.jo), pa = (typeof _g45F1CrPal === 'function') ? _g45F1CrPal(x.pire) : { p: x.pire + 1, ico: '' };
       var feu = x.pire >= 3 && x.pire <= 7 && x.cours >= 1 && x.pire - x.cours <= 1;
-      h += '<div style="' + ln + (me ? 'background:rgba(47,107,255,.2);border-radius:8px;' : '') + '"><span style="font-weight:' + (me ? 800 : 600) + ';">' + esc(x.nom) + '</span>'
+      /* 20261107c (« manque photo + club ») : photo ESPN (headshots/<ligue>/players/full/<id>.png) + logo et nom du club (equipes.json de la saison) */
+      var clN = (Q.EQ && Q.EQ[x.eq] && Q.EQ[x.eq][0]) || '', clL = clN && typeof window._g45LogoIndex === 'function' ? window._g45LogoIndex(clN) : '';
+      h += '<div style="' + ln + 'align-items:center;' + (me ? 'background:rgba(47,107,255,.2);border-radius:8px;' : '') + '"><span style="display:flex;align-items:center;gap:10px;min-width:0;">'
+        + '<img src="https://a.espncdn.com/i/headshots/' + esc(X.lg) + '/players/full/' + esc(x.id) + '.png" alt="" loading="lazy" onerror="this.style.visibility=\'hidden\'" style="width:46px;height:46px;border-radius:50%;object-fit:cover;object-position:top;background:#25335c;border:2px solid ' + (me ? '#6d9dff' : '#2a3a63') + ';flex:none;">'
+        + '<span style="min-width:0;"><span style="display:block;font-weight:' + (me ? 800 : 600) + ';">' + esc(x.nom) + '</span>'
+        + (clN ? '<span style="display:flex;align-items:center;gap:5px;font-size:13px;color:#c9d3ee;">' + (/^https:\/\//.test(clL) ? '<img src="' + esc(clL) + '" alt="" loading="lazy" onerror="this.remove()" style="width:18px;height:18px;object-fit:contain;">' : '') + esc(clN) + '</span>' : '') + '</span></span>'
         + '<span>' + Math.round(100 * x.ok / x.n) + ' % <span style="font-size:12px;color:#c9d3ee;">' + x.ok + '/' + x.n + '</span></span><span style="font-weight:800;color:' + coul(x.pire) + ';">' + x.pire + '</span>'
         + '<span style="font-weight:800;color:' + (feu ? '#ff5a5a' : x.cours ? '#ff9f43' : '#c9d3ee') + ';">' + (x.cours ? (feu ? '🔥 ' : '') + x.cours : '—') + '</span>'
         + '<span><b>' + pa.p + ' palier' + (pa.p > 1 ? 's' : '') + '</b> ' + (pa.ico || '') + (pa.mise != null ? ' <span style="font-size:12px;color:#c9d3ee;">' + pa.mise + ' €</span>' : '') + '</span></div>';
