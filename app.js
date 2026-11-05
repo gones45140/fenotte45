@@ -52207,7 +52207,7 @@ async function _g45SaisonsGen(el, nom, perso) {
   try { if (typeof _g45RegAbsPoser === 'function') setTimeout(_g45RegAbsPoser, 0); } catch (e) {}   /* 20261006t */
   /* 20261014g : « 📊 Tes critères sur 4 saisons » aussi pour la NHL (en tête du panneau, même bloc que le foot). */
   /* 20261014h : aussi NFL, NBA, MLB (score final, vainqueur). */
-  try { if (((sp === 'hockey' && lg === 'nhl') || (sp === 'football' && lg === 'nfl') || (sp === 'basketball' && lg === 'nba') || (sp === 'baseball' && lg === 'mlb') || sp === 'rugby' || sp === 'rugby-league') && perso && perso.id && typeof window._g45CrHtml === 'function') el.insertAdjacentHTML('afterbegin', window._g45CrHtml(nom, { sp: sp, lg: lg, id: String(perso.id) })); } catch (e) {}
+  try { if (((sp === 'hockey' && (lg === 'nhl' || lg === 'khl' /* 20261106n : capture HC Sotchi « critères 5 dernières saisons j'ai toujours pas » ; id = webcaster, le même que l'archive (113) */)) || (sp === 'football' && lg === 'nfl') || (sp === 'basketball' && lg === 'nba') || (sp === 'baseball' && lg === 'mlb') || sp === 'rugby' || sp === 'rugby-league') && perso && perso.id && typeof window._g45CrHtml === 'function') el.insertAdjacentHTML('afterbegin', window._g45CrHtml(nom, { sp: sp, lg: lg, id: String(perso.id) })); } catch (e) {}
 }
 
 /* ── Ouverture du detail d'un match ──────────────────────────────────────────
