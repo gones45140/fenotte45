@@ -86485,11 +86485,13 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   }
   var LOI_COUL = { 'fra.1': '#1b3d8f', 'fra.2': '#e4572e', 'eng.1': '#5b2a86', 'esp.1': '#e8392b', 'ita.1': '#0a7cc2', 'ger.1': '#d20515', 'ned.1': '#ef7d00', 'por.1': '#00a19a',
     'bra.1': '#1f9d48', 'arg.1': '#4d9bd6', 'uefa.champions': '#16307a', 'uefa.europa': '#f07d00', 'uefa.europa.conf': '#1fa34a',
-    nhl: '#5f6f86', nba: '#c9082a', nfl: '#013369', mlb: '#0b4fa0', '270559': '#8c6a1f', '271937': '#7a1c3c', '272073': '#2f7a8c', '3': '#0b7a4a' };   /* 20261105y : couleur par championnat */
+    nhl: '#5f6f86', khl: '#1d4f9c' /* 20261106u */, nba: '#c9082a', nfl: '#013369', mlb: '#0b4fa0', '270559': '#8c6a1f', '271937': '#7a1c3c', '272073': '#2f7a8c', '3': '#0b7a4a' };   /* 20261105y : couleur par championnat */
   var LOI_SP = { soccer: '⚽', hockey: '🏒', basketball: '🏀', football: '🏈', baseball: '⚾', rugby: '🏉', 'rugby-league': '🏉' };
   function loiCarte(x) {
     var nz = function (t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, ''); };
-    return ((typeof state !== 'undefined' && state.u) || []).filter(function (u) { return u && u.type !== 'joueur' && u.type !== 'competition' && (nz(u.n) === nz(x.eq) || (typeof _g45BandMeme === 'function' && _g45BandMeme(u.n, x.eq))); })[0] || null;
+    /* 20261106u : KHL — nom anglais de khl.ru (« HC Sochi ») ≠ nom de la carte (« HC Sotchi ») → même équipe par l'id webcaster */
+    var kh = function (u) { if (x.lg !== 'khl' || typeof g45KhlEquipe !== 'function') return false; var e = g45KhlEquipe(u.n); return !!(e && String(e.id) === String(x.id)); };
+    return ((typeof state !== 'undefined' && state.u) || []).filter(function (u) { return u && u.type !== 'joueur' && u.type !== 'competition' && (nz(u.n) === nz(x.eq) || (typeof _g45BandMeme === 'function' && _g45BandMeme(u.n, x.eq)) || kh(u)); })[0] || null;
   }
   function loiCharger(force) {
     if (LOI.enCours || (!force && LOI.d && Date.now() - LOI.t < 30 * 60e3)) return;
