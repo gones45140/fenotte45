@@ -86339,7 +86339,8 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
   }
   function methJouer(sq, cote, G, une) {
     var F = [1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144], O = {};
-    var run = function (mise, maj) { var bk = 0, mn = 0, mx = 0, bout = 0; for (var i = 0; i < sq.length; i++) { var w = sq.charAt(i) === '1', m = mise(); if (m > mx) mx = m; bk += w ? m * (cote - 1) : -m; if (bk < mn) mn = bk; bout += maj(w) || 0; } return { b: bk, mn: mn, mx: mx, bout: bout }; };
+    /* 20261106d (« plus grosse chute » → « oui ») : ch = plus grosse baisse depuis le plus haut atteint (réserve qu'il faut avoir) */
+    var run = function (mise, maj) { var bk = 0, mn = 0, mx = 0, bout = 0, haut = 0, ch = 0; for (var i = 0; i < sq.length; i++) { var w = sq.charAt(i) === '1', m = mise(); if (m > mx) mx = m; bk += w ? m * (cote - 1) : -m; if (bk < mn) mn = bk; if (bk > haut) haut = bk; if (haut - bk > ch) ch = haut - bk; bout += maj(w) || 0; } return { b: bk, mn: mn, mx: mx, bout: bout, ch: ch }; };
     var p = 0; O.mont = run(function () { return +G[p] || 0; }, function (w) { if (w) { p = 0; return 0; } if (p >= G.length - 1) { p = 0; return 1; } p++; return 0; });
     var fi = 0; O.fib = run(function () { return une * F[fi]; }, function (w) { fi = w ? Math.max(0, fi - 2) : Math.min(F.length - 1, fi + 1); });
     var da = 1; O.dal = run(function () { return une * da; }, function (w) { da = w ? Math.max(1, da - 1) : da + 1; });
@@ -86363,7 +86364,7 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
     var lig = function (t, ex, R, rouge) {
       var c3 = function (v, l, col) { return '<div style="background:#0f1730;border-radius:8px;padding:5px;text-align:center;"><b style="display:block;font-size:16px;color:' + col + ';">' + v + '</b><span style="font-size:13px;color:#c9d3ee;">' + l + '</span></div>'; };
       return '<div style="border-top:1px solid #1c2747;padding:9px 0;"><b>' + t + '</b><br><span style="font-size:13px;color:#c9d3ee;">' + ex + '</span>'
-        + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:4px;">' + c3((R.b > 0 ? '+' : R.b < 0 ? '−' : '') + euC(Math.abs(R.b)), 'bénéfice', coul(R.b)) + c3('−' + euC(Math.abs(R.mn)), 'pire creux', rouge ? '#ff5a5a' : '#ff9f43') + c3(euC(R.mx), 'mise max', rouge ? '#ff5a5a' : '#fff') + '</div>'
+        + '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:6px;margin-top:4px;">' + c3((R.b > 0 ? '+' : R.b < 0 ? '−' : '') + euC(Math.abs(R.b)), 'bénéfice', coul(R.b)) + c3('−' + euC(Math.abs(R.mn)), 'pire creux', rouge ? '#ff5a5a' : '#ff9f43') + c3('−' + euC(R.ch), 'plus grosse chute', rouge ? '#ff5a5a' : '#ff9f43') + c3(euC(R.mx), 'mise max', rouge ? '#ff5a5a' : '#fff') + '</div>'
         + (R.bout ? '<div style="font-size:13px;color:#ff5a5a;margin-top:3px;">⚠️ ' + R.bout + ' série' + (R.bout > 1 ? 's' : '') + ' perdue' + (R.bout > 1 ? 's' : '') + ' jusqu\'au dernier palier (P' + G.length + ')</div>' : '') + '</div>';
     };
     h += lig('🚀 Ta montante (Cockpit)', 'après une défaite : 2 × tout ce qui est perdu (ta grille, ' + G.length + ' paliers). Une victoire rattrape tout.', O.mont, O.mont.mx > 50 * une)
@@ -86373,7 +86374,7 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
       /* 20261106c (« y a pas Carolina ») : cartes dont la série date d'avant la suite match par match (sq) → à recalculer */
       + (function () { var A = []; ((typeof state !== 'undefined' && state.u) || []).forEach(function (u) { var P = (u && u.psL) || {}; if (['dom', 'ext', 'glob'].some(function (k) { var R = P[k]; return R && !R.err && R.p && R.p.length && typeof R.sq !== 'string'; })) A.push(esc(u.n)); });
         return A.length ? '<div style="font-size:14px;color:#ffd34d;margin-top:6px;">🔄 Pas encore dans la liste (série calculée avant le 02/11, à recalculer dans 🃏 Mes cartes) : ' + A.join(', ') + '.</div>' : ''; })()
-      + '<div style="font-size:13px;color:#c9d3ee;margin-top:4px;">« Pire creux » = le plus bas où ta bankroll serait descendue en cours de route. Même cote pour tous les matchs (cote de la carte si tu l\'as notée).</div>';
+      + '<div style="font-size:13px;color:#c9d3ee;margin-top:4px;">« Pire creux » = le plus bas par rapport au départ · « plus grosse chute » = la plus grosse perte depuis le plus haut atteint (la réserve qu\'il faut avoir). Même cote pour tous les matchs (cote de la carte si tu l\'as notée).</div>';
     z.innerHTML = h;
   }
   window._g45MethDessiner = methDessiner;
