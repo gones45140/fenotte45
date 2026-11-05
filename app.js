@@ -86335,6 +86335,9 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
     var b = function (v, txt) { var on = LOI.v === v; return '<button onclick="g45LoiVue(\'' + v + '\')" style="' + BTN + 'font-size:15px;' + (on ? 'background:#2a4a9a;border-color:#6d9dff;' : '') + '">' + txt + '</button>'; };
     return '<div style="display:flex;flex-wrap:wrap;margin-bottom:6px;">' + b('pep', '🔥 Pépites du jour') + b('ind', '🎯 Séries individuelles') + b('eq', '🏁 Séries équipes') + '</div>';
   }
+  var LOI_COUL = { 'fra.1': '#1b3d8f', 'fra.2': '#e4572e', 'eng.1': '#5b2a86', 'esp.1': '#e8392b', 'ita.1': '#0a7cc2', 'ger.1': '#d20515', 'ned.1': '#ef7d00', 'por.1': '#00a19a',
+    'bra.1': '#1f9d48', 'arg.1': '#4d9bd6', 'uefa.champions': '#16307a', 'uefa.europa': '#f07d00', 'uefa.europa.conf': '#1fa34a',
+    nhl: '#5f6f86', nba: '#c9082a', nfl: '#013369', mlb: '#0b4fa0', '270559': '#8c6a1f', '271937': '#7a1c3c', '272073': '#2f7a8c', '3': '#0b7a4a' };   /* 20261105y : couleur par championnat */
   var LOI_SP = { soccer: '⚽', hockey: '🏒', basketball: '🏀', football: '🏈', baseball: '⚾', rugby: '🏉', 'rugby-league': '🏉' };
   function loiCarte(x) {
     var nz = function (t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, ''); };
@@ -86371,7 +86374,9 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
       var bt = u ? '<button onclick="g45CkEngager(\'' + String(u.n).replace(/[\\'"<>&]/g, '') + '\',' + (x.d ? 1 : 0) + ',\'' + nA + '\',' + x.t + ')" style="' + BTN + 'margin-top:4px;background:#2f6bff;border-color:#6d9dff;">✅ Engager</button>'
         : '<button onclick="g45LoiCreer(\'' + x.eid + '\',\'' + x.id + '\',\'' + x.k + '\',\'' + x.lieu + '\')" style="' + BTN + 'margin-top:4px;background:#2f6bff;border-color:#6d9dff;">➕ Créer la carte</button>';
       var F = {}; try { if (u && typeof window._g45CkFond === 'function') F = window._g45CkFond(u.n) || {}; } catch (e) {}
-      var cc = /^[0-9a-f]{6}$/i.test(x.c || '') ? '#' + x.c : (/^#[0-9a-f]{6}$/i.test(F.c || '') ? F.c : '#4d84ff');
+      /* 20261105y (« la couleur de fond, bleu rouge violet : chaque couleur doit correspondre à son championnat ») : couleur de la LIGUE (LOI_COUL),
+         celle de l'équipe seulement si la ligue n'est pas dans la liste. */
+      var cc = LOI_COUL[x.lg] || (/^[0-9a-f]{6}$/i.test(x.c || '') ? '#' + x.c : (/^#[0-9a-f]{6}$/i.test(F.c || '') ? F.c : '#4d84ff'));
       if (/^#(0{6}|1{6}|ffffff)$/i.test(cc)) cc = '#4d84ff';
       var lg = /^https:\/\//.test(x.logo || '') ? x.logo : (F.logo || F.img || ''), al = /^https:\/\//.test(x.alogo || '') ? x.alogo : '';
       var bd = 'display:inline-block;background:rgba(11,16,29,.66);border-radius:8px;padding:3px 8px;';
