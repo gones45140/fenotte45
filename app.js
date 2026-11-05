@@ -86347,7 +86347,15 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
     O.fix = run(function () { return une; }, function () {});
     return O;
   }
-  window._g45MethT = { jouer: methJouer, liste: methListe };   /* tests */
+  /* 20261106e (« D'Alembert et Fibo, il faut une cote moyenne de combien ? ») : cote à partir de laquelle la méthode finit gagnante (bénéfice ≥ 0)
+     sur la même suite de matchs — recherche par dichotomie entre 1,01 et 20 (le bénéfice monte avec la cote). null = jamais rentable avant 20. */
+  function methSeuil(sq, G, une, cle) {
+    var b = function (c) { return methJouer(sq, c, G, une)[cle].b; };
+    if (b(20) < 0) return null; if (b(1.01) >= 0) return 1.01;
+    var lo = 1.01, hi = 20; for (var i = 0; i < 40; i++) { var mi = (lo + hi) / 2; if (b(mi) >= 0) hi = mi; else lo = mi; }
+    return Math.ceil(hi * 100 - 1e-6) / 100;
+  }
+  window._g45MethT = { jouer: methJouer, liste: methListe, seuil: methSeuil };   /* tests */
   function methDessiner() {
     var z = $('g45-ck-meth'); if (!z) return;
     var L = methListe(), h = '<div style="font-size:17px;font-weight:800;">⚖️ Et si j\'avais joué autrement ?</div>';
@@ -86361,16 +86369,18 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
       + L.map(function (x) { var v = x.u.n + '|' + x.k; return '<option value="' + esc(v) + '"' + (v === METH.sel ? ' selected' : '') + '>🃏 ' + esc(x.u.n) + ' ' + ic[x.k] + '</option>'; }).join('') + '</select>'
       + '<span style="font-size:14px;">cote <input type="text" inputmode="decimal" value="' + String(cote).replace('.', ',') + '" onchange="g45MethCote(this.value)" style="width:64px;padding:6px 8px;border-radius:10px;border:1px solid #2a3a63;background:#0b1226;color:#fff;font-size:15px;"> ✏️</span></div>';
     var coul = function (v) { return v > 0.5 ? '#1ed760' : v < -0.5 ? '#ff9f43' : '#fff'; };
-    var lig = function (t, ex, R, rouge) {
+    var lig = function (t, ex, R, rouge, cle) {
+      var se = methSeuil(cur.sq, G, une, cle), seT = se == null ? '<span style="color:#ff5a5a;">🎯 jamais rentable (même à 20)</span>' : '🎯 rentable à partir d\'une cote de <b style="color:' + (cote >= se ? '#1ed760' : '#ff9f43') + ';">' + String(se.toFixed(2)).replace('.', ',') + '</b>' + (cote >= se ? ' ✅' : '');
       var c3 = function (v, l, col) { return '<div style="background:#0f1730;border-radius:8px;padding:5px;text-align:center;"><b style="display:block;font-size:16px;color:' + col + ';">' + v + '</b><span style="font-size:13px;color:#c9d3ee;">' + l + '</span></div>'; };
       return '<div style="border-top:1px solid #1c2747;padding:9px 0;"><b>' + t + '</b><br><span style="font-size:13px;color:#c9d3ee;">' + ex + '</span>'
         + '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:6px;margin-top:4px;">' + c3((R.b > 0 ? '+' : R.b < 0 ? '−' : '') + euC(Math.abs(R.b)), 'bénéfice', coul(R.b)) + c3('−' + euC(Math.abs(R.mn)), 'pire creux', rouge ? '#ff5a5a' : '#ff9f43') + c3('−' + euC(R.ch), 'plus grosse chute', rouge ? '#ff5a5a' : '#ff9f43') + c3(euC(R.mx), 'mise max', rouge ? '#ff5a5a' : '#fff') + '</div>'
+        + '<div style="font-size:14px;margin-top:4px;">' + seT + '</div>'
         + (R.bout ? '<div style="font-size:13px;color:#ff5a5a;margin-top:3px;">⚠️ ' + R.bout + ' série' + (R.bout > 1 ? 's' : '') + ' perdue' + (R.bout > 1 ? 's' : '') + ' jusqu\'au dernier palier (P' + G.length + ')</div>' : '') + '</div>';
     };
-    h += lig('🚀 Ta montante (Cockpit)', 'après une défaite : 2 × tout ce qui est perdu (ta grille, ' + G.length + ' paliers). Une victoire rattrape tout.', O.mont, O.mont.mx > 50 * une)
-      + lig('🐚 Fibonacci', 'après une défaite, la mise suit 1-1-2-3-5-8… × P1. Après une victoire : 2 cases en arrière.', O.fib)
-      + lig('🪜 D\'Alembert', '+' + euC(une) + ' après une défaite, −' + euC(une) + ' après une victoire.', O.dal)
-      + lig('📏 Mise fixe', 'toujours ' + euC(une) + ', quoi qu\'il arrive.', O.fix)
+    h += lig('🚀 Ta montante (Cockpit)', 'après une défaite : 2 × tout ce qui est perdu (ta grille, ' + G.length + ' paliers). Une victoire rattrape tout.', O.mont, O.mont.mx > 50 * une, 'mont')
+      + lig('🐚 Fibonacci', 'après une défaite, la mise suit 1-1-2-3-5-8… × P1. Après une victoire : 2 cases en arrière.', O.fib, false, 'fib')
+      + lig('🪜 D\'Alembert', '+' + euC(une) + ' après une défaite, −' + euC(une) + ' après une victoire.', O.dal, false, 'dal')
+      + lig('📏 Mise fixe', 'toujours ' + euC(une) + ', quoi qu\'il arrive.', O.fix, false, 'fix')
       /* 20261106c (« y a pas Carolina ») : cartes dont la série date d'avant la suite match par match (sq) → à recalculer */
       + (function () { var A = []; ((typeof state !== 'undefined' && state.u) || []).forEach(function (u) { var P = (u && u.psL) || {}; if (['dom', 'ext', 'glob'].some(function (k) { var R = P[k]; return R && !R.err && R.p && R.p.length && typeof R.sq !== 'string'; })) A.push(esc(u.n)); });
         return A.length ? '<div style="font-size:14px;color:#ffd34d;margin-top:6px;">🔄 Pas encore dans la liste (série calculée avant le 02/11, à recalculer dans 🃏 Mes cartes) : ' + A.join(', ') + '.</div>' : ''; })()
