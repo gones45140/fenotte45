@@ -86370,6 +86370,9 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
       + lig('🐚 Fibonacci', 'après une défaite, la mise suit 1-1-2-3-5-8… × P1. Après une victoire : 2 cases en arrière.', O.fib)
       + lig('🪜 D\'Alembert', '+' + euC(une) + ' après une défaite, −' + euC(une) + ' après une victoire.', O.dal)
       + lig('📏 Mise fixe', 'toujours ' + euC(une) + ', quoi qu\'il arrive.', O.fix)
+      /* 20261106c (« y a pas Carolina ») : cartes dont la série date d'avant la suite match par match (sq) → à recalculer */
+      + (function () { var A = []; ((typeof state !== 'undefined' && state.u) || []).forEach(function (u) { var P = (u && u.psL) || {}; if (['dom', 'ext', 'glob'].some(function (k) { var R = P[k]; return R && !R.err && R.p && R.p.length && typeof R.sq !== 'string'; })) A.push(esc(u.n)); });
+        return A.length ? '<div style="font-size:14px;color:#ffd34d;margin-top:6px;">🔄 Pas encore dans la liste (série calculée avant le 02/11, à recalculer dans 🃏 Mes cartes) : ' + A.join(', ') + '.</div>' : ''; })()
       + '<div style="font-size:13px;color:#c9d3ee;margin-top:4px;">« Pire creux » = le plus bas où ta bankroll serait descendue en cours de route. Même cote pour tous les matchs (cote de la carte si tu l\'as notée).</div>';
     z.innerHTML = h;
   }
