@@ -43776,7 +43776,7 @@ window.g45F1Session=g45F1Session;
    et les données utilisateur n'étaient JAMAIS écrites — l'ajout apparaissait à l'écran puis
    disparaissait au rechargement. Ce n'était ni la synchro GitHub, ni Dropbox, ni le cache
    du navigateur. Tous ces caches sont reconstructibles : ils cèdent la place aux données. */
-var _G45_CACHE_PREFIXES=['g45reg4f_',/* 27/10 : journaux foot des saisons finies */'g45mlbk1_',/* 27/10 : journaux strikeouts MLB */'g45reg4n_',/* 27/10 : journaux NFL des saisons finies */'g45reg4_',/* 27/10 : journaux NHL des saisons finies (4 saisons) */'g45nflyd1_',/* 27/10 : journaux yards NFL */'g45f1cr1_',/* 27/10 : résultats F1 Jolpica (critères 4 saisons) */'g45nfltd1_',/* 22/10 : TD / FG NFL par match */'g45cr1u_','g45cr3v_',/* 03/11 : g45cr3u_ → v (phase finale rugby) ; 22/10 : critères US avec n° de match */'g45cr1e_','g45crf1_','g45crid1_',/* 21/10 : feuilles de match des critères */'g45cr3_','g45cr1_',/* 14/10 : critères sur 4 saisons */'g45agoa2_',/* 11/10 : cotes Agenda (The Odds API) */'g45reg1_',/* 08/10 : régularité buteurs NHL */'g45bb1_','g45bbst1_','g45bbld1_','g45bbf1_',/* 03/10 : Pro A be-basketball */'g45es1_',/* 01/10 : stats Euroleague */'g45kbo1_',/* 01/10 : KBO (mykbostats) */'g45t14lg1',/* 01/10 : logos Top 14 (LNR) */'g45pd2_',/* 01/10 : Pro D2 (LNR) */'g45t14sq1_',/* 01/10 : effectifs Top 14 (LNR) */'g45nrlm1_','g45nrldr1_',/* 01/10 : feuilles et calendriers NRL */'g45nrlsq1_',/* 01/10 : effectifs NRL */'g45nrlst2_',/* 01/10 : classements NRL */'g45proacid1_',/* 30/09 : numéros LNB par saison */'g45proast1_',/* 30/09 : stats Pro A */'g45proa1_',/* 30/09 : Pro A par journée */'g45el1_',/* 30/09 : Euroleague (compact) */'g45buts1_',/* 30/09 : buts en action (match fini) */'g45prad1_','g45vsj1_','g45vse1_',/* 30/09 : radars joueurs */'g45ia1_',/* 29/09 : avis IA gardés 6 h */'g45_mmeta2_','g45_mmeta1_','g45_tennis4_','g45_tennis3_',/* 16/09 : meta de match (domicile/lieu) et score tennis, reconstructibles */'g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dcf_','g45dc_',
+var _G45_CACHE_PREFIXES=['g45age1|',/* 06/11 : âge + pays des joueurs */'g45reg4f_',/* 27/10 : journaux foot des saisons finies */'g45mlbk1_',/* 27/10 : journaux strikeouts MLB */'g45reg4n_',/* 27/10 : journaux NFL des saisons finies */'g45reg4_',/* 27/10 : journaux NHL des saisons finies (4 saisons) */'g45nflyd1_',/* 27/10 : journaux yards NFL */'g45f1cr1_',/* 27/10 : résultats F1 Jolpica (critères 4 saisons) */'g45nfltd1_',/* 22/10 : TD / FG NFL par match */'g45cr1u_','g45cr3v_',/* 03/11 : g45cr3u_ → v (phase finale rugby) ; 22/10 : critères US avec n° de match */'g45cr1e_','g45crf1_','g45crid1_',/* 21/10 : feuilles de match des critères */'g45cr3_','g45cr1_',/* 14/10 : critères sur 4 saisons */'g45agoa2_',/* 11/10 : cotes Agenda (The Odds API) */'g45reg1_',/* 08/10 : régularité buteurs NHL */'g45bb1_','g45bbst1_','g45bbld1_','g45bbf1_',/* 03/10 : Pro A be-basketball */'g45es1_',/* 01/10 : stats Euroleague */'g45kbo1_',/* 01/10 : KBO (mykbostats) */'g45t14lg1',/* 01/10 : logos Top 14 (LNR) */'g45pd2_',/* 01/10 : Pro D2 (LNR) */'g45t14sq1_',/* 01/10 : effectifs Top 14 (LNR) */'g45nrlm1_','g45nrldr1_',/* 01/10 : feuilles et calendriers NRL */'g45nrlsq1_',/* 01/10 : effectifs NRL */'g45nrlst2_',/* 01/10 : classements NRL */'g45proacid1_',/* 30/09 : numéros LNB par saison */'g45proast1_',/* 30/09 : stats Pro A */'g45proa1_',/* 30/09 : Pro A par journée */'g45el1_',/* 30/09 : Euroleague (compact) */'g45buts1_',/* 30/09 : buts en action (match fini) */'g45prad1_','g45vsj1_','g45vse1_',/* 30/09 : radars joueurs */'g45ia1_',/* 29/09 : avis IA gardés 6 h */'g45_mmeta2_','g45_mmeta1_','g45_tennis4_','g45_tennis3_',/* 16/09 : meta de match (domicile/lieu) et score tennis, reconstructibles */'g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dcf_','g45dc_',
   'g45trv3_','g45trv2_','g45trOdds2_',/* 13/10 : cotes The Odds API par marchés */'g45tr_','g45but_st_','g45butL_','g45butA_','g45but_mur_',
   '_g45clv','g45clv_snaps','g45_saisons_cache_v3_','g45_saisons_cache_v2_',
   /* Ajoutes le 20/08 : ces caches, tous reconstructibles, n'etaient PAS declares
@@ -78684,6 +78684,7 @@ window._G45_PAL_COUL = ['#1ed760', '#8fdc4a', '#f5c542', '#ffa53a', '#ff7a3a', '
         if (bloc && bloc !== row) bloc.insertBefore(im, bloc.firstChild); else { im.className = 'g45ul-bg'; row.insertBefore(im, row.firstChild); }
       }
       var info = row.querySelector('.uname'); info = info && info.nextElementSibling;
+      try { if (u.type === 'joueur' && typeof window._g45AgePoser === 'function' && info) window._g45AgePoser(u, info); } catch (e) {}   /* 20261106q : drapeau + pays + âge */
       if (info && /Palier/.test(info.textContent || '')) {
         info.innerHTML = '<span style="color:#f5c542;font-size:15px;">' + '⭐'.repeat(Math.max(0, parseInt(u.s, 10) || 0)) + '</span>'
           + '<span style="display:inline-flex;flex-wrap:wrap;gap:4px;vertical-align:middle;">' + window._g45UlPaliers(u, C) + '</span>';
@@ -86817,4 +86818,65 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   };
   document.addEventListener('change', function (e) { if (e.target && /^(c-unit|c-lieu|c-comp)$/.test(e.target.id)) { try { dessiner(); } catch (x) {} } }, true);
   setInterval(function () { try { var ce = $('ck-eng'); if (ce && ce.offsetParent) dessiner(); } catch (e) {} }, 2000);
+})();
+
+/* ═══ 20261106q — 🌍 DRAPEAU + PAYS + ÂGE SUR LES CARTES JOUEUR (Antoine : « il manque peut-être l'âge et la nationalité du joueur non ? » →
+   maquette age.png « OUI », + ⏳ 33 ans et plus). SONDÉ le 06/11 (console d'Antoine) : ESPN <sp>/<lg>/teams/<id>/roster → athletes[] (NHL / NBA :
+   items[]) { age, dateOfBirth, birthPlace { country « CAN » }, foot : citizenship « Mali » + flag.href }. Le numéro ESPN du joueur et son club
+   viennent des archives (cotes/<sport>/joueurs.json { id: [nom, club, ligue, n] } puis joueurs/<id>.json c[] [ligue, saison, idClub, …]).
+   Gardé 30 jours (localStorage g45age1|nom) ; rien affiché si introuvable. ═══ */
+(function () {
+  var RAW = 'https://raw.githubusercontent.com/gones45140/gones45-archives/main/cotes/';
+  var SP = { '🏒': ['hockey', 'hockey'], '🏀': ['basket', 'basketball'], '🏈': ['football-us', 'football'], '⚾': ['baseball', 'baseball'], '⚽': ['foot', 'soccer'] };
+  var P3 = { CAN: 'Canada', USA: 'États-Unis', CZE: 'Tchéquie', SWE: 'Suède', FIN: 'Finlande', RUS: 'Russie', SVK: 'Slovaquie', SUI: 'Suisse', CHE: 'Suisse',
+    GER: 'Allemagne', DEU: 'Allemagne', LAT: 'Lettonie', LVA: 'Lettonie', DEN: 'Danemark', DNK: 'Danemark', NOR: 'Norvège', AUT: 'Autriche', FRA: 'France',
+    BLR: 'Biélorussie', KAZ: 'Kazakhstan', SLO: 'Slovénie', SVN: 'Slovénie', AUS: 'Australie', SRB: 'Serbie', ESP: 'Espagne', ITA: 'Italie', GBR: 'Royaume-Uni',
+    BRA: 'Brésil', ARG: 'Argentine', NGA: 'Nigeria', CMR: 'Cameroun', GRE: 'Grèce', TUR: 'Turquie', LTU: 'Lituanie', CRO: 'Croatie', HRV: 'Croatie',
+    SEN: 'Sénégal', JPN: 'Japon', KOR: 'Corée du Sud', DOM: 'Rép. dominicaine', VEN: 'Venezuela', PUR: 'Porto Rico', CUB: 'Cuba', MEX: 'Mexique',
+    POR: 'Portugal', PRT: 'Portugal', NED: 'Pays-Bas', NLD: 'Pays-Bas', BEL: 'Belgique', UKR: 'Ukraine', POL: 'Pologne', COL: 'Colombie', PAN: 'Panama',
+    BAH: 'Bahamas', JAM: 'Jamaïque', CHN: 'Chine', TPE: 'Taïwan', HUN: 'Hongrie', SLV: 'Salvador', NZL: 'Nouvelle-Zélande', BIH: 'Bosnie', MNE: 'Monténégro' };
+  var PEN = { Spain: 'Espagne', Germany: 'Allemagne', England: 'Angleterre', Italy: 'Italie', Netherlands: 'Pays-Bas', Belgium: 'Belgique', Brazil: 'Brésil',
+    Argentina: 'Argentine', Morocco: 'Maroc', Algeria: 'Algérie', 'Ivory Coast': "Côte d'Ivoire", "Cote d'Ivoire": "Côte d'Ivoire", Senegal: 'Sénégal',
+    Cameroon: 'Cameroun', Switzerland: 'Suisse', Croatia: 'Croatie', Denmark: 'Danemark', Norway: 'Norvège', Sweden: 'Suède', Poland: 'Pologne',
+    Scotland: 'Écosse', Wales: 'Pays de Galles', 'United States': 'États-Unis', USA: 'États-Unis', Colombia: 'Colombie', Uruguay: 'Uruguay', Ukraine: 'Ukraine',
+    Turkey: 'Turquie', 'Türkiye': 'Turquie', Austria: 'Autriche', Greece: 'Grèce', 'Czech Republic': 'Tchéquie', Czechia: 'Tchéquie', Serbia: 'Serbie',
+    Georgia: 'Géorgie', Egypt: 'Égypte', Tunisia: 'Tunisie', Ghana: 'Ghana', Nigeria: 'Nigeria', 'DR Congo': 'RD Congo', Japan: 'Japon', 'South Korea': 'Corée du Sud',
+    Mexico: 'Mexique', Canada: 'Canada', Ireland: 'Irlande', Hungary: 'Hongrie', Slovakia: 'Slovaquie', Slovenia: 'Slovénie', Guinea: 'Guinée', Ecuador: 'Équateur' };
+  var nz = function (t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z]/g, ''); };
+  var MEM = {}, lireJ = function (ch) { if (!MEM[ch]) MEM[ch] = fetch(RAW + ch).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }); return MEM[ch]; };
+  var EN = {};
+  async function chercher(u) {
+    var S = SP[u.sport]; if (!S) return null;
+    var ix = await lireJ(S[0] + '/joueurs.json'); if (!ix) return null;
+    var n0 = nz(u.n), pid = null;
+    Object.keys(ix).some(function (id) { if (nz(ix[id][0]) === n0) { pid = id; return true; } return false; });
+    if (!pid) return { vide: 1 };
+    var fi = await lireJ(S[0] + '/joueurs/' + pid + '.json'); if (!fi || !fi.c || !fi.c.length) return { vide: 1 };
+    var sa = fi.c.map(function (x) { return x[1]; }).sort().pop(), C = fi.c.filter(function (x) { return x[1] === sa; }).sort(function (a, b) { return (b[4] || 0) - (a[4] || 0); })[0];
+    var r = await fetch('https://site.api.espn.com/apis/site/v2/sports/' + S[1] + '/' + C[0] + '/teams/' + C[2] + '/roster'); if (!r.ok) return null;
+    var j = await r.json(), L = (j.athletes || []).reduce(function (a, g) { return a.concat(g.items || [g]); }, []);
+    var a = L.filter(function (x) { return String(x.id) === String(pid); })[0] || L.filter(function (x) { return nz(x.displayName) === n0; })[0];
+    if (!a) return { vide: 1 };
+    var c3 = String(((a.birthPlace || {}).country) || '').toUpperCase(), pays = '', fl = '';
+    if (a.citizenship) { pays = PEN[a.citizenship] || a.citizenship; fl = (a.flag && a.flag.href) || ''; }
+    else if (c3) { pays = P3[c3] || c3; fl = 'https://a.espncdn.com/i/teamlogos/countries/500/' + c3.toLowerCase() + '.png'; }
+    return { d: String(a.dateOfBirth || '').slice(0, 10), a: a.age || null, p: pays, f: fl };
+  }
+  function ageDe(o) { if (o.d) { var b = new Date(o.d), n = new Date(), y = n.getFullYear() - b.getFullYear(); if (n.getMonth() < b.getMonth() || (n.getMonth() === b.getMonth() && n.getDate() < b.getDate())) y--; if (y > 10 && y < 60) return y; } return o.a || null; }
+  function html(o) {
+    var ag = ageDe(o); if (!ag && !o.p) return '';
+    var e = function (t) { return String(t).replace(/[<>&"]/g, ''); };
+    return '<div class="g45ul-id" style="display:inline-flex;align-items:center;gap:7px;margin:4px 0 2px;background:rgba(11,16,29,.7);border-radius:8px;padding:3px 10px;font-size:15px;font-weight:700;color:#fff;">'
+      + (/^https:\/\//.test(o.f || '') ? '<img src="' + e(o.f) + '" alt="" loading="lazy" onerror="this.remove()" style="height:16px;width:24px;object-fit:cover;border-radius:2px;">' : '')
+      + e(o.p || '') + (o.p && ag ? ' · ' : '') + (ag ? ag + ' ans' : '') + (ag && ag <= 23 ? ' 🌱' : ag && ag >= 33 ? ' ⏳' : '') + '</div>';
+  }
+  window._g45AgePoser = function (u, apres) {
+    var cle = 'g45age1|' + u.n, c = null;
+    try { c = JSON.parse(localStorage.getItem(cle) || 'null'); } catch (e) {}
+    var poser = function (o) { var h = html(o); if (!h || !apres || !apres.parentNode) return; var x = apres.parentNode.querySelector('.g45ul-id'); if (x) x.remove(); apres.insertAdjacentHTML('afterend', h); };
+    if (c && Date.now() - c.t < 30 * 864e5) { if (!c.vide) poser(c); return; }
+    if (EN[u.n]) return; EN[u.n] = 1;
+    chercher(u).then(function (o) { delete EN[u.n]; if (!o) return; o.t = Date.now(); try { localStorage.setItem(cle, JSON.stringify(o)); } catch (e) {} if (!o.vide) poser(o); }).catch(function () { delete EN[u.n]; });
+  };
+  window._g45AgeT = { html: html, ageDe: ageDe };   /* tests */
 })();
