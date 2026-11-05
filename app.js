@@ -77496,6 +77496,8 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
      stats = joués, m[6] = h|a pour le lieu) ; réussite = même règle que le critère (seuil « Combien », ligne X,5 plus / moins) ; pire série =
      suite de ratés, saisons à la suite ; 20 matchs au minimum. ═══ */
   S.clsJU = S.clsJU || {};
+  var USJTRI = { pire: 1, dal: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], fib: [1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144] };   /* 20261107f */
+  window.g45CrUsJTri = function (k) { S.usJTri = USJTRI[k] ? k : 'pire'; try { redessiner(); } catch (e) {} };
   var USJ = { hockey: { g: ['G'], a: ['A'], p: ['G', 'A'] }, basketball: { pts: ['PTS'], reb: ['REB'], ast: ['AST'], tp: ['3PT'], pra: ['PTS', 'REB', 'AST'], pr: ['PTS', 'REB'], pa: ['PTS', 'AST'], ra: ['REB', 'AST'] }, football: { td: ['rTD', 'reTD'], ptd: ['pTD'] } };
   function usJModeDe(c0) { return !!(S.ctx && USJ[S.ctx.sp] && aOk(S.ctx.lg) && c0 && c0.jo && !c0.jo2 && USJ[S.ctx.sp][c0.jm || ''] && /aucun crit/.test(libCombo(clsCombo(c0)))); }
   function usJVal(sp, jm, st) { var v = 0; ((USJ[sp] || {})[jm] || []).forEach(function (k) { var x = st[k]; if (k === '3PT' && typeof x === 'string') x = parseInt(x, 10); v += +x || 0; }); return v; }
@@ -77539,14 +77541,30 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       + '<button onclick="g45CrClsJULancer()" style="border:none;border-radius:10px;padding:9px 14px;font-size:14px;font-weight:700;color:#fff;background:#2f6bff;cursor:pointer;">▶ Lancer le classement des joueurs (archives, ≈ 20 s)</button></div>';
     var R = Object.keys(Q.P).map(function (pid) {
       var Pj = Q.P[pid], L = Pj.L.filter(function (x) { return S.lieu !== 'dom' && S.lieu !== 'ext' || (S.lieu === 'dom' ? x[1] === 1 : x[1] === 0); }).sort(function (a, b) { return a[0] - b[0]; });
-      var ok = 0, pire = 0, cur = 0; L.forEach(function (x) { if (usJOk(c0, x[2])) { ok++; cur = 0; } else { cur++; if (cur > pire) pire = cur; } });
-      return { id: pid, nom: Pj.nom, eq: Pj.eq, n: L.length, ok: ok, pire: pire, cours: cur };
+      var ok = 0, pire = 0, cur = 0, sq = []; L.forEach(function (x) { var b = usJOk(c0, x[2]); sq.push({ s: '', ok: b }); if (b) { ok++; cur = 0; } else { cur++; if (cur > pire) pire = cur; } });
+      return { id: pid, nom: Pj.nom, eq: Pj.eq, n: L.length, ok: ok, pire: pire, cours: cur, sq: sq };
     }).filter(function (x) { return x.n >= 20 && x.ok > 0; }).sort(function (a, b) { return (a.pire - b.pire) || (b.ok / b.n - a.ok / a.n); });
+    /* 20261107f — 🪜 / 🐚 JOUABLE EN MÉTHODE (Antoine : « je cherche des joueurs à jouer en d'Alembert ou fibo, pas évident à trouver » →
+       maquette meth_cls.png « oui ») : boutons 🏁 Pire série / 🪜 D'Alembert / 🐚 Fibonacci ; en méthode, chaque joueur est simulé avec simCalc()
+       (mêmes règles que les critères 20261106f) sur toute sa suite de matchs, P1 = 1er palier des ⭐ (comme simHtml), cote = celle des critères
+       (les journaux joueurs n'ont pas la cote de chaque match), capital SANS limite (classement, pas la bankroll de chacun) → trié par gain. */
+    var tri = USJTRI[S.usJTri] ? S.usJTri : 'pire', u1 = 1, coteM = ckCote();
+    if (tri !== 'pire') {
+      try { var et = (typeof _g45PalEt === 'function') ? _g45PalEt() : '1'; u1 = +((typeof STRATS !== 'undefined' && (STRATS[et] || STRATS['1'])) || [1])[0] || 1; } catch (e) {}
+      var MI = USJTRI[tri].map(function (k) { return Math.round(k * u1 * 100) / 100; });
+      R.forEach(function (x) { var r = simCalc(x.sq, MI, coteM, 0, tri); x.gain = r.tot; x.mmax = r.max; });
+      R.sort(function (a, b) { return (b.gain - a.gain) || (a.mmax - b.mmax); });
+    }
     if (!R.length) return h + '<div style="font-size:14px;color:#fff;">Pas assez de matchs avec ce critère.</div></div>';
     var top = R.slice(0, 20), moi = R.filter(function (x) { return x.id === String(c0.jo); })[0];
     if (moi && top.indexOf(moi) < 0) top.push(moi);
-    var ln = 'display:grid;grid-template-columns:1.8fr 1fr .8fr .8fr 1.2fr;gap:6px;padding:8px 4px;border-bottom:1px solid #1c2747;font-size:14px;color:#fff;';
-    h += '<div style="' + ln + 'font-size:13px;color:#c9d3ee;"><span>Joueur</span><span>Réussite</span><span>Pire</span><span>En cours</span><span>Paliers</span></div>';
+    var bTri = function (k, t) { var on = k === tri; return '<button onclick="g45CrUsJTri(\'' + k + '\')" style="border-radius:12px;padding:8px 12px;font-size:15px;font-weight:800;cursor:pointer;color:#fff;border:1px solid ' + (on ? '#6d9dff' : '#2a3a63') + ';background:' + (on ? '#2a4a9a' : '#0b1226') + ';">' + t + '</button>'; };
+    h += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;">' + bTri('pire', '🏁 Pire série') + bTri('dal', '🪜 D\'Alembert') + bTri('fib', '🐚 Fibonacci') + '</div>';
+    var fr2 = function (v) { return String(Math.round(v * 100) / 100).replace('.', ','); };
+    if (tri !== 'pire') h += '<div style="font-size:14px;color:#ffd34d;margin:6px 0 8px;">Trié par le gain simulé · P1 = ' + fr2(u1) + ' € · cote ' + fr2(coteM) + ' (celle des critères) → il faut plus de ' + Math.ceil(100 / coteM) + ' % de réussite</div>';
+    var ln = tri !== 'pire' ? 'display:grid;grid-template-columns:2fr 1fr 1fr .9fr;gap:6px;padding:8px 4px;border-bottom:1px solid #1c2747;font-size:14px;color:#fff;'
+      : 'display:grid;grid-template-columns:1.8fr 1fr .8fr .8fr 1.2fr;gap:6px;padding:8px 4px;border-bottom:1px solid #1c2747;font-size:14px;color:#fff;';
+    h += '<div style="' + ln + 'font-size:13px;color:#c9d3ee;"><span>Joueur</span><span>Réussite</span>' + (tri !== 'pire' ? '<span>Gain ' + (tri === 'dal' ? '🪜' : '🐚') + '</span><span>Mise max</span>' : '<span>Pire</span><span>En cours</span><span>Paliers</span>') + '</div>';
     top.forEach(function (x) {
       var me = x.id === String(c0.jo), pa = (typeof _g45F1CrPal === 'function') ? _g45F1CrPal(x.pire) : { p: x.pire + 1, ico: '' };
       var feu = x.pire >= 3 && x.pire <= 7 && x.cours >= 1 && x.pire - x.cours <= 1;
@@ -77556,13 +77574,16 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
         + '<img src="https://a.espncdn.com/i/headshots/' + esc(X.lg) + '/players/full/' + esc(x.id) + '.png" alt="" loading="lazy" onerror="this.style.visibility=\'hidden\'" style="width:46px;height:46px;border-radius:50%;object-fit:cover;object-position:top;background:#25335c;border:2px solid ' + (me ? '#6d9dff' : '#2a3a63') + ';flex:none;">'
         + '<span style="min-width:0;"><span style="display:block;font-weight:' + (me ? 800 : 600) + ';">' + esc(x.nom) + '</span>'
         + (clN ? '<span style="display:flex;align-items:center;gap:5px;font-size:13px;color:#c9d3ee;">' + (/^https:\/\//.test(clL) ? '<img src="' + esc(clL) + '" alt="" loading="lazy" onerror="this.remove()" style="width:18px;height:18px;object-fit:contain;">' : '') + esc(clN) + '</span>' : '') + '</span></span>'
-        + '<span>' + Math.round(100 * x.ok / x.n) + ' % <span style="font-size:12px;color:#c9d3ee;">' + x.ok + '/' + x.n + '</span></span><span style="font-weight:800;color:' + coul(x.pire) + ';">' + x.pire + '</span>'
+        + '<span>' + Math.round(100 * x.ok / x.n) + ' % <span style="font-size:12px;color:#c9d3ee;">' + x.ok + '/' + x.n + '</span></span>'
+        + (tri !== 'pire' ? '<span style="font-weight:900;color:' + (x.gain >= 0 ? '#1ed760' : '#ff5a5a') + ';">' + (x.gain < 0 ? '🔴 −' : '+') + Math.abs(Math.round(x.gain)).toLocaleString('fr-FR') + ' €</span><span>' + fr2(x.mmax) + ' €</span></div>'
+        : '<span style="font-weight:800;color:' + coul(x.pire) + ';">' + x.pire + '</span>'
         + '<span style="font-weight:800;color:' + (feu ? '#ff5a5a' : x.cours ? '#ff9f43' : '#c9d3ee') + ';">' + (x.cours ? (feu ? '🔥 ' : '') + x.cours : '—') + '</span>'
-        + '<span><b>' + pa.p + ' palier' + (pa.p > 1 ? 's' : '') + '</b> ' + (pa.ico || '') + (pa.mise != null ? ' <span style="font-size:12px;color:#c9d3ee;">' + pa.mise + ' €</span>' : '') + '</span></div>';
+        + '<span><b>' + pa.p + ' palier' + (pa.p > 1 ? 's' : '') + '</b> ' + (pa.ico || '') + (pa.mise != null ? ' <span style="font-size:12px;color:#c9d3ee;">' + pa.mise + ' €</span>' : '') + '</span></div>');
     });
+    if (tri !== 'pire') return h + '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">Gain = toutes ses saisons jouées en ' + (tri === 'dal' ? '🪜 D\'Alembert' : '🐚 Fibonacci') + ' à cette cote · Mise max = la plus grosse mise qu\'il aurait fallu poser · 🔴 = la méthode aurait perdu de l\'argent. Candidats : les 40 meilleurs de la saison en cours pour ce critère + ton joueur.</div></div>';
     return h + '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">✅ 5 paliers ou moins · ⚠️ jusqu\'à ta dernière mise · ❌ au-delà de tes paliers (mises 1 ⭐). Candidats : les 40 meilleurs de la saison en cours pour ce critère + ton joueur ; toutes leurs saisons dans la ligue.</div></div>';
   }
-  window._g45CrUsJT = { mode: usJModeDe, val: usJVal, ok: usJOk };   /* tests */
+  window._g45CrUsJT = { mode: usJModeDe, val: usJVal, ok: usJOk, html: function (X, c0) { return usClsJHtml(X, c0); } };   /* tests */
   window._g45CrRgT = { rgFiche: rgFiche, aJouRg: aJouRg, aSaRg: aSaRg, rgMois: rgMois, rgLigue: rgLigue, rgJOk: rgJOk };   /* tests */
   function clsHtml() {
     var X = clsCtx(); if (!X) return '';
