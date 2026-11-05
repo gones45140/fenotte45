@@ -47166,9 +47166,9 @@ async function loadCompetTab() {
      dans Compétitions, ces deux onglets ne sont plus jamais montrés. */
   var _ckIci = !!window._g45CompetCk && !_ckOff;
   vues = vues.filter(function (v) { var ser = v[0] === 'buteurs' || v[0] === 'seq'; return _ckIci ? ser : !ser; });
-  if (_ckIci) { if (_g45CompetVue !== 'buteurs' && _g45CompetVue !== 'seq') _g45CompetVue = 'buteurs'; if (!vues.length) { el.innerHTML = '<button onclick="g45CompetSel(null)" style="border:none;background:rgba(255,255,255,.06);color:#fff;border-radius:8px;padding:8px 12px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:10px;">\u2190 ' + sp.name + '</button><div style="font-size:15px;color:#fff;">Pas de s\u00e9ries pour cette comp\u00e9tition.</div>'; return; } }
+  if (_ckIci) { if (vues.length && !vues.some(function (v) { return v[0] === _g45CompetVue; })) _g45CompetVue = vues[0][0];   /* 20261105t : ex. Séries équipes demandées sur une ligue qui ne les a pas */ if (!vues.length) { el.innerHTML = '<button onclick="g45CompetSel(null)" style="border:none;background:rgba(255,255,255,.06);color:#fff;border-radius:8px;padding:8px 12px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:10px;">\u2190 ' + sp.name + '</button><div style="font-size:15px;color:#fff;">Pas de s\u00e9ries pour cette comp\u00e9tition.</div>'; return; } }
   else if (_g45CompetVue === 'transferts' || _g45CompetVue === 'suivies' || _g45CompetVue === 'buteurs' || _g45CompetVue === 'seq') _g45CompetVue = 'equipes';
-  var onglets = vues.map(function (v) {
+  var onglets = _ckIci ? '' : vues.map(function (v) {   /* 20261105t : dans le Cockpit, les boutons 🔥 / 🎯 / 🏁 de la Loi des séries suffisent */
     var on = (v[0] === _g45CompetVue);
     return '<button onclick="g45CompetVue(\'' + v[0] + '\')" style="flex:1;min-width:96px;padding:10px;font-size:11.5px;font-weight:800;cursor:pointer;border-radius:9px;'
       + (on ? 'background:#2563eb;border:1px solid #3b82f6;color:#fff;' : 'background:#1a2235;border:1px solid rgba(255,255,255,.14);color:#9fb0c7;')
@@ -77388,7 +77388,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     if (Q.etat === 1) return h + '<div style="font-size:14px;color:#fff;">⏳ Lecture des équipes… <span id="g45cr-cls-prog">' + (Q.f || 0) + ' / ' + (Q.n || '?') + '</span> (la 1re fois seulement)</div></div>';
     if (Q.etat !== 2) return h + (Q.err ? '<div style="font-size:14px;color:#ff9f43;margin-bottom:6px;">⚠️ ' + esc(Q.err) + '</div>' : '')
       + '<button onclick="g45CrClsLancer()" style="border:none;border-radius:10px;padding:9px 14px;font-size:14px;font-weight:700;color:#fff;background:#2f6bff;cursor:pointer;">▶ Lancer le classement (' + (/^rugby/.test(X.sp) ? 'archives, ≈ 20 s' : '≈ 1 min la 1re fois, ensuite gardé') + ')</button></div>';
-    var feu = function (R) { return R.pire <= 7 && R.cours >= 1 && R.pire - R.cours <= 1; }, triF = S.clsTri === 'feu';   /* 20261105q : 🔥 = à 1 défaite (ou moins) du record, pire ≤ 7 (9 paliers − 2 de sécurité) */
+    var feu = function (R) { return R.pire >= 3 && R.pire <= 7 && R.cours >= 1 && R.pire - R.cours <= 1; }   /* 20261105t : « série 3 matchs mini, 1 et 2 c'est tellement courant », triF = S.clsTri === 'feu';   /* 20261105q : 🔥 = à 1 défaite (ou moins) du record, pire ≤ 7 (9 paliers − 2 de sécurité) */
     var L = (Q.eq || []).map(function (t) { var D = Q.D[t.id]; var R = D ? clsStat(D, c) : null; return { t: t, R: R }; })
       .filter(function (x) { return x.R && x.R.n >= 5; })
       .sort(triF ? function (a, b) { var fa = feu(a.R) ? 0 : (a.R.pire <= 7 ? 1 : 2), fb = feu(b.R) ? 0 : (b.R.pire <= 7 ? 1 : 2); return (fa - fb) || ((a.R.pire - a.R.cours) - (b.R.pire - b.R.cours)) || (b.R.cours - a.R.cours) || (a.R.pire - b.R.pire); }
@@ -77406,7 +77406,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
         + '<span style="font-weight:800;color:' + (feu(x.R) ? '#ff5a5a' : x.R.cours ? '#ff9f43' : '#c9d3ee') + ';">' + (x.R.cours ? (feu(x.R) ? '🔥 ' : '') + x.R.cours : '—') + '</span>'
         + '<span><b>' + pa.p + ' palier' + (pa.p > 1 ? 's' : '') + '</b> ' + pa.ico + (pa.mise != null ? ' <span style="font-size:12px;color:#c9d3ee;">' + pa.mise + ' €</span>' : '') + '</span></div>';
     });
-    return h + '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">« En cours » = ratés de suite au dernier match lu (— = réussi). 🔥 = à 1 raté ou moins de sa pire série, pire série de 7 au plus (place pour 2 paliers de sécurité). ✅ 5 paliers ou moins · ⚠️ jusqu\'à ta dernière mise · ❌ au-delà de tes paliers (mises 1 ⭐). Touche une équipe pour ouvrir sa carte. 5 matchs comptés au minimum.</div></div>';
+    return h + '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">« En cours » = ratés de suite au dernier match lu (— = réussi). 🔥 = à 1 raté ou moins de sa pire série, pire série de 3 à 7 (place pour 2 paliers de sécurité). ✅ 5 paliers ou moins · ⚠️ jusqu\'à ta dernière mise · ❌ au-delà de tes paliers (mises 1 ⭐). Touche une équipe pour ouvrir sa carte. 5 matchs comptés au minimum.</div></div>';
   }
   function redessiner() {
     /* 20261029a (capture Compétitions → Séries équipes, Timberwolves : « les sélecteurs réagissent pas ») : #g45cr existe aussi dans une fiche
@@ -86275,7 +86275,7 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
       /* 20261104r (capture annotée d'Antoine : 1 Tableau de bord, 2 Mes cartes, 3 Mes grilles, 4 Engager, 5 Bilan, 6 Archive, 7 Agenda, 8 Cockpit BET45) */
       + bt('tdb', '🏠 Tableau de bord', "g45CkOnglet('tdb')") + bt('loi', '📊 Loi des séries', "g45CkOnglet('loi')") + bt('mc', '🃏 Mes cartes', "g45CkOnglet('mc')")   /* 20261105r : onglet après le Tableau de bord */ + bt('gr', '🪜 Mes grilles', "g45CkOnglet('gr')")
       + bt('eng', '🚀 Engager', "g45CkOnglet('eng')") + bt('bil', '📈 Bilan', "g45CkOnglet('bil')") + bt('arc', '🕒 Archive', "g45CkOnglet('arc')")
-      + bt('ag', '📅 Agenda', "g45CkOnglet('ag')") + bt('cb', '📊 Cockpit BET45', "g45CkOnglet('cb')") + bt('tr', '🔍 Trouver', "g45CkOnglet('tr')") + '</div>';
+      + bt('ag', '📅 Agenda', "g45CkOnglet('ag')") + bt('cb', '📊 Cockpit BET45', "g45CkOnglet('cb')") + '</div>';   /* 20261105t : 🔍 Trouver fondu dans 📊 Loi des séries */
   }
   function squelette() {
     var p = $('t-cockpit'); if (!p) return null;
@@ -86330,7 +86330,11 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
      5 dernières saisons ; nouvel onglet "Loi des séries" » → maquette → « oui code-le ») : le robot loi-series (gones45-archives, chaque matin)
      écrit loi/loi_series.json = équipes qui jouent dans les 24 h et sont à 1 raté (ou moins) de leur pire série (pire ≤ 7, ≥ 20 matchs) ;
      ici : lecture (30 min de cache), filtre sport, une carte par pépite, « ✅ Engager » si la carte existe, sinon « ➕ Créer la carte ». ═══ */
-  var LOI = { d: null, t: 0, f: 'tous', enCours: false };
+  var LOI = { d: null, t: 0, f: 'tous', enCours: false, v: 'pep' };   /* v (20261105t) : 'pep' pépites du jour · 'ind' Séries individuelles · 'eq' Séries équipes */
+  function loiSous() {
+    var b = function (v, txt) { var on = LOI.v === v; return '<button onclick="g45LoiVue(\'' + v + '\')" style="' + BTN + 'font-size:15px;' + (on ? 'background:#2a4a9a;border-color:#6d9dff;' : '') + '">' + txt + '</button>'; };
+    return '<div style="display:flex;flex-wrap:wrap;margin-bottom:6px;">' + b('pep', '🔥 Pépites du jour') + b('ind', '🎯 Séries individuelles') + b('eq', '🏁 Séries équipes') + '</div>';
+  }
   var LOI_SP = { soccer: '⚽', hockey: '🏒', basketball: '🏀', football: '🏈', baseball: '⚾', rugby: '🏉', 'rugby-league': '🏉' };
   function loiCarte(x) {
     var nz = function (t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, ''); };
@@ -86352,7 +86356,7 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
     var F = [['tous', 'Tous'], ['soccer', '⚽'], ['hockey', '🏒'], ['basketball', '🏀'], ['football', '🏈'], ['baseball', '⚾'], ['rugby', '🏉']];
     h += '<div>' + F.map(function (f) { var on = LOI.f === f[0]; return '<button onclick="g45LoiFiltre(\'' + f[0] + '\')" style="' + BTN + 'margin-top:6px;' + (on ? 'background:#2a4a9a;border-color:#6d9dff;' : '') + '">' + f[1] + '</button>'; }).join('') + '</div></div>';
     if (!D) return h + '<div style="' + CARTE + '">' + (LOI.enCours ? '⏳ Lecture de la liste du matin…' : '⚠️ Liste du matin pas encore disponible.') + '</div>';
-    var now = Date.now(), L = (D.L || []).filter(function (x) { return x.t > now - 15 * 60e3 && (LOI.f === 'tous' || x.sp === LOI.f || (LOI.f === 'rugby' && x.sp === 'rugby-league')); })
+    var now = Date.now(), L = (D.L || []).filter(function (x) { return x.pire >= 3 && x.t > now - 15 * 60e3 &&   /* 20261105t : pire série 3 au moins */ (LOI.f === 'tous' || x.sp === LOI.f || (LOI.f === 'rugby' && x.sp === 'rugby-league')); })
       .sort(function (a, b) { return (a.pire - a.cours) - (b.pire - b.cours) || a.t - b.t; });
     if (!L.length) return h + '<div style="' + CARTE + '">Aucune pépite pour l\'instant' + (LOI.f !== 'tous' ? ' dans ce sport' : '') + '.</div>';
     L.forEach(function (x) {
@@ -86368,9 +86372,12 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
         + (x.p && x.p.length ? ' <span style="font-size:13px;color:#c9d3ee;">(' + x.p.join('·') + ')</span>' : '') + '<br>'
         + '<span style="font-size:13px;color:#c9d3ee;">→ ' + (x.pire + 1) + ' paliers' + (sec ? ' + ' + sec + ' de sécurité = ' + pal + ' paliers' : '') + ' · ' + x.ok + '/' + x.n + ' réussis</span><br>' + bt + '</div>';
     });
-    return h + '<div style="font-size:13px;color:#c9d3ee;padding:0 4px 10px;">Paris regardés : ⚽ victoire, victoire ou nul, +1,5 / +2,5 / −3,5 buts, les deux marquent, l\'équipe marque · 🏒 vainqueur, victoire 60 min, +5,5 / −6,5 buts · 🏀🏈⚾🏉 vainqueur. Saison régulière (sports US). Pire série de 7 au plus.</div>';
+    return h + '<div style="font-size:13px;color:#c9d3ee;padding:0 4px 10px;">Paris regardés : ⚽ victoire, victoire ou nul, +1,5 / +2,5 / −3,5 buts, les deux marquent, l\'équipe marque · 🏒 vainqueur, victoire 60 min, +5,5 / −6,5 buts · 🏀🏈⚾🏉 vainqueur. Saison régulière (sports US). Pire série de 3 à 7.</div>';
   }
-  function loiDessiner() { var z = $('ck-loi'); if (z && TAB === 'loi') z.innerHTML = loiHtml(); }
+  function loiDessiner() { var z = $('ck-loi'); if (z && TAB === 'loi') z.innerHTML = loiSous() + (LOI.v === 'pep' ? loiHtml() : ''); }
+  /* 20261105t (« Loi des séries et Trouver en 1, possible ou pas » → « oui ») : un seul onglet, 3 boutons ; Séries individuelles / équipes =
+     l'ancien 🔍 Trouver (#t-compet déplacé dans #ck-tr, sous les boutons). */
+  window.g45LoiVue = function (v) { LOI.v = (v === 'ind' || v === 'eq') ? v : 'pep'; if (LOI.v !== 'pep') { try { _g45CompetVue = LOI.v === 'eq' ? 'seq' : 'buteurs'; } catch (e) {} } window.g45CkOnglet('loi'); };
   window.g45LoiFiltre = function (f) { LOI.f = f || 'tous'; loiDessiner(); };
   window.g45LoiCreer = function (eid, id, k, lieu) {
     var x = ((LOI.d && LOI.d.L) || []).filter(function (y) { return y.eid === eid && y.id === id && y.k === k && y.lieu === lieu; })[0]; if (!x || typeof state === 'undefined') return;
@@ -86385,9 +86392,10 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
   };
   window._g45LoiT = { html: loiHtml, LOI: LOI, carte: loiCarte };   /* tests */
   window.g45CkOnglet = function (k) {
-    TAB = ['eng', 'bil', 'arc', 'cb', 'gr', 'ag', 'mc', 'tr', 'loi'].indexOf(k) >= 0 ? k : 'tdb'; squelette();
+    if (k === 'tr') { k = 'loi'; if (LOI.v === 'pep') { LOI.v = 'ind'; try { _g45CompetVue = 'buteurs'; } catch (e) {} } }   /* 20261105t : 🔍 Trouver → Loi des séries */
+    TAB = ['eng', 'bil', 'arc', 'cb', 'gr', 'ag', 'mc', 'loi'].indexOf(k) >= 0 ? k : 'tdb'; squelette();
     var kl = $('ck-loi'); if (kl) { kl.style.display = TAB === 'loi' ? '' : 'none'; if (TAB === 'loi') { loiDessiner(); loiCharger(false); } }   /* 20261105r */
-    var kt = $('ck-tr'); if (kt) { kt.style.display = TAB === 'tr' ? '' : 'none'; if (TAB === 'tr') cpPrendre(); else cpRendre(); }   /* 20261105s */
+    var kt = $('ck-tr'), cpO = TAB === 'loi' && LOI.v !== 'pep'; if (kt) { kt.style.display = cpO ? '' : 'none'; if (cpO) cpPrendre(); else cpRendre(); }   /* 20261105s-t */
     var km = $('ck-mc'); if (km) { km.style.display = TAB === 'mc' ? '' : 'none'; if (TAB === 'mc') ulPrendre(); else ulRendre(); }
     var t = $('ck-tdb'), e = $('ck-eng'), cb = $('ck-bil'), kb = $('ck-cb'), kg = $('ck-gr'), ka = $('ck-ag');
     if (ka) { ka.style.display = TAB === 'ag' ? '' : 'none'; if (TAB === 'ag') { var tc2 = $('t-cal'); if (tc2) tc2.style.display = 'block'; try { if (typeof loadCalendrier === 'function') loadCalendrier(); } catch (x) {} } }
