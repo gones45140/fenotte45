@@ -77518,10 +77518,15 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
         Q.n = todo.length; var i = 0;
         /* 20261107d (capture Draisaitl buteur 🏠 : 149 matchs / pire 7 ici, 114 / pire 5 dans ses critères) : SAISON RÉGULIÈRE seulement, comme les
            critères (aEquipeUS : m[5] === 2) → matchs du journal gardés s'ils sont « saison régulière » dans le fichier de l'équipe (equipes/<id>.json). */
-        var REG = {}, regDe = async function (sa, tid) { var k = sa + '|' + tid; if (!REG[k]) REG[k] = aLire(B0 + sa + '/equipes/' + tid + '.json').then(function (q) { var o = {}, n = 0; ((q && q.m) || []).forEach(function (m) { if (m[5] === 2) { o[String(m[2])] = 1; n++; } }); return n >= 20 ? o : {}; /* 20261107g (Aho buteur ✈️ : classement +2 503 € / 288 € ≠ critères +1 223 € / 110 €) : All-Star (« Team MacKinnon » 03/02/2024) et 4 Nations (« Finland » 15/02/2025) rangés en saison régulière dans les archives → équipe gardée seulement avec 20 matchs de saison régulière au moins (un vrai club en a 82) */ }).catch(function () { return {}; }); return REG[k]; };
+        var REG = {}, regDe = async function (sa, tid) { var k = sa + '|' + tid; if (!REG[k]) REG[k] = aLire(B0 + sa + '/equipes/' + tid + '.json').then(function (q) { var o = {}, n = 0; ((q && q.m) || []).forEach(function (m) { if (m[5] === 2) { o[String(m[2])] = 1; n++; } }); o._n = n; return o; /* 20261107k : le tri des équipes se fait plus bas (seuil relatif) ; 20261107g (Aho buteur ✈️ : classement +2 503 € / 288 € ≠ critères +1 223 € / 110 €) : All-Star (« Team MacKinnon » 03/02/2024) et 4 Nations (« Finland » 15/02/2025) rangés en saison régulière dans les archives → équipe gardée seulement avec 20 matchs de saison régulière au moins (un vrai club en a 82) */ }).catch(function () { return {}; }); return REG[k]; };
         async function w() { while (i < todo.length) { var t = todo[i++]; var j = null, sa = aSaUS(X.lg, t[1]); try { j = await aLire(B0 + sa + '/joueurs/' + t[0] + '.json'); } catch (e) {}
           var M = ((j && j.m) || []).filter(function (m) { return m && m[4] && typeof m[4] === 'object'; }), T = {}; M.forEach(function (m) { T[String(m[3])] = 1; });
-          var OK = {}; for (var tid in T) { var o = await regDe(sa, tid); for (var e2 in o) OK[e2] = 1; }
+          /* 20261107k (capture Matthews buteur 📏 : classement 98/208 +136 € ≠ critères 108/225 +171 €) : le seuil fixe de 20 matchs (20261107g) jetait la
+             SAISON EN COURS (Toronto 17 matchs au 07/11) → seuil RELATIF : une équipe compte si elle a au moins 1/4 des matchs du club principal du joueur
+             cette saison et 5 matchs (ou si c'est le club principal) ; All-Star / 4 Nations (1 à 3 matchs contre 50+) restent dehors. */
+          var OK = {}, LT = []; for (var tid in T) LT.push(await regDe(sa, tid));
+          var nMax = LT.reduce(function (a, o) { return Math.max(a, o._n || 0); }, 0);
+          LT.forEach(function (o) { var n = o._n || 0; if (!n || n < nMax / 4 || (n < 5 && n !== nMax)) return; for (var e2 in o) if (e2 !== '_n') OK[e2] = 1; });
           M.forEach(function (m) { if (OK[String(m[2])]) P[t[0]].L.push([+m[0] || 0, m[6] === 'h' ? 1 : m[6] === 'a' ? 0 : -1, usJVal(X.sp, c0.jm, m[4])]); });
           if (j && j.n && !P[t[0]].nom) P[t[0]].nom = j.n; Q.f++;
           var e1 = document.querySelector('[id="g45cr-cls-prog"]'); if (e1) e1.textContent = Q.f + ' / ' + Q.n; } }
