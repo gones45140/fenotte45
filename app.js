@@ -77484,6 +77484,11 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     if (X.sp === 'soccer' && clsJModeDe(c0)) return clsJHtml(X, c0);   /* 20261102d */
     if (rgArchOk(X.sp, X.lg) && c0.jo && !c0.jo2 && /aucun crit/.test(libCombo(clsCombo(c0)))) return rgClsJHtml(X, c0, Q);   /* 20261103k */
     var c = clsCombo(c0), nomLg = (S.data[S.nom] && S.data[S.nom].ligue) || US_N[X.lg] || 'championnat';
+    /* 20261106z2 (capture Pavel Zacha pointeur : « Jouable en Cockpit ? » NHL = toutes les équipes à 100 %, « Même critère (aucun critère) ») : un critère
+       JOUEUR seul n'a pas de classement d'équipes (les joueurs ne sont classés qu'en foot / rugby) → message au lieu d'une liste qui ne veut rien dire. */
+    if (/aucun crit/.test(libCombo(c))) return '<div style="margin-top:16px;padding-top:12px;border-top:1px solid #2a3a63;"><div style="font-size:16px;font-weight:800;color:#fff;">🏁 Jouable en Cockpit ?</div>'
+      + '<div style="font-size:14px;color:#ffd34d;margin-top:4px;">Ce classement compare les ÉQUIPES : ajoute un critère d\'équipe (résultat, buts, tiers…) pour le voir. '
+      + (c0.jo ? 'Le classement des joueurs de la ' + esc(US_N[X.lg] || X.lg) + ' n\'existe pas encore (seulement foot et rugby).' : '') + '</div></div>';
     var ign = CLS_SANS.some(function (q) { return c0[q]; });
     var h = '<div style="margin-top:16px;padding-top:12px;border-top:1px solid #2a3a63;">'
       + '<div style="font-size:16px;font-weight:800;color:#fff;">🏁 Jouable en Cockpit ? — classement ' + (X.sp === 'soccer' || /^rugby/.test(X.sp) ? 'du championnat' : 'de la ' + esc(US_N[X.lg] || X.lg)) + '</div>'
