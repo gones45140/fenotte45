@@ -86585,3 +86585,94 @@ window._G45_ARCH_LG = ['fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champi
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { setTimeout(poser, 300); }); else setTimeout(poser, 300);
   setInterval(function () { try { poser(); dessiner(); } catch (e) {} }, 15000);
 })();
+
+/* ═══ 20261106g — ⚖️ ENGAGER EN FIBONACCI / D'ALEMBERT (Antoine : « moi je propose des onglets, soit en Cockpit soit en Fibo soit en Alembert,
+   comme ça on ne touche pas à Cockpit » → maquette-meth2 → « ok go 2 ») :
+   • onglets 🚀 Cockpit · 🐚 Fibonacci · 🪜 D'Alembert en tête de 🚀 Engager (window._g45EngMeth, gardé dans localStorage g45_eng_meth) ;
+   • Fibonacci : mise = P1 × 1-1-2-3-5-8… ; D'Alembert : mise = P1 × 1-2-3-4… (P1 = 1er palier de la grille de la carte, même lieu) ;
+   • PALIERS À PART : u.lm = { fib: { clé: palier }, dal: {…} } (clé = _g45PalKey(compétition, lieu), comme u.lc) → la montante (u.l / u.lc)
+     n'est JAMAIS touchée ; gagné → Fibonacci −2 crans, D'Alembert −1 ; perdu → +1 (12 au plus) ; ½✅ = gagné, ½❌ = perdu, ↩️ = inchangé ;
+     annulé → palier d'avant ;
+   • le pari est enregistré comme un pari simple (isS faux, donc hors calculs de la montante) avec meth / mp (palier) / mk (clé) et la note
+     « 🐚 Fibonacci F2 » ; comptabilité inchangée (pari() / result() / _g45BetAppliquer). ═══ */
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var SEQ = { fib: [1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144], dal: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] };
+  var NOM = { mont: '🚀 Cockpit', fib: '🐚 Fibonacci', dal: '🪜 D\'Alembert' }, LET = { fib: 'F', dal: 'D' };
+  var meth = function () { var m = window._g45EngMeth; if (!m) { try { m = localStorage.getItem('g45_eng_meth') || 'mont'; } catch (e) { m = 'mont'; } } return SEQ[m] ? m : 'mont'; };
+  var carte = function () { var s = $('c-unit'); return s && (state.u || []).filter(function (x) { return x.n === s.value; })[0]; };
+  var lieu = function () { return typeof g45LieuCourant === 'function' ? g45LieuCourant() : ''; };
+  var cle = function () { var c = ($('c-comp') && $('c-comp').value) || ''; return typeof _g45PalKey === 'function' ? (_g45PalKey(c, lieu()) || '|' + lieu()) : '|' + lieu(); };
+  var palM = function (u, m, k) { return Math.max(1, parseInt(((u.lm || {})[m] || {})[k], 10) || 1); };
+  var setM = function (u, m, k, p) { u.lm = u.lm || {}; u.lm[m] = u.lm[m] || {}; if (p <= 1) delete u.lm[m][k]; else u.lm[m][k] = p; };
+  var p1De = function (u) { var G = (typeof _g45Grille === 'function' ? _g45Grille(u, lieu()) : null) || [1]; return +G[0] || 1; };
+  var miseDe = function (u, m, p) { return Math.round(p1De(u) * SEQ[m][Math.min(p, SEQ[m].length) - 1] * 100) / 100; };
+  window._g45MethEngT = { SEQ: SEQ, palM: palM, miseDe: miseDe };   /* tests */
+  function dessiner() {
+    var ce = $('ck-eng'); if (!ce) return;
+    var z = $('g45-eng-meth'); if (!z) { z = document.createElement('div'); z.id = 'g45-eng-meth'; z.style.cssText = 'margin:0 0 10px;'; ce.insertBefore(z, ce.firstChild); }
+    var m = meth(), u = carte();
+    var h = '<div style="display:flex;flex-wrap:wrap;gap:6px;">' + ['mont', 'fib', 'dal'].map(function (k) { var on = k === m; return '<button onclick="g45EngMeth(\'' + k + '\')" style="border-radius:12px;padding:8px 12px;font-size:15px;font-weight:800;cursor:pointer;color:#fff;border:1px solid ' + (on ? '#6d9dff' : '#2a3a63') + ';background:' + (on ? '#2a4a9a' : '#0b1226') + ';">' + NOM[k] + '</button>'; }).join('') + '</div>';
+    if (m !== 'mont' && u) {
+      var k = cle(), p = palM(u, m, k), P1 = p1De(u);
+      h += '<div style="margin-top:8px;background:rgba(10,14,24,.93);border:1px solid #1c2747;border-radius:12px;padding:10px 12px;color:#fff;font-size:15px;line-height:1.5;">'
+        + '<b>' + NOM[m] + ' — ' + String(u.n).replace(/</g, '') + '</b> · ' + LET[m] + p + ' · mise <b>' + String(miseDe(u, m, p)).replace('.', ',') + ' €</b>'
+        + '<div style="font-size:13px;color:#c9d3ee;">P1 = ' + String(P1).replace('.', ',') + ' € (grille de la carte). Gagné → ' + LET[m] + Math.max(1, p - (m === 'fib' ? 2 : 1)) + ' · perdu → ' + LET[m] + Math.min(p + 1, 12) + '. Paliers à part : ta montante Cockpit ne bouge pas.</div>'
+        + '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:5px;margin-top:6px;">' + SEQ[m].map(function (x, i) { var on = i + 1 === p; return '<div style="text-align:center;border-radius:8px;padding:5px 2px;font-weight:800;font-size:14px;background:' + (on ? '#1d4ed8' : '#12301f') + ';border:1px solid ' + (on ? '#6d9dff' : '#1f6b45') + ';">' + LET[m] + (i + 1) + '<br>' + String(Math.round(P1 * x * 100) / 100).replace('.', ',') + ' €</div>'; }).join('') + '</div></div>';
+    }
+    if (z.innerHTML !== h) z.innerHTML = h;
+    var cg = $('crash-grid'), box = cg && (cg.closest('.card') || cg.parentNode); if (box && box !== ce) box.style.display = m === 'mont' ? '' : 'none';
+  }
+  window._g45EngMethDessiner = dessiner;
+  window.g45EngMeth = function (k) { window._g45EngMeth = SEQ[k] ? k : 'mont'; try { localStorage.setItem('g45_eng_meth', window._g45EngMeth); } catch (e) {} try { (window.updMise || updMise)(); } catch (e) {} dessiner(); };
+  /* mise proposée : celle de la méthode (après le calcul normal de la montante) */
+  var um0 = window.updMise;
+  if (typeof um0 === 'function') window.updMise = updMise = function () {
+    var r = um0.apply(this, arguments);
+    try { var m = meth(), u = carte(), mi = $('c-mise'); if (m !== 'mont' && u && mi && !mi._g45Man) mi.value = miseDe(u, m, palM(u, m, cle())); dessiner(); } catch (e) {}
+    return r;
+  };
+  /* placement : pari(true) normal puis le pari devient « méthode » (hors montante) */
+  var pa0 = window.pari;
+  if (typeof pa0 === 'function') window.pari = pari = function (isS) {
+    var m = meth(), u = isS ? carte() : null;
+    if (!isS || m === 'mont' || !u) return pa0.apply(this, arguments);
+    var k = cle(), p = palM(u, m, k), n0 = (state.h || []).length, top = state.h && state.h[0];
+    var r = pa0.apply(this, arguments);
+    var b = state.h && state.h[0];
+    if (b && b !== top && state.h.length > n0) {
+      b.isS = false; b.meth = m; b.mp = p; b.mk = k; delete b.l;
+      b.notes = NOM[m] + ' ' + LET[m] + p + (b.notes ? ' · ' + b.notes : '');
+      try { save(); } catch (e) {} try { if (typeof render === 'function') render(); } catch (e) {}
+    }
+    return r;
+  };
+  var avance = function (b, gagne) {
+    var u = (state.u || []).filter(function (x) { return x.n === b.n; })[0]; if (!u || !SEQ[b.meth]) return;
+    var p = palM(u, b.meth, b.mk);
+    setM(u, b.meth, b.mk, gagne ? Math.max(1, p - (b.meth === 'fib' ? 2 : 1)) : Math.min(p + 1, SEQ[b.meth].length));
+  };
+  var re0 = window.result;
+  if (typeof re0 === 'function') window.result = result = function (id, win) {
+    var b = (state.h || []).filter(function (x) { return x.id === id; })[0], meth0 = b && b.meth;
+    var r = re0.apply(this, arguments);
+    try { if (meth0 && !(state.h || []).some(function (x) { return x.id === id; })) { avance(b, !!win); save(); try { (window.updMise || updMise)(); } catch (e) {} } } catch (e) {}
+    return r;
+  };
+  var rg0 = window.g45BetRegler;
+  if (typeof rg0 === 'function') window.g45BetRegler = function (id, ar, deb) {
+    var b = (state.h || []).filter(function (x) { return x.id === id; })[0];
+    var r = rg0.apply(this, arguments);
+    try { if (r && b && b.meth && ar !== 'v') { avance(b, ar === 'hw'); save(); } } catch (e) {}
+    return r;
+  };
+  var ca0 = window.cancelBet;
+  if (typeof ca0 === 'function') window.cancelBet = cancelBet = function (id) {
+    var b = (state.h || []).filter(function (x) { return x.id === id; })[0];
+    var r = ca0.apply(this, arguments);
+    try { if (b && b.meth && !(state.h || []).some(function (x) { return x.id === id; })) { var u = (state.u || []).filter(function (x) { return x.n === b.n; })[0]; if (u) { setM(u, b.meth, b.mk, b.mp || 1); save(); } } } catch (e) {}
+    return r;
+  };
+  document.addEventListener('change', function (e) { if (e.target && /^(c-unit|c-lieu|c-comp)$/.test(e.target.id)) { try { dessiner(); } catch (x) {} } }, true);
+  setInterval(function () { try { var ce = $('ck-eng'); if (ce && ce.offsetParent) dessiner(); } catch (e) {} }, 2000);
+})();
