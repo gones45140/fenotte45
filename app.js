@@ -53016,7 +53016,7 @@ async function _g45CompoCtx(nom, avecFoot) {
   }
 
   /* 4. Dernier recours : on cherche le nom dans les classements. */
-  if (!em || em.indexOf('\u26bd') < 0) {
+  if ((!em || em.indexOf('\u26bd') < 0) && !footSur) {   /* 20261107z2 (console d'Antoine : perso = { league aus.1, sport soccer }, pas de carte) : le balayage US trouvait « Mariners » en MLB → sauté pour un club connu comme foot */
     var tables = [];
     for (var j = 0; j < _G45_LIGUES_SCAN.length; j++) {
       var L = _G45_LIGUES_SCAN[j];
