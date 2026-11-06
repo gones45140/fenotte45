@@ -5038,7 +5038,9 @@ function _g45CarteResultatHTML(h, logos){
   var coul2 = adversaireC ? g45CoulIdentite(adversaireC) : '';
   var abbr1 = (u1 && u1.abbr) || titreC.replace(/[^a-zA-Z]/g, '').substring(0, 3).toUpperCase() || '—';
   var abbr2 = adversaireC ? (adversaireC.replace(/[^a-zA-Z]/g, '').substring(0, 3).toUpperCase() || '—') : '';
-  var isPend=!!h.isPending;
+  /* 20261108b (capture carte partagée Colorado – Nashville 2-3 « Perdu » alors que le match était EN COURS) : un pari encore dans state.h (en cours)
+     ou sans résultat (win absent) = ⏳ En cours, jamais « Perdu » d'après le score du moment. */
+  var isPend=!!h.isPending || h.win == null || (state.h || []).some(function (x) { return x && x.id === h.id; });
   var gain=isPend?0:(h.win?(parseFloat(h.m)*parseFloat(h.cote)-parseFloat(h.m)):-parseFloat(h.m));
   var verdictTxt=isPend?'⏳ En cours':(h.win?'✅ Gagné':'❌ Perdu');
   var verdictCls=isPend?'#f0b020':(h.win?'#1ed760':'#ff4545');
@@ -74520,6 +74522,35 @@ async function _g45CarteComplements(h, nm, lg) {
       if (u) { try { lg.j[n] = await _g45CarteLogoData(u); } catch (e) {} }
     })());
   });
+  /* 20261108c (cartes partagées Colorado – Nashville « COL / NAS » et Adam Fox « ADA / PHI » en initiales, pas de photo) : 1) joueur NHL / NBA / NFL
+     retrouvé dans les archives (cotes/<sport>/<ligue>/<saison>/joueurs.json : nom → numéro ESPN + club) → photo ESPN headshots + logo de SON club
+     à gauche ; 2) logos manquants (gauche / adversaire) → index des équipes des archives (window._g45LogoIndex, loi/equipes.json). */
+  taches.push((async function () {
+    try {
+      var LG = { hockey: ['hockey', 'nhl'], basketball: ['basket', 'nba'], nfl: ['football-us', 'nfl'] }[sp];
+      var nz = function (t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z]/g, ''); };
+      if (typeof window._g45LogoIndex === 'function') { window._g45LogoIndex(''); for (var w = 0; w < 10 && !window._g45LogoIndex('Colorado Avalanche') && !window._g45LogoIndex('Paris Saint-Germain'); w++) await new Promise(function (r) { setTimeout(r, 300); }); }
+      var club = '';
+      if (LG && noms.length) {
+        var d = new Date(), y = d.getMonth() >= 6 ? d.getFullYear() : d.getFullYear() - 1, SA = [y + '-' + String(y + 1).slice(2), (y - 1) + '-' + String(y).slice(2)];
+        for (var i = 0; i < SA.length && !club; i++) {
+          var B = 'https://raw.githubusercontent.com/gones45140/gones45-archives/main/cotes/' + LG[0] + '/' + LG[1] + '/' + SA[i] + '/';
+          var J = await fetch(B + 'joueurs.json').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }); if (!J) continue;
+          var EQ = null;
+          for (var k = 0; k < noms.length; k++) {
+            var n0 = nz(noms[k]), pid = Object.keys(J).filter(function (q) { return nz(J[q][0]) === n0; })[0]; if (!pid) continue;
+            if (!lg.j[noms[k]]) { try { lg.j[noms[k]] = await _g45CarteLogoData('https://a.espncdn.com/i/headshots/' + LG[1] + '/players/full/' + pid + '.png'); } catch (e) {} }
+            if (!club && J[pid][1]) { if (!EQ) EQ = await fetch(B + 'equipes.json').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }); club = (EQ && EQ[J[pid][1]] && EQ[J[pid][1]][0]) || ''; }
+          }
+        }
+      }
+      var ix = function (n) { try { return (n && typeof window._g45LogoIndex === 'function' && window._g45LogoIndex(n)) || ''; } catch (e) { return ''; } };
+      var ua = (club && noms.indexOf(nm && nm.titre) >= 0) ? ix(club) : '';
+      if (ua) lg.a = await _g45CarteLogoData(ua);
+      else if (!lg.a && nm) { var u1 = ix(nm.titre) || ix(club); if (u1) lg.a = await _g45CarteLogoData(u1); }
+      if (!lg.b && nm && nm.adv) { var u2 = ix(nm.adv); if (u2) lg.b = await _g45CarteLogoData(u2); }
+    } catch (e) {}
+  })());
   await Promise.race([Promise.all(taches), new Promise(function (r) { setTimeout(r, 12000); })]);
 }
 function _g45CarteJoueursHtml(h, logos, coul, typeTxt) {
