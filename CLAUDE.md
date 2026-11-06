@@ -128,7 +128,7 @@ PIÈGES À NE JAMAIS OUBLIER :
   pour contourner un quota ; Polymarket (ANJ) et Kalshi abandonnés ; jamais les photos de be-basketball.
   LNR (lnr.fr) : CGU = usage personnel et strictement privé seulement → pas d'archivage LNR dans gones45-archives (public) sans autorisation (03/11).
 - Abandonné / refusé (ne pas reproposer) : NPB, handball, Workers AI (IA), BTS The Odds API par match, stats live Pro A Sofascore,
-  mi-temps Pro D2, papier peint clair, panneaux pub autour du terrain, tuile « ➕ Ajouter ».
+  mi-temps Pro D2, papier peint clair, panneaux pub autour du terrain, tuile « ➕ Ajouter », mode Survivor L1 (08/11 : le Discord préfère séparer jeu et paris).
 - Antoine parie sur la FIN des séries : ne pas lui refaire la leçon sur le « biais du parieur ».
 
 ## 7. Reste à faire / en attente (détail : HISTORIQUE.md § 7)
@@ -158,7 +158,6 @@ PIÈGES À NE JAMAIS OUBLIER :
 - 📊 Classement NHL Global / Domicile / Extérieur : FAIT (20261108f, archives) — à confirmer à l'écran par Antoine.
 - 🏁 « Jouable en Cockpit ? » JOUEURS NHL / NBA / NFL : FAIT (20261107b, usClsJHtml ; vérifié archives NHL pointeur 🏠 : McDavid / Draisaitl / Pastrnak pire 2, Zacha 5) — à confirmer à l'écran par Antoine.
 - 🎯 Calculatrice Cote juste : FAIT (20261108f bloc + 20261108g match : championnat, 🏠 / ✈️, panneau de critères complet, marge du book) — à confirmer à l'écran par Antoine.
-- 🎮 MODE SURVIVOR (Antoine, 08/11 ; « autre jeu, rien à voir avec le Mondial ») : chaque journée 1 équipe qui doit GAGNER, nul (foot) = éliminé, équipe jamais reprise, UNE seule vie par compétition, dernier survivant gagne ; joué par un DISCORD (beaucoup de joueurs) → classement partagé (Social / Supabase déjà en place), choix verrouillé au coup d'envoi, résultats lus automatiquement. Championnat : LIGUE 1 (Discord « le-survivor-de-neeco » de Neeco_cs : « après la trêve on lance le survivor L1 », 08/11). Maquette avant code.
 - Cédric : toucher 🤍 sur Portugal. Worker : budget `_lourd` 4 → 2 proposé.
 
 ## 8. Façon de travailler en session cloud
