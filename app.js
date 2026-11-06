@@ -87416,8 +87416,11 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     var p = m.length ? m.reduce(function (a, b) { return a + b; }, 0) / m.length : null;
     /* 20261108g (« il faut retirer la marge du book ») : avec la cote inverse → marge réelle (1/b + 1/inv − 1) ; sans → marge type D.mg % (7 par défaut) */
     var bk = nb(D.b), inv = nb(D.inv), mg = nb(D.mg); if (mg == null) mg = 7;
-    var pb = null, mgR = null; if (bk > 1) { if (inv > 1) { mgR = (1 / bk + 1 / inv - 1) * 100; pb = (1 / bk) / (1 / bk + 1 / inv) * 100; } else { mgR = mg; pb = (100 / bk) / (1 + mg / 100); } }
-    return { m: D.e.map(melange), p: p, cj: p > 0 ? 100 / p : null, bk: bk, pb: pb, mgR: mgR, ev: (p != null && bk > 1) ? (p / 100 * bk - 1) * 100 : null };
+    /* 20261108k (« manque juste la cote juste à 3 possibilités », ex. Toulouse nul Strasbourg) : 3e cote D.t3 (1N2) → marge = somme des 3
+       inverses − 1 ; cote juste du book de CHAQUE issue = cote × somme (sj). Ton pari reste la 1re case. */
+    var t3 = nb(D.t3), sj = null;
+    var pb = null, mgR = null; if (bk > 1) { if (inv > 1) { var so = 1 / bk + 1 / inv + (t3 > 1 ? 1 / t3 : 0); mgR = (so - 1) * 100; pb = (1 / bk) / so * 100; sj = [bk, inv].concat(t3 > 1 ? [t3] : []).map(function (c) { return c * so; }); } else { mgR = mg; pb = (100 / bk) / (1 + mg / 100); } }
+    return { m: D.e.map(melange), p: p, cj: p > 0 ? 100 / p : null, bk: bk, pb: pb, mgR: mgR, sj: sj, t3: t3 > 1 ? t3 : null, inv: inv > 1 ? inv : null, ev: (p != null && bk > 1) ? (p / 100 * bk - 1) * 100 : null };
   }
   var inp = function (id, v, w) { return '<input id="' + id + '" value="' + esc(v) + '" inputmode="decimal" oninput="g45CjMaj(this)" style="width:' + (w || 64) + 'px;font-size:16px;font-weight:800;text-align:center;padding:6px;border-radius:8px;background:#141c33;color:#fff;border:1px solid #2a3a63;">'; };
   function html() {
@@ -87431,7 +87434,9 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
         + '<div style="font-size:14px;margin-top:6px;color:#fff;">→ <b>' + fr(R.m[i]) + ' %</b></div></div>';
     };
     var verdict = '';
-    if (R.cj && R.bk > 1) verdict = '<div style="font-size:14px;color:#c9d3ee;margin-top:4px;">Book ' + fr(R.bk, 2) + ' → sans marge (' + fr(R.mgR, 1) + ' %) le book estime <b style="color:#fff;">' + fr(R.pb) + ' %</b> · nous ' + fr(R.p) + ' %</div>'
+    var sjL = R.sj ? '<div style="font-size:14px;color:#c9d3ee;margin-top:4px;">Marge réelle <b style="color:#fff;">' + fr(R.mgR, 1) + ' %</b> · cotes sans marge : '
+      + [R.bk, R.inv, R.t3].filter(function (c) { return c; }).map(function (c, i) { return fr(c, 2) + ' → <b style="color:#fff;">' + fr(R.sj[i], 2) + '</b>'; }).join(' · ') + '</div>' : '';
+    if (R.cj && R.bk > 1) verdict = sjL + '<div style="font-size:14px;color:#c9d3ee;margin-top:4px;">Book ' + fr(R.bk, 2) + ' → sans marge (' + fr(R.mgR, 1) + ' %) le book estime <b style="color:#fff;">' + fr(R.pb) + ' %</b> · nous ' + fr(R.p) + ' %</div>'
       + (R.ev > 0 ? '<div style="font-size:16px;font-weight:900;margin-top:4px;color:#1ed760;">✅ intéressant : +' + fr(R.ev, 1) + ' % de value (cote juste ' + fr(R.cj, 2) + ')</div>'
         : '<div style="font-size:16px;font-weight:900;margin-top:4px;color:#ff8a8a;">❌ trop court : ' + fr(R.ev, 1) + ' % (il faudrait ' + fr(R.cj, 2) + ' ou plus)</div>');
     return '<div id="g45-cj" class="fc" style="margin-top:12px;background:rgba(10,14,24,.93);border:1px solid #1c2747;border-radius:14px;padding:12px;color:#fff;">'
@@ -87440,7 +87445,8 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
       + '<div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;">' + col(0) + col(1) + '</div>'
       + '<div style="font-size:14px;font-weight:800;margin:10px 0 4px;">Poids</div><div style="display:flex;gap:6px;flex-wrap:wrap;font-size:14px;">'
       + ['10 derniers', '2 saisons', '5 saisons'].map(function (t, i) { return '<span style="flex:1;min-width:100px;background:#0b1226;border:1px solid #2a3a63;border-radius:8px;padding:6px;text-align:center;">' + t + ' ' + inp('cj-w' + i, D.w[i], 48) + ' %</span>'; }).join('') + '</div>'
-      + '<div style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:15px;flex-wrap:wrap;">Cote du book ' + inp('cj-b', D.b, 80) + ' <span style="font-size:13px;color:#c9d3ee;">cote inverse (facultatif)</span> ' + inp('cj-inv', D.inv || '', 70) + '</div>'
+      + '<div style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:15px;flex-wrap:wrap;">Cote du book ' + inp('cj-b', D.b, 80) + ' <span style="font-size:13px;color:#c9d3ee;">cote inverse (facultatif)</span> ' + inp('cj-inv', D.inv || '', 70) + ' <span style="font-size:13px;color:#c9d3ee;">3e cote (1N2, facultatif)</span> ' + inp('cj-t3', D.t3 || '', 70) + '</div>'
+      + (R.sj && !(R.cj && R.bk > 1) ? sjL : '')
       + '<div style="display:flex;align-items:center;gap:8px;margin-top:6px;font-size:13px;color:#c9d3ee;">Marge du book sans cote inverse ' + inp('cj-mg', D.mg == null ? 7 : D.mg, 48) + ' %</div>'
       + '<div style="margin-top:12px;background:' + (R.p == null ? '#0b1226' : 'rgba(30,215,96,.12)') + ';border:1px solid ' + (R.p == null ? '#2a3a63' : '#1ed760') + ';border-radius:12px;padding:10px;text-align:center;">'
       + (R.p == null ? '<div style="font-size:14px;color:#c9d3ee;">Remplis au moins une équipe.</div>' : '<div style="font-size:14px;color:#c9d3ee;">Estimation du match</div><div style="font-size:24px;font-weight:900;">' + fr(R.p) + ' % → cote juste <span style="color:#1ed760;">' + fr(R.cj, 2) + '</span></div>' + verdict)
@@ -87461,10 +87467,11 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     else if ((m = id.match(/^cj-w(\d)$/))) D.w[+m[1]] = v;
     else if (id === 'cj-b') D.b = v;
     else if (id === 'cj-inv') D.inv = v;
+    else if (id === 'cj-t3') D.t3 = v;   /* 20261108k */
     else if (id === 'cj-mg') D.mg = v;
     garder(); poser(id);
   };
-  window.g45CjVider = function () { D = { e: [{ nom: '', lieu: '', d10: '', s2: '', s5: '' }, { nom: '', lieu: '', d10: '', s2: '', s5: '' }], w: [40, 35, 25], b: '', inv: '', mg: 7, crit: '' }; garder(); poser(); };
+  window.g45CjVider = function () { D = { e: [{ nom: '', lieu: '', d10: '', s2: '', s5: '' }, { nom: '', lieu: '', d10: '', s2: '', s5: '' }], w: [40, 35, 25], b: '', inv: '', t3: '', mg: 7, crit: '' }; garder(); poser(); };
   window.g45CjMettre = function (k, o, muet) {
     var i = k === 2 ? 1 : 0; D.e[i] = { nom: o.nom || '', lieu: o.lieu || '', d10: o.d10 == null ? '' : o.d10, s2: o.s2 == null ? '' : o.s2, s5: o.s5 == null ? '' : o.s5 };
     D.crit = o.crit || D.crit; garder(); poser();
