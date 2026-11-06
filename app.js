@@ -87295,33 +87295,44 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
 })();
 
 /* ═══ 20261108d — 📊 CLASSEMENT NHL GLOBAL / DOMICILE / EXTÉRIEUR (Antoine, 06/11 : « on n'a pas global / domicile / extérieur en classement »
-   → maquette clsDE.png « oui »). Compétitions → NHL → Classement : 3 boutons ; 🌍 Global = le classement ESPN habituel (g45LoadStandings
-   d'origine) ; 🏠 / ✈️ = calculé sur nos archives (cotes/hockey/nhl/<saison>/equipes/<id>.json : m[3] h|a, m[4] score [dom, ext],
-   m[5] 2 = saison régulière, m[6] prolongation / tirs au but) : MJ, V, D, DP (défaite après prolongation), buts pour-contre,
-   Pts = 2 par victoire + 1 par DP ; équipes All-Star / 4 Nations (moins d'1/4 des matchs du plus gros total) écartées. ═══ */
+   → maquette clsDE.png « oui ») ; 20261108e : « oui pour tous » → TOUS les championnats archivés qui passent par g45LoadStandings.
+   Compétitions → Classement : 3 boutons ; 🌍 Global = le classement ESPN habituel (g45LoadStandings d'origine) ; 🏠 / ✈️ = calculé sur nos
+   archives (cotes/<sport>/<ligue>/<saison>/equipes/<id>.json : m[3] h|a, m[4] score [dom, ext] ; sports US : m[5] 2 = saison régulière,
+   m[6] prolongation). Hockey : V D DP, Pts 2 / 1 ; foot : V N D, Pts 3 / 1 / 0 ; rugby : V N D, Pts 4 / 2 / 0 (SANS bonus) ;
+   NBA / NFL / MLB : V D et % de victoires. Saison : la plus récente trouvée (AAAA-AA puis AAAA). Équipes All-Star / 4 Nations écartées
+   (moins d'1/4 des matchs du plus gros total). ═══ */
 (function () {
   var L0 = window.g45LoadStandings; if (typeof L0 !== 'function') return;
   var MODE = 'all', MEM = {};
-  var RAW = 'https://raw.githubusercontent.com/gones45140/gones45-archives/main/cotes/hockey/nhl/';
+  var ARC = 'https://raw.githubusercontent.com/gones45140/gones45-archives/main/cotes/';
+  var SPD = { soccer: 'foot', hockey: 'hockey', basketball: 'basket', football: 'football-us', baseball: 'baseball', rugby: 'rugby', 'rugby-league': 'rugby-xiii' };
   var esc = function (t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
-  var lire = function (p) { return fetch(RAW + p + '?h=' + Math.floor(Date.now() / 36e5)).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }); };
-  async function table(lieu) {
-    var d = new Date(), y = d.getMonth() >= 6 ? d.getFullYear() : d.getFullYear() - 1, sa = y + '-' + String(y + 1).slice(2), k = sa;
-    if (!MEM[k]) MEM[k] = (async function () {
-      var EQ = await lire(sa + '/equipes.json'); if (!EQ) return null;
-      var ids = Object.keys(EQ), F = await Promise.all(ids.map(function (id) { return lire(sa + '/equipes/' + id + '.json'); }));
-      var T = ids.map(function (id, i) { return { id: id, nom: EQ[id][0], ab: EQ[id][1], m: ((F[i] && F[i].m) || []).filter(function (m) { return m && m[5] === 2 && m[4] && m[4][0] != null && m[4][1] != null; }) }; });
+  var lire = function (p) { return fetch(ARC + p + '?h=' + Math.floor(Date.now() / 36e5)).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }); };
+  var genre = function (sp) { return sp === 'hockey' ? 'hk' : sp === 'soccer' ? 'ft' : /^rugby/.test(sp) ? 'rg' : 'us'; };
+  var ok = function (slug, sp) { if (!SPD[sp]) return false; if (/^rugby/.test(sp)) return true; return (window._G45_ARCH_LG || []).indexOf(String(slug)) >= 0 && !/^(fifa|uefa)\./.test(String(slug)); };
+  async function charger(slug, sp) {
+    var k = sp + '|' + slug; if (MEM[k]) return MEM[k];
+    return (MEM[k] = (async function () {
+      var d = new Date(), y = d.getMonth() >= 6 ? d.getFullYear() : d.getFullYear() - 1;
+      var C = [y + '-' + String(y + 1).slice(2), String(d.getFullYear()), String(y)], B = SPD[sp] + '/' + slug + '/', sa = '', EQ = null;
+      for (var i = 0; i < C.length && !EQ; i++) { EQ = await lire(B + C[i] + '/equipes.json'); if (EQ) sa = C[i]; }
+      if (!EQ) return null;
+      var ids = Object.keys(EQ), F = await Promise.all(ids.map(function (id) { return lire(B + sa + '/equipes/' + id + '.json'); })), US = { hockey: 1, basketball: 1, football: 1, baseball: 1 }[sp];
+      var T = ids.map(function (id, i) { return { id: id, nom: EQ[id][0], ab: EQ[id][1], m: ((F[i] && F[i].m) || []).filter(function (m) { return m && m[4] && m[4][0] != null && m[4][1] != null && (!US || m[5] === 2); }) }; });
       var mx = T.reduce(function (a, t) { return Math.max(a, t.m.length); }, 0);
       return { sa: sa, T: T.filter(function (t) { return t.m.length && t.m.length >= mx / 4; }) };
-    })();
-    var D = await MEM[k]; if (!D) return null;
+    })());
+  }
+  async function table(slug, sp, lieu) {
+    var D = await charger(slug, sp); if (!D) { delete MEM[sp + '|' + slug]; return null; }
+    var G = genre(sp), PV = { hk: 2, ft: 3, rg: 4, us: 1 }[G], PN = { hk: 0, ft: 1, rg: 2, us: 0 }[G];
     var R = D.T.map(function (t) {
-      var o = { id: t.id, nom: t.nom, ab: t.ab, mj: 0, v: 0, d: 0, dp: 0, bp: 0, bc: 0 };
+      var o = { id: t.id, nom: t.nom, ab: t.ab, mj: 0, v: 0, n: 0, d: 0, dp: 0, bp: 0, bc: 0 };
       t.m.forEach(function (m) { var h = m[3] === 'h'; if (lieu === 'dom' ? !h : h) return; var p = h ? +m[4][0] : +m[4][1], c = h ? +m[4][1] : +m[4][0];
-        o.mj++; o.bp += p; o.bc += c; if (p > c) o.v++; else if (m[6]) o.dp++; else o.d++; });
-      o.pts = 2 * o.v + o.dp; return o;
-    }).filter(function (o) { return o.mj; }).sort(function (a, b) { return b.pts - a.pts || b.v - a.v || (b.bp - b.bc) - (a.bp - a.bc) || a.nom.localeCompare(b.nom); });
-    return { sa: D.sa, R: R };
+        o.mj++; o.bp += p; o.bc += c; if (p > c) o.v++; else if (p === c && G !== 'hk' && G !== 'us') o.n++; else if (G === 'hk' && m[6]) o.dp++; else o.d++; });
+      o.pts = PV * o.v + PN * o.n + (G === 'hk' ? o.dp : 0); o.pc = o.mj ? o.v / o.mj : 0; return o;
+    }).filter(function (o) { return o.mj; }).sort(function (a, b) { return (G === 'us' ? (b.pc - a.pc || b.v - a.v) : (b.pts - a.pts || b.v - a.v)) || (b.bp - b.bc) - (a.bp - a.bc) || a.nom.localeCompare(b.nom); });
+    return { sa: D.sa, R: R, G: G };
   }
   function boutons() {
     var b = function (k, t) { var on = MODE === k; return '<button onclick="g45NhlClsLieu(\'' + k + '\')" style="border-radius:10px;padding:9px;font-size:15px;font-weight:800;cursor:pointer;color:#fff;border:1px solid ' + (on ? '#6d9dff' : '#2a3a63') + ';background:' + (on ? '#2a4a9a' : '#0b1226') + ';">' + t + '</button>'; };
@@ -87333,22 +87344,27 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     var z = box.querySelector('#g45-nhlcls');
     if (MODE === 'all') return L0.call(this, slug, sp, z);
     z.innerHTML = '<div style="color:#fff;font-size:14px;padding:10px;">⏳ Lecture des archives…</div>';
-    var D = await table(MODE);
-    if (!D || !D.R.length) { z.innerHTML = '<div style="color:#ffb13d;font-size:14px;padding:10px;">Archives indisponibles pour le moment.</div>'; return; }
-    var gc = 'display:grid;grid-template-columns:24px minmax(0,1fr) 30px 30px 30px 34px 50px 38px;gap:4px;padding:8px;align-items:center;';
-    var h = '<div style="font-size:16px;font-weight:900;color:#fff;margin:2px 0 8px;">' + (MODE === 'dom' ? '🏠 Domicile' : '✈️ Extérieur') + ' · NHL ' + esc(D.sa) + '</div>'
-      + '<div style="background:rgba(11,16,29,.6);border-radius:8px;overflow:hidden;"><div style="' + gc + 'font-size:12px;color:#c9d3ee;font-weight:700;"><span>#</span><span>Équipe</span><span>MJ</span><span>V</span><span>D</span><span>DP</span><span>Buts</span><span>Pts</span></div>';
+    var D = await table(slug, sp, MODE);
+    if (!D || !D.R.length) { z.innerHTML = '<div style="color:#ffb13d;font-size:14px;padding:10px;">Archives indisponibles pour ce championnat.</div>'; return; }
+    var G = D.G, cols = G === 'hk' ? ['MJ', 'V', 'D', 'DP', 'Buts', 'Pts'] : G === 'us' ? ['MJ', 'V', 'D', '%', 'Pts +/−'] : ['MJ', 'V', 'N', 'D', G === 'rg' ? 'Points' : 'Buts', 'Pts'];
+    var W = { MJ: '30px', V: '30px', N: '30px', D: '30px', DP: '34px', Buts: '50px', Points: '62px', Pts: '38px', '%': '44px', 'Pts +/−': '62px' };
+    var gc = 'display:grid;grid-template-columns:24px minmax(0,1fr) ' + cols.map(function (c) { return W[c]; }).join(' ') + ';gap:4px;padding:8px;align-items:center;';
+    var LGN = { hk: '', ft: '', rg: '', us: '' };
+    var h = '<div style="font-size:16px;font-weight:900;color:#fff;margin:2px 0 8px;">' + (MODE === 'dom' ? '🏠 Domicile' : '✈️ Extérieur') + ' · ' + esc(String(slug).toUpperCase()) + ' ' + esc(D.sa) + '</div>'
+      + '<div style="background:rgba(11,16,29,.6);border-radius:8px;overflow:hidden;"><div style="' + gc + 'font-size:12px;color:#c9d3ee;font-weight:700;"><span>#</span><span>Équipe</span>' + cols.map(function (c) { return '<span>' + c + '</span>'; }).join('') + '</div>';
     D.R.forEach(function (r, i) {
       var lg = ''; try { lg = (typeof window._g45LogoIndex === 'function' && window._g45LogoIndex(r.nom)) || ''; } catch (e) {}
-      if (!lg && r.ab) lg = 'https://a.espncdn.com/i/teamlogos/nhl/500/' + String(r.ab).toLowerCase() + '.png';
+      if (!lg) lg = sp === 'soccer' ? 'https://a.espncdn.com/i/teamlogos/soccer/500/' + r.id + '.png' : (/^(hockey|basketball|football|baseball)$/.test(sp) && r.ab ? 'https://a.espncdn.com/i/teamlogos/' + String(slug) + '/500/' + String(r.ab).toLowerCase() + '.png' : '');
+      var val = { MJ: r.mj, V: r.v, N: r.n, D: r.d, DP: r.dp, Buts: r.bp + '-' + r.bc, Points: r.bp + '-' + r.bc, Pts: '<b style="color:#1ed760;">' + r.pts + '</b>', '%': '<b style="color:#1ed760;">' + Math.round(100 * r.pc) + '</b>', 'Pts +/−': (r.bp - r.bc > 0 ? '+' : '') + (r.bp - r.bc) };
       h += '<div style="' + gc + 'border-top:1px solid rgba(255,255,255,.08);font-size:14px;color:#fff;"><span style="font-weight:800;color:' + (i ? '#c9d3ee' : '#f0b020') + ';">' + (i + 1) + '</span>'
         + '<span style="display:flex;gap:6px;align-items:center;min-width:0;">' + (lg ? '<img src="' + esc(lg) + '" alt="" loading="lazy" onerror="this.remove()" style="width:22px;height:22px;object-fit:contain;flex:none;">' : '') + '<b style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(r.nom) + '</b></span>'
-        + '<span>' + r.mj + '</span><span>' + r.v + '</span><span>' + r.d + '</span><span>' + r.dp + '</span><span>' + r.bp + '-' + r.bc + '</span><span style="font-weight:900;color:#1ed760;">' + r.pts + '</span></div>';
+        + cols.map(function (c) { return '<span>' + val[c] + '</span>'; }).join('') + '</div>';
     });
-    z.innerHTML = h + '</div><div style="font-size:13px;color:#c9d3ee;margin-top:6px;">' + (MODE === 'dom' ? '🏠 = seulement les matchs à domicile' : '✈️ = seulement les matchs à l\'extérieur') + ' (saison régulière) · DP = défaite en prolongation / tirs au but · Pts = 2 par victoire, 1 par DP.</div>';
+    var leg = G === 'hk' ? 'DP = défaite en prolongation / tirs au but · Pts = 2 par victoire, 1 par DP' : G === 'ft' ? 'Pts = 3 par victoire, 1 par nul' : G === 'rg' ? 'Pts = 4 par victoire, 2 par nul (sans les points de bonus)' : '% = victoires sur matchs joués';
+    z.innerHTML = h + '</div><div style="font-size:13px;color:#c9d3ee;margin-top:6px;">' + (MODE === 'dom' ? '🏠 = seulement les matchs à domicile' : '✈️ = seulement les matchs à l\'extérieur') + (G === 'hk' || G === 'us' ? ' (saison régulière)' : '') + ' · ' + leg + '.</div>';
   }
   g45LoadStandings = window.g45LoadStandings = function (slug, sp, box) {
-    if (String(slug) !== 'nhl' || !box) return L0.apply(this, arguments);
+    if (!box || !ok(slug, sp)) return L0.apply(this, arguments);
     dernier = [slug, sp, box]; return rendre(slug, sp, box);
   };
   window.g45NhlClsLieu = function (k) { MODE = ({ all: 1, dom: 1, ext: 1 })[k] ? k : 'all'; if (dernier && dernier[2].isConnected) rendre(dernier[0], dernier[1], dernier[2]); };

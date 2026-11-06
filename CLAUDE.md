@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action (il est court exprès). Le détail de tout l'historique est dans HISTORIQUE.md
-(à chercher avec grep, jamais à lire en entier). Mis à jour le 31/10/2026 (version déployée : 20261108d, même app.js sur gones45 et fenotte45).
+(à chercher avec grep, jamais à lire en entier). Mis à jour le 31/10/2026 (version déployée : 20261108e, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -155,7 +155,7 @@ PIÈGES À NE JAMAIS OUBLIER :
 - ⚖️ Méthodes (06/11) : simulation des critères en 🚀 / 🐚 Fibonacci / 🪜 D'Alembert / 📏 fixe FAITE (20261106f) ; Engager par méthode FAIT (20261106g : onglets, paliers u.lm à part, paris méthode = paris simples isS faux) ; filtre Bilan / Archive FAIT (20261106h).
 - 🏒 KHL (Antoine, 06/11 : « on n'a pas fait la KHL, faudra le faire ») : absente de la Loi des séries et de 🔎 Critères (pas d'archives KHL dans gones45-archives) → SOURCE = notre site russe khl.ru déjà utilisé par l'appli (g45KhlApi, event_v2…) : robot d'archivage KHL (saisons passées + chaque jour), puis Loi des séries et 🔎 Critères.
 - 🏒 BUTS PAR TIERS-TEMPS NHL + KHL dans les critères (onglet Buts, Antoine 06/11) : les archives n'ont QUE le score final (f {h,a}, m[4]) → ajouter les scores par période (ESPN linescores NHL, event_v2 khl.ru) au robot + rattrapage, puis critères par tiers = marchés du book montrés par Antoine (captures Omsk / CSKA) : tiers avec le plus de buts (1er / 2e / 3e / plusieurs), résultat du tiers 1N2, équipe qui marque le 1er but du tiers (ou aucun), nombre de buts du tiers +/− 1,5, les deux marquent dans le tiers, handicap ±0,5, vainqueur remboursé si nul, double chance. SONDES 06/11 : NHL ESPN scoreboard competitors[].linescores [{value, period 1/2/3}] ✅ ; KHL event_v2 : goals[] {time s, score « 5:0 », period} + matchs passés avec scores {first_period « 0:3 », second_period, third_period, overtime, bullitt} ✅ ; event_v2 3001039 coupé : worker corrigé le 06/11. events_v2 (liste LÉGÈRE, 16 par page, stage 407 = saison en cours) a AUSSI scores {first_period, second_period, third_period, overtime, bullitt} + score ✅ → archivage KHL rapide sans fiche lourde (sauf « 1er but du tiers » = goals[] de event_v2). FAIT 06/11 : 1) NHL tiers 5 saisons (≈ 98 %), 2) archive KHL 5 saisons (3 652 matchs, robot khl.yml chaque matin), 3) onglet ⏱️ Tiers-temps des critères (20261106m, NHL + KHL ; KHL via 🔎 Critères). « 1er but du tiers » FAIT (20261106v : NHL plays ESPN + déduction ; KHL déduction seule, cas 1-1 non comptés) ; KHL dans les pépites de la Loi des séries FAIT (20261106u) ; fiche équipe KHL : critères FAITS (20261106n). ⚠️ Compétitions → KHL → Individuel = « Statistiques joueurs KHL indisponibles » (capture 06/11) : players_v2 / event_v2 khl.ru rendus COUPÉS par webcaster et gardés en cache → worker CORRIGÉ le 06/11 (JSON incomplet jamais gardé, 2e essai) : à revérifier par Antoine.
-- 📊 Classement NHL Global / Domicile / Extérieur : FAIT (20261108d, archives) — à confirmer à l'écran par Antoine.
+- 📊 Classement NHL Global / Domicile / Extérieur : FAIT (20261108e, archives) — à confirmer à l'écran par Antoine.
 - 🏁 « Jouable en Cockpit ? » JOUEURS NHL / NBA / NFL : FAIT (20261107b, usClsJHtml ; vérifié archives NHL pointeur 🏠 : McDavid / Draisaitl / Pastrnak pire 2, Zacha 5) — à confirmer à l'écran par Antoine.
 - Cédric : toucher 🤍 sur Portugal. Worker : budget `_lourd` 4 → 2 proposé.
 
