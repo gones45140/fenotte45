@@ -87492,8 +87492,9 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
 (function () {
   var IXU = 'https://raw.githubusercontent.com/gones45140/gones45-archives/main/loi/equipes.json';
   var M = { ix: null, en: 0, lg: '', h: '', a: '', on: 0 };
-  try { var c0 = JSON.parse(localStorage.getItem('g45cjm1') || 'null'); if (c0) { M.lg = c0.lg || ''; M.h = c0.h || ''; M.a = c0.a || ''; } } catch (e) {}
-  var garder = function () { try { localStorage.setItem('g45cjm1', JSON.stringify({ lg: M.lg, h: M.h, a: M.a })); } catch (e) {} };
+  try { var c0 = JSON.parse(localStorage.getItem('g45cjm1') || 'null'); if (c0) { M.lg = c0.lg || ''; M.h = c0.h || ''; M.a = c0.a || ''; M.c = c0.c || ['', '', '']; M.pk = c0.pk == null ? -1 : c0.pk; } } catch (e) {}
+  M.c = M.c || ['', '', '']; if (M.pk == null) M.pk = -1; M.r = {};   /* 20261108l */
+  var garder = function () { try { localStorage.setItem('g45cjm1', JSON.stringify({ lg: M.lg, h: M.h, a: M.a, c: M.c, pk: M.pk })); } catch (e) {} };
   var SPI = { soccer: '⚽', hockey: '🏒', basketball: '🏀', football: '🏈', baseball: '⚾', rugby: '🏉', 'rugby-league': '🏉' };
   var esc = function (t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
   var SEL = 'width:100%;box-sizing:border-box;font-size:15px;font-weight:800;padding:9px;border-radius:10px;background:#141c33;color:#fff;border:1px solid #2a3a63;';
@@ -87518,6 +87519,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     var champ = function (k, ic, ph) { var x = x2(M[k]); return '<div style="position:relative;min-width:0;"><input id="g45-cjm-i' + k + '" autocomplete="off" value="' + esc(x ? x[4] : '') + '" placeholder="' + ic + ' ' + ph + '" oninput="g45CjmCherche(\'' + k + '\',this.value)" onfocus="this.select()" style="' + IN + '"><div id="g45-cjm-s' + k + '"></div></div>'; };
     h += '<div style="font-size:14px;font-weight:800;margin:10px 0 4px;">2. Le match — tape le nom</div><div style="display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:6px;align-items:start;">'
       + champ('h', '🏠', 'domicile') + '<span style="color:#c9d3ee;font-weight:800;padding-top:10px;">vs</span>' + champ('a', '✈️', 'extérieur') + '</div>';
+    if (M.h && M.a && x2(M.h) && x2(M.a)) h += '<div id="g45-cjm-1n2">' + t1n2Html() + '</div>';   /* 20261108l */
     if (M.h && M.a && x2(M.h) && x2(M.a)) {
       var b = function (k, t) { var on = M.on === k; return '<button onclick="g45CjmOnglet(' + k + ')" style="flex:1;border-radius:10px;padding:9px;font-size:15px;font-weight:800;cursor:pointer;color:#fff;border:1px solid ' + (on ? '#6d9dff' : '#2a3a63') + ';background:' + (on ? '#2a4a9a' : '#0b1226') + ';">' + t + '</button>'; };
       h += '<div style="font-size:14px;font-weight:800;margin:10px 0 4px;">3. Ton critère (même combiné pour les 2 équipes)</div>'
@@ -87547,6 +87549,96 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     panneau();
   }
   window.g45CjmSet = function (k, v) { M[k] = v; if (k === 'lg') { M.h = ''; M.a = ''; } M.on = k === 'a' ? 1 : 0; M.garde = 0; garder(); dessiner(); };
+  /* ═══ 20261108l — 📊 NOS STATS 1N2 (Antoine : « nous on estime à combien Toulouse et Strasbourg ? » → « et ça on peut pas le dire ? » →
+     maquette maquette_1n2.png « oui et mets le côté choisi, ici nul, en or ») : dès que les 2 équipes sont choisies, lecture DIRECTE des
+     archives gones45-archives (cotes/<foot|hockey|basket|football-us|baseball|rugby|rugby-xiii>/<ligue>/<saison>/equipes/<id>.json, saisons
+     « 2026-27 » ou « 2026 » essayées, 404 = absente, 5 plus récentes gardées). Domicile = équipe 🏠 à domicile seulement, extérieur = équipe ✈️
+     à l'extérieur seulement. Chaque % = mélange 10 derniers / 2 saisons / 5 saisons avec les POIDS de la calculatrice (_g45CjT.D().w) ;
+     P(1) = moyenne (victoires 🏠, défaites ✈️), P(N) = moyenne des nuls, P(2) = moyenne (victoires ✈️, défaites 🏠). Hockey : 1N2 sur 60 min
+     (m[6] prolongation / tirs au but = nul). Sports US : saison régulière + séries (m[5] ≥ 2) ; basket, baseball, NFL = 2 issues (pas de nul).
+     3 cases de cotes du book (M.c, gardées) → verdict ✅ / ❌ par issue (value = % × cote − 1), marge réelle et cotes sans marge quand toutes
+     les cotes sont là. Toucher une issue = la choisir (M.pk) → cadre OR. Toulouse – Strasbourg vérifié sur les archives : 37 / 27,5 / 35,5 %. ═══ */
+  var DIRS = { soccer: 'foot', hockey: 'hockey', basketball: 'basket', football: 'football-us', baseball: 'baseball', rugby: 'rugby', 'rugby-league': 'rugby-xiii' };
+  var AR0 = 'https://raw.githubusercontent.com/gones45140/gones45-archives/main/cotes/';
+  var sansNul = function (sp) { return sp === 'basketball' || sp === 'baseball' || sp === 'football'; };
+  function lignes(sp, lg, id, lieu) {
+    var y = new Date().getFullYear() + 1, C = [];
+    for (var a = y; a >= y - 7; a--) { C.push(a + '-' + String(a + 1).slice(2)); C.push(String(a)); }
+    var hr = Math.floor(Date.now() / 36e5);
+    return Promise.all(C.map(function (sa) {
+      return fetch(AR0 + DIRS[sp] + '/' + lg + '/' + sa + '/equipes/' + id + '.json?h=' + hr).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; })
+        .then(function (j) { return j && j.m ? { sa: sa, m: j.m } : null; });
+    })).then(function (L) {
+      L = L.filter(function (x) { return x && x.m.length; }).sort(function (a, b) { return parseInt(b.sa, 10) - parseInt(a.sa, 10); }).slice(0, 5);
+      var us = sp === 'hockey' || sp === 'basketball' || sp === 'football' || sp === 'baseball', R = [];
+      L.forEach(function (x, i) { x.m.forEach(function (m) {
+        if (m[3] !== lieu || !m[4] || m[4][0] == null || m[4][1] == null) return;
+        if (us && !(m[5] >= 2)) return;
+        var me = lieu === 'h' ? +m[4][0] : +m[4][1], ad = lieu === 'h' ? +m[4][1] : +m[4][0];
+        var r = (sp === 'hockey' && m[6]) || me === ad ? 'N' : me > ad ? 'V' : 'D';
+        R.push({ t: +m[0] || 0, s: i, r: r });
+      }); });
+      return R.sort(function (a, b) { return a.t - b.t; });
+    });
+  }
+  function melange(R, k) {
+    if (!R.length) return null;
+    var p = function (L) { return L.length ? 100 * L.filter(function (x) { return x.r === k; }).length / L.length : null; };
+    var v = [p(R.slice(-10)), p(R.filter(function (x) { return x.s < 2; })), p(R)];
+    var D0 = window._g45CjT && window._g45CjT.D ? window._g45CjT.D() : null, w = (D0 && D0.w) || [40, 35, 25], t = 0, n = 0;
+    v.forEach(function (x, i) { var wi = parseFloat(String(w[i]).replace(',', '.')); if (x != null && wi > 0) { t += x * wi; n += wi; } });
+    return n ? t / n : null;
+  }
+  function calc1n2(xh, xa) {
+    var k = M.lg + '|' + M.h + '|' + M.a;
+    if (M.r[k]) return M.r[k];
+    M.r[k] = { en: 1 };
+    Promise.all([lignes(xh[0], xh[1], xh[3], 'h'), lignes(xa[0], xa[1], xa[3], 'a')]).then(function (Q) {
+      var H = Q[0], A = Q[1];
+      if (!H.length || !A.length) { M.r[k] = { err: 1 }; } else {
+        var p1 = (melange(H, 'V') + melange(A, 'D')) / 2, pN = (melange(H, 'N') + melange(A, 'N')) / 2, p2 = (melange(A, 'V') + melange(H, 'D')) / 2;
+        M.r[k] = { H: H, A: A, p: sansNul(xh[0]) ? [p1, null, p2] : [p1, pN, p2], nH: H.length, nA: A.length };
+      }
+      var z = document.getElementById('g45-cjm-1n2'); if (z) z.innerHTML = t1n2Html();
+    }).catch(function () { M.r[k] = { err: 1 }; });
+    return M.r[k];
+  }
+  var frx = function (x, d) { return x == null || isNaN(x) ? '—' : String(Math.round(x * Math.pow(10, d || 0)) / Math.pow(10, d || 0)).replace('.', ','); };
+  var nbx = function (v) { var x = parseFloat(String(v == null ? '' : v).replace(',', '.')); return isNaN(x) ? null : x; };
+  function t1n2Html() {
+    var xh = x2(M.h), xa = x2(M.a); if (!xh || !xa) return '';
+    var r = calc1n2(xh, xa), sn = sansNul(xh[0]);
+    var h = '<div style="font-size:16px;font-weight:900;margin:12px 0 6px;">📊 Nos stats ' + (sn ? '(vainqueur)' : '1N2') + (xh[0] === 'hockey' ? ' — 60 min' : '') + '</div>';
+    if (r.en) return h + '<div style="font-size:14px;">⏳ Lecture des archives…</div>';
+    if (r.err) return h + '<div style="font-size:14px;color:#ffb13d;">Pas assez de matchs archivés pour ces 2 équipes.</div>';
+    var I = sn ? [0, 2] : [0, 1, 2], noms = [xh[4], 'Nul', xa[4]];
+    var cotes = I.map(function (i) { return nbx(M.c[i]); }), tous = cotes.every(function (c) { return c > 1; });
+    var so = tous ? cotes.reduce(function (a, c) { return a + 1 / c; }, 0) : null;
+    var col = 'display:grid;grid-template-columns:repeat(' + I.length + ',minmax(0,1fr));gap:6px;text-align:center;';
+    h += '<div style="' + col + '">' + I.map(function (i, j) {
+      var p = r.p[i], c = cotes[j], ev = (c > 1 && p != null) ? (p / 100 * c - 1) * 100 : null, on = M.pk === i;
+      return '<div onclick="g45CjmPick(' + i + ')" style="cursor:pointer;background:' + (on ? 'rgba(245,197,66,.16)' : '#141c33') + ';border:' + (on ? '2px solid #f5c542' : '1px solid #2a3a63') + ';border-radius:10px;padding:8px 4px;min-width:0;">'
+        + '<div style="font-size:14px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;' + (on ? 'color:#f5c542;' : '') + '">' + (i === 0 ? '🏠 ' : i === 2 ? '✈️ ' : '') + esc(noms[i]) + '</div>'
+        + '<div style="font-size:20px;font-weight:900;">' + frx(p) + ' %</div>'
+        + '<div style="font-size:15px;">cote <b style="color:#1ed760;">' + (p > 0 ? frx(100 / p, 2) : '—') + '</b></div>'
+        + (ev == null ? '' : '<div style="font-size:14px;font-weight:800;margin-top:3px;color:' + (ev > 0 ? '#1ed760' : '#ff8a8a') + ';">' + (ev > 0 ? '✅ +' : '❌ ') + frx(ev, 1) + ' %</div>') + '</div>';
+    }).join('') + '</div>';
+    h += '<div style="font-size:14px;font-weight:800;margin:10px 0 4px;">Cotes du book (facultatif)</div><div style="' + col + '">' + I.map(function (i) {
+      var on = M.pk === i;
+      return '<input id="g45-cjm-c' + i + '" value="' + esc(M.c[i]) + '" inputmode="decimal" placeholder="' + (i === 1 ? 'nul' : i === 0 ? '🏠' : '✈️') + '" oninput="g45CjmCote(' + i + ',this.value)" style="width:100%;box-sizing:border-box;font-size:17px;font-weight:900;text-align:center;padding:8px;border-radius:10px;background:#141c33;color:#fff;border:' + (on ? '2px solid #f5c542' : '1px solid #2a3a63') + ';">';
+    }).join('') + '</div><div id="g45-cjm-mg" style="font-size:14px;color:#c9d3ee;margin-top:6px;">' + (so ? 'Marge du book <b style="color:#fff;">' + frx((so - 1) * 100, 1) + ' %</b> · sans marge : ' + cotes.map(function (c) { return '<b style="color:#fff;">' + frx(c * so, 2) + '</b>'; }).join(' · ') : '') + '</div>'
+      + '<div style="font-size:13px;color:#c9d3ee;margin-top:6px;">Touche une issue pour la choisir (cadre or). ' + esc(xh[4]) + ' = moyenne (ses victoires à 🏠, défaites de ' + esc(xa[4]) + ' à ✈️) ; poids 10 derniers / 2 saisons / 5 saisons du bloc 🎯 Cote juste. ' + r.nH + ' et ' + r.nA + ' matchs lus.</div>';
+    return h;
+  }
+  function t1n2Maj(focus) {
+    var z = document.getElementById('g45-cjm-1n2'); if (!z) return;
+    var a = document.activeElement, fid = a && a.id && /^g45-cjm-c/.test(a.id) ? a.id : null, pos = null; try { if (fid) pos = a.selectionStart; } catch (e) {}
+    z.innerHTML = t1n2Html();
+    if (fid) { var f = document.getElementById(fid); if (f) { f.focus(); try { if (pos != null) f.setSelectionRange(pos, pos); } catch (e) {} } }
+  }
+  window.g45CjmCote = function (i, v) { M.c[i] = v; garder(); t1n2Maj(); };
+  window.g45CjmPick = function (i) { M.pk = M.pk === i ? -1 : i; garder(); t1n2Maj(); };
+  window._g45Cjm1n2 = { lignes: lignes, melange: melange, html: t1n2Html };   /* tests */
   /* 20261108i — recherche à la frappe */
   var sansAcc = function (t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); };
   function trouver(q) {
