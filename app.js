@@ -86787,7 +86787,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     var F = [['tous', 'Tous'], ['soccer', '⚽'], ['hockey', '🏒'], ['basketball', '🏀'], ['football', '🏈'], ['baseball', '⚾'], ['rugby', '🏉']];
     h += '<div>' + F.map(function (f) { var on = LOI.f === f[0]; return '<button onclick="g45LoiFiltre(\'' + f[0] + '\')" style="' + BTN + 'margin-top:6px;' + (on ? 'background:#2a4a9a;border-color:#6d9dff;' : '') + '">' + f[1] + '</button>'; }).join('') + '</div></div>';
     if (!D) return h + '<div style="' + CARTE + '">' + (LOI.enCours ? '⏳ Lecture de la liste du matin…' : '⚠️ Liste du matin pas encore disponible.') + '</div>';
-    var now = Date.now(), L = (D.L || []).filter(function (x) { return x.pire >= 3 && x.t > now - 15 * 60e3 &&   /* 20261105t : pire série 3 au moins */ (LOI.f === 'tous' || x.sp === LOI.f || (LOI.f === 'rugby' && x.sp === 'rugby-league')); })
+    var now = Date.now(), L = (D.L || []).filter(function (x) { return x.pire >= 3 && x.cours >= 3 && x.t > now - 15 * 60e3 &&   /* 20261105t : pire série 3 au moins ; 20261107p (capture Metz « 🔥 2/3 » : « j'avais dit à partir de 3 ») : 3 ratés de suite EN COURS au moins */ (LOI.f === 'tous' || x.sp === LOI.f || (LOI.f === 'rugby' && x.sp === 'rugby-league')); })
       .sort(function (a, b) { return (a.pire - a.cours) - (b.pire - b.cours) || a.t - b.t; });
     if (!L.length) return h + '<div style="' + CARTE + '">Aucune pépite pour l\'instant' + (LOI.f !== 'tous' ? ' dans ce sport' : '') + '.</div>';
     /* 20261105w (« Plzeň 2 fois » → « oui ça sera mieux, fais en sorte qu'il n'y ait pas trop un trou au milieu ») : UNE carte par équipe et par match
