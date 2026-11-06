@@ -87189,10 +87189,18 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   }
   var lieuI = function (x) { return x.lieu === 'dom' ? ' 🏠' : x.lieu === 'ext' ? ' ✈️' : ''; };
   var resH = function (x) { var c = x.r === 1 ? '#1ed760' : x.r === 0 ? '#ff6b6b' : '#c9d3ee'; return '<span style="font-weight:800;color:' + c + ';font-size:16px;white-space:nowrap;">' + (x.r === 1 ? '✅' : x.r === 0 ? '❌' : x.r === -1 ? '🚫' : '⏳') + ' ' + esc(x.sc || '') + '</span>'; };
+  /* 20261107r (capture : « manque heure, championnat, fond » → maquette loiL.png « oui ») : carte par pépite = logo de l'équipe en fond (couleur x.c
+     si gardée), bande sombre sous le texte, 🕒 heure (Paris) + 🏆 championnat sur la 2e ligne. */
   var ligne = function (x, date) {
-    return '<div style="display:flex;align-items:center;gap:8px;padding:7px 4px;border-bottom:1px solid #1c2747;font-size:14px;color:#fff;">'
-      + (date ? '<span style="color:#c9d3ee;font-size:13px;width:40px;flex:none;">' + esc(String(x.j || '').slice(8, 10) + '/' + String(x.j || '').slice(5, 7)) + '</span>' : '')
-      + '<span style="flex:1;min-width:0;"><b>' + (SPI[x.sp] || '') + ' ' + esc(x.eq) + '</b> <span style="color:#c9d3ee;font-size:13px;">' + (x.d ? 'vs ' : 'à ') + esc(x.adv) + '</span><br><span style="color:#c9d3ee;font-size:13px;">' + esc(x.lib) + lieuI(x) + ' · 🔥 ' + x.cours + ' / ' + x.pire + '</span></span>' + resH(x) + '</div>';
+    var col = /^[0-9a-f]{6}$/i.test(String(x.c || '')) ? '#' + x.c : '#2a3a63', hh = '';
+    try { hh = new Date(x.t).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris' }); } catch (e) {}
+    return '<div style="position:relative;overflow:hidden;border-radius:12px;margin:6px 0;background:linear-gradient(90deg,' + col + '55,#0b1226 70%);border:1px solid #2a3a63;color:#fff;">'
+      + (/^https:\/\//.test(x.logo || '') ? '<img src="' + esc(x.logo) + '" alt="" loading="lazy" onerror="this.remove()" style="position:absolute;right:-8px;top:50%;transform:translateY(-50%);width:92px;height:92px;object-fit:contain;opacity:.35;">' : '')
+      + '<div style="position:relative;display:flex;align-items:center;gap:8px;padding:9px 10px;">'
+      + '<div style="flex:1;min-width:0;background:rgba(0,0,0,.45);border-radius:8px;padding:5px 8px;"><div style="font-size:15px;"><b>' + (SPI[x.sp] || '') + ' ' + esc(x.eq) + '</b> <span style="color:#c9d3ee;font-size:13px;">' + (x.d ? 'vs ' : 'à ') + esc(x.adv) + '</span></div>'
+      + '<div style="font-size:13px;color:#c9d3ee;">' + (date ? '📅 ' + esc(String(x.j || '').slice(8, 10) + '/' + String(x.j || '').slice(5, 7)) + ' · ' : '') + (hh ? '🕒 ' + esc(hh) : '') + (x.ligue ? ' · 🏆 ' + esc(x.ligue) : '') + '</div>'
+      + '<div style="font-size:14px;">' + esc(x.lib) + lieuI(x) + ' · 🔥 ' + x.cours + ' / ' + x.pire + '</div></div>'
+      + '<span style="background:rgba(0,0,0,.45);border-radius:8px;padding:4px 8px;">' + resH(x) + '</span></div></div>';
   };
   function html() {
     charger();
