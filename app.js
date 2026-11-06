@@ -87191,7 +87191,8 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   var resH = function (x) { var c = x.r === 1 ? '#1ed760' : x.r === 0 ? '#ff6b6b' : '#c9d3ee'; return '<span style="font-weight:800;color:' + c + ';font-size:16px;white-space:nowrap;">' + (x.r === 1 ? '✅' : x.r === 0 ? '❌' : x.r === -1 ? '🚫' : '⏳') + ' ' + esc(x.sc || '') + '</span>'; };
   /* 20261107r (capture : « manque heure, championnat, fond » → maquette loiL.png « oui ») : carte par pépite = logo de l'équipe en fond (couleur x.c
      si gardée), bande sombre sous le texte, 🕒 heure (Paris) + 🏆 championnat sur la 2e ligne. */
-  var ligne = function (x, date) {
+  var ligne = function (G, date) {
+    var x = G[0];
     var col = /^[0-9a-f]{6}$/i.test(String(x.c || '')) ? '#' + x.c : '#2a3a63', hh = '';
     try { hh = new Date(x.t).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris' }); } catch (e) {}
     return '<div style="position:relative;overflow:hidden;border-radius:12px;margin:6px 0;background:linear-gradient(90deg,' + col + '55,#0b1226 70%);border:1px solid #2a3a63;color:#fff;">'
@@ -87199,9 +87200,12 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
       + '<div style="position:relative;display:flex;align-items:center;gap:8px;padding:9px 10px;">'
       + '<div class="g45lb-b" style="flex:0 1 auto;min-width:0;background:rgba(0,0,0,.45);border-radius:8px;padding:5px 8px;"><div style="font-size:15px;"><b>' + (SPI[x.sp] || '')   /* 20261107t (« le cache est un poil trop grand, il passe sur le logo ») : bande sombre à la taille du texte, le logo reste libre */ + ' ' + esc(x.eq) + '</b> <span style="color:#c9d3ee;font-size:13px;">' + (x.d ? 'vs ' : 'à ') + esc(x.adv) + '</span></div>'
       + '<div style="font-size:13px;color:#c9d3ee;">' + (date ? '📅 ' + esc(String(x.j || '').slice(8, 10) + '/' + String(x.j || '').slice(5, 7)) + ' · ' : '') + (hh ? '🕒 ' + esc(hh) : '') + (x.ligue ? ' · 🏆 ' + esc(x.ligue) : '') + '</div>'
-      + '<div style="font-size:14px;">' + esc(x.lib) + lieuI(x) + ' · 🔥 ' + x.cours + ' / ' + x.pire + '</div></div>'
-      + '<span style="flex:1;"></span><span style="background:rgba(0,0,0,.8);border-radius:8px;padding:4px 8px;">' + resH(x) + '</span></div></div>';
+      /* 20261107y (« Venezia en double » → maquette loiG.png « oui ») : UNE carte par match ; chaque pari sur sa ligne avec son ✅ / ❌ / ⏳ ; score à droite */
+      + (G || [x]).map(function (y, i) { var ic = y.r === 1 ? '<b style="color:#1ed760;">✅</b>' : y.r === 0 ? '<b style="color:#ff6b6b;">❌</b>' : y.r === -1 ? '🚫' : '⏳';
+          return '<div style="font-size:14px;display:flex;justify-content:space-between;gap:10px;' + (i === 0 && (G || []).length > 1 ? 'border-top:1px solid #2a3a63;margin-top:4px;padding-top:4px;' : '') + '"><span>' + esc(y.lib) + lieuI(y) + ' · 🔥 ' + y.cours + ' / ' + y.pire + '</span>' + ic + '</div>'; }).join('') + '</div>'
+      + '<span style="flex:1;"></span><span style="background:rgba(0,0,0,.8);border-radius:8px;padding:4px 8px;font-weight:900;font-size:16px;white-space:nowrap;">' + (function () { var z = (G || [x]).filter(function (y) { return y.sc; })[0]; return z ? esc(z.sc) : (G || [x]).every(function (y) { return y.r === -1; }) ? '🚫' : '⏳'; })() + '</span></div></div>';
   };
+  var grouper = function (A) { var o = [], ix = {}; A.forEach(function (x) { var k = x.j + '|' + x.eid + '|' + x.id; if (ix[k] == null) { ix[k] = o.length; o.push([]); } o[ix[k]].push(x); }); return o; };
   function html() {
     charger();
     var h = '<div style="background:rgba(10,14,24,.93);border:1px solid #1c2747;border-radius:14px;padding:12px;color:#fff;">'
@@ -87241,9 +87245,9 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     h += '</div><div style="font-size:13px;color:#c9d3ee;margin:8px 0;">Chaque jour : ✅ gagnées / pépites jouées. Vert = plus de la moitié gagnées, jaune = moitié, rouge = moins, ⏳ = pas encore joué. Touche un jour pour voir ses pépites.</div>';
     var XJ = (PJ[M.j] || []).slice().sort(function (a, b) { return a.t - b.t; });   /* 20261107u (« c'est le désordre niveau horaire ») : du plus tôt au plus tard */
     if (XJ.length && !M.tout) { var dj = new Date(M.j + 'T12:00:00')   /* 20261107x (« doublon ? ») : historique ouvert → la liste du jour n'est pas répétée au-dessus */, gj = XJ.filter(function (x) { return x.r === 1; }).length, nj = XJ.filter(function (x) { return x.r === 1 || x.r === 0; }).length;
-      h += '<div style="font-size:15px;font-weight:800;margin:6px 0 4px;">' + dj.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }) + (nj ? ' · ' + gj + '/' + nj + ' ✅' : '') + '</div><div class="g45lb-g">' + XJ.map(function (x) { return ligne(x, false); }).join('') + '</div>'; }   /* 20261107s : 2 colonnes sur PC */
+      h += '<div style="font-size:15px;font-weight:800;margin:6px 0 4px;">' + dj.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }) + (nj ? ' · ' + gj + '/' + nj + ' ✅' : '') + '</div><div class="g45lb-g">' + grouper(XJ).map(function (g) { return ligne(g, false); }).join('') + '</div>'; }   /* 20261107s : 2 colonnes sur PC */
     h += '<button onclick="g45LoiBilTout()" style="margin-top:12px;width:100%;padding:10px;border-radius:10px;border:1px solid #2a3a63;background:#0b1226;color:#fff;font-size:15px;font-weight:800;cursor:pointer;">' + (M.tout ? '▲ Fermer l\'historique' : '📜 Tout voir (' + L.length + ' pépites)') + '</button>';
-    if (M.tout) h += '<div class="g45lb-g" style="margin-top:6px;">' + L.slice().sort(function (a, b) { return a.j < b.j ? 1 : a.j > b.j ? -1 : a.t - b.t; }).map(function (x) { return ligne(x, true); }).join('') + '</div>';
+    if (M.tout) h += '<div class="g45lb-g" style="margin-top:6px;">' + grouper(L.slice().sort(function (a, b) { return a.j < b.j ? 1 : a.j > b.j ? -1 : a.t - b.t; })).map(function (g) { return ligne(g, true); }).join('') + '</div>';
     return h + '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">✅ = le pari a gagné (la série s\'est arrêtée) · ❌ = encore raté · ⏳ = pas encore joué · 🚫 = match annulé / reporté.</div></div>';
   }
   /* 20261107s (capture PC : cartes étirées sur toute la largeur, grand vide au milieu) : 2 colonnes à partir de 900 px */
