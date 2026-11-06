@@ -87497,12 +87497,13 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     if (!M.ix) return h + '<div style="font-size:14px;">⏳ Lecture des championnats…</div></div>';
     h += '<div style="font-size:14px;font-weight:800;margin:4px 0;">1. Championnat</div><select onchange="g45CjmSet(\'lg\',this.value)" style="' + SEL + '"><option value="">— choisis —</option>'
       + ligues().map(function (l) { return '<option value="' + esc(l[0]) + '"' + (l[0] === M.lg ? ' selected' : '') + '>' + esc(l[1]) + '</option>'; }).join('') + '</select>';
-    if (M.lg) {
-      var E = equipes(), opt = function (v) { return '<option value="">— choisis —</option>' + E.map(function (x) { return '<option value="' + esc(x[3]) + '"' + (String(x[3]) === String(v) ? ' selected' : '') + '>' + esc(x[4]) + '</option>'; }).join(''); };
-      h += '<div style="font-size:14px;font-weight:800;margin:10px 0 4px;">2. Le match</div><div style="display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:6px;align-items:center;">'
-        + '<select onchange="g45CjmSet(\'h\',this.value)" style="' + SEL + '">' + opt(M.h).replace('— choisis —', '🏠 domicile') + '</select><span style="color:#c9d3ee;font-weight:800;">vs</span>'
-        + '<select onchange="g45CjmSet(\'a\',this.value)" style="' + SEL + '">' + opt(M.a).replace('— choisis —', '✈️ extérieur') + '</select></div>';
-    }
+    /* 20261108i — 2. Le match : on TAPE le nom (Antoine : « je pensais que ça recherchait l'équipe dès qu'on commence à l'écrire ») →
+       liste des équipes qui correspondent (championnat choisi d'abord, puis tous les autres) ; toucher une équipe d'un autre championnat
+       change le championnat tout seul. Pas de redessin pendant la frappe (le clavier ne se ferme pas) : seule la liste #g45-cjm-s… change. */
+    var IN = 'width:100%;box-sizing:border-box;font-size:16px;font-weight:800;padding:9px;border-radius:10px;background:#141c33;color:#fff;border:1px solid #2a3a63;';
+    var champ = function (k, ic, ph) { var x = x2(M[k]); return '<div style="position:relative;min-width:0;"><input id="g45-cjm-i' + k + '" autocomplete="off" value="' + esc(x ? x[4] : '') + '" placeholder="' + ic + ' ' + ph + '" oninput="g45CjmCherche(\'' + k + '\',this.value)" onfocus="this.select()" style="' + IN + '"><div id="g45-cjm-s' + k + '"></div></div>'; };
+    h += '<div style="font-size:14px;font-weight:800;margin:10px 0 4px;">2. Le match — tape le nom</div><div style="display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:6px;align-items:start;">'
+      + champ('h', '🏠', 'domicile') + '<span style="color:#c9d3ee;font-weight:800;padding-top:10px;">vs</span>' + champ('a', '✈️', 'extérieur') + '</div>';
     if (M.h && M.a && x2(M.h) && x2(M.a)) {
       var b = function (k, t) { var on = M.on === k; return '<button onclick="g45CjmOnglet(' + k + ')" style="flex:1;border-radius:10px;padding:9px;font-size:15px;font-weight:800;cursor:pointer;color:#fff;border:1px solid ' + (on ? '#6d9dff' : '#2a3a63') + ';background:' + (on ? '#2a4a9a' : '#0b1226') + ';">' + t + '</button>'; };
       h += '<div style="font-size:14px;font-weight:800;margin:10px 0 4px;">3. Ton critère (même combiné pour les 2 équipes)</div>'
@@ -87531,6 +87532,28 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     panneau();
   }
   window.g45CjmSet = function (k, v) { M[k] = v; if (k === 'lg') { M.h = ''; M.a = ''; } M.on = k === 'a' ? 1 : 0; M.garde = 0; garder(); dessiner(); };
+  /* 20261108i — recherche à la frappe */
+  var sansAcc = function (t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); };
+  function trouver(q) {
+    q = sansAcc(q).trim(); if (q.length < 2 || !M.ix) return [];
+    var R = M.ix.filter(function (x) { return sansAcc(x[4]).indexOf(q) >= 0; });
+    R.sort(function (a, b) { var ka = (a[0] + '|' + a[1] === M.lg ? 0 : 1) + (sansAcc(a[4]).indexOf(q) === 0 ? 0 : 0.5), kb = (b[0] + '|' + b[1] === M.lg ? 0 : 1) + (sansAcc(b[4]).indexOf(q) === 0 ? 0 : 0.5); return ka - kb || a[4].localeCompare(b[4], 'fr'); });
+    return R.slice(0, 8);
+  }
+  window.g45CjmCherche = function (k, v) {
+    var z = document.getElementById('g45-cjm-s' + k); if (!z) return;
+    var R = trouver(v);
+    if (!R.length) { z.innerHTML = String(v || '').trim().length >= 2 ? '<div style="font-size:14px;color:#c9d3ee;padding:8px 4px;">Aucune équipe trouvée.</div>' : ''; return; }
+    z.innerHTML = '<div style="background:#1b2547;border:1px solid #3a4f8a;border-radius:10px;margin-top:4px;overflow:hidden;">' + R.map(function (x, n) {
+      var lg = M.ix.filter(function (y) { return y[0] === x[0] && y[1] === x[1]; })[0];
+      return '<div onclick="g45CjmPrendre(\'' + k + '\',\'' + esc(x[0] + '|' + x[1]) + '\',\'' + esc(x[3]) + '\')" style="cursor:pointer;padding:9px;font-size:15px;font-weight:800;' + (n ? 'border-top:1px solid #2a3a63;' : '') + '">'
+        + (SPI[x[0]] || '') + ' ' + esc(x[4]) + ' <span style="color:#9fb0d8;font-weight:600;font-size:13px;">· ' + esc(lg && lg[2] || x[1]) + '</span></div>';
+    }).join('') + '</div>';
+  };
+  window.g45CjmPrendre = function (k, lg, id) {
+    if (lg !== M.lg) { M.lg = lg; var o = k === 'h' ? 'a' : 'h'; if (!x2(M[o])) M[o] = ''; }
+    M[k] = id; M.on = k === 'a' ? 1 : 0; M.garde = 0; garder(); dessiner();
+  };
   window.g45CjmOnglet = function (k) { M.on = k ? 1 : 0; M.garde = 1; dessiner(); };
   /* remplissage automatique : l'équipe affichée dans le panneau → Équipe 1 (domicile) ou 2 (extérieur) */
   window._g45CjAuto = function (o) {
