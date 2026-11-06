@@ -87277,11 +87277,30 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     var ok = function (c) { return c > 1 ? c : null; }, m;
     if (x.k === 'v' || x.k === 'vq') return ok(ml[side]) ? { c: ml[side] } : null;
     if (x.k === 'vn') return ok(ml[side]) && ok(ml.d) ? { c: 1 / (1 / ml[side] + 1 / ml.d), e: 1 } : null;
-    if ((m = String(x.k).match(/^([ou])(\d)(\d)$/))) { var L = +(m[2] + '.' + m[3]), T = fi.tot || {}; return T.L === L && ok(T[m[1]]) ? { c: T[m[1]] } : null; }
+    if ((m = String(x.k).match(/^([ou])(\d)(\d)$/))) { var L = +(m[2] + '.' + m[3]), T = fi.tot || {}; if (T.L === L && ok(T[m[1]])) return { c: T[m[1]] }; return estTot(T, m[1], L); }
+    if (x.k === 'v60') return est60(ml[side], ml[side === 'h' ? 'a' : 'h']);
     if (x.k === 'btts') return fi.bts && ok(fi.bts.o) ? { c: fi.bts.o } : null;
     if (x.k === 'marque') { var Q = fi.teq && fi.teq[side]; if (!Q || typeof window._g45AgTeqSep !== 'function') return null; var S0 = window._g45AgTeqSep(Q)[0.5]; return S0 && ok(S0.ov) ? { c: S0.ov } : null; }
     return null;
   }
+  /* 20261108n (Antoine : « soit on calcule nous-mêmes soit on enlève les sans cote ? » → « calcul ≈ » ; « et cote inférieure à 1,5 on enlève ») :
+     ligne de buts absente → estimée depuis la ligne principale du book (Poisson : nombre de buts attendu λ tel que P(plus de L) = part sans marge
+     de la cote « plus », puis P de la ligne voulue, même marge) ; victoire en 60 min (hockey) ≈ vainqueur sans marge − la moitié des
+     prolongations (23 % des matchs NHL / KHL, archives). Les pépites à cote < 1,50 (vraie ou ≈) sont retirées du bilan et de la liste. */
+  function poisPlus(lam, L) { var k = Math.floor(L), t = Math.exp(-lam), c = t; for (var i = 1; i <= k; i++) { t *= lam / i; c += t; } return 1 - c; }
+  function estTot(T, sens, L2) {
+    if (!(T && T.L > 0 && T.o > 1 && T.u > 1)) return null;
+    var so = 1 / T.o + 1 / T.u, po = (1 / T.o) / so, a = 0.05, b = 15;
+    for (var i = 0; i < 60; i++) { var mid = (a + b) / 2; if (poisPlus(mid, T.L) < po) a = mid; else b = mid; }
+    var p = poisPlus((a + b) / 2, L2); if (sens === 'u') p = 1 - p; if (!(p > 0.01 && p < 0.99)) return null;
+    return { c: 1 / (p * so), e: 1 };
+  }
+  function est60(c, cAdv) {
+    if (!(c > 1 && cAdv > 1)) return null;
+    var so = 1 / c + 1 / cAdv, p = (1 / c) / so - 0.23 / 2; if (!(p > 0.02)) return null;
+    return { c: 1 / (p * so), e: 1 };
+  }
+  window._g45LoiEst = { estTot: estTot, est60: est60 };   /* tests */
   function chargerCotes(L) {
     var A = L.filter(function (x) { return x.eid && DIRC[x.sp] && FI[x.eid] === undefined; }); if (!A.length || MCen) return;
     MCen = 1;
@@ -87321,18 +87340,18 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     h += '<div style="font-size:14px;font-weight:800;margin:4px 0 4px;">Sport</div><div style="display:flex;gap:6px;flex-wrap:wrap;">' + Object.keys(SPF).map(function (k) { return bF(M.fs === k, 'g45LoiBilF(\'s\',\'' + k + '\')', SPF[k]); }).join('') + '</div>'
       + '<div style="font-size:14px;font-weight:800;margin:10px 0 4px;">Ratés de suite en cours</div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">' + [0, 3, 4, 5, 6, 7].map(function (k) { return bF(M.fc === k, 'g45LoiBilF(\'c\',' + k + ')', k ? (k === 7 ? '7 et +' : String(k)) : 'Tous'); }).join('') + '</div>';
     var L = (M.d.L || []).filter(function (x) { return (M.fs === 'tous' || x.sp === M.fs || (M.fs === 'rugby' && x.sp === 'rugby-league')) && (!M.fc || (M.fc === 7 ? x.cours >= 7 : x.cours === M.fc)); }).sort(function (a, b) { return b.t - a.t; });
+    chargerCotes(L); L = L.filter(function (x) { var q = coteDe(x); return !(q && q.c < 1.5); });   /* 20261108n : cote < 1,50 retirée */
     if (!L.length && ((M.d.L || []).length)) return h + '<div style="font-size:14px;">Aucune pépite avec ces filtres.</div></div>';
     if (!L.length) return h + '<div style="font-size:14px;">Aucune pépite gardée pour l\'instant : le robot commence l\'historique chaque matin, le bilan se remplit dès les premiers résultats.</div></div>';
     var J = L.filter(function (x) { return x.r === 1 || x.r === 0; }), G = J.filter(function (x) { return x.r === 1; }).length, P = J.length - G;
     var tu = function (lb, v, bg, bd, col) { return '<div style="flex:1;min-width:105px;background:' + bg + ';border:1px solid ' + bd + ';border-radius:10px;padding:8px;text-align:center;"><div style="font-size:13px;color:#c9d3ee;">' + lb + '</div><div style="font-size:22px;font-weight:900;color:' + col + ';">' + v + '</div></div>'; };
     h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">' + tu('Pépites jouées', J.length, '#0b1226', '#2a3a63', '#fff')
       + tu('Série stoppée ✅', G + (J.length ? ' · ' + Math.round(100 * G / J.length) + ' %' : ''), 'rgba(30,215,96,.12)', '#1ed760', '#1ed760') + tu('Série continue ❌', P, 'rgba(255,69,69,.12)', '#ff4545', '#ff6b6b') + '</div>';
-    chargerCotes(L);   /* 20261108m */
     var JC = J.filter(function (x) { return coteDe(x); }), gain = JC.reduce(function (a, x) { return a + (x.r === 1 ? 10 * (coteDe(x).c - 1) : -10); }, 0);
     if (JC.length) h += '<div style="background:' + (gain >= 0 ? 'rgba(30,215,96,.12)' : 'rgba(255,69,69,.12)') + ';border:1px solid ' + (gain >= 0 ? '#1ed760' : '#ff4545') + ';border-radius:10px;padding:8px;margin-bottom:10px;text-align:center;">'
       + '<div style="font-size:14px;color:#c9d3ee;">💶 Joué à 10 € chaque pépite avec cote (' + JC.length + ' sur ' + J.length + ')</div>'
       + '<div style="font-size:22px;font-weight:900;color:' + (gain >= 0 ? '#1ed760' : '#ff6b6b') + ';">' + (gain >= 0 ? '+' : '−') + frC(Math.abs(gain)).replace(',00', '') + ' € · ' + (gain >= 0 ? '+' : '−') + Math.round(Math.abs(gain) / (10 * JC.length) * 100) + ' %</div>'
-      + '<div style="font-size:13px;color:#c9d3ee;">Cote d\'avant-match gardée par nos archives (≈ = victoire ou nul calculée depuis le 1N2).</div></div>';
+      + '<div style="font-size:13px;color:#c9d3ee;">Cote d\'avant-match gardée par nos archives (≈ = estimée : victoire ou nul depuis le 1N2, autre ligne de buts depuis la ligne du book, 60 min depuis le vainqueur). Pépites à cote sous 1,50 retirées.</div></div>';
     var S = {}; J.forEach(function (x) { var k = SPI[x.sp] || '?'; S[k] = S[k] || [0, 0]; S[k][1]++; if (x.r === 1) S[k][0]++; });
     h += '<div style="display:flex;gap:6px;flex-wrap:wrap;font-size:14px;font-weight:700;margin-bottom:12px;">' + Object.keys(S).map(function (k) { return '<span style="background:#0b1226;border:1px solid #2a3a63;border-radius:8px;padding:3px 8px;">' + k + ' ' + S[k][0] + '/' + S[k][1] + ' · ' + Math.round(100 * S[k][0] / S[k][1]) + ' %</span>'; }).join('') + '</div>';
     /* calendrier */
