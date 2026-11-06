@@ -158,6 +158,7 @@ PIÈGES À NE JAMAIS OUBLIER :
 - 📊 Classement NHL Global / Domicile / Extérieur : FAIT (20261108f, archives) — à confirmer à l'écran par Antoine.
 - 🏁 « Jouable en Cockpit ? » JOUEURS NHL / NBA / NFL : FAIT (20261107b, usClsJHtml ; vérifié archives NHL pointeur 🏠 : McDavid / Draisaitl / Pastrnak pire 2, Zacha 5) — à confirmer à l'écran par Antoine.
 - 🎯 Calculatrice Cote juste : FAIT (20261108f bloc + 20261108g match : championnat, 🏠 / ✈️, panneau de critères complet, marge du book) — à confirmer à l'écran par Antoine.
+- 🎮 MODE SURVIVOR (Antoine, 08/11 ; « autre jeu, rien à voir avec le Mondial ») : chaque journée 1 équipe qui doit GAGNER, nul (foot) = éliminé, équipe jamais reprise, UNE seule vie par compétition, dernier survivant gagne ; joué par un DISCORD (beaucoup de joueurs) → classement partagé (Social / Supabase déjà en place), choix verrouillé au coup d'envoi, résultats lus automatiquement. Championnat(s) : EN ATTENTE (Antoine). Maquette avant code.
 - Cédric : toucher 🤍 sur Portugal. Worker : budget `_lourd` 4 → 2 proposé.
 
 ## 8. Façon de travailler en session cloud
