@@ -33,7 +33,10 @@ self.addEventListener('fetch', function(event){
       var _cn = _lg ? 'g45-logos' : 'g45-images', _max = _lg ? 1500 : 200;
       event.respondWith(caches.open(_cn).then(function (c) {
         return c.match(req.url).then(function (hit) {
-          if (hit) return hit;
+          /* 20261108q (cartes partagées « LAL / POR », « KIR / SAN » en lettres sur téléphone) : un logo mis en cache par une <img>
+             est OPAQUE ; le rendre à une lecture « cors » (carte partagée : fetch → blob → image intégrée) = erreur réseau → plus de logo.
+             Lecture cors + copie opaque → on va chercher une vraie copie cors (qui remplace l'opaque, valable pour les deux). */
+          if (hit && !(hit.type === 'opaque' && req.mode === 'cors')) return hit;
           return fetch(req).then(function (r) {
             if (r && (r.ok || r.type === 'opaque')) {
               var cp = r.clone();

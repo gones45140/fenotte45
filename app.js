@@ -5012,8 +5012,11 @@ async function _g45CarteLogoData(url){
   if (_g45CarteLogoCache[url] !== undefined) return _g45CarteLogoCache[url];
   var out = '';
   try {
-    var r = await fetch(url, { mode: 'cors' });
-    if (r.ok) {
+    /* 20261108q (cartes partagées en lettres sur téléphone : logo gardé OPAQUE par le service worker → lecture cors refusée) : 2e essai
+       avec une adresse un peu différente (?g45c=1) → pas trouvée dans le cache du téléphone → vraie lecture cors chez ESPN. */
+    var r = null; try { r = await fetch(url, { mode: 'cors' }); } catch (e1) { r = null; }
+    if (!r || !r.ok) { try { r = await fetch(url + (url.indexOf('?') < 0 ? '?' : '&') + 'g45c=1', { mode: 'cors', cache: 'reload' }); } catch (e2) { r = null; } }
+    if (r && r.ok) {
       var b = await r.blob();
       if (b.size && b.size < 500000) {
         out = await new Promise(function (res) {
