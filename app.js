@@ -81843,7 +81843,7 @@ window._g45AgJouUs = async function (nowTs) {
    (son propre observateur) : cachée par le CSS hors de « ⭐ Sélection du jour ».
    Mémoire : localStorage g45tr_vue (bet / perso / but / clv) et g45tr_sous (sel / his / gra) ; par défaut bet + sel. */
 (function () {
-  var VUES = { bet: 1, perso: 1, but: 1, clv: 1, ck: 1 }, SOUS = { sel: 1, his: 1, gra: 1, bil: 1 };   /* 20261023y : bil = 📊 Bilans (gones) */
+  var VUES = { bet: 1, perso: 1, but: 1, clv: 1, ck: 1, loi: 1 }, SOUS = { sel: 1, his: 1, gra: 1, bil: 1 };   /* 20261023y : bil = 📊 Bilans (gones) */
   var lire = function (k, ok, def) { try { var v = localStorage.getItem(k); return ok[v] ? v : def; } catch (e) { return def; } };
   var ecrire = function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} };
   var ckIci = function () { try { return !(typeof window._g45CkActif === 'function' && window._g45CkActif()); } catch (e) { return true; } };   /* 20261104k : Cockpit BET45 dans le monde du Cockpit quand il est activé */
@@ -81885,7 +81885,7 @@ window._g45AgJouUs = async function (nowTs) {
         + ';background:' + (on ? '#1a2235' : 'rgba(11,16,29,.92)') + ';">' + lbl + '</button>';
     };
     return '<div id="g45tr-nav"><div class="g45tr-n1">' + b1('bet', '📒 Tendances BET45') + b1('perso', '🔍 Tendances perso')
-      + b1('but', '⚽ Tendances buteurs') + b1('clv', '📏 CLV') + (ckIci() ? b1('ck', '🏁 Cockpit d\'Antoine') : '') + '</div>'   /* 20261028p */
+      + b1('but', '⚽ Tendances buteurs') + b1('clv', '📏 CLV') + (ckIci() ? b1('ck', '🏁 Cockpit d\'Antoine') : '') + b1('loi', '📊 Loi des séries') + '</div>'   /* 20261107q */   /* 20261028p */
       + (v === 'bet' ? '<div class="g45tr-n2' + (bilOk() ? ' g45tr-n2b' : '') + '">' + b2('sel', '⭐ Sélection du jour') + b2('his', '📅 Historique') + b2('gra', '📈 Graphique / Stats') + (bilOk() ? b2('bil', '📊 Bilans') : '') + '</div>' : '')
       + '</div>';
   };
@@ -81930,7 +81930,8 @@ window._g45AgJouUs = async function (nowTs) {
     if (k === 'perso') { r = _load.apply(this, arguments); if (!(window._g45TnPerso && window._g45TnPerso(el))) rangerPerso(el); }   /* 20261020i : 🎾 Tennis */
     else if (k === 'but') r = _but();
     else if (k === 'clv') r = _clv();
-    else if (k === 'ck') { var ch = ''; try { ch = window._g45CkHtml(); } catch (e) {} el.innerHTML = nav() + ch; }   /* 20261028p : 🏁 Cockpit BET45 */
+    else if (k === 'ck') { var ch = ''; try { ch = window._g45CkHtml(); } catch (e) {} el.innerHTML = nav() + ch; }
+    else if (k === 'loi') { var lh = ''; try { lh = window._g45LoiBilHtml(); } catch (e) {} el.innerHTML = nav() + '<div id="g45-loibil">' + lh + '</div>'; }   /* 20261107q : bilan + calendrier des pépites */   /* 20261028p : 🏁 Cockpit BET45 */
     else if (k === 'bet-sel') {
       ecrire('g45tr_sel_ferme', '0');   /* ouverte d'office ici */
       var s = ''; try { s = window._g45TrSelHtml(); } catch (e) {}
@@ -87167,4 +87168,74 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     chercher(u).then(function (o) { delete EN[u.n]; if (!o) return; o.t = Date.now(); try { localStorage.setItem(cle, JSON.stringify(o)); } catch (e) {} if (!o.vide) poser(o); }).catch(function () { delete EN[u.n]; });
   };
   window._g45AgeT = { html: html, ageDe: ageDe };   /* tests */
+})();
+
+/* ═══ 20261107q — 📊 LOI DES SÉRIES : BILAN + CALENDRIER DANS TENDANCES (Antoine : « balancer dans Tendances et archiver, je veux contrôler un
+   truc » → maquettes loibil.png + loical.png « oui » + « fais un calendrier »). Données : loi/historique.json (gones45-archives, robot
+   loi_series.mjs chaque matin : chaque pépite gardée, résultat relu dans les archives : r 1 = gagné (série stoppée), 0 = raté, -1 = annulé,
+   null = pas joué / pas encore relu). Onglet « 📊 Loi des séries » des Tendances : tuiles (pépites / ✅ / ❌), % par sport, calendrier du mois
+   (une case par jour : gagnées / pépites, vert si plus de la moitié, jaune moitié, rouge moins, ⏳ pas joué), liste du jour touché,
+   « Tout voir » = historique complet. Lecture 30 min (mémoire). ═══ */
+(function () {
+  var URL = 'https://raw.githubusercontent.com/gones45140/gones45-archives/main/loi/historique.json';
+  var M = { d: null, t: 0, en: 0, mois: 0, j: '', tout: 0 };
+  var SPI = { soccer: '⚽', hockey: '🏒', basketball: '🏀', football: '🏈', baseball: '⚾', rugby: '🏉', 'rugby-league': '🏉' };
+  var esc = function (t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+  var redessiner = function () { var z = document.getElementById('g45-loibil'); if (z) z.innerHTML = html(); };
+  function charger() {
+    if (M.en || (M.d && Date.now() - M.t < 30 * 60e3)) return; M.en = 1;
+    fetch(URL + '?t=' + Math.floor(Date.now() / 600000)).then(function (r) { return r.ok ? r.json() : (r.status === 404 ? { L: [] } : null); })
+      .then(function (j) { M.en = 0; if (j) { M.d = j; M.t = Date.now(); } else if (!M.d) M.err = 1; redessiner(); }).catch(function () { M.en = 0; if (!M.d) M.err = 1; redessiner(); });
+  }
+  var lieuI = function (x) { return x.lieu === 'dom' ? ' 🏠' : x.lieu === 'ext' ? ' ✈️' : ''; };
+  var resH = function (x) { var c = x.r === 1 ? '#1ed760' : x.r === 0 ? '#ff6b6b' : '#c9d3ee'; return '<span style="font-weight:800;color:' + c + ';font-size:16px;white-space:nowrap;">' + (x.r === 1 ? '✅' : x.r === 0 ? '❌' : x.r === -1 ? '🚫' : '⏳') + ' ' + esc(x.sc || '') + '</span>'; };
+  var ligne = function (x, date) {
+    return '<div style="display:flex;align-items:center;gap:8px;padding:7px 4px;border-bottom:1px solid #1c2747;font-size:14px;color:#fff;">'
+      + (date ? '<span style="color:#c9d3ee;font-size:13px;width:40px;flex:none;">' + esc(String(x.j || '').slice(8, 10) + '/' + String(x.j || '').slice(5, 7)) + '</span>' : '')
+      + '<span style="flex:1;min-width:0;"><b>' + (SPI[x.sp] || '') + ' ' + esc(x.eq) + '</b> <span style="color:#c9d3ee;font-size:13px;">' + (x.d ? 'vs ' : 'à ') + esc(x.adv) + '</span><br><span style="color:#c9d3ee;font-size:13px;">' + esc(x.lib) + lieuI(x) + ' · 🔥 ' + x.cours + ' / ' + x.pire + '</span></span>' + resH(x) + '</div>';
+  };
+  function html() {
+    charger();
+    var h = '<div style="background:rgba(10,14,24,.93);border:1px solid #1c2747;border-radius:14px;padding:12px;color:#fff;">'
+      + '<div style="font-size:17px;font-weight:900;">📊 Loi des séries — bilan</div>'
+      + '<div style="font-size:13px;color:#c9d3ee;margin:3px 0 10px;">Les pépites du jour, gardées chaque matin, et leur résultat le lendemain (pas tes paris).</div>';
+    if (!M.d) return h + '<div style="font-size:14px;">' + (M.err ? '⚠️ Historique indisponible pour le moment.' : '⏳ Lecture de l\'historique…') + '</div></div>';
+    var L = (M.d.L || []).slice().sort(function (a, b) { return b.t - a.t; });
+    if (!L.length) return h + '<div style="font-size:14px;">Aucune pépite gardée pour l\'instant : le robot commence l\'historique chaque matin, le bilan se remplit dès les premiers résultats.</div></div>';
+    var J = L.filter(function (x) { return x.r === 1 || x.r === 0; }), G = J.filter(function (x) { return x.r === 1; }).length, P = J.length - G;
+    var tu = function (lb, v, bg, bd, col) { return '<div style="flex:1;min-width:105px;background:' + bg + ';border:1px solid ' + bd + ';border-radius:10px;padding:8px;text-align:center;"><div style="font-size:13px;color:#c9d3ee;">' + lb + '</div><div style="font-size:22px;font-weight:900;color:' + col + ';">' + v + '</div></div>'; };
+    h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">' + tu('Pépites jouées', J.length, '#0b1226', '#2a3a63', '#fff')
+      + tu('Série stoppée ✅', G + (J.length ? ' · ' + Math.round(100 * G / J.length) + ' %' : ''), 'rgba(30,215,96,.12)', '#1ed760', '#1ed760') + tu('Série continue ❌', P, 'rgba(255,69,69,.12)', '#ff4545', '#ff6b6b') + '</div>';
+    var S = {}; J.forEach(function (x) { var k = SPI[x.sp] || '?'; S[k] = S[k] || [0, 0]; S[k][1]++; if (x.r === 1) S[k][0]++; });
+    h += '<div style="display:flex;gap:6px;flex-wrap:wrap;font-size:14px;font-weight:700;margin-bottom:12px;">' + Object.keys(S).map(function (k) { return '<span style="background:#0b1226;border:1px solid #2a3a63;border-radius:8px;padding:3px 8px;">' + k + ' ' + S[k][0] + '/' + S[k][1] + ' · ' + Math.round(100 * S[k][0] / S[k][1]) + ' %</span>'; }).join('') + '</div>';
+    /* calendrier */
+    var now = new Date(), base = new Date(now.getFullYear(), now.getMonth() + M.mois, 1), an = base.getFullYear(), mo = base.getMonth();
+    var MOIS = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+    var jj = function (d) { return an + '-' + ('0' + (mo + 1)).slice(-2) + '-' + ('0' + d).slice(-2); }, PJ = {};
+    L.forEach(function (x) { (PJ[x.j] = PJ[x.j] || []).push(x); });
+    if (!M.j) M.j = (J[0] && J[0].j) || L[0].j;
+    h += '<div style="display:flex;align-items:center;justify-content:space-between;margin:4px 0 8px;"><button onclick="g45LoiBilMois(-1)" style="font-size:20px;background:#0b1226;border:1px solid #2a3a63;border-radius:8px;color:#fff;padding:2px 12px;cursor:pointer;">◀</button>'
+      + '<span style="font-size:17px;font-weight:900;">📅 ' + MOIS[mo] + ' ' + an + '</span><button onclick="g45LoiBilMois(1)" style="font-size:20px;background:#0b1226;border:1px solid #2a3a63;border-radius:8px;color:#fff;padding:2px 12px;cursor:pointer;">▶</button></div>';
+    h += '<div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;">' + ['L', 'M', 'M', 'J', 'V', 'S', 'D'].map(function (x) { return '<div style="text-align:center;font-size:13px;color:#c9d3ee;">' + x + '</div>'; }).join('');
+    var dec = (new Date(an, mo, 1).getDay() + 6) % 7, nb = new Date(an, mo + 1, 0).getDate();
+    for (var i = 0; i < dec; i++) h += '<div></div>';
+    for (var d = 1; d <= nb; d++) {
+      var X = PJ[jj(d)] || [], jo = X.filter(function (x) { return x.r === 1 || x.r === 0; }), g = jo.filter(function (x) { return x.r === 1; }).length, bg = '#0b1226', bd = '#2a3a63', t = '';
+      if (X.length) { if (!jo.length) t = '⏳ ' + X.length; else { t = g + '/' + jo.length; var vv = g * 2 - jo.length; bg = vv > 0 ? 'rgba(30,215,96,.18)' : vv === 0 ? 'rgba(245,197,66,.15)' : 'rgba(255,69,69,.18)'; bd = vv > 0 ? '#1ed760' : vv === 0 ? '#f5c542' : '#ff4545'; } }
+      var on = jj(d) === M.j;
+      h += '<div ' + (X.length ? 'onclick="g45LoiBilJour(\'' + jj(d) + '\')" ' : '') + 'style="background:' + bg + ';border:' + (on ? '2px solid #6d9dff' : '1px solid ' + bd) + ';border-radius:8px;min-height:46px;padding:3px 1px;text-align:center;' + (X.length ? 'cursor:pointer;' : '') + '"><div style="font-size:13px;font-weight:800;">' + d + '</div><div style="font-size:12px;font-weight:700;">' + t + '</div></div>';
+    }
+    h += '</div><div style="font-size:13px;color:#c9d3ee;margin:8px 0;">Chaque jour : ✅ gagnées / pépites jouées. Vert = plus de la moitié gagnées, jaune = moitié, rouge = moins, ⏳ = pas encore joué. Touche un jour pour voir ses pépites.</div>';
+    var XJ = PJ[M.j] || [];
+    if (XJ.length) { var dj = new Date(M.j + 'T12:00:00'), gj = XJ.filter(function (x) { return x.r === 1; }).length, nj = XJ.filter(function (x) { return x.r === 1 || x.r === 0; }).length;
+      h += '<div style="font-size:15px;font-weight:800;margin:6px 0 4px;">' + dj.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }) + (nj ? ' · ' + gj + '/' + nj + ' ✅' : '') + '</div>' + XJ.map(function (x) { return ligne(x, false); }).join(''); }
+    h += '<button onclick="g45LoiBilTout()" style="margin-top:12px;width:100%;padding:10px;border-radius:10px;border:1px solid #2a3a63;background:#0b1226;color:#fff;font-size:15px;font-weight:800;cursor:pointer;">' + (M.tout ? '▲ Fermer l\'historique' : '📜 Tout voir (' + L.length + ' pépites)') + '</button>';
+    if (M.tout) h += '<div style="margin-top:6px;">' + L.map(function (x) { return ligne(x, true); }).join('') + '</div>';
+    return h + '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">✅ = le pari a gagné (la série s\'est arrêtée) · ❌ = encore raté · ⏳ = pas encore joué · 🚫 = match annulé / reporté.</div></div>';
+  }
+  window._g45LoiBilHtml = html;
+  window._g45LoiBilT = M;   /* tests */
+  window.g45LoiBilMois = function (k) { M.mois += k; redessiner(); };
+  window.g45LoiBilJour = function (j) { M.j = j; redessiner(); };
+  window.g45LoiBilTout = function () { M.tout = !M.tout; redessiner(); };
 })();
