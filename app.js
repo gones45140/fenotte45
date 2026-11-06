@@ -87178,7 +87178,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
    « Tout voir » = historique complet. Lecture 30 min (mémoire). ═══ */
 (function () {
   var URL = 'https://raw.githubusercontent.com/gones45140/gones45-archives/main/loi/historique.json';
-  var M = { d: null, t: 0, en: 0, mois: 0, j: '', tout: 0 };
+  var M = { d: null, t: 0, en: 0, mois: 0, j: '', tout: 0, fs: 'tous', fc: 0 };   /* 20261107v : filtres sport (fs) / ratés en cours (fc, 7 = 7 et +) */
   var SPI = { soccer: '⚽', hockey: '🏒', basketball: '🏀', football: '🏈', baseball: '⚾', rugby: '🏉', 'rugby-league': '🏉' };
   var esc = function (t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
   var redessiner = function () { var z = document.getElementById('g45-loibil'); if (z) z.innerHTML = html(); };
@@ -87208,7 +87208,12 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
       + '<div style="font-size:17px;font-weight:900;">📊 Loi des séries — bilan</div>'
       + '<div style="font-size:13px;color:#c9d3ee;margin:3px 0 10px;">Les pépites du jour, gardées chaque matin, et leur résultat le lendemain (pas tes paris).</div>';
     if (!M.d) return h + '<div style="font-size:14px;">' + (M.err ? '⚠️ Historique indisponible pour le moment.' : '⏳ Lecture de l\'historique…') + '</div></div>';
-    var L = (M.d.L || []).slice().sort(function (a, b) { return b.t - a.t; });
+    var SPF = { tous: 'Tous', soccer: '⚽', hockey: '🏒', basketball: '🏀', football: '🏈', baseball: '⚾', rugby: '🏉' };
+    var bF = function (on, onclick, t) { return '<button onclick="' + onclick + '" style="border-radius:12px;padding:7px 11px;font-size:15px;font-weight:800;cursor:pointer;color:#fff;border:1px solid ' + (on ? '#6d9dff' : '#2a3a63') + ';background:' + (on ? '#2a4a9a' : '#0b1226') + ';">' + t + '</button>'; };
+    h += '<div style="font-size:14px;font-weight:800;margin:4px 0 4px;">Sport</div><div style="display:flex;gap:6px;flex-wrap:wrap;">' + Object.keys(SPF).map(function (k) { return bF(M.fs === k, 'g45LoiBilF(\'s\',\'' + k + '\')', SPF[k]); }).join('') + '</div>'
+      + '<div style="font-size:14px;font-weight:800;margin:10px 0 4px;">Ratés de suite en cours</div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">' + [0, 3, 4, 5, 6, 7].map(function (k) { return bF(M.fc === k, 'g45LoiBilF(\'c\',' + k + ')', k ? (k === 7 ? '7 et +' : String(k)) : 'Tous'); }).join('') + '</div>';
+    var L = (M.d.L || []).filter(function (x) { return (M.fs === 'tous' || x.sp === M.fs || (M.fs === 'rugby' && x.sp === 'rugby-league')) && (!M.fc || (M.fc === 7 ? x.cours >= 7 : x.cours === M.fc)); }).sort(function (a, b) { return b.t - a.t; });
+    if (!L.length && ((M.d.L || []).length)) return h + '<div style="font-size:14px;">Aucune pépite avec ces filtres.</div></div>';
     if (!L.length) return h + '<div style="font-size:14px;">Aucune pépite gardée pour l\'instant : le robot commence l\'historique chaque matin, le bilan se remplit dès les premiers résultats.</div></div>';
     var J = L.filter(function (x) { return x.r === 1 || x.r === 0; }), G = J.filter(function (x) { return x.r === 1; }).length, P = J.length - G;
     var tu = function (lb, v, bg, bd, col) { return '<div style="flex:1;min-width:105px;background:' + bg + ';border:1px solid ' + bd + ';border-radius:10px;padding:8px;text-align:center;"><div style="font-size:13px;color:#c9d3ee;">' + lb + '</div><div style="font-size:22px;font-weight:900;color:' + col + ';">' + v + '</div></div>'; };
@@ -87247,5 +87252,6 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   window._g45LoiBilT = M;   /* tests */
   window.g45LoiBilMois = function (k) { M.mois += k; redessiner(); };
   window.g45LoiBilJour = function (j) { M.j = j; redessiner(); };
+  window.g45LoiBilF = function (q, v) { if (q === 's') M.fs = v; else M.fc = +v || 0; M.j = ''; redessiner(); };
   window.g45LoiBilTout = function () { M.tout = !M.tout; redessiner(); };
 })();
