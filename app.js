@@ -76383,11 +76383,11 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var N = {}, O = [];
     jFiltre(c, ms).forEach(function (m) { if (!valeur(c, m).n) return; var k = m.trf || String(S.ctx.id); if (!N[k]) { N[k] = 0; O.push(k); } N[k]++; });
     if (!O.length) return '';
-    return '<br>' + O.map(function (k) {
+    return O.map(function (k) {
       var e = T.nm[k] || [], nom = k === String(S.ctx.id) ? (S.nom || e[0] || '') : (e[0] || ''), ab = String(e[1] || '').toLowerCase();
       var u = ''; try { u = (typeof window._g45LogoIndex === 'function' && window._g45LogoIndex(nom)) || ''; } catch (x) {}
       if (!u && ab) u = 'https://a.espncdn.com/i/teamlogos/' + esc(S.ctx.lg) + '/500/' + esc(ab) + '.png';
-      return '<span title="' + esc(nom) + '" style="display:inline-flex;align-items:center;gap:4px;background:rgba(0,0,0,.45);border-radius:6px;padding:2px 6px;margin:4px 4px 0 0;font-size:13px;font-weight:700;color:#fff;">'
+      return '<span title="' + esc(nom) + '" style="display:flex;align-items:center;gap:5px;width:max-content;background:rgba(0,0,0,.45);border-radius:6px;padding:2px 6px;margin:2px 0;font-size:14px;font-weight:700;color:#fff;">'
         + (/^https:\/\//.test(u) ? '<img src="' + esc(u) + '" alt="" loading="lazy" onerror="this.remove()" style="width:20px;height:20px;object-fit:contain;">' : esc(String(e[1] || nom).slice(0, 4))) + N[k] + '</span>';
     }).join('');
   }
@@ -76964,25 +76964,27 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
 
   function tableau(c, D) {
     if (c.jbk && bkOk() && !S.bkE[S.ctx.lg + '|' + S.ctx.id]) bkCharger();   /* 20261103h : lignes du book lues une fois par équipe */
+    var CL = !!(S.ctx && usSeul(c));   /* 20261107n : colonne « Club · matchs » (maquette clubs2.png « oui ») */
     var tous = [], h = '<table style="width:100%;border-collapse:collapse;font-size:14px;color:#fff;margin-top:6px;">'
       + '<tr><th style="text-align:left;font-size:13px;color:#c9d3ee;padding:6px 4px;border-bottom:1px solid #2a3a63;">Saison</th>'
+      + (CL ? '<th style="text-align:left;font-size:13px;color:#c9d3ee;padding:6px 4px;border-bottom:1px solid #2a3a63;">Club · matchs</th>' : '')
       + '<th style="text-align:left;font-size:13px;color:#c9d3ee;padding:6px 4px;border-bottom:1px solid #2a3a63;">Réussite</th>'
-      + '<th style="text-align:left;font-size:13px;color:#c9d3ee;padding:6px 4px;border-bottom:1px solid #2a3a63;">Pire série<br>de défaites</th>'
-      + '<th style="text-align:left;font-size:13px;color:#c9d3ee;padding:6px 4px;border-bottom:1px solid #2a3a63;">Meilleure<br>série</th></tr>';
+      + '<th style="text-align:left;font-size:13px;color:#c9d3ee;padding:6px 4px;border-bottom:1px solid #2a3a63;">' + (CL ? 'Pire' : 'Pire série<br>de défaites') + '</th>'
+      + '<th style="text-align:left;font-size:13px;color:#c9d3ee;padding:6px 4px;border-bottom:1px solid #2a3a63;">' + (CL ? 'Meill.' : 'Meilleure<br>série') + '</th></tr>';
     D.saisons.slice().reverse().forEach(function (s) { var L0 = s && msS(c, s); if (L0) tous = tous.concat(filtrer(L0)); });
     D.saisons.forEach(function (s) {
       if (!s) return;
-      var td = 'padding:8px 4px;border-bottom:1px solid #1c2747;';
+      var td = 'padding:8px 4px;border-bottom:1px solid #1c2747;vertical-align:middle;', cs = CL ? '4' : '3', clT = '';
       var sms = msS(c, s), XA = jAil(c, s), viaA = XA && sms === XA.a.ms;   /* 20261031g */
       var libS = lib(D.lg, s.an) + (viaA ? '<br><span style="font-size:13px;color:#f5c542;font-weight:700;">↪️ ' + esc(XA.a.club || 'autre club') + '</span>' : '');
-      if (!sms) { h += '<tr><td style="' + td + '">' + libS + '</td><td colspan="3" style="' + td + 'color:#c9d3ee;">indisponible</td></tr>'; return; }
+      if (!sms) { h += '<tr><td style="' + td + '">' + libS + '</td><td colspan="' + cs + '" style="' + td + 'color:#c9d3ee;">indisponible</td></tr>'; return; }
       var ms = filtrer(sms);
-      try { libS += usClubsHtml(c, ms); } catch (e) {}   /* 20261107m */
-      if (!ms.length) { h += '<tr><td style="' + td + '">' + libS + '</td><td colspan="3" style="' + td + 'color:#c9d3ee;">aucun match joué</td></tr>'; return; }
+      try { clT = usClubsHtml(c, ms); } catch (e) {}   /* 20261107m ; 20261107n : dans sa colonne */
+      if (!ms.length) { h += '<tr><td style="' + td + '">' + libS + '</td><td colspan="' + cs + '" style="' + td + 'color:#c9d3ee;">aucun match joué</td></tr>'; return; }
       var R = calc(c, ms);
-      if (!R.n && XA && !viaA) { h += '<tr><td style="' + td + '">' + libS + '</td><td colspan="3" style="' + td + 'color:#f5c542;">↪️ ' + esc(XA.j.n) + ' n\'était pas à ' + esc(S.nom) + (XA.a.club ? ' (' + esc(XA.a.club) + ')' : '') + '</td></tr>'; return; }   /* 20261031g : transfert */
-      if (!R.n) { h += '<tr><td style="' + td + '">' + libS + '</td><td colspan="3" style="' + td + 'color:#c9d3ee;">aucun match compté (critères joueur / feuille / match précédent)</td></tr>'; return; }   /* 20261021f : plus de « NaN % » */
-      h += '<tr><td style="' + td + '">' + libS + '</td><td style="' + td + '">' + nbV(R.ok) + '/' + nbV(R.n) + ' · ' + Math.round(100 * R.ok / R.n) + ' %</td>'
+      if (!R.n && XA && !viaA) { h += '<tr><td style="' + td + '">' + libS + '</td><td colspan="' + cs + '" style="' + td + 'color:#f5c542;">↪️ ' + esc(XA.j.n) + ' n\'était pas à ' + esc(S.nom) + (XA.a.club ? ' (' + esc(XA.a.club) + ')' : '') + '</td></tr>'; return; }   /* 20261031g : transfert */
+      if (!R.n) { h += '<tr><td style="' + td + '">' + libS + '</td><td colspan="' + cs + '" style="' + td + 'color:#c9d3ee;">aucun match compté (critères joueur / feuille / match précédent)</td></tr>'; return; }   /* 20261021f : plus de « NaN % » */
+      h += '<tr><td style="' + td + '">' + libS + '</td>' + (CL ? '<td style="' + td + '">' + (clT || '—') + '</td>' : '') + '<td style="' + td + '">' + nbV(R.ok) + '/' + nbV(R.n) + ' · ' + Math.round(100 * R.ok / R.n) + ' %</td>'
         + '<td style="' + td + 'font-weight:700;color:' + coul(R.pire) + ';">' + R.pire + '</td>'
         + '<td style="' + td + 'font-weight:700;color:#5aa9ff;">' + R.best + '</td></tr>';
     });
