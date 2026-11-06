@@ -77100,6 +77100,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var V = cjVals(c, D, tous); if (!V.n) return '';
     var lieu = S.lieu === 'dom' ? '🏠 Domicile' : S.lieu === 'ext' ? '✈️ Extérieur' : 'Tous lieux';
     S.cjDer = { nom: S.nom, lieu: lieu, crit: libCombo(c), d10: V.d10, s2: V.s2, s5: V.s5 };
+    try { if (typeof window._g45CjAuto === 'function') { var cjD = S.cjDer; setTimeout(function () { window._g45CjAuto(cjD); }, 0); } } catch (e) {}   /* 20261108g : calculatrice « match » remplie toute seule */
     var b = function (k) { return '<button onclick="g45CjEnvoyer(' + k + ')" style="border:1px solid #6d9dff;border-radius:10px;padding:8px 12px;font-size:14px;font-weight:800;color:#fff;background:#1b2a55;cursor:pointer;">→ Équipe ' + k + '</button>'; };
     return '<div style="margin-top:10px;background:#0f1730;border-radius:10px;padding:10px;font-size:14px;color:#fff;">🧮 <b>Envoyer à la calculatrice</b> (🎯 Cote juste) : 10 derniers <b>' + (V.d10 == null ? '—' : V.d10 + ' %') + '</b> · 2 saisons <b>' + (V.s2 == null ? '—' : V.s2 + ' %') + '</b> · toutes <b>' + V.s5 + ' %</b>'
       + '<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">' + b(1) + b(2) + '</div></div>';
@@ -87393,7 +87394,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
    poids 40 / 35 / 25 modifiables, cote du book → % estimé (moyenne des deux équipes mélangées), cote juste = 100 / %, ✅ si book ≥ cote juste.
    Rempli à la main ou par « 🧮 Envoyer à la calculatrice » des critères (g45CjMettre) ; gardé en localStorage g45cj1 (confort). ═══ */
 (function () {
-  var K = 'g45cj1', D = { e: [{ nom: '', lieu: '', d10: '', s2: '', s5: '' }, { nom: '', lieu: '', d10: '', s2: '', s5: '' }], w: [40, 35, 25], b: '', crit: '' };
+  var K = 'g45cj1', D = { e: [{ nom: '', lieu: '', d10: '', s2: '', s5: '' }, { nom: '', lieu: '', d10: '', s2: '', s5: '' }], w: [40, 35, 25], b: '', inv: '', mg: 7, crit: '' };
   try { var c0 = JSON.parse(localStorage.getItem(K) || 'null'); if (c0 && c0.e) D = c0; } catch (e) {}
   var garder = function () { try { localStorage.setItem(K, JSON.stringify(D)); } catch (e) {} };
   var esc = function (t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
@@ -87406,7 +87407,10 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   function calc() {
     var m = D.e.map(melange).filter(function (x) { return x != null; });
     var p = m.length ? m.reduce(function (a, b) { return a + b; }, 0) / m.length : null;
-    return { m: D.e.map(melange), p: p, cj: p > 0 ? 100 / p : null, bk: nb(D.b) };
+    /* 20261108g (« il faut retirer la marge du book ») : avec la cote inverse → marge réelle (1/b + 1/inv − 1) ; sans → marge type D.mg % (7 par défaut) */
+    var bk = nb(D.b), inv = nb(D.inv), mg = nb(D.mg); if (mg == null) mg = 7;
+    var pb = null, mgR = null; if (bk > 1) { if (inv > 1) { mgR = (1 / bk + 1 / inv - 1) * 100; pb = (1 / bk) / (1 / bk + 1 / inv) * 100; } else { mgR = mg; pb = (100 / bk) / (1 + mg / 100); } }
+    return { m: D.e.map(melange), p: p, cj: p > 0 ? 100 / p : null, bk: bk, pb: pb, mgR: mgR, ev: (p != null && bk > 1) ? (p / 100 * bk - 1) * 100 : null };
   }
   var inp = function (id, v, w) { return '<input id="' + id + '" value="' + esc(v) + '" inputmode="decimal" oninput="g45CjMaj(this)" style="width:' + (w || 64) + 'px;font-size:16px;font-weight:800;text-align:center;padding:6px;border-radius:8px;background:#141c33;color:#fff;border:1px solid #2a3a63;">'; };
   function html() {
@@ -87420,15 +87424,17 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
         + '<div style="font-size:14px;margin-top:6px;color:#fff;">→ <b>' + fr(R.m[i]) + ' %</b></div></div>';
     };
     var verdict = '';
-    if (R.cj && R.bk > 1) verdict = R.bk >= R.cj ? '<div style="font-size:15px;font-weight:800;margin-top:4px;color:#1ed760;">Book ' + fr(R.bk, 2) + ' : ✅ intéressant (cote juste ' + fr(R.cj, 2) + ')</div>'
-      : '<div style="font-size:15px;font-weight:800;margin-top:4px;color:#ff8a8a;">Book ' + fr(R.bk, 2) + ' : ❌ trop court (il faudrait ' + fr(R.cj, 2) + ' ou plus · le book estime ' + fr(100 / R.bk) + ' %)</div>';
+    if (R.cj && R.bk > 1) verdict = '<div style="font-size:14px;color:#c9d3ee;margin-top:4px;">Book ' + fr(R.bk, 2) + ' → sans marge (' + fr(R.mgR, 1) + ' %) le book estime <b style="color:#fff;">' + fr(R.pb) + ' %</b> · nous ' + fr(R.p) + ' %</div>'
+      + (R.ev > 0 ? '<div style="font-size:16px;font-weight:900;margin-top:4px;color:#1ed760;">✅ intéressant : +' + fr(R.ev, 1) + ' % de value (cote juste ' + fr(R.cj, 2) + ')</div>'
+        : '<div style="font-size:16px;font-weight:900;margin-top:4px;color:#ff8a8a;">❌ trop court : ' + fr(R.ev, 1) + ' % (il faudrait ' + fr(R.cj, 2) + ' ou plus)</div>');
     return '<div id="g45-cj" class="fc" style="margin-top:12px;background:rgba(10,14,24,.93);border:1px solid #1c2747;border-radius:14px;padding:12px;color:#fff;">'
       + '<div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:17px;font-weight:900;">🎯 Cote juste</span><button onclick="g45CjVider()" style="font-size:13px;padding:5px 10px;border-radius:8px;border:1px solid #2a3a63;background:#0b1226;color:#fff;cursor:pointer;">Effacer</button></div>'
       + '<div style="font-size:13px;color:#c9d3ee;margin:3px 0 10px;">' + (D.crit ? 'Critère : <b style="color:#fff;">' + esc(D.crit) + '</b> · ' : '') + 'remplis à la main ou par « 🧮 Envoyer à la calculatrice » dans les critères d\'une équipe.</div>'
       + '<div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;">' + col(0) + col(1) + '</div>'
       + '<div style="font-size:14px;font-weight:800;margin:10px 0 4px;">Poids</div><div style="display:flex;gap:6px;flex-wrap:wrap;font-size:14px;">'
       + ['10 derniers', '2 saisons', '5 saisons'].map(function (t, i) { return '<span style="flex:1;min-width:100px;background:#0b1226;border:1px solid #2a3a63;border-radius:8px;padding:6px;text-align:center;">' + t + ' ' + inp('cj-w' + i, D.w[i], 48) + ' %</span>'; }).join('') + '</div>'
-      + '<div style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:15px;">Cote du book ' + inp('cj-b', D.b, 80) + '</div>'
+      + '<div style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:15px;flex-wrap:wrap;">Cote du book ' + inp('cj-b', D.b, 80) + ' <span style="font-size:13px;color:#c9d3ee;">cote inverse (facultatif)</span> ' + inp('cj-inv', D.inv || '', 70) + '</div>'
+      + '<div style="display:flex;align-items:center;gap:8px;margin-top:6px;font-size:13px;color:#c9d3ee;">Marge du book sans cote inverse ' + inp('cj-mg', D.mg == null ? 7 : D.mg, 48) + ' %</div>'
       + '<div style="margin-top:12px;background:' + (R.p == null ? '#0b1226' : 'rgba(30,215,96,.12)') + ';border:1px solid ' + (R.p == null ? '#2a3a63' : '#1ed760') + ';border-radius:12px;padding:10px;text-align:center;">'
       + (R.p == null ? '<div style="font-size:14px;color:#c9d3ee;">Remplis au moins une équipe.</div>' : '<div style="font-size:14px;color:#c9d3ee;">Estimation du match</div><div style="font-size:24px;font-weight:900;">' + fr(R.p) + ' % → cote juste <span style="color:#1ed760;">' + fr(R.cj, 2) + '</span></div>' + verdict)
       + '</div><div style="font-size:13px;color:#c9d3ee;margin-top:8px;">Chaque équipe : mélange 10 derniers / 2 saisons / 5 saisons avec les poids (une case vide est ignorée), puis moyenne des deux équipes.</div></div>';
@@ -87447,15 +87453,92 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     else if ((m = id.match(/^cj-(d10|s2|s5)(\d)$/))) D.e[+m[2]][m[1]] = v;
     else if ((m = id.match(/^cj-w(\d)$/))) D.w[+m[1]] = v;
     else if (id === 'cj-b') D.b = v;
+    else if (id === 'cj-inv') D.inv = v;
+    else if (id === 'cj-mg') D.mg = v;
     garder(); poser(id);
   };
-  window.g45CjVider = function () { D = { e: [{ nom: '', lieu: '', d10: '', s2: '', s5: '' }, { nom: '', lieu: '', d10: '', s2: '', s5: '' }], w: [40, 35, 25], b: '', crit: '' }; garder(); poser(); };
-  window.g45CjMettre = function (k, o) {
+  window.g45CjVider = function () { D = { e: [{ nom: '', lieu: '', d10: '', s2: '', s5: '' }, { nom: '', lieu: '', d10: '', s2: '', s5: '' }], w: [40, 35, 25], b: '', inv: '', mg: 7, crit: '' }; garder(); poser(); };
+  window.g45CjMettre = function (k, o, muet) {
     var i = k === 2 ? 1 : 0; D.e[i] = { nom: o.nom || '', lieu: o.lieu || '', d10: o.d10 == null ? '' : o.d10, s2: o.s2 == null ? '' : o.s2, s5: o.s5 == null ? '' : o.s5 };
     D.crit = o.crit || D.crit; garder(); poser();
+    if (muet) return;
     try { if (typeof toast === 'function') toast('🧮 ' + (o.nom || 'Équipe') + ' → Équipe ' + (i + 1) + ' de la calculatrice'); else alert('🧮 Envoyé : ' + (o.nom || '') + ' → Équipe ' + (i + 1) + ' (Pari → 🧮 Calculatrice)'); } catch (e) {}
   };
   window._g45CjT = { calc: calc, D: function () { return D; }, html: html };   /* tests */
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { poser(); }); else setTimeout(poser, 0);
   setInterval(function () { var t = document.getElementById('t-calc'); if (t && !document.getElementById('g45-cj')) poser(); }, 3000);
+})();
+
+/* ═══ 20261108g — 🎯 COTE JUSTE D'UN MATCH (Antoine : « choisir les 2 équipes, le championnat et le type de pari », « je veux les critères des
+   5 dernières années », « retirer la marge du book » → maquette cj2.png + marge « oui, code tout ») : au-dessus du bloc 🎯 Cote juste de la
+   Calculatrice : championnat (index des archives loi/equipes.json), 🏠 équipe à domicile, ✈️ équipe à l'extérieur, puis le PANNEAU DE CRITÈRES
+   COMPLET (window._g45CrHtml, le même que « Tes critères ») sur l'équipe choisie par l'onglet 🏠 / ✈️ ; le combiné est GARDÉ d'une équipe à
+   l'autre (S.combos remis après le changement d'équipe) et le lieu posé (🏠 = domicile, ✈️ = extérieur). À chaque calcul du tableau, les 3 %
+   (10 derniers / 2 saisons / toutes) arrivent tout seuls dans l'Équipe 1 ou 2 (window._g45CjAuto). ═══ */
+(function () {
+  var IXU = 'https://raw.githubusercontent.com/gones45140/gones45-archives/main/loi/equipes.json';
+  var M = { ix: null, en: 0, lg: '', h: '', a: '', on: 0 };
+  try { var c0 = JSON.parse(localStorage.getItem('g45cjm1') || 'null'); if (c0) { M.lg = c0.lg || ''; M.h = c0.h || ''; M.a = c0.a || ''; } } catch (e) {}
+  var garder = function () { try { localStorage.setItem('g45cjm1', JSON.stringify({ lg: M.lg, h: M.h, a: M.a })); } catch (e) {} };
+  var SPI = { soccer: '⚽', hockey: '🏒', basketball: '🏀', football: '🏈', baseball: '⚾', rugby: '🏉', 'rugby-league': '🏉' };
+  var esc = function (t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+  var SEL = 'width:100%;box-sizing:border-box;font-size:15px;font-weight:800;padding:9px;border-radius:10px;background:#141c33;color:#fff;border:1px solid #2a3a63;';
+  function charger() {
+    if (M.ix || M.en) return; M.en = 1;
+    fetch(IXU + '?h=' + Math.floor(Date.now() / 36e5)).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { M.en = 0; if (j && j.L) { M.ix = j.L; dessiner(); } }).catch(function () { M.en = 0; });
+  }
+  function ligues() { var o = {}, L = []; (M.ix || []).forEach(function (x) { var k = x[0] + '|' + x[1]; if (!o[k]) { o[k] = 1; L.push([k, (SPI[x[0]] || '') + ' ' + (x[2] || x[1])]); } }); return L.sort(function (a, b) { return a[1].localeCompare(b[1], 'fr'); }); }
+  function equipes() { return (M.ix || []).filter(function (x) { return x[0] + '|' + x[1] === M.lg; }).sort(function (a, b) { return a[4].localeCompare(b[4], 'fr'); }); }
+  function x2(id) { return equipes().filter(function (x) { return String(x[3]) === String(id); })[0] || null; }
+  function html() {
+    charger();
+    var h = '<div id="g45-cjm" class="fc" style="margin-top:12px;background:rgba(10,14,24,.93);border:1px solid #1c2747;border-radius:14px;padding:12px;color:#fff;">'
+      + '<div style="font-size:17px;font-weight:900;margin-bottom:8px;">🎯 Cote juste — match</div>';
+    if (!M.ix) return h + '<div style="font-size:14px;">⏳ Lecture des championnats…</div></div>';
+    h += '<div style="font-size:14px;font-weight:800;margin:4px 0;">1. Championnat</div><select onchange="g45CjmSet(\'lg\',this.value)" style="' + SEL + '"><option value="">— choisis —</option>'
+      + ligues().map(function (l) { return '<option value="' + esc(l[0]) + '"' + (l[0] === M.lg ? ' selected' : '') + '>' + esc(l[1]) + '</option>'; }).join('') + '</select>';
+    if (M.lg) {
+      var E = equipes(), opt = function (v) { return '<option value="">— choisis —</option>' + E.map(function (x) { return '<option value="' + esc(x[3]) + '"' + (String(x[3]) === String(v) ? ' selected' : '') + '>' + esc(x[4]) + '</option>'; }).join(''); };
+      h += '<div style="font-size:14px;font-weight:800;margin:10px 0 4px;">2. Le match</div><div style="display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:6px;align-items:center;">'
+        + '<select onchange="g45CjmSet(\'h\',this.value)" style="' + SEL + '">' + opt(M.h).replace('— choisis —', '🏠 domicile') + '</select><span style="color:#c9d3ee;font-weight:800;">vs</span>'
+        + '<select onchange="g45CjmSet(\'a\',this.value)" style="' + SEL + '">' + opt(M.a).replace('— choisis —', '✈️ extérieur') + '</select></div>';
+    }
+    if (M.h && M.a && x2(M.h) && x2(M.a)) {
+      var b = function (k, t) { var on = M.on === k; return '<button onclick="g45CjmOnglet(' + k + ')" style="flex:1;border-radius:10px;padding:9px;font-size:15px;font-weight:800;cursor:pointer;color:#fff;border:1px solid ' + (on ? '#6d9dff' : '#2a3a63') + ';background:' + (on ? '#2a4a9a' : '#0b1226') + ';">' + t + '</button>'; };
+      h += '<div style="font-size:14px;font-weight:800;margin:10px 0 4px;">3. Ton critère (même combiné pour les 2 équipes)</div>'
+        + '<div style="display:flex;gap:6px;margin-bottom:6px;">' + b(0, '🏠 ' + esc(x2(M.h)[4])) + b(1, '✈️ ' + esc(x2(M.a)[4])) + '</div>'
+        + '<div style="font-size:13px;color:#c9d3ee;">Compose ton combiné, puis touche l\'autre équipe : le même combiné est repris, à son lieu. Les % arrivent tout seuls dans le bloc 🎯 Cote juste en dessous.</div>'
+        + '<div id="g45-cjcr"></div>';
+    }
+    return h + '</div>';
+  }
+  function panneau() {
+    var z = document.getElementById('g45-cjcr'); if (!z || typeof window._g45CrHtml !== 'function') return;
+    var x = x2(M.on ? M.a : M.h); if (!x) return;
+    var S0 = window._g45CrS, nom = x[4], ctx = x[0] === 'soccer' ? null : { sp: x[0], lg: x[1], id: String(x[3]) }, lgF = x[0] === 'soccer' ? x[1] : null;
+    var sv = S0 && S0.combos ? JSON.parse(JSON.stringify(S0.combos)) : null, sa = S0 ? S0.a : 0;
+    try {
+      window._g45CrHtml(nom, ctx, lgF);   /* 1er appel : change d'équipe (le module remet un combiné neuf) */
+      if (S0) { if (sv && sv.length && M.garde) { S0.combos = sv; S0.a = sa; } S0.lieu = M.on ? 'ext' : 'dom'; S0.ov = S0.ov || {}; S0.ov[nom] = 1; }
+      z.innerHTML = window._g45CrHtml(nom, ctx, lgF);
+    } catch (e) { z.innerHTML = '<div style="color:#ffb13d;font-size:14px;">Critères indisponibles pour cette équipe.</div>'; }
+    M.garde = 1;
+  }
+  function dessiner() {
+    var t = document.getElementById('t-calc'); if (!t) return;
+    var z = document.getElementById('g45-cjm'), tmp = document.createElement('div'); tmp.innerHTML = html(); var n = tmp.firstChild;
+    if (z) z.parentNode.replaceChild(n, z); else { var cj = document.getElementById('g45-cj'); if (cj) t.insertBefore(n, cj); else t.appendChild(n); }
+    panneau();
+  }
+  window.g45CjmSet = function (k, v) { M[k] = v; if (k === 'lg') { M.h = ''; M.a = ''; } M.on = k === 'a' ? 1 : 0; M.garde = 0; garder(); dessiner(); };
+  window.g45CjmOnglet = function (k) { M.on = k ? 1 : 0; M.garde = 1; dessiner(); };
+  /* remplissage automatique : l'équipe affichée dans le panneau → Équipe 1 (domicile) ou 2 (extérieur) */
+  window._g45CjAuto = function (o) {
+    if (!o || !document.getElementById('g45-cjcr') || typeof window.g45CjMettre !== 'function') return;
+    var xh = x2(M.h), xa = x2(M.a);
+    var k = xh && o.nom === xh[4] ? 1 : xa && o.nom === xa[4] ? 2 : 0; if (!k) return;
+    window.g45CjMettre(k, o, true);
+  };
+  window._g45CjmT = M;   /* tests */
+  setInterval(function () { var t = document.getElementById('t-calc'); if (t && document.getElementById('g45-cj') && !document.getElementById('g45-cjm')) dessiner(); }, 1500);
 })();
