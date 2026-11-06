@@ -87293,3 +87293,64 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   window.g45LoiBilF = function (q, v) { if (q === 's') M.fs = v; else M.fc = +v || 0; M.j = ''; redessiner(); };
   window.g45LoiBilTout = function () { M.tout = !M.tout; redessiner(); };
 })();
+
+/* ═══ 20261108d — 📊 CLASSEMENT NHL GLOBAL / DOMICILE / EXTÉRIEUR (Antoine, 06/11 : « on n'a pas global / domicile / extérieur en classement »
+   → maquette clsDE.png « oui »). Compétitions → NHL → Classement : 3 boutons ; 🌍 Global = le classement ESPN habituel (g45LoadStandings
+   d'origine) ; 🏠 / ✈️ = calculé sur nos archives (cotes/hockey/nhl/<saison>/equipes/<id>.json : m[3] h|a, m[4] score [dom, ext],
+   m[5] 2 = saison régulière, m[6] prolongation / tirs au but) : MJ, V, D, DP (défaite après prolongation), buts pour-contre,
+   Pts = 2 par victoire + 1 par DP ; équipes All-Star / 4 Nations (moins d'1/4 des matchs du plus gros total) écartées. ═══ */
+(function () {
+  var L0 = window.g45LoadStandings; if (typeof L0 !== 'function') return;
+  var MODE = 'all', MEM = {};
+  var RAW = 'https://raw.githubusercontent.com/gones45140/gones45-archives/main/cotes/hockey/nhl/';
+  var esc = function (t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+  var lire = function (p) { return fetch(RAW + p + '?h=' + Math.floor(Date.now() / 36e5)).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }); };
+  async function table(lieu) {
+    var d = new Date(), y = d.getMonth() >= 6 ? d.getFullYear() : d.getFullYear() - 1, sa = y + '-' + String(y + 1).slice(2), k = sa;
+    if (!MEM[k]) MEM[k] = (async function () {
+      var EQ = await lire(sa + '/equipes.json'); if (!EQ) return null;
+      var ids = Object.keys(EQ), F = await Promise.all(ids.map(function (id) { return lire(sa + '/equipes/' + id + '.json'); }));
+      var T = ids.map(function (id, i) { return { id: id, nom: EQ[id][0], ab: EQ[id][1], m: ((F[i] && F[i].m) || []).filter(function (m) { return m && m[5] === 2 && m[4] && m[4][0] != null && m[4][1] != null; }) }; });
+      var mx = T.reduce(function (a, t) { return Math.max(a, t.m.length); }, 0);
+      return { sa: sa, T: T.filter(function (t) { return t.m.length && t.m.length >= mx / 4; }) };
+    })();
+    var D = await MEM[k]; if (!D) return null;
+    var R = D.T.map(function (t) {
+      var o = { id: t.id, nom: t.nom, ab: t.ab, mj: 0, v: 0, d: 0, dp: 0, bp: 0, bc: 0 };
+      t.m.forEach(function (m) { var h = m[3] === 'h'; if (lieu === 'dom' ? !h : h) return; var p = h ? +m[4][0] : +m[4][1], c = h ? +m[4][1] : +m[4][0];
+        o.mj++; o.bp += p; o.bc += c; if (p > c) o.v++; else if (m[6]) o.dp++; else o.d++; });
+      o.pts = 2 * o.v + o.dp; return o;
+    }).filter(function (o) { return o.mj; }).sort(function (a, b) { return b.pts - a.pts || b.v - a.v || (b.bp - b.bc) - (a.bp - a.bc) || a.nom.localeCompare(b.nom); });
+    return { sa: D.sa, R: R };
+  }
+  function boutons() {
+    var b = function (k, t) { var on = MODE === k; return '<button onclick="g45NhlClsLieu(\'' + k + '\')" style="border-radius:10px;padding:9px;font-size:15px;font-weight:800;cursor:pointer;color:#fff;border:1px solid ' + (on ? '#6d9dff' : '#2a3a63') + ';background:' + (on ? '#2a4a9a' : '#0b1226') + ';">' + t + '</button>'; };
+    return '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-bottom:10px;">' + b('all', '🌍 Global') + b('dom', '🏠 Domicile') + b('ext', '✈️ Extérieur') + '</div>';
+  }
+  var dernier = null;
+  async function rendre(slug, sp, box) {
+    box.innerHTML = boutons() + '<div id="g45-nhlcls"></div>';
+    var z = box.querySelector('#g45-nhlcls');
+    if (MODE === 'all') return L0.call(this, slug, sp, z);
+    z.innerHTML = '<div style="color:#fff;font-size:14px;padding:10px;">⏳ Lecture des archives…</div>';
+    var D = await table(MODE);
+    if (!D || !D.R.length) { z.innerHTML = '<div style="color:#ffb13d;font-size:14px;padding:10px;">Archives indisponibles pour le moment.</div>'; return; }
+    var gc = 'display:grid;grid-template-columns:24px minmax(0,1fr) 30px 30px 30px 34px 50px 38px;gap:4px;padding:8px;align-items:center;';
+    var h = '<div style="font-size:16px;font-weight:900;color:#fff;margin:2px 0 8px;">' + (MODE === 'dom' ? '🏠 Domicile' : '✈️ Extérieur') + ' · NHL ' + esc(D.sa) + '</div>'
+      + '<div style="background:rgba(11,16,29,.6);border-radius:8px;overflow:hidden;"><div style="' + gc + 'font-size:12px;color:#c9d3ee;font-weight:700;"><span>#</span><span>Équipe</span><span>MJ</span><span>V</span><span>D</span><span>DP</span><span>Buts</span><span>Pts</span></div>';
+    D.R.forEach(function (r, i) {
+      var lg = ''; try { lg = (typeof window._g45LogoIndex === 'function' && window._g45LogoIndex(r.nom)) || ''; } catch (e) {}
+      if (!lg && r.ab) lg = 'https://a.espncdn.com/i/teamlogos/nhl/500/' + String(r.ab).toLowerCase() + '.png';
+      h += '<div style="' + gc + 'border-top:1px solid rgba(255,255,255,.08);font-size:14px;color:#fff;"><span style="font-weight:800;color:' + (i ? '#c9d3ee' : '#f0b020') + ';">' + (i + 1) + '</span>'
+        + '<span style="display:flex;gap:6px;align-items:center;min-width:0;">' + (lg ? '<img src="' + esc(lg) + '" alt="" loading="lazy" onerror="this.remove()" style="width:22px;height:22px;object-fit:contain;flex:none;">' : '') + '<b style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(r.nom) + '</b></span>'
+        + '<span>' + r.mj + '</span><span>' + r.v + '</span><span>' + r.d + '</span><span>' + r.dp + '</span><span>' + r.bp + '-' + r.bc + '</span><span style="font-weight:900;color:#1ed760;">' + r.pts + '</span></div>';
+    });
+    z.innerHTML = h + '</div><div style="font-size:13px;color:#c9d3ee;margin-top:6px;">' + (MODE === 'dom' ? '🏠 = seulement les matchs à domicile' : '✈️ = seulement les matchs à l\'extérieur') + ' (saison régulière) · DP = défaite en prolongation / tirs au but · Pts = 2 par victoire, 1 par DP.</div>';
+  }
+  g45LoadStandings = window.g45LoadStandings = function (slug, sp, box) {
+    if (String(slug) !== 'nhl' || !box) return L0.apply(this, arguments);
+    dernier = [slug, sp, box]; return rendre(slug, sp, box);
+  };
+  window.g45NhlClsLieu = function (k) { MODE = ({ all: 1, dom: 1, ext: 1 })[k] ? k : 'all'; if (dernier && dernier[2].isConnected) rendre(dernier[0], dernier[1], dernier[2]); };
+  window._g45NhlClsT = { table: table, M: MEM };   /* tests */
+})();
