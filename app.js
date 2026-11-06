@@ -87354,6 +87354,47 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
       + '<div style="font-size:13px;color:#c9d3ee;">Cote d\'avant-match gardée par nos archives (≈ = estimée : victoire ou nul depuis le 1N2, autre ligne de buts depuis la ligne du book, 60 min depuis le vainqueur). Pépites à cote sous 1,50 retirées.</div></div>';
     var S = {}; J.forEach(function (x) { var k = SPI[x.sp] || '?'; S[k] = S[k] || [0, 0]; S[k][1]++; if (x.r === 1) S[k][0]++; });
     h += '<div style="display:flex;gap:6px;flex-wrap:wrap;font-size:14px;font-weight:700;margin-bottom:12px;">' + Object.keys(S).map(function (k) { return '<span style="background:#0b1226;border:1px solid #2a3a63;border-radius:8px;padding:3px 8px;">' + k + ' ' + S[k][0] + '/' + S[k][1] + ' · ' + Math.round(100 * S[k][0] / S[k][1]) + ' %</span>'; }).join('') + '</div>';
+    /* ═══ 20261108o — 📈 GRAPHIQUE + 📊 BILANS DE LA LOI DES SÉRIES (Antoine : « il manque graphique / bilan dans loi des séries ? » →
+       maquette maquette_loi_graph.png ; « on demande pas trop au robot ? » → non, tout est calculé ICI depuis historique.json + cotes des
+       archives déjà lues ; « oui »). 3 onglets (M.vue) : 📅 Calendrier (comme avant), 📈 Graphique (gain cumulé à 10 € par jour, pépites
+       terminées avec cote, mêmes filtres), 📊 Bilans (par pari, par ratés de suite en cours, par sport, par championnat : réussite, cote
+       moyenne, gain). ═══ */
+    var bV = function (k, t) { var on = (M.vue || 'cal') === k; return '<button onclick="g45LoiBilVue(\'' + k + '\')" style="flex:1;border-radius:10px;padding:9px 4px;font-size:15px;font-weight:800;cursor:pointer;color:#fff;border:1px solid ' + (on ? '#6d9dff' : '#2a3a63') + ';background:' + (on ? '#2a4a9a' : '#0b1226') + ';">' + t + '</button>'; };
+    h += '<div style="display:flex;gap:6px;margin:0 0 10px;">' + bV('cal', '📅 Calendrier') + bV('gr', '📈 Graphique') + bV('bil', '📊 Bilans') + '</div>';
+    var gainDe = function (x) { var q = coteDe(x); return q ? (x.r === 1 ? 10 * (q.c - 1) : -10) : null; };
+    var eur = function (v) { return (v >= 0 ? '+' : '−') + String(Math.round(Math.abs(v))) + ' €'; };
+    if (M.vue === 'gr') {
+      var JD = {}; JC.forEach(function (x) { JD[x.j] = (JD[x.j] || 0) + gainDe(x); });
+      var jours = Object.keys(JD).sort(), cum = 0, pts = jours.map(function (j) { cum += JD[j]; return [j, cum]; });
+      if (!pts.length) return h + '<div style="font-size:14px;padding:10px 0;">Pas encore de pépite terminée avec une cote : la courbe démarre dès les premiers résultats.</div></div>';
+      var W = 360, H = 170, mx = Math.max(0, Math.max.apply(null, pts.map(function (p) { return p[1]; }))), mn = Math.min(0, Math.min.apply(null, pts.map(function (p) { return p[1]; }))), rg = (mx - mn) || 10;
+      var X = function (i) { return 40 + (pts.length > 1 ? i * (W - 50) / (pts.length - 1) : (W - 50) / 2); }, Y = function (v) { return 15 + (mx - v) * (H - 45) / rg; };
+      var fin = pts[pts.length - 1][1], cl = fin >= 0 ? '#1ed760' : '#ff6b6b';
+      h += '<div style="font-size:15px;font-weight:800;margin:4px 0 6px;">💶 Gain cumulé (10 € par pépite avec cote)</div>'
+        + '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;max-width:520px;background:#0b1226;border-radius:10px;display:block;">'
+        + '<line x1="40" y1="' + Y(0) + '" x2="' + (W - 10) + '" y2="' + Y(0) + '" stroke="#3a4f8a" stroke-dasharray="4 4"/><text x="4" y="' + (Y(0) + 4) + '" fill="#c9d3ee" font-size="12">0 €</text>'
+        + '<polyline fill="none" stroke="' + cl + '" stroke-width="3" points="' + pts.map(function (p, i) { return X(i).toFixed(1) + ',' + Y(p[1]).toFixed(1); }).join(' ') + '"/>'
+        + pts.map(function (p, i) { return '<circle cx="' + X(i).toFixed(1) + '" cy="' + Y(p[1]).toFixed(1) + '" r="3.5" fill="' + (JD[p[0]] >= 0 ? '#1ed760' : '#ff6b6b') + '"/>'; }).join('')
+        + '<text x="' + (W - 12) + '" y="14" text-anchor="end" fill="' + cl + '" font-size="15" font-weight="900">' + eur(fin) + '</text>'
+        + '<text x="40" y="' + (H - 8) + '" fill="#c9d3ee" font-size="12">' + esc(pts[0][0].slice(8, 10) + '/' + pts[0][0].slice(5, 7)) + '</text><text x="' + (W - 10) + '" y="' + (H - 8) + '" text-anchor="end" fill="#c9d3ee" font-size="12">' + esc(pts[pts.length - 1][0].slice(8, 10) + '/' + pts[pts.length - 1][0].slice(5, 7)) + '</text></svg>'
+        + '<div style="font-size:14px;margin-top:8px;">' + jours.slice().reverse().map(function (j) { var n = JC.filter(function (x) { return x.j === j; }), g = n.filter(function (x) { return x.r === 1; }).length; return '<div style="display:flex;justify-content:space-between;border-bottom:1px solid #1c2747;padding:4px 0;"><span>📅 ' + esc(j.slice(8, 10) + '/' + j.slice(5, 7)) + ' · ' + g + '/' + n.length + ' ✅</span><b style="color:' + (JD[j] >= 0 ? '#1ed760' : '#ff6b6b') + ';">' + eur(JD[j]) + '</b></div>'; }).join('') + '</div>';
+      return h + '</div>';
+    }
+    if (M.vue === 'bil') {
+      var tab = function (titre, cle) {
+        var B = {}; J.forEach(function (x) { var k = cle(x); if (k == null) return; var b = B[k] || (B[k] = { n: 0, ok: 0, nc: 0, sc: 0, g: 0 }); b.n++; if (x.r === 1) b.ok++; var q = coteDe(x); if (q) { b.nc++; b.sc += q.c; b.g += gainDe(x); } });
+        var K = Object.keys(B).sort(function (a, b) { return B[b].g - B[a].g || B[b].n - B[a].n; }); if (!K.length) return '';
+        return '<div style="font-size:15px;font-weight:800;margin:12px 0 4px;">' + titre + '</div><div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:14px;">'
+          + '<tr style="color:#c9d3ee;"><td style="padding:4px 2px;">&nbsp;</td><td>Réussite</td><td>Cote moy.</td><td style="text-align:right;">Gain</td></tr>'
+          + K.map(function (k) { var b = B[k]; return '<tr style="border-top:1px solid #1c2747;"><td style="padding:5px 2px;">' + esc(k) + '</td><td>' + b.ok + '/' + b.n + ' · ' + Math.round(100 * b.ok / b.n) + ' %</td><td>' + (b.nc ? frC(b.sc / b.nc) : '—') + '</td><td style="text-align:right;font-weight:800;color:' + (b.nc ? (b.g >= 0 ? '#1ed760' : '#ff6b6b') : '#c9d3ee') + ';">' + (b.nc ? eur(b.g) : '—') + '</td></tr>'; }).join('') + '</table></div>';
+      };
+      if (!J.length) return h + '<div style="font-size:14px;padding:10px 0;">Pas encore de pépite terminée : les bilans arrivent dès les premiers résultats.</div></div>';
+      h += tab('📊 Par pari', function (x) { return x.lib; }) + tab('🔥 Par ratés de suite en cours', function (x) { return (x.cours >= 7 ? '7 et +' : x.cours) + ' ratés'; })
+        + tab('Par sport', function (x) { return (SPI[x.sp] || '') + ' ' + ({ soccer: 'Foot', hockey: 'Hockey', basketball: 'Basket', football: 'NFL', baseball: 'Baseball', rugby: 'Rugby', 'rugby-league': 'Rugby XIII' }[x.sp] || x.sp); })
+        + tab('🏆 Par championnat', function (x) { return x.ligue || x.lg; })
+        + '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">Gain = 10 € par pépite terminée qui a une cote (vraie ou ≈). Réussite = toutes les pépites terminées.</div>';
+      return h + '</div>';
+    }
     /* calendrier */
     var now = new Date(), base = new Date(now.getFullYear(), now.getMonth() + M.mois, 1), an = base.getFullYear(), mo = base.getMonth();
     var MOIS = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
@@ -87387,6 +87428,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   window.g45LoiBilJour = function (j) { M.j = j; redessiner(); };
   window.g45LoiBilF = function (q, v) { if (q === 's') M.fs = v; else M.fc = +v || 0; M.j = ''; redessiner(); };
   window.g45LoiBilTout = function () { M.tout = !M.tout; redessiner(); };
+  window.g45LoiBilVue = function (k) { M.vue = k; redessiner(); };   /* 20261108o */
 })();
 
 /* ═══ 20261108d — 📊 CLASSEMENT NHL GLOBAL / DOMICILE / EXTÉRIEUR (Antoine, 06/11 : « on n'a pas global / domicile / extérieur en classement »
