@@ -76347,7 +76347,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   function usTrDe(c, sa) {
     if (!sa || !usSeul(c)) return null;
     var pid = String(joueurs(c)[0].id), k = S.ctx.lg + '|' + pid + '|' + S.ctx.id, T = S.usTr[k];
-    if (!T) { T = S.usTr[k] = { etat: 1, an: {} }; usTrCharger(T, pid, S.ctx.sp, S.ctx.lg, String(S.ctx.id), (S.data[S.nom] && S.data[S.nom].saisons) || []); }
+    if (!T) { T = S.usTr[k] = { etat: 1, an: {}, nm: {} }; usTrCharger(T, pid, S.ctx.sp, S.ctx.lg, String(S.ctx.id), (S.data[S.nom] && S.data[S.nom].saisons) || []); }
     return T.an[sa.an] || null;
   }
   async function usTrCharger(T, pid, sp, lg, cid, SA) {
@@ -76357,6 +76357,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       try {
         var B = ASP[sp] + '/' + lg + '/' + aSaUS(lg, sa.an), j = await aLire(B + '/joueurs/' + pid + '.json'); if (!j || !j.m) continue;
         var M = j.m.filter(function (m) { return m && m[4] && typeof m[4] === 'object'; }), ids = {}; M.forEach(function (m) { ids[String(m[3])] = 1; });
+        try { var EQ = await aLire(B + '/equipes.json'); if (EQ) Object.keys(EQ).forEach(function (q) { if (!T.nm[q]) T.nm[q] = EQ[q]; }); } catch (e) {}   /* 20261107m : noms + sigles des clubs (logos) */
         if (Object.keys(ids).length < 2 && ids[cid]) continue;
         var LT = []; for (var tid in ids) { var q = await aLire(B + '/equipes/' + tid + '.json'), n = 0; ((q && q.m) || []).forEach(function (m) { if (m[5] === 2) n++; }); LT.push([tid, n]); }
         var nMax = LT.reduce(function (a, x) { return Math.max(a, x[1]); }, 0), out = [];
@@ -76372,9 +76373,25 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
         if (out.length) { T.an[sa.an] = out; rien = false; }
       } catch (e) {}
     }
-    T.etat = 2; if (!rien) { try { redessiner(); } catch (e) {} }
+    T.etat = 2; try { redessiner(); } catch (e) {}
   }
-  window._g45CrUsTrT = { seul: usSeul, de: usTrDe, S: S };   /* tests */
+  /* 20261107m (Antoine : « on met un petit logo du club comme Flash le fait » → maquette clubs.png « oui ») : sous chaque saison du tableau, une
+     pastille par club du joueur (logo + matchs comptés avec ce club), joueur seul NHL / NBA / NFL. Logo : index Loi (_g45LogoIndex), sinon ESPN par sigle. */
+  function usClubsHtml(c, ms) {
+    if (!S.ctx || !usSeul(c)) return '';
+    var pid = String(joueurs(c)[0].id), T = S.usTr[S.ctx.lg + '|' + pid + '|' + S.ctx.id]; if (!T) return '';
+    var N = {}, O = [];
+    jFiltre(c, ms).forEach(function (m) { if (!valeur(c, m).n) return; var k = m.trf || String(S.ctx.id); if (!N[k]) { N[k] = 0; O.push(k); } N[k]++; });
+    if (!O.length) return '';
+    return '<br>' + O.map(function (k) {
+      var e = T.nm[k] || [], nom = k === String(S.ctx.id) ? (S.nom || e[0] || '') : (e[0] || ''), ab = String(e[1] || '').toLowerCase();
+      var u = ''; try { u = (typeof window._g45LogoIndex === 'function' && window._g45LogoIndex(nom)) || ''; } catch (x) {}
+      if (!u && ab) u = 'https://a.espncdn.com/i/teamlogos/' + esc(S.ctx.lg) + '/500/' + esc(ab) + '.png';
+      return '<span title="' + esc(nom) + '" style="display:inline-flex;align-items:center;gap:4px;background:rgba(0,0,0,.45);border-radius:6px;padding:2px 6px;margin:4px 4px 0 0;font-size:13px;font-weight:700;color:#fff;">'
+        + (/^https:\/\//.test(u) ? '<img src="' + esc(u) + '" alt="" loading="lazy" onerror="this.remove()" style="width:20px;height:20px;object-fit:contain;">' : esc(String(e[1] || nom).slice(0, 4))) + N[k] + '</span>';
+    }).join('');
+  }
+  window._g45CrUsTrT = { seul: usSeul, de: usTrDe, S: S, clubs: function (c, ms) { return usClubsHtml(c, ms); } };   /* tests */
   function jAil(c, sa) {   /* { j: joueur, a: { club, ms } } : un joueur choisi n'a joué AUCUN match de cette saison avec ce club */
     if (S.ctx || !sa) return null;
     var P = joueurs(c);
@@ -76960,6 +76977,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       var libS = lib(D.lg, s.an) + (viaA ? '<br><span style="font-size:13px;color:#f5c542;font-weight:700;">↪️ ' + esc(XA.a.club || 'autre club') + '</span>' : '');
       if (!sms) { h += '<tr><td style="' + td + '">' + libS + '</td><td colspan="3" style="' + td + 'color:#c9d3ee;">indisponible</td></tr>'; return; }
       var ms = filtrer(sms);
+      try { libS += usClubsHtml(c, ms); } catch (e) {}   /* 20261107m */
       if (!ms.length) { h += '<tr><td style="' + td + '">' + libS + '</td><td colspan="3" style="' + td + 'color:#c9d3ee;">aucun match joué</td></tr>'; return; }
       var R = calc(c, ms);
       if (!R.n && XA && !viaA) { h += '<tr><td style="' + td + '">' + libS + '</td><td colspan="3" style="' + td + 'color:#f5c542;">↪️ ' + esc(XA.j.n) + ' n\'était pas à ' + esc(S.nom) + (XA.a.club ? ' (' + esc(XA.a.club) + ')' : '') + '</td></tr>'; return; }   /* 20261031g : transfert */
