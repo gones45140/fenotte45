@@ -76291,7 +76291,8 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     Promise.all(SA.map(function (sa) { return sa ? aJoueur(D.lg, pid, sa.an).catch(function () { return null; }).then(function (a) { return a || _g45RegLogFoot(D.lg, pid, sa.an); }).catch(function () { return null; }) : null; })).then(async function (L) {   /* 20261031k : archives d'abord */
       var d = {}, vides = [];
       L.forEach(function (x, i) {
-        var n = 0; ((x && x.gameLog) || []).forEach(function (g) { if (g.d) { d[String(g.d).slice(0, 10)] = { g: g.goals || 0, a: g.assists || 0 }; n++; } });
+        var n = 0; ((x && x.gameLog) || []).forEach(function (g) { if (g.tid && D.tid && g.tid !== String(D.tid)) return;   /* 20261107o : un match avec un AUTRE club du même championnat ne doit pas tomber sur la même date du club choisi */
+          if (g.d) { d[String(g.d).slice(0, 10)] = { g: g.goals || 0, a: g.assists || 0 }; n++; } });
         if (x && !n && SA[i]) vides.push(SA[i].an);   /* 20261031g : saison lue, AUCUN match dans ce championnat (lecture ratée = rien) */
       });
       var ai = {}; if (vides.length) { try { ai = await jAilleurs(pid, D.lg, vides); } catch (e) {} }
@@ -76343,7 +76344,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
      club principal et ≥ 5 → All-Star / 4 Nations dehors) → lignes de ce club (aEquipeUS, son point de vue : domicile, score…) + m.jv = ses stats
      de ce match (rôles AJR + déduits). Lu une fois par joueur et par club choisi (S.usTr), puis redessin. ═══ */
   S.usTr = S.usTr || {};
-  function usSeul(c) { try { return !!(S.ctx && AJR[S.ctx.sp] && aOk(S.ctx.lg) && joueurs(c).length === 1 && /aucun crit/.test(libCombo(clsCombo(c)))); } catch (e) { return false; } }
+  function usSeul(c) { try { return !!(S.ctx && (AJR[S.ctx.sp] ? aOk(S.ctx.lg) : (rg() && rgArchOk(S.ctx.sp, S.ctx.lg))) && joueurs(c).length === 1 && /aucun crit/.test(libCombo(clsCombo(c)))); } catch (e) { return false; } }   /* 20261107o : + rugby */
   function usTrDe(c, sa) {
     if (!sa || !usSeul(c)) return null;
     var pid = String(joueurs(c)[0].id), k = S.ctx.lg + '|' + pid + '|' + S.ctx.id, T = S.usTr[k];
@@ -76354,6 +76355,21 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var R0 = AJR[sp], nb = function (x) { return typeof x === 'string' ? (parseInt(x, 10) || 0) : (+x || 0); }, rien = true;
     for (var i = 0; i < SA.length; i++) {
       var sa = SA[i]; if (!sa) continue;
+      /* 20261107o — 🏉 RUGBY (Antoine « oui » : foot + rugby comme la NHL) : journal du joueur dans CETTE ligue (rgBase/joueurs/<id>.json) → matchs
+         avec un autre club de la ligue ; lignes = equipes/<club>.json (point de vue du club) ; m.jv = { t: essais, pts, tit, ar: 1 } comme usVal
+         (feuille d'archive : présent = titulaire / remplaçant / essai / points, comme rgFiche). Pas d'All-Star en rugby → pas de seuil. */
+      if (!R0) { try {
+        var BR = rgBase(sp, lg, sa.an), jr = await aLire(BR + '/joueurs/' + pid + '.json'); if (!jr || !jr.m) continue;
+        try { var EQr = await aLire(BR + '/equipes.json'); if (EQr) Object.keys(EQr).forEach(function (q) { if (!T.nm[q]) T.nm[q] = EQr[q]; }); } catch (e) {}
+        var Jr = {}; jr.m.forEach(function (m) { var st = m && m[4]; if (!st || typeof st !== 'object' || String(m[3]) === cid) return; if (!(st.TIT || st.REMP || st.E || st.PTS)) return; (Jr[String(m[3])] = Jr[String(m[3])] || {})[String(m[2])] = st; });
+        var outR = [];
+        for (var tr in Jr) {
+          var qr = await aLire(BR + '/equipes/' + tr + '.json'); if (!qr || !qr.m) continue;
+          qr.m.forEach(function (m) { var st = Jr[tr][String(m[2])]; if (!st || !m[4]) return; var h = m[3] === 'h';
+            var r3 = [aIso(m[0]), h ? 1 : 0, h ? m[4][0] : m[4][1], h ? m[4][1] : m[4][0], 0, 0, String(m[2])]; r3.jv = {}; r3.jv[pid] = { t: +st.E || 0, pts: +st.PTS || 0, tit: st.TIT ? 1 : 0, ar: 1 }; r3.trf = tr; outR.push(r3); });
+        }
+        if (outR.length) { T.an[sa.an] = outR; rien = false; }
+      } catch (e) {} continue; }
       try {
         var B = ASP[sp] + '/' + lg + '/' + aSaUS(lg, sa.an), j = await aLire(B + '/joueurs/' + pid + '.json'); if (!j || !j.m) continue;
         var M = j.m.filter(function (m) { return m && m[4] && typeof m[4] === 'object'; }), ids = {}; M.forEach(function (m) { ids[String(m[3])] = 1; });
@@ -76378,20 +76394,51 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   /* 20261107m (Antoine : « on met un petit logo du club comme Flash le fait » → maquette clubs.png « oui ») : sous chaque saison du tableau, une
      pastille par club du joueur (logo + matchs comptés avec ce club), joueur seul NHL / NBA / NFL. Logo : index Loi (_g45LogoIndex), sinon ESPN par sigle. */
   function usClubsHtml(c, ms) {
-    if (!S.ctx || !usSeul(c)) return '';
-    var pid = String(joueurs(c)[0].id), T = S.usTr[S.ctx.lg + '|' + pid + '|' + S.ctx.id]; if (!T) return '';
+    var ft = !S.ctx; if (ft ? !seul(c) : !usSeul(c)) return '';
+    var D0 = S.data[S.nom] || {}, cid = String(ft ? D0.tid : S.ctx.id), pid = String(joueurs(c)[0].id), T = S.usTr[ft ? 'ft|' + D0.lg + '|' + pid + '|' + cid : S.ctx.lg + '|' + pid + '|' + S.ctx.id]; if (!T) return '';
     var N = {}, O = [];
-    jFiltre(c, ms).forEach(function (m) { if (!valeur(c, m).n) return; var k = m.trf || String(S.ctx.id); if (!N[k]) { N[k] = 0; O.push(k); } N[k]++; });
+    jFiltre(c, ms).forEach(function (m) { if (!valeur(c, m).n) return; var k = m.trf || cid; if (!N[k]) { N[k] = 0; O.push(k); } N[k]++; });
     if (!O.length) return '';
     return O.map(function (k) {
-      var e = T.nm[k] || [], nom = k === String(S.ctx.id) ? (S.nom || e[0] || '') : (e[0] || ''), ab = String(e[1] || '').toLowerCase();
+      var e = T.nm[k] || [], nom = k === cid ? (S.nom || e[0] || '') : (e[0] || ''), ab = String(e[1] || '').toLowerCase();
       var u = ''; try { u = (typeof window._g45LogoIndex === 'function' && window._g45LogoIndex(nom)) || ''; } catch (x) {}
-      if (!u && ab) u = 'https://a.espncdn.com/i/teamlogos/' + esc(S.ctx.lg) + '/500/' + esc(ab) + '.png';
+      if (!u && ft) u = 'https://a.espncdn.com/i/teamlogos/soccer/500/' + esc(k) + '.png';   /* 20261107o : foot = logo ESPN par numéro de club */
+      else if (!u && ab && !rg()) u = 'https://a.espncdn.com/i/teamlogos/' + esc(S.ctx.lg) + '/500/' + esc(ab) + '.png';
       return '<span title="' + esc(nom) + '" style="display:flex;align-items:center;gap:5px;width:max-content;background:rgba(0,0,0,.45);border-radius:6px;padding:2px 6px;margin:2px 0;font-size:14px;font-weight:700;color:#fff;">'
         + (/^https:\/\//.test(u) ? '<img src="' + esc(u) + '" alt="" loading="lazy" onerror="this.remove()" style="width:20px;height:20px;object-fit:contain;">' : esc(String(e[1] || nom).slice(0, 4))) + N[k] + '</span>';
     }).join('');
   }
-  window._g45CrUsTrT = { seul: usSeul, de: usTrDe, S: S, clubs: function (c, ms) { return usClubsHtml(c, ms); } };   /* tests */
+  /* ═══ 20261107o — ⚽ FOOT : joueur SEUL suivi dans TOUS ses clubs de championnat, même en cours de saison (avant, 20261031g : seulement une saison
+     ENTIÈRE ailleurs, via ESPN, et jamais un autre club du MÊME championnat). Carrière des archives cotes/foot/joueurs/<id>.json
+     c[] = [ligue, saison, club, nom, matchs, …] → pour chaque saison, chaque club de championnat national (xxx.N) autre que le club choisi :
+     lignes aEquipe(ligue, club) filtrées sur les matchs du journal du joueur (foot/<ligue>/<saison>/joueurs/<id>.json, m[3] = ce club) ;
+     m.jv = { g, a }. ═══ */
+  function ftTrDe(c, sa) {
+    if (!sa || S.ctx || !seul(c)) return null;
+    var D0 = S.data[S.nom]; if (!D0 || !D0.lg || !D0.tid) return null;
+    var pid = String(joueurs(c)[0].id), k = 'ft|' + D0.lg + '|' + pid + '|' + D0.tid, T = S.usTr[k];
+    if (!T) { T = S.usTr[k] = { etat: 1, an: {}, nm: {} }; ftTrCharger(T, pid, D0.lg, String(D0.tid), D0.saisons || []); }
+    return T.an[sa.an] || null;
+  }
+  async function ftTrCharger(T, pid, lg, cid, SA) {
+    var car = null; try { car = await aLire('foot/joueurs/' + pid + '.json'); } catch (e) {}
+    var C = ((car && car.c) || []).filter(function (x) { return x && /^[a-z]{2,4}\.\d$/.test(x[0]) && !(x[0] === lg && String(x[2]) === cid); });
+    C.forEach(function (x) { T.nm[String(x[2])] = [x[3] || '', '']; });
+    for (var i = 0; i < SA.length; i++) {
+      var sa = SA[i]; if (!sa) continue; var out = [];
+      for (var k = 0; k < C.length; k++) {
+        var x = C[k], lg2 = x[0], cl = String(x[2]), sa2 = aSa(lg2, sa.an); if (String(x[1]) !== sa2) continue;
+        try {
+          var rows = await aEquipe(lg2, cl, sa.an), jr = await aLire('foot/' + lg2 + '/' + sa2 + '/joueurs/' + pid + '.json'); if (!rows || !jr || !jr.m) continue;
+          var J = {}; jr.m.forEach(function (m) { if (m && m[4] && String(m[3]) === cl) J[String(m[2])] = m[4]; });
+          rows.forEach(function (m) { var st = J[m.id]; if (!st) return; var r = [m.d, m.dom, m.p, m.c]; if (m.co) r[12] = m.co; r.jv = {}; r.jv[pid] = { g: +st.G || 0, a: +st.A || 0 }; r.trf = cl; out.push(r); });
+        } catch (e) {}
+      }
+      if (out.length) T.an[sa.an] = out;
+    }
+    T.etat = 2; try { redessiner(); } catch (e) {}
+  }
+  window._g45CrUsTrT = { seul: usSeul, seulF: function (c) { return seul(c); }, de: usTrDe, ft: ftTrDe, S: S, clubs: function (c, ms) { return usClubsHtml(c, ms); } };   /* tests */
   function jAil(c, sa) {   /* { j: joueur, a: { club, ms } } : un joueur choisi n'a joué AUCUN match de cette saison avec ce club */
     if (S.ctx || !sa) return null;
     var P = joueurs(c);
@@ -76402,6 +76449,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var L = msDe(sa);
     if (L && S.ctx) { var XT = usTrDe(c, sa); return XT && XT.length ? L.concat(XT).sort(function (a, b) { return a[0] < b[0] ? -1 : 1; }) : L; }   /* 20261107l */
     if (!L || !seul(c)) return L;
+    var FT = ftTrDe(c, sa); if (FT && FT.length) return L.concat(FT).sort(function (a, b) { return a[0] < b[0] ? -1 : 1; });   /* 20261107o */
     var X = jAil(c, sa); return X && X.a.ms.length ? X.a.ms : L;
   }
   function roCharger(nom, D) {
@@ -76855,7 +76903,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var q = await aLire('foot/' + lg + '/' + sa + '/joueurs/' + pid + '.json'); if (q === null) return null;
     /* 20261102j (capture « 🏠 Kylian Mbappé buteur » : 2022-23 / 2023-24 « ↪️ PSG · aucun match joué ») : h était laissé à null → l'ancien club
        (jAilleurs, m[1] = -1) ne passait jamais le filtre 🏠 / ✈️. m[6] du journal = 'h' | 'a' (le même que « Jouable en Cockpit » joueurs). */
-    return { gameLog: ((q && q.m) || []).filter(function (m) { return m[4]; }).map(function (m) { return { d: aIso(m[0]), goals: m[4].G || 0, assists: m[4].A || 0, h: m[6] === 'h' ? 1 : m[6] === 'a' ? 0 : null }; }), arch: 1 };
+    return { gameLog: ((q && q.m) || []).filter(function (m) { return m[4]; }).map(function (m) { return { d: aIso(m[0]), goals: m[4].G || 0, assists: m[4].A || 0, h: m[6] === 'h' ? 1 : m[6] === 'a' ? 0 : null, tid: m[3] == null ? '' : String(m[3]) }; }), arch: 1 };   /* 20261107o : + tid (club du match) */
   }
   async function aFeuilles(lg, tid, an) {   /* fiche.cf des mois joués par le club → S.fa[idMatch] (0 = relue, ESPN sans stats d'équipe) */
     var A = await aEquipe(lg, tid, an); if (!A) return;
@@ -76964,7 +77012,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
 
   function tableau(c, D) {
     if (c.jbk && bkOk() && !S.bkE[S.ctx.lg + '|' + S.ctx.id]) bkCharger();   /* 20261103h : lignes du book lues une fois par équipe */
-    var CL = !!(S.ctx && usSeul(c));   /* 20261107n : colonne « Club · matchs » (maquette clubs2.png « oui ») */
+    var CL = !!(S.ctx ? usSeul(c) : (seul(c) && S.usTr['ft|' + D.lg + '|' + String((joueurs(c)[0] || {}).id) + '|' + D.tid]));   /* 20261107o : + foot */   /* 20261107n : colonne « Club · matchs » (maquette clubs2.png « oui ») */
     var tous = [], h = '<table style="width:100%;border-collapse:collapse;font-size:14px;color:#fff;margin-top:6px;">'
       + '<tr><th style="text-align:left;font-size:13px;color:#c9d3ee;padding:6px 4px;border-bottom:1px solid #2a3a63;">Saison</th>'
       + (CL ? '<th style="text-align:left;font-size:13px;color:#c9d3ee;padding:6px 4px;border-bottom:1px solid #2a3a63;">Club · matchs</th>' : '')
