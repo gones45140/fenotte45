@@ -77419,12 +77419,19 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
         if (!(S.ui[nom] && (S.ui[nom].enCours || S.ui[nom].ar))) usCharger(nom, D, true);
         S.uiI = usIdxs(D);
       }
+      /* 20261108j — dans la Calculatrice (🎯 Cote juste — match), le détail (tableau des saisons, séries, « Si tu l'avais joué en… »,
+         Jouable en Cockpit) est REPLIÉ derrière un ➕ (Antoine : « cette partie-là on met un + pour l'ouvrir et doit être fermée dans la
+         calculatrice ») : enveloppe .g45cr-det + bouton .g45cr-detb, visibles / cachés par le CSS du bloc #g45-cjcr seulement ;
+         ailleurs (Tes critères, fiches) rien ne change. Les % partent quand même vers la calculatrice (calculés, juste cachés). */
+      h += '<div class="g45cr-detb" onclick="g45CjmDetail()" style="display:none;margin-top:12px;cursor:pointer;text-align:center;padding:11px;border-radius:10px;font-size:15px;font-weight:800;color:#fff;background:#16213f;border:1px solid #2a3a63;">'
+        + '<span class="g45cr-d0">➕ Voir le détail (saisons, séries, simulation)</span><span class="g45cr-d1">➖ Fermer le détail</span></div><div class="g45cr-det">';
       S.combos.forEach(function (cc, i) {
         h += '<div style="margin-top:12px;font-size:15px;"><span style="color:#c9d3ee;">' + (S.combos.length > 1 ? 'Combiné ' + (i + 1) + ' : ' : 'Ton combiné : ') + '</span><b>'
           + (S.lieu === 'dom' ? '🏠 ' : S.lieu === 'ext' ? '✈️ ' : '') + esc(libCombo(cc)) + '</b></div>' + tableau(cc, D);
       });
       h += '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">Pire série : 🟢 0-2 · 🟠 3-4 · 🔴 5 et plus. Pas de cote : ESPN ne garde pas celles des matchs joués.</div>';
       try { if (!(typeof window._g45CkActif === 'function' && !window._g45CkActif())) h += clsHtml(); } catch (e) {}   /* 20261027h : 🏁 Jouable en Cockpit ? ; 20261104l : seulement avec le Cockpit activé */
+      h += '</div>';   /* 20261108j : fin de .g45cr-det */
     }
     return h + '</div>';
   }
@@ -87515,6 +87522,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   }
   function panneau() {
     var z = document.getElementById('g45-cjcr'); if (!z || typeof window._g45CrHtml !== 'function') return;
+    z.classList.toggle('ouv', !!M.det);   /* 20261108j */
     var x = x2(M.on ? M.a : M.h); if (!x) return;
     var S0 = window._g45CrS, nom = x[4], ctx = x[0] === 'soccer' ? null : { sp: x[0], lg: x[1], id: String(x[3]) }, lgF = x[0] === 'soccer' ? x[1] : null;
     var sv = S0 && S0.combos ? JSON.parse(JSON.stringify(S0.combos)) : null, sa = S0 ? S0.a : 0;
@@ -87554,6 +87562,11 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     if (lg !== M.lg) { M.lg = lg; var o = k === 'h' ? 'a' : 'h'; if (!x2(M[o])) M[o] = ''; }
     M[k] = id; M.on = k === 'a' ? 1 : 0; M.garde = 0; garder(); dessiner();
   };
+  /* 20261108j — ➕ / ➖ détail des critères replié dans la calculatrice (classe .ouv sur #g45-cjcr, gardée d'un redessin à l'autre par M.det) */
+  (function () { if (document.getElementById('g45-cjdet-css')) return; var st = document.createElement('style'); st.id = 'g45-cjdet-css';
+    st.textContent = '#g45-cjcr .g45cr-detb{display:block!important}#g45-cjcr:not(.ouv) .g45cr-det{display:none}#g45-cjcr .g45cr-d1,#g45-cjcr.ouv .g45cr-d0{display:none}#g45-cjcr.ouv .g45cr-d1{display:inline}';
+    (document.head || document.documentElement).appendChild(st); })();
+  window.g45CjmDetail = function () { M.det = !M.det; var z = document.getElementById('g45-cjcr'); if (z) z.classList.toggle('ouv', !!M.det); };
   window.g45CjmOnglet = function (k) { M.on = k ? 1 : 0; M.garde = 1; dessiner(); };
   /* remplissage automatique : l'équipe affichée dans le panneau → Équipe 1 (domicile) ou 2 (extérieur) */
   window._g45CjAuto = function (o) {
