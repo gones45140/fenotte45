@@ -87248,6 +87248,50 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
       .then(function (j) { M.en = 0; if (j) { M.d = j; M.t = Date.now(); } else if (!M.d) M.err = 1; redessiner(); }).catch(function () { M.en = 0; if (!M.d) M.err = 1; redessiner(); });
   }
   var lieuI = function (x) { return x.lieu === 'dom' ? ' 🏠' : x.lieu === 'ext' ? ' ✈️' : ''; };
+  /* ═══ 20261108m — 💶 COTES DES PÉPITES (Antoine : « y a moyen d'avoir les cotes, car c'est plutôt joli en réussite » → « oui ») : cote
+     d'avant-match gardée par le robot dans gones45-archives (cotes/<dir>/<lg>/<saison>/matchs/<AAAA-MM>.json[eid] : ml {h, d, a}, tot {L, o, u},
+     bts {o, n}, teq {h|a: [[ligne, cote]…]}). Victoire / vainqueur = ml du côté de l'équipe ; victoire ou nul ≈ 1 / (1/ml + 1/nul) (calculée) ;
+     plus / moins = SEULEMENT si la ligne du pari est la ligne gardée (tot.L) ; les deux marquent = bts.o ; l'équipe marque = teq plus de 0,5
+     (_g45AgTeqSep) ; victoire en 60 min (hockey) : pas de cote. Bilan « joué à 10 € » sur les pépites terminées qui ont une cote.
+     Lecture : un fichier par ligue / mois, gardé en mémoire (MC), redessin une seule fois quand tout est arrivé. ═══ */
+  var DIRC = { soccer: 'foot', hockey: 'hockey', basketball: 'basket', football: 'football-us', baseball: 'baseball', rugby: 'rugby', 'rugby-league': 'rugby-xiii' };
+  var ARC = 'https://raw.githubusercontent.com/gones45140/gones45-archives/main/cotes/', MC = {}, MCen = 0;
+  function moisDe(t) { var d = new Date(t), L = [d.toISOString().slice(0, 7)]; try { var pz = d.toLocaleDateString('sv-SE', { timeZone: 'Europe/Paris' }).slice(0, 7); if (L.indexOf(pz) < 0) L.push(pz); } catch (e) {} return L; }
+  function saisonsDe(t) { var d = new Date(t), y = d.getUTCFullYear(), m = d.getUTCMonth() + 1, a = m >= 7 ? y : y - 1; return [a + '-' + String(a + 1).slice(2), String(y)]; }
+  function lireMois(x, mo) {   /* → objet du mois (ou {}) ; essaie la saison « 2026-27 » puis « 2026 » */
+    var k = x.sp + '|' + x.lg + '|' + mo;
+    if (!MC[k]) {
+      var S = saisonsDe(x.t), hr = Math.floor(Date.now() / 36e5), essai = function (i) {
+        if (i >= S.length) return Promise.resolve({});
+        return fetch(ARC + DIRC[x.sp] + '/' + x.lg + '/' + S[i] + '/matchs/' + mo + '.json?h=' + hr).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; })
+          .then(function (j) { return j || essai(i + 1); });
+      };
+      MC[k] = essai(0);
+    }
+    return MC[k];
+  }
+  var FI = {};   /* eid → fiche (0 = cherchée, rien) */
+  function coteDe(x) {
+    var fi = FI[x.eid]; if (!fi) return null;
+    var side = String(fi.h && fi.h.id) === String(x.id) ? 'h' : String(fi.a && fi.a.id) === String(x.id) ? 'a' : (x.d ? 'h' : 'a'), ml = fi.ml || {};
+    var ok = function (c) { return c > 1 ? c : null; }, m;
+    if (x.k === 'v' || x.k === 'vq') return ok(ml[side]) ? { c: ml[side] } : null;
+    if (x.k === 'vn') return ok(ml[side]) && ok(ml.d) ? { c: 1 / (1 / ml[side] + 1 / ml.d), e: 1 } : null;
+    if ((m = String(x.k).match(/^([ou])(\d)(\d)$/))) { var L = +(m[2] + '.' + m[3]), T = fi.tot || {}; return T.L === L && ok(T[m[1]]) ? { c: T[m[1]] } : null; }
+    if (x.k === 'btts') return fi.bts && ok(fi.bts.o) ? { c: fi.bts.o } : null;
+    if (x.k === 'marque') { var Q = fi.teq && fi.teq[side]; if (!Q || typeof window._g45AgTeqSep !== 'function') return null; var S0 = window._g45AgTeqSep(Q)[0.5]; return S0 && ok(S0.ov) ? { c: S0.ov } : null; }
+    return null;
+  }
+  function chargerCotes(L) {
+    var A = L.filter(function (x) { return x.eid && DIRC[x.sp] && FI[x.eid] === undefined; }); if (!A.length || MCen) return;
+    MCen = 1;
+    Promise.all(A.map(function (x) {
+      return Promise.all(moisDe(x.t).map(function (mo) { return lireMois(x, mo); })).then(function (D) { var f = null; D.forEach(function (d) { if (!f && d && d[x.eid]) f = d[x.eid]; }); FI[x.eid] = f || 0; });
+    })).then(function () { MCen = 0; redessiner(); }).catch(function () { MCen = 0; });
+  }
+  var frC = function (c) { return (Math.round(c * 100) / 100).toFixed(2).replace('.', ','); };
+  var coteH = function (y) { var q = coteDe(y); return q ? ' · <b style="color:#f5c542;">' + (q.e ? '≈ ' : '') + frC(q.c) + '</b>' : ''; };
+  window._g45LoiCote = { coteDe: coteDe, FI: FI };   /* tests */
   var resH = function (x) { var c = x.r === 1 ? '#1ed760' : x.r === 0 ? '#ff6b6b' : '#c9d3ee'; return '<span style="font-weight:800;color:' + c + ';font-size:16px;white-space:nowrap;">' + (x.r === 1 ? '✅' : x.r === 0 ? '❌' : x.r === -1 ? '🚫' : '⏳') + ' ' + esc(x.sc || '') + '</span>'; };
   /* 20261107r (capture : « manque heure, championnat, fond » → maquette loiL.png « oui ») : carte par pépite = logo de l'équipe en fond (couleur x.c
      si gardée), bande sombre sous le texte, 🕒 heure (Paris) + 🏆 championnat sur la 2e ligne. */
@@ -87262,7 +87306,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
       + '<div style="font-size:13px;color:#c9d3ee;">' + (date ? '📅 ' + esc(String(x.j || '').slice(8, 10) + '/' + String(x.j || '').slice(5, 7)) + ' · ' : '') + (hh ? '🕒 ' + esc(hh) : '') + (x.ligue ? ' · 🏆 ' + esc(x.ligue) : '') + '</div>'
       /* 20261107y (« Venezia en double » → maquette loiG.png « oui ») : UNE carte par match ; chaque pari sur sa ligne avec son ✅ / ❌ / ⏳ ; score à droite */
       + (G || [x]).map(function (y, i) { var ic = y.r === 1 ? '<b style="color:#1ed760;">✅</b>' : y.r === 0 ? '<b style="color:#ff6b6b;">❌</b>' : y.r === -1 ? '🚫' : '⏳';
-          return '<div style="font-size:14px;display:flex;justify-content:space-between;gap:10px;' + (i === 0 && (G || []).length > 1 ? 'border-top:1px solid #2a3a63;margin-top:4px;padding-top:4px;' : '') + '"><span>' + esc(y.lib) + lieuI(y) + ' · 🔥 ' + y.cours + ' / ' + y.pire + '</span>' + ic + '</div>'; }).join('') + '</div>'
+          return '<div style="font-size:14px;display:flex;justify-content:space-between;gap:10px;' + (i === 0 && (G || []).length > 1 ? 'border-top:1px solid #2a3a63;margin-top:4px;padding-top:4px;' : '') + '"><span>' + esc(y.lib) + lieuI(y) + ' · 🔥 ' + y.cours + ' / ' + y.pire + coteH(y) + '</span>' + ic + '</div>'; }).join('') + '</div>'
       + '<span style="flex:1;"></span><span style="background:rgba(0,0,0,.8);border-radius:8px;padding:4px 8px;font-weight:900;font-size:16px;white-space:nowrap;">' + (function () { var z = (G || [x]).filter(function (y) { return y.sc; })[0]; return z ? esc(z.sc) : (G || [x]).every(function (y) { return y.r === -1; }) ? '🚫' : '⏳'; })() + '</span></div></div>';
   };
   var grouper = function (A) { var o = [], ix = {}; A.forEach(function (x) { var k = x.j + '|' + x.eid + '|' + x.id; if (ix[k] == null) { ix[k] = o.length; o.push([]); } o[ix[k]].push(x); }); return o; };
@@ -87283,6 +87327,12 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     var tu = function (lb, v, bg, bd, col) { return '<div style="flex:1;min-width:105px;background:' + bg + ';border:1px solid ' + bd + ';border-radius:10px;padding:8px;text-align:center;"><div style="font-size:13px;color:#c9d3ee;">' + lb + '</div><div style="font-size:22px;font-weight:900;color:' + col + ';">' + v + '</div></div>'; };
     h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">' + tu('Pépites jouées', J.length, '#0b1226', '#2a3a63', '#fff')
       + tu('Série stoppée ✅', G + (J.length ? ' · ' + Math.round(100 * G / J.length) + ' %' : ''), 'rgba(30,215,96,.12)', '#1ed760', '#1ed760') + tu('Série continue ❌', P, 'rgba(255,69,69,.12)', '#ff4545', '#ff6b6b') + '</div>';
+    chargerCotes(L);   /* 20261108m */
+    var JC = J.filter(function (x) { return coteDe(x); }), gain = JC.reduce(function (a, x) { return a + (x.r === 1 ? 10 * (coteDe(x).c - 1) : -10); }, 0);
+    if (JC.length) h += '<div style="background:' + (gain >= 0 ? 'rgba(30,215,96,.12)' : 'rgba(255,69,69,.12)') + ';border:1px solid ' + (gain >= 0 ? '#1ed760' : '#ff4545') + ';border-radius:10px;padding:8px;margin-bottom:10px;text-align:center;">'
+      + '<div style="font-size:14px;color:#c9d3ee;">💶 Joué à 10 € chaque pépite avec cote (' + JC.length + ' sur ' + J.length + ')</div>'
+      + '<div style="font-size:22px;font-weight:900;color:' + (gain >= 0 ? '#1ed760' : '#ff6b6b') + ';">' + (gain >= 0 ? '+' : '−') + frC(Math.abs(gain)).replace(',00', '') + ' € · ' + (gain >= 0 ? '+' : '−') + Math.round(Math.abs(gain) / (10 * JC.length) * 100) + ' %</div>'
+      + '<div style="font-size:13px;color:#c9d3ee;">Cote d\'avant-match gardée par nos archives (≈ = victoire ou nul calculée depuis le 1N2).</div></div>';
     var S = {}; J.forEach(function (x) { var k = SPI[x.sp] || '?'; S[k] = S[k] || [0, 0]; S[k][1]++; if (x.r === 1) S[k][0]++; });
     h += '<div style="display:flex;gap:6px;flex-wrap:wrap;font-size:14px;font-weight:700;margin-bottom:12px;">' + Object.keys(S).map(function (k) { return '<span style="background:#0b1226;border:1px solid #2a3a63;border-radius:8px;padding:3px 8px;">' + k + ' ' + S[k][0] + '/' + S[k][1] + ' · ' + Math.round(100 * S[k][0] / S[k][1]) + ' %</span>'; }).join('') + '</div>';
     /* calendrier */
