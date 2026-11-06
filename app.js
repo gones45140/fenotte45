@@ -79355,7 +79355,7 @@ window._g45ClLogo = _g45ClLogo;
       var im = document.createElement('img');
       im.className = 'g45-cl-fil'; im.alt = ''; im.loading = 'lazy'; im.src = u;
       im.onerror = function () { im.remove(); };
-      im.setAttribute('style', 'position:absolute;left:58%;top:50%;transform:translate(-50%,-50%);height:84px;width:84px;max-height:92%;object-fit:contain;opacity:.5;pointer-events:none;filter:drop-shadow(0 2px 6px rgba(0,0,0,.5));');
+      im.setAttribute('style', 'position:absolute;left:58%;top:50%;transform:translate(-50%,-50%);height:92px;width:92px;max-height:96%;object-fit:contain;opacity:.9;pointer-events:none;filter:drop-shadow(0 2px 6px rgba(0,0,0,.6));');   /* 20261108c (« logo à faire ressortir, plus visible comme ce matin ») : opacité .5 → .9, 92 px */
       if (getComputedStyle(el).position === 'static') el.style.position = 'relative';
       el.insertBefore(im, el.firstChild);
     });
