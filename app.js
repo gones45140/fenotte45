@@ -77084,9 +77084,27 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       try { h += simHtml(c, D); } catch (e) {}   /* 20261102m */
       h += garderHtml(c, D, T);   /* 20261028e */
       h += ajoutHtml(c);   /* 20261101c */
+      try { h += cjHtml(c, D, tous); } catch (e) {}   /* 20261108f */
     }
     return h;
   }
+  /* ═══ 20261108f — 🧮 « ENVOYER À LA CALCULATRICE » (Antoine : « on estime à combien de % le but en 1re mi-temps entre les 2 ? », « faut tenir
+     compte des derniers matchs », « à mettre dans calculatrice » → maquette cj.png « oui ») : % de réussite du combiné sur les 10 derniers matchs
+     comptés, les 2 dernières saisons, toutes les saisons (lieu choisi) → Équipe 1 ou 2 du bloc 🎯 Cote juste (window.g45CjMettre). ═══ */
+  function cjVals(c, D, tous) {
+    var L = jFiltre(c, tous).filter(function (m) { return valeur(c, m).n > 0; }), pc = function (A) { if (!A.length) return null; var k = 0; A.forEach(function (m) { var v = valeur(c, m); if (v.ok * 2 >= v.n) k++; }); return Math.round(100 * k / A.length); };
+    var r2 = []; (D.saisons || []).slice(0, 2).forEach(function (sa) { var sms = sa && msS(c, sa); if (sms) r2 = r2.concat(jFiltre(c, filtrer(sms)).filter(function (m) { return valeur(c, m).n > 0; })); });
+    return { d10: pc(L.slice(-10)), s2: pc(r2), s5: pc(L), n: L.length };
+  }
+  function cjHtml(c, D, tous) {
+    var V = cjVals(c, D, tous); if (!V.n) return '';
+    var lieu = S.lieu === 'dom' ? '🏠 Domicile' : S.lieu === 'ext' ? '✈️ Extérieur' : 'Tous lieux';
+    S.cjDer = { nom: S.nom, lieu: lieu, crit: libCombo(c), d10: V.d10, s2: V.s2, s5: V.s5 };
+    var b = function (k) { return '<button onclick="g45CjEnvoyer(' + k + ')" style="border:1px solid #6d9dff;border-radius:10px;padding:8px 12px;font-size:14px;font-weight:800;color:#fff;background:#1b2a55;cursor:pointer;">→ Équipe ' + k + '</button>'; };
+    return '<div style="margin-top:10px;background:#0f1730;border-radius:10px;padding:10px;font-size:14px;color:#fff;">🧮 <b>Envoyer à la calculatrice</b> (🎯 Cote juste) : 10 derniers <b>' + (V.d10 == null ? '—' : V.d10 + ' %') + '</b> · 2 saisons <b>' + (V.s2 == null ? '—' : V.s2 + ' %') + '</b> · toutes <b>' + V.s5 + ' %</b>'
+      + '<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">' + b(1) + b(2) + '</div></div>';
+  }
+  window.g45CjEnvoyer = function (k) { if (S.cjDer && typeof window.g45CjMettre === 'function') window.g45CjMettre(k, S.cjDer); };
   /* ═══ 20261028e — 📌 GARDER SUR LA CARTE (« à moins que l'on fasse un truc pour les dernières saisons » : Antoine recopiait « 3/4/3 » à la
      main ; maquette maquette-garde → « après, 2023-24 à 2025-26, pas besoin de le recalculer à chaque fois ») : u.ps = { sig (lieu|combiné),
      lib, k (lieu), ans [libellés], p [pire série par saison, la plus récente d'abord], tot (pire sur 4 saisons), at }. Saisons FINIES figées ;
@@ -87369,4 +87387,75 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   };
   window.g45NhlClsLieu = function (k) { MODE = ({ all: 1, dom: 1, ext: 1 })[k] ? k : 'all'; if (dernier && dernier[2].isConnected) rendre(dernier[0], dernier[1], dernier[2]); };
   window._g45NhlClsT = { table: table, M: MEM };   /* tests */
+})();
+
+/* ═══ 20261108f — 🎯 COTE JUSTE DANS LA CALCULATRICE (maquette cj.png « oui ») : 2 équipes × (10 derniers / 2 saisons / toutes les saisons, en %),
+   poids 40 / 35 / 25 modifiables, cote du book → % estimé (moyenne des deux équipes mélangées), cote juste = 100 / %, ✅ si book ≥ cote juste.
+   Rempli à la main ou par « 🧮 Envoyer à la calculatrice » des critères (g45CjMettre) ; gardé en localStorage g45cj1 (confort). ═══ */
+(function () {
+  var K = 'g45cj1', D = { e: [{ nom: '', lieu: '', d10: '', s2: '', s5: '' }, { nom: '', lieu: '', d10: '', s2: '', s5: '' }], w: [40, 35, 25], b: '', crit: '' };
+  try { var c0 = JSON.parse(localStorage.getItem(K) || 'null'); if (c0 && c0.e) D = c0; } catch (e) {}
+  var garder = function () { try { localStorage.setItem(K, JSON.stringify(D)); } catch (e) {} };
+  var esc = function (t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+  var nb = function (x) { var v = parseFloat(String(x).replace(',', '.')); return isNaN(v) ? null : v; };
+  function melange(e) {
+    var v = [nb(e.d10), nb(e.s2), nb(e.s5)], w = D.w.map(nb), t = 0, s = 0;
+    v.forEach(function (x, i) { if (x != null && w[i] > 0) { t += x * w[i]; s += w[i]; } });
+    return s ? t / s : null;
+  }
+  function calc() {
+    var m = D.e.map(melange).filter(function (x) { return x != null; });
+    var p = m.length ? m.reduce(function (a, b) { return a + b; }, 0) / m.length : null;
+    return { m: D.e.map(melange), p: p, cj: p > 0 ? 100 / p : null, bk: nb(D.b) };
+  }
+  var inp = function (id, v, w) { return '<input id="' + id + '" value="' + esc(v) + '" inputmode="decimal" oninput="g45CjMaj(this)" style="width:' + (w || 64) + 'px;font-size:16px;font-weight:800;text-align:center;padding:6px;border-radius:8px;background:#141c33;color:#fff;border:1px solid #2a3a63;">'; };
+  function html() {
+    var R = calc(), fr = function (x, d) { return x == null ? '—' : String(Math.round(x * Math.pow(10, d || 0)) / Math.pow(10, d || 0)).replace('.', ','); };
+    var col = function (i) {
+      var e = D.e[i];
+      return '<div style="background:#0b1226;border:1px solid #2a3a63;border-radius:10px;padding:8px;min-width:0;">'
+        + '<input id="cj-n' + i + '" value="' + esc(e.nom) + '" placeholder="Équipe ' + (i + 1) + '" oninput="g45CjMaj(this)" style="width:100%;box-sizing:border-box;font-size:15px;font-weight:900;padding:6px;border-radius:8px;background:#141c33;color:#fff;border:1px solid #2a3a63;">'
+        + '<div style="font-size:13px;color:#c9d3ee;margin:4px 0 6px;">' + esc(e.lieu || '') + '</div>'
+        + [['10 derniers', 'd10'], ['2 saisons', 's2'], ['5 saisons', 's5']].map(function (x) { return '<div style="display:flex;justify-content:space-between;align-items:center;margin:4px 0;font-size:14px;color:#fff;"><span>' + x[0] + '</span><span>' + inp('cj-' + x[1] + i, e[x[1]]) + ' %</span></div>'; }).join('')
+        + '<div style="font-size:14px;margin-top:6px;color:#fff;">→ <b>' + fr(R.m[i]) + ' %</b></div></div>';
+    };
+    var verdict = '';
+    if (R.cj && R.bk > 1) verdict = R.bk >= R.cj ? '<div style="font-size:15px;font-weight:800;margin-top:4px;color:#1ed760;">Book ' + fr(R.bk, 2) + ' : ✅ intéressant (cote juste ' + fr(R.cj, 2) + ')</div>'
+      : '<div style="font-size:15px;font-weight:800;margin-top:4px;color:#ff8a8a;">Book ' + fr(R.bk, 2) + ' : ❌ trop court (il faudrait ' + fr(R.cj, 2) + ' ou plus · le book estime ' + fr(100 / R.bk) + ' %)</div>';
+    return '<div id="g45-cj" class="fc" style="margin-top:12px;background:rgba(10,14,24,.93);border:1px solid #1c2747;border-radius:14px;padding:12px;color:#fff;">'
+      + '<div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:17px;font-weight:900;">🎯 Cote juste</span><button onclick="g45CjVider()" style="font-size:13px;padding:5px 10px;border-radius:8px;border:1px solid #2a3a63;background:#0b1226;color:#fff;cursor:pointer;">Effacer</button></div>'
+      + '<div style="font-size:13px;color:#c9d3ee;margin:3px 0 10px;">' + (D.crit ? 'Critère : <b style="color:#fff;">' + esc(D.crit) + '</b> · ' : '') + 'remplis à la main ou par « 🧮 Envoyer à la calculatrice » dans les critères d\'une équipe.</div>'
+      + '<div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;">' + col(0) + col(1) + '</div>'
+      + '<div style="font-size:14px;font-weight:800;margin:10px 0 4px;">Poids</div><div style="display:flex;gap:6px;flex-wrap:wrap;font-size:14px;">'
+      + ['10 derniers', '2 saisons', '5 saisons'].map(function (t, i) { return '<span style="flex:1;min-width:100px;background:#0b1226;border:1px solid #2a3a63;border-radius:8px;padding:6px;text-align:center;">' + t + ' ' + inp('cj-w' + i, D.w[i], 48) + ' %</span>'; }).join('') + '</div>'
+      + '<div style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:15px;">Cote du book ' + inp('cj-b', D.b, 80) + '</div>'
+      + '<div style="margin-top:12px;background:' + (R.p == null ? '#0b1226' : 'rgba(30,215,96,.12)') + ';border:1px solid ' + (R.p == null ? '#2a3a63' : '#1ed760') + ';border-radius:12px;padding:10px;text-align:center;">'
+      + (R.p == null ? '<div style="font-size:14px;color:#c9d3ee;">Remplis au moins une équipe.</div>' : '<div style="font-size:14px;color:#c9d3ee;">Estimation du match</div><div style="font-size:24px;font-weight:900;">' + fr(R.p) + ' % → cote juste <span style="color:#1ed760;">' + fr(R.cj, 2) + '</span></div>' + verdict)
+      + '</div><div style="font-size:13px;color:#c9d3ee;margin-top:8px;">Chaque équipe : mélange 10 derniers / 2 saisons / 5 saisons avec les poids (une case vide est ignorée), puis moyenne des deux équipes.</div></div>';
+  }
+  function poser(focusId) {
+    var t = document.getElementById('t-calc'); if (!t) return;
+    var z = document.getElementById('g45-cj'), pos = null;
+    var a = document.activeElement; if (a && a.id && /^cj-/.test(a.id)) { focusId = a.id; try { pos = a.selectionStart; } catch (e) {} }
+    var tmp = document.createElement('div'); tmp.innerHTML = html(); var n = tmp.firstChild;
+    if (z) z.parentNode.replaceChild(n, z); else t.appendChild(n);
+    if (focusId) { var f = document.getElementById(focusId); if (f) { f.focus(); try { if (pos != null) f.setSelectionRange(pos, pos); } catch (e) {} } }
+  }
+  window.g45CjMaj = function (el) {
+    var id = el.id, v = el.value, m;
+    if ((m = id.match(/^cj-n(\d)$/))) D.e[+m[1]].nom = v;
+    else if ((m = id.match(/^cj-(d10|s2|s5)(\d)$/))) D.e[+m[2]][m[1]] = v;
+    else if ((m = id.match(/^cj-w(\d)$/))) D.w[+m[1]] = v;
+    else if (id === 'cj-b') D.b = v;
+    garder(); poser(id);
+  };
+  window.g45CjVider = function () { D = { e: [{ nom: '', lieu: '', d10: '', s2: '', s5: '' }, { nom: '', lieu: '', d10: '', s2: '', s5: '' }], w: [40, 35, 25], b: '', crit: '' }; garder(); poser(); };
+  window.g45CjMettre = function (k, o) {
+    var i = k === 2 ? 1 : 0; D.e[i] = { nom: o.nom || '', lieu: o.lieu || '', d10: o.d10 == null ? '' : o.d10, s2: o.s2 == null ? '' : o.s2, s5: o.s5 == null ? '' : o.s5 };
+    D.crit = o.crit || D.crit; garder(); poser();
+    try { if (typeof toast === 'function') toast('🧮 ' + (o.nom || 'Équipe') + ' → Équipe ' + (i + 1) + ' de la calculatrice'); else alert('🧮 Envoyé : ' + (o.nom || '') + ' → Équipe ' + (i + 1) + ' (Pari → 🧮 Calculatrice)'); } catch (e) {}
+  };
+  window._g45CjT = { calc: calc, D: function () { return D; }, html: html };   /* tests */
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { poser(); }); else setTimeout(poser, 0);
+  setInterval(function () { var t = document.getElementById('t-calc'); if (t && !document.getElementById('g45-cj')) poser(); }, 3000);
 })();
