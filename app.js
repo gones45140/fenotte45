@@ -87440,7 +87440,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
       + '</div><div style="font-size:13px;color:#c9d3ee;margin-top:8px;">Chaque équipe : mélange 10 derniers / 2 saisons / 5 saisons avec les poids (une case vide est ignorée), puis moyenne des deux équipes.</div></div>';
   }
   function poser(focusId) {
-    var t = document.getElementById('t-calc'); if (!t) return;
+    var t = document.getElementById('calc-cj') || document.getElementById('t-calc'); if (!t) return;   /* 20261108h : onglet 🎯 Cote juste */
     var z = document.getElementById('g45-cj'), pos = null;
     var a = document.activeElement; if (a && a.id && /^cj-/.test(a.id)) { focusId = a.id; try { pos = a.selectionStart; } catch (e) {} }
     var tmp = document.createElement('div'); tmp.innerHTML = html(); var n = tmp.firstChild;
@@ -87525,7 +87525,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     M.garde = 1;
   }
   function dessiner() {
-    var t = document.getElementById('t-calc'); if (!t) return;
+    var t = document.getElementById('calc-cj') || document.getElementById('t-calc'); if (!t) return;   /* 20261108h */
     var z = document.getElementById('g45-cjm'), tmp = document.createElement('div'); tmp.innerHTML = html(); var n = tmp.firstChild;
     if (z) z.parentNode.replaceChild(n, z); else { var cj = document.getElementById('g45-cj'); if (cj) t.insertBefore(n, cj); else t.appendChild(n); }
     panneau();
@@ -87541,4 +87541,32 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   };
   window._g45CjmT = M;   /* tests */
   setInterval(function () { var t = document.getElementById('t-calc'); if (t && document.getElementById('g45-cj') && !document.getElementById('g45-cjm')) dessiner(); }, 1500);
+})();
+
+/* ═══ 20261108h — 🎯 COTE JUSTE EN ONGLET (Antoine : « devrait être dans un onglet entre Value et ARJEL non ? ») : bouton « 🎯 Cote juste »
+   (ct-cj) après Value dans les onglets de la Calculatrice, panneau #calc-cj (caché par défaut) qui reçoit #g45-cjm + #g45-cj ; swCalc
+   enveloppé comme pour les Lanceurs (calc-lc). ═══ */
+(function () {
+  function poserOnglet() {
+    var vb = document.getElementById('ct-vb'), pv = document.getElementById('calc-vb'); if (!vb || !pv) return false;
+    if (!document.getElementById('ct-cj')) { var b = document.createElement('button'); b.className = 'ctbtn'; b.id = 'ct-cj'; b.textContent = '🎯 Cote juste'; b.setAttribute('onclick', "swCalc('cj')"); vb.parentNode.insertBefore(b, vb.nextSibling); }
+    var c = document.getElementById('calc-cj');
+    if (!c) { c = document.createElement('div'); c.id = 'calc-cj'; c.style.display = 'none'; pv.parentNode.insertBefore(c, pv.nextSibling); }
+    ['g45-cjm', 'g45-cj'].forEach(function (id) { var x = document.getElementById(id); if (x && x.parentNode !== c) c.appendChild(x); });
+    return true;
+  }
+  var sw0 = window.swCalc;
+  window.swCalc = swCalc = function (m) {
+    poserOnglet();
+    var c = document.getElementById('calc-cj'), b = document.getElementById('ct-cj');
+    if (c) c.style.display = m === 'cj' ? 'block' : 'none';
+    if (b) b.classList.toggle('on', m === 'cj');
+    if (m === 'cj') {
+      ['sb', 'dt', 'lay', 'vb', 'arjel', 'lc'].forEach(function (p) { var el = document.getElementById('calc-' + p); if (el) el.style.display = 'none'; var bt = document.getElementById('ct-' + p); if (bt) bt.classList.remove('on'); });
+      return;
+    }
+    if (typeof sw0 === 'function') return sw0.apply(this, arguments);
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', poserOnglet); else setTimeout(poserOnglet, 0);
+  setInterval(poserOnglet, 2000);
 })();
