@@ -53005,7 +53005,10 @@ async function _g45CompoCtx(nom, avecFoot) {
 
   /* 3. Indice gratuit : les tables de noms de l'appli donnent le SPORT sans
      aucune requete. Incompletes, mais quand elles repondent elles ont raison. */
-  var ind = _g45CompoIndice(nom);
+  /* 20261107z (capture « Central Coast Mariners FC » = foot australien, ouvert en MLB : « Mariners » trouvé dans la table des noms MLB) :
+     carte du mur en ⚽, ou équipe ouverte depuis le foot (perso soccer) → la table des autres sports n'est PAS consultée. */
+  var footSur = (em && em.indexOf('\u26bd') >= 0) || (perso && perso.league && (perso.sport || 'soccer') === 'soccer');
+  var ind = footSur ? null : _g45CompoIndice(nom);
   if (ind) {
     var eqI = await _g45CompoEq(ind[0], ind[1]);
     var refI = _g45CompoMatch(nom, eqI, false);
