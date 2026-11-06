@@ -87195,12 +87195,12 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     var col = /^[0-9a-f]{6}$/i.test(String(x.c || '')) ? '#' + x.c : '#2a3a63', hh = '';
     try { hh = new Date(x.t).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris' }); } catch (e) {}
     return '<div style="position:relative;overflow:hidden;border-radius:12px;margin:6px 0;background:linear-gradient(90deg,' + col + '55,#0b1226 70%);border:1px solid #2a3a63;color:#fff;">'
-      + (/^https:\/\//.test(x.logo || '') ? '<img src="' + esc(x.logo) + '" alt="" loading="lazy" onerror="this.remove()" style="position:absolute;right:-8px;top:50%;transform:translateY(-50%);width:92px;height:92px;object-fit:contain;opacity:.35;">' : '')
+      + (/^https:\/\//.test(x.logo || '') ? '<img src="' + esc(x.logo) + '" alt="" loading="lazy" onerror="this.remove()" style="position:absolute;right:64px;top:50%;transform:translateY(-50%);width:92px;height:92px;object-fit:contain;opacity:.35;">' : '')   /* 20261107s : logo à gauche du résultat (capture PC : ⏳ posé sur le logo) */
       + '<div style="position:relative;display:flex;align-items:center;gap:8px;padding:9px 10px;">'
       + '<div style="flex:1;min-width:0;background:rgba(0,0,0,.45);border-radius:8px;padding:5px 8px;"><div style="font-size:15px;"><b>' + (SPI[x.sp] || '') + ' ' + esc(x.eq) + '</b> <span style="color:#c9d3ee;font-size:13px;">' + (x.d ? 'vs ' : 'à ') + esc(x.adv) + '</span></div>'
       + '<div style="font-size:13px;color:#c9d3ee;">' + (date ? '📅 ' + esc(String(x.j || '').slice(8, 10) + '/' + String(x.j || '').slice(5, 7)) + ' · ' : '') + (hh ? '🕒 ' + esc(hh) : '') + (x.ligue ? ' · 🏆 ' + esc(x.ligue) : '') + '</div>'
       + '<div style="font-size:14px;">' + esc(x.lib) + lieuI(x) + ' · 🔥 ' + x.cours + ' / ' + x.pire + '</div></div>'
-      + '<span style="background:rgba(0,0,0,.45);border-radius:8px;padding:4px 8px;">' + resH(x) + '</span></div></div>';
+      + '<span style="background:rgba(0,0,0,.8);border-radius:8px;padding:4px 8px;">' + resH(x) + '</span></div></div>';
   };
   function html() {
     charger();
@@ -87236,11 +87236,13 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     h += '</div><div style="font-size:13px;color:#c9d3ee;margin:8px 0;">Chaque jour : ✅ gagnées / pépites jouées. Vert = plus de la moitié gagnées, jaune = moitié, rouge = moins, ⏳ = pas encore joué. Touche un jour pour voir ses pépites.</div>';
     var XJ = PJ[M.j] || [];
     if (XJ.length) { var dj = new Date(M.j + 'T12:00:00'), gj = XJ.filter(function (x) { return x.r === 1; }).length, nj = XJ.filter(function (x) { return x.r === 1 || x.r === 0; }).length;
-      h += '<div style="font-size:15px;font-weight:800;margin:6px 0 4px;">' + dj.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }) + (nj ? ' · ' + gj + '/' + nj + ' ✅' : '') + '</div>' + XJ.map(function (x) { return ligne(x, false); }).join(''); }
+      h += '<div style="font-size:15px;font-weight:800;margin:6px 0 4px;">' + dj.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }) + (nj ? ' · ' + gj + '/' + nj + ' ✅' : '') + '</div><div class="g45lb-g">' + XJ.map(function (x) { return ligne(x, false); }).join('') + '</div>'; }   /* 20261107s : 2 colonnes sur PC */
     h += '<button onclick="g45LoiBilTout()" style="margin-top:12px;width:100%;padding:10px;border-radius:10px;border:1px solid #2a3a63;background:#0b1226;color:#fff;font-size:15px;font-weight:800;cursor:pointer;">' + (M.tout ? '▲ Fermer l\'historique' : '📜 Tout voir (' + L.length + ' pépites)') + '</button>';
-    if (M.tout) h += '<div style="margin-top:6px;">' + L.map(function (x) { return ligne(x, true); }).join('') + '</div>';
+    if (M.tout) h += '<div class="g45lb-g" style="margin-top:6px;">' + L.map(function (x) { return ligne(x, true); }).join('') + '</div>';
     return h + '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">✅ = le pari a gagné (la série s\'est arrêtée) · ❌ = encore raté · ⏳ = pas encore joué · 🚫 = match annulé / reporté.</div></div>';
   }
+  /* 20261107s (capture PC : cartes étirées sur toute la largeur, grand vide au milieu) : 2 colonnes à partir de 900 px */
+  try { if (!document.getElementById('g45lb-css')) { var cs = document.createElement('style'); cs.id = 'g45lb-css'; cs.textContent = '.g45lb-g{display:grid;grid-template-columns:minmax(0,1fr);column-gap:10px}@media(min-width:900px){.g45lb-g{grid-template-columns:repeat(2,minmax(0,1fr))}}'; (document.head || document.documentElement).appendChild(cs); } } catch (e) {}
   window._g45LoiBilHtml = html;
   window._g45LoiBilT = M;   /* tests */
   window.g45LoiBilMois = function (k) { M.mois += k; redessiner(); };
