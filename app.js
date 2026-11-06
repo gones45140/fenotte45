@@ -76164,6 +76164,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   }
   window.g45CrBk = function () { var c = S.combos[S.a]; c.jbk = c.jbk ? '' : '1'; if (c.jbk) bkCharger(); redessiner(); };
   function usVal(pid, m) {
+    if (m.jv) return m.jv[pid] || null;   /* 20261107l : match avec un AUTRE club du joueur (suivi des transferts) */
     var eid = m[6]; if (!eid || !S.uiI) return null;
     var ix = null; S.uiI.forEach(function (x) { if (!ix && x && x.parMatch && x.parMatch[eid]) ix = x; });
     if (!ix) return null;
@@ -76335,6 +76336,45 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     return !S.ctx && joueurs(c).length === 1 && (!S.comp || S.comp === 'L')
       && ['res', 'ou', 'bts', 'te', 'ad', 'ec', 'fs', 'ts', 'as', 'cad', 'mt', 'mp', 'bo', 'pm', 'm1', 'm2', 'ha'].every(function (k) { return !c[k]; });
   }
+  /* ═══ 20261107l — 🔁 CRITÈRES NHL / NBA / NFL D'UN JOUEUR SEUL : il est SUIVI DANS SES AUTRES CLUBS (vérification automatique des 40 meilleurs
+     buteurs NHL le 07/11 : classement « Jouable en Cockpit ? » = critères pour les 26 restés au même club, mais Rantanen 241 matchs au classement /
+     99 dans ses critères — les critères ne lisaient que le club choisi ; Antoine : « oui »). Comme le foot (20261031g) : pour chaque saison, journal
+     du joueur (joueurs/<id>.json) → matchs joués avec un AUTRE vrai club (même seuil relatif que le classement, 20261107k : ≥ 1/4 des matchs du
+     club principal et ≥ 5 → All-Star / 4 Nations dehors) → lignes de ce club (aEquipeUS, son point de vue : domicile, score…) + m.jv = ses stats
+     de ce match (rôles AJR + déduits). Lu une fois par joueur et par club choisi (S.usTr), puis redessin. ═══ */
+  S.usTr = S.usTr || {};
+  function usSeul(c) { try { return !!(S.ctx && AJR[S.ctx.sp] && aOk(S.ctx.lg) && joueurs(c).length === 1 && /aucun crit/.test(libCombo(clsCombo(c)))); } catch (e) { return false; } }
+  function usTrDe(c, sa) {
+    if (!sa || !usSeul(c)) return null;
+    var pid = String(joueurs(c)[0].id), k = S.ctx.lg + '|' + pid + '|' + S.ctx.id, T = S.usTr[k];
+    if (!T) { T = S.usTr[k] = { etat: 1, an: {} }; usTrCharger(T, pid, S.ctx.sp, S.ctx.lg, String(S.ctx.id), (S.data[S.nom] && S.data[S.nom].saisons) || []); }
+    return T.an[sa.an] || null;
+  }
+  async function usTrCharger(T, pid, sp, lg, cid, SA) {
+    var R0 = AJR[sp], nb = function (x) { return typeof x === 'string' ? (parseInt(x, 10) || 0) : (+x || 0); }, rien = true;
+    for (var i = 0; i < SA.length; i++) {
+      var sa = SA[i]; if (!sa) continue;
+      try {
+        var B = ASP[sp] + '/' + lg + '/' + aSaUS(lg, sa.an), j = await aLire(B + '/joueurs/' + pid + '.json'); if (!j || !j.m) continue;
+        var M = j.m.filter(function (m) { return m && m[4] && typeof m[4] === 'object'; }), ids = {}; M.forEach(function (m) { ids[String(m[3])] = 1; });
+        if (Object.keys(ids).length < 2 && ids[cid]) continue;
+        var LT = []; for (var tid in ids) { var q = await aLire(B + '/equipes/' + tid + '.json'), n = 0; ((q && q.m) || []).forEach(function (m) { if (m[5] === 2) n++; }); LT.push([tid, n]); }
+        var nMax = LT.reduce(function (a, x) { return Math.max(a, x[1]); }, 0), out = [];
+        for (var t = 0; t < LT.length; t++) {
+          var tid2 = LT[t][0], n2 = LT[t][1]; if (tid2 === cid || !n2 || n2 < nMax / 4 || (n2 < 5 && n2 !== nMax)) continue;
+          var rows = await aEquipeUS(sp, lg, tid2, sa.an); if (!rows) continue;
+          var J = {}; M.forEach(function (m) { if (String(m[3]) === tid2) J[String(m[2])] = m[4]; });
+          rows.forEach(function (r) { var st = J[String(r[6])]; if (!st) return; var o = {};
+            Object.keys(R0).forEach(function (rk) { o[rk] = R0[rk].reduce(function (s0, kk) { return s0 + nb(st[kk]); }, 0); });
+            try { (_g45JouCfg(sp).roles || []).forEach(function (r2) { if (r2.deduit) o[r2.k] = r2.deduit.reduce(function (s0, kk) { return s0 + (o[kk] || 0); }, 0); }); } catch (e) {}
+            var r3 = r.slice(); r3.jv = {}; r3.jv[pid] = o; r3.trf = tid2; out.push(r3); });
+        }
+        if (out.length) { T.an[sa.an] = out; rien = false; }
+      } catch (e) {}
+    }
+    T.etat = 2; if (!rien) { try { redessiner(); } catch (e) {} }
+  }
+  window._g45CrUsTrT = { seul: usSeul, de: usTrDe, S: S };   /* tests */
   function jAil(c, sa) {   /* { j: joueur, a: { club, ms } } : un joueur choisi n'a joué AUCUN match de cette saison avec ce club */
     if (S.ctx || !sa) return null;
     var P = joueurs(c);
@@ -76342,7 +76382,9 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     return null;
   }
   function msS(c, sa) {   /* matchs d'une saison : ceux du club, ou (B) ceux de l'ancien club du joueur seul */
-    var L = msDe(sa); if (!L || !seul(c)) return L;
+    var L = msDe(sa);
+    if (L && S.ctx) { var XT = usTrDe(c, sa); return XT && XT.length ? L.concat(XT).sort(function (a, b) { return a[0] < b[0] ? -1 : 1; }) : L; }   /* 20261107l */
+    if (!L || !seul(c)) return L;
     var X = jAil(c, sa); return X && X.a.ms.length ? X.a.ms : L;
   }
   function roCharger(nom, D) {
