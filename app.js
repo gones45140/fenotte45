@@ -87951,3 +87951,25 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   window._g45LogoIndex = env;
   window._g45LogoFr = FR;   /* tests */
 })();
+
+/* ═══ 20261109b — NOMBRE DE PARIS EN COURS (capture Cockpit PSG – Troyes : « petit détail important mais le nombre de paris engagés ») :
+   les titres « En cours » des formulaires montante (#live-strat) et simple (#live-norm) deviennent « En cours (N) », comme Winamax
+   « En cours (8) ». Même tri que render (les DEUX copies) : montante = isS ou méthode (Fibonacci / D'Alembert), simple = le reste. ═══ */
+(function () {
+  function maj() {
+    try {
+      if (typeof state === 'undefined' || !state || !state.h) return;
+      [['live-strat', function (x) { return x.isS || x.meth; }], ['live-norm', function (x) { return !x.isS && !x.meth; }]].forEach(function (c) {
+        var tb = document.getElementById(c[0]); if (!tb) return;
+        var bloc = tb.closest('.g45-nu-tbl') || tb.closest('table'), sec = bloc && bloc.previousElementSibling;
+        while (sec && !(sec.classList && sec.classList.contains('sec'))) sec = sec.previousElementSibling;
+        var sp = sec && sec.querySelector('span'); if (!sp || !/^En cours/.test(sp.textContent)) return;
+        var n = state.h.filter(function (x) { return x && c[1](x); }).length, t = 'En cours (' + n + ')';
+        if (sp.textContent !== t) sp.textContent = t;
+      });
+    } catch (e) {}
+  }
+  window._g45EnCoursNb = maj;   /* tests */
+  setInterval(maj, 1500);
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', maj); else setTimeout(maj, 0);
+})();
