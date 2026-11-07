@@ -86954,7 +86954,11 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     var nz = function (t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, ''); };
     /* 20261106u : KHL — nom anglais de khl.ru (« HC Sochi ») ≠ nom de la carte (« HC Sotchi ») → même équipe par l'id webcaster */
     var kh = function (u) { if (x.lg !== 'khl' || typeof g45KhlEquipe !== 'function') return false; var e = g45KhlEquipe(u.n); return !!(e && String(e.id) === String(x.id)); };
-    return ((typeof state !== 'undefined' && state.u) || []).filter(function (u) { return u && u.type !== 'joueur' && u.type !== 'competition' && (nz(u.n) === nz(x.eq) || (typeof _g45BandMeme === 'function' && _g45BandMeme(u.n, x.eq)) || kh(u)); })[0] || null;
+    /* 20261109f (capture : pépite Tottenham « Spurs » avec le fond des Spurs de San Antonio + « ✅ Engager » sur la carte NBA) : la carte doit être du
+       MÊME SPORT que la pépite (emoji du sport de la carte) ; une carte sans sport reste acceptée comme avant. */
+    var ICO = { soccer: '⚽', hockey: '🏒', basketball: '🏀', football: '🏈', baseball: '⚾', rugby: '🏉', 'rugby-league': '🏉' }[x.sp] || '';
+    var memeSport = function (u) { var sp = String(u.sport || ''); return !sp || !ICO || sp.indexOf(ICO) >= 0; };
+    return ((typeof state !== 'undefined' && state.u) || []).filter(function (u) { return u && u.type !== 'joueur' && u.type !== 'competition' && memeSport(u) && (nz(u.n) === nz(x.eq) || (typeof _g45BandMeme === 'function' && _g45BandMeme(u.n, x.eq)) || kh(u)); })[0] || null;
   }
   function loiCharger(force) {
     if (LOI.enCours || (!force && LOI.d && Date.now() - LOI.t < 30 * 60e3)) return;
@@ -86980,6 +86984,8 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     var G = [], GI = {};
     L.forEach(function (x) { var k = x.eid + '|' + x.id; if (!GI[k]) { GI[k] = { x: x, L: [] }; G.push(GI[k]); } GI[k].L.push(x); });
     h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,430px),1fr));gap:10px;margin-bottom:10px;">';
+    /* 20261109f (« sans cote ? » → « oui ») : même cote d'avant-match que Tendances → Loi des séries (archives, ≈ = estimée), en or à côté du pari */
+    try { var LC = window._g45LoiCote; if (LC && LC.charger) { LC.apres = function () { try { loiDessiner(); } catch (e) {} }; LC.charger(L); } } catch (e) {}
     G.forEach(function (g) {
       var x = g.x, u = loiCarte(x), dt = new Date(x.t), auj = dt.toDateString() === new Date().toDateString();
       var hr = (auj ? 'aujourd\'hui ' : dt.toLocaleDateString('fr-FR', { weekday: 'short', day: '2-digit', month: '2-digit' }) + ' ') + dt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
@@ -86995,7 +87001,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
       var bd = 'display:inline-block;background:rgba(11,16,29,.66);border-radius:8px;padding:3px 8px;';
       var lignes = g.L.map(function (y) {
         var pal = Math.min(9, y.pire + 3), sec = pal - (y.pire + 1);
-        return '<div style="' + bd + 'font-size:15px;"><span style="font-weight:900;border-radius:7px;padding:0 6px;margin-right:6px;background:#3a0f0f;border:1px solid #ff5a5a;">🔥 ' + y.cours + ' / ' + y.pire + '</span><b style="color:#ffd34d;">' + esc(y.lib) + '</b> <span style="font-size:13px;color:#dfe6f7;">(' + (y.lieu === 'tout' ? 'tous lieux' : y.d ? 'à domicile' : 'à l\'extérieur') + ')</span>'
+        return '<div style="' + bd + 'font-size:15px;"><span style="font-weight:900;border-radius:7px;padding:0 6px;margin-right:6px;background:#3a0f0f;border:1px solid #ff5a5a;">🔥 ' + y.cours + ' / ' + y.pire + '</span><b style="color:#ffd34d;">' + esc(y.lib) + '</b> <span style="font-size:13px;color:#dfe6f7;">(' + (y.lieu === 'tout' ? 'tous lieux' : y.d ? 'à domicile' : 'à l\'extérieur') + ')</span>' + (function () { var t = ''; try { t = window._g45LoiCote && window._g45LoiCote.txt ? window._g45LoiCote.txt(y) : ''; } catch (e) {} return t ? ' <b style="color:#f5c542;white-space:nowrap;">· ' + t + '</b>' : ''; })()
           + '<br><span style="font-size:14px;">' + y.cours + ' raté' + (y.cours > 1 ? 's' : '') + ' de suite · pire série ' + y.pire + (y.p && y.p.length ? ' <span style="font-size:13px;color:#dfe6f7;">(' + y.p.join('·') + ')</span>' : '') + '</span>'
           /* 20261106l (Plzeň, « A + ») : séries sur la phase principale ; réussite en QUALIFICATION pendant la série = mention, non comptée */
           + (y.qv ? '<br><span style="font-size:14px;color:#ffd34d;">⚠️ pari réussi en qualification le ' + new Date(y.qv).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) + ' (non compté)</span>' : '')
@@ -87430,11 +87436,11 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     MCen = 1;
     Promise.all(A.map(function (x) {
       return Promise.all(moisDe(x.t).map(function (mo) { return lireMois(x, mo); })).then(function (D) { var f = null; D.forEach(function (d) { if (!f && d && d[x.eid]) f = d[x.eid]; }); FI[x.eid] = f || 0; });
-    })).then(function () { MCen = 0; redessiner(); }).catch(function () { MCen = 0; });
+    })).then(function () { MCen = 0; redessiner(); try { if (typeof window._g45LoiCote.apres === 'function') window._g45LoiCote.apres(); } catch (e) {} }).catch(function () { MCen = 0; });   /* 20261109f : + Cockpit */
   }
   var frC = function (c) { return (Math.round(c * 100) / 100).toFixed(2).replace('.', ','); };
   var coteH = function (y) { var q = coteDe(y); return q ? ' · <b style="color:#f5c542;">' + (q.e ? '≈ ' : '') + frC(q.c) + '</b>' : ''; };
-  window._g45LoiCote = { coteDe: coteDe, FI: FI };   /* tests */
+  window._g45LoiCote = { coteDe: coteDe, FI: FI, charger: function (L) { chargerCotes(L); }, txt: function (y) { var q = coteDe(y); return q ? (q.e ? '≈ ' : '') + frC(q.c) : ''; } };   /* tests ; 20261109f : charger / txt pour le Cockpit */
   var resH = function (x) { var c = x.r === 1 ? '#1ed760' : x.r === 0 ? '#ff6b6b' : '#c9d3ee'; return '<span style="font-weight:800;color:' + c + ';font-size:16px;white-space:nowrap;">' + (x.r === 1 ? '✅' : x.r === 0 ? '❌' : x.r === -1 ? '🚫' : '⏳') + ' ' + esc(x.sc || '') + '</span>'; };
   /* 20261107r (capture : « manque heure, championnat, fond » → maquette loiL.png « oui ») : carte par pépite = logo de l'équipe en fond (couleur x.c
      si gardée), bande sombre sous le texte, 🕒 heure (Paris) + 🏆 championnat sur la 2e ligne. */
