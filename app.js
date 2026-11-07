@@ -84799,6 +84799,31 @@ window._g45TrTestVoit = function () { try { return (typeof _g45SanteActive === '
     } catch (e) {}
     return r;
   };
+  /* 20261109d (« tu peux regarder si les mouvements de fonds sont répertoriés dans l'historique » → NON : seul « ✏️ Modifier » était noté) :
+     fund(add) — boutons « + Dépôt / − Retrait » et « + / − » de 💸 Mouvement de fonds (DEUX copies, appelées par leur nom global depuis le
+     HTML) — enveloppé de la même façon : la variation du solde du compte (#mv-book) est notée dans state.mvt. */
+  var f0 = window.fund;
+  if (typeof f0 === 'function' && !f0._g45Mvt) {
+    var fEnv = function (add) {
+      /* montant et compte lus AVANT l'appel (mêmes contrôles que fund) : le mouvement noté = ce qui est saisi, pas une différence de soldes */
+      var k = (document.getElementById('mv-book') || {}).value, amt = parseFloat((document.getElementById('mv-amt') || {}).value);
+      var av = parseFloat((window.state && state.b && k && state.b[k]) || 0) || 0;
+      var r = f0.apply(this, arguments);
+      try {
+        if (k && !isNaN(amt) && amt) {
+          var v = Math.round((add ? amt : -amt) * 100) / 100;
+          if (!state.mvt) state.mvt = [];
+          state.mvt.unshift({ id: 'mv' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), d: ymd(new Date()), k: k, v: v, av: av, ap: Math.round((av + v) * 100) / 100 });
+          if (state.mvt.length > 500) state.mvt.length = 500;
+          try { save(); } catch (e) {} try { if (typeof _g45PushBetsGithub === 'function') _g45PushBetsGithub(true); } catch (e) {}
+          try { window._g45MvtRender(); } catch (e) {}
+        }
+      } catch (e) {}
+      return r;
+    };
+    fEnv._g45Mvt = true;
+    window.fund = fund = fEnv;
+  }
   var filtre = function () { try { return localStorage.getItem('g45_mvt_f') || 'tout'; } catch (e) { return 'tout'; } };
   window.g45MvtFiltre = function (f) { try { localStorage.setItem('g45_mvt_f', f); } catch (e) {} window._g45MvtRender(); };
   window._g45MvtLignes = function () {
