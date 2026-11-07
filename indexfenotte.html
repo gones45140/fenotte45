@@ -70,8 +70,8 @@
 <script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});}</script>
 </head>
 <body>
-<!-- 20261108y : écran d'accueil posé DÈS LE 1er AFFICHAGE (Antoine : « logo, puis mon mur, puis le logo revient ») ; app.js le garde 3,5 s puis l'efface (voir 20261108v) ; secours : retiré au bout de 4,5 s (page de connexion bet45 sans app.js). -->
-<div id="g45-accueil" style="position:fixed;inset:0;z-index:2147483000;background:#0a0e1a;display:flex;align-items:center;justify-content:center;pointer-events:none;transition:opacity .45s ease;"><img src="icon-512.png" alt="" style="width:min(64vw,320px);height:auto;border-radius:50%;"></div>
+<!-- 20261108y : écran d'accueil posé DÈS LE 1er AFFICHAGE (Antoine : « logo, puis mon mur, puis le logo revient ») ; app.js le garde 3,5 s puis l'efface (voir 20261108v) ; 20261109c : anneau de chargement doré autour du logo (« fais le jeu du téléchargement comme » l'écran Lyon) ; secours : retiré au bout de 4,5 s (page de connexion bet45 sans app.js). -->
+<div id="g45-accueil" style="position:fixed;inset:0;z-index:2147483000;background:#0a0e1a;display:flex;align-items:center;justify-content:center;pointer-events:none;transition:opacity .45s ease;"><style>@keyframes g45accA{to{stroke-dashoffset:0}}#g45-accueil .g45acc-arc{animation:g45accA 3.6s ease-out forwards}</style><div style="position:relative;width:min(72vw,340px);height:min(72vw,340px);"><svg viewBox="0 0 100 100" style="position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg);"><defs><linearGradient id="g45accg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f5c542"/><stop offset="1" stop-color="#ffffff"/></linearGradient></defs><circle cx="50" cy="50" r="47" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="3"/><circle class="g45acc-arc" cx="50" cy="50" r="47" fill="none" stroke="url(#g45accg)" stroke-width="3" stroke-linecap="round" stroke-dasharray="295.4" stroke-dashoffset="295.4"/></svg><img src="icon-512.png" alt="" style="position:absolute;left:9%;top:9%;width:82%;height:82%;border-radius:50%;object-fit:cover;"></div></div>
 <script>setTimeout(function(){var v=document.getElementById('g45-accueil');if(v)v.remove();},4500);</script>
 
 
@@ -1444,7 +1444,7 @@
 <!-- FENOTTE45 : app.js est injecte par auth-guard.js APRES authentification.
      Le ?v= doit changer a CHAQUE deploiement. -->
 <script src="social.js?v=20261014x"></script>
-<script type="module" src="auth-guard.js?v=20261109b"></script>
+<script type="module" src="auth-guard.js?v=20261109c"></script>
 
 
 
