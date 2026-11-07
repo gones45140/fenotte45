@@ -79017,6 +79017,39 @@ window._G45_PAL_COUL = ['#1ed760', '#8fdc4a', '#f5c542', '#ffa53a', '#ff7a3a', '
     if (v && (v.cut || v.thumb)) return v.cut || v.thumb;
     return '';
   };
+  /* 20261108u / w — photo d'une carte joueur sans photo ou à photo morte (cf. habiller) */
+  window._g45UlPhChercher = function (row0, u0) {
+          var sp = (typeof _g45CarteVisSport === 'function') ? _g45CarteVisSport({ sport: u0.sport || '', comp: u0.comp || '' }) : 'soccer';
+          var MEM = window._g45UlPhMem = window._g45UlPhMem || {};   /* une seule recherche par carte et par session */
+          if (!MEM[u0.n]) MEM[u0.n] = (async function () {
+            var src = '', mots = String(u0.n || '').trim().split(/\s+/), noms = [u0.n];
+            if (mots.length === 2) noms.push(mots[1] + ' ' + mots[0]);   /* « MBAPPE KYLIAN » → « KYLIAN MBAPPE » */
+            for (var q = 0; q < noms.length && !src; q++) {
+              try { if (typeof _g45JoueurVisChercher === 'function') { var v2 = await _g45JoueurVisChercher(noms[q], sp); if (v2) src = v2.cut || v2.thumb || ''; } } catch (e) {}
+              try { if (!src && sp === 'soccer' && typeof _g45ClsPhotoDe === 'function') src = await _g45ClsPhotoDe(noms[q], u0.club || '', { n: 2, p: {} }) || ''; } catch (e) {}
+            }
+            /* 20261108w (« toujours pas » : Mbappé, Yamal) : en plus (secours si la 1re ne charge pas), foot = photo ESPN du joueur de l'index des archives
+               (cotes/foot/joueurs.json : idEspn → [nom, club, ligue, n]), lu une fois par session. */
+            var L = src ? [src] : [];
+            if (sp === 'soccer') {
+              try {
+                window._g45FtJixP = window._g45FtJixP || fetch('https://raw.githubusercontent.com/gones45140/gones45-archives/main/cotes/foot/joueurs.json').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
+                var JX = await window._g45FtJixP, nz = function (t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z]/g, ''); };
+                var cib = noms.map(nz), best = null;
+                if (JX) Object.keys(JX).forEach(function (id) { if (cib.indexOf(nz(JX[id][0])) >= 0 && (!best || (JX[id][3] || 0) > (JX[best][3] || 0))) best = id; });
+                if (best) L.push('https://a.espncdn.com/i/headshots/soccer/players/full/' + best + '.png');
+              } catch (e) {}
+            }
+            return L;
+          })();
+          MEM[u0.n].then(function (L) {
+            if (!L || !L.length || !row0.isConnected || row0.querySelector('.g45ul-ph,.g45ul-bg')) return;
+            var k2 = 0, im2 = document.createElement('img'); im2.className = 'g45ul-ph'; im2.alt = ''; im2.src = L[0];
+            im2.onerror = function () { k2++; if (k2 < L.length) im2.src = L[k2]; else im2.remove(); };   /* photo suivante si celle-ci ne charge pas */
+            var nm2 = row0.querySelector('.uname'), bl2 = nm2 && nm2.parentNode;
+            if (bl2 && bl2 !== row0) bl2.insertBefore(im2, bl2.firstChild); else { im2.className = 'g45ul-bg'; row0.insertBefore(im2, row0.firstChild); }
+          }).catch(function () {});
+  };
   var habiller = function () {
     var box = document.getElementById('ulist'); if (!box || typeof state === 'undefined' || !state.u) return;
     var C = window._G45_PAL_COUL || ['#1ed760'];
@@ -79039,33 +79072,10 @@ window._G45_PAL_COUL = ['#1ed760', '#8fdc4a', '#f5c542', '#ffa53a', '#ff7a3a', '
            la photo / le logo n'est plus un fond pâle (18 %) mais une vignette nette en haut à droite de la carte (.g45ul-ph, dans le bloc texte) ;
            ❤ / ✏ Modifier / ✕ passent en bas, sur toute la largeur (.g45ul-bt). */
         var im = document.createElement('img'); im.className = 'g45ul-ph'; im.alt = ''; im.loading = 'lazy'; im.src = img;
-        im.onerror = function () { im.remove(); };
+        im.onerror = function () { im.remove(); if (u.type === 'joueur' && typeof window._g45UlPhChercher === 'function') window._g45UlPhChercher(row, u); };   /* 20261108w : photo morte → recherche */
         var nm0 = row.querySelector('.uname'), bloc = nm0 && nm0.parentNode;
         if (bloc && bloc !== row) bloc.insertBefore(im, bloc.firstChild); else { im.className = 'g45ul-bg'; row.insertBefore(im, row.firstChild); }
-      } else if (u.type === 'joueur') {
-        /* 20261108u (capture 🃏 Mes cartes : Mbappé, Lamine Yamal SANS photo : « manque les photos ici ») : la photo n'était prise que si elle
-           était déjà en mémoire (_g45JoueurVisLire) ; sinon rien, et la carte n'était plus jamais revue. Recherche maintenant (même chemin que
-           les cartes partagées : _g45JoueurVisChercher, puis photo ESPN du foot _g45ClsPhotoDe) et pose la vignette quand elle arrive. */
-        (function (row0, u0) {
-          var sp = (typeof _g45CarteVisSport === 'function') ? _g45CarteVisSport({ sport: u0.sport || '', comp: u0.comp || '' }) : 'soccer';
-          var MEM = window._g45UlPhMem = window._g45UlPhMem || {};   /* une seule recherche par carte et par session */
-          if (!MEM[u0.n]) MEM[u0.n] = (async function () {
-            var src = '', mots = String(u0.n || '').trim().split(/\s+/), noms = [u0.n];
-            if (mots.length === 2) noms.push(mots[1] + ' ' + mots[0]);   /* « MBAPPE KYLIAN » → « KYLIAN MBAPPE » */
-            for (var q = 0; q < noms.length && !src; q++) {
-              try { if (typeof _g45JoueurVisChercher === 'function') { var v2 = await _g45JoueurVisChercher(noms[q], sp); if (v2) src = v2.cut || v2.thumb || ''; } } catch (e) {}
-              try { if (!src && sp === 'soccer' && typeof _g45ClsPhotoDe === 'function') src = await _g45ClsPhotoDe(noms[q], u0.club || '', { n: 2, p: {} }) || ''; } catch (e) {}
-            }
-            return src;
-          })();
-          MEM[u0.n].then(function (src) {
-            if (!src || !row0.isConnected || row0.querySelector('.g45ul-ph,.g45ul-bg')) return;
-            var im2 = document.createElement('img'); im2.className = 'g45ul-ph'; im2.alt = ''; im2.loading = 'lazy'; im2.src = src; im2.onerror = function () { im2.remove(); };
-            var nm2 = row0.querySelector('.uname'), bl2 = nm2 && nm2.parentNode;
-            if (bl2 && bl2 !== row0) bl2.insertBefore(im2, bl2.firstChild); else { im2.className = 'g45ul-bg'; row0.insertBefore(im2, row0.firstChild); }
-          }).catch(function () {});
-        })(row, u);
-      }
+      } else if (u.type === 'joueur' && typeof window._g45UlPhChercher === 'function') window._g45UlPhChercher(row, u);   /* 20261108u / w */
       var info = row.querySelector('.uname'); info = info && info.nextElementSibling;
       try { if (u.type === 'joueur' && typeof window._g45AgePoser === 'function' && info) window._g45AgePoser(u, info); } catch (e) {}   /* 20261106q : drapeau + pays + âge */
       if (info && /Palier/.test(info.textContent || '')) {
