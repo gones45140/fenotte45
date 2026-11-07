@@ -1,5 +1,24 @@
 /* © 2026 Antoine T. — BET45 / GONES45 (bet45.fr). Tous droits réservés.
    Copie, reproduction ou réutilisation de tout ou partie de ce code interdites sans autorisation écrite. Voir LICENSE. */
+/* ═══ 20261108v — ÉCRAN D'ACCUEIL PROLONGÉ (Antoine, capture du mur + logo Bad Gones : « le temps que mon mur se mette bien j'ai de vieilles
+   images, laps de temps 3 secondes ; je propose de mettre celle-ci plus longtemps au début, ou celle de BET45 pour BET45 ») : dès le chargement
+   d'app.js, un voile plein écran du même fond que l'écran de lancement du téléphone (#0a0e1a) avec le logo (gones : icon-gones-512.png ;
+   bet45 : icon-512.png) reste 3,5 s après le chargement de la page (6 s au plus), puis s'efface en fondu. Il ne bloque aucun toucher
+   (pointer-events: none) ; jamais pour le robot (?robot=) ni sous un navigateur piloté (tests). ═══ */
+(function () {
+  try {
+    if (/[?&]robot=/.test(location.search) || navigator.webdriver) return;
+    var bet = /(^|\.)bet45\.fr$/i.test(location.hostname) || /fenotte/i.test(location.pathname);
+    var v = document.createElement('div'); v.id = 'g45-accueil';
+    v.style.cssText = 'position:fixed;inset:0;z-index:2147483000;background:#0a0e1a;display:flex;align-items:center;justify-content:center;pointer-events:none;transition:opacity .45s ease;';
+    v.innerHTML = '<img src="' + (bet ? 'icon-512.png' : 'icon-gones-512.png') + '" alt="" style="width:min(64vw,320px);height:auto;border-radius:50%;">';
+    (document.body || document.documentElement).appendChild(v);
+    var t0 = Date.now(), fini = false, cacher = function () { if (fini) return; fini = true; v.style.opacity = '0'; setTimeout(function () { try { v.remove(); } catch (e) {} }, 500); };
+    var apres = function () { setTimeout(cacher, Math.max(0, 3500 - (Date.now() - t0))); };
+    if (document.readyState === 'complete') apres(); else window.addEventListener('load', apres);
+    setTimeout(cacher, 6000);
+  } catch (e) {}
+})();
 /* 20261106h (« fais le filtre Bilan / Archive ») : un pari compte dans le Bilan / l'Archive du Cockpit selon la méthode choisie (window._g45BilMeth) :
    'mont' (défaut) = montante Cockpit (isS) · 'fib' / 'dal' = paris Fibonacci / D'Alembert (h.meth) · 'tout' = les trois. */
 function _g45EstCk(h){ if(!h) return false; var m=(typeof window!=='undefined'&&window._g45BilMeth)||'mont'; if(m==='tout') return !!h.isS||!!h.meth; if(m==='mont') return !!h.isS; return h.meth===m; }
