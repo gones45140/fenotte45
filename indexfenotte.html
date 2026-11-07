@@ -70,6 +70,10 @@
 <script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});}</script>
 </head>
 <body>
+<!-- 20261108y : écran d'accueil posé DÈS LE 1er AFFICHAGE (Antoine : « logo, puis mon mur, puis le logo revient ») ; app.js le garde 3,5 s puis l'efface (voir 20261108v) ; secours : retiré au bout de 4,5 s (page de connexion bet45 sans app.js). -->
+<div id="g45-accueil" style="position:fixed;inset:0;z-index:2147483000;background:#0a0e1a;display:flex;align-items:center;justify-content:center;pointer-events:none;transition:opacity .45s ease;"><img src="icon-512.png" alt="" style="width:min(64vw,320px);height:auto;border-radius:50%;"></div>
+<script>setTimeout(function(){var v=document.getElementById('g45-accueil');if(v)v.remove();},4500);</script>
+
 
 <header class="topbar" style="position:relative;">
   <!-- 12/09/2026 : point d'entree vers login.html, absent partout ailleurs dans
@@ -1440,7 +1444,7 @@
 <!-- FENOTTE45 : app.js est injecte par auth-guard.js APRES authentification.
      Le ?v= doit changer a CHAQUE deploiement. -->
 <script src="social.js?v=20261014x"></script>
-<script type="module" src="auth-guard.js?v=20261108x"></script>
+<script type="module" src="auth-guard.js?v=20261108y"></script>
 
 
 

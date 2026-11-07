@@ -7,12 +7,13 @@
    (pointer-events: none) ; jamais pour le robot (?robot=) ni sous un navigateur piloté (tests). ═══ */
 (function () {
   try {
-    if (/[?&]robot=/.test(location.search) || navigator.webdriver) return;
+    var v0 = document.getElementById('g45-accueil');   /* 20261108y : déjà posé par la page (index.html / indexfenotte.html) */
+    if (/[?&]robot=/.test(location.search) || navigator.webdriver) { if (v0) v0.remove(); return; }
     var bet = /(^|\.)bet45\.fr$/i.test(location.hostname) || /fenotte/i.test(location.pathname);
-    var v = document.createElement('div'); v.id = 'g45-accueil';
-    v.style.cssText = 'position:fixed;inset:0;z-index:2147483000;background:#0a0e1a;display:flex;align-items:center;justify-content:center;pointer-events:none;transition:opacity .45s ease;';
-    v.innerHTML = '<img src="' + (bet ? 'icon-512.png' : 'icon-gones-512.png') + '" alt="" style="width:min(64vw,320px);height:auto;border-radius:50%;">';
-    (document.body || document.documentElement).appendChild(v);
+    var v = v0 || document.createElement('div'); v.id = 'g45-accueil';
+    if (!v0) v.style.cssText = 'position:fixed;inset:0;z-index:2147483000;background:#0a0e1a;display:flex;align-items:center;justify-content:center;pointer-events:none;transition:opacity .45s ease;';
+    if (!v0) v.innerHTML = '<img src="' + (bet ? 'icon-512.png' : 'icon-gones-512.png') + '" alt="" style="width:min(64vw,320px);height:auto;border-radius:50%;">';
+    if (!v0) (document.body || document.documentElement).appendChild(v);
     var t0 = Date.now(), fini = false, cacher = function () { if (fini) return; fini = true; v.style.opacity = '0'; setTimeout(function () { try { v.remove(); } catch (e) {} }, 500); };
     var apres = function () { setTimeout(cacher, Math.max(0, 3500 - (Date.now() - t0))); };
     if (document.readyState === 'complete') apres(); else window.addEventListener('load', apres);
