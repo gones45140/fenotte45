@@ -87343,7 +87343,21 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     h += '<div style="font-size:14px;font-weight:800;margin:4px 0 4px;">Sport</div><div style="display:flex;gap:6px;flex-wrap:wrap;">' + Object.keys(SPF).map(function (k) { return bF(M.fs === k, 'g45LoiBilF(\'s\',\'' + k + '\')', SPF[k]); }).join('') + '</div>'
       + '<div style="font-size:14px;font-weight:800;margin:10px 0 4px;">Ratés de suite en cours</div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">' + [0, 3, 4, 5, 6, 7].map(function (k) { return bF(M.fc === k, 'g45LoiBilF(\'c\',' + k + ')', k ? (k === 7 ? '7 et +' : String(k)) : 'Tous'); }).join('') + '</div>';
     var L = (M.d.L || []).filter(function (x) { return (M.fs === 'tous' || x.sp === M.fs || (M.fs === 'rugby' && x.sp === 'rugby-league')) && (!M.fc || (M.fc === 7 ? x.cours >= 7 : x.cours === M.fc)); }).sort(function (a, b) { return b.t - a.t; });
-    chargerCotes(L); L = L.filter(function (x) { if (FI[x.eid] === undefined) return true; var q = coteDe(x); return !!q && q.c >= 1.5; });   /* 20261108n : cote < 1,50 retirée ; 20261108p (« enlève alors les matchs incalculables ») : fiche lue mais aucune cote (même ≈) → retirée ; en cours de lecture → gardée */
+    chargerCotes(L);
+    /* 20261108s (capture Sharks / Banfield 07/11 à 6 h 54 encore ⏳ : « faudrait le score du match ») : le robot Loi des séries ne repasse que le
+       lendemain matin ; la fiche du match lue pour la cote (FI, archives remplies toutes les heures) a déjà le score final f {h, a} (+ ot) →
+       score affiché et ✅ / ❌ calculés tout de suite (mêmes règles que loi_series.mjs ; le robot confirmera ensuite). */
+    L.forEach(function (x) {
+      if (x.r != null) return; var fi = FI[x.eid]; if (!fi || !fi.f || fi.f.h == null || fi.f.a == null) return;
+      var dom = String(fi.h && fi.h.id) === String(x.id) ? true : String(fi.a && fi.a.id) === String(x.id) ? false : !!x.d;
+      var p = +(dom ? fi.f.h : fi.f.a), c = +(dom ? fi.f.a : fi.f.h), ot = !!fi.ot, m, r = null;
+      if (x.k === 'v' || x.k === 'vq') r = p > c; else if (x.k === 'vn') r = p >= c; else if (x.k === 'v60') r = p > c && !ot;
+      else if (x.k === 'btts') r = p > 0 && c > 0; else if (x.k === 'marque') r = p > 0;
+      else if ((m = String(x.k).match(/^([ou])(\d)(\d)$/))) { var Lg = +(m[2] + '.' + m[3]); r = m[1] === 'o' ? p + c > Lg : p + c < Lg; }
+      if (r == null) return;
+      x.r = r ? 1 : 0; x.sc = fi.f.h + '-' + fi.f.a + (ot ? ' (prol.)' : ''); x.prov = 1;
+    });
+    L = L.filter(function (x) { if (FI[x.eid] === undefined) return true; var q = coteDe(x); return !!q && q.c >= 1.5; });   /* 20261108n : cote < 1,50 retirée ; 20261108p (« enlève alors les matchs incalculables ») : fiche lue mais aucune cote (même ≈) → retirée ; en cours de lecture → gardée */
     if (!L.length && ((M.d.L || []).length)) return h + '<div style="font-size:14px;">Aucune pépite avec ces filtres.</div></div>';
     if (!L.length) return h + '<div style="font-size:14px;">Aucune pépite gardée pour l\'instant : le robot commence l\'historique chaque matin, le bilan se remplit dès les premiers résultats.</div></div>';
     var J = L.filter(function (x) { return x.r === 1 || x.r === 0; }), G = J.filter(function (x) { return x.r === 1; }).length, P = J.length - G;
