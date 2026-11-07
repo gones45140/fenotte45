@@ -87455,7 +87455,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
       + '<div style="font-size:13px;color:#c9d3ee;">' + (date ? '📅 ' + esc(String(x.j || '').slice(8, 10) + '/' + String(x.j || '').slice(5, 7)) + ' · ' : '') + (hh ? '🕒 ' + esc(hh) : '') + (x.ligue ? ' · 🏆 ' + esc(x.ligue) : '') + '</div>'
       /* 20261107y (« Venezia en double » → maquette loiG.png « oui ») : UNE carte par match ; chaque pari sur sa ligne avec son ✅ / ❌ / ⏳ ; score à droite */
       + (G || [x]).map(function (y, i) { var ic = y.r === 1 ? '<b style="color:#1ed760;">✅</b>' : y.r === 0 ? '<b style="color:#ff6b6b;">❌</b>' : y.r === -1 ? '🚫' : '⏳';
-          return '<div style="font-size:14px;display:flex;justify-content:space-between;gap:10px;' + (i === 0 && (G || []).length > 1 ? 'border-top:1px solid #2a3a63;margin-top:4px;padding-top:4px;' : '') + '"><span>' + esc(y.lib) + lieuI(y) + ' · 🔥 ' + y.cours + ' / ' + y.pire + coteH(y) + '</span>' + ic + '</div>'; }).join('') + '</div>'
+          return '<div style="font-size:14px;display:flex;justify-content:space-between;gap:10px;' + (i === 0 && (G || []).length > 1 ? 'border-top:1px solid #2a3a63;margin-top:4px;padding-top:4px;' : '') + '"><span>' + esc(y.lib) + (y.av && y.av.length ? coteH(y) + '<br><span style="font-size:13px;color:#dfe6f7;">' + [y].concat(y.av).map(function (z) { return (lieuI(z).trim() || '') + ' ' + esc(z.eq) + ' 🔥 ' + z.cours + ' / ' + z.pire; }).join(' · ') + '</span>' : lieuI(y) + ' · 🔥 ' + y.cours + ' / ' + y.pire + coteH(y)) + '</span>' + ic + '</div>'; }   /* 20261109g : pari du match fusionné → séries des 2 équipes */).join('') + '</div>'
       + '<span style="flex:1;"></span><span style="background:rgba(0,0,0,.8);border-radius:8px;padding:4px 8px;font-weight:900;font-size:16px;white-space:nowrap;">' + (function () { var z = (G || [x]).filter(function (y) { return y.sc; })[0]; return z ? esc(z.sc) : (G || [x]).every(function (y) { return y.r === -1; }) ? '🚫' : '⏳'; })() + '</span></div></div>';
   };
   var grouper = function (A) { var o = [], ix = {}; A.forEach(function (x) { var k = x.j + '|' + x.eid + '|' + x.id; if (ix[k] == null) { ix[k] = o.length; o.push([]); } o[ix[k]].push(x); }); return o; };
@@ -87485,6 +87485,12 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
       x.r = r ? 1 : 0; x.sc = fi.f.h + '-' + fi.f.a + (ot ? ' (prol.)' : ''); x.prov = 1;
     });
     L = L.filter(function (x) { if (FI[x.eid] === undefined) return true; var q = coteDe(x); return !!q && q.c >= 1.5; });   /* 20261108n : cote < 1,50 retirée ; 20261108p (« enlève alors les matchs incalculables ») : fiche lue mais aucune cote (même ≈) → retirée ; en cours de lecture → gardée */
+    /* 20261109g (capture Leipzig – Augsburg : « Moins de 3,5 buts » 🏠 Leipzig 3/3 ET ✈️ Augsburg 5/5, même cote ≈ 2,37 → « oui ») : un pari du
+       MATCH (plus / moins de buts, les deux marquent) trouvé par les 2 équipes = UNE seule pépite (celle du domicile), les séries des 2 équipes
+       dessus (x.av), comptée UNE fois dans le bilan, le graphique et les 10 €. Paris d'une équipe (victoire, marque…) : inchangés. */
+    var MGc = {}, LLc = [];
+    L.forEach(function (x) { x.av = null; if (!/^([ou]\d\d|btts)$/.test(String(x.k))) { LLc.push(x); return; } var k = x.j + '|' + x.eid + '|' + x.k, g = MGc[k]; if (!g) { MGc[k] = g = []; LLc.push(g); } g.push(x); });
+    L = LLc.map(function (e) { if (!Array.isArray(e)) return e; e.sort(function (a, b) { return (b.d ? 1 : 0) - (a.d ? 1 : 0); }); if (e.length > 1) e[0].av = e.slice(1); return e[0]; });
     if (!L.length && ((M.d.L || []).length)) return h + '<div style="font-size:14px;">Aucune pépite avec ces filtres.</div></div>';
     if (!L.length) return h + '<div style="font-size:14px;">Aucune pépite gardée pour l\'instant : le robot commence l\'historique chaque matin, le bilan se remplit dès les premiers résultats.</div></div>';
     var J = L.filter(function (x) { return x.r === 1 || x.r === 0; }), G = J.filter(function (x) { return x.r === 1; }).length, P = J.length - G;
