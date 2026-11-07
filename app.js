@@ -3156,7 +3156,8 @@ function render(){
 
   /* selects */
   var bOpt=Object.keys(state.b).map(function(k){return '<option value="'+k+'">'+bki(k).n+'</option>';}).join('');
-  ['c-book','n-book','mv-book'].forEach(function(id){var e=$i(id);if(e)e.innerHTML=bOpt;});
+  /* 20261108z (« j'ai mis à jour ma mise palier, ça a changé de Winamax à OrbitX ») : render réécrit les listes → le bookmaker choisi est gardé. */
+  ['c-book','n-book','mv-book'].forEach(function(id){var e=$i(id);if(e){var v0=e.value;e.innerHTML=bOpt;if(v0&&[].some.call(e.options,function(o){return o.value===v0;}))e.value=v0;}});
   var uSel=$i('c-unit');
   /* PALIER DU LIEU SELECTIONNE (23/08). Le menu affichait `u.l`, le palier
      historique — celui-la meme qui reste pollue par l'autre lieu. Avec « PSG »
@@ -11588,7 +11589,8 @@ function render(){
 
   /* selects */
   var bOpt=Object.keys(state.b).map(function(k){return '<option value="'+k+'">'+bki(k).n+'</option>';}).join('');
-  ['c-book','n-book','mv-book'].forEach(function(id){var e=$i(id);if(e)e.innerHTML=bOpt;});
+  /* 20261108z (« j'ai mis à jour ma mise palier, ça a changé de Winamax à OrbitX ») : render réécrit les listes → le bookmaker choisi est gardé. */
+  ['c-book','n-book','mv-book'].forEach(function(id){var e=$i(id);if(e){var v0=e.value;e.innerHTML=bOpt;if(v0&&[].some.call(e.options,function(o){return o.value===v0;}))e.value=v0;}});
   var uSel=$i('c-unit');
   /* PALIER DU LIEU SELECTIONNE (23/08). Le menu affichait `u.l`, le palier
      historique — celui-la meme qui reste pollue par l'autre lieu. Avec « PSG »
@@ -84430,12 +84432,14 @@ window._g45TrTestVoit = function () { try { return (typeof _g45SanteActive === '
 })();
 
 /* ═══ 20261025g — OrbitX EN 1er CHOIX (« Piwi devient OrbitX ») ═══ Les listes de bookmakers suivent l'ordre de state.b : OrbitX est remis
-   en tête (une fois au chargement). Piwi reste (anciens paris, solde) ; rien n'est supprimé. */
+   en tête (une fois au chargement). Piwi reste (anciens paris, solde) ; rien n'est supprimé.
+   20261108z (« mon book le plus est Winamax ») : c'est WINAMAX qui est mis en tête désormais (OrbitX reste dans la liste). */
 (function () {
   try {
-    if (typeof state === 'undefined' || !state || !state.b || !('orbitx' in state.b) || Object.keys(state.b)[0] === 'orbitx') return;
-    var nb = { orbitx: state.b.orbitx };
-    Object.keys(state.b).forEach(function (k) { if (k !== 'orbitx') nb[k] = state.b[k]; });
+    var K1 = 'winamax';
+    if (typeof state === 'undefined' || !state || !state.b || !(K1 in state.b) || Object.keys(state.b)[0] === K1) return;
+    var nb = {}; nb[K1] = state.b[K1];
+    Object.keys(state.b).forEach(function (k) { if (k !== K1) nb[k] = state.b[k]; });
     state.b = nb;
     if (typeof render === 'function') render();
   } catch (e) {}
