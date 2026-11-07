@@ -87833,3 +87833,31 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', poserOnglet); else setTimeout(poserOnglet, 0);
   setInterval(poserOnglet, 2000);
 })();
+
+/* ═══ 20261108t — LOGOS DES NOMS « WINAMAX » / FRANÇAIS (capture 07/11 : pari Mayence – B. Munich « Victoire + Over 2.5 + Buteur Harry Kane »,
+   carte En cours en initiales « M » / « BM ») : l'index des équipes des archives (window._g45LogoIndex, noms ESPN anglais) ne reconnaît pas
+   « Mayence », « B. Munich »… → table de noms français / abrégés → nom ESPN, essayée seulement quand le nom tel quel n'est pas trouvé. ═══ */
+(function () {
+  var g0 = window._g45LogoIndex; if (typeof g0 !== 'function' || g0._g45Fr) return;
+  var nz = function (t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, ''); };
+  var FR = {
+    mayence: 'Mainz', mainz05: 'Mainz', bmunich: 'Bayern Munich', bayern: 'Bayern Munich', bayernmunich: 'Bayern Munich', munich: 'Bayern Munich',
+    cologne: 'FC Cologne', koln: 'FC Cologne', mgladbach: 'Borussia Mönchengladbach', monchengladbach: 'Borussia Mönchengladbach', gladbach: 'Borussia Mönchengladbach',
+    dortmund: 'Borussia Dortmund', bdortmund: 'Borussia Dortmund', leverkusen: 'Bayer Leverkusen', francfort: 'Eintracht Frankfurt', efrancfort: 'Eintracht Frankfurt',
+    fribourg: 'SC Freiburg', stuttgart: 'VfB Stuttgart', breme: 'Werder Bremen', wbreme: 'Werder Bremen', hambourg: 'Hamburg SV', augsbourg: 'FC Augsburg',
+    hoffenheim: 'TSG Hoffenheim', leipzig: 'RB Leipzig', unionberlin: '1. FC Union Berlin', schalke: 'Schalke 04', paderborn: 'SC Paderborn 07', elversberg: 'SV Elversberg',
+    inter: 'Internazionale', intermilan: 'Internazionale', milan: 'AC Milan', acmilan: 'AC Milan', rome: 'AS Roma', asrome: 'AS Roma', roma: 'AS Roma', naples: 'Napoli',
+    turin: 'Torino', juventus: 'Juventus', florence: 'Fiorentina', genes: 'Genoa', bologne: 'Bologna', venise: 'Venezia',
+    seville: 'Sevilla', fcseville: 'Sevilla', betis: 'Real Betis', realbetis: 'Real Betis', atlmadrid: 'Atlético Madrid', atleticomadrid: 'Atlético Madrid', atletico: 'Atlético Madrid',
+    barcelone: 'Barcelona', fcbarcelone: 'Barcelona', valence: 'Valencia', bilbao: 'Athletic Club', athbilbao: 'Athletic Club', athleticbilbao: 'Athletic Club', alaves: 'Alavés',
+    celtavigo: 'Celta Vigo', vigo: 'Celta Vigo', rsociedad: 'Real Sociedad', malaga: 'Málaga', santander: 'Racing Santander', rayo: 'Rayo Vallecano'
+  };
+  var env = function (nom) {
+    var l = g0.apply(this, arguments); if (l) return l;
+    var k = nz(nom), a = FR[k] || FR[k.replace(/^(fc|ac|as|sc|vfb|tsg|rb|sv)/, '')];
+    return a ? g0(a) : l;
+  };
+  env._g45Fr = true;
+  window._g45LogoIndex = env;
+  window._g45LogoFr = FR;   /* tests */
+})();
