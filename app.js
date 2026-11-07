@@ -73129,6 +73129,21 @@ function _g45TicketRemplirCockpit(o) {
          mêmes RACINES (5 premières lettres des mots de ≥ 5 lettres, mots génériques retirés), identiques des DEUX côtés
          (« Manchester United » ≠ « Manchester City »). */
       || (function () { var R = window._g45TkRacines, r0 = R(eq); return r0 ? ops.filter(function (op) { return R(nz(op.value)) === r0; })[0] : null; })();
+    /* 20261109a (capture ticket Winamax « Résultat PSG + Moins de 4,5 » → « PSG n'est pas une équipe de ton mur », 3e fois ; « encore et
+       toujours ce PSG ») : sigles / noms courts du ticket → nom complet (PSG → Paris Saint-Germain, OM → Marseille, OL → Lyon, B. Munich…,
+       + la table française des logos _g45LogoFr) puis même recherche (égal, inclus, racines). */
+    if (!choisi) {
+      var AL = { psg: 'paris saint germain', parissg: 'paris saint germain', parisstgermain: 'paris saint germain', om: 'marseille', ol: 'lyon', losc: 'lille', asse: 'saint etienne', ogcn: 'nice', rcl: 'lens', rcsa: 'strasbourg', sco: 'angers', tfc: 'toulouse', fcn: 'nantes', srfc: 'rennes', manutd: 'manchester united', manu: 'manchester united', mancity: 'manchester city', city: 'manchester city', spurs: 'tottenham', barca: 'barcelona', atleti: 'atletico madrid', juve: 'juventus', bvb: 'borussia dortmund' };
+      var k0 = eq.replace(/[^a-z0-9]/g, ''), FR0 = window._g45LogoFr || {}, al = AL[k0] || (FR0[k0] ? nz(FR0[k0]) : '');
+      if (al) {
+        var alR = window._g45TkRacines ? window._g45TkRacines(al) : '';
+        choisi = ops.filter(function (op) { return nz(op.value) === al || nz(op.text) === al; })[0]
+          || ops.filter(function (op) { var v = nz(op.value); return v && (v.indexOf(al) >= 0 || al.indexOf(v) >= 0); })[0]
+          || (alR ? ops.filter(function (op) { return window._g45TkRacines(nz(op.value)) === alR; })[0] : null) || null;
+        /* l'inverse : carte du mur écrite en sigle (« PSG ») et ticket en toutes lettres → déjà couvert par AL côté carte */
+      }
+      if (!choisi) choisi = ops.filter(function (op) { var k1 = nz(op.value).replace(/[^a-z0-9]/g, ''), a1 = AL[k1]; return a1 && (a1 === eq || eq.indexOf(a1) >= 0); })[0] || null;
+    }
     if (choisi) { un.value = choisi.value; ids.push('c-unit'); try { if (typeof updMise === 'function') updMise(); if (typeof renderCrash === 'function') renderCrash(); } catch (x) {} }
   }
   /* 20261025c (capture : ticket Winamax MyMatch Edmonton – Toronto → « Edmonton Oilers n'est pas une équipe de ton mur », alors que la carte
