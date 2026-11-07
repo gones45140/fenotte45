@@ -79023,6 +79023,29 @@ window._G45_PAL_COUL = ['#1ed760', '#8fdc4a', '#f5c542', '#ffa53a', '#ff7a3a', '
         im.onerror = function () { im.remove(); };
         var nm0 = row.querySelector('.uname'), bloc = nm0 && nm0.parentNode;
         if (bloc && bloc !== row) bloc.insertBefore(im, bloc.firstChild); else { im.className = 'g45ul-bg'; row.insertBefore(im, row.firstChild); }
+      } else if (u.type === 'joueur') {
+        /* 20261108u (capture 🃏 Mes cartes : Mbappé, Lamine Yamal SANS photo : « manque les photos ici ») : la photo n'était prise que si elle
+           était déjà en mémoire (_g45JoueurVisLire) ; sinon rien, et la carte n'était plus jamais revue. Recherche maintenant (même chemin que
+           les cartes partagées : _g45JoueurVisChercher, puis photo ESPN du foot _g45ClsPhotoDe) et pose la vignette quand elle arrive. */
+        (function (row0, u0) {
+          var sp = (typeof _g45CarteVisSport === 'function') ? _g45CarteVisSport({ sport: u0.sport || '', comp: u0.comp || '' }) : 'soccer';
+          var MEM = window._g45UlPhMem = window._g45UlPhMem || {};   /* une seule recherche par carte et par session */
+          if (!MEM[u0.n]) MEM[u0.n] = (async function () {
+            var src = '', mots = String(u0.n || '').trim().split(/\s+/), noms = [u0.n];
+            if (mots.length === 2) noms.push(mots[1] + ' ' + mots[0]);   /* « MBAPPE KYLIAN » → « KYLIAN MBAPPE » */
+            for (var q = 0; q < noms.length && !src; q++) {
+              try { if (typeof _g45JoueurVisChercher === 'function') { var v2 = await _g45JoueurVisChercher(noms[q], sp); if (v2) src = v2.cut || v2.thumb || ''; } } catch (e) {}
+              try { if (!src && sp === 'soccer' && typeof _g45ClsPhotoDe === 'function') src = await _g45ClsPhotoDe(noms[q], u0.club || '', { n: 2, p: {} }) || ''; } catch (e) {}
+            }
+            return src;
+          })();
+          MEM[u0.n].then(function (src) {
+            if (!src || !row0.isConnected || row0.querySelector('.g45ul-ph,.g45ul-bg')) return;
+            var im2 = document.createElement('img'); im2.className = 'g45ul-ph'; im2.alt = ''; im2.loading = 'lazy'; im2.src = src; im2.onerror = function () { im2.remove(); };
+            var nm2 = row0.querySelector('.uname'), bl2 = nm2 && nm2.parentNode;
+            if (bl2 && bl2 !== row0) bl2.insertBefore(im2, bl2.firstChild); else { im2.className = 'g45ul-bg'; row0.insertBefore(im2, row0.firstChild); }
+          }).catch(function () {});
+        })(row, u);
       }
       var info = row.querySelector('.uname'); info = info && info.nextElementSibling;
       try { if (u.type === 'joueur' && typeof window._g45AgePoser === 'function' && info) window._g45AgePoser(u, info); } catch (e) {}   /* 20261106q : drapeau + pays + âge */
