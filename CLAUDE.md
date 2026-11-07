@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action (il est court exprès). Le détail de tout l'historique est dans HISTORIQUE.md
-(à chercher avec grep, jamais à lire en entier). Mis à jour le 31/10/2026 (version déployée : 20261109d, même app.js sur gones45 et fenotte45).
+(à chercher avec grep, jamais à lire en entier). Mis à jour le 31/10/2026 (version déployée : 20261109e, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -158,6 +158,7 @@ PIÈGES À NE JAMAIS OUBLIER :
 - 📊 Classement NHL Global / Domicile / Extérieur : FAIT (20261108f, archives) — à confirmer à l'écran par Antoine.
 - 🏁 « Jouable en Cockpit ? » JOUEURS NHL / NBA / NFL : FAIT (20261107b, usClsJHtml ; vérifié archives NHL pointeur 🏠 : McDavid / Draisaitl / Pastrnak pire 2, Zacha 5) — à confirmer à l'écran par Antoine.
 - 🎯 Calculatrice Cote juste : FAIT (20261108f bloc + 20261108g match : championnat, 🏠 / ✈️, panneau de critères complet, marge du book) — à confirmer à l'écran par Antoine.
+- 🏀🏈 « Quart-temps avec le plus de points » NBA / NFL (Antoine 07/11, capture Winamax « mi-temps avec le plus de buts ») : archives = score final seul → ajouter les scores par quart-temps au robot cotes-archive (ESPN linescores, SONDER d'abord) + rattrapage 4 saisons, puis critère 1er/2e/3e/4e/égalité. Foot (mh) FAIT 20261109e ; NHL = tqm déjà fait.
 - Cédric : toucher 🤍 sur Portugal. Worker : budget `_lourd` 4 → 2 proposé.
 
 ## 8. Façon de travailler en session cloud

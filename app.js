@@ -75967,7 +75967,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   /* 20261021d (« on va rajouter des trucs » : duo / trio buteurs, double chance buteur, tirs, tirs par équipe + mi-temps, marque en premier,
      match précédent ; maquette maquette-criteres « oui ») : valeurs par défaut des nouveaux critères (aussi pour les combinés de « Reprendre ma note »). */
   function norm(c) {
-    var D0 = { tq: '1', tqr: '', tqp: '', tqo: '', TQL: 1.5, tqb: '', tqm: '', jx: 'cha', fs: '', FL: 24.5, ts: '', TSL: 12.5, as: '', ASL: 10.5, cad: '', CL: 4.5, mt: '', mp: '', bo: '', BL: 4.5, pm: '', m1: '', M1L: 1, m2: '', M2L: 1, ha: '', HAL: 0.25, ess: '', esm: '', ESL: 5.5, esb: '', jtit: '' };   /* 20261103k : essais rugby */   /* 20261024b : m1 / m2 = buts 1re / 2e mi-temps */
+    var D0 = { tq: '1', tqr: '', tqp: '', tqo: '', TQL: 1.5, tqb: '', tqm: '', jx: 'cha', mh: '', fs: '', FL: 24.5, ts: '', TSL: 12.5, as: '', ASL: 10.5, cad: '', CL: 4.5, mt: '', mp: '', bo: '', BL: 4.5, pm: '', m1: '', M1L: 1, m2: '', M2L: 1, ha: '', HAL: 0.25, ess: '', esm: '', ESL: 5.5, esb: '', jtit: '' };   /* 20261103k : essais rugby */   /* 20261024b : m1 / m2 = buts 1re / 2e mi-temps */
     for (var k in D0) if (c[k] == null) c[k] = D0[k];
     return c;
   }
@@ -76041,6 +76041,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     if (c.as) p.push('Tirs adversaire ' + (c.as === 'ov' ? 'Over ' : 'Under ') + c.ASL);
     if (c.cad) p.push('Tirs cadrés ' + (c.cad === 'eq' ? 'équipe' : 'match') + ' Over ' + c.CL);
     if (c.mt) p.push({ mene: 'Mène à la pause', nul: 'Nul à la pause', but: 'But en 1re mi-temps' }[c.mt]);
+    if (c.mh) p.push({ '1': '1re mi-temps avec le plus de buts', e: 'Autant de buts dans les 2 mi-temps', '2': '2de mi-temps avec le plus de buts' }[c.mh]);   /* 20261109e */
     if (c.m1) p.push('Buts 1re MT ' + (c.m1 === 'ov' ? 'Over ' : 'Under ') + String(c.M1L).replace('.', ','));   /* 20261024b */
     if (c.m2) p.push('Buts 2e MT ' + (c.m2 === 'ov' ? 'Over ' : 'Under ') + String(c.M2L).replace('.', ','));
     if (c.mp) p.push('Marque en premier : ' + c.mp);
@@ -76059,7 +76060,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   function okOU(dir, v, L) { if (v === L) return true; return dir === 'un' ? v < L : v > L; }
   function nbRemb(c, m) {   /* [critères actifs, critères remboursés] */
     var gf = m[2], ga = m[3]; if (m[4]) { var mn = Math.min(gf, ga); gf = mn; ga = mn; }
-    var act = ['res', 'ou', 'bts', 'te', 'ad', 'ec', 'fs', 'ts', 'as', 'cad', 'mt', 'mp', 'bo', 'pm', 'm1', 'm2', 'ha', 'hb', 'tb', 'qb', 'ess', 'esm', 'esb'].filter(function (k) { return c[k]; }).length + (joueurs(c).length ? 1 : 0), r = 0;
+    var act = ['res', 'ou', 'bts', 'te', 'ad', 'ec', 'fs', 'ts', 'as', 'cad', 'mt', 'mh', 'mp', 'bo', 'pm', 'm1', 'm2', 'ha', 'hb', 'tb', 'qb', 'ess', 'esm', 'esb'].filter(function (k) { return c[k]; }).length + (joueurs(c).length ? 1 : 0), r = 0;
     if (esBesoin(c) && c.esm) { var E0 = esDe(m); if (E0 && E0[0] + E0[1] === c.ESL) r++; }   /* 20261103k */
     if (c.ou && gf + ga === c.L) r++;
     if (c.te && gf === c.TL) r++;
@@ -76148,6 +76149,10 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       if (c.mt === 'mene' && !(F.hh > F.ha)) return false;
       if (c.mt === 'nul' && F.hh !== F.ha) return false;
       if (c.mt === 'but' && !(F.hh + F.ha > 0)) return false;
+      if (c.mh) {   /* 20261109e (capture Winamax « Mi-temps avec le plus de buts : 1re 3,05 · Égalité 5,60 · 2de 2,20 ») : buts 1re MT = score à la pause, 2de = final − pause */
+        var h1 = F.hh + F.ha, h2 = m[2] + m[3] - h1, gm = h1 > h2 ? '1' : h1 < h2 ? '2' : 'e';
+        if (gm !== c.mh) return false;
+      }
       if (c.m1 || c.m2) {   /* 20261024b : buts par mi-temps */
         var b1 = F.hh + F.ha, b2 = m[2] + m[3] - b1;
         if (c.m1 && !okOU(c.m1, b1, c.M1L)) return false;
@@ -76289,7 +76294,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
      [tirs dom, tirs ext, cadrés dom, cadrés ext, MT dom, MT ext, 1er but 'h'/'a'/'', corners dom, corners ext, cartons dom, cartons ext] ;
      identifiants des matchs : g45crid1_<lg>_<club>_<an> (saison passée, pour toujours). ── */
   S.fid = S.fid || {}; S.fp = S.fp || {};
-  function fBesoin(c) { return !S.ctx && !!(c.fs || c.ts || c.as || c.cad || c.mt || c.mp || c.bo || c.m1 || c.m2); }
+  function fBesoin(c) { return !S.ctx && !!(c.fs || c.ts || c.as || c.cad || c.mt || c.mh || c.mp || c.bo || c.m1 || c.m2); }
   S.fa = S.fa || {};   /* 20261031k : feuilles d'équipe lues dans les archives (fiche.cf), mémoire seulement */
   function fLire(id) { if (S.fa[id]) return S.fa[id]; try { return JSON.parse(localStorage.getItem('g45crf1_' + id) || 'null'); } catch (e) { return null; } }
   function fVal(m) {
@@ -76409,7 +76414,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   }
   function seul(c) {
     return !S.ctx && joueurs(c).length === 1 && (!S.comp || S.comp === 'L')
-      && ['res', 'ou', 'bts', 'te', 'ad', 'ec', 'fs', 'ts', 'as', 'cad', 'mt', 'mp', 'bo', 'pm', 'm1', 'm2', 'ha'].every(function (k) { return !c[k]; });
+      && ['res', 'ou', 'bts', 'te', 'ad', 'ec', 'fs', 'ts', 'as', 'cad', 'mt', 'mh', 'mp', 'bo', 'pm', 'm1', 'm2', 'ha'].every(function (k) { return !c[k]; });
   }
   /* ═══ 20261107l — 🔁 CRITÈRES NHL / NBA / NFL D'UN JOUEUR SEUL : il est SUIVI DANS SES AUTRES CLUBS (vérification automatique des 40 meilleurs
      buteurs NHL le 07/11 : classement « Jouable en Cockpit ? » = critères pour les 26 restés au même club, mais Rantanen 241 matchs au classement /
@@ -76634,7 +76639,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
      la défaite au temps réglementaire n'a pas de cote 2 issues) ; sinon la cote tapée. */
   function coteM(c, m) {
     var co = m && m[12]; if (!co || !c.res) return null;
-    var nb = ['ou', 'bts', 'te', 'ad', 'ec', 'fs', 'ts', 'as', 'cad', 'mt', 'mp', 'bo', 'pm', 'm1', 'm2', 'ha', 'hb', 'tb', 'qb'].some(function (k) { return c[k]; }) || joueurs(c).length;
+    var nb = ['ou', 'bts', 'te', 'ad', 'ec', 'fs', 'ts', 'as', 'cad', 'mt', 'mh', 'mp', 'bo', 'pm', 'm1', 'm2', 'ha', 'hb', 'tb', 'qb'].some(function (k) { return c[k]; }) || joueurs(c).length;
     if (nb) return null;
     var k = !S.ctx ? { vic: 0, nul: 1, def: 2 }[c.res] : ({ vqr: 0, def: hk() ? null : 2, per: 2 })[c.res];
     var v = k == null ? 0 : +co[k]; return v > 1 ? v : null;
@@ -77361,6 +77366,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
         + lab('Tirs de l\'adversaire') + ouBt('as', 'ASL', 4.5, 25.5)
         + lab('Tirs cadrés (over)') + b(c.cad === 'eq', esc(nom), "g45CrSet('cad','eq')") + b(c.cad === 'ma', 'Match', "g45CrSet('cad','ma')") + b(!c.cad, 'Aucun', "g45CrSet('cad','')") + selN('CL', 0.5, 14.5)
         + lab('Mi-temps') + b(c.mt === 'mene', 'Mène à la pause', "g45CrSet('mt','mene')") + b(c.mt === 'nul', 'Nul à la pause', "g45CrSet('mt','nul')") + b(c.mt === 'but', 'But en 1re MT (+0,5)', "g45CrSet('mt','but')") + b(!c.mt, 'Aucun', "g45CrSet('mt','')")
+        + lab('Mi-temps avec le plus de buts') + b(c.mh === '1', '1re mi-temps', "g45CrSet('mh','1')") + b(c.mh === 'e', 'Égalité', "g45CrSet('mh','e')") + b(c.mh === '2', '2de mi-temps', "g45CrSet('mh','2')") + b(!c.mh, 'Aucun', "g45CrSet('mh','')")   /* 20261109e */
         + lab('Marque en premier') + b(c.mp === 'oui', 'Oui', "g45CrSet('mp','oui')") + b(c.mp === 'non', 'Non', "g45CrSet('mp','non')") + b(!c.mp, 'Peu importe', "g45CrSet('mp','')")
         + lab('Corners / cartons (over)') + b(c.bo === 'coe', 'Corners ' + esc(nom), "g45CrSet('bo','coe')") + b(c.bo === 'com', 'Corners match', "g45CrSet('bo','com')")
         + b(c.bo === 'cae', 'Cartons ' + esc(nom), "g45CrSet('bo','cae')") + b(c.bo === 'cam', 'Cartons match', "g45CrSet('bo','cam')") + b(!c.bo, 'Aucun', "g45CrSet('bo','')") + selN('BL', 0.5, 14.5);
@@ -77438,7 +77444,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var q8 = h.length;
     var PAN = { tiers: h.slice(q7, q8), res: h.slice(q0, q1) + h.slice(q2, q3), buts: h.slice(q1, q2) + h.slice(q6, q6b), ess: h.slice(q6b, q7), jou: h.slice(q3, q4), feu: h.slice(q4, q5), ctx: h.slice(q5, q6) };   /* 20261103k : ess */
     var NB = { res: (c.res ? 1 : 0) + (c.ec ? 1 : 0) + (c.ha ? 1 : 0) + (c.hb ? 1 : 0), buts: (c.ou ? 1 : 0) + (c.tb ? 1 : 0) + (c.qb ? 1 : 0) + (c.te ? 1 : 0) + (c.ad ? 1 : 0) + (c.bts ? 1 : 0) + (c.m1 ? 1 : 0) + (c.m2 ? 1 : 0), jou: joueurs(c).length ? 1 : 0,
-      feu: ['fs', 'ts', 'as', 'cad', 'mt', 'mp', 'bo'].filter(function (k) { return c[k]; }).length, ctx: c.pm ? 1 : 0, ess: rg() ? ['ess', 'esm', 'esb'].filter(function (k) { return c[k]; }).length : 0, tiers: hk() ? ['tqr', 'tqo', 'tqb', 'tqm', 'tqp'].filter(function (k) { return c[k]; }).length : 0 };
+      feu: ['fs', 'ts', 'as', 'cad', 'mt', 'mh', 'mp', 'bo'].filter(function (k) { return c[k]; }).length, ctx: c.pm ? 1 : 0, ess: rg() ? ['ess', 'esm', 'esb'].filter(function (k) { return c[k]; }).length : 0, tiers: hk() ? ['tqr', 'tqo', 'tqb', 'tqm', 'tqp'].filter(function (k) { return c[k]; }).length : 0 };
     var ONG = [['res', '🏁 Résultat'], ['buts', '⚽ ' + motUnite()], ['ess', '🏉 Essais'], ['tiers', '⏱️ Tiers-temps'], ['jou', '👤 Joueurs'], ['feu', '🎯 Feuille'], ['ctx', '🔁 Contexte']].filter(function (o) { return PAN[o[0]]; });
     var TB = 'res'; try { TB = localStorage.getItem('g45_cr_tab') || 'res'; } catch (e) {}
     if (!PAN[TB]) TB = 'res';
@@ -77483,7 +77489,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
      Foot : championnat seul. Sports : foot, NHL, NFL, NBA, MLB (pas le rugby : scoreboards trop lourds). Rien ne part sans le bouton ;
      3 équipes à la fois ; saisons passées dans les MÊMES caches que le bloc (g45cr1_<lg>_<id>_<an>, g45cr1u_…) → déjà lues = gratuites. ═══ */
   S.cls = S.cls || {};
-  var CLS_SANS = ['jo', 'jn', 'jo2', 'jn2', 'jo3', 'jn3', 'fs', 'ts', 'as', 'cad', 'mt', 'mp', 'bo', 'm1', 'm2'];
+  var CLS_SANS = ['jo', 'jn', 'jo2', 'jn2', 'jo3', 'jn3', 'fs', 'ts', 'as', 'cad', 'mt', 'mh', 'mp', 'bo', 'm1', 'm2'];
   function clsCtx() {
     var D = S.data[S.nom];
     if (S.ctx && rgArchOk(S.ctx.sp, S.ctx.lg)) return { sp: S.ctx.sp, lg: String(S.ctx.lg), id: String(S.ctx.id) };   /* 20261103k : 🏉 archives */
