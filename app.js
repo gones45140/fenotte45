@@ -86665,6 +86665,13 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     });
     return { s: s, n: n };
   }
+  window.g45CkEngCoche = function (nom, t, on) {   /* 20261108x : ☑️ Déjà engagé à la main */
+    var EM = {}; try { EM = JSON.parse(localStorage.getItem('g45ck_engm') || '{}') || {}; } catch (e) {}
+    var k = nom + '|' + t; if (on) EM[k] = 1; else delete EM[k];
+    Object.keys(EM).forEach(function (q) { if (+q.split('|').pop() < Date.now() - 2 * 86400000) delete EM[q]; });   /* ménage : plus de 2 jours */
+    try { localStorage.setItem('g45ck_engm', JSON.stringify(EM)); } catch (e) {}
+    try { window.g45CkOnglet('tdb'); } catch (e) {}
+  };
   window.g45CkEngager = function (nom, d, adv, t) {
     try {
       window.g45CkOuvrir(null, 'eng');   /* 20261104i : le formulaire de montante est dans le monde du Cockpit */
@@ -86719,14 +86726,25 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
          Par carte (window._g45CkFond : bannière vis, photo détourée cut, logo net à droite, liseré couleur de l'équipe), textes sur bande sombre. */
       var F = {}; try { F = (typeof window._g45CkFond === 'function' ? window._g45CkFond(m.n) : {}) || {}; } catch (e) {}
       var cc = /^#[0-9a-f]{6}$/i.test(F.c || '') ? F.c : '#4d84ff', bd = 'background:rgba(11,16,29,.62);border-radius:8px;padding:3px 8px;';
-      h += '<div style="position:relative;overflow:hidden;border-radius:10px;margin:6px 0;min-height:96px;border-left:4px solid ' + cc + ';background:linear-gradient(90deg,' + cc + '8c 0%,' + cc + '55 50%,' + cc + '30 100%);text-shadow:0 1px 3px rgba(0,0,0,.85);">'
+      /* 20261108x (capture Prochaines 24 h : « il manque 2 choses : mon type de pari, et une case à cocher quand mon pari est déjà engagé » →
+         proposition → « oui code ») : 🎯 type de pari de la carte (note 🏠 / ✈️ selon le lieu du match, sinon 🌍) ; ☑️ Déjà engagé = coché tout
+         seul si un pari EN COURS existe sur cette carte (state.h, b.n), ou à la main (localStorage g45ck_engm, clé carte|heure) → Engager caché,
+         carte grisée. */
+      var Dn = {}; try { Dn = (typeof _g45UfDecoupe === 'function' && u) ? _g45UfDecoupe(u.note) : {}; } catch (e) {}
+      var typ = String((m.d ? Dn.dom : Dn.ext) || Dn.glob || '').replace(/📌/g, '').trim();
+      var EM = {}; try { EM = JSON.parse(localStorage.getItem('g45ck_engm') || '{}') || {}; } catch (e) {}
+      var engA = ((typeof state !== 'undefined' && state.h) || []).some(function (b) { return b && b.n === m.n; }), engM = !!EM[m.n + '|' + m.t], eng = engA || engM;
+      h += '<div style="position:relative;overflow:hidden;border-radius:10px;margin:6px 0;min-height:96px;' + (eng ? 'opacity:.55;filter:grayscale(.5);' : '') + 'border-left:4px solid ' + cc + ';background:linear-gradient(90deg,' + cc + '8c 0%,' + cc + '55 50%,' + cc + '30 100%);text-shadow:0 1px 3px rgba(0,0,0,.85);">'
         + (F.vis ? '<img src="' + esc(F.vis) + '" alt="" loading="lazy" onerror="this.remove()" style="position:absolute;left:0;top:-25%;width:100%;height:150%;object-fit:cover;opacity:.75;pointer-events:none;"><div style="position:absolute;inset:0;background:linear-gradient(90deg,rgba(10,14,26,.55),rgba(10,14,26,.15) 60%,rgba(10,14,26,.45));pointer-events:none;"></div>' : '')
         + (F.cut ? '<img src="' + esc(F.cut) + '" alt="" loading="lazy" onerror="this.remove()" style="position:absolute;left:62%;transform:translateX(-50%);bottom:0;height:100%;max-width:25%;object-fit:contain;object-position:bottom center;pointer-events:none;filter:drop-shadow(0 6px 14px rgba(0,0,0,.55));">' : '')
         + ((F.logo || (!F.vis && !F.cut && F.img)) ? '<img src="' + esc(F.logo || F.img) + '" alt="" loading="lazy" onerror="this.remove()" style="position:absolute;right:16px;top:50%;transform:translateY(-50%);height:76%;max-width:22%;object-fit:contain;pointer-events:none;filter:drop-shadow(0 4px 10px rgba(0,0,0,.6));">' : '')
         + '<div style="position:relative;padding:9px 10px;display:flex;flex-direction:column;align-items:flex-start;gap:5px;">'
         + '<div style="' + bd + 'font-size:15px;"><b>' + hr + ' · ' + esc(m.n) + '</b> ' + (m.d ? '🏠' : '✈️') + (m.adv ? ' contre ' + esc(m.adv) : '') + '</div>'
         + '<div style="' + bd + 'font-size:14px;">' + (G ? 'P' + p + ' sur ' + G.length + ' · mise <b>' + euC(mi) + '</b>' : '<span style="color:#c9d3ee;">pas de grille</span>') + '</div>'
-        + '<button onclick="g45CkEngager(' + esc(JSON.stringify(m.n)).replace(/"/g, '&quot;') + ',' + (m.d ? 1 : 0) + ',' + esc(JSON.stringify(m.adv || '')).replace(/"/g, '&quot;') + ',' + m.t + ')" style="background:#4d7cff;border:0;border-radius:9px;padding:7px 12px;font-weight:800;font-size:14px;color:#fff;cursor:pointer;">✅ Engager</button></div></div>';
+        + (typ ? '<div style="' + bd + 'font-size:14px;">🎯 ' + esc(typ) + '</div>' : '')
+        + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">'
+        + (eng ? '' : '<button onclick="g45CkEngager(' + esc(JSON.stringify(m.n)).replace(/"/g, '&quot;') + ',' + (m.d ? 1 : 0) + ',' + esc(JSON.stringify(m.adv || '')).replace(/"/g, '&quot;') + ',' + m.t + ')" style="background:#4d7cff;border:0;border-radius:9px;padding:7px 12px;font-weight:800;font-size:14px;color:#fff;cursor:pointer;">✅ Engager</button>')
+        + '<label style="' + bd + 'font-size:14px;font-weight:800;cursor:' + (engA ? 'default' : 'pointer') + ';display:flex;align-items:center;gap:6px;"><input type="checkbox"' + (eng ? ' checked' : '') + (engA ? ' disabled' : '') + ' onchange="g45CkEngCoche(' + esc(JSON.stringify(m.n)).replace(/"/g, '&quot;') + ',' + m.t + ',this.checked)" style="width:20px;height:20px;">' + (eng ? '✅ Déjà engagé' : 'Déjà engagé') + '</label></div></div></div>';
     });
     h += '</div>';
     var A = [];
