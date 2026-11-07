@@ -40190,6 +40190,12 @@ function _g45NhlInfoDe(nom) {
   }
   return null;
 }
+/* 20261109h : vrai si le match ESPN est celui d'une équipe féminine / jeune / réserve (noms normalisés) alors que le pari ne l'est pas. */
+function _g45ScVar(noms, cibles) {
+  var V = /(women|woman|femin|femen|femmes|frauen|ladies|dames|u1[5-9]|u2[0-3]|under\d\d|reserve|castilla|youth|juvenil|primavera|academy)/;
+  return (noms || []).some(function (n) { return V.test(n); }) && !(cibles || []).some(function (c) { return V.test(c); });
+}
+window._g45ScVar = _g45ScVar;
 function _g45ScoreTexte(h) {
   /* ELARGI AU PARI SIMPLE (28/08). Une montante a son equipe dans `h.n` ; un
      pari simple (h.n==='SIMPLE') l'a dans `h.target`, sous la forme "Equipe
@@ -40246,6 +40252,14 @@ function _g45ScoreTexte(h) {
      un echec du navigateur, pas une absence de donnees. On les jette. La file
      d'attente posee juste au-dessus empeche que la relance recommence. */
   var ck = (h.sport === '🎾' ? 'g45_tennis4_' : 'g45_score4_') + h.id;   // tennis4 : + lieu (16/09)   // tennis : cle a part depuis le 16/09 (nouveau format)
+  /* 20261109h (capture 07/11 : Forest « 5-0 » City alors que nos archives disent 3-1 ; PSG 3-0 et Valence 1-1 Real faux aussi, ✅ / ❌ justes) :
+     un score cherché PENDANT le match tombait sur le tableau ESPN « soccer/all », où « manchestercitywomen » CONTIENT « manchestercity » →
+     score d'une équipe FÉMININE / jeune / réserve gardé pour toujours. Recherche corrigée plus bas (_g45ScVar) ; ici, les scores foot déjà
+     gardés depuis le 25/10 sont oubliés UNE fois (g45_scpurge1) pour être recherchés à nouveau. */
+  if (h.sport === '⚽' && String(h.date).slice(0, 10) >= '2026-10-25') {
+    try { if (!window._g45ScPurge) window._g45ScPurge = JSON.parse(localStorage.getItem('g45_scpurge1') || '{}');
+      if (!window._g45ScPurge[h.id]) { window._g45ScPurge[h.id] = 1; localStorage.setItem('g45_scpurge1', JSON.stringify(window._g45ScPurge)); localStorage.removeItem(ck); } } catch (e) {}
+  }
   var raw = null;
   try { raw = localStorage.getItem(ck); } catch(e) {}
   if (raw) {
@@ -40374,6 +40388,7 @@ function _g45ScoreTexte(h) {
                 if (!st.completed) return;
                 var cps = cp.competitors || [];
                 var noms = cps.map(function(c){ return nrm((c.team && (c.team.displayName || c.team.shortDisplayName || c.team.name)) || ''); });
+                if (_g45ScVar(noms, cibles)) return;   /* 20261109h */
                 var c0 = function(c){ return noms.some(function(n){ return n && (n.indexOf(c) >= 0 || c.indexOf(n) >= 0); }); };
                 if (cibles.length && c0(cibles[0])) _cand.push(ev);
               });
@@ -40385,6 +40400,7 @@ function _g45ScoreTexte(h) {
                 if (!st.completed) return;
                 var cps = cp.competitors || [];
                 var noms = cps.map(function(c){ return nrm((c.team && (c.team.displayName || c.team.shortDisplayName || c.team.name)) || ''); });
+                if (_g45ScVar(noms, cibles)) return;   /* 20261109h : pas l'équipe féminine / jeune */
                 /* Un nom doit CONTENIR l'autre : « Slovan Bratislava » cote pari
                    face a « SK Slovan Bratislava » cote ESPN.
                    ET LES DEUX CAMPS DOIVENT CORRESPONDRE quand on connait les
