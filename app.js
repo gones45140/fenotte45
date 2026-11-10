@@ -88091,7 +88091,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   var r2 = function (v) { return Math.round(v * 100) / 100; };
   var fr = function (v) { return (Math.round(v * 100) / 100).toFixed(2).replace('.', ','); };
   var sg = function (v) { return (v >= 0 ? '+' : '−') + fr(Math.abs(v)); };
-  var ST = { k: 'lay', p: 'rep', fix: '1', fv: '' };
+  var ST = { k: '2b', p: 'rep', fix: '1', fv: '' };   /* 20261110e : Back + Back par défaut */
   /* Calcul pur. D = { k, a, b (cote 2 : contre ou 2e book), c (commission % de la jambe 2), S (mise jambe 1, 'lay') / T (total), p 'rep' | '1' | '2' } */
   function calc(D) {
     var a = num(D.a), b = num(D.b), c = Math.max(0, num(D.c)) / 100, p = D.p || 'rep', R = { ok: false };
@@ -88184,7 +88184,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
         + '<div style="display:flex;gap:8px;align-items:center;margin-top:6px;font-size:14px;color:#c9d3ee;">' + (k === 'lay' && n === 2 ? 'Mise contre' : 'Mise') + ' <input id="sb-m' + n + '" inputmode="decimal" placeholder="—" oninput="g45SbMise(\'' + n + '\',this.value)" style="' + IN + 'width:100px;text-align:center;"> €</div>' + comm(n === 1 ? 'sb-c1' : 'sb-c', n === 1 ? ST.c1 : ST.c, bsel) + (extra || '') + '</div>';
     };
     var h = '<div style="background:#121b36;border:1px solid #2a3a63;border-radius:14px;padding:12px;color:#fff;margin-bottom:12px;">'
-      + '<div style="display:flex;gap:6px;margin-bottom:10px;">' + [['lay', '📗 Book + 📕 contre'], ['2b', '2 books'], ['rn', '🔄 Remb. si nul']].map(function (x) { return '<button onclick="g45SbKind(\'' + x[0] + '\')" style="' + BT(k === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div>'
+      + '<div style="display:flex;gap:6px;margin-bottom:10px;">' + [['2b', '📗 Back + 📗 Back'], ['lay', '📗 Back + 📕 Lay'], ['rn', '🔄 Remb. si nul']]   /* 20261110e (capture : PSG back OrbitX 1,5 + l'issue contraire back Betify 5 saisis dans « Book + contre » → lu comme un lay, perte) : noms clairs, Back + Back en premier */.map(function (x) { return '<button onclick="g45SbKind(\'' + x[0] + '\')" style="' + BT(k === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div>'
       + '<input id="sb-match" placeholder="Match (ex. PSG – Lyon)" style="' + IN + 'width:100%;box-sizing:border-box;font-weight:700;">'
       + '<div style="display:flex;gap:8px;margin-top:6px;"><input id="sb-date" type="date" style="' + IN + 'flex:1;min-width:0;"><input id="sb-heure" type="time" style="' + IN + 'width:110px;"></div>'
       + lab(k === 'lay' ? 'Jambes' : 'Jambes (une issue et son contraire)');
