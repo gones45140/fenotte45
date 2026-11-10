@@ -75777,6 +75777,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     return '<img src="' + esc(u) + '" alt="" loading="lazy" onerror="this.remove()" style="width:46px;height:46px;border-radius:50%;object-fit:cover;object-position:top;border:2px solid #f5c542;background:#25335c;">';
   }
   function carte(h) {
+    if (h && h.sb && typeof window._g45SbCarte === 'function') { var _sb = window._g45SbCarte(h); if (_sb != null) return _sb; }   /* 20261110a : ⚖️ surebet = une carte pour les 2 jambes */
     var id = esc(h.id), typ = (typeof g45TypeSansCote === 'function' ? g45TypeSansCote(h.type) : h.type) || '—';
     var j = joueurs(h), c = num(h.cote), m = num(h.m);
     var lieu = h.domicile === 'dom' ? ' · 🏠 Domicile' : (h.domicile === 'ext' ? ' · 🚌 Extérieur' : '');
@@ -88050,4 +88051,210 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   window._g45EnCoursNb = maj;   /* tests */
   setInterval(maj, 1500);
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', maj); else setTimeout(maj, 0);
+})();
+
+/* ═══ 20261110a — ⚖️ MODE DE PARI SUREBET (Antoine 07/11 : « un nouveau mode de pari surebet : je mise sur un book et son contraire sur un
+   autre, je gagne sur l'un, perds sur l'autre en restant gagnant » + « il y a le gagné ou remboursé aussi » ; 10/11 : exemple fr.surebet.com
+   (case D = tout le bénéfice sur une issue, les autres à 0) → « c'est pour parier sur OrbitX et un book français » → maquette
+   maquette_surebet_orbitx.png → « oui »). Onglet Pari : 3e bouton ⚖️ Surebet (à côté de Simple / Combiné), 3 sortes :
+   - 'lay' 📗 book + 📕 OrbitX CONTRE : mise S sur le book (cote a), contre sur l'échange (cote l, commission c %) ; L = mise contre,
+     responsabilité (bloqué) = L × (l − 1). Réparti : L = S·a / (l − c) ; « si l'issue passe » : L = S / (1 − c) (sinon 0) ; « si elle ne
+     passe pas » : L = S·(a − 1) / (l − 1) (sinon 0). Mêmes formules que fr.surebet.com (10 / 6 / 3 % → 103,09 / 515,46 / 384,54).
+   - '2b' deux books classiques (issue et son contraire), total T : réparti Si = T·(1/ci) / Σ(1/c) ; sur une issue : l'autre = T / sa cote.
+   - 'rn' 🔄 remboursé si nul (jambe 1 « A gagne, remboursé si nul », jambe 2 « B ou nul ») : 1 / N / 2, le nul rend la jambe 1.
+   Chaque jambe = un pari simple ORDINAIRE de state.h (même comptabilité que tout le reste : mise retirée du book au placement ;
+   jambe CONTRE = convention ↩️ Lay existante : m = responsabilité, cote = 1 + L·(1 − c) / responsabilité), reliées par h.sb { g, k, i, iss }.
+   « En cours » : UNE carte ⚖️ (jambe 1, la 2 est cachée) avec les boutons d'issue → g45SbRegler règle les deux d'un coup
+   (gagné / perdu / 🔄 remboursé = ar 'v' cote 1, comme g45BetRegler). 🗑️ = les deux jambes annulées et remboursées. ═══ */
+(function () {
+  var esc = function (t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+  var num = function (v) { var n = parseFloat(String(v == null ? '' : v).replace(',', '.')); return isNaN(n) ? 0 : n; };
+  var r2 = function (v) { return Math.round(v * 100) / 100; };
+  var fr = function (v) { return (Math.round(v * 100) / 100).toFixed(2).replace('.', ','); };
+  var sg = function (v) { return (v >= 0 ? '+' : '−') + fr(Math.abs(v)); };
+  var ST = { k: 'lay', p: 'rep' };
+  /* Calcul pur. D = { k, a, b (cote 2 : contre ou 2e book), c (commission % de la jambe 2), S (mise jambe 1, 'lay') / T (total), p 'rep' | '1' | '2' } */
+  function calc(D) {
+    var a = num(D.a), b = num(D.b), c = Math.max(0, num(D.c)) / 100, p = D.p || 'rep', R = { ok: false };
+    if (!(a > 1) || !(b > 1)) return R;
+    if (D.k === 'lay') {
+      var S = num(D.S); if (!(S > 0) || !(b - c > 0)) return R;
+      var L = p === '1' ? S / (1 - c) : p === '2' ? S * (a - 1) / (b - 1) : S * a / (b - c), liab = L * (b - 1);
+      var g1 = S * (a - 1) - liab, g2 = L * (1 - c) - S;
+      R = { ok: true, s1: r2(S), L: r2(L), s2: r2(liab), cote2: Math.round((1 + L * (1 - c) / liab) * 1e6) / 1e6, res: [[g1, S * (a - 1), -liab], [g2, -S, L * (1 - c)]], base: S };
+    } else {
+      var T = num(D.T); if (!(T > 0)) return R;
+      var s1, s2;
+      if (D.k === 'rn') { s1 = p === '1' ? T - T / b : p === '2' ? T / a : T * b / (a + b); }
+      else { s1 = p === '1' ? T - T / b : p === '2' ? T / a : T * (1 / a) / (1 / a + 1 / b); }
+      s2 = T - s1;
+      R = { ok: true, s1: r2(s1), s2: r2(s2), res: [[s1 * a - T, s1 * (a - 1), -s2], [s2 * b - T, -s1, s2 * (b - 1)]], base: T };
+      if (D.k === 'rn') R.res.splice(1, 0, [s2 * b - s2, 0, s2 * (b - 1)]);   /* nul : jambe 1 rendue */
+    }
+    R.min = Math.min.apply(null, R.res.map(function (x) { return x[0]; }));
+    R.pct = R.base ? R.min / R.base * 100 : 0;
+    return R;
+  }
+  window._g45SbCalc = calc;
+  function books() { var B = (typeof state !== 'undefined' && state && state.b) || {}; return Object.keys(B); }
+  function nomB(k) { try { return bki(k).n; } catch (e) { return String(k || ''); } }
+  function opts(sel) { return books().map(function (k) { return '<option value="' + esc(k) + '"' + (k === sel ? ' selected' : '') + '>' + esc(nomB(k)) + '</option>'; }).join(''); }
+  var $ = function (id) { return document.getElementById(id); };
+  var IN = 'background:#16213f;border:1px solid #6d9dff;border-radius:8px;padding:8px;color:#fff;font-size:16px;font-weight:800;';
+  var BT = function (on) { return 'flex:1;min-width:0;cursor:pointer;border-radius:10px;padding:10px 6px;font-size:14px;font-weight:800;color:#fff;border:' + (on ? '2px solid #f5c542;background:#2a2410;' : '1px solid #2a3a63;background:#0b1226;'); };
+  function lire() {
+    var v = function (id) { var e = $(id); return e ? e.value : ''; };
+    return { k: ST.k, p: ST.p, a: v('sb-a'), b: v('sb-b'), c: ST.k === 'lay' ? v('sb-c') : 0, S: v('sb-m'), T: v('sb-m'), m1: v('sb-p1'), m2: v('sb-p2'), match: v('sb-match'), b1: v('sb-bk1'), b2: v('sb-bk2'), date: v('sb-date'), heure: v('sb-heure') };
+  }
+  function libs(D) {
+    var p1 = String(D.m1 || '').trim() || 'Issue 1', p2 = String(D.m2 || '').trim();
+    if (D.k === 'lay') return [p1, 'Contre ' + p1, p1 + ' passe', p1 + ' ne passe pas'];
+    if (D.k === 'rn') return [p1 + ' (remboursé si nul)', p2 || 'L\'autre ou nul'];
+    return [p1, p2 || 'Le contraire'];
+  }
+  function resultat() {
+    var z = $('sb-res'); if (!z) return;
+    var D = lire(), R = calc(D), L = libs(D);
+    if (!R.ok) { z.innerHTML = '<div style="font-size:14px;color:#c9d3ee;padding:6px 0;">Tape les deux cotes et la mise.</div>'; return; }
+    var nb1 = nomB(D.b1), nb2 = nomB(D.b2), h = '';
+    if (D.k === 'lay') h += '<div style="display:flex;gap:8px;margin-top:8px;"><div style="flex:1;background:#0b1226;border:1px solid #2a3a63;border-radius:10px;padding:8px;text-align:center;font-size:13px;color:#c9d3ee;">Contre sur ' + esc(nb2) + '<b style="display:block;font-size:20px;color:#fff;">' + fr(R.L) + ' €</b></div>'
+      + '<div style="flex:1;background:#0b1226;border:1px solid #2a3a63;border-radius:10px;padding:8px;text-align:center;font-size:13px;color:#c9d3ee;">Bloqué sur ' + esc(nb2) + '<b style="display:block;font-size:20px;color:#ffb36b;">' + fr(R.s2) + ' €</b></div></div>'
+      + '<div style="font-size:13px;color:#c9d3ee;margin-top:6px;">« Bloqué » = ce que tu paies sur ' + esc(nb2) + ' si « ' + esc(L[0]) + ' » passe (ta responsabilité). Il faut l\'avoir sur ce compte.</div>';
+    else h += '<div style="display:flex;gap:8px;margin-top:8px;"><div style="flex:1;background:#0b1226;border:1px solid #2a3a63;border-radius:10px;padding:8px;text-align:center;font-size:13px;color:#c9d3ee;">' + esc(nb1) + '<b style="display:block;font-size:20px;color:#fff;">' + fr(R.s1) + ' €</b></div>'
+      + '<div style="flex:1;background:#0b1226;border:1px solid #2a3a63;border-radius:10px;padding:8px;text-align:center;font-size:13px;color:#c9d3ee;">' + esc(nb2) + '<b style="display:block;font-size:20px;color:#fff;">' + fr(R.s2) + ' €</b></div></div>';
+    var iss = D.k === 'lay' ? [L[2], L[3]] : D.k === 'rn' ? [String(D.m1 || 'Issue 1') + ' gagne', 'Nul', 'L\'autre gagne'] : [L[0], L[1]];
+    var cl = function (v) { return 'color:' + (v > 0.004 ? '#1ed760' : v < -0.004 ? '#ff6b6b' : '#fff') + ';font-weight:800;'; };
+    h += '<table style="width:100%;border-collapse:collapse;font-size:14px;margin-top:8px;"><tr style="color:#c9d3ee;"><td style="padding:5px 2px;">Résultat</td><td>' + esc(nb1) + '</td><td>' + esc(nb2) + '</td><td style="text-align:right;">Bilan</td></tr>'
+      + R.res.map(function (x, i) { var rn = D.k === 'rn' && i === 1; return '<tr style="border-top:1px solid #1c2747;"><td style="padding:6px 2px;font-weight:800;">' + esc(iss[i]) + '</td><td style="' + (rn ? 'color:#6dd3ff;font-weight:800;' : cl(x[1])) + '">' + (rn ? '🔄 rendu' : sg(x[1])) + '</td><td style="' + cl(x[2]) + '">' + sg(x[2]) + '</td><td style="text-align:right;' + cl(x[0]) + '">' + sg(x[0]) + ' €</td></tr>'; }).join('') + '</table>';
+    var okG = R.min >= -0.004;
+    h += '<div style="margin-top:10px;border-radius:10px;padding:10px;text-align:center;background:' + (okG ? 'rgba(30,215,96,.15);border:1px solid #1ed760;' : 'rgba(255,69,69,.15);border:1px solid #ff4545;') + '">'
+      + '<div style="font-size:13px;color:#c9d3ee;">' + (okG ? '🟢 Bénéfice garanti (au minimum)' : '🔴 Pas de surebet : tu peux perdre') + '</div>'
+      + '<b style="font-size:22px;color:' + (okG ? '#1ed760' : '#ff6b6b') + ';">' + sg(R.min) + ' € · ' + (R.pct >= 0 ? '+' : '−') + Math.abs(R.pct).toFixed(1).replace('.', ',') + ' %</b>'
+      + (D.k === 'lay' && num(D.c) > 0 ? '<div style="font-size:13px;color:#c9d3ee;">(commission ' + esc(nb2) + ' déjà retirée)</div>' : '') + '</div>';
+    z.innerHTML = h;
+  }
+  function panneau() {
+    var z = $('sub-sb'); if (!z) return;
+    var B = books(), bOr = B.filter(function (k) { return /orbit/i.test(k + ' ' + nomB(k)); })[0] || '', bFr = B.filter(function (k) { return k !== bOr; })[0] || B[0] || '';
+    var o1 = ST.b1 || bFr, o2 = ST.b2 || (ST.k === 'lay' ? (bOr || B[1] || B[0]) : (B.filter(function (k) { return k !== o1 && k !== bOr; })[0] || B[1] || B[0])) || '';
+    var k = ST.k, P = { lay: [['rep', '⚖️ Réparti'], ['1', 'Si ça passe'], ['2', 'Si ça ne passe pas']], '2b': [['rep', '⚖️ Réparti'], ['1', 'Sur l\'issue 1'], ['2', 'Sur l\'issue 2']], rn: [['rep', '⚖️ Réparti'], ['1', 'Sur l\'issue 1'], ['2', 'Sur l\'issue 2']] }[k];
+    var lab = function (t) { return '<div style="font-size:14px;font-weight:800;margin:10px 0 4px;">' + t + '</div>'; };
+    var jambe = function (n, tag, col, pid, pph, bid, bsel, cid, cph, extra) {
+      return '<div style="background:#0b1226;border:1px solid #2a3a63;border-radius:10px;padding:8px;margin-bottom:8px;">'
+        + '<div style="display:flex;gap:8px;align-items:center;"><span style="background:' + col + ';border-radius:7px;padding:3px 8px;font-weight:900;font-size:14px;">' + tag + '</span>'
+        + (pid ? '<input id="' + pid + '" placeholder="' + pph + '" oninput="g45SbMaj()" style="' + IN + 'flex:1;min-width:0;font-weight:700;">' : '<span style="flex:1;font-size:15px;color:#c9d3ee;">' + pph + '</span>') + '</div>'
+        + '<div style="display:flex;gap:8px;align-items:center;margin-top:6px;"><select id="' + bid + '" onchange="g45SbMaj(1)" style="' + IN + 'flex:1;min-width:0;">' + opts(bsel) + '</select>'
+        + '<input id="' + cid + '" inputmode="decimal" placeholder="' + cph + '" oninput="g45SbMaj()" style="' + IN + 'width:80px;text-align:center;"></div>' + (extra || '') + '</div>';
+    };
+    var h = '<div style="background:#121b36;border:1px solid #2a3a63;border-radius:14px;padding:12px;color:#fff;margin-bottom:12px;">'
+      + '<div style="display:flex;gap:6px;margin-bottom:10px;">' + [['lay', '📗 Book + 📕 contre'], ['2b', '2 books'], ['rn', '🔄 Remb. si nul']].map(function (x) { return '<button onclick="g45SbKind(\'' + x[0] + '\')" style="' + BT(k === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div>'
+      + '<input id="sb-match" placeholder="Match (ex. PSG – Lyon)" style="' + IN + 'width:100%;box-sizing:border-box;font-weight:700;">'
+      + '<div style="display:flex;gap:8px;margin-top:6px;"><input id="sb-date" type="date" style="' + IN + 'flex:1;min-width:0;"><input id="sb-heure" type="time" style="' + IN + 'width:110px;"></div>'
+      + lab(k === 'lay' ? 'Jambes' : 'Jambes (une issue et son contraire)');
+    if (k === 'lay') h += jambe(1, 'POUR', '#1e7a43', 'sb-p1', 'Pari (ex. PSG gagne)', 'sb-bk1', o1, 'sb-a', 'cote')
+      + jambe(2, 'CONTRE', '#a32a2a', '', 'le même pari, contre', 'sb-bk2', o2, 'sb-b', 'cote',
+        '<div style="display:flex;gap:8px;align-items:center;margin-top:6px;font-size:14px;color:#c9d3ee;">Commission <input id="sb-c" inputmode="decimal" value="' + esc(ST.c == null ? '3' : ST.c) + '" oninput="g45SbMaj()" style="' + IN + 'width:60px;text-align:center;"> %</div>');
+    else if (k === 'rn') h += jambe(1, '1', '#2f6bff', 'sb-p1', 'Équipe A (remboursé si nul)', 'sb-bk1', o1, 'sb-a', 'cote') + jambe(2, '2', '#2f6bff', 'sb-p2', 'Équipe B ou nul', 'sb-bk2', o2, 'sb-b', 'cote');
+    else h += jambe(1, '1', '#2f6bff', 'sb-p1', 'Issue 1 (ex. Plus de 2,5)', 'sb-bk1', o1, 'sb-a', 'cote') + jambe(2, '2', '#2f6bff', 'sb-p2', 'Issue 2 (ex. Moins de 2,5)', 'sb-bk2', o2, 'sb-b', 'cote');
+    h += '<div style="display:flex;justify-content:space-between;align-items:center;margin:8px 0;font-size:15px;font-weight:800;"><span>💶 ' + (k === 'lay' ? 'Ma mise sur le book' : 'Total à miser') + '</span><input id="sb-m" inputmode="decimal" placeholder="100" oninput="g45SbMaj()" style="' + IN + 'width:100px;text-align:center;"></div>'
+      + lab('Bénéfice sur :') + '<div style="display:flex;gap:6px;">' + P.map(function (x) { return '<button onclick="g45SbPart(\'' + x[0] + '\')" style="' + BT(ST.p === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div>'
+      + '<div id="sb-res"></div>'
+      + '<button onclick="g45SbEnreg()" style="width:100%;margin-top:10px;cursor:pointer;border:0;border-radius:12px;padding:13px;font-size:17px;font-weight:900;color:#fff;background:#2f6bff;">✅ Enregistrer le surebet</button></div>';
+    var keep = ST.vals || {};
+    z.innerHTML = h;
+    Object.keys(keep).forEach(function (id) { var e = $(id); if (e && keep[id] != null && id !== 'sb-c') e.value = keep[id]; });
+    if (!$('sb-date').value) { try { $('sb-date').value = new Date().toLocaleDateString('sv-SE'); } catch (e) {} }
+    resultat();
+  }
+  function garder() { var o = {}; ['sb-match', 'sb-date', 'sb-heure', 'sb-p1', 'sb-p2', 'sb-a', 'sb-b', 'sb-m', 'sb-bk1', 'sb-bk2'].forEach(function (id) { var e = $(id); if (e) o[id] = e.value; }); ST.vals = o; var c = $('sb-c'); if (c) ST.c = c.value; }
+  window.g45SbMaj = function (bk) { garder(); if (bk) { ST.b1 = ST.vals['sb-bk1']; ST.b2 = ST.vals['sb-bk2']; } resultat(); };
+  window.g45SbKind = function (k) { garder(); ST.k = k; ST.p = 'rep'; ST.b2 = null; panneau(); };
+  window.g45SbPart = function (p) { garder(); ST.p = p; panneau(); };
+  window.g45SbEnreg = function () {
+    garder();
+    var D = lire(), R = calc(D), L = libs(D);
+    if (!R.ok) return alert('Tape les deux cotes et la mise.');
+    if (!D.b1 || !D.b2 || D.b1 === D.b2) return alert('Choisis deux bookmakers différents.');
+    if (R.min < -0.004 && !confirm('Ce n\'est pas un surebet : tu peux perdre ' + fr(-R.min) + ' €. Enregistrer quand même ?')) return;
+    var B = state.b || (state.b = {});
+    if ((parseFloat(B[D.b1]) || 0) < R.s1) return alert('Solde insuffisant sur ' + nomB(D.b1) + ' (' + fr(R.s1) + ' € nécessaires).');
+    if ((parseFloat(B[D.b2]) || 0) < R.s2) return alert('Solde insuffisant sur ' + nomB(D.b2) + ' (' + fr(R.s2) + ' € ' + (D.k === 'lay' ? 'bloqués' : 'nécessaires') + ').');
+    var now = new Date(), t = now.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) + ' ' + now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    var g = 'sb' + Date.now(), match = String(D.match || '').trim() || 'Surebet', iss = D.k === 'rn' ? [String(D.m1 || 'Issue 1'), 'Nul', String(D.m2 || 'Issue 2').replace(/\s+ou\s+nul$/i, '')] : D.k === 'lay' ? [L[2], L[3]] : [L[0], L[1]];
+    var base = { n: 'SIMPLE', target: match, eq: '', l: 1, isS: false, isFlash: false, isFreebet: false, t: t, sport: '', comp: '', heure: D.heure || '', date: D.date || '', domicile: '', notif: false, joueur: '', joueurs: [], jmode: '' };
+    var j1 = Object.assign({}, base, { id: String(Date.now()), b: D.b1, m: R.s1, cote: num(D.a), isLay: false, type: '⚖️ ' + L[0], notes: '⚖️ Surebet', sb: { g: g, k: D.k, i: 1, iss: iss } });
+    var j2 = Object.assign({}, base, { id: String(Date.now() + 1), b: D.b2, m: R.s2, cote: D.k === 'lay' ? R.cote2 : num(D.b), isLay: D.k === 'lay', type: '⚖️ ' + L[1], notes: '⚖️ Surebet' + (D.k === 'lay' ? ' · contre ' + fr(R.L) + ' € @' + String(num(D.b)).replace('.', ',') + ' · commission ' + String(num(D.c)).replace('.', ',') + ' %' : ''), sb: { g: g, k: D.k, i: 2, iss: iss } });
+    B[D.b1] = (parseFloat(B[D.b1]) - R.s1).toFixed(2); B[D.b2] = (parseFloat(B[D.b2]) - R.s2).toFixed(2);
+    state.h.unshift(j2); state.h.unshift(j1);
+    try { save(); } catch (e) {} try { updMise(); } catch (e) {} try { if (typeof render === 'function') render(); } catch (e) {}
+    ST.vals = {}; panneau();
+    alert('⚖️ Surebet enregistré : ' + nomB(D.b1) + ' ' + fr(R.s1) + ' € · ' + nomB(D.b2) + ' ' + fr(R.s2) + ' €' + (D.k === 'lay' ? ' bloqués' : '') + '.');
+  };
+  /* Règlement : o = '1' | '2' | 'n' */
+  window.g45SbRegler = function (g, o, sansConf) {
+    var J = (state.h || []).filter(function (x) { return x && x.sb && x.sb.g === g; }); if (!J.length) return false;
+    var k = J[0].sb.k, iss = J[0].sb.iss || [], lib = o === 'n' ? 'Nul' : o === '2' ? iss[k === 'rn' ? 2 : 1] : iss[0];
+    if (!sansConf && !confirm('Régler le surebet : « ' + lib + ' » ?')) return false;
+    J.forEach(function (bet) {
+      var i = bet.sb.i, w, rb = false;
+      if (k === 'rn') { if (o === 'n') { if (i === 1) rb = true; else w = true; } else w = (o === '1') === (i === 1); }
+      else w = (o === '1') === (i === 1);
+      var nb = Object.assign({}, bet, { win: rb ? true : !!w, debrief: '⚖️ Surebet : ' + lib });
+      if (rb) { nb.ar = 'v'; nb.coteO = bet.cote; nb.mO = bet.m; nb.cote = 1; nb.debrief = '↩️ Remboursé · ' + nb.debrief; }
+      _g45BetAppliquer(bet, 'h', -1); _g45BetAppliquer(nb, 'a', 1);
+      var ix = state.h.indexOf(bet); if (ix >= 0) state.h.splice(ix, 1);
+      state.a.unshift(nb);
+    });
+    try { save(); } catch (e) {} try { updMise(); } catch (e) {} try { if (typeof render === 'function') render(); } catch (e) {}
+    return true;
+  };
+  window.g45SbAnnuler = function (g, sansConf) {
+    var J = (state.h || []).filter(function (x) { return x && x.sb && x.sb.g === g; }); if (!J.length) return false;
+    if (!sansConf && !confirm('Annuler ce surebet et rembourser les deux mises ?')) return false;
+    J.forEach(function (bet) { _g45BetAppliquer(bet, 'h', -1); var ix = state.h.indexOf(bet); if (ix >= 0) state.h.splice(ix, 1); });
+    try { save(); } catch (e) {} try { updMise(); } catch (e) {} try { if (typeof render === 'function') render(); } catch (e) {}
+    return true;
+  };
+  /* Carte « En cours » : jambe 1 = carte ⚖️ des deux jambes ; jambe 2 = rien (null = pas un surebet) */
+  window._g45SbCarte = function (h) {
+    if (!h || !h.sb) return null;
+    var J = (state.h || []).filter(function (x) { return x && x.sb && x.sb.g === h.sb.g; }).sort(function (a, b) { return a.sb.i - b.sb.i; });
+    if (h.sb.i !== 1 && J.some(function (x) { return x.sb.i === 1; })) return '';
+    var k = h.sb.k, iss = h.sb.iss || [], g = esc(h.sb.g);
+    var bk = function (b) { try { return bbadge(b.b); } catch (e) { return esc(b.b); } };
+    var lig = J.map(function (b) {
+      var lay = !!b.isLay, m = num(b.m);
+      return '<div style="font-size:15px;margin:3px 0;">' + (k === 'lay' ? (lay ? '📕 ' : '📗 ') : (b.sb.i === 1 ? '① ' : '② ')) + esc(String(b.type || '').replace(/^⚖️\s*/, '')) + ' · <b>' + fr(m) + ' €</b>' + (lay ? ' bloqués' : ' @' + String(b.cote).replace('.', ',')) + ' ' + bk(b) + '</div>';
+    }).join('');
+    var B = function (o, t, bg) { return '<button onclick="g45SbRegler(\'' + g + '\',\'' + o + '\')" style="flex:1;min-width:0;cursor:pointer;border-radius:10px;padding:11px 6px;font-size:15px;font-weight:900;color:#fff;border:0;background:' + bg + ';">' + esc(t) + '</button>'; };
+    var bts = k === 'rn' ? B('1', '1 ' + (iss[0] || ''), '#1e7a43') + B('n', 'N Nul', '#6b5a12') + B('2', '2 ' + (iss[2] || ''), '#7a1e1e') : B('1', iss[0] || 'Issue 1', '#1e7a43') + B('2', iss[1] || 'Issue 2', '#7a1e1e');
+    return '<tr data-g45ec="1"><td colspan="5" style="padding:0 0 10px;border:none;"><div style="background:rgba(11,16,29,.9);border:1px solid #2a3350;border-left:4px solid #f5c542;border-radius:12px;padding:12px 14px;color:#fff;text-align:left;">'
+      + '<div style="font-size:17px;font-weight:900;">⚖️ Surebet · ' + esc(h.target || '') + (h.heure ? ' · ' + esc(h.heure) : '') + '</div>' + lig
+      + '<div style="display:flex;gap:6px;margin-top:10px;">' + bts + '</div>'
+      + '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;gap:8px;"><span style="font-size:13px;color:#c9d3ee;">Touche le résultat : les deux jambes sont réglées toutes seules.</span>'
+      + '<button onclick="g45SbAnnuler(\'' + g + '\')" title="Annuler le surebet" style="cursor:pointer;border-radius:8px;padding:6px 10px;font-size:15px;color:#fff;background:rgba(255,255,255,.06);border:1px solid #3a4566;">🗑️</button></div>'
+      + '</div></td></tr>';
+  };
+  /* Onglet : bouton ⚖️ Surebet après 🎲 Combiné + panneau #sub-sb après #sub-combi ; swBet('sb') */
+  function poser() {
+    var bc = $('btn-comb'); if (!bc || $('btn-sb')) return;
+    var b = document.createElement('button'); b.className = 'togb'; b.id = 'btn-sb'; b.textContent = '⚖️ Surebet'; b.setAttribute('onclick', "swBet('sb')");
+    bc.parentNode.insertBefore(b, bc.nextSibling);
+    var sc = $('sub-combi'), z = document.createElement('div'); z.id = 'sub-sb'; z.style.display = 'none';
+    if (sc && sc.parentNode) sc.parentNode.insertBefore(z, sc.nextSibling);
+  }
+  var sw0 = window.swBet;
+  if (typeof sw0 === 'function') window.swBet = swBet = function (mode) {
+    poser();
+    var on = mode === 'sb', z = $('sub-sb'), b = $('btn-sb');
+    if (on) {
+      ['sub-strat', 'sub-simple', 'sub-combi'].forEach(function (id) { var e = $(id); if (e) e.style.display = 'none'; });
+      ['btn-cpit', 'btn-simp', 'btn-comb'].forEach(function (id) { var e = $(id); if (e) e.classList.remove('on'); });
+      if (z) { z.style.display = 'block'; panneau(); } if (b) b.classList.add('on');
+      return;
+    }
+    if (z) z.style.display = 'none'; if (b) b.classList.remove('on');
+    return sw0.apply(this, arguments);
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', poser); else setTimeout(poser, 0);
 })();
