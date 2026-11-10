@@ -87598,19 +87598,23 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     })).then(function () { MCen = 0; redessiner(); try { if (typeof window._g45LoiCote.apres === 'function') window._g45LoiCote.apres(); } catch (e) {} }).catch(function () { MCen = 0; });   /* 20261109f : + Cockpit */
   }
   var frC = function (c) { return (Math.round(c * 100) / 100).toFixed(2).replace('.', ','); };
-  var coteH = function (y) { var q = coteDe(y); return q ? ' · <b style="color:#f5c542;">' + (q.e ? '≈ ' : '') + frC(q.c) + '</b>' : ''; };
+  /* 20261111g (« et pareil cote book estimée, car là c'est trop haut ») : les cotes des archives sont celles du book AMÉRICAIN (DraftKings) ;
+     un book français paie environ 6 % de moins (même règle que les 🧪 value tennis : cote × 0,94) → « FR ≈ » affichée à côté, et les gains du
+     bilan (10 € et 🚀 montante) calculés avec cette cote FR. */
+  var FRK = 0.94, coteFr = function (c) { return Math.round(c * FRK * 100) / 100; };
+  var coteH = function (y) { var q = coteDe(y); return q ? ' · <b style="color:#f5c542;">' + (q.e ? '≈ ' : '') + frC(q.c) + '</b> <span style="color:#6dd3ff;font-weight:800;">FR ≈ ' + frC(coteFr(q.c)) + '</span>' : ''; };
   window._g45LoiMont = function (L, coteDe) {   /* 20261111f : simulation montante du bilan (voir html) */
     var G = [10, 20, 60, 180, 540, 1620, 4860, 14580, 43740], E = {}, g = 0, pmax = 0, mmax = 0, n = 0;
     L.slice().sort(function (a, b) { return a.t - b.t; }).forEach(function (x) {
       var q = coteDe(x); if (!q || !(q.c > 1) || (x.r !== 1 && x.r !== 0)) return;
       var k = x.id + '|' + x.k + '|' + (x.lieu || ''), p = E[k] || 1, m = G[Math.min(p, G.length) - 1];
       n++; if (p > pmax) pmax = p; if (m > mmax) mmax = m;
-      if (x.r === 1) { g += m * (q.c - 1); E[k] = 1; } else { g -= m; E[k] = p + 1; }
+      if (x.r === 1) { g += m * (Math.round(q.c * 0.94 * 100) / 100 - 1); E[k] = 1; }   /* 20261111g : cote FR estimée */ else { g -= m; E[k] = p + 1; }
     });
     var ouv = Object.keys(E).filter(function (k) { return E[k] > 1; });
     return { n: n, g: Math.round(g * 100) / 100, pmax: pmax, mmax: mmax, ouv: ouv.length, prochs: ouv.slice(0, 3).map(function (k) { var p = E[k]; return 'P' + p + ' = ' + G[Math.min(p, G.length) - 1] + ' €'; }).join(', ') + (ouv.length > 3 ? '…' : '') };
   };
-  window._g45LoiCote = { coteDe: coteDe, FI: FI, charger: function (L) { chargerCotes(L); }, txt: function (y) { var q = coteDe(y); return q ? (q.e ? '≈ ' : '') + frC(q.c) : ''; } };   /* tests ; 20261109f : charger / txt pour le Cockpit */
+  window._g45LoiCote = { coteDe: coteDe, FI: FI, charger: function (L) { chargerCotes(L); }, txt: function (y) { var q = coteDe(y); return q ? (q.e ? '≈ ' : '') + frC(q.c) + ' (FR ≈ ' + frC(coteFr(q.c)) + ')' : ''; } };   /* 20261111g : + cote FR estimée */   /* tests ; 20261109f : charger / txt pour le Cockpit */
   var resH = function (x) { var c = x.r === 1 ? '#1ed760' : x.r === 0 ? '#ff6b6b' : '#c9d3ee'; return '<span style="font-weight:800;color:' + c + ';font-size:16px;white-space:nowrap;">' + (x.r === 1 ? '✅' : x.r === 0 ? '❌' : x.r === -1 ? '🚫' : '⏳') + ' ' + esc(x.sc || '') + '</span>'; };
   /* 20261107r (capture : « manque heure, championnat, fond » → maquette loiL.png « oui ») : carte par pépite = logo de l'équipe en fond (couleur x.c
      si gardée), bande sombre sous le texte, 🕒 heure (Paris) + 🏆 championnat sur la 2e ligne. */
@@ -87667,9 +87671,9 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     var tu = function (lb, v, bg, bd, col) { return '<div style="flex:1;min-width:105px;background:' + bg + ';border:1px solid ' + bd + ';border-radius:10px;padding:8px;text-align:center;"><div style="font-size:13px;color:#c9d3ee;">' + lb + '</div><div style="font-size:22px;font-weight:900;color:' + col + ';">' + v + '</div></div>'; };
     h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">' + tu('Pépites jouées', J.length, '#0b1226', '#2a3a63', '#fff')
       + tu('Série stoppée ✅', G + (J.length ? ' · ' + Math.round(100 * G / J.length) + ' %' : ''), 'rgba(30,215,96,.12)', '#1ed760', '#1ed760') + tu('Série continue ❌', P, 'rgba(255,69,69,.12)', '#ff4545', '#ff6b6b') + '</div>';
-    var JC = J.filter(function (x) { return coteDe(x); }), gain = JC.reduce(function (a, x) { return a + (x.r === 1 ? 10 * (coteDe(x).c - 1) : -10); }, 0);
+    var JC = J.filter(function (x) { return coteDe(x); }), gain = JC.reduce(function (a, x) { return a + (x.r === 1 ? 10 * (coteFr(coteDe(x).c) - 1) : -10); }, 0);   /* 20261111g : cote FR */
     if (JC.length) h += '<div style="background:' + (gain >= 0 ? 'rgba(30,215,96,.12)' : 'rgba(255,69,69,.12)') + ';border:1px solid ' + (gain >= 0 ? '#1ed760' : '#ff4545') + ';border-radius:10px;padding:8px;margin-bottom:10px;text-align:center;">'
-      + '<div style="font-size:14px;color:#c9d3ee;">💶 Joué à 10 € chaque pépite avec cote (' + JC.length + ' sur ' + J.length + ')</div>'
+      + '<div style="font-size:14px;color:#c9d3ee;">💶 Joué à 10 € chaque pépite avec cote FR estimée (' + JC.length + ' sur ' + J.length + ')</div>'
       + '<div style="font-size:22px;font-weight:900;color:' + (gain >= 0 ? '#1ed760' : '#ff6b6b') + ';">' + (gain >= 0 ? '+' : '−') + frC(Math.abs(gain)).replace(',00', '') + ' € · ' + (gain >= 0 ? '+' : '−') + Math.round(Math.abs(gain) / (10 * JC.length) * 100) + ' %</div>'
       + '<div style="font-size:13px;color:#c9d3ee;">Cote d\'avant-match gardée par nos archives (≈ = estimée : victoire ou nul depuis le 1N2, autre ligne de buts depuis la ligne du book, 60 min depuis le vainqueur). Pépites à cote sous 1,50 retirées.</div></div>';
     /* 20261111f (Antoine, bilan Loi des séries : « si ça passe pas, la fois d'après la mise est de combien ? » → simulation montante « oui ») :
@@ -87690,7 +87694,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
        moyenne, gain). ═══ */
     var bV = function (k, t) { var on = (M.vue || 'cal') === k; return '<button onclick="g45LoiBilVue(\'' + k + '\')" style="flex:1;border-radius:10px;padding:9px 4px;font-size:15px;font-weight:800;cursor:pointer;color:#fff;border:1px solid ' + (on ? '#6d9dff' : '#2a3a63') + ';background:' + (on ? '#2a4a9a' : '#0b1226') + ';">' + t + '</button>'; };
     h += '<div style="display:flex;gap:6px;margin:0 0 10px;">' + bV('cal', '📅 Calendrier') + bV('gr', '📈 Graphique') + bV('bil', '📊 Bilans') + '</div>';
-    var gainDe = function (x) { var q = coteDe(x); return q ? (x.r === 1 ? 10 * (q.c - 1) : -10) : null; };
+    var gainDe = function (x) { var q = coteDe(x); return q ? (x.r === 1 ? 10 * (coteFr(q.c) - 1) : -10) : null; };   /* 20261111g : cote FR */
     var eur = function (v) { return (v >= 0 ? '+' : '−') + String(Math.round(Math.abs(v))) + ' €'; };
     if (M.vue === 'gr') {
       var JD = {}; JC.forEach(function (x) { JD[x.j] = (JD[x.j] || 0) + gainDe(x); });
