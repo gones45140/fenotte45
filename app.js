@@ -77176,10 +77176,10 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
         var col = x.pire <= 2 ? '#1ed760' : x.pire <= 4 ? '#ff9f43' : '#ff5a5a', pal = x.pire + 1;
         h += '<div style="background:#0b1226;border:1px solid #2a3a63;border-radius:12px;padding:10px;margin-top:8px;font-size:15px;line-height:1.5;">'
           + '<b style="background:#f5c542;color:#0b1226;border-radius:8px;padding:0 7px;margin-right:6px;">' + (i + 1) + '</b><b>' + ({ dom: '🏠 ', ext: '✈️ ' }[B.lieu] || '🌍 ') + esc(x.lib) + '</b><br>'
-          + 'Pire série <b style="color:' + col + ';">' + x.pire + '</b> → ' + pal + ' palier' + (pal > 1 ? 's' : '') + ' ' + (pal <= 5 ? '✅' : '⚠️') + ' · ' + Math.round(100 * x.p) + ' % (' + Math.round(x.n) + ' matchs) · cote juste ≈ <b style="color:#f5c542;">' + x.cj.toFixed(2).replace('.', ',') + '</b><br>'
+          + 'Pire série <b style="color:' + col + ';">' + x.pire + '</b> → ' + pal + ' palier' + (pal > 1 ? 's' : '') + ' ' + (pal <= 5 ? '✅' : '⚠️') + ' · ' + Math.round(100 * x.p) + ' % (' + Math.round(x.n) + ' matchs) · cote juste ≈ <b style="color:#f5c542;">' + x.cj.toFixed(2).replace('.', ',') + '</b> · book ≈ <b style="color:#6dd3ff;">' + (x.cj / 1.09).toFixed(2).replace('.', ',') + '</b><br>'   /* 20261111e (« à côté de cote juste mets cote estimée book avec environ 9 % de marge ») */
           + '<span onclick="g45CrBest(\'use\',' + i + ')" style="display:inline-block;cursor:pointer;margin-top:6px;border:1px solid #6d9dff;background:#16213f;border-radius:8px;padding:5px 11px;font-size:14px;font-weight:800;">➡️ Utiliser ce critère</span></div>';
       });
-      h += '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">Cote juste = 1 ÷ réussite (sans la marge du book, environ 6 % de moins chez le book).</div>';
+      h += '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">Cote juste = 1 ÷ réussite. Book ≈ cote juste ÷ 1,09 (marge d\'environ 9 %).</div>';
     }
     return h + '</div>';
   }
