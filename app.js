@@ -88121,7 +88121,18 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   /* 20261110d (« et la mise sur chaque, un peu comme le screen 2 » = fr.surebet.com : une mise par ligne + enjeu total) : tout est
      proportionnel à la mise → on calcule pour 100, puis on met à l'échelle de la case tapée (ST.fix : '1' mise jambe 1, '2' mise jambe 2
      (CONTRE = mise contre), 't' enjeu total = somme des mises, CONTRE compté avec ce qui est bloqué). */
+  /* 20261110f : mises DÉJÀ jouées (2 tickets lus) → résultat réel de ces deux mises, sans rien recalculer */
+  function calcS(D, s1, v2) {
+    var a = num(D.a), b = num(D.b), c = Math.max(0, num(D.c)) / 100, c1 = Math.max(0, num(D.c1)) / 100, R;
+    if (!(a > 1) || !(b > 1) || !(s1 > 0) || !(v2 > 0)) return { ok: false };
+    a = 1 + (a - 1) * (1 - c1); if (D.k !== 'lay') b = 1 + (b - 1) * (1 - c);
+    if (D.k === 'lay') { var L = v2, liab = L * (b - 1); R = { ok: true, a: a, s1: r2(s1), L: r2(L), s2: r2(liab), cote2: Math.round((1 + L * (1 - c) / liab) * 1e6) / 1e6, res: [[s1 * (a - 1) - liab, s1 * (a - 1), -liab], [L * (1 - c) - s1, -s1, L * (1 - c)]], base: s1 }; }
+    else { var T = s1 + v2; R = { ok: true, a: a, b: b, s1: r2(s1), s2: r2(v2), res: [[s1 * a - T, s1 * (a - 1), -v2], [v2 * b - T, -s1, v2 * (b - 1)]], base: T }; if (D.k === 'rn') R.res.splice(1, 0, [v2 * b - v2, 0, v2 * (b - 1)]); }
+    R.min = Math.min.apply(null, R.res.map(function (x) { return x[0]; })); R.pct = R.base ? R.min / R.base * 100 : 0; return R;
+  }
+  window._g45SbCalcS = calcS;
   function calcF(D) {
+    if (ST.fix === 'b') return calcS(D, num(ST.t1), num(ST.t2));
     var R1 = calc(Object.assign({}, D, { S: 100, T: 100 })); if (!R1.ok) return R1;
     var fv = num(ST.fv), ref = ST.fix === '2' ? (D.k === 'lay' ? R1.L : R1.s2) : ST.fix === 't' ? (D.k === 'lay' ? 100 + R1.s2 : 100) : (D.k === 'lay' ? 100 : R1.s1);
     if (!(fv > 0) || !(ref > 0)) return { ok: false };
@@ -88181,7 +88192,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
         + (pid ? '<input id="' + pid + '" placeholder="' + pph + '" oninput="g45SbMaj()" style="' + IN + 'flex:1;min-width:0;font-weight:700;">' : '<span style="flex:1;font-size:15px;color:#c9d3ee;">' + pph + '</span>') + '</div>'
         + '<div style="display:flex;gap:8px;align-items:center;margin-top:6px;"><select id="' + bid + '" onchange="g45SbMaj(1)" style="' + IN + 'flex:1;min-width:0;">' + opts(bsel) + '</select>'
         + '<input id="' + cid + '" inputmode="decimal" placeholder="' + cph + '" oninput="g45SbMaj()" style="' + IN + 'width:80px;text-align:center;"></div>'
-        + '<div style="display:flex;gap:8px;align-items:center;margin-top:6px;font-size:14px;color:#c9d3ee;">' + (k === 'lay' && n === 2 ? 'Mise contre' : 'Mise') + ' <input id="sb-m' + n + '" inputmode="decimal" placeholder="—" oninput="g45SbMise(\'' + n + '\',this.value)" style="' + IN + 'width:100px;text-align:center;"> €</div>' + comm(n === 1 ? 'sb-c1' : 'sb-c', n === 1 ? ST.c1 : ST.c, bsel) + (extra || '') + '</div>';
+        + '<div style="display:flex;gap:8px;align-items:center;margin-top:6px;font-size:14px;color:#c9d3ee;"><button onclick="g45SbTicket(' + n + ')" style="cursor:pointer;border-radius:8px;padding:7px 10px;font-size:14px;font-weight:800;color:#fff;background:#2f6bff;border:0;">📷 Ticket ' + n + '</button>' + (k === 'lay' && n === 2 ? 'Mise contre' : 'Mise') + ' <input id="sb-m' + n + '" inputmode="decimal" placeholder="—" oninput="g45SbMise(\'' + n + '\',this.value)" style="' + IN + 'width:100px;text-align:center;"> €</div>' + comm(n === 1 ? 'sb-c1' : 'sb-c', n === 1 ? ST.c1 : ST.c, bsel) + (extra || '') + '</div>';
     };
     var h = '<div style="background:#121b36;border:1px solid #2a3a63;border-radius:14px;padding:12px;color:#fff;margin-bottom:12px;">'
       + '<div style="display:flex;gap:6px;margin-bottom:10px;">' + [['2b', '📗 Back + 📗 Back'], ['lay', '📗 Back + 📕 Lay'], ['rn', '🔄 Remb. si nul']]   /* 20261110e (capture : PSG back OrbitX 1,5 + l'issue contraire back Betify 5 saisis dans « Book + contre » → lu comme un lay, perte) : noms clairs, Back + Back en premier */.map(function (x) { return '<button onclick="g45SbKind(\'' + x[0] + '\')" style="' + BT(k === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div>'
@@ -88206,7 +88217,37 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   }
   function garder() { var o = {}; ['sb-match', 'sb-date', 'sb-heure', 'sb-p1', 'sb-p2', 'sb-a', 'sb-b', 'sb-bk1', 'sb-bk2'].forEach(function (id) { var e = $(id); if (e) o[id] = e.value; }); ST.vals = o; var c = $('sb-c'); if (c) ST.c = c.value; var c1 = $('sb-c1'); if (c1) ST.c1 = c1.value; }
   window.g45SbMaj = function (bk) { garder(); if (bk) { ST.b1 = ST.vals['sb-bk1']; ST.b2 = ST.vals['sb-bk2']; ST.c = null; ST.c1 = null; panneau(); return; } resultat(); };   /* 20261110c : autre book → commission par défaut du book (OrbitX 3 %) */
-  window.g45SbMise = function (f, v) { ST.fix = String(f); ST.fv = v; resultat(); };
+  window.g45SbMise = function (f, v) { ST.fix = String(f); ST.fv = v; ST.t1 = ST.t2 = null; resultat(); };
+  /* 20261110f (« faudrait que ça puisse lire 2 tickets maintenant ») : 📷 Ticket sous chaque jambe → même lecture que « 📷 Lire un ticket »
+     (_g45TicketIa, secours Tesseract) → pari, book (retrouvé parmi MES books), cote, mise, match, date / heure. Les 2 tickets lus → les 2 vraies
+     mises gardées (ST.fix 'b', calcS) : on voit le résultat réel de ce qui est joué. */
+  window.g45SbTicket = function (n) {
+    var inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*';
+    inp.onchange = function () {
+      var f = inp.files && inp.files[0]; if (!f) return;
+      var rd = new FileReader();
+      rd.onload = async function (ev) {
+        var z = $('sb-res'); if (z) z.innerHTML = '<div style="font-size:15px;font-weight:800;padding:8px 0;">🧠 Lecture du ticket ' + n + '… ⏳</div>';
+        var o = null; try { o = await _g45TicketIa(ev.target.result); } catch (e) { try { o = await _g45TicketTesseract(ev.target.result); } catch (e2) {} }
+        if (!o) { if (z) z.innerHTML = '<div style="font-size:15px;color:#ff6b6b;padding:8px 0;">❌ Ticket ' + n + ' illisible</div>'; return; }
+        garder();
+        var nz = function (t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, ''); };
+        var bk = '', ob = nz(o.bookmaker); if (ob) books().forEach(function (k) { var a = nz(k), b = nz(nomB(k)); if (!bk && (a === ob || b === ob || (a && ob.indexOf(a) >= 0) || (b && ob.indexOf(b) >= 0) || (b && b.indexOf(ob) >= 0))) bk = k; });
+        var V = ST.vals || (ST.vals = {}), typ = String(o.type || '').trim();
+        if (n === 1) { if (typ) V['sb-p1'] = typ; if (bk) { V['sb-bk1'] = bk; ST.b1 = bk; } if (o.cote) V['sb-a'] = String(o.cote).replace(',', '.'); }
+        else { if (typ && ST.k !== 'lay') V['sb-p2'] = typ; if (bk) { V['sb-bk2'] = bk; ST.b2 = bk; } if (o.cote) V['sb-b'] = String(o.cote).replace(',', '.'); }
+        if (!String(V['sb-match'] || '').trim() && o.equipe) V['sb-match'] = o.equipe + (o.adversaire ? ' – ' + o.adversaire : '');
+        if (o.date && /^\d{4}-\d{2}-\d{2}$/.test(o.date)) V['sb-date'] = o.date; if (o.heure && /^\d{1,2}:\d{2}$/.test(o.heure)) V['sb-heure'] = ('0' + o.heure).slice(-5);
+        if (n === 1) ST.c1 = null; else ST.c = null;
+        var mi = num(o.mise); if (mi > 0) { ST['t' + n] = mi; if (ST.t1 > 0 && ST.t2 > 0) ST.fix = 'b'; else { ST.fix = String(n); ST.fv = String(mi); } }
+        panneau();
+        if (ST.fix === 'b') { var e1 = $('sb-m1'), e2 = $('sb-m2'); if (e1) e1.value = fr(ST.t1).replace(',', '.'); if (e2) e2.value = fr(ST.t2).replace(',', '.'); resultat(); }
+        var z2 = $('sb-res'); if (z2) z2.insertAdjacentHTML('afterbegin', '<div style="font-size:14px;color:#1ed760;font-weight:800;margin-top:6px;">✅ Ticket ' + n + ' lu' + (bk ? '' : ' · ⚠️ book « ' + esc(o.bookmaker || '?') + ' » pas dans tes books') + (mi > 0 ? '' : ' · mise non lue') + ' — vérifie</div>');
+      };
+      rd.readAsDataURL(f);
+    };
+    inp.click();
+  };
   window.g45SbKind = function (k) { garder(); ST.k = k; ST.p = 'rep'; ST.b2 = null; panneau(); };
   window.g45SbPart = function (p) { garder(); ST.p = p; panneau(); };
   window.g45SbEnreg = function () {
@@ -88226,7 +88267,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     B[D.b1] = (parseFloat(B[D.b1]) - R.s1).toFixed(2); B[D.b2] = (parseFloat(B[D.b2]) - R.s2).toFixed(2);
     state.h.unshift(j2); state.h.unshift(j1);
     try { save(); } catch (e) {} try { updMise(); } catch (e) {} try { if (typeof render === 'function') render(); } catch (e) {}
-    ST.vals = {}; ST.fv = ''; panneau();
+    ST.vals = {}; ST.fv = ''; ST.t1 = ST.t2 = null; if (ST.fix === 'b') ST.fix = '1'; panneau();
     alert('⚖️ Surebet enregistré : ' + nomB(D.b1) + ' ' + fr(R.s1) + ' € · ' + nomB(D.b2) + ' ' + fr(R.s2) + ' €' + (D.k === 'lay' ? ' bloqués' : '') + '.');
   };
   /* Règlement : o = '1' | '2' | 'n' */
