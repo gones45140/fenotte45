@@ -88096,18 +88096,21 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   function calc(D) {
     var a = num(D.a), b = num(D.b), c = Math.max(0, num(D.c)) / 100, p = D.p || 'rep', R = { ok: false };
     if (!(a > 1) || !(b > 1)) return R;
+    /* 20261110c (« pour le POUR mets-moi la commission aussi, comme si je pariais en back [OrbitX] et contre en ARJEL » ; fr.surebet.com :
+       1,5 à 3 % → 1,485) : commission de chaque jambe POUR / book → cote nette = 1 + (cote − 1) × (1 − commission). Jambe CONTRE : inchangée. */
+    var c1 = Math.max(0, num(D.c1)) / 100; a = 1 + (a - 1) * (1 - c1); if (D.k !== 'lay') { b = 1 + (b - 1) * (1 - c); }
     if (D.k === 'lay') {
       var S = num(D.S); if (!(S > 0) || !(b - c > 0)) return R;
       var L = p === '1' ? S / (1 - c) : p === '2' ? S * (a - 1) / (b - 1) : S * a / (b - c), liab = L * (b - 1);
       var g1 = S * (a - 1) - liab, g2 = L * (1 - c) - S;
-      R = { ok: true, s1: r2(S), L: r2(L), s2: r2(liab), cote2: Math.round((1 + L * (1 - c) / liab) * 1e6) / 1e6, res: [[g1, S * (a - 1), -liab], [g2, -S, L * (1 - c)]], base: S };
+      R = { ok: true, a: a, s1: r2(S), L: r2(L), s2: r2(liab), cote2: Math.round((1 + L * (1 - c) / liab) * 1e6) / 1e6, res: [[g1, S * (a - 1), -liab], [g2, -S, L * (1 - c)]], base: S };
     } else {
       var T = num(D.T); if (!(T > 0)) return R;
       var s1, s2;
       if (D.k === 'rn') { s1 = p === '1' ? T - T / b : p === '2' ? T / a : T * b / (a + b); }
       else { s1 = p === '1' ? T - T / b : p === '2' ? T / a : T * (1 / a) / (1 / a + 1 / b); }
       s2 = T - s1;
-      R = { ok: true, s1: r2(s1), s2: r2(s2), res: [[s1 * a - T, s1 * (a - 1), -s2], [s2 * b - T, -s1, s2 * (b - 1)]], base: T };
+      R = { ok: true, a: a, b: b, s1: r2(s1), s2: r2(s2), res: [[s1 * a - T, s1 * (a - 1), -s2], [s2 * b - T, -s1, s2 * (b - 1)]], base: T };
       if (D.k === 'rn') R.res.splice(1, 0, [s2 * b - s2, 0, s2 * (b - 1)]);   /* nul : jambe 1 rendue */
     }
     R.min = Math.min.apply(null, R.res.map(function (x) { return x[0]; }));
@@ -88123,7 +88126,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   var BT = function (on) { return 'flex:1;min-width:0;cursor:pointer;border-radius:10px;padding:10px 6px;font-size:14px;font-weight:800;color:#fff;border:' + (on ? '2px solid #f5c542;background:#2a2410;' : '1px solid #2a3a63;background:#0b1226;'); };
   function lire() {
     var v = function (id) { var e = $(id); return e ? e.value : ''; };
-    return { k: ST.k, p: ST.p, a: v('sb-a'), b: v('sb-b'), c: ST.k === 'lay' ? v('sb-c') : 0, S: v('sb-m'), T: v('sb-m'), m1: v('sb-p1'), m2: v('sb-p2'), match: v('sb-match'), b1: v('sb-bk1'), b2: v('sb-bk2'), date: v('sb-date'), heure: v('sb-heure') };
+    return { k: ST.k, p: ST.p, a: v('sb-a'), b: v('sb-b'), c: v('sb-c'), c1: v('sb-c1'), S: v('sb-m'), T: v('sb-m'), m1: v('sb-p1'), m2: v('sb-p2'), match: v('sb-match'), b1: v('sb-bk1'), b2: v('sb-bk2'), date: v('sb-date'), heure: v('sb-heure') };
   }
   function libs(D) {
     var p1 = String(D.m1 || '').trim() || 'Issue 1', p2 = String(D.m2 || '').trim();
@@ -88149,7 +88152,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     h += '<div style="margin-top:10px;border-radius:10px;padding:10px;text-align:center;background:' + (okG ? 'rgba(30,215,96,.15);border:1px solid #1ed760;' : 'rgba(255,69,69,.15);border:1px solid #ff4545;') + '">'
       + '<div style="font-size:13px;color:#c9d3ee;">' + (okG ? '🟢 Bénéfice garanti (au minimum)' : '🔴 Pas de surebet : tu peux perdre') + '</div>'
       + '<b style="font-size:22px;color:' + (okG ? '#1ed760' : '#ff6b6b') + ';">' + sg(R.min) + ' € · ' + (R.pct >= 0 ? '+' : '−') + Math.abs(R.pct).toFixed(1).replace('.', ',') + ' %</b>'
-      + (D.k === 'lay' && num(D.c) > 0 ? '<div style="font-size:13px;color:#c9d3ee;">(commission ' + esc(nb2) + ' déjà retirée)</div>' : '') + '</div>';
+      + (num(D.c) > 0 || num(D.c1) > 0 ? '<div style="font-size:13px;color:#c9d3ee;">(commissions déjà retirées)</div>' : '') + '</div>';
     z.innerHTML = h;
   }
   function panneau() {
@@ -88158,12 +88161,14 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     var o1 = ST.b1 || bFr, o2 = ST.b2 || (ST.k === 'lay' ? (bOr || B[1] || B[0]) : (B.filter(function (k) { return k !== o1 && k !== bOr; })[0] || B[1] || B[0])) || '';
     var k = ST.k, P = { lay: [['rep', '⚖️ Réparti'], ['1', 'Si ça passe'], ['2', 'Si ça ne passe pas']], '2b': [['rep', '⚖️ Réparti'], ['1', 'Sur l\'issue 1'], ['2', 'Sur l\'issue 2']], rn: [['rep', '⚖️ Réparti'], ['1', 'Sur l\'issue 1'], ['2', 'Sur l\'issue 2']] }[k];
     var lab = function (t) { return '<div style="font-size:14px;font-weight:800;margin:10px 0 4px;">' + t + '</div>'; };
+    var orb = function (bk) { return /orbit|betfair|exchange|matchbook/i.test(String(bk || '') + ' ' + nomB(bk)); };
+    var comm = function (id, val, bk) { var v = val != null && val !== '' ? val : (orb(bk) ? '3' : '0'); return '<div style="display:flex;gap:8px;align-items:center;margin-top:6px;font-size:14px;color:#c9d3ee;">Commission <input id="' + id + '" inputmode="decimal" value="' + esc(v) + '" oninput="g45SbMaj()" style="' + IN + 'width:60px;text-align:center;"> %</div>'; };
     var jambe = function (n, tag, col, pid, pph, bid, bsel, cid, cph, extra) {
       return '<div style="background:#0b1226;border:1px solid #2a3a63;border-radius:10px;padding:8px;margin-bottom:8px;">'
         + '<div style="display:flex;gap:8px;align-items:center;"><span style="background:' + col + ';border-radius:7px;padding:3px 8px;font-weight:900;font-size:14px;">' + tag + '</span>'
         + (pid ? '<input id="' + pid + '" placeholder="' + pph + '" oninput="g45SbMaj()" style="' + IN + 'flex:1;min-width:0;font-weight:700;">' : '<span style="flex:1;font-size:15px;color:#c9d3ee;">' + pph + '</span>') + '</div>'
         + '<div style="display:flex;gap:8px;align-items:center;margin-top:6px;"><select id="' + bid + '" onchange="g45SbMaj(1)" style="' + IN + 'flex:1;min-width:0;">' + opts(bsel) + '</select>'
-        + '<input id="' + cid + '" inputmode="decimal" placeholder="' + cph + '" oninput="g45SbMaj()" style="' + IN + 'width:80px;text-align:center;"></div>' + (extra || '') + '</div>';
+        + '<input id="' + cid + '" inputmode="decimal" placeholder="' + cph + '" oninput="g45SbMaj()" style="' + IN + 'width:80px;text-align:center;"></div>' + comm(n === 1 ? 'sb-c1' : 'sb-c', n === 1 ? ST.c1 : ST.c, bsel) + (extra || '') + '</div>';
     };
     var h = '<div style="background:#121b36;border:1px solid #2a3a63;border-radius:14px;padding:12px;color:#fff;margin-bottom:12px;">'
       + '<div style="display:flex;gap:6px;margin-bottom:10px;">' + [['lay', '📗 Book + 📕 contre'], ['2b', '2 books'], ['rn', '🔄 Remb. si nul']].map(function (x) { return '<button onclick="g45SbKind(\'' + x[0] + '\')" style="' + BT(k === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div>'
@@ -88171,8 +88176,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
       + '<div style="display:flex;gap:8px;margin-top:6px;"><input id="sb-date" type="date" style="' + IN + 'flex:1;min-width:0;"><input id="sb-heure" type="time" style="' + IN + 'width:110px;"></div>'
       + lab(k === 'lay' ? 'Jambes' : 'Jambes (une issue et son contraire)');
     if (k === 'lay') h += jambe(1, 'POUR', '#1e7a43', 'sb-p1', 'Pari (ex. PSG gagne)', 'sb-bk1', o1, 'sb-a', 'cote')
-      + jambe(2, 'CONTRE', '#a32a2a', '', 'le même pari, contre', 'sb-bk2', o2, 'sb-b', 'cote',
-        '<div style="display:flex;gap:8px;align-items:center;margin-top:6px;font-size:14px;color:#c9d3ee;">Commission <input id="sb-c" inputmode="decimal" value="' + esc(ST.c == null ? '3' : ST.c) + '" oninput="g45SbMaj()" style="' + IN + 'width:60px;text-align:center;"> %</div>');
+      + jambe(2, 'CONTRE', '#a32a2a', '', 'le même pari, contre', 'sb-bk2', o2, 'sb-b', 'cote');
     else if (k === 'rn') h += jambe(1, '1', '#2f6bff', 'sb-p1', 'Équipe A (remboursé si nul)', 'sb-bk1', o1, 'sb-a', 'cote') + jambe(2, '2', '#2f6bff', 'sb-p2', 'Équipe B ou nul', 'sb-bk2', o2, 'sb-b', 'cote');
     else h += jambe(1, '1', '#2f6bff', 'sb-p1', 'Issue 1 (ex. Plus de 2,5)', 'sb-bk1', o1, 'sb-a', 'cote') + jambe(2, '2', '#2f6bff', 'sb-p2', 'Issue 2 (ex. Moins de 2,5)', 'sb-bk2', o2, 'sb-b', 'cote');
     h += '<div style="display:flex;justify-content:space-between;align-items:center;margin:8px 0;font-size:15px;font-weight:800;"><span>💶 ' + (k === 'lay' ? 'Ma mise sur le book' : 'Total à miser') + '</span><input id="sb-m" inputmode="decimal" placeholder="100" oninput="g45SbMaj()" style="' + IN + 'width:100px;text-align:center;"></div>'
@@ -88185,8 +88189,8 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     if (!$('sb-date').value) { try { $('sb-date').value = new Date().toLocaleDateString('sv-SE'); } catch (e) {} }
     resultat();
   }
-  function garder() { var o = {}; ['sb-match', 'sb-date', 'sb-heure', 'sb-p1', 'sb-p2', 'sb-a', 'sb-b', 'sb-m', 'sb-bk1', 'sb-bk2'].forEach(function (id) { var e = $(id); if (e) o[id] = e.value; }); ST.vals = o; var c = $('sb-c'); if (c) ST.c = c.value; }
-  window.g45SbMaj = function (bk) { garder(); if (bk) { ST.b1 = ST.vals['sb-bk1']; ST.b2 = ST.vals['sb-bk2']; } resultat(); };
+  function garder() { var o = {}; ['sb-match', 'sb-date', 'sb-heure', 'sb-p1', 'sb-p2', 'sb-a', 'sb-b', 'sb-m', 'sb-bk1', 'sb-bk2'].forEach(function (id) { var e = $(id); if (e) o[id] = e.value; }); ST.vals = o; var c = $('sb-c'); if (c) ST.c = c.value; var c1 = $('sb-c1'); if (c1) ST.c1 = c1.value; }
+  window.g45SbMaj = function (bk) { garder(); if (bk) { ST.b1 = ST.vals['sb-bk1']; ST.b2 = ST.vals['sb-bk2']; ST.c = null; ST.c1 = null; panneau(); return; } resultat(); };   /* 20261110c : autre book → commission par défaut du book (OrbitX 3 %) */
   window.g45SbKind = function (k) { garder(); ST.k = k; ST.p = 'rep'; ST.b2 = null; panneau(); };
   window.g45SbPart = function (p) { garder(); ST.p = p; panneau(); };
   window.g45SbEnreg = function () {
@@ -88201,8 +88205,8 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     var now = new Date(), t = now.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) + ' ' + now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
     var g = 'sb' + Date.now(), match = String(D.match || '').trim() || 'Surebet', iss = D.k === 'rn' ? [String(D.m1 || 'Issue 1'), 'Nul', String(D.m2 || 'Issue 2').replace(/\s+ou\s+nul$/i, '')] : D.k === 'lay' ? [L[2], L[3]] : [L[0], L[1]];
     var base = { n: 'SIMPLE', target: match, eq: '', l: 1, isS: false, isFlash: false, isFreebet: false, t: t, sport: '', comp: '', heure: D.heure || '', date: D.date || '', domicile: '', notif: false, joueur: '', joueurs: [], jmode: '' };
-    var j1 = Object.assign({}, base, { id: String(Date.now()), b: D.b1, m: R.s1, cote: num(D.a), isLay: false, type: '⚖️ ' + L[0], notes: '⚖️ Surebet', sb: { g: g, k: D.k, i: 1, iss: iss } });
-    var j2 = Object.assign({}, base, { id: String(Date.now() + 1), b: D.b2, m: R.s2, cote: D.k === 'lay' ? R.cote2 : num(D.b), isLay: D.k === 'lay', type: '⚖️ ' + L[1], notes: '⚖️ Surebet' + (D.k === 'lay' ? ' · contre ' + fr(R.L) + ' € @' + String(num(D.b)).replace('.', ',') + ' · commission ' + String(num(D.c)).replace('.', ',') + ' %' : ''), sb: { g: g, k: D.k, i: 2, iss: iss } });
+    var j1 = Object.assign({}, base, { id: String(Date.now()), b: D.b1, m: R.s1, cote: Math.round(R.a * 1e6) / 1e6, isLay: false, type: '⚖️ ' + L[0], notes: '⚖️ Surebet' + (num(D.c1) > 0 ? ' · @' + String(num(D.a)).replace('.', ',') + ' commission ' + String(num(D.c1)).replace('.', ',') + ' %' : ''), sb: { g: g, k: D.k, i: 1, iss: iss } });
+    var j2 = Object.assign({}, base, { id: String(Date.now() + 1), b: D.b2, m: R.s2, cote: D.k === 'lay' ? R.cote2 : Math.round(R.b * 1e6) / 1e6, isLay: D.k === 'lay', type: '⚖️ ' + L[1], notes: '⚖️ Surebet' + (D.k === 'lay' ? ' · contre ' + fr(R.L) + ' € @' + String(num(D.b)).replace('.', ',') + ' · commission ' + String(num(D.c)).replace('.', ',') + ' %' : ''), sb: { g: g, k: D.k, i: 2, iss: iss } });
     B[D.b1] = (parseFloat(B[D.b1]) - R.s1).toFixed(2); B[D.b2] = (parseFloat(B[D.b2]) - R.s2).toFixed(2);
     state.h.unshift(j2); state.h.unshift(j1);
     try { save(); } catch (e) {} try { updMise(); } catch (e) {} try { if (typeof render === 'function') render(); } catch (e) {}
