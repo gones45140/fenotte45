@@ -88091,7 +88091,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   var r2 = function (v) { return Math.round(v * 100) / 100; };
   var fr = function (v) { return (Math.round(v * 100) / 100).toFixed(2).replace('.', ','); };
   var sg = function (v) { return (v >= 0 ? '+' : '−') + fr(Math.abs(v)); };
-  var ST = { k: 'lay', p: 'rep' };
+  var ST = { k: 'lay', p: 'rep', fix: '1', fv: '' };
   /* Calcul pur. D = { k, a, b (cote 2 : contre ou 2e book), c (commission % de la jambe 2), S (mise jambe 1, 'lay') / T (total), p 'rep' | '1' | '2' } */
   function calc(D) {
     var a = num(D.a), b = num(D.b), c = Math.max(0, num(D.c)) / 100, p = D.p || 'rep', R = { ok: false };
@@ -88118,6 +88118,16 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     return R;
   }
   window._g45SbCalc = calc;
+  /* 20261110d (« et la mise sur chaque, un peu comme le screen 2 » = fr.surebet.com : une mise par ligne + enjeu total) : tout est
+     proportionnel à la mise → on calcule pour 100, puis on met à l'échelle de la case tapée (ST.fix : '1' mise jambe 1, '2' mise jambe 2
+     (CONTRE = mise contre), 't' enjeu total = somme des mises, CONTRE compté avec ce qui est bloqué). */
+  function calcF(D) {
+    var R1 = calc(Object.assign({}, D, { S: 100, T: 100 })); if (!R1.ok) return R1;
+    var fv = num(ST.fv), ref = ST.fix === '2' ? (D.k === 'lay' ? R1.L : R1.s2) : ST.fix === 't' ? (D.k === 'lay' ? 100 + R1.s2 : 100) : (D.k === 'lay' ? 100 : R1.s1);
+    if (!(fv > 0) || !(ref > 0)) return { ok: false };
+    var x = 100 * fv / ref; return calc(Object.assign({}, D, { S: x, T: x }));
+  }
+  window._g45SbCalcF = function (D, fix, fv) { var a = ST.fix, b = ST.fv; ST.fix = fix; ST.fv = fv; try { return calcF(D); } finally { ST.fix = a; ST.fv = b; } };
   function books() { var B = (typeof state !== 'undefined' && state && state.b) || {}; return Object.keys(B); }
   function nomB(k) { try { return bki(k).n; } catch (e) { return String(k || ''); } }
   function opts(sel) { return books().map(function (k) { return '<option value="' + esc(k) + '"' + (k === sel ? ' selected' : '') + '>' + esc(nomB(k)) + '</option>'; }).join(''); }
@@ -88136,8 +88146,10 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   }
   function resultat() {
     var z = $('sb-res'); if (!z) return;
-    var D = lire(), R = calc(D), L = libs(D);
-    if (!R.ok) { z.innerHTML = '<div style="font-size:14px;color:#c9d3ee;padding:6px 0;">Tape les deux cotes et la mise.</div>'; return; }
+    var D = lire(), R = calcF(D), L = libs(D);
+    var put = function (id, v) { var e = $(id); if (e && document.activeElement !== e && String(ST.fix) !== id.slice(-1)) e.value = v > 0 ? fr(v).replace(',', '.') : ''; };
+    if (R.ok) { put('sb-m1', R.s1); put('sb-m2', D.k === 'lay' ? R.L : R.s2); put('sb-mt', R.s1 + R.s2); }
+    if (!R.ok) { z.innerHTML = '<div style="font-size:14px;color:#c9d3ee;padding:6px 0;">Tape les deux cotes et une mise.</div>'; return; }
     var nb1 = nomB(D.b1), nb2 = nomB(D.b2), h = '';
     if (D.k === 'lay') h += '<div style="display:flex;gap:8px;margin-top:8px;"><div style="flex:1;background:#0b1226;border:1px solid #2a3a63;border-radius:10px;padding:8px;text-align:center;font-size:13px;color:#c9d3ee;">Contre sur ' + esc(nb2) + '<b style="display:block;font-size:20px;color:#fff;">' + fr(R.L) + ' €</b></div>'
       + '<div style="flex:1;background:#0b1226;border:1px solid #2a3a63;border-radius:10px;padding:8px;text-align:center;font-size:13px;color:#c9d3ee;">Bloqué sur ' + esc(nb2) + '<b style="display:block;font-size:20px;color:#ffb36b;">' + fr(R.s2) + ' €</b></div></div>'
@@ -88168,7 +88180,8 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
         + '<div style="display:flex;gap:8px;align-items:center;"><span style="background:' + col + ';border-radius:7px;padding:3px 8px;font-weight:900;font-size:14px;">' + tag + '</span>'
         + (pid ? '<input id="' + pid + '" placeholder="' + pph + '" oninput="g45SbMaj()" style="' + IN + 'flex:1;min-width:0;font-weight:700;">' : '<span style="flex:1;font-size:15px;color:#c9d3ee;">' + pph + '</span>') + '</div>'
         + '<div style="display:flex;gap:8px;align-items:center;margin-top:6px;"><select id="' + bid + '" onchange="g45SbMaj(1)" style="' + IN + 'flex:1;min-width:0;">' + opts(bsel) + '</select>'
-        + '<input id="' + cid + '" inputmode="decimal" placeholder="' + cph + '" oninput="g45SbMaj()" style="' + IN + 'width:80px;text-align:center;"></div>' + comm(n === 1 ? 'sb-c1' : 'sb-c', n === 1 ? ST.c1 : ST.c, bsel) + (extra || '') + '</div>';
+        + '<input id="' + cid + '" inputmode="decimal" placeholder="' + cph + '" oninput="g45SbMaj()" style="' + IN + 'width:80px;text-align:center;"></div>'
+        + '<div style="display:flex;gap:8px;align-items:center;margin-top:6px;font-size:14px;color:#c9d3ee;">' + (k === 'lay' && n === 2 ? 'Mise contre' : 'Mise') + ' <input id="sb-m' + n + '" inputmode="decimal" placeholder="—" oninput="g45SbMise(\'' + n + '\',this.value)" style="' + IN + 'width:100px;text-align:center;"> €</div>' + comm(n === 1 ? 'sb-c1' : 'sb-c', n === 1 ? ST.c1 : ST.c, bsel) + (extra || '') + '</div>';
     };
     var h = '<div style="background:#121b36;border:1px solid #2a3a63;border-radius:14px;padding:12px;color:#fff;margin-bottom:12px;">'
       + '<div style="display:flex;gap:6px;margin-bottom:10px;">' + [['lay', '📗 Book + 📕 contre'], ['2b', '2 books'], ['rn', '🔄 Remb. si nul']].map(function (x) { return '<button onclick="g45SbKind(\'' + x[0] + '\')" style="' + BT(k === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div>'
@@ -88179,7 +88192,8 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
       + jambe(2, 'CONTRE', '#a32a2a', '', 'le même pari, contre', 'sb-bk2', o2, 'sb-b', 'cote');
     else if (k === 'rn') h += jambe(1, '1', '#2f6bff', 'sb-p1', 'Équipe A (remboursé si nul)', 'sb-bk1', o1, 'sb-a', 'cote') + jambe(2, '2', '#2f6bff', 'sb-p2', 'Équipe B ou nul', 'sb-bk2', o2, 'sb-b', 'cote');
     else h += jambe(1, '1', '#2f6bff', 'sb-p1', 'Issue 1 (ex. Plus de 2,5)', 'sb-bk1', o1, 'sb-a', 'cote') + jambe(2, '2', '#2f6bff', 'sb-p2', 'Issue 2 (ex. Moins de 2,5)', 'sb-bk2', o2, 'sb-b', 'cote');
-    h += '<div style="display:flex;justify-content:space-between;align-items:center;margin:8px 0;font-size:15px;font-weight:800;"><span>💶 ' + (k === 'lay' ? 'Ma mise sur le book' : 'Total à miser') + '</span><input id="sb-m" inputmode="decimal" placeholder="100" oninput="g45SbMaj()" style="' + IN + 'width:100px;text-align:center;"></div>'
+    h += '<div style="display:flex;justify-content:space-between;align-items:center;margin:8px 0;font-size:15px;font-weight:800;"><span>💶 Enjeu total' + (k === 'lay' ? ' <span style="font-size:13px;font-weight:400;color:#c9d3ee;">(mise + bloqué)</span>' : '') + '</span><input id="sb-mt" inputmode="decimal" placeholder="—" oninput="g45SbMise(\'t\',this.value)" style="' + IN + 'width:100px;text-align:center;"></div>'
+      + '<div style="font-size:13px;color:#c9d3ee;margin:-4px 0 4px;">Tape une mise (jambe 1, jambe 2 ou total) : les autres se calculent.</div>'
       + lab('Bénéfice sur :') + '<div style="display:flex;gap:6px;">' + P.map(function (x) { return '<button onclick="g45SbPart(\'' + x[0] + '\')" style="' + BT(ST.p === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div>'
       + '<div id="sb-res"></div>'
       + '<button onclick="g45SbEnreg()" style="width:100%;margin-top:10px;cursor:pointer;border:0;border-radius:12px;padding:13px;font-size:17px;font-weight:900;color:#fff;background:#2f6bff;">✅ Enregistrer le surebet</button></div>';
@@ -88187,16 +88201,18 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     z.innerHTML = h;
     Object.keys(keep).forEach(function (id) { var e = $(id); if (e && keep[id] != null && id !== 'sb-c') e.value = keep[id]; });
     if (!$('sb-date').value) { try { $('sb-date').value = new Date().toLocaleDateString('sv-SE'); } catch (e) {} }
+    try { var ef = $('sb-m' + ST.fix); if (ef && ST.fv) ef.value = ST.fv; } catch (e) {}   /* 20261110d : la mise tapée reste */
     resultat();
   }
-  function garder() { var o = {}; ['sb-match', 'sb-date', 'sb-heure', 'sb-p1', 'sb-p2', 'sb-a', 'sb-b', 'sb-m', 'sb-bk1', 'sb-bk2'].forEach(function (id) { var e = $(id); if (e) o[id] = e.value; }); ST.vals = o; var c = $('sb-c'); if (c) ST.c = c.value; var c1 = $('sb-c1'); if (c1) ST.c1 = c1.value; }
+  function garder() { var o = {}; ['sb-match', 'sb-date', 'sb-heure', 'sb-p1', 'sb-p2', 'sb-a', 'sb-b', 'sb-bk1', 'sb-bk2'].forEach(function (id) { var e = $(id); if (e) o[id] = e.value; }); ST.vals = o; var c = $('sb-c'); if (c) ST.c = c.value; var c1 = $('sb-c1'); if (c1) ST.c1 = c1.value; }
   window.g45SbMaj = function (bk) { garder(); if (bk) { ST.b1 = ST.vals['sb-bk1']; ST.b2 = ST.vals['sb-bk2']; ST.c = null; ST.c1 = null; panneau(); return; } resultat(); };   /* 20261110c : autre book → commission par défaut du book (OrbitX 3 %) */
+  window.g45SbMise = function (f, v) { ST.fix = String(f); ST.fv = v; resultat(); };
   window.g45SbKind = function (k) { garder(); ST.k = k; ST.p = 'rep'; ST.b2 = null; panneau(); };
   window.g45SbPart = function (p) { garder(); ST.p = p; panneau(); };
   window.g45SbEnreg = function () {
     garder();
-    var D = lire(), R = calc(D), L = libs(D);
-    if (!R.ok) return alert('Tape les deux cotes et la mise.');
+    var D = lire(), R = calcF(D), L = libs(D);
+    if (!R.ok) return alert('Tape les deux cotes et une mise.');
     if (!D.b1 || !D.b2 || D.b1 === D.b2) return alert('Choisis deux bookmakers différents.');
     if (R.min < -0.004 && !confirm('Ce n\'est pas un surebet : tu peux perdre ' + fr(-R.min) + ' €. Enregistrer quand même ?')) return;
     var B = state.b || (state.b = {});
@@ -88210,7 +88226,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     B[D.b1] = (parseFloat(B[D.b1]) - R.s1).toFixed(2); B[D.b2] = (parseFloat(B[D.b2]) - R.s2).toFixed(2);
     state.h.unshift(j2); state.h.unshift(j1);
     try { save(); } catch (e) {} try { updMise(); } catch (e) {} try { if (typeof render === 'function') render(); } catch (e) {}
-    ST.vals = {}; panneau();
+    ST.vals = {}; ST.fv = ''; panneau();
     alert('⚖️ Surebet enregistré : ' + nomB(D.b1) + ' ' + fr(R.s1) + ' € · ' + nomB(D.b2) + ' ' + fr(R.s2) + ' €' + (D.k === 'lay' ? ' bloqués' : '') + '.');
   };
   /* Règlement : o = '1' | '2' | 'n' */
