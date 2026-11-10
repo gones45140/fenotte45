@@ -75984,7 +75984,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   /* 20261021d (« on va rajouter des trucs » : duo / trio buteurs, double chance buteur, tirs, tirs par équipe + mi-temps, marque en premier,
      match précédent ; maquette maquette-criteres « oui ») : valeurs par défaut des nouveaux critères (aussi pour les combinés de « Reprendre ma note »). */
   function norm(c) {
-    var D0 = { tq: '1', tqr: '', tqp: '', tqo: '', TQL: 1.5, tqb: '', tqm: '', jx: 'cha', mh: '', fs: '', FL: 24.5, ts: '', TSL: 12.5, as: '', ASL: 10.5, cad: '', CL: 4.5, mt: '', mp: '', bo: '', BL: 4.5, pm: '', m1: '', M1L: 1, m2: '', M2L: 1, ha: '', HAL: 0.25, ess: '', esm: '', ESL: 5.5, esb: '', jtit: '' };   /* 20261103k : essais rugby */   /* 20261024b : m1 / m2 = buts 1re / 2e mi-temps */
+    var D0 = { tq: '1', tqr: '', tqp: '', tqo: '', TQL: 1.5, tqb: '', tqm: '', jx: 'cha', mh: '', fs: '', FL: 24.5, ts: '', TSL: 12.5, as: '', ASL: 10.5, cad: '', CL: 4.5, mt: '', mp: '', bo: '', BL: 4.5, pm: '', m1: '', M1L: 1, m2: '', M2L: 1, ha: '', HAL: 0.25, ess: '', esm: '', ESL: 5.5, esb: '', jtit: '', otp: '' };   /* 20261103k : essais rugby */   /* 20261024b : m1 / m2 = buts 1re / 2e mi-temps */
     for (var k in D0) if (c[k] == null) c[k] = D0[k];
     return c;
   }
@@ -76035,7 +76035,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   function libCombo(c) {
     var p = [];
     if (c.res === 'vic') p.push(hk() ? 'Victoire (temps régl.)' : 'Victoire'); else if (c.res === 'vqr') p.push(hk() || us() ? 'Vainqueur (prolong. comprise)' : 'Vainqueur'); else if (c.res === 'nul') p.push('Nul'); else if (c.res === 'def') p.push(hk() ? 'Défaite (temps régl.)' : 'Défaite'); else if (c.res === 'per') p.push('Perdant (prolong. comprise)');   /* 20261031m */
-    if (c.ou) p.push((c.ou === 'ov' ? 'Over ' : 'Under ') + c.L);
+    if (c.ou) p.push((c.ou === 'ov' ? 'Over ' : 'Under ') + c.L + (hk() && c.otp ? ' (prol. + TAB)' : ''));   /* 20261111c */
     if (c.bts) p.push('Les deux marquent : ' + (c.bts === 'oui' ? 'oui' : 'non'));
     if (c.te) p.push(motUnite() + ' équipe ' + (c.te === 'ov' ? 'Over ' : 'Under ') + c.TL);
     if (c.ad) p.push(motUnite() + ' adversaire ' + (c.ad === 'ov' ? 'Over ' : 'Under ') + c.AL);
@@ -76125,11 +76125,15 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     }
     if (c.res === 'vqr' && !(gf > ga)) return false;
     if (c.res === 'per' && !(gf < ga)) return false;   /* 20261031m : perd le match, prolongation / TAB compris (contraire de Vainqueur) */
+    var gfP = gf, gaP = ga;   /* 20261111c : score final, prolongation / TAB compris (pour c.otp) */
     if (m[4]) { var mn = Math.min(gf, ga); gf = mn; ga = mn; }   /* hockey : prolongation / TAB → égalité au temps réglementaire */
     if (c.res === 'vic' && !(gf > ga)) return false;
     if (c.res === 'nul' && gf !== ga) return false;
     if (c.res === 'def' && !(gf < ga)) return false;
-    if (c.ou && !okOU(c.ou, gf + ga, c.L)) return false;
+    /* 20261111c (Winamax MyMatch NHL : « Nombre de buts : prolongations et tirs au but éventuels inclus » — écart cote juste 1,69 / book 1,52 ;
+       mais « Nombre de buts de <équipe> : hors prolongations et tirs au but ») : c.otp = '1' → SEUL le total du match compte prolongation + TAB
+       (score final, TAB gagné = +1 but) ; buts d'une équipe / de l'adversaire restent au temps réglementaire. */
+    if (c.ou && !okOU(c.ou, c.otp ? gfP + gaP : gf + ga, c.L)) return false;
     if (c.bts === 'oui' && !(gf > 0 && ga > 0)) return false;
     if (c.bts === 'non' && gf > 0 && ga > 0) return false;
     if (c.te && !okOU(c.te, gf, c.TL)) return false;
@@ -77130,6 +77134,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     if (sp === 'soccer') ['oui', 'non'].forEach(function (o) { X.push(function (c) { c.bts = o; }); });
     if (S.ctx && !rg()) { ['ov', 'un'].forEach(function (o) { X.push(function (c) { c.tb = o; }); }); ['c', 'n'].forEach(function (o) { X.push(function (c) { c.hb = o; }); }); }
     var out = [];
+    if (sp === 'hockey') { var b0 = base; base = function () { var c = b0(); c.otp = '1'; return c; }; }   /* 20261111c : total du match comme le MyMatch Winamax (prolongation + TAB compris) */
     if (!J.length) { RES.forEach(function (r) { X.forEach(function (f) { var c = base(); c.res = r; f(c); if (c.res || c.ou || c.te || c.bts || c.tb || c.hb) out.push(c); }); }); return out; }
     var ROL = [];
     var CF = S.ctx && typeof _g45JouCfg === 'function' ? _g45JouCfg(S.ctx.sp) : null;
@@ -77401,7 +77406,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var LL = lignes(); if (LL.indexOf(c.L) < 0) LL.push(c.L); LL.sort(function (x, y) { return x - y; });
     LL.forEach(function (L) { sel += '<option value="' + L + '"' + (c.L === L ? ' selected' : '') + '>' + L + '</option>'; });
     sel += '</select>';
-    h += lab(us() || rg() ? US_L[sport()][3] : hk() ? 'Buts du match (temps réglementaire)' : 'Buts du match') + b(c.ou === 'ov', 'Over', "g45CrSet('ou','ov')") + b(c.ou === 'un', 'Under', "g45CrSet('ou','un')") + b(c.ou === '', 'Aucun', "g45CrSet('ou','')") + sel;
+    h += lab(us() || rg() ? US_L[sport()][3] : hk() ? 'Buts du match' : 'Buts du match') + (hk() ? b(!c.otp, '⏱️ 60 min', "g45CrSet('otp','')") + b(!!c.otp, '🏒 + prolong. et TAB (Winamax)', "g45CrSet('otp','1')") + '<br>' : '') + b(c.ou === 'ov', 'Over', "g45CrSet('ou','ov')") + b(c.ou === 'un', 'Under', "g45CrSet('ou','un')") + b(c.ou === '', 'Aucun', "g45CrSet('ou','')") + sel;
     /* 20261103e (capture : « Total du book doit passer dans Points ? » → oui) : ligne déplacée de Résultat vers l'onglet Points, sous le total fixe. */
     if (S.ctx && !rg()) h += lab('🎯 Total du bookmaker (ligne de chaque match)') + b(c.tb === 'ov', 'Over', "g45CrSet('tb','ov')") + b(c.tb === 'un', 'Under', "g45CrSet('tb','un')") + b(!c.tb, 'Aucun', "g45CrSet('tb','')");   /* 20261103d */
     if (S.ctx && S.ctx.lg === 'nba') h += lab('🎯 Total de points de l\'équipe du bookmaker (gardé depuis le 03/11)') + b(c.qb === 'ov', 'Over', "g45CrSet('qb','ov')") + b(c.qb === 'un', 'Under', "g45CrSet('qb','un')") + b(!c.qb, 'Aucun', "g45CrSet('qb','')");   /* 20261103f */
