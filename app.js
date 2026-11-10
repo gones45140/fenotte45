@@ -78002,9 +78002,14 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       if (hb) cb.hb = hb; if (tb) cb.tb = tb; if (qb) cb.qb = qb;
       return cb;
     }
-    var R = _g45AgConsigne(String(t || '').replace(/🌍|🏠|✈️?|🛫/g, ' '), true);
+    /* 20261109j (cartes 49ers « San Francisco 49ers et moins de 51,5 » / Chiefs : pire série 1·2·1·1 et 1·1·1·1, « le chiffre des séries est faux »)
+       : seul « + » séparait les jambes → « 49ers et moins de 51,5 » = une jambe, lue « moins de 51,5 » seul (victoire perdue). « et » sépare
+       aussi les jambes ici, et une jambe qui n'est que le NOM de l'équipe de la carte = victoire. */
+    var R = _g45AgConsigne(String(t || '').replace(/🌍|🏠|✈️?|🛫/g, ' ').replace(/\s+et\s+/gi, ' + '), true);
     if (!R || R.nobet || !R.opts.length) return null;
     var c = combo0(); c.res = ''; var ok = true;
+    var estNom = function (x) { var a = serNz(x), n = serNz(nom); return !!(a && n && (n === a || (' ' + n + ' ').indexOf(' ' + a + ' ') >= 0 || (' ' + a + ' ').indexOf(' ' + n + ' ') >= 0)); };
+    R.opts[0].forEach(function (l) { if (l.k === '?' && nom && estNom(l.t)) { l.k = 'vic'; } });
     R.opts[0].forEach(function (l) {
       if (l.k === 'vic' || l.k === 'vqr' || l.k === 'def' || l.k === 'per') c.res = (us() && l.k === 'vic') ? 'vqr' : (us() && l.k === 'per' ? 'def' : l.k);
       else if (l.k === 'ov' || l.k === 'un') { c.ou = l.k; c.L = l.L; }
