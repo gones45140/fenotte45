@@ -86595,9 +86595,28 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     try { (window.updMise || updMise)(); } catch (e) {}
     try { dessiner(true); } catch (e) {}
   }
+  /* 20261110h (alerte « Appliquer tout de suite la nouvelle grille ⭐⭐⭐⭐⭐ ? » → « il faudrait que ça garde les mises des séries en cours et
+     prenne la nouvelle mise une fois que ça repart de P1, et celles à P1 appliquer directement ») : la grille ⭐ change TOUT DE SUITE pour les
+     équipes à P1 ; chaque équipe EN SÉRIE garde l'ancienne grille comme grille perso (u.g = ancienne) avec retour aux étoiles en attente
+     (u.ga = 'E', mécanisme 20261104f) → elle reprend la nouvelle grille toute seule à son retour à P1. Plus de grille ⭐ globale en attente. */
+  function appliquerGel(k, g) {
+    var old = (typeof STRATS !== 'undefined' && STRATS[k]) ? STRATS[k].slice() : null, L = enSerie(k);
+    if (old) ((typeof state !== 'undefined' && state.u) || []).forEach(function (u) {
+      if (!u || String(u.s) !== String(k) || (Array.isArray(u.g) && u.g.length >= 6) || palMax(u) <= 1) return;
+      u.g = old.slice(); u.ga = 'E';
+    });
+    appliquer(k, g);
+    return L;
+  }
+  window._g45GrilleGel = appliquerGel;   /* tests */
   window._g45GrilleDemande = function (k, g) {
     var L = enSerie(k);
     if (!L.length) { appliquer(k, g); return 'ok'; }
+    if (true) {   /* 20261110h */
+      appliquerGel(k, g);
+      try { alert('✅ Nouvelle grille ' + etoiles(k) + ' (P1 ' + String(g[0]).replace('.', ',') + ' €, ' + g.length + ' paliers) appliquée aux équipes à P1.\n\n⏳ En série, elles gardent leurs mises actuelles jusqu\'à leur retour à P1 : ' + L.map(function (x) { return x.n + ' (P' + x.p + ')'; }).join(', ') + '.'); } catch (e) {}
+      return 'gel';
+    }
     var o = attLire(); o[k] = g; attEcrire(o);
     try { alert('⏳ Nouvelle grille ' + etoiles(k) + ' (P1 ' + String(g[0]).replace('.', ',') + ' €, ' + g.length + ' paliers) EN ATTENTE.\n\nElle s\'appliquera toute seule quand ' + L.map(function (x) { return x.n + ' (P' + x.p + ')'; }).join(', ') + ' ' + (L.length > 1 ? 'seront revenues' : 'sera revenue') + ' à P1.'); } catch (e) {}
     try { if (typeof renderPaliers === 'function') renderPaliers(); } catch (e) {}
@@ -86650,7 +86669,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   window.g45GrilleGlForcer = function (n, L) { var u = (state.u || []).filter(function (x) { return x.n === n; })[0]; if (!u || !u.gla || !u.gla[L]) return; if (!confirm('Appliquer tout de suite pour ' + n + ' (' + (L === 'dom' ? '🏠' : '✈️') + ') ?\nLa série en cours continue avec les NOUVELLES mises.')) return; glAppliquer(u, u.gla[L], L); };
   window.g45GrilleGlAnnuler = function (n, L) { var u = (state.u || []).filter(function (x) { return x.n === n; })[0]; if (!u || !u.gla) return; delete u.gla[L]; if (!Object.keys(u.gla).length) delete u.gla; try { save(); } catch (e) {} try { dessiner(true); } catch (e) {} };
   window._g45GrilleEqT = { appliquer: eqAppliquer, demande: eqDemande, glAppliquer: glAppliquer, glDemande: glDemande };   /* tests */
-  var verif = function () { try { var o = attLire(); Object.keys(o).forEach(function (k) { if (!enSerie(k).length && Array.isArray(o[k])) appliquer(k, o[k]); });
+  var verif = function () { try { var o = attLire(); Object.keys(o).forEach(function (k) { if (Array.isArray(o[k])) appliquerGel(k, o[k]); });   /* 20261110h : grille ⭐ en attente d'avant → appliquée, équipes en série gelées */
     ((typeof state !== 'undefined' && state.u) || []).forEach(function (u) { if (u && u.ga && palMax(u) <= 1) eqAppliquer(u, u.ga);
       if (u && u.gla) Object.keys(u.gla).forEach(function (L) { if (((typeof _g45PalLieu === 'function') ? _g45PalLieu(u, L) : palMax(u)) <= 1) glAppliquer(u, u.gla[L], L); }); }); } catch (e) {} };
   window._g45GrilleVerif = verif;
