@@ -77111,6 +77111,85 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
      les plus anciennes sont barrées et sorties du total, des séries, de la simulation et de la calculatrice. Choix gardé (g45cr_ns). */
   function nsCr(D) { var n = (D && D.saisons || []).length, v = 0; try { v = parseInt(localStorage.getItem('g45cr_ns') || '', 10) || 0; } catch (e) {} return v >= 2 && v < n ? v : n; }
   window.g45CrNs = function (v) { try { localStorage.setItem('g45cr_ns', String(v)); } catch (e) {} try { redessiner(); } catch (e) {} };
+  /* ═══ 20261110g — 🔍 TROUVER LA MEILLEURE STRATÉGIE (Antoine : « très souvent je cherche la meilleure stratégie d'un joueur ou d'une équipe,
+     on pourrait faire quoi pour trouver plus facilement ? » → maquette_meilleure_strategie.png ; « la cote 1,56 un poil trop bas » → « laisse
+     quand même 1,5 mini, je ferai ma sélection en mettant 1,7 »). Teste tout seul une série de paris sur les saisons choisies (📅) et le lieu
+     choisi : équipe = résultat (rien / victoire ou vainqueur / nul / défaite) × (rien / over-under du match / buts de l'équipe / les deux
+     marquent / total ou handicap du book) ; joueur (le joueur du combiné) = chaque rôle et seuil, seul ou avec la victoire / un total.
+     Gardés : 15 matchs comptés au moins et cote juste (1 ÷ réussite) ≥ cote mini ; triés par pire série puis réussite (ou l'inverse).
+     « ➡️ Utiliser » met ce pari dans le combiné actif (tableau, simulation, « Garder » comme d'habitude). Calcul en mémoire, rien de lu. ═══ */
+  S.best = S.best || { on: 0, lieu: 'tout', cm: 1.5, tri: 'pire', R: null, nom: '' };
+  function bestCands(c0) {
+    var J = joueurs(c0), base = function () { var c = norm(combo0()); c.res = ''; J.forEach(function (x, i) { var q = i ? String(i + 1) : ''; c['jo' + q] = x.id; c['jn' + q] = x.n; }); if (J.length) { c.jx = c0.jx; c.jtit = c0.jtit; } return c; };
+    var RES = [''].concat(us() ? ['vqr', 'def'] : hk() ? ['vic', 'vqr', 'def', 'per'] : ['vic', 'nul', 'def']);
+    var sp = S.ctx ? S.ctx.sp : 'soccer', LO = sp === 'soccer' ? [1.5, 2.5, 3.5, 4.5] : sp === 'hockey' ? [4.5, 5.5, 6.5] : [];
+    var TE = sp === 'soccer' ? [0.5, 1.5] : sp === 'hockey' ? [1.5, 2.5, 3.5] : [];
+    var X = [function () { return null; }];   /* compléments : rien, total, buts équipe, BTS, book */
+    LO.forEach(function (L) { ['ov', 'un'].forEach(function (o) { X.push(function (c) { c.ou = o; c.L = L; }); }); });
+    TE.forEach(function (L) { ['ov', 'un'].forEach(function (o) { X.push(function (c) { c.te = o; c.TL = L; }); }); });
+    if (sp === 'soccer') ['oui', 'non'].forEach(function (o) { X.push(function (c) { c.bts = o; }); });
+    if (S.ctx && !rg()) { ['ov', 'un'].forEach(function (o) { X.push(function (c) { c.tb = o; }); }); ['c', 'n'].forEach(function (o) { X.push(function (c) { c.hb = o; }); }); }
+    var out = [];
+    if (!J.length) { RES.forEach(function (r) { X.forEach(function (f) { var c = base(); c.res = r; f(c); if (c.res || c.ou || c.te || c.bts || c.tb || c.hb) out.push(c); }); }); return out; }
+    var ROL = [];
+    var CF = S.ctx && typeof _g45JouCfg === 'function' ? _g45JouCfg(S.ctx.sp) : null;
+    if (CF) CF.roles.forEach(function (r) { var SE = r.seuils ? r.seuils.map(Number) : [1, 2]; SE.forEach(function (n) { ROL.push({ jm: r.k, jmin: n }); }); });
+    else [['', 1], ['', 2], ['pas', 1], ['dec', 1]].forEach(function (x) { ROL.push({ jm: x[0], jmin: x[1] }); });
+    var RJ = [''].concat(us() ? ['vqr'] : ['vic']), XJ = [X[0]].concat(X.filter(function (f, i) { return i > 0 && i <= LO.length * 2; }));
+    ROL.forEach(function (ro) { RJ.forEach(function (r) { XJ.forEach(function (f) { var c = base(); c.jm = ro.jm; c.jmin = ro.jmin; c.res = r; f(c); out.push(c); }); }); });
+    return out;
+  }
+  function bestCalc(D) {
+    var B = S.best, l0 = S.lieu, NS = nsCr(D), SA = (D.saisons || []).slice(0, NS), R = [];
+    S.lieu = B.lieu;
+    try {
+      bestCands(S.combos[S.a] || combo0()).forEach(function (c) {
+        var tous = []; SA.slice().reverse().forEach(function (s) { var L0 = s && msS(c, s); if (L0) tous = tous.concat(filtrer(L0)); });
+        if (!tous.length) return; var T = calc(c, tous); if (!(T.n >= 15)) return;
+        var p = T.ok / T.n; if (!(p > 0)) return; var cj = 1 / p; if (cj < B.cm) return;
+        R.push({ c: c, lib: libCombo(c), pire: T.pire, p: p, cj: cj, n: T.n });
+      });
+    } catch (e) {}
+    S.lieu = l0;
+    R.sort(function (a, b) { return B.tri === 'p' ? (b.p - a.p || a.pire - b.pire) : (a.pire - b.pire || b.p - a.p); });
+    return R.slice(0, 10);
+  }
+  function bestHtml(D) {
+    var B = S.best, bt = function (on, t, f) { return '<span onclick="' + f + '" style="display:inline-block;cursor:pointer;margin:3px 6px 3px 0;padding:7px 11px;border-radius:10px;font-size:14px;font-weight:800;color:#fff;' + (on ? 'border:2px solid #f5c542;background:#2a2410;' : 'border:1px solid #2a3a63;background:#16213f;') + '">' + t + '</span>'; };
+    if (!B.on || B.nom !== S.nom) return '<div style="margin:4px 0 8px;"><span onclick="g45CrBest(\'on\')" style="display:inline-block;cursor:pointer;padding:9px 14px;border-radius:10px;font-size:15px;font-weight:900;color:#fff;background:#2f6bff;">🔍 Trouver la meilleure stratégie</span></div>';
+    var h = '<div style="background:#121b36;border:1px solid #2a3a63;border-radius:14px;padding:12px;margin:6px 0 10px;color:#fff;">'
+      + '<div style="display:flex;justify-content:space-between;align-items:center;"><b style="font-size:17px;">🔍 Trouver la meilleure stratégie</b><span onclick="g45CrBest(\'off\')" style="cursor:pointer;font-size:18px;padding:2px 8px;">✕</span></div>'
+      + '<div style="font-size:13px;color:#c9d3ee;">' + esc(S.nom) + (joueurs(S.combos[S.a] || {}).length ? ' · ' + esc(joueurs(S.combos[S.a]).map(function (x) { return x.n; }).join(', ')) : '') + ' · ' + nsCr(D) + ' saisons · l\'appli teste les paris et classe les meilleurs</div>'
+      + '<div style="font-size:14px;font-weight:800;margin-top:8px;">Lieu</div>' + [['tout', '🌍 Tous'], ['dom', '🏠 Domicile'], ['ext', '✈️ Extérieur']].map(function (x) { return bt(B.lieu === x[0], x[1], 'g45CrBest(\'lieu\',\'' + x[0] + '\')'); }).join('')
+      + '<div style="font-size:14px;font-weight:800;margin-top:4px;">Cote mini (cote juste)</div>' + [1.5, 1.7, 1.8, 2].map(function (v) { return bt(B.cm === v, String(v.toFixed(2)).replace('.', ','), 'g45CrBest(\'cm\',' + v + ')'); }).join('')
+      + '<div style="font-size:14px;font-weight:800;margin-top:4px;">Trier par</div>' + bt(B.tri === 'pire', '🪜 Pire série', 'g45CrBest(\'tri\',\'pire\')') + bt(B.tri === 'p', '📊 Réussite', 'g45CrBest(\'tri\',\'p\')')
+      + '<div onclick="g45CrBest(\'go\')" style="cursor:pointer;margin-top:8px;text-align:center;padding:11px;border-radius:12px;font-size:16px;font-weight:900;background:#2f6bff;">🔍 Chercher (' + bestCands(S.combos[S.a] || combo0()).length + ' paris testés)</div>';
+    if (B.R) {
+      h += '<div style="font-size:16px;font-weight:900;margin-top:12px;">🏆 Top stratégies</div>';
+      if (!B.R.length) h += '<div style="font-size:14px;color:#c9d3ee;padding:6px 0;">Aucun pari à cette cote mini avec au moins 15 matchs. Baisse la cote mini ou change de lieu.</div>';
+      B.R.forEach(function (x, i) {
+        var col = x.pire <= 2 ? '#1ed760' : x.pire <= 4 ? '#ff9f43' : '#ff5a5a', pal = x.pire + 1;
+        h += '<div style="background:#0b1226;border:1px solid #2a3a63;border-radius:12px;padding:10px;margin-top:8px;font-size:15px;line-height:1.5;">'
+          + '<b style="background:#f5c542;color:#0b1226;border-radius:8px;padding:0 7px;margin-right:6px;">' + (i + 1) + '</b><b>' + ({ dom: '🏠 ', ext: '✈️ ' }[B.lieu] || '🌍 ') + esc(x.lib) + '</b><br>'
+          + 'Pire série <b style="color:' + col + ';">' + x.pire + '</b> → ' + pal + ' palier' + (pal > 1 ? 's' : '') + ' ' + (pal <= 5 ? '✅' : '⚠️') + ' · ' + Math.round(100 * x.p) + ' % (' + Math.round(x.n) + ' matchs) · cote juste ≈ <b style="color:#f5c542;">' + x.cj.toFixed(2).replace('.', ',') + '</b><br>'
+          + '<span onclick="g45CrBest(\'use\',' + i + ')" style="display:inline-block;cursor:pointer;margin-top:6px;border:1px solid #6d9dff;background:#16213f;border-radius:8px;padding:5px 11px;font-size:14px;font-weight:800;">➡️ Utiliser ce critère</span></div>';
+      });
+      h += '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">Cote juste = 1 ÷ réussite (sans la marge du book, environ 6 % de moins chez le book).</div>';
+    }
+    return h + '</div>';
+  }
+  window.g45CrBest = function (k, v) {
+    var B = S.best, D = S.data[S.nom];
+    if (k === 'on') { B.on = 1; B.nom = S.nom; B.R = null; B.lieu = S.lieu || 'tout'; }
+    else if (k === 'off') { B.on = 0; B.R = null; }
+    else if (k === 'lieu') { B.lieu = v; B.R = null; }
+    else if (k === 'cm') { B.cm = +v; B.R = null; }
+    else if (k === 'tri') { B.tri = v; if (B.R) B.R = D ? bestCalc(D) : null; }
+    else if (k === 'go') { B.R = D && D.saisons ? bestCalc(D) : []; }
+    else if (k === 'use') { var x = B.R && B.R[+v]; if (x) { S.combos[S.a] = norm(Object.assign({}, x.c)); S.lieu = B.lieu; B.on = 0; B.R = null; } }
+    try { redessiner(); } catch (e) {}
+  };
+  window._g45CrBest = function (D) { return bestCalc(D); };   /* tests */
   function tableau(c, D0) {
     var NSc = nsCr(D0), D = NSc < (D0.saisons || []).length ? Object.assign({}, D0, { saisons: D0.saisons.slice(0, NSc) }) : D0, DX = (D0.saisons || []).slice(NSc);
     if (c.jbk && bkOk() && !S.bkE[S.ctx.lg + '|' + S.ctx.id]) bkCharger();   /* 20261103h : lignes du book lues une fois par équipe */
@@ -77483,6 +77562,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       + '<div style="background:#0f1730;border-radius:10px;padding:4px 12px 8px;margin-top:6px;">' + PAN[TB].replace(/margin:14px 0 2px;padding-top:8px;border-top:1px solid #2a3a63;/g, 'margin:8px 0 2px;') + '</div>';
     h += '<div style="margin:6px 0 4px;">' + (S.combos.length < 3 ? b(false, '➕ Comparer avec un autre combiné (OU)', 'g45CrAjout()') : '')
       + (S.combos.length > 1 ? b(false, '✕ Retirer le combiné ' + (S.a + 1), 'g45CrSuppr()') : '') + '</div>';
+    try { if (D && D.saisons) h += bestHtml(D); } catch (e) {}   /* 20261110g : 🔍 Trouver la meilleure stratégie */
     if (!D || (!D.err && !D.saisons)) {
       h += '<div style="font-size:14px;color:#c9d3ee;padding:10px 0;">⏳ Lecture des ' + nbS() + ' saisons…</div>';
       setTimeout(function () { charger(nom).then(function () { redessiner(); }); }, 0);
