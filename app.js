@@ -77106,10 +77106,17 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   }
   function lab(t) { return '<div style="font-size:13px;color:#c9d3ee;margin:8px 0 4px;">' + t + '</div>'; }
 
-  function tableau(c, D) {
+  /* 20261110b (Arsenal 🏠 « pire série 0·3·4·4·16 », 16 = 2022-23 : « fait peur, après l'équipe a bien changé » → maquette saisons « oui » ;
+     « pour les critères fais 2 / 3 / 4 / 5 saisons ») : 📅 nombre de saisons comptées (saison en cours comprise, la plus récente d'abord) ;
+     les plus anciennes sont barrées et sorties du total, des séries, de la simulation et de la calculatrice. Choix gardé (g45cr_ns). */
+  function nsCr(D) { var n = (D && D.saisons || []).length, v = 0; try { v = parseInt(localStorage.getItem('g45cr_ns') || '', 10) || 0; } catch (e) {} return v >= 2 && v < n ? v : n; }
+  window.g45CrNs = function (v) { try { localStorage.setItem('g45cr_ns', String(v)); } catch (e) {} try { redessiner(); } catch (e) {} };
+  function tableau(c, D0) {
+    var NSc = nsCr(D0), D = NSc < (D0.saisons || []).length ? Object.assign({}, D0, { saisons: D0.saisons.slice(0, NSc) }) : D0, DX = (D0.saisons || []).slice(NSc);
     if (c.jbk && bkOk() && !S.bkE[S.ctx.lg + '|' + S.ctx.id]) bkCharger();   /* 20261103h : lignes du book lues une fois par équipe */
     var CL = !!(S.ctx ? usSeul(c) : (seul(c) && S.usTr['ft|' + D.lg + '|' + String((joueurs(c)[0] || {}).id) + '|' + D.tid]));   /* 20261107o : + foot */   /* 20261107n : colonne « Club · matchs » (maquette clubs2.png « oui ») */
-    var tous = [], h = '<table style="width:100%;border-collapse:collapse;font-size:14px;color:#fff;margin-top:6px;">'
+    var nMax = (D0.saisons || []).length, tous = [], h = (nMax > 2 ? '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:8px;font-size:15px;font-weight:800;">📅 ' + [2, 3, 4, 5].filter(function (k) { return k <= nMax; }).map(function (k) { var on = k === NSc; return '<span onclick="g45CrNs(' + k + ')" style="cursor:pointer;padding:6px 12px;border-radius:10px;font-size:14px;' + (on ? 'border:2px solid #f5c542;background:#2a2410;' : 'border:1px solid #2a3a63;background:#16213f;') + '">' + k + ' saisons</span>'; }).join('') + '</div>' : '')
+      + '<table style="width:100%;border-collapse:collapse;font-size:14px;color:#fff;margin-top:6px;">'
       + '<tr><th style="text-align:left;font-size:13px;color:#c9d3ee;padding:6px 4px;border-bottom:1px solid #2a3a63;">Saison</th>'
       + (CL ? '<th style="text-align:left;font-size:13px;color:#c9d3ee;padding:6px 4px;border-bottom:1px solid #2a3a63;">Club · matchs</th>' : '')
       + '<th style="text-align:left;font-size:13px;color:#c9d3ee;padding:6px 4px;border-bottom:1px solid #2a3a63;">Réussite</th>'
@@ -77132,11 +77139,15 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
         + '<td style="' + td + 'font-weight:700;color:' + coul(R.pire) + ';">' + R.pire + '</td>'
         + '<td style="' + td + 'font-weight:700;color:#5aa9ff;">' + R.best + '</td></tr>';
     });
+    DX.forEach(function (s) {   /* 20261110b : saisons mises de côté, barrées */
+      if (!s) return; var sms = msS(c, s), ms = sms ? filtrer(sms) : [], R = ms.length ? calc(c, ms) : null, td = 'padding:8px 4px;border-bottom:1px solid #1c2747;color:#7d89a8;text-decoration:line-through;';
+      h += '<tr><td style="' + td + '">' + lib(D0.lg, s.an) + '</td>' + (CL ? '<td style="' + td + '">—</td>' : '') + (R && R.n ? '<td style="' + td + '">' + nbV(R.ok) + '/' + nbV(R.n) + ' · ' + Math.round(100 * R.ok / R.n) + ' %</td><td style="' + td + '">' + R.pire + '</td><td style="' + td + '">' + R.best + '</td>' : '<td colspan="3" style="' + td + '">—</td>') + '</tr>';
+    });
     h += '</table>';
     if (tous.length && calc(c, tous).n) {   /* 20261021f : rien compté → pas de total « NaN % » */
       var T = calc(c, tous);
       h += '<div style="margin-top:10px;background:#0f1730;border-radius:10px;padding:10px;font-size:14px;line-height:1.6;color:#fff;">'
-        + '🧮 <b>Total : ' + nbV(T.ok) + '/' + nbV(T.n) + ' · ' + Math.round(100 * T.ok / T.n) + ' %</b><br>'
+        + '🧮 <b>Total' + (DX.length ? ' (' + NSc + ' saisons)' : '') + ' : ' + nbV(T.ok) + '/' + nbV(T.n) + ' · ' + Math.round(100 * T.ok / T.n) + ' %</b><br>'
         + '🪜 Pire série : <b style="color:' + coul(T.pire) + ';">' + T.pire + ' défaite' + (T.pire > 1 ? 's' : '') + ' de suite</b>' + (_g45CkCoupe() ? '' : ' → il fallait <b>' + (T.pire + 1) + ' palier' + (T.pire ? 's' : '') + '</b>')   /* 20261105a : paliers / mise max = Cockpit → cachés s'il est coupé */
         + (_g45CkCoupe() ? '' : (function () { try { var pa = _g45F1CrPal(T.pire); return ' ' + pa.ico + (pa.mise != null ? ' · mise max <b>' + pa.mise + ' €</b> (' + new Array(+(pa.et || 1) + 1).join('⭐') + ')' : ' au-delà de tes ' + pa.max + ' paliers'); } catch (e) { return ''; } })())   /* 20261028c : mise max promise par la maquette 20261027h */
         + '<br>'
@@ -78027,7 +78038,8 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       var R = calc(c, ms); if (!R.n) return; ans.push(lib(D.lg, sa.an)); p.push(R.pire);
     });
     (D.saisons || []).slice().reverse().forEach(function (sa) { if (sa && sa.ms) tous = tous.concat(filtrer(sa.ms)); });
-    return { lib: libCombo(c), ans: ans, p: p, tot: tous.length ? calc(c, tous).pire : 0, sq: sqDe(c, tous) };   /* 20261102p : sq → 💶 */
+    var px = []; (D._px || []).forEach(function (sa) { if (!sa || !sa.ms) return; var ms = filtrer(sa.ms); if (!ms.length) return; var R = calc(c, ms); if (R.n) px.push(R.pire); });   /* 20261110b : saisons mises de côté (barrées) */
+    return { lib: libCombo(c), ans: ans, p: p, px: px, ns: D._ns || 0, nt: (D.saisons || []).length + (D._px || []).length, tot: tous.length ? calc(c, tous).pire : 0, sq: sqDe(c, tous) };   /* 20261102p : sq → 💶 */
   }
   async function serCtx(nom, ft) {   /* { sp, lg, id } ou { err } ; ft = carte ⚽ (sinon espnResolveTeam pourrait trouver un club de foot homonyme) */
     var x = null; try { x = await _g45CompoCtx(nom, ft); } catch (e) {}
@@ -78054,6 +78066,8 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       D = await pr;
     } catch (e) {}
     if (!D || !(D.saisons || []).some(function (s) { return s && s.ms; })) { P.forEach(function (q) { out[q.k] = { t: q.t, err: 'matchs illisibles (réseau)' }; }); u.psL = out; return true; }
+    var nsU = parseInt(u.psN, 10) || 0;   /* 20261110b : 📅 nombre de saisons de la carte (2 à toutes) */
+    if (nsU >= 2 && nsU < D.saisons.length) D = Object.assign({}, D, { saisons: D.saisons.slice(0, nsU), _px: D.saisons.slice(nsU), _ns: nsU });
     var JQ = [];
     P.forEach(function (q) {
       avec(C, q.k === 'glob' ? 'tout' : q.k, function () {
@@ -79214,7 +79228,7 @@ window._G45_PAL_COUL = ['#1ed760', '#8fdc4a', '#f5c542', '#ffa53a', '#ff7a3a', '
       if (R.err || !R.p || !R.p.length) { h += '<div style="font-size:13px;color:#c9d3ee;font-weight:400;">📊 ' + k[1] + ' ' + e(R.err || 'aucun match compté') + '</div>'; return; }
       at = Math.max(at, R.at || 0);
       var pa = window._g45PalCarte(R.tot, u, k[0]);
-      h += '<div>📊 ' + k[1] + ' pire série ' + R.p.map(function (v) { return '<span style="color:' + col(v) + ';">' + v + '</span>'; }).join(' · ')
+      h += '<div>📊 ' + k[1] + ' pire série ' + R.p.map(function (v) { return '<span style="color:' + col(v) + ';">' + v + '</span>'; }).join(' · ') + (R.px || []).map(function (v) { return ' · <span style="color:#7d89a8;text-decoration:line-through;">' + v + '</span>'; }).join('')   /* 20261110b : saisons mises de côté */
         + ' → <b>' + pa.p + ' palier' + (pa.p > 1 ? 's' : '') + ' ' + pa.ico + '</b>' + (pa.mise != null ? ' <span style="font-weight:400;color:#c9d3ee;">· ' + pa.mise + ' €</span>' : '') + (pa.cum != null ? ' <span style="color:#ffb3b3;">(total misé ' + (Math.round(pa.cum * 100) / 100).toLocaleString('fr-FR') + ' €)</span>' : '') + window._g45SimTxt(R.sim, u) + '</div><!--g45BT:' + k[0] + '-->';   /* 20261105j : place du bouton 🎯 de ce lieu */   /* 20261030d (« rajoute ici aussi le total », Outils → Équipes) */
     });
     if (!h) return '';
@@ -79238,7 +79252,12 @@ window._G45_PAL_COUL = ['#1ed760', '#8fdc4a', '#f5c542', '#ffa53a', '#ff7a3a', '
     } catch (e) {}
     var d = new Date(at || Date.now()), dt = ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2);
     return '<div class="g45ul-psl" style="margin-top:4px;background:rgba(11,16,29,.8);border-radius:6px;padding:4px 7px;font-size:14px;color:#fff;font-weight:700;font-style:normal;line-height:1.5;">' + h
-      + '<div style="font-size:13px;font-weight:400;color:#c9d3ee;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">4 saisons · championnat · calculé le ' + dt
+      + (function () {   /* 20261110b : 📅 choix du nombre de saisons de la carte (recalcul tout seul) */
+          var R0 = null; Object.keys(P || {}).forEach(function (k) { if (!R0 && P[k] && P[k].p && P[k].p.length) R0 = P[k]; });
+          var nt = (R0 && R0.nt) || 0, ns = (R0 && R0.ns) || nt; if (nt < 3 || !(typeof _g45SanteActive !== 'function' || _g45SanteActive())) return '';
+          return '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:4px 0;">📅 ' + [2, 3, 4, 5].filter(function (k) { return k <= nt; }).map(function (k) { var on = k === ns; return '<span onclick="event.stopPropagation();g45SerNs(\'' + String(u.n).replace(/[\\'"<>&]/g, '') + '\',' + k + ',this)" style="cursor:pointer;padding:4px 10px;border-radius:9px;font-size:14px;' + (on ? 'border:2px solid #f5c542;background:#2a2410;' : 'border:1px solid #2a3a63;background:#16213f;') + '">' + k + ' saisons</span>'; }).join('') + '</div>';
+        })()
+      + '<div style="font-size:13px;font-weight:400;color:#c9d3ee;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">' + (function () { var n = 4; Object.keys(P || {}).some(function (k) { var R = P[k]; if (R && R.nt) { n = R.ns || R.nt; return true; } return false; }); return n; })() + ' saisons · championnat · calculé le ' + dt
       + ((typeof _g45SanteActive !== 'function' || _g45SanteActive()) ? '<button onclick="event.stopPropagation();g45SerUne(\'' + String(u.n).replace(/[\\'"<>&]/g, '') + '\',this)" style="padding:5px 10px;border-radius:8px;border:1px solid #6d9dff;background:#2f6bff;color:#fff;font-size:13px;font-weight:800;cursor:pointer;">🔄 Recalculer</button>' : '')   /* 20261028n */
       + '</div></div>';
   };
@@ -88258,3 +88277,13 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', poser); else setTimeout(poser, 0);
 })();
+
+/* 20261110b : 📅 nombre de saisons d'une carte (u.psN, 2 à toutes ; toutes = rien de gardé) → recalcul de ses séries */
+window.g45SerNs = function (nom, n, el) {
+  var u = ((typeof state !== 'undefined' && state.u) || []).filter(function (x) { return x && (x.n === nom || String(x.n).replace(/[\\'"<>&]/g, '') === nom); })[0]; if (!u) return;
+  var nt = 0; try { Object.keys(u.psL || {}).forEach(function (k) { var R = u.psL[k]; if (R && R.nt) nt = Math.max(nt, R.nt); }); } catch (e) {}
+  if (nt && n >= nt) delete u.psN; else u.psN = n;
+  if (el) { try { el.textContent = '⏳'; } catch (e) {} }
+  try { save(); } catch (e) {}
+  if (typeof window.g45SerUne === 'function') window.g45SerUne(u.n);
+};
