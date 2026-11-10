@@ -87599,6 +87599,17 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   }
   var frC = function (c) { return (Math.round(c * 100) / 100).toFixed(2).replace('.', ','); };
   var coteH = function (y) { var q = coteDe(y); return q ? ' · <b style="color:#f5c542;">' + (q.e ? '≈ ' : '') + frC(q.c) + '</b>' : ''; };
+  window._g45LoiMont = function (L, coteDe) {   /* 20261111f : simulation montante du bilan (voir html) */
+    var G = [10, 20, 60, 180, 540, 1620, 4860, 14580, 43740], E = {}, g = 0, pmax = 0, mmax = 0, n = 0;
+    L.slice().sort(function (a, b) { return a.t - b.t; }).forEach(function (x) {
+      var q = coteDe(x); if (!q || !(q.c > 1) || (x.r !== 1 && x.r !== 0)) return;
+      var k = x.id + '|' + x.k + '|' + (x.lieu || ''), p = E[k] || 1, m = G[Math.min(p, G.length) - 1];
+      n++; if (p > pmax) pmax = p; if (m > mmax) mmax = m;
+      if (x.r === 1) { g += m * (q.c - 1); E[k] = 1; } else { g -= m; E[k] = p + 1; }
+    });
+    var ouv = Object.keys(E).filter(function (k) { return E[k] > 1; });
+    return { n: n, g: Math.round(g * 100) / 100, pmax: pmax, mmax: mmax, ouv: ouv.length, prochs: ouv.slice(0, 3).map(function (k) { var p = E[k]; return 'P' + p + ' = ' + G[Math.min(p, G.length) - 1] + ' €'; }).join(', ') + (ouv.length > 3 ? '…' : '') };
+  };
   window._g45LoiCote = { coteDe: coteDe, FI: FI, charger: function (L) { chargerCotes(L); }, txt: function (y) { var q = coteDe(y); return q ? (q.e ? '≈ ' : '') + frC(q.c) : ''; } };   /* tests ; 20261109f : charger / txt pour le Cockpit */
   var resH = function (x) { var c = x.r === 1 ? '#1ed760' : x.r === 0 ? '#ff6b6b' : '#c9d3ee'; return '<span style="font-weight:800;color:' + c + ';font-size:16px;white-space:nowrap;">' + (x.r === 1 ? '✅' : x.r === 0 ? '❌' : x.r === -1 ? '🚫' : '⏳') + ' ' + esc(x.sc || '') + '</span>'; };
   /* 20261107r (capture : « manque heure, championnat, fond » → maquette loiL.png « oui ») : carte par pépite = logo de l'équipe en fond (couleur x.c
@@ -87661,6 +87672,15 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
       + '<div style="font-size:14px;color:#c9d3ee;">💶 Joué à 10 € chaque pépite avec cote (' + JC.length + ' sur ' + J.length + ')</div>'
       + '<div style="font-size:22px;font-weight:900;color:' + (gain >= 0 ? '#1ed760' : '#ff6b6b') + ';">' + (gain >= 0 ? '+' : '−') + frC(Math.abs(gain)).replace(',00', '') + ' € · ' + (gain >= 0 ? '+' : '−') + Math.round(Math.abs(gain) / (10 * JC.length) * 100) + ' %</div>'
       + '<div style="font-size:13px;color:#c9d3ee;">Cote d\'avant-match gardée par nos archives (≈ = estimée : victoire ou nul depuis le 1N2, autre ligne de buts depuis la ligne du book, 60 min depuis le vainqueur). Pépites à cote sous 1,50 retirées.</div></div>';
+    /* 20261111f (Antoine, bilan Loi des séries : « si ça passe pas, la fois d'après la mise est de combien ? » → simulation montante « oui ») :
+       🚀 EN MONTANTE — chaque pépite (même équipe + même pari + même lieu) démarre à P1 = 10 € ; ratée → la fois suivante où ELLE revient en
+       pépite, palier suivant (grille d'Antoine : ×2 puis ×3 → 10, 20, 60, 180, 540…) ; passée → retour à P1. Pépites avec cote seulement,
+       dans l'ordre des matchs. Gain total, plus haut palier, plus grosse mise, montantes encore ouvertes (palier en attente). */
+    var mt = window._g45LoiMont ? window._g45LoiMont(JC, coteDe) : null;
+    if (mt && mt.n) h += '<div style="background:' + (mt.g >= 0 ? 'rgba(30,215,96,.12)' : 'rgba(255,69,69,.12)') + ';border:1px solid ' + (mt.g >= 0 ? '#1ed760' : '#ff4545') + ';border-radius:10px;padding:8px;margin-bottom:10px;text-align:center;">'
+      + '<div style="font-size:14px;color:#c9d3ee;">🚀 En montante (P1 10 €, puis ×2 et ×3 sur la même équipe et le même pari)</div>'
+      + '<div style="font-size:22px;font-weight:900;color:' + (mt.g >= 0 ? '#1ed760' : '#ff6b6b') + ';">' + (mt.g >= 0 ? '+' : '−') + frC(Math.abs(mt.g)).replace(',00', '') + ' €</div>'
+      + '<div style="font-size:14px;">Plus haut palier : <b>P' + mt.pmax + '</b> · plus grosse mise : <b>' + frC(mt.mmax).replace(',00', '') + ' €</b>' + (mt.ouv ? ' · ⏳ ' + mt.ouv + ' montante' + (mt.ouv > 1 ? 's' : '') + ' en cours (prochaine mise ' + mt.prochs + ')' : '') + '</div></div>';
     var S = {}; J.forEach(function (x) { var k = SPI[x.sp] || '?'; S[k] = S[k] || [0, 0]; S[k][1]++; if (x.r === 1) S[k][0]++; });
     h += '<div style="display:flex;gap:6px;flex-wrap:wrap;font-size:14px;font-weight:700;margin-bottom:12px;">' + Object.keys(S).map(function (k) { return '<span style="background:#0b1226;border:1px solid #2a3a63;border-radius:8px;padding:3px 8px;">' + k + ' ' + S[k][0] + '/' + S[k][1] + ' · ' + Math.round(100 * S[k][0] / S[k][1]) + ' %</span>'; }).join('') + '</div>';
     /* ═══ 20261108o — 📈 GRAPHIQUE + 📊 BILANS DE LA LOI DES SÉRIES (Antoine : « il manque graphique / bilan dans loi des séries ? » →
