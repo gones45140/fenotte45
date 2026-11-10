@@ -77126,7 +77126,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   function bestCands(c0) {
     var J = joueurs(c0), base = function () { var c = norm(combo0()); c.res = ''; J.forEach(function (x, i) { var q = i ? String(i + 1) : ''; c['jo' + q] = x.id; c['jn' + q] = x.n; }); if (J.length) { c.jx = c0.jx; c.jtit = c0.jtit; } return c; };
     var RES = [''].concat(us() ? ['vqr', 'def'] : hk() ? ['vic', 'vqr', 'def', 'per'] : ['vic', 'nul', 'def']);
-    var sp = S.ctx ? S.ctx.sp : 'soccer', LO = sp === 'soccer' ? [1.5, 2.5, 3.5, 4.5] : sp === 'hockey' ? [5.5, 6.5, 7.5] : [];   /* 20261111b (capture Winamax MyMatch NHL : « il propose qu'à partir de 5,5 ») : plus de 4,5 en hockey */
+    var sp = S.ctx ? S.ctx.sp : 'soccer', LO = sp === 'soccer' ? [1.5, 2.5, 3.5, 4.5] : sp === 'hockey' ? [4.5, 5.5, 6.5, 7.5] : [];   /* 20261111b puis 20261111d (« en fait ça dépend des matchs », MyMatch Montréal – Minnesota dès 4,5) : 4,5 à 7,5 en hockey */
     var TE = sp === 'soccer' ? [0.5, 1.5] : sp === 'hockey' ? [1.5, 2.5, 3.5] : [];
     var X = [function () { return null; }];   /* compléments : rien, total, buts équipe, BTS, book */
     LO.forEach(function (L) { ['ov', 'un'].forEach(function (o) { X.push(function (c) { c.ou = o; c.L = L; }); }); });
