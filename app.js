@@ -77988,6 +77988,20 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     return e && e.split(' ').some(function (w) { return w.length > 2 && n.indexOf(' ' + w + ' ') >= 0; }) ? 'te' : 'ad';
   }
   function serCombo(t, nom) {   /* même conversion que g45CrNote ; null = pari pas calculable (buteur, texte inconnu, no bet) */
+    /* 20261109i (carte Rams « 🏠/✈️ Couvre le handicap du book » → « pari pas calculable (texte…) ») : les lignes du BOOK des critères
+       (hb handicap, tb total match, qb total équipe — textes de g45CrNote) sont lues ici, retirées du texte, le reste passe comme avant. */
+    var tx = String(t || '').replace(/🌍|🏠|✈️?|🛫/g, ' '), hb = '', tb = '', qb = '', mq;
+    if (/ne\s+couvre\s+pas\s+le\s+handicap\s+du\s+book/i.test(tx)) { hb = 'n'; tx = tx.replace(/ne\s+couvre\s+pas\s+le\s+handicap\s+du\s+book/ig, ' '); }
+    else if (/couvre\s+le\s+handicap\s+du\s+book/i.test(tx)) { hb = 'c'; tx = tx.replace(/couvre\s+le\s+handicap\s+du\s+book/ig, ' '); }
+    if ((mq = tx.match(/(over|under)\s+du\s+total\s+[ée]quipe\s+du\s+book/i))) { qb = /over/i.test(mq[1]) ? 'ov' : 'un'; tx = tx.replace(mq[0], ' '); }
+    if ((mq = tx.match(/(over|under)\s+du\s+total\s+du\s+book/i))) { tb = /over/i.test(mq[1]) ? 'ov' : 'un'; tx = tx.replace(mq[0], ' '); }
+    if (hb || tb || qb) {
+      var rest = tx.replace(/[+·,;&\/|📌-]|\bet\b/gi, ' ').trim(), cb;
+      if (!rest) { cb = combo0(); cb.res = ''; }
+      else { cb = serCombo(rest, nom); if (!cb) return null; }
+      if (hb) cb.hb = hb; if (tb) cb.tb = tb; if (qb) cb.qb = qb;
+      return cb;
+    }
     var R = _g45AgConsigne(String(t || '').replace(/🌍|🏠|✈️?|🛫/g, ' '), true);
     if (!R || R.nobet || !R.opts.length) return null;
     var c = combo0(); c.res = ''; var ok = true;
