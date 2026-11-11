@@ -5117,9 +5117,9 @@ function _g45CarteResultatHTML(h, logos){
     ? (titreC + ' <span style="color:#4f5d88;font-size:12px;">vs</span> ' + adversaireC)
     : titreC;
 
-  var halo = coul2
-    ? ('radial-gradient(circle at 30% 18%,' + coul1 + '4d 0%,' + coul1 + '00 55%),radial-gradient(circle at 70% 18%,' + coul2 + '4d 0%,' + coul2 + '00 55%)')
-    : ('radial-gradient(circle at 50% 18%,' + coul1 + '59 0%,' + coul1 + '00 55%)');
+  /* 20261111l (Antoine : « fond jaune en cours, rouge perdu, vert gagné » → « OUI ») : le halo et le rond du joueur prennent la couleur
+     du RÉSULTAT (verdictCls) au lieu de la couleur calculée d'après le nom de l'équipe. */
+  var halo = 'radial-gradient(circle at 50% 18%,' + verdictCls + '59 0%,' + verdictCls + '00 60%)';
 
   return '<div style="width:340px;border-radius:20px;overflow:hidden;position:relative;'
     +'background:'+halo+',repeating-linear-gradient(135deg,rgba(255,255,255,.025) 0px,rgba(255,255,255,.025) 1px,transparent 1px,transparent 14px),linear-gradient(160deg,#151b30 0%,#0a0e1a 65%);'
@@ -5137,7 +5137,7 @@ function _g45CarteResultatHTML(h, logos){
     +'<div style="position:relative;text-align:center;padding:4px 22px 16px;font-size:11px;color:#8b97c4;">'+(h.comp?('<span style="display:inline-block;font-size:9px;font-weight:900;letter-spacing:.06em;color:#c9d2f0;border:1px solid rgba(255,255,255,.16);padding:3px 8px;border-radius:6px;background:rgba(255,255,255,.05);margin-right:6px;">'+h.comp.toUpperCase()+'</span>'):'')+(h.date||'')+'</div>'
     +(score?('<div style="position:relative;text-align:center;padding:0 22px 10px;"><span style="font-size:26px;font-weight:900;color:#fff;">'+score+'</span></div>'):'')
     /* 20261009c (maquette validée « oui ») : pari sur un JOUEUR → photo ronde + nom (initiales sans photo), type dessous. */
-    +((typeof _g45CarteJoueursHtml==='function' && _g45CarteJoueursHtml(h, logos, coul1, typeTxtC))
+    +((typeof _g45CarteJoueursHtml==='function' && _g45CarteJoueursHtml(h, logos, verdictCls, typeTxtC))
       || ('<div style="position:relative;text-align:center;padding:0 22px 18px;font-size:11px;color:#8b97c4;">'+(typeTxtC||'')+'</div>'))
     +'<div style="position:relative;display:flex;border-top:1px solid rgba(255,255,255,.08);">'
       +'<div style="flex:1;text-align:center;padding:14px 8px;border-right:1px solid rgba(255,255,255,.08);"><div style="font-size:9px;color:#5b6690;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Mise</div><div style="font-size:15px;font-weight:800;color:#fff;">'+parseFloat(h.m).toFixed(2)+'€</div></div>'
