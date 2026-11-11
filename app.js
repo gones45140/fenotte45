@@ -76709,7 +76709,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       if (m && S.ctx && S.ctx.lg === 'nhl' && J1.length === 1 && !c.res && c.jsens !== 'un'
         && !['ou', 'bts', 'te', 'ad', 'ec', 'fs', 'ts', 'as', 'cad', 'mt', 'mh', 'mp', 'bo', 'pm', 'm1', 'm2', 'ha', 'hb', 'tb', 'qb', 'tq', 'tqr', 'tqp', 'tqo', 'tqb', 'tqm'].some(function (k) { return c[k] && !(k === 'tq' && c[k] === '1'); })) {
         var oJ = S.bk[m[6]] && S.bk[m[6]][J1[0].id], TJ = { g: '230', a: '219', p: '218' }[c.jm || 'g'], nJ = jMinDe(c), LJ = oJ && TJ && oJ[TJ];
-        if (Array.isArray(LJ)) { var eJ = LJ.filter(function (e) { return e && (TJ === '230' ? nJ === 1 : +e[0] === nJ); })[0]; var vJ = eJ ? +eJ[1] : 0; if (vJ > 1) return vJ; }
+        if (Array.isArray(LJ)) { var eJ = LJ.filter(function (e) { return e && (TJ === '230' ? nJ === 1 : +e[0] === nJ); })[0]; var vJ = eJ ? +eJ[1] : 0; if (vJ > 1) return Math.max(1.01, Math.round(vJ * (window._G45_TR_FR || 0.94) * 100) / 100); }   /* 20261112d (« en ARJEL on est en dessous » → « 0.94 ») : DraftKings × 0,94 ≈ books FR */
         return null;
       }
     } catch (eJ) {}
@@ -76804,7 +76804,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       + (CM.p ? '<div style="font-size:14px;color:#ff9f43;font-weight:700;margin:2px 0 6px;line-height:1.45;">⚠️ Ta bankroll (' + Math.round(cap).toLocaleString('fr-FR') + ' €) ne couvre pas P' + CM.p + ' aujourd\'hui : il faudrait ' + Math.round(CM.besoin).toLocaleString('fr-FR') + ' € (tout perdu jusqu\'à P' + (CM.p - 1) + ' + la mise de P' + CM.p + '). Dans la simulation, ta bankroll évolue avec tes gains et tes pertes : une mise qu\'elle ne couvre pas = série 💥 perdue.</div>'
         : (cap > 0 ? '<div style="font-size:13px;color:#1ed760;margin:2px 0 6px;">✅ Ta bankroll (' + Math.round(cap).toLocaleString('fr-FR') + ' €) couvre les ' + mises.length + ' paliers (' + Math.round(CM.besoin).toLocaleString('fr-FR') + ' € au total).</div>' : ''))   /* 20261104b */
       /* 20261102o (Antoine : « faudrait pouvoir mettre soi-même la cote, + facile non ? ») : case à taper (clavier chiffres) au lieu de la liste. */
-      + (nV.length ? '<div style="font-size:14px;color:#1ed760;font-weight:700;margin:2px 0;">✅ Vraies cotes de fermeture : ' + nV.length + ' matchs sur ' + seq.length + ' (moyenne ' + moyV.toFixed(2).replace('.', ',') + ')' + (nV.length < seq.length ? ' · cote tapée pour les autres' : '') + '</div>' : '')
+      + (nV.length ? '<div style="font-size:14px;color:#1ed760;font-weight:700;margin:2px 0;">✅ Vraies cotes de fermeture : ' + nV.length + ' matchs sur ' + seq.length + ' (moyenne ' + moyV.toFixed(2).replace('.', ',') + (joueurs(c).length ? ' · DraftKings × 0,94 ≈ books FR' : '') + ')' + (nV.length < seq.length ? ' · cote tapée pour les autres' : '') + '</div>' : '')
       + '<div>' + (nV.length === seq.length ? 'Cote de secours : ' : 'Cote utilisée : ') + '<input type="text" inputmode="decimal" value="' + cote.toFixed(2).replace('.', ',') + '" onchange="g45CrCkCote(this.value)" onfocus="this.select()" style="width:90px;font-size:17px;font-weight:800;padding:6px 8px;border-radius:8px;background:#16213f;color:#fff;border:1px solid #6d9dff;text-align:center;"> <span style="font-size:13px;color:#c9d3ee;">tape ta cote (ex. 1,56)</span></div>'
       + '<table style="width:100%;border-collapse:collapse;font-size:14px;color:#fff;margin-top:6px;"><tr><th style="' + th + '">Saison</th><th style="' + th + '">Gagnés</th><th style="' + th + '">💥</th><th style="' + th + '">Bilan</th></tr>';
     libs.forEach(function (lb) {
