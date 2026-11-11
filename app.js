@@ -80173,7 +80173,10 @@ var _G45_BK_DOM = [
        courbe du mois par JOUR (€ sur le côté, dates, gain du jour, plus haut / plus bas / total, point = ouvre le jour).
        Logos : x.hl / x.al et J.lg[sl] posés par le robot (ESPN), sinon g45LogoUrlDe / logo de ligue mémorisé, sinon initiales. */
     var cle = function (t) { var d = new Date(t); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); };
-    var calcJ = function (lst) { window._g45TrTestOk = !!(window._g45TrEnTest && O.mois && window._g45TrEnTest(Date.parse(O.mois + '-15'))); var c = window._g45TrOffCalc(lst); window._g45TrTestOk = false; return { n: c.n, ok: c.ok, nc: c.nc, g: c.gain, att: lst.length - c.n, roi: c.roi }; };
+    /* 20261111i (Antoine : « faudrait mettre sur 10 € et non 1 ») : les gains du bilan des tendances sont affichés pour une mise de 10 € par pari
+       (le calcul pur _g45TrOffCalc reste à 1 €, testé par smoke ; le ROI ne change pas). */
+    var _G45_TR_MISE = 10;
+    var calcJ = function (lst) { window._g45TrTestOk = !!(window._g45TrEnTest && O.mois && window._g45TrEnTest(Date.parse(O.mois + '-15'))); var c = window._g45TrOffCalc(lst); window._g45TrTestOk = false; return { n: c.n, ok: c.ok, nc: c.nc, g: Math.round(c.gain * _G45_TR_MISE * 100) / 100, att: lst.length - c.n, roi: c.roi }; };   /* 20261111i : gain affiché pour 10 € par pari */
     var eurC = function (v) { return (v >= 0 ? '+' : '−') + Math.abs(v).toFixed(2).replace('.', ',') + ' €'; };
     var auj = new Date(), moisAuj = auj.getFullYear() + '-' + ('0' + (auj.getMonth() + 1)).slice(-2);
     if (!O.mois) O.mois = moisAuj;
@@ -80240,9 +80243,9 @@ var _G45_BK_DOM = [
         + LA.map(function (y) { var on = y === an; return '<button onclick="g45TrOffBilAn(\'' + y + '\')" style="cursor:pointer;padding:6px 12px;border-radius:9px;font-weight:800;font-size:14px;color:#fff;' + (on ? 'background:#2563eb;border:1px solid #5aa9ff;' : 'background:transparent;border:1px solid rgba(255,255,255,.25);') + '">' + y + '</button>'; }).join('') + '</span></div>'
         + '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0;">'
         + kpi('✅ Réussite ' + an, T.n ? Math.round(T.ok / T.n * 100) + ' %' : '—', T.n ? T.ok + ' / ' + T.n + ' jugées' : 'aucune jugée')
-        + kpi('💶 Gain à 1 € ' + an, T.nc ? eurC(T.g) : '—', T.nc ? 'ROI ' + (T.roi >= 0 ? '+' : '') + Math.round(T.roi * 100) + ' %' : 'aucun pari avec cote', T.g >= 0 ? '#1ed760' : '#ff6b6b')
+        + kpi('💶 Gain à 10 € ' + an, T.nc ? eurC(T.g) : '—', T.nc ? 'ROI ' + (T.roi >= 0 ? '+' : '') + Math.round(T.roi * 100) + ' %' : 'aucun pari avec cote', T.g >= 0 ? '#1ed760' : '#ff6b6b')
         + kpi('🏆 Meilleur mois', best ? best.k : '—', best ? Math.round(best.p * 100) + ' %' + (best.nc ? ' · ' + eurC(best.g) : '') : '10 jugées minimum') + '</div>'
-        + '<div style="display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr;gap:6px;padding:0 8px 6px;font-size:13px;color:#c9d3ee;font-weight:800;"><span>Mois</span><span style="text-align:center;">Réussite</span><span style="text-align:center;">Gain à 1 €</span><span style="text-align:center;">Paris</span></div>'
+        + '<div style="display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr;gap:6px;padding:0 8px 6px;font-size:13px;color:#c9d3ee;font-weight:800;"><span>Mois</span><span style="text-align:center;">Réussite</span><span style="text-align:center;">Gain à 10 €</span><span style="text-align:center;">Paris</span></div>'
         + (lignes || '<div style="font-size:14px;color:#c9d3ee;">Aucun pari cette année.</div>') + '</div>';
     })();
     /* Bilan du mois d'avant : du 1er au 7 du mois en cours, quand on regarde le mois en cours. */
@@ -80271,7 +80274,7 @@ var _G45_BK_DOM = [
     var tuile = function (t, mil, s) { return '<div class="g45tro-k" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:10px;text-align:center;"><div style="font-size:13px;font-weight:700;color:#c9d3ee;">' + t + '</div>' + mil + '<div style="font-size:12px;color:#c9d3ee;">' + s + '</div></div>'; };
     h += '<div class="g45tro-kpis g45tro-gra" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0;">'
       + tuile('✅ Réussite du mois', ring, CM.n ? CM.ok + ' / ' + CM.n + ' jugées' : 'aucune jugée')
-      + tuile('💶 Gain à 1 €', '<div style="font-size:26px;font-weight:900;margin:8px 0;color:' + (CM.g >= 0 ? '#1ed760' : '#ff6b6b') + ';">' + (CM.nc ? eurC(CM.g) : '—') + '</div>', CM.nc ? CM.nc + ' paris avec cote · ROI ' + (CM.roi >= 0 ? '+' : '') + Math.round(CM.roi * 100) + ' %' : 'aucun pari avec cote jugé')
+      + tuile('💶 Gain à 10 €', '<div style="font-size:26px;font-weight:900;margin:8px 0;color:' + (CM.g >= 0 ? '#1ed760' : '#ff6b6b') + ';">' + (CM.nc ? eurC(CM.g) : '—') + '</div>', CM.nc ? CM.nc + ' paris avec cote · ROI ' + (CM.roi >= 0 ? '+' : '') + Math.round(CM.roi * 100) + ' %' : 'aucun pari avec cote jugé')
       + tuile('⏳ En attente', '<div style="font-size:26px;font-weight:900;margin:8px 0;">' + CM.att + '</div>', 'résultat après le match')
       + '</div>';
     /* Calendrier du mois */
@@ -80336,7 +80339,7 @@ var _G45_BK_DOM = [
           g.forEach(function (x) {
             var ok = x.r === 1, ko = x.r === 0;
             var vj = x.r == null && LV ? _g45TrSuivJuge(x.k, LV.h, LV.a) : null;
-            var res = vj != null ? (LV.st === 'in' ? (vj ? '<span style="color:#7dffb0;">✅ gagnant si ça reste</span>' : '<span style="color:#f0c828;">⏳ pas encore</span>') : (vj ? '<span style="color:#1ed760;">✅ provisoire</span>' : '<span style="color:#ff6b6b;">❌ provisoire</span>')) : x.r == null ? '⏳' : (ok ? '✅' : '❌') + (x.c > 1 ? ' ' + eurC(ok ? x.c - 1 : -1) : '');
+            var res = vj != null ? (LV.st === 'in' ? (vj ? '<span style="color:#7dffb0;">✅ gagnant si ça reste</span>' : '<span style="color:#f0c828;">⏳ pas encore</span>') : (vj ? '<span style="color:#1ed760;">✅ provisoire</span>' : '<span style="color:#ff6b6b;">❌ provisoire</span>')) : x.r == null ? '⏳' : (ok ? '✅' : '❌') + (x.c > 1 ? ' ' + eurC((ok ? x.c - 1 : -1) * _G45_TR_MISE) : '');
             /* 20261017n (« dans les tendances on a des stats, aucune dans l'historique », maquette) : 📊 % des stats + 🏦 % des bookmakers
                sur chaque pari ; faits du jour (x.fa) dépliables d'un appui */
             var pP = x.p > 0 ? Math.round(x.p > 1 ? x.p : x.p * 100) : null, pF = x.f > 0 ? Math.round(x.f > 1 ? x.f : x.f * 100) : null;
@@ -80359,7 +80362,7 @@ var _G45_BK_DOM = [
     var P = [{ l: '', v: 0 }], cum = 0;
     joursM.forEach(function (k) { var Bk = calcJ(J2[k]); if (!Bk.nc) return; cum += Bk.g; P.push({ k: k, l: k.slice(8) + '/' + k.slice(5, 7), v: Math.round(cum * 100) / 100, d: Bk.g }); });
     h += '<div style="margin-top:16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px;">'
-      + '<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px;"><span style="font-size:15px;font-weight:800;">💶 Courbe du gain · <span style="text-transform:capitalize;">' + esc(nomMois(O.mois)) + '</span></span><span style="font-size:13px;color:#c9d3ee;">1 € par pari avec cote · un point = un jour</span></div>';
+      + '<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px;"><span style="font-size:15px;font-weight:800;">💶 Courbe du gain · <span style="text-transform:capitalize;">' + esc(nomMois(O.mois)) + '</span></span><span style="font-size:13px;color:#c9d3ee;">10 € par pari avec cote · un point = un jour</span></div>';
     if (P.length < 2) h += '<div style="font-size:14px;color:#c9d3ee;margin-top:8px;">La courbe apparaît après le 1er jour avec un pari à cote jugé.</div>';
     else {
       var vs = P.map(function (p) { return p.v; }), fin = vs[vs.length - 1], hi = Math.max.apply(null, vs), lo = Math.min.apply(null, vs), colF = fin >= 0 ? '#1ed760' : '#ff6b6b';
@@ -80410,7 +80413,7 @@ var _G45_BK_DOM = [
         + '<div style="margin-top:16px;font-size:16px;font-weight:800;">📊 Statistiques · <span style="text-transform:capitalize;">' + esc(nomMois(O.mois)) + '</span> <span style="font-size:13px;color:#aab6d6;font-weight:600;">· suivent les filtres</span></div>'
         + '<div class="g45tro-st" style="margin-top:8px;">' + sbloc('🏆 Par championnat', sCh) + sbloc('🎯 Par type de pari', sTy)
         + sbloc('📈 Annoncé contre réel', sPr, '<div style="font-size:13px;color:#c9d3ee;">Trait blanc = % annoncé par les stats · barre = % réussi</div>') + sbloc('🤝 Stats et bookmakers', sAv) + '</div>'
-        + '<div style="font-size:13px;color:#c9d3ee;margin-top:6px;">Gain = 1 € par pari avec cote · « — » = pas de cote</div>';
+        + '<div style="font-size:13px;color:#c9d3ee;margin-top:6px;">Gain = 10 € par pari avec cote · « — » = pas de cote</div>';
     } catch (e) {}
     h += '</div>';   /* fin .g45tro-gra (20261020c) */
     h += '<div style="margin-top:10px;font-size:12px;color:#c9d3ee;">Statistiques, pas des pronos sûrs. 🔞 Jouer comporte des risques : 09 74 75 13 13.</div>';
