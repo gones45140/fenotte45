@@ -5006,7 +5006,20 @@ window.g45CoulIdentite = g45CoulIdentite;
 function _g45CarteNoms(h){
   var simple = (h.n === 'SIMPLE');
   var parts = (h.target && h.target !== '-') ? String(h.target).split(/\s+vs\s+/i) : [];
-  if (simple) return { titre: String(parts[0] || h.n || '—').trim(), adv: String(parts[1] || '').trim() };
+  if (simple) {
+    var o = { titre: String(parts[0] || h.n || '—').trim(), adv: String(parts[1] || '').trim() };
+    /* 20261111j (carte partagée « Mitch Marner vs Utah Mammoth », pari Marner passeur, Vegas – Utah) : sur un pari JOUEUR, le ticket met
+       parfois le joueur à la place de son équipe → si la fiche du match (_g45MatchMeta) connaît les deux équipes, que l'adversaire
+       en est une et que le titre n'est AUCUNE des deux, le titre devient l'autre équipe (le joueur reste affiché en dessous). */
+    try {
+      var mt = (o.adv && (h.joueur || (h.joueurs && h.joueurs.length)) && typeof _g45MatchMeta === 'function') ? _g45MatchMeta(h) : null;
+      var mm = typeof _g45MemeNom === 'function' ? _g45MemeNom : null;
+      if (mt && mt.hn && mt.an && mm && !mm(o.titre, mt.hn) && !mm(o.titre, mt.an)) {
+        if (mm(o.adv, mt.an)) o.titre = mt.hn; else if (mm(o.adv, mt.hn)) o.titre = mt.an;
+      }
+    } catch (e) {}
+    return o;
+  }
   return { titre: String(h.n || h.target || '—').trim(), adv: (h.target && h.target !== '-') ? String(h.target).trim() : '' };
 }
 /* L'adresse d'un ecusson : le mur et la table LOGOS d'abord, puis le CDN ESPN
