@@ -5124,7 +5124,10 @@ function _g45CarteResultatHTML(h, logos){
   return '<div style="width:340px;border-radius:20px;overflow:hidden;position:relative;'
     +'background:'+halo+',repeating-linear-gradient(135deg,rgba(255,255,255,.025) 0px,rgba(255,255,255,.025) 1px,transparent 1px,transparent 14px),linear-gradient(160deg,#151b30 0%,#0a0e1a 65%);'
     +'border:1px solid rgba(255,255,255,.08);font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif;">'
-    +'<div style="position:absolute;right:-20px;bottom:-40px;font-size:210px;opacity:.13;line-height:1;transform:rotate(-8deg);">'+(h.sport||'⚽')+'</div>'
+    /* 20261112b (maquette « logo de la compétition en fond » → « oui ») : logo de la COMPÉTITION (logos.comp, _g45ClLogo) à la place du
+       ballon / de la crosse ; compétition sans logo connu = ballon comme avant. */
+    +(logos.comp ? '<img src="'+logos.comp+'" alt="" style="position:absolute;right:-30px;bottom:30px;width:230px;height:230px;object-fit:contain;opacity:.13;transform:rotate(-8deg);">'
+      : '<div style="position:absolute;right:-20px;bottom:-40px;font-size:210px;opacity:.13;line-height:1;transform:rotate(-8deg);">'+(h.sport||'⚽')+'</div>')
     +'<div style="position:relative;padding:20px 22px 16px;display:flex;justify-content:space-between;align-items:center;">'
       +'<div style="font-size:15px;font-weight:900;color:#fff;letter-spacing:-.02em;">BET<span style="color:#ff5a5a;">45</span></div>'
       +'<div style="font-size:11px;font-weight:800;padding:5px 12px;border-radius:20px;background:'+verdictCls+'26;color:'+verdictCls+';">'+verdictTxt+'</div>'
@@ -74578,6 +74581,15 @@ async function _g45CarteComplements(h, nm, lg) {
   }
   var noms = _g45CarteJoueursNoms(h), sp = _g45CarteVisSport(h);
   lg.j = {};
+  /* 20261112b : logo de la compétition en fond de carte (foot / rugby : logo ESPN lu une fois puis gardé → 2e essai après 1,5 s) */
+  taches.push((async function () {
+    try {
+      if (typeof _g45ClLogo !== 'function' || !h.comp) return;
+      var uC = _g45ClLogo(h.comp);
+      if (!uC) { await new Promise(function (r) { setTimeout(r, 1500); }); uC = _g45ClLogo(h.comp); }
+      if (uC) lg.comp = await _g45CarteLogoData(uC);
+    } catch (e) {}
+  })());
   noms.forEach(function (n) {
     taches.push((async function () {
       var u = '';
