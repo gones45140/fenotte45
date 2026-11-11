@@ -75984,7 +75984,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   /* 20261021d (« on va rajouter des trucs » : duo / trio buteurs, double chance buteur, tirs, tirs par équipe + mi-temps, marque en premier,
      match précédent ; maquette maquette-criteres « oui ») : valeurs par défaut des nouveaux critères (aussi pour les combinés de « Reprendre ma note »). */
   function norm(c) {
-    var D0 = { tq: '1', tqr: '', tqp: '', tqo: '', TQL: 1.5, tqb: '', tqm: '', jx: 'cha', mh: '', fs: '', FL: 24.5, ts: '', TSL: 12.5, as: '', ASL: 10.5, cad: '', CL: 4.5, mt: '', mp: '', bo: '', BL: 4.5, pm: '', m1: '', M1L: 1, m2: '', M2L: 1, ha: '', HAL: 0.25, ess: '', esm: '', ESL: 5.5, esb: '', jtit: '', otp: '' };   /* 20261103k : essais rugby */   /* 20261024b : m1 / m2 = buts 1re / 2e mi-temps */
+    var D0 = { tq: '1', tqr: '', tqp: '', tqo: '', TQL: 1.5, tqb: '', tqm: '', jx: 'cha', mh: '', fs: '', FL: 24.5, ts: '', TSL: 12.5, as: '', ASL: 10.5, cad: '', CL: 4.5, mt: '', mp: '', bo: '', BL: 4.5, pm: '', m1: '', M1L: 1, m2: '', M2L: 1, ha: '', HAL: 0.25, ess: '', esm: '', ESL: 5.5, esb: '', jtit: '', otp: '', hf: '' };   /* 20261103k : essais rugby */   /* 20261024b : m1 / m2 = buts 1re / 2e mi-temps */
     for (var k in D0) if (c[k] == null) c[k] = D0[k];
     return c;
   }
@@ -76065,7 +76065,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     if (c.bo) p.push({ coe: 'Corners équipe', com: 'Corners match', cae: 'Cartons équipe', cam: 'Cartons match' }[c.bo] + ' Over ' + c.BL);
     if (c.pm) p.push('Après ' + { v: 'une victoire', n: 'un nul', d: 'une défaite' }[c.pm]);
     if (c.ha) p.push('Handicap ' + (c.HAL > 0 ? '+' : '') + String(c.HAL).replace('.', ','));   /* 20261024d */
-    if (c.hb) p.push(c.hb === 'c' ? 'Couvre le handicap du book' : 'Ne couvre pas le handicap du book');   /* 20261103b */
+    if (c.hb) p.push((c.hb === 'c' ? 'Couvre le handicap du book' : 'Ne couvre pas le handicap du book') + (c.hf === 'f' ? ' (quand favori)' : c.hf === 'o' ? ' (quand outsider)' : ''));   /* 20261103b ; 20261111h : favori / outsider */
     if (c.tb) p.push(c.tb === 'ov' ? 'Over du total du book' : 'Under du total du book');   /* 20261103d */
     if (c.qb) p.push(c.qb === 'ov' ? 'Over du total équipe du book' : 'Under du total équipe du book');   /* 20261103f */
     if (c.ec === 'g') p.push('Gagne de ' + String(c.E).replace('.', ',') + ' ou +');
@@ -76296,6 +76296,11 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       if (esBesoin(c) && !esDe(m)) return false;   /* 20261103k : pas de feuille archivée → non compté */
       if (rg() && P.length && (c.jm === 'pts' || c.jtit) && P.some(function (x) { var v = jValP(x.id, m); return !v || !v.ar || (c.jtit && !v.tit); })) return false;   /* points / titulaire : archives seulement */
       if (c.hb && (m[7] == null || isNaN(+m[7]))) return false;   /* 20261103b : pas de handicap gardé pour ce match → non compté */
+      /* 20261111h (Antoine, Toronto – Colorado : « Ne couvre pas le handicap » 57 % mélangeait les matchs où Toronto était FAVORI (−1,5 :
+         ne pas couvrir = ne pas gagner de 2) et OUTSIDER (+1,5 : ne pas couvrir = perdre de 2 ou +) → chiffre trompeur. On garde seulement
+         les matchs où l'équipe était dans la même situation : ligne du book < 0 = favorite, > 0 = outsider (ligne 0 = non comptée). */
+      if (c.hb && c.hf === 'f' && !(+m[7] < 0)) return false;
+      if (c.hb && c.hf === 'o' && !(+m[7] > 0)) return false;
       if (c.tb && (m[8] == null || isNaN(+m[8]))) return false;   /* 20261103d : pas de total gardé → non compté */
       if (c.qb && (m[9] == null || isNaN(+m[9]))) return false;   /* 20261103f */
       if (S.ctx && c.jbk && bkOk() && P.some(function (x) { var L = bkL(x.id, m, c.jm), v = jValP(x.id, m); return L == null || (v && (v[c.jm] || 0) === L); })) return false;   /* 20261103h : pas de ligne du book (ou ligne égalée) → non compté */
@@ -77132,7 +77137,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     LO.forEach(function (L) { ['ov', 'un'].forEach(function (o) { X.push(function (c) { c.ou = o; c.L = L; }); }); });
     TE.forEach(function (L) { ['ov', 'un'].forEach(function (o) { X.push(function (c) { c.te = o; c.TL = L; }); }); });
     if (sp === 'soccer') ['oui', 'non'].forEach(function (o) { X.push(function (c) { c.bts = o; }); });
-    if (S.ctx && !rg()) { ['ov', 'un'].forEach(function (o) { X.push(function (c) { c.tb = o; }); }); ['c', 'n'].forEach(function (o) { X.push(function (c) { c.hb = o; }); }); }
+    if (S.ctx && !rg()) { ['ov', 'un'].forEach(function (o) { X.push(function (c) { c.tb = o; }); }); ['c', 'n'].forEach(function (o) { ['f', 'o'].forEach(function (q) { X.push(function (c) { c.hb = o; c.hf = q; }); }); }); }   /* 20261111h : handicap séparé favori / outsider */
     var out = [];
     if (sp === 'hockey') { var b0 = base; base = function () { var c = b0(); c.otp = '1'; return c; }; }   /* 20261111c : total du match comme le MyMatch Winamax (prolongation + TAB compris) */
     if (!J.length) { RES.forEach(function (r) { X.forEach(function (f) { var c = base(); c.res = r; f(c); if (c.res || c.ou || c.te || c.bts || c.tb || c.hb) out.push(c); }); }); return out; }
@@ -77440,7 +77445,8 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     /* 20261103c (Antoine : « on n'a pas le A libre » → « oui ») : écart TAPÉ (12,5, 16…) au lieu de la liste 3 / 5 / 8 / 10 / 15 ; virgule acceptée. */
     var selE = '<input type="text" inputmode="decimal" value="' + String(c.E).replace('.', ',') + '" onchange="g45CrSet(\'E\',this.value)" onfocus="this.select()" style="width:80px;background:#16213f;color:#fff;border:1px solid #6d9dff;border-radius:8px;padding:7px 10px;font-size:15px;font-weight:700;text-align:center;margin:0 6px 6px 0;">';
     h += lab('Écart (' + motUnite().toLowerCase() + hkTr + ')') + b(c.ec === 'g', 'Gagne de ' + String(c.E).replace('.', ',') + ' ou +', "g45CrSet('ec','g')") + b(c.ec === 'p', 'Perd de ' + String(c.E).replace('.', ',') + ' max', "g45CrSet('ec','p')") + b(!c.ec, 'Aucun', "g45CrSet('ec','')") + selE;
-    if (S.ctx && !rg()) h += lab('🎯 Handicap du bookmaker (ligne de chaque match, archives)') + b(c.hb === 'c', 'Couvre', "g45CrSet('hb','c')") + b(c.hb === 'n', 'Ne couvre pas', "g45CrSet('hb','n')") + b(!c.hb, 'Aucun', "g45CrSet('hb','')");   /* 20261103b */
+    if (S.ctx && !rg()) h += lab('🎯 Handicap du bookmaker (ligne de chaque match, archives)') + b(c.hb === 'c', 'Couvre', "g45CrSet('hb','c')") + b(c.hb === 'n', 'Ne couvre pas', "g45CrSet('hb','n')") + b(!c.hb, 'Aucun', "g45CrSet('hb','')")   /* 20261103b */
+      + (c.hb ? '<div style="margin:2px 0 6px;">' + b(c.hf === 'f', '⭐ Quand favori (ligne −)', "g45CrSet('hf','f')") + b(c.hf === 'o', '🐺 Quand outsider (ligne +)', "g45CrSet('hf','o')") + b(!c.hf, 'Tous les matchs', "g45CrSet('hf','')") + '</div>' : '');   /* 20261111h */
     /* 20261024d : HANDICAP ASIATIQUE (foot) — « Belgrano +0,25 » : −3 → +3 de 0,25 en 0,25 ; 0 / ligne ronde égalée = remboursé, ,25 / ,75 = moitié-moitié */
     if (!S.ctx) {
       var selH = '<select onchange="g45CrSet(\'HAL\',this.value)" style="background:#16213f;color:#fff;border:1px solid ' + (c.ha ? '#f5c542' : '#6d9dff') + ';border-radius:8px;padding:7px 10px;font-size:14px;margin:0 6px 6px 0;">'
