@@ -76290,7 +76290,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   function bkOk() { return !!(S.ctx && S.ctx.lg === 'nba'); }
   function bkL(pid, m, jm) { var t = BKT[jm], o = S.bk[m[6]] && S.bk[m[6]][pid]; var L = o && t && o[t] && o[t][0] && o[t][0][0]; return L == null || isNaN(+L) ? null : +L; }
   async function bkCharger() {
-    var C = S.ctx; if (!C || C.lg !== 'nba') return; var cle = C.lg + '|' + C.id; if (S.bkE[cle]) return; S.bkE[cle] = 1;
+    var C = S.ctx; if (!C || (C.lg !== 'nba' && C.lg !== 'nhl')) return; var cle = C.lg + '|' + C.id;   /* 20261112c : + NHL (cotes joueurs de la 💶) */ if (S.bkE[cle]) return; S.bkE[cle] = 1;
     try {
       var an = annees(C.lg)[0], B = ASP[C.sp] + '/' + C.lg + '/' + aSaUS(C.lg, an), q = await aLire(B + '/equipes/' + C.id + '.json'), M = {};
       ((q && q.m) || []).forEach(function (m) { M[m[1]] = 1; });
@@ -76701,6 +76701,18 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
      combiné est un pari de RÉSULTAT seul (foot : Victoire / Nul / Défaite ; NBA / NFL / MLB : Vainqueur / Défaite ; NHL : Vainqueur seulement,
      la défaite au temps réglementaire n'a pas de cote 2 issues) ; sinon la cote tapée. */
   function coteM(c, m) {
+    /* 20261112c (Antoine : « on les a les cotes dans archives non ? » → « oui ») : pari JOUEUR NHL seul (buteur / passeur / pointeur, 1, 2 ou 3+)
+       → vraie cote DraftKings gardée par le robot pour CE match (fiche.j[id].o : 230 buteur [[null, cote]], 219 passes et 218 points
+       [[seuil, cote]…]), lue dans S.bk (bkCharger). Gardées depuis fin octobre 2026 : les autres matchs gardent la cote tapée. */
+    try {
+      var J1 = joueurs(c);
+      if (m && S.ctx && S.ctx.lg === 'nhl' && J1.length === 1 && !c.res && c.jsens !== 'un'
+        && !['ou', 'bts', 'te', 'ad', 'ec', 'fs', 'ts', 'as', 'cad', 'mt', 'mh', 'mp', 'bo', 'pm', 'm1', 'm2', 'ha', 'hb', 'tb', 'qb', 'tq', 'tqr', 'tqp', 'tqo', 'tqb', 'tqm'].some(function (k) { return c[k] && !(k === 'tq' && c[k] === '1'); })) {
+        var oJ = S.bk[m[6]] && S.bk[m[6]][J1[0].id], TJ = { g: '230', a: '219', p: '218' }[c.jm || 'g'], nJ = jMinDe(c), LJ = oJ && TJ && oJ[TJ];
+        if (Array.isArray(LJ)) { var eJ = LJ.filter(function (e) { return e && (TJ === '230' ? nJ === 1 : +e[0] === nJ); })[0]; var vJ = eJ ? +eJ[1] : 0; if (vJ > 1) return vJ; }
+        return null;
+      }
+    } catch (eJ) {}
     var co = m && m[12]; if (!co || !c.res) return null;
     var nb = ['ou', 'bts', 'te', 'ad', 'ec', 'fs', 'ts', 'as', 'cad', 'mt', 'mh', 'mp', 'bo', 'pm', 'm1', 'm2', 'ha', 'hb', 'tb', 'qb'].some(function (k) { return c[k]; }) || joueurs(c).length;
     if (nb) return null;
@@ -76734,6 +76746,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     return { par: par, tot: tot, bo: bo, max: max, det: det, bk: bk, ruine: ruine, fin: cap > 0 ? cap + tot : null };
   }
   window._g45CrSimT = simCalc;   /* tests */
+  window._g45CrCoteM = function (c, m) { return coteM(c, m); };   /* 20261112c : tests */
   window.g45CrCkMeth = function (k) { S.simM = ({ mont: 1, fib: 1, dal: 1, fix: 1 })[k] ? k : 'mont'; try { localStorage.setItem('g45_sim_meth', S.simM); } catch (e) {} try { redessiner(); } catch (e) {} };   /* 20261106f */
   /* 20261102p (capture carte MacKinnon « 📊 pire série … → 5 paliers » : « peut-être le rajouter ici, ça évite de recalculer à chaque fois ») :
      bilan 💶 gardé AVEC la série (u.psL par « 🔄 Calculer mes séries », u.ps par 📌) → { e: € arrondi, bo: 💥, c: cote }. Mises = ⭐ de la
@@ -76761,6 +76774,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   };
   function simHtml(c, D) {
     if (typeof window._g45CkActif === 'function' && !window._g45CkActif()) return '';   /* 20261104l : 💶 + 📋 seulement avec le Cockpit activé */
+    if (S.ctx && S.ctx.lg === 'nhl' && joueurs(c).length === 1) { S.bkT = S.bkT || {}; var kT = S.ctx.lg + '|' + S.ctx.id; if (!S.bkT[kT]) { S.bkT[kT] = 1; bkCharger(); } }   /* 20261112c : cotes joueurs NHL, un seul essai par équipe (pas de boucle si la lecture échoue) */
     var seq = [], libs = [];
     D.saisons.slice().reverse().forEach(function (sa) {
       if (!sa) return; var L0 = msS(c, sa); if (!L0) return;
