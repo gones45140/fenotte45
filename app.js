@@ -5070,6 +5070,7 @@ function _g45CarteResultatHTML(h, logos){
   logos = logos || {};
   var nomsC = _g45CarteNoms(h);
   var titreC = nomsC.titre, adversaireC = nomsC.adv;
+  if (logos.club) titreC = String(logos.club);   /* 20261111k : pari joueur → le club du joueur en titre (archives) */
   var u1 = (state.u || []).filter(function (x) { return x && x.n === titreC; })[0];
   var coul1 = g45CoulIdentite(titreC);
   var coul2 = adversaireC ? g45CoulIdentite(adversaireC) : '';
@@ -74607,14 +74608,25 @@ async function _g45CarteComplements(h, nm, lg) {
           var J = await fetch(B + 'joueurs.json').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }); if (!J) continue;
           var EQ = null;
           for (var k = 0; k < noms.length; k++) {
-            var n0 = nz(noms[k]), pid = Object.keys(J).filter(function (q) { return nz(J[q][0]) === n0; })[0]; if (!pid) continue;
+            var n0 = nz(noms[k]), pid = Object.keys(J).filter(function (q) { return nz(J[q][0]) === n0; })[0];
+            /* 20261111k : « Mitchell Marner » (ticket) = « Mitch Marner » (archives) → même nom de famille + même 1re lettre, si un seul joueur */
+            if (!pid) { var pN = String(noms[k]).trim().split(/\s+/), fN = nz(pN[pN.length - 1]), iN = nz(pN[0]).charAt(0);
+              var cand = fN.length >= 3 ? Object.keys(J).filter(function (q) { var m = String(J[q][0] || '').trim().split(/\s+/); return nz(m[m.length - 1]) === fN && nz(m[0]).charAt(0) === iN; }) : [];
+              if (cand.length === 1) pid = cand[0]; }
+            if (!pid) continue;
             if (!lg.j[noms[k]]) { try { lg.j[noms[k]] = await _g45CarteLogoData('https://a.espncdn.com/i/headshots/' + LG[1] + '/players/full/' + pid + '.png'); } catch (e) {} }
             if (!club && J[pid][1]) { if (!EQ) EQ = await fetch(B + 'equipes.json').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }); club = (EQ && EQ[J[pid][1]] && EQ[J[pid][1]][0]) || ''; }
           }
         }
       }
       var ix = function (n) { try { return (n && typeof window._g45LogoIndex === 'function' && window._g45LogoIndex(n)) || ''; } catch (e) { return ''; } };
-      var ua = (club && noms.indexOf(nm && nm.titre) >= 0) ? ix(club) : '';
+      /* 20261111k (carte « Mitch Marner vs Utah » toujours en « MAR » en 20261111j : la fiche du match n'était pas trouvée, et le titre
+         « Mitch Marner » ≠ le joueur « Mitchell Marner ») : le titre est un JOUEUR s'il a le même nom de famille qu'un joueur du pari →
+         son CLUB (archives) devient le titre de la carte (lg.club, lu par _g45CarteResultatHTML) et donne le logo. */
+      var nomF = function (t) { var m = String(t || '').trim().split(/\s+/); return nz(m[m.length - 1]); };
+      var tJ = !!(nm && nm.titre && noms.some(function (q) { return nz(q) === nz(nm.titre) || (nomF(q).length >= 3 && nomF(q) === nomF(nm.titre)); }));
+      if (club && tJ) lg.club = club;
+      var ua = (club && tJ) ? ix(club) : '';
       if (ua) lg.a = await _g45CarteLogoData(ua);
       else if (!lg.a && nm) { var u1 = ix(nm.titre) || ix(club); if (u1) lg.a = await _g45CarteLogoData(u1); }
       if (!lg.b && nm && nm.adv) { var u2 = ix(nm.adv); if (u2) lg.b = await _g45CarteLogoData(u2); }
