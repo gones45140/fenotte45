@@ -80420,7 +80420,7 @@ var _G45_BK_DOM = [
     else {
       var vs = P.map(function (p) { return p.v; }), fin = vs[vs.length - 1], hi = Math.max.apply(null, vs), lo = Math.min.apply(null, vs), colF = fin >= 0 ? '#1ed760' : '#ff6b6b';
       h += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0;">' + pill('Paris avec cote : ' + CM.nc, '#ffffff14') + pill('⬆ Plus haut : ' + eurC(hi), '#1ed76033', '#7dffb0') + pill('⬇ Plus bas : ' + eurC(lo), '#ff5c5c33', '#ffa0a0') + pill('Fin : ' + eurC(fin), colF, '#111') + '</div>';
-      var tel = (window.innerWidth || 1000) < 600, W = tel ? 380 : 900, H = 250, ml = 56, mr = 72, mt = 26, mb = 44;
+      var tel = (window.innerWidth || 1000) < 600, W = tel ? 380 : 900, H = 270, ml = 56, mr = 72, mt = 46, mb = 44;   /* 20261112f : mt 26 → 46 (2 lignes d'étiquette) */
       var st2 = Math.max(1, Math.ceil((Math.max(hi, 1) - Math.min(lo, -1)) / 4)), mx = Math.ceil(Math.max(hi, 1) / st2) * st2, mn = Math.floor(Math.min(lo, -1) / st2) * st2;
       var X = function (i) { return ml + i * (W - ml - mr) / (P.length - 1); }, Y = function (v) { return mt + (mx - v) * (H - mt - mb) / (mx - mn); };
       var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" style="display:block;">';
@@ -80433,10 +80433,12 @@ var _G45_BK_DOM = [
         var c = p.d >= 0 ? '#1ed760' : '#ff6b6b', voir = (i % pas === 0) || i === P.length - 1;
         svg += '<g onclick="g45TrOffJour(\'' + p.k + '\')" style="cursor:pointer;"><circle cx="' + X(i).toFixed(1) + '" cy="' + Y(p.v).toFixed(1) + '" r="13" fill="transparent"/><circle cx="' + X(i).toFixed(1) + '" cy="' + Y(p.v).toFixed(1) + '" r="7" fill="' + c + '" stroke="#0b1020" stroke-width="3"/></g>';
         if (voir) svg += '<text x="' + X(i).toFixed(1) + '" y="' + (H - 14) + '" text-anchor="middle" fill="#fff" font-size="14" font-weight="700">' + p.l + '</text>'
+          /* 20261112f (Antoine : « je pensais que c'était le total… faudrait l'ajouter » → « en haut total, en bas gain du jour ») */
+          + '<text x="' + X(i).toFixed(1) + '" y="' + (Y(p.v) - 30).toFixed(1) + '" text-anchor="middle" fill="#fff" font-size="14" font-weight="900">' + (p.v >= 0 ? '+' : '−') + Math.abs(p.v).toFixed(2).replace('.', ',') + ' €</text>'
           + '<text x="' + X(i).toFixed(1) + '" y="' + (Y(p.v) - 14).toFixed(1) + '" text-anchor="middle" fill="' + c + '" font-size="13" font-weight="800">' + (p.d >= 0 ? '+' : '−') + Math.abs(p.d).toFixed(2).replace('.', ',') + '</text>';
       });
       svg += '<rect x="' + (W - mr + 6) + '" y="' + (Y(fin) - 16).toFixed(1) + '" width="' + (mr - 8) + '" height="30" rx="8" fill="' + colF + '"/><text x="' + (W - mr / 2 + 2) + '" y="' + (Y(fin) + 5).toFixed(1) + '" text-anchor="middle" fill="#111" font-size="14" font-weight="900">' + (fin >= 0 ? '+' : '−') + Math.abs(fin).toFixed(2).replace('.', ',') + '</text></svg>';
-      h += svg + '<div style="font-size:13px;color:#c9d3ee;margin-top:6px;">🟢 jour gagnant · 🔴 jour perdant · le chiffre = gain du jour · touche un point pour voir le jour</div>';
+      h += svg + '<div style="font-size:13px;color:#c9d3ee;margin-top:6px;">🟢 jour gagnant · 🔴 jour perdant · en haut (blanc) = total · en dessous = gain du jour · touche un point pour voir le jour</div>';
     }
     h += '</div>';
     /* 20261017m (« on a pas de stats ? », maquette validée « oui ») : 📊 Statistiques du mois affiché (filtres compris) —
