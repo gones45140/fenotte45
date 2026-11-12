@@ -77328,7 +77328,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     S.cjDer = { nom: S.nom, lieu: lieu, crit: libCombo(c), d10: V.d10, s2: V.s2, s5: V.s5 };
     try { if (typeof window._g45CjAuto === 'function') { var cjD = S.cjDer; setTimeout(function () { window._g45CjAuto(cjD); }, 0); } } catch (e) {}   /* 20261108g : calculatrice « match » remplie toute seule */
     var b = function (k) { return '<button onclick="g45CjEnvoyer(' + k + ')" style="border:1px solid #6d9dff;border-radius:10px;padding:8px 12px;font-size:14px;font-weight:800;color:#fff;background:#1b2a55;cursor:pointer;">→ Équipe ' + k + '</button>'; };
-    return '<div style="margin-top:10px;background:#0f1730;border-radius:10px;padding:10px;font-size:14px;color:#fff;">🧮 <b>Envoyer à la calculatrice</b> (🎯 Cote juste) : 10 derniers <b>' + (V.d10 == null ? '—' : V.d10 + ' %') + '</b> · 2 saisons <b>' + (V.s2 == null ? '—' : V.s2 + ' %') + '</b> · toutes <b>' + V.s5 + ' %</b>'
+    return '<div style="margin-top:10px;background:#0f1730;border-radius:10px;padding:10px;font-size:14px;color:#fff;">🧮 <b>Envoyer à la calculatrice</b> (🎯 Cote juste) : 10 derniers matchs <b>' + (V.d10 == null ? '—' : V.d10 + ' %') + '</b> · 2 saisons <b>' + (V.s2 == null ? '—' : V.s2 + ' %') + '</b> · toutes <b>' + V.s5 + ' %</b>'
       + '<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">' + b(1) + b(2) + '</div></div>';
   }
   window.g45CjEnvoyer = function (k) { if (S.cjDer && typeof window.g45CjMettre === 'function') window.g45CjMettre(k, S.cjDer); };
@@ -87958,7 +87958,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
       return '<div style="background:#0b1226;border:1px solid #2a3a63;border-radius:10px;padding:8px;min-width:0;">'
         + '<input id="cj-n' + i + '" value="' + esc(e.nom) + '" placeholder="Équipe ' + (i + 1) + '" oninput="g45CjMaj(this)" style="width:100%;box-sizing:border-box;font-size:15px;font-weight:900;padding:6px;border-radius:8px;background:#141c33;color:#fff;border:1px solid #2a3a63;">'
         + '<div style="font-size:13px;color:#c9d3ee;margin:4px 0 6px;">' + esc(e.lieu || '') + '</div>'
-        + [['10 derniers', 'd10'], ['2 saisons', 's2'], ['5 saisons', 's5']].map(function (x) { return '<div style="display:flex;justify-content:space-between;align-items:center;margin:4px 0;font-size:14px;color:#fff;"><span>' + x[0] + '</span><span>' + inp('cj-' + x[1] + i, e[x[1]]) + ' %</span></div>'; }).join('')
+        + [['10 derniers matchs', 'd10'], ['2 saisons', 's2'], ['Toutes saisons', 's5']].map(function (x) { return '<div style="display:flex;justify-content:space-between;align-items:center;margin:4px 0;font-size:14px;color:#fff;"><span>' + x[0] + '</span><span>' + inp('cj-' + x[1] + i, e[x[1]]) + ' %</span></div>'; }).join('')
         + '<div style="font-size:14px;margin-top:6px;color:#fff;">→ <b>' + fr(R.m[i]) + ' %</b></div></div>';
     };
     var verdict = '';
@@ -87972,13 +87972,13 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
       + '<div style="font-size:13px;color:#c9d3ee;margin:3px 0 10px;">' + (D.crit ? 'Critère : <b style="color:#fff;">' + esc(D.crit) + '</b> · ' : '') + 'remplis à la main ou par « 🧮 Envoyer à la calculatrice » dans les critères d\'une équipe.</div>'
       + '<div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;">' + col(0) + col(1) + '</div>'
       + '<div style="font-size:14px;font-weight:800;margin:10px 0 4px;">Poids</div><div style="display:flex;gap:6px;flex-wrap:wrap;font-size:14px;">'
-      + ['10 derniers', '2 saisons', '5 saisons'].map(function (t, i) { return '<span style="flex:1;min-width:100px;background:#0b1226;border:1px solid #2a3a63;border-radius:8px;padding:6px;text-align:center;">' + t + ' ' + inp('cj-w' + i, D.w[i], 48) + ' %</span>'; }).join('') + '</div>'
+      + ['10 derniers matchs', '2 saisons', 'Toutes saisons'].map(function (t, i) { return '<span style="flex:1;min-width:100px;background:#0b1226;border:1px solid #2a3a63;border-radius:8px;padding:6px;text-align:center;">' + t + ' ' + inp('cj-w' + i, D.w[i], 48) + ' %</span>'; }).join('') + '</div>'
       + '<div style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:15px;flex-wrap:wrap;">Cote du book ' + inp('cj-b', D.b, 80) + ' <span style="font-size:13px;color:#c9d3ee;">cote inverse (facultatif)</span> ' + inp('cj-inv', D.inv || '', 70) + ' <span style="font-size:13px;color:#c9d3ee;">3e cote (1N2, facultatif)</span> ' + inp('cj-t3', D.t3 || '', 70) + '</div>'
       + (R.sj && !(R.cj && R.bk > 1) ? sjL : '')
       + '<div style="display:flex;align-items:center;gap:8px;margin-top:6px;font-size:13px;color:#c9d3ee;">Marge du book sans cote inverse ' + inp('cj-mg', D.mg == null ? 7 : D.mg, 48) + ' %</div>'
       + '<div style="margin-top:12px;background:' + (R.p == null ? '#0b1226' : 'rgba(30,215,96,.12)') + ';border:1px solid ' + (R.p == null ? '#2a3a63' : '#1ed760') + ';border-radius:12px;padding:10px;text-align:center;">'
       + (R.p == null ? '<div style="font-size:14px;color:#c9d3ee;">Remplis au moins une équipe.</div>' : '<div style="font-size:14px;color:#c9d3ee;">Estimation du match</div><div style="font-size:24px;font-weight:900;">' + fr(R.p) + ' % → cote juste <span style="color:#1ed760;">' + fr(R.cj, 2) + '</span></div>' + verdict)
-      + '</div><div style="font-size:13px;color:#c9d3ee;margin-top:8px;">Chaque équipe : mélange 10 derniers / 2 saisons / 5 saisons avec les poids (une case vide est ignorée), puis moyenne des deux équipes.</div></div>';
+      + '</div><div style="font-size:13px;color:#c9d3ee;margin-top:8px;">Chaque équipe : mélange 10 derniers matchs / 2 saisons / toutes saisons avec les poids (une case vide est ignorée), puis moyenne des deux équipes.</div></div>';
   }
   function poser(focusId) {
     var t = document.getElementById('calc-cj') || document.getElementById('t-calc'); if (!t) return;   /* 20261108h : onglet 🎯 Cote juste */
