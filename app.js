@@ -88568,7 +88568,7 @@ window.g45SerNs = function (nom, n, el) {
 (function () {
   try {
     var st = document.createElement('style');
-    st.textContent = '.psub[data-sub="t-tend"],.psub[data-sub="t-calc"]{display:none!important}';
+    st.textContent = '.psub[data-sub="t-tend"],.psub[data-sub="t-calc"]{display:none!important}#t-calc .psub-bar{display:none!important}';   /* 20261112m : capture Antoine, Bilan / Bank entourés en haut de la Calculatrice → barre Pari cachée sur cette page */
     document.head.appendChild(st);
   } catch (e) {}
   function poser() {
