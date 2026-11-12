@@ -54034,7 +54034,7 @@ window.g45VjAn = function (v) {
 /* Bascule Équipes / Joueurs, posée une fois en tête de l'onglet VS. */
 window.g45VsBascule = function (m) {
   _g45VjMode = m; window._g45VjModeW = m;
-  var t = document.getElementById('t-comp'); if (!t) return;
+  var t = document.getElementById('calc-vs') || document.getElementById('t-comp'); if (!t) return;   /* 20261112l : VS déplacé dans la Calculatrice */
   var bar = document.getElementById('g45-vs-bascule');
   if (!bar) {
     var titre = t.querySelector('.sec'); if (!titre) return;
@@ -88596,5 +88596,36 @@ window.g45SerNs = function (nom, n, el) {
     } catch (e) {}
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', poser); else poser();
+  setTimeout(poser, 1500);
+})();
+
+/* ═══ 20261112l — ⚖️ VS DANS LA CALCULATRICE (Antoine : « à moins de le mettre dans calculatrice ? » → « OUI ») : le contenu de #t-comp
+   (comparateur équipes / joueurs, radar) est DÉPLACÉ (mêmes nœuds, mêmes id) dans un panneau #calc-vs de la Calculatrice, onglet
+   « ⚖️ VS » (ct-vs) à la fin de la barre ; swCalc enveloppé comme pour Cote juste / Lanceurs ; bouton VS caché dans la barre Pari. ═══ */
+(function () {
+  try { var st = document.createElement('style'); st.textContent = '.psub[data-sub="t-comp"]{display:none!important}'; document.head.appendChild(st); } catch (e) {}
+  function poser() {
+    var tc = document.getElementById('t-calc'), tp = document.getElementById('t-comp'), barre = tc && tc.querySelector('.calc-tabs');
+    if (!tc || !barre) return false;
+    var c = document.getElementById('calc-vs');
+    if (!c) { c = document.createElement('div'); c.id = 'calc-vs'; c.style.display = 'none'; tc.appendChild(c); }
+    if (tp) Array.prototype.slice.call(tp.children).forEach(function (x) { if (!(x.classList && x.classList.contains('psub-bar'))) c.appendChild(x); });
+    if (!document.getElementById('ct-vs')) { var b = document.createElement('button'); b.className = 'ctbtn'; b.id = 'ct-vs'; b.textContent = '⚖️ VS'; b.setAttribute('onclick', "swCalc('vs')"); barre.appendChild(b); }
+    return true;
+  }
+  var sw0 = window.swCalc;
+  window.swCalc = swCalc = function (m) {
+    poser();
+    var c = document.getElementById('calc-vs'), b = document.getElementById('ct-vs');
+    if (c) c.style.display = m === 'vs' ? 'block' : 'none';
+    if (b) b.classList.toggle('on', m === 'vs');
+    if (m === 'vs') {
+      ['sb', 'dt', 'lay', 'vb', 'arjel', 'lc', 'cj'].forEach(function (p) { var el = document.getElementById('calc-' + p); if (el) el.style.display = 'none'; var bt = document.getElementById('ct-' + p); if (bt) bt.classList.remove('on'); });
+      try { if (typeof initComparateur === 'function') initComparateur(); } catch (e) {}
+      return;
+    }
+    if (typeof sw0 === 'function') return sw0.apply(this, arguments);
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', poser); else setTimeout(poser, 0);
   setTimeout(poser, 1500);
 })();
