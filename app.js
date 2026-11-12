@@ -77279,7 +77279,15 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       if (!ms.length) { h += '<tr><td style="' + td + '">' + libS + '</td><td colspan="' + cs + '" style="' + td + 'color:#c9d3ee;">aucun match joué</td></tr>'; return; }
       var R = calc(c, ms);
       if (!R.n && XA && !viaA) { h += '<tr><td style="' + td + '">' + libS + '</td><td colspan="' + cs + '" style="' + td + 'color:#f5c542;">↪️ ' + esc(XA.j.n) + ' n\'était pas à ' + esc(S.nom) + (XA.a.club ? ' (' + esc(XA.a.club) + ')' : '') + '</td></tr>'; return; }   /* 20261031g : transfert */
-      if (!R.n) { h += '<tr><td style="' + td + '">' + libS + '</td><td colspan="' + cs + '" style="' + td + 'color:#c9d3ee;">aucun match compté (critères joueur / feuille / match précédent)</td></tr>'; return; }   /* 20261021f : plus de « NaN % » */
+      if (!R.n) {
+        /* 20261112i (Antoine, ✈️ + « Quand outsider » : 2026-27 « aucun match compté (critères joueur / feuille…) » → raison fausse) : on dit la vraie
+           raison quand c'est le handicap du book (aucune ligne gardée, ou jamais favori / outsider cette saison). */
+        var pq = 'aucun match compté (critères joueur / feuille / match précédent)';
+        if (c.hb) { var aL = ms.filter(function (m) { return m[7] != null && !isNaN(+m[7]); });
+          if (!aL.length) pq = 'aucune ligne de handicap du book gardée pour cette saison';
+          else if (c.hf === 'o' && !aL.some(function (m) { return +m[7] > 0; })) pq = 'jamais outsider (ligne +) cette saison' + ({ dom: ' à domicile', ext: ' à l\'extérieur' }[S.lieu] || '') + ' : toujours favori';
+          else if (c.hf === 'f' && !aL.some(function (m) { return +m[7] < 0; })) pq = 'jamais favori (ligne −) cette saison' + ({ dom: ' à domicile', ext: ' à l\'extérieur' }[S.lieu] || '') + ' : toujours outsider'; }
+        h += '<tr><td style="' + td + '">' + libS + '</td><td colspan="' + cs + '" style="' + td + 'color:#c9d3ee;">' + pq + '</td></tr>'; return; }   /* 20261021f : plus de « NaN % » */   /* 20261021f : plus de « NaN % » */
       h += '<tr><td style="' + td + '">' + libS + '</td>' + (CL ? '<td style="' + td + '">' + (clT || '—') + '</td>' : '') + '<td style="' + td + '">' + nbV(R.ok) + '/' + nbV(R.n) + ' · ' + Math.round(100 * R.ok / R.n) + ' %</td>'
         + '<td style="' + td + 'font-weight:700;color:' + coul(R.pire) + ';">' + R.pire + '</td>'
         + '<td style="' + td + 'font-weight:700;color:#5aa9ff;">' + R.best + '</td></tr>';
