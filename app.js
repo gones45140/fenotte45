@@ -88560,3 +88560,41 @@ window.g45SerNs = function (nom, n, el) {
   try { save(); } catch (e) {}
   if (typeof window.g45SerUne === 'function') window.g45SerUne(u.n);
 };
+
+/* ═══ 20261112k — 🧮 CALCULATRICE DANS LE MENU (capture annotée d'Antoine, « on est d'accord pour les 3 points ») :
+   1) Calculatrice sort de la barre de la page Pari → entrée du menu de gauche, sous Tendances (PC) et dans « + Plus » (téléphone) ;
+   2) bouton 🔥 Tendances de la barre Pari supprimé (déjà dans le menu) ; 3) Pari / Bilan / Bank restent. VS : reste dans Pari pour l'instant
+   (Antoine ne sait pas encore où le mettre). Fait par script (les 2 pages index.html / indexfenotte.html ont la même barre et le même menu). ═══ */
+(function () {
+  try {
+    var st = document.createElement('style');
+    st.textContent = '.psub[data-sub="t-tend"],.psub[data-sub="t-calc"]{display:none!important}';
+    document.head.appendChild(st);
+  } catch (e) {}
+  function poser() {
+    try {
+      if (!document.getElementById('g45-ni-calc')) {
+        var tn = document.querySelector('.nav .ni[onclick*="t-tend"]');
+        if (tn) {
+          var b = document.createElement('button');
+          b.id = 'g45-ni-calc'; b.className = 'ni pc-only';
+          b.setAttribute('onclick', "showTab('t-calc',this)");
+          b.innerHTML = '<span>🧮</span>Calculatrice';
+          tn.parentNode.insertBefore(b, tn.nextSibling);
+        }
+      }
+      if (!document.getElementById('g45-pm-calc')) {
+        var pm = document.querySelector('#plus-menu > div'), mod = pm && pm.querySelector('button');
+        if (pm && mod) {
+          var c = mod.cloneNode(false);
+          c.id = 'g45-pm-calc'; c.removeAttribute('onclick');
+          c.setAttribute('onclick', "showTab('t-calc',$i('btn-plus-menu'));togglePlusMenu();");
+          c.innerHTML = '<span style="font-size:17px;">🧮</span>Calculatrice';
+          pm.insertBefore(c, pm.firstChild);
+        }
+      }
+    } catch (e) {}
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', poser); else poser();
+  setTimeout(poser, 1500);
+})();
