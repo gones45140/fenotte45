@@ -82762,16 +82762,19 @@ window._g45AgJouUs = async function (nowTs) {
     var ju = L.filter(function (x) { return x.r === 0 || x.r === 1; }), ok = ju.filter(function (x) { return x.r === 1; }).length;
     var g = ju.reduce(function (s2, x) { return s2 + (x.r === 1 ? x.c - 1 : -1); }, 0);
     var e = function (t) { return String(t || '').replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
-    var h = '<div style="margin-top:10px;background:#2a2f3d;border:1px dashed #8e9bbd;border-radius:10px;padding:10px 12px;">'
-      + '<div style="font-size:15px;font-weight:900;">🧪 Value tennis — en test (vous quatre seulement)</div>'
+    /* 20261112g (Antoine : « tu peux mettre ça en fenêtre ouvrable / fermable ») : bloc replié par défaut (titre + bilan toujours visibles),
+       ouvert / fermé gardé par appareil (g45_tst_tv) */
+    var ouv = false; try { ouv = localStorage.getItem('g45_tst_tv') === '1'; } catch (eO) {}
+    var h = '<details' + (ouv ? ' open' : '') + ' ontoggle="try{localStorage.setItem(\'g45_tst_tv\',this.open?\'1\':\'0\')}catch(e){}" style="margin-top:10px;background:#2a2f3d;border:1px dashed #8e9bbd;border-radius:10px;padding:10px 12px;">'
+      + '<summary style="cursor:pointer;"><span style="font-size:15px;font-weight:900;">🧪 Value tennis — en test (vous quatre seulement)</span>'
       + '<div style="font-size:14px;margin:4px 0 6px;">' + ju.length + ' jugés · ' + ok + ' gagnés · gain à 1 € : <b style="color:' + (g >= 0 ? '#1ed760' : '#ff6b6b') + ';">' + (g >= 0 ? '+' : '') + g.toFixed(2).replace('.', ',') + ' €</b>'
-      + (ju.length ? ' (' + (g >= 0 ? '+' : '') + Math.round(g / ju.length * 100) + ' %)' : '') + ' · ' + (L.length - ju.length) + ' en attente · bilan le 10/11</div>';
+      + (ju.length ? ' (' + (g >= 0 ? '+' : '') + Math.round(g / ju.length * 100) + ' %)' : '') + ' · ' + (L.length - ju.length) + ' en attente · bilan le 10/11</div></summary>';
     L.slice().sort(function (a, b) { return b.t - a.t; }).slice(0, 12).forEach(function (x) {
       var d = ''; try { d = new Date(x.t).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }); } catch (er) {}
       h += '<div style="display:flex;justify-content:space-between;gap:8px;font-size:14px;padding:4px 0;border-top:1px solid rgba(255,255,255,.08);"><span>' + d + ' · ' + e(x.h) + ' – ' + e(x.a) + ' · <b>' + e(x.n) + '</b></span>'
         + '<span style="white-space:nowrap;">@' + String(x.c).replace('.', ',') + ' ' + (x.r === 1 ? '✅' : (x.r === 0 ? '❌' : '⏳')) + '</span></div>';
     });
-    return h + '<div style="font-size:12px;color:#c9d3ee;margin-top:4px;">💎 cote du book 1,50 – 2,50, + 5 % ou plus selon BET45 · cote FR ≈ cote US × 0,94 · hors bilan officiel.</div></div>';
+    return h + '<div style="font-size:12px;color:#c9d3ee;margin-top:4px;">💎 cote du book 1,50 – 2,50, + 5 % ou plus selon BET45 · cote FR ≈ cote US × 0,94 · hors bilan officiel.</div></details>';
   };
   /* 20261024p : bloc « 🧪 Paris mis en test » — J.pz du robot avec x.st = 'test' (choix d'Antoine dans 📊 Bilans) ; testeurs seulement,
      hors bilan. Les paris en PAUSE ne sont pas montrés (suivis en coulisse). */
@@ -82780,15 +82783,18 @@ window._g45AgJouUs = async function (nowTs) {
     var ju = L.filter(function (x) { return x.r === 0 || x.r === 1; }), ok = ju.filter(function (x) { return x.r === 1; }).length;
     var g = ju.reduce(function (s2, x) { return s2 + (x.r === 1 ? (x.c > 1 ? x.c - 1 : 0) : -1); }, 0);
     var e = function (t) { return String(t || '').replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
-    var h = '<div style="margin-top:10px;background:#2a2f3d;border:1px dashed #8e9bbd;border-radius:10px;padding:10px 12px;">'
-      + '<div style="font-size:15px;font-weight:900;">🧪 Paris en test (vous quatre seulement)</div>'
-      + '<div style="font-size:14px;margin:4px 0 6px;">' + ju.length + ' jugés · ' + ok + ' gagnés · gain à 1 € : <b style="color:' + (g >= 0 ? '#1ed760' : '#ff6b6b') + ';">' + (g >= 0 ? '+' : '') + g.toFixed(2).replace('.', ',') + ' €</b> · ' + (L.length - ju.length) + ' en attente</div>';
+    /* 20261112g (Antoine : « tu peux mettre ça en fenêtre ouvrable / fermable ») : bloc replié par défaut (titre + bilan toujours visibles),
+       ouvert / fermé gardé par appareil (g45_tst_te) */
+    var ouv = false; try { ouv = localStorage.getItem('g45_tst_te') === '1'; } catch (eO) {}
+    var h = '<details' + (ouv ? ' open' : '') + ' ontoggle="try{localStorage.setItem(\'g45_tst_te\',this.open?\'1\':\'0\')}catch(e){}" style="margin-top:10px;background:#2a2f3d;border:1px dashed #8e9bbd;border-radius:10px;padding:10px 12px;">'
+      + '<summary style="cursor:pointer;"><span style="font-size:15px;font-weight:900;">🧪 Paris en test (vous quatre seulement)</span>'
+      + '<div style="font-size:14px;margin:4px 0 6px;">' + ju.length + ' jugés · ' + ok + ' gagnés · gain à 1 € : <b style="color:' + (g >= 0 ? '#1ed760' : '#ff6b6b') + ';">' + (g >= 0 ? '+' : '') + g.toFixed(2).replace('.', ',') + ' €</b> · ' + (L.length - ju.length) + ' en attente</div></summary>';
     L.slice().sort(function (a, b) { return b.t - a.t; }).slice(0, 12).forEach(function (x) {
       var d = ''; try { d = new Date(x.t).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }); } catch (er) {}
       h += '<div style="display:flex;justify-content:space-between;gap:8px;font-size:14px;padding:4px 0;border-top:1px solid rgba(255,255,255,.08);"><span>' + d + ' · ' + e(x.h) + ' – ' + e(x.a) + ' · <b>' + e(x.m || x.k) + '</b></span>'
         + '<span style="white-space:nowrap;">' + (x.c > 1 ? '@' + String(x.c).replace('.', ',') + ' ' : '') + (x.r === 1 ? '✅' : (x.r === 0 ? '❌' : '⏳')) + '</span></div>';
     });
-    return h + '<div style="font-size:12px;color:#c9d3ee;margin-top:4px;">Paris mis en 🧪 Test dans 📊 Bilans · hors bilan officiel.</div></div>';
+    return h + '<div style="font-size:12px;color:#c9d3ee;margin-top:4px;">Paris mis en 🧪 Test dans 📊 Bilans · hors bilan officiel.</div></details>';
   };
   /* 20261023m : bloc « 🧪 Coupes d'Europe — en test » (J.ce du robot : tendances de C1 / C3 / C4 écartées de la sélection officielle car
      cote × % réel des coupes d'Europe < 1,05, ou marché de résultat) — testeurs seulement, hors bilan. */
@@ -82797,9 +82803,12 @@ window._g45AgJouUs = async function (nowTs) {
     var ju = L.filter(function (x) { return x.r === 0 || x.r === 1; }), ok = ju.filter(function (x) { return x.r === 1; }).length;
     var g = ju.reduce(function (s2, x) { return s2 + (x.r === 1 ? (x.c > 1 ? x.c - 1 : 0) : -1); }, 0);
     var e = function (t) { return String(t || '').replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
-    var h = '<div style="margin-top:10px;background:#2a2f3d;border:1px dashed #8e9bbd;border-radius:10px;padding:10px 12px;">'
-      + '<div style="font-size:15px;font-weight:900;">🧪 Coupes d\'Europe — en test (vous quatre seulement)</div>'
-      + '<div style="font-size:14px;margin:4px 0 6px;">' + ju.length + ' jugées · ' + ok + ' gagnées · gain à 1 € : <b style="color:' + (g >= 0 ? '#1ed760' : '#ff6b6b') + ';">' + (g >= 0 ? '+' : '') + g.toFixed(2).replace('.', ',') + ' €</b> · ' + (L.length - ju.length) + ' en attente</div>';
+    /* 20261112g (Antoine : « tu peux mettre ça en fenêtre ouvrable / fermable ») : bloc replié par défaut (titre + bilan toujours visibles),
+       ouvert / fermé gardé par appareil (g45_tst_ce) */
+    var ouv = false; try { ouv = localStorage.getItem('g45_tst_ce') === '1'; } catch (eO) {}
+    var h = '<details' + (ouv ? ' open' : '') + ' ontoggle="try{localStorage.setItem(\'g45_tst_ce\',this.open?\'1\':\'0\')}catch(e){}" style="margin-top:10px;background:#2a2f3d;border:1px dashed #8e9bbd;border-radius:10px;padding:10px 12px;">'
+      + '<summary style="cursor:pointer;"><span style="font-size:15px;font-weight:900;">🧪 Coupes d\'Europe — en test (vous quatre seulement)</span>'
+      + '<div style="font-size:14px;margin:4px 0 6px;">' + ju.length + ' jugées · ' + ok + ' gagnées · gain à 1 € : <b style="color:' + (g >= 0 ? '#1ed760' : '#ff6b6b') + ';">' + (g >= 0 ? '+' : '') + g.toFixed(2).replace('.', ',') + ' €</b> · ' + (L.length - ju.length) + ' en attente</div></summary>';
     L.slice().sort(function (a, b) { return b.t - a.t; }).slice(0, 12).forEach(function (x) {
       var d = ''; try { d = new Date(x.t).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }); } catch (er) {}
       h += '<div style="display:flex;justify-content:space-between;gap:8px;font-size:14px;padding:4px 0;border-top:1px solid rgba(255,255,255,.08);"><span>' + d + ' · ' + e(x.h) + ' – ' + e(x.a) + ' · <b>' + e(x.m) + '</b>'
@@ -82807,7 +82816,7 @@ window._g45AgJouUs = async function (nowTs) {
         + (x.sg != null ? ' <span style="color:#c9d3ee;font-size:12px;">(gros club : ' + Math.round(x.sg * 100) + ' %)</span>' : '') + '</span>'
         + '<span style="white-space:nowrap;">' + (x.c > 1 ? '@' + String(x.c).replace('.', ',') + ' ' : '') + (x.r === 1 ? '✅' : (x.r === 0 ? '❌' : '⏳')) + '</span></div>';
     });
-    return h + '<div style="font-size:12px;color:#c9d3ee;margin-top:4px;">Buts gardés en officiel (20261023q) seulement si la stat du GROS club (coefficient UEFA) est ≥ 70 % et la cote ≥ 1,55 (− de 3,5) · 1,60 (+ de 2,5) · 1,80 (les 2 marquent).</div></div>';
+    return h + '<div style="font-size:12px;color:#c9d3ee;margin-top:4px;">Buts gardés en officiel (20261023q) seulement si la stat du GROS club (coefficient UEFA) est ≥ 70 % et la cote ≥ 1,55 (− de 3,5) · 1,60 (+ de 2,5) · 1,80 (les 2 marquent).</div></details>';
   };
   window._G45_TN_PER = ['Terre · Europe', 'Terre · Amérique du Sud', 'Terre · autres régions', 'Gazon', 'Dur · janvier-février (Australie, Golfe)', 'Dur · printemps américain', 'Dur · été américain', 'Dur · automne (salle & Asie)', 'Dur · autres'];
   window._g45TnPer = function (sf, t, ct) {
