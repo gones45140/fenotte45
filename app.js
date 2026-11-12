@@ -76737,7 +76737,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       if (cap > 0 && mises[0] > cap + tot + 1e-9) { ruine = { s: x.s, n: det.length }; return; }   /* 20261104c : plus de quoi miser P1 */
       var m = mises[i], d = { p: i + 1, m: m, c: x.c > 1 ? x.c : cote, g: 0, b: 0 };
       if (m > max) max = m;
-      if (x.ok) { var g = m * ((x.c > 1 ? x.c : cote) - 1); P.ok++; P.bo += g; tot += g; i = meth === 'fib' ? Math.max(0, i - 2) : meth === 'dal' ? Math.max(0, i - 1) : 0; if (!i) eng = 0; d.g = g; }   /* 20261103i : vraie cote du match si connue ; 20261106f : Fibonacci −2 cases, D'Alembert −1 */
+      if (x.ok) { var g = m * ((x.c > 1 ? x.c : cote) - 1); P.ok++; P.bo += g; tot += g; i = meth === 'fib' ? Math.max(0, i - 2) : meth === 'dal' ? Math.max(0, i - 1) : 0; if (!i && eng > 0) d.ser = g - eng; if (!i) eng = 0; d.g = g; }   /* 20261112e : d.ser = bénéfice de la série (gain − mises perdues depuis P1) */   /* 20261103i : vraie cote du match si connue ; 20261106f : Fibonacci −2 cases, D'Alembert −1 */
       else { P.bo -= m; tot -= m; eng += m; d.g = -m;
         if (meth === 'fix') i = 0; else if (meth === 'fib' || meth === 'dal') i = Math.min(i + 1, mises.length - 1);   /* 20261106f : pas de « bout » : la mise plafonne au dernier cran */
         else { i++; if (i >= mises.length) { P.e++; bo++; i = 0; eng = 0; d.b = 1; } } }
@@ -76875,7 +76875,9 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
         + '<div style="position:relative;background:rgba(5,10,25,.55);padding:7px ' + (lo ? '64px' : '9px') + ' 7px 9px;line-height:1.45;">'
         + '<div style="font-size:14px;"><b>' + dte + '</b> ' + (m[1] ? '🏠' : '✈️') + ' ' + (a ? esc(a[0]) : (A && A._ === 1 ? '…' : '—')) + ' · ' + ic + ' <b>' + m[2] + '-' + m[3] + '</b>' + (st ? ' · ' + st : '') + '</div>'
         + '<div style="font-size:14px;">P' + d.p + ' · mise ' + d.m.toLocaleString('fr-FR') + ' € · cote ' + d.c.toFixed(2).replace('.', ',') + (o.x.c > 1 ? ' ✅' : '')
-        + ' → <b style="color:' + cl(d.g) + ';">' + (d.g > 0 ? '+' : d.g < 0 ? '−' : '') + Math.abs(d.g).toFixed(2).replace('.', ',') + ' €</b>' + (d.b === 2 ? ' <span style="color:#ff5a5a;font-weight:800;">💥 bankroll trop petite pour le palier suivant</span>' : d.b ? ' <span style="color:#ff5a5a;font-weight:800;">tout perdu</span>' : '') + '</div></div></div>';
+        + ' → <b style="color:' + cl(d.g) + ';">' + (d.g > 0 ? '+' : d.g < 0 ? '−' : '') + Math.abs(d.g).toFixed(2).replace('.', ',') + ' €</b>'
+          /* 20261112e (Antoine : « ce qu'il manque c'est bénéfice : gain du match − les mises depuis P1 ») */
+          + (d.ser != null ? '<br>🏁 Bénéfice de la série : <b style="color:' + cl(d.ser) + ';">' + (d.ser > 0 ? '+' : d.ser < 0 ? '−' : '') + Math.abs(d.ser).toFixed(2).replace('.', ',') + ' €</b>' : '') + (d.b === 2 ? ' <span style="color:#ff5a5a;font-weight:800;">💥 bankroll trop petite pour le palier suivant</span>' : d.b ? ' <span style="color:#ff5a5a;font-weight:800;">tout perdu</span>' : '') + '</div></div></div>';
     });
     return h + '</div><div style="margin-top:4px;">Bilan de la saison : <b style="color:' + cl(bil) + ';">' + eu(bil) + '</b> · plus grosse mise ' + mx.toLocaleString('fr-FR') + ' €</div>';
   }
