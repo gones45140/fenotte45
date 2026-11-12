@@ -77224,6 +77224,8 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       + '<div style="display:flex;justify-content:space-between;align-items:center;"><b style="font-size:17px;">🔍 Trouver la meilleure stratégie</b><span onclick="g45CrBest(\'off\')" style="cursor:pointer;font-size:18px;padding:2px 8px;">✕</span></div>'
       + '<div style="font-size:13px;color:#c9d3ee;">' + esc(S.nom) + (joueurs(S.combos[S.a] || {}).length ? ' · ' + esc(joueurs(S.combos[S.a]).map(function (x) { return x.n; }).join(', ')) : '') + ' · ' + nsCr(D) + ' saisons · l\'appli teste les paris et classe les meilleurs</div>'
       + '<div style="font-size:14px;font-weight:800;margin-top:8px;">Lieu</div>' + [['tout', '🌍 Tous'], ['dom', '🏠 Domicile'], ['ext', '✈️ Extérieur']].map(function (x) { return bt(B.lieu === x[0], x[1], 'g45CrBest(\'lieu\',\'' + x[0] + '\')'); }).join('')
+      /* 20261112h (Antoine : « pouvoir choisir sur 2 / 3 / 4 / 5 ans ») : même choix que le 📅 des critères (g45cr_ns, nsCr) */
+      + ((D && (D.saisons || []).length > 2) ? '<div style="font-size:14px;font-weight:800;margin-top:4px;">📅 Saisons</div>' + (function () { var o = '', nM = D.saisons.length, nC = nsCr(D); for (var q = 2; q <= nM; q++) o += bt(nC === q, q + ' saisons', 'g45CrBest(\'ns\',' + q + ')'); return o; })() : '')
       + '<div style="font-size:14px;font-weight:800;margin-top:4px;">Cote mini (cote juste)</div>' + [1.5, 1.7, 1.8, 2].map(function (v) { return bt(B.cm === v, String(v.toFixed(2)).replace('.', ','), 'g45CrBest(\'cm\',' + v + ')'); }).join('')
       + '<div style="font-size:14px;font-weight:800;margin-top:4px;">Trier par</div>' + bt(B.tri === 'pire', '🪜 Pire série', 'g45CrBest(\'tri\',\'pire\')') + bt(B.tri === 'p', '📊 Réussite', 'g45CrBest(\'tri\',\'p\')')
       + '<div onclick="g45CrBest(\'go\')" style="cursor:pointer;margin-top:8px;text-align:center;padding:11px;border-radius:12px;font-size:16px;font-weight:900;background:#2f6bff;">🔍 Chercher (' + bestCands(S.combos[S.a] || combo0()).length + ' paris testés)</div>';
@@ -77247,6 +77249,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     else if (k === 'off') { B.on = 0; B.R = null; }
     else if (k === 'lieu') { B.lieu = v; B.R = null; }
     else if (k === 'cm') { B.cm = +v; B.R = null; }
+    else if (k === 'ns') { try { localStorage.setItem('g45cr_ns', String(v)); } catch (e) {} if (B.R) B.R = D ? bestCalc(D) : null; }   /* 20261112h */
     else if (k === 'tri') { B.tri = v; if (B.R) B.R = D ? bestCalc(D) : null; }
     else if (k === 'go') { B.R = D && D.saisons ? bestCalc(D) : []; }
     else if (k === 'use') { var x = B.R && B.R[+v]; if (x) { S.combos[S.a] = norm(Object.assign({}, x.c)); S.lieu = B.lieu; B.on = 0; B.R = null; } }
