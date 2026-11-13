@@ -75937,7 +75937,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
    ════════════════════════════════════════════════════════════════════════════ */
 (function () {
   var CAL = ['bra.1','usa.1','arg.1','nor.1','swe.1','fin.1','irl.1','rus.1','jpn.1','kor.1',
-    'fifa.friendly','uefa.nations','fifa.worldq.uefa','fifa.world','uefa.euro'];   /* 20261113h : sélections = années civiles (archives « 2026 ») */
+    'fifa.friendly','uefa.nations','fifa.worldq.uefa','fifa.world','uefa.euro', 'uefa.euroq', 'conmebol.america', 'caf.nations', 'caf.nations_qual', 'fifa.worldq.conmebol', 'fifa.worldq.caf', 'fifa.worldq.afc', 'fifa.worldq.concacaf', 'fifa.worldq.ofc', 'concacaf.gold', 'concacaf.nations.league', 'afc.asian.cup'];   /* 20261113j : + 12 compétitions de sélections ; 20261113h : sélections = années civiles (archives « 2026 ») */
   var S = window._g45Cr = window._g45Cr || { nom: '', lieu: 'tout', combos: [], a: 0, data: {}, enCours: {} };
   /* ═══ 20261103k — 🏉 CRITÈRES RUGBY SUR LES ARCHIVES (Antoine, 03/11 : « critères rugby, maquette » → maquette-criteres-rugby « oui A, garde les
      points buteur, 20 matchs mini, B ok, C les 2 ») : feuilles de match de gones45-archives (cotes/rugby/<lg>/<saison>/matchs/AAAA-MM.json,
@@ -76910,8 +76910,12 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
      « on pourra savoir à quoi correspond chaque match ? » → étiquette par match + filtre Tout / Officiels / Amicaux → « OUI on part là-dessus »).
      Une sélection joue ≈ 10 matchs par an sur PLUSIEURS compétitions → une « saison » = une année civile, TOUTES les compétitions archivées
      mélangées par date (lignes au format des matchs d'Europe : [date, dom, pour, contre, 0, 1, idMatch, compétition], cotes en m[12]). ═══ */
-  var SELL = ['fifa.friendly', 'uefa.nations', 'fifa.worldq.uefa', 'fifa.world', 'uefa.euro'];
-  var SELN = { 'fifa.friendly': '🤝 Amical', 'uefa.nations': '🏆 Ligue des nations', 'fifa.worldq.uefa': '🌍 Qualifs CDM', 'fifa.world': '🏆 Coupe du monde', 'uefa.euro': '🇪🇺 Euro' };
+  var SELL = ['fifa.friendly', 'uefa.nations', 'fifa.worldq.uefa', 'fifa.world', 'uefa.euro', 'uefa.euroq', 'conmebol.america', 'caf.nations', 'caf.nations_qual', 'fifa.worldq.conmebol', 'fifa.worldq.caf', 'fifa.worldq.afc', 'fifa.worldq.concacaf', 'fifa.worldq.ofc', 'concacaf.gold', 'concacaf.nations.league', 'afc.asian.cup'];
+  var SELN = { 'fifa.friendly': '🤝 Amical', 'uefa.nations': '🏆 Ligue des nations', 'fifa.worldq.uefa': '🌍 Qualifs CDM', 'fifa.world': '🏆 Coupe du monde', 'uefa.euro': '🇪🇺 Euro',
+    /* 20261113j (sondé le 13/11, robot sonde) : 12 compétitions de sélections en plus dans les archives */
+    'uefa.euroq': '🇪🇺 Qualifs Euro', 'conmebol.america': '🌎 Copa América', 'caf.nations': '🌍 CAN', 'caf.nations_qual': '🌍 Qualifs CAN', 'fifa.worldq.conmebol': '🌍 Qualifs CDM',
+    'fifa.worldq.caf': '🌍 Qualifs CDM', 'fifa.worldq.afc': '🌍 Qualifs CDM', 'fifa.worldq.concacaf': '🌍 Qualifs CDM', 'fifa.worldq.ofc': '🌍 Qualifs CDM', 'concacaf.gold': '🏆 Gold Cup',
+    'concacaf.nations.league': '🏆 Ligue des nations CONCACAF', 'afc.asian.cup': '🏆 Coupe d\'Asie' };
   window._g45SelN = SELN;
   function msDe(sa) {
     if (sa && sa.sel) return sa.ms;   /* 20261113h */
@@ -77066,7 +77070,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
      les joueurs d'une saison qu'une fois TOUTE la saison relue (etat.v2 = etat.n). Saison / ligue absente, réseau → ESPN comme avant. ═══ */
   var ARW = 'https://raw.githubusercontent.com/gones45140/gones45-archives/main/cotes/', AMEM = {};   /* chemins : foot/…, hockey/… */
   function aOk(lg) { return (window._G45_ARCH_LG || []).indexOf(lg) >= 0; }
-  function aSa(lg, an) { return CAL.indexOf(lg) >= 0 || ['fifa.friendly', 'uefa.nations', 'fifa.worldq.uefa', 'fifa.world', 'uefa.euro'].indexOf(lg) >= 0 ? String(an) : an + '-' + String(an + 1).slice(2); }
+  function aSa(lg, an) { return CAL.indexOf(lg) >= 0 || ['fifa.friendly', 'uefa.nations', 'fifa.worldq.uefa', 'fifa.world', 'uefa.euro', 'uefa.euroq', 'conmebol.america', 'caf.nations', 'caf.nations_qual', 'fifa.worldq.conmebol', 'fifa.worldq.caf', 'fifa.worldq.afc', 'fifa.worldq.concacaf', 'fifa.worldq.ofc', 'concacaf.gold', 'concacaf.nations.league', 'afc.asian.cup'].indexOf(lg) >= 0 ? String(an) : an + '-' + String(an + 1).slice(2); }
   function aLire(ch) {   /* JSON, 0 = absent (404), null = lecture ratée */
     var k = ch + '|' + Math.floor(Date.now() / 600000);   /* 10 min : la saison en cours bouge (robot toutes les 2 h) */
     if (!AMEM[k]) AMEM[k] = fetch(ARW + ch + '?t=' + k.split('|')[1]).then(function (r) { return r.ok ? r.json() : (r.status === 404 ? 0 : null); }).catch(function () { return null; })
@@ -77504,7 +77508,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     if (!S.ctx && D && D.sel) {   /* 20261113h : sélection → Tout / Officiels / Amicaux */
       var sq = S.selc || 'T';
       h += lab('Compétition') + b(sq === 'T', 'Tout', "g45CrSet('selc','T')") + b(sq === 'O', '🏆 Officiels', "g45CrSet('selc','O')") + b(sq === 'A', '🤝 Amicaux seuls', "g45CrSet('selc','A')")
-        + '<div style="font-size:13px;color:#c9d3ee;">Officiels = Coupe du monde, Euro, qualifs, Ligue des nations. Une « saison » = une année.</div>';
+        + '<div style="font-size:13px;color:#c9d3ee;">Officiels = Coupe du monde, Euro, Copa América, CAN, Coupe d\'Asie, Gold Cup, qualifs, Ligues des nations. Une « saison » = une année.</div>';
     } else if (!S.ctx) {   /* 20261021e : coupes d'Europe */
       var cp = S.comp || 'L';
       h += lab('Compétition') + b(cp === 'L', '🏆 Championnat', "g45CrSet('comp','L')") + b(cp === 'E', '🌍 Coupe d\'Europe', "g45CrSet('comp','E')") + b(cp === 'T', 'Les deux', "g45CrSet('comp','T')");
@@ -86110,7 +86114,8 @@ window._g45MqPalHtml = function (pire, pd) {
    Cotes affichées selon le sélecteur DraftKings / estimée France (_g45DkMode). */
 window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'uefa.champions', 'uefa.europa', 'uefa.europa.conf', 'nhl', 'nba', 'nfl',
   /* 20261031d : + ligues ESPN du mur (saisons CIVILES « 2026 » pour MLB, Brésil, Argentine, sélections) */
-  'mlb', 'ned.1', 'por.1', 'fra.2', 'bra.1', 'arg.1', 'fifa.friendly', 'uefa.nations', 'fifa.worldq.uefa', 'fifa.world', 'uefa.euro'];
+  'mlb', 'ned.1', 'por.1', 'fra.2', 'bra.1', 'arg.1', 'fifa.friendly', 'uefa.nations', 'fifa.worldq.uefa', 'fifa.world', 'uefa.euro',
+  'uefa.euroq', 'conmebol.america', 'caf.nations', 'caf.nations_qual', 'fifa.worldq.conmebol', 'fifa.worldq.caf', 'fifa.worldq.afc', 'fifa.worldq.concacaf', 'fifa.worldq.ofc', 'concacaf.gold', 'concacaf.nations.league', 'afc.asian.cup'];   /* 20261113j */
 (function () {
   var MEM = {}, ST = window._g45ArchS = window._g45ArchS || { eq: {}, mois: {}, ouv: {} };
   var esc = function (t) { return String(t == null ? '' : t).replace(/[<>&"]/g, ''); };
