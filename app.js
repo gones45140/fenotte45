@@ -75936,7 +75936,8 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
    - Sélections nationales (pas de championnat) : bloc absent.
    ════════════════════════════════════════════════════════════════════════════ */
 (function () {
-  var CAL = ['bra.1','usa.1','arg.1','nor.1','swe.1','fin.1','irl.1','rus.1','jpn.1','kor.1'];
+  var CAL = ['bra.1','usa.1','arg.1','nor.1','swe.1','fin.1','irl.1','rus.1','jpn.1','kor.1',
+    'fifa.friendly','uefa.nations','fifa.worldq.uefa','fifa.world','uefa.euro'];   /* 20261113h : sélections = années civiles (archives « 2026 ») */
   var S = window._g45Cr = window._g45Cr || { nom: '', lieu: 'tout', combos: [], a: 0, data: {}, enCours: {} };
   /* ═══ 20261103k — 🏉 CRITÈRES RUGBY SUR LES ARCHIVES (Antoine, 03/11 : « critères rugby, maquette » → maquette-criteres-rugby « oui A, garde les
      points buteur, 20 matchs mini, B ok, C les 2 ») : feuilles de match de gones45-archives (cotes/rugby/<lg>/<saison>/matchs/AAAA-MM.json,
@@ -76389,6 +76390,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       var ids = {};
       for (var i = 0; i < D.saisons.length; i++) {
         var sa = D.saisons[i]; if (!sa) continue;
+        if (D.sel) { (sa.ms || []).forEach(function (m) { if (m[6]) ids[m[0]] = m[6]; }); for (var si = 0; si < SELL.length; si++) { try { await aFeuilles(SELL[si], D.tid, sa.an); } catch (e) {} } continue; }   /* 20261113h */
         var cle = 'g45crid1_' + D.lg + '_' + D.tid + '_' + sa.an, L = null;
         if (i > 0) { try { L = JSON.parse(localStorage.getItem(cle) || 'null'); } catch (e) {} }
         if (!L) {   /* 20261031k : identifiants + feuilles d'équipe des archives d'abord */
@@ -76404,6 +76406,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
         L.forEach(function (x) { ids[x[0]] = x[1]; });
       }
       var slug = {};
+      if (D.sel) D.saisons.forEach(function (sa) { ((sa && sa.ms) || []).forEach(function (m) { if (m[6]) slug[m[6]] = m[7]; }); });   /* 20261113h */
       if (S.comp && S.comp !== 'L') D.saisons.forEach(function (sa) { ((sa && sa.eu) || []).forEach(function (m) { if (m[6]) { ids[m[0]] = m[6]; slug[m[6]] = m[7]; } }); });
       if (S.comp && S.comp !== 'L') { for (var ie = 0; ie < D.saisons.length; ie++) { var se = D.saisons[ie]; if (!se) continue; for (var ke = 0; ke < EU.length; ke++) { try { await aFeuilles(EU[ke], D.tid, se.an); } catch (e) {} } } }   /* 20261031k */
       S.fid[nom] = ids;
@@ -76873,7 +76876,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       h += '<div style="position:relative;overflow:hidden;border-radius:10px;margin:6px 0;background:#0b1226;border:1px solid #1c2747;">'
         + (lo ? '<img src="' + lo + '" alt="" onerror="this.remove()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);height:44px;width:44px;object-fit:contain;z-index:2;pointer-events:none;filter:drop-shadow(0 1px 3px rgba(0,0,0,.6));">' : '')   /* 20261103p (capture : « fais-le ressortir comme le screen 2 », logos nets à droite des paris) : logo net, devant */
         + '<div style="position:relative;background:rgba(5,10,25,.55);padding:7px ' + (lo ? '64px' : '9px') + ' 7px 9px;line-height:1.45;">'
-        + '<div style="font-size:14px;"><b>' + dte + '</b> ' + (m[1] ? '🏠' : '✈️') + ' ' + (a ? esc(a[0]) : (A && A._ === 1 ? '…' : '—')) + ' · ' + ic + ' <b>' + m[2] + '-' + m[3] + '</b>' + (st ? ' · ' + st : '') + '</div>'
+        + '<div style="font-size:14px;"><b>' + dte + '</b> ' + (m[1] ? '🏠' : '✈️') + ' ' + (a ? esc(a[0]) : (A && A._ === 1 ? '…' : '—')) + (SELN[m[7]] ? ' · <span style="color:#ffd34d;font-weight:700;">' + SELN[m[7]] + '</span>' : '') + ' · ' + ic + ' <b>' + m[2] + '-' + m[3] + '</b>' + (st ? ' · ' + st : '') + '</div>'
         + '<div style="font-size:14px;">P' + d.p + ' · mise ' + d.m.toLocaleString('fr-FR') + ' € · cote ' + d.c.toFixed(2).replace('.', ',') + (o.x.c > 1 ? ' ✅' : '')
         + ' → <b style="color:' + cl(d.g) + ';">' + (d.g > 0 ? '+' : d.g < 0 ? '−' : '') + Math.abs(d.g).toFixed(2).replace('.', ',') + ' €</b>'
           /* 20261112e (Antoine : « ce qu'il manque c'est bénéfice : gain du match − les mises depuis P1 ») */
@@ -76889,7 +76892,15 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
      [date, dom, pour, contre, 0, 1, id ESPN, compétition], saison passée gardée pour toujours (g45cr1e_<lg>_<club>_<an>). Buts des joueurs :
      journal du CHAMPIONNAT seulement → un match d'Europe n'a pas de joueur → non compté pour un critère joueur. ── */
   var EU = ['uefa.champions', 'uefa.europa', 'uefa.europa.conf'];
+  /* ═══ 20261113h — 🌍 SÉLECTIONS NATIONALES (Antoine : « pour les sélections nationales on a quoi ? » → archives oui, critères non ;
+     « on pourra savoir à quoi correspond chaque match ? » → étiquette par match + filtre Tout / Officiels / Amicaux → « OUI on part là-dessus »).
+     Une sélection joue ≈ 10 matchs par an sur PLUSIEURS compétitions → une « saison » = une année civile, TOUTES les compétitions archivées
+     mélangées par date (lignes au format des matchs d'Europe : [date, dom, pour, contre, 0, 1, idMatch, compétition], cotes en m[12]). ═══ */
+  var SELL = ['fifa.friendly', 'uefa.nations', 'fifa.worldq.uefa', 'fifa.world', 'uefa.euro'];
+  var SELN = { 'fifa.friendly': '🤝 Amical', 'uefa.nations': '🏆 Ligue des nations', 'fifa.worldq.uefa': '🌍 Qualifs CDM', 'fifa.world': '🏆 Coupe du monde', 'uefa.euro': '🇪🇺 Euro' };
+  window._g45SelN = SELN;
   function msDe(sa) {
+    if (sa && sa.sel) return sa.ms;   /* 20261113h */
     if (S.ctx || !S.comp || S.comp === 'L') return sa.ms;
     if (S.comp === 'E') return sa.eu || null;
     if (!sa.ms && !sa.eu) return null;
@@ -76933,6 +76944,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       if (rq === 'L' && (m[5] || m[7])) return false;
       if (rq === 'LP' && m[5]) return false;
       if (rq === 'E' && !m[5]) return false;
+      if (SELN[m[7]] && (S.selc || 'T') !== 'T' && ((S.selc === 'A') !== (m[7] === 'fifa.friendly'))) return false;   /* 20261113h : O = officiels, A = amicaux */
       if (rc === 'CC' && m[5] !== 1) return false;
       if (rc === 'CH' && m[5] !== 2) return false;
       return S.lieu === 'tout' || (S.lieu === 'dom' ? m[1] === 1 : m[1] === 0);
@@ -77122,6 +77134,8 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     if (S.enCours[nom]) return; S.enCours[nom] = 1;
     if (S.ctx) { try { await (rg() ? chargerRg(nom) : chargerHk(nom)); } catch (e) { S.data[nom] = { t: Date.now(), err: 'Lecture impossible (réseau).' }; } delete S.enCours[nom]; return; }
     try {
+      var sid = (S.selIds || {})[nom];   /* 20261113h : sélection choisie dans 🔎 Critères (identifiant ESPN de l'index) */
+      if (sid) { await chargerSel(nom, sid); return; }
       var r = await espnResolveTeam(nom);
       /* 20261027y (capture « Séries équipes » Ligue 1 : Aston Villa, Liverpool, Bayern… dans le classement) : pour le PSG, espnResolveTeam renvoyait
          la Ligue des champions → championnat imposé par la page (S.lgForce, onglet Compétitions → 🏁 Séries équipes). */
@@ -77135,6 +77149,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
           try { var ixd = await aLire('foot/' + DOM[di] + '/' + aSa(DOM[di], annees(DOM[di])[0]) + '/equipes.json'); if (ixd && ixd[String(r.id)]) { lg = DOM[di]; break; } } catch (e) {}
         }
       }
+      if (r && r.id && /fifa|uefa\.(nations|euro)|friendly/.test(lg || '')) { await chargerSel(nom, String(r.id)); return; }   /* 20261113h */
       if (!r || !r.id || !lg || /fifa|uefa\.(nations|euro)|friendly/.test(lg)) { S.data[nom] = { t: Date.now(), err: 'Pas de championnat trouvé pour cette équipe.' }; return; }
       var ans = annees(lg), out = { t: Date.now(), lg: lg, ligue: '', saisons: [], tid: String(r.id) };
       await Promise.all(ans.map(async function (an, i) {
@@ -77160,6 +77175,25 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       S.data[nom] = out;
     } catch (e) { S.data[nom] = { t: Date.now(), err: 'Lecture impossible (réseau).' }; }
     finally { delete S.enCours[nom]; }
+  }
+
+  async function chargerSel(nom, id) {   /* 20261113h : 5 années civiles, toutes les compétitions archivées de la sélection */
+    var ans = annees('fifa.world'), out = { t: Date.now(), lg: 'fifa.world', ligue: 'Sélection · toutes compétitions', saisons: [], tid: String(id), sel: 1, arch: 0 };
+    await Promise.all(ans.map(async function (an, i) {
+      var cle = 'g45cr1s_' + id + '_' + an, ms = null;
+      if (i > 0) { try { ms = JSON.parse(localStorage.getItem(cle) || 'null'); } catch (e) {} }
+      if (!ms) {
+        var ok = false; ms = [];
+        for (var k = 0; k < SELL.length; k++) {
+          var A = null; try { A = await aEquipe(SELL[k], id, an); } catch (e) {}
+          if (A) { ok = true; A.forEach(function (m) { var r = [m.d, m.dom, m.p, m.c, 0, 1, m.id, SELL[k]]; if (m.co) r[12] = m.co; ms.push(r); }); }
+        }
+        ms.sort(function (a, b) { return a[0] < b[0] ? -1 : 1; });
+        if (!ok) ms = null; else { out.arch++; if (i > 0 && ms.length) { try { localStorage.setItem(cle, JSON.stringify(ms)); } catch (e) {} } }
+      }
+      out.saisons[i] = { an: an, ms: ms, sel: 1 };
+    }));
+    S.data[nom] = out;
   }
 
   var BT = 'border-radius:16px;padding:7px 12px;font-size:14px;cursor:pointer;color:#fff;margin:0 6px 6px 0;';
@@ -77453,7 +77487,12 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       h += lab('Compétition') + b(rq0 === 'L', '🏉 Championnat', "g45CrSet('rgc','L')") + b(rq0 === 'LP', '🏉 + 🏅 Phases finales', "g45CrSet('rgc','LP')")
         + (cupB ? b(rq0 === 'E', '🏆 Coupe d\'Europe', "g45CrSet('rgc','E')") : '') + b(rq0 === 'T', 'Tout', "g45CrSet('rgc','T')");
     }
-    if (!S.ctx) {   /* 20261021e : coupes d'Europe */
+    if (!S.ctx && D && D.sel) {   /* 20261113h : sélection → Tout / Officiels / Amicaux */
+      var sq = S.selc || 'T';
+      h += lab('Compétition') + b(sq === 'T', 'Tout', "g45CrSet('selc','T')") + b(sq === 'O', '🏆 Officiels', "g45CrSet('selc','O')") + b(sq === 'A', '🤝 Amicaux seuls', "g45CrSet('selc','A')")
+        + '<div style="font-size:13px;color:#c9d3ee;">Officiels = Coupe du monde, Euro, qualifs, Ligue des nations. Une « saison » = une année.</div>';
+      if (joueurs(S.combos[S.a] || {}).length) h += '<div style="font-size:13px;color:#ff9f43;">⚠️ Joueurs : pas encore lus pour les sélections.</div>';
+    } else if (!S.ctx) {   /* 20261021e : coupes d'Europe */
       var cp = S.comp || 'L';
       h += lab('Compétition') + b(cp === 'L', '🏆 Championnat', "g45CrSet('comp','L')") + b(cp === 'E', '🌍 Coupe d\'Europe', "g45CrSet('comp','E')") + b(cp === 'T', 'Les deux', "g45CrSet('comp','T')");
       if (cp !== 'L' && D && D.saisons) { euCharger(nom, D); if (D.euEtat !== 2) h += '<div style="font-size:14px;color:#f5c542;margin:4px 0;">⏳ Matchs de coupe d\'Europe…</div>'; }
@@ -78062,6 +78101,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     z.parentNode.replaceChild(t.firstChild, z);
   }
   window._g45CrHtml = function (nom, ctx, lgF) {   /* 20261027y : lgF = championnat imposé (Séries équipes) ; absent = comme avant */
+    if (lgF === 'sel' || /^(fifa\.|uefa\.(nations|euro))/.test(lgF || '')) lgF = 'fifa.world';   /* 20261113h : sélection → toujours 'fifa.world' (sinon effacée à chaque appel) */
     S.lgForce = lgF || null;
     if (S.lgForce && S.data[nom] && S.data[nom].lg && S.data[nom].lg !== S.lgForce) delete S.data[nom];
     return html(nom, ctx);
@@ -78080,6 +78120,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   window.g45CrSet = function (k, v) {
     if (k === 'lieu') S.lieu = v;
     else if (k === 'comp') S.comp = v;   /* 20261021e */
+    else if (k === 'selc') S.selc = v;   /* 20261113h */
     else if (k === 'rgc') S.rgc = v;   /* 20261103n */
     else {
       var c = S.combos[S.a];
@@ -87343,8 +87384,11 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
       .catch(function () { LOI.ixEnCours = false; if (TAB === 'loi' && LOI.v === 'cr') loiCrListe(); });
   }
   /* carte du mur → ligne de l'index (même nom, ou nom court contenu : « PSG » / « Paris Saint-Germain » reste à part, on garde le nom de la carte) */
+  /* 20261113h : sélection (lg 'sel', nom anglais d'ESPN) → nom français de G45_NATIONS par l'identifiant (« Germany » → « Allemagne ») */
+  function loiNomFr(x) { if (!x || x[1] !== 'sel' || typeof G45_NATIONS === 'undefined') return (x && x[4]) || ''; var n = G45_NATIONS.filter(function (y) { return String(y.id) === String(x[3]); })[0]; return (n && n.fr) || x[4]; }
   function loiIxDe(nom) {
     var n = loiNz(nom); if (!n || !LOI.ix) return null;
+    var sf = LOI.ix.filter(function (x) { return x[1] === 'sel' && loiNz(loiNomFr(x)) === n; })[0]; if (sf) return sf;   /* 20261113h */
     return LOI.ix.filter(function (x) { return loiNz(x[4]) === n; })[0] || LOI.ix.filter(function (x) { return typeof _g45BandMeme === 'function' && _g45BandMeme(nom, x[4]); })[0] || null;
   }
   function loiCrHtml() {
@@ -87371,7 +87415,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
       return;
     }
     if (!LOI.ix) { z.innerHTML = '<div style="font-size:14px;">' + (LOI.ixEnCours ? '⏳ Lecture de la liste des équipes…' : '⚠️ Liste des équipes indisponible pour l\'instant.') + '</div>'; return; }
-    LOI.ix.forEach(function (x) { var n = loiNz(x[4]); if (n.indexOf(q) >= 0) R.push({ nom: x[4], x: x, d: n.indexOf(q) === 0 ? 0 : 1 }); });
+    LOI.ix.forEach(function (x) { var fr = loiNomFr(x), n = loiNz(x[4]), nf = loiNz(fr), i1 = n.indexOf(q), i2 = nf.indexOf(q); if (i1 >= 0 || i2 >= 0) R.push({ nom: fr, x: x, d: (i1 === 0 || i2 === 0) ? 0 : 1 }); });   /* 20261113h : + nom français des sélections */
     R.sort(function (a, b) { return a.d - b.d; }); R = R.slice(0, 15); LOI.res = R;
     z.innerHTML = R.length ? R.map(function (r, i) { var x = r.x; return loiCrBtn(r.nom, x[0], x[1], x[2], x[3], x[5], i); }).join('') : '<div style="font-size:14px;">Aucune équipe trouvée.</div>';
   }
@@ -87384,6 +87428,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   function loiCrPoser(nom, x) {
     /* foot : critères retrouvés par le NOM (espnResolveTeam) dans le championnat imposé ; autres sports : par l'identifiant ESPN */
     if (x && x[0] !== 'soccer') LOI.cr = { nom: nom, ctx: { sp: x[0], lg: x[1], id: String(x[3]) }, lgF: null };
+    else if (x && x[1] === 'sel') { var S1 = window._g45CrS; if (S1) { S1.selIds = S1.selIds || {}; S1.selIds[loiNomFr(x)] = String(x[3]); } LOI.cr = { nom: loiNomFr(x), ctx: null, lgF: 'fifa.world' }; }   /* 20261113h : sélection (index lg 'sel') */
     else LOI.cr = { nom: (x && x[4]) || nom, ctx: null, lgF: (x && x[1]) || null };
   }
   window.g45LoiCrQ = function (v) { LOI.q = String(v || '').slice(0, 40); loiCrListe(); };
@@ -88159,6 +88204,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     z.classList.toggle('ouv', !!M.det);   /* 20261108j */
     var x = x2(M.on ? M.a : M.h); if (!x) return;
     var S0 = window._g45CrS, nom = x[4], ctx = x[0] === 'soccer' ? null : { sp: x[0], lg: x[1], id: String(x[3]) }, lgF = x[0] === 'soccer' ? x[1] : null;
+    if (S0 && x[1] === 'sel') { S0.selIds = S0.selIds || {}; S0.selIds[nom] = String(x[3]); }   /* 20261113h : sélection → par l'identifiant */
     var sv = S0 && S0.combos ? JSON.parse(JSON.stringify(S0.combos)) : null, sa = S0 ? S0.a : 0;
     try {
       window._g45CrHtml(nom, ctx, lgF);   /* 1er appel : change d'équipe (le module remet un combiné neuf) */
