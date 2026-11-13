@@ -75950,12 +75950,12 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
      🏁 Jouable en Cockpit ? : équipes ET joueurs (20 matchs mini) lus d'un coup dans les archives de la ligue.
      Rôles PROPRES aux critères (_g45JouCfg local) : la table partagée _G45_JOU_TABLE (Analyser les joueurs de Saisons) n'est pas touchée.
      Index joueurs du rugby : clé _g45JouCle + '_r2' (l'ancien index ESPN n'avait ni points ni titulaires). ═══ */
-  var RG_ARCH = { rugby: ['270559', '271937', '180659', '17567', '289234', '164205'], 'rugby-league': ['3'] };   /* 20261113k : + Nations Championship, tests, Coupe du monde */
+  var RG_ARCH = { rugby: ['270559', '271937', '180659', '17567', '289234', '164205', '244293'], 'rugby-league': ['3'] };   /* 20261113k : + Nations Championship, tests, Coupe du monde */
   /* ═══ 20261113k — 🏉 SÉLECTIONS DE RUGBY (Antoine : « rugby, l'équipe de France, Nations Championship ? » → sondes du 13/11 : 17567 Nations
      Championship, 289234 tests internationaux, 164205 Coupe du monde, 180659 Six Nations → « fais la partie appli rugby aussi »). Comme le foot :
      ctx.lg = 'rsel' (index loi/equipes.json), « saison » = année civile (dossier AAAA de chaque compétition), toutes les compétitions mélangées
      par date, m[7] = compétition (étiquette SELN, filtre Tout / Officiels / 🤝 Tests). ═══ */
-  var RSEL = ['180659', '17567', '164205', '289234'];
+  var RSEL = ['180659', '17567', '164205', '289234', '244293'];   /* 20261113l : + Rugby Championship */
   var RG_CFG = { parStat: true, roles: [
     { k: 't', lab: 'Marque un essai', col: '#1ed760', ico: '\uD83C\uDFC9', stats: ['tries'] },
     { k: 'pts', lab: 'Points (buteur)', col: '#f5c542', ico: '\uD83C\uDFAF', stats: ['points'], seuils: _g45BkLignes(0, 30), def: '9.5' }
@@ -76925,7 +76925,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     'uefa.euroq': '🇪🇺 Qualifs Euro', 'conmebol.america': '🌎 Copa América', 'caf.nations': '🌍 CAN', 'caf.nations_qual': '🌍 Qualifs CAN', 'fifa.worldq.conmebol': '🌍 Qualifs CDM',
     'fifa.worldq.caf': '🌍 Qualifs CDM', 'fifa.worldq.afc': '🌍 Qualifs CDM', 'fifa.worldq.concacaf': '🌍 Qualifs CDM', 'fifa.worldq.ofc': '🌍 Qualifs CDM', 'concacaf.gold': '🏆 Gold Cup',
     'concacaf.nations.league': '🏆 Ligue des nations CONCACAF', 'afc.asian.cup': '🏆 Coupe d\'Asie',
-    /* 20261113k : rugby */ '180659': '🏉 Six Nations', '17567': '🏆 Nations Championship', '164205': '🏆 Coupe du monde', '289234': '🤝 Test-match' };
+    /* 20261113k : rugby */ '180659': '🏉 Six Nations', '17567': '🏆 Nations Championship', '164205': '🏆 Coupe du monde', '289234': '🤝 Test-match', '244293': '🏆 Rugby Championship' };
   var SELA = { 'fifa.friendly': 1, '289234': 1 };   /* 20261113k : « amicaux » (foot) / tests (rugby) */
   window._g45SelN = SELN;
   function msDe(sa) {
@@ -77532,7 +77532,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     if (D && D.sel) {   /* 20261113h : sélection → Tout / Officiels / Amicaux ; 20261113k : + rugby (Tests) */
       var sq = S.selc || 'T', rgS = rg();
       h += lab('Compétition') + b(sq === 'T', 'Tout', "g45CrSet('selc','T')") + b(sq === 'O', '🏆 Officiels', "g45CrSet('selc','O')") + b(sq === 'A', rgS ? '🤝 Tests seuls' : '🤝 Amicaux seuls', "g45CrSet('selc','A')")
-        + '<div style="font-size:13px;color:#c9d3ee;">' + (rgS ? 'Officiels = Six Nations, Coupe du monde, Nations Championship.' : 'Officiels = Coupe du monde, Euro, Copa América, CAN, Coupe d\'Asie, Gold Cup, qualifs, Ligues des nations.') + ' Une « saison » = une année.</div>';
+        + '<div style="font-size:13px;color:#c9d3ee;">' + (rgS ? 'Officiels = Six Nations, Rugby Championship, Coupe du monde, Nations Championship.' : 'Officiels = Coupe du monde, Euro, Copa América, CAN, Coupe d\'Asie, Gold Cup, qualifs, Ligues des nations.') + ' Une « saison » = une année.</div>';
     } else if (!S.ctx) {   /* 20261021e : coupes d'Europe */
       var cp = S.comp || 'L';
       h += lab('Compétition') + b(cp === 'L', '🏆 Championnat', "g45CrSet('comp','L')") + b(cp === 'E', '🌍 Coupe d\'Europe', "g45CrSet('comp','E')") + b(cp === 'T', 'Les deux', "g45CrSet('comp','T')");
