@@ -88832,3 +88832,51 @@ window.g45SerNs = function (nom, n, el) {
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', poser); else setTimeout(poser, 0);
   setTimeout(poser, 1500);
 })();
+
+/* ═══ 20261114a — 🪜 PALIER RÉGLABLE À LA MAIN dans « ✏️ Modifier » d'une carte (Antoine, capture Pastrnak 🏠 P1 : « repasse-moi Pastrnak
+   en P2 » → il n'y avait aucun endroit pour le faire ; proposition « 🪜 Palier 🏠 [P1 ▾] ✈️ [P1 ▾] » → « oui pas mal »).
+   Une liste P1 → P9 par palier connu de la carte (clés u.lc « compétition|dom / ext », ou u.l s'il n'y en a pas) ; si la carte n'a
+   qu'un lieu, l'autre (🏠 / ✈️) est proposé pour la même compétition. Enregistrer → u.lc[clé] (+ u.l) puis l'enregistrement habituel. ═══ */
+(function () {
+  var ed0 = window.editUnit, sv0 = window.saveEditUnit;
+  if (typeof ed0 !== 'function' || typeof sv0 !== 'function' || ed0._g45Pal) return;
+  var lignes = function (u) {
+    var L = [], vus = {}, comps = {};
+    Object.keys(u.lc || {}).forEach(function (k) { var m = String(k).split('|'); comps[m[0]] = 1; vus[k] = 1; L.push({ k: k, c: m[0], l: m[1] || '', p: parseInt(u.lc[k], 10) || 1 }); });
+    var cs = Object.keys(comps);
+    if (cs.length === 1) ['dom', 'ext'].forEach(function (l) { var k = cs[0] + '|' + l; if (!vus[k]) L.push({ k: k, c: cs[0], l: l, p: 1 }); });
+    if (!L.length) L.push({ k: '', c: '', l: '', p: parseInt(u.l, 10) || 1 });
+    var ord = { '': 0, dom: 1, ext: 2 };
+    L.sort(function (a, b) { return a.c.localeCompare(b.c) || ord[a.l] - ord[b.l]; });
+    return { L: L, plusieurs: cs.length > 1 };
+  };
+  var ed = function (i) {
+    var r = ed0.apply(this, arguments);
+    try {
+      var u = state.u[parseInt(i)], note = document.getElementById('edit-unit-note'); if (!u || !note) return r;
+      var z = document.getElementById('edit-unit-pal');
+      if (!z) { z = document.createElement('div'); z.id = 'edit-unit-pal'; z.className = 'fg'; z.style.marginBottom = '14px'; var bloc = note.closest('.fg') || note.parentNode; bloc.parentNode.insertBefore(z, bloc.nextSibling); }
+      var R = lignes(u), opt = function (p) { var o = ''; for (var n = 1; n <= 9; n++) o += '<option value="' + n + '"' + (n === p ? ' selected' : '') + '>P' + n + '</option>'; return o; };
+      z.innerHTML = '<label class="fl" style="font-size:14px;">🪜 Palier</label><div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;">'
+        + R.L.map(function (x) {
+          var ico = x.l === 'dom' ? '🏠' : x.l === 'ext' ? '✈️' : '🌍', cn = R.plusieurs && x.c ? x.c.charAt(0).toUpperCase() + x.c.slice(1) + ' ' : '';
+          return '<span style="font-size:15px;font-weight:800;color:#fff;">' + cn + ico + ' <select data-g45pk="' + x.k + '" data-g45p0="' + x.p + '" style="font-size:15px;font-weight:800;background:#16213f;color:#fff;border:2px solid #6d9dff;border-radius:8px;padding:5px 8px;">' + opt(x.p) + '</select></span>';
+        }).join('') + '</div>';
+    } catch (e) {}
+    return r;
+  };
+  ed._g45Pal = true; window.editUnit = ed; try { editUnit = ed; } catch (e) {}
+  var sv = function () {
+    try {
+      var i = parseInt((document.getElementById('edit-unit-idx') || {}).value), u = state.u[i];
+      if (u) Array.prototype.forEach.call(document.querySelectorAll('#edit-unit-pal select[data-g45pk]'), function (s) {
+        var v = Math.max(1, Math.min(9, parseInt(s.value, 10) || 1)), k = s.getAttribute('data-g45pk');
+        if (String(v) === s.getAttribute('data-g45p0')) return;   /* pas touché */
+        if (k) { u.lc = u.lc || {}; u.lc[k] = v; }
+        u.l = v;
+      });
+    } catch (e) {}
+    return sv0.apply(this, arguments);
+  };
+  window.saveEditUnit = sv; try { saveEditUnit = sv; } catch (e) {}
+})();
