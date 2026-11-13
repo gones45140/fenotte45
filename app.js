@@ -4465,6 +4465,7 @@ var _G45_COMP_ALIAS = [[/^(spanish)?(la)?liga(easports|ea)?(spain)?$|^primeradiv
   [/^(french)?ligue1(mcdonalds|ubereats|mcdonald)?(france)?$/, 'ligue1'], [/^(english)?premierleague$|^epl$/, 'premierleague'],
   [/^(italian)?seriea(enilive|tim)?$/, 'seriea'], [/^(german)?bundesliga$/, 'bundesliga'],
   [/^(uefa)?championsleague$|^liguedeschampions$|^ldc$|^c1$/, 'liguedeschampions'], [/^(uefa)?europaleague$|^liguedeurope$|^ligueeuropa$|^c3$/, 'ligueeuropa'],
+  [/^nations?championships?$/, 'nationschampionship'],   /* 20261113l (capture : « Nation championship » / « Nations Championship ») */
   [/^nationalhockeyleague$/, 'nhl'], [/^nationalbasketballassociation$/, 'nba'], [/^nationalfootballleague$/, 'nfl'], [/^majorleaguebaseball$/, 'mlb']];
 function _g45CompNz(x){
   var k=String(x||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');
@@ -64919,6 +64920,17 @@ async function _g45JoueurVisChercher(nom, sport) {
     var norm = function (x) { return (typeof _g45SgNorm === 'function' ? _g45SgNorm(x) : String(x || '').toLowerCase()); };
     var cible = norm(n);
     var bons = liste.filter(function (p) { return !p.strSport || rx.test(p.strSport); });
+    /* 20261113l (capture : « Malcom Marx » sans photo — le pari écrit « Malcom », TheSportsDB connaît « Malcolm Marx ») : rien trouvé →
+       2e recherche par le NOM DE FAMILLE seul, gardée seulement si le nom complet est à 2 lettres près (même sport). */
+    if (!bons.length) {
+      var mots = n.split(/\s+/), nf = mots[mots.length - 1];
+      if (nf && nf.length >= 3) {
+        var lev = function (a, b) { var d = [], i, k; for (i = 0; i <= a.length; i++) d[i] = [i]; for (k = 0; k <= b.length; k++) d[0][k] = k;
+          for (i = 1; i <= a.length; i++) for (k = 1; k <= b.length; k++) d[i][k] = Math.min(d[i - 1][k] + 1, d[i][k - 1] + 1, d[i - 1][k - 1] + (a[i - 1] === b[k - 1] ? 0 : 1)); return d[a.length][b.length]; };
+        try { var r2b = await fetch('https://www.thesportsdb.com/api/v1/json/3/searchplayers.php?p=' + encodeURIComponent(nf));
+          if (r2b.ok) { var j2 = await r2b.json(); bons = ((j2 && j2.player) || []).filter(function (p) { return (!p.strSport || rx.test(p.strSport)) && lev(norm(p.strPlayer || ''), cible) <= 2; }); } } catch (e) {}
+      }
+    }
     var p0 = bons.filter(function (p) { return norm(p.strPlayer) === cible; })[0] || bons[0] || null;
     var val = { t: Date.now(), fan: (p0 && p0.strFanart1) || '', cut: (p0 && p0.strCutout) || '',
                 thumb: (p0 && p0.strThumb) || '', club: (p0 && p0.strTeam) || '' };
@@ -85239,9 +85251,13 @@ window._g45TrTestVoit = function () { try { return (typeof _g45SanteActive === '
    peut ramener d'anciennes clés). */
 (function () {
   var brut = function (x) { return String(x || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, ''); };
+  /* 20261113l (Antoine, capture des paris Afrique du Sud – France : « Nation championship » et « Nations Championship » → « le même nom ») :
+     les variantes d'une compétition connue prennent UN seul nom affiché, écrit dans le pari (une fois, puis sauvegarde). */
+  var COMP_LIB = { nationschampionship: 'Nations Championship' };
   window._g45LcCanon = function () {
     if (typeof state === 'undefined' || !state || !state.u) return 0;
     var paris = (state.a || []).concat(state.h || []), n = 0;
+    paris.forEach(function (h) { if (!h || !h.comp) return; var lb = COMP_LIB[_g45CompNz(h.comp)]; if (lb && h.comp !== lb) { h.comp = lb; n++; } });
     state.u.forEach(function (u) {
       if (!u || !u.lc) return;
       var groupes = {};
