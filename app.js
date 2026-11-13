@@ -77424,6 +77424,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     if (!S.ctx !== !ctx || (ctx && (S.ctx.id !== ctx.id || S.ctx.sp !== ctx.sp))) S.nom = '';
     S.ctx = ctx;
     preparer(nom);
+    try { crPre(nom); } catch (eP) {}   /* 20261112n */
     var o = ouvert();
     var h = '<div id="g45cr" style="margin:12px 0;background:rgba(20,28,48,.95);border:1px solid #2a3a63;border-radius:12px;padding:12px;color:#fff;">'
       + '<div onclick="g45CrOuvrir()" style="cursor:pointer;font-size:16px;font-weight:700;display:flex;justify-content:space-between;align-items:center;">'
@@ -78918,6 +78919,44 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   }
   window._g45SerBarre = serBarre;
   /* 20261028n (« si je veux recalculer une seule équipe et non toutes ») : 🔄 Recalculer dans le cadre 📊 de la carte → cette carte seule */
+  /* ═══ 20261112n — 🔍 « Voir dans les critères » à côté de 🔄 Recalculer (Antoine : « un petit onglet loupe qui permettrait d'aller sur la page
+     des critères, pré-remplie » → « oui ») : le pari écrit sur la carte (serParis / serCombo, comme le calcul de la pire série) est posé dans
+     window._g45CrPre, puis 🔎 Critères de l'équipe s'ouvre (g45LoiCrCarte) ; html() → crPre() remplace le combiné et le lieu (🏠 / ✈️ / 🌍).
+     Carte JOUEUR NHL : club de la carte (serClub), joueur retrouvé dans les archives (joueurs.json : nom, sinon nom de famille + initiale) →
+     onglet joueur, rôle buteur / passeur / pointeur (« 2 ou + » lu dans le texte). ═══ */
+  function crPre(nom) {
+    var P = window._g45CrPre; if (!P || Date.now() - P.t0 > 120000) return;
+    var a = serNz(P.nom), b = serNz(nom); if (!(a && b && (a === b || a.indexOf(b) >= 0 || b.indexOf(a) >= 0))) return;
+    window._g45CrPre = null;
+    var c = null;
+    if (P.j) { c = combo0(); c.res = ''; c.jo = String(P.j.id); c.jn = P.j.n; c.jm = P.j.jm; c.jmin = String(P.j.min || 1); c = norm(c); }
+    else c = serCombo(P.t, nom);
+    if (c) { S.combos = [c]; S.a = 0; }
+    S.lieu = P.lieu || 'tout'; S.ov = S.ov || {}; S.ov[nom] = 1;
+  }
+  window._g45CrPreT = crPre;   /* tests */
+  window.g45SerCrit = async function (nom, k) {
+    var u = ((typeof state !== 'undefined' && state.u) || []).filter(function (x) { return x && x.n === nom; })[0]; if (!u) return;
+    var P = serParis(u), q = P.filter(function (x) { return x.k === k; })[0] || P[0]; if (!q) return;
+    var lieu = q.k === 'dom' ? 'dom' : q.k === 'ext' ? 'ext' : 'tout', pre = { t0: Date.now(), t: q.t, lieu: lieu, nom: u.n };
+    if (u.type === 'joueur') {
+      var club = serClub(u); if (!club) { try { toast('Club du joueur manquant (Modifier → 🏟️ Club)'); } catch (e) {} return; }
+      pre.nom = club;
+      if (String(u.sport || '').indexOf('🏒') >= 0) {
+        var tx = String(q.t || '').toLowerCase(), jm = /point/.test(tx) ? 'p' : /passe/.test(tx) ? 'a' : 'g', mn = (tx.match(/(\d)\s*(?:ou\s*plus|\+)/) || [])[1] || 1, id = null;
+        try {
+          var d = new Date(), y = d.getMonth() >= 6 ? d.getFullYear() : d.getFullYear() - 1, nz = function (t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z]/g, ''); };
+          var J = await fetch('https://raw.githubusercontent.com/gones45140/gones45-archives/main/cotes/hockey/nhl/' + y + '-' + String(y + 1).slice(2) + '/joueurs.json').then(function (r) { return r.ok ? r.json() : null; });
+          if (J) { var n0 = nz(u.n), pN = String(u.n).trim().split(/\s+/), fN = nz(pN[pN.length - 1]), iN = nz(pN[0]).charAt(0);
+            id = Object.keys(J).filter(function (x) { return nz(J[x][0]) === n0; })[0];
+            if (!id) { var cd = Object.keys(J).filter(function (x) { var m = String(J[x][0] || '').trim().split(/\s+/); return nz(m[m.length - 1]) === fN && nz(m[0]).charAt(0) === iN; }); if (cd.length === 1) id = cd[0]; } }
+        } catch (e) {}
+        if (id) pre.j = { id: id, n: u.n, jm: jm, min: +mn };
+      }
+    }
+    window._g45CrPre = pre;
+    if (typeof window.g45LoiCrCarte === 'function') window.g45LoiCrCarte(pre.nom);
+  };
   window.g45SerUne = async function (nom, btn) {
     if (typeof _g45SanteActive === 'function' && !_g45SanteActive()) return;
     var u = ((typeof state !== 'undefined' && state.u) || []).filter(function (x) { return x && (x.n === nom || String(x.n).replace(/[\\'"<>&]/g, '') === nom); })[0]; if (!u) return;
@@ -79414,6 +79453,13 @@ window._G45_PAL_COUL = ['#1ed760', '#8fdc4a', '#f5c542', '#ffa53a', '#ff7a3a', '
         })()
       + '<div style="font-size:13px;font-weight:400;color:#c9d3ee;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">' + (function () { var n = 4; Object.keys(P || {}).some(function (k) { var R = P[k]; if (R && R.nt) { n = R.ns || R.nt; return true; } return false; }); return n; })() + ' saisons · championnat · calculé le ' + dt
       + ((typeof _g45SanteActive !== 'function' || _g45SanteActive()) ? '<button onclick="event.stopPropagation();g45SerUne(\'' + String(u.n).replace(/[\\'"<>&]/g, '') + '\',this)" style="padding:5px 10px;border-radius:8px;border:1px solid #6d9dff;background:#2f6bff;color:#fff;font-size:13px;font-weight:800;cursor:pointer;">🔄 Recalculer</button>' : '')   /* 20261028n */
+            + (function () {   /* 20261112n : 🔍 critères pré-remplis, un bouton par pari écrit (🌍 / 🏠 / ✈️) */
+          if (typeof window.g45LoiCrCarte !== 'function' || (typeof _g45CkCoupe === 'function' && _g45CkCoupe())) return '';
+          var nm = String(u.n).replace(/[\\'"<>&]/g, '');
+          return Object.keys(P || {}).filter(function (k) { return ['glob', 'dom', 'ext'].indexOf(k) >= 0; }).map(function (k) {
+            return '<button onclick="event.stopPropagation();g45SerCrit(\'' + nm + '\',\'' + k + '\')" style="padding:5px 10px;border-radius:8px;border:1px solid #f5c542;background:#2a2410;color:#fff;font-size:13px;font-weight:800;cursor:pointer;">🔍 Critères' + ({ dom: ' 🏠', ext: ' ✈️' }[k] || '') + '</button>';
+          }).join('');
+        })()
       + '</div></div>';
   };
   /* 20261027z (« dans Outils → Équipe il devrait y avoir plusieurs paliers pour certaines équipes ») : une pastille par montante de u.lc
