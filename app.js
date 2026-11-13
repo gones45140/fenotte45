@@ -2490,7 +2490,7 @@ function _renderBilanPeriodeChips(){
   var cur=window._bilanPeriode||'all';
   box.innerHTML=defs.map(function(d){
     var on=cur===d[0];
-    return '<button onclick="setBilanPeriode(\''+d[0]+'\')" style="flex:1;border:none;border-radius:8px;padding:7px 4px;font-size:11px;font-weight:800;cursor:pointer;background:'+(on?'#1ed760':'rgba(255,255,255,.06)')+';color:'+(on?'#0b1a10':'var(--t2)')+';">'+d[1]+'</button>';
+    return '<button onclick="setBilanPeriode(\''+d[0]+'\')" style="flex:1;border:2px solid '+(on?'#1ed760':'#6d9dff')+';border-radius:8px;padding:8px 4px;font-size:14px;font-weight:900;cursor:pointer;background:'+(on?'#1ed760':'#16213f')+';color:'+(on?'#0b1a10':'#fff')+';">'+d[1]+'</button>'; /* 20261113g : boutons de période bien visibles (Antoine : « on le voit à peine ») */
   }).join('');
 }
 function setBilanPeriode(p){ window._bilanPeriode=p; _renderBilanPeriodeChips(); try{renderBilanTab();}catch(e){} try{renderGlobalCharts();}catch(e){} }
@@ -11289,7 +11289,7 @@ function _renderBilanPeriodeChips(){
   var cur=window._bilanPeriode||'all';
   box.innerHTML=defs.map(function(d){
     var on=cur===d[0];
-    return '<button onclick="setBilanPeriode(\''+d[0]+'\')" style="flex:1;border:none;border-radius:8px;padding:7px 4px;font-size:11px;font-weight:800;cursor:pointer;background:'+(on?'#1ed760':'rgba(255,255,255,.06)')+';color:'+(on?'#0b1a10':'var(--t2)')+';">'+d[1]+'</button>';
+    return '<button onclick="setBilanPeriode(\''+d[0]+'\')" style="flex:1;border:2px solid '+(on?'#1ed760':'#6d9dff')+';border-radius:8px;padding:8px 4px;font-size:14px;font-weight:900;cursor:pointer;background:'+(on?'#1ed760':'#16213f')+';color:'+(on?'#0b1a10':'#fff')+';">'+d[1]+'</button>'; /* 20261113g : boutons de période bien visibles (Antoine : « on le voit à peine ») */
   }).join('');
 }
 function setBilanPeriode(p){ window._bilanPeriode=p; _renderBilanPeriodeChips(); try{renderBilanTab();}catch(e){} try{renderGlobalCharts();}catch(e){} }
@@ -87769,9 +87769,13 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
      ligne 🪜 sous chaque pépite = palier / mise / gain de la simulation 🚀 En montante (_g45LoiMont → window._g45LoiDet, même clé
      équipe + pari + lieu + date) ; ⏳ = palier et mise prévus ; série fermée après des ratés = 🏁 bénéfice de la série. */
   var montL = function (y) {
-    var d = (window._g45LoiDet || {})[y.id + '|' + y.k + '|' + (y.lieu || '') + '|' + y.t]; if (!d) return '';
+    var d = (window._g45LoiDet || {})[y.id + '|' + y.k + '|' + (y.lieu || '') + '|' + y.t];
     var e2 = function (v) { return (v >= 0 ? '+' : '−') + frC(Math.abs(v)) + ' €'; }, cl = function (v) { return v >= 0 ? '#1ed760' : '#ff6b6b'; };
-    return '<br><span style="font-size:13px;font-weight:700;">🪜 P' + d.p + ' · mise ' + String(d.m) + ' €'
+    /* 20261113g (Antoine : « faut-il mettre en 10 € normal et mode Cockpit ? ») : ligne 💶 10 € à plat (cote FR) au-dessus de la ligne 🪜 */
+    var q10 = coteDe(y), l10 = '';
+    if (q10) l10 = '<br><span style="font-size:13px;font-weight:700;">💶 10 €' + ((y.r === 1 || y.r === 0) ? ' → <b style="color:' + cl(y.r === 1 ? 1 : -1) + ';">' + e2(y.r === 1 ? 10 * (coteFr(q10.c) - 1) : -10) + '</b>' : ' (gain possible ' + e2(10 * (coteFr(q10.c) - 1)) + ')') + '</span>';
+    if (!d) return l10;
+    return l10 + '<br><span style="font-size:13px;font-weight:700;">🪜 P' + d.p + ' · mise ' + String(d.m) + ' €'
       + (d.g != null ? ' → <b style="color:' + cl(d.g) + ';">' + e2(d.g) + '</b>' : '')
       + (d.ser != null ? ' · 🏁 bénéfice de la série <b style="color:' + cl(d.ser) + ';">' + e2(d.ser) + '</b>' : '') + '</span>';
   };
@@ -87786,6 +87790,8 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     var bF = function (on, onclick, t) { return '<button onclick="' + onclick + '" style="border-radius:12px;padding:7px 11px;font-size:15px;font-weight:800;cursor:pointer;color:#fff;border:1px solid ' + (on ? '#6d9dff' : '#2a3a63') + ';background:' + (on ? '#2a4a9a' : '#0b1226') + ';">' + t + '</button>'; };
     h += '<div style="font-size:14px;font-weight:800;margin:4px 0 4px;">Sport</div><div style="display:flex;gap:6px;flex-wrap:wrap;">' + Object.keys(SPF).map(function (k) { return bF(M.fs === k, 'g45LoiBilF(\'s\',\'' + k + '\')', SPF[k]); }).join('') + '</div>'
       + '<div style="font-size:14px;font-weight:800;margin:10px 0 4px;">Ratés de suite en cours</div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">' + [0, 4, 5, 6, 7].map(function (k) { return bF(M.fc === k, 'g45LoiBilF(\'c\',' + k + ')', k ? (k === 7 ? '7 et +' : String(k)) : 'Tous'); }).join('') + '</div>';
+    /* 20261113g (Antoine : « rajouter comme screen 3 » = 1J / 1S / 1M / 1A / Tout du Bilan paris) : période (M.per), mêmes durées que le Bilan */
+    h += '<div style="font-size:14px;font-weight:800;margin:0 0 4px;">Période</div><div style="display:flex;gap:6px;margin-bottom:10px;">' + [['1j', '1J'], ['1s', '1S'], ['1m', '1M'], ['1a', '1A'], ['all', 'Tout']].map(function (d) { var on = (M.per || 'all') === d[0]; return '<button onclick="g45LoiBilF(\'p\',\'' + d[0] + '\')" style="flex:1;border:2px solid ' + (on ? '#1ed760' : '#6d9dff') + ';border-radius:8px;padding:8px 4px;font-size:14px;font-weight:900;cursor:pointer;background:' + (on ? '#1ed760' : '#16213f') + ';color:' + (on ? '#0b1a10' : '#fff') + ';">' + d[1] + '</button>'; }).join('') + '</div>';
     if (M.fc === 3) M.fc = 0;
     var L = (M.d.L || []).filter(function (x) { return x.cours >= 4 && (M.fs === 'tous' || x.sp === M.fs || (M.fs === 'rugby' && x.sp === 'rugby-league')) && (!M.fc || (M.fc === 7 ? x.cours >= 7 : x.cours === M.fc)); }).sort(function (a, b) { return b.t - a.t; });
     chargerCotes(L);
@@ -87812,6 +87818,8 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
        (x.av) ; une seule mise dans la montante et une seule fois dans le bilan. */
     L.forEach(function (x) { x.av = null; var mt = /^([ou]\d\d|btts)$/.test(String(x.k)), k = mt ? x.j + '|' + x.eid + '|' + x.k : 'E|' + x.j + '|' + x.eid + '|' + x.id + '|' + x.k, g = MGc[k]; if (!g) { MGc[k] = g = []; LLc.push(g); } g.push(x); });
     L = LLc.map(function (e) { if (!Array.isArray(e)) return e; e.sort(function (a, b) { return ((b.d ? 2 : 0) + (b.lieu ? 1 : 0)) - ((a.d ? 2 : 0) + (a.lieu ? 1 : 0)); }); if (e.length > 1) e[0].av = e.slice(1); return e[0]; });
+    var Lall = L, jPer = { '1j': 1, '1s': 7, '1m': 30, '1a': 365 }[M.per];   /* 20261113g : la montante se calcule sur TOUT l'historique (paliers justes), seul l'affichage est filtré */
+    if (jPer) { var cP = new Date(); cP.setHours(0, 0, 0, 0); cP.setDate(cP.getDate() - jPer); var cS = cP.getFullYear() + '-' + ('0' + (cP.getMonth() + 1)).slice(-2) + '-' + ('0' + cP.getDate()).slice(-2); L = L.filter(function (x) { return String(x.j) >= cS; }); }
     if (!L.length && ((M.d.L || []).length)) return h + '<div style="font-size:14px;">Aucune pépite avec ces filtres.</div></div>';
     if (!L.length) return h + '<div style="font-size:14px;">Aucune pépite gardée pour l\'instant : le robot commence l\'historique chaque matin, le bilan se remplit dès les premiers résultats.</div></div>';
     var J = L.filter(function (x) { return x.r === 1 || x.r === 0; }), G = J.filter(function (x) { return x.r === 1; }).length, P = J.length - G;
@@ -87827,7 +87835,8 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
        🚀 EN MONTANTE — chaque pépite (même équipe + même pari + même lieu) démarre à P1 = 10 € ; ratée → la fois suivante où ELLE revient en
        pépite, palier suivant (grille d'Antoine : ×2 puis ×3 → 10, 20, 60, 180, 540…) ; passée → retour à P1. Pépites avec cote seulement,
        dans l'ordre des matchs. Gain total, plus haut palier, plus grosse mise, montantes encore ouvertes (palier en attente). */
-    var mt = window._g45LoiMont ? window._g45LoiMont(L.filter(function (x) { return coteDe(x); }), coteDe) : null;   /* 20261113b : + pépites ⏳ (palier prévu) */
+    var mt = window._g45LoiMont ? window._g45LoiMont(Lall.filter(function (x) { return coteDe(x); }), coteDe) : null;
+    if (mt && jPer) { var DTp = window._g45LoiDet || {}, gP = 0, nP = 0, pP = 0, mP = 0; L.forEach(function (x) { var q = DTp[x.id + '|' + x.k + '|' + (x.lieu || '') + '|' + x.t]; if (!q) return; if (q.g != null) { gP += q.g; nP++; } pP = Math.max(pP, q.p || 0); mP = Math.max(mP, q.m || 0); }); mt.g = gP; mt.n = nP; mt.pmax = pP; mt.mmax = mP; }   /* 20261113g : chiffres de la période */   /* 20261113b : + pépites ⏳ (palier prévu) */
     if (mt && mt.n) h += '<div style="background:' + (mt.g >= 0 ? 'rgba(30,215,96,.12)' : 'rgba(255,69,69,.12)') + ';border:1px solid ' + (mt.g >= 0 ? '#1ed760' : '#ff4545') + ';border-radius:10px;padding:8px;margin-bottom:10px;text-align:center;">'
       + '<div style="font-size:14px;color:#c9d3ee;">🚀 En montante (P1 10 €, puis ×2 et ×3 sur la même équipe et le même pari)</div>'
       + '<div style="font-size:22px;font-weight:900;color:' + (mt.g >= 0 ? '#1ed760' : '#ff6b6b') + ';">' + (mt.g >= 0 ? '+' : '−') + frC(Math.abs(mt.g)).replace(',00', '') + ' €</div>'
@@ -87853,6 +87862,8 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
       /* 20261113e (Antoine : « pareil ici, le graphique pas assez détaillé ») : comme la courbe des Tendances — graduations en €, date sous
          chaque point, EN HAUT le total (blanc) et EN DESSOUS le gain du jour (vert / rouge), pastilles plus haut / plus bas / fin. */
       var W = 560, H = 290, ml = 52, mr = 16, mt = 46, mb = 34;
+      /* 20261113g (capture PC : grand vide à droite) : toute la largeur ; largeur du dessin = largeur de l'écran pour garder des textes à taille normale */
+      try { var lE = (window.innerWidth || 0) - 60; if (lE > W) W = Math.min(1400, lE); } catch (e) {}
       var vs = pts.map(function (p) { return p[1]; }), hi = Math.max.apply(null, vs), lo = Math.min.apply(null, vs), vsM = ptsM.map(function (p) { return p[1]; });
       var hiA = Math.max(hi, Math.max.apply(null, vsM)), loA = Math.min(lo, Math.min.apply(null, vsM)), finM = vsM[vsM.length - 1];
       var st2 = Math.max(10, Math.ceil((Math.max(hiA, 10) - Math.min(loA, -10)) / 4 / 10) * 10), mx = Math.ceil(Math.max(hiA, 10) / st2) * st2, mn = Math.floor(Math.min(loA, -10) / st2) * st2;
@@ -87863,7 +87874,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
       var pas = Math.max(1, Math.ceil(pts.length / 8));
       h += '<div style="font-size:15px;font-weight:800;margin:4px 0 6px;">💶 Gain cumulé (10 € par pépite avec cote)</div>'
         + '<div>' + pil('⬆ Plus haut : ' + e0(hi), '#1ed76033', '#7dffb0') + pil('⬇ Plus bas : ' + e0(lo), '#ff5c5c33', '#ffa0a0') + pil('💶 Fin 10 € : ' + e0(fin), cl, '#111') + pil('🚀 Fin montante : ' + e0(finM), '#f5c542', '#111') + '</div>'
-        + '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;max-width:760px;background:#0b1226;border-radius:10px;display:block;">' + gr
+        + '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;background:#0b1226;border-radius:10px;display:block;">' + gr
         + '<polyline fill="none" stroke="#f5c542" stroke-width="3" stroke-dasharray="7 5" points="' + ptsM.map(function (p, i) { return X(i).toFixed(1) + ',' + Y(p[1]).toFixed(1); }).join(' ') + '"/>'
         + ptsM.map(function (p, i) { return '<circle cx="' + X(i).toFixed(1) + '" cy="' + Y(p[1]).toFixed(1) + '" r="4" fill="#f5c542"/>'; }).join('')
         + '<polyline fill="none" stroke="' + cl + '" stroke-width="3" points="' + pts.map(function (p, i) { return X(i).toFixed(1) + ',' + Y(p[1]).toFixed(1); }).join(' ') + '"/>'
@@ -87929,7 +87940,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   window._g45LoiBilT = M;   /* tests */
   window.g45LoiBilMois = function (k) { M.mois += k; redessiner(); };
   window.g45LoiBilJour = function (j) { M.j = j; redessiner(); };
-  window.g45LoiBilF = function (q, v) { if (q === 's') M.fs = v; else M.fc = +v || 0; M.j = ''; redessiner(); };
+  window.g45LoiBilF = function (q, v) { if (q === 's') M.fs = v; else if (q === 'p') M.per = v; else M.fc = +v || 0; M.j = ''; redessiner(); };   /* 20261113g : p = période */
   window.g45LoiBilTout = function () { M.tout = !M.tout; redessiner(); };
   window.g45LoiBilVue = function (k) { M.vue = k; redessiner(); };   /* 20261108o */
 })();
