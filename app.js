@@ -87806,8 +87806,11 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
        MATCH (plus / moins de buts, les deux marquent) trouvé par les 2 équipes = UNE seule pépite (celle du domicile), les séries des 2 équipes
        dessus (x.av), comptée UNE fois dans le bilan, le graphique et les 10 €. Paris d'une équipe (victoire, marque…) : inchangés. */
     var MGc = {}, LLc = [];
-    L.forEach(function (x) { x.av = null; if (!/^([ou]\d\d|btts)$/.test(String(x.k))) { LLc.push(x); return; } var k = x.j + '|' + x.eid + '|' + x.k, g = MGc[k]; if (!g) { MGc[k] = g = []; LLc.push(g); } g.push(x); });
-    L = LLc.map(function (e) { if (!Array.isArray(e)) return e; e.sort(function (a, b) { return (b.d ? 1 : 0) - (a.d ? 1 : 0); }); if (e.length > 1) e[0].av = e.slice(1); return e[0]; });
+    /* 20261113c (capture Bucks – Lakers : « Vainqueur 🏠 4/4 » ET « Vainqueur 7/7 », P3 60 € + P2 20 € → « 2 × la mise ? ») : un pari d'ÉQUIPE
+       trouvé par la série 🏠 / ✈️ ET la série globale de la même équipe sur le même match = UNE pépite (celle du lieu), l'autre série dessus
+       (x.av) ; une seule mise dans la montante et une seule fois dans le bilan. */
+    L.forEach(function (x) { x.av = null; var mt = /^([ou]\d\d|btts)$/.test(String(x.k)), k = mt ? x.j + '|' + x.eid + '|' + x.k : 'E|' + x.j + '|' + x.eid + '|' + x.id + '|' + x.k, g = MGc[k]; if (!g) { MGc[k] = g = []; LLc.push(g); } g.push(x); });
+    L = LLc.map(function (e) { if (!Array.isArray(e)) return e; e.sort(function (a, b) { return ((b.d ? 2 : 0) + (b.lieu ? 1 : 0)) - ((a.d ? 2 : 0) + (a.lieu ? 1 : 0)); }); if (e.length > 1) e[0].av = e.slice(1); return e[0]; });
     if (!L.length && ((M.d.L || []).length)) return h + '<div style="font-size:14px;">Aucune pépite avec ces filtres.</div></div>';
     if (!L.length) return h + '<div style="font-size:14px;">Aucune pépite gardée pour l\'instant : le robot commence l\'historique chaque matin, le bilan se remplit dès les premiers résultats.</div></div>';
     var J = L.filter(function (x) { return x.r === 1 || x.r === 0; }), G = J.filter(function (x) { return x.r === 1; }).length, P = J.length - G;
