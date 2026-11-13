@@ -46987,6 +46987,15 @@ function g45CompetOuvrir(nom, id, slug, sport, dejaResolu) {
       return;
     }
   }
+  /* 20261114b (captures : Compétitions → Nations Championship → « France » ouvrait la fiche de la carte « France » ⚽ du mur, et la table
+     perso « france » passait au rugby → la carte foot pointait sur l'équipe de rugby) : une carte du mur du MÊME nom mais d'un AUTRE sport
+     → l'équipe s'ouvre sous « France 🏉 » (nom à part, sa propre entrée perso), la carte du mur n'est pas touchée. */
+  try {
+    var _spN = function (x) { return x === 'rugby-league' ? 'rugby' : (x || 'soccer'); };
+    var _u0 = (window.state && state.u) ? state.u.filter(function (u) { return u && u.n === nom; })[0] : null;
+    if (_u0 && sport && typeof g45SportDe === 'function' && _spN(g45SportDe(_u0)) !== _spN(sport))
+      nom = nom + ' ' + ({ rugby: '🏉', 'rugby-league': '🏉', hockey: '🏒', basketball: '🏀', football: '🏈', baseball: '⚾', soccer: '⚽' }[sport] || '');
+  } catch (e) {}
   try {
     if (id && slug && typeof g45TeamsPerso === 'function') {
       var p = g45TeamsPerso();
@@ -88879,4 +88888,16 @@ window.g45SerNs = function (nom, n, el) {
     return sv0.apply(this, arguments);
   };
   window.saveEditUnit = sv; try { saveEditUnit = sv; } catch (e) {}
+})();
+
+/* ═══ 20261114b — RÉPARATION de la table perso (g45_teams_perso) : une entrée du nom d'une carte du mur mais d'un AUTRE sport (« france » →
+   rugby 17567, écrite en touchant France dans Compétitions → Nations Championship) est retirée, une fois au démarrage. ═══ */
+(function () {
+  try {
+    if (typeof g45TeamsPerso !== 'function' || typeof g45SportDe !== 'function' || !window.state || !state.u) return;
+    var p = g45TeamsPerso(), n = 0, spN = function (x) { return x === 'rugby-league' ? 'rugby' : (x || 'soccer'); };
+    state.u.forEach(function (u) { if (!u || !u.n || !String(u.sport || '').trim()) return;   /* sport de la carte connu seulement */ var k = String(u.n).toLowerCase().trim(), e = p[k];
+      if (e && spN(e.sport) !== spN(g45SportDe(u))) { delete p[k]; n++; } });
+    if (n) localStorage.setItem('g45_teams_perso', JSON.stringify(p));
+  } catch (e) {}
 })();
