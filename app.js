@@ -75950,14 +75950,20 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
      🏁 Jouable en Cockpit ? : équipes ET joueurs (20 matchs mini) lus d'un coup dans les archives de la ligue.
      Rôles PROPRES aux critères (_g45JouCfg local) : la table partagée _G45_JOU_TABLE (Analyser les joueurs de Saisons) n'est pas touchée.
      Index joueurs du rugby : clé _g45JouCle + '_r2' (l'ancien index ESPN n'avait ni points ni titulaires). ═══ */
-  var RG_ARCH = { rugby: ['270559', '271937', '180659'], 'rugby-league': ['3'] };
+  var RG_ARCH = { rugby: ['270559', '271937', '180659', '17567', '289234', '164205'], 'rugby-league': ['3'] };   /* 20261113k : + Nations Championship, tests, Coupe du monde */
+  /* ═══ 20261113k — 🏉 SÉLECTIONS DE RUGBY (Antoine : « rugby, l'équipe de France, Nations Championship ? » → sondes du 13/11 : 17567 Nations
+     Championship, 289234 tests internationaux, 164205 Coupe du monde, 180659 Six Nations → « fais la partie appli rugby aussi »). Comme le foot :
+     ctx.lg = 'rsel' (index loi/equipes.json), « saison » = année civile (dossier AAAA de chaque compétition), toutes les compétitions mélangées
+     par date, m[7] = compétition (étiquette SELN, filtre Tout / Officiels / 🤝 Tests). ═══ */
+  var RSEL = ['180659', '17567', '164205', '289234'];
   var RG_CFG = { parStat: true, roles: [
     { k: 't', lab: 'Marque un essai', col: '#1ed760', ico: '\uD83C\uDFC9', stats: ['tries'] },
     { k: 'pts', lab: 'Points (buteur)', col: '#f5c542', ico: '\uD83C\uDFAF', stats: ['points'], seuils: _g45BkLignes(0, 30), def: '9.5' }
   ] };
   var _g45JouCfg = function (sp) { return /^rugby/.test(String(sp || '')) ? RG_CFG : window._g45JouCfg(sp); };
   function rgArchOk(sp, lg) { return (RG_ARCH[sp] || []).indexOf(String(lg)) >= 0; }
-  function aSaRg(lg, an) { return lg === '3' ? String(an) : lg === '180659' ? String(an + 1) : an + '-' + String(an + 1).slice(2); }
+  function aSaRg(lg, an) { if (S.ctx && S.ctx.lg === 'rsel') return String(an);   /* 20261113k */
+    return lg === '3' ? String(an) : lg === '180659' ? String(an + 1) : an + '-' + String(an + 1).slice(2); }
   function rgBase(sp, lg, an) { return (sp === 'rugby-league' ? 'rugby-xiii/' : 'rugby/') + lg + '/' + aSaRg(lg, an); }
   function rgMois(lg, an) {   /* mois possibles du dossier de la saison */
     var sa = aSaRg(lg, an), L = [];
@@ -76005,7 +76011,8 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     rgTot(ix);
     return ix.n ? ix : null;
   }
-  function rgLgs(C) { var L = [String(C.lg)]; if (C.sp === 'rugby' && ['270559', '270557', '267979'].indexOf(String(C.lg)) >= 0) L.push('271937'); return L.filter(function (x, i) { return L.indexOf(x) === i; }); }
+  function rgLgs(C) { if (C.lg === 'rsel') return RSEL.slice();   /* 20261113k */
+    var L = [String(C.lg)]; if (C.sp === 'rugby' && ['270559', '270557', '267979'].indexOf(String(C.lg)) >= 0) L.push('271937'); return L.filter(function (x, i) { return L.indexOf(x) === i; }); }
   function jCle(sp, lg, an, id) { return _g45JouCle(sp, lg, an, id) + (/^rugby/.test(String(sp)) ? '_r2' : ''); }
   function esBesoin(c) { return rg() && !!(c.ess || c.esm || c.esb); }
   function esDe(m) {   /* [essais de l'équipe, essais de l'adversaire] ou null */
@@ -76062,6 +76069,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   function annees(lg) {
     /* 20261103a (capture Winamax Spurs −18,5 → −12,5 : « savoir si une équipe passe le cut » ; « 5 saisons oui ») : NBA = 5 saisons comme le foot
        (archives basket/nba 2022-23 → 2026-27, saison régulière ; handicap de clôture gardé 22-23 / 25-26 / 26-27). Autres sports US / rugby : 4. */
+    if (S.ctx && lg === 'rsel') { var yS = new Date().getFullYear(); return [yS, yS - 1, yS - 2, yS - 3, yS - 4]; }   /* 20261113k */
     if (S.ctx) { var a0 = (typeof _g45SgAnAuto === 'function') ? _g45SgAnAuto(lg) : new Date().getFullYear() + 1; return lg === 'nba' ? [a0, a0 - 1, a0 - 2, a0 - 3, a0 - 4] : [a0, a0 - 1, a0 - 2, a0 - 3]; }
     var d = new Date(), y = d.getFullYear(), y0 = CAL.indexOf(lg) >= 0 ? y : (d.getMonth() + 1 >= 8 ? y : y - 1);
     /* 20261102i (groupe Bets 4 us, Jp33 : « tu ne peux pas remonter sur 6 ou 7 saisons ? » → Antoine : « rajoute une saison supplémentaire mais
@@ -76069,7 +76077,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
        Sports US / rugby passent par S.ctx (ligne du dessus) : 4 saisons, inchangé. */
     return [y0, y0 - 1, y0 - 2, y0 - 3, y0 - 4];
   }
-  function lib(lg, an) { if (rg() && typeof _g45SgLabel === 'function') return _g45SgLabel(lg, an); if (lg === 'nfl' || lg === 'mlb') return String(an); if (S.ctx) return (an - 1) + '-' + String(an).slice(2); return CAL.indexOf(lg) >= 0 ? String(an) : an + '-' + String(an + 1).slice(2); }
+  function lib(lg, an) { if (lg === 'rsel') return String(an);   /* 20261113k */ if (rg() && typeof _g45SgLabel === 'function') return _g45SgLabel(lg, an); if (lg === 'nfl' || lg === 'mlb') return String(an); if (S.ctx) return (an - 1) + '-' + String(an).slice(2); return CAL.indexOf(lg) >= 0 ? String(an) : an + '-' + String(an + 1).slice(2); }
   function libCombo(c) {
     var p = [];
     if (c.res === 'vic') p.push(hk() ? 'Victoire (temps régl.)' : 'Victoire'); else if (c.res === 'vqr') p.push(hk() || us() ? 'Vainqueur (prolong. comprise)' : 'Vainqueur'); else if (c.res === 'nul') p.push('Nul'); else if (c.res === 'def') p.push(hk() ? 'Défaite (temps régl.)' : 'Défaite'); else if (c.res === 'per') p.push('Perdant (prolong. comprise)');   /* 20261031m */
@@ -76262,7 +76270,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
           }
           if (lu) { old.ar = 1; old.builtAt = Date.now(); old.total = Object.keys(old.parMatch).length; rgTot(old); if (Object.keys(old.joueurs).length) { try { localStorage.setItem(cle, JSON.stringify(old)); } catch (e) {} } }
         }
-        if (seul) continue;
+        if (seul || C.lg === 'rsel') continue;   /* 20261113k : sélections rugby = archives seulement */
         if (sa.ms.some(function (m) { return m[6] && !(old.parMatch && old.parMatch[m[6]]); })) {   /* 20261031n : archives GitHub d'abord (index complet de la saison) */
           var AX = null; try { AX = await aJouUS(C.sp, C.lg, C.id, sa.an); } catch (e) {}
           if (AX && sa.ms.every(function (m) { return !m[6] || AX.parMatch[m[6]]; })) { old = AX; old.total = Object.keys(AX.parMatch).length; try { localStorage.setItem(cle, JSON.stringify(old)); } catch (e) {} U.f += sa.ms.length; }
@@ -76845,6 +76853,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   function mpmBases(m, an) {   /* dossiers d'archives possibles pour la ligne m */
     var C = S.ctx;
     if (!C) { var D0 = S.data && S.data[S.nom]; return [(m[5] === 1 && typeof m[7] === 'string') ? 'foot/' + m[7] + '/' + aSa(m[7], an) : 'foot/' + (D0 ? D0.lg : '') + '/' + aSa(D0 ? D0.lg : '', an)]; }
+    if (rg() && C.lg === 'rsel') return ['rugby/' + m[7] + '/' + an];   /* 20261113k */
     if (rg()) { if (m[5]) return ['rugby/' + (m[5] === 2 ? '272073' : '271937') + '/' + an + '-' + String(an + 1).slice(2)]; return [rgBase(C.sp, C.lg, an)]; }
     return [ASP[C.sp] + '/' + C.lg + '/' + aSaUS(C.lg, an)];
   }
@@ -76915,7 +76924,9 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     /* 20261113j (sondé le 13/11, robot sonde) : 12 compétitions de sélections en plus dans les archives */
     'uefa.euroq': '🇪🇺 Qualifs Euro', 'conmebol.america': '🌎 Copa América', 'caf.nations': '🌍 CAN', 'caf.nations_qual': '🌍 Qualifs CAN', 'fifa.worldq.conmebol': '🌍 Qualifs CDM',
     'fifa.worldq.caf': '🌍 Qualifs CDM', 'fifa.worldq.afc': '🌍 Qualifs CDM', 'fifa.worldq.concacaf': '🌍 Qualifs CDM', 'fifa.worldq.ofc': '🌍 Qualifs CDM', 'concacaf.gold': '🏆 Gold Cup',
-    'concacaf.nations.league': '🏆 Ligue des nations CONCACAF', 'afc.asian.cup': '🏆 Coupe d\'Asie' };
+    'concacaf.nations.league': '🏆 Ligue des nations CONCACAF', 'afc.asian.cup': '🏆 Coupe d\'Asie',
+    /* 20261113k : rugby */ '180659': '🏉 Six Nations', '17567': '🏆 Nations Championship', '164205': '🏆 Coupe du monde', '289234': '🤝 Test-match' };
+  var SELA = { 'fifa.friendly': 1, '289234': 1 };   /* 20261113k : « amicaux » (foot) / tests (rugby) */
   window._g45SelN = SELN;
   function msDe(sa) {
     if (sa && sa.sel) return sa.ms;   /* 20261113h */
@@ -76953,7 +76964,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   }
   function filtrer(ms) {
     var rc = rg() ? (window._g45SgRgComp || 'tout') : 'tout';   /* 20261014k : m[5] = 1 → Champions Cup */
-    var rq = rg() ? (S.rgc || 'T') : 'T';   /* 20261103n : boutons Compétition du bloc (remplacent le filtre de Saisons ici) */
+    var rq = rg() && !(S.ctx && S.ctx.lg === 'rsel') ? (S.rgc || 'T') : 'T';   /* 20261113k : sélection rugby = filtre Officiels / Tests */   /* 20261103n : boutons Compétition du bloc (remplacent le filtre de Saisons ici) */
     if (rg()) rc = 'tout';
     /* 20261021d : m.pr = résultat du match d'AVANT dans la saison (tous lieux) — 'v' / 'n' / 'd' (score final) ; 1er match de la saison : rien */
     ms.forEach(function (m, i) { var q = ms[i - 1]; m.pr = q ? (q[2] > q[3] ? 'v' : q[2] < q[3] ? 'd' : 'n') : ''; });
@@ -76962,7 +76973,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       if (rq === 'L' && (m[5] || m[7])) return false;
       if (rq === 'LP' && m[5]) return false;
       if (rq === 'E' && !m[5]) return false;
-      if (SELN[m[7]] && (S.selc || 'T') !== 'T' && ((S.selc === 'A') !== (m[7] === 'fifa.friendly'))) return false;   /* 20261113h : O = officiels, A = amicaux */
+      if (SELN[m[7]] && (S.selc || 'T') !== 'T' && ((S.selc === 'A') !== !!SELA[m[7]])) return false;   /* 20261113k : SELA */   /* 20261113h : O = officiels, A = amicaux */
       if (rc === 'CC' && m[5] !== 1) return false;
       if (rc === 'CH' && m[5] !== 2) return false;
       return S.lieu === 'tout' || (S.lieu === 'dom' ? m[1] === 1 : m[1] === 0);
@@ -77031,6 +77042,19 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   window._g45CrRgPo = rgPo;   /* tests */
   function rgcLib() { return rg() ? ({ L: ' · championnat seul', LP: ' · championnat + phases finales', E: ' · coupes d\'Europe' }[S.rgc] || '') : ''; }   /* carte gardée */
   async function chargerRg(nom) {
+    if (S.ctx && S.ctx.lg === 'rsel') {   /* 20261113k : sélection de rugby → archives de RSEL, années civiles */
+      var Cs = S.ctx, outS = { t: Date.now(), lg: 'rsel', ligue: 'Sélection · toutes compétitions', saisons: [], tid: String(Cs.id), sel: 1 };
+      await Promise.all(annees('rsel').map(async function (an, i) {
+        var ms = [], ok = false;
+        for (var k = 0; k < RSEL.length; k++) {
+          var q = await aLire('rugby/' + RSEL[k] + '/' + an + '/equipes/' + Cs.id + '.json'); if (q === null) continue; ok = true;
+          ((q && q.m) || []).forEach(function (m) { if (!m || !m[4] || m[4][0] == null || m[4][1] == null) return; var h = m[3] === 'h'; ms.push([aIso(m[0]), h ? 1 : 0, h ? +m[4][0] : +m[4][1], h ? +m[4][1] : +m[4][0], 0, 0, String(m[2]), RSEL[k]]); });
+        }
+        ms.sort(function (a, b) { return a[0] < b[0] ? -1 : 1; });
+        outS.saisons[i] = { an: an, ms: ok ? ms : null, sel: 1 };
+      }));
+      S.data[nom] = outS; return;
+    }
     var C = S.ctx, ans = annees(C.lg), out = { t: Date.now(), lg: C.lg, ligue: C.sp === 'rugby' ? 'phases finales et coupes d\'Europe comprises' : 'saison régulière', saisons: [] }, eq = [];
     try { eq = await _g45CompetEquipes({ sp: C.sp, s: C.lg }); } catch (e) {}
     var ids = eq.map(function (t) { return t.id; }).filter(Boolean);
@@ -77499,16 +77523,16 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
         + '<button onclick="g45CrNote()" style="width:100%;background:#2a4a9a;color:#fff;border:0;border-radius:10px;padding:9px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:4px;">📌 Reprendre ma note</button>';
     }
     h += lab('Lieu') + b(S.lieu === 'dom', '🏠 Domicile', "g45CrSet('lieu','dom')") + b(S.lieu === 'ext', '✈️ Extérieur', "g45CrSet('lieu','ext')") + b(S.lieu === 'tout', 'Les deux', "g45CrSet('lieu','tout')");
-    if (rg()) {   /* 20261103n : 🏉 compétition */
+    if (rg() && !(D && D.sel)) {   /* 20261103n : 🏉 compétition ; 20261113k : pas pour une sélection */
       var rq0 = S.rgc || 'T', cupB = S.ctx.sp === 'rugby' && ['270559', '270557', '267979'].indexOf(String(S.ctx.lg)) >= 0;
       if (!cupB && rq0 === 'E') rq0 = S.rgc = 'T';
       h += lab('Compétition') + b(rq0 === 'L', '🏉 Championnat', "g45CrSet('rgc','L')") + b(rq0 === 'LP', '🏉 + 🏅 Phases finales', "g45CrSet('rgc','LP')")
         + (cupB ? b(rq0 === 'E', '🏆 Coupe d\'Europe', "g45CrSet('rgc','E')") : '') + b(rq0 === 'T', 'Tout', "g45CrSet('rgc','T')");
     }
-    if (!S.ctx && D && D.sel) {   /* 20261113h : sélection → Tout / Officiels / Amicaux */
-      var sq = S.selc || 'T';
-      h += lab('Compétition') + b(sq === 'T', 'Tout', "g45CrSet('selc','T')") + b(sq === 'O', '🏆 Officiels', "g45CrSet('selc','O')") + b(sq === 'A', '🤝 Amicaux seuls', "g45CrSet('selc','A')")
-        + '<div style="font-size:13px;color:#c9d3ee;">Officiels = Coupe du monde, Euro, Copa América, CAN, Coupe d\'Asie, Gold Cup, qualifs, Ligues des nations. Une « saison » = une année.</div>';
+    if (D && D.sel) {   /* 20261113h : sélection → Tout / Officiels / Amicaux ; 20261113k : + rugby (Tests) */
+      var sq = S.selc || 'T', rgS = rg();
+      h += lab('Compétition') + b(sq === 'T', 'Tout', "g45CrSet('selc','T')") + b(sq === 'O', '🏆 Officiels', "g45CrSet('selc','O')") + b(sq === 'A', rgS ? '🤝 Tests seuls' : '🤝 Amicaux seuls', "g45CrSet('selc','A')")
+        + '<div style="font-size:13px;color:#c9d3ee;">' + (rgS ? 'Officiels = Six Nations, Coupe du monde, Nations Championship.' : 'Officiels = Coupe du monde, Euro, Copa América, CAN, Coupe d\'Asie, Gold Cup, qualifs, Ligues des nations.') + ' Une « saison » = une année.</div>';
     } else if (!S.ctx) {   /* 20261021e : coupes d'Europe */
       var cp = S.comp || 'L';
       h += lab('Compétition') + b(cp === 'L', '🏆 Championnat', "g45CrSet('comp','L')") + b(cp === 'E', '🌍 Coupe d\'Europe', "g45CrSet('comp','E')") + b(cp === 'T', 'Les deux', "g45CrSet('comp','T')");
@@ -87403,10 +87427,12 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   }
   /* carte du mur → ligne de l'index (même nom, ou nom court contenu : « PSG » / « Paris Saint-Germain » reste à part, on garde le nom de la carte) */
   /* 20261113h : sélection (lg 'sel', nom anglais d'ESPN) → nom français de G45_NATIONS par l'identifiant (« Germany » → « Allemagne ») */
-  function loiNomFr(x) { if (!x || x[1] !== 'sel' || typeof G45_NATIONS === 'undefined') return (x && x[4]) || ''; var n = G45_NATIONS.filter(function (y) { return String(y.id) === String(x[3]); })[0]; return (n && n.fr) || x[4]; }
+  var LOI_RFR = { England: 'Angleterre', Ireland: 'Irlande', Scotland: 'Écosse', Wales: 'Pays de Galles', Italy: 'Italie', 'South Africa': 'Afrique du Sud', 'New Zealand': 'Nouvelle-Zélande', Australia: 'Australie', Argentina: 'Argentine', Japan: 'Japon', Fiji: 'Fidji', Georgia: 'Géorgie', Samoa: 'Samoa', Tonga: 'Tonga', Uruguay: 'Uruguay', Chile: 'Chili', Portugal: 'Portugal', Spain: 'Espagne', Romania: 'Roumanie', Namibia: 'Namibie', Canada: 'Canada', 'United States': 'États-Unis', USA: 'États-Unis' };
+  function loiNomFr(x) { if (x && x[1] === 'rsel') return LOI_RFR[x[4]] || x[4];   /* 20261113k : sélections rugby */
+    if (!x || x[1] !== 'sel' || typeof G45_NATIONS === 'undefined') return (x && x[4]) || ''; var n = G45_NATIONS.filter(function (y) { return String(y.id) === String(x[3]); })[0]; return (n && n.fr) || x[4]; }
   function loiIxDe(nom) {
     var n = loiNz(nom); if (!n || !LOI.ix) return null;
-    var sf = LOI.ix.filter(function (x) { return x[1] === 'sel' && loiNz(loiNomFr(x)) === n; })[0]; if (sf) return sf;   /* 20261113h */
+    var sf = LOI.ix.filter(function (x) { return x[1] === 'sel' && loiNz(loiNomFr(x)) === n; })[0]; if (sf) return sf;   /* 20261113h (rugby 'rsel' non : la carte « France » du mur reste le foot) */
     return LOI.ix.filter(function (x) { return loiNz(x[4]) === n; })[0] || LOI.ix.filter(function (x) { return typeof _g45BandMeme === 'function' && _g45BandMeme(nom, x[4]); })[0] || null;
   }
   function loiCrHtml() {
@@ -87445,7 +87471,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   }
   function loiCrPoser(nom, x) {
     /* foot : critères retrouvés par le NOM (espnResolveTeam) dans le championnat imposé ; autres sports : par l'identifiant ESPN */
-    if (x && x[0] !== 'soccer') LOI.cr = { nom: nom, ctx: { sp: x[0], lg: x[1], id: String(x[3]) }, lgF: null };
+    if (x && x[0] !== 'soccer') LOI.cr = { nom: x[1] === 'rsel' ? loiNomFr(x) + ' 🏉' : nom, ctx: { sp: x[0], lg: x[1], id: String(x[3]) }, lgF: null };   /* 20261113k : « France 🏉 » ≠ « France » (foot) dans S.data */
     else if (x && x[1] === 'sel') { var S1 = window._g45CrS; if (S1) { S1.selIds = S1.selIds || {}; S1.selIds[loiNomFr(x)] = String(x[3]); } LOI.cr = { nom: loiNomFr(x), ctx: null, lgF: 'fifa.world' }; }   /* 20261113h : sélection (index lg 'sel') */
     else LOI.cr = { nom: (x && x[4]) || nom, ctx: null, lgF: (x && x[1]) || null };
   }
