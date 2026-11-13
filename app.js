@@ -87734,13 +87734,16 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   var FRK = 0.94, coteFr = function (c) { return Math.round(c * FRK * 100) / 100; };
   var coteH = function (y) { var q = coteDe(y); return q ? ' · <b style="color:#f5c542;">' + (q.e ? '≈ ' : '') + frC(q.c) + '</b> <span style="color:#6dd3ff;font-weight:800;">FR ≈ ' + frC(coteFr(q.c)) + '</span>' : ''; };
   window._g45LoiMont = function (L, coteDe) {   /* 20261111f : simulation montante du bilan (voir html) */
-    var G = [10, 20, 60, 180, 540, 1620, 4860, 14580, 43740], E = {}, g = 0, pmax = 0, mmax = 0, n = 0;
+    var G = [10, 20, 60, 180, 540, 1620, 4860, 14580, 43740], E = {}, PE = {}, g = 0, pmax = 0, mmax = 0, n = 0, DET = {};
     L.slice().sort(function (a, b) { return a.t - b.t; }).forEach(function (x) {
-      var q = coteDe(x); if (!q || !(q.c > 1) || (x.r !== 1 && x.r !== 0)) return;
-      var k = x.id + '|' + x.k + '|' + (x.lieu || ''), p = E[k] || 1, m = G[Math.min(p, G.length) - 1];
+      var q = coteDe(x); if (!q || !(q.c > 1)) return;
+      var k = x.id + '|' + x.k + '|' + (x.lieu || ''), p = E[k] || 1, m = G[Math.min(p, G.length) - 1], kd = k + '|' + x.t;
+      if (x.r !== 1 && x.r !== 0) { if (x.r !== -1) DET[kd] = { p: p, m: m }; return; }   /* 20261113b : ⏳ = palier et mise prévus */
       n++; if (p > pmax) pmax = p; if (m > mmax) mmax = m;
-      if (x.r === 1) { g += m * (Math.round(q.c * 0.94 * 100) / 100 - 1); E[k] = 1; }   /* 20261111g : cote FR estimée */ else { g -= m; E[k] = p + 1; }
+      if (x.r === 1) { var gg = m * (Math.round(q.c * 0.94 * 100) / 100 - 1); g += gg; DET[kd] = { p: p, m: m, g: Math.round(gg * 100) / 100 }; if (p > 1) DET[kd].ser = Math.round((gg - (PE[k] || 0)) * 100) / 100; E[k] = 1; PE[k] = 0; }   /* 20261111g : cote FR estimée */
+      else { g -= m; DET[kd] = { p: p, m: m, g: -m }; E[k] = p + 1; PE[k] = (PE[k] || 0) + m; }
     });
+    window._g45LoiDet = DET;
     var ouv = Object.keys(E).filter(function (k) { return E[k] > 1; });
     return { n: n, g: Math.round(g * 100) / 100, pmax: pmax, mmax: mmax, ouv: ouv.length, prochs: ouv.slice(0, 3).map(function (k) { var p = E[k]; return 'P' + p + ' = ' + G[Math.min(p, G.length) - 1] + ' €'; }).join(', ') + (ouv.length > 3 ? '…' : '') };
   };
@@ -87759,8 +87762,18 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
       + '<div style="font-size:13px;color:#c9d3ee;">' + (date ? '📅 ' + esc(String(x.j || '').slice(8, 10) + '/' + String(x.j || '').slice(5, 7)) + ' · ' : '') + (hh ? '🕒 ' + esc(hh) : '') + (x.ligue ? ' · 🏆 ' + esc(x.ligue) : '') + '</div>'
       /* 20261107y (« Venezia en double » → maquette loiG.png « oui ») : UNE carte par match ; chaque pari sur sa ligne avec son ✅ / ❌ / ⏳ ; score à droite */
       + (G || [x]).map(function (y, i) { var ic = y.r === 1 ? '<b style="color:#1ed760;">✅</b>' : y.r === 0 ? '<b style="color:#ff6b6b;">❌</b>' : y.r === -1 ? '🚫' : '⏳';
-          return '<div style="font-size:14px;display:flex;justify-content:space-between;gap:10px;' + (i === 0 && (G || []).length > 1 ? 'border-top:1px solid #2a3a63;margin-top:4px;padding-top:4px;' : '') + '"><span>' + esc(y.lib) + (y.av && y.av.length ? coteH(y) + '<br><span style="font-size:13px;color:#dfe6f7;">' + [y].concat(y.av).map(function (z) { return (lieuI(z).trim() || '') + ' ' + esc(z.eq) + ' 🔥 ' + z.cours + ' / ' + z.pire; }).join(' · ') + '</span>' : lieuI(y) + ' · 🔥 ' + y.cours + ' / ' + y.pire + coteH(y)) + '</span>' + ic + '</div>'; }   /* 20261109g : pari du match fusionné → séries des 2 équipes */).join('') + '</div>'
+          return '<div style="font-size:14px;display:flex;justify-content:space-between;gap:10px;' + (i === 0 && (G || []).length > 1 ? 'border-top:1px solid #2a3a63;margin-top:4px;padding-top:4px;' : '') + '"><span>' + esc(y.lib) + (y.av && y.av.length ? coteH(y) + '<br><span style="font-size:13px;color:#dfe6f7;">' + [y].concat(y.av).map(function (z) { return (lieuI(z).trim() || '') + ' ' + esc(z.eq) + ' 🔥 ' + z.cours + ' / ' + z.pire; }).join(' · ') + '</span>' : lieuI(y) + ' · 🔥 ' + y.cours + ' / ' + y.pire + coteH(y)) + montL(y) + '</span>' + ic + '</div>'; }   /* 20261113b : + 🪜 palier / mise / gain ; 20261109g : pari du match fusionné → séries des 2 équipes */).join('') + '</div>'
       + '<span style="flex:1;"></span><span style="background:rgba(0,0,0,.8);border-radius:8px;padding:4px 8px;font-weight:900;font-size:16px;white-space:nowrap;">' + (function () { var z = (G || [x]).filter(function (y) { return y.sc; })[0]; return z ? esc(z.sc) : (G || [x]).every(function (y) { return y.r === -1; }) ? '🚫' : '⏳'; })() + '</span></div></div>';
+  };
+  /* 20261113b (Antoine : « on joue en mode Cockpit avec P1 à 10 €, on voit ni la mise, ni le palier, ni le gain » → maquette « oui ») :
+     ligne 🪜 sous chaque pépite = palier / mise / gain de la simulation 🚀 En montante (_g45LoiMont → window._g45LoiDet, même clé
+     équipe + pari + lieu + date) ; ⏳ = palier et mise prévus ; série fermée après des ratés = 🏁 bénéfice de la série. */
+  var montL = function (y) {
+    var d = (window._g45LoiDet || {})[y.id + '|' + y.k + '|' + (y.lieu || '') + '|' + y.t]; if (!d) return '';
+    var e2 = function (v) { return (v >= 0 ? '+' : '−') + frC(Math.abs(v)) + ' €'; }, cl = function (v) { return v >= 0 ? '#1ed760' : '#ff6b6b'; };
+    return '<br><span style="font-size:13px;font-weight:700;">🪜 P' + d.p + ' · mise ' + String(d.m) + ' €'
+      + (d.g != null ? ' → <b style="color:' + cl(d.g) + ';">' + e2(d.g) + '</b>' : '')
+      + (d.ser != null ? ' · 🏁 bénéfice de la série <b style="color:' + cl(d.ser) + ';">' + e2(d.ser) + '</b>' : '') + '</span>';
   };
   var grouper = function (A) { var o = [], ix = {}; A.forEach(function (x) { var k = x.j + '|' + x.eid + '|' + x.id; if (ix[k] == null) { ix[k] = o.length; o.push([]); } o[ix[k]].push(x); }); return o; };
   function html() {
@@ -87810,7 +87823,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
        🚀 EN MONTANTE — chaque pépite (même équipe + même pari + même lieu) démarre à P1 = 10 € ; ratée → la fois suivante où ELLE revient en
        pépite, palier suivant (grille d'Antoine : ×2 puis ×3 → 10, 20, 60, 180, 540…) ; passée → retour à P1. Pépites avec cote seulement,
        dans l'ordre des matchs. Gain total, plus haut palier, plus grosse mise, montantes encore ouvertes (palier en attente). */
-    var mt = window._g45LoiMont ? window._g45LoiMont(JC, coteDe) : null;
+    var mt = window._g45LoiMont ? window._g45LoiMont(L.filter(function (x) { return coteDe(x); }), coteDe) : null;   /* 20261113b : + pépites ⏳ (palier prévu) */
     if (mt && mt.n) h += '<div style="background:' + (mt.g >= 0 ? 'rgba(30,215,96,.12)' : 'rgba(255,69,69,.12)') + ';border:1px solid ' + (mt.g >= 0 ? '#1ed760' : '#ff4545') + ';border-radius:10px;padding:8px;margin-bottom:10px;text-align:center;">'
       + '<div style="font-size:14px;color:#c9d3ee;">🚀 En montante (P1 10 €, puis ×2 et ×3 sur la même équipe et le même pari)</div>'
       + '<div style="font-size:22px;font-weight:900;color:' + (mt.g >= 0 ? '#1ed760' : '#ff6b6b') + ';">' + (mt.g >= 0 ? '+' : '−') + frC(Math.abs(mt.g)).replace(',00', '') + ' €</div>'
