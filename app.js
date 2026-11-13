@@ -87846,28 +87846,34 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     if (M.vue === 'gr') {
       var JD = {}; JC.forEach(function (x) { JD[x.j] = (JD[x.j] || 0) + gainDe(x); });
       var jours = Object.keys(JD).sort(), cum = 0, pts = jours.map(function (j) { cum += JD[j]; return [j, cum]; });
+      /* 20261113f (Antoine : « faudrait les 2 ») : 2e courbe 🚀 montante (gains d.g de _g45LoiDet par jour), en or */
+      var DTm = window._g45LoiDet || {}, JM = {}; JC.forEach(function (x) { var q = DTm[x.id + '|' + x.k + '|' + (x.lieu || '') + '|' + x.t]; if (q && q.g != null) JM[x.j] = (JM[x.j] || 0) + q.g; });
+      var cumM = 0, ptsM = jours.map(function (j) { cumM += (JM[j] || 0); return [j, cumM]; });
       if (!pts.length) return h + '<div style="font-size:14px;padding:10px 0;">Pas encore de pépite terminée avec une cote : la courbe démarre dès les premiers résultats.</div></div>';
       /* 20261113e (Antoine : « pareil ici, le graphique pas assez détaillé ») : comme la courbe des Tendances — graduations en €, date sous
          chaque point, EN HAUT le total (blanc) et EN DESSOUS le gain du jour (vert / rouge), pastilles plus haut / plus bas / fin. */
       var W = 560, H = 290, ml = 52, mr = 16, mt = 46, mb = 34;
-      var vs = pts.map(function (p) { return p[1]; }), hi = Math.max.apply(null, vs), lo = Math.min.apply(null, vs);
-      var st2 = Math.max(10, Math.ceil((Math.max(hi, 10) - Math.min(lo, -10)) / 4 / 10) * 10), mx = Math.ceil(Math.max(hi, 10) / st2) * st2, mn = Math.floor(Math.min(lo, -10) / st2) * st2;
+      var vs = pts.map(function (p) { return p[1]; }), hi = Math.max.apply(null, vs), lo = Math.min.apply(null, vs), vsM = ptsM.map(function (p) { return p[1]; });
+      var hiA = Math.max(hi, Math.max.apply(null, vsM)), loA = Math.min(lo, Math.min.apply(null, vsM)), finM = vsM[vsM.length - 1];
+      var st2 = Math.max(10, Math.ceil((Math.max(hiA, 10) - Math.min(loA, -10)) / 4 / 10) * 10), mx = Math.ceil(Math.max(hiA, 10) / st2) * st2, mn = Math.floor(Math.min(loA, -10) / st2) * st2;
       var X = function (i) { return ml + (pts.length > 1 ? i * (W - ml - mr) / (pts.length - 1) : (W - ml - mr) / 2); }, Y = function (v) { return mt + (mx - v) * (H - mt - mb) / (mx - mn); };
       var fin = pts[pts.length - 1][1], cl = fin >= 0 ? '#1ed760' : '#ff6b6b', e0 = function (v) { return (v >= 0 ? '+' : '−') + String(Math.round(Math.abs(v))) + ' €'; };
       var pil = function (t, bg, c) { return '<span style="display:inline-block;margin:0 6px 6px 0;padding:4px 10px;border-radius:12px;font-size:14px;font-weight:800;background:' + bg + ';color:' + (c || '#fff') + ';">' + t + '</span>'; };
       var gr = ''; for (var v = mn; v <= mx + 1e-9; v += st2) gr += '<line x1="' + ml + '" x2="' + (W - mr) + '" y1="' + Y(v).toFixed(1) + '" y2="' + Y(v).toFixed(1) + '" stroke="' + (v === 0 ? '#ffffff88' : '#ffffff1a') + '"' + (v === 0 ? ' stroke-dasharray="6 5"' : '') + '/><text x="' + (ml - 6) + '" y="' + (Y(v) + 4).toFixed(1) + '" text-anchor="end" fill="#c9d3ee" font-size="13">' + (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v) + ' €</text>';
       var pas = Math.max(1, Math.ceil(pts.length / 8));
       h += '<div style="font-size:15px;font-weight:800;margin:4px 0 6px;">💶 Gain cumulé (10 € par pépite avec cote)</div>'
-        + '<div>' + pil('⬆ Plus haut : ' + e0(hi), '#1ed76033', '#7dffb0') + pil('⬇ Plus bas : ' + e0(lo), '#ff5c5c33', '#ffa0a0') + pil('Fin : ' + e0(fin), cl, '#111') + '</div>'
+        + '<div>' + pil('⬆ Plus haut : ' + e0(hi), '#1ed76033', '#7dffb0') + pil('⬇ Plus bas : ' + e0(lo), '#ff5c5c33', '#ffa0a0') + pil('💶 Fin 10 € : ' + e0(fin), cl, '#111') + pil('🚀 Fin montante : ' + e0(finM), '#f5c542', '#111') + '</div>'
         + '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;max-width:760px;background:#0b1226;border-radius:10px;display:block;">' + gr
+        + '<polyline fill="none" stroke="#f5c542" stroke-width="3" stroke-dasharray="7 5" points="' + ptsM.map(function (p, i) { return X(i).toFixed(1) + ',' + Y(p[1]).toFixed(1); }).join(' ') + '"/>'
+        + ptsM.map(function (p, i) { return '<circle cx="' + X(i).toFixed(1) + '" cy="' + Y(p[1]).toFixed(1) + '" r="4" fill="#f5c542"/>'; }).join('')
         + '<polyline fill="none" stroke="' + cl + '" stroke-width="3" points="' + pts.map(function (p, i) { return X(i).toFixed(1) + ',' + Y(p[1]).toFixed(1); }).join(' ') + '"/>'
         + pts.map(function (p, i) { var d = JD[p[0]], c = d >= 0 ? '#1ed760' : '#ff6b6b', voir = i % pas === 0 || i === pts.length - 1;
             return '<circle cx="' + X(i).toFixed(1) + '" cy="' + Y(p[1]).toFixed(1) + '" r="5" fill="' + c + '" stroke="#0b1226" stroke-width="2"/>'
               + (voir ? '<text x="' + X(i).toFixed(1) + '" y="' + (Y(p[1]) - 26).toFixed(1) + '" text-anchor="middle" fill="#fff" font-size="13" font-weight="900">' + e0(p[1]) + '</text>'
                 + '<text x="' + X(i).toFixed(1) + '" y="' + (Y(p[1]) - 11).toFixed(1) + '" text-anchor="middle" fill="' + c + '" font-size="12" font-weight="800">' + e0(d) + '</text>'
                 + '<text x="' + X(i).toFixed(1) + '" y="' + (H - 10) + '" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">' + esc(p[0].slice(8, 10) + '/' + p[0].slice(5, 7)) + '</text>' : ''); }).join('')
-        + '</svg><div style="font-size:13px;color:#c9d3ee;margin-top:6px;">En haut (blanc) = total à ce jour · en dessous = gain du jour · 🟢 jour gagnant · 🔴 jour perdant.</div>'
-        + '<div style="font-size:14px;margin-top:8px;">' + jours.slice().reverse().map(function (j) { var n = JC.filter(function (x) { return x.j === j; }), g = n.filter(function (x) { return x.r === 1; }).length; return '<div style="display:flex;justify-content:space-between;border-bottom:1px solid #1c2747;padding:4px 0;"><span>📅 ' + esc(j.slice(8, 10) + '/' + j.slice(5, 7)) + ' · ' + g + '/' + n.length + ' ✅</span><b style="color:' + (JD[j] >= 0 ? '#1ed760' : '#ff6b6b') + ';">' + eur(JD[j]) + '</b></div>'; }).join('') + '</div>';
+        + '</svg><div style="font-size:13px;color:#c9d3ee;margin-top:6px;">Trait plein = 💶 10 € par pépite (en haut, blanc = total ; en dessous = gain du jour) · pointillé or = 🚀 montante (P1 10 €, ×2 puis ×3).</div>'
+        + '<div style="font-size:14px;margin-top:8px;">' + jours.slice().reverse().map(function (j) { var n = JC.filter(function (x) { return x.j === j; }), g = n.filter(function (x) { return x.r === 1; }).length; return '<div style="display:flex;justify-content:space-between;border-bottom:1px solid #1c2747;padding:4px 0;"><span>📅 ' + esc(j.slice(8, 10) + '/' + j.slice(5, 7)) + ' · ' + g + '/' + n.length + ' ✅</span><span><b style="color:' + (JD[j] >= 0 ? '#1ed760' : '#ff6b6b') + ';">💶 ' + eur(JD[j]) + '</b>' + (JM[j] != null ? ' · <b style="color:#f5c542;">🚀 ' + eur(JM[j]) + '</b>' : '') + '</span></div>'; }).join('') + '</div>';
       return h + '</div>';
     }
     if (M.vue === 'bil') {
@@ -87903,11 +87909,13 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
       h += '<div ' + (X.length ? 'onclick="g45LoiBilJour(\'' + jj(d) + '\')" ' : '') + 'style="background:' + bg + ';border:' + (on ? '2px solid #6d9dff' : '1px solid ' + bd) + ';border-radius:8px;min-height:46px;padding:3px 1px;text-align:center;' + (X.length ? 'cursor:pointer;' : '') + '"><div style="font-size:13px;font-weight:800;">' + d + '</div><div style="font-size:12px;font-weight:700;">' + t + '</div>'
         /* 20261113e (Antoine : « mettre dans les cases journalières le bilan positif ou négatif de la journée ») : gain du jour de la 🚀 montante
            (somme des d.g de window._g45LoiDet pour les pépites terminées du jour) */
-        + (function () { var DT = window._g45LoiDet || {}, gj = 0, nj = 0; X.forEach(function (x) { var q = DT[x.id + '|' + x.k + '|' + (x.lieu || '') + '|' + x.t]; if (q && q.g != null) { gj += q.g; nj++; } });
-            return nj ? '<div style="font-size:12px;font-weight:900;color:' + (gj >= 0 ? '#1ed760' : '#ff6b6b') + ';">' + (gj >= 0 ? '+' : '−') + String(Math.round(Math.abs(gj) * 100) / 100).replace('.', ',') + ' €</div>' : ''; })()
+        + (function () { var DT = window._g45LoiDet || {}, gj = 0, nj = 0, g10 = 0, n10 = 0, f2 = function (v) { return (v >= 0 ? '+' : '−') + String(Math.round(Math.abs(v))) + ' €'; };
+            X.forEach(function (x) { var q = DT[x.id + '|' + x.k + '|' + (x.lieu || '') + '|' + x.t]; if (q && q.g != null) { gj += q.g; nj++; } var g1 = (x.r === 1 || x.r === 0) ? gainDe(x) : null; if (g1 != null) { g10 += g1; n10++; } });   /* 20261113f : les 2 (10 € et montante) */
+            return (n10 ? '<div style="font-size:12px;font-weight:900;color:' + (g10 >= 0 ? '#1ed760' : '#ff6b6b') + ';">💶 ' + f2(g10) + '</div>' : '')
+              + (nj ? '<div style="font-size:12px;font-weight:900;color:#f5c542;">🚀 ' + f2(gj) + '</div>' : ''); })()
         + '</div>';
     }
-    h += '</div><div style="font-size:13px;color:#c9d3ee;margin:8px 0;">Chaque jour : ✅ gagnées / pépites jouées, puis le gain du jour en 🚀 montante. Vert = plus de la moitié gagnées, jaune = moitié, rouge = moins, ⏳ = pas encore joué. Touche un jour pour voir ses pépites.</div>';
+    h += '</div><div style="font-size:13px;color:#c9d3ee;margin:8px 0;">Chaque jour : ✅ gagnées / pépites jouées, puis le gain du jour 💶 à 10 € et 🚀 en montante. Vert = plus de la moitié gagnées, jaune = moitié, rouge = moins, ⏳ = pas encore joué. Touche un jour pour voir ses pépites.</div>';
     var XJ = (PJ[M.j] || []).slice().sort(function (a, b) { return a.t - b.t; });   /* 20261107u (« c'est le désordre niveau horaire ») : du plus tôt au plus tard */
     if (XJ.length && !M.tout) { var dj = new Date(M.j + 'T12:00:00')   /* 20261107x (« doublon ? ») : historique ouvert → la liste du jour n'est pas répétée au-dessus */, gj = XJ.filter(function (x) { return x.r === 1; }).length, nj = XJ.filter(function (x) { return x.r === 1 || x.r === 0; }).length;
       h += '<div style="font-size:15px;font-weight:800;margin:6px 0 4px;">' + dj.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }) + (nj ? ' · ' + gj + '/' + nj + ' ✅' : '') + '</div><div class="g45lb-g">' + grouper(XJ).map(function (g) { return ligne(g, false); }).join('') + '</div>'; }   /* 20261107s : 2 colonnes sur PC */
