@@ -76433,14 +76433,16 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     if (S.jl[pid]) return;
     S.jl[pid] = { enCours: 1 };
     var SA = D.saisons || [];
-    Promise.all(SA.map(function (sa) { return sa ? aJoueur(D.lg, pid, sa.an).catch(function () { return null; }).then(function (a) { return a || _g45RegLogFoot(D.lg, pid, sa.an); }).catch(function () { return null; }) : null; })).then(async function (L) {   /* 20261031k : archives d'abord */
+    /* 20261113i : sélection → journal du joueur dans les 5 compétitions de l'année, mis bout à bout (archives seulement) */
+    var unAn = D.sel ? function (sa) { return Promise.all(SELL.map(function (lg) { return aJoueur(lg, pid, sa.an).catch(function () { return null; }); })).then(function (R) { var g = [], ok = false; R.forEach(function (a) { if (a) { ok = true; g = g.concat(a.gameLog || []); } }); return ok ? { gameLog: g, arch: 1 } : null; }); } : null;
+    Promise.all(SA.map(function (sa) { return sa ? (unAn ? unAn(sa) : aJoueur(D.lg, pid, sa.an).catch(function () { return null; }).then(function (a) { return a || _g45RegLogFoot(D.lg, pid, sa.an); }).catch(function () { return null; })) : null; })).then(async function (L) {   /* 20261031k : archives d'abord */
       var d = {}, vides = [];
       L.forEach(function (x, i) {
         var n = 0; ((x && x.gameLog) || []).forEach(function (g) { if (g.tid && D.tid && g.tid !== String(D.tid)) return;   /* 20261107o : un match avec un AUTRE club du même championnat ne doit pas tomber sur la même date du club choisi */
           if (g.d) { d[String(g.d).slice(0, 10)] = { g: g.goals || 0, a: g.assists || 0 }; n++; } });
         if (x && !n && SA[i]) vides.push(SA[i].an);   /* 20261031g : saison lue, AUCUN match dans ce championnat (lecture ratée = rien) */
       });
-      var ai = {}; if (vides.length) { try { ai = await jAilleurs(pid, D.lg, vides); } catch (e) {} }
+      var ai = {}; if (vides.length && !D.sel) { try { ai = await jAilleurs(pid, D.lg, vides); } catch (e) {} }   /* 20261113i : pas de « transfert » en sélection */
       S.jl[pid] = { d: d, n: Object.keys(d).length, ai: ai };
       try { redessiner(); } catch (e) {}
     });
@@ -76600,6 +76602,18 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   function roCharger(nom, D) {
     if (S.ro[nom]) return;
     S.ro[nom] = { enCours: 1 };
+    /* 20261113i (Antoine : « et les joueurs, impossible ? » → non : les archives gardent les joueurs des 5 compétitions de sélection) :
+       liste = joueurs.json des 2 dernières années de chaque compétition, ceux de CETTE sélection (x[1] = id), triés buts + passes. */
+    if (D.sel) {
+      var ANS2 = (D.saisons || []).slice(0, 2).map(function (sa) { return sa && sa.an; }).filter(Boolean), P = [];
+      SELL.forEach(function (lg) { ANS2.forEach(function (an) { P.push(aLire('foot/' + lg + '/' + aSa(lg, an) + '/joueurs.json')); }); });
+      Promise.all(P).then(function (R) {
+        var M = {}; R.forEach(function (J) { if (!J) return; Object.keys(J).forEach(function (id) { var x = J[id]; if (!x || String(x[1]) !== String(D.tid)) return; var o = M[id] || (M[id] = { id: String(id), nom: x[0] || '?', v: 0 }); var st = x[3] || {}; o.v += (+st.G || 0) + (+st.A || 0); }); });
+        S.ro[nom] = { l: Object.keys(M).map(function (k) { return M[k]; }).sort(function (x, y) { return y.v - x.v || x.nom.localeCompare(y.nom); }) };
+        try { redessiner(); } catch (e) {}
+      }).catch(function () { S.ro[nom] = { l: [] }; });
+      return;
+    }
     fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/' + D.lg + '/teams/' + D.tid + '/roster').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
       var st = function (a, nm) { var v = 0; try { ((a.statistics && a.statistics.splits && a.statistics.splits.categories) || []).forEach(function (c) { (c.stats || []).forEach(function (x) { if (x.name === nm) v = +x.value || 0; }); }); } catch (e) {} return v; };
       var l = ((j && j.athletes) || []).reduce(function (acc, x) { return acc.concat(x && x.items ? x.items : [x]); }, [])
@@ -77491,7 +77505,6 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       var sq = S.selc || 'T';
       h += lab('Compétition') + b(sq === 'T', 'Tout', "g45CrSet('selc','T')") + b(sq === 'O', '🏆 Officiels', "g45CrSet('selc','O')") + b(sq === 'A', '🤝 Amicaux seuls', "g45CrSet('selc','A')")
         + '<div style="font-size:13px;color:#c9d3ee;">Officiels = Coupe du monde, Euro, qualifs, Ligue des nations. Une « saison » = une année.</div>';
-      if (joueurs(S.combos[S.a] || {}).length) h += '<div style="font-size:13px;color:#ff9f43;">⚠️ Joueurs : pas encore lus pour les sélections.</div>';
     } else if (!S.ctx) {   /* 20261021e : coupes d'Europe */
       var cp = S.comp || 'L';
       h += lab('Compétition') + b(cp === 'L', '🏆 Championnat', "g45CrSet('comp','L')") + b(cp === 'E', '🌍 Coupe d\'Europe', "g45CrSet('comp','E')") + b(cp === 'T', 'Les deux', "g45CrSet('comp','T')");
