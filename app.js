@@ -89270,8 +89270,11 @@ window.g45SerNs = function (nom, n, el) {
         try { var r = await fetch(RAW + SPD[E[0]] + '/' + LGS[j] + '/' + sa + '/equipes/' + E[3] + '.json?h=' + Math.floor(Date.now() / 36e5)); if (r.ok) q = await r.json(); } catch (e) {}
         if (q && q.m) q.m.forEach(function (m) { if (m) MM.push({ m: m, eu: j > 0 }); }); }
       if (!MM.length) continue;
-      var ms = MM.filter(function (o) { var m = o.m; return m[4] && m[4][0] != null && m[4][1] != null && m[11]; }).sort(function (a2, b2) { return a2.m[0] - b2.m[0]; })
-        .map(function (o) { var m = o.m, h = m[3] === 'h'; return { h: h ? 1 : 0, eu: o.eu ? 1 : 0, c: +(h ? m[11][0] : m[11][2]), w: h ? +m[4][0] > +m[4][1] : +m[4][1] > +m[4][0] }; }).filter(function (x) { return x.c > 1; });
+      /* 20261114x : m[11] = [victoire, nul, défaite] de L'ÉQUIPE (déjà dans son sens) — l'essai prenait m[11][2] à l'extérieur = la cote de
+         l'ADVERSAIRE (bug, chiffres ✈️ / 🌍 faux) → toujours m[11][0] pour la victoire. Données brutes gardées pour les autres critères. */
+      var ms = MM.filter(function (o) { var m = o.m; return m[4] && m[4][0] != null && m[4][1] != null; }).sort(function (a2, b2) { return a2.m[0] - b2.m[0]; })
+        .map(function (o) { var m = o.m, h = m[3] === 'h', P = +(h ? m[4][0] : m[4][1]), Q = +(h ? m[4][1] : m[4][0]);
+          return { h: h ? 1 : 0, eu: o.eu ? 1 : 0, p: P, q: Q, co: Array.isArray(m[11]) ? m[11].map(Number) : null, tl: m[9] == null ? null : +m[9], to: m[15] || null, hl: m[8] == null ? null : +m[8], ho: m[16] || null }; });
       if (ms.length) out.push({ sa: sa, ms: ms });
     }
     if (M.eq !== E) return;
@@ -89295,7 +89298,7 @@ window.g45SerNs = function (nom, n, el) {
     if (M.eq) {
       var TJ = JT[M.eq[0]] || [];
       h += '<div style="font-size:16px;font-weight:900;margin:8px 0 6px;">' + ICO[M.eq[0]] + ' ' + esc(M.eq[4]) + ' <span style="font-size:14px;font-weight:400;color:#c9d3ee;">· ' + esc(M.eq[2]) + '</span></div>'
-        + '<div style="font-size:14px;color:#c9d3ee;margin-bottom:4px;">Pari</div>' + bt(!M.jo, '🏆 Victoire de l\'équipe', 'g45CbJ(-1)') + (TJ.length ? bt(!!M.jo || M.jl === 'load' || Array.isArray(M.jl), '👤 Un joueur', 'g45CbJ(-2)') : '');
+        + '<div style="font-size:14px;color:#c9d3ee;margin-bottom:4px;">Pari</div>' + pariHtml() + (TJ.length ? bt(!!M.jo || M.jl === 'load' || Array.isArray(M.jl), '👤 Un joueur', 'g45CbJ(-2)') : '');   /* 20261114x */
       if (!M.jo && euOk()) h += '<div style="margin:2px 0 4px;">' + bt(!!M.eu, (M.eu ? '✅' : '➕') + ' Coupes d\'Europe (LDC, Europa, Conférence)', 'g45CbEu()') + '</div>';
       if (Array.isArray(M.jl) && !M.jo) h += '<div style="margin:2px 0 6px;">' + (M.jl.length ? M.jl.slice(0, 30).map(function (x, i) { return bt(false, esc(x[1]) + ' <span style="font-weight:400;color:#c9d3ee;">· ' + x[2] + ' m.</span>', 'g45CbJ(' + i + ')'); }).join('') : '<span style="font-size:14px;color:#ffb13d;">Aucun joueur gardé pour cette équipe.</span>') + '</div>';
       else if (M.jl === 'load' && !M.jo) h += '<div style="font-size:14px;">⏳ Lecture des joueurs…</div>';
@@ -89333,10 +89336,46 @@ window.g45SerNs = function (nom, n, el) {
     + '<div style="font-size:14px;">📉 ' + distL(D.regle) + '</div><div style="font-size:14px;">🏁 ' + distL(D.ck) + '</div>'; };
   /* 20261114v (« fais le global des 5 saisons ET par saison ») : ligne sous chaque saison */
   var distS = function (R, td) { return '<tr><td colspan="3" style="' + td + 'border-top:none;padding-top:0;font-size:13px;color:#e6ebf7;">🪜 📉 ' + distL(R.regle.d) + '<br>🪜 🏁 ' + distL(R.ck.d) + '</td></tr>'; };
+  /* ═══ 20261114x — CRITÈRES dans l'essai (« rajoute les autres critères comme sur 📊 Critères » → maquette → « oui go ») : M.pari =
+     v victoire / n nul / d défaite (vraies cotes m[11]) ; o plus / u moins de la ligne du book (m[9], cotes m[15]) ; h handicap du book (m[8],
+     cotes m[16]) ; x autre critère (M.cr) avec une cote moyenne tapée (M.cx). Ligne exacte (pile) = remboursé → match sauté (la série attend). ═══ */
+  var CRX = [['dc', '🛡️ Double chance (V ou N)'], ['mq', '⚽ L\'équipe marque'], ['bts', '🤝 Les deux marquent'], ['pl', '⬆️ Plus de [N] (match)'], ['mo', '⬇️ Moins de [N] (match)'], ['vm', '🏆 Victoire + moins de [N]']];
+  function msP(ms) {
+    if (M.jo) return ms;   /* joueur : déjà { h, c, w } */
+    var P = M.pari || 'v', cx = num(M.cx), N = num(M.cn);
+    return ms.map(function (x) {
+      if (x.p == null) return x.c > 1 ? x : null;   /* ancien format */
+      var co = x.co || [], t = x.p + x.q, c = 0, w = false;
+      if (P === 'v') { c = +co[0]; w = x.p > x.q; }
+      else if (P === 'n') { c = +co[1]; w = x.p === x.q; }
+      else if (P === 'd') { c = +co[2]; w = x.p < x.q; }
+      else if (P === 'o' || P === 'u') { if (x.tl == null || !x.to || t === x.tl) return null; c = +x.to[P === 'o' ? 0 : 1]; w = P === 'o' ? t > x.tl : t < x.tl; }
+      else if (P === 'h') { if (x.hl == null || !x.ho || x.p + x.hl === x.q) return null; c = +x.ho[0]; w = x.p + x.hl > x.q; }
+      else if (P === 'x') { if (!(cx > 1)) return null; c = cx; var cr = M.cr || 'dc';
+        if (cr === 'dc') w = x.p >= x.q; else if (cr === 'mq') w = x.p > 0; else if (cr === 'bts') w = x.p > 0 && x.q > 0;
+        else { if (!(N >= 0)) return null; if (cr === 'pl') w = t > N; else if (cr === 'mo') w = t < N; else if (cr === 'vm') w = x.p > x.q && t < N; } }
+      return c > 1 ? { h: x.h, eu: x.eu, c: c, w: !!w } : null;
+    }).filter(Boolean);
+  }
+  window._g45CbMsP = function (ms, o) { var s0 = { pari: M.pari, cx: M.cx, cn: M.cn, cr: M.cr, jo: M.jo }; Object.assign(M, o || {}); try { return msP(ms); } finally { Object.assign(M, s0); } };   /* tests */
+  function pariHtml() {
+    var sp = M.eq && M.eq[0], foot = sp === 'soccer';
+    var L = [['v', '🏆 Victoire'], foot ? ['n', '🤝 Nul'] : null, ['d', '❌ Défaite'], ['o', '⬆️ Plus ligne book'], ['u', '⬇️ Moins ligne book'], ['h', '➖ Handicap book'], ['x', '🎯 Autre critère…']].filter(Boolean);
+    var h = '<div style="margin:2px 0 4px;">' + L.map(function (x) { return bt(!M.jo && (M.pari || 'v') === x[0], x[1], "g45CbPari('" + x[0] + "')"); }).join('') + '</div>';
+    if (!M.jo && M.pari === 'x') {
+      h += '<div style="margin:2px 0 4px;">' + CRX.filter(function (x) { return foot || (x[0] !== 'bts' && x[0] !== 'mq'); }).map(function (x) { return bt((M.cr || 'dc') === x[0], x[1], "g45CbCr('" + x[0] + "')"); }).join('') + '</div>'
+        + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:6px;">'
+        + (/^(pl|mo|vm)$/.test(M.cr || '') ? '<label style="font-size:14px;">N (ligne)<input value="' + esc(M.cn || '') + '" inputmode="decimal" onchange="g45CbSet(\'cn\',this.value)" placeholder="ex. 4,5" style="' + IN + '"></label>' : '<div></div>')
+        + '<label style="font-size:14px;">Cote moyenne<input value="' + esc(M.cx || '') + '" inputmode="decimal" onchange="g45CbSet(\'cx\',this.value)" placeholder="ex. 1,25" style="' + IN + '"></label></div>'
+        + '<div style="font-size:13px;color:#c9d3ee;">Pas de cote gardée pour ce critère : l\'essai prend ta cote moyenne pour chaque match.</div>';
+    }
+    if (!M.jo && /^[ouh]$/.test(M.pari || '')) h += '<div style="font-size:13px;color:#c9d3ee;">Ligne et cote du book de chaque match (gardées par nos robots). Ligne pile = remboursé → match sauté.</div>';
+    return h;
+  }
   function resHtml(p1, C) {
     var td = 'padding:6px 4px;border-top:1px solid #1c2747;', tA = { g: 0, mx: 0, ab: 0 }, tB = { g: 0, mx: 0, ab: 0 };
     var col = function (v) { return v >= 0 ? '#1ed760' : '#ff6b6b'; };
-    var SS = M.R.slice().reverse().map(function (s) { return { sa: s.sa, ms: s.ms.filter(function (x) { return M.lieu === 'tout' || (M.lieu === 'dom' ? x.h === 1 : x.h === 0); }) }; }).filter(function (s) { return s.ms.length; });
+    var SS = M.R.slice().reverse().map(function (s) { return { sa: s.sa, ms: msP(s.ms).filter(function (x) { return M.lieu === 'tout' || (M.lieu === 'dom' ? x.h === 1 : x.h === 0); }) }; }).filter(function (s) { return s.ms.length; });
     var RS = simSaisons(SS, { p1: p1, stop: M.stop, pl: M.pl, r: M.r }), RI = {}; RS.forEach(function (r) { RI[r.sa] = r; });   /* 20261114m : séries continues d'une saison à l'autre */
     /* 20261114w (« mets un coup de peinture, il n'y a rien d'aligné » → maquette → « oui go ») : une CARTE par saison, rangée comme un tableau :
        libellé à gauche, 📉 / 🏁 en colonnes alignées à droite (chiffres à largeur fixe, jamais coupés), puis les lignes 🪜 ; Total = même carte, bord or. */
@@ -89354,7 +89393,7 @@ window.g45SerNs = function (nom, n, el) {
         + '</table><div style="font-size:14px;margin-top:4px;line-height:1.5;">🪜 📉 ' + distL(dA) + '<br>🪜 🏁 ' + distL(dB) + '</div></div>';
     };
     var L = M.R.map(function (s) {
-      var ms = s.ms.filter(function (x) { return M.lieu === 'tout' || (M.lieu === 'dom' ? x.h === 1 : x.h === 0); }); if (!ms.length) return '';
+      var ms = msP(s.ms).filter(function (x) { return M.lieu === 'tout' || (M.lieu === 'dom' ? x.h === 1 : x.h === 0); }); if (!ms.length) return '';
       var R = RI[s.sa], v = ms.filter(function (x) { return x.w; }).length, bas = ms.filter(function (x) { return x.c < 1.5; }).length, neu = ms.filter(function (x) { return x.eu; }).length;
       tA.g += R.regle.g; tA.mx = Math.max(tA.mx, R.regle.mx); tA.ab += R.regle.ab; tB.g += R.ck.g; tB.mx = Math.max(tB.mx, R.ck.mx); tB.ab += R.ck.ab;
       tA.pp = Math.max(tA.pp || 0, R.regle.pp || 0); tB.pp = Math.max(tB.pp || 0, R.ck.pp || 0);   /* 20261114u */
@@ -89362,7 +89401,7 @@ window.g45SerNs = function (nom, n, el) {
     }).join('');
     if (!L) return '<div style="font-size:14px;margin-top:8px;">Aucun match pour ce lieu.</div>';
     return '<div style="font-size:14px;color:#c9d3ee;margin-top:8px;">📉 Ta règle (' + (M.pl ? 'dès ' + M.pl.toFixed(2).replace('.', ',') : 'tous les matchs') + ') · 🏁 Cockpit seul (1,50 et plus)</div>' + L
-      + carteS('Total ' + M.R.filter(function (s) { return s.ms.some(function (x) { return M.lieu === 'tout' || (M.lieu === 'dom' ? x.h === 1 : x.h === 0); }); }).length + ' saisons', '', tA, tB, RS.dist.regle, RS.dist.ck, 1)
+      + carteS('Total ' + M.R.filter(function (s) { return msP(s.ms).some(function (x) { return M.lieu === 'tout' || (M.lieu === 'dom' ? x.h === 1 : x.h === 0); }); }).length + ' saisons', '', tA, tB, RS.dist.regle, RS.dist.ck, 1)
       + (C > 0 && tA.mx > C ? '<div style="font-size:14px;color:#ff6b6b;font-weight:800;margin-top:4px;">⚠️ Ta règle demande une mise de ' + eu(tA.mx) + ' : plus que ton capital (' + eu(C) + ').</div>' : '')
       + ((RS.fin.regle > 0 || RS.fin.ck > 0) ? '<div style="font-size:14px;color:#ffd34d;margin-top:6px;">⏳ Série en cours (pas encore rattrapée) : 📉 ' + eu(RS.fin.regle) + ' · 🏁 ' + eu(RS.fin.ck) + ' déjà misés, comptés dans le total.</div>' : '')
       + '<div style="font-size:13px;color:#c9d3ee;margin-top:6px;">Une série pas finie en fin de saison continue sur la suivante. max = plus grosse mise · 🛑 = séries abandonnées à l\'arrêt de sécurité (perte gardée). Cotes de clôture de nos archives (pas la cote FR). Cockpit seul = grille ×2 puis ×3, matchs sous 1,50 sautés.</div>';
@@ -89370,7 +89409,7 @@ window.g45SerNs = function (nom, n, el) {
   function dessiner() { var z = document.getElementById('calc-cb'); if (z && z.style.display !== 'none') { z.innerHTML = html(); liste(); } }
   window._g45CbHtml = html; window._g45CbM = M;
   window.g45CbSet = function (k, v) {
-    if (k === 'lieu' || k === 'stop' || k === 'pl' || k === 'r') { M[k] = v; dessiner(); return; }
+    if (k === 'lieu' || k === 'stop' || k === 'pl' || k === 'r' || k === 'cx' || k === 'cn') { M[k] = v; dessiner(); return; }   /* 20261114x : cx / cn */
     M[k] = String(v).slice(0, 8);
     var z = document.getElementById('g45-cb-t'), c = num(M.c), p1 = num(M.p1), kk = num(M.k);   /* pas de redessin complet pendant la frappe (clavier) */
     if (z) z.innerHTML = tabHtml(c, p1, kk, c > 1 && p1 > 0 && kk > 1, cap());
@@ -89382,6 +89421,8 @@ window.g45SerNs = function (nom, n, el) {
     var x = Array.isArray(M.jl) && M.jl[i]; if (!x) return; M.jo = x; M.jt = M.jt && (JT[M.eq[0]] || []).some(function (t) { return t[0] === M.jt; }) ? M.jt : ((JT[M.eq[0]] || [])[0] || [])[0]; jCharger(); };
   window.g45CbJT = function (k) { M.jt = k; jCharger(); };
   window.g45CbEu = function () { M.eu = !M.eu; charger(); };   /* 20261114r */
+  window.g45CbPari = function (k) { M.pari = k; if (M.jo || !Array.isArray(M.R) || M.R.some(function (s) { return s.ms.some(function (x) { return x.p == null && x.co == null; }); })) { M.jo = null; M.jl = null; charger(); return; } dessiner(); };   /* 20261114x */
+  window.g45CbCr = function (k) { M.cr = k; dessiner(); };
 
   function poser() {
     var tc = document.getElementById('t-calc'), barre = tc && tc.querySelector('.calc-tabs'); if (!tc || !barre) return false;
