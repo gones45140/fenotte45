@@ -87698,16 +87698,21 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   var cbSt = function (u, k) { var o = (u.lcb || {})[k]; return o && o.p > 1 ? o : { p: 1, prev: 0, per: 0 }; };
   var cbP1 = function (u) { var v = parseFloat(u.cbP1); return v > 0 ? v : p1De(u); };
   var cbStop = function (u) { var v = parseInt(u.cbStop, 10); return v >= 3 && v <= 9 ? v : 5; };
-  var cbMise = function (u, k, c) { var st = cbSt(u, k); if (st.p <= 1) return Math.round(cbP1(u) * 100) / 100; if (!(c > 1)) return 0;
+  /* 20261114q — COTE PLANCHER (Antoine, Barça – Alavés 1,06 : « calcul des matchs du Barça en sautant ceux sous 1,20 » → 🏠 +217 € au lieu de
+     +266 € mais plus grosse mise 228 € au lieu de 2 730 € → « oui mets le plancher 1,20 ») : sous le plancher de la carte (u.cbPl, 1,20 par
+     défaut, 0 = aucun), le match est SAUTÉ : pas de mise, la série attend le match suivant (même au palier 1). */
+  var cbPl = function (u) { var v = u && u.cbPl != null ? parseFloat(u.cbPl) : 1.2; return v >= 0 ? v : 1.2; };
+  var cbSaute = function (u, c) { var pl = cbPl(u); return !!(pl && c > 1 && c < pl - 1e-9); };
+  var cbMise = function (u, k, c) { if (cbSaute(u, c)) return 0; var st = cbSt(u, k); if (st.p <= 1) return Math.round(cbP1(u) * 100) / 100; if (!(c > 1)) return 0;
     return Math.ceil((c < 1.5 ? st.prev * (1 / (c - 1) + 2) : st.per * 3) * 100) / 100; };
   var cbAvance = function (u, k, mise, gagne) { u.lcb = u.lcb || {}; var st = cbSt(u, k);
     if (gagne) { delete u.lcb[k]; return; }
     var n = { p: st.p + 1, prev: +mise || 0, per: (st.per || 0) + (+mise || 0) };
     if (st.p >= cbStop(u)) delete u.lcb[k]; else u.lcb[k] = n; };
-  window._g45CbMeth = { mise: cbMise, avance: cbAvance, st: cbSt };   /* tests */
+  window._g45CbMeth = { mise: cbMise, avance: cbAvance, st: cbSt, saute: cbSaute };   /* tests */
   /* la mise dépend de la cote : on recalcule quand la cote du ticket change (renderMmCote = cote combinée / cote réelle) */
   try { if (typeof renderMmCote === 'function' && !renderMmCote._cb) { var _rmc0 = renderMmCote; renderMmCote = window.renderMmCote = function () { var r = _rmc0.apply(this, arguments);
-    try { if (meth() === 'cb') { var u = carte(), mi = $('c-mise'); if (u && mi && !mi._g45Man) { var v = cbMise(u, cle(), cbCote()); if (v) mi.value = v; } dessiner(); } } catch (e) {} return r; }; renderMmCote._cb = 1; } } catch (e) {}
+    try { if (meth() === 'cb') { var u = carte(), mi = $('c-mise'); if (u && mi && !mi._g45Man) { var v = cbMise(u, cle(), cbCote()); if (v) mi.value = v; else if (cbSaute(u, cbCote())) mi.value = ''; } dessiner(); } } catch (e) {} return r; }; renderMmCote._cb = 1; } } catch (e) {}
   /* 20261106w (capture d'Antoine : pari Cockpit placé avec 🪜 D'Alembert encore actif → enregistré en pari simple) : méthode PAS gardée d'une
      visite à l'autre (plus de localStorage) → Engager s'ouvre toujours sur 🚀 Cockpit ; confirmation avant un pari Fibonacci / D'Alembert. */
   var meth = function () { var m = window._g45EngMeth || 'mont'; return (SEQ[m] || m === 'cb') ? m : 'mont'; };
@@ -87741,12 +87746,15 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     var bk = 0; try { Object.keys(state.b || {}).forEach(function (x) { bk += parseFloat(state.b[x]) || 0; }); } catch (e) {}
     var part = parseFloat(state.cbPart) > 0 ? parseFloat(state.cbPart) : 20, cap = bk * part / 100, f2 = function (v) { return (Math.round(v * 100) / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €'; };
     var B = function (on, t, fn) { return '<button onclick="' + fn + '" style="border-radius:10px;padding:6px 11px;font-size:14px;font-weight:800;cursor:pointer;color:#fff;margin:0 5px 5px 0;border:2px solid ' + (on ? '#1ed760' : '#6d9dff') + ';background:' + (on ? '#14532d' : '#16213f') + ';">' + t + '</button>'; };
-    var reg = st.p <= 1 ? 'P1 = mise de départ de la carte' : (!c ? 'tape d\'abord ta sélection (la cote)' : (c < 1.5 ? 'cote sous 1,50 : mise d\'avant ' + f2(st.prev) + ' × ' + (1 / (c - 1) + 2).toFixed(2).replace('.', ',') : 'cote 1,50 ou plus : pertes de la série ' + f2(st.per) + ' × 3'));
+    var PL = cbPl(u), sau = cbSaute(u, c);
+    var reg = sau ? '⏭️ cote sous ' + PL.toFixed(2).replace('.', ',') + ' : match SAUTÉ, la série attend le match suivant' : st.p <= 1 ? 'P1 = mise de départ de la carte' : (!c ? 'tape d\'abord ta sélection (la cote)' : (c < 1.5 ? 'cote sous 1,50 : mise d\'avant ' + f2(st.prev) + ' × ' + (1 / (c - 1) + 2).toFixed(2).replace('.', ',') : 'cote 1,50 ou plus : pertes de la série ' + f2(st.per) + ' × 3'));
     var h = '<div style="margin-top:8px;background:rgba(10,14,24,.93);border:1px solid #1c2747;border-radius:12px;padding:10px 12px;color:#fff;font-size:15px;line-height:1.5;">'
       + '<b>📉 Cotes basses — ' + String(u.n).replace(/</g, '') + ' ' + (L === 'dom' ? '🏠' : L === 'ext' ? '✈️' : '🌍') + '</b> · série <b>C' + st.p + '</b>' + (st.per ? ' · déjà perdu ' + f2(st.per) : '')
       + (c ? ' · cote ' + String(c).replace('.', ',') : '') + '<br>➡️ Mise : <b style="font-size:18px;color:#ffd34d;">' + (mi ? f2(mi) : '—') + '</b> <span style="font-size:13px;color:#c9d3ee;">(' + reg + ')</span>'
       + '<div style="font-size:14px;margin-top:6px;">🛑 Arrêt de cette carte (série abandonnée après ce palier perdu)</div>'
       + [5, 6, 7].map(function (n) { return B(S === n, 'C' + n, "g45CbCarte('stop'," + n + ')'); }).join('')
+      + '<div style="font-size:14px;margin-top:4px;">⏭️ Cote plancher (en dessous, match sauté)</div>'
+      + [1.2, 1.25, 1.3, 0].map(function (n) { return B(Math.abs(PL - n) < 1e-9, n ? n.toFixed(2).replace('.', ',') : 'Aucune', "g45CbCarte('pl'," + n + ')'); }).join('')
       + '<div style="font-size:14px;margin-top:4px;">🪙 Mise de départ (P1) de cette carte : <b>' + f2(P1) + '</b></div>'
       + '<div style="font-size:14px;margin-top:4px;">🏦 Part de ta BK pour les cotes basses</div>' + [10, 20, 50, 100].map(function (n) { return B(part === n, n + ' %', "g45CbCarte('part'," + n + ')'); }).join('')
       + '<div style="font-size:14px;">Ma part (' + f2(cap) + ') couvre :</div>' + [5, 6, 7].map(function (n) { var v = Math.floor(cap / Math.pow(4, n - 1) * 100) / 100; return B(false, n + ' paliers → P1 ' + f2(v), "g45CbCarte('p1'," + v + ')'); }).join('')
@@ -87754,7 +87762,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     return h;
   }
   window.g45CbCarte = function (q, v) {
-    var u = carte(); if (q === 'part') { state.cbPart = +v; } else if (!u) return; else if (q === 'stop') u.cbStop = +v; else if (q === 'p1' && +v > 0) { if (!confirm('P1 de ' + u.n + ' = ' + String(v).replace('.', ',') + ' € ?')) return; u.cbP1 = +v; }
+    var u = carte(); if (q === 'part') { state.cbPart = +v; } else if (!u) return; else if (q === 'stop') u.cbStop = +v; else if (q === 'pl') u.cbPl = +v; else if (q === 'p1' && +v > 0) { if (!confirm('P1 de ' + u.n + ' = ' + String(v).replace('.', ',') + ' € ?')) return; u.cbP1 = +v; }
     try { save(); } catch (e) {} try { (window.updMise || updMise)(); } catch (e) {} dessiner();
   };
   /* ═══ 20261114o — 📉 COTES BASSES dans le 📊 Tableau de bord (maquette → « oui ») : chiffres (bénéfice, mises, ✅ / ❌, séries abandonnées),
@@ -87821,7 +87829,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   var um0 = window.updMise;
   if (typeof um0 === 'function') window.updMise = updMise = function () {
     var r = um0.apply(this, arguments);
-    try { var m = meth(), u = carte(), mi = $('c-mise'); if (m !== 'mont' && u && mi && !mi._g45Man) { var v = m === 'cb' ? cbMise(u, cle(), cbCote()) : miseDe(u, m, palM(u, m, cle())); if (v) mi.value = v; } dessiner(); } catch (e) {}
+    try { var m = meth(), u = carte(), mi = $('c-mise'); if (m !== 'mont' && u && mi && !mi._g45Man) { var v = m === 'cb' ? cbMise(u, cle(), cbCote()) : miseDe(u, m, palM(u, m, cle())); if (v) mi.value = v; else if (m === 'cb' && cbSaute(u, cbCote())) mi.value = ''; } dessiner(); } catch (e) {}
     return r;
   };
   /* placement : pari(true) normal puis le pari devient « méthode » (hors montante) */
@@ -87829,6 +87837,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   if (typeof pa0 === 'function') window.pari = pari = function (isS) {
     var m = meth(), u = isS ? carte() : null;
     if (!isS || m === 'mont' || !u) return pa0.apply(this, arguments);
+    if (m === 'cb' && cbSaute(u, cbCote())) { alert('⏭️ Cote ' + String(cbCote()).replace('.', ',') + ' sous le plancher ' + cbPl(u).toFixed(2).replace('.', ',') + ' de ' + u.n + ' : match sauté, la série 📉 attend le match suivant.\n\n(Plancher modifiable dans 📉 Cotes basses.)'); return; }   /* 20261114q */
     var k = cle(), p = m === 'cb' ? cbSt(u, k).p : palM(u, m, k), n0 = (state.h || []).length, top = state.h && state.h[0];
     if (!window._g45MethSansConfirm && !confirm('Ce pari part en ' + NOM[m] + ' (' + LET[m] + p + '), HORS montante Cockpit. OK ?\n\nAnnuler → reviens sur 🚀 Cockpit.')) { window.g45EngMeth('mont'); return; }
     var r = pa0.apply(this, arguments);
@@ -89094,7 +89103,7 @@ window.g45SerNs = function (nom, n, el) {
    2) Essai sur une équipe (clubs de foot des archives, pari Victoire, vraies cotes de clôture m[11]) : sa règle + arrêt de sécurité, comparée
       à « Cockpit seul » (matchs sous 1,50 sautés, grille ×2 puis ×3). ═══ */
 (function () {
-  var M = { c: '1,30', p1: '10', k: '5', q: '', eq: null, lieu: 'tout', stop: 5, R: null, etat: '' };
+  var M = { c: '1,30', p1: '10', k: '5', q: '', eq: null, lieu: 'tout', stop: 5, pl: 1.2, R: null, etat: '' };   /* 20261114q : pl = cote plancher */
   var esc = function (x) { return String(x == null ? '' : x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); };
   var num = function (x) { return parseFloat(String(x).replace(',', '.')); };
   var eu = function (v, d) { return (Math.round(v * 100) / 100).toLocaleString('fr-FR', { minimumFractionDigits: d ? 2 : 0, maximumFractionDigits: 2 }) + ' €'; };
@@ -89123,12 +89132,12 @@ window.g45SerNs = function (nom, n, el) {
      cours à la fin d'une saison CONTINUE sur la suivante, comme en vrai ; gains / mises max / abandons comptés dans la saison du match.
      S = [{ sa, ms }] du plus ancien au plus récent → [{ regle: {g, mx, ab}, ck: {…} }] + fin = pertes de la série encore ouverte. */
   function simSaisons(S, o) {
-    var p1 = o.p1 || 10, stop = o.stop || 0, G = [1, 2, 6, 18, 54, 162, 486, 1458, 4374];
+    var p1 = o.p1 || 10, stop = o.stop || 0, pl = o.pl || 0, G = [1, 2, 6, 18, 54, 162, 486, 1458, 4374];
     var A = { pal: 0, prev: 0, per: 0 }, B = { q: 0, per: 0 }, out = [];
     S.forEach(function (sx) {
       var r = { g: 0, mx: 0, ab: 0 }, k = { g: 0, mx: 0, ab: 0 };
       sx.ms.forEach(function (x) {
-        if (x.c > 1.05) {
+        if (x.c > 1.05 && !(pl && x.c < pl - 1e-9)) {   /* 20261114q : sous le plancher → match sauté */
           var m = A.pal === 0 ? p1 : (x.c < 1.5 ? A.prev * (1 / (x.c - 1) + 2) : A.per * 3); if (m > r.mx) r.mx = m;
           if (x.w) { r.g += m * (x.c - 1); A.pal = 0; A.prev = 0; A.per = 0; }
           else { r.g -= m; A.per += m; A.prev = m; A.pal++; if (stop && A.pal >= stop) { r.ab++; A.pal = 0; A.prev = 0; A.per = 0; } }
@@ -89239,7 +89248,9 @@ window.g45SerNs = function (nom, n, el) {
       h += ''
         + '<div style="font-size:14px;color:#c9d3ee;margin-bottom:4px;">Lieu</div>' + bt(M.lieu === 'tout', 'Tous les matchs', "g45CbSet('lieu','tout')") + bt(M.lieu === 'dom', '🏠 Domicile', "g45CbSet('lieu','dom')") + bt(M.lieu === 'ext', '✈️ Extérieur', "g45CbSet('lieu','ext')")
         + '<div style="font-size:14px;color:#c9d3ee;margin:4px 0;">🛑 Arrêt de sécurité (série abandonnée après ce palier perdu)</div>'
-        + [4, 5, 6, 7, 0].map(function (n) { return bt(M.stop === n, n ? 'P' + n : 'Aucun', "g45CbSet('stop'," + n + ')'); }).join('');
+        + [4, 5, 6, 7, 0].map(function (n) { return bt(M.stop === n, n ? 'P' + n : 'Aucun', "g45CbSet('stop'," + n + ')'); }).join('')
+        + '<div style="font-size:14px;color:#c9d3ee;margin:4px 0;">⏭️ Cote plancher de ta règle (en dessous, match sauté, la série attend)</div>'
+        + [1.2, 1.25, 1.3, 0].map(function (n) { return bt(M.pl === n, n ? n.toFixed(2).replace('.', ',') : 'Aucune', "g45CbSet('pl'," + n + ')'); }).join('');
       if (M.etat === 'load') h += '<div style="font-size:14px;margin-top:8px;">⏳ Lecture des saisons…</div>';
       else if (M.etat === 'vide') h += '<div style="font-size:14px;margin-top:8px;color:#ffb13d;">Pas de cotes gardées pour cette équipe.</div>';
       else if (M.etat === 'videJ') h += '<div style="font-size:14px;margin-top:8px;color:#ffb13d;">Pas de cote gardée pour ce joueur et ce pari.</div>';
@@ -89262,7 +89273,7 @@ window.g45SerNs = function (nom, n, el) {
     var td = 'padding:6px 4px;border-top:1px solid #1c2747;', tA = { g: 0, mx: 0, ab: 0 }, tB = { g: 0, mx: 0, ab: 0 };
     var col = function (v) { return v >= 0 ? '#1ed760' : '#ff6b6b'; };
     var SS = M.R.slice().reverse().map(function (s) { return { sa: s.sa, ms: s.ms.filter(function (x) { return M.lieu === 'tout' || (M.lieu === 'dom' ? x.h === 1 : x.h === 0); }) }; }).filter(function (s) { return s.ms.length; });
-    var RS = simSaisons(SS, { p1: p1, stop: M.stop }), RI = {}; RS.forEach(function (r) { RI[r.sa] = r; });   /* 20261114m : séries continues d'une saison à l'autre */
+    var RS = simSaisons(SS, { p1: p1, stop: M.stop, pl: M.pl }), RI = {}; RS.forEach(function (r) { RI[r.sa] = r; });   /* 20261114m : séries continues d'une saison à l'autre */
     var L = M.R.map(function (s) {
       var ms = s.ms.filter(function (x) { return M.lieu === 'tout' || (M.lieu === 'dom' ? x.h === 1 : x.h === 0); }); if (!ms.length) return '';
       var R = RI[s.sa], v = ms.filter(function (x) { return x.w; }).length, bas = ms.filter(function (x) { return x.c < 1.5; }).length;
@@ -89272,7 +89283,7 @@ window.g45SerNs = function (nom, n, el) {
         + '<td style="' + td + '"><b style="color:' + col(R.ck.g) + ';">' + sg(R.ck.g) + '</b><br>max ' + eu(R.ck.mx) + (R.ck.ab ? '<br><span style="color:#ff6b6b;">🛑 ' + R.ck.ab + '</span>' : '') + '</td></tr>';
     }).join('');
     if (!L) return '<div style="font-size:14px;margin-top:8px;">Aucun match pour ce lieu.</div>';
-    return '<div style="overflow-x:auto;margin-top:8px;"><table style="width:100%;border-collapse:collapse;font-size:14px;"><tr style="color:#c9d3ee;"><td style="padding:4px;">Saison</td><td>📉 Ta règle<br>(tous les matchs)</td><td>🏁 Cockpit seul<br>(1,50 et plus)</td></tr>' + L
+    return '<div style="overflow-x:auto;margin-top:8px;"><table style="width:100%;border-collapse:collapse;font-size:14px;"><tr style="color:#c9d3ee;"><td style="padding:4px;">Saison</td><td>📉 Ta règle<br>(' + (M.pl ? 'dès ' + M.pl.toFixed(2).replace('.', ',') : 'tous les matchs') + ')</td><td>🏁 Cockpit seul<br>(1,50 et plus)</td></tr>' + L
       + '<tr><td style="' + td + 'font-weight:900;">Total</td><td style="' + td + '"><b style="color:' + col(tA.g) + ';">' + sg(tA.g) + '</b><br>max ' + eu(tA.mx) + (tA.ab ? '<br><span style="color:#ff6b6b;">🛑 ' + tA.ab + '</span>' : '') + '</td>'
       + '<td style="' + td + '"><b style="color:' + col(tB.g) + ';">' + sg(tB.g) + '</b><br>max ' + eu(tB.mx) + (tB.ab ? '<br><span style="color:#ff6b6b;">🛑 ' + tB.ab + '</span>' : '') + '</td></tr></table></div>'
       + (C > 0 && tA.mx > C ? '<div style="font-size:14px;color:#ff6b6b;font-weight:800;margin-top:4px;">⚠️ Ta règle demande une mise de ' + eu(tA.mx) + ' : plus que ton capital (' + eu(C) + ').</div>' : '')
@@ -89282,7 +89293,7 @@ window.g45SerNs = function (nom, n, el) {
   function dessiner() { var z = document.getElementById('calc-cb'); if (z && z.style.display !== 'none') { z.innerHTML = html(); liste(); } }
   window._g45CbHtml = html; window._g45CbM = M;
   window.g45CbSet = function (k, v) {
-    if (k === 'lieu' || k === 'stop') { M[k] = v; dessiner(); return; }
+    if (k === 'lieu' || k === 'stop' || k === 'pl') { M[k] = v; dessiner(); return; }
     M[k] = String(v).slice(0, 8);
     var z = document.getElementById('g45-cb-t'), c = num(M.c), p1 = num(M.p1), kk = num(M.k);   /* pas de redessin complet pendant la frappe (clavier) */
     if (z) z.innerHTML = tabHtml(c, p1, kk, c > 1 && p1 > 0 && kk > 1, cap());
