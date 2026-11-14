@@ -87268,6 +87268,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     S.forEach(function (x) { (x.u.abd || []).forEach(function (a, i) { A.push('⚠️ <b>' + esc(x.u.n) + '</b> ' + (a.l === 'dom' ? '🏠' : a.l === 'ext' ? '✈️' : '') + ' : série abandonnée le ' + esc(a.d) + ' à P' + a.p + ' : <b style="color:#ff5a5a;">−' + eu(a.perdu) + '</b> perdus <button onclick="g45CkAbFermer(' + esc(JSON.stringify(x.u.n)).replace(/"/g, '&quot;') + ',' + i + ')" title="Fermer" style="border:0;background:none;color:#c9d3ee;font-size:16px;cursor:pointer;">✕</button>'); }); });   /* 20261104y */
     S.forEach(function (x) { if (x.u.ga) A.push('⏳ <b>' + esc(x.u.n) + '</b> : nouvelle grille en attente (P' + x.p + ').'); });
     try { var at = (typeof window._g45GrilleAtt === 'function') ? window._g45GrilleAtt() : {}; Object.keys(at).forEach(function (k) { A.push('⏳ Grille ' + '⭐'.repeat(+k || 1) + ' en attente (Outils).'); }); } catch (e) {}
+    try { if (typeof window._g45CbTdb === 'function') h += window._g45CbTdb(); } catch (e) {}   /* 20261114o : bloc 📉 Cotes basses */
     h += '<div style="' + CARTE + '"><div style="font-size:16px;font-weight:800;margin-bottom:6px;">⚠️ Alertes</div>' + (A.length ? A.map(function (a) { return '<div style="margin-top:3px;">' + a + '</div>'; }).join('') : '<div style="color:#1ed760;">✅ Rien à signaler.</div>') + '</div>';
     return h;
   }
@@ -87756,6 +87757,64 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     var u = carte(); if (q === 'part') { state.cbPart = +v; } else if (!u) return; else if (q === 'stop') u.cbStop = +v; else if (q === 'p1' && +v > 0) { if (!confirm('P1 de ' + u.n + ' = ' + String(v).replace('.', ',') + ' € ?')) return; u.cbP1 = +v; }
     try { save(); } catch (e) {} try { (window.updMise || updMise)(); } catch (e) {} dessiner();
   };
+  /* ═══ 20261114o — 📉 COTES BASSES dans le 📊 Tableau de bord (maquette → « oui ») : chiffres (bénéfice, mises, ✅ / ❌, séries abandonnées),
+     une carte par équipe ET par lieu (série en cours C1-C7, mise suivante, bénéfice, pire palier atteint, arrêt), graphique du bénéfice cumulé
+     pari après pari (SVG maison, pas de Chart.js) : point vert gagné / rouge perdu, trait rouge = série abandonnée ; période 7 j / 30 j / Tout
+     (date = id du pari = Date.now() au placement). Seulement les paris meth 'cb' : la montante Cockpit n'y entre jamais. ═══ */
+  window._g45CbPer = window._g45CbPer || 'tout';
+  window.g45CbPer = function (k) { window._g45CbPer = k; try { window.g45CkOnglet('tdb'); } catch (e) {} };
+  window._g45CbTdb = function () {
+    var A = (state.a || []).filter(function (b) { return b && b.meth === 'cb'; }), H = (state.h || []).filter(function (b) { return b && b.meth === 'cb'; });
+    var esc = function (t) { return String(t == null ? '' : t).replace(/[<>&"]/g, ''); };
+    var f2 = function (v) { return (v > 0 ? '+' : v < 0 ? '−' : '') + (Math.round(Math.abs(v) * 100) / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €'; };
+    var CS = 'background:rgba(10,14,24,.93);border:1px solid #1c2747;border-radius:12px;padding:12px;margin-bottom:10px;font-size:14px;line-height:1.5;color:#fff;';
+    var cles = {}; (state.u || []).forEach(function (u) { Object.keys(u.lcb || {}).forEach(function (k) { cles[u.n + '§' + k] = 1; }); });
+    if (!A.length && !H.length && !Object.keys(cles).length) return '';
+    var gain = function (b) { try { return _g45BetEffetTotal(b, 'a').b; } catch (e) { return 0; } };
+    var tsOf = function (b) { var t = parseInt(b.id, 10); return t > 1e12 ? t : 0; };
+    var per = window._g45CbPer, lim = per === '7' ? Date.now() - 7 * 864e5 : per === '30' ? Date.now() - 30 * 864e5 : 0;
+    var L = A.filter(function (b) { return !lim || tsOf(b) >= lim; }).sort(function (a, b) { return tsOf(a) - tsOf(b); });
+    var ben = 0, mis = 0, nw = 0, nl = 0, nab = 0; L.forEach(function (b) { ben += gain(b); mis += parseFloat(b.m) || 0; if (b.win) nw++; else nl++; if (b.cbAb) nab++; });
+    var enj = H.reduce(function (a, b) { return a + (parseFloat(b.m) || 0); }, 0);
+    var kp = function (v, l, col) { return '<div style="background:#0f1730;border-radius:10px;padding:8px;text-align:center;"><b style="display:block;font-size:18px;color:' + (col || '#fff') + ';">' + v + '</b><span style="font-size:13px;color:#c9d3ee;">' + l + '</span></div>'; };
+    var B = function (on, t, fn) { return '<button onclick="' + fn + '" style="border-radius:10px;padding:5px 11px;font-size:14px;font-weight:800;cursor:pointer;color:#fff;margin:0 5px 0 0;border:2px solid ' + (on ? '#1ed760' : '#6d9dff') + ';background:' + (on ? '#14532d' : '#16213f') + ';">' + t + '</button>'; };
+    var h = '<div style="' + CS + '"><div style="font-size:16px;font-weight:800;margin-bottom:6px;">📉 Cotes basses</div>'
+      + '<div style="margin-bottom:8px;">' + [['7', '7 j'], ['30', '30 j'], ['tout', 'Tout']].map(function (x) { return B(per === x[0], x[1], "g45CbPer('" + x[0] + "')"); }).join('') + '</div>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">' + kp(f2(ben), 'bénéfice', ben > 0.005 ? '#1ed760' : ben < -0.005 ? '#ff5a5a' : '#fff')
+      + kp(f2(mis).replace(/^\+/, ''), 'misé (réglés)' + (enj ? ' · ' + f2(enj).replace(/^\+/, '') + ' en cours' : ''))
+      + kp('✅ ' + nw + ' · ❌ ' + nl, 'paris gagnés / perdus') + kp('🛑 ' + nab, 'séries abandonnées', nab ? '#ff9f43' : '#fff') + '</div>';
+    /* graphique */
+    if (L.length) {
+      var W = 340, Hh = 150, pad = 8, cum = [0]; L.forEach(function (b) { cum.push(cum[cum.length - 1] + gain(b)); });
+      var mx = Math.max.apply(null, cum), mn = Math.min.apply(null, cum); if (mx === mn) { mx += 1; mn -= 1; }
+      var X = function (i) { return pad + (W - 2 * pad) * i / Math.max(1, cum.length - 1); }, Y = function (v) { return pad + (Hh - 2 * pad) * (mx - v) / (mx - mn); };
+      var pts = cum.map(function (v, i) { return X(i).toFixed(1) + ',' + Y(v).toFixed(1); }).join(' ');
+      var g = '<svg viewBox="0 0 ' + W + ' ' + Hh + '" style="width:100%;height:auto;margin-top:10px;background:#0b1226;border-radius:10px;">'
+        + '<line x1="' + pad + '" x2="' + (W - pad) + '" y1="' + Y(0).toFixed(1) + '" y2="' + Y(0).toFixed(1) + '" stroke="#5b6b95" stroke-dasharray="4 4"/>';
+      L.forEach(function (b, i) { if (b.cbAb) g += '<line x1="' + X(i + 1).toFixed(1) + '" x2="' + X(i + 1).toFixed(1) + '" y1="' + pad + '" y2="' + (Hh - pad) + '" stroke="#ff5a5a" stroke-width="2"/>'; });
+      g += '<polyline points="' + pts + '" fill="none" stroke="#ffd34d" stroke-width="2.5"/>';
+      L.forEach(function (b, i) { g += '<circle cx="' + X(i + 1).toFixed(1) + '" cy="' + Y(cum[i + 1]).toFixed(1) + '" r="4" fill="' + (b.win ? '#1ed760' : '#ff5a5a') + '"/>'; });
+      g += '</svg><div style="font-size:13px;color:#c9d3ee;">📈 Bénéfice cumulé, pari après pari · 🟢 gagné · 🔴 perdu · trait rouge = série abandonnée</div>';
+      h += g;
+    } else h += '<div style="margin-top:8px;color:#c9d3ee;">Pas encore de pari 📉 réglé sur cette période.</div>';
+    /* cartes équipe + lieu */
+    var G = {}; A.concat(H).forEach(function (b) { var k = b.n + '§' + (b.mk || ''); (G[k] = G[k] || { n: b.n, k: b.mk || '', l: [] }).l.push(b); });
+    Object.keys(cles).forEach(function (k) { if (!G[k]) { var i = k.indexOf('§'); G[k] = { n: k.slice(0, i), k: k.slice(i + 1), l: [] }; } });
+    var cartes = Object.keys(G).map(function (k) { return G[k]; });
+    cartes.forEach(function (c) { c.u = (state.u || []).filter(function (x) { return x.n === c.n; })[0]; c.st = c.u ? cbSt(c.u, c.k) : { p: 1 }; c.ben = c.l.reduce(function (a, b) { return a + (state.a.indexOf(b) >= 0 ? gain(b) : 0); }, 0); c.pire = c.l.reduce(function (a, b) { return Math.max(a, +b.mp || 1); }, c.st.p); });
+    cartes.sort(function (a, b) { return b.st.p - a.st.p || a.n.localeCompare(b.n); });
+    h += '<div style="margin-top:10px;display:grid;gap:8px;">' + cartes.map(function (c) {
+      var lv = String(c.k).split('|').pop(), li = lv === 'dom' ? '🏠' : lv === 'ext' ? '✈️' : '🌍', logo = ''; try { logo = typeof g45LogoUrlDe === 'function' ? (g45LogoUrlDe(c.n) || '') : ''; } catch (e) {}
+      var nx = c.u ? (c.st.p <= 1 ? f2(cbMise(c.u, c.k, 0)).replace(/^\+/, '') : 'selon la cote') : '—', enc = c.l.some(function (b) { return H.indexOf(b) >= 0; });
+      return '<div style="position:relative;overflow:hidden;border-radius:12px;border:1px solid #1c2747;min-height:84px;background:#0f1730;">'
+        + (logo ? '<img src="' + esc(logo) + '" alt="" style="position:absolute;right:-10px;top:-10px;width:110px;height:110px;object-fit:contain;opacity:.35;" onerror="this.remove()">' : '')
+        + '<div style="position:relative;background:linear-gradient(90deg,rgba(5,8,16,.92),rgba(5,8,16,.75));padding:9px 12px;">'
+        + '<b style="font-size:16px;">' + esc(c.n) + ' ' + li + '</b> · série <b style="color:' + (c.st.p > 1 ? '#ff9f43' : '#1ed760') + ';">C' + c.st.p + '</b>' + (enc ? ' · ⏳ pari en cours' : '')
+        + '<br>➡️ Prochaine mise : <b style="color:#ffd34d;">' + nx + '</b>'
+        + '<br>Bénéfice <b style="color:' + (c.ben > 0.005 ? '#1ed760' : c.ben < -0.005 ? '#ff5a5a' : '#fff') + ';">' + f2(c.ben) + '</b> · pire C' + c.pire + ' · 🛑 arrêt C' + (c.u ? cbStop(c.u) : 5) + '</div></div>';
+    }).join('') + '</div></div>';
+    return h;
+  };
   window._g45EngMethDessiner = dessiner;
   window.g45EngMeth = function (k) { window._g45EngMeth = (SEQ[k] || k === 'cb') ? k : 'mont'; try { (window.updMise || updMise)(); } catch (e) {} dessiner(); };
   /* mise proposée : celle de la méthode (après le calcul normal de la montante) */
@@ -87784,7 +87843,9 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   };
   var avance = function (b, gagne) {
     var u = (state.u || []).filter(function (x) { return x.n === b.n; })[0]; if (!u) return;
-    if (b.meth === 'cb') { cbAvance(u, b.mk, b.m, gagne); return; }   /* 20261114n */
+    if (b.meth === 'cb') { var ab = !gagne && cbSt(u, b.mk).p >= cbStop(u); cbAvance(u, b.mk, b.m, gagne);   /* 20261114n */
+      if (ab) { b.cbAb = 1; (state.a || []).forEach(function (x) { if (x.id === b.id) x.cbAb = 1; }); }   /* 20261114o : série abandonnée (arrêt) → trait rouge du graphique */
+      return; }
     if (!SEQ[b.meth]) return;
     var p = palM(u, b.meth, b.mk);
     setM(u, b.meth, b.mk, gagne ? Math.max(1, p - (b.meth === 'fib' ? 2 : 1)) : Math.min(p + 1, SEQ[b.meth].length));
