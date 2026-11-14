@@ -75880,7 +75880,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       /* 20261106y (« logo / photo ou pas » → maquette ec.png « OUI ») : bookmaker en grand à gauche (le rond du sport part), logos VS heure au milieu, photo du joueur */
       + '<div style="display:flex;flex-direction:column;align-items:center;gap:6px;width:96px;flex:none;"><div style="transform:scale(1.45);transform-origin:center;">' + book + '</div></div>'
       + '<div class="g45ec-mid" style="flex:1 1 230px;min-width:0;">'
-      + '<div style="font-size:13px;color:#c9d3ee;">' + (h.isS ? '🚀 Montante · ' : '') + (h.meth === 'fib' ? '🐚 Fibonacci · ' : h.meth === 'dal' ? '🪜 D\'Alembert · ' : '') + (h.isCombi ? '🧩 Combiné · ' : '') + (h.comp ? '🏆 ' + esc(h.comp) + ' · ' : '') + esc(jour(h)) + (h.heure ? ' · ' + esc(h.heure) : '') + lieu + '</div>'
+      + '<div style="font-size:13px;color:#c9d3ee;">' + (typeof window._g45MethPill === 'function' ? window._g45MethPill(h) : (h.isS ? '🚀 Montante · ' : '')) + (h.isCombi ? '🧩 Combiné · ' : '') + (h.comp ? '🏆 ' + esc(h.comp) + ' · ' : '') + esc(jour(h)) + (h.heure ? ' · ' + esc(h.heure) : '') + lieu + '</div>'
       + '<div style="font-size:17px;font-weight:800;margin:3px 0;word-break:break-word;">' + esc(titre(h)) + '</div>'
       + '<div style="font-size:14px;display:flex;align-items:center;flex-wrap:wrap;gap:6px;">' + photoJ(j, h) + (j ? '🎯 ' + esc(typ) + ' : <b style="background:rgba(0,0,0,.5);padding:2px 6px;border-radius:6px;">' + esc(j) + '</b>' : '<b style="background:rgba(0,0,0,.5);padding:2px 6px;border-radius:6px;">' + esc(typ) + '</b>')
       + (h.isFreebet ? ' <span style="font-size:13px;">🎟 Freebet</span>' : '') + (h.isLay ? ' <span style="font-size:13px;">↩️ Lay</span>' : '') + '</div>'
@@ -87823,6 +87823,24 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     }).join('') + '</div></div>';
     return h;
   };
+  /* ═══ 20261114s — PASTILLE DE MÉTHODE (Antoine : « pour pas se tromper, faudrait indiquer sur les cartes si c'est du Cockpit ou autres » →
+     maquette → « oui go ») : cartes du mur / 🃏 Mes cartes = pastilles du Cockpit préfixées 🚀, + une pastille par série EN COURS (palier > 1)
+     des autres méthodes (📉 C, 🐚 F, 🪜 D, avec 🏠 / ✈️ / 🌍 de la clé) ; paris en cours = pastille de couleur au début (🚀 / 📉 / 🐚 / 🪜). ═══ */
+  var MCOL = { mont: '#4d84ff', cb: '#ff9f43', fib: '#b07cff', dal: '#2dd4bf' };
+  window._g45MethPill = function (h) {
+    var m = h && h.isS ? 'mont' : (h && h.meth) || ''; if (!MCOL[m]) return '';
+    var t = m === 'mont' ? '🚀 Cockpit' : NOM[m] + (h.mp ? ' ' + LET[m] + h.mp : '');
+    return '<span style="display:inline-block;padding:2px 8px;border-radius:7px;font-size:14px;font-weight:800;color:#0b101d;background:' + MCOL[m] + ';margin-right:6px;">' + t + '</span>';
+  };
+  try { var _up0 = window._g45UlPaliers; if (typeof _up0 === 'function' && !_up0._meth) {
+    window._g45UlPaliers = function (u, C) {
+      var r = String(_up0.apply(this, arguments) || '').replace(/(<span class="g45ul-pal"[^>]*>)/g, '$1🚀 ');
+      var ic = function (k) { var l = String(k).split('|')[1] || ''; return l === 'dom' ? '🏠 ' : l === 'ext' ? '✈️ ' : '🌍 '; };
+      var pil = function (m, k, p) { return '<span class="g45ul-pal" style="background:' + MCOL[m] + ';margin-left:0;">' + NOM[m].split(' ')[0] + ' ' + ic(k) + LET[m] + p + '</span>'; };
+      try { Object.keys((u && u.lcb) || {}).forEach(function (k) { var p = +(u.lcb[k] || {}).p || 1; if (p > 1) r += pil('cb', k, p); }); } catch (e) {}
+      try { ['fib', 'dal'].forEach(function (m) { Object.keys(((u && u.lm) || {})[m] || {}).forEach(function (k) { var p = parseInt(u.lm[m][k], 10) || 1; if (p > 1) r += pil(m, k, p); }); }); } catch (e) {}
+      return r;
+    }; window._g45UlPaliers._meth = 1; } } catch (e) {}
   window._g45EngMethDessiner = dessiner;
   window.g45EngMeth = function (k) { window._g45EngMeth = (SEQ[k] || k === 'cb') ? k : 'mont'; try { (window.updMise || updMise)(); } catch (e) {} dessiner(); };
   /* mise proposée : celle de la méthode (après le calcul normal de la montante) */
