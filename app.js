@@ -89274,7 +89274,7 @@ window.g45SerNs = function (nom, n, el) {
          l'ADVERSAIRE (bug, chiffres ✈️ / 🌍 faux) → toujours m[11][0] pour la victoire. Données brutes gardées pour les autres critères. */
       /* 20261115d (« attends, playoffs on les dégage ») : sports US = saison régulière seule (m[5] = 2) ; playoffs (3) et présaison (1) retirés ; foot inchangé */
       var US = E[0] !== 'soccer';
-      var ms = MM.filter(function (o) { var m = o.m; return m[4] && m[4][0] != null && m[4][1] != null && (!US || +m[5] === 2); }).sort(function (a2, b2) { return a2.m[0] - b2.m[0]; })
+      var ms = MM.filter(function (o) { var m = o.m; return m[4] && m[4][0] != null && m[4][1] != null && (!US || +m[5] === (M.po ? 3 : 2)); })   /* 20261115e : M.po = playoffs SEULS, à part du championnat */.sort(function (a2, b2) { return a2.m[0] - b2.m[0]; })
         .map(function (o) { var m = o.m, h = m[3] === 'h', P = +(h ? m[4][0] : m[4][1]), Q = +(h ? m[4][1] : m[4][0]);
           return { h: h ? 1 : 0, eu: o.eu ? 1 : 0, p: P, q: Q, co: Array.isArray(m[11]) ? m[11].map(Number) : null, tl: m[9] == null ? null : +m[9], to: m[15] || null, hl: m[8] == null ? null : +m[8], ho: m[16] || null, ot: +m[6] || 0 }; });   /* 20261115b : ot = prolongation (NHL 60 min) */
       if (ms.length) out.push({ sa: sa, ms: ms });
@@ -89301,6 +89301,7 @@ window.g45SerNs = function (nom, n, el) {
       var TJ = JT[M.eq[0]] || [];
       h += '<div style="font-size:16px;font-weight:900;margin:8px 0 6px;">' + ICO[M.eq[0]] + ' ' + esc(M.eq[4]) + ' <span style="font-size:14px;font-weight:400;color:#c9d3ee;">· ' + esc(M.eq[2]) + '</span></div>'
         + '<div style="font-size:14px;color:#c9d3ee;margin-bottom:4px;">Pari</div>' + pariHtml() + (TJ.length ? bt(!!M.jo || M.jl === 'load' || Array.isArray(M.jl), '👤 Un joueur', 'g45CbJ(-2)') : '');   /* 20261114x */
+      if (!M.jo && M.eq[0] !== 'soccer') h += '<div style="font-size:14px;color:#c9d3ee;margin:2px 0 4px;">Compétition</div>' + bt(!M.po, '📅 Saison régulière', 'g45CbPo(0)') + bt(!!M.po, '🏆 Playoffs (à part)', 'g45CbPo(1)');   /* 20261115e */
       if (!M.jo && euOk()) h += '<div style="margin:2px 0 4px;">' + bt(!!M.eu, (M.eu ? '✅' : '➕') + ' Coupes d\'Europe (LDC, Europa, Conférence)', 'g45CbEu()') + '</div>';
       if (Array.isArray(M.jl) && !M.jo) h += '<div style="margin:2px 0 6px;">' + (M.jl.length ? M.jl.slice(0, 30).map(function (x, i) { return bt(false, esc(x[1]) + ' <span style="font-weight:400;color:#c9d3ee;">· ' + x[2] + ' m.</span>', 'g45CbJ(' + i + ')'); }).join('') : '<span style="font-size:14px;color:#ffb13d;">Aucun joueur gardé pour cette équipe.</span>') + '</div>';
       else if (M.jl === 'load' && !M.jo) h += '<div style="font-size:14px;">⏳ Lecture des joueurs…</div>';
@@ -89424,7 +89425,7 @@ window.g45SerNs = function (nom, n, el) {
     if (z) z.innerHTML = tabHtml(c, p1, kk, c > 1 && p1 > 0 && kk > 1, cap());
   };
   window.g45CbQ = function (v) { M.q = String(v || '').slice(0, 40); liste(); };
-  window.g45CbEq = function (i) { var x = (M.res || [])[i]; if (!x) return; M.eq = x; M.q = ''; M.jo = null; M.jl = null; charger(); };
+  window.g45CbEq = function (i) { var x = (M.res || [])[i]; if (!x) return; M.eq = x; M.q = ''; M.jo = null; M.jl = null; M.po = false; charger(); };
   /* 20261114p : -1 = victoire de l'équipe ; -2 = liste des joueurs ; i = joueur i de la liste */
   window.g45CbJ = function (i) { if (!M.eq) return; if (i === -1) { M.jo = null; M.jl = null; charger(); return; } if (i === -2) { M.jo = null; M.R = null; M.etat = ''; if (Array.isArray(M.jl)) dessiner(); else jListe(); return; }
     var x = Array.isArray(M.jl) && M.jl[i]; if (!x) return; M.jo = x; M.jt = M.jt && (JT[M.eq[0]] || []).some(function (t) { return t[0] === M.jt; }) ? M.jt : ((JT[M.eq[0]] || [])[0] || [])[0]; jCharger(); };
@@ -89432,6 +89433,9 @@ window.g45SerNs = function (nom, n, el) {
   window.g45CbEu = function () { M.eu = !M.eu; charger(); };   /* 20261114r */
   window.g45CbPari = function (k) { M.pari = k; if (M.jo || !Array.isArray(M.R) || M.R.some(function (s) { return s.ms.some(function (x) { return x.p == null && x.co == null; }); })) { M.jo = null; M.jl = null; charger(); return; } dessiner(); };   /* 20261114x */
   window.g45CbCr = function (k) { M.cr = k; dessiner(); };
+  /* 20261115e (« rajoute un bouton playoffs, pour compter mais en dehors du championnat ») : sports US, matchs de playoffs seuls (m[5] = 3),
+     séries à part (une série de playoffs pas finie continue aux playoffs suivants, jamais mêlée à la saison régulière) */
+  window.g45CbPo = function (v) { M.po = !!v; if (M.eq) { M.jo = null; M.jl = null; charger(); } };
 
   function poser() {
     var tc = document.getElementById('t-calc'), barre = tc && tc.querySelector('.calc-tabs'); if (!tc || !barre) return false;
