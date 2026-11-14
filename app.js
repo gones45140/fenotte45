@@ -89274,7 +89274,7 @@ window.g45SerNs = function (nom, n, el) {
          l'ADVERSAIRE (bug, chiffres ✈️ / 🌍 faux) → toujours m[11][0] pour la victoire. Données brutes gardées pour les autres critères. */
       var ms = MM.filter(function (o) { var m = o.m; return m[4] && m[4][0] != null && m[4][1] != null; }).sort(function (a2, b2) { return a2.m[0] - b2.m[0]; })
         .map(function (o) { var m = o.m, h = m[3] === 'h', P = +(h ? m[4][0] : m[4][1]), Q = +(h ? m[4][1] : m[4][0]);
-          return { h: h ? 1 : 0, eu: o.eu ? 1 : 0, p: P, q: Q, co: Array.isArray(m[11]) ? m[11].map(Number) : null, tl: m[9] == null ? null : +m[9], to: m[15] || null, hl: m[8] == null ? null : +m[8], ho: m[16] || null }; });
+          return { h: h ? 1 : 0, eu: o.eu ? 1 : 0, p: P, q: Q, co: Array.isArray(m[11]) ? m[11].map(Number) : null, tl: m[9] == null ? null : +m[9], to: m[15] || null, hl: m[8] == null ? null : +m[8], ho: m[16] || null, ot: +m[6] || 0 }; });   /* 20261115b : ot = prolongation (NHL 60 min) */
       if (ms.length) out.push({ sa: sa, ms: ms });
     }
     if (M.eq !== E) return;
@@ -89349,6 +89349,8 @@ window.g45SerNs = function (nom, n, el) {
       if (P === 'v') { c = +co[0]; w = x.p > x.q; }
       else if (P === 'n') { c = +co[1]; w = x.p === x.q; }
       else if (P === 'd') { c = +co[2]; w = x.p < x.q; }
+      /* 20261115b (« manque vainqueur ? » → « oui et un bouton nul ? ») : NHL 60 min — pas de vraie cote gardée → cote moyenne tapée */
+      else if (P === 'v60' || P === 'n60') { if (!(cx > 1)) return null; c = cx; w = P === 'v60' ? (x.p > x.q && !x.ot) : x.ot > 0; }
       else if (P === 'o' || P === 'u') { if (x.tl == null || !x.to || t === x.tl) return null; c = +x.to[P === 'o' ? 0 : 1]; w = P === 'o' ? t > x.tl : t < x.tl; }
       else if (P === 'h') { if (x.hl == null || !x.ho || x.p + x.hl === x.q) return null; c = +x.ho[0]; w = x.p + x.hl > x.q; }
       else if (P === 'x') { if (!(cx > 1)) return null; c = cx; var cr = M.cr || 'dc';
@@ -89360,7 +89362,8 @@ window.g45SerNs = function (nom, n, el) {
   window._g45CbMsP = function (ms, o) { var s0 = { pari: M.pari, cx: M.cx, cn: M.cn, cr: M.cr, jo: M.jo }; Object.assign(M, o || {}); try { return msP(ms); } finally { Object.assign(M, s0); } };   /* tests */
   function pariHtml() {
     var sp = M.eq && M.eq[0], foot = sp === 'soccer';
-    var L = [['v', '🏆 Victoire'], foot ? ['n', '🤝 Nul'] : null, ['d', '❌ Défaite'], ['o', '⬆️ Plus ligne book'], ['u', '⬇️ Moins ligne book'], ['h', '➖ Handicap book'], ['x', '🎯 Autre critère…']].filter(Boolean);
+    var hk = sp === 'hockey';
+    var L = [['v', foot ? '🏆 Victoire' : '🏆 Vainqueur (prolong. comprise)'], foot ? ['n', '🤝 Nul'] : null, hk ? ['v60', '⏱️ Victoire 60 min'] : null, hk ? ['n60', '🤝 Nul 60 min'] : null, ['d', foot ? '❌ Défaite' : '❌ Perdant (prolong. comprise)'], ['o', '⬆️ Plus ligne book'], ['u', '⬇️ Moins ligne book'], ['h', '➖ Handicap book'], ['x', '🎯 Autre critère…']].filter(Boolean);
     var h = '<div style="margin:2px 0 4px;">' + L.map(function (x) { return bt(!M.jo && (M.pari || 'v') === x[0], x[1], "g45CbPari('" + x[0] + "')"); }).join('') + '</div>';
     if (!M.jo && M.pari === 'x') {
       h += '<div style="margin:2px 0 4px;">' + CRX.filter(function (x) { return foot || (x[0] !== 'bts' && x[0] !== 'mq'); }).map(function (x) { return bt((M.cr || 'dc') === x[0], x[1], "g45CbCr('" + x[0] + "')"); }).join('') + '</div>'
@@ -89369,6 +89372,8 @@ window.g45SerNs = function (nom, n, el) {
         + '<label style="font-size:14px;">Cote moyenne<input value="' + esc(M.cx || '') + '" inputmode="decimal" onchange="g45CbSet(\'cx\',this.value)" placeholder="ex. 1,25" style="' + IN + '"></label></div>'
         + '<div style="font-size:13px;color:#c9d3ee;">Pas de cote gardée pour ce critère : l\'essai prend ta cote moyenne pour chaque match.</div>';
     }
+    if (!M.jo && /^(v60|n60)$/.test(M.pari || '')) h += '<label style="font-size:14px;display:block;max-width:220px;">Cote moyenne<input value="' + esc(M.cx || '') + '" inputmode="decimal" onchange="g45CbSet(\'cx\',this.value)" placeholder="' + (M.pari === 'n60' ? 'ex. 4,20' : 'ex. 1,90') + '" style="' + IN + '"></label>'
+      + '<div style="font-size:13px;color:#c9d3ee;">Résultat à la fin du temps réglementaire (match allé en prolongation = nul). Pas de vraie cote gardée : l\'essai prend ta cote moyenne.</div>';
     if (!M.jo && /^[ouh]$/.test(M.pari || '')) h += '<div style="font-size:13px;color:#c9d3ee;">Ligne et cote du book de chaque match (gardées par nos robots). Ligne pile = remboursé → match sauté.</div>';
     return h;
   }
