@@ -88912,6 +88912,8 @@ window.g45SerNs = function (nom, n, el) {
   var ed = function (i) {
     var r = ed0.apply(this, arguments);
     try {
+      /* 20261114i (capture Kaprizov : « on voit pas le bouton bleu ») : fiche plus haute que l'écran avec le palier → elle défile (90 % de la hauteur) */
+      try { var mdl = document.getElementById('edit-unit-modal'), box0 = mdl && mdl.firstElementChild; if (box0) { box0.style.maxHeight = '90vh'; box0.style.overflowY = 'auto'; box0.style.boxSizing = 'border-box'; } } catch (e) {}
       var u = state.u[parseInt(i)], note = document.getElementById('edit-unit-note'); if (!u || !note) return r;
       var z = document.getElementById('edit-unit-pal');
       if (!z) { z = document.createElement('div'); z.id = 'edit-unit-pal'; z.className = 'fg'; z.style.marginBottom = '14px'; var bloc = note.closest('.fg') || note.parentNode; bloc.parentNode.insertBefore(z, bloc.nextSibling); }
