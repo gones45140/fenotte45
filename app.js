@@ -89272,7 +89272,9 @@ window.g45SerNs = function (nom, n, el) {
       if (!MM.length) continue;
       /* 20261114x : m[11] = [victoire, nul, défaite] de L'ÉQUIPE (déjà dans son sens) — l'essai prenait m[11][2] à l'extérieur = la cote de
          l'ADVERSAIRE (bug, chiffres ✈️ / 🌍 faux) → toujours m[11][0] pour la victoire. Données brutes gardées pour les autres critères. */
-      var ms = MM.filter(function (o) { var m = o.m; return m[4] && m[4][0] != null && m[4][1] != null; }).sort(function (a2, b2) { return a2.m[0] - b2.m[0]; })
+      /* 20261115d (« attends, playoffs on les dégage ») : sports US = saison régulière seule (m[5] = 2) ; playoffs (3) et présaison (1) retirés ; foot inchangé */
+      var US = E[0] !== 'soccer';
+      var ms = MM.filter(function (o) { var m = o.m; return m[4] && m[4][0] != null && m[4][1] != null && (!US || +m[5] === 2); }).sort(function (a2, b2) { return a2.m[0] - b2.m[0]; })
         .map(function (o) { var m = o.m, h = m[3] === 'h', P = +(h ? m[4][0] : m[4][1]), Q = +(h ? m[4][1] : m[4][0]);
           return { h: h ? 1 : 0, eu: o.eu ? 1 : 0, p: P, q: Q, co: Array.isArray(m[11]) ? m[11].map(Number) : null, tl: m[9] == null ? null : +m[9], to: m[15] || null, hl: m[8] == null ? null : +m[8], ho: m[16] || null, ot: +m[6] || 0 }; });   /* 20261115b : ot = prolongation (NHL 60 min) */
       if (ms.length) out.push({ sa: sa, ms: ms });
