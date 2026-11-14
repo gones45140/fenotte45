@@ -77026,7 +77026,8 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       if (rq === 'L' && (m[5] || m[7])) return false;
       if (rq === 'LP' && m[5]) return false;
       if (rq === 'E' && !m[5]) return false;
-      if (SELN[m[7]] && (S.selc || 'T') !== 'T' && ((S.selc === 'A') !== !!SELA[m[7]])) return false;   /* 20261113k : SELA */   /* 20261113h : O = officiels, A = amicaux */
+      if (SELN[m[7]] && S.selc && S.selc.indexOf('c:') === 0) { if (SELN[m[7]] !== S.selc.slice(2)) return false; }   /* 20261114g : une compétition (par son étiquette) */
+      else if (SELN[m[7]] && (S.selc || 'T') !== 'T' && ((S.selc === 'A') !== !!SELA[m[7]])) return false;   /* 20261113k : SELA */   /* 20261113h : O = officiels, A = amicaux */
       if (rc === 'CC' && m[5] !== 1) return false;
       if (rc === 'CH' && m[5] !== 2) return false;
       return S.lieu === 'tout' || (S.lieu === 'dom' ? m[1] === 1 : m[1] === 0);
@@ -77584,7 +77585,12 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     }
     if (D && D.sel) {   /* 20261113h : sélection → Tout / Officiels / Amicaux ; 20261113k : + rugby (Tests) */
       var sq = S.selc || 'T', rgS = rg();
+      /* 20261114g (Antoine : « par championnat ? » → boutons par compétition, « oui ») : une compétition jouée par l'équipe = un bouton (même
+         étiquette = même bouton, ex. les qualifs CDM des différents continents) ; filtre sur l'étiquette SELN de m[7]. */
+      var cpL = [], cpV = {}; (D.saisons || []).forEach(function (sa) { ((sa && sa.ms) || []).forEach(function (m) { var lb = SELN[m[7]]; if (lb && !cpV[lb]) { cpV[lb] = 1; cpL.push(lb); } }); });
+      if (sq.indexOf('c:') === 0 && !cpV[sq.slice(2)]) sq = S.selc = 'T';
       h += lab('Compétition') + b(sq === 'T', 'Tout', "g45CrSet('selc','T')") + b(sq === 'O', '🏆 Officiels', "g45CrSet('selc','O')") + b(sq === 'A', rgS ? '🤝 Tests seuls' : '🤝 Amicaux seuls', "g45CrSet('selc','A')")
+        + (cpL.length > 1 ? '<div style="margin-top:2px;">' + cpL.map(function (lb) { return b(sq === 'c:' + lb, lb, "g45CrSet('selc','c:" + lb.replace(/\\/g, '').replace(/'/g, "\\'") + "')"); }).join('') + '</div>' : '')
         + '<div style="font-size:13px;color:#c9d3ee;">' + (rgS ? 'Officiels = Six Nations, Rugby Championship, Coupe du monde, Nations Championship.' : 'Officiels = Coupe du monde, Euro, Copa América, CAN, Coupe d\'Asie, Gold Cup, qualifs, Ligues des nations.') + ' Une « saison » = une année.</div>';
     } else if (!S.ctx) {   /* 20261021e : coupes d'Europe */
       var cp = S.comp || 'L';
