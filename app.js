@@ -78474,8 +78474,12 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       .sort(function (a, b) { return a.d < b.d ? -1 : a.d > b.d ? 1 : 0; });
     var parAn = {}, tous = [];
     L.forEach(function (x) {
-      var m = idx[x.d] || (hock ? idx[veille(x.d)] : null) || null;
-      var h = x.g.h != null ? x.g.h : (m ? m[1] : null);
+      /* 20261114j (carte Jarvis « Vainqueur + pointeur » 🏠 pire série 1·4·3·4 ≠ critères 1·2·2·4) : NHL = date LOCALE du journal, archives = date
+         UTC (souvent le lendemain) ; avec deux matchs sur deux soirs de suite, idx[x.d] tombait sur le match de la VEILLE. Hockey : lendemain UTC
+         d'abord, puis le même jour ; et le domicile / extérieur du journal doit correspondre au match trouvé. */
+      var hJ = x.g.h != null ? x.g.h : null, m = null;
+      (hock ? [veille(x.d), x.d] : [x.d]).some(function (dd) { var q = idx[dd]; if (q && (hJ == null || q[1] == null || +q[1] === +hJ)) { m = q; return true; } return false; });
+      var h = hJ != null ? hJ : (m ? m[1] : null);
       if (k === 'dom' && h !== 1) return; if (k === 'ext' && h !== 0) return;
       var r = serPasseJ(c, x.g, m, hock); if (r === null) return;
       var a = serAnDe(x.d, civil); (parAn[a] = parAn[a] || []).push(r); tous.push(r);
