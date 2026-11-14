@@ -89179,23 +89179,25 @@ window.g45SerNs = function (nom, n, el) {
      S = [{ sa, ms }] du plus ancien au plus récent → [{ regle: {g, mx, ab}, ck: {…} }] + fin = pertes de la série encore ouverte. */
   function simSaisons(S, o) {
     var p1 = o.p1 || 10, stop = o.stop || 0, pl = o.pl || 0, G = (typeof state !== 'undefined' && state && state.ckP25) ? [1, 2.5, 7.5, 22.5, 67.5, 202.5, 607.5, 1822.5, 5467.5] : [1, 2, 6, 18, 54, 162, 486, 1458, 4374];   /* 20261114t : colonne Cockpit seul = ta grille (P2 × 2,5 si cochée) */
-    var A = { pal: 0, prev: 0, per: 0 }, B = { q: 0, per: 0 }, out = [];
+    var A = { pal: 0, prev: 0, per: 0 }, B = { q: 0, per: 0 }, out = [], DR = {}, DK = {};   /* 20261114u : DR / DK = palier où chaque série est gagnée */
     S.forEach(function (sx) {
-      var r = { g: 0, mx: 0, ab: 0 }, k = { g: 0, mx: 0, ab: 0 };
+      var r = { g: 0, mx: 0, ab: 0, pp: 0 }, k = { g: 0, mx: 0, ab: 0, pp: 0 };   /* pp = pire palier joué dans la saison */
       sx.ms.forEach(function (x) {
         if (x.c > 1.05 && !(pl && x.c < pl - 1e-9)) {   /* 20261114q : sous le plancher → match sauté */
           var m = A.pal === 0 ? p1 : (x.c < 1.5 ? A.prev * (1 / (x.c - 1) + 2) : (o.r === 's' ? A.prev * (A.pal === 1 ? 2.5 : 3) : A.per * 3)); if (m > r.mx) r.mx = m;   /* 20261114t */
+          if (A.pal + 1 > r.pp) r.pp = A.pal + 1; if (x.w) DR[A.pal + 1] = (DR[A.pal + 1] || 0) + 1;
           if (x.w) { r.g += m * (x.c - 1); A.pal = 0; A.prev = 0; A.per = 0; }
           else { r.g -= m; A.per += m; A.prev = m; A.pal++; if (stop && A.pal >= stop) { r.ab++; A.pal = 0; A.prev = 0; A.per = 0; } }
         }
         if (x.c >= 1.5) {
           var m2 = p1 * G[Math.min(B.q, G.length - 1)]; if (m2 > k.mx) k.mx = m2;
+          if (B.q + 1 > k.pp) k.pp = B.q + 1; if (x.w) DK[B.q + 1] = (DK[B.q + 1] || 0) + 1;   /* 20261114u */
           if (x.w) { k.g += m2 * (x.c - 1); B.q = 0; B.per = 0; } else { k.g -= m2; B.per += m2; B.q++; if ((stop && B.q >= stop) || B.q >= G.length) { k.ab++; B.q = 0; B.per = 0; } }
         }
       });
       out.push({ sa: sx.sa, regle: r, ck: k });
     });
-    out.fin = { regle: A.per, ck: B.per };
+    out.fin = { regle: A.per, ck: B.per }; out.dist = { regle: DR, ck: DK };
     return out;
   }
   window._g45CbSim = sim; window._g45CbTable = table; window._g45CbSimS = simSaisons;   /* tests */
@@ -89324,6 +89326,10 @@ window.g45SerNs = function (nom, n, el) {
     if (C > 0 && T.some(function (x) { return x.tot > C; })) h += '<div style="font-size:14px;color:#ff6b6b;margin-top:4px;">⚠️ = plus que ton capital (' + eu(C) + ').</div>';
     return h;
   }
+  /* 20261114u (« il faudrait mettre le nombre de paliers » → maquette → « oui ») : 🪜 pire palier par case + paliers où les séries sont gagnées */
+  var pp = function (n) { return n ? '<br>🪜 pire P' + n : ''; };
+  var distH = function (D) { if (!D) return ''; var ligne = function (ic, o) { var K = Object.keys(o || {}).map(Number).sort(function (a, b) { return a - b; }); return K.length ? '<div style="font-size:14px;margin-top:4px;">' + ic + ' Séries gagnées : ' + K.map(function (k) { return 'P' + k + ' ×' + o[k]; }).join(' · ') + '</div>' : ''; };
+    return ligne('📉', D.regle) + ligne('🏁', D.ck); };
   function resHtml(p1, C) {
     var td = 'padding:6px 4px;border-top:1px solid #1c2747;', tA = { g: 0, mx: 0, ab: 0 }, tB = { g: 0, mx: 0, ab: 0 };
     var col = function (v) { return v >= 0 ? '#1ed760' : '#ff6b6b'; };
@@ -89333,14 +89339,16 @@ window.g45SerNs = function (nom, n, el) {
       var ms = s.ms.filter(function (x) { return M.lieu === 'tout' || (M.lieu === 'dom' ? x.h === 1 : x.h === 0); }); if (!ms.length) return '';
       var R = RI[s.sa], v = ms.filter(function (x) { return x.w; }).length, bas = ms.filter(function (x) { return x.c < 1.5; }).length, neu = ms.filter(function (x) { return x.eu; }).length;
       tA.g += R.regle.g; tA.mx = Math.max(tA.mx, R.regle.mx); tA.ab += R.regle.ab; tB.g += R.ck.g; tB.mx = Math.max(tB.mx, R.ck.mx); tB.ab += R.ck.ab;
+      tA.pp = Math.max(tA.pp || 0, R.regle.pp || 0); tB.pp = Math.max(tB.pp || 0, R.ck.pp || 0);   /* 20261114u */
       return '<tr><td style="' + td + 'font-weight:800;">' + esc(s.sa) + '<br><span style="font-weight:400;color:#c9d3ee;">' + v + '/' + ms.length + ' V · ' + bas + ' sous 1,50' + (neu ? ' · 🇪🇺 ' + neu + ' en coupe' : '') + '</span></td>'
-        + '<td style="' + td + '"><b style="color:' + col(R.regle.g) + ';">' + sg(R.regle.g) + '</b><br>max ' + eu(R.regle.mx) + (R.regle.ab ? '<br><span style="color:#ff6b6b;">🛑 ' + R.regle.ab + '</span>' : '') + '</td>'
-        + '<td style="' + td + '"><b style="color:' + col(R.ck.g) + ';">' + sg(R.ck.g) + '</b><br>max ' + eu(R.ck.mx) + (R.ck.ab ? '<br><span style="color:#ff6b6b;">🛑 ' + R.ck.ab + '</span>' : '') + '</td></tr>';
+        + '<td style="' + td + '"><b style="color:' + col(R.regle.g) + ';">' + sg(R.regle.g) + '</b><br>max ' + eu(R.regle.mx) + pp(R.regle.pp) + (R.regle.ab ? '<br><span style="color:#ff6b6b;">🛑 ' + R.regle.ab + '</span>' : '') + '</td>'
+        + '<td style="' + td + '"><b style="color:' + col(R.ck.g) + ';">' + sg(R.ck.g) + '</b><br>max ' + eu(R.ck.mx) + pp(R.ck.pp) + (R.ck.ab ? '<br><span style="color:#ff6b6b;">🛑 ' + R.ck.ab + '</span>' : '') + '</td></tr>';
     }).join('');
     if (!L) return '<div style="font-size:14px;margin-top:8px;">Aucun match pour ce lieu.</div>';
     return '<div style="overflow-x:auto;margin-top:8px;"><table style="width:100%;border-collapse:collapse;font-size:14px;"><tr style="color:#c9d3ee;"><td style="padding:4px;">Saison</td><td>📉 Ta règle<br>(' + (M.pl ? 'dès ' + M.pl.toFixed(2).replace('.', ',') : 'tous les matchs') + ')</td><td>🏁 Cockpit seul<br>(1,50 et plus)</td></tr>' + L
-      + '<tr><td style="' + td + 'font-weight:900;">Total</td><td style="' + td + '"><b style="color:' + col(tA.g) + ';">' + sg(tA.g) + '</b><br>max ' + eu(tA.mx) + (tA.ab ? '<br><span style="color:#ff6b6b;">🛑 ' + tA.ab + '</span>' : '') + '</td>'
-      + '<td style="' + td + '"><b style="color:' + col(tB.g) + ';">' + sg(tB.g) + '</b><br>max ' + eu(tB.mx) + (tB.ab ? '<br><span style="color:#ff6b6b;">🛑 ' + tB.ab + '</span>' : '') + '</td></tr></table></div>'
+      + '<tr><td style="' + td + 'font-weight:900;">Total</td><td style="' + td + '"><b style="color:' + col(tA.g) + ';">' + sg(tA.g) + '</b><br>max ' + eu(tA.mx) + pp(tA.pp) + (tA.ab ? '<br><span style="color:#ff6b6b;">🛑 ' + tA.ab + '</span>' : '') + '</td>'
+      + '<td style="' + td + '"><b style="color:' + col(tB.g) + ';">' + sg(tB.g) + '</b><br>max ' + eu(tB.mx) + pp(tB.pp) + (tB.ab ? '<br><span style="color:#ff6b6b;">🛑 ' + tB.ab + '</span>' : '') + '</td></tr></table></div>'
+      + distH(RS.dist)
       + (C > 0 && tA.mx > C ? '<div style="font-size:14px;color:#ff6b6b;font-weight:800;margin-top:4px;">⚠️ Ta règle demande une mise de ' + eu(tA.mx) + ' : plus que ton capital (' + eu(C) + ').</div>' : '')
       + ((RS.fin.regle > 0 || RS.fin.ck > 0) ? '<div style="font-size:14px;color:#ffd34d;margin-top:6px;">⏳ Série en cours (pas encore rattrapée) : 📉 ' + eu(RS.fin.regle) + ' · 🏁 ' + eu(RS.fin.ck) + ' déjà misés, comptés dans le total.</div>' : '')
       + '<div style="font-size:13px;color:#c9d3ee;margin-top:6px;">Une série pas finie en fin de saison continue sur la suivante. max = plus grosse mise · 🛑 = séries abandonnées à l\'arrêt de sécurité (perte gardée). Cotes de clôture de nos archives (pas la cote FR). Cockpit seul = grille ×2 puis ×3, matchs sous 1,50 sautés.</div>';
