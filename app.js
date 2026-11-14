@@ -51767,6 +51767,35 @@ async function _g45SaisonsGen(el, nom, perso) {
      club de rugby d'un championnat européen → matchs de CE club en Champions Cup (ESPN 271937, même lecture mensuelle) ajoutés à la
      saison, marqués m.cc = 1 ; filtre « Compétition » (window._g45SgRgComp : 'tout' | 'L' | 'E') appliqué AVANT tout calcul, suivi aussi
      par le bloc « Tes critères sur 4 saisons ». Club absent de la Champions Cup = rien ne change. */
+  /* 20261114d (capture fiche « France 🏉 » ouverte depuis le Nations Championship : 3 matchs seulement, « il manque des matchs ») : une
+     SÉLECTION de rugby joue plusieurs compétitions → saison = année civile, matchs de TOUTES les compétitions de sélections archivées
+     (Six Nations, Nations Championship, Coupe du monde, tests, Rugby Championship), lus dans gones45-archives ; noms / logos des adversaires
+     depuis equipes.json de chaque compétition. */
+  var _RSEL = ['180659', '17567', '164205', '289234', '244293'];
+  if (sp === 'rugby' && _RSEL.indexOf(lg) >= 0 && perso && perso.id) {
+    var memS = memK + '|sel', idS = String(perso.id);
+    if (!_g45SgMem[memS]) {
+      var Y = lg === '180659' ? an + 1 : an, yN = new Date().getFullYear(); if (Y > yN) Y = yN;
+      var AR = 'https://raw.githubusercontent.com/gones45140/gones45-archives/main/cotes/rugby/', hq = '?t=' + Math.floor(Date.now() / 3600000), tout = [], vusS = {};
+      var lit = function (u) { return fetch(u).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }); };
+      var R2 = await Promise.all(_RSEL.map(function (lx) { return Promise.all([lit(AR + lx + '/' + Y + '/equipes/' + idS + '.json' + hq), lit(AR + lx + '/' + Y + '/equipes.json' + hq)]); }));
+      window._g45SgCupIds = window._g45SgCupIds || {}; var NS = _g45SgMem[memS + '|n'] = {};
+      R2.forEach(function (x, i) {
+        var q = x[0], ix = x[1] || {};
+        Object.keys(ix).forEach(function (k) { if (ix[k] && ix[k][0]) NS[k] = ix[k][0]; });
+        ((q && q.m) || []).forEach(function (m) {
+          if (!m || !m[2] || !m[7] || !m[4] || m[4][0] == null || m[4][1] == null || vusS[m[2]]) return; vusS[m[2]] = 1;
+          var dom = m[3] === 'h', adv = String(m[7]);
+          tout.push({ id: String(m[2]), h: dom ? idS : adv, a: dom ? adv : idS, hg: +m[4][0], ag: +m[4][1], t: +m[0], hp: null, ap: null, ox: 0 });
+          window._g45SgCupIds[String(m[2])] = _RSEL[i];
+        });
+      });
+      tout.sort(function (a, b) { return a.t - b.t; });
+      _g45SgMem[memS] = tout;
+    }
+    if ((_g45SgMem[memS] || []).length) ms = _g45SgMem[memS];
+    var NS2 = _g45SgMem[memS + '|n'] || {}; Object.keys(NS2).forEach(function (k) { if (!noms[k]) noms[k] = NS2[k]; if (!logos[k]) logos[k] = 'https://a.espncdn.com/i/teamlogos/rugby/teams/500/' + k + '.png'; });
+  }
   var _rgCup = (sp === 'rugby' && ['270559', '270557', '267979'].indexOf(lg) >= 0 && perso && perso.id), _rgN = { L: (ms || []).length, E: 0 };
   if (_rgCup) {
     /* 20261014k (« pareil Challenge Cup ») : Champions Cup (271937, cc = 1) et Challenge Cup (272073, cc = 2). */
