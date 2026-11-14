@@ -89338,20 +89338,31 @@ window.g45SerNs = function (nom, n, el) {
     var col = function (v) { return v >= 0 ? '#1ed760' : '#ff6b6b'; };
     var SS = M.R.slice().reverse().map(function (s) { return { sa: s.sa, ms: s.ms.filter(function (x) { return M.lieu === 'tout' || (M.lieu === 'dom' ? x.h === 1 : x.h === 0); }) }; }).filter(function (s) { return s.ms.length; });
     var RS = simSaisons(SS, { p1: p1, stop: M.stop, pl: M.pl, r: M.r }), RI = {}; RS.forEach(function (r) { RI[r.sa] = r; });   /* 20261114m : séries continues d'une saison à l'autre */
+    /* 20261114w (« mets un coup de peinture, il n'y a rien d'aligné » → maquette → « oui go ») : une CARTE par saison, rangée comme un tableau :
+       libellé à gauche, 📉 / 🏁 en colonnes alignées à droite (chiffres à largeur fixe, jamais coupés), puis les lignes 🪜 ; Total = même carte, bord or. */
+    var f2 = function (v) { return eu(v, 1); }, s2 = function (v) { return (v >= 0 ? '+' : '−') + eu(Math.abs(v), 1); };
+    var cel = 'text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;padding:3px 0 3px 10px;';
+    var carteS = function (titre, sous, A, B, dA, dB, tot) {
+      var lig = function (lib, a, b2, st) { return '<tr><td style="padding:3px 0;color:#c9d3ee;white-space:nowrap;">' + lib + '</td><td style="' + cel + (st || '') + '">' + a + '</td><td style="' + cel + (st || '') + '">' + b2 + '</td></tr>'; };
+      var gb = function (v) { return '<b style="font-size:16px;color:' + col(v) + ';">' + s2(v) + '</b>'; };
+      return '<div style="margin-top:8px;padding:10px 12px;border-radius:12px;background:' + (tot ? '#1a1608' : '#0f1730') + ';border:' + (tot ? '2px solid #f5c542' : '1px solid #1c2747') + ';">'
+        + '<div style="font-size:15px;font-weight:900;">' + titre + (sous ? ' <span style="font-weight:400;color:#c9d3ee;font-size:14px;">· ' + sous + '</span>' : '') + '</div>'
+        + '<table style="width:100%;border-collapse:collapse;font-size:14px;margin-top:4px;">'
+        + '<tr><td></td><td style="' + cel + 'color:#c9d3ee;">📉 Ta règle</td><td style="' + cel + 'color:#c9d3ee;">🏁 Cockpit</td></tr>'
+        + lig('Bénéfice', gb(A.g), gb(B.g)) + lig('Mise max', f2(A.mx), f2(B.mx)) + lig('Pire palier', A.pp ? 'P' + A.pp : '—', B.pp ? 'P' + B.pp : '—')
+        + ((A.ab || B.ab) ? lig('Abandons', A.ab ? '🛑 ' + A.ab : '—', B.ab ? '🛑 ' + B.ab : '—', 'color:#ff6b6b;font-weight:800;') : '')
+        + '</table><div style="font-size:14px;margin-top:4px;line-height:1.5;">🪜 📉 ' + distL(dA) + '<br>🪜 🏁 ' + distL(dB) + '</div></div>';
+    };
     var L = M.R.map(function (s) {
       var ms = s.ms.filter(function (x) { return M.lieu === 'tout' || (M.lieu === 'dom' ? x.h === 1 : x.h === 0); }); if (!ms.length) return '';
       var R = RI[s.sa], v = ms.filter(function (x) { return x.w; }).length, bas = ms.filter(function (x) { return x.c < 1.5; }).length, neu = ms.filter(function (x) { return x.eu; }).length;
       tA.g += R.regle.g; tA.mx = Math.max(tA.mx, R.regle.mx); tA.ab += R.regle.ab; tB.g += R.ck.g; tB.mx = Math.max(tB.mx, R.ck.mx); tB.ab += R.ck.ab;
       tA.pp = Math.max(tA.pp || 0, R.regle.pp || 0); tB.pp = Math.max(tB.pp || 0, R.ck.pp || 0);   /* 20261114u */
-      return '<tr><td style="' + td + 'font-weight:800;">' + esc(s.sa) + '<br><span style="font-weight:400;color:#c9d3ee;">' + v + '/' + ms.length + ' V · ' + bas + ' sous 1,50' + (neu ? ' · 🇪🇺 ' + neu + ' en coupe' : '') + '</span></td>'
-        + '<td style="' + td + '"><b style="color:' + col(R.regle.g) + ';">' + sg(R.regle.g) + '</b><br>max ' + eu(R.regle.mx) + pp(R.regle.pp) + (R.regle.ab ? '<br><span style="color:#ff6b6b;">🛑 ' + R.regle.ab + '</span>' : '') + '</td>'
-        + '<td style="' + td + '"><b style="color:' + col(R.ck.g) + ';">' + sg(R.ck.g) + '</b><br>max ' + eu(R.ck.mx) + pp(R.ck.pp) + (R.ck.ab ? '<br><span style="color:#ff6b6b;">🛑 ' + R.ck.ab + '</span>' : '') + '</td></tr>' + distS(R, td);
+      return carteS(esc(s.sa), v + '/' + ms.length + ' V · ' + bas + ' sous 1,50' + (neu ? ' · 🇪🇺 ' + neu + ' en coupe' : ''), R.regle, R.ck, R.regle.d, R.ck.d);
     }).join('');
     if (!L) return '<div style="font-size:14px;margin-top:8px;">Aucun match pour ce lieu.</div>';
-    return '<div style="overflow-x:auto;margin-top:8px;"><table style="width:100%;border-collapse:collapse;font-size:14px;"><tr style="color:#c9d3ee;"><td style="padding:4px;">Saison</td><td>📉 Ta règle<br>(' + (M.pl ? 'dès ' + M.pl.toFixed(2).replace('.', ',') : 'tous les matchs') + ')</td><td>🏁 Cockpit seul<br>(1,50 et plus)</td></tr>' + L
-      + '<tr><td style="' + td + 'font-weight:900;">Total</td><td style="' + td + '"><b style="color:' + col(tA.g) + ';">' + sg(tA.g) + '</b><br>max ' + eu(tA.mx) + pp(tA.pp) + (tA.ab ? '<br><span style="color:#ff6b6b;">🛑 ' + tA.ab + '</span>' : '') + '</td>'
-      + '<td style="' + td + '"><b style="color:' + col(tB.g) + ';">' + sg(tB.g) + '</b><br>max ' + eu(tB.mx) + pp(tB.pp) + (tB.ab ? '<br><span style="color:#ff6b6b;">🛑 ' + tB.ab + '</span>' : '') + '</td></tr></table></div>'
-      + distH(RS.dist)
+    return '<div style="font-size:14px;color:#c9d3ee;margin-top:8px;">📉 Ta règle (' + (M.pl ? 'dès ' + M.pl.toFixed(2).replace('.', ',') : 'tous les matchs') + ') · 🏁 Cockpit seul (1,50 et plus)</div>' + L
+      + carteS('Total ' + M.R.filter(function (s) { return s.ms.some(function (x) { return M.lieu === 'tout' || (M.lieu === 'dom' ? x.h === 1 : x.h === 0); }); }).length + ' saisons', '', tA, tB, RS.dist.regle, RS.dist.ck, 1)
       + (C > 0 && tA.mx > C ? '<div style="font-size:14px;color:#ff6b6b;font-weight:800;margin-top:4px;">⚠️ Ta règle demande une mise de ' + eu(tA.mx) + ' : plus que ton capital (' + eu(C) + ').</div>' : '')
       + ((RS.fin.regle > 0 || RS.fin.ck > 0) ? '<div style="font-size:14px;color:#ffd34d;margin-top:6px;">⏳ Série en cours (pas encore rattrapée) : 📉 ' + eu(RS.fin.regle) + ' · 🏁 ' + eu(RS.fin.ck) + ' déjà misés, comptés dans le total.</div>' : '')
       + '<div style="font-size:13px;color:#c9d3ee;margin-top:6px;">Une série pas finie en fin de saison continue sur la suivante. max = plus grosse mise · 🛑 = séries abandonnées à l\'arrêt de sécurité (perte gardée). Cotes de clôture de nos archives (pas la cote FR). Cockpit seul = grille ×2 puis ×3, matchs sous 1,50 sautés.</div>';
