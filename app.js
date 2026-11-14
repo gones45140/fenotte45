@@ -89331,7 +89331,9 @@ window.g45SerNs = function (nom, n, el) {
   }
   /* 20261114u (« il faudrait mettre le nombre de paliers » → maquette → « oui ») : 🪜 pire palier par case + paliers où les séries sont gagnées */
   var pp = function (n) { return n ? '<br>🪜 pire P' + n : ''; };
-  var distL = function (o) { var K = Object.keys(o || {}).map(Number).sort(function (a, b) { return a - b; }); return K.length ? K.map(function (k) { return 'P' + k + ' ×' + o[k]; }).join(' · ') : '—'; };
+  /* 20261115c (« P1 P2 P3… P6 » : les paliers sans série gagnée manquaient) : tous les paliers de P1 au plus haut, ×0 en gris */
+  var distL = function (o) { var K = Object.keys(o || {}).map(Number); if (!K.length) return '—'; var mx = Math.max.apply(null, K), r = [];
+    for (var k = 1; k <= mx; k++) r.push(o[k] ? 'P' + k + ' ×' + o[k] : '<span style="color:#8792ad;">P' + k + ' ×0</span>'); return r.join(' · '); };
   var distH = function (D) { if (!D) return ''; return '<div style="font-size:14px;margin-top:6px;font-weight:800;">🪜 Séries gagnées, total des saisons</div>'
     + '<div style="font-size:14px;">📉 ' + distL(D.regle) + '</div><div style="font-size:14px;">🏁 ' + distL(D.ck) + '</div>'; };
   /* 20261114v (« fais le global des 5 saisons ET par saison ») : ligne sous chaque saison */
