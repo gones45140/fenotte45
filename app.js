@@ -87703,8 +87703,13 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
      défaut, 0 = aucun), le match est SAUTÉ : pas de mise, la série attend le match suivant (même au palier 1). */
   var cbPl = function (u) { var v = u && u.cbPl != null ? parseFloat(u.cbPl) : 1.2; return v >= 0 ? v : 1.2; };
   var cbSaute = function (u, c) { var pl = cbPl(u); return !!(pl && c > 1 && c < pl - 1e-9); };
+  /* 20261114t (« le but : sécuriser un peu les cotes basses et que Cockpit gagne un peu plus » → maquette → « oui go ») : règle à 1,50 ou plus
+     PAR CARTE u.cbR : 's' 🛡️ (par défaut) = mise d'avant × 2,5 au P2 puis × 3 (à 1,50 : +2,50 € par série gagnée) ; 'a' 🔥 = pertes × 3 (l'ancienne). */
+  var cbR = function (u) { return u && u.cbR === 'a' ? 'a' : 's'; };
   var cbMise = function (u, k, c) { if (cbSaute(u, c)) return 0; var st = cbSt(u, k); if (st.p <= 1) return Math.round(cbP1(u) * 100) / 100; if (!(c > 1)) return 0;
-    return Math.ceil((c < 1.5 ? st.prev * (1 / (c - 1) + 2) : st.per * 3) * 100) / 100; };
+    return Math.ceil((c < 1.5 ? st.prev * (1 / (c - 1) + 2) : (cbR(u) === 'a' ? st.per * 3 : st.prev * (st.p === 2 ? 2.5 : 3))) * 100) / 100; };
+  /* part de BK couverte par N paliers (règle à 1,50+) : 🔥 4^(N−1) ; 🛡️ 1 + 2,5 × (3^(N−1) − 1) / 2 */
+  var cbDiv = function (u, n) { return cbR(u) === 'a' ? Math.pow(4, n - 1) : 1 + 2.5 * (Math.pow(3, n - 1) - 1) / 2; };
   var cbAvance = function (u, k, mise, gagne) { u.lcb = u.lcb || {}; var st = cbSt(u, k);
     if (gagne) { delete u.lcb[k]; return; }
     var n = { p: st.p + 1, prev: +mise || 0, per: (st.per || 0) + (+mise || 0) };
@@ -87747,22 +87752,23 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     var part = parseFloat(state.cbPart) > 0 ? parseFloat(state.cbPart) : 20, cap = bk * part / 100, f2 = function (v) { return (Math.round(v * 100) / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €'; };
     var B = function (on, t, fn) { return '<button onclick="' + fn + '" style="border-radius:10px;padding:6px 11px;font-size:14px;font-weight:800;cursor:pointer;color:#fff;margin:0 5px 5px 0;border:2px solid ' + (on ? '#1ed760' : '#6d9dff') + ';background:' + (on ? '#14532d' : '#16213f') + ';">' + t + '</button>'; };
     var PL = cbPl(u), sau = cbSaute(u, c);
-    var reg = sau ? '⏭️ cote sous ' + PL.toFixed(2).replace('.', ',') + ' : match SAUTÉ, la série attend le match suivant' : st.p <= 1 ? 'P1 = mise de départ de la carte' : (!c ? 'tape d\'abord ta sélection (la cote)' : (c < 1.5 ? 'cote sous 1,50 : mise d\'avant ' + f2(st.prev) + ' × ' + (1 / (c - 1) + 2).toFixed(2).replace('.', ',') : 'cote 1,50 ou plus : pertes de la série ' + f2(st.per) + ' × 3'));
+    var reg = sau ? '⏭️ cote sous ' + PL.toFixed(2).replace('.', ',') + ' : match SAUTÉ, la série attend le match suivant' : st.p <= 1 ? 'P1 = mise de départ de la carte' : (!c ? 'tape d\'abord ta sélection (la cote)' : (c < 1.5 ? 'cote sous 1,50 : mise d\'avant ' + f2(st.prev) + ' × ' + (1 / (c - 1) + 2).toFixed(2).replace('.', ',') : (cbR(u) === 'a' ? 'cote 1,50 ou plus : pertes de la série ' + f2(st.per) + ' × 3' : 'cote 1,50 ou plus : mise d\'avant ' + f2(st.prev) + ' × ' + (st.p === 2 ? '2,5' : '3'))));
     var h = '<div style="margin-top:8px;background:rgba(10,14,24,.93);border:1px solid #1c2747;border-radius:12px;padding:10px 12px;color:#fff;font-size:15px;line-height:1.5;">'
       + '<b>📉 Cotes basses — ' + String(u.n).replace(/</g, '') + ' ' + (L === 'dom' ? '🏠' : L === 'ext' ? '✈️' : '🌍') + '</b> · série <b>C' + st.p + '</b>' + (st.per ? ' · déjà perdu ' + f2(st.per) : '')
       + (c ? ' · cote ' + String(c).replace('.', ',') : '') + '<br>➡️ Mise : <b style="font-size:18px;color:#ffd34d;">' + (mi ? f2(mi) : '—') + '</b> <span style="font-size:13px;color:#c9d3ee;">(' + reg + ')</span>'
       + '<div style="font-size:14px;margin-top:6px;">🛑 Arrêt de cette carte (série abandonnée après ce palier perdu)</div>'
       + [5, 6, 7].map(function (n) { return B(S === n, 'C' + n, "g45CbCarte('stop'," + n + ')'); }).join('')
+      + '<div style="font-size:14px;margin-top:4px;">📐 Règle à 1,50 ou plus</div>' + B(cbR(u) === 's', '🛡️ ×2,5 puis ×3', "g45CbCarte('r','s')") + B(cbR(u) === 'a', '🔥 Pertes × 3', "g45CbCarte('r','a')")
       + '<div style="font-size:14px;margin-top:4px;">⏭️ Cote plancher (en dessous, match sauté)</div>'
       + [1.2, 1.25, 1.3, 0].map(function (n) { return B(Math.abs(PL - n) < 1e-9, n ? n.toFixed(2).replace('.', ',') : 'Aucune', "g45CbCarte('pl'," + n + ')'); }).join('')
       + '<div style="font-size:14px;margin-top:4px;">🪙 Mise de départ (P1) de cette carte : <b>' + f2(P1) + '</b></div>'
       + '<div style="font-size:14px;margin-top:4px;">🏦 Part de ta BK pour les cotes basses</div>' + [10, 20, 50, 100].map(function (n) { return B(part === n, n + ' %', "g45CbCarte('part'," + n + ')'); }).join('')
-      + '<div style="font-size:14px;">Ma part (' + f2(cap) + ') couvre :</div>' + [5, 6, 7].map(function (n) { var v = Math.floor(cap / Math.pow(4, n - 1) * 100) / 100; return B(false, n + ' paliers → P1 ' + f2(v), "g45CbCarte('p1'," + v + ')'); }).join('')
-      + '<div style="font-size:13px;color:#c9d3ee;">P1 = part ÷ 4^(paliers − 1) (règle « pertes × 3 »). Sous 1,50, la mise monte plus vite : c\'est un minimum de prudence. Paris et séries À PART de ta montante Cockpit.</div></div>';
+      + '<div style="font-size:14px;">Ma part (' + f2(cap) + ') couvre :</div>' + [5, 6, 7].map(function (n) { var v = Math.floor(cap / cbDiv(u, n) * 100) / 100; return B(false, n + ' paliers → P1 ' + f2(v), "g45CbCarte('p1'," + v + ')'); }).join('')
+      + '<div style="font-size:13px;color:#c9d3ee;">P1 = ta part ÷ le total des mises de ces paliers (règle choisie, cotes de 1,50 ou plus). Sous 1,50, la mise monte plus vite : c\'est un minimum de prudence. Paris et séries À PART de ta montante Cockpit.</div></div>';
     return h;
   }
   window.g45CbCarte = function (q, v) {
-    var u = carte(); if (q === 'part') { state.cbPart = +v; } else if (!u) return; else if (q === 'stop') u.cbStop = +v; else if (q === 'pl') u.cbPl = +v; else if (q === 'p1' && +v > 0) { if (!confirm('P1 de ' + u.n + ' = ' + String(v).replace('.', ',') + ' € ?')) return; u.cbP1 = +v; }
+    var u = carte(); if (q === 'part') { state.cbPart = +v; } else if (!u) return; else if (q === 'stop') u.cbStop = +v; else if (q === 'pl') u.cbPl = +v; else if (q === 'r') u.cbR = v === 'a' ? 'a' : 's'; else if (q === 'p1' && +v > 0) { if (!confirm('P1 de ' + u.n + ' = ' + String(v).replace('.', ',') + ' € ?')) return; u.cbP1 = +v; }
     try { save(); } catch (e) {} try { (window.updMise || updMise)(); } catch (e) {} dessiner();
   };
   /* ═══ 20261114o — 📉 COTES BASSES dans le 📊 Tableau de bord (maquette → « oui ») : chiffres (bénéfice, mises, ✅ / ❌, séries abandonnées),
@@ -87841,6 +87847,28 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
       try { ['fib', 'dal'].forEach(function (m) { Object.keys(((u && u.lm) || {})[m] || {}).forEach(function (k) { var p = parseInt(u.lm[m][k], 10) || 1; if (p > 1) r += pil(m, k, p); }); }); } catch (e) {}
       return r;
     }; window._g45UlPaliers._meth = 1; } } catch (e) {}
+  /* ═══ 20261114t — 🚀 COCKPIT P2 × 2,5 (même demande) : case dans 🪜 Mes grilles (state.ckP25). Cochée, toute grille « standard » (P2 = 2 × P1,
+     puis × 3) est LUE en P2 = 2,5 × P1 puis × 3 (10 / 25 / 75 / 225…) ; grille enregistrée inchangée (décocher = retour) ; P1 auto divise la
+     part par 1 + 2,5 × (3^(N−1) − 1) / 2 au lieu de 3^(N−1). Les grilles perso qui n'ont pas cette forme ne sont pas touchées. ═══ */
+  var p25 = function (g) {
+    if (!state.ckP25 || !Array.isArray(g) || g.length < 3) return g; var g0 = +g[0], ok = g0 > 0 && Math.abs(g[1] - 2 * g0) <= 0.02 * g0 + 0.011;
+    for (var i = 2; ok && i < g.length; i++) ok = Math.abs(g[i] - 3 * g[i - 1]) <= 0.02 * g[i] + 0.011; if (!ok) return g;
+    var r = [g0]; for (var j = 1; j < g.length; j++) r.push(Math.round(g0 * 2.5 * Math.pow(3, j - 1) * 100) / 100); return r; };
+  window._g45P25 = p25;   /* tests */
+  try { if (typeof _g45Grille === 'function' && !_g45Grille._p25) { var _gr0 = _g45Grille; _g45Grille = window._g45Grille = function () { return p25(_gr0.apply(this, arguments)); }; _g45Grille._p25 = 1; } } catch (e) {}
+  try { if (window._g45PctT && !window._g45PctT._p25) { var _pp0 = window._g45PctT.p1; window._g45PctT.p1 = function (c, n) { return state.ckP25 ? Math.floor(c / (1 + 2.5 * (Math.pow(3, n - 1) - 1) / 2) * 100) / 100 : _pp0(c, n); }; window._g45PctT._p25 = 1; } } catch (e) {}
+  function p25Poser() {
+    var cg = $('ck-gr'); if (!cg) return; var z = $('g45-p25');
+    if (!z) { z = document.createElement('div'); z.id = 'g45-p25'; z.style.cssText = 'margin:0 0 12px;padding:10px 12px;border-radius:10px;background:rgba(77,132,255,.12);border:1px solid #4d84ff;font-size:15px;color:#fff;'; cg.insertBefore(z, cg.firstChild); }
+    var on = !!state.ckP25, h = '<label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:800;"><input type="checkbox" ' + (on ? 'checked' : '') + ' onchange="g45P25(this.checked)" style="width:22px;height:22px;"> 🚀 P2 × 2,5 (au lieu de × 2)</label>'
+      + '<div style="font-size:14px;color:#c9d3ee;margin-top:4px;">Grille ' + (on ? '10 / 25 / 75 / 225 / 675 €' : '10 / 20 / 60 / 180 / 540 €') + ' (pour P1 à 10 €). À 1,50, chaque série gagnée rapporte un peu (+2,50 € pour 10 €) au lieu de juste rembourser.</div>';
+    if (z.innerHTML !== h) z.innerHTML = h;
+  }
+  window.g45P25 = function (on) {
+    if (on && !confirm('🚀 P2 × 2,5 : toutes tes grilles Cockpit passent à 10 / 25 / 75 / 225… (pour P1 10 €).\nLes séries déjà en cours prennent tout de suite les nouvelles mises.\n\nOK ?')) { p25Poser(); return; }
+    state.ckP25 = !!on; try { save(); } catch (e) {} try { if (typeof render === 'function') render(); } catch (e) {} try { (window.updMise || updMise)(); } catch (e) {} p25Poser();
+  };
+  try { var _ong0 = window.g45CkOnglet; if (typeof _ong0 === 'function' && !_ong0._p25) { window.g45CkOnglet = function () { var r = _ong0.apply(this, arguments); try { p25Poser(); } catch (e) {} return r; }; window.g45CkOnglet._p25 = 1; } } catch (e) {}
   window._g45EngMethDessiner = dessiner;
   window.g45EngMeth = function (k) { window._g45EngMeth = (SEQ[k] || k === 'cb') ? k : 'mont'; try { (window.updMise || updMise)(); } catch (e) {} dessiner(); };
   /* mise proposée : celle de la méthode (après le calcul normal de la montante) */
@@ -89121,7 +89149,7 @@ window.g45SerNs = function (nom, n, el) {
    2) Essai sur une équipe (clubs de foot des archives, pari Victoire, vraies cotes de clôture m[11]) : sa règle + arrêt de sécurité, comparée
       à « Cockpit seul » (matchs sous 1,50 sautés, grille ×2 puis ×3). ═══ */
 (function () {
-  var M = { c: '1,30', p1: '10', k: '5', q: '', eq: null, lieu: 'tout', stop: 5, pl: 1.2, R: null, etat: '' };   /* 20261114q : pl = cote plancher */
+  var M = { c: '1,30', p1: '10', k: '5', q: '', eq: null, lieu: 'tout', stop: 5, pl: 1.2, r: 's', R: null, etat: '' };   /* 20261114t : r = règle à 1,50+ */   /* 20261114q : pl = cote plancher */
   var esc = function (x) { return String(x == null ? '' : x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); };
   var num = function (x) { return parseFloat(String(x).replace(',', '.')); };
   var eu = function (v, d) { return (Math.round(v * 100) / 100).toLocaleString('fr-FR', { minimumFractionDigits: d ? 2 : 0, maximumFractionDigits: 2 }) + ' €'; };
@@ -89137,7 +89165,7 @@ window.g45SerNs = function (nom, n, el) {
     var p1 = o.p1 || 10, stop = o.stop || 0;
     var pal = 0, prev = 0, per = 0, g = 0, mx = 0, ab = 0, n = 0;
     ms.forEach(function (x) { if (!(x.c > 1.05)) return;
-      var m = pal === 0 ? p1 : (x.c < 1.5 ? prev * (1 / (x.c - 1) + 2) : per * 3); n++; if (m > mx) mx = m;
+      var m = pal === 0 ? p1 : (x.c < 1.5 ? prev * (1 / (x.c - 1) + 2) : (o.r === 's' ? prev * (pal === 1 ? 2.5 : 3) : per * 3)); n++; if (m > mx) mx = m;   /* 20261114t : o.r 's' = ×2,5 puis ×3 */
       if (x.w) { g += m * (x.c - 1); pal = 0; prev = 0; per = 0; }
       else { g -= m; per += m; prev = m; pal++; if (stop && pal >= stop) { ab++; pal = 0; prev = 0; per = 0; } } });
     var G = [1, 2, 6, 18, 54, 162, 486, 1458, 4374], q = 0, g2 = 0, mx2 = 0, ab2 = 0, n2 = 0;
@@ -89150,13 +89178,13 @@ window.g45SerNs = function (nom, n, el) {
      cours à la fin d'une saison CONTINUE sur la suivante, comme en vrai ; gains / mises max / abandons comptés dans la saison du match.
      S = [{ sa, ms }] du plus ancien au plus récent → [{ regle: {g, mx, ab}, ck: {…} }] + fin = pertes de la série encore ouverte. */
   function simSaisons(S, o) {
-    var p1 = o.p1 || 10, stop = o.stop || 0, pl = o.pl || 0, G = [1, 2, 6, 18, 54, 162, 486, 1458, 4374];
+    var p1 = o.p1 || 10, stop = o.stop || 0, pl = o.pl || 0, G = (typeof state !== 'undefined' && state && state.ckP25) ? [1, 2.5, 7.5, 22.5, 67.5, 202.5, 607.5, 1822.5, 5467.5] : [1, 2, 6, 18, 54, 162, 486, 1458, 4374];   /* 20261114t : colonne Cockpit seul = ta grille (P2 × 2,5 si cochée) */
     var A = { pal: 0, prev: 0, per: 0 }, B = { q: 0, per: 0 }, out = [];
     S.forEach(function (sx) {
       var r = { g: 0, mx: 0, ab: 0 }, k = { g: 0, mx: 0, ab: 0 };
       sx.ms.forEach(function (x) {
         if (x.c > 1.05 && !(pl && x.c < pl - 1e-9)) {   /* 20261114q : sous le plancher → match sauté */
-          var m = A.pal === 0 ? p1 : (x.c < 1.5 ? A.prev * (1 / (x.c - 1) + 2) : A.per * 3); if (m > r.mx) r.mx = m;
+          var m = A.pal === 0 ? p1 : (x.c < 1.5 ? A.prev * (1 / (x.c - 1) + 2) : (o.r === 's' ? A.prev * (A.pal === 1 ? 2.5 : 3) : A.per * 3)); if (m > r.mx) r.mx = m;   /* 20261114t */
           if (x.w) { r.g += m * (x.c - 1); A.pal = 0; A.prev = 0; A.per = 0; }
           else { r.g -= m; A.per += m; A.prev = m; A.pal++; if (stop && A.pal >= stop) { r.ab++; A.pal = 0; A.prev = 0; A.per = 0; } }
         }
@@ -89259,7 +89287,7 @@ window.g45SerNs = function (nom, n, el) {
       + '<label style="font-size:14px;">Multiplier par<input value="' + esc(M.k) + '" inputmode="decimal" oninput="g45CbSet(\'k\',this.value)" style="' + IN + '"></label></div>'
       + '<div id="g45-cb-t">' + tabHtml(c, p1, k, ok, C) + '</div>';
     h += '<div style="font-size:15px;font-weight:800;margin:16px 0 4px;">2. L\'essai sur une équipe ou un joueur (⚽ 🏒 🏀 🏈 ⚾)</div>'
-      + '<div style="font-size:14px;color:#c9d3ee;margin-bottom:6px;">Ta règle rejouée sur les vraies cotes gardées : sous 1,50 → mise d\'avant × (1 ÷ (cote − 1) + 2) ; à 1,50 ou plus → pertes de la série × 3 ; P1 = la mise du dessus.</div>'
+      + '<div style="font-size:14px;color:#c9d3ee;margin-bottom:6px;">Ta règle rejouée sur les vraies cotes gardées : sous 1,50 → mise d\'avant × (1 ÷ (cote − 1) + 2) ; à 1,50 ou plus → 🛡️ mise d\'avant × 2,5 puis × 3, ou 🔥 pertes de la série × 3 ; P1 = la mise du dessus.</div>'
       + '<input id="g45-cb-q" type="search" autocomplete="off" placeholder="ex. Lyon, Oilers, Celtics, Bills…" value="' + esc(M.q) + '" oninput="g45CbQ(this.value)" style="' + IN + '">'
       + '<div id="g45-cb-l" style="margin-top:8px;"></div>';
     if (M.eq) {
@@ -89276,7 +89304,8 @@ window.g45SerNs = function (nom, n, el) {
         + '<div style="font-size:14px;color:#c9d3ee;margin:4px 0;">🛑 Arrêt de sécurité (série abandonnée après ce palier perdu)</div>'
         + [4, 5, 6, 7, 0].map(function (n) { return bt(M.stop === n, n ? 'P' + n : 'Aucun', "g45CbSet('stop'," + n + ')'); }).join('')
         + '<div style="font-size:14px;color:#c9d3ee;margin:4px 0;">⏭️ Cote plancher de ta règle (en dessous, match sauté, la série attend)</div>'
-        + [1.2, 1.25, 1.3, 0].map(function (n) { return bt(M.pl === n, n ? n.toFixed(2).replace('.', ',') : 'Aucune', "g45CbSet('pl'," + n + ')'); }).join('');
+        + [1.2, 1.25, 1.3, 0].map(function (n) { return bt(M.pl === n, n ? n.toFixed(2).replace('.', ',') : 'Aucune', "g45CbSet('pl'," + n + ')'); }).join('')
+        + '<div style="font-size:14px;color:#c9d3ee;margin:4px 0;">📐 Règle à 1,50 ou plus</div>' + bt(M.r === 's', '🛡️ ×2,5 puis ×3', "g45CbSet('r','s')") + bt(M.r === 'a', '🔥 Pertes × 3', "g45CbSet('r','a')");
       if (M.etat === 'load') h += '<div style="font-size:14px;margin-top:8px;">⏳ Lecture des saisons…</div>';
       else if (M.etat === 'vide') h += '<div style="font-size:14px;margin-top:8px;color:#ffb13d;">Pas de cotes gardées pour cette équipe.</div>';
       else if (M.etat === 'videJ') h += '<div style="font-size:14px;margin-top:8px;color:#ffb13d;">Pas de cote gardée pour ce joueur et ce pari.</div>';
@@ -89299,7 +89328,7 @@ window.g45SerNs = function (nom, n, el) {
     var td = 'padding:6px 4px;border-top:1px solid #1c2747;', tA = { g: 0, mx: 0, ab: 0 }, tB = { g: 0, mx: 0, ab: 0 };
     var col = function (v) { return v >= 0 ? '#1ed760' : '#ff6b6b'; };
     var SS = M.R.slice().reverse().map(function (s) { return { sa: s.sa, ms: s.ms.filter(function (x) { return M.lieu === 'tout' || (M.lieu === 'dom' ? x.h === 1 : x.h === 0); }) }; }).filter(function (s) { return s.ms.length; });
-    var RS = simSaisons(SS, { p1: p1, stop: M.stop, pl: M.pl }), RI = {}; RS.forEach(function (r) { RI[r.sa] = r; });   /* 20261114m : séries continues d'une saison à l'autre */
+    var RS = simSaisons(SS, { p1: p1, stop: M.stop, pl: M.pl, r: M.r }), RI = {}; RS.forEach(function (r) { RI[r.sa] = r; });   /* 20261114m : séries continues d'une saison à l'autre */
     var L = M.R.map(function (s) {
       var ms = s.ms.filter(function (x) { return M.lieu === 'tout' || (M.lieu === 'dom' ? x.h === 1 : x.h === 0); }); if (!ms.length) return '';
       var R = RI[s.sa], v = ms.filter(function (x) { return x.w; }).length, bas = ms.filter(function (x) { return x.c < 1.5; }).length, neu = ms.filter(function (x) { return x.eu; }).length;
@@ -89319,7 +89348,7 @@ window.g45SerNs = function (nom, n, el) {
   function dessiner() { var z = document.getElementById('calc-cb'); if (z && z.style.display !== 'none') { z.innerHTML = html(); liste(); } }
   window._g45CbHtml = html; window._g45CbM = M;
   window.g45CbSet = function (k, v) {
-    if (k === 'lieu' || k === 'stop' || k === 'pl') { M[k] = v; dessiner(); return; }
+    if (k === 'lieu' || k === 'stop' || k === 'pl' || k === 'r') { M[k] = v; dessiner(); return; }
     M[k] = String(v).slice(0, 8);
     var z = document.getElementById('g45-cb-t'), c = num(M.c), p1 = num(M.p1), kk = num(M.k);   /* pas de redessin complet pendant la frappe (clavier) */
     if (z) z.innerHTML = tabHtml(c, p1, kk, c > 1 && p1 > 0 && kk > 1, cap());
