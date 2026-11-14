@@ -87925,6 +87925,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
      ligne 🪜 sous chaque pépite = palier / mise / gain de la simulation 🚀 En montante (_g45LoiMont → window._g45LoiDet, même clé
      équipe + pari + lieu + date) ; ⏳ = palier et mise prévus ; série fermée après des ratés = 🏁 bénéfice de la série. */
   var montL = function (y) {
+    if (y.nc) return '<br><span style="font-size:13px;font-weight:700;color:#c9d3ee;">➖ non compté (1 seul pari par équipe)</span>';   /* 20261114h */
     var d = (window._g45LoiDet || {})[y.id + '|' + y.k + '|' + (y.lieu || '') + '|' + y.t];
     var e2 = function (v) { return (v >= 0 ? '+' : '−') + frC(Math.abs(v)) + ' €'; }, cl = function (v) { return v >= 0 ? '#1ed760' : '#ff6b6b'; };
     /* 20261113g (Antoine : « faut-il mettre en 10 € normal et mode Cockpit ? ») : ligne 💶 10 € à plat (cote FR) au-dessus de la ligne 🪜 */
@@ -87949,7 +87950,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     /* 20261113g (Antoine : « rajouter comme screen 3 » = 1J / 1S / 1M / 1A / Tout du Bilan paris) : période (M.per), mêmes durées que le Bilan */
     h += '<div style="font-size:14px;font-weight:800;margin:0 0 4px;">Période</div><div style="display:flex;gap:6px;margin-bottom:10px;">' + [['1j', '1J'], ['1s', '1S'], ['1m', '1M'], ['1a', '1A'], ['all', 'Tout']].map(function (d) { var on = (M.per || 'all') === d[0]; return '<button onclick="g45LoiBilF(\'p\',\'' + d[0] + '\')" style="flex:1;border:2px solid ' + (on ? '#1ed760' : '#6d9dff') + ';border-radius:8px;padding:8px 4px;font-size:14px;font-weight:900;cursor:pointer;background:' + (on ? '#1ed760' : '#16213f') + ';color:' + (on ? '#0b1a10' : '#fff') + ';">' + d[1] + '</button>'; }).join('') + '</div>';
     if (M.fc === 3) M.fc = 0;
-    var L = (M.d.L || []).filter(function (x) { return x.cours >= 4 && (M.fs === 'tous' || x.sp === M.fs || (M.fs === 'rugby' && x.sp === 'rugby-league')) && (!M.fc || (M.fc === 7 ? x.cours >= 7 : x.cours === M.fc)); }).sort(function (a, b) { return b.t - a.t; });
+    var L = (M.d.L || []).filter(function (x) { return x.cours >= 4 && x.lg !== 'fifa.friendly' /* 20261114h : amicaux retirés */ && (M.fs === 'tous' || x.sp === M.fs || (M.fs === 'rugby' && x.sp === 'rugby-league')) && (!M.fc || (M.fc === 7 ? x.cours >= 7 : x.cours === M.fc)); }).sort(function (a, b) { return b.t - a.t; });
     chargerCotes(L);
     /* 20261108s (capture Sharks / Banfield 07/11 à 6 h 54 encore ⏳ : « faudrait le score du match ») : le robot Loi des séries ne repasse que le
        lendemain matin ; la fiche du match lue pour la cote (FI, archives remplies toutes les heures) a déjà le score final f {h, a} (+ ot) →
@@ -87974,11 +87975,18 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
        (x.av) ; une seule mise dans la montante et une seule fois dans le bilan. */
     L.forEach(function (x) { x.av = null; var mt = /^([ou]\d\d|btts)$/.test(String(x.k)), k = mt ? x.j + '|' + x.eid + '|' + x.k : 'E|' + x.j + '|' + x.eid + '|' + x.id + '|' + x.k, g = MGc[k]; if (!g) { MGc[k] = g = []; LLc.push(g); } g.push(x); });
     L = LLc.map(function (e) { if (!Array.isArray(e)) return e; e.sort(function (a, b) { return ((b.d ? 2 : 0) + (b.lieu ? 1 : 0)) - ((a.d ? 2 : 0) + (a.lieu ? 1 : 0)); }); if (e.length > 1) e[0].av = e.slice(1); return e[0]; });
+    /* 20261114h (captures Bolivie 3 paris ❌, Serbie 2 paris ❌ : « on prend 1 seul pari par équipe dans le bilan, on peut laisser les lois des
+       séries mais indiquer que 1 seul pari est pris ») : plusieurs pépites d'une même équipe sur un même match → UNE seule comptée (la plus longue
+       série en cours, puis la pire série, puis la plus petite cote) ; les autres restent affichées « ➖ non compté » (x.nc), hors bilan, graphique,
+       calendrier et montante. */
+    var PEq = {}; L.forEach(function (x) { x.nc = 0; var k = x.j + '|' + x.eid + '|' + x.id; (PEq[k] = PEq[k] || []).push(x); });
+    Object.keys(PEq).forEach(function (k) { var g = PEq[k]; if (g.length < 2) return; var cq = function (x) { var q = coteDe(x); return q ? q.c : 99; };
+      g.sort(function (a, b) { return (b.cours - a.cours) || (b.pire - a.pire) || (cq(a) - cq(b)); }); g.slice(1).forEach(function (x) { x.nc = 1; }); });
     var Lall = L, jPer = { '1j': 1, '1s': 7, '1m': 30, '1a': 365 }[M.per];   /* 20261113g : la montante se calcule sur TOUT l'historique (paliers justes), seul l'affichage est filtré */
     if (jPer) { var cP = new Date(); cP.setHours(0, 0, 0, 0); cP.setDate(cP.getDate() - jPer); var cS = cP.getFullYear() + '-' + ('0' + (cP.getMonth() + 1)).slice(-2) + '-' + ('0' + cP.getDate()).slice(-2); L = L.filter(function (x) { return String(x.j) >= cS; }); }
     if (!L.length && ((M.d.L || []).length)) return h + '<div style="font-size:14px;">Aucune pépite avec ces filtres.</div></div>';
     if (!L.length) return h + '<div style="font-size:14px;">Aucune pépite gardée pour l\'instant : le robot commence l\'historique chaque matin, le bilan se remplit dès les premiers résultats.</div></div>';
-    var J = L.filter(function (x) { return x.r === 1 || x.r === 0; }), G = J.filter(function (x) { return x.r === 1; }).length, P = J.length - G;
+    var J = L.filter(function (x) { return !x.nc && (x.r === 1 || x.r === 0); }), G = J.filter(function (x) { return x.r === 1; }).length, P = J.length - G;
     var tu = function (lb, v, bg, bd, col) { return '<div style="flex:1;min-width:105px;background:' + bg + ';border:1px solid ' + bd + ';border-radius:10px;padding:8px;text-align:center;"><div style="font-size:13px;color:#c9d3ee;">' + lb + '</div><div style="font-size:22px;font-weight:900;color:' + col + ';">' + v + '</div></div>'; };
     h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">' + tu('Pépites jouées', J.length, '#0b1226', '#2a3a63', '#fff')
       + tu('Série stoppée ✅', G + (J.length ? ' · ' + Math.round(100 * G / J.length) + ' %' : ''), 'rgba(30,215,96,.12)', '#1ed760', '#1ed760') + tu('Série continue ❌', P, 'rgba(255,69,69,.12)', '#ff4545', '#ff6b6b') + '</div>';
@@ -87991,7 +87999,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
        🚀 EN MONTANTE — chaque pépite (même équipe + même pari + même lieu) démarre à P1 = 10 € ; ratée → la fois suivante où ELLE revient en
        pépite, palier suivant (grille d'Antoine : ×2 puis ×3 → 10, 20, 60, 180, 540…) ; passée → retour à P1. Pépites avec cote seulement,
        dans l'ordre des matchs. Gain total, plus haut palier, plus grosse mise, montantes encore ouvertes (palier en attente). */
-    var mt = window._g45LoiMont ? window._g45LoiMont(Lall.filter(function (x) { return coteDe(x); }), coteDe) : null;
+    var mt = window._g45LoiMont ? window._g45LoiMont(Lall.filter(function (x) { return !x.nc && coteDe(x); }), coteDe) : null;
     if (mt && jPer) { var DTp = window._g45LoiDet || {}, gP = 0, nP = 0, pP = 0, mP = 0; L.forEach(function (x) { var q = DTp[x.id + '|' + x.k + '|' + (x.lieu || '') + '|' + x.t]; if (!q) return; if (q.g != null) { gP += q.g; nP++; } pP = Math.max(pP, q.p || 0); mP = Math.max(mP, q.m || 0); }); mt.g = gP; mt.n = nP; mt.pmax = pP; mt.mmax = mP; }   /* 20261113g : chiffres de la période */   /* 20261113b : + pépites ⏳ (palier prévu) */
     if (mt && mt.n) h += '<div style="background:' + (mt.g >= 0 ? 'rgba(30,215,96,.12)' : 'rgba(255,69,69,.12)') + ';border:1px solid ' + (mt.g >= 0 ? '#1ed760' : '#ff4545') + ';border-radius:10px;padding:8px;margin-bottom:10px;text-align:center;">'
       + '<div style="font-size:14px;color:#c9d3ee;">🚀 En montante (P1 10 €, puis ×2 et ×3 sur la même équipe et le même pari)</div>'
@@ -88070,21 +88078,21 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     var dec = (new Date(an, mo, 1).getDay() + 6) % 7, nb = new Date(an, mo + 1, 0).getDate();
     for (var i = 0; i < dec; i++) h += '<div></div>';
     for (var d = 1; d <= nb; d++) {
-      var X = PJ[jj(d)] || [], jo = X.filter(function (x) { return x.r === 1 || x.r === 0; }), g = jo.filter(function (x) { return x.r === 1; }).length, bg = '#0b1226', bd = '#2a3a63', t = '';
+      var X = PJ[jj(d)] || [], jo = X.filter(function (x) { return !x.nc && (x.r === 1 || x.r === 0); }), g = jo.filter(function (x) { return x.r === 1; }).length, bg = '#0b1226', bd = '#2a3a63', t = '';
       if (X.length) { if (!jo.length) t = '⏳ ' + X.length; else { t = g + '/' + jo.length; var vv = g * 2 - jo.length; bg = vv > 0 ? 'rgba(30,215,96,.18)' : vv === 0 ? 'rgba(245,197,66,.15)' : 'rgba(255,69,69,.18)'; bd = vv > 0 ? '#1ed760' : vv === 0 ? '#f5c542' : '#ff4545'; } }
       var on = jj(d) === M.j;
       h += '<div ' + (X.length ? 'onclick="g45LoiBilJour(\'' + jj(d) + '\')" ' : '') + 'style="background:' + bg + ';border:' + (on ? '2px solid #6d9dff' : '1px solid ' + bd) + ';border-radius:8px;min-height:46px;padding:3px 1px;text-align:center;' + (X.length ? 'cursor:pointer;' : '') + '"><div style="font-size:13px;font-weight:800;">' + d + '</div><div style="font-size:12px;font-weight:700;">' + t + '</div>'
         /* 20261113e (Antoine : « mettre dans les cases journalières le bilan positif ou négatif de la journée ») : gain du jour de la 🚀 montante
            (somme des d.g de window._g45LoiDet pour les pépites terminées du jour) */
         + (function () { var DT = window._g45LoiDet || {}, gj = 0, nj = 0, g10 = 0, n10 = 0, f2 = function (v) { return (v >= 0 ? '+' : '−') + String(Math.round(Math.abs(v))) + ' €'; };
-            X.forEach(function (x) { var q = DT[x.id + '|' + x.k + '|' + (x.lieu || '') + '|' + x.t]; if (q && q.g != null) { gj += q.g; nj++; } var g1 = (x.r === 1 || x.r === 0) ? gainDe(x) : null; if (g1 != null) { g10 += g1; n10++; } });   /* 20261113f : les 2 (10 € et montante) */
+            X.forEach(function (x) { var q = DT[x.id + '|' + x.k + '|' + (x.lieu || '') + '|' + x.t]; if (q && q.g != null) { gj += q.g; nj++; } var g1 = (!x.nc && (x.r === 1 || x.r === 0)) ? gainDe(x) : null; if (g1 != null) { g10 += g1; n10++; } });   /* 20261113f : les 2 (10 € et montante) */
             return (n10 ? '<div style="font-size:12px;font-weight:900;color:' + (g10 >= 0 ? '#1ed760' : '#ff6b6b') + ';">💶 ' + f2(g10) + '</div>' : '')
               + (nj ? '<div style="font-size:12px;font-weight:900;color:#f5c542;">🚀 ' + f2(gj) + '</div>' : ''); })()
         + '</div>';
     }
     h += '</div><div style="font-size:13px;color:#c9d3ee;margin:8px 0;">Chaque jour : ✅ gagnées / pépites jouées, puis le gain du jour 💶 à 10 € et 🚀 en montante. Vert = plus de la moitié gagnées, jaune = moitié, rouge = moins, ⏳ = pas encore joué. Touche un jour pour voir ses pépites.</div>';
     var XJ = (PJ[M.j] || []).slice().sort(function (a, b) { return a.t - b.t; });   /* 20261107u (« c'est le désordre niveau horaire ») : du plus tôt au plus tard */
-    if (XJ.length && !M.tout) { var dj = new Date(M.j + 'T12:00:00')   /* 20261107x (« doublon ? ») : historique ouvert → la liste du jour n'est pas répétée au-dessus */, gj = XJ.filter(function (x) { return x.r === 1; }).length, nj = XJ.filter(function (x) { return x.r === 1 || x.r === 0; }).length;
+    if (XJ.length && !M.tout) { var dj = new Date(M.j + 'T12:00:00')   /* 20261107x (« doublon ? ») : historique ouvert → la liste du jour n'est pas répétée au-dessus */, gj = XJ.filter(function (x) { return !x.nc && x.r === 1; }).length, nj = XJ.filter(function (x) { return !x.nc && (x.r === 1 || x.r === 0); }).length;
       h += '<div style="font-size:15px;font-weight:800;margin:6px 0 4px;">' + dj.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }) + (nj ? ' · ' + gj + '/' + nj + ' ✅' : '') + '</div><div class="g45lb-g">' + grouper(XJ).map(function (g) { return ligne(g, false); }).join('') + '</div>'; }   /* 20261107s : 2 colonnes sur PC */
     h += '<button onclick="g45LoiBilTout()" style="margin-top:12px;width:100%;padding:10px;border-radius:10px;border:1px solid #2a3a63;background:#0b1226;color:#fff;font-size:15px;font-weight:800;cursor:pointer;">' + (M.tout ? '▲ Fermer l\'historique' : '📜 Tout voir (' + L.length + ' pépites)') + '</button>';
     if (M.tout) h += '<div class="g45lb-g" style="margin-top:6px;">' + grouper(L.slice().sort(function (a, b) { return a.j < b.j ? 1 : a.j > b.j ? -1 : a.t - b.t; })).map(function (g) { return ligne(g, true); }).join('') + '</div>';
