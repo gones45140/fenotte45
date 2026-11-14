@@ -78468,7 +78468,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   function serLabAn(a, civil) { return civil ? String(a) : a + '-' + String(a + 1).slice(2); }
   /* log = journal du joueur (n'importe quel ordre), ms = matchs du club, k = glob|dom|ext → { lib, ans, p, tot } */
   function serStatJ(c, log, ms, k, hock, civil) {
-    var idx = {}; (ms || []).forEach(function (m) { idx[m[0]] = m; });
+    var idx = {}, idxE = {}; (ms || []).forEach(function (m) { idx[m[0]] = m; if (m[6]) idxE[String(m[6])] = m; });   /* 20261114k : + par N° de match */
     var veille = function (d) { var x = new Date(d + 'T12:00:00Z'); x.setUTCDate(x.getUTCDate() + 1); return x.toISOString().slice(0, 10); };
     var L = (log || []).map(function (g) { return { g: g, d: String(g.gameDate || g.d || '').slice(0, 10) }; }).filter(function (x) { return /^\d{4}-\d\d-\d\d$/.test(x.d); })
       .sort(function (a, b) { return a.d < b.d ? -1 : a.d > b.d ? 1 : 0; });
@@ -78477,8 +78477,8 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       /* 20261114j (carte Jarvis « Vainqueur + pointeur » 🏠 pire série 1·4·3·4 ≠ critères 1·2·2·4) : NHL = date LOCALE du journal, archives = date
          UTC (souvent le lendemain) ; avec deux matchs sur deux soirs de suite, idx[x.d] tombait sur le match de la VEILLE. Hockey : lendemain UTC
          d'abord, puis le même jour ; et le domicile / extérieur du journal doit correspondre au match trouvé. */
-      var hJ = x.g.h != null ? x.g.h : null, m = null;
-      (hock ? [veille(x.d), x.d] : [x.d]).some(function (dd) { var q = idx[dd]; if (q && (hJ == null || q[1] == null || +q[1] === +hJ)) { m = q; return true; } return false; });
+      var hJ = x.g.h != null ? x.g.h : null, m = x.g.eid ? (idxE[String(x.g.eid)] || null) : null;
+      if (!m && !x.g.eid) (hock ? [veille(x.d), x.d] : [x.d]).some(function (dd) { var q = idx[dd]; if (q && (hJ == null || q[1] == null || +q[1] === +hJ)) { m = q; return true; } return false; });
       var h = hJ != null ? hJ : (m ? m[1] : null);
       if (k === 'dom' && h !== 1) return; if (k === 'ext' && h !== 0) return;
       var r = serPasseJ(c, x.g, m, hock); if (r === null) return;
@@ -78575,6 +78575,21 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     psSim(out, u);
     u.psL = out; return true;
   }
+  async function serLogNhlArch(nom) {   /* 20261114k : [{ gameDate, eid, goals, assists, points, h }] saison régulière, 4 saisons ; null = pas trouvé */
+    var d0 = new Date(), a0 = d0.getMonth() + 1 >= 8 ? d0.getFullYear() + 1 : d0.getFullYear(), ANS = [a0, a0 - 1, a0 - 2, a0 - 3], id = null;
+    for (var i = 0; i < 2 && !id; i++) { var J = await aLire('hockey/nhl/' + aSaUS('nhl', ANS[i]) + '/joueurs.json'); if (!J) continue;
+      id = serTrouve(Object.keys(J).map(function (z) { return [z, serNz((J[z] || [])[0] || '')]; }), nom); }
+    if (!id) return null;
+    var L = [];
+    for (var j = 0; j < ANS.length; j++) {
+      var B0 = 'hockey/nhl/' + aSaUS('nhl', ANS[j]), q0 = await aLire(B0 + '/joueurs/' + id + '.json'), L0 = ((q0 && q0.m) || []).filter(function (m) { return m && m[4]; });
+      var EQ = {}; L0.forEach(function (m) { EQ[m[3]] = 1; });
+      for (var e in EQ) { var qe = await aLire(B0 + '/equipes/' + e + '.json'); if (qe && qe.m) { EQ[e] = {}; qe.m.forEach(function (x) { EQ[e][String(x[2])] = x[5]; }); } else EQ[e] = null; }
+      L0.forEach(function (m) { var T = EQ[m[3]]; if (T && T[String(m[2])] !== 2) return; var st = m[4] || {}, g = +st.G || 0, a = +st.A || 0;
+        L.push({ gameDate: aIso(m[0]), eid: String(m[2]), goals: g, assists: a, points: g + a, h: m[6] === 'h' ? 1 : m[6] === 'a' ? 0 : null }); });
+    }
+    return L.length ? L : null;
+  }
   async function serJoueur(u) {
     var P = serParis(u); if (!P.length) return false;
     var out = {}, now = Date.now(), fin = function (err) { P.forEach(function (q) { out[q.k] = { t: q.t, err: err }; }); u.psL = out; return true; };
@@ -78588,9 +78603,15 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     if (hock) {
       if (X && X.lg !== 'nhl') return fin('club NHL introuvable (' + club + ')');
       var ab = (typeof _g45RegEquipe === 'function') ? _g45RegEquipe(club) : null; if (!ab) return fin('club NHL introuvable (' + club + ')');
-      var id = await serIdNhl(u.n, ab[0]); if (!id) return fin('joueur introuvable dans l\'effectif de ' + club);
-      var d0 = new Date(), a0 = d0.getMonth() + 1 >= 8 ? d0.getFullYear() : d0.getFullYear() - 1;
-      try { log = ((await _g45RegLog4(id, a0 + '' + (a0 + 1))) || {}).gameLog; } catch (e) {}
+      /* 20261114k (Jarvis 🏠 « Vainqueur + pointeur » : carte 1·4·2·3 ≠ critères 1·2·2·4, vérifié à la main dans les archives = 1·2·2·4) :
+         journal du joueur pris dans les ARCHIVES (comme les critères et la NBA), chaque match relié au match du club par son N° (eid),
+         saison régulière seulement ; journal NHL par la date seulement en secours. */
+      try { log = await serLogNhlArch(u.n); } catch (e) { log = null; }
+      if (!log || !log.length) {
+        var id = await serIdNhl(u.n, ab[0]); if (!id) return fin('joueur introuvable dans l\'effectif de ' + club);
+        var d0 = new Date(), a0 = d0.getMonth() + 1 >= 8 ? d0.getFullYear() : d0.getFullYear() - 1;
+        try { log = ((await _g45RegLog4(id, a0 + '' + (a0 + 1))) || {}).gameLog; } catch (e) {}
+      }
     } else {
       civil = (typeof _g45RegCivil === 'function') && _g45RegCivil(X.lg);
       var idF = await serIdFoot(u.n); if (!idF) return fin('joueur introuvable chez ESPN');
@@ -79036,7 +79057,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   try { if (!document.getElementById('g45ck-ty-css')) { var stT = document.createElement('style'); stT.id = 'g45ck-ty-css';
     stT.textContent = '.g45ck-tyw{flex:1 1 260px;min-width:0;display:flex}@media(min-width:700px){.g45ck-row{display:grid!important;grid-template-columns:minmax(240px,330px) minmax(0,1fr) auto;align-items:start}.g45ck-row>div{justify-self:start}.g45ck-tyw{justify-content:flex-start}}@media(max-width:699px){.g45ck-logo{right:10px!important;top:10px!important;transform:none!important;height:52px!important;max-width:24%!important}}';   /* 20261029u : colonne alignée (« re-montrer le décalage ») */
     (document.head || document.documentElement).appendChild(stT); } } catch (e) {}
-  window._g45SerNomJ = serNomJ; window._g45SerStatJ = serStatJ; window._g45SerLegsJ = serLegsJ; window._g45SerJoueur = serJoueur;   /* tests */
+  window._g45SerNomJ = serNomJ; window._g45SerLogNhl = serLogNhlArch; window._g45SerStatJ = serStatJ; window._g45SerLegsJ = serLegsJ; window._g45SerJoueur = serJoueur;   /* tests */
   S.ser = S.ser || { etat: 0, f: 0, n: 0 };
   window.g45SerLancer = function () {
     var Q = S.ser; if (Q.etat === 1) return;
