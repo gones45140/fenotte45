@@ -51755,6 +51755,9 @@ async function _g45SaisonsGen(el, nom, perso) {
      celle qui alimente deja le classement — donc aucune requete de plus, et ils
      existent pour toute equipe classee, pas seulement celles du mur. */
   eq.forEach(function (t) { noms[String(t.id)] = t.nom; if (t.logo) logos[String(t.id)] = t.logo; });
+  /* 20261114e (capture : « tourne dans le vide », Chargement de la saison 2026… (1/12)) : sélection de rugby → PAS de lecture ESPN mois par
+     mois (lente / bloquée) ; les matchs viennent des archives juste en dessous (20261114d). */
+  if (!ms && sp === 'rugby' && ['180659', '17567', '164205', '289234', '244293'].indexOf(lg) >= 0 && perso && perso.id) ms = [];
   if (!ms) {
     try {
       ms = await _g45CompetMatchs(sp, lg, an, eq.map(function (t) { return t.id; }).filter(Boolean),
