@@ -88978,3 +88978,154 @@ window.g45SerNs = function (nom, n, el) {
     if (n) localStorage.setItem('g45_teams_perso', JSON.stringify(p));
   } catch (e) {}
 })();
+
+/* ═══ 20261114l — 📉 COTES BASSES (Calculatrice, onglet à part — Antoine, 14/11 : « il faut une cote de 1,5 mini pour le Cockpit ; en dessous
+   existe-t-il un calcul ? » → multiplicateur minimum 1 ÷ (cote − 1) + 1 ; « si je multiplie par 5 », « 1.2 faut du ×6 ou ×7 » ; sa règle :
+   sous 1,50 mise d'avant × (1 ÷ (cote − 1) + 2), à 1,50 ou plus (pertes de la série) × 3 ; « on regarde ce soir… mais SANS TOUCHER AU COCKPIT »
+   → maquette texte « oui »). Rien n'est lu ni écrit dans le Cockpit, les grilles ou les paris : calcul seul.
+   1) Tableau des mises : cote, P1, multiplicateur → mise / total misé / bénéfice par palier, alerte multiplicateur trop petit / capital.
+   2) Essai sur une équipe (clubs de foot des archives, pari Victoire, vraies cotes de clôture m[11]) : sa règle + arrêt de sécurité, comparée
+      à « Cockpit seul » (matchs sous 1,50 sautés, grille ×2 puis ×3). ═══ */
+(function () {
+  var M = { c: '1,30', p1: '10', k: '5', q: '', eq: null, lieu: 'tout', stop: 5, R: null, etat: '' };
+  var esc = function (x) { return String(x == null ? '' : x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); };
+  var num = function (x) { return parseFloat(String(x).replace(',', '.')); };
+  var eu = function (v, d) { return (Math.round(v * 100) / 100).toLocaleString('fr-FR', { minimumFractionDigits: d ? 2 : 0, maximumFractionDigits: 2 }) + ' €'; };
+  var sg = function (v) { return (v >= 0 ? '+' : '−') + eu(Math.abs(v)); };
+  var cap = function () { try { var t = 0; Object.keys(state.b || {}).forEach(function (k) { t += parseFloat(state.b[k]) || 0; }); return t; } catch (e) { return 0; } };
+  var IN = 'width:100%;box-sizing:border-box;font-size:16px;font-weight:800;padding:9px;border-radius:10px;background:#141c33;color:#fff;border:1px solid #6d9dff;';
+  var bt = function (on, t, fn) { return '<button onclick="' + fn + '" style="border-radius:12px;padding:8px 12px;font-size:14px;font-weight:800;cursor:pointer;color:#fff;margin:0 6px 6px 0;border:2px solid ' + (on ? '#1ed760' : '#6d9dff') + ';background:' + (on ? '#14532d' : '#16213f') + ';">' + t + '</button>'; };
+
+  /* tableau : [{ p, m, tot, ben }] */
+  function table(c, p1, k, n) { var L = [], m = p1, tot = 0; for (var i = 1; i <= n; i++) { tot += m; L.push({ p: i, m: m, tot: tot, ben: m * c - tot }); m = m * k; } return L; }
+  /* simulation — ms = [{ c: cote, w: gagné }] dans l'ordre ; o = { p1, stop } → { regle: {g, mx, ab, n}, ck: {…} } */
+  function sim(ms, o) {
+    var p1 = o.p1 || 10, stop = o.stop || 0;
+    var pal = 0, prev = 0, per = 0, g = 0, mx = 0, ab = 0, n = 0;
+    ms.forEach(function (x) { if (!(x.c > 1.05)) return;
+      var m = pal === 0 ? p1 : (x.c < 1.5 ? prev * (1 / (x.c - 1) + 2) : per * 3); n++; if (m > mx) mx = m;
+      if (x.w) { g += m * (x.c - 1); pal = 0; prev = 0; per = 0; }
+      else { g -= m; per += m; prev = m; pal++; if (stop && pal >= stop) { ab++; pal = 0; prev = 0; per = 0; } } });
+    var G = [1, 2, 6, 18, 54, 162, 486, 1458, 4374], q = 0, g2 = 0, mx2 = 0, ab2 = 0, n2 = 0;
+    ms.forEach(function (x) { if (!(x.c >= 1.5)) return;
+      var m = p1 * G[Math.min(q, G.length - 1)]; n2++; if (m > mx2) mx2 = m;
+      if (x.w) { g2 += m * (x.c - 1); q = 0; } else { g2 -= m; q++; if ((stop && q >= stop) || q >= G.length) { ab2++; q = 0; } } });
+    return { regle: { g: g, mx: mx, ab: ab, n: n }, ck: { g: g2, mx: mx2, ab: ab2, n: n2 } };
+  }
+  window._g45CbSim = sim; window._g45CbTable = table;   /* tests */
+
+  function ix() { try { var c = JSON.parse(localStorage.getItem('g45loiEq1') || 'null'); if (c && c.L) return c.L; } catch (e) {} return M.ix || null; }
+  function ixCharger() { if (ix() || M.ixEn) return; M.ixEn = 1;
+    fetch('https://raw.githubusercontent.com/gones45140/gones45-archives/main/loi/equipes.json?h=' + Math.floor(Date.now() / 36e5)).then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) { M.ixEn = 0; if (j && j.L) M.ix = j.L; liste(); }).catch(function () { M.ixEn = 0; }); }
+  var nz = function (t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, ''); };
+  function liste() {
+    var z = document.getElementById('g45-cb-l'); if (!z) return; var q = nz(M.q), L = ix();
+    if (!q) { z.innerHTML = ''; return; }
+    if (!L) { z.innerHTML = '<div style="font-size:14px;color:#c9d3ee;">⏳ Lecture de la liste des équipes…</div>'; ixCharger(); return; }
+    var R = L.filter(function (x) { return x[0] === 'soccer' && x[1] !== 'sel' && nz(x[4]).indexOf(q) >= 0; }).slice(0, 8); M.res = R;
+    z.innerHTML = R.length ? R.map(function (x, i) { return bt(false, '⚽ ' + esc(x[4]) + ' <span style="font-weight:400;color:#c9d3ee;">· ' + esc(x[2]) + '</span>', 'g45CbEq(' + i + ')'); }).join('')
+      : '<div style="font-size:14px;color:#c9d3ee;">Aucun club de foot trouvé.</div>';
+  }
+  var CIV = ['bra.1', 'arg.1'];
+  async function charger() {
+    var E = M.eq; if (!E) return; M.etat = 'load'; M.R = null; dessiner();
+    var d = new Date(), y = d.getFullYear(), y0 = CIV.indexOf(E[1]) >= 0 ? y : (d.getMonth() + 1 >= 8 ? y : y - 1), out = [];
+    for (var i = 0; i < 5; i++) {
+      var a = y0 - i, sa = CIV.indexOf(E[1]) >= 0 ? String(a) : a + '-' + String(a + 1).slice(2), q = null;
+      try { var r = await fetch('https://raw.githubusercontent.com/gones45140/gones45-archives/main/cotes/foot/' + E[1] + '/' + sa + '/equipes/' + E[3] + '.json?h=' + Math.floor(Date.now() / 36e5)); if (r.ok) q = await r.json(); } catch (e) {}
+      if (!q || !q.m) continue;
+      var ms = q.m.filter(function (m) { return m && m[4] && m[4][0] != null && m[4][1] != null && m[11]; }).sort(function (a2, b2) { return a2[0] - b2[0]; })
+        .map(function (m) { var h = m[3] === 'h'; return { h: h ? 1 : 0, c: +(h ? m[11][0] : m[11][2]), w: h ? +m[4][0] > +m[4][1] : +m[4][1] > +m[4][0] }; }).filter(function (x) { return x.c > 1; });
+      if (ms.length) out.push({ sa: sa, ms: ms });
+    }
+    if (M.eq !== E) return;
+    M.R = out; M.etat = out.length ? '' : 'vide'; dessiner();
+  }
+  function html() {
+    var c = num(M.c), p1 = num(M.p1), k = num(M.k), ok = c > 1 && p1 > 0 && k > 1, C = cap();
+    var h = '<div class="fc" style="background:rgba(10,14,24,.93);border:1px solid #1c2747;border-radius:14px;padding:12px;color:#fff;">'
+      + '<div style="font-size:17px;font-weight:900;">📉 Cotes basses (sous 1,50)</div>'
+      + '<div style="font-size:14px;color:#c9d3ee;margin:3px 0 10px;">Un calcul à part : rien ne change dans ton Cockpit, tes grilles ni tes paris.</div>'
+      + '<div style="font-size:15px;font-weight:800;margin-bottom:6px;">1. Le tableau des mises</div>'
+      + '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;">'
+      + '<label style="font-size:14px;">Cote<input value="' + esc(M.c) + '" inputmode="decimal" oninput="g45CbSet(\'c\',this.value)" style="' + IN + '"></label>'
+      + '<label style="font-size:14px;">Mise P1 (€)<input value="' + esc(M.p1) + '" inputmode="decimal" oninput="g45CbSet(\'p1\',this.value)" style="' + IN + '"></label>'
+      + '<label style="font-size:14px;">Multiplier par<input value="' + esc(M.k) + '" inputmode="decimal" oninput="g45CbSet(\'k\',this.value)" style="' + IN + '"></label></div>'
+      + '<div id="g45-cb-t">' + tabHtml(c, p1, k, ok, C) + '</div>';
+    h += '<div style="font-size:15px;font-weight:800;margin:16px 0 4px;">2. L\'essai sur une équipe (foot, pari Victoire)</div>'
+      + '<div style="font-size:14px;color:#c9d3ee;margin-bottom:6px;">Ta règle rejouée sur les vraies cotes gardées : sous 1,50 → mise d\'avant × (1 ÷ (cote − 1) + 2) ; à 1,50 ou plus → pertes de la série × 3 ; P1 = la mise du dessus.</div>'
+      + '<input id="g45-cb-q" type="search" autocomplete="off" placeholder="ex. Lyon, Arsenal, Bayern…" value="' + esc(M.q) + '" oninput="g45CbQ(this.value)" style="' + IN + '">'
+      + '<div id="g45-cb-l" style="margin-top:8px;"></div>';
+    if (M.eq) {
+      h += '<div style="font-size:16px;font-weight:900;margin:8px 0 6px;">⚽ ' + esc(M.eq[4]) + ' <span style="font-size:14px;font-weight:400;color:#c9d3ee;">· ' + esc(M.eq[2]) + '</span></div>'
+        + '<div style="font-size:14px;color:#c9d3ee;margin-bottom:4px;">Lieu</div>' + bt(M.lieu === 'tout', 'Tous les matchs', "g45CbSet('lieu','tout')") + bt(M.lieu === 'dom', '🏠 Domicile', "g45CbSet('lieu','dom')") + bt(M.lieu === 'ext', '✈️ Extérieur', "g45CbSet('lieu','ext')")
+        + '<div style="font-size:14px;color:#c9d3ee;margin:4px 0;">🛑 Arrêt de sécurité (série abandonnée après ce palier perdu)</div>'
+        + [4, 5, 6, 7, 0].map(function (n) { return bt(M.stop === n, n ? 'P' + n : 'Aucun', "g45CbSet('stop'," + n + ')'); }).join('');
+      if (M.etat === 'load') h += '<div style="font-size:14px;margin-top:8px;">⏳ Lecture des saisons…</div>';
+      else if (M.etat === 'vide') h += '<div style="font-size:14px;margin-top:8px;color:#ffb13d;">Pas de cotes gardées pour ce club.</div>';
+      else if (M.R) h += resHtml(p1 > 0 ? p1 : 10, C);
+    }
+    return h + '</div>';
+  }
+  function tabHtml(c, p1, k, ok, C) {
+    if (!ok) return '<div style="font-size:14px;color:#ffb13d;margin-top:8px;">Tape une cote (plus de 1), une mise et un multiplicateur.</div>';
+    var kmin = 1 / (c - 1) + 1, T = table(c, p1, k, 6), td = 'padding:6px 4px;border-top:1px solid #1c2747;';
+    var h = '<div style="font-size:14px;margin:8px 0 6px;">Multiplicateur minimum pour cette cote : <b style="color:#ffd34d;">×' + (Math.ceil(kmin * 100) / 100).toLocaleString('fr-FR') + '</b>'
+      + (k < kmin - 1e-9 ? ' <span style="color:#ff6b6b;font-weight:800;">⚠️ ×' + String(k).replace('.', ',') + ' est trop petit : la série finit perdante même si le pari passe.</span>' : '') + '</div>'
+      + '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:14px;"><tr style="color:#c9d3ee;"><td style="padding:4px;">Palier</td><td>Mise</td><td>Total misé</td><td style="text-align:right;">Bénéfice si ça passe</td></tr>'
+      + T.map(function (x) { var trop = C > 0 && x.tot > C; return '<tr><td style="' + td + 'font-weight:800;">P' + x.p + '</td><td style="' + td + '">' + eu(x.m) + '</td><td style="' + td + (trop ? 'color:#ff6b6b;font-weight:800;' : '') + '">' + eu(x.tot) + (trop ? ' ⚠️' : '') + '</td>'
+          + '<td style="' + td + 'text-align:right;font-weight:800;color:' + (x.ben >= 0 ? '#1ed760' : '#ff6b6b') + ';">' + sg(x.ben) + '</td></tr>'; }).join('') + '</table></div>';
+    if (C > 0 && T.some(function (x) { return x.tot > C; })) h += '<div style="font-size:14px;color:#ff6b6b;margin-top:4px;">⚠️ = plus que ton capital (' + eu(C) + ').</div>';
+    return h;
+  }
+  function resHtml(p1, C) {
+    var td = 'padding:6px 4px;border-top:1px solid #1c2747;', tA = { g: 0, mx: 0, ab: 0 }, tB = { g: 0, mx: 0, ab: 0 };
+    var col = function (v) { return v >= 0 ? '#1ed760' : '#ff6b6b'; };
+    var L = M.R.map(function (s) {
+      var ms = s.ms.filter(function (x) { return M.lieu === 'tout' || (M.lieu === 'dom' ? x.h === 1 : x.h === 0); }); if (!ms.length) return '';
+      var R = sim(ms, { p1: p1, stop: M.stop }), v = ms.filter(function (x) { return x.w; }).length, bas = ms.filter(function (x) { return x.c < 1.5; }).length;
+      tA.g += R.regle.g; tA.mx = Math.max(tA.mx, R.regle.mx); tA.ab += R.regle.ab; tB.g += R.ck.g; tB.mx = Math.max(tB.mx, R.ck.mx); tB.ab += R.ck.ab;
+      return '<tr><td style="' + td + 'font-weight:800;">' + esc(s.sa) + '<br><span style="font-weight:400;color:#c9d3ee;">' + v + '/' + ms.length + ' V · ' + bas + ' sous 1,50</span></td>'
+        + '<td style="' + td + '"><b style="color:' + col(R.regle.g) + ';">' + sg(R.regle.g) + '</b><br>max ' + eu(R.regle.mx) + (R.regle.ab ? '<br><span style="color:#ff6b6b;">🛑 ' + R.regle.ab + '</span>' : '') + '</td>'
+        + '<td style="' + td + '"><b style="color:' + col(R.ck.g) + ';">' + sg(R.ck.g) + '</b><br>max ' + eu(R.ck.mx) + (R.ck.ab ? '<br><span style="color:#ff6b6b;">🛑 ' + R.ck.ab + '</span>' : '') + '</td></tr>';
+    }).join('');
+    if (!L) return '<div style="font-size:14px;margin-top:8px;">Aucun match pour ce lieu.</div>';
+    return '<div style="overflow-x:auto;margin-top:8px;"><table style="width:100%;border-collapse:collapse;font-size:14px;"><tr style="color:#c9d3ee;"><td style="padding:4px;">Saison</td><td>📉 Ta règle<br>(tous les matchs)</td><td>🏁 Cockpit seul<br>(1,50 et plus)</td></tr>' + L
+      + '<tr><td style="' + td + 'font-weight:900;">Total</td><td style="' + td + '"><b style="color:' + col(tA.g) + ';">' + sg(tA.g) + '</b><br>max ' + eu(tA.mx) + (tA.ab ? '<br><span style="color:#ff6b6b;">🛑 ' + tA.ab + '</span>' : '') + '</td>'
+      + '<td style="' + td + '"><b style="color:' + col(tB.g) + ';">' + sg(tB.g) + '</b><br>max ' + eu(tB.mx) + (tB.ab ? '<br><span style="color:#ff6b6b;">🛑 ' + tB.ab + '</span>' : '') + '</td></tr></table></div>'
+      + (C > 0 && tA.mx > C ? '<div style="font-size:14px;color:#ff6b6b;font-weight:800;margin-top:4px;">⚠️ Ta règle demande une mise de ' + eu(tA.mx) + ' : plus que ton capital (' + eu(C) + ').</div>' : '')
+      + '<div style="font-size:13px;color:#c9d3ee;margin-top:6px;">max = plus grosse mise · 🛑 = séries abandonnées à l\'arrêt de sécurité (perte gardée). Cotes de clôture de nos archives (pas la cote FR). Cockpit seul = grille ×2 puis ×3, matchs sous 1,50 sautés.</div>';
+  }
+  function dessiner() { var z = document.getElementById('calc-cb'); if (z && z.style.display !== 'none') { z.innerHTML = html(); liste(); } }
+  window._g45CbHtml = html; window._g45CbM = M;
+  window.g45CbSet = function (k, v) {
+    if (k === 'lieu' || k === 'stop') { M[k] = v; dessiner(); return; }
+    M[k] = String(v).slice(0, 8);
+    var z = document.getElementById('g45-cb-t'), c = num(M.c), p1 = num(M.p1), kk = num(M.k);   /* pas de redessin complet pendant la frappe (clavier) */
+    if (z) z.innerHTML = tabHtml(c, p1, kk, c > 1 && p1 > 0 && kk > 1, cap());
+  };
+  window.g45CbQ = function (v) { M.q = String(v || '').slice(0, 40); liste(); };
+  window.g45CbEq = function (i) { var x = (M.res || [])[i]; if (!x) return; M.eq = x; M.q = ''; charger(); };
+
+  function poser() {
+    var tc = document.getElementById('t-calc'), barre = tc && tc.querySelector('.calc-tabs'); if (!tc || !barre) return false;
+    if (!document.getElementById('calc-cb')) { var c = document.createElement('div'); c.id = 'calc-cb'; c.style.display = 'none'; tc.appendChild(c); }
+    if (!document.getElementById('ct-cb')) { var b = document.createElement('button'); b.className = 'ctbtn'; b.id = 'ct-cb'; b.textContent = '📉 Cotes basses'; b.setAttribute('onclick', "swCalc('cb')"); barre.appendChild(b); }
+    return true;
+  }
+  var sw0 = window.swCalc;
+  window.swCalc = swCalc = function (m) {
+    poser();
+    var c = document.getElementById('calc-cb'), b = document.getElementById('ct-cb');
+    if (c) c.style.display = m === 'cb' ? 'block' : 'none';
+    if (b) b.classList.toggle('on', m === 'cb');
+    if (m === 'cb') {
+      ['sb', 'dt', 'lay', 'vb', 'arjel', 'lc', 'cj', 'vs'].forEach(function (p) { var el = document.getElementById('calc-' + p); if (el) el.style.display = 'none'; var x = document.getElementById('ct-' + p); if (x) x.classList.remove('on'); });
+      dessiner(); return;
+    }
+    if (typeof sw0 === 'function') return sw0.apply(this, arguments);
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', poser); else setTimeout(poser, 0);
+  setTimeout(poser, 1600);
+})();
