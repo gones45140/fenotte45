@@ -89154,17 +89154,57 @@ window.g45SerNs = function (nom, n, el) {
     var z = document.getElementById('g45-cb-l'); if (!z) return; var q = nz(M.q), L = ix();
     if (!q) { z.innerHTML = ''; return; }
     if (!L) { z.innerHTML = '<div style="font-size:14px;color:#c9d3ee;">⏳ Lecture de la liste des équipes…</div>'; ixCharger(); return; }
-    var R = L.filter(function (x) { return x[0] === 'soccer' && x[1] !== 'sel' && nz(x[4]).indexOf(q) >= 0; }).slice(0, 8); M.res = R;
-    z.innerHTML = R.length ? R.map(function (x, i) { return bt(false, '⚽ ' + esc(x[4]) + ' <span style="font-weight:400;color:#c9d3ee;">· ' + esc(x[2]) + '</span>', 'g45CbEq(' + i + ')'); }).join('')
-      : '<div style="font-size:14px;color:#c9d3ee;">Aucun club de foot trouvé.</div>';
+    var R = L.filter(function (x) { return SPD[x[0]] && x[1] !== 'sel' && x[1] !== 'khl' && nz(x[4]).indexOf(q) >= 0; }).slice(0, 10); M.res = R;   /* 20261114p : tous les sports gardés */
+    z.innerHTML = R.length ? R.map(function (x, i) { return bt(false, ICO[x[0]] + ' ' + esc(x[4]) + ' <span style="font-weight:400;color:#c9d3ee;">· ' + esc(x[2]) + '</span>', 'g45CbEq(' + i + ')'); }).join('')
+      : '<div style="font-size:14px;color:#c9d3ee;">Aucune équipe trouvée.</div>';
   }
-  var CIV = ['bra.1', 'arg.1'];
+  /* ═══ 20261114p — 📉 essai sur TOUS LES SPORTS et sur un JOUEUR (Antoine : « tous les sports et joueurs comme Cockpit » → « ok go ») :
+     équipes foot / NHL / NBA / NFL / MLB (même format d'archive : m[11] = cotes de clôture [dom, nul, ext], m[4] score final, prolongation
+     comprise) ; joueur = un joueur de l'équipe choisie (joueurs.json de la saison en cours, m[1] = équipe), ses matchs gardés avec cote
+     (joueurs/<id>.json, m[5] = cotes DraftKings par type — gardées SEULEMENT depuis octobre 2026) : NHL ⭐ pointeur 218 / 🎯 passeur 219
+     (palier 1) / 🥅 buteur 230 ; NBA lignes « plus de » 1 points / 3 rebonds / 2 passes ; foot ⚽ buteur 230 / 🎯 passeur 219 ; NFL 🏈 TD 31. ═══ */
+  var SPD = { soccer: 'foot', hockey: 'hockey', basketball: 'basket', football: 'football-us', baseball: 'baseball' };
+  var ICO = { soccer: '⚽', hockey: '🏒', basketball: '🏀', football: '🏈', baseball: '⚾' };
+  var nTD = function (s) { var n = 0; Object.keys(s || {}).forEach(function (k) { if (/TD$/.test(k) && k !== 'pTD') n += +s[k] || 0; }); return n; };
+  var JT = {
+    hockey: [['p', '⭐ Pointeur', '218', 1, function (s) { return (+s.G || 0) + (+s.A || 0) >= 1; }], ['a', '🎯 Passeur', '219', 1, function (s) { return (+s.A || 0) >= 1; }], ['g', '🥅 Buteur', '230', null, function (s) { return (+s.G || 0) >= 1; }]],
+    basketball: [['pts', '🏀 Points (plus de la ligne)', '1', 'o', 'PTS'], ['reb', '🔁 Rebonds', '3', 'o', 'REB'], ['ast', '🎯 Passes', '2', 'o', 'AST']],
+    soccer: [['g', '⚽ Buteur', '230', null, function (s) { return (+s.G || 0) >= 1; }], ['a', '🎯 Passeur', '219', 1, function (s) { return (+s.A || 0) >= 1; }]],
+    football: [['td', '🏈 TD à tout moment', '31', null, function (s) { return nTD(s) >= 1; }]]
+  };
+  window._g45CbJT = JT;   /* tests */
+  /* match joueur → { h, c, w } ou null (pas de cote de ce type) */
+  function jMatch(x, t) {
+    var o = x && x[5], st = (x && x[4]) || {}, L = o && o[t[2]]; if (!L || !L.length) return null; var c = 0, w;
+    if (t[3] === 'o') { var ln = +L[0][0]; c = +L[0][1]; if (!(ln >= 0)) return null; w = (+st[t[4]] || 0) > ln; }
+    else { var e = t[3] == null ? L[0] : L.filter(function (y) { return +y[0] === t[3]; })[0]; if (!e) return null; c = +e[1]; w = t[4](st); }
+    return c > 1 ? { h: x[6] === 'h' ? 1 : 0, c: c, w: !!w } : null;
+  }
+  window._g45CbJMatch = jMatch;   /* tests */
+  var CIV = ['bra.1', 'arg.1', 'mlb'];
+  var saDe = function (lg, i) { var d = new Date(), y = d.getFullYear(), y0 = CIV.indexOf(lg) >= 0 ? y : (d.getMonth() + 1 >= 8 ? y : y - 1), a = y0 - i; return CIV.indexOf(lg) >= 0 ? String(a) : a + '-' + String(a + 1).slice(2); };
+  var RAW = 'https://raw.githubusercontent.com/gones45140/gones45-archives/main/cotes/';
+  async function jListe() {
+    var E = M.eq; if (!E) return; M.jl = 'load'; dessiner(); var L = [];
+    for (var i = 0; i < 2 && !L.length; i++) { try { var r = await fetch(RAW + SPD[E[0]] + '/' + E[1] + '/' + saDe(E[1], i) + '/joueurs.json?h=' + Math.floor(Date.now() / 36e5)); if (r.ok) { var j = await r.json();
+      Object.keys(j || {}).forEach(function (k) { var v = j[k]; if (v && String(v[1]) === String(E[3])) L.push([k, v[0], +v[2] || 0]); }); } } catch (e) {} }
+    if (M.eq !== E) return; L.sort(function (a, b) { return b[2] - a[2]; }); M.jl = L; dessiner();
+  }
+  async function jCharger() {
+    var E = M.eq, J = M.jo, T = (JT[E && E[0]] || []).filter(function (t) { return t[0] === M.jt; })[0]; if (!E || !J || !T) return;
+    M.etat = 'load'; M.R = null; dessiner(); var out = [];
+    for (var i = 1; i >= 0; i--) { var sa = saDe(E[1], i), q = null;
+      try { var r = await fetch(RAW + SPD[E[0]] + '/' + E[1] + '/' + sa + '/joueurs/' + J[0] + '.json?h=' + Math.floor(Date.now() / 36e5)); if (r.ok) q = await r.json(); } catch (e) {}
+      var ms = ((q && q.m) || []).slice().sort(function (a, b) { return a[0] - b[0]; }).map(function (x) { return jMatch(x, T); }).filter(Boolean);
+      if (ms.length) out.unshift({ sa: sa, ms: ms }); }
+    if (M.eq !== E || M.jo !== J) return; M.R = out; M.etat = out.length ? '' : 'videJ'; dessiner();
+  }
   async function charger() {
     var E = M.eq; if (!E) return; M.etat = 'load'; M.R = null; dessiner();
     var d = new Date(), y = d.getFullYear(), y0 = CIV.indexOf(E[1]) >= 0 ? y : (d.getMonth() + 1 >= 8 ? y : y - 1), out = [];
     for (var i = 0; i < 5; i++) {
       var a = y0 - i, sa = CIV.indexOf(E[1]) >= 0 ? String(a) : a + '-' + String(a + 1).slice(2), q = null;
-      try { var r = await fetch('https://raw.githubusercontent.com/gones45140/gones45-archives/main/cotes/foot/' + E[1] + '/' + sa + '/equipes/' + E[3] + '.json?h=' + Math.floor(Date.now() / 36e5)); if (r.ok) q = await r.json(); } catch (e) {}
+      try { var r = await fetch(RAW + SPD[E[0]] + '/' + E[1] + '/' + sa + '/equipes/' + E[3] + '.json?h=' + Math.floor(Date.now() / 36e5)); if (r.ok) q = await r.json(); } catch (e) {}
       if (!q || !q.m) continue;
       var ms = q.m.filter(function (m) { return m && m[4] && m[4][0] != null && m[4][1] != null && m[11]; }).sort(function (a2, b2) { return a2[0] - b2[0]; })
         .map(function (m) { var h = m[3] === 'h'; return { h: h ? 1 : 0, c: +(h ? m[11][0] : m[11][2]), w: h ? +m[4][0] > +m[4][1] : +m[4][1] > +m[4][0] }; }).filter(function (x) { return x.c > 1; });
@@ -89184,17 +89224,25 @@ window.g45SerNs = function (nom, n, el) {
       + '<label style="font-size:14px;">Mise P1 (€)<input value="' + esc(M.p1) + '" inputmode="decimal" oninput="g45CbSet(\'p1\',this.value)" style="' + IN + '"></label>'
       + '<label style="font-size:14px;">Multiplier par<input value="' + esc(M.k) + '" inputmode="decimal" oninput="g45CbSet(\'k\',this.value)" style="' + IN + '"></label></div>'
       + '<div id="g45-cb-t">' + tabHtml(c, p1, k, ok, C) + '</div>';
-    h += '<div style="font-size:15px;font-weight:800;margin:16px 0 4px;">2. L\'essai sur une équipe (foot, pari Victoire)</div>'
+    h += '<div style="font-size:15px;font-weight:800;margin:16px 0 4px;">2. L\'essai sur une équipe ou un joueur (⚽ 🏒 🏀 🏈 ⚾)</div>'
       + '<div style="font-size:14px;color:#c9d3ee;margin-bottom:6px;">Ta règle rejouée sur les vraies cotes gardées : sous 1,50 → mise d\'avant × (1 ÷ (cote − 1) + 2) ; à 1,50 ou plus → pertes de la série × 3 ; P1 = la mise du dessus.</div>'
-      + '<input id="g45-cb-q" type="search" autocomplete="off" placeholder="ex. Lyon, Arsenal, Bayern…" value="' + esc(M.q) + '" oninput="g45CbQ(this.value)" style="' + IN + '">'
+      + '<input id="g45-cb-q" type="search" autocomplete="off" placeholder="ex. Lyon, Oilers, Celtics, Bills…" value="' + esc(M.q) + '" oninput="g45CbQ(this.value)" style="' + IN + '">'
       + '<div id="g45-cb-l" style="margin-top:8px;"></div>';
     if (M.eq) {
-      h += '<div style="font-size:16px;font-weight:900;margin:8px 0 6px;">⚽ ' + esc(M.eq[4]) + ' <span style="font-size:14px;font-weight:400;color:#c9d3ee;">· ' + esc(M.eq[2]) + '</span></div>'
+      var TJ = JT[M.eq[0]] || [];
+      h += '<div style="font-size:16px;font-weight:900;margin:8px 0 6px;">' + ICO[M.eq[0]] + ' ' + esc(M.eq[4]) + ' <span style="font-size:14px;font-weight:400;color:#c9d3ee;">· ' + esc(M.eq[2]) + '</span></div>'
+        + '<div style="font-size:14px;color:#c9d3ee;margin-bottom:4px;">Pari</div>' + bt(!M.jo, '🏆 Victoire de l\'équipe', 'g45CbJ(-1)') + (TJ.length ? bt(!!M.jo || M.jl === 'load' || Array.isArray(M.jl), '👤 Un joueur', 'g45CbJ(-2)') : '');
+      if (Array.isArray(M.jl) && !M.jo) h += '<div style="margin:2px 0 6px;">' + (M.jl.length ? M.jl.slice(0, 30).map(function (x, i) { return bt(false, esc(x[1]) + ' <span style="font-weight:400;color:#c9d3ee;">· ' + x[2] + ' m.</span>', 'g45CbJ(' + i + ')'); }).join('') : '<span style="font-size:14px;color:#ffb13d;">Aucun joueur gardé pour cette équipe.</span>') + '</div>';
+      else if (M.jl === 'load' && !M.jo) h += '<div style="font-size:14px;">⏳ Lecture des joueurs…</div>';
+      if (M.jo) h += '<div style="font-size:15px;font-weight:800;margin:4px 0;">👤 ' + esc(M.jo[1]) + ' <button onclick="g45CbJ(-2)" style="font-size:13px;border-radius:8px;padding:2px 8px;color:#fff;background:#1c2747;border:1px solid #8fa3d6;cursor:pointer;">changer</button></div>'
+        + TJ.map(function (t) { return bt(M.jt === t[0], t[1], "g45CbJT('" + t[0] + "')"); }).join('') + '<div style="font-size:13px;color:#c9d3ee;">Cotes des joueurs gardées seulement depuis octobre 2026 (matchs avec cote).</div>';
+      h += ''
         + '<div style="font-size:14px;color:#c9d3ee;margin-bottom:4px;">Lieu</div>' + bt(M.lieu === 'tout', 'Tous les matchs', "g45CbSet('lieu','tout')") + bt(M.lieu === 'dom', '🏠 Domicile', "g45CbSet('lieu','dom')") + bt(M.lieu === 'ext', '✈️ Extérieur', "g45CbSet('lieu','ext')")
         + '<div style="font-size:14px;color:#c9d3ee;margin:4px 0;">🛑 Arrêt de sécurité (série abandonnée après ce palier perdu)</div>'
         + [4, 5, 6, 7, 0].map(function (n) { return bt(M.stop === n, n ? 'P' + n : 'Aucun', "g45CbSet('stop'," + n + ')'); }).join('');
       if (M.etat === 'load') h += '<div style="font-size:14px;margin-top:8px;">⏳ Lecture des saisons…</div>';
-      else if (M.etat === 'vide') h += '<div style="font-size:14px;margin-top:8px;color:#ffb13d;">Pas de cotes gardées pour ce club.</div>';
+      else if (M.etat === 'vide') h += '<div style="font-size:14px;margin-top:8px;color:#ffb13d;">Pas de cotes gardées pour cette équipe.</div>';
+      else if (M.etat === 'videJ') h += '<div style="font-size:14px;margin-top:8px;color:#ffb13d;">Pas de cote gardée pour ce joueur et ce pari.</div>';
       else if (M.R) h += resHtml(p1 > 0 ? p1 : 10, C);
     }
     return h + '</div>';
@@ -89240,7 +89288,11 @@ window.g45SerNs = function (nom, n, el) {
     if (z) z.innerHTML = tabHtml(c, p1, kk, c > 1 && p1 > 0 && kk > 1, cap());
   };
   window.g45CbQ = function (v) { M.q = String(v || '').slice(0, 40); liste(); };
-  window.g45CbEq = function (i) { var x = (M.res || [])[i]; if (!x) return; M.eq = x; M.q = ''; charger(); };
+  window.g45CbEq = function (i) { var x = (M.res || [])[i]; if (!x) return; M.eq = x; M.q = ''; M.jo = null; M.jl = null; charger(); };
+  /* 20261114p : -1 = victoire de l'équipe ; -2 = liste des joueurs ; i = joueur i de la liste */
+  window.g45CbJ = function (i) { if (!M.eq) return; if (i === -1) { M.jo = null; M.jl = null; charger(); return; } if (i === -2) { M.jo = null; M.R = null; M.etat = ''; if (Array.isArray(M.jl)) dessiner(); else jListe(); return; }
+    var x = Array.isArray(M.jl) && M.jl[i]; if (!x) return; M.jo = x; M.jt = M.jt && (JT[M.eq[0]] || []).some(function (t) { return t[0] === M.jt; }) ? M.jt : ((JT[M.eq[0]] || [])[0] || [])[0]; jCharger(); };
+  window.g45CbJT = function (k) { M.jt = k; jCharger(); };
 
   function poser() {
     var tc = document.getElementById('t-calc'), barre = tc && tc.querySelector('.calc-tabs'); if (!tc || !barre) return false;
