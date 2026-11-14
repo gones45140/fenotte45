@@ -89012,7 +89012,31 @@ window.g45SerNs = function (nom, n, el) {
       if (x.w) { g2 += m * (x.c - 1); q = 0; } else { g2 -= m; q++; if ((stop && q >= stop) || q >= G.length) { ab2++; q = 0; } } });
     return { regle: { g: g, mx: mx, ab: ab, n: n }, ck: { g: g2, mx: mx2, ab: ab2, n: n2 } };
   }
-  window._g45CbSim = sim; window._g45CbTable = table;   /* tests */
+  /* 20261114m (Lille 🏠 2025-26 −21,35 € : 3 défaites en fin de saison, série coupée → « normal la perte ? » → « oui » à la suite) : la série en
+     cours à la fin d'une saison CONTINUE sur la suivante, comme en vrai ; gains / mises max / abandons comptés dans la saison du match.
+     S = [{ sa, ms }] du plus ancien au plus récent → [{ regle: {g, mx, ab}, ck: {…} }] + fin = pertes de la série encore ouverte. */
+  function simSaisons(S, o) {
+    var p1 = o.p1 || 10, stop = o.stop || 0, G = [1, 2, 6, 18, 54, 162, 486, 1458, 4374];
+    var A = { pal: 0, prev: 0, per: 0 }, B = { q: 0, per: 0 }, out = [];
+    S.forEach(function (sx) {
+      var r = { g: 0, mx: 0, ab: 0 }, k = { g: 0, mx: 0, ab: 0 };
+      sx.ms.forEach(function (x) {
+        if (x.c > 1.05) {
+          var m = A.pal === 0 ? p1 : (x.c < 1.5 ? A.prev * (1 / (x.c - 1) + 2) : A.per * 3); if (m > r.mx) r.mx = m;
+          if (x.w) { r.g += m * (x.c - 1); A.pal = 0; A.prev = 0; A.per = 0; }
+          else { r.g -= m; A.per += m; A.prev = m; A.pal++; if (stop && A.pal >= stop) { r.ab++; A.pal = 0; A.prev = 0; A.per = 0; } }
+        }
+        if (x.c >= 1.5) {
+          var m2 = p1 * G[Math.min(B.q, G.length - 1)]; if (m2 > k.mx) k.mx = m2;
+          if (x.w) { k.g += m2 * (x.c - 1); B.q = 0; B.per = 0; } else { k.g -= m2; B.per += m2; B.q++; if ((stop && B.q >= stop) || B.q >= G.length) { k.ab++; B.q = 0; B.per = 0; } }
+        }
+      });
+      out.push({ sa: sx.sa, regle: r, ck: k });
+    });
+    out.fin = { regle: A.per, ck: B.per };
+    return out;
+  }
+  window._g45CbSim = sim; window._g45CbTable = table; window._g45CbSimS = simSaisons;   /* tests */
 
   function ix() { try { var c = JSON.parse(localStorage.getItem('g45loiEq1') || 'null'); if (c && c.L) return c.L; } catch (e) {} return M.ix || null; }
   function ixCharger() { if (ix() || M.ixEn) return; M.ixEn = 1;
@@ -89082,9 +89106,11 @@ window.g45SerNs = function (nom, n, el) {
   function resHtml(p1, C) {
     var td = 'padding:6px 4px;border-top:1px solid #1c2747;', tA = { g: 0, mx: 0, ab: 0 }, tB = { g: 0, mx: 0, ab: 0 };
     var col = function (v) { return v >= 0 ? '#1ed760' : '#ff6b6b'; };
+    var SS = M.R.slice().reverse().map(function (s) { return { sa: s.sa, ms: s.ms.filter(function (x) { return M.lieu === 'tout' || (M.lieu === 'dom' ? x.h === 1 : x.h === 0); }) }; }).filter(function (s) { return s.ms.length; });
+    var RS = simSaisons(SS, { p1: p1, stop: M.stop }), RI = {}; RS.forEach(function (r) { RI[r.sa] = r; });   /* 20261114m : séries continues d'une saison à l'autre */
     var L = M.R.map(function (s) {
       var ms = s.ms.filter(function (x) { return M.lieu === 'tout' || (M.lieu === 'dom' ? x.h === 1 : x.h === 0); }); if (!ms.length) return '';
-      var R = sim(ms, { p1: p1, stop: M.stop }), v = ms.filter(function (x) { return x.w; }).length, bas = ms.filter(function (x) { return x.c < 1.5; }).length;
+      var R = RI[s.sa], v = ms.filter(function (x) { return x.w; }).length, bas = ms.filter(function (x) { return x.c < 1.5; }).length;
       tA.g += R.regle.g; tA.mx = Math.max(tA.mx, R.regle.mx); tA.ab += R.regle.ab; tB.g += R.ck.g; tB.mx = Math.max(tB.mx, R.ck.mx); tB.ab += R.ck.ab;
       return '<tr><td style="' + td + 'font-weight:800;">' + esc(s.sa) + '<br><span style="font-weight:400;color:#c9d3ee;">' + v + '/' + ms.length + ' V · ' + bas + ' sous 1,50</span></td>'
         + '<td style="' + td + '"><b style="color:' + col(R.regle.g) + ';">' + sg(R.regle.g) + '</b><br>max ' + eu(R.regle.mx) + (R.regle.ab ? '<br><span style="color:#ff6b6b;">🛑 ' + R.regle.ab + '</span>' : '') + '</td>'
@@ -89095,7 +89121,8 @@ window.g45SerNs = function (nom, n, el) {
       + '<tr><td style="' + td + 'font-weight:900;">Total</td><td style="' + td + '"><b style="color:' + col(tA.g) + ';">' + sg(tA.g) + '</b><br>max ' + eu(tA.mx) + (tA.ab ? '<br><span style="color:#ff6b6b;">🛑 ' + tA.ab + '</span>' : '') + '</td>'
       + '<td style="' + td + '"><b style="color:' + col(tB.g) + ';">' + sg(tB.g) + '</b><br>max ' + eu(tB.mx) + (tB.ab ? '<br><span style="color:#ff6b6b;">🛑 ' + tB.ab + '</span>' : '') + '</td></tr></table></div>'
       + (C > 0 && tA.mx > C ? '<div style="font-size:14px;color:#ff6b6b;font-weight:800;margin-top:4px;">⚠️ Ta règle demande une mise de ' + eu(tA.mx) + ' : plus que ton capital (' + eu(C) + ').</div>' : '')
-      + '<div style="font-size:13px;color:#c9d3ee;margin-top:6px;">max = plus grosse mise · 🛑 = séries abandonnées à l\'arrêt de sécurité (perte gardée). Cotes de clôture de nos archives (pas la cote FR). Cockpit seul = grille ×2 puis ×3, matchs sous 1,50 sautés.</div>';
+      + ((RS.fin.regle > 0 || RS.fin.ck > 0) ? '<div style="font-size:14px;color:#ffd34d;margin-top:6px;">⏳ Série en cours (pas encore rattrapée) : 📉 ' + eu(RS.fin.regle) + ' · 🏁 ' + eu(RS.fin.ck) + ' déjà misés, comptés dans le total.</div>' : '')
+      + '<div style="font-size:13px;color:#c9d3ee;margin-top:6px;">Une série pas finie en fin de saison continue sur la suivante. max = plus grosse mise · 🛑 = séries abandonnées à l\'arrêt de sécurité (perte gardée). Cotes de clôture de nos archives (pas la cote FR). Cockpit seul = grille ×2 puis ×3, matchs sous 1,50 sautés.</div>';
   }
   function dessiner() { var z = document.getElementById('calc-cb'); if (z && z.style.display !== 'none') { z.innerHTML = html(); liste(); } }
   window._g45CbHtml = html; window._g45CbM = M;
