@@ -89191,6 +89191,8 @@ window.g45SerNs = function (nom, n, el) {
   }
   window._g45CbJMatch = jMatch;   /* tests */
   var CIV = ['bra.1', 'arg.1', 'mlb'];
+  var EU = ['uefa.champions', 'uefa.europa', 'uefa.europa.conf'];   /* 20261114r */
+  var euOk = function () { return !!(M.eq && M.eq[0] === 'soccer' && /^[a-z]{3}\.\d$/.test(M.eq[1]) && CIV.indexOf(M.eq[1]) < 0); };
   var saDe = function (lg, i) { var d = new Date(), y = d.getFullYear(), y0 = CIV.indexOf(lg) >= 0 ? y : (d.getMonth() + 1 >= 8 ? y : y - 1), a = y0 - i; return CIV.indexOf(lg) >= 0 ? String(a) : a + '-' + String(a + 1).slice(2); };
   var RAW = 'https://raw.githubusercontent.com/gones45140/gones45-archives/main/cotes/';
   async function jListe() {
@@ -89213,10 +89215,15 @@ window.g45SerNs = function (nom, n, el) {
     var d = new Date(), y = d.getFullYear(), y0 = CIV.indexOf(E[1]) >= 0 ? y : (d.getMonth() + 1 >= 8 ? y : y - 1), out = [];
     for (var i = 0; i < 5; i++) {
       var a = y0 - i, sa = CIV.indexOf(E[1]) >= 0 ? String(a) : a + '-' + String(a + 1).slice(2), q = null;
-      try { var r = await fetch(RAW + SPD[E[0]] + '/' + E[1] + '/' + sa + '/equipes/' + E[3] + '.json?h=' + Math.floor(Date.now() / 36e5)); if (r.ok) q = await r.json(); } catch (e) {}
-      if (!q || !q.m) continue;
-      var ms = q.m.filter(function (m) { return m && m[4] && m[4][0] != null && m[4][1] != null && m[11]; }).sort(function (a2, b2) { return a2[0] - b2[0]; })
-        .map(function (m) { var h = m[3] === 'h'; return { h: h ? 1 : 0, c: +(h ? m[11][0] : m[11][2]), w: h ? +m[4][0] > +m[4][1] : +m[4][1] > +m[4][0] }; }).filter(function (x) { return x.c > 1; });
+      /* 20261114r (Barça Liga + LDC : 🏠 +305 € au lieu de +217 €, même mise max → « oui ») : + Coupes d'Europe (LDC, Europa League,
+         Conference League, même id ESPN d'équipe), matchs mêlés dans l'ordre des dates ; x.eu = match de coupe. */
+      var LGS = [E[1]].concat(euOk() && M.eu ? EU : []), MM = [];
+      for (var j = 0; j < LGS.length; j++) { q = null;
+        try { var r = await fetch(RAW + SPD[E[0]] + '/' + LGS[j] + '/' + sa + '/equipes/' + E[3] + '.json?h=' + Math.floor(Date.now() / 36e5)); if (r.ok) q = await r.json(); } catch (e) {}
+        if (q && q.m) q.m.forEach(function (m) { if (m) MM.push({ m: m, eu: j > 0 }); }); }
+      if (!MM.length) continue;
+      var ms = MM.filter(function (o) { var m = o.m; return m[4] && m[4][0] != null && m[4][1] != null && m[11]; }).sort(function (a2, b2) { return a2.m[0] - b2.m[0]; })
+        .map(function (o) { var m = o.m, h = m[3] === 'h'; return { h: h ? 1 : 0, eu: o.eu ? 1 : 0, c: +(h ? m[11][0] : m[11][2]), w: h ? +m[4][0] > +m[4][1] : +m[4][1] > +m[4][0] }; }).filter(function (x) { return x.c > 1; });
       if (ms.length) out.push({ sa: sa, ms: ms });
     }
     if (M.eq !== E) return;
@@ -89241,6 +89248,7 @@ window.g45SerNs = function (nom, n, el) {
       var TJ = JT[M.eq[0]] || [];
       h += '<div style="font-size:16px;font-weight:900;margin:8px 0 6px;">' + ICO[M.eq[0]] + ' ' + esc(M.eq[4]) + ' <span style="font-size:14px;font-weight:400;color:#c9d3ee;">· ' + esc(M.eq[2]) + '</span></div>'
         + '<div style="font-size:14px;color:#c9d3ee;margin-bottom:4px;">Pari</div>' + bt(!M.jo, '🏆 Victoire de l\'équipe', 'g45CbJ(-1)') + (TJ.length ? bt(!!M.jo || M.jl === 'load' || Array.isArray(M.jl), '👤 Un joueur', 'g45CbJ(-2)') : '');
+      if (!M.jo && euOk()) h += '<div style="margin:2px 0 4px;">' + bt(!!M.eu, (M.eu ? '✅' : '➕') + ' Coupes d\'Europe (LDC, Europa, Conférence)', 'g45CbEu()') + '</div>';
       if (Array.isArray(M.jl) && !M.jo) h += '<div style="margin:2px 0 6px;">' + (M.jl.length ? M.jl.slice(0, 30).map(function (x, i) { return bt(false, esc(x[1]) + ' <span style="font-weight:400;color:#c9d3ee;">· ' + x[2] + ' m.</span>', 'g45CbJ(' + i + ')'); }).join('') : '<span style="font-size:14px;color:#ffb13d;">Aucun joueur gardé pour cette équipe.</span>') + '</div>';
       else if (M.jl === 'load' && !M.jo) h += '<div style="font-size:14px;">⏳ Lecture des joueurs…</div>';
       if (M.jo) h += '<div style="font-size:15px;font-weight:800;margin:4px 0;">👤 ' + esc(M.jo[1]) + ' <button onclick="g45CbJ(-2)" style="font-size:13px;border-radius:8px;padding:2px 8px;color:#fff;background:#1c2747;border:1px solid #8fa3d6;cursor:pointer;">changer</button></div>'
@@ -89276,9 +89284,9 @@ window.g45SerNs = function (nom, n, el) {
     var RS = simSaisons(SS, { p1: p1, stop: M.stop, pl: M.pl }), RI = {}; RS.forEach(function (r) { RI[r.sa] = r; });   /* 20261114m : séries continues d'une saison à l'autre */
     var L = M.R.map(function (s) {
       var ms = s.ms.filter(function (x) { return M.lieu === 'tout' || (M.lieu === 'dom' ? x.h === 1 : x.h === 0); }); if (!ms.length) return '';
-      var R = RI[s.sa], v = ms.filter(function (x) { return x.w; }).length, bas = ms.filter(function (x) { return x.c < 1.5; }).length;
+      var R = RI[s.sa], v = ms.filter(function (x) { return x.w; }).length, bas = ms.filter(function (x) { return x.c < 1.5; }).length, neu = ms.filter(function (x) { return x.eu; }).length;
       tA.g += R.regle.g; tA.mx = Math.max(tA.mx, R.regle.mx); tA.ab += R.regle.ab; tB.g += R.ck.g; tB.mx = Math.max(tB.mx, R.ck.mx); tB.ab += R.ck.ab;
-      return '<tr><td style="' + td + 'font-weight:800;">' + esc(s.sa) + '<br><span style="font-weight:400;color:#c9d3ee;">' + v + '/' + ms.length + ' V · ' + bas + ' sous 1,50</span></td>'
+      return '<tr><td style="' + td + 'font-weight:800;">' + esc(s.sa) + '<br><span style="font-weight:400;color:#c9d3ee;">' + v + '/' + ms.length + ' V · ' + bas + ' sous 1,50' + (neu ? ' · 🇪🇺 ' + neu + ' en coupe' : '') + '</span></td>'
         + '<td style="' + td + '"><b style="color:' + col(R.regle.g) + ';">' + sg(R.regle.g) + '</b><br>max ' + eu(R.regle.mx) + (R.regle.ab ? '<br><span style="color:#ff6b6b;">🛑 ' + R.regle.ab + '</span>' : '') + '</td>'
         + '<td style="' + td + '"><b style="color:' + col(R.ck.g) + ';">' + sg(R.ck.g) + '</b><br>max ' + eu(R.ck.mx) + (R.ck.ab ? '<br><span style="color:#ff6b6b;">🛑 ' + R.ck.ab + '</span>' : '') + '</td></tr>';
     }).join('');
@@ -89304,6 +89312,7 @@ window.g45SerNs = function (nom, n, el) {
   window.g45CbJ = function (i) { if (!M.eq) return; if (i === -1) { M.jo = null; M.jl = null; charger(); return; } if (i === -2) { M.jo = null; M.R = null; M.etat = ''; if (Array.isArray(M.jl)) dessiner(); else jListe(); return; }
     var x = Array.isArray(M.jl) && M.jl[i]; if (!x) return; M.jo = x; M.jt = M.jt && (JT[M.eq[0]] || []).some(function (t) { return t[0] === M.jt; }) ? M.jt : ((JT[M.eq[0]] || [])[0] || [])[0]; jCharger(); };
   window.g45CbJT = function (k) { M.jt = k; jCharger(); };
+  window.g45CbEu = function () { M.eu = !M.eu; charger(); };   /* 20261114r */
 
   function poser() {
     var tc = document.getElementById('t-calc'), barre = tc && tc.querySelector('.calc-tabs'); if (!tc || !barre) return false;
