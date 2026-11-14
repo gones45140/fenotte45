@@ -87592,7 +87592,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     if (t) t.style.display = TAB === 'tdb' ? '' : 'none'; if (e) e.style.display = TAB === 'eng' ? '' : 'none'; if (cb) cb.style.display = (TAB === 'bil' || TAB === 'arc') ? '' : 'none';
     if (TAB === 'bil' || TAB === 'arc') {
       try { var cbz = $('ck-bil'), bmz = $('g45-bil-meth'); if (cbz && !bmz) { bmz = document.createElement('div'); bmz.id = 'g45-bil-meth'; bmz.style.cssText = 'margin:0 0 8px;display:flex;flex-wrap:wrap;gap:6px;'; cbz.insertBefore(bmz, cbz.firstChild); }
-        if (bmz) { var mB = window._g45BilMeth || 'mont'; bmz.innerHTML = [['mont', '🚀 Cockpit'], ['fib', '🐚 Fibonacci'], ['dal', '🪜 D\'Alembert'], ['tout', 'Toutes']].map(function (x) { var on = x[0] === mB; return '<button onclick="g45BilMeth(\'' + x[0] + '\')" style="' + BTN + (on ? 'background:#2a4a9a;border-color:#6d9dff;' : '') + '">' + x[1] + '</button>'; }).join(''); } } catch (x) {}   /* 20261106h : filtre par méthode */
+        if (bmz) { var mB = window._g45BilMeth || 'mont'; bmz.innerHTML = [['mont', '🚀 Cockpit'], ['fib', '🐚 Fibonacci'], ['dal', '🪜 D\'Alembert'], ['cb', '📉 Cotes basses'], ['tout', 'Toutes']].map(function (x) { var on = x[0] === mB; return '<button onclick="g45BilMeth(\'' + x[0] + '\')" style="' + BTN + (on ? 'background:#2a4a9a;border-color:#6d9dff;' : '') + '">' + x[1] + '</button>'; }).join(''); } } catch (x) {}   /* 20261106h : filtre par méthode */
       if (bilPrendre()) { window._g45ArchCk = TAB === 'arc';
         try { if (TAB === 'arc') showBilanTab('arch', $('btab-arch')); else showBilanTab('cockpit', $('btab-cockpit')); } catch (x) {}
         try { if (TAB === 'bil' && typeof renderGlobalCharts === 'function') setTimeout(function () { try { renderGlobalCharts(); } catch (y) {} }, 50); } catch (x) {} }
@@ -87627,7 +87627,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
       + '<div style="font-size:14px;color:#c9d3ee;text-align:center;padding-bottom:10px;">Si tu ne joues pas en montante, rien ne change pour toi.</div>';
   }
   window.g45CkActiver = function () { try { window.g45CkOnSet(true); } catch (e) {} window.g45CkOuvrir(null, 'tdb'); };
-  window.g45BilMeth = function (k) { window._g45BilMeth = ({ mont: 1, fib: 1, dal: 1, tout: 1 })[k] ? k : 'mont'; window.g45CkOnglet(TAB); };   /* 20261106h */
+  window.g45BilMeth = function (k) { window._g45BilMeth = ({ mont: 1, fib: 1, dal: 1, cb: 1, tout: 1 })[k] ? k : 'mont'; window.g45CkOnglet(TAB); };   /* 20261106h */
   window.g45CkOuvrir = function (btn, k) { squelette(); if (typeof showTab === 'function') showTab('t-cockpit', btn || $('g45-ni-ck')); if (!actif()) { vitrine(); return; } var v = $('ck-vit'); if (v) v.style.display = 'none'; var ht0 = $('ck-tabs'); if (ht0) ht0.style.display = ''; window.g45CkOnglet(k || TAB); };
   function dessiner() { var p = $('t-cockpit'); if (p && p.style.display !== 'none' && TAB === 'tdb') { squelette(); var t = $('ck-tdb'); try { if (t) t.innerHTML = tableau(); var ht = $('ck-tabs'); if (ht && !ht.innerHTML) ht.innerHTML = entete(); } catch (e) { if (t) t.innerHTML = '<div style="color:#ff5a5a;">Erreur du tableau de bord.</div>'; } } }
   function poser() {
@@ -87685,10 +87685,31 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
 (function () {
   var $ = function (id) { return document.getElementById(id); };
   var SEQ = { fib: [1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144], dal: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] };
-  var NOM = { mont: '🚀 Cockpit', fib: '🐚 Fibonacci', dal: '🪜 D\'Alembert' }, LET = { fib: 'F', dal: 'D' };
+  var NOM = { mont: '🚀 Cockpit', fib: '🐚 Fibonacci', dal: '🪜 D\'Alembert', cb: '📉 Cotes basses' }, LET = { fib: 'F', dal: 'D', cb: 'C' };
+  /* ═══ 20261114n — 📉 COTES BASSES, 4e méthode (Antoine : « faudrait faire tous les sports et joueurs comme Cockpit, une organisation comme
+     Cockpit : pari / bilan / stat / graphique » ; « séparé et arrêt carte par carte ; calculer sa mise de départ par rapport à sa BK, 7, 6 ou 5
+     paliers » ; « au-dessus de 1,5 c'est A » (pertes × 3) ; « pour suivre la saison d'une équipe type Barcelone à domicile ») :
+     série PAR CARTE ET PAR LIEU (clé _g45PalKey comme u.lc), À PART : u.lcb[clé] = { p palier, prev dernière mise, per pertes de la série } ;
+     mise : P1 au palier 1, puis cote < 1,50 → prev × (1 ÷ (cote − 1) + 2), cote ≥ 1,50 → per × 3 ; gagné → P1 ; perdu au palier d'arrêt
+     (u.cbStop, 5 / 6 / 7, carte par carte) → série abandonnée (P1) ; P1 de la carte u.cbP1 (sinon 1er palier de la grille) ; 🏦 part de la BK
+     (state.cbPart %) ÷ 4^(N − 1) → P1 (« couvre N paliers », règle ≥ 1,50). La montante (u.l / u.lc) et u.lm ne sont jamais touchées. ═══ */
+  var cbCote = function () { var a = $('mm-cote-manuelle'), b = $('mm-cote-total'); var v = parseFloat(String((a && a.value) || '').replace(',', '.')); if (!(v > 1)) v = parseFloat(String((b && b.textContent) || '').replace(',', '.')); return v > 1 ? v : 0; };
+  var cbSt = function (u, k) { var o = (u.lcb || {})[k]; return o && o.p > 1 ? o : { p: 1, prev: 0, per: 0 }; };
+  var cbP1 = function (u) { var v = parseFloat(u.cbP1); return v > 0 ? v : p1De(u); };
+  var cbStop = function (u) { var v = parseInt(u.cbStop, 10); return v >= 3 && v <= 9 ? v : 5; };
+  var cbMise = function (u, k, c) { var st = cbSt(u, k); if (st.p <= 1) return Math.round(cbP1(u) * 100) / 100; if (!(c > 1)) return 0;
+    return Math.ceil((c < 1.5 ? st.prev * (1 / (c - 1) + 2) : st.per * 3) * 100) / 100; };
+  var cbAvance = function (u, k, mise, gagne) { u.lcb = u.lcb || {}; var st = cbSt(u, k);
+    if (gagne) { delete u.lcb[k]; return; }
+    var n = { p: st.p + 1, prev: +mise || 0, per: (st.per || 0) + (+mise || 0) };
+    if (st.p >= cbStop(u)) delete u.lcb[k]; else u.lcb[k] = n; };
+  window._g45CbMeth = { mise: cbMise, avance: cbAvance, st: cbSt };   /* tests */
+  /* la mise dépend de la cote : on recalcule quand la cote du ticket change (renderMmCote = cote combinée / cote réelle) */
+  try { if (typeof renderMmCote === 'function' && !renderMmCote._cb) { var _rmc0 = renderMmCote; renderMmCote = window.renderMmCote = function () { var r = _rmc0.apply(this, arguments);
+    try { if (meth() === 'cb') { var u = carte(), mi = $('c-mise'); if (u && mi && !mi._g45Man) { var v = cbMise(u, cle(), cbCote()); if (v) mi.value = v; } dessiner(); } } catch (e) {} return r; }; renderMmCote._cb = 1; } } catch (e) {}
   /* 20261106w (capture d'Antoine : pari Cockpit placé avec 🪜 D'Alembert encore actif → enregistré en pari simple) : méthode PAS gardée d'une
      visite à l'autre (plus de localStorage) → Engager s'ouvre toujours sur 🚀 Cockpit ; confirmation avant un pari Fibonacci / D'Alembert. */
-  var meth = function () { var m = window._g45EngMeth || 'mont'; return SEQ[m] ? m : 'mont'; };
+  var meth = function () { var m = window._g45EngMeth || 'mont'; return (SEQ[m] || m === 'cb') ? m : 'mont'; };
   try { localStorage.removeItem('g45_eng_meth'); } catch (e) {}
   var carte = function () { var s = $('c-unit'); return s && (state.u || []).filter(function (x) { return x.n === s.value; })[0]; };
   var lieu = function () { return typeof g45LieuCourant === 'function' ? g45LieuCourant() : ''; };
@@ -87702,8 +87723,9 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     var ce = $('ck-eng'); if (!ce) return;
     var z = $('g45-eng-meth'); if (!z) { z = document.createElement('div'); z.id = 'g45-eng-meth'; z.style.cssText = 'margin:0 0 10px;'; ce.insertBefore(z, ce.firstChild); }
     var m = meth(), u = carte();
-    var h = '<div style="display:flex;flex-wrap:wrap;gap:6px;">' + ['mont', 'fib', 'dal'].map(function (k) { var on = k === m; return '<button onclick="g45EngMeth(\'' + k + '\')" style="border-radius:12px;padding:8px 12px;font-size:15px;font-weight:800;cursor:pointer;color:#fff;border:1px solid ' + (on ? '#6d9dff' : '#2a3a63') + ';background:' + (on ? '#2a4a9a' : '#0b1226') + ';">' + NOM[k] + '</button>'; }).join('') + '</div>';
-    if (m !== 'mont' && u) {
+    var h = '<div style="display:flex;flex-wrap:wrap;gap:6px;">' + ['mont', 'fib', 'dal', 'cb'].map(function (k) { var on = k === m; return '<button onclick="g45EngMeth(\'' + k + '\')" style="border-radius:12px;padding:8px 12px;font-size:15px;font-weight:800;cursor:pointer;color:#fff;border:1px solid ' + (on ? '#6d9dff' : '#2a3a63') + ';background:' + (on ? '#2a4a9a' : '#0b1226') + ';">' + NOM[k] + '</button>'; }).join('') + '</div>';
+    if (m === 'cb' && u) h += cbHtml(u);
+    else if (m !== 'mont' && u) {
       var k = cle(), p = palM(u, m, k), P1 = p1De(u);
       h += '<div style="margin-top:8px;background:rgba(10,14,24,.93);border:1px solid #1c2747;border-radius:12px;padding:10px 12px;color:#fff;font-size:15px;line-height:1.5;">'
         + '<b>' + NOM[m] + ' — ' + String(u.n).replace(/</g, '') + '</b> · ' + LET[m] + p + ' · mise <b>' + String(miseDe(u, m, p)).replace('.', ',') + ' €</b>'
@@ -87713,13 +87735,34 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     if (z.innerHTML !== h) z.innerHTML = h;
     var cg = $('crash-grid'), box = cg && (cg.closest('.card') || cg.parentNode); if (box && box !== ce) box.style.display = m === 'mont' ? '' : 'none';
   }
+  function cbHtml(u) {
+    var k = cle(), st = cbSt(u, k), c = cbCote(), mi = cbMise(u, k, c), S = cbStop(u), P1 = cbP1(u), L = lieu();
+    var bk = 0; try { Object.keys(state.b || {}).forEach(function (x) { bk += parseFloat(state.b[x]) || 0; }); } catch (e) {}
+    var part = parseFloat(state.cbPart) > 0 ? parseFloat(state.cbPart) : 20, cap = bk * part / 100, f2 = function (v) { return (Math.round(v * 100) / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €'; };
+    var B = function (on, t, fn) { return '<button onclick="' + fn + '" style="border-radius:10px;padding:6px 11px;font-size:14px;font-weight:800;cursor:pointer;color:#fff;margin:0 5px 5px 0;border:2px solid ' + (on ? '#1ed760' : '#6d9dff') + ';background:' + (on ? '#14532d' : '#16213f') + ';">' + t + '</button>'; };
+    var reg = st.p <= 1 ? 'P1 = mise de départ de la carte' : (!c ? 'tape d\'abord ta sélection (la cote)' : (c < 1.5 ? 'cote sous 1,50 : mise d\'avant ' + f2(st.prev) + ' × ' + (1 / (c - 1) + 2).toFixed(2).replace('.', ',') : 'cote 1,50 ou plus : pertes de la série ' + f2(st.per) + ' × 3'));
+    var h = '<div style="margin-top:8px;background:rgba(10,14,24,.93);border:1px solid #1c2747;border-radius:12px;padding:10px 12px;color:#fff;font-size:15px;line-height:1.5;">'
+      + '<b>📉 Cotes basses — ' + String(u.n).replace(/</g, '') + ' ' + (L === 'dom' ? '🏠' : L === 'ext' ? '✈️' : '🌍') + '</b> · série <b>C' + st.p + '</b>' + (st.per ? ' · déjà perdu ' + f2(st.per) : '')
+      + (c ? ' · cote ' + String(c).replace('.', ',') : '') + '<br>➡️ Mise : <b style="font-size:18px;color:#ffd34d;">' + (mi ? f2(mi) : '—') + '</b> <span style="font-size:13px;color:#c9d3ee;">(' + reg + ')</span>'
+      + '<div style="font-size:14px;margin-top:6px;">🛑 Arrêt de cette carte (série abandonnée après ce palier perdu)</div>'
+      + [5, 6, 7].map(function (n) { return B(S === n, 'C' + n, "g45CbCarte('stop'," + n + ')'); }).join('')
+      + '<div style="font-size:14px;margin-top:4px;">🪙 Mise de départ (P1) de cette carte : <b>' + f2(P1) + '</b></div>'
+      + '<div style="font-size:14px;margin-top:4px;">🏦 Part de ta BK pour les cotes basses</div>' + [10, 20, 50, 100].map(function (n) { return B(part === n, n + ' %', "g45CbCarte('part'," + n + ')'); }).join('')
+      + '<div style="font-size:14px;">Ma part (' + f2(cap) + ') couvre :</div>' + [5, 6, 7].map(function (n) { var v = Math.floor(cap / Math.pow(4, n - 1) * 100) / 100; return B(false, n + ' paliers → P1 ' + f2(v), "g45CbCarte('p1'," + v + ')'); }).join('')
+      + '<div style="font-size:13px;color:#c9d3ee;">P1 = part ÷ 4^(paliers − 1) (règle « pertes × 3 »). Sous 1,50, la mise monte plus vite : c\'est un minimum de prudence. Paris et séries À PART de ta montante Cockpit.</div></div>';
+    return h;
+  }
+  window.g45CbCarte = function (q, v) {
+    var u = carte(); if (q === 'part') { state.cbPart = +v; } else if (!u) return; else if (q === 'stop') u.cbStop = +v; else if (q === 'p1' && +v > 0) { if (!confirm('P1 de ' + u.n + ' = ' + String(v).replace('.', ',') + ' € ?')) return; u.cbP1 = +v; }
+    try { save(); } catch (e) {} try { (window.updMise || updMise)(); } catch (e) {} dessiner();
+  };
   window._g45EngMethDessiner = dessiner;
-  window.g45EngMeth = function (k) { window._g45EngMeth = SEQ[k] ? k : 'mont'; try { (window.updMise || updMise)(); } catch (e) {} dessiner(); };
+  window.g45EngMeth = function (k) { window._g45EngMeth = (SEQ[k] || k === 'cb') ? k : 'mont'; try { (window.updMise || updMise)(); } catch (e) {} dessiner(); };
   /* mise proposée : celle de la méthode (après le calcul normal de la montante) */
   var um0 = window.updMise;
   if (typeof um0 === 'function') window.updMise = updMise = function () {
     var r = um0.apply(this, arguments);
-    try { var m = meth(), u = carte(), mi = $('c-mise'); if (m !== 'mont' && u && mi && !mi._g45Man) mi.value = miseDe(u, m, palM(u, m, cle())); dessiner(); } catch (e) {}
+    try { var m = meth(), u = carte(), mi = $('c-mise'); if (m !== 'mont' && u && mi && !mi._g45Man) { var v = m === 'cb' ? cbMise(u, cle(), cbCote()) : miseDe(u, m, palM(u, m, cle())); if (v) mi.value = v; } dessiner(); } catch (e) {}
     return r;
   };
   /* placement : pari(true) normal puis le pari devient « méthode » (hors montante) */
@@ -87727,19 +87770,22 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   if (typeof pa0 === 'function') window.pari = pari = function (isS) {
     var m = meth(), u = isS ? carte() : null;
     if (!isS || m === 'mont' || !u) return pa0.apply(this, arguments);
-    var k = cle(), p = palM(u, m, k), n0 = (state.h || []).length, top = state.h && state.h[0];
+    var k = cle(), p = m === 'cb' ? cbSt(u, k).p : palM(u, m, k), n0 = (state.h || []).length, top = state.h && state.h[0];
     if (!window._g45MethSansConfirm && !confirm('Ce pari part en ' + NOM[m] + ' (' + LET[m] + p + '), HORS montante Cockpit. OK ?\n\nAnnuler → reviens sur 🚀 Cockpit.')) { window.g45EngMeth('mont'); return; }
     var r = pa0.apply(this, arguments);
     var b = state.h && state.h[0];
     if (b && b !== top && state.h.length > n0) {
       b.isS = false; b.meth = m; b.mp = p; b.mk = k; delete b.l;
+      if (m === 'cb') b.cbAv = JSON.stringify(cbSt(u, k));   /* 20261114n : état de la série avant le pari (annulation) */
       b.notes = NOM[m] + ' ' + LET[m] + p + (b.notes ? ' · ' + b.notes : '');
       try { save(); } catch (e) {} try { if (typeof render === 'function') render(); } catch (e) {}
     }
     return r;
   };
   var avance = function (b, gagne) {
-    var u = (state.u || []).filter(function (x) { return x.n === b.n; })[0]; if (!u || !SEQ[b.meth]) return;
+    var u = (state.u || []).filter(function (x) { return x.n === b.n; })[0]; if (!u) return;
+    if (b.meth === 'cb') { cbAvance(u, b.mk, b.m, gagne); return; }   /* 20261114n */
+    if (!SEQ[b.meth]) return;
     var p = palM(u, b.meth, b.mk);
     setM(u, b.meth, b.mk, gagne ? Math.max(1, p - (b.meth === 'fib' ? 2 : 1)) : Math.min(p + 1, SEQ[b.meth].length));
   };
@@ -87761,7 +87807,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   if (typeof ca0 === 'function') window.cancelBet = cancelBet = function (id) {
     var b = (state.h || []).filter(function (x) { return x.id === id; })[0];
     var r = ca0.apply(this, arguments);
-    try { if (b && b.meth && !(state.h || []).some(function (x) { return x.id === id; })) { var u = (state.u || []).filter(function (x) { return x.n === b.n; })[0]; if (u) { setM(u, b.meth, b.mk, b.mp || 1); save(); } } } catch (e) {}
+    try { if (b && b.meth && !(state.h || []).some(function (x) { return x.id === id; })) { var u = (state.u || []).filter(function (x) { return x.n === b.n; })[0]; if (u) { if (b.meth === 'cb') { u.lcb = u.lcb || {}; var av = null; try { av = JSON.parse(b.cbAv || 'null'); } catch (e) {} if (av && av.p > 1) u.lcb[b.mk] = av; else delete u.lcb[b.mk]; } else setM(u, b.meth, b.mk, b.mp || 1); save(); } } } catch (e) {}
     return r;
   };
   document.addEventListener('change', function (e) { if (e.target && /^(c-unit|c-lieu|c-comp)$/.test(e.target.id)) { try { dessiner(); } catch (x) {} } }, true);
