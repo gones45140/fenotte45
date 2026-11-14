@@ -78195,6 +78195,10 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     z.parentNode.replaceChild(t.firstChild, z);
   }
   window._g45CrHtml = function (nom, ctx, lgF) {   /* 20261027y : lgF = championnat imposé (Séries équipes) ; absent = comme avant */
+    /* 20261114f (capture fiche France 🏉 : critères « 2026-27 1/2, 2025-26 0/3 » → « le critère lit tous les matchs ? ») : sélection de rugby
+       ouverte depuis une de ses compétitions → même lecture que 🔎 Critères (lg 'rsel' : toutes les compétitions, années civiles). */
+    if (ctx && ctx.sp === 'rugby' && ['180659', '17567', '164205', '289234', '244293'].indexOf(String(ctx.lg)) >= 0) ctx = { sp: 'rugby', lg: 'rsel', id: String(ctx.id) };
+    if (ctx && ctx.lg === 'rsel' && S.data[nom] && S.data[nom].lg !== 'rsel') delete S.data[nom];   /* ancienne lecture (une seule compétition) */
     if (lgF === 'sel' || /^(fifa\.|uefa\.(nations|euro))/.test(lgF || '')) lgF = 'fifa.world';   /* 20261113h : sélection → toujours 'fifa.world' (sinon effacée à chaque appel) */
     S.lgForce = lgF || null;
     if (S.lgForce && S.data[nom] && S.data[nom].lg && S.data[nom].lg !== S.lgForce) delete S.data[nom];
