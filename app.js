@@ -88189,7 +88189,9 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     var G = [10, 20, 60, 180, 540, 1620, 4860, 14580, 43740], E = {}, PE = {}, g = 0, pmax = 0, mmax = 0, n = 0, DET = {};
     L.slice().sort(function (a, b) { return a.t - b.t; }).forEach(function (x) {
       var q = coteDe(x); if (!q || !(q.c > 1)) return;
-      var k = x.id + '|' + x.k + '|' + (x.lieu || ''), p = E[k] || 1, m = G[Math.min(p, G.length) - 1], kd = k + '|' + x.t;
+      /* 20261116f (captures Bucks : « le 11 Milwaukee perd, le 12 le mode Cockpit ne double pas la mise ») : la série de la montante = même équipe
+         + même pari, QUEL QUE SOIT le lieu (11/11 pépite 🌍, 12/11 pépite 🏠 avec la 🌍 dessus → P2) ; kd (détail affiché) garde le lieu. */
+      var kL = x.id + '|' + x.k + '|' + (x.lieu || ''), k = x.id + '|' + x.k, p = E[k] || 1, m = G[Math.min(p, G.length) - 1], kd = kL + '|' + x.t;
       if (x.r !== 1 && x.r !== 0) { if (x.r !== -1) DET[kd] = { p: p, m: m }; return; }   /* 20261113b : ⏳ = palier et mise prévus */
       n++; if (p > pmax) pmax = p; if (m > mmax) mmax = m;
       if (x.r === 1) { var gg = m * (Math.round(q.c * 0.94 * 100) / 100 - 1); g += gg; DET[kd] = { p: p, m: m, g: Math.round(gg * 100) / 100 }; if (p > 1) DET[kd].ser = Math.round((gg - (PE[k] || 0)) * 100) / 100; E[k] = 1; PE[k] = 0; }   /* 20261111g : cote FR estimée */
