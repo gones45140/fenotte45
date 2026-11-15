@@ -89726,8 +89726,8 @@ window.g45SerNs = function (nom, n, el) {
       var PH = { nhl: 'typuvs1421795648', nba: 'wtqwqq1453033773', nfl: 'cofxkn1631264748', mlb: '9ppjtt1521040145', nrl: 'xqqupr1422582318' };
       if (LG[v] && PH[LG[v]]) {
         var ph = document.createElement('img');
-        ph.src = 'https://r2.thesportsdb.com/images/media/league/fanart/' + PH[LG[v]] + '.jpg'; ph.alt = ''; ph.loading = 'lazy'; ph.className = 'g45-acc-ph';
-        ph.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 22%;pointer-events:none;' + (LG[v] === 'nba' ? 'filter:brightness(1.7) contrast(1.05);' : '');
+        ph.src = LG[v] === 'nba' ? 'images/equipes/nba-ballon.jpg' : 'https://r2.thesportsdb.com/images/media/league/fanart/' + PH[LG[v]] + '.jpg';   /* 20261116o (« basket NBA, faudrait un joueur avec un ballon ») : photo envoyée par Antoine */ ph.alt = ''; ph.loading = 'lazy'; ph.className = 'g45-acc-ph';
+        ph.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 22%;pointer-events:none;' + '';
         im.src = url; im.alt = ''; im.className = 'g45-acc-lg';
         im.style.cssText = 'position:absolute;right:10px;top:10px;height:clamp(40px,11vw,72px);width:auto;max-width:35%;object-fit:contain;filter:drop-shadow(0 2px 6px rgba(0,0,0,.85));pointer-events:none;';
         im.onerror = function () { im.remove(); };
