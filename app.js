@@ -61968,6 +61968,7 @@ function _g45LigneMatch(h, titreDefaut, typeTxt, cote){
     + '<span style="color:#7aa2ff;font-weight:800;font-size:11px;background:rgba(77,132,255,.16);padding:1px 7px;border-radius:5px;">' + coteTxt + '</span>'
     /* 20261005h (« il manque peut-être le sport ? », maquette validée « Oui ») : compétition en PASTILLE colorée du sport
        (« 🏈 NFL »), mêmes couleurs que l'Agenda ; sport deviné par _g45ParisSport. */
+    + (typeof window._g45TypePatch === 'function' ? window._g45TypePatch(h) : '')   /* 20261115j : patch du type de pari */
     + '<span style="margin-left:8px;">' + _g45ParisCompPastille(h) + (lieu ? (h.comp ? ' · ' : '') + '\ud83d\udccd ' + _g45Esc(lieu) : '') + '</span>';
 
   if (h.isCombi) return { titre: function () { return titreDefaut; }, integre: false, sous: sous };
@@ -89571,9 +89572,11 @@ window.g45SerNs = function (nom, n, el) {
       [].forEach.call(t.querySelectorAll(':scope > img, :scope > span[aria-hidden]'), function (x) { x.remove(); });
       var voile = t.querySelector(':scope > div'), im = document.createElement('img');
       im.src = url; im.alt = ''; im.loading = 'lazy'; im.className = 'g45-acc-lg';
-      im.style.cssText = 'position:absolute;left:0;right:0;top:6px;margin:auto;height:calc(100% - 62px);min-height:40px;max-width:70%;width:auto;object-fit:contain;pointer-events:none;filter:drop-shadow(0 0 1px rgba(255,255,255,.9)) drop-shadow(0 3px 6px rgba(0,0,0,.7));';
+      /* 20261115j (« ça fait moins bannière que Kansas » → maquette « logo géant » → « oui go bannière ») : logo GÉANT qui remplit la tuile,
+         penché, coupé sur les bords (comme le fanart Kansas City) ; le voile sombre existant et le bandeau gardent le texte lisible */
+      im.style.cssText = 'position:absolute;left:50%;top:50%;width:105%;height:auto;max-width:none;transform:translate(-50%,-52%) rotate(-10deg);opacity:.95;pointer-events:none;';
       im.onerror = function () { im.remove(); };
-      if (voile && voile.nextSibling) t.insertBefore(im, voile.nextSibling); else t.appendChild(im);
+      if (voile) t.insertBefore(im, voile); else t.insertBefore(im, t.firstChild);   /* 20261115j : sous le voile (bannière) */
       t.setAttribute('data-g45lg', url);
       var nom = t.lastElementChild && t.lastElementChild.firstElementChild;
       if (nom && fav && !/❤️/.test(nom.textContent)) nom.textContent = nom.textContent + ' ❤️';
@@ -89584,3 +89587,12 @@ window.g45SerNs = function (nom, n, el) {
   _g45AccRegrouper._g45Logo = 1;
   window._g45AccLogoClub = clubDe;   /* tests */
 })();
+
+/* ═══ 20261115j — PATCH DU TYPE DE PARI sur les cartes réglées (Bilan / Archive « Paris filtrés ») (Antoine : « mettre un petit patch du type
+   de pari : simple / combiné / cockpit / cotes basses / d'Alembert / fibo ») : 🧩 Combiné (h.isCombi), 🚀 Cockpit (h.isS), 📉 / 🪜 / 🐚 (h.meth),
+   sinon 🎯 Simple ; mêmes couleurs que les pastilles des cartes. ═══ */
+window._g45TypePatch = function (h) {
+  if (!h) return '';
+  var t = h.isCombi ? ['🧩 Combiné', '#c084fc'] : h.isS ? ['🚀 Cockpit', '#4d84ff'] : h.meth === 'cb' ? ['📉 Cotes basses', '#ff9f43'] : h.meth === 'dal' ? ['🪜 D\'Alembert', '#2dd4bf'] : h.meth === 'fib' ? ['🐚 Fibonacci', '#b07cff'] : ['🎯 Simple', '#8792ad'];
+  return '<span style="margin-left:8px;display:inline-block;white-space:nowrap;font-weight:800;font-size:11px;color:#0b101d;background:' + t[1] + ';padding:1px 7px;border-radius:6px;">' + t[0] + '</span>';
+};
