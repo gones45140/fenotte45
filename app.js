@@ -88282,7 +88282,8 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
        Concacaf B ou + non ») : Concacaf Nations League → seule la LIGUE A compte. Sonde d'Antoine (scoreboard 13-16/11) : la ligue A joue
        les « quarterfinals » (puis demies / finale), les ligues B / C la « group-stage » et les « gold-cup-play-in-prelims » → phase gardée
        par le robot (x.stg = season.slug ESPN) ; pas quart / demie / finale → x.nc + x.nf (affichée, hors bilan / graphique / montante). */
-    L.forEach(function (x) { if (x.lg === 'concacaf.nations.league' && x.stg && !/quarter|semi|final|third/i.test(x.stg)) { x.nc = 1; x.nf = 1; } });
+    L.forEach(function (x) { if ((x.lg === 'concacaf.nations.league' && x.stg && !/quarter|semi|final|third/i.test(x.stg))
+      || (x.lg === 'uefa.nations' && /^D/i.test(String(x.grp || '')))) { x.nc = 1; x.nf = 1; } });   /* 20261116c : + Ligue des nations UEFA ligue D (x.grp = groupe du classement ESPN, robot) */
     var Lall = L, jPer = { '1j': 1, '1s': 7, '1m': 30, '1a': 365 }[M.per];   /* 20261113g : la montante se calcule sur TOUT l'historique (paliers justes), seul l'affichage est filtré */
     if (jPer) { var cP = new Date(); cP.setHours(0, 0, 0, 0); cP.setDate(cP.getDate() - jPer); var cS = cP.getFullYear() + '-' + ('0' + (cP.getMonth() + 1)).slice(-2) + '-' + ('0' + cP.getDate()).slice(-2); L = L.filter(function (x) { return String(x.j) >= cS; }); }
     if (!L.length && ((M.d.L || []).length)) return h + '<div style="font-size:14px;">Aucune pépite avec ces filtres.</div></div>';
