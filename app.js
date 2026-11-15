@@ -89539,3 +89539,48 @@ window.g45SerNs = function (nom, n, el) {
   try { var _on0 = window.g45CkOnglet; if (typeof _on0 === 'function' && !_on0._g45Mode) { window.g45CkOnglet = function (k) { var r = _on0.apply(this, arguments); if (k === 'eng') setTimeout(auto, 0); return r; }; window.g45CkOnglet._g45Mode = 1; } } catch (e) {}
   window._g45ModeAuto = auto;   /* tests */
 })();
+
+/* ═══ 20261115i — TUILES DU MUR : LOGOS NETS (Antoine : « c'est pas les bonnes images » → maquette → « logo compétition, US de préférence ;
+   foot logo club de cœur ; rugby club préféré ; NRL logo NRL ; tennis, F1, cyclisme, biathlon comme actuellement ») : 🏒 NHL, 🏀 NBA, 🏈 NFL,
+   ⚾ MLB, 🏉🇦🇺 NRL = logo de la ligue ESPN (leagues/500/<x>.png, SONDÉ 200 le 15/11) ; ⚽ / 🏉 = club de cœur (state.fav) s'il est de ce sport,
+   sinon l'équipe du sport la plus jouée (paris) ; logo ENTIER, pleine couleur, au-dessus du voile sombre, contour clair (logo blanc lisible),
+   ❤️ après le nom du sport si c'est le club de cœur. Les autres tuiles et « Choisis ton club » (bet45 sans club) ne changent pas. ═══ */
+(function () {
+  if (typeof _g45AccRegrouper !== 'function' || _g45AccRegrouper._g45Logo) return;
+  var LG = { '🏒': 'nhl', '🏀': 'nba', '🏈': 'nfl', '⚾': 'mlb', '🏉🇦🇺': 'nrl' };
+  var esc = function (x) { return String(x || '').replace(/[<>&"]/g, ''); };
+  function clubDe(v) {
+    var U = (window.state && state.u) || [], sp = function (u) { try { return _g45AccSport(u).v; } catch (e) { return ''; } };
+    var f = state && state.fav, uf = f && U.filter(function (u) { return u && u.n === f; })[0];
+    if (uf && sp(uf) === v) return { u: uf, fav: 1 };
+    var nb = {}; ((state.a || []).concat(state.h || [])).forEach(function (b) { if (b && b.n) nb[b.n] = (nb[b.n] || 0) + 1; });
+    var L = U.filter(function (u) { return u && u.n && sp(u) === v && !(window._G45_ACC_NOMS || []).some(function (x) { return x[0].test(String(u.n).trim()); }); })
+      .sort(function (a, b) { return (nb[b.n] || 0) - (nb[a.n] || 0); });
+    return L[0] ? { u: L[0], fav: 0 } : null;
+  }
+  function logoDe(u) { var l = ''; try { l = (typeof g45LogoUrlDe === 'function' ? g45LogoUrlDe(u.n) : '') || u.logoUrl || ''; } catch (e) { l = u.logoUrl || ''; } return l; }
+  function habiller() {
+    var zone = document.getElementById('g45-acc-zone'); if (!zone) return;
+    [].forEach.call(zone.querySelectorAll('[data-k]'), function (t) {
+      var v = t.getAttribute('data-k'); if (/g45AccClub/.test(t.getAttribute('onclick') || '')) return;   /* bet45 : « Choisis ton club » */
+      var url = '', fav = 0;
+      if (LG[v]) url = 'https://a.espncdn.com/i/teamlogos/leagues/500/' + LG[v] + '.png';
+      else if (v === '⚽' || v === '🏉') { var C = clubDe(v); if (C) { url = logoDe(C.u); fav = C.fav; } }
+      if (!url) return;
+      if (t.getAttribute('data-g45lg') === url) return;
+      [].forEach.call(t.querySelectorAll(':scope > img, :scope > span[aria-hidden]'), function (x) { x.remove(); });
+      var voile = t.querySelector(':scope > div'), im = document.createElement('img');
+      im.src = url; im.alt = ''; im.loading = 'lazy'; im.className = 'g45-acc-lg';
+      im.style.cssText = 'position:absolute;left:0;right:0;top:6px;margin:auto;height:calc(100% - 62px);min-height:40px;max-width:70%;width:auto;object-fit:contain;pointer-events:none;filter:drop-shadow(0 0 1px rgba(255,255,255,.9)) drop-shadow(0 3px 6px rgba(0,0,0,.7));';
+      im.onerror = function () { im.remove(); };
+      if (voile && voile.nextSibling) t.insertBefore(im, voile.nextSibling); else t.appendChild(im);
+      t.setAttribute('data-g45lg', url);
+      var nom = t.lastElementChild && t.lastElementChild.firstElementChild;
+      if (nom && fav && !/❤️/.test(nom.textContent)) nom.textContent = nom.textContent + ' ❤️';
+    });
+  }
+  var r0 = _g45AccRegrouper;
+  _g45AccRegrouper = window._g45AccRegrouper = function () { var r = r0.apply(this, arguments); try { habiller(); } catch (e) {} return r; };
+  _g45AccRegrouper._g45Logo = 1;
+  window._g45AccLogoClub = clubDe;   /* tests */
+})();
