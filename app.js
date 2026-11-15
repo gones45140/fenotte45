@@ -89710,7 +89710,7 @@ window.g45SerNs = function (nom, n, el) {
       if (voile) t.insertBefore(ph, voile); else t.insertBefore(ph, t.firstChild);
     });
     [].forEach.call(zone.querySelectorAll('[data-k]'), function (t) {
-      var v = t.getAttribute('data-k'); if (/g45AccClub/.test(t.getAttribute('onclick') || '')) return;   /* bet45 : « Choisis ton club » */
+      var v = t.getAttribute('data-k'); if (/g45AccClub/.test(t.getAttribute('onclick') || '') && !LG[v]) return;   /* 20261116r : tuile « Choisis ton club » d'une ligue US / NRL → photo de la ligue quand même */   /* bet45 : « Choisis ton club » */
       var url = '', fav = 0;
       if (LG[v]) url = 'https://a.espncdn.com/i/teamlogos/leagues/500/' + LG[v] + '.png';
       else if (v === '⚽' || v === '🏉') { var C = clubDe(v); if (C) { url = logoDe(C.u); fav = C.fav; } }
@@ -89769,13 +89769,19 @@ window.g45SerNs = function (nom, n, el) {
         var nomC = C.u.n, logoCss = im.style.cssText;
         var ov = (v === '⚽' && /lyon/i.test(nomC)) ? 'https://r2.thesportsdb.com/images/media/team/fanart/yxuqvx1420582853.jpg'
           : (v === '🏉' && /toulous/i.test(nomC)) ? 'https://r2.thesportsdb.com/images/media/team/fanart/etm5og1623729932.jpg' : '';   /* photo Stade Toulousain envoyée par Antoine */
-        var pr = ov ? Promise.resolve({ u: ov }) : (typeof _g45BgChercher === 'function' ? Promise.resolve(_g45BgChercher(nomC)) : Promise.resolve({}));
+        /* 20261116r (capture bet45 : France = vieille photo 2018) : image PERSO du club (images/equipes/<nom>, ex. coq FFF) d'abord, sinon TheSportsDB */
+        var pr = ov ? Promise.resolve({ u: ov }) : Promise.resolve((function () { var lu; try { lu = _g45ImgPersoLire(nomC); } catch (e) {} return lu !== undefined ? (lu || '') : (typeof _g45ImgPersoTester === 'function' ? _g45ImgPersoTester(nomC) : ''); })()).catch(function () { return ''; })
+          .then(function (pe) { return pe ? { u: pe } : (typeof _g45BgChercher === 'function' ? _g45BgChercher(nomC) : {}); });
         pr.then(function (o) {
           if (!o || !o.u || !t.isConnected || t.getAttribute('data-g45lg') !== url || t.querySelector('.g45-acc-ph')) return;
           var ph = document.createElement('img');
           ph.src = o.u; ph.alt = ''; ph.className = 'g45-acc-ph';
           ph.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 22%;pointer-events:none;';
           ph.onerror = function () { ph.remove(); im.style.cssText = logoCss; };
+          ph.onload = function () { if (ph.naturalWidth < ph.naturalHeight * 1.5 && !t.querySelector('.g45-acc-flou')) {   /* 20261116r : image carrée (coq) → entière + fond flou */
+            var fl = document.createElement('img'); fl.src = ph.src; fl.alt = ''; fl.className = 'g45-acc-flou';
+            fl.style.cssText = 'position:absolute;inset:-20px;width:calc(100% + 40px);height:calc(100% + 40px);object-fit:cover;filter:blur(16px) brightness(.7);pointer-events:none;';
+            t.insertBefore(fl, ph); ph.style.objectFit = 'contain'; ph.style.objectPosition = 'center'; } };
           t.insertBefore(ph, im);
           im.style.cssText = 'position:absolute;right:10px;top:10px;height:clamp(40px,11vw,72px);width:auto;max-width:35%;object-fit:contain;filter:drop-shadow(0 2px 6px rgba(0,0,0,.85));pointer-events:none;';
         }).catch(function () {});
