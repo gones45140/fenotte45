@@ -21196,7 +21196,7 @@ function loadLiensEquipe() {
     actifs.forEach(function(l){
       html += '<div style="'+lsBtn+'">';
       html += '<a href="'+l.url+'" target="_blank" style="display:flex;align-items:center;gap:12px;flex:1;text-decoration:none;">';
-      html += '<div style="font-size:20px;">'+l.ico+'</div>';
+      html += '<div style="font-size:20px;">'+_g45Drap(l.ico,26)+'</div>';
       html += '<div style="flex:1;"><div style="font-size:13px;font-weight:700;color:'+l.col+';">'+l.label+'</div>';
       html += '<div style="font-size:10px;color:var(--t3);">'+l.desc+'</div></div>';
       html += '<div style="color:var(--t3);">→</div></a>';
@@ -21213,7 +21213,7 @@ function loadLiensEquipe() {
     liensPerso.forEach(function(l, i){
       html += '<div style="'+lsBtn+'">';
       html += '<a href="'+l.url+'" target="_blank" style="display:flex;align-items:center;gap:12px;flex:1;text-decoration:none;">';
-      html += '<div style="font-size:20px;">'+l.ico+'</div>';
+      html += '<div style="font-size:20px;">'+_g45Drap(l.ico,26)+'</div>';
       html += '<div style="flex:1;"><div style="font-size:13px;font-weight:700;color:#7aaaff;">'+l.label+'</div>';
       html += '<div style="font-size:10px;color:var(--t3);">'+l.url.substring(0,40)+'...</div></div>';
       html += '<div style="color:var(--t3);">→</div></a>';
@@ -31627,7 +31627,7 @@ function g45DirectSport(sportKey){
   var groups=(sportKey==='soccer')?G45_LEAGUE_GROUPS:(s.groups||[]);
   var groupsHtml=groups.map(function(g){
     var chips=g.leagues.map(function(l){
-      return '<button class="g45lg-chip" onclick="g45LoadLeagueMatches(\''+l.slug+'\',this,0,\''+sportKey+'\')" style="border:none;cursor:pointer;font-size:11px;font-weight:700;padding:7px 11px;border-radius:8px;background:rgba(255,255,255,.06);color:var(--t2);white-space:nowrap;flex-shrink:0;">'+l.ico+' '+l.name+'</button>';
+      return '<button class="g45lg-chip" onclick="g45LoadLeagueMatches(\''+l.slug+'\',this,0,\''+sportKey+'\')" style="border:none;cursor:pointer;font-size:11px;font-weight:700;padding:7px 11px;border-radius:8px;background:rgba(255,255,255,.06);color:var(--t2);white-space:nowrap;flex-shrink:0;">'+_g45Drap(l.ico,14)+' '+l.name+'</button>';
     }).join('');
     return '<div style="margin-bottom:8px;"><div style="font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#4f5d88;margin-bottom:5px;">'+g.grp+'</div>'
       +'<div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch;">'+chips+'</div></div>';
@@ -37464,7 +37464,7 @@ function g45ShowSport(sportKey){
   var groups = (sportKey==='soccer') ? G45_LEAGUE_GROUPS : (s.groups||[]);
   var groupsHtml=groups.map(function(g){
     var chips=g.leagues.map(function(l){
-      return '<button class="g45lg-chip" onclick="g45LoadCalendar(\''+l.slug+'\',this,0,\''+sportKey+'\')" style="border:none;cursor:pointer;font-size:11px;font-weight:700;padding:7px 11px;border-radius:8px;background:rgba(255,255,255,.06);color:var(--t2);white-space:nowrap;flex-shrink:0;">'+l.ico+' '+l.name+'</button>';
+      return '<button class="g45lg-chip" onclick="g45LoadCalendar(\''+l.slug+'\',this,0,\''+sportKey+'\')" style="border:none;cursor:pointer;font-size:11px;font-weight:700;padding:7px 11px;border-radius:8px;background:rgba(255,255,255,.06);color:var(--t2);white-space:nowrap;flex-shrink:0;">'+_g45Drap(l.ico,14)+' '+l.name+'</button>';
     }).join('');
     return '<div style="margin-bottom:8px;"><div style="font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#4f5d88;margin-bottom:5px;">'+g.grp+'</div><div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch;">'+chips+'</div></div>';
   }).join('');
@@ -47145,7 +47145,12 @@ async function loadCompetTab() {
         } else if (lo) {
           vis = '<img src="' + lo + '" style="width:22px;height:22px;object-fit:contain;" onerror="this.remove()" loading="lazy">';
         } else {
-          vis = '<span style="font-size:17px;line-height:1;">' + (l.ico || '') + '</span>';
+          /* 20261116t (captures Compétitions : « FR », « EU », « ZA », « US », « KR », « AU » en lettres → « faudrait les vrais drapeaux ») :
+             Windows n'affiche pas les drapeaux emoji (lettres à la place) → drapeau emoji (2 lettres « régionales ») = image flagcdn.com. */
+          var _cp = Array.from(String(l.ico || '')).map(function (ch) { var c = ch.codePointAt(0); return c >= 0x1F1E6 && c <= 0x1F1FF ? String.fromCharCode(97 + c - 0x1F1E6) : null; });
+          var _fi = (_cp.length === 2 && _cp[0] && _cp[1]) ? _cp.join('') : '';
+          vis = _fi ? '<img src="https://flagcdn.com/w40/' + _fi + '.png" alt="" loading="lazy" onerror="this.remove()" style="width:24px;height:16px;object-fit:cover;border-radius:3px;">'
+            : '<span style="font-size:17px;line-height:1;">' + (l.ico || '') + '</span>';
         }
         /* ═══ GRILLE REGULIERE (26/08) ═══
            Les chips flottaient en lignes irregulieres, chacune large comme son
@@ -89814,3 +89819,14 @@ window._g45TypePatch = function (h) {
   try { document.addEventListener('change', function (e) { if (e.target && e.target.id === 'u-name') net(); }, true); document.addEventListener('focusin', function (e) { if (e.target && e.target.id === 'u-name') setTimeout(net, 60); }, true); } catch (e) {}
   try { setTimeout(net, 800); setTimeout(net, 3000); } catch (e) {}
 })();
+
+
+/* ═══ 20261116t — DRAPEAUX EN IMAGE (captures Compétitions : « FR », « EU », « ZA »… en lettres → « faudrait les vrais drapeaux ») : Windows
+   n'affiche pas les drapeaux emoji (2 lettres « régionales ») → image flagcdn.com (déjà utilisée par Compétitions). Autre icône : inchangée. ═══ */
+function _g45Drap(ico, px) {
+  try {
+    var c = Array.from(String(ico || '')).map(function (ch) { var k = ch.codePointAt(0); return k >= 0x1F1E6 && k <= 0x1F1FF ? String.fromCharCode(97 + k - 0x1F1E6) : null; });
+    if (c.length === 2 && c[0] && c[1]) { var h = px || 16; return '<img src="https://flagcdn.com/w40/' + c.join('') + '.png" alt="" loading="lazy" onerror="this.remove()" style="width:' + Math.round(h * 1.5) + 'px;height:' + h + 'px;object-fit:cover;border-radius:3px;vertical-align:middle;">'; }
+  } catch (e) {}
+  return ico || '';
+}
