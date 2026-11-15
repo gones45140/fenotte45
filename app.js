@@ -88118,7 +88118,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     fetch(URL + '?t=' + Math.floor(Date.now() / 600000)).then(function (r) { return r.ok ? r.json() : (r.status === 404 ? { L: [] } : null); })
       .then(function (j) { M.en = 0; if (j) { M.d = j; M.t = Date.now(); } else if (!M.d) M.err = 1; redessiner(); }).catch(function () { M.en = 0; if (!M.d) M.err = 1; redessiner(); });
   }
-  var lieuI = function (x) { return x.lieu === 'dom' ? ' 🏠' : x.lieu === 'ext' ? ' ✈️' : ''; };
+  var lieuI = function (x) { return x.lieu === 'dom' ? ' 🏠' : x.lieu === 'ext' ? ' ✈️' : ' 🌍'; };   /* 20261116d (capture annotée : « on sait pas si c'est global ou domicile ») : série GLOBALE (lieu « tout ») = 🌍 */
   /* ═══ 20261108m — 💶 COTES DES PÉPITES (Antoine : « y a moyen d'avoir les cotes, car c'est plutôt joli en réussite » → « oui ») : cote
      d'avant-match gardée par le robot dans gones45-archives (cotes/<dir>/<lg>/<saison>/matchs/<AAAA-MM>.json[eid] : ml {h, d, a}, tot {L, o, u},
      bts {o, n}, teq {h|a: [[ligne, cote]…]}). Victoire / vainqueur = ml du côté de l'équipe ; victoire ou nul ≈ 1 / (1/ml + 1/nul) (calculée) ;
