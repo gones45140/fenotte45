@@ -89576,6 +89576,8 @@ window.g45SerNs = function (nom, n, el) {
          penché, coupé sur les bords (comme le fanart Kansas City) ; le voile sombre existant et le bandeau gardent le texte lisible */
       im.style.cssText = 'position:absolute;left:50%;top:50%;width:105%;height:auto;max-width:none;transform:translate(-50%,-52%) rotate(-10deg);opacity:.95;pointer-events:none;';
       im.onerror = function () { im.remove(); };
+      /* 20261115k (capture : logo NBA haut et fin, coupé → « NBA… ») : logo plus haut que large → moins grand, presque droit, entier */
+      im.onload = function () { if (im.naturalHeight > im.naturalWidth * 1.3) { im.style.width = '62%'; im.style.transform = 'translate(-50%,-56%) rotate(-6deg)'; } };
       if (voile) t.insertBefore(im, voile); else t.insertBefore(im, t.firstChild);   /* 20261115j : sous le voile (bannière) */
       t.setAttribute('data-g45lg', url);
       var nom = t.lastElementChild && t.lastElementChild.firstElementChild;
