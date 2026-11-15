@@ -88221,7 +88221,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
      ligne 🪜 sous chaque pépite = palier / mise / gain de la simulation 🚀 En montante (_g45LoiMont → window._g45LoiDet, même clé
      équipe + pari + lieu + date) ; ⏳ = palier et mise prévus ; série fermée après des ratés = 🏁 bénéfice de la série. */
   var montL = function (y) {
-    if (y.nc) return '<br><span style="font-size:13px;font-weight:700;color:#c9d3ee;">➖ non compté (1 seul pari par équipe)</span>';   /* 20261114h */
+    if (y.nc) return '<br><span style="font-size:13px;font-weight:700;color:#c9d3ee;">➖ non compté (' + (y.nf ? 'niveau trop faible' : '1 seul pari par équipe') + ')</span>';   /* 20261114h ; 20261116b : nf */
     var d = (window._g45LoiDet || {})[y.id + '|' + y.k + '|' + (y.lieu || '') + '|' + y.t];
     var e2 = function (v) { return (v >= 0 ? '+' : '−') + frC(Math.abs(v)) + ' €'; }, cl = function (v) { return v >= 0 ? '#1ed760' : '#ff6b6b'; };
     /* 20261113g (Antoine : « faut-il mettre en 10 € normal et mode Cockpit ? ») : ligne 💶 10 € à plat (cote FR) au-dessus de la ligne 🪜 */
@@ -88278,6 +88278,11 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     var PEq = {}; L.forEach(function (x) { x.nc = 0; var k = x.j + '|' + x.eid + '|' + x.id; (PEq[k] = PEq[k] || []).push(x); });
     Object.keys(PEq).forEach(function (k) { var g = PEq[k]; if (g.length < 2) return; var cq = function (x) { var q = coteDe(x); return q ? q.c : 99; };
       g.sort(function (a, b) { return (b.cours - a.cours) || (b.pire - a.pire) || (cq(a) - cq(b)); }); g.slice(1).forEach(function (x) { x.nc = 1; }); });
+    /* 20261116b (captures Sint Maarten / Belize : « on peut le laisser mais pas le comptabiliser, niveau trop faible » → « Concacaf A on compte,
+       Concacaf B ou + non ») : Concacaf Nations League → seule la LIGUE A compte. Sonde d'Antoine (scoreboard 13-16/11) : la ligue A joue
+       les « quarterfinals » (puis demies / finale), les ligues B / C la « group-stage » et les « gold-cup-play-in-prelims » → phase gardée
+       par le robot (x.stg = season.slug ESPN) ; pas quart / demie / finale → x.nc + x.nf (affichée, hors bilan / graphique / montante). */
+    L.forEach(function (x) { if (x.lg === 'concacaf.nations.league' && x.stg && !/quarter|semi|final|third/i.test(x.stg)) { x.nc = 1; x.nf = 1; } });
     var Lall = L, jPer = { '1j': 1, '1s': 7, '1m': 30, '1a': 365 }[M.per];   /* 20261113g : la montante se calcule sur TOUT l'historique (paliers justes), seul l'affichage est filtré */
     if (jPer) { var cP = new Date(); cP.setHours(0, 0, 0, 0); cP.setDate(cP.getDate() - jPer); var cS = cP.getFullYear() + '-' + ('0' + (cP.getMonth() + 1)).slice(-2) + '-' + ('0' + cP.getDate()).slice(-2); L = L.filter(function (x) { return String(x.j) >= cS; }); }
     if (!L.length && ((M.d.L || []).length)) return h + '<div style="font-size:14px;">Aucune pépite avec ces filtres.</div></div>';
