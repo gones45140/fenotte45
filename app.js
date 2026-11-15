@@ -89604,7 +89604,7 @@ window.g45SerNs = function (nom, n, el) {
       if (t.querySelector('.g45-acc-ph')) return;
       var ph = document.createElement('img'), voile = t.querySelector(':scope > div');
       ph.src = 'https://r2.thesportsdb.com/images/media/league/banner/srsuyy1421852767.jpg'; ph.alt = ''; ph.className = 'g45-acc-ph';
-      ph.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;';
+      ph.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:right center;pointer-events:none;';   /* 20261115u (« décale, là elle va pas aller loin ») : on montre la DROITE de la bannière = l'avant de la voiture */
       ph.onload = function () { [].forEach.call(t.querySelectorAll(':scope > img:not(.g45-acc-ph)'), function (x) { x.remove(); }); };
       ph.onerror = function () { ph.remove(); };
       if (voile) t.insertBefore(ph, voile); else t.insertBefore(ph, t.firstChild);
