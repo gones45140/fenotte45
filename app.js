@@ -87548,6 +87548,11 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
        (une ligne par pari 🔥), cartes en grille (2 ou 3 par rangée sur PC, 1 sur téléphone) → plus de grand vide entre le texte et le logo. */
     /* 20261116k : mêmes règles « ➖ non compté » que le bilan (Concacaf B / C, UEFA D, 6 moins cotées pour le titre, opposées, cote > 6) */
     try { L.forEach(function (x) { x.nc = 0; x.nf = 0; }); if (window._g45LoiExclure) window._g45LoiExclure(L); } catch (e) {}
+    /* 20261116l (« vu que l'on évite ces matchs, autant les enlever non ? » → oui) : pépites du jour « non comptées » RETIRÉES de la liste
+       (le bilan les garde, grisées) ; une ligne dit combien et pourquoi. */
+    var nRet = L.filter(function (x) { return x.nc; }).length; L = L.filter(function (x) { return !x.nc; });
+    if (nRet) h += '<div style="font-size:13px;color:#c9d3ee;margin:-4px 0 8px;">➖ ' + nRet + ' pépite' + (nRet > 1 ? 's' : '') + ' retirée' + (nRet > 1 ? 's' : '') + ' (niveau trop faible, équipe très mal cotée, cote au-dessus de 6 ou pari opposé sur le même match).</div>';
+    if (!L.length) return h + '<div style="' + CARTE + '">Aucune pépite à jouer pour l\'instant.</div>';
     var G = [], GI = {};
     L.forEach(function (x) { var k = x.eid + '|' + x.id; if (!GI[k]) { GI[k] = { x: x, L: [] }; G.push(GI[k]); } GI[k].L.push(x); });
     h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,430px),1fr));gap:10px;margin-bottom:10px;">';
