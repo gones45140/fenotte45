@@ -89609,8 +89609,15 @@ window.g45SerNs = function (nom, n, el) {
          penché, coupé sur les bords (comme le fanart Kansas City) ; le voile sombre existant et le bandeau gardent le texte lisible */
       im.style.cssText = 'position:absolute;left:50%;top:50%;width:105%;height:auto;max-width:260px;transform:translate(-50%,-52%) rotate(-10deg);opacity:.95;pointer-events:none;';   /* 20261115o (capture PC « trop zoomé ») : plafond 260 px, le téléphone ne change pas */
       im.onerror = function () { im.remove(); };
+      /* 20261115p (capture PC annotée « agrandis pour que les logos logent dedans » → maquette réelle → « oui ») : ÉCRAN LARGE seulement,
+         tuile 230 px de haut et logo ENTIER (88 % de la hauteur, 60 % de la largeur au plus, un peu penché). Téléphone inchangé. */
+      var pc = false; try { pc = window.matchMedia ? window.matchMedia('(min-width: 900px)').matches : (window.innerWidth >= 900); } catch (e) {}
+      if (pc) {
+        t.style.minHeight = '230px';
+        im.style.cssText = 'position:absolute;left:50%;top:50%;height:88%;width:auto;max-width:60%;object-fit:contain;transform:translate(-50%,-50%) rotate(-8deg);opacity:.95;pointer-events:none;';
+      }
       /* 20261115k (capture : logo NBA haut et fin, coupé → « NBA… ») : logo plus haut que large → moins grand, presque droit, entier */
-      im.onload = function () { if (im.naturalHeight > im.naturalWidth * 1.3) { im.style.width = '62%'; im.style.maxWidth = '170px'; im.style.transform = 'translate(-50%,-56%) rotate(-6deg)'; } };
+      im.onload = function () { if (!pc && im.naturalHeight > im.naturalWidth * 1.3) { im.style.width = '62%'; im.style.maxWidth = '170px'; im.style.transform = 'translate(-50%,-56%) rotate(-6deg)'; } };
       if (voile) t.insertBefore(im, voile); else t.insertBefore(im, t.firstChild);   /* 20261115j : sous le voile (bannière) */
       t.setAttribute('data-g45lg', url);
       var nom = t.lastElementChild && t.lastElementChild.firstElementChild;
