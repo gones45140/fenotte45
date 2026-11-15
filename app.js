@@ -77390,7 +77390,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       bestCands(S.combos[S.a] || combo0()).forEach(function (c) {
         var tous = []; SA.slice().reverse().forEach(function (s) { var L0 = s && msS(c, s); if (L0) tous = tous.concat(filtrer(L0)); });
         if (!tous.length) return; var T = calc(c, tous); if (!(T.n >= 15)) return;
-        var p = T.ok / T.n; if (!(p > 0)) return; var cj = 1 / p; if (cj < B.cm) return;
+        var p = T.ok / T.n; if (!(p > 0)) return; var cj = 1 / p; if (cj < B.cm) return;   /* 20261116x (« j'ai pas les cotes en dessous de 1,5 ? ») : + boutons 1,20 et 1,30 (paris très réguliers, cotes basses) */
         R.push({ c: c, lib: libCombo(c), pire: T.pire, p: p, cj: cj, n: T.n });
       });
     } catch (e) {}
@@ -77407,7 +77407,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       + '<div style="font-size:14px;font-weight:800;margin-top:8px;">Lieu</div>' + [['tout', '🌍 Tous'], ['dom', '🏠 Domicile'], ['ext', '✈️ Extérieur']].map(function (x) { return bt(B.lieu === x[0], x[1], 'g45CrBest(\'lieu\',\'' + x[0] + '\')'); }).join('')
       /* 20261112h (Antoine : « pouvoir choisir sur 2 / 3 / 4 / 5 ans ») : même choix que le 📅 des critères (g45cr_ns, nsCr) */
       + ((D && (D.saisons || []).length > 2) ? '<div style="font-size:14px;font-weight:800;margin-top:4px;">📅 Saisons</div>' + (function () { var o = '', nM = D.saisons.length, nC = nsCr(D); for (var q = 2; q <= nM; q++) o += bt(nC === q, q + ' saisons', 'g45CrBest(\'ns\',' + q + ')'); return o; })() : '')
-      + '<div style="font-size:14px;font-weight:800;margin-top:4px;">Cote mini (cote juste)</div>' + [1.5, 1.7, 1.8, 2].map(function (v) { return bt(B.cm === v, String(v.toFixed(2)).replace('.', ','), 'g45CrBest(\'cm\',' + v + ')'); }).join('')
+      + '<div style="font-size:14px;font-weight:800;margin-top:4px;">Cote mini (cote juste)</div>' + [1.2, 1.3, 1.5, 1.7, 1.8, 2].map(function (v) { return bt(B.cm === v, String(v.toFixed(2)).replace('.', ','), 'g45CrBest(\'cm\',' + v + ')'); }).join('')
       + '<div style="font-size:14px;font-weight:800;margin-top:4px;">Trier par</div>' + bt(B.tri === 'pire', '🪜 Pire série', 'g45CrBest(\'tri\',\'pire\')') + bt(B.tri === 'p', '📊 Réussite', 'g45CrBest(\'tri\',\'p\')')
       + '<div onclick="g45CrBest(\'go\')" style="cursor:pointer;margin-top:8px;text-align:center;padding:11px;border-radius:12px;font-size:16px;font-weight:900;background:#2f6bff;">🔍 Chercher (' + bestCands(S.combos[S.a] || combo0()).length + ' paris testés)</div>';
     if (B.R) {
