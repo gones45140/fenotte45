@@ -89636,9 +89636,30 @@ window.g45SerNs = function (nom, n, el) {
         im.style.cssText = 'position:absolute;left:50%;top:50%;height:88%;width:auto;max-width:60%;object-fit:contain;transform:translate(-50%,-50%) rotate(-8deg);opacity:.95;pointer-events:none;';
       }
       /* 20261115k (capture : logo NBA haut et fin, coupé → « NBA… ») : logo plus haut que large → moins grand, presque droit, entier */
-      im.onload = function () { if (!pc && im.naturalHeight > im.naturalWidth * 1.3) { im.style.width = '62%'; im.style.maxWidth = '170px'; im.style.transform = 'translate(-50%,-56%) rotate(-6deg)'; } };
+      im.onload = function () { if (!pc && !t.querySelector('.g45-acc-ph') && im.naturalHeight > im.naturalWidth * 1.3) { im.style.width = '62%'; im.style.maxWidth = '170px'; im.style.transform = 'translate(-50%,-56%) rotate(-6deg)'; } };
       if (voile) t.insertBefore(im, voile); else t.insertBefore(im, t.firstChild);   /* 20261115j : sous le voile (bannière) */
       t.setAttribute('data-g45lg', url);
+      /* 20261115r (Antoine : « foot faudrait une bannière de l'Olympique Lyonnais, ainsi que le rugby » → maquette OL 5 choix → photo 2
+         yxuqvx1420582853 ; « attention Toulouse c'est le rugby ») : ⚽ / 🏉 = PHOTO DU CLUB DE CŒUR en fond + logo en petit en haut à droite.
+         OL = photo choisie ; tout autre club (amis, Stade Toulousain…) = 1re photo TheSportsDB du club DU BON SPORT via _g45BgChercher
+         (fond d'écran par équipe 20261007e : filtre strSport → le rugby ne prend PAS le Toulouse FC ; cache g45bgclub1_ 30 j).
+         Pas de photo / photo en erreur → le grand logo reste. */
+      if ((v === '⚽' || v === '🏉') && C && C.u && C.u.n) {
+        var nomC = C.u.n, logoCss = im.style.cssText;
+        var ov = (v === '⚽' && /lyon/i.test(nomC)) ? 'https://r2.thesportsdb.com/images/media/team/fanart/yxuqvx1420582853.jpg'
+          : (v === '🏉' && /toulous/i.test(nomC)) ? 'https://r2.thesportsdb.com/images/media/team/fanart/etm5og1623729932.jpg' : '';   /* photo Stade Toulousain envoyée par Antoine */
+        var pr = ov ? Promise.resolve({ u: ov }) : (typeof _g45BgChercher === 'function' ? Promise.resolve(_g45BgChercher(nomC)) : Promise.resolve({}));
+        pr.then(function (o) {
+          if (!o || !o.u || !t.isConnected || t.getAttribute('data-g45lg') !== url || t.querySelector('.g45-acc-ph')) return;
+          var ph = document.createElement('img');
+          ph.src = o.u; ph.alt = ''; ph.className = 'g45-acc-ph';
+          ph.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;';
+          ph.onerror = function () { ph.remove(); im.style.cssText = logoCss; };
+          t.insertBefore(ph, im);
+          im.style.cssText = 'position:absolute;right:10px;top:10px;height:clamp(40px,11vw,72px);width:auto;max-width:35%;object-fit:contain;filter:drop-shadow(0 2px 6px rgba(0,0,0,.85));pointer-events:none;';
+          t.style.minHeight = 'clamp(96px,22vw,130px)';
+        }).catch(function () {});
+      }
       var nom = t.lastElementChild && t.lastElementChild.firstElementChild;
       if (nom && fav && !/❤️/.test(nom.textContent)) nom.textContent = nom.textContent + ' ❤️';
     });
