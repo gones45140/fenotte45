@@ -87853,8 +87853,12 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
       + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">' + kp(f2(ben), 'bénéfice', ben > 0.005 ? '#1ed760' : ben < -0.005 ? '#ff5a5a' : '#fff')
       + kp(f2(mis).replace(/^\+/, ''), 'misé (réglés)' + (enj ? ' · ' + f2(enj).replace(/^\+/, '') + ' en cours' : ''))
       + kp('✅ ' + nw + ' · ❌ ' + nl, 'paris gagnés / perdus') + kp('🛑 ' + nab, 'séries abandonnées', nab ? '#ff9f43' : '#fff') + '</div>';
+    /* 20261115x (capture PC : « ce graphique n'a pas sa place ici, il manque des données, trait trop épais, faire comme ce screen » = la courbe
+       du Bilan) : plus de graphique dans le Tableau de bord → bouton vers 📈 Bilan filtré 📉 Cotes basses (même courbe que le Bilan : euros,
+       dates, détail au toucher). L'ancien SVG reste en dessous, désactivé (if (false && …)). */
+    h += '<button onclick="window._g45BilMeth=\'cb\';g45CkOnglet(\'bil\')" style="margin-top:10px;background:#4d7cff;border:0;border-radius:9px;padding:8px 14px;font-weight:800;font-size:14px;color:#fff;cursor:pointer;">📈 Voir le graphique (Bilan · 📉 Cotes basses)</button>';
     /* graphique */
-    if (L.length) {
+    if (false && L.length) {
       var W = 340, Hh = 150, pad = 8, cum = [0]; L.forEach(function (b) { cum.push(cum[cum.length - 1] + gain(b)); });
       var mx = Math.max.apply(null, cum), mn = Math.min.apply(null, cum); if (mx === mn) { mx += 1; mn -= 1; }
       var X = function (i) { return pad + (W - 2 * pad) * i / Math.max(1, cum.length - 1); }, Y = function (v) { return pad + (Hh - 2 * pad) * (mx - v) / (mx - mn); };
@@ -87866,7 +87870,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
       L.forEach(function (b, i) { g += '<circle cx="' + X(i + 1).toFixed(1) + '" cy="' + Y(cum[i + 1]).toFixed(1) + '" r="4" fill="' + (b.win ? '#1ed760' : '#ff5a5a') + '"/>'; });
       g += '</svg><div style="font-size:13px;color:#c9d3ee;">📈 Bénéfice cumulé, pari après pari · 🟢 gagné · 🔴 perdu · trait rouge = série abandonnée</div>';
       h += g;
-    } else h += '<div style="margin-top:8px;color:#c9d3ee;">Pas encore de pari 📉 réglé sur cette période.</div>';
+    } else if (!L.length) h += '<div style="margin-top:8px;color:#c9d3ee;">Pas encore de pari 📉 réglé sur cette période.</div>';
     /* cartes équipe + lieu */
     var G = {}; A.concat(H).forEach(function (b) { var k = b.n + '§' + (b.mk || ''); (G[k] = G[k] || { n: b.n, k: b.mk || '', l: [] }).l.push(b); });
     Object.keys(cles).forEach(function (k) { if (!G[k]) { var i = k.indexOf('§'); G[k] = { n: k.slice(0, i), k: k.slice(i + 1), l: [] }; } });
