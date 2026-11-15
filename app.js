@@ -89604,6 +89604,25 @@ window.g45SerNs = function (nom, n, el) {
       if (t.getAttribute('data-g45lg') === url) return;
       [].forEach.call(t.querySelectorAll(':scope > img, :scope > span[aria-hidden]'), function (x) { x.remove(); });
       var voile = t.querySelector(':scope > div'), im = document.createElement('img');
+      /* 20261115q (capture PC « ça fait quand même moins bien que la belle image de MMA » → maquette 4 photos par sport → choix d'Antoine
+         « nhl 2, nba 1 (on voit pas grand-chose), nfl 3, mlb 1, nrl 3 ») : sports US + NRL = VRAIE PHOTO de la ligue (fanart TheSportsDB,
+         lookupleague 4380 / 4387 / 4391 / 4424 / 4416 sondé par Antoine le 15/11) qui remplit la tuile, comme MMA, + PETIT logo en haut à droite.
+         NBA (photo très sombre) éclaircie. Photo absente / en erreur → l'ancien logo géant (20261115j / p) reprend sa place. */
+      var PH = { nhl: 'typuvs1421795648', nba: 'wtqwqq1453033773', nfl: 'cofxkn1631264748', mlb: '9ppjtt1521040145', nrl: 'xqqupr1422582318' };
+      if (LG[v] && PH[LG[v]]) {
+        var ph = document.createElement('img');
+        ph.src = 'https://r2.thesportsdb.com/images/media/league/fanart/' + PH[LG[v]] + '.jpg'; ph.alt = ''; ph.loading = 'lazy'; ph.className = 'g45-acc-ph';
+        ph.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;' + (LG[v] === 'nba' ? 'filter:brightness(1.7) contrast(1.05);' : '');
+        im.src = url; im.alt = ''; im.className = 'g45-acc-lg';
+        im.style.cssText = 'position:absolute;right:10px;top:10px;height:clamp(40px,11vw,72px);width:auto;max-width:35%;object-fit:contain;filter:drop-shadow(0 2px 6px rgba(0,0,0,.85));pointer-events:none;';
+        im.onerror = function () { im.remove(); };
+        ph.onerror = function () { ph.remove(); t.removeAttribute('data-g45lg'); t.setAttribute('data-g45noph', '1'); try { habiller(); } catch (e) {} };
+        if (!t.hasAttribute('data-g45noph')) {
+          if (voile) { t.insertBefore(ph, voile); t.insertBefore(im, voile); } else { t.insertBefore(im, t.firstChild); t.insertBefore(ph, t.firstChild); }
+          t.setAttribute('data-g45lg', url); return;
+        }
+        im = document.createElement('img');
+      }
       im.src = url; im.alt = ''; im.loading = 'lazy'; im.className = 'g45-acc-lg';
       /* 20261115j (« ça fait moins bannière que Kansas » → maquette « logo géant » → « oui go bannière ») : logo GÉANT qui remplit la tuile,
          penché, coupé sur les bords (comme le fanart Kansas City) ; le voile sombre existant et le bandeau gardent le texte lisible */
