@@ -76865,6 +76865,9 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     return { e: Math.round(R.tot), bo: R.bo, c: c };
   }
   function sqDe(c, ms) { return jFiltre(c, ms).filter(function (m) { return valeur(c, m).n > 0; }).map(function (m) { var v = valeur(c, m); return v.ok * 2 >= v.n; }); }
+  /* 20261115y (« Et si j'avais joué autrement ? » : « en dessous on a les vraies cotes… et il n'y a pas cote basse ») : VRAIE cote de chaque
+     match de la série (même filtre et même ordre que sqDe ; 0 = cote inconnue → cote de la carte), gardée avec la série (R.cq). */
+  function cqDe(c, ms) { return jFiltre(c, ms).filter(function (m) { return valeur(c, m).n > 0; }).map(function (m) { var x = 0; try { x = +coteM(c, m) || 0; } catch (e) {} return x > 1 ? Math.round(x * 100) / 100 : 0; }); }
   function sqTxt(sq) { return (sq || []).map(function (x) { return x ? '1' : '0'; }).join(''); }
   function psSim(out, u) { Object.keys(out).forEach(function (k) { var R = out[k]; if (R && R.sq) { R.sq = sqTxt(R.sq); try { R.sim = simDe(R.sq, u); } catch (e) {} } }); }
   /* 20261102q (capture : « mince, ça met 1,56 à chaque 😅 ») : COTE PAR CARTE (u.ck), touchée sur la carte (« à 1,56 ✏️ ») ; la série gardée (sq « 1101… »,
@@ -78391,7 +78394,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     });
     (D.saisons || []).slice().reverse().forEach(function (sa) { if (sa && sa.ms) tous = tous.concat(filtrer(sa.ms)); });
     var px = []; (D._px || []).forEach(function (sa) { if (!sa || !sa.ms) return; var ms = filtrer(sa.ms); if (!ms.length) return; var R = calc(c, ms); if (R.n) px.push(R.pire); });   /* 20261110b : saisons mises de côté (barrées) */
-    return { lib: libCombo(c), ans: ans, p: p, px: px, ns: D._ns || 0, nt: (D.saisons || []).length + (D._px || []).length, tot: tous.length ? calc(c, tous).pire : 0, sq: sqDe(c, tous) };   /* 20261102p : sq → 💶 */
+    return { lib: libCombo(c), ans: ans, p: p, px: px, ns: D._ns || 0, nt: (D.saisons || []).length + (D._px || []).length, tot: tous.length ? calc(c, tous).pire : 0, sq: sqDe(c, tous), cq: cqDe(c, tous) };   /* 20261102p : sq → 💶 ; 20261115y : cq = vraies cotes */
   }
   async function serCtx(nom, ft) {   /* { sp, lg, id } ou { err } ; ft = carte ⚽ (sinon espnResolveTeam pourrait trouver un club de foot homonyme) */
     var x = null; try { x = await _g45CompoCtx(nom, ft); } catch (e) {}
@@ -79050,7 +79053,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       var u = ckU(m.n); if (!u || U[u.n]) return;
       var x = { n: u.n, color: u.color || '', s: u.s, type: u.type || '', sport: u.sport || '', note: u.note || '', pm: {}, psL: null };
       ['dom', 'ext'].forEach(function (l) { try { if (u.s != null && typeof STRATS !== 'undefined' && _g45Grille(u)) { var p = (typeof _g45PalLieu === 'function') ? _g45PalLieu(u, l) : (parseInt(u.l, 10) || 1); x.pm[l] = { p: p, mi: _g45Grille(u, l)[p - 1] }; } } catch (e) {} });
-      if (u.psL) { x.psL = {}; Object.keys(u.psL).forEach(function (k) { var R = Object.assign({}, u.psL[k]); delete R.sq;   /* 20261102q : série brute pas publiée */ if (!R.err && R.p) { try { R.pa = window._g45PalCarte(R.tot, u); } catch (e) {} } x.psL[k] = R; }); }
+      if (u.psL) { x.psL = {}; Object.keys(u.psL).forEach(function (k) { var R = Object.assign({}, u.psL[k]); delete R.sq; delete R.cq;   /* 20261102q : série brute pas publiée */ if (!R.err && R.p) { try { R.pa = window._g45PalCarte(R.tot, u); } catch (e) {} } x.psL[k] = R; }); }
       U[u.n] = x;
     });
     var P = ckParis().map(function (y) { var b = y.b; return { j: y.j, r: y.r, g: y.g, b: { n: b.n, domicile: b.domicile || '', type: b.type || '', target: b.target || '', l: b.l || 1, m: b.m, cote: b.cote, comp: b.comp || '', t: b.t || '', heure: b.heure || '', date: b.date || '', id: b.id || '', isCashout: b.isCashout ? 1 : 0, isFreebet: b.isFreebet ? 1 : 0, sport: b.sport || '' } }; });   /* 20261029l : + champs de la fiche (bet45) */
@@ -87401,7 +87404,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   var METH = { sel: '', cote: 0 };
   function methListe() {
     var L = [];
-    ((typeof state !== 'undefined' && state.u) || []).forEach(function (u) { var P = (u && u.psL) || {}; ['dom', 'ext', 'glob'].forEach(function (k) { var R = P[k]; if (R && typeof R.sq === 'string' && R.sq.length >= 10) L.push({ u: u, k: k, sq: R.sq }); }); });
+    ((typeof state !== 'undefined' && state.u) || []).forEach(function (u) { var P = (u && u.psL) || {}; ['dom', 'ext', 'glob'].forEach(function (k) { var R = P[k]; if (R && typeof R.sq === 'string' && R.sq.length >= 10) L.push({ u: u, k: k, sq: R.sq, cq: (R.cq && R.cq.length === R.sq.length) ? R.cq : null }); }); });
     return L;
   }
   function methJouer(sq, cote, G, une) {
@@ -87422,7 +87425,20 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     var lo = 1.01, hi = 20; for (var i = 0; i < 40; i++) { var mi = (lo + hi) / 2; if (b(mi) >= 0) hi = mi; else lo = mi; }
     return Math.ceil(hi * 100 - 1e-6) / 100;
   }
-  window._g45MethT = { jouer: methJouer, liste: methListe, seuil: methSeuil };   /* tests */
+  /* 20261115y : rejeu avec les VRAIES cotes match par match (cq) et la même mécanique que la simulation des critères (window._g45CrSimT :
+     🚀 / 🐚 / 🪜 / 📏 / 📉, plancher 1,20 et arrêt du 📉 compris) ; cote inconnue d'un match → cote de la carte. Même sortie que methJouer. */
+  function methJouerReel(sq, cq, cote, G, une) {
+    var SIM = window._g45CrSimT; if (typeof SIM !== 'function') return null;
+    var F = [1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144], D = []; for (var j = 1; j <= 60; j++) D.push(une * j);
+    var seq = sq.split('').map(function (x, i) { return { s: '', ok: x === '1', c: cq && cq[i] > 1 ? cq[i] : 0 }; });
+    var un = function (meth, mises) {
+      var R = SIM(seq, mises, cote, 0, meth), haut = 0, mn = 0, ch = 0;
+      (R.det || []).forEach(function (d) { if (d.t > haut) haut = d.t; if (d.t < mn) mn = d.t; if (haut - d.t > ch) ch = haut - d.t; });
+      return { b: R.tot, mn: mn, mx: R.max, ch: ch, bout: (meth === 'mont' || meth === 'cb') ? R.bo : 0, n: (R.det || []).length };
+    };
+    return { mont: un('mont', G), fib: un('fib', F.map(function (f) { return une * f; })), dal: un('dal', D), fix: un('fix', [une]), cb: un('cb', [une]) };
+  }
+  window._g45MethT = { jouer: methJouer, liste: methListe, seuil: methSeuil, reel: methJouerReel };   /* tests */
   function methDessiner() {
     var z = $('g45-ck-meth'); if (!z) return;
     var L = methListe(), h = '<div style="font-size:17px;font-weight:800;">⚖️ Et si j\'avais joué autrement ?</div>';
@@ -87430,28 +87446,33 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     var cur = L.filter(function (x) { return x.u.n + '|' + x.k === METH.sel; })[0] || L[0]; METH.sel = cur.u.n + '|' + cur.k;
     var G = (typeof _g45Grille === 'function' ? _g45Grille(cur.u, cur.k === 'glob' ? '' : cur.k) : null) || [1, 2, 6, 18, 54, 162, 486, 1458, 4374], une = +G[0] || 1;
     var cote = METH.cote > 1 ? METH.cote : (+cur.u.ck > 1 ? +cur.u.ck : 1.7), O = methJouer(cur.sq, cote, G, une);
+    var nReel = cur.cq ? cur.cq.filter(function (x) { return x > 1; }).length : 0, OR = null;   /* 20261115y */
+    try { OR = methJouerReel(cur.sq, nReel ? cur.cq : null, cote, G, une); } catch (e) { OR = null; }
+    if (OR && nReel) { O.mont = OR.mont; O.fib = OR.fib; O.dal = OR.dal; O.fix = OR.fix; }
     var ic = { dom: '🏠', ext: '✈️', glob: '🌍' }, nE = function (t) { return String(t).replace(/[\\'"<>&]/g, ''); };
-    h += '<div style="font-size:14px;color:#c9d3ee;">On rejoue les vrais matchs de la carte (' + cur.sq.length + ' matchs, 4 saisons, même pari) avec 4 façons de miser. P1 = ' + euC(une) + '.</div>'
+    h += '<div style="font-size:14px;color:#c9d3ee;">On rejoue les vrais matchs de la carte (' + cur.sq.length + ' matchs, 4 saisons, même pari) avec 5 façons de miser. P1 = ' + euC(une) + '.</div>'
+      + '<div style="font-size:14px;margin-top:3px;color:' + (nReel ? '#1ed760' : '#ffd34d') + ';">' + (nReel ? '✅ Vraies cotes des archives pour ' + nReel + ' match' + (nReel > 1 ? 's' : '') + ' sur ' + cur.sq.length + (nReel < cur.sq.length ? ' (les autres : la cote ci-dessous)' : '') + '.' : '⚠️ Pas de vraies cotes gardées pour cette carte : cote ci-dessous pour tous les matchs (🃏 Mes cartes → « 🔄 Calculer mes séries » pour les récupérer).') + '</div>'
       + '<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;"><select onchange="g45MethSel(this.value)" style="font-size:15px;font-weight:700;padding:7px 9px;border-radius:10px;background:#141c33;color:#fff;border:1px solid #2a3a63;max-width:100%;">'
       + L.map(function (x) { var v = x.u.n + '|' + x.k; return '<option value="' + esc(v) + '"' + (v === METH.sel ? ' selected' : '') + '>🃏 ' + esc(x.u.n) + ' ' + ic[x.k] + '</option>'; }).join('') + '</select>'
       + '<span style="font-size:14px;">cote <input type="text" inputmode="decimal" value="' + String(cote).replace('.', ',') + '" onchange="g45MethCote(this.value)" style="width:64px;padding:6px 8px;border-radius:10px;border:1px solid #2a3a63;background:#0b1226;color:#fff;font-size:15px;"> ✏️</span></div>';
     var coul = function (v) { return v > 0.5 ? '#1ed760' : v < -0.5 ? '#ff9f43' : '#fff'; };
     var lig = function (t, ex, R, rouge, cle) {
-      var se = methSeuil(cur.sq, G, une, cle), seT = se == null ? '<span style="color:#ff5a5a;">🎯 jamais rentable (même à 20)</span>' : '🎯 rentable à partir d\'une cote de <b style="color:' + (cote >= se ? '#1ed760' : '#ff9f43') + ';">' + String(se.toFixed(2)).replace('.', ',') + '</b>' + (cote >= se ? ' ✅' : '');
+      var se = (nReel || cle === 'cb') ? -1 : methSeuil(cur.sq, G, une, cle), seT = se === -1 ? '' : se == null ? '<span style="color:#ff5a5a;">🎯 jamais rentable (même à 20)</span>' : '🎯 rentable à partir d\'une cote de <b style="color:' + (cote >= se ? '#1ed760' : '#ff9f43') + ';">' + String(se.toFixed(2)).replace('.', ',') + '</b>' + (cote >= se ? ' ✅' : '');
       var c3 = function (v, l, col) { return '<div style="background:#0f1730;border-radius:8px;padding:5px;text-align:center;"><b style="display:block;font-size:16px;color:' + col + ';">' + v + '</b><span style="font-size:13px;color:#c9d3ee;">' + l + '</span></div>'; };
       return '<div style="border-top:1px solid #1c2747;padding:9px 0;"><b>' + t + '</b><br><span style="font-size:13px;color:#c9d3ee;">' + ex + '</span>'
         + '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:6px;margin-top:4px;">' + c3((R.b > 0 ? '+' : R.b < 0 ? '−' : '') + euC(Math.abs(R.b)), 'bénéfice', coul(R.b)) + c3('−' + euC(Math.abs(R.mn)), 'pire creux', rouge ? '#ff5a5a' : '#ff9f43') + c3('−' + euC(R.ch), 'plus grosse chute', rouge ? '#ff5a5a' : '#ff9f43') + c3(euC(R.mx), 'mise max', rouge ? '#ff5a5a' : '#fff') + '</div>'
         + '<div style="font-size:14px;margin-top:4px;">' + seT + '</div>'
-        + (R.bout ? '<div style="font-size:13px;color:#ff5a5a;margin-top:3px;">⚠️ ' + R.bout + ' série' + (R.bout > 1 ? 's' : '') + ' perdue' + (R.bout > 1 ? 's' : '') + ' jusqu\'au dernier palier (P' + G.length + ')</div>' : '') + '</div>';
+        + (R.bout ? '<div style="font-size:13px;color:#ff5a5a;margin-top:3px;">⚠️ ' + R.bout + ' série' + (R.bout > 1 ? 's' : '') + ' perdue' + (R.bout > 1 ? 's' : '') + (cle === 'cb' ? ' jusqu\'à l\'arrêt 🛑' : ' jusqu\'au dernier palier (P' + G.length + ')') + '</div>' : '') + '</div>';
     };
     h += lig('🚀 Ta montante (Cockpit)', 'après une défaite : 2 × tout ce qui est perdu (ta grille, ' + G.length + ' paliers). Une victoire rattrape tout.', O.mont, O.mont.mx > 50 * une, 'mont')
       + lig('🐚 Fibonacci', 'après une défaite, la mise suit 1-1-2-3-5-8… × P1. Après une victoire : 2 cases en arrière.', O.fib, false, 'fib')
       + lig('🪜 D\'Alembert', '+' + euC(une) + ' après une défaite, −' + euC(une) + ' après une victoire.', O.dal, false, 'dal')
       + lig('📏 Mise fixe', 'toujours ' + euC(une) + ', quoi qu\'il arrive.', O.fix, false, 'fix')
+      + (OR ? lig('📉 Cotes basses', 'P1 = ' + euC(une) + ' ; après une défaite : cote < 1,50 → mise d\'avant × (1 ÷ (cote − 1) + 2), sinon × 2,5 puis × 3 ; match à moins de 1,20 sauté ; arrêt à C' + (function () { try { var v = localStorage.getItem('g45cr_cbstop'); return v == null ? 5 : (+v || '—'); } catch (e) { return 5; } })() + ' (comme dans les critères).', OR.cb, false, 'cb') : '')   /* 20261115y */
       /* 20261106c (« y a pas Carolina ») : cartes dont la série date d'avant la suite match par match (sq) → à recalculer */
       + (function () { var A = []; ((typeof state !== 'undefined' && state.u) || []).forEach(function (u) { var P = (u && u.psL) || {}; if (['dom', 'ext', 'glob'].some(function (k) { var R = P[k]; return R && !R.err && R.p && R.p.length && typeof R.sq !== 'string'; })) A.push(esc(u.n)); });
         return A.length ? '<div style="font-size:14px;color:#ffd34d;margin-top:6px;">🔄 Pas encore dans la liste (série calculée avant le 02/11, à recalculer dans 🃏 Mes cartes) : ' + A.join(', ') + '.</div>' : ''; })()
-      + '<div style="font-size:13px;color:#c9d3ee;margin-top:4px;">« Pire creux » = le plus bas par rapport au départ · « plus grosse chute » = la plus grosse perte depuis le plus haut atteint (la réserve qu\'il faut avoir). Même cote pour tous les matchs (cote de la carte si tu l\'as notée).</div>';
+      + '<div style="font-size:13px;color:#c9d3ee;margin-top:4px;">« Pire creux » = le plus bas par rapport au départ · « plus grosse chute » = la plus grosse perte depuis le plus haut atteint (la réserve qu\'il faut avoir). ' + (nReel ? 'Vraie cote de clôture de chaque match (archives) ; la cote ci-dessous ne sert qu\'aux matchs sans cote.' : 'Même cote pour tous les matchs (cote de la carte si tu l\'as notée).') + '</div>';
     z.innerHTML = h;
   }
   window._g45MethDessiner = methDessiner;
