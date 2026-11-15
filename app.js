@@ -89598,6 +89598,17 @@ window.g45SerNs = function (nom, n, el) {
     /* 20261115s (capture PC annotée « agrandis les cadres ») : écran large → TOUTES les tuiles du mur à 230 px de haut
        (photos, logos, F1, MMA, cyclisme, biathlon…). Téléphone inchangé. */
     try { if (window.matchMedia && window.matchMedia('(min-width: 900px)').matches) [].forEach.call(zone.querySelectorAll('[data-k]'), function (t) { t.style.minHeight = '230px'; }); } catch (e) {}
+    /* 20261115t (Antoine : « et F1 on a quoi en image » → bannière de la ligue TheSportsDB 4370 envoyée par lui) : tuile F1 = bannière
+       F1 en fond (cover) à la place du logo sur rectangle sombre ; l'ancienne image n'est retirée qu'une fois la bannière chargée. */
+    [].forEach.call(zone.querySelectorAll('[data-k="🏎"]'), function (t) {
+      if (t.querySelector('.g45-acc-ph')) return;
+      var ph = document.createElement('img'), voile = t.querySelector(':scope > div');
+      ph.src = 'https://r2.thesportsdb.com/images/media/league/banner/srsuyy1421852767.jpg'; ph.alt = ''; ph.className = 'g45-acc-ph';
+      ph.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;';
+      ph.onload = function () { [].forEach.call(t.querySelectorAll(':scope > img:not(.g45-acc-ph)'), function (x) { x.remove(); }); };
+      ph.onerror = function () { ph.remove(); };
+      if (voile) t.insertBefore(ph, voile); else t.insertBefore(ph, t.firstChild);
+    });
     [].forEach.call(zone.querySelectorAll('[data-k]'), function (t) {
       var v = t.getAttribute('data-k'); if (/g45AccClub/.test(t.getAttribute('onclick') || '')) return;   /* bet45 : « Choisis ton club » */
       var url = '', fav = 0;
