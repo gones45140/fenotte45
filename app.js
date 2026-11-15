@@ -87546,6 +87546,8 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     if (!L.length) return h + '<div style="' + CARTE + '">Aucune pépite pour l\'instant' + (LOI.f !== 'tous' ? ' dans ce sport' : '') + '.</div>';
     /* 20261105w (« Plzeň 2 fois » → « oui ça sera mieux, fais en sorte qu'il n'y ait pas trop un trou au milieu ») : UNE carte par équipe et par match
        (une ligne par pari 🔥), cartes en grille (2 ou 3 par rangée sur PC, 1 sur téléphone) → plus de grand vide entre le texte et le logo. */
+    /* 20261116k : mêmes règles « ➖ non compté » que le bilan (Concacaf B / C, UEFA D, 6 moins cotées pour le titre, opposées, cote > 6) */
+    try { L.forEach(function (x) { x.nc = 0; x.nf = 0; }); if (window._g45LoiExclure) window._g45LoiExclure(L); } catch (e) {}
     var G = [], GI = {};
     L.forEach(function (x) { var k = x.eid + '|' + x.id; if (!GI[k]) { GI[k] = { x: x, L: [] }; G.push(GI[k]); } GI[k].L.push(x); });
     h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,430px),1fr));gap:10px;margin-bottom:10px;">';
@@ -87565,12 +87567,13 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
       var lg = /^https:\/\//.test(x.logo || '') ? x.logo : (F.logo || F.img || ''), al = /^https:\/\//.test(x.alogo || '') ? x.alogo : '';
       var bd = 'display:inline-block;background:rgba(11,16,29,.66);border-radius:8px;padding:3px 8px;';
       var lignes = g.L.map(function (y) {
-        var pal = Math.min(9, y.pire + 3), sec = pal - (y.pire + 1);
-        return '<div style="' + bd + 'font-size:15px;"><span style="font-weight:900;border-radius:7px;padding:0 6px;margin-right:6px;background:#3a0f0f;border:1px solid #ff5a5a;">🔥 ' + y.cours + ' / ' + y.pire + '</span><b style="color:#ffd34d;">' + esc(y.lib) + '</b> <span style="font-size:13px;color:#dfe6f7;">(' + (y.lieu === 'tout' ? 'tous lieux' : y.d ? 'à domicile' : 'à l\'extérieur') + ')</span>' + (function () { var t = ''; try { t = window._g45LoiCote && window._g45LoiCote.txt ? window._g45LoiCote.txt(y) : ''; } catch (e) {} return t ? ' <b style="color:#f5c542;white-space:nowrap;">· ' + t + '</b>' : ''; })()
+        var pal = Math.max(y.pire + 1, Math.min(9, y.pire + 3)), sec = pal - (y.pire + 1);   /* 20261116k : Bucks 9/9 affichait « + -1 de sécurité » */
+        return '<div style="' + bd + 'font-size:15px;' + (y.nc ? 'opacity:.6;' : '') + '"><span style="font-weight:900;border-radius:7px;padding:0 6px;margin-right:6px;background:#3a0f0f;border:1px solid #ff5a5a;">🔥 ' + y.cours + ' / ' + y.pire + '</span><b style="color:#ffd34d;">' + esc(y.lib) + '</b> <span style="font-size:13px;color:#dfe6f7;">(' + (y.lieu === 'tout' ? 'tous lieux' : y.d ? 'à domicile' : 'à l\'extérieur') + ')</span>' + (function () { var t = ''; try { t = window._g45LoiCote && window._g45LoiCote.txt ? window._g45LoiCote.txt(y) : ''; } catch (e) {} return t ? ' <b style="color:#f5c542;white-space:nowrap;">· ' + t + '</b>' : ''; })()
           + '<br><span style="font-size:14px;">' + y.cours + ' raté' + (y.cours > 1 ? 's' : '') + ' de suite · pire série ' + y.pire + (y.p && y.p.length ? ' <span style="font-size:13px;color:#dfe6f7;">(' + y.p.join('·') + ')</span>' : '') + '</span>'
           /* 20261106l (Plzeň, « A + ») : séries sur la phase principale ; réussite en QUALIFICATION pendant la série = mention, non comptée */
           + (y.qv ? '<br><span style="font-size:14px;color:#ffd34d;">⚠️ pari réussi en qualification le ' + new Date(y.qv).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) + ' (non compté)</span>' : '')
-          + '<br><span style="font-size:13px;color:#dfe6f7;">→ ' + (y.pire + 1) + ' paliers' + (sec ? ' + ' + sec + ' de sécurité = ' + pal + ' paliers' : '') + ' · ' + y.ok + '/' + y.n + ' réussis</span></div>';
+          + '<br><span style="font-size:13px;color:#dfe6f7;">→ ' + (y.pire + 1) + ' paliers' + (sec ? ' + ' + sec + ' de sécurité = ' + pal + ' paliers' : '') + ' · ' + y.ok + '/' + y.n + ' réussis</span>'
+          + (y.nc && window._g45LoiNfTxt ? '<br><span style="font-size:14px;font-weight:800;color:#ffb3b3;">➖ non compté (' + window._g45LoiNfTxt(y) + ') : à ne pas jouer</span>' : '') + '</div>';
       }).join('');
       h += '<div style="position:relative;overflow:hidden;border-radius:12px;min-height:180px;border-left:4px solid ' + cc + ';background:linear-gradient(90deg,' + cc + '8c 0%,' + cc + '55 55%,' + cc + '30 100%);color:#fff;font-size:15px;line-height:1.45;text-shadow:0 1px 3px rgba(0,0,0,.85);">'
         + (F.vis ? '<img src="' + esc(F.vis) + '" alt="" loading="lazy" onerror="this.remove()" style="position:absolute;left:0;top:-25%;width:100%;height:150%;object-fit:cover;opacity:.7;pointer-events:none;"><div style="position:absolute;inset:0;background:linear-gradient(90deg,rgba(10,14,26,.55),rgba(10,14,26,.15) 60%,rgba(10,14,26,.45));pointer-events:none;"></div>' : '')
@@ -88201,6 +88204,38 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     var ouv = Object.keys(E).filter(function (k) { return E[k] > 1; });
     return { n: n, g: Math.round(g * 100) / 100, pmax: pmax, mmax: mmax, ouv: ouv.length, prochs: ouv.slice(0, 3).map(function (k) { var p = E[k]; return 'P' + p + ' = ' + G[Math.min(p, G.length) - 1] + ' €'; }).join(', ') + (ouv.length > 3 ? '…' : '') };
   };
+  /* 20261116k (capture Pépites du jour : « là rien ne bouge ? ») : règles « ➖ non compté » (20261116b → j) dans UNE fonction, utilisée par le
+     bilan ET par la liste des pépites du jour (loiHtml) : x.nc = 1 + x.nf (1 niveau trop faible, 2 équipe trop faible pour le book,
+     3 pépite opposée, 4 cote au-dessus de 6). Ne touche pas aux pépites déjà marquées (1 seul pari par équipe). */
+  window._g45LoiExclure = function (L) {
+    L.forEach(function (x) { if ((x.lg === 'concacaf.nations.league' && x.stg && !/quarter|semi|final|third/i.test(x.stg))
+      || (x.lg === 'uefa.nations' && /^D/i.test(String(x.grp || '')))) { x.nc = 1; x.nf = 1; }
+      /* 20261116h (« comment éviter les pièges des équipes faibles dès P1 ? » → « les 6 dernières, que l'on ne joue pas ») : NBA / NHL / NFL / MLB,
+         équipe parmi les 6 MOINS cotées de sa ligue pour le titre (x.fr, rang gardé par le robot chaque matin) → non comptée */
+      else if (x.fr != null && +x.fr <= 6 && !x.sv) { x.nc = 1; x.nf = 2; }
+      /* 20261116j (capture Turquie en France, Victoire 12,00 ≈ 11,28 FR, 0 point, aucun enjeu : « j'aime pas du tout » → cote max « 6 ») :
+         cote FR estimée au-dessus de 6,00 → non comptée */
+      else if (!x.sv && (function () { var q = coteDe(x); return q && coteFr(q.c) > 6; })()) { x.nc = 1; x.nf = 4; } });
+    /* 20261116i (capture Croatie – Tchéquie : Croatie « Victoire » 4/4 et Tchéquie « Victoire ou nul » 4/4 = l'inverse l'une de l'autre, une perd
+       forcément → « oui ») : 2 pépites OPPOSÉES d'un même match (victoire ↔ victoire ou nul de l'adversaire, vainqueur ↔ vainqueur de l'adversaire,
+       plus ↔ moins de la même ligne) → UNE seule comptée : meilleur taux de réussite passé (ok / n, gardé par le robot), puis la plus longue série
+       en cours, puis la pire série ; l'autre « ➖ non compté (pépite opposée sur le même match) » (x.nf = 3). */
+    (function () {
+      var opp = function (a, b) {
+        if (a.eid !== b.eid) return false; var ka = String(a.k), kb = String(b.k), ma = /^([ou])(\d\d)$/.exec(ka), mb = /^([ou])(\d\d)$/.exec(kb);
+        if (ma && mb) return ma[1] !== mb[1] && ma[2] === mb[2];
+        if (String(a.id) === String(b.id)) return false;
+        return (ka === 'v' && kb === 'vn') || (ka === 'vn' && kb === 'v') || (ka === 'vq' && kb === 'vq');
+      };
+      var tx = function (x) { return x.n > 0 ? x.ok / x.n : -1; };
+      var parM = {}; L.forEach(function (x) { if (!x.nc) (parM[x.eid] = parM[x.eid] || []).push(x); });
+      Object.keys(parM).forEach(function (e) { var g = parM[e]; for (var i = 0; i < g.length; i++) for (var j = i + 1; j < g.length; j++) {
+        var a = g[i], b = g[j]; if (a.nc || b.nc || !opp(a, b)) continue;
+        var d = (tx(b) - tx(a)) || (b.cours - a.cours) || (b.pire - a.pire), perd = d > 0 ? a : b; perd.nc = 1; perd.nf = 3; } });
+    })();
+    return L;
+  };
+  window._g45LoiNfTxt = function (y) { return y.nf === 4 ? 'cote au-dessus de 6' : y.nf === 3 ? 'pépite opposée sur le même match' : y.nf === 2 ? 'équipe trop faible pour le book' : y.nf ? 'niveau trop faible' : '1 seul pari par équipe'; };
   window._g45LoiCote = { coteDe: coteDe, FI: FI, charger: function (L) { chargerCotes(L); }, txt: function (y) { var q = coteDe(y); return q ? (q.e ? '≈ ' : '') + frC(q.c) + ' (FR ≈ ' + frC(coteFr(q.c)) + ')' : ''; } };   /* 20261111g : + cote FR estimée */   /* tests ; 20261109f : charger / txt pour le Cockpit */
   var resH = function (x) { var c = x.r === 1 ? '#1ed760' : x.r === 0 ? '#ff6b6b' : '#c9d3ee'; return '<span style="font-weight:800;color:' + c + ';font-size:16px;white-space:nowrap;">' + (x.r === 1 ? '✅' : x.r === 0 ? '❌' : x.r === -1 ? '🚫' : '⏳') + ' ' + esc(x.sc || '') + '</span>'; };
   /* 20261107r (capture : « manque heure, championnat, fond » → maquette loiL.png « oui ») : carte par pépite = logo de l'équipe en fond (couleur x.c
@@ -88284,31 +88319,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
        Concacaf B ou + non ») : Concacaf Nations League → seule la LIGUE A compte. Sonde d'Antoine (scoreboard 13-16/11) : la ligue A joue
        les « quarterfinals » (puis demies / finale), les ligues B / C la « group-stage » et les « gold-cup-play-in-prelims » → phase gardée
        par le robot (x.stg = season.slug ESPN) ; pas quart / demie / finale → x.nc + x.nf (affichée, hors bilan / graphique / montante). */
-    L.forEach(function (x) { if ((x.lg === 'concacaf.nations.league' && x.stg && !/quarter|semi|final|third/i.test(x.stg))
-      || (x.lg === 'uefa.nations' && /^D/i.test(String(x.grp || '')))) { x.nc = 1; x.nf = 1; }
-      /* 20261116h (« comment éviter les pièges des équipes faibles dès P1 ? » → « les 6 dernières, que l'on ne joue pas ») : NBA / NHL / NFL / MLB,
-         équipe parmi les 6 MOINS cotées de sa ligue pour le titre (x.fr, rang gardé par le robot chaque matin) → non comptée */
-      else if (x.fr != null && +x.fr <= 6 && !x.sv) { x.nc = 1; x.nf = 2; }
-      /* 20261116j (capture Turquie en France, Victoire 12,00 ≈ 11,28 FR, 0 point, aucun enjeu : « j'aime pas du tout » → cote max « 6 ») :
-         cote FR estimée au-dessus de 6,00 → non comptée */
-      else if (!x.sv && (function () { var q = coteDe(x); return q && coteFr(q.c) > 6; })()) { x.nc = 1; x.nf = 4; } });
-    /* 20261116i (capture Croatie – Tchéquie : Croatie « Victoire » 4/4 et Tchéquie « Victoire ou nul » 4/4 = l'inverse l'une de l'autre, une perd
-       forcément → « oui ») : 2 pépites OPPOSÉES d'un même match (victoire ↔ victoire ou nul de l'adversaire, vainqueur ↔ vainqueur de l'adversaire,
-       plus ↔ moins de la même ligne) → UNE seule comptée : meilleur taux de réussite passé (ok / n, gardé par le robot), puis la plus longue série
-       en cours, puis la pire série ; l'autre « ➖ non compté (pépite opposée sur le même match) » (x.nf = 3). */
-    (function () {
-      var opp = function (a, b) {
-        if (a.eid !== b.eid) return false; var ka = String(a.k), kb = String(b.k), ma = /^([ou])(\d\d)$/.exec(ka), mb = /^([ou])(\d\d)$/.exec(kb);
-        if (ma && mb) return ma[1] !== mb[1] && ma[2] === mb[2];
-        if (String(a.id) === String(b.id)) return false;
-        return (ka === 'v' && kb === 'vn') || (ka === 'vn' && kb === 'v') || (ka === 'vq' && kb === 'vq');
-      };
-      var tx = function (x) { return x.n > 0 ? x.ok / x.n : -1; };
-      var parM = {}; L.forEach(function (x) { if (!x.nc) (parM[x.eid] = parM[x.eid] || []).push(x); });
-      Object.keys(parM).forEach(function (e) { var g = parM[e]; for (var i = 0; i < g.length; i++) for (var j = i + 1; j < g.length; j++) {
-        var a = g[i], b = g[j]; if (a.nc || b.nc || !opp(a, b)) continue;
-        var d = (tx(b) - tx(a)) || (b.cours - a.cours) || (b.pire - a.pire), perd = d > 0 ? a : b; perd.nc = 1; perd.nf = 3; } });
-    })();   /* 20261116c : + Ligue des nations UEFA ligue D (x.grp = groupe du classement ESPN, robot) */
+    try { window._g45LoiExclure(L); } catch (e) {}   /* 20261116k : règles « non compté » partagées avec les pépites du jour (_g45LoiExclure) */   /* 20261116c : + Ligue des nations UEFA ligue D (x.grp = groupe du classement ESPN, robot) */
     var Lall = L, jPer = { '1j': 1, '1s': 7, '1m': 30, '1a': 365 }[M.per];   /* 20261113g : la montante se calcule sur TOUT l'historique (paliers justes), seul l'affichage est filtré */
     if (jPer) { var cP = new Date(); cP.setHours(0, 0, 0, 0); cP.setDate(cP.getDate() - jPer); var cS = cP.getFullYear() + '-' + ('0' + (cP.getMonth() + 1)).slice(-2) + '-' + ('0' + cP.getDate()).slice(-2); L = L.filter(function (x) { return String(x.j) >= cS; }); }
     if (!L.length && ((M.d.L || []).length)) return h + '<div style="font-size:14px;">Aucune pépite avec ces filtres.</div></div>';
