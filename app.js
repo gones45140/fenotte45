@@ -47256,7 +47256,7 @@ async function loadCompetTab() {
   el.innerHTML = '<button onclick="g45CompetSel(null)" style="border:none;background:rgba(255,255,255,.06);color:var(--t2);border-radius:8px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;margin-bottom:10px;">\u2190 ' + sp.name + '</button>'
     + '<div class="sec" style="margin-top:0;display:flex;align-items:center;gap:8px;">'
       + (_g45CompetLogos[c.s] ? '<img src="' + _g45CompetLogos[c.s] + '" style="width:22px;height:22px;object-fit:contain;" onerror="this.style.display=\'none\'">' : '')
-      + '<span>' + (c.ico || '') + ' ' + c.n + '</span></div>'
+      + '<span>' + _g45Drap(c.ico || '', 18) + ' ' + c.n + '</span></div>'
     + '<div style="display:flex;gap:8px;margin-bottom:10px;align-items:center;flex-wrap:wrap;">'
       + '<select onchange="g45CompetSaison(this.value)" style="padding:9px 11px;font-size:12px;border-radius:9px;background:#0f1626;border:1px solid rgba(255,255,255,.14);color:#e6ecf5;">' + opts + '</select>'
       + '</div>'
@@ -50397,40 +50397,50 @@ function g45T14Classement(box, force) {
   if (!rows.length) return false;
   var complet = !!essais && Object.keys(essais).length >= ms.length;
 
-  var col = '26px 1fr 26px 26px 26px 26px 44px 30px 30px 38px';
+  /* 20261116u (capture classement Top 14 : « besoin d'un coup de feeling » → maquette_top14 → « oui ») : logo du club (lD / lE du calendrier),
+     colonnes resserrées (largeur max 860 px), ligne par club, liseré des places (Top 14 : 1-2 demi-finale directe, 3-6 barrages,
+     13e barrage de relégation, 14e relégué ; autre ligue : 1-6 vert, 2 derniers rouge), légende, points en jaune, forme des 5 derniers. */
+  var LOGO = {}, FOR = {};
+  ms.slice().sort(function (a, b) { return new Date(a.date) - new Date(b.date); }).forEach(function (m) {
+    if (m.lD && !LOGO[m.dom]) LOGO[m.dom] = m.lD; if (m.lE && !LOGO[m.ext]) LOGO[m.ext] = m.lE;
+    var sd = parseInt(m.sDom, 10) || 0, se = parseInt(m.sExt, 10) || 0;
+    (FOR[m.dom] = FOR[m.dom] || []).push(sd > se ? 'V' : sd < se ? 'D' : 'N'); (FOR[m.ext] = FOR[m.ext] || []).push(se > sd ? 'V' : se < sd ? 'D' : 'N');
+  });
+  var t14 = String(ctx.ligue) === '270559', nR = rows.length;
+  var zone = function (rg) { if (t14) return rg <= 2 ? '#1ed760' : rg <= 6 ? '#4d84ff' : rg === 13 ? '#ff9f43' : rg === 14 ? '#ff4545' : '#2a3a63'; return rg <= 6 ? '#1ed760' : rg > nR - 2 ? '#ff4545' : '#2a3a63'; };
+  var leg = function (c, t) { return '<span style="display:inline-flex;align-items:center;gap:5px;"><span style="width:11px;height:11px;border-radius:3px;background:' + c + ';"></span>' + t + '</span>'; };
   var h = '<div id="g45-t14-cl">'
     + '<div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:0 0 9px;">'
-    + '<span style="font-size:10.5px;font-weight:700;color:var(--t2);">Calcul\u00e9 depuis les r\u00e9sultats \u00b7 '
+    + '<span style="font-size:13px;font-weight:700;color:#c9d3ee;">Calcul\u00e9 depuis les r\u00e9sultats \u00b7 '
     + ms.length + ' matchs jou\u00e9s</span>';
   if (!complet) {
     h += '<button id="g45-t14-btn" onclick="g45T14Bonus()" style="padding:7px 13px;border-radius:9px;'
       + 'border:1.5px solid rgba(240,176,32,.55);background:rgba(240,176,32,.12);color:#f0b020;'
-      + 'font-size:11.5px;font-weight:800;cursor:pointer;">\ud83c\udfc9 Compter les essais (bonus offensifs)</button>';
+      + 'font-size:13px;font-weight:800;cursor:pointer;">\ud83c\udfc9 Compter les essais (bonus offensifs)</button>';
   }
-  h += '</div>'
-    + '<div style="display:grid;grid-template-columns:' + col + ';gap:6px;font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;padding:0 9px 5px;">'
-    + '<span>#</span><span>Club</span><span style="text-align:center;">J</span><span style="text-align:center;">G</span>'
-    + '<span style="text-align:center;">N</span><span style="text-align:center;">P</span>'
-    + '<span style="text-align:right;">Diff</span><span style="text-align:center;">BO</span>'
-    + '<span style="text-align:center;">BD</span><span style="text-align:right;">Pts</span></div>'
-    + '<div style="display:flex;flex-direction:column;gap:3px;">';
+  h += '</div>' + '<div style="display:flex;flex-wrap:wrap;gap:12px;font-size:13px;color:#c9d3ee;margin:0 0 8px;">'
+    + (t14 ? leg('#1ed760', '1-2 : demi-finale directe') + leg('#4d84ff', '3-6 : barrages') + leg('#ff9f43', '13e : barrage de relégation') + leg('#ff4545', '14e : relégué') : leg('#1ed760', '6 premiers') + leg('#ff4545', '2 derniers')) + '</div>';
+  var col = '34px minmax(0,1fr) 30px 30px 30px 30px 52px 32px 32px 104px 44px';
+  var th = function (t, a) { return '<span style="text-align:' + (a || 'center') + ';">' + t + '</span>'; };
+  h += '<div style="max-width:860px;overflow-x:auto;"><div style="min-width:620px;">'
+    + '<div style="display:grid;grid-template-columns:' + col + ';gap:6px;font-size:12px;font-weight:700;color:#9fb0d6;padding:0 10px 4px;">'
+    + th('#') + th('Club', 'left') + th('J') + th('G') + th('N') + th('P') + th('Diff') + th('BO') + th('BD') + th('Forme') + th('Pts') + '</div>'
+    + '<div style="display:flex;flex-direction:column;gap:5px;">';
   rows.forEach(function (r, i) {
-    var rang = i + 1;
-    var bord = (rang <= 6) ? 'var(--g)' : ((rang >= 13) ? 'var(--r)' : 'transparent');
-    h += '<div style="display:grid;grid-template-columns:' + col + ';gap:6px;align-items:center;padding:7px 9px;'
-      + 'border-radius:6px;border-left:3px solid ' + bord + ';background:rgba(255,255,255,' + (i % 2 ? '.02' : '.045') + ');">'
-      + '<span style="font-size:11px;font-weight:800;color:var(--t3);">' + rang + '</span>'
-      + '<span style="font-size:13.5px;font-weight:700;color:var(--t1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + _g45Esc(r.nom) + '</span>'
-      + '<span style="font-size:12px;text-align:center;color:var(--t2);font-variant-numeric:tabular-nums;">' + r.j + '</span>'
-      + '<span style="font-size:12px;text-align:center;color:var(--t2);font-variant-numeric:tabular-nums;">' + r.g + '</span>'
-      + '<span style="font-size:12px;text-align:center;color:var(--t2);font-variant-numeric:tabular-nums;">' + r.n + '</span>'
-      + '<span style="font-size:12px;text-align:center;color:var(--t2);font-variant-numeric:tabular-nums;">' + r.p + '</span>'
-      + '<span style="font-size:12px;text-align:right;color:' + (r.diff > 0 ? 'var(--g)' : (r.diff < 0 ? 'var(--r)' : 'var(--t2)')) + ';font-variant-numeric:tabular-nums;">' + (r.diff > 0 ? '+' : '') + r.diff + '</span>'
-      + '<span style="font-size:12px;text-align:center;color:' + (r.bo ? '#f0b020' : 'var(--t3)') + ';font-variant-numeric:tabular-nums;">' + r.bo + '</span>'
-      + '<span style="font-size:12px;text-align:center;color:' + (r.bd ? '#22d3ee' : 'var(--t3)') + ';font-variant-numeric:tabular-nums;">' + r.bd + '</span>'
-      + '<span style="font-size:13.5px;text-align:right;font-weight:800;color:var(--t1);font-variant-numeric:tabular-nums;">' + r.pts + '</span></div>';
+    var rang = i + 1, lg = LOGO[r.nom] || '', f = (FOR[r.nom] || []).slice(-5);
+    var nb = function (v, c) { return '<span style="font-size:15px;text-align:center;color:' + (c || '#fff') + ';font-variant-numeric:tabular-nums;">' + v + '</span>'; };
+    h += '<div style="display:grid;grid-template-columns:' + col + ';gap:6px;align-items:center;padding:7px 10px;border-radius:9px;border-left:4px solid ' + zone(rang) + ';background:#141c33;">'
+      + '<span style="font-size:15px;font-weight:800;text-align:center;">' + rang + '</span>'
+      + '<span style="display:flex;align-items:center;gap:9px;min-width:0;">' + (lg ? '<img src="' + _g45Esc(lg) + '" alt="" loading="lazy" onerror="this.remove()" style="width:28px;height:28px;object-fit:contain;flex:none;">' : '')
+      + '<span style="font-size:15px;font-weight:800;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + _g45Esc(r.nom) + '</span></span>'
+      + nb(r.j) + nb(r.g) + nb(r.n) + nb(r.p)
+      + '<span style="font-size:15px;font-weight:700;text-align:center;color:' + (r.diff > 0 ? '#1ed760' : (r.diff < 0 ? '#ff6b6b' : '#fff')) + ';font-variant-numeric:tabular-nums;">' + (r.diff > 0 ? '+' : '') + r.diff + '</span>'
+      + nb(r.bo, r.bo ? '#f0b020' : '#c9d3ee') + nb(r.bd, r.bd ? '#22d3ee' : '#c9d3ee')
+      + '<span style="display:flex;justify-content:center;gap:2px;">' + f.map(function (x) { return '<span style="width:17px;height:17px;border-radius:4px;font-size:10px;font-weight:900;line-height:17px;text-align:center;color:#0b1020;background:' + (x === 'V' ? '#1ed760' : x === 'D' ? '#ff5a5a' : '#c9d3ee') + ';">' + x + '</span>'; }).join('') + '</span>'
+      + '<span style="font-size:17px;text-align:center;font-weight:900;color:#ffd34d;font-variant-numeric:tabular-nums;">' + r.pts + '</span></div>';
   });
-  h += '</div><div style="font-size:10.5px;color:var(--t3);line-height:1.6;margin-top:9px;">'
+  h += '</div></div>';
+  h += '</div><div style="font-size:13px;color:#c9d3ee;line-height:1.6;margin-top:9px;">'
     + 'Victoire 4 \u00b7 nul 2 \u00b7 bonus offensif +1 (3 essais d\u2019\u00e9cart) \u00b7 bonus d\u00e9fensif +1 (d\u00e9faite de 5 points ou moins).'
     + (complet ? '' : '<br><b style="color:#f0b020;">Bonus offensifs non compt\u00e9s</b> \u2014 le classement peut diff\u00e9rer de l\u2019officiel tant qu\u2019ils manquent.')
     + '<br>\u00c9galit\u00e9s d\u00e9partag\u00e9es \u00e0 la diff\u00e9rence g\u00e9n\u00e9rale ; la LNR regarde d\u2019abord les confrontations directes.'
