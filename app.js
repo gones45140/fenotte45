@@ -89722,11 +89722,12 @@ window.g45SerNs = function (nom, n, el) {
          « nhl 2, nba 1 (on voit pas grand-chose), nfl 3, mlb 1, nrl 3 ») : sports US + NRL = VRAIE PHOTO de la ligue (fanart TheSportsDB,
          lookupleague 4380 / 4387 / 4391 / 4424 / 4416 sondé par Antoine le 15/11) qui remplit la tuile, comme MMA, + PETIT logo en haut à droite.
          NBA (photo très sombre) éclaircie. Photo absente / en erreur → l'ancien logo géant (20261115j / p) reprend sa place. */
+      /* 20261116n (capture : « rugby, NRL tête coupée dommage ») : photos calées vers le HAUT (object-position center 22 %) */
       var PH = { nhl: 'typuvs1421795648', nba: 'wtqwqq1453033773', nfl: 'cofxkn1631264748', mlb: '9ppjtt1521040145', nrl: 'xqqupr1422582318' };
       if (LG[v] && PH[LG[v]]) {
         var ph = document.createElement('img');
         ph.src = 'https://r2.thesportsdb.com/images/media/league/fanart/' + PH[LG[v]] + '.jpg'; ph.alt = ''; ph.loading = 'lazy'; ph.className = 'g45-acc-ph';
-        ph.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;' + (LG[v] === 'nba' ? 'filter:brightness(1.7) contrast(1.05);' : '');
+        ph.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 22%;pointer-events:none;' + (LG[v] === 'nba' ? 'filter:brightness(1.7) contrast(1.05);' : '');
         im.src = url; im.alt = ''; im.className = 'g45-acc-lg';
         im.style.cssText = 'position:absolute;right:10px;top:10px;height:clamp(40px,11vw,72px);width:auto;max-width:35%;object-fit:contain;filter:drop-shadow(0 2px 6px rgba(0,0,0,.85));pointer-events:none;';
         im.onerror = function () { im.remove(); };
@@ -89767,7 +89768,7 @@ window.g45SerNs = function (nom, n, el) {
           if (!o || !o.u || !t.isConnected || t.getAttribute('data-g45lg') !== url || t.querySelector('.g45-acc-ph')) return;
           var ph = document.createElement('img');
           ph.src = o.u; ph.alt = ''; ph.className = 'g45-acc-ph';
-          ph.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;';
+          ph.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 22%;pointer-events:none;';
           ph.onerror = function () { ph.remove(); im.style.cssText = logoCss; };
           t.insertBefore(ph, im);
           im.style.cssText = 'position:absolute;right:10px;top:10px;height:clamp(40px,11vw,72px);width:auto;max-width:35%;object-fit:contain;filter:drop-shadow(0 2px 6px rgba(0,0,0,.85));pointer-events:none;';
