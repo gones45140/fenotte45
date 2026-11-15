@@ -76807,12 +76807,25 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var e = 0; for (var i = 0; i < mises.length; i++) { e += mises[i]; if (cap > 0 && e > cap + 1e-9) return { p: i + 1, besoin: e }; } return { p: 0, besoin: e };
   }
   function simCalc(seq, mises, cote, cap, meth) {   /* 20261106f : meth = 'mont' (défaut) | 'fib' | 'dal' | 'fix' */   /* seq = [{ s: libellé saison, ok }] dans l'ordre → { par: { s: { ok, bo, e } }, tot, bo, max } ; cap = capital (0 = sans limite) */
-    var i = 0, par = {}, tot = 0, bo = 0, max = 0, det = [], eng = 0, bk = 0, ruine = null;   /* 20261103o : det = détail de chaque match (📋 Match par match) ; 20261104b : eng = déjà perdu dans la série */
+    var i = 0, par = {}, tot = 0, bo = 0, max = 0, det = [], eng = 0, bk = 0, ruine = null, prevC = 0;   /* 20261115h : prevC = mise d'avant (📉) */   /* 20261103o : det = détail de chaque match (📋 Match par match) ; 20261104b : eng = déjà perdu dans la série */
     seq.forEach(function (x) {
       var P = par[x.s] = par[x.s] || { ok: 0, bo: 0, e: 0 };
       /* 20261104c (« attention ma BK est évolutive… et sur bet45 ils n'ont pas tous la même ») : bankroll qui VIT pendant la simulation = capital
          de départ (celui de la personne connectée) + gains − pertes ; la mise doit tenir dans l'argent disponible à ce moment-là. */
       if (ruine) return;
+      /* 20261115h (« ici faudrait rajouter cotes basses ») : 📉 = règle d'Antoine sur la VRAIE cote du match : P1 = 1er palier des ⭐ ; ensuite
+         cote < 1,50 → mise d'avant × (1 ÷ (cote − 1) + 2), cote ≥ 1,50 → mise d'avant × 2,5 (P2) puis × 3 (🛡️) ; cote < 1,20 = match sauté
+         (la série attend) ; perdu à P5 = 💥 (arrêt), retour P1. */
+      if (meth === 'cb') {
+        var cC = x.c > 1 ? x.c : cote; if (cC < 1.2 - 1e-9) return;
+        if (cap > 0 && mises[0] > cap + tot + 1e-9) { ruine = { s: x.s, n: det.length }; return; }
+        var mC = i === 0 ? mises[0] : Math.ceil((cC < 1.5 ? prevC * (1 / (cC - 1) + 2) : prevC * (i === 1 ? 2.5 : 3)) * 100) / 100;
+        if (cap > 0 && i > 0 && mC > cap + tot + 1e-9) { P.e++; bo++; bk++; i = 0; eng = 0; prevC = 0; mC = mises[0]; if (det.length) det[det.length - 1].b = 2; }
+        var dC = { p: i + 1, m: mC, c: cC, g: 0, b: 0 }; if (mC > max) max = mC;
+        if (x.ok) { var gC = mC * (cC - 1); P.ok++; P.bo += gC; tot += gC; if (eng > 0) dC.ser = gC - eng; i = 0; eng = 0; prevC = 0; dC.g = gC; }
+        else { P.bo -= mC; tot -= mC; eng += mC; dC.g = -mC; prevC = mC; i++; if (i >= 5) { P.e++; bo++; i = 0; eng = 0; prevC = 0; dC.b = 1; } }
+        dC.t = tot; det.push(dC); return;
+      }
       if (cap > 0 && i > 0 && mises[i] > cap + tot + 1e-9) { P.e++; bo++; bk++; i = 0; eng = 0; if (det.length) det[det.length - 1].b = 2; }   /* 20261104b : capital dépassé */
       if (cap > 0 && mises[0] > cap + tot + 1e-9) { ruine = { s: x.s, n: det.length }; return; }   /* 20261104c : plus de quoi miser P1 */
       var m = mises[i], d = { p: i + 1, m: m, c: x.c > 1 ? x.c : cote, g: 0, b: 0 };
@@ -76827,7 +76840,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   }
   window._g45CrSimT = simCalc;   /* tests */
   window._g45CrCoteM = function (c, m) { return coteM(c, m); };   /* 20261112c : tests */
-  window.g45CrCkMeth = function (k) { S.simM = ({ mont: 1, fib: 1, dal: 1, fix: 1 })[k] ? k : 'mont'; try { localStorage.setItem('g45_sim_meth', S.simM); } catch (e) {} try { redessiner(); } catch (e) {} };   /* 20261106f */
+  window.g45CrCkMeth = function (k) { S.simM = ({ mont: 1, fib: 1, dal: 1, fix: 1, cb: 1 })[k] ? k : 'mont'; try { localStorage.setItem('g45_sim_meth', S.simM); } catch (e) {} try { redessiner(); } catch (e) {} };   /* 20261106f */
   /* 20261102p (capture carte MacKinnon « 📊 pire série … → 5 paliers » : « peut-être le rajouter ici, ça évite de recalculer à chaque fois ») :
      bilan 💶 gardé AVEC la série (u.psL par « 🔄 Calculer mes séries », u.ps par 📌) → { e: € arrondi, bo: 💥, c: cote }. Mises = ⭐ de la
      CARTE (_g45Grille(u), comme « mise max » de la carte), sinon l'échelle des critères ; cote = celle tapée dans les critères (g45_ck_cote). */
@@ -76868,21 +76881,23 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     if (meth === 'fib') mises = [1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144].map(function (k) { return Math.round(k * u1 * 100) / 100; });
     else if (meth === 'dal') mises = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(function (k) { return Math.round(k * u1 * 100) / 100; });
     else if (meth === 'fix') mises = [u1];
-    var NOMM = { mont: '🚀 Cockpit', fib: '🐚 Fibonacci', dal: '🪜 D\'Alembert', fix: '📏 Mise fixe' };
+    else if (meth === 'cb') mises = [u1];   /* 20261115h : 📉 mise calculée match par match (simCalc) */
+    var NOMM = { mont: '🚀 Cockpit', fib: '🐚 Fibonacci', dal: '🪜 D\'Alembert', fix: '📏 Mise fixe', cb: '📉 Cotes basses' };
     var cap = capT(), CM = meth === 'mont' ? capMan(mises, cap) : { p: 0, besoin: 0 }, cote = ckCote(), R = simCalc(seq, mises, cote, cap, meth), nV = seq.filter(function (x) { return x.c > 1; }), moyV = nV.length ? nV.reduce(function (t, x) { return t + x.c; }, 0) / nV.length : 0;   /* 20261103i */
     var eu = function (x) { var r = Math.round(x); return (r > 0 ? '+' : r < 0 ? '−' : '') + Math.abs(r).toLocaleString('fr-FR') + ' €'; };
     var cl = function (x) { return x > 0.5 ? '#1ed760' : x < -0.5 ? '#ff5a5a' : '#fff'; };
     var td = 'padding:7px 4px;border-bottom:1px solid #1c2747;', th = 'text-align:left;font-size:13px;color:#c9d3ee;padding:6px 4px;border-bottom:1px solid #2a3a63;';
     var h = '<div style="margin-top:10px;background:#0f1730;border-radius:10px;padding:10px;font-size:14px;color:#fff;line-height:1.5;">'
       + '<div style="font-size:15px;font-weight:800;">💶 Si tu l\'avais joué en…</div>'
-      + '<div style="margin:2px 0 4px;">' + ['mont', 'fib', 'dal', 'fix'].map(function (k) { var on = k === meth; return '<button onclick="g45CrCkMeth(\'' + k + '\')" style="border-radius:12px;padding:6px 10px;font-size:14px;font-weight:800;cursor:pointer;color:#fff;margin:4px 6px 0 0;border:1px solid ' + (on ? '#6d9dff' : '#2a3a63') + ';background:' + (on ? '#2a4a9a' : '#0b1226') + ';">' + NOMM[k] + '</button>'; }).join('') + '</div>'
-      + (meth !== 'mont' ? '<div style="font-size:13px;color:#c9d3ee;">' + (meth === 'fib' ? 'Après une défaite, la mise suit 1-1-2-3-5-8… × P1 ; après une victoire, 2 cases en arrière.' : meth === 'dal' ? 'Après une défaite +1 × P1, après une victoire −1 × P1.' : 'Toujours la même mise (P1).') + ' Les ⭐ choisissent P1.</div>' : '')
+      + '<div style="margin:2px 0 4px;">' + ['mont', 'fib', 'dal', 'fix', 'cb'].map(function (k) { var on = k === meth; return '<button onclick="g45CrCkMeth(\'' + k + '\')" style="border-radius:12px;padding:6px 10px;font-size:14px;font-weight:800;cursor:pointer;color:#fff;margin:4px 6px 0 0;border:1px solid ' + (on ? '#6d9dff' : '#2a3a63') + ';background:' + (on ? '#2a4a9a' : '#0b1226') + ';">' + NOMM[k] + '</button>'; }).join('') + '</div>'
+      + (meth === 'cb' ? '<div style="font-size:13px;color:#c9d3ee;">📉 Sous 1,50 : mise d\'avant × (1 ÷ (cote − 1) + 2) ; à 1,50 ou plus : × 2,5 au P2 puis × 3 ; cote sous 1,20 = match sauté ; arrêt à P5. P1 = 1er palier des ⭐.</div>' : '')
+      + (meth !== 'mont' && meth !== 'cb' ? '<div style="font-size:13px;color:#c9d3ee;">' + (meth === 'fib' ? 'Après une défaite, la mise suit 1-1-2-3-5-8… × P1 ; après une victoire, 2 cases en arrière.' : meth === 'dal' ? 'Après une défaite +1 × P1, après une victoire −1 × P1.' : 'Toujours la même mise (P1).') + ' Les ⭐ choisissent P1.</div>' : '')
       /* 20261102r (capture : « il y a juste un truc, on peut pas choisir son nombre d'étoiles ») : boutons ⭐ 1 → 5 = même échelle que « mise max »
          (g45_pal_et, _g45PalEt) → le Total et le 💶 changent ensemble. */
       + '<div style="margin:4px 0 2px;">' + ['1', '2', '3', '4', '5'].map(function (k) { var on = k === et; return '<button onclick="g45CrCkEt(\'' + k + '\')" style="border-radius:14px;padding:5px 10px;font-size:14px;cursor:pointer;color:#fff;margin:4px 6px 0 0;border:1px solid ' + (on ? '#f5c542' : '#2a3a63') + ';background:' + (on ? '#5a4a12' : '#16213f') + ';font-weight:' + (on ? 800 : 400) + ';">' + k + ' ⭐</button>'; }).join('') + '</div>'
       + '<div style="font-size:13px;color:#c9d3ee;margin:2px 0 6px;">Paliers ' + mises.join(' · ') + ' €</div>'
       + (CM.p ? '<div style="font-size:14px;color:#ff9f43;font-weight:700;margin:2px 0 6px;line-height:1.45;">⚠️ Ta bankroll (' + Math.round(cap).toLocaleString('fr-FR') + ' €) ne couvre pas P' + CM.p + ' aujourd\'hui : il faudrait ' + Math.round(CM.besoin).toLocaleString('fr-FR') + ' € (tout perdu jusqu\'à P' + (CM.p - 1) + ' + la mise de P' + CM.p + '). Dans la simulation, ta bankroll évolue avec tes gains et tes pertes : une mise qu\'elle ne couvre pas = série 💥 perdue.</div>'
-        : (cap > 0 ? '<div style="font-size:13px;color:#1ed760;margin:2px 0 6px;">✅ Ta bankroll (' + Math.round(cap).toLocaleString('fr-FR') + ' €) couvre les ' + mises.length + ' paliers (' + Math.round(CM.besoin).toLocaleString('fr-FR') + ' € au total).</div>' : ''))   /* 20261104b */
+        : (cap > 0 && meth !== 'cb' ? '<div style="font-size:13px;color:#1ed760;margin:2px 0 6px;">✅ Ta bankroll (' + Math.round(cap).toLocaleString('fr-FR') + ' €) couvre les ' + mises.length + ' paliers (' + Math.round(CM.besoin).toLocaleString('fr-FR') + ' € au total).</div>' : ''))   /* 20261104b */
       /* 20261102o (Antoine : « faudrait pouvoir mettre soi-même la cote, + facile non ? ») : case à taper (clavier chiffres) au lieu de la liste. */
       + (nV.length ? '<div style="font-size:14px;color:#1ed760;font-weight:700;margin:2px 0;">✅ Vraies cotes de fermeture : ' + nV.length + ' matchs sur ' + seq.length + ' (moyenne ' + moyV.toFixed(2).replace('.', ',') + (joueurs(c).length ? ' · DraftKings × 0,94 ≈ books FR' : '') + ')' + (nV.length < seq.length ? ' · cote tapée pour les autres' : '') + '</div>' : '')
       + '<div>' + (nV.length === seq.length ? 'Cote de secours : ' : 'Cote utilisée : ') + '<input type="text" inputmode="decimal" value="' + cote.toFixed(2).replace('.', ',') + '" onchange="g45CrCkCote(this.value)" onfocus="this.select()" style="width:90px;font-size:17px;font-weight:800;padding:6px 8px;border-radius:8px;background:#16213f;color:#fff;border:1px solid #6d9dff;text-align:center;"> <span style="font-size:13px;color:#c9d3ee;">tape ta cote (ex. 1,56)</span></div>'
@@ -79539,9 +79554,11 @@ window._G45_PAL_COUL = ['#1ed760', '#8fdc4a', '#f5c542', '#ffa53a', '#ff7a3a', '
             if (D.glob) lg.push('🌍 ' + D.glob);
             var nz = function (x) { return String(x || '').trim().toLowerCase(); };
             if (D.dom && D.ext && nz(D.dom) === nz(D.ext)) lg.push('🏠/✈️ ' + D.dom); else { if (D.dom) lg.push('🏠 ' + D.dom); if (D.ext) lg.push('✈️ ' + D.ext); }
-            var ht = lg.map(function (x) { return '<div>' + (/^🏟️/.test(x) ? '' : '📌 ') + String(x).replace(/[<>&]/g, '') + '</div>'; });
+            /* 20261115h : méthode choisie par pari (u.mode, ✏️ Modifier) → « · 📉 » au bout de la ligne */
+            var MOD = u.mode || {}, MT = { cb: ' · 📉 Cotes basses', fib: ' · 🐚 Fibonacci', dal: ' · 🪜 D\'Alembert' }, mdl = function (x) { var k = /^🌍/.test(x) ? 'glob' : /^🏠/.test(x) ? 'dom' : /^✈/.test(x) ? 'ext' : ''; return (k && MT[MOD[k]]) || ''; };
+            var ht = lg.map(function (x) { return '<div>' + (/^🏟️/.test(x) ? '' : '📌 ') + String(x).replace(/[<>&]/g, '') + mdl(x) + '</div>'; });
             if (u.np) ht.push('<div style="color:#c9d3ee;">📝 ' + String(u.np).replace(/[<>&]/g, '') + '</div>');   /* 20261028c : note perso, affichée seulement */
-            if (lg.length > 1 || u.np || /^🏟️/.test(lg[0] || '')) no.innerHTML = ht.join('');
+            if (lg.length > 1 || u.np || /^🏟️/.test(lg[0] || '') || Object.keys(MOD).some(function (k) { return MT[MOD[k]]; })) no.innerHTML = ht.join('');
           } catch (e) {}
         }
       }
@@ -89464,4 +89481,61 @@ window.g45SerNs = function (nom, n, el) {
   };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', poser); else setTimeout(poser, 0);
   setTimeout(poser, 1600);
+})();
+
+/* ═══ 20261115h — MODE DE PARI PAR PARI DE LA CARTE (Antoine, capture ✏️ Modifier Oilers : « ici faudrait mettre le mode de pari à cocher »
+   → maquette → « oui ») : sous 🌍 / 🏠 / ✈️ de la fenêtre Modifier, 4 boutons à choix unique 🚀 Cockpit / 📉 Cotes basses / 🐚 Fibonacci /
+   🪜 D'Alembert (montrés si le pari est rempli) → u.mode = { glob, dom, ext } ('mont' par défaut, non gardé). Effets : ligne du pari sur la carte
+   « · 📉 Cotes basses » ; 🚀 Engager : carte + lieu choisis → l'onglet de la méthode s'ouvre tout seul (g45EngMeth). ═══ */
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var M = [['mont', '🚀 Cockpit'], ['cb', '📉 Cotes basses'], ['fib', '🐚 Fibonacci'], ['dal', '🪜 D\'Alembert']];
+  var CH = { glob: 'edit-unit-ppart', dom: 'edit-unit-pdom', ext: 'edit-unit-pext' };
+  window._g45ModeSel = {};
+  function rangee(k, v) {
+    return '<div class="g45-mode" data-k="' + k + '" style="display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 10px;align-items:center;"><span style="font-size:14px;color:#c9d3ee;">Mode :</span>'
+      + M.map(function (m) { var on = m[0] === v; return '<button type="button" onclick="g45ModeChoix(\'' + k + '\',\'' + m[0] + '\')" style="border-radius:10px;padding:6px 10px;font-size:14px;font-weight:800;cursor:pointer;color:#fff;border:2px solid ' + (on ? '#1ed760' : '#2a3a63') + ';background:' + (on ? '#14532d' : '#0b1226') + ';">' + (on ? '☑ ' : '☐ ') + m[1] + '</button>'; }).join('') + '</div>';
+  }
+  function poser() {
+    Object.keys(CH).forEach(function (k) {
+      var inp = $(CH[k]); if (!inp) return; var bloc = inp.closest('.fg') || inp.parentNode, z = bloc.querySelector('.g45-mode');
+      var plein = String(inp.value || '').trim() !== '';
+      if (!plein) { if (z) z.remove(); return; }
+      var h = rangee(k, window._g45ModeSel[k] || 'mont');
+      if (!z) { bloc.insertAdjacentHTML('beforeend', h); } else if (z.outerHTML !== h) z.outerHTML = h;
+      if (!inp._g45Mode) { inp._g45Mode = 1; inp.addEventListener('input', poser); }
+    });
+  }
+  window.g45ModeChoix = function (k, v) { window._g45ModeSel[k] = v; poser(); };
+  var ed0 = window.editUnit;
+  if (typeof ed0 === 'function' && !ed0._g45Mode) {
+    var ed = function (i) { var r = ed0.apply(this, arguments); try { var u = state.u[parseInt(i)]; window._g45ModeSel = Object.assign({}, (u && u.mode) || {}); poser(); } catch (e) {} return r; };
+    ed._g45Mode = 1; window.editUnit = ed; try { editUnit = ed; } catch (e) {}
+  }
+  var sv0 = window.saveEditUnit;
+  if (typeof sv0 === 'function' && !sv0._g45Mode) {
+    var sv = function () {
+      try {
+        var i = parseInt(($('edit-unit-idx') || {}).value), u = state.u[i];
+        if (u) { var o = {}; Object.keys(CH).forEach(function (k) { var inp = $(CH[k]), v = window._g45ModeSel[k]; if (inp && String(inp.value || '').trim() && v && v !== 'mont') o[k] = v; });
+          if (Object.keys(o).length) u.mode = o; else delete u.mode; }
+      } catch (e) {}
+      return sv0.apply(this, arguments);
+    };
+    sv._g45Mode = 1; window.saveEditUnit = sv; try { saveEditUnit = sv; } catch (e) {}
+  }
+  /* 🚀 Engager : la méthode suit la carte + le lieu */
+  window._g45ModeDe = function (u, lieu) { var m = (u && u.mode) || {}; return m[lieu === 'dom' ? 'dom' : lieu === 'ext' ? 'ext' : 'glob'] || (lieu ? m.glob : '') || 'mont'; };
+  var auto = function () {
+    try {
+      var s = $('c-unit'), u = s && (state.u || []).filter(function (x) { return x.n === s.value; })[0]; if (!u || typeof window.g45EngMeth !== 'function') return;
+      var L = typeof g45LieuCourant === 'function' ? g45LieuCourant() : '', m = window._g45ModeDe(u, L);
+      if (!u.mode) return;   /* carte sans choix : on ne touche à rien */
+      if ((window._g45EngMeth || 'mont') !== m) window.g45EngMeth(m);
+    } catch (e) {}
+  };
+  document.addEventListener('change', function (e) { var id = e.target && e.target.id; if (id === 'c-unit' || id === 'c-lieu') setTimeout(auto, 0); }, true);
+  document.addEventListener('click', function (e) { var b = e.target && e.target.closest && e.target.closest('[onclick*="Lieu"],[onclick*="lieu"]'); if (b && $('c-unit')) setTimeout(auto, 50); }, true);
+  try { var _on0 = window.g45CkOnglet; if (typeof _on0 === 'function' && !_on0._g45Mode) { window.g45CkOnglet = function (k) { var r = _on0.apply(this, arguments); if (k === 'eng') setTimeout(auto, 0); return r; }; window.g45CkOnglet._g45Mode = 1; } } catch (e) {}
+  window._g45ModeAuto = auto;   /* tests */
 })();
