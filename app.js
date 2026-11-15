@@ -39075,7 +39075,8 @@ function g45RenderStandings(data, season, sportPath, slug){
       var _z=(e.note && _g45ZoneFromNote(e.note.description)) || _g45ZoneByPos(slug, sportPath, idx+1, entries.length);
       if(_z) legend[_z.label]=_z.color;
       var _bd=_z?('border-left:3px solid '+_z.color+';'):'border-left:3px solid transparent;';
-      var _rowbg=_z?('background:'+_g45Hex2rgba(_z.color,.13)+';'):'';
+      /* 20261116v (capture Ligue 1 : « les couleurs de fond jaune, rouge et autres ne sortent pas assez ») : fond des zones .13 → .32 */
+      var _rowbg=_z?('background:'+_g45Hex2rgba(_z.color,.32)+';'):'';
       var logo=''; try{ logo=(t.logos&&t.logos[0]&&t.logos[0].href)||''; }catch(_){ }
       var nm=_g45EntName(e)||'?';
       var J=_g45Stat(st,['gamesPlayed']), V=_g45Stat(st,['wins','gamesWon']), N=_g45Stat(st,['ties','draws','gamesDrawn']), D=_g45Stat(st,['losses','gamesLost']);
@@ -39094,7 +39095,7 @@ function g45RenderStandings(data, season, sportPath, slug){
       /* La barre de qualification passe en LISERE INTERNE : un vrai
          border-left casserait les coins arrondis de la bande. */
       var _cell='padding:8px 6px;text-align:center;font-variant-numeric:tabular-nums;font-weight:700;'
-        + 'background:' + (_z ? _g45Hex2rgba(_z.color,.13) : (idx%2 ? 'rgba(255,255,255,.045)' : 'rgba(255,255,255,.022)')) + ';';
+        + 'background:' + (_z ? _g45Hex2rgba(_z.color,.32) : (idx%2 ? 'rgba(255,255,255,.045)' : 'rgba(255,255,255,.022)')) + ';';
       var _val=function(v, coul){
         var vide=(v===''||v==='-'), nul=(String(v)==='0');
         return '<td style="'+_cell+'color:'+(vide||nul?'#5c6785':(coul||'#dbe3f5'))+';">'+(vide?'-':v)+'</td>';
@@ -50429,7 +50430,7 @@ function g45T14Classement(box, force) {
   rows.forEach(function (r, i) {
     var rang = i + 1, lg = LOGO[r.nom] || '', f = (FOR[r.nom] || []).slice(-5);
     var nb = function (v, c) { return '<span style="font-size:15px;text-align:center;color:' + (c || '#fff') + ';font-variant-numeric:tabular-nums;">' + v + '</span>'; };
-    h += '<div style="display:grid;grid-template-columns:' + col + ';gap:6px;align-items:center;padding:7px 10px;border-radius:9px;border-left:4px solid ' + zone(rang) + ';background:#141c33;">'
+    h += '<div style="display:grid;grid-template-columns:' + col + ';gap:6px;align-items:center;padding:7px 10px;border-radius:9px;border-left:4px solid ' + zone(rang) + ';background:' + (zone(rang) !== '#2a3a63' ? 'linear-gradient(90deg,' + zone(rang) + '55,#141c33 70%)' : '#141c33') + ';">'
       + '<span style="font-size:15px;font-weight:800;text-align:center;">' + rang + '</span>'
       + '<span style="display:flex;align-items:center;gap:9px;min-width:0;">' + (lg ? '<img src="' + _g45Esc(lg) + '" alt="" loading="lazy" onerror="this.remove()" style="width:28px;height:28px;object-fit:contain;flex:none;">' : '')
       + '<span style="font-size:15px;font-weight:800;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + _g45Esc(r.nom) + '</span></span>'
