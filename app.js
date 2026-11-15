@@ -76834,7 +76834,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
         if (cap > 0 && i > 0 && mC > cap + tot + 1e-9) { P.e++; bo++; bk++; i = 0; eng = 0; prevC = 0; mC = mises[0]; if (det.length) det[det.length - 1].b = 2; }
         var dC = { p: i + 1, m: mC, c: cC, g: 0, b: 0 }; if (mC > max) max = mC;
         if (x.ok) { var gC = mC * (cC - 1); P.ok++; P.bo += gC; tot += gC; if (eng > 0) dC.ser = gC - eng; i = 0; eng = 0; prevC = 0; dC.g = gC; }
-        else { P.bo -= mC; tot -= mC; eng += mC; dC.g = -mC; prevC = mC; i++; if (i >= 5) { P.e++; bo++; i = 0; eng = 0; prevC = 0; dC.b = 1; } }
+        else { P.bo -= mC; tot -= mC; eng += mC; dC.g = -mC; prevC = mC; i++; var stC = S.cbStop == null ? 5 : +S.cbStop; if (stC && i >= stC) {   /* 20261115m : arrêt choisi (0 = aucun) */ P.e++; bo++; i = 0; eng = 0; prevC = 0; dC.b = 1; } }
         dC.t = tot; det.push(dC); return;
       }
       if (cap > 0 && i > 0 && mises[i] > cap + tot + 1e-9) { P.e++; bo++; bk++; i = 0; eng = 0; if (det.length) det[det.length - 1].b = 2; }   /* 20261104b : capital dépassé */
@@ -76851,6 +76851,8 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   }
   window._g45CrSimT = simCalc;   /* tests */
   window._g45CrCoteM = function (c, m) { return coteM(c, m); };   /* 20261112c : tests */
+  S.cbStop = (function () { try { var v = localStorage.getItem('g45cr_cbstop'); return v == null ? 5 : +v; } catch (e) { return 5; } })();
+  window.g45CrCbStop = function (n) { S.cbStop = +n || 0; try { localStorage.setItem('g45cr_cbstop', String(S.cbStop)); } catch (e) {} try { redessiner(); } catch (e) {} };   /* 20261115m */
   window.g45CrCkMeth = function (k) { S.simM = ({ mont: 1, fib: 1, dal: 1, fix: 1, cb: 1 })[k] ? k : 'mont'; try { localStorage.setItem('g45_sim_meth', S.simM); } catch (e) {} try { redessiner(); } catch (e) {} };   /* 20261106f */
   /* 20261102p (capture carte MacKinnon « 📊 pire série … → 5 paliers » : « peut-être le rajouter ici, ça évite de recalculer à chaque fois ») :
      bilan 💶 gardé AVEC la série (u.psL par « 🔄 Calculer mes séries », u.ps par 📌) → { e: € arrondi, bo: 💥, c: cote }. Mises = ⭐ de la
@@ -76901,7 +76903,9 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var h = '<div style="margin-top:10px;background:#0f1730;border-radius:10px;padding:10px;font-size:14px;color:#fff;line-height:1.5;">'
       + '<div style="font-size:15px;font-weight:800;">💶 Si tu l\'avais joué en…</div>'
       + '<div style="margin:2px 0 4px;">' + ['mont', 'fib', 'dal', 'fix', 'cb'].map(function (k) { var on = k === meth; return '<button onclick="g45CrCkMeth(\'' + k + '\')" style="border-radius:12px;padding:6px 10px;font-size:14px;font-weight:800;cursor:pointer;color:#fff;margin:4px 6px 0 0;border:1px solid ' + (on ? '#6d9dff' : '#2a3a63') + ';background:' + (on ? '#2a4a9a' : '#0b1226') + ';">' + NOMM[k] + '</button>'; }).join('') + '</div>'
-      + (meth === 'cb' ? '<div style="font-size:13px;color:#c9d3ee;">📉 Sous 1,50 : mise d\'avant × (1 ÷ (cote − 1) + 2) ; à 1,50 ou plus : × 2,5 au P2 puis × 3 ; cote sous 1,20 = match sauté ; arrêt à P5. P1 = 1er palier des ⭐.</div>' : '')
+      + (meth === 'cb' ? '<div style="font-size:13px;color:#c9d3ee;">📉 Sous 1,50 : mise d\'avant × (1 ÷ (cote − 1) + 2) ; à 1,50 ou plus : × 2,5 au P2 puis × 3 ; cote sous 1,20 = match sauté. P1 = 1er palier des ⭐.</div>'
+          /* 20261115m (« on n'a pas dans les critères le stop et là où on veut le stopper ») : arrêt de sécurité au choix, gardé (g45cr_cbstop) */
+          + '<div style="margin:4px 0 2px;font-size:14px;">🛑 Arrêt : ' + [4, 5, 6, 7, 0].map(function (n) { var on = (S.cbStop == null ? 5 : +S.cbStop) === n; return '<span onclick="g45CrCbStop(' + n + ')" style="display:inline-block;cursor:pointer;margin:4px 6px 0 0;padding:5px 11px;border-radius:10px;font-size:14px;font-weight:800;' + (on ? 'border:2px solid #1ed760;background:#14532d;' : 'border:1px solid #2a3a63;background:#16213f;') + '">' + (n ? 'P' + n : 'Aucun') + '</span>'; }).join('') + '</div>' : '')
       + (meth !== 'mont' && meth !== 'cb' ? '<div style="font-size:13px;color:#c9d3ee;">' + (meth === 'fib' ? 'Après une défaite, la mise suit 1-1-2-3-5-8… × P1 ; après une victoire, 2 cases en arrière.' : meth === 'dal' ? 'Après une défaite +1 × P1, après une victoire −1 × P1.' : 'Toujours la même mise (P1).') + ' Les ⭐ choisissent P1.</div>' : '')
       /* 20261102r (capture : « il y a juste un truc, on peut pas choisir son nombre d'étoiles ») : boutons ⭐ 1 → 5 = même échelle que « mise max »
          (g45_pal_et, _g45PalEt) → le Total et le 💶 changent ensemble. */
