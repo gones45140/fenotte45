@@ -78751,6 +78751,21 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   window._g45CkMurSig = ckMurSig;
   function ckFond(n) {   /* 20261029r : { c couleur, img } d'une carte (image perso du dépôt, logo du mur, logo connu, visuel joueur) */
     var u = ((typeof state !== 'undefined' && state.u) || []).filter(function (x) { return x && x.n === n; })[0] || {}, img = '';
+    /* 20261115z (capture Par carte : « il manque des photos » → « c'est des joueurs enlevés du mur ») : carte RETIRÉE du mur (plus dans state.u)
+       → carte « fantôme » tirée de ses paris (nom + sport) ; si c'est un joueur (photo gardée _g45JoueurVisLire, sinon cherchée UNE fois quand
+       aucun logo d'équipe ne correspond au nom) → même rendu qu'un joueur du mur : photo détourée + logo de son club. */
+    if (!u.n) { try {
+      var B0 = ((state.a || []).concat(state.h || [])).filter(function (b) { return b && b.n === n; })[0];
+      if (B0) {
+        u = { n: n, sport: B0.sport || '' }; var spF = (typeof g45SportDe === 'function' ? g45SportDe(u) : '') || '';
+        var jF = (spF && spF !== 'soccer' ? _g45JoueurVisLire(n, spF) : null) || _g45JoueurVisLire(n);
+        if (jF && (jF.cut || jF.thumb)) u.type = 'joueur';
+        else if (jF === undefined && !((typeof g45LogoUrlDe === 'function' && g45LogoUrlDe(n)) || '') && typeof _g45JoueurVisChercher === 'function') {
+          var dj = window._g45CkFondDem = window._g45CkFondDem || {};
+          if (!dj[n]) { dj[n] = 1; Promise.resolve(_g45JoueurVisChercher(n, spF)).catch(function () {}); }
+        }
+      }
+    } catch (e) {} }
     try { img = (typeof _g45ImgPersoLire === 'function' && _g45ImgPersoLire(n)) || ''; } catch (e) {}
     if (!img && u.logoUrl) img = u.logoUrl;
     try { if (!img && typeof g45LogoUrlDe === 'function') img = g45LogoUrlDe(n) || ''; } catch (e) {}
