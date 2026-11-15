@@ -75836,7 +75836,9 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   }
   function titre(h) {
     /* 20261016e (capture « Connor McDavid – Utah Mammoth ») : Équipe jouée (h.eq) d'abord — club du joueur, équipe d'une compétition */
-    if (h.isS) { var t = String(h.target || '').replace(/^\s*vs\s+/i, '').trim(); return ((h.eq && String(h.eq).trim()) || h.n) + (t && t !== '-' ? ' – ' + t : ''); }
+    /* 20261115f (capture pari 📉 Oilers @ Toronto : titre « Toronto Maple Leafs » seul, on croit que Toronto est joué) : paris d'une méthode
+       (📉 / 🐚 / 🪜, isS faux mais carte = équipe jouée) titrés comme le Cockpit « Équipe – Adversaire » */
+    if (h.isS || h.meth) { var t = String(h.target || '').replace(/^\s*vs\s+/i, '').trim(); return ((h.eq && String(h.eq).trim()) || h.n) + (t && t !== '-' ? ' – ' + t : ''); }
     return String(h.isCombi ? h.n : (h.target || h.n || '')).replace(/\s+vs\s+/ig, ' – ');
   }
   function joueurs(h) {
