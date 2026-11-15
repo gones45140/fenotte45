@@ -88223,7 +88223,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
      ligne 🪜 sous chaque pépite = palier / mise / gain de la simulation 🚀 En montante (_g45LoiMont → window._g45LoiDet, même clé
      équipe + pari + lieu + date) ; ⏳ = palier et mise prévus ; série fermée après des ratés = 🏁 bénéfice de la série. */
   var montL = function (y) {
-    if (y.nc) return '<br><span style="font-size:13px;font-weight:700;color:#c9d3ee;">➖ non compté (' + (y.nf === 3 ? 'pépite opposée sur le même match' : y.nf === 2 ? 'équipe trop faible pour le book' : y.nf ? 'niveau trop faible' : '1 seul pari par équipe') + ')</span>';   /* 20261114h ; 20261116b : nf */
+    if (y.nc) return '<br><span style="font-size:13px;font-weight:700;color:#c9d3ee;">➖ non compté (' + (y.nf === 4 ? 'cote au-dessus de 6' : y.nf === 3 ? 'pépite opposée sur le même match' : y.nf === 2 ? 'équipe trop faible pour le book' : y.nf ? 'niveau trop faible' : '1 seul pari par équipe') + ')</span>';   /* 20261114h ; 20261116b : nf */
     var d = (window._g45LoiDet || {})[y.id + '|' + y.k + '|' + (y.lieu || '') + '|' + y.t];
     var e2 = function (v) { return (v >= 0 ? '+' : '−') + frC(Math.abs(v)) + ' €'; }, cl = function (v) { return v >= 0 ? '#1ed760' : '#ff6b6b'; };
     /* 20261113g (Antoine : « faut-il mettre en 10 € normal et mode Cockpit ? ») : ligne 💶 10 € à plat (cote FR) au-dessus de la ligne 🪜 */
@@ -88288,7 +88288,10 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
       || (x.lg === 'uefa.nations' && /^D/i.test(String(x.grp || '')))) { x.nc = 1; x.nf = 1; }
       /* 20261116h (« comment éviter les pièges des équipes faibles dès P1 ? » → « les 6 dernières, que l'on ne joue pas ») : NBA / NHL / NFL / MLB,
          équipe parmi les 6 MOINS cotées de sa ligue pour le titre (x.fr, rang gardé par le robot chaque matin) → non comptée */
-      else if (x.fr != null && +x.fr <= 6 && !x.sv) { x.nc = 1; x.nf = 2; } });
+      else if (x.fr != null && +x.fr <= 6 && !x.sv) { x.nc = 1; x.nf = 2; }
+      /* 20261116j (capture Turquie en France, Victoire 12,00 ≈ 11,28 FR, 0 point, aucun enjeu : « j'aime pas du tout » → cote max « 6 ») :
+         cote FR estimée au-dessus de 6,00 → non comptée */
+      else if (!x.sv && (function () { var q = coteDe(x); return q && coteFr(q.c) > 6; })()) { x.nc = 1; x.nf = 4; } });
     /* 20261116i (capture Croatie – Tchéquie : Croatie « Victoire » 4/4 et Tchéquie « Victoire ou nul » 4/4 = l'inverse l'une de l'autre, une perd
        forcément → « oui ») : 2 pépites OPPOSÉES d'un même match (victoire ↔ victoire ou nul de l'adversaire, vainqueur ↔ vainqueur de l'adversaire,
        plus ↔ moins de la même ligne) → UNE seule comptée : meilleur taux de réussite passé (ok / n, gardé par le robot), puis la plus longue série
