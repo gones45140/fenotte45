@@ -87845,8 +87845,13 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
       var r = String(_up0.apply(this, arguments) || '').replace(/(<span class="g45ul-pal"[^>]*>)/g, '$1🚀 ');
       var ic = function (k) { var l = String(k).split('|')[1] || ''; return l === 'dom' ? '🏠 ' : l === 'ext' ? '✈️ ' : '🌍 '; };
       var pil = function (m, k, p) { return '<span class="g45ul-pal" style="background:' + MCOL[m] + ';margin-left:0;">' + NOM[m].split(' ')[0] + ' ' + ic(k) + LET[m] + p + '</span>'; };
-      try { Object.keys((u && u.lcb) || {}).forEach(function (k) { var p = +(u.lcb[k] || {}).p || 1; if (p > 1) r += pil('cb', k, p); }); } catch (e) {}
-      try { ['fib', 'dal'].forEach(function (m) { Object.keys(((u && u.lm) || {})[m] || {}).forEach(function (k) { var p = parseInt(u.lm[m][k], 10) || 1; if (p > 1) r += pil(m, k, p); }); }); } catch (e) {}
+      /* 20261115g (capture carte Oilers « 🚀 Palier 1 » seul alors qu'un pari 📉 C1 est en cours : « c'est pas indiqué que je le joue en cotes
+         basses ») : une pastille par méthode et par lieu dès que la carte y a une série (palier > 1) OU un pari (en cours ou archivé) */
+      var vus = {}, add = function (m, k, p) { var id = m + '|' + (String(k).split('|')[1] || ''); if (vus[id] && vus[id] >= p) return; vus[id] = p; };
+      try { (state.h || []).concat(state.a || []).forEach(function (b) { if (b && u && b.n === u.n && MCOL[b.meth] && b.meth !== 'mont') add(b.meth, b.mk || '', 1); }); } catch (e) {}
+      try { Object.keys((u && u.lcb) || {}).forEach(function (k) { add('cb', k, +(u.lcb[k] || {}).p || 1); }); } catch (e) {}
+      try { ['fib', 'dal'].forEach(function (m) { Object.keys(((u && u.lm) || {})[m] || {}).forEach(function (k) { add(m, k, parseInt(u.lm[m][k], 10) || 1); }); }); } catch (e) {}
+      Object.keys(vus).forEach(function (id) { var m = id.split('|')[0], l = id.split('|')[1]; r += pil(m, '|' + l, vus[id]); });
       return r;
     }; window._g45UlPaliers._meth = 1; } } catch (e) {}
   /* ═══ 20261114t — 🚀 COCKPIT P2 × 2,5 (même demande) : case dans 🪜 Mes grilles (state.ckP25). Cochée, toute grille « standard » (P2 = 2 × P1,
