@@ -89595,6 +89595,9 @@ window.g45SerNs = function (nom, n, el) {
   function logoDe(u) { var l = ''; try { l = (typeof g45LogoUrlDe === 'function' ? g45LogoUrlDe(u.n) : '') || u.logoUrl || ''; } catch (e) { l = u.logoUrl || ''; } return l; }
   function habiller() {
     var zone = document.getElementById('g45-acc-zone'); if (!zone) return;
+    /* 20261115s (capture PC annotée « agrandis les cadres ») : écran large → TOUTES les tuiles du mur à 230 px de haut
+       (photos, logos, F1, MMA, cyclisme, biathlon…). Téléphone inchangé. */
+    try { if (window.matchMedia && window.matchMedia('(min-width: 900px)').matches) [].forEach.call(zone.querySelectorAll('[data-k]'), function (t) { t.style.minHeight = '230px'; }); } catch (e) {}
     [].forEach.call(zone.querySelectorAll('[data-k]'), function (t) {
       var v = t.getAttribute('data-k'); if (/g45AccClub/.test(t.getAttribute('onclick') || '')) return;   /* bet45 : « Choisis ton club » */
       var url = '', fav = 0;
@@ -89657,7 +89660,6 @@ window.g45SerNs = function (nom, n, el) {
           ph.onerror = function () { ph.remove(); im.style.cssText = logoCss; };
           t.insertBefore(ph, im);
           im.style.cssText = 'position:absolute;right:10px;top:10px;height:clamp(40px,11vw,72px);width:auto;max-width:35%;object-fit:contain;filter:drop-shadow(0 2px 6px rgba(0,0,0,.85));pointer-events:none;';
-          t.style.minHeight = 'clamp(96px,22vw,130px)';
         }).catch(function () {});
       }
       var nom = t.lastElementChild && t.lastElementChild.firstElementChild;
