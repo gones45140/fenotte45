@@ -76389,9 +76389,19 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   function jValP(pid, m) { return jVal({ jo: pid }, m); }
   function joueurs(c) { var r = []; [['jo', 'jn'], ['jo2', 'jn2'], ['jo3', 'jn3']].forEach(function (k) { if (c[k[0]]) r.push({ id: c[k[0]], n: c[k[1]] || '?' }); }); return r; }
   /* 20261021d : matchs NON COMPTÉS = un joueur choisi n'a pas joué (pari remboursé), pas de match précédent connu, feuille de match absente */
+  /* ═══ 20261115l (Antoine, capture Cleveland 🏠 : « les critères Cockpit ne fonctionnent pas pour cotes basses, on ne joue pas en dessous de
+     1,20 » → bouton « pour tous les sports ») : S.pl12 = matchs dont la VRAIE cote du pari (coteM : résultat, joueurs NHL) est sous 1,20
+     retirés de tout le bloc (tableau, pire série, paliers, 💶, séries) ; pari sans cote gardée = match gardé. ═══ */
+  S.pl12 = (function () { try { return localStorage.getItem('g45cr_pl12') === '1'; } catch (e) { return false; } })();
+  window.g45CrPl12 = function () { S.pl12 = !S.pl12; try { localStorage.setItem('g45cr_pl12', S.pl12 ? '1' : '0'); } catch (e) {} try { redessiner(); } catch (e) {} };
+  function pl12Btn(c) {
+    return '<div style="margin:8px 0 2px;"><span onclick="g45CrPl12()" style="display:inline-block;cursor:pointer;padding:6px 12px;border-radius:10px;font-size:14px;font-weight:800;color:#fff;' + (S.pl12 ? 'border:2px solid #1ed760;background:#14532d;' : 'border:1px solid #2a3a63;background:#16213f;') + '">' + (S.pl12 ? '☑' : '☐') + ' 📉 Sans les matchs sous 1,20</span>'
+      + (S.pl12 ? '<div style="font-size:13px;color:#c9d3ee;margin-top:3px;">Matchs à cote gardée sous 1,20 retirés (comme en 📉 Cotes basses). Paris sans cote gardée : tous les matchs comptent.</div>' : '') + '</div>';
+  }
   function jFiltre(c, ms) {
     var P = joueurs(c);
     return ms.filter(function (m) {
+      if (S.pl12) { var c12 = null; try { c12 = coteM(c, m); } catch (e) {} if (c12 && c12 < 1.2 - 1e-9) return false; }   /* 20261115l */
       if (P.length && P.some(function (x) { return !jValP(x.id, m); })) return false;
       if (S.ctx && c.jm === 'lp' && P.some(function (x) { var v = jValP(x.id, m); return !v || !v.lp; })) return false;   /* 20261025m : seulement ses départs */
       if (c.pm && !m.pr) return false;
@@ -77409,7 +77419,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     if (c.jbk && bkOk() && !S.bkE[S.ctx.lg + '|' + S.ctx.id]) bkCharger();   /* 20261103h : lignes du book lues une fois par équipe */
     var CL = !!(S.ctx ? usSeul(c) : (seul(c) && S.usTr['ft|' + D.lg + '|' + String((joueurs(c)[0] || {}).id) + '|' + D.tid]));   /* 20261107o : + foot */   /* 20261107n : colonne « Club · matchs » (maquette clubs2.png « oui ») */
     var nMax = (D0.saisons || []).length, tous = [], h = (nMax > 2 ? '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:8px;font-size:15px;font-weight:800;">📅 ' + [2, 3, 4, 5].filter(function (k) { return k <= nMax; }).map(function (k) { var on = k === NSc; return '<span onclick="g45CrNs(' + k + ')" style="cursor:pointer;padding:6px 12px;border-radius:10px;font-size:14px;' + (on ? 'border:2px solid #f5c542;background:#2a2410;' : 'border:1px solid #2a3a63;background:#16213f;') + '">' + k + ' saisons</span>'; }).join('') + '</div>' : '')
-      + '<table style="width:100%;border-collapse:collapse;font-size:14px;color:#fff;margin-top:6px;">'
+      + pl12Btn(c) + '<table style="width:100%;border-collapse:collapse;font-size:14px;color:#fff;margin-top:6px;">'
       + '<tr><th style="text-align:left;font-size:13px;color:#c9d3ee;padding:6px 4px;border-bottom:1px solid #2a3a63;">Saison</th>'
       + (CL ? '<th style="text-align:left;font-size:13px;color:#c9d3ee;padding:6px 4px;border-bottom:1px solid #2a3a63;">Club · matchs</th>' : '')
       + '<th style="text-align:left;font-size:13px;color:#c9d3ee;padding:6px 4px;border-bottom:1px solid #2a3a63;">Réussite</th>'
