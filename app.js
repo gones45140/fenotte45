@@ -89798,3 +89798,13 @@ window._g45TypePatch = function (h) {
   var t = h.isCombi ? ['🧩 Combiné', '#c084fc'] : h.isS ? ['🚀 Cockpit', '#4d84ff'] : h.meth === 'cb' ? ['📉 Cotes basses', '#ff9f43'] : h.meth === 'dal' ? ['🪜 D\'Alembert', '#2dd4bf'] : h.meth === 'fib' ? ['🐚 Fibonacci', '#b07cff'] : ['🎯 Simple', '#8792ad'];
   return '<span style="margin-left:8px;display:inline-block;white-space:nowrap;font-weight:800;font-size:11px;color:#0b101d;background:' + t[1] + ';padding:1px 7px;border-radius:6px;">' + t[0] + '</span>';
 };
+
+/* ═══ 20261116q — CASE « Nom » D'OUTILS → ÉQUIPES : PAS DE MAIL (capture bet45 : « je veux choisir un club de hockey, je tombe sur ça, mon mail
+   n'est pas donné j'espère ») : Chrome remplissait #u-name avec l'identifiant enregistré (le mail) en la prenant pour une case de connexion.
+   index.html / indexfenotte.html : autocomplete="off" + name="g45-club" ; ici, garde-fou : un texte avec « @ » posé par le navigateur est
+   effacé (à l'ouverture et à chaque remplissage automatique). Rien n'est envoyé ni gardé tant que la personne n'ajoute pas l'équipe. ═══ */
+(function () {
+  var net = function () { try { var i = document.getElementById('u-name'); if (i && /@/.test(i.value || '')) i.value = ''; } catch (e) {} };
+  try { document.addEventListener('change', function (e) { if (e.target && e.target.id === 'u-name') net(); }, true); document.addEventListener('focusin', function (e) { if (e.target && e.target.id === 'u-name') setTimeout(net, 60); }, true); } catch (e) {}
+  try { setTimeout(net, 800); setTimeout(net, 3000); } catch (e) {}
+})();
