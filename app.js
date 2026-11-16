@@ -24073,7 +24073,7 @@ function getCompIcon(name) {
   return '⚽';
 }
 
-function filterMatchesByComp(matches, filters) {
+function filterMatchesByComp(matches, filters, strict) {
   if(!filters || filters.all) return matches;
   /* FILTRE PAR NOM (24/09/2026) : pour une selection, chaque competition a sa
      propre case (« sf-n:<nom> ») au lieu des familles club — championnat,
@@ -24085,7 +24085,11 @@ function filterMatchesByComp(matches, filters) {
   var _cles = Object.keys(filters).filter(function(k){ return k.indexOf('sf-n:')===0 && filters[k]; });
   if (_cles.length) {
     var _parNom = matches.filter(function(m){ return !!filters['sf-n:' + _nz(m.competition && m.competition.name)]; });
-    if (_parNom.length) return _parNom;
+    /* 20261117p (capture France, saison 2025-26 : 18 matchs de Coupe du monde affichés avec « Ligue des nations » seule cochée —
+       « pas sûr que le filtre fonctionne ») : une saison SANS match de la compétition cochée renvoyait TOUS ses matchs. `strict` :
+       l'appelant a déjà vérifié que les cases cochées existent chez cette équipe (repli « Toutes » sinon, 20261005y) → une saison
+       sans match coché est vide, donc sautée. */
+    if (_parNom.length || strict) return _parNom;
     var _autres = Object.keys(filters).some(function(k){ return k !== 'all' && k.indexOf('sf-n:') !== 0 && filters[k]; });
     if (!_autres) return matches;
   }
@@ -25486,7 +25490,7 @@ function renderSaisonsChart(el, results, nom) {
   saisons.forEach(function(s) {
     var matches = results[s];
     var filters = _saisonFilters;   /* 20261005y : filtre EFFECTIF (voir plus haut) */
-    var filteredMatches = filterMatchesByComp(matches, filters);
+    var filteredMatches = filterMatchesByComp(matches, filters, _selF);   /* 20261117p : strict pour une sélection */
     /* On n'affiche PLUS tous les matchs quand le filtre ne rend rien : c'est
        exactement ce qui donnait l'impression que le filtre ne marchait pas.
        Une saison sans match dans la competition choisie est simplement sautee. */
