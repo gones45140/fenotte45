@@ -77019,6 +77019,27 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       if (v.ok * 2 >= v.n) { run = 0; rb++; if (rb > best) best = rb; } else { rb = 0; run++; if (run > pire) pire = run; } });
     return { n: Math.round(N * 100) / 100, ok: Math.round(ok * 100) / 100, pire: pire, best: best };
   }
+  /* 20261117q — 🕒 DERNIÈRES RÉUSSITES (Antoine, Espagne « Défaite » : « faudra indiquer le dernier match perdu… hier c'est l'Angleterre
+     mais je cherche celui d'avant » ; maquette texte « oui ») : les 3 derniers matchs où le combiné est passé, du plus récent au plus ancien,
+     sur les mêmes saisons / lieu / filtres que le Total (D = saisons gardées). Adversaire lu comme dans 📋 Match par match (mpmAdv, archives ;
+     redessin quand c'est lu), sinon seulement date + score. Score du point de vue de l'équipe (m[2]-m[3]). */
+  function derOkHtml(c, D) {
+    var L = [];
+    (D.saisons || []).slice().reverse().forEach(function (s) {
+      if (!s) return; var sms = msS(c, s); if (!sms) return;
+      jFiltre(c, filtrer(sms)).forEach(function (m) { var v = valeur(c, m); if (v.n && v.ok * 2 >= v.n) L.push({ m: m, an: s.an }); });
+    });
+    if (!L.length) return '';
+    L = L.slice(-3).reverse();
+    var tid = S.ctx ? S.ctx.id : (D.tid || ''); if (tid) { try { mpmAdv(L, tid); } catch (e) {} }
+    var anNow = new Date().getFullYear();
+    return '<br>🕒 Dernières réussites : ' + L.map(function (o) {
+      var m = o.m, dt = String(m[0] || '').slice(0, 10).split('-'), b = mpmBases(m, o.an)[0], A = S.adv && S.adv[b],
+          a = A && (A[String(m[6] || '')] || A['d' + String(m[0] || '').slice(0, 10)]);
+      var dte = dt.length === 3 ? dt[2] + '/' + dt[1] + (+dt[0] !== anNow ? '/' + dt[0] : '') : '';
+      return '<b>' + dte + '</b> ' + (m[1] ? '🏠' : '✈️') + (a ? ' ' + esc(a[0]) : '') + ' <b>' + m[2] + '-' + m[3] + '</b>';
+    }).join(' · ');
+  }
   function enCours(c, ms) {
     ms = jFiltre(c, ms).filter(function (m) { return valeur(c, m).n > 0; });
     if (!ms.length) return '';
@@ -77761,7 +77782,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
         + '<br>'
         + '🏆 Meilleure série : <b style="color:#5aa9ff;">' + T.best + ' réussite' + (T.best > 1 ? 's' : '') + ' de suite</b>'
         + (function () { var B0 = brunoEtat(c, tous), N = S.a2n || B0.k; return apres2Html(apres2(c, tous, N), T, N, apres2Choix(N, B0.cr)); })()   /* 20261102f / k (les boutons sont un bloc : pas de <br>) */
-        + '📈 Série en cours : ' + enCours(c, tous) + '</div>';
+        + '📈 Série en cours : ' + enCours(c, tous) + (function () { try { return derOkHtml(c, D); } catch (e) { return ''; } })() + '</div>';   /* 20261117q */
       try { h += simHtml(c, D); } catch (e) {}   /* 20261102m */
       h += garderHtml(c, D, T);   /* 20261028e */
       h += ajoutHtml(c);   /* 20261101c */
