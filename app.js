@@ -27842,6 +27842,14 @@ window._G45_PRESS_POIDS = _G45_PRESS_POIDS;
    reellement : g45Build() en console. */
 window.g45Build = function(){ return '20260827b'; };
 
+/* 20261117j : libellés ESPN restés en anglais dans les Statistiques du match (capture d'Antoine France – Türkiye). */
+var _G45_ST_LIBFR = { 'on target %': 'Tirs cadrés %', 'shot %': 'Tirs cadrés %', 'penalty goals': 'Penaltys marqués', 'penalty kicks taken': 'Penaltys tirés',
+  'pass completion %': 'Passes réussies %', 'pass %': 'Passes réussies %', 'cross %': 'Centres réussis %', 'longball %': 'Longs ballons réussis %', 'long ball %': 'Longs ballons réussis %',
+  'tackle %': 'Tacles réussis %', 'accurate long balls': 'Longs ballons réussis', 'long balls': 'Longs ballons', 'effective tackles': 'Tacles réussis', 'tackles': 'Tacles',
+  'clearances': 'Dégagements', 'effective clearances': 'Dégagements réussis', 'interceptions': 'Interceptions', 'blocked shots': 'Tirs bloqués', 'saves': 'Arrêts',
+  'shots on goal': 'Tirs cadrés', 'shots': 'Tirs', 'fouls': 'Fautes', 'offsides': 'Hors-jeu', 'corner kicks': 'Corners', 'own goals': 'Buts contre son camp',
+  'accurate crosses': 'Centres réussis', 'crosses': 'Centres', 'accurate passes': 'Passes réussies', 'passes': 'Passes', 'yellow cards': 'Cartons jaunes', 'red cards': 'Cartons rouges',
+  'possession': 'Possession', 'total shots': 'Tirs' };
 function _renderEspnMatchStats(s, homeId, awayId, col){
   try {
     /* ═══ AUCUNE STATISTIQUE AVANT LE COUP D'ENVOI (26/08) ═══
@@ -27884,6 +27892,21 @@ function _renderEspnMatchStats(s, homeId, awayId, col){
     prio.forEach(function(n){ if(H[n]||A[n]) ajout(n); });
     Object.keys(H).forEach(ajout);
     Object.keys(A).forEach(ajout);
+    /* ═══ 20261117j — STATISTIQUES LISIBLES (capture d'Antoine : libellés « à peine visibles » ; maquette « oui »,
+       avec « attention de ne pas avoir la même couleur pour les 2 équipes ») ═══
+       Libellés blancs 14 px sur bande sombre, chiffres 16 px, barre de CHAQUE équipe partant du centre (domicile vers la
+       gauche, extérieur vers la droite), aux couleurs des équipes. Même paire de couleurs que la Pression du match :
+       _g45CoulPaireSombre écarte deux couleurs trop proches (sinon ambre pour la 2e). 0 – 0 → pas de barre. */
+    var _cps = (s.header && s.header.competitions && s.header.competitions[0] && s.header.competitions[0].competitors) || [];
+    var _dm = _cps.filter(function (c) { return c.homeAway === 'home'; })[0] || _cps[0] || {};
+    var _ex = _cps.filter(function (c) { return c.homeAway === 'away'; })[0] || _cps[1] || {};
+    var _cD = '#4d84ff', _cE = '#f0b020';
+    try {
+      if (typeof _g45CoulPaireSombre === 'function' && _dm.team && _ex.team) { var _pp = _g45CoulPaireSombre(_dm, _ex); if (_pp && _pp[0] && _pp[1]) { _cD = _pp[0]; _cE = _pp[1]; } }
+      if (typeof _g45Ecart === 'function' && _g45Ecart(_cD, _cE) < 90) _cE = (_g45Ecart(_cD, '#f0b020') < 90 ? '#ff4d5e' : '#f0b020');
+    } catch (e) {}
+    var _nD = (_dm.team && (_dm.team.displayName || _dm.team.name)) || '', _nE = (_ex.team && (_ex.team.displayName || _ex.team.name)) || '';
+    var _lgS = function (c, nm) { return nm ? '<span style="display:inline-flex;align-items:center;gap:7px;font-size:14px;font-weight:800;color:#fff;background:rgba(0,0,0,.45);padding:4px 10px;border-radius:8px;"><span style="width:14px;height:14px;border-radius:3px;background:' + c + ';"></span>' + (typeof _g45CyEa === 'function' ? _g45CyEa(nm) : nm) + '</span>' : ''; };
     var rows='';
     names.forEach(function(n){
       var hh=H[n], aa=A[n], hv=hh?hh.v:null, av=aa?aa.v:null;
@@ -27892,10 +27915,25 @@ function _renderEspnMatchStats(s, homeId, awayId, col){
       hv=(hv!=null?hv:'0'); av=(av!=null?av:'0');
       var hn=parseFloat(String(hv).replace(',','.'))||0, an=parseFloat(String(av).replace(',','.'))||0, tot=hn+an;
       var hp=tot>0?Math.round(hn/tot*100):50, ap=100-hp;
-      rows+='<div style="margin-bottom:9px;"><div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;margin-bottom:3px;"><b style="color:var(--t1);min-width:40px;">'+hv+'</b><span style="color:var(--t3);text-align:center;flex:1;padding:0 6px;">'+lab+'</span><b style="color:var(--t1);min-width:40px;text-align:right;">'+av+'</b></div><div style="display:flex;height:5px;border-radius:3px;overflow:hidden;background:rgba(255,255,255,.06);"><div style="width:'+hp+'%;background:'+col+';"></div><div style="width:'+ap+'%;background:var(--t3);opacity:.55;"></div></div></div>';
+      /* 20261117j : libellé anglais restant → français ; « 0.3 » d'un pourcentage → « 30 % ». */
+      var _lt = _G45_ST_LIBFR[String(lab).toLowerCase().trim()]; if (_lt) lab = _lt;
+      var _pct = /%|pct$/i.test(String(lab) + ' ' + n) || /Pct$/.test(n);
+      if (_pct) {
+        var _fp = function (v) { var x = parseFloat(String(v).replace(',', '.')); if (isNaN(x)) return v; if (x <= 1 && n !== 'possessionPct') x = x * 100; return Math.round(x) + ' %'; };
+        hv = _fp(hv); av = _fp(av); lab = String(lab).replace(/\s*%$/, ' (%)').replace(/\(%\) \(%\)/, '(%)');
+      }
+      var _hpx = tot > 0 ? Math.round(hn / tot * 100) : 0, _apx = tot > 0 ? 100 - _hpx : 0;
+      rows+='<div style="margin-bottom:12px;"><div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:5px;">'
+        + '<b style="color:#fff;font-size:16px;min-width:52px;">'+hv+'</b>'
+        + '<span style="color:#fff;font-size:14px;font-weight:700;text-align:center;background:rgba(0,0,0,.5);padding:3px 12px;border-radius:8px;">'+lab+'</span>'
+        + '<b style="color:#fff;font-size:16px;min-width:52px;text-align:right;">'+av+'</b></div>'
+        + '<div style="display:flex;gap:3px;height:7px;">'
+          + '<div style="flex:1;display:flex;justify-content:flex-end;background:rgba(255,255,255,.12);border-radius:4px;"><div style="width:'+_hpx+'%;background:'+_cD+';border-radius:4px;"></div></div>'
+          + '<div style="flex:1;display:flex;background:rgba(255,255,255,.12);border-radius:4px;"><div style="width:'+_apx+'%;background:'+_cE+';border-radius:4px;"></div></div>'
+        + '</div></div>';
     });
     if(!rows) return '';
-    return '<div class="fc" style="padding:14px;"><div style="font-size:11px;font-weight:800;letter-spacing:.5px;color:var(--t2);margin-bottom:12px;">📊 STATISTIQUES</div>'+rows+'</div>';
+    return '<div class="fc" style="padding:16px;"><div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;align-items:center;margin-bottom:14px;"><span style="font-size:15px;font-weight:800;color:#fff;">📊 STATISTIQUES</span><span style="display:flex;gap:8px;flex-wrap:wrap;">' + _lgS(_cD, _nD) + _lgS(_cE, _nE) + '</span></div>'+rows+'</div>';
   } catch(e){ return ''; }
 }
 
