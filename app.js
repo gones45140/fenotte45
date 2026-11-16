@@ -9673,10 +9673,10 @@ function editPlayerStats(teamId, playerId, encName, isGK, uid) {
   var ms = {}; try { ms = JSON.parse(localStorage.getItem(manualKey)||'{}'); } catch(e){}
   // compMode + journée actuels
   var compMode = window['_compMode_'+uid] || 'league';
-  var prefix = compMode === 'euro' ? 'euro' : 'league';
+  var prefix = _g45CompPfx(compMode);   /* 20261117i */
   var vj = (function(){ var el=document.getElementById('fbref-journee-'+uid); return el?el.value:'global'; })() || 'global';
   var jp = (vj !== 'global') ? prefix+'_'+vj : prefix;
-  var compLabel = (compMode==='euro'?'Europe':'Championnat') + (vj!=='global'?' '+vj:' (global)');
+  var compLabel = (compMode==='euro'?'Europe':(String(compMode).indexOf('.')>0?((_G45_SEL_COMPS.filter(function(c){return c[0]===compMode;})[0]||[0,compMode])[1]):'Championnat')) + (vj!=='global'?' '+vj:' (global)');
 
   function g(k){ return ms[jp+'_'+k]!==undefined ? ms[jp+'_'+k] : ''; }
   var fields = isGK
@@ -17590,7 +17590,7 @@ async function autoEspnFillSquad(uid, nom, silencieux) {
   var keyTeam = sofaId || '0';
 
   var comp = window['_compMode_' + uid] || 'league';
-  var savePrefix = (comp === 'euro') ? 'euro' : 'league';
+  var savePrefix = _g45CompPfx(comp);   /* 20261117i : s_<slug> pour une compétition de sélection */
 
   var cacheKey = 'squad_sofa_' + (sofaId || 'af_' + nom);
   var squadData = null;
@@ -17681,7 +17681,8 @@ async function autoEspnFillSquad(uid, nom, silencieux) {
 
     // Championnat à interroger pour les stats. En Europe : auto-détection de la coupe.
     var statsLeague = resolved.league;
-    if (comp === 'euro') {
+    if (String(comp).indexOf('.') > 0) statsLeague = comp;   /* 20261117i : sélection → la compétition choisie */
+    else if (comp === 'euro') {
       var euroSlugs = ['uefa.champions', 'uefa.europa', 'uefa.europa.conf', 'uefa.champions_qual','uefa.europa_qual','uefa.europa.conf_qual'];
       var foundEuro = null;
       for (var pi = 0; pi < pairs.length && pi < 8 && !foundEuro; pi++) {
@@ -17877,6 +17878,20 @@ async function toggleAdminLock(uid) {
   }
 }
 
+/* ═══ 20261117i — VRAIES COMPÉTITIONS D'UNE SÉLECTION (effectif, capture d'Antoine France : « championnat / europe c'est pas bon,
+   faut y mettre les vraies compétitions », maquette « oui ») ═══
+   Pour une sélection, « Championnat » lisait la Coupe du monde (ligue de résolution fifa.world) et « Europe » cherchait la C1.
+   Le mode de compétition d'une sélection est désormais le SLUG ESPN de la compétition (uefa.nations…) ; ses stats sont rangées sous
+   le préfixe « s_<slug> » (ex. s_uefa_nations_apps), à côté de league_ / euro_ des clubs, qui ne changent pas. */
+var _G45_SEL_COMPS = [['uefa.nations', '🇪🇺 Ligue des nations'], ['fifa.worldq.uefa', '🌍 Qualifs CDM'], ['fifa.world', '🏆 Coupe du monde'], ['uefa.euro', '🇪🇺 Euro'], ['fifa.friendly', '🤝 Amicaux']];
+function _g45CompPfx(mode) {
+  if (mode === 'euro') return 'euro';
+  if (mode && String(mode).indexOf('.') > 0) return 's_' + String(mode).replace(/\./g, '_');
+  return 'league';
+}
+function _g45EstSelNom(nom) {
+  try { return !!((typeof _g45NatByAlias !== 'undefined') && _g45NatByAlias[_g45norm(nom)]); } catch (e) { return false; }
+}
 function setCompMode(uid, comp) {
   window['_compMode_'+uid] = comp;
   var b = document.getElementById('fbref-comp-'+uid);
@@ -18248,6 +18263,9 @@ async function loadFdSquad(el, nom, teamId, noTerrain, terrainOnly) {
     var posColors={1:'#f5a623',2:'#4fc3f7',3:'#81c784',4:'#ef9a9a'};
     var posLabels={1:'🧤 Gardiens',2:'🛡️ Défenseurs',3:'🎯 Milieux',4:'⚽ Attaquants'};
     var uid = 'fd_'+(sofaId||afId||nom||'x').toString().replace(/[^a-zA-Z0-9]/g,'');
+    /* 20261117i : sélection → mode = compétition réelle (Ligue des nations par défaut) ; club → inchangé. */
+    var _estSel = _g45EstSelNom(nom);
+    if (_estSel && String(window['_compMode_'+uid] || '').indexOf('.') < 0) window['_compMode_'+uid] = 'uefa.nations';
     var html = '<div style="padding:2px 0;">';
 
     // Header
@@ -18333,7 +18351,7 @@ async function loadFdSquad(el, nom, teamId, noTerrain, terrainOnly) {
     // Sélecteur de journée - visible par tous
     var lastJKey = 'squad_lastJ_'+saisonKey(sofaId||'0');
     var lastJ = localStorage.getItem(lastJKey)||'';
-    html += '<div style="margin-bottom:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">'
+    html += '<div style="margin-bottom:8px;display:'+(_estSel?'none':'flex')+';align-items:center;gap:6px;flex-wrap:wrap;">'   /* 20261117i : J1-J38 / MD inutiles pour une sélection (le select reste, caché, sur « Global ») */
       +'<span style="font-size:10px;color:var(--t3);">Journée :</span>'
       +'<select id="fbref-journee-'+uid+'" onchange="loadTeamCompo&&loadTeamCompo()" style="padding:3px 8px;border-radius:6px;border:1px solid rgba(255,255,255,.15);background:var(--bg2,#1a1f2e);color:var(--t2);font-size:10px;font-weight:700;cursor:pointer;">'
       +'<option value="global">Global (total)</option>';
@@ -18349,6 +18367,12 @@ async function loadFdSquad(el, nom, teamId, noTerrain, terrainOnly) {
 
     // Selecteur Competition (Champ/Europe) - visible par tous
     var curComp = window['_compMode_'+uid] || 'league';
+    if (_estSel) {
+      html += '<div style="margin-bottom:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;"><span style="font-size:13px;color:#fff;font-weight:700;">Compétition :</span>'
+        + _G45_SEL_COMPS.map(function (c) { var on = curComp === c[0];
+            return '<button onclick="setCompMode(\''+uid+'\',\''+c[0]+'\')" style="padding:5px 12px;border-radius:6px;border:1px solid '+(on?'rgba(77,132,255,.6)':'rgba(255,255,255,.15)')+';background:'+(on?'rgba(77,132,255,.28)':'rgba(10,16,32,.6)')+';color:'+(on?'#fff':'#dbe3f5')+';font-size:13px;font-weight:700;cursor:pointer;">'+c[1]+'</button>'; }).join('')
+        + '</div>';
+    } else
     html += '<div style="margin-bottom:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">'
       +'<span style="font-size:10px;color:var(--t3);">Competition :</span>'
       +'<button onclick="setCompMode(\''+uid+'\',\'league\')" style="padding:4px 12px;border-radius:6px;border:1px solid '+(curComp==='league'?'rgba(77,132,255,.5)':'rgba(255,255,255,.12)')+';background:'+(curComp==='league'?'rgba(77,132,255,.2)':'rgba(255,255,255,.05)')+';color:'+(curComp==='league'?'#4d84ff':'var(--t3)')+';font-size:11px;font-weight:700;cursor:pointer;">Championnat</button>'
@@ -18397,10 +18421,12 @@ async function loadFdSquad(el, nom, teamId, noTerrain, terrainOnly) {
     html += '<div style="height:360px;"></div></div>';
 
     }
-    // Panneau fiche
+    // Panneau fiche — 20261117i : seulement avec le terrain (sans lui, cadre vide « ← Sélectionne » + une balise fermante en trop)
+    if(!noTerrain){
     html += '<div id="fd-tip-'+uid+'" style="width:140px;flex-shrink:0;border-radius:12px;background:rgba(14,18,32,.95);border:1px solid rgba(77,132,255,.25);padding:12px;display:flex;flex-direction:column;gap:2px;">';
     html += '<div style="font-size:9px;color:var(--t3);text-align:center;margin:auto 0;">← Sélectionne</div>';
     html += '</div></div>';
+    }
 
     // Tableau par poste
     [1,2,3,4].forEach(function(pos){
@@ -18424,7 +18450,7 @@ async function loadFdSquad(el, nom, teamId, noTerrain, terrainOnly) {
       if(!terrainOnly) {     if(isMobilePortrait) {
         // ── MODE PORTRAIT MOBILE : Joueur + stats compactes ──
         var mCompMode = window['_compMode_'+uid] || 'league';
-        var mPrefix = mCompMode === 'euro' ? 'euro' : 'league';
+        var mPrefix = _g45CompPfx(mCompMode);   /* 20261117i */
         var mView = (function(){ var el=document.getElementById('fbref-journee-'+uid); return el?el.value:'global'; })() || 'global';
         var mJ = (mView && mView !== 'global') ? mPrefix+'_'+mView : mPrefix;
         var mIsGK = (pos === 1);
@@ -18547,7 +18573,7 @@ async function loadFdSquad(el, nom, teamId, noTerrain, terrainOnly) {
         html += '</tr></thead><tbody>';
         // Trier les joueurs selon la colonne selectionnee
         var sortedPp = pp.slice().sort(function(a,b){
-          var prefix2 = compMode==='euro'?'euro':'league';
+          var prefix2 = _g45CompPfx(compMode);   /* 20261117i */
           var jPfx = (viewJournee&&viewJournee!=='global') ? prefix2+'_'+viewJournee : prefix2;
           var getVal = function(p, key) {
             var ms2={}; try{ms2=JSON.parse(localStorage.getItem('manual_stats_'+saisonKey((sofaId||afId||'0')+'_'+p.id))||'{}');}catch(e){}
@@ -18579,8 +18605,8 @@ async function loadFdSquad(el, nom, teamId, noTerrain, terrainOnly) {
           var manualKey='manual_stats_'+saisonKey((sofaId||afId||'0')+'_'+p.id);
           var ms={}; try{ms=JSON.parse(localStorage.getItem(manualKey)||'{}');}catch(e){}
           var hasManual=ms.league_goals!==undefined||ms.euro_goals!==undefined;
-          var isEuro = compMode==='euro';
-          var prefix = isEuro ? 'euro' : 'league';
+          var isEuro = compMode!=='league';   /* 20261117i : une compétition de sélection se lit comme l'Europe (pas de repli sur les stats d'effectif) */
+          var prefix = _g45CompPfx(compMode);
 
           // Lecture selon la journée sélectionnée
           var jPrefix = prefix; // par défaut global
@@ -55097,7 +55123,7 @@ async function autoApiSportsFillSquad(uid, nom) {
   var squadData = trouve.squad;
 
   var comp = window['_compMode_' + uid] || 'league';
-  var savePrefix = (comp === 'euro') ? 'euro' : 'league';
+  var savePrefix = _g45CompPfx(comp);   /* 20261117i : s_<slug> pour une compétition de sélection */
 
   /* Garde-fou : une equipe remplie a la main n'est jamais ecrasee. */
   var srcApis = 'apis_src_' + saisonKey(keyTeam + '_' + savePrefix);
