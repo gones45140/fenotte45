@@ -27372,13 +27372,39 @@ async function _espnMatchLiveData(nom){
       var st=(comp&&comp.status&&comp.status.type)?comp.status.type:{};
       return {id:e.id, t:new Date(e.date).getTime(), state:st.state||'', leagueSlug:(e.season&&e.season.slug)||resolved.league};
     }).filter(function(x){return x.id;});
+    /* 20261117f (capture bet45 : France → onglet Live = « Terminé 4:6 England », le match de CET ÉTÉ, au lieu de France – Türkiye
+       d'hier soir) : une sélection est résolue en `fifa.world` (espnResolveTeam), et le calendrier d'équipe ESPN au foot ne rend
+       QUE la compétition demandée → seuls les matchs de Coupe du monde. Gones voyait le bon match par un autre chemin (équipe perso
+       rangée dans une autre ligue). Pour une sélection, on lit donc aussi les calendriers des autres compétitions de sélections
+       (même liste que les Prochains matchs, 24/09) ; une compétition où l'équipe n'a pas joué renvoie une erreur, ignorée. */
+    var _selL = [];
+    try {
+      if (SPT === 'soccer' && (/^fifa\.|^uefa\.(nations|euro)|^conmebol\.|^caf\.nations|^concacaf\.(gold|nations)/.test(String(resolved.league))
+          || ((typeof _g45NatByAlias !== 'undefined') && _g45NatByAlias[_g45norm(nom)]))) {
+        _selL = ['uefa.nations', 'fifa.friendly', 'fifa.worldq.uefa', 'uefa.euroq', 'uefa.euro', 'fifa.world'].filter(function (l) { return l !== resolved.league; });
+      }
+    } catch (e) {}
+    if (_selL.length) {
+      var _selR = await Promise.all(_selL.map(function (l) {
+        return fetch(FD_PROXY+'?host=espn&path='+encodeURIComponent('/apis/site/v2/sports/soccer/'+l+'/teams/'+resolved.id+'/schedule'))
+          .then(function (x) { return x.ok ? x.json() : null; }).then(function (j) { return [l, j]; }).catch(function () { return [l, null]; });
+      }));
+      _selR.forEach(function (p) {
+        ((p[1] && p[1].events) || []).forEach(function (e) {
+          if (!e || !e.id || events.some(function (x) { return String(x.id) === String(e.id); })) return;
+          var comp = (e.competitions && e.competitions[0]) || {};
+          var st = (comp.status && comp.status.type) ? comp.status.type : {};
+          events.push({ id: e.id, t: new Date(e.date).getTime(), state: st.state || '', leagueSlug: p[0] });
+        });
+      });
+    }
     /* 20261024x (capture 14:17 : Manchester City, onglet Live = « Terminé 3-2 Ipswich » alors qu'il jouait Aston Villa) : le calendrier
        d'équipe ESPN (foot) ne liste que les matchs JOUÉS → le match en cours n'y est pas et on prenait le plus proche, l'ancien.
        On ajoute le programme du JOUR (scoreboard) de la ligue de l'équipe — et, au foot, des 3 coupes d'Europe — : un match de
        l'équipe en cours (ou du jour) y est trouvé par son id ESPN. */
     try {
       var sbL = [resolved.league];
-      if (SPT === 'soccer') ['uefa.champions', 'uefa.europa', 'uefa.europa.conf'].forEach(function (x) { if (sbL.indexOf(x) < 0) sbL.push(x); });
+      if (SPT === 'soccer') (_selL.length ? _selL /* 20261117f : sélection → match du jour dans ses compétitions, pas les coupes d'Europe */ : ['uefa.champions', 'uefa.europa', 'uefa.europa.conf']).forEach(function (x) { if (sbL.indexOf(x) < 0) sbL.push(x); });
       var sbR = await Promise.all(sbL.map(function (l) {
         return fetch(FD_PROXY+'?host=espn&path='+encodeURIComponent('/apis/site/v2/sports/'+SPT+'/'+l+'/scoreboard')).then(function (x) { return x.json(); }).then(function (j) { return [l, j]; }).catch(function () { return [l, null]; });
       }));
