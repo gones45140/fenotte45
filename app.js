@@ -18279,6 +18279,11 @@ async function loadFdSquad(el, nom, teamId, noTerrain, terrainOnly) {
         var _cmp = window['_compMode_'+uid] || 'league';
         var _fl  = 'g45autoespn_' + saisonKey((sofaId||afId||nom||'0') + '_' + _cmp);
         var _seuil = _g45DernierJourRafraichissement(_cmp);
+        /* 20261117f (capture bet45 : France, stats de l'effectif figées — Mbappé 0 match — alors que gones était à jour par le bouton
+           ⚡ Auto ESPN réservé à l'admin) : le rafraîchissement auto suit le rythme d'un CHAMPIONNAT (une fois après le mardi). Une
+           sélection joue pendant les trêves, du jeudi au mardi : le remplissage du mardi précédent tombait AVANT les matchs. Pour une
+           sélection, on rafraîchit donc une fois par JOUR (minuit), à l'ouverture de l'effectif. */
+        try { if ((typeof _g45NatByAlias !== 'undefined') && _g45NatByAlias[_g45norm(nom)]) { var _mn = new Date(); _mn.setHours(0, 0, 0, 0); _seuil = _mn.getTime(); } } catch (e) {}
         var _dernier = parseInt(localStorage.getItem(_fl) || '0', 10) || 0;
         if(_dernier >= _seuil) return;
         if(typeof autoEspnFillSquad !== 'function') return;
