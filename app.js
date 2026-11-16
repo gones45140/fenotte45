@@ -75962,6 +75962,10 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       if (!meta || !meta.eid || !meta.sp || !meta.lg) continue;
       var j = null; try { j = await sb(meta.sp, meta.lg, String(h.date).slice(0, 10).replace(/-/g, '')); } catch (e) {}
       var ev = ((j && j.events) || []).filter(function (e) { return String(e.id) === String(meta.eid); })[0];
+      /* 20261116y (captures 03 h 22 : Oilers 01:30 et Dallas 02:00 sans score en direct ni « ça passe ») : ESPN range un match US de la nuit
+         (heure de Paris) au jour AMÉRICAIN, la VEILLE de la date du pari → scoreboard de la veille si le match n'est pas trouvé. */
+      if (!ev) { try { var dv = new Date(String(h.date).slice(0, 10) + 'T12:00:00Z'); dv.setUTCDate(dv.getUTCDate() - 1);
+        var j2 = await sb(meta.sp, meta.lg, dv.toISOString().slice(0, 10).replace(/-/g, '')); ev = ((j2 && j2.events) || []).filter(function (e) { return String(e.id) === String(meta.eid); })[0]; } catch (e) {} }
       if (!ev) continue;
       var cp = (ev.competitions && ev.competitions[0]) || {}, st = (cp.status && cp.status.type) || (ev.status && ev.status.type) || {};
       if (st.state !== 'in' && st.state !== 'post') continue;
@@ -80191,7 +80195,8 @@ window._g45CdMarche = _g45CdMarche; window._g45CdTexte = _g45CdTexte;
     if (!meta || !meta.eid || !meta.lg || !(meta.sp === 'soccer' || _G45_CD_US[meta.sp + '|' + meta.lg])) return;   /* 20261020q : + NBA · 20261024p : + MLB, NHL */
     z._cdPend = 1;
     try {
-      var C = await _g45CdLire(meta.sp, meta.lg, meta.eid, [String(h.date).slice(0, 10).replace(/-/g, '')]);
+      var _dv = new Date(String(h.date).slice(0, 10) + 'T12:00:00Z'); _dv.setUTCDate(_dv.getUTCDate() - 1);   /* 20261116y : + la veille (jour US) */
+      var C = await _g45CdLire(meta.sp, meta.lg, meta.eid, [String(h.date).slice(0, 10).replace(/-/g, ''), _dv.toISOString().slice(0, 10).replace(/-/g, '')]);
       if (!C || C.state !== 'in') return;
       var moiDom = h.domicile === 'dom' ? true : (h.domicile === 'ext' ? false : (meta.moiDom != null ? !!meta.moiDom : null));
       var M = _g45CdMarche(h, C, moiDom); if (!M) return;
