@@ -47639,7 +47639,10 @@ async function loadCompetTab() {
   var rgFr = function (r) { r = +r || 0; return r ? (r === 1 ? '1er' : r + 'e') : ''; };
   body.innerHTML = '<div style="font-size:13px;color:#c9d3ee;margin-bottom:10px;">'
       + eq.length + ' \u00e9quipes \u00b7 touche une \u00e9quipe pour ouvrir sa fiche compl\u00e8te \u00b7 \u2606 = la suivre</div>'
-    + Object.keys(grp).map(function (g) {
+    /* 20261117r (capture Ligue des nations → Équipes : « c'est le bordel, du D dans du A » — groupes C2, A3, C1, A1… dans l'ordre d'ESPN) :
+       des groupes nommés « Group A1 / Groupe B / Poule 3 » sont triés naturellement (A1, A2… B1… D2). Autres découpages (conférences…) : ordre ESPN. */
+    + (function (K) { return K.length > 1 && K.every(function (g) { return /^(group|groupe|poule|pool)\b/i.test(g); })
+        ? K.sort(function (x, y) { return x.localeCompare(y, 'fr', { numeric: true, sensitivity: 'base' }); }) : K; })(Object.keys(grp)).map(function (g) {
         return (g ? '<div style="font-size:14px;font-weight:800;color:#fff;margin:12px 0 6px;">' + g + '</div>' : '')
           + '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(210px,100%),1fr));gap:8px;">'
           + grp[g].map(function (t) {
