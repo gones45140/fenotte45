@@ -40322,8 +40322,7 @@ function _g45ScoreTexte(h) {
          aussi utilisee par `renderArchive` (onglet PARI), pas seulement par
          le Bilan — sans les deux appels, le score resolu en tache de fond ne
          rafraichissait que la liste qui n'avait pas demande la recherche. */
-      try { if (typeof renderBilanTab === 'function') renderBilanTab(); } catch(e) {}
-      try { if (typeof renderArchive === 'function') renderArchive(); } catch(e) {}
+      _g45ScoreRedessiner();   /* 20261117c : redessin regroupé (voir _g45ScoreRedessiner) */
     }
   };
   var finirTxt = function(txt, ven) {
@@ -40332,8 +40331,7 @@ function _g45ScoreTexte(h) {
     try { localStorage.setItem(ck, JSON.stringify(payload)); } catch(e) {}
     if (!_g45ScoreVus[ck]) {
       _g45ScoreVus[ck] = 1;
-      try { if (typeof renderBilanTab === 'function') renderBilanTab(); } catch(e) {}
-      try { if (typeof renderArchive === 'function') renderArchive(); } catch(e) {}
+      _g45ScoreRedessiner();   /* 20261117c : redessin regroupé (voir _g45ScoreRedessiner) */
     }
   };
   /* FENETRE DE DATE ELARGIE POUR LES SPORTS US (28/08, retour d'Antoine —
@@ -89888,4 +89886,19 @@ function _g45Drap(ico, px) {
     if (c.length === 2 && c[0] && c[1]) { var h = px || 16; return '<img src="https://flagcdn.com/w40/' + c.join('') + '.png" alt="" loading="lazy" onerror="this.remove()" style="width:' + Math.round(h * 1.5) + 'px;height:' + h + 'px;object-fit:cover;border-radius:3px;vertical-align:middle;">'; }
   } catch (e) {}
   return ico || '';
+}
+
+
+/* ═══ 20261117c — GRAPHIQUES QUI CLIGNOTENT (Antoine : « tous les graphiques le font, dans la seconde », « ça bouge toujours ») : chaque score
+   d'ancien pari retrouvé en tâche de fond (_g45ScoreTexte → finir / finirTxt) relançait TOUT le Bilan + l'Archive (graphiques recréés) ;
+   avec des centaines de paris = des dizaines de redessins par seconde (mesuré : ~100 graphiques recréés / 0,5 s à l'ouverture du Bilan).
+   Les redessins sont maintenant REGROUPÉS : un seul, 1,5 s après le dernier score trouvé. ═══ */
+var _g45ScoreRedT = null;
+function _g45ScoreRedessiner() {
+  if (_g45ScoreRedT) clearTimeout(_g45ScoreRedT);
+  _g45ScoreRedT = setTimeout(function () {
+    _g45ScoreRedT = null;
+    try { if (typeof renderBilanTab === 'function') renderBilanTab(); } catch (e) {}
+    try { if (typeof renderArchive === 'function') renderArchive(); } catch (e) {}
+  }, 1500);
 }
