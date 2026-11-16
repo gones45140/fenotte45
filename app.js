@@ -89760,13 +89760,16 @@ window.g45SerNs = function (nom, n, el) {
   }
   function logoDe(u) { var l = ''; try { l = (typeof g45LogoUrlDe === 'function' ? g45LogoUrlDe(u.n) : '') || u.logoUrl || ''; } catch (e) { l = u.logoUrl || ''; } return l; }
   function habiller() {
+    /* 20261117e (captures « c'est quoi ça ? » : sport ouvert → bloc noir avec logo OL / coq géant qui déborde) : en vue d'UN sport, les BOUTONS
+       de l'en-tête (Compétitions, Équipes / Joueurs) portent aussi data-k → ils recevaient photo + logo + hauteur. Seules les TUILES
+       (div role="button") sont habillées. */
     var zone = document.getElementById('g45-acc-zone'); if (!zone) return;
     /* 20261115s (capture PC annotée « agrandis les cadres ») : écran large → TOUTES les tuiles du mur à 230 px de haut
        (photos, logos, F1, MMA, cyclisme, biathlon…). Téléphone inchangé. */
-    try { if (window.matchMedia && window.matchMedia('(min-width: 900px)').matches) [].forEach.call(zone.querySelectorAll('[data-k]'), function (t) { t.style.minHeight = '230px'; }); } catch (e) {}
+    try { if (window.matchMedia && window.matchMedia('(min-width: 900px)').matches) [].forEach.call(zone.querySelectorAll('div[data-k][role="button"]'), function (t) { t.style.minHeight = '230px'; }); } catch (e) {}
     /* 20261115t (Antoine : « et F1 on a quoi en image » → bannière de la ligue TheSportsDB 4370 envoyée par lui) : tuile F1 = bannière
        F1 en fond (cover) à la place du logo sur rectangle sombre ; l'ancienne image n'est retirée qu'une fois la bannière chargée. */
-    [].forEach.call(zone.querySelectorAll('[data-k="🏎"]'), function (t) {
+    [].forEach.call(zone.querySelectorAll('div[data-k="🏎"][role="button"]'), function (t) {
       if (t.querySelector('.g45-acc-ph')) return;
       var ph = document.createElement('img'), voile = t.querySelector(':scope > div');
       ph.src = 'images/equipes/f1-redbull.jpg';   /* 20261115v (« je préfère Red Bull » ; TheSportsDB n'a aucune photo Red Bull F1 → image envoyée par Antoine, gardée dans le dépôt) */ ph.alt = ''; ph.className = 'g45-acc-ph';
@@ -89775,7 +89778,7 @@ window.g45SerNs = function (nom, n, el) {
       ph.onerror = function () { ph.remove(); };
       if (voile) t.insertBefore(ph, voile); else t.insertBefore(ph, t.firstChild);
     });
-    [].forEach.call(zone.querySelectorAll('[data-k]'), function (t) {
+    [].forEach.call(zone.querySelectorAll('div[data-k][role="button"]'), function (t) {
       var v = t.getAttribute('data-k'); if (/g45AccClub/.test(t.getAttribute('onclick') || '') && !LG[v]) return;   /* 20261116r : tuile « Choisis ton club » d'une ligue US / NRL → photo de la ligue quand même */   /* bet45 : « Choisis ton club » */
       var url = '', fav = 0;
       if (LG[v]) url = 'https://a.espncdn.com/i/teamlogos/leagues/500/' + LG[v] + '.png';
