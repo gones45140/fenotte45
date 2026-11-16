@@ -67596,7 +67596,7 @@ function _g45ClvEligible(h) {
     && String(h.sport || '⚽').indexOf('⚽') >= 0 && /^\d{4}-\d{2}-\d{2}/.test(String(h.date || '')) && parseFloat(h.cote) > 1;
 }
 function _g45ClvLire(h) { try { var c = JSON.parse(localStorage.getItem('g45clv1_' + h.id) || 'null'); if (!c) return undefined; if (c.neg) return (Date.now() - c.t < 3 * 86400000) ? null : undefined; return c; } catch (e) { return undefined; } }
-var _g45ClvSb = {}, _g45ClvEnCours = {}, _g45ClvFile = [], _g45ClvActif = 0;
+var _g45ClvSb = {}, _g45ClvEnCours = {}, _g45ClvFile = [], _g45ClvActif = 0; var _g45ClvPanne = {};   /* 20261117b : id → heure du dernier échec réseau (pas de nouvel essai avant 10 min) */
 async function _g45ClvScoreboard(jour) {
   if (!_g45ClvSb[jour]) _g45ClvSb[jour] = (async function () {
     var r = await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/all/scoreboard?dates=' + jour.replace(/-/g, '') + '&limit=400');
@@ -67612,7 +67612,10 @@ async function _g45ClvResoudre(h) {
   var ce = _g45ClvNrm(equipe), ca = _g45ClvNrm(adv);
   if (ce.length < 3) return neg();
   var evs = [], jour = String(h.date).slice(0, 10);
-  try { evs = await _g45ClvScoreboard(jour); } catch (e) { return; }   /* réseau : on retentera */
+  /* 20261117b (capture « tous les graphiques clignotent, dans la seconde ») : scoreboard ESPN en échec → promesse REJETÉE gardée en mémoire →
+     chaque nouvel essai échouait aussitôt → _g45ClvPompe / _g45ClvPoser tournaient en boucle et redessinaient la page sans arrêt. Échec réseau
+     = pause de 10 min pour ce pari (_g45ClvPanne) et promesse du jour oubliée. */
+  try { evs = await _g45ClvScoreboard(jour); } catch (e) { delete _g45ClvSb[jour]; _g45ClvPanne[h.id] = Date.now(); return; }   /* réseau : on retentera (dans 10 min) */
   var colle = function (n, c) { return n && c && c.length > 2 && (n.indexOf(c) >= 0 || c.indexOf(n) >= 0); };
   var cand = evs.map(function (e) {
     var cp = (e.competitions && e.competitions[0]) || {}, cs = cp.competitors || [];
@@ -67626,7 +67629,7 @@ async function _g45ClvResoudre(h) {
   var sel = _g45ClvSelection(h, moiDom);
   if (!sel) return neg();
   var d = null;
-  try { var r = await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/all/summary?event=' + encodeURIComponent(ev.id)); if (r.ok) d = await r.json(); } catch (e) { return; }
+  try { var r = await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/all/summary?event=' + encodeURIComponent(ev.id)); if (r.ok) d = await r.json(); else { _g45ClvPanne[h.id] = Date.now(); return; } } catch (e) { _g45ClvPanne[h.id] = Date.now(); return; }   /* 20261117b */
   var pc = d && (d.pickcenter || d.odds || [])[0];
   if (!pc) return neg();
   var clo = 0;
@@ -67661,7 +67664,7 @@ function _g45ClvPoser() {
     elig.forEach(function (h) {
       var c = _g45ClvLire(h);
       if (c && c.c) { var _eg = Math.abs(parseFloat(h.cote) - c.c) < 0.005; faits.push({ h: h, c: c, v: _eg ? 0 : (parseFloat(h.cote) / c.c - 1) * 100, eg: _eg }); }
-      else if (c === undefined) { aChercher++; if (!_g45ClvEnCours[h.id] && _g45ClvFile.length < 40) { _g45ClvEnCours[h.id] = 1; _g45ClvFile.push(h); } }
+      else if (c === undefined) { aChercher++; if (!_g45ClvEnCours[h.id] && !(_g45ClvPanne[h.id] && Date.now() - _g45ClvPanne[h.id] < 600000) && _g45ClvFile.length < 40) { _g45ClvEnCours[h.id] = 1; _g45ClvFile.push(h); } }
     });
     _g45ClvPompe();
     var esc = function (x) { return String(x).replace(/&/g, '&amp;').replace(/</g, '&lt;'); };
