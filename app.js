@@ -4810,6 +4810,19 @@ function injectRefreshButton() {
      `id` conserve : la classe pilote l'affichage, le comportement ne change pas. */
   b.className = 'g45-refresh';
   b.style.cssText = 'position:fixed;bottom:80px;right:16px;z-index:9999;width:48px;height:48px;border-radius:50%;border:1px solid rgba(77,132,255,.4);background:rgba(20,26,40,.95);color:#4d84ff;font-size:20px;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;';
+  /* 20261117o — DÉPLACÉ EN HAUT À GAUCHE (Antoine : « enlève le bouton » puis « en fait laisse-le mais repositionne-le », flèche
+     vers le coin haut gauche, à gauche de BET45). Il flottait en bas à droite par-dessus le contenu (stats, terrain). Il est
+     posé dans la barre du haut, avant le logo, à sa place dans le flux (plus de position fixe), pleinement visible. Sans barre
+     du haut : ancienne place. Téléphone : toujours caché par style.css (< 700 px). */
+  var _top = document.querySelector('header.topbar');
+  if (_top) {
+    b.style.cssText = 'width:38px;height:38px;flex:0 0 38px;margin-right:12px;border-radius:50%;border:1px solid rgba(77,132,255,.5);background:rgba(20,26,40,.95);color:#4d84ff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:1;';
+    var _lg = _top.querySelector('.logo');
+    var _bx = document.createElement('div'); _bx.style.cssText = 'display:flex;align-items:center;';
+    _top.insertBefore(_bx, _lg || _top.firstChild);
+    _bx.appendChild(b); if (_lg) _bx.appendChild(_lg);
+    return;
+  }
   document.body.appendChild(b);
 }
 if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', injectRefreshButton); } else { injectRefreshButton(); }
