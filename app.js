@@ -27690,51 +27690,119 @@ function _renderMatchPression(s, homeId, awayId, momEspn){
       for (var k = 0; k < n; k++) { if (bD[k] > 0 || bE[k] > 0) dernier = k; }
       nAff = Math.min(n, dernier + 2);
     }
+    /* ═══ 20261117h — PRESSION LISIBLE (capture d'Antoine France – Türkiye : « C EST PAS UN PEU ILLISIBLE ? ») ═══
+       Maquettes validées (« oui » sur la 3e) :
+       1) UNE SEULE BARRE PAR MINUTE : « je comprends les barres des 2 côtés, c'est soit un côté soit l'autre, pas les 2 ».
+          On dessine l'ÉCART (domicile − extérieur) de la minute : vers le haut si le domicile a plus poussé, vers le bas sinon.
+          C'est aussi la lecture du momentum d'ESPN / Sofascore.
+       2) Barres FINES (« barre plus fine peut-être… pour la pression les barres ») : 45 % de la colonne, 2 px mini.
+       3) Textes blancs 13-15 px (étaient 8-11 px gris), icônes plus grosses, graduations tous les quarts d'heure,
+          pointillé à la mi-temps.
+       4) BULLE au survol (PC) / au toucher (téléphone) : minute, qui pousse, et le détail des buts / cartons /
+          remplacements tiré du commentaire ESPN (« Goal! … X (Équipe) », « X (Équipe) is shown the yellow card »,
+          « Substitution, Équipe. X replaces Y. ») ; phrase non reconnue → texte ESPN tel quel. */
+    var _det = {};
+    try {
+      com.forEach(function(c){
+        var p = c.play || {};
+        var tt = String((p.type && p.type.text) || '').toLowerCase();
+        var tx = String(c.text || p.text || '').trim();
+        var ico = '';
+        if (tt.indexOf('goal') >= 0 || /^goal!/i.test(tx) || /^own goal/i.test(tx)) ico = '⚽';
+        else if (tt.indexOf('red card') >= 0 || /shown the red card/i.test(tx)) ico = '🟥';
+        else if (tt.indexOf('yellow') >= 0 || /shown the yellow card/i.test(tx)) ico = '🟨';
+        else if (tt.indexOf('substitut') >= 0 || /^substitution/i.test(tx)) ico = '🔁';
+        if (!ico) return;
+        var mn = _g45MinuteAction(c);
+        if (isNaN(mn)) return;
+        if (ico !== '⚽' && p.period && p.period.number === 2 && mn <= 45) mn += 45;
+        var i = Math.min(n - 1, Math.floor(mn / PAS));
+        var eq = String((p.team && p.team.displayName) || '');
+        var lib = '', m;
+        if (ico === '⚽') {
+          if ((m = tx.match(/^(?:goal!|own goal)[^.]*\.\s*(.+?)\s*\(([^)]+)\)/i))) lib = (/^own/i.test(tx) ? 'But contre son camp : ' : 'But de ') + m[1] + ' (' + m[2] + ')';
+        } else if (ico === '🔁') {
+          if ((m = tx.match(/^substitution,\s*([^.]+)\.\s*(.+?)\s+replaces\s+(.+?)\.?(?:\s+because.*)?$/i))) lib = m[1] + ' : ' + m[2] + ' remplace ' + m[3];
+        } else {
+          if ((m = tx.match(/^(.+?)\s*\(([^)]+)\)\s+is shown the/i))) lib = (ico === '🟥' ? 'Carton rouge : ' : 'Carton jaune : ') + m[1] + ' (' + m[2] + ')';
+        }
+        if (!lib) {
+          var ath = (p.participants && p.participants[0] && p.participants[0].athlete && p.participants[0].athlete.displayName) || '';
+          lib = ath ? (ath + (eq ? ' (' + eq + ')' : '')) : (tx || eq);
+        }
+        (_det[i] = _det[i] || []).push(ico + ' ' + lib);
+      });
+    } catch (e) {}
+    var _esc = function (t) { return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); };
+    var _pc = false; try { _pc = window.matchMedia && window.matchMedia('(min-width: 900px)').matches; } catch (e) {}
+    var HH = _pc ? 80 : 60, FS = _pc ? 16 : 12;
+    var maxN = 0;
+    for (var q = 0; q < nAff; q++) maxN = Math.max(maxN, Math.abs(bD[q] - bE[q]));
+    if (!(maxN > 0)) maxN = 1;
     var barres = '';
     for (var i = 0; i < nAff; i++) {
-      var hD = Math.round((bD[i] / maxi) * H), hE = Math.round((bE[i] / maxi) * H);
+      var net = bD[i] - bE[i];
+      var hD = net > 0 ? Math.max(2, Math.round((net / maxN) * HH)) : 0, hE = net < 0 ? Math.max(2, Math.round((-net / maxN) * HH)) : 0;
       var but = buts.filter(function(g){ return g.i === i; })[0];
       var rep = reperes.filter(function(g){ return g.i === i; })[0];
-      /* A la minute, les barres deviennent fines : 1 px d'ecart suffit, sinon
-         les 96 colonnes ne tiennent plus sur un ecran de telephone. */
-      barres += '<div style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;position:relative;">'
-        + '<div style="height:11px;font-size:8px;line-height:11px;">' + (but && but.dom ? '\u26bd' : (rep && rep.dom ? rep.ico : '')) + '</div>'
-        + '<div style="height:' + H + 'px;display:flex;align-items:flex-end;width:100%;padding:0 .5px;box-sizing:border-box;">'
-          + '<div style="width:100%;height:' + hD + 'px;background:' + cD + ';border-radius:1px 1px 0 0;"></div>'
+      var bulle = '<b>' + (i * PAS) + '\'</b> · ' + (net > 0 ? _esc(_g45CyEa(nomD)) + ' pousse' : net < 0 ? _esc(_g45CyEa(nomE)) + ' pousse' : 'équilibre')
+        + (_det[i] || []).map(function (t) { return '<br>' + _esc(t); }).join('');
+      var mi = (Math.round(45 / PAS) === i) ? 'border-left:2px dashed rgba(255,255,255,.45);' : '';
+      barres += '<div data-g45pb="' + _esc(bulle) + '" onmouseenter="g45PressBulle(this)" onclick="g45PressBulle(this)" onmouseleave="g45PressBulle(null)" style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;position:relative;cursor:pointer;' + mi + '">'
+        + '<div style="height:' + (FS + 6) + 'px;font-size:' + FS + 'px;line-height:' + (FS + 6) + 'px;white-space:nowrap;">' + (but && but.dom ? '⚽' : (rep && rep.dom ? rep.ico : '')) + '</div>'
+        + '<div style="height:' + HH + 'px;display:flex;align-items:flex-end;justify-content:center;width:100%;">'
+          + '<div style="width:45%;min-width:2px;height:' + hD + 'px;background:' + cD + ';border-radius:2px 2px 0 0;"></div>'
         + '</div>'
-        + '<div style="height:1px;width:100%;background:rgba(255,255,255,.22);"></div>'
-        + '<div style="height:' + H + 'px;display:flex;align-items:flex-start;width:100%;padding:0 .5px;box-sizing:border-box;">'
-          + '<div style="width:100%;height:' + hE + 'px;background:' + cE + ';border-radius:0 0 1px 1px;"></div>'
+        + '<div style="height:2px;width:100%;background:rgba(255,255,255,.5);"></div>'
+        + '<div style="height:' + HH + 'px;display:flex;align-items:flex-start;justify-content:center;width:100%;">'
+          + '<div style="width:45%;min-width:2px;height:' + hE + 'px;background:' + cE + ';border-radius:0 0 2px 2px;"></div>'
         + '</div>'
-        + '<div style="height:11px;font-size:8px;line-height:11px;">' + (but && !but.dom ? '\u26bd' : (rep && !rep.dom ? rep.ico : '')) + '</div>'
+        + '<div style="height:' + (FS + 6) + 'px;font-size:' + FS + 'px;line-height:' + (FS + 6) + 'px;white-space:nowrap;">' + (but && !but.dom ? '⚽' : (rep && !rep.dom ? rep.ico : '')) + '</div>'
       + '</div>';
     }
 
     var lg = function(c, nom){
-      return '<span style="display:inline-flex;align-items:center;gap:5px;font-size:9.5px;font-weight:700;color:rgba(255,255,255,.75);">'
-        + '<span style="width:9px;height:9px;border-radius:2px;background:' + c + ';"></span>' + _g45CyEa(nom) + '</span>';
+      return '<span style="display:inline-flex;align-items:center;gap:7px;font-size:14px;font-weight:800;color:#fff;background:rgba(0,0,0,.45);padding:4px 10px;border-radius:8px;">'
+        + '<span style="width:14px;height:14px;border-radius:3px;background:' + c + ';"></span>' + _g45CyEa(nom) + '</span>';
     };
+    var tot = nAff * PAS;
+    var ax = [0, 15, 30, 45, 60, 75, 90].filter(function (m) { return m <= tot; }).map(function (m) {
+      return '<span style="position:absolute;left:' + (m / tot * 100) + '%;transform:translateX(' + (m === 0 ? '0' : '-50%') + ');">' + m + '\'</span>';
+    }).join('');
 
-    return '<div class="fc" style="padding:14px;">'
-      + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:11px;">'
-        + '<div style="font-size:11px;font-weight:800;letter-spacing:.5px;color:var(--t2);">\ud83d\udcc8 PRESSION DU MATCH'
-          + (enCours ? ' <span style="color:#ff5a5a;font-size:9px;">\u25cf EN COURS</span>' : '') + '</div>'
-        + '<div style="display:flex;gap:11px;">' + lg(cD, nomD) + lg(cE, nomE) + '</div>'
+    return '<div class="fc" style="padding:16px;">'
+      + '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin-bottom:12px;">'
+        + '<div style="font-size:15px;font-weight:800;color:#fff;">📈 PRESSION DU MATCH'
+          + (enCours ? ' <span style="color:#ff5a5a;font-size:13px;">● EN COURS</span>' : '') + '</div>'
+        + '<div style="display:flex;gap:8px;flex-wrap:wrap;">' + lg(cD, nomD) + lg(cE, nomE) + '</div>'
       + '</div>'
-      + '<div style="display:flex;align-items:center;gap:1px;">' + barres + '</div>'
-      + '<div style="display:flex;justify-content:space-between;font-size:8.5px;color:var(--t3);margin-top:5px;font-weight:700;">'
-        + '<span>0\'</span>'
-        + (nAff > n * 0.55 ? '<span>45\'</span>' : '')
-        + '<span>' + Math.round(nAff * PAS) + '\'</span></div>'
-      + '<div style="font-size:8.5px;color:var(--t3);margin-top:7px;line-height:1.5;">'
-        + '\u26bd but \u00b7 \ud83d\udfe8 carton \u00b7 \ud83d\udfe5 expulsion \u00b7 \ud83d\udd01 remplacement<br>'
-        + (sourceEspn
-            ? 'Momentum publi\u00e9 par ESPN, une valeur par minute.'
-            : 'Reconstruite \u00e0 partir des actions du match \u2014 tirs, corners, buts, fautes. Indicateur maison, non comparable aux valeurs d\'ESPN ou de Sofascore.')
+      + '<div class="g45-pb-zone" style="position:relative;"><div style="display:flex;align-items:center;gap:1px;">' + barres + '</div>'
+        + '<div class="g45-pb-bulle" style="display:none;position:absolute;top:4px;z-index:5;background:#0b1222;border:1px solid rgba(255,255,255,.35);border-radius:10px;padding:9px 12px;font-size:14px;color:#fff;line-height:1.6;max-width:min(460px,100%);box-sizing:border-box;box-shadow:0 6px 20px rgba(0,0,0,.6);pointer-events:none;"></div></div>'
+      + '<div style="position:relative;height:20px;font-size:13px;font-weight:800;color:#fff;margin-top:6px;">' + ax + '</div>'
+      + '<div style="font-size:14px;color:#fff;margin-top:10px;line-height:1.7;">⚽ but · 🟨 carton · 🟥 expulsion · 🔁 remplacement</div>'
+      + '<div style="font-size:13px;color:rgba(255,255,255,.8);margin-top:4px;line-height:1.5;">Une seule barre par minute : vers le haut = ' + _esc(_g45CyEa(nomD)) + ' domine, vers le bas = ' + _esc(_g45CyEa(nomE)) + ' domine. '
+        + (_pc ? 'Survole' : 'Touche') + ' une minute pour le détail.<br>'
+        + (sourceEspn ? 'Momentum publié par ESPN.' : 'Calcul maison (tirs, corners, buts, fautes), non comparable aux valeurs d\'ESPN ou de Sofascore.')
         + '</div>'
     + '</div>';
   } catch (e) { return ''; }
 }
+
+/* 20261117h : bulle de la Pression du match (survol PC / toucher téléphone). Une bulle par graphique (.g45-pb-zone),
+   placée au-dessus de la colonne et gardée dans le cadre. null = cacher (sortie de la souris). */
+window.g45PressBulle = function (col) {
+  try {
+    if (!col) { document.querySelectorAll('.g45-pb-bulle').forEach(function (b) { b.style.display = 'none'; }); return; }
+    var zone = col.closest('.g45-pb-zone'); if (!zone) return;
+    var b = zone.querySelector('.g45-pb-bulle'); if (!b) return;
+    b.innerHTML = col.getAttribute('data-g45pb') || '';
+    b.style.display = 'block';
+    var zr = zone.getBoundingClientRect(), cr = col.getBoundingClientRect();
+    var x = cr.left - zr.left + cr.width / 2 - b.offsetWidth / 2;
+    x = Math.max(0, Math.min(x, zr.width - b.offsetWidth));
+    b.style.left = x + 'px';
+  } catch (e) {}
+};
 
 /* EXPORTS EXPLICITES (26/08). La declaration est pourtant au niveau superieur,
    mais `typeof _renderMatchPression` rendait `undefined` en console chez

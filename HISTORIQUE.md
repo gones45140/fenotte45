@@ -1076,6 +1076,7 @@ Il est dans les DEUX dépôts (gones45 et fenotte45), identique (cmp). Jamais de
   Pose : `_g45HeroPoser` remplace le 1er enfant de `#d-hero .dtop`.
 - Pression du match (`_renderMatchPression`) : couleurs `_g45CoulClaire` /
   `_g45CoulPaireSombre` (lisibles sur fond sombre, écart minimal entre équipes) — 27p.
+  20261117h (« C EST PAS UN PEU ILLISIBLE ? » France – Türkiye ; maquettes, « oui » sur la 3e) : UNE barre par minute = écart domicile − extérieur (« soit un côté soit l autre, pas les 2 »), barres fines 45 %, textes blancs 13-15 px, graduations 15 min, pointillé mi-temps ; bulle au survol / toucher `g45PressBulle` (data-g45pb) : minute, qui pousse, buts / cartons / remplacements lus dans le texte du commentaire ESPN (Goal! … X (Éq.) / is shown the … card / Substitution, Éq. X replaces Y), sinon participants ou texte brut. Test Playwright (faux commentaire) bulles OK PC + tel, smoke 235.
 - Astuce « passe en paysage » (IIFE en fin d'app.js) : téléphone tactile en portrait
   seulement (`pointer: coarse`), clés `g45_astuce_paysage_off` / sessionStorage — 27q/r.
 - Domicile / Extérieur dans la fenêtre de match : foot `g45DomExtLancer` (empilé si
