@@ -75943,6 +75943,15 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   }
   /* ── direct ── */
   var memSb = {};
+  var memSu = {};   /* 20261116z : fiche du match (stats joueurs en direct), relue au plus toutes les 60 s */
+  async function sumJ(sp, lg, eid) {
+    var k = sp + '|' + lg + '|' + eid, o = memSu[k];
+    if (o && Date.now() - o.t < 60000) return o.p;
+    var p = fetch('https://site.api.espn.com/apis/site/v2/sports/' + sp + '/' + lg + '/summary?event=' + eid, { cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
+    memSu[k] = { t: Date.now(), p: p };
+    return p;
+  }
   async function sb(sp, lg, d) {
     var k = sp + '|' + lg + '|' + d, o = memSb[k];
     if (o && Date.now() - o.t < 60000) return o.p;
@@ -75977,9 +75986,40 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       try { if (!h.isLay && typeof _g45AvPari === 'function') v = _g45AvPari((typeof g45TypeSansCote === 'function' ? g45TypeSansCote(h.type) : h.type) || '', moiDom, hs, as); } catch (e) {}
       var enCours = st.state === 'in', clk = enCours ? String((cp.status && cp.status.displayClock) || st.shortDetail || '').replace(/\s/g, '') : '';
       var col = enCours ? '#ff4545' : '#c9d3ee';
+      /* 20261116z (capture Dallas – Florida en direct, pari « Passeur (1 ou plus) : Jason Robertson » : « ça ne dit pas si c'est bien parti
+         ou pas ») : pari JOUEUR NHL / NBA → stats du joueur EN DIRECT (summary ESPN, boxscore.players[].statistics, labels G / A pour la NHL,
+         PTS / REB / AST pour la NBA, format déjà lu par le robot d'archives) : « 🎯 Robertson : 1 passe ✅ » ; match fini → gagné / perdu. */
+      var pj = '';
+      try {
+        var jn = joueurs(h), ty = String(h.type || '').toLowerCase();
+        if (jn && jn.indexOf(',') < 0 && (meta.sp === 'hockey' || meta.sp === 'basketball')) {
+          var su = await sumJ(meta.sp, meta.lg, meta.eid), nn = function (x) { return String(x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z]/g, ''); };
+          var cib = nn(jn), St = null;
+          (((su && su.boxscore) || {}).players || []).forEach(function (eq) { (eq.statistics || []).forEach(function (cat) { (cat.athletes || []).forEach(function (a) {
+            var an = nn((a.athlete || {}).displayName); if (St || !an || !(an === cib || (cib.length > 5 && an.indexOf(cib) >= 0) || (an.length > 5 && cib.indexOf(an) >= 0))) return;
+            St = {}; (cat.labels || []).forEach(function (l, i) { St[l] = parseFloat((a.stats || [])[i]) || 0; }); }); }); });
+          if (St) {
+            var nb = (/(\d+)\s*ou plus/.exec(ty) || [])[1], seuil = nb ? +nb : 1, val = null, lib = '';
+            var ln = /([+-])\s*de\s*(\d+(?:[.,]\d+)?)/.exec(ty), lig = ln ? parseFloat(ln[2].replace(',', '.')) : null;
+            if (meta.sp === 'hockey') {
+              if (/pointeur|point/.test(ty)) { val = (St.G || 0) + (St.A || 0); lib = 'point'; }
+              else if (/passe/.test(ty)) { val = St.A || 0; lib = 'passe'; }
+              else if (/buteur|but/.test(ty)) { val = St.G || 0; lib = 'but'; }
+            } else {
+              if (/rebond/.test(ty)) { val = St.REB || 0; lib = 'rebond'; } else if (/passe/.test(ty)) { val = St.AST || 0; lib = 'passe'; } else if (/point/.test(ty)) { val = St.PTS || 0; lib = 'point'; }
+            }
+            if (val != null) {
+              var ok = lig != null ? (ln[1] === '+' ? val > lig : val < lig) : val >= seuil;
+              var nomC = String(jn).split(' ').slice(-1)[0];
+              pj = ' · 🎯 ' + esc(nomC) + ' : ' + val + ' ' + lib + (val > 1 ? 's' : '') + (ok ? (enCours && lig != null && ln[1] === '-' ? ' ⏳' : ' ✅') : (enCours ? ' ⏳' : ' ❌'));
+              if (st.state === 'post') pj += ok ? ' gagné' : ' perdu';
+            }
+          }
+        }
+      } catch (e) {}
       z.innerHTML = '<span style="display:inline-block;margin-top:6px;font-size:13px;font-weight:800;background:' + (enCours ? 'rgba(255,69,69,.18)' : 'rgba(255,255,255,.08)') + ';border:1px solid ' + col + ';border-radius:6px;padding:2px 8px;">'
         + (enCours ? '🔴 EN DIRECT · ' : '🏁 Terminé · ') + hs + '-' + as + (clk ? ' · ' + esc(clk) : '')
-        + (enCours && v === true ? ' · ✅ gagnant si ça reste comme ça' : (enCours && v === false ? ' · ⏳ pas encore gagnant' : '')) + '</span>';
+        + (pj ? pj : (enCours && v === true ? ' · ✅ gagnant si ça reste comme ça' : (enCours && v === false ? ' · ⏳ pas encore gagnant' : ''))) + '</span>';
     }
   }
   function brancher() {
