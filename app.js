@@ -27849,7 +27849,7 @@ var _G45_ST_LIBFR = { 'on target %': 'Tirs cadrés %', 'shot %': 'Tirs cadrés %
   'clearances': 'Dégagements', 'effective clearances': 'Dégagements réussis', 'interceptions': 'Interceptions', 'blocked shots': 'Tirs bloqués', 'saves': 'Arrêts',
   'shots on goal': 'Tirs cadrés', 'shots': 'Tirs', 'fouls': 'Fautes', 'offsides': 'Hors-jeu', 'corner kicks': 'Corners', 'own goals': 'Buts contre son camp',
   'accurate crosses': 'Centres réussis', 'crosses': 'Centres', 'accurate passes': 'Passes réussies', 'passes': 'Passes', 'yellow cards': 'Cartons jaunes', 'red cards': 'Cartons rouges',
-  'possession': 'Possession', 'total shots': 'Tirs' };
+  'possession': 'Possession', 'total shots': 'Tirs', 'long balls %': 'Longs ballons réussis %', 'tackles %': 'Tacles réussis %', 'crosses %': 'Centres réussis %', 'passes %': 'Passes réussies %' };   /* + 20261117l (capture : « Long Balls (%) ») */
 function _renderEspnMatchStats(s, homeId, awayId, col){
   try {
     /* ═══ AUCUNE STATISTIQUE AVANT LE COUP D'ENVOI (26/08) ═══
@@ -27912,6 +27912,8 @@ function _renderEspnMatchStats(s, homeId, awayId, col){
     names.forEach(function(n){
       var hh=H[n], aa=A[n], hv=hh?hh.v:null, av=aa?aa.v:null;
       if(hv==null && av==null) return;
+      /* 20261117l (capture : « Dégagements 8 / 16 » deux fois) : ESPN sert totalClearance ET effectiveClearance, souvent identiques → une seule ligne. */
+      if(n==='effectiveClearance' && H.totalClearance && A.totalClearance && H.totalClearance.v===hv && A.totalClearance.v===av) return;
       var lab=frMap[n]||(hh&&hh.l)||(aa&&aa.l)||n;
       hv=(hv!=null?hv:'0'); av=(av!=null?av:'0');
       var hn=parseFloat(String(hv).replace(',','.'))||0, an=parseFloat(String(av).replace(',','.'))||0, tot=hn+an;
