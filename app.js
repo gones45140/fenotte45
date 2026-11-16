@@ -75997,7 +75997,11 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
           var su = await sumJ(meta.sp, meta.lg, meta.eid), nn = function (x) { return String(x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z]/g, ''); };
           var cib = nn(jn), St = null;
           (((su && su.boxscore) || {}).players || []).forEach(function (eq) { (eq.statistics || []).forEach(function (cat) { (cat.athletes || []).forEach(function (a) {
-            var an = nn((a.athlete || {}).displayName); if (St || !an || !(an === cib || (cib.length > 5 && an.indexOf(cib) >= 0) || (an.length > 5 && cib.indexOf(an) >= 0))) return;
+            var dn = (a.athlete || {}).displayName || '', an = nn(dn);
+            /* 20261117d (capture Marner : carte « Mitchell Marner », ESPN « Mitch Marner ») : sinon même NOM DE FAMILLE + même initiale du prénom */
+            var pr = function (x) { var t = String(x || '').trim().split(/\s+/); return { n: nn(t.slice(1).join(' ')), i: nn(t[0]).charAt(0) }; }, A1 = pr(dn), B1 = pr(jn);
+            var memeNom = A1.n && A1.n === B1.n && A1.i && A1.i === B1.i;
+            if (St || !an || !(an === cib || memeNom || (cib.length > 5 && an.indexOf(cib) >= 0) || (an.length > 5 && cib.indexOf(an) >= 0))) return;
             St = {}; (cat.labels || []).forEach(function (l, i) { St[l] = parseFloat((a.stats || [])[i]) || 0; }); }); }); });
           if (St) {
             var nb = (/(\d+)\s*ou plus/.exec(ty) || [])[1], seuil = nb ? +nb : 1, val = null, lib = '';
