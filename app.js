@@ -23694,6 +23694,26 @@ async function loadTeamSaisons() {
       if (_natSel) {
         var _tout = null;
         try { _tout = await espnClubSchedule(nom, null, 'all'); } catch(e){}
+        /* 20261117m (capture France, Saisons : pas de France – Türkiye du 15/11 ; SONDE d'Antoine : soccer/all s'arrête au
+           12/11, uefa.nations a bien le 15/11) : la liste « toutes compétitions » d'ESPN est EN RETARD de quelques jours.
+           On complète avec le calendrier de chaque compétition de sélection (matchs absents seulement, repérés par leur id),
+           rangés sous le même slug que soccer/all (e.league.slug). */
+        try {
+          var _NOMS = { 'uefa.nations': 'UEFA Nations League', 'fifa.friendly': 'Friendly', 'fifa.worldq.uefa': 'World Cup Qualifying', 'uefa.euroq': 'Euro Qualifying', 'uefa.euro': 'UEFA European Championship', 'fifa.world': 'FIFA World Cup' };
+          var _sup = await Promise.all(Object.keys(_NOMS).map(function (sl) { return espnClubSchedule(nom, null, sl).then(function (x) { return [sl, x]; }).catch(function () { return [sl, null]; }); }));
+          if (!_tout) _tout = { team: null, matches: [] };
+          var _ids = {}; (_tout.matches || []).forEach(function (m) { _ids[String(m.id)] = 1; });
+          _sup.forEach(function (pr) {
+            if (!pr[1]) return;
+            if (!_tout.team && pr[1].team) _tout.team = pr[1].team;
+            (pr[1].matches || []).forEach(function (m) {
+              if (_ids[String(m.id)]) return; _ids[String(m.id)] = 1;
+              m.competition = pr[0]; m.competitionName = (typeof _g45CompNatFr === 'function') ? _g45CompNatFr(_NOMS[pr[0]]) : _NOMS[pr[0]];
+              _tout.matches.push(m);
+            });
+          });
+          _tout.matches.sort(function (x, y) { return new Date(y.date) - new Date(x.date); });
+        } catch(e){}
         var _saisonDe = function (d) {
           var x = new Date(d); if (isNaN(x)) return null;
           return (x.getMonth() + 1 >= 8) ? x.getFullYear() : x.getFullYear() - 1;
