@@ -27907,6 +27907,7 @@ function _renderEspnMatchStats(s, homeId, awayId, col){
     } catch (e) {}
     var _nD = (_dm.team && (_dm.team.displayName || _dm.team.name)) || '', _nE = (_ex.team && (_ex.team.displayName || _ex.team.name)) || '';
     var _lgS = function (c, nm) { return nm ? '<span style="display:inline-flex;align-items:center;gap:7px;font-size:14px;font-weight:800;color:#fff;background:rgba(0,0,0,.45);padding:4px 10px;border-radius:8px;"><span style="width:14px;height:14px;border-radius:3px;background:' + c + ';"></span>' + (typeof _g45CyEa === 'function' ? _g45CyEa(nm) : nm) + '</span>' : ''; };
+    var rowOf={};
     var rows='';
     names.forEach(function(n){
       var hh=H[n], aa=A[n], hv=hh?hh.v:null, av=aa?aa.v:null;
@@ -27923,7 +27924,7 @@ function _renderEspnMatchStats(s, homeId, awayId, col){
         hv = _fp(hv); av = _fp(av); lab = String(lab).replace(/\s*%$/, ' (%)').replace(/\(%\) \(%\)/, '(%)');
       }
       var _hpx = tot > 0 ? Math.round(hn / tot * 100) : 0, _apx = tot > 0 ? 100 - _hpx : 0;
-      rows+='<div style="margin-bottom:12px;"><div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:5px;">'
+      rowOf[n] = '<div style="margin-bottom:12px;"><div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:5px;">'
         + '<b style="color:#fff;font-size:16px;min-width:52px;">'+hv+'</b>'
         + '<span style="color:#fff;font-size:14px;font-weight:700;text-align:center;background:rgba(0,0,0,.5);padding:3px 12px;border-radius:8px;">'+lab+'</span>'
         + '<b style="color:#fff;font-size:16px;min-width:52px;text-align:right;">'+av+'</b></div>'
@@ -27931,9 +27932,31 @@ function _renderEspnMatchStats(s, homeId, awayId, col){
           + '<div style="flex:1;display:flex;justify-content:flex-end;background:rgba(255,255,255,.12);border-radius:4px;"><div style="width:'+_hpx+'%;background:'+_cD+';border-radius:4px;"></div></div>'
           + '<div style="flex:1;display:flex;background:rgba(255,255,255,.12);border-radius:4px;"><div style="width:'+_apx+'%;background:'+_cE+';border-radius:4px;"></div></div>'
         + '</div></div>';
+      rows += rowOf[n];
     });
     if(!rows) return '';
-    return '<div class="fc" style="padding:16px;"><div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;align-items:center;margin-bottom:14px;"><span style="font-size:15px;font-weight:800;color:#fff;">📊 STATISTIQUES</span><span style="display:flex;gap:8px;flex-wrap:wrap;">' + _lgS(_cD, _nD) + _lgS(_cE, _nE) + '</span></div>'+rows+'</div>';
+    /* ═══ 20261117k — CLASSÉES PAR CATÉGORIE (captures Sofascore d'Antoine : « on voit clairement que c'est classé par
+       catégorie » ; maquette « oui ») ═══ Cadres Aperçu / Tirs / Passes / Défense / Discipline (Aperçu reprend quelques stats
+       des autres, comme Sofascore), 3 colonnes sur PC, empilés sur téléphone (grille auto-fit). Toute stat d'ESPN non rangée
+       va dans « Autres » : rien n'est perdu. Pas de 1re / 2e mi-temps : ESPN ne donne que le total. */
+    var _CATS = [
+      ['\u2b50 Aper\u00e7u du match', ['possessionPct', 'expectedGoals', 'totalShots', 'shotsOnTarget', 'shotsOnGoal', 'wonCorners', 'cornerKicks', 'foulsCommitted', 'saves']],
+      ['\ud83c\udfaf Tirs', ['totalShots', 'shotsOnTarget', 'shotsOnGoal', 'blockedShots', 'shotsInsideBox', 'shotsOutsideBox', 'shotPct', 'hitWoodwork', 'penaltyKickGoals', 'penaltyKickShots', 'penaltyKicksTaken', 'ownGoals']],
+      ['\ud83d\udd01 Passes', ['totalPasses', 'accuratePasses', 'passPct', 'totalCrosses', 'accurateCrosses', 'crossPct', 'totalLongBalls', 'accurateLongBalls', 'longballPct']],
+      ['\ud83d\udee1\ufe0f D\u00e9fense', ['totalTackles', 'effectiveTackles', 'tacklePct', 'interceptions', 'totalClearance', 'effectiveClearance', 'saves']],
+      ['\ud83d\udfe8 Discipline', ['foulsCommitted', 'yellowCards', 'redCards', 'offsides']]
+    ];
+    var _range = {}, _cadres = '';
+    var _cadre = function (titre, corps) { return '<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:12px 14px;"><div style="text-align:center;color:#fff;font-size:16px;font-weight:800;margin-bottom:12px;">' + titre + '</div>' + corps + '</div>'; };
+    _CATS.forEach(function (c) {
+      var corps = '', vus = {};
+      c[1].forEach(function (k) { if (rowOf[k] && !vus[k]) { corps += rowOf[k]; vus[k] = 1; _range[k] = 1; } });
+      if (corps) _cadres += _cadre(c[0], corps);
+    });
+    var _autres = names.filter(function (k) { return rowOf[k] && !_range[k]; }).map(function (k) { return rowOf[k]; }).join('');
+    if (_autres) _cadres += _cadre('\ud83d\udccb Autres', _autres);
+    return '<div class="fc" style="padding:16px;"><div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;align-items:center;margin-bottom:14px;"><span style="font-size:15px;font-weight:800;color:#fff;">📊 STATISTIQUES</span><span style="display:flex;gap:8px;flex-wrap:wrap;">' + _lgS(_cD, _nD) + _lgS(_cE, _nE) + '</span></div>'
+      + '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(320px,100%),1fr));gap:14px;">' + _cadres + '</div></div>';
   } catch(e){ return ''; }
 }
 
