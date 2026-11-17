@@ -5346,7 +5346,7 @@ function addUnit(){
   var ulink2=($i('u-link2')&&$i('u-link2').value.trim())||'';
   var unote=($i('u-note')&&$i('u-note').value.trim())||'';var utype=($i('u-type')&&$i('u-type').value)||'club';
 try{ var _off2=JSON.parse(localStorage.getItem('g45_presets_off')||'{}'); if(_off2[name]){ delete _off2[name]; localStorage.setItem('g45_presets_off',JSON.stringify(_off2)); } }catch(e){}
-state.u.push({n:name,abbr:abbr,color:color,s:$i('u-stars').value,l:1,sport:($i('u-sport')&&$i('u-sport').value)||'⚽',logoUrl:logoUrl||'',link:ulink,link2:ulink2,note:unote,type:utype});
+state.u.push({ad:Date.now(),n:name,abbr:abbr,color:color,s:$i('u-stars').value,l:1,sport:($i('u-sport')&&$i('u-sport').value)||'⚽',logoUrl:logoUrl||'',link:ulink,link2:ulink2,note:unote,type:utype});
   if(logoUrl)LOGOS[name]=logoUrl;
   $i('u-name').value='';
   if($i('u-link'))$i('u-link').value='';
@@ -13238,7 +13238,7 @@ function addUnit(){
   var ulink2=($i('u-link2')&&$i('u-link2').value.trim())||'';
   var unote=($i('u-note')&&$i('u-note').value.trim())||'';var utype=($i('u-type')&&$i('u-type').value)||'club';
 try{ var _off2=JSON.parse(localStorage.getItem('g45_presets_off')||'{}'); if(_off2[name]){ delete _off2[name]; localStorage.setItem('g45_presets_off',JSON.stringify(_off2)); } }catch(e){}
-state.u.push({n:name,abbr:abbr,color:color,s:$i('u-stars').value,l:1,sport:($i('u-sport')&&$i('u-sport').value)||'⚽',logoUrl:logoUrl||'',link:ulink,link2:ulink2,note:unote,type:utype});
+state.u.push({ad:Date.now(),n:name,abbr:abbr,color:color,s:$i('u-stars').value,l:1,sport:($i('u-sport')&&$i('u-sport').value)||'⚽',logoUrl:logoUrl||'',link:ulink,link2:ulink2,note:unote,type:utype});
   if(logoUrl)LOGOS[name]=logoUrl;
   $i('u-name').value='';
   if($i('u-link'))$i('u-link').value='';
@@ -40029,6 +40029,17 @@ async function _g45PullBetsGithub(){
            rechargement suivant. */
         var _off={}; try{ _off=JSON.parse(localStorage.getItem('g45_presets_off')||'{}'); }catch(e){}
         var _estSupprime=function(n){ return n && Object.prototype.hasOwnProperty.call(_off, String(n)); };
+        /* 20261117x (« pourquoi sur tel j'ai 6 joueurs et PC 9 en NHL sur mes cartes ? ») : la pierre tombale est LOCALE à l'appareil. Un joueur
+           supprimé sur le téléphone puis REMIS sur le PC restait caché sur le téléphone pour toujours. On lève la pierre tombale si la version
+           distante prouve que l'entrée a été remise APRÈS la suppression : carte créée après (x.ad, posé à l'ajout depuis 20261117x) ou un pari
+           sur ce nom enregistré après (b.id = horodatage de création du pari). */
+        try{
+          var _apres=function(n, t){ var x=(st.u||[]).filter(function(z){ return z&&z.n===n; })[0]; if(!x) return false;
+            if(+x.ad>t) return true;
+            return (st.h||[]).concat(st.a||[]).some(function(b){ return b&&b.n===n&&(+b.id||0)>t; }); };
+          var _leve=[]; Object.keys(_off).forEach(function(n){ if(_apres(n, +_off[n]||0)){ delete _off[n]; _leve.push(n); } });
+          if(_leve.length){ localStorage.setItem('g45_presets_off', JSON.stringify(_off)); console.warn('🪦→✅ remis sur un autre appareil : '+_leve.join(', ')); }
+        }catch(e){}
         if(Array.isArray(st.u)){
           var _av=st.u.length;
           st.u=st.u.filter(function(x){ return !(x&&_estSupprime(x.n)); });
