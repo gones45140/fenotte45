@@ -5402,6 +5402,9 @@ function rmUnit(i){var u=state.u[parseInt(i)];if(u&&confirm('Supprimer '+u.n+' ?
      absent d'un cote. Sans trace ecrite, une suppression ne peut pas survivre
      a une synchronisation. */
   try{ var _off=JSON.parse(localStorage.getItem('g45_presets_off')||'{}'); _off[u.n]=Date.now(); localStorage.setItem('g45_presets_off',JSON.stringify(_off)); }catch(e){}
+  /* 20261117w (« quand j'abandonne une série et supprime le joueur, sa série perdante disparaît ») : alertes d'abandon (u.abd) gardées à part
+     dans state.abdX (avec le nom) → toujours affichées dans ⚠️ Alertes du Tableau de bord jusqu'au ✕. (2 copies de rmUnit.) */
+  try{ if(u.abd&&u.abd.length){ state.abdX=(state.abdX||[]).concat(u.abd.map(function(a){ var o={n:u.n}; for(var k in a) o[k]=a[k]; return o; })); } }catch(e){}
   state.u.splice(parseInt(i),1);save();try{ if(typeof _g45PushBetsGithub==='function') _g45PushBetsGithub(true); }catch(e){}}}
 
 /* ── NAV ── */
@@ -13291,6 +13294,9 @@ function rmUnit(i){var u=state.u[parseInt(i)];if(u&&confirm('Supprimer '+u.n+' ?
      absent d'un cote. Sans trace ecrite, une suppression ne peut pas survivre
      a une synchronisation. */
   try{ var _off=JSON.parse(localStorage.getItem('g45_presets_off')||'{}'); _off[u.n]=Date.now(); localStorage.setItem('g45_presets_off',JSON.stringify(_off)); }catch(e){}
+  /* 20261117w (« quand j'abandonne une série et supprime le joueur, sa série perdante disparaît ») : alertes d'abandon (u.abd) gardées à part
+     dans state.abdX (avec le nom) → toujours affichées dans ⚠️ Alertes du Tableau de bord jusqu'au ✕. (2 copies de rmUnit.) */
+  try{ if(u.abd&&u.abd.length){ state.abdX=(state.abdX||[]).concat(u.abd.map(function(a){ var o={n:u.n}; for(var k in a) o[k]=a[k]; return o; })); } }catch(e){}
   state.u.splice(parseInt(i),1);save();try{ if(typeof _g45PushBetsGithub==='function') _g45PushBetsGithub(true); }catch(e){}}}
 
 /* ── NAV ── */
@@ -87554,6 +87560,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     if (p1 > 0 && Math.abs(p1 - (+G[0] || 0)) > 0.001 && window._g45GrilleEqT) { try { window._g45GrilleEqT.demande(u, _g45PaliersDepuisP1(p1, G.length || 9)); } catch (e) {} }
     try { (window.updMise || updMise)(); } catch (e) {} try { dessiner(); } catch (e) {} try { if (typeof render === 'function') render(); } catch (e) {}
   };
+  window.g45CkAbXFermer = function (i) { if (!state.abdX) return; state.abdX.splice(i, 1); if (!state.abdX.length) delete state.abdX; try { save(); } catch (e) {} try { dessiner(); } catch (e) {} };   /* 20261117w */
   window.g45CkAbMode = function (on) { window._g45CkAbMode = !!on; try { dessiner(); } catch (e) {} };   /* 20261105b */
   window.g45CkAbFermer = function (nom, i) { var u = (state.u || []).filter(function (x) { return x.n === nom; })[0]; if (!u || !u.abd) return; u.abd.splice(i, 1); if (!u.abd.length) delete u.abd; try { save(); } catch (e) {} try { dessiner(); } catch (e) {} try { abDeco(); } catch (e) {} };
   /* Avertissement sur la carte (🃏 Mes cartes ; caché dans Outils par #g45-ck-css) */
@@ -87677,6 +87684,8 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     var A = [];
     en.forEach(function (x) { if (c > 0 && x.reste > c) A.push('🔴 <b>' + esc(x.u.n) + '</b> : ta bankroll (' + eu(c) + ') ne couvre pas la fin de la série (' + eu(x.reste) + ' jusqu\'à P' + x.N + ').'); });
     S.forEach(function (x) { var b = x.u.ps && x.u.ps.b; if (b && b.cr >= 2 && b.n >= 5 && 100 * b.ok / b.n <= b.pt - 10) A.push('🛑 Bruno time : <b>' + esc(x.u.n) + '</b> a réussi ' + b.cr + ' fois de suite → après ' + b.k + ' réussites, ' + Math.round(100 * b.ok / b.n) + ' % seulement (' + b.pt + ' % d\'habitude).'); });
+    /* 20261117w : alertes d'abandon des cartes SUPPRIMÉES (state.abdX) */
+    (state.abdX || []).forEach(function (a, i) { A.push('⚠️ <b>' + esc(a.n || '') + '</b> <span style="color:#c9d3ee;">(carte supprimée)</span> ' + (a.l === 'dom' ? '🏠' : a.l === 'ext' ? '✈️' : '') + ' : série abandonnée le ' + esc(a.d) + ' à ' + ({ cb: '📉 C', fib: '🐚 F', dal: '🪜 D' }[a.mt] || 'P') + a.p + ' : <b style="color:#ff5a5a;">−' + eu(a.perdu) + '</b> perdus <button onclick="g45CkAbXFermer(' + i + ')" title="Fermer" style="border:0;background:none;color:#c9d3ee;font-size:16px;cursor:pointer;">✕</button>'); });
     S.forEach(function (x) { (x.u.abd || []).forEach(function (a, i) { A.push('⚠️ <b>' + esc(x.u.n) + '</b> ' + (a.l === 'dom' ? '🏠' : a.l === 'ext' ? '✈️' : '') + ' : série abandonnée le ' + esc(a.d) + ' à ' + ({ cb: '📉 C', fib: '🐚 F', dal: '🪜 D' }[a.mt] || 'P') + a.p + ' : <b style="color:#ff5a5a;">−' + eu(a.perdu) + '</b> perdus <button onclick="g45CkAbFermer(' + esc(JSON.stringify(x.u.n)).replace(/"/g, '&quot;') + ',' + i + ')" title="Fermer" style="border:0;background:none;color:#c9d3ee;font-size:16px;cursor:pointer;">✕</button>'); }); });   /* 20261104y */
     S.forEach(function (x) { if (x.u.ga) A.push('⏳ <b>' + esc(x.u.n) + '</b> : nouvelle grille en attente (P' + x.p + ').'); });
     try { var at = (typeof window._g45GrilleAtt === 'function') ? window._g45GrilleAtt() : {}; Object.keys(at).forEach(function (k) { A.push('⏳ Grille ' + '⭐'.repeat(+k || 1) + ' en attente (Outils).'); }); } catch (e) {}
