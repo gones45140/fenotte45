@@ -40055,6 +40055,10 @@ async function _g45PullBetsGithub(){
             if(x&&x.n&&!_vus[String(x.n).toLowerCase()]&&!_estSupprime(x.n)){ st.u.push(x); _gardes.push(x.n); }
           });
           if(_gardes.length) console.warn('🛟 entrées locales conservées malgré la synchro : '+_gardes.join(', '));
+          /* 20261117z (contrôle ?sync=1 d'Antoine : PC 44 cartes / 16 🏒, téléphone 38 / 11, MÊME date de synchro 21:19) : les entrées locales
+             gardées ici n'étaient JAMAIS renvoyées sur GitHub (après le rechargement, dates égales → ni pull ni push) → l'autre appareil ne
+             les recevait jamais. On marque l'état « à envoyer » : au rechargement, le garde-fou pousse la version fusionnée. */
+          if(_gardes.length){ try{ localStorage.setItem('g45_dirty','1'); }catch(e){} }
         }
       }catch(e){}
       localStorage.setItem('g45v5', JSON.stringify(st));
