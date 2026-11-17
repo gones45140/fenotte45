@@ -88511,12 +88511,12 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   var FRK = 0.94, coteFr = function (c) { return Math.round(c * FRK * 100) / 100; };
   var coteH = function (y) { var q = coteDe(y); return q ? ' · <b style="color:#f5c542;">' + (q.e ? '≈ ' : '') + frC(q.c) + '</b> <span style="color:#6dd3ff;font-weight:800;">FR ≈ ' + frC(coteFr(q.c)) + '</span>' : ''; };
   window._g45LoiMont = function (L, coteDe) {   /* 20261111f : simulation montante du bilan (voir html) */
-    var G = [10, 20, 60, 180, 540, 1620, 4860, 14580, 43740], E = {}, PE = {}, g = 0, pmax = 0, mmax = 0, n = 0, DET = {};
+    var G = [10, 20, 60, 180, 540, 1620, 4860, 14580, 43740], E = {}, PE = {}, g = 0, pmax = 0, mmax = 0, n = 0, DET = {}, DER = {};   /* DER : dernière pépite de chaque série (20261117s) */
     L.slice().sort(function (a, b) { return a.t - b.t; }).forEach(function (x) {
       var q = coteDe(x); if (!q || !(q.c > 1)) return;
       /* 20261116f (captures Bucks : « le 11 Milwaukee perd, le 12 le mode Cockpit ne double pas la mise ») : la série de la montante = même équipe
          + même pari, QUEL QUE SOIT le lieu (11/11 pépite 🌍, 12/11 pépite 🏠 avec la 🌍 dessus → P2) ; kd (détail affiché) garde le lieu. */
-      var kL = x.id + '|' + x.k + '|' + (x.lieu || ''), k = x.id + '|' + x.k, p = E[k] || 1, m = G[Math.min(p, G.length) - 1], kd = kL + '|' + x.t;
+      var kL = x.id + '|' + x.k + '|' + (x.lieu || ''), k = x.id + '|' + x.k; DER[k] = x; var p = E[k] || 1, m = G[Math.min(p, G.length) - 1], kd = kL + '|' + x.t;
       if (x.r !== 1 && x.r !== 0) { if (x.r !== -1) DET[kd] = { p: p, m: m }; return; }   /* 20261113b : ⏳ = palier et mise prévus */
       n++; if (p > pmax) pmax = p; if (m > mmax) mmax = m;
       if (x.r === 1) { var gg = m * (Math.round(q.c * 0.94 * 100) / 100 - 1); g += gg; DET[kd] = { p: p, m: m, g: Math.round(gg * 100) / 100 }; if (p > 1) DET[kd].ser = Math.round((gg - (PE[k] || 0)) * 100) / 100; E[k] = 1; PE[k] = 0; }   /* 20261111g : cote FR estimée */
@@ -88524,7 +88524,11 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     });
     window._g45LoiDet = DET;
     var ouv = Object.keys(E).filter(function (k) { return E[k] > 1; });
-    return { n: n, g: Math.round(g * 100) / 100, pmax: pmax, mmax: mmax, ouv: ouv.length, prochs: ouv.slice(0, 3).map(function (k) { var p = E[k]; return 'P' + p + ' = ' + G[Math.min(p, G.length) - 1] + ' €'; }).join(', ') + (ouv.length > 3 ? '…' : '') };
+    /* 20261117s (capture : « P2 = 20 €, P2 = 20 €, P2 = 20 €… » + « ? » → maquette « oui ») : liste détaillée des montantes ouvertes (équipe, pari,
+       palier, prochaine mise), plus haut palier d'abord. */
+    var ouvL = ouv.map(function (k) { var x = DER[k] || {}, p = E[k]; return { eq: x.eq || '', lib: x.lib || x.k || '', sp: x.sp || '', logo: x.logo || '', p: p, m: G[Math.min(p, G.length) - 1] }; })
+      .sort(function (a, b) { return (b.p - a.p) || String(a.eq).localeCompare(String(b.eq)); });
+    return { ouvL: ouvL, n: n, g: Math.round(g * 100) / 100, pmax: pmax, mmax: mmax, ouv: ouv.length, prochs: ouv.slice(0, 3).map(function (k) { var p = E[k]; return 'P' + p + ' = ' + G[Math.min(p, G.length) - 1] + ' €'; }).join(', ') + (ouv.length > 3 ? '…' : '') };
   };
   /* 20261116k (capture Pépites du jour : « là rien ne bouge ? ») : règles « ➖ non compté » (20261116b → j) dans UNE fonction, utilisée par le
      bilan ET par la liste des pépites du jour (loiHtml) : x.nc = 1 + x.nf (1 niveau trop faible, 2 équipe trop faible pour le book,
@@ -88664,7 +88668,15 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     if (mt && mt.n) h += '<div style="background:' + (mt.g >= 0 ? 'rgba(30,215,96,.12)' : 'rgba(255,69,69,.12)') + ';border:1px solid ' + (mt.g >= 0 ? '#1ed760' : '#ff4545') + ';border-radius:10px;padding:8px;margin-bottom:10px;text-align:center;">'
       + '<div style="font-size:14px;color:#c9d3ee;">🚀 En montante (P1 10 €, puis ×2 et ×3 sur la même équipe et le même pari)</div>'
       + '<div style="font-size:22px;font-weight:900;color:' + (mt.g >= 0 ? '#1ed760' : '#ff6b6b') + ';">' + (mt.g >= 0 ? '+' : '−') + frC(Math.abs(mt.g)).replace(',00', '') + ' €</div>'
-      + '<div style="font-size:14px;">Plus haut palier : <b>P' + mt.pmax + '</b> · plus grosse mise : <b>' + frC(mt.mmax).replace(',00', '') + ' €</b>' + (mt.ouv ? ' · ⏳ ' + mt.ouv + ' montante' + (mt.ouv > 1 ? 's' : '') + ' en cours (prochaine mise ' + mt.prochs + ')' : '') + '</div></div>';
+      + '<div style="font-size:14px;">Plus haut palier : <b>P' + mt.pmax + '</b> · plus grosse mise : <b>' + frC(mt.mmax).replace(',00', '') + ' €</b>' + (mt.ouv ? ' · ⏳ ' + mt.ouv + ' montante' + (mt.ouv > 1 ? 's' : '') + ' en cours : ' + (function () {   /* 20261117s : regroupées par palier + détail */
+          var P = {}; (mt.ouvL || []).forEach(function (o) { P[o.p] = P[o.p] || [0, o.m]; P[o.p][0]++; });
+          return Object.keys(P).sort(function (a, b) { return a - b; }).map(function (p) { return P[p][0] + ' en P' + p + ' (' + frC(P[p][1]).replace(',00', '') + ' €)'; }).join(' · ');
+        })() : '') + '</div>'
+      + (mt.ouv && (mt.ouvL || []).length ? '<details style="margin-top:6px;text-align:left;"><summary style="cursor:pointer;font-size:14px;font-weight:800;text-align:center;">▸ Voir le détail</summary>'
+        + mt.ouvL.map(function (o) { return '<div style="display:flex;align-items:center;gap:8px;font-size:14px;padding:5px 4px;border-top:1px solid rgba(255,255,255,.08);">'
+            + (o.logo ? '<img src="' + o.logo + '" alt="" onerror="this.remove()" style="width:22px;height:22px;object-fit:contain;">' : '<span>' + (SPI[o.sp] || '') + '</span>')
+            + '<span style="flex:1;"><b>' + esc(o.eq) + '</b> · ' + esc(o.lib) + '</span><b>P' + o.p + ' → ' + frC(o.m).replace(',00', '') + ' €</b></div>'; }).join('')
+        + '</details>' : '') + '</div>';
     var S = {}; J.forEach(function (x) { var k = SPI[x.sp] || '?'; S[k] = S[k] || [0, 0]; S[k][1]++; if (x.r === 1) S[k][0]++; });
     h += '<div style="display:flex;gap:6px;flex-wrap:wrap;font-size:14px;font-weight:700;margin-bottom:12px;">' + Object.keys(S).map(function (k) { return '<span style="background:#0b1226;border:1px solid #2a3a63;border-radius:8px;padding:3px 8px;">' + k + ' ' + S[k][0] + '/' + S[k][1] + ' · ' + Math.round(100 * S[k][0] / S[k][1]) + ' %</span>'; }).join('') + '</div>';
     /* ═══ 20261108o — 📈 GRAPHIQUE + 📊 BILANS DE LA LOI DES SÉRIES (Antoine : « il manque graphique / bilan dans loi des séries ? » →
