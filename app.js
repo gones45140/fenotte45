@@ -87562,7 +87562,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     Array.prototype.forEach.call(ul.querySelectorAll('.urow'), function (row) {
       var b = row.querySelector('[data-idx]'), u = b ? state.u[+b.getAttribute('data-idx')] : null, z = row.querySelector('.g45ul-ab');
       if (!u || !u.abd || !u.abd.length) { if (z) z.remove(); return; }
-      var h = u.abd.map(function (a, i) { return '⚠️ Série abandonnée le ' + esc(a.d) + (a.l === 'dom' ? ' 🏠' : a.l === 'ext' ? ' ✈️' : '') + ' à P' + a.p + ' : <b style="color:#ff5a5a;">−' + eu(a.perdu) + '</b> perdus <button onclick="event.stopPropagation();g45CkAbFermer(' + esc(JSON.stringify(u.n)).replace(/"/g, '&quot;') + ',' + i + ')" style="border:0;background:none;color:#c9d3ee;font-size:15px;cursor:pointer;">✕</button>'; }).join('<br>');
+      var h = u.abd.map(function (a, i) { return '⚠️ Série abandonnée le ' + esc(a.d) + (a.l === 'dom' ? ' 🏠' : a.l === 'ext' ? ' ✈️' : '') + ' à ' + ({ cb: '📉 C', fib: '🐚 F', dal: '🪜 D' }[a.mt] || 'P') + a.p + ' : <b style="color:#ff5a5a;">−' + eu(a.perdu) + '</b> perdus <button onclick="event.stopPropagation();g45CkAbFermer(' + esc(JSON.stringify(u.n)).replace(/"/g, '&quot;') + ',' + i + ')" style="border:0;background:none;color:#c9d3ee;font-size:15px;cursor:pointer;">✕</button>'; }).join('<br>');
       if (!z) { z = document.createElement('div'); z.className = 'g45ul-ab'; z.style.cssText = 'position:relative;margin-top:4px;background:#3a2408;border:1px solid #ff9f43;border-radius:8px;padding:4px 8px;font-size:14px;color:#fff;'; var nm = row.querySelector('.uname'); (nm && nm.parentNode ? nm.parentNode : row).appendChild(z); }
       if (z.innerHTML !== h) z.innerHTML = h;
     });
@@ -87667,7 +87667,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     var A = [];
     en.forEach(function (x) { if (c > 0 && x.reste > c) A.push('🔴 <b>' + esc(x.u.n) + '</b> : ta bankroll (' + eu(c) + ') ne couvre pas la fin de la série (' + eu(x.reste) + ' jusqu\'à P' + x.N + ').'); });
     S.forEach(function (x) { var b = x.u.ps && x.u.ps.b; if (b && b.cr >= 2 && b.n >= 5 && 100 * b.ok / b.n <= b.pt - 10) A.push('🛑 Bruno time : <b>' + esc(x.u.n) + '</b> a réussi ' + b.cr + ' fois de suite → après ' + b.k + ' réussites, ' + Math.round(100 * b.ok / b.n) + ' % seulement (' + b.pt + ' % d\'habitude).'); });
-    S.forEach(function (x) { (x.u.abd || []).forEach(function (a, i) { A.push('⚠️ <b>' + esc(x.u.n) + '</b> ' + (a.l === 'dom' ? '🏠' : a.l === 'ext' ? '✈️' : '') + ' : série abandonnée le ' + esc(a.d) + ' à P' + a.p + ' : <b style="color:#ff5a5a;">−' + eu(a.perdu) + '</b> perdus <button onclick="g45CkAbFermer(' + esc(JSON.stringify(x.u.n)).replace(/"/g, '&quot;') + ',' + i + ')" title="Fermer" style="border:0;background:none;color:#c9d3ee;font-size:16px;cursor:pointer;">✕</button>'); }); });   /* 20261104y */
+    S.forEach(function (x) { (x.u.abd || []).forEach(function (a, i) { A.push('⚠️ <b>' + esc(x.u.n) + '</b> ' + (a.l === 'dom' ? '🏠' : a.l === 'ext' ? '✈️' : '') + ' : série abandonnée le ' + esc(a.d) + ' à ' + ({ cb: '📉 C', fib: '🐚 F', dal: '🪜 D' }[a.mt] || 'P') + a.p + ' : <b style="color:#ff5a5a;">−' + eu(a.perdu) + '</b> perdus <button onclick="g45CkAbFermer(' + esc(JSON.stringify(x.u.n)).replace(/"/g, '&quot;') + ',' + i + ')" title="Fermer" style="border:0;background:none;color:#c9d3ee;font-size:16px;cursor:pointer;">✕</button>'); }); });   /* 20261104y */
     S.forEach(function (x) { if (x.u.ga) A.push('⏳ <b>' + esc(x.u.n) + '</b> : nouvelle grille en attente (P' + x.p + ').'); });
     try { var at = (typeof window._g45GrilleAtt === 'function') ? window._g45GrilleAtt() : {}; Object.keys(at).forEach(function (k) { A.push('⏳ Grille ' + '⭐'.repeat(+k || 1) + ' en attente (Outils).'); }); } catch (e) {}
     try { if (typeof window._g45CbTdb === 'function') h += window._g45CbTdb(); } catch (e) {}   /* 20261114o : bloc 📉 Cotes basses */
@@ -88158,6 +88158,25 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   var p1De = function (u) { var G = (typeof _g45Grille === 'function' ? _g45Grille(u, lieu()) : null) || [1]; return +G[0] || 1; };
   var miseDe = function (u, m, p) { return Math.round(p1De(u) * SEQ[m][Math.min(p, SEQ[m].length) - 1] * 100) / 100; };
   window._g45MethEngT = { SEQ: SEQ, palM: palM, miseDe: miseDe };   /* tests */
+  /* ═══ 20261117u — 🏳️ ABANDONNER UNE SÉRIE 📉 / 🐚 / 🪜 (Antoine, carte Eichel : abandon Cockpit fait, « 📉 🏠 C2 » resté → « on n'a pas par mode »
+     → maquette texte « oui ») : comme g45CkAbandon (20261104y) mais pour les autres méthodes : confirmation (pertes de la série), série remise au
+     1er palier (📉 u.lcb[k] supprimé ; 🐚 / 🪜 u.lm[m][k] supprimé), alerte u.abd { d, p, perdu, l, mt } jusqu'au ✕. Pertes : 📉 = per gardé par
+     la série ; 🐚 / 🪜 = mises des paliers 1 à p − 1 à la P1 actuelle (≈, la vraie suite dépend des gains intermédiaires). Paris et bankroll intouchés. ═══ */
+  window.g45MethAbandon = function (nom, m, ks) {
+    var u = (state.u || []).filter(function (x) { return x.n === nom; })[0]; if (!u || !NOM[m] || m === 'mont') return;
+    (ks || []).forEach(function (k) {
+      var p = m === 'cb' ? cbSt(u, k).p : palM(u, m, k); if (p <= 1) return;
+      var perdu = 0, env = '';
+      if (m === 'cb') perdu = +cbSt(u, k).per || 0; else { for (var i = 1; i < p; i++) perdu += miseDe(u, m, i); env = '≈ '; }
+      var l = String(k).split('|')[1] || '', lt = l === 'dom' ? ' (🏠 domicile)' : l === 'ext' ? ' (✈️ extérieur)' : '';
+      var eu2 = function (v) { return (Math.round(v * 100) / 100).toFixed(2).replace('.', ',').replace(',00', '') + ' €'; };
+      if (!confirm('🏳️ Abandonner la série ' + NOM[m] + ' de ' + nom + lt + ' ?\n\nTu en es à ' + LET[m] + p + ' : tu as perdu ' + env + eu2(perdu) + '.\nLa série repart à ' + LET[m] + '1. Tes paris et ta bankroll ne changent pas.')) return;
+      if (m === 'cb') { if (u.lcb) delete u.lcb[k]; } else setM(u, m, k, 1);
+      var d = new Date(); (u.abd = u.abd || []).push({ d: String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0'), p: p, perdu: Math.round(perdu * 100) / 100, l: l === 'dom' || l === 'ext' ? l : '', mt: m });
+    });
+    try { if (typeof save === 'function') save(); } catch (e) {}
+    try { if (typeof render === 'function') render(); } catch (e) {} try { dessiner(); } catch (e) {}
+  };
   function dessiner() {
     var ce = $('ck-eng'); if (!ce) return;
     var z = $('g45-eng-meth'); if (!z) { z = document.createElement('div'); z.id = 'g45-eng-meth'; z.style.cssText = 'margin:0 0 10px;'; ce.insertBefore(z, ce.firstChild); }
@@ -88277,11 +88296,13 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
       var pil = function (m, k, p) { return '<span class="g45ul-pal" style="background:' + MCOL[m] + ';margin-left:0;">' + NOM[m].split(' ')[0] + ' ' + ic(k) + LET[m] + p + '</span>'; };
       /* 20261115g (capture carte Oilers « 🚀 Palier 1 » seul alors qu'un pari 📉 C1 est en cours : « c'est pas indiqué que je le joue en cotes
          basses ») : une pastille par méthode et par lieu dès que la carte y a une série (palier > 1) OU un pari (en cours ou archivé) */
-      var vus = {}, add = function (m, k, p) { var id = m + '|' + (String(k).split('|')[1] || ''); if (vus[id] && vus[id] >= p) return; vus[id] = p; };
+      var vus = {}, KS = {}, add = function (m, k, p) { var id = m + '|' + (String(k).split('|')[1] || ''); if (p > 1) (KS[id] = KS[id] || {})[k] = 1; if (vus[id] && vus[id] >= p) return; vus[id] = p; };
       try { (state.h || []).concat(state.a || []).forEach(function (b) { if (b && u && b.n === u.n && MCOL[b.meth] && b.meth !== 'mont') add(b.meth, b.mk || '', 1); }); } catch (e) {}
       try { Object.keys((u && u.lcb) || {}).forEach(function (k) { add('cb', k, +(u.lcb[k] || {}).p || 1); }); } catch (e) {}
       try { ['fib', 'dal'].forEach(function (m) { Object.keys(((u && u.lm) || {})[m] || {}).forEach(function (k) { add(m, k, parseInt(u.lm[m][k], 10) || 1); }); }); } catch (e) {}
-      Object.keys(vus).forEach(function (id) { var m = id.split('|')[0], l = id.split('|')[1]; r += pil(m, '|' + l, vus[id]); });
+      Object.keys(vus).forEach(function (id) { var m = id.split('|')[0], l = id.split('|')[1]; r += pil(m, '|' + l, vus[id]);
+        /* 20261117u (carte Eichel « 📉 🏠 C2 » après l'abandon Cockpit : « on n'a pas par mode » → « oui ») : 🏳️ à côté d'une série EN COURS (palier > 1) */
+        if (vus[id] > 1 && KS[id] && u && u.n) r += '<button onclick="event.stopPropagation();g45MethAbandon(' + JSON.stringify(u.n).replace(/"/g, '&quot;') + ',\'' + m + '\',' + JSON.stringify(Object.keys(KS[id])).replace(/"/g, '&quot;') + ')" title="Abandonner cette série" style="margin:0 6px 0 2px;border-radius:8px;padding:2px 8px;font-size:13px;font-weight:800;color:#fff;cursor:pointer;border:1px solid #ff9f43;background:#3a2408;">🏳️</button>'; });
       return r;
     }; window._g45UlPaliers._meth = 1; } } catch (e) {}
   /* ═══ 20261114t — 🚀 COCKPIT P2 × 2,5 (même demande) : case dans 🪜 Mes grilles (state.ckP25). Cochée, toute grille « standard » (P2 = 2 × P1,
