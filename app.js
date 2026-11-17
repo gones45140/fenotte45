@@ -79798,15 +79798,18 @@ window._G45_PAL_COUL = ['#1ed760', '#8fdc4a', '#f5c542', '#ffa53a', '#ff7a3a', '
         h += '<tr><td class="st">' + lab[k] + (modif ? '<div style="font-size:12px;color:#f0b020;font-weight:700;">modifiée</div>' : '')
           + '<div style="margin-top:4px;"><select onchange="_g45MajP1(\'' + k + '\',null,this.value)" aria-label="Nombre de paliers ' + lab[k] + '" style="font-size:14px;font-weight:800;background:#0b1226;color:#fff;border:1px solid #2a3a63;border-radius:6px;padding:3px 4px;">' + [6, 7, 8, 9].map(function (q) { return '<option value="' + q + '"' + (q === _nb ? ' selected' : '') + '>P' + q + ' max</option>'; }).join('') + '</select></div>'
           + (_att ? '<div style="font-size:13px;color:#f5c542;font-weight:700;margin-top:3px;">⏳ nouvelle grille en attente (P1 ' + String(_att[0]).replace('.', ',') + ', P' + _att.length + ' max)</div><button onclick="g45GrilleForcer(\'' + k + '\')" style="font-size:13px;margin:3px 4px 0 0;padding:3px 8px;border-radius:6px;border:1px solid #2a3a63;background:#0b1226;color:#fff;cursor:pointer;">✅ Appliquer</button><button onclick="g45GrilleAnnuler(\'' + k + '\')" style="font-size:13px;margin-top:3px;padding:3px 8px;border-radius:6px;border:1px solid #2a3a63;background:#0b1226;color:#fff;cursor:pointer;">✖ Annuler</button>' : '') + '</td>';
-        STRATS[k].forEach(function (v, j) {
-          var cj = C[Math.min(j, C.length - 1)];
+        /* 20261117t (« si je veux personnaliser par équipe ? » → « le tableau montre les grilles ENREGISTRÉES en × 2 » → « OUI ») : case 🚀 P2 × 2,5
+           cochée → P2 et suivants affichés tels qu'ils seront JOUÉS (_g45P25 : P1, 2,5 × P1, puis × 3) ; la grille enregistrée ne change pas. */
+        var _gv = (typeof window._g45P25 === 'function') ? (window._g45P25(STRATS[k]) || STRATS[k]) : STRATS[k];
+        STRATS[k].forEach(function (v0, j) {
+          var cj = C[Math.min(j, C.length - 1)], v = j === 0 ? v0 : _gv[j];
           /* 20261104v (« faire ressortir un peu plus les couleurs ») : fond 2e → 5c, bordure pleine */
           if (j === 0) h += '<td class="p1" style="background:' + cj + '6b;border:2px solid ' + cj + ';"><input type="number" min="0" step="1" value="' + v + '" onchange="_g45MajP1(\'' + k + '\',this.value)" aria-label="Mise de départ ' + k + ' étoiles"></td>';
           else h += '<td style="background:' + cj + '5c;border:1px solid ' + cj + ';font-weight:800;text-shadow:0 1px 3px rgba(0,0,0,.8);">' + v + '</td>';
         });
         h += '</tr>';
       });
-      h += '</table></div><div style="font-size:13px;color:#c9d3ee;margin-top:6px;">Touche la case jaune (P1, mise de départ) pour la changer : les paliers suivants suivent. « P… max » = nombre de paliers de la grille (6 à 9).</div>';
+      h += '</table></div><div style="font-size:13px;color:#c9d3ee;margin-top:6px;">Touche la case jaune (P1, mise de départ) pour la changer : les paliers suivants suivent. « P… max » = nombre de paliers de la grille (6 à 9).' + ((typeof state !== 'undefined' && state.ckP25) ? '<br>🚀 <b>P2 × 2,5 coché</b> : P2 et suivants = mises réellement jouées (P1 × 2,5, puis × 3).' : '') + '</div>';
       el.innerHTML = h;
     };
     window.renderPaliers = renderPaliers;
@@ -88300,7 +88303,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   }
   window.g45P25 = function (on) {
     if (on && !confirm('🚀 P2 × 2,5 : toutes tes grilles Cockpit passent à 10 / 25 / 75 / 225… (pour P1 10 €).\nLes séries déjà en cours prennent tout de suite les nouvelles mises.\n\nOK ?')) { p25Poser(); return; }
-    state.ckP25 = !!on; try { save(); } catch (e) {} try { if (typeof render === 'function') render(); } catch (e) {} try { (window.updMise || updMise)(); } catch (e) {} p25Poser();
+    state.ckP25 = !!on; try { save(); } catch (e) {} try { if (typeof render === 'function') render(); } catch (e) {} try { if (typeof renderPaliers === 'function') renderPaliers(); } catch (e) {}   /* 20261117t */ try { (window.updMise || updMise)(); } catch (e) {} p25Poser();
   };
   try { var _ong0 = window.g45CkOnglet; if (typeof _ong0 === 'function' && !_ong0._p25) { window.g45CkOnglet = function () { var r = _ong0.apply(this, arguments); try { p25Poser(); } catch (e) {} return r; }; window.g45CkOnglet._p25 = 1; } } catch (e) {}
   window._g45EngMethDessiner = dessiner;
