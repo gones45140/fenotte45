@@ -81802,6 +81802,31 @@ function _g45PaysLogo(nom, k) {
   } catch (e) {}
 })();
 
+/* ═══ 20261117y — CONTRÔLE DE SYNCHRO ?sync=1 (Antoine : « il me manque sur téléphone Pastrnak, Jarvis, Eichel, Bouchard, Necas, et j'ai
+   MacKinnon sur tel et pas sur PC ») : à ouvrir sur CHAQUE appareil ; une alerte résume (jamais de jeton affiché, seulement « présent / absent ») :
+   synchro active, clé présente, modifications non envoyées, date locale / distante de la dernière synchro, nombre de cartes, joueurs 🏒,
+   suppressions mémorisées SUR CET APPAREIL (pierres tombales). Aucun effet sans ?sync=1. ═══ */
+(function () {
+  try {
+    if (!/[?&]sync=1/.test(location.search)) return;
+    setTimeout(async function () {
+      var d = function (t) { t = +t || 0; return t ? new Date(t).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—'; };
+      var rem = null; try { var r = await _gh_getBets(); rem = r && r.data ? r.data.ts : null; } catch (e) {}
+      var off = {}; try { off = JSON.parse(localStorage.getItem('g45_presets_off') || '{}') || {}; } catch (e) {}
+      var U = (typeof state !== 'undefined' && state.u) || [];
+      var hk = U.filter(function (u) { return u && /🏒/.test(String(u.sport || '')); }).map(function (u) { return u.n; });
+      var txt = '🔄 SYNCHRO (cet appareil)\n'
+        + 'Synchro : ' + (typeof _g45BetSyncOn === 'function' && _g45BetSyncOn() ? 'ACTIVE' : 'COUPÉE') + ' · clé : ' + (typeof _g45BetsPass === 'function' && _g45BetsPass() ? 'présente' : 'ABSENTE') + '\n'
+        + 'Modifs non envoyées : ' + (localStorage.getItem('g45_dirty') === '1' ? 'OUI' : 'non') + '\n'
+        + 'Dernière synchro ici : ' + d(localStorage.getItem('g45_betsync_ts')) + ' · sur GitHub : ' + d(rem) + '\n'
+        + 'Cartes : ' + U.length + ' · 🏒 ' + hk.length + ' : ' + hk.join(', ') + '\n'
+        + 'Supprimés sur cet appareil : ' + (Object.keys(off).map(function (n) { return n + ' (' + d(off[n]) + ')'; }).join(', ') || 'aucun');
+      try { console.log(txt); } catch (e) {}
+      try { alert(txt); } catch (e) {}
+    }, 4000);
+  } catch (e) {}
+})();
+
 /* ═══ 🏠 / ✈️ PARI PAR LIEU + 🏟️ CLUB DU JOUEUR (20261017q, maquettes validées « ok ») ═══
    « On pourrait remplacer [les liens Sofascore / Flashscore] par 🏠 Type de pari / ✈️ Type de pari » + « pour les joueurs, club avec une
    recherche comme pour équipe ». Formulaire du mur (ajout) ET fenêtre « Modifier » : les deux liens sont cachés (gardés dans 🔗 Liens),
