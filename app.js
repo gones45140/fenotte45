@@ -88703,11 +88703,15 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     var SPF = { tous: 'Tous', soccer: '⚽', hockey: '🏒', basketball: '🏀', football: '🏈', baseball: '⚾', rugby: '🏉' };
     var bF = function (on, onclick, t) { return '<button onclick="' + onclick + '" style="border-radius:12px;padding:7px 11px;font-size:15px;font-weight:800;cursor:pointer;color:#fff;border:1px solid ' + (on ? '#6d9dff' : '#2a3a63') + ';background:' + (on ? '#2a4a9a' : '#0b1226') + ';">' + t + '</button>'; };
     h += '<div style="font-size:14px;font-weight:800;margin:4px 0 4px;">Sport</div><div style="display:flex;gap:6px;flex-wrap:wrap;">' + Object.keys(SPF).map(function (k) { return bF(M.fs === k, 'g45LoiBilF(\'s\',\'' + k + '\')', SPF[k]); }).join('') + '</div>'
+      /* 20261118b (bilan Loi des séries : « faudrait voir un filtre par type de compétition ? » → maquette texte « OUI ») : M.fco = '' toutes /
+         'ch' championnats (ligues + NHL / NBA / NFL / MLB / KHL / rugby) / 'eu' coupes d'Europe (uefa.champions / europa / europa.conf) /
+         'sel' sélections (x.sel ou fifa / uefa.nations / uefa.euro / concacaf / conmebol / caf / afc). Tout le bilan suit (L filtré). */
+      + '<div style="font-size:14px;font-weight:800;margin:10px 0 4px;">Compétition</div><div style="display:flex;gap:6px;flex-wrap:wrap;">' + [['', 'Toutes'], ['ch', '🏟️ Championnats'], ['eu', '🏆 Coupes d\'Europe'], ['sel', '🌍 Sélections']].map(function (k) { return bF((M.fco || '') === k[0], 'g45LoiBilF(\'k\',\'' + k[0] + '\')', k[1]); }).join('') + '</div>'
       + '<div style="font-size:14px;font-weight:800;margin:10px 0 4px;">Ratés de suite en cours</div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">' + [0, 4, 5, 6, 7].map(function (k) { return bF(M.fc === k, 'g45LoiBilF(\'c\',' + k + ')', k ? (k === 7 ? '7 et +' : String(k)) : 'Tous'); }).join('') + '</div>';
     /* 20261113g (Antoine : « rajouter comme screen 3 » = 1J / 1S / 1M / 1A / Tout du Bilan paris) : période (M.per), mêmes durées que le Bilan */
     h += '<div style="font-size:14px;font-weight:800;margin:0 0 4px;">Période</div><div style="display:flex;gap:6px;margin-bottom:10px;">' + [['1j', '1J'], ['1s', '1S'], ['1m', '1M'], ['1a', '1A'], ['all', 'Tout']].map(function (d) { var on = (M.per || 'all') === d[0]; return '<button onclick="g45LoiBilF(\'p\',\'' + d[0] + '\')" style="flex:1;border:2px solid ' + (on ? '#1ed760' : '#6d9dff') + ';border-radius:8px;padding:8px 4px;font-size:14px;font-weight:900;cursor:pointer;background:' + (on ? '#1ed760' : '#16213f') + ';color:' + (on ? '#0b1a10' : '#fff') + ';">' + d[1] + '</button>'; }).join('') + '</div>';
     if (M.fc === 3) M.fc = 0;
-    var L = (M.d.L || []).filter(function (x) { return x.cours >= 4 && x.lg !== 'fifa.friendly' /* 20261114h : amicaux retirés */ && (M.fs === 'tous' || x.sp === M.fs || (M.fs === 'rugby' && x.sp === 'rugby-league')) && (!M.fc || (M.fc === 7 ? x.cours >= 7 : x.cours === M.fc)); }).sort(function (a, b) { return b.t - a.t; });
+    var L = (M.d.L || []).filter(function (x) { return x.cours >= 4 && x.lg !== 'fifa.friendly' /* 20261114h : amicaux retirés */ && (M.fs === 'tous' || x.sp === M.fs || (M.fs === 'rugby' && x.sp === 'rugby-league')) && (!M.fc || (M.fc === 7 ? x.cours >= 7 : x.cours === M.fc)) && (!M.fco || window._g45LoiTypeComp(x) === M.fco); }).sort(function (a, b) { return b.t - a.t; });
     chargerCotes(L);
     /* 20261108s (capture Sharks / Banfield 07/11 à 6 h 54 encore ⏳ : « faudrait le score du match ») : le robot Loi des séries ne repasse que le
        lendemain matin ; la fiche du match lue pour la cote (FI, archives remplies toutes les heures) a déjà le score final f {h, a} (+ ot) →
@@ -88874,7 +88878,11 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   window._g45LoiBilT = M;   /* tests */
   window.g45LoiBilMois = function (k) { M.mois += k; redessiner(); };
   window.g45LoiBilJour = function (j) { M.j = j; redessiner(); };
-  window.g45LoiBilF = function (q, v) { if (q === 's') M.fs = v; else if (q === 'p') M.per = v; else M.fc = +v || 0; M.j = ''; redessiner(); };   /* 20261113g : p = période */
+  window._g45LoiTypeComp = function (x) { var lg = String((x && x.lg) || '');   /* 20261118b */
+    if (x && x.sel || /^(fifa\.|uefa\.(nations|euroq?)(\.|$)|concacaf|conmebol|caf\.|afc\.)/.test(lg)) return 'sel';
+    if (/^uefa\.(champions|europa)/.test(lg)) return 'eu';
+    return 'ch'; };
+  window.g45LoiBilF = function (q, v) { if (q === 's') M.fs = v; else if (q === 'p') M.per = v; else if (q === 'k') M.fco = v || ''; else M.fc = +v || 0; M.j = ''; redessiner(); };   /* 20261113g : p = période */
   window.g45LoiBilTout = function () { M.tout = !M.tout; redessiner(); };
   window.g45LoiBilVue = function (k) { M.vue = k; redessiner(); };   /* 20261108o */
 })();
