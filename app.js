@@ -87605,7 +87605,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     h += '<div style="' + CARTE + '"><div style="font-size:16px;font-weight:800;margin-bottom:6px;">🏦 Ma bankroll</div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">'
       + kp(eu(c), 'bankroll') + kp((B.s > 0 ? '+' : '') + eu(B.s), 'montante ce mois (' + B.n + ')', B.s > 0.5 ? '#1ed760' : B.s < -0.5 ? '#ff5a5a' : '#fff')
       + kp((pe < 10 ? pe.toFixed(1).replace('.', ',') : Math.round(pe)) + ' %', 'engagé en séries', pe < 20 ? '#1ed760' : pe <= 50 ? '#ff9f43' : '#ff5a5a') + '</div></div>';
-    var en = S.filter(function (x) { return x.p > 1; }).sort(function (a, b) { return (a.N - a.p) - (b.N - b.p) || b.p - a.p; }), p1 = S.filter(function (x) { return x.p <= 1; });
+    var en = S.filter(function (x) { return x.p > 1; }).concat((function () { try { return window._g45MethSeries ? window._g45MethSeries() : []; } catch (e) { return []; } })()).sort(function (a, b) { return (a.N - a.p) - (b.N - b.p) || b.p - a.p; }), p1 = S.filter(function (x) { return x.p <= 1; });
     /* 20261105b (capture « Mes séries en cours », « il y a un peu trop d'Abandonner non » → maquette → « oui ») : UN seul bouton en haut ;
        en l'appuyant (abMode), un petit 🏳️ apparaît sur chaque ligne (même confirmation g45CkAbandon) ; « ✖ Fermer » les retire. */
     var abT = en.length ? (window._g45CkAbMode
@@ -87621,6 +87621,16 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
       var ic = '<span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:' + col + ';vertical-align:-2px;box-shadow:0 0 6px ' + col + ';"></span>';
       var abB = '<button onclick="g45CkAbandon(' + esc(JSON.stringify(x.u.n)).replace(/"/g, '&quot;') + ',' + esc(JSON.stringify(x.k || '')).replace(/"/g, '&quot;') + ')" style="margin-right:8px;border-radius:8px;padding:2px 8px;font-size:13px;font-weight:800;color:#fff;cursor:pointer;border:1px solid #ff9f43;background:#3a2408;vertical-align:1px;" title="Abandonner cette série">🏳️</button>';   /* 20261105c : collé AVANT le nom (sur PC, à droite, on ne savait plus quel drapeau = quelle série) */   /* 20261104y ; 20261105b : petit drapeau, seulement en mode abandon */
       if (!window._g45CkAbMode) abB = '';
+      /* 20261117v : ligne d'une série 📉 / 🐚 / 🪜 (même barre, mode devant, 🏳️ = g45MethAbandon) */
+      if (x.meth) {
+        var MI = { cb: ['📉', 'C'], fib: ['🐚', 'F'], dal: ['🪜', 'D'] }[x.meth] || ['', 'P'], lz = String(x.k).split('|')[1] || '';
+        var abM = window._g45CkAbMode ? '<button onclick="g45MethAbandon(' + esc(JSON.stringify(x.u.n)).replace(/"/g, '&quot;') + ',\'' + x.meth + '\',' + esc(JSON.stringify([x.k])).replace(/"/g, '&quot;') + ')" style="margin-right:8px;border-radius:8px;padding:2px 8px;font-size:13px;font-weight:800;color:#fff;cursor:pointer;border:1px solid #ff9f43;background:#3a2408;vertical-align:1px;" title="Abandonner cette série">🏳️</button>' : '';
+        h += '<div style="margin-top:4px;">' + abM + ic + ' ' + MI[0] + ' <b>' + esc(x.u.n) + '</b> ' + (lz === 'dom' ? '🏠' : lz === 'ext' ? '✈️' : '🌍') + ' · ' + MI[1] + x.p + ' sur ' + x.N
+          + (x.mise != null ? ' · mise <b>' + euC(x.mise) + '</b>' : ' · pertes <b>' + euC(x.per) + '</b> (mise selon la cote)')
+          + (r <= 1 ? ' · <span style="color:' + wc + ';font-weight:800;">' + (r === 0 ? 'dernier palier' : 'plus qu\'1 palier') + '</span>' : '') + '</div>'
+          + '<div style="height:8px;border-radius:6px;background:#1c2747;overflow:hidden;margin:3px 0;"><div style="height:8px;width:' + Math.round(100 * x.p / x.N) + '%;background:' + col + ';"></div></div>';
+        return;
+      }
       h += '<div style="margin-top:4px;">' + abB + ic + ' <b>' + esc(x.u.n) + '</b> ' + x.lieu + ' · P' + x.p + ' sur ' + x.N + ' · mise <b>' + euC(x.mise) + '</b>' + (r <= 3 ? ' · <span style="color:' + wc + ';font-weight:800;">' + (r === 0 ? 'dernier palier' : 'plus que ' + r + ' palier' + (r > 1 ? 's' : '')) + '</span>' : '') + '</div>'
         + '<div style="height:8px;border-radius:6px;background:#1c2747;overflow:hidden;margin:3px 0;"><div style="height:8px;width:' + Math.round(100 * x.p / x.N) + '%;background:' + col + ';"></div></div>';
     });
@@ -88162,6 +88172,18 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
      → maquette texte « oui ») : comme g45CkAbandon (20261104y) mais pour les autres méthodes : confirmation (pertes de la série), série remise au
      1er palier (📉 u.lcb[k] supprimé ; 🐚 / 🪜 u.lm[m][k] supprimé), alerte u.abd { d, p, perdu, l, mt } jusqu'au ✕. Pertes : 📉 = per gardé par
      la série ; 🐚 / 🪜 = mises des paliers 1 à p − 1 à la P1 actuelle (≈, la vraie suite dépend des gains intermédiaires). Paris et bankroll intouchés. ═══ */
+  /* 20261117v (« Mes séries en cours » du Tableau de bord sans la série 📉 C2 d'Eichel → maquette texte « oui ») : séries EN COURS (palier > 1)
+     des méthodes 📉 / 🐚 / 🪜, pour la liste du Tableau de bord : { u, meth, k, p, N, mise (🐚 / 🪜 : mise du palier ; 📉 : dépend de la cote → null),
+     per (📉 : pertes de la série) }. */
+  window._g45MethSeries = function () {
+    var L = [];
+    (state.u || []).forEach(function (u) {
+      if (!u) return;
+      Object.keys(u.lcb || {}).forEach(function (k) { var st = cbSt(u, k); if (st.p > 1) L.push({ u: u, meth: 'cb', k: k, p: st.p, N: cbStop(u), mise: null, per: +st.per || 0 }); });
+      ['fib', 'dal'].forEach(function (m) { Object.keys((u.lm || {})[m] || {}).forEach(function (k) { var p = palM(u, m, k); if (p > 1) L.push({ u: u, meth: m, k: k, p: p, N: SEQ[m].length, mise: miseDe(u, m, p) }); }); });
+    });
+    return L;
+  };
   window.g45MethAbandon = function (nom, m, ks) {
     var u = (state.u || []).filter(function (x) { return x.n === nom; })[0]; if (!u || !NOM[m] || m === 'mont') return;
     (ks || []).forEach(function (k) {
