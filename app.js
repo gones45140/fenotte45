@@ -88657,9 +88657,28 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
         var a = g[i], b = g[j]; if (a.nc || b.nc || !opp(a, b)) continue;
         var d = (tx(b) - tx(a)) || (b.cours - a.cours) || (b.pire - a.pire), perd = d > 0 ? a : b; perd.nc = 1; perd.nf = 3; } });
     })();
+    /* ═══ 20261118c — DEUX « VICTOIRE » OPPOSÉES → « VICTOIRE OU NUL » DE L'OUTSIDER (Israël – Autriche 1-1 : les 2 pépites Victoire, 5 ratés
+       de suite chacune, perdues sur le nul ; Antoine : « 2 victoires opposées ça donne un nul 😂 » → « ou que ça devienne un victoire ou nul sur
+       la cote la plus haute ? ») : les 2 pépites « v » du même match (équipes différentes) passent « ➖ non compté » (nf 5) et sont REMPLACÉES par
+       une pépite « Victoire ou nul » (vo: 1) de l'équipe à la cote la plus haute (outsider) ; résultat déduit des deux : outsider gagne ou nul
+       (2 ratés) → ✅, favori gagne → ❌, annulé → 🚫, sinon ⏳. Sans cotes connues : rien ne change (2 pépites gardées). Les pépites dérivées
+       d'un passage précédent sont d'abord retirées (fonction rappelée à chaque dessin). ═══ */
+    try {
+      for (var vi = L.length - 1; vi >= 0; vi--) if (L[vi] && L[vi].vo) L.splice(vi, 1);
+      var qV = function (x) { try { var q = coteDe(x); return q && q.c > 1 ? q.c : 0; } catch (e) { return 0; } };
+      var parV = {}; L.forEach(function (x) { if ((!x.nc || x.nf === 5) && x.k === 'v') (parV[x.eid] = parV[x.eid] || []).push(x); });   /* nf 5 : déjà marquées à un dessin précédent (objets gardés) */
+      Object.keys(parV).forEach(function (e) { var g = parV[e]; if (g.length !== 2 || String(g[0].id) === String(g[1].id)) return;
+        var c0 = qV(g[0]), c1 = qV(g[1]); if (!c0 || !c1) return;
+        var out = c0 >= c1 ? g[0] : g[1], fav = out === g[0] ? g[1] : g[0];
+        var r = (out.r === -1 || fav.r === -1) ? -1 : out.r === 1 ? 1 : fav.r === 1 ? 0 : (out.r === 0 && fav.r === 0) ? 1 : null;
+        g[0].nc = 1; g[0].nf = 5; g[1].nc = 1; g[1].nf = 5;
+        var vn = {}; for (var kk in out) vn[kk] = out[kk];
+        vn.k = 'vn'; vn.lib = 'Victoire ou nul'; vn.vo = 1; vn.nc = 0; vn.nf = 0; vn.r = r;
+        L.push(vn); });
+    } catch (e) {}
     return L;
   };
-  window._g45LoiNfTxt = function (y) { return y.nf === 4 ? 'cote au-dessus de 6' : y.nf === 3 ? 'pépite opposée sur le même match' : y.nf === 2 ? 'équipe trop faible pour le book' : y.nf ? 'niveau trop faible' : '1 seul pari par équipe'; };
+  window._g45LoiNfTxt = function (y) { return y.nf === 5 ? '2 victoires opposées → remplacées par « victoire ou nul » de l\'outsider' : y.nf === 4 ? 'cote au-dessus de 6' : y.nf === 3 ? 'pépite opposée sur le même match' : y.nf === 2 ? 'équipe trop faible pour le book' : y.nf ? 'niveau trop faible' : '1 seul pari par équipe'; };
   window._g45LoiCote = { coteDe: coteDe, FI: FI, charger: function (L) { chargerCotes(L); }, txt: function (y) { var q = coteDe(y); return q ? (q.e ? '≈ ' : '') + frC(q.c) + ' (FR ≈ ' + frC(coteFr(q.c)) + ')' : ''; } };   /* 20261111g : + cote FR estimée */   /* tests ; 20261109f : charger / txt pour le Cockpit */
   var resH = function (x) { var c = x.r === 1 ? '#1ed760' : x.r === 0 ? '#ff6b6b' : '#c9d3ee'; return '<span style="font-weight:800;color:' + c + ';font-size:16px;white-space:nowrap;">' + (x.r === 1 ? '✅' : x.r === 0 ? '❌' : x.r === -1 ? '🚫' : '⏳') + ' ' + esc(x.sc || '') + '</span>'; };
   /* 20261107r (capture : « manque heure, championnat, fond » → maquette loiL.png « oui ») : carte par pépite = logo de l'équipe en fond (couleur x.c
