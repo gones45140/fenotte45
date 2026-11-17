@@ -73603,6 +73603,9 @@ async function _g45TicketIa(dataUrl) {
     + '"type":"le ou les marchés en français court, joints par \' + \' (ex : Victoire Inter + Moins de 4,5 buts)",'
     /* 20261024u (capture Winamax MyMatch « Résultat Atl. Madrid / Nombre de buts Moins de 3,5 » lue « Résultat + Moins de 3,5 buts » : l'équipe était perdue) */
     + '"type" : un marché « Résultat » / « 1N2 » s\'écrit TOUJOURS avec sa sélection : « Victoire <équipe> », « Nul » ou « Victoire <adversaire> », jamais « Résultat » seul. '
+    /* 20261118a (ticket Winamax NHL « Vainqueur Edmonton Oilers » lu « Victoire » : « victoire et vainqueur… ») : au hockey / basket / foot US,
+       « Vainqueur » = prolongation et tirs au but COMPRIS, « Victoire » = temps réglementaire seul → deux paris différents, à ne pas mélanger. */
+    + 'Un marché « Vainqueur <équipe> » (ou « Vainqueur du match », « Gagnant prolongation comprise ») reste « Vainqueur <équipe> » : ne le change JAMAIS en « Victoire » (ce n\'est pas le même pari). '
     + '"selections":["TOUS les pilotes / coureurs choisis, pour une COURSE (F1, MotoGP, cyclisme)"] ou null,'
     + '"cote":cote TOTALE du ticket (PAS les gains potentiels),"mise":montant misé en euros,"gains":gains potentiels en euros ou null,"bookmaker":"nom du site","bookmaker_sur":true ou false,"etat":"en_cours, gagne, perdu, rembourse ou null (étiquette d\'état du ticket : En cours / Gagné / Perdu)"}\n'
     + 'BOOKMAKER : WINAMAX = carte bleu nuit, étiquette d\'état en haut à gauche (« En cours » jaune avec chrono, « Gagné » vert, « Perdu » rouge), '
