@@ -88675,8 +88675,8 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
      un book français paie environ 6 % de moins (même règle que les 🧪 value tennis : cote × 0,94) → « FR ≈ » affichée à côté, et les gains du
      bilan (10 € et 🚀 montante) calculés avec cette cote FR. */
   /* 20261118x (captures Winamax : VanVleet 7+ passes 2,35 contre 3,15 DraftKings (× 0,75), Simons 3+ passes 3,35 contre 4,15 (× 0,81)) :
-     les paris JOUEURS NBA paient bien moins en France → cote FR ≈ × 0,78 pour une pépite joueur NBA, × 0,94 pour le reste. */
-  var FRK = 0.94, coteFr = function (c, y) { return Math.round(c * (y && y.jo && y.sp === 'basketball' ? 0.78 : FRK) * 100) / 100; };
+     les paris JOUEURS NBA paient bien moins en France → cote FR ≈ × 0,75 (3e exemple Coulibaly 10+ pts 2,75 / 3,94 = × 0,70 ; moyenne des 3) pour une pépite joueur NBA, × 0,94 pour le reste. */
+  var FRK = 0.94, coteFr = function (c, y) { return Math.round(c * (y && y.jo && y.sp === 'basketball' ? 0.75 : FRK) * 100) / 100; };
   var coteH = function (y) { var q = coteDe(y); return q ? ' · <b style="color:#f5c542;">' + (q.e ? '≈ ' : '') + frC(q.c) + '</b> <span style="color:#6dd3ff;font-weight:800;">FR ≈ ' + frC(coteFr(q.c, y)) + '</span>' : ''; };
   window._g45LoiMont = function (L, coteDe) {   /* 20261111f : simulation montante du bilan (voir html) */
     var G = [10, 20, 60, 180, 540, 1620, 4860, 14580, 43740], E = {}, PE = {}, g = 0, pmax = 0, mmax = 0, n = 0, DET = {}, DER = {};   /* DER : dernière pépite de chaque série (20261117s) */
@@ -88687,7 +88687,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
       var kL = x.id + '|' + x.k + '|' + (x.lieu || ''), k = x.id + '|' + x.k; DER[k] = x; var p = E[k] || 1, m = G[Math.min(p, G.length) - 1], kd = kL + '|' + x.t;
       if (x.r !== 1 && x.r !== 0) { if (x.r !== -1) DET[kd] = { p: p, m: m }; return; }   /* 20261113b : ⏳ = palier et mise prévus */
       n++; if (p > pmax) pmax = p; if (m > mmax) mmax = m;
-      if (x.r === 1) { var gg = m * (Math.round(q.c * (x.jo && x.sp === 'basketball' ? 0.78 : 0.94) * 100) / 100 - 1);   /* 20261118x */ g += gg; DET[kd] = { p: p, m: m, g: Math.round(gg * 100) / 100 }; if (p > 1) DET[kd].ser = Math.round((gg - (PE[k] || 0)) * 100) / 100; E[k] = 1; PE[k] = 0; }   /* 20261111g : cote FR estimée */
+      if (x.r === 1) { var gg = m * (Math.round(q.c * (x.jo && x.sp === 'basketball' ? 0.75 : 0.94) * 100) / 100 - 1);   /* 20261118x */ g += gg; DET[kd] = { p: p, m: m, g: Math.round(gg * 100) / 100 }; if (p > 1) DET[kd].ser = Math.round((gg - (PE[k] || 0)) * 100) / 100; E[k] = 1; PE[k] = 0; }   /* 20261111g : cote FR estimée */
       else { g -= m; DET[kd] = { p: p, m: m, g: -m }; E[k] = p + 1; PE[k] = (PE[k] || 0) + m; }
     });
     window._g45LoiDet = DET;
