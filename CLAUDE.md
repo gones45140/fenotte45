@@ -160,6 +160,7 @@ PIÈGES À NE JAMAIS OUBLIER :
 - 🎯 Calculatrice Cote juste : FAIT (20261108f bloc + 20261108g match : championnat, 🏠 / ✈️, panneau de critères complet, marge du book) — à confirmer à l'écran par Antoine.
 - 🏀🏈 « Quart-temps avec le plus de points » NBA / NFL (Antoine 07/11, capture Winamax « mi-temps avec le plus de buts ») : archives = score final seul → ajouter les scores par quart-temps au robot cotes-archive (ESPN linescores, SONDER d'abord) + rattrapage 4 saisons, puis critère 1er/2e/3e/4e/égalité. Foot (mh) FAIT 20261109e ; NHL = tqm déjà fait.
 - 📊 Loi des séries vers le 16/12 : refaire le tableau par tranche de cote des pépites (seuil « non compté » à 6 depuis 20261116h ; Antoine hésite avec 5 → passer à 5 si la tranche 5–6 perd plus que les autres).
+- 👤 Pépites JOUEURS de la Loi des séries (18/11, NHL / foot / NBA / NFL, règles dans HISTORIQUE 20261118h → s) : « on laisse comme cela, on ajustera plus tard » (bruit NBA, seuils saison entière, cote 1,60 NBA).
 - Cédric : toucher 🤍 sur Portugal. Worker : budget `_lourd` 4 → 2 proposé.
 
 ## 8. Façon de travailler en session cloud
