@@ -87905,6 +87905,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
        MÊME SPORT que la pépite (emoji du sport de la carte) ; une carte sans sport reste acceptée comme avant. */
     var ICO = { soccer: '⚽', hockey: '🏒', basketball: '🏀', football: '🏈', baseball: '⚾', rugby: '🏉', 'rugby-league': '🏉' }[x.sp] || '';
     var memeSport = function (u) { var sp = String(u.sport || ''); return !sp || !ICO || sp.indexOf(ICO) >= 0; };
+    if (x.jo) return ((typeof state !== 'undefined' && state.u) || []).filter(function (u) { return u && u.type === 'joueur' && memeSport(u) && nz(u.n) === nz(x.eq); })[0] || null;   /* 20261118h : pépite joueur → carte du joueur */
     return ((typeof state !== 'undefined' && state.u) || []).filter(function (u) { return u && u.type !== 'joueur' && u.type !== 'competition' && memeSport(u) && (nz(u.n) === nz(x.eq) || (typeof _g45BandMeme === 'function' && _g45BandMeme(u.n, x.eq)) || kh(u)); })[0] || null;
   }
   function loiCharger(force) {
@@ -87918,7 +87919,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   }
   function loiHtml() {
     var D = LOI.d, h = '<div style="' + CARTE + '"><div style="font-size:17px;font-weight:800;">📊 Loi des séries</div>'
-      + '<div style="font-size:13px;color:#c9d3ee;">Équipes qui jouent dans les 24 h et qui sont à 1 raté (ou moins) de leur pire série sur ' + ((D && D.s) || 5) + ' saisons. '
+      + '<div style="font-size:13px;color:#c9d3ee;">Équipes (et joueurs NHL 👤) qui jouent dans les 24 h et qui sont à 1 raté (ou moins) de leur pire série sur ' + ((D && D.s) || 5) + ' saisons. '
       + (D && D.at ? 'Calculé le ' + new Date(D.at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) + ' à ' + new Date(D.at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : 'Calcul chaque matin') + ', sur les résultats des matchs (pas tes paris).</div>';
     var F = [['tous', 'Tous'], ['soccer', '⚽'], ['hockey', '🏒'], ['basketball', '🏀'], ['football', '🏈'], ['baseball', '⚾'], ['rugby', '🏉']];
     h += '<div>' + F.map(function (f) { var on = LOI.f === f[0]; return '<button onclick="g45LoiFiltre(\'' + f[0] + '\')" style="' + BTN + 'margin-top:6px;' + (on ? 'background:#2a4a9a;border-color:#6d9dff;' : '') + '">' + f[1] + '</button>'; }).join('') + '</div>'
@@ -87970,11 +87971,11 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
         + (/^https:\/\//.test(x.llogo || '') ? '<img src="' + esc(x.llogo) + '" alt="" loading="lazy" onerror="this.remove()" style="position:absolute;right:18px;top:104px;height:64px;width:68px;object-fit:contain;pointer-events:none;filter:drop-shadow(0 3px 8px rgba(0,0,0,.6));">' : '')
         + '<div style="position:relative;padding:10px 12px;display:flex;flex-direction:column;align-items:flex-start;gap:5px;">'
         + '<div style="' + bd + 'font-size:16px;margin-right:96px;"><b>' + (LOI_SP[x.sp] || '') + ' ' + esc(x.eq) + ' ' + (x.d ? '🏠' : '✈️') + '</b></div>'
-        + '<div style="' + bd + 'font-size:14px;margin-right:96px;">' + (x.d ? 'vs ' : 'à ') + (al ? '<img src="' + esc(al) + '" alt="" loading="lazy" onerror="this.remove()" style="height:18px;width:18px;object-fit:contain;vertical-align:-4px;margin-right:4px;">' : '') + esc(x.adv) + ' · ' + hr + ' · ' + esc(x.ligue || '') + '</div>'
+        + '<div style="' + bd + 'font-size:14px;margin-right:96px;">' + (x.jo && x.equipe ? '👤 ' + esc(x.equipe) + ' ' : '') + (x.d ? 'vs ' : 'à ') + (al ? '<img src="' + esc(al) + '" alt="" loading="lazy" onerror="this.remove()" style="height:18px;width:18px;object-fit:contain;vertical-align:-4px;margin-right:4px;">' : '') + esc(x.adv) + ' · ' + hr + ' · ' + esc(x.ligue || '') + '</div>'
         + lignes + bt + '</div></div>';
     });
     h += '</div>';
-    return h + '<div style="font-size:13px;color:#c9d3ee;padding:0 4px 10px;">Paris regardés : ⚽ victoire, victoire ou nul, +1,5 / +2,5 / −3,5 buts, les deux marquent, l\'équipe marque · 🏒 vainqueur, victoire 60 min, +5,5 / −6,5 buts · 🏀🏈⚾🏉 vainqueur. Saison régulière (sports US). Pire série de 3 à 7.</div>';
+    return h + '<div style="font-size:13px;color:#c9d3ee;padding:0 4px 10px;">Paris regardés : ⚽ victoire, victoire ou nul, +1,5 / +2,5 / −3,5 buts, les deux marquent, l\'équipe marque · 🏒 vainqueur, victoire 60 min, +5,5 / −6,5 buts · 🏀🏈⚾🏉 vainqueur · 👤 joueurs NHL : pointeur / décisif, buteur, passeur (matchs joués, réussite 30 % ou plus). Saison régulière (sports US). Pire série de 3 à 7.</div>';
   }
   function loiDessiner() { var z = $('ck-loi'); if (z && TAB === 'loi') { z.innerHTML = loiSous() + (LOI.v === 'pep' ? loiHtml() : LOI.v === 'cr' ? loiCrHtml() : ''); if (LOI.v === 'cr') { loiCrListe(); loiCrBox(); } } }
   /* 20261105t (« Loi des séries et Trouver en 1, possible ou pas » → « oui ») : un seul onglet, 3 boutons ; Séries individuelles / équipes =
@@ -88004,7 +88005,8 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     var pari = String(x.lib).replace(/\s*\(prolongation comprise\)/, '').toLowerCase();
     if (!confirm('➕ Créer la carte ' + x.eq + ' (' + (LOI_SP[x.sp] || '') + ') avec le pari « ' + pari + ' »' + (x.lieu === 'tout' ? '' : x.d ? ' à domicile' : ' à l\'extérieur') + ' ?')) return;
     var note = typeof window._g45UfCompose === 'function' ? window._g45UfCompose('', '', x.lieu === 'dom' ? pari : '', x.lieu === 'ext' ? pari : '', x.lieu === 'tout' ? pari : '') : pari;
-    state.u.push({ n: x.eq, abbr: String(x.eq).replace(/[^A-Za-z]/g, '').slice(0, 3).toUpperCase(), color: '#4d84ff', s: '3', l: 1, sport: LOI_SP[x.sp] || '⚽', logoUrl: '', link: '', link2: '', note: note, type: 'club' });
+    if (x.jo) state.u.push({ n: x.eq, abbr: String(x.eq).split(' ').pop().slice(0, 3).toUpperCase(), color: '#1d4ed8', s: '3', l: 1, sport: LOI_SP[x.sp] || '🏒', logoUrl: '', link: '', link2: '', note: note, type: 'joueur', club: x.equipe || '' });   /* 20261118h : carte JOUEUR */
+    else state.u.push({ n: x.eq, abbr: String(x.eq).replace(/[^A-Za-z]/g, '').slice(0, 3).toUpperCase(), color: '#4d84ff', s: '3', l: 1, sport: LOI_SP[x.sp] || '⚽', logoUrl: '', link: '', link2: '', note: note, type: 'club' });
     try { save(); } catch (e) {} try { if (typeof _g45PushBetsGithub === 'function') _g45PushBetsGithub(true); } catch (e) {} try { if (typeof render === 'function') render(); } catch (e) {}
     loiDessiner();
   };
@@ -88584,6 +88586,10 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   var FI = {};   /* eid → fiche (0 = cherchée, rien) */
   function coteDe(x) {
     var fi = FI[x.eid]; if (!fi) return null;
+    /* 20261118h — 👤 pépites JOUEURS NHL : cote DraftKings gardée dans la fiche du match (fi.j[idEspn].o, mêmes types que l'Agenda :
+       230 buteur [null, c], 219 passeur [1, c], 218 pointeur [1, c]) */
+    if (x.jo) { var JJ = fi.j && fi.j[x.jid], TT = { jb: '230', ja: '219', jp: '218' }[x.k], AA = (JJ && JJ.o && TT && JJ.o[TT]) || [];
+      var ee = AA.filter(function (z) { return z && (z[0] == null || +z[0] === 1); })[0]; return ee && ee[1] > 1 ? { c: +ee[1] } : null; }
     var side = String(fi.h && fi.h.id) === String(x.id) ? 'h' : String(fi.a && fi.a.id) === String(x.id) ? 'a' : (x.d ? 'h' : 'a'), ml = fi.ml || {};
     var ok = function (c) { return c > 1 ? c : null; }, m;
     if (x.k === 'v' || x.k === 'vq') return ok(ml[side]) ? { c: ml[side] } : null;
