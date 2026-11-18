@@ -88609,6 +88609,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     return MC[k];
   }
   var FI = {};   /* eid → fiche (0 = cherchée, rien) */
+  var FIt = {};   /* 20261118r : eid → heure de la dernière lecture */
   function coteDe(x) {
     var fi = FI[x.eid]; if (!fi) return null;
     /* 20261118h — 👤 pépites JOUEURS NHL : cote DraftKings gardée dans la fiche du match (fi.j[idEspn].o, mêmes types que l'Agenda :
@@ -88649,7 +88650,13 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   }
   window._g45LoiEst = { estTot: estTot, est60: est60 };   /* tests */
   function chargerCotes(L) {
-    var A = L.filter(function (x) { return x.eid && DIRC[x.sp] && FI[x.eid] === undefined; }); if (!A.length || MCen) return;
+    /* 20261118r (« le filtre de 1,6 à quelle heure ? ») : le robot des cotes n'archive un match que 8 h avant (toutes les heures à h21) → une fiche
+       lue trop tôt (0, ou sans cotes joueurs pour une pépite joueur) restait vide jusqu'au rechargement de la page : relue toutes les 30 min
+       tant que le match n'a pas commencé. */
+    var nw = Date.now(), A = L.filter(function (x) { if (!x.eid || !DIRC[x.sp]) return false; var f = FI[x.eid]; if (f === undefined) return true;
+      return x.t > nw && (f === 0 || (x.jo && !f.j)) && nw - (FIt[x.eid] || 0) > 30 * 60e3; });
+    if (!A.length || MCen) return;
+    A.forEach(function (x) { if (FI[x.eid] !== undefined) { moisDe(x.t).forEach(function (mo) { delete MC[x.sp + '|' + x.lg + '|' + mo]; }); } FIt[x.eid] = nw; });
     MCen = 1;
     Promise.all(A.map(function (x) {
       return Promise.all(moisDe(x.t).map(function (mo) { return lireMois(x, mo); })).then(function (D) { var f = null; D.forEach(function (d) { if (!f && d && d[x.eid]) f = d[x.eid]; }); FI[x.eid] = f || 0; });
