@@ -87921,9 +87921,10 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
       + '<div style="font-size:13px;color:#c9d3ee;">Équipes qui jouent dans les 24 h et qui sont à 1 raté (ou moins) de leur pire série sur ' + ((D && D.s) || 5) + ' saisons. '
       + (D && D.at ? 'Calculé le ' + new Date(D.at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) + ' à ' + new Date(D.at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : 'Calcul chaque matin') + ', sur les résultats des matchs (pas tes paris).</div>';
     var F = [['tous', 'Tous'], ['soccer', '⚽'], ['hockey', '🏒'], ['basketball', '🏀'], ['football', '🏈'], ['baseball', '⚾'], ['rugby', '🏉']];
-    h += '<div>' + F.map(function (f) { var on = LOI.f === f[0]; return '<button onclick="g45LoiFiltre(\'' + f[0] + '\')" style="' + BTN + 'margin-top:6px;' + (on ? 'background:#2a4a9a;border-color:#6d9dff;' : '') + '">' + f[1] + '</button>'; }).join('') + '</div></div>';
+    h += '<div>' + F.map(function (f) { var on = LOI.f === f[0]; return '<button onclick="g45LoiFiltre(\'' + f[0] + '\')" style="' + BTN + 'margin-top:6px;' + (on ? 'background:#2a4a9a;border-color:#6d9dff;' : '') + '">' + f[1] + '</button>'; }).join('') + '</div>'
+      + '<div style="margin-top:6px;font-size:14px;font-weight:800;">Pire série : ' + window._g45LoiPmaxBtns('g45LoiPmaxL', BTN + 'background:#2a4a9a;border-color:#6d9dff;', BTN) + '</div></div>';   /* 20261118d */
     if (!D) return h + '<div style="' + CARTE + '">' + (LOI.enCours ? '⏳ Lecture de la liste du matin…' : '⚠️ Liste du matin pas encore disponible.') + '</div>';
-    var now = Date.now(), L = (D.L || []).filter(function (x) { return x.pire >= 3 && x.cours >= 4 && x.t > now - 15 * 60e3 &&   /* 20261113d (Antoine, bilan : « 3 c'est trop fréquent ») : 4 ratés en cours au moins */   /* 20261105t : pire série 3 au moins ; 20261107p (capture Metz « 🔥 2/3 » : « j'avais dit à partir de 3 ») : 3 ratés de suite EN COURS au moins */ (LOI.f === 'tous' || x.sp === LOI.f || (LOI.f === 'rugby' && x.sp === 'rugby-league')); })
+    var now = Date.now(), _pm = window._g45LoiPmax ? window._g45LoiPmax() : 0, L = (D.L || []).filter(function (x) { return x.pire >= 3 && x.cours >= 4 && (!_pm || x.pire <= _pm) /* 20261118d */ && x.t > now - 15 * 60e3 &&   /* 20261113d (Antoine, bilan : « 3 c'est trop fréquent ») : 4 ratés en cours au moins */   /* 20261105t : pire série 3 au moins ; 20261107p (capture Metz « 🔥 2/3 » : « j'avais dit à partir de 3 ») : 3 ratés de suite EN COURS au moins */ (LOI.f === 'tous' || x.sp === LOI.f || (LOI.f === 'rugby' && x.sp === 'rugby-league')); })
       .sort(function (a, b) { return (a.pire - a.cours) - (b.pire - b.cours) || a.t - b.t; });
     if (!L.length) return h + '<div style="' + CARTE + '">Aucune pépite pour l\'instant' + (LOI.f !== 'tous' ? ' dans ce sport' : '') + '.</div>';
     /* 20261105w (« Plzeň 2 fois » → « oui ça sera mieux, fais en sorte qu'il n'y ait pas trop un trou au milieu ») : UNE carte par équipe et par match
@@ -87979,7 +87980,14 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   /* 20261105t (« Loi des séries et Trouver en 1, possible ou pas » → « oui ») : un seul onglet, 3 boutons ; Séries individuelles / équipes =
      l'ancien 🔍 Trouver (#t-compet déplacé dans #ck-tr, sous les boutons). */
   window.g45LoiVue = function (v) { LOI.v = (v === 'ind' || v === 'eq' || v === 'cr') ? v : 'pep'; if (LOI.v === 'ind' || LOI.v === 'eq') { try { _g45CompetVue = LOI.v === 'eq' ? 'seq' : 'buteurs'; } catch (e) {} } window.g45CkOnglet('loi'); };
+/* ═══ 20261118d — PIRE SÉRIE MAX (Antoine, bilan des séries de 4 à −33 % : « dans nos choix il faut que la pire série soit de 5, allez 6 grand
+   maximum » ; « attention bien différencier le type et le lieu : Edmonton Victoire ✈️ ça passe pas (pire 14) mais Edmonton Vainqueur ✈️ passe
+   (pire 4) ») : x.pire du robot est DÉJÀ la pire série de CETTE équipe pour CE pari et CE lieu → filtre « Pire série : Toutes / 5 max / 6 max »
+   (localStorage g45_loi_pmax, 6 par défaut), partagé par la liste des pépites du jour et le bilan. ═══ */
+  window._g45LoiPmax = function () { var v = null; try { v = localStorage.getItem('g45_loi_pmax'); } catch (e) {} v = v == null ? 6 : +v; return v === 5 || v === 6 ? v : 0; };
+  window._g45LoiPmaxBtns = function (onclick, styleOn, styleOff) { var pm = window._g45LoiPmax(); return [[0, 'Toutes'], [5, '5 max'], [6, '6 max']].map(function (k) { return '<button onclick="' + onclick + '(' + k[0] + ')" style="' + (pm === k[0] ? styleOn : styleOff) + '">' + (pm === k[0] ? '✓ ' : '') + k[1] + '</button>'; }).join(''); };
   window.g45LoiFiltre = function (f) { LOI.f = f || 'tous'; loiDessiner(); };
+  window.g45LoiPmaxL = function (v) { try { localStorage.setItem('g45_loi_pmax', String(+v || 0)); } catch (e) {} loiDessiner(); };   /* 20261118d */
   window.g45LoiCreer = function (eid, id, k, lieu) {
     var x = ((LOI.d && LOI.d.L) || []).filter(function (y) { return y.eid === eid && y.id === id && y.k === k && y.lieu === lieu; })[0]; if (!x || typeof state === 'undefined') return;
     if (loiCarte(x)) { loiDessiner(); return; }
@@ -88726,11 +88734,12 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
          'ch' championnats (ligues + NHL / NBA / NFL / MLB / KHL / rugby) / 'eu' coupes d'Europe (uefa.champions / europa / europa.conf) /
          'sel' sélections (x.sel ou fifa / uefa.nations / uefa.euro / concacaf / conmebol / caf / afc). Tout le bilan suit (L filtré). */
       + '<div style="font-size:14px;font-weight:800;margin:10px 0 4px;">Compétition</div><div style="display:flex;gap:6px;flex-wrap:wrap;">' + [['', 'Toutes'], ['ch', '🏟️ Championnats'], ['eu', '🏆 Coupes d\'Europe'], ['sel', '🌍 Sélections']].map(function (k) { return bF((M.fco || '') === k[0], 'g45LoiBilF(\'k\',\'' + k[0] + '\')', k[1]); }).join('') + '</div>'
+      + '<div style="font-size:14px;font-weight:800;margin:10px 0 4px;">Pire série (de l\'équipe, pour ce pari et ce lieu)</div><div style="display:flex;gap:6px;flex-wrap:wrap;">' + [[0, 'Toutes'], [5, '5 max'], [6, '6 max']].map(function (k) { return bF((window._g45LoiPmax ? window._g45LoiPmax() : 0) === k[0], 'g45LoiBilF(\'m\',' + k[0] + ')', k[1]); }).join('') + '</div>'   /* 20261118d */
       + '<div style="font-size:14px;font-weight:800;margin:10px 0 4px;">Ratés de suite en cours</div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">' + [0, 4, 5, 6, 7].map(function (k) { return bF(M.fc === k, 'g45LoiBilF(\'c\',' + k + ')', k ? (k === 7 ? '7 et +' : String(k)) : 'Tous'); }).join('') + '</div>';
     /* 20261113g (Antoine : « rajouter comme screen 3 » = 1J / 1S / 1M / 1A / Tout du Bilan paris) : période (M.per), mêmes durées que le Bilan */
     h += '<div style="font-size:14px;font-weight:800;margin:0 0 4px;">Période</div><div style="display:flex;gap:6px;margin-bottom:10px;">' + [['1j', '1J'], ['1s', '1S'], ['1m', '1M'], ['1a', '1A'], ['all', 'Tout']].map(function (d) { var on = (M.per || 'all') === d[0]; return '<button onclick="g45LoiBilF(\'p\',\'' + d[0] + '\')" style="flex:1;border:2px solid ' + (on ? '#1ed760' : '#6d9dff') + ';border-radius:8px;padding:8px 4px;font-size:14px;font-weight:900;cursor:pointer;background:' + (on ? '#1ed760' : '#16213f') + ';color:' + (on ? '#0b1a10' : '#fff') + ';">' + d[1] + '</button>'; }).join('') + '</div>';
     if (M.fc === 3) M.fc = 0;
-    var L = (M.d.L || []).filter(function (x) { return x.cours >= 4 && x.lg !== 'fifa.friendly' /* 20261114h : amicaux retirés */ && (M.fs === 'tous' || x.sp === M.fs || (M.fs === 'rugby' && x.sp === 'rugby-league')) && (!M.fc || (M.fc === 7 ? x.cours >= 7 : x.cours === M.fc)) && (!M.fco || window._g45LoiTypeComp(x) === M.fco); }).sort(function (a, b) { return b.t - a.t; });
+    var L = (M.d.L || []).filter(function (x) { return x.cours >= 4 && x.lg !== 'fifa.friendly' /* 20261114h : amicaux retirés */ && (M.fs === 'tous' || x.sp === M.fs || (M.fs === 'rugby' && x.sp === 'rugby-league')) && (!M.fc || (M.fc === 7 ? x.cours >= 7 : x.cours === M.fc)) && (!M.fco || window._g45LoiTypeComp(x) === M.fco) && (!window._g45LoiPmax || !window._g45LoiPmax() || x.pire <= window._g45LoiPmax()) /* 20261118d */; }).sort(function (a, b) { return b.t - a.t; });
     chargerCotes(L);
     /* 20261108s (capture Sharks / Banfield 07/11 à 6 h 54 encore ⏳ : « faudrait le score du match ») : le robot Loi des séries ne repasse que le
        lendemain matin ; la fiche du match lue pour la cote (FI, archives remplies toutes les heures) a déjà le score final f {h, a} (+ ot) →
@@ -88901,7 +88910,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     if (x && x.sel || /^(fifa\.|uefa\.(nations|euroq?)(\.|$)|concacaf|conmebol|caf\.|afc\.)/.test(lg)) return 'sel';
     if (/^uefa\.(champions|europa)/.test(lg)) return 'eu';
     return 'ch'; };
-  window.g45LoiBilF = function (q, v) { if (q === 's') M.fs = v; else if (q === 'p') M.per = v; else if (q === 'k') M.fco = v || ''; else M.fc = +v || 0; M.j = ''; redessiner(); };   /* 20261113g : p = période */
+  window.g45LoiBilF = function (q, v) { if (q === 's') M.fs = v; else if (q === 'p') M.per = v; else if (q === 'k') M.fco = v || ''; else if (q === 'm') { try { localStorage.setItem('g45_loi_pmax', String(+v || 0)); } catch (e) {} } else M.fc = +v || 0; M.j = ''; redessiner(); };   /* 20261113g : p = période */
   window.g45LoiBilTout = function () { M.tout = !M.tout; redessiner(); };
   window.g45LoiBilVue = function (k) { M.vue = k; redessiner(); };   /* 20261108o */
 })();
