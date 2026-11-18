@@ -88078,9 +88078,17 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     var z = $('g45-loi-crl'); if (!z) return;
     var q = loiNz(LOI.q), R = [];
     if (!q) {
-      ((typeof state !== 'undefined' && state.u) || []).forEach(function (u) { if (u && u.n && u.type !== 'joueur' && u.type !== 'competition') { var x = loiIxDe(u.n); R.push({ nom: u.n, x: x }); } });
+      ((typeof state !== 'undefined' && state.u) || []).forEach(function (u) { if (u && u.n && u.type !== 'joueur' && u.type !== 'competition') { var x = loiIxDe(u.n), us = String(u.sport || ''), spE = /⚽/.test(us) ? 'soccer' : /🏒/.test(us) ? 'hockey' : /🏀/.test(us) ? 'basketball' : /🏈/.test(us) ? 'football' : /⚾/.test(us) ? 'baseball' : /🏉/.test(us) ? 'rugby' : /🏎|🎾|🏍|⛳|🥊|🚴|🏇/.test(us) || /formule|f1\b|tennis|moto/i.test(u.n) ? '' : 'autre'; R.push({ nom: u.n, x: x, sp: (x && x[0]) || spE }); } });   /* 20261118v : sport de la carte si absente de l'index */
+      /* 20261118v (capture tel « 🃏 Tes cartes » : « là c'est un peu le désordre aussi » → maquette « oui ») : seulement les cartes retrouvées
+         dans l'index des équipes (FORMULE 1, compétitions… retirées), rangées par SPORT (titre), ordre alphabétique, 2 boutons par ligne de même largeur. */
+      var ORD = ['soccer', 'hockey', 'basketball', 'football', 'baseball', 'rugby', 'rugby-league', 'autre'], TIT = { soccer: '⚽ Foot', hockey: '🏒 Hockey', basketball: '🏀 Basket', football: '🏈 Foot US', baseball: '⚾ Baseball', rugby: '🏉 Rugby', 'rugby-league': '🏉 Rugby à XIII', autre: '🃏 Autres' };
+      R = R.filter(function (r) { return r.sp; }).sort(function (a, b) { var oa = ORD.indexOf(a.sp), ob = ORD.indexOf(b.sp); return ((oa < 0 ? 99 : oa) - (ob < 0 ? 99 : ob)) || String(a.nom).localeCompare(String(b.nom), 'fr'); });
       LOI.res = R;
-      z.innerHTML = R.length ? '<div style="font-size:14px;color:#ffd34d;">🃏 Tes cartes</div>' + R.map(function (r, i) { var x = r.x || []; return loiCrBtn(r.nom, x[0], x[1], x[2], x[3], x[5], i); }).join('')
+      var grille = '', spC = null;
+      R.forEach(function (r, i) { var x = r.x || [r.sp]; if (r.sp !== spC) { if (spC !== null) grille += '</div>'; spC = r.sp; grille += '<div style="font-size:15px;font-weight:800;margin:10px 0 4px;">' + (TIT[spC] || (LOI_SP[spC] || '🃏')) + '</div><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;">'; }
+        grille += loiCrBtn(r.nom, x[0], x[1], x[2], x[3], x[5], i).replace('margin-top:6px;display:inline-flex;', 'margin:0;display:flex;width:100%;min-width:0;text-align:left;'); });
+      if (spC !== null) grille += '</div>';
+      z.innerHTML = R.length ? '<div style="font-size:14px;color:#ffd34d;">🃏 Tes cartes</div>' + grille
         : '<div style="font-size:14px;color:#c9d3ee;">Tape le nom d\'une équipe.</div>';
       if (!LOI.ix) z.insertAdjacentHTML('beforeend', '<div style="font-size:13px;color:#c9d3ee;margin-top:6px;">' + (LOI.ixEnCours ? '⏳ Lecture de la liste des équipes…' : '') + '</div>');
       return;
