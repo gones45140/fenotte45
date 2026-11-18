@@ -87976,7 +87976,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
         + lignes + bt + '</div></div>';
     });
     h += '</div>';
-    return h + '<div style="font-size:13px;color:#c9d3ee;padding:0 4px 10px;">Paris regardés : ⚽ victoire, victoire ou nul, +1,5 / +2,5 / −3,5 buts, les deux marquent, l\'équipe marque · 🏒 vainqueur, victoire 60 min, +5,5 / −6,5 buts · 🏀🏈⚾🏉 vainqueur · 👤 joueurs : 🏒 pointeur / décisif, buteur, passeur · ⚽ buteur, passeur, décisif · 🏈 touchdown (matchs joués, réussite 30 % ou plus). Saison régulière (sports US). Pire série de 3 à 7.</div>';
+    return h + '<div style="font-size:13px;color:#c9d3ee;padding:0 4px 10px;">Paris regardés : ⚽ victoire, victoire ou nul, +1,5 / +2,5 / −3,5 buts, les deux marquent, l\'équipe marque · 🏒 vainqueur, victoire 60 min, +5,5 / −6,5 buts · 🏀🏈⚾🏉 vainqueur · 👤 joueurs : 🏒 pointeur / décisif, buteur, passeur · ⚽ buteur, passeur, décisif · 🏈 touchdown · 🏀 points / rebonds / passes, paliers autour de sa moyenne (matchs joués, réussite 30 % ou plus). Saison régulière (sports US). Pire série de 3 à 7.</div>';
   }
   function loiDessiner() { var z = $('ck-loi'); if (z && TAB === 'loi') { z.innerHTML = loiSous() + (LOI.v === 'pep' ? loiHtml() : LOI.v === 'cr' ? loiCrHtml() : ''); if (LOI.v === 'cr') { loiCrListe(); loiCrBox(); } } }
   /* 20261105t (« Loi des séries et Trouver en 1, possible ou pas » → « oui ») : un seul onglet, 3 boutons ; Séries individuelles / équipes =
@@ -88601,6 +88601,9 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     if (x.jo) { var JJ = fi.j && fi.j[x.jid], c1 = function (T) { var AA = (JJ && JJ.o && JJ.o[T]) || [], ee = AA.filter(function (z) { return z && (z[0] == null || +z[0] === 1); })[0]; return ee && ee[1] > 1 ? +ee[1] : 0; };
       /* 20261118k : foot jd ⚡ Décisif ESTIMÉ (but ou passe = 1 − (1 − 1/c buteur)(1 − 1/c passeur), comme l'Agenda) ; NFL jt touchdown = 31 */
       if (x.k === 'jd') { var cg = c1('230'), ca = c1('219'); return cg && ca ? { c: 1 / (1 - (1 - 1 / cg) * (1 - 1 / ca)), e: 1 } : null; }
+      /* 20261118l : NBA jn<STAT><seuil> = palier Milestones DraftKings (218 points, 220 rebonds, 219 passes : [seuil, cote]) */
+      var mN = String(x.k).match(/^jn(PTS|REB|AST)(\d+)$/);
+      if (mN) { var AN = (JJ && JJ.o && JJ.o[{ PTS: '218', REB: '220', AST: '219' }[mN[1]]]) || [], eN = AN.filter(function (z) { return z && +z[0] === +mN[2]; })[0]; return eN && eN[1] > 1 ? { c: +eN[1] } : null; }
       var TT = { jb: '230', ja: '219', jp: '218', jt: '31' }[x.k], cc = TT ? c1(TT) : 0; return cc ? { c: cc } : null; }
     var side = String(fi.h && fi.h.id) === String(x.id) ? 'h' : String(fi.a && fi.a.id) === String(x.id) ? 'a' : (x.d ? 'h' : 'a'), ml = fi.ml || {};
     var ok = function (c) { return c > 1 ? c : null; }, m;
