@@ -87951,7 +87951,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     });
     L = L.filter(function (x) { var a = x.jo && AB[x.eid]; if (a && a.ids && a.ids.indexOf(String(x.jid)) >= 0) { nAb++; return false; } return true; });
     if (nAb) h += '<div style="font-size:13px;color:#c9d3ee;margin:-4px 0 8px;">🚫 ' + nAb + ' pépite' + (nAb > 1 ? 's' : '') + ' joueur retirée' + (nAb > 1 ? 's' : '') + ' (joueur annoncé absent par ESPN).</div>';
-    if (nRet) h += '<div style="font-size:13px;color:#c9d3ee;margin:-4px 0 8px;">➖ ' + nRet + ' pépite' + (nRet > 1 ? 's' : '') + ' retirée' + (nRet > 1 ? 's' : '') + ' (niveau trop faible, équipe très mal cotée, cote au-dessus de 6 ou pari opposé sur le même match).</div>';
+    if (nRet) h += '<div style="font-size:13px;color:#c9d3ee;margin:-4px 0 8px;">➖ ' + nRet + ' pépite' + (nRet > 1 ? 's' : '') + ' retirée' + (nRet > 1 ? 's' : '') + ' (niveau trop faible, équipe très mal cotée, cote au-dessus de 6, pari opposé sur le même match ou cote du book trop loin de la nôtre).</div>';
     if (!L.length) return h + '<div style="' + CARTE + '">Aucune pépite à jouer pour l\'instant.</div>';
     var G = [], GI = {};
     L.forEach(function (x) { var k = x.eid + '|' + x.id; if (!GI[k]) { GI[k] = { x: x, L: [] }; G.push(GI[k]); } GI[k].L.push(x); });
@@ -87977,7 +87977,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
           + '<br><span style="font-size:14px;">' + y.cours + ' raté' + (y.cours > 1 ? 's' : '') + ' de suite · pire série ' + y.pire + (y.p && y.p.length ? ' <span style="font-size:13px;color:#dfe6f7;">(' + y.p.join('·') + ')</span>' : '') + '</span>'
           /* 20261106l (Plzeň, « A + ») : séries sur la phase principale ; réussite en QUALIFICATION pendant la série = mention, non comptée */
           + (y.qv ? '<br><span style="font-size:14px;color:#ffd34d;">⚠️ pari réussi en qualification le ' + new Date(y.qv).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) + ' (non compté)</span>' : '')
-          + '<br><span style="font-size:13px;color:#dfe6f7;">→ ' + (y.pire + 1) + ' paliers' + (sec ? ' + ' + sec + ' de sécurité = ' + pal + ' paliers' : '') + ' · ' + y.ok + '/' + y.n + ' réussis</span>'
+          + '<br><span style="font-size:13px;color:#dfe6f7;">→ ' + (y.pire + 1) + ' paliers' + (sec ? ' + ' + sec + ' de sécurité = ' + pal + ' paliers' : '') + ' · ' + y.ok + '/' + y.n + ' réussis</span>' + (window._g45LoiJusteHtml ? window._g45LoiJusteHtml(y) : '') /* 20261119a */
           + (y.nc && window._g45LoiNfTxt ? '<br><span style="font-size:14px;font-weight:800;color:#ffb3b3;">➖ non compté (' + window._g45LoiNfTxt(y) + ') : à ne pas jouer</span>' : '') + '</div>';
       }).join('');
       h += '<div style="position:relative;overflow:hidden;border-radius:12px;min-height:180px;border-left:4px solid ' + cc + ';background:linear-gradient(90deg,' + cc + '8c 0%,' + cc + '55 55%,' + cc + '30 100%);color:#fff;font-size:15px;line-height:1.45;text-shadow:0 1px 3px rgba(0,0,0,.85);">'
@@ -88712,7 +88712,10 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
       else if (x.fr != null && +x.fr <= 6 && !x.sv && !x.jo) { x.nc = 1; x.nf = 2; }   /* 20261118s (« donc un bon joueur dans une équipe nulle saute ? ») : règle réservée aux ÉQUIPES */
       /* 20261116j (capture Turquie en France, Victoire 12,00 ≈ 11,28 FR, 0 point, aucun enjeu : « j'aime pas du tout » → cote max « 6 ») :
          cote FR estimée au-dessus de 6,00 → non comptée */
-      else if (!x.sv && (function () { var q = coteDe(x); return q && coteFr(q.c, x) > 6; })()) { x.nc = 1; x.nf = 4; } });
+      else if (!x.sv && (function () { var q = coteDe(x); return q && coteFr(q.c, x) > 6; })()) { x.nc = 1; x.nf = 4; }
+      /* 20261119a (« à combien on l'estime, et si trop grosse différence l'enlever ? » → × 1,40) : pépite JOUEUR dont la cote FR du book dépasse
+         de plus de 40 % notre cote juste (matchs joués / réussis) → le book « n'y croit pas » → non comptée (nf 6), gardée dans l'historique. */
+      else if (x.jo && !x.sv && (function () { var r = window._g45LoiEcart(x); return r != null && r > 1.4; })()) { x.nc = 1; x.nf = 6; } });
     /* 20261116i (capture Croatie – Tchéquie : Croatie « Victoire » 4/4 et Tchéquie « Victoire ou nul » 4/4 = l'inverse l'une de l'autre, une perd
        forcément → « oui ») : 2 pépites OPPOSÉES d'un même match (victoire ↔ victoire ou nul de l'adversaire, vainqueur ↔ vainqueur de l'adversaire,
        plus ↔ moins de la même ligne) → UNE seule comptée : meilleur taux de réussite passé (ok / n, gardé par le robot), puis la plus longue série
@@ -88751,7 +88754,11 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     } catch (e) {}
     return L;
   };
-  window._g45LoiNfTxt = function (y) { return y.nf === 5 ? '2 victoires opposées → remplacées par « victoire ou nul » de l\'outsider' : y.nf === 4 ? 'cote au-dessus de 6' : y.nf === 3 ? 'pépite opposée sur le même match' : y.nf === 2 ? 'équipe trop faible pour le book' : y.nf ? 'niveau trop faible' : '1 seul pari par équipe'; };
+  /* 20261119a : notre cote juste (n / ok) et écart avec la cote FR du book (pépites joueurs) */
+  window._g45LoiEcart = function (x) { var q = coteDe(x); if (!q || !x || !(x.n > 0) || !(x.ok > 0)) return null; return coteFr(q.c, x) / (x.n / x.ok); };
+  window._g45LoiJusteHtml = function (y) { if (!y || !y.jo) return ''; var q = coteDe(y); if (!q || !(y.n > 0) || !(y.ok > 0)) return ''; var j = y.n / y.ok, f = coteFr(q.c, y), r = f / j;
+    return '<br><span style="font-size:13px;color:' + (r > 1.4 ? '#ffb3b3' : '#dfe6f7') + ';">🎯 Notre cote ≈ ' + frC(j) + ' · book ' + frC(f) + ' (× ' + r.toFixed(2).replace('.', ',') + ')</span>'; };
+  window._g45LoiNfTxt = function (y) { return y.nf === 6 ? 'le book n\'y croit pas : sa cote est trop loin de la nôtre' : y.nf === 5 ? '2 victoires opposées → remplacées par « victoire ou nul » de l\'outsider' : y.nf === 4 ? 'cote au-dessus de 6' : y.nf === 3 ? 'pépite opposée sur le même match' : y.nf === 2 ? 'équipe trop faible pour le book' : y.nf ? 'niveau trop faible' : '1 seul pari par équipe'; };
   /* 20261118m (pépites joueurs NBA trop nombreuses → Antoine : « + de 1.6 cote ») : pépite JOUEUR gardée seulement si sa cote (fiche du match
      lue) est d'au moins 1,60 ; fiche pas encore lue → gardée (la liste se redessine à l'arrivée des cotes) ; TD NFL (aucune cote gardée) → gardé. */
   window._g45LoiJoCoteOk = function (x) { if (!x || !x.jo || x.sp !== 'basketball' || !FI[x.eid]) return true;   /* 20261118m : « NBA seulement » */   /* fiche pas encore archivée (0) → gardée en attendant */ var q = coteDe(x); return !!q && q.c >= 1.6; };
@@ -88780,7 +88787,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
       + '<div style="display:none;margin-top:6px;">' + (G || [x]).map(function (y) { var pal = Math.max(y.pire + 1, Math.min(9, y.pire + 3)), sec = pal - (y.pire + 1);
           return '<div style="font-size:14px;margin-top:4px;padding-top:4px;border-top:1px solid #2a3a63;"><b style="color:#ffd34d;">' + esc(y.lib) + '</b>' + lieuI(y)
             + '<br>' + y.cours + ' raté' + (y.cours > 1 ? 's' : '') + ' de suite · pire série ' + y.pire + (y.p && y.p.length ? ' <span style="font-size:13px;color:#dfe6f7;">(' + y.p.join('·') + ')</span>' : '')
-            + '<br><span style="font-size:13px;color:#dfe6f7;">→ ' + (y.pire + 1) + ' paliers' + (sec ? ' + ' + sec + ' de sécurité = ' + pal + ' paliers' : '') + (y.n ? ' · ' + y.ok + '/' + y.n + ' réussis' : '') + '</span></div>'; }).join('')
+            + '<br><span style="font-size:13px;color:#dfe6f7;">→ ' + (y.pire + 1) + ' paliers' + (sec ? ' + ' + sec + ' de sécurité = ' + pal + ' paliers' : '') + (y.n ? ' · ' + y.ok + '/' + y.n + ' réussis' : '') + '</span>' + window._g45LoiJusteHtml(y) /* 20261119a */ + '</div>'; }).join('')
         + (x.r == null && x.t > Date.now() ? '<button onclick="g45LoiCreer(\'' + esc(x.eid) + '\',\'' + esc(x.id) + '\',\'' + esc(x.k) + '\',\'' + esc(x.lieu) + '\')" style="margin-top:6px;border-radius:12px;padding:6px 12px;font-size:15px;font-weight:800;cursor:pointer;color:#fff;background:#2f6bff;border:1px solid #6d9dff;">➕ Créer la carte</button>' : '') + '</div></div>'   /* fin du détail + fin de la bande sombre (g45lb-b) */
       + '<span style="flex:1;"></span><span style="background:rgba(0,0,0,.8);border-radius:8px;padding:4px 8px;font-weight:900;font-size:16px;white-space:nowrap;' + (x.jo ? 'align-self:flex-end;margin-top:84px;position:relative;z-index:3;' : '') /* 20261118w : sous la photo du joueur */ + '">' + (function () { var z = (G || [x]).filter(function (y) { return y.sc; })[0]; return z ? esc(z.sc) : (G || [x]).every(function (y) { return y.r === -1; }) ? '🚫' : '⏳'; })() + '</span></div></div>';
   };
