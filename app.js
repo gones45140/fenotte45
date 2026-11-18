@@ -88674,8 +88674,10 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   /* 20261111g (« et pareil cote book estimée, car là c'est trop haut ») : les cotes des archives sont celles du book AMÉRICAIN (DraftKings) ;
      un book français paie environ 6 % de moins (même règle que les 🧪 value tennis : cote × 0,94) → « FR ≈ » affichée à côté, et les gains du
      bilan (10 € et 🚀 montante) calculés avec cette cote FR. */
-  var FRK = 0.94, coteFr = function (c) { return Math.round(c * FRK * 100) / 100; };
-  var coteH = function (y) { var q = coteDe(y); return q ? ' · <b style="color:#f5c542;">' + (q.e ? '≈ ' : '') + frC(q.c) + '</b> <span style="color:#6dd3ff;font-weight:800;">FR ≈ ' + frC(coteFr(q.c)) + '</span>' : ''; };
+  /* 20261118x (captures Winamax : VanVleet 7+ passes 2,35 contre 3,15 DraftKings (× 0,75), Simons 3+ passes 3,35 contre 4,15 (× 0,81)) :
+     les paris JOUEURS NBA paient bien moins en France → cote FR ≈ × 0,78 pour une pépite joueur NBA, × 0,94 pour le reste. */
+  var FRK = 0.94, coteFr = function (c, y) { return Math.round(c * (y && y.jo && y.sp === 'basketball' ? 0.78 : FRK) * 100) / 100; };
+  var coteH = function (y) { var q = coteDe(y); return q ? ' · <b style="color:#f5c542;">' + (q.e ? '≈ ' : '') + frC(q.c) + '</b> <span style="color:#6dd3ff;font-weight:800;">FR ≈ ' + frC(coteFr(q.c, y)) + '</span>' : ''; };
   window._g45LoiMont = function (L, coteDe) {   /* 20261111f : simulation montante du bilan (voir html) */
     var G = [10, 20, 60, 180, 540, 1620, 4860, 14580, 43740], E = {}, PE = {}, g = 0, pmax = 0, mmax = 0, n = 0, DET = {}, DER = {};   /* DER : dernière pépite de chaque série (20261117s) */
     L.slice().sort(function (a, b) { return a.t - b.t; }).forEach(function (x) {
@@ -88685,7 +88687,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
       var kL = x.id + '|' + x.k + '|' + (x.lieu || ''), k = x.id + '|' + x.k; DER[k] = x; var p = E[k] || 1, m = G[Math.min(p, G.length) - 1], kd = kL + '|' + x.t;
       if (x.r !== 1 && x.r !== 0) { if (x.r !== -1) DET[kd] = { p: p, m: m }; return; }   /* 20261113b : ⏳ = palier et mise prévus */
       n++; if (p > pmax) pmax = p; if (m > mmax) mmax = m;
-      if (x.r === 1) { var gg = m * (Math.round(q.c * 0.94 * 100) / 100 - 1); g += gg; DET[kd] = { p: p, m: m, g: Math.round(gg * 100) / 100 }; if (p > 1) DET[kd].ser = Math.round((gg - (PE[k] || 0)) * 100) / 100; E[k] = 1; PE[k] = 0; }   /* 20261111g : cote FR estimée */
+      if (x.r === 1) { var gg = m * (Math.round(q.c * (x.jo && x.sp === 'basketball' ? 0.78 : 0.94) * 100) / 100 - 1);   /* 20261118x */ g += gg; DET[kd] = { p: p, m: m, g: Math.round(gg * 100) / 100 }; if (p > 1) DET[kd].ser = Math.round((gg - (PE[k] || 0)) * 100) / 100; E[k] = 1; PE[k] = 0; }   /* 20261111g : cote FR estimée */
       else { g -= m; DET[kd] = { p: p, m: m, g: -m }; E[k] = p + 1; PE[k] = (PE[k] || 0) + m; }
     });
     window._g45LoiDet = DET;
@@ -88707,7 +88709,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
       else if (x.fr != null && +x.fr <= 6 && !x.sv && !x.jo) { x.nc = 1; x.nf = 2; }   /* 20261118s (« donc un bon joueur dans une équipe nulle saute ? ») : règle réservée aux ÉQUIPES */
       /* 20261116j (capture Turquie en France, Victoire 12,00 ≈ 11,28 FR, 0 point, aucun enjeu : « j'aime pas du tout » → cote max « 6 ») :
          cote FR estimée au-dessus de 6,00 → non comptée */
-      else if (!x.sv && (function () { var q = coteDe(x); return q && coteFr(q.c) > 6; })()) { x.nc = 1; x.nf = 4; } });
+      else if (!x.sv && (function () { var q = coteDe(x); return q && coteFr(q.c, x) > 6; })()) { x.nc = 1; x.nf = 4; } });
     /* 20261116i (capture Croatie – Tchéquie : Croatie « Victoire » 4/4 et Tchéquie « Victoire ou nul » 4/4 = l'inverse l'une de l'autre, une perd
        forcément → « oui ») : 2 pépites OPPOSÉES d'un même match (victoire ↔ victoire ou nul de l'adversaire, vainqueur ↔ vainqueur de l'adversaire,
        plus ↔ moins de la même ligne) → UNE seule comptée : meilleur taux de réussite passé (ok / n, gardé par le robot), puis la plus longue série
@@ -88750,7 +88752,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   /* 20261118m (pépites joueurs NBA trop nombreuses → Antoine : « + de 1.6 cote ») : pépite JOUEUR gardée seulement si sa cote (fiche du match
      lue) est d'au moins 1,60 ; fiche pas encore lue → gardée (la liste se redessine à l'arrivée des cotes) ; TD NFL (aucune cote gardée) → gardé. */
   window._g45LoiJoCoteOk = function (x) { if (!x || !x.jo || x.sp !== 'basketball' || !FI[x.eid]) return true;   /* 20261118m : « NBA seulement » */   /* fiche pas encore archivée (0) → gardée en attendant */ var q = coteDe(x); return !!q && q.c >= 1.6; };
-  window._g45LoiCote = { coteDe: coteDe, FI: FI, charger: function (L) { chargerCotes(L); }, txt: function (y) { var q = coteDe(y); return q ? (q.e ? '≈ ' : '') + frC(q.c) + ' (FR ≈ ' + frC(coteFr(q.c)) + ')' : ''; } };   /* 20261111g : + cote FR estimée */   /* tests ; 20261109f : charger / txt pour le Cockpit */
+  window._g45LoiCote = { coteDe: coteDe, FI: FI, charger: function (L) { chargerCotes(L); }, txt: function (y) { var q = coteDe(y); return q ? (q.e ? '≈ ' : '') + frC(q.c) + ' (FR ≈ ' + frC(coteFr(q.c, y)) + ')' : ''; } };   /* 20261111g : + cote FR estimée */   /* tests ; 20261109f : charger / txt pour le Cockpit */
   var resH = function (x) { var c = x.r === 1 ? '#1ed760' : x.r === 0 ? '#ff6b6b' : '#c9d3ee'; return '<span style="font-weight:800;color:' + c + ';font-size:16px;white-space:nowrap;">' + (x.r === 1 ? '✅' : x.r === 0 ? '❌' : x.r === -1 ? '🚫' : '⏳') + ' ' + esc(x.sc || '') + '</span>'; };
   /* 20261107r (capture : « manque heure, championnat, fond » → maquette loiL.png « oui ») : carte par pépite = logo de l'équipe en fond (couleur x.c
      si gardée), bande sombre sous le texte, 🕒 heure (Paris) + 🏆 championnat sur la 2e ligne. */
@@ -88788,7 +88790,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     var e2 = function (v) { return (v >= 0 ? '+' : '−') + frC(Math.abs(v)) + ' €'; }, cl = function (v) { return v >= 0 ? '#1ed760' : '#ff6b6b'; };
     /* 20261113g (Antoine : « faut-il mettre en 10 € normal et mode Cockpit ? ») : ligne 💶 10 € à plat (cote FR) au-dessus de la ligne 🪜 */
     var q10 = coteDe(y), l10 = '';
-    if (q10) l10 = '<br><span style="font-size:13px;font-weight:700;">💶 10 €' + ((y.r === 1 || y.r === 0) ? ' → <b style="color:' + cl(y.r === 1 ? 1 : -1) + ';">' + e2(y.r === 1 ? 10 * (coteFr(q10.c) - 1) : -10) + '</b>' : ' (gain possible ' + e2(10 * (coteFr(q10.c) - 1)) + ')') + '</span>';
+    if (q10) l10 = '<br><span style="font-size:13px;font-weight:700;">💶 10 €' + ((y.r === 1 || y.r === 0) ? ' → <b style="color:' + cl(y.r === 1 ? 1 : -1) + ';">' + e2(y.r === 1 ? 10 * (coteFr(q10.c, y) - 1) : -10) + '</b>' : ' (gain possible ' + e2(10 * (coteFr(q10.c, y) - 1)) + ')') + '</span>';
     if (!d) return l10;
     return l10 + '<br><span style="font-size:13px;font-weight:700;">🪜 P' + d.p + ' · mise ' + String(d.m) + ' €'
       + (d.g != null ? ' → <b style="color:' + cl(d.g) + ';">' + e2(d.g) + '</b>' : '')
@@ -88863,7 +88865,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     var tu = function (lb, v, bg, bd, col) { return '<div style="flex:1;min-width:105px;background:' + bg + ';border:1px solid ' + bd + ';border-radius:10px;padding:8px;text-align:center;"><div style="font-size:13px;color:#c9d3ee;">' + lb + '</div><div style="font-size:22px;font-weight:900;color:' + col + ';">' + v + '</div></div>'; };
     h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">' + tu('Pépites jouées', J.length, '#0b1226', '#2a3a63', '#fff')
       + tu('Série stoppée ✅', G + (J.length ? ' · ' + Math.round(100 * G / J.length) + ' %' : ''), 'rgba(30,215,96,.12)', '#1ed760', '#1ed760') + tu('Série continue ❌', P, 'rgba(255,69,69,.12)', '#ff4545', '#ff6b6b') + '</div>';
-    var JC = J.filter(function (x) { return coteDe(x); }), gain = JC.reduce(function (a, x) { return a + (x.r === 1 ? 10 * (coteFr(coteDe(x).c) - 1) : -10); }, 0);   /* 20261111g : cote FR */
+    var JC = J.filter(function (x) { return coteDe(x); }), gain = JC.reduce(function (a, x) { return a + (x.r === 1 ? 10 * (coteFr(coteDe(x).c, x) - 1) : -10); }, 0);   /* 20261111g : cote FR */
     if (JC.length) h += '<div style="background:' + (gain >= 0 ? 'rgba(30,215,96,.12)' : 'rgba(255,69,69,.12)') + ';border:1px solid ' + (gain >= 0 ? '#1ed760' : '#ff4545') + ';border-radius:10px;padding:8px;margin-bottom:10px;text-align:center;">'
       + '<div style="font-size:14px;color:#c9d3ee;">💶 Joué à 10 € chaque pépite avec cote FR estimée (' + JC.length + ' sur ' + J.length + ')</div>'
       + '<div style="font-size:22px;font-weight:900;color:' + (gain >= 0 ? '#1ed760' : '#ff6b6b') + ';">' + (gain >= 0 ? '+' : '−') + frC(Math.abs(gain)).replace(',00', '') + ' € · ' + (gain >= 0 ? '+' : '−') + Math.round(Math.abs(gain) / (10 * JC.length) * 100) + ' %</div>'
@@ -88895,7 +88897,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
        moyenne, gain). ═══ */
     var bV = function (k, t) { var on = (M.vue || 'cal') === k; return '<button onclick="g45LoiBilVue(\'' + k + '\')" style="flex:1;border-radius:10px;padding:9px 4px;font-size:15px;font-weight:800;cursor:pointer;color:#fff;border:1px solid ' + (on ? '#6d9dff' : '#2a3a63') + ';background:' + (on ? '#2a4a9a' : '#0b1226') + ';">' + t + '</button>'; };
     h += '<div style="display:flex;gap:6px;margin:0 0 10px;">' + bV('cal', '📅 Calendrier') + bV('gr', '📈 Graphique') + bV('bil', '📊 Bilans') + '</div>';
-    var gainDe = function (x) { var q = coteDe(x); return q ? (x.r === 1 ? 10 * (coteFr(q.c) - 1) : -10) : null; };   /* 20261111g : cote FR */
+    var gainDe = function (x) { var q = coteDe(x); return q ? (x.r === 1 ? 10 * (coteFr(q.c, x) - 1) : -10) : null; };   /* 20261111g : cote FR */
     var eur = function (v) { return (v >= 0 ? '+' : '−') + String(Math.round(Math.abs(v))) + ' €'; };
     if (M.vue === 'gr') {
       var JD = {}; JC.forEach(function (x) { JD[x.j] = (JD[x.j] || 0) + gainDe(x); });
