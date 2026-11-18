@@ -87936,6 +87936,21 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     /* 20261116l (« vu que l'on évite ces matchs, autant les enlever non ? » → oui) : pépites du jour « non comptées » RETIRÉES de la liste
        (le bilan les garde, grisées) ; une ligne dit combien et pourquoi. */
     var nRet = L.filter(function (x) { return x.nc; }).length; L = L.filter(function (x) { return !x.nc; });
+    /* 20261118p (Marcus Smart « Suspendu » → « oui » relire avant le match) : pour une pépite JOUEUR à moins de 3 h du match, l'appli relit les
+       absents ESPN du résumé (injuries : status Out / type O / suspension) toutes les 20 min → joueur absent RETIRÉ (ligne 🚫 ci-dessous).
+       Le robot du matin le fait déjà ; ici on attrape les annonces de la journée. */
+    var AB = window._g45LoiAbs || (window._g45LoiAbs = {}), nAb = 0;
+    L.forEach(function (x) {
+      if (!x.jo || x.t - now > 3 * 3600e3) return; var a = AB[x.eid]; if (a && (a.enc || now - a.t < 20 * 60e3)) return;
+      AB[x.eid] = { enc: 1, t: now, ids: (a && a.ids) || [] };
+      fetch('https://site.api.espn.com/apis/site/v2/sports/' + x.sp + '/' + x.lg + '/summary?event=' + encodeURIComponent(x.eid)).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+        var ids = []; ((j && j.injuries) || []).forEach(function (T) { (T.injuries || []).forEach(function (i) { var at = i.athlete || {}, st = String(i.status || ''), ab = String((i.type && i.type.abbreviation) || ''), dt = String((i.details && i.details.type) || '');
+          if (at.id && (/^out$/i.test(st) || ab === 'O' || /susp/i.test(st + ' ' + dt))) ids.push(String(at.id)); }); });
+        AB[x.eid] = { t: Date.now(), ids: ids }; if (j && ids.length) { try { loiDessiner(); } catch (e) {} }
+      }).catch(function () { AB[x.eid] = { t: Date.now(), ids: (a && a.ids) || [] }; });
+    });
+    L = L.filter(function (x) { var a = x.jo && AB[x.eid]; if (a && a.ids && a.ids.indexOf(String(x.jid)) >= 0) { nAb++; return false; } return true; });
+    if (nAb) h += '<div style="font-size:13px;color:#c9d3ee;margin:-4px 0 8px;">🚫 ' + nAb + ' pépite' + (nAb > 1 ? 's' : '') + ' joueur retirée' + (nAb > 1 ? 's' : '') + ' (joueur annoncé absent par ESPN).</div>';
     if (nRet) h += '<div style="font-size:13px;color:#c9d3ee;margin:-4px 0 8px;">➖ ' + nRet + ' pépite' + (nRet > 1 ? 's' : '') + ' retirée' + (nRet > 1 ? 's' : '') + ' (niveau trop faible, équipe très mal cotée, cote au-dessus de 6 ou pari opposé sur le même match).</div>';
     if (!L.length) return h + '<div style="' + CARTE + '">Aucune pépite à jouer pour l\'instant.</div>';
     var G = [], GI = {};
@@ -88813,6 +88828,9 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     try { window._g45LoiExclure(L); } catch (e) {}   /* 20261116k : règles « non compté » partagées avec les pépites du jour (_g45LoiExclure) */   /* 20261116c : + Ligue des nations UEFA ligue D (x.grp = groupe du classement ESPN, robot) */
     var Lall = L, jPer = { '1j': 1, '1s': 7, '1m': 30, '1a': 365 }[M.per];   /* 20261113g : la montante se calcule sur TOUT l'historique (paliers justes), seul l'affichage est filtré */
     if (jPer) { var cP = new Date(); cP.setHours(0, 0, 0, 0); cP.setDate(cP.getDate() - jPer); var cS = cP.getFullYear() + '-' + ('0' + (cP.getMonth() + 1)).slice(-2) + '-' + ('0' + cP.getDate()).slice(-2); L = L.filter(function (x) { return String(x.j) >= cS; }); }
+    /* 20261118p (capture Georgia : « tout ce qui n'est pas compté, enlève-le ») : pépites ➖ non comptées RETIRÉES de l'affichage du bilan
+       (comme la liste du jour, 20261116l) ; la montante (Lall) les ignorait déjà. */
+    L = L.filter(function (x) { return !x.nc; });
     if (!L.length && ((M.d.L || []).length)) return h + '<div style="font-size:14px;">Aucune pépite avec ces filtres.</div></div>';
     if (!L.length) return h + '<div style="font-size:14px;">Aucune pépite gardée pour l\'instant : le robot commence l\'historique chaque matin, le bilan se remplit dès les premiers résultats.</div></div>';
     var J = L.filter(function (x) { return !x.nc && (x.r === 1 || x.r === 0); }), G = J.filter(function (x) { return x.r === 1; }).length, P = J.length - G;
