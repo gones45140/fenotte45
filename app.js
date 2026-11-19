@@ -90761,6 +90761,60 @@ function _g45ScoreRedessiner() {
     var lab = String(o.lab).split(/\s*\+\s*/).map(function (t) { return /^\s*(victoire|vainqueur)\b/i.test(t) ? t.replace(/victoire|vainqueur/i, 'Défaite') : /^\s*d[ée]faite\b/i.test(t) ? t.replace(/d[ée]faite/i, 'Victoire') : t; }).join(' + ');
     return { f: o.f, nom: a, u: carte(a), ft: o.ft, lieu: o.lieu === 'dom' ? 'ext' : o.lieu === 'ext' ? 'dom' : o.lieu, lab: lab, meth: o.meth };
   }
+  /* ═══ 20261120v — 🚑 ABSENTS (Carolina – Montréal : BET45 43 % / book 1,52 → capture d'Antoine des absents de Montréal, « avec les blessés
+     oui ça change la donne » → maquette « oui ») : sous la carte « Ton pari », NHL / NBA / NFL. SONDES console d'Antoine (19/11) :
+     site.api …/<sp>/<lg>/scoreboard?dates=AAAAMMJJ-AAAAMMJJ → events (match retrouvé par les 2 noms ; veille + jour, heure US) ;
+     …/summary?event=<id> → injuries[] { team {id, displayName}, injuries[] { status « Out » / « Injured Reserve » / « Day-To-Day »…, date,
+     athlete { id, displayName, position.abbreviation }, details.type } } (Montréal : 5 / 6 absents de l'autre appli — le gardien Montembeault
+     n'y était pas) ; …/teams/<id>/injuries = {} (vide). Points du joueur = archives de la saison (joueurs.json : NHL G + A, NBA PTS / match) ;
+     ⚠️ si un des 6 meilleurs marqueurs de l'équipe manque, si le gardien (NHL G) ou le quarterback (NFL QB) manque. Lu une fois / 30 min
+     (AB), échec = rien d'affiché (pas de boucle). ═══ */
+  var AB = {}, ABL = { hockey: ['hockey/nhl', 'hockey/nhl'], basketball: ['basketball/nba', 'basket/nba'], football: ['football/nfl', 'football-us/nfl'] };
+  function absSp(o) { var x = String((o.u && o.u.sport) || (o.f === 'simple' ? v('p-sport') : '') || ''); return /🏒/.test(x) ? 'hockey' : /🏀/.test(x) ? 'basketball' : /🏈/.test(x) ? 'football' : ''; }
+  function absCle(o) { var sp = absSp(o); return sp && o.nom && o.adv && /^\d{4}-\d\d-\d\d$/.test(o.date) ? sp + '|' + o.nom + '|' + o.adv + '|' + o.date : ''; }
+  var nzA = function (t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim(); };
+  var memeA = function (a, b) { a = nzA(a); b = nzA(b); return !!(a && b && (a === b || (' ' + a + ' ').indexOf(' ' + b + ' ') >= 0 || (' ' + b + ' ').indexOf(' ' + a + ' ') >= 0)); };
+  async function absCharger(o, k) {
+    var sp = absSp(o), L = ABL[sp], d = o.date.replace(/-/g, ''), d0 = new Date(Date.parse(o.date + 'T12:00:00Z') - 864e5).toISOString().slice(0, 10).replace(/-/g, '');
+    var jget = async function (u) { try { var r = await fetch(u); if (r.ok) return await r.json(); } catch (e) {} if (typeof _g45TrEspn === 'function') { try { return await _g45TrEspn(u.replace('https://site.api.espn.com', '')); } catch (e) {} } return null; };
+    var sb = await jget('https://site.api.espn.com/apis/site/v2/sports/' + L[0] + '/scoreboard?dates=' + d0 + '-' + d);
+    var ev = ((sb && sb.events) || []).filter(function (e) { var C = ((e.competitions || [])[0] || {}).competitors || []; return C.some(function (c) { return memeA((c.team || {}).displayName, o.nom); }) && C.some(function (c) { return memeA((c.team || {}).displayName, o.adv); }); })[0];
+    if (!ev) return { err: 'match introuvable' };
+    var su = await jget('https://site.api.espn.com/apis/site/v2/sports/' + L[0] + '/summary?event=' + ev.id); if (!su) return { err: 'blessés illisibles' };
+    var ds = new Date(), y = ds.getMonth() + 1 >= 7 ? ds.getFullYear() : ds.getFullYear() - 1, J = null;
+    try { var rj = await fetch('https://raw.githubusercontent.com/gones45140/gones45-archives/main/cotes/' + L[1] + '/' + y + '-' + String(y + 1).slice(2) + '/joueurs.json?h=' + Math.floor(Date.now() / 864e5)); if (rj.ok) J = await rj.json(); } catch (e) {}
+    var pts = function (id) { var x = J && J[id]; if (!x || !x[3]) return null; var st = x[3]; return sp === 'hockey' ? (+st.G || 0) + (+st.A || 0) : sp === 'basketball' ? (x[2] ? (+st.PTS || 0) / x[2] : null) : null; };
+    var tops = function (tid) { if (!J || sp === 'football') return []; return Object.keys(J).filter(function (k2) { return String(J[k2][1]) === String(tid); }).map(function (k2) { return [k2, pts(k2) || 0]; }).sort(function (a, b) { return b[1] - a[1]; }).slice(0, 6).map(function (x) { return x[0]; }); };
+    var der = 0, T = ((su.injuries || [])).map(function (t) {
+      var tid = String((t.team || {}).id || ''), T6 = tops(tid);
+      var Lj = (t.injuries || []).map(function (x) { var a = x.athlete || {}, t0 = Date.parse(x.date || '') || 0; if (t0 > der) der = t0;
+        return { n: a.displayName || a.fullName || '', pos: ((a.position || {}).abbreviation) || '', st: x.status || '', ty: (x.details || {}).type || '', id: String(a.id || ''), p: pts(String(a.id || '')), top: T6.indexOf(String(a.id || '')) >= 0 }; });
+      Lj.sort(function (a, b) { return (b.p || 0) - (a.p || 0); });
+      return { nom: (t.team || {}).displayName || '', id: tid, L: Lj };
+    });
+    return { sp: sp, T: T, der: der };
+  }
+  function absHtml(o) {
+    var k = absCle(o); if (!k) return '';
+    var A = AB[k];
+    if (!A || Date.now() - A.t > 30 * 60e3) { if (!A || !A.en) { AB[k] = A = { t: Date.now(), en: 1, R: A && A.R }; absCharger(o, k).then(function (R) { AB[k] = { t: Date.now(), R: R }; }, function () { AB[k] = { t: Date.now(), R: { err: 'réseau' } }; }).then(function () { SIG.strat = ''; SIG.simple = ''; }); } }
+    var R = A.R; if (!R) return '<div style="' + BOX + 'font-size:14px;">🚑 Absents… ⏳</div>';
+    if (R.err || !R.T || !R.T.length) return '';
+    var POS = { hockey: { G: 'gardien', D: 'défenseur', C: 'attaquant', LW: 'attaquant', RW: 'attaquant', F: 'attaquant' }, basketball: { PG: 'meneur', SG: 'arrière', SF: 'ailier', PF: 'ailier fort', C: 'pivot', G: 'arrière', F: 'ailier' }, football: { QB: 'quarterback', RB: 'running back', WR: 'receveur', TE: 'tight end' } }[R.sp] || {};
+    var dt = R.der ? new Date(R.der).toLocaleString('fr-FR', { timeZone: 'Europe/Paris', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).replace(' ', ' ') : '';
+    var h = '<div style="' + BOX + '"><div style="font-size:14px;font-weight:800;color:#ffd34d;margin-bottom:6px;">🚑 ABSENTS <span style="font-weight:400;color:#c9d3ee;">(ESPN' + (dt ? ' · mis à jour ' + esc(dt) : '') + ')</span></div>';
+    [o.nom, o.adv].forEach(function (nm) {
+      var t = R.T.filter(function (x) { return memeA(x.nom, nm); })[0] || { nom: nm, L: [] }, L = t.L, ab = L.filter(function (x) { return !/day|question|probable/i.test(x.st); });
+      h += '<div style="font-size:15px;font-weight:800;margin-top:6px;">' + esc(t.nom) + ' : ' + (L.length ? '(' + L.length + ')' : 'aucun ✅') + '</div>';
+      L.forEach(function (x) { var inc = /day|question|doubt|probable/i.test(x.st);
+        h += '<div style="font-size:14px;margin-left:8px;">' + (inc ? '❓' : '❌') + ' ' + esc(x.n) + ' <span style="color:#c9d3ee;">(' + esc(POS[x.pos] || x.pos || '?') + (inc ? ' · incertain' : '') + ')' + (x.p != null ? ' · ' + (R.sp === 'basketball' ? f2(x.p).replace(/,?0+$/, '') + ' pts / match' : x.p + ' pts cette saison') : '') + '</span></div>'; });
+      var tp = ab.filter(function (x) { return x.top; }).length, gk = L.filter(function (x) { return (R.sp === 'hockey' && x.pos === 'G') || (R.sp === 'football' && x.pos === 'QB'); })[0];
+      if (gk) h += '<div style="font-size:14px;font-weight:800;color:#ffb13d;margin-left:8px;">⚠️ ' + (R.sp === 'hockey' ? 'Gardien' : 'Quarterback') + (/day|question|doubt|probable/i.test(gk.st) ? ' incertain : ' : ' absent : ') + esc(gk.n) + '</div>';
+      if (tp) h += '<div style="font-size:14px;font-weight:800;color:#ffb13d;margin-left:8px;">⚠️ ' + tp + ' des 6 meilleurs marqueurs de ' + esc(t.nom) + ' absent' + (tp > 1 ? 's' : '') + '</div>';
+    });
+    return h + '</div>';
+  }
+  window._g45TkAbs = { html: absHtml, cle: absCle, AB: AB };   /* tests */
   window.g45TkSa = function (k, j) { SA_I[k] = +j || 0; ['strat', 'simple'].forEach(function (f) { SIG[f] = ''; }); poser(); };
   function ticket(o) {
     var F = {}; try { F = (window._g45CkFond && window._g45CkFond(o.nom)) || {}; } catch (e) {}
@@ -90875,6 +90929,7 @@ function _g45ScoreRedessiner() {
       (estNhlJ(o) ? window._g45FicheJoueur(o.nom, o.lieu, o.lab, o.adv, spJ(o), (typeof _g45UClub === 'function' ? _g45UClub(o.u) : '') || o.u.club || '') : window._g45FichePari(o.nom, o.ft, o.lieu, o.lab, o.meth)).then(function (R) { RES[k] = R || { err: 'rien' }; }).catch(function () { RES[k] = { err: 'calcul impossible' }; }).then(function () { delete EN[k]; SIG[f] = ''; poserF(f); });
     }
     sig += '|' + (mob ? 'm' + (MOBO[f] ? 1 : 0) : 'p');
+    try { var kAb = absCle(o); if (kAb) sig += '|ab' + (AB[kAb] && AB[kAb].R ? (AB[kAb].R.err ? 'e' : AB[kAb].t) : 0); } catch (e) {}   /* 20261120v */
     if (sig === SIG[f]) return; SIG[f] = sig;
     var zi = mob ? zm : z.querySelector('.g45-tkpc-in');
     /* téléphone : une colonne (cellules dans l'ordre), repliée par défaut ; résumé = cote estimée → book */
@@ -90887,7 +90942,7 @@ function _g45ScoreRedessiner() {
     };
     /* 20261119u (capture : « METTRE À LA MÊME HAUTEUR ») : grille 2 colonnes, une ligne par bloc → 📋 fiche face à 📋 fiche, match par match face à
        match par match (fiche() marque ses blocs : \u0002 avant la fiche, \u0003 avant le match par match) */
-    var P1 = (ticket(o) + fiche(o)).split(/[\u0002\u0003]/), sep = function (x) { return String(x || '').replace(/[\u0002\u0003]/g, ''); };
+    var P1 = (ticket(o) + absHtml(o) + fiche(o)).split(/[\u0002\u0003]/), sep = function (x) { return String(x || '').replace(/[\u0002\u0003]/g, ''); };
     if (!zi) return;
     var Rj = RES[k];
     if (mob && !(oA || (Rj && Rj.jo && Rj.hJ && Rj.hJ.aid))) { sortie(P1, []); return; }
