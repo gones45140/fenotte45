@@ -79200,13 +79200,14 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var L = [], jr = function (b) { if (/^\d{4}-\d\d-\d\d$/.test(String(b.date || ''))) return b.date; var t = +b.id; return t > 1e12 ? ckYmd(new Date(t)) : ''; };
     ((typeof state !== 'undefined' && state.a) || []).forEach(function (b) {
       /* 20261119m (capture Cockpit BET45 → Calendrier : « mes paris en cote basse ne sont pas intégrés, faudrait les mettre ») : + paris 📉 Cotes basses
-         (b.meth 'cb', isS faux depuis 20261114n) ; série à part de la montante dans ckDepart (clé + méthode). */
-      if (!b || !(b.isS || b.meth === 'cb') || b.isPending || (b.win !== true && b.win !== false)) return;
+         (b.meth 'cb', isS faux depuis 20261114n) ; série à part de la montante dans ckDepart (clé + méthode).
+         20261119n (« ajoute les mêmes, même si c'est pas des modes que je parie actuellement ») : + 🐚 Fibonacci / 🪜 D'Alembert = tout b.meth. */
+      if (!b || !(b.isS || b.meth) || b.isPending || (b.win !== true && b.win !== false)) return;
       var j = jr(b); if (!j) return;
       var g = 0; try { g = _g45BetEffetTotal(b, 'a').b; } catch (e) { g = b.win ? (parseFloat(b.m) || 0) * ((parseFloat(b.cote) || 0) - 1) : -(parseFloat(b.m) || 0); }
       L.push({ j: j, b: b, r: b.win, g: Math.round(g * 100) / 100 });
     });
-    ((typeof state !== 'undefined' && state.h) || []).forEach(function (b) { if (b && (b.isS || b.meth === 'cb')) { var j = jr(b); if (j) L.push({ j: j, b: b, r: null, g: 0 }); } });   /* 20261119m */
+    ((typeof state !== 'undefined' && state.h) || []).forEach(function (b) { if (b && (b.isS || b.meth)) { var j = jr(b); if (j) L.push({ j: j, b: b, r: null, g: 0 }); } });   /* 20261119m */
     return ckDepart(L);
   }
   /* 20261029m (« seuls mes paris Cockpit doivent y être, la Formule 1 n'y est pas » → C « à partir d'une date » = 1er novembre ; « le problème
