@@ -3302,6 +3302,8 @@ function render(){
       var _jv=(!_vis && typeof _g45JoueurVisLire==='function')?_g45JoueurVisLire(u.n):null;
       /* 20261120j : joueur → bannière de SON CLUB derrière sa photo détourée (le fanart du joueur ne passe plus devant) */
       var _clubV=(!_vis && typeof _g45ClubVis==='function')?_g45ClubVis(u):'', _jCut='';
+      /* 20261120q (capture Wembanyama sur le mur : « PAS DE BANNIERE NI photo ») : TheSportsDB sans photo → photo ESPN (u.phE, posée par _g45PhEspRemplir) */
+      if(u.phE && !(_jv && (_jv.cut||_jv.thumb))) _jv=Object.assign({},_jv||{},{cut:u.phE,fan:''});
       if(_clubV && _jv && (_jv.cut||_jv.thumb)) _jv=Object.assign({},_jv,{fan:''});
       if(!_vis && _jv && _jv.fan) _vis=_jv.fan;
       if(!_vis && _jv && (_jv.cut||_jv.thumb)){
@@ -3313,7 +3315,7 @@ function render(){
           +'object-fit:contain;object-position:bottom center;pointer-events:none;'
           +'filter:drop-shadow(0 6px 14px rgba(0,0,0,.55));">';
       }
-      if(_clubV && _couche && !_vis){ _jCut=_couche; _vis=_clubV; }   /* 20261120j : la photo est remise par-dessus la bannière plus bas */
+      if(_clubV && !_vis){ _jCut=_couche; _vis=_clubV; }   /* 20261120j : la photo est remise par-dessus la bannière plus bas ; 20261120q : bannière posée MÊME sans photo */
       /* 20261016x (Canucks : bannière TheSportsDB illisible, choix 1 d'Antoine) : club listé dans window._G45_FOND_LOGO → LOGO entier au centre. */
       var _fl=false; try{ if(window._g45FondLogo && window._g45FondLogo(u.n)){ var _flv=window._G45_FOND_LOGO[_g45SgNorm(u.n)], _flu=(typeof _flv==='string'?_flv:'')||((typeof g45LogoUrlDe==='function')?g45LogoUrlDe(u.n):'')||u.logoUrl||''; if(_flu){ _vis=_flu; _fl=true; } } }catch(e){}
       if(_vis){
@@ -11774,6 +11776,8 @@ function render(){
       var _jv=(!_vis && typeof _g45JoueurVisLire==='function')?_g45JoueurVisLire(u.n):null;
       /* 20261120j : joueur → bannière de SON CLUB derrière sa photo détourée (le fanart du joueur ne passe plus devant) */
       var _clubV=(!_vis && typeof _g45ClubVis==='function')?_g45ClubVis(u):'', _jCut='';
+      /* 20261120q (capture Wembanyama sur le mur : « PAS DE BANNIERE NI photo ») : TheSportsDB sans photo → photo ESPN (u.phE, posée par _g45PhEspRemplir) */
+      if(u.phE && !(_jv && (_jv.cut||_jv.thumb))) _jv=Object.assign({},_jv||{},{cut:u.phE,fan:''});
       if(_clubV && _jv && (_jv.cut||_jv.thumb)) _jv=Object.assign({},_jv,{fan:''});
       if(!_vis && _jv && _jv.fan) _vis=_jv.fan;
       if(!_vis && _jv && (_jv.cut||_jv.thumb)){
@@ -11785,7 +11789,7 @@ function render(){
           +'object-fit:contain;object-position:bottom center;pointer-events:none;'
           +'filter:drop-shadow(0 6px 14px rgba(0,0,0,.55));">';
       }
-      if(_clubV && _couche && !_vis){ _jCut=_couche; _vis=_clubV; }   /* 20261120j : la photo est remise par-dessus la bannière plus bas */
+      if(_clubV && !_vis){ _jCut=_couche; _vis=_clubV; }   /* 20261120j : la photo est remise par-dessus la bannière plus bas ; 20261120q : bannière posée MÊME sans photo */
       /* 20261016x (Canucks : bannière TheSportsDB illisible, choix 1 d'Antoine) : club listé dans window._G45_FOND_LOGO → LOGO entier au centre. */
       var _fl=false; try{ if(window._g45FondLogo && window._g45FondLogo(u.n)){ var _flv=window._G45_FOND_LOGO[_g45SgNorm(u.n)], _flu=(typeof _flv==='string'?_flv:'')||((typeof g45LogoUrlDe==='function')?g45LogoUrlDe(u.n):'')||u.logoUrl||''; if(_flu){ _vis=_flu; _fl=true; } } }catch(e){}
       if(_vis){
@@ -91177,3 +91181,29 @@ setTimeout(_g45ButReparer, 4000);
     nf._g45l = 1; window.g45MurJoueurPanel = g45MurJoueurPanel = nf;
   } catch (e) {}
 })();
+
+/* ═══ 20261120q — 📸 PHOTO ESPN DES JOUEURS 🏀 / 🏈 / 🏒 DU MUR (capture : Wembanyama sans photo ni bannière) ═══
+   TheSportsDB n'a pas de photo pour tout le monde (Wembanyama) → n° ESPN retrouvé par le nom dans l'index LÉGER de la saison des archives
+   (cotes/<basket/nba|football-us/nfl|hockey/nhl>/<saison>/joueurs.json, 40 à 100 Ko, lu une fois par sport) → u.phE = photo détourée
+   ESPN (a.espncdn.com/i/headshots/<nba|nfl|nhl>/players/full/<id>.png), gardée sur la carte ; le mur la pose quand TheSportsDB n'a rien.
+   Une fois par démarrage, 8 s après l'ouverture ; un joueur pas trouvé est simplement laissé (aucune boucle). */
+function _g45PhEspRemplir() {
+  try {
+    var U = (typeof state !== 'undefined' && state && state.u) ? state.u : [], ARC = 'https://raw.githubusercontent.com/gones45140/gones45-archives/main/cotes/';
+    var d = new Date(), y = d.getMonth() + 1 >= 7 ? d.getFullYear() : d.getFullYear() - 1, sa = y + '-' + String(y + 1).slice(2);
+    var SP = [['🏀', 'basket/nba', 'nba'], ['🏈', 'football-us/nfl', 'nfl'], ['🏒', 'hockey/nhl', 'nhl']];
+    var nz = function (t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z]+/g, ' ').trim(); };
+    SP.forEach(function (q) {
+      var L = U.filter(function (u) { return u && u.type === 'joueur' && !u.phE && String(u.sport || '').indexOf(q[0]) >= 0; }); if (!L.length) return;
+      fetch(ARC + q[1] + '/' + sa + '/joueurs.json?h=' + Math.floor(Date.now() / 864e5)).then(function (r) { return r.ok ? r.json() : null; }).then(function (J) {
+        if (!J) return; var ch = 0, K = Object.keys(J);
+        L.forEach(function (u) { var n0 = nz(u.n), id = K.filter(function (k) { return nz(J[k][0]) === n0; })[0];
+          if (!id) { var fam = n0.split(' ').slice(-1)[0], C = K.filter(function (k) { var x = nz(J[k][0]); return x.split(' ').slice(-1)[0] === fam && x[0] === n0[0]; }); if (C.length === 1) id = C[0]; }
+          if (id) { u.phE = 'https://a.espncdn.com/i/headshots/' + q[2] + '/players/full/' + id + '.png'; ch++; } });
+        if (ch) { if (typeof save === 'function') save(); if (typeof render === 'function') render(); }
+      }).catch(function () {});
+    });
+  } catch (e) {}
+}
+window._g45PhEspRemplir = _g45PhEspRemplir;
+setTimeout(_g45PhEspRemplir, 8000);
