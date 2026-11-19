@@ -79237,6 +79237,22 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var s = ckSous(), b = function (k, t) { var on = s === k; return '<button onclick="g45CkSous(\'' + k + '\')" style="flex:1;font-size:14px;padding:10px 4px;border-radius:10px;color:#fff;font-weight:800;cursor:pointer;border:' + (on ? '2px solid #f5c542' : '1px solid rgba(255,255,255,.22)') + ';background:' + (on ? '#1a2235' : 'rgba(11,16,29,.92)') + ';">' + t + '</button>'; };
     return '<div style="display:flex;gap:6px;margin:4px 0 10px;">' + b('a', '🎯 Aujourd\'hui') + b('c', '📅 Calendrier') + b('g', '📈 Graphique') + '</div>';
   }
+  /* 20261119o (capture détail du jour annotée : « faudrait que l'on puisse différencier le mode » → dessin d'Antoine : LOGO MODE rond au milieu
+     de chaque ligne, ligne VERTE si gagné / ROUGE si perdu, « + rajout logo club et photo ») : ckVis(b) = { ph photo joueur, lo logo (club du
+     joueur ou équipe) } — gones les calcule (carte state.u, _g45JoueurVisLire, _g45UClub, g45LogoUrlDe) et les PUBLIE (b.ph / b.lo) pour bet45. */
+  function ckVis(b) {
+    var r = { ph: /^https:\/\//.test(b.ph || '') ? b.ph : '', lo: /^https:\/\//.test(b.lo || '') ? b.lo : '' }; if (ckDist() || (r.ph && r.lo)) return r;
+    try {
+      var u = ((typeof state !== 'undefined' && state.u) || []).filter(function (x) { return x && x.n === b.n; })[0] || null, jo = !!(u && u.type === 'joueur');
+      var lg = function (n) { var l = n && typeof g45LogoUrlDe === 'function' ? g45LogoUrlDe(n) : ''; return /^https?:\/\//.test(l || '') ? String(l).replace(/^http:/, 'https:') : ''; };
+      if (jo) { var v = typeof _g45JoueurVisLire === 'function' ? _g45JoueurVisLire(b.n, b.sport || u.sport) : null; if (!r.ph && v) r.ph = String(v.cut || v.thumb || '').replace(/^http:/, 'https:');
+        if (!r.lo) r.lo = lg(typeof _g45UClub === 'function' ? _g45UClub(u) : u.club); }
+      else if (!r.lo) r.lo = lg(b.n) || (/^https?:\/\//.test((u && u.logoUrl) || '') ? String(u.logoUrl).replace(/^http:/, 'https:') : '');
+    } catch (e) {}
+    return r;
+  }
+  window._g45CkVis = ckVis;   /* tests */
+  var CKM = { mont: ['🚀', '#4d84ff', ''], cb: ['📉', '#ff9f43', 'C'], fib: ['🐚', '#b07cff', 'F'], dal: ['🪜', '#2dd4bf', 'D'] };
   function ckCal() {
     var e = function (x) { return String(x == null ? '' : x).replace(/[<>&"]/g, ''); };
     var P = ckParis(), parJ = {}; P.forEach(function (x) { (parJ[x.j] = parJ[x.j] || []).push(x); });
@@ -79263,9 +79279,16 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       h += ckBox('<div style="font-size:16px;font-weight:800;margin-bottom:4px;"><span style="text-transform:capitalize;">' + e(dj.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })) + '</span> · <span style="color:' + (tj >= 0 ? '#1ed760' : '#ff5a5a') + ';">' + ckEur(tj) + '</span></div>'
         + LJ.map(function (x) {
           var b = x.b, ico = b.domicile === 'dom' ? ' 🏠' : b.domicile === 'ext' ? ' ✈️' : '', pari = [b.target && b.target !== '-' && b.target !== b.n ? 'vs ' + b.target : '', b.type && b.type !== '-' ? b.type : ''].filter(Boolean).join(' · ');   /* 20261029c (« Inter, sauf que c'est Inter + under 3.5 ») : marché joué = b.type (getMmLabel), target = adversaire */
-          return '<div style="display:flex;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid #1c2747;font-size:15px;"><div>' + (x.r === null ? '⏳' : x.r ? '✅' : '❌') + ' <b>' + e(b.n) + '</b>' + ico
-            + '<div style="font-size:13px;color:#c9d3ee;">' + (pari ? e(pari) + ' · ' : '') + 'palier ' + e(b.l || 1) + ' · ' + e(String(b.m).replace('.', ',')) + ' € @ ' + e(String(b.cote).replace('.', ',')) + '</div></div>'
-            + '<div style="font-weight:800;white-space:nowrap;color:' + (x.r === null ? '#f5c542' : x.g >= 0 ? '#1ed760' : '#ff5a5a') + ';">' + (x.r === null ? 'en cours' : ckEur(x.g)) + '</div></div>';
+          /* 20261119o : ligne colorée (vert / rouge / jaune en cours), photo + logo du club à gauche, pastille ronde du MODE au milieu, palier avec la lettre du mode */
+          var mk = b.meth && CKM[b.meth] ? b.meth : 'mont', M = CKM[mk], V = ckVis(b), pl = M[2] ? M[2] + (b.mp || 1) : (b.l || 1);
+          var bg = x.r === null ? 'rgba(245,197,66,.14)' : x.r ? 'rgba(30,215,96,.16)' : 'rgba(255,90,90,.18)', bd = x.r === null ? '#f5c542' : x.r ? '#1ed760' : '#ff5a5a';
+          var im = function (u, sz, st) { return '<img src="' + e(u) + '" alt="" loading="lazy" onerror="this.remove()" style="width:' + sz + 'px;height:' + sz + 'px;object-fit:contain;' + (st || '') + '">'; };
+          var vis = V.ph || V.lo ? '<div style="position:relative;flex:0 0 52px;width:52px;height:52px;">' + (V.ph ? im(V.ph, 52, 'border-radius:50%;background:rgba(0,0,0,.35);') + (V.lo ? im(V.lo, 24, 'position:absolute;right:-4px;bottom:-4px;filter:drop-shadow(0 0 3px rgba(0,0,0,.8));') : '') : im(V.lo, 48, 'filter:drop-shadow(0 0 3px rgba(0,0,0,.7));')) + '</div>' : '';
+          return '<div style="display:grid;grid-template-columns:minmax(0,1fr) 46px 96px;align-items:center;gap:8px;padding:8px 10px;margin:6px 0;border-radius:10px;background:' + bg + ';border-left:4px solid ' + bd + ';font-size:15px;">'
+            + '<div style="display:flex;align-items:center;gap:10px;min-width:0;">' + vis + '<div style="min-width:0;">' + (x.r === null ? '⏳' : x.r ? '✅' : '❌') + ' <b>' + e(b.n) + '</b>' + ico
+            + '<div style="font-size:13px;color:#dfe6f7;">' + (pari ? e(pari) + ' · ' : '') + 'palier ' + e(pl) + ' · ' + e(String(b.m).replace('.', ',')) + ' € @ ' + e(String(b.cote).replace('.', ',')) + '</div></div></div>'
+            + '<div title="' + e(mk) + '" style="width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;background:rgba(11,16,29,.85);border:3px solid ' + M[1] + ';">' + M[0] + '</div>'
+            + '<div style="font-weight:800;white-space:nowrap;text-align:right;color:' + (x.r === null ? '#f5c542' : x.g >= 0 ? '#1ed760' : '#ff5a5a') + ';">' + (x.r === null ? 'en cours' : ckEur(x.g)) + '</div></div>';
         }).join(''));
     } else if (sel && !agJ[sel]) h += ckBox('<div style="font-size:15px;">Aucun pari Cockpit ce jour-là.</div>');
     if (sel && agJ[sel]) {
@@ -79420,7 +79443,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       if (u.psL) { x.psL = {}; Object.keys(u.psL).forEach(function (k) { var R = Object.assign({}, u.psL[k]); delete R.sq; delete R.cq;   /* 20261102q : série brute pas publiée */ if (!R.err && R.p) { try { R.pa = window._g45PalCarte(R.tot, u); } catch (e) {} } x.psL[k] = R; }); }
       U[u.n] = x;
     });
-    var P = ckParis().map(function (y) { var b = y.b; return { j: y.j, r: y.r, g: y.g, b: { n: b.n, domicile: b.domicile || '', type: b.type || '', target: b.target || '', l: b.l || 1, m: b.m, cote: b.cote, comp: b.comp || '', t: b.t || '', heure: b.heure || '', date: b.date || '', id: b.id || '', isCashout: b.isCashout ? 1 : 0, isFreebet: b.isFreebet ? 1 : 0, sport: b.sport || '', meth: b.meth || '' } }; });   /* 20261119m : + meth (📉) */   /* 20261029l : + champs de la fiche (bet45) */
+    var P = ckParis().map(function (y) { var b = y.b; return { j: y.j, r: y.r, g: y.g, b: { n: b.n, domicile: b.domicile || '', type: b.type || '', target: b.target || '', l: b.l || 1, m: b.m, cote: b.cote, comp: b.comp || '', t: b.t || '', heure: b.heure || '', date: b.date || '', id: b.id || '', isCashout: b.isCashout ? 1 : 0, isFreebet: b.isFreebet ? 1 : 0, sport: b.sport || '', meth: b.meth || '', mp: b.mp || 0, ph: ckVis(b).ph, lo: ckVis(b).lo } }; });   /* 20261119o : + mp, photo, logo */   /* 20261119m : + meth (📉) */   /* 20261029l : + champs de la fiche (bet45) */
     var NT = {}; P.forEach(function (y) { var n = y.b.n; if (NT[n] == null) { var uu = ckU(n); NT[n] = (uu && uu.note) || ''; } });
     var LG = {}; Object.keys(NT).forEach(function (n) { LG[n] = ckFond(n); });   /* 20261029r : couleur + logo de chaque carte (bet45) */   /* 20261029q : pari choisi (Outils) de chaque carte, pas u.np */
     var SC = {}; Object.keys(NT).concat(Object.keys(U)).forEach(function (n) { var uu = ckU(n); if (uu && uu.s != null) SC[n] = uu.s; });   /* 20261029v : ⭐ de chaque carte + grille d'Antoine (mise de départ des abonnés) */
