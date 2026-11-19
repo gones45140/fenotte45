@@ -79182,6 +79182,14 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     try { vis = (typeof _g45ImgPersoLire === 'function' && _g45ImgPersoLire(n)) || ''; } catch (e) {}
     try { if (!vis && typeof g45VisuelCache === 'function') vis = g45VisuelCache(n) || ''; } catch (e) {}
     try { var spJ = (typeof g45SportDe === 'function' ? g45SportDe(u) : '') || ''; jv = (spJ && spJ !== 'soccer' ? _g45JoueurVisLire(n, spJ) : null) || _g45JoueurVisLire(n); } catch (e) {}
+    /* 20261120g (capture Cockpit Aujourd'hui : cartes joueurs sur fond bleu « la bannière du club en gardant la photo du joueur ? » → vraie maquette
+       Jarvis / Carolina → « oui ») : carte JOUEUR → bannière de SON CLUB (🏟️ de la carte, sinon carte d'équipe du mur au nom proche) avant son
+       fanart ; photo détourée au centre et logo du club inchangés ; rien trouvé → fond d'avant. */
+    if (!vis && u.type === 'joueur') { try {
+      var clV = typeof _g45UClub === 'function' ? _g45UClub(u) : (u.club || '');
+      if (clV) { var CS = [clV]; ((typeof state !== 'undefined' && state.u) || []).forEach(function (x) { if (x && x.type !== 'joueur' && x.n && x.n !== clV && typeof _g45BandMeme === 'function' && _g45BandMeme(x.n, clV)) CS.push(x.n); });
+        CS.some(function (c) { var v = ''; try { v = (typeof _g45ImgPersoLire === 'function' && _g45ImgPersoLire(c)) || (typeof g45VisuelCache === 'function' && g45VisuelCache(c)) || ''; } catch (e) {} if (v) vis = v; return !!v; }); }
+    } catch (e) {} }
     if (!vis && jv && jv.fan) vis = jv.fan;
     if (jv && (jv.cut || jv.thumb) && u.type === 'joueur') cut = jv.cut || jv.thumb;
     try { logo = u.type === 'joueur' && typeof _g45JoueurClubLogo === 'function' ? (_g45JoueurClubLogo(u) || '') : ((typeof g45LogoUrlDe === 'function' && g45LogoUrlDe(n)) || u.logoUrl || ''); } catch (e) {}
