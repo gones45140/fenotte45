@@ -90509,6 +90509,8 @@ function _g45ScoreRedessiner() {
   var esc = function (t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
   var f2 = function (v) { return (Math.round(v * 100) / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
   var pcT = function (p) { return p == null ? '—' : Math.round(p * 100) + ' %'; };
+  /* 20261119v (« total 23 % = 4,35 sur la calculatrice, faut pouvoir calculer pour trouver la différence ») : % + cote équivalente 100 / % */
+  var pcC = function (p) { return p == null ? '—' : pcT(p) + (p > 0 ? ' (' + f2(1 / p) + ')' : ''); };
   var BOX = 'background:rgba(11,16,29,.92);border:1px solid #2a3a63;border-radius:12px;padding:12px;color:#fff;margin-bottom:10px;';
   var v = function (id) { var x = $(id); return x ? String(x.value || '') : ''; };
   var carte = function (nom) { return ((typeof state !== 'undefined' && state.u) || []).filter(function (x) { return x && x.n === nom; })[0] || null; };
@@ -90564,8 +90566,8 @@ function _g45ScoreRedessiner() {
       h += '<div style="font-size:18px;font-weight:800;">BET45 : ' + f2(ce) + (o.cote ? ' <span style="font-weight:400;">→ book</span> <span style="color:' + (bon ? '#1ed760' : '#ff5a5a') + ';">' + f2(o.cote) + (bon ? ' 💎' : '') + '</span>' : '') + '</div>'
         + (val != null ? '<div style="font-size:14px;color:' + (bon ? '#1ed760' : '#ff9f9f') + ';">' + (bon ? 'Le book paie plus que notre estimation : +' : 'Le book paie moins que notre estimation : ') + Math.round(val * 100) + ' %</div>' : '')
         + '<div style="font-size:13px;color:#c9d3ee;margin-top:3px;">' + pcT(estM) + ' estimé' + (okA ? ' = moyenne des 2 équipes' : '') + '</div>'
-        + '<div style="font-size:13px;color:#c9d3ee;">' + esc(o.nom) + (o.lieu === 'dom' ? ' 🏠' : o.lieu === 'ext' ? ' ✈️' : '') + ' ' + pcT(R.est) + ' (10 derniers ' + pcT(R.p10) + ' · 2 saisons ' + pcT(R.p2) + ' · tout ' + pcT(R.pT) + ')</div>'
-        + (oA ? '<div style="font-size:13px;color:#c9d3ee;">' + esc(oA.nom) + (oA.lieu === 'dom' ? ' 🏠' : oA.lieu === 'ext' ? ' ✈️' : '') + ' · ' + esc(oA.lab) + ' : ' + (okA ? pcT(RA.est) + ' (10 derniers ' + pcT(RA.p10) + ' · 2 saisons ' + pcT(RA.p2) + ' · tout ' + pcT(RA.pT) + ')' : RA ? 'pas de données' + (RA.err ? ' (' + esc(RA.err) + ')' : '') : '⏳') + '</div>' : '<div style="font-size:13px;color:#c9d3ee;">Remplis « Adversaire » pour compter aussi l\'autre équipe.</div>');
+        + '<div style="font-size:13px;color:#c9d3ee;">' + esc(o.nom) + (o.lieu === 'dom' ? ' 🏠' : o.lieu === 'ext' ? ' ✈️' : '') + ' ' + pcC(R.est) + ' (10 derniers ' + pcC(R.p10) + ' · 2 saisons ' + pcC(R.p2) + ' · tout ' + pcC(R.pT) + ')</div>'
+        + (oA ? '<div style="font-size:13px;color:#c9d3ee;">' + esc(oA.nom) + (oA.lieu === 'dom' ? ' 🏠' : oA.lieu === 'ext' ? ' ✈️' : '') + ' · ' + esc(oA.lab) + ' : ' + (okA ? pcC(RA.est) + ' (10 derniers ' + pcC(RA.p10) + ' · 2 saisons ' + pcC(RA.p2) + ' · tout ' + pcC(RA.pT) + ')' : RA ? 'pas de données' + (RA.err ? ' (' + esc(RA.err) + ')' : '') : '⏳') + '</div>' : '<div style="font-size:13px;color:#c9d3ee;">Remplis « Adversaire » pour compter aussi l\'autre équipe.</div>');
     }
     /* 20261119r : 📋 comme 🔎 Critères — tableau par saison, total, paliers, meilleure série, série en cours, dernières réussites */
     if (sansCote) h = '<div style="display:none;">';   /* fermé par le « </div> » qui ouvre le bloc 📋 */
@@ -90577,7 +90579,7 @@ function _g45ScoreRedessiner() {
       + (R.ss && R.ss.length ? '<table style="width:100%;border-collapse:collapse;font-size:14px;color:#fff;"><tr style="color:#c9d3ee;font-size:13px;text-align:left;"><th style="' + TD + '">Saison</th><th style="' + TD + '">Réussite</th><th style="' + TD + '">Pire</th><th style="' + TD + '">Meill.</th></tr>'
         + R.ss.map(function (x) { return '<tr><td style="' + TD + '">' + esc(x.l) + '</td><td style="' + TD + '">' + nb(x.ok) + '/' + nb(x.n) + ' · ' + pc0(x.ok, x.n) + '</td><td style="' + TD + 'font-weight:800;color:' + col(x.pire) + ';">' + x.pire + '</td><td style="' + TD + 'font-weight:800;color:#6d9dff;">' + x.best + '</td></tr>'; }).join('') + '</table>' : '');
     var T = R.tt || { ok: 0, n: 0, pire: 0, best: 0 }, der = ''; try { der = typeof R.der === 'function' ? String(R.der() || '').replace(/^<br>/, '') : ''; } catch (e) {}
-    h += '<div style="font-size:15px;margin-top:8px;line-height:1.5;">🧮 <b>Total : ' + nb(T.ok) + '/' + nb(T.n) + ' · ' + pc0(T.ok, T.n) + '</b>'
+    h += '<div style="font-size:15px;margin-top:8px;line-height:1.5;">🧮 <b>Total : ' + nb(T.ok) + '/' + nb(T.n) + ' · ' + pc0(T.ok, T.n) + (T.ok > 0 ? ' → cote ' + f2(T.n / T.ok) : '') + '</b>'
       + '<br>🪜 Pire série : <b style="color:' + col(T.pire) + ';">' + T.pire + '</b> → il fallait <b>' + (T.pire + 1) + ' paliers</b>' + (T.pire + 1 > 6 ? ' ⚠️' : '')
       + '<br>🏆 Meilleure série : <b style="color:#6d9dff;">' + T.best + '</b>'
       + '<br>📈 Série en cours : <b style="color:' + (R.cours >= 3 ? '#ff9f43' : '#fff') + ';">' + R.cours + ' raté' + (R.cours > 1 ? 's' : '') + '</b>'
