@@ -30637,7 +30637,7 @@ window.g45ButMode=g45ButMode; window.g45ButLg=g45ButLg;
    (vérifié : count:0 sur Haaland). Le club se lit donc dans le champ NOTE de l'entrée. */
 function _g45ButMur(){
   var U=(typeof state!=='undefined'&&state&&state.u)?state.u:[];
-  return U.filter(function(u){ return u&&u.type==='joueur'&&u.n; })
+  return U.filter(function(u){ return u&&u.type==='joueur'&&u.n&&(!u.sport||u.sport==='\u26bd'); })   /* 20261120k : marqueurs = foot */
           .map(function(u){ return {n:u.n, club:_g45UClub(u), mur:true}; });
 }
 async function _g45ButChercheDans(nom, club){
@@ -30698,6 +30698,9 @@ async function _g45ButClubEspn(aid){
   return {lg:lg, tid:tid, tname:tname};
 }
 async function _g45ButIdMur(p){
+  /* 20261120k (capture Wembanyama → « Aucune statistique disponible pour Guillem Victor ») : un joueur 🏀 / 🏈 / 🏒… du mur était cherché
+     dans les effectifs FOOT (nom « Victor » = Guillem Victor) et SA photo foot remplaçait celle du joueur. Recherche foot = joueurs ⚽ seulement. */
+  if(!_g45ButJoueurFoot(p.n)) return null;
   var ck='g45but_mur_'+_g45ClvNz(p.n);
   var c=null;
   try{ c=JSON.parse(localStorage.getItem(ck)||'null'); }catch(e){}
@@ -90905,3 +90908,50 @@ function _g45ScoreRedessiner() {
   window._g45TkPc = { poser: poser, lire: lire, RES: RES };   /* tests */
   setInterval(function () { try { poser(); } catch (e) {} }, 1200);
 })();
+
+/* ═══ 20261120k — JOUEURS NON FOOT DU MUR : plus de recherche FOOT (capture Antoine, Wembanyama « Aucune statistique pour Guillem Victor »,
+   console : teams/24/roster 400 et 403583.png 404 = photo foot de Guillem Victor posée sur la carte) ═══
+   1) _g45ButJoueurFoot(nom) : faux si l'entrée du mur est un joueur d'un autre sport (sport ≠ ⚽ ; sans sport = foot, comme avant).
+   2) Onglet Statistiques d'un joueur 🏀 / 🏈 / autre (le 🏒 garde sa fiche NHL) : message clair au lieu de la fiche foot.
+   3) Réparation UNE fois par démarrage : photo foot (headshots/soccer) collée sur un joueur non foot → retirée, cache g45but_mur_ effacé. */
+function _g45ButJoueurFoot(nom) {
+  try {
+    var U = (typeof state !== 'undefined' && state && state.u) ? state.u : [];
+    var u = U.filter(function (x) { return x && x.n === nom; })[0];
+    return !(u && u.type === 'joueur' && u.sport && u.sport !== '\u26bd');
+  } catch (e) { return true; }
+}
+window._g45ButJoueurFoot = _g45ButJoueurFoot;
+(function () {
+  try {
+    var p1 = window.g45MurJoueurPanel; if (!p1 || p1._g45k) return;
+    var nf = function () {
+      var nom = (typeof _currentTeam !== 'undefined' && _currentTeam) ? _currentTeam : '';
+      if (nom && !_g45ButJoueurFoot(nom) && !(typeof _g45NhlJEntree === 'function' && _g45NhlJEntree())) {
+        var el = document.getElementById('ip-joueur');
+        if (el) el.innerHTML = '<div style="font-size:14px;color:#c9d3ee;text-align:center;padding:16px;line-height:1.7;">Fiche statistiques pas encore faite pour ce sport.<br>'
+          + '<span style="font-size:13px;">Ses séries : 🏁 Cockpit → Séries individuelles · son pari : panneau « Ton pari ».</span></div>';
+        return Promise.resolve();
+      }
+      return p1.apply(this, arguments);
+    };
+    nf._g45k = 1; window.g45MurJoueurPanel = g45MurJoueurPanel = nf;
+  } catch (e) {}
+})();
+function _g45ButReparer() {
+  try {
+    var U = (typeof state !== 'undefined' && state && state.u) ? state.u : [], ch = 0;
+    U.forEach(function (u) {
+      if (!u || u.type !== 'joueur' || !u.sport || u.sport === '\u26bd') return;
+      try { localStorage.removeItem('g45but_mur_' + _g45ClvNz(u.n)); } catch (e) {}
+      if (u.logoUrl && /headshots\/soccer\//.test(u.logoUrl)) {
+        delete u.logoUrl; ch++;
+        try { if (typeof LOGOS !== 'undefined' && LOGOS[u.n] && /headshots\/soccer\//.test(LOGOS[u.n])) delete LOGOS[u.n]; } catch (e) {}
+      }
+    });
+    if (ch) { if (typeof save === 'function') save(); if (typeof render === 'function') render(); }
+    return ch;
+  } catch (e) { return -1; }
+}
+window._g45ButReparer = _g45ButReparer;
+setTimeout(_g45ButReparer, 4000);
