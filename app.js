@@ -90955,3 +90955,132 @@ function _g45ButReparer() {
 }
 window._g45ButReparer = _g45ButReparer;
 setTimeout(_g45ButReparer, 4000);
+
+/* ═══ 20261120l — 🏀 / 🏈 FICHE STATISTIQUES D'UN JOUEUR DU MUR (Antoine : « OUI » à la proposition de 20261120k, maquette Wembanyama
+   validée « OUI ») ═══
+   Onglet Statistiques d'un joueur NBA / NFL (le foot garde sa fiche ESPN, le 🏒 sa fiche NHL). TOUT vient des archives gones45-archives :
+   cotes/<basket/nba|football-us/nfl>/<saison>/joueurs.json (nom → n° ESPN), joueurs/<id>.json (m : [t, mois, n° match, n° club, stats, lignes
+   du book {type: [[ligne, cote over], [ligne, cote under]]}, h|a]) croisé avec equipes/<club>.json (m : [t, mois, n° match, h|a, [dom, ext],
+   type 1 prépa / 2 saison / 3 playoffs, prol., n° adv]) ; prépa retirée, matchs joués seulement (J).
+   Lignes NBA (vérifiées sur Wembanyama le 19/11) : 1 points, 2 passes, 3 rebonds, 4 3 pts, 90 pts + reb + passes. Contres : pas de ligne.
+   NFL : aucune ligne gardée → la 2e case compte les matchs « à N ou plus » (TD : 1 ; autres : sa moyenne arrondie), comme les catégories sans ligne.
+   Catégories NFL montrées seulement si le joueur en a (QB : yards / TD à la passe ; RB : yards course ; WR / TE : réceptions, yards…). */
+(function () {
+  try {
+    var ARC = 'https://raw.githubusercontent.com/gones45140/gones45-archives/main/cotes/', JM = {};
+    var DIR = { '🏀': 'basket/nba', '🏈': 'football-us/nfl' }, HS = { '🏀': 'nba', '🏈': 'nfl' };
+    var spDe = function (u) { var t = String((u && u.sport) || ''); return t.indexOf('🏀') >= 0 ? '🏀' : t.indexOf('🏈') >= 0 ? '🏈' : ''; };
+    var CAT = {
+      '🏀': [{ l: 'Points', c: 'PTS', k: ['PTS'], o: '1', u: 'points' }, { l: 'Rebonds', c: 'REB', k: ['REB'], o: '3', u: 'rebonds' }, { l: 'Passes', c: 'PAS', k: ['AST'], o: '2', u: 'passes' },
+        { l: 'Contres', c: 'CTR', k: ['CTR'], u: 'contres' }, { l: '3 pts', c: '3PT', k: ['3PT'], o: '4', u: 'paniers à 3 pts' }, { l: 'Pts+Reb+Pas', c: 'P+R+P', k: ['PTS', 'REB', 'AST'], o: '90', u: 'pts + reb + passes' }],
+      '🏈': [{ l: 'Yards passe', c: 'YDS', k: ['pY'], u: 'yards à la passe' }, { l: 'TD passe', c: 'TD', k: ['pTD'], u: 'TD à la passe', s1: 1 }, { l: 'Yards course', c: 'YDS', k: ['rY'], u: 'yards à la course' },
+        { l: 'Réceptions', c: 'REC', k: ['REC'], u: 'réceptions' }, { l: 'Yards réception', c: 'YDS', k: ['reY'], u: 'yards en réception' }, { l: 'TD marqués', c: 'TD', k: ['rTD', 'reTD'], u: 'TD marqués', s1: 1 }]
+    };
+    var esc = function (t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+    var nz = function (t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z]+/g, ' ').trim(); };
+    var jget = function (u) { if (!JM[u]) JM[u] = fetch(u + '?h=' + Math.floor(Date.now() / 36e5)).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }); return JM[u]; };
+    var f1 = function (v) { return (Math.round(v * 10) / 10).toLocaleString('fr-FR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }); };
+    var lg = function (v) { return String(v).replace('.', ','); };
+    function saisons() { var d = new Date(), y = d.getMonth() + 1 >= 7 ? d.getFullYear() : d.getFullYear() - 1, L = []; for (var a = y; a > y - 5; a--) L.push(a + '-' + String(a + 1).slice(2)); return L; }
+    var ST = window._g45UsJ = { cat: 0, sa: 0, tout: 0, nom: '', D: null };
+    /* Charge toutes les saisons gardées du joueur → D = { nom, club, id, sp, S: [{ s, L: [match…] }] } */
+    async function charger(u) {
+      var sp = spDe(u), base = ARC + DIR[sp] + '/', SA = saisons(), n0 = nz(u.n), fam = n0.split(' ').slice(-1)[0], id = '';
+      var IXJ = await Promise.all(SA.map(function (s) { return jget(base + s + '/joueurs.json'); }));
+      IXJ.forEach(function (J0) { if (id || !J0) return;
+        Object.keys(J0).forEach(function (k) { if (!id && nz(J0[k][0]) === n0) id = k; });
+        if (!id) { var C = Object.keys(J0).filter(function (k) { var x = nz(J0[k][0]); return x.split(' ').slice(-1)[0] === fam && x[0] === n0[0]; }); if (C.length === 1) id = C[0]; } });
+      if (!id) return { err: u.n + ' introuvable dans les archives ' + (sp === '🏀' ? 'NBA' : 'NFL') + '.' };
+      var IX = await Promise.all(SA.map(function (s) { return jget(base + s + '/equipes.json'); }));
+      var SJ = await Promise.all(SA.map(function (s) { return jget(base + s + '/joueurs/' + id + '.json'); })), S = [], nomJ = '', club = '';
+      for (var i = 0; i < SA.length; i++) {
+        var jj = SJ[i]; if (!jj || !jj.m || !jj.m.length) continue; nomJ = nomJ || jj.n;
+        var cl = {}; jj.m.forEach(function (r) { cl[r[3]] = 1; });
+        var EQ = {}, NM = {};
+        await Promise.all(Object.keys(cl).map(function (c) { return jget(base + SA[i] + '/equipes/' + c + '.json').then(function (e) { EQ[c] = {}; NM[c] = (e && e.nom) || ''; ((e && e.m) || []).forEach(function (r) { EQ[c][r[2]] = r; }); }); }));
+        var ix = IX[i] || {}, L = [];
+        jj.m.forEach(function (r) { var st = r[4], e = EQ[r[3]] && EQ[r[3]][r[2]]; if (!st || !st.J || !e || !(e[5] >= 2)) return;
+          var dom = (r[6] || e[3]) === 'h', o = String(e[7] || '');
+          L.push({ t: +r[0] || 0, dom: dom, adv: (ix[o] && ix[o][0]) || '', sc: e[4] ? (dom ? e[4][0] + ' – ' + e[4][1] : e[4][1] + ' – ' + e[4][0]) : '',
+            g: e[4] ? (dom ? e[4][0] > e[4][1] : e[4][1] > e[4][0]) : null, st: st, o: r[5] || {}, po: e[5] === 3 });
+        });
+        L.sort(function (a, b) { return b.t - a.t; });   /* le plus récent d'abord */
+        if (!L.length) continue;
+        if (!club) { var dj = jj.m.filter(function (r) { return r[4]; }).sort(function (a, b) { return a[0] - b[0]; }).slice(-1)[0]; club = NM[jj.eq] || (dj && NM[dj[3]]) || ''; }
+        S.push({ s: SA[i], L: L });
+      }
+      if (!S.length) return { err: 'Aucun match joué de ' + u.n + ' dans les archives.' };
+      return { nom: nomJ || u.n, club: club, id: id, sp: sp, S: S };
+    }
+    var val = function (c, st) { return c.k.reduce(function (a, k) { return a + (+st[k] || 0); }, 0); };
+    function dessiner(el, u) {
+      var D = ST.D; if (!el || !D) return;
+      var sp = D.sp, TOT = D.S.reduce(function (a, s) { return a + s.L.length; }, 0);
+      /* catégorie montrée si le joueur en fait dans au moins 1 match sur 5 (QB : pas de « Réceptions » pour une passe déviée rattrapée) ; NBA : toutes */
+      var CS = CAT[sp].filter(function (c) { var n = 0; D.S.forEach(function (s) { s.L.forEach(function (x) { if (val(c, x.st) > 0) n++; }); }); return sp === '🏀' ? n > 0 : n * 5 >= TOT; });
+      if (!CS.length) CS = CAT[sp].slice(0, 1);
+      if (ST.cat >= CS.length) ST.cat = 0; if (ST.sa >= D.S.length) ST.sa = 0;
+      var c = CS[ST.cat], Sx = D.S[ST.sa], L = Sx.L, V = L.map(function (x) { return val(c, x.st); });
+      var moy = function (A) { return A.length ? A.reduce(function (a, b) { return a + b; }, 0) / A.length : 0; };
+      var m = moy(V), mD = moy(L.filter(function (x) { return x.dom; }).map(function (x) { return val(c, x.st); })), mE = moy(L.filter(function (x) { return !x.dom; }).map(function (x) { return val(c, x.st); }));
+      var seuil = c.s1 || Math.max(1, Math.round(m)), ligne = function (x) { var q = c.o && x.o[c.o]; return q && q[0] && q[0][0] != null ? +q[0][0] : null; };
+      var okDe = function (x) { var v = val(c, x.st), li = ligne(x); return li != null ? v > li : (c.o ? null : v >= seuil); };
+      var BG = 'font-size:34px;display:block;', SM = 'font-size:14px;color:#c9d3ee;', avL = L.filter(function (x) { return ligne(x) != null; }), b2;
+      if (c.o && avL.length) { var ok = avL.filter(function (x) { return val(c, x.st) > ligne(x); }).length;
+        b2 = '<b style="' + BG + 'color:' + (ok * 2 >= avL.length ? '#2ecc71' : '#ff5a5a') + ';">' + ok + ' / ' + avL.length + '</b><small style="' + SM + '">au-dessus de la ligne du book (' + Math.round(ok * 100 / avL.length) + ' %)</small>'; }
+      else { var ok2 = V.filter(function (v) { return v >= seuil; }).length;
+        b2 = '<b style="' + BG + 'color:' + (ok2 * 2 >= V.length ? '#2ecc71' : '#ff5a5a') + ';">' + ok2 + ' / ' + V.length + '</b><small style="' + SM + '">matchs à ' + seuil + ' ' + esc(c.u) + ' ou plus (' + Math.round(ok2 * 100 / V.length) + ' %)' + (c.o ? ' · pas de ligne du book gardée' : '') + '</small>'; }
+      var min = moy(L.map(function (x) { return +x.st.MIN || 0; }));
+      var ban = ''; try { ban = (typeof g45VisuelCache === 'function' && D.club && g45VisuelCache(D.club)) || (typeof _g45ClubVis === 'function' && _g45ClubVis(u)) || ''; } catch (e) {}
+      var ph = 'https://a.espncdn.com/i/headshots/' + HS[sp] + '/players/full/' + D.id + '.png';
+      var chip = function (t, on, js) { return '<span onclick="' + js + '" style="cursor:pointer;padding:7px 12px;border-radius:9px;background:' + (on ? '#2f6bff' : '#16224a') + ';font-size:14px;font-weight:700;color:#fff;">' + esc(t) + '</span>'; };
+      var box = 'background:#121c3d;border-radius:12px;padding:12px;text-align:center;';
+      var N = ST.tout ? L.length : Math.min(8, L.length);
+      var rows = L.slice(0, N).map(function (x) { var d = new Date(x.t), li = ligne(x), ok = okDe(x);
+        return '<div style="display:grid;grid-template-columns:62px minmax(0,1fr) 92px 46px 56px 30px;gap:6px;padding:6px 4px;border-bottom:1px solid #1c2747;font-size:14px;align-items:center;color:#fff;">'
+          + '<span>' + ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2) + '</span>'
+          + '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (x.dom ? '🏠' : '✈️') + ' ' + esc(x.adv) + (x.po ? ' · PO' : '') + '</span>'
+          + '<span style="color:' + (x.g == null ? '#fff' : x.g ? '#2ecc71' : '#ff5a5a') + ';">' + esc(x.sc) + '</span><b>' + val(c, x.st) + '</b>'
+          + '<span>' + (li != null ? lg(li) : c.o ? '—' : '≥ ' + seuil) + '</span><span>' + (ok == null ? '' : ok ? '✅' : '❌') + '</span></div>'; }).join('');
+      el.innerHTML = '<div style="color:#fff;">'
+        + '<div style="position:relative;border-radius:14px;overflow:hidden;height:150px;background:' + (ban ? 'url(' + esc(ban) + ') center/cover' : 'linear-gradient(120deg,#1b2a55,#24386e)') + ';">'
+        + '<div style="position:absolute;left:0;right:0;bottom:0;background:rgba(5,10,25,.82);padding:12px 16px 12px 128px;">'
+        + '<div style="font-size:22px;font-weight:800;">' + sp + ' ' + esc(D.nom) + '</div><div style="font-size:14px;color:#c9d3ee;margin-top:3px;">' + esc(D.club) + ' · ' + L.length + ' matchs' + (min ? ' · ' + f1(min) + ' min / match' : '') + '</div></div>'
+        + '<img src="' + ph + '" onerror="this.style.display=\'none\'" style="position:absolute;left:10px;bottom:0;height:140px;max-width:120px;object-fit:contain;"></div>'
+        + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin:14px 0 10px;">' + CS.map(function (x, i) { return chip(x.l, i === ST.cat, '_g45UsJ.cat=' + i + ';g45UsJDessiner()'); }).join('') + '</div>'
+        + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">' + D.S.map(function (s, i) { return '<span onclick="_g45UsJ.sa=' + i + ';_g45UsJ.tout=0;g45UsJDessiner()" style="cursor:pointer;padding:5px 10px;border-radius:8px;background:' + (i === ST.sa ? '#26407e' : '#121c3d') + ';font-size:13px;">' + s.s + '</span>'; }).join('') + '</div>'
+        + '<div style="display:flex;gap:12px;margin-bottom:10px;"><div style="flex:1;' + box + '"><b style="font-size:34px;display:block;">' + f1(m) + '</b><small style="font-size:14px;color:#c9d3ee;">' + esc(c.u) + ' par match</small></div>'
+        + '<div style="flex:1;' + box + '">' + b2 + '</div></div>'
+        + '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px;">'
+        + [['🏠 Domicile', f1(mD)], ['✈️ Extérieur', f1(mE)], ['5 derniers', f1(moy(V.slice(0, 5)))], ['Record', V.length ? Math.max.apply(null, V) : 0]].map(function (q) {
+          return '<div style="background:#121c3d;border-radius:10px;padding:9px;text-align:center;font-size:13px;color:#c9d3ee;">' + q[0] + '<b style="display:block;font-size:20px;color:#fff;">' + q[1] + '</b></div>'; }).join('') + '</div>'
+        + '<div style="display:grid;grid-template-columns:62px minmax(0,1fr) 92px 46px 56px 30px;gap:6px;padding:6px 4px;border-bottom:1px solid #1c2747;font-size:13px;font-weight:700;color:#8aa0ff;"><span>Date</span><span>Adversaire</span><span>Score</span><span>' + esc(c.c) + '</span><span>Ligne</span><span></span></div>'
+        + rows
+        + (L.length > 8 ? '<div onclick="_g45UsJ.tout=_g45UsJ.tout?0:1;g45UsJDessiner()" style="cursor:pointer;margin-top:10px;display:inline-block;padding:8px 14px;border-radius:9px;background:#16224a;font-size:14px;font-weight:700;">' + (ST.tout ? '▲ Moins de matchs' : '📋 Voir tous ses matchs (' + L.length + ')') + '</div>' : '')
+        + '</div>';
+    }
+    window.g45UsJDessiner = function () { try { dessiner(document.getElementById('ip-joueur'), ST.u); } catch (e) {} };
+    window.g45UsJoueurPanel = async function (u) {
+      var el = document.getElementById('ip-joueur'); if (!el || !u || !spDe(u)) return;
+      if (ST.nom !== u.n) { ST.nom = u.n; ST.cat = 0; ST.sa = 0; ST.tout = 0; ST.D = null; }
+      ST.u = u;
+      if (!ST.D) {
+        el.innerHTML = '<div style="font-size:14px;color:#c9d3ee;text-align:center;padding:14px;">⏳ Lecture des archives…</div>';
+        var R = null; try { R = await charger(u); } catch (e) { R = { err: 'Archives indisponibles.' }; }
+        if (ST.nom !== u.n) return;
+        if (R.err) { el.innerHTML = '<div style="font-size:14px;color:#c9d3ee;text-align:center;padding:16px;line-height:1.7;">' + esc(R.err) + '</div>'; return; }
+        ST.D = R;
+      }
+      dessiner(el, u);
+    };
+    /* branchement : le message « pas encore faite » de 20261120k ne reste que pour les autres sports */
+    var p2 = window.g45MurJoueurPanel; if (!p2 || p2._g45l) return;
+    var nf = function () {
+      var nom = (typeof _currentTeam !== 'undefined' && _currentTeam) ? _currentTeam : '';
+      var U = (typeof state !== 'undefined' && state && state.u) ? state.u : [], u = U.filter(function (x) { return x && x.n === nom; })[0];
+      if (u && u.type === 'joueur' && spDe(u)) return window.g45UsJoueurPanel(u);
+      return p2.apply(this, arguments);
+    };
+    nf._g45l = 1; window.g45MurJoueurPanel = g45MurJoueurPanel = nf;
+  } catch (e) {}
+})();
