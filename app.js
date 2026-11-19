@@ -89556,6 +89556,23 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     window.g45CjMettre(k, o, true);
   };
   window._g45CjmT = M;   /* tests */
+  /* 20261120u (capture Calculatrice Minnesota – Knicks : « dès que je mets Minnesota domicile il met Knicks domicile, quand je mets Knicks
+     extérieur il met Minnesota extérieur ») : les boutons 🏠 / ✈️ du panneau de critères changeaient le lieu de l'équipe de l'ONGLET affiché
+     (Knicks sur l'onglet Knicks…), pas celle à laquelle Antoine pensait. Dans « Cote juste — match », le lieu vient du MATCH : équipe 🏠 =
+     domicile, équipe ✈️ = extérieur ; un 🏠 / ✈️ / Tous touché dans CE panneau est ramené au lieu du match (toast). Ailleurs, rien ne change. */
+  (function () {
+    var g0 = window.g45CrSet; if (typeof g0 !== 'function' || g0._g45u) return;
+    var nf = function (k, v) {
+      try {
+        var z = document.getElementById('g45-cjcr'), tc = document.getElementById('t-calc'), x = M.h && M.a ? x2(M.on ? M.a : M.h) : null;
+        var ici = z && tc && tc.getClientRects().length && x && window._g45CrS && window._g45CrS.nom === x[4];   /* panneau de la calculatrice (même replié) */
+        if (k === 'lieu' && ici) { var bon = M.on ? 'ext' : 'dom';
+          if (v !== bon) { try { if (typeof toast === 'function') toast((x ? x[4] : 'Cette équipe') + (bon === 'dom' ? ' joue à 🏠 domicile' : ' joue à ✈️ l\'extérieur') + ' dans ce match'); } catch (e) {} v = bon; } }
+      } catch (e) {}
+      return g0.call(this, k, v);
+    };
+    nf._g45u = 1; window.g45CrSet = nf;
+  })();
   setInterval(function () { var t = document.getElementById('t-calc'); if (t && document.getElementById('g45-cj') && !document.getElementById('g45-cjm')) dessiner(); }, 1500);
 })();
 
