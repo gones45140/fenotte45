@@ -79242,13 +79242,10 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
      joueur ou équipe) } — gones les calcule (carte state.u, _g45JoueurVisLire, _g45UClub, g45LogoUrlDe) et les PUBLIE (b.ph / b.lo) pour bet45. */
   function ckVis(b) {
     var r = { ph: /^https:\/\//.test(b.ph || '') ? b.ph : '', lo: /^https:\/\//.test(b.lo || '') ? b.lo : '' }; if (ckDist() || (r.ph && r.lo)) return r;
-    try {
-      var u = ((typeof state !== 'undefined' && state.u) || []).filter(function (x) { return x && x.n === b.n; })[0] || null, jo = !!(u && u.type === 'joueur');
-      var lg = function (n) { var l = n && typeof g45LogoUrlDe === 'function' ? g45LogoUrlDe(n) : ''; return /^https?:\/\//.test(l || '') ? String(l).replace(/^http:/, 'https:') : ''; };
-      if (jo) { var v = typeof _g45JoueurVisLire === 'function' ? _g45JoueurVisLire(b.n, b.sport || u.sport) : null; if (!r.ph && v) r.ph = String(v.cut || v.thumb || '').replace(/^http:/, 'https:');
-        if (!r.lo) r.lo = lg(typeof _g45UClub === 'function' ? _g45UClub(u) : u.club); }
-      else if (!r.lo) r.lo = lg(b.n) || (/^https?:\/\//.test((u && u.logoUrl) || '') ? String(u.logoUrl).replace(/^http:/, 'https:') : '');
-    } catch (e) {}
+    /* 20261119p (capture : logos d'équipe OK, AUCUNE photo de joueur) : b.sport est un emoji (🏒) → mauvaise clé de _g45JoueurVisLire. On prend
+       ckFond(n), déjà utilisé par les cartes du Cockpit (photo détourée cut + logo du club, cartes retirées du mur comprises). */
+    try { var F = ckFond(b.n) || {}, hs = function (x) { return /^https?:\/\//.test(x || '') ? String(x).replace(/^http:/, 'https:') : ''; };
+      if (!r.ph) r.ph = hs(F.cut); if (!r.lo) r.lo = hs(F.logo) || (r.ph ? '' : hs(F.img)); } catch (e) {}
     return r;
   }
   window._g45CkVis = ckVis;   /* tests */
