@@ -3300,6 +3300,9 @@ function render(){
          DETOURE est pose a droite sur le degrade (cas B) — un detoure en
          `cover` serait agrandi jusqu'a ne montrer qu'un fragment de visage. */
       var _jv=(!_vis && typeof _g45JoueurVisLire==='function')?_g45JoueurVisLire(u.n):null;
+      /* 20261120j : joueur → bannière de SON CLUB derrière sa photo détourée (le fanart du joueur ne passe plus devant) */
+      var _clubV=(!_vis && typeof _g45ClubVis==='function')?_g45ClubVis(u):'', _jCut='';
+      if(_clubV && _jv && (_jv.cut||_jv.thumb)) _jv=Object.assign({},_jv,{fan:''});
       if(!_vis && _jv && _jv.fan) _vis=_jv.fan;
       if(!_vis && _jv && (_jv.cut||_jv.thumb)){
         _couche='<img src="'+(_jv.cut||_jv.thumb)+'" alt="" loading="lazy" data-alt="'+((typeof _g45JoueurVisRepli==='function')?_g45JoueurVisRepli(_jv):'')+'" onerror="_g45ImgRepli(this)" '
@@ -3310,6 +3313,7 @@ function render(){
           +'object-fit:contain;object-position:bottom center;pointer-events:none;'
           +'filter:drop-shadow(0 6px 14px rgba(0,0,0,.55));">';
       }
+      if(_clubV && _couche && !_vis){ _jCut=_couche; _vis=_clubV; }   /* 20261120j : la photo est remise par-dessus la bannière plus bas */
       /* 20261016x (Canucks : bannière TheSportsDB illisible, choix 1 d'Antoine) : club listé dans window._G45_FOND_LOGO → LOGO entier au centre. */
       var _fl=false; try{ if(window._g45FondLogo && window._g45FondLogo(u.n)){ var _flv=window._G45_FOND_LOGO[_g45SgNorm(u.n)], _flu=(typeof _flv==='string'?_flv:'')||((typeof g45LogoUrlDe==='function')?g45LogoUrlDe(u.n):'')||u.logoUrl||''; if(_flu){ _vis=_flu; _fl=true; } } }catch(e){}
       if(_vis){
@@ -3327,6 +3331,7 @@ function render(){
             +'object-fit:contain;opacity:'+(_fl?'.9':'.6')+';pointer-events:none;">';
         }
       }
+      if(_jCut) _couche+=_jCut;   /* 20261120j : photo du joueur par-dessus la bannière de son club */
       /* Logo nettement plus present : 86 px a 18 %. Une ligne du mur faisait
          10 px de haut de matiere pour 100 % de largeur vide — l'effet « salon
          Discord » qu'Antoine veut casser. */
@@ -11767,6 +11772,9 @@ function render(){
          DETOURE est pose a droite sur le degrade (cas B) — un detoure en
          `cover` serait agrandi jusqu'a ne montrer qu'un fragment de visage. */
       var _jv=(!_vis && typeof _g45JoueurVisLire==='function')?_g45JoueurVisLire(u.n):null;
+      /* 20261120j : joueur → bannière de SON CLUB derrière sa photo détourée (le fanart du joueur ne passe plus devant) */
+      var _clubV=(!_vis && typeof _g45ClubVis==='function')?_g45ClubVis(u):'', _jCut='';
+      if(_clubV && _jv && (_jv.cut||_jv.thumb)) _jv=Object.assign({},_jv,{fan:''});
       if(!_vis && _jv && _jv.fan) _vis=_jv.fan;
       if(!_vis && _jv && (_jv.cut||_jv.thumb)){
         _couche='<img src="'+(_jv.cut||_jv.thumb)+'" alt="" loading="lazy" data-alt="'+((typeof _g45JoueurVisRepli==='function')?_g45JoueurVisRepli(_jv):'')+'" onerror="_g45ImgRepli(this)" '
@@ -11777,6 +11785,7 @@ function render(){
           +'object-fit:contain;object-position:bottom center;pointer-events:none;'
           +'filter:drop-shadow(0 6px 14px rgba(0,0,0,.55));">';
       }
+      if(_clubV && _couche && !_vis){ _jCut=_couche; _vis=_clubV; }   /* 20261120j : la photo est remise par-dessus la bannière plus bas */
       /* 20261016x (Canucks : bannière TheSportsDB illisible, choix 1 d'Antoine) : club listé dans window._G45_FOND_LOGO → LOGO entier au centre. */
       var _fl=false; try{ if(window._g45FondLogo && window._g45FondLogo(u.n)){ var _flv=window._G45_FOND_LOGO[_g45SgNorm(u.n)], _flu=(typeof _flv==='string'?_flv:'')||((typeof g45LogoUrlDe==='function')?g45LogoUrlDe(u.n):'')||u.logoUrl||''; if(_flu){ _vis=_flu; _fl=true; } } }catch(e){}
       if(_vis){
@@ -11794,6 +11803,7 @@ function render(){
             +'object-fit:contain;opacity:'+(_fl?'.9':'.6')+';pointer-events:none;">';
         }
       }
+      if(_jCut) _couche+=_jCut;   /* 20261120j : photo du joueur par-dessus la bannière de son club */
       /* Logo nettement plus present : 86 px a 18 %. Une ligne du mur faisait
          10 px de haut de matiere pour 100 % de largeur vide — l'effet « salon
          Discord » qu'Antoine veut casser. */
@@ -44082,7 +44092,7 @@ window.g45F1Session=g45F1Session;
    et les données utilisateur n'étaient JAMAIS écrites — l'ajout apparaissait à l'écran puis
    disparaissait au rechargement. Ce n'était ni la synchro GitHub, ni Dropbox, ni le cache
    du navigateur. Tous ces caches sont reconstructibles : ils cèdent la place aux données. */
-var _G45_CACHE_PREFIXES=['g45nhlGA2_',/* 20/11 : moyennes « encaissés » par ligue / saison / lieu (panneau Ton pari, joueurs) */'g45age1|',/* 06/11 : âge + pays des joueurs */'g45reg4f_',/* 27/10 : journaux foot des saisons finies */'g45mlbk1_',/* 27/10 : journaux strikeouts MLB */'g45reg4n_',/* 27/10 : journaux NFL des saisons finies */'g45reg4_',/* 27/10 : journaux NHL des saisons finies (4 saisons) */'g45nflyd1_',/* 27/10 : journaux yards NFL */'g45f1cr1_',/* 27/10 : résultats F1 Jolpica (critères 4 saisons) */'g45nfltd1_',/* 22/10 : TD / FG NFL par match */'g45cr1u_','g45cr3v_',/* 03/11 : g45cr3u_ → v (phase finale rugby) ; 22/10 : critères US avec n° de match */'g45cr1e_','g45crf1_','g45crid1_',/* 21/10 : feuilles de match des critères */'g45cr3_','g45cr1_',/* 14/10 : critères sur 4 saisons */'g45agoa2_',/* 11/10 : cotes Agenda (The Odds API) */'g45reg1_',/* 08/10 : régularité buteurs NHL */'g45bb1_','g45bbst1_','g45bbld1_','g45bbf1_',/* 03/10 : Pro A be-basketball */'g45es1_',/* 01/10 : stats Euroleague */'g45kbo1_',/* 01/10 : KBO (mykbostats) */'g45t14lg1',/* 01/10 : logos Top 14 (LNR) */'g45pd2_',/* 01/10 : Pro D2 (LNR) */'g45t14sq1_',/* 01/10 : effectifs Top 14 (LNR) */'g45nrlm1_','g45nrldr1_',/* 01/10 : feuilles et calendriers NRL */'g45nrlsq1_',/* 01/10 : effectifs NRL */'g45nrlst2_',/* 01/10 : classements NRL */'g45proacid1_',/* 30/09 : numéros LNB par saison */'g45proast1_',/* 30/09 : stats Pro A */'g45proa1_',/* 30/09 : Pro A par journée */'g45el1_',/* 30/09 : Euroleague (compact) */'g45buts1_',/* 30/09 : buts en action (match fini) */'g45prad1_','g45vsj1_','g45vse1_',/* 30/09 : radars joueurs */'g45ia1_',/* 29/09 : avis IA gardés 6 h */'g45_mmeta2_','g45_mmeta1_','g45_tennis4_','g45_tennis3_',/* 16/09 : meta de match (domicile/lieu) et score tennis, reconstructibles */'g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dcf_','g45dc_',
+var _G45_CACHE_PREFIXES=['g45ban1',/* 20/11 : archive des bannières (robot) */'g45nhlGA2_',/* 20/11 : moyennes « encaissés » par ligue / saison / lieu (panneau Ton pari, joueurs) */'g45age1|',/* 06/11 : âge + pays des joueurs */'g45reg4f_',/* 27/10 : journaux foot des saisons finies */'g45mlbk1_',/* 27/10 : journaux strikeouts MLB */'g45reg4n_',/* 27/10 : journaux NFL des saisons finies */'g45reg4_',/* 27/10 : journaux NHL des saisons finies (4 saisons) */'g45nflyd1_',/* 27/10 : journaux yards NFL */'g45f1cr1_',/* 27/10 : résultats F1 Jolpica (critères 4 saisons) */'g45nfltd1_',/* 22/10 : TD / FG NFL par match */'g45cr1u_','g45cr3v_',/* 03/11 : g45cr3u_ → v (phase finale rugby) ; 22/10 : critères US avec n° de match */'g45cr1e_','g45crf1_','g45crid1_',/* 21/10 : feuilles de match des critères */'g45cr3_','g45cr1_',/* 14/10 : critères sur 4 saisons */'g45agoa2_',/* 11/10 : cotes Agenda (The Odds API) */'g45reg1_',/* 08/10 : régularité buteurs NHL */'g45bb1_','g45bbst1_','g45bbld1_','g45bbf1_',/* 03/10 : Pro A be-basketball */'g45es1_',/* 01/10 : stats Euroleague */'g45kbo1_',/* 01/10 : KBO (mykbostats) */'g45t14lg1',/* 01/10 : logos Top 14 (LNR) */'g45pd2_',/* 01/10 : Pro D2 (LNR) */'g45t14sq1_',/* 01/10 : effectifs Top 14 (LNR) */'g45nrlm1_','g45nrldr1_',/* 01/10 : feuilles et calendriers NRL */'g45nrlsq1_',/* 01/10 : effectifs NRL */'g45nrlst2_',/* 01/10 : classements NRL */'g45proacid1_',/* 30/09 : numéros LNB par saison */'g45proast1_',/* 30/09 : stats Pro A */'g45proa1_',/* 30/09 : Pro A par journée */'g45el1_',/* 30/09 : Euroleague (compact) */'g45buts1_',/* 30/09 : buts en action (match fini) */'g45prad1_','g45vsj1_','g45vse1_',/* 30/09 : radars joueurs */'g45ia1_',/* 29/09 : avis IA gardés 6 h */'g45_mmeta2_','g45_mmeta1_','g45_tennis4_','g45_tennis3_',/* 16/09 : meta de match (domicile/lieu) et score tennis, reconstructibles */'g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dcf_','g45dc_',
   'g45trv3_','g45trv2_','g45trOdds2_',/* 13/10 : cotes The Odds API par marchés */'g45tr_','g45but_st_','g45butL_','g45butA_','g45but_mur_',
   '_g45clv','g45clv_snaps','g45_saisons_cache_v3_','g45_saisons_cache_v2_',
   /* Ajoutes le 20/08 : ces caches, tous reconstructibles, n'etaient PAS declares
@@ -58821,10 +58831,47 @@ function g45VisuelCache(nom) {
   try {
     if (!nom) return '';
     return (typeof _g45ImgPersoLire === 'function' ? (_g45ImgPersoLire(nom) || '') : '')
-        || (typeof _g45FanLire === 'function' ? (_g45FanLire(nom) || '') : '');
+        || (typeof _g45FanLire === 'function' ? (_g45FanLire(nom) || '') : '')
+        || _g45BanArch(nom);   /* 20261120i : archive des bannières (robot gones45-archives) */
   } catch (e) { return ''; }
 }
 window.g45VisuelCache = g45VisuelCache;
+/* ═══ 20261120i — 🖼️ ARCHIVE DES BANNIÈRES (Antoine : « impossible de les archiver les bannières ? » → « OUI ») : le robot bannieres.yml de
+   gones45-archives range l'ADRESSE de la bannière TheSportsDB de chaque club archivé (bannieres/bannieres.json, E["sp|id"] = { n, u }).
+   Lu une fois (gardé 1 jour dans localStorage g45ban1), index par nom normalisé ; à l'arrivée, un seul redessin. Lecture en mémoire
+   seulement : aucune recherche lancée à l'affichage. ═══ */
+var _G45_BAN = { m: null, en: 0 };
+function _g45BanArch(nom) {
+  try {
+    if (!_G45_BAN.m && !_G45_BAN.en) {
+      var c0 = null; try { c0 = JSON.parse(localStorage.getItem('g45ban1') || 'null'); } catch (e) {}
+      if (c0 && c0.m && Date.now() - c0.t < 864e5) _G45_BAN.m = c0.m;
+      else { _G45_BAN.en = 1;
+        fetch('https://raw.githubusercontent.com/gones45140/gones45-archives/main/bannieres/bannieres.json?h=' + Math.floor(Date.now() / 36e5)).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+          var m = {}; if (j && j.E) Object.keys(j.E).forEach(function (k) { var e = j.E[k]; if (e && e.u && e.n) m[_g45SgNorm(e.n)] = e.u; });
+          _G45_BAN.m = m; if (j && j.E) { try { localStorage.setItem('g45ban1', JSON.stringify({ t: Date.now(), m: m })); } catch (e) {} }
+          if (Object.keys(m).length) { try { if (typeof render === 'function') render(); } catch (e) {} }
+        }).catch(function () { _G45_BAN.m = {}; }); }
+    }
+    var M = _G45_BAN.m; if (!M || !nom) return '';
+    var k = _g45SgNorm(nom); if (M[k]) return M[k];
+    var ks = Object.keys(M).filter(function (x) { return k.length >= 6 && x.length >= 6 && (x.indexOf(k) >= 0 || k.indexOf(x) >= 0); });
+    return ks.length === 1 ? M[ks[0]] : '';
+  } catch (e) { return ''; }
+}
+window._g45BanArch = _g45BanArch;
+/* 20261120j (capture mur → Hockey → Joueurs, Draisaitl sur fond bleu flou : « là aussi on pourrait mettre le fond du club ») : bannière du CLUB
+   d'un joueur (🏟️ de la carte, sinon carte d'équipe du mur au nom proche), lecture en mémoire seulement. Sert au mur (2 copies du rendu). */
+function _g45ClubVis(u) {
+  try {
+    if (!u || u.type !== 'joueur') return '';
+    var cl = typeof _g45UClub === 'function' ? _g45UClub(u) : (u.club || ''); if (!cl) return '';
+    var CS = [cl]; ((typeof state !== 'undefined' && state.u) || []).forEach(function (x) { if (x && x.type !== 'joueur' && x.n && x.n !== cl && typeof _g45BandMeme === 'function' && _g45BandMeme(x.n, cl)) CS.push(x.n); });
+    for (var i = 0; i < CS.length; i++) { var v = g45VisuelCache(CS[i]); if (v) return v; }
+    return '';
+  } catch (e) { return ''; }
+}
+window._g45ClubVis = _g45ClubVis;
 
 function g45CoulPaire(srcDom, srcExt) {
   var a = g45CoulEquipe(srcDom, '#4d84ff');
