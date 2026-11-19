@@ -91000,7 +91000,7 @@ setTimeout(_g45ButReparer, 4000);
       var car = await jget(ARC + 'foot/joueurs/' + id + '.json'), E = (car && car.c) || []; if (!E.length) return { err: 'Aucune saison de ' + u.n + ' dans les archives.' };
       var dern = E.filter(function (e) { return FGR(e[0]) === 'ch'; }).sort(function (a, b) { return b[6] - a[6]; })[0];
       var comps = ['ch', 'c1', 'eu', 'sel'].filter(function (g) { return E.some(function (e) { return FGR(e[0]) === g; }); }); comps.push('tout');
-      return { nom: (car && car.n) || u.n, club: dern ? dern[3] : (IXF[id][1] || ''), id: id, sp: '⚽', E: E, comps: comps, comp: comps[0], lgCh: dern ? dern[0] : '', SG: {} };
+      return { nom: (car && car.n) || u.n, club: dern ? dern[3] : (IXF[id][1] || ''), id: id, sp: '⚽', E: E, comps: comps, comp: comps[0], lgCh: dern ? dern[0] : '', tid: dern ? String(dern[2]) : '', SG: {} };
     }
     async function chargerComp(D, g) {
       if (D.SG[g]) return D.SG[g];
@@ -91011,7 +91011,7 @@ setTimeout(_g45ButReparer, 4000);
         var EQ = {}; await Promise.all(Object.keys(cl).map(function (c) { return jget(base + 'equipes/' + c + '.json').then(function (q) { EQ[c] = {}; if (q && q.nom && e[2] === c && FGR(e[0]) === 'ch' && e === (D.E.filter(function (z) { return FGR(z[0]) === 'ch'; }).sort(function (a, b) { return b[6] - a[6]; })[0])) cn = q.nom; ((q && q.m) || []).forEach(function (rr) { EQ[c][rr[2]] = rr; }); }); }));
         jj.m.forEach(function (rr) { var st = rr[4], q = EQ[rr[3]] && EQ[rr[3]][rr[2]]; if (!st || !(st.TIT || st.REM) || !q || vu[rr[2]]) return; vu[rr[2]] = 1;
           var dom = (rr[6] || q[3]) === 'h', o = String(q[7] || ''), sc = q[4];
-          ALL.push({ t: +rr[0] || 0, dom: dom, adv: (ix[o] && ix[o][0]) || '', sc: sc ? (dom ? sc[0] + ' – ' + sc[1] : sc[1] + ' – ' + sc[0]) : '',
+          ALL.push({ t: +rr[0] || 0, dom: dom, aid: o, adv: (ix[o] && ix[o][0]) || '', sc: sc ? (dom ? sc[0] + ' – ' + sc[1] : sc[1] + ' – ' + sc[0]) : '',
             g: sc && sc[0] !== sc[1] ? (dom ? sc[0] > sc[1] : sc[1] > sc[0]) : null, st: st, o: rr[5] || {}, lg: e[0] }); });
       }));
       if (cn) D.club = cn;
@@ -91055,7 +91055,7 @@ setTimeout(_g45ButReparer, 4000);
         if (!id) { var C = Object.keys(J0).filter(function (k) { var x = nz(J0[k][0]); return x.split(' ').slice(-1)[0] === fam && x[0] === n0[0]; }); if (C.length === 1) id = C[0]; } });
       if (!id) return { err: u.n + ' introuvable dans les archives ' + (sp === '🏀' ? 'NBA' : 'NFL') + '.' };
       var IX = await Promise.all(SA.map(function (s) { return jget(base + s + '/equipes.json'); }));
-      var SJ = await Promise.all(SA.map(function (s) { return jget(base + s + '/joueurs/' + id + '.json'); })), S = [], nomJ = '', club = '';
+      var SJ = await Promise.all(SA.map(function (s) { return jget(base + s + '/joueurs/' + id + '.json'); })), S = [], nomJ = '', club = '', tid = '';
       for (var i = 0; i < SA.length; i++) {
         var jj = SJ[i]; if (!jj || !jj.m || !jj.m.length) continue; nomJ = nomJ || jj.n;
         var cl = {}; jj.m.forEach(function (r) { cl[r[3]] = 1; });
@@ -91064,16 +91064,39 @@ setTimeout(_g45ButReparer, 4000);
         var ix = IX[i] || {}, L = [];
         jj.m.forEach(function (r) { var st = r[4], e = EQ[r[3]] && EQ[r[3]][r[2]]; if (!st || !st.J || !e || !(e[5] >= 2)) return;
           var dom = (r[6] || e[3]) === 'h', o = String(e[7] || '');
-          L.push({ t: +r[0] || 0, dom: dom, adv: (ix[o] && ix[o][0]) || '', sc: e[4] ? (dom ? e[4][0] + ' – ' + e[4][1] : e[4][1] + ' – ' + e[4][0]) : '',
+          L.push({ t: +r[0] || 0, dom: dom, aid: o, adv: (ix[o] && ix[o][0]) || '', sc: e[4] ? (dom ? e[4][0] + ' – ' + e[4][1] : e[4][1] + ' – ' + e[4][0]) : '',
             g: e[4] ? (dom ? e[4][0] > e[4][1] : e[4][1] > e[4][0]) : null, st: st, o: r[5] || {}, po: e[5] === 3 });
         });
         L.sort(function (a, b) { return b.t - a.t; });   /* le plus récent d'abord */
         if (!L.length) continue;
-        if (!club) { var dj = jj.m.filter(function (r) { return r[4]; }).sort(function (a, b) { return a[0] - b[0]; }).slice(-1)[0]; club = NM[jj.eq] || (dj && NM[dj[3]]) || ''; }
+        if (!club) { var dj = jj.m.filter(function (r) { return r[4]; }).sort(function (a, b) { return a[0] - b[0]; }).slice(-1)[0]; club = NM[jj.eq] || (dj && NM[dj[3]]) || ''; tid = NM[jj.eq] ? jj.eq : (dj && dj[3]) || ''; }
         S.push({ s: SA[i], L: L });
       }
       if (!S.length) return { err: 'Aucun match joué de ' + u.n + ' dans les archives.' };
-      return { nom: nomJ || u.n, club: club, id: id, sp: sp, S: S };
+      return { nom: nomJ || u.n, club: club, id: id, sp: sp, S: S, tid: String(tid || '') };
+    }
+    /* ═══ 20261120t (« manque une chose d'ailleurs… les 5 futurs matchs » → bloc proposé → « oui ») : 📅 Ses 5 prochains matchs. SONDE
+       d'Antoine (console 19/11) : site.api.espn.com …/teams/<id>/schedule → events[] {date, competitions[0].status.type.completed,
+       competitors[] {homeAway, team {id, displayName}}} : NBA Spurs 65 à venir, NHL Oilers 61, NFL Chiefs 8, MLB Phillies 162 (mars),
+       foot …/soccer/eng.1/teams/382/schedule?fixture=true 28 à venir. Foot : championnat du club (+ C1 s'il en joue), réunis par date.
+       Face-à-face = archives (toutes saisons chargées de la compétition affichée) contre ce n° d'adversaire, mêmes catégorie et cut. Lu
+       une fois par fiche (D.fut) ; échec → [] (pas de boucle de redessin). ═══ */
+    var ESP = { '🏀': 'basketball/nba', '🏈': 'football/nfl', '🏒': 'hockey/nhl', '⚾': 'baseball/mlb' };
+    async function futurs(D) {
+      if (!D.tid) return [];
+      var P = D.sp === '⚽' ? [D.lgCh].concat((D.comps || []).indexOf('c1') >= 0 ? ['uefa.champions'] : []).filter(Boolean).map(function (l) { return 'soccer/' + l + '/teams/' + D.tid + '/schedule?fixture=true'; })
+        : ESP[D.sp] ? [ESP[D.sp] + '/teams/' + D.tid + '/schedule'] : [];
+      var A = [];
+      await Promise.all(P.map(async function (pa) {
+        var j = null;
+        try { var r = await fetch('https://site.api.espn.com/apis/site/v2/sports/' + pa); if (r.ok) j = await r.json(); } catch (e) {}
+        if (!j && typeof _g45TrEspn === 'function') { try { j = await _g45TrEspn('/apis/site/v2/sports/' + pa); } catch (e) {} }
+        ((j && j.events) || []).forEach(function (e) { var c0 = (e.competitions || [])[0] || {}; if (((c0.status || {}).type || {}).completed) return;
+          var mo = null, ad = null; (c0.competitors || []).forEach(function (q) { if (String((q.team || {}).id) === D.tid) mo = q; else ad = q; });
+          var t = Date.parse(e.date); if (!mo || !ad || !(t > Date.now() - 3 * 3600e3)) return;
+          A.push({ t: t, dom: mo.homeAway === 'home', aid: String((ad.team || {}).id || ''), adv: (ad.team || {}).displayName || '', po: /uefa/.test(pa) }); });
+      }));
+      A.sort(function (a, b) { return a.t - b.t; }); return A.slice(0, 5);
     }
     var val = function (c, st) { return c.k.reduce(function (a, k) { return a + (+st[k] || 0); }, 0); };
     function dessiner(el, u) {
@@ -91117,6 +91140,20 @@ setTimeout(_g45ButReparer, 4000);
       ST.kDep = K != null ? K : (avL.length ? Math.ceil(ligne(avL[0])) : seuil);   /* départ du − / + depuis 📗 Book = dernière ligne du book */
       /* 🎯 Ses séries (choix « 3 », 20261120m) : du plus ancien au plus récent, matchs sans ligne en 🏀 ignorés (okDe null) */
       var pire = 0, best = 0, ru = 0, rb = 0; L.slice().reverse().forEach(function (x) { var o = okDe(x); if (o == null) return; if (o) { rb++; ru = 0; if (rb > best) best = rb; } else { ru++; rb = 0; if (ru > pire) pire = ru; } });
+      /* 📅 5 prochains matchs (20261120t) */
+      var fut = '';
+      if (D.fut === undefined) { D.fut = null; futurs(D).then(function (A) { D.fut = A || []; }, function () { D.fut = []; }).then(function () { if (ST.D === D) window.g45UsJDessiner(); }); }
+      if (D.fut === null) fut = '<div style="font-size:14px;color:#c9d3ee;margin:0 0 12px;">📅 Prochains matchs… ⏳</div>';
+      else if (D.fut.length) {
+        var TT = []; D.S.forEach(function (s) { TT = TT.concat(s.L); });
+        fut = '<div style="font-size:16px;font-weight:800;margin:4px 0 8px;">📅 Ses ' + D.fut.length + ' prochains matchs</div>' + D.fut.map(function (f) {
+          var H = TT.filter(function (x) { return f.aid && x.aid === f.aid; }), Hd = H.filter(function (x) { return okDe(x) != null; }), Hok = Hd.filter(function (x) { return okDe(x); }).length;
+          var mo = H.length ? H.reduce(function (a, x) { return a + val(c, x.st); }, 0) / H.length : 0;
+          var dt = new Date(f.t).toLocaleString('fr-FR', { timeZone: 'Europe/Paris', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).replace(' ', ' · ');
+          return '<div style="display:grid;grid-template-columns:118px minmax(0,1fr) auto;gap:8px;padding:7px 8px;margin-bottom:4px;background:#121c3d;border-radius:9px;font-size:14px;align-items:center;color:#fff;">'
+            + '<span>' + esc(dt) + '</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (f.dom ? '🏠' : '✈️') + ' ' + esc(f.adv) + (f.po ? ' · C1' : '') + '</span>'
+            + '<span style="color:#c9d3ee;">' + (Hd.length ? 'face-à-face : <b style="color:' + (Hok * 2 >= Hd.length ? '#2ecc71' : '#ff5a5a') + ';">' + Hok + ' / ' + Hd.length + ' ✅</b> (moy. ' + f1(mo) + ')' : H.length ? 'face-à-face : moy. ' + f1(mo) + ' (' + H.length + ' m.)' : 'pas de face-à-face') + '</span></div>'; }).join('') + '<div style="height:8px;"></div>';
+      }
       var LB = c.n0 ? ['Pire série sans ' + c.n0, 'Meilleure série avec ' + c.n0, 'Sans ' + c.n0 + ' en cours'] : ['Pire série ratée ❌', 'Meilleure série réussie ✅', 'Ratés de suite en cours'];
       var ser = '<div style="font-size:16px;font-weight:800;margin:4px 0 8px;">🎯 Ses séries</div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;">'
         + [[LB[0], pire, '#f5c542'], [LB[1], best, '#2ecc71'], [LB[2], ru, ru ? '#ff5a5a' : '#fff']].map(function (q) { return '<div style="background:#121c3d;border-radius:10px;padding:9px;text-align:center;font-size:13px;color:#c9d3ee;">' + q[0] + '<b style="display:block;font-size:20px;color:' + q[2] + ';">' + q[1] + '</b></div>'; }).join('') + '</div>';
@@ -91144,7 +91181,7 @@ setTimeout(_g45ButReparer, 4000);
             return [['🏠 Domicile', cnt(L.filter(function (x) { return x.dom; }))], ['✈️ Extérieur', cnt(L.filter(function (x) { return !x.dom; }))], ['5 derniers', cnt(L.slice(0, 5))], ['Record', c.n0 ? rec + ' ' + (rec > 1 ? c.us : c.u) : rec]]; })()
           : [['🏠 Domicile', f1(mD)], ['✈️ Extérieur', f1(mE)], ['5 derniers', f1(moy(V.slice(0, 5)))], ['Record', V.length ? Math.max.apply(null, V) : 0]]).map(function (q) {
           return '<div style="background:#121c3d;border-radius:10px;padding:9px;text-align:center;font-size:13px;color:#c9d3ee;">' + q[0] + '<b style="display:block;font-size:20px;color:#fff;">' + q[1] + '</b></div>'; }).join('') + '</div>'
-        + tir + ser
+        + tir + ser + fut
         + '<div style="display:grid;grid-template-columns:62px minmax(0,1fr) 92px 56px 56px 30px;gap:6px;padding:6px 4px;border-bottom:1px solid #1c2747;font-size:13px;font-weight:700;color:#8aa0ff;"><span>Date</span><span>Adversaire</span><span>Score</span><span>' + esc(sp === '🏒' || (sp === '⚽' && c.n0 && c.l !== 'Cartons') ? 'B · A' : c.c || (c.l === 'Cartons' ? 'CART.' : '')) + '</span><span>' + (c.b && (sp !== '⚽' || aCo) ? 'Cote' : sp === '⚽' && c.n0 ? 'Tirs / cad.' : K != null ? 'Cut' : 'Ligne') + '</span><span></span></div>'
         + rows
         + (L.length > 8 ? '<div onclick="_g45UsJ.tout=_g45UsJ.tout?0:1;g45UsJDessiner()" style="cursor:pointer;margin-top:10px;display:inline-block;padding:8px 14px;border-radius:9px;background:#16224a;font-size:14px;font-weight:700;">' + (ST.tout ? '▲ Moins de matchs' : '📋 Voir tous ses matchs (' + L.length + ')') + '</div>' : '')
