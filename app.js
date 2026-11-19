@@ -90968,13 +90968,19 @@ setTimeout(_g45ButReparer, 4000);
 (function () {
   try {
     var ARC = 'https://raw.githubusercontent.com/gones45140/gones45-archives/main/cotes/', JM = {};
-    var DIR = { '🏀': 'basket/nba', '🏈': 'football-us/nfl' }, HS = { '🏀': 'nba', '🏈': 'nfl' };
-    var spDe = function (u) { var t = String((u && u.sport) || ''); return t.indexOf('🏀') >= 0 ? '🏀' : t.indexOf('🏈') >= 0 ? '🏈' : ''; };
+    /* 20261120m (fiche NHL actuelle montrée → choix « 1 » = NHL au même modèle, + « 3 » = bloc 🎯 Ses séries partout ; maquette Draisaitl
+       « oui ») : 🏒 ajouté. Archives NHL : stats G, A, PM, TOI (pas de tirs) ; cotes du book (pas de lignes) : 230 buteur [[null, cote]],
+       219 passes et 218 points [[1, cote 1 ou +], [2, …]…] → colonne « Cote », réussite = 1 ou plus. Joueur absent des archives → ancienne
+       fiche NHL (API nhle.com) en secours. Dates à l'heure américaine (match de 19 h à New York = 00 h UTC le lendemain : t − 6 h). */
+    var DIR = { '🏀': 'basket/nba', '🏈': 'football-us/nfl', '🏒': 'hockey/nhl' }, HS = { '🏀': 'nba', '🏈': 'nfl', '🏒': 'nhl' };
+    var spDe = function (u) { var t = String((u && u.sport) || ''); return t.indexOf('🏀') >= 0 ? '🏀' : t.indexOf('🏈') >= 0 ? '🏈' : t.indexOf('🏒') >= 0 ? '🏒' : ''; };
     var CAT = {
       '🏀': [{ l: 'Points', c: 'PTS', k: ['PTS'], o: '1', u: 'points' }, { l: 'Rebonds', c: 'REB', k: ['REB'], o: '3', u: 'rebonds' }, { l: 'Passes', c: 'PAS', k: ['AST'], o: '2', u: 'passes' },
         { l: 'Contres', c: 'CTR', k: ['CTR'], u: 'contres' }, { l: '3 pts', c: '3PT', k: ['3PT'], o: '4', u: 'paniers à 3 pts' }, { l: 'Pts+Reb+Pas', c: 'P+R+P', k: ['PTS', 'REB', 'AST'], o: '90', u: 'pts + reb + passes' }],
       '🏈': [{ l: 'Yards passe', c: 'YDS', k: ['pY'], u: 'yards à la passe' }, { l: 'TD passe', c: 'TD', k: ['pTD'], u: 'TD à la passe', s1: 1 }, { l: 'Yards course', c: 'YDS', k: ['rY'], u: 'yards à la course' },
-        { l: 'Réceptions', c: 'REC', k: ['REC'], u: 'réceptions' }, { l: 'Yards réception', c: 'YDS', k: ['reY'], u: 'yards en réception' }, { l: 'TD marqués', c: 'TD', k: ['rTD', 'reTD'], u: 'TD marqués', s1: 1 }]
+        { l: 'Réceptions', c: 'REC', k: ['REC'], u: 'réceptions' }, { l: 'Yards réception', c: 'YDS', k: ['reY'], u: 'yards en réception' }, { l: 'TD marqués', c: 'TD', k: ['rTD', 'reTD'], u: 'TD marqués', s1: 1 }],
+      '🏒': [{ l: 'Buts', k: ['G'], b: '230', u: 'but', us: 'buts', n0: 'but', s1: 1 }, { l: 'Passes', k: ['A'], b: '219', u: 'passe', us: 'passes', n0: 'passe', s1: 1 },
+        { l: 'Points', k: ['G', 'A'], b: '218', u: 'point', us: 'points', n0: 'point', s1: 1 }]
     };
     var esc = function (t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
     var nz = function (t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z]+/g, ' ').trim(); };
@@ -91017,44 +91023,55 @@ setTimeout(_g45ButReparer, 4000);
       var D = ST.D; if (!el || !D) return;
       var sp = D.sp, TOT = D.S.reduce(function (a, s) { return a + s.L.length; }, 0);
       /* catégorie montrée si le joueur en fait dans au moins 1 match sur 5 (QB : pas de « Réceptions » pour une passe déviée rattrapée) ; NBA : toutes */
-      var CS = CAT[sp].filter(function (c) { var n = 0; D.S.forEach(function (s) { s.L.forEach(function (x) { if (val(c, x.st) > 0) n++; }); }); return sp === '🏀' ? n > 0 : n * 5 >= TOT; });
+      var CS = CAT[sp].filter(function (c) { var n = 0; D.S.forEach(function (s) { s.L.forEach(function (x) { if (val(c, x.st) > 0) n++; }); }); return sp === '🏈' ? n * 5 >= TOT : n > 0; });
       if (!CS.length) CS = CAT[sp].slice(0, 1);
       if (ST.cat >= CS.length) ST.cat = 0; if (ST.sa >= D.S.length) ST.sa = 0;
       var c = CS[ST.cat], Sx = D.S[ST.sa], L = Sx.L, V = L.map(function (x) { return val(c, x.st); });
       var moy = function (A) { return A.length ? A.reduce(function (a, b) { return a + b; }, 0) / A.length : 0; };
       var m = moy(V), mD = moy(L.filter(function (x) { return x.dom; }).map(function (x) { return val(c, x.st); })), mE = moy(L.filter(function (x) { return !x.dom; }).map(function (x) { return val(c, x.st); }));
       var seuil = c.s1 || Math.max(1, Math.round(m)), ligne = function (x) { var q = c.o && x.o[c.o]; return q && q[0] && q[0][0] != null ? +q[0][0] : null; };
+      var cote = function (x) { var q = c.b && x.o[c.b]; if (!q || !q.length) return null; if (q[0][0] == null) return +q[0][1] || null; var e1 = q.filter(function (e) { return e[0] === 1; })[0]; return e1 ? +e1[1] || null : null; };
       var okDe = function (x) { var v = val(c, x.st), li = ligne(x); return li != null ? v > li : (c.o ? null : v >= seuil); };
       var BG = 'font-size:34px;display:block;', SM = 'font-size:14px;color:#c9d3ee;', avL = L.filter(function (x) { return ligne(x) != null; }), b2;
       if (c.o && avL.length) { var ok = avL.filter(function (x) { return val(c, x.st) > ligne(x); }).length;
         b2 = '<b style="' + BG + 'color:' + (ok * 2 >= avL.length ? '#2ecc71' : '#ff5a5a') + ';">' + ok + ' / ' + avL.length + '</b><small style="' + SM + '">au-dessus de la ligne du book (' + Math.round(ok * 100 / avL.length) + ' %)</small>'; }
       else { var ok2 = V.filter(function (v) { return v >= seuil; }).length;
-        b2 = '<b style="' + BG + 'color:' + (ok2 * 2 >= V.length ? '#2ecc71' : '#ff5a5a') + ';">' + ok2 + ' / ' + V.length + '</b><small style="' + SM + '">matchs à ' + seuil + ' ' + esc(c.u) + ' ou plus (' + Math.round(ok2 * 100 / V.length) + ' %)' + (c.o ? ' · pas de ligne du book gardée' : '') + '</small>'; }
-      var min = moy(L.map(function (x) { return +x.st.MIN || 0; }));
+        b2 = '<b style="' + BG + 'color:' + (ok2 * 2 >= V.length ? '#2ecc71' : '#ff5a5a') + ';">' + ok2 + ' / ' + V.length + '</b><small style="' + SM + '">' + (c.n0 ? 'matchs avec ' + c.n0 : 'matchs à ' + seuil + ' ' + esc(c.u) + ' ou plus') + ' (' + Math.round(ok2 * 100 / V.length) + ' %)' + (c.o ? ' · pas de ligne du book gardée' : '') + '</small>'; }
+      var min = moy(L.map(function (x) { return +x.st.MIN || 0; })), hk = '';
+      if (sp === '🏒') { var sG = 0, sA = 0, sP = 0, sT = 0, nT = 0; L.forEach(function (x) { sG += +x.st.G || 0; sA += +x.st.A || 0; sP += +x.st.PM || 0; var q = String(x.st.TOI || '').split(':'); if (q.length === 2) { sT += (+q[0]) * 60 + (+q[1]); nT++; } });
+        hk = ' · ' + sG + ' B · ' + sA + ' A · ' + (sP > 0 ? '+' : '') + sP + (nT ? ' · ' + Math.floor(sT / nT / 60) + ':' + ('0' + Math.round(sT / nT % 60)).slice(-2) + ' / match' : ''); }
       var ban = ''; try { ban = (typeof g45VisuelCache === 'function' && D.club && g45VisuelCache(D.club)) || (typeof _g45ClubVis === 'function' && _g45ClubVis(u)) || ''; } catch (e) {}
       var ph = 'https://a.espncdn.com/i/headshots/' + HS[sp] + '/players/full/' + D.id + '.png';
       var chip = function (t, on, js) { return '<span onclick="' + js + '" style="cursor:pointer;padding:7px 12px;border-radius:9px;background:' + (on ? '#2f6bff' : '#16224a') + ';font-size:14px;font-weight:700;color:#fff;">' + esc(t) + '</span>'; };
       var box = 'background:#121c3d;border-radius:12px;padding:12px;text-align:center;';
       var N = ST.tout ? L.length : Math.min(8, L.length);
-      var rows = L.slice(0, N).map(function (x) { var d = new Date(x.t), li = ligne(x), ok = okDe(x);
-        return '<div style="display:grid;grid-template-columns:62px minmax(0,1fr) 92px 46px 56px 30px;gap:6px;padding:6px 4px;border-bottom:1px solid #1c2747;font-size:14px;align-items:center;color:#fff;">'
-          + '<span>' + ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2) + '</span>'
+      /* 🎯 Ses séries (choix « 3 », 20261120m) : du plus ancien au plus récent, matchs sans ligne en 🏀 ignorés (okDe null) */
+      var pire = 0, best = 0, ru = 0, rb = 0; L.slice().reverse().forEach(function (x) { var o = okDe(x); if (o == null) return; if (o) { rb++; ru = 0; if (rb > best) best = rb; } else { ru++; rb = 0; if (ru > pire) pire = ru; } });
+      var LB = c.n0 ? ['Pire série sans ' + c.n0, 'Meilleure série avec ' + c.n0, 'Sans ' + c.n0 + ' en cours'] : ['Pire série ratée ❌', 'Meilleure série réussie ✅', 'Ratés de suite en cours'];
+      var ser = '<div style="font-size:16px;font-weight:800;margin:4px 0 8px;">🎯 Ses séries</div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;">'
+        + [[LB[0], pire, '#f5c542'], [LB[1], best, '#2ecc71'], [LB[2], ru, ru ? '#ff5a5a' : '#fff']].map(function (q) { return '<div style="background:#121c3d;border-radius:10px;padding:9px;text-align:center;font-size:13px;color:#c9d3ee;">' + q[0] + '<b style="display:block;font-size:20px;color:' + q[2] + ';">' + q[1] + '</b></div>'; }).join('') + '</div>';
+      var rows = L.slice(0, N).map(function (x) { var d = new Date(x.t - 216e5), li = ligne(x), ok = okDe(x), co = cote(x);
+        return '<div style="display:grid;grid-template-columns:62px minmax(0,1fr) 92px 56px 56px 30px;gap:6px;padding:6px 4px;border-bottom:1px solid #1c2747;font-size:14px;align-items:center;color:#fff;">'
+          + '<span>' + ('0' + d.getUTCDate()).slice(-2) + '/' + ('0' + (d.getUTCMonth() + 1)).slice(-2) + '</span>'
           + '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (x.dom ? '🏠' : '✈️') + ' ' + esc(x.adv) + (x.po ? ' · PO' : '') + '</span>'
-          + '<span style="color:' + (x.g == null ? '#fff' : x.g ? '#2ecc71' : '#ff5a5a') + ';">' + esc(x.sc) + '</span><b>' + val(c, x.st) + '</b>'
-          + '<span>' + (li != null ? lg(li) : c.o ? '—' : '≥ ' + seuil) + '</span><span>' + (ok == null ? '' : ok ? '✅' : '❌') + '</span></div>'; }).join('');
+          + '<span style="color:' + (x.g == null ? '#fff' : x.g ? '#2ecc71' : '#ff5a5a') + ';">' + esc(x.sc) + '</span><b>' + (sp === '🏒' ? (+x.st.G || 0) + ' · ' + (+x.st.A || 0) : val(c, x.st)) + '</b>'
+          + '<span>' + (c.b ? (co ? co.toFixed(2).replace('.', ',') : '—') : li != null ? lg(li) : c.o ? '—' : '≥ ' + seuil) + '</span><span>' + (ok == null ? '' : ok ? '✅' : '❌') + '</span></div>'; }).join('');
       el.innerHTML = '<div style="color:#fff;">'
         + '<div style="position:relative;border-radius:14px;overflow:hidden;height:150px;background:' + (ban ? 'url(' + esc(ban) + ') center/cover' : 'linear-gradient(120deg,#1b2a55,#24386e)') + ';">'
         + '<div style="position:absolute;left:0;right:0;bottom:0;background:rgba(5,10,25,.82);padding:12px 16px 12px 128px;">'
-        + '<div style="font-size:22px;font-weight:800;">' + sp + ' ' + esc(D.nom) + '</div><div style="font-size:14px;color:#c9d3ee;margin-top:3px;">' + esc(D.club) + ' · ' + L.length + ' matchs' + (min ? ' · ' + f1(min) + ' min / match' : '') + '</div></div>'
+        + '<div style="font-size:22px;font-weight:800;">' + sp + ' ' + esc(D.nom) + '</div><div style="font-size:14px;color:#c9d3ee;margin-top:3px;">' + esc(D.club) + ' · ' + L.length + ' matchs' + (sp === '🏒' ? hk : min ? ' · ' + f1(min) + ' min / match' : '') + '</div></div>'
         + '<img src="' + ph + '" onerror="this.style.display=\'none\'" style="position:absolute;left:10px;bottom:0;height:140px;max-width:120px;object-fit:contain;"></div>'
         + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin:14px 0 10px;">' + CS.map(function (x, i) { return chip(x.l, i === ST.cat, '_g45UsJ.cat=' + i + ';g45UsJDessiner()'); }).join('') + '</div>'
         + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">' + D.S.map(function (s, i) { return '<span onclick="_g45UsJ.sa=' + i + ';_g45UsJ.tout=0;g45UsJDessiner()" style="cursor:pointer;padding:5px 10px;border-radius:8px;background:' + (i === ST.sa ? '#26407e' : '#121c3d') + ';font-size:13px;">' + s.s + '</span>'; }).join('') + '</div>'
-        + '<div style="display:flex;gap:12px;margin-bottom:10px;"><div style="flex:1;' + box + '"><b style="font-size:34px;display:block;">' + f1(m) + '</b><small style="font-size:14px;color:#c9d3ee;">' + esc(c.u) + ' par match</small></div>'
+        + '<div style="display:flex;gap:12px;margin-bottom:10px;"><div style="flex:1;' + box + '"><b style="font-size:34px;display:block;">' + (c.us ? m.toFixed(2).replace('.', ',') : f1(m)) + '</b><small style="font-size:14px;color:#c9d3ee;">' + esc(c.u) + ' par match' + (c.us ? ' (' + V.reduce(function (a, b) { return a + b; }, 0) + ' ' + c.us + ')' : '') + '</small></div>'
         + '<div style="flex:1;' + box + '">' + b2 + '</div></div>'
         + '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px;">'
-        + [['🏠 Domicile', f1(mD)], ['✈️ Extérieur', f1(mE)], ['5 derniers', f1(moy(V.slice(0, 5)))], ['Record', V.length ? Math.max.apply(null, V) : 0]].map(function (q) {
+        + (c.n0 ? (function () { var cnt = function (A) { return A.filter(function (x) { return okDe(x); }).length + ' / ' + A.length; }, rec = V.length ? Math.max.apply(null, V) : 0;
+            return [['🏠 Domicile', cnt(L.filter(function (x) { return x.dom; }))], ['✈️ Extérieur', cnt(L.filter(function (x) { return !x.dom; }))], ['5 derniers', cnt(L.slice(0, 5))], ['Record', rec + ' ' + (rec > 1 ? c.us : c.u)]]; })()
+          : [['🏠 Domicile', f1(mD)], ['✈️ Extérieur', f1(mE)], ['5 derniers', f1(moy(V.slice(0, 5)))], ['Record', V.length ? Math.max.apply(null, V) : 0]]).map(function (q) {
           return '<div style="background:#121c3d;border-radius:10px;padding:9px;text-align:center;font-size:13px;color:#c9d3ee;">' + q[0] + '<b style="display:block;font-size:20px;color:#fff;">' + q[1] + '</b></div>'; }).join('') + '</div>'
-        + '<div style="display:grid;grid-template-columns:62px minmax(0,1fr) 92px 46px 56px 30px;gap:6px;padding:6px 4px;border-bottom:1px solid #1c2747;font-size:13px;font-weight:700;color:#8aa0ff;"><span>Date</span><span>Adversaire</span><span>Score</span><span>' + esc(c.c) + '</span><span>Ligne</span><span></span></div>'
+        + ser
+        + '<div style="display:grid;grid-template-columns:62px minmax(0,1fr) 92px 56px 56px 30px;gap:6px;padding:6px 4px;border-bottom:1px solid #1c2747;font-size:13px;font-weight:700;color:#8aa0ff;"><span>Date</span><span>Adversaire</span><span>Score</span><span>' + esc(sp === '🏒' ? 'B · A' : c.c) + '</span><span>' + (c.b ? 'Cote' : 'Ligne') + '</span><span></span></div>'
         + rows
         + (L.length > 8 ? '<div onclick="_g45UsJ.tout=_g45UsJ.tout?0:1;g45UsJDessiner()" style="cursor:pointer;margin-top:10px;display:inline-block;padding:8px 14px;border-radius:9px;background:#16224a;font-size:14px;font-weight:700;">' + (ST.tout ? '▲ Moins de matchs' : '📋 Voir tous ses matchs (' + L.length + ')') + '</div>' : '')
         + '</div>';
@@ -91068,6 +91085,7 @@ setTimeout(_g45ButReparer, 4000);
         el.innerHTML = '<div style="font-size:14px;color:#c9d3ee;text-align:center;padding:14px;">⏳ Lecture des archives…</div>';
         var R = null; try { R = await charger(u); } catch (e) { R = { err: 'Archives indisponibles.' }; }
         if (ST.nom !== u.n) return;
+        if (R.err && spDe(u) === '🏒' && ST.repli) { ST.nom = ''; return 'repli'; }   /* pas dans les archives → ancienne fiche NHL */
         if (R.err) { el.innerHTML = '<div style="font-size:14px;color:#c9d3ee;text-align:center;padding:16px;line-height:1.7;">' + esc(R.err) + '</div>'; return; }
         ST.D = R;
       }
@@ -91078,7 +91096,8 @@ setTimeout(_g45ButReparer, 4000);
     var nf = function () {
       var nom = (typeof _currentTeam !== 'undefined' && _currentTeam) ? _currentTeam : '';
       var U = (typeof state !== 'undefined' && state && state.u) ? state.u : [], u = U.filter(function (x) { return x && x.n === nom; })[0];
-      if (u && u.type === 'joueur' && spDe(u)) return window.g45UsJoueurPanel(u);
+      var self = this, args = arguments;
+      if (u && u.type === 'joueur' && spDe(u)) { ST.repli = 1; return Promise.resolve(window.g45UsJoueurPanel(u)).then(function (x) { return x === 'repli' ? p2.apply(self, args) : x; }); }
       return p2.apply(this, arguments);
     };
     nf._g45l = 1; window.g45MurJoueurPanel = g45MurJoueurPanel = nf;
