@@ -91191,14 +91191,21 @@ function _g45PhEspRemplir() {
   try {
     var U = (typeof state !== 'undefined' && state && state.u) ? state.u : [], ARC = 'https://raw.githubusercontent.com/gones45140/gones45-archives/main/cotes/';
     var d = new Date(), y = d.getMonth() + 1 >= 7 ? d.getFullYear() : d.getFullYear() - 1, sa = y + '-' + String(y + 1).slice(2);
-    var SP = [['🏀', 'basket/nba', 'nba'], ['🏈', 'football-us/nfl', 'nfl'], ['🏒', 'hockey/nhl', 'nhl']];
+    /* 20261120r (capture Cristopher Sánchez ⚾ sur la bannière des Phillies, sans photo) : ⚾ ajouté — MLB rangée en année CIVILE (« 2026 »,
+       repli année d'avant si pas encore de fichier) ; homonymes (« Christopher sanchez » écrit avec un h → nom de famille + initiale :
+       Cristopher ET Carlos Sánchez) départagés par le club de la carte (_g45UClub) lu dans equipes.json de la même saison. */
+    var SP = [['🏀', 'basket/nba', 'nba'], ['🏈', 'football-us/nfl', 'nfl'], ['🏒', 'hockey/nhl', 'nhl'], ['⚾', 'baseball/mlb', 'mlb', 1]];
     var nz = function (t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z]+/g, ' ').trim(); };
     SP.forEach(function (q) {
       var L = U.filter(function (u) { return u && u.type === 'joueur' && !u.phE && String(u.sport || '').indexOf(q[0]) >= 0; }); if (!L.length) return;
-      fetch(ARC + q[1] + '/' + sa + '/joueurs.json?h=' + Math.floor(Date.now() / 864e5)).then(function (r) { return r.ok ? r.json() : null; }).then(function (J) {
-        if (!J) return; var ch = 0, K = Object.keys(J);
+      var hj = '?h=' + Math.floor(Date.now() / 864e5), lire = function (s0) { return Promise.all([fetch(ARC + q[1] + '/' + s0 + '/joueurs.json' + hj).then(function (r) { return r.ok ? r.json() : null; }), fetch(ARC + q[1] + '/' + s0 + '/equipes.json' + hj).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; })]); };
+      var s1 = q[3] ? String(d.getFullYear()) : sa, s2 = q[3] ? String(d.getFullYear() - 1) : '';
+      lire(s1).then(function (P) { return P[0] || !s2 ? P : lire(s2); }).then(function (P) {
+        var J = P[0], EQ = P[1] || {}; if (!J) return; var ch = 0, K = Object.keys(J);
         L.forEach(function (u) { var n0 = nz(u.n), id = K.filter(function (k) { return nz(J[k][0]) === n0; })[0];
-          if (!id) { var fam = n0.split(' ').slice(-1)[0], C = K.filter(function (k) { var x = nz(J[k][0]); return x.split(' ').slice(-1)[0] === fam && x[0] === n0[0]; }); if (C.length === 1) id = C[0]; }
+          if (!id) { var fam = n0.split(' ').slice(-1)[0], C = K.filter(function (k) { var x = nz(J[k][0]); return x.split(' ').slice(-1)[0] === fam && x[0] === n0[0]; });
+            if (C.length > 1) { var cz = nz(typeof _g45UClub === 'function' ? _g45UClub(u) : ''); if (cz) C = C.filter(function (k) { var e = EQ[J[k][1]], cn = nz(e && e[0]); return cn && (cn === cz || cn.indexOf(cz) >= 0 || cz.indexOf(cn) >= 0); }); }
+            if (C.length === 1) id = C[0]; }
           if (id) { u.phE = 'https://a.espncdn.com/i/headshots/' + q[2] + '/players/full/' + id + '.png'; ch++; } });
         if (ch) { if (typeof save === 'function') save(); if (typeof render === 'function') render(); }
       }).catch(function () {});
