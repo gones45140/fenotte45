@@ -78785,6 +78785,39 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     psSim(out, u);   /* 20261102p */
     u.psL = out; return true;
   }
+  /* ═══ 20261119q — 🎫 PANNEAU « TON PARI » (PC, à droite du formulaire Cockpit ; Antoine : « toute cette partie est vide sur PC » → maquette
+     ticket + cote estimée + fiche → « OUI ») : même moteur que 🔄 Calculer mes séries (serCtx → chargerHk / chargerFt, serCombo, sqDe, serStat)
+     pour UNE équipe, UN lieu et le texte du pari coché (getMmLabel). Cote estimée = comme la 🎯 Calculatrice Cote juste : % pondéré
+     10 derniers 40 / 2 saisons 35 / toutes 25 (case vide ignorée), sur le COMBINÉ entier (les jambes ne sont pas indépendantes : BTS et Over
+     vont ensemble), cote = 100 / %. Matchs de l'équipe chargés une fois par heure (FP). ═══ */
+  var FP = {};
+  window._g45FichePari = async function (nom, ft, lieu, texte) {
+    var k = nom + '|' + (ft ? 1 : 0), E = FP[k];
+    if (!E || Date.now() - E.t > 3600e3) {
+      E = FP[k] = { t: Date.now(), p: (async function () {
+        var X = await serCtx(nom, ft); if (X.err) return { err: X.err };
+        var C = X.sp === 'soccer' ? null : X, D = null;
+        try { D = await avec(C, 'tout', function () { return C ? chargerHk(nom, C) : chargerFt(X.lg, X.id); }); } catch (e) {}
+        if (!D || !(D.saisons || []).some(function (s) { return s && s.ms; })) return { err: 'matchs illisibles (réseau)' };
+        return { C: C, D: D };
+      })() };
+    }
+    var B = await E.p; if (B.err) { if (/réseau/.test(B.err)) delete FP[k]; return { err: B.err }; }
+    var lk = lieu === 'dom' || lieu === 'ext' ? lieu : 'tout';
+    return avec(B.C, lk, function () {
+      var c = serCombo(texte, nom); if (!c) return { err: 'pari pas calculable', ligue: B.D.ligue || '' };
+      var SA = (B.D.saisons || []).filter(function (s) { return s && s.ms; }), cur = B.D.saisons[0] && B.D.saisons[0].ms ? B.D.saisons[0] : null;
+      var seq = function (cc, L) { var o = []; L.slice().reverse().forEach(function (sa) { o = o.concat(sqDe(cc, filtrer(sa.ms))); }); return o; };
+      var all = seq(c, SA), two = seq(c, SA.slice(0, 2)), cs = cur ? seq(c, [cur]) : [];
+      var pc = function (L) { return L.length ? L.filter(Boolean).length / L.length : null; };
+      var P = [[pc(all.slice(-10)), 40], [pc(two), 35], [pc(all), 25]].filter(function (x) { return x[0] != null; }), w = P.reduce(function (a, x) { return a + x[1]; }, 0);
+      var est = w ? P.reduce(function (a, x) { return a + x[0] * x[1]; }, 0) / w : null, cours = 0;
+      for (var i = all.length - 1; i >= 0 && !all[i]; i--) cours++;
+      var legs = String(texte || '').split(/\s*\+\s*/).filter(Boolean).map(function (t) { var cl = serCombo(t, nom); if (!cl) return { t: t, p: null }; var L = seq(cl, cur ? [cur] : SA.slice(0, 1)); return { t: t, p: pc(L), n: L.length }; });
+      var st = null; try { st = serStat(B.D, c); } catch (e) {}
+      return { lib: libCombo(c), ligue: B.D.ligue || '', d5: all.slice(-5), n: all.length, nCur: cs.length, okCur: cs.filter(Boolean).length, p10: pc(all.slice(-10)), p2: pc(two), pT: pc(all), est: est, cours: cours, pire: st ? st.p : [], legs: legs };
+    });
+  };
   function serNomJ(t) {   /* « Victoire + Over 2.5 + Harry Kane buteur » → « Harry Kane » */
     var x = String(t || '').replace(/🌍|🏠|✈️?|🛫/g, ' ').split(/\s+ou\s+/i)[0].split('+').filter(function (p) { return /buteur|marqueur|passeur|passe d|point/i.test(p); })[0];
     return x ? x.replace(/\b(buteur|marqueur|passeur|passe d[ée]cisive|1|un|points?|ou plus|et plus)\b/gi, ' ').replace(/\s+/g, ' ').trim() : '';
@@ -90441,3 +90474,82 @@ function _g45ScoreRedessiner() {
     try { if (typeof renderArchive === 'function') renderArchive(); } catch (e) {}
   }, 1500);
 }
+
+
+/* ═══ 20261119q — 🎫 PANNEAU « TON PARI » À DROITE DU FORMULAIRE COCKPIT (PC seulement). Antoine (capture Pari sur PC, partie droite vide :
+   « on pourrait faire quoi » → maquette texte « 🎫 ton pari + 🎯 cote estimée + 📋 fiche de l'équipe » → « OUI »). Le panneau est posé en
+   absolu à droite de #sub-strat (sticky en haut), seulement si la fenêtre a la place (≥ 1280 px et 400 px libres) ; téléphone : rien.
+   Mis à jour toutes les 1,2 s si quelque chose change (carte, lieu, pari coché, cote, mise, méthode) : pas d'accroche dans les nombreuses
+   fonctions du formulaire (deux copies, enveloppes). Calculs : window._g45FichePari (bloc des critères). ═══ */
+(function () {
+  var SIG = '', RES = {}, EN = {};
+  var $ = function (id) { return document.getElementById(id); };
+  var esc = function (t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+  var f2 = function (v) { return (Math.round(v * 100) / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
+  var pcT = function (p) { return p == null ? '—' : Math.round(p * 100) + ' %'; };
+  var BOX = 'background:rgba(11,16,29,.92);border:1px solid #2a3a63;border-radius:12px;padding:12px;color:#fff;margin-bottom:10px;';
+  function lire() {
+    var u0 = $('c-unit'), nom = u0 ? u0.value : '', u = ((typeof state !== 'undefined' && state.u) || []).filter(function (x) { return x && x.n === nom; })[0] || null;
+    var lab = ''; try { lab = typeof getMmLabel === 'function' ? getMmLabel() : ''; } catch (e) {}
+    var cote = 0; try { cote = typeof getMmCote === 'function' ? +getMmCote() || 0 : 0; } catch (e) {}
+    var v = function (id) { var x = $(id); return x ? String(x.value || '') : ''; };
+    return { nom: nom, u: u, lieu: v('c-lieu'), adv: v('c-target'), comp: v('c-comp'), date: v('c-date'), heure: v('c-heure'), mise: parseFloat(v('c-mise').replace(',', '.')) || 0, lab: lab, cote: cote > 1 ? cote : 0, meth: window._g45EngMeth || 'mont' };
+  }
+  function cle(o) { return o.nom + '|' + o.lieu + '|' + o.lab; }
+  function ticket(o) {
+    var F = {}; try { F = (window._g45CkFond && window._g45CkFond(o.nom)) || {}; } catch (e) {}
+    var lo = F.cut || F.logo || F.img || '', li = o.lieu === 'dom' ? ' 🏠' : o.lieu === 'ext' ? ' ✈️' : ' 🌍';
+    var M = { mont: ['🚀 Cockpit', '#4d84ff'], cb: ['📉 Cotes basses', '#ff9f43'], fib: ['🐚 Fibonacci', '#b07cff'], dal: ['🪜 D\'Alembert', '#2dd4bf'] }[o.meth] || ['🚀 Cockpit', '#4d84ff'];
+    var pal = ''; if (o.meth === 'mont' && o.u) { try { pal = ' · Palier ' + (typeof _g45PalLieu === 'function' ? _g45PalLieu(o.u, o.lieu || 'dom') : (o.u.l || 1)); } catch (e) {} }
+    var dt = /^\d{4}-\d\d-\d\d$/.test(o.date) ? o.date.slice(8, 10) + '/' + o.date.slice(5, 7) : '';
+    return '<div style="' + BOX + 'position:relative;overflow:hidden;">'
+      + '<div style="font-size:14px;font-weight:800;color:#ffd34d;margin-bottom:6px;">🎫 TON PARI</div>'
+      + '<div style="display:flex;align-items:center;gap:10px;">' + (/^https?:/.test(lo) ? '<img src="' + esc(lo) + '" alt="" onerror="this.remove()" style="width:54px;height:54px;object-fit:contain;flex:0 0 54px;filter:drop-shadow(0 0 3px rgba(0,0,0,.7));">' : '')
+      + '<div style="min-width:0;"><div style="font-size:17px;font-weight:800;">' + esc(o.nom || 'Choisis une carte') + li + (o.adv ? ' <span style="font-weight:400;color:#dfe6f7;">vs ' + esc(o.adv) + '</span>' : '') + '</div>'
+      + '<div style="font-size:13px;color:#c9d3ee;">' + [esc(o.comp), dt, esc(o.heure)].filter(Boolean).join(' · ') + '</div></div></div>'
+      + '<div style="font-size:15px;margin-top:8px;">' + (o.lab ? '✅ <b>' + esc(o.lab) + '</b>' : '<span style="color:#c9d3ee;">Coche un pari à gauche</span>') + '</div>'
+      + '<div style="font-size:15px;margin-top:4px;">Cote <b>' + (o.cote ? f2(o.cote) : '—') + '</b> · Mise <b>' + (o.mise ? f2(o.mise) + ' €' : '—') + '</b></div>'
+      + '<div style="font-size:15px;margin-top:4px;"><span style="display:inline-block;padding:2px 8px;border-radius:7px;font-size:14px;font-weight:800;color:#0b101d;background:' + M[1] + ';">' + M[0] + '</span>' + esc(pal)
+      + (o.cote && o.mise ? ' · Gain possible <b style="color:#1ed760;">' + f2(o.mise * o.cote) + ' €</b>' : '') + '</div></div>';
+  }
+  function fiche(o) {
+    var k = cle(o), R = RES[k];
+    if (!o.nom || !o.lab) return '';
+    if (o.u && o.u.type === 'joueur') return '<div style="' + BOX + 'font-size:14px;">📋 Fiche et cote estimée : équipes seulement pour l\'instant.</div>';
+    if (!R) return '<div style="' + BOX + 'font-size:14px;">⏳ Calcul sur les archives…</div>';
+    if (R.err) return '<div style="' + BOX + 'font-size:14px;">🎯 Cote estimée et 📋 fiche : pas de données (' + esc(R.err) + ').</div>';
+    var ce = R.est ? 1 / R.est : 0, h = '<div style="' + BOX + '"><div style="font-size:14px;font-weight:800;color:#ffd34d;margin-bottom:6px;">🎯 COTE ESTIMÉE</div>';
+    if (!ce) h += '<div style="font-size:15px;">Jamais passé sur ces matchs : pas d\'estimation.</div>';
+    else {
+      var val = o.cote ? R.est * o.cote - 1 : null, bon = val != null && val > 0;
+      h += '<div style="font-size:18px;font-weight:800;">BET45 : ' + f2(ce) + (o.cote ? ' <span style="font-weight:400;">→ book</span> <span style="color:' + (bon ? '#1ed760' : '#ff5a5a') + ';">' + f2(o.cote) + (bon ? ' 💎' : '') + '</span>' : '') + '</div>'
+        + (val != null ? '<div style="font-size:14px;color:' + (bon ? '#1ed760' : '#ff9f9f') + ';">' + (bon ? 'Le book paie plus que notre estimation : +' : 'Le book paie moins que notre estimation : ') + Math.round(val * 100) + ' %</div>' : '')
+        + '<div style="font-size:13px;color:#c9d3ee;margin-top:3px;">' + pcT(R.est) + ' estimé · 10 derniers ' + pcT(R.p10) + ' · 2 saisons ' + pcT(R.p2) + ' · tout ' + pcT(R.pT) + '</div>';
+    }
+    h += '</div><div style="' + BOX + '"><div style="font-size:14px;font-weight:800;color:#ffd34d;margin-bottom:6px;">📋 ' + esc(o.nom) + (o.lieu === 'dom' ? ' 🏠' : o.lieu === 'ext' ? ' ✈️' : ' 🌍') + (R.ligue ? ' <span style="font-weight:400;color:#c9d3ee;">· ' + esc(R.ligue) + '</span>' : '') + '</div>'
+      + '<div style="font-size:15px;">5 derniers : ' + (R.d5.length ? R.d5.map(function (x) { return x ? '✅' : '❌'; }).join(' ') : '—') + '</div>'
+      + (R.nCur ? '<div style="font-size:15px;margin-top:3px;">Cette saison : <b>' + R.okCur + ' / ' + R.nCur + '</b> (' + pcT(R.okCur / R.nCur) + ')</div>' : '')
+      + (R.legs.length > 1 ? '<div style="font-size:14px;margin-top:3px;color:#dfe6f7;">' + R.legs.map(function (l) { return esc(l.t) + ' : <b>' + pcT(l.p) + '</b>'; }).join(' · ') + '</div>' : '')
+      + '<div style="font-size:15px;margin-top:3px;">Ratés de suite : <b style="color:' + (R.cours >= 3 ? '#ff9f43' : '#fff') + ';">' + R.cours + '</b></div>'
+      + (R.pire && R.pire.length ? '<div style="font-size:15px;margin-top:3px;">Pire série : <b>' + R.pire.join('-') + '</b></div>' : '') + '</div>';
+    return h;
+  }
+  function poser() {
+    var sub = $('sub-strat'), z = $('g45-tkpc');
+    /* #sub-strat prend toute la largeur (simulateur de paliers, tableau En cours) ; le formulaire = .mm-wrap + .g45-form (640 px) → panneau à leur droite */
+    var mm = sub && sub.querySelector('.mm-wrap'), fm = sub && sub.querySelector('.g45-form'), rS = sub && sub.getBoundingClientRect(), rM = mm && mm.getBoundingClientRect(), rF = fm && fm.getBoundingClientRect();
+    var place = !!(sub && mm && fm && sub.offsetParent !== null && window.innerWidth >= 1280 && rS.right - rM.right >= 400);
+    if (!place) { if (z) z.style.display = 'none'; return; }
+    if (!z) { z = document.createElement('div'); z.id = 'g45-tkpc'; z.style.cssText = 'position:absolute;width:360px;z-index:5;'; z.innerHTML = '<div id="g45-tkpc-in" style="position:sticky;top:80px;"></div>'; if (getComputedStyle(sub).position === 'static') sub.style.position = 'relative'; sub.appendChild(z); }
+    z.style.display = ''; z.style.left = Math.round(rM.right - rS.left + 24) + 'px'; z.style.top = Math.round(rM.top - rS.top) + 'px'; z.style.height = Math.max(200, Math.round(rF.bottom - rM.top)) + 'px';
+    var o = lire(), k = cle(o), sig = k + '|' + o.cote + '|' + o.mise + '|' + o.meth + '|' + o.adv + '|' + o.comp + '|' + o.date + '|' + o.heure + '|' + (RES[k] ? 1 : 0);
+    if (o.nom && o.lab && !RES[k] && !EN[k] && !(o.u && o.u.type === 'joueur') && typeof window._g45FichePari === 'function') {
+      EN[k] = 1; var ft = !o.u || !o.u.sport || String(o.u.sport).indexOf('⚽') >= 0;
+      window._g45FichePari(o.nom, ft, o.lieu, o.lab).then(function (R) { RES[k] = R || { err: 'rien' }; }).catch(function () { RES[k] = { err: 'calcul impossible' }; }).then(function () { delete EN[k]; SIG = ''; poser(); });
+    }
+    if (sig === SIG) return; SIG = sig;
+    var zi = $('g45-tkpc-in'); if (zi) zi.innerHTML = ticket(o) + fiche(o);
+  }
+  window._g45TkPc = { poser: poser, lire: lire, RES: RES };   /* tests */
+  setInterval(function () { try { poser(); } catch (e) {} }, 1200);
+})();
