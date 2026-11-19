@@ -79199,12 +79199,14 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     });
     var L = [], jr = function (b) { if (/^\d{4}-\d\d-\d\d$/.test(String(b.date || ''))) return b.date; var t = +b.id; return t > 1e12 ? ckYmd(new Date(t)) : ''; };
     ((typeof state !== 'undefined' && state.a) || []).forEach(function (b) {
-      if (!b || !b.isS || b.isPending || (b.win !== true && b.win !== false)) return;
+      /* 20261119m (capture Cockpit BET45 → Calendrier : « mes paris en cote basse ne sont pas intégrés, faudrait les mettre ») : + paris 📉 Cotes basses
+         (b.meth 'cb', isS faux depuis 20261114n) ; série à part de la montante dans ckDepart (clé + méthode). */
+      if (!b || !(b.isS || b.meth === 'cb') || b.isPending || (b.win !== true && b.win !== false)) return;
       var j = jr(b); if (!j) return;
       var g = 0; try { g = _g45BetEffetTotal(b, 'a').b; } catch (e) { g = b.win ? (parseFloat(b.m) || 0) * ((parseFloat(b.cote) || 0) - 1) : -(parseFloat(b.m) || 0); }
       L.push({ j: j, b: b, r: b.win, g: Math.round(g * 100) / 100 });
     });
-    ((typeof state !== 'undefined' && state.h) || []).forEach(function (b) { if (b && b.isS) { var j = jr(b); if (j) L.push({ j: j, b: b, r: null, g: 0 }); } });
+    ((typeof state !== 'undefined' && state.h) || []).forEach(function (b) { if (b && (b.isS || b.meth === 'cb')) { var j = jr(b); if (j) L.push({ j: j, b: b, r: null, g: 0 }); } });   /* 20261119m */
     return ckDepart(L);
   }
   /* 20261029m (« seuls mes paris Cockpit doivent y être, la Formule 1 n'y est pas » → C « à partir d'une date » = 1er novembre ; « le problème
@@ -79216,7 +79218,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   function ckDepart(L, auj) {
     auj = auj || ckYmd(new Date()); if (auj < CK_DEBUT) return L;
     var G = {}, ord = function (x) { return x.j + '|' + String(x.b.id || ''); };
-    L.forEach(function (x) { var k = x.b.n + '|' + (x.b.domicile || ''); (G[k] = G[k] || []).push(x); });
+    L.forEach(function (x) { var k = x.b.n + '|' + (x.b.domicile || '') + '|' + (x.b.meth || ''); (G[k] = G[k] || []).push(x); });   /* 20261119m : 📉 à part */
     var out = [];
     Object.keys(G).forEach(function (k) {
       var A = G[k].sort(function (a, b) { return ord(a) < ord(b) ? -1 : ord(a) > ord(b) ? 1 : 0; });
@@ -79417,7 +79419,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       if (u.psL) { x.psL = {}; Object.keys(u.psL).forEach(function (k) { var R = Object.assign({}, u.psL[k]); delete R.sq; delete R.cq;   /* 20261102q : série brute pas publiée */ if (!R.err && R.p) { try { R.pa = window._g45PalCarte(R.tot, u); } catch (e) {} } x.psL[k] = R; }); }
       U[u.n] = x;
     });
-    var P = ckParis().map(function (y) { var b = y.b; return { j: y.j, r: y.r, g: y.g, b: { n: b.n, domicile: b.domicile || '', type: b.type || '', target: b.target || '', l: b.l || 1, m: b.m, cote: b.cote, comp: b.comp || '', t: b.t || '', heure: b.heure || '', date: b.date || '', id: b.id || '', isCashout: b.isCashout ? 1 : 0, isFreebet: b.isFreebet ? 1 : 0, sport: b.sport || '' } }; });   /* 20261029l : + champs de la fiche (bet45) */
+    var P = ckParis().map(function (y) { var b = y.b; return { j: y.j, r: y.r, g: y.g, b: { n: b.n, domicile: b.domicile || '', type: b.type || '', target: b.target || '', l: b.l || 1, m: b.m, cote: b.cote, comp: b.comp || '', t: b.t || '', heure: b.heure || '', date: b.date || '', id: b.id || '', isCashout: b.isCashout ? 1 : 0, isFreebet: b.isFreebet ? 1 : 0, sport: b.sport || '', meth: b.meth || '' } }; });   /* 20261119m : + meth (📉) */   /* 20261029l : + champs de la fiche (bet45) */
     var NT = {}; P.forEach(function (y) { var n = y.b.n; if (NT[n] == null) { var uu = ckU(n); NT[n] = (uu && uu.note) || ''; } });
     var LG = {}; Object.keys(NT).forEach(function (n) { LG[n] = ckFond(n); });   /* 20261029r : couleur + logo de chaque carte (bet45) */   /* 20261029q : pari choisi (Outils) de chaque carte, pas u.np */
     var SC = {}; Object.keys(NT).concat(Object.keys(U)).forEach(function (n) { var uu = ckU(n); if (uu && uu.s != null) SC[n] = uu.s; });   /* 20261029v : ⭐ de chaque carte + grille d'Antoine (mise de départ des abonnés) */
