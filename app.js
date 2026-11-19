@@ -90583,7 +90583,8 @@ function _g45ScoreRedessiner() {
       var val = o.cote ? estM * o.cote - 1 : null, bon = val != null && val > 0;
       h += '<div style="font-size:18px;font-weight:800;">BET45 : ' + f2(ce) + (o.cote ? ' <span style="font-weight:400;">→ book</span> <span style="color:' + (bon ? '#1ed760' : '#ff5a5a') + ';">' + f2(o.cote) + (bon ? ' 💎' : '') + '</span>' : '') + '</div>'
         + (val != null ? '<div style="font-size:14px;color:' + (bon ? '#1ed760' : '#ff9f9f') + ';">' + (bon ? 'Le book paie plus que notre estimation : +' : 'Le book paie moins que notre estimation : ') + Math.round(val * 100) + ' %</div>' : '')
-        + (o.cote ? '<div style="font-size:13px;color:#c9d3ee;">Book sans sa marge (≈ 7 %) : <b style="color:#fff;">' + f2(o.cote * 1.07) + '</b></div>' : '')
+        /* 20261119z (« 5,26 × marge 11 % = 4,68 » ≈ book 4,70) : marge selon le pari — simple 7 %, combiné / MyMatch (2 sélections ou +) 11 % */
+        + (o.cote ? (function () { var mg = String(o.lab || '').split(/\s*\+\s*/).filter(Boolean).length >= 2 ? 0.11 : 0.07; return '<div style="font-size:13px;color:#c9d3ee;">Book sans sa marge (≈ ' + Math.round(mg * 100) + ' %' + (mg > 0.1 ? ', combiné' : '') + ') : <b style="color:#fff;">' + f2(o.cote * (1 + mg)) + '</b> · notre cote avec cette marge : <b style="color:#fff;">' + f2(ce / (1 + mg)) + '</b></div>'; })() : '')
         + '<div style="font-size:13px;color:#dfe6f7;margin-top:3px;">' + pcT(estM) + ' estimé = moyenne de : ' + esc(o.nom) + ' ' + pcC(R.pT) + (okA ? ' · ' + esc(oA.nom) + ' ' + pcC(RA.pT) : '') + (HF ? ' · face-à-face ' + pcC(HF.p) : '') + ' (5 saisons)</div>'
         + '<div style="font-size:12px;color:#9fb0d6;margin-top:3px;">Pour info :</div>'
         + '<div style="font-size:13px;color:#c9d3ee;">' + esc(o.nom) + (o.lieu === 'dom' ? ' 🏠' : o.lieu === 'ext' ? ' ✈️' : '') + ' : 10 derniers ' + pcC(R.p10) + ' · 2 saisons ' + pcC(R.p2) + ' · tout ' + pcC(R.pT) + '</div>'
