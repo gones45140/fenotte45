@@ -78799,6 +78799,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
         var C = X.sp === 'soccer' ? null : X, D = null;
         try { D = await avec(C, 'tout', function () { return C ? chargerHk(nom, C) : chargerFt(X.lg, X.id); }); } catch (e) {}
         if (!D || !(D.saisons || []).some(function (s) { return s && s.ms; })) return { err: 'matchs illisibles (réseau)' };
+        if (!D.tid && X.id) { try { D.tid = String(X.id); } catch (e) {} }   /* 20261119s : adversaires (mpmAdv / derOkHtml lisent D.tid) */
         return { C: C, D: D };
       })() };
     }
@@ -78807,7 +78808,9 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     /* 20261119r (capture critères Lyon ✈️ Victoire : « faudrait limite mettre ces infos » → maquette « oui ») : + tableau par saison (réussite,
        pire, meilleure), total, paliers, meilleure série, dernières réussites (derOkHtml, adversaires lus après coup → R.der() redemandé au
        dessin) ; 📉 Cotes basses → matchs à cote gardée sous 1,20 retirés (S.pl12 forcé le temps du calcul, comme le bouton des critères). */
-    var p12 = meth === 'cb', run = function (fn) { var o12 = S.pl12; S.pl12 = p12 || o12; try { return avec(B.C, lk, fn); } finally { S.pl12 = o12; } };
+    var p12 = meth === 'cb', run = function (fn) {   /* 20261119s : mpmBases lit S.data[S.nom].lg (foot) → équipe du panneau posée le temps du calcul */
+      var o12 = S.pl12, oN = S.nom, oD = S.data['\u0001tk']; S.pl12 = p12 || o12; S.data['\u0001tk'] = B.D; S.nom = '\u0001tk';
+      try { return avec(B.C, lk, fn); } finally { S.pl12 = o12; S.nom = oN; if (oD === undefined) delete S.data['\u0001tk']; else S.data['\u0001tk'] = oD; } };
     return run(function () {
       var c = serCombo(texte, nom); if (!c) return { err: 'pari pas calculable', ligue: B.D.ligue || '' };
       var SA = (B.D.saisons || []).filter(function (s) { return s && s.ms; }), cur = B.D.saisons[0] && B.D.saisons[0].ms ? B.D.saisons[0] : null;
@@ -78822,7 +78825,14 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       var ss = SA.map(function (sa) { var R1 = calc(c, filtrer(sa.ms)); return { l: lib(B.D.lg, sa.an), ok: R1.ok, n: R1.n, pire: R1.pire, best: R1.best }; }).filter(function (x) { return x.n; });
       var tous = []; SA.slice().reverse().forEach(function (sa) { tous = tous.concat(filtrer(sa.ms)); }); var TT = calc(c, tous);
       var der = function () { try { return run(function () { return derOkHtml(c, B.D); }); } catch (e) { return ''; } };
-      return { ss: ss, tt: TT, der: der, ns: SA.length, lib: libCombo(c), ligue: B.D.ligue || '', d5: all.slice(-5), n: all.length, nCur: cs.length, okCur: cs.filter(Boolean).length, p10: pc(all.slice(-10)), p2: pc(two), pT: pc(all), est: est, cours: cours, pire: st ? st.p : [], legs: legs };
+      /* 20261119s (capture « 📋 Match par match » des critères : « faudrait rajouter cela ? » → maquette « OUI ») : matchs d'une saison (SA[i], 0 = en cours),
+         du plus récent au plus ancien, adversaire comme derOkHtml (mpmAdv → S.adv, lu après coup : redemandé à chaque dessin) */
+      var mpm = function (i) { try { return run(function () { var sa = SA[i]; if (!sa) return [];
+        var L = jFiltre(c, filtrer(msS(c, sa) || sa.ms)).filter(function (m) { return valeur(c, m).n > 0; }).map(function (m) { return { m: m, an: sa.an }; });
+        var tid = S.ctx ? S.ctx.id : (B.D.tid || ''); if (tid && L.length) { try { mpmAdv(L, tid); } catch (e) {} }
+        return L.map(function (o) { var m = o.m, b0 = mpmBases(m, o.an)[0], A = S.adv && S.adv[b0], a = A && (A[String(m[6] || '')] || A['d' + String(m[0] || '').slice(0, 10)]), v = valeur(c, m);
+          return { d: String(m[0] || '').slice(0, 10), dom: !!m[1], adv: a ? a[0] : '', sc: m[2] + '-' + m[3], ok: v.ok * 2 >= v.n }; }).reverse(); }); } catch (e) { return []; } };
+      return { mpm: mpm, saL: SA.map(function (sa) { return lib(B.D.lg, sa.an); }), ss: ss, tt: TT, der: der, ns: SA.length, lib: libCombo(c), ligue: B.D.ligue || '', d5: all.slice(-5), n: all.length, nCur: cs.length, okCur: cs.filter(Boolean).length, p10: pc(all.slice(-10)), p2: pc(two), pT: pc(all), est: est, cours: cours, pire: st ? st.p : [], legs: legs };
     });
   };
   function serNomJ(t) {   /* « Victoire + Over 2.5 + Harry Kane buteur » → « Harry Kane » */
@@ -90483,36 +90493,46 @@ function _g45ScoreRedessiner() {
 }
 
 
-/* ═══ 20261119q — 🎫 PANNEAU « TON PARI » À DROITE DU FORMULAIRE COCKPIT (PC seulement). Antoine (capture Pari sur PC, partie droite vide :
-   « on pourrait faire quoi » → maquette texte « 🎫 ton pari + 🎯 cote estimée + 📋 fiche de l'équipe » → « OUI »). Le panneau est posé en
-   absolu à droite de #sub-strat (sticky en haut), seulement si la fenêtre a la place (≥ 1280 px et 400 px libres) ; téléphone : rien.
-   Mis à jour toutes les 1,2 s si quelque chose change (carte, lieu, pari coché, cote, mise, méthode) : pas d'accroche dans les nombreuses
-   fonctions du formulaire (deux copies, enveloppes). Calculs : window._g45FichePari (bloc des critères). ═══ */
+/* ═══ 20261119q — 🎫 PANNEAU « TON PARI » À DROITE DU FORMULAIRE (PC seulement). Antoine (capture Pari sur PC, partie droite vide :
+   « on pourrait faire quoi » → maquette texte « 🎫 ton pari + 🎯 cote estimée + 📋 fiche de l'équipe » → « OUI »). Posé en absolu à droite
+   du formulaire (.mm-wrap + .g45-form, 640 px), sticky en haut, seulement si la fenêtre a la place (≥ 1280 px et 400 px libres) ; téléphone : rien.
+   Mis à jour toutes les 1,2 s si quelque chose change : pas d'accroche dans les nombreuses fonctions du formulaire (deux copies, enveloppes).
+   Calculs : window._g45FichePari (bloc des critères).
+   20261119s (« OUI ET FAIRE PAREIL ICI » sur Pari → Simple) : même panneau sur #sub-simple (équipe n-team, sport p-sport, lieu p-domicile,
+   pari getMmLabelSimple, cote n-cote, mise n-mise ; pastille « 🎯 Pari simple ») ; + 📋 Match par match. ═══ */
 (function () {
-  var SIG = '', RES = {}, EN = {};
+  var SIG = {}, RES = {}, EN = {}, SA_I = {};
   var $ = function (id) { return document.getElementById(id); };
   var esc = function (t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
   var f2 = function (v) { return (Math.round(v * 100) / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
   var pcT = function (p) { return p == null ? '—' : Math.round(p * 100) + ' %'; };
   var BOX = 'background:rgba(11,16,29,.92);border:1px solid #2a3a63;border-radius:12px;padding:12px;color:#fff;margin-bottom:10px;';
-  function lire() {
-    var u0 = $('c-unit'), nom = u0 ? u0.value : '', u = ((typeof state !== 'undefined' && state.u) || []).filter(function (x) { return x && x.n === nom; })[0] || null;
-    var lab = ''; try { lab = typeof getMmLabel === 'function' ? getMmLabel() : ''; } catch (e) {}
+  var v = function (id) { var x = $(id); return x ? String(x.value || '') : ''; };
+  var carte = function (nom) { return ((typeof state !== 'undefined' && state.u) || []).filter(function (x) { return x && x.n === nom; })[0] || null; };
+  function lire(f) {
+    if (f === 'simple') {
+      var nS = v('n-team').trim(), uS = carte(nS), labS = ''; try { labS = typeof getMmLabelSimple === 'function' ? getMmLabelSimple() : ''; } catch (e) {}
+      var cS = parseFloat(v('n-cote').replace(',', '.')) || 0, sp = v('p-sport');
+      return { f: f, nom: nS, u: uS, ft: !sp || sp.indexOf('⚽') >= 0, lieu: v('p-domicile') || v('n-lieu'), adv: v('n-analysis'), comp: v('n-comp'), date: v('n-date'), heure: v('n-heure'), mise: parseFloat(v('n-mise').replace(',', '.')) || 0, lab: labS || v('n-type'), cote: cS > 1 ? cS : 0, meth: 'simple' };
+    }
+    var nom = v('c-unit'), u = carte(nom), lab = ''; try { lab = typeof getMmLabel === 'function' ? getMmLabel() : ''; } catch (e) {}
     var cote = 0; try { cote = typeof getMmCote === 'function' ? +getMmCote() || 0 : 0; } catch (e) {}
-    var v = function (id) { var x = $(id); return x ? String(x.value || '') : ''; };
-    return { nom: nom, u: u, lieu: v('c-lieu'), adv: v('c-target'), comp: v('c-comp'), date: v('c-date'), heure: v('c-heure'), mise: parseFloat(v('c-mise').replace(',', '.')) || 0, lab: lab, cote: cote > 1 ? cote : 0, meth: window._g45EngMeth || 'mont' };
+    return { f: 'strat', nom: nom, u: u, ft: !u || !u.sport || String(u.sport).indexOf('⚽') >= 0, lieu: v('c-lieu'), adv: v('c-target'), comp: v('c-comp'), date: v('c-date'), heure: v('c-heure'), mise: parseFloat(v('c-mise').replace(',', '.')) || 0, lab: lab, cote: cote > 1 ? cote : 0, meth: window._g45EngMeth || 'mont' };
   }
-  function cle(o) { return o.nom + '|' + o.lieu + '|' + o.lab + (o.meth === 'cb' ? '|cb' : ''); }
+  function cle(o) { return o.nom + '|' + o.lieu + '|' + o.lab + (o.meth === 'cb' ? '|cb' : '') + (o.ft ? '' : '|x'); }
+  window.g45TkSa = function (k, j) { SA_I[k] = +j || 0; ['strat', 'simple'].forEach(function (f) { SIG[f] = ''; }); poser(); };
   function ticket(o) {
     var F = {}; try { F = (window._g45CkFond && window._g45CkFond(o.nom)) || {}; } catch (e) {}
     var lo = F.cut || F.logo || F.img || '', li = o.lieu === 'dom' ? ' 🏠' : o.lieu === 'ext' ? ' ✈️' : ' 🌍';
-    var M = { mont: ['🚀 Cockpit', '#4d84ff'], cb: ['📉 Cotes basses', '#ff9f43'], fib: ['🐚 Fibonacci', '#b07cff'], dal: ['🪜 D\'Alembert', '#2dd4bf'] }[o.meth] || ['🚀 Cockpit', '#4d84ff'];
+    if (!lo && o.nom && typeof g45LogoUrlDe === 'function') { try { lo = g45LogoUrlDe(o.nom) || ''; } catch (e) {} }
+    if (!lo && o.nom && typeof window._g45LogoIndex === 'function') { try { lo = window._g45LogoIndex(o.nom) || ''; } catch (e) {} }
+    var M = { mont: ['🚀 Cockpit', '#4d84ff'], cb: ['📉 Cotes basses', '#ff9f43'], fib: ['🐚 Fibonacci', '#b07cff'], dal: ['🪜 D\'Alembert', '#2dd4bf'], simple: ['🎯 Pari simple', '#c9d3ee'] }[o.meth] || ['🚀 Cockpit', '#4d84ff'];
     var pal = ''; if (o.meth === 'mont' && o.u) { try { pal = ' · Palier ' + (typeof _g45PalLieu === 'function' ? _g45PalLieu(o.u, o.lieu || 'dom') : (o.u.l || 1)); } catch (e) {} }
     var dt = /^\d{4}-\d\d-\d\d$/.test(o.date) ? o.date.slice(8, 10) + '/' + o.date.slice(5, 7) : '';
     return '<div style="' + BOX + 'position:relative;overflow:hidden;">'
       + '<div style="font-size:14px;font-weight:800;color:#ffd34d;margin-bottom:6px;">🎫 TON PARI</div>'
       + '<div style="display:flex;align-items:center;gap:10px;">' + (/^https?:/.test(lo) ? '<img src="' + esc(lo) + '" alt="" onerror="this.remove()" style="width:54px;height:54px;object-fit:contain;flex:0 0 54px;filter:drop-shadow(0 0 3px rgba(0,0,0,.7));">' : '')
-      + '<div style="min-width:0;"><div style="font-size:17px;font-weight:800;">' + esc(o.nom || 'Choisis une carte') + li + (o.adv ? ' <span style="font-weight:400;color:#dfe6f7;">vs ' + esc(o.adv) + '</span>' : '') + '</div>'
+      + '<div style="min-width:0;"><div style="font-size:17px;font-weight:800;">' + esc(o.nom || (o.f === 'simple' ? 'Écris une équipe' : 'Choisis une carte')) + li + (o.adv ? ' <span style="font-weight:400;color:#dfe6f7;">vs ' + esc(o.adv) + '</span>' : '') + '</div>'
       + '<div style="font-size:13px;color:#c9d3ee;">' + [esc(o.comp), dt, esc(o.heure)].filter(Boolean).join(' · ') + '</div></div></div>'
       + '<div style="font-size:15px;margin-top:8px;">' + (o.lab ? '✅ <b>' + esc(o.lab) + '</b>' : '<span style="color:#c9d3ee;">Coche un pari à gauche</span>') + '</div>'
       + '<div style="font-size:15px;margin-top:4px;">Cote <b>' + (o.cote ? f2(o.cote) : '—') + '</b> · Mise <b>' + (o.mise ? f2(o.mise) + ' €' : '—') + '</b></div>'
@@ -90550,24 +90570,36 @@ function _g45ScoreRedessiner() {
       + '<br>5 derniers : ' + (R.d5.length ? R.d5.map(function (x) { return x ? '✅' : '❌'; }).join(' ') : '—')
       + (R.legs.length > 1 ? '<br><span style="font-size:14px;color:#dfe6f7;">Cette saison : ' + R.legs.map(function (l) { return esc(l.t) + ' <b>' + pcT(l.p) + '</b>'; }).join(' · ') + '</span>' : '')
       + '</div></div>';
+    /* 20261119s : 📋 MATCH PAR MATCH (onglets saisons, liste qui défile dans le cadre) */
+    if (typeof R.mpm === 'function' && R.saL && R.saL.length) {
+      var si = Math.min(SA_I[k] || 0, R.saL.length - 1), ML = R.mpm(si), anN = new Date().getFullYear();
+      h += '<div style="' + BOX + '"><div style="font-size:14px;font-weight:800;color:#ffd34d;margin-bottom:6px;">📋 MATCH PAR MATCH</div><div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px;">'
+        + R.saL.map(function (l, j) { var on = j === si; return '<button onclick="g45TkSa(decodeURIComponent(\'' + encodeURIComponent(k).replace(/'/g, '%27') + '\'),' + j + ')" style="padding:4px 9px;border-radius:12px;font-size:13px;font-weight:800;cursor:pointer;color:#fff;border:1px solid ' + (on ? '#6d9dff' : '#2a3a63') + ';background:' + (on ? '#2f55b8' : '#16213f') + ';">' + esc(l) + '</button>'; }).join('') + '</div>'
+        + '<div style="max-height:260px;overflow-y:auto;">' + (ML.length ? ML.map(function (x) { var dt = x.d.split('-'), dte = dt.length === 3 ? dt[2] + '/' + dt[1] + (+dt[0] !== anN ? '/' + dt[0].slice(2) : '') : '';
+            return '<div style="display:grid;grid-template-columns:62px minmax(0,1fr) 44px 22px;gap:6px;align-items:center;padding:4px 2px;border-bottom:1px solid #1c2747;font-size:14px;"><span>' + esc(dte) + '</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (x.dom ? '🏠' : '✈️') + ' ' + esc(x.adv || '') + '</span><b style="text-align:right;">' + esc(x.sc) + '</b><span>' + (x.ok ? '✅' : '❌') + '</span></div>'; }).join('')
+          : '<div style="font-size:14px;color:#c9d3ee;">Aucun match compté cette saison.</div>') + '</div></div>';
+    }
     return h;
   }
-  function poser() {
-    var sub = $('sub-strat'), z = $('g45-tkpc');
-    /* #sub-strat prend toute la largeur (simulateur de paliers, tableau En cours) ; le formulaire = .mm-wrap + .g45-form (640 px) → panneau à leur droite */
+  function poserF(f) {
+    var sub = $(f === 'simple' ? 'sub-simple' : 'sub-strat'), zid = 'g45-tkpc' + (f === 'simple' ? '-s' : ''), z = $(zid);
+    /* le bloc prend toute la largeur ; le formulaire = .mm-wrap + .g45-form (640 px) → panneau à leur droite */
     var mm = sub && sub.querySelector('.mm-wrap'), fm = sub && sub.querySelector('.g45-form'), rS = sub && sub.getBoundingClientRect(), rM = mm && mm.getBoundingClientRect(), rF = fm && fm.getBoundingClientRect();
     var place = !!(sub && mm && fm && sub.offsetParent !== null && window.innerWidth >= 1280 && rS.right - rM.right >= 400);
     if (!place) { if (z) z.style.display = 'none'; return; }
-    if (!z) { z = document.createElement('div'); z.id = 'g45-tkpc'; z.style.cssText = 'position:absolute;width:360px;z-index:5;'; z.innerHTML = '<div id="g45-tkpc-in" style="position:sticky;top:80px;"></div>'; if (getComputedStyle(sub).position === 'static') sub.style.position = 'relative'; sub.appendChild(z); }
+    if (!z) { z = document.createElement('div'); z.id = zid; z.style.cssText = 'position:absolute;width:360px;z-index:5;'; z.innerHTML = '<div class="g45-tkpc-in" style="position:sticky;top:80px;"></div>'; if (getComputedStyle(sub).position === 'static') sub.style.position = 'relative'; sub.appendChild(z); }
     z.style.display = ''; z.style.left = Math.round(rM.right - rS.left + 24) + 'px'; z.style.top = Math.round(rM.top - rS.top) + 'px'; z.style.height = Math.max(200, Math.round(rF.bottom - rM.top)) + 'px';
-    var o = lire(), k = cle(o), sig = k + '|' + o.cote + '|' + o.mise + '|' + o.meth + '|' + o.adv + '|' + o.comp + '|' + o.date + '|' + o.heure + '|' + (RES[k] ? 1 : 0) + '|' + (RES[k] && typeof RES[k].der === 'function' ? (function () { try { return RES[k].der(); } catch (e) { return ''; } })() : '');
-    if (o.nom && o.lab && !RES[k] && !EN[k] && !(o.u && o.u.type === 'joueur') && typeof window._g45FichePari === 'function') {
-      EN[k] = 1; var ft = !o.u || !o.u.sport || String(o.u.sport).indexOf('⚽') >= 0;
-      window._g45FichePari(o.nom, ft, o.lieu, o.lab, o.meth).then(function (R) { RES[k] = R || { err: 'rien' }; }).catch(function () { RES[k] = { err: 'calcul impossible' }; }).then(function () { delete EN[k]; SIG = ''; poser(); });
+    var o = lire(f), k = cle(o), Rk = RES[k], ex = '';
+    if (Rk && !Rk.err) { try { ex = (typeof Rk.der === 'function' ? Rk.der() : '') + '|' + (typeof Rk.mpm === 'function' ? JSON.stringify(Rk.mpm(SA_I[k] || 0)).length : ''); } catch (e) {} }
+    var sig = k + '|' + o.cote + '|' + o.mise + '|' + o.meth + '|' + o.adv + '|' + o.comp + '|' + o.date + '|' + o.heure + '|' + (Rk ? 1 : 0) + '|' + (SA_I[k] || 0) + '|' + ex;
+    if (o.nom && o.lab && !Rk && !EN[k] && !(o.u && o.u.type === 'joueur') && typeof window._g45FichePari === 'function') {
+      EN[k] = 1;
+      window._g45FichePari(o.nom, o.ft, o.lieu, o.lab, o.meth).then(function (R) { RES[k] = R || { err: 'rien' }; }).catch(function () { RES[k] = { err: 'calcul impossible' }; }).then(function () { delete EN[k]; SIG[f] = ''; poserF(f); });
     }
-    if (sig === SIG) return; SIG = sig;
-    var zi = $('g45-tkpc-in'); if (zi) zi.innerHTML = ticket(o) + fiche(o);
+    if (sig === SIG[f]) return; SIG[f] = sig;
+    var zi = z.querySelector('.g45-tkpc-in'); if (zi) zi.innerHTML = ticket(o) + fiche(o);
   }
+  function poser() { poserF('strat'); poserF('simple'); }
   window._g45TkPc = { poser: poser, lire: lire, RES: RES };   /* tests */
   setInterval(function () { try { poser(); } catch (e) {} }, 1200);
 })();
