@@ -78791,7 +78791,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
      10 derniers 40 / 2 saisons 35 / toutes 25 (case vide ignorée), sur le COMBINÉ entier (les jambes ne sont pas indépendantes : BTS et Over
      vont ensemble), cote = 100 / %. Matchs de l'équipe chargés une fois par heure (FP). ═══ */
   var FP = {};
-  window._g45FichePari = async function (nom, ft, lieu, texte) {
+  window._g45FichePari = async function (nom, ft, lieu, texte, meth) {
     var k = nom + '|' + (ft ? 1 : 0), E = FP[k];
     if (!E || Date.now() - E.t > 3600e3) {
       E = FP[k] = { t: Date.now(), p: (async function () {
@@ -78804,7 +78804,11 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     }
     var B = await E.p; if (B.err) { if (/réseau/.test(B.err)) delete FP[k]; return { err: B.err }; }
     var lk = lieu === 'dom' || lieu === 'ext' ? lieu : 'tout';
-    return avec(B.C, lk, function () {
+    /* 20261119r (capture critères Lyon ✈️ Victoire : « faudrait limite mettre ces infos » → maquette « oui ») : + tableau par saison (réussite,
+       pire, meilleure), total, paliers, meilleure série, dernières réussites (derOkHtml, adversaires lus après coup → R.der() redemandé au
+       dessin) ; 📉 Cotes basses → matchs à cote gardée sous 1,20 retirés (S.pl12 forcé le temps du calcul, comme le bouton des critères). */
+    var p12 = meth === 'cb', run = function (fn) { var o12 = S.pl12; S.pl12 = p12 || o12; try { return avec(B.C, lk, fn); } finally { S.pl12 = o12; } };
+    return run(function () {
       var c = serCombo(texte, nom); if (!c) return { err: 'pari pas calculable', ligue: B.D.ligue || '' };
       var SA = (B.D.saisons || []).filter(function (s) { return s && s.ms; }), cur = B.D.saisons[0] && B.D.saisons[0].ms ? B.D.saisons[0] : null;
       var seq = function (cc, L) { var o = []; L.slice().reverse().forEach(function (sa) { o = o.concat(sqDe(cc, filtrer(sa.ms))); }); return o; };
@@ -78815,7 +78819,10 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       for (var i = all.length - 1; i >= 0 && !all[i]; i--) cours++;
       var legs = String(texte || '').split(/\s*\+\s*/).filter(Boolean).map(function (t) { var cl = serCombo(t, nom); if (!cl) return { t: t, p: null }; var L = seq(cl, cur ? [cur] : SA.slice(0, 1)); return { t: t, p: pc(L), n: L.length }; });
       var st = null; try { st = serStat(B.D, c); } catch (e) {}
-      return { lib: libCombo(c), ligue: B.D.ligue || '', d5: all.slice(-5), n: all.length, nCur: cs.length, okCur: cs.filter(Boolean).length, p10: pc(all.slice(-10)), p2: pc(two), pT: pc(all), est: est, cours: cours, pire: st ? st.p : [], legs: legs };
+      var ss = SA.map(function (sa) { var R1 = calc(c, filtrer(sa.ms)); return { l: lib(B.D.lg, sa.an), ok: R1.ok, n: R1.n, pire: R1.pire, best: R1.best }; }).filter(function (x) { return x.n; });
+      var tous = []; SA.slice().reverse().forEach(function (sa) { tous = tous.concat(filtrer(sa.ms)); }); var TT = calc(c, tous);
+      var der = function () { try { return run(function () { return derOkHtml(c, B.D); }); } catch (e) { return ''; } };
+      return { ss: ss, tt: TT, der: der, ns: SA.length, lib: libCombo(c), ligue: B.D.ligue || '', d5: all.slice(-5), n: all.length, nCur: cs.length, okCur: cs.filter(Boolean).length, p10: pc(all.slice(-10)), p2: pc(two), pT: pc(all), est: est, cours: cours, pire: st ? st.p : [], legs: legs };
     });
   };
   function serNomJ(t) {   /* « Victoire + Over 2.5 + Harry Kane buteur » → « Harry Kane » */
@@ -90495,7 +90502,7 @@ function _g45ScoreRedessiner() {
     var v = function (id) { var x = $(id); return x ? String(x.value || '') : ''; };
     return { nom: nom, u: u, lieu: v('c-lieu'), adv: v('c-target'), comp: v('c-comp'), date: v('c-date'), heure: v('c-heure'), mise: parseFloat(v('c-mise').replace(',', '.')) || 0, lab: lab, cote: cote > 1 ? cote : 0, meth: window._g45EngMeth || 'mont' };
   }
-  function cle(o) { return o.nom + '|' + o.lieu + '|' + o.lab; }
+  function cle(o) { return o.nom + '|' + o.lieu + '|' + o.lab + (o.meth === 'cb' ? '|cb' : ''); }
   function ticket(o) {
     var F = {}; try { F = (window._g45CkFond && window._g45CkFond(o.nom)) || {}; } catch (e) {}
     var lo = F.cut || F.logo || F.img || '', li = o.lieu === 'dom' ? ' 🏠' : o.lieu === 'ext' ? ' ✈️' : ' 🌍';
@@ -90526,12 +90533,23 @@ function _g45ScoreRedessiner() {
         + (val != null ? '<div style="font-size:14px;color:' + (bon ? '#1ed760' : '#ff9f9f') + ';">' + (bon ? 'Le book paie plus que notre estimation : +' : 'Le book paie moins que notre estimation : ') + Math.round(val * 100) + ' %</div>' : '')
         + '<div style="font-size:13px;color:#c9d3ee;margin-top:3px;">' + pcT(R.est) + ' estimé · 10 derniers ' + pcT(R.p10) + ' · 2 saisons ' + pcT(R.p2) + ' · tout ' + pcT(R.pT) + '</div>';
     }
-    h += '</div><div style="' + BOX + '"><div style="font-size:14px;font-weight:800;color:#ffd34d;margin-bottom:6px;">📋 ' + esc(o.nom) + (o.lieu === 'dom' ? ' 🏠' : o.lieu === 'ext' ? ' ✈️' : ' 🌍') + (R.ligue ? ' <span style="font-weight:400;color:#c9d3ee;">· ' + esc(R.ligue) + '</span>' : '') + '</div>'
-      + '<div style="font-size:15px;">5 derniers : ' + (R.d5.length ? R.d5.map(function (x) { return x ? '✅' : '❌'; }).join(' ') : '—') + '</div>'
-      + (R.nCur ? '<div style="font-size:15px;margin-top:3px;">Cette saison : <b>' + R.okCur + ' / ' + R.nCur + '</b> (' + pcT(R.okCur / R.nCur) + ')</div>' : '')
-      + (R.legs.length > 1 ? '<div style="font-size:14px;margin-top:3px;color:#dfe6f7;">' + R.legs.map(function (l) { return esc(l.t) + ' : <b>' + pcT(l.p) + '</b>'; }).join(' · ') + '</div>' : '')
-      + '<div style="font-size:15px;margin-top:3px;">Ratés de suite : <b style="color:' + (R.cours >= 3 ? '#ff9f43' : '#fff') + ';">' + R.cours + '</b></div>'
-      + (R.pire && R.pire.length ? '<div style="font-size:15px;margin-top:3px;">Pire série : <b>' + R.pire.join('-') + '</b></div>' : '') + '</div>';
+    /* 20261119r : 📋 comme 🔎 Critères — tableau par saison, total, paliers, meilleure série, série en cours, dernières réussites */
+    var pc0 = function (a, b) { return b ? Math.round(a / b * 100) + ' %' : '—'; }, nb = function (x) { return String(Math.round(x * 100) / 100).replace('.', ','); };
+    var col = function (v) { return v <= 2 ? '#1ed760' : v <= 4 ? '#ff9f43' : '#ff5a5a'; }, TD = 'padding:4px 3px;border-bottom:1px solid #1c2747;';
+    h += '</div><div style="' + BOX + '"><div style="font-size:14px;font-weight:800;color:#ffd34d;margin-bottom:6px;">📋 ' + esc(o.nom) + (o.lieu === 'dom' ? ' 🏠' : o.lieu === 'ext' ? ' ✈️' : ' 🌍')
+      + ' <span style="font-weight:400;color:#dfe6f7;">· ' + esc(o.lab) + ' · ' + (R.ns || 0) + ' saisons</span></div>'
+      + (o.meth === 'cb' ? '<div style="font-size:13px;color:#c9d3ee;margin-bottom:4px;">📉 Matchs à cote gardée sous 1,20 retirés.</div>' : '')
+      + (R.ss && R.ss.length ? '<table style="width:100%;border-collapse:collapse;font-size:14px;color:#fff;"><tr style="color:#c9d3ee;font-size:13px;text-align:left;"><th style="' + TD + '">Saison</th><th style="' + TD + '">Réussite</th><th style="' + TD + '">Pire</th><th style="' + TD + '">Meill.</th></tr>'
+        + R.ss.map(function (x) { return '<tr><td style="' + TD + '">' + esc(x.l) + '</td><td style="' + TD + '">' + nb(x.ok) + '/' + nb(x.n) + ' · ' + pc0(x.ok, x.n) + '</td><td style="' + TD + 'font-weight:800;color:' + col(x.pire) + ';">' + x.pire + '</td><td style="' + TD + 'font-weight:800;color:#6d9dff;">' + x.best + '</td></tr>'; }).join('') + '</table>' : '');
+    var T = R.tt || { ok: 0, n: 0, pire: 0, best: 0 }, der = ''; try { der = typeof R.der === 'function' ? String(R.der() || '').replace(/^<br>/, '') : ''; } catch (e) {}
+    h += '<div style="font-size:15px;margin-top:8px;line-height:1.5;">🧮 <b>Total : ' + nb(T.ok) + '/' + nb(T.n) + ' · ' + pc0(T.ok, T.n) + '</b>'
+      + '<br>🪜 Pire série : <b style="color:' + col(T.pire) + ';">' + T.pire + '</b> → il fallait <b>' + (T.pire + 1) + ' paliers</b>' + (T.pire + 1 > 6 ? ' ⚠️' : '')
+      + '<br>🏆 Meilleure série : <b style="color:#6d9dff;">' + T.best + '</b>'
+      + '<br>📈 Série en cours : <b style="color:' + (R.cours >= 3 ? '#ff9f43' : '#fff') + ';">' + R.cours + ' raté' + (R.cours > 1 ? 's' : '') + '</b>'
+      + (der ? '<br>' + der : '')
+      + '<br>5 derniers : ' + (R.d5.length ? R.d5.map(function (x) { return x ? '✅' : '❌'; }).join(' ') : '—')
+      + (R.legs.length > 1 ? '<br><span style="font-size:14px;color:#dfe6f7;">Cette saison : ' + R.legs.map(function (l) { return esc(l.t) + ' <b>' + pcT(l.p) + '</b>'; }).join(' · ') + '</span>' : '')
+      + '</div></div>';
     return h;
   }
   function poser() {
@@ -90542,10 +90560,10 @@ function _g45ScoreRedessiner() {
     if (!place) { if (z) z.style.display = 'none'; return; }
     if (!z) { z = document.createElement('div'); z.id = 'g45-tkpc'; z.style.cssText = 'position:absolute;width:360px;z-index:5;'; z.innerHTML = '<div id="g45-tkpc-in" style="position:sticky;top:80px;"></div>'; if (getComputedStyle(sub).position === 'static') sub.style.position = 'relative'; sub.appendChild(z); }
     z.style.display = ''; z.style.left = Math.round(rM.right - rS.left + 24) + 'px'; z.style.top = Math.round(rM.top - rS.top) + 'px'; z.style.height = Math.max(200, Math.round(rF.bottom - rM.top)) + 'px';
-    var o = lire(), k = cle(o), sig = k + '|' + o.cote + '|' + o.mise + '|' + o.meth + '|' + o.adv + '|' + o.comp + '|' + o.date + '|' + o.heure + '|' + (RES[k] ? 1 : 0);
+    var o = lire(), k = cle(o), sig = k + '|' + o.cote + '|' + o.mise + '|' + o.meth + '|' + o.adv + '|' + o.comp + '|' + o.date + '|' + o.heure + '|' + (RES[k] ? 1 : 0) + '|' + (RES[k] && typeof RES[k].der === 'function' ? (function () { try { return RES[k].der(); } catch (e) { return ''; } })() : '');
     if (o.nom && o.lab && !RES[k] && !EN[k] && !(o.u && o.u.type === 'joueur') && typeof window._g45FichePari === 'function') {
       EN[k] = 1; var ft = !o.u || !o.u.sport || String(o.u.sport).indexOf('⚽') >= 0;
-      window._g45FichePari(o.nom, ft, o.lieu, o.lab).then(function (R) { RES[k] = R || { err: 'rien' }; }).catch(function () { RES[k] = { err: 'calcul impossible' }; }).then(function () { delete EN[k]; SIG = ''; poser(); });
+      window._g45FichePari(o.nom, ft, o.lieu, o.lab, o.meth).then(function (R) { RES[k] = R || { err: 'rien' }; }).catch(function () { RES[k] = { err: 'calcul impossible' }; }).then(function () { delete EN[k]; SIG = ''; poser(); });
     }
     if (sig === SIG) return; SIG = sig;
     var zi = $('g45-tkpc-in'); if (zi) zi.innerHTML = ticket(o) + fiche(o);
