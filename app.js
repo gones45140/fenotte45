@@ -87951,7 +87951,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     });
     L = L.filter(function (x) { var a = x.jo && AB[x.eid]; if (a && a.ids && a.ids.indexOf(String(x.jid)) >= 0) { nAb++; return false; } return true; });
     if (nAb) h += '<div style="font-size:13px;color:#c9d3ee;margin:-4px 0 8px;">🚫 ' + nAb + ' pépite' + (nAb > 1 ? 's' : '') + ' joueur retirée' + (nAb > 1 ? 's' : '') + ' (joueur annoncé absent par ESPN).</div>';
-    if (nRet) h += '<div style="font-size:13px;color:#c9d3ee;margin:-4px 0 8px;">➖ ' + nRet + ' pépite' + (nRet > 1 ? 's' : '') + ' retirée' + (nRet > 1 ? 's' : '') + ' (niveau trop faible, équipe très mal cotée, cote au-dessus de 6, pari opposé sur le même match ou cote du book trop loin de la nôtre).</div>';
+    if (nRet) h += '<div style="font-size:13px;color:#c9d3ee;margin:-4px 0 8px;">➖ ' + nRet + ' pépite' + (nRet > 1 ? 's' : '') + ' retirée' + (nRet > 1 ? 's' : '') + ' (niveau trop faible, équipe très mal cotée, cote au-dessus de 4, pari opposé sur le même match ou cote du book trop loin de la nôtre).</div>';
     if (!L.length) return h + '<div style="' + CARTE + '">Aucune pépite à jouer pour l\'instant.</div>';
     var G = [], GI = {};
     L.forEach(function (x) { var k = x.eid + '|' + x.id; if (!GI[k]) { GI[k] = { x: x, L: [] }; G.push(GI[k]); } GI[k].L.push(x); });
@@ -88703,7 +88703,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   };
   /* 20261116k (capture Pépites du jour : « là rien ne bouge ? ») : règles « ➖ non compté » (20261116b → j) dans UNE fonction, utilisée par le
      bilan ET par la liste des pépites du jour (loiHtml) : x.nc = 1 + x.nf (1 niveau trop faible, 2 équipe trop faible pour le book,
-     3 pépite opposée, 4 cote au-dessus de 6). Ne touche pas aux pépites déjà marquées (1 seul pari par équipe). */
+     3 pépite opposée, 4 cote au-dessus de 4). Ne touche pas aux pépites déjà marquées (1 seul pari par équipe). */
   window._g45LoiExclure = function (L) {
     L.forEach(function (x) { if ((x.lg === 'concacaf.nations.league' && x.stg && !/quarter|semi|final|third/i.test(x.stg))
       || (x.lg === 'uefa.nations' && /^D/i.test(String(x.grp || '')))) { x.nc = 1; x.nf = 1; }
@@ -88712,7 +88712,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
       else if (!x.sv && ((x.fut != null && +x.fut > 5000) || (x.fut == null && x.fr != null && +x.fr <= 6))) { x.nc = 1; x.nf = 2; }   /* 20261119c (« Detroit ça joue le titre ? » → « ok pour 50 ») : équipe (et ses joueurs) cotée à plus de 50 contre 1 pour le titre (x.fut, cote US > +5000 ≈ la moitié basse de chaque ligue) ; sans cote titre gardée : les 6 moins cotées comme avant */   /* 20261118s retiré le 19/11 (« hier j'ai fait une erreur… en fait si, on enlève les joueurs des équipes faibles, j'assume ce choix ») : équipes ET joueurs */
       /* 20261116j (capture Turquie en France, Victoire 12,00 ≈ 11,28 FR, 0 point, aucun enjeu : « j'aime pas du tout » → cote max « 6 ») :
          cote FR estimée au-dessus de 6,00 → non comptée */
-      else if (!x.sv && (function () { var q = coteDe(x); return q && coteFr(q.c, x) > 6; })()) { x.nc = 1; x.nf = 4; }
+      else if (!x.sv && (function () { var q = coteDe(x); return q && coteFr(q.c, x) > 4; })()) { x.nc = 1; x.nf = 4; }   /* 20261119d (« cote FR estimée à plus de 4 on saute ») : limite 6 → 4 */
       /* 20261119a (« à combien on l'estime, et si trop grosse différence l'enlever ? » → × 1,40) : pépite JOUEUR dont la cote FR du book dépasse
          de plus de 40 % notre cote juste (matchs joués / réussis) → le book « n'y croit pas » → non comptée (nf 6), gardée dans l'historique. */
       else if (x.jo && !x.sv && (function () { var r = window._g45LoiEcart(x); return r != null && r > 1.4; })()) { x.nc = 1; x.nf = 6; } });
@@ -88758,7 +88758,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   window._g45LoiEcart = function (x) { var q = coteDe(x); if (!q || !x || !(x.n > 0) || !(x.ok > 0)) return null; return coteFr(q.c, x) / (x.n / x.ok); };
   window._g45LoiJusteHtml = function (y) { if (!y || !y.jo) return ''; var q = coteDe(y); if (!q || !(y.n > 0) || !(y.ok > 0)) return ''; var j = y.n / y.ok, f = coteFr(q.c, y), r = f / j;
     return '<br><span style="font-size:13px;color:' + (r > 1.4 ? '#ffb3b3' : '#dfe6f7') + ';">🎯 Notre cote ≈ ' + frC(j) + ' · book ' + frC(f) + ' (× ' + r.toFixed(2).replace('.', ',') + ')</span>'; };
-  window._g45LoiNfTxt = function (y) { return y.nf === 6 ? 'le book n\'y croit pas : sa cote est trop loin de la nôtre' : y.nf === 5 ? '2 victoires opposées → remplacées par « victoire ou nul » de l\'outsider' : y.nf === 4 ? 'cote au-dessus de 6' : y.nf === 3 ? 'pépite opposée sur le même match' : y.nf === 2 ? 'équipe trop faible pour le book' : y.nf ? 'niveau trop faible' : '1 seul pari par équipe'; };
+  window._g45LoiNfTxt = function (y) { return y.nf === 6 ? 'le book n\'y croit pas : sa cote est trop loin de la nôtre' : y.nf === 5 ? '2 victoires opposées → remplacées par « victoire ou nul » de l\'outsider' : y.nf === 4 ? 'cote au-dessus de 4' : y.nf === 3 ? 'pépite opposée sur le même match' : y.nf === 2 ? 'équipe trop faible pour le book' : y.nf ? 'niveau trop faible' : '1 seul pari par équipe'; };
   /* 20261118m (pépites joueurs NBA trop nombreuses → Antoine : « + de 1.6 cote ») : pépite JOUEUR gardée seulement si sa cote (fiche du match
      lue) est d'au moins 1,60 ; fiche pas encore lue → gardée (la liste se redessine à l'arrivée des cotes) ; TD NFL (aucune cote gardée) → gardé. */
   window._g45LoiJoCoteOk = function (x) { if (!x || !x.jo || x.sp !== 'basketball' || !FI[x.eid]) return true;   /* 20261118m : « NBA seulement » */   /* fiche pas encore archivée (0) → gardée en attendant */ var q = coteDe(x); return !!q && q.c >= 1.6; };
@@ -88795,7 +88795,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
      ligne 🪜 sous chaque pépite = palier / mise / gain de la simulation 🚀 En montante (_g45LoiMont → window._g45LoiDet, même clé
      équipe + pari + lieu + date) ; ⏳ = palier et mise prévus ; série fermée après des ratés = 🏁 bénéfice de la série. */
   var montL = function (y) {
-    if (y.nc) return '<br><span style="font-size:13px;font-weight:700;color:#c9d3ee;">➖ non compté (' + (y.nf === 4 ? 'cote au-dessus de 6' : y.nf === 3 ? 'pépite opposée sur le même match' : y.nf === 2 ? 'équipe trop faible pour le book' : y.nf ? 'niveau trop faible' : '1 seul pari par équipe') + ')</span>';   /* 20261114h ; 20261116b : nf */
+    if (y.nc) return '<br><span style="font-size:13px;font-weight:700;color:#c9d3ee;">➖ non compté (' + (y.nf === 4 ? 'cote au-dessus de 4' : y.nf === 3 ? 'pépite opposée sur le même match' : y.nf === 2 ? 'équipe trop faible pour le book' : y.nf ? 'niveau trop faible' : '1 seul pari par équipe') + ')</span>';   /* 20261114h ; 20261116b : nf */
     var d = (window._g45LoiDet || {})[y.id + '|' + y.k + '|' + (y.lieu || '') + '|' + y.t];
     var e2 = function (v) { return (v >= 0 ? '+' : '−') + frC(Math.abs(v)) + ' €'; }, cl = function (v) { return v >= 0 ? '#1ed760' : '#ff6b6b'; };
     /* 20261113g (Antoine : « faut-il mettre en 10 € normal et mode Cockpit ? ») : ligne 💶 10 € à plat (cote FR) au-dessus de la ligne 🪜 */
