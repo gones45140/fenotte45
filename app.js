@@ -90582,7 +90582,28 @@ function _g45ScoreRedessiner() {
     var two = []; per.slice(0, 2).reverse().forEach(function (L) { two = two.concat(L); });
     var cours = 0; for (var q = all.length - 1; q >= 0 && !all[q].ok; q--) cours++;
     var H = aid ? all.filter(function (x) { return x.aid === aid; }).reverse() : [], hok = H.filter(function (x) { return x.ok; }).length;
-    var est = [pc(all)].concat(H.length >= 3 ? [hok / H.length] : []); est = est.reduce(function (a, x) { return a + x; }, 0) / est.length;
+    /* 20261120d (« l'adversaire, faudrait regarder s'il encaisse beaucoup ? » → maquette → « oui ») : buts encaissés par l'adversaire au lieu
+       INVERSE (joueur 🏠 → adversaire ✈️), 5 mêmes saisons, saison + playoffs, comparés à la moyenne NHL au même lieu (32 équipes, saisons
+       finies gardées dans localStorage g45nhlGA1_<saison>_<h|a|t>) → r = GA adv / GA ligue (borné 0,6 – 1,6) ; % du joueur ajusté par une loi
+       de Poisson : λ = −ln(1 − p), p' = 1 − e^(−λ·r). Cote estimée = moyenne (joueur ajusté, face-à-face si ≥ 3). */
+    var GA = null;
+    if (aid) { try {
+      var la = lieu === 'dom' ? 'a' : lieu === 'ext' ? 'h' : '', gaS = function (rows) { var t = 0, n = 0; (rows || []).forEach(function (e) { if (!(e[5] >= 2) || !e[4] || (la && e[3] !== la)) return; t += +e[4][1] || 0; n++; }); return [t, n]; };
+      var aT = 0, aN = 0, lT = 0, lN = 0, sCur = SA[0];
+      /* toutes les saisons en même temps (1er calcul ≈ 160 fichiers, ensuite gardés) */
+      var RS = await Promise.all(SA.map(async function (sg, g) {
+        if (saL.indexOf(sg) < 0) return null;
+        var ea = await jget(NHA + sg + '/equipes/' + aid + '.json'), x1 = gaS(ea && ea.m);
+        var ck = 'g45nhlGA1_' + sg + '_' + (la || 't'), lv = null; if (sg !== sCur) { try { lv = JSON.parse(localStorage.getItem(ck) || 'null'); } catch (e) {} }
+        if (!lv) { var ixg = IX[g] || {}, Q = await Promise.all(Object.keys(ixg).map(function (k2) { return jget(NHA + sg + '/equipes/' + k2 + '.json'); })), t2 = 0, n2 = 0;
+          Q.forEach(function (e) { var y2 = gaS(e && e.m); t2 += y2[0]; n2 += y2[1]; }); lv = [t2, n2]; if (sg !== sCur && n2 > 100) { try { localStorage.setItem(ck, JSON.stringify(lv)); } catch (e) {} } }
+        return [x1, lv];
+      }));
+      RS.forEach(function (q) { if (!q) return; aT += q[0][0]; aN += q[0][1]; lT += q[1][0]; lN += q[1][1]; });
+      if (aN >= 20 && lN > 200) { var ga = aT / aN, gl = lT / lN, r0 = Math.max(0.6, Math.min(1.6, ga / gl)); GA = { ga: ga, gl: gl, r: r0, n: aN, la: la }; }
+    } catch (e) {} }
+    var pT0 = pc(all), pA = pT0 != null && GA ? 1 - Math.exp(Math.log(1 - Math.min(0.999, pT0)) * GA.r) : pT0;
+    var est = [pA].concat(H.length >= 3 ? [hok / H.length] : []); est = est.reduce(function (a, x) { return a + x; }, 0) / est.length;
     var dte = function (x) { var d = x.d.split('-'); return d[2] + '/' + d[1] + (+d[0] !== new Date().getFullYear() ? '/' + d[0] : ''); };
     var der = all.filter(function (x) { return x.ok; }).slice(-3).reverse();
     var cur = per[0][0] && per[0][0].an === SA[0] ? per[0] : [];
@@ -90591,7 +90612,7 @@ function _g45ScoreRedessiner() {
       p10: pc(all.slice(-10)), p2: pc(two), pT: pc(all), est: est, cours: cours, legs: [],
       der: function () { return der.length ? '<br>🕒 Dernières réussites : ' + der.map(function (x) { return '<b>' + esc(dte(x)) + '</b> ' + (x.dom ? '🏠' : '✈️') + ' ' + esc(x.adv) + ' <b>' + esc(x.sc) + '</b>'; }).join(' · ') : ''; },
       mpm: function (j) { return (per[j] || []).slice().reverse(); },
-      hJ: { aid: aid, adv: adv, L: H, ok: hok } };
+      hJ: { aid: aid, adv: adv, L: H, ok: hok }, GA: GA, pA: pA };
   };
   function lire(f) {
     if (f === 'simple') {
@@ -90643,7 +90664,7 @@ function _g45ScoreRedessiner() {
        → « 5,26 + la marge… on est pas loin ») : % estimé = MOYENNE des 5 saisons entières de l'équipe (tout), de l'adversaire (tout) et des
        face-à-face au même lieu (si au moins 3) ; les 10 derniers / 2 saisons restent affichés pour info. Book sans sa marge ≈ cote × 1,07. */
     var HF = null; try { if (R.jo && R.hJ && R.hJ.L.length >= 3) HF = { p: R.hJ.ok / R.hJ.L.length, n: R.hJ.L.length }; else if (okA && RA.tid && typeof R.h2h === 'function') { var HH = R.h2h(RA.tid), HM = (HH.L || []).filter(function (x) { return o.lieu === 'dom' ? x.dom : o.lieu === 'ext' ? !x.dom : true; }); if (HM.length >= 3) HF = { p: HM.filter(function (x) { return x.ok; }).length / HM.length, n: HM.length }; } } catch (e) {}
-    var CP = [R.pT].concat(okA ? [RA.pT] : []).concat(HF ? [HF.p] : []).filter(function (x) { return x != null; });
+    var CP = [R.jo && R.pA != null ? R.pA : R.pT].concat(okA ? [RA.pT] : []).concat(HF ? [HF.p] : []).filter(function (x) { return x != null; });   /* 20261120d : joueur = % ajusté à l'adversaire */
     var estM = CP.length ? CP.reduce(function (a, x) { return a + x; }, 0) / CP.length : null;
     var ce = estM ? 1 / estM : 0, h = '<div style="' + BOX + '"><div style="font-size:14px;font-weight:800;color:#ffd34d;margin-bottom:6px;">🎯 COTE ESTIMÉE</div>';
     if (!ce) h += '<div style="font-size:15px;">Jamais passé sur ces matchs : pas d\'estimation.</div>';
@@ -90655,7 +90676,8 @@ function _g45ScoreRedessiner() {
         /* 20261120a (capture Winamax Ligue 1 : 1N2 Troyes – Le Havre 111,8 %, Nice – PSG 111,9 %, Monaco – Auxerre 111,7 % → marge ≈ 12 % même en
            simple → « oui ») : 12 % pour tous les paris, même formule (cote × 1,12 ; la marge du book pèse surtout sur les grosses cotes) */
         + (o.cote ? (function () { var mg = 0.12; return '<div style="font-size:13px;color:#c9d3ee;">Book sans sa marge (≈ ' + Math.round(mg * 100) + ' %) : <b style="color:#fff;">' + f2(o.cote * (1 + mg)) + '</b> · notre cote avec cette marge : <b style="color:#fff;">' + f2(ce / (1 + mg)) + '</b></div>'; })() : '')
-        + '<div style="font-size:13px;color:#dfe6f7;margin-top:3px;">' + pcT(estM) + ' estimé = moyenne de : ' + esc(o.nom) + ' ' + pcC(R.pT) + (okA ? ' · ' + esc(oA.nom) + ' ' + pcC(RA.pT) : '') + (HF ? ' · face-à-face ' + pcC(HF.p) : '') + ' (5 saisons)</div>'
+        + (R.jo && R.GA ? '<div style="font-size:14px;margin-top:4px;">🛡️ ' + esc(o.adv) + (R.GA.la === 'a' ? ' ✈️' : R.GA.la === 'h' ? ' 🏠' : '') + ' encaisse <b>' + String(Math.round(R.GA.ga * 100) / 100).replace('.', ',') + '</b> buts/match (moyenne NHL ' + String(Math.round(R.GA.gl * 100) / 100).replace('.', ',') + ') → <b style="color:' + (R.GA.r >= 1 ? '#1ed760' : '#ff9f43') + ';">' + (R.GA.r >= 1 ? '+' : '') + Math.round((R.GA.r - 1) * 100) + ' %</b><br><span style="font-size:13px;color:#dfe6f7;">' + esc(o.nom) + ' : ' + pcT(R.pT) + ' → ajusté <b>' + pcT(R.pA) + '</b></span></div>' : (R.jo && o.adv ? '<div style="font-size:13px;color:#c9d3ee;margin-top:3px;">🛡️ Buts encaissés par ' + esc(o.adv) + ' : pas assez de matchs lus.</div>' : ''))
+        + '<div style="font-size:13px;color:#dfe6f7;margin-top:3px;">' + pcT(estM) + ' estimé = moyenne de : ' + esc(o.nom) + (R.jo && R.GA ? ' ajusté ' + pcC(R.pA) : ' ' + pcC(R.pT)) + (okA ? ' · ' + esc(oA.nom) + ' ' + pcC(RA.pT) : '') + (HF ? ' · face-à-face ' + pcC(HF.p) : '') + ' (5 saisons)</div>'
         + '<div style="font-size:12px;color:#9fb0d6;margin-top:3px;">Pour info :</div>'
         + '<div style="font-size:13px;color:#c9d3ee;">' + esc(o.nom) + (o.lieu === 'dom' ? ' 🏠' : o.lieu === 'ext' ? ' ✈️' : '') + ' : 10 derniers ' + pcC(R.p10) + ' · 2 saisons ' + pcC(R.p2) + ' · tout ' + pcC(R.pT) + '</div>'
         + (oA ? '<div style="font-size:13px;color:#c9d3ee;">' + esc(oA.nom) + (oA.lieu === 'dom' ? ' 🏠' : oA.lieu === 'ext' ? ' ✈️' : '') + ' · ' + esc(oA.lab) + ' : ' + (okA ? '10 derniers ' + pcC(RA.p10) + ' · 2 saisons ' + pcC(RA.p2) + ' · tout ' + pcC(RA.pT) : RA ? 'pas de données' + (RA.err ? ' (' + esc(RA.err) + ')' : '') : '⏳') + '</div>' : (R.jo ? (o.adv ? '' : '<div style="font-size:13px;color:#c9d3ee;">Remplis « Adversaire » pour les face-à-face.</div>') : '<div style="font-size:13px;color:#c9d3ee;">Remplis « Adversaire » pour compter aussi l\'autre équipe.</div>'));
