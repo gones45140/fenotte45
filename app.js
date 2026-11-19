@@ -88709,7 +88709,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
       || (x.lg === 'uefa.nations' && /^D/i.test(String(x.grp || '')))) { x.nc = 1; x.nf = 1; }
       /* 20261116h (« comment éviter les pièges des équipes faibles dès P1 ? » → « les 6 dernières, que l'on ne joue pas ») : NBA / NHL / NFL / MLB,
          équipe parmi les 6 MOINS cotées de sa ligue pour le titre (x.fr, rang gardé par le robot chaque matin) → non comptée */
-      else if (x.fr != null && +x.fr <= 6 && !x.sv && !x.jo) { x.nc = 1; x.nf = 2; }   /* 20261118s (« donc un bon joueur dans une équipe nulle saute ? ») : règle réservée aux ÉQUIPES */
+      else if (x.fr != null && +x.fr <= 6 && !x.sv) { x.nc = 1; x.nf = 2; }   /* 20261118s retiré le 19/11 (« hier j'ai fait une erreur… en fait si, on enlève les joueurs des équipes faibles, j'assume ce choix ») : équipes ET joueurs */
       /* 20261116j (capture Turquie en France, Victoire 12,00 ≈ 11,28 FR, 0 point, aucun enjeu : « j'aime pas du tout » → cote max « 6 ») :
          cote FR estimée au-dessus de 6,00 → non comptée */
       else if (!x.sv && (function () { var q = coteDe(x); return q && coteFr(q.c, x) > 6; })()) { x.nc = 1; x.nf = 4; }
