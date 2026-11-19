@@ -89374,7 +89374,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
         if (us && !(m[5] >= 2)) return;
         var me = lieu === 'h' ? +m[4][0] : +m[4][1], ad = lieu === 'h' ? +m[4][1] : +m[4][0];
         var r = (sp === 'hockey' && m[6]) || me === ad ? 'N' : me > ad ? 'V' : 'D';
-        R.push({ t: +m[0] || 0, s: i, r: r });
+        R.push({ t: +m[0] || 0, s: i, r: r, o: String(m[7] == null ? '' : m[7]) });   /* 20261120b : o = n° de l'adversaire (face-à-face) */
       }); });
       return R.sort(function (a, b) { return a.t - b.t; });
     });
@@ -89394,8 +89394,14 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     Promise.all([lignes(xh[0], xh[1], xh[3], 'h'), lignes(xa[0], xa[1], xa[3], 'a')]).then(function (Q) {
       var H = Q[0], A = Q[1];
       if (!H.length || !A.length) { M.r[k] = { err: 1 }; } else {
-        var p1 = (melange(H, 'V') + melange(A, 'D')) / 2, pN = (melange(H, 'N') + melange(A, 'N')) / 2, p2 = (melange(A, 'V') + melange(H, 'D')) / 2;
-        M.r[k] = { H: H, A: A, p: sansNul(xh[0]) ? [p1, null, p2] : [p1, pN, p2], nH: H.length, nA: A.length };
+        /* 20261120b (« faut rajouter les face-à-face sur la même période ? » → « oui, le calcul qu'on vient de faire, le meilleur à mes yeux ») :
+           même calcul que le panneau « Ton pari » (20261119y, tombé juste sur Lyon – Lille) : % = MOYENNE des 5 saisons entières de 🏠 (ses
+           matchs à domicile), de ✈️ (ses matchs à l'extérieur) et des face-à-face 🏠 – ✈️ chez 🏠 sur la même période (si au moins 3 matchs). */
+        var pt = function (L, r) { return L.length ? 100 * L.filter(function (x) { return x.r === r; }).length / L.length : null; };
+        var F = H.filter(function (x) { return x.o && x.o === String(xa[3]); }), fOk = F.length >= 3;
+        var moy = function (a, b, c) { var v = [a, b].concat(fOk ? [c] : []).filter(function (x) { return x != null; }); return v.length ? v.reduce(function (s0, x) { return s0 + x; }, 0) / v.length : null; };
+        var p1 = moy(pt(H, 'V'), pt(A, 'D'), pt(F, 'V')), pN = moy(pt(H, 'N'), pt(A, 'N'), pt(F, 'N')), p2 = moy(pt(A, 'V'), pt(H, 'D'), pt(F, 'D'));
+        M.r[k] = { H: H, A: A, F: F, fOk: fOk, p: sansNul(xh[0]) ? [p1, null, p2] : [p1, pN, p2], nH: H.length, nA: A.length };
       }
       var z = document.getElementById('g45-cjm-1n2'); if (z) z.innerHTML = t1n2Html();
     }).catch(function () { M.r[k] = { err: 1 }; });
@@ -89425,7 +89431,11 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
       var on = M.pk === i;
       return '<input id="g45-cjm-c' + i + '" value="' + esc(M.c[i]) + '" inputmode="decimal" placeholder="' + (i === 1 ? 'nul' : i === 0 ? '🏠' : '✈️') + '" oninput="g45CjmCote(' + i + ',this.value)" style="width:100%;box-sizing:border-box;font-size:17px;font-weight:900;text-align:center;padding:8px;border-radius:10px;background:#141c33;color:#fff;border:' + (on ? '2px solid #f5c542' : '1px solid #2a3a63') + ';">';
     }).join('') + '</div><div id="g45-cjm-mg" style="font-size:14px;color:#c9d3ee;margin-top:6px;">' + (so ? 'Marge du book <b style="color:#fff;">' + frx((so - 1) * 100, 1) + ' %</b> · sans marge : ' + cotes.map(function (c) { return '<b style="color:#fff;">' + frx(c * so, 2) + '</b>'; }).join(' · ') : '') + '</div>'
-      + '<div style="font-size:13px;color:#c9d3ee;margin-top:6px;">Touche une issue pour la choisir (cadre or). ' + esc(xh[4]) + ' = moyenne (ses victoires à 🏠, défaites de ' + esc(xa[4]) + ' à ✈️) ; poids 10 derniers / 2 saisons / 5 saisons du bloc 🎯 Cote juste. ' + r.nH + ' et ' + r.nA + ' matchs lus.</div>';
+      + '<div style="font-size:13px;color:#c9d3ee;margin-top:6px;">Touche une issue pour la choisir (cadre or). ' + esc(xh[4]) + ' = moyenne (ses victoires à 🏠, défaites de ' + esc(xa[4]) + ' à ✈️) + face-à-face ; 5 saisons entières. ' + r.nH + ' et ' + r.nA + ' matchs lus.</div>'
+      /* 20261120b : 🆚 face-à-face chez 🏠, même période */
+      + (r.F ? '<div style="font-size:15px;margin-top:8px;padding:8px 10px;border-radius:10px;background:rgba(11,16,29,.85);border:1px solid #2a3a63;">🆚 <b>Face-à-face</b> (' + esc(xh[4]) + ' 🏠 – ' + esc(xa[4]) + ', 5 saisons) : '
+          + (r.F.length ? '<b>' + r.F.filter(function (x) { return x.r === 'V'; }).length + ' V · ' + (sn ? '' : r.F.filter(function (x) { return x.r === 'N'; }).length + ' N · ') + r.F.filter(function (x) { return x.r === 'D'; }).length + ' D</b> (' + r.F.length + ' match' + (r.F.length > 1 ? 's' : '') + ')' : 'aucun')
+          + '<div style="font-size:13px;color:#c9d3ee;">' + (r.fOk ? 'Compté dans les % ci-dessus.' : 'Pas compté (moins de 3 matchs).') + '</div></div>' : '');
     return h;
   }
   function t1n2Maj(focus) {
