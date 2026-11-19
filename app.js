@@ -88704,6 +88704,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   /* 20261116k (capture Pépites du jour : « là rien ne bouge ? ») : règles « ➖ non compté » (20261116b → j) dans UNE fonction, utilisée par le
      bilan ET par la liste des pépites du jour (loiHtml) : x.nc = 1 + x.nf (1 niveau trop faible, 2 équipe trop faible pour le book,
      3 pépite opposée, 4 cote au-dessus de 4). Ne touche pas aux pépites déjà marquées (1 seul pari par équipe). */
+  window._G45_SEL_TOP = ['Spain', 'France', 'Argentina', 'England', 'Brazil', 'Portugal', 'Netherlands', 'Belgium', 'Germany', 'Croatia', 'Italy', 'Morocco', 'Colombia', 'Uruguay', 'Mexico', 'USA', 'United States', 'Switzerland', 'Japan', 'Senegal', 'Denmark'];   /* 20261119g : top 20 FIFA (nov. 2026) */
   window._g45LoiExclure = function (L) {
     L.forEach(function (x) { if ((x.lg === 'concacaf.nations.league' && x.stg && !/quarter|semi|final|third/i.test(x.stg))
       || (x.lg === 'uefa.nations' && /^D/i.test(String(x.grp || '')))) { x.nc = 1; x.nf = 1; }
@@ -88715,6 +88716,9 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
       else if (!x.sv && !x.mo && (function () { var q = coteDe(x); return q && coteFr(q.c, x) > 4; })()) { x.nc = 1; x.nf = 4; }   /* 20261119d (« cote FR estimée à plus de 4 on saute ») : limite 6 → 4 */
       /* 20261119a (« à combien on l'estime, et si trop grosse différence l'enlever ? » → × 1,40) : pépite JOUEUR dont la cote FR du book dépasse
          de plus de 40 % notre cote juste (matchs joués / réussis) → le book « n'y croit pas » → non comptée (nf 6), gardée dans l'historique. */
+      /* 20261119g (bilan Sélections 6/15 · −25,40 € → « garder que les grosses teams ? » → top 20 FIFA « oui go ») : sélection hors de la
+         liste _G45_SEL_TOP (noms ESPN, à mettre à jour quand le classement FIFA bouge) → non comptée (nf 8) */
+      else if (!x.sv && !x.mo && window._g45LoiTypeComp && window._g45LoiTypeComp(x) === 'sel' && window._G45_SEL_TOP.indexOf(String(x.eq || '').trim()) < 0) { x.nc = 1; x.nf = 8; }
       /* 20261119f (VanVleet 3,05 US → 2,29 FR : « ça reste beaucoup trop, c'est énorme » → « j'aime pas me faire voler 😂 » = choix A) : joueur NBA
          à cote US au-dessus de 3,00 (zone où le book français prend ~ 25 % de marge) → non compté (nf 7) */
       else if (x.jo && x.sp === 'basketball' && !x.sv && !x.mo && (function () { var q = coteDe(x); return q && q.c > 3; })()) { x.nc = 1; x.nf = 7; }
@@ -88761,7 +88765,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   window._g45LoiEcart = function (x) { var q = coteDe(x); if (!q || !x || !(x.n > 0) || !(x.ok > 0)) return null; return coteFr(q.c, x) / (x.n / x.ok); };
   window._g45LoiJusteHtml = function (y) { if (!y || !y.jo) return ''; var q = coteDe(y); if (!q || !(y.n > 0) || !(y.ok > 0)) return ''; var j = y.n / y.ok, f = coteFr(q.c, y), r = f / j;
     return '<br><span style="font-size:13px;color:' + (r > 1.4 ? '#ffb3b3' : '#dfe6f7') + ';">🎯 Notre cote ≈ ' + frC(j) + ' · book ' + frC(f) + ' (× ' + r.toFixed(2).replace('.', ',') + ')</span>'; };
-  window._g45LoiNfTxt = function (y) { return y.nf === 7 ? 'cote US au-dessus de 3 : le book français la rabote trop' : y.nf === 6 ? 'le book n\'y croit pas : sa cote est trop loin de la nôtre' : y.nf === 5 ? '2 victoires opposées → remplacées par « victoire ou nul » de l\'outsider' : y.nf === 4 ? 'cote au-dessus de 4' : y.nf === 3 ? 'pépite opposée sur le même match' : y.nf === 2 ? 'équipe trop faible pour le book' : y.nf ? 'niveau trop faible' : '1 seul pari par équipe'; };
+  window._g45LoiNfTxt = function (y) { return y.nf === 8 ? 'sélection hors du top 20 FIFA' : y.nf === 7 ? 'cote US au-dessus de 3 : le book français la rabote trop' : y.nf === 6 ? 'le book n\'y croit pas : sa cote est trop loin de la nôtre' : y.nf === 5 ? '2 victoires opposées → remplacées par « victoire ou nul » de l\'outsider' : y.nf === 4 ? 'cote au-dessus de 4' : y.nf === 3 ? 'pépite opposée sur le même match' : y.nf === 2 ? 'équipe trop faible pour le book' : y.nf ? 'niveau trop faible' : '1 seul pari par équipe'; };
   /* 20261118m (pépites joueurs NBA trop nombreuses → Antoine : « + de 1.6 cote ») : pépite JOUEUR gardée seulement si sa cote (fiche du match
      lue) est d'au moins 1,60 ; fiche pas encore lue → gardée (la liste se redessine à l'arrivée des cotes) ; TD NFL (aucune cote gardée) → gardé. */
   window._g45LoiJoCoteOk = function (x) { if (!x || !x.jo || x.sp !== 'basketball' || !FI[x.eid]) return true;   /* 20261118m : « NBA seulement » */   /* fiche pas encore archivée (0) → gardée en attendant */ var q = coteDe(x); return !!q && q.c >= 1.6; };
