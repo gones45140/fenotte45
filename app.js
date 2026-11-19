@@ -73572,6 +73572,22 @@ function _g45TicketRemplirCockpit(o) {
       }
     } catch (x) {}
   }
+  /* 20261120y (capture ticket Winamax MyMatch Tampa Bay – Edmonton « Plus de 5,5 + Double chance buteur L. Draisaitl ou C. McDavid » →
+     « Tampa Bay Lightning n'est pas une équipe de ton mur ») : l'IA lit l'équipe à DOMICILE ; les joueurs du ticket jouent pour l'adversaire.
+     Rien trouvé → carte JOUEUR du mur dont le NOM DE FAMILLE est sur le ticket (type / joueur), quel que soit son club ; plusieurs → celle
+     nommée la 1re sur le ticket. Le bloc 20261020p plus bas remet ensuite équipe = club du joueur (Edmonton) et le lieu inversé. */
+  if (un && !choisi) {
+    try {
+      var UJ2 = (typeof state !== 'undefined' && state && state.u) ? state.u : [], txt2 = ' ' + nz(String(o.type || '') + ' ' + String(o.joueur || '')) + ' ';
+      var cJ2 = [].slice.call(un.options).map(function (op) { var u2 = UJ2.filter(function (x) { return x && x.n === op.value; })[0]; if (!u2 || u2.type !== 'joueur') return null;
+        var w = nz(op.value).split(' ').filter(function (x) { return x.length >= 3; }), fam = w[w.length - 1]; var i = fam ? txt2.indexOf(' ' + fam + ' ') : -1; return i >= 0 ? { op: op, i: i } : null; }).filter(Boolean).sort(function (a2, b2) { return a2.i - b2.i; });
+      if (cJ2.length) {
+        choisi = cJ2[0].op; cj = (cj || []).concat([choisi]); un.value = choisi.value; ids.push('c-unit');
+        if (!o.joueur) o.joueur = choisi.value;
+        try { if (typeof updMise === 'function') updMise(); if (typeof renderCrash === 'function') renderCrash(); } catch (x) {}
+      }
+    } catch (x) {}
+  }
   /* 20261016f (ticket Winamax « Résultat Florida Panthers » vs Vancouver Canucks, Florida absent du mur, Vancouver présent ; choix
      d'Antoine : « celle de Vancouver ») : équipe jouée absente du mur mais ADVERSAIRE au mur → pari CONTRE cette équipe : sa carte,
      adversaire = l'équipe du ticket, lieu inversé, « Résultat / Victoire » → « Défaite ». */
