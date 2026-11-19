@@ -58848,11 +58848,11 @@ function _g45BanArch(nom) {
   try {
     if (!_G45_BAN.m && !_G45_BAN.en) {
       var c0 = null; try { c0 = JSON.parse(localStorage.getItem('g45ban1') || 'null'); } catch (e) {}
-      if (c0 && c0.m && Date.now() - c0.t < 864e5) _G45_BAN.m = c0.m;
+      if (c0 && c0.m && Object.keys(c0.m).length && Date.now() - c0.t < 864e5) _G45_BAN.m = c0.m;   /* 20261120p : copie VIDE (1er fichier du robot, 19/11 18 h 16) ignorée → relue */
       else { _G45_BAN.en = 1;
         fetch('https://raw.githubusercontent.com/gones45140/gones45-archives/main/bannieres/bannieres.json?h=' + Math.floor(Date.now() / 36e5)).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
           var m = {}; if (j && j.E) Object.keys(j.E).forEach(function (k) { var e = j.E[k]; if (e && e.u && e.n) m[_g45SgNorm(e.n)] = e.u; });
-          _G45_BAN.m = m; if (j && j.E) { try { localStorage.setItem('g45ban1', JSON.stringify({ t: Date.now(), m: m })); } catch (e) {} }
+          _G45_BAN.m = m; if (j && j.E && Object.keys(m).length) { try { localStorage.setItem('g45ban1', JSON.stringify({ t: Date.now(), m: m })); } catch (e) {} }
           if (Object.keys(m).length) { try { if (typeof render === 'function') render(); } catch (e) {} }
         }).catch(function () { _G45_BAN.m = {}; }); }
     }
