@@ -89311,7 +89311,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
         : '<div style="font-size:16px;font-weight:900;margin-top:4px;color:#ff8a8a;">❌ trop court : ' + fr(R.ev, 1) + ' % (il faudrait ' + fr(R.cj, 2) + ' ou plus)</div>');
     return '<div id="g45-cj" class="fc" style="margin-top:12px;background:rgba(10,14,24,.93);border:1px solid #1c2747;border-radius:14px;padding:12px;color:#fff;">'
       + '<div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:17px;font-weight:900;">🎯 Cote juste</span><button onclick="g45CjVider()" style="font-size:13px;padding:5px 10px;border-radius:8px;border:1px solid #2a3a63;background:#0b1226;color:#fff;cursor:pointer;">Effacer</button></div>'
-      + '<div style="font-size:13px;color:#c9d3ee;margin:3px 0 10px;">' + (D.crit ? 'Critère : <b style="color:#fff;">' + esc(D.crit) + '</b> · ' : '') + 'remplis à la main ou par « 🧮 Envoyer à la calculatrice » dans les critères d\'une équipe.</div>'
+      + '<div style="font-size:13px;color:#c9d3ee;margin:3px 0 10px;">' + (D.crit ? 'Critère : <b style="color:#fff;">' + esc(D.crit) + (D.e[0] && D.e[0].nom ? ' · ' + esc(D.e[0].nom) : '') + '</b> · ' : '') + 'remplis à la main ou par « 🧮 Envoyer à la calculatrice » dans les critères d\'une équipe.</div>'
       + '<div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;">' + col(0) + col(1) + '</div>'
       + '<div style="font-size:14px;font-weight:800;margin:10px 0 4px;">Poids</div><div style="display:flex;gap:6px;flex-wrap:wrap;font-size:14px;">'
       + ['10 derniers matchs', '2 saisons', 'Toutes saisons'].map(function (t, i) { return '<span style="flex:1;min-width:100px;background:#0b1226;border:1px solid #2a3a63;border-radius:8px;padding:6px;text-align:center;">' + t + ' ' + inp('cj-w' + i, D.w[i], 48) + ' %</span>'; }).join('') + '</div>'
@@ -89344,7 +89344,8 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   window.g45CjVider = function () { D = { e: [{ nom: '', lieu: '', d10: '', s2: '', s5: '' }, { nom: '', lieu: '', d10: '', s2: '', s5: '' }], w: [40, 35, 25], b: '', inv: '', t3: '', mg: 7, crit: '' }; garder(); poser(); };
   window.g45CjMettre = function (k, o, muet) {
     var i = k === 2 ? 1 : 0; D.e[i] = { nom: o.nom || '', lieu: o.lieu || '', d10: o.d10 == null ? '' : o.d10, s2: o.s2 == null ? '' : o.s2, s5: o.s5 == null ? '' : o.s5 };
-    D.crit = o.crit || D.crit; garder(); poser();
+    /* 20261120w (« Critère : Défaite » affiché alors qu'Antoine calculait la victoire de Pittsburgh → « OUI C ») : le titre suit la case 1 seulement */
+    if (i === 0 || !D.crit) D.crit = o.crit || D.crit; garder(); poser();
     if (muet) return;
     try { if (typeof toast === 'function') toast('🧮 ' + (o.nom || 'Équipe') + ' → Équipe ' + (i + 1) + ' de la calculatrice'); else alert('🧮 Envoyé : ' + (o.nom || '') + ' → Équipe ' + (i + 1) + ' (Pari → 🧮 Calculatrice)'); } catch (e) {}
   };
@@ -90845,8 +90846,15 @@ function _g45ScoreRedessiner() {
        → « 5,26 + la marge… on est pas loin ») : % estimé = MOYENNE des 5 saisons entières de l'équipe (tout), de l'adversaire (tout) et des
        face-à-face au même lieu (si au moins 3) ; les 10 derniers / 2 saisons restent affichés pour info. Book sans sa marge ≈ cote × 1,07. */
     var HF = null; try { if (R.jo && R.hJ && R.hJ.L.length >= 3) HF = { p: R.hJ.ok / R.hJ.L.length, n: R.hJ.L.length }; else if (okA && RA.tid && typeof R.h2h === 'function') { var HH = R.h2h(RA.tid), HM = (HH.L || []).filter(function (x) { return o.lieu === 'dom' ? x.dom : o.lieu === 'ext' ? !x.dom : true; }); if (HM.length >= 3) HF = { p: HM.filter(function (x) { return x.ok; }).length / HM.length, n: HM.length }; } } catch (e) {}
-    var CP = [R.jo && R.pA != null ? R.pA : R.pT].concat(okA ? [RA.pT] : []).concat(HF ? [HF.p] : []).filter(function (x) { return x != null; });   /* 20261120d : joueur = % ajusté à l'adversaire */
+    var CP = [R.jo && R.pA != null ? R.pA : R.pT].concat(okA ? [RA.pT] : []).filter(function (x) { return x != null; });   /* 20261120d : joueur = % ajusté à l'adversaire */
     var estM = CP.length ? CP.reduce(function (a, x) { return a + x; }, 0) / CP.length : null;
+    /* 20261120w (Toronto – LA : face-à-face 1/3 = un tiers de la cote ; « ça tue notre marge à chaque fois » → « 3 matchs sur 269, on est loin des 13 % »
+       → « OUI A ») : le face-à-face pèse au NOMBRE DE MATCHS, comme chaque match de l'équipe et de l'adversaire : w = n / (n + matchs équipe + matchs
+       adversaire). Tests archives (victoire 🏠, 1 740 matchs NHL / 1 903 foot ; erreur, plus bas = mieux) : ⅓ dès 3 matchs 0,2421 / 0,2218 (le pire),
+       sans 0,2373 / 0,2208, proportionnel 0,2372 / 0,2205. */
+    var nEq = (R.tt && R.tt.n) || R.n || 0, nAd = okA ? ((RA.tt && RA.tt.n) || RA.n || 0) : 0, wHF = HF && estM != null ? HF.n / (HF.n + nEq + nAd) : 0;
+    if (HF && estM == null) { estM = HF.p; wHF = 1; }
+    else if (wHF) estM = (1 - wHF) * estM + wHF * HF.p;
     var ce = estM ? 1 / estM : 0, h = '<div style="' + BOX + '"><div style="font-size:14px;font-weight:800;color:#ffd34d;margin-bottom:6px;">🎯 COTE ESTIMÉE</div>';
     if (!ce) h += '<div style="font-size:15px;">Jamais passé sur ces matchs : pas d\'estimation.</div>';
     else {
@@ -90858,7 +90866,7 @@ function _g45ScoreRedessiner() {
            simple → « oui ») : 12 % pour tous les paris, même formule (cote × 1,12 ; la marge du book pèse surtout sur les grosses cotes) */
         + (o.cote ? (function () { var mg = 0.12; return '<div style="font-size:13px;color:#c9d3ee;">Book sans sa marge (≈ ' + Math.round(mg * 100) + ' %) : <b style="color:#fff;">' + f2(o.cote * (1 + mg)) + '</b> · notre cote avec cette marge : <b style="color:#fff;">' + f2(ce / (1 + mg)) + '</b></div>'; })() : '')
         + (R.jo && R.GA ? '<div style="font-size:14px;margin-top:4px;">🛡️ ' + esc(o.adv) + (R.GA.la === 'a' ? ' ✈️' : R.GA.la === 'h' ? ' 🏠' : '') + ' encaisse <b>' + String(Math.round(R.GA.ga * 100) / 100).replace('.', ',') + '</b> ' + (R.sp === 'basketball' || R.sp === 'football' ? 'points' : 'buts') + '/match (moyenne ' + ({ hockey: 'NHL', basketball: 'NBA', football: 'NFL' }[R.sp] || 'du championnat') + ' ' + String(Math.round(R.GA.gl * 100) / 100).replace('.', ',') + ') → <b style="color:' + (R.GA.r >= 1 ? '#1ed760' : '#ff9f43') + ';">' + (R.GA.r >= 1 ? '+' : '') + Math.round((R.GA.r - 1) * 100) + ' %</b><br><span style="font-size:13px;color:#dfe6f7;">' + esc(o.nom) + ' : ' + pcT(R.pT) + ' → ajusté <b>' + pcT(R.pA) + '</b></span></div>' : (R.jo && o.adv ? '<div style="font-size:13px;color:#c9d3ee;margin-top:3px;">🛡️ Buts encaissés par ' + esc(o.adv) + ' : pas assez de matchs lus.</div>' : ''))
-        + '<div style="font-size:13px;color:#dfe6f7;margin-top:3px;">' + pcT(estM) + ' estimé = moyenne de : ' + esc(o.nom) + (R.jo && R.GA ? ' ajusté ' + pcC(R.pA) : ' ' + pcC(R.pT)) + (okA ? ' · ' + esc(oA.nom) + ' ' + pcC(RA.pT) : '') + (HF ? ' · face-à-face ' + pcC(HF.p) : '') + ' (5 saisons)</div>'
+        + '<div style="font-size:13px;color:#dfe6f7;margin-top:3px;">' + pcT(estM) + ' estimé = moyenne de ' + esc(o.nom) + (R.jo && R.GA ? ' ajusté ' + pcC(R.pA) : ' ' + pcC(R.pT)) + (okA ? ' · ' + esc(oA.nom) + ' ' + pcC(RA.pT) : '') + (HF ? ' · face-à-face ' + pcC(HF.p) + ' compté ' + (wHF < 0.01 ? '< 1' : Math.round(wHF * 100)) + ' % (' + HF.n + ' matchs)' : '') + ' (5 saisons)</div>'
         + '<div style="font-size:12px;color:#9fb0d6;margin-top:3px;">Pour info :</div>'
         + '<div style="font-size:13px;color:#c9d3ee;">' + esc(o.nom) + (o.lieu === 'dom' ? ' 🏠' : o.lieu === 'ext' ? ' ✈️' : '') + ' : 10 derniers ' + pcC(R.p10) + ' · 2 saisons ' + pcC(R.p2) + ' · tout ' + pcC(R.pT) + '</div>'
         + (oA ? '<div style="font-size:13px;color:#c9d3ee;">' + esc(oA.nom) + (oA.lieu === 'dom' ? ' 🏠' : oA.lieu === 'ext' ? ' ✈️' : '') + ' · ' + esc(oA.lab) + ' : ' + (okA ? '10 derniers ' + pcC(RA.p10) + ' · 2 saisons ' + pcC(RA.p2) + ' · tout ' + pcC(RA.pT) : RA ? 'pas de données' + (RA.err ? ' (' + esc(RA.err) + ')' : '') : '⏳') + '</div>' : (R.jo ? (o.adv ? '' : '<div style="font-size:13px;color:#c9d3ee;">Remplis « Adversaire » pour les face-à-face.</div>') : '<div style="font-size:13px;color:#c9d3ee;">Remplis « Adversaire » pour compter aussi l\'autre équipe.</div>'));
