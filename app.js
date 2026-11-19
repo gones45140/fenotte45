@@ -90526,7 +90526,8 @@ function _g45ScoreRedessiner() {
    20261119s (« OUI ET FAIRE PAREIL ICI » sur Pari → Simple) : même panneau sur #sub-simple (équipe n-team, sport p-sport, lieu p-domicile,
    pari getMmLabelSimple, cote n-cote, mise n-mise ; pastille « 🎯 Pari simple ») ; + 📋 Match par match. ═══ */
 (function () {
-  var SIG = {}, RES = {}, EN = {}, SA_I = {};
+  var SIG = {}, RES = {}, EN = {}, SA_I = {}, MOBO = {};
+  window.g45TkMob = function (f) { MOBO[f] = !MOBO[f]; SIG[f] = ''; poser(); };
   var $ = function (id) { return document.getElementById(id); };
   var esc = function (t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
   var f2 = function (v) { return (Math.round(v * 100) / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
@@ -90717,12 +90718,23 @@ function _g45ScoreRedessiner() {
     /* le bloc prend toute la largeur ; le formulaire = .mm-wrap + .g45-form (640 px) → panneau à leur droite */
     var mm = sub && sub.querySelector('.mm-wrap'), fm = sub && sub.querySelector('.g45-form'), rS = sub && sub.getBoundingClientRect(), rM = mm && mm.getBoundingClientRect(), rF = fm && fm.getBoundingClientRect();
     var libre = rS ? rS.right - (rM ? rM.right : 0) : 0, place = !!(sub && mm && fm && sub.offsetParent !== null && window.innerWidth >= 1280 && libre >= 400);
-    if (!place) { if (z) z.style.display = 'none'; return; }
-    if (!z) { z = document.createElement('div'); z.id = zid; z.style.cssText = 'position:absolute;width:360px;z-index:5;'; z.innerHTML = '<div class="g45-tkpc-in" style="position:sticky;top:80px;display:flex;gap:12px;align-items:flex-start;"></div>'; if (getComputedStyle(sub).position === 'static') sub.style.position = 'relative'; sub.appendChild(z); }
+    /* 20261120e (« ok cool pour PC ; sur tel on n'a pas la calculatrice cote juste par joueur ? » → maquette « bloc sous le formulaire, ➕ Voir le
+       détail » → « oui ») : pas de place à droite (téléphone, petite fenêtre) → MÊME contenu en une colonne, replié par défaut, juste avant le
+       bouton « Engager la montante » / « Placer le pari simple ». */
+    var mob = !place && !!(sub && sub.offsetParent !== null), zm = $(zid + '-m');
+    if (!place) { if (z) z.style.display = 'none'; }
+    if (!mob && zm) zm.style.display = 'none';
+    if (!place && !mob) return;
+    if (mob) {
+      var bt = sub.querySelector('button[onclick^="pari("]');
+      if (!zm) { zm = document.createElement('div'); zm.id = zid + '-m'; zm.style.cssText = 'margin:12px 0 4px;'; if (bt && bt.parentNode) bt.parentNode.insertBefore(zm, bt); else sub.appendChild(zm); }
+      zm.style.display = '';
+    }
+    if (place && !z) { z = document.createElement('div'); z.id = zid; z.style.cssText = 'position:absolute;width:360px;z-index:5;'; z.innerHTML = '<div class="g45-tkpc-in" style="position:sticky;top:80px;display:flex;gap:12px;align-items:flex-start;"></div>'; if (getComputedStyle(sub).position === 'static') sub.style.position = 'relative'; sub.appendChild(z); }
     /* 20261119t (capture : « le mettre ici pour l'adversaire ? », 2e colonne entourée à droite) : fiche de l'adversaire en 2e colonne si la place le permet */
-    var w2 = Math.min(360, Math.floor(libre - 24 - 360 - 12 - 8)), col2 = w2 >= 300;
-    z.style.width = (col2 ? 360 + 12 + w2 : 360) + 'px';
-    z.style.display = ''; z.style.left = Math.round(rM.right - rS.left + 24) + 'px'; z.style.top = Math.round(rM.top - rS.top) + 'px'; z.style.height = Math.max(200, Math.round(rF.bottom - rM.top)) + 'px';
+    var w2 = mob ? 0 : Math.min(360, Math.floor(libre - 24 - 360 - 12 - 8)), col2 = mob || w2 >= 300;
+    if (place) { z.style.width = (col2 ? 360 + 12 + w2 : 360) + 'px';
+    z.style.display = ''; z.style.left = Math.round(rM.right - rS.left + 24) + 'px'; z.style.top = Math.round(rM.top - rS.top) + 'px'; z.style.height = Math.max(200, Math.round(rF.bottom - rM.top)) + 'px'; }
     var o = lire(f), k = cle(o), Rk = RES[k], ex = '';
     if (Rk && !Rk.err) { try { ex = (typeof Rk.der === 'function' ? Rk.der() : '') + '|' + (typeof Rk.mpm === 'function' ? JSON.stringify(Rk.mpm(SA_I[k] || 0)).length : ''); } catch (e) {} }
     var sig = k + '|' + o.cote + '|' + o.mise + '|' + o.meth + '|' + o.adv + '|' + o.comp + '|' + o.date + '|' + o.heure + '|' + (Rk ? 1 : 0) + '|' + (SA_I[k] || 0) + '|' + ex;
@@ -90736,13 +90748,23 @@ function _g45ScoreRedessiner() {
       EN[k] = 1;
       (estNhlJ(o) ? window._g45FicheJoueurNhl(o.nom, o.lieu, o.lab, o.adv) : window._g45FichePari(o.nom, o.ft, o.lieu, o.lab, o.meth)).then(function (R) { RES[k] = R || { err: 'rien' }; }).catch(function () { RES[k] = { err: 'calcul impossible' }; }).then(function () { delete EN[k]; SIG[f] = ''; poserF(f); });
     }
+    sig += '|' + (mob ? 'm' + (MOBO[f] ? 1 : 0) : 'p');
     if (sig === SIG[f]) return; SIG[f] = sig;
-    var zi = z.querySelector('.g45-tkpc-in');
+    var zi = mob ? zm : z.querySelector('.g45-tkpc-in');
+    /* téléphone : une colonne (cellules dans l'ordre), repliée par défaut ; résumé = cote estimée → book */
+    var sortie = function (C1, C2) {
+      if (!mob) return false;
+      var tout = C1.join('') + C2.join(''), mE = tout.match(/BET45 : ([0-9,]+)/), dia = /💎/.test(String(C1[0] || ''));
+      var res = '<div style="' + BOX + 'display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:' + (MOBO[f] ? '10px' : '0') + ';"><div style="font-size:15px;font-weight:800;">🎯 Cote estimée : ' + (mE ? mE[1] : (o.nom && o.lab ? '⏳' : '—')) + (o.cote ? ' <span style="font-weight:400;">→ book</span> ' + f2(o.cote) + (dia ? ' 💎' : '') : '') + '</div>'
+        + '<button onclick="g45TkMob(\'' + f + '\')" style="flex:0 0 auto;padding:6px 12px;border-radius:10px;font-size:15px;font-weight:800;cursor:pointer;color:#fff;background:#2f6bff;border:1px solid #6d9dff;">' + (MOBO[f] ? '➖ Fermer' : '➕ Voir le détail') + '</button></div>';
+      zi.style.display = 'block'; zi.innerHTML = res + (MOBO[f] ? tout.replace(/[\u0002\u0003]/g, '') : ''); return true;
+    };
     /* 20261119u (capture : « METTRE À LA MÊME HAUTEUR ») : grille 2 colonnes, une ligne par bloc → 📋 fiche face à 📋 fiche, match par match face à
        match par match (fiche() marque ses blocs : \u0002 avant la fiche, \u0003 avant le match par match) */
     var P1 = (ticket(o) + fiche(o)).split(/[\u0002\u0003]/), sep = function (x) { return String(x || '').replace(/[\u0002\u0003]/g, ''); };
     if (!zi) return;
     var Rj = RES[k];
+    if (mob && !(oA || (Rj && Rj.jo && Rj.hJ && Rj.hJ.aid))) { sortie(P1, []); return; }
     if (col2 && !oA && Rj && Rj.jo && Rj.hJ && Rj.hJ.aid) {   /* 20261120c : joueur NHL → 2e colonne = 🆚 face-à-face du joueur contre l'adversaire, au même lieu */
       var HJ = Rj.hJ, anJ = new Date().getFullYear(), pqJ = function (a, b) { return b ? Math.round(a / b * 100) + ' %' + (a ? ' → cote ' + f2(b / a) : '') : '—'; };
       var bJ = '<div style="' + BOX + '"><div style="font-size:14px;font-weight:800;color:#ffd34d;">🆚 ' + esc(o.nom) + ' vs ' + esc(o.adv) + '</div><div style="font-size:13px;color:#dfe6f7;margin-bottom:5px;">' + esc(Rj.lib) + (o.lieu === 'dom' ? ' · 🏠' : o.lieu === 'ext' ? ' · ✈️' : '') + ' · 5 saisons</div>'
@@ -90751,6 +90773,7 @@ function _g45ScoreRedessiner() {
               return '<div style="display:grid;grid-template-columns:72px minmax(0,1fr) 44px 22px;gap:6px;align-items:center;padding:4px 2px;border-bottom:1px solid #1c2747;font-size:14px;"><span>' + esc(dte) + '</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (x.dom ? '🏠' : '✈️') + ' ' + esc(x.adv) + '</span><b style="text-align:right;">' + esc(x.sc) + '</b><span>' + (x.ok ? '✅' : '❌') + '</span></div>'; }).join('') + '</div>'
           : '<div style="font-size:14px;color:#c9d3ee;">Aucun match contre eux ' + (o.lieu === 'dom' ? 'à domicile' : o.lieu === 'ext' ? 'à l\'extérieur' : '') + ' dans les saisons gardées.</div>') + '</div>';
       zi.style.display = 'grid'; zi.style.gridTemplateColumns = '360px ' + w2 + 'px'; zi.style.columnGap = '12px'; zi.style.alignItems = 'start';
+      if (sortie(P1, [bJ])) return;
       var celJ = function (x) { return '<div style="min-width:0;">' + sep(x) + '</div>'; };
       zi.innerHTML = celJ(P1[0]) + celJ(bJ) + celJ(P1[1]) + celJ('') + celJ(P1[2]) + celJ('') + (P1.length > 3 ? celJ(P1.slice(3).join('')) + celJ('') : '');
       return;
@@ -90772,6 +90795,7 @@ function _g45ScoreRedessiner() {
               return '<div style="display:grid;grid-template-columns:72px minmax(0,1fr) 44px 22px;gap:6px;align-items:center;padding:4px 2px;border-bottom:1px solid #1c2747;font-size:14px;"><span>' + esc(dte) + '</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (x.dom ? '🏠' : '✈️') + ' ' + esc(x.adv) + '</span><b style="text-align:right;">' + esc(x.sc) + '</b><span>' + (x.ok ? '✅' : '❌') + '</span></div>'; }).join('') + '</div>'
           : '<div style="font-size:14px;color:#c9d3ee;">' + (H.pend ? '⏳ Lecture des matchs…' : 'Aucun face-à-face ' + (o.lieu === 'dom' ? 'à domicile' : o.lieu === 'ext' ? 'à l\'extérieur' : '') + ' dans les saisons gardées.' + (HL.length && HL.length !== ml.length ? ' (tous lieux : ' + ok + '/' + HL.length + ')' : '')) + '</div>') + '</div>';
     }
+    if (sortie(P1, [hA, P2[1] || '', P2[2] || ''])) return;
     zi.style.display = 'grid'; zi.style.gridTemplateColumns = '360px ' + w2 + 'px'; zi.style.columnGap = '12px'; zi.style.alignItems = 'start';
     zi.innerHTML = cel(P1[0]) + cel(hA) + cel(P1[1]) + cel(P2[1]) + cel(P1[2]) + cel(P2[2]) + (P1.length > 3 ? cel(P1.slice(3).join('')) + cel('') : '');
   }
