@@ -78847,6 +78847,27 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
      10 derniers 40 / 2 saisons 35 / toutes 25 (case vide ignorée), sur le COMBINÉ entier (les jambes ne sont pas indépendantes : BTS et Over
      vont ensemble), cote = 100 / %. Matchs de l'équipe chargés une fois par heure (FP). ═══ */
   var FP = {};
+  /* ═══ 20261120x — 📚 DRAFTKINGS + ARCHIVES (« OUI B » ; tests 19/11 : NHL 1 740 / NBA 1 540 matchs, l'historique des équipes ≈ pas mieux
+     qu'une constante, cotes du book + archives nettement mieux ; Carolina – Montréal V + O5,5 : 92 matchs semblables → 43 % → 2,30, Winamax
+     sans marge 2,20) : pV = chance de l'équipe selon le « vainqueur » DraftKings du match (marge retirée), L = total du book ; matchs
+     SEMBLABLES = loi/semblables/<lg>.json (robot semblables.yml : [pDom, total, butsDom, butsExt, prol, jour]) avec la même chance (± 3 points,
+     élargi jusqu'à ± 8 si moins de 60 matchs) et le même total (NHL égal, NBA ± 4, NFL ± 3) ; le pari est passé sur chacun par passe(c, m)
+     (même moteur que les critères, m = [, , pour, contre, prol, , , , total]) → % = réussis / matchs. ═══ */
+  var SBF = {};
+  window._g45FicheSembl = async function (nom, lieu, texte, pV, L, lg) {
+    var X = { sp: { nhl: 'hockey', nba: 'basketball', nfl: 'football' }[lg], lg: lg, id: '' }; if (!X.sp) return { err: 'sport pas encore fait' };   /* contexte du sport seulement (us() / hk()) */
+    if (!SBF[lg]) SBF[lg] = fetch('https://raw.githubusercontent.com/gones45140/gones45-archives/main/loi/semblables/' + lg + '.json?h=' + Math.floor(Date.now() / 36e5)).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
+    var F = await SBF[lg]; if (!F || !F.M) { delete SBF[lg]; return { err: 'archives indisponibles' }; }
+    var dom = lieu !== 'ext', tol = lg === 'nba' ? 4 : lg === 'nfl' ? 3 : 0.01;
+    return avec(X, 'tout', function () {
+      var c = serCombo(texte, nom); if (!c) return { err: 'pari pas calculable' };
+      var pick = function (d) { return F.M.filter(function (x) { var pt = dom ? x[0] : 1 - x[0]; return Math.abs(pt - pV) <= d && (L == null || x[1] == null || Math.abs(x[1] - L) <= tol); }); };
+      var d = 0.03, Ls = pick(d); while (Ls.length < 60 && d < 0.08) { d += 0.01; Ls = pick(d); }
+      if (Ls.length < 20) return { err: 'trop peu de matchs semblables (' + Ls.length + ')' };
+      var ok = 0; Ls.forEach(function (x) { var m = [0, 0, dom ? x[2] : x[3], dom ? x[3] : x[2], x[4], 0, 0, null, x[1], null]; try { if (passe(c, m)) ok++; } catch (e) {} });
+      return { p: ok / Ls.length, n: Ls.length, ok: ok, lo: Math.max(0, pV - d), hi: Math.min(1, pV + d), L: L, pV: pV };
+    });
+  };
   window._g45FichePari = async function (nom, ft, lieu, texte, meth) {
     var k = nom + '|' + (ft ? 1 : 0), E = FP[k];
     if (!E || Date.now() - E.t > 3600e3) {
@@ -86757,6 +86778,7 @@ window._g45MqPalHtml = function (pire, pd) {
     } catch (e) {}
     MEQ[K] = { t: Date.now(), E: E }; return E;
   }
+  window._g45CeCharger = chargerEq;   /* 20261120x : cotes DraftKings du match pour la ligne 📚 de « Ton pari » */
   function htmlEq(lg, eid, E) {
     var OUV = false; try { OUV = localStorage.getItem('g45ce_ouvert') === '1'; } catch (e) {}
     var EST = window._g45DkMode() === 'fr', FR = window._G45_TR_FR || 0.94, v = function (d) { return d > 1 ? (EST ? '≈ ' + f(Math.max(1.01, Math.round(d * FR * 100) / 100)) : f(d)) : '–'; };
@@ -90793,7 +90815,8 @@ function _g45ScoreRedessiner() {
       Lj.sort(function (a, b) { return (b.p || 0) - (a.p || 0); });
       return { nom: (t.team || {}).displayName || '', id: tid, L: Lj };
     });
-    return { sp: sp, T: T, der: der };
+    var Ch = (((ev.competitions || [])[0] || {}).competitors || []).filter(function (c2) { return c2.homeAway === 'home'; })[0];
+    return { sp: sp, T: T, der: der, eid: String(ev.id), hNom: Ch ? (Ch.team || {}).displayName || '' : '' };
   }
   function absHtml(o) {
     var k = absCle(o); if (!k) return '';
@@ -90816,6 +90839,22 @@ function _g45ScoreRedessiner() {
     return h + '</div>';
   }
   window._g45TkAbs = { html: absHtml, cle: absCle, AB: AB };   /* tests */
+  /* 20261120x — 📚 : cotes DraftKings du match (même match ESPN que 🚑) → matchs semblables (window._g45FicheSembl) ; une fois / 30 min (SB) */
+  var SB = {}, SBL = { hockey: 'nhl', basketball: 'nba', football: 'nfl' };
+  function sembDe(o) {
+    var k = absCle(o); if (!k || !o.lab) return null; k += '|' + o.lab;
+    var A = AB[absCle(o)], R0 = A && A.R; if (!R0 || R0.err || !R0.eid) return null;
+    var X = SB[k];
+    if (!X || Date.now() - X.t > 30 * 60e3) { if (!X || !X.en) { SB[k] = X = { t: Date.now(), en: 1, R: X && X.R };
+      (async function () {
+        var lg = SBL[R0.sp], E = typeof window._g45CeCharger === 'function' ? await window._g45CeCharger(lg, R0.eid) : null;
+        if (!E || !E.ml || !(E.ml.h > 1) || !(E.ml.a > 1)) return { err: 'cotes DraftKings absentes' };
+        var home = memeA(R0.hNom, o.nom), ph = (1 / E.ml.h) / (1 / E.ml.h + 1 / E.ml.a), pV = home ? ph : 1 - ph;
+        var R = await window._g45FicheSembl(o.nom, home ? 'dom' : 'ext', o.lab, pV, E.tot && E.tot.L != null ? +E.tot.L : null, lg);
+        if (R && !R.err) R.ml = home ? E.ml.h : E.ml.a; return R;
+      })().then(function (R) { SB[k] = { t: Date.now(), R: R || { err: 'rien' } }; }, function () { SB[k] = { t: Date.now(), R: { err: 'calcul impossible' } }; }).then(function () { SIG.strat = ''; SIG.simple = ''; }); } }
+    return X.R || null;
+  }
   window.g45TkSa = function (k, j) { SA_I[k] = +j || 0; ['strat', 'simple'].forEach(function (f) { SIG[f] = ''; }); poser(); };
   function ticket(o) {
     var F = {}; try { F = (window._g45CkFond && window._g45CkFond(o.nom)) || {}; } catch (e) {}
@@ -90855,6 +90894,9 @@ function _g45ScoreRedessiner() {
     var nEq = (R.tt && R.tt.n) || R.n || 0, nAd = okA ? ((RA.tt && RA.tt.n) || RA.n || 0) : 0, wHF = HF && estM != null ? HF.n / (HF.n + nEq + nAd) : 0;
     if (HF && estM == null) { estM = HF.p; wHF = 1; }
     else if (wHF) estM = (1 - wHF) * estM + wHF * HF.p;
+    /* 20261120x : 📚 DraftKings + archives = estimation PRINCIPALE en NHL / NBA / NFL quand elle existe ; l'historique des équipes reste en dessous (pour info) */
+    var SBr = null; try { SBr = R.jo ? null : sembDe(o); } catch (e) {} var estH = estM, sbOk = !!(SBr && SBr.p != null && SBr.p > 0);
+    if (sbOk) estM = SBr.p;
     var ce = estM ? 1 / estM : 0, h = '<div style="' + BOX + '"><div style="font-size:14px;font-weight:800;color:#ffd34d;margin-bottom:6px;">🎯 COTE ESTIMÉE</div>';
     if (!ce) h += '<div style="font-size:15px;">Jamais passé sur ces matchs : pas d\'estimation.</div>';
     else {
@@ -90866,7 +90908,8 @@ function _g45ScoreRedessiner() {
            simple → « oui ») : 12 % pour tous les paris, même formule (cote × 1,12 ; la marge du book pèse surtout sur les grosses cotes) */
         + (o.cote ? (function () { var mg = 0.12; return '<div style="font-size:13px;color:#c9d3ee;">Book sans sa marge (≈ ' + Math.round(mg * 100) + ' %) : <b style="color:#fff;">' + f2(o.cote * (1 + mg)) + '</b> · notre cote avec cette marge : <b style="color:#fff;">' + f2(ce / (1 + mg)) + '</b></div>'; })() : '')
         + (R.jo && R.GA ? '<div style="font-size:14px;margin-top:4px;">🛡️ ' + esc(o.adv) + (R.GA.la === 'a' ? ' ✈️' : R.GA.la === 'h' ? ' 🏠' : '') + ' encaisse <b>' + String(Math.round(R.GA.ga * 100) / 100).replace('.', ',') + '</b> ' + (R.sp === 'basketball' || R.sp === 'football' ? 'points' : 'buts') + '/match (moyenne ' + ({ hockey: 'NHL', basketball: 'NBA', football: 'NFL' }[R.sp] || 'du championnat') + ' ' + String(Math.round(R.GA.gl * 100) / 100).replace('.', ',') + ') → <b style="color:' + (R.GA.r >= 1 ? '#1ed760' : '#ff9f43') + ';">' + (R.GA.r >= 1 ? '+' : '') + Math.round((R.GA.r - 1) * 100) + ' %</b><br><span style="font-size:13px;color:#dfe6f7;">' + esc(o.nom) + ' : ' + pcT(R.pT) + ' → ajusté <b>' + pcT(R.pA) + '</b></span></div>' : (R.jo && o.adv ? '<div style="font-size:13px;color:#c9d3ee;margin-top:3px;">🛡️ Buts encaissés par ' + esc(o.adv) + ' : pas assez de matchs lus.</div>' : ''))
-        + '<div style="font-size:13px;color:#dfe6f7;margin-top:3px;">' + pcT(estM) + ' estimé = moyenne de ' + esc(o.nom) + (R.jo && R.GA ? ' ajusté ' + pcC(R.pA) : ' ' + pcC(R.pT)) + (okA ? ' · ' + esc(oA.nom) + ' ' + pcC(RA.pT) : '') + (HF ? ' · face-à-face ' + pcC(HF.p) + ' compté ' + (wHF < 0.01 ? '< 1' : Math.round(wHF * 100)) + ' % (' + HF.n + ' matchs)' : '') + ' (5 saisons)</div>'
+        + (sbOk ? '<div style="font-size:14px;margin-top:4px;">📚 <b>DraftKings + archives : ' + pcC(SBr.p) + '</b> · ' + SBr.n + ' matchs semblables (' + (SBr.pV >= 0.5 ? 'favori' : 'outsider') + ' à ' + Math.round(SBr.lo * 100) + '–' + Math.round(SBr.hi * 100) + ' %' + (SBr.L != null ? ', total ' + String(SBr.L).replace('.', ',') : '') + ')</div>' : (SBr === null && absCle(o) ? '' : ''))
+        + '<div style="font-size:13px;color:#dfe6f7;margin-top:3px;">' + (sbOk ? '📋 Historique des équipes (pour info) : ' + pcC(estH) + ' = moyenne de ' : pcT(estM) + ' estimé = moyenne de ') + esc(o.nom) + (R.jo && R.GA ? ' ajusté ' + pcC(R.pA) : ' ' + pcC(R.pT)) + (okA ? ' · ' + esc(oA.nom) + ' ' + pcC(RA.pT) : '') + (HF ? ' · face-à-face ' + pcC(HF.p) + ' compté ' + (wHF < 0.01 ? '< 1' : Math.round(wHF * 100)) + ' % (' + HF.n + ' matchs)' : '') + ' (5 saisons)</div>'
         + '<div style="font-size:12px;color:#9fb0d6;margin-top:3px;">Pour info :</div>'
         + '<div style="font-size:13px;color:#c9d3ee;">' + esc(o.nom) + (o.lieu === 'dom' ? ' 🏠' : o.lieu === 'ext' ? ' ✈️' : '') + ' : 10 derniers ' + pcC(R.p10) + ' · 2 saisons ' + pcC(R.p2) + ' · tout ' + pcC(R.pT) + '</div>'
         + (oA ? '<div style="font-size:13px;color:#c9d3ee;">' + esc(oA.nom) + (oA.lieu === 'dom' ? ' 🏠' : oA.lieu === 'ext' ? ' ✈️' : '') + ' · ' + esc(oA.lab) + ' : ' + (okA ? '10 derniers ' + pcC(RA.p10) + ' · 2 saisons ' + pcC(RA.p2) + ' · tout ' + pcC(RA.pT) : RA ? 'pas de données' + (RA.err ? ' (' + esc(RA.err) + ')' : '') : '⏳') + '</div>' : (R.jo ? (o.adv ? '' : '<div style="font-size:13px;color:#c9d3ee;">Remplis « Adversaire » pour les face-à-face.</div>') : '<div style="font-size:13px;color:#c9d3ee;">Remplis « Adversaire » pour compter aussi l\'autre équipe.</div>'));
@@ -90937,6 +90980,7 @@ function _g45ScoreRedessiner() {
       (estNhlJ(o) ? window._g45FicheJoueur(o.nom, o.lieu, o.lab, o.adv, spJ(o), (typeof _g45UClub === 'function' ? _g45UClub(o.u) : '') || o.u.club || '') : window._g45FichePari(o.nom, o.ft, o.lieu, o.lab, o.meth)).then(function (R) { RES[k] = R || { err: 'rien' }; }).catch(function () { RES[k] = { err: 'calcul impossible' }; }).then(function () { delete EN[k]; SIG[f] = ''; poserF(f); });
     }
     sig += '|' + (mob ? 'm' + (MOBO[f] ? 1 : 0) : 'p');
+    try { var kSb = absCle(o) + '|' + o.lab, xs = SB[kSb]; sig += '|sb' + (xs && xs.R ? (xs.R.err ? 'e' : xs.t) : 0); } catch (e) {}   /* 20261120x */
     try { var kAb = absCle(o); if (kAb) sig += '|ab' + (AB[kAb] && AB[kAb].R ? (AB[kAb].R.err ? 'e' : AB[kAb].t) : 0); } catch (e) {}   /* 20261120v */
     if (sig === SIG[f]) return; SIG[f] = sig;
     var zi = mob ? zm : z.querySelector('.g45-tkpc-in');
