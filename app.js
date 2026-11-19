@@ -90976,8 +90976,11 @@ setTimeout(_g45ButReparer, 4000);
        « oui ») : 🏒 ajouté. Archives NHL : stats G, A, PM, TOI (pas de tirs) ; cotes du book (pas de lignes) : 230 buteur [[null, cote]],
        219 passes et 218 points [[1, cote 1 ou +], [2, …]…] → colonne « Cote », réussite = 1 ou plus. Joueur absent des archives → ancienne
        fiche NHL (API nhle.com) en secours. Dates à l'heure américaine (match de 19 h à New York = 00 h UTC le lendemain : t − 6 h). */
-    var DIR = { '🏀': 'basket/nba', '🏈': 'football-us/nfl', '🏒': 'hockey/nhl' }, HS = { '🏀': 'nba', '🏈': 'nfl', '🏒': 'nhl' };
-    var spDe = function (u) { var t = String((u && u.sport) || ''); return t.indexOf('🏀') >= 0 ? '🏀' : t.indexOf('🏈') >= 0 ? '🏈' : t.indexOf('🏒') >= 0 ? '🏒' : (!t || t.indexOf('⚽') >= 0) ? '⚽' : ''; };
+    var DIR = { '🏀': 'basket/nba', '🏈': 'football-us/nfl', '🏒': 'hockey/nhl', '⚾': 'baseball/mlb' }, HS = { '🏀': 'nba', '🏈': 'nfl', '🏒': 'nhl', '⚾': 'mlb' };
+    /* 20261120s (« oui » à la fiche ⚾ proposée) : MLB rangée en ANNÉE CIVILE (2026, 2025…) ; lanceur (IP, pK, pH, ER, pBB) ou frappeur
+       (H, HR, RBI, R, BB, K) : catégories montrées si ≥ 1 match sur 5 (comme la NFL) ; pas de cotes joueurs gardées. Manches lancées
+       (IP 6.2 = 6 manches 2/3) seulement dans l'en-tête, converties en tiers de manche. */
+    var spDe = function (u) { var t = String((u && u.sport) || ''); return t.indexOf('🏀') >= 0 ? '🏀' : t.indexOf('🏈') >= 0 ? '🏈' : t.indexOf('🏒') >= 0 ? '🏒' : t.indexOf('⚾') >= 0 ? '⚾' : (!t || t.indexOf('⚽') >= 0) ? '⚽' : ''; };
     /* 20261120o (capture fiche ⚽ Haaland « Y A MIEUX A FAIRE ? » → maquette au même modèle → « OUI ») : ⚽ ajouté (sans sport = foot, comme
        _g45ButJoueurFoot). Joueur retrouvé dans cotes/foot/joueurs.json (index de TOUS les championnats : n° ESPN → [nom, club, ligue, n]),
        carrière cotes/foot/joueurs/<id>.json (c : [ligue, saison, n° club, club, matchs, t0, t1]) → compétitions 🏆 championnat / ⭐ C1 /
@@ -91027,6 +91030,11 @@ setTimeout(_g45ButReparer, 4000);
       '⚽': [{ l: 'Buts', k: ['G'], b: '230', u: 'but', us: 'buts', n0: 'but', s1: 1 }, { l: 'Passes', k: ['A'], b: '219', u: 'passe', us: 'passes', n0: 'passe', s1: 1 },
         { l: 'Décisif', k: ['G', 'A'], u: 'décisif', us: 'décisifs', n0: 'décisif', s1: 1 }, { l: 'Tirs', c: 'TIRS', k: ['T'], u: 'tirs' }, { l: 'Tirs cadrés', c: 'CAD.', k: ['TC'], u: 'tirs cadrés' },
         { l: 'Cartons', k: ['AR', 'R'], b: '264', u: 'carton', us: 'cartons', n0: 'carton', s1: 1 }],
+      '⚾': [{ l: 'Strikeouts', c: 'K', k: ['pK'], u: 'strikeouts' }, { l: 'Coups sûrs concédés', c: 'H', k: ['pH'], u: 'coups sûrs concédés' },
+        { l: 'Points mérités', c: 'ER', k: ['ER'], u: 'points mérités' }, { l: 'Buts sur balles', c: 'BB', k: ['pBB'], u: 'buts sur balles accordés' },
+        { l: 'Coups sûrs', c: 'H', k: ['H'], u: 'coups sûrs' }, { l: 'Home runs', k: ['HR'], u: 'home run', us: 'home runs', n0: 'home run', s1: 1 },
+        { l: 'Points produits', c: 'RBI', k: ['RBI'], u: 'points produits' }, { l: 'Points marqués', c: 'R', k: ['R'], u: 'points marqués' },
+        { l: 'Buts sur balles', c: 'BB', k: ['BB'], u: 'buts sur balles' }, { l: 'Strikeouts', c: 'K', k: ['K'], u: 'strikeouts subis' }],
       '🏒': [{ l: 'Buts', k: ['G'], b: '230', u: 'but', us: 'buts', n0: 'but', s1: 1 }, { l: 'Passes', k: ['A'], b: '219', u: 'passe', us: 'passes', n0: 'passe', s1: 1 },
         { l: 'Points', k: ['G', 'A'], b: '218', u: 'point', us: 'points', n0: 'point', s1: 1 }]
     };
@@ -91040,7 +91048,7 @@ setTimeout(_g45ButReparer, 4000);
     /* Charge toutes les saisons gardées du joueur → D = { nom, club, id, sp, S: [{ s, L: [match…] }] } */
     async function charger(u) {
       if (spDe(u) === '⚽') { var DF = await chargerFoot(u); if (DF.err) return DF; DF.S = await chargerComp(DF, DF.comp); if (!DF.S.length) return { err: 'Aucun match joué de ' + u.n + ' dans les archives.' }; return DF; }
-      var sp = spDe(u), base = ARC + DIR[sp] + '/', SA = saisons(), n0 = nz(u.n), fam = n0.split(' ').slice(-1)[0], id = '';
+      var sp = spDe(u), base = ARC + DIR[sp] + '/', SA = sp === '⚾' ? (function () { var y0 = new Date().getFullYear(); return [0, 1, 2, 3, 4].map(function (i) { return String(y0 - i); }); })() : saisons(), n0 = nz(u.n), fam = n0.split(' ').slice(-1)[0], id = '';
       var IXJ = await Promise.all(SA.map(function (s) { return jget(base + s + '/joueurs.json'); }));
       IXJ.forEach(function (J0) { if (id || !J0) return;
         Object.keys(J0).forEach(function (k) { if (!id && nz(J0[k][0]) === n0) id = k; });
@@ -91072,7 +91080,7 @@ setTimeout(_g45ButReparer, 4000);
       var D = ST.D; if (!el || !D) return;
       var sp = D.sp, TOT = D.S.reduce(function (a, s) { return a + s.L.length; }, 0);
       /* catégorie montrée si le joueur en fait dans au moins 1 match sur 5 (QB : pas de « Réceptions » pour une passe déviée rattrapée) ; NBA : toutes */
-      var CS = CAT[sp].filter(function (c) { var n = 0; D.S.forEach(function (s) { s.L.forEach(function (x) { if (val(c, x.st) > 0) n++; }); }); return sp === '🏈' ? n * 5 >= TOT : n > 0; });
+      var CS = CAT[sp].filter(function (c) { var n = 0; D.S.forEach(function (s) { s.L.forEach(function (x) { if (val(c, x.st) > 0) n++; }); }); return sp === '🏈' || sp === '⚾' ? n * 5 >= TOT : n > 0; });
       if (!CS.length) CS = CAT[sp].slice(0, 1);
       if (ST.cat >= CS.length) ST.cat = 0; if (ST.sa >= D.S.length) ST.sa = 0;
       if (!D.S.length || !D.S[ST.sa] || !D.S[ST.sa].L.length) { if (D.comps) { el.innerHTML = '<div style="font-size:14px;color:#c9d3ee;text-align:center;padding:16px;">Aucun match dans cette compétition. <span onclick="g45UsJComp(\'' + D.comps[0] + '\')" style="cursor:pointer;color:#8aa0ff;font-weight:700;">← Revenir</span></div>'; return; } }
@@ -91096,6 +91104,8 @@ setTimeout(_g45ButReparer, 4000);
       if (sp === '⚽') { var fG = 0, fA = 0, fT = 0, fC = 0, fTi = 0; L.forEach(function (x) { fG += +x.st.G || 0; fA += +x.st.A || 0; fT += +x.st.T || 0; fC += +x.st.TC || 0; if (x.st.TIT) fTi++; });
         hk = ' · ' + fG + ' B · ' + fA + ' A · titulaire ' + fTi + ' / ' + L.length;
         if (fT) tir = '<div style="background:#121c3d;border-radius:10px;padding:9px 12px;font-size:14px;margin-bottom:12px;">' + fT + ' tirs · ' + fC + ' cadrés · conversion ' + Math.round(fG * 100 / fT) + ' % · ' + f1(fT / L.length) + ' tirs / match</div>'; }
+      if (sp === '⚾') { var tiers = 0, nIP = 0; L.forEach(function (x) { if (x.st.IP != null) { var ip = +x.st.IP || 0; tiers += Math.floor(ip) * 3 + Math.round((ip % 1) * 10); nIP++; } });
+        if (nIP) hk = ' · ' + f1(tiers / 3 / nIP) + ' manches / match'; }
       if (sp === '🏒') { var sG = 0, sA = 0, sP = 0, sT = 0, nT = 0; L.forEach(function (x) { sG += +x.st.G || 0; sA += +x.st.A || 0; sP += +x.st.PM || 0; var q = String(x.st.TOI || '').split(':'); if (q.length === 2) { sT += (+q[0]) * 60 + (+q[1]); nT++; } });
         hk = ' · ' + sG + ' B · ' + sA + ' A · ' + (sP > 0 ? '+' : '') + sP + (nT ? ' · ' + Math.floor(sT / nT / 60) + ':' + ('0' + Math.round(sT / nT % 60)).slice(-2) + ' / match' : ''); }
       var ban = ''; try { ban = (typeof g45VisuelCache === 'function' && D.club && g45VisuelCache(D.club)) || (typeof _g45ClubVis === 'function' && _g45ClubVis(u)) || ''; } catch (e) {}
@@ -91119,7 +91129,7 @@ setTimeout(_g45ButReparer, 4000);
       el.innerHTML = '<div style="color:#fff;">'
         + '<div style="position:relative;border-radius:14px;overflow:hidden;height:150px;background:' + (ban ? 'url(' + esc(ban) + ') center/cover' : 'linear-gradient(120deg,#1b2a55,#24386e)') + ';">'
         + '<div style="position:absolute;left:0;right:0;bottom:0;background:rgba(5,10,25,.82);padding:12px 16px 12px 128px;">'
-        + '<div style="font-size:22px;font-weight:800;">' + sp + ' ' + esc(D.nom) + '</div><div style="font-size:14px;color:#c9d3ee;margin-top:3px;">' + esc(D.club) + ' · ' + L.length + ' matchs' + (sp === '🏒' || sp === '⚽' ? hk : min ? ' · ' + f1(min) + ' min / match' : '') + '</div></div>'
+        + '<div style="font-size:22px;font-weight:800;">' + sp + ' ' + esc(D.nom) + '</div><div style="font-size:14px;color:#c9d3ee;margin-top:3px;">' + esc(D.club) + ' · ' + L.length + ' matchs' + (sp === '🏒' || sp === '⚽' || sp === '⚾' ? hk : min ? ' · ' + f1(min) + ' min / match' : '') + '</div></div>'
         + '<img src="' + ph + '" onerror="this.style.display=\'none\'" style="position:absolute;left:10px;bottom:0;height:140px;max-width:120px;object-fit:contain;"></div>'
         + (D.comps ? '<div style="display:flex;gap:6px;flex-wrap:wrap;margin:14px 0 0;">' + D.comps.map(function (g) { return chip({ ch: '🏆 ' + (FLG[D.lgCh] || 'Championnat'), c1: '⭐ C1', eu: '🇪🇺 C3 / C4', sel: '🌍 Sélection', tout: 'Tout' }[g], g === D.comp, "g45UsJComp('" + g + "')"); }).join('') + '</div>' : '')
         + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin:14px 0 10px;">' + CS.map(function (x, i) { return chip(x.l, i === ST.cat, '_g45UsJ.cat=' + i + ';_g45UsJ.k=null;g45UsJDessiner()'); }).join('') + '</div>'
