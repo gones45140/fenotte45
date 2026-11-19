@@ -79189,6 +79189,17 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       var clV = typeof _g45UClub === 'function' ? _g45UClub(u) : (u.club || '');
       if (clV) { var CS = [clV]; ((typeof state !== 'undefined' && state.u) || []).forEach(function (x) { if (x && x.type !== 'joueur' && x.n && x.n !== clV && typeof _g45BandMeme === 'function' && _g45BandMeme(x.n, clV)) CS.push(x.n); });
         CS.some(function (c) { var v = ''; try { v = (typeof _g45ImgPersoLire === 'function' && _g45ImgPersoLire(c)) || (typeof g45VisuelCache === 'function' && g45VisuelCache(c)) || ''; } catch (e) {} if (v) vis = v; return !!v; }); }
+      /* 20261120h (« problématique, je veux suivre le joueur sans forcément le club ») : club sans carte / sans bannière en mémoire → bannière
+         cherchée UNE fois (TheSportsDB, comme les cartes du mur, _g45FanCompleter, gardée en mémoire), puis carte redessinée ; échec mémorisé
+         par _g45FanChercher (pas de nouvel essai à chaque dessin). */
+      if (!vis && clV && typeof _g45FanLire === 'function' && _g45FanLire(clV) === undefined && typeof _g45FanCompleter === 'function') {
+        var DQ = window._g45CkClubDem = window._g45CkClubDem || {};
+        if (!DQ[clV]) { DQ[clV] = 1; var spC = (typeof g45SportDe === 'function' ? g45SportDe(u) : '') || 'soccer';
+          setTimeout(function () { _g45FanCompleter([{ nom: clV, sp: spC }]).then(function (m) {
+            if (m) { try { if (typeof ckRedessiner === 'function') ckRedessiner(); } catch (e) {} try { if (typeof render === 'function') render(); } catch (e) {} }
+            else if (_g45FanLire(clV) === undefined) delete DQ[clV];   /* occupé ailleurs → nouvel essai au prochain dessin */
+          }).catch(function () { delete DQ[clV]; }); }, 400 + Object.keys(DQ).length * 1200); }
+      }
     } catch (e) {} }
     if (!vis && jv && jv.fan) vis = jv.fan;
     if (jv && (jv.cut || jv.thumb) && u.type === 'joueur') cut = jv.cut || jv.thumb;
