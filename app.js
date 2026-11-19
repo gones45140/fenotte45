@@ -90570,16 +90570,24 @@ function _g45ScoreRedessiner() {
     if (o.u && o.u.type === 'joueur') return '<div style="' + BOX + 'font-size:14px;">📋 Fiche et cote estimée : équipes seulement pour l\'instant.</div>';
     if (!R) return '<div style="' + BOX + 'font-size:14px;">⏳ Calcul sur les archives…</div>';
     if (R.err) return '<div style="' + BOX + 'font-size:14px;">🎯 Cote estimée et 📋 fiche : pas de données (' + esc(R.err) + ').</div>';
-    var oA = advDe(o), RA = oA ? RES[cle(oA)] : null, okA = !!(RA && !RA.err && RA.est != null), estM = R.est != null && okA ? (R.est + RA.est) / 2 : R.est;
+    var oA = advDe(o), RA = oA ? RES[cle(oA)] : null, okA = !!(RA && !RA.err && RA.est != null);
+    /* 20261119y (Lyon ✈️ – Lille : 10,89 contre 4,70 ; « avec du 4, du 4,41 et du 10,71 pas moyen de tomber autour du book ? » → moyenne des 3 ≈ 5,26
+       → « 5,26 + la marge… on est pas loin ») : % estimé = MOYENNE des 5 saisons entières de l'équipe (tout), de l'adversaire (tout) et des
+       face-à-face au même lieu (si au moins 3) ; les 10 derniers / 2 saisons restent affichés pour info. Book sans sa marge ≈ cote × 1,07. */
+    var HF = null; try { if (okA && RA.tid && typeof R.h2h === 'function') { var HH = R.h2h(RA.tid), HM = (HH.L || []).filter(function (x) { return o.lieu === 'dom' ? x.dom : o.lieu === 'ext' ? !x.dom : true; }); if (HM.length >= 3) HF = { p: HM.filter(function (x) { return x.ok; }).length / HM.length, n: HM.length }; } } catch (e) {}
+    var CP = [R.pT].concat(okA ? [RA.pT] : []).concat(HF ? [HF.p] : []).filter(function (x) { return x != null; });
+    var estM = CP.length ? CP.reduce(function (a, x) { return a + x; }, 0) / CP.length : null;
     var ce = estM ? 1 / estM : 0, h = '<div style="' + BOX + '"><div style="font-size:14px;font-weight:800;color:#ffd34d;margin-bottom:6px;">🎯 COTE ESTIMÉE</div>';
     if (!ce) h += '<div style="font-size:15px;">Jamais passé sur ces matchs : pas d\'estimation.</div>';
     else {
       var val = o.cote ? estM * o.cote - 1 : null, bon = val != null && val > 0;
       h += '<div style="font-size:18px;font-weight:800;">BET45 : ' + f2(ce) + (o.cote ? ' <span style="font-weight:400;">→ book</span> <span style="color:' + (bon ? '#1ed760' : '#ff5a5a') + ';">' + f2(o.cote) + (bon ? ' 💎' : '') + '</span>' : '') + '</div>'
         + (val != null ? '<div style="font-size:14px;color:' + (bon ? '#1ed760' : '#ff9f9f') + ';">' + (bon ? 'Le book paie plus que notre estimation : +' : 'Le book paie moins que notre estimation : ') + Math.round(val * 100) + ' %</div>' : '')
-        + '<div style="font-size:13px;color:#c9d3ee;margin-top:3px;">' + pcT(estM) + ' estimé' + (okA ? ' = moyenne des 2 équipes' : '') + '</div>'
-        + '<div style="font-size:13px;color:#c9d3ee;">' + esc(o.nom) + (o.lieu === 'dom' ? ' 🏠' : o.lieu === 'ext' ? ' ✈️' : '') + ' ' + pcC(R.est) + ' (10 derniers ' + pcC(R.p10) + ' · 2 saisons ' + pcC(R.p2) + ' · tout ' + pcC(R.pT) + ')</div>'
-        + (oA ? '<div style="font-size:13px;color:#c9d3ee;">' + esc(oA.nom) + (oA.lieu === 'dom' ? ' 🏠' : oA.lieu === 'ext' ? ' ✈️' : '') + ' · ' + esc(oA.lab) + ' : ' + (okA ? pcC(RA.est) + ' (10 derniers ' + pcC(RA.p10) + ' · 2 saisons ' + pcC(RA.p2) + ' · tout ' + pcC(RA.pT) + ')' : RA ? 'pas de données' + (RA.err ? ' (' + esc(RA.err) + ')' : '') : '⏳') + '</div>' : '<div style="font-size:13px;color:#c9d3ee;">Remplis « Adversaire » pour compter aussi l\'autre équipe.</div>');
+        + (o.cote ? '<div style="font-size:13px;color:#c9d3ee;">Book sans sa marge (≈ 7 %) : <b style="color:#fff;">' + f2(o.cote * 1.07) + '</b></div>' : '')
+        + '<div style="font-size:13px;color:#dfe6f7;margin-top:3px;">' + pcT(estM) + ' estimé = moyenne de : ' + esc(o.nom) + ' ' + pcC(R.pT) + (okA ? ' · ' + esc(oA.nom) + ' ' + pcC(RA.pT) : '') + (HF ? ' · face-à-face ' + pcC(HF.p) : '') + ' (5 saisons)</div>'
+        + '<div style="font-size:12px;color:#9fb0d6;margin-top:3px;">Pour info :</div>'
+        + '<div style="font-size:13px;color:#c9d3ee;">' + esc(o.nom) + (o.lieu === 'dom' ? ' 🏠' : o.lieu === 'ext' ? ' ✈️' : '') + ' : 10 derniers ' + pcC(R.p10) + ' · 2 saisons ' + pcC(R.p2) + ' · tout ' + pcC(R.pT) + '</div>'
+        + (oA ? '<div style="font-size:13px;color:#c9d3ee;">' + esc(oA.nom) + (oA.lieu === 'dom' ? ' 🏠' : oA.lieu === 'ext' ? ' ✈️' : '') + ' · ' + esc(oA.lab) + ' : ' + (okA ? '10 derniers ' + pcC(RA.p10) + ' · 2 saisons ' + pcC(RA.p2) + ' · tout ' + pcC(RA.pT) : RA ? 'pas de données' + (RA.err ? ' (' + esc(RA.err) + ')' : '') : '⏳') + '</div>' : '<div style="font-size:13px;color:#c9d3ee;">Remplis « Adversaire » pour compter aussi l\'autre équipe.</div>');
     }
     /* 20261119r : 📋 comme 🔎 Critères — tableau par saison, total, paliers, meilleure série, série en cours, dernières réussites */
     if (sansCote) h = '<div style="display:none;">';   /* fermé par le « </div> » qui ouvre le bloc 📋 */
