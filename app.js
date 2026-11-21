@@ -87819,6 +87819,45 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   };
   window.g45CkAbXFermer = function (i) { if (!state.abdX) return; state.abdX.splice(i, 1); if (!state.abdX.length) delete state.abdX; try { save(); } catch (e) {} try { dessiner(); } catch (e) {} };   /* 20261117w */
   window.g45CkAbMode = function (on) { window._g45CkAbMode = !!on; try { dessiner(); } catch (e) {} };   /* 20261105b */
+  /* ═══ 20261121b — ➕ PARIS PERDUS DE LA SÉRIE (capture Prochaines 24 h « Haaland P2 sur 9 » : « il manque une chose quand c'est P2 ou + :
+     un petit bouton + qui montre les derniers paris perdus sur la série » → maquette → « oui ») : à partir de P2, ➕ à côté de « Pn sur N · mise »
+     (Prochaines 24 h ET 🪜 Mes séries en cours) → liste des paris de montante PERDUS de l'échelle en cours (state.a, isS, même carte, même lieu /
+     compétition que la clé de l'échelle), du plus récent au plus ancien, arrêtée au dernier pari GAGNÉ ou après p − 1 pertes, + total perdu.
+     ➖ referme (window._g45CkPlus, rien d'enregistré). ═══ */
+  function ckKeyLieu(u, lieu) { var L = _g45LieuNz(lieu), K = Object.keys((u && u.lc) || {}); return K.filter(function (k) { return L && k.slice(-(L.length + 1)) === '|' + L; })[0] || ''; }
+  function ckPertes(u, k, p) {
+    var ks = String(k || ''), i = ks.indexOf('|'), L = i >= 0 ? _g45LieuNz(ks.slice(i + 1)) : '', cp = i >= 0 ? ks.slice(0, i) : ks;
+    var A = ((typeof state !== 'undefined' && state.a) || []).filter(function (b) {
+      if (!b || !b.isS || b.n !== u.n || b.isPending) return false;
+      if (L && _g45LieuNz(b.domicile) !== L) return false;
+      if (cp && typeof _g45CompNz === 'function' && _g45CompNz(b.comp) !== cp) return false;
+      return true;
+    }).sort(function (a, b) { return (+b.id || 0) - (+a.id || 0); });
+    var out = [];
+    for (var j = 0; j < A.length && out.length < p - 1; j++) { if (A[j].win) break; out.push(A[j]); }
+    return out;
+  }
+  window._g45CkPertes = ckPertes;   /* tests */
+  window.g45CkPlus = function (id) { window._g45CkPlus = window._g45CkPlus || {}; window._g45CkPlus[id] = !window._g45CkPlus[id]; try { dessiner(); } catch (e) {} };
+  function ckPlusBtn(id) {
+    var o = !!(window._g45CkPlus || {})[id];
+    return ' <button onclick="g45CkPlus(' + esc(JSON.stringify(id)).replace(/"/g, '&quot;') + ')" aria-label="paris perdus de la série" style="margin-left:6px;border-radius:8px;padding:0 9px;font-size:15px;font-weight:800;line-height:22px;color:#fff;cursor:pointer;border:1px solid #8fa3d6;background:#1c2747;">' + (o ? '➖' : '➕') + '</button>';
+  }
+  function ckPlusListe(id, u, k, p) {
+    if (!(window._g45CkPlus || {})[id]) return '';
+    var P = ckPertes(u, k, p), tot = 0;
+    var h = '<div style="background:rgba(11,16,29,.88);border-radius:8px;padding:6px 10px;font-size:14px;line-height:1.6;color:#fff;margin:3px 0;">';
+    if (!P.length) h += '<span style="color:#c9d3ee;">Aucun pari perdu trouvé dans ton historique pour cette série.</span>';
+    P.forEach(function (b) {
+      var m = parseFloat(b.m) || 0; tot += m;
+      var d = String(b.date || ''), dm = /^\d{4}-\d{2}-\d{2}/.test(d) ? d.slice(8, 10) + '/' + d.slice(5, 7) : '';
+      if (!dm && +b.id > 1e12) { var dt = new Date(+b.id); dm = String(dt.getDate()).padStart(2, '0') + '/' + String(dt.getMonth() + 1).padStart(2, '0'); }
+      var adv = String(b.target && b.target !== '-' ? b.target : '').trim();
+      h += '<div>❌ ' + (dm ? dm + ' · ' : '') + (adv ? 'contre ' + esc(adv) + ' · ' : '') + (b.cote ? 'cote ' + String(b.cote).replace('.', ',') + ' · ' : '') + '<b style="color:#ff6b6b;">−' + euC(m) + '</b></div>';
+    });
+    if (P.length) h += '<div style="border-top:1px solid #2a3a63;margin-top:4px;padding-top:3px;font-weight:800;">Perdu sur la série : <span style="color:#ff6b6b;">−' + euC(tot) + '</span></div>';
+    return h + '</div>';
+  }
   window.g45CkAbFermer = function (nom, i) { var u = (state.u || []).filter(function (x) { return x.n === nom; })[0]; if (!u || !u.abd) return; u.abd.splice(i, 1); if (!u.abd.length) delete u.abd; try { save(); } catch (e) {} try { dessiner(); } catch (e) {} try { abDeco(); } catch (e) {} };
   /* Avertissement sur la carte (🃏 Mes cartes ; caché dans Outils par #g45-ck-css) */
   function abDeco() {
@@ -87895,8 +87934,9 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
           + '<div style="height:8px;border-radius:6px;background:#1c2747;overflow:hidden;margin:3px 0;"><div style="height:8px;width:' + Math.round(100 * x.p / x.N) + '%;background:' + col + ';"></div></div>';
         return;
       }
-      h += '<div style="margin-top:4px;">' + abB + ic + ' <b>' + esc(x.u.n) + '</b> ' + x.lieu + ' · P' + x.p + ' sur ' + x.N + ' · mise <b>' + euC(x.mise) + '</b>' + (r <= 3 ? ' · <span style="color:' + wc + ';font-weight:800;">' + (r === 0 ? 'dernier palier' : 'plus que ' + r + ' palier' + (r > 1 ? 's' : '')) + '</span>' : '') + '</div>'
-        + '<div style="height:8px;border-radius:6px;background:#1c2747;overflow:hidden;margin:3px 0;"><div style="height:8px;width:' + Math.round(100 * x.p / x.N) + '%;background:' + col + ';"></div></div>';
+      h += '<div style="margin-top:4px;">' + abB + ic + ' <b>' + esc(x.u.n) + '</b> ' + x.lieu + ' · P' + x.p + ' sur ' + x.N + ' · mise <b>' + euC(x.mise) + '</b>' + ckPlusBtn('tb|' + x.u.n + '|' + (x.k || '')) + (r <= 3 ? ' · <span style="color:' + wc + ';font-weight:800;">' + (r === 0 ? 'dernier palier' : 'plus que ' + r + ' palier' + (r > 1 ? 's' : '')) + '</span>' : '') + '</div>'
+        + '<div style="height:8px;border-radius:6px;background:#1c2747;overflow:hidden;margin:3px 0;"><div style="height:8px;width:' + Math.round(100 * x.p / x.N) + '%;background:' + col + ';"></div></div>'
+        + ckPlusListe('tb|' + x.u.n + '|' + (x.k || ''), x.u, x.k || '', x.p);
     });
     if (p1.length) h += '<div style="margin-top:6px;"><span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:' + ((window._G45_PAL_COUL || ['#1ed760'])[0]) + ';vertical-align:-2px;"></span> ' + p1.slice(0, 12).map(function (x) { return '<b>' + esc(x.u.n) + '</b>'; }).join(', ') + (p1.length > 12 ? ' et ' + (p1.length - 12) + ' autres' : '') + ' · P1</div>';
     h += '</div>';
@@ -87931,7 +87971,8 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
         + ((F.logo || (!F.vis && !F.cut && F.img)) ? '<img src="' + esc(F.logo || F.img) + '" alt="" loading="lazy" onerror="this.remove()" style="position:absolute;right:16px;top:50%;transform:translateY(-50%);height:76%;' + (pcW ? 'max-height:150px;' : '') + 'max-width:22%;object-fit:contain;pointer-events:none;filter:drop-shadow(0 4px 10px rgba(0,0,0,.6));">' : '')
         + '<div style="position:relative;padding:9px 10px;display:flex;flex-direction:column;align-items:flex-start;gap:5px;">'
         + '<div style="' + bd + 'font-size:15px;"><b>' + hr + ' · ' + esc(m.n) + '</b> ' + (m.d ? '🏠' : '✈️') + (m.adv ? ' contre ' + esc(m.adv) : '') + '</div>'
-        + '<div style="' + bd + 'font-size:14px;">' + (G ? 'P' + p + ' sur ' + G.length + ' · mise <b>' + euC(mi) + '</b>' : '<span style="color:#c9d3ee;">pas de grille</span>') + '</div>'
+        + '<div style="' + bd + 'font-size:14px;">' + (G ? 'P' + p + ' sur ' + G.length + ' · mise <b>' + euC(mi) + '</b>' + (p > 1 && u ? ckPlusBtn('24|' + m.n + '|' + m.t) : '') : '<span style="color:#c9d3ee;">pas de grille</span>') + '</div>'
+        + (p > 1 && u ? ckPlusListe('24|' + m.n + '|' + m.t, u, ckKeyLieu(u, m.d ? 'dom' : 'ext'), p) : '')
         + (typ ? '<div style="' + bd + 'font-size:14px;">🎯 ' + esc(typ) + '</div>' : '')
         + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">'
         + (eng ? '' : '<button onclick="g45CkEngager(' + esc(JSON.stringify(m.n)).replace(/"/g, '&quot;') + ',' + (m.d ? 1 : 0) + ',' + esc(JSON.stringify(m.adv || '')).replace(/"/g, '&quot;') + ',' + m.t + ')" style="background:#4d7cff;border:0;border-radius:9px;padding:7px 12px;font-weight:800;font-size:14px;color:#fff;cursor:pointer;">✅ Engager</button>')
