@@ -87841,10 +87841,12 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
      compétition que la clé de l'échelle), du plus récent au plus ancien, arrêtée au dernier pari GAGNÉ ou après p − 1 pertes, + total perdu.
      ➖ referme (window._g45CkPlus, rien d'enregistré). ═══ */
   function ckKeyLieu(u, lieu) { var L = _g45LieuNz(lieu), K = Object.keys((u && u.lc) || {}); return K.filter(function (k) { return L && k.slice(-(L.length + 1)) === '|' + L; })[0] || ''; }
-  function ckPertes(u, k, p) {
+  function ckPertes(u, k, p, meth) {
     var ks = String(k || ''), i = ks.indexOf('|'), L = i >= 0 ? _g45LieuNz(ks.slice(i + 1)) : '', cp = i >= 0 ? ks.slice(0, i) : ks;
     var A = ((typeof state !== 'undefined' && state.a) || []).filter(function (b) {
-      if (!b || !b.isS || b.n !== u.n || b.isPending) return false;
+      if (!b || b.n !== u.n || b.isPending) return false;
+      if (meth === 'cb') return b.meth === 'cb' && String(b.mk || '') === String(k || '');   /* 20261121f : série 📉 */
+      if (!b.isS) return false;
       if (L && _g45LieuNz(b.domicile) !== L) return false;
       if (cp && typeof _g45CompNz === 'function' && _g45CompNz(b.comp) !== cp) return false;
       return true;
@@ -87859,9 +87861,10 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     var o = !!(window._g45CkPlus || {})[id];
     return ' <button onclick="g45CkPlus(' + esc(JSON.stringify(id)).replace(/"/g, '&quot;') + ')" aria-label="paris perdus de la série" style="margin-left:6px;border-radius:8px;padding:0 9px;font-size:15px;font-weight:800;line-height:22px;color:#fff;cursor:pointer;border:1px solid #8fa3d6;background:#1c2747;">' + (o ? '➖' : '➕') + '</button>';
   }
-  function ckPlusListe(id, u, k, p) {
+  function ckPlusListe(id, u, k, p, meth) {
     if (!(window._g45CkPlus || {})[id]) return '';
-    var P = ckPertes(u, k, p), tot = 0;
+    var P = ckPertes(u, k, p, meth), tot = 0;
+    if (!P.length && meth === 'cb') P = ckPertes(u, k, p);   /* série passée de 🚀 à 📉 (➡️ 📉) : les pertes sont des paris 🚀 */
     var h = '<div style="background:rgba(11,16,29,.88);border-radius:8px;padding:6px 10px;font-size:14px;line-height:1.6;color:#fff;margin:3px 0;">';
     if (!P.length) h += '<span style="color:#c9d3ee;">Aucun pari perdu trouvé dans ton historique pour cette série.</span>';
     P.forEach(function (b) {
@@ -87973,6 +87976,18 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
          seul si un pari EN COURS existe sur cette carte (state.h, b.n), ou à la main (localStorage g45ck_engm, clé carte|heure) → Engager caché,
          carte grisée. */
       var Dn = {}; try { Dn = (typeof _g45UfDecoupe === 'function' && u) ? _g45UfDecoupe(u.note) : {}; } catch (e) {}
+      /* 20261121f (capture Prochaines 24 h : Haaland « P1 sur 9 · mise 3 € » juste après « ➡️ 📉 » : « j'ai modifié de mode mais ça a mis en P1 ») :
+         la carte affichait TOUJOURS l'échelle 🚀. Pari du lieu en mode 📉 (u.mode) → série 📉 (u.lcb, clé terminée par le lieu) : « 📉 C2 sur 5 ·
+         pertes 3 € (mise selon la cote) », ➕ = paris 📉 perdus (meth 'cb', même clé). */
+      var lz = m.d ? 'dom' : 'ext', mdL = u && u.mode ? (u.mode[lz] || u.mode.glob || '') : '', palTxt, palListe = '';
+      if (u && mdL === 'cb' && window._g45CbMeth) {
+        var CBm = window._g45CbMeth, kcb = Object.keys(u.lcb || {}).filter(function (k) { return k.slice(-(lz.length + 1)) === '|' + lz; })[0] || ('|' + lz), sc = CBm.st(u, kcb), Nc = CBm.stop ? CBm.stop(u) : 5;
+        palTxt = '📉 C' + sc.p + ' sur ' + Nc + ' · ' + (sc.p > 1 ? 'pertes <b>' + euC(sc.per) + '</b> (mise selon la cote)' + ckPlusBtn('24|' + m.n + '|' + m.t) : 'mise <b>' + euC(CBm.mise(u, kcb, 0)) + '</b>');
+        if (sc.p > 1) palListe = ckPlusListe('24|' + m.n + '|' + m.t, u, kcb, sc.p, 'cb');
+      } else {
+        palTxt = G ? 'P' + p + ' sur ' + G.length + ' · mise <b>' + euC(mi) + '</b>' + (p > 1 && u ? ckPlusBtn('24|' + m.n + '|' + m.t) : '') : '<span style="color:#c9d3ee;">pas de grille</span>';
+        if (p > 1 && u) palListe = ckPlusListe('24|' + m.n + '|' + m.t, u, ckKeyLieu(u, lz), p);
+      }
       var typ = String((m.d ? Dn.dom : Dn.ext) || Dn.glob || '').replace(/📌/g, '').trim();
       var EM = {}; try { EM = JSON.parse(localStorage.getItem('g45ck_engm') || '{}') || {}; } catch (e) {}
       var engA = ((typeof state !== 'undefined' && state.h) || []).some(function (b) { return b && b.n === m.n; }), engM = !!EM[m.n + '|' + m.t], eng = engA || engM;
@@ -87987,8 +88002,8 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
         + ((F.logo || (!F.vis && !F.cut && F.img)) ? '<img src="' + esc(F.logo || F.img) + '" alt="" loading="lazy" onerror="this.remove()" style="position:absolute;right:16px;top:50%;transform:translateY(-50%);height:76%;' + (pcW ? 'max-height:150px;' : '') + 'max-width:22%;object-fit:contain;pointer-events:none;filter:drop-shadow(0 4px 10px rgba(0,0,0,.6));">' : '')
         + '<div style="position:relative;padding:9px 10px;display:flex;flex-direction:column;align-items:flex-start;gap:5px;">'
         + '<div style="' + bd + 'font-size:15px;"><b>' + hr + ' · ' + esc(m.n) + '</b> ' + (m.d ? '🏠' : '✈️') + (m.adv ? ' contre ' + esc(m.adv) : '') + '</div>'
-        + '<div style="' + bd + 'font-size:14px;">' + (G ? 'P' + p + ' sur ' + G.length + ' · mise <b>' + euC(mi) + '</b>' + (p > 1 && u ? ckPlusBtn('24|' + m.n + '|' + m.t) : '') : '<span style="color:#c9d3ee;">pas de grille</span>') + '</div>'
-        + (p > 1 && u ? ckPlusListe('24|' + m.n + '|' + m.t, u, ckKeyLieu(u, m.d ? 'dom' : 'ext'), p) : '')
+        + '<div style="' + bd + 'font-size:14px;">' + palTxt + '</div>'
+        + palListe
         + (typ ? '<div style="' + bd + 'font-size:14px;">🎯 ' + esc(typ) + '</div>' : '')
         + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">'
         + (eng ? '' : '<button onclick="g45CkEngager(' + esc(JSON.stringify(m.n)).replace(/"/g, '&quot;') + ',' + (m.d ? 1 : 0) + ',' + esc(JSON.stringify(m.adv || '')).replace(/"/g, '&quot;') + ',' + m.t + ')" style="background:#4d7cff;border:0;border-radius:9px;padding:7px 12px;font-weight:800;font-size:14px;color:#fff;cursor:pointer;">✅ Engager</button>')
@@ -88584,7 +88599,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     if (gagne) { delete u.lcb[k]; return; }
     var n = { p: st.p + 1, prev: +mise || 0, per: (st.per || 0) + (+mise || 0) };
     if (st.p >= cbStop(u)) delete u.lcb[k]; else u.lcb[k] = n; };
-  window._g45CbMeth = { mise: cbMise, avance: cbAvance, st: cbSt, saute: cbSaute };   /* tests */
+  window._g45CbMeth = { mise: cbMise, avance: cbAvance, st: cbSt, saute: cbSaute, stop: cbStop };   /* tests ; 20261121f : stop pour Prochaines 24 h */
   /* la mise dépend de la cote : on recalcule quand la cote du ticket change (renderMmCote = cote combinée / cote réelle) */
   try { if (typeof renderMmCote === 'function' && !renderMmCote._cb) { var _rmc0 = renderMmCote; renderMmCote = window.renderMmCote = function () { var r = _rmc0.apply(this, arguments);
     try { if (meth() === 'cb') { var u = carte(), mi = $('c-mise'); if (u && mi && !mi._g45Man) { var v = cbMise(u, cle(), cbCote()); if (v) mi.value = v; else if (cbSaute(u, cbCote())) mi.value = ''; } dessiner(); } } catch (e) {} return r; }; renderMmCote._cb = 1; } } catch (e) {}
