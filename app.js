@@ -87980,6 +87980,18 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
          la carte affichait TOUJOURS l'échelle 🚀. Pari du lieu en mode 📉 (u.mode) → série 📉 (u.lcb, clé terminée par le lieu) : « 📉 C2 sur 5 ·
          pertes 3 € (mise selon la cote) », ➕ = paris 📉 perdus (meth 'cb', même clé). */
       var lz = m.d ? 'dom' : 'ext', mdL = u && u.mode ? (u.mode[lz] || u.mode.glob || '') : '', palTxt, palListe = '';
+      /* 20261121g (capture Prochaines 24 h PSG / Arsenal / Real : « en cotes basses elles sont pas répertoriées ») : mode pas coché dans ✏️ Modifier
+         (u.mode vide) alors que la carte se joue en 📉 → déduit : série 📉 du lieu en cours (u.lcb) ou DERNIER pari de la carte à ce lieu = meth 'cb'. */
+      if (u && !mdL) {
+        try {
+          if (Object.keys(u.lcb || {}).some(function (k) { return k.slice(-(lz.length + 1)) === '|' + lz && ((u.lcb[k] || {}).p || 1) > 1; })) mdL = 'cb';
+          else {
+            var dl = ((state.h || []).concat(state.a || [])).filter(function (b) { return b && b.n === u.n && (b.isS || b.meth) && _g45LieuNz(b.domicile || (String(b.mk || '').split('|')[1] || '')) === lz; })
+              .sort(function (a, b) { return (+b.id || 0) - (+a.id || 0); })[0];
+            if (dl && dl.meth === 'cb') mdL = 'cb';
+          }
+        } catch (e) {}
+      }
       if (u && mdL === 'cb' && window._g45CbMeth) {
         var CBm = window._g45CbMeth, kcb = Object.keys(u.lcb || {}).filter(function (k) { return k.slice(-(lz.length + 1)) === '|' + lz; })[0] || ('|' + lz), sc = CBm.st(u, kcb), Nc = CBm.stop ? CBm.stop(u) : 5;
         palTxt = '📉 C' + sc.p + ' sur ' + Nc + ' · ' + (sc.p > 1 ? 'pertes <b>' + euC(sc.per) + '</b> (mise selon la cote)' + ckPlusBtn('24|' + m.n + '|' + m.t) : 'mise <b>' + euC(CBm.mise(u, kcb, 0)) + '</b>');
