@@ -88063,10 +88063,67 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
      DÉPLACÉES dans #ck-mc le temps de l'onglet puis remises dans Outils (repère). Dans Outils → Équipes, les séries sont cachées par CSS
      (#t-outils .g45ul-ps / .g45ul-psl / #g45-ser-bar). ═══ */
   var repUl = null;
-  function ulRendre() { var ul = $('ulist'), bar = $('g45-ser-bar'); if (ul && repUl && ul.parentNode && ul.parentNode.id === 'ck-mc') { repUl.parentNode.insertBefore(ul, repUl); if (bar && bar.parentNode && bar.parentNode.id === 'ck-mc') repUl.parentNode.insertBefore(bar, ul); } }
+  function ulRendre() { var ul = $('ulist'), bar = $('g45-ser-bar'); if (ul && repUl && ul.parentNode && ul.parentNode.id === 'ck-mc') { repUl.parentNode.insertBefore(ul, repUl); try { mcFiltrer(); } catch (e) {} if (bar && bar.parentNode && bar.parentNode.id === 'ck-mc') repUl.parentNode.insertBefore(bar, ul); } }
   function ulPrendre() { var ul = $('ulist'), cm = $('ck-mc'); if (!ul || !cm) return; if (!repUl) { repUl = document.createComment('ulist'); ul.parentNode.insertBefore(repUl, ul); } var bar = $('g45-ser-bar'); if (bar && bar.parentNode !== cm) cm.appendChild(bar); if (ul.parentNode !== cm) cm.appendChild(ul);
-    try { if (typeof render === 'function') render(); } catch (e) {} try { if (typeof window._g45SerBarre === 'function') window._g45SerBarre(); } catch (e) {} }
+    try { mcBarre(); } catch (e) {}
+    try { if (typeof render === 'function') render(); } catch (e) {} try { if (typeof window._g45SerBarre === 'function') window._g45SerBarre(); } catch (e) {} try { mcFiltrer(); } catch (e) {} }
   window._g45CkUlRendre = ulRendre;
+  /* ═══ 20261121d — 🔍 RECHERCHE DANS 🃏 MES CARTES (capture Mes cartes → Football 15 équipes : « ça me casse les pieds pour rechercher mes clubs
+     ou joueurs, j'en ai beaucoup » → maquette → « Oui ») : barre #g45-mc-rech au-dessus de #ulist (seulement dans l'onglet) : champ « Chercher
+     un club ou un joueur… » (accents / majuscules ignorés, ✕ vide) + puces Toutes / 🪜 En série (P2+) (u.l, u.lc ou u.lm > 1) / ⚠️ Alerte (carte
+     dont le texte porte ⚠️ : pire série au-delà de la grille). Filtre posé sur les .urow déjà dessinées (style.display), titres de sport et
+     sous-titres 👥 / 👤 sans carte visible cachés ; refait après chaque render (MutationObserver sur #ulist). Remis à zéro quand #ulist
+     retourne dans Outils. Texte et puce gardés en mémoire (window._g45McF), rien d'enregistré. ═══ */
+  window._g45McF = window._g45McF || { q: '', f: 'tout' };
+  var mcNz = function (t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim(); };
+  function mcEnSerie(u) {
+    if (!u) return false; if ((parseInt(u.l, 10) || 1) > 1) return true;
+    var g = function (o) { return Object.keys(o || {}).some(function (k) { var v = o[k]; return (parseInt(v && typeof v === 'object' ? v.p : v, 10) || 1) > 1; }); };
+    return g(u.lc) || g(u.lm);
+  }
+  function mcGarde(row) {
+    var F = window._g45McF, b = row.querySelector('[data-idx]'), u = b ? (state.u || [])[+b.getAttribute('data-idx')] : null; if (!u) return true;
+    if (F.q && mcNz(u.n).indexOf(mcNz(F.q)) < 0) return false;
+    if (F.f === 'ser' && !mcEnSerie(u)) return false;
+    if (F.f === 'al' && String(row.textContent || '').indexOf('⚠') < 0) return false;
+    return true;
+  }
+  var mcSale = false;
+  function mcFiltrer() {
+    var ul = $('ulist'); if (!ul) return;
+    var actif = ul.parentNode && ul.parentNode.id === 'ck-mc', F = window._g45McF, tout = !actif || (!F.q && F.f === 'tout'), n = 0;
+    if (tout && !mcSale) { var z0 = $('g45-mc-rien'); if (z0) z0.style.display = 'none'; return; }   /* rien filtré : on ne touche à rien (autres écrans) */
+    mcSale = !tout;
+    [].forEach.call(ul.querySelectorAll('.urow'), function (r) { var ok = tout || mcGarde(r); r.style.display = ok ? '' : 'none'; if (ok) n++; });
+    var vis = function (el) { return el && [].some.call(el.querySelectorAll('.urow'), function (r) { return r.style.display !== 'none'; }); };
+    [].forEach.call(ul.querySelectorAll('.g45-mur-spw > .g45-mur-grid'), function (g) { var st = g.previousElementSibling; if (st) st.style.display = tout || vis(g) ? '' : 'none'; });
+    [].forEach.call(ul.querySelectorAll('.g45-mur-sp'), function (h) { h.style.display = tout || vis(h.nextElementSibling) ? '' : 'none'; });
+    var z = $('g45-mc-rien'); if (z) z.style.display = !tout && !n ? '' : 'none';
+  }
+  window._g45McFiltrer = mcFiltrer;
+  window.g45McCherche = function (v) { window._g45McF.q = String(v || ''); var x = $('g45-mc-x'); if (x) x.style.display = v ? '' : 'none'; mcFiltrer(); };
+  window.g45McPuce = function (f) { window._g45McF.f = f; mcBarre(); mcFiltrer(); };
+  window.g45McVider = function () { var i = $('g45-mc-q'); if (i) i.value = ''; window.g45McCherche(''); };
+  function mcBarre() {
+    var ul = $('ulist'), cm = $('ck-mc'); if (!ul || !cm) return;
+    var z = $('g45-mc-rech'), F = window._g45McF;
+    if (!z) {
+      z = document.createElement('div'); z.id = 'g45-mc-rech'; z.style.cssText = 'margin:10px 0 6px;';
+      z.innerHTML = '<div style="position:relative;"><input id="g45-mc-q" type="search" autocomplete="off" placeholder="🔍 Chercher un club ou un joueur…" oninput="g45McCherche(this.value)" style="width:100%;box-sizing:border-box;padding:11px 42px 11px 14px;border-radius:12px;border:1px solid #6d9dff;background:#0b1226;color:#fff;font-size:16px;font-weight:700;">'
+        + '<button id="g45-mc-x" onclick="g45McVider()" aria-label="vider" style="display:none;position:absolute;right:6px;top:50%;transform:translateY(-50%);border:0;background:#1c2747;color:#fff;border-radius:8px;width:32px;height:32px;font-size:16px;font-weight:800;cursor:pointer;">✕</button></div>'
+        + '<div id="g45-mc-puces" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;"></div>'
+        + '<div id="g45-mc-rien" style="display:none;margin-top:8px;font-size:15px;color:#fff;background:rgba(11,16,29,.8);border-radius:8px;padding:8px 10px;">Aucune carte ne correspond.</div>';
+      var i0 = z.querySelector('#g45-mc-q'); if (i0) i0.value = F.q;
+      var x0 = z.querySelector('#g45-mc-x'); if (x0 && F.q) x0.style.display = '';
+      new MutationObserver(function () { try { mcFiltrer(); } catch (e) {} }).observe(ul, { childList: true, subtree: true });
+    }
+    if (z.parentNode !== cm || z.nextSibling !== ul) cm.insertBefore(z, ul);
+    var pc = z.querySelector('#g45-mc-puces');
+    if (pc) pc.innerHTML = [['tout', 'Toutes'], ['ser', '🪜 En série (P2+)'], ['al', '⚠️ Alerte']].map(function (x) {
+      var on = F.f === x[0];
+      return '<button onclick="g45McPuce(\'' + x[0] + '\')" style="padding:7px 12px;border-radius:14px;font-size:14px;font-weight:800;cursor:pointer;color:#fff;border:1px solid ' + (on ? '#6d9dff' : '#2a3a63') + ';background:' + (on ? '#2f6bff' : '#0b1226') + ';">' + x[1] + '</button>';
+    }).join('');
+  }
   /* 20261105s : #t-compet DÉPLACÉ dans #ck-tr le temps de l'onglet 🔍 Trouver (séries seulement), remis dans la page Compétitions ensuite (repère). */
   var repCp = null;
   function cpRendre() { var tc = $('t-compet'); window._g45CompetCk = false; if (tc && repCp && tc.parentNode && tc.parentNode.id === 'ck-tr') { repCp.parentNode.insertBefore(tc, repCp); tc.style.display = 'none'; } }
