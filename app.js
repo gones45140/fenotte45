@@ -38793,11 +38793,15 @@ function _g45TypeMots(t, eq, adv){
   if(typeof g45TypeSansCote==='function') raw=g45TypeSansCote(raw);
   var nz=function(x){return String(x||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,' ').trim();};
   var num=function(x){return String(x).replace(',','.');};
-  var legs=raw.split(/\s*\+\s*/).filter(Boolean).map(function(l){
+  /* 20261121p (ticket Winamax « Total du joueur (passes + rebonds) - Victor Wembanyama Plus de 14,5 » enregistré en « Total du joueur
+     (passes + Over 14.5) » → critères 0/114, l'appli comptait les PASSES seules) : le « + » DANS les parenthèses ne coupe plus le pari en
+     jambes (passes + rebonds = une seule stat), et une jambe qui parle de rebonds / passes / assists reste telle quelle. */
+  var _par=0, _rw=''; for(var _i=0;_i<raw.length;_i++){ var _c=raw.charAt(_i); if(_c==='(') _par++; else if(_c===')') _par=Math.max(0,_par-1); _rw+=(_c==='+'&&_par>0)?'\u0001':_c; }
+  var legs=_rw.split(/\s*\+\s*/).filter(Boolean).map(function(l){ return l.replace(/\s*\u0001\s*/g,' + '); }).map(function(l){
     if(/ou nul|double chance/.test(nz(l))) return l.trim();   /* double chance : le nom de l'équipe dit laquelle */
     [eq,adv].forEach(function(n){ if(n&&String(n).trim().length>=3) l=_g45TypeSansEquipe(l,n); });
     var z=nz(l.replace(/[:()\[\]]/g,' ')), m;
-    if(/buteur|marqueur|passeur|passe d|point|essai|tir/.test(z)) return l.trim();
+    if(/buteur|marqueur|passeur|passe d|point|essai|tir|rebond|passes|assist/.test(z)) return l.trim();
     if(/buts?\s+(de|du|des|d')\s/.test(z)) return l.trim();
     if(/(les deux|deux equipes).*marqu|btts|\bbts\b/.test(z)) return /\bnon\b|\bno\b/.test(z)?'BTS Non':'BTS Oui';
     if((m=z.match(/(?:plus de|over)\s*(\d+(?:[.,]\d+)?)/))) return 'Over '+num(m[1]);
