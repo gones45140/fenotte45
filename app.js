@@ -26795,7 +26795,14 @@ async function loadCalendrier() {
     if (!m || (m.suivi && !m.sp) || !u || !u.note) return true;
     var nt = String(u.note), dom = /🏠/.test(nt), ext = /✈|🛫/.test(nt);
     if (dom === ext) return true;
-    return m.isDom ? dom : ext;
+    if (m.isDom ? dom : ext) return true;
+    /* 20261121j (carte Draisaitl « 📌 🏠 Buteur » + pastille « 📉 ✈️ C2 », Edmonton à Carolina absent : « j'ai pas Draisaitl ou McDavid extérieur
+       aussi ») : une SÉRIE EN COURS (palier > 1) à ce lieu, 🚀 u.lc / 📉 u.lcb / 🐚 🪜 u.lm, garde le match même si la consigne 📌 ne cite pas ce lieu. */
+    try {
+      var lz = m.isDom ? '|dom' : '|ext', enS = function (o) { return Object.keys(o || {}).some(function (k) { var v = o[k]; return k.slice(-lz.length) === lz && (parseInt(v && typeof v === 'object' ? v.p : v, 10) || 1) > 1; }); };
+      if (enS(u.lc) || enS(u.lcb) || enS((u.lm || {}).fib) || enS((u.lm || {}).dal)) return true;
+    } catch (e) {}
+    return false;
   };
   allMatches = allMatches.filter(function(m){
     try { return window._g45AgLieuOk(m, _agMur(m)); } catch(e) { return true; }
