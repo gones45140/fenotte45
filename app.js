@@ -28802,7 +28802,7 @@ var _bcp=document.getElementById('btn-chat-params-pc');if(_bcp)_bcp.onclick=func
 var G45_VAPID_PUBLIC = 'BDiHPmicEs4Quz-RUMuPGZHRRwILrqoJWNWTIrcZ4fch51Wyxc889Sbym8ZSG56YdNfCNLN56ykVfHhrOguqdF4';
 
 function g45NotifPrefs(){
-  var d={enabled:false, ev:{compo:true,start:true,goals:true,end:true}, teams:{}, bets:true};
+  var d={enabled:false, ev:{compo:true,start:true,goals:true,end:true, f1q:true,f1s:true,f1r:true,f1fp:false}, teams:{}, bets:true};   /* 21/11 : f1… = rappel 🔔 F1 15 min avant (worker f1Rappel) */
   try{ var p=JSON.parse(localStorage.getItem('g45_notif')||'null'); if(p){ d.enabled=!!p.enabled; if(p.ev){ for(var k in p.ev) d.ev[k]=p.ev[k]; } if(p.teams) d.teams=p.teams; if(typeof p.bets==='boolean') d.bets=p.bets; } }catch(e){}
   return d;
 }
@@ -28853,6 +28853,18 @@ function renderNotifPanel(){
   evDefs.forEach(function(d){
     var on=p.ev[d[0]]!==false;
     h+='<label style="display:flex;align-items:center;gap:9px;font-size:12px;color:var(--t1);cursor:pointer;">'
+      +'<input type="checkbox" '+(on?'checked':'')+' onchange="toggleNotifEvent(\''+d[0]+'\')" style="accent-color:var(--a);width:16px;height:16px;flex:none;">'+d[1]+'</label>';
+  });
+  h+='</div></div>';
+  /* 21/11/2026 — RAPPEL 🔔 F1 (maquette acceptée par Antoine : « oublié d'aller entre 2 séances du coup j'ai pas le live »).
+     Le worker (f1Rappel, cron 5 min, calendrier ESPN) prévient 15 min avant chaque séance cochée. Cases rangées dans p.ev
+     (f1q / f1s / f1r / f1fp), envoyées avec les autres préférences par la synchro /psub. */
+  h+='<div style="margin-top:12px;border-top:1px solid var(--b1);padding-top:11px;">'
+    +'<label class="fl" style="color:var(--t2);">\ud83c\udfce F1 \u2014 me pr\u00e9venir 15\u00a0min avant</label>'
+    +'<div style="display:flex;flex-wrap:wrap;gap:7px 16px;margin-top:7px;">';
+  [['f1q','Qualifs'],['f1s','Sprint'],['f1r','Course'],['f1fp','Essais libres']].forEach(function(d){
+    var on=p.ev[d[0]]===true;
+    h+='<label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--t1);cursor:pointer;">'
       +'<input type="checkbox" '+(on?'checked':'')+' onchange="toggleNotifEvent(\''+d[0]+'\')" style="accent-color:var(--a);width:16px;height:16px;flex:none;">'+d[1]+'</label>';
   });
   h+='</div></div>';
@@ -70649,6 +70661,9 @@ function _g45F1TrPropre(t) {
     }
     try {
       var r = await fetch(url);
+      /* 21/11/2026 — 2e secours : tracé fabriqué à l'avance par le robot f1-traces de gones45-archives (OpenF1 = 401 pendant une
+         séance, et personne n'avait ouvert la fiche du GP entre deux séances : « j'ai pas le live », Antoine, Las Vegas). */
+      if (!r.ok) r = await fetch('https://raw.githubusercontent.com/gones45140/gones45-archives/main/f1/traces/' + encodeURIComponent(cle) + '.json');
       if (!r.ok) return null;
       var t = _g45F1TrPropre(await r.json());
       if (t) { try { localStorage.setItem(cle, JSON.stringify(t)); } catch (e) {} }

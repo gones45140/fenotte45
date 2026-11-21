@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action (il est court exprès). Le détail de tout l'historique est dans HISTORIQUE.md
-(à chercher avec grep, jamais à lire en entier). Mis à jour le 31/10/2026 (version déployée : 20261120y, même app.js sur gones45 et fenotte45).
+(à chercher avec grep, jamais à lire en entier). Mis à jour le 31/10/2026 (version déployée : 20261121a, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -107,7 +107,7 @@ Index des zones (fonction d'entrée → mot à chercher dans HISTORIQUE.md) :
 - Tennis (analyse ESPN) `g45TnAnalyser` / `_g45TnSaison` / `_g45TnCalc` / `_g45TnSurf`, bouton Tendances perso `_g45TnPerso`, Elo `_g45TnEloDe`, recherche joueur `searchTennisPlayer` / `_g45TjCalc`, classement par surface `_g45TcListe` (robot .github/scripts/elo.mjs)
 - Marqueurs `g45ButeursView`, `g45MarqueursUS`, `g45NbaMq` · CLV `g45ClvView` · quota cotes `_g45QtHtml`
 - IA du match `_g45MultiAI` · articles `_g45ArticleBloc` · santé `g45SanteTester` (gones seulement : `_g45SanteActive`)
-- KHL `g45KhlDetailMatch`, Euroleague / Pro A `_g45ElRendre`, Top 14 / Pro D2 `g45LnrRender` / `_g45Pd2Rendre`, NRL `g45NrlStatsRender`, KBO `_g45KboRendre`, F1 `g45F1Detail` / `_g45F1Off…`
+- KHL `g45KhlDetailMatch`, Euroleague / Pro A `_g45ElRendre`, Top 14 / Pro D2 `g45LnrRender` / `_g45Pd2Rendre`, NRL `g45NrlStatsRender`, KBO `_g45KboRendre`, F1 `g45F1Detail` / `_g45F1Off…` (rappel 🔔 15 min avant : worker `f1Rappel` ; tracés à l'avance : robot gones45-archives f1-traces, 20261121a)
 - Stockage `_G45_CACHE_PREFIXES` / `_G45_CACHE_MORTS` (nouvelle version de clé = ancienne dans MORTS), nettoyage ?menage=1, diagnostic ?diag=1
 - 📊 Loi des séries (onglet Cockpit 'loi', 20261105r) : robot gones45-archives loi-series.yml / .github/scripts/loi_series.mjs (chaque matin) → loi/loi_series.json ; app `loiHtml` / `g45LoiCreer` ; 🔎 Critères de n'importe quelle équipe (20261106i, index loi/equipes.json, `loiCrHtml` / `g45LoiCrCarte`)
 - 🏁 Monde du Cockpit (onglet #t-cockpit, bouton barre du bas, interrupteur state.ckOn dans Outils → ➕ Équipes, 20261104o) `_g45CkTableau` / `g45CkOuvrir` / `_g45CkPoser` ; grilles `_g45Grille(u)` (u.g perso / STRATS), `_g45GrilleDemande`, mise % `_g45PctDessiner`
@@ -162,6 +162,7 @@ PIÈGES À NE JAMAIS OUBLIER :
 - 📊 Loi des séries vers le 16/12 : refaire le tableau par tranche de cote des pépites (seuil « non compté » à 6 depuis 20261116h, passé à 4 le 19/11 par Antoine (20261119d) → regarder la tranche 3–4).
 - 👤 Pépites JOUEURS de la Loi des séries (18/11, NHL / foot / NBA / NFL, règles dans HISTORIQUE 20261118h → s) : « on laisse comme cela, on ajustera plus tard » (bruit NBA, seuils saison entière, cote 1,60 NBA). Vers le 19/12 : bilan des pépites joueurs retirées « book trop loin » (nf 6, écart > × 1,40) → resserrer / desserrer la limite.
 - 🎯 Cote estimée US (19/11, tests archives : NHL 1 740 m., NBA 1 540 m. → historique des équipes ≈ pas mieux qu'une constante ; foot 1 894 m. → historique OK) : ligne « 📚 DraftKings + archives » dans « Ton pari » FAITE (20261120x, robot semblables.yml) — à confirmer à l'écran par Antoine ; face-à-face proportionnel (w) FAIT. 🚑 Absents dans « Ton pari » FAIT (20261120v, NHL / NBA / NFL, summary ESPN) — foot à sonder ; à confirmer à l'écran par Antoine.
+- 🏎 20261121a : vérifier le 1er passage du robot f1-traces (hors séance) et le rappel 🔔 au GP du Qatar (FP1 27/11 13:30 UTC).
 - Cédric : toucher 🤍 sur Portugal. Worker : budget `_lourd` 4 → 2 proposé.
 
 ## 8. Façon de travailler en session cloud
