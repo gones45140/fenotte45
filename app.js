@@ -78747,14 +78747,15 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     }).filter(function (x) { return x && x.n >= mn; });
     R.sort(function (a, b) { return S.duoT === 'pire' ? (a.pire - b.pire) || (b.r - a.r) : S.duoT === 'sai' ? (b.rs - a.rs) || (b.r - a.r) : (b.r - a.r) || (a.pire - b.pire); });
     R.slice(0, 15).forEach(function (x, kk) {
-      var d = x.d, lg = ''; try { lg = (typeof window._g45LogoIndex === 'function' && window._g45LogoIndex(d[4])) || ''; } catch (e) {}
+      /* 20261122b (capture : Lightning sans logo ; « on n'a pas le nombre de matchs joués ensemble ») : logo donné par le robot (d[7], par n° d'équipe), sinon index ; « sur N matchs ensemble » */
+      var d = x.d, lg = d[7] || ''; if (!lg) try { lg = (typeof window._g45LogoIndex === 'function' && window._g45LogoIndex(d[4])) || ''; } catch (e) {}
       var F = {}; try { F = (typeof window._g45CkFond === 'function' ? window._g45CkFond(d[4]) : {}) || {}; } catch (e) {}
       var cc = /^#[0-9a-f]{6}$/i.test(F.c || '') ? F.c : '#4d84ff', pc = x.pire <= 2 ? '#1ed760' : x.pire <= 4 ? '#ff9f43' : '#ff5a5a', st = duoSurMur(d);
       var bd = 'display:inline-block;background:rgba(11,16,29,.62);border-radius:8px;padding:2px 8px;';
       h += '<div style="display:flex;align-items:center;gap:10px;margin:8px 0;padding:8px 10px;border-radius:10px;border-left:4px solid ' + cc + ';background:linear-gradient(90deg,' + cc + '55 0%,#0b101d 70%);color:#fff;">'
-        + '<div style="width:46px;height:46px;border-radius:50%;background:#fff;flex:none;display:flex;align-items:center;justify-content:center;overflow:hidden;">' + (lg ? '<img src="' + esc(lg) + '" alt="" style="width:40px;height:40px;object-fit:contain;">' : '<b style="color:#0b101d;font-size:13px;">' + esc(String(d[4]).slice(0, 3).toUpperCase()) + '</b>') + '</div>'
+        + '<div style="width:46px;height:46px;border-radius:50%;background:#fff;flex:none;display:flex;align-items:center;justify-content:center;overflow:hidden;">' + (lg ? '<img src="' + esc(lg) + '" alt="" onerror="this.replaceWith(document.createTextNode(\'' + esc(String(d[4]).slice(0, 3).toUpperCase()) + '\'))" style="width:40px;height:40px;object-fit:contain;">' : '<b style="color:#0b101d;font-size:13px;">' + esc(String(d[4]).slice(0, 3).toUpperCase()) + '</b>') + '</div>'
         + '<div style="flex:1;min-width:0;"><div style="' + bd + 'font-size:16px;font-weight:800;">' + (kk + 1) + '. ' + esc(duoFam(d[0])) + (k[0] === 's' ? ' + ' : ' ou ') + esc(duoFam(d[2])) + (st ? ' ⭐' : '') + '</div><br>'
-        + '<div style="' + bd + 'font-size:14px;margin-top:4px;">' + esc(d[4]) + ' · <b>' + Math.round(100 * x.r) + ' %</b> · saison <b>' + Math.round(100 * x.rs) + ' %</b> · pire <b style="color:' + pc + ';">' + x.pire + '</b></div><br>'
+        + '<div style="' + bd + 'font-size:14px;margin-top:4px;">' + esc(d[4]) + ' · <b>' + Math.round(100 * x.r) + ' %</b> sur <b>' + x.n + '</b> matchs ensemble · saison <b>' + Math.round(100 * x.rs) + ' %</b> · pire <b style="color:' + pc + ';">' + x.pire + '</b></div><br>'
         + '<div style="' + bd + 'font-size:14px;margin-top:4px;">🎯 cote mini <b style="color:#ffd34d;">' + (x.r ? (Math.ceil(100 / x.r) / 100).toFixed(2).replace('.', ',') : '—') + '</b>' + (x.enc ? ' · ' + x.enc + ' raté' + (x.enc > 1 ? 's' : '') + ' en cours' : '') + '</div>'
         + (st ? '' : '<div><button onclick="g45DuoMur(\'' + f + '\',' + x.i + ')" style="border:0;border-radius:9px;padding:6px 10px;font-weight:800;font-size:14px;color:#fff;background:#1f7a3a;margin-top:6px;cursor:pointer;">➕ Ajouter au mur</button></div>') + '</div></div>';
     });
