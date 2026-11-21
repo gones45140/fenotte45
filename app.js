@@ -88757,8 +88757,29 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
       Object.keys(vus).forEach(function (id) { var m = id.split('|')[0], l = id.split('|')[1]; r += pil(m, '|' + l, vus[id]);
         /* 20261117u (carte Eichel « 📉 🏠 C2 » après l'abandon Cockpit : « on n'a pas par mode » → « oui ») : 🏳️ à côté d'une série EN COURS (palier > 1) */
         if (vus[id] > 1 && KS[id] && u && u.n) r += '<button onclick="event.stopPropagation();g45MethAbandon(' + JSON.stringify(u.n).replace(/"/g, '&quot;') + ',\'' + m + '\',' + JSON.stringify(Object.keys(KS[id])).replace(/"/g, '&quot;') + ')" title="Abandonner cette série" style="margin:0 6px 0 2px;border-radius:8px;padding:2px 8px;font-size:13px;font-weight:800;color:#fff;cursor:pointer;border:1px solid #ff9f43;background:#3a2408;">🏳️</button>'; });
+      /* 20261121e (carte Haaland « 🚀 🏠 Palier 2 / 🚀 ✈️ Palier 2 », mode 📉 coché : « je jouais en Cockpit mais cotes trop basses, je suis en
+         P2, je veux le changer » → proposition → « oui passer à la série ») : échelle 🚀 en série (palier > 1) dont le pari du même lieu est en
+         mode 📉 (u.mode) → bouton « ➡️ 📉 » = g45VersCb. */
+      try { if (u && u.n && u.mode) { var LC = {}; Object.keys(u.lc || {}).forEach(function (k) { var p = parseInt(u.lc[k], 10) || 1; if (p > 1) LC[k] = p; });
+        if (!Object.keys(u.lc || {}).length && (parseInt(u.l, 10) || 1) > 1) LC[''] = parseInt(u.l, 10);
+        Object.keys(LC).forEach(function (k) { var l = String(k).split('|')[1] || 'glob'; if ((u.mode[l] || (l !== 'glob' ? '' : u.mode.glob)) !== 'cb') return;
+          r += '<button onclick="event.stopPropagation();g45VersCb(' + JSON.stringify(u.n).replace(/"/g, '&quot;') + ',' + JSON.stringify(k).replace(/"/g, '&quot;') + ')" title="Passer cette série en 📉 Cotes basses" style="margin:0 6px 4px 0;border-radius:8px;padding:2px 9px;font-size:14px;font-weight:800;color:#0b101d;cursor:pointer;border:0;background:#ff9f43;">' + ic(k) + '➡️ 📉</button>'; }); } } catch (e) {}
       return r;
     }; window._g45UlPaliers._meth = 1; } } catch (e) {}
+  /* 20261121e — ➡️ PASSER UNE SÉRIE 🚀 EN 📉 COTES BASSES (même demande) : l'échelle 🚀 repart à P1 et la série 📉 du même lieu (même clé
+     _g45PalKey, u.lcb) démarre au MÊME palier : C = P, pertes à rattraper = mises de la grille P1 … P(n−1) (comme 🏳️ Abandonner),
+     mise d'avant = mise de P(n−1). Ensuite la mise suit la règle 📉 de la carte (cbMise). Paris, bilan et bankroll intouchés. */
+  window.g45VersCb = function (nom, k) {
+    var u = (state.u || []).filter(function (x) { return x.n === nom; })[0]; if (!u) return;
+    var p = k ? (parseInt((u.lc || {})[k], 10) || 1) : (parseInt(u.l, 10) || 1); if (p <= 1) return;
+    var G = (typeof _g45Grille === 'function' ? _g45Grille(u, k) : null) || [], per = 0; for (var i = 0; i < p - 1 && i < G.length; i++) per += +G[i] || 0;
+    var prev = +G[Math.min(p - 2, G.length - 1)] || 0, kc = k || '|', l = String(k).split('|')[1] || '', ico = l === 'dom' ? '🏠' : l === 'ext' ? '✈️' : '🌍';
+    var C = Math.min(p, cbStop(u)), eu = function (x) { return (Math.round(x * 100) / 100).toLocaleString('fr-FR') + ' €'; };
+    if (!confirm('Passer ' + nom + ' ' + ico + ' en 📉 Cotes basses ?\n\n🚀 Cockpit : P' + p + ' → P1\n📉 Cotes basses : démarre à C' + C + ', ' + eu(per) + ' de pertes à rattraper (dernière mise ' + eu(prev) + ').\n\nTes paris ne changent pas.')) return;
+    if (k) { u.lc = u.lc || {}; u.lc[k] = 1; } else u.l = 1;
+    u.lcb = u.lcb || {}; u.lcb[kc] = { p: C, prev: prev, per: Math.round(per * 100) / 100 };
+    try { save(); } catch (e) {} try { if (typeof render === 'function') render(); } catch (e) {} try { if (typeof window._g45CkPoser === 'function') window._g45CkPoser(); } catch (e) {}
+  };
   /* ═══ 20261114t — 🚀 COCKPIT P2 × 2,5 (même demande) : case dans 🪜 Mes grilles (state.ckP25). Cochée, toute grille « standard » (P2 = 2 × P1,
      puis × 3) est LUE en P2 = 2,5 × P1 puis × 3 (10 / 25 / 75 / 225…) ; grille enregistrée inchangée (décocher = retour) ; P1 auto divise la
      part par 1 + 2,5 × (3^(N−1) − 1) / 2 au lieu de 3^(N−1). Les grilles perso qui n'ont pas cette forme ne sont pas touchées. ═══ */
