@@ -26805,8 +26805,16 @@ async function loadCalendrier() {
     var _ckV = {}, _ckL = [];
     allMatches.forEach(function(m){
       var u = m.joueur ? ((state.u || []).filter(function(x){ return x && x.type === 'joueur' && x.n === m.joueur.nom; })[0] || _agMur(m)) : _agMur(m);
+      /* 20261121h (capture Agenda « Carolina Hurricanes vs Oilers · ⭐ Suivi · 🏠 », absent de Prochaines 24 h) : match ⭐ suivi À LA MAIN (sans
+         m.sp : _agMur rend null) → carte du mur cherchée quand même, côté domicile (ourName) puis extérieur (adv), sport tiré de la carte. */
+      var dS = m.isDom ? 1 : 0, spS = m.sp, inv = false;
+      if (!u && m.suivi && !m.sp) {
+        u = _agMur({ ourName: m.ourName, sp: 'x' });
+        if (u) dS = 1; else { u = _agMur({ ourName: m.adv, sp: 'x' }); if (u) { dS = 0; inv = true; } }
+        if (u) { var ics = String(u.sport || ''); spS = /🏒/.test(ics) ? 'hockey' : /🏀/.test(ics) ? 'basketball' : /🏈/.test(ics) ? 'football' : /⚾/.test(ics) ? 'baseball' : 'soccer'; }
+      }
       var t = Date.parse(m.date) || 0; if (!u || !t || _ckV[u.n + '|' + t]) return; _ckV[u.n + '|' + t] = 1;
-      _ckL.push({ t: t, n: u.n, d: m.isDom ? 1 : 0, adv: String(m.adv || ''), sp: m.sp || 'soccer' });
+      _ckL.push({ t: t, n: u.n, d: dS, adv: String((inv ? m.ourName : m.adv) || ''), sp: spS || 'soccer' });
     });
     var _ckD = new Date(); window._g45CkAg = { j: _ckD.getFullYear() + '-' + (_ckD.getMonth() + 1) + '-' + _ckD.getDate(), L: _ckL, mur: (window._g45CkMurSig ? window._g45CkMurSig() : '') };   /* 20261029z2 : mur au moment de la lecture */
     localStorage.setItem('g45ck_ag', JSON.stringify(window._g45CkAg));
