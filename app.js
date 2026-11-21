@@ -88866,7 +88866,10 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   var um0 = window.updMise;
   if (typeof um0 === 'function') window.updMise = updMise = function () {
     var r = um0.apply(this, arguments);
-    try { var m = meth(), u = carte(), mi = $('c-mise'); if (m !== 'mont' && u && mi && !mi._g45Man) { var v = m === 'cb' ? cbMise(u, cle(), cbCote()) : miseDe(u, m, palM(u, m, cle())); if (v) mi.value = v; else if (m === 'cb' && cbSaute(u, cbCote())) mi.value = ''; } dessiner(); } catch (e) {}
+    try { var m = meth(), u = carte(), mi = $('c-mise'); if (m !== 'mont' && u && mi && !mi._g45Man) { var v = m === 'cb' ? cbMise(u, cle(), cbCote()) : miseDe(u, m, palM(u, m, cle())); if (v) mi.value = v; else if (m === 'cb' && (cbSaute(u, cbCote()) || (!cbCote() && cbSt(u, cle()).p > 1))) mi.value = '';
+      /* 20261121k (capture Engager 📉 « Leon Draisaitl (📉 C2) », mise 7.74 = celle du 🚀 : « ça calcule pas ») : sans cote, la mise 📉 d'un C2+
+         est inconnue → champ vidé (plus la mise 🚀 restée) avec l'invite « 📉 mets la cote » ; elle se calcule dès que la cote est tapée. */
+      if (m === 'cb') mi.placeholder = (!cbCote() && cbSt(u, cle()).p > 1) ? '📉 mets la cote' : ''; } dessiner(); } catch (e) {}
     return r;
   };
   /* placement : pari(true) normal puis le pari devient « méthode » (hors montante) */
