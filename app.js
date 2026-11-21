@@ -26768,11 +26768,15 @@ async function loadCalendrier() {
   });
 
   // Dédoublonnage (un même match peut apparaître pour 2 favoris qui s'affrontent) + tri par date
-  var seen = {};
-  allMatches = allMatches.filter(function(m){
-    var k = m.date + '|' + [m.ourName, m.adv].sort().join('|');
-    if(seen[k]) return false; seen[k]=1; return true;
-  });
+  /* 20261121l (capture Prochaines 24 h sans Lille – Lyon 20:45 : « pareil j'ai pas Lille ») : Lille ET Lyon sont sur le mur → le match venait
+     2 fois (une par équipe) et le dédoublonnage par PAIRE gardait la 1re (Lyon, qui joue à l'extérieur alors que sa carte ne joue que 🏠 →
+     retirée ensuite) : Lille disparaissait. Désormais : une entrée par ÉQUIPE DU MUR (date + notre équipe) ; les matchs ⭐ suivis (m.suivi)
+     sont retirés seulement si la paire est déjà là. */
+  var seen = {}, seenP = {}, _pk = function(m){ return m.date + '|' + [m.ourName, m.adv].sort().join('|'); };
+  var _nonS = allMatches.filter(function(m){ return !m.suivi; }), _S = allMatches.filter(function(m){ return m.suivi; });
+  _nonS = _nonS.filter(function(m){ var k = m.date + '|' + m.ourName + '|' + (m.joueur ? (m.joueur.nom || '') : ''); if (seen[k]) return false; seen[k] = 1; seenP[_pk(m)] = 1; return true; });
+  _S = _S.filter(function(m){ var k = _pk(m); if (seenP[k]) return false; seenP[k] = 1; return true; });
+  allMatches = _nonS.concat(_S);
   allMatches.sort(function(a,b){ return new Date(a.date)-new Date(b.date); });
   /* 20261018i (« liste sur 1 semaine, réactualisée 1× par jour, les matchs joués s'effacent ») : 7 jours à venir seulement. */
   try { var _ag7 = Date.now() + 7 * 86400000; allMatches = allMatches.filter(function(m){ var t = Date.parse(m.date); return !(t > _ag7); }); } catch(e) {}
