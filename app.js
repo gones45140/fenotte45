@@ -82306,7 +82306,7 @@ window._g45UfDecoupe = function (note) {
   var sig = function () {
     try {
       return JSON.stringify([(state.u || []).map(function (u) { return [u.n, u.note, u.s, u.l, u.sport, u.type, u.club]; }), state.lc || null,
-        (state.h || []).length, (state.a || []).length, (typeof g45SuivisGet === 'function' ? g45SuivisGet().map(function (m) { return m.id; }) : []), 'xc' /* 20261019c + 20261018x : liste refaite une fois (photos NHL) */]);
+        (state.h || []).length, (state.a || []).length, (typeof g45SuivisGet === 'function' ? g45SuivisGet().map(function (m) { return m.id; }) : []), 'xd' /* 20261019c + 20261018x : liste refaite une fois (photos NHL) ; 20261121m : 'xd' = refaite une fois pour 20261121h / j / l (Carolina ⭐, Draisaitl ✈️, Lille – Lyon : la liste du jour gardée n'avait pas les corrections) */]);
     } catch (e) { return String(Math.random()); }
   };
   var op = function (mode, val) {
