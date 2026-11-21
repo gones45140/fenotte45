@@ -89887,7 +89887,13 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     turin: 'Torino', juventus: 'Juventus', florence: 'Fiorentina', genes: 'Genoa', bologne: 'Bologna', venise: 'Venezia',
     seville: 'Sevilla', fcseville: 'Sevilla', betis: 'Real Betis', realbetis: 'Real Betis', atlmadrid: 'Atlético Madrid', atleticomadrid: 'Atlético Madrid', atletico: 'Atlético Madrid',
     barcelone: 'Barcelona', fcbarcelone: 'Barcelona', valence: 'Valencia', bilbao: 'Athletic Club', athbilbao: 'Athletic Club', athleticbilbao: 'Athletic Club', alaves: 'Alavés',
-    celtavigo: 'Celta Vigo', vigo: 'Celta Vigo', rsociedad: 'Real Sociedad', malaga: 'Málaga', santander: 'Racing Santander', rayo: 'Rayo Vallecano'
+    celtavigo: 'Celta Vigo', vigo: 'Celta Vigo', rsociedad: 'Real Sociedad', malaga: 'Málaga', santander: 'Racing Santander', rayo: 'Rayo Vallecano',
+    /* 20261121o (carte « en cours » Lille – « Olympique lyonnais » : rond « OL » sans logo, « il reconnaît pas ») : noms longs des clubs de
+       Ligue 1 (écrits par le book / l'adversaire tapé) → nom ESPN de l'index (loi/equipes.json, fra.1) */
+    olympiquelyonnais: 'Lyon', ol: 'Lyon', olympiquedemarseille: 'Marseille', om: 'Marseille', psg: 'Paris Saint-Germain', parissg: 'Paris Saint-Germain',
+    monaco: 'AS Monaco', ogcnice: 'Nice', rennes: 'Stade Rennais', rclens: 'Lens', losc: 'Lille', losclille: 'Lille', lilleosc: 'Lille',
+    rcstrasbourg: 'Strasbourg', rcstrasbourgalsace: 'Strasbourg', stadebrestois: 'Brest', stadebrestois29: 'Brest', toulousefc: 'Toulouse', fclorient: 'Lorient',
+    angerssco: 'Angers', auxerre: 'AJ Auxerre', ajauxerre: 'AJ Auxerre', lehavre: 'Le Havre AC', havreac: 'Le Havre AC', estac: 'Troyes', estactroyes: 'Troyes', lemansfc: 'Le Mans'
   };
   var env = function (nom) {
     var l = g0.apply(this, arguments); if (l) return l;
