@@ -26888,7 +26888,7 @@ async function loadCalendrier() {
        chemin ⭐ (m.suivi + m.sp, isDom juste) → équipe du mur cherchée par nom souple ; seuls les matchs suivis À LA MAIN (sans m.sp,
        isDom toujours vrai) restent sans palier. */
     if (!m || (m.suivi && !m.sp)) return '';
-    var u = _agMur(m);
+    var u = (m.joueur && (state.u || []).filter(function(x){ return x && x.type === 'joueur' && x.n === m.joueur.nom; })[0]) || _agMur(m);   /* 20261121n : carte JOUEUR d'abord (comme g45ck_ag) */
     if (!u || u.s == null || typeof STRATS === 'undefined' || !_g45Grille(u)) return '';
     var sl = String(m.compSlug || '').toLowerCase(), nm = String(m.comp || '').toLowerCase();
     var foot = !m.sp || m.sp === 'soccer';
@@ -26896,6 +26896,19 @@ async function loadCalendrier() {
     if (foot && !champ && !/champions|europa|conference|coupe|cup|copa|pokal|coppa|super|friendl|amical|qualif|nations|trophy|troph[ée]e|\.w?cup|uefa|fifa|conmebol/.test(sl + ' ' + nm))
       champ = /ligue|liga|bundesliga|serie|premier|eredivisie|primeira|championship|mls|super lig|jupiler|pro league/.test(sl + ' ' + nm);
     if (!champ) return '';
+    /* 20261121n (capture Agenda : Draisaitl ✈️ et Carolina 🏠 en « 🚀 Palier 1 » : « montre pas les cotes basses ») : pari du lieu en 📉
+       (coché dans ✏️ Modifier, ou déduit : série 📉 en cours / dernier pari 📉, comme Prochaines 24 h) → « 📉 C2 · pertes 7,74 € (mise selon
+       la cote) » en orange (C1 : « 📉 C1 · mise P1 … »). */
+    try {
+      var lz = m.isDom ? 'dom' : 'ext', md = (u.mode && (u.mode[lz] || u.mode.glob)) || '';
+      var kcb = Object.keys(u.lcb || {}).filter(function (k) { return k.slice(-(lz.length + 1)) === '|' + lz; })[0] || ('|' + lz), CBm = window._g45CbMeth;
+      if (!md && CBm && CBm.st(u, kcb).p > 1) md = 'cb';
+      if (!md) { var dl = ((state.h || []).concat(state.a || [])).filter(function (b) { return b && b.n === u.n && (b.isS || b.meth) && _g45LieuNz(b.domicile || (String(b.mk || '').split('|')[1] || '')) === lz; }).sort(function (a, b) { return (+b.id || 0) - (+a.id || 0); })[0]; if (dl && dl.meth === 'cb') md = 'cb'; }
+      if (md === 'cb' && CBm) {
+        var sc = CBm.st(u, kcb), eu = function (x) { return (Math.round((+x || 0) * 100) / 100).toLocaleString('fr-FR'); };
+        return '<div style="margin-top:5px;"><span style="display:inline-block;background:rgba(255,159,67,.22);border:1px solid #ff9f43;color:#fff;font-size:14px;font-weight:800;border-radius:7px;padding:2px 9px;">📉 C' + sc.p + (sc.p > 1 ? ' · pertes ' + eu(sc.per) + ' € (mise selon la cote)' : ' · mise ' + eu(CBm.mise(u, kcb, 0)) + ' €') + '</span></div>';
+      }
+    } catch (e) {}
     var p = (typeof _g45PalLieu === 'function') ? _g45PalLieu(u, m.isDom ? 'dom' : 'ext') : (parseInt(u.l, 10) || 1);
     var mi = _g45Grille(u, m.isDom ? 'dom' : 'ext')[p - 1];
     if (mi == null) return '';
@@ -82306,7 +82319,7 @@ window._g45UfDecoupe = function (note) {
   var sig = function () {
     try {
       return JSON.stringify([(state.u || []).map(function (u) { return [u.n, u.note, u.s, u.l, u.sport, u.type, u.club]; }), state.lc || null,
-        (state.h || []).length, (state.a || []).length, (typeof g45SuivisGet === 'function' ? g45SuivisGet().map(function (m) { return m.id; }) : []), 'xd' /* 20261019c + 20261018x : liste refaite une fois (photos NHL) ; 20261121m : 'xd' = refaite une fois pour 20261121h / j / l (Carolina ⭐, Draisaitl ✈️, Lille – Lyon : la liste du jour gardée n'avait pas les corrections) */]);
+        (state.h || []).length, (state.a || []).length, (typeof g45SuivisGet === 'function' ? g45SuivisGet().map(function (m) { return m.id; }) : []), 'xe' /* 20261019c + 20261018x : liste refaite une fois (photos NHL) ; 20261121m-n : 'xd' puis 'xe' = refaite une fois pour 20261121h / j / l (Carolina ⭐, Draisaitl ✈️, Lille – Lyon : la liste du jour gardée n'avait pas les corrections) */]);
     } catch (e) { return String(Math.random()); }
   };
   var op = function (mode, val) {
