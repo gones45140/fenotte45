@@ -3171,6 +3171,7 @@ function render(){
       return '<option value="'+u.n+'">'+(u.sport||'')+' '+u.n+' (P'+_p+')</option>';
     }).join('');
     if(_gUs&&state.u.some(function(u){return u.n===_gUs;}))uSel.value=_gUs;
+    try{ if(typeof window._g45UnitEtiq==='function') window._g45UnitEtiq(); }catch(e){}   /* 20261121i : 📉 C… si Engager est en Cotes basses */
   }
 
   /* live cockpit */
@@ -11645,6 +11646,7 @@ function render(){
       return '<option value="'+u.n+'">'+(u.sport||'')+' '+u.n+' (P'+_p+')</option>';
     }).join('');
     if(_gUs&&state.u.some(function(u){return u.n===_gUs;}))uSel.value=_gUs;
+    try{ if(typeof window._g45UnitEtiq==='function') window._g45UnitEtiq(); }catch(e){}   /* 20261121i : 📉 C… si Engager est en Cotes basses */
   }
 
   /* live cockpit */
@@ -88838,7 +88840,21 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   };
   try { var _ong0 = window.g45CkOnglet; if (typeof _ong0 === 'function' && !_ong0._p25) { window.g45CkOnglet = function () { var r = _ong0.apply(this, arguments); try { p25Poser(); } catch (e) {} return r; }; window.g45CkOnglet._p25 = 1; } } catch (e) {}
   window._g45EngMethDessiner = dessiner;
-  window.g45EngMeth = function (k) { window._g45EngMeth = (SEQ[k] || k === 'cb') ? k : 'mont'; try { (window.updMise || updMise)(); } catch (e) {} dessiner(); };
+  window.g45EngMeth = function (k) { window._g45EngMeth = (SEQ[k] || k === 'cb') ? k : 'mont'; try { window._g45UnitEtiq(); } catch (e) {} try { (window.updMise || updMise)(); } catch (e) {} dessiner(); };
+  /* 20261121i (capture du choix de carte d'🚀 Engager, onglet 📉 : « Carolina Hurricanes (P1) » « en cotes basses alors que je suis en P2 ») :
+     la liste affichait toujours le palier 🚀. Engager sur 📉 → « (📉 C2) » = série 📉 du lieu choisi (u.lcb, clé terminée par le lieu, sinon
+     |lieu) ; 🐚 / 🪜 → « (🐚 F2) » / « (🪜 D2) » (u.lm). Retour 🚀 → « (P…) » d'origine. Texte des options seulement. */
+  window._g45UnitEtiq = function () {
+    var sel = $('c-unit'); if (!sel) return; var m = meth(), lz = lieu() || '';
+    [].forEach.call(sel.options, function (o) {
+      var u = (state.u || []).filter(function (x) { return x.n === o.value; })[0]; if (!u) return;
+      if (o._g45T == null) o._g45T = o.textContent; var t0 = o._g45T;
+      if (m === 'mont') { o.textContent = t0; return; }
+      var base = t0.replace(/\s*\(P\d+\)\s*$/, ''), suf = lz ? '|' + lz : '|', p = 1;
+      if (m === 'cb') { var k = Object.keys(u.lcb || {}).filter(function (x) { return x.slice(-suf.length) === suf; })[0] || suf; p = cbSt(u, k).p; o.textContent = base + ' (📉 C' + p + ')'; }
+      else { var K = Object.keys(((u.lm || {})[m]) || {}).filter(function (x) { return x.slice(-suf.length) === suf; })[0] || suf; p = palM(u, m, K); o.textContent = base + ' (' + (NOM[m] || '').split(' ')[0] + ' ' + (LET[m] || 'P') + p + ')'; }
+    });
+  };
   /* mise proposée : celle de la méthode (après le calcul normal de la montante) */
   var um0 = window.updMise;
   if (typeof um0 === 'function') window.updMise = updMise = function () {
