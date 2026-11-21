@@ -65285,6 +65285,10 @@ async function _g45JoueurVisChercher(nom, sport) {
     var r = await fetch('https://www.thesportsdb.com/api/v1/json/3/searchplayers.php?p=' + encodeURIComponent(n));
     if (!r.ok) return null;
     var j = await r.json();
+    /* 20261121b (capture mur → Joueurs : Haaland sans photo alors que TheSportsDB a son cutout, sondé le 21/11) : une réponse SANS champ
+       « player » (relais en panne / quota : « {} ») était gardée 7 jours comme « pas de photo ». Seule une vraie réponse TheSportsDB
+       ({ player: [...] } ou { player: null }) est désormais gardée. */
+    if (!j || !('player' in j)) return null;
     var liste = (j && j.player) || [];
     /* On ne garde que le sport demande, et on prefere une correspondance de nom. */
     var rx = _G45_VIS_SPORT[sport || 'soccer'] || _G45_VIS_SPORT.soccer;
@@ -65310,6 +65314,18 @@ async function _g45JoueurVisChercher(nom, sport) {
   } catch (e) { return null; }
 }
 window._g45JoueurVisChercher = _g45JoueurVisChercher;
+/* 20261121b : une seule fois, on efface les « pas de photo » gardés (g45jv_ sans cut / thumb / fan), parmi lesquels ceux venus des réponses
+   vides ci-dessus (Haaland) → redemandés normalement. */
+(function _g45JvPurge1() {
+  try {
+    if (localStorage.getItem('g45jvp1')) return;
+    Object.keys(localStorage).forEach(function (k) {
+      if (k.indexOf(_G45_JOUEUR_VIS) !== 0) return;
+      try { var c = JSON.parse(localStorage.getItem(k) || 'null'); if (!c || (!c.cut && !c.thumb && !c.fan)) localStorage.removeItem(k); } catch (e) {}
+    });
+    localStorage.setItem('g45jvp1', '1');
+  } catch (e) {}
+})();
 
 /* Enchainement : quand la recherche de CLUB ne rend rien, on tente le JOUEUR. */
 (function _g45BrancherVisuelJoueur() {
