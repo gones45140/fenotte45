@@ -78683,6 +78683,70 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   }
   window._g45CrUsJT = { mode: usJModeDe, val: usJVal, ok: usJOk, html: function (X, c0) { return usClsJHtml(X, c0); } };   /* tests */
   window._g45CrRgT = { rgFiche: rgFiche, aJouRg: aJouRg, aSaRg: aSaRg, rgMois: rgMois, rgLigue: rgLigue, rgJOk: rgJOk };   /* tests */
+  /* ═══ 20261121q — 🏁 JOUABLE EN COCKPIT ? DES DUOS « DOUBLE CHANCE BUTEUR » NHL (capture critères Kyle Connor : « Ce critère joueur n'a pas
+     encore de classement… » → « faudrait mettre jouable en Cockpit, que ça trouve d'autres duos » → maquette maquette_duos.png → « oui ») :
+     liste du robot gones45-archives (duos.mjs, chaque matin dans semblables.yml → loi/duos/nhl.json : 2 joueurs de la même équipe, matchs
+     joués ENSEMBLE, réussi = au moins un des deux marque ; saison en cours + d'avant ; ≥ 50 matchs dont ≥ 10 cette saison). Puces 🌍 / 🏠 / ✈️
+     et tri Réussite / Pire série / Cette saison ; cote mini = 1 ÷ réussite ; ⭐ = carte joueur du mur qui joue déjà ce duo (note qui cite
+     l'autre joueur) ; ➕ Ajouter au mur = carte joueur du 1er, pari « Double chance buteur A ou B ». ═══ */
+  S.duoL = S.duoL || 'tout'; S.duoT = S.duoT || 'ok';
+  window.g45DuoReg = function (k, v) { S[k] = v; try { redessiner(); } catch (e) {} };
+  function duosCharger() {
+    if (window._g45Duos || window._g45DuosEn) return;
+    window._g45DuosEn = 1;
+    fetch('https://raw.githubusercontent.com/gones45140/gones45-archives/main/loi/duos/nhl.json?h=' + Math.floor(Date.now() / 36e5)).then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) { window._g45Duos = (j && j.L) ? j : { L: [], err: 1 }; try { redessiner(); } catch (e) {} })
+      .catch(function () { window._g45Duos = { L: [], err: 1 }; try { redessiner(); } catch (e) {} });
+  }
+  function duoFam(n) { return String(n || '').trim().split(/\s+/).slice(-1)[0] || ''; }
+  function duoSurMur(d) {
+    var nz = function (t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); };
+    return ((typeof state !== 'undefined' && state.u) || []).some(function (u) {
+      if (!u || u.type !== 'joueur') return false; var n = nz(u.n), no = nz(u.note);
+      return (n === nz(d[0]) && no.indexOf(nz(duoFam(d[2]))) >= 0) || (n === nz(d[2]) && no.indexOf(nz(duoFam(d[0]))) >= 0);
+    });
+  }
+  window.g45DuoMur = function (i) {
+    var D = window._g45Duos, d = D && D.L && D.L[i]; if (!d || typeof state === 'undefined') return;
+    var nom = (state.u || []).some(function (x) { return x && x.n === d[0]; }) ? d[2] : d[0];
+    if ((state.u || []).some(function (x) { return x && x.n === nom; })) { alert(d[0] + ' et ' + d[2] + ' sont déjà sur ton mur : ajoute le pari dans ✏️ Modifier.'); return; }
+    if (typeof _g45MurPlein === 'function' && _g45MurPlein()) { alert('🧱 Ton mur est plein : enlève une carte dans Outils → Équipes pour ajouter ' + nom + '.'); return; }
+    var pari = 'Double chance buteur ' + d[0] + ' ou ' + d[2], club = d[4];
+    var note = typeof window._g45UfCompose === 'function' ? window._g45UfCompose(club, '', '', '', pari) : pari;
+    state.u.push({ n: nom, abbr: duoFam(nom).slice(0, 3).toUpperCase(), color: '#1d4ed8', s: '3', l: 1, sport: '🏒', logoUrl: '', link: '', link2: '', note: note, type: 'joueur', club: club });
+    try { save(); } catch (e) {}
+    try { if (typeof _g45PushBetsGithub === 'function') _g45PushBetsGithub(true); } catch (e) {}
+    try { if (typeof render === 'function') render(); } catch (e) {}
+    try { redessiner(); } catch (e) {}
+  };
+  function duosHtml() {
+    var h = '<div style="margin-top:16px;padding-top:12px;border-top:1px solid #2a3a63;"><div style="font-size:17px;font-weight:800;color:#fff;">🏁 Jouable en Cockpit ?</div>';
+    var D = window._g45Duos; if (!D) { duosCharger(); return h + '<div style="font-size:14px;color:#fff;margin-top:6px;">⏳ Lecture des duos…</div></div>'; }
+    if (!D.L.length) return h + '<div style="font-size:14px;color:#ffd34d;margin-top:6px;">Liste des duos pas encore prête (robot du matin).</div></div>';
+    h += '<div style="font-size:14px;color:#c9d3ee;margin:3px 0 8px;">Duos « double chance buteur » · même équipe · ' + esc((D.s || []).length || 2) + ' saisons NHL</div>';
+    var pu = function (k, v, t) { var on = S[k] === v; return '<button onclick="g45DuoReg(\'' + k + '\',\'' + v + '\')" style="padding:7px 12px;border-radius:14px;font-size:14px;font-weight:800;cursor:pointer;color:#fff;margin:0 6px 6px 0;border:1px solid ' + (on ? '#6d9dff' : '#2a3a63') + ';background:' + (on ? '#2f6bff' : '#0b1226') + ';">' + t + '</button>'; };
+    h += '<div>' + pu('duoL', 'tout', '🌍 Tous') + pu('duoL', 'dom', '🏠 Domicile') + pu('duoL', 'ext', '✈️ Extérieur') + '</div>'
+      + '<div>' + pu('duoT', 'ok', 'Réussite') + pu('duoT', 'pire', 'Pire série') + pu('duoT', 'sai', 'Cette saison') + '</div>';
+    var R = D.L.map(function (d, i) {
+      var n = S.duoL === 'dom' ? d[11] : S.duoL === 'ext' ? d[14] : d[6], ok = S.duoL === 'dom' ? d[12] : S.duoL === 'ext' ? d[15] : d[7], pire = S.duoL === 'dom' ? d[13] : S.duoL === 'ext' ? d[16] : d[10];
+      return { d: d, i: i, n: n, r: n ? ok / n : 0, pire: pire, rs: d[8] ? d[9] / d[8] : 0 };
+    }).filter(function (x) { return x.n >= 20; });
+    R.sort(function (a, b) { return S.duoT === 'pire' ? (a.pire - b.pire) || (b.r - a.r) : S.duoT === 'sai' ? (b.rs - a.rs) || (b.r - a.r) : (b.r - a.r) || (a.pire - b.pire); });
+    R.slice(0, 15).forEach(function (x, k) {
+      var d = x.d, lg = ''; try { lg = (typeof window._g45LogoIndex === 'function' && window._g45LogoIndex(d[4])) || ''; } catch (e) {}
+      var F = {}; try { F = (typeof window._g45CkFond === 'function' ? window._g45CkFond(d[4]) : {}) || {}; } catch (e) {}
+      var cc = /^#[0-9a-f]{6}$/i.test(F.c || '') ? F.c : '#4d84ff', pc = x.pire <= 2 ? '#1ed760' : x.pire <= 4 ? '#ff9f43' : '#ff5a5a', st = duoSurMur(d);
+      var bd = 'display:inline-block;background:rgba(11,16,29,.62);border-radius:8px;padding:2px 8px;';
+      h += '<div style="display:flex;align-items:center;gap:10px;margin:8px 0;padding:8px 10px;border-radius:10px;border-left:4px solid ' + cc + ';background:linear-gradient(90deg,' + cc + '55 0%,#0b101d 70%);color:#fff;">'
+        + '<div style="width:46px;height:46px;border-radius:50%;background:#fff;flex:none;display:flex;align-items:center;justify-content:center;overflow:hidden;">' + (lg ? '<img src="' + esc(lg) + '" alt="" style="width:40px;height:40px;object-fit:contain;">' : '<b style="color:#0b101d;font-size:13px;">' + esc(String(d[4]).slice(0, 3).toUpperCase()) + '</b>') + '</div>'
+        + '<div style="flex:1;min-width:0;"><div style="' + bd + 'font-size:16px;font-weight:800;">' + (k + 1) + '. ' + esc(duoFam(d[0])) + ' ou ' + esc(duoFam(d[2])) + (st ? ' ⭐' : '') + '</div><br>'
+        + '<div style="' + bd + 'font-size:14px;margin-top:4px;">' + esc(d[4]) + ' · <b>' + Math.round(100 * x.r) + ' %</b> · saison <b>' + Math.round(100 * x.rs) + ' %</b> · pire <b style="color:' + pc + ';">' + x.pire + '</b></div><br>'
+        + '<div style="' + bd + 'font-size:14px;margin-top:4px;">🎯 cote mini <b style="color:#ffd34d;">' + (x.r ? (Math.ceil(100 / x.r) / 100).toFixed(2).replace('.', ',') : '—') + '</b>' + (d[17] ? ' · ' + d[17] + ' raté' + (d[17] > 1 ? 's' : '') + ' en cours' : '') + '</div>'
+        + (st ? '' : '<div><button onclick="g45DuoMur(' + x.i + ')" style="border:0;border-radius:9px;padding:6px 10px;font-weight:800;font-size:14px;color:#fff;background:#1f7a3a;margin-top:6px;cursor:pointer;">➕ Ajouter au mur</button></div>') + '</div></div>';
+    });
+    return h + '<div style="font-size:14px;color:#c9d3ee;margin-top:6px;">Cote mini = cote à trouver chez ton book pour être gagnant. ⭐ = déjà sur ton mur. Pire série : <b style="color:#1ed760;">0-2</b> · <b style="color:#ff9f43;">3-4</b> · <b style="color:#ff5a5a;">5+</b>. Au moins 20 matchs ensemble au lieu choisi.</div></div>';
+  }
+  window._g45DuosHtml = duosHtml;   /* tests */
   function clsHtml() {
     var X = clsCtx(); if (!X) return '';
     var Q = S.cls[X.sp + '|' + X.lg] || {}, c0 = S.combos[S.a]; if (!c0) return '';
@@ -78692,6 +78756,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     /* 20261106z2 (capture Pavel Zacha pointeur : « Jouable en Cockpit ? » NHL = toutes les équipes à 100 %, « Même critère (aucun critère) ») : un critère
        JOUEUR seul n'a pas de classement d'équipes (les joueurs ne sont classés qu'en foot / rugby) → message au lieu d'une liste qui ne veut rien dire. */
     if (usJModeDe(c0)) return usClsJHtml(X, c0);   /* 20261107b */
+    if (X.sp === 'hockey' && X.lg === 'nhl' && c0.jo && ((c0.jo2 && c0.jx === 'un') || /\bou\b/i.test(libCombo(c0))) && /aucun crit/.test(libCombo(c))) return duosHtml();   /* 20261121q */
     if (/aucun crit/.test(libCombo(c))) return '<div style="margin-top:16px;padding-top:12px;border-top:1px solid #2a3a63;"><div style="font-size:16px;font-weight:800;color:#fff;">🏁 Jouable en Cockpit ?</div>'
       + '<div style="font-size:14px;color:#ffd34d;margin-top:4px;">Ce classement compare les ÉQUIPES : ajoute un critère d\'équipe (résultat, buts, tiers…) pour le voir. '
       + (c0.jo ? 'Ce critère joueur n\'a pas encore de classement des joueurs pour cette ligue.' : '') + '</div></div>';
