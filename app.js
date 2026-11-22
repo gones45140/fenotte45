@@ -22,7 +22,9 @@
 })();
 /* 20261106h (« fais le filtre Bilan / Archive ») : un pari compte dans le Bilan / l'Archive du Cockpit selon la méthode choisie (window._g45BilMeth) :
    'mont' (défaut) = montante Cockpit (isS) · 'fib' / 'dal' = paris Fibonacci / D'Alembert (h.meth) · 'tout' = les trois. */
-function _g45EstCk(h){ if(!h) return false; var m=(typeof window!=='undefined'&&window._g45BilMeth)||'mont'; if(m==='tout') return !!h.isS||!!h.meth; if(m==='mont') return !!h.isS; return h.meth===m; }
+/* 20261122x (mode unique étape 3) : pari Cockpit pris sous 1,50 (cote d'origine avant commission d'exchange) ; filtres « 📉 sous 1,50 » (mb) / « 🚀 1,50 et + » (mh) */
+window._g45CoteBasse = function (h) { var c = parseFloat(String((h && (h.coteB || h.cote)) || '').replace(',', '.')); return c > 1 && c < 1.5; };
+function _g45EstCk(h){ if(!h) return false; var m=(typeof window!=='undefined'&&window._g45BilMeth)||'mont'; if(m==='tout') return !!h.isS||!!h.meth; if(m==='mont') return !!h.isS; if(m==='mb') return !!h.isS&&window._g45CoteBasse(h); if(m==='mh') return !!h.isS&&!window._g45CoteBasse(h); return h.meth===m; }
 /* 20261105a : vrai si le monde du Cockpit est COUPÉ (critères : on cache paliers / mise max / ⭐). */
 function _g45CkCoupe() { try { return typeof window._g45CkActif === 'function' && !window._g45CkActif(); } catch (e) { return false; } }
 /* ═══ 20261016q — NETTOYAGE D'URGENCE ?menage=1 (gones figé sur le téléphone d'Antoine, navigation privée OK = donnée locale en cause) ═══
@@ -88709,7 +88711,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     if (t) t.style.display = TAB === 'tdb' ? '' : 'none'; if (e) e.style.display = TAB === 'eng' ? '' : 'none'; if (cb) cb.style.display = (TAB === 'bil' || TAB === 'arc') ? '' : 'none';
     if (TAB === 'bil' || TAB === 'arc') {
       try { var cbz = $('ck-bil'), bmz = $('g45-bil-meth'); if (cbz && !bmz) { bmz = document.createElement('div'); bmz.id = 'g45-bil-meth'; bmz.style.cssText = 'margin:0 0 8px;display:flex;flex-wrap:wrap;gap:6px;'; cbz.insertBefore(bmz, cbz.firstChild); }
-        if (bmz) { var mB = window._g45BilMeth || 'mont'; bmz.innerHTML = [['mont', '🚀 Cockpit'], ['fib', '🐚 Fibonacci'], ['dal', '🪜 D\'Alembert'], ['cb', '📉 Cotes basses'], ['tout', 'Toutes']].map(function (x) { var on = x[0] === mB; return '<button onclick="g45BilMeth(\'' + x[0] + '\')" style="' + BTN + (on ? 'background:#2a4a9a;border-color:#6d9dff;' : '') + '">' + x[1] + '</button>'; }).join(''); } } catch (x) {}   /* 20261106h : filtre par méthode */
+        if (bmz) { var mB = window._g45BilMeth || 'mont'; bmz.innerHTML = [['mont', '🚀 Cockpit (tout)'], ['mb', '📉 sous 1,50'], ['mh', '🚀 1,50 et +'], ['fib', '🐚 Fibonacci'], ['dal', '🪜 D\'Alembert'], ['cb', '📉 anciennes Cotes basses'], ['tout', 'Toutes']].map(function (x) { var on = x[0] === mB; return '<button onclick="g45BilMeth(\'' + x[0] + '\')" style="' + BTN + (on ? 'background:#2a4a9a;border-color:#6d9dff;' : '') + '">' + x[1] + '</button>'; }).join(''); } } catch (x) {}   /* 20261106h : filtre par méthode */
       if (bilPrendre()) { window._g45ArchCk = TAB === 'arc';
         try { if (TAB === 'arc') showBilanTab('arch', $('btab-arch')); else showBilanTab('cockpit', $('btab-cockpit')); } catch (x) {}
         try { if (TAB === 'bil' && typeof renderGlobalCharts === 'function') setTimeout(function () { try { renderGlobalCharts(); } catch (y) {} }, 50); } catch (x) {} }
@@ -88744,7 +88746,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
       + '<div style="font-size:14px;color:#c9d3ee;text-align:center;padding-bottom:10px;">Si tu ne joues pas en montante, rien ne change pour toi.</div>';
   }
   window.g45CkActiver = function () { try { window.g45CkOnSet(true); } catch (e) {} window.g45CkOuvrir(null, 'tdb'); };
-  window.g45BilMeth = function (k) { window._g45BilMeth = ({ mont: 1, fib: 1, dal: 1, cb: 1, tout: 1 })[k] ? k : 'mont'; window.g45CkOnglet(TAB); };   /* 20261106h */
+  window.g45BilMeth = function (k) { window._g45BilMeth = ({ mont: 1, mb: 1, mh: 1, fib: 1, dal: 1, cb: 1, tout: 1 })[k] ? k : 'mont'; window.g45CkOnglet(TAB); };   /* 20261106h */
   window.g45CkOuvrir = function (btn, k) { squelette(); if (typeof showTab === 'function') showTab('t-cockpit', btn || $('g45-ni-ck')); if (!actif()) { vitrine(); return; } var v = $('ck-vit'); if (v) v.style.display = 'none'; var ht0 = $('ck-tabs'); if (ht0) ht0.style.display = ''; window.g45CkOnglet(k || TAB); };
   function dessiner() { var p = $('t-cockpit'); if (p && p.style.display !== 'none' && TAB === 'tdb') { squelette(); var t = $('ck-tdb'); try { if (t) t.innerHTML = tableau(); var ht = $('ck-tabs'); if (ht && !ht.innerHTML) ht.innerHTML = entete(); } catch (e) { if (t) t.innerHTML = '<div style="color:#ff5a5a;">Erreur du tableau de bord.</div>'; } } }
   function poser() {
@@ -88847,11 +88849,21 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     return Math.ceil((c < 1.5 ? prev * (1 / (c - 1) + 2) : (cbR(u) === 'a' ? per * 3 : prev * (p === 2 ? 2.5 : 3))) * 100) / 100;
   };
   window._g45MonMise = monMise;   /* tests */
+  /* 20261122x (maquette « Cote 1,42 → 📉 sous 1,50 · mise … / Cote 1,65 → 🚀 1,50 et + ») : étiquette sous la mise du formulaire 🚀 Engager */
+  var monTag = function () {
+    var mi = $('c-mise'); if (!mi) return; var z = $('g45-mon-tag');
+    var c = cbCote(), on = meth() === 'mont' && c > 1;
+    if (!on) { if (z) z.remove(); return; }
+    if (!z) { z = document.createElement('div'); z.id = 'g45-mon-tag'; z.style.cssText = 'font-size:14px;font-weight:800;margin-top:4px;'; (mi.parentNode || mi).appendChild(z); }
+    var b = c < 1.5, t = (b ? '📉 sous 1,50' : '🚀 1,50 et +') + ' · cote ' + String(c).replace('.', ',');
+    if (z.textContent !== t) { z.textContent = t; z.style.color = b ? '#ff9f43' : '#6d9dff'; }
+  };
+  window._g45MonTag = monTag;   /* tests */
   window._g45CbMeth = { mise: cbMise, avance: cbAvance, st: cbSt, saute: cbSaute, stop: cbStop };   /* tests ; 20261121f : stop pour Prochaines 24 h */
   /* la mise dépend de la cote : on recalcule quand la cote du ticket change (renderMmCote = cote combinée / cote réelle) */
   try { if (typeof renderMmCote === 'function' && !renderMmCote._cb) { var _rmc0 = renderMmCote; renderMmCote = window.renderMmCote = function () { var r = _rmc0.apply(this, arguments);
     try { if (meth() === 'cb') { var u = carte(), mi = $('c-mise'); if (u && mi && !mi._g45Man) { var v = cbMise(u, cle(), cbCote()); if (v) mi.value = v; else if (cbSaute(u, cbCote())) mi.value = ''; } dessiner(); }
-      else if (meth() === 'mont') { var u2 = carte(), mi2 = $('c-mise'); if (u2 && mi2 && !mi2._g45Man) { var v2 = monMise(u2, cle(), cbCote()); if (v2) mi2.value = v2; } } } catch (e) {} return r; };   /* 20261122v */ renderMmCote._cb = 1; } } catch (e) {}
+      else if (meth() === 'mont') { var u2 = carte(), mi2 = $('c-mise'); if (u2 && mi2 && !mi2._g45Man) { var v2 = monMise(u2, cle(), cbCote()); if (v2) mi2.value = v2; } } } catch (e) {} try { monTag(); } catch (e) {} return r; };   /* 20261122v ; 20261122x : étiquette */ renderMmCote._cb = 1; } } catch (e) {}
   /* 20261106w (capture d'Antoine : pari Cockpit placé avec 🪜 D'Alembert encore actif → enregistré en pari simple) : méthode PAS gardée d'une
      visite à l'autre (plus de localStorage) → Engager s'ouvre toujours sur 🚀 Cockpit ; confirmation avant un pari Fibonacci / D'Alembert. */
   var meth = function () { var m = window._g45EngMeth || 'mont'; return (SEQ[m] || m === 'cb') ? m : 'mont'; };
@@ -89005,7 +89017,9 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   window._g45MethPill = function (h) {
     var m = h && h.isS ? 'mont' : (h && h.meth) || ''; if (!MCOL[m]) return '';
     var t = m === 'mont' ? '🚀 Cockpit' : NOM[m] + (h.mp ? ' ' + LET[m] + h.mp : '');
-    return '<span style="display:inline-block;padding:2px 8px;border-radius:7px;font-size:14px;font-weight:800;color:#0b101d;background:' + MCOL[m] + ';margin-right:6px;">' + t + '</span>';
+    /* 20261122x (mode unique étape 3) : pari Cockpit pris sous 1,50 → pastille 📉 orange */
+    var bas = m === 'mont' && window._g45CoteBasse && window._g45CoteBasse(h); if (bas) t = '📉 Cockpit · sous 1,50';
+    return '<span style="display:inline-block;padding:2px 8px;border-radius:7px;font-size:14px;font-weight:800;color:#0b101d;background:' + (bas ? '#ff9f43' : MCOL[m]) + ';margin-right:6px;">' + t + '</span>';
   };
   try { var _up0 = window._g45UlPaliers; if (typeof _up0 === 'function' && !_up0._meth) {
     window._g45UlPaliers = function (u, C) {
@@ -89086,7 +89100,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   var um0 = window.updMise;
   if (typeof um0 === 'function') window.updMise = updMise = function () {
     var r = um0.apply(this, arguments);
-    try { var m0 = meth(), u0 = carte(), mi0 = $('c-mise'); if (m0 === 'mont' && u0 && mi0 && !mi0._g45Man) { var vm = monMise(u0, cle(), cbCote()); if (vm) mi0.value = vm; } } catch (e) {}   /* 20261122v */
+    try { var m0 = meth(), u0 = carte(), mi0 = $('c-mise'); if (m0 === 'mont' && u0 && mi0 && !mi0._g45Man) { var vm = monMise(u0, cle(), cbCote()); if (vm) mi0.value = vm; } monTag(); } catch (e) {}   /* 20261122v ; 20261122x */
     try { var m = meth(), u = carte(), mi = $('c-mise'); if (m !== 'mont' && u && mi && !mi._g45Man) { var v = m === 'cb' ? cbMise(u, cle(), cbCote()) : miseDe(u, m, palM(u, m, cle())); if (v) mi.value = v; else if (m === 'cb' && (cbSaute(u, cbCote()) || (!cbCote() && cbSt(u, cle()).p > 1))) mi.value = '';
       /* 20261121k (capture Engager 📉 « Leon Draisaitl (📉 C2) », mise 7.74 = celle du 🚀 : « ça calcule pas ») : sans cote, la mise 📉 d'un C2+
          est inconnue → champ vidé (plus la mise 🚀 restée) avec l'invite « 📉 mets la cote » ; elle se calcule dès que la cote est tapée. */
@@ -91098,7 +91112,7 @@ window.g45SerNs = function (nom, n, el) {
    sinon 🎯 Simple ; mêmes couleurs que les pastilles des cartes. ═══ */
 window._g45TypePatch = function (h) {
   if (!h) return '';
-  var t = h.isCombi ? ['🧩 Combiné', '#c084fc'] : h.isS ? ['🚀 Cockpit', '#4d84ff'] : h.meth === 'cb' ? ['📉 Cotes basses', '#ff9f43'] : h.meth === 'dal' ? ['🪜 D\'Alembert', '#2dd4bf'] : h.meth === 'fib' ? ['🐚 Fibonacci', '#b07cff'] : ['🎯 Simple', '#8792ad'];
+  var t = h.isCombi ? ['🧩 Combiné', '#c084fc'] : h.isS ? (window._g45CoteBasse && window._g45CoteBasse(h) ? ['📉 Cockpit · sous 1,50', '#ff9f43'] : ['🚀 Cockpit', '#4d84ff']) :   /* 20261122x */ h.meth === 'cb' ? ['📉 Cotes basses', '#ff9f43'] : h.meth === 'dal' ? ['🪜 D\'Alembert', '#2dd4bf'] : h.meth === 'fib' ? ['🐚 Fibonacci', '#b07cff'] : ['🎯 Simple', '#8792ad'];
   return '<span style="margin-left:8px;display:inline-block;white-space:nowrap;font-weight:800;font-size:11px;color:#0b101d;background:' + t[1] + ';padding:1px 7px;border-radius:6px;">' + t[0] + '</span>';
 };
 

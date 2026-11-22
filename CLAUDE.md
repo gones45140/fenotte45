@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action (il est court exprès). Le détail de tout l'historique est dans HISTORIQUE.md
-(à chercher avec grep, jamais à lire en entier). Mis à jour le 31/10/2026 (version déployée : 20261122w, même app.js sur gones45 et fenotte45).
+(à chercher avec grep, jamais à lire en entier). Mis à jour le 31/10/2026 (version déployée : 20261122x, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -164,7 +164,7 @@ PIÈGES À NE JAMAIS OUBLIER :
 - 🎯 Cote estimée US (19/11, tests archives : NHL 1 740 m., NBA 1 540 m. → historique des équipes ≈ pas mieux qu'une constante ; foot 1 894 m. → historique OK) : ligne « 📚 DraftKings + archives » dans « Ton pari » FAITE (20261120x, robot semblables.yml) — à confirmer à l'écran par Antoine ; face-à-face proportionnel (w) FAIT. 🚑 Absents dans « Ton pari » FAIT (20261120v, NHL / NBA / NFL, summary ESPN) — foot à sonder ; à confirmer à l'écran par Antoine.
 - 🏎 20261121a : vérifier le 1er passage du robot f1-traces (hors séance) et le rappel 🔔 au GP du Qatar (FP1 27/11 13:30 UTC).
 - 🎯 Cote estimée foot : « par les buts » (Poisson archives, 20261122m) + « 📚 Calée sur DraftKings » (20261122n, 1N2 + BTS 152 + buts par équipe 253) + Calculatrice Cote juste (20261122u) — à confirmer à l'écran par Antoine.
-- 🚀 MODE UNIQUE 🚀 + 📉 (maquette 21/11, « 2,5 et garder ») : ÉTAPES 1-2 FAITES (20261122v mise selon la cote, 20261122w fusion + reprise des séries 📉, state.mode1) ; ÉTAPE 3 = pastilles 📉 / 🚀 par pari + filtre Bilan (détail HISTORIQUE 20261122v).
+- 🚀 MODE UNIQUE 🚀 + 📉 (maquette 21/11) : FAIT 20261122v-x (mise selon la cote, fusion + reprise des séries 📉 state.mode1, pastilles + filtre Bilan) — à confirmer à l'écran par Antoine.
 - Cédric : toucher 🤍 sur Portugal. Worker : budget `_lourd` 4 → 2 proposé.
 
 ## 8. Façon de travailler en session cloud
