@@ -90623,7 +90623,7 @@ window.g45SerNs = function (nom, n, el) {
    2) Essai sur une équipe (clubs de foot des archives, pari Victoire, vraies cotes de clôture m[11]) : sa règle + arrêt de sécurité, comparée
       à « Cockpit seul » (matchs sous 1,50 sautés, grille ×2 puis ×3). ═══ */
 (function () {
-  var M = { c: '1,30', p1: '10', k: '5', q: '', eq: null, lieu: 'tout', stop: 5, pl: 1.2, r: 's', R: null, etat: '' };   /* 20261114t : r = règle à 1,50+ */   /* 20261114q : pl = cote plancher */
+  var M = { c: '1,30', p1: '10', k: '', q: '', eq: null, lieu: 'tout', stop: 5, pl: 1.2, r: 's', R: null, etat: '' };   /* 20261114t : r = règle à 1,50+ */   /* 20261114q : pl = cote plancher */
   var esc = function (x) { return String(x == null ? '' : x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); };
   var num = function (x) { return parseFloat(String(x).replace(',', '.')); };
   var eu = function (v, d) { return (Math.round(v * 100) / 100).toLocaleString('fr-FR', { minimumFractionDigits: d ? 2 : 0, maximumFractionDigits: 2 }) + ' €'; };
@@ -90757,15 +90757,17 @@ window.g45SerNs = function (nom, n, el) {
     M.R = out; M.etat = out.length ? '' : 'vide'; dessiner();
   }
   function html() {
-    var c = num(M.c), p1 = num(M.p1), k = num(M.k), ok = c > 1 && p1 > 0 && k > 1, C = cap();
+    /* 20261123c (« on garde mais on change le nom » → « 📉 Mises sous 1,50 ») : « Multiplier par » VIDE = la règle du mode unique,
+       mise d'avant × (1 ÷ (cote − 1) + 2) (×5,33 à 1,30) ; un chiffre tapé reste possible pour tester. */
+    var c = num(M.c), p1 = num(M.p1), k = kDe(c), ok = c > 1 && p1 > 0 && k > 1, C = cap();
     var h = '<div class="fc" style="background:rgba(10,14,24,.93);border:1px solid #1c2747;border-radius:14px;padding:12px;color:#fff;">'
-      + '<div style="font-size:17px;font-weight:900;">📉 Cotes basses (sous 1,50)</div>'
+      + '<div style="font-size:17px;font-weight:900;">📉 Mises sous 1,50</div>'
       + '<div style="font-size:14px;color:#c9d3ee;margin:3px 0 10px;">Un calcul à part : rien ne change dans ton Cockpit, tes grilles ni tes paris.</div>'
       + '<div style="font-size:15px;font-weight:800;margin-bottom:6px;">1. Le tableau des mises</div>'
       + '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;">'
       + '<label style="font-size:14px;">Cote<input value="' + esc(M.c) + '" inputmode="decimal" oninput="g45CbSet(\'c\',this.value)" style="' + IN + '"></label>'
       + '<label style="font-size:14px;">Mise P1 (€)<input value="' + esc(M.p1) + '" inputmode="decimal" oninput="g45CbSet(\'p1\',this.value)" style="' + IN + '"></label>'
-      + '<label style="font-size:14px;">Multiplier par<input value="' + esc(M.k) + '" inputmode="decimal" oninput="g45CbSet(\'k\',this.value)" style="' + IN + '"></label></div>'
+      + '<label style="font-size:14px;">Multiplier par <span style="color:#c9d3ee;">(vide = ta règle)</span><input value="' + esc(M.k) + '" inputmode="decimal" oninput="g45CbSet(\'k\',this.value)" placeholder="ta règle" style="' + IN + '"></label></div>'
       + '<div id="g45-cb-t">' + tabHtml(c, p1, k, ok, C) + '</div>';
     h += '<div style="font-size:15px;font-weight:800;margin:16px 0 4px;">2. L\'essai sur une équipe ou un joueur (⚽ 🏒 🏀 🏈 ⚾)</div>'
       + '<div style="font-size:14px;color:#c9d3ee;margin-bottom:6px;">Ta règle rejouée sur les vraies cotes gardées : sous 1,50 → mise d\'avant × (1 ÷ (cote − 1) + 2) ; à 1,50 ou plus → 🛡️ mise d\'avant × 2,5 puis × 3, ou 🔥 pertes de la série × 3 ; P1 = la mise du dessus.</div>'
@@ -90795,10 +90797,12 @@ window.g45SerNs = function (nom, n, el) {
     }
     return h + '</div>';
   }
+  function kDe(c) { var k = num(M.k); return k > 0 ? k : (c > 1 ? 1 / (c - 1) + 2 : 0); }   /* 20261123c : vide = règle du mode unique */
   function tabHtml(c, p1, k, ok, C) {
-    if (!ok) return '<div style="font-size:14px;color:#ffb13d;margin-top:8px;">Tape une cote (plus de 1), une mise et un multiplicateur.</div>';
+    if (!ok) return '<div style="font-size:14px;color:#ffb13d;margin-top:8px;">Tape une cote (plus de 1) et une mise.</div>';
     var kmin = 1 / (c - 1) + 1, T = table(c, p1, k, 6), td = 'padding:6px 4px;border-top:1px solid #1c2747;';
-    var h = '<div style="font-size:14px;margin:8px 0 6px;">Multiplicateur minimum pour cette cote : <b style="color:#ffd34d;">×' + (Math.ceil(kmin * 100) / 100).toLocaleString('fr-FR') + '</b>'
+    var h = (num(M.k) > 0 ? '' : '<div style="font-size:14px;margin:8px 0 0;">📐 Ta règle à cette cote : mise d\'avant <b style="color:#ffd34d;">×' + (Math.round(k * 100) / 100).toLocaleString('fr-FR') + '</b></div>')
+      + '<div style="font-size:14px;margin:8px 0 6px;">Multiplicateur minimum pour cette cote : <b style="color:#ffd34d;">×' + (Math.ceil(kmin * 100) / 100).toLocaleString('fr-FR') + '</b>'
       + (k < kmin - 1e-9 ? ' <span style="color:#ff6b6b;font-weight:800;">⚠️ ×' + String(k).replace('.', ',') + ' est trop petit : la série finit perdante même si le pari passe.</span>' : '') + '</div>'
       + '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:14px;"><tr style="color:#c9d3ee;"><td style="padding:4px;">Palier</td><td>Mise</td><td>Total misé</td><td style="text-align:right;">Bénéfice si ça passe</td></tr>'
       + T.map(function (x) { var trop = C > 0 && x.tot > C; return '<tr><td style="' + td + 'font-weight:800;">P' + x.p + '</td><td style="' + td + '">' + eu(x.m) + '</td><td style="' + td + (trop ? 'color:#ff6b6b;font-weight:800;' : '') + '">' + eu(x.tot) + (trop ? ' ⚠️' : '') + '</td>'
@@ -90895,7 +90899,7 @@ window.g45SerNs = function (nom, n, el) {
   window.g45CbSet = function (k, v) {
     if (k === 'lieu' || k === 'stop' || k === 'pl' || k === 'r' || k === 'cx' || k === 'cn') { M[k] = v; dessiner(); return; }   /* 20261114x : cx / cn */
     M[k] = String(v).slice(0, 8);
-    var z = document.getElementById('g45-cb-t'), c = num(M.c), p1 = num(M.p1), kk = num(M.k);   /* pas de redessin complet pendant la frappe (clavier) */
+    var z = document.getElementById('g45-cb-t'), c = num(M.c), p1 = num(M.p1), kk = kDe(c);   /* pas de redessin complet pendant la frappe (clavier) */
     if (z) z.innerHTML = tabHtml(c, p1, kk, c > 1 && p1 > 0 && kk > 1, cap());
   };
   window.g45CbQ = function (v) { M.q = String(v || '').slice(0, 40); liste(); };
@@ -90914,7 +90918,7 @@ window.g45SerNs = function (nom, n, el) {
   function poser() {
     var tc = document.getElementById('t-calc'), barre = tc && tc.querySelector('.calc-tabs'); if (!tc || !barre) return false;
     if (!document.getElementById('calc-cb')) { var c = document.createElement('div'); c.id = 'calc-cb'; c.style.display = 'none'; tc.appendChild(c); }
-    if (!document.getElementById('ct-cb')) { var b = document.createElement('button'); b.className = 'ctbtn'; b.id = 'ct-cb'; b.textContent = '📉 Cotes basses'; b.setAttribute('onclick', "swCalc('cb')"); barre.appendChild(b); }
+    if (!document.getElementById('ct-cb')) { var b = document.createElement('button'); b.className = 'ctbtn'; b.id = 'ct-cb'; b.textContent = '📉 Mises sous 1,50'; b.setAttribute('onclick', "swCalc('cb')"); barre.appendChild(b); }
     return true;
   }
   var sw0 = window.swCalc;
@@ -92220,4 +92224,61 @@ setTimeout(_g45PhEspRemplir, 8000);
     return r;
   };
   rp._g45Mg = 1; window.renderPaliers = renderPaliers = rp;
+})();
+
+/* ═══ 20261123c — 🧮 CALCULATRICE RANGÉE (Antoine : « on peut faire un truc plus propre ? » → maquette → « OK »).
+   9 onglets sur une ligne qui défile, petits et gris, le dernier (⚾ Lanceurs) coupé → 3 groupes de gros boutons blancs, tous visibles :
+   💰 Gagner à coup sûr (Surebet, Dutching, Lay) · 🎯 Juger une cote (Value, Cote juste, ARJEL, VS) · 🚀 Mes séries & stats
+   (📉 Mises sous 1,50, ⚾ Lanceurs). La barre .calc-tabs reste LA MÊME (les autres blocs y ajoutent leurs boutons par
+   querySelector('#t-calc .calc-tabs')) : on y pose 3 cadres et on range chaque bouton par son id ; un bouton ajouté plus tard est rangé
+   par un MutationObserver. La barre sort du formulaire (au-dessus), les calculs ont tous la même largeur (900 px) sur une bande sombre. ═══ */
+(function () {
+  var G = [['💰 Gagner à coup sûr', ['sb', 'dt', 'lay']], ['🎯 Juger une cote', ['vb', 'cj', 'arjel', 'vs']], ['🚀 Mes séries & stats', ['cb', 'lc']]];
+  try { var st = document.createElement('style'); st.textContent =
+    '#t-calc .calc-tabs{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px;border:0;overflow:visible;margin:0 0 12px;max-width:900px}'
+    + '#t-calc .g45-cg{background:rgba(10,14,24,.93);border:1px solid #1c2747;border-radius:12px;padding:10px}'
+    + '#t-calc .g45-cgt{font-size:14px;color:#ffd166;font-weight:800;margin-bottom:6px}'
+    + '#t-calc .g45-cgb{display:flex;gap:6px;flex-wrap:wrap}'
+    + '#t-calc .ctbtn{flex:0 0 auto;background:#1a2235;border:1px solid #33405e;border-radius:9px;padding:9px 12px;font-size:15px;font-weight:800;color:#fff;margin:0;text-shadow:none}'
+    + '#t-calc .ctbtn.on{background:#2563eb;border-color:#3b82f6;color:#fff}'
+    + '#t-calc>.fc.g45-form{max-width:900px;background:rgba(10,14,24,.93);border:1px solid #1c2747;border-radius:14px;padding:14px}'
+    + '#calc-cb,#calc-vs,#calc-lc{max-width:900px}'
+    + '#t-calc .g45-form .fl,#t-calc .g45-form .cres-l,#t-calc .g45-form .cres-row{color:#fff;font-size:14px}'
+    + '#t-calc .g45-form .cres-row.cres-hero{background:rgba(30,215,96,.08);border:1px solid rgba(30,215,96,.5);border-radius:10px;padding:10px;margin-top:8px}'
+    + '#t-calc .g45-form .cres-row.cres-hero .cres-l{font-size:16px;font-weight:800}'
+    + '#t-calc .g45-form [style*="color:var(--t3)"]{color:#c9d3ee!important;font-size:13px!important}'
+    + '#t-calc .g45-form .ba{font-size:14px;color:#fff}';
+    document.head.appendChild(st); } catch (e) {}
+  var obs = null, enCours = false;
+  function ranger() {
+    var tc = document.getElementById('t-calc'), bar = tc && tc.querySelector('.calc-tabs'); if (!bar || enCours) return;
+    enCours = true;
+    try {
+      var fm = bar.parentNode; if (fm && fm !== tc && fm.parentNode === tc) tc.insertBefore(bar, fm);   /* la barre au-dessus du formulaire */
+      var cadres = G.map(function (g, i) { var c = bar.querySelector('.g45-cg[data-g="' + i + '"]');
+        if (!c) { c = document.createElement('div'); c.className = 'g45-cg'; c.setAttribute('data-g', i); c.innerHTML = '<div class="g45-cgt">' + g[0] + '</div><div class="g45-cgb"></div>'; bar.appendChild(c); }
+        return c.querySelector('.g45-cgb'); });
+      Array.prototype.slice.call(bar.querySelectorAll('.ctbtn')).forEach(function (b) {
+        var id = String(b.id || '').replace(/^ct-/, ''), gi = 2;
+        G.forEach(function (g, i) { if (g[1].indexOf(id) >= 0) gi = i; });
+        if (b.parentNode !== cadres[gi]) cadres[gi].appendChild(b); });
+      cadres.forEach(function (z, i) { var ord = G[i][1];
+        Array.prototype.slice.call(z.children).sort(function (a, b) { var x = ord.indexOf(String(a.id).replace(/^ct-/, '')), y = ord.indexOf(String(b.id).replace(/^ct-/, '')); return (x < 0 ? 99 : x) - (y < 0 ? 99 : y); })
+          .forEach(function (b, j, T) { if (T.some(function (x, k) { return z.children[k] !== x; })) z.appendChild(b); }); });
+      var cb = document.getElementById('ct-cb'); if (cb && cb.textContent !== '📉 Mises sous 1,50') cb.textContent = '📉 Mises sous 1,50';
+      if (!obs && window.MutationObserver) { obs = new MutationObserver(function () { setTimeout(ranger, 0); }); obs.observe(bar, { childList: true, subtree: true }); }
+    } catch (e) {}
+    enCours = false;
+  }
+  window._g45CalcRanger = ranger;
+  /* le formulaire (bande sombre) ne garde que Surebet / Dutching / Lay / Value / Cote juste / ARJEL : VS, Mises sous 1,50 et Lanceurs ont
+     leur propre panneau à côté → sinon une bande sombre VIDE restait au-dessus */
+  var sw0 = window.swCalc;
+  window.swCalc = swCalc = function (m) {
+    var r = typeof sw0 === 'function' ? sw0.apply(this, arguments) : undefined;
+    try { ranger(); var tc = document.getElementById('t-calc'), fm = tc && tc.querySelector(':scope>.fc.g45-form'); if (fm) fm.style.display = /^(vs|cb|lc)$/.test(m) ? 'none' : ''; } catch (e) {}
+    return r;
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ranger); else setTimeout(ranger, 0);
+  setTimeout(ranger, 1700); setTimeout(ranger, 4000);
 })();
