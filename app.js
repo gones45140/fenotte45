@@ -76595,6 +76595,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   }
   function preparer(nom) {
     if (S.nom !== nom) {
+      delete S.duoRet;   /* 20261123d : autre carte ouverte → le « ↩️ Revenir » des duos est oublié */
       S.nom = nom; S.a = 0; S.combos = [combo0()];
       var f = (typeof _statFilter !== 'undefined') ? _statFilter : 'global';
       S.lieu = f === 'dom' ? 'dom' : f === 'ext' ? 'ext' : 'tout';
@@ -78139,6 +78140,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
         + (typeof _g45BlocPremium === 'function' ? _g45BlocPremium() : '') + '</div></div>';
     } catch (e) {}
     var D = S.data[nom];
+    if (S.duoRet) h += '<button onclick="g45DuoRet()" style="width:100%;margin:6px 0 4px;background:#141b2e;color:#fff;border:1px solid #6d9dff;border-radius:10px;padding:9px;font-size:15px;font-weight:800;cursor:pointer;text-align:left;">↩️ Revenir à mon critère <span style="font-weight:400;color:#c9d3ee;">(' + esc(S.duoRet.nom) + ')</span></button>';   /* 20261123d */
     var lieuTxt = S.lieu === 'dom' ? '🏠 à domicile' : S.lieu === 'ext' ? '✈️ à l\'extérieur' : 'domicile + extérieur';
     h += '<div style="font-size:13px;color:#c9d3ee;margin:4px 0 8px;">' + esc(nom) + ' · ' + lieuTxt + (rg() ? ' · ' + ({ L: 'championnat seul', LP: 'championnat + phases finales', E: 'coupes d\'Europe' }[S.rgc] || (S.ctx.sp === 'rugby' && ['270559', '270557', '267979'].indexOf(String(S.ctx.lg)) >= 0 ? 'phases finales et coupes d\'Europe comprises' : 'phases finales comprises')) : (D && D.ligue ? ' · ' + esc(D.ligue) : '')) + (S.ctx ? '' : (S.comp === 'E' ? ' · coupes d\'Europe' : S.comp === 'T' ? ' · championnat + coupes d\'Europe' : ' · championnat seulement')) + '</div>';
     var u = (state.u || []).filter(function (x) { return x.n === nom; })[0];
@@ -78822,12 +78824,45 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
         + '<div style="flex:1;min-width:0;"><div style="' + bd + 'font-size:16px;font-weight:800;">' + (kk + 1) + '. ' + esc(duoFam(d[0])) + (Q.som ? ' + ' : ' ou ') + esc(duoFam(d[2])) + (st ? ' ⭐' : '') + '</div><br>'
         + '<div style="' + bd + 'font-size:14px;margin-top:4px;">' + esc(d[4]) + ' · <b>' + Math.round(100 * x.r) + ' %</b> sur <b>' + x.n + '</b> matchs ensemble · saison <b>' + Math.round(100 * x.rs) + ' %</b> · pire <b style="color:' + pc + ';">' + x.pire + '</b></div><br>'
         + '<div style="' + bd + 'font-size:14px;margin-top:4px;">🎯 cote mini <b style="color:#ffd34d;">' + (x.r ? (Math.ceil(100 / x.r) / 100).toFixed(2).replace('.', ',') : '—') + '</b>' + (x.enc ? ' · ' + x.enc + ' raté' + (x.enc > 1 ? 's' : '') + ' en cours' : '') + '</div>'
-        + (st ? '' : '<div><button onclick="g45DuoMur(\'' + f + '\',' + x.i + ')" style="border:0;border-radius:9px;padding:6px 10px;font-weight:800;font-size:14px;color:#fff;background:#1f7a3a;margin-top:6px;cursor:pointer;">➕ Ajouter au mur</button></div>') + '</div></div>';
+        + (st && duoAffiche(d) ? '' : '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;">'
+          + (st ? '' : '<button onclick="g45DuoMur(\'' + f + '\',' + x.i + ')" style="border:0;border-radius:9px;padding:6px 10px;font-weight:800;font-size:14px;color:#fff;background:#1f7a3a;cursor:pointer;">➕ Ajouter au mur</button>')
+          + (duoAffiche(d) ? '' : '<button onclick="g45DuoCr(\'' + f + '\',' + x.i + ')" style="border:0;border-radius:9px;padding:6px 10px;font-weight:800;font-size:14px;color:#fff;background:#2f6bff;cursor:pointer;">🔎 Voir ses critères</button>') + '</div>') + '</div></div>';
     });
     if (!R.length) h += '<div style="font-size:14px;color:#ffd34d;">Pas assez de matchs ensemble à ce lieu.</div>';
     return h + '<div style="font-size:14px;color:#c9d3ee;margin-top:6px;">Cote mini = cote à trouver chez ton book pour être gagnant. ⭐ = déjà sur ton mur. Pire série : <b style="color:#1ed760;">0-2</b> · <b style="color:#ff9f43;">3-4</b> · <b style="color:#ff5a5a;">5+</b>. Au moins ' + mn + ' matchs ensemble au lieu choisi.</div></div>';
   }
   window._g45DuosHtml = duosHtml;   /* tests */
+  /* ═══ 20261123d (« 1 mais fais une maquette » → maquette maq_duo_cr.png → « OUI ») : 🔎 Voir ses critères sur chaque duo de « Jouable en
+     Cockpit ? ». Le critère en cours est COPIÉ (rôle, seuil, résultat, lieu…), seuls les deux joueurs changent (jo / jo2 = n° ESPN du fichier
+     des duos, jx 'un' = double chance). Duo d'une AUTRE équipe : les critères passent sur cette équipe (sports US : ctx { sp, lg, id d[5] } ;
+     foot : nom d[4] de l'index + championnat imposé, comme 🔎 Critères d'une équipe). S.duoRet garde le critère de départ → « ↩️ Revenir à mon
+     critère » ; ouvrir les critères d'une autre carte l'oublie (preparer). ═══ */
+  function duoAffiche(d) { var c = S.combos[S.a] || {}; return !c.jo3 && ((c.jo === String(d[1]) && c.jo2 === String(d[3])) || (c.jo === String(d[3]) && c.jo2 === String(d[1]))); }
+  function duoMemeEq(d) {
+    if (S.ctx) return String(S.ctx.id) === String(d[5]);
+    var a = String(S.nom || '').toLowerCase(), b0 = String(d[4] || '').toLowerCase(); if (a === b0) return true;
+    try { return typeof _g45BandMeme === 'function' && !!_g45BandMeme(S.nom, d[4]); } catch (e) { return false; }
+  }
+  function duoHaut() { try { var zL = document.querySelectorAll('[id="g45cr"]'), z = null; for (var i = zL.length - 1; i >= 0 && !z; i--) if (zL[i].getClientRects().length) z = zL[i]; if (z && z.scrollIntoView) z.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e) {} }
+  window.g45DuoCr = function (f, i) {
+    var D = DUOF[f], d = D && D.L && D.L[i], c0 = S.combos[S.a]; if (!d || !c0 || !S.nom) return;
+    if (!S.duoRet) S.duoRet = { nom: S.nom, ctx: S.ctx, lgF: S.lgForce, a: S.a, combos: JSON.parse(JSON.stringify(S.combos)) };
+    var c = JSON.parse(JSON.stringify(c0));
+    c.jo = String(d[1]); c.jn = d[0]; c.jo2 = String(d[3]); c.jn2 = d[2]; c.jo3 = ''; c.jn3 = ''; c.jx = 'un';
+    if (duoMemeEq(d)) { S.combos[S.a] = c; }
+    else {
+      var LG = { nhl: ['hockey', 'nhl'], nba: ['basketball', 'nba'], nfl: ['football', 'nfl'], mlb: ['baseball', 'mlb'] }[f];
+      if (LG) { S.ctx = { sp: LG[0], lg: LG[1], id: String(d[5]) }; S.lgForce = null; }
+      else { S.ctx = null; S.lgForce = f.indexOf('foot-') === 0 ? f.slice(5) : null; if (S.data[d[4]] && S.data[d[4]].lg && S.lgForce && S.data[d[4]].lg !== S.lgForce) delete S.data[d[4]]; }
+      S.nom = d[4]; S.a = 0; S.combos = [c]; S.ov = S.ov || {}; S.ov[d[4]] = 1;
+    }
+    redessiner(); duoHaut();
+  };
+  window.g45DuoRet = function () {
+    var r = S.duoRet; if (!r) return; delete S.duoRet;
+    S.ctx = r.ctx; S.lgForce = r.lgF; S.nom = r.nom; S.combos = r.combos; S.a = r.a; S.ov = S.ov || {}; S.ov[r.nom] = 1;
+    redessiner(); duoHaut();
+  };
   function clsHtml() {
     var X = clsCtx(); if (!X) return '';
     var Q = S.cls[X.sp + '|' + X.lg] || {}, c0 = S.combos[S.a]; if (!c0) return '';
