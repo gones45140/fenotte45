@@ -35395,6 +35395,8 @@ async function _renderGenericDetail(el, sport, lg, eid){
       try { h += _g45UsTeamStats(data); } catch (e) {}
       /* NBA : feuille des joueurs (25/09/2026) — zéro requête, même résumé. */
       if (lg === 'nba' && typeof _g45NbaFeuilleHtml === 'function') { try { h += _g45NbaFeuilleHtml(data, eid, stT.state); } catch (e) {} }
+      /* 20261123s (capture Chiefs – Cardinals en direct : « j'ai pas les stats joueur ? » → maquette maq_stats_j.png « OUI ») : NFL. */
+      if (lg === 'nfl' && typeof _g45NflFeuilleHtml === 'function') { try { h += _g45NflFeuilleHtml(data); } catch (e) {} }
       /* 20261005p (« j'ai pas les compo », maquette validée « oui les deux ») : joueurs du match NHL / hockey ESPN. */
       if (sport === 'hockey' && typeof _g45NhlFeuilleHtml === 'function') { try { h += _g45NhlFeuilleHtml(data, eid, stT.state); } catch (e) {} }
       /* 20261006y : avant le coup d'envoi (NHL), joueurs disponibles + absents depuis l'API NHL (bloc en fin d'app.js). */
@@ -86142,7 +86144,7 @@ window._g45TrTestVoit = function () { try { return (typeof _g45SanteActive === '
     if (gain && /field goal|punt|kickoff/i.test(tt)) gain = 'de ' + Math.abs(lp.statYardage) + ' yards';   /* 20261025q : distance du coup de pied, pas un gain */
     return '<div class="g45-nfl-drive" style="background:rgba(21,28,48,.96);border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:12px 14px;margin:10px 0;color:#fff;">'
       + bandeau
-      + (sansPos ? '<div style="font-size:15px;font-weight:900;margin-bottom:8px;">🏈 EN ATTENTE DU COUP D\'ENVOI</div>' : '')
+      + (sansPos ? '<div style="font-size:15px;font-weight:900;margin-bottom:8px;">' + (lp && lp.type ? '⏸️ ENTRE DEUX ACTIONS' : '🏈 EN ATTENTE DU COUP D\'ENVOI') + '</div>' : '')   /* 20261123s : match commencé (dernière action connue) → pas « en attente du coup d'envoi » */
       + '<div style="font-size:15px;font-weight:900;margin-bottom:8px;display:' + (sansPos ? 'none' : 'flex') + ';align-items:center;gap:6px;flex-wrap:wrap;">🏈 DRIVE EN COURS · ' + (att.logo ? '<img src="' + esc(att.logo) + '" alt="" style="width:24px;height:24px;object-fit:contain;" onerror="this.remove()">' : '') + esc(att.shortDisplayName || att.displayName || att.abbreviation || '') + (s.isRedZone ? ' · <span style="color:#ff6b6b;">zone rouge</span>' : '') + '</div>'
       + '<div style="position:relative;height:96px;border-radius:8px;overflow:hidden;background:repeating-linear-gradient(90deg,#2e7d32 0 8.4%,#33873a 8.4% 16.8%);">'
       + ez(ta, 'left') + ez(th, 'right') + lignes + fleche
@@ -92575,3 +92577,42 @@ setTimeout(_g45PhEspRemplir, 8000);
   if (document.readyState === 'complete') setTimeout(init, 1200); else window.addEventListener('load', function () { setTimeout(init, 1200); });
   window._g45RetourInit = init;   /* tests */
 })();
+
+/* ═══ 20261123s — 📋 STATS DES JOUEURS NFL dans la fenêtre de match (capture Chiefs – Cardinals : « j'ai pas les stats joueur ? » → maquette
+   maq_stats_j.png « OUI » ; la NBA et la NHL avaient déjà leur feuille). summary ESPN boxscore.players[] = une entrée par équipe, statistics[]
+   par catégorie { name passing / rushing / receiving, labels, athletes[] { athlete.displayName, stats[] } } (SONDÉ console d'Antoine 22/11 :
+   receiving « 1 15 15.0 0 15 1 » = REC YDS AVG TD LONG TGTS). Colonnes lues PAR LIBELLÉ. Bouton par équipe ; joueurs des paris EN COURS
+   surlignés ⭐ (nom de famille), 🏈 = TD. Le direct relit la fenêtre comme avant. ═══ */
+function _g45NflFeuilleHtml(data) {
+  var BP = data && data.boxscore && data.boxscore.players; if (!BP || !BP.length) return '';
+  var esc = function (t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+  var nn = function (x) { return String(x || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z]/g, ''); };
+  var PARI = {}; try { ((window.state && state.h) || []).forEach(function (h) { var L = (Array.isArray(h.joueurs) ? h.joueurs.map(function (x) { return x && x.nom; }) : []).concat([h.joueur]).filter(Boolean);
+    L.forEach(function (n) { String(n).split(/\s+(?:ou|et)\s+|,/).forEach(function (m) { var f = nn(String(m).trim().split(/\s+/).slice(-1)[0]); if (f.length > 2) PARI[f] = 1; }); }); }); } catch (e) {}
+  var CATS = [['passing', '🎯 Passes', [['C/ATT', 'Réuss./Tent.'], ['YDS', 'Yards'], ['TD', 'TD'], ['INT', 'INT']]],
+    ['rushing', '🏃 Courses', [['CAR', 'Courses'], ['YDS', 'Yards'], ['TD', 'TD']]],
+    ['receiving', '🙌 Réceptions', [['REC', 'Récep.'], ['YDS', 'Yards'], ['TD', 'TD'], ['TGTS', 'Cibles']]]];
+  var td = 'padding:5px 4px;border-top:1px solid #2a3a63;text-align:right;', uid = 'g45sj' + Math.random().toString(36).slice(2, 8);
+  var blocs = BP.slice(0, 2).map(function (tp, ti) {
+    var t = tp.team || {}, h = '', tdP = {};
+    (tp.statistics || []).forEach(function (c) { if (!/rushing|receiving/i.test(c.name || '')) return; var iT = (c.labels || []).indexOf('TD'); (c.athletes || []).forEach(function (a) { if (iT >= 0 && +((a.stats || [])[iT]) > 0) tdP[nn((a.athlete || {}).displayName)] = 1; }); });
+    CATS.forEach(function (K) {
+      var c = (tp.statistics || []).filter(function (x) { return String(x.name || '').toLowerCase() === K[0]; })[0]; if (!c || !(c.athletes || []).length) return;
+      var lab = c.labels || [], ix = K[2].map(function (k) { return lab.indexOf(k[0]); });
+      h += '<div style="font-size:15px;font-weight:900;margin:10px 0 4px;color:#ffd34d;">' + K[1] + '</div><table style="width:100%;border-collapse:collapse;font-size:14px;color:#fff;"><tr><th style="text-align:left;color:#c9d3ee;padding:4px;">Joueur</th>'
+        + K[2].map(function (k, i) { return ix[i] >= 0 ? '<th style="text-align:right;color:#c9d3ee;padding:4px;">' + k[1] + '</th>' : ''; }).join('') + '</tr>';
+      c.athletes.forEach(function (a) { var nm = (a.athlete || {}).displayName || '', f = nn(String(nm).trim().split(/\s+/).slice(-1)[0]), mien = !!PARI[f], tdx = !!tdP[nn(nm)];
+        h += '<tr style="' + (mien ? 'background:rgba(30,215,96,.12);' : '') + '"><td style="' + td + 'text-align:left;">' + (mien ? '⭐ ' : '') + esc(nm) + (tdx ? ' 🏈' : '') + '</td>'
+          + ix.map(function (j) { return j >= 0 ? '<td style="' + td + '">' + esc((a.stats || [])[j]) + '</td>' : ''; }).join('') + '</tr>'; });
+      h += '</table>';
+    });
+    return { nom: t.displayName || t.shortDisplayName || ('Équipe ' + (ti + 1)), col: t.color ? '#' + t.color : '#2f6bff', h: h };
+  }).filter(function (b) { return b.h; });
+  if (!blocs.length) return '';
+  var bt = blocs.map(function (b, i) { return '<span onclick="var r=this.closest(\'.g45sj\');r.querySelectorAll(\'.g45sj-t\').forEach(function(x,k){x.style.display=k===' + i + '?\'\':\'none\';});r.querySelectorAll(\'.g45sj-b\').forEach(function(x,k){x.style.background=k===' + i + '?\'' + b.col + '\':\'#16213f\';});" class="g45sj-b" style="display:inline-block;cursor:pointer;padding:7px 12px;border-radius:10px;font-weight:800;font-size:14px;margin:0 6px 6px 0;border:1px solid #2a3a63;background:' + (i === 0 ? b.col : '#16213f') + ';color:#fff;">' + esc(b.nom) + '</span>'; }).join('');
+  return '<div class="g45sj" id="' + uid + '" style="background:rgba(21,28,48,.96);border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:12px;margin:10px 0;color:#fff;">'
+    + '<div style="font-size:17px;font-weight:900;margin-bottom:8px;">📋 Stats des joueurs</div><div>' + bt + '</div>'
+    + blocs.map(function (b, i) { return '<div class="g45sj-t" style="' + (i ? 'display:none;' : '') + '">' + b.h + '</div>'; }).join('')
+    + '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">⭐ = joueur d\'un de tes paris en cours · 🏈 = a marqué un TD</div></div>';
+}
+window._g45NflFeuilleHtml = _g45NflFeuilleHtml;
