@@ -76534,7 +76534,9 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
         }
       } catch (e) {}
       z.innerHTML = '<span style="display:inline-block;margin-top:6px;font-size:13px;font-weight:800;background:' + (enCours ? 'rgba(255,69,69,.18)' : 'rgba(255,255,255,.08)') + ';border:1px solid ' + col + ';border-radius:6px;padding:2px 8px;">'
-        + (enCours ? '🔴 EN DIRECT · ' : '🏁 Terminé · ') + hs + '-' + as + (clk ? ' · ' + esc(clk) : '')
+        /* 20261124a (capture Inter – Atalanta à l'extérieur : « EN DIRECT · 1-2 » lu à l'envers, « le score m'a mis en erreur ») : score écrit
+           AVEC les noms (domicile à gauche, comme ESPN) → « Atalanta 1-2 Inter ». */
+        + (enCours ? '🔴 EN DIRECT · ' : '🏁 Terminé · ') + (function () { var nm = function (c) { var t = c.team || {}; return esc(t.shortDisplayName || t.abbreviation || t.displayName || ''); }, a1 = nm(ho), b1 = nm(aw); return (a1 ? a1 + ' ' : '') + hs + '-' + as + (b1 ? ' ' + b1 : ''); })() + (clk ? ' · ' + esc(clk) : '')
         + (pj ? pj : (enCours && v === true ? ' · ✅ gagnant si ça reste comme ça' : (enCours && v === false ? ' · ⏳ pas encore gagnant' : ''))) + '</span>';
     }
   }
