@@ -90136,6 +90136,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     return [p1, p2 || 'Le contraire'];
   }
   function resultat() {
+    ['1', '2'].forEach(function (o) { var e = $('sb-part' + o), t = sbPartLab(o); if (e && t && e.innerHTML !== t) e.innerHTML = t; });
     var z = $('sb-res'); if (!z) return;
     var D = lire(), R = calcF(D), L = libs(D);
     var put = function (id, v) { var e = $(id); if (e && document.activeElement !== e && String(ST.fix) !== id.slice(-1)) e.value = v > 0 ? fr(v).replace(',', '.') : ''; };
@@ -90185,7 +90186,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     else h += jambe(1, '1', '#2f6bff', 'sb-p1', 'Issue 1 (ex. Plus de 2,5)', 'sb-bk1', o1, 'sb-a', 'cote') + jambe(2, '2', '#2f6bff', 'sb-p2', 'Issue 2 (ex. Moins de 2,5)', 'sb-bk2', o2, 'sb-b', 'cote');
     h += '<div style="display:flex;justify-content:space-between;align-items:center;margin:8px 0;font-size:15px;font-weight:800;"><span>💶 Enjeu total' + (k === 'lay' ? ' <span style="font-size:13px;font-weight:400;color:#c9d3ee;">(mise + bloqué)</span>' : '') + '</span><input id="sb-mt" inputmode="decimal" placeholder="—" oninput="g45SbMise(\'t\',this.value)" style="' + IN + 'width:100px;text-align:center;"></div>'
       + '<div style="font-size:13px;color:#c9d3ee;margin:-4px 0 4px;">Tape une mise (jambe 1, jambe 2 ou total) : les autres se calculent.</div>'
-      + lab('Bénéfice sur :') + '<div style="display:flex;gap:6px;">' + P.map(function (x) { return '<button onclick="g45SbPart(\'' + x[0] + '\')" style="' + BT(ST.p === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div>'
+      + lab('Bénéfice sur :') + '<div style="display:flex;gap:6px;">' + P.map(function (x) { return '<button id="sb-part' + x[0] + '" onclick="g45SbPart(\'' + x[0] + '\')" style="' + BT(ST.p === x[0]) + '">' + (sbPartLab(x[0]) || x[1]) + '</button>'; }).join('') + '</div>'
       + '<div id="sb-res"></div>'
       + '<button onclick="g45SbEnreg()" style="width:100%;margin-top:10px;cursor:pointer;border:0;border-radius:12px;padding:13px;font-size:17px;font-weight:900;color:#fff;background:#2f6bff;">✅ Enregistrer le surebet</button></div>';
     var keep = ST.vals || {};
@@ -90195,6 +90196,16 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     if (!$('sb-date').value) { try { $('sb-date').value = new Date().toLocaleDateString('sv-SE'); } catch (e) {} }
     try { var ef = $('sb-m' + ST.fix); if (ef && ST.fv) ef.value = ST.fv; } catch (e) {}   /* 20261110d : la mise tapée reste */
     resultat();
+  }
+  /* 20261122i (« Si ça passe » lu comme « ce qui s'est passé » ; « c'est plus clair [Bénéfice si Antonelli gagne], par contre je fais pas des
+     paris que sur Antonelli 😂 ») : les boutons « Bénéfice sur » reprennent le TEXTE des jambes (✅ pari POUR / ❌ pari POUR en lay ; issue 1 /
+     issue 2 sinon), mis à jour en tapant ; jambe vide → anciens libellés. */
+  function sbPartLab(o) {
+    if (o !== '1' && o !== '2') return '';
+    var v = function (id) { var e = $(id); return String(e ? e.value : ((ST.vals || {})[id] || '')).trim(); }, cut = function (t) { return t.length > 26 ? t.slice(0, 25) + '…' : t; };
+    var p1 = v('sb-p1'), p2 = v('sb-p2');
+    if (ST.k === 'lay') return p1 ? (o === '1' ? '✅ ' : '❌ ') + esc(cut(p1)) : '';
+    var t = o === '1' ? p1 : p2; return t ? esc(cut(t)) : '';
   }
   function garder() { var o = {}; ['sb-match', 'sb-date', 'sb-heure', 'sb-p1', 'sb-p2', 'sb-a', 'sb-b', 'sb-bk1', 'sb-bk2'].forEach(function (id) { var e = $(id); if (e) o[id] = e.value; }); ST.vals = o; var c = $('sb-c'); if (c) ST.c = c.value; var c1 = $('sb-c1'); if (c1) ST.c1 = c1.value; }
   window.g45SbMaj = function (bk) { garder(); if (bk) { ST.b1 = ST.vals['sb-bk1']; ST.b2 = ST.vals['sb-bk2']; ST.c = null; ST.c1 = null; panneau(); return; } resultat(); };   /* 20261110c : autre book → commission par défaut du book (OrbitX 3 %) */
