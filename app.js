@@ -77992,7 +77992,11 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
      12 premiers joueurs de la liste du formulaire (S.ro : sports US = classés par le rôle choisi, foot = buts + passes). Foot : journaux des
      joueurs lus d'abord (jCharger, ⏳), le calcul se lance quand ils sont là. Plafond 3 000 paris testés. ═══ */
   var BEST_NJ = 12;
-  function bestJTous() { return ((S.ro[S.nom] || {}).l || []).slice(0, BEST_NJ).map(function (x) { return { id: String(x.id), n: x.nom || '?' }; }); }
+  function bestJTous() {
+    var RO = S.ro[S.nom] || {}, L = RO.l || [];
+    if (RO.cur) { var Lc = L.filter(function (x) { return RO.cur[String(x.id)]; }); if (Lc.length) L = Lc; }   /* 20261123z : joueurs encore au club seulement */
+    return L.slice(0, BEST_NJ).map(function (x) { return { id: String(x.id), n: x.nom || '?' }; });
+  }
   function bestCandsTous() {
     var P = bestJTous(), ROL = [], out = [];
     var CF = S.ctx && typeof _g45JouCfg === 'function' ? _g45JouCfg(S.ctx.sp) : null;
@@ -78036,7 +78040,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       + (((S.ro[S.nom] || {}).l || []).length > 1 ? '<div style="font-size:14px;font-weight:800;margin-top:4px;">Joueurs testés</div>'   /* 20261123h */
         + bt(!B.tous, '👤 Mes joueurs' + (joueurs(S.combos[S.a] || {}).length ? ' (' + esc(joueurs(S.combos[S.a]).map(function (x) { return String(x.n).split(' ').slice(-1)[0]; }).join(', ')) + ')' : ''), 'g45CrBest(\'tous\',0)')
         + bt(!!B.tous, '👥 Tous les joueurs de ' + esc(S.nom), 'g45CrBest(\'tous\',1)')
-        + (B.tous ? '<div style="font-size:13px;color:#c9d3ee;">l\'appli teste chaque joueur seul + chaque duo « l\'un ou l\'autre » (les ' + Math.min(BEST_NJ, ((S.ro[S.nom] || {}).l || []).length) + ' premiers joueurs de la liste)</div>' : '') : '')
+        + (B.tous ? '<div style="font-size:13px;color:#c9d3ee;">l\'appli teste chaque joueur seul + chaque duo « l\'un ou l\'autre » (les ' + bestJTous().length + ' premiers joueurs de la liste)</div>' : '') : '')
       + '<div onclick="g45CrBest(\'go\')" style="cursor:pointer;margin-top:8px;text-align:center;padding:11px;border-radius:12px;font-size:16px;font-weight:900;background:#2f6bff;">🔍 Chercher (' + bestCandsDe(S.combos[S.a] || combo0()).length + ' paris testés)</div>';
     if (B.att) { if (bestPrets(D)) { B.att = 0; B.R = bestCalc(D); } else { var nP = bestJTous().filter(function (x) { return S.jl[x.id] && S.jl[x.id].d; }).length; h += '<div style="font-size:14px;color:#f5c542;margin-top:8px;">⏳ Lecture des joueurs : ' + nP + ' / ' + bestJTous().length + '…</div>'; } }
     if (B.R) {
@@ -78420,7 +78424,10 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       var LJ = Object.keys(TOT).map(function (a) { return TOT[a]; }).sort(function (x, y) { return y.v - x.v || String(x.nom).localeCompare(String(y.nom)); });
       if (c.jm === 'lp') LJ = LJ.filter(function (x) { return x.v > 0; });   /* 20261025m : lanceurs partants seulement */
       if (c.jm === 'lp') [['jo', 'jn'], ['jo2', 'jn2'], ['jo3', 'jn3']].forEach(function (k) { if (c[k[0]] && !LJ.some(function (x) { return x.id === c[k[0]]; })) { delete c[k[0]]; delete c[k[1]]; } });   /* frappeur choisi avant : retiré */
-      S.ro[nom] = { l: LJ };
+      /* 20261123z (capture Trouver la meilleure stratégie Dallas : « au moins un de (Matt Duchene, Tyler Seguin) » → « duchene joue plus a dallas ») :
+         joueurs de la saison EN COURS (index saisons[0]) notés cur → « tous les joueurs » ne garde qu'eux. La liste du formulaire reste entière. */
+      var CUR0 = S.uiI && S.uiI[0] && S.uiI[0].joueurs ? S.uiI[0].joueurs : null;
+      S.ro[nom] = { l: LJ, cur: CUR0 ? Object.keys(CUR0).reduce(function (o, k) { o[String(k)] = 1; return o; }, {}) : null };
       var selU = function (slot, k) {
         var t = '<select onchange="g45CrJoueur(this.value,' + slot + ')" style="background:#16213f;color:#fff;border:1px solid #6d9dff;border-radius:8px;padding:7px 10px;font-size:14px;margin:0 6px 6px 0;max-width:100%;">'
           + '<option value="">' + (slot === 1 ? 'Aucun joueur' : '+ joueur') + '</option>';
