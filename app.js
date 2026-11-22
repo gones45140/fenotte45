@@ -77991,7 +77991,16 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   function cjHtml(c, D, tous) {
     var V = cjVals(c, D, tous); if (!V.n) return '';
     var lieu = S.lieu === 'dom' ? '🏠 Domicile' : S.lieu === 'ext' ? '✈️ Extérieur' : 'Tous lieux';
-    S.cjDer = { nom: S.nom, lieu: lieu, crit: libCombo(c), d10: V.d10, s2: V.s2, s5: V.s5 };
+    /* 20261122u (« OK 1 » = Calculatrice Cote juste sur « par les buts » + DraftKings) : profil de buts de l'équipe au lieu choisi (foot, pari qui ne
+       dépend que du score : même contrôle et mêmes poids que « Ton pari » 20261122m) → envoyé avec les % (po) ; G = grille 0-10 en texte « 0101… ». */
+    var po = null; try { if (!S.ctx && !c.jo) {
+      var LM = []; (D.saisons || []).slice().reverse().forEach(function (sa) { if (!sa || !sa.ms) return; var ag = (D.saisons || []).indexOf(sa); filtrer(msS(c, sa) || sa.ms).forEach(function (m) { if (m && m[2] != null && m[3] != null) LM.push({ m: m, ag: ag }); }); });
+      if (LM.length >= 10 && LM.every(function (x) { var m = x.m; try { return !!passe(c, m) === !!passe(c, [m[0], m[1], m[2], m[3]]); } catch (e) { return false; } })) {
+        var sw = 0, sf = 0, sg = 0, sp = 0; LM.forEach(function (x, i) { var w = (x.ag <= 0 ? 1 : x.ag === 1 ? 0.7 : 0.35) * (i >= LM.length - 10 ? 1.5 : 1); sw += w; sf += w * x.m[2]; sg += w * x.m[3]; sp += w * (passe(c, x.m) ? 1 : 0); });
+        var G = []; for (var gi = 0; gi <= 10; gi++) { var ln = ''; for (var gj = 0; gj <= 10; gj++) { var ok = false; try { ok = !!passe(c, [LM[0].m[0], LM[0].m[1], gi, gj]); } catch (e) {} ln += ok ? '1' : '0'; } G.push(ln); }
+        po = { gf: sf / sw, ga: sg / sw, own: sp / sw, G: G, lg: String(D.lg || '') };
+      } } } catch (e) { po = null; }
+    S.cjDer = { nom: S.nom, lieu: lieu, crit: libCombo(c), d10: V.d10, s2: V.s2, s5: V.s5, po: po };
     try { if (typeof window._g45CjAuto === 'function') { var cjD = S.cjDer; setTimeout(function () { window._g45CjAuto(cjD); }, 0); } } catch (e) {}   /* 20261108g : calculatrice « match » remplie toute seule */
     var b = function (k) { return '<button onclick="g45CjEnvoyer(' + k + ')" style="border:1px solid #6d9dff;border-radius:10px;padding:8px 12px;font-size:14px;font-weight:800;color:#fff;background:#1b2a55;cursor:pointer;">→ Équipe ' + k + '</button>'; };
     return '<div style="margin-top:10px;background:#0f1730;border-radius:10px;padding:10px;font-size:14px;color:#fff;">🧮 <b>Envoyer à la calculatrice</b> (🎯 Cote juste) : 10 derniers matchs <b>' + (V.d10 == null ? '—' : V.d10 + ' %') + '</b> · 2 saisons <b>' + (V.s2 == null ? '—' : V.s2 + ' %') + '</b> · toutes <b>' + V.s5 + ' %</b>'
@@ -89723,14 +89732,27 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   }
   function calc() {
     var m = D.e.map(melange).filter(function (x) { return x != null; });
-    var p = m.length ? m.reduce(function (a, b) { return a + b; }, 0) / m.length : null;
+    var p = m.length ? m.reduce(function (a, b) { return a + b; }, 0) / m.length : null, pMoy = p, PO = null, DK = null;
+    /* 20261122u : équipe 1 + équipe 2 envoyées depuis les critères (profil de buts) → ⚽ « par les buts » (80 % modèle + 20 % % récent de l'équipe 1,
+       λ = buts marqués × encaissés adverses ÷ moyenne du championnat) ; cotes DraftKings du match trouvées (matchs à venir chez ESPN) → 📚 calée sur
+       DraftKings, estimation PRINCIPALE. Sinon : moyenne des deux équipes comme avant. */
+    try { var e0 = D.e[0], e1 = D.e[1], T = e0 && e0.po, A = e1 && e1.po;
+      if (T && T.G && A) {
+        var gr = function (L1, L2) { var po = function (l, k) { var q = Math.exp(-l); for (var z = 1; z <= k; z++) q *= l / z; return q; }, s0 = 0; for (var i2 = 0; i2 <= 10; i2++) for (var j2 = 0; j2 <= 10; j2++) if (String(T.G[i2] || '').charAt(j2) === '1') s0 += po(L1, i2) * po(L2, j2); return Math.min(0.97, Math.max(0.03, s0)); };
+        var dom = !/xt/i.test(e0.lieu || ''), BL = typeof window._g45ButsLigues === 'function' ? window._g45ButsLigues() : null;
+        if (BL) { var Mg = BL[T.lg] || [1.5, 1.2], lT = dom ? Mg[0] : Mg[1], lA = dom ? Mg[1] : Mg[0], LT = Math.max(0.15, T.gf * A.ga / lT), LA = Math.max(0.1, A.gf * T.ga / lA), pm = gr(LT, LA);
+          PO = { p: 0.8 * pm + 0.2 * T.own, LT: LT, LA: LA }; }
+        var F = typeof window._g45DkLam === 'function' && T.lg && e0.nom && e1.nom ? window._g45DkLam(T.lg, e0.nom, e1.nom, '') : null;
+        if (F) { var L1 = F.home ? F.h : F.a, L2 = F.home ? F.a : F.h; DK = { p: gr(L1, L2), LT: L1, LA: L2, Q: F.Q }; }
+      } } catch (e) { PO = DK = null; }
+    if (DK) p = DK.p * 100; else if (PO) p = PO.p * 100;
     /* 20261108g (« il faut retirer la marge du book ») : avec la cote inverse → marge réelle (1/b + 1/inv − 1) ; sans → marge type D.mg % (7 par défaut) */
     var bk = nb(D.b), inv = nb(D.inv), mg = nb(D.mg); if (mg == null) mg = 7;
     /* 20261108k (« manque juste la cote juste à 3 possibilités », ex. Toulouse nul Strasbourg) : 3e cote D.t3 (1N2) → marge = somme des 3
        inverses − 1 ; cote juste du book de CHAQUE issue = cote × somme (sj). Ton pari reste la 1re case. */
     var t3 = nb(D.t3), sj = null;
     var pb = null, mgR = null; if (bk > 1) { if (inv > 1) { var so = 1 / bk + 1 / inv + (t3 > 1 ? 1 / t3 : 0); mgR = (so - 1) * 100; pb = (1 / bk) / so * 100; sj = [bk, inv].concat(t3 > 1 ? [t3] : []).map(function (c) { return c * so; }); } else { mgR = mg; pb = (100 / bk) / (1 + mg / 100); } }
-    return { m: D.e.map(melange), p: p, cj: p > 0 ? 100 / p : null, bk: bk, pb: pb, mgR: mgR, sj: sj, t3: t3 > 1 ? t3 : null, inv: inv > 1 ? inv : null, ev: (p != null && bk > 1) ? (p / 100 * bk - 1) * 100 : null };
+    return { pMoy: pMoy, PO: PO, DK: DK, m: D.e.map(melange), p: p, cj: p > 0 ? 100 / p : null, bk: bk, pb: pb, mgR: mgR, sj: sj, t3: t3 > 1 ? t3 : null, inv: inv > 1 ? inv : null, ev: (p != null && bk > 1) ? (p / 100 * bk - 1) * 100 : null };
   }
   var inp = function (id, v, w) { return '<input id="' + id + '" value="' + esc(v) + '" inputmode="decimal" oninput="g45CjMaj(this)" style="width:' + (w || 64) + 'px;font-size:16px;font-weight:800;text-align:center;padding:6px;border-radius:8px;background:#141c33;color:#fff;border:1px solid #2a3a63;">'; };
   function html() {
@@ -89760,7 +89782,10 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
       + '<div style="display:flex;align-items:center;gap:8px;margin-top:6px;font-size:13px;color:#c9d3ee;">Marge du book sans cote inverse ' + inp('cj-mg', D.mg == null ? 7 : D.mg, 48) + ' %</div>'
       + '<div style="margin-top:12px;background:' + (R.p == null ? '#0b1226' : 'rgba(30,215,96,.12)') + ';border:1px solid ' + (R.p == null ? '#2a3a63' : '#1ed760') + ';border-radius:12px;padding:10px;text-align:center;">'
       + (R.p == null ? '<div style="font-size:14px;color:#c9d3ee;">Remplis au moins une équipe.</div>' : '<div style="font-size:14px;color:#c9d3ee;">Estimation du match</div><div style="font-size:24px;font-weight:900;">' + fr(R.p) + ' % → cote juste <span style="color:#1ed760;">' + fr(R.cj, 2) + '</span></div>' + verdict)
-      + '</div><div style="font-size:13px;color:#c9d3ee;margin-top:8px;">Chaque équipe : mélange 10 derniers matchs / 2 saisons / toutes saisons avec les poids (une case vide est ignorée), puis moyenne des deux équipes.</div></div>';
+      + '</div>' + (R.DK ? '<div style="font-size:14px;margin-top:6px;">📚 <b>Calée sur DraftKings</b> · buts attendus ' + esc(D.e[0].nom) + ' ' + fr(R.DK.LT, 2) + ', ' + esc(D.e[1].nom) + ' ' + fr(R.DK.LA, 2) + (R.DK.Q && R.DK.Q.ml ? ' (1N2 ' + R.DK.Q.ml.map(function (x) { return fr(x, 2); }).join(' / ') + (R.DK.Q.bts ? ' · les deux marquent ' + fr(R.DK.Q.bts, 2) : '') + ')' : '') + '</div>' : '')
+      + (R.PO ? '<div style="font-size:14px;margin-top:4px;color:' + (R.DK ? '#c9d3ee' : '#fff') + ';">⚽ ' + (R.DK ? 'Nos archives (pour info) : ' : '') + 'par les buts <b>' + fr(R.PO.p * 100) + ' %</b> (' + esc(D.e[0].nom) + ' ≈ ' + fr(R.PO.LT, 2) + ' buts, ' + esc(D.e[1].nom) + ' ≈ ' + fr(R.PO.LA, 2) + ')</div>' : '')
+      + ((R.DK || R.PO) && R.pMoy != null ? '<div style="font-size:13px;color:#c9d3ee;margin-top:2px;">Ancienne méthode (pour info) : moyenne des deux équipes ' + fr(R.pMoy) + ' %</div>' : '')
+      + '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">' + (R.DK ? 'Estimation = cotes DraftKings du match (marge retirée) → buts attendus → ton critère sur chaque score.' : R.PO ? 'Estimation = attaque / défense des deux équipes (« par les buts »), 80 % modèle + 20 % % récent de l\'équipe 1.' : 'Chaque équipe : mélange 10 derniers matchs / 2 saisons / toutes saisons avec les poids (une case vide est ignorée), puis moyenne des deux équipes.') + '</div></div>';
   }
   function poser(focusId) {
     var t = document.getElementById('calc-cj') || document.getElementById('t-calc'); if (!t) return;   /* 20261108h : onglet 🎯 Cote juste */
@@ -89783,13 +89808,14 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   };
   window.g45CjVider = function () { D = { e: [{ nom: '', lieu: '', d10: '', s2: '', s5: '' }, { nom: '', lieu: '', d10: '', s2: '', s5: '' }], w: [40, 35, 25], b: '', inv: '', t3: '', mg: 7, crit: '' }; garder(); poser(); };
   window.g45CjMettre = function (k, o, muet) {
-    var i = k === 2 ? 1 : 0; D.e[i] = { nom: o.nom || '', lieu: o.lieu || '', d10: o.d10 == null ? '' : o.d10, s2: o.s2 == null ? '' : o.s2, s5: o.s5 == null ? '' : o.s5 };
+    var i = k === 2 ? 1 : 0; D.e[i] = { nom: o.nom || '', lieu: o.lieu || '', d10: o.d10 == null ? '' : o.d10, s2: o.s2 == null ? '' : o.s2, s5: o.s5 == null ? '' : o.s5, po: o.po || null };   /* 20261122u : + profil de buts */
     /* 20261120w (« Critère : Défaite » affiché alors qu'Antoine calculait la victoire de Pittsburgh → « OUI C ») : le titre suit la case 1 seulement */
     if (i === 0 || !D.crit) D.crit = o.crit || D.crit; garder(); poser();
     if (muet) return;
     try { if (typeof toast === 'function') toast('🧮 ' + (o.nom || 'Équipe') + ' → Équipe ' + (i + 1) + ' de la calculatrice'); else alert('🧮 Envoyé : ' + (o.nom || '') + ' → Équipe ' + (i + 1) + ' (Pari → 🧮 Calculatrice)'); } catch (e) {}
   };
   window._g45CjT = { calc: calc, D: function () { return D; }, html: html };   /* tests */
+  window.addEventListener('g45dk', function () { try { if (document.getElementById('g45-cj')) poser(); } catch (e) {} });   /* 20261122u */
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { poser(); }); else setTimeout(poser, 0);
   setInterval(function () { var t = document.getElementById('t-calc'); if (t && !document.getElementById('g45-cj')) poser(); }, 3000);
 })();
@@ -91348,7 +91374,7 @@ function _g45ScoreRedessiner() {
     if (BLG && Date.now() - BLG.t < 3600e3) return BLG.L;
     if (!BLG || !BLG.en) { BLG = { t: Date.now(), en: 1, L: BLG && BLG.L };
       fetch('https://raw.githubusercontent.com/gones45140/gones45-archives/main/loi/buts_ligues.json?h=' + Math.floor(Date.now() / 36e5)).then(function (r) { return r.ok ? r.json() : null; })
-        .then(function (j) { BLG = { t: Date.now(), L: (j && j.L) || {} }; }, function () { BLG = { t: Date.now(), L: {} }; }).then(function () { SIG.strat = ''; SIG.simple = ''; try { poser(); } catch (e) {} }); }
+        .then(function (j) { BLG = { t: Date.now(), L: (j && j.L) || {} }; }, function () { BLG = { t: Date.now(), L: {} }; }).then(function () { SIG.strat = ''; SIG.simple = ''; try { poser(); } catch (e) {} try { window.dispatchEvent(new Event('g45dk')); } catch (e) {} }); }
     return BLG.L || null;
   }
   function poisEst(o, R, RA) {
@@ -91362,6 +91388,7 @@ function _g45ScoreRedessiner() {
     return { p: Math.min(0.97, Math.max(0.03, 0.8 * p + 0.2 * T.own)), pm: p, own: T.own, LT: LT, LA: LA };
   }
   window._g45TkPois = poisEst;   /* tests */
+  window._g45ButsLigues = butsLigues;   /* 20261122u : Calculatrice */
   window._g45TkBL = function (L) { BLG = { t: Date.now(), L: L }; };   /* tests */
   /* ═══ 20261122n — ⚽ CALÉE SUR DRAFTKINGS (« 2,69 encore trop haut, faut être proche de Wina et Draft » ; SONDES d'Antoine Barça – Villarreal
      401882804 : odds/100 moneyLine −525 / 700 / 1100, total 4,5 ; propBets 152 les deux marquent [oui 1,46, non 2,70] (current.over.decimal,
@@ -91382,13 +91409,14 @@ function _g45ScoreRedessiner() {
     return { h: best.a, a: best.b };
   }
   window._g45TkDkAjuste = dkAjuste;   /* tests */
-  function dkFoot(o, R) {
-    var T = R && R.po; if (!T || !T.G || !T.lg || !o.nom || !o.adv || !/^\d{4}-\d\d-\d\d$/.test(o.date)) return null;
+  /* 20261122u : chargeur partagé (« Ton pari » et Calculatrice « Cote juste ») — date facultative (sans date : matchs à venir du scoreboard) */
+  function dkLam(lg, nom, adv, date) {
+    var o = { nom: nom, adv: adv, date: date || '' }, T = { lg: lg };
     var k = T.lg + '|' + o.nom + '|' + o.adv + '|' + o.date, X = DKF[k];
     if (!X || Date.now() - X.t > 30 * 60e3) { if (!X || !X.en) { DKF[k] = X = { t: Date.now(), en: 1, Q: X && X.Q };
       (async function () {
         var j = async function (u) { try { var r = await fetch(u); if (r.ok) return await r.json(); } catch (e) {} return null; };
-        var d = o.date.replace(/-/g, ''), sb = await j('https://site.api.espn.com/apis/site/v2/sports/soccer/' + T.lg + '/scoreboard?dates=' + d);
+        var d = o.date.replace(/-/g, ''), sb = await j('https://site.api.espn.com/apis/site/v2/sports/soccer/' + T.lg + '/scoreboard' + (d ? '?dates=' + d : ''));
         var ev = ((sb && sb.events) || []).filter(function (e) { var C = ((e.competitions || [])[0] || {}).competitors || []; return C.some(function (c) { return memeA((c.team || {}).displayName, o.nom) || memeA((c.team || {}).shortDisplayName, o.nom); }) && C.some(function (c) { return memeA((c.team || {}).displayName, o.adv) || memeA((c.team || {}).shortDisplayName, o.adv); }); })[0];
         if (!ev) return { err: 'match introuvable chez ESPN' };
         var C = ((ev.competitions || [])[0] || {}).competitors || [], H = C.filter(function (c) { return c.homeAway === 'home'; })[0] || {}, Aw = C.filter(function (c) { return c.homeAway === 'away'; })[0] || {};
@@ -91404,8 +91432,13 @@ function _g45ScoreRedessiner() {
         Object.keys(par).forEach(function (K) { var v = par[K]; if (v.length < 2) return; var t = K.split('|')[0], L = +K.split('|')[1], p = (1 / v[0]) / (1 / v[0] + 1 / v[1]); (t === String((H.team || {}).id) ? Q.T : t === String((Aw.team || {}).id) ? Q.A : []).push([L, p]); });
         if (Q.w == null && !Q.T.length) return { err: 'pas de cotes DraftKings' };
         var F = dkAjuste(Q); F.Q = Q; F.home = memeA((H.team || {}).displayName, o.nom) || memeA((H.team || {}).shortDisplayName, o.nom); return F;
-      })().then(function (F) { DKF[k] = { t: Date.now(), F: F || { err: 'rien' } }; }, function () { DKF[k] = { t: Date.now(), F: { err: 'lecture impossible' } }; }).then(function () { SIG.strat = ''; SIG.simple = ''; try { poser(); } catch (e) {} }); } }
-    var F = X.F; if (!F || F.err) return null;
+      })().then(function (F) { DKF[k] = { t: Date.now(), F: F || { err: 'rien' } }; }, function () { DKF[k] = { t: Date.now(), F: { err: 'lecture impossible' } }; }).then(function () { SIG.strat = ''; SIG.simple = ''; try { poser(); } catch (e) {} try { window.dispatchEvent(new Event('g45dk')); } catch (e) {} }); } }
+    var F = X.F; return F && !F.err ? F : null;
+  }
+  window._g45DkLam = dkLam;   /* Calculatrice */
+  function dkFoot(o, R) {
+    var T = R && R.po; if (!T || !T.G || !T.lg || !o.nom || !o.adv || !/^\d{4}-\d\d-\d\d$/.test(o.date)) return null;
+    var F = dkLam(T.lg, o.nom, o.adv, o.date); if (!F) return null;
     var LT = F.home ? F.h : F.a, LA = F.home ? F.a : F.h, p = 0;
     for (var i = 0; i <= 10; i++) for (var jj = 0; jj <= 10; jj++) if (T.G[i][jj]) p += dkPo(LT, i) * dkPo(LA, jj);
     return { p: Math.min(0.97, Math.max(0.03, p)), LT: LT, LA: LA, Q: F.Q };
