@@ -90198,7 +90198,18 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   }
   function garder() { var o = {}; ['sb-match', 'sb-date', 'sb-heure', 'sb-p1', 'sb-p2', 'sb-a', 'sb-b', 'sb-bk1', 'sb-bk2'].forEach(function (id) { var e = $(id); if (e) o[id] = e.value; }); ST.vals = o; var c = $('sb-c'); if (c) ST.c = c.value; var c1 = $('sb-c1'); if (c1) ST.c1 = c1.value; }
   window.g45SbMaj = function (bk) { garder(); if (bk) { ST.b1 = ST.vals['sb-bk1']; ST.b2 = ST.vals['sb-bk2']; ST.c = null; ST.c1 = null; panneau(); return; } resultat(); };   /* 20261110c : autre book → commission par défaut du book (OrbitX 3 %) */
-  window.g45SbMise = function (f, v) { ST.fix = String(f); ST.fv = v; ST.t1 = ST.t2 = null; resultat(); };
+  /* 20261122h (Back Winamax 4 / Lay OrbitX 3,4 : « par contre ça me recalcule le lay automatiquement, c'est un peu chiant ») : la 1re mise tapée
+     calcule l'autre ; si on tape ENSUITE dans l'autre case, les DEUX mises tapées sont gardées telles quelles (fix 'b', comme 2 tickets lus),
+     plus aucun recalcul. Taper dans « Enjeu total » relance le calcul automatique. */
+  window.g45SbMise = function (f, v) {
+    f = String(f); var autre = f === '1' ? '2' : f === '2' ? '1' : '';
+    if (autre && ST.saisi && ST.saisi[autre] && (ST.fix === autre || ST.fix === 'b')) {
+      var eo = $('sb-m' + autre); ST['t' + f] = num(v); ST['t' + autre] = num(eo && eo.value); ST.saisi[f] = 1;
+      if (ST.t1 > 0 && ST.t2 > 0) { ST.fix = 'b'; resultat(); return; }
+    }
+    ST.saisi = {}; if (autre) ST.saisi[f] = 1;
+    ST.fix = f; ST.fv = v; ST.t1 = ST.t2 = null; resultat();
+  };
   /* 20261110f (« faudrait que ça puisse lire 2 tickets maintenant ») : 📷 Ticket sous chaque jambe → même lecture que « 📷 Lire un ticket »
      (_g45TicketIa, secours Tesseract) → pari, book (retrouvé parmi MES books), cote, mise, match, date / heure. Les 2 tickets lus → les 2 vraies
      mises gardées (ST.fix 'b', calcS) : on voit le résultat réel de ce qui est joué. */
@@ -90220,7 +90231,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
         if (!String(V['sb-match'] || '').trim() && o.equipe) V['sb-match'] = o.equipe + (o.adversaire ? ' – ' + o.adversaire : '');
         if (o.date && /^\d{4}-\d{2}-\d{2}$/.test(o.date)) V['sb-date'] = o.date; if (o.heure && /^\d{1,2}:\d{2}$/.test(o.heure)) V['sb-heure'] = ('0' + o.heure).slice(-5);
         if (n === 1) ST.c1 = null; else ST.c = null;
-        var mi = num(o.mise); if (mi > 0) { ST['t' + n] = mi; if (ST.t1 > 0 && ST.t2 > 0) ST.fix = 'b'; else { ST.fix = String(n); ST.fv = String(mi); } }
+        var mi = num(o.mise); if (mi > 0) { ST.saisi = ST.saisi || {}; ST.saisi[n] = 1; ST['t' + n] = mi; if (ST.t1 > 0 && ST.t2 > 0) ST.fix = 'b'; else { ST.fix = String(n); ST.fv = String(mi); } }
         panneau();
         if (ST.fix === 'b') { var e1 = $('sb-m1'), e2 = $('sb-m2'); if (e1) e1.value = fr(ST.t1).replace(',', '.'); if (e2) e2.value = fr(ST.t2).replace(',', '.'); resultat(); }
         var z2 = $('sb-res'); if (z2) z2.insertAdjacentHTML('afterbegin', '<div style="font-size:14px;color:#1ed760;font-weight:800;margin-top:6px;">✅ Ticket ' + n + ' lu' + (bk ? '' : ' · ⚠️ book « ' + esc(o.bookmaker || '?') + ' » pas dans tes books') + (mi > 0 ? '' : ' · mise non lue') + ' — vérifie</div>');
@@ -90238,7 +90249,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     z.innerHTML = '<div style="font-size:17px;font-weight:900;color:#fff;margin:16px 0 6px;">⏳ Surebets en cours (' + L.length + ')</div>' + L.map(function (h) { var c = ''; try { c = window._g45SbCarte(h) || ''; } catch (e) {} return c; }).join('');
   }
   window._g45SbEnCours = sbEnCours;
-  window.g45SbKind = function (k) { garder(); ST.k = k; ST.p = 'rep'; ST.b2 = null; panneau(); };
+  window.g45SbKind = function (k) { garder(); ST.k = k; ST.p = 'rep'; ST.b2 = null; ST.saisi = {}; if (ST.fix === 'b') ST.fix = '1'; panneau(); };
   window.g45SbPart = function (p) { garder(); ST.p = p; panneau(); };
   window.g45SbEnreg = function () {
     garder();
@@ -90257,7 +90268,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     B[D.b1] = (parseFloat(B[D.b1]) - R.s1).toFixed(2); B[D.b2] = (parseFloat(B[D.b2]) - R.s2).toFixed(2);
     state.h.unshift(j2); state.h.unshift(j1);
     try { save(); } catch (e) {} try { updMise(); } catch (e) {} try { if (typeof render === 'function') render(); } catch (e) {}
-    ST.vals = {}; ST.fv = ''; ST.t1 = ST.t2 = null; if (ST.fix === 'b') ST.fix = '1'; panneau();
+    ST.vals = {}; ST.fv = ''; ST.t1 = ST.t2 = null; ST.saisi = {}; if (ST.fix === 'b') ST.fix = '1'; panneau();
     alert('⚖️ Surebet enregistré : ' + nomB(D.b1) + ' ' + fr(R.s1) + ' € · ' + nomB(D.b2) + ' ' + fr(R.s2) + ' €' + (D.k === 'lay' ? ' bloqués' : '') + '.');
   };
   /* Règlement : o = '1' | '2' | 'n' */
