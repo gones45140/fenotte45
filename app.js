@@ -78694,6 +78694,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
      TITULAIRES) ; une clé par critère : b = buteur (NHL, foot), m19.5… = au moins un des deux plus de L points, s39.5… = total des deux plus de L
      (NBA, puces de seuil). */
   S.duoL = S.duoL || 'tout'; S.duoT = S.duoT || 'ok'; S.duoK = S.duoK || 'm24.5';
+  S.duoS = S.duoS || '2';   /* 20261122c (« 2 saisons est-ce suffisant ? » → « oui » au bouton 4 saisons) : stats 4 saisons du robot (d[8]) */
   window.g45DuoReg = function (k, v) { S[k] = v; try { redessiner(); } catch (e) {} };
   var DUOF = {};
   function duoFic(X) { return X.lg === 'nhl' ? 'nhl' : X.lg === 'nba' ? 'nba' : (X.sp === 'soccer' && /^(fra|eng|esp|ita|ger|ned|por)\.1$/.test(X.lg) ? 'foot-' + X.lg : ''); }
@@ -78733,15 +78734,16 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     if (!D.L.length) return h + '<div style="font-size:14px;color:#ffd34d;margin-top:6px;">Liste des duos pas encore prête pour cette ligue (robot du matin).</div></div>';
     var k = nba ? (D.K.indexOf(S.duoK) >= 0 ? S.duoK : 'm24.5') : 'b';
     var lgN = f === 'nhl' ? 'NHL' : nba ? 'NBA' : ((S.data[S.nom] && S.data[S.nom].ligue) || X.lg);
-    h += '<div style="font-size:14px;color:#c9d3ee;margin:3px 0 8px;">Duos ' + (nba ? (k[0] === 'm' ? '« double chance marqueurs » : au moins un des deux plus de ' : '« duo marqueurs de points » : total des deux plus de ') + String(k).slice(1).replace('.', ',') + ' pts' : '« double chance buteur »') + ' · même équipe' + (f.indexOf('foot') === 0 ? ' · titulaires tous les deux' : '') + ' · ' + esc((D.s || []).length || 2) + ' saisons ' + esc(lgN) + '</div>';
+    h += '<div style="font-size:14px;color:#c9d3ee;margin:3px 0 8px;">Duos ' + (nba ? (k[0] === 'm' ? '« double chance marqueurs » : au moins un des deux plus de ' : '« duo marqueurs de points » : total des deux plus de ') + String(k).slice(1).replace('.', ',') + ' pts' : '« double chance buteur »') + ' · même équipe' + (f.indexOf('foot') === 0 ? ' · titulaires tous les deux' : '') + ' · ' + (S.duoS === '4' ? ((D.s4 || []).length || 4) : ((D.s || []).length || 2)) + ' saisons ' + esc(lgN) + '</div>';
     var pu = function (kk, v, t) { var on = S[kk] === v || (kk === 'duoK' && k === v); return '<button onclick="g45DuoReg(\'' + kk + '\',\'' + v + '\')" style="padding:7px 12px;border-radius:14px;font-size:14px;font-weight:800;cursor:pointer;color:#fff;margin:0 6px 6px 0;border:1px solid ' + (on ? '#6d9dff' : '#2a3a63') + ';background:' + (on ? '#2f6bff' : '#0b1226') + ';">' + t + '</button>'; };
     if (nba) h += '<div><span style="font-size:14px;color:#c9d3ee;margin-right:6px;">1 des 2 plus de</span>' + ['m19.5', 'm24.5', 'm29.5', 'm34.5'].map(function (x) { return pu('duoK', x, x.slice(1).replace('.', ',')); }).join('') + '</div>'
       + '<div><span style="font-size:14px;color:#c9d3ee;margin-right:6px;">Total des 2 plus de</span>' + ['s39.5', 's44.5', 's49.5', 's54.5'].map(function (x) { return pu('duoK', x, x.slice(1).replace('.', ',')); }).join('') + '</div>';
+    h += '<div>' + pu('duoS', '2', '📅 2 saisons') + pu('duoS', '4', '📅 4 saisons') + '</div>';
     h += '<div>' + pu('duoL', 'tout', '🌍 Tous') + pu('duoL', 'dom', '🏠 Domicile') + pu('duoL', 'ext', '✈️ Extérieur') + '</div>'
       + '<div>' + pu('duoT', 'ok', 'Réussite') + pu('duoT', 'pire', 'Pire série') + pu('duoT', 'sai', 'Cette saison') + '</div>';
     var mn = f.indexOf('foot') === 0 ? 10 : 20;
     var R = D.L.map(function (d, i) {
-      var v = (d[6] || {})[k]; if (!v) return null;
+      var v = (S.duoS === '4' && d[8] && d[8][k]) || (d[6] || {})[k]; if (!v) return null;
       var n = S.duoL === 'dom' ? v[5] : S.duoL === 'ext' ? v[8] : v[0], ok = S.duoL === 'dom' ? v[6] : S.duoL === 'ext' ? v[9] : v[1], pire = S.duoL === 'dom' ? v[7] : S.duoL === 'ext' ? v[10] : v[4];
       return { d: d, i: i, n: n, r: n ? ok / n : 0, pire: pire, rs: v[2] ? v[3] / v[2] : 0, enc: v[11] };
     }).filter(function (x) { return x && x.n >= mn; });
