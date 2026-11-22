@@ -92595,22 +92595,27 @@ function _g45NflFeuilleHtml(data) {
   var BP = data && data.boxscore && data.boxscore.players; if (!BP || !BP.length) return '';
   var esc = function (t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
   var nn = function (x) { return String(x || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z]/g, ''); };
-  var PARI = {}; try { ((window.state && state.h) || []).forEach(function (h) { var L = (Array.isArray(h.joueurs) ? h.joueurs.map(function (x) { return x && x.nom; }) : []).concat([h.joueur]).filter(Boolean);
-    L.forEach(function (n) { String(n).split(/\s+(?:ou|et)\s+|,/).forEach(function (m) { var f = nn(String(m).trim().split(/\s+/).slice(-1)[0]); if (f.length > 2) PARI[f] = 1; }); }); }); } catch (e) {}
+  var PARI = {}, PTXT = ''; try { ((window.state && state.h) || []).forEach(function (h) { var L = (Array.isArray(h.joueurs) ? h.joueurs.map(function (x) { return x && x.nom; }) : []).concat([h.joueur]).filter(Boolean);
+    L.forEach(function (n) { String(n).split(/\s+(?:ou|et)\s+|,/).forEach(function (m) { var f = nn(String(m).trim().split(/\s+/).slice(-1)[0]); if (f.length > 2) PARI[f] = 1; }); });
+    PTXT += ' ' + String(h.type || '') + ' ' + String(h.n || '') + ' ' + String(h.target || ''); }); } catch (e) {}
+  /* 20261123u (capture : pas d'⭐ sur Kelce / Rice) : le pari « Marqueur de touchdown - R. Rice ou T. Kelce » n'a les noms QUE dans le texte du
+     type → nom de famille cherché aussi dans le texte des paris en cours (mot entier, 4 lettres au moins). */
+  var PW = ' ' + String(PTXT).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z]+/g, ' ') + ' ';
+  var dansPari = function (f) { return !!PARI[f] || (f.length >= 4 && PW.indexOf(' ' + f + ' ') >= 0); };
   var CATS = [['passing', '🎯 Passes', [['C/ATT', 'Réuss./Tent.'], ['YDS', 'Yards'], ['TD', 'TD'], ['INT', 'INT']]],
     ['rushing', '🏃 Courses', [['CAR', 'Courses'], ['YDS', 'Yards'], ['TD', 'TD']]],
     ['receiving', '🙌 Réceptions', [['REC', 'Récep.'], ['YDS', 'Yards'], ['TD', 'TD'], ['TGTS', 'Cibles']]]];
   var td = 'padding:5px 4px;border-top:1px solid #2a3a63;text-align:right;', uid = 'g45sj' + Math.random().toString(36).slice(2, 8);
   var blocs = BP.slice(0, 2).map(function (tp, ti) {
     var t = tp.team || {}, h = '', tdP = {};
-    (tp.statistics || []).forEach(function (c) { if (!/rushing|receiving/i.test(c.name || '')) return; var iT = (c.labels || []).indexOf('TD'); (c.athletes || []).forEach(function (a) { if (iT >= 0 && +((a.stats || [])[iT]) > 0) tdP[nn((a.athlete || {}).displayName)] = 1; }); });
+    (tp.statistics || []).forEach(function (c) { if (!/rushing|receiving|passing/i.test(c.name || '')) return; var iT = (c.labels || []).indexOf('TD'), pa = /passing/i.test(c.name || ''); (c.athletes || []).forEach(function (a) { if (iT >= 0 && +((a.stats || [])[iT]) > 0) { var kk = nn((a.athlete || {}).displayName); tdP[kk] = tdP[kk] || (pa ? 'p' : 1); if (!pa) tdP[kk] = 1; } }); });   /* 20261123u : passe de TD aussi (« Mahomes TD passe pour Kelce ») */
     CATS.forEach(function (K) {
       var c = (tp.statistics || []).filter(function (x) { return String(x.name || '').toLowerCase() === K[0]; })[0]; if (!c || !(c.athletes || []).length) return;
       var lab = c.labels || [], ix = K[2].map(function (k) { return lab.indexOf(k[0]); });
       h += '<div style="font-size:15px;font-weight:900;margin:10px 0 4px;color:#ffd34d;">' + K[1] + '</div><table style="width:100%;border-collapse:collapse;font-size:14px;color:#fff;"><tr><th style="text-align:left;color:#c9d3ee;padding:4px;">Joueur</th>'
         + K[2].map(function (k, i) { return ix[i] >= 0 ? '<th style="text-align:right;color:#c9d3ee;padding:4px;">' + k[1] + '</th>' : ''; }).join('') + '</tr>';
-      c.athletes.forEach(function (a) { var nm = (a.athlete || {}).displayName || '', f = nn(String(nm).trim().split(/\s+/).slice(-1)[0]), mien = !!PARI[f], tdx = !!tdP[nn(nm)];
-        h += '<tr style="' + (mien ? 'background:rgba(30,215,96,.12);' : '') + '"><td style="' + td + 'text-align:left;">' + (mien ? '⭐ ' : '') + esc(nm) + (tdx ? ' 🏈' : '') + '</td>'
+      c.athletes.forEach(function (a) { var nm = (a.athlete || {}).displayName || '', f = nn(String(nm).trim().split(/\s+/).slice(-1)[0]), mien = dansPari(f), tdx = tdP[nn(nm)];
+        h += '<tr style="' + (mien ? 'background:rgba(30,215,96,.12);' : '') + '"><td style="' + td + 'text-align:left;">' + (mien ? '⭐ ' : '') + esc(nm) + (tdx === 1 ? ' 🏈' : tdx === 'p' ? ' 🎯🏈' : '') + '</td>'
           + ix.map(function (j) { return j >= 0 ? '<td style="' + td + '">' + esc((a.stats || [])[j]) + '</td>' : ''; }).join('') + '</tr>'; });
       h += '</table>';
     });
@@ -92620,7 +92625,7 @@ function _g45NflFeuilleHtml(data) {
   var bt = blocs.map(function (b, i) { return '<span onclick="var r=this.closest(\'.g45sj\');r.querySelectorAll(\'.g45sj-t\').forEach(function(x,k){x.style.display=k===' + i + '?\'\':\'none\';});r.querySelectorAll(\'.g45sj-b\').forEach(function(x,k){x.style.background=k===' + i + '?\'' + b.col + '\':\'#16213f\';});" class="g45sj-b" style="display:inline-block;cursor:pointer;padding:7px 12px;border-radius:10px;font-weight:800;font-size:14px;margin:0 6px 6px 0;border:1px solid #2a3a63;background:' + (i === 0 ? b.col : '#16213f') + ';color:#fff;">' + esc(b.nom) + '</span>'; }).join('');
   return '<div class="g45sj" id="' + uid + '" style="background:rgba(21,28,48,.96);border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:12px;margin:10px 0;color:#fff;">'
     + '<div style="font-size:17px;font-weight:900;margin-bottom:8px;">📋 Stats des joueurs</div><div>' + bt + '</div>'
-    + blocs.map(function (b, i) { return '<div class="g45sj-t" style="' + (i ? 'display:none;' : '') + '">' + b.h + '</div>'; }).join('')
-    + '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">⭐ = joueur d\'un de tes paris en cours · 🏈 = a marqué un TD</div></div>';
+    + blocs.map(function (b, i) { return '<div class="g45sj-t" data-g45pl="x" style="' + (i ? 'display:none;' : '') + '">' + b.h + '</div>'; }).join('')   /* 20261123u : data-g45pl x = pas replié en « 🎯 Passes » par le rangement automatique de la fenêtre */
+    + '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">⭐ = joueur d\'un de tes paris en cours · 🏈 = a marqué un TD · 🎯🏈 = passe de TD</div></div>';
 }
 window._g45NflFeuilleHtml = _g45NflFeuilleHtml;
