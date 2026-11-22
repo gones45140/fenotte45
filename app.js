@@ -74442,15 +74442,21 @@ window._g45AgOdHtml = _g45AgOdHtml; window._g45AgOdEv = _g45AgOdEv;
    NHL : buteur 230 (2 buts 39, 3 buts 40, sinon 232), passeur 219, pointeur 218 (cible = 1 / 2 / 3) ; NFL : touchdown 31 / 32 / 33 ;
    NBA : « points / rebonds / passes / 3 pts » + un nombre (« 25+ », « plus de 24,5 ») → Milestones 218 / 220 / 219 / 221. */
 var _g45AgDkM = {};
-function _g45AgDkCharger(sp, lg) {
-  var K = sp + '/' + lg, E = _g45AgDkM[K];
-  if (E && (E.P || Date.now() - E.t < 600000)) return E.P || Promise.resolve(E.M);
+/* 20261122t (« on fait trop de demandes vers ESPN ? » → « OUI ») : 3e argument facultatif = noms des 2 équipes → UN SEUL match lu (roster des
+   2 équipes + propBets : 3 demandes au lieu de ~3 par match du jour), gardé 30 min (« Ton pari ») ; sans lui, comme avant (Agenda, 10 min). */
+function _g45AgDkCharger(sp, lg, eqN) {
+  var nzE = function (t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim(); };
+  var unM = Array.isArray(eqN) && eqN.length === 2 && !!eqN[1], K = sp + '/' + lg + (unM ? '|' + nzE(eqN[0]) + '|' + nzE(eqN[1]) : ''), E = _g45AgDkM[K];
+  if (E && (E.P || Date.now() - E.t < (unM ? 1800000 : 600000))) return E.P || Promise.resolve(E.M);
   E = _g45AgDkM[K] = { t: 0, M: null };
   E.P = (async function () {
     var M = {}, nom = function (n) { return String(n || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z]/g, ''); };
     try {
       var sb = await (await fetch('https://site.api.espn.com/apis/site/v2/sports/' + sp + '/' + lg + '/scoreboard')).json();
       var q = ((sb && sb.events) || []).filter(function (e) { return !(((e.status || {}).type || {}).completed); });
+      if (unM) { var mE = function (c, n) { var a = nzE((c.team || {}).displayName), b = nzE(n), s2 = nzE((c.team || {}).shortDisplayName); return !!(b && ((a && (a === b || (' ' + a + ' ').indexOf(' ' + b + ' ') >= 0 || (' ' + b + ' ').indexOf(' ' + a + ' ') >= 0)) || (s2 && (s2 === b || (' ' + b + ' ').indexOf(' ' + s2 + ' ') >= 0)))); };
+        var q1 = q.filter(function (e) { var C = ((e.competitions || [])[0] || {}).competitors || []; return C.some(function (c) { return mE(c, eqN[1]); }); });   /* l'adversaire suffit (nom de carte « FC Barcelone » ≠ « Barcelona » chez ESPN) */
+        q = (q1.filter(function (e) { var C = ((e.competitions || [])[0] || {}).competitors || []; return C.some(function (c) { return mE(c, eqN[0]); }); })[0] || q1[0]) ? [q1.filter(function (e) { var C = ((e.competitions || [])[0] || {}).competitors || []; return C.some(function (c) { return mE(c, eqN[0]); }); })[0] || q1[0]] : []; }
       var un = async function () {
         while (q.length) {
           var e = q.shift(), noms = {};
@@ -91411,8 +91417,8 @@ function _g45ScoreRedessiner() {
   function dkJoueur(o, R) {
     if (!R || !R.jo || !R.sp || !R.lgx || typeof _g45AgDkCharger !== 'function') return null;
     var nm = jNom(o), k = R.sp + '|' + R.lgx + '|' + nm + '|' + o.lab, X = DKJ[k];
-    if (!X || Date.now() - X.t > 10 * 60e3) { if (!X || !X.en) { DKJ[k] = X = { t: Date.now(), en: 1, R: X && X.R };
-      _g45AgDkCharger(R.sp, R.lgx).then(function (M) {
+    if (!X || Date.now() - X.t > 30 * 60e3) { if (!X || !X.en) { DKJ[k] = X = { t: Date.now(), en: 1, R: X && X.R };
+      _g45AgDkCharger(R.sp, R.lgx, o.adv ? [o.u && o.u.type === 'joueur' ? ((typeof _g45UClub === 'function' ? _g45UClub(o.u) : '') || o.u.club || '') : o.nom, o.adv] : null).then(function (M) {
         var oj = _g45AgDkTrouve(M, nm), dec = R.sp === 'soccer' && /d[ée]cisif/i.test(o.lab), P = _g45AgDkPari(R.sp, dec ? 'buteur passeur' : o.lab);
         if (!oj || !P.length) return { err: 1 };
         var cs = P.map(function (q) { return _g45AgDkCote(oj, q); }), pr = function (c) { return c > 1 ? Math.min(0.97, 1 / c / 1.07) : null; };
