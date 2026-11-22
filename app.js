@@ -88214,7 +88214,9 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
         palTxt = '📉 C' + sc.p + ' sur ' + Nc + ' · ' + (sc.p > 1 ? 'pertes <b>' + euC(sc.per) + '</b> (mise selon la cote)' + ckPlusBtn('24|' + m.n + '|' + m.t) : 'mise <b>' + euC(CBm.mise(u, kcb, 0)) + '</b>');
         if (sc.p > 1) palListe = ckPlusListe('24|' + m.n + '|' + m.t, u, kcb, sc.p, 'cb');
       } else {
-        palTxt = G ? 'P' + p + ' sur ' + G.length + ' · mise <b>' + euC(mi) + '</b>' + (p > 1 && u ? ckPlusBtn('24|' + m.n + '|' + m.t) : '') : '<span style="color:#c9d3ee;">pas de grille</span>';
+        /* 20261122v : 🚀 mode unique étape 1 — à partir de P2 la mise dépend de la cote du jour (Engager) → pertes de l'échelle affichées */
+        var perM = 0; if (G && p > 1 && u) { try { perM = ckPertes(u, ckKeyLieu(u, lz), p).reduce(function (a, b) { return a + (parseFloat(b.m) || 0); }, 0); } catch (e) { perM = 0; } }
+        palTxt = G ? 'P' + p + ' sur ' + G.length + ' · ' + (perM > 0 ? 'pertes <b>' + euC(perM) + '</b> (mise selon la cote)' : 'mise <b>' + euC(mi) + '</b>') + (p > 1 && u ? ckPlusBtn('24|' + m.n + '|' + m.t) : '') : '<span style="color:#c9d3ee;">pas de grille</span>';
         if (p > 1 && u) palListe = ckPlusListe('24|' + m.n + '|' + m.t, u, ckKeyLieu(u, lz), p);
       }
       var typ = String((m.d ? Dn.dom : Dn.ext) || Dn.glob || '').replace(/📌/g, '').trim();
@@ -88828,10 +88830,25 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     if (gagne) { delete u.lcb[k]; return; }
     var n = { p: st.p + 1, prev: +mise || 0, per: (st.per || 0) + (+mise || 0) };
     if (st.p >= cbStop(u)) delete u.lcb[k]; else u.lcb[k] = n; };
+  /* ═══ 20261122v — 🚀 MODE UNIQUE, ÉTAPE 1 : MISE DU COCKPIT SELON LA COTE (maquette « mode unique » → « 2,5 et garder ») : en 🚀 Cockpit, à partir
+     de P2, la mise n'est plus la case de la grille mais la règle des Cotes basses appliquée à l'échelle de MONTANTE en cours : cote < 1,50 →
+     mise d'avant × (1 ÷ (cote − 1) + 2) ; cote ≥ 1,50 → 🛡️ × 2,5 au P2 puis × 3 (🔥 u.cbR 'a' : pertes × 3). Mise d'avant et pertes = paris
+     PERDUS de l'échelle (ckPertes, comme ➕ des Prochaines 24 h). P1 = 1re case de la grille, arrêt au bout de la grille (inchangé). Le pari reste
+     un pari de montante normal (u.lc, isS, Bilan / Archive / publication inchangés). Pertes illisibles ou cote absente → case de la grille. ═══ */
+  var monMise = function (u, k, c) {
+    if (!u || !(c > 1)) return 0;
+    var p = 1; try { var cp = ($('c-comp') && $('c-comp').value) || ''; p = typeof _g45Pal === 'function' ? _g45Pal(u, cp, lieu()) : (parseInt(u.l, 10) || 1); } catch (e) {}
+    if (p <= 1 || typeof window._g45CkPertes !== 'function') return 0;
+    var L = window._g45CkPertes(u, k, p, 'mont'); if (!L || L.length < p - 1 || !L.length) return 0;
+    var prev = parseFloat(L[0].m) || 0, per = L.reduce(function (a, b) { return a + (parseFloat(b.m) || 0); }, 0); if (!(prev > 0)) return 0;
+    return Math.ceil((c < 1.5 ? prev * (1 / (c - 1) + 2) : (cbR(u) === 'a' ? per * 3 : prev * (p === 2 ? 2.5 : 3))) * 100) / 100;
+  };
+  window._g45MonMise = monMise;   /* tests */
   window._g45CbMeth = { mise: cbMise, avance: cbAvance, st: cbSt, saute: cbSaute, stop: cbStop };   /* tests ; 20261121f : stop pour Prochaines 24 h */
   /* la mise dépend de la cote : on recalcule quand la cote du ticket change (renderMmCote = cote combinée / cote réelle) */
   try { if (typeof renderMmCote === 'function' && !renderMmCote._cb) { var _rmc0 = renderMmCote; renderMmCote = window.renderMmCote = function () { var r = _rmc0.apply(this, arguments);
-    try { if (meth() === 'cb') { var u = carte(), mi = $('c-mise'); if (u && mi && !mi._g45Man) { var v = cbMise(u, cle(), cbCote()); if (v) mi.value = v; else if (cbSaute(u, cbCote())) mi.value = ''; } dessiner(); } } catch (e) {} return r; }; renderMmCote._cb = 1; } } catch (e) {}
+    try { if (meth() === 'cb') { var u = carte(), mi = $('c-mise'); if (u && mi && !mi._g45Man) { var v = cbMise(u, cle(), cbCote()); if (v) mi.value = v; else if (cbSaute(u, cbCote())) mi.value = ''; } dessiner(); }
+      else if (meth() === 'mont') { var u2 = carte(), mi2 = $('c-mise'); if (u2 && mi2 && !mi2._g45Man) { var v2 = monMise(u2, cle(), cbCote()); if (v2) mi2.value = v2; } } } catch (e) {} return r; };   /* 20261122v */ renderMmCote._cb = 1; } } catch (e) {}
   /* 20261106w (capture d'Antoine : pari Cockpit placé avec 🪜 D'Alembert encore actif → enregistré en pari simple) : méthode PAS gardée d'une
      visite à l'autre (plus de localStorage) → Engager s'ouvre toujours sur 🚀 Cockpit ; confirmation avant un pari Fibonacci / D'Alembert. */
   var meth = function () { var m = window._g45EngMeth || 'mont'; return (SEQ[m] || m === 'cb') ? m : 'mont'; };
@@ -89066,6 +89083,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   var um0 = window.updMise;
   if (typeof um0 === 'function') window.updMise = updMise = function () {
     var r = um0.apply(this, arguments);
+    try { var m0 = meth(), u0 = carte(), mi0 = $('c-mise'); if (m0 === 'mont' && u0 && mi0 && !mi0._g45Man) { var vm = monMise(u0, cle(), cbCote()); if (vm) mi0.value = vm; } } catch (e) {}   /* 20261122v */
     try { var m = meth(), u = carte(), mi = $('c-mise'); if (m !== 'mont' && u && mi && !mi._g45Man) { var v = m === 'cb' ? cbMise(u, cle(), cbCote()) : miseDe(u, m, palM(u, m, cle())); if (v) mi.value = v; else if (m === 'cb' && (cbSaute(u, cbCote()) || (!cbCote() && cbSt(u, cle()).p > 1))) mi.value = '';
       /* 20261121k (capture Engager 📉 « Leon Draisaitl (📉 C2) », mise 7.74 = celle du 🚀 : « ça calcule pas ») : sans cote, la mise 📉 d'un C2+
          est inconnue → champ vidé (plus la mise 🚀 restée) avec l'invite « 📉 mets la cote » ; elle se calcule dès que la cote est tapée. */
