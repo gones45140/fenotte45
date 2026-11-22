@@ -76396,18 +76396,25 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
             St = {}; (cat.labels || []).forEach(function (l, i) { St[l] = parseFloat((a.stats || [])[i]) || 0; }); }); }); });
           if (St) {
             var nb = (/(\d+)\s*ou plus/.exec(ty) || [])[1], seuil = nb ? +nb : 1, val = null, lib = '';
-            var ln = /([+-])\s*de\s*(\d+(?:[.,]\d+)?)/.exec(ty), lig = ln ? parseFloat(ln[2].replace(',', '.')) : null;
+            var ln = /([+-])\s*de\s*(\d+(?:[.,]\d+)?)/.exec(ty);
+            /* 20261122d (capture pari Wembanyama « Total du joueur (passes + rebond)=Over 14.5 » en direct : « 🎯 Wembanyama : 9 rebonds ✅ » 🤣) :
+               « Over / plus de X » et « Under / moins de X » sont des lignes aussi (avant : seulement « + de X »), et en NBA les stats
+               citées ensemble s'ADDITIONNENT (passes + rebonds = AST + REB). */
+            if (!ln) { var lo = /(?:over|plus de)\s*(\d+(?:[.,]\d+)?)/.exec(ty), lu = /(?:under|moins de)\s*(\d+(?:[.,]\d+)?)/.exec(ty); if (lo) ln = [lo[0], '+', lo[1]]; else if (lu) ln = [lu[0], '-', lu[1]]; }
+            var lig = ln ? parseFloat(ln[2].replace(',', '.')) : null;
             if (meta.sp === 'hockey') {
               if (/pointeur|point/.test(ty)) { val = (St.G || 0) + (St.A || 0); lib = 'point'; }
               else if (/passe/.test(ty)) { val = St.A || 0; lib = 'passe'; }
               else if (/buteur|but/.test(ty)) { val = St.G || 0; lib = 'but'; }
             } else {
-              if (/rebond/.test(ty)) { val = St.REB || 0; lib = 'rebond'; } else if (/passe/.test(ty)) { val = St.AST || 0; lib = 'passe'; } else if (/point/.test(ty)) { val = St.PTS || 0; lib = 'point'; }
+              var kP = /\bpoints?\b|\bpts\b/.test(ty.replace(/3\s*points?/g, '')), kR = /rebond/.test(ty), kA = /passe/.test(ty), nK = (kP ? 1 : 0) + (kR ? 1 : 0) + (kA ? 1 : 0);
+              if (nK > 1) { val = (kP ? St.PTS || 0 : 0) + (kR ? St.REB || 0 : 0) + (kA ? St.AST || 0 : 0); lib = [kP ? 'pts' : '', kR ? 'reb' : '', kA ? 'passes' : ''].filter(Boolean).join(' + '); }
+              else if (kR) { val = St.REB || 0; lib = 'rebond'; } else if (kA) { val = St.AST || 0; lib = 'passe'; } else if (kP) { val = St.PTS || 0; lib = 'point'; }
             }
             if (val != null) {
               var ok = lig != null ? (ln[1] === '+' ? val > lig : val < lig) : val >= seuil;
               var nomC = String(jn).split(' ').slice(-1)[0];
-              pj = ' · 🎯 ' + esc(nomC) + ' : ' + val + ' ' + lib + (val > 1 ? 's' : '') + (ok ? (enCours && lig != null && ln[1] === '-' ? ' ⏳' : ' ✅') : (enCours ? ' ⏳' : ' ❌'));
+              pj = ' · 🎯 ' + esc(nomC) + ' : ' + val + ' ' + lib + (val > 1 && !/\+/.test(lib) ? 's' : '') + (lig != null ? ' / ' + String(lig).replace('.', ',') : '') + (ok ? (enCours && lig != null && ln[1] === '-' ? ' ⏳' : ' ✅') : (enCours ? ' ⏳' : ' ❌'));
               if (st.state === 'post') pj += ok ? ' gagné' : ' perdu';
             }
           }
