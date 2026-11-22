@@ -86484,6 +86484,18 @@ window._g45TrTestVoit = function () { try { return (typeof _g45SanteActive === '
         u.lc[ck] = v; n++;
       });
     });
+    /* 20261124b (carte San Francisco 49ers 🏈 avec une pastille « Nhl ✈️ Palier 3 », aucun pari 49ers en NHL : pari réglé pendant qu'il
+       portait la compétition NHL, corrigé en NFL ensuite) : palier d'une LIGUE D'UN AUTRE SPORT que la carte (nhl / khl 🏒, nfl 🏈,
+       nba / euroleague 🏀, mlb ⚾) et sans aucun pari de la carte dans cette compétition → retiré. */
+    var SPL = { nhl: '🏒', khl: '🏒', nfl: '🏈', nba: '🏀', euroleague: '🏀', mlb: '⚾' };
+    state.u.forEach(function (u) {
+      if (!u || !u.lc || !u.sport) return;
+      Object.keys(u.lc).forEach(function (k) {
+        var c = k.split('|')[0], e = SPL[c]; if (!e || String(u.sport).indexOf(e) >= 0) return;
+        if (paris.some(function (h) { return h && h.n === u.n && _g45CompNz(h.comp) === c; })) return;
+        delete u.lc[k]; n++;
+      });
+    });
     if (n) { try { save(); } catch (e) {} }
     return n;
   };
