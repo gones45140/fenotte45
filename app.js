@@ -91332,6 +91332,53 @@ function _g45ScoreRedessiner() {
   }
   window._g45TkPois = poisEst;   /* tests */
   window._g45TkBL = function (L) { BLG = { t: Date.now(), L: L }; };   /* tests */
+  /* ═══ 20261122n — ⚽ CALÉE SUR DRAFTKINGS (« 2,69 encore trop haut, faut être proche de Wina et Draft » ; SONDES d'Antoine Barça – Villarreal
+     401882804 : odds/100 moneyLine −525 / 700 / 1100, total 4,5 ; propBets 152 les deux marquent [oui 1,46, non 2,70] (current.over.decimal,
+     ORDRE oui puis non), 253 buts de chaque équipe (team id, cible 0,5…6,5, plus puis moins), 256 clean sheet) : buts attendus des deux équipes
+     (Poisson) ajustés pour coller à TOUTES ces cotes (marge retirée paire par paire) → le pari passé sur chaque score (grille R.po.G).
+     Barça – Villarreal : λ 3,46 / 1,11 → V + BTS 2,04, V + U4,5 2,64, victoire 1,23. Estimation PRINCIPALE quand les cotes existent ; le modèle
+     des archives reste affiché pour info. Une lecture / 30 min par match. ═══ */
+  var DKF = {};
+  var dkPo = function (l, k) { var p = Math.exp(-l); for (var i = 1; i <= k; i++) p *= l / i; return p; };
+  function dkAjuste(Q) {   /* Q = { w, d, b, T: [[ligne, p plus]], A: [[ligne, p plus]] } → { h, a } buts attendus (maison / extérieur) */
+    var tail = function (l, L) { var c = 0; for (var k = 0; k <= Math.floor(L); k++) c += dkPo(l, k); return 1 - c; };
+    var err = function (a, b) { var e = 0, w = 0, d = 0, bt = 0, PA = [], PB = []; for (var i = 0; i <= 12; i++) { PA.push(dkPo(a, i)); PB.push(dkPo(b, i)); }
+      for (i = 0; i <= 12; i++) for (var j = 0; j <= 12; j++) { var q = PA[i] * PB[j]; if (i > j) w += q; else if (i === j) d += q; if (i > 0 && j > 0) bt += q; }
+      if (Q.w != null) e += (w - Q.w) * (w - Q.w) + (d - Q.d) * (d - Q.d); if (Q.b != null) e += (bt - Q.b) * (bt - Q.b);
+      (Q.T || []).forEach(function (x) { var t = tail(a, x[0]) - x[1]; e += t * t; }); (Q.A || []).forEach(function (x) { var t = tail(b, x[0]) - x[1]; e += t * t; }); return e; };
+    var best = null, pas = function (a0, a1, b0, b1, st) { for (var a = a0; a <= a1; a += st) for (var b = b0; b <= b1; b += st) { var e = err(a, b); if (!best || e < best.e) best = { a: a, b: b, e: e }; } };
+    pas(0.2, 5, 0.1, 4, 0.1); var A0 = best.a, B0 = best.b; pas(Math.max(0.05, A0 - 0.12), A0 + 0.12, Math.max(0.05, B0 - 0.12), B0 + 0.12, 0.01);
+    return { h: best.a, a: best.b };
+  }
+  window._g45TkDkAjuste = dkAjuste;   /* tests */
+  function dkFoot(o, R) {
+    var T = R && R.po; if (!T || !T.G || !T.lg || !o.nom || !o.adv || !/^\d{4}-\d\d-\d\d$/.test(o.date)) return null;
+    var k = T.lg + '|' + o.nom + '|' + o.adv + '|' + o.date, X = DKF[k];
+    if (!X || Date.now() - X.t > 30 * 60e3) { if (!X || !X.en) { DKF[k] = X = { t: Date.now(), en: 1, Q: X && X.Q };
+      (async function () {
+        var j = async function (u) { try { var r = await fetch(u); if (r.ok) return await r.json(); } catch (e) {} return null; };
+        var d = o.date.replace(/-/g, ''), sb = await j('https://site.api.espn.com/apis/site/v2/sports/soccer/' + T.lg + '/scoreboard?dates=' + d);
+        var ev = ((sb && sb.events) || []).filter(function (e) { var C = ((e.competitions || [])[0] || {}).competitors || []; return C.some(function (c) { return memeA((c.team || {}).displayName, o.nom) || memeA((c.team || {}).shortDisplayName, o.nom); }) && C.some(function (c) { return memeA((c.team || {}).displayName, o.adv) || memeA((c.team || {}).shortDisplayName, o.adv); }); })[0];
+        if (!ev) return { err: 'match introuvable chez ESPN' };
+        var C = ((ev.competitions || [])[0] || {}).competitors || [], H = C.filter(function (c) { return c.homeAway === 'home'; })[0] || {}, Aw = C.filter(function (c) { return c.homeAway === 'away'; })[0] || {};
+        var b = 'https://sports.core.api.espn.com/v2/sports/soccer/leagues/' + T.lg + '/events/' + ev.id + '/competitions/' + ev.id + '/odds';
+        var od = await j(b), pb = await j(b + '/100/propBets?limit=1000'), it = ((od && od.items) || []).filter(function (x) { return x && x.homeTeamOdds; })[0];
+        var am = function (v) { v = parseFloat(v); return v >= 100 ? 1 + v / 100 : v <= -100 ? 1 + 100 / -v : null; }, Q = { T: [], A: [] };
+        if (it) { var ch = am((it.homeTeamOdds || {}).moneyLine), cd = am((it.drawOdds || {}).moneyLine), ca = am((it.awayTeamOdds || {}).moneyLine);
+          if (ch && cd && ca) { var s = 1 / ch + 1 / cd + 1 / ca; Q.w = (1 / ch) / s; Q.d = (1 / cd) / s; Q.ml = [ch, cd, ca]; } }
+        var P = (pb && pb.items) || [], co = function (x) { return typeof _g45NhlDkCote === 'function' ? _g45NhlDkCote(x) : null; };
+        var B = typeof _g45AgBtsLire === 'function' ? _g45AgBtsLire(P) : null; if (B && B.o > 1 && B.n > 1) { Q.b = (1 / B.o) / (1 / B.o + 1 / B.n); Q.bts = B.o; }
+        var tid = function (x) { var r = ((x.team || {}).$ref) || ''; var m = /teams\/(\d+)/.exec(r); return m ? m[1] : ''; }, par = {};
+        P.filter(function (x) { return String((x.type || {}).id) === '253'; }).forEach(function (x) { var t = tid(x), L = parseFloat(((x.current || {}).target || {}).value), c = co(x); if (!t || !(L >= 0) || !(c > 1)) return; var K = t + '|' + L; (par[K] = par[K] || []).push(c); });
+        Object.keys(par).forEach(function (K) { var v = par[K]; if (v.length < 2) return; var t = K.split('|')[0], L = +K.split('|')[1], p = (1 / v[0]) / (1 / v[0] + 1 / v[1]); (t === String((H.team || {}).id) ? Q.T : t === String((Aw.team || {}).id) ? Q.A : []).push([L, p]); });
+        if (Q.w == null && !Q.T.length) return { err: 'pas de cotes DraftKings' };
+        var F = dkAjuste(Q); F.Q = Q; F.home = memeA((H.team || {}).displayName, o.nom) || memeA((H.team || {}).shortDisplayName, o.nom); return F;
+      })().then(function (F) { DKF[k] = { t: Date.now(), F: F || { err: 'rien' } }; }, function () { DKF[k] = { t: Date.now(), F: { err: 'lecture impossible' } }; }).then(function () { SIG.strat = ''; SIG.simple = ''; try { poser(); } catch (e) {} }); } }
+    var F = X.F; if (!F || F.err) return null;
+    var LT = F.home ? F.h : F.a, LA = F.home ? F.a : F.h, p = 0;
+    for (var i = 0; i <= 10; i++) for (var jj = 0; jj <= 10; jj++) if (T.G[i][jj]) p += dkPo(LT, i) * dkPo(LA, jj);
+    return { p: Math.min(0.97, Math.max(0.03, p)), LT: LT, LA: LA, Q: F.Q };
+  }
   function fiche(o, sansCote) {   /* sansCote : 2e colonne (adversaire), fiche 📋 + match par match seulement */
     var k = cle(o), R = RES[k];
     if (!o.nom || !o.lab) return '';
@@ -91359,7 +91406,8 @@ function _g45ScoreRedessiner() {
     else if (wHF) estM = (1 - wHF) * estM + wHF * HF.p;
     /* 20261120x : 📚 DraftKings + archives = estimation PRINCIPALE en NHL / NBA / NFL quand elle existe ; l'historique des équipes reste en dessous (pour info) */
     var SBr = null; try { SBr = R.jo ? null : sembDe(o); } catch (e) {} var estH = estM, sbOk = !!(SBr && SBr.p != null && SBr.p > 0);
-    if (sbOk) estM = SBr.p;
+    var DKP = null; try { DKP = sbOk ? null : dkFoot(o, R); } catch (e) { DKP = null; }   /* 20261122n */
+    if (sbOk) estM = SBr.p; else if (DKP) estM = DKP.p;
     var ce = estM ? 1 / estM : 0, h = '<div style="' + BOX + '"><div style="font-size:14px;font-weight:800;color:#ffd34d;margin-bottom:6px;">🎯 COTE ESTIMÉE</div>';
     if (!ce) h += '<div style="font-size:15px;">Jamais passé sur ces matchs : pas d\'estimation.</div>';
     else {
@@ -91372,7 +91420,9 @@ function _g45ScoreRedessiner() {
         + (o.cote ? (function () { var mg = 0.12; return '<div style="font-size:13px;color:#c9d3ee;">Book sans sa marge (≈ ' + Math.round(mg * 100) + ' %) : <b style="color:#fff;">' + f2(o.cote * (1 + mg)) + '</b> · notre cote avec cette marge : <b style="color:#fff;">' + f2(ce / (1 + mg)) + '</b></div>'; })() : '')
         + (R.jo && R.GA ? '<div style="font-size:14px;margin-top:4px;">🛡️ ' + esc(o.adv) + (R.GA.la === 'a' ? ' ✈️' : R.GA.la === 'h' ? ' 🏠' : '') + ' encaisse <b>' + String(Math.round(R.GA.ga * 100) / 100).replace('.', ',') + '</b> ' + (R.sp === 'basketball' || R.sp === 'football' ? 'points' : 'buts') + '/match (moyenne ' + ({ hockey: 'NHL', basketball: 'NBA', football: 'NFL' }[R.sp] || 'du championnat') + ' ' + String(Math.round(R.GA.gl * 100) / 100).replace('.', ',') + ') → <b style="color:' + (R.GA.r >= 1 ? '#1ed760' : '#ff9f43') + ';">' + (R.GA.r >= 1 ? '+' : '') + Math.round((R.GA.r - 1) * 100) + ' %</b><br><span style="font-size:13px;color:#dfe6f7;">' + esc(o.nom) + ' : ' + pcT(R.pT) + ' → ajusté <b>' + pcT(R.pA) + '</b></span></div>' : (R.jo && o.adv ? '<div style="font-size:13px;color:#c9d3ee;margin-top:3px;">🛡️ Buts encaissés par ' + esc(o.adv) + ' : pas assez de matchs lus.</div>' : ''))
         + (sbOk ? '<div style="font-size:14px;margin-top:4px;">📚 <b>DraftKings + archives : ' + pcC(SBr.p) + '</b> · ' + SBr.n + ' matchs semblables (' + (SBr.pV >= 0.5 ? 'favori' : 'outsider') + ' à ' + Math.round(SBr.lo * 100) + '–' + Math.round(SBr.hi * 100) + ' %' + (SBr.L != null ? ', total ' + String(SBr.L).replace('.', ',') : '') + ')</div>' : (SBr === null && absCle(o) ? '' : ''))
-        + (PSN && !sbOk ? '<div style="font-size:13px;color:#dfe6f7;margin-top:3px;">' + pcT(estM) + ' estimé ⚽ par les buts : ' + esc(o.nom) + ' ≈ ' + f2(PSN.LT) + ' but' + (PSN.LT >= 2 ? 's' : '') + ', ' + esc(oA.nom) + ' ≈ ' + f2(PSN.LA) + ' (modèle ' + pcC(PSN.pm) + ', 80 %) + ' + esc(o.nom) + ' récent ' + pcC(PSN.own) + ' (20 %)' + (HF ? ' · face-à-face ' + pcC(HF.p) + ' compté ' + (wHF < 0.01 ? '< 1' : Math.round(wHF * 100)) + ' %' : '') + '</div>' : '')
+        + (DKP ? '<div style="font-size:14px;margin-top:4px;">📚 <b>Calée sur DraftKings : ' + pcC(DKP.p) + '</b> · buts attendus ' + esc(o.nom) + ' ' + f2(DKP.LT) + ', ' + esc(o.adv) + ' ' + f2(DKP.LA)
+            + (DKP.Q && DKP.Q.ml ? ' (1N2 ' + DKP.Q.ml.map(f2).join(' / ') + (DKP.Q.bts ? ' · les deux marquent ' + f2(DKP.Q.bts) : '') + ')' : '') + '</div>' : '')
+        + (PSN && !sbOk ? '<div style="font-size:13px;color:#dfe6f7;margin-top:3px;">' + (DKP ? '📋 Nos archives (pour info) : ' + pcC(PSN.p) : pcT(estM) + ' estimé') + ' ⚽ par les buts : ' + esc(o.nom) + ' ≈ ' + f2(PSN.LT) + ' but' + (PSN.LT >= 2 ? 's' : '') + ', ' + esc(oA.nom) + ' ≈ ' + f2(PSN.LA) + ' (modèle ' + pcC(PSN.pm) + ', 80 %) + ' + esc(o.nom) + ' récent ' + pcC(PSN.own) + ' (20 %)' + (HF ? ' · face-à-face ' + pcC(HF.p) + ' compté ' + (wHF < 0.01 ? '< 1' : Math.round(wHF * 100)) + ' %' : '') + '</div>' : '')
         + '<div style="font-size:13px;color:#dfe6f7;margin-top:3px;">' + (sbOk ? '📋 Historique des équipes (pour info) : ' + pcC(estH) + ' = moyenne de ' : PSN ? 'Ancienne méthode (pour info) : ' + pcC(estMoy) + ' = moyenne de ' : pcT(estM) + ' estimé = moyenne de ') + esc(o.nom) + (R.jo && R.GA ? ' ajusté ' + pcC(R.pA) : ' ' + pcC(R.pT)) + (okA ? ' · ' + esc(oA.nom) + ' ' + pcC(RA.pT) : '') + (HF ? ' · face-à-face ' + pcC(HF.p) + ' compté ' + (wHF < 0.01 ? '< 1' : Math.round(wHF * 100)) + ' % (' + HF.n + ' matchs)' : '') + ' (5 saisons)</div>'
         + '<div style="font-size:12px;color:#9fb0d6;margin-top:3px;">Pour info :</div>'
         + '<div style="font-size:13px;color:#c9d3ee;">' + esc(o.nom) + (o.lieu === 'dom' ? ' 🏠' : o.lieu === 'ext' ? ' ✈️' : '') + ' : 10 derniers ' + pcC(R.p10) + ' · 2 saisons ' + pcC(R.p2) + ' · tout ' + pcC(R.pT) + '</div>'
