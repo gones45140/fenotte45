@@ -91597,7 +91597,7 @@ function _g45ScoreRedessiner() {
   function estNhlJ(o) { if (!o || !spJ(o)) return false; if (o.u && o.u.type === 'joueur') return true; try { return !!(o.jn && o.lab && jPari(o.lab, spJ(o))); } catch (e) { return false; } }   /* 20261120c (NHL) → 20261120f : NHL, foot, NBA, NFL ; 20261122p : + joueur écrit sur une carte d'équipe */
   var TKNS = 5; try { TKNS = Math.min(5, Math.max(2, parseInt(localStorage.getItem('g45tkns'), 10) || 5)); } catch (e) {}   /* 20261122s */
   window.g45TkNs = function (n) { TKNS = Math.min(5, Math.max(2, +n || 5)); try { localStorage.setItem('g45tkns', String(TKNS)); } catch (e) {} SIG.strat = ''; SIG.simple = ''; poser(); };
-  function jNom(o) { return o.u && o.u.type === 'joueur' ? o.nom : (o.jn || o.nom); }
+  function jNom(o) { if (o && o._jf) return o._jf; return o.u && o.u.type === 'joueur' ? o.nom : (o.jn || o.nom); }   /* 20261124d : _jf = joueur imposé (dkMulti) */
   function cle(o) { return o.nom + '|' + o.lieu + '|' + o.lab + (o.meth === 'cb' ? '|cb' : '') + (o.ft ? '' : '|x') + (estNhlJ(o) ? '|j|' + (o.adv || '') + '|' + ((o.jns && o.jns.length > 1) ? o.jns.join('+') + '|' + o.jmo : (o.jn || '')) : '') + '|s' + TKNS; }
   /* 20261119t (Lyon ✈️ Victoire + BTS : BET45 6,93 / book 4,70 « ça fait une sacrée différence » → « on ajoute l'adversaire ? » → « oui ») :
      comme la Calculatrice Cote juste, % = moyenne des 2 équipes. Adversaire = champ Adversaire, lieu inverse, pari vu de son côté
@@ -91824,7 +91824,7 @@ function _g45ScoreRedessiner() {
   }
   window._g45TkDkJ = dkJoueur;   /* tests */
   function dkMulti(o, R) {
-    var DL = o.jns.map(function (n) { return dkJoueur(Object.assign({}, o, { jn: n }), R); }); if (!DL.every(Boolean)) return null;
+    var DL = o.jns.map(function (n) { return dkJoueur(Object.assign({}, o, { jn: n, _jf: n }), R); }); if (!DL.every(Boolean)) return null;   /* 20261124d : _jf (sinon carte JOUEUR → toujours le joueur de la carte) */
     var et = o.jmo === 'et', pr = DL.reduce(function (a, d) { return et ? a * d.p : a * (1 - d.p); }, 1);
     return { p: Math.min(0.97, Math.max(0.03, et ? pr : 1 - pr)), lib: o.jns.map(function (n, i) { return n + ' ' + DL[i].lib; }).join(et ? ' ET ' : ' OU ') + (et ? ' (tous)' : ' (au moins un)'), multi: 1 };
   }
@@ -91858,7 +91858,10 @@ function _g45ScoreRedessiner() {
     var SBr = null; try { SBr = R.jo ? null : sembDe(o); } catch (e) {} var estH = estM, sbOk = !!(SBr && SBr.p != null && SBr.p > 0);
     var DKP = null; try { DKP = sbOk ? null : dkFoot(o, R); } catch (e) { DKP = null; }   /* 20261122n */
     var DJ = null; try { DJ = R.jo ? dkJoueur(o, R) : null; } catch (e) { DJ = null; }   /* 20261122p */
-    try { if (R.jo && o.jns && o.jns.length > 1 && !(o.u && o.u.type === 'joueur')) DJ = dkMulti(o, R); } catch (e) { DJ = null; }   /* 20261123b : plusieurs joueurs */
+    /* 20261124d (capture Cockpit carte Connor McDavid, ticket Winamax « Double chance Buteur » Draisaitl ou McDavid 1,35 : cote estimée 2,51 =
+       McDavid SEUL, « le book paie 46 % de moins ») : le calcul à plusieurs joueurs est aussi fait quand la carte est un JOUEUR (avant : coupé,
+       jNom rendait toujours le joueur de la carte). */
+    try { if (R.jo && o.jns && o.jns.length > 1) DJ = dkMulti(o, R); } catch (e) { DJ = null; }   /* 20261123b : plusieurs joueurs */
     if (sbOk) estM = SBr.p; else if (DKP) estM = DKP.p; else if (DJ) estM = DJ.p;
     var ce = estM ? 1 / estM : 0, h = '<div style="' + BOX + '"><div style="font-size:14px;font-weight:800;color:#ffd34d;margin-bottom:6px;">🎯 COTE ESTIMÉE</div>';
     if (!ce) h += '<div style="font-size:15px;">Jamais passé sur ces matchs : pas d\'estimation.</div>';
