@@ -76416,6 +76416,40 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     memSb[k] = { t: Date.now(), p: p };
     return p;
   }
+  /* ═══ 20261123q (capture pari en cours Zverev – Alcaraz, finale ATP, « pas de live ? » alors qu'ESPN montre « 1er set 1-3 ») : TENNIS en
+     direct. Le direct des autres sports passe par _g45MatchMeta (n° de match ESPN) que le tennis n'a pas → scoreboard ESPN tennis (atp puis
+     wta) du jour du pari, match retrouvé par les NOMS DE FAMILLE des deux joueurs (groupings simples) ; affichage « 🔴 EN DIRECT · Zverev 4-6
+     · 1-3 Alcaraz (2e set) » ; pari « remporter un set : X » → ✅ dès que X a gagné un set, ❌ si match fini sans ; « vainqueur / gagne X »
+     → sets gagnés comparés à la fin. ═══ */
+  async function tnLive(h) {
+    var nn = function (x) { return String(x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z]/g, ''); };
+    var P = titre(h).split(' – ').map(function (x) { return x.trim(); }).filter(Boolean); if (P.length !== 2) return '';
+    var fam = function (x) { return nn(String(x).trim().split(/\s+/).slice(-1)[0]); }, F = P.map(fam);
+    var ymd = String(h.date || '').slice(0, 10).replace(/-/g, ''), C = null;
+    for (var li = 0; li < 2 && !C; li++) { var j = await sb('tennis', ['atp', 'wta'][li], ymd);
+      ((j && j.events) || []).forEach(function (ev) { (ev.groupings || []).forEach(function (g) { if (!/singles/i.test((g.grouping && g.grouping.displayName) || '')) return;
+        (g.competitions || []).forEach(function (c) { if (C) return; var cs = c.competitors || []; if (cs.length !== 2) return;
+          var N = cs.map(function (x) { return fam(((x.athlete || {}).displayName) || ((x.athlete || {}).shortName) || ''); });
+          if ((N[0] === F[0] && N[1] === F[1]) || (N[0] === F[1] && N[1] === F[0])) C = c; }); }); }); }
+    if (!C) return '';
+    var st = (C.status && C.status.type) || {}; if (st.state !== 'in' && st.state !== 'post') return '';
+    var cs = C.competitors, i0 = fam(((cs[0].athlete || {}).displayName) || '') === F[0] ? 0 : 1, A = cs[i0], B = cs[1 - i0];
+    var la = (A.linescores || []).map(function (l) { return +l.value || 0; }), lb = (B.linescores || []).map(function (l) { return +l.value || 0; });
+    var enCours = st.state === 'in', nS = Math.max(la.length, lb.length), fini = function (k) { return !enCours || k < nS - 1; };
+    var sA = 0, sB = 0; for (var k = 0; k < nS; k++) { if (!fini(k)) continue; if ((la[k] || 0) > (lb[k] || 0)) sA++; else if ((lb[k] || 0) > (la[k] || 0)) sB++; }
+    var sets = []; for (var q = 0; q < nS; q++) sets.push((la[q] || 0) + '-' + (lb[q] || 0));
+    var ty = nn(String(h.type || '')), ok = null;
+    var cibleA = ty.indexOf(F[0]) >= 0, cibleB = ty.indexOf(F[1]) >= 0, gA = cibleA && !cibleB ? sA : cibleB && !cibleA ? sB : null, gB = cibleA && !cibleB ? sB : cibleB && !cibleA ? sA : null;
+    if (gA != null) {
+      if (/set/.test(ty) && /remporter|gagner|gagne|win|aumoinsun/.test(ty)) ok = gA >= 1 ? true : (enCours ? null : false);
+      else if (/vainqueur|gagne|victoire|win|resultat/.test(ty) && !/set/.test(ty)) ok = enCours ? null : gA > gB;
+    }
+    var col = enCours ? '#ff4545' : '#c9d3ee', nomA = esc(String(P[0]).split(/\s+/).slice(-1)[0]), nomB = esc(String(P[1]).split(/\s+/).slice(-1)[0]);
+    return '<span style="display:inline-block;margin-top:6px;font-size:13px;font-weight:800;background:' + (enCours ? 'rgba(255,69,69,.18)' : 'rgba(255,255,255,.08)') + ';border:1px solid ' + col + ';border-radius:6px;padding:2px 8px;">'
+      + (enCours ? '🔴 EN DIRECT · ' : '🏁 Terminé · ') + nomA + ' ' + sets.join(' · ') + ' ' + nomB + (enCours ? ' (' + nS + (nS === 1 ? 'er' : 'e') + ' set)' : '')
+      + (ok === true ? ' · ✅ gagné' : ok === false ? ' · ❌ perdu' : (gA != null && enCours ? ' · ⏳' : '')) + '</span>';
+  }
+  window._g45TnLive = tnLive;   /* tests */
   async function direct() {
     var H = (typeof state !== 'undefined' && state && state.h) || [];
     var zones = document.querySelectorAll('[data-g45ecl]');
@@ -76423,6 +76457,8 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       var z = zones[i], h = H.filter(function (x) { return x && String(x.id) === z.getAttribute('data-g45ecl'); })[0];
       if (!h || h.isCombi) continue;
       var t0 = debut(h); if (!t0 || Date.now() < t0 - 5 * 60000 || Date.now() > t0 + 3.5 * 3600000) continue;
+      var spH = ''; try { spH = String((typeof _g45ParisSport === 'function' && _g45ParisSport(h)) || h.sport || ''); } catch (e) {}
+      if (/🎾/.test(spH)) { try { var tzH = await tnLive(h); if (tzH) z.innerHTML = tzH; } catch (e) {} continue; }   /* 20261123q */
       var meta = (typeof _g45MatchMeta === 'function') ? _g45MatchMeta(h) : null;
       if (!meta || !meta.eid || !meta.sp || !meta.lg) continue;
       var j = null; try { j = await sb(meta.sp, meta.lg, String(h.date).slice(0, 10).replace(/-/g, '')); } catch (e) {}
