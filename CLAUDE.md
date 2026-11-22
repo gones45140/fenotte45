@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action (il est court exprès). Le détail de tout l'historique est dans HISTORIQUE.md
-(à chercher avec grep, jamais à lire en entier). Mis à jour le 31/10/2026 (version déployée : 20261123d, même app.js sur gones45 et fenotte45).
+(à chercher avec grep, jamais à lire en entier). Mis à jour le 31/10/2026 (version déployée : 20261123e, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -158,7 +158,7 @@ PIÈGES À NE JAMAIS OUBLIER :
 - 📊 Classement NHL Global / Domicile / Extérieur : FAIT (20261108f, archives) — à confirmer à l'écran par Antoine.
 - 🏁 « Jouable en Cockpit ? » JOUEURS NHL / NBA / NFL : FAIT (20261107b, usClsJHtml ; vérifié archives NHL pointeur 🏠 : McDavid / Draisaitl / Pastrnak pire 2, Zacha 5) — à confirmer à l'écran par Antoine.
 - 🎯 Calculatrice Cote juste : FAIT (20261108f bloc + 20261108g match : championnat, 🏠 / ✈️, panneau de critères complet, marge du book) — à confirmer à l'écran par Antoine.
-- 🏀🏈 « Quart-temps avec le plus de points » NBA / NFL (Antoine 07/11, capture Winamax « mi-temps avec le plus de buts ») : archives = score final seul → ajouter les scores par quart-temps au robot cotes-archive (ESPN linescores, SONDER d'abord) + rattrapage 4 saisons, puis critère 1er/2e/3e/4e/égalité. Foot (mh) FAIT 20261109e ; NHL = tqm déjà fait.
+- 🏀🏈 « Quart-temps / mi-temps avec le plus de points » NBA / NFL : FAIT 20261123e (archives pe, onglet ⏱️ Quart-temps) — à confirmer à l'écran par Antoine.
 - 📊 Loi des séries vers le 16/12 : refaire le tableau par tranche de cote des pépites (seuil « non compté » à 6 depuis 20261116h, passé à 4 le 19/11 par Antoine (20261119d) → regarder la tranche 3–4).
 - 👤 Pépites JOUEURS de la Loi des séries (18/11, NHL / foot / NBA / NFL, règles dans HISTORIQUE 20261118h → s) : « on laisse comme cela, on ajustera plus tard » (bruit NBA, seuils saison entière, cote 1,60 NBA). Vers le 19/12 : bilan des pépites joueurs retirées « book trop loin » (nf 6, écart > × 1,40) → resserrer / desserrer la limite.
 - 🎯 Cote estimée US (19/11, tests archives : NHL 1 740 m., NBA 1 540 m. → historique des équipes ≈ pas mieux qu'une constante ; foot 1 894 m. → historique OK) : ligne « 📚 DraftKings + archives » dans « Ton pari » FAITE (20261120x, robot semblables.yml) — à confirmer à l'écran par Antoine ; face-à-face proportionnel (w) FAIT. 🚑 Absents dans « Ton pari » FAIT (20261120v, NHL / NBA / NFL, summary ESPN) — foot à sonder ; à confirmer à l'écran par Antoine.
