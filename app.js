@@ -91636,6 +91636,15 @@ function _g45ScoreRedessiner() {
     var A = AB[k];
     if (!A || Date.now() - A.t > 30 * 60e3) { if (!A || !A.en) { AB[k] = A = { t: Date.now(), en: 1, R: A && A.R }; absCharger(o, k).then(function (R) { AB[k] = { t: Date.now(), R: R }; }, function () { AB[k] = { t: Date.now(), R: { err: 'réseau' } }; }).then(function () { SIG.strat = ''; SIG.simple = ''; }); } }
     var R = A.R; if (!R) return '<div style="' + BOX + 'font-size:14px;">🚑 Absents… ⏳</div>';
+    /* 20261123w (ligue1.com « compositions probables » montré par Antoine ; lecture automatique refusée (CGU LFP + article fait main) et IA
+       jugée trop chère en quota → « bouton ») : match de LIGUE 1 (compétition du formulaire ou de la carte) → bouton vers l'article ligue1.com
+       des compos probables / absents, ouvert dans un nouvel onglet. Rien n'est lu. */
+    if (R.err === 'pas Premier League') {
+      var l1 = /ligue\s*1\b|fra\.1|uber eats|mcdonald/i.test(String(o.comp || '') + ' ' + String((o.u && (o.u.ligue || o.u.lg || o.u.comp)) || ''));
+      return l1 ? '<div style="' + BOX + '"><div style="font-size:14px;font-weight:800;color:#ffd34d;margin-bottom:6px;">🚑 ABSENTS · Ligue 1</div>'
+        + '<a href="https://ligue1.com/fr/articles/l1_article_5704-les-compositions-probables-ligue-1-2026-2027" target="_blank" rel="noopener" style="display:inline-block;background:#2f6bff;color:#fff;font-weight:800;font-size:15px;border-radius:10px;padding:9px 14px;text-decoration:none;">📰 Compos probables Ligue 1</a>'
+        + '<div style="font-size:13px;color:#c9d3ee;margin-top:6px;">Absents, suspendus et retours de chaque équipe, sur le site officiel de la Ligue 1 (nouvel onglet).</div></div>' : '';
+    }
     if (R.err || !R.T || !R.T.length) return '';
     var POS = { soccer: { GK: 'gardien', DEF: 'défenseur', MID: 'milieu', FWD: 'attaquant' }, hockey: { G: 'gardien', D: 'défenseur', C: 'attaquant', LW: 'attaquant', RW: 'attaquant', F: 'attaquant' }, basketball: { PG: 'meneur', SG: 'arrière', SF: 'ailier', PF: 'ailier fort', C: 'pivot', G: 'arrière', F: 'ailier' }, football: { QB: 'quarterback', RB: 'running back', WR: 'receveur', TE: 'tight end' } }[R.sp] || {};
     var dt = R.der ? new Date(R.der).toLocaleString('fr-FR', { timeZone: 'Europe/Paris', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).replace(' ', ' ') : '';
