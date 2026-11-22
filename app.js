@@ -77157,7 +77157,10 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
      club principal et ≥ 5 → All-Star / 4 Nations dehors) → lignes de ce club (aEquipeUS, son point de vue : domicile, score…) + m.jv = ses stats
      de ce match (rôles AJR + déduits). Lu une fois par joueur et par club choisi (S.usTr), puis redessin. ═══ */
   S.usTr = S.usTr || {};
-  function usSeul(c) { try { return !!(S.ctx && (AJR[S.ctx.sp] ? aOk(S.ctx.lg) : (rg() && rgArchOk(S.ctx.sp, S.ctx.lg))) && joueurs(c).length === 1 && /aucun crit/.test(libCombo(clsCombo(c)))); } catch (e) { return false; } }   /* 20261107o : + rugby */
+  function usSeul(c) { try { return !!(S.ctx && (AJR[S.ctx.sp] ? aOk(S.ctx.lg) : (rg() && rgArchOk(S.ctx.sp, S.ctx.lg))) && joueurs(c).length === 1); } catch (e) { return false; } }   /* 20261107o : + rugby */
+  /* 20261124e (Trouver la meilleure stratégie, Dallas · Mikko Rantanen 🏠 4 saisons : « Rantanen pointeur » sur 123 matchs mais « Over 4.5 + Rantanen
+     pointeur » sur 52 seulement = matchs avec DALLAS → « 4 ans les stats sont fausses » → « OUI CORRIGE ») : un joueur AVEC critères d'équipe (Over,
+     Victoire…) suit aussi ses autres clubs ; le critère d'équipe est jugé sur le club avec lequel il jouait ce soir-là (lignes aEquipeUS de ce club). */
   function usTrDe(c, sa) {
     if (!sa || !usSeul(c)) return null;
     var pid = String(joueurs(c)[0].id), k = S.ctx.lg + '|' + pid + '|' + S.ctx.id, T = S.usTr[k];
