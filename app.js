@@ -74487,6 +74487,9 @@ function _g45AgDkPari(sp, txt) {   /* texte 📌 → [{ty: [ids…], cible, lib}
     if (/buteur|\bbuts?\b/.test(t)) out.push({ ty: se === 1 ? ['230', '232'] : (se === 2 ? ['39', '232'] : ['40', '232']), cible: se, lib: se === 1 ? 'Buteur' : se + ' buts ou +' });
     if (/passeur|passes?\b/.test(t)) out.push({ ty: ['219'], cible: se, lib: se === 1 ? 'Passeur' : se + ' passes ou +' });
     if (/pointeur|points?\b/.test(t)) out.push({ ty: ['218'], cible: se, lib: se === 1 ? 'Pointeur' : se + ' points ou +' });
+  } else if (sp === 'soccer') {   /* 20261122p : foot (sonde Barça – Villarreal : 230 buteur à tout moment, 39 2+, 40 3+, 219 passes décisives (cible)) */
+    if (/buteur|marqueur|\bbuts?\b/.test(t)) out.push({ ty: [{ 1: '230', 2: '39', 3: '40' }[se]], cible: null, lib: se === 1 ? 'Buteur' : se + ' buts ou +' });
+    if (/passeur|passe d|passes?\b/.test(t)) out.push({ ty: ['219'], cible: se, lib: se === 1 ? 'Passeur' : se + ' passes ou +' });
   } else if (sp === 'football') {
     if (/touchdown|\btd\b|buteur|marqueur/.test(t)) out.push({ ty: [{ 1: '31', 2: '32', 3: '33' }[se]], cible: null, lib: se === 1 ? 'TD à tout moment' : se + ' TD ou +' });
   } else if (sp === 'basketball') {
@@ -91194,7 +91197,7 @@ function _g45ScoreRedessiner() {
     var dte = function (x) { var d = x.d.split('-'); return d[2] + '/' + d[1] + (+d[0] !== new Date().getFullYear() ? '/' + d[0] : ''); };
     var der = all.filter(function (x) { return x.ok; }).slice(-3).reverse();
     var cur = per[0][0] && per[0][0].an === SA[0] ? per[0] : [];
-    return { jo: 1, lib: P.l, ligue: { hockey: 'NHL', basketball: 'NBA', football: 'NFL' }[sp] || 'Championnat', ns: per.length, saL: saL, ss: per.map(function (L, j) { var c = cal(L); return { l: saL[j], ok: c.ok, n: c.n, pire: c.pire, best: c.best }; }),
+    return { lgx: sp === 'soccer' ? (NHA.split('/cotes/foot/')[1] || '').replace(/\/$/, '') : ({ hockey: 'nhl', basketball: 'nba', football: 'nfl' }[sp] || ''), jo: 1, lib: P.l, ligue: { hockey: 'NHL', basketball: 'NBA', football: 'NFL' }[sp] || 'Championnat', ns: per.length, saL: saL, ss: per.map(function (L, j) { var c = cal(L); return { l: saL[j], ok: c.ok, n: c.n, pire: c.pire, best: c.best }; }),
       tt: cal(all), d5: all.slice(-5).map(function (x) { return x.ok; }), n: all.length, nCur: cur.length, okCur: cur.filter(function (x) { return x.ok; }).length,
       p10: pc(all.slice(-10)), p2: pc(two), pT: pc(all), est: est, cours: cours, legs: [],
       sp: sp, der: function () { return der.length ? '<br>🕒 Dernières réussites : ' + der.map(function (x) { return '<b>' + esc(dte(x)) + '</b> ' + (x.dom ? '🏠' : '✈️') + ' ' + esc(x.adv) + ' <b>' + esc(x.sc) + '</b>'; }).join(' · ') : ''; },
@@ -91205,20 +91208,25 @@ function _g45ScoreRedessiner() {
     if (f === 'simple') {
       var nS = v('n-team').trim(), uS = carte(nS), labS = ''; try { labS = typeof getMmLabelSimple === 'function' ? getMmLabelSimple() : ''; } catch (e) {}
       var cS = parseFloat(v('n-cote').replace(',', '.')) || 0, sp = v('p-sport');
-      return { f: f, nom: nS, u: uS, ft: !sp || sp.indexOf('⚽') >= 0, lieu: v('p-domicile') || v('n-lieu'), adv: v('n-analysis'), comp: v('n-comp'), date: v('n-date'), heure: v('n-heure'), mise: parseFloat(v('n-mise').replace(',', '.')) || 0, lab: labS || v('n-type'), cote: cS > 1 ? cS : 0, meth: 'simple' };
+      return { f: f, jn: jnDe('n'), nom: nS, u: uS, ft: !sp || sp.indexOf('⚽') >= 0, lieu: v('p-domicile') || v('n-lieu'), adv: v('n-analysis'), comp: v('n-comp'), date: v('n-date'), heure: v('n-heure'), mise: parseFloat(v('n-mise').replace(',', '.')) || 0, lab: labS || v('n-type'), cote: cS > 1 ? cS : 0, meth: 'simple' };
     }
     var nom = v('c-unit'), u = carte(nom), lab = ''; try { lab = typeof getMmLabel === 'function' ? getMmLabel() : ''; } catch (e) {}
     var cote = 0; try { cote = typeof getMmCote === 'function' ? +getMmCote() || 0 : 0; } catch (e) {}
-    return { f: 'strat', nom: nom, u: u, ft: !u || !u.sport || String(u.sport).indexOf('⚽') >= 0, lieu: v('c-lieu'), adv: v('c-target'), comp: v('c-comp'), date: v('c-date'), heure: v('c-heure'), mise: parseFloat(v('c-mise').replace(',', '.')) || 0, lab: lab, cote: cote > 1 ? cote : 0, meth: window._g45EngMeth || 'mont' };
+    return { f: 'strat', jn: jnDe('c'), nom: nom, u: u, ft: !u || !u.sport || String(u.sport).indexOf('⚽') >= 0, lieu: v('c-lieu'), adv: v('c-target'), comp: v('c-comp'), date: v('c-date'), heure: v('c-heure'), mise: parseFloat(v('c-mise').replace(',', '.')) || 0, lab: lab, cote: cote > 1 ? cote : 0, meth: window._g45EngMeth || 'mont' };
   }
   function spJ(o) { var x = String((o && o.u && o.u.sport) || ''); return /🏒/.test(x) ? 'hockey' : /🏀/.test(x) ? 'basketball' : /🏈/.test(x) ? 'football' : /⚽/.test(x) || !x ? 'soccer' : ''; }   /* 20261120f */
-  function estNhlJ(o) { return !!(o && o.u && o.u.type === 'joueur' && spJ(o)); }   /* 20261120c (NHL) → 20261120f : NHL, foot, NBA, NFL */
-  function cle(o) { return o.nom + '|' + o.lieu + '|' + o.lab + (o.meth === 'cb' ? '|cb' : '') + (o.ft ? '' : '|x') + (estNhlJ(o) ? '|j|' + (o.adv || '') : ''); }
+  /* 20261122p (capture Engager Barcelona · ✅ Buteur · 👤 Joueurs « Lamine Yamal » → « pas de données (pari pas calculable) » ; « OUI, à faire sur
+     tous les sports et les critères joueurs ») : carte d'ÉQUIPE + nom dans « 👤 Joueurs » + pari joueur seul (buteur, passeur, points 20+…) →
+     même fiche que les cartes joueur (_g45FicheJoueur : le joueur, club = la carte), foot / NHL / NBA / NFL. */
+  function jnDe(p) { try { var L = typeof _g45FormJoueurs === 'function' ? _g45FormJoueurs(p) : []; return (L[0] && L[0].nom) || ''; } catch (e) { return ''; } }
+  function estNhlJ(o) { if (!o || !spJ(o)) return false; if (o.u && o.u.type === 'joueur') return true; try { return !!(o.jn && o.lab && jPari(o.lab, spJ(o))); } catch (e) { return false; } }   /* 20261120c (NHL) → 20261120f : NHL, foot, NBA, NFL ; 20261122p : + joueur écrit sur une carte d'équipe */
+  function jNom(o) { return o.u && o.u.type === 'joueur' ? o.nom : (o.jn || o.nom); }
+  function cle(o) { return o.nom + '|' + o.lieu + '|' + o.lab + (o.meth === 'cb' ? '|cb' : '') + (o.ft ? '' : '|x') + (estNhlJ(o) ? '|j|' + (o.adv || '') + '|' + (o.jn || '') : ''); }
   /* 20261119t (Lyon ✈️ Victoire + BTS : BET45 6,93 / book 4,70 « ça fait une sacrée différence » → « on ajoute l'adversaire ? » → « oui ») :
      comme la Calculatrice Cote juste, % = moyenne des 2 équipes. Adversaire = champ Adversaire, lieu inverse, pari vu de son côté
      (Victoire ↔ Défaite, Vainqueur → Défaite ; BTS / Over / Under / Nul inchangés). Adversaire vide ou illisible → l'équipe seule. */
   function advDe(o) {
-    var a = String(o.adv || '').trim(); if (!a || !o.lab || (o.u && o.u.type === 'joueur')) return null;   /* 20261120c : joueur → face-à-face seulement (R.hJ) */
+    var a = String(o.adv || '').trim(); if (!a || !o.lab || (o.u && o.u.type === 'joueur') || estNhlJ(o)) return null;   /* 20261122p : joueur écrit → pas d'adversaire « vu de son côté » */   /* 20261120c : joueur → face-à-face seulement (R.hJ) */
     var lab = String(o.lab).split(/\s*\+\s*/).map(function (t) { return /^\s*(victoire|vainqueur)\b/i.test(t) ? t.replace(/victoire|vainqueur/i, 'Défaite') : /^\s*d[ée]faite\b/i.test(t) ? t.replace(/d[ée]faite/i, 'Victoire') : t; }).join(' + ');
     return { f: o.f, nom: a, u: carte(a), ft: o.ft, lieu: o.lieu === 'dom' ? 'ext' : o.lieu === 'ext' ? 'dom' : o.lieu, lab: lab, meth: o.meth };
   }
@@ -91379,6 +91387,24 @@ function _g45ScoreRedessiner() {
     for (var i = 0; i <= 10; i++) for (var jj = 0; jj <= 10; jj++) if (T.G[i][jj]) p += dkPo(LT, i) * dkPo(LA, jj);
     return { p: Math.min(0.97, Math.max(0.03, p)), LT: LT, LA: LA, Q: F.Q };
   }
+  /* 20261122p : 📚 cote DraftKings du JOUEUR pour ce match (propBets ESPN, mêmes lectures que l'Agenda : _g45AgDkCharger / _g45AgDkPari /
+     _g45AgDkTrouve / _g45AgDkCote ; matchs pas encore joués du jour) → chance ≈ 1 / cote ÷ 1,07 (marge d'un pari joueur « oui » seul). Foot
+     « décisif » = buteur OU passeur (1 − (1 − pB)(1 − pP)). Une lecture / 10 min (mémoire de l'Agenda). */
+  var DKJ = {};
+  function dkJoueur(o, R) {
+    if (!R || !R.jo || !R.sp || !R.lgx || typeof _g45AgDkCharger !== 'function') return null;
+    var nm = jNom(o), k = R.sp + '|' + R.lgx + '|' + nm + '|' + o.lab, X = DKJ[k];
+    if (!X || Date.now() - X.t > 10 * 60e3) { if (!X || !X.en) { DKJ[k] = X = { t: Date.now(), en: 1, R: X && X.R };
+      _g45AgDkCharger(R.sp, R.lgx).then(function (M) {
+        var oj = _g45AgDkTrouve(M, nm), dec = R.sp === 'soccer' && /d[ée]cisif/i.test(o.lab), P = _g45AgDkPari(R.sp, dec ? 'buteur passeur' : o.lab);
+        if (!oj || !P.length) return { err: 1 };
+        var cs = P.map(function (q) { return _g45AgDkCote(oj, q); }), pr = function (c) { return c > 1 ? Math.min(0.97, 1 / c / 1.07) : null; };
+        if (dec) { var a = pr(cs[0]), b = pr(cs[1]); if (a == null || b == null) return { err: 1 }; return { p: 1 - (1 - a) * (1 - b), c: cs, lib: 'buteur ' + cs[0].toFixed(2).replace('.', ',') + ' · passeur ' + cs[1].toFixed(2).replace('.', ',') }; }
+        var p0 = pr(cs[0]); return p0 == null ? { err: 1 } : { p: p0, c: cs, lib: P[0].lib.toLowerCase() + ' ' + cs[0].toFixed(2).replace('.', ',') };
+      }).catch(function () { return { err: 1 }; }).then(function (r) { DKJ[k] = { t: Date.now(), R: r }; SIG.strat = ''; SIG.simple = ''; try { poser(); } catch (e) {} }); } }
+    return X.R && !X.R.err ? X.R : null;
+  }
+  window._g45TkDkJ = dkJoueur;   /* tests */
   function fiche(o, sansCote) {   /* sansCote : 2e colonne (adversaire), fiche 📋 + match par match seulement */
     var k = cle(o), R = RES[k];
     if (!o.nom || !o.lab) return '';
@@ -91407,7 +91433,8 @@ function _g45ScoreRedessiner() {
     /* 20261120x : 📚 DraftKings + archives = estimation PRINCIPALE en NHL / NBA / NFL quand elle existe ; l'historique des équipes reste en dessous (pour info) */
     var SBr = null; try { SBr = R.jo ? null : sembDe(o); } catch (e) {} var estH = estM, sbOk = !!(SBr && SBr.p != null && SBr.p > 0);
     var DKP = null; try { DKP = sbOk ? null : dkFoot(o, R); } catch (e) { DKP = null; }   /* 20261122n */
-    if (sbOk) estM = SBr.p; else if (DKP) estM = DKP.p;
+    var DJ = null; try { DJ = R.jo ? dkJoueur(o, R) : null; } catch (e) { DJ = null; }   /* 20261122p */
+    if (sbOk) estM = SBr.p; else if (DKP) estM = DKP.p; else if (DJ) estM = DJ.p;
     var ce = estM ? 1 / estM : 0, h = '<div style="' + BOX + '"><div style="font-size:14px;font-weight:800;color:#ffd34d;margin-bottom:6px;">🎯 COTE ESTIMÉE</div>';
     if (!ce) h += '<div style="font-size:15px;">Jamais passé sur ces matchs : pas d\'estimation.</div>';
     else {
@@ -91420,10 +91447,11 @@ function _g45ScoreRedessiner() {
         + (o.cote ? (function () { var mg = 0.12; return '<div style="font-size:13px;color:#c9d3ee;">Book sans sa marge (≈ ' + Math.round(mg * 100) + ' %) : <b style="color:#fff;">' + f2(o.cote * (1 + mg)) + '</b> · notre cote avec cette marge : <b style="color:#fff;">' + f2(ce / (1 + mg)) + '</b></div>'; })() : '')
         + (R.jo && R.GA ? '<div style="font-size:14px;margin-top:4px;">🛡️ ' + esc(o.adv) + (R.GA.la === 'a' ? ' ✈️' : R.GA.la === 'h' ? ' 🏠' : '') + ' encaisse <b>' + String(Math.round(R.GA.ga * 100) / 100).replace('.', ',') + '</b> ' + (R.sp === 'basketball' || R.sp === 'football' ? 'points' : 'buts') + '/match (moyenne ' + ({ hockey: 'NHL', basketball: 'NBA', football: 'NFL' }[R.sp] || 'du championnat') + ' ' + String(Math.round(R.GA.gl * 100) / 100).replace('.', ',') + ') → <b style="color:' + (R.GA.r >= 1 ? '#1ed760' : '#ff9f43') + ';">' + (R.GA.r >= 1 ? '+' : '') + Math.round((R.GA.r - 1) * 100) + ' %</b><br><span style="font-size:13px;color:#dfe6f7;">' + esc(o.nom) + ' : ' + pcT(R.pT) + ' → ajusté <b>' + pcT(R.pA) + '</b></span></div>' : (R.jo && o.adv ? '<div style="font-size:13px;color:#c9d3ee;margin-top:3px;">🛡️ Buts encaissés par ' + esc(o.adv) + ' : pas assez de matchs lus.</div>' : ''))
         + (sbOk ? '<div style="font-size:14px;margin-top:4px;">📚 <b>DraftKings + archives : ' + pcC(SBr.p) + '</b> · ' + SBr.n + ' matchs semblables (' + (SBr.pV >= 0.5 ? 'favori' : 'outsider') + ' à ' + Math.round(SBr.lo * 100) + '–' + Math.round(SBr.hi * 100) + ' %' + (SBr.L != null ? ', total ' + String(SBr.L).replace('.', ',') : '') + ')</div>' : (SBr === null && absCle(o) ? '' : ''))
+        + (DJ ? '<div style="font-size:14px;margin-top:4px;">📚 <b>DraftKings : ' + pcC(DJ.p) + '</b> · ' + esc(jNom(o)) + ' ' + esc(DJ.lib) + ' (marge retirée ≈ 7 %)</div>' : '')
         + (DKP ? '<div style="font-size:14px;margin-top:4px;">📚 <b>Calée sur DraftKings : ' + pcC(DKP.p) + '</b> · buts attendus ' + esc(o.nom) + ' ' + f2(DKP.LT) + ', ' + esc(o.adv) + ' ' + f2(DKP.LA)
             + (DKP.Q && DKP.Q.ml ? ' (1N2 ' + DKP.Q.ml.map(f2).join(' / ') + (DKP.Q.bts ? ' · les deux marquent ' + f2(DKP.Q.bts) : '') + ')' : '') + '</div>' : '')
         + (PSN && !sbOk ? '<div style="font-size:13px;color:#dfe6f7;margin-top:3px;">' + (DKP ? '📋 Nos archives (pour info) : ' + pcC(PSN.p) : pcT(estM) + ' estimé') + ' ⚽ par les buts : ' + esc(o.nom) + ' ≈ ' + f2(PSN.LT) + ' but' + (PSN.LT >= 2 ? 's' : '') + ', ' + esc(oA.nom) + ' ≈ ' + f2(PSN.LA) + ' (modèle ' + pcC(PSN.pm) + ', 80 %) + ' + esc(o.nom) + ' récent ' + pcC(PSN.own) + ' (20 %)' + (HF ? ' · face-à-face ' + pcC(HF.p) + ' compté ' + (wHF < 0.01 ? '< 1' : Math.round(wHF * 100)) + ' %' : '') + '</div>' : '')
-        + '<div style="font-size:13px;color:#dfe6f7;margin-top:3px;">' + (sbOk ? '📋 Historique des équipes (pour info) : ' + pcC(estH) + ' = moyenne de ' : PSN ? 'Ancienne méthode (pour info) : ' + pcC(estMoy) + ' = moyenne de ' : pcT(estM) + ' estimé = moyenne de ') + esc(o.nom) + (R.jo && R.GA ? ' ajusté ' + pcC(R.pA) : ' ' + pcC(R.pT)) + (okA ? ' · ' + esc(oA.nom) + ' ' + pcC(RA.pT) : '') + (HF ? ' · face-à-face ' + pcC(HF.p) + ' compté ' + (wHF < 0.01 ? '< 1' : Math.round(wHF * 100)) + ' % (' + HF.n + ' matchs)' : '') + ' (5 saisons)</div>'
+        + '<div style="font-size:13px;color:#dfe6f7;margin-top:3px;">' + (sbOk ? '📋 Historique des équipes (pour info) : ' + pcC(estH) + ' = moyenne de ' : PSN ? 'Ancienne méthode (pour info) : ' + pcC(estMoy) + ' = moyenne de ' : DJ ? '📋 Archives (pour info) : ' + pcC(estMoy) + ' = ' : pcT(estM) + ' estimé = moyenne de ') + esc(o.nom) + (R.jo && R.GA ? ' ajusté ' + pcC(R.pA) : ' ' + pcC(R.pT)) + (okA ? ' · ' + esc(oA.nom) + ' ' + pcC(RA.pT) : '') + (HF ? ' · face-à-face ' + pcC(HF.p) + ' compté ' + (wHF < 0.01 ? '< 1' : Math.round(wHF * 100)) + ' % (' + HF.n + ' matchs)' : '') + ' (5 saisons)</div>'
         + '<div style="font-size:12px;color:#9fb0d6;margin-top:3px;">Pour info :</div>'
         + '<div style="font-size:13px;color:#c9d3ee;">' + esc(o.nom) + (o.lieu === 'dom' ? ' 🏠' : o.lieu === 'ext' ? ' ✈️' : '') + ' : 10 derniers ' + pcC(R.p10) + ' · 2 saisons ' + pcC(R.p2) + ' · tout ' + pcC(R.pT) + '</div>'
         + (oA ? '<div style="font-size:13px;color:#c9d3ee;">' + esc(oA.nom) + (oA.lieu === 'dom' ? ' 🏠' : oA.lieu === 'ext' ? ' ✈️' : '') + ' · ' + esc(oA.lab) + ' : ' + (okA ? '10 derniers ' + pcC(RA.p10) + ' · 2 saisons ' + pcC(RA.p2) + ' · tout ' + pcC(RA.pT) : RA ? 'pas de données' + (RA.err ? ' (' + esc(RA.err) + ')' : '') : '⏳') + '</div>' : (R.jo ? (o.adv ? '' : '<div style="font-size:13px;color:#c9d3ee;">Remplis « Adversaire » pour les face-à-face.</div>') : '<div style="font-size:13px;color:#c9d3ee;">Remplis « Adversaire » pour compter aussi l\'autre équipe.</div>'));
@@ -91491,7 +91519,7 @@ function _g45ScoreRedessiner() {
     sig += '|' + kA + (kA && RES[kA] ? 1 : 0) + '|' + (col2 ? w2 : 0); try { if (Rk && !Rk.err && kA && RES[kA] && RES[kA].tid && typeof Rk.h2h === 'function') { var Hs = Rk.h2h(RES[kA].tid); sig += '|h' + Hs.L.length + (Hs.pend ? 'p' : ''); } } catch (e) {} if (kA && RES[kA] && !RES[kA].err) { try { sig += '|' + (typeof RES[kA].der === 'function' ? RES[kA].der() : '') + '|' + JSON.stringify(RES[kA].mpm(SA_I[kA] || 0)).length + '|' + (SA_I[kA] || 0); } catch (e) {} }
     if (o.nom && o.lab && !Rk && !EN[k] && (!(o.u && o.u.type === 'joueur') || estNhlJ(o)) && typeof window._g45FichePari === 'function') {
       EN[k] = 1;
-      (estNhlJ(o) ? window._g45FicheJoueur(o.nom, o.lieu, o.lab, o.adv, spJ(o), (typeof _g45UClub === 'function' ? _g45UClub(o.u) : '') || o.u.club || '') : window._g45FichePari(o.nom, o.ft, o.lieu, o.lab, o.meth)).then(function (R) { RES[k] = R || { err: 'rien' }; }).catch(function () { RES[k] = { err: 'calcul impossible' }; }).then(function () { delete EN[k]; SIG[f] = ''; poserF(f); });
+      (estNhlJ(o) ? window._g45FicheJoueur(jNom(o), o.lieu, o.lab, o.adv, spJ(o), o.u && o.u.type === 'joueur' ? ((typeof _g45UClub === 'function' ? _g45UClub(o.u) : '') || o.u.club || '') : o.nom) : window._g45FichePari(o.nom, o.ft, o.lieu, o.lab, o.meth)).then(function (R) { RES[k] = R || { err: 'rien' }; }).catch(function () { RES[k] = { err: 'calcul impossible' }; }).then(function () { delete EN[k]; SIG[f] = ''; poserF(f); });
     }
     sig += '|' + (mob ? 'm' + (MOBO[f] ? 1 : 0) : 'p');
     try { var kSb = absCle(o) + '|' + o.lab, xs = SB[kSb]; sig += '|sb' + (xs && xs.R ? (xs.R.err ? 'e' : xs.t) : 0); } catch (e) {}   /* 20261120x */
