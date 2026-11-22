@@ -91438,7 +91438,7 @@ function _g45ScoreRedessiner() {
       + (R.ss && R.ss.length ? '<table style="width:100%;border-collapse:collapse;font-size:14px;color:#fff;"><tr style="color:#c9d3ee;font-size:13px;text-align:left;"><th style="' + TD + '">Saison</th><th style="' + TD + '">Réussite</th><th style="' + TD + '">Pire</th><th style="' + TD + '">Meill.</th></tr>'
         + R.ss.map(function (x) { return '<tr><td style="' + TD + '">' + esc(x.l) + '</td><td style="' + TD + '">' + nb(x.ok) + '/' + nb(x.n) + ' · ' + pc0(x.ok, x.n) + '</td><td style="' + TD + 'font-weight:800;color:' + col(x.pire) + ';">' + x.pire + '</td><td style="' + TD + 'font-weight:800;color:#6d9dff;">' + x.best + '</td></tr>'; }).join('') + '</table>' : '');
     var T = R.tt || { ok: 0, n: 0, pire: 0, best: 0 }, der = ''; try { der = typeof R.der === 'function' ? String(R.der() || '').replace(/^<br>/, '') : ''; } catch (e) {}
-    h += '<div style="font-size:15px;margin-top:8px;line-height:1.5;">🧮 <b>Total : ' + nb(T.ok) + '/' + nb(T.n) + ' · ' + pc0(T.ok, T.n) + (T.ok > 0 ? ' → cote ' + f2(T.n / T.ok) : '') + '</b>'
+    h += '<div style="font-size:15px;margin-top:8px;line-height:1.5;">🧮 <b>Total : ' + nb(T.ok) + '/' + nb(T.n) + ' · ' + pc0(T.ok, T.n) + '</b>'
       + '<br>🪜 Pire série : <b style="color:' + col(T.pire) + ';">' + T.pire + '</b> → il fallait <b>' + (T.pire + 1) + ' paliers</b>' + (T.pire + 1 > 6 ? ' ⚠️' : '')
       + '<br>🏆 Meilleure série : <b style="color:#6d9dff;">' + T.best + '</b>'
       + '<br>📈 Série en cours : <b style="color:' + (R.cours >= 3 ? '#ff9f43' : '#fff') + ';">' + R.cours + ' raté' + (R.cours > 1 ? 's' : '') + '</b>'
@@ -91513,7 +91513,7 @@ function _g45ScoreRedessiner() {
     var Rj = RES[k];
     if (mob && !(oA || (Rj && Rj.jo && Rj.hJ && Rj.hJ.aid))) { sortie(P1, []); return; }
     if (col2 && !oA && Rj && Rj.jo && Rj.hJ && Rj.hJ.aid) {   /* 20261120c : joueur NHL → 2e colonne = 🆚 face-à-face du joueur contre l'adversaire, au même lieu */
-      var HJ = Rj.hJ, anJ = new Date().getFullYear(), pqJ = function (a, b) { return b ? Math.round(a / b * 100) + ' %' + (a ? ' → cote ' + f2(b / a) : '') : '—'; };
+      var HJ = Rj.hJ, anJ = new Date().getFullYear(), pqJ = function (a, b) { return b ? Math.round(a / b * 100) + ' %' : '—'; };   /* 20261122o : % gardé, « → cote » retirée */
       var bJ = '<div style="' + BOX + '"><div style="font-size:14px;font-weight:800;color:#ffd34d;">🆚 ' + esc(o.nom) + ' vs ' + esc(o.adv) + '</div><div style="font-size:13px;color:#dfe6f7;margin-bottom:5px;">' + esc(Rj.lib) + (o.lieu === 'dom' ? ' · 🏠' : o.lieu === 'ext' ? ' · ✈️' : '') + ' · 5 saisons</div>'
         + (HJ.L.length ? '<div style="font-size:15px;"><b>' + HJ.ok + '/' + HJ.L.length + ' · ' + pqJ(HJ.ok, HJ.L.length) + '</b></div><div style="font-size:13px;color:#c9d3ee;">' + (HJ.L.length >= 3 ? 'Compté dans la cote estimée.' : 'Pas compté (moins de 3 matchs).') + '</div>'
           + '<div style="max-height:260px;overflow-y:auto;margin-top:6px;">' + HJ.L.map(function (x) { var dt = x.d.split('-'), dte = dt[2] + '/' + dt[1] + (+dt[0] !== anJ ? '/' + dt[0].slice(2) : '');
@@ -91533,7 +91533,10 @@ function _g45ScoreRedessiner() {
     var Rk2 = RES[k];
     if (Rk2 && !Rk2.err && typeof Rk2.h2h === 'function' && RES[kA] && !RES[kA].err && RES[kA].tid) {
       var H = Rk2.h2h(RES[kA].tid), HL = H.L || [], ok = HL.filter(function (x) { return x.ok; }).length, ml = HL.filter(function (x) { return o.lieu === 'dom' ? x.dom : o.lieu === 'ext' ? !x.dom : true; }), okl = ml.filter(function (x) { return x.ok; }).length, anN = new Date().getFullYear();
-      var pq = function (a, b) { return b ? Math.round(a / b * 100) + ' %' + (a ? ' → cote ' + f2(b / a) : '') : '—'; };
+      /* 20261122o (capture « Ton pari » : 3 cotes entourées en rouge — face-à-face 4,00, Total Barça 3,42, Total Villarreal 6,83 — « comment on
+         arrive à la cote bleue ? » → « on enlève les cotes rouges tout en gardant le % ») : l'historique ne donne plus de « → cote » (elle se lisait
+         comme une cote juste alors que la cote estimée vient des cotes du match / du modèle) ; le % reste. */
+      var pq = function (a, b) { return b ? Math.round(a / b * 100) + ' %' : '—'; };
       hA += '<div style="' + BOX + '"><div style="font-size:14px;font-weight:800;color:#ffd34d;">🆚 FACE-À-FACE ' + esc(o.nom) + ' – ' + esc(oA.nom) + '</div><div style="font-size:13px;color:#dfe6f7;margin-bottom:5px;">' + esc(o.lab) + ' (pour ' + esc(o.nom) + ')</div>'
         /* 20261119x (« le critère c'est Lyon extérieur, sauf que tu as mélangé domicile et extérieur dans le face-à-face ») : total + liste = MÊME LIEU que le pari ; tous lieux en petit */
         + (ml.length ? '<div style="font-size:15px;"><b>' + (o.lieu === 'dom' ? '🏠 ' : o.lieu === 'ext' ? '✈️ ' : '') + R0ns(Rk2) + ' saisons : ' + okl + '/' + ml.length + ' · ' + pq(okl, ml.length) + '</b></div>'
