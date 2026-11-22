@@ -91571,11 +91571,36 @@ function _g45ScoreRedessiner() {
      ⚠️ si un des 6 meilleurs marqueurs de l'équipe manque, si le gardien (NHL G) ou le quarterback (NFL QB) manque. Lu une fois / 30 min
      (AB), échec = rien d'affiché (pas de boucle). ═══ */
   var AB = {}, ABL = { hockey: ['hockey/nhl', 'hockey/nhl'], basketball: ['basketball/nba', 'basket/nba'], football: ['football/nfl', 'football-us/nfl'] };
-  function absSp(o) { var x = String((o.u && o.u.sport) || (o.f === 'simple' ? v('p-sport') : '') || ''); return /🏒/.test(x) ? 'hockey' : /🏀/.test(x) ? 'basketball' : /🏈/.test(x) ? 'football' : ''; }
+  function absSp(o) { var x = String((o.u && o.u.sport) || (o.f === 'simple' ? v('p-sport') : '') || ''); return /🏒/.test(x) ? 'hockey' : /🏀/.test(x) ? 'basketball' : /🏈/.test(x) ? 'football' : /⚽/.test(x) ? 'soccer' : ''; }   /* 20261123r : + foot (Premier League, FPL) */
+  /* ═══ 20261123r (« 2 » = absents foot → SONDES 22/11 : ESPN rien, API-Sports gratuit refuse la saison en cours → « OUI branche FPL, et le reste
+     personne ne le donne gratuitement ») : Fantasy Premier League (jeu officiel, gratuit, sans clé, worker host=fpl déjà là) — bootstrap-static :
+     teams { id, name « Man City », short_name } ; elements { first_name, second_name, web_name, team, element_type 1 G / 2 D / 3 M / 4 A,
+     status a dispo · d incertain · i blessé · s suspendu · u indisponible · n hors effectif, chance_of_playing_next_round, news, news_added,
+     goals_scored, assists }. Premier League SEULEMENT (les 2 équipes doivent y être) ; joueurs d / i / s gardés (u = partis / prêtés, n = hors
+     effectif : retirés) ; ⚠️ si un des 6 meilleurs buteurs + passeurs de l'équipe manque. ═══ */
+  var FPL_AL = { 'manchester city': 'man city', 'manchester united': 'man utd', 'tottenham hotspur': 'spurs', 'tottenham': 'spurs', 'nottingham forest': "nott'm forest", 'wolverhampton wanderers': 'wolves', 'wolverhampton': 'wolves', 'newcastle united': 'newcastle', 'brighton & hove albion': 'brighton', 'brighton and hove albion': 'brighton', 'west ham united': 'west ham', 'leeds united': 'leeds', 'afc bournemouth': 'bournemouth', 'leicester city': 'leicester', 'ipswich town': 'ipswich', 'sheffield united': 'sheffield utd', 'luton town': 'luton', 'hull city': 'hull' };
+  function fplEq(T, nom) { var n = String(nom || '').toLowerCase().trim(), a = FPL_AL[n] || n; return (T || []).filter(function (t) { return memeA(t.name, a) || memeA(t.name, nom) || nzA(t.short_name) === nzA(nom); })[0] || null; }
+  async function absFpl(o) {
+    var B = null; try { B = typeof fplFetch === 'function' ? await fplFetch('/api/bootstrap-static/') : null; } catch (e) { B = null; }
+    if (!B || !B.teams || !B.elements) return { err: 'FPL illisible' };
+    var E1 = fplEq(B.teams, o.nom), E2 = fplEq(B.teams, o.adv); if (!E1 || !E2) return { err: 'pas Premier League' };
+    var POSF = { 1: 'GK', 2: 'DEF', 3: 'MID', 4: 'FWD' }, der = 0;
+    var T = [[E1, o.nom], [E2, o.adv]].map(function (x) {
+      var eq = x[0], J = B.elements.filter(function (e) { return e.team === eq.id; });
+      var top = J.slice().sort(function (a, b) { return ((b.goals_scored || 0) + (b.assists || 0)) - ((a.goals_scored || 0) + (a.assists || 0)); }).slice(0, 6).filter(function (e) { return (e.goals_scored || 0) + (e.assists || 0) > 0; }).map(function (e) { return e.id; });
+      var L = J.filter(function (e) { return /^[dis]$/.test(e.status || ''); }).map(function (e) { var t0 = Date.parse(e.news_added || '') || 0; if (t0 > der) der = t0;
+        var ch = e.chance_of_playing_next_round;
+        return { n: ((e.first_name || '') + ' ' + (e.second_name || '')).trim() || e.web_name, pos: POSF[e.element_type] || '', st: e.status === 'd' ? 'doubtful' + (ch != null ? ' ' + ch + ' %' : '') : e.status === 's' ? 'suspendu' : 'out', ty: e.news || '', id: String(e.id), p: (e.goals_scored || 0) + (e.assists || 0), g: e.goals_scored || 0, a: e.assists || 0, top: top.indexOf(e.id) >= 0, ch: ch }; });
+      L.sort(function (a, b) { return (b.p || 0) - (a.p || 0); });
+      return { nom: x[1], id: String(eq.id), L: L };
+    });
+    return { sp: 'soccer', T: T, der: der, src: 'Fantasy Premier League' };
+  }
   function absCle(o) { var sp = absSp(o); return sp && o.nom && o.adv && /^\d{4}-\d\d-\d\d$/.test(o.date) ? sp + '|' + o.nom + '|' + o.adv + '|' + o.date : ''; }
   var nzA = function (t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim(); };
   var memeA = function (a, b) { a = nzA(a); b = nzA(b); return !!(a && b && (a === b || (' ' + a + ' ').indexOf(' ' + b + ' ') >= 0 || (' ' + b + ' ').indexOf(' ' + a + ' ') >= 0)); };
   async function absCharger(o, k) {
+    if (absSp(o) === 'soccer') return absFpl(o);   /* 20261123r */
     var sp = absSp(o), L = ABL[sp], d = o.date.replace(/-/g, ''), d0 = new Date(Date.parse(o.date + 'T12:00:00Z') - 864e5).toISOString().slice(0, 10).replace(/-/g, '');
     var jget = async function (u) { try { var r = await fetch(u); if (r.ok) return await r.json(); } catch (e) {} if (typeof _g45TrEspn === 'function') { try { return await _g45TrEspn(u.replace('https://site.api.espn.com', '')); } catch (e) {} } return null; };
     var sb = await jget('https://site.api.espn.com/apis/site/v2/sports/' + L[0] + '/scoreboard?dates=' + d0 + '-' + d);
@@ -91602,17 +91627,17 @@ function _g45ScoreRedessiner() {
     if (!A || Date.now() - A.t > 30 * 60e3) { if (!A || !A.en) { AB[k] = A = { t: Date.now(), en: 1, R: A && A.R }; absCharger(o, k).then(function (R) { AB[k] = { t: Date.now(), R: R }; }, function () { AB[k] = { t: Date.now(), R: { err: 'réseau' } }; }).then(function () { SIG.strat = ''; SIG.simple = ''; }); } }
     var R = A.R; if (!R) return '<div style="' + BOX + 'font-size:14px;">🚑 Absents… ⏳</div>';
     if (R.err || !R.T || !R.T.length) return '';
-    var POS = { hockey: { G: 'gardien', D: 'défenseur', C: 'attaquant', LW: 'attaquant', RW: 'attaquant', F: 'attaquant' }, basketball: { PG: 'meneur', SG: 'arrière', SF: 'ailier', PF: 'ailier fort', C: 'pivot', G: 'arrière', F: 'ailier' }, football: { QB: 'quarterback', RB: 'running back', WR: 'receveur', TE: 'tight end' } }[R.sp] || {};
+    var POS = { soccer: { GK: 'gardien', DEF: 'défenseur', MID: 'milieu', FWD: 'attaquant' }, hockey: { G: 'gardien', D: 'défenseur', C: 'attaquant', LW: 'attaquant', RW: 'attaquant', F: 'attaquant' }, basketball: { PG: 'meneur', SG: 'arrière', SF: 'ailier', PF: 'ailier fort', C: 'pivot', G: 'arrière', F: 'ailier' }, football: { QB: 'quarterback', RB: 'running back', WR: 'receveur', TE: 'tight end' } }[R.sp] || {};
     var dt = R.der ? new Date(R.der).toLocaleString('fr-FR', { timeZone: 'Europe/Paris', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).replace(' ', ' ') : '';
-    var h = '<div style="' + BOX + '"><div style="font-size:14px;font-weight:800;color:#ffd34d;margin-bottom:6px;">🚑 ABSENTS <span style="font-weight:400;color:#c9d3ee;">(ESPN' + (dt ? ' · mis à jour ' + esc(dt) : '') + ')</span></div>';
+    var h = '<div style="' + BOX + '"><div style="font-size:14px;font-weight:800;color:#ffd34d;margin-bottom:6px;">🚑 ABSENTS <span style="font-weight:400;color:#c9d3ee;">(' + (R.src || 'ESPN') + (dt ? ' · mis à jour ' + esc(dt) : '') + ')</span></div>';
     [o.nom, o.adv].forEach(function (nm) {
-      var t = R.T.filter(function (x) { return memeA(x.nom, nm); })[0] || { nom: nm, L: [] }, L = t.L, ab = L.filter(function (x) { return !/day|question|probable/i.test(x.st); });
+      var t = R.T.filter(function (x) { return memeA(x.nom, nm); })[0] || { nom: nm, L: [] }, L = t.L, ab = L.filter(function (x) { return !/day|question|probable|doubt/i.test(x.st); });
       h += '<div style="font-size:15px;font-weight:800;margin-top:6px;">' + esc(t.nom) + ' : ' + (L.length ? '(' + L.length + ')' : 'aucun ✅') + '</div>';
       L.forEach(function (x) { var inc = /day|question|doubt|probable/i.test(x.st);
-        h += '<div style="font-size:14px;margin-left:8px;">' + (inc ? '❓' : '❌') + ' ' + esc(x.n) + ' <span style="color:#c9d3ee;">(' + esc(POS[x.pos] || x.pos || '?') + (inc ? ' · incertain' : '') + ')' + (x.p != null ? ' · ' + (R.sp === 'basketball' ? f2(x.p).replace(/,?0+$/, '') + ' pts / match' : x.p + ' pts cette saison') : '') + '</span></div>'; });
+        h += '<div style="font-size:14px;margin-left:8px;">' + (inc ? '❓' : '❌') + ' ' + esc(x.n) + ' <span style="color:#c9d3ee;">(' + esc(POS[x.pos] || x.pos || '?') + (inc ? ' · incertain' + (x.ch != null ? ' ' + x.ch + ' %' : '') : '') + (x.st === 'suspendu' ? ' · suspendu' : '') + ')' + (R.sp === 'soccer' ? ((x.g || x.a) ? ' · ' + x.g + ' but' + (x.g > 1 ? 's' : '') + ' · ' + x.a + ' passe' + (x.a > 1 ? 's' : '') + ' cette saison' : '') : (x.p != null ? ' · ' + (R.sp === 'basketball' ? f2(x.p).replace(/,?0+$/, '') + ' pts / match' : x.p + ' pts cette saison') : '')) + '</span></div>'; });   /* 20261123r : foot = buts / passes, % de chances FPL, suspendu */
       var tp = ab.filter(function (x) { return x.top; }).length, gk = L.filter(function (x) { return (R.sp === 'hockey' && x.pos === 'G') || (R.sp === 'football' && x.pos === 'QB'); })[0];
       if (gk) h += '<div style="font-size:14px;font-weight:800;color:#ffb13d;margin-left:8px;">⚠️ ' + (R.sp === 'hockey' ? 'Gardien' : 'Quarterback') + (/day|question|doubt|probable/i.test(gk.st) ? ' incertain : ' : ' absent : ') + esc(gk.n) + '</div>';
-      if (tp) h += '<div style="font-size:14px;font-weight:800;color:#ffb13d;margin-left:8px;">⚠️ ' + tp + ' des 6 meilleurs marqueurs de ' + esc(t.nom) + ' absent' + (tp > 1 ? 's' : '') + '</div>';
+      if (tp) h += '<div style="font-size:14px;font-weight:800;color:#ffb13d;margin-left:8px;">⚠️ ' + tp + ' des 6 meilleurs ' + (R.sp === 'soccer' ? 'buteurs / passeurs' : 'marqueurs') + ' de ' + esc(t.nom) + ' absent' + (tp > 1 ? 's' : '') + '</div>';
     });
     return h + '</div>';
   }

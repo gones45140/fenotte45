@@ -1,7 +1,7 @@
 # CLAUDE.md — GONES45 / BET45
 
 Lis ce fichier EN ENTIER avant toute action (il est court exprès). Le détail de tout l'historique est dans HISTORIQUE.md
-(à chercher avec grep, jamais à lire en entier). Mis à jour le 31/10/2026 (version déployée : 20261123q, même app.js sur gones45 et fenotte45).
+(à chercher avec grep, jamais à lire en entier). Mis à jour le 31/10/2026 (version déployée : 20261123r, même app.js sur gones45 et fenotte45).
 
 ## 1. Le projet
 
@@ -161,7 +161,7 @@ PIÈGES À NE JAMAIS OUBLIER :
 - 🏀🏈 « Quart-temps / mi-temps avec le plus de points » NBA / NFL : FAIT 20261123e (archives pe, onglet ⏱️ Quart-temps) — à confirmer à l'écran par Antoine.
 - 📊 Loi des séries vers le 16/12 : refaire le tableau par tranche de cote des pépites (seuil « non compté » à 6 depuis 20261116h, passé à 4 le 19/11 par Antoine (20261119d) → regarder la tranche 3–4).
 - 👤 Pépites JOUEURS de la Loi des séries (18/11, NHL / foot / NBA / NFL, règles dans HISTORIQUE 20261118h → s) : « on laisse comme cela, on ajustera plus tard » (bruit NBA, seuils saison entière, cote 1,60 NBA). Vers le 19/12 : bilan des pépites joueurs retirées « book trop loin » (nf 6, écart > × 1,40) → resserrer / desserrer la limite.
-- 🎯 Cote estimée US (19/11, tests archives : NHL 1 740 m., NBA 1 540 m. → historique des équipes ≈ pas mieux qu'une constante ; foot 1 894 m. → historique OK) : ligne « 📚 DraftKings + archives » dans « Ton pari » FAITE (20261120x, robot semblables.yml) — à confirmer à l'écran par Antoine ; face-à-face proportionnel (w) FAIT. 🚑 Absents dans « Ton pari » FAIT (20261120v, NHL / NBA / NFL, summary ESPN) — foot SONDÉ 22/11 : ESPN ne donne RIEN (summary injuries null, roster sans statut, core injuries vide) → autre source à décider par Antoine (API-Football gratuit 100 / jour avec clé, ou FPL Premier League seule) ; à confirmer à l'écran par Antoine.
+- 🎯 Cote estimée US (19/11, tests archives : NHL 1 740 m., NBA 1 540 m. → historique des équipes ≈ pas mieux qu'une constante ; foot 1 894 m. → historique OK) : ligne « 📚 DraftKings + archives » dans « Ton pari » FAITE (20261120x, robot semblables.yml) — à confirmer à l'écran par Antoine ; face-à-face proportionnel (w) FAIT. 🚑 Absents dans « Ton pari » FAIT (20261120v, NHL / NBA / NFL, summary ESPN) — foot : ESPN rien, API-Sports gratuit refuse la saison en cours (sondés 22/11) → PREMIER LEAGUE seule via FPL (20261123r), autres championnats : aucune source gratuite autorisée ; à confirmer à l'écran par Antoine.
 - 🏎 20261121a : vérifier le 1er passage du robot f1-traces (hors séance) et le rappel 🔔 au GP du Qatar (FP1 27/11 13:30 UTC).
 - 🎯 Cote estimée foot : « par les buts » (Poisson archives, 20261122m) + « 📚 Calée sur DraftKings » (20261122n, 1N2 + BTS 152 + buts par équipe 253) + Calculatrice Cote juste (20261122u) — à confirmer à l'écran par Antoine.
 - 🚀 MODE UNIQUE 🚀 + 📉 (maquette 21/11) : FAIT 20261122v-x (mise selon la cote, fusion + reprise des séries 📉 state.mode1, pastilles + filtre Bilan) — à confirmer à l'écran par Antoine.
