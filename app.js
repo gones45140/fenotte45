@@ -69047,6 +69047,14 @@ async function _g45TenPhotos(racine) {
           var l = ((await r.json()) || {}).player || [], cible = _g45TenNorm(n);
           var t = l.filter(function (p) { return /^tennis$/i.test(p.strSport || ''); });
           var p0 = t.filter(function (p) { return _g45TenNorm(p.strPlayer) === cible; })[0] || (t.length === 1 ? t[0] : null);
+          /* 20261123p (pari « Alexandre Zverev » : prénom à la française, rien trouvé) : 2e essai par le NOM DE FAMILLE seul ; un seul joueur de
+             tennis → lui ; plusieurs (Alexander / Mischa Zverev) → celui dont le prénom commence par la même lettre. */
+          var mots = String(n).trim().split(/\s+/);
+          if (!p0 && mots.length >= 2) {
+            try { var r2 = await fetch('https://www.thesportsdb.com/api/v1/json/3/searchplayers.php?p=' + encodeURIComponent(mots[mots.length - 1]));
+              if (r2.ok) { var t2 = (((await r2.json()) || {}).player || []).filter(function (p) { return /^tennis$/i.test(p.strSport || '') && _g45TenNorm(String(p.strPlayer || '').split(' ').slice(-1)[0]) === _g45TenNorm(mots[mots.length - 1]); });
+                p0 = t2.length === 1 ? t2[0] : (t2.filter(function (p) { return _g45TenNorm(p.strPlayer)[0] === cible[0]; })[0] || null); } } catch (e2) {}
+          }
           if (p0) u = _g45R2(p0.strThumb || p0.strCutout || '');
           try { localStorage.setItem(_G45_TPH + cible, JSON.stringify({ u: u, t: Date.now() })); } catch (e) {}
         }
@@ -76313,6 +76321,16 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     if (h.isCombi) return '';
     var P = titre(h).split(' – ').map(function (x) { return x.trim(); }).filter(Boolean); if (P.length !== 2) return '';
     if (h.domicile === 'ext') P.reverse();
+    /* 20261123p (capture pari en cours « Alexandre Zverev – Alcaraz » : ronds AZ / A, « manque les photos ») : tennis → photo du joueur comme dans
+       les résultats (_g45TenAvatar + recherche TheSportsDB _g45TenPhotos, gardée en mémoire), au lieu du logo d'équipe. */
+    var spT = ''; try { spT = String((typeof _g45ParisSport === 'function' && _g45ParisSport(h)) || h.sport || ''); } catch (e) { spT = String(h.sport || ''); }
+    if (/🎾/.test(spT) && typeof _g45TenAvatar === 'function') {
+      try { setTimeout(function () { if (typeof _g45TenPhotos === 'function') _g45TenPhotos(document); }, 300); } catch (e) {}
+      var av = function (n) { return '<span style="display:inline-flex;width:72px;height:72px;flex:none;">' + _g45TenAvatar({ displayName: n }, 72).replace('margin:0 5px;', 'margin:0;') + '</span>'; };
+      return '<div class="g45ec-vs" style="display:flex;align-items:center;justify-content:center;gap:16px;flex:0 1 300px;">' + av(P[0])
+        + '<div style="text-align:center;"><b style="display:block;font-size:26px;color:#c9d3ee;">VS</b>' + (h.heure ? '<span style="background:#0b1226;border-radius:8px;padding:3px 9px;font-weight:800;font-size:17px;">' + esc(h.heure) + '</span>' : '') + '</div>'
+        + av(P[1]) + '</div>';
+    }
     return '<div class="g45ec-vs" style="display:flex;align-items:center;justify-content:center;gap:16px;flex:0 1 300px;">' + logoRond(P[0])
       + '<div style="text-align:center;"><b style="display:block;font-size:26px;color:#c9d3ee;">VS</b>' + (h.heure ? '<span style="background:#0b1226;border-radius:8px;padding:3px 9px;font-weight:800;font-size:17px;">' + esc(h.heure) + '</span>' : '') + '</div>'
       + logoRond(P[1]) + '</div>';
