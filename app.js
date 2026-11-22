@@ -77897,11 +77897,28 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     ROL.forEach(function (ro) { RJ.forEach(function (r) { XJ.forEach(function (f) { var c = base(); c.jm = ro.jm; c.jmin = ro.jmin; c.res = r; f(c); out.push(c); }); }); });
     return out;
   }
+  /* ═══ 20261123h — ② 👥 TOUS LES JOUEURS DE L'ÉQUIPE dans « Trouver la meilleure stratégie » (maquette maq_equipe.png « oui ») : B.tous = 1 →
+     candidats = chaque rôle / seuil (comme pour « mes joueurs ») de chaque joueur SEUL + chaque DUO « l'un ou l'autre » (jx 'un'), sur les
+     12 premiers joueurs de la liste du formulaire (S.ro : sports US = classés par le rôle choisi, foot = buts + passes). Foot : journaux des
+     joueurs lus d'abord (jCharger, ⏳), le calcul se lance quand ils sont là. Plafond 3 000 paris testés. ═══ */
+  var BEST_NJ = 12;
+  function bestJTous() { return ((S.ro[S.nom] || {}).l || []).slice(0, BEST_NJ).map(function (x) { return { id: String(x.id), n: x.nom || '?' }; }); }
+  function bestCandsTous() {
+    var P = bestJTous(), ROL = [], out = [];
+    var CF = S.ctx && typeof _g45JouCfg === 'function' ? _g45JouCfg(S.ctx.sp) : null;
+    if (CF) CF.roles.forEach(function (r) { if (r.k === 'lp') return; var SE = r.seuils ? r.seuils.map(Number) : [1, 2]; SE.forEach(function (n) { ROL.push({ jm: r.k, jmin: n }); }); });
+    else [['', 1], ['', 2], ['pas', 1], ['dec', 1]].forEach(function (x) { ROL.push({ jm: x[0], jmin: x[1] }); });
+    var mk = function (A, B2, ro) { var c = norm(combo0()); c.res = ''; c.jo = A.id; c.jn = A.n; if (B2) { c.jo2 = B2.id; c.jn2 = B2.n; c.jx = 'un'; } c.jm = ro.jm; c.jmin = ro.jmin; return c; };
+    ROL.forEach(function (ro) { P.forEach(function (A, i) { out.push(mk(A, null, ro)); for (var j = i + 1; j < P.length; j++) out.push(mk(A, P[j], ro)); }); });
+    return out.slice(0, 3000);
+  }
+  function bestCandsDe(c0) { return S.best.tous ? bestCandsTous() : bestCands(c0); }
+  function bestPrets(D) { if (S.ctx || !S.best.tous) return true; var ok = true; bestJTous().forEach(function (x) { if (!S.jl[x.id]) { try { jCharger(x.id, D); } catch (e) {} } if (!(S.jl[x.id] && S.jl[x.id].d)) ok = false; }); return ok; }
   function bestCalc(D) {
     var B = S.best, l0 = S.lieu, NS = nsCr(D), SA = (D.saisons || []).slice(0, NS), R = [];
     S.lieu = B.lieu;
     try {
-      bestCands(S.combos[S.a] || combo0()).forEach(function (c) {
+      bestCandsDe(S.combos[S.a] || combo0()).forEach(function (c) {
         var tous = []; SA.slice().reverse().forEach(function (s) { var L0 = s && msS(c, s); if (L0) tous = tous.concat(filtrer(L0)); });
         if (!tous.length) return; var T = calc(c, tous); if (!(T.n >= 15)) return;
         var p = T.ok / T.n; if (!(p > 0)) return; var cj = 1 / p; if (cj < B.cm) return;   /* 20261116x (« j'ai pas les cotes en dessous de 1,5 ? ») : + boutons 1,20 et 1,30 (paris très réguliers, cotes basses) */
@@ -77923,7 +77940,12 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       + ((D && (D.saisons || []).length > 2) ? '<div style="font-size:14px;font-weight:800;margin-top:4px;">📅 Saisons</div>' + (function () { var o = '', nM = D.saisons.length, nC = nsCr(D); for (var q = 2; q <= nM; q++) o += bt(nC === q, q + ' saisons', 'g45CrBest(\'ns\',' + q + ')'); return o; })() : '')
       + '<div style="font-size:14px;font-weight:800;margin-top:4px;">Cote mini (cote juste)</div>' + [1.2, 1.3, 1.5, 1.7, 1.8, 2].map(function (v) { return bt(B.cm === v, String(v.toFixed(2)).replace('.', ','), 'g45CrBest(\'cm\',' + v + ')'); }).join('')
       + '<div style="font-size:14px;font-weight:800;margin-top:4px;">Trier par</div>' + bt(B.tri === 'pire', '🪜 Pire série', 'g45CrBest(\'tri\',\'pire\')') + bt(B.tri === 'p', '📊 Réussite', 'g45CrBest(\'tri\',\'p\')')
-      + '<div onclick="g45CrBest(\'go\')" style="cursor:pointer;margin-top:8px;text-align:center;padding:11px;border-radius:12px;font-size:16px;font-weight:900;background:#2f6bff;">🔍 Chercher (' + bestCands(S.combos[S.a] || combo0()).length + ' paris testés)</div>';
+      + (((S.ro[S.nom] || {}).l || []).length > 1 ? '<div style="font-size:14px;font-weight:800;margin-top:4px;">Joueurs testés</div>'   /* 20261123h */
+        + bt(!B.tous, '👤 Mes joueurs' + (joueurs(S.combos[S.a] || {}).length ? ' (' + esc(joueurs(S.combos[S.a]).map(function (x) { return String(x.n).split(' ').slice(-1)[0]; }).join(', ')) + ')' : ''), 'g45CrBest(\'tous\',0)')
+        + bt(!!B.tous, '👥 Tous les joueurs de ' + esc(S.nom), 'g45CrBest(\'tous\',1)')
+        + (B.tous ? '<div style="font-size:13px;color:#c9d3ee;">l\'appli teste chaque joueur seul + chaque duo « l\'un ou l\'autre » (les ' + Math.min(BEST_NJ, ((S.ro[S.nom] || {}).l || []).length) + ' premiers joueurs de la liste)</div>' : '') : '')
+      + '<div onclick="g45CrBest(\'go\')" style="cursor:pointer;margin-top:8px;text-align:center;padding:11px;border-radius:12px;font-size:16px;font-weight:900;background:#2f6bff;">🔍 Chercher (' + bestCandsDe(S.combos[S.a] || combo0()).length + ' paris testés)</div>';
+    if (B.att) { if (bestPrets(D)) { B.att = 0; B.R = bestCalc(D); } else { var nP = bestJTous().filter(function (x) { return S.jl[x.id] && S.jl[x.id].d; }).length; h += '<div style="font-size:14px;color:#f5c542;margin-top:8px;">⏳ Lecture des joueurs : ' + nP + ' / ' + bestJTous().length + '…</div>'; } }
     if (B.R) {
       h += '<div style="font-size:16px;font-weight:900;margin-top:12px;">🏆 Top stratégies</div>';
       if (!B.R.length) h += '<div style="font-size:14px;color:#c9d3ee;padding:6px 0;">Aucun pari à cette cote mini avec au moins 15 matchs. Baisse la cote mini ou change de lieu.</div>';
@@ -77940,17 +77962,19 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   }
   window.g45CrBest = function (k, v) {
     var B = S.best, D = S.data[S.nom];
-    if (k === 'on') { B.on = 1; B.nom = S.nom; B.R = null; B.lieu = S.lieu || 'tout'; }
+    if (k === 'on') { B.on = 1; B.nom = S.nom; B.R = null; B.att = 0; B.lieu = S.lieu || 'tout'; }
     else if (k === 'off') { B.on = 0; B.R = null; }
     else if (k === 'lieu') { B.lieu = v; B.R = null; }
     else if (k === 'cm') { B.cm = +v; B.R = null; }
     else if (k === 'ns') { try { localStorage.setItem('g45cr_ns', String(v)); } catch (e) {} if (B.R) B.R = D ? bestCalc(D) : null; }   /* 20261112h */
     else if (k === 'tri') { B.tri = v; if (B.R) B.R = D ? bestCalc(D) : null; }
-    else if (k === 'go') { B.R = D && D.saisons ? bestCalc(D) : []; }
+    else if (k === 'tous') { B.tous = +v ? 1 : 0; B.R = null; B.att = 0; }   /* 20261123h */
+    else if (k === 'go') { if (D && D.saisons && B.tous && !bestPrets(D)) { B.att = 1; B.R = null; } else B.R = D && D.saisons ? bestCalc(D) : []; }
     else if (k === 'use') { var x = B.R && B.R[+v]; if (x) { S.combos[S.a] = norm(Object.assign({}, x.c)); S.lieu = B.lieu; B.on = 0; B.R = null; } }
     try { redessiner(); } catch (e) {}
   };
   window._g45CrBest = function (D) { return bestCalc(D); };   /* tests */
+  window._g45BestTous = function () { return bestCandsTous(); };   /* tests 20261123h */
   function tableau(c, D0) {
     var NSc = nsCr(D0), D = NSc < (D0.saisons || []).length ? Object.assign({}, D0, { saisons: D0.saisons.slice(0, NSc) }) : D0, DX = (D0.saisons || []).slice(NSc);
     if (c.jbk && bkOk() && !S.bkE[S.ctx.lg + '|' + S.ctx.id]) bkCharger();   /* 20261103h : lignes du book lues une fois par équipe */
@@ -78832,6 +78856,10 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     else if (nba) h += '<div><span style="font-size:14px;color:#c9d3ee;margin-right:6px;">1 des 2 plus de</span>' + ['m19.5', 'm24.5', 'm29.5', 'm34.5'].map(function (x) { return pu('duoK', x, x.slice(1).replace('.', ',')); }).join('') + '</div>'
       + '<div><span style="font-size:14px;color:#c9d3ee;margin-right:6px;">Total des 2 plus de</span>' + ['s39.5', 's44.5', 's49.5', 's54.5'].map(function (x) { return pu('duoK', x, x.slice(1).replace('.', ',')); }).join('') + '</div>';
     h += '<div>' + pu('duoS', '2', '📅 2 saisons') + pu('duoS', '4', '📅 4 saisons') + '</div>';
+    /* 20261123h (« en fait on n'a pas le meilleur choix de l'équipe en joueurs ? » → « les 2 » → maquette maq_equipe.png « oui ») : ① 🏈 Seulement
+       <équipe de la carte> / 🌍 Toute la ligue (S.duoE) — même équipe = duoMemeEq (n° ESPN en US, nom en foot). */
+    S.duoE = S.duoE || 'tout';
+    if (S.nom) h += '<div>' + pu('duoE', 'eq', ({ nhl: '🏒', nba: '🏀', nfl: '🏈', mlb: '⚾' }[f] || '⚽') + ' Seulement ' + esc(S.nom)) + pu('duoE', 'tout', '🌍 Tout le championnat') + '</div>';
     h += '<div>' + pu('duoL', 'tout', '🌍 Tous') + pu('duoL', 'dom', '🏠 Domicile') + pu('duoL', 'ext', '✈️ Extérieur') + '</div>'
       + '<div>' + pu('duoT', 'ok', 'Réussite') + pu('duoT', 'pire', 'Pire série') + pu('duoT', 'sai', 'Cette saison') + '</div>';
     /* 20261123f (capture duos NFL « faudrait rajouter des cotes » → « 2 » = filtre → maquette maq_duo_cote.png « oui ») : 🎯 cote mini jusqu'à
@@ -78844,6 +78872,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       var n = S.duoL === 'dom' ? v[5] : S.duoL === 'ext' ? v[8] : v[0], ok = S.duoL === 'dom' ? v[6] : S.duoL === 'ext' ? v[9] : v[1], pire = S.duoL === 'dom' ? v[7] : S.duoL === 'ext' ? v[10] : v[4];
       return { d: d, i: i, n: n, r: n ? ok / n : 0, pire: pire, rs: v[2] ? v[3] / v[2] : 0, enc: v[11] };
     }).filter(function (x) { return x && x.n >= mn; });
+    if (S.duoE === 'eq' && S.nom) R = R.filter(function (x) { return duoMemeEq(x.d); });   /* 20261123h */
     var nAvC = R.length, sC = S.duoC === 'tout' ? 0 : +S.duoC;   /* 20261123f */
     if (sC > 1) R = R.filter(function (x) { return x.r > 0 && Math.ceil(100 / x.r) / 100 <= sC + 1e-9; });
     R.sort(function (a, b) { return S.duoT === 'pire' ? (a.pire - b.pire) || (b.r - a.r) : S.duoT === 'sai' ? (b.rs - a.rs) || (b.r - a.r) : (b.r - a.r) || (a.pire - b.pire); });
@@ -78862,7 +78891,8 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
           + (st ? '' : '<button onclick="g45DuoMur(\'' + f + '\',' + x.i + ')" style="border:0;border-radius:9px;padding:6px 10px;font-weight:800;font-size:14px;color:#fff;background:#1f7a3a;cursor:pointer;">➕ Ajouter au mur</button>')
           + (duoAffiche(d) ? '' : '<button onclick="g45DuoCr(\'' + f + '\',' + x.i + ')" style="border:0;border-radius:9px;padding:6px 10px;font-weight:800;font-size:14px;color:#fff;background:#2f6bff;cursor:pointer;">🔎 Voir ses critères</button>') + '</div>') + '</div></div>';
     });
-    if (!R.length) h += '<div style="font-size:14px;color:#ffd34d;">' + (nAvC && sC > 1 ? 'Aucun duo avec une cote mini à ' + String(S.duoC).replace('.', ',') + ' ou moins : choisis une cote plus haute.' : 'Pas assez de matchs ensemble à ce lieu.') + '</div>';
+    if (!R.length && S.duoE === 'eq' && !nAvC) h += '<div style="font-size:14px;color:#ffd34d;">Aucun duo de ' + esc(S.nom) + ' dans la liste (pas assez de matchs ensemble, ou chacun trop peu décisif) : essaie 🌍 Tout le championnat.</div>';
+    else if (!R.length) h += '<div style="font-size:14px;color:#ffd34d;">' + (nAvC && sC > 1 ? 'Aucun duo avec une cote mini à ' + String(S.duoC).replace('.', ',') + ' ou moins : choisis une cote plus haute.' : 'Pas assez de matchs ensemble à ce lieu.') + '</div>';
     return h + '<div style="font-size:14px;color:#c9d3ee;margin-top:6px;">Cote mini = cote à trouver chez ton book pour être gagnant. ⭐ = déjà sur ton mur. Pire série : <b style="color:#1ed760;">0-2</b> · <b style="color:#ff9f43;">3-4</b> · <b style="color:#ff5a5a;">5+</b>. Au moins ' + mn + ' matchs ensemble au lieu choisi.</div></div>';
   }
   window._g45DuosHtml = duosHtml;   /* tests */
