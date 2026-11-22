@@ -82167,6 +82167,14 @@ window._g45NhlJTrouver = _g45NhlJTrouver; window._g45NhlJHtml = _g45NhlJHtml; wi
 })();
 
 
+/* ═══ 20261124c — LOGO NHL DE SECOURS CHEZ ESPN (capture du mur : carte « Edmonton Oilers » sans logo ; sonde console : g45LogoUrlDe =
+   assets.nhle.com/logos/nhl/svg/EDM_dark.svg, rien d'autre) : l'image NHL ne s'affiche plus → logo ESPN a.espncdn.com/i/teamlogos/nhl/500/
+   <abréviation ESPN>.png (même serveur que tous les autres logos de l'appli ; abréviation ESPN = NHL en minuscules sauf NJ, SJ, TB, LA, UTAH). ═══ */
+window._g45NhlLogoEspn = function (ab) {
+  var x = { NJD: 'nj', SJS: 'sj', TBL: 'tb', LAK: 'la', UTA: 'utah' }[String(ab || '').toUpperCase()] || String(ab || '').toLowerCase();
+  return 'https://a.espncdn.com/i/teamlogos/nhl/500/' + x + '.png';
+};
+
 /* ═══ 20261015w — LOGO DU CLUB D'UN JOUEUR NHL SUR LA CARTE DU MUR (capture : Celebrini / « San Jose Sharks » sans logo) ═══
    _g45JoueurClubLogo cherchait le club de la note avec g45SdbClub(club, '⚽') — en FOOT : « San Jose Sharks » introuvable (échec
    gardé 7 j) ; Edmonton passait par un autre chemin. Joueur 🏒 dont la note (ou le nom) est un club NHL (_g45RegEquipe) → logo
@@ -82182,7 +82190,7 @@ window._g45NhlJTrouver = _g45NhlJTrouver; window._g45NhlJHtml = _g45NhlJHtml; wi
         if (eq) {
           var club = _g45UClub(u);
           var l = (club && typeof g45LogoUrlDe === 'function') ? g45LogoUrlDe(club) : '';
-          return l || ('https://assets.nhle.com/logos/nhl/svg/' + eq[0] + '_dark.svg');   /* 20261015x (« je les vois à peine ») : version pour fond SOMBRE (NON vérifiée) */
+          return l || window._g45NhlLogoEspn(eq[0]);   /* 20261124c : logo ESPN (le _dark.svg NHL ne s'affichait plus, carte Oilers vide) */   /* 20261015x (« je les vois à peine ») : version pour fond SOMBRE (NON vérifiée) */
         }
       }
     } catch (e) {}
@@ -82207,7 +82215,7 @@ window._g45NhlJTrouver = _g45NhlJTrouver; window._g45NhlJHtml = _g45NhlJHtml; wi
       var u = ((typeof state !== 'undefined' && state && state.u) || []).filter(function (x) { return x && x.n === name; })[0];
       if (u && u.type !== 'joueur' && /🏒/.test(u.sport || '') && typeof _g45RegEquipe === 'function') {
         var eq = _g45RegEquipe(name);
-        if (eq) return 'https://assets.nhle.com/logos/nhl/svg/' + eq[0] + '_dark.svg';
+        if (eq) return window._g45NhlLogoEspn(eq[0]);   /* 20261124c */
       }
     } catch (e) {}
     return l;
