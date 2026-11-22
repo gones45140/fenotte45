@@ -91962,3 +91962,26 @@ setTimeout(_g45PhEspRemplir, 8000);
   updMise = window.updMise = function () { var r = prev.apply(this, arguments); try { compSerie(); } catch (e) {} return r; };
   updMise._g45CompSerie = true;
 })();
+
+/* ═══ 20261122q — 🔄 COMMISSION DES EXCHANGES SUR LES PARIS SIMPLES / COCKPIT (capture OrbitX : Under 4,5 back 12,50 @ 2,02 « Fully Matched »,
+   si ça passe +12,37 (net de commission) ; « vu que c'est OrbitX, ça devrait le reconnaître non ? ») : jusqu'ici seul le ⚖️ Surebet retirait
+   la commission. Un pari BACK enregistré sur un exchange (OrbitX, Betfair, Matchbook, Smarkets… : nom du book) est gardé avec la cote NETTE
+   = 1 + (cote − 1) × 0,97 (3 % sur le GAIN seulement, comme le Surebet 20261110c) → comptabilité, gains et stats justes partout (toutes les
+   lectures utilisent la cote). Cote d'origine gardée (h.coteB) et écrite dans les notes. Lay, freebet, surebet : inchangés. ═══ */
+(function () {
+  var pa0 = window.pari; if (typeof pa0 !== 'function' || pa0._g45Exch) return;
+  var K = 3, exch = function (b) { var n = ''; try { n = (typeof bki === 'function' && bki(b) && bki(b).n) || ''; } catch (e) {} return /orbit|betfair|exchange|matchbook|smarkets|betdaq/i.test(String(b || '') + ' ' + n); };
+  window._g45ExchNet = function (b) {   /* b = pari → convertit sur place si besoin ; renvoie true si converti */
+    if (!b || b.isLay || b.isFreebet || b.sb || b.coteB || !exch(b.b)) return false;
+    var c = parseFloat(String(b.cote).replace(',', '.')); if (!(c > 1)) return false;
+    b.coteB = c; b.comX = K; b.cote = Math.round((1 + (c - 1) * (1 - K / 100)) * 10000) / 10000;
+    b.notes = '🔄 ' + (b.notes ? b.notes + ' · ' : '') + 'cote ' + String(c).replace('.', ',') + ' − ' + K + ' % de commission sur le gain';
+    return true;
+  };
+  window.pari = pari = function () {
+    var top = state.h && state.h[0], n0 = (state.h || []).length, r = pa0.apply(this, arguments), b = state.h && state.h[0];
+    try { if (b && b !== top && state.h.length > n0 && window._g45ExchNet(b)) { try { save(); } catch (e) {} try { if (typeof render === 'function') render(); } catch (e) {} } } catch (e) {}
+    return r;
+  };
+  pari._g45Exch = true;
+})();
