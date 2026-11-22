@@ -92619,13 +92619,18 @@ function _g45NflFeuilleHtml(data) {
           + ix.map(function (j) { return j >= 0 ? '<td style="' + td + '">' + esc((a.stats || [])[j]) + '</td>' : ''; }).join('') + '</tr>'; });
       h += '</table>';
     });
-    return { nom: t.displayName || t.shortDisplayName || ('Équipe ' + (ti + 1)), col: t.color ? '#' + t.color : '#2f6bff', h: h };
+    return { nom: t.displayName || t.shortDisplayName || ('Équipe ' + (ti + 1)), col: t.color ? '#' + t.color : '#2f6bff', h: h, mien: /⭐/.test(h) };
   }).filter(function (b) { return b.h; });
   if (!blocs.length) return '';
-  var bt = blocs.map(function (b, i) { return '<span onclick="var r=this.closest(\'.g45sj\');r.querySelectorAll(\'.g45sj-t\').forEach(function(x,k){x.style.display=k===' + i + '?\'\':\'none\';});r.querySelectorAll(\'.g45sj-b\').forEach(function(x,k){x.style.background=k===' + i + '?\'' + b.col + '\':\'#16213f\';});" class="g45sj-b" style="display:inline-block;cursor:pointer;padding:7px 12px;border-radius:10px;font-weight:800;font-size:14px;margin:0 6px 6px 0;border:1px solid #2a3a63;background:' + (i === 0 ? b.col : '#16213f') + ';color:#fff;">' + esc(b.nom) + '</span>'; }).join('');
+  /* 20261123v (« ça saute au rafraîchissement et remet Arizona, l'équipe à domicile ») : la fenêtre est redessinée pendant le direct → équipe
+     choisie gardée (window._g45SjSel = nom) ; sinon l'équipe d'un pari en cours (⭐), sinon la 1re. */
+  var sel = 0, S0 = window._g45SjSel || '';
+  blocs.forEach(function (b, i) { if (S0 && b.nom === S0) sel = i; });
+  if (!S0 || !blocs.some(function (b) { return b.nom === S0; })) blocs.forEach(function (b, i) { if (b.mien && !blocs[sel].mien) sel = i; });
+  var bt = blocs.map(function (b, i) { return '<span onclick="window._g45SjSel=\'' + esc(b.nom).replace(/'/g, '') + '\';var r=this.closest(\'.g45sj\');r.querySelectorAll(\'.g45sj-t\').forEach(function(x,k){x.style.display=k===' + i + '?\'\':\'none\';});r.querySelectorAll(\'.g45sj-b\').forEach(function(x,k){x.style.background=k===' + i + '?\'' + b.col + '\':\'#16213f\';});" class="g45sj-b" style="display:inline-block;cursor:pointer;padding:7px 12px;border-radius:10px;font-weight:800;font-size:14px;margin:0 6px 6px 0;border:1px solid #2a3a63;background:' + (i === sel ? b.col : '#16213f') + ';color:#fff;">' + esc(b.nom) + '</span>'; }).join('');
   return '<div class="g45sj" id="' + uid + '" style="background:rgba(21,28,48,.96);border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:12px;margin:10px 0;color:#fff;">'
     + '<div style="font-size:17px;font-weight:900;margin-bottom:8px;">📋 Stats des joueurs</div><div>' + bt + '</div>'
-    + blocs.map(function (b, i) { return '<div class="g45sj-t" data-g45pl="x" style="' + (i ? 'display:none;' : '') + '">' + b.h + '</div>'; }).join('')   /* 20261123u : data-g45pl x = pas replié en « 🎯 Passes » par le rangement automatique de la fenêtre */
+    + blocs.map(function (b, i) { return '<div class="g45sj-t" data-g45pl="x" style="' + (i !== sel ? 'display:none;' : '') + '">' + b.h + '</div>'; }).join('')   /* 20261123u : data-g45pl x = pas replié en « 🎯 Passes » par le rangement automatique de la fenêtre */
     + '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">⭐ = joueur d\'un de tes paris en cours · 🏈 = a marqué un TD · 🎯🏈 = passe de TD</div></div>';
 }
 window._g45NflFeuilleHtml = _g45NflFeuilleHtml;
