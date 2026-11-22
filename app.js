@@ -77536,7 +77536,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       /* 20261102r (capture : « il y a juste un truc, on peut pas choisir son nombre d'étoiles ») : boutons ⭐ 1 → 5 = même échelle que « mise max »
          (g45_pal_et, _g45PalEt) → le Total et le 💶 changent ensemble. */
       + '<div style="margin:4px 0 2px;">' + ['1', '2', '3', '4', '5'].map(function (k) { var on = k === et; return '<button onclick="g45CrCkEt(\'' + k + '\')" style="border-radius:14px;padding:5px 10px;font-size:14px;cursor:pointer;color:#fff;margin:4px 6px 0 0;border:1px solid ' + (on ? '#f5c542' : '#2a3a63') + ';background:' + (on ? '#5a4a12' : '#16213f') + ';font-weight:' + (on ? 800 : 400) + ';">' + k + ' ⭐</button>'; }).join('') + '</div>'
-      + '<div style="font-size:13px;color:#c9d3ee;margin:2px 0 6px;">Paliers ' + mises.join(' · ') + ' €</div>'
+      + '<div style="font-size:13px;color:#c9d3ee;margin:2px 0 6px;">Paliers ' + ((meth === 'mont' && typeof state !== 'undefined' && state && state.mode1) ? mises.map(function (x, k) { return String(Math.round((+mises[0] || 1) * (k ? 2.5 * Math.pow(3, k - 1) : 1) * 100) / 100).replace('.', ','); }).join(' · ') + ' € (🚀 mode unique, cote ≥ 1,50)' : mises.join(' · ') + ' €') + '</div>'   /* 20261124f */
       + (CM.p ? '<div style="font-size:14px;color:#ff9f43;font-weight:700;margin:2px 0 6px;line-height:1.45;">⚠️ Ta bankroll (' + Math.round(cap).toLocaleString('fr-FR') + ' €) ne couvre pas P' + CM.p + ' aujourd\'hui : il faudrait ' + Math.round(CM.besoin).toLocaleString('fr-FR') + ' € (tout perdu jusqu\'à P' + (CM.p - 1) + ' + la mise de P' + CM.p + '). Dans la simulation, ta bankroll évolue avec tes gains et tes pertes : une mise qu\'elle ne couvre pas = série 💥 perdue.</div>'
         : (cap > 0 && meth !== 'cb' ? '<div style="font-size:13px;color:#1ed760;margin:2px 0 6px;">✅ Ta bankroll (' + Math.round(cap).toLocaleString('fr-FR') + ' €) couvre les ' + mises.length + ' paliers (' + Math.round(CM.besoin).toLocaleString('fr-FR') + ' € au total).</div>' : ''))   /* 20261104b */
       /* 20261102o (Antoine : « faudrait pouvoir mettre soi-même la cote, + facile non ? ») : case à taper (clavier chiffres) au lieu de la liste. */
@@ -86634,7 +86634,12 @@ window._g45TrTestVoit = function () { try { return (typeof _g45SanteActive === '
     var et = (typeof _g45PalEt === 'function') ? _g45PalEt() : '1';
     var S = (typeof STRATS !== 'undefined' && (STRATS[et] || STRATS['1'])) || [1, 2, 6, 18, 54, 162, 486, 1458];
     var p = pire + 1;
-    return { p: p, mise: p <= S.length ? S[p - 1] : null, max: S.length, et: et, ico: p <= 5 ? '✅' : (p <= S.length ? '⚠️' : '❌') };
+    /* 20261124f (captures critères : « mise max 108 € (⭐⭐⭐) » mais simulation « plus grosse mise engagée 135 € » → « 2 mise maximum différente »
+       → « fait le tout de suite ») : en MODE UNIQUE 🚀 (state.mode1, 20261122v) la mise suit P1 × 2,5 au P2 puis × 3 (cote ≥ 1,50), comme simCalc ;
+       grille ⭐ classique sinon. */
+    var uni = typeof state !== 'undefined' && state && state.mode1;
+    var mU = function (k) { return Math.round((+S[0] || 1) * (k <= 1 ? 1 : 2.5 * Math.pow(3, k - 2)) * 100) / 100; };
+    return { p: p, mise: p <= S.length ? (uni ? mU(p) : S[p - 1]) : null, max: S.length, et: et, uni: !!uni, ico: p <= 5 ? '✅' : (p <= S.length ? '⚠️' : '❌') };
   };
   window._g45PalEt = function () { var v = '1'; try { v = localStorage.getItem('g45_pal_et') || '1'; } catch (e) {} return /^[1-5]$/.test(v) ? v : '1'; };
   window.g45PalEtChoix = function (k) {
