@@ -4407,11 +4407,14 @@ function _g45PalLieu(u, lieu){
   var L=_g45LieuNz(lieu);
   try{
     if(u.lc){
-      var suf='|'+L, sansLieu=null, aDesLieux=false;
+      var suf='|'+L, sansLieu=null, aDesLieux=false, mx=0;
+      /* 20261122j (capture « Prochaines 24 h » Barcelona 🏠 « P1 sur 9 » alors que Liga 🏠 = P2 ; la carte avait aussi une clé orpheline
+         nations|dom = 1, rangée AVANT) : on prenait la 1re clé du lieu → plusieurs compétitions au même lieu = la série EN COURS, le palier le plus haut. */
       for(var k in u.lc){
-        if(L && k.length>suf.length && k.slice(-suf.length)===suf) return parseInt(u.lc[k],10)||1;
+        if(L && k.length>suf.length && k.slice(-suf.length)===suf){ mx=Math.max(mx, parseInt(u.lc[k],10)||1); continue; }
         if(k.indexOf('|')>=0) aDesLieux=true; else if(sansLieu===null) sansLieu=parseInt(u.lc[k],10)||1;
       }
+      if(mx) return mx;
       /* Ancienne cle sans lieu : point de depart legitime des deux echelles. */
       if(sansLieu!==null) return sansLieu;
       /* Des qu'une echelle par lieu existe, `u.l` n'est plus une reference. */
