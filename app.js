@@ -32905,7 +32905,7 @@ async function _g45MultiAI(box, boxId, sys, facts, title){
   box.innerHTML='<div id="'+boxId+'-ac"></div>'+slot('gq','🧠 1ᵉʳ avis — l\'IA réfléchit…')+(gk||mem?slot('gm','🔷 Gemini réfléchit…'):'')+slot('ds','🧩 3ᵉ avis — l\'IA réfléchit…')+'<div id="'+boxId+'-pied"></div>';
   box.setAttribute('data-loaded','1');
   if(mem){
-    ['gq','gm','ds'].forEach(function(id){ var a=mem.av.filter(function(x){return x.k===id;})[0]; avis.push(a||null); if(a) poser(id,a); else { var el=document.getElementById(boxId+'-'+id); if(el) el.remove(); } });
+    ['gq','gm','ds'].forEach(function(id){ var a=mem.av.filter(function(x){return x.k===id;})[0]; avis.push(a||null); if(a) poser(id,a); else if(id==='gm'&&gk) poser('gm',{err:'🔷 Gemini n\'avait pas répondu lors de cette analyse (quota gratuit) — touche « 🔄 Relancer les IA » pour réessayer.'}); else { var el=document.getElementById(boxId+'-'+id); if(el) el.remove(); } });   /* 20261123k : case Gemini expliquée au lieu de disparaître */
     fin();
     return;
   }
@@ -32947,6 +32947,7 @@ async function _g45MultiAI(box, boxId, sys, facts, title){
           gEssais++; var gAc=(typeof AbortController!=='undefined')?new AbortController():null, gTo=gAc?setTimeout(function(){ try{gAc.abort();}catch(x){} },25000):0;
           var rg=await fetch(g45GeminiUrl(GM[gi]),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:sys+'\n\nFAITS :\n'+facts.join('\n')}]}],generationConfig:{temperature:0.4}}),signal:gAc?gAc.signal:undefined});
           dg=await rg.json(); if(gTo) clearTimeout(gTo);
+          if(rg.status===429) gEssais--;   /* 20261123k (« ton filtre IA enlève carrément Gemini ») : un 429 répond tout de suite et le quota est PAR modèle → il ne compte pas dans les 3 essais, les 6 modèles flash peuvent être tentés (50 s en tout reste la limite) */
           if(rg.status===429||rg.status===503) dg={error:{message:rg.status===429?'trop de demandes (quota gratuit), réessaie plus tard':'serveurs Google surchargés, réessaie plus tard'}};
           var gt=((dg.candidates&&dg.candidates[0]&&dg.candidates[0].content&&dg.candidates[0].content.parts&&dg.candidates[0].content.parts.map(function(pp){return pp.text||'';}).join(''))||'').trim();
           if(gt) return {k:'gm',lbl:'Gemini (Google)',col:'#4d84ff',txt:_g45IaNettoyer(gt)};
