@@ -90111,7 +90111,12 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     var R1 = calc(Object.assign({}, D, { S: 100, T: 100 })); if (!R1.ok) return R1;
     var fv = num(ST.fv), ref = ST.fix === '2' ? (D.k === 'lay' ? R1.L : R1.s2) : ST.fix === 't' ? (D.k === 'lay' ? 100 + R1.s2 : 100) : (D.k === 'lay' ? 100 : R1.s1);
     if (!(fv > 0) || !(ref > 0)) return { ok: false };
-    var x = 100 * fv / ref; return calc(Object.assign({}, D, { S: x, T: x }));
+    var x = 100 * fv / ref, R = calc(Object.assign({}, D, { S: x, T: x }));
+    /* 20261122g (capture : ticket Bet365 61,48 € lu, jambe enregistrée 61,46 € ; « je perds 345 pas 344,88 ») : la mise de référence (pour 100)
+       était ARRONDIE au centime avant la mise à l'échelle → la case tapée / lue ressortait à ± 2 centimes. La mise tapée est gardée TELLE QUELLE,
+       l'autre jambe vient du calcul, et le résultat est refait sur ces deux mises exactes (calcS). */
+    if (R.ok && (ST.fix === '1' || ST.fix === '2')) { var o2 = D.k === 'lay' ? R.L : R.s2, Rx = calcS(D, ST.fix === '1' ? fv : R.s1, ST.fix === '2' ? fv : o2); if (Rx.ok) R = Rx; }
+    return R;
   }
   window._g45SbCalcF = function (D, fix, fv) { var a = ST.fix, b = ST.fv; ST.fix = fix; ST.fv = fv; try { return calcF(D); } finally { ST.fix = a; ST.fv = b; } };
   function books() { var B = (typeof state !== 'undefined' && state && state.b) || {}; return Object.keys(B); }
@@ -90184,8 +90189,9 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
       + '<div id="sb-res"></div>'
       + '<button onclick="g45SbEnreg()" style="width:100%;margin-top:10px;cursor:pointer;border:0;border-radius:12px;padding:13px;font-size:17px;font-weight:900;color:#fff;background:#2f6bff;">✅ Enregistrer le surebet</button></div>';
     var keep = ST.vals || {};
-    z.innerHTML = h;
+    z.innerHTML = h + '<div id="sb-encours"></div>';
     Object.keys(keep).forEach(function (id) { var e = $(id); if (e && keep[id] != null && id !== 'sb-c') e.value = keep[id]; });
+    sbEnCours();
     if (!$('sb-date').value) { try { $('sb-date').value = new Date().toLocaleDateString('sv-SE'); } catch (e) {} }
     try { var ef = $('sb-m' + ST.fix); if (ef && ST.fv) ef.value = ST.fv; } catch (e) {}   /* 20261110d : la mise tapée reste */
     resultat();
@@ -90223,6 +90229,15 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     };
     inp.click();
   };
+  /* 20261122g (« je le trouve pas, même pas dans Bilan » → « oui, mets-le en dessous de Pari Surebet ») : les surebets EN COURS (cartes ⚖️ avec
+     les boutons d'issue, _g45SbCarte) aussi sous « Enregistrer le surebet » ; ils restaient seulement dans Simple → En cours. */
+  function sbEnCours() {
+    var z = $('sb-encours'); if (!z) return;
+    var L = ((typeof state !== 'undefined' && state.h) || []).filter(function (x) { return x && x.sb && x.sb.i === 1; });
+    if (!L.length) { z.innerHTML = ''; return; }
+    z.innerHTML = '<div style="font-size:17px;font-weight:900;color:#fff;margin:16px 0 6px;">⏳ Surebets en cours (' + L.length + ')</div>' + L.map(function (h) { var c = ''; try { c = window._g45SbCarte(h) || ''; } catch (e) {} return c; }).join('');
+  }
+  window._g45SbEnCours = sbEnCours;
   window.g45SbKind = function (k) { garder(); ST.k = k; ST.p = 'rep'; ST.b2 = null; panneau(); };
   window.g45SbPart = function (p) { garder(); ST.p = p; panneau(); };
   window.g45SbEnreg = function () {
@@ -90260,14 +90275,14 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
       var ix = state.h.indexOf(bet); if (ix >= 0) state.h.splice(ix, 1);
       state.a.unshift(nb);
     });
-    try { save(); } catch (e) {} try { updMise(); } catch (e) {} try { if (typeof render === 'function') render(); } catch (e) {}
+    try { save(); } catch (e) {} try { updMise(); } catch (e) {} try { if (typeof render === 'function') render(); } catch (e) {} try { sbEnCours(); } catch (e) {}
     return true;
   };
   window.g45SbAnnuler = function (g, sansConf) {
     var J = (state.h || []).filter(function (x) { return x && x.sb && x.sb.g === g; }); if (!J.length) return false;
     if (!sansConf && !confirm('Annuler ce surebet et rembourser les deux mises ?')) return false;
     J.forEach(function (bet) { _g45BetAppliquer(bet, 'h', -1); var ix = state.h.indexOf(bet); if (ix >= 0) state.h.splice(ix, 1); });
-    try { save(); } catch (e) {} try { updMise(); } catch (e) {} try { if (typeof render === 'function') render(); } catch (e) {}
+    try { save(); } catch (e) {} try { updMise(); } catch (e) {} try { if (typeof render === 'function') render(); } catch (e) {} try { sbEnCours(); } catch (e) {}
     return true;
   };
   /* Carte « En cours » : jambe 1 = carte ⚖️ des deux jambes ; jambe 2 = rien (null = pas un surebet) */
