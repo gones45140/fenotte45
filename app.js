@@ -92455,3 +92455,39 @@ setTimeout(_g45PhEspRemplir, 8000);
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ranger); else setTimeout(ranger, 0);
   setTimeout(ranger, 1700); setTimeout(ranger, 4000);
 })();
+
+/* ═══ 20261123m — ⬅️ FLÈCHE RETOUR DU NAVIGATEUR (Antoine, capture Chrome : « quand j'appuie ici ça me vire du site, est-ce normal ? » → « oui ») :
+   BET45 est une seule page ; les onglets ne prévenaient pas le navigateur → ← quittait le site. Chaque changement d'onglet (showTab, enveloppé
+   en DERNIER) ajoute une entrée d'historique { g45, t } ; ← : 1) ferme d'abord une fenêtre ouverte (fiche de match, modifier un pari…) ou la
+   fiche d'équipe (#detail) et reste sur l'onglet ; 2) sinon revient à l'onglet précédent ; 3) au tout début (entrée « base »), quitte le site.
+   Même chose avec le bouton retour d'Android. ═══ */
+(function () {
+  if (!window.history || !history.pushState) return;
+  var MOD = ['match-detail-modal', 'edit-bet-modal', 'edit-unit-modal', 'key-help-modal', 'g45-sg-modal', 'fd-edit-popup', 'fd-edit-overlay', 'g45-betlive-modal', 'simu-share-modal', 'profil-share-modal', 'profil-invite-modal'];
+  var nav = false, cur = null, pret = false;
+  function vis(e) { return !!(e && e.style.display !== 'none' && e.getClientRects().length); }
+  function fermer() {
+    var f = false; MOD.forEach(function (id) { var e = document.getElementById(id); if (vis(e)) { e.style.display = 'none'; f = true; } });
+    if (f) return true;
+    var d = document.getElementById('detail'); if (vis(d) && cur && typeof st0 === 'function') { nav = true; try { st0(cur, btnDe(cur)); } catch (x) {} nav = false; return true; }
+    return false;
+  }
+  function btnDe(id) { try { return document.querySelector('.ni[onclick*="\'' + id + '\'"]'); } catch (e) { return null; } }
+  function tabVisible() { var t = null; document.querySelectorAll('.tab').forEach(function (x) { if (!t && x.id && vis(x)) t = x.id; }); return t; }
+  var st0 = window.showTab;
+  if (typeof st0 !== 'function') return;
+  window.showTab = showTab = function (id, btn) {
+    var r = st0.apply(this, arguments);
+    try { if (pret && !nav && id && id !== cur) history.pushState({ g45: 1, t: id }, ''); if (id) cur = id; } catch (e) {}
+    return r;
+  };
+  window.addEventListener('popstate', function (ev) {
+    var s = ev.state; if (!s || !s.g45) return;
+    if (fermer()) { try { history.pushState({ g45: 1, t: cur }, ''); } catch (e) {} return; }   /* fenêtre fermée : on reste sur l'onglet */
+    if (s.base && s.t === cur) { history.back(); return; }   /* tout début : on quitte le site */
+    nav = true; try { window.showTab(s.t, btnDe(s.t)); } catch (e) {} nav = false; cur = s.t;
+  });
+  function init() { if (pret) return; cur = tabVisible() || cur || 't-home'; try { history.replaceState({ g45: 1, t: cur, base: 1 }, ''); history.pushState({ g45: 1, t: cur }, ''); } catch (e) {} pret = true; }
+  if (document.readyState === 'complete') setTimeout(init, 1200); else window.addEventListener('load', function () { setTimeout(init, 1200); });
+  window._g45RetourInit = init;   /* tests */
+})();
