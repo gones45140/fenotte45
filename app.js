@@ -79509,7 +79509,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
      buts / passes / points = le plus haut (au moins un) ou le plus bas (tous). ═══ */
   function serMultiJ(t) {
     var x = String(t || ''), m = x.match(/au moins un de \(([^)]+)\)/i);
-    if (m) return { L: m[1].split(/\s*,\s*/).map(function (z) { return z.trim(); }).filter(Boolean), m: 'un' };
+    if (m) return { L: m[1].split(/\s*,\s*|\s+ou\s+|\s+or\s+|\s*\/\s*/i).map(function (z) { return z.trim(); }).filter(Boolean), m: 'un' };   /* 20261123o : « (Kyle Connor ou Mark Scheifele) » aussi */
     var y = x.replace(/🌍|🏠|✈️?|🛫|📌/g, ' ').split('+').filter(function (q) { return /buteur|passeur|point/i.test(q); })[0] || '';
     var mo = /\s+et\s+/i.test(y) ? 'et' : /\s+ou\s+/i.test(y) ? 'un' : '';
     if (!mo) return null;
@@ -79533,7 +79533,9 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var hock = String(u.sport || '').indexOf('🏒') >= 0, foot = !hock && (!u.sport || String(u.sport).indexOf('⚽') >= 0);
     if (!hock && !foot) return fin('sport pas encore calculé (NHL, NBA et foot)');
     var club = serClub(u); if (!club) return fin('club manquant (Modifier → 🏟️ Club du joueur)');
-    var CS = P.map(function (q) { return serLegsJ(q.t, club); }), equipe = CS.some(function (c) { return c && (c.res || c.ou || c.bts || c.te || c.ad); });
+    /* 20261123o (carte Kyle Connor 🏠 « au moins un de (Kyle Connor ou Mark Scheifele) buteur » → « pari pas calculable (texte…) ») : les NOMS des
+       joueurs gênaient la lecture du pari → pari à plusieurs joueurs lu sans la liste des noms (« buteur »). */
+    var CS = P.map(function (q) { var tq = q.t; try { if (serMultiJ(tq)) tq = String(tq).replace(/au moins un de \([^)]*\)/i, ' ').replace(/\s+/g, ' '); } catch (e) {} return serLegsJ(tq, club); }), equipe = CS.some(function (c) { return c && (c.res || c.ou || c.bts || c.te || c.ad); });
     var X = null, log = null, civil = false, ms = [];
     if (!hock || equipe) { X = await serCtx(club, foot); if (X.err) return fin(X.err + ' (' + club + ')'); }   /* NHL sans jambe d'équipe : l'abréviation suffit */
     if (hock) {
@@ -80588,7 +80590,7 @@ window._G45_PAL_COUL = ['#1ed760', '#8fdc4a', '#f5c542', '#ffa53a', '#ff7a3a', '
        « Calculer mes séries » (u.psL) a déjà une série calculée pour le même lieu (dom / ext, 🌍 = glob) — une seule ligne, celle qu'on peut recalculer. */
     /* 20261123n (carte Draisaitl : ligne « ✈️ au moins un de (McDavid, Draisaitl) buteur » restée alors que le pari ✈️ a été vidé dans
        ✏️ Modifier → « comment on fait pour l'enlever ? ») : plus de pari à ce lieu sur la carte → la ligne 📌 gardée n'est plus affichée. */
-    try { var DN = (u.note && window._g45UfDecoupe) ? window._g45UfDecoupe(u.note) : null; if (DN && ((P.k === 'dom' && !DN.dom) || (P.k === 'ext' && !DN.ext))) return ''; } catch (e) {}
+    try { var DN = (u.note && window._g45UfDecoupe) ? window._g45UfDecoupe(u.note) : null; if (DN && ((P.k === 'dom' && !DN.dom) || (P.k === 'ext' && !DN.ext) || (P.k !== 'dom' && P.k !== 'ext' && !DN.glob))) return ''; } catch (e) {}   /* 20261123o : 🌍 aussi (carte Kyle Connor : ligne 🌍 sans pari 🌍) */
     var kL = P.k === 'dom' ? 'dom' : P.k === 'ext' ? 'ext' : 'glob', RL = u.psL && u.psL[kL];
     if (RL && !RL.err && RL.p && RL.p.length) return '';
     var col = function (v) { return v <= 2 ? '#1ed760' : (v <= 4 ? '#ff9f43' : '#ff5a5a'); };
