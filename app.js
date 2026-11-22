@@ -75516,7 +75516,10 @@ function _g45CourbePropre(ch, dates) {
   function _g45ClubArchive(nom) {
     var box = $i('ip-archive'); if (!box || typeof _g45BetRowMini !== 'function') return;
     var paris = ((state && state.a) || []).filter(function (h) { return h && h.n === nom; });
-    if (!paris.length) return;
+    /* 20261122j (capture fiche Barcelona, « ✈️ Extérieur 5 » choisi mais Barcelona – Alavés (domicile) dans l'Archive) : l'Archive refaite ici
+       relisait TOUS les paris de la carte → mêmes filtres compétition + lieu que Bilan / Graphs / Types (_g45CompFiltre, enveloppé). */
+    try { if (typeof window._g45CompFiltre === 'function') { var pf = window._g45CompFiltre(paris, nom); if (Array.isArray(pf)) paris = pf; } } catch (e) {}
+    if (!paris.length) { box.innerHTML = '<div class="empty">Aucun pari archivé</div>'; return; }
     var jours = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
     var tri = paris.slice().sort(function (a, b) { var x = (a.date || '') + ' ' + (a.heure || ''), y = (b.date || '') + ' ' + (b.heure || ''); return y < x ? -1 : (y > x ? 1 : 0); });
     var parJ = {}, ordre = [];
