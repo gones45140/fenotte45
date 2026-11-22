@@ -78828,12 +78828,18 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     h += '<div>' + pu('duoS', '2', '📅 2 saisons') + pu('duoS', '4', '📅 4 saisons') + '</div>';
     h += '<div>' + pu('duoL', 'tout', '🌍 Tous') + pu('duoL', 'dom', '🏠 Domicile') + pu('duoL', 'ext', '✈️ Extérieur') + '</div>'
       + '<div>' + pu('duoT', 'ok', 'Réussite') + pu('duoT', 'pire', 'Pire série') + pu('duoT', 'sai', 'Cette saison') + '</div>';
+    /* 20261123f (capture duos NFL « faudrait rajouter des cotes » → « 2 » = filtre → maquette maq_duo_cote.png « oui ») : 🎯 cote mini jusqu'à
+       1,20 / 1,30 / 1,50 / 1,80 / 2,00 / Toutes (S.duoC) — ne garde que les duos dont la cote mini (1 ÷ réussite au lieu choisi) est sous ce seuil. */
+    S.duoC = S.duoC || 'tout';
+    h += '<div><span style="font-size:14px;color:#c9d3ee;margin-right:6px;">🎯 Cote mini jusqu\'à</span>' + ['1.2', '1.3', '1.5', '1.8', '2'].map(function (x) { return pu('duoC', x, (+x).toFixed(2).replace('.', ',')); }).join('') + pu('duoC', 'tout', 'Toutes') + '</div>';
     var mn = f.indexOf('foot') === 0 || f === 'nfl' ? 10 : 20;
     var R = D.L.map(function (d, i) {
       var v = (S.duoS === '4' && d[8] && d[8][k]) || (d[6] || {})[k]; if (!v) return null;
       var n = S.duoL === 'dom' ? v[5] : S.duoL === 'ext' ? v[8] : v[0], ok = S.duoL === 'dom' ? v[6] : S.duoL === 'ext' ? v[9] : v[1], pire = S.duoL === 'dom' ? v[7] : S.duoL === 'ext' ? v[10] : v[4];
       return { d: d, i: i, n: n, r: n ? ok / n : 0, pire: pire, rs: v[2] ? v[3] / v[2] : 0, enc: v[11] };
     }).filter(function (x) { return x && x.n >= mn; });
+    var nAvC = R.length, sC = S.duoC === 'tout' ? 0 : +S.duoC;   /* 20261123f */
+    if (sC > 1) R = R.filter(function (x) { return x.r > 0 && Math.ceil(100 / x.r) / 100 <= sC + 1e-9; });
     R.sort(function (a, b) { return S.duoT === 'pire' ? (a.pire - b.pire) || (b.r - a.r) : S.duoT === 'sai' ? (b.rs - a.rs) || (b.r - a.r) : (b.r - a.r) || (a.pire - b.pire); });
     R.slice(0, 15).forEach(function (x, kk) {
       /* 20261122b (capture : Lightning sans logo ; « on n'a pas le nombre de matchs joués ensemble ») : logo donné par le robot (d[7], par n° d'équipe), sinon index ; « sur N matchs ensemble » */
@@ -78850,7 +78856,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
           + (st ? '' : '<button onclick="g45DuoMur(\'' + f + '\',' + x.i + ')" style="border:0;border-radius:9px;padding:6px 10px;font-weight:800;font-size:14px;color:#fff;background:#1f7a3a;cursor:pointer;">➕ Ajouter au mur</button>')
           + (duoAffiche(d) ? '' : '<button onclick="g45DuoCr(\'' + f + '\',' + x.i + ')" style="border:0;border-radius:9px;padding:6px 10px;font-weight:800;font-size:14px;color:#fff;background:#2f6bff;cursor:pointer;">🔎 Voir ses critères</button>') + '</div>') + '</div></div>';
     });
-    if (!R.length) h += '<div style="font-size:14px;color:#ffd34d;">Pas assez de matchs ensemble à ce lieu.</div>';
+    if (!R.length) h += '<div style="font-size:14px;color:#ffd34d;">' + (nAvC && sC > 1 ? 'Aucun duo avec une cote mini à ' + String(S.duoC).replace('.', ',') + ' ou moins : choisis une cote plus haute.' : 'Pas assez de matchs ensemble à ce lieu.') + '</div>';
     return h + '<div style="font-size:14px;color:#c9d3ee;margin-top:6px;">Cote mini = cote à trouver chez ton book pour être gagnant. ⭐ = déjà sur ton mur. Pire série : <b style="color:#1ed760;">0-2</b> · <b style="color:#ff9f43;">3-4</b> · <b style="color:#ff5a5a;">5+</b>. Au moins ' + mn + ' matchs ensemble au lieu choisi.</div></div>';
   }
   window._g45DuosHtml = duosHtml;   /* tests */
