@@ -90936,7 +90936,7 @@ window.g45SerNs = function (nom, n, el) {
   window._g45ModeSel = {};
   function rangee(k, v) {
     return '<div class="g45-mode" data-k="' + k + '" style="display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 10px;align-items:center;"><span style="font-size:14px;color:#c9d3ee;">Mode :</span>'
-      + M.map(function (m) { var on = m[0] === v; return '<button type="button" onclick="g45ModeChoix(\'' + k + '\',\'' + m[0] + '\')" style="border-radius:10px;padding:6px 10px;font-size:14px;font-weight:800;cursor:pointer;color:#fff;border:2px solid ' + (on ? '#1ed760' : '#2a3a63') + ';background:' + (on ? '#14532d' : '#0b1226') + ';">' + (on ? '☑ ' : '☐ ') + m[1] + '</button>'; }).join('') + '</div>';
+      + M.filter(function (m) { return m[0] !== 'cb' || !(typeof state !== 'undefined' && state.mode1); }).map(function (m) { var on = m[0] === v; return '<button type="button" onclick="g45ModeChoix(\'' + k + '\',\'' + m[0] + '\')" style="border-radius:10px;padding:6px 10px;font-size:14px;font-weight:800;cursor:pointer;color:#fff;border:2px solid ' + (on ? '#1ed760' : '#2a3a63') + ';background:' + (on ? '#14532d' : '#0b1226') + ';">' + (on ? '☑ ' : '☐ ') + m[1] + '</button>'; }).join('') + '</div>';
   }
   function poser() {
     Object.keys(CH).forEach(function (k) {
