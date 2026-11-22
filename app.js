@@ -88719,7 +88719,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     if (t) t.style.display = TAB === 'tdb' ? '' : 'none'; if (e) e.style.display = TAB === 'eng' ? '' : 'none'; if (cb) cb.style.display = (TAB === 'bil' || TAB === 'arc') ? '' : 'none';
     if (TAB === 'bil' || TAB === 'arc') {
       try { var cbz = $('ck-bil'), bmz = $('g45-bil-meth'); if (cbz && !bmz) { bmz = document.createElement('div'); bmz.id = 'g45-bil-meth'; bmz.style.cssText = 'margin:0 0 8px;display:flex;flex-wrap:wrap;gap:6px;'; cbz.insertBefore(bmz, cbz.firstChild); }
-        if (bmz) { var mB = window._g45BilMeth || 'mont'; bmz.innerHTML = [['mont', '🚀 Cockpit (tout)'], ['mb', '📉 sous 1,50'], ['mh', '🚀 1,50 et +'], ['fib', '🐚 Fibonacci'], ['dal', '🪜 D\'Alembert'], ['cb', '📉 anciennes Cotes basses'], ['tout', 'Toutes']].map(function (x) { var on = x[0] === mB; return '<button onclick="g45BilMeth(\'' + x[0] + '\')" style="' + BTN + (on ? 'background:#2a4a9a;border-color:#6d9dff;' : '') + '">' + x[1] + '</button>'; }).join(''); } } catch (x) {}   /* 20261106h : filtre par méthode */
+        if (bmz) { var mB = window._g45BilMeth || 'mont'; bmz.innerHTML = [['mont', '🚀 Cockpit (tout)'], ['mb', '📉 sous 1,50'], ['mh', '🚀 1,50 et +'], ['fib', '🐚 Fibonacci'], ['dal', '🪜 D\'Alembert']].concat(state.mode1b ? [] : [['cb', '📉 anciennes Cotes basses']]).concat([['tout', 'Toutes']]).map(function (x) { var on = x[0] === mB; return '<button onclick="g45BilMeth(\'' + x[0] + '\')" style="' + BTN + (on ? 'background:#2a4a9a;border-color:#6d9dff;' : '') + '">' + x[1] + '</button>'; }).join(''); } } catch (x) {}   /* 20261106h : filtre par méthode */
       if (bilPrendre()) { window._g45ArchCk = TAB === 'arc';
         try { if (TAB === 'arc') showBilanTab('arch', $('btab-arch')); else showBilanTab('cockpit', $('btab-cockpit')); } catch (x) {}
         try { if (TAB === 'bil' && typeof renderGlobalCharts === 'function') setTimeout(function () { try { renderGlobalCharts(); } catch (y) {} }, 50); } catch (x) {} }
@@ -92164,7 +92164,22 @@ setTimeout(_g45PhEspRemplir, 8000);
     try { if (n && typeof toast === 'function') toast('🚀 Mode unique : ' + n + ' série' + (n > 1 ? 's' : '') + ' 📉 reprise' + (n > 1 ? 's' : '') + ' dans le Cockpit'); } catch (e) {}
     return n;
   };
-  var essai = 0, go = function () { if (typeof state !== 'undefined' && state && Array.isArray(state.u)) { try { window._g45Mode1(); } catch (e) {} return; } if (++essai < 20) setTimeout(go, 1500); };
+  /* 20261122za (capture 📈 Bilan, filtre « 📉 anciennes Cotes basses » : 22 paris → « ça on le bascule ? ») : une fois (state.mode1b), chaque
+     pari 📉 (meth 'cb', en cours ET réglé) devient un pari 🚀 Cockpit : isS, palier l = mp, lieu tiré de la clé mk si absent, methO = 'cb'
+     (mémoire). Argent inchangé (même cote, même mise) ; un 📉 encore EN COURS fait avancer l'échelle 🚀 reprise (sinon son règlement
+     recréait une série 📉). Bilan : pastille / filtre selon la cote (20261122x), bouton « anciennes Cotes basses » retiré. */
+  window._g45Mode1b = function () {
+    if (typeof state === 'undefined' || !state || state.mode1b || !state.mode1) return 0;
+    var n = 0; ((state.h || []).concat(state.a || [])).forEach(function (b) {
+      if (!b || b.meth !== 'cb') return;
+      b.methO = 'cb'; b.isS = true; b.l = parseInt(b.mp, 10) || 1; if (!b.domicile) { var lz = String(b.mk || '').split('|')[1] || ''; if (lz === 'dom' || lz === 'ext') b.domicile = lz; }
+      delete b.meth; delete b.mp; n++;
+    });
+    state.mode1b = 1; try { save(); } catch (e) {} try { if (typeof render === 'function') render(); } catch (e) {}
+    try { if (n && typeof toast === 'function') toast('🚀 ' + n + ' pari' + (n > 1 ? 's' : '') + ' 📉 passé' + (n > 1 ? 's' : '') + ' en Cockpit'); } catch (e) {}
+    return n;
+  };
+  var essai = 0, go = function () { if (typeof state !== 'undefined' && state && Array.isArray(state.u)) { try { window._g45Mode1(); } catch (e) {} try { window._g45Mode1b(); } catch (e) {} return; } if (++essai < 20) setTimeout(go, 1500); };
   setTimeout(go, 3000);
 })();
 
