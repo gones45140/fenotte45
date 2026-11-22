@@ -86765,7 +86765,18 @@ window._g45MqPalHtml = function (pire, pd) {
     el.insertAdjacentHTML('beforeend', '<div class="g45-lieuf" style="display:flex;flex-wrap:wrap;align-items:center;margin-top:4px;"><span style="font-size:14px;color:#c9d3ee;margin-right:8px;">Lieu :</span>'
       + b('', 'Tous', (liste || []).length) + (n.glob ? b('glob', '🌍 Global', n.glob) : '') + (n.dom ? b('dom', '🏠 Domicile', n.dom) : '') + (n.ext ? b('ext', '✈️ Extérieur', n.ext) : '') + '</div>');
   };
-  window.g45SetLieuF = function (nom, v) { window._g45LieuF[nom] = v || ''; if (typeof openClub === 'function') openClub(nom); };
+  /* 20261122l (« quand je clique sur Archive domicile du Barça ça me met à cette page » = Bilan) : un filtre Lieu / compétition rouvre la fiche
+     (openClub) qui repartait sur Bilan → on garde l'onglet ouvert (Archive, Graphs, Types…). */
+  var garderOnglet = function (f) {
+    var b = document.querySelector('#detail .itab.on, .itabs .itab.on'), m = b && /swInner\('([a-z]+)'/.exec(b.getAttribute('onclick') || ''), y = window.scrollY;
+    f();
+    if (!m || m[1] === 'bilan') return;
+    var nb = Array.prototype.filter.call(document.querySelectorAll('.itabs .itab'), function (x) { return (x.getAttribute('onclick') || '').indexOf("swInner('" + m[1] + "'") >= 0; })[0];
+    try { if (nb && typeof swInner === 'function') { swInner(m[1], nb); window.scrollTo(0, y); } } catch (e) {}
+  };
+  window.g45SetLieuF = function (nom, v) { window._g45LieuF[nom] = v || ''; garderOnglet(function () { if (typeof openClub === 'function') openClub(nom); }); };
+  var sc0 = window.g45SetCompF;
+  if (typeof sc0 === 'function') g45SetCompF = window.g45SetCompF = function (nom, v) { var a = arguments, t = this; garderOnglet(function () { sc0.apply(t, a); }); };
 })();
 /* 20261029j (suite, « oui ») : % de l'onglet Types en vert (≥ 60 %), orange (40–59 %), rouge (< 40 %) au lieu de la couleur de l'équipe (illisible
    en bleu foncé / rouge même à 100 %). Couleur posée après chaque rendu de #ip-types (openClub, DEUX copies, intactes). */
