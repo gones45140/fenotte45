@@ -32938,16 +32938,22 @@ async function _g45MultiAI(box, boxId, sys, facts, title){
       /* Liste decouverte aupres de Google plutot que codee en dur : un modele
          retire ne casse plus le maillon correspondant. */
       var GM=await g45GeminiModeles();
-      for(var gi=0; gi<GM.length; gi++){
+      /* 20261123g (capture « il dort Gemini » : « Gemini réfléchit… » sans fin, console 429 ×3 puis 503 ×2) : chaque modèle était essayé à la
+         suite SANS limite de temps — un 503 de Google (surcharge) peut traîner longtemps. Garde-fou : 3 modèles au plus, 25 s par essai
+         (AbortController), 50 s en tout ; ensuite « 🔷 Gemini indisponible » s'affiche à la place de l'attente. */
+      var gT0=Date.now(), gEssais=0;
+      for(var gi=0; gi<GM.length && gEssais<3 && Date.now()-gT0<50000; gi++){
         try{
-          var rg=await fetch(g45GeminiUrl(GM[gi]),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:sys+'\n\nFAITS :\n'+facts.join('\n')}]}],generationConfig:{temperature:0.4}})});
-          dg=await rg.json();
+          gEssais++; var gAc=(typeof AbortController!=='undefined')?new AbortController():null, gTo=gAc?setTimeout(function(){ try{gAc.abort();}catch(x){} },25000):0;
+          var rg=await fetch(g45GeminiUrl(GM[gi]),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:sys+'\n\nFAITS :\n'+facts.join('\n')}]}],generationConfig:{temperature:0.4}}),signal:gAc?gAc.signal:undefined});
+          dg=await rg.json(); if(gTo) clearTimeout(gTo);
+          if(rg.status===429||rg.status===503) dg={error:{message:rg.status===429?'trop de demandes (quota gratuit), réessaie plus tard':'serveurs Google surchargés, réessaie plus tard'}};
           var gt=((dg.candidates&&dg.candidates[0]&&dg.candidates[0].content&&dg.candidates[0].content.parts&&dg.candidates[0].content.parts.map(function(pp){return pp.text||'';}).join(''))||'').trim();
           if(gt) return {k:'gm',lbl:'Gemini (Google)',col:'#4d84ff',txt:_g45IaNettoyer(gt)};
-        }catch(ge){}
+        }catch(ge){ if(ge&&ge.name==='AbortError') dg={error:{message:'pas de réponse en 25 s, réessaie plus tard'}}; }
       }
     }catch(e){ return {err:'🔷 Gemini injoignable.'}; }
-    return {err:'🔷 Gemini indisponible'+((dg&&dg.error&&dg.error.message)?(' : '+String(dg.error.message).slice(0,60)):'')+'.'};
+    return {err:'🔷 Gemini indisponible'+((dg&&dg.error&&dg.error.message)?(' : '+String(dg.error.message).slice(0,70)):'')+'.'};
   })().then(function(a){ avis[1]=a&&a.txt?a:null; poser('gm',a); });
   var troisieme=(async function(){
     /* 11/09/2026 : la liste etait en dur et trois de ses quatre noms etaient
