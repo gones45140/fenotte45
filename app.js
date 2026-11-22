@@ -80586,6 +80586,9 @@ window._G45_PAL_COUL = ['#1ed760', '#8fdc4a', '#f5c542', '#ffa53a', '#ff7a3a', '
     var P = u && u.ps; if (!P || !P.p || !P.p.length) return '';
     /* 20261102t (capture Wembanyama : deux lignes, « pourquoi un calcul en haut et en bas du bouton ? » → « oui ») : la ligne 📌 est cachée quand
        « Calculer mes séries » (u.psL) a déjà une série calculée pour le même lieu (dom / ext, 🌍 = glob) — une seule ligne, celle qu'on peut recalculer. */
+    /* 20261123n (carte Draisaitl : ligne « ✈️ au moins un de (McDavid, Draisaitl) buteur » restée alors que le pari ✈️ a été vidé dans
+       ✏️ Modifier → « comment on fait pour l'enlever ? ») : plus de pari à ce lieu sur la carte → la ligne 📌 gardée n'est plus affichée. */
+    try { var DN = (u.note && window._g45UfDecoupe) ? window._g45UfDecoupe(u.note) : null; if (DN && ((P.k === 'dom' && !DN.dom) || (P.k === 'ext' && !DN.ext))) return ''; } catch (e) {}
     var kL = P.k === 'dom' ? 'dom' : P.k === 'ext' ? 'ext' : 'glob', RL = u.psL && u.psL[kL];
     if (RL && !RL.err && RL.p && RL.p.length) return '';
     var col = function (v) { return v <= 2 ? '#1ed760' : (v <= 4 ? '#ff9f43' : '#ff5a5a'); };
