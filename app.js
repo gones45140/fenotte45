@@ -91978,6 +91978,33 @@ setTimeout(_g45PhEspRemplir, 8000);
     b.notes = '🔄 ' + (b.notes ? b.notes + ' · ' : '') + 'cote ' + String(c).replace('.', ',') + ' − ' + K + ' % de commission sur le gain';
     return true;
   };
+  /* 20261122q (suite, « Cockpit ou autre mode, dès que c'est parié sur OrbitX la règle doit s'appliquer ») : aussi le COMBINÉ (saveCombiPending)
+     et la MODIFICATION ✏️ (saveBetEdit) : book passé sur un exchange ou cote retapée → effet du pari retiré, cote nette recalculée, effet remis
+     (_g45BetAppliquer, seule source de vérité) ; book repassé sur un book classique → cote d'origine rendue. */
+  var sansNote = function (t) { return String(t || '').replace(/^🔄 /, '').replace(/(^| · )cote [\d,]+ − \d+ % de commission sur le gain$/, '').trim(); };
+  window._g45ExchEdit = function (b, loc) {
+    if (!b || b.isLay || b.isFreebet || b.sb) return false;
+    var c = parseFloat(String(b.cote).replace(',', '.')), net = b.coteB ? Math.round((1 + (b.coteB - 1) * (1 - (b.comX || K) / 100)) * 10000) / 10000 : null;
+    if (exch(b.b)) { if (b.coteB && Math.abs(c - net) < 1e-4) return false; }
+    else if (!(b.coteB && Math.abs(c - net) < 1e-4)) return false;
+    if (typeof _g45BetAppliquer === 'function') _g45BetAppliquer(b, loc, -1);
+    if (exch(b.b)) { delete b.coteB; b.notes = sansNote(b.notes); window._g45ExchNet(b); }
+    else { b.cote = b.coteB; delete b.coteB; delete b.comX; b.notes = sansNote(b.notes); }
+    if (typeof _g45BetAppliquer === 'function') _g45BetAppliquer(b, loc, +1);
+    return true;
+  };
+  var sc0 = window.saveCombiPending;
+  if (typeof sc0 === 'function') window.saveCombiPending = saveCombiPending = function () {
+    var top = state.h && state.h[0], n0 = (state.h || []).length, r = sc0.apply(this, arguments), b = state.h && state.h[0];
+    try { if (b && b !== top && state.h.length > n0 && window._g45ExchNet(b)) { try { save(); } catch (e) {} try { if (typeof render === 'function') render(); } catch (e) {} } } catch (e) {}
+    return r;
+  };
+  var se0 = window.saveBetEdit;
+  if (typeof se0 === 'function') window.saveBetEdit = saveBetEdit = function (id) {
+    var r = se0.apply(this, arguments);
+    try { var f = typeof _betFind === 'function' ? _betFind(id) : null; if (f && window._g45ExchEdit(f.bet, f.pending ? 'h' : 'a')) { try { save(); } catch (e) {} try { if (typeof render === 'function') render(); } catch (e) {} } } catch (e) {}
+    return r;
+  };
   window.pari = pari = function () {
     var top = state.h && state.h[0], n0 = (state.h || []).length, r = pa0.apply(this, arguments), b = state.h && state.h[0];
     try { if (b && b !== top && state.h.length > n0 && window._g45ExchNet(b)) { try { save(); } catch (e) {} try { if (typeof render === 'function') render(); } catch (e) {} } } catch (e) {}
