@@ -73463,7 +73463,26 @@ window._g45BetsFusion = _g45BetsFusion;
    (`_g45TicketTesseract`, mêmes règles qu'avant + mise sur la ligne suivante). Passage par le worker avec une
    image : NON vérifié (taille de corps acceptée).
    ═══════════════════════════════════════════════════════════════════════════ */
+/* ═══ 20261123i (capture ticket MyMatch « Marqueur de touchdown Kelce ou Rice » : « il remplit qu'un seul joueur ») : plusieurs joueurs d'un
+   même pari. L'IA rend « joueur » = « A ou B » (ou une liste « joueurs ») → découpé : 1er joueur dans le champ, les autres en « + Ajouter un
+   joueur » (g45JAjout), mode OU (« ou », « / ») ou ET (« et », « + », « & ») ; o.joueur garde le 1er pour la recherche de la carte. ═══ */
+function _g45TkJoueurs(o) {
+  if (!o || o._jL) return;
+  var L = [], m = 'ou';
+  if (Array.isArray(o.joueurs)) L = o.joueurs.map(function (x) { return String(x || '').trim(); }).filter(Boolean);
+  if (L.length < 2 && o.joueur) { var t = String(o.joueur);
+    if (/\s(et|and|&|\+)\s/i.test(t) && !/\s(ou|or)\s|\//i.test(t)) m = 'et';
+    L = t.split(/\s+(?:ou|or|et|and)\s+|\s*[\/&+,;]\s*/i).map(function (x) { return x.trim(); }).filter(function (x) { return x.length >= 2; }); }
+  if (o.jmode === 'et') m = 'et';
+  o._jL = L; o._jM = m; if (L.length) o.joueur = L[0];
+}
+function _g45TkJoueursPoser(o, p) {
+  var L = (o && o._jL) || []; if (L.length < 2 || typeof g45JAjout !== 'function') return;
+  for (var i = 1; i < L.length && i < 4; i++) g45JAjout(L[i], '', p);
+  try { if (typeof g45JMode === 'function') g45JMode(o._jM || 'ou', p); } catch (e) {}
+}
 function _g45TicketRemplir(o) {
+  try { _g45TkJoueurs(o); } catch (e) {}   /* 20261123i */
   var ids = [];
   var met = function (id, v) {
     var e = document.getElementById(id);
@@ -73478,6 +73497,7 @@ function _g45TicketRemplir(o) {
   try { ['n-joueur', 'n-joueur-match'].forEach(function (id) { var e = document.getElementById(id); if (e && e.value) { e.value = ''; try { e.dispatchEvent(new Event('input', { bubbles: true })); } catch (x) {} } });
     var bx = document.getElementById('n-joueurs-extra'); if (bx && bx.children.length) { bx.innerHTML = ''; if (typeof g45JMajMode === 'function') g45JMajMode('n'); } } catch (x) {}
   met('n-joueur', o.joueur);
+  try { _g45TkJoueursPoser(o, 'n'); } catch (e) {}   /* 20261123i */
   if (/^\d{4}-\d{2}-\d{2}$/.test(String(o.date || ''))) met('n-date', o.date);
   if (/^\d{1,2}:\d{2}$/.test(String(o.heure || ''))) met('n-heure', String(o.heure).padStart(5, '0'));
   met('n-comp', o.competition); met('n-type', (typeof _g45TypeMots === 'function' && o.type) ? _g45TypeMots(o.type, o.equipe, o.adversaire) : o.type);   /* 20261029k */
@@ -73583,6 +73603,7 @@ window._g45TkRacines = function (t) {
   return l.filter(function (w, i) { return l.indexOf(w) === i; }).sort().join(' ');
 };
 function _g45TicketRemplirCockpit(o) {
+  try { _g45TkJoueurs(o); } catch (e) {}   /* 20261123i */
   var ids = [];
   var ev = function (e) { try { e.dispatchEvent(new Event('input', { bubbles: true })); e.dispatchEvent(new Event('change', { bubbles: true })); } catch (x) {} };
   var met = function (id, v) { var e = document.getElementById(id); if (!e || v == null || v === '') return; e.value = v; ids.push(id); ev(e); };
@@ -73711,6 +73732,7 @@ function _g45TicketRemplirCockpit(o) {
   try { ['c-joueur', 'c-joueur-match'].forEach(function (id) { var e = document.getElementById(id); if (e && e.value) { e.value = ''; try { e.dispatchEvent(new Event('input', { bubbles: true })); } catch (x) {} } });
     var bx = document.getElementById('c-joueurs-extra'); if (bx && bx.children.length) { bx.innerHTML = ''; if (typeof g45JMajMode === 'function') g45JMajMode('c'); } } catch (x) {}
   met('c-joueur', o.joueur);
+  try { _g45TkJoueursPoser(o, 'c'); } catch (e) {}   /* 20261123i */
   /* 20261016c (« Équipe jouée Edmonton non ? ») : carte JOUEUR choisie → « Équipe jouée » (#c-equipe) = club du joueur
      (équipe lue sur le ticket, sinon la note de la carte, ex. « Edmonton Oilers »). */
   if (choisi && cj && cj.indexOf(choisi) >= 0) {
@@ -73747,7 +73769,7 @@ async function _g45TicketIa(dataUrl) {
   if (cle) h.Authorization = 'Bearer ' + cle;
   var consigne = 'Ceci est la capture d\'un ticket de pari sportif (Winamax, Betclic, Unibet, PMU, Piwi, ZEbet…). Réponds UNIQUEMENT par un JSON, sans texte autour :\n'
     + '{"equipe":"ÉQUIPE (jamais un joueur) sur laquelle porte le pari ; pour un pari joueur, l\'équipe de ce joueur ; sinon la 1re équipe du match","adversaire":"l\'autre équipe du match",'
-    + '"joueur":"nom du joueur si le pari porte sur un joueur (buteur, passeur, décisif…), sinon null",'
+    + '"joueur":"nom du joueur si le pari porte sur un joueur (buteur, passeur, décisif…), sinon null ; PLUSIEURS joueurs dans le même pari (ex. « Kelce ou Rice », double chance, MyMatch) → TOUS les noms séparés par « ou » (ou par « et » s\'ils doivent TOUS réussir)",'
     + '"domicile":true si l\'équipe pariée est la 1re affichée (celle qui reçoit), false sinon, null si inconnu,'
     + '"date":"AAAA-MM-JJ ou null","heure":"HH:MM ou null","competition":"ou null","sport":"football, hockey, basket, tennis, rugby, nfl, baseball, mma, f1, cyclisme…",'
     + '"type":"le ou les marchés en français court, joints par \' + \' (ex : Victoire Inter + Moins de 4,5 buts)",'
