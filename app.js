@@ -79503,6 +79503,29 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     }
     return L.length ? L : null;
   }
+  /* ═══ 20261123l (carte McDavid « ✈️ au moins un de (Connor McDavid, Leon Draisaitl) buteur » : pire série 2·5·8·9 → « bizarre le chiffre ») :
+     🔄 Calculer mes séries ne lisait que le joueur de la CARTE (McDavid seul). Pari à plusieurs joueurs (« au moins un de (A, B) … » des critères,
+     « A ou B … », « A et B …s ») → journal de CHAQUE joueur ; match gardé seulement si TOUS ont joué (même N° de match, sinon même date) ;
+     buts / passes / points = le plus haut (au moins un) ou le plus bas (tous). ═══ */
+  function serMultiJ(t) {
+    var x = String(t || ''), m = x.match(/au moins un de \(([^)]+)\)/i);
+    if (m) return { L: m[1].split(/\s*,\s*/).map(function (z) { return z.trim(); }).filter(Boolean), m: 'un' };
+    var y = x.replace(/🌍|🏠|✈️?|🛫|📌/g, ' ').split('+').filter(function (q) { return /buteur|passeur|point/i.test(q); })[0] || '';
+    var mo = /\s+et\s+/i.test(y) ? 'et' : /\s+ou\s+/i.test(y) ? 'un' : '';
+    if (!mo) return null;
+    var L = y.replace(/\b(buteurs?|passeurs?|pointeurs?|1|un|points?|ou plus|et plus|double chance|marqueurs?)\b/gi, ' ').split(/\s+(?:et|ou)\s+|\s*,\s*/i).map(function (z) { return z.replace(/\s+/g, ' ').trim(); }).filter(function (z) { return z.length >= 3; });
+    return L.length >= 2 ? { L: L, m: mo } : null;
+  }
+  function serFusionJ(log, autres, mo) {
+    var cle = function (g) { return g.eid ? 'e' + g.eid : 'd' + String(g.gameDate || g.d || '').slice(0, 10); };
+    var IX = autres.map(function (L) { var o = {}; (L || []).forEach(function (g) { o[cle(g)] = g; o['d' + String(g.gameDate || g.d || '').slice(0, 10)] = o['d' + String(g.gameDate || g.d || '').slice(0, 10)] || g; }); return o; });
+    var f = mo === 'et' ? Math.min : Math.max, v = function (g, k) { return k === 'points' ? (g.points != null ? +g.points || 0 : (+g.goals || 0) + (+g.assists || 0)) : +g[k] || 0; };
+    return (log || []).map(function (g) {
+      var A = IX.map(function (o) { return o[cle(g)] || o['d' + String(g.gameDate || g.d || '').slice(0, 10)] || null; }); if (A.some(function (a) { return !a; })) return null;
+      var r = Object.assign({}, g); ['goals', 'assists', 'points'].forEach(function (k) { r[k] = f.apply(null, [v(g, k)].concat(A.map(function (a) { return v(a, k); }))); }); return r;
+    }).filter(Boolean);
+  }
+  window._g45SerMultiJ = serMultiJ; window._g45SerFusionJ = serFusionJ;   /* tests */
   async function serJoueur(u) {
     var P = serParis(u); if (!P.length) return false;
     var out = {}, now = Date.now(), fin = function (err) { P.forEach(function (q) { out[q.k] = { t: q.t, err: err }; }); u.psL = out; return true; };
@@ -79532,6 +79555,13 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       try { log = ((await _g45RegLog4Foot(X.lg, idF, aF)) || {}).gameLog; } catch (e) {}
     }
     if (!log || !log.length) return fin('matchs du joueur illisibles (réseau)');
+    /* 20261123l : journaux des AUTRES joueurs des paris à plusieurs (même sport, même club) */
+    var MJ = P.map(function (q) { var o = serMultiJ(q.t); return o && o.L.filter(function (n) { return serNz(n) !== serNz(u.n); }).length ? o : null; }), LA = {};
+    for (var mi = 0; mi < MJ.length; mi++) { if (!MJ[mi]) continue;
+      for (var mj = 0; mj < MJ[mi].L.length; mj++) { var nA = MJ[mi].L[mj]; if (serNz(nA) === serNz(u.n) || LA[serNz(nA)] !== undefined) continue;
+        var lA = null;
+        try { if (hock) lA = await serLogNhlArch(nA); else { var idA = await serIdFoot(nA); if (idA) { var dA = new Date(), aA = civil ? dA.getFullYear() : (dA.getMonth() + 1 >= 8 ? dA.getFullYear() : dA.getFullYear() - 1); lA = ((await _g45RegLog4Foot(X.lg, idA, aA)) || {}).gameLog; } } } catch (e) { lA = null; }
+        LA[serNz(nA)] = lA && lA.length ? lA : null; } }
     if (equipe) {
       var C = hock ? X : null, D = null;
       try { var pr = avec(C, 'tout', function () { return C ? chargerHk(club, C) : chargerFt(X.lg, X.id); }); D = await pr; } catch (e) {}
@@ -79541,7 +79571,11 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       var c = CS[i];
       if (!c) { out[q.k] = { t: q.t, err: 'pari pas calculable (texte…)' }; return; }
       if ((c.res || c.ou || c.bts || c.te || c.ad) && !ms.length) { out[q.k] = { t: q.t, err: 'matchs du club illisibles (réseau)' }; return; }
-      var R = serStatJ(c, log, ms, q.k, hock, civil); R.t = q.t; R.at = now;
+      var logQ = log, MQ = MJ[i];
+      if (MQ) { var AU = MQ.L.filter(function (n) { return serNz(n) !== serNz(u.n); }).map(function (n) { return LA[serNz(n)]; });
+        if (AU.some(function (a) { return !a; })) { out[q.k] = { t: q.t, err: 'un des joueurs introuvable dans les archives' }; return; }
+        logQ = serFusionJ(log, AU, MQ.m); }   /* 20261123l */
+      var R = serStatJ(c, logQ, ms, q.k, hock, civil); R.t = q.t; R.at = now;
       out[q.k] = R.p.length ? R : { t: q.t, err: 'aucun match compté' };
     });
     psSim(out, u);   /* 20261102p */
