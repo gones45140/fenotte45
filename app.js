@@ -77999,7 +77999,10 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     if (CF) CF.roles.forEach(function (r) { if (r.k === 'lp') return; var SE = r.seuils ? r.seuils.map(Number) : [1, 2]; SE.forEach(function (n) { ROL.push({ jm: r.k, jmin: n }); }); });
     else [['', 1], ['', 2], ['pas', 1], ['dec', 1]].forEach(function (x) { ROL.push({ jm: x[0], jmin: x[1] }); });
     var mk = function (A, B2, ro) { var c = norm(combo0()); c.res = ''; c.jo = A.id; c.jn = A.n; if (B2) { c.jo2 = B2.id; c.jn2 = B2.n; c.jx = 'un'; } c.jm = ro.jm; c.jmin = ro.jmin; return c; };
-    ROL.forEach(function (ro) { P.forEach(function (A, i) { out.push(mk(A, null, ro)); for (var j = i + 1; j < P.length; j++) out.push(mk(A, P[j], ro)); }); });
+    /* 20261123y (captures Winamax Dallas – Pittsburgh : « Buteur multichance » seul, pas de passeur / pointeur à plusieurs → « duo pointeur duo
+       passeur existe pas ») : NHL et foot → DUOS seulement en buteur 1 ou + ; les autres rôles restent testés joueur par joueur. */
+    var spT = S.ctx ? S.ctx.sp : 'soccer', duoOk = function (ro) { return spT === 'hockey' ? (ro.jm === 'g' && +ro.jmin === 1) : spT === 'soccer' ? (ro.jm === '' && +ro.jmin === 1) : true; };
+    ROL.forEach(function (ro) { var dOk = duoOk(ro); P.forEach(function (A, i) { out.push(mk(A, null, ro)); if (dOk) for (var j = i + 1; j < P.length; j++) out.push(mk(A, P[j], ro)); }); });
     return out.slice(0, 3000);
   }
   function bestCandsDe(c0) { return S.best.tous ? bestCandsTous() : bestCands(c0); }
@@ -78921,8 +78924,8 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     return { r: r, l: l, ent: l === Math.round(l), lab: lab, som: k[0] === 's' && r === 'pts' }; }
   function duoCle(D, c0, f) {
     var K = D.K || ['b'], jm = String((c0 && c0.jm) || ''), n = parseFloat(c0 && c0.jmin) || 1, r;
-    if (f === 'nhl') r = /^[gap]$/.test(jm) ? jm : 'g';
-    else if (f.indexOf('foot') === 0) { r = jm === 'pas' ? 'a' : jm === 'dec' ? 'p' : 'g'; if (jm === 'dbl') n = 2; if (jm === 'tri') n = 3; }
+    /* 20261123y (« duo pointeur duo passeur existe pas » : le book n'a que « Buteur multichance ») : NHL et foot → toujours les duos BUTEUR 1 ou +. */
+    if (f === 'nhl' || f.indexOf('foot') === 0) { r = 'g'; n = 1; }
     else if (f === 'nfl') r = 'td';
     else if (f === 'mlb') { r = jm === 'r' ? 'r' : 'hr'; if (r === 'hr') n = 1; }
     else r = DUO_ROLE[jm] && /^(pts|reb|ast|tp|pra|pr|pa|ra)$/.test(jm) ? jm : 'pts';
