@@ -44163,7 +44163,7 @@ window.g45F1Session=g45F1Session;
    et les données utilisateur n'étaient JAMAIS écrites — l'ajout apparaissait à l'écran puis
    disparaissait au rechargement. Ce n'était ni la synchro GitHub, ni Dropbox, ni le cache
    du navigateur. Tous ces caches sont reconstructibles : ils cèdent la place aux données. */
-var _G45_CACHE_PREFIXES=['g45ban1',/* 20/11 : archive des bannières (robot) */'g45nhlGA2_',/* 20/11 : moyennes « encaissés » par ligue / saison / lieu (panneau Ton pari, joueurs) */'g45age1|',/* 06/11 : âge + pays des joueurs */'g45reg4f_',/* 27/10 : journaux foot des saisons finies */'g45mlbk1_',/* 27/10 : journaux strikeouts MLB */'g45reg4n_',/* 27/10 : journaux NFL des saisons finies */'g45reg4_',/* 27/10 : journaux NHL des saisons finies (4 saisons) */'g45nflyd1_',/* 27/10 : journaux yards NFL */'g45f1cr1_',/* 27/10 : résultats F1 Jolpica (critères 4 saisons) */'g45nfltd1_',/* 22/10 : TD / FG NFL par match */'g45cr1u_','g45cr3v_',/* 03/11 : g45cr3u_ → v (phase finale rugby) ; 22/10 : critères US avec n° de match */'g45cr1e_','g45crf1_','g45crid1_',/* 21/10 : feuilles de match des critères */'g45cr3_','g45cr1_',/* 14/10 : critères sur 4 saisons */'g45agoa2_',/* 11/10 : cotes Agenda (The Odds API) */'g45reg1_',/* 08/10 : régularité buteurs NHL */'g45bb1_','g45bbst1_','g45bbld1_','g45bbf1_',/* 03/10 : Pro A be-basketball */'g45es1_',/* 01/10 : stats Euroleague */'g45kbo1_',/* 01/10 : KBO (mykbostats) */'g45t14lg1',/* 01/10 : logos Top 14 (LNR) */'g45pd2_',/* 01/10 : Pro D2 (LNR) */'g45t14sq1_',/* 01/10 : effectifs Top 14 (LNR) */'g45nrlm1_','g45nrldr1_',/* 01/10 : feuilles et calendriers NRL */'g45nrlsq1_',/* 01/10 : effectifs NRL */'g45nrlst2_',/* 01/10 : classements NRL */'g45proacid1_',/* 30/09 : numéros LNB par saison */'g45proast1_',/* 30/09 : stats Pro A */'g45proa1_',/* 30/09 : Pro A par journée */'g45el1_',/* 30/09 : Euroleague (compact) */'g45buts1_',/* 30/09 : buts en action (match fini) */'g45prad1_','g45vsj1_','g45vse1_',/* 30/09 : radars joueurs */'g45ia1_',/* 29/09 : avis IA gardés 6 h */'g45_mmeta2_','g45_mmeta1_','g45_tennis4_','g45_tennis3_',/* 16/09 : meta de match (domicile/lieu) et score tennis, reconstructibles */'g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dcf_','g45dc_',
+var _G45_CACHE_PREFIXES=['g45tw1',/* 23/11 : vainqueur des matchs de tennis des paris réglés (ESPN) */'g45ban1',/* 20/11 : archive des bannières (robot) */'g45nhlGA2_',/* 20/11 : moyennes « encaissés » par ligue / saison / lieu (panneau Ton pari, joueurs) */'g45age1|',/* 06/11 : âge + pays des joueurs */'g45reg4f_',/* 27/10 : journaux foot des saisons finies */'g45mlbk1_',/* 27/10 : journaux strikeouts MLB */'g45reg4n_',/* 27/10 : journaux NFL des saisons finies */'g45reg4_',/* 27/10 : journaux NHL des saisons finies (4 saisons) */'g45nflyd1_',/* 27/10 : journaux yards NFL */'g45f1cr1_',/* 27/10 : résultats F1 Jolpica (critères 4 saisons) */'g45nfltd1_',/* 22/10 : TD / FG NFL par match */'g45cr1u_','g45cr3v_',/* 03/11 : g45cr3u_ → v (phase finale rugby) ; 22/10 : critères US avec n° de match */'g45cr1e_','g45crf1_','g45crid1_',/* 21/10 : feuilles de match des critères */'g45cr3_','g45cr1_',/* 14/10 : critères sur 4 saisons */'g45agoa2_',/* 11/10 : cotes Agenda (The Odds API) */'g45reg1_',/* 08/10 : régularité buteurs NHL */'g45bb1_','g45bbst1_','g45bbld1_','g45bbf1_',/* 03/10 : Pro A be-basketball */'g45es1_',/* 01/10 : stats Euroleague */'g45kbo1_',/* 01/10 : KBO (mykbostats) */'g45t14lg1',/* 01/10 : logos Top 14 (LNR) */'g45pd2_',/* 01/10 : Pro D2 (LNR) */'g45t14sq1_',/* 01/10 : effectifs Top 14 (LNR) */'g45nrlm1_','g45nrldr1_',/* 01/10 : feuilles et calendriers NRL */'g45nrlsq1_',/* 01/10 : effectifs NRL */'g45nrlst2_',/* 01/10 : classements NRL */'g45proacid1_',/* 30/09 : numéros LNB par saison */'g45proast1_',/* 30/09 : stats Pro A */'g45proa1_',/* 30/09 : Pro A par journée */'g45el1_',/* 30/09 : Euroleague (compact) */'g45buts1_',/* 30/09 : buts en action (match fini) */'g45prad1_','g45vsj1_','g45vse1_',/* 30/09 : radars joueurs */'g45ia1_',/* 29/09 : avis IA gardés 6 h */'g45_mmeta2_','g45_mmeta1_','g45_tennis4_','g45_tennis3_',/* 16/09 : meta de match (domicile/lieu) et score tennis, reconstructibles */'g45rcP_','g45rcD_','g45rcY_','g45rc_','g45dcm_','g45dcf_','g45dc_',
   'g45trv3_','g45trv2_','g45trOdds2_',/* 13/10 : cotes The Odds API par marchés */'g45tr_','g45but_st_','g45butL_','g45butA_','g45but_mur_',
   '_g45clv','g45clv_snaps','g45_saisons_cache_v3_','g45_saisons_cache_v2_',
   /* Ajoutes le 20/08 : ces caches, tous reconstructibles, n'etaient PAS declares
@@ -75234,6 +75234,9 @@ function _g45JphSuite() {
 function _g45IdJoueur(h, avant) {
   try {
     var noms = (typeof _g45CarteJoueursNoms === 'function') ? _g45CarteJoueursNoms(h) : [];
+    /* 20261123x (« met une photo du vainqueur » → « 2 ») : pari TENNIS réglé → rond = VAINQUEUR du match lu sur ESPN (_g45TnVainqueur). */
+    var tw = ''; try { tw = (typeof window._g45TnVainqueur === 'function' && window._g45TnVainqueur(h)) || ''; } catch (e) {}
+    if (tw) noms = [tw];
     if (!noms.length) return avant;
     var n = noms[0], k = _g45JphCle(n);
     var sp = (typeof _g45CarteVisSport === 'function') ? _g45CarteVisSport(h) : 'soccer';
@@ -92643,3 +92646,69 @@ function _g45NflFeuilleHtml(data) {
     + '<div style="font-size:13px;color:#c9d3ee;margin-top:8px;">⭐ = joueur d\'un de tes paris en cours · 🏈 = a marqué un TD · 🎯🏈 = passe de TD</div></div>';
 }
 window._g45NflFeuilleHtml = _g45NflFeuilleHtml;
+
+
+/* ═══ 20261123x — 🎾 PHOTO DU VAINQUEUR SUR LES PARIS TENNIS RÉGLÉS (capture Bilan « Alexandre Zverev vs Carlos Alcaraz · Zverev · Remporter
+   pas de set », rond « Z » à droite → « met une photo du vainqueur » → choix « 2 » = le vainqueur du match lu sur ESPN). Pari 🎾 réglé (pas
+   en cours, pas combiné) : scoreboard ESPN tennis atp puis wta du jour du pari (et du lendemain : matchs de nuit), match retrouvé par les
+   NOMS DE FAMILLE des deux joueurs (simples), terminé (state post) → vainqueur = competitor.winner, sinon plus de sets gagnés. Gardé dans
+   localStorage g45tw1 { id: nom } (échec gardé 1 jour : '' + date) ; une recherche à la fois ; trouvé → Bilan / Archive redessinés
+   (_g45ScoreRedessiner, regroupé). Le rond (_g45IdJoueur, 20261009f) prend alors son nom → photo TheSportsDB comme les autres joueurs. ═══ */
+(function () {
+  var CLE = 'g45tw1', M = null, file = [], actif = 0, vus = {};
+  var lire = function () { if (M) return M; try { M = JSON.parse(localStorage.getItem(CLE) || '{}') || {}; } catch (e) { M = {}; } return M; };
+  var ecrire = function () { try { localStorage.setItem(CLE, JSON.stringify(M)); } catch (e) {} };
+  var nn = function (x) { return String(x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z]/g, ''); };
+  var fam = function (x) { return nn(String(x || '').trim().split(/\s+/).slice(-1)[0]); };
+  var estTennis = function (h) { var s = ''; try { s = String((typeof _g45ParisSport === 'function' && _g45ParisSport(h)) || h.sport || ''); } catch (e) { s = String(h.sport || ''); } return /🎾/.test(s); };
+  var joueurs = function (h) {
+    var c = null; try { c = (typeof _g45EclairCibles === 'function') ? _g45EclairCibles(h)[0] : null; } catch (e) {}
+    var P = c && c.nom && c.adv ? [c.nom, c.adv] : String(h.target || '').split(/\s+(?:vs\.?|–|-)\s+/i);
+    P = P.map(function (x) { return String(x || '').trim(); }).filter(Boolean);
+    return P.length === 2 ? P : null;
+  };
+  var jour = function (ymd, d) { var t = Date.UTC(+ymd.slice(0, 4), +ymd.slice(4, 6) - 1, +ymd.slice(6, 8)) + d * 864e5, x = new Date(t); return x.getUTCFullYear() + ('0' + (x.getUTCMonth() + 1)).slice(-2) + ('0' + x.getUTCDate()).slice(-2); };
+  async function chercher(h) {
+    var P = joueurs(h); if (!P) return '';
+    var F = P.map(fam), ymd = String(h.date || '').slice(0, 10).replace(/-/g, ''); if (!/^\d{8}$/.test(ymd)) return '';
+    for (var di = 0; di < 2; di++) for (var li = 0; li < 2; li++) {
+      var j = null;
+      try { var r = await fetch('https://site.api.espn.com/apis/site/v2/sports/tennis/' + ['atp', 'wta'][li] + '/scoreboard?dates=' + jour(ymd, di)); j = r.ok ? await r.json() : null; } catch (e) { j = null; }
+      var C = null;
+      ((j && j.events) || []).forEach(function (ev) { (ev.groupings || []).forEach(function (g) { if (!/singles/i.test((g.grouping && g.grouping.displayName) || '')) return;
+        (g.competitions || []).forEach(function (c) { if (C) return; var cs = c.competitors || []; if (cs.length !== 2) return;
+          var N = cs.map(function (x) { return fam(((x.athlete || {}).displayName) || ((x.athlete || {}).shortName) || ''); });
+          if ((N[0] === F[0] && N[1] === F[1]) || (N[0] === F[1] && N[1] === F[0])) C = c; }); }); });
+      if (!C) continue;
+      var st = (C.status && C.status.type) || {}; if (st.state !== 'post') return null;   /* pas fini : on réessaiera */
+      var cs = C.competitors, w = cs.filter(function (x) { return x.winner === true; })[0];
+      if (!w) {
+        var la = (cs[0].linescores || []).map(function (l) { return +l.value || 0; }), lb = (cs[1].linescores || []).map(function (l) { return +l.value || 0; }), a = 0, b = 0;
+        for (var k = 0; k < Math.max(la.length, lb.length); k++) { if ((la[k] || 0) > (lb[k] || 0)) a++; else if ((lb[k] || 0) > (la[k] || 0)) b++; }
+        w = a > b ? cs[0] : b > a ? cs[1] : null;
+      }
+      if (!w) return '';
+      var wn = fam(((w.athlete || {}).displayName) || '');
+      return wn === F[0] ? P[0] : wn === F[1] ? P[1] : (((w.athlete || {}).displayName) || '');
+    }
+    return '';
+  }
+  function suite() {
+    if (actif || !file.length) return;
+    var h = file.shift(); actif = 1;
+    chercher(h).then(function (n) {
+      if (n !== null) { lire()[h.id] = n ? n : '|' + Date.now(); ecrire(); }
+      else delete vus[h.id];
+      if (n && typeof _g45ScoreRedessiner === 'function') _g45ScoreRedessiner();
+    }).catch(function () {}).then(function () { actif = 0; setTimeout(suite, 400); });
+  }
+  window._g45TnVainqueur = function (h) {
+    if (!h || !h.id || h.isPending || h.isCombi || !estTennis(h)) return '';
+    var v = lire()[h.id];
+    if (typeof v === 'string' && v && v.charAt(0) !== '|') return v;
+    if (typeof v === 'string' && v.charAt(0) === '|' && Date.now() - (+v.slice(1) || 0) < 864e5) return '';
+    if (!vus[h.id]) { vus[h.id] = 1; file.push(h); setTimeout(suite, 60); }
+    return '';
+  };
+  window._g45TnVainqueurChercher = chercher;   /* tests */
+})();
