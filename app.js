@@ -58692,7 +58692,14 @@ var _G45_US_STATS_FR = {
   'blocks': 'Contres', 'field goal pct': '% aux tirs', 'three point pct': '% à 3 points',
   'free throw pct': '% aux lancers francs', 'fouls': 'Fautes',
   'runs': 'Points', 'errors': 'Erreurs', 'left on base': 'Laissés sur base',
-  'strikeouts': 'Retraits au bâton', 'home runs': 'Home runs'
+  'strikeouts': 'Retraits au bâton', 'home runs': 'Home runs',
+  /* 20261123t (capture stats d'équipe Chiefs – Cardinals : « les stats en anglais ») : libellés NFL vus à l'écran */
+  '1st downs': '1ers downs', 'passing 1st downs': '1ers downs à la passe', 'rushing 1st downs': '1ers downs à la course',
+  '1st downs from penalties': '1ers downs sur pénalité', '3rd down efficiency': 'Réussite au 3e essai', '4th down efficiency': 'Réussite au 4e essai',
+  'total plays': 'Actions jouées', 'yards per play': 'Yards par action', 'total drives': 'Séries offensives', 'comp/att': 'Passes réussies / tentées',
+  'yards per pass': 'Yards par passe', 'interceptions thrown': 'Interceptions subies', 'sacks-yards lost': 'Sacks (yards perdus)',
+  'rushing attempts': 'Courses', 'yards per rush': 'Yards par course', 'red zone (made-att)': 'Zone rouge (TD / entrées)', 'fumbles lost': 'Fumbles perdus',
+  'defensive / special teams tds': 'TD défense / équipes spéciales', 'possession time': 'Temps de possession'
 };
 function _g45UsStatFr(lib) {
   var k = String(lib || '').trim().toLowerCase();
@@ -58772,7 +58779,7 @@ function _g45UsDeroule(data, sport) {
     else if (Array.isArray(data.plays)) src = data.plays.filter(function (p) { return p && p.scoringPlay; });
     if (!src.length) return '';
 
-    var h = '<style>.g45us-x{color:var(--t3);}</style>'
+    var h = '<style>.g45us-x{color:#c9d3ee;}</style>'
       + '<div style="margin-top:10px;border-top:1px solid rgba(255,255,255,.06);padding-top:8px;">'
       + '<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#8aa0ff;margin-bottom:6px;">Déroulé des points</div>';
     var perCourante = null;
@@ -58789,13 +58796,14 @@ function _g45UsDeroule(data, sport) {
       var hs = parseInt(p.homeScore, 10), as = parseInt(p.awayScore, 10);
       var score = (!isNaN(hs) && !isNaN(as)) ? (hs + ' - ' + as) : '';
       var hor = (p.clock && p.clock.displayValue) || '';
-      h += '<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:7px;background:rgba(255,255,255,.04);margin-bottom:3px;">'
-        + '<span style="font-size:10px;font-weight:800;width:32px;flex:none;text-align:center;border-radius:4px;padding:2px 0;'
-        + 'background:' + c + '33;color:' + c + ';">' + _g45Esc(ab) + '</span>'
-        + '<span style="flex:1;font-size:11.5px;font-weight:600;color:var(--t2);line-height:1.4;">'
+      h += '<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:7px;background:rgba(11,16,29,.85);margin-bottom:3px;">'
+        /* 20261123t (« on voit à peine le Travis Kelce ») : texte blanc 14 px, heure / score lisibles, sigle sur fond plein (règle de lisibilité) */
+        + '<span style="font-size:12px;font-weight:900;width:36px;flex:none;text-align:center;border-radius:4px;padding:3px 0;'
+        + 'background:' + c + ';color:#fff;">' + _g45Esc(ab) + '</span>'
+        + '<span style="flex:1;font-size:14px;font-weight:600;color:#fff;line-height:1.45;">'
         + _g45UsActionFr(p.text || p.shortText, sport) + '</span>'
-        + (hor ? '<span style="font-size:10px;color:var(--t3);width:40px;text-align:right;flex:none;">' + _g45Esc(hor) + '</span>' : '')
-        + (score ? '<span style="font-size:11.5px;font-weight:800;color:var(--t1);width:44px;text-align:right;flex:none;font-variant-numeric:tabular-nums;">' + score + '</span>' : '')
+        + (hor ? '<span style="font-size:13px;color:#c9d3ee;width:44px;text-align:right;flex:none;">' + _g45Esc(hor) + '</span>' : '')
+        + (score ? '<span style="font-size:15px;font-weight:900;color:#fff;width:50px;text-align:right;flex:none;font-variant-numeric:tabular-nums;">' + score + '</span>' : '')
         + '</div>';
     });
     return h + '</div>';
