@@ -77452,7 +77452,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       if (meth === 'cb' || uni) {
         var cC = x.c > 1 ? x.c : cote; if (!uni && cC < 1.2 - 1e-9) return;
         if (cap > 0 && mises[0] > cap + tot + 1e-9) { ruine = { s: x.s, n: det.length }; return; }
-        var mC = i === 0 ? mises[0] : Math.ceil((cC < 1.5 ? prevC * (1 / (cC - 1) + 2) : prevC * (i === 1 ? 2.5 : 3)) * 100) / 100;
+        var mC = i === 0 ? mises[0] : Math.ceil((cC < 1.5 ? prevC * (1 / (cC - 1) + 2) : prevC * (i === 1 ? 2.5 : 3)) * 100 - 1e-6) / 100;   /* 20261124g : − 1e-6 = erreur d'arrondi (7,74 × 2,5 = 19,350000000002 → 19,36) */
         if (cap > 0 && i > 0 && mC > cap + tot + 1e-9) { P.e++; bo++; bk++; i = 0; eng = 0; prevC = 0; mC = mises[0]; if (det.length) det[det.length - 1].b = 2; }
         var dC = { p: i + 1, m: mC, c: cC, g: 0, b: 0 }; if (mC > max) max = mC;
         if (x.ok) { var gC = mC * (cC - 1); P.ok++; P.bo += gC; tot += gC; if (eng > 0) dC.ser = gC - eng; i = 0; eng = 0; prevC = 0; dC.g = gC; }
@@ -89101,7 +89101,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
      PAR CARTE u.cbR : 's' 🛡️ (par défaut) = mise d'avant × 2,5 au P2 puis × 3 (à 1,50 : +2,50 € par série gagnée) ; 'a' 🔥 = pertes × 3 (l'ancienne). */
   var cbR = function (u) { return u && u.cbR === 'a' ? 'a' : 's'; };
   var cbMise = function (u, k, c) { if (cbSaute(u, c)) return 0; var st = cbSt(u, k); if (st.p <= 1) return Math.round(cbP1(u) * 100) / 100; if (!(c > 1)) return 0;
-    return Math.ceil((c < 1.5 ? st.prev * (1 / (c - 1) + 2) : (cbR(u) === 'a' ? st.per * 3 : st.prev * (st.p === 2 ? 2.5 : 3))) * 100) / 100; };
+    return Math.ceil((c < 1.5 ? st.prev * (1 / (c - 1) + 2) : (cbR(u) === 'a' ? st.per * 3 : st.prev * (st.p === 2 ? 2.5 : 3))) * 100 - 1e-6) / 100; };   /* 20261124g : − 1e-6 = erreur d'arrondi (7,74 × 2,5 = 19,350000000002 → 19,36) */
   /* part de BK couverte par N paliers (règle à 1,50+) : 🔥 4^(N−1) ; 🛡️ 1 + 2,5 × (3^(N−1) − 1) / 2 */
   var cbDiv = function (u, n) { return cbR(u) === 'a' ? Math.pow(4, n - 1) : 1 + 2.5 * (Math.pow(3, n - 1) - 1) / 2; };
   var cbAvance = function (u, k, mise, gagne) { u.lcb = u.lcb || {}; var st = cbSt(u, k);
@@ -89122,7 +89122,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     if (mg) L = L.filter(function (b) { return (+b.id || 0) > (mg.t || 0); });   /* 20261122w : série 📉 reprise → ses pertes + les pertes 🚀 depuis */
     if (mg ? L.length < p - mg.p : (L.length < p - 1 || !L.length)) return 0;
     var prev = L.length ? parseFloat(L[0].m) || 0 : (+mg.prev || 0), per = L.reduce(function (a, b) { return a + (parseFloat(b.m) || 0); }, mg ? (+mg.per || 0) : 0); if (!(prev > 0)) return 0;
-    return Math.ceil((c < 1.5 ? prev * (1 / (c - 1) + 2) : (cbR(u) === 'a' ? per * 3 : prev * (p === 2 ? 2.5 : 3))) * 100) / 100;
+    return Math.ceil((c < 1.5 ? prev * (1 / (c - 1) + 2) : (cbR(u) === 'a' ? per * 3 : prev * (p === 2 ? 2.5 : 3))) * 100 - 1e-6) / 100;   /* 20261124g : − 1e-6 = erreur d'arrondi (7,74 × 2,5 = 19,350000000002 → 19,36) */
   };
   window._g45MonMise = monMise;   /* tests */
   /* 20261122x (maquette « Cote 1,42 → 📉 sous 1,50 · mise … / Cote 1,65 → 🚀 1,50 et + ») : étiquette sous la mise du formulaire 🚀 Engager */
@@ -92527,7 +92527,7 @@ setTimeout(_g45PhEspRemplir, 8000);
 (function () {
   var f2 = function (x) { return (Math.round(x * 100) / 100).toLocaleString('fr-FR', { maximumFractionDigits: 2 }); };
   window._g45MgCote = 1.3; try { var v0 = parseFloat(localStorage.getItem('g45mgc')); if (v0 > 1) window._g45MgCote = v0; } catch (e) {}
-  var serie = function (G, c) { var L = [], p = +G[0] || 0; for (var i = 0; i < G.length; i++) { if (i) p = Math.ceil((c < 1.5 ? p * (1 / (c - 1) + 2) : p * (i === 1 ? 2.5 : 3)) * 100) / 100; L.push(p); } return L; };
+  var serie = function (G, c) { var L = [], p = +G[0] || 0; for (var i = 0; i < G.length; i++) { if (i) p = Math.ceil((c < 1.5 ? p * (1 / (c - 1) + 2) : p * (i === 1 ? 2.5 : 3)) * 100 - 1e-6) / 100; L.push(p); } return L; };   /* 20261124g : − 1e-6 = erreur d'arrondi (7,74 × 2,5 = 19,350000000002 → 19,36) */
   window._g45MgHtml = function (G, c) { var L = serie(G, c), tot = L.reduce(function (a, b) { return a + b; }, 0); return L.map(function (m, i) { return 'P' + (i + 1) + ' <b>' + f2(m) + ' €</b>'; }).join(' · ') + ' <span style="color:#c9d3ee;">(tout perdu : ' + f2(tot) + ' €)</span>'; };
   window.g45MgCote = function (c) { window._g45MgCote = +c || 1.3; try { localStorage.setItem('g45mgc', String(window._g45MgCote)); } catch (e) {} try { renderPaliers(); } catch (e) {} };
   var r0 = window.renderPaliers; if (typeof r0 !== 'function' || r0._g45Mg) return;
