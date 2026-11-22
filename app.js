@@ -78720,13 +78720,13 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       return (n === nz(d[0]) && no.indexOf(nz(duoFam(d[2]))) >= 0) || (n === nz(d[2]) && no.indexOf(nz(duoFam(d[0]))) >= 0);
     });
   }
-  function duoPari(d, k) { var L = String(k).slice(1).replace('.', ','); return k === 'b' ? 'Double chance buteur ' + d[0] + ' ou ' + d[2] : k[0] === 'm' ? 'Double chance marqueurs ' + d[0] + ' ou ' + d[2] + ' plus de ' + L : 'Duo marqueurs de points ' + d[0] + ' + ' + d[2] + ' plus de ' + L; }
+  function duoPari(d, k) { var L = String(k).slice(1).replace('.', ','); if (/^[gap]\d$/.test(k)) return 'Double chance ' + DUO_ROLE[k[0]] + (k[1] > 1 ? ' ' + k[1] + ' ou +' : '') + ' ' + d[0] + ' ou ' + d[2]; return k === 'b' ? 'Double chance buteur ' + d[0] + ' ou ' + d[2] : k[0] === 'm' ? 'Double chance marqueurs ' + d[0] + ' ou ' + d[2] + ' plus de ' + L : 'Duo marqueurs de points ' + d[0] + ' + ' + d[2] + ' plus de ' + L; }
   window.g45DuoMur = function (f, i) {
     var D = DUOF[f], d = D && D.L && D.L[i]; if (!d || typeof state === 'undefined') return;
     var nom = (state.u || []).some(function (x) { return x && x.n === d[0]; }) ? d[2] : d[0];
     if ((state.u || []).some(function (x) { return x && x.n === nom; })) { alert(d[0] + ' et ' + d[2] + ' sont déjà sur ton mur : ajoute le pari dans ✏️ Modifier.'); return; }
     if (typeof _g45MurPlein === 'function' && _g45MurPlein()) { alert('🧱 Ton mur est plein : enlève une carte dans Outils → Équipes pour ajouter ' + nom + '.'); return; }
-    var k = f === 'nba' ? S.duoK : 'b', pari = duoPari(d, k), club = d[4], sp = f === 'nhl' ? '🏒' : f === 'nba' ? '🏀' : '⚽';
+    var k = f === 'nba' ? S.duoK : f === 'nhl' ? (S.duoKN || 'g1') : 'b', pari = duoPari(d, k), club = d[4], sp = f === 'nhl' ? '🏒' : f === 'nba' ? '🏀' : '⚽';
     var note = typeof window._g45UfCompose === 'function' ? window._g45UfCompose(club, '', '', '', pari) : pari;
     state.u.push({ n: nom, abbr: duoFam(nom).slice(0, 3).toUpperCase(), color: '#1d4ed8', s: '3', l: 1, sport: sp, logoUrl: '', link: '', link2: '', note: note, type: 'joueur', club: club });
     try { save(); } catch (e) {}
@@ -78734,14 +78734,18 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     try { if (typeof render === 'function') render(); } catch (e) {}
     try { redessiner(); } catch (e) {}
   };
-  function duosHtml(X) {
+  /* 20261122e (capture critère « Eichel + Stone · ⭐ Pointeur · 2 ou + · double chance » : « c'est pas trop la même sélection ») : NHL = clé du
+     critère (jm g / a / p + jmin 1 / 2 / 3 → g1 … p3, fichier robot) ; foot = buteur seulement. */
+  var DUO_ROLE = { g: 'buteur', a: 'passeur', p: 'pointeur' };
+  function duoCleNhl(D, c0) { var r = c0 && DUO_ROLE[c0.jm] ? c0.jm : 'g', n = Math.max(1, parseInt(c0 && c0.jmin, 10) || 1), k = r + n; return (D.K || []).indexOf(k) >= 0 ? k : ((D.K || []).indexOf('g1') >= 0 ? 'g1' : (D.K || ['b'])[0]); }
+  function duosHtml(X, c0) {
     var f = duoFic(X) || 'nhl', nba = f === 'nba';
     var h = '<div style="margin-top:16px;padding-top:12px;border-top:1px solid #2a3a63;"><div style="font-size:17px;font-weight:800;color:#fff;">🏁 Jouable en Cockpit ?</div>';
     var D = DUOF[f]; if (!D || D.en) { duosCharger(f); return h + '<div style="font-size:14px;color:#fff;margin-top:6px;">⏳ Lecture des duos…</div></div>'; }
     if (!D.L.length) return h + '<div style="font-size:14px;color:#ffd34d;margin-top:6px;">Liste des duos pas encore prête pour cette ligue (robot du matin).</div></div>';
-    var k = nba ? (D.K.indexOf(S.duoK) >= 0 ? S.duoK : 'm24.5') : 'b';
+    var k = nba ? (D.K.indexOf(S.duoK) >= 0 ? S.duoK : 'm24.5') : f === 'nhl' ? duoCleNhl(D, c0) : 'b'; S.duoKN = k;
     var lgN = f === 'nhl' ? 'NHL' : nba ? 'NBA' : ((S.data[S.nom] && S.data[S.nom].ligue) || X.lg);
-    h += '<div style="font-size:14px;color:#c9d3ee;margin:3px 0 8px;">Duos ' + (nba ? (k[0] === 'm' ? '« double chance marqueurs » : au moins un des deux plus de ' : '« duo marqueurs de points » : total des deux plus de ') + String(k).slice(1).replace('.', ',') + ' pts' : '« double chance buteur »') + ' · même équipe' + (f.indexOf('foot') === 0 ? ' · titulaires tous les deux' : '') + ' · ' + (S.duoS === '4' ? ((D.s4 || []).length || 4) : ((D.s || []).length || 2)) + ' saisons ' + esc(lgN) + '</div>';
+    h += '<div style="font-size:14px;color:#c9d3ee;margin:3px 0 8px;">Duos ' + (nba ? (k[0] === 'm' ? '« double chance marqueurs » : au moins un des deux plus de ' : '« duo marqueurs de points » : total des deux plus de ') + String(k).slice(1).replace('.', ',') + ' pts' : /^[gap]\d$/.test(k) ? '« double chance ' + DUO_ROLE[k[0]] + ' » ' + k[1] + ' ou + (au moins un des deux)' : '« double chance buteur »') + ' · même équipe' + (f.indexOf('foot') === 0 ? ' · titulaires tous les deux' : '') + ' · ' + (S.duoS === '4' ? ((D.s4 || []).length || 4) : ((D.s || []).length || 2)) + ' saisons ' + esc(lgN) + '</div>';
     var pu = function (kk, v, t) { var on = S[kk] === v || (kk === 'duoK' && k === v); return '<button onclick="g45DuoReg(\'' + kk + '\',\'' + v + '\')" style="padding:7px 12px;border-radius:14px;font-size:14px;font-weight:800;cursor:pointer;color:#fff;margin:0 6px 6px 0;border:1px solid ' + (on ? '#6d9dff' : '#2a3a63') + ';background:' + (on ? '#2f6bff' : '#0b1226') + ';">' + t + '</button>'; };
     if (nba) h += '<div><span style="font-size:14px;color:#c9d3ee;margin-right:6px;">1 des 2 plus de</span>' + ['m19.5', 'm24.5', 'm29.5', 'm34.5'].map(function (x) { return pu('duoK', x, x.slice(1).replace('.', ',')); }).join('') + '</div>'
       + '<div><span style="font-size:14px;color:#c9d3ee;margin-right:6px;">Total des 2 plus de</span>' + ['s39.5', 's44.5', 's49.5', 's54.5'].map(function (x) { return pu('duoK', x, x.slice(1).replace('.', ',')); }).join('') + '</div>';
@@ -78781,7 +78785,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     /* 20261106z2 (capture Pavel Zacha pointeur : « Jouable en Cockpit ? » NHL = toutes les équipes à 100 %, « Même critère (aucun critère) ») : un critère
        JOUEUR seul n'a pas de classement d'équipes (les joueurs ne sont classés qu'en foot / rugby) → message au lieu d'une liste qui ne veut rien dire. */
     if (usJModeDe(c0)) return usClsJHtml(X, c0);   /* 20261107b */
-    if (duoFic(X) && c0.jo && ((c0.jo2 && c0.jx === 'un') || /\bou\b/i.test(libCombo(c0))) && /aucun crit/.test(libCombo(c))) return duosHtml(X);   /* 20261121q ; 20261122a : foot + NBA */
+    if (duoFic(X) && c0.jo && ((c0.jo2 && c0.jx === 'un') || /\bou\b/i.test(libCombo(c0))) && /aucun crit/.test(libCombo(c))) return duosHtml(X, c0);   /* 20261121q ; 20261122a : foot + NBA ; 20261122e : rôle + seuil du critère */
     if (/aucun crit/.test(libCombo(c))) return '<div style="margin-top:16px;padding-top:12px;border-top:1px solid #2a3a63;"><div style="font-size:16px;font-weight:800;color:#fff;">🏁 Jouable en Cockpit ?</div>'
       + '<div style="font-size:14px;color:#ffd34d;margin-top:4px;">Ce classement compare les ÉQUIPES : ajoute un critère d\'équipe (résultat, buts, tiers…) pour le voir. '
       + (c0.jo ? 'Ce critère joueur n\'a pas encore de classement des joueurs pour cette ligue.' : '') + '</div></div>';
