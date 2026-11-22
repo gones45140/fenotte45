@@ -88209,13 +88209,13 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
           }
         } catch (e) {}
       }
-      if (u && mdL === 'cb' && window._g45CbMeth) {
+      if (u && mdL === 'cb' && window._g45CbMeth && !(state.mode1 && !Object.keys(u.lcb || {}).length)) {   /* 20261122w */
         var CBm = window._g45CbMeth, kcb = Object.keys(u.lcb || {}).filter(function (k) { return k.slice(-(lz.length + 1)) === '|' + lz; })[0] || ('|' + lz), sc = CBm.st(u, kcb), Nc = CBm.stop ? CBm.stop(u) : 5;
         palTxt = '📉 C' + sc.p + ' sur ' + Nc + ' · ' + (sc.p > 1 ? 'pertes <b>' + euC(sc.per) + '</b> (mise selon la cote)' + ckPlusBtn('24|' + m.n + '|' + m.t) : 'mise <b>' + euC(CBm.mise(u, kcb, 0)) + '</b>');
         if (sc.p > 1) palListe = ckPlusListe('24|' + m.n + '|' + m.t, u, kcb, sc.p, 'cb');
       } else {
         /* 20261122v : 🚀 mode unique étape 1 — à partir de P2 la mise dépend de la cote du jour (Engager) → pertes de l'échelle affichées */
-        var perM = 0; if (G && p > 1 && u) { try { perM = ckPertes(u, ckKeyLieu(u, lz), p).reduce(function (a, b) { return a + (parseFloat(b.m) || 0); }, 0); } catch (e) { perM = 0; } }
+        var perM = 0; if (G && p > 1 && u) { try { var kM = ckKeyLieu(u, lz), mgM = (u.lcbMig || {})[kM]; perM = ckPertes(u, kM, p).filter(function (b) { return !mgM || (+b.id || 0) > (mgM.t || 0); }).reduce(function (a, b) { return a + (parseFloat(b.m) || 0); }, mgM ? (+mgM.per || 0) : 0); } catch (e) { perM = 0; } }
         palTxt = G ? 'P' + p + ' sur ' + G.length + ' · ' + (perM > 0 ? 'pertes <b>' + euC(perM) + '</b> (mise selon la cote)' : 'mise <b>' + euC(mi) + '</b>') + (p > 1 && u ? ckPlusBtn('24|' + m.n + '|' + m.t) : '') : '<span style="color:#c9d3ee;">pas de grille</span>';
         if (p > 1 && u) palListe = ckPlusListe('24|' + m.n + '|' + m.t, u, ckKeyLieu(u, lz), p);
       }
@@ -88838,9 +88838,12 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   var monMise = function (u, k, c) {
     if (!u || !(c > 1)) return 0;
     var p = 1; try { var cp = ($('c-comp') && $('c-comp').value) || ''; p = typeof _g45Pal === 'function' ? _g45Pal(u, cp, lieu()) : (parseInt(u.l, 10) || 1); } catch (e) {}
+    if (p <= 1 && u.lcbMig && u.lcbMig[k]) { delete u.lcbMig[k]; if (!Object.keys(u.lcbMig).length) delete u.lcbMig; }   /* série finie → reprise oubliée */
     if (p <= 1 || typeof window._g45CkPertes !== 'function') return 0;
-    var L = window._g45CkPertes(u, k, p, 'mont'); if (!L || L.length < p - 1 || !L.length) return 0;
-    var prev = parseFloat(L[0].m) || 0, per = L.reduce(function (a, b) { return a + (parseFloat(b.m) || 0); }, 0); if (!(prev > 0)) return 0;
+    var mg = (u.lcbMig || {})[k], L = window._g45CkPertes(u, k, p, 'mont') || [];
+    if (mg) L = L.filter(function (b) { return (+b.id || 0) > (mg.t || 0); });   /* 20261122w : série 📉 reprise → ses pertes + les pertes 🚀 depuis */
+    if (mg ? L.length < p - mg.p : (L.length < p - 1 || !L.length)) return 0;
+    var prev = L.length ? parseFloat(L[0].m) || 0 : (+mg.prev || 0), per = L.reduce(function (a, b) { return a + (parseFloat(b.m) || 0); }, mg ? (+mg.per || 0) : 0); if (!(prev > 0)) return 0;
     return Math.ceil((c < 1.5 ? prev * (1 / (c - 1) + 2) : (cbR(u) === 'a' ? per * 3 : prev * (p === 2 ? 2.5 : 3))) * 100) / 100;
   };
   window._g45MonMise = monMise;   /* tests */
@@ -88896,7 +88899,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     var ce = $('ck-eng'); if (!ce) return;
     var z = $('g45-eng-meth'); if (!z) { z = document.createElement('div'); z.id = 'g45-eng-meth'; z.style.cssText = 'margin:0 0 10px;'; ce.insertBefore(z, ce.firstChild); }
     var m = meth(), u = carte();
-    var h = '<div style="display:flex;flex-wrap:wrap;gap:6px;">' + ['mont', 'fib', 'dal', 'cb'].map(function (k) { var on = k === m; return '<button onclick="g45EngMeth(\'' + k + '\')" style="border-radius:12px;padding:8px 12px;font-size:15px;font-weight:800;cursor:pointer;color:#fff;border:1px solid ' + (on ? '#6d9dff' : '#2a3a63') + ';background:' + (on ? '#2a4a9a' : '#0b1226') + ';">' + NOM[k] + '</button>'; }).join('') + '</div>';
+    var h = '<div style="display:flex;flex-wrap:wrap;gap:6px;">' + ['mont', 'fib', 'dal'].concat(state.mode1 ? [] : ['cb']).map(function (k) { var on = k === m; return '<button onclick="g45EngMeth(\'' + k + '\')" style="border-radius:12px;padding:8px 12px;font-size:15px;font-weight:800;cursor:pointer;color:#fff;border:1px solid ' + (on ? '#6d9dff' : '#2a3a63') + ';background:' + (on ? '#2a4a9a' : '#0b1226') + ';">' + NOM[k] + '</button>'; }).join('') + '</div>';
     if (m === 'cb' && u) h += cbHtml(u);
     else if (m !== 'mont' && u) {
       var k = cle(), p = palM(u, m, k), P1 = p1De(u);
@@ -90914,7 +90917,7 @@ window.g45SerNs = function (nom, n, el) {
    « · 📉 Cotes basses » ; 🚀 Engager : carte + lieu choisis → l'onglet de la méthode s'ouvre tout seul (g45EngMeth). ═══ */
 (function () {
   var $ = function (id) { return document.getElementById(id); };
-  var M = [['mont', '🚀 Cockpit'], ['cb', '📉 Cotes basses'], ['fib', '🐚 Fibonacci'], ['dal', '🪜 D\'Alembert']];
+  var M = [['mont', '🚀 Cockpit'], ['cb', '📉 Cotes basses'], ['fib', '🐚 Fibonacci'], ['dal', '🪜 D\'Alembert']].filter(function (m) { return m[0] !== 'cb' || !(typeof state !== 'undefined' && state.mode1); });   /* 20261122w : mode unique → plus de case 📉 */
   var CH = { glob: 'edit-unit-ppart', dom: 'edit-unit-pdom', ext: 'edit-unit-pext' };
   window._g45ModeSel = {};
   function rangee(k, v) {
@@ -92111,4 +92114,34 @@ setTimeout(_g45PhEspRemplir, 8000);
   };
   document.addEventListener('focusin', function (e) { var t = e.target; if (t && (t.id === 'c-joueur' || t.id === 'n-joueur' || (t.classList && t.classList.contains('g45-jx-nom')))) remplir(t); });
   window._g45JlRemplir = remplir;   /* tests */
+})();
+
+/* ═══ 20261122w — 🚀 MODE UNIQUE, ÉTAPE 2 : FUSION 🚀 + 📉 (maquette du 21/11, « on enchaîne étape 2 ») : une seule fois (state.mode1) —
+   chaque série 📉 EN COURS (u.lcb, palier > 1) devient l'échelle 🚀 du même lieu (u.lc[clé] = son palier) et garde ses pertes
+   (u.lcbMig[clé] = { p, prev, per, t } lu par monMise 20261122v : pertes 📉 + pertes 🚀 depuis t) ; si l'échelle 🚀 du même lieu est AUSSI en
+   cours → question « laquelle garder ». Les modes 📉 des cartes (u.mode) sont retirés ; plus de case 📉 dans ✏️ Modifier ni d'onglet 📉 dans
+   🚀 Engager (bouton ➡️ 📉 disparu avec). Anciens paris 📉 intacts (Bilan / Archive gardent le filtre 📉). ═══ */
+(function () {
+  window._g45Mode1 = function (sansQuestion) {
+    if (typeof state === 'undefined' || !state || !Array.isArray(state.u) || state.mode1) return 0;
+    var n = 0, eu = function (x) { return (Math.round((+x || 0) * 100) / 100).toLocaleString('fr-FR') + ' €'; };
+    state.u.forEach(function (u) {
+      if (!u) return;
+      Object.keys(u.lcb || {}).forEach(function (k) {
+        var st = u.lcb[k]; delete u.lcb[k]; if (!st || !(st.p > 1)) return;
+        var pm = parseInt((u.lc || {})[k], 10) || 1, l = String(k).split('|')[1] || '', ico = l === 'dom' ? '🏠' : l === 'ext' ? '✈️' : '🌍', garde = true;
+        if (pm > 1 && !sansQuestion) garde = confirm('🚀 Mode unique — ' + u.n + ' ' + ico + ' a deux séries en cours :\n\nOK = garder 📉 C' + st.p + ' (pertes ' + eu(st.per) + ')\nAnnuler = garder 🚀 P' + pm);
+        if (!garde) return;
+        u.lc = u.lc || {}; u.lc[k] = st.p; u.lcbMig = u.lcbMig || {}; u.lcbMig[k] = { p: st.p, prev: +st.prev || 0, per: +st.per || 0, t: Date.now() }; n++;
+      });
+      if (u.lcb && !Object.keys(u.lcb).length) delete u.lcb;
+      if (u.mode) { Object.keys(u.mode).forEach(function (l) { if (u.mode[l] === 'cb') delete u.mode[l]; }); if (!Object.keys(u.mode).length) delete u.mode; }
+    });
+    state.mode1 = 1;
+    try { save(); } catch (e) {} try { if (typeof render === 'function') render(); } catch (e) {}
+    try { if (n && typeof toast === 'function') toast('🚀 Mode unique : ' + n + ' série' + (n > 1 ? 's' : '') + ' 📉 reprise' + (n > 1 ? 's' : '') + ' dans le Cockpit'); } catch (e) {}
+    return n;
+  };
+  var essai = 0, go = function () { if (typeof state !== 'undefined' && state && Array.isArray(state.u)) { try { window._g45Mode1(); } catch (e) {} return; } if (++essai < 20) setTimeout(go, 1500); };
+  setTimeout(go, 3000);
 })();
