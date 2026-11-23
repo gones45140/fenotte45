@@ -89923,7 +89923,8 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     for (var i = 0; i < dec; i++) h += '<div></div>';
     for (var d = 1; d <= nb; d++) {
       var X = PJ[jj(d)] || [], jo = X.filter(function (x) { return !x.nc && (x.r === 1 || x.r === 0); }), g = jo.filter(function (x) { return x.r === 1; }).length, bg = '#0b1226', bd = '#2a3a63', t = '';
-      if (X.length) { if (!jo.length) t = '⏳ ' + X.length; else { t = g + '/' + jo.length; var vv = g * 2 - jo.length; bg = vv > 0 ? 'rgba(30,215,96,.18)' : vv === 0 ? 'rgba(245,197,66,.15)' : 'rgba(255,69,69,.18)'; bd = vv > 0 ? '#1ed760' : vv === 0 ? '#f5c542' : '#ff4545'; } }
+      if (X.length) { if (!jo.length) t = '⏳ ' + X.length; else { t = g + '/' + jo.length; /* 20261124k (capture calendrier : 21/11 9/20 rouge à +37 € → « je comprends pas les fonds de couleur » → « oui » au gain) : couleur = GAIN DU JOUR à 10 € (pépites avec cote), sinon % gagnées */
+          var g10c = 0, n10c = 0; jo.forEach(function (x) { var g1 = gainDe(x); if (g1 != null) { g10c += g1; n10c++; } }); var vv = n10c ? (Math.abs(g10c) < 0.5 ? 0 : g10c) : g * 2 - jo.length; bg = vv > 0 ? 'rgba(30,215,96,.18)' : vv === 0 ? 'rgba(245,197,66,.15)' : 'rgba(255,69,69,.18)'; bd = vv > 0 ? '#1ed760' : vv === 0 ? '#f5c542' : '#ff4545'; } }
       var on = jj(d) === M.j;
       h += '<div ' + (X.length ? 'onclick="g45LoiBilJour(\'' + jj(d) + '\')" ' : '') + 'style="background:' + bg + ';border:' + (on ? '2px solid #6d9dff' : '1px solid ' + bd) + ';border-radius:8px;min-height:46px;padding:3px 1px;text-align:center;' + (X.length ? 'cursor:pointer;' : '') + '"><div style="font-size:13px;font-weight:800;">' + d + '</div><div style="font-size:12px;font-weight:700;">' + t + '</div>'
         /* 20261113e (Antoine : « mettre dans les cases journalières le bilan positif ou négatif de la journée ») : gain du jour de la 🚀 montante
@@ -89934,7 +89935,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
               + (nj ? '<div style="font-size:12px;font-weight:900;color:#f5c542;">🚀 ' + f2(gj) + '</div>' : ''); })()
         + '</div>';
     }
-    h += '</div><div style="font-size:13px;color:#c9d3ee;margin:8px 0;">Chaque jour : ✅ gagnées / pépites jouées, puis le gain du jour 💶 à 10 € et 🚀 en montante. Vert = plus de la moitié gagnées, jaune = moitié, rouge = moins, ⏳ = pas encore joué. Touche un jour pour voir ses pépites.</div>';
+    h += '</div><div style="font-size:13px;color:#c9d3ee;margin:8px 0;">Chaque jour : ✅ gagnées / pépites jouées, puis le gain du jour 💶 à 10 € et 🚀 en montante. Vert = jour gagnant (gain 💶 positif), rouge = jour perdant, jaune = 0 €, ⏳ = pas encore joué. Touche un jour pour voir ses pépites.</div>';
     var XJ = (PJ[M.j] || []).slice().sort(function (a, b) { return a.t - b.t; });   /* 20261107u (« c'est le désordre niveau horaire ») : du plus tôt au plus tard */
     if (XJ.length && !M.tout) { var dj = new Date(M.j + 'T12:00:00')   /* 20261107x (« doublon ? ») : historique ouvert → la liste du jour n'est pas répétée au-dessus */, gj = XJ.filter(function (x) { return !x.nc && x.r === 1; }).length, nj = XJ.filter(function (x) { return !x.nc && (x.r === 1 || x.r === 0); }).length;
       h += '<div style="font-size:15px;font-weight:800;margin:6px 0 4px;">' + dj.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }) + (nj ? ' · ' + gj + '/' + nj + ' ✅' : '') + '</div><div class="g45lb-g">' + grouper(XJ).map(function (g) { return ligne(g, false); }).join('') + '</div>'; }   /* 20261107s : 2 colonnes sur PC */
