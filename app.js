@@ -67613,7 +67613,7 @@ function _g45AvJambe(txt, moiDom, hS, aS) {
   if (/domicile ou nul|1n\b/.test(t)) return hS >= aS;
   if (/exterieur ou nul|n2\b/.test(t)) return aS >= hS;
   if (/ou nul/.test(t)) return camp ? mien >= autre : null;
-  if (/sans nul|12\b/.test(t)) return hS !== aS;
+  if (/sans nul|^12$/.test(t)) return hS !== aS;   /* 20261124n : « 12 » SEUL, comme le Worker (« 112 points » n est pas « sans nul ») */
   if (/victoire|gagn|\bwin\b/.test(t)) return camp ? mien > autre : null;
   /* 20261007g : « Vainqueur » = prolongation / TAB compris (score final), comme le Worker. */
   if (/vainqueur/.test(t)) return camp ? mien > autre : null;
@@ -74155,7 +74155,7 @@ function _g45MmCouleurs() {
       b.classList.remove('pris');
       var st = '', txt = t;
       if (pris) { st = 'background:#1ed760;color:#06210f;border-color:#1ed760;'; txt = '✓ ' + t; }
-      else if (rouges[t]) st = 'background:rgba(255,69,69,.55);color:#fff;border-color:#ff4545;text-decoration:line-through;';
+      else if (rouges[t]) st = 'opacity:.35;';   /* 20261124n : grisé (maquette « Ton pari » validée), plus de rouge barré */
       else if (couverts[t]) st = 'background:rgba(30,215,96,.28);color:#fff;border-color:#1ed760;';
       if (b.getAttribute('data-g45st') !== st) { b.style.cssText = st; b.setAttribute('data-g45st', st); }
       if (b.textContent !== txt) b.textContent = txt;
@@ -92826,4 +92826,290 @@ window._g45FaF = (function () {
     var dA = lieuA === 'dom' ? true : lieuA === 'ext' ? false : null, LiA = dA == null ? null : A.filter(function (x) { return x.dom === dA; }), LiB = dA == null ? null : Bm.filter(function (x) { return x.dom === !dA; });
     return { A: { id: IA.id, nom: IA.nom, n: A.length, m: moy(A), ml: LiA && LiA.length >= 5 ? moy(LiA) : null }, B: { id: IB.id, nom: IB.nom, n: Bm.length, m: moy(Bm), ml: LiB && LiB.length >= 5 ? moy(LiB) : null }, p: w + l ? w / (w + l) : null, H: H, dA: dA };
   };
+})();
+/* ═══════════════════════════════════════════════════════════════════════════
+   20261124n — « TON PARI » PAR SPORT EN ONGLETS (maquettes validées par Antoine le 23/11 : « il manque pas des critères ? » →
+   « oui rajouter des critères que l'on trouve » [ceux de « Tes critères sur 5 saisons »] → « en colonne comme ici Résultat / Buts / Joueur /
+   Feuille de match » → « après chaque sport a des critères différents » → « OUI »).
+   POURQUOI : #mm-types / #mm-types-simple ne proposaient que 17 boutons foot, pour tous les sports. On les REMPLACE (après chaque rendu,
+   comme 20261007z) par 4 onglets propres au sport du formulaire (#c-sport Cockpit, #p-sport Simple) : foot, hockey, basket, NFL, rugby.
+   Les autres sports (tennis, F1, MMA…) gardent l'ancienne liste. Les paris choisis vont dans les MÊMES lignes qu'avant (mmRows /
+   mmRowsSimple) : le ticket collé (pense-bête, _g45TicketRemplir*) et l'enregistrement ne changent pas.
+   LIBELLÉS : écrits pour que le règlement auto (_g45AvJambe ici, _g45VerdictJambe du Worker, copies identiques) ne se trompe JAMAIS :
+   - « Over X » / « Under X » = total du MATCH seulement (sens exact du Worker) ; « HC −1,5 » = handicap (mien + ligne > autre, exact) ;
+   - tout le reste (buts / points d'une équipe, mi-temps, tiers, quart-temps, corners, cartons, joueurs) est écrit « N … ou plus » /
+     « N … max » (jamais « over », « plus de », « moins de », « + de », « et », « + », « gagne », « nul » seul, « les deux marquent ») →
+     le Worker répond null (aucune annonce) au lieu de lire le total du match. Testé dans tests/smoke.js (tpRegles).
+   Choix incompatibles : GRISÉS (maquette « plus de rouge barré »), aussi dans l'ancienne liste (_g45MmCouleurs).
+   ═══════════════════════════════════════════════════════════════════════════ */
+(function () {
+  var S = { tab: { c: 0, n: 0 }, ln: { c: {}, n: {} }, ti: { c: 1, n: 1 }, st: { c: 'pts', n: 'pts' }, jn: { c: null, n: null }, sp: { c: '', n: '' } };
+  var Z = {
+    c: { types: 'mm-types', sport: 'c-sport', lieu: 'c-lieu', adv: 'c-target', mise: 'c-mise', rows: function () { return typeof mmRows !== 'undefined' ? mmRows : []; }, render: function () { if (typeof renderMmRows === 'function') renderMmRows(); }, ajout: function () { if (typeof addMmRow === 'function') addMmRow(); } },
+    n: { types: 'mm-types-simple', sport: 'p-sport', lieu: 'n-lieu', adv: 'n-analysis', mise: 'n-mise', rows: function () { return typeof mmRowsSimple !== 'undefined' ? mmRowsSimple : []; }, render: function () { if (typeof renderMmRowsSimple === 'function') renderMmRowsSimple(); }, ajout: function () { if (typeof addMmRowSimple === 'function') addMmRowSimple(); } }
+  };
+  var val = function (id) { var e = document.getElementById(id); return e ? String(e.value || '').trim() : ''; };
+  var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+  var vf = function (x) { return String(x).replace('.', ','); };
+  function sportDe(z) {
+    var s = val(Z[z].sport);
+    if (s === '⚽') return 'foot'; if (s === '🏒') return 'hockey'; if (s === '🏀') return 'basket'; if (s === '🏈') return 'nfl';
+    if (s.indexOf('🏉') === 0) return 'rugby';
+    return '';
+  }
+  function carte(z) {   /* carte du mur choisie (Cockpit) */
+    if (z !== 'c') return null;
+    var n = val('c-unit'), U = (typeof state !== 'undefined' && state && state.u) || [];
+    return U.filter(function (u) { return u && u.n === n; })[0] || null;
+  }
+  function equipe(z) {
+    if (z === 'n') return val('n-team') || 'Mon équipe';
+    var u = carte(z), n = val('c-unit');
+    if (u && u.type === 'joueur') { var cl = ''; try { cl = typeof _g45UClub === 'function' ? _g45UClub(u) : ''; } catch (e) {} return cl || 'Mon équipe'; }
+    return n || 'Mon équipe';
+  }
+  function adversaire(z) { return val(Z[z].adv) || 'L\'adversaire'; }
+  function joueurDefaut(z) {
+    if (z === 'n') return val('n-joueur');
+    var u = carte(z); return u && u.type === 'joueur' ? u.n : '';
+  }
+  function joueur(z) { var j = S.jn[z]; return (j == null ? joueurDefaut(z) : j).trim(); }
+  function ouPlus(l) { return Math.floor(+l) + 1; }   /* Over 1,5 → 2 ou plus */
+  function auMax(l) { return Math.floor(+l); }         /* Under 1,5 → 1 max */
+  var unite = function (n, mot, pl) { return n + ' ' + (n > 1 ? (pl || mot + 's') : mot); };
+  /* ── lignes proposées par sport (mêmes bornes que les critères : US_L, foot 0,5 → 5,5, hockey 0,5 → 7,5) ── */
+  var L = {
+    foot: { m: [0.5, 1.5, 2.5, 3.5, 4.5, 5.5], e: [0.5, 1.5, 2.5, 3.5], mt: [0.5, 1.5, 2.5], hc: ['-2.5', '-1.5', '-1', '-0.5', '+0.5', '+1', '+1.5', '+2.5'], co: [7.5, 8.5, 9.5, 10.5, 11.5], coe: [3.5, 4.5, 5.5, 6.5], ca: [2.5, 3.5, 4.5, 5.5], cae: [0.5, 1.5, 2.5], ti: [0.5, 1.5, 2.5, 3.5] },
+    hockey: { m: [3.5, 4.5, 5.5, 6.5, 7.5], e: [0.5, 1.5, 2.5, 3.5, 4.5], ti: [0.5, 1.5, 2.5], hc: ['-2.5', '-1.5', '+1.5', '+2.5'], tirs: [1.5, 2.5, 3.5, 4.5] },
+    basket: { m: 224.5, e: 112.5, hc: '-5.5', j: 19.5 },
+    nfl: { m: 44.5, e: 21.5, hc: '-3.5', yd: 59.5, ptd: [0.5, 1.5, 2.5] },
+    rugby: { m: 45.5, e: 24.5, hc: '-7.5', es: [2.5, 3.5, 4.5, 5.5, 6.5], ese: [0.5, 1.5, 2.5, 3.5], pp: 9.5 }
+  };
+  var STATS = { basket: [['pts', 'points', 'points'], ['reb', 'rebonds', 'rebonds'], ['ast', 'passes', 'passes'], ['tp', 'paniers à 3 pts', 'paniers à 3 pts'], ['pr', 'pts + reb', 'pts + reb'], ['pa', 'pts + passes', 'pts + passes'], ['ra', 'reb + passes', 'reb + passes'], ['pra', 'pts + reb + passes', 'pts + reb + passes']] };
+  var TABS = {
+    foot: ['🏆 Résultat', '⚽ Buts', '👤 Joueur', '📋 Feuille de match'],
+    hockey: ['🏆 Résultat', '🥅 Buts', '⏱️ Tiers-temps', '👤 Joueur'],
+    basket: ['🏆 Résultat', '🏀 Points', '⏱️ Quart-temps', '👤 Joueur'],
+    nfl: ['🏆 Résultat', '🏈 Points', '⏱️ Quart-temps', '👤 Joueur'],
+    rugby: ['🏆 Résultat', '🏉 Points', '🏉 Essais', '👤 Joueur']
+  };
+  /* ── libellés (voir l'en-tête : jamais de mot qui tromperait le règlement auto) ── */
+  function lib(z, k, a) {
+    var eq = equipe(z), ad = adversaire(z), j = joueur(z), jd = joueurDefaut(z), sp = sportDe(z);
+    var nom = function (x) { return x === 'eq' ? eq : ad; };
+    var jp = function (mot) { return (j ? j + ' ' : '') + mot; };
+    /* foot : même nom que la carte / le champ joueur → type nu (Buteur, Passeur, Décisif) comme avant (paris joueur reconnus partout) */
+    var jNu = function (mot, motNom) { return (!j || (jd && j.toLowerCase() === jd.toLowerCase())) ? mot : j + ' ' + motNom; };
+    var ou = function (l, o, mot, pl) { return o === 'o' ? unite(ouPlus(l), mot, pl) + ' ou plus' : (auMax(l) === 0 ? 'aucun ' + mot : unite(auMax(l), mot, pl) + ' max'); };
+    var tiers = function (t) { return t === 1 ? '1er tiers' : t + 'e tiers'; };
+    switch (k) {
+      case 'type': return a.t;
+      case 'tot': return (a.o === 'o' ? 'Over ' : 'Under ') + String(a.l).replace(',', '.');
+      case 'hc': { var hl = String(a.l).replace(',', '.').trim(); return 'HC ' + (/^[+-]/.test(hl) ? hl : (+hl > 0 ? '+' + hl : hl)); }
+      case 'eqb': return (a.q === 'eq' ? eq : ad) + (a.o === 'u' && auMax(a.l) === 0 ? ' ne marque pas' : ' marque ' + ou(a.l, a.o, a.mot || 'but'));
+      case 'eqp': return nom(a.q) + ' : ' + ou(a.l, a.o, a.mot || 'point');
+      case 'mtb': return (a.mt === 1 ? '1re' : '2e') + ' mi-temps : ' + ou(a.l, a.o, 'but');
+      case 'mene': return eq + ' mène à la mi-temps';
+      case 'mtnul': return 'Nul à la mi-temps';
+      case 'mtpp': return 'Mi-temps la plus prolifique : ' + a.v;
+      case 'qtpp': return 'Quart-temps le plus prolifique : ' + a.v;
+      case 'tipp': return 'Tiers le plus prolifique : ' + a.v;
+      case 'prem': return eq + ' marque en premier';
+      case 'jb': return sp === 'foot' ? jNu(a.nu, a.mot) : jp(a.mot);
+      case 'jl': return jp(ou(a.l, a.o, a.mot, a.pl));
+      case 'fe': return a.lab + ' : ' + ou(a.l, a.o, a.mot);
+      case 'ti': return tiers(a.t) + ' : ' + a.v;
+      case 'tib': return tiers(a.t) + ' : ' + ou(a.l, a.o, 'but');
+      case 'es': return 'Essais du match : ' + ou(a.l, a.o, 'essai').replace(/ essais?/, '');
+      case 'ese': return eq + ' : ' + ou(a.l, a.o, 'essai');
+    }
+    return '';
+  }
+  /* ── construction : chaque bouton = une « spec » rangée dans R[z], libellé calculé AU CLIC (noms à jour) ── */
+  var R = { c: [], n: [] };
+  function choisis(z) { return Z[z].rows().map(function (r) { return r && r.type; }).filter(Boolean); }
+  function rouges(z) {
+    var C = choisis(z), out = {}, Rg = null;
+    try { Rg = typeof _g45MmRegles === 'function' ? _g45MmRegles(val(Z[z].lieu)) : null; } catch (e) {}
+    C.forEach(function (t) {
+      ((Rg && Rg.contra[t]) || []).forEach(function (x) { out[x] = 1; });
+      var m = /^(Over|Under) (.+)$/.exec(t); if (m) out[(m[1] === 'Over' ? 'Under ' : 'Over ') + m[2]] = 1;
+    });
+    return out;
+  }
+  function bouton(z, k, a, txt, sous) {
+    var i = R[z].length; R[z].push({ k: k, a: a });
+    var t = lib(z, k, a), C = choisis(z), on = C.indexOf(t) >= 0, rg = rouges(z), off = !on && rg[t];
+    var st = on ? 'background:#14532d;border-color:#1ed760;color:#fff;' : off ? 'opacity:.35;' : '';
+    return '<button type="button" class="g45tp-b" data-t="' + esc(t) + '" onclick="g45TpAdd(\'' + z + '\',' + i + ')" style="' + st + '">' + (on ? '✓ ' : '') + esc(txt)
+      + (sous || off ? '<small>' + esc(off ? 'incompatible' : sous) + '</small>' : '') + '</button>';
+  }
+  function grille(z, items, cols) {
+    return '<div class="g45tp-g" style="grid-template-columns:repeat(' + (cols || 3) + ',minmax(0,1fr));">' + items.map(function (x) { return bouton(z, x[0], x[1], x[2], x[3]); }).join('') + '</div>';
+  }
+  function fam(t) { return '<div class="g45tp-f">' + esc(t) + '</div>'; }
+  /* ligne « Plus / Moins » : puces si la liste est courte (foot, hockey), sinon champ de saisie (NBA 224,5…) */
+  function ligne(z, cle, titre, vals, k, a) {
+    var cur = S.ln[z][cle]; if (cur == null) { cur = Array.isArray(vals) ? vals[Math.min(vals.length - 1, Math.floor(vals.length / 2))] : vals; S.ln[z][cle] = cur; }
+    var h = '<div class="g45tp-l"><span class="g45tp-lt">' + esc(titre) + '</span><span class="g45tp-lc">';
+    if (Array.isArray(vals)) h += vals.map(function (v) { return '<button type="button" class="g45tp-ch' + (String(v) === String(cur) ? ' on' : '') + '" onclick="g45TpLn(\'' + z + '\',\'' + cle + '\',\'' + v + '\')">' + vf(v) + '</button>'; }).join('');
+    else h += '<input class="g45tp-in" inputmode="decimal" value="' + vf(cur) + '" onchange="g45TpLn(\'' + z + '\',\'' + cle + '\',this.value,1)">';
+    var mk = function (o, txt) { var aa = {}; for (var x in a) aa[x] = a[x]; aa.l = cur; aa.o = o; return bouton(z, k, aa, txt).replace('class="g45tp-b"', 'class="g45tp-b g45tp-ou"'); };
+    return h + '</span>' + mk('o', 'Plus') + mk('u', 'Moins') + '</div>';
+  }
+  function puces(z, cle, vals, lab) {
+    return '<div class="g45tp-l"><span class="g45tp-lt">' + esc(lab) + '</span><span class="g45tp-lc">' + vals.map(function (v) {
+      return '<button type="button" class="g45tp-ch' + (String(S[cle][z]) === String(v[0]) ? ' on' : '') + '" onclick="g45TpSet(\'' + z + '\',\'' + cle + '\',\'' + v[0] + '\')">' + esc(v[1]) + '</button>'; }).join('') + '</span></div>';
+  }
+  function champJoueur(z) {
+    var j = S.jn[z] == null ? joueurDefaut(z) : S.jn[z];
+    return '<div class="g45tp-l"><span class="g45tp-lt">Joueur</span><input class="g45tp-in" style="width:240px;text-align:left;" placeholder="Nom du joueur" value="' + esc(j) + '" oninput="g45TpJoueur(\'' + z + '\',this.value)"></div>';
+  }
+  /* aide sous le bouton : HC −v = gagne d'au moins floor(v)+1 ; HC +v = perd de ceil(v)−1 au plus (règle mien + ligne > autre) */
+  function hcAide(v) { v = +v; if (v < 0) return 'gagne de ' + (Math.floor(-v) + 1) + ' ou +'; var p = Math.ceil(v) - 1; return p <= 0 ? 'nul ou victoire' : 'perd de ' + p + ' max'; }
+  function hcGrille(z, vals) { return grille(z, vals.map(function (v) { return ['hc', { l: v }, 'HC ' + vf(v), hcAide(v)]; }), 4); }
+  function hcLigne(z, def) {   /* NBA / NFL / rugby : ligne libre (−5,5, +7,5…) + Ajouter */
+    var cur = S.ln[z].hc; if (cur == null) cur = S.ln[z].hc = def;
+    return '<div class="g45tp-l"><span class="g45tp-lt">⚖️ Handicap</span><input class="g45tp-in" inputmode="decimal" value="' + vf(cur) + '" onchange="g45TpLn(\'' + z + '\',\'hc\',this.value,1)">'
+      + bouton(z, 'hc', { l: cur }, 'Ajouter', hcAide(String(cur).replace(',', '.'))).replace('class="g45tp-b"', 'class="g45tp-b g45tp-ou"') + '</div>';
+  }
+  function contenu(z, sp, tab) {
+    var Lp = L[sp], eq = equipe(z), ad = adversaire(z), h = '';
+    var res = function (arr) { return grille(z, arr.map(function (x) { return ['type', { t: x[0] }, x[0], x[1]]; })); };
+    if (sp === 'foot') {
+      if (tab === 0) return res([['Victoire', eq + ' gagne'], ['Vainqueur', 'prolong. comprise'], ['Nul'], ['Défaite'], ['Domicile ou nul'], ['Extérieur ou nul']])
+        + fam('⚖️ Handicap') + hcGrille(z, Lp.hc)
+        + fam('⏱️ Mi-temps') + grille(z, [['mene', {}, 'Mène à la pause'], ['mtnul', {}, 'Nul à la pause']], 2)
+        + grille(z, [['mtpp', { v: '1re' }, '+ de buts en 1re MT'], ['mtpp', { v: 'égalité' }, 'Autant de buts'], ['mtpp', { v: '2e' }, '+ de buts en 2e MT']]);
+      if (tab === 1) return grille(z, [['type', { t: 'BTS Oui' }, 'BTS Oui', 'les deux marquent'], ['type', { t: 'BTS Non' }, 'BTS Non'], ['prem', {}, 'Marque en premier', eq]])
+        + ligne(z, 'm', 'Buts du match', Lp.m, 'tot', {}) + ligne(z, 'e', 'Buts de ' + eq, Lp.e, 'eqb', { q: 'eq' }) + ligne(z, 'a', 'Buts de ' + ad, Lp.e, 'eqb', { q: 'ad' })
+        + ligne(z, 'm1', 'Buts 1re mi-temps', Lp.mt, 'mtb', { mt: 1 }) + ligne(z, 'm2', 'Buts 2e mi-temps', Lp.mt, 'mtb', { mt: 2 });
+      if (tab === 2) return champJoueur(z) + grille(z, [['jb', { nu: 'Buteur', mot: 'buteur' }, '⚽ Buteur'], ['jb', { nu: 'Doublé (2 buts)', mot: 'doublé (2 buts)' }, '⚽⚽ Doublé'], ['jb', { nu: 'Triplé (3 buts)', mot: 'triplé (3 buts)' }, '⚽⚽⚽ Triplé'],
+        ['jb', { nu: 'Passeur', mot: 'passeur' }, '🅰️ Passeur'], ['jb', { nu: 'Décisif', mot: 'décisif' }, '⭐ Décisif']])
+        + ligne(z, 'tc', '🎯 Tirs cadrés', Lp.ti, 'jl', { mot: 'tir cadré', pl: 'tirs cadrés' });
+      return ligne(z, 'coe', 'Corners de ' + eq, Lp.coe, 'fe', { lab: 'Corners ' + eq, mot: 'corner' }) + ligne(z, 'com', 'Corners du match', Lp.co, 'fe', { lab: 'Corners du match', mot: 'corner' })
+        + ligne(z, 'cae', 'Cartons de ' + eq, Lp.cae, 'fe', { lab: 'Cartons ' + eq, mot: 'carton' }) + ligne(z, 'cam', 'Cartons du match', Lp.ca, 'fe', { lab: 'Cartons du match', mot: 'carton' });
+    }
+    if (sp === 'hockey') {
+      if (tab === 0) return res([['Victoire', '60 min'], ['Vainqueur', 'prolong. + TAB'], ['Nul', '60 min'], ['Défaite', '60 min']]) + fam('⚖️ Puck line / handicap') + hcGrille(z, Lp.hc);
+      if (tab === 1) return grille(z, [['type', { t: 'BTS Oui' }, 'BTS Oui', 'les deux marquent'], ['type', { t: 'BTS Non' }, 'BTS Non'], ['prem', {}, 'Marque en premier', eq]])
+        + ligne(z, 'm', 'Buts du match', Lp.m, 'tot', {}) + ligne(z, 'e', 'Buts de ' + eq, Lp.e, 'eqb', { q: 'eq' }) + ligne(z, 'a', 'Buts de ' + ad, Lp.e, 'eqb', { q: 'ad' });
+      if (tab === 2) { var t = +S.ti[z] || 1;
+        return puces(z, 'ti', [[1, '1er tiers'], [2, '2e tiers'], [3, '3e tiers']], 'Tiers')
+          + grille(z, [['ti', { t: t, v: eq + ' devant' }, eq + ' devant'], ['ti', { t: t, v: 'égalité' }, 'Égalité'], ['ti', { t: t, v: ad + ' devant' }, ad + ' devant'],
+                       ['ti', { t: t, v: 'les 2 équipes marquent' }, 'Les 2 marquent'], ['ti', { t: t, v: '1er but pour ' + eq }, '1er but : ' + eq], ['ti', { t: t, v: 'aucun but' }, 'Aucun but']])
+          + ligne(z, 'tb' + t, 'Buts du tiers', Lp.ti, 'tib', { t: t })
+          + fam('Tiers avec le + de buts') + grille(z, [['tipp', { v: '1er' }, '1er'], ['tipp', { v: '2e' }, '2e'], ['tipp', { v: '3e' }, '3e'], ['tipp', { v: 'égalité' }, 'Égalité']], 4); }
+      return champJoueur(z) + grille(z, [['jb', { mot: 'buteur' }, '🥅 Buteur'], ['jb', { mot: 'passeur' }, '🅰️ Passeur'], ['jb', { mot: 'pointeur (but ou passe)' }, '⭐ Pointeur', 'but ou passe']])
+        + ligne(z, 'tirs', '🎯 Tirs', Lp.tirs, 'jl', { mot: 'tir' });
+    }
+    if (sp === 'basket' || sp === 'nfl') {
+      if (tab === 0) return res([['Vainqueur', 'prolong. comprise'], ['Défaite', 'perdant']]) + hcLigne(z, Lp.hc);
+      if (tab === 1) return ligne(z, 'm', 'Points du match', Lp.m, 'tot', {}) + ligne(z, 'e', 'Points de ' + eq, Lp.e, 'eqp', { q: 'eq' }) + ligne(z, 'a', 'Points de ' + ad, Lp.e, 'eqp', { q: 'ad' });
+      if (tab === 2) return fam('Quart-temps avec le + de points') + grille(z, [['qtpp', { v: '1er' }, '1er'], ['qtpp', { v: '2e' }, '2e'], ['qtpp', { v: '3e' }, '3e'], ['qtpp', { v: '4e' }, '4e']], 4)
+        + fam('Mi-temps avec le + de points') + grille(z, [['mtpp', { v: '1re' }, '1re'], ['mtpp', { v: 'égalité' }, 'Égalité'], ['mtpp', { v: '2e' }, '2e']]);
+      if (sp === 'basket') { var st = S.st[z], s0 = STATS.basket.filter(function (x) { return x[0] === st; })[0] || STATS.basket[0];
+        return champJoueur(z) + puces(z, 'st', STATS.basket.map(function (x) { return [x[0], x[1]]; }), 'Stat')
+          + ligne(z, 'j_' + st, 'Ligne (' + s0[1] + ')', Lp.j, 'jl', { mot: s0[1], pl: s0[2] }); }
+      return champJoueur(z) + grille(z, [['jb', { mot: 'marque un TD' }, '🏈 Marque un TD'], ['jb', { mot: 'marque le 1er TD' }, '⭐ 1er TD du match']], 2)
+        + ligne(z, 'ptd', '🎯 TD à la passe', Lp.ptd, 'jl', { mot: 'TD à la passe', pl: 'TD à la passe' }) + ligne(z, 'yd', '📏 Yards', Lp.yd, 'jl', { mot: 'yard' });
+    }
+    if (sp === 'rugby') {
+      if (tab === 0) return res([['Victoire', eq + ' gagne'], ['Nul'], ['Défaite'], ['Domicile ou nul'], ['Extérieur ou nul']])
+        + hcLigne(z, Lp.hc)
+        + fam('⏱️ Mi-temps') + grille(z, [['mene', {}, 'Mène à la pause'], ['mtnul', {}, 'Nul à la pause']], 2);
+      if (tab === 1) return ligne(z, 'm', 'Points du match', Lp.m, 'tot', {}) + ligne(z, 'e', 'Points de ' + eq, Lp.e, 'eqp', { q: 'eq' }) + ligne(z, 'a', 'Points de ' + ad, Lp.e, 'eqp', { q: 'ad' });
+      if (tab === 2) return ligne(z, 'es', 'Essais du match', Lp.es, 'es', {}) + ligne(z, 'ese', 'Essais de ' + eq, Lp.ese, 'ese', {})
+        + grille(z, [['type', { t: 'Les 2 équipes marquent un essai' }, 'Les 2 équipes marquent un essai']], 1);
+      return champJoueur(z) + grille(z, [['jb', { mot: 'marque un essai' }, '🏉 Marque un essai'], ['jb', { mot: 'titulaire' }, '✅ Titulaire']], 2)
+        + ligne(z, 'pp', '🦶 Points au pied', Lp.pp, 'jl', { mot: 'point au pied', pl: 'points au pied' });
+    }
+    return h;
+  }
+  function css() {
+    if (document.getElementById('g45tp-css')) return;
+    var s = document.createElement('style'); s.id = 'g45tp-css';
+    s.textContent = '.g45tp-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:10px 0}'
+      + '.g45tp-tab{padding:10px 4px;border-radius:10px;background:#16213f;border:1px solid #2a3a63;color:#fff;font-size:14px;font-weight:800;cursor:pointer}'
+      + '.g45tp-tab.on{background:#2f6bff;border-color:#6d9dff}'
+      + '.g45tp-g{display:grid;gap:7px;margin:6px 0}'
+      + '.g45tp-b{padding:10px 6px;border-radius:10px;background:#16213f;border:1px solid #2a3a63;color:#fff;font-size:14px;font-weight:800;cursor:pointer;line-height:1.2}'
+      + '.g45tp-b small{display:block;font-size:12px;font-weight:600;color:#c9d3ee;margin-top:2px}'
+      + '.g45tp-f{font-size:14px;font-weight:900;color:#6fc3ff;margin:12px 0 4px}'
+      + '.g45tp-l{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:7px 0}'
+      + '.mm-types .g45tp-lt{display:block !important;flex:0 0 100% !important;width:100% !important;font-size:14px;font-weight:800;color:#fff;margin-bottom:-2px}'   /* titre AU-DESSUS (téléphone : Plus / Moins restaient sur une 2e ligne) */
+      + '.g45tp-lc{display:flex;flex-wrap:wrap;gap:5px}'
+      + '.g45tp-ch{background:#16213f;border:1px solid #2a3a63;border-radius:8px;padding:7px 9px;color:#fff;font-size:14px;font-weight:800;cursor:pointer}'
+      + '.g45tp-ch.on{background:#14532d;border-color:#1ed760}'
+      + '.g45tp-ou{padding:7px 12px;background:#2f6bff;border-color:#6d9dff}'
+      + '.g45tp-in{background:#16213f;border:1px solid #6d9dff;border-radius:8px;padding:7px 10px;color:#fff;font-size:15px;font-weight:800;width:90px;text-align:center}'
+      + '.g45tp-autre{width:100%;margin-top:10px;padding:11px;border-radius:10px;background:transparent;border:1px dashed #6d9dff;color:#fff;font-size:14px;font-weight:800;cursor:pointer}'
+      /* lignes choisies : lignes claires, cote en jaune (maquette) */
+      + '.mm-wrap .mm-row{border-left:4px solid #1ed760 !important;padding:8px 10px}'
+      + '.mm-wrap .mm-row input.fi:first-child{font-size:15px !important;font-weight:800;color:#fff !important}'
+      + '.mm-wrap .mm-row input.mm-cote:not(:first-child){background:#f5c542 !important;color:#000 !important;font-size:15px !important;font-weight:900;text-align:center;border:0}'
+      + '.mm-wrap .mm-row .mm-del{color:#ff8a8a;font-size:18px}';
+    document.head.appendChild(s);
+  }
+  function dessiner(z) {
+    var box = document.getElementById(Z[z].types); if (!box) return;
+    var sp = sportDe(z);
+    if (!sp) { if (box.getAttribute('data-g45tp')) { box.removeAttribute('data-g45tp'); box.style.display = ''; } return; }   /* autres sports : ancienne liste */
+    css();
+    if (S.sp[z] !== sp) { S.sp[z] = sp; S.tab[z] = 0; }
+    R[z] = [];
+    var T = TABS[sp], tab = S.tab[z] || 0;
+    var h = '<div class="g45tp-tabs">' + T.map(function (t, i) { return '<button type="button" class="g45tp-tab' + (i === tab ? ' on' : '') + '" onclick="g45TpTab(\'' + z + '\',' + i + ')">' + esc(t) + '</button>'; }).join('') + '</div>'
+      + contenu(z, sp, tab)
+      + '<button type="button" class="g45tp-autre" onclick="g45TpAutre(\'' + z + '\')">✍️ Autre pari (écrire à la main)</button>';
+    box.setAttribute('data-g45tp', sp); box.style.display = 'block';
+    box.innerHTML = h;
+    bouton_enr(z);
+  }
+  /* gros bouton « Enregistrer » : mise et gain (maquette) */
+  function bouton_enr(z) {
+    try {
+      var box = document.getElementById(Z[z].types), w = box && box.closest('.mm-wrap'), b = w && w.querySelector('.mm-cote-total > button');
+      if (!b) return;
+      var cote = 1; Z[z].rows().forEach(function (r) { cote *= (parseFloat(r.cote) || 1); });
+      if (z === 'c') { var man = parseFloat(val('mm-cote-manuelle').replace(',', '.')); if (man > 1) cote = man; }
+      var mise = parseFloat(val(Z[z].mise).replace(',', '.'));
+      var e = function (x) { return x.toFixed(2).replace('.', ',') + ' €'; };
+      b.textContent = '✅ Enregistrer le pari' + (mise > 0 ? ' · ' + e(mise) + ' → gain ' + e(mise * cote) : '');
+      b.style.cssText = 'display:block;width:100%;margin-top:10px;padding:14px;border-radius:12px;border:0;background:#2f6bff;color:#fff;font-size:16px;font-weight:900;cursor:pointer;';
+      var p = b.parentNode; if (p && p.style.flexWrap !== 'wrap') p.style.flexWrap = 'wrap';
+    } catch (e) {}
+  }
+  window.g45TpTab = function (z, i) { S.tab[z] = i; dessiner(z); };
+  window.g45TpLn = function (z, cle, v, saisie) { var n = parseFloat(String(v).replace(',', '.')); if (!isFinite(n)) return; S.ln[z][cle] = /^[+-]/.test(String(v).trim()) ? String(v).trim().replace(',', '.') : (saisie ? n : v); dessiner(z); };
+  window.g45TpSet = function (z, cle, v) { S[cle][z] = v; dessiner(z); };
+  window.g45TpJoueur = function (z, v) { S.jn[z] = v; if (z === 'n') { var e = document.getElementById('n-joueur'); if (e) e.value = v; } };
+  window.g45TpAutre = function (z) { Z[z].ajout(); };
+  window.g45TpAdd = function (z, i) {
+    var sp = R[z][i]; if (!sp) return;
+    var t = lib(z, sp.k, sp.a); if (!t) return;
+    var rows = Z[z].rows(), k = -1;
+    rows.forEach(function (r, j) { if (r && r.type === t) k = j; });
+    if (k >= 0) { if (rows.length > 1) rows.splice(k, 1); else rows[0].type = ''; }   /* re-clic = on l'enlève */
+    else { var vide = rows.filter(function (r) { return r && !String(r.type || '').trim(); })[0]; if (vide) vide.type = t; else rows.push({ type: t, cote: 1.50 }); }
+    Z[z].render();
+  };
+  window._g45TpLib = lib; window._g45TpDessiner = dessiner; window._g45TpS = S;
+  /* après chaque rendu des lignes (et changement de sport / équipe / lieu / adversaire / mise) → onglets redessinés */
+  ['renderMmRows', 'renderMmRowsSimple'].forEach(function (n) {
+    var f = window[n]; if (typeof f !== 'function' || f._g45Tp) return;
+    var w = function () { var x = f.apply(this, arguments); try { dessiner(n === 'renderMmRows' ? 'c' : 'n'); } catch (e) {} return x; };
+    w._g45Tp = 1; for (var k in f) if (Object.prototype.hasOwnProperty.call(f, k)) w[k] = f[k]; window[n] = w;
+  });
+  document.addEventListener('change', function (e) {
+    var id = e.target && e.target.id; if (!id) return;
+    if (['c-sport', 'c-unit', 'c-lieu', 'c-target'].indexOf(id) >= 0) { if (id === 'c-unit') S.jn.c = null; try { dessiner('c'); } catch (x) {} }
+    if (['p-sport', 'n-team', 'n-lieu', 'n-analysis', 'n-joueur'].indexOf(id) >= 0) { if (id === 'n-joueur') S.jn.n = null; try { dessiner('n'); } catch (x) {} }
+  }, true);
+  document.addEventListener('input', function (e) {
+    var id = e.target && e.target.id; if (!id) return;
+    if (id === 'c-mise' || id === 'mm-cote-manuelle' || (e.target.classList && e.target.classList.contains('mm-cote'))) try { bouton_enr('c'); bouton_enr('n'); } catch (x) {}
+    if (id === 'n-mise') try { bouton_enr('n'); } catch (x) {}
+  }, true);
+  setTimeout(function () { try { dessiner('c'); dessiner('n'); } catch (e) {} }, 1600);
 })();
