@@ -89716,8 +89716,10 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   var ligne = function (G, date) {
     var x = G[0], tl = tlogoDe(x);
     var col = /^[0-9a-f]{6}$/i.test(String(x.c || '')) ? '#' + x.c : '#2a3a63', hh = '';
+    /* 20261124l (capture des pépites jouées → « pareil quand le résultat est connu, fond vert ou rouge ; match en attente tu peux laisser ») : gagnée = vert, perdue = rouge */
+    var bdR = '#2a3a63'; if (x.r === 1) { col = '#1ed760'; bdR = '#1ed760'; } else if (x.r === 0) { col = '#ff4545'; bdR = '#ff4545'; }
     try { hh = new Date(x.t).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris' }); } catch (e) {}
-    return '<div style="position:relative;overflow:hidden;border-radius:12px;margin:6px 0;background:linear-gradient(90deg,' + col + '55,#0b1226 70%);border:1px solid #2a3a63;color:#fff;">'
+    return '<div style="position:relative;overflow:hidden;border-radius:12px;margin:6px 0;background:linear-gradient(90deg,' + col + '55,#0b1226 70%);border:1px solid ' + bdR + ';color:#fff;">'
       /* 20261118t (capture tel : « le joueur est un peu coupé, faudrait le rendre + visible ») : photo d'un JOUEUR au-dessus de la bande
          (z-index), pleine opacité, et bande de texte limitée pour ne plus passer dessus. */
       /* 20261119k (captures tel : « logo du club juste en dessous de la photo ? » + logo d'équipe coupé par la bande) : TOUTES les cartes → image 76 px
