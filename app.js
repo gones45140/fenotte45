@@ -92888,7 +92888,7 @@ window._g45FaF = (function () {
   var unite = function (n, mot, pl) { return n + ' ' + (n > 1 ? (pl || mot + 's') : mot); };
   /* ── lignes proposées par sport (mêmes bornes que les critères : US_L, foot 0,5 → 5,5, hockey 0,5 → 7,5) ── */
   var L = {
-    foot: { m: [0.5, 1.5, 2.5, 3.5, 4.5, 5.5], e: [0.5, 1.5, 2.5, 3.5], mt: [0.5, 1.5, 2.5], hc: ['-2.5', '-1.5', '-1', '-0.5', '+0.5', '+1', '+1.5', '+2.5'], co: [7.5, 8.5, 9.5, 10.5, 11.5], coe: [3.5, 4.5, 5.5, 6.5], ca: [2.5, 3.5, 4.5, 5.5], cae: [0.5, 1.5, 2.5], ti: [0.5, 1.5, 2.5, 3.5] },
+    foot: { m: [0.5, 1.5, 2.5, 3.5, 4.5, 5.5], e: [0.5, 1.5, 2.5, 3.5], mt: [0.5, 1.5, 2.5], hc: ['-2.5', '-1.5', '-1', '-0.5', '+0.5', '+1', '+1.5', '+2.5'], co: [7.5, 8.5, 9.5, 10.5, 11.5], coe: [3.5, 4.5, 5.5, 6.5], ca: [2.5, 3.5, 4.5, 5.5], cae: [0.5, 1.5, 2.5], ti: [0.5, 1.5, 2.5, 3.5], tt: [0.5, 1.5, 2.5, 3.5, 4.5] },
     hockey: { m: [3.5, 4.5, 5.5, 6.5, 7.5], e: [0.5, 1.5, 2.5, 3.5, 4.5], ti: [0.5, 1.5, 2.5], hc: ['-2.5', '-1.5', '+1.5', '+2.5'], tirs: [1.5, 2.5, 3.5, 4.5] },
     basket: { m: 224.5, e: 112.5, hc: '-5.5', j: 19.5 },
     nfl: { m: 44.5, e: 21.5, hc: '-3.5', yd: 59.5, ptd: [0.5, 1.5, 2.5] },
@@ -93006,7 +93006,8 @@ window._g45FaF = (function () {
         + ligne(z, 'm1', 'Buts 1re mi-temps', Lp.mt, 'mtb', { mt: 1 }) + ligne(z, 'm2', 'Buts 2e mi-temps', Lp.mt, 'mtb', { mt: 2 });
       if (tab === 2) return champJoueur(z) + grille(z, [['jb', { nu: 'Buteur', mot: 'buteur' }, '⚽ Buteur'], ['jb', { nu: 'Doublé (2 buts)', mot: 'doublé (2 buts)' }, '⚽⚽ Doublé'], ['jb', { nu: 'Triplé (3 buts)', mot: 'triplé (3 buts)' }, '⚽⚽⚽ Triplé'],
         ['jb', { nu: 'Passeur', mot: 'passeur' }, '🅰️ Passeur'], ['jb', { nu: 'Décisif', mot: 'décisif' }, '⭐ Décisif']])
-        + ligne(z, 'tc', '🎯 Tirs cadrés', Lp.ti, 'jl', { mot: 'tir cadré', pl: 'tirs cadrés' });
+        + ligne(z, 'tc', '🎯 Tirs cadrés', Lp.ti, 'jl', { mot: 'tir cadré', pl: 'tirs cadrés' })
+        + ligne(z, 'tt', '🦶 Tirs (cadrés ou non)', Lp.tt, 'jl', { mot: 'tir', pl: 'tirs' });   /* 20261124p (« tir cadré il y a le mode sans ? ») */
       return ligne(z, 'coe', 'Corners de ' + eq, Lp.coe, 'fe', { lab: 'Corners ' + eq, mot: 'corner' }) + ligne(z, 'com', 'Corners du match', Lp.co, 'fe', { lab: 'Corners du match', mot: 'corner' })
         + ligne(z, 'cae', 'Cartons de ' + eq, Lp.cae, 'fe', { lab: 'Cartons ' + eq, mot: 'carton' }) + ligne(z, 'cam', 'Cartons du match', Lp.ca, 'fe', { lab: 'Cartons du match', mot: 'carton' });
     }
@@ -93060,7 +93061,7 @@ window._g45FaF = (function () {
       + '.mm-types .g45tp-lt{display:block !important;flex:0 0 100% !important;width:100% !important;font-size:14px;font-weight:800;color:#fff;margin-bottom:-2px}'   /* titre AU-DESSUS (téléphone : Plus / Moins restaient sur une 2e ligne) */
       + '.g45tp-lc{display:flex;flex-wrap:wrap;gap:5px}'
       + '.g45tp-ch{background:#16213f;border:1px solid #2a3a63;border-radius:8px;padding:7px 9px;color:#fff;font-size:14px;font-weight:800;cursor:pointer}'
-      + '.g45tp-ch.on{background:#14532d;border-color:#1ed760}'
+      + '.g45tp-ch.on{background:#16213f;border:2px solid #6fc3ff;box-shadow:0 0 0 1px #6fc3ff inset}'   /* ligne PROPOSÉE = contour bleu ; vert = seulement ce qui est dans le pari (« si je veux pas choisir ce critère ») */
       + '.g45tp-ou{padding:7px 12px;background:#2f6bff;border-color:#6d9dff}'
       + '.g45tp-in{background:#16213f;border:1px solid #6d9dff;border-radius:8px;padding:7px 10px;color:#fff;font-size:15px;font-weight:800;width:90px;text-align:center}'
       + '.g45tp-autre{width:100%;margin-top:10px;padding:11px;border-radius:10px;background:transparent;border:1px dashed #6d9dff;color:#fff;font-size:14px;font-weight:800;cursor:pointer}'
@@ -93146,4 +93147,120 @@ window._g45FaF = (function () {
     if (id === 'n-mise') try { bouton_enr('n'); } catch (x) {}
   }, true);
   setTimeout(function () { try { dessiner('c'); dessiner('n'); } catch (e) {} }, 1600);
+})();
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   20261124p — « LE MATCH » REFAIT (Engager / Cockpit, maquette maquette_lematch.png ; Antoine : « on pourrait faire mieux non ? » sur le
+   bloc « Le match », puis « oui » le 23/11) : bloc #g45lm posé AVANT « Ton pari » : en-tête sport + compétition, carte VS (logo + équipe
+   choisie à gauche, VS + date / heure au milieu, adversaire + logo à droite), boutons 🏠 Domicile / ✈️ Extérieur / 🌍 Tous, 📅 Aujourd'hui /
+   Demain / Autre date, puis Mise + Bookmaker.
+   POURQUOI on DÉPLACE les vrais champs (#c-unit, #c-sport, #c-comp, #c-target + sa liste, #c-date, #c-heure, #c-mise, #c-book) au lieu
+   d'en faire des copies : le ticket collé (_g45TicketRemplirCockpit), les paliers (updMise / renderCrash / g45LieuChange) et
+   l'enregistrement les lisent par leur id → rien à synchroniser, rien ne change pour eux. Le reste (Équipe jouée, joueurs — remplis
+   par l'onglet 👤 de « Ton pari » —, lieu en liste) part dans « ⚙️ Plus de détails » replié. #c-lieu reste la source du lieu.
+   ═══════════════════════════════════════════════════════════════════════════ */
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+  function jour(d) { var x = new Date(); x.setDate(x.getDate() + d); return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0'); }
+  function logo(nom) { try { return nom && typeof g45LogoUrlDe === 'function' ? g45LogoUrlDe(nom) : ''; } catch (e) { return ''; } }
+  function carte() { var n = $('c-unit') ? $('c-unit').value : '', U = (typeof state !== 'undefined' && state && state.u) || []; return U.filter(function (u) { return u && u.n === n; })[0] || null; }
+  function rond(url, txt) {
+    return url ? '<img src="' + esc(url) + '" alt="" style="width:100%;height:100%;object-fit:contain;" onerror="this.replaceWith(document.createTextNode(\'' + esc(String(txt || '?').charAt(0)) + '\'))">' : esc(String(txt || '?').charAt(0).toUpperCase());
+  }
+  var CSS = '#g45lm{background:rgba(11,16,29,.94);border:1px solid #2a3a63;border-radius:14px;padding:14px;margin-bottom:12px;color:#fff}'
+    + '#g45lm .lm-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}'
+    + '#g45lm .lm-h b{font-size:18px;font-weight:900}'
+    + '#g45lm #c-sport{width:150px !important;flex:0 0 auto;min-width:0;padding:6px 8px;font-size:15px;background:#16213f;border:1px solid #2a3a63;border-radius:10px;color:#fff}'
+    + '#g45lm #c-comp{width:160px !important;flex:0 0 auto;padding:6px 12px;font-size:15px;font-weight:800;background:#2f6bff;border:1px solid #6d9dff;border-radius:999px;color:#fff}'
+    + '#g45lm .lm-vs{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;background:#0b1226;border-radius:12px;padding:12px}'
+    + '#g45lm .lm-eq{display:flex;align-items:center;gap:8px;min-width:0}'
+    + '#g45lm .lm-eq.d{flex-direction:row-reverse;text-align:right}'
+    + '#g45lm .lm-lg{flex:0 0 54px;width:54px;height:54px;border-radius:50%;background:#fff;color:#16213f;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:900;overflow:hidden;padding:5px;box-sizing:border-box}'
+    + '#g45lm .lm-lg.vide{background:#22305a;color:#c9d3ee}'
+    + '#g45lm .lm-nm{min-width:0;flex:1}'
+    + '#g45lm #c-unit{width:100%;background:transparent;border:0;border-bottom:1px dashed #6d9dff;border-radius:0;padding:2px 0;color:#fff;font-size:17px;font-weight:900}'
+    + '#g45lm #c-target{width:100%;background:#16213f;border:1px solid #6d9dff;border-radius:10px;padding:8px 10px;color:#fff;font-size:15px;font-weight:800;text-align:inherit}'
+    + '#g45lm .lm-sub{font-size:13px;color:#c9d3ee;margin-top:3px}'
+    + '#g45lm .lm-mid{text-align:center}#g45lm .lm-mid b{font-size:22px;font-weight:900;color:#c9d3ee}#g45lm .lm-mid div{font-size:13px;color:#c9d3ee;white-space:nowrap}'
+    + '#g45lm .lm-bt{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}'
+    + '#g45lm .lm-b{padding:9px 12px;border-radius:999px;background:#16213f;border:1px solid #2a3a63;color:#fff;font-size:14px;font-weight:800;cursor:pointer}'
+    + '#g45lm .lm-b.on{background:#2f6bff;border-color:#6d9dff}'
+    + '#g45lm .lm-dt{display:flex;gap:6px;margin-top:8px;align-items:center}'
+    + '#g45lm .lm-dt input{width:auto !important;flex:0 0 auto;background:#16213f;border:1px solid #2a3a63;border-radius:10px;padding:8px;color:#fff;font-size:15px}'
+    + '#g45lm .lm-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}'
+    + '#g45lm .lm-box{background:#0b1226;border:1px solid #2a3a63;border-radius:12px;padding:8px 10px}'
+    + '#g45lm .lm-box span{display:block;font-size:13px;color:#c9d3ee;margin-bottom:3px}'
+    + '#g45lm .lm-box input,#g45lm .lm-box select{width:100%;background:transparent;border:0;color:#fff;font-size:18px;font-weight:900;padding:0}'
+    + '#g45lm .lm-box select option,#g45lm #c-unit option,#g45lm #c-sport option{background:#16213f;color:#fff}'
+    + '@media (max-width:520px){#g45lm .lm-vs{grid-template-columns:1fr;text-align:left}#g45lm .lm-eq.d{flex-direction:row;text-align:left}#g45lm .lm-mid{display:flex;gap:10px;align-items:center;justify-content:center}}';
+  function poser() {
+    var types = $('mm-types'), wrap = types && types.closest('.mm-wrap'), unit = $('c-unit');
+    if (!wrap || !unit || $('g45lm')) return !!$('g45lm');
+    var st = document.createElement('style'); st.id = 'g45lm-css'; st.textContent = CSS; document.head.appendChild(st);
+    var b = document.createElement('div'); b.id = 'g45lm';
+    b.innerHTML = '<div class="lm-h"><b id="lm-sp">⚽</b><b>Le match</b><span id="lm-sport"></span><span id="lm-comp"></span></div>'
+      + '<div class="lm-vs"><div class="lm-eq"><div class="lm-lg" id="lm-lg1"></div><div class="lm-nm"><span id="lm-unit"></span><div class="lm-sub" id="lm-sub1"></div></div></div>'
+      + '<div class="lm-mid"><b>VS</b><div id="lm-quand"></div></div>'
+      + '<div class="lm-eq d"><div class="lm-lg vide" id="lm-lg2">?</div><div class="lm-nm" id="lm-adv"></div></div></div>'
+      + '<div class="lm-bt" id="lm-lieu"></div><div class="lm-bt" id="lm-date"></div><div class="lm-dt" id="lm-dt"></div>'
+      + '<div class="lm-row"><label class="lm-box"><span>💶 Mise</span><span id="lm-mise" style="margin:0"></span></label><label class="lm-box"><span>🏦 Bookmaker</span><span id="lm-book" style="margin:0"></span></label></div>';
+    wrap.parentNode.insertBefore(b, wrap);
+    var mv = function (id, dest) { var e = $(id), d = $(dest); if (e && d) d.appendChild(e); return e; };
+    mv('c-sport', 'lm-sport'); mv('c-comp', 'lm-comp'); var dl = $('dl-c-comp'); if (dl) $('lm-comp').appendChild(dl);
+    mv('c-unit', 'lm-unit');
+    var tg = $('c-target'), tgw = tg && tg.parentNode; if (tgw) { var lb = tgw.querySelector('label'); if (lb) lb.style.display = 'none'; $('lm-adv').appendChild(tgw); tgw.style.margin = '0'; tg.placeholder = 'Adversaire…'; }
+    mv('c-date', 'lm-dt'); mv('c-heure', 'lm-dt');
+    mv('c-mise', 'lm-mise'); mv('c-book', 'lm-book');
+    /* ancien bloc : titre « Le match » → « ⚙️ Plus de détails » replié ; « La mise » vidé → caché */
+    try {
+      var fc = b.parentNode.querySelector('.fc.g45-form');
+      [].forEach.call((fc || document).querySelectorAll('.mm-fam span'), function (s) {
+        var fam = s.parentNode, nx = fam.nextElementSibling;
+        if (s.textContent === 'Le match' && nx && !$('lm-det')) {
+          var d = document.createElement('details'); d.id = 'lm-det'; d.style.cssText = 'margin-bottom:8px;';
+          d.innerHTML = '<summary style="cursor:pointer;font-size:14px;font-weight:800;color:#6fc3ff;padding:6px 0;">⚙️ Plus de détails (équipe jouée, lieu, joueurs…)</summary>';
+          fam.parentNode.insertBefore(d, fam); d.appendChild(nx); fam.style.display = 'none';
+        }
+        if (s.textContent === 'La mise' && nx && !nx.querySelector('input,select')) { fam.style.display = 'none'; nx.style.display = 'none'; }
+      });
+      [].forEach.call(document.querySelectorAll('#lm-det .fg'), function (g) { if (!g.querySelector('input,select,textarea')) g.style.display = 'none'; });   /* « Coup d'envoi » vide */
+    } catch (e) {}
+    maj();
+    return true;
+  }
+  function maj() {
+    if (!$('g45lm')) return;
+    var u = carte(), nom = $('c-unit') ? $('c-unit').value : '', club = '';
+    if (u && u.type === 'joueur') { try { club = typeof _g45UClub === 'function' ? _g45UClub(u) : ''; } catch (e) {} }
+    var l1 = logo(club || nom), adv = $('c-target') ? $('c-target').value.trim() : '', l2 = logo(adv);
+    var g1 = $('lm-lg1'), g2 = $('lm-lg2');
+    if (g1) { g1.innerHTML = rond(l1, club || nom); g1.className = 'lm-lg' + (l1 ? '' : ' vide'); }
+    if (g2) { g2.innerHTML = adv ? rond(l2, adv) : '?'; g2.className = 'lm-lg' + (l2 ? '' : ' vide'); }
+    var sp = $('c-sport'); if ($('lm-sp')) $('lm-sp').textContent = sp && sp.value ? sp.value.slice(0, 2).replace(/[^\S]/g, '') : '⚽';
+    var lieu = $('c-lieu') ? $('c-lieu').value : 'dom';
+    if ($('lm-sub1')) $('lm-sub1').textContent = (club ? club + ' · ' : '') + (lieu === 'dom' ? '🏠 domicile' : lieu === 'ext' ? '✈️ extérieur' : '🌍 tous les matchs');
+    var d = $('c-date') ? $('c-date').value : '', h = $('c-heure') ? $('c-heure').value : '', q = '';
+    if (/^\d{4}-\d{2}-\d{2}$/.test(d)) { var dt = new Date(d + 'T12:00:00'); q = dt.toLocaleDateString('fr-FR', { weekday: 'short', day: '2-digit', month: '2-digit' }); }
+    if ($('lm-quand')) $('lm-quand').textContent = (q || 'date ?') + (h ? ' · ' + h : '');
+    var bt = function (on, txt, js) { return '<button type="button" class="lm-b' + (on ? ' on' : '') + '" onclick="' + js + '">' + txt + '</button>'; };
+    if ($('lm-lieu')) $('lm-lieu').innerHTML = bt(lieu === 'dom', '🏠 Domicile', "g45LmLieu('dom')") + bt(lieu === 'ext', '✈️ Extérieur', "g45LmLieu('ext')") + bt(lieu === '', '🌍 Tous', "g45LmLieu('')");
+    var auj = jour(0), dem = jour(1), autre = window._g45LmAutre || (d && d !== auj && d !== dem);
+    if ($('lm-date')) $('lm-date').innerHTML = bt(d === auj && !window._g45LmAutre, '📅 Aujourd\'hui', "g45LmDate(0)") + bt(d === dem && !window._g45LmAutre, '📅 Demain', "g45LmDate(1)") + bt(autre, '🗓️ Autre date', "g45LmDate(-1)");
+    if ($('c-date')) $('c-date').style.display = autre ? '' : 'none';
+  }
+  window.g45LmLieu = function (v) { var s = $('c-lieu'); if (!s) return; s.value = v; try { if (typeof g45LieuChange === 'function') g45LieuChange(); } catch (e) {} try { s.dispatchEvent(new Event('change', { bubbles: true })); } catch (e) {} maj(); };
+  window.g45LmDate = function (k) {
+    var e = $('c-date'); if (!e) return;
+    if (k >= 0) { window._g45LmAutre = false; e.value = jour(k); try { e.dispatchEvent(new Event('change', { bubbles: true })); } catch (x) {} }
+    else { window._g45LmAutre = true; maj(); try { e.focus(); if (e.showPicker) e.showPicker(); } catch (x) {} return; }
+    maj();
+  };
+  window._g45LmMaj = maj; window._g45LmPoser = poser;
+  ['input', 'change'].forEach(function (ev) {
+    document.addEventListener(ev, function (e) { var id = e.target && e.target.id; if (/^c-(unit|target|date|heure|lieu|sport)$/.test(id || '')) { if (id === 'c-date' && ev === 'change') window._g45LmAutre = false; try { maj(); } catch (x) {} } }, true);
+  });
+  /* champs remplis par le code (ticket, carte choisie, setLieu…) sans événement → petite relecture régulière, seulement si le bloc est visible */
+  setInterval(function () { var b = $('g45lm'); if (b && b.offsetParent) try { maj(); } catch (e) {} }, 1500);
+  var essais = 0; (function go() { if (!poser() && ++essais < 40) setTimeout(go, 500); })();
 })();
