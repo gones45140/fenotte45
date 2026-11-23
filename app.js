@@ -89508,6 +89508,15 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     chercher(u).then(function (o) { delete EN[u.n]; if (!o) return; o.t = Date.now(); try { localStorage.setItem(cle, JSON.stringify(o)); } catch (e) {} if (!o.vide) poser(o); }).catch(function () { delete EN[u.n]; });
   };
   window._g45AgeT = { html: html, ageDe: ageDe };   /* tests */
+  /* 20261124y (carte à 2 joueurs : « USA 29 ans et l'autre ? ils ont tous les 2 29 ans et américain ? » → « oui ») : âge + pays d'UN joueur
+     par son nom (même recherche et même mémoire g45age1| que la bande de la carte) → { ag, p, f } ou null ; servi à chaque photo du duo. */
+  window._g45AgeInfo = function (nom, sport) {
+    var cle = 'g45age1|' + nom, c = null;
+    try { c = JSON.parse(localStorage.getItem(cle) || 'null'); } catch (e) {}
+    var fin = function (o) { return o && !o.vide ? { ag: ageDe(o), p: o.p || '', f: o.f || '' } : null; };
+    if (c && Date.now() - c.t < 30 * 864e5) return Promise.resolve(fin(c));
+    return chercher({ n: nom, sport: sport }).then(function (o) { if (!o) return null; o.t = Date.now(); try { localStorage.setItem(cle, JSON.stringify(o)); } catch (e) {} return fin(o); }).catch(function () { return null; });
+  };
 })();
 
 /* ═══ 20261107q — 📊 LOI DES SÉRIES : BILAN + CALENDRIER DANS TENDANCES (Antoine : « balancer dans Tendances et archiver, je veux contrôler un
@@ -93460,10 +93469,17 @@ window._g45FaF = (function () {
     var w = document.createElement('div'); w.className = 'g45ul-duo';
     w.style.cssText = 'float:right;display:flex;gap:6px;margin:0 0 6px 8px;text-align:center;';
     var fam = function (n) { return esc(String(n).split(/\s+/).slice(-1)[0]); };
-    var cel = function (html, n) { return '<div style="display:flex;flex-direction:column;align-items:center;gap:2px;"><span class="g45duo-ph">' + html + '</span><span style="font-size:12px;color:#c9d3ee;">' + fam(n) + '</span></div>'; };
+    var cel = function (html, n) { return '<div style="display:flex;flex-direction:column;align-items:center;gap:2px;"><span class="g45duo-ph">' + html + '</span><span style="font-size:12px;color:#c9d3ee;">' + fam(n) + '</span><span class="g45duo-id" style="font-size:13px;font-weight:700;color:#fff;display:inline-flex;align-items:center;gap:4px;"></span></div>'; };
     var src0 = (ph && ph.getAttribute('src')) || u.phE || '';
     w.innerHTML = cel(rond(src0, u.n, 'var(--g45ulc,#4d84ff)'), u.n) + D.autres.map(function (a) { return cel(rond('', a, '#1ed760'), a); }).join('');
     if (ph) ph.replaceWith(w); else if (bloc && bloc !== row) bloc.insertBefore(w, bloc.firstChild);
+    /* 20261124y : drapeau + âge de CHAQUE joueur sous sa photo (la bande « pays · âge » de la carte = 1er joueur seul → cachée, cf. habiller) */
+    var ids = w.querySelectorAll('.g45duo-id');
+    [u.n].concat(D.autres).forEach(function (n, i) {
+      if (!ids[i] || typeof window._g45AgeInfo !== 'function') return;
+      window._g45AgeInfo(n, u.sport).then(function (o) { if (!o || !ids[i].isConnected) return;
+        ids[i].innerHTML = (/^https:\/\//.test(o.f) ? '<img src="' + esc(o.f) + '" alt="" style="height:12px;width:18px;object-fit:cover;border-radius:2px;" onerror="this.remove()">' : '') + (o.ag ? esc(o.ag) + ' ans' : esc(o.p)); });
+    });
     /* photos des autres joueurs */
     var cells = w.querySelectorAll('.g45duo-ph'), sp = spDe(u);
     if (!src0 && sp && cells[0]) index(sp).then(function (J) { var id = J && idDe(J, u.n); if (id && cells[0].isConnected) cells[0].innerHTML = rond('https://a.espncdn.com/i/headshots/' + SPX[sp][1] + '/players/full/' + id + '.png', u.n, 'var(--g45ulc,#4d84ff)'); });   /* carte sans photo posée : ESPN aussi */
@@ -93477,6 +93493,7 @@ window._g45FaF = (function () {
   function habiller() {
     var box = document.getElementById('ulist'); if (!box || typeof state === 'undefined' || !state.u) return;
     Array.prototype.forEach.call(box.querySelectorAll('.urow.g45ul'), function (row) {
+      if (row.getAttribute('data-g45duo') === '1') { var bd = row.querySelector('.g45ul-id'); if (bd && bd.parentNode && bd.parentNode.style.display !== 'none') bd.parentNode.style.display = 'none'; return; }   /* 20261124y : bande pays · âge du 1er joueur seul */
       if (row.getAttribute('data-g45duo')) return;
       var b = row.querySelector('[data-idx]'), u = b ? state.u[+b.getAttribute('data-idx')] : null, D = joueurs(u);
       if (!D) { row.setAttribute('data-g45duo', '0'); return; }
