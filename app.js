@@ -93160,107 +93160,138 @@ window._g45FaF = (function () {
    par l'onglet 👤 de « Ton pari » —, lieu en liste) part dans « ⚙️ Plus de détails » replié. #c-lieu reste la source du lieu.
    ═══════════════════════════════════════════════════════════════════════════ */
 (function () {
+  /* 20261124q (« oui » au même bloc dans Pari simple) : un seul code pour les deux formulaires, configuré par Z.c (Engager, ids c-…)
+     et Z.n (Pari simple, ids n-… / p-sport ; lieu par setLieu + #n-lieu ; équipe = champ texte #n-team avec sa recherche). */
   var $ = function (id) { return document.getElementById(id); };
   var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
   function jour(d) { var x = new Date(); x.setDate(x.getDate() + d); return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0'); }
   function logo(nom) { try { return nom && typeof g45LogoUrlDe === 'function' ? g45LogoUrlDe(nom) : ''; } catch (e) { return ''; } }
-  function carte() { var n = $('c-unit') ? $('c-unit').value : '', U = (typeof state !== 'undefined' && state && state.u) || []; return U.filter(function (u) { return u && u.n === n; })[0] || null; }
+  var Z = {
+    c: { bloc: 'g45lm', types: 'mm-types', unit: 'c-unit', unitWrap: false, adv: 'c-target', date: 'c-date', heure: 'c-heure', sport: 'c-sport', comp: 'c-comp', dl: 'dl-c-comp', mise: 'c-mise', book: 'c-book',
+         lieu: function () { return $('c-lieu') ? $('c-lieu').value : 'dom'; },
+         setLieu: function (v) { var s = $('c-lieu'); if (!s) return; s.value = v; try { if (typeof g45LieuChange === 'function') g45LieuChange(); } catch (e) {} try { s.dispatchEvent(new Event('change', { bubbles: true })); } catch (e) {} } },
+    n: { bloc: 'g45lm-n', types: 'mm-types-simple', unit: 'n-team', unitWrap: true, adv: 'n-analysis', date: 'n-date', heure: 'n-heure', sport: 'p-sport', comp: 'n-comp', dl: 'dl-n-comp', mise: 'n-mise', book: 'n-book',
+         lieu: function () { return $('n-lieu') ? $('n-lieu').value : 'dom'; },
+         /* le pari simple lit #n-lieu puis #p-domicile (2 rangées de boutons historiques) → les DEUX sont réglés */
+         setLieu: function (v) { try { if (typeof setLieu === 'function') setLieu(v); else if ($('n-lieu')) $('n-lieu').value = v; } catch (e) {} try { if (typeof togglePariDom === 'function') togglePariDom(v === 'dom' ? true : v === 'ext' ? false : null); } catch (e) {} } }
+  };
+  var AUTRE = { c: false, n: false };
+  function carte(z) { if (z !== 'c') return null; var n = $('c-unit') ? $('c-unit').value : '', U = (typeof state !== 'undefined' && state && state.u) || []; return U.filter(function (u) { return u && u.n === n; })[0] || null; }
   function rond(url, txt) {
     return url ? '<img src="' + esc(url) + '" alt="" style="width:100%;height:100%;object-fit:contain;" onerror="this.replaceWith(document.createTextNode(\'' + esc(String(txt || '?').charAt(0)) + '\'))">' : esc(String(txt || '?').charAt(0).toUpperCase());
   }
-  var CSS = '#g45lm{background:rgba(11,16,29,.94);border:1px solid #2a3a63;border-radius:14px;padding:14px;margin-bottom:12px;color:#fff}'
-    + '#g45lm .lm-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}'
-    + '#g45lm .lm-h b{font-size:18px;font-weight:900}'
-    + '#g45lm #c-sport{width:150px !important;flex:0 0 auto;min-width:0;padding:6px 8px;font-size:15px;background:#16213f;border:1px solid #2a3a63;border-radius:10px;color:#fff}'
-    + '#g45lm #c-comp{width:160px !important;flex:0 0 auto;padding:6px 12px;font-size:15px;font-weight:800;background:#2f6bff;border:1px solid #6d9dff;border-radius:999px;color:#fff}'
-    + '#g45lm .lm-vs{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;background:#0b1226;border-radius:12px;padding:12px}'
-    + '#g45lm .lm-eq{display:flex;align-items:center;gap:8px;min-width:0}'
-    + '#g45lm .lm-eq.d{flex-direction:row-reverse;text-align:right}'
-    + '#g45lm .lm-lg{flex:0 0 54px;width:54px;height:54px;border-radius:50%;background:#fff;color:#16213f;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:900;overflow:hidden;padding:5px;box-sizing:border-box}'
-    + '#g45lm .lm-lg.vide{background:#22305a;color:#c9d3ee}'
-    + '#g45lm .lm-nm{min-width:0;flex:1}'
-    + '#g45lm #c-unit{width:100%;background:transparent;border:0;border-bottom:1px dashed #6d9dff;border-radius:0;padding:2px 0;color:#fff;font-size:17px;font-weight:900}'
-    + '#g45lm #c-target{width:100%;background:#16213f;border:1px solid #6d9dff;border-radius:10px;padding:8px 10px;color:#fff;font-size:15px;font-weight:800;text-align:inherit}'
-    + '#g45lm .lm-sub{font-size:13px;color:#c9d3ee;margin-top:3px}'
-    + '#g45lm .lm-mid{text-align:center}#g45lm .lm-mid b{font-size:22px;font-weight:900;color:#c9d3ee}#g45lm .lm-mid div{font-size:13px;color:#c9d3ee;white-space:nowrap}'
-    + '#g45lm .lm-bt{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}'
-    + '#g45lm .lm-b{padding:9px 12px;border-radius:999px;background:#16213f;border:1px solid #2a3a63;color:#fff;font-size:14px;font-weight:800;cursor:pointer}'
-    + '#g45lm .lm-b.on{background:#2f6bff;border-color:#6d9dff}'
-    + '#g45lm .lm-dt{display:flex;gap:6px;margin-top:8px;align-items:center}'
-    + '#g45lm .lm-dt input{width:auto !important;flex:0 0 auto;background:#16213f;border:1px solid #2a3a63;border-radius:10px;padding:8px;color:#fff;font-size:15px}'
-    + '#g45lm .lm-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}'
-    + '#g45lm .lm-box{background:#0b1226;border:1px solid #2a3a63;border-radius:12px;padding:8px 10px}'
-    + '#g45lm .lm-box span{display:block;font-size:13px;color:#c9d3ee;margin-bottom:3px}'
-    + '#g45lm .lm-box input,#g45lm .lm-box select{width:100%;background:transparent;border:0;color:#fff;font-size:18px;font-weight:900;padding:0}'
-    + '#g45lm .lm-box select option,#g45lm #c-unit option,#g45lm #c-sport option{background:#16213f;color:#fff}'
-    + '@media (max-width:520px){#g45lm .lm-vs{grid-template-columns:1fr;text-align:left}#g45lm .lm-eq.d{flex-direction:row;text-align:left}#g45lm .lm-mid{display:flex;gap:10px;align-items:center;justify-content:center}}';
-  function poser() {
-    var types = $('mm-types'), wrap = types && types.closest('.mm-wrap'), unit = $('c-unit');
-    if (!wrap || !unit || $('g45lm')) return !!$('g45lm');
-    var st = document.createElement('style'); st.id = 'g45lm-css'; st.textContent = CSS; document.head.appendChild(st);
-    var b = document.createElement('div'); b.id = 'g45lm';
-    b.innerHTML = '<div class="lm-h"><b id="lm-sp">⚽</b><b>Le match</b><span id="lm-sport"></span><span id="lm-comp"></span></div>'
-      + '<div class="lm-vs"><div class="lm-eq"><div class="lm-lg" id="lm-lg1"></div><div class="lm-nm"><span id="lm-unit"></span><div class="lm-sub" id="lm-sub1"></div></div></div>'
-      + '<div class="lm-mid"><b>VS</b><div id="lm-quand"></div></div>'
-      + '<div class="lm-eq d"><div class="lm-lg vide" id="lm-lg2">?</div><div class="lm-nm" id="lm-adv"></div></div></div>'
-      + '<div class="lm-bt" id="lm-lieu"></div><div class="lm-bt" id="lm-date"></div><div class="lm-dt" id="lm-dt"></div>'
-      + '<div class="lm-row"><label class="lm-box"><span>💶 Mise</span><span id="lm-mise" style="margin:0"></span></label><label class="lm-box"><span>🏦 Bookmaker</span><span id="lm-book" style="margin:0"></span></label></div>';
+  var CSS = '.g45lm-b{background:rgba(11,16,29,.94);border:1px solid #2a3a63;border-radius:14px;padding:14px;margin-bottom:12px;color:#fff}'
+    + '.g45lm-b .lm-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}'
+    + '.g45lm-b .lm-h b{font-size:18px;font-weight:900}'
+    + '.g45lm-b .lm-fsp{width:150px !important;flex:0 0 auto;min-width:0;padding:6px 8px;font-size:15px;background:#16213f;border:1px solid #2a3a63;border-radius:10px;color:#fff}'
+    + '.g45lm-b .lm-fco{width:160px !important;flex:0 0 auto;padding:6px 12px;font-size:15px;font-weight:800;background:#2f6bff;border:1px solid #6d9dff;border-radius:999px;color:#fff}'
+    + '.g45lm-b .lm-vs{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;background:#0b1226;border-radius:12px;padding:12px}'
+    + '.g45lm-b .lm-eq{display:flex;align-items:center;gap:8px;min-width:0}'
+    + '.g45lm-b .lm-eq.d{flex-direction:row-reverse;text-align:right}'
+    + '.g45lm-b .lm-lg{flex:0 0 54px;width:54px;height:54px;border-radius:50%;background:#fff;color:#16213f;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:900;overflow:hidden;padding:5px;box-sizing:border-box}'
+    + '.g45lm-b .lm-lg.vide{background:#22305a;color:#c9d3ee}'
+    + '.g45lm-b .lm-nm{min-width:0;flex:1}'
+    + '.g45lm-b .lm-fun{width:100%;background:transparent;border:0;border-bottom:1px dashed #6d9dff;border-radius:0;padding:2px 0;color:#fff;font-size:17px;font-weight:900}'
+    + '.g45lm-b .lm-fad{width:100%;background:#16213f;border:1px solid #6d9dff;border-radius:10px;padding:8px 10px;color:#fff;font-size:15px;font-weight:800;text-align:inherit}'
+    + '.g45lm-b .lm-sub{font-size:13px;color:#c9d3ee;margin-top:3px}'
+    + '.g45lm-b .lm-mid{text-align:center}.g45lm-b .lm-mid b{font-size:22px;font-weight:900;color:#c9d3ee}.g45lm-b .lm-mid div{font-size:13px;color:#c9d3ee;white-space:nowrap}'
+    + '.g45lm-b .lm-bt{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}'
+    + '.g45lm-b .lm-b{padding:9px 12px;border-radius:999px;background:#16213f;border:1px solid #2a3a63;color:#fff;font-size:14px;font-weight:800;cursor:pointer}'
+    + '.g45lm-b .lm-b.on{background:#2f6bff;border-color:#6d9dff}'
+    + '.g45lm-b .lm-dt{display:flex;gap:6px;margin-top:8px;align-items:center}'
+    + '.g45lm-b .lm-dt input{width:auto !important;flex:0 0 auto;background:#16213f;border:1px solid #2a3a63;border-radius:10px;padding:8px;color:#fff;font-size:15px}'
+    + '.g45lm-b .lm-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}'
+    + '.g45lm-b .lm-box{background:#0b1226;border:1px solid #2a3a63;border-radius:12px;padding:8px 10px}'
+    + '.g45lm-b .lm-box span{display:block;font-size:13px;color:#c9d3ee;margin-bottom:3px}'
+    + '.g45lm-b .lm-box input,.g45lm-b .lm-box select{width:100%;background:transparent;border:0;color:#fff;font-size:18px;font-weight:900;padding:0}'
+    + '.g45lm-b .lm-box select option,.g45lm-b .lm-fun option,.g45lm-b .lm-fsp option{background:#16213f;color:#fff}'
+    + '@media (max-width:520px){.g45lm-b .lm-vs{grid-template-columns:1fr;text-align:left}.g45lm-b .lm-eq.d{flex-direction:row;text-align:left}.g45lm-b .lm-mid{display:flex;gap:10px;align-items:center;justify-content:center}}';
+  function poser(z) {
+    var C = Z[z], types = $(C.types), wrap = types && types.closest('.mm-wrap'), unit = $(C.unit);
+    if ($(C.bloc)) return true;
+    if (!wrap || !unit) return false;
+    if (!$('g45lm-css')) { var st = document.createElement('style'); st.id = 'g45lm-css'; st.textContent = CSS; document.head.appendChild(st); }
+    var b = document.createElement('div'); b.id = C.bloc; b.className = 'g45lm-b';
+    var k = function (x) { return 'lm-' + x + '-' + z; };
+    b.innerHTML = '<div class="lm-h"><b id="' + k('sp') + '">⚽</b><b>Le match</b><span id="' + k('sport') + '"></span><span id="' + k('comp') + '"></span></div>'
+      + '<div class="lm-vs"><div class="lm-eq"><div class="lm-lg" id="' + k('lg1') + '"></div><div class="lm-nm"><span id="' + k('unit') + '"></span><div class="lm-sub" id="' + k('sub1') + '"></div></div></div>'
+      + '<div class="lm-mid"><b>VS</b><div id="' + k('quand') + '"></div></div>'
+      + '<div class="lm-eq d"><div class="lm-lg vide" id="' + k('lg2') + '">?</div><div class="lm-nm" id="' + k('adv') + '"></div></div></div>'
+      + '<div class="lm-bt" id="' + k('lieu') + '"></div><div class="lm-bt" id="' + k('date') + '"></div><div class="lm-dt" id="' + k('dt') + '"></div>'
+      + '<div class="lm-row"><label class="lm-box"><span>💶 Mise</span><span id="' + k('mise') + '" style="margin:0"></span></label><label class="lm-box"><span>🏦 Bookmaker</span><span id="' + k('book') + '" style="margin:0"></span></label></div>';
     wrap.parentNode.insertBefore(b, wrap);
-    var mv = function (id, dest) { var e = $(id), d = $(dest); if (e && d) d.appendChild(e); return e; };
-    mv('c-sport', 'lm-sport'); mv('c-comp', 'lm-comp'); var dl = $('dl-c-comp'); if (dl) $('lm-comp').appendChild(dl);
-    mv('c-unit', 'lm-unit');
-    var tg = $('c-target'), tgw = tg && tg.parentNode; if (tgw) { var lb = tgw.querySelector('label'); if (lb) lb.style.display = 'none'; $('lm-adv').appendChild(tgw); tgw.style.margin = '0'; tg.placeholder = 'Adversaire…'; }
-    mv('c-date', 'lm-dt'); mv('c-heure', 'lm-dt');
-    mv('c-mise', 'lm-mise'); mv('c-book', 'lm-book');
-    /* ancien bloc : titre « Le match » → « ⚙️ Plus de détails » replié ; « La mise » vidé → caché */
+    var mv = function (id, dest, cl) { var e = $(id), d = $(k(dest)); if (e && d) { d.appendChild(e); if (cl) e.classList.add(cl); } return e; };
+    /* l'ancien titre du formulaire, cherché AVANT de déplacer les champs */
+    var fc = wrap.parentNode.querySelector('.fc.g45-form') || document;
+    mv(C.sport, 'sport', 'lm-fsp'); mv(C.comp, 'comp', 'lm-fco'); var dl = $(C.dl); if (dl) $(k('comp')).appendChild(dl);
+    var aWrap = function (id, dest, ph) {   /* champ + sa liste de recherche (bloc .fg position:relative) déplacés ensemble */
+      var e = $(id), w = e && e.parentNode; if (!w) return;
+      var lb = w.querySelector('label'); if (lb) lb.style.display = 'none';
+      $(k(dest)).appendChild(w); w.style.margin = '0'; e.classList.add(dest === 'adv' ? 'lm-fad' : 'lm-fad'); if (ph) e.placeholder = ph;
+    };
+    if (C.unitWrap) aWrap(C.unit, 'unit', 'Mon équipe…'); else mv(C.unit, 'unit', 'lm-fun');
+    aWrap(C.adv, 'adv', 'Adversaire…');
+    mv(C.date, 'dt'); mv(C.heure, 'dt');
+    mv(C.mise, 'mise'); mv(C.book, 'book');
     try {
-      var fc = b.parentNode.querySelector('.fc.g45-form');
-      [].forEach.call((fc || document).querySelectorAll('.mm-fam span'), function (s) {
+      [].forEach.call(fc.querySelectorAll('.mm-fam span'), function (s) {
         var fam = s.parentNode, nx = fam.nextElementSibling;
-        if (s.textContent === 'Le match' && nx && !$('lm-det')) {
+        if (z === 'c' && s.textContent === 'Le match' && nx && !$('lm-det')) {
           var d = document.createElement('details'); d.id = 'lm-det'; d.style.cssText = 'margin-bottom:8px;';
           d.innerHTML = '<summary style="cursor:pointer;font-size:14px;font-weight:800;color:#6fc3ff;padding:6px 0;">⚙️ Plus de détails (équipe jouée, lieu, joueurs…)</summary>';
           fam.parentNode.insertBefore(d, fam); d.appendChild(nx); fam.style.display = 'none';
         }
+        if (z === 'n' && s.textContent === 'Le match') fam.style.display = 'none';
         if (s.textContent === 'La mise' && nx && !nx.querySelector('input,select')) { fam.style.display = 'none'; nx.style.display = 'none'; }
       });
-      [].forEach.call(document.querySelectorAll('#lm-det .fg'), function (g) { if (!g.querySelector('input,select,textarea')) g.style.display = 'none'; });   /* « Coup d'envoi » vide */
+      /* blocs vidés par le déplacement (Coup d'envoi, Sport / Compétition, Équipe / Adversaire, Mise / Bookmaker…) → cachés */
+      [].forEach.call(fc.querySelectorAll('.fg, .g2'), function (g) { if (!g.closest('.g45lm-b') && !g.querySelector('input,select,textarea,button') && !g.querySelector('#n-garanties')) g.style.display = 'none'; });
+      if (z === 'n') { var bd = $('btn-dom'); if (bd && bd.parentNode) bd.parentNode.style.display = 'none'; var pd = $('pari-dom-btn'), pg = pd && pd.closest('.fg'); if (pg) pg.style.display = 'none'; }   /* ancienne rangée 🏠 Dom / 🚌 Ext / ➖ Neut : remplacée par les boutons du bloc */
     } catch (e) {}
-    maj();
+    maj(z);
     return true;
   }
-  function maj() {
-    if (!$('g45lm')) return;
-    var u = carte(), nom = $('c-unit') ? $('c-unit').value : '', club = '';
+  function maj(z) {
+    var C = Z[z]; if (!$(C.bloc)) return;
+    var k = function (x) { return 'lm-' + x + '-' + z; };
+    var u = carte(z), nom = $(C.unit) ? $(C.unit).value : '', club = '';
     if (u && u.type === 'joueur') { try { club = typeof _g45UClub === 'function' ? _g45UClub(u) : ''; } catch (e) {} }
-    var l1 = logo(club || nom), adv = $('c-target') ? $('c-target').value.trim() : '', l2 = logo(adv);
-    var g1 = $('lm-lg1'), g2 = $('lm-lg2');
-    if (g1) { g1.innerHTML = rond(l1, club || nom); g1.className = 'lm-lg' + (l1 ? '' : ' vide'); }
-    if (g2) { g2.innerHTML = adv ? rond(l2, adv) : '?'; g2.className = 'lm-lg' + (l2 ? '' : ' vide'); }
-    var sp = $('c-sport'); if ($('lm-sp')) $('lm-sp').textContent = sp && sp.value ? sp.value.slice(0, 2).replace(/[^\S]/g, '') : '⚽';
-    var lieu = $('c-lieu') ? $('c-lieu').value : 'dom';
-    if ($('lm-sub1')) $('lm-sub1').textContent = (club ? club + ' · ' : '') + (lieu === 'dom' ? '🏠 domicile' : lieu === 'ext' ? '✈️ extérieur' : '🌍 tous les matchs');
-    var d = $('c-date') ? $('c-date').value : '', h = $('c-heure') ? $('c-heure').value : '', q = '';
+    var l1 = logo(club || nom), adv = $(C.adv) ? $(C.adv).value.trim() : '', l2 = logo(adv);
+    var g1 = $(k('lg1')), g2 = $(k('lg2'));
+    if (g1) { var h1 = nom || club ? rond(l1, club || nom) : '?'; if (g1.getAttribute('data-k') !== (l1 + '|' + (club || nom))) { g1.innerHTML = h1; g1.setAttribute('data-k', l1 + '|' + (club || nom)); } g1.className = 'lm-lg' + (l1 ? '' : ' vide'); }
+    if (g2) { if (g2.getAttribute('data-k') !== (l2 + '|' + adv)) { g2.innerHTML = adv ? rond(l2, adv) : '?'; g2.setAttribute('data-k', l2 + '|' + adv); } g2.className = 'lm-lg' + (l2 ? '' : ' vide'); }
+    var sp = $(C.sport); if ($(k('sp'))) $(k('sp')).textContent = sp && sp.value ? sp.value : '⚽';
+    var lieu = C.lieu();
+    if ($(k('sub1'))) $(k('sub1')).textContent = (club ? club + ' · ' : '') + (lieu === 'dom' ? '🏠 domicile' : lieu === 'ext' ? '✈️ extérieur' : (z === 'c' ? '🌍 tous les matchs' : '➖ neutre'));
+    var d = $(C.date) ? $(C.date).value : '', h = $(C.heure) ? $(C.heure).value : '', q = '';
     if (/^\d{4}-\d{2}-\d{2}$/.test(d)) { var dt = new Date(d + 'T12:00:00'); q = dt.toLocaleDateString('fr-FR', { weekday: 'short', day: '2-digit', month: '2-digit' }); }
-    if ($('lm-quand')) $('lm-quand').textContent = (q || 'date ?') + (h ? ' · ' + h : '');
+    if ($(k('quand'))) $(k('quand')).textContent = (q || 'date ?') + (h ? ' · ' + h : '');
     var bt = function (on, txt, js) { return '<button type="button" class="lm-b' + (on ? ' on' : '') + '" onclick="' + js + '">' + txt + '</button>'; };
-    if ($('lm-lieu')) $('lm-lieu').innerHTML = bt(lieu === 'dom', '🏠 Domicile', "g45LmLieu('dom')") + bt(lieu === 'ext', '✈️ Extérieur', "g45LmLieu('ext')") + bt(lieu === '', '🌍 Tous', "g45LmLieu('')");
-    var auj = jour(0), dem = jour(1), autre = window._g45LmAutre || (d && d !== auj && d !== dem);
-    if ($('lm-date')) $('lm-date').innerHTML = bt(d === auj && !window._g45LmAutre, '📅 Aujourd\'hui', "g45LmDate(0)") + bt(d === dem && !window._g45LmAutre, '📅 Demain', "g45LmDate(1)") + bt(autre, '🗓️ Autre date', "g45LmDate(-1)");
-    if ($('c-date')) $('c-date').style.display = autre ? '' : 'none';
+    var H1 = bt(lieu === 'dom', '🏠 Domicile', "g45LmLieu('" + z + "','dom')") + bt(lieu === 'ext', '✈️ Extérieur', "g45LmLieu('" + z + "','ext')") + bt(lieu === '', z === 'c' ? '🌍 Tous' : '➖ Neutre', "g45LmLieu('" + z + "','')");
+    if ($(k('lieu')) && $(k('lieu')).innerHTML !== H1) $(k('lieu')).innerHTML = H1;
+    var auj = jour(0), dem = jour(1), autre = AUTRE[z] || (d && d !== auj && d !== dem);
+    var H2 = bt(d === auj && !AUTRE[z], '📅 Aujourd\'hui', "g45LmDate('" + z + "',0)") + bt(d === dem && !AUTRE[z], '📅 Demain', "g45LmDate('" + z + "',1)") + bt(autre, '🗓️ Autre date', "g45LmDate('" + z + "',-1)");
+    if ($(k('date')) && $(k('date')).innerHTML !== H2) $(k('date')).innerHTML = H2;
+    if ($(C.date)) $(C.date).style.display = autre ? '' : 'none';
   }
-  window.g45LmLieu = function (v) { var s = $('c-lieu'); if (!s) return; s.value = v; try { if (typeof g45LieuChange === 'function') g45LieuChange(); } catch (e) {} try { s.dispatchEvent(new Event('change', { bubbles: true })); } catch (e) {} maj(); };
-  window.g45LmDate = function (k) {
-    var e = $('c-date'); if (!e) return;
-    if (k >= 0) { window._g45LmAutre = false; e.value = jour(k); try { e.dispatchEvent(new Event('change', { bubbles: true })); } catch (x) {} }
-    else { window._g45LmAutre = true; maj(); try { e.focus(); if (e.showPicker) e.showPicker(); } catch (x) {} return; }
-    maj();
+  /* compatibilité 20261124p : g45LmLieu('dom') / g45LmDate(1) sans formulaire = Engager */
+  window.g45LmLieu = function (z, v) { if (v === undefined) { v = z; z = 'c'; } Z[z].setLieu(v); maj(z); };
+  window.g45LmDate = function (z, n) {
+    if (n === undefined) { n = z; z = 'c'; }
+    var e = $(Z[z].date); if (!e) return;
+    if (n >= 0) { AUTRE[z] = false; e.value = jour(n); try { e.dispatchEvent(new Event('input', { bubbles: true })); e.dispatchEvent(new Event('change', { bubbles: true })); } catch (x) {} }
+    else { AUTRE[z] = true; maj(z); try { e.focus(); if (e.showPicker) e.showPicker(); } catch (x) {} return; }
+    maj(z);
   };
-  window._g45LmMaj = maj; window._g45LmPoser = poser;
+  window._g45LmMaj = function (z) { maj(z || 'c'); if (!z) maj('n'); }; window._g45LmPoser = poser;
   ['input', 'change'].forEach(function (ev) {
-    document.addEventListener(ev, function (e) { var id = e.target && e.target.id; if (/^c-(unit|target|date|heure|lieu|sport)$/.test(id || '')) { if (id === 'c-date' && ev === 'change') window._g45LmAutre = false; try { maj(); } catch (x) {} } }, true);
+    document.addEventListener(ev, function (e) {
+      var id = e.target && e.target.id || '';
+      if (/^c-(unit|target|date|heure|lieu|sport)$/.test(id)) { if (id === 'c-date' && ev === 'change') AUTRE.c = false; try { maj('c'); } catch (x) {} }
+      if (/^(n-(team|analysis|date|heure|lieu)|p-sport)$/.test(id)) { if (id === 'n-date' && ev === 'change') AUTRE.n = false; try { maj('n'); } catch (x) {} }
+    }, true);
   });
-  /* champs remplis par le code (ticket, carte choisie, setLieu…) sans événement → petite relecture régulière, seulement si le bloc est visible */
-  setInterval(function () { var b = $('g45lm'); if (b && b.offsetParent) try { maj(); } catch (e) {} }, 1500);
-  var essais = 0; (function go() { if (!poser() && ++essais < 40) setTimeout(go, 500); })();
+  /* champs remplis par le code (ticket, carte choisie, setLieu…) sans événement → relecture régulière, seulement si le bloc est visible */
+  setInterval(function () { ['c', 'n'].forEach(function (z) { var b = $(Z[z].bloc); if (b && b.offsetParent) try { maj(z); } catch (e) {} }); }, 1500);
+  var essais = 0; (function go() { var a = poser('c'), b = poser('n'); if (!(a && b) && ++essais < 40) setTimeout(go, 500); })();
 })();
