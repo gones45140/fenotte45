@@ -88207,8 +88207,12 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     dessiner(true);
   };
   function boite(mi) {
-    var g = mi.closest('.g2') || mi.parentNode, id = 'g45pct-' + mi.id, b = $(id);
+    /* 20261124r (capture « là ça donne pas terrible ») : la mise est maintenant dans la petite case du bloc « Le match » (.g45lm-b) →
+       le panneau % se pose SOUS la ligne Mise / Bookmaker, en pleine largeur (et y est replacé s'il était déjà dans la case) */
+    var lm = mi.closest && mi.closest('.g45lm-b'), row = lm && lm.querySelector('.lm-row');
+    var g = row || mi.closest('.g2') || mi.parentNode, id = 'g45pct-' + mi.id, b = $(id);
     if (!b) { b = document.createElement('div'); b.id = id; b.style.cssText = BOITE; g.insertAdjacentElement('afterend', b); }
+    else if (row && b.previousElementSibling !== row) row.insertAdjacentElement('afterend', b);
     return b;
   }
   var vu = {};
@@ -92987,7 +92991,11 @@ window._g45FaF = (function () {
   }
   /* aide sous le bouton : HC −v = gagne d'au moins floor(v)+1 ; HC +v = perd de ceil(v)−1 au plus (règle mien + ligne > autre) */
   function hcAide(v) { v = +v; if (v < 0) return 'gagne de ' + (Math.floor(-v) + 1) + ' ou +'; var p = Math.ceil(v) - 1; return p <= 0 ? 'nul ou victoire' : 'perd de ' + p + ' max'; }
-  function hcGrille(z, vals) { return grille(z, vals.map(function (v) { return ['hc', { l: v }, 'HC ' + vf(v), hcAide(v)]; }), 4); }
+  /* 20261124s (« ça fait tassé non ? ») : handicap en PASTILLES sur une ligne + une phrase d'aide (avant : 8 gros boutons à 2 lignes) */
+  function hcGrille(z, vals) {
+    var h = '<div class="g45tp-lc" style="margin:4px 0">' + vals.map(function (v) { return bouton(z, 'hc', { l: v }, vf(v)).replace('class="g45tp-b"', 'class="g45tp-b g45tp-pi"'); }).join('') + '</div>';
+    return h + '<div style="font-size:13px;color:#c9d3ee;margin:2px 0 4px">HC −1,5 = gagne de 2 ou + · HC +1,5 = perd de 1 max · HC +0,5 = nul ou victoire</div>';
+  }
   function hcLigne(z, def) {   /* NBA / NFL / rugby : ligne libre (−5,5, +7,5…) + Ajouter */
     var cur = S.ln[z].hc; if (cur == null) cur = S.ln[z].hc = def;
     return '<div class="g45tp-l"><span class="g45tp-lt">⚖️ Handicap</span><input class="g45tp-in" inputmode="decimal" value="' + vf(cur) + '" onchange="g45TpLn(\'' + z + '\',\'hc\',this.value,1)">'
@@ -92997,10 +93005,11 @@ window._g45FaF = (function () {
     var Lp = L[sp], eq = equipe(z), ad = adversaire(z), h = '';
     var res = function (arr) { return grille(z, arr.map(function (x) { return ['type', { t: x[0] }, x[0], x[1]]; })); };
     if (sp === 'foot') {
-      if (tab === 0) return res([['Victoire', eq + ' gagne'], ['Vainqueur', 'prolong. comprise'], ['Nul'], ['Défaite'], ['Domicile ou nul'], ['Extérieur ou nul']])
+      if (tab === 0) return res([['Victoire'], ['Vainqueur', 'avec prolong.'], ['Nul'], ['Défaite'], ['Domicile ou nul'], ['Extérieur ou nul']])
         + fam('⚖️ Handicap') + hcGrille(z, Lp.hc)
         + fam('⏱️ Mi-temps') + grille(z, [['mene', {}, 'Mène à la pause'], ['mtnul', {}, 'Nul à la pause']], 2)
-        + grille(z, [['mtpp', { v: '1re' }, '+ de buts en 1re MT'], ['mtpp', { v: 'égalité' }, 'Autant de buts'], ['mtpp', { v: '2e' }, '+ de buts en 2e MT']]);
+        + '<div style="font-size:13px;color:#c9d3ee;margin:6px 0 0">Mi-temps avec le + de buts :</div>'
+        + grille(z, [['mtpp', { v: '1re' }, '1re'], ['mtpp', { v: 'égalité' }, 'Égalité'], ['mtpp', { v: '2e' }, '2e']]);
       if (tab === 1) return grille(z, [['type', { t: 'BTS Oui' }, 'BTS Oui', 'les deux marquent'], ['type', { t: 'BTS Non' }, 'BTS Non'], ['prem', {}, 'Marque en premier', eq]])
         + ligne(z, 'm', 'Buts du match', Lp.m, 'tot', {}) + ligne(z, 'e', 'Buts de ' + eq, Lp.e, 'eqb', { q: 'eq' }) + ligne(z, 'a', 'Buts de ' + ad, Lp.e, 'eqb', { q: 'ad' })
         + ligne(z, 'm1', 'Buts 1re mi-temps', Lp.mt, 'mtb', { mt: 1 }) + ligne(z, 'm2', 'Buts 2e mi-temps', Lp.mt, 'mtb', { mt: 2 });
@@ -93036,7 +93045,7 @@ window._g45FaF = (function () {
         + ligne(z, 'ptd', '🎯 TD à la passe', Lp.ptd, 'jl', { mot: 'TD à la passe', pl: 'TD à la passe' }) + ligne(z, 'yd', '📏 Yards', Lp.yd, 'jl', { mot: 'yard' });
     }
     if (sp === 'rugby') {
-      if (tab === 0) return res([['Victoire', eq + ' gagne'], ['Nul'], ['Défaite'], ['Domicile ou nul'], ['Extérieur ou nul']])
+      if (tab === 0) return res([['Victoire'], ['Nul'], ['Défaite'], ['Domicile ou nul'], ['Extérieur ou nul']])
         + hcLigne(z, Lp.hc)
         + fam('⏱️ Mi-temps') + grille(z, [['mene', {}, 'Mène à la pause'], ['mtnul', {}, 'Nul à la pause']], 2);
       if (tab === 1) return ligne(z, 'm', 'Points du match', Lp.m, 'tot', {}) + ligne(z, 'e', 'Points de ' + eq, Lp.e, 'eqp', { q: 'eq' }) + ligne(z, 'a', 'Points de ' + ad, Lp.e, 'eqp', { q: 'ad' });
@@ -93051,17 +93060,19 @@ window._g45FaF = (function () {
     if (document.getElementById('g45tp-css')) return;
     var s = document.createElement('style'); s.id = 'g45tp-css';
     s.textContent = '.g45tp-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:10px 0}'
-      + '.g45tp-tab{padding:10px 4px;border-radius:10px;background:#16213f;border:1px solid #2a3a63;color:#fff;font-size:14px;font-weight:800;cursor:pointer}'
+      + '.g45tp-tab{padding:10px 4px;border-radius:10px;background:#2a3d6e;border:1px solid #4a64a8;color:#fff;font-size:14px;font-weight:800;cursor:pointer}'
       + '.g45tp-tab.on{background:#2f6bff;border-color:#6d9dff}'
       + '.g45tp-g{display:grid;gap:7px;margin:6px 0}'
-      + '.g45tp-b{padding:10px 6px;border-radius:10px;background:#16213f;border:1px solid #2a3a63;color:#fff;font-size:14px;font-weight:800;cursor:pointer;line-height:1.2}'
+      + '.g45tp-pi{padding:8px 11px;flex:0 0 auto}'
+      /* 20261124s : fond « B » choisi par Antoine (boutons bleu plus clair #2a3d6e, ressortent mieux sur le fond sombre) */
+      + '.g45tp-b{padding:9px 6px;border-radius:10px;background:#2a3d6e;border:1px solid #4a64a8;color:#fff;font-size:14px;font-weight:800;cursor:pointer;line-height:1.2}'
       + '.g45tp-b small{display:block;font-size:12px;font-weight:600;color:#c9d3ee;margin-top:2px}'
       + '.g45tp-f{font-size:14px;font-weight:900;color:#6fc3ff;margin:12px 0 4px}'
       + '.g45tp-l{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:7px 0}'
       + '.mm-types .g45tp-lt{display:block !important;flex:0 0 100% !important;width:100% !important;font-size:14px;font-weight:800;color:#fff;margin-bottom:-2px}'   /* titre AU-DESSUS (téléphone : Plus / Moins restaient sur une 2e ligne) */
       + '.g45tp-lc{display:flex;flex-wrap:wrap;gap:5px}'
-      + '.g45tp-ch{background:#16213f;border:1px solid #2a3a63;border-radius:8px;padding:7px 9px;color:#fff;font-size:14px;font-weight:800;cursor:pointer}'
-      + '.g45tp-ch.on{background:#16213f;border:2px solid #6fc3ff;box-shadow:0 0 0 1px #6fc3ff inset}'   /* ligne PROPOSÉE = contour bleu ; vert = seulement ce qui est dans le pari (« si je veux pas choisir ce critère ») */
+      + '.g45tp-ch{background:#2a3d6e;border:1px solid #4a64a8;border-radius:8px;padding:7px 9px;color:#fff;font-size:14px;font-weight:800;cursor:pointer}'
+      + '.g45tp-ch.on{background:#2a3d6e;border:2px solid #6fc3ff;box-shadow:0 0 0 1px #6fc3ff inset}'   /* ligne PROPOSÉE = contour bleu ; vert = seulement ce qui est dans le pari (« si je veux pas choisir ce critère ») */
       + '.g45tp-ou{padding:7px 12px;background:#2f6bff;border-color:#6d9dff}'
       + '.g45tp-in{background:#16213f;border:1px solid #6d9dff;border-radius:8px;padding:7px 10px;color:#fff;font-size:15px;font-weight:800;width:90px;text-align:center}'
       + '.g45tp-autre{width:100%;margin-top:10px;padding:11px;border-radius:10px;background:transparent;border:1px dashed #6d9dff;color:#fff;font-size:14px;font-weight:800;cursor:pointer}'
@@ -93206,7 +93217,7 @@ window._g45FaF = (function () {
     + '.g45lm-b .lm-sub{font-size:13px;color:#c9d3ee;margin-top:3px}'
     + '.g45lm-b .lm-mid{text-align:center}.g45lm-b .lm-mid b{font-size:22px;font-weight:900;color:#c9d3ee}.g45lm-b .lm-mid div{font-size:13px;color:#c9d3ee;white-space:nowrap}'
     + '.g45lm-b .lm-bt{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}'
-    + '.g45lm-b .lm-b{padding:9px 12px;border-radius:999px;background:#16213f;border:1px solid #2a3a63;color:#fff;font-size:14px;font-weight:800;cursor:pointer}'
+    + '.g45lm-b .lm-b{padding:9px 12px;border-radius:999px;background:#2a3d6e;border:1px solid #4a64a8;color:#fff;font-size:14px;font-weight:800;cursor:pointer}'
     + '.g45lm-b .lm-b.on{background:#2f6bff;border-color:#6d9dff}'
     + '.g45lm-b .lm-dt{display:flex;gap:6px;margin-top:8px;align-items:center}'
     + '.g45lm-b .lm-dt input{width:auto !important;flex:0 0 auto;background:#16213f;border:1px solid #2a3a63;border-radius:10px;padding:8px;color:#fff;font-size:15px}'
