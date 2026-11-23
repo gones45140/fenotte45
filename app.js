@@ -78243,7 +78243,9 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var nom = P[0].n; if ((state.u || []).some(function (x) { return x && x.n === nom; })) { redessiner(); return; }
     if (typeof _g45MurPlein === 'function' && _g45MurPlein()) { alert('🧱 Ton mur est plein : enlève une carte dans Outils → Équipes pour ajouter ' + nom + '.'); return; }
     var SPE = { hockey: '🏒', football: '🏈', basketball: '🏀', baseball: '⚾', rugby: '🏉', 'rugby-league': '🏉' }, sp = S.ctx ? (SPE[S.ctx.sp] || '⚽') : '⚽';
-    var club = String(S.nom || '').trim(), pari = String(libCombo(c) || '').replace(nom, '').replace(/\s+/g, ' ').replace(/^[\s+·]+|[\s+·]+$/g, '').trim();
+    /* 20261124x (cartes McDavid / Johnston « au moins un de (, Leon Draisaitl) ») : le nom n'est retiré du pari que s'il y a UN seul joueur
+       (« Connor McDavid buteur » → « buteur ») ; à plusieurs, il reste (sinon « (, B) » et la carte ne sait plus qui est le 1er). */
+    var club = String(S.nom || '').trim(), pari = String(libCombo(c) || '').replace(P.length === 1 ? nom : '\u0000', '').replace(/\s+/g, ' ').replace(/^[\s+·]+|[\s+·]+$/g, '').trim();
     var note = typeof window._g45UfCompose === 'function' ? window._g45UfCompose(club, '', S.lieu === 'dom' ? pari : '', S.lieu === 'ext' ? pari : '', (!S.lieu || S.lieu === 'tout') ? pari : '') : club;
     state.u.push({ n: nom, abbr: nom.split(' ').pop().slice(0, 3).toUpperCase(), color: '#1d4ed8', s: '3', l: 1, sport: sp, logoUrl: '', link: '', link2: '', note: note, type: 'joueur', club: club });
     try { save(); } catch (e) {}
@@ -93483,6 +93485,18 @@ window._g45FaF = (function () {
       poser(row, u, D);
     });
   }
+  /* 20261124x : réparation des notes déjà abîmées par g45CrAjoutMur (nom du joueur de la carte retiré d'un pari à plusieurs joueurs) :
+     « au moins un de (, B) » → « (Carte, B) » ; « buts cumulés de  + B » → « de Carte + B » ; « 🏠 et B buteurs » → « 🏠 Carte et B buteurs ». */
+  function reparer(u) {
+    if (!u || u.type !== 'joueur' || !u.note || !u.n) return false;
+    var n0 = String(u.note), n1 = n0.replace(/au moins un de \(\s*,\s*/g, 'au moins un de (' + u.n + ', ')
+      .replace(/buts cumulés de\s+\+\s*/g, 'buts cumulés de ' + u.n + ' + ')
+      .replace(/(🏠|✈️|✈|🌍|\+)\s+et\s+(?=[A-ZÀ-Ý][^+]*?\s(?:buteur|passeur|pointeur|d[ée]cisif|doubl[ée]|tripl[ée])s\b)/g, function (m, a) { return a + ' ' + u.n + ' et '; });
+    if (n1 === n0) return false; u.note = n1; return true;
+  }
+  window._g45DuoReparer = reparer;
+  setTimeout(function () { try { if (typeof state === 'undefined' || !state.u) return; var ch = 0; state.u.forEach(function (u) { if (reparer(u)) ch++; });
+    if (ch) { if (typeof save === 'function') save(); if (typeof render === 'function') render(); } } catch (e) {} }, 5000);
   window._g45DuoJoueurs = joueurs; window._g45DuoHabiller = habiller;   /* tests */
   setInterval(function () { try { var b = document.getElementById('ulist'); if (b && b.offsetParent) habiller(); } catch (e) {} }, 1500);
 })();
