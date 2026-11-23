@@ -93165,7 +93165,17 @@ window._g45FaF = (function () {
   var $ = function (id) { return document.getElementById(id); };
   var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
   function jour(d) { var x = new Date(); x.setDate(x.getDate() + d); return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0'); }
-  function logo(nom) { try { return nom && typeof g45LogoUrlDe === 'function' ? g45LogoUrlDe(nom) : ''; } catch (e) { return ''; } }
+  /* 20261124r (« manque les logos », capture Olympique lyonnais / Monaco) : même chaîne que « Ton pari » (ticket()) : logo de la carte du
+     mur (_g45CkFond), puis LOGOS (g45LogoUrlDe), puis l'index des archives avec les noms français (_g45LogoIndex : « Olympique lyonnais »
+     → Lyon, « Monaco » → AS Monaco ; chargé en différé → la relecture 1,5 s le pose dès qu'il arrive). */
+  function logo(nom) {
+    if (!nom) return '';
+    var l = '';
+    try { var F = (window._g45CkFond && window._g45CkFond(nom)) || {}; l = F.cut || F.logo || F.img || ''; } catch (e) {}
+    if (!l) try { l = typeof g45LogoUrlDe === 'function' ? (g45LogoUrlDe(nom) || '') : ''; } catch (e) {}
+    if (!l) try { l = typeof window._g45LogoIndex === 'function' ? (window._g45LogoIndex(nom) || '') : ''; } catch (e) {}
+    return l;
+  }
   var Z = {
     c: { bloc: 'g45lm', types: 'mm-types', unit: 'c-unit', unitWrap: false, adv: 'c-target', date: 'c-date', heure: 'c-heure', sport: 'c-sport', comp: 'c-comp', dl: 'dl-c-comp', mise: 'c-mise', book: 'c-book',
          lieu: function () { return $('c-lieu') ? $('c-lieu').value : 'dom'; },
