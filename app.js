@@ -93410,3 +93410,79 @@ window._g45FaF = (function () {
   setInterval(function () { ['c', 'n'].forEach(function (z) { var s = $('g45st3-' + z); if (s && s.offsetParent) try { maj(z); } catch (e) {} }); }, 1500);
   var essais = 0; (function go() { var a = poser('c'), b = poser('n'); if (!(a && b) && ++essais < 60) setTimeout(go, 500); })();
 })();
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   20261124w — CARTE À 2 (OU 3) JOUEURS dans « Mes cartes » (#ulist) (capture carte Kyle Connor « 📌 🏠 au moins un de (Kyle Connor ou Mark
+   Scheifele) buteur » : « une idée, mettre les 2 joueurs ainsi que les 2 photos » → maquette « chevauchées » → « on va mal voir la photo du
+   fond ? » → photos CÔTE À CÔTE → « oui ») : joueurs lus dans la note (window._g45SerMultiJ, déjà utilisé par 🔄 Calculer mes séries) →
+   titre « Kyle Connor ou Mark Scheifele » (« et » si la note dit chacun), photos côte à côte (celle de la carte, bord de sa couleur, + les
+   autres, bord vert) avec le nom de famille dessous. Photo des autres : ESPN par le n° trouvé dans l'index léger des archives
+   (joueurs.json de la saison, comme _g45PhEspRemplir) pour 🏒 / 🏀 / 🏈 ; sinon TheSportsDB déjà gardé ; sinon initiales. Carte d'un seul
+   joueur : inchangée. Rien n'est enregistré sur la carte (affichage seulement).
+   ═══════════════════════════════════════════════════════════════════════════ */
+(function () {
+  var ARC = 'https://raw.githubusercontent.com/gones45140/gones45-archives/main/cotes/', IX = {};
+  var nz = function (t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z]+/g, ' ').trim(); };
+  var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+  var SPX = { '🏒': ['hockey/nhl', 'nhl'], '🏀': ['basket/nba', 'nba'], '🏈': ['football-us/nfl', 'nfl'] };
+  function spDe(u) { var s = String((u && u.sport) || ''); for (var k in SPX) if (s.indexOf(k) >= 0) return k; return ''; }
+  function index(sp) {
+    if (!IX[sp]) { var d = new Date(), y = d.getMonth() + 1 >= 7 ? d.getFullYear() : d.getFullYear() - 1, sa = y + '-' + String(y + 1).slice(2);
+      IX[sp] = fetch(ARC + SPX[sp][0] + '/' + sa + '/joueurs.json?h=' + Math.floor(Date.now() / 864e5)).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }); }
+    return IX[sp];
+  }
+  function idDe(J, nom) {
+    var n0 = nz(nom), K = Object.keys(J || {}), id = K.filter(function (k) { return nz(J[k][0]) === n0; })[0];
+    if (!id) { var w = n0.split(' '), fam = w[w.length - 1], C = K.filter(function (k) { var x = nz(J[k][0]).split(' '); return x[x.length - 1] === fam && x[0].charAt(0) === n0.charAt(0); }); if (C.length === 1) id = C[0]; }
+    return id || null;
+  }
+  function joueurs(u) {
+    if (!u || u.type !== 'joueur' || typeof window._g45SerMultiJ !== 'function') return null;
+    var M = null; try { M = window._g45SerMultiJ(String(u.note || '')); } catch (e) {}
+    if (!M || !M.L || M.L.length < 2) return null;
+    var me = nz(u.n), fam = me.split(' ').slice(-1)[0];
+    var autres = M.L.filter(function (x) { var z = nz(x); return z !== me && z.split(' ').slice(-1)[0] !== fam; }).slice(0, 2);
+    return autres.length ? { autres: autres, m: M.m } : null;
+  }
+  function rond(src, nom, bord) {
+    var ini = String(nom).split(/\s+/).map(function (w) { return w.charAt(0); }).join('').slice(0, 2).toUpperCase();
+    var st = 'width:64px;height:64px;border-radius:50%;border:2px solid ' + bord + ';background:rgba(11,16,29,.7);box-sizing:border-box;';
+    return src ? '<img src="' + esc(src) + '" alt="" loading="lazy" style="' + st + 'object-fit:contain;padding:3px;" onerror="this.outerHTML=\'<div style=&quot;' + st + 'display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;color:#fff;&quot;>' + esc(ini) + '</div>\'">'
+      : '<div style="' + st + 'display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;color:#fff;">' + esc(ini) + '</div>';
+  }
+  function poser(row, u, D) {
+    if (row.getAttribute('data-g45duo')) return; row.setAttribute('data-g45duo', '1');
+    var nm = row.querySelector('.uname');
+    if (nm) nm.insertAdjacentHTML('beforeend', D.autres.map(function (a) { return '<br><span style="color:#ffd34d;font-size:14px;font-weight:800;">' + (D.m === 'et' ? 'et' : 'ou') + '</span><br>' + esc(a); }).join(''));
+    var ph = row.querySelector('.g45ul-ph'), bloc = nm && nm.parentNode;
+    var w = document.createElement('div'); w.className = 'g45ul-duo';
+    w.style.cssText = 'float:right;display:flex;gap:6px;margin:0 0 6px 8px;text-align:center;';
+    var fam = function (n) { return esc(String(n).split(/\s+/).slice(-1)[0]); };
+    var cel = function (html, n) { return '<div style="display:flex;flex-direction:column;align-items:center;gap:2px;"><span class="g45duo-ph">' + html + '</span><span style="font-size:12px;color:#c9d3ee;">' + fam(n) + '</span></div>'; };
+    var src0 = (ph && ph.getAttribute('src')) || u.phE || '';
+    w.innerHTML = cel(rond(src0, u.n, 'var(--g45ulc,#4d84ff)'), u.n) + D.autres.map(function (a) { return cel(rond('', a, '#1ed760'), a); }).join('');
+    if (ph) ph.replaceWith(w); else if (bloc && bloc !== row) bloc.insertBefore(w, bloc.firstChild);
+    /* photos des autres joueurs */
+    var cells = w.querySelectorAll('.g45duo-ph'), sp = spDe(u);
+    if (!src0 && sp && cells[0]) index(sp).then(function (J) { var id = J && idDe(J, u.n); if (id && cells[0].isConnected) cells[0].innerHTML = rond('https://a.espncdn.com/i/headshots/' + SPX[sp][1] + '/players/full/' + id + '.png', u.n, 'var(--g45ulc,#4d84ff)'); });   /* carte sans photo posée : ESPN aussi */
+    D.autres.forEach(function (a, i) {
+      var c = cells[i + 1]; if (!c) return;
+      var mettre = function (src) { if (src && c.isConnected) c.innerHTML = rond(src, a, '#1ed760'); };
+      try { var v = typeof _g45JoueurVisLire === 'function' ? _g45JoueurVisLire(a) : null; if (v && (v.cut || v.thumb)) mettre(v.cut || v.thumb); } catch (e) {}
+      if (sp) index(sp).then(function (J) { var id = J && idDe(J, a); if (id) mettre('https://a.espncdn.com/i/headshots/' + SPX[sp][1] + '/players/full/' + id + '.png'); });
+    });
+  }
+  function habiller() {
+    var box = document.getElementById('ulist'); if (!box || typeof state === 'undefined' || !state.u) return;
+    Array.prototype.forEach.call(box.querySelectorAll('.urow.g45ul'), function (row) {
+      if (row.getAttribute('data-g45duo')) return;
+      var b = row.querySelector('[data-idx]'), u = b ? state.u[+b.getAttribute('data-idx')] : null, D = joueurs(u);
+      if (!D) { row.setAttribute('data-g45duo', '0'); return; }
+      /* la photo de la carte arrive parfois après (recherche) : on attend qu'elle soit posée, au plus ~6 s */
+      var t = +(row.getAttribute('data-g45duot') || 0); if (!row.querySelector('.g45ul-ph') && t < 4) { row.setAttribute('data-g45duot', String(t + 1)); return; }
+      poser(row, u, D);
+    });
+  }
+  window._g45DuoJoueurs = joueurs; window._g45DuoHabiller = habiller;   /* tests */
+  setInterval(function () { try { var b = document.getElementById('ulist'); if (b && b.offsetParent) habiller(); } catch (e) {} }, 1500);
+})();
