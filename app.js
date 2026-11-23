@@ -89717,7 +89717,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     var x = G[0], tl = tlogoDe(x);
     var col = /^[0-9a-f]{6}$/i.test(String(x.c || '')) ? '#' + x.c : '#2a3a63', hh = '';
     /* 20261124l (capture des pépites jouées → « pareil quand le résultat est connu, fond vert ou rouge ; match en attente tu peux laisser ») : gagnée = vert, perdue = rouge */
-    var bdR = '#2a3a63'; if (x.r === 1) { col = '#1ed760'; bdR = '#1ed760'; } else if (x.r === 0) { col = '#ff4545'; bdR = '#ff4545'; }
+    var bdR = '#2a3a63'; if (x.r === 1) { col = '#1ed760'; bdR = '#1ed760'; } else if (x.r === 0) { col = '#ff4545'; bdR = '#ff4545'; } else col = '#2f6bff';   /* 20261124m (« tu as du bleu rouge vert alors que ça n'a pas commencé ») : en attente = BLEU neutre, plus la couleur du club */
     try { hh = new Date(x.t).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris' }); } catch (e) {}
     return '<div style="position:relative;overflow:hidden;border-radius:12px;margin:6px 0;background:linear-gradient(90deg,' + col + '55,#0b1226 70%);border:1px solid ' + bdR + ';color:#fff;">'
       /* 20261118t (capture tel : « le joueur est un peu coupé, faudrait le rendre + visible ») : photo d'un JOUEUR au-dessus de la bande
@@ -91847,6 +91847,33 @@ function _g45ScoreRedessiner() {
     return { p: Math.min(0.97, Math.max(0.03, et ? pr : 1 - pr)), lib: o.jns.map(function (n, i) { return n + ' ' + DL[i].lib; }).join(et ? ' ET ' : ' OU ') + (et ? ' (tous)' : ' (au moins un)'), multi: 1 };
   }
   window._g45TkDkMulti = dkMulti;   /* tests */
+  /* 20261124m — 🆚 Face-à-face points NBA (window._g45FaF, fin d'app.js) : pari « face-à-face » / 🆚 / « qui marque le plus » + 2 joueurs NBA */
+  var FAF = {};
+  function fafHtml(o, f) {
+    if (!o || spJ(o) !== 'basketball' || !o.jns || o.jns.length !== 2 || !/face|🆚|\bduel\b|marque(ra)? (le )?plus/i.test(String(o.lab || ''))) return '';
+    var k = o.jns.join('|') + '|' + (o.lieu || ''), X = FAF[k];
+    if (!X && typeof window._g45FaF === 'function') { FAF[k] = X = { en: 1 }; window._g45FaF(o.jns[0], o.jns[1], o.lieu).then(function (R) { FAF[k] = { R: R || { err: 'rien' } }; }).catch(function () { FAF[k] = { R: { err: 'calcul impossible' } }; }).then(function () { SIG[f] = ''; poserF(f); }); }
+    if (!X || X.en) return '<div style="' + BOX + 'font-size:14px;">🆚 Face-à-face points : ⏳ calcul sur les archives…</div>';
+    var R = X.R; if (R.err) return '<div style="' + BOX + 'font-size:14px;">🆚 Face-à-face points : ' + esc(R.err) + '.</div>';
+    var f1 = function (v) { return v == null ? '—' : String(Math.round(v * 10) / 10).replace('.', ','); }, ph = function (id) { return '<img src="https://a.espncdn.com/i/headshots/nba/players/full/' + esc(id) + '.png" alt="" onerror="this.style.visibility=\'hidden\'" style="width:56px;height:56px;border-radius:50%;object-fit:cover;object-position:50% 15%;border:3px solid #6d9dff;background:#25335c;flex:none;">'; };
+    var pA = R.p, pB = pA == null ? null : 1 - pA, cj = function (p) { return p > 0 ? f2(1 / p) : '—'; }, iA = R.dA === true ? '🏠' : R.dA === false ? '✈️' : '', iB = R.dA === true ? '✈️' : R.dA === false ? '🏠' : '';
+    var val = o.cote && pA != null ? pA * o.cote - 1 : null, bon = val != null && val > 0, sF = function (n) { return esc(String(n).split(' ').slice(-1)[0]); };
+    var Hn = R.H.length, Hok = R.H.filter(function (x) { return x.a > x.b; }).length, an = new Date().getFullYear();
+    return '<div style="' + BOX + '"><div style="font-size:14px;font-weight:800;color:#ffd34d;margin-bottom:8px;">🆚 FACE-À-FACE POINTS · NBA</div>'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">'
+      + '<div style="display:flex;align-items:center;gap:8px;min-width:0;">' + ph(R.A.id) + '<div style="min-width:0;"><div style="font-size:16px;font-weight:900;">' + esc(R.A.nom) + '</div><div style="font-size:13px;color:#c9d3ee;">moy. <b style="color:#fff;">' + f1(R.A.m) + '</b> pts' + (R.A.ml != null ? ' · ' + iA + ' ' + f1(R.A.ml) : '') + '</div></div></div>'
+      + '<b style="font-size:20px;color:#c9d3ee;">VS</b>'
+      + '<div style="display:flex;align-items:center;gap:8px;flex-direction:row-reverse;text-align:right;min-width:0;">' + ph(R.B.id) + '<div style="min-width:0;"><div style="font-size:16px;font-weight:900;">' + esc(R.B.nom) + '</div><div style="font-size:13px;color:#c9d3ee;">moy. <b style="color:#fff;">' + f1(R.B.m) + '</b> pts' + (R.B.ml != null ? ' · ' + iB + ' ' + f1(R.B.ml) : '') + '</div></div></div></div>'
+      + (pA != null ? '<div style="display:flex;height:30px;border-radius:8px;overflow:hidden;margin:10px 0 6px;font-weight:900;font-size:14px;"><div style="width:' + Math.round(pA * 100) + '%;background:#1ed760;color:#06210f;display:flex;align-items:center;padding:0 8px;white-space:nowrap;">' + sF(R.A.nom) + ' ' + Math.round(pA * 100) + ' %</div><div style="flex:1;background:#ff6b6b;color:#2a0606;display:flex;align-items:center;justify-content:flex-end;padding:0 8px;white-space:nowrap;">' + Math.round(pB * 100) + ' % ' + sF(R.B.nom) + '</div></div>'
+        + '<div style="font-size:14px;margin:4px 0;">📊 <b>' + esc(R.A.nom) + ' marque plus</b> : ' + Math.round(pA * 100) + ' % → cote juste <b style="color:#ffd34d;">' + cj(pA) + '</b></div>'
+        + '<div style="font-size:14px;margin:4px 0;">📊 <b>' + esc(R.B.nom) + ' marque plus</b> : ' + Math.round(pB * 100) + ' % → cote juste <b style="color:#ffd34d;">' + cj(pB) + '</b></div>' : '')
+      + '<div style="font-size:14px;margin:4px 0;">🤝 Face-à-face réels : <b>' + Hn + '</b>' + (Hn ? ' · ' + sF(R.A.nom) + ' devant <b style="color:#1ed760;">' + Hok + ' / ' + Hn + '</b>' : '') + '</div>'
+      + (val != null ? '<div style="font-size:14px;margin:4px 0;">🎯 Ta cote ' + f2(o.cote) + ' (' + sF(R.A.nom) + ') → <b style="color:' + (bon ? '#1ed760' : '#ff9f9f') + ';">' + (bon ? '💎 value +' : 'value ') + Math.round(val * 100) + ' %</b> · book sans marge ≈ ' + f2(o.cote * 1.12) + '</div>' : '')
+      + (Hn ? '<div style="font-size:13px;font-weight:800;color:#ffd34d;margin-top:8px;">📋 Match par match</div>' + R.H.slice(0, 8).map(function (x) { var d = new Date(x.t), dt = ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2) + (d.getFullYear() !== an ? '/' + String(d.getFullYear()).slice(2) : '');
+          return '<div style="display:grid;grid-template-columns:66px 24px 1fr 1fr 22px;gap:6px;align-items:center;padding:4px 2px;border-bottom:1px solid #1c2747;font-size:14px;"><span>' + dt + '</span><span>' + (x.dom ? '🏠' : '✈️') + '</span><span' + (x.a > x.b ? ' style="font-weight:900;"' : '') + '>' + sF(R.A.nom) + ' ' + x.a + '</span><span' + (x.b > x.a ? ' style="font-weight:900;"' : '') + '>' + sF(R.B.nom) + ' ' + x.b + '</span><span>' + (x.a > x.b ? '✅' : x.a < x.b ? '❌' : '➖') + '</span></div>'; }).join('') : '')
+      + '<div style="font-size:12px;color:#9fb0d6;margin-top:6px;">% = points de chacun sur ses ' + R.A.n + ' / ' + R.B.n + ' derniers matchs joués (toutes les paires comparées, égalités retirées).</div></div>';
+  }
+  window._g45TkFaf = fafHtml;   /* tests */
   function fiche(o, sansCote) {   /* sansCote : 2e colonne (adversaire), fiche 📋 + match par match seulement */
     var k = cle(o), R = RES[k];
     if (!o.nom || !o.lab) return '';
@@ -91983,7 +92010,7 @@ function _g45ScoreRedessiner() {
     };
     /* 20261119u (capture : « METTRE À LA MÊME HAUTEUR ») : grille 2 colonnes, une ligne par bloc → 📋 fiche face à 📋 fiche, match par match face à
        match par match (fiche() marque ses blocs : \u0002 avant la fiche, \u0003 avant le match par match) */
-    var P1 = (ticket(o) + absHtml(o) + fiche(o)).split(/[\u0002\u0003]/), sep = function (x) { return String(x || '').replace(/[\u0002\u0003]/g, ''); };
+    var P1 = (ticket(o) + absHtml(o) + fafHtml(o, f) + fiche(o)).split(/[\u0002\u0003]/), sep = function (x) { return String(x || '').replace(/[\u0002\u0003]/g, ''); };
     if (!zi) return;
     var Rj = RES[k];
     if (mob && !(oA || (Rj && Rj.jo && Rj.hJ && Rj.hJ.aid))) { sortie(P1, []); return; }
@@ -92764,4 +92791,39 @@ window._g45NflFeuilleHtml = _g45NflFeuilleHtml;
     return '';
   };
   window._g45TnVainqueurChercher = chercher;   /* tests */
+})();
+
+
+/* ═══ 20261124m — 🆚 FACE-À-FACE POINTS NBA (Winamax « qui marque le plus de points entre A et B », maquette maquette_faceaface.png « OUI ») :
+   points de chaque joueur sur ses 82 derniers matchs JOUÉS (archives cotes/basket/nba/<saison>/joueurs/<idEspn>.json, 3 saisons) ; chance que
+   A marque plus que B = toutes les paires (match de A, match de B) comparées, égalités retirées (pari remboursé) ; moyenne aussi au lieu du match
+   (🏠 / ✈️) ; vrais face-à-face = même n° de match ESPN dans les deux journaux. Joueur retrouvé par son nom dans joueurs.json (sinon nom de famille
+   unique). Utilisé par « Ton pari » (pari « face-à-face » + 2 joueurs). ═══ */
+window._g45FaF = (function () {
+  var B = 'https://raw.githubusercontent.com/gones45140/gones45-archives/main/cotes/basket/nba/', M = {};
+  var get = function (u) { if (!M[u]) M[u] = fetch(u + '?h=' + Math.floor(Date.now() / 36e5)).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }); return M[u]; };
+  var nz = function (t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z]+/g, ' ').trim(); };
+  var saisons = function () { var d = new Date(), y = d.getMonth() >= 6 ? d.getFullYear() : d.getFullYear() - 1, L = []; for (var i = 0; i < 3; i++) L.push((y - i) + '-' + String((y - i + 1) % 100).padStart(2, '0')); return L; };
+  async function idDe(nom) {
+    var n = nz(nom), fam = n.split(' ').slice(-1)[0], SA = saisons();
+    for (var i = 0; i < SA.length; i++) { var J = await get(B + SA[i] + '/joueurs.json'); if (!J) continue;
+      var ks = Object.keys(J), ex = ks.filter(function (k) { return nz(J[k][0]) === n; }); if (ex.length) return { id: ex[0], nom: J[ex[0]][0] };
+      var fm = ks.filter(function (k) { return nz(J[k][0]).split(' ').slice(-1)[0] === fam; }); if (fm.length === 1) return { id: fm[0], nom: J[fm[0]][0] }; }
+    return null;
+  }
+  async function journal(id) {
+    var L = [], SA = saisons(), VU = {};
+    for (var i = 0; i < SA.length; i++) { var q = await get(B + SA[i] + '/joueurs/' + id + '.json'); ((q && q.m) || []).forEach(function (m) { var st = m[4] || {}; if (!(+st.J >= 1 || +st.MIN > 0) || VU[m[2]]) return; VU[m[2]] = 1; L.push({ t: m[0], eid: String(m[2]), dom: m[6] === 'h', p: +st.PTS || 0 }); }); }
+    return L.sort(function (a, b) { return a.t - b.t; });
+  }
+  var moy = function (L) { return L.length ? L.reduce(function (a, x) { return a + x.p; }, 0) / L.length : null; };
+  return async function (nA, nB, lieuA) {
+    var IA = await idDe(nA), IB = await idDe(nB); if (!IA || !IB) return { err: (!IA ? nA : nB) + ' introuvable dans les archives NBA' };
+    var LA = await journal(IA.id), LB = await journal(IB.id), A = LA.slice(-82), Bm = LB.slice(-82);
+    if (A.length < 10 || Bm.length < 10) return { err: 'pas assez de matchs joués' };
+    var w = 0, l = 0; A.forEach(function (x) { Bm.forEach(function (y) { if (x.p > y.p) w++; else if (x.p < y.p) l++; }); });
+    var EB = {}; LB.forEach(function (y) { EB[y.eid] = y; }), H = LA.filter(function (x) { return EB[x.eid]; }).map(function (x) { var y = EB[x.eid]; return { t: x.t, dom: x.dom, a: x.p, b: y.p }; }).reverse();
+    var dA = lieuA === 'dom' ? true : lieuA === 'ext' ? false : null, LiA = dA == null ? null : A.filter(function (x) { return x.dom === dA; }), LiB = dA == null ? null : Bm.filter(function (x) { return x.dom === !dA; });
+    return { A: { id: IA.id, nom: IA.nom, n: A.length, m: moy(A), ml: LiA && LiA.length >= 5 ? moy(LiA) : null }, B: { id: IB.id, nom: IB.nom, n: Bm.length, m: moy(Bm), ml: LiB && LiB.length >= 5 ? moy(LiB) : null }, p: w + l ? w / (w + l) : null, H: H, dA: dA };
+  };
 })();
