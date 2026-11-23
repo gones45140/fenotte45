@@ -92843,7 +92843,7 @@ window._g45FaF = (function () {
    Choix incompatibles : GRISÉS (maquette « plus de rouge barré »), aussi dans l'ancienne liste (_g45MmCouleurs).
    ═══════════════════════════════════════════════════════════════════════════ */
 (function () {
-  var S = { tab: { c: 0, n: 0 }, ln: { c: {}, n: {} }, ti: { c: 1, n: 1 }, st: { c: 'pts', n: 'pts' }, jn: { c: null, n: null }, sp: { c: '', n: '' } };
+  var S = { nbJ: { c: 1, n: 1 }, tab: { c: 0, n: 0 }, ln: { c: {}, n: {} }, ti: { c: 1, n: 1 }, st: { c: 'pts', n: 'pts' }, jn: { c: null, n: null }, sp: { c: '', n: '' } };
   var Z = {
     c: { types: 'mm-types', sport: 'c-sport', lieu: 'c-lieu', adv: 'c-target', mise: 'c-mise', rows: function () { return typeof mmRows !== 'undefined' ? mmRows : []; }, render: function () { if (typeof renderMmRows === 'function') renderMmRows(); }, ajout: function () { if (typeof addMmRow === 'function') addMmRow(); } },
     n: { types: 'mm-types-simple', sport: 'p-sport', lieu: 'n-lieu', adv: 'n-analysis', mise: 'n-mise', rows: function () { return typeof mmRowsSimple !== 'undefined' ? mmRowsSimple : []; }, render: function () { if (typeof renderMmRowsSimple === 'function') renderMmRowsSimple(); }, ajout: function () { if (typeof addMmRowSimple === 'function') addMmRowSimple(); } }
@@ -92869,11 +92869,20 @@ window._g45FaF = (function () {
     return n || 'Mon équipe';
   }
   function adversaire(z) { return val(Z[z].adv) || 'L\'adversaire'; }
+  /* 20261124o (« en critère on a la double chance dans les joueurs ? ») : les joueurs vivent dans les champs du formulaire
+     (#n-joueur / #c-joueur + lignes #…-joueurs-extra + mode #…-jmode-val ou / et, déjà lus par l'enregistrement et le règlement
+     du Worker : ctx.joueurs.mode). L'onglet Joueur les montre et les remplit ; sans nom, carte joueur du mur (Cockpit). */
   function joueurDefaut(z) {
-    if (z === 'n') return val('n-joueur');
+    if (z === 'n') return '';
     var u = carte(z); return u && u.type === 'joueur' ? u.n : '';
   }
-  function joueur(z) { var j = S.jn[z]; return (j == null ? joueurDefaut(z) : j).trim(); }
+  function joueursForm(z) {
+    var L = []; try { L = (typeof _g45FormJoueurs === 'function' ? _g45FormJoueurs(z) : []).map(function (x) { return x.nom; }); } catch (e) {}
+    if (!L.length && joueurDefaut(z)) L = [joueurDefaut(z)];
+    return L;
+  }
+  function joueur(z) { var L = joueursForm(z); return L.length === 1 ? L[0] : ''; }   /* 2 joueurs ou + : noms dans la liste, pas dans le libellé */
+  function modeJ(z) { return val(z + '-jmode-val') || 'ou'; }
   function ouPlus(l) { return Math.floor(+l) + 1; }   /* Over 1,5 → 2 ou plus */
   function auMax(l) { return Math.floor(+l); }         /* Under 1,5 → 1 max */
   var unite = function (n, mot, pl) { return n + ' ' + (n > 1 ? (pl || mot + 's') : mot); };
@@ -92899,7 +92908,8 @@ window._g45FaF = (function () {
     var nom = function (x) { return x === 'eq' ? eq : ad; };
     var jp = function (mot) { return (j ? j + ' ' : '') + mot; };
     /* foot : même nom que la carte / le champ joueur → type nu (Buteur, Passeur, Décisif) comme avant (paris joueur reconnus partout) */
-    var jNu = function (mot, motNom) { return (!j || (jd && j.toLowerCase() === jd.toLowerCase())) ? mot : j + ' ' + motNom; };
+    var jNu = function (mot) { return mot; };   /* 20261124o : nom(s) dans les champs joueur → type nu (Buteur…) comme avant */
+    if (!j && joueursForm(z).length > 1) jp = function (mot) { return mot.charAt(0).toUpperCase() + mot.slice(1) + (modeJ(z) === 'et' ? ' (chacun)' : ' (au moins un)'); };
     var ou = function (l, o, mot, pl) { return o === 'o' ? unite(ouPlus(l), mot, pl) + ' ou plus' : (auMax(l) === 0 ? 'aucun ' + mot : unite(auMax(l), mot, pl) + ' max'); };
     var tiers = function (t) { return t === 1 ? '1er tiers' : t + 'e tiers'; };
     switch (k) {
@@ -92916,7 +92926,7 @@ window._g45FaF = (function () {
       case 'tipp': return 'Tiers le plus prolifique : ' + a.v;
       case 'prem': return eq + ' marque en premier';
       case 'jb': return sp === 'foot' ? jNu(a.nu, a.mot) : jp(a.mot);
-      case 'jl': return jp(ou(a.l, a.o, a.mot, a.pl));
+      case 'jl': return (!j && joueursForm(z).length > 1) ? ou(a.l, a.o, a.mot, a.pl) + (modeJ(z) === 'et' ? ' (chacun)' : ' (au moins un)') : jp(ou(a.l, a.o, a.mot, a.pl));
       case 'fe': return a.lab + ' : ' + ou(a.l, a.o, a.mot);
       case 'ti': return tiers(a.t) + ' : ' + a.v;
       case 'tib': return tiers(a.t) + ' : ' + ou(a.l, a.o, 'but');
@@ -92962,8 +92972,18 @@ window._g45FaF = (function () {
       return '<button type="button" class="g45tp-ch' + (String(S[cle][z]) === String(v[0]) ? ' on' : '') + '" onclick="g45TpSet(\'' + z + '\',\'' + cle + '\',\'' + v[0] + '\')">' + esc(v[1]) + '</button>'; }).join('') + '</span></div>';
   }
   function champJoueur(z) {
-    var j = S.jn[z] == null ? joueurDefaut(z) : S.jn[z];
-    return '<div class="g45tp-l"><span class="g45tp-lt">Joueur</span><input class="g45tp-in" style="width:240px;text-align:left;" placeholder="Nom du joueur" value="' + esc(j) + '" oninput="g45TpJoueur(\'' + z + '\',this.value)"></div>';
+    var noms = []; noms.push(val(z + '-joueur'));
+    document.querySelectorAll('#' + z + '-joueurs-extra .g45-jx-nom').forEach(function (e) { noms.push(String(e.value || '')); });
+    var nb = Math.max(1, Math.min(3, S.nbJ[z] || 1, 3)); if (noms.filter(Boolean).length > nb) nb = Math.min(3, noms.filter(Boolean).length);
+    var h = '<div class="g45tp-l"><span class="g45tp-lt">Joueur' + (nb > 1 ? 's (1 à 3)' : '') + '</span>';
+    for (var i = 0; i < nb; i++) h += '<input class="g45tp-in g45tp-jn" style="width:200px;text-align:left;" placeholder="' + (i === 0 ? esc(joueurDefaut(z) || 'Nom du joueur') : i + 1 + 'e joueur') + '" value="' + esc(noms[i] || '') + '" oninput="g45TpJoueur(\'' + z + '\',' + i + ',this.value)">';
+    if (nb < 3) h += '<button type="button" class="g45tp-ch" onclick="g45TpPlusJ(\'' + z + '\')">➕ ' + (nb + 1) + 'e joueur</button>';
+    h += '</div>';
+    if (joueursForm(z).length > 1) { var m = modeJ(z);
+      h += '<div class="g45tp-l"><span class="g45tp-lt">Avec ' + joueursForm(z).length + ' joueurs</span><span class="g45tp-lc">'
+        + '<button type="button" class="g45tp-ch' + (m === 'et' ? ' on' : '') + '" onclick="g45TpModeJ(\'' + z + '\',\'et\')">Chacun</button>'
+        + '<button type="button" class="g45tp-ch' + (m !== 'et' ? ' on' : '') + '" onclick="g45TpModeJ(\'' + z + '\',\'ou\')">Au moins un (double chance)</button></span></div>'; }
+    return h;
   }
   /* aide sous le bouton : HC −v = gagne d'au moins floor(v)+1 ; HC +v = perd de ceil(v)−1 au plus (règle mien + ligne > autre) */
   function hcAide(v) { v = +v; if (v < 0) return 'gagne de ' + (Math.floor(-v) + 1) + ' ou +'; var p = Math.ceil(v) - 1; return p <= 0 ? 'nul ou victoire' : 'perd de ' + p + ' max'; }
@@ -93083,7 +93103,21 @@ window._g45FaF = (function () {
   window.g45TpTab = function (z, i) { S.tab[z] = i; dessiner(z); };
   window.g45TpLn = function (z, cle, v, saisie) { var n = parseFloat(String(v).replace(',', '.')); if (!isFinite(n)) return; S.ln[z][cle] = /^[+-]/.test(String(v).trim()) ? String(v).trim().replace(',', '.') : (saisie ? n : v); dessiner(z); };
   window.g45TpSet = function (z, cle, v) { S[cle][z] = v; dessiner(z); };
-  window.g45TpJoueur = function (z, v) { S.jn[z] = v; if (z === 'n') { var e = document.getElementById('n-joueur'); if (e) e.value = v; } };
+  window.g45TpJoueur = function (z, i, v) {
+    if (i === 0) { var e = document.getElementById(z + '-joueur'); if (e) e.value = v; }
+    else {
+      var box = document.getElementById(z + '-joueurs-extra'); if (!box) return;
+      while (box.querySelectorAll('.g45-jx').length < i && typeof g45JAjout === 'function') g45JAjout('', '', z);
+      var r = box.querySelectorAll('.g45-jx')[i - 1], inp = r && r.querySelector('.g45-jx-nom'); if (inp) inp.value = v;
+    }
+    try { if (typeof g45JMajMode === 'function') g45JMajMode(z); } catch (x) {}
+    clearTimeout(S['tj' + z]); S['tj' + z] = setTimeout(function () {   /* bloc « Chacun / Au moins un » : redessiné à la fin de la frappe, curseur gardé */
+      var a = document.activeElement, idx = a && a.classList && a.classList.contains('g45tp-jn') ? [].indexOf.call(document.querySelectorAll('#' + Z[z].types + ' .g45tp-jn'), a) : -1, pos = idx >= 0 ? a.selectionStart : 0;
+      dessiner(z); if (idx >= 0) { var b = document.querySelectorAll('#' + Z[z].types + ' .g45tp-jn')[idx]; if (b) { b.focus(); try { b.setSelectionRange(pos, pos); } catch (x) {} } }
+    }, 700);
+  };
+  window.g45TpPlusJ = function (z) { S.nbJ[z] = Math.min(3, (S.nbJ[z] || 1) + 1); dessiner(z); };
+  window.g45TpModeJ = function (z, m) { if (typeof g45JMode === 'function') g45JMode(m, z); else { var h = document.getElementById(z + '-jmode-val'); if (h) h.value = m; } dessiner(z); };
   window.g45TpAutre = function (z) { Z[z].ajout(); };
   window.g45TpAdd = function (z, i) {
     var sp = R[z][i]; if (!sp) return;
@@ -93103,8 +93137,8 @@ window._g45FaF = (function () {
   });
   document.addEventListener('change', function (e) {
     var id = e.target && e.target.id; if (!id) return;
-    if (['c-sport', 'c-unit', 'c-lieu', 'c-target'].indexOf(id) >= 0) { if (id === 'c-unit') S.jn.c = null; try { dessiner('c'); } catch (x) {} }
-    if (['p-sport', 'n-team', 'n-lieu', 'n-analysis', 'n-joueur'].indexOf(id) >= 0) { if (id === 'n-joueur') S.jn.n = null; try { dessiner('n'); } catch (x) {} }
+    if (['c-sport', 'c-unit', 'c-lieu', 'c-target'].indexOf(id) >= 0) { try { dessiner('c'); } catch (x) {} }
+    if (['p-sport', 'n-team', 'n-lieu', 'n-analysis'].indexOf(id) >= 0) { try { dessiner('n'); } catch (x) {} }
   }, true);
   document.addEventListener('input', function (e) {
     var id = e.target && e.target.id; if (!id) return;
