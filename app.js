@@ -73633,9 +73633,13 @@ function _g45TicketRemplirCockpit(o) {
   /* 20261016b (capture ticket Winamax « Passes décisives : 1 ou plus · Connor McDavid » → « Edmonton Oilers n'est pas une équipe de ton
      mur ») : un pari JOUEUR va d'abord sur la carte du JOUEUR si elle est au mur (type joueur) — nom de famille (≥ 4 lettres) commun,
      « MCDAVID CONNOR » = « Connor McDavid » ; plusieurs cartes → le prénom départage. Sinon : équipe comme avant. */
-  if (un && o.joueur) {
+  /* 20261124v (capture ticket MyMatch Winnipeg « Double chance buteur M. Scheifele ou K. Connor » → « Winnipeg Jets n'est pas une équipe de
+     ton mur » alors que la carte Kyle Connor y est) : seul le 1er joueur (o.joueur = Scheifele) était cherché → TOUS les joueurs du ticket
+     (o._jL de _g45TkJoueurs), dans l'ordre, pour la carte joueur ET dans le texte des règles « club » / « nom de famille » plus bas. */
+  var jTous = (o._jL && o._jL.length ? o._jL : [o.joueur]).filter(Boolean);
+  if (un && jTous.length) for (var jI = 0; jI < jTous.length && !choisi; jI++) {
     try {
-      var jz = nz(o.joueur).split(' ').filter(function (w) { return w.length >= 4; });
+      var jz = nz(jTous[jI]).split(' ').filter(function (w) { return w.length >= 4; });
       var U0 = (typeof state !== 'undefined' && state && state.u) ? state.u : [];
       var cj = [].slice.call(un.options).filter(function (op) {
         var u0 = U0.filter(function (x) { return x && x.n === op.value; })[0];
@@ -73644,6 +73648,9 @@ function _g45TicketRemplirCockpit(o) {
         return jz.length && v.indexOf(' ' + jz[jz.length - 1] + ' ') >= 0;
       });
       if (cj.length > 1) { var cj2 = cj.filter(function (op) { var v = ' ' + nz(op.value) + ' '; return jz.every(function (w) { return v.indexOf(' ' + w + ' ') >= 0; }); }); if (cj2.length) cj = cj2; }
+      /* 20261124v : « K. Connor » → l'INITIALE départage (Kyle Connor, pas « MCDAVID CONNOR » = Connor McDavid) */
+      var ini = nz(jTous[jI]).split(' ').filter(function (w) { return w.length === 1; })[0], fam0 = jz[jz.length - 1];
+      if (cj.length > 1 && ini) { var cj3 = cj.filter(function (op) { return nz(op.value).split(' ').some(function (w) { return w !== fam0 && w.charAt(0) === ini; }); }); if (cj3.length) cj = cj3; }
       if (cj[0]) { choisi = cj[0]; un.value = choisi.value; ids.push('c-unit'); try { if (typeof updMise === 'function') updMise(); if (typeof renderCrash === 'function') renderCrash(); } catch (x) {} }
     } catch (x) {}
   }
@@ -73684,7 +73691,7 @@ function _g45TicketRemplirCockpit(o) {
       var UJ = (typeof state !== 'undefined' && state && state.u) ? state.u : [], RJ = window._g45TkRacines, rq0 = RJ ? RJ(eq) : '';
       var memeC = function (c) { c = nz(c); return !!c && (c === eq || c.indexOf(eq) >= 0 || eq.indexOf(c) >= 0 || (!!rq0 && RJ(c) === rq0)); };
       var cJ = [].slice.call(un.options).filter(function (op) { var u2 = UJ.filter(function (x) { return x && x.n === op.value; })[0]; return u2 && u2.type === 'joueur' && memeC(_g45UClub(u2)); });
-      if (cJ.length >= 1) { var txtT = ' ' + nz(String(o.type || '') + ' ' + String(o.joueur || '')) + ' '; cJ = cJ.filter(function (op) { var w = nz(op.value).split(' ').filter(function (x) { return x.length >= 3; }); return w.length && txtT.indexOf(' ' + w[w.length - 1] + ' ') >= 0; }); }
+      if (cJ.length >= 1) { var txtT = ' ' + nz(String(o.type || '') + ' ' + jTous.join(' ')) + ' '; cJ = cJ.filter(function (op) { var w = nz(op.value).split(' ').filter(function (x) { return x.length >= 3; }); return w.length && txtT.indexOf(' ' + w[w.length - 1] + ' ') >= 0; }); }
       if (cJ.length === 1) {
         choisi = cJ[0]; cj = [choisi]; un.value = choisi.value; ids.push('c-unit');
         if (!o.joueur) o.joueur = choisi.value;
@@ -73698,7 +73705,7 @@ function _g45TicketRemplirCockpit(o) {
      nommée la 1re sur le ticket. Le bloc 20261020p plus bas remet ensuite équipe = club du joueur (Edmonton) et le lieu inversé. */
   if (un && !choisi) {
     try {
-      var UJ2 = (typeof state !== 'undefined' && state && state.u) ? state.u : [], txt2 = ' ' + nz(String(o.type || '') + ' ' + String(o.joueur || '')) + ' ';
+      var UJ2 = (typeof state !== 'undefined' && state && state.u) ? state.u : [], txt2 = ' ' + nz(String(o.type || '') + ' ' + jTous.join(' ')) + ' ';
       var cJ2 = [].slice.call(un.options).map(function (op) { var u2 = UJ2.filter(function (x) { return x && x.n === op.value; })[0]; if (!u2 || u2.type !== 'joueur') return null;
         var w = nz(op.value).split(' ').filter(function (x) { return x.length >= 3; }), fam = w[w.length - 1]; var i = fam ? txt2.indexOf(' ' + fam + ' ') : -1; return i >= 0 ? { op: op, i: i } : null; }).filter(Boolean).sort(function (a2, b2) { return a2.i - b2.i; });
       if (cJ2.length) {
@@ -92951,9 +92958,29 @@ window._g45FaF = (function () {
     });
     return out;
   }
+  /* 20261124v (capture « Double chance buteur » lu sur le ticket, bouton Buteur pas vert : « possible de mettre en vert mes sélections ») :
+     une ligne écrite autrement (ticket, saisie à la main) allume aussi le bouton qui veut dire la même chose ; re-clic = cette ligne retirée */
+  var nzT = function (x) { return String(x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim(); };
+  function equiv(k, a) {
+    if (k === 'jb') { var m = nzT(a.mot || a.nu);
+      if (/^buteur/.test(m)) return /buteur/; if (/^passeur/.test(m)) return /passeur/; if (/^pointeur/.test(m)) return /pointeur|but ou passe/;
+      if (/^decisif/.test(m)) return /decisif/; if (/^double/.test(m)) return /double(?! chance)|2 buts/; if (/^triple/.test(m)) return /triple|3 buts|hat.?trick/;
+      if (/essai/.test(m)) return /essai/; if (/1er td/.test(m)) return /1er td|premier td|first td/; if (/marque un td/.test(m)) return /(^|[^r] )(td|touchdown)\b(?! a la passe)/;
+      if (/titulaire/.test(m)) return /titulaire/; return null; }
+    if (k === 'tot') { var l = String(a.l).replace(',', '.').replace('.', '[.,]'); return new RegExp((a.o === 'o' ? '(over|plus de|\\+ de)' : '(under|moins de|- de)') + '\\s*' + l + '\\b'); }
+    if (k === 'type' && a.t === 'BTS Oui') return /^(?!.*\bnon\b).*(\bbtts?\b|les deux (equipes )?marquent)/;
+    if (k === 'type' && a.t === 'BTS Non') return /(\bbtts?\b|les deux (equipes )?marquent).*\bnon\b|\bnon\b.*(\bbtts?\b|marquent)/;
+    return null;
+  }
+  function idxDe(z, k, a, t) {
+    var rows = Z[z].rows(), i = -1;
+    rows.forEach(function (r, j) { if (i < 0 && r && r.type === t) i = j; });
+    if (i < 0) { var re = equiv(k, a); if (re) rows.forEach(function (r, j) { if (i < 0 && r && r.type && re.test(nzT(r.type))) i = j; }); }
+    return i;
+  }
   function bouton(z, k, a, txt, sous) {
     var i = R[z].length; R[z].push({ k: k, a: a });
-    var t = lib(z, k, a), C = choisis(z), on = C.indexOf(t) >= 0, rg = rouges(z), off = !on && rg[t];
+    var t = lib(z, k, a), C = choisis(z), on = idxDe(z, k, a, t) >= 0, rg = rouges(z), off = !on && rg[t];
     var st = on ? 'background:#14532d;border-color:#1ed760;color:#fff;' : off ? 'opacity:.35;' : '';
     return '<button type="button" class="g45tp-b" data-t="' + esc(t) + '" onclick="g45TpAdd(\'' + z + '\',' + i + ')" style="' + st + '">' + (on ? '✓ ' : '') + esc(txt)
       + (sous || off ? '<small>' + esc(off ? 'incompatible' : sous) + '</small>' : '') + '</button>';
@@ -92973,7 +93000,7 @@ window._g45FaF = (function () {
   }
   function puces(z, cle, vals, lab) {
     return '<div class="g45tp-l"><span class="g45tp-lt">' + esc(lab) + '</span><span class="g45tp-lc">' + vals.map(function (v) {
-      return '<button type="button" class="g45tp-ch' + (String(S[cle][z]) === String(v[0]) ? ' on' : '') + '" onclick="g45TpSet(\'' + z + '\',\'' + cle + '\',\'' + v[0] + '\')">' + esc(v[1]) + '</button>'; }).join('') + '</span></div>';
+      return '<button type="button" class="g45tp-ch sel' + (String(S[cle][z]) === String(v[0]) ? ' on' : '') + '" onclick="g45TpSet(\'' + z + '\',\'' + cle + '\',\'' + v[0] + '\')">' + esc(v[1]) + '</button>'; }).join('') + '</span></div>';
   }
   function champJoueur(z) {
     var noms = []; noms.push(val(z + '-joueur'));
@@ -92985,8 +93012,8 @@ window._g45FaF = (function () {
     h += '</div>';
     if (joueursForm(z).length > 1) { var m = modeJ(z);
       h += '<div class="g45tp-l"><span class="g45tp-lt">Avec ' + joueursForm(z).length + ' joueurs</span><span class="g45tp-lc">'
-        + '<button type="button" class="g45tp-ch' + (m === 'et' ? ' on' : '') + '" onclick="g45TpModeJ(\'' + z + '\',\'et\')">Chacun</button>'
-        + '<button type="button" class="g45tp-ch' + (m !== 'et' ? ' on' : '') + '" onclick="g45TpModeJ(\'' + z + '\',\'ou\')">Au moins un (double chance)</button></span></div>'; }
+        + '<button type="button" class="g45tp-ch sel' + (m === 'et' ? ' on' : '') + '" onclick="g45TpModeJ(\'' + z + '\',\'et\')">Chacun</button>'
+        + '<button type="button" class="g45tp-ch sel' + (m !== 'et' ? ' on' : '') + '" onclick="g45TpModeJ(\'' + z + '\',\'ou\')">Au moins un (double chance)</button></span></div>'; }
     return h;
   }
   /* aide sous le bouton : HC −v = gagne d'au moins floor(v)+1 ; HC +v = perd de ceil(v)−1 au plus (règle mien + ligne > autre) */
@@ -93073,6 +93100,7 @@ window._g45FaF = (function () {
       + '.g45tp-lc{display:flex;flex-wrap:wrap;gap:5px}'
       + '.g45tp-ch{background:#2a3d6e;border:1px solid #4a64a8;border-radius:8px;padding:7px 9px;color:#fff;font-size:14px;font-weight:800;cursor:pointer}'
       + '.g45tp-ch.on{background:#2a3d6e;border:2px solid #6fc3ff;box-shadow:0 0 0 1px #6fc3ff inset}'   /* ligne PROPOSÉE = contour bleu ; vert = seulement ce qui est dans le pari (« si je veux pas choisir ce critère ») */
+      + '.g45tp-ch.sel.on{background:#14532d;border:1px solid #1ed760;box-shadow:none}'   /* 20261124v : RÉGLAGE choisi (mode joueurs, tiers, stat) = vert comme un choix */
       + '.g45tp-ou{padding:7px 12px;background:#2f6bff;border-color:#6d9dff}'
       + '.g45tp-in{background:#16213f;border:1px solid #6d9dff;border-radius:8px;padding:7px 10px;color:#fff;font-size:15px;font-weight:800;width:90px;text-align:center}'
       + '.g45tp-autre{width:100%;margin-top:10px;padding:11px;border-radius:10px;background:transparent;border:1px dashed #6d9dff;color:#fff;font-size:14px;font-weight:800;cursor:pointer}'
@@ -93134,8 +93162,7 @@ window._g45FaF = (function () {
   window.g45TpAdd = function (z, i) {
     var sp = R[z][i]; if (!sp) return;
     var t = lib(z, sp.k, sp.a); if (!t) return;
-    var rows = Z[z].rows(), k = -1;
-    rows.forEach(function (r, j) { if (r && r.type === t) k = j; });
+    var rows = Z[z].rows(), k = idxDe(z, sp.k, sp.a, t);   /* 20261124v : même sens écrit autrement = même ligne */
     if (k >= 0) { if (rows.length > 1) rows.splice(k, 1); else rows[0].type = ''; }   /* re-clic = on l'enlève */
     else { var vide = rows.filter(function (r) { return r && !String(r.type || '').trim(); })[0]; if (vide) vide.type = t; else rows.push({ type: t, cote: 1.50 }); }
     Z[z].render();
