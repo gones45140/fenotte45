@@ -93316,3 +93316,70 @@ window._g45FaF = (function () {
   setInterval(function () { ['c', 'n'].forEach(function (z) { var b = $(Z[z].bloc); if (b && b.offsetParent) try { maj(z); } catch (e) {} }); }, 1500);
   var essais = 0; (function go() { var a = poser('c'), b = poser('n'); if (!(a && b) && ++essais < 40) setTimeout(go, 500); })();
 })();
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   20261124u — FORMULAIRE EN 3 ÉTAPES (Engager / Pari simple ; Antoine : « j'ai testé un pari, c'est très compliqué de comprendre » →
+   maquette maquette_etapes.png → « mon pari doit être en 1er et mon match ensuite » → « oui ») :
+     1 Ton pari (.mm-wrap)  →  2 Le match (#g45lm / #g45lm-n)  →  3 Ta mise (#g45st3-c / -n : mise + bookmaker, % de bankroll,
+     « 🪜 Voir les paliers » replié [simulateur crash, Engager], « ⚙️ Plus d'options » replié [reste du formulaire], UN seul bouton).
+   UN SEUL BOUTON = le VRAI bouton du formulaire (pari(true) « Engager la montante » / pari(false) « Placer le pari simple »), DÉPLACÉ
+   (mêmes enveloppes : ticket, exchange, méthodes…), en vert « ✅ Valider le pari · mise → gain ». Le bouton bleu du haut
+   (saveMmAsPari, ANCIEN chemin qui range dans state.p, cf. 20261122q) est CACHÉ : 20261124n l'avait mis en avant par erreur.
+   Le panneau « Cote estimée » du téléphone (#g45-tkpc-m / -s-m, posé avant le bouton) suit le bouton dans l'étape 3.
+   ═══════════════════════════════════════════════════════════════════════════ */
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var Z = {
+    c: { sub: 'sub-strat', types: 'mm-types', lm: 'g45lm', mise: 'c-mise', pm: 'g45-tkpc-m', cote: function () { try { return typeof getMmCote === 'function' ? getMmCote() : 0; } catch (e) { return 0; } } },
+    n: { sub: 'sub-simple', types: 'mm-types-simple', lm: 'g45lm-n', mise: 'n-mise', pm: 'g45-tkpc-s-m', cote: function () { var e = $('n-cote'); return e ? parseFloat(String(e.value).replace(',', '.')) || 0 : 0; } }
+  };
+  var CSS = '.g45st-n{flex:0 0 30px;width:30px;height:30px;border-radius:50%;background:#2f6bff;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:16px;font-weight:900;margin-right:8px}'
+    + '.g45st-h{display:flex;align-items:center;font-size:18px;font-weight:900;color:#fff;margin:0 0 10px}'
+    + '.mm-cote-total > button[onclick^="saveMmAsPari"]{display:none !important}'
+    + '.g45st-det{margin-top:10px}.g45st-det > summary{cursor:pointer;font-size:14px;font-weight:800;color:#6fc3ff;padding:6px 0;list-style:none}'
+    + '.g45st-det > summary::-webkit-details-marker{display:none}'
+    + '.g45st-go{display:block !important;width:100% !important;margin-top:12px !important;padding:15px !important;border-radius:12px !important;border:0 !important;background:#1ed760 !important;color:#06210f !important;font-size:17px !important;font-weight:900 !important;cursor:pointer}';
+  function tete(n, txt) { return '<span class="g45st-n">' + n + '</span>' + txt; }
+  function poser(z) {
+    var C = Z[z], sub = $(C.sub), types = $(C.types), mm = types && types.closest('.mm-wrap'), lm = $(C.lm);
+    if (!sub || !mm || !lm) return false;
+    if ($('g45st3-' + z)) return true;
+    var bt = sub.querySelector('button[onclick^="pari("]'), fc = bt && bt.closest('.fc'), row = lm.querySelector('.lm-row');
+    if (!bt || !fc || !row) return false;
+    if (!$('g45st-css')) { var st = document.createElement('style'); st.id = 'g45st-css'; st.textContent = CSS; document.head.appendChild(st); }
+    /* 1 — Ton pari : numéro en tête, ancien titre « Ton pari » masqué (le bouton « + Ajouter une sélection » reste) */
+    var h1 = document.createElement('div'); h1.className = 'g45st-h'; h1.innerHTML = tete(1, 'Ton pari'); mm.insertBefore(h1, mm.firstChild);
+    var tt = mm.querySelector('.mm-title > span'); if (tt) tt.style.display = 'none';
+    /* 2 — Le match : APRÈS Ton pari */
+    mm.parentNode.insertBefore(lm, mm.nextSibling);
+    var lh = lm.querySelector('.lm-h'); if (lh) { var nb = document.createElement('span'); nb.className = 'g45st-n'; nb.textContent = '2'; lh.insertBefore(nb, lh.firstChild); }
+    /* 3 — Ta mise */
+    var s3 = document.createElement('div'); s3.id = 'g45st3-' + z; s3.className = 'g45lm-b';
+    s3.innerHTML = '<div class="g45st-h">' + tete(3, 'Ta mise') + '</div>';
+    lm.parentNode.insertBefore(s3, lm.nextSibling);
+    s3.appendChild(row);
+    var pct = $('g45pct-' + C.mise); if (pct) s3.appendChild(pct);   /* % de bankroll (sinon reposé sous la ligne par boite()) */
+    var cr = z === 'c' ? sub.querySelector('.crash-wrap') : null;
+    if (cr) { var d1 = document.createElement('details'); d1.className = 'g45st-det'; d1.innerHTML = '<summary>▸ 🪜 Voir les paliers (simulateur)</summary>'; d1.appendChild(cr); s3.appendChild(d1); }
+    var d2 = document.createElement('details'); d2.className = 'g45st-det'; d2.id = 'g45st-opt-' + z;
+    d2.innerHTML = '<summary>▸ ⚙️ Plus d\'options (' + (z === 'n' ? 'type de pari, cote, garantie, ' : '') + 'notes, joueurs, freebet, prévenir…)</summary>';
+    fc.parentNode.insertBefore(d2, fc); d2.appendChild(fc); s3.appendChild(d2);
+    bt.classList.add('g45st-go'); s3.appendChild(bt);
+    maj(z);
+    return true;
+  }
+  function maj(z) {
+    var C = Z[z], s3 = $('g45st3-' + z); if (!s3) return;
+    var bt = s3.querySelector('button[onclick^="pari("]'); if (!bt) return;
+    var pm = $(C.pm); if (pm && pm.nextElementSibling !== bt) s3.insertBefore(pm, bt);   /* panneau « Cote estimée » (téléphone) juste avant le bouton */
+    var row = s3.querySelector('.lm-row'), pct = $('g45pct-' + C.mise); if (row && pct && pct.previousElementSibling !== row) row.insertAdjacentElement('afterend', pct);
+    var mi = parseFloat(String(($(C.mise) || {}).value || '').replace(',', '.')) || 0, co = C.cote() || 0;
+    var e = function (x) { return x.toFixed(2).replace('.', ',') + ' €'; };
+    var t = '✅ Valider le pari' + (mi > 0 ? ' · ' + e(mi) + (co > 1 ? ' → gain ' + e(mi * co) : '') : '');
+    if (bt.textContent !== t) bt.textContent = t;
+  }
+  window._g45StMaj = maj; window._g45StPoser = poser;
+  document.addEventListener('input', function () { try { maj('c'); maj('n'); } catch (e) {} }, true);
+  setInterval(function () { ['c', 'n'].forEach(function (z) { var s = $('g45st3-' + z); if (s && s.offsetParent) try { maj(z); } catch (e) {} }); }, 1500);
+  var essais = 0; (function go() { var a = poser('c'), b = poser('n'); if (!(a && b) && ++essais < 60) setTimeout(go, 500); })();
+})();
