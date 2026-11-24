@@ -89624,8 +89624,13 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   window._g45LoiFrK = function (c, y) { if (!(y && y.jo && y.sp === 'basketball')) return 0.94; if (c <= 2.5) return 0.94; if (c >= 3) return 0.75; return 0.94 - (c - 2.5) / 0.5 * 0.19; };
   var FRK = 0.94, coteFr = function (c, y) { return Math.round(c * window._g45LoiFrK(c, y) * 100) / 100; };
   var coteH = function (y) { var q = coteDe(y); return q ? ' · <b style="color:#f5c542;">' + (q.e ? '≈ ' : '') + frC(q.c) + '</b> <span style="color:#6dd3ff;font-weight:800;">FR ≈ ' + frC(coteFr(q.c, y)) + '</span>' : ''; };
+  window._g45LoiGrille = function () { var uni = typeof state !== 'undefined' && state && state.mode1;
+    return uni ? [10, 25, 75, 225, 675, 2025, 6075, 18225, 54675] : [10, 20, 60, 180, 540, 1620, 4860, 14580, 43740]; };
+  window._g45LoiGrTxt = function () { return (typeof state !== 'undefined' && state && state.mode1) ? 'P1 10 €, ×2,5 puis ×3 — mode unique' : 'P1 10 €, ×2 puis ×3'; };
   window._g45LoiMont = function (L, coteDe) {   /* 20261111f : simulation montante du bilan (voir html) */
-    var G = [10, 20, 60, 180, 540, 1620, 4860, 14580, 43740], E = {}, PE = {}, g = 0, pmax = 0, mmax = 0, n = 0, DET = {}, DER = {}, VU = {};   /* VU : 20261124z */   /* DER : dernière pépite de chaque série (20261117s) */
+    /* 20261124aa (« on est sur l'ancienne formule du Cockpit ? 10, 20, 60 ? » → « oui ») : 🚀 MODE UNIQUE allumé (state.mode1, 20261122v) →
+       grille du mode unique pour une cote ≥ 1,50 (les pépites sous 1,50 sont retirées) : P1 10 €, × 2,5 au P2 puis × 3 ; sinon ancienne grille. */
+    var G = window._g45LoiGrille(), E = {}, PE = {}, g = 0, pmax = 0, mmax = 0, n = 0, DET = {}, DER = {}, VU = {};   /* VU : 20261124z */   /* DER : dernière pépite de chaque série (20261117s) */
     L.slice().sort(function (a, b) { return a.t - b.t; }).forEach(function (x) {
       var q = coteDe(x); if (!q || !(q.c > 1)) return;
       /* 20261116f (captures Bucks : « le 11 Milwaukee perd, le 12 le mode Cockpit ne double pas la mise ») : la série de la montante = même équipe
@@ -89869,7 +89874,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     var mt = window._g45LoiMont ? window._g45LoiMont(Lall.filter(function (x) { return !x.nc && coteDe(x); }), coteDe) : null;
     if (mt && jPer) { var DTp = window._g45LoiDet || {}, gP = 0, nP = 0, pP = 0, mP = 0; L.forEach(function (x) { var q = DTp[x.id + '|' + x.k + '|' + (x.lieu || '') + '|' + x.t]; if (!q || q.dup) return; if (q.g != null) { gP += q.g; nP++; } pP = Math.max(pP, q.p || 0); mP = Math.max(mP, q.m || 0); }); mt.g = gP; mt.n = nP; mt.pmax = pP; mt.mmax = mP; }   /* 20261113g : chiffres de la période */   /* 20261113b : + pépites ⏳ (palier prévu) */
     if (mt && mt.n) h += '<div style="background:' + (mt.g >= 0 ? 'rgba(30,215,96,.12)' : 'rgba(255,69,69,.12)') + ';border:1px solid ' + (mt.g >= 0 ? '#1ed760' : '#ff4545') + ';border-radius:10px;padding:8px;margin-bottom:10px;text-align:center;">'
-      + '<div style="font-size:14px;color:#c9d3ee;">🚀 En montante (P1 10 €, puis ×2 et ×3 sur la même équipe et le même pari)</div>'
+      + '<div style="font-size:14px;color:#c9d3ee;">🚀 En montante (' + window._g45LoiGrTxt() + ', sur la même équipe et le même pari)</div>'
       + '<div style="font-size:22px;font-weight:900;color:' + (mt.g >= 0 ? '#1ed760' : '#ff6b6b') + ';">' + (mt.g >= 0 ? '+' : '−') + frC(Math.abs(mt.g)).replace(',00', '') + ' €</div>'
       + '<div style="font-size:14px;">Plus haut palier : <b>P' + mt.pmax + '</b> · plus grosse mise : <b>' + frC(mt.mmax).replace(',00', '') + ' €</b>' + (mt.ouv ? ' · ⏳ ' + mt.ouv + ' montante' + (mt.ouv > 1 ? 's' : '') + ' en cours : ' + (function () {   /* 20261117s : regroupées par palier + détail */
           var P = {}; (mt.ouvL || []).forEach(function (o) { P[o.p] = P[o.p] || [0, o.m]; P[o.p][0]++; });
@@ -89922,7 +89927,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
               + (voir ? '<text x="' + X(i).toFixed(1) + '" y="' + (Y(p[1]) - 26).toFixed(1) + '" text-anchor="middle" fill="#fff" font-size="13" font-weight="900">' + e0(p[1]) + '</text>'
                 + '<text x="' + X(i).toFixed(1) + '" y="' + (Y(p[1]) - 11).toFixed(1) + '" text-anchor="middle" fill="' + c + '" font-size="12" font-weight="800">' + e0(d) + '</text>'
                 + '<text x="' + X(i).toFixed(1) + '" y="' + (H - 10) + '" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">' + esc(p[0].slice(8, 10) + '/' + p[0].slice(5, 7)) + '</text>' : ''); }).join('')
-        + '</svg><div style="font-size:13px;color:#c9d3ee;margin-top:6px;">Trait plein = 💶 10 € par pépite (en haut, blanc = total ; en dessous = gain du jour) · pointillé or = 🚀 montante (P1 10 €, ×2 puis ×3).</div>'
+        + '</svg><div style="font-size:13px;color:#c9d3ee;margin-top:6px;">Trait plein = 💶 10 € par pépite (en haut, blanc = total ; en dessous = gain du jour) · pointillé or = 🚀 montante (' + window._g45LoiGrTxt() + ').</div>'
         + '<div style="font-size:14px;margin-top:8px;">' + jours.slice().reverse().map(function (j) { var n = JC.filter(function (x) { return x.j === j; }), g = n.filter(function (x) { return x.r === 1; }).length; return '<div style="display:flex;justify-content:space-between;border-bottom:1px solid #1c2747;padding:4px 0;"><span>📅 ' + esc(j.slice(8, 10) + '/' + j.slice(5, 7)) + ' · ' + g + '/' + n.length + ' ✅</span><span><b style="color:' + (JD[j] >= 0 ? '#1ed760' : '#ff6b6b') + ';">💶 ' + eur(JD[j]) + '</b>' + (JM[j] != null ? ' · <b style="color:#f5c542;">🚀 ' + eur(JM[j]) + '</b>' : '') + '</span></div>'; }).join('') + '</div>';
       return h + '</div>';
     }
