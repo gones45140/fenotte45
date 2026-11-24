@@ -93025,6 +93025,122 @@ window._g45FaF = (function () {
     return '<div class="g45tp-l"><span class="g45tp-lt">' + esc(lab) + '</span><span class="g45tp-lc">' + vals.map(function (v) {
       return '<button type="button" class="g45tp-ch sel' + (String(S[cle][z]) === String(v[0]) ? ' on' : '') + '" onclick="g45TpSet(\'' + z + '\',\'' + cle + '\',\'' + v[0] + '\')">' + esc(v[1]) + '</button>'; }).join('') + '</span></div>';
   }
+  /* ═══ 20261125c — 👥 LISTE DES JOUEURS DES 2 ÉQUIPES sous « Joueur » (capture PC Lyon – Monaco, champ vide : « on pourrait pas avoir une liste des
+     joueurs des 2 équipes ? » → maquette 2 colonnes → « et si c'est en Ligue Europa ou Conférence ça reprend la compétition choisie ? » → « oui »).
+     SOURCE : archives gones45-archives (gratuit, pas d'ESPN) cotes/<sport>/<ligue>/<saison>/joueurs.json = { idEspn: [nom, idÉquipe, matchs, {stats}] }.
+     ÉQUIPE → identifiant par l'index loi/equipes.json ([sp, lg, ligue, id, nom, logo], le même que 🔎 Critères), filtré par sport ; foot : secours
+     espnResolveTeam (« Olympique lyonnais » ≠ « Lyon » de l'index). COMPÉTITION (foot) : celle du formulaire (#c-comp / #n-comp, _g45SlugDepuisLibelle)
+     d'abord ; si l'équipe n'y a aucun joueur (coupe non archivée…) → son championnat, avec la mention « stats du championnat ».
+     Saison : juillet → juin (2026-27), sinon année civile (Brésil, Argentine…). KHL : pas de joueurs dans les archives → pas de liste.
+     Toucher un joueur = son nom dans la 1re case libre (vert) ; re-toucher = retiré. 6 par équipe, « ▼ Voir les N » pour tous. ═══ */
+  var LJ = { mem: {}, eq: {}, tout: { c: 0, n: 0 } };
+  var LJ_SP = { foot: ['soccer', 'foot'], hockey: ['hockey', 'hockey'], basket: ['basketball', 'basket'], nfl: ['football', 'football-us'], rugby: ['rugby', 'rugby'] };
+  var LJ_US = { hockey: 'nhl', basket: 'nba', nfl: 'nfl' };
+  var ljNz = function (t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, ''); };
+  function ljSaisons() { var d = new Date(), y = d.getMonth() + 1 >= 7 ? d.getFullYear() : d.getFullYear() - 1; return [y + '-' + String(y + 1).slice(2), String(d.getFullYear())]; }
+  function ljRedessiner(z) { clearTimeout(LJ['t' + z]); LJ['t' + z] = setTimeout(function () { try { dessiner(z); } catch (e) {} }, 60); }
+  /* joueurs.json d'une ligue (saison 2026-27 puis 2026) → null si absent ; une seule lecture par visite */
+  function ljLigue(z, dos, lg) {
+    var k = dos + '/' + lg; if (k in LJ.mem) return LJ.mem[k] === 0 ? undefined : LJ.mem[k];
+    LJ.mem[k] = 0; var SA = ljSaisons(), h = '?h=' + Math.floor(Date.now() / 36e5);
+    var lire = function (i) {
+      if (i >= SA.length) { LJ.mem[k] = null; ljRedessiner(z); return; }
+      fetch('https://raw.githubusercontent.com/gones45140/gones45-archives/main/cotes/' + k + '/' + SA[i] + '/joueurs.json' + h)
+        .then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; })
+        .then(function (j) { if (j && typeof j === 'object' && Object.keys(j).length) { LJ.mem[k] = j; ljRedessiner(z); } else lire(i + 1); });
+    };
+    lire(0); return undefined;
+  }
+  /* équipe → { id, lg } (lg = championnat de l'index) ; undefined = en cours, null = introuvable */
+  function ljEquipe(z, nom, spE, lgPref) {
+    var k = spE + '|' + ljNz(nom); if (!ljNz(nom)) return null;
+    if (k in LJ.eq) return LJ.eq[k] === 0 ? undefined : LJ.eq[k];
+    var O = window._g45LoiT && window._g45LoiT.LOI, IX = O && O.ix;
+    if (!IX) { try { if (typeof window._g45LogoIndex === 'function') window._g45LogoIndex(''); } catch (e) {} if (!LJ['ixT' + z] && (LJ['ixN' + z] = (LJ['ixN' + z] || 0) + 1) <= 10) LJ['ixT' + z] = setTimeout(function () { LJ['ixT' + z] = 0; ljRedessiner(z); }, 1500); return undefined; }
+    var n = ljNz(nom), C = IX.filter(function (x) { return x[0] === spE; });
+    var pref = function (L) { return L.filter(function (x) { return x[1] === lgPref; })[0] || L[0] || null; };
+    var x = pref(C.filter(function (x) { return ljNz(x[4]) === n; }))
+      || pref(C.filter(function (x) { return typeof _g45BandMeme === 'function' && _g45BandMeme(nom, x[4]); }))
+      || pref(C.filter(function (x) { var m = ljNz(x[4]); return m.length >= 4 && n.length >= 4 && (n.indexOf(m) >= 0 || m.indexOf(n) >= 0); }));
+    if (x) return (LJ.eq[k] = { id: String(x[3]), lg: x[1] });
+    if (spE === 'soccer' && typeof espnResolveTeam === 'function') {
+      LJ.eq[k] = 0;
+      Promise.resolve().then(function () { return espnResolveTeam(nom); }).catch(function () { return null; }).then(function (r) {
+        var y = r && r.id ? IX.filter(function (x) { return x[0] === 'soccer' && String(x[3]) === String(r.id); })[0] : null;
+        LJ.eq[k] = r && r.id ? { id: String(r.id), lg: (y && y[1]) || r.league || '' } : null; ljRedessiner(z);
+      });
+      return undefined;
+    }
+    return (LJ.eq[k] = null);
+  }
+  function ljStat(sp, s, nm) {
+    s = s || {}; var n = Math.max(1, +nm || 1), v = function (c) { return +s[c] || 0; }, f1 = function (x) { return (Math.round(x * 10) / 10).toString().replace('.', ','); };
+    if (sp === 'foot') return { tri: v('G') * 100 + v('A'), txt: [v('G') ? v('G') + ' ⚽' : '', v('A') ? v('A') + ' 🅰️' : ''].filter(Boolean).join(' ') };
+    if (sp === 'hockey') return { tri: (v('G') + v('A')) * 100 + v('G'), txt: [v('G') ? v('G') + ' 🥅' : '', v('A') ? v('A') + ' 🅰️' : ''].filter(Boolean).join(' ') };
+    if (sp === 'basket') return { tri: v('PTS') / n, txt: v('PTS') ? f1(v('PTS') / n) + ' pts' : '' };
+    if (sp === 'nfl') { var td = v('rTD') + v('reTD'); return { tri: td * 100 + v('pTD'), txt: [td ? td + ' TD' : '', v('pTD') ? v('pTD') + ' TD passe' : ''].filter(Boolean).join(' · ') }; }
+    return { tri: v('PTS'), txt: v('PTS') ? v('PTS') + ' pts' : '' };
+  }
+  function ljCourt(nom) { var w = String(nom || '').trim().split(/\s+/); return w.length > 1 ? w.slice(1).join(' ') : w[0]; }
+  /* une colonne : { ok, html } — ok faux tant que rien n'est lisible */
+  function ljColonne(z, sp, nom, ico, lgComp) {
+    var D = LJ_SP[sp]; if (!D) return null;
+    var E = ljEquipe(z, nom, D[0], lgComp); if (!E) return E;
+    var lgs = sp === 'foot' ? [lgComp, E.lg].filter(function (x, i, A) { return x && A.indexOf(x) === i; }) : sp === 'rugby' ? [E.lg] : [LJ_US[sp]];
+    var J = null, lgU = null;
+    for (var i = 0; i < lgs.length; i++) {
+      var d = ljLigue(z, D[1], lgs[i]); if (d === undefined) return undefined;
+      var L = d ? Object.keys(d).map(function (pid) { var a = d[pid]; return { pid: pid, nom: a[0], eq: String(a[1]), n: a[2], s: a[3] }; }).filter(function (x) { return x.eq === E.id && x.nom; }) : [];
+      if (L.length) { J = L; lgU = lgs[i]; break; }
+    }
+    if (!J) return null;
+    J.forEach(function (x) { var st = ljStat(sp, x.s, x.n); x.tri = st.tri; x.txt = st.txt; });
+    J.sort(function (a, b) { return (b.tri - a.tri) || ((+b.n || 0) - (+a.n || 0)) || String(a.nom).localeCompare(String(b.nom)); });
+    var pris = joueursForm(z).map(ljNz), tout = LJ.tout[z], V = tout ? J : J.slice(0, 6);
+    J.forEach(function (x) { if (!tout && pris.indexOf(ljNz(x.nom)) >= 0 && V.indexOf(x) < 0) V.push(x); });   /* joueur choisi toujours visible */
+    var h = '<div class="g45lj-h">' + ico + esc(nom) + '</div>';
+    if (sp === 'foot' && lgComp && lgU !== lgComp) h += '<div class="g45lj-n">stats du championnat</div>';
+    h += V.map(function (x) {
+      var on = pris.indexOf(ljNz(x.nom)) >= 0;
+      return '<button type="button" class="g45lj-c' + (on ? ' on' : '') + '" title="' + esc(x.nom) + '" data-nom="' + esc(x.nom) + '" onclick="g45LjChoix(\'' + z + '\',this.getAttribute(\'data-nom\'))"><b>' + (on ? '✓ ' : '') + esc(ljCourt(x.nom)) + '</b><small>' + esc(x.txt) + '</small></button>';
+    }).join('');
+    if (J.length > 6) h += '<button type="button" class="g45lj-m" onclick="g45LjTout(\'' + z + '\')">' + (tout ? '▲ Moins' : '▼ Voir les ' + J.length) + '</button>';
+    return { html: h };
+  }
+  function listeJ(z) {
+    var sp = sportDe(z); if (!LJ_SP[sp]) return '';
+    if (!document.getElementById('g45lj-css')) { var s = document.createElement('style'); s.id = 'g45lj-css';
+      s.textContent = '.g45lj{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:6px 0 10px}'
+        + '.g45lj-h{font-size:14px;font-weight:900;color:#fff;background:rgba(0,0,0,.45);border-radius:8px;padding:6px 8px;margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}'
+        + '.g45lj-n{font-size:13px;color:#ffd34d;margin:-2px 0 4px}'
+        + '.g45lj-c{display:flex;justify-content:space-between;align-items:center;gap:6px;width:100%;box-sizing:border-box;margin:4px 0;padding:8px 9px;border-radius:8px;background:#2a3d6e;border:1px solid #4a64a8;color:#fff;font-size:14px;cursor:pointer;text-align:left}'
+        + '.g45lj-c b{font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.g45lj-c small{font-size:13px;color:#dbe6ff;white-space:nowrap}'
+        + '.g45lj-c.on{background:#14532d;border-color:#1ed760}'
+        + '.g45lj-m{width:100%;padding:8px;border-radius:8px;background:transparent;border:1px dashed #6d9dff;color:#9cc2ff;font-size:14px;font-weight:800;cursor:pointer}';
+      document.head.appendChild(s); }
+    var lgComp = '';
+    if (sp === 'foot') { try { var inf = typeof _g45SlugDepuisLibelle === 'function' ? _g45SlugDepuisLibelle(val(z + '-comp')) : null; lgComp = inf && inf.slug && (!inf.sport || inf.sport === 'soccer') ? inf.slug : ''; } catch (e) {} }
+    var li = typeof _g45LieuNz === 'function' ? _g45LieuNz(val(Z[z].lieu)) : '', icA = li === 'dom' ? '🏠 ' : li === 'ext' ? '✈️ ' : '', icB = li === 'dom' ? '✈️ ' : li === 'ext' ? '🏠 ' : '';
+    var nA = equipe(z), nB = val(Z[z].adv);
+    var A = nA && nA !== 'Mon équipe' ? ljColonne(z, sp, nA, icA, lgComp) : null, B = nB ? ljColonne(z, sp, nB, icB, lgComp) : null;
+    if (A === undefined || B === undefined) { if (!A && !B) return '<div class="g45lj-n" style="color:#c9d3ee">⏳ Lecture des joueurs…</div>'; }
+    if (!A && !B) return '';
+    var col = function (x) { return '<div>' + (x && x.html ? x.html : '') + '</div>'; };
+    return '<div class="g45lj">' + col(A) + col(B) + '</div>';
+  }
+  window.g45LjTout = function (z) { LJ.tout[z] = LJ.tout[z] ? 0 : 1; dessiner(z); };
+  window.g45LjChoix = function (z, nom) {
+    var noms = [val(z + '-joueur')]; document.querySelectorAll('#' + z + '-joueurs-extra .g45-jx-nom').forEach(function (e) { noms.push(String(e.value || '').trim()); });
+    var nb = Math.max(1, Math.min(3, S.nbJ[z] || 1)), i = noms.map(ljNz).indexOf(ljNz(nom));
+    if (i >= 0) window.g45TpJoueur(z, i, '');   /* re-toucher = retiré */
+    else {
+      var j = -1; for (var k = 0; k < nb; k++) if (!String(noms[k] || '').trim()) { j = k; break; }
+      if (j < 0) { if (nb < 3) { S.nbJ[z] = nb + 1; j = nb; } else j = nb - 1; }
+      window.g45TpJoueur(z, j, nom);
+    }
+    dessiner(z);
+  };
+  window._g45LjT = { LJ: LJ, liste: listeJ };   /* tests */
   function champJoueur(z) {
     var noms = []; noms.push(val(z + '-joueur'));
     document.querySelectorAll('#' + z + '-joueurs-extra .g45-jx-nom').forEach(function (e) { noms.push(String(e.value || '')); });
@@ -93037,7 +93153,7 @@ window._g45FaF = (function () {
       h += '<div class="g45tp-l"><span class="g45tp-lt">Avec ' + joueursForm(z).length + ' joueurs</span><span class="g45tp-lc">'
         + '<button type="button" class="g45tp-ch sel' + (m === 'et' ? ' on' : '') + '" onclick="g45TpModeJ(\'' + z + '\',\'et\')">Chacun</button>'
         + '<button type="button" class="g45tp-ch sel' + (m !== 'et' ? ' on' : '') + '" onclick="g45TpModeJ(\'' + z + '\',\'ou\')">Au moins un (double chance)</button></span></div>'; }
-    return h;
+    return h + listeJ(z);   /* 20261125c */
   }
   /* aide sous le bouton : HC −v = gagne d'au moins floor(v)+1 ; HC +v = perd de ceil(v)−1 au plus (règle mien + ligne > autre) */
   function hcAide(v) { v = +v; if (v < 0) return 'gagne de ' + (Math.floor(-v) + 1) + ' ou +'; var p = Math.ceil(v) - 1; return p <= 0 ? 'nul ou victoire' : 'perd de ' + p + ' max'; }
