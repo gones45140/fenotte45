@@ -128,7 +128,7 @@ PIÈGES À NE JAMAIS OUBLIER :
   pour contourner un quota ; Polymarket (ANJ) et Kalshi abandonnés ; jamais les photos de be-basketball.
   LNR (lnr.fr) : CGU = usage personnel et strictement privé seulement → pas d'archivage LNR dans gones45-archives (public) sans autorisation (03/11).
 - Abandonné / refusé (ne pas reproposer) : NPB, handball, ski alpin (16/11 : FIS interdit, ESPN rien, TheSportsDB sans Coupe du monde), Workers AI (IA), BTS The Odds API par match, stats live Pro A Sofascore,
-  mi-temps Pro D2, papier peint clair, panneaux pub autour du terrain, tuile « ➕ Ajouter », mode Survivor L1 (08/11 : le Discord préfère séparer jeu et paris).
+  mi-temps Pro D2, papier peint clair, panneaux pub autour du terrain, tuile « ➕ Ajouter », mode Survivor L1 (08/11 : le Discord préfère séparer jeu et paris), avis IA sur mon pari dans le formulaire (25/11 : « ça apporte rien », l'IA du match de la fenêtre de match suffit).
 - Antoine parie sur la FIN des séries : ne pas lui refaire la leçon sur le « biais du parieur ».
 
 ## 7. Reste à faire / en attente (détail : HISTORIQUE.md § 7)
