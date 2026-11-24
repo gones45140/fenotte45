@@ -89625,16 +89625,23 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   var FRK = 0.94, coteFr = function (c, y) { return Math.round(c * window._g45LoiFrK(c, y) * 100) / 100; };
   var coteH = function (y) { var q = coteDe(y); return q ? ' · <b style="color:#f5c542;">' + (q.e ? '≈ ' : '') + frC(q.c) + '</b> <span style="color:#6dd3ff;font-weight:800;">FR ≈ ' + frC(coteFr(q.c, y)) + '</span>' : ''; };
   window._g45LoiMont = function (L, coteDe) {   /* 20261111f : simulation montante du bilan (voir html) */
-    var G = [10, 20, 60, 180, 540, 1620, 4860, 14580, 43740], E = {}, PE = {}, g = 0, pmax = 0, mmax = 0, n = 0, DET = {}, DER = {};   /* DER : dernière pépite de chaque série (20261117s) */
+    var G = [10, 20, 60, 180, 540, 1620, 4860, 14580, 43740], E = {}, PE = {}, g = 0, pmax = 0, mmax = 0, n = 0, DET = {}, DER = {}, VU = {};   /* VU : 20261124z */   /* DER : dernière pépite de chaque série (20261117s) */
     L.slice().sort(function (a, b) { return a.t - b.t; }).forEach(function (x) {
       var q = coteDe(x); if (!q || !(q.c > 1)) return;
       /* 20261116f (captures Bucks : « le 11 Milwaukee perd, le 12 le mode Cockpit ne double pas la mise ») : la série de la montante = même équipe
          + même pari, QUEL QUE SOIT le lieu (11/11 pépite 🌍, 12/11 pépite 🏠 avec la 🌍 dessus → P2) ; kd (détail affiché) garde le lieu. */
-      var kL = x.id + '|' + x.k + '|' + (x.lieu || ''), k = x.id + '|' + x.k; DER[k] = x; var p = E[k] || 1, m = G[Math.min(p, G.length) - 1], kd = kL + '|' + x.t;
-      if (x.r !== 1 && x.r !== 0) { if (x.r !== -1) DET[kd] = { p: p, m: m }; return; }   /* 20261113b : ⏳ = palier et mise prévus */
+      /* 20261124z (captures Bucks Vainqueur : « on passe de P2 à P4 et en mettant le filtre basket équipe ça devient P3, bizarre ») : 1) le MÊME
+         match avait 2 pépites (✈️ et 🌍) → 2 pas de montante pour 1 match ; 2) série = id ESPN + pari SANS le sport (l'id « 15 » des Bucks
+         existe aussi en NHL / NFL) → la liste « tous les sports » mêlait d'autres équipes. Clé = sport | équipe | pari ; 1 seul pas par match
+         (la 2e pépite du même match reçoit le même palier, marquée dup = pas recomptée dans les gains). */
+      var kL = x.id + '|' + x.k + '|' + (x.lieu || ''), k = (x.sp || '') + '|' + x.id + '|' + x.k; DER[k] = x; var kd = kL + '|' + x.t, km = k + '|' + (x.eid || x.t);
+      if (VU[km]) { DET[kd] = Object.assign({ dup: 1 }, VU[km]); return; }
+      var p = E[k] || 1, m = G[Math.min(p, G.length) - 1];
+      if (x.r !== 1 && x.r !== 0) { if (x.r !== -1) { DET[kd] = { p: p, m: m }; VU[km] = DET[kd]; } return; }   /* 20261113b : ⏳ = palier et mise prévus */
       n++; if (p > pmax) pmax = p; if (m > mmax) mmax = m;
       if (x.r === 1) { var gg = m * (Math.round(q.c * window._g45LoiFrK(q.c, x) * 100) / 100 - 1);   /* 20261118x */ g += gg; DET[kd] = { p: p, m: m, g: Math.round(gg * 100) / 100 }; if (p > 1) DET[kd].ser = Math.round((gg - (PE[k] || 0)) * 100) / 100; E[k] = 1; PE[k] = 0; }   /* 20261111g : cote FR estimée */
       else { g -= m; DET[kd] = { p: p, m: m, g: -m }; E[k] = p + 1; PE[k] = (PE[k] || 0) + m; }
+      VU[km] = DET[kd];
     });
     window._g45LoiDet = DET;
     var ouv = Object.keys(E).filter(function (k) { return E[k] > 1; });
@@ -89860,7 +89867,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
        pépite, palier suivant (grille d'Antoine : ×2 puis ×3 → 10, 20, 60, 180, 540…) ; passée → retour à P1. Pépites avec cote seulement,
        dans l'ordre des matchs. Gain total, plus haut palier, plus grosse mise, montantes encore ouvertes (palier en attente). */
     var mt = window._g45LoiMont ? window._g45LoiMont(Lall.filter(function (x) { return !x.nc && coteDe(x); }), coteDe) : null;
-    if (mt && jPer) { var DTp = window._g45LoiDet || {}, gP = 0, nP = 0, pP = 0, mP = 0; L.forEach(function (x) { var q = DTp[x.id + '|' + x.k + '|' + (x.lieu || '') + '|' + x.t]; if (!q) return; if (q.g != null) { gP += q.g; nP++; } pP = Math.max(pP, q.p || 0); mP = Math.max(mP, q.m || 0); }); mt.g = gP; mt.n = nP; mt.pmax = pP; mt.mmax = mP; }   /* 20261113g : chiffres de la période */   /* 20261113b : + pépites ⏳ (palier prévu) */
+    if (mt && jPer) { var DTp = window._g45LoiDet || {}, gP = 0, nP = 0, pP = 0, mP = 0; L.forEach(function (x) { var q = DTp[x.id + '|' + x.k + '|' + (x.lieu || '') + '|' + x.t]; if (!q || q.dup) return; if (q.g != null) { gP += q.g; nP++; } pP = Math.max(pP, q.p || 0); mP = Math.max(mP, q.m || 0); }); mt.g = gP; mt.n = nP; mt.pmax = pP; mt.mmax = mP; }   /* 20261113g : chiffres de la période */   /* 20261113b : + pépites ⏳ (palier prévu) */
     if (mt && mt.n) h += '<div style="background:' + (mt.g >= 0 ? 'rgba(30,215,96,.12)' : 'rgba(255,69,69,.12)') + ';border:1px solid ' + (mt.g >= 0 ? '#1ed760' : '#ff4545') + ';border-radius:10px;padding:8px;margin-bottom:10px;text-align:center;">'
       + '<div style="font-size:14px;color:#c9d3ee;">🚀 En montante (P1 10 €, puis ×2 et ×3 sur la même équipe et le même pari)</div>'
       + '<div style="font-size:22px;font-weight:900;color:' + (mt.g >= 0 ? '#1ed760' : '#ff6b6b') + ';">' + (mt.g >= 0 ? '+' : '−') + frC(Math.abs(mt.g)).replace(',00', '') + ' €</div>'
@@ -89888,7 +89895,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
       var JD = {}; JC.forEach(function (x) { JD[x.j] = (JD[x.j] || 0) + gainDe(x); });
       var jours = Object.keys(JD).sort(), cum = 0, pts = jours.map(function (j) { cum += JD[j]; return [j, cum]; });
       /* 20261113f (Antoine : « faudrait les 2 ») : 2e courbe 🚀 montante (gains d.g de _g45LoiDet par jour), en or */
-      var DTm = window._g45LoiDet || {}, JM = {}; JC.forEach(function (x) { var q = DTm[x.id + '|' + x.k + '|' + (x.lieu || '') + '|' + x.t]; if (q && q.g != null) JM[x.j] = (JM[x.j] || 0) + q.g; });
+      var DTm = window._g45LoiDet || {}, JM = {}; JC.forEach(function (x) { var q = DTm[x.id + '|' + x.k + '|' + (x.lieu || '') + '|' + x.t]; if (q && q.g != null && !q.dup) JM[x.j] = (JM[x.j] || 0) + q.g; });
       var cumM = 0, ptsM = jours.map(function (j) { cumM += (JM[j] || 0); return [j, cumM]; });
       if (!pts.length) return h + '<div style="font-size:14px;padding:10px 0;">Pas encore de pépite terminée avec une cote : la courbe démarre dès les premiers résultats.</div></div>';
       /* 20261113e (Antoine : « pareil ici, le graphique pas assez détaillé ») : comme la courbe des Tendances — graduations en €, date sous
@@ -89954,7 +89961,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
         /* 20261113e (Antoine : « mettre dans les cases journalières le bilan positif ou négatif de la journée ») : gain du jour de la 🚀 montante
            (somme des d.g de window._g45LoiDet pour les pépites terminées du jour) */
         + (function () { var DT = window._g45LoiDet || {}, gj = 0, nj = 0, g10 = 0, n10 = 0, f2 = function (v) { return (v >= 0 ? '+' : '−') + String(Math.round(Math.abs(v))) + ' €'; };
-            X.forEach(function (x) { var q = DT[x.id + '|' + x.k + '|' + (x.lieu || '') + '|' + x.t]; if (q && q.g != null) { gj += q.g; nj++; } var g1 = (!x.nc && (x.r === 1 || x.r === 0)) ? gainDe(x) : null; if (g1 != null) { g10 += g1; n10++; } });   /* 20261113f : les 2 (10 € et montante) */
+            X.forEach(function (x) { var q = DT[x.id + '|' + x.k + '|' + (x.lieu || '') + '|' + x.t]; if (q && q.g != null && !q.dup) { gj += q.g; nj++; }   /* 20261124z : 2e pépite du même match pas recomptée */ var g1 = (!x.nc && (x.r === 1 || x.r === 0)) ? gainDe(x) : null; if (g1 != null) { g10 += g1; n10++; } });   /* 20261113f : les 2 (10 € et montante) */
             return (n10 ? '<div style="font-size:12px;font-weight:900;color:' + (g10 >= 0 ? '#1ed760' : '#ff6b6b') + ';">💶 ' + f2(g10) + '</div>' : '')
               + (nj ? '<div style="font-size:12px;font-weight:900;color:#f5c542;">🚀 ' + f2(gj) + '</div>' : ''); })()
         + '</div>';
