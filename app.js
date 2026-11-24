@@ -93251,7 +93251,9 @@ window._g45FaF = (function () {
   function rond(url, txt) {
     return url ? '<img src="' + esc(url) + '" alt="" style="width:100%;height:100%;object-fit:contain;" onerror="this.replaceWith(document.createTextNode(\'' + esc(String(txt || '?').charAt(0)) + '\'))">' : esc(String(txt || '?').charAt(0).toUpperCase());
   }
-  var CSS = '.g45lm-b{background:rgba(11,16,29,.94);border:1px solid #2a3a63;border-radius:14px;padding:14px;margin-bottom:12px;color:#fff}'
+  /* 20261125b (capture PC : le panneau « Ton pari / Cote estimée » à droite recouvrait « Le match » — case Adversaire cachée) : même largeur
+     que « Ton pari » (.mm-wrap 640 px, style.css) → le panneau de droite, posé après .mm-wrap, ne mord plus sur les blocs 2 et 3. */
+  var CSS = '.g45lm-b{background:rgba(11,16,29,.94);border:1px solid #2a3a63;border-radius:14px;padding:14px;margin-bottom:12px;color:#fff;max-width:640px;box-sizing:border-box}'
     + '.g45lm-b .lm-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}'
     + '.g45lm-b .lm-h b{font-size:18px;font-weight:900}'
     + '.g45lm-b .lm-fsp{width:150px !important;flex:0 0 auto;min-width:0;padding:6px 8px;font-size:15px;background:#16213f;border:1px solid #2a3a63;border-radius:10px;color:#fff}'
