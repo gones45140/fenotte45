@@ -26816,6 +26816,7 @@ async function loadCalendrier() {
   allMatches = allMatches.filter(function(m){
     try { return window._g45AgLieuOk(m, _agMur(m)); } catch(e) { return true; }
   });
+  /* 20261125d : compétitions jouées par la carte → window._g45CkCompOk (bloc en fin de fichier) */
   try { window._g45AgDates = allMatches.map(function(m){ return Date.parse(m.date); }).filter(function(t){ return t > 0; }); } catch(e) {}   /* 20261017s : cache de l'Agenda */
   /* 20261028p — 🏁 COCKPIT BET45 (Tendances) : liste des matchs des cartes DU MUR (lieu déjà filtré par _g45AgLieuOk), gardée pour le jour
      (localStorage g45ck_ag {j, L [{t, n (carte), d (1 = domicile), adv, sp}]}) : l'Agenda gardé sur l'appareil (IndexedDB 'ag1') ne relit rien. */
@@ -26831,7 +26832,7 @@ async function loadCalendrier() {
         if (u) dS = 1; else { u = _agMur({ ourName: m.adv, sp: 'x' }); if (u) { dS = 0; inv = true; } }
         if (u) { var ics = String(u.sport || ''); spS = /🏒/.test(ics) ? 'hockey' : /🏀/.test(ics) ? 'basketball' : /🏈/.test(ics) ? 'football' : /⚾/.test(ics) ? 'baseball' : 'soccer'; }
       }
-      var t = Date.parse(m.date) || 0; if (!u || !t || _ckV[u.n + '|' + t]) return; _ckV[u.n + '|' + t] = 1;
+      var t = Date.parse(m.date) || 0; if (!u || !t || (window._g45CkCompOk && !window._g45CkCompOk(m, u)) || _ckV[u.n + '|' + t]) return; _ckV[u.n + '|' + t] = 1;
       _ckL.push({ t: t, n: u.n, d: dS, adv: String((inv ? m.ourName : m.adv) || ''), sp: spS || 'soccer' });
     });
     var _ckD = new Date(); window._g45CkAg = { j: _ckD.getFullYear() + '-' + (_ckD.getMonth() + 1) + '-' + _ckD.getDate(), L: _ckL, mur: (window._g45CkMurSig ? window._g45CkMurSig() : '') };   /* 20261029z2 : mur au moment de la lecture */
@@ -93646,4 +93647,34 @@ window._g45FaF = (function () {
     if (ch) { if (typeof save === 'function') save(); if (typeof render === 'function') render(); } } catch (e) {} }, 5000);
   window._g45DuoJoueurs = joueurs; window._g45DuoHabiller = habiller;   /* tests */
   setInterval(function () { try { var b = document.getElementById('ulist'); if (b && b.offsetParent) habiller(); } catch (e) {} }, 1500);
+})();
+(function () {
+/* ═══ 20261125d (capture Cockpit → Prochaines 24 h : Real Madrid – PSV, Arsenal – Dortmund, City – Napoli proposés « à engager » : « je parie en
+   championnat, pas en Ligue des champions ; sur mes cartes les différents championnats ne sont pas différenciés » → proposition → « oui ») :
+   compétitions JOUÉES par une carte = celles de ses paris (state.h + state.a, b.comp) + clés de ses échelles (u.lc / u.lcb / u.lm, « liga|dom »).
+   Un match de COUPE (Ligue des champions, Europa, Conférence, coupes nationales…) d'une compétition que la carte n'a jamais jouée est retiré de la
+   liste g45ck_ag (→ 📅 Prochaines 24 h et Cockpit BET45). Un match de CHAMPIONNAT reste toujours (pas de risque de perdre un match sur un nom
+   écrit autrement). Carte sans aucun pari → rien de retiré. L'Agenda, lui, garde TOUS les matchs (info). */
+var _ckNzC = function (x) { var k = typeof _g45CompNz === 'function' ? _g45CompNz(x) : String(x || '').toLowerCase(); return /conf/.test(k) ? 'conference' : k; };
+var _ckSlugNz = { 'uefa.champions': 'liguedeschampions', 'uefa.europa': 'ligueeuropa', 'uefa.europa.conf': 'conference' };
+window._g45CompCoupe = function (nom, slug) {
+  var s = String(slug || '').toLowerCase(), n = String(nom || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  if (/^(uefa|fifa|conmebol|concacaf|afc|caf)\./.test(s) || /(cup|copa|coupe|pokal|coppa|taca|super|_qual)/.test(s)) return true;
+  return /\bchampions\b|europa|conference|coupe|\bcup\b|copa|pokal|coppa|taca|supercup|super cup|libertadores|sudamericana|trophee des champions|community shield|mondial|world|qualif|nations|\beuro\b|amica|friendly/.test(n);
+};
+window._g45CarteComps = function (u) {
+  if (!u || !u.n) return null;
+  var S = {}, n = 0, add = function (c) { var k = _ckNzC(c); if (k && !S[k]) { S[k] = 1; n++; if (!window._g45CompCoupe(c, '')) lg = 1; } }, lg = 0;   /* lg : au moins un CHAMPIONNAT joué */
+  ((state.h || []).concat(state.a || [])).forEach(function (b) { if (b && b.n === u.n && b.comp) add(b.comp); });
+  [u.lc, u.lcb, (u.lm || {}).fib, (u.lm || {}).dal].forEach(function (o) { Object.keys(o || {}).forEach(function (k) { var c = String(k).split('|')[0]; if (c) add(c); }); });
+  return n && lg ? S : null;   /* sélection nationale (que des coupes) : rien de retiré, les noms de coupes varient trop */
+};
+window._g45CkCompOk = function (m, u) {
+  try {
+    if (!m || !u || !window._g45CompCoupe(m.comp, m.compSlug)) return true;
+    var S = window._g45CarteComps(u); if (!S) return true;
+    var k = _ckSlugNz[String(m.compSlug || '').toLowerCase()] || _ckNzC(m.comp);
+    return !!S[k];
+  } catch (e) { return true; }
+};
 })();
