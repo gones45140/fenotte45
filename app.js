@@ -78020,6 +78020,11 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
        passeur existe pas ») : NHL et foot → DUOS seulement en buteur 1 ou + ; les autres rôles restent testés joueur par joueur. */
     var spT = S.ctx ? S.ctx.sp : 'soccer', duoOk = function (ro) { return spT === 'hockey' ? (ro.jm === 'g' && +ro.jmin === 1) : spT === 'soccer' ? (ro.jm === '' && +ro.jmin === 1) : true; };
     ROL.forEach(function (ro) { var dOk = duoOk(ro); P.forEach(function (A, i) { out.push(mk(A, null, ro)); if (dOk) for (var j = i + 1; j < P.length; j++) out.push(mk(A, P[j], ro)); }); });
+    /* 20261125e (capture Top stratégies Carolina « au moins un de (Jarvis, Ehlers) buteur » : « si je veux un trio c'est impossible ? » → « oui ») :
+       + TRIOS « au moins un de (A, B, C) » aux mêmes rôles que les duos (NHL / foot : buteur 1 ou + seulement ; autres sports : tous), APRÈS les
+       duos (plafond 3 000 : 12 joueurs = 220 trios par rôle). Le calcul suit déjà 3 joueurs (joueurs(c), jx 'un' = au moins un). */
+    var mk3 = function (A, B2, C3, ro) { var c = mk(A, B2, ro); c.jo3 = C3.id; c.jn3 = C3.n; return c; };
+    ROL.forEach(function (ro) { if (!duoOk(ro)) return; for (var i = 0; i < P.length; i++) for (var j = i + 1; j < P.length; j++) for (var k = j + 1; k < P.length; k++) out.push(mk3(P[i], P[j], P[k], ro)); });
     return out.slice(0, 3000);
   }
   function bestCandsDe(c0) { return S.best.tous ? bestCandsTous() : bestCands(c0); }
