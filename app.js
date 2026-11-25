@@ -76743,7 +76743,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var JN = joueurs(c).map(function (x) { return x.n; }), JM = { pas: 'passeur', dec: 'décisif', dbl: 'doublé', tri: 'triplé' }[c.jm] || 'buteur';
     if (S.ctx && typeof _g45JouCfg === 'function' && _g45JouCfg(S.ctx.sp)) { var RJ = _g45JouCfg(S.ctx.sp).roles.filter(function (r) { return r.k === c.jm; })[0]; JM = (RJ ? RJ.lab.toLowerCase() : '') + (RJ && RJ.seuils ? ' ' + (c.jsens === 'un' ? 'moins' : 'plus') + ' de ' + (c.jbk && bkOk() ? 'la ligne du book' : String(jMinDe(c)).replace('.', ',')) : (jMinDe(c) > 1 ? ' (' + jMinDe(c) + ' ou +)' : '')); }   /* 20261022i ; 20261103h : ligne du book */
     if (JN.length === 1) p.push(JN[0] + ' ' + JM);
-    else if (JN.length > 1) p.push(c.jx === 'un' ? 'au moins un de (' + JN.join(', ') + ') ' + JM : /^c/.test(c.jx) ? 'buts cumulés de ' + JN.join(' + ') + ' +' + c.jx.slice(1, 2) + ',' + c.jx.slice(2) : JN.join(' et ') + ' ' + JM + 's');
+    else if (JN.length > 1) p.push(c.jx === 'un' ? 'au moins un de (' + JN.join(', ') + ') ' + JM : /^c\d/.test(c.jx) ? 'buts cumulés de ' + JN.join(' + ') + ' +' + c.jx.slice(1, 2) + ',' + c.jx.slice(2) : JN.join(' et ') + ' ' + JM + 's');   /* 20261125f (capture Top stratégies « buts cumulés de Jordan Staal + Seth Jarvis +h,a ») : /^c/ attrapait aussi « cha » (Chacun) → /^c\d/ (cumul c15…) */
     if (JN.length && rg() && c.jtit) p.push('titulaire seulement');   /* 20261103k */
     if (c.fs) p.push('Tirs du match ' + (c.fs === 'ov' ? 'Over ' : 'Under ') + c.FL);
     if (c.ts) p.push('Tirs équipe ' + (c.ts === 'ov' ? 'Over ' : 'Under ') + c.TSL);
