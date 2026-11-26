@@ -89537,6 +89537,27 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   var SPI = { soccer: '⚽', hockey: '🏒', basketball: '🏀', football: '🏈', baseball: '⚾', rugby: '🏉', 'rugby-league': '🏉' };
   var esc = function (t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
   var redessiner = function () { var z = document.getElementById('g45-loibil'); if (z) z.innerHTML = html(); };
+  /* 20261126a (pépite Anfernee Simons 3+ passes + capture de la compo : « le gus est remplaçant » → proposition 🪑 → « oui ») : NBA seulement.
+     ① y.ti (robot loi_series, titulaires gardés par cotes-archive depuis le 26/11, saison en cours rattrapée) = { b sorti du banc, n derniers matchs,
+     s remplaçant de suite depuis le dernier } → « 🪑 remplaçant 3 de ses 5 derniers matchs » / « depuis 2 matchs » / « sur ses 5 derniers matchs ».
+     ② match COMMENCÉ (moins de 4 h) pas encore réglé : summary ESPN (boxscore athletes[].starter, SONDÉ 25/11 : rempli seulement match commencé),
+     lu UNE fois par match (TIV, 0 = en cours, {} = rien) → « 🪑 remplaçant ce soir ». */
+  var TIV = {};
+  var tiH = function (y) {
+    if (!y || !y.jo || y.sp !== 'basketball') return '';
+    var t = [], now = Date.now();
+    if (y.r == null && y.t < now && y.t > now - 4 * 3600e3 && y.eid) {
+      var V = TIV[y.eid];
+      if (V === undefined) { TIV[y.eid] = 0;
+        fetch('https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event=' + encodeURIComponent(y.eid)).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }).then(function (d) {
+          var M = {}; try { ((d && d.boxscore && d.boxscore.players) || []).forEach(function (e) { (e.statistics || []).forEach(function (c) { (c.athletes || []).forEach(function (a) { if (a.athlete && a.athlete.id) M[String(a.athlete.id)] = !!a.starter; }); }); }); } catch (e) {}
+          TIV[y.eid] = M; redessiner(); });
+      } else if (V && V[String(y.jid)] === false) t.push('remplaçant ce soir');
+    }
+    var T = y.ti; if (T && T.b) t.push(T.b >= T.n ? 'remplaçant sur ses ' + T.n + ' derniers matchs' : T.s >= 2 ? 'remplaçant depuis ' + T.s + ' matchs' : 'remplaçant ' + T.b + ' de ses ' + T.n + ' derniers matchs');
+    return t.length ? '<br><span style="font-size:13px;font-weight:800;color:#ffd34d;">🪑 ' + t.join(' · ') + '</span>' : '';
+  };
+  window._g45TiH = tiH;   /* tests */
   function charger() {
     if (M.en || (M.d && Date.now() - M.t < 30 * 60e3)) return; M.en = 1;
     fetch(URL + '?t=' + Math.floor(Date.now() / 600000), { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : (r.status === 404 ? { L: [] } : null); })   /* 20261118r : no-store (le navigateur gardait l'ancien historique) */
@@ -89771,7 +89792,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
       + '<div style="font-size:13px;color:#c9d3ee;">' + (date ? '📅 ' + esc(String(x.j || '').slice(8, 10) + '/' + String(x.j || '').slice(5, 7)) + ' · ' : '') + (hh ? '🕒 ' + esc(hh) : '') + (x.ligue ? ' · 🏆 ' + esc(x.ligue) : '') + '</div>'
       /* 20261107y (« Venezia en double » → maquette loiG.png « oui ») : UNE carte par match ; chaque pari sur sa ligne avec son ✅ / ❌ / ⏳ ; score à droite */
       + (G || [x]).map(function (y, i) { var ic = y.r === 1 ? '<b style="color:#1ed760;">✅</b>' : y.r === 0 ? '<b style="color:#ff6b6b;">❌</b>' : y.r === -1 ? '🚫' : '⏳';
-          return '<div style="font-size:14px;display:flex;justify-content:space-between;gap:10px;' + (i === 0 && (G || []).length > 1 ? 'border-top:1px solid #2a3a63;margin-top:4px;padding-top:4px;' : '') + '"><span>' + esc(y.lib) + (y.av && y.av.length ? coteH(y) + '<br><span style="font-size:13px;color:#dfe6f7;">' + [y].concat(y.av).map(function (z) { return (lieuI(z).trim() || '') + ' ' + esc(z.eq) + ' 🔥 ' + z.cours + ' / ' + z.pire; }).join(' · ') + '</span>' : lieuI(y) + ' · 🔥 ' + y.cours + ' / ' + y.pire + coteH(y)) + montL(y) + '</span>' + ic + '</div>'; }   /* 20261113b : + 🪜 palier / mise / gain ; 20261109g : pari du match fusionné → séries des 2 équipes */).join('')
+          return '<div style="font-size:14px;display:flex;justify-content:space-between;gap:10px;' + (i === 0 && (G || []).length > 1 ? 'border-top:1px solid #2a3a63;margin-top:4px;padding-top:4px;' : '') + '"><span>' + esc(y.lib) + tiH(y) /* 20261126a */ + (y.av && y.av.length ? coteH(y) + '<br><span style="font-size:13px;color:#dfe6f7;">' + [y].concat(y.av).map(function (z) { return (lieuI(z).trim() || '') + ' ' + esc(z.eq) + ' 🔥 ' + z.cours + ' / ' + z.pire; }).join(' · ') + '</span>' : lieuI(y) + ' · 🔥 ' + y.cours + ' / ' + y.pire + coteH(y)) + montL(y) + '</span>' + ic + '</div>'; }   /* 20261113b : + 🪜 palier / mise / gain ; 20261109g : pari du match fusionné → séries des 2 équipes */).join('')
       /* 20261118q (captures Harden : « mettre un + dans la carte du bilan et faire comme la carte des pépites du jour ») : bouton ➕ → détail de
          chaque pari (ratés de suite, pire série par saison, paliers + sécurité, réussis) et « ➕ Créer la carte » si le match n'est pas joué. */
       + '<button onclick="g45LoiPlus(this)" style="margin-top:5px;border-radius:10px;padding:3px 12px;font-size:16px;font-weight:900;cursor:pointer;color:#fff;background:#2f6bff;border:1px solid #6d9dff;">➕</button>'
