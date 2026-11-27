@@ -90322,14 +90322,19 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   var DIRS = { soccer: 'foot', hockey: 'hockey', basketball: 'basket', football: 'football-us', baseball: 'baseball', rugby: 'rugby', 'rugby-league': 'rugby-xiii' };
   var AR0 = 'https://raw.githubusercontent.com/gones45140/gones45-archives/main/cotes/';
   var sansNul = function (sp) { return sp === 'basketball' || sp === 'baseball' || sp === 'football'; };
+  /* 20261127e (console d'Antoine : dizaines de 404 « nhl/2027-28 », « nhl/2026 », « nhl/2021-22 »… → « c'est normal ? ») : 16 dossiers essayés
+     d'un coup (2 formats × 8 ans) alors que 5 existent. Maintenant : saison EN COURS et 4 d'avant, format « 2026-27 » d'abord ; rien trouvé →
+     format civil « 2026 » ; le format qui marche est retenu par ligue (FMT) → plus d'essais inutiles. */
+  var FMT = {};
   function lignes(sp, lg, id, lieu) {
-    var y = new Date().getFullYear() + 1, C = [];
-    for (var a = y; a >= y - 7; a--) { C.push(a + '-' + String(a + 1).slice(2)); C.push(String(a)); }
-    var hr = Math.floor(Date.now() / 36e5);
-    return Promise.all(C.map(function (sa) {
+    var d = new Date(), cur = d.getMonth() + 1 >= 7 ? d.getFullYear() : d.getFullYear() - 1, hr = Math.floor(Date.now() / 36e5), kF = sp + '|' + lg;
+    var saDe = function (f) { var C = []; for (var a = (f === 'c' ? d.getFullYear() : cur); C.length < 5; a--) C.push(f === 'c' ? String(a) : a + '-' + String(a + 1).slice(2)); return C; };
+    var essai = function (f) { return Promise.all(saDe(f).map(function (sa) {
       return fetch(AR0 + DIRS[sp] + '/' + lg + '/' + sa + '/equipes/' + id + '.json?h=' + hr).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; })
         .then(function (j) { return j && j.m ? { sa: sa, m: j.m } : null; });
-    })).then(function (L) {
+    })); };
+    var f0 = FMT[kF] || 's';
+    return essai(f0).then(function (L) { if (L.some(Boolean)) { FMT[kF] = f0; return L; } var f1 = f0 === 's' ? 'c' : 's'; return essai(f1).then(function (L2) { if (L2.some(Boolean)) FMT[kF] = f1; return L2; }); }).then(function (L) {
       L = L.filter(function (x) { return x && x.m.length; }).sort(function (a, b) { return parseInt(b.sa, 10) - parseInt(a.sa, 10); }).slice(0, 5);
       var us = sp === 'hockey' || sp === 'basketball' || sp === 'football' || sp === 'baseball', R = [];
       L.forEach(function (x, i) { x.m.forEach(function (m) {
