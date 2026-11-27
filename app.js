@@ -78481,7 +78481,9 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
           + '<option value="">' + (slot === 1 ? 'Aucun joueur' : '+ joueur') + '</option>';
         /* 20261127j (critères Pro D2, Gabin Lorre parti de Béziers en 2025 : « certains joueurs n'y jouent plus » → proposition → « oui et griser ») :
            Pro D2 → joueurs de la SAISON EN COURS d'abord, puis groupe « ↩️ Anciens joueurs » GRISÉ (« · parti en 2025 » = fin de sa dernière saison au club). */
-        var PD2 = !!(S.ctx && S.ctx.lg === 'prod2' && CUR0 && Object.keys(CUR0).length), opt = function (x, anc) { return '<option value="' + x.id + '"' + (c[k] === x.id ? ' selected' : '') + (anc ? ' style="color:#8a93a8;"' : '') + '>' + esc(x.nom) + (x.v ? (c.jm === 'lp' ? ' · lanceur (' + x.v + ' départ' + (x.v > 1 ? 's' : '') + ')' : ' (' + x.v + ')') : '') + (anc ? ' · ' + anc : '') + '</option>'; };
+        /* 20261127o (capture critères Minnesota Wild NHL : « faudrait faire pareil qu'au rugby, les joueurs plus là ») : TOUS les sports, plus seulement
+           la Pro D2. Garde-fou : 8 joueurs au moins déjà vus cette saison (sinon début de saison → liste à plat comme avant). */
+        var PD2 = !!(CUR0 && Object.keys(CUR0).length >= 8), opt = function (x, anc) { return '<option value="' + x.id + '"' + (c[k] === x.id ? ' selected' : '') + (anc ? ' style="color:#8a93a8;"' : '') + '>' + esc(x.nom) + (x.v ? (c.jm === 'lp' ? ' · lanceur (' + x.v + ' départ' + (x.v > 1 ? 's' : '') + ')' : ' (' + x.v + ')') : '') + (anc ? ' · ' + anc : '') + '</option>'; };
         if (PD2) {
           var SAi = ((S.data[nom] || {}).saisons || []), parti = function (a) { for (var q = 1; q < S.uiI.length; q++) { if (S.uiI[q] && S.uiI[q].joueurs && S.uiI[q].joueurs[a]) return SAi[q] && SAi[q].an ? 'parti en ' + (SAi[q].an + 1) : 'ancien'; } return 'ancien'; };
           LJ.filter(function (x) { return CUR0[x.id]; }).forEach(function (x) { t += opt(x); });
