@@ -73814,6 +73814,8 @@ async function _g45TicketIa(dataUrl) {
        « Vainqueur » = prolongation et tirs au but COMPRIS, « Victoire » = temps réglementaire seul → deux paris différents, à ne pas mélanger. */
     + 'Un marché « Vainqueur <équipe> » (ou « Vainqueur du match », « Gagnant prolongation comprise ») reste « Vainqueur <équipe> » : ne le change JAMAIS en « Victoire » (ce n\'est pas le même pari). '
     + '"selections":["TOUS les pilotes / coureurs choisis, pour une COURSE (F1, MotoGP, cyclisme)"] ou null,'
+    /* 20261127r (capture ticket combiné Sinayoko décisif / Chelsea / Kelleher essai, onglet Combiné : « rien se lit sur un combiné ») */
+    + '"legs":[{"equipe":"équipe de la sélection (pour un joueur : SON équipe)","adversaire":"l\'autre équipe du match","joueur":"joueur ou null","type":"marché court en français (ex : Victoire Chelsea, Buteur, Joueur décisif, Marqueur d\'essai)","cote":cote de CETTE sélection,"sport":"football, rugby, hockey…","competition":"ou null","date":"AAAA-MM-JJ ou null","heure":"HH:MM ou null"}] : pour un COMBINÉ (plusieurs sélections sur UN même ticket), UNE entrée par sélection, dans l\'ordre du ticket ; sinon null,'
     + '"cote":cote TOTALE du ticket (PAS les gains potentiels),"mise":montant misé en euros,"gains":gains potentiels en euros ou null,"bookmaker":"nom du site","bookmaker_sur":true ou false,"etat":"en_cours, gagne, perdu, rembourse ou null (étiquette d\'état du ticket : En cours / Gagné / Perdu)"}\n'
     + 'BOOKMAKER : WINAMAX = carte bleu nuit, étiquette d\'état en haut à gauche (« En cours » jaune avec chrono, « Gagné » vert, « Perdu » rouge), '
     + 'cote dans une pastille BLANCHE en chiffres rouges, lignes « Mise » / « Gains potentiels » (gains en jaune), bouton « COMPLÉTER », bas de ticket '
@@ -74007,8 +74009,10 @@ async function _g45TicketTesseract(dataUrl) {
       console.log('ticket lu (' + via + ')', o);
       /* 20261023s (capture : le secours Tesseract a pris « 1D:3142973174 2026-10-22 » — la ligne ID d'un ticket Pinnacle — pour l'équipe) */
       ['equipe', 'adversaire'].forEach(function (k) { if (o && /^\s*[1Il]D\s*:|^\s*\d{6,}|\d{4}-\d{2}-\d{2}/.test(String(o[k] || ''))) o[k] = null; });
-      var _ck = _g45TicketCockpit(); var ids = _ck ? _g45TicketRemplirCockpit(o) : _g45TicketRemplir(o);
-      try { setTimeout(function () { window._g45TicketMatch(o, _ck); }, 400); } catch (e) {}   /* 20261023t : match retrouvé → adversaire, heure */
+      /* 20261127r : onglet Combiné ouvert → les sélections du ticket vont dans le combiné (une ligne par sélection) */
+      var _cbE = document.getElementById('sub-combi'), _cb = !!(_cbE && _cbE.offsetParent !== null && typeof window._g45TicketRemplirCombi === 'function');
+      var _ck = !_cb && _g45TicketCockpit(); var ids = _cb ? window._g45TicketRemplirCombi(o) : _ck ? _g45TicketRemplirCockpit(o) : _g45TicketRemplir(o);
+      if (!_cb) try { setTimeout(function () { window._g45TicketMatch(o, _ck); }, 400); } catch (e) {}   /* 20261023t : match retrouvé → adversaire, heure */
       try { _g45TicketCouleurs(_ck, ids); } catch (e) { console.warn('ticket couleurs', e && e.message); }
       av.textContent = ids.length ? ('✅ Ticket lu (' + via + ') : ' + ids.length + ' champs remplis — vérifie avant d\'enregistrer') : '⚠️ Rien trouvé sur le ticket';
       /* 20261023r (« il n'a pas su lire la mise et le site » sur un ticket Pinnacle, sur téléphone sans console) : on écrit CE QUE L'IA A LU
@@ -94148,3 +94152,38 @@ window._g45CkCompOk = function (m, u) {
   try { _renderSaisonDetail = window._renderSaisonDetail; _renderGenericDetail = window._renderGenericDetail; } catch (e) {}
   window._g45Jds = { lire: lire, stat: stat, poser: poser };   /* tests */
 })();
+
+/* ═══ 20261127r — 🎫 TICKET COMBINÉ (capture : ticket Winamax combiné 3 sélections collé avec l'onglet Pari → Combiné ouvert : « rien se lit sur un
+   combiné »). Le remplissage ne connaissait que le pari simple (n-…) et le Cockpit (c-…) ; l'IA ne lisait qu'un pari. Maintenant l'IA rend
+   aussi legs[] (une entrée par sélection) et, onglet Combiné ouvert, chaque sélection devient une ligne du combiné (combiRows : sport,
+   compétition, équipe / joueur, adversaire, type, cote) ; cote totale du ticket ≠ produit → « Cote du book » ; mise, site, date, heure.
+   Pas de legs (secours Tesseract…) → une seule ligne avec ce qui a été lu. Rend la liste des champs remplis (comme les autres). ═══ */
+window._g45TicketRemplirCombi = function (o) {
+  o = o || {}; var ids = [];
+  var num = function (v) { var n = parseFloat(String(v == null ? '' : v).replace(',', '.').replace(/[^\d.]/g, '')); return isFinite(n) && n > 0 ? n : null; };
+  var met = function (id, v) { var e = document.getElementById(id); if (!e || v == null || v === '') return; e.value = v; ids.push(id); try { e.dispatchEvent(new Event('input', { bubbles: true })); e.dispatchEvent(new Event('change', { bubbles: true })); } catch (x) {} };
+  var SP = { football: '⚽', soccer: '⚽', foot: '⚽', basket: '🏀', basketball: '🏀', tennis: '🎾', nfl: '🏈', 'football americain': '🏈', hockey: '🏒', baseball: '⚾', rugby: '🏉', nrl: '🏉🇦🇺', f1: '🏎', 'formule 1': '🏎', mma: '🥊', ufc: '🥊', cyclisme: '🚴' };
+  var spDe = function (t) { return SP[String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim()] || '⚽'; };
+  var L = Array.isArray(o.legs) && o.legs.length ? o.legs : [o];
+  combiRows.length = 0;
+  L.forEach(function (g, i) {
+    g = g || {}; var c = num(g.cote);
+    var team = g.joueur ? String(g.joueur) + (g.equipe ? ' (' + g.equipe + ')' : '') : (g.equipe || '');
+    combiRows.push({ id: Date.now() + i, sport: spDe(g.sport || o.sport), comp: g.competition || '', team: team, adv: g.adversaire || '', type: g.type || '', cote: c && c < 1000 ? +c.toFixed(2) : 1.5 });
+  });
+  try { renderCombiRows(); } catch (e) {}
+  if (combiRows.length) ids.push('combi-rows');
+  var tot = num(o.cote), prod = combiRows.reduce(function (p, r) { return p * (+r.cote || 1); }, 1);
+  if (tot && tot < 100000 && Math.abs(tot - prod) > 0.02 * prod) met('combi-cote-book', tot.toFixed(2));
+  var m = num(o.mise); if (m) met('combi-mise', m);
+  var g0 = L[0] || {}, dt = o.date || g0.date, hr = o.heure || g0.heure;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(String(dt || ''))) met('combi-date', dt);
+  if (/^\d{1,2}:\d{2}$/.test(String(hr || ''))) met('combi-heure', String(hr).padStart(5, '0'));
+  if (o.bookmaker) {
+    var be = document.getElementById('combi-book'), bk = String(o.bookmaker).toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (be && bk) { var op = [].filter.call(be.options, function (x) { return (x.value + ' ' + x.text).toLowerCase().replace(/[^a-z0-9]/g, '').indexOf(bk) >= 0; })[0];
+      if (op) { be.value = op.value; ids.push('combi-book'); try { be.dispatchEvent(new Event('change', { bubbles: true })); } catch (x) {} } }
+  }
+  try { updateCombiCote(); } catch (e) {}
+  return ids;
+};
