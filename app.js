@@ -77228,6 +77228,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     return O.map(function (k) {
       var e = T.nm[k] || [], nom = k === cid ? (S.nom || e[0] || '') : (e[0] || ''), ab = String(e[1] || '').toLowerCase();
       var u = ''; try { u = (typeof window._g45LogoIndex === 'function' && window._g45LogoIndex(nom)) || ''; } catch (x) {}
+      if (!u && S.ctx && S.ctx.lg === 'prod2') { try { u = window._g45Pd2Hist.logo(k) || ''; } catch (x) {} }   /* 20261127i (« oui logo » : Béziers affiché « AS B ») : logo LNR gardé avec l'historique Pro D2 */
       if (!u && ft) u = 'https://a.espncdn.com/i/teamlogos/soccer/500/' + esc(k) + '.png';   /* 20261107o : foot = logo ESPN par numéro de club */
       else if (!u && ab && !rg()) u = 'https://a.espncdn.com/i/teamlogos/' + esc(S.ctx.lg) + '/500/' + esc(ab) + '.png';
       return '<span title="' + esc(nom) + '" style="display:flex;align-items:center;gap:5px;width:max-content;background:rgba(0,0,0,.45);border-radius:6px;padding:2px 6px;margin:2px 0;font-size:14px;font-weight:700;color:#fff;">'
@@ -93972,6 +93973,12 @@ window._g45CkCompOk = function (m, u) {
         d.innerHTML = '<button onclick="g45Pd2Criteres(' + JSON.stringify(sl).replace(/"/g, '&quot;') + ',' + JSON.stringify(c.n).replace(/"/g, '&quot;') + ')" style="margin:8px 0;border-radius:10px;padding:9px 14px;font-size:15px;font-weight:800;cursor:pointer;color:#fff;background:#2f6bff;border:1px solid #6d9dff;">📊 Critères 5 saisons</button>';
         var hd = box.firstElementChild; if (hd) hd.insertBefore(d, hd.children[1] || null); } } catch (e) {}
     return r; };
-  window._g45Pd2Hist = { maj: maj, n: nMatchs, nf: nFeuilles, H: H, charger: charger, saisons: saisons, dateDe: dateDe, lireF: lireF };   /* tests */
+  function logoDe(sl) {   /* 20261127i : logo LNR d'un club (slug) pris dans les matchs gardés, saison la plus récente d'abord */
+    var S = Object.keys(H).sort().reverse();
+    var abs = function (u) { u = String(u || ''); return /^\/\//.test(u) ? 'https:' + u : /^\//.test(u) ? 'https://prod2.lnr.fr' + u : u; };
+    for (var i = 0; i < S.length; i++) { var M = H[S[i]].M || {}; for (var j in M) { var L = M[j] || []; for (var k = 0; k < L.length; k++) { var m = L[k]; var u = m.h === sl ? abs(m.hl) : m.a === sl ? abs(m.al) : ''; if (/^https?:\/\//.test(u)) return u.replace(/^http:/, 'https:'); } } }
+    return '';
+  }
+  window._g45Pd2Hist = { logo: logoDe, maj: maj, n: nMatchs, nf: nFeuilles, H: H, charger: charger, saisons: saisons, dateDe: dateDe, lireF: lireF };   /* tests */
   setTimeout(function () { charger().then(function () { if (Object.keys(H).length) maj(null, true); }); }, 20000);
 })();
