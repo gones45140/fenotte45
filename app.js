@@ -4813,7 +4813,14 @@ function injectRefreshButton() {
   b.id = 'smart-refresh-btn';
   b.innerHTML = '🔄';
   b.title = 'Rafraîchir cette page';
-  b.onclick = smartRefresh;
+  /* 20261127k — VRAI RECHARGEMENT (Antoine : « faut qu'il serve comme ce bouton là », capture du ↻ du navigateur). Avant, il ne
+     faisait que redessiner le mur ou la fiche : rien de visible sur les autres écrans (critères du Cockpit…) et jamais la
+     nouvelle version d'app.js. Maintenant = le ↻ du navigateur : la page est rechargée (sw.js sert index.html / app.js en
+     no-store → toujours la dernière version). smartRefresh reste pour qui l'appelle encore. */
+  b.onclick = function () {
+    try { b.style.transition = 'transform .5s'; b.style.transform = 'rotate(360deg)'; } catch (e) {}
+    setTimeout(function () { try { location.reload(); } catch (e) { smartRefresh(); } }, 150);
+  };
   /* 04/09, retour d'Antoine : « ce bouton est particulierement chiant ».
      Il flottait au-dessus du contenu sur TOUS les ecrans, et tombait pile sur
      les boutons de marche de la page Pari. Il fait de surcroit doublon sur
