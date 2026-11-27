@@ -78020,10 +78020,9 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     /* 20261127f (capture Top stratégies Minnesota, 👤 Mes joueurs Kaprizov + Eriksson Ek : « POURQUOI j'ai encore double chance pointeur / passeur ??? ») :
        la règle 20261123y (« au moins un de (A, B) » = BUTEUR 1 ou + seulement en NHL / foot, le book ne propose rien d'autre) n'était appliquée qu'à
        👥 Tous les joueurs (bestCandsTous) → même filtre ici quand le formulaire a 2-3 joueurs en « Au moins un ». */
-    /* 20261127l (capture Top stratégies Minnesota « Kirill Kaprizov ET Joel Eriksson Ek pointeurs » : « toujours pas corrigé ça ? ») : le filtre
-       ne regardait que « au moins un » (jx 'un') ; le formulaire était en « les deux » (jx 'et') → même règle pour tout combiné à 2-3 joueurs
-       en NHL / foot : buteur 1 ou + seulement. */
-    if (J.length > 1 && (sp === 'hockey' || sp === 'soccer')) ROL = ROL.filter(function (ro) { return +ro.jmin === 1 && (sp === 'hockey' ? ro.jm === 'g' : ro.jm === ''); });
+    /* 20261127m — ANNULE 20261127l (Antoine : « je m'étais trompé, c'est double ou trio ; la sélection de base c'est Chacun, il y avait 0 erreur ») :
+       « Chacun » (jx 'et') = chaque joueur fait son rôle = paris séparés qui existent au book (pointeur compris) → on ne filtre QUE « au moins un ». */
+    if (J.length > 1 && c0.jx === 'un' && (sp === 'hockey' || sp === 'soccer')) ROL = ROL.filter(function (ro) { return +ro.jmin === 1 && (sp === 'hockey' ? ro.jm === 'g' : ro.jm === ''); });
     var RJ = [''].concat(us() ? ['vqr'] : ['vic']), XJ = [X[0]].concat(X.filter(function (f, i) { return i > 0 && i <= LO.length * 2; }));
     ROL.forEach(function (ro) { RJ.forEach(function (r) { XJ.forEach(function (f) { var c = base(); c.jm = ro.jm; c.jmin = ro.jmin; c.res = r; f(c); out.push(c); }); }); });
     return out;
