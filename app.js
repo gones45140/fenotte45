@@ -90181,6 +90181,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
     return 'ch'; };
   window.g45LoiBilF = function (q, v) { if (q === 's') M.fs = v; else if (q === 'p') M.per = v; else if (q === 'k') M.fco = v || ''; else if (q === 'j') { try { localStorage.setItem('g45_loi_jo', v || ''); } catch (e) {} } else if (q === 'm') { try { localStorage.setItem('g45_loi_pmax', String(+v || 0)); } catch (e) {} } else M.fc = +v || 0; M.j = ''; redessiner(); };   /* 20261113g : p = période */
   window.g45LoiBilTout = function () { M.tout = !M.tout; redessiner(); };
+  window._g45LoiBilRedessiner = function () { try { redessiner(); } catch (e) {} };   /* 20261127v : redessin du bilan à l'arrivée des moyennes NBA (27u) */
   window.g45LoiBilVue = function (k) { M.vue = k; redessiner(); };   /* 20261108o */
 })();
 
@@ -94204,10 +94205,11 @@ window._g45TicketRemplirCombi = function (o) {
   var NBAJ = null, nbaLu = 0;
   var nbaMoy = function (jid) { var a = NBAJ && NBAJ[String(jid || '')]; return a ? (+((a[3] || {}).PTS) || 0) / Math.max(1, +a[2] || 1) : null; };
   var pj = function (L) {
-    if (!NBAJ) { if (!nbaLu && window._g45Jds && window._g45Jds.lire) { nbaLu = 1; window._g45Jds.lire('basket', 'nba').then(function (j) { if (j) { NBAJ = j; try { window._g45LoiT && window._g45LoiT.dessiner && window._g45LoiT.dessiner(); } catch (e) {} } else nbaLu = 0; }, function () { nbaLu = 0; }); } return; }
+    if (!NBAJ) { if (!nbaLu && window._g45Jds && window._g45Jds.lire) { nbaLu = 1; window._g45Jds.lire('basket', 'nba').then(function (j) { if (j) { NBAJ = j; try { window._g45LoiT && window._g45LoiT.dessiner && window._g45LoiT.dessiner(); } catch (e) {} try { window._g45LoiBilRedessiner && window._g45LoiBilRedessiner(); } catch (e) {} } else nbaLu = 0; }, function () { nbaLu = 0; }); } return; }
     L.forEach(function (x) { if (x.nc || !x.jo || x.sp !== 'basketball' || x.sv || x.mo) return; var m = nbaMoy(x.jid); if (m == null || m < 20) { x.nc = 1; x.nf = 11; } });
   };
   window._g45LoiNba = { moy: nbaMoy, poser: function (j) { NBAJ = j; } };   /* tests */
+  setTimeout(function () { try { pj([]); } catch (e) {} }, 4000);   /* 20261127v : moyennes NBA lues dès le démarrage (bilan juste du 1er coup) */
   var reev = function (x) { x.mo = 0; x.nc = 0; x.nf = 0; try { ex0([x]); pj([x]); } catch (e) {} x.mo = 1; };
   var f = function (L) {
     var r = ex0.apply(this, arguments);
