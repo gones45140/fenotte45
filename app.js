@@ -77997,6 +77997,10 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     var CF = S.ctx && typeof _g45JouCfg === 'function' ? _g45JouCfg(S.ctx.sp) : null;
     if (CF) CF.roles.forEach(function (r) { var SE = r.seuils ? r.seuils.map(Number) : [1, 2]; SE.forEach(function (n) { ROL.push({ jm: r.k, jmin: n }); }); });
     else [['', 1], ['', 2], ['pas', 1], ['dec', 1]].forEach(function (x) { ROL.push({ jm: x[0], jmin: x[1] }); });
+    /* 20261127f (capture Top stratégies Minnesota, 👤 Mes joueurs Kaprizov + Eriksson Ek : « POURQUOI j'ai encore double chance pointeur / passeur ??? ») :
+       la règle 20261123y (« au moins un de (A, B) » = BUTEUR 1 ou + seulement en NHL / foot, le book ne propose rien d'autre) n'était appliquée qu'à
+       👥 Tous les joueurs (bestCandsTous) → même filtre ici quand le formulaire a 2-3 joueurs en « Au moins un ». */
+    if (J.length > 1 && c0.jx === 'un' && (sp === 'hockey' || sp === 'soccer')) ROL = ROL.filter(function (ro) { return +ro.jmin === 1 && (sp === 'hockey' ? ro.jm === 'g' : ro.jm === ''); });
     var RJ = [''].concat(us() ? ['vqr'] : ['vic']), XJ = [X[0]].concat(X.filter(function (f, i) { return i > 0 && i <= LO.length * 2; }));
     ROL.forEach(function (ro) { RJ.forEach(function (r) { XJ.forEach(function (f) { var c = base(); c.jm = ro.jm; c.jmin = ro.jmin; c.res = r; f(c); out.push(c); }); }); });
     return out;
@@ -78091,6 +78095,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   };
   window._g45CrBest = function (D) { return bestCalc(D); };   /* tests */
   window._g45BestTous = function () { return bestCandsTous(); };   /* tests 20261123h */
+  window._g45BestCands = function (c0) { return bestCands(c0); };   /* tests 20261127f */
   function tableau(c, D0) {
     var NSc = nsCr(D0), D = NSc < (D0.saisons || []).length ? Object.assign({}, D0, { saisons: D0.saisons.slice(0, NSc) }) : D0, DX = (D0.saisons || []).slice(NSc);
     if (c.jbk && bkOk() && !S.bkE[S.ctx.lg + '|' + S.ctx.id]) bkCharger();   /* 20261103h : lignes du book lues une fois par équipe */
