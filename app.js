@@ -86428,7 +86428,10 @@ window._g45TrTestVoit = function () { try { return (typeof _g45SanteActive === '
   window.g45MvtFiltre = function (f) { try { localStorage.setItem('g45_mvt_f', f); } catch (e) {} window._g45MvtRender(); };
   window._g45MvtLignes = function () {
     var L = [];
-    ((window.state && state.mvt) || []).forEach(function (m) { L.push({ t: m.v > 0 ? 'dep' : 'ret', d: m.d, k: m.k, v: m.v, txt: (m.v > 0 ? '⬆️ Dépôt' : '⬇️ Retrait'), sous: ico(m.k) + ' ' + nomBk(m.k) + ' · solde ' + fr(m.av) + ' → ' + fr(m.ap) + ' €' }); });
+    ((window.state && state.mvt) || []).forEach(function (m) {
+      /* 20261127c : virement entre deux comptes = 2 lignes (vr commun) → UNE ligne « 🔁 Virement A → B », la ligne de départ (v < 0) seule */
+      if (m.vr) { if (m.v < 0) L.push({ t: 'vir', d: m.d, k: m.k, v: m.v, txt: '🔁 Virement', sous: ico(m.k) + ' ' + nomBk(m.k) + ' → ' + ico(m.k2) + ' ' + nomBk(m.k2) + ' · ' + fr(-m.v) + ' €' }); return; }
+      L.push({ t: m.v > 0 ? 'dep' : 'ret', d: m.d, k: m.k, v: m.v, txt: (m.v > 0 ? '⬆️ Dépôt' : '⬇️ Retrait'), sous: ico(m.k) + ' ' + nomBk(m.k) + ' · solde ' + fr(m.av) + ' → ' + fr(m.ap) + ' €' }); });
     ((window.state && state.aboH) || []).forEach(function (h) { L.push({ t: 'abo', d: h.d, k: h.b, v: -h.m, txt: '💳 ' + h.n, sous: ico(h.b) + ' ' + nomBk(h.b) }); });
     L.sort(function (a, b) { return a.d < b.d ? 1 : (a.d > b.d ? -1 : 0); });
     return L;
@@ -86440,7 +86443,7 @@ window._g45TrTestVoit = function () { try { return (typeof _g45SanteActive === '
     if (!box) { box = document.createElement('div'); box.id = 'g45-mvt'; }
     if (box.previousElementSibling !== ap) ap.parentNode.insertBefore(box, ap.nextSibling);
     var f = filtre(), L = window._g45MvtLignes(), mois = ymd(new Date()).slice(0, 7);
-    var dep = 0, ret = 0; L.forEach(function (x) { if (x.d.slice(0, 7) !== mois) return; if (x.v > 0) dep += x.v; else ret += x.v; });
+    var dep = 0, ret = 0; L.forEach(function (x) { if (x.d.slice(0, 7) !== mois || x.t === 'vir') return; if (x.v > 0) dep += x.v; else ret += x.v; });
     var V = L.filter(function (x) { return f === 'tout' || x.t === f; }).slice(0, 40);
     var MOIS = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
     var bt = function (k, lib) { var on = f === k; return '<button onclick="g45MvtFiltre(\'' + k + '\')" style="border:1px solid ' + (on ? '#2f6bff' : 'rgba(255,255,255,.25)') + ';background:' + (on ? '#2f6bff' : 'transparent') + ';border-radius:8px;padding:6px 11px;font-size:13px;font-weight:' + (on ? 900 : 700) + ';color:#fff;cursor:pointer;">' + lib + '</button>'; };
@@ -93713,4 +93716,49 @@ window._g45CkCompOk = function (m, u) {
     return !!S[k];
   } catch (e) { return true; }
 };
+})();
+/* ═══ 20261127c — 🔁 VIREMENT ENTRE DEUX COMPTES (Antoine : « un mouvement de ma bank vers un book ou inversement c'est pas possible directement ? » →
+   proposition De / Vers / Montant → « oui ») : bloc sous « Mouvement de fonds » (posé par JS, index.html et indexfenotte.html intacts).
+   Compte de départ − montant, compte d'arrivée + montant ; 2 lignes state.mvt liées (vr commun, k2 = l'autre compte) → la synchro (20261127a,
+   lignes appliquées par leur montant v) les rejoue sur l'autre appareil ; Total déposé (somme des v) ne bouge pas ; historique = 1 ligne 🔁.
+   Solde de départ insuffisant → message, rien n'est fait. ═══ */
+(function () {
+  var ymd = function (d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+  var opts = function () { var mv = document.getElementById('mv-book'); return mv ? mv.innerHTML : ''; };
+  function poser() {
+    var mv = document.getElementById('mv-book'), fc = mv && mv.closest('.fc'); if (!fc) return;
+    var box = document.getElementById('g45-vir');
+    if (!box) {
+      box = document.createElement('div'); box.id = 'g45-vir';
+      box.innerHTML = '<div class="sec">🔁 Virement</div><div class="fc">'
+        + '<label class="fl">De</label><select id="vir-de" class="fi" style="margin:4px 0 8px;"></select>'
+        + '<label class="fl">Vers</label><select id="vir-vers" class="fi" style="margin:4px 0 8px;"></select>'
+        + '<input type="number" id="vir-amt" class="fi" placeholder="Montant €" inputmode="decimal" style="text-align:center;">'
+        + '<button class="sfbtn" style="width:100%;margin-top:8px;text-align:center;font-size:15px;font-weight:800;border-color:rgba(77,132,255,.5);color:#fff;background:#2f6bff;" onclick="g45Virer()">🔁 Virer</button></div>';
+      fc.parentNode.insertBefore(box, fc.nextSibling);
+    }
+    var o = opts(); ['vir-de', 'vir-vers'].forEach(function (id) { var e = document.getElementById(id); if (e && e.getAttribute('data-o') !== o) { var v = e.value; e.innerHTML = o; e.setAttribute('data-o', o); if (v) e.value = v; } });
+  }
+  window.g45Virer = function () {
+    try {
+      var de = (document.getElementById('vir-de') || {}).value, vers = (document.getElementById('vir-vers') || {}).value;
+      var amt = Math.round(parseFloat(String((document.getElementById('vir-amt') || {}).value || '').replace(',', '.')) * 100) / 100;
+      if (!de || !vers) { alert('Choisis les deux comptes.'); return; }
+      if (de === vers) { alert('Choisis deux comptes différents.'); return; }
+      if (!(amt > 0)) { alert('Tape un montant.'); return; }
+      var a = parseFloat(state.b[de]) || 0, b = parseFloat(state.b[vers]) || 0;
+      if (a < amt) { alert('Pas assez sur le compte de départ (' + a.toFixed(2).replace('.', ',') + ' €).'); return; }
+      state.b[de] = (Math.round((a - amt) * 100) / 100).toFixed(2); state.b[vers] = (Math.round((b + amt) * 100) / 100).toFixed(2);
+      var id = 'mv' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), d = ymd(new Date());
+      if (!state.mvt) state.mvt = [];
+      state.mvt.unshift({ id: id + 'b', d: d, k: vers, k2: de, v: amt, av: b, ap: Math.round((b + amt) * 100) / 100, vr: id }, { id: id + 'a', d: d, k: de, k2: vers, v: -amt, av: a, ap: Math.round((a - amt) * 100) / 100, vr: id });
+      if (state.mvt.length > 500) state.mvt.length = 500;
+      var e = document.getElementById('vir-amt'); if (e) e.value = '';
+      try { save(); } catch (x) {} try { if (typeof _g45PushBetsGithub === 'function') _g45PushBetsGithub(true); } catch (x) {}
+      try { render(); } catch (x) {}
+    } catch (x) { alert('Virement impossible : ' + x.message); }
+  };
+  var r0 = window.render;
+  if (typeof r0 === 'function') window.render = function () { var r = r0.apply(this, arguments); try { poser(); } catch (e) {} return r; };
+  try { poser(); } catch (e) {}
 })();
