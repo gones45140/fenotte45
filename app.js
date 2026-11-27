@@ -28786,13 +28786,14 @@ function setArchFilter(f, el) {
 }
 // ── BANK — total ──
 function updateBankTotal() {
+  /* 20261127b (capture Bank « TOTAL DÉPOSÉ 0.00 € » → « oui ») : lisait state.books, qui n'existe plus → toujours 0. Maintenant = dépôts − retraits
+     de l'historique des mouvements (state.mvt : 💸 Mouvement de fonds et ✏️ Modifier, notés depuis le 27/10/2026 ; abonnements à part). */
   var total = 0;
-  if(state.books) {
-    state.books.forEach(function(b){ total += (b.balance||0); });
-  }
+  (state.mvt || []).forEach(function(m){ total += (+(m && m.v) || 0); });
   var el = document.getElementById('bank-total');
-  if(el) el.textContent = total.toFixed(2) + ' €';
+  if(el) el.innerHTML = (Math.round(total * 100) / 100).toFixed(2) + ' €<div style="font-size:13px;font-weight:600;color:#c9d3ee;margin-top:2px;">dépôts − retraits depuis le 27/10</div>';
 }
+window.updateBankTotal = updateBankTotal;   /* 20261127b : appelée aussi après chaque render (bloc mvt) */
 
 var _bcp=document.getElementById('btn-chat-params-pc');if(_bcp)_bcp.onclick=function(){toggleChatParamsPC();};var _bcm=document.getElementById('btn-chat-params-mobile');if(_bcm)_bcm.onclick=function(){toggleChatParams();};
   var _bgen=document.getElementById('btn-generate-pari');if(_bgen)_bgen.onclick=function(){generatePariDuJour();};
@@ -86478,7 +86479,7 @@ window._g45TrTestVoit = function () { try { return (typeof _g45SanteActive === '
     return n;
   };
   var r0 = window.render;
-  if (typeof r0 === 'function') window.render = function () { var r = r0.apply(this, arguments); try { window._g45MvtRender(); } catch (e) {} return r; };
+  if (typeof r0 === 'function') window.render = function () { var r = r0.apply(this, arguments); try { window._g45MvtRender(); } catch (e) {} try { window.updateBankTotal(); } catch (e) {} /* 20261127b */ return r; };
   try { window._g45MvtRender(); } catch (e) {}
 })();
 
