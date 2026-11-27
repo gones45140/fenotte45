@@ -94192,7 +94192,7 @@ window._g45TicketRemplirCombi = function (o) {
    compter ? »). Le robot (loi_series.mjs, 20261116f) marque mo = 1 toute pépite dont le DERNIER résultat de même équipe | pari | lieu est ❌ ;
    il ne connaît pas les règles « ➖ non compté » de l'appli. Willem II Victoire ✈️ du 22/11 (cote > 4, dernier du championnat) était NON
    COMPTÉE → jamais jouée, mais sa défaite a « ouvert » une montante → le 27/11, mo = 1 passait outre tous les filtres. Correctif : après les
-   règles, chaque pépite mo dont la dernière pépite jugée (même clé, avant elle) est non comptée (ou absente de l'historique) est réévaluée
+   règles, chaque pépite mo dont la dernière pépite jugée (même clé, avant elle) est non comptée est réévaluée
    SANS l'exemption (ordre chronologique : une chaîne de non comptées reste non comptée). Pépites du jour : clés gardées du dernier bilan. ═══ */
 (function () {
   var ex0 = window._g45LoiExclure; if (typeof ex0 !== 'function' || ex0._g45Mo) return;
@@ -94206,7 +94206,7 @@ window._g45TicketRemplirCombi = function (o) {
         var der = {}, KO = {};
         L.slice().sort(function (a, b) { return (+a.t || 0) - (+b.t || 0); }).forEach(function (x) {
           var k = cle(x);
-          if (x.mo && !x.sv && !x.nc) { var p = der[k]; if (!p || p.nc) reev(x); }
+          if (x.mo && !x.sv && !x.nc) { var p = der[k]; if (p && p.nc) reev(x); }   /* 20261127t : précédente ABSENTE (historique coupé, ~ 60 cas) → on garde l'exemption du robot (« gros tri ») */
           if (x.r === 0 || x.r === 1) der[k] = x;
         });
         Object.keys(der).forEach(function (k) { if (der[k].r === 0 && der[k].nc) KO[k] = 1; });
