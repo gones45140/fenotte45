@@ -78470,7 +78470,14 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       var selU = function (slot, k) {
         var t = '<select onchange="g45CrJoueur(this.value,' + slot + ')" style="background:#16213f;color:#fff;border:1px solid #6d9dff;border-radius:8px;padding:7px 10px;font-size:14px;margin:0 6px 6px 0;max-width:100%;">'
           + '<option value="">' + (slot === 1 ? 'Aucun joueur' : '+ joueur') + '</option>';
-        LJ.forEach(function (x) { t += '<option value="' + x.id + '"' + (c[k] === x.id ? ' selected' : '') + '>' + esc(x.nom) + (x.v ? (c.jm === 'lp' ? ' · lanceur (' + x.v + ' départ' + (x.v > 1 ? 's' : '') + ')' : ' (' + x.v + ')') : '') + '</option>'; });
+        /* 20261127j (critères Pro D2, Gabin Lorre parti de Béziers en 2025 : « certains joueurs n'y jouent plus » → proposition → « oui et griser ») :
+           Pro D2 → joueurs de la SAISON EN COURS d'abord, puis groupe « ↩️ Anciens joueurs » GRISÉ (« · parti en 2025 » = fin de sa dernière saison au club). */
+        var PD2 = !!(S.ctx && S.ctx.lg === 'prod2' && CUR0 && Object.keys(CUR0).length), opt = function (x, anc) { return '<option value="' + x.id + '"' + (c[k] === x.id ? ' selected' : '') + (anc ? ' style="color:#8a93a8;"' : '') + '>' + esc(x.nom) + (x.v ? (c.jm === 'lp' ? ' · lanceur (' + x.v + ' départ' + (x.v > 1 ? 's' : '') + ')' : ' (' + x.v + ')') : '') + (anc ? ' · ' + anc : '') + '</option>'; };
+        if (PD2) {
+          var SAi = ((S.data[nom] || {}).saisons || []), parti = function (a) { for (var q = 1; q < S.uiI.length; q++) { if (S.uiI[q] && S.uiI[q].joueurs && S.uiI[q].joueurs[a]) return SAi[q] && SAi[q].an ? 'parti en ' + (SAi[q].an + 1) : 'ancien'; } return 'ancien'; };
+          LJ.filter(function (x) { return CUR0[x.id]; }).forEach(function (x) { t += opt(x); });
+          var ANC = LJ.filter(function (x) { return !CUR0[x.id]; }); if (ANC.length) { t += '<optgroup label="↩️ Anciens joueurs" style="color:#8a93a8;">'; ANC.forEach(function (x) { t += opt(x, parti(x.id)); }); t += '</optgroup>'; }
+        } else LJ.forEach(function (x) { t += opt(x); });
         return t + '</select>';
       };
       h += '<div style="font-size:15px;font-weight:800;margin:14px 0 2px;padding-top:8px;border-top:1px solid #2a3a63;">👤 Joueurs</div>';
