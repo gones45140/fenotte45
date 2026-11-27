@@ -86390,7 +86390,7 @@ window._g45TrTestVoit = function () { try { return (typeof _g45SanteActive === '
       var ap = parseFloat(state.b[k]) || 0, v = Math.round((ap - av) * 100) / 100;
       if (v) {
         if (!state.mvt) state.mvt = [];
-        state.mvt.unshift({ id: 'mv' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), d: ymd(new Date()), k: k, v: v, av: av, ap: ap });
+        state.mvt.unshift({ id: 'mv' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), d: ymd(new Date()), k: k, v: v, av: av, ap: ap, ab: 1 });   /* 20261127a : ab = solde SAISI (✏️ Modifier) → recopié tel quel sur l'autre appareil */
         if (state.mvt.length > 500) state.mvt.length = 500;
         try { save(); } catch (e) {} try { if (typeof _g45PushBetsGithub === 'function') _g45PushBetsGithub(true); } catch (e) {}
         try { render(); } catch (e) { window._g45MvtRender(); }
@@ -86462,7 +86462,16 @@ window._g45TrTestVoit = function () { try { return (typeof _g45SanteActive === '
     try {
       if (rem && rem.mvt && state) {
         if (!state.mvt) state.mvt = [];
-        rem.mvt.forEach(function (m) { if (m && m.id && !state.mvt.some(function (x) { return x.id === m.id; })) state.mvt.push(JSON.parse(JSON.stringify(m))); });
+        /* 20261127a (capture Bank : « ma bank pas synchro PC / téléphone ») : les lignes de l'autre appareil arrivaient SANS toucher aux soldes
+           (20261027b) → un dépôt / retrait / solde modifié sur le PC n'existait pas sur le téléphone (et l'inverse). Ligne NOUVELLE ici (jamais vue,
+           donc jamais appliquée) : ✏️ Modifier (ab) → solde du compte = solde saisi là-bas (ap) ; 💸 Dépôt / Retrait → solde + montant (v).
+           Lignes appliquées dans l'ordre où elles ont été faites (id = date en base 36). Lignes déjà présentes des deux côtés : rien ne change. */
+        var neuves = rem.mvt.filter(function (m) { return m && m.id && !state.mvt.some(function (x) { return x.id === m.id; }); })
+          .sort(function (a, b) { return String(a.id) < String(b.id) ? -1 : (String(a.id) > String(b.id) ? 1 : 0); });
+        neuves.forEach(function (m) {
+          state.mvt.push(JSON.parse(JSON.stringify(m)));
+          try { if (m.k && state.b) { var cur = parseFloat(state.b[m.k]) || 0, nv = m.ab && isFinite(+m.ap) ? +m.ap : cur + (+m.v || 0); state.b[m.k] = (Math.round(nv * 100) / 100).toFixed(2); n++; } } catch (e) {}
+        });
         state.mvt.sort(function (a, b) { return a.d < b.d ? 1 : (a.d > b.d ? -1 : 0); });
       }
     } catch (e) {}
