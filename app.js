@@ -94206,7 +94206,7 @@ window._g45TicketRemplirCombi = function (o) {
   var nbaMoy = function (jid) { var a = NBAJ && NBAJ[String(jid || '')]; return a ? (+((a[3] || {}).PTS) || 0) / Math.max(1, +a[2] || 1) : null; };
   var pj = function (L) {
     if (!NBAJ) { if (!nbaLu && window._g45Jds && window._g45Jds.lire) { nbaLu = 1; window._g45Jds.lire('basket', 'nba').then(function (j) { if (j) { NBAJ = j; try { window._g45LoiT && window._g45LoiT.dessiner && window._g45LoiT.dessiner(); } catch (e) {} try { window._g45LoiBilRedessiner && window._g45LoiBilRedessiner(); } catch (e) {} } else nbaLu = 0; }, function () { nbaLu = 0; }); } return; }
-    L.forEach(function (x) { if (x.nc || !x.jo || x.sp !== 'basketball' || x.sv || x.mo) return; var m = nbaMoy(x.jid); if (m == null || m < 20) { x.nc = 1; x.nf = 11; } });
+    L.forEach(function (x) { if (x.nc || !x.jo || x.sp !== 'basketball') return;   /* 20261127w (« toujours là » : Simons 3+ passes 🏠 du 21/11 = mo SANS pépite précédente de même lieu → exemption gardée par 27t) : montantes comprises, plus d'exemption */ var m = nbaMoy(x.jid); if (m == null || m < 20) { x.nc = 1; x.nf = 11; } });
   };
   window._g45LoiNba = { moy: nbaMoy, poser: function (j) { NBAJ = j; } };   /* tests */
   setTimeout(function () { try { pj([]); } catch (e) {} }, 4000);   /* 20261127v : moyennes NBA lues dès le démarrage (bilan juste du 1er coup) */
