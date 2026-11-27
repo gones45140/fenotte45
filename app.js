@@ -78491,11 +78491,50 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
         } else LJ.forEach(function (x) { t += opt(x); });
         return t + '</select>';
       };
+      /* ═══ 20261127p — 👤 JOUEURS EN BOUTONS (maquette A « les 2 », capture critères Minnesota : la liste de Ton pari « en un coup d'œil ça parle ») :
+         la liste déroulante devient une grille de boutons : joueurs de la SAISON EN COURS (CUR0) avec leurs stats de la saison (index
+         critères S.uiI[0] : tot par rôle ; NBA = moyenne par match, matchs comptés dans pres), 8 visibles + « ▼ Voir les N joueurs » ;
+         anciens (20261127j/o) dessous, gris, repliés (« ▼ Voir les N anciens »). Toucher = ajouté (1re case libre, 3 max : le 3e est
+         remplacé), re-toucher = retiré (g45CrJTap → g45CrJoueur). Début de saison (CUR0 < 8 joueurs) : liste déroulante comme avant. ═══ */
+      var grilleJ = function () {
+        var I0 = S.uiI[0] || {}, NM = {}, PR = I0.pres || {};
+        Object.keys(PR).forEach(function (e) { (PR[e] || []).forEach(function (a) { NM[String(a)] = (NM[String(a)] || 0) + 1; }); });
+        var RV = RL.filter(function (r) { return r.k !== 'lp' && !r.deduit; }), moy = S.ctx && S.ctx.sp === 'basketball';
+        var stTxt = function (id) {
+          var J0 = CUR0[id], tt = (J0 && J0.tot) || {}, n = NM[String(id)] || 0, out = [], tri = 0;
+          RV.forEach(function (r, i) { var v = +tt[r.k] || 0; if (i < 4) tri += v * Math.pow(100, 3 - i); if (!v || out.length >= 2) return;
+            var tx = moy && n ? (Math.round(v / n * 10) / 10).toString().replace('.', ',') : String(v);
+            out.push(tx + ' ' + (r.ico || r.lettre || r.lab)); });
+          return { t: out.join(' '), tri: tri };
+        };
+        var pris = joueurs(c).map(function (x) { return String(x.id); });
+        var bt = function (x, anc) {
+          var on = pris.indexOf(String(x.id)) >= 0, st = anc ? '' : stTxt(x.id).t;
+          return '<button type="button" data-id="' + esc(String(x.id)) + '" onclick="g45CrJTap(this.getAttribute(\'data-id\'))" style="display:flex;justify-content:space-between;align-items:center;gap:8px;text-align:left;padding:10px 12px;border-radius:9px;font-size:15px;font-weight:700;cursor:pointer;'
+            + (on ? 'background:#1f6b3a;border:1px solid #3fbf6a;color:#fff;' : anc ? 'background:#1a2135;border:1px solid #2a3350;color:#8a93a8;' : 'background:#2a3d70;border:1px solid #3c5596;color:#fff;') + '">'
+            + '<span>' + (on ? '✓ ' : '') + esc(x.nom) + '</span><small style="font-size:14px;font-weight:600;white-space:nowrap;' + (anc && !on ? 'color:#8a93a8;' : 'color:#dfe6ff;') + '">' + esc(anc ? anc : st) + '</small></button>';
+        };
+        var G = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px;margin:4px 0 6px;';
+        var CU = LJ.filter(function (x) { return CUR0[x.id]; }).map(function (x) { return { x: x, tri: stTxt(x.id).tri }; })
+          .sort(function (a, b) { return b.tri - a.tri || String(a.x.nom).localeCompare(String(b.x.nom)); }).map(function (o) { return o.x; });
+        var AN = LJ.filter(function (x) { return !CUR0[x.id]; });
+        var SAi = ((S.data[nom] || {}).saisons || []), parti = function (a) { for (var q = 1; q < S.uiI.length; q++) { if (S.uiI[q] && S.uiI[q].joueurs && S.uiI[q].joueurs[a]) return SAi[q] && SAi[q].an ? 'parti en ' + (SAi[q].an + 1) : 'ancien'; } return 'ancien'; };
+        var VJ = S.jgTout ? CU : CU.slice(0, 8); CU.forEach(function (x) { if (VJ.indexOf(x) < 0 && pris.indexOf(String(x.id)) >= 0) VJ.push(x); });
+        var t = '<div style="font-size:14px;color:#c9d3ee;margin:6px 0 2px;">' + esc(nom) + ' · saison en cours — touche jusqu\'à 3 joueurs</div><div style="' + G + '">' + VJ.map(function (x) { return bt(x); }).join('') + '</div>';
+        if (CU.length > 8) t += '<button type="button" onclick="g45CrJVoir(\'jgTout\')" style="width:100%;padding:9px;border-radius:9px;border:1px dashed #3c5596;background:transparent;color:#8fb0ff;font-weight:700;font-size:15px;cursor:pointer;margin-bottom:6px;">' + (S.jgTout ? '▲ Moins' : '▼ Voir les ' + CU.length + ' joueurs') + '</button>';
+        if (AN.length) {
+          var VA = S.jgAnc ? AN : AN.filter(function (x) { return pris.indexOf(String(x.id)) >= 0; });
+          t += '<div style="font-size:14px;color:#c9d3ee;margin:8px 0 2px;">↩️ Anciens joueurs (plus au club)</div>' + (VA.length ? '<div style="' + G + '">' + VA.map(function (x) { return bt(x, parti(x.id)); }).join('') + '</div>' : '')
+            + '<button type="button" onclick="g45CrJVoir(\'jgAnc\')" style="width:100%;padding:9px;border-radius:9px;border:1px dashed #2a3350;background:transparent;color:#8a93a8;font-weight:700;font-size:15px;cursor:pointer;margin-bottom:6px;">' + (S.jgAnc ? '▲ Cacher les anciens' : (AN.length > 1 ? '▼ Voir les ' + AN.length + ' anciens' : '▼ Voir l\'ancien joueur')) + '</button>';
+        }
+        return t;
+      };
+      var PGJ = !!(CUR0 && Object.keys(CUR0).length >= 8);
       h += '<div style="font-size:15px;font-weight:800;margin:14px 0 2px;padding-top:8px;border-top:1px solid #2a3a63;">👤 Joueurs</div>';
       if (UU.enCours) h += '<div id="g45cr-up" style="font-size:14px;color:#f5c542;margin:4px 0;">⏳ Feuilles de match : ' + (UU.f || 0) + ' / ' + (UU.n || '…') + ' (la 1re fois seulement)</div>';
       else if (man) h += b(false, '📥 Lire les feuilles de match des ' + nbS() + ' saisons (' + man + ' matchs, la 1re fois seulement)', 'g45CrUsLire()');
       if (LJ.length) {
-        h += lab('Joueurs (1 à 3, matchs où ils ont TOUS joué)') + selU(1, 'jo') + (c.jo ? selU(2, 'jo2') : '') + (c.jo2 ? selU(3, 'jo3') : '')
+        h += lab('Joueurs (1 à 3, matchs où ils ont TOUS joué)') + (PGJ ? grilleJ() : selU(1, 'jo') + (c.jo ? selU(2, 'jo2') : '') + (c.jo2 ? selU(3, 'jo3') : ''))
           + lab('Ce qu\'il doit faire') + RL.map(function (r) { return b(c.jm === r.k, (r.ico || '') + ' ' + r.lab, "g45CrSet('jm','" + r.k + "')"); }).join('')
           + (c.jm === 'lp' ? '<div style="font-size:14px;color:#fff;margin:6px 0;">⚾ Seuls les matchs où il a été lanceur partant sont comptés.</div>' : (RJS.seuils ? lab('Ligne') + (bkOk() ? b(!!c.jbk, '🎯 Ligne du book', 'g45CrBk()') : '') + b(c.jsens !== 'un', 'Plus de', "g45CrSet('jsens','ov')") + b(c.jsens === 'un', 'Moins de', "g45CrSet('jsens','un')")   /* 20261030e : ligne X,5 comme le book */
             + '<select onchange="g45CrSet(\'jmin\',this.value)" style="background:#16213f;color:#fff;border:1px solid #6d9dff;border-radius:8px;padding:7px 10px;font-size:15px;font-weight:700;margin:0 6px 6px 0;">' + SEU.map(function (n) { return '<option value="' + n + '"' + (String(c.jmin) === n ? ' selected' : '') + '>' + n.replace('.', ',') + '</option>'; }).join('') + '</select>'
@@ -79148,6 +79187,14 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   window._g45CrPasse = passe; window._g45CrCalc = calc;
   window.g45CrOuvrir = function () { S.ov = S.ov || {}; S.ov[S.nom] = !ouvert(); redessiner(); };   /* 20261021g */
   window._g45CrS = S;   /* tests */
+  /* 20261127p : grille de boutons joueurs (critères) — toucher = ajouter (1re case libre ; 3 pris → le 3e remplacé), re-toucher = retirer */
+  window.g45CrJTap = function (id) {
+    var c = S.combos[S.a]; if (!c || !id) return; id = String(id);
+    var sl = c.jo === id ? 1 : c.jo2 === id ? 2 : c.jo3 === id ? 3 : 0;
+    if (sl) return window.g45CrJoueur('', sl);
+    window.g45CrJoueur(id, !c.jo ? 1 : !c.jo2 ? 2 : 3);
+  };
+  window.g45CrJVoir = function (k) { S[k] = !S[k]; try { redessiner(); } catch (e) {} };
   window.g45CrJoueur = function (id, slot) {   /* 20261021d : slot 1 / 2 / 3 ; retirer un joueur fait remonter les suivants */
     var c = S.combos[S.a], k = slot === 3 ? '3' : slot === 2 ? '2' : '', nm = '';
     var RO = S.ro[S.nom] || {}; (RO.l || []).forEach(function (x) { if (x.id === id) nm = x.nom; });
@@ -94002,4 +94049,96 @@ window._g45CkCompOk = function (m, u) {
   }
   window._g45Pd2Hist = { logo: logoDe, maj: maj, n: nMatchs, nf: nFeuilles, H: H, charger: charger, saisons: saisons, dateDe: dateDe, lireF: lireF };   /* tests */
   setTimeout(function () { charger().then(function () { if (Object.keys(H).length) maj(null, true); }); }, 20000);
+})();
+
+/* ═══ 20261127p — 👥 JOUEURS DES 2 ÉQUIPES dans la FENÊTRE DU MATCH (maquette B « les 2 » : la liste de Ton pari « en un coup d'œil ça
+   parle »). Une bande « 👥 Joueurs des 2 équipes (saison) » dans le groupe 📊 Avant-match (avant 🏠 Domicile / 🚌 Extérieur), repliée ;
+   ouverte = 2 colonnes 🏠 / ✈️, 6 joueurs par équipe + « ▼ Voir les N ». SOURCE = archives gones45-archives
+   cotes/<foot|hockey|basket|football-us|baseball|rugby>/<ligue>/<saison 2026-27 puis 2026>/joueurs.json = { idEspn: [nom, idÉquipe,
+   matchs, {stats}] } (comme 20261125c, pas d'ESPN en plus : les équipes viennent du summary déjà lu, _g45ResumeIA). Affichage seul. ═══ */
+(function () {
+  var MEM = {}, OUV = {}, TOUT = {};
+  var DOS = { soccer: 'foot', hockey: 'hockey', basketball: 'basket', football: 'football-us', baseball: 'baseball', rugby: 'rugby' };
+  var esc = function (t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+  function saisons() { var d = new Date(), y = d.getMonth() + 1 >= 7 ? d.getFullYear() : d.getFullYear() - 1; return [y + '-' + String(y + 1).slice(2), String(d.getFullYear())]; }
+  function lire(dos, lg) {
+    var k = dos + '/' + lg; if (MEM[k]) return MEM[k];
+    var SA = saisons(), h = '?h=' + Math.floor(Date.now() / 36e5);
+    MEM[k] = (async function () {
+      for (var i = 0; i < SA.length; i++) {
+        try { var r = await fetch('https://raw.githubusercontent.com/gones45140/gones45-archives/main/cotes/' + k + '/' + SA[i] + '/joueurs.json' + h); if (!r.ok) continue; var j = await r.json(); if (j && typeof j === 'object' && Object.keys(j).length) return j; } catch (e) {}
+      }
+      return null;
+    })();
+    MEM[k].then(function (j) { if (!j) setTimeout(function () { delete MEM[k]; }, 6e5); });
+    return MEM[k];
+  }
+  function stat(dos, s, nm) {
+    s = s || {}; var n = Math.max(1, +nm || 1), v = function (c) { return +s[c] || 0; }, f1 = function (x) { return (Math.round(x * 10) / 10).toString().replace('.', ','); };
+    if (dos === 'foot') return { tri: v('G') * 100 + v('A'), txt: [v('G') ? v('G') + ' ⚽' : '', v('A') ? v('A') + ' 🅰️' : ''].filter(Boolean).join(' ') };
+    if (dos === 'hockey') return { tri: (v('G') + v('A')) * 100 + v('G'), txt: [v('G') ? v('G') + ' 🥅' : '', v('A') ? v('A') + ' 🅰️' : ''].filter(Boolean).join(' ') };
+    if (dos === 'basket') return { tri: v('PTS') / n, txt: v('PTS') ? f1(v('PTS') / n) + ' pts' + (v('REB') ? ' · ' + f1(v('REB') / n) + ' reb' : '') : '' };
+    if (dos === 'football-us') { var td = v('rTD') + v('reTD'); return { tri: td * 100 + v('pTD'), txt: [td ? td + ' TD' : '', v('pTD') ? v('pTD') + ' TD passe' : ''].filter(Boolean).join(' · ') }; }
+    if (v('PTS')) return { tri: v('PTS'), txt: v('PTS') + ' pts' };
+    return { tri: +nm || 0, txt: (+nm || 0) + ' matchs' };
+  }
+  function colonne(J, dos, tid, nom, ico, cle) {
+    var L = Object.keys(J).map(function (pid) { var a = J[pid]; return { nom: a[0], eq: String(a[1]), n: a[2], s: a[3] }; }).filter(function (x) { return x.eq === String(tid) && x.nom; });
+    L.forEach(function (x) { var st = stat(dos, x.s, x.n); x.tri = st.tri; x.txt = st.txt; });
+    L.sort(function (a, b) { return (b.tri - a.tri) || ((+b.n || 0) - (+a.n || 0)) || String(a.nom).localeCompare(String(b.nom)); });
+    var V = TOUT[cle] ? L : L.slice(0, 6);
+    var h = '<div><div style="font-size:15px;font-weight:800;padding:8px 10px;background:#1a2547;border-radius:8px;margin:0 0 6px;color:#fff;">' + ico + ' ' + esc(nom) + '</div>';
+    if (!L.length) return h + '<div style="font-size:14px;color:#c9d3ee;padding:6px 2px;">Pas de joueurs dans les archives.</div></div>';
+    h += V.map(function (x) {
+      return '<div style="display:flex;justify-content:space-between;align-items:center;gap:6px;padding:9px 10px;border-radius:9px;background:#2a3d70;border:1px solid #3c5596;font-size:15px;font-weight:700;color:#fff;margin-bottom:6px;">'
+        + '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(x.nom) + '</span><small style="font-size:14px;font-weight:600;color:#dfe6ff;white-space:nowrap;">' + esc(x.txt) + '</small></div>';
+    }).join('');
+    if (L.length > 6) h += '<button type="button" data-k="' + esc(cle) + '" onclick="g45JdsTout(this)" style="width:100%;padding:9px;border-radius:9px;border:1px dashed #3c5596;background:transparent;color:#8fb0ff;font-weight:700;font-size:15px;cursor:pointer;">' + (TOUT[cle] ? '▲ Moins' : '▼ Voir les ' + L.length) + '</button>';
+    return h + '</div>';
+  }
+  async function remplir(u) {
+    var c = u.querySelector('[data-g45jdc]'); if (!c) return;
+    var dos = u.getAttribute('data-dos'), lg = u.getAttribute('data-lg'), eid = u.getAttribute('data-eid');
+    var d = (typeof _g45ResumeIA !== 'undefined' && _g45ResumeIA[eid]) || null, comp = (((d || {}).header || {}).competitions || [])[0] || {}, cps = comp.competitors || [];
+    var ho = cps.filter(function (x) { return x.homeAway === 'home'; })[0] || cps[0], aw = cps.filter(function (x) { return x.homeAway === 'away'; })[0] || cps[1];
+    if (!ho || !aw || !ho.team || !aw.team) { c.innerHTML = '<div style="font-size:14px;color:#c9d3ee;">Équipes introuvables.</div>'; return; }
+    c.innerHTML = '<div style="font-size:14px;color:#c9d3ee;">⏳ Joueurs…</div>';
+    var J = await lire(dos, lg);
+    if (!J) { c.innerHTML = '<div style="font-size:14px;color:#c9d3ee;">Pas de joueurs dans les archives pour ce championnat.</div>'; return; }
+    var nm = function (t) { return t.team.displayName || t.team.shortDisplayName || '?'; };
+    c.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">' + colonne(J, dos, ho.team.id, nm(ho), '🏠', eid + '|h') + colonne(J, dos, aw.team.id, nm(aw), '✈️', eid + '|a') + '</div>'
+      + '<div style="font-size:13px;color:#c9d3ee;margin-top:6px;">Saison en cours (archives).</div>';
+  }
+  window.g45JdsTout = function (b) { var k = b.getAttribute('data-k'); TOUT[k] = !TOUT[k]; var u = b.closest('[data-g45jds]'); if (u) remplir(u); };
+  window.g45JdsOuvrir = function (b) {
+    var u = b.closest('[data-g45jds]'), c = u && u.querySelector('[data-g45jdc]'); if (!c) return;
+    var eid = u.getAttribute('data-eid'), on = c.style.display === 'none';
+    OUV[eid] = on; c.style.display = on ? '' : 'none'; b.querySelector('[data-fl]').textContent = on ? '▼' : '▸';
+    if (on) remplir(u);
+  };
+  function poser(el, dos, lg, eid, essai) {
+    if (!el || !el.isConnected || !dos || !lg || !eid) return;
+    var am = el.querySelector('[data-g45grp="am"]');
+    if (!am) { if ((essai || 0) < 12) setTimeout(function () { poser(el, dos, lg, eid, (essai || 0) + 1); }, 500); return; }
+    if (am.querySelector('[data-g45jds]')) return;
+    var u = document.createElement('div');
+    u.setAttribute('data-g45jds', '1'); u.setAttribute('data-dos', dos); u.setAttribute('data-lg', lg); u.setAttribute('data-eid', eid);
+    var cb = '47,179,179';
+    u.innerHTML = '<button type="button" data-g45plb="1" onclick="g45JdsOuvrir(this)" style="display:flex;justify-content:space-between;align-items:center;width:100%;box-sizing:border-box;text-align:left;margin:6px 0;padding:11px 12px;border-radius:10px;font-size:15px;font-weight:800;color:#fff;line-height:1.3;cursor:pointer;'
+      + 'background:linear-gradient(rgba(' + cb + ',.16),rgba(' + cb + ',.16)),rgba(11,16,29,.94);border:1.5px solid rgba(' + cb + ',.55);border-left:5px solid rgb(' + cb + ');"><span>👥 Joueurs des 2 équipes (saison)</span><span data-fl="1">▸</span></button>'
+      + '<div data-g45jdc="1" style="display:none;margin:4px 0 8px;"></div>';
+    var dx = null;
+    Array.prototype.forEach.call(am.children, function (x) { var b = x.firstElementChild; if (b && b.tagName === 'BUTTON' && /domicile/i.test(b.textContent) && /ext[ée]rieur/i.test(b.textContent)) dx = x; });
+    if (dx) am.insertBefore(u, dx); else am.appendChild(u);
+    if (OUV[eid]) { var b = u.firstElementChild; OUV[eid] = false; window.g45JdsOuvrir(b); }
+  }
+  function env(nom, f) {
+    var r0 = window[nom]; if (typeof r0 !== 'function' || r0._g45Jds) return;
+    var g = async function () { var a = arguments, r = await r0.apply(this, a); try { f(a); } catch (e) {} return r; };
+    Object.keys(r0).forEach(function (k) { g[k] = r0[k]; }); g._g45Jds = 1; window[nom] = g;
+  }
+  env('_renderSaisonDetail', function (a) { poser(a[0], 'foot', String(a[2] || ''), String(a[1] || '')); });
+  env('_renderGenericDetail', function (a) { var dos = DOS[String(a[1] || '')]; if (dos && dos !== 'foot') poser(a[0], dos, String(a[2] || ''), String(a[3] || '')); });
+  try { _renderSaisonDetail = window._renderSaisonDetail; _renderGenericDetail = window._renderGenericDetail; } catch (e) {}
+  window._g45Jds = { lire: lire, stat: stat, poser: poser };   /* tests */
 })();
