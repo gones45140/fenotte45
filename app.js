@@ -89152,7 +89152,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   window._g45LoiCr = { liste: loiCrListe, ixDe: loiIxDe, poser: loiCrPoser };   /* tests */
   /* 20261106z (capture En cours : seul Colorado, sur le mur, avait son logo) : logo d'une équipe par son NOM dans l'index des archives (424 équipes) */
   window._g45LogoIndex = function (nom) { loiIxCharger(); var x = LOI.ix ? loiIxDe(nom) : null; return (x && /^https:\/\//.test(x[5] || '')) ? x[5] : ''; };
-  window._g45LoiT = { html: loiHtml, LOI: LOI, carte: loiCarte };   /* tests */
+  window._g45LoiT = { html: loiHtml, LOI: LOI, carte: loiCarte, dessiner: function () { try { loiDessiner(); } catch (e) {} } };   /* tests ; 20261127u : dessiner */
   window.g45CkOnglet = function (k) {
     if (k === 'tr') { k = 'loi'; if (LOI.v === 'pep' || LOI.v === 'cr') { LOI.v = 'ind'; try { _g45CompetVue = 'buteurs'; } catch (e) {} } }   /* 20261105t : 🔍 Trouver → Loi des séries */
     TAB = ['eng', 'bil', 'arc', 'cb', 'gr', 'ag', 'mc', 'loi'].indexOf(k) >= 0 ? k : 'tdb'; squelette();
@@ -89917,7 +89917,7 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   window._g45LoiEcart = function (x) { var q = coteDe(x); if (!q || !x || !(x.n > 0) || !(x.ok > 0)) return null; return coteFr(q.c, x) / (x.n / x.ok); };
   window._g45LoiJusteHtml = function (y) { if (!y || !y.jo) return ''; var q = coteDe(y); if (!q || !(y.n > 0) || !(y.ok > 0)) return ''; var j = y.n / y.ok, f = coteFr(q.c, y), r = f / j;
     return '<br><span style="font-size:13px;color:' + (r > 1.4 ? '#ffb3b3' : '#dfe6f7') + ';">🎯 Notre cote ≈ ' + frC(j) + ' · book ' + frC(f) + ' (× ' + r.toFixed(2).replace('.', ',') + ')</span>'; };
-  window._g45LoiNfTxt = function (y) { return y.nf === 10 ? 'équipe dans les 6 dernières de son championnat' : y.nf === 9 ? 'outsider : cote au-dessus de 2,20 sur un pari de résultat' : y.nf === 8 ? 'sélection hors du top 20 FIFA' : y.nf === 7 ? 'cote US au-dessus de 3 : le book français la rabote trop' : y.nf === 6 ? 'le book n\'y croit pas : sa cote est trop loin de la nôtre' : y.nf === 5 ? '2 victoires opposées → remplacées par « victoire ou nul » de l\'outsider' : y.nf === 4 ? 'cote au-dessus de 4' : y.nf === 3 ? 'pépite opposée sur le même match' : y.nf === 2 ? 'équipe trop faible pour le book' : y.nf ? 'niveau trop faible' : '1 seul pari par équipe'; };
+  window._g45LoiNfTxt = function (y) { return y.nf === 11 ? 'joueur NBA à moins de 20 points de moyenne' : y.nf === 10 ? 'équipe dans les 6 dernières de son championnat' : y.nf === 9 ? 'outsider : cote au-dessus de 2,20 sur un pari de résultat' : y.nf === 8 ? 'sélection hors du top 20 FIFA' : y.nf === 7 ? 'cote US au-dessus de 3 : le book français la rabote trop' : y.nf === 6 ? 'le book n\'y croit pas : sa cote est trop loin de la nôtre' : y.nf === 5 ? '2 victoires opposées → remplacées par « victoire ou nul » de l\'outsider' : y.nf === 4 ? 'cote au-dessus de 4' : y.nf === 3 ? 'pépite opposée sur le même match' : y.nf === 2 ? 'équipe trop faible pour le book' : y.nf ? 'niveau trop faible' : '1 seul pari par équipe'; };
   /* 20261118m (pépites joueurs NBA trop nombreuses → Antoine : « + de 1.6 cote ») : pépite JOUEUR gardée seulement si sa cote (fiche du match
      lue) est d'au moins 1,60 ; fiche pas encore lue → gardée (la liste se redessine à l'arrivée des cotes) ; TD NFL (aucune cote gardée) → gardé. */
   window._g45LoiJoCoteOk = function (x) { if (!x || !x.jo || x.sp !== 'basketball' || !FI[x.eid]) return true;   /* 20261118m : « NBA seulement » */   /* fiche pas encore archivée (0) → gardée en attendant */ var q = coteDe(x); return !!q && q.c >= 1.6; };
@@ -94197,9 +94197,21 @@ window._g45TicketRemplirCombi = function (o) {
 (function () {
   var ex0 = window._g45LoiExclure; if (typeof ex0 !== 'function' || ex0._g45Mo) return;
   var cle = function (x) { return (x.sp || '') + '|' + x.id + '|' + x.k + '|' + (x.lieu || 'tout') + (x.jo ? '|' + (x.jid || '') : ''); };
-  var reev = function (x) { x.mo = 0; x.nc = 0; x.nf = 0; try { ex0([x]); } catch (e) {} x.mo = 1; };
+  /* ═══ 20261127u — 🏀 PÉPITES JOUEURS NBA : 20 POINTS DE MOYENNE MINIMUM (bilan 27/11 « basket joueur une catastrophe » : historique robot
+     49 / 127 = 39 % ; par moyenne de points du joueur : < 15 pts 25 / 79 = 32 %, 15-20 pts 13 / 30 = 43 %, 20 pts et + 11 / 18 = 61 % → « oui go »).
+     Moyenne = joueurs.json NBA de la saison en cours (archives, PTS / matchs, window._g45Jds.lire). Pas encore lu → rien d'écarté, la liste se
+     redessine à l'arrivée. Joueur absent du fichier ou moins de 20 pts → non compté (nf 11). Montantes en cours (mo / sv) : règle habituelle. ═══ */
+  var NBAJ = null, nbaLu = 0;
+  var nbaMoy = function (jid) { var a = NBAJ && NBAJ[String(jid || '')]; return a ? (+((a[3] || {}).PTS) || 0) / Math.max(1, +a[2] || 1) : null; };
+  var pj = function (L) {
+    if (!NBAJ) { if (!nbaLu && window._g45Jds && window._g45Jds.lire) { nbaLu = 1; window._g45Jds.lire('basket', 'nba').then(function (j) { if (j) { NBAJ = j; try { window._g45LoiT && window._g45LoiT.dessiner && window._g45LoiT.dessiner(); } catch (e) {} } else nbaLu = 0; }, function () { nbaLu = 0; }); } return; }
+    L.forEach(function (x) { if (x.nc || !x.jo || x.sp !== 'basketball' || x.sv || x.mo) return; var m = nbaMoy(x.jid); if (m == null || m < 20) { x.nc = 1; x.nf = 11; } });
+  };
+  window._g45LoiNba = { moy: nbaMoy, poser: function (j) { NBAJ = j; } };   /* tests */
+  var reev = function (x) { x.mo = 0; x.nc = 0; x.nf = 0; try { ex0([x]); pj([x]); } catch (e) {} x.mo = 1; };
   var f = function (L) {
     var r = ex0.apply(this, arguments);
+    try { pj(L); } catch (e) {}
     try {
       var hist = L.some(function (x) { return x.r === 0 || x.r === 1; });
       if (hist) {
