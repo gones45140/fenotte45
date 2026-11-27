@@ -76593,7 +76593,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
      🏁 Jouable en Cockpit ? : équipes ET joueurs (20 matchs mini) lus d'un coup dans les archives de la ligue.
      Rôles PROPRES aux critères (_g45JouCfg local) : la table partagée _G45_JOU_TABLE (Analyser les joueurs de Saisons) n'est pas touchée.
      Index joueurs du rugby : clé _g45JouCle + '_r2' (l'ancien index ESPN n'avait ni points ni titulaires). ═══ */
-  var RG_ARCH = { rugby: ['270559', '271937', '180659', '17567', '289234', '164205', '244293'], 'rugby-league': ['3'] };   /* 20261113k : + Nations Championship, tests, Coupe du monde */
+  var RG_ARCH = { rugby: ['270559', '271937', '180659', '17567', '289234', '164205', '244293', 'prod2' /* 20261127h : historique local */], 'rugby-league': ['3'] };   /* 20261113k : + Nations Championship, tests, Coupe du monde */
   /* ═══ 20261113k — 🏉 SÉLECTIONS DE RUGBY (Antoine : « rugby, l'équipe de France, Nations Championship ? » → sondes du 13/11 : 17567 Nations
      Championship, 289234 tests internationaux, 164205 Coupe du monde, 180659 Six Nations → « fais la partie appli rugby aussi »). Comme le foot :
      ctx.lg = 'rsel' (index loi/equipes.json), « saison » = année civile (dossier AAAA de chaque compétition), toutes les compétitions mélangées
@@ -76714,6 +76714,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
     /* 20261103a (capture Winamax Spurs −18,5 → −12,5 : « savoir si une équipe passe le cut » ; « 5 saisons oui ») : NBA = 5 saisons comme le foot
        (archives basket/nba 2022-23 → 2026-27, saison régulière ; handicap de clôture gardé 22-23 / 25-26 / 26-27). Autres sports US / rugby : 4. */
     if (S.ctx && lg === 'rsel') { var yS = new Date().getFullYear(); return [yS, yS - 1, yS - 2, yS - 3, yS - 4]; }   /* 20261113k */
+    if (S.ctx && lg === 'prod2') { var dP = new Date(), aP = dP.getMonth() + 1 >= 7 ? dP.getFullYear() : dP.getFullYear() - 1; return [aP, aP - 1, aP - 2, aP - 3, aP - 4]; }   /* 20261127h : Pro D2, 5 saisons (historique local) */
     if (S.ctx) { var a0 = (typeof _g45SgAnAuto === 'function') ? _g45SgAnAuto(lg) : new Date().getFullYear() + 1; return lg === 'nba' ? [a0, a0 - 1, a0 - 2, a0 - 3, a0 - 4] : [a0, a0 - 1, a0 - 2, a0 - 3]; }
     var d = new Date(), y = d.getFullYear(), y0 = CAL.indexOf(lg) >= 0 ? y : (d.getMonth() + 1 >= 8 ? y : y - 1);
     /* 20261102i (groupe Bets 4 us, Jp33 : « tu ne peux pas remonter sur 6 ou 7 saisons ? » → Antoine : « rajoute une saison supplémentaire mais
@@ -77778,6 +77779,16 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
       }));
       S.data[nom] = outS; return;
     }
+    if (S.ctx && S.ctx.lg === 'prod2') {   /* 20261127h : Pro D2 = historique LNR gardé sur l'appareil (window._g45Pd2Hist), saison régulière */
+      var CP = S.ctx; try { if (window._g45Pd2Hist) await window._g45Pd2Hist.maj(null, true); } catch (e) {}
+      if (!window._g45Pd2Hist || !window._g45Pd2Hist.n()) { S.data[nom] = { t: Date.now(), err: 'Historique Pro D2 pas encore lu sur cet appareil : Compétitions → Rugby → Pro D2 → « 📥 Construire l\'historique ».' }; return; }
+      var outP = { t: Date.now(), lg: 'prod2', ligue: 'Pro D2 · saison régulière (gardée sur cet appareil)', saisons: [] }, ansP = annees('prod2');
+      for (var iP = 0; iP < ansP.length; iP++) {
+        var qP = await aLire(rgBase('rugby', 'prod2', ansP[iP]) + '/equipes/' + CP.id + '.json');
+        outP.saisons[iP] = { an: ansP[iP], ms: qP && qP.m ? qP.m.filter(function (m) { return m[4] && m[4][0] != null; }).map(function (m) { var h = m[3] === 'h'; return [aIso(m[0]), h ? 1 : 0, h ? +m[4][0] : +m[4][1], h ? +m[4][1] : +m[4][0], 0, 0, String(m[2]), 0]; }).sort(function (a, b) { return a[0] < b[0] ? -1 : 1; }) : null };
+      }
+      S.data[nom] = outP; return;
+    }
     var C = S.ctx, ans = annees(C.lg), out = { t: Date.now(), lg: C.lg, ligue: C.sp === 'rugby' ? 'phases finales et coupes d\'Europe comprises' : 'saison régulière', saisons: [] }, eq = [];
     try { eq = await _g45CompetEquipes({ sp: C.sp, s: C.lg }); } catch (e) {}
     var ids = eq.map(function (t) { return t.id; }).filter(Boolean);
@@ -77819,6 +77830,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   function aOk(lg) { return (window._G45_ARCH_LG || []).indexOf(lg) >= 0; }
   function aSa(lg, an) { return CAL.indexOf(lg) >= 0 || ['fifa.friendly', 'uefa.nations', 'fifa.worldq.uefa', 'fifa.world', 'uefa.euro', 'uefa.euroq', 'conmebol.america', 'caf.nations', 'caf.nations_qual', 'fifa.worldq.conmebol', 'fifa.worldq.caf', 'fifa.worldq.afc', 'fifa.worldq.concacaf', 'fifa.worldq.ofc', 'concacaf.gold', 'concacaf.nations.league', 'afc.asian.cup'].indexOf(lg) >= 0 ? String(an) : an + '-' + String(an + 1).slice(2); }
   function aLire(ch) {   /* JSON, 0 = absent (404), null = lecture ratée */
+    if (/^rugby\/prod2\//.test(ch) && typeof window._g45Pd2Arch === 'function') return window._g45Pd2Arch(ch);   /* 20261127h : Pro D2 = historique gardé sur l'appareil (CGU LNR) */
     var k = ch + '|' + Math.floor(Date.now() / 600000);   /* 10 min : la saison en cours bouge (robot toutes les 2 h) */
     if (!AMEM[k]) AMEM[k] = fetch(ARW + ch + '?t=' + k.split('|')[1]).then(function (r) { return r.ok ? r.json() : (r.status === 404 ? 0 : null); }).catch(function () { return null; })
       .then(function (x) { if (x === null) delete AMEM[k]; return x; });
@@ -93825,4 +93837,141 @@ window._g45CkCompOk = function (m, u) {
   var r0 = window.render;
   if (typeof r0 === 'function') window.render = function () { var r = r0.apply(this, arguments); try { poser(); } catch (e) {} return r; };
   try { poser(); } catch (e) {}
+})();
+/* ═══ 20261127h — 🏉 PRO D2 : HISTORIQUE GARDÉ SUR L'APPAREIL (Antoine : « pour le Cockpit on avait quoi sur le rugby » → « pas de Pro D2 dans les
+   archives : les CGU de la LNR l'interdisent, voilà ce que je cherchais » → historique PRIVÉ sur l'appareil (usage personnel, rien de publié)
+   → SONDE console 27/11 : lnr.fr garde les saisons 2004-2005 → 2026-2027, 8 matchs + scores par journée → « oui » + « voir les essais joueur
+   Pro D2 » + « modifie le worker sans rien casser »). Worker fd-proxy (27/11) : &ex=lite (page sans head / script / style / svg) et &ex=st
+   (statistiques-du-match → { J: [[[nom, poste, minutes, points, essais]…] reçoit, visiteur] }).
+   STOCKAGE : IndexedDB « g45pd2h » (1 enregistrement par saison LNR « 2025-2026 » : M = matchs { e, j, t, h, hn, hl, a, an, al, sh, sa, u },
+   F = feuilles { e: [joueurs reçoit, joueurs visiteur] }). 5 saisons (en cours + 4), journées 1 à 30 (saison régulière).
+   ARCHIVES VIRTUELLES : les critères lisent « rugby/prod2/<2025-26>/… » par aLire (enveloppé) → window._g45Pd2Arch fabrique equipes.json,
+   equipes/<club>.json, matchs/<AAAA-MM>.json au format du dépôt gones45-archives → 📊 Critères, 🏉 Essais, 👤 Joueurs, Jouable en Cockpit.
+   ACTUALISATION (« l'actualisation de la Pro D2 se fera comment ? ») : seulement la saison EN COURS (journées pas finies + feuilles des
+   nouveaux matchs), à l'ouverture de l'écran Pro D2 / des critères d'un club Pro D2, et au plus une fois toutes les 6 h ; saisons passées
+   lues une seule fois. Club = slug de son logo LNR (_g45Pd2Slug). Joueur = son nom (pas d'identifiant LNR). Titulaire : inconnu (non gardé). ═══ */
+(function () {
+  var DB = null, H = {}, CHG = null, ETAT = { en: 0, f: 0, n: 0, msg: '' };
+  var nz = function (t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''); };
+  var url = function (p, ex) { return (typeof _g45Pd2Url === 'function' ? _g45Pd2Url(p) : '') + (ex ? '&ex=' + ex : ''); };
+  function saisons() { var d = new Date(), y = d.getMonth() + 1 >= 7 ? d.getFullYear() : d.getFullYear() - 1, L = []; for (var i = 0; i < 5; i++) L.push((y - i) + '-' + (y - i + 1)); return L; }
+  function ouvrir() {
+    if (DB) return Promise.resolve(DB);
+    return new Promise(function (ok) { try { var r = indexedDB.open('g45pd2h', 1); r.onupgradeneeded = function () { r.result.createObjectStore('s', { keyPath: 's' }); }; r.onsuccess = function () { DB = r.result; ok(DB); }; r.onerror = function () { ok(null); }; } catch (e) { ok(null); } });
+  }
+  function charger() {
+    if (CHG) return CHG;
+    CHG = ouvrir().then(function (db) { if (!db) return; return new Promise(function (ok) { try { var q = db.transaction('s').objectStore('s').getAll(); q.onsuccess = function () { (q.result || []).forEach(function (x) { H[x.s] = x; }); ok(); }; q.onerror = function () { ok(); }; } catch (e) { ok(); } }); });
+    return CHG;
+  }
+  function garder(s) { return ouvrir().then(function (db) { if (!db || !H[s]) return; try { db.transaction('s', 'readwrite').objectStore('s').put(H[s]); } catch (e) {} }); }
+  var MOIS = { janvier: 0, fevrier: 1, mars: 2, avril: 3, mai: 4, juin: 5, juillet: 6, aout: 7, septembre: 8, octobre: 9, novembre: 10, decembre: 11 };
+  function dateDe(s, n, jour, hr) {   /* « Vendredi 10 octobre » (+ année éventuelle) + « 21h00 » ; sinon date approchée de la journée */
+    var y0 = +s.slice(0, 4), t = String(jour || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''), m = t.match(/(\d{1,2})\s+([a-z]+)(?:\s+(\d{4}))?/), h = String(hr || '').match(/(\d{1,2})h(\d{2})/);
+    if (m && MOIS[m[2]] != null) { var mo = MOIS[m[2]], y = m[3] ? +m[3] : (mo >= 6 ? y0 : y0 + 1); return new Date(y, mo, +m[1], h ? +h[1] : 20, h ? +h[2] : 0).getTime(); }
+    return new Date(y0, 7, 20 + (n - 1) * 7, 20, 0).getTime();
+  }
+  function slug(c) { return (typeof _g45Pd2Slug === 'function' && _g45Pd2Slug(c.l)) || nz(c.n); }
+  async function lireJ(s, n) {
+    var r = await fetch(url('/calendrier-et-resultats/' + s + '/j' + n, 'lite')); if (!r.ok) return null;
+    var X = typeof _g45Pd2Journee === 'function' ? _g45Pd2Journee(await r.text()) : null; if (!X) return null;
+    return X.map(function (m, i) { var h = slug(m.h), a = slug(m.a), u = ''; try { u = m.u ? new URL(m.u, 'https://prod2.lnr.fr').pathname.replace(/\/$/, '') : ''; } catch (e) {}
+      return { e: 'pd2|' + s + '|' + n + '|' + h + '|' + a, j: n, t: dateDe(s, n, m.j, m.hr), h: h, hn: m.h.n, hl: m.h.l, a: a, an: m.a.n, al: m.a.l, sh: m.sh, sa: m.sa, u: u }; });
+  }
+  async function lireF(m) {
+    var r = await fetch(url(m.u + '/statistiques-du-match', 'st')); if (!r.ok) return null;
+    var j = null; try { j = await r.json(); } catch (e) { return null; }
+    var J = (j && j.J) || []; if (J.length < 2) return null;
+    var sm = function (L) { return L.reduce(function (t, x) { return t + (+x[3] || 0); }, 0); };
+    if (sm(J[0]) === m.sa && sm(J[1]) === m.sh && m.sh !== m.sa) J = [J[1], J[0]];   /* « 1er = reçoit » NON vérifié → contrôle par les points */
+    return [J[0], J[1]];
+  }
+  async function enLots(L, f, k) { for (var i = 0; i < L.length; i += k) { await Promise.all(L.slice(i, i + k).map(function (x) { return f(x).catch(function () {}); })); } }
+  /* complet = toutes les saisons ; sinon saison en cours seulement (actualisation) */
+  async function maj(prog, rapide, complet) {
+    await charger();
+    if (ETAT.en) return; var S = saisons(), cur = S[0];
+    if (rapide && H[cur] && Date.now() - (H[cur].at || 0) < 6 * 3600e3) return;
+    if (!complet && !Object.keys(H).length) return;   /* jamais construit : on attend le bouton */
+    ETAT.en = 1; ETAT.f = 0; ETAT.msg = '';
+    try {
+      var A = [];
+      S.forEach(function (s, i) { if (!complet && i > 0) return; var R = H[s] || (H[s] = { s: s, M: {}, F: {}, at: 0 });
+        for (var n = 1; n <= 30; n++) { var L = R.M[n]; if (L && L.length && (i > 0 || L.every(function (m) { return m.sh != null; }))) continue; A.push([s, n]); } });
+      ETAT.n = A.length; var vide = {};
+      await enLots(A, async function (x) {
+        if (vide[x[0]] && x[1] > vide[x[0]] + 1) { ETAT.f++; return; }   /* saison en cours : on ne lit pas toutes les journées à venir */
+        var L = await lireJ(x[0], x[1]); ETAT.f++; if (prog) prog(ETAT);
+        if (L && L.length) { H[x[0]].M[x[1]] = L; if (L.every(function (m) { return m.sh == null; }) && (!vide[x[0]] || x[1] < vide[x[0]])) vide[x[0]] = x[1]; }
+      }, 4);
+      var B = []; S.forEach(function (s, i) { if (!complet && i > 0) return; var R = H[s]; if (!R) return; Object.keys(R.M).forEach(function (n) { (R.M[n] || []).forEach(function (m) { if (m.sh != null && m.u && !R.F[m.e]) B.push([s, m]); }); }); });
+      ETAT.n += B.length;
+      await enLots(B, async function (x) { var F = await lireF(x[1]); ETAT.f++; if (prog) prog(ETAT); if (F) H[x[0]].F[x[1].e] = F; }, 4);
+      for (var k = 0; k < S.length; k++) if (H[S[k]]) { H[S[k]].at = Date.now(); await garder(S[k]); }
+    } catch (e) { ETAT.msg = e.message; }
+    ETAT.en = 0; if (prog) prog(ETAT);
+    try { ixAjout(); } catch (e) {}
+  }
+  function nMatchs() { var n = 0; Object.keys(H).forEach(function (s) { Object.keys(H[s].M || {}).forEach(function (j) { (H[s].M[j] || []).forEach(function (m) { if (m.sh != null) n++; }); }); }); return n; }
+  function nFeuilles() { var n = 0; Object.keys(H).forEach(function (s) { n += Object.keys(H[s].F || {}).length; }); return n; }
+  /* ── archives virtuelles ── */
+  var pid = function (nom) { return 'pd2:' + nz(nom); };
+  function tous(s) { var R = H[s]; if (!R) return []; var L = []; Object.keys(R.M || {}).forEach(function (j) { (R.M[j] || []).forEach(function (m) { if (m.sh != null && m.sa != null) L.push(m); }); }); return L.sort(function (a, b) { return a.t - b.t; }); }
+  function mo(t) { var d = new Date(t); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }
+  window._g45Pd2Arch = function (ch) {
+    return charger().then(function () {
+      var m = ch.match(/^rugby\/prod2\/(\d{4})-(\d{2})\/(.+)$/); if (!m) return 0;
+      var s = m[1] + '-' + (+m[1] + 1), R = H[s], rest = m[3]; if (!R) return 0;
+      var L = tous(s); if (!L.length) return 0;
+      if (rest === 'equipes.json') { var E = {}; L.forEach(function (x) { [[x.h, x.hn], [x.a, x.an]].forEach(function (c) { var o = E[c[0]] || (E[c[0]] = [c[1], '', 0]); o[2]++; }); }); return E; }
+      if (rest === 'etat.json') return { n: L.length, v2: L.length };
+      var q = rest.match(/^equipes\/(.+)\.json$/);
+      if (q) { var id = q[1], M = []; L.forEach(function (x) { var k = x.h === id ? 'h' : x.a === id ? 'a' : ''; if (k) M.push([x.t, mo(x.t), x.e, k, [x.sh, x.sa], 0, 0, k === 'h' ? x.a : x.h]); });
+        if (!M.length) return 0; var n0 = L.filter(function (x) { return x.h === id; })[0] || L.filter(function (x) { return x.a === id; })[0]; return { nom: n0 ? (n0.h === id ? n0.hn : n0.an) : id, ab: '', m: M }; }
+      var w = rest.match(/^matchs\/(\d{4}-\d{2})\.json$/);
+      if (w) { var D = {}; L.forEach(function (x) { if (mo(x.t) !== w[1]) return; var fi = { t: x.t, h: { id: x.h, nom: x.hn }, a: { id: x.a, nom: x.an }, f: { h: x.sh, a: x.sa } }, F = R.F[x.e];
+          if (F) { fi.st = {}; [['h', F[0]], ['a', F[1]]].forEach(function (z) { (z[1] || []).forEach(function (j) { if (!j[0]) return; var s0 = {}; if (+j[4]) s0.E = +j[4]; if (+j[3]) s0.PTS = +j[3]; s0.REMP = 1; fi.st[pid(j[0])] = { n: j[0], k: z[0], s: s0 }; }); }); }
+          D[x.e] = fi; }); return D; }
+      return 0;
+    });
+  };
+  /* ── 🔎 Critères d'une équipe : clubs de Pro D2 ajoutés à l'index (recherche + ouverture) ── */
+  function ixAjout() {
+    var O = window._g45LoiT && window._g45LoiT.LOI; if (!O || !O.ix) return false;
+    var cur = H[saisons()[0]] || H[saisons()[1]]; if (!cur) return true; var vu = {};
+    O.ix.forEach(function (x) { if (x[1] === 'prod2') vu[x[3]] = 1; });
+    tous(cur.s).forEach(function (x) { [[x.h, x.hn, x.hl], [x.a, x.an, x.al]].forEach(function (c) { if (vu[c[0]]) return; vu[c[0]] = 1; O.ix.push(['rugby', 'prod2', 'Pro D2', c[0], c[1], /^https:\/\//.test(c[2] || '') ? c[2] : '']); }); });
+    return true;
+  }
+  var essais = 0, tm = setInterval(function () { essais++; if ((Object.keys(H).length && ixAjout()) || essais > 40) clearInterval(tm); }, 3000);
+  window.g45Pd2Criteres = function (sl, nom) {
+    try { var O = window._g45LoiT && window._g45LoiT.LOI; ixAjout();
+      window._g45LoiCr.poser(nom, ['rugby', 'prod2', 'Pro D2', sl, nom, '']); if (O) { O.q = ''; O.v = 'cr'; }
+      if (typeof window.g45CkOuvrir === 'function') window.g45CkOuvrir(null, 'loi'); else window.g45CkOnglet('loi');
+    } catch (e) { alert('Critères indisponibles : ' + e.message); }
+  };
+  /* ── carte « 📚 Historique Pro D2 » en haut de l'écran Pro D2 + bouton 📊 Critères dans la fiche d'un club ── */
+  function carte() {
+    var n = nMatchs(), f = nFeuilles(), S = saisons(), nb = S.filter(function (s) { return H[s] && Object.keys(H[s].M || {}).length; }).length;
+    var bar = ETAT.en ? '<div style="margin-top:8px;height:10px;border-radius:6px;background:#1c2747;overflow:hidden;"><div style="height:10px;width:' + Math.round(100 * ETAT.f / Math.max(1, ETAT.n)) + '%;background:#2f6bff;"></div></div><div style="font-size:13px;color:#c9d3ee;margin-top:4px;">⏳ ' + ETAT.f + ' / ' + ETAT.n + ' pages LNR…</div>' : '';
+    return '<div id="g45pd2h" style="background:rgba(11,16,29,.92);border:1px solid #2a3a63;border-radius:12px;padding:12px;margin-bottom:10px;color:#fff;font-size:14px;">'
+      + '<div style="font-size:16px;font-weight:800;">📚 Historique Pro D2 <span style="font-size:13px;color:#c9d3ee;font-weight:600;">· gardé sur cet appareil</span></div>'
+      + '<div style="margin-top:4px;">' + (n ? nb + ' saisons · ' + n + ' matchs · ' + f + ' feuilles (essais / points des joueurs)' : 'Pas encore lu. 5 saisons ≈ 1 400 pages LNR (allégées), quelques minutes ; mieux en Wi-Fi.') + '</div>'
+      + (ETAT.en ? '' : '<button onclick="g45Pd2HistLancer()" style="margin-top:8px;border-radius:10px;padding:9px 14px;font-size:15px;font-weight:800;cursor:pointer;color:#fff;background:#2f6bff;border:1px solid #6d9dff;">' + (n ? '🔄 Compléter / mettre à jour' : '📥 Construire l\'historique (5 saisons)') + '</button>')
+      + bar + '<div style="font-size:13px;color:#c9d3ee;margin-top:6px;">Ensuite : 📊 Critères d\'un club (onglet 👥 Équipes → club → 📊 Critères). Mise à jour toute seule (saison en cours).</div></div>';
+  }
+  function poserCarte() { var el = document.getElementById('t-compet'); if (!el) return; var b = document.getElementById('g45pd2h'); var html = carte();
+    if (b) { b.outerHTML = html; return; } if (!/🏉 Pro D2/.test(el.textContent || '')) return; var t = document.createElement('div'); t.innerHTML = html; var x = t.firstChild; var ref = el.children[1] || el.firstChild; el.insertBefore(x, ref ? ref.nextSibling : null); }
+  window.g45Pd2HistLancer = function () { charger().then(function () { var t0 = 0; maj(function () { var n = Date.now(); if (n - t0 > 400 || !ETAT.en) { t0 = n; poserCarte(); } }, false, true).then(poserCarte); poserCarte(); }); };
+  var r0 = window._g45Pd2Rendre;
+  if (typeof r0 === 'function') window._g45Pd2Rendre = async function (el) { var r = await r0.apply(this, arguments); try { await charger(); poserCarte(); maj(function () {}, true).then(poserCarte); } catch (e) {} return r; };
+  var f0 = window._g45Pd2Fiche;
+  if (typeof f0 === 'function') window._g45Pd2Fiche = async function () { var r = await f0.apply(this, arguments);
+    try { var box = document.getElementById('g45pd2-club'), sl = window._g45Pd2 && _g45Pd2.club, c = ((_g45Pd2 && _g45Pd2.C) || []).filter(function (x) { return _g45Pd2Slug(x.l) === sl; })[0];
+      if (box && c && !box.querySelector('.g45pd2-cr')) { var d = document.createElement('div'); d.className = 'g45pd2-cr';
+        d.innerHTML = '<button onclick="g45Pd2Criteres(' + JSON.stringify(sl).replace(/"/g, '&quot;') + ',' + JSON.stringify(c.n).replace(/"/g, '&quot;') + ')" style="margin:8px 0;border-radius:10px;padding:9px 14px;font-size:15px;font-weight:800;cursor:pointer;color:#fff;background:#2f6bff;border:1px solid #6d9dff;">📊 Critères 5 saisons</button>';
+        var hd = box.firstElementChild; if (hd) hd.insertBefore(d, hd.children[1] || null); } } catch (e) {}
+    return r; };
+  window._g45Pd2Hist = { maj: maj, n: nMatchs, nf: nFeuilles, H: H, charger: charger, saisons: saisons, dateDe: dateDe, lireF: lireF };   /* tests */
+  setTimeout(function () { charger().then(function () { if (Object.keys(H).length) maj(null, true); }); }, 20000);
 })();
