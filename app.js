@@ -88470,6 +88470,32 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
       var tg = $('c-target'); if (tg && adv) tg.value = adv;
       if (t) { var dt = new Date(+t), dd = $('c-date'), hh = $('c-heure'); if (dd) dd.value = dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0') + '-' + String(dt.getDate()).padStart(2, '0'); if (hh) hh.value = String(dt.getHours()).padStart(2, '0') + ':' + String(dt.getMinutes()).padStart(2, '0'); }
       try { if (typeof g45LieuChange === 'function') g45LieuChange(); } catch (e) {}
+      /* 20261127g (captures Prochaines 24 h Kaprizov « 🎯 Buteur » → ✅ Engager → formulaire « Victoire 1,8 + BTS Oui 1,7 » et onglets du FOOT :
+         « quand j'appuie sur Engager ça donne ça alors que mon choix c'est buteur ») : Engager ne posait ni le SPORT ni le PARI de la carte.
+         Maintenant : sport de la carte (#c-sport, option la plus longue qui ouvre u.sport) + lignes « Ton pari » = 🎯 pari de la carte pour ce lieu
+         (_g45UfDecoupe : dom / ext, sinon glob ; « A + B » coupé en lignes, pas « HC +1,5 ») ; carte JOUEUR → « Kirill Kaprizov buteur » ;
+         cote vide (à taper). Pas de pari écrit sur la carte → lignes vidées. */
+      try {
+        var u = ((typeof state !== 'undefined' && state.u) || []).filter(function (x) { return x && x.n === nom; })[0];
+        if (sel) sel.dispatchEvent(new Event('change', { bubbles: true }));
+        if (u) {
+          var spS = $('c-sport'), ic = String(u.sport || '');
+          if (spS && ic) { var best = null; [].forEach.call(spS.options, function (o) { if (o.value && ic.indexOf(o.value) === 0 && (!best || o.value.length > best.value.length)) best = o; }); if (best && spS.value !== best.value) { spS.value = best.value; spS.dispatchEvent(new Event('change', { bubbles: true })); } }
+          var Dn = typeof _g45UfDecoupe === 'function' ? _g45UfDecoupe(u.note) : {}, typ = String((d ? Dn.dom : Dn.ext) || Dn.glob || '').replace(/📌/g, '').trim();
+          var JOU = /buteur|passeur|pointeur|d[ée]cisif|doubl|tripl|\btd\b|touchdown|essai|titulaire|points?\b|rebonds?|passes?\b|tirs?\b/i;
+          var maj = function (t) { t = t.replace(/^(over|under)\b/i, function (w) { return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase(); }); return t.charAt(0).toUpperCase() + t.slice(1); };
+          if (typeof mmRows !== 'undefined') {
+            mmRows.length = 0;
+            typ.split(/\s*\+\s*(?![\d.,])/).map(function (x) { return x.trim(); }).filter(Boolean).forEach(function (x) {
+              var nm = String(u.n || ''), dern = nm.split(' ').slice(-1)[0];
+              var t = u.type === 'joueur' && JOU.test(x) && !(dern && new RegExp(dern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i').test(x)) ? nm + ' ' + x.toLowerCase() : maj(x);
+              mmRows.push({ type: t, cote: '' });
+            });
+            if (!mmRows.length) mmRows.push({ type: '', cote: '' });
+            if (typeof renderMmRows === 'function') renderMmRows();
+          }
+        }
+      } catch (e) {}
       try { (window.updMise || updMise)(); } catch (e) {}
       var mi = $('c-mise'); if (mi) setTimeout(function () { try { mi.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) {} }, 200);
     } catch (e) {}
