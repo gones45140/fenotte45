@@ -89079,7 +89079,10 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
   /* carte du mur → ligne de l'index (même nom, ou nom court contenu : « PSG » / « Paris Saint-Germain » reste à part, on garde le nom de la carte) */
   /* 20261113h : sélection (lg 'sel', nom anglais d'ESPN) → nom français de G45_NATIONS par l'identifiant (« Germany » → « Allemagne ») */
   var LOI_RFR = { England: 'Angleterre', Ireland: 'Irlande', Scotland: 'Écosse', Wales: 'Pays de Galles', Italy: 'Italie', 'South Africa': 'Afrique du Sud', 'New Zealand': 'Nouvelle-Zélande', Australia: 'Australie', Argentina: 'Argentine', Japan: 'Japon', Fiji: 'Fidji', Georgia: 'Géorgie', Samoa: 'Samoa', Tonga: 'Tonga', Uruguay: 'Uruguay', Chile: 'Chili', Portugal: 'Portugal', Spain: 'Espagne', Romania: 'Roumanie', Namibia: 'Namibie', Canada: 'Canada', 'United States': 'États-Unis', USA: 'États-Unis' };
+  var LOI_SFR = { '476': 'Irlande', '586': 'Irlande du Nord' };
   function loiNomFr(x) { if (x && x[1] === 'rsel') return LOI_RFR[x[4]] || x[4];   /* 20261113k : sélections rugby */
+    /* 20261127q (recherche « ir » : Irlande rugby mais pas foot) : sélections foot absentes de G45_NATIONS → nom français ici */
+    if (x && x[1] === 'sel' && LOI_SFR[String(x[3])]) return LOI_SFR[String(x[3])];
     if (!x || x[1] !== 'sel' || typeof G45_NATIONS === 'undefined') return (x && x[4]) || ''; var n = G45_NATIONS.filter(function (y) { return String(y.id) === String(x[3]); })[0]; return (n && n.fr) || x[4]; }
   function loiIxDe(nom) {
     var n = loiNz(nom); if (!n || !LOI.ix) return null;
@@ -89118,7 +89121,10 @@ window._G45_ARCH_LG = ['khl' /* 20261106m : archive KHL (robot khl.yml) */, 'fra
       return;
     }
     if (!LOI.ix) { z.innerHTML = '<div style="font-size:14px;">' + (LOI.ixEnCours ? '⏳ Lecture de la liste des équipes…' : '⚠️ Liste des équipes indisponible pour l\'instant.') + '</div>'; return; }
-    LOI.ix.forEach(function (x) { var fr = loiNomFr(x), n = loiNz(x[4]), nf = loiNz(fr), i1 = n.indexOf(q), i2 = nf.indexOf(q); if (i1 >= 0 || i2 >= 0) R.push({ nom: fr, x: x, d: (i1 === 0 || i2 === 0) ? 0 : 1 }); });   /* 20261113h : + nom français des sélections */
+    LOI.ix.forEach(function (x) { var fr = loiNomFr(x), n = loiNz(x[4]), nf = loiNz(fr), i1 = n.indexOf(q), i2 = nf.indexOf(q); if (i1 >= 0 || i2 >= 0) R.push({ nom: fr, x: x, d: (i1 === 0 || i2 === 0) ? 0 : 1 }); });
+    /* 20261127q : début d'un MOT (« Rep Ireland », « N Ireland ») avant un bout de mot (« Admiral », « Mirassol ») — la liste est coupée à 15 */
+    var mot = function (t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').split(/[^a-z0-9]+/).some(function (w) { return w && w.indexOf(q) === 0; }); };
+    R.forEach(function (r) { if (r.d === 1 && (mot(r.x[4]) || mot(r.nom))) r.d = 0.5; });   /* 20261113h : + nom français des sélections */
     R.sort(function (a, b) { return a.d - b.d; }); R = R.slice(0, 15); LOI.res = R;
     z.innerHTML = R.length ? R.map(function (r, i) { var x = r.x; return loiCrBtn(r.nom, x[0], x[1], x[2], x[3], x[5], i); }).join('') : '<div style="font-size:14px;">Aucune équipe trouvée.</div>';
   }
