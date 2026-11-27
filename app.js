@@ -78437,7 +78437,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
         + lab('Joueurs (1 à 3, matchs où ils ont TOUS joué)') + selJ(1, 'jo') + (c.jo ? selJ(2, 'jo2') : '') + (c.jo2 ? selJ(3, 'jo3') : '')
         + '<br>' + b(c.jm === 'but', '⚽ Buteur', "g45CrSet('jm','but')") + b(c.jm === 'dbl', '⚽⚽ Doublé', "g45CrSet('jm','dbl')") + b(c.jm === 'tri', '⚽⚽⚽ Triplé', "g45CrSet('jm','tri')")
         + b(c.jm === 'pas', '🅰️ Passeur', "g45CrSet('jm','pas')") + b(c.jm === 'dec', '⭐ Décisif', "g45CrSet('jm','dec')");
-      if (c.jo2) h += lab('Avec ' + (c.jo3 ? '3' : '2') + ' joueurs') + b(c.jx === 'cha', 'Chacun', "g45CrSet('jx','cha')") + b(c.jx === 'un', 'Au moins un (double chance)', "g45CrSet('jx','un')")
+      if (c.jo2) h += lab('Avec ' + (c.jo3 ? '3' : '2') + ' joueurs') + b(c.jx === 'un', 'Au moins un (double chance)', "g45CrSet('jx','un')") + b(c.jx === 'cha', 'Chacun', "g45CrSet('jx','cha')")   /* 20261127n : double chance en 1er */
         + b(c.jx === 'c15', 'Buts cumulés +1,5', "g45CrSet('jx','c15')") + b(c.jx === 'c25', '+2,5', "g45CrSet('jx','c25')") + b(c.jx === 'c35', '+3,5', "g45CrSet('jx','c35')");
       joueurs(c).forEach(function (x) { jCharger(x.id, D); var JJ = S.jl[x.id] || {}; if (JJ.enCours) h += '<div style="font-size:13px;color:#c9d3ee;">⏳ Matchs de ' + esc(x.n) + '…</div>'; else if (!JJ.n) h += '<div style="font-size:13px;color:#ff9f43;">⚠️ Aucun match trouvé pour ' + esc(x.n) + ' dans ce championnat.</div>'; });
       q4 = h.length;
@@ -78499,7 +78499,7 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
             + '<select onchange="g45CrSet(\'jmin\',this.value)" style="background:#16213f;color:#fff;border:1px solid #6d9dff;border-radius:8px;padding:7px 10px;font-size:15px;font-weight:700;margin:0 6px 6px 0;">' + SEU.map(function (n) { return '<option value="' + n + '"' + (String(c.jmin) === n ? ' selected' : '') + '>' + n.replace('.', ',') + '</option>'; }).join('') + '</select>'
             : lab('Combien') + SEU.map(function (n) { return b(String(c.jmin) === n, n + ' ou +', "g45CrSet('jmin','" + n + "')"); }).join(''))
             );   /* 20261025m */
-        if (c.jo2) h += lab('Avec ' + (c.jo3 ? '3' : '2') + ' joueurs') + b(c.jx !== 'un', 'Chacun', "g45CrSet('jx','cha')") + b(c.jx === 'un', 'Au moins un (double chance)', "g45CrSet('jx','un')");
+        if (c.jo2) h += lab('Avec ' + (c.jo3 ? '3' : '2') + ' joueurs') + b(c.jx === 'un', 'Au moins un (double chance)', "g45CrSet('jx','un')") + b(c.jx !== 'un', 'Chacun', "g45CrSet('jx','cha')");   /* 20261127n : double chance en 1er */
         if (rg()) h += lab('Compter') + b(!c.jtit, 'Tous ses matchs', "g45CrSet('jtit','')") + b(!!c.jtit, 'Titulaire seulement', "g45CrSet('jtit','1')")
           + ((c.jm === 'pts' || c.jtit) ? '<div style="font-size:13px;color:#c9d3ee;margin:2px 0 4px;">Points et titulaires : feuilles archivées seulement (Top 14, Champions Cup, Six Nations, NRL).</div>' : '');   /* 20261103k */
       } else if (!UU.enCours) h += '<div style="font-size:13px;color:#c9d3ee;margin:4px 0;">' + (rg() && !UU.ar ? '⏳ Feuilles de match archivées…' : 'Lis d\'abord les feuilles de match : la liste des joueurs vient de là.') + '</div>';
@@ -79149,9 +79149,12 @@ window._g45AideBoutonsPoser = _g45AideBoutonsPoser;
   window.g45CrJoueur = function (id, slot) {   /* 20261021d : slot 1 / 2 / 3 ; retirer un joueur fait remonter les suivants */
     var c = S.combos[S.a], k = slot === 3 ? '3' : slot === 2 ? '2' : '', nm = '';
     var RO = S.ro[S.nom] || {}; (RO.l || []).forEach(function (x) { if (x.id === id) nm = x.nom; });
+    var had2 = !!c.jo2;   /* 20261127n */
     c['jo' + k] = id || ''; c['jn' + k] = nm;
     var P = joueurs(c); c.jo = c.jo2 = c.jo3 = ''; c.jn = c.jn2 = c.jn3 = '';
     P.forEach(function (x, i) { var q = i ? String(i + 1) : ''; c['jo' + q] = x.id; c['jn' + q] = x.n; });
+    /* 20261127n (Antoine : « mets en 1er double chance buteur prioritaire et Chacun 2e ») : un 2e joueur AJOUTÉ → « Au moins un » choisi d'office. */
+    if (!had2 && c.jo2) c.jx = 'un';
     try { redessiner(); } catch (e) {}
   };
   window.g45CrSet = function (k, v) {
